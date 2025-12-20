@@ -24,15 +24,17 @@ const K_BOX = "Box Children";
 const K_ROUND = "Rounded Corners";
 const K_GROWTH = "Growth Mode";
 const K_MULTICOLOR = "Multicolor Mode";
+const K_MINIMIZED = "Is Minimized";
 
 const getVal = (key, def) => ea.getScriptSettingValue(key, { value: def }).value;
 
-let maxWidth = parseInt(getVal(K_WIDTH, 200));
+let maxWidth = parseInt(getVal(K_WIDTH, 300));
 let useFibonacci = getVal(K_FIBO, false) === true;
 let boxChildren = getVal(K_BOX, false) === true;
 let roundedCorners = getVal(K_ROUND, true) === true;
 let multicolor = getVal(K_MULTICOLOR, true) === true;
 let currentModalGrowthMode = getVal(K_GROWTH, "Radial");
+let isMinimized = getVal(K_MINIMIZED, false) === true;
 let autoLayoutDisabled = false;
 
 const NORMAL_SIZES = [36, 28, 20, 16]; 
@@ -43,12 +45,12 @@ const isMac = ea.DEVICE.isMacOS || ea.DEVICE.isIOS;
 
 const INSTRUCTIONS = `
 - **ENTER**: Add a sibling node and stay on the current parent for rapid entry.
-- **${isMac ? "CMD" : "CTRL"} + ENTER**: Add a child node and "drill down" (automatically select the new node).
+- **${isMac ? "CMD" : "CTRL"} + ENTER**: Add a child node and "drill down" (follow the new node).
 - **SHIFT + ENTER**: Add the node and close the modeler.
 - **${isMac ? "OPT" : "ALT"} + Arrows**: Navigate through the mindmap nodes on the canvas.
-- **Coloring**: L1 branches get unique colors (Multicolor mode). Descendants (L2+) always inherit their parent's color.
-- **Growth Strategy**: Stored in the central node. Existing maps maintain their style automatically.
+- **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
 - **Copy/Paste**: Export/Import indented Markdown lists.
+- **Focus mode**: Click the minimize button next to the input field to hide the controls and reduce the size of the tool
 `;
 
 // ---------------------------------------------------------------------------
@@ -132,9 +134,7 @@ const layoutSubtree = (nodeId, x, centerY, side, allElements) => {
   eaNode.x = side === 1 ? x : x - node.width;
   eaNode.y = centerY - node.height / 2;
   const children = getChildrenNodes(nodeId, allElements);
-  // Stable sort for descendants: preserve visual order by Y
   children.sort((a, b) => a.y - b.y);
-  
   const subtreeHeight = getSubtreeHeight(nodeId, allElements);
   let currentY = centerY - subtreeHeight / 2;
   children.forEach(child => {
@@ -239,7 +239,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)];
   ea.style.roundness = roundedCorners ? { type: 3 } : null;
 
-  const curMaxW = depth === 0 ? 400 : maxWidth;
+  const curMaxW = maxWidth;
   const metrics = ea.measureText(text);
   const shouldWrap = metrics.width > curMaxW;
 
@@ -252,7 +252,6 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   } else {
     ea.style.strokeColor = getReadableColor(nodeColor);
     
-    // Positioning for Manual Mode (No Auto Layout)
     let px = parent.x, py = parent.y;
     if (autoLayoutDisabled) {
       const rootEl = allElements.find(e => e.id === rootId);
@@ -304,14 +303,13 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
 // ---------------------------------------------------------------------------
 // 5. Copy & Paste Engine
 // ---------------------------------------------------------------------------
-const getText = (all, node) => {
+const getTextFromNode = (all, node) => {
   if (node.type === "text") return node.originalText;
-  const textId = node.boundElements.find(be => be.type==="text")?.id;
+  const textId = node.boundElements?.find(be => be.type==="text")?.id;
   if (!textId) return "";
-  textEl = all.find(el=>el.id === textId);
-  if (!textEl) return "";
-  return textEl.originalText;
-}
+  const textEl = all.find(el=>el.id === textId);
+  return textEl ? textEl.originalText : "";
+};
 
 const copyMapAsText = async () => {
   const sel = ea.getViewSelectedElement();
@@ -324,12 +322,10 @@ const copyMapAsText = async () => {
     const node = all.find(e => e.id === nodeId);
     const children = getChildrenNodes(nodeId, all);
     children.sort((a,b) => a.y - b.y);
-    
     let str = "";
-    const text = getText(all,node);
+    const text = getTextFromNode(all, node);
     if (depth === 0) str += `# ${text}\n\n`;
     else str += `${"  ".repeat(depth - 1)}- ${text}\n`;
-    
     children.forEach(c => { str += buildList(c.id, depth + 1); });
     return str;
   };
@@ -366,12 +362,10 @@ const pasteListToMap = async () => {
   const sel = ea.getViewSelectedElement();
   let currentParent;
 
-  // 1. Resolve Root
   if (!sel) {
     if (rootTextFromHeader) {
       currentParent = await addNode(rootTextFromHeader, true, true);
     } else {
-      // Check if there's exactly one top-level item in the list
       const minIndent = Math.min(...parsed.map(p => p.indent));
       const topLevelItems = parsed.filter(p => p.indent === minIndent);
       if (topLevelItems.length === 1) {
@@ -383,36 +377,26 @@ const pasteListToMap = async () => {
     }
   } else {
     currentParent = sel;
-    // If selected element is part of a container, parent is already handled in addNode
   }
 
-  // 2. Process Nested List
-  // We use a stack to track nodes at each indentation level
   const stack = [{ indent: -1, node: currentParent }];
-  
   for (const item of parsed) {
-    // Pop the stack until we find the parent level
+
     while (stack.length > 1 && item.indent <= stack[stack.length - 1].indent) {
       stack.pop();
     }
     
     // The current parent is the top of the stack
     const parentNode = stack[stack.length - 1].node;
-    
-    // Add node (passing true to skip re-layout during batch add)
     ea.selectElementsInView([parentNode]);
     const newNode = await addNode(item.text, false, true);
-    
     stack.push({ indent: item.indent, node: newNode });
   }
 
-  // 3. Final Layout
-  const allEls = ea.getViewElements();
-  const info = getHierarchy(currentParent, allEls);
+  const info = getHierarchy(currentParent, ea.getViewElements());
   triggerGlobalLayout(info.rootId);
   await ea.addElementsToView(false, false, true, true);
-  
-  new Notice("Mindmap paste complete.");
+  new Notice("Paste complete.");
 };
 
 // ---------------------------------------------------------------------------
@@ -453,13 +437,18 @@ const navigateMap = (key) => {
 
 const modal = new ea.FloatingModal(app);
 modal.onOpen = () => {
-  const { contentEl } = modal; contentEl.empty(); modal.titleEl.setText("Mind Map Builder");
+  const { contentEl, titleEl, modalEl } = modal;
+  contentEl.empty();
+  titleEl.setText("Mind Map Builder");
   
   const details = contentEl.createEl("details");
   details.createEl("summary", { text: "Instructions & Shortcuts" });
   ea.obsidian.MarkdownRenderer.render(app, INSTRUCTIONS, details.createDiv(), "", ea.plugin);
+  
+  const inputRow = new ea.obsidian.Setting(contentEl).setName("Node Text");
 
-  const statusEl = contentEl.createDiv({ attr: { style: "font-size:0.85em; color:var(--text-accent); font-weight:bold; margin:12px 0; border-bottom:1px solid var(--background-modifier-border); padding-bottom:5px;" }});
+  const bodyContainer = contentEl.createDiv();
+  const statusEl = bodyContainer.createDiv({ attr: { style: "font-size:0.85em; color:var(--text-accent); font-weight:bold; margin:12px 0; border-bottom:1px solid var(--background-modifier-border); padding-bottom:5px;" }});
   
   let strategyDropdown, autoLayoutToggle;
   const updateStatus = () => {
@@ -485,17 +474,39 @@ modal.onOpen = () => {
   };
 
   let inputEl;
-  new ea.obsidian.Setting(contentEl).setName("Node Text").addText(text => {
-      inputEl = text.inputEl; inputEl.style.width = "100%"; inputEl.placeholder = "Enter concept...";
-  }).settingEl.style.display = "block";
+  inputRow.addText(text => {
+      inputEl = text.inputEl; inputEl.style.width = "100%"; inputEl.placeholder = "Concept...";
+  });
+  
+  inputRow.addExtraButton(btn => {
+    const updateIcon = () => {
+      btn.setIcon(isMinimized ? "maximize-2" : "minimize-2");
+      btn.setTooltip(isMinimized ? "Maximize UI" : "Minimize UI");
+      const display = isMinimized ? "none" : "block";
+      bodyContainer.style.display = display;
+      titleEl.style.display = display;
+      details.style.display = display;
+      modalEl.style.opacity = isMinimized ? "0.8" : "1";
+    };
+    updateIcon();
+    btn.onClick(async () => {
+      isMinimized = !isMinimized;
+      ea.setScriptSettingValue(K_MINIMIZED, { value: isMinimized });
+      dirty = true;
+      updateIcon();
+    });
+  });
 
-  new ea.obsidian.Setting(contentEl).setName("Growth Strategy").addDropdown(d => {
+  inputRow.settingEl.style.display = "block";
+  inputRow.controlEl.style.width = "100%";
+  inputRow.controlEl.style.marginTop = "8px";
+
+  new ea.obsidian.Setting(bodyContainer).setName("Growth Strategy").addDropdown(d => {
     strategyDropdown = d;
     d.addOptions({ "Radial": "Radial", "Right-facing": "Right-facing", "Left-facing": "Left-facing" })
     .setValue(currentModalGrowthMode)
     .onChange(async v => { 
-      currentModalGrowthMode = v;
-      ea.setScriptSettingValue(K_GROWTH, { value: v }); dirty = true; 
+      currentModalGrowthMode = v; ea.setScriptSettingValue(K_GROWTH, { value: v }); dirty = true; 
       const sel = ea.getViewSelectedElement();
       if (sel) {
         const info = getHierarchy(sel, ea.getViewElements());
@@ -510,7 +521,7 @@ modal.onOpen = () => {
     });
   });
 
-  autoLayoutToggle = new ea.obsidian.Setting(contentEl).setName("Disable Auto-Layout").addToggle(t => t
+  autoLayoutToggle = new ea.obsidian.Setting(bodyContainer).setName("Disable Auto-Layout").addToggle(t => t
     .setValue(autoLayoutDisabled)
     .onChange(async v => {
       autoLayoutDisabled = v;
@@ -524,19 +535,19 @@ modal.onOpen = () => {
     })
   ).components[0];
 
-  new ea.obsidian.Setting(contentEl).setName("Multicolor Branches").addToggle(t => t.setValue(multicolor).onChange(v => { multicolor = v; ea.setScriptSettingValue(K_MULTICOLOR, { value: v }); dirty = true; }));
+  new ea.obsidian.Setting(bodyContainer).setName("Multicolor Branches").addToggle(t => t.setValue(multicolor).onChange(v => { multicolor = v; ea.setScriptSettingValue(K_MULTICOLOR, { value: v }); dirty = true; }));
 
   let sliderValDisplay;
-  const sliderSetting = new ea.obsidian.Setting(contentEl).setName("Max Wrap Width").addSlider(s => s.setLimits(100, 600, 10).setValue(maxWidth).onChange(async (v) => {
+  const sliderSetting = new ea.obsidian.Setting(bodyContainer).setName("Max Wrap Width").addSlider(s => s.setLimits(100, 600, 10).setValue(maxWidth).onChange(async (v) => {
         maxWidth = v; sliderValDisplay.setText(`${v}px`); ea.setScriptSettingValue(K_WIDTH, { value: v }); dirty = true;
   }));
   sliderValDisplay = sliderSetting.descEl.createSpan({ text: `${maxWidth}px`, attr: { style: "margin-left:10px; font-weight:bold;" }});
 
-  new ea.obsidian.Setting(contentEl).setName("Fibonacci Scale").addToggle(t => t.setValue(useFibonacci).onChange(v => { useFibonacci = v; ea.setScriptSettingValue(K_FIBO, { value: v }); dirty = true; }));
-  new ea.obsidian.Setting(contentEl).setName("Box Child Nodes").addToggle(t => t.setValue(boxChildren).onChange(v => { boxChildren = v; ea.setScriptSettingValue(K_BOX, { value: v }); dirty = true; }));
-  new ea.obsidian.Setting(contentEl).setName("Rounded Corners").addToggle(t => t.setValue(roundedCorners).onChange(v => { roundedCorners = v; ea.setScriptSettingValue(K_ROUND, { value: v }); dirty = true; }));
+  new ea.obsidian.Setting(bodyContainer).setName("Fibonacci Scale").addToggle(t => t.setValue(useFibonacci).onChange(v => { useFibonacci = v; ea.setScriptSettingValue(K_FIBO, { value: v }); dirty = true; }));
+  new ea.obsidian.Setting(bodyContainer).setName("Box Child Nodes").addToggle(t => t.setValue(boxChildren).onChange(v => { boxChildren = v; ea.setScriptSettingValue(K_BOX, { value: v }); dirty = true; }));
+  new ea.obsidian.Setting(bodyContainer).setName("Rounded Corners").addToggle(t => t.setValue(roundedCorners).onChange(v => { roundedCorners = v; ea.setScriptSettingValue(K_ROUND, { value: v }); dirty = true; }));
 
-  const btnGrid = contentEl.createDiv({ attr: { style: "display: grid; grid-template-columns: repeat(5, 1fr); gap:6px; margin-top:20px;" }});
+  const btnGrid = bodyContainer.createDiv({ attr: { style: "display: grid; grid-template-columns: repeat(5, 1fr); gap:6px; margin-top:20px;" }});
   btnGrid.createEl("button", { text: "Sibling", cls: "mod-cta" }).onclick = async () => { await addNode(inputEl.value, false); inputEl.value = ""; inputEl.focus(); updateStatus(); };
   btnGrid.createEl("button", { text: "Follow" }).onclick = async () => { await addNode(inputEl.value, true); inputEl.value = ""; inputEl.focus(); updateStatus(); };
   btnGrid.createEl("button", { text: "Close" }).onclick = async () => { await addNode(inputEl.value, false); modal.close(); };
