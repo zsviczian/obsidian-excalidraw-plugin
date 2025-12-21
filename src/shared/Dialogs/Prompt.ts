@@ -162,7 +162,7 @@ export class GenericInputPrompt extends Modal {
     private header: string,
     placeholder?: string,
     value?: string,
-    buttons?: { caption: string; action: Function }[],
+    buttons?: ButtonDefinition[],
     lines?: number,
     displayEditorButtons?: boolean,
     customComponents?: (container: HTMLElement) => void,
@@ -296,13 +296,17 @@ export class GenericInputPrompt extends Modal {
         const btn = new ButtonComponent(actionButtonContainer);
         btn.buttonEl.style.marginLeft="5px";
         if(button.tooltip) btn.setTooltip(button.tooltip);
-        btn.setButtonText(button.caption).onClick((evt: MouseEvent) => {
-          const res = button.action(this.input);
-          if (res) {
-            this.input = res;
-          }
-          this.submit();
-        });
+        button.iconId
+          ? btn.setIcon(button.iconId)
+          : btn.setButtonText(button.caption);
+        button.tooltip && btn.setTooltip(button.tooltip);
+        btn.onClick((evt: MouseEvent) => {
+            const res = button.action(this.input);
+            if (res) {
+              this.input = res;
+            }
+            this.submit();
+          });
         b = b ?? btn;
       }
       if (b) {
