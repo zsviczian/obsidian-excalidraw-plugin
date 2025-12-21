@@ -115,7 +115,7 @@ import {
 } from "../utils/utils";
 import { cleanBlockRef, cleanSectionHeading, closeLeafView, getAttachmentsFolderAndFilePath, getExcalidraAndMarkdowViewsForFile, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf, setExcalidrawView } from "../utils/obsidianUtils";
 import { splitFolderAndFilename } from "../utils/fileUtils";
-import { GenericInputPrompt, MultiOptionConfirmationPrompt, NewFileActions, Prompt, linkPrompt } from "../shared/Dialogs/Prompt";
+import { GenericInputPrompt, LaTexPrompt, MultiOptionConfirmationPrompt, NewFileActions, Prompt, linkPrompt } from "../shared/Dialogs/Prompt";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
 import { updateEquation } from "../shared/LaTeX";
 import {
@@ -1061,7 +1061,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if(!equation) return;
     }
 
-    GenericInputPrompt.Prompt(this,this.plugin,this.app,t("ENTER_LATEX"),undefined,equation, undefined, 3).then(async (formula: string) => {
+    //GenericInputPrompt.Prompt(this,this.plugin,this.app,t("ENTER_LATEX"),undefined,equation, undefined, 3)
+    LaTexPrompt.Prompt(this.app, t("ENTER_LATEX"), equation)
+    .then(async (formula: string) => {
       if (!formula || formula === equation) {
         return;
       }

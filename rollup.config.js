@@ -188,8 +188,10 @@ const BUILD_CONFIG = {
         },
       }),
       postprocess([
-        [/React=require\("react"\),state=require\("@codemirror\/state"\),view=require\("@codemirror\/view"\)/,
-        `state=require("@codemirror/state"),view=require("@codemirror/view")` + packageString],
+        [
+          /(var[^;]*?),\s*React\s*=\s*require\(["']react["']\)([^;]*;)/,
+          (_, g1, g2) => `${g1}${g2}${packageString}`
+        ],
       ]),
     ] : [
       postprocess([ [/var React = require\('react'\);/, packageString] ]),

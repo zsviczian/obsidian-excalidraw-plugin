@@ -31,7 +31,7 @@ import {
   isVersionNewerThanOther,
   scaleLoadedImage,
 } from "src/utils/utils";
-import { GenericInputPrompt, NewFileActions } from "src/shared/Dialogs/Prompt";
+import { GenericInputPrompt, LaTexPrompt, NewFileActions } from "src/shared/Dialogs/Prompt";
 import { t } from "src/lang/helpers";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import {
@@ -657,15 +657,19 @@ export function repositionElementsToCursor(
 export const insertLaTeXToView = (view: ExcalidrawView, center: boolean = false) => {
   const app = view.plugin.app;
   const ea = getEA(view) as ExcalidrawAutomate;
-  GenericInputPrompt.Prompt(
-    view,
-    view.plugin,
-    app,
-    t("ENTER_LATEX"),
-    "\\color{red}\\oint_S {E_n dA = \\frac{1}{{\\varepsilon _0 }}} Q_{inside}",
-    view.plugin.settings.latexBoilerplate,
-    undefined,
-    3
+  const isLatexSuitAvailable = !!app.plugins.plugins["obsidian-latex-suite"];
+  (isLatexSuitAvailable
+    ? LaTexPrompt.Prompt(app, t("ENTER_LATEX"), view.plugin.settings.latexBoilerplate)
+    : GenericInputPrompt.Prompt(
+        view,
+        view.plugin,
+        app,
+        t("ENTER_LATEX"),
+        "\\color{red}\\oint_S {E_n dA = \\frac{1}{{\\varepsilon _0 }}} Q_{inside}",
+        view.plugin.settings.latexBoilerplate,
+        undefined,
+        3
+      )
   ).then(async (formula: string) => {
     if (formula) {
       const id = await ea.addLaTex(0, 0, formula);

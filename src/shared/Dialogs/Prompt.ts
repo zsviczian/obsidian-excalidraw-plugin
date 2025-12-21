@@ -24,6 +24,11 @@ import { REGEX_LINK, REGEX_TAGS } from "../ExcalidrawData";
 import { ScriptEngine } from "../Scripts";
 import { openExternalLink, openTagSearch, parseObsidianLink } from "src/utils/excalidrawViewUtils";
 import { ButtonDefinition } from "src/types/promptTypes";
+import { EditorView, keymap } from "@codemirror/view";
+import { history } from "@codemirror/commands";
+import { parser } from "./math-only";
+import { LRLanguage } from "@codemirror/language";
+import { editorLivePreviewField } from "obsidian";
 
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;
@@ -77,6 +82,153 @@ export class Prompt extends Modal {
   async openAndGetValue(resolve: (value: string) => void): Promise<void> {
     this.resolve = resolve;
     this.open();
+  }
+}
+
+export class LaTexPrompt extends Modal {
+  public waitForClose : Promise<string>;
+  private promptEl: HTMLInputElement;
+  private resolvePromise: (input: string) => void;
+  private rejectPromise: (reason?: any) => void;
+  private editorView : EditorView;
+  private latexsSuitePlugin : any;
+
+  protected constructor(
+    app: App,
+    private prompt_text: string,
+    private default_value?: string,
+  ) {
+    super(app);
+    this.titleEl.setText(this.prompt_text);
+    this.latexsSuitePlugin = app.plugins.plugins["obsidian-latex-suite"];
+    const mainContentContainer: HTMLDivElement = this.contentEl.createDiv();
+    this.display(default_value, mainContentContainer);
+    this.waitForClose = new Promise<string>((resolve, reject) => {
+      this.resolvePromise = resolve;
+      this.rejectPromise = reject;
+    });
+    this.editorView.focus();
+  }
+
+  public static Prompt(app: App,
+    prompt_text?: string,
+    default_value?: string,
+  ): Promise<string>{
+    const latexprompt = new LaTexPrompt(app, prompt_text, default_value);
+
+    return latexprompt.waitForClose;
+  }
+
+  private display(value : string, container : HTMLDivElement) {
+    if (this.latexsSuitePlugin) {
+      // the language put eveything in a "math" node
+      // surrounded by "math-begin" and "math-end" 
+      // so that latex-suite always thinks we are in mathmode
+      const language = LRLanguage.define({parser:parser});
+      const extensions = [
+        language, 
+        keymap.of([{
+          key:"Mod-Enter", 
+          run : () => {this.submitCallback(); return true;}
+        }]),
+        history(),
+        editorLivePreviewField.init(() => false),
+        ... this.latexsSuitePlugin.editorExtensions
+      ];
+
+      this.editorView = new EditorView({ 
+        doc: value, 
+        parent : container,
+        extensions : extensions,
+      });
+    } else {
+      const extensions = [
+        keymap.of([{
+          key:"Mod-Enter", 
+          run : () => {this.submitCallback(); return true;}
+        }]),
+        history(),
+      ];
+      this.editorView = new EditorView({ 
+        doc: value, 
+        extensions : extensions,
+        parent : container,
+      });
+    }
+
+    const cmContent = this.editorView.dom.querySelector('.cm-content') as HTMLElement;
+    if (cmContent) {
+      cmContent.style.caretColor = 'var(--caret-color)';
+    }
+    
+    const buttonBarContainer: HTMLDivElement = container.createDiv();
+    buttonBarContainer.addClass(`excalidraw-prompt-buttonbar-bottom`);
+    const actionButtonContainer: HTMLDivElement = buttonBarContainer.createDiv();
+
+    this.createButton(
+        actionButtonContainer,
+        "",
+        this.submitCallback.bind(this),
+        t("PROMPT_BUTTON_OK") ?? "",
+        undefined,
+        "check"
+      ).setCta().buttonEl.style.marginRight = "0";
+    this.createButton(
+        actionButtonContainer, 
+        "", 
+        this.cancelCallback.bind(this), 
+        t("PROMPT_BUTTON_CANCEL"),
+        undefined,
+        "x"
+      );
+    this.open();
+  }
+
+  private createButton(container: HTMLElement,
+    text: string,
+    callback: (evt: MouseEvent) => any,
+    tooltip: string = "",
+    margin: string = "5px",
+    iconId?:string,
+  ){
+    const btn = new ButtonComponent(container);
+    btn.buttonEl.style.padding = "0.5em";
+    btn.buttonEl.style.marginLeft = margin;
+    btn.setTooltip(tooltip);
+
+    if (iconId) {
+      btn.setIcon(iconId);
+    } else {
+      btn.setButtonText(text);
+    }
+
+    btn.onClick(callback);
+    return btn;
+  }
+  
+  private submitCallback(){
+    const res = this.editorView.state.doc.toString();
+    if (res.trim().length == 0) {
+      this.rejectPromise("empty latex");
+    } else { 
+      this.resolvePromise(res);
+    }
+    this.close();
+  }
+
+  private cancelCallback(){
+    this.rejectPromise("Canceled input");
+    this.close();
+  }
+
+  onOpen(): void {
+    super.onOpen();
+    this.editorView.focus();
+  }
+
+  onClose(): void {
+    this.contentEl.empty();
+    this.editorView.destroy();
   }
 }
 
@@ -275,7 +427,6 @@ export class GenericInputPrompt extends Modal {
 
     if (iconId) {
       btn.setIcon(iconId);
-      //btn.setButtonText(text ?? "");
     } else {
       btn.setButtonText(text);
     }
