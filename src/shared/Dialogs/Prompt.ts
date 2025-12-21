@@ -155,6 +155,11 @@ export class LaTexPrompt extends Modal {
         parent : container,
       });
     }
+
+    const cmContent = this.editorView.dom.querySelector('.cm-content') as HTMLElement;
+    if (cmContent) {
+      cmContent.style.caretColor = 'var(--caret-color)';
+    }
     
     const buttonBarContainer: HTMLDivElement = container.createDiv();
     buttonBarContainer.addClass(`excalidraw-prompt-buttonbar-bottom`);
@@ -162,14 +167,20 @@ export class LaTexPrompt extends Modal {
 
     this.createButton(
         actionButtonContainer,
-        "✅",
+        "",
         this.submitCallback.bind(this),
+        t("PROMPT_BUTTON_OK") ?? "",
+        undefined,
+        "check"
       ).setCta().buttonEl.style.marginRight = "0";
     this.createButton(
         actionButtonContainer, 
-        "❌", 
+        "", 
         this.cancelCallback.bind(this), 
-        t("PROMPT_BUTTON_CANCEL"));
+        t("PROMPT_BUTTON_CANCEL"),
+        undefined,
+        "x"
+      );
     this.open();
   }
 
@@ -178,12 +189,20 @@ export class LaTexPrompt extends Modal {
     callback: (evt: MouseEvent) => any,
     tooltip: string = "",
     margin: string = "5px",
+    iconId?:string,
   ){
     const btn = new ButtonComponent(container);
     btn.buttonEl.style.padding = "0.5em";
     btn.buttonEl.style.marginLeft = margin;
     btn.setTooltip(tooltip);
-    btn.setButtonText(text).onClick(callback);
+
+    if (iconId) {
+      btn.setIcon(iconId);
+    } else {
+      btn.setButtonText(text);
+    }
+
+    btn.onClick(callback);
     return btn;
   }
   
@@ -408,7 +427,6 @@ export class GenericInputPrompt extends Modal {
 
     if (iconId) {
       btn.setIcon(iconId);
-      //btn.setButtonText(text ?? "");
     } else {
       btn.setButtonText(text);
     }
