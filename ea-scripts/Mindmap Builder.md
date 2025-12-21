@@ -1,4 +1,93 @@
 /*
+
+# Mind Map Builder: Technical Specification & User Guide
+
+## 1. Overview
+**Mind Map Builder** is a high-performance automation script designed for the Excalidraw-Obsidian plugin. It transforms the Excalidraw canvas into a rapid brainstorming environment, allowing users to build complex, structured, and visually organized mind maps using primarily keyboard shortcuts. 
+
+The script balances **automation** (auto-layout, recursive grouping, and contrast-aware coloring) with **flexibility** (manual node pinning and layout-free modes), ensuring that the mind map stays organized even as it grows to hundreds of nodes.
+
+---
+
+## 2. Core Purpose
+The primary goal is to minimize the "friction of drawing." Instead of manually drawing boxes and arrows, the user focuses on the hierarchy of ideas. The script handles:
+- **Spatial Arrangement**: Distributing nodes radially or directionally.
+- **Visual Hierarchy**: Automatically adjusting font sizes and arrow thicknesses based on depth.
+- **Data Portability**: Enabling seamless transition between visual diagrams and Markdown bullet lists via the clipboard.
+
+---
+
+## 3. Feature Set
+
+### A. Intelligent Layout Engine
+The script features a recursive spacing engine that calculates the "subtree height" of every branch. 
+- **Radial Mode**: Distributes Level 1 branches in a circle. It uses a specific logic: the first 6 nodes are placed at 60° increments starting from 30°. Beyond 6 nodes, it compresses the arc to 320° (20° to 340°) to maintain a professional aesthetic and avoid overlapping the central node's vertical axis.
+- **Directional Modes**: "Right-facing" and "Left-facing" constrain the map to specific arcs, useful for linear flows or side-by-side comparisons.
+- **Recursive Re-balancing**: Every time a node is added, the script re-calculates the entire tree's coordinates to ensure no nodes or arrows overlap, even if sub-branches have vastly different densities.
+
+### B. "Manual Break-out" (Node Pinning)
+If a user manually drags a Level 1 branch significantly outside the auto-calculated radius (specifically > 1.5x the current radius), the engine marks that branch as **deliberately placed**. The auto-layout will no longer move that branch, but it will still automatically organize any children added *to* that branch.
+
+### C. Import & Export (Markdown Sync)
+- **Copy as Text**: Converts the visual map into an H1 header (Root) followed by an indented Markdown bullet list.
+- **Paste from Text**: Parses an indented Markdown list. If a node is selected on the canvas, the list is appended to that node. If nothing is selected, a new map is generated. It intelligently detects if a list has a single root or multiple top-level items.
+
+### D. Visual Styling & Accessibility
+- **Dynamic Contrast-Aware Coloring**: In "Multicolor Mode," the script generates 10 random colors for new Level 1 branches and uses **ColorMaster** to select the one with the highest contrast (minimum 3:1 ratio) against the current canvas background.
+- **Color Inheritance**: Grandchildren and all deeper descendants strictly inherit the stroke color of their parent, maintaining visual "branch identity."
+- **Font Scales**: Supports a "Normal Scale" (36-16pt) and a "Fibonacci Scale" (68-16pt) for dramatic visual emphasis. It also offers a "Use scene fontsize" mode to match the user's current tool settings.
+
+---
+
+## 4. UI and User Experience
+
+### Focus Mode (Minimized UI)
+By clicking the **Minimize** icon next to the input field, the modal collapses, hiding all settings and buttons except the input field and label. This is designed for power users who know the shortcuts and want maximum screen real estate for their drawing.
+
+### Single-Row Management
+All primary actions (Add Sibling, Follow Child, Close, Copy, Paste) are located in a single row at the bottom to reduce mouse travel.
+
+### Keyboard Shortcuts
+| Shortcut | Action |
+| :--- | :--- |
+| **ENTER** | Add a sibling node (stay on current parent). |
+| **CMD/CTRL + ENTER** | Add a child and "drill down" (select the new node). |
+| **SHIFT + ENTER** | Add node and close the modal. |
+| **ALT/OPT + ARROWS** | Navigate the mind map structure (parent/child/sibling). |
+
+---
+
+## 5. Settings and Persistence
+
+### Global Settings
+The following are saved to the Excalidraw Plugin's script settings and persist across all new drawings:
+- **Max Text Width**: The point at which text wraps (Default: 300px).
+- **Font Sizes**: Choice of Normal, Fibonacci, or Scene-based.
+- **Rounded Corners**: Toggle between sharp and adaptive roundness.
+- **Group Branches**: Whether to use recursive grouping.
+- **Is Minimized**: Stores the user's preferred UI state.
+
+### Map-Specific Persistence (customData)
+To ensure that a mind map doesn't change its behavior when shared or reopened, the **Central Node (Root)** stores specific metadata in its `customData`:
+- `growthMode`: Stores whether the map is Radial, Left, or Right facing.
+- `autoLayoutDisabled`: Stores whether the user has disabled the layout engine for this specific map.
+
+---
+
+## 6. Special Logic Solutions
+
+### The "mindmapNew" Tag
+When a Level 1 node is created, it is temporarily tagged with `mindmapNew: true`. During the next layout cycle, the engine separates "Existing" nodes (which are sorted by their visual angle to allow manual re-ordering) from "New" nodes. New nodes are always appended to the end of the clockwise sequence. Once positioned, the tag is deleted. This prevents new nodes from "jumping" into the middle of an established sequence.
+
+### Recursive Grouping
+When enabled, the script groups elements from the "leaves" upward. 
+- A leaf node is grouped with its parent and the connecting arrow.
+- That group is then nested into the grandparent's group.
+- **The Root Exception**: The root node is never part of an L1 group. This allows the user to move the central idea independently or detach a whole branch by simply dragging it.
+
+### Vertical Centering
+All nodes use `textVerticalAlign: "middle"` and `textAlign: "center"` (if boxed) or `"left"` (if not), ensuring that the connecting arrows always point to the geometric center of the text, regardless of line count.
+
 ```js
 MINDMAP Builder
 ==========================
@@ -19,27 +108,36 @@ if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.18.3")) {
 // ---------------------------------------------------------------------------
 let dirty = false;
 const K_WIDTH = "Max Text Width";
-const K_FIBO = "Use Fibonacci";
+const K_FONTSIZE = "Font Sizes";
 const K_BOX = "Box Children";
 const K_ROUND = "Rounded Corners";
 const K_GROWTH = "Growth Mode";
 const K_MULTICOLOR = "Multicolor Mode";
 const K_MINIMIZED = "Is Minimized";
+const K_GROUP = "Group Branches";
+const api = ea.getExcalidrawAPI();
 
 const getVal = (key, def) => ea.getScriptSettingValue(key, { value: def }).value;
 
 let maxWidth = parseInt(getVal(K_WIDTH, 300));
-let useFibonacci = getVal(K_FIBO, false) === true;
+let fontsizeScale = getVal(K_FONTSIZE, "Normal Scale");
 let boxChildren = getVal(K_BOX, false) === true;
 let roundedCorners = getVal(K_ROUND, true) === true;
 let multicolor = getVal(K_MULTICOLOR, true) === true;
+let groupBranches = getVal(K_GROUP, true) === true;
 let currentModalGrowthMode = getVal(K_GROWTH, "Radial");
 let isMinimized = getVal(K_MINIMIZED, false) === true;
 let autoLayoutDisabled = false;
 
-const NORMAL_SIZES = [36, 28, 20, 16]; 
-const FIBO_SIZES = [68, 42, 26, 16];
-const STROKE_WIDTHS = [4, 4, 2, 1, 0.5]; 
+const FONT_SCALE = {
+  "Use scene fontsize": Array(4).fill(api.getAppState().currentItemFontSize),
+  "Fibonacci Scale": [68, 42, 26, 16],
+  "Normal Scale": [36, 28, 20, 16]
+}
+
+const getFontScale = (type) => FONT_SCALE[type] ?? FONT_SCALE["Normal Scale"];
+
+const STROKE_WIDTHS = [6, 4, 2, 1, 0.5]; 
 const ownerWindow = ea.targetView.ownerWindow;
 const isMac = ea.DEVICE.isMacOS || ea.DEVICE.isIOS;
 
@@ -49,8 +147,8 @@ const INSTRUCTIONS = `
 - **SHIFT + ENTER**: Add the node and close the modeler.
 - **${isMac ? "OPT" : "ALT"} + Arrows**: Navigate through the mindmap nodes on the canvas.
 - **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
+- **Grouping**: Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
 - **Copy/Paste**: Export/Import indented Markdown lists.
-- **Focus mode**: Click the minimize button next to the input field to hide the controls and reduce the size of the tool
 `;
 
 // ---------------------------------------------------------------------------
@@ -116,7 +214,7 @@ const getReadableColor = (hex) => {
 };
 
 // ---------------------------------------------------------------------------
-// 3. Layout Engine
+// 3. Layout & Grouping Engine
 // ---------------------------------------------------------------------------
 
 const GAP_X = 140, GAP_Y = 30;
@@ -126,6 +224,28 @@ const getSubtreeHeight = (nodeId, allElements) => {
   if (children.length === 0) return allElements.find(el => el.id === nodeId).height;
   const total = children.reduce((sum, child) => sum + getSubtreeHeight(child.id, allElements), 0);
   return Math.max(allElements.find(el => el.id === nodeId).height, total + (children.length - 1) * GAP_Y);
+};
+
+// Recursive grouping logic
+const applyRecursiveGrouping = (nodeId, allElements) => {
+  const children = getChildrenNodes(nodeId, allElements);
+  const nodeIdsInSubtree = [nodeId];
+  
+  children.forEach(child => {
+    const subtreeIds = applyRecursiveGrouping(child.id, allElements);
+    nodeIdsInSubtree.push(...subtreeIds);
+    
+    // Find the arrow connecting nodeId to child
+    const arrow = allElements.find(a => a.type === "arrow" && a.startBinding?.elementId === nodeId && a.endBinding?.elementId === child.id);
+    if (arrow) nodeIdsInSubtree.push(arrow.id);
+  });
+
+  // Apply group in EA workbench
+  if (nodeIdsInSubtree.length > 1) {
+    ea.addToGroup(nodeIdsInSubtree);
+  }
+  
+  return nodeIdsInSubtree;
 };
 
 const layoutSubtree = (nodeId, x, centerY, side, allElements) => {
@@ -157,6 +277,11 @@ const triggerGlobalLayout = (rootId) => {
   const root = allElements.find(el => el.id === rootId);
   ea.copyViewElementsToEAforEditing(allElements);
 
+  // Clear existing grouping info for mindmap components before rebuilding
+  if (groupBranches) {
+    ea.getElements().forEach(el => { el.groupIds = []; });
+  }
+
   const l1Nodes = getChildrenNodes(rootId, allElements);
   if (l1Nodes.length === 0) return;
 
@@ -174,7 +299,7 @@ const triggerGlobalLayout = (rootId) => {
   
   const sortedL1 = [...existingL1, ...newL1];
   const count = sortedL1.length;
-  const radius = 260 + (count * 12);
+  const radius = Math.max(Math.round(root.width*0.9), 260) + (count * 12);
   
   let startAngle, angleStep;
   if (mode === "Right-facing") { startAngle = 20; angleStep = count <= 1 ? 0 : 140 / (count - 1); }
@@ -200,6 +325,11 @@ const triggerGlobalLayout = (rootId) => {
       const eaA = ea.getElement(arrow.id), eaC = ea.getElement(node.id);
       const eX = eaC.x + eaC.width/2, eY = eaC.y + eaC.height/2;
       eaA.x = rootCenter.x; eaA.y = rootCenter.y; eaA.points = [[0, 0], [eX - rootCenter.x, eY - rootCenter.y]];
+    }
+
+    // Apply recursive grouping to this L1 branch
+    if (groupBranches) {
+      applyRecursiveGrouping(node.id, allElements);
     }
   });
 };
@@ -233,13 +363,13 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     }
   }
 
-  const fontScale = useFibonacci ? FIBO_SIZES : NORMAL_SIZES;
+  const fontScale = getFontScale(fontsizeScale);
   ea.clear();
   ea.style.fontFamily = st.currentItemFontFamily; 
   ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)];
   ea.style.roundness = roundedCorners ? { type: 3 } : null;
 
-  const curMaxW = maxWidth;
+  const curMaxW = depth === 0 ? Math.max(400,maxWidth) : maxWidth;;
   const metrics = ea.measureText(text);
   const shouldWrap = metrics.width > curMaxW;
 
@@ -251,15 +381,19 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     rootId = newNodeId;
   } else {
     ea.style.strokeColor = getReadableColor(nodeColor);
+    const rootEl = allElements.find(e => e.id === rootId);
+    const mode = rootEl.customData?.growthMode || currentModalGrowthMode;
     
-    let px = parent.x, py = parent.y;
+    const offset = (mode === "Radial" || mode === "Right-facing")
+      ? rootEl.width*2
+      : -rootEl.width;
+    let px = parent.x + offset, py = parent.y;
     if (autoLayoutDisabled) {
-      const rootEl = allElements.find(e => e.id === rootId);
       const rootCenter = { x: rootEl.x + rootEl.width / 2, y: rootEl.y + rootEl.height / 2 };
       const side = (parent.x + parent.width/2 > rootCenter.x) ? 1 : -1;
-      const manualGapX = 220; 
-      const jitterX = (Math.random() - 0.5) * 100;
-      const jitterY = (Math.random() - 0.5) * 100;
+      const manualGapX = Math.round(parent.width * 1.3); 
+      const jitterX = (Math.random() - 0.5) * 150;
+      const jitterY = (Math.random() - 0.5) * 150;
       const nodeW = shouldWrap ? maxWidth : metrics.width;
       px = side === 1 ? parent.x + parent.width + manualGapX + jitterX : parent.x - manualGapX - nodeW + jitterX;
       py = (parent.y + parent.height/2) - (metrics.height / 2) + jitterY;
@@ -386,7 +520,6 @@ const pasteListToMap = async () => {
       stack.pop();
     }
     
-    // The current parent is the top of the stack
     const parentNode = stack[stack.length - 1].node;
     ea.selectElementsInView([parentNode]);
     const newNode = await addNode(item.text, false, true);
@@ -501,25 +634,27 @@ modal.onOpen = () => {
   inputRow.controlEl.style.width = "100%";
   inputRow.controlEl.style.marginTop = "8px";
 
-  new ea.obsidian.Setting(bodyContainer).setName("Growth Strategy").addDropdown(d => {
-    strategyDropdown = d;
-    d.addOptions({ "Radial": "Radial", "Right-facing": "Right-facing", "Left-facing": "Left-facing" })
-    .setValue(currentModalGrowthMode)
-    .onChange(async v => { 
-      currentModalGrowthMode = v; ea.setScriptSettingValue(K_GROWTH, { value: v }); dirty = true; 
-      const sel = ea.getViewSelectedElement();
-      if (sel) {
-        const info = getHierarchy(sel, ea.getViewElements());
-        ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(e => e.id === info.rootId));
-        ea.addAppendUpdateCustomData(info.rootId, { growthMode: v });
-        await ea.addElementsToView(false, false, true, true);
-        if (!autoLayoutDisabled) {
-          triggerGlobalLayout(info.rootId);
+  new ea.obsidian.Setting(bodyContainer)
+    .setName("Growth Strategy")
+    .addDropdown(d => {
+      strategyDropdown = d;
+      d.addOptions({ "Radial": "Radial", "Right-facing": "Right-facing", "Left-facing": "Left-facing" })
+      .setValue(currentModalGrowthMode)
+      .onChange(async v => { 
+        currentModalGrowthMode = v; ea.setScriptSettingValue(K_GROWTH, { value: v }); dirty = true; 
+        const sel = ea.getViewSelectedElement();
+        if (sel) {
+          const info = getHierarchy(sel, ea.getViewElements());
+          ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(e => e.id === info.rootId));
+          ea.addAppendUpdateCustomData(info.rootId, { growthMode: v });
           await ea.addElementsToView(false, false, true, true);
+          if (!autoLayoutDisabled) {
+            triggerGlobalLayout(info.rootId);
+            await ea.addElementsToView(false, false, true, true);
+          }
         }
-      }
+      });
     });
-  });
 
   autoLayoutToggle = new ea.obsidian.Setting(bodyContainer).setName("Disable Auto-Layout").addToggle(t => t
     .setValue(autoLayoutDisabled)
@@ -535,6 +670,21 @@ modal.onOpen = () => {
     })
   ).components[0];
 
+  new ea.obsidian.Setting(bodyContainer).setName("Group Branches").addToggle(t => t
+    .setValue(groupBranches)
+    .onChange(async v => {
+      groupBranches = v;
+      ea.setScriptSettingValue(K_GROUP, { value: v });
+      dirty = true;
+      const sel = ea.getViewSelectedElement();
+      if (sel) {
+        const info = getHierarchy(sel, ea.getViewElements());
+        triggerGlobalLayout(info.rootId);
+        await ea.addElementsToView(false, false, true, true);
+      }
+    })
+  );
+
   new ea.obsidian.Setting(bodyContainer).setName("Multicolor Branches").addToggle(t => t.setValue(multicolor).onChange(v => { multicolor = v; ea.setScriptSettingValue(K_MULTICOLOR, { value: v }); dirty = true; }));
 
   let sliderValDisplay;
@@ -543,9 +693,37 @@ modal.onOpen = () => {
   }));
   sliderValDisplay = sliderSetting.descEl.createSpan({ text: `${maxWidth}px`, attr: { style: "margin-left:10px; font-weight:bold;" }});
 
-  new ea.obsidian.Setting(bodyContainer).setName("Fibonacci Scale").addToggle(t => t.setValue(useFibonacci).onChange(v => { useFibonacci = v; ea.setScriptSettingValue(K_FIBO, { value: v }); dirty = true; }));
-  new ea.obsidian.Setting(bodyContainer).setName("Box Child Nodes").addToggle(t => t.setValue(boxChildren).onChange(v => { boxChildren = v; ea.setScriptSettingValue(K_BOX, { value: v }); dirty = true; }));
-  new ea.obsidian.Setting(bodyContainer).setName("Rounded Corners").addToggle(t => t.setValue(roundedCorners).onChange(v => { roundedCorners = v; ea.setScriptSettingValue(K_ROUND, { value: v }); dirty = true; }));
+  new ea.obsidian.Setting(bodyContainer)
+    .setName(K_FONTSIZE)
+    .addDropdown(d => {
+      Object.keys(FONT_SCALE).forEach(key=>d.addOption(key,key));
+      d.setValue(fontsizeScale);
+      d.onChange(v => {
+        fontsizeScale = v;
+        ea.setScriptSettingValue(K_FONTSIZE, { value: v });
+        dirty = true;
+      })
+    });
+
+  new ea.obsidian.Setting(bodyContainer)
+    .setName("Box Child Nodes")
+    .addToggle(t => t.setValue(boxChildren)
+      .onChange(v => {
+        boxChildren = v;
+        ea.setScriptSettingValue(K_BOX, { value: v });
+        dirty = true;
+      })
+    );
+
+  new ea.obsidian.Setting(bodyContainer)
+    .setName("Rounded Corners")
+    .addToggle(t => t.setValue(roundedCorners)
+      .onChange(v => {
+        roundedCorners = v;
+        ea.setScriptSettingValue(K_ROUND, { value: v });
+        dirty = true;
+      })
+    );
 
   const btnGrid = bodyContainer.createDiv({ attr: { style: "display: grid; grid-template-columns: repeat(5, 1fr); gap:6px; margin-top:20px;" }});
   btnGrid.createEl("button", { text: "Sibling", cls: "mod-cta" }).onclick = async () => { await addNode(inputEl.value, false); inputEl.value = ""; inputEl.focus(); updateStatus(); };
