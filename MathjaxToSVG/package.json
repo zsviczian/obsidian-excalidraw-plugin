@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "mathjax-full": "^3.2.2",
-    "nanoid": "^4.0.2"
+    "nanoid": "^5.0.9"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^26.0.1",

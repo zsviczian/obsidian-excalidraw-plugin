@@ -8,6 +8,7 @@ import {
   TFile,
   Notice,
   TextAreaComponent,
+  getIcon,
 } from "obsidian";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import ExcalidrawPlugin from "../../core/main";
@@ -294,7 +295,7 @@ export class GenericInputPrompt extends Modal {
     private header: string,
     placeholder?: string,
     value?: string,
-    buttons?: { caption: string; action: Function }[],
+    buttons?: ButtonDefinition[],
     lines?: number,
     displayEditorButtons?: boolean,
     customComponents?: (container: HTMLElement) => void,
@@ -398,12 +399,21 @@ export class GenericInputPrompt extends Modal {
     callback: (evt: MouseEvent) => any,
     tooltip: string = "",
     margin: string = "5px",
+    iconId?:string,
   ) {
     const btn = new ButtonComponent(container);
     btn.buttonEl.style.padding = "0.5em";
     btn.buttonEl.style.marginLeft = margin;
     btn.setTooltip(tooltip);
-    btn.setButtonText(text).onClick(callback);
+
+    if (iconId) {
+      btn.setIcon(iconId);
+      //btn.setButtonText(text ?? "");
+    } else {
+      btn.setButtonText(text);
+    }
+
+    btn.onClick(callback);
     return btn;
   }
 
@@ -419,13 +429,17 @@ export class GenericInputPrompt extends Modal {
         const btn = new ButtonComponent(actionButtonContainer);
         btn.buttonEl.style.marginLeft="5px";
         if(button.tooltip) btn.setTooltip(button.tooltip);
-        btn.setButtonText(button.caption).onClick((evt: MouseEvent) => {
-          const res = button.action(this.input);
-          if (res) {
-            this.input = res;
-          }
-          this.submit();
-        });
+        button.iconId
+          ? btn.setIcon(button.iconId)
+          : btn.setButtonText(button.caption);
+        button.tooltip && btn.setTooltip(button.tooltip);
+        btn.onClick((evt: MouseEvent) => {
+            const res = button.action(this.input);
+            if (res) {
+              this.input = res;
+            }
+            this.submit();
+          });
         b = b ?? btn;
       }
       if (b) {
@@ -435,20 +449,32 @@ export class GenericInputPrompt extends Modal {
     } else {
       this.createButton(
         actionButtonContainer,
-        "✅",
+        "",
         this.submitClickCallback.bind(this),
+        t("PROMPT_BUTTON_OK") ?? "",
+        "5px",
+        "check",
       ).setCta().buttonEl.style.marginRight = "0";
     }
-    this.createButton(actionButtonContainer, "❌", this.cancelClickCallback.bind(this), t("PROMPT_BUTTON_CANCEL"));
+    
+    this.createButton(
+      actionButtonContainer,
+      "",
+      this.cancelClickCallback.bind(this),
+      t("PROMPT_BUTTON_CANCEL"),
+      "5px",
+      "x",
+    );
+  
     if(this.displayEditorButtons) {
-      this.createButton(editorButtonContainer, "⏎", ()=>this.insertStringBtnClickCallback("\n"), t("PROMPT_BUTTON_INSERT_LINE"), "0");
-      this.createButton(editorButtonContainer, "⌫", this.delBtnClickCallback.bind(this), "Delete");
-      this.createButton(editorButtonContainer, "⎵", ()=>this.insertStringBtnClickCallback(" "), t("PROMPT_BUTTON_INSERT_SPACE"));
-      this.createButton(editorButtonContainer, "§", this.specialCharsBtnClickCallback.bind(this), t("PROMPT_BUTTON_SPECIAL_CHARS"));
+      this.createButton(editorButtonContainer, "", ()=>this.insertStringBtnClickCallback("\n"), t("PROMPT_BUTTON_INSERT_LINE"), "0", "corner-down-left");
+      this.createButton(editorButtonContainer, "", this.delBtnClickCallback.bind(this), "Delete", "5px", "delete");
+      this.createButton(editorButtonContainer, "", ()=>this.insertStringBtnClickCallback(" "), t("PROMPT_BUTTON_INSERT_SPACE"), "5px", "space");
+      this.createButton(editorButtonContainer, "", this.specialCharsBtnClickCallback.bind(this), t("PROMPT_BUTTON_SPECIAL_CHARS"), "5px", "at-sign");
       if(this.view) {
-        this.createButton(editorButtonContainer, "🔗", this.linkBtnClickCallback.bind(this), t("PROMPT_BUTTON_INSERT_LINK"));
+        this.createButton(editorButtonContainer, "", this.linkBtnClickCallback.bind(this), t("PROMPT_BUTTON_INSERT_LINK"), "5px", "link");
       }
-      this.createButton(editorButtonContainer, "🔠", this.uppercaseBtnClickCallback.bind(this), t("PROMPT_BUTTON_UPPERCASE"));
+      this.createButton(editorButtonContainer, "", this.uppercaseBtnClickCallback.bind(this), t("PROMPT_BUTTON_UPPERCASE"), "5px", "arrow-big-up");
     }
   }
 

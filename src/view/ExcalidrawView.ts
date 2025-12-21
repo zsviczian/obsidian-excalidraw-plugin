@@ -1127,7 +1127,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         t("MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT_TITLE"),
         undefined,
         ef.linkParts.original,
-        [{caption: "✅", action: (x:string)=>{x.replaceAll("\n","").trim()}}],
+        [{iconId: "check", caption: "", action: (x:string)=>{x.replaceAll("\n","").trim()}}],
         3,
         false,
         (container) => container.createEl("p",{text: fragWithHTML(t("MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT"))}),

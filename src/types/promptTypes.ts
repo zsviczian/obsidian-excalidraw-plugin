@@ -1,4 +1,4 @@
-export type ButtonDefinition = { caption: string; tooltip?:string; action: Function };
+export type ButtonDefinition = { caption: string; tooltip?:string; action: Function, iconId?: string };
 
 export interface InputPromptOptions {
   header: string,
