@@ -24,6 +24,8 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 ## Fixed
 - YouTube video embeds working on iOS  [#2569](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2569)
+- Stroke color settings for Embeddedables (markdown notes, websites) notes is missing after 2.17 update [#2580](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2580)
+- Context menu paste pastes in image twice [#10542](https://github.com/excalidraw/excalidraw/issues/10542)
 
 ## New in ExcalidrawAutomate
 - Added 3 new helper functions for working with Script Engine settings (safe during initialization when \`scriptEngineSettings[activeScript]\` is \`undefined\` / \`null\`):

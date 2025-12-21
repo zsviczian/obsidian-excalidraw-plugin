@@ -352,7 +352,7 @@ const triggerGlobalLayout = (rootId) => {
       layoutSubtree(node.id, node.x, node.y + node.height/2, side, allElements);
     }
     else {
-      layoutSubtree(node.id, tCX - node.width/2, tCY, side, allElements);
+      layoutSubtree(node.id, tCX, tCY, side, allElements);
     }
 
     if (node.customData?.mindmapNew) {
