@@ -45,6 +45,7 @@ import { createSliderWithText } from "src/utils/sliderUtils";
 import { PDFExportSettingsComponent, PDFExportSettings } from "src/shared/Dialogs/PDFExportSettingsComponent";
 import { ContentSearcher } from "src/shared/components/ContentSearcher";
 import { UIMode, UIModeSettingsComponent } from "src/shared/Dialogs/UIModeSettingComponent";
+import { ScriptSettingValue } from "src/types/excalidrawAutomateTypes";
 
 export interface ExcalidrawSettings {
   copyLinkToElemenetAnchorTo100: boolean;
@@ -172,13 +173,7 @@ export interface ExcalidrawSettings {
   mdCSS: string;
   scriptEngineSettings: {
     [key:string]: {
-      [key:string]: {
-        value?:string,
-        hidden?: boolean,
-        description?: string,
-        valueset?: string[],
-        height?: number,
-      }
+      [key:string]: ScriptSettingValue;
     }
   };
   previousRelease: string;

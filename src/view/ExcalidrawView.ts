@@ -3724,6 +3724,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
 
     api.updateContainerSize(api.getSceneElements().filter(el => newIds.includes(el.id)).filter(isContainer));
+    api.refreshAllArrows();
     if (save) {
       await this.save(false); //preventReload=false will ensure that markdown links are paresed and displayed correctly
     } else {

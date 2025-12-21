@@ -388,8 +388,14 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addArrow",
-    code: "addArrow(points: [[x: number, y: number]], formatting?: { startArrowHead?: string; endArrowHead?: string; startObjectId?: string; endObjectId?: string;}, id?:string): string;",
-    desc: `valid values for startArrowHead and endArrowHead are: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null`,
+    code:
+      'addArrow(points: [x: number, y: number][], formatting?: { startArrowHead?: string; endArrowHead?: string; startObjectId?: string; endObjectId?: string; startBindMode?: string; endBindMode?: string; startFixedPoint?: [number, number]; endFixedPoint?: [number, number]; elbowed?: boolean}, id?: string): string;',
+    desc:
+      "Adds an arrow element.\n" +
+      'Arrowheads: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null.\n' +
+      'Bindings: "inside" | "outside" Sets startObjectId/endObjectId to bind the arrow ends to shapes. Bind mode: "orbit" (default) or "inside".\n' +
+      "Fixed point: [xRatio,yRatio] in 0..1 (percentage of bound element width/height) to bind to a specific point on the element. In case of orbit mode, the orbit will happen around this immaginary point.\n" +
+      "Elbowed: true will create an elbowed arrow.",
     after: "",
   },
   {
@@ -678,6 +684,37 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     code: "async setScriptSettings(settings: any): Promise<void>;",
     desc: `Sets script settings.\nSee for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html","Script Engine Help")}`,
     after: "",
+  },
+  {
+    field: "setScriptSettingValue",
+    code: "setScriptSettingValue(key: string, value: ScriptSettingValue): void;",
+    desc:
+      `Sets a single Script Engine setting value for the active script (in-memory).\n` +
+      `Use saveScriptSettings() to persist changes.\n` +
+      `Handles initialization when scriptEngineSettings[activeScript] is undefined/null.\n` +
+      `See for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html","Script Engine Help")}\n\n` +
+      `type ScriptSettingValue = { value?: string; hidden?: boolean; description?: string; valueset?: string[]; height?: number; };`,
+    after: `("myKey", { value: "" });`,
+  },
+  {
+    field: "getScriptSettingValue",
+    code: "getScriptSettingValue(key: string, defaultValue: ScriptSettingValue): ScriptSettingValue;",
+    desc:
+      `Gets a single Script Engine setting value for the active script.\n` +
+      `Returns defaultValue if the key does not exist (or if activeScript is not set).\n` +
+      `Handles initialization when scriptEngineSettings[activeScript] is undefined/null.\n` +
+      `See for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html","Script Engine Help")}\n\n` +
+      `type ScriptSettingValue = { value?: string; hidden?: boolean; description?: string; valueset?: string[]; height?: number; };`,
+    after: `("myKey", { value: "" });`,
+  },
+  {
+    field: "saveScriptSettings",
+    code: "async saveScriptSettings(): Promise<void>;",
+    desc:
+      `Persists Script Engine settings to disk (plugin settings).\n` +
+      `Useful after calling setScriptSettingValue().\n` +
+      `See for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html","Script Engine Help")}`,
+    after: "()",
   },
   {
     field: "openFileInNewOrAdjacentLeaf",

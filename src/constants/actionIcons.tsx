@@ -879,7 +879,7 @@ export const penIcon = (pen: PenStyle) => {
 }
 
 export const stringToSVG = (svg: string) => {
-  if(svg.match('class="skip"')) {
+  if(svg.match(/class=("|')[^"']*(lucide|skip)[^"']*("|')/)) {
     return <div dangerouslySetInnerHTML={{__html: svg}}></div>
   }
   svg = svg

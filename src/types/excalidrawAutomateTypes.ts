@@ -9,6 +9,14 @@ export type SVGColorInfo = Map<string, {
   stroke: boolean;
 }>;
 
+export type ScriptSettingValue = {
+  value?:string | number | boolean,
+  hidden?: boolean,
+  description?: string,
+  valueset?: string[],
+  height?: number,
+};
+
 export type ImageInfo = {
   mimeType: MimeType,
   id: FileId,
