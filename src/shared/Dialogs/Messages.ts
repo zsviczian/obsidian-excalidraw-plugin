@@ -20,6 +20,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 "2.18.3":`
 ## New
 - Added Mindmap Builder script to the script store.
+- LaTeX Suit Integration by [@TravisLEBLANC1](https://github.com/TravisLEBLANC1)
 
 ## Fixed
 - YouTube video embeds working on iOS  [#2569](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2569)
