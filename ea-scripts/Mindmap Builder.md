@@ -3,81 +3,78 @@
 # Mind Map Builder: Technical Specification & User Guide
 
 ## 1. Overview
-**Mind Map Builder** is a high-performance automation script designed for the Excalidraw-Obsidian plugin. It transforms the Excalidraw canvas into a rapid brainstorming environment, allowing users to build complex, structured, and visually organized mind maps using primarily keyboard shortcuts. 
+**Mind Map Builder** transforms the Obsidian-Excalidraw canvas into a rapid brainstorming environment, allowing users to build complex, structured, and visually organized mind maps using primarily keyboard shortcuts. 
 
-The script balances **automation** (auto-layout, recursive grouping, and contrast-aware coloring) with **flexibility** (manual node pinning and layout-free modes), ensuring that the mind map stays organized even as it grows to hundreds of nodes.
+The script balances **automation** (auto-layout, recursive grouping, and contrast-aware coloring) with **explicit flexibility** (node pinning and redirection logic), ensuring that the mind map stays organized even as it grows to hundreds of nodes.
 
 ## 2. Core Purpose
 The primary goal is to minimize the "friction of drawing." Instead of manually drawing boxes and arrows, the user focuses on the hierarchy of ideas. The script handles:
-- **Spatial Arrangement**: Distributing nodes radially or directionally.
+- **Spatial Arrangement**: Distributing nodes radially or directionally (Left/Right).
 - **Visual Hierarchy**: Automatically adjusting font sizes and arrow thicknesses based on depth.
+- **Selection Redirection**: Automatically shifting focus from connecting arrows to their associated nodes to ensure continuous workflow.
 - **Data Portability**: Enabling seamless transition between visual diagrams and Markdown bullet lists via the clipboard.
 
 ## 3. Feature Set
 
 ### A. Intelligent Layout Engine
 The script features a recursive spacing engine that calculates the "subtree height" of every branch. 
-- **Radial Mode**: Distributes Level 1 branches in a circle. It uses a specific logic: the first 6 nodes are placed at 60° increments starting from 30°. Beyond 6 nodes, it compresses the arc to 320° (20° to 340°) to maintain a professional aesthetic and avoid overlapping the central node's vertical axis.
-- **Directional Modes**: "Right-facing" and "Left-facing" constrain the map to specific arcs, useful for linear flows or side-by-side comparisons.
-- **Recursive Re-balancing**: Every time a node is added, the script re-calculates the entire tree's coordinates to ensure no nodes or arrows overlap, even if sub-branches have vastly different densities.
+- **Growth Modes**: Supports Radial (circular), Right-facing, and Left-facing layouts.
+- **Radial Logic**: Distributes the first 6 nodes at 60° increments. Beyond 6 nodes, it compresses the arc to 320° to maintain a professional aesthetic and avoid overlapping the central node's vertical axis.
+- **Recursive Re-balancing**: Coordinates are recalculated across the tree to prevent overlaps while maintaining the user's chosen growth direction.
 
-### B. "Manual Break-out" (Node Pinning)
-If a user manually drags a Level 1 branch significantly outside the auto-calculated radius (specifically > 1.1x the current radius), the engine marks that branch as **deliberately placed**. The auto-layout will no longer move that branch, but it will still automatically organize any children added *to* that branch.
+### B. Pinning & Manual Placement
+Nodes can be excluded from the auto-layout engine in two ways:
+- **Explicit Pinning**: Users can toggle a "Pinned" state via UI or shortcut. Pinned nodes stay at their exact coordinates, while the engine still organizes their unpinned children relative to that fixed position.
+- **Manual Break-out**: If a node is dragged significantly outside the calculated auto-layout radius (> 1.1x radius), the engine treats it as deliberately placed and stops moving it automatically.
 
 ### C. Import & Export (Markdown Sync)
 - **Copy as Text**: Converts the visual map into an H1 header (Root) followed by an indented Markdown bullet list.
-- **Paste from Text**: Parses an indented Markdown list. If a node is selected on the canvas, the list is appended to that node. If nothing is selected, a new map is generated. It intelligently detects if a list has a single root or multiple top-level items.
+- **Paste from Text**: Parses an indented Markdown list. It supports appending to an existing node or generating a brand-new map from a clipboard list.
 
 ### D. Visual Styling & Accessibility
-- **Dynamic Contrast-Aware Coloring**: In "Multicolor Mode," the script generates 10 random colors for new Level 1 branches and uses **ColorMaster** to select the one with the highest contrast (minimum 3:1 ratio) against the current canvas background.
-- **Color Inheritance**: Grandchildren and all deeper descendants strictly inherit the stroke color of their parent, maintaining visual "branch identity."
-- **Font Scales**: Supports a "Normal Scale" (36-16pt) and a "Fibonacci Scale" (68-16pt) for dramatic visual emphasis. It also offers a "Use scene fontsize" mode to match the user's current tool settings.
+- **Dynamic Contrast-Aware Coloring**: In "Multicolor Mode," Level 1 branches receive random colors validated for a minimum 3:1 contrast ratio against the current canvas background.
+- **Stroke Styles**: Users can choose to inherit the **Scene Stroke Style** (Solid, Dashed, Dotted) or force an **Always Solid** style for branch connectors to maintain a clean appearance.
 
 ## 4. UI and User Experience
 
 ### Focus Mode (Minimized UI)
-By clicking the **Minimize** icon next to the input field, the modal collapses, hiding all settings and buttons except the input field and label. This is designed for power users who know the shortcuts and want maximum screen real estate for their drawing.
-
-### Single-Row Management
-All primary actions (Add Sibling, Follow Child, Close, Copy, Paste) are located in a single row at the bottom to reduce mouse travel.
+By clicking the **Minimize** icon, the modal collapses into a minimal input bar, hiding settings to maximize canvas visibility for power users.
 
 ### Keyboard Shortcuts
 | Shortcut | Action |
 | :--- | :--- |
 | **ENTER** | Add a sibling node (stay on current parent). |
 | **CMD/CTRL + ENTER** | Add a child and "drill down" (select the new node). |
+| **CMD/CTRL + SHIFT + ENTER** | **Pin/Unpin** the location of the selected node. |
 | **SHIFT + ENTER** | Add node and close the modal. |
 | **ALT/OPT + ARROWS** | Navigate the mind map structure (parent/child/sibling). |
-
 
 ## 5. Settings and Persistence
 
 ### Global Settings
-The following are saved to the Excalidraw Plugin's script settings and persist across all new drawings:
-- **Max Text Width**: The point at which text wraps (Default: 300px).
-- **Font Sizes**: Choice of Normal, Fibonacci, or Scene-based.
-- **Rounded Corners**: Toggle between sharp and adaptive roundness.
-- **Group Branches**: Whether to use recursive grouping.
-- **Is Minimized**: Stores the user's preferred UI state.
+Persisted across sessions:
+- **Max Text Width**: Point at which text wraps (Default: 450px).
+- **Font Scales**: Choice of Normal, Fibonacci, or Scene-based sizes.
+- **Recursive Grouping**: When enabled, groups sub-trees from the leaves upward.
 
 ### Map-Specific Persistence (customData)
-To ensure that a mind map doesn't change its behavior when shared or reopened, the **Central Node (Root)** stores specific metadata in its `customData`:
-- `growthMode`: Stores whether the map is Radial, Left, or Right facing.
-- `autoLayoutDisabled`: Stores whether the user has disabled the layout engine for this specific map.
+- `growthMode`: Stored on the Root node (Radial, Left, or Right).
+- `isPinned`: Stored on individual nodes to bypass the layout engine.
+- `isBranch`: Stored on arrows to distinguish Mind Map connectors from standard annotations.
 
 ## 6. Special Logic Solutions
 
 ### The "mindmapNew" Tag
-When a Level 1 node is created, it is temporarily tagged with `mindmapNew: true`. During the next layout cycle, the engine separates "Existing" nodes (which are sorted by their visual angle to allow manual re-ordering) from "New" nodes. New nodes are always appended to the end of the clockwise sequence. Once positioned, the tag is deleted. This prevents new nodes from "jumping" into the middle of an established sequence.
+When a Level 1 node is created, it is temporarily tagged with `mindmapNew: true`. During the next layout cycle, the engine separates "Existing" nodes (which are sorted by their visual angle to allow manual re-ordering) from "New" nodes. New nodes are always appended to the end of the clockwise sequence. This prevents new nodes from "jumping" into the middle of an established branch order.
+
+### Arrow Focus Redirection
+When the script starts or the modal is re-activated, if an arrow is selected, the script automatically redirects selection to the `startBinding` node (or `endBinding`). If no bindings exist, it clears the selection. This prevents "Target: null" errors when the user accidentally clicks a connector.
 
 ### Recursive Grouping
-When enabled, the script groups elements from the "leaves" upward. 
-- A leaf node is grouped with its parent and the connecting arrow.
-- That group is then nested into the grandparent's group.
-- **The Root Exception**: The root node is never part of an L1 group. This allows the user to move the central idea independently or detach a whole branch by simply dragging it.
+When enabled, the script groups elements from the "leaves" upward. A leaf node is grouped with its parent and the connecting arrow. That group is then nested into the grandparent's group. The **Root Exception**: The root node is never part of an L1 group, allowing users to move the central idea or detach whole branches easily.
 
 ### Vertical Centering
-All nodes use `textVerticalAlign: "middle"` and `textAlign: "center"` (if boxed) or `"left"` (if not), ensuring that the connecting arrows always point to the geometric center of the text, regardless of line count.
+All nodes use `textVerticalAlign: "middle"`. This ensures that connecting arrows always point to the geometric center of the text, maintaining visual alignment regardless of how many lines of text a node contains.
 
 ```js
 MINDMAP Builder
@@ -106,6 +103,7 @@ const K_GROWTH = "Growth Mode";
 const K_MULTICOLOR = "Multicolor Mode";
 const K_MINIMIZED = "Is Minimized";
 const K_GROUP = "Group Branches";
+const K_ARROWSTROKE = "Arrow Stroke Style"
 const api = ea.getExcalidrawAPI();
 
 const getVal = (key, def) => ea.getScriptSettingValue(key, { value: def }).value;
@@ -118,6 +116,7 @@ let multicolor = getVal(K_MULTICOLOR, true) === true;
 let groupBranches = getVal(K_GROUP, true) === true;
 let currentModalGrowthMode = getVal(K_GROWTH, "Radial");
 let isMinimized = getVal(K_MINIMIZED, false) === true;
+let isSolidArrow = getVal(K_ARROWSTROKE, true) === true;
 let autoLayoutDisabled = false;
 
 const FONT_SCALE = {
@@ -137,6 +136,7 @@ const INSTRUCTIONS = `
 - **${isMac ? "CMD" : "CTRL"} + ENTER**: Add a child node and "drill down" (follow the new node).
 - **SHIFT + ENTER**: Add the node and close the modeler.
 - **${isMac ? "OPT" : "ALT"} + Arrows**: Navigate through the mindmap nodes on the canvas.
+- **${isMac ? "CMD" : "CTRL"} + SHIFT + ENTER**: Pin/Unpin location of a node. Pinned nodes will not be touched by auto layout.
 - **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
 - **Grouping**: Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
 - **Copy/Paste**: Export/Import indented Markdown lists.
@@ -146,8 +146,57 @@ const INSTRUCTIONS = `
 // 2. Traversal & Geometry Helpers
 // ---------------------------------------------------------------------------
 
+const ensureNodeSelected = () => {
+  const selectedElements = ea.getViewSelectedElements();
+  
+  if (selectedElements.length === 0) return;
+
+  // 1. Handle Single Arrow Selection, deliberatly not filtering to el.customData?.isBranch
+  if (selectedElements.length === 1 && selectedElements[0].type === "arrow") {
+    const sel = selectedElements[0];
+    const targetId = sel.startBinding?.elementId || sel.endBinding?.elementId;
+    if (targetId) {
+      const target = ea.getViewElements().find(el => el.id === targetId);
+      if (target) ea.selectElementsInView([target]);
+    } else {
+      ea.selectElementsInView([]);
+    }
+    return;
+  }
+
+  // 2. Handle Group Selection (Find Highest Ranking Parent)
+  // deliberatly not filtering to el.customData?.isBranch
+  if (selectedElements.length > 1) {
+    const selectedIds = new Set(selectedElements.map(el => el.id));
+    const arrows = selectedElements.filter(el => el.type === "arrow");
+    
+    const sourceIds = new Set();
+    const sinkIds = new Set();
+
+    // Analyze arrows that connect elements WITHIN the current selection
+    arrows.forEach(arrow => {
+      const startId = arrow.startBinding?.elementId;
+      const endId = arrow.endBinding?.elementId;
+
+      if (startId && selectedIds.has(startId)) sourceIds.add(startId);
+      if (endId && selectedIds.has(endId)) sinkIds.add(endId);
+    });
+
+    // The "Highest Ranking Parent" is a source within the group 
+    // that is NOT a sink of any arrow within that same group.
+    const rootId = Array.from(sourceIds).find(id => !sinkIds.has(id));
+
+    if (rootId) {
+      const target = selectedElements.find(el => el.id === rootId);
+      if (target) ea.selectElementsInView([target]);
+    }
+  }
+};
+
 const getParentNode = (id, allElements) => {
-  const arrow = allElements.find(el => el.type === "arrow" && el.endBinding?.elementId === id);
+  const arrow = allElements.find(el => 
+    el.type === "arrow" && el.customData?.isBranch && el.endBinding?.elementId === id
+  );
   if (!arrow) return null;
   const parent = allElements.find(el => el.id === arrow.startBinding?.elementId);
   return parent?.containerId
@@ -156,8 +205,12 @@ const getParentNode = (id, allElements) => {
 };
 
 const getChildrenNodes = (id, allElements) => {
-  const arrows = allElements.filter(el => el.type === "arrow" && el.startBinding?.elementId === id);
-  return arrows.map(a => allElements.find(el => el.id === a.endBinding?.elementId)).filter(Boolean);
+  const arrows = allElements.filter(el =>
+    el.type === "arrow" && el.customData?.isBranch && el.startBinding?.elementId === id
+  );
+  return arrows
+    .map(a => allElements.find(el => el.id === a.endBinding?.elementId))
+    .filter(Boolean);
 };
 
 const getHierarchy = (el, allElements) => {
@@ -253,7 +306,7 @@ const applyRecursiveGrouping = (nodeId, allElements) => {
     nodeIdsInSubtree.push(...subtreeIds);
     
     // Find the arrow connecting nodeId to child
-    const arrow = allElements.find(a => a.type === "arrow" && a.startBinding?.elementId === nodeId && a.endBinding?.elementId === child.id);
+    const arrow = allElements.find(a => a.type === "arrow" && a.customData?.isBranch && a.startBinding?.elementId === nodeId && a.endBinding?.elementId === child.id);
     if (arrow) {
       nodeIdsInSubtree.push(arrow.id);
     }
@@ -267,33 +320,61 @@ const applyRecursiveGrouping = (nodeId, allElements) => {
   return nodeIdsInSubtree;
 };
 
-const layoutSubtree = (nodeId, x, centerY, side, allElements) => {
+const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
   const node = allElements.find(el => el.id === nodeId);
   const eaNode = ea.getElement(nodeId);
-  eaNode.x = side === 1 ? x : x - node.width;
-  eaNode.y = centerY - node.height / 2;
+  
+  const isPinned = node.customData?.isPinned === true;
+
+  if (!isPinned) {
+    eaNode.x = side === 1 ? targetX : targetX - node.width;
+    eaNode.y = targetCenterY - node.height / 2;
+  }
+
+  const currentX = eaNode.x;
+  const currentYCenter = eaNode.y + node.height / 2;
+
   const children = getChildrenNodes(nodeId, allElements);
   sortChildrenStable(children);
   const subtreeHeight = getSubtreeHeight(nodeId, allElements);
-  let currentY = centerY - subtreeHeight / 2;
+  
+  let currentY = currentYCenter - subtreeHeight / 2;
+  
   children.forEach(child => {
     const childH = getSubtreeHeight(child.id, allElements);
-    layoutSubtree(child.id, side === 1
-      ? eaNode.x + node.width + GAP_X
-      : eaNode.x - GAP_X, currentY + childH / 2, side, allElements);
+    
+    layoutSubtree(
+      child.id, 
+      side === 1 ? currentX + node.width + GAP_X : currentX - GAP_X, 
+      currentY + childH / 2, 
+      side, 
+      allElements
+    );
+    
     currentY += childH + GAP_Y;
-    const arrow = allElements.find(a => a.type === "arrow" && a.startBinding?.elementId === nodeId && a.endBinding?.elementId === child.id);
+
+    const arrow = allElements.find(a => 
+      a.type === "arrow" && 
+      a.customData?.isBranch &&
+      a.startBinding?.elementId === nodeId && 
+      a.endBinding?.elementId === child.id
+    );
+    
     if (arrow) {
-      const eaArrow = ea.getElement(arrow.id), eaChild = ea.getElement(child.id);
-      const sX = eaNode.x + eaNode.width/2, sY = eaNode.y + eaNode.height/2;
-      const eX = eaChild.x + eaChild.width/2, eY = eaChild.y + eaChild.height/2;
-      eaArrow.x = sX; eaArrow.y = sY;
+      const eaArrow = ea.getElement(arrow.id);
+      const eaChild = ea.getElement(child.id);
+      const sX = currentX + node.width / 2;
+      const sY = currentYCenter;
+      const eX = eaChild.x + eaChild.width / 2;
+      const eY = eaChild.y + eaChild.height / 2;
+      eaArrow.x = sX;
+      eaArrow.y = sY;
       eaArrow.points = [[0, 0], [eX - sX, eY - sY]];
     }
   });
 };
 
-const triggerGlobalLayout = (rootId) => {
+const triggerGlobalLayout = (rootId, force = false) => {
   const allElements = ea.getViewElements();
   const root = allElements.find(el => el.id === rootId);
   ea.copyViewElementsToEAforEditing(allElements);
@@ -346,7 +427,7 @@ const triggerGlobalLayout = (rootId) => {
     const tCY = rootCenter.y + radius * Math.sin(angleRad);
     
     const currentDist = Math.hypot((node.x + node.width/2) - rootCenter.x, (node.y + node.height/2) - rootCenter.y);
-    const isPinned = !node.customData?.mindmapNew && currentDist > radius * 1.1;
+    const isPinned = node.customData?.isPinned || (!force && !node.customData?.mindmapNew && currentDist > radius * 1.1);
     const side = (isPinned
       ? (node.x + node.width/2 > rootCenter.x)
       : (tCX > rootCenter.x)
@@ -363,7 +444,7 @@ const triggerGlobalLayout = (rootId) => {
       ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
     }
 
-    const arrow = allElements.find(a => a.type === "arrow" && a.startBinding?.elementId === rootId && a.endBinding?.elementId === node.id);
+    const arrow = allElements.find(a => a.type === "arrow" && a.customData?.isBranch && a.startBinding?.elementId === rootId && a.endBinding?.elementId === node.id);
     if (arrow) {
       const eaA = ea.getElement(arrow.id), eaC = ea.getElement(node.id);
       const eX = eaC.x + eaC.width/2, eY = eaC.y + eaC.height/2;
@@ -481,25 +562,28 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     ea.copyViewElementsToEAforEditing([parent]);
     ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
     ea.style.roughness = api.getAppState().currentItemRoughness;
-    ea.style.strokeStyle = api.getAppState().currentItemStrokeStyle;
+    ea.style.strokeStyle = isSolidArrow ? "solid" : api.getAppState().currentItemStrokeStyle;
     const startPoint = [parent.x + parent.width/2, parent.y + parent.height/2];
-    ea.addArrow([startPoint, startPoint], {
+    const arrowId = ea.addArrow([startPoint, startPoint], {
       startObjectId: parent.id,
       endObjectId: newNodeId,
       startArrowHead: null,
       endArrowHead: null
     });
+    ea.addAppendUpdateCustomData(arrowId, { isBranch: true });
   }
 
   await ea.addElementsToView(!parent, false, true, true);
+  ea.clear();
   
   if (!skipFinalLayout && rootId && !autoLayoutDisabled) { 
     triggerGlobalLayout(rootId); 
-    await ea.addElementsToView(false, false, true, true); 
+    await ea.addElementsToView(false, false, true, true);
+    ea.clear();
   } else if (rootId && (autoLayoutDisabled || skipFinalLayout) && parent) {
     const allEls = ea.getViewElements();
     const node = allEls.find(el => el.id === newNodeId);
-    const arrow = allEls.find(a => a.type === "arrow" && a.endBinding?.elementId === newNodeId);
+    const arrow = allEls.find(a => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === newNodeId);
     if (arrow) {
       ea.copyViewElementsToEAforEditing([arrow]);
       const eaA = ea.getElement(arrow.id);
@@ -508,6 +592,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       eaA.x = sX; eaA.y = sY;
       eaA.points = [[0, 0], [eX - sX, eY - sY]];
       await ea.addElementsToView(false, false, true, true);
+      ea.clear();
     }
   }
 
@@ -622,6 +707,7 @@ const pasteListToMap = async () => {
   const info = getHierarchy(currentParent, ea.getViewElements());
   triggerGlobalLayout(info.rootId);
   await ea.addElementsToView(false, false, true, true);
+  ea.clear();
   new Notice("Paste complete.");
 };
 
@@ -673,6 +759,7 @@ const navigateMap = (key) => {
 const modal = new ea.FloatingModal(app);
 modal.onOpen = () => {
   const { contentEl, titleEl, modalEl } = modal;
+  ensureNodeSelected();
   contentEl.empty();
   titleEl.setText("Mind Map Builder");
   
@@ -683,36 +770,54 @@ modal.onOpen = () => {
   const inputRow = new ea.obsidian.Setting(contentEl).setName("Node Text");
 
   const bodyContainer = contentEl.createDiv();
-  const statusEl = bodyContainer.createDiv({ attr: {
-    style: "font-size:0.85em; color:var(--text-accent); font-weight:bold; margin:12px 0; border-bottom:1px solid var(--background-modifier-border); padding-bottom:5px;"
-  }});
   
-  let strategyDropdown, autoLayoutToggle;
+  let strategyDropdown, autoLayoutToggle, pinBtn;
+
   const updateStatus = () => {
     const all = ea.getViewElements();
     const sel = ea.getViewSelectedElement();
     const name = sel?.text || (sel?.type === "rectangle" ? "Root" : null);
-    statusEl.setText(name ? `Targeting: ${name.substring(0,30)}` : "Target: New Central Node");
     
     if (sel) {
-        const info = getHierarchy(sel, all);
-        const root = all.find(e => e.id === info.rootId);
-        const mapStrategy = root.customData?.growthMode;
-        if (mapStrategy && mapStrategy !== currentModalGrowthMode) {
-            currentModalGrowthMode = mapStrategy;
-            strategyDropdown.setValue(mapStrategy);
-        }
-        const mapLayoutPref = root.customData?.autoLayoutDisabled === true;
-        if (mapLayoutPref !== autoLayoutDisabled) {
-          autoLayoutDisabled = mapLayoutPref;
-          autoLayoutToggle.setValue(mapLayoutPref);
-        }
+      const isPinned = sel.customData?.isPinned === true;
+      pinBtn?.setIcon(isPinned ? "pin" : "pin-off");
+      pinBtn?.setTooltip(`${isPinned ? "This element is pinned. Click to unpin" : "This element is not pinned. Click to pin"} the location of the selected element (${isMac ? "CMD" : "CTRL"}+SHIFT+Enter)`);
+
+      const info = getHierarchy(sel, all);
+      const root = all.find(e => e.id === info.rootId);
+      const mapStrategy = root.customData?.growthMode;
+      if (mapStrategy && mapStrategy !== currentModalGrowthMode) {
+          currentModalGrowthMode = mapStrategy;
+          strategyDropdown.setValue(mapStrategy);
+      }
+      const mapLayoutPref = root.customData?.autoLayoutDisabled === true;
+      if (mapLayoutPref !== autoLayoutDisabled) {
+        autoLayoutDisabled = mapLayoutPref;
+        autoLayoutToggle.setValue(mapLayoutPref);
+      }
+    } else {
+      pinBtn?.setIcon("pin-off");
     }
   };
 
   let inputEl;
   inputRow.addText(text => {
       inputEl = text.inputEl; inputEl.style.width = "100%"; inputEl.placeholder = "Concept...";
+  });
+
+  inputRow.addExtraButton(btn => {
+    pinBtn = btn;
+    btn.onClick(async () => {
+      const sel = ea.getViewSelectedElement();
+      if (sel) {
+        const newPinnedState = !(sel.customData?.isPinned === true);
+        ea.copyViewElementsToEAforEditing([sel]);
+        ea.addAppendUpdateCustomData(sel.id, { isPinned: newPinnedState });
+        await ea.addElementsToView(false, false, true, true);
+        ea.clear();
+        updateStatus();
+      }
+    });
   });
   
   inputRow.addExtraButton(btn => {
@@ -734,6 +839,11 @@ modal.onOpen = () => {
     });
   });
 
+  modalEl.addEventListener("pointerenter", () => {
+    ensureNodeSelected();
+    updateStatus();
+  });
+
   inputRow.settingEl.style.display = "block";
   inputRow.controlEl.style.width = "100%";
   inputRow.controlEl.style.marginTop = "8px";
@@ -752,9 +862,11 @@ modal.onOpen = () => {
           ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(e => e.id === info.rootId));
           ea.addAppendUpdateCustomData(info.rootId, { growthMode: v });
           await ea.addElementsToView(false, false, true, true);
+          ea.clear();
           if (!autoLayoutDisabled) {
-            triggerGlobalLayout(info.rootId);
+            triggerGlobalLayout(info.rootId, true);
             await ea.addElementsToView(false, false, true, true);
+            ea.clear();
           }
         }
       });
@@ -770,6 +882,7 @@ modal.onOpen = () => {
         ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(e => e.id === info.rootId));
         ea.addAppendUpdateCustomData(info.rootId, { autoLayoutDisabled: v });
         await ea.addElementsToView(false, false, true, true);
+        ea.clear();
       }
     })
   ).components[0];
@@ -785,9 +898,22 @@ modal.onOpen = () => {
         const info = getHierarchy(sel, ea.getViewElements());
         triggerGlobalLayout(info.rootId);
         await ea.addElementsToView(false, false, true, true);
+        ea.clear();
       }
     })
   );
+
+  new ea.obsidian.Setting(bodyContainer)
+    .setName("Use scene stroke style")
+    .setDesc("Use the latest stroke style (solid, dashed, dotted) from the scene, or always use solid style for branches.")
+    .addToggle(t => t
+      .setValue(!isSolidArrow)
+      .onChange(v => {
+        isSolidArrow = !v;
+        ea.setScriptSettingValue(K_ARROWSTROKE, { value: !v });
+        dirty = true;
+      })
+    );
 
   new ea.obsidian.Setting(bodyContainer)
     .setName("Multicolor Branches")
@@ -879,6 +1005,22 @@ modal.onOpen = () => {
 
   const keyHandler = async (e) => {
     if (ownerWindow.document.activeElement !== inputEl) return;
+
+    if (e.key === "Enter" && e.shiftKey && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      e.stopPropagation();
+      const sel = ea.getViewSelectedElement();
+      if (sel) {
+        const newPinnedState = !(sel.customData?.isPinned === true);
+        ea.copyViewElementsToEAforEditing([sel]);
+        ea.addAppendUpdateCustomData(sel.id, { isPinned: newPinnedState });
+        await ea.addElementsToView(false, false, true, true);
+        ea.clear();
+        updateStatus();
+      }
+      return;
+    }
+
     if (e.altKey) {
       if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
         e.preventDefault();
