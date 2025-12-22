@@ -659,6 +659,17 @@ export declare class ExcalidrawAutomate {
      * @param {"arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null} [formatting.endArrowHead] - The end arrowhead type.
      * @param {string} [formatting.startObjectId] - The ID of the start object.
      * @param {string} [formatting.endObjectId] - The ID of the end object.
+     * BindMode Determines whether the arrow remains outside the shape or is allowed to
+     * go all the way inside the shape up to the exact fixed point.
+     * @param {"inside" | "orbit"} [formatting.startBindMode] - The binding mode for the start object.
+     * @param {"inside" | "orbit"} [formatting.endBindMode] - The binding mode for the end object.
+     * FixedPoint represents the fixed point binding information in form of a vertical and
+     * horizontal ratio (i.e. a percentage value in the 0.0-1.0 range). This ratio
+     * gives the user selected fixed point by multiplying the bound element width
+     * with fixedPoint[0] and the bound element height with fixedPoint[1] to get the
+     * bound element-local point coordinate.
+     * @param {[number, number]} [formatting.startFixedPoint] - The fixed point for the start object.
+     * @param {[number, number]} [formatting.endFixedPoint] - The fixed point for the end object.
      * @param {string} [id] - The ID of the arrow element.
      * @returns {string} The ID of the added arrow element.
      */
@@ -667,6 +678,11 @@ export declare class ExcalidrawAutomate {
         endArrowHead?: "arrow" | "bar" | "circle" | "circle_outline" | "triangle" | "triangle_outline" | "diamond" | "diamond_outline" | null;
         startObjectId?: string;
         endObjectId?: string;
+        startBindMode?: "inside" | "orbit";
+        endBindMode?: "inside" | "orbit";
+        startFixedPoint?: [number, number];
+        endFixedPoint?: [number, number];
+        elbowed?: boolean;
     }, id?: string): string;
     /**
      * Adds a mermaid diagram to ExcalidrawAutomate elements.
@@ -1225,6 +1241,9 @@ export declare class ExcalidrawAutomate {
      * @returns {Promise<void>} Promise resolving when the settings are saved.
      */
     setScriptSettings(settings: any): Promise<void>;
+    setScriptSettingValue(key: string, value: ScriptSettingValue): void;
+    getScriptSettingValue(key: string, defaultValue: ScriptSettingValue): ScriptSettingValue;
+    saveScriptSettings(): Promise<void>;
     /**
      * Opens a file in a new workspace leaf or reuses an existing adjacent leaf depending on Excalidraw Plugin Settings.
      * @param {TFile} file - The file to open.
@@ -1360,6 +1379,13 @@ export type SVGColorInfo = Map<string, {
     fill: boolean;
     stroke: boolean;
 }>;
+export type ScriptSettingValue = {
+    value?: string | number | boolean;
+    hidden?: boolean;
+    description?: string;
+    valueset?: string[];
+    height?: number;
+};
 export type ImageInfo = {
     mimeType: MimeType;
     id: FileId;
@@ -2651,6 +2677,7 @@ export interface ExcalidrawImperativeAPI {
     isTrayModeEnabled: InstanceType<typeof App>["isTrayModeEnabled"];
     getColorAtScenePoint: InstanceType<typeof App>["getColorAtScenePoint"];
     startLineEditor: InstanceType<typeof App>["startLineEditor"];
+    refreshAllArrows: InstanceType<typeof App>["refreshAllArrows"];
     getSceneElements: InstanceType<typeof App>["getSceneElements"];
     getAppState: () => InstanceType<typeof App>["state"];
     getFiles: () => InstanceType<typeof App>["files"];

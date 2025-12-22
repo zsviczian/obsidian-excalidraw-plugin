@@ -22,7 +22,7 @@ The script features a recursive spacing engine that calculates the "subtree heig
 - **Recursive Re-balancing**: Every time a node is added, the script re-calculates the entire tree's coordinates to ensure no nodes or arrows overlap, even if sub-branches have vastly different densities.
 
 ### B. "Manual Break-out" (Node Pinning)
-If a user manually drags a Level 1 branch significantly outside the auto-calculated radius (specifically > 1.5x the current radius), the engine marks that branch as **deliberately placed**. The auto-layout will no longer move that branch, but it will still automatically organize any children added *to* that branch.
+If a user manually drags a Level 1 branch significantly outside the auto-calculated radius (specifically > 1.1x the current radius), the engine marks that branch as **deliberately placed**. The auto-layout will no longer move that branch, but it will still automatically organize any children added *to* that branch.
 
 ### C. Import & Export (Markdown Sync)
 - **Copy as Text**: Converts the visual map into an H1 header (Root) followed by an indented Markdown bullet list.
@@ -110,7 +110,7 @@ const api = ea.getExcalidrawAPI();
 
 const getVal = (key, def) => ea.getScriptSettingValue(key, { value: def }).value;
 
-let maxWidth = parseInt(getVal(K_WIDTH, 300));
+let maxWidth = parseInt(getVal(K_WIDTH, 450));
 let fontsizeScale = getVal(K_FONTSIZE, "Normal Scale");
 let boxChildren = getVal(K_BOX, false) === true;
 let roundedCorners = getVal(K_ROUND, true) === true;
@@ -324,12 +324,16 @@ const triggerGlobalLayout = (rootId) => {
   
   let startAngle, angleStep;
   if (mode === "Right-facing") {
-    startAngle = 20;
-    angleStep = count <= 1 ? 0 : 140 / (count - 1);
-    }
+    // Range starts at 30 deg span (75 to 105) and expands by 30 each step
+    const span = count <= 2 ? 30 : Math.min(120, 60 + (count - 3) * 30);
+    startAngle = 90 - (span / 2);
+    angleStep = count <= 1 ? 0 : span / (count - 1);
+  }
   else if (mode === "Left-facing") {
-    startAngle = 340;
-    angleStep = count <= 1 ? 0 : -140 / (count - 1);
+    // Mirror of Right-facing (centered at 270)
+    const span = count <= 2 ? 30 : Math.min(120, 60 + (count - 3) * 30);
+    startAngle = 270 + (span / 2);
+    angleStep = count <= 1 ? 0 : -span / (count - 1);
   }
   else {
     startAngle = count <= 6 ? 30 : 20;
@@ -342,7 +346,7 @@ const triggerGlobalLayout = (rootId) => {
     const tCY = rootCenter.y + radius * Math.sin(angleRad);
     
     const currentDist = Math.hypot((node.x + node.width/2) - rootCenter.x, (node.y + node.height/2) - rootCenter.y);
-    const isPinned = !node.customData?.mindmapNew && currentDist > radius * 1.5;
+    const isPinned = !node.customData?.mindmapNew && currentDist > radius * 1.1;
     const side = (isPinned
       ? (node.x + node.width/2 > rootCenter.x)
       : (tCX > rootCenter.x)
