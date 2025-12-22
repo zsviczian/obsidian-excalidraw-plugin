@@ -334,6 +334,25 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
   const currentX = eaNode.x;
   const currentYCenter = eaNode.y + node.height / 2;
 
+  let effectiveSide = side;
+  const parent = getParentNode(nodeId, allElements);
+  
+  if (isPinned && parent) {
+    const parentCenterX = parent.x + parent.width / 2;
+    const nodeCenterX = currentX + node.width / 2;
+    effectiveSide = nodeCenterX >= parentCenterX ? 1 : -1;
+  }
+
+  const textElement = ea.getBoundTextElement(node).eaElement;
+  if (textElement) { 
+    if (textElement.textAlign === "left" && effectiveSide === 1) {
+      textElement.textAlign = "right";
+    }
+    if (textElement.textAlign === "right" && effectiveSide !== 1) {
+      textElement.textAlign = "left";
+    }
+  }
+
   const children = getChildrenNodes(nodeId, allElements);
   sortChildrenStable(children);
   const subtreeHeight = getSubtreeHeight(nodeId, allElements);
@@ -345,9 +364,9 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
     
     layoutSubtree(
       child.id, 
-      side === 1 ? currentX + node.width + GAP_X : currentX - GAP_X, 
+      effectiveSide === 1 ? currentX + node.width + GAP_X : currentX - GAP_X, 
       currentY + childH / 2, 
-      side, 
+      effectiveSide, 
       allElements
     );
     
@@ -521,17 +540,17 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     ea.style.strokeColor = getReadableColor(nodeColor);
     const rootEl = allElements.find(e => e.id === rootId);
     const mode = rootEl.customData?.growthMode || currentModalGrowthMode;
+    const rootCenter = {
+      x: rootEl.x + rootEl.width / 2,
+      y: rootEl.y + rootEl.height / 2
+    };
+    const side = (parent.x + parent.width/2 > rootCenter.x) ? 1 : -1;
     
     const offset = (mode === "Radial" || mode === "Right-facing")
       ? rootEl.width*2
       : -rootEl.width;
     let px = parent.x + offset, py = parent.y;
     if (autoLayoutDisabled) {
-      const rootCenter = {
-        x: rootEl.x + rootEl.width / 2,
-        y: rootEl.y + rootEl.height / 2
-      };
-      const side = (parent.x + parent.width/2 > rootCenter.x) ? 1 : -1;
       const manualGapX = Math.round(parent.width * 1.3); 
       const jitterX = (Math.random() - 0.5) * 150;
       const jitterY = (Math.random() - 0.5) * 150;
@@ -544,7 +563,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
 
     newNodeId = ea.addText(px, py, text, {
       box: boxChildren ? "rectangle" : false,
-      textAlign: boxChildren ? "center" : "left",
+      textAlign: boxChildren ? "center" : (side === 1 ? "right" : "left"),
       textVerticalAlign: "middle",
       width: shouldWrap ? maxWidth : undefined,
       autoResize: !shouldWrap
@@ -840,8 +859,25 @@ modal.onOpen = () => {
   });
 
   modalEl.addEventListener("pointerenter", () => {
+    if(!ea.targetView) {
+      new Notice("Host Excalidraw Window was closed");
+      modal.close();
+      return;
+    }
+    if(ea.targetView !== app.workspace.activeLeaf.view) {
+      modalEl.style.borderColor = "red";
+      modalEl.style.borderWidth = "3px";
+    } else {
+      modalEl.style.borderColor = "";
+      modalEl.style.borderWidth = "";
+    }
     ensureNodeSelected();
     updateStatus();
+  });
+
+  modalEl.addEventListener("pointerleave", () => {
+      modalEl.style.borderColor = "";
+      modalEl.style.borderWidth = "";
   });
 
   inputRow.settingEl.style.display = "block";
@@ -1050,11 +1086,41 @@ modal.onOpen = () => {
   };
 
   ownerWindow.addEventListener("keydown", keyHandler, true);
+
+  const canvasPointerListener = (e) => {
+    if (!ea.targetView) {
+      modal.close();
+      return;
+    }
+    if (app.workspace.activeLeaf.view !== ea.targetView) return;
+    if (modal.modalEl.contains(e.target)) return;
+
+    setTimeout(() => {
+      const selection = ea.getViewSelectedElements();
+      const textEl = selection.find(el => el.type === "text");
+      let isEligible = false;
+
+      if (selection.length === 1 && textEl) {
+        isEligible = true;
+      } else if (selection.length === 2 && textEl) {
+        const other = selection.find(el => el.id !== textEl.id);
+        if (other && textEl.containerId === other.id && other.type !== "arrow") {
+          isEligible = true;
+        }
+      }
+
+      if (isEligible) {
+        updateStatus();
+      }
+    }, 50);
+  };
+
+  ownerWindow.addEventListener("pointerdown", canvasPointerListener);
+
   updateStatus();
-  const monitor = setInterval(updateStatus, 1000);
   modal.onClose = async () => {
-    clearInterval(monitor);
     ownerWindow.removeEventListener("keydown", keyHandler, true);
+    ownerWindow.removeEventListener("pointerdown", canvasPointerListener);
     if (dirty) {
       await ea.saveScriptSettings();
     }
