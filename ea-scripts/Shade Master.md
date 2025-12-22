@@ -23,6 +23,8 @@ const HELP_TEXT = `
     - Additionally if the same color is used as fill and stroke the color can only be mapped once
 - This is an experimental script - contributions welcome on GitHub via PRs
 
+😍 If you find this script helpful, please [buy me a coffee ☕](https://ko-fi.com/zsolt).
+
 <a href="https://www.youtube.com/watch?v=ISuORbVKyhQ" target="_blank"><img src ="https://i.ytimg.com/vi/ISuORbVKyhQ/maxresdefault.jpg" style="max-width:560px; width:100%"></a>
 
 `;

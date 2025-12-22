@@ -142,6 +142,8 @@ const INSTRUCTIONS = `
 - **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
 - **Grouping**: Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
 - **Copy/Paste**: Export/Import indented Markdown lists.
+
+😍 If you find this script helpful, please [buy me a coffee ☕](https://ko-fi.com/zsolt).
 `;
 
 // ---------------------------------------------------------------------------
@@ -603,16 +605,25 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     const allEls = ea.getViewElements();
     const node = allEls.find(el => el.id === newNodeId);
     const arrow = allEls.find(a => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === newNodeId);
+
+    ea.copyViewElementsToEAforEditing(groupBranches ? allEls : (arrow ? [arrow] : []));
+
     if (arrow) {
-      ea.copyViewElementsToEAforEditing([arrow]);
       const eaA = ea.getElement(arrow.id);
       const sX = parent.x + parent.width/2, sY = parent.y + parent.height/2;
       const eX = node.x + node.width/2, eY = node.y + node.height/2;
       eaA.x = sX; eaA.y = sY;
       eaA.points = [[0, 0], [eX - sX, eY - sY]];
-      await ea.addElementsToView(false, false, true, true);
-      ea.clear();
     }
+    
+    if (groupBranches) {
+      ea.getElements().forEach(el => { el.groupIds = []; });
+      const l1Nodes = getChildrenNodes(rootId, allEls);
+      l1Nodes.forEach(l1 => applyRecursiveGrouping(l1.id, allEls));
+    }
+
+    await ea.addElementsToView(false, false, true, true);
+    ea.clear();
   }
 
   const finalNode = ea.getViewElements().find(el => el.id === newNodeId);
@@ -1007,7 +1018,7 @@ modal.onOpen = () => {
     .addToggle(t => t
       .setValue(centerText)
       .onChange(v => {
-        isSolidArrow = v;
+        centerText = v;
         ea.setScriptSettingValue(K_CENTERTEXT, { value: v });
         dirty = true;
       })

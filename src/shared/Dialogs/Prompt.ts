@@ -100,6 +100,7 @@ export class LaTexPrompt extends Modal {
   ) {
     super(app);
     this.titleEl.setText(this.prompt_text);
+    this.contentEl.addClass("excalidraw-LatexPrompt");
     this.latexsSuitePlugin = app.plugins.plugins["obsidian-latex-suite"];
     const mainContentContainer: HTMLDivElement = this.contentEl.createDiv();
     this.display(default_value, mainContentContainer);
@@ -156,11 +157,6 @@ export class LaTexPrompt extends Modal {
       });
     }
 
-    const cmContent = this.editorView.dom.querySelector('.cm-content') as HTMLElement;
-    if (cmContent) {
-      cmContent.style.caretColor = 'var(--caret-color)';
-    }
-    
     const buttonBarContainer: HTMLDivElement = container.createDiv();
     buttonBarContainer.addClass(`excalidraw-prompt-buttonbar-bottom`);
     const actionButtonContainer: HTMLDivElement = buttonBarContainer.createDiv();

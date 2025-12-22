@@ -926,3 +926,11 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw .ToolIcon.ToolIcon__penMode {
 	height:fit-content
 }
+
+.excalidraw-LatexPrompt .cm-content {
+  caret-color: var(--caret-color);
+}
+
+.excalidraw-LatexPrompt .cm-editor {
+  margin-top: 90px;
+}
