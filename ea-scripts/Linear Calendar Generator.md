@@ -2,6 +2,8 @@
 
 This script generates a linear (horizontal) calendar for a specified year, with days flowing left to right and months as rows.
 
+![300](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-Linear-Calendar-Generator.jpg)
+
 ## Features
 - Horizontal timeline layout with days of the week as columns
 - Month names displayed on both left and right sides
