@@ -25,7 +25,7 @@ The script features a recursive spacing engine that calculates the "subtree heig
 ### B. Pinning & Manual Placement
 Nodes can be excluded from the auto-layout engine in two ways:
 - **Explicit Pinning**: Users can toggle a "Pinned" state via UI or shortcut. Pinned nodes stay at their exact coordinates, while the engine still organizes their unpinned children relative to that fixed position.
-- **Manual Break-out**: If a node is dragged significantly outside the calculated auto-layout radius (> 1.1x radius), the engine treats it as deliberately placed and stops moving it automatically.
+- **Manual Break-out**: If a node is dragged significantly outside the calculated auto-layout radius (> 1.5x radius), the engine treats it as deliberately placed and stops moving it automatically.
 
 ### C. Import & Export (Markdown Sync)
 - **Copy as Text**: Converts the visual map into an H1 header (Root) followed by an indented Markdown bullet list.
@@ -103,7 +103,8 @@ const K_GROWTH = "Growth Mode";
 const K_MULTICOLOR = "Multicolor Mode";
 const K_MINIMIZED = "Is Minimized";
 const K_GROUP = "Group Branches";
-const K_ARROWSTROKE = "Arrow Stroke Style"
+const K_ARROWSTROKE = "Arrow Stroke Style";
+const K_CENTERTEXT = "Center text in nodes?";
 const api = ea.getExcalidrawAPI();
 
 const getVal = (key, def) => ea.getScriptSettingValue(key, { value: def }).value;
@@ -117,6 +118,7 @@ let groupBranches = getVal(K_GROUP, true) === true;
 let currentModalGrowthMode = getVal(K_GROWTH, "Radial");
 let isMinimized = getVal(K_MINIMIZED, false) === true;
 let isSolidArrow = getVal(K_ARROWSTROKE, true) === true;
+let centerText = getVal(K_CENTERTEXT, true) === true;
 let autoLayoutDisabled = false;
 
 const FONT_SCALE = {
@@ -343,14 +345,8 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
     effectiveSide = nodeCenterX >= parentCenterX ? 1 : -1;
   }
 
-  const textElement = ea.getBoundTextElement(node).eaElement;
-  if (textElement) { 
-    if (textElement.textAlign === "left" && effectiveSide === 1) {
-      textElement.textAlign = "right";
-    }
-    if (textElement.textAlign === "right" && effectiveSide !== 1) {
-      textElement.textAlign = "left";
-    }
+  if (!isPinned && eaNode.type === "text" && !eaNode.containerId && node.textAlign !== "center") { 
+    eaNode.textAlign = (effectiveSide === 1) ? "left" : "right";
   }
 
   const children = getChildrenNodes(nodeId, allElements);
@@ -446,7 +442,7 @@ const triggerGlobalLayout = (rootId, force = false) => {
     const tCY = rootCenter.y + radius * Math.sin(angleRad);
     
     const currentDist = Math.hypot((node.x + node.width/2) - rootCenter.x, (node.y + node.height/2) - rootCenter.y);
-    const isPinned = node.customData?.isPinned || (!force && !node.customData?.mindmapNew && currentDist > radius * 1.1);
+    const isPinned = node.customData?.isPinned || (!force && !node.customData?.mindmapNew && currentDist > radius * 1.5);
     const side = (isPinned
       ? (node.x + node.width/2 > rootCenter.x)
       : (tCX > rootCenter.x)
@@ -561,9 +557,13 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       py = (parent.y + parent.height/2) - (metrics.height / 2) + jitterY;
     }
 
+    const textAlign = centerText 
+      ? "center" 
+      : (side === 1 ? "left" : "right");
+
     newNodeId = ea.addText(px, py, text, {
       box: boxChildren ? "rectangle" : false,
-      textAlign: boxChildren ? "center" : (side === 1 ? "right" : "left"),
+      textAlign,
       textVerticalAlign: "middle",
       width: shouldWrap ? maxWidth : undefined,
       autoResize: !shouldWrap
@@ -838,6 +838,20 @@ modal.onOpen = () => {
       }
     });
   });
+
+  inputRow.addExtraButton(btn => btn
+    .setIcon("refresh-ccw")
+    .setTooltip("Force auto rearrange map. Will move all elements except for those that are pinned.")
+    .onClick(async () => {
+      const sel = ea.getViewSelectedElement();
+      if (sel) {
+        const info = getHierarchy(sel, ea.getViewElements());
+        triggerGlobalLayout(info.rootId, true);
+        await ea.addElementsToView(false, false, true, true);
+        ea.clear();
+      }
+    })
+  );
   
   inputRow.addExtraButton(btn => {
     const updateIcon = () => {
@@ -976,6 +990,18 @@ modal.onOpen = () => {
       })
     );
   sliderValDisplay = sliderSetting.descEl.createSpan({ text: `${maxWidth}px`, attr: { style: "margin-left:10px; font-weight:bold;" }});
+
+  new ea.obsidian.Setting(bodyContainer)
+    .setName("Center child node text")
+    .setDesc("Toggle off: align text to rigth/left depending on the side, Toggle on: center the text.")
+    .addToggle(t => t
+      .setValue(centerText)
+      .onChange(v => {
+        isSolidArrow = v;
+        ea.setScriptSettingValue(K_CENTERTEXT, { value: v });
+        dirty = true;
+      })
+    );
 
   new ea.obsidian.Setting(bodyContainer)
     .setName(K_FONTSIZE)
