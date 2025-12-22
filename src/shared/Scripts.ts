@@ -14,7 +14,7 @@ import { splitFolderAndFilename } from "../utils/fileUtils";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import { WeakArray } from "./WeakArray";
-import { getExcalidrawViews } from "../utils/obsidianUtils";
+import { getExcalidrawViews, stripYamlFrontmatter } from "../utils/obsidianUtils";
 import { ButtonDefinition, InputPromptOptions } from "src/types/promptTypes";
 
 export type ScriptIconMap = {
@@ -211,9 +211,8 @@ export class ScriptEngine {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
           (async()=>{
-            const script = await this.app.vault.read(f);
+            const script = stripYamlFrontmatter(await this.app.vault.read(f));
             if(script) {
-              //remove YAML frontmatter if present
               this.executeScript(view, script, scriptName,f);
             }
           })()
@@ -260,7 +259,7 @@ export class ScriptEngine {
       await view.save(false, true);
     }
 
-    script = script.replace(/^---.*?---\n/gs, "");
+    script = stripYamlFrontmatter(script);
     const ea = getEA(view);
     this.eaInstances.push(ea);
     ea.activeScript = title;

@@ -777,7 +777,7 @@ const navigateMap = (key) => {
 
 const modal = new ea.FloatingModal(app);
 modal.onOpen = () => {
-  const { contentEl, titleEl, modalEl } = modal;
+  const { contentEl, titleEl, modalEl, headerEl } = modal;
   ensureNodeSelected();
   contentEl.empty();
   titleEl.setText("Mind Map Builder");
@@ -821,7 +821,9 @@ modal.onOpen = () => {
 
   let inputEl;
   inputRow.addText(text => {
-      inputEl = text.inputEl; inputEl.style.width = "100%"; inputEl.placeholder = "Concept...";
+    inputEl = text.inputEl;
+    inputEl.style.width = "100%";
+    inputEl.placeholder = "Concept...";
   });
 
   inputRow.addExtraButton(btn => {
@@ -857,11 +859,19 @@ modal.onOpen = () => {
     const updateIcon = () => {
       btn.setIcon(isMinimized ? "maximize-2" : "minimize-2");
       btn.setTooltip(isMinimized ? "Maximize UI" : "Minimize UI");
-      const display = isMinimized ? "none" : "block";
+      const display = isMinimized ? "none" : "";
       bodyContainer.style.display = display;
+      headerEl.style.display = display;
       titleEl.style.display = display;
       details.style.display = display;
       modalEl.style.opacity = isMinimized ? "0.8" : "1";
+      inputRow.infoEl.style.display = display;
+      modalEl.style.paddingBottom = isMinimized ? "6px" : "";
+      modalEl.style.paddingRight = isMinimized ? "6px" : "";
+      modalEl.style.paddingLeft = isMinimized ? "6px" : "";
+      modalEl.style.minHeight = isMinimized ? "0px" : "";
+      inputRow.settingEl.style.padding = isMinimized ? "0" : "";
+      inputRow.settingEl.style.border = isMinimized ? "0" : "";
     };
     updateIcon();
     btn.onClick(async () => {
@@ -992,8 +1002,8 @@ modal.onOpen = () => {
   sliderValDisplay = sliderSetting.descEl.createSpan({ text: `${maxWidth}px`, attr: { style: "margin-left:10px; font-weight:bold;" }});
 
   new ea.obsidian.Setting(bodyContainer)
-    .setName("Center child node text")
-    .setDesc("Toggle off: align text to rigth/left depending on the side, Toggle on: center the text.")
+    .setName("Center text")
+    .setDesc("Toggle off: align nodes to rigth/left depending; Toggle on: center the text.")
     .addToggle(t => t
       .setValue(centerText)
       .onChange(v => {

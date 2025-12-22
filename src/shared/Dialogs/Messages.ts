@@ -19,8 +19,9 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 `,
 "2.18.3":`
 ## New
-- Added Mindmap Builder script to the script store.
+- Added Mindmap Builder script to the store.
 - LaTeX Suit Integration by [@TravisLEBLANC1](https://github.com/TravisLEBLANC1)
+- Added Linear Calendar Generator script to the store. 🙏 [@iwanhoogendoorn](https://github.com/iwanhoogendoorn)
 
 ## Fixed
 - YouTube video embeds working on iOS  [#2569](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2569)
@@ -39,6 +40,27 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
   - \`startFixedPoint?: [number, number]\`
   - \`endFixedPoint?: [number, number]\`
   - \`elbowed?: boolean\`
+
+\`\`\`ts
+  /**
+   * Returns an object describing the bound text element.
+   * If a text element is provided:
+   *  - returns { eaElement } if the element is in ea.elementsDict
+   *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
+   * If a container element is provided, searches for the bound text element:
+   *  - returns { eaElement } if found in ea.elementsDict
+   *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
+   * If not found, returns {}.
+   * Does not add the text element to elementsDict.
+   * @param element 
+   * @param searchInView - If true, searches in the targetView elements if not found in elementsDict.
+   * @returns Object containing either eaElement or sceneElement or empty if not found.
+   */
+  getBoundTextElement(element: ExcalidrawElement, searchInView: boolean = false): {
+    eaElement?: Mutable<ExcalidrawTextElement>,
+    sceneElement?: ExcalidrawTextElement
+    };
+\`\`\`
 `,
 "2.18.2":`
 ## Fixed

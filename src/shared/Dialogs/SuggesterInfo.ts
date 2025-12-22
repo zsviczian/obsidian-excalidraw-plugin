@@ -203,6 +203,22 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "getBoundTextElement",
+    code:
+      "getBoundTextElement(element: ExcalidrawElement, searchInView?: boolean): { eaElement?: Mutable<ExcalidrawTextElement>; sceneElement?: ExcalidrawTextElement; };",
+    desc:
+      "Returns an object describing the bound text element.\n" +
+      "If a text element is provided:\n" +
+      " - returns { eaElement } if the element is in ea.elementsDict\n" +
+      " - else (if searchInView is true) returns { sceneElement } if found in the targetView scene\n" +
+      "If a container element is provided, searches for the bound text element:\n" +
+      " - returns { eaElement } if found in ea.elementsDict\n" +
+      " - else (if searchInView is true) returns { sceneElement } if found in the targetView scene\n" +
+      "If not found, returns {}.\n" +
+      "Does not add the text element to elementsDict.",
+    after: "",
+  },
+  {
     field: "create",
     code: 'async create(params?: {filename?: string, foldername?: string, templatePath?: string, onNewPane?: boolean, silent?: boolean, frontmatterKeys?: {},}): Promise<string>;',
     desc: "Create a drawing and save it to filename.\nIf filename is null: default filename as defined in Excalidraw settings.\nIf folder is null: default folder as defined in Excalidraw settings\nReturns the path to the created file.\n" +
