@@ -140,6 +140,7 @@ const INSTRUCTIONS = `
 - **${isMac ? "CMD" : "CTRL"} + ENTER**: Add a child node and "drill down" (follow the new node).
 - **SHIFT + ENTER**: Add the node and close the modeler.
 - **${isMac ? "OPT" : "ALT"} + Arrows**: Navigate through the mindmap nodes on the canvas.
+- **${isMac ? "OPT" : "ALT"} + C / X / V**: Copy, Cut, or Paste branches.
 - **${isMac ? "CMD" : "CTRL"} + SHIFT + ENTER**: Pin/Unpin location of a node. Pinned nodes will not be touched by auto layout.
 - **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
 - **Grouping**: Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
@@ -661,6 +662,7 @@ const copyMapAsText = async (cut = false) => {
   const info = getHierarchy(sel, all);
 
   const isRootSelected = info.rootId === sel.id;
+  const parentNode = getParentNode(sel.id, all);
 
   if (isRootSelected) {
     cut = false;
@@ -717,6 +719,11 @@ const copyMapAsText = async (cut = false) => {
     if (incomingArrow) elementsToDelete.push(incomingArrow);
 
     ea.deleteViewElements(elementsToDelete);
+    
+    if (parentNode) {
+      ea.selectElementsInView([parentNode]);
+    }
+
     new Notice("Branch cut to clipboard.");
   } else {
     new Notice("Branch copied as bullet list.");
@@ -790,6 +797,16 @@ const pasteListToMap = async () => {
   triggerGlobalLayout(info.rootId);
   await ea.addElementsToView(false, false, true, true);
   ea.clear();
+
+  const allInView = ea.getViewElements();
+  const targetToSelect = sel 
+    ? allInView.find(e => e.id === sel.id) 
+    : allInView.find(e => e.id === pastedRoot?.id);
+
+  if (targetToSelect) {
+    ea.selectElementsInView([targetToSelect]);
+  }
+
   new Notice("Paste complete.");
 };
 
@@ -1012,13 +1029,23 @@ modal.onOpen = () => {
       inputEl.focus();
       updateStatus();
     };
-  copyBtn = btnGrid.createEl("button", { text: "Copy", attr: {style: "padding: 2px;"} });
+copyBtn = btnGrid.createEl("button", { 
+    text: "Copy", 
+    attr: { style: "padding: 2px;", title: `Copy branch as text (${isMac ? "OPT" : "ALT"}+C)` } 
+  });
   copyBtn.onclick = copyMapAsText;
-  cutBtn = btnGrid.createEl("button", { text: "Cut", attr: {style: "padding: 2px;"} });
-  cutBtn.onclick = () => copyMapAsText(true);
-  btnGrid.createEl("button", { text: "Paste", attr: {style: "padding: 2px;"} })
-    .onclick = pasteListToMap;
 
+  cutBtn = btnGrid.createEl("button", { 
+    text: "Cut", 
+    attr: { style: "padding: 2px;", title: `Cut branch as text (${isMac ? "OPT" : "ALT"}+X)` } 
+  });
+  cutBtn.onclick = () => copyMapAsText(true);
+
+  btnGrid.createEl("button", { 
+    text: "Paste", 
+    attr: { style: "padding: 2px;", title: `Paste list from clipboard (${isMac ? "OPT" : "ALT"}+V)` } 
+  })
+    .onclick = pasteListToMap;
   new ea.obsidian.Setting(bodyContainer)
     .setName("Growth Strategy")
     .addDropdown(d => {
@@ -1177,6 +1204,10 @@ modal.onOpen = () => {
     }
 
     if (e.altKey) {
+      if (e.code === "KeyC") { e.preventDefault(); copyMapAsText(false); return; }
+      if (e.code === "KeyX") { e.preventDefault(); copyMapAsText(true); return; }
+      if (e.code === "KeyV") { e.preventDefault(); pasteListToMap(); return; }
+
       if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
         e.preventDefault();
         navigateMap(e.key);
