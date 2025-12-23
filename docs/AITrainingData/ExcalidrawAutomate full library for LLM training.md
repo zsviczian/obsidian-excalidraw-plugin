@@ -10284,7 +10284,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2025-12-23T11:05:04.254Z
+Generated on: 2025-12-23T13:48:34.481Z
 
 ---
 
@@ -18954,6 +18954,7 @@ const INSTRUCTIONS = `
 - **${isMac ? "CMD" : "CTRL"} + ENTER**: Add a child node and "drill down" (follow the new node).
 - **SHIFT + ENTER**: Add the node and close the modeler.
 - **${isMac ? "OPT" : "ALT"} + Arrows**: Navigate through the mindmap nodes on the canvas.
+- **${isMac ? "OPT" : "ALT"} + C / X / V**: Copy, Cut, or Paste branches.
 - **${isMac ? "CMD" : "CTRL"} + SHIFT + ENTER**: Pin/Unpin location of a node. Pinned nodes will not be touched by auto layout.
 - **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
 - **Grouping**: Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
@@ -19475,6 +19476,7 @@ const copyMapAsText = async (cut = false) => {
   const info = getHierarchy(sel, all);
 
   const isRootSelected = info.rootId === sel.id;
+  const parentNode = getParentNode(sel.id, all);
 
   if (isRootSelected) {
     cut = false;
@@ -19531,6 +19533,11 @@ const copyMapAsText = async (cut = false) => {
     if (incomingArrow) elementsToDelete.push(incomingArrow);
 
     ea.deleteViewElements(elementsToDelete);
+    
+    if (parentNode) {
+      ea.selectElementsInView([parentNode]);
+    }
+
     new Notice("Branch cut to clipboard.");
   } else {
     new Notice("Branch copied as bullet list.");
@@ -19604,6 +19611,16 @@ const pasteListToMap = async () => {
   triggerGlobalLayout(info.rootId);
   await ea.addElementsToView(false, false, true, true);
   ea.clear();
+
+  const allInView = ea.getViewElements();
+  const targetToSelect = sel 
+    ? allInView.find(e => e.id === sel.id) 
+    : allInView.find(e => e.id === pastedRoot?.id);
+
+  if (targetToSelect) {
+    ea.selectElementsInView([targetToSelect]);
+  }
+
   new Notice("Paste complete.");
 };
 
@@ -19652,6 +19669,14 @@ const navigateMap = (key) => {
   }
 };
 
+const setButtonDisabled = (btn, disabled) => {
+  if(!btn) return;
+  btn.disabled = disabled;
+  if(!btn.extraSettingsEl) return;
+  btn.extraSettingsEl.style.opacity = disabled ? "0.5" : "";
+  btn.extraSettingsEl.style.pointerEvents = disabled ? "none" : "";
+}
+
 const modal = new ea.FloatingModal(app);
 modal.onOpen = () => {
   const { contentEl, titleEl, modalEl, headerEl } = modal;
@@ -19669,7 +19694,7 @@ modal.onOpen = () => {
   const bodyContainer = contentEl.createDiv();
   bodyContainer.style.width = "100%"
   
-  let strategyDropdown, autoLayoutToggle, pinBtn, cutBtn;
+  let strategyDropdown, autoLayoutToggle, pinBtn, refreshBtn, cutBtn, copyBtn;
 
   const updateStatus = () => {
     const all = ea.getViewElements();
@@ -19678,13 +19703,18 @@ modal.onOpen = () => {
     
     if (sel) {
       const isPinned = sel.customData?.isPinned === true;
-      pinBtn?.setIcon(isPinned ? "pin" : "pin-off");
-      pinBtn?.setTooltip(`${isPinned ? "This element is pinned. Click to unpin" : "This element is not pinned. Click to pin"} the location of the selected element (${isMac ? "CMD" : "CTRL"}+SHIFT+Enter)`);
+      if(pinBtn) {
+        pinBtn.setIcon(isPinned ? "pin" : "pin-off");
+        pinBtn.setTooltip(`${isPinned ? "This element is pinned. Click to unpin" : "This element is not pinned. Click to pin"} the location of the selected element (${isMac ? "CMD" : "CTRL"}+SHIFT+Enter)`);
+        setButtonDisabled(pinBtn, false);
+      }
+
+      setButtonDisabled(refreshBtn, false);
 
       const info = getHierarchy(sel, all);
-      if (cutBtn) {
-        cutBtn.disabled = (info.rootId === sel.id);
-      }
+      setButtonDisabled(cutBtn,info.rootId === sel.id);
+      setButtonDisabled(copyBtn, false);
+
       const root = all.find(e => e.id === info.rootId);
       const mapStrategy = root.customData?.growthMode;
       if (mapStrategy && mapStrategy !== currentModalGrowthMode) {
@@ -19697,8 +19727,11 @@ modal.onOpen = () => {
         autoLayoutToggle.setValue(mapLayoutPref);
       }
     } else {
-      pinBtn?.setIcon("pin-off");
-      if (cutBtn) cutBtn.disabled = true;
+      if (pinBtn) pinBtn.setIcon("pin-off");
+      setButtonDisabled(pinBtn, true);
+      setButtonDisabled(refreshBtn, true);
+      setButtonDisabled(copyBtn, true);
+      setButtonDisabled(cutBtn, true);
     }
   };
 
@@ -19724,10 +19757,11 @@ modal.onOpen = () => {
     });
   });
 
-  inputRow.addExtraButton(btn => btn
-    .setIcon("refresh-ccw")
-    .setTooltip("Force auto rearrange map. Will move all elements except for those that are pinned.")
-    .onClick(async () => {
+  inputRow.addExtraButton(btn => {
+    refreshBtn = btn;
+    btn.setIcon("refresh-ccw");
+    btn.setTooltip("Force auto rearrange map. Will move all elements except for those that are pinned.");
+    btn.onClick(async () => {
       const sel = ea.getViewSelectedElement();
       if (sel) {
         const info = getHierarchy(sel, ea.getViewElements());
@@ -19736,7 +19770,7 @@ modal.onOpen = () => {
         ea.clear();
       }
     })
-  );
+  });
   
   inputRow.addExtraButton(btn => {
     const updateIcon = () => {
@@ -19809,13 +19843,23 @@ modal.onOpen = () => {
       inputEl.focus();
       updateStatus();
     };
-  btnGrid.createEl("button", { text: "Copy", attr: {style: "padding: 2px;"} })
-    .onclick = copyMapAsText;
-  cutBtn = btnGrid.createEl("button", { text: "Cut", attr: {style: "padding: 2px;"} });
-  cutBtn.onclick = () => copyMapAsText(true);
-  btnGrid.createEl("button", { text: "Paste", attr: {style: "padding: 2px;"} })
-    .onclick = pasteListToMap;
+copyBtn = btnGrid.createEl("button", { 
+    text: "Copy", 
+    attr: { style: "padding: 2px;", title: `Copy branch as text (${isMac ? "OPT" : "ALT"}+C)` } 
+  });
+  copyBtn.onclick = copyMapAsText;
 
+  cutBtn = btnGrid.createEl("button", { 
+    text: "Cut", 
+    attr: { style: "padding: 2px;", title: `Cut branch as text (${isMac ? "OPT" : "ALT"}+X)` } 
+  });
+  cutBtn.onclick = () => copyMapAsText(true);
+
+  btnGrid.createEl("button", { 
+    text: "Paste", 
+    attr: { style: "padding: 2px;", title: `Paste list from clipboard (${isMac ? "OPT" : "ALT"}+V)` } 
+  })
+    .onclick = pasteListToMap;
   new ea.obsidian.Setting(bodyContainer)
     .setName("Growth Strategy")
     .addDropdown(d => {
@@ -19974,6 +20018,10 @@ modal.onOpen = () => {
     }
 
     if (e.altKey) {
+      if (e.code === "KeyC") { e.preventDefault(); copyMapAsText(false); return; }
+      if (e.code === "KeyX") { e.preventDefault(); copyMapAsText(true); return; }
+      if (e.code === "KeyV") { e.preventDefault(); pasteListToMap(); return; }
+
       if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
         e.preventDefault();
         navigateMap(e.key);
