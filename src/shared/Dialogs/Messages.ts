@@ -18,6 +18,10 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.18.3":`
+<div class="excalidraw-videoWrapper">
+<a href="https://www.youtube.com/watch?v=dZguonMP2KU" target="_blank"><img src ="https://i.ytimg.com/vi/dZguonMP2KU/maxresdefault.jpg" style="width:100%;"></a>
+</div>
+
 ## New
 - Added Mindmap Builder script to the store.
 - LaTeX Suit Integration by [@TravisLEBLANC1](https://github.com/TravisLEBLANC1)
@@ -25,7 +29,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 ## Fixed
 - YouTube video embeds working on iOS  [#2569](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2569)
-- Stroke color settings for Embeddedables (markdown notes, websites) notes is missing after 2.17 update [#2580](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2580)
+- Stroke color setting for Embeddedables (markdown notes, websites) is missing after 2.17.0 update [#2580](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2580)
 - Context menu paste pastes in image twice [#10542](https://github.com/excalidraw/excalidraw/issues/10542)
 
 ## New in ExcalidrawAutomate
@@ -267,55 +271,5 @@ public getViewCenterPosition(): {x:number, y:number};
     }
   ):ExcalidrawElement[] 
 \`\`\`
-`,
-"2.14.3":`
-<div class="excalidraw-videoWrapper">
-<a href="https://www.youtube.com/watch?v=29EWeglRm7s" target="_blank"><img src ="https://i.ytimg.com/vi/29EWeglRm7s/maxresdefault.jpg" style="width:100%;"></a>
-</div>
-
-Updated the Printable Layout Wizard script with the option to exclude empty pages.
-
-## Fixed
-- If a frame is locked, elements created over the frame or dragged over the frame should not be auto-added to the frame. [#9850](https://github.com/excalidraw/excalidraw/issues/9850)
-
-## Fixed in ExcalidrawAutomate
-- Not all AppState properties were being correctly copied to the template when creating a new drawing with ea.create() [#2440](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2440)
-`,
-"2.14.2":`
-## Fixed
-- Converting Markdown to Excalidraw ("Back of note"/"Convert markdown to ExcaliDrawing") no longer appends T00:00:00.000Z to an existing date frontmatter field and handles merging of lists such as tags intelligently [#2414](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2414)
-- Multi‑point line creation on touchscreens (tap–tap–tap) produced a horizontal line after using a pen. Fixed. [#9840](https://github.com/excalidraw/excalidraw/pull/9840#issuecomment-3165319266)
-
-## New
-- Zoom settings (Settings → Excalidraw → Appearance and Behavior → Zoom) [#2434](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2434):
-  - Zoom increment (default 5%) to fine‑tune mouse wheel / gesture precision.
-  - Minimum zoom (default 10%) controls how far you can zoom out (below 10% may be unstable—use with caution).
-  - Maximum zoom (default 3000%) defines the upper zoom limit.
-- Palm Guard script (in script store): Mobile-friendly drawing mode for stylus users. Enters fullscreen, hides UI, shows a draggable minimal toolbar (toggle + exit) to prevent accidental palm taps; single tap to exit. Inspired by [#2409](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2409)
-
-<div class="excalidraw-videoWrapper">
-<a href="https://www.youtube.com/watch?v=A_udjVjgWN0" target="_blank"><img src ="https://i.ytimg.com/vi/A_udjVjgWN0/maxresdefault.jpg" style="width:100%;"></a>
-</div>
-
-## ExcalidrawAutomate
-- Improved \`FloatingModal\` behavior. Floating Modal now does not trap keyboard events, the header element does not block "X" button in the top right corner, all four corners are rounded on Mobile Devices.
-
-`,
-"2.14.1":`
-## Fixed
-- Excalidraw broke Obsidian's UI in Arabic, Persian, and Hebrew due to LTR, RTL conflict. [#2423](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2423) 
-- Styling issues impacting native Obsidian search/replace dialogs. [#2420](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2420)
-- Now using native Obsidian attachment location function. 🙏 [mnaoumov](https://github.com/mnaoumov) [#2421](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2421), potentially fixes [#179](https://github.com/RainCat1998/obsidian-custom-attachment-location/issues/179) of the Obsidian Custom Attachment Location plugin issue.
-
-## New
-- New frontmatter option \`excalidraw-embed-md\`. When set to \`true\`, embedding the drawing into a markdown note will render the "back of the note" (its markdown content) instead of rendering it as an image.
-  - If you want to always display the drawing as an image, even when \`excalidraw-embed-md\` is enabled, use the special embed syntax: \`![[drawing#^as-image]]\`. Here, \`as-image\` is a phantom block reference that forces image rendering.
-- Added Spanish translation by [@Joakim31](https://github.com/Joakim31) [#2425](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2425)
-- Incremental minor updates from the main [Excalidraw project](https://github.com/excalidraw/excalidraw).
-`,
-"2.14.0":`
-## A Big "Small" Update
-- Added search to Excalidraw Settings, plus added a link to access the public NotebookLM workbook pre-loaded with everything about the plugin
-- New Taiwan-idiomatic Traditional Chinese translation by [@rlan](https://github.com/rlan) [#2413](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2413)
 `,
 };

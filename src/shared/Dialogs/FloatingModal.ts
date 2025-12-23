@@ -1,5 +1,68 @@
 import { App, Modal } from "obsidian";
 
+function getClientPoint(e: PointerEvent | TouchEvent) {
+  if (e.type.startsWith("touch")) {
+    const t = (e as TouchEvent).touches[0] ?? (e as TouchEvent).changedTouches[0];
+    return t ? { x: t.clientX, y: t.clientY } : null;
+  }
+  const p = e as PointerEvent;
+  return { x: p.clientX, y: p.clientY };
+}
+
+function pointInRect(pt: { x: number; y: number }, r: DOMRect, padding = 1): boolean {
+  return (
+    pt.x >= r.left - padding &&
+    pt.x <= r.right + padding &&
+    pt.y >= r.top - padding &&
+    pt.y <= r.bottom + padding
+  );
+}
+
+function isPointOnText(e: PointerEvent | TouchEvent): boolean {
+  const pt = getClientPoint(e);
+  if (!pt) return false;
+
+  let offsetNode: Node | null = null;
+  let offset: number | null = null;
+
+  // Chromium/Firefox-ish
+  const caretPos = (document as any).caretPositionFromPoint?.(pt.x, pt.y);
+  if (caretPos?.offsetNode) {
+    offsetNode = caretPos.offsetNode;
+    offset = typeof caretPos.offset === "number" ? caretPos.offset : null;
+  } else {
+    // Safari/WebKit
+    const caretRange = (document as any).caretRangeFromPoint?.(pt.x, pt.y);
+    if (caretRange?.startContainer) {
+      offsetNode = caretRange.startContainer;
+      offset = typeof caretRange.startOffset === "number" ? caretRange.startOffset : null;
+    }
+  }
+
+  if (!offsetNode || offsetNode.nodeType !== Node.TEXT_NODE || offset == null) return false;
+  if (!offsetNode.textContent?.trim()) return false;
+
+  const textNode = offsetNode as Text;
+  const len = textNode.data.length;
+  const at = Math.max(0, Math.min(offset, len));
+
+  const range = document.createRange();
+  if (at < len) {
+    range.setStart(textNode, at);
+    range.setEnd(textNode, at + 1);
+  } else if (at > 0) {
+    range.setStart(textNode, at - 1);
+    range.setEnd(textNode, at);
+  } else {
+    return false;
+  }
+
+  const rects = Array.from(range.getClientRects());
+  if (rects.length === 0) return false;
+
+  return rects.some((r) => pointInRect(pt, r, 1));
+}
+
 export class FloatingModal extends Modal {
   private dragging = false;
   private offsetX = 0;
@@ -34,6 +97,7 @@ export class FloatingModal extends Modal {
       target instanceof HTMLTextAreaElement ||
       target instanceof HTMLSelectElement ||
       target instanceof HTMLButtonElement ||
+      isPointOnText(e) ||
       target.closest(".clickable-icon") ||
       target.closest(".modal-close-button") // ensure close button never starts drag
     ) {

@@ -2,6 +2,8 @@
 
 # Mind Map Builder: Technical Specification & User Guide
 
+![](https://youtu.be/dZguonMP2KU)
+
 ## 1. Overview
 **Mind Map Builder** transforms the Obsidian-Excalidraw canvas into a rapid brainstorming environment, allowing users to build complex, structured, and visually organized mind maps using primarily keyboard shortcuts. 
 
@@ -144,6 +146,8 @@ const INSTRUCTIONS = `
 - **Copy/Paste**: Export/Import indented Markdown lists.
 
 😍 If you find this script helpful, please [buy me a coffee ☕](https://ko-fi.com/zsolt).
+
+<a href="https://www.youtube.com/watch?v=dZguonMP2KU" target="_blank"><img src ="https://i.ytimg.com/vi/dZguonMP2KU/maxresdefault.jpg" style="max-width:560px; width:100%"></a>
 `;
 
 // ---------------------------------------------------------------------------
@@ -647,34 +651,76 @@ const getTextFromNode = (all, node) => {
   return textEl ? textEl.originalText : "";
 };
 
-const copyMapAsText = async () => {
+const copyMapAsText = async (cut = false) => {
   const sel = ea.getViewSelectedElement();
-  if (!sel) return;
+  if (!sel) {
+    new Notice("Select a node to copy.");
+    return;
+  }
   const all = ea.getViewElements();
   const info = getHierarchy(sel, all);
-  const rootNode = all.find(e => e.id === info.rootId);
-  
+
+  const isRootSelected = info.rootId === sel.id;
+
+  if (isRootSelected) {
+    cut = false;
+  }
+
+  const elementsToDelete = [];
+
   const buildList = (nodeId, depth = 0) => {
     const node = all.find(e => e.id === nodeId);
+    if (!node) return "";
+
+    if (cut) {
+      elementsToDelete.push(node);
+      node.boundElements?.forEach(be => {
+        const boundEl = all.find(e => e.id === be.id);
+        if (boundEl) elementsToDelete.push(boundEl);
+      });
+    }
+
     const children = getChildrenNodes(nodeId, all);
     sortChildrenStable(children);
     let str = "";
     const text = getTextFromNode(all, node);
-    if (depth === 0) {
+    if (depth === 0 && isRootSelected) {
       str += `# ${text}\n\n`;
+    } else {
+      str += `${"  ".repeat(depth - (isRootSelected ? 1 : 0))}- ${text}\n`;
     }
-    else {
-      str += `${"  ".repeat(depth - 1)}- ${text}\n`;
-    }
+    
     children.forEach(c => {
+      if (cut) {
+        const arrow = all.find(a => 
+          a.type === "arrow" && 
+          a.customData?.isBranch && 
+          a.startBinding?.elementId === nodeId && 
+          a.endBinding?.elementId === c.id
+        );
+        if (arrow) elementsToDelete.push(arrow);
+      }
       str += buildList(c.id, depth + 1);
     });
     return str;
   };
 
-  const md = buildList(rootNode.id);
+  const md = buildList(sel.id);
   await navigator.clipboard.writeText(md);
-  new Notice("Mindmap copied to clipboard.");
+
+  if (cut) {
+    const incomingArrow = all.find(a => 
+      a.type === "arrow" && 
+      a.customData?.isBranch && 
+      a.endBinding?.elementId === sel.id
+    );
+    if (incomingArrow) elementsToDelete.push(incomingArrow);
+
+    ea.deleteViewElements(elementsToDelete);
+    new Notice("Branch cut to clipboard.");
+  } else {
+    new Notice("Branch copied as bullet list.");
+  }
 };
 
 const pasteListToMap = async () => {
@@ -685,13 +731,23 @@ const pasteListToMap = async () => {
   let parsed = [];
   let rootTextFromHeader = null;
 
+  if (lines.length === 0 ||
+    !lines[0].match(/^(#+\s|\s*(?:-|\*|\d+)\s)/) ||
+    !lines.every((line,idx) => (idx === 0) || line.match(/^\s*(?:-|\*|\d+)\s/))
+  ) {
+    new Notice("Paste aborted. Cliboard is not a bulleted list");
+    return;
+  }
+
+  const delta = lines[0].match(/^#+\s/) ? 1 : 0;
+
   lines.forEach(line => {
-    if (line.startsWith("# ")) {
-      rootTextFromHeader = line.substring(2).trim();
+    if (line.match(/^#+\s/)) {
+      parsed.push({indent: 0, text: line.substring(2).trim()});
     } else {
       const match = line.match(/^(\s*)(?:-|\*|\d+\.)\s+(.*)$/);
       if (match) {
-        parsed.push({ indent: match[1].length, text: match[2].trim() });
+        parsed.push({ indent: delta + match[1].length, text: match[2].trim() });
       }
     }
   });
@@ -705,17 +761,13 @@ const pasteListToMap = async () => {
   let currentParent;
 
   if (!sel) {
-    if (rootTextFromHeader) {
-      currentParent = await addNode(rootTextFromHeader, true, true);
+    const minIndent = Math.min(...parsed.map(p => p.indent));
+    const topLevelItems = parsed.filter(p => p.indent === minIndent);
+    if (topLevelItems.length === 1) {
+      currentParent = await addNode(topLevelItems[0].text, true, true);
+      parsed.shift();
     } else {
-      const minIndent = Math.min(...parsed.map(p => p.indent));
-      const topLevelItems = parsed.filter(p => p.indent === minIndent);
-      if (topLevelItems.length === 1) {
-        currentParent = await addNode(topLevelItems[0].text, true, true);
-        parsed.shift();
-      } else {
-        currentParent = await addNode("Mindmap Builder Paste", true, true);
-      }
+      currentParent = await addNode("Mindmap Builder Paste", true, true);
     }
   } else {
     currentParent = sel;
@@ -786,9 +838,18 @@ const navigateMap = (key) => {
   }
 };
 
+const setButtonDisabled = (btn, disabled) => {
+  if(!btn) return;
+  btn.disabled = disabled;
+  if(!btn.extraSettingsEl) return;
+  btn.extraSettingsEl.style.opacity = disabled ? "0.5" : "";
+  btn.extraSettingsEl.style.pointerEvents = disabled ? "none" : "";
+}
+
 const modal = new ea.FloatingModal(app);
 modal.onOpen = () => {
   const { contentEl, titleEl, modalEl, headerEl } = modal;
+  modalEl.style.maxHeight = "70vh";
   ensureNodeSelected();
   contentEl.empty();
   titleEl.setText("Mind Map Builder");
@@ -800,8 +861,9 @@ modal.onOpen = () => {
   const inputRow = new ea.obsidian.Setting(contentEl).setName("Node Text");
 
   const bodyContainer = contentEl.createDiv();
+  bodyContainer.style.width = "100%"
   
-  let strategyDropdown, autoLayoutToggle, pinBtn;
+  let strategyDropdown, autoLayoutToggle, pinBtn, refreshBtn, cutBtn, copyBtn;
 
   const updateStatus = () => {
     const all = ea.getViewElements();
@@ -810,10 +872,18 @@ modal.onOpen = () => {
     
     if (sel) {
       const isPinned = sel.customData?.isPinned === true;
-      pinBtn?.setIcon(isPinned ? "pin" : "pin-off");
-      pinBtn?.setTooltip(`${isPinned ? "This element is pinned. Click to unpin" : "This element is not pinned. Click to pin"} the location of the selected element (${isMac ? "CMD" : "CTRL"}+SHIFT+Enter)`);
+      if(pinBtn) {
+        pinBtn.setIcon(isPinned ? "pin" : "pin-off");
+        pinBtn.setTooltip(`${isPinned ? "This element is pinned. Click to unpin" : "This element is not pinned. Click to pin"} the location of the selected element (${isMac ? "CMD" : "CTRL"}+SHIFT+Enter)`);
+        setButtonDisabled(pinBtn, false);
+      }
+
+      setButtonDisabled(refreshBtn, false);
 
       const info = getHierarchy(sel, all);
+      setButtonDisabled(cutBtn,info.rootId === sel.id);
+      setButtonDisabled(copyBtn, false);
+
       const root = all.find(e => e.id === info.rootId);
       const mapStrategy = root.customData?.growthMode;
       if (mapStrategy && mapStrategy !== currentModalGrowthMode) {
@@ -826,7 +896,11 @@ modal.onOpen = () => {
         autoLayoutToggle.setValue(mapLayoutPref);
       }
     } else {
-      pinBtn?.setIcon("pin-off");
+      if (pinBtn) pinBtn.setIcon("pin-off");
+      setButtonDisabled(pinBtn, true);
+      setButtonDisabled(refreshBtn, true);
+      setButtonDisabled(copyBtn, true);
+      setButtonDisabled(cutBtn, true);
     }
   };
 
@@ -852,10 +926,11 @@ modal.onOpen = () => {
     });
   });
 
-  inputRow.addExtraButton(btn => btn
-    .setIcon("refresh-ccw")
-    .setTooltip("Force auto rearrange map. Will move all elements except for those that are pinned.")
-    .onClick(async () => {
+  inputRow.addExtraButton(btn => {
+    refreshBtn = btn;
+    btn.setIcon("refresh-ccw");
+    btn.setTooltip("Force auto rearrange map. Will move all elements except for those that are pinned.");
+    btn.onClick(async () => {
       const sel = ea.getViewSelectedElement();
       if (sel) {
         const info = getHierarchy(sel, ea.getViewElements());
@@ -864,7 +939,7 @@ modal.onOpen = () => {
         ea.clear();
       }
     })
-  );
+  });
   
   inputRow.addExtraButton(btn => {
     const updateIcon = () => {
@@ -918,6 +993,31 @@ modal.onOpen = () => {
   inputRow.settingEl.style.display = "block";
   inputRow.controlEl.style.width = "100%";
   inputRow.controlEl.style.marginTop = "8px";
+
+  const btnGrid = bodyContainer.createDiv({ attr: {
+    style: "display: grid; grid-template-columns: repeat(5, 1fr); gap:6px;"
+  }});
+
+  btnGrid.createEl("button", { text: "Add Sibling", cls: "mod-cta", attr: {style: "padding: 2px;"}})
+    .onclick = async () => {
+      await addNode(inputEl.value, false);
+      inputEl.value = "";
+      inputEl.focus();
+      updateStatus();
+    };
+  btnGrid.createEl("button", { text: "Add+Follow", attr: {style: "padding: 2px;"} })
+    .onclick = async () => {
+      await addNode(inputEl.value, true);
+      inputEl.value = "";
+      inputEl.focus();
+      updateStatus();
+    };
+  copyBtn = btnGrid.createEl("button", { text: "Copy", attr: {style: "padding: 2px;"} });
+  copyBtn.onclick = copyMapAsText;
+  cutBtn = btnGrid.createEl("button", { text: "Cut", attr: {style: "padding: 2px;"} });
+  cutBtn.onclick = () => copyMapAsText(true);
+  btnGrid.createEl("button", { text: "Paste", attr: {style: "padding: 2px;"} })
+    .onclick = pasteListToMap;
 
   new ea.obsidian.Setting(bodyContainer)
     .setName("Growth Strategy")
@@ -1057,34 +1157,6 @@ modal.onOpen = () => {
         dirty = true;
       })
     );
-
-  const btnGrid = bodyContainer.createDiv({ attr: {
-    style: "display: grid; grid-template-columns: repeat(5, 1fr); gap:6px; margin-top:20px;"
-  }});
-
-  btnGrid.createEl("button", { text: "Sibling", cls: "mod-cta" })
-    .onclick = async () => {
-      await addNode(inputEl.value, false);
-      inputEl.value = "";
-      inputEl.focus();
-      updateStatus();
-    };
-  btnGrid.createEl("button", { text: "Follow" })
-    .onclick = async () => {
-      await addNode(inputEl.value, true);
-      inputEl.value = "";
-      inputEl.focus();
-      updateStatus();
-    };
-  btnGrid.createEl("button", { text: "Close" })
-    .onclick = async () => {
-      await addNode(inputEl.value, false);
-      modal.close();
-    };
-  btnGrid.createEl("button", { text: "Copy" })
-    .onclick = copyMapAsText;
-  btnGrid.createEl("button", { text: "Paste" })
-    .onclick = pasteListToMap;
 
   const keyHandler = async (e) => {
     if (ownerWindow.document.activeElement !== inputEl) return;

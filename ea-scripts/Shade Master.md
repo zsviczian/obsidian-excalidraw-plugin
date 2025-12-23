@@ -326,7 +326,7 @@ function slider(contentEl, action, min, max, step, invert) {
 
 function showModal() {
   let debounceColorPicker = true;
-  const modal = new ea.obsidian.Modal(app);
+  const modal = new ea.FloatingModal(app);
   let dirty = false;
 
   modal.onOpen = async () => {
@@ -564,8 +564,6 @@ function showModal() {
         .setButtonText("Close")
         .setCta(true)
         .onClick(() => modal.close()));
-
-    makeModalDraggable(modalEl);
     
     const maxHeight = Math.round(height * 0.6);
     const maxWidth = Math.round(width * 0.9);
@@ -584,60 +582,6 @@ function showModal() {
   };
 
   modal.open();
-}
-
-/**
- * Add draggable functionality to the modal element.
- * @param {HTMLElement} modalEl - The modal element to make draggable.
- */
-function makeModalDraggable(modalEl) {
-  let isDragging = false;
-  let startX, startY, initialX, initialY;
-
-  const header = modalEl.querySelector('.modal-titlebar') || modalEl; // Default to modalEl if no titlebar
-  header.style.cursor = 'move';
-
-  const onPointerDown = (e) => {
-    // Ensure the event target isn't an interactive element like slider, button, or input
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
-
-    isDragging = true;
-    startX = e.clientX;
-    startY = e.clientY;
-    const rect = modalEl.getBoundingClientRect();
-    initialX = rect.left;
-    initialY = rect.top;
-
-    modalEl.style.position = 'absolute';
-    modalEl.style.margin = '0';
-    modalEl.style.left = `${initialX}px`;
-    modalEl.style.top = `${initialY}px`;
-  };
-
-  const onPointerMove = (e) => {
-    if (!isDragging) return;
-
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-
-    modalEl.style.left = `${initialX + dx}px`;
-    modalEl.style.top = `${initialY + dy}px`;
-  };
-
-  const onPointerUp = () => {
-    isDragging = false;
-  };
-
-  header.addEventListener('pointerdown', onPointerDown);
-  document.addEventListener('pointermove', onPointerMove);
-  document.addEventListener('pointerup', onPointerUp);
-
-  // Clean up event listeners on modal close
-  modalEl.addEventListener('remove', () => {
-    header.removeEventListener('pointerdown', onPointerDown);
-    document.removeEventListener('pointermove', onPointerMove);
-    document.removeEventListener('pointerup', onPointerUp);
-  });
 }
 
 function executeChange(isDecrease, step, action) {

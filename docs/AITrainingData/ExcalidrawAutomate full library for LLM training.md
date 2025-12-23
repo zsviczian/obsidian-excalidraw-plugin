@@ -509,6 +509,24 @@ export declare class ExcalidrawAutomate {
      */
     getElement(id: string): Mutable<ExcalidrawElement>;
     /**
+     * Returns an object describing the bound text element.
+     * If a text element is provided:
+     *  - returns { eaElement } if the element is in ea.elementsDict
+     *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
+     * If a container element is provided, searches for the bound text element:
+     *  - returns { eaElement } if found in ea.elementsDict
+     *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
+     * If not found, returns {}.
+     * Does not add the text element to elementsDict.
+     * @param element
+     * @param searchInView - If true, searches in the targetView elements if not found in elementsDict.
+     * @returns Object containing either eaElement or sceneElement or empty if not found.
+     */
+    getBoundTextElement(element: ExcalidrawElement, searchInView?: boolean): {
+        eaElement?: Mutable<ExcalidrawTextElement>;
+        sceneElement?: ExcalidrawTextElement;
+    };
+    /**
      * Creates a drawing and saves it to the specified filename.
      * @param {Object} [params] - Parameters for creating the drawing.
      * @param {string} [params.filename] - The filename for the drawing. If null, default filename as defined in Excalidraw settings.
@@ -10266,7 +10284,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2025-12-22T06:07:45.536Z
+Generated on: 2025-12-23T11:05:04.254Z
 
 ---
 
@@ -10328,7 +10346,7 @@ These are the scripts I use most often. I tried to order them by importance, but
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Excalidraw%20Writing%20Machine.svg"/></div>|[[#Excalidraw Writing Machine]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Convert%20freedraw%20to%20line.svg"/></div>|[[#Convert freedraw to line]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Crop%20Vintage%20Mask.svg"/></div>|[[#Crop Vintage Mask]]|
-|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-mindmap-builder.png"/></div>|[[#Mindmap Builder]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Mindmap%20Builder.svg"/></div>|[[#Mindmap Builder]]|
 
 ## Layout and Organization
 **Keywords**: Design, Placement, Arrangement, Structure, Formatting, Alignment
@@ -10456,6 +10474,7 @@ These are the scripts I use most often. I tried to order them by importance, but
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Convert%20freedraw%20to%20line.svg"/></div>|[[#Convert freedraw to line]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Deconstruct%20selected%20elements%20into%20new%20drawing.svg"/></div>|[[#Deconstruct selected elements into new drawing]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Full-Year%20Calendar%20Generator.svg"/></div>|[[#Full-Year Calendar Generator]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Linear%20Calendar%20Generator.svg"/></div>|[[#Linear Calendar Generator]]|
 
 ## Masking and cropping
 **Keywords**: Crop, Mask, Transform images
@@ -10732,11 +10751,17 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Lighten%20background%20color.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script lightens the background color of the selected element by 2% at a time. You can use this script several times until you are satisfied. It is recommended to set a shortcut key for this script so that you can quickly try to DARKEN and LIGHTEN the color effect.In contrast to the `Modify background color opacity` script, the advantage is that the background color of the element is not affected by the canvas color, and the color value does not appear in a strange rgba() form.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/darken-lighten-background-color.png'></td></tr></table>
 
+## Linear Calendar Generator
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Linear%20Calendar%20Generator.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/iwanhoogendoorn'>@iwanhoogendoorn</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Linear%20Calendar%20Generator.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Generates a complete calendar for a specified year.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-Linear-Calendar-Generator.jpg'></td></tr></table>
+
 ## Mindmap Builder
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Mindmap%20Builder.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Mindmap%20Builder.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Rapid mind mapping workflow driven by keyboard shortcuts: add sibling/child nodes, auto-layout and branch styling, quick navigation, optional recursive grouping, and Markdown copy/paste import/export for bullet-list sync.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-mindmap-builder.png'></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Mindmap%20Builder.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Rapid mind mapping workflow driven by keyboard shortcuts: add sibling/child nodes, auto-layout and branch styling, quick navigation, optional recursive grouping, and Markdown copy/paste import/export for bullet-list sync.<br><a href="YouTube: dZguonMP2KU" target="_blank"><img src ="https://i.ytimg.com/vi/dZguonMP2KU/maxresdefault.jpg" style="width:400px;"></a><br><a href='YouTube: dZguonMP2KU' target='_blank'>Link to video on YouTube</a><br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-mindmap-builder.png'></td></tr></table>
 
 ## Mindmap connector
 ```excalidraw-script-install
@@ -18568,6 +18593,222 @@ await ea.addElementsToView(false, false);
 
 ---
 
+## Linear Calendar Generator.md
+<!-- Source: ea-scripts/Linear Calendar Generator.md -->
+
+/*
+
+This script generates a linear (horizontal) calendar for a specified year, with days flowing left to right and months as rows.
+
+![300](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-Linear-Calendar-Generator.jpg)
+
+## Features
+- Horizontal timeline layout with days of the week as columns
+- Month names displayed on both left and right sides
+- Weekend days (Saturday & Sunday) highlighted
+- Day-of-week headers at top and bottom
+
+## Customizable Colors
+
+You can personalize the calendar's appearance by defining your own colors:
+
+1. Create two rectangles in your design.
+2. Select both rectangles before running the script:
+	• The **fill and stroke colors of the first rectangle** will be applied to weekdays.
+	• The **fill and stroke colors of the second rectangle** will be used for weekends.
+
+If no rectangles are selected, the default color schema will be used (white and light blue-gray for weekends).
+
+```javascript
+*/
+
+// -------------------------------------
+// Constants initiation
+// -------------------------------------
+
+const CELL_WIDTH = 176;       // Width of each day cell
+const CELL_HEIGHT = 288;      // Height of each day cell
+const START_X = 0;            // X start position
+const START_Y = 0;            // Y start position
+const ROW_SPACING = 32;       // Space between month rows
+const MONTH_LABEL_WIDTH = 240; // Space for month labels on sides
+
+// Colors
+let COLOR_WEEKEND = "#e8eaed";
+let COLOR_WEEKDAY = "#ffffff";
+let COLOR_TEXT = "#000000";
+let COLOR_WEEKEND_TEXT = "#000000";
+let COLOR_HEADER_TEXT = "#000000";
+const COLOR_STROKE = "#d0d4db";
+let STROKE_WIDTH = 1;
+let FILLSTYLE = "solid";
+const ROUGHNESS = 0;          // 0 = Architect, 1 = Artist, 2 = Cartoonist
+const FONT_FAMILY = 3;        // 1 = Virgil, 2 = Helvetica, 3 = Cascadia (code), 4 = Little One
+
+// Font sizes
+const FONT_SIZE_DAY = 56;
+const FONT_SIZE_HEADER = 48;
+const FONT_SIZE_MONTH = 64;
+const FONT_SIZE_YEAR = 112;
+
+// Day constants
+const SATURDAY = 6;
+const SUNDAY = 0;
+const JANUARY = 0;
+const FIRST_DAY_OF_THE_MONTH = 1;
+
+// Day names (short)
+const DAY_NAMES = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+
+// Month names (short)
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// Number of day columns needed (max 37 to cover all possible month alignments: 6 days offset + 31 days)
+const NUM_COLUMNS = 37;
+
+// -------------------------------------
+
+// Ask for requested Year
+let requestedYear = parseFloat(new Date().getFullYear());
+requestedYear = parseFloat(await utils.inputPrompt("Year?", requestedYear, requestedYear));
+if (isNaN(requestedYear)) {
+    new Notice("Invalid number");
+    return;
+}
+
+// -------------------------------------
+// Use selected elements for calendar style
+// -------------------------------------
+
+let elements = ea.getViewSelectedElements();
+if (elements.length >= 1) {
+    COLOR_WEEKDAY = elements[0].backgroundColor;
+    FILLSTYLE = elements[0].fillStyle;
+    STROKE_WIDTH = elements[0].strokeWidth;
+}
+if (elements.length >= 2) {
+    COLOR_WEEKEND = elements[1].backgroundColor;
+}
+
+// -------------------------------------
+// Helper function to get days in a month
+// -------------------------------------
+
+function getDaysInMonth(year, month) {
+    return new Date(year, month + 1, 0).getDate();
+}
+
+// -------------------------------------
+// Helper function to get the day of week for first day of month
+// -------------------------------------
+
+function getFirstDayOfMonth(year, month) {
+    return new Date(year, month, 1).getDay();
+}
+
+// -------------------------------------
+// Draw day-of-week headers
+// -------------------------------------
+
+function drawDayHeaders(yPosition) {
+    ea.style.fontSize = FONT_SIZE_HEADER;
+    ea.style.strokeColor = COLOR_TEXT;
+    ea.style.fontFamily = FONT_FAMILY;
+    
+    for (let col = 0; col < NUM_COLUMNS; col++) {
+        const dayIndex = col % 7;
+        const x = START_X + MONTH_LABEL_WIDTH + (col * CELL_WIDTH);
+        
+        // Center the text in the cell (approximate width of 2 chars)
+        const textX = x + (CELL_WIDTH / 2) - (FONT_SIZE_HEADER * 0.6);
+        ea.addText(textX, yPosition, DAY_NAMES[dayIndex]);
+    }
+}
+
+// -------------------------------------
+// Draw month row
+// -------------------------------------
+
+function drawMonthRow(year, month, rowIndex) {
+    const daysInMonth = getDaysInMonth(year, month);
+    const firstDayOfWeek = getFirstDayOfMonth(year, month);
+    const y = START_Y + 160 + (rowIndex * (CELL_HEIGHT + ROW_SPACING));
+    
+    // Draw month label on the left
+    ea.style.fontSize = FONT_SIZE_MONTH;
+    ea.style.strokeColor = COLOR_TEXT;
+    ea.style.fontFamily = FONT_FAMILY;
+    const monthLabelY = y + (CELL_HEIGHT / 2) - (FONT_SIZE_MONTH / 2);
+    ea.addText(START_X, monthLabelY, MONTH_NAMES[month]);
+    
+    // Draw day cells
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dayOfWeek = date.getDay();
+        const col = firstDayOfWeek + day - 1; // Column position based on day of week alignment
+        
+        const x = START_X + MONTH_LABEL_WIDTH + (col * CELL_WIDTH);
+        const isWeekend = dayOfWeek === SATURDAY || dayOfWeek === SUNDAY;
+        
+        // Set cell style
+        ea.style.backgroundColor = isWeekend ? COLOR_WEEKEND : COLOR_WEEKDAY;
+        ea.style.strokeColor = COLOR_STROKE;
+        ea.style.strokeWidth = STROKE_WIDTH;
+        ea.style.fillStyle = FILLSTYLE;
+        ea.style.roughness = ROUGHNESS;
+        
+        // Draw cell rectangle
+        ea.addRect(x, y, CELL_WIDTH, CELL_HEIGHT);
+        
+        // Draw day number
+        ea.style.fontSize = FONT_SIZE_DAY;
+        ea.style.strokeColor = COLOR_TEXT;
+        ea.style.fontFamily = FONT_FAMILY;
+        
+        // Position the day number at top center of the cell
+        const dayStr = String(day).padStart(2, "0");
+        const charWidth = FONT_SIZE_DAY * 0.6; // Approximate character width
+        const textWidth = dayStr.length * charWidth;
+        const textX = x + (CELL_WIDTH - textWidth) / 2;
+        const textY = y + 32; // 32px padding from top
+        ea.addText(textX, textY, dayStr);
+    }
+    
+    // Draw month label on the right
+    ea.style.fontSize = FONT_SIZE_MONTH;
+    ea.style.strokeColor = COLOR_TEXT;
+    const rightLabelX = START_X + MONTH_LABEL_WIDTH + (NUM_COLUMNS * CELL_WIDTH) + 60;
+    ea.addText(rightLabelX, monthLabelY, MONTH_NAMES[month]);
+}
+
+// -------------------------------------
+// Main calendar generation
+// -------------------------------------
+
+// Draw year title (centered above calendar)
+ea.style.fontSize = FONT_SIZE_YEAR;
+ea.style.strokeColor = COLOR_TEXT;
+ea.style.fontFamily = FONT_FAMILY;
+const yearX = START_X + MONTH_LABEL_WIDTH + ((NUM_COLUMNS * CELL_WIDTH) / 2) - 120;
+ea.addText(yearX, START_Y - 200, String(requestedYear));
+
+// Draw top day-of-week headers
+drawDayHeaders(START_Y);
+
+// Draw all 12 months
+for (let month = 0; month < 12; month++) {
+    drawMonthRow(requestedYear, month, month);
+}
+
+// Draw bottom day-of-week headers
+const bottomHeaderY = START_Y + 160 + (12 * (CELL_HEIGHT + ROW_SPACING)) + 40;
+drawDayHeaders(bottomHeaderY);
+
+await ea.addElementsToView(false, false, true);
+```
+
+---
+
 ## Mindmap Builder.md
 <!-- Source: ea-scripts/Mindmap Builder.md -->
 
@@ -18575,82 +18816,81 @@ await ea.addElementsToView(false, false);
 
 # Mind Map Builder: Technical Specification & User Guide
 
-## 1. Overview
-**Mind Map Builder** is a high-performance automation script designed for the Excalidraw-Obsidian plugin. It transforms the Excalidraw canvas into a rapid brainstorming environment, allowing users to build complex, structured, and visually organized mind maps using primarily keyboard shortcuts. 
+![](YouTube: dZguonMP2KU)
 
-The script balances **automation** (auto-layout, recursive grouping, and contrast-aware coloring) with **flexibility** (manual node pinning and layout-free modes), ensuring that the mind map stays organized even as it grows to hundreds of nodes.
+## 1. Overview
+**Mind Map Builder** transforms the Obsidian-Excalidraw canvas into a rapid brainstorming environment, allowing users to build complex, structured, and visually organized mind maps using primarily keyboard shortcuts. 
+
+The script balances **automation** (auto-layout, recursive grouping, and contrast-aware coloring) with **explicit flexibility** (node pinning and redirection logic), ensuring that the mind map stays organized even as it grows to hundreds of nodes.
 
 ## 2. Core Purpose
 The primary goal is to minimize the "friction of drawing." Instead of manually drawing boxes and arrows, the user focuses on the hierarchy of ideas. The script handles:
-- **Spatial Arrangement**: Distributing nodes radially or directionally.
+- **Spatial Arrangement**: Distributing nodes radially or directionally (Left/Right).
 - **Visual Hierarchy**: Automatically adjusting font sizes and arrow thicknesses based on depth.
+- **Selection Redirection**: Automatically shifting focus from connecting arrows to their associated nodes to ensure continuous workflow.
 - **Data Portability**: Enabling seamless transition between visual diagrams and Markdown bullet lists via the clipboard.
 
 ## 3. Feature Set
 
 ### A. Intelligent Layout Engine
 The script features a recursive spacing engine that calculates the "subtree height" of every branch. 
-- **Radial Mode**: Distributes Level 1 branches in a circle. It uses a specific logic: the first 6 nodes are placed at 60° increments starting from 30°. Beyond 6 nodes, it compresses the arc to 320° (20° to 340°) to maintain a professional aesthetic and avoid overlapping the central node's vertical axis.
-- **Directional Modes**: "Right-facing" and "Left-facing" constrain the map to specific arcs, useful for linear flows or side-by-side comparisons.
-- **Recursive Re-balancing**: Every time a node is added, the script re-calculates the entire tree's coordinates to ensure no nodes or arrows overlap, even if sub-branches have vastly different densities.
+- **Growth Modes**: Supports Radial (circular), Right-facing, and Left-facing layouts.
+- **Radial Logic**: Distributes the first 6 nodes at 60° increments. Beyond 6 nodes, it compresses the arc to 320° to maintain a professional aesthetic and avoid overlapping the central node's vertical axis.
+- **Recursive Re-balancing**: Coordinates are recalculated across the tree to prevent overlaps while maintaining the user's chosen growth direction.
 
-### B. "Manual Break-out" (Node Pinning)
-If a user manually drags a Level 1 branch significantly outside the auto-calculated radius (specifically > 1.5x the current radius), the engine marks that branch as **deliberately placed**. The auto-layout will no longer move that branch, but it will still automatically organize any children added *to* that branch.
+### B. Pinning & Manual Placement
+Nodes can be excluded from the auto-layout engine in two ways:
+- **Explicit Pinning**: Users can toggle a "Pinned" state via UI or shortcut. Pinned nodes stay at their exact coordinates, while the engine still organizes their unpinned children relative to that fixed position.
+- **Manual Break-out**: If a node is dragged significantly outside the calculated auto-layout radius (> 1.5x radius), the engine treats it as deliberately placed and stops moving it automatically.
 
 ### C. Import & Export (Markdown Sync)
 - **Copy as Text**: Converts the visual map into an H1 header (Root) followed by an indented Markdown bullet list.
-- **Paste from Text**: Parses an indented Markdown list. If a node is selected on the canvas, the list is appended to that node. If nothing is selected, a new map is generated. It intelligently detects if a list has a single root or multiple top-level items.
+- **Paste from Text**: Parses an indented Markdown list. It supports appending to an existing node or generating a brand-new map from a clipboard list.
 
 ### D. Visual Styling & Accessibility
-- **Dynamic Contrast-Aware Coloring**: In "Multicolor Mode," the script generates 10 random colors for new Level 1 branches and uses **ColorMaster** to select the one with the highest contrast (minimum 3:1 ratio) against the current canvas background.
-- **Color Inheritance**: Grandchildren and all deeper descendants strictly inherit the stroke color of their parent, maintaining visual "branch identity."
-- **Font Scales**: Supports a "Normal Scale" (36-16pt) and a "Fibonacci Scale" (68-16pt) for dramatic visual emphasis. It also offers a "Use scene fontsize" mode to match the user's current tool settings.
+- **Dynamic Contrast-Aware Coloring**: In "Multicolor Mode," Level 1 branches receive random colors validated for a minimum 3:1 contrast ratio against the current canvas background.
+- **Stroke Styles**: Users can choose to inherit the **Scene Stroke Style** (Solid, Dashed, Dotted) or force an **Always Solid** style for branch connectors to maintain a clean appearance.
 
 ## 4. UI and User Experience
 
 ### Focus Mode (Minimized UI)
-By clicking the **Minimize** icon next to the input field, the modal collapses, hiding all settings and buttons except the input field and label. This is designed for power users who know the shortcuts and want maximum screen real estate for their drawing.
-
-### Single-Row Management
-All primary actions (Add Sibling, Follow Child, Close, Copy, Paste) are located in a single row at the bottom to reduce mouse travel.
+By clicking the **Minimize** icon, the modal collapses into a minimal input bar, hiding settings to maximize canvas visibility for power users.
 
 ### Keyboard Shortcuts
 | Shortcut | Action |
 | :--- | :--- |
 | **ENTER** | Add a sibling node (stay on current parent). |
 | **CMD/CTRL + ENTER** | Add a child and "drill down" (select the new node). |
+| **CMD/CTRL + SHIFT + ENTER** | **Pin/Unpin** the location of the selected node. |
 | **SHIFT + ENTER** | Add node and close the modal. |
 | **ALT/OPT + ARROWS** | Navigate the mind map structure (parent/child/sibling). |
-
 
 ## 5. Settings and Persistence
 
 ### Global Settings
-The following are saved to the Excalidraw Plugin's script settings and persist across all new drawings:
-- **Max Text Width**: The point at which text wraps (Default: 300px).
-- **Font Sizes**: Choice of Normal, Fibonacci, or Scene-based.
-- **Rounded Corners**: Toggle between sharp and adaptive roundness.
-- **Group Branches**: Whether to use recursive grouping.
-- **Is Minimized**: Stores the user's preferred UI state.
+Persisted across sessions:
+- **Max Text Width**: Point at which text wraps (Default: 450px).
+- **Font Scales**: Choice of Normal, Fibonacci, or Scene-based sizes.
+- **Recursive Grouping**: When enabled, groups sub-trees from the leaves upward.
 
 ### Map-Specific Persistence (customData)
-To ensure that a mind map doesn't change its behavior when shared or reopened, the **Central Node (Root)** stores specific metadata in its `customData`:
-- `growthMode`: Stores whether the map is Radial, Left, or Right facing.
-- `autoLayoutDisabled`: Stores whether the user has disabled the layout engine for this specific map.
+- `growthMode`: Stored on the Root node (Radial, Left, or Right).
+- `isPinned`: Stored on individual nodes to bypass the layout engine.
+- `isBranch`: Stored on arrows to distinguish Mind Map connectors from standard annotations.
 
 ## 6. Special Logic Solutions
 
 ### The "mindmapNew" Tag
-When a Level 1 node is created, it is temporarily tagged with `mindmapNew: true`. During the next layout cycle, the engine separates "Existing" nodes (which are sorted by their visual angle to allow manual re-ordering) from "New" nodes. New nodes are always appended to the end of the clockwise sequence. Once positioned, the tag is deleted. This prevents new nodes from "jumping" into the middle of an established sequence.
+When a Level 1 node is created, it is temporarily tagged with `mindmapNew: true`. During the next layout cycle, the engine separates "Existing" nodes (which are sorted by their visual angle to allow manual re-ordering) from "New" nodes. New nodes are always appended to the end of the clockwise sequence. This prevents new nodes from "jumping" into the middle of an established branch order.
+
+### Arrow Focus Redirection
+When the script starts or the modal is re-activated, if an arrow is selected, the script automatically redirects selection to the `startBinding` node (or `endBinding`). If no bindings exist, it clears the selection. This prevents "Target: null" errors when the user accidentally clicks a connector.
 
 ### Recursive Grouping
-When enabled, the script groups elements from the "leaves" upward. 
-- A leaf node is grouped with its parent and the connecting arrow.
-- That group is then nested into the grandparent's group.
-- **The Root Exception**: The root node is never part of an L1 group. This allows the user to move the central idea independently or detach a whole branch by simply dragging it.
+When enabled, the script groups elements from the "leaves" upward. A leaf node is grouped with its parent and the connecting arrow. That group is then nested into the grandparent's group. The **Root Exception**: The root node is never part of an L1 group, allowing users to move the central idea or detach whole branches easily.
 
 ### Vertical Centering
-All nodes use `textVerticalAlign: "middle"` and `textAlign: "center"` (if boxed) or `"left"` (if not), ensuring that the connecting arrows always point to the geometric center of the text, regardless of line count.
+All nodes use `textVerticalAlign: "middle"`. This ensures that connecting arrows always point to the geometric center of the text, maintaining visual alignment regardless of how many lines of text a node contains.
 
 ```js
 MINDMAP Builder
@@ -18679,11 +18919,13 @@ const K_GROWTH = "Growth Mode";
 const K_MULTICOLOR = "Multicolor Mode";
 const K_MINIMIZED = "Is Minimized";
 const K_GROUP = "Group Branches";
+const K_ARROWSTROKE = "Arrow Stroke Style";
+const K_CENTERTEXT = "Center text in nodes?";
 const api = ea.getExcalidrawAPI();
 
 const getVal = (key, def) => ea.getScriptSettingValue(key, { value: def }).value;
 
-let maxWidth = parseInt(getVal(K_WIDTH, 300));
+let maxWidth = parseInt(getVal(K_WIDTH, 450));
 let fontsizeScale = getVal(K_FONTSIZE, "Normal Scale");
 let boxChildren = getVal(K_BOX, false) === true;
 let roundedCorners = getVal(K_ROUND, true) === true;
@@ -18691,6 +18933,8 @@ let multicolor = getVal(K_MULTICOLOR, true) === true;
 let groupBranches = getVal(K_GROUP, true) === true;
 let currentModalGrowthMode = getVal(K_GROWTH, "Radial");
 let isMinimized = getVal(K_MINIMIZED, false) === true;
+let isSolidArrow = getVal(K_ARROWSTROKE, true) === true;
+let centerText = getVal(K_CENTERTEXT, true) === true;
 let autoLayoutDisabled = false;
 
 const FONT_SCALE = {
@@ -18710,17 +18954,71 @@ const INSTRUCTIONS = `
 - **${isMac ? "CMD" : "CTRL"} + ENTER**: Add a child node and "drill down" (follow the new node).
 - **SHIFT + ENTER**: Add the node and close the modeler.
 - **${isMac ? "OPT" : "ALT"} + Arrows**: Navigate through the mindmap nodes on the canvas.
+- **${isMac ? "CMD" : "CTRL"} + SHIFT + ENTER**: Pin/Unpin location of a node. Pinned nodes will not be touched by auto layout.
 - **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
 - **Grouping**: Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
 - **Copy/Paste**: Export/Import indented Markdown lists.
+
+😍 If you find this script helpful, please [buy me a coffee ☕](https://ko-fi.com/zsolt).
+
+<a href="YouTube: dZguonMP2KU" target="_blank"><img src ="https://i.ytimg.com/vi/dZguonMP2KU/maxresdefault.jpg" style="max-width:560px; width:100%"></a>
 `;
 
 // ---------------------------------------------------------------------------
 // 2. Traversal & Geometry Helpers
 // ---------------------------------------------------------------------------
 
+const ensureNodeSelected = () => {
+  const selectedElements = ea.getViewSelectedElements();
+  
+  if (selectedElements.length === 0) return;
+
+  // 1. Handle Single Arrow Selection, deliberatly not filtering to el.customData?.isBranch
+  if (selectedElements.length === 1 && selectedElements[0].type === "arrow") {
+    const sel = selectedElements[0];
+    const targetId = sel.startBinding?.elementId || sel.endBinding?.elementId;
+    if (targetId) {
+      const target = ea.getViewElements().find(el => el.id === targetId);
+      if (target) ea.selectElementsInView([target]);
+    } else {
+      ea.selectElementsInView([]);
+    }
+    return;
+  }
+
+  // 2. Handle Group Selection (Find Highest Ranking Parent)
+  // deliberatly not filtering to el.customData?.isBranch
+  if (selectedElements.length > 1) {
+    const selectedIds = new Set(selectedElements.map(el => el.id));
+    const arrows = selectedElements.filter(el => el.type === "arrow");
+    
+    const sourceIds = new Set();
+    const sinkIds = new Set();
+
+    // Analyze arrows that connect elements WITHIN the current selection
+    arrows.forEach(arrow => {
+      const startId = arrow.startBinding?.elementId;
+      const endId = arrow.endBinding?.elementId;
+
+      if (startId && selectedIds.has(startId)) sourceIds.add(startId);
+      if (endId && selectedIds.has(endId)) sinkIds.add(endId);
+    });
+
+    // The "Highest Ranking Parent" is a source within the group 
+    // that is NOT a sink of any arrow within that same group.
+    const rootId = Array.from(sourceIds).find(id => !sinkIds.has(id));
+
+    if (rootId) {
+      const target = selectedElements.find(el => el.id === rootId);
+      if (target) ea.selectElementsInView([target]);
+    }
+  }
+};
+
 const getParentNode = (id, allElements) => {
-  const arrow = allElements.find(el => el.type === "arrow" && el.endBinding?.elementId === id);
+  const arrow = allElements.find(el => 
+    el.type === "arrow" && el.customData?.isBranch && el.endBinding?.elementId === id
+  );
   if (!arrow) return null;
   const parent = allElements.find(el => el.id === arrow.startBinding?.elementId);
   return parent?.containerId
@@ -18729,8 +19027,12 @@ const getParentNode = (id, allElements) => {
 };
 
 const getChildrenNodes = (id, allElements) => {
-  const arrows = allElements.filter(el => el.type === "arrow" && el.startBinding?.elementId === id);
-  return arrows.map(a => allElements.find(el => el.id === a.endBinding?.elementId)).filter(Boolean);
+  const arrows = allElements.filter(el =>
+    el.type === "arrow" && el.customData?.isBranch && el.startBinding?.elementId === id
+  );
+  return arrows
+    .map(a => allElements.find(el => el.id === a.endBinding?.elementId))
+    .filter(Boolean);
 };
 
 const getHierarchy = (el, allElements) => {
@@ -18826,7 +19128,7 @@ const applyRecursiveGrouping = (nodeId, allElements) => {
     nodeIdsInSubtree.push(...subtreeIds);
     
     // Find the arrow connecting nodeId to child
-    const arrow = allElements.find(a => a.type === "arrow" && a.startBinding?.elementId === nodeId && a.endBinding?.elementId === child.id);
+    const arrow = allElements.find(a => a.type === "arrow" && a.customData?.isBranch && a.startBinding?.elementId === nodeId && a.endBinding?.elementId === child.id);
     if (arrow) {
       nodeIdsInSubtree.push(arrow.id);
     }
@@ -18840,33 +19142,74 @@ const applyRecursiveGrouping = (nodeId, allElements) => {
   return nodeIdsInSubtree;
 };
 
-const layoutSubtree = (nodeId, x, centerY, side, allElements) => {
+const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
   const node = allElements.find(el => el.id === nodeId);
   const eaNode = ea.getElement(nodeId);
-  eaNode.x = side === 1 ? x : x - node.width;
-  eaNode.y = centerY - node.height / 2;
+  
+  const isPinned = node.customData?.isPinned === true;
+
+  if (!isPinned) {
+    eaNode.x = side === 1 ? targetX : targetX - node.width;
+    eaNode.y = targetCenterY - node.height / 2;
+  }
+
+  const currentX = eaNode.x;
+  const currentYCenter = eaNode.y + node.height / 2;
+
+  let effectiveSide = side;
+  const parent = getParentNode(nodeId, allElements);
+  
+  if (isPinned && parent) {
+    const parentCenterX = parent.x + parent.width / 2;
+    const nodeCenterX = currentX + node.width / 2;
+    effectiveSide = nodeCenterX >= parentCenterX ? 1 : -1;
+  }
+
+  if (!isPinned && eaNode.type === "text" && !eaNode.containerId && node.textAlign !== "center") { 
+    eaNode.textAlign = (effectiveSide === 1) ? "left" : "right";
+  }
+
   const children = getChildrenNodes(nodeId, allElements);
   sortChildrenStable(children);
   const subtreeHeight = getSubtreeHeight(nodeId, allElements);
-  let currentY = centerY - subtreeHeight / 2;
+  
+  let currentY = currentYCenter - subtreeHeight / 2;
+  
   children.forEach(child => {
     const childH = getSubtreeHeight(child.id, allElements);
-    layoutSubtree(child.id, side === 1
-      ? eaNode.x + node.width + GAP_X
-      : eaNode.x - GAP_X, currentY + childH / 2, side, allElements);
+    
+    layoutSubtree(
+      child.id, 
+      effectiveSide === 1 ? currentX + node.width + GAP_X : currentX - GAP_X, 
+      currentY + childH / 2, 
+      effectiveSide, 
+      allElements
+    );
+    
     currentY += childH + GAP_Y;
-    const arrow = allElements.find(a => a.type === "arrow" && a.startBinding?.elementId === nodeId && a.endBinding?.elementId === child.id);
+
+    const arrow = allElements.find(a => 
+      a.type === "arrow" && 
+      a.customData?.isBranch &&
+      a.startBinding?.elementId === nodeId && 
+      a.endBinding?.elementId === child.id
+    );
+    
     if (arrow) {
-      const eaArrow = ea.getElement(arrow.id), eaChild = ea.getElement(child.id);
-      const sX = eaNode.x + eaNode.width/2, sY = eaNode.y + eaNode.height/2;
-      const eX = eaChild.x + eaChild.width/2, eY = eaChild.y + eaChild.height/2;
-      eaArrow.x = sX; eaArrow.y = sY;
+      const eaArrow = ea.getElement(arrow.id);
+      const eaChild = ea.getElement(child.id);
+      const sX = currentX + node.width / 2;
+      const sY = currentYCenter;
+      const eX = eaChild.x + eaChild.width / 2;
+      const eY = eaChild.y + eaChild.height / 2;
+      eaArrow.x = sX;
+      eaArrow.y = sY;
       eaArrow.points = [[0, 0], [eX - sX, eY - sY]];
     }
   });
 };
 
-const triggerGlobalLayout = (rootId) => {
+const triggerGlobalLayout = (rootId, force = false) => {
   const allElements = ea.getViewElements();
   const root = allElements.find(el => el.id === rootId);
   ea.copyViewElementsToEAforEditing(allElements);
@@ -18897,12 +19240,16 @@ const triggerGlobalLayout = (rootId) => {
   
   let startAngle, angleStep;
   if (mode === "Right-facing") {
-    startAngle = 20;
-    angleStep = count <= 1 ? 0 : 140 / (count - 1);
-    }
+    // Range starts at 30 deg span (75 to 105) and expands by 30 each step
+    const span = count <= 2 ? 30 : Math.min(120, 60 + (count - 3) * 30);
+    startAngle = 90 - (span / 2);
+    angleStep = count <= 1 ? 0 : span / (count - 1);
+  }
   else if (mode === "Left-facing") {
-    startAngle = 340;
-    angleStep = count <= 1 ? 0 : -140 / (count - 1);
+    // Mirror of Right-facing (centered at 270)
+    const span = count <= 2 ? 30 : Math.min(120, 60 + (count - 3) * 30);
+    startAngle = 270 + (span / 2);
+    angleStep = count <= 1 ? 0 : -span / (count - 1);
   }
   else {
     startAngle = count <= 6 ? 30 : 20;
@@ -18915,7 +19262,7 @@ const triggerGlobalLayout = (rootId) => {
     const tCY = rootCenter.y + radius * Math.sin(angleRad);
     
     const currentDist = Math.hypot((node.x + node.width/2) - rootCenter.x, (node.y + node.height/2) - rootCenter.y);
-    const isPinned = !node.customData?.mindmapNew && currentDist > radius * 1.5;
+    const isPinned = node.customData?.isPinned || (!force && !node.customData?.mindmapNew && currentDist > radius * 1.5);
     const side = (isPinned
       ? (node.x + node.width/2 > rootCenter.x)
       : (tCX > rootCenter.x)
@@ -18932,7 +19279,7 @@ const triggerGlobalLayout = (rootId) => {
       ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
     }
 
-    const arrow = allElements.find(a => a.type === "arrow" && a.startBinding?.elementId === rootId && a.endBinding?.elementId === node.id);
+    const arrow = allElements.find(a => a.type === "arrow" && a.customData?.isBranch && a.startBinding?.elementId === rootId && a.endBinding?.elementId === node.id);
     if (arrow) {
       const eaA = ea.getElement(arrow.id), eaC = ea.getElement(node.id);
       const eX = eaC.x + eaC.width/2, eY = eaC.y + eaC.height/2;
@@ -19009,17 +19356,17 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     ea.style.strokeColor = getReadableColor(nodeColor);
     const rootEl = allElements.find(e => e.id === rootId);
     const mode = rootEl.customData?.growthMode || currentModalGrowthMode;
+    const rootCenter = {
+      x: rootEl.x + rootEl.width / 2,
+      y: rootEl.y + rootEl.height / 2
+    };
+    const side = (parent.x + parent.width/2 > rootCenter.x) ? 1 : -1;
     
     const offset = (mode === "Radial" || mode === "Right-facing")
       ? rootEl.width*2
       : -rootEl.width;
     let px = parent.x + offset, py = parent.y;
     if (autoLayoutDisabled) {
-      const rootCenter = {
-        x: rootEl.x + rootEl.width / 2,
-        y: rootEl.y + rootEl.height / 2
-      };
-      const side = (parent.x + parent.width/2 > rootCenter.x) ? 1 : -1;
       const manualGapX = Math.round(parent.width * 1.3); 
       const jitterX = (Math.random() - 0.5) * 150;
       const jitterY = (Math.random() - 0.5) * 150;
@@ -19030,9 +19377,13 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       py = (parent.y + parent.height/2) - (metrics.height / 2) + jitterY;
     }
 
+    const textAlign = centerText 
+      ? "center" 
+      : (side === 1 ? "left" : "right");
+
     newNodeId = ea.addText(px, py, text, {
       box: boxChildren ? "rectangle" : false,
-      textAlign: boxChildren ? "center" : "left",
+      textAlign,
       textVerticalAlign: "middle",
       width: shouldWrap ? maxWidth : undefined,
       autoResize: !shouldWrap
@@ -19050,34 +19401,47 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     ea.copyViewElementsToEAforEditing([parent]);
     ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
     ea.style.roughness = api.getAppState().currentItemRoughness;
-    ea.style.strokeStyle = api.getAppState().currentItemStrokeStyle;
+    ea.style.strokeStyle = isSolidArrow ? "solid" : api.getAppState().currentItemStrokeStyle;
     const startPoint = [parent.x + parent.width/2, parent.y + parent.height/2];
-    ea.addArrow([startPoint, startPoint], {
+    const arrowId = ea.addArrow([startPoint, startPoint], {
       startObjectId: parent.id,
       endObjectId: newNodeId,
       startArrowHead: null,
       endArrowHead: null
     });
+    ea.addAppendUpdateCustomData(arrowId, { isBranch: true });
   }
 
   await ea.addElementsToView(!parent, false, true, true);
+  ea.clear();
   
   if (!skipFinalLayout && rootId && !autoLayoutDisabled) { 
     triggerGlobalLayout(rootId); 
-    await ea.addElementsToView(false, false, true, true); 
+    await ea.addElementsToView(false, false, true, true);
+    ea.clear();
   } else if (rootId && (autoLayoutDisabled || skipFinalLayout) && parent) {
     const allEls = ea.getViewElements();
     const node = allEls.find(el => el.id === newNodeId);
-    const arrow = allEls.find(a => a.type === "arrow" && a.endBinding?.elementId === newNodeId);
+    const arrow = allEls.find(a => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === newNodeId);
+
+    ea.copyViewElementsToEAforEditing(groupBranches ? allEls : (arrow ? [arrow] : []));
+
     if (arrow) {
-      ea.copyViewElementsToEAforEditing([arrow]);
       const eaA = ea.getElement(arrow.id);
       const sX = parent.x + parent.width/2, sY = parent.y + parent.height/2;
       const eX = node.x + node.width/2, eY = node.y + node.height/2;
       eaA.x = sX; eaA.y = sY;
       eaA.points = [[0, 0], [eX - sX, eY - sY]];
-      await ea.addElementsToView(false, false, true, true);
     }
+    
+    if (groupBranches) {
+      ea.getElements().forEach(el => { el.groupIds = []; });
+      const l1Nodes = getChildrenNodes(rootId, allEls);
+      l1Nodes.forEach(l1 => applyRecursiveGrouping(l1.id, allEls));
+    }
+
+    await ea.addElementsToView(false, false, true, true);
+    ea.clear();
   }
 
   const finalNode = ea.getViewElements().find(el => el.id === newNodeId);
@@ -19101,34 +19465,76 @@ const getTextFromNode = (all, node) => {
   return textEl ? textEl.originalText : "";
 };
 
-const copyMapAsText = async () => {
+const copyMapAsText = async (cut = false) => {
   const sel = ea.getViewSelectedElement();
-  if (!sel) return;
+  if (!sel) {
+    new Notice("Select a node to copy.");
+    return;
+  }
   const all = ea.getViewElements();
   const info = getHierarchy(sel, all);
-  const rootNode = all.find(e => e.id === info.rootId);
-  
+
+  const isRootSelected = info.rootId === sel.id;
+
+  if (isRootSelected) {
+    cut = false;
+  }
+
+  const elementsToDelete = [];
+
   const buildList = (nodeId, depth = 0) => {
     const node = all.find(e => e.id === nodeId);
+    if (!node) return "";
+
+    if (cut) {
+      elementsToDelete.push(node);
+      node.boundElements?.forEach(be => {
+        const boundEl = all.find(e => e.id === be.id);
+        if (boundEl) elementsToDelete.push(boundEl);
+      });
+    }
+
     const children = getChildrenNodes(nodeId, all);
     sortChildrenStable(children);
     let str = "";
     const text = getTextFromNode(all, node);
-    if (depth === 0) {
+    if (depth === 0 && isRootSelected) {
       str += `# ${text}\n\n`;
+    } else {
+      str += `${"  ".repeat(depth - (isRootSelected ? 1 : 0))}- ${text}\n`;
     }
-    else {
-      str += `${"  ".repeat(depth - 1)}- ${text}\n`;
-    }
+    
     children.forEach(c => {
+      if (cut) {
+        const arrow = all.find(a => 
+          a.type === "arrow" && 
+          a.customData?.isBranch && 
+          a.startBinding?.elementId === nodeId && 
+          a.endBinding?.elementId === c.id
+        );
+        if (arrow) elementsToDelete.push(arrow);
+      }
       str += buildList(c.id, depth + 1);
     });
     return str;
   };
 
-  const md = buildList(rootNode.id);
+  const md = buildList(sel.id);
   await navigator.clipboard.writeText(md);
-  new Notice("Mindmap copied to clipboard.");
+
+  if (cut) {
+    const incomingArrow = all.find(a => 
+      a.type === "arrow" && 
+      a.customData?.isBranch && 
+      a.endBinding?.elementId === sel.id
+    );
+    if (incomingArrow) elementsToDelete.push(incomingArrow);
+
+    ea.deleteViewElements(elementsToDelete);
+    new Notice("Branch cut to clipboard.");
+  } else {
+    new Notice("Branch copied as bullet list.");
+  }
 };
 
 const pasteListToMap = async () => {
@@ -19139,13 +19545,23 @@ const pasteListToMap = async () => {
   let parsed = [];
   let rootTextFromHeader = null;
 
+  if (lines.length === 0 ||
+    !lines[0].match(/^(#+\s|\s*(?:-|\*|\d+)\s)/) ||
+    !lines.every((line,idx) => (idx === 0) || line.match(/^\s*(?:-|\*|\d+)\s/))
+  ) {
+    new Notice("Paste aborted. Cliboard is not a bulleted list");
+    return;
+  }
+
+  const delta = lines[0].match(/^#+\s/) ? 1 : 0;
+
   lines.forEach(line => {
-    if (line.startsWith("# ")) {
-      rootTextFromHeader = line.substring(2).trim();
+    if (line.match(/^#+\s/)) {
+      parsed.push({indent: 0, text: line.substring(2).trim()});
     } else {
       const match = line.match(/^(\s*)(?:-|\*|\d+\.)\s+(.*)$/);
       if (match) {
-        parsed.push({ indent: match[1].length, text: match[2].trim() });
+        parsed.push({ indent: delta + match[1].length, text: match[2].trim() });
       }
     }
   });
@@ -19159,17 +19575,13 @@ const pasteListToMap = async () => {
   let currentParent;
 
   if (!sel) {
-    if (rootTextFromHeader) {
-      currentParent = await addNode(rootTextFromHeader, true, true);
+    const minIndent = Math.min(...parsed.map(p => p.indent));
+    const topLevelItems = parsed.filter(p => p.indent === minIndent);
+    if (topLevelItems.length === 1) {
+      currentParent = await addNode(topLevelItems[0].text, true, true);
+      parsed.shift();
     } else {
-      const minIndent = Math.min(...parsed.map(p => p.indent));
-      const topLevelItems = parsed.filter(p => p.indent === minIndent);
-      if (topLevelItems.length === 1) {
-        currentParent = await addNode(topLevelItems[0].text, true, true);
-        parsed.shift();
-      } else {
-        currentParent = await addNode("Mindmap Builder Paste", true, true);
-      }
+      currentParent = await addNode("Mindmap Builder Paste", true, true);
     }
   } else {
     currentParent = sel;
@@ -19191,6 +19603,7 @@ const pasteListToMap = async () => {
   const info = getHierarchy(currentParent, ea.getViewElements());
   triggerGlobalLayout(info.rootId);
   await ea.addElementsToView(false, false, true, true);
+  ea.clear();
   new Notice("Paste complete.");
 };
 
@@ -19241,7 +19654,9 @@ const navigateMap = (key) => {
 
 const modal = new ea.FloatingModal(app);
 modal.onOpen = () => {
-  const { contentEl, titleEl, modalEl } = modal;
+  const { contentEl, titleEl, modalEl, headerEl } = modal;
+  modalEl.style.maxHeight = "70vh";
+  ensureNodeSelected();
   contentEl.empty();
   titleEl.setText("Mind Map Builder");
   
@@ -19252,47 +19667,94 @@ modal.onOpen = () => {
   const inputRow = new ea.obsidian.Setting(contentEl).setName("Node Text");
 
   const bodyContainer = contentEl.createDiv();
-  const statusEl = bodyContainer.createDiv({ attr: {
-    style: "font-size:0.85em; color:var(--text-accent); font-weight:bold; margin:12px 0; border-bottom:1px solid var(--background-modifier-border); padding-bottom:5px;"
-  }});
+  bodyContainer.style.width = "100%"
   
-  let strategyDropdown, autoLayoutToggle;
+  let strategyDropdown, autoLayoutToggle, pinBtn, cutBtn;
+
   const updateStatus = () => {
     const all = ea.getViewElements();
     const sel = ea.getViewSelectedElement();
     const name = sel?.text || (sel?.type === "rectangle" ? "Root" : null);
-    statusEl.setText(name ? `Targeting: ${name.substring(0,30)}` : "Target: New Central Node");
     
     if (sel) {
-        const info = getHierarchy(sel, all);
-        const root = all.find(e => e.id === info.rootId);
-        const mapStrategy = root.customData?.growthMode;
-        if (mapStrategy && mapStrategy !== currentModalGrowthMode) {
-            currentModalGrowthMode = mapStrategy;
-            strategyDropdown.setValue(mapStrategy);
-        }
-        const mapLayoutPref = root.customData?.autoLayoutDisabled === true;
-        if (mapLayoutPref !== autoLayoutDisabled) {
-          autoLayoutDisabled = mapLayoutPref;
-          autoLayoutToggle.setValue(mapLayoutPref);
-        }
+      const isPinned = sel.customData?.isPinned === true;
+      pinBtn?.setIcon(isPinned ? "pin" : "pin-off");
+      pinBtn?.setTooltip(`${isPinned ? "This element is pinned. Click to unpin" : "This element is not pinned. Click to pin"} the location of the selected element (${isMac ? "CMD" : "CTRL"}+SHIFT+Enter)`);
+
+      const info = getHierarchy(sel, all);
+      if (cutBtn) {
+        cutBtn.disabled = (info.rootId === sel.id);
+      }
+      const root = all.find(e => e.id === info.rootId);
+      const mapStrategy = root.customData?.growthMode;
+      if (mapStrategy && mapStrategy !== currentModalGrowthMode) {
+          currentModalGrowthMode = mapStrategy;
+          strategyDropdown.setValue(mapStrategy);
+      }
+      const mapLayoutPref = root.customData?.autoLayoutDisabled === true;
+      if (mapLayoutPref !== autoLayoutDisabled) {
+        autoLayoutDisabled = mapLayoutPref;
+        autoLayoutToggle.setValue(mapLayoutPref);
+      }
+    } else {
+      pinBtn?.setIcon("pin-off");
+      if (cutBtn) cutBtn.disabled = true;
     }
   };
 
   let inputEl;
   inputRow.addText(text => {
-      inputEl = text.inputEl; inputEl.style.width = "100%"; inputEl.placeholder = "Concept...";
+    inputEl = text.inputEl;
+    inputEl.style.width = "100%";
+    inputEl.placeholder = "Concept...";
   });
+
+  inputRow.addExtraButton(btn => {
+    pinBtn = btn;
+    btn.onClick(async () => {
+      const sel = ea.getViewSelectedElement();
+      if (sel) {
+        const newPinnedState = !(sel.customData?.isPinned === true);
+        ea.copyViewElementsToEAforEditing([sel]);
+        ea.addAppendUpdateCustomData(sel.id, { isPinned: newPinnedState });
+        await ea.addElementsToView(false, false, true, true);
+        ea.clear();
+        updateStatus();
+      }
+    });
+  });
+
+  inputRow.addExtraButton(btn => btn
+    .setIcon("refresh-ccw")
+    .setTooltip("Force auto rearrange map. Will move all elements except for those that are pinned.")
+    .onClick(async () => {
+      const sel = ea.getViewSelectedElement();
+      if (sel) {
+        const info = getHierarchy(sel, ea.getViewElements());
+        triggerGlobalLayout(info.rootId, true);
+        await ea.addElementsToView(false, false, true, true);
+        ea.clear();
+      }
+    })
+  );
   
   inputRow.addExtraButton(btn => {
     const updateIcon = () => {
       btn.setIcon(isMinimized ? "maximize-2" : "minimize-2");
       btn.setTooltip(isMinimized ? "Maximize UI" : "Minimize UI");
-      const display = isMinimized ? "none" : "block";
+      const display = isMinimized ? "none" : "";
       bodyContainer.style.display = display;
+      headerEl.style.display = display;
       titleEl.style.display = display;
       details.style.display = display;
       modalEl.style.opacity = isMinimized ? "0.8" : "1";
+      inputRow.infoEl.style.display = display;
+      modalEl.style.paddingBottom = isMinimized ? "6px" : "";
+      modalEl.style.paddingRight = isMinimized ? "6px" : "";
+      modalEl.style.paddingLeft = isMinimized ? "6px" : "";
+      modalEl.style.minHeight = isMinimized ? "0px" : "";
+      inputRow.settingEl.style.padding = isMinimized ? "0" : "";
+      inputRow.settingEl.style.border = isMinimized ? "0" : "";
     };
     updateIcon();
     btn.onClick(async () => {
@@ -19303,9 +19765,56 @@ modal.onOpen = () => {
     });
   });
 
+  modalEl.addEventListener("pointerenter", () => {
+    if(!ea.targetView) {
+      new Notice("Host Excalidraw Window was closed");
+      modal.close();
+      return;
+    }
+    if(ea.targetView !== app.workspace.activeLeaf.view) {
+      modalEl.style.borderColor = "red";
+      modalEl.style.borderWidth = "3px";
+    } else {
+      modalEl.style.borderColor = "";
+      modalEl.style.borderWidth = "";
+    }
+    ensureNodeSelected();
+    updateStatus();
+  });
+
+  modalEl.addEventListener("pointerleave", () => {
+      modalEl.style.borderColor = "";
+      modalEl.style.borderWidth = "";
+  });
+
   inputRow.settingEl.style.display = "block";
   inputRow.controlEl.style.width = "100%";
   inputRow.controlEl.style.marginTop = "8px";
+
+  const btnGrid = bodyContainer.createDiv({ attr: {
+    style: "display: grid; grid-template-columns: repeat(5, 1fr); gap:6px;"
+  }});
+
+  btnGrid.createEl("button", { text: "Add Sibling", cls: "mod-cta", attr: {style: "padding: 2px;"}})
+    .onclick = async () => {
+      await addNode(inputEl.value, false);
+      inputEl.value = "";
+      inputEl.focus();
+      updateStatus();
+    };
+  btnGrid.createEl("button", { text: "Add+Follow", attr: {style: "padding: 2px;"} })
+    .onclick = async () => {
+      await addNode(inputEl.value, true);
+      inputEl.value = "";
+      inputEl.focus();
+      updateStatus();
+    };
+  btnGrid.createEl("button", { text: "Copy", attr: {style: "padding: 2px;"} })
+    .onclick = copyMapAsText;
+  cutBtn = btnGrid.createEl("button", { text: "Cut", attr: {style: "padding: 2px;"} });
+  cutBtn.onclick = () => copyMapAsText(true);
+  btnGrid.createEl("button", { text: "Paste", attr: {style: "padding: 2px;"} })
+    .onclick = pasteListToMap;
 
   new ea.obsidian.Setting(bodyContainer)
     .setName("Growth Strategy")
@@ -19321,9 +19830,11 @@ modal.onOpen = () => {
           ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(e => e.id === info.rootId));
           ea.addAppendUpdateCustomData(info.rootId, { growthMode: v });
           await ea.addElementsToView(false, false, true, true);
+          ea.clear();
           if (!autoLayoutDisabled) {
-            triggerGlobalLayout(info.rootId);
+            triggerGlobalLayout(info.rootId, true);
             await ea.addElementsToView(false, false, true, true);
+            ea.clear();
           }
         }
       });
@@ -19339,6 +19850,7 @@ modal.onOpen = () => {
         ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(e => e.id === info.rootId));
         ea.addAppendUpdateCustomData(info.rootId, { autoLayoutDisabled: v });
         await ea.addElementsToView(false, false, true, true);
+        ea.clear();
       }
     })
   ).components[0];
@@ -19354,9 +19866,22 @@ modal.onOpen = () => {
         const info = getHierarchy(sel, ea.getViewElements());
         triggerGlobalLayout(info.rootId);
         await ea.addElementsToView(false, false, true, true);
+        ea.clear();
       }
     })
   );
+
+  new ea.obsidian.Setting(bodyContainer)
+    .setName("Use scene stroke style")
+    .setDesc("Use the latest stroke style (solid, dashed, dotted) from the scene, or always use solid style for branches.")
+    .addToggle(t => t
+      .setValue(!isSolidArrow)
+      .onChange(v => {
+        isSolidArrow = !v;
+        ea.setScriptSettingValue(K_ARROWSTROKE, { value: !v });
+        dirty = true;
+      })
+    );
 
   new ea.obsidian.Setting(bodyContainer)
     .setName("Multicolor Branches")
@@ -19383,6 +19908,18 @@ modal.onOpen = () => {
       })
     );
   sliderValDisplay = sliderSetting.descEl.createSpan({ text: `${maxWidth}px`, attr: { style: "margin-left:10px; font-weight:bold;" }});
+
+  new ea.obsidian.Setting(bodyContainer)
+    .setName("Center text")
+    .setDesc("Toggle off: align nodes to rigth/left depending; Toggle on: center the text.")
+    .addToggle(t => t
+      .setValue(centerText)
+      .onChange(v => {
+        centerText = v;
+        ea.setScriptSettingValue(K_CENTERTEXT, { value: v });
+        dirty = true;
+      })
+    );
 
   new ea.obsidian.Setting(bodyContainer)
     .setName(K_FONTSIZE)
@@ -19418,36 +19955,24 @@ modal.onOpen = () => {
       })
     );
 
-  const btnGrid = bodyContainer.createDiv({ attr: {
-    style: "display: grid; grid-template-columns: repeat(5, 1fr); gap:6px; margin-top:20px;"
-  }});
-
-  btnGrid.createEl("button", { text: "Sibling", cls: "mod-cta" })
-    .onclick = async () => {
-      await addNode(inputEl.value, false);
-      inputEl.value = "";
-      inputEl.focus();
-      updateStatus();
-    };
-  btnGrid.createEl("button", { text: "Follow" })
-    .onclick = async () => {
-      await addNode(inputEl.value, true);
-      inputEl.value = "";
-      inputEl.focus();
-      updateStatus();
-    };
-  btnGrid.createEl("button", { text: "Close" })
-    .onclick = async () => {
-      await addNode(inputEl.value, false);
-      modal.close();
-    };
-  btnGrid.createEl("button", { text: "Copy" })
-    .onclick = copyMapAsText;
-  btnGrid.createEl("button", { text: "Paste" })
-    .onclick = pasteListToMap;
-
   const keyHandler = async (e) => {
     if (ownerWindow.document.activeElement !== inputEl) return;
+
+    if (e.key === "Enter" && e.shiftKey && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      e.stopPropagation();
+      const sel = ea.getViewSelectedElement();
+      if (sel) {
+        const newPinnedState = !(sel.customData?.isPinned === true);
+        ea.copyViewElementsToEAforEditing([sel]);
+        ea.addAppendUpdateCustomData(sel.id, { isPinned: newPinnedState });
+        await ea.addElementsToView(false, false, true, true);
+        ea.clear();
+        updateStatus();
+      }
+      return;
+    }
+
     if (e.altKey) {
       if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
         e.preventDefault();
@@ -19477,11 +20002,41 @@ modal.onOpen = () => {
   };
 
   ownerWindow.addEventListener("keydown", keyHandler, true);
+
+  const canvasPointerListener = (e) => {
+    if (!ea.targetView) {
+      modal.close();
+      return;
+    }
+    if (app.workspace.activeLeaf.view !== ea.targetView) return;
+    if (modal.modalEl.contains(e.target)) return;
+
+    setTimeout(() => {
+      const selection = ea.getViewSelectedElements();
+      const textEl = selection.find(el => el.type === "text");
+      let isEligible = false;
+
+      if (selection.length === 1 && textEl) {
+        isEligible = true;
+      } else if (selection.length === 2 && textEl) {
+        const other = selection.find(el => el.id !== textEl.id);
+        if (other && textEl.containerId === other.id && other.type !== "arrow") {
+          isEligible = true;
+        }
+      }
+
+      if (isEligible) {
+        updateStatus();
+      }
+    }, 50);
+  };
+
+  ownerWindow.addEventListener("pointerdown", canvasPointerListener);
+
   updateStatus();
-  const monitor = setInterval(updateStatus, 1000);
   modal.onClose = async () => {
-    clearInterval(monitor);
     ownerWindow.removeEventListener("keydown", keyHandler, true);
+    ownerWindow.removeEventListener("pointerdown", canvasPointerListener);
     if (dirty) {
       await ea.saveScriptSettings();
     }
@@ -23489,6 +24044,8 @@ const HELP_TEXT = `
     - Additionally if the same color is used as fill and stroke the color can only be mapped once
 - This is an experimental script - contributions welcome on GitHub via PRs
 
+😍 If you find this script helpful, please [buy me a coffee ☕](https://ko-fi.com/zsolt).
+
 <a href="YouTube: ISuORbVKyhQ" target="_blank"><img src ="https://i.ytimg.com/vi/ISuORbVKyhQ/maxresdefault.jpg" style="max-width:560px; width:100%"></a>
 
 `;
@@ -23790,7 +24347,7 @@ function slider(contentEl, action, min, max, step, invert) {
 
 function showModal() {
   let debounceColorPicker = true;
-  const modal = new ea.obsidian.Modal(app);
+  const modal = new ea.FloatingModal(app);
   let dirty = false;
 
   modal.onOpen = async () => {
@@ -24028,8 +24585,6 @@ function showModal() {
         .setButtonText("Close")
         .setCta(true)
         .onClick(() => modal.close()));
-
-    makeModalDraggable(modalEl);
     
     const maxHeight = Math.round(height * 0.6);
     const maxWidth = Math.round(width * 0.9);
@@ -24048,60 +24603,6 @@ function showModal() {
   };
 
   modal.open();
-}
-
-/**
- * Add draggable functionality to the modal element.
- * @param {HTMLElement} modalEl - The modal element to make draggable.
- */
-function makeModalDraggable(modalEl) {
-  let isDragging = false;
-  let startX, startY, initialX, initialY;
-
-  const header = modalEl.querySelector('.modal-titlebar') || modalEl; // Default to modalEl if no titlebar
-  header.style.cursor = 'move';
-
-  const onPointerDown = (e) => {
-    // Ensure the event target isn't an interactive element like slider, button, or input
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
-
-    isDragging = true;
-    startX = e.clientX;
-    startY = e.clientY;
-    const rect = modalEl.getBoundingClientRect();
-    initialX = rect.left;
-    initialY = rect.top;
-
-    modalEl.style.position = 'absolute';
-    modalEl.style.margin = '0';
-    modalEl.style.left = `${initialX}px`;
-    modalEl.style.top = `${initialY}px`;
-  };
-
-  const onPointerMove = (e) => {
-    if (!isDragging) return;
-
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-
-    modalEl.style.left = `${initialX + dx}px`;
-    modalEl.style.top = `${initialY + dy}px`;
-  };
-
-  const onPointerUp = () => {
-    isDragging = false;
-  };
-
-  header.addEventListener('pointerdown', onPointerDown);
-  document.addEventListener('pointermove', onPointerMove);
-  document.addEventListener('pointerup', onPointerUp);
-
-  // Clean up event listeners on modal close
-  modalEl.addEventListener('remove', () => {
-    header.removeEventListener('pointerdown', onPointerDown);
-    document.removeEventListener('pointermove', onPointerMove);
-    document.removeEventListener('pointerup', onPointerUp);
-  });
 }
 
 function executeChange(isDecrease, step, action) {

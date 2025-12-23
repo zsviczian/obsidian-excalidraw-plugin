@@ -342,6 +342,24 @@ export declare class ExcalidrawAutomate {
      */
     getElement(id: string): Mutable<ExcalidrawElement>;
     /**
+     * Returns an object describing the bound text element.
+     * If a text element is provided:
+     *  - returns { eaElement } if the element is in ea.elementsDict
+     *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
+     * If a container element is provided, searches for the bound text element:
+     *  - returns { eaElement } if found in ea.elementsDict
+     *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
+     * If not found, returns {}.
+     * Does not add the text element to elementsDict.
+     * @param element
+     * @param searchInView - If true, searches in the targetView elements if not found in elementsDict.
+     * @returns Object containing either eaElement or sceneElement or empty if not found.
+     */
+    getBoundTextElement(element: ExcalidrawElement, searchInView?: boolean): {
+        eaElement?: Mutable<ExcalidrawTextElement>;
+        sceneElement?: ExcalidrawTextElement;
+    };
+    /**
      * Creates a drawing and saves it to the specified filename.
      * @param {Object} [params] - Parameters for creating the drawing.
      * @param {string} [params.filename] - The filename for the drawing. If null, default filename as defined in Excalidraw settings.
