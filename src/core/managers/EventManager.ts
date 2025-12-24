@@ -193,6 +193,15 @@ export class EventManager {
       this.plugin.lastPDFLeafID = leaf.id;
     }
 
+    if (leaf.view && leaf.view.getViewType() === VIEW_TYPE_EXCALIDRAW) {
+      this.plugin.lastActiveExcalidrawLeafID = leaf.id;
+    } else {
+      const lastLeaf = this.app.workspace.getLeafById(this.plugin.lastActiveExcalidrawLeafID);
+      if(!lastLeaf || !(lastLeaf.view instanceof ExcalidrawView)) {
+        this.plugin.lastActiveExcalidrawLeafID = null;
+      }
+    }
+
     if(this.leafChangeTimeout) {
       window.clearTimeout(this.leafChangeTimeout);
     }

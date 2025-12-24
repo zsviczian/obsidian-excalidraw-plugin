@@ -81,7 +81,7 @@ import { log } from "../utils/debugHelper";
 import { ExcalidrawLib } from "../types/excalidrawLib";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
 import { AddImageOptions, ImageInfo, ScriptSettingValue, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
-import { _measureText, cloneElement, createPNG, createSVG, ensureActiveScriptSettingsObject, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getFontFamily, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeBindMode, normalizeFixedPoint, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
+import { _measureText, cloneElement, createPNG, createSVG, ensureActiveScriptSettingsObject, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getFontFamily, getLastActiveExcalidrawView, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeBindMode, normalizeFixedPoint, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
 import { exportToPDF, getMarginValue, getPageDimensions } from "src/utils/exportUtils";
 import { PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties, ExportSettings} from "src/types/exportUtilTypes";
 import { FrameRenderingOptions } from "src/types/utilTypes";
@@ -2331,35 +2331,72 @@ export class ExcalidrawAutomate {
   isExcalidrawFile(f: TFile): boolean {
     return this.plugin.isExcalidrawFile(f);
   };
+
   targetView: ExcalidrawView = null; //the view currently edited
   /**
-   * Sets the target view for EA. All the view operations and the access to Excalidraw API will be performed on this view.
-   * If view is null or undefined, the function will first try setView("active"), then setView("first").
-   * @param {ExcalidrawView | "first" | "active"} [view] - The view to set as target.
-   * @returns {ExcalidrawView} The target view.
+   * Sets the target view for EA. All view operations and all access to the Excalidraw API
+   * will be performed on this view.
+   *
+   * Typical usage:
+   * - `setView()` to pick a sensible default automatically
+   * - `setView(excalidrawView)` to explicitly target a specific view
+   *
+   * Selectors:
+   * - If `view` is `null` or `undefined` (or `"auto"`), EA will pick a sensible default:
+   *   1) the currently active Excalidraw view (if any),
+   *   2) otherwise the last active Excalidraw view (if it is still available),
+   *   3) otherwise the `"first"` Excalidraw view in the workspace.
+   * - If `show` is `true`, the view will be revealed (brought to front) and focused.
+   *
+   * Deprecated selectors (kept for backward compatibility):
+   * - If `"active"` is provided, the currently active Excalidraw view will be used. If no
+   *   active Excalidraw view is available, the last active Excalidraw view will be used.
+   * - If `"first"` is provided, the target will be the first Excalidraw view returned by
+   *   Obsidian's workspace leaf collection (i.e., the first item in the current
+   *   `getExcalidrawViews()` result). **This ordering is managed by Obsidian and does not
+   *   necessarily match what a user would consider the “first”/“leftmost”/“topmost” view;
+   *   from a user's perspective it may appear effectively random.**
+   *
+   * @param {ExcalidrawView | "auto" | "first" | "active" | null | undefined} [view] - The view (or selector) to set as target.
+   * @param {boolean} [show=false] - Whether to reveal/focus the target view.
+   * @returns {ExcalidrawView} The ExcalidrawView that was set as `targetView` (or `null` if none found).
    */
-  setView(view?: ExcalidrawView | "first" | "active"): ExcalidrawView {
-    if(!view) {
-      const v = this.plugin.app.workspace.getActiveViewOfType(ExcalidrawView);
-      if (v instanceof ExcalidrawView) {
-        this.targetView = v;
-      }
-      else {
-        this.targetView = getExcalidrawViews(this.plugin.app)[0];
-      }
-    }
-    if (view == "active") {
-      const v = this.plugin.app.workspace.getActiveViewOfType(ExcalidrawView);
-      if (!(v instanceof ExcalidrawView)) {
+  setView(view?: ExcalidrawView | "auto" | "first" | "active" | null, show: boolean = false): ExcalidrawView {
+    const app = this.plugin.app;
+    const workspace = app.workspace;
+    const setView = () => {
+      if(!view || view === "auto") {
+        view = workspace.getActiveViewOfType(ExcalidrawView);
+        if (view instanceof ExcalidrawView) {
+          this.targetView = view;
+          return;
+        }
+        view = getLastActiveExcalidrawView(this.plugin);
+        this.targetView = view ?? getExcalidrawViews(this.plugin.app)[0];
         return;
       }
-      this.targetView = v;
+      if (view == "active") {
+        view = workspace.getActiveViewOfType(ExcalidrawView);
+        if (view instanceof ExcalidrawView) {
+          this.targetView = view;
+          return;
+        }
+        this.targetView = getLastActiveExcalidrawView(this.plugin);
+        return;
+      }
+      if (view == "first") {
+        this.targetView = getExcalidrawViews(this.plugin.app)[0];
+        return;
+      }
+      if (view instanceof ExcalidrawView) {
+        this.targetView = view;
+      }
     }
-    if (view == "first") {
-      this.targetView = getExcalidrawViews(this.plugin.app)[0];
-    }
-    if (view instanceof ExcalidrawView) {
-      this.targetView = view;
+    setView();
+    if(show && this.targetView) {
+      this.plugin.app.workspace.revealLeaf(
+        this.targetView.leaf,
+      );
     }
     return this.targetView;
   };

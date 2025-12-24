@@ -118,6 +118,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public settings: ExcalidrawSettings;
   public activeExcalidrawView: ExcalidrawView = null;
   public lastActiveExcalidrawFilePath: string = null;
+  public lastActiveExcalidrawLeafID: string = null;
   public hover: { linkText: string; sourcePath: string } = {
     linkText: null,
     sourcePath: null,

@@ -929,3 +929,11 @@ export function ensureActiveScriptSettingsObject(
 
   return plugin.settings.scriptEngineSettings[activeScript] as Record<string, ScriptSettingValue>;
 }
+
+export function getLastActiveExcalidrawView(plugin: ExcalidrawPlugin): ExcalidrawView | null {
+  const leaf = plugin.app.workspace.getLeafById(plugin.lastActiveExcalidrawLeafID);
+  if(leaf && leaf.view instanceof ExcalidrawView) {
+    return leaf.view as ExcalidrawView;
+  }
+  return null;
+}

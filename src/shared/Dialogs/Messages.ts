@@ -17,6 +17,21 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.19.0":`
+## New in ExcalidrawAutomate
+- **setView() improvements**
+  - Calling \`setView()\` now picks a sensible target automatically:
+    - It prefers the **currently active Excalidraw view**.
+    - If no active Excalidraw view is found (e.g., the user is focused on a different tab like the File Explorer/sidebar), it will fall back to the **last active Excalidraw view (as long as it is still available)** — typically the drawing the user came from.
+  - **New selector**: \`"auto"\` (equivalent to calling \`setView()\`).
+    - Useful when you also want to reveal/focus the view: \`setView("auto", true)\`.
+  - **Deprecated selectors**: \`"active"\` and \`"first"\` are deprecated and kept only for backward compatibility.
+    - Recommended usage is either \`setView()\`, \`setView("auto")\`, or \`setView(excalidrawView)\` (explicitly target a specific view).
+
+\`\`\`ts
+setView(view?: ExcalidrawView | "auto" | "first" | "active" | null, show: boolean = false)
+\`\`\`
+`,
 "2.18.3":`
 <div class="excalidraw-videoWrapper">
 <a href="https://www.youtube.com/watch?v=dZguonMP2KU" target="_blank"><img src ="https://i.ytimg.com/vi/dZguonMP2KU/maxresdefault.jpg" style="width:100%;"></a>

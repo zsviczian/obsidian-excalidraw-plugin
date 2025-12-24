@@ -491,9 +491,18 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "setView",
-    code: 'setView(view: ExcalidrawView | "first" | "active"): ExcalidrawView;',
-    desc: null,
-    after: "",
+    code: 'setView(view?: ExcalidrawView | "auto" | "first" | "active" | null, show: boolean = false): ExcalidrawView;',
+    desc: "Sets the target view for EA. All the view operations and the access to Excalidraw API will be performed on this view. " +
+      "Typically you will use setView() (to pick a sensible default) or setView(excalidrawView) (to explicitly target a specific view).\n" +
+      '"auto" is equivalent to calling setView() and can read nicer when you want to show the view (e.g. setView("auto", true)).\n' +
+      '"active" and "first" are deprecated and are kept for backward compatibility.\n' +
+      'If view is null or undefined (or "auto"), EA will pick a sensible default: first the currently active Excalidraw view (if any), otherwise the last active Excalidraw view (if it is still available), otherwise the "first" Excalidraw view in the workspace.\n' +
+      "If show is true, the view will be brought to front and focused.\n" +
+      'If "first" is provided, the target will be the first Excalidraw view returned by Obsidian\'s workspace leaf collection (i.e., the first item in getExcalidrawViews()). ' +
+      "This ordering is managed by Obsidian and does not necessarily match what a user would consider the “first” view; from a user's perspective it may appear random.\n" +
+      'If "active" is provided, the currently active Excalidraw view in the workspace will be used. If that is not available, then the last active Excalidraw view will be used.\n' +
+      "The function returns the ExcalidrawView that was set as targetView.",
+    after: '("auto",true);',
   },
   {
     field: "getExcalidrawAPI",
