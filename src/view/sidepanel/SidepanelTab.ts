@@ -190,6 +190,12 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 		this.modalEl?.remove();
 	}
 
+	public setDisabled(disabled: boolean) {
+		this.contentEl.style.pointerEvents = disabled ? "none" : "";
+		this.contentEl.style.opacity = disabled ? "0.5" : "";
+		return this;
+	}
+
 	private runCloseHandlers() {
 		if (this.isClosed) {
 			return;
