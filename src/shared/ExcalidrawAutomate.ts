@@ -94,8 +94,6 @@ import { SidepanelTabOptions } from "src/types/excalidrawAutomateTypes";
 import { patchMobileView } from "src/utils/customEmbeddableUtils";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { AIRequest } from "src/types/AIUtilTypes";
-import { arrow, end } from "@popperjs/core";
-import { start } from "repl";
 
 extendPlugins([
   HarmonyPlugin,
@@ -564,6 +562,7 @@ export class ExcalidrawAutomate {
    */
   public async createSidepanelTab(
     title: string,
+    persist: boolean = false,
     options?: SidepanelTabOptions,
   ): Promise<ExcalidrawSidepanelTab | null> {
     if (this.sidepanelTab) {
@@ -576,8 +575,11 @@ export class ExcalidrawAutomate {
       errorMessage("Unable to open sidepanel", "createSidepanelTab()");
       return null;
     }
-    const tab = await spView.createTab({ title, scriptName, options });
+    const tab = await spView.createTab({ title, scriptName, options, hostEA: this });
     this.sidepanelTab = tab;
+    if (persist && this.activeScript) {
+      this.persistSidepanelTab();
+    }
     return tab;
   }
 
@@ -2377,6 +2379,7 @@ export class ExcalidrawAutomate {
    * Clears elementsDict and imagesDict, and resets all style values to default.
    */
   reset():void {
+    this.closeSidepanelTab();
     this.clear();
     this.activeScript = null;
     this.style = {
@@ -3837,13 +3840,13 @@ export class ExcalidrawAutomate {
    * Destroys the ExcalidrawAutomate instance, clearing all references and data.
    */
   destroy(): void {
+    this.closeSidepanelTab();
     this.targetView = null;
     this.plugin = null;
     this.elementsDict = {};
     this.imagesDict = {};
     this.mostRecentMarkdownSVG = null;
     this.activeScript = null;
-    this.sidepanelTab = null;
     //@ts-ignore
     this.style = {};
     //@ts-ignore

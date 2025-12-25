@@ -2,6 +2,7 @@ import { ItemView, WorkspaceLeaf } from "obsidian";
 import { ICON_NAME, VIEW_TYPE_SIDEPANEL } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
+import type { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import type { SidepanelTabOptions } from "src/types/excalidrawAutomateTypes";
 import { ExcalidrawSidepanelTab } from "./SidepanelTab";
 
@@ -9,6 +10,7 @@ type TabCreationConfig = {
   title: string;
 	scriptName?: string;
 	reuseExisting?: boolean;
+	hostEA?: ExcalidrawAutomate;
 	options?: SidepanelTabOptions;
 };
 
@@ -32,15 +34,15 @@ export class ExcalidrawSidepanelView extends ItemView {
 			}
 			await leaf.setViewState({ type: VIEW_TYPE_SIDEPANEL, active: reveal });
 		}
-		const view = leaf.view;
-		if (!(view instanceof ExcalidrawSidepanelView)) {
+		const spView = leaf.view;
+		if (!(spView instanceof ExcalidrawSidepanelView)) {
 			return null;
 		}
 		if (reveal) {
 			plugin.app.workspace.revealLeaf(leaf);
 		}
-		await view.waitUntilReady();
-		return view;
+		await spView.waitUntilReady();
+		return spView;
 	}
 
 	public static onPluginUnload(plugin: ExcalidrawPlugin) {
@@ -50,7 +52,8 @@ export class ExcalidrawSidepanelView extends ItemView {
 
 	private tabs = new Map<string, ExcalidrawSidepanelTab>();
 	private scriptTabs = new Map<string, ExcalidrawSidepanelTab>();
-	private persistedScripts = new Set<string>();
+	private tabHosts = new Map<string, ExcalidrawAutomate>();
+	private persistedScripts = new Map<string, { title: string }>();
 	private activeTabId: string | null = null;
 	private tabsEl: HTMLDivElement | null = null;
 	private bodyEl: HTMLDivElement | null = null;
@@ -61,8 +64,28 @@ export class ExcalidrawSidepanelView extends ItemView {
 	constructor(leaf: WorkspaceLeaf, private plugin: ExcalidrawPlugin) {
 		super(leaf);
 		(plugin.settings.sidepanelTabs ?? [])
-			.filter((name) => !!name)
-			.forEach((name) => this.persistedScripts.add(name));
+			.filter((entry) => !!entry)
+			.forEach((entry) => {
+				let scriptName = "";
+				let title = "";
+				try {
+					const parsed = JSON.parse(entry);
+					scriptName = parsed?.script ?? parsed?.name ?? "";
+					title = parsed?.title ?? scriptName;
+				} catch (e) {
+					if (entry.includes("::")) {
+						const [namePart, ...rest] = entry.split("::");
+						scriptName = namePart;
+						title = rest.join("::") || namePart;
+					} else {
+						scriptName = entry;
+						title = entry;
+					}
+				}
+				if (scriptName) {
+					this.persistedScripts.set(scriptName, { title: title || scriptName });
+				}
+			});
 		this.readyPromise = new Promise((resolve) => {
 			this.resolveReady = resolve;
 		});
@@ -111,7 +134,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 		await this.readyPromise;
 	}
 
-	public async createTab(config: TabCreationConfig = {title: "unknown"}): Promise<ExcalidrawSidepanelTab> {
+	public async createTab(config: TabCreationConfig = { title: "unknown" }): Promise<ExcalidrawSidepanelTab> {
 		await this.waitUntilReady();
 		const scriptName = config.scriptName;
 		const reuse = config.reuseExisting !== false;
@@ -120,18 +143,29 @@ export class ExcalidrawSidepanelView extends ItemView {
 			if (existing) {
 				existing.reset(config.title, config.options);
 				this.setActiveTab(existing);
+				if (config.hostEA) {
+					this.tabHosts.set(existing.id, config.hostEA);
+				}
 				return existing;
 			}
 		}
 		const tab = this.createTabInternal(config.title, scriptName, config.options);
+		if (config.hostEA) {
+			this.tabHosts.set(tab.id, config.hostEA);
+		}
 		return tab;
 	}
 
 	public markTabPersistent(tab: ExcalidrawSidepanelTab) {
-    const scriptName = tab.scriptName;
+		const scriptName = tab.scriptName;
+		if (!scriptName) {
+			return;
+		}
 		this.scriptTabs.set(scriptName, tab);
-		if (!this.persistedScripts.has(scriptName)) {
-			this.persistedScripts.add(scriptName);
+		const title = tab.title;
+		const existing = this.persistedScripts.get(scriptName);
+		if (!existing || existing.title !== title) {
+			this.persistedScripts.set(scriptName, { title });
 			this.savePersistentScripts();
 		}
 	}
@@ -152,6 +186,11 @@ export class ExcalidrawSidepanelView extends ItemView {
 			this.scriptTabs.delete(scriptName);
 			this.unmarkTabPersistent(scriptName);
 		}
+		const hostEA = this.tabHosts.get(tab.id);
+		if (hostEA && hostEA.sidepanelTab === tab) {
+			hostEA.sidepanelTab = null;
+		}
+		this.tabHosts.delete(tab.id);
 		tab.destroy();
 		if (this.activeTabId === tab.id) {
 			this.activeTabId = null;
@@ -209,17 +248,17 @@ export class ExcalidrawSidepanelView extends ItemView {
 				return;
 			}
 			await this.plugin.awaitInit();
-			for (const scriptName of Array.from(this.persistedScripts)) {
+			for (const [scriptName, meta] of Array.from(this.persistedScripts.entries())) {
 				if (!scriptName) {
 					continue;
 				}
-				await this.runScriptByName(scriptName);
+				await this.runScriptByName(scriptName, meta.title);
 			}
 		})();
 		return this.restorePromise;
 	}
 
-	private async runScriptByName(scriptName: string) {
+	private async runScriptByName(scriptName: string, title: string) {
 		const scriptEngine = this.plugin.scriptEngine;
 		if (!scriptEngine) {
 			return;
@@ -234,13 +273,19 @@ export class ExcalidrawSidepanelView extends ItemView {
 		try {
 			const script = await this.plugin.app.vault.read(file);
 			await scriptEngine.executeScript(undefined, script, scriptName, file);
+			const restoredTab = this.scriptTabs.get(scriptName);
+			if (restoredTab) {
+				restoredTab.setTitle(title);
+			}
 		} catch (error) {
 			console.error(`Excalidraw: error while restoring sidepanel script '${scriptName}'`, error);
 		}
 	}
 
 	private savePersistentScripts() {
-		this.plugin.settings.sidepanelTabs = Array.from(this.persistedScripts);
+		this.plugin.settings.sidepanelTabs = Array.from(this.persistedScripts.entries()).map(([script, meta]) =>
+			JSON.stringify({ script, title: meta.title ?? script }),
+		);
 		void this.plugin.saveSettings();
 	}
 }

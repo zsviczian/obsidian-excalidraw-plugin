@@ -17,6 +17,7 @@ let tabCounter = 0;
 export class ExcalidrawSidepanelTab {
 	readonly id: string;
 	private _scriptName?: string;
+	private _title: string;
 	readonly containerEl: HTMLDivElement;
 	readonly modalEl: HTMLDivElement;
 	readonly contentEl: HTMLDivElement;
@@ -34,6 +35,7 @@ export class ExcalidrawSidepanelTab {
 		options?: SidepanelTabOptions,
 	) {
 		this._scriptName = scriptName;
+		this._title = title;
 		this.id = `excalidraw-sidepanel-tab-${++tabCounter}`;
 		this.modalEl = this.containers.bodyEl.createDiv({ cls: "excalidraw-sidepanel-tab" });
 		this.modalEl.id = this.id;
@@ -48,6 +50,10 @@ export class ExcalidrawSidepanelTab {
 
 	public get scriptName(): string | undefined {
 		return this._scriptName;
+	}
+
+	public get title(): string {
+		return this._title;
 	}
 
 	public setScriptName(scriptName?: string) {
@@ -93,6 +99,7 @@ export class ExcalidrawSidepanelTab {
 	}
 
 	public setTitle(title: string) {
+		this._title = title;
 		this.titleEl.setText(title);
 		this.labelEl.setText(title);
 		this.buttonEl.setAttr("aria-label", title);
