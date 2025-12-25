@@ -1,4 +1,4 @@
-import { setIcon } from "obsidian";
+import { setIcon, type CloseableComponent } from "obsidian";
 import { ICON_NAME } from "src/constants/constants";
 import type { SidepanelTabOptions } from "src/types/excalidrawAutomateTypes";
 
@@ -14,7 +14,7 @@ type Containers = {
 
 let tabCounter = 0;
 
-export class ExcalidrawSidepanelTab {
+export class ExcalidrawSidepanelTab implements CloseableComponent {
 	readonly id: string;
 	private _scriptName?: string;
 	private _title: string;
@@ -22,10 +22,14 @@ export class ExcalidrawSidepanelTab {
 	readonly modalEl: HTMLDivElement;
 	readonly contentEl: HTMLDivElement;
 	readonly titleEl: HTMLDivElement;
+	public shouldRestoreSelection = false;
 	private buttonEl: HTMLButtonElement;
 	private labelEl: HTMLSpanElement;
 	private iconEl: HTMLSpanElement;
 	private closeEl: HTMLButtonElement;
+	private closeCallback?: () => any;
+	private isClosed = false;
+	private isActive = false;
 
 	constructor(
     title: string,
@@ -45,7 +49,7 @@ export class ExcalidrawSidepanelTab {
 		this.buttonEl = this.createButton();
 		this.buttonEl.setAttr("aria-controls", this.id);
 		this.applyOptions(title, options);
-		this.buttonEl.addEventListener("click", () => this.host.activate(this));
+		this.buttonEl.addEventListener("click", () => this.open());
 	}
 
 	public get scriptName(): string | undefined {
@@ -78,7 +82,7 @@ export class ExcalidrawSidepanelTab {
 		this.closeEl.addEventListener("click", (evt) => {
 			evt.preventDefault();
 			evt.stopPropagation();
-			this.host.close(this);
+			this.close();
 		});
 		setIcon(this.closeEl, "x");
 		return button;
@@ -103,6 +107,22 @@ export class ExcalidrawSidepanelTab {
 		this.titleEl.setText(title);
 		this.labelEl.setText(title);
 		this.buttonEl.setAttr("aria-label", title);
+		return this;
+	}
+
+	public setContent(content: string | DocumentFragment) {
+		this.clear();
+		if (typeof content === "string") {
+			this.contentEl.setText(content);
+		} else {
+			this.contentEl.append(content);
+		}
+		return this;
+	}
+
+	public setCloseCallback(callback: () => any) {
+		this.closeCallback = callback;
+		return this;
 	}
 
 	public setIcon(iconId?: string) {
@@ -119,18 +139,49 @@ export class ExcalidrawSidepanelTab {
 		this.host.activate(this);
 	}
 
+	public open() {
+		this.isClosed = false;
+		this.host.activate(this);
+		void this.onOpen();
+	}
+
 	public close() {
+		this.runCloseHandlers();
 		this.host.close(this);
 	}
 
+	public onOpen(): Promise<void> | void {}
+
+	public onClose(): void {}
+
 	public setActive(active: boolean) {
+		const becameActive = active && !this.isActive;
+		this.isActive = active;
 		this.modalEl.toggleClass("is-active", active);
 		this.buttonEl.setAttr("aria-selected", String(active));
 		this.buttonEl.toggleClass("is-active", active);
+		if (becameActive) {
+			void this.onOpen();
+		}
+	}
+
+	public notifyWillClose() {
+		this.runCloseHandlers();
 	}
 
 	public destroy() {
 		this.buttonEl?.remove();
 		this.modalEl?.remove();
+	}
+
+	private runCloseHandlers() {
+		if (this.isClosed) {
+			return;
+		}
+		this.isClosed = true;
+		if (this.closeCallback) {
+			this.closeCallback();
+		}
+		this.onClose();
 	}
 }

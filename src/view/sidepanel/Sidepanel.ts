@@ -180,6 +180,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 	}
 
 	public removeTab(tab: ExcalidrawSidepanelTab) {
+		tab.notifyWillClose();
 		this.tabs.delete(tab.id);
 		const scriptName = tab.scriptName;
 		if (scriptName && this.scriptTabs.get(scriptName) === tab) {
