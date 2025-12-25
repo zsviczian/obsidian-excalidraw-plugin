@@ -90,10 +90,10 @@ import { AutoexportConfig } from "src/types/excalidrawViewTypes";
 import { FloatingModal } from "./Dialogs/FloatingModal";
 import { ExcalidrawSidepanelView } from "src/view/sidepanel/Sidepanel";
 import { ExcalidrawSidepanelTab } from "src/view/sidepanel/SidepanelTab";
-import { SidepanelTabOptions } from "src/types/excalidrawAutomateTypes";
 import { patchMobileView } from "src/utils/customEmbeddableUtils";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { AIRequest } from "src/types/AIUtilTypes";
+import { SidepanelTabOptions } from "src/types/sidepanelTabTypes";
 
 extendPlugins([
   HarmonyPlugin,
@@ -867,6 +867,9 @@ export class ExcalidrawAutomate {
     eaElement?: Mutable<ExcalidrawTextElement>,
     sceneElement?: ExcalidrawTextElement
     } {
+    if (!element) {
+      return {};
+    }
     if(element.type === "text") {
       if(element.id in this.elementsDict) {
         return {eaElement: element as Mutable<ExcalidrawTextElement>};

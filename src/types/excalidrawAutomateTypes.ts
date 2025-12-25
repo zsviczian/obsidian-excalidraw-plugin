@@ -40,8 +40,3 @@ export interface AddImageOptions {
   anchor?: boolean;
   colorMap?: ColorMap;
 }
-
-export interface SidepanelTabOptions {
-  icon?: string;
-  reveal?: boolean;
-}

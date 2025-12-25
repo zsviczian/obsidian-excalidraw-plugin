@@ -1,7 +1,7 @@
 import type { CloseableComponent } from "obsidian";
 import type ExcalidrawPlugin from "src/core/main";
 import { getLastActiveExcalidrawView } from "src/utils/excalidrawAutomateUtils";
-import type { SidepanelTabOptions } from "src/types/excalidrawAutomateTypes";
+import type { SidepanelTabOptions, SidepanelTab as SidepanelTabType } from "src/types/sidepanelTabTypes";
 import ExcalidrawView from "src/view/ExcalidrawView";
 
 type HostCallbacks = {
@@ -17,7 +17,7 @@ type Containers = {
 
 let tabCounter = 0;
 
-export class ExcalidrawSidepanelTab implements CloseableComponent {
+export class ExcalidrawSidepanelTab implements CloseableComponent, SidepanelTabType {
 	readonly id: string;
 	private _scriptName?: string;
 	private _title: string;
@@ -25,8 +25,6 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 	readonly modalEl: HTMLDivElement;
 	readonly contentEl: HTMLDivElement;
 	readonly titleEl: HTMLDivElement;
-	public shouldRestoreSelection = false;
-	private closeCallback?: () => any;
 	private isClosed = false;
 	private isActive = false;
 	public onFocus: (view: ExcalidrawView | null) => void = () => {};
@@ -36,6 +34,10 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
    */
   public onExcalidrawViewClosed: () => void = () => {};
 
+	/**
+	 * Creates a sidepanel tab instance bound to a host view and container elements.
+	 * The tab manages its own DOM nodes (label + content) and delegates lifecycle events back to the host.
+	 */
 	constructor(
     title: string,
 		private host: HostCallbacks,
@@ -62,6 +64,11 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 		return this._title;
 	}
 
+	/**
+	 * Assigns a script name used for persistence and lookup without altering the title.
+   * This is used by ExcalidrawSidpanel when creating or restoring tabs.
+   * Not intended for public use by EA scripts.
+	 */
 	public setScriptName(scriptName?: string) {
 		this._scriptName = scriptName;
 	}
@@ -71,14 +78,24 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 		this.clear();
 	}
 
+	/**
+	 * Reinitializes the tab title and clears previous content/handlers.
+   * Not intended for public use by EA scripts.
+	 */
 	public reset(title: string, options?: SidepanelTabOptions) {
 		this.applyOptions(title, options);
 	}
 
+	/**
+	 * Removes all child nodes from the content container.
+	 */
 	public clear() {
 		this.contentEl.empty();
 	}
 
+	/**
+	 * Updates the tab title label and notifies the host to refresh any UI affordances.
+	 */
 	public setTitle(title: string) {
 		this._title = title;
 		this.titleEl.setText(title);
@@ -86,6 +103,9 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 		return this;
 	}
 
+	/**
+	 * Replaces the tab content with the provided text or fragment.
+	 */
 	public setContent(content: string | DocumentFragment) {
 		this.clear();
 		if (typeof content === "string") {
@@ -96,23 +116,25 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 		return this;
 	}
 
-	public setCloseCallback(callback: () => any) {
-		this.closeCallback = callback;
-		return this;
-	}
-
-	public setIcon(_iconId?: string) {}
-
+	/**
+	 * Activates the tab within the host sidepanel.
+	 */
 	public focus() {
 		this.host.activate(this);
 	}
 
+	/**
+	 * Marks the tab as open/active and triggers its onOpen lifecycle hook.
+	 */
 	public open() {
 		this.isClosed = false;
 		this.host.activate(this);
 		void this.onOpen();
 	}
 
+	/**
+	 * Closes the tab via host, firing close handlers first.
+	 */
 	public close() {
 		this.runCloseHandlers();
 		this.host.close(this);
@@ -122,6 +144,11 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 
 	public onClose(): void {}
 
+	/**
+	 * Flags the tab as active/inactive and triggers focus/onOpen when becoming active.
+   * This function is called by ExcalidrawSidepanel when the tab's active state changes.
+   * Not intended for public use by EA scripts.
+	 */
 	public setActive(active: boolean) {
 		const becameActive = active && !this.isActive;
 		this.isActive = active;
@@ -133,18 +160,36 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 		}
 	}
 
+	/**
+	 * Signals the tab will close soon and runs close handlers once.
+   * This function is called by ExcalidrawSidepanel when the user attempts to close the tab.
+   * Not intended for public use by EA scripts.
+	 */
 	public notifyWillClose() {
 		this.runCloseHandlers();
 	}
 
+	/**
+	 * Invokes focus handlers with the provided or last active Excalidraw view.
+   * This is called by ExcalidrawSidepanel when the tab gains focus.
+   * Not intended for public use by EA scripts.
+	 */
 	public handleFocus(view?: ExcalidrawView | null) {
 		this.runFocusHandlers(view);
 	}
 
+	/**
+	 * Removes DOM nodes and releases references.
+   * This is called by ExcalidrawSidepanel when the tab is being destroyed.
+   * Not intended for public use by EA scripts.
+	 */
 	public destroy() {
 		this.modalEl?.remove();
 	}
 
+	/**
+	 * Toggles pointer interactivity and visual opacity for the tab content.
+	 */
 	public setDisabled(disabled: boolean) {
 		this.contentEl.style.pointerEvents = disabled ? "none" : "";
 		this.contentEl.style.opacity = disabled ? "0.5" : "";
@@ -156,9 +201,6 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 			return;
 		}
 		this.isClosed = true;
-		if (this.closeCallback) {
-			this.closeCallback();
-		}
 		this.onClose();
 	}
 
@@ -169,6 +211,9 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 		this.onFocus(view ?? this.getLastActiveView());
 	}
 
+	/**
+	 * Resolves the last active Excalidraw view from the plugin host.
+	 */
 	private getLastActiveView(): ExcalidrawView | null {
 		return getLastActiveExcalidrawView(this.host.plugin) ?? null;
 	}

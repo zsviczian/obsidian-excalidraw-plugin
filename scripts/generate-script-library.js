@@ -30,6 +30,16 @@ For a reference, follow the implementation pattern used in the "Printable Layout
 - Elements can be deleted from the scene by setting their isDeleted property to true.
 - The Obsidian.md module is available on ea.obsidian.
 
+**Sidepanels and multi-view tooling:**
+- Sidepanels are for scripts that must stay open while users hop between multiple Excalidraw views. They should implement the SidepanelTab hooks (\`onOpen\`, \`onFocus(view)\`, \`onClose\`, \`onExcalidrawViewClosed\`) and manage their own \`ea.targetView\` explicitly.
+- Persisted sidepanel scripts are launched during plugin startup (e.g., Obsidian restart, plugin update) with \`ea.targetView === null\`. Scripts must handle this by deferring view-bound work until \`onFocus\` delivers a view; call \`ea.setView(view)\` when you decide to bind.
+- Each ea instance may host a single sidepanelTab. This sidepanel tab is stored in ea.sidepanelTab. Create the tab with \`ea.createSidepanelTab(title, persist?, options?)\`; the returned \`ea.sidepanelTab\` exposes \`contentEl\`, \`setContent\`, \`setTitle\`, \`setDisabled\`, \`setCloseCallback\`, \`open/close\`, and focus lifecycle hooks. Reveal with \`ea.revealSidepanelTab()\`. Persist with \`ea.persistSidepanelTab()\` (tabs are restored and scripts re-run on next startup). Close with \`ea.closeSidepanelTab()\`.
+- Mobile UX: sidepanels slide in without disturbing canvas layout and are better for longer forms than floating modals. Prefer them for complex inputs, especially on phones.
+- Auto-closing patterns: For scripts that use sidepanels, but perform operations that are single ExcalidrawView relevant, they can call \`ea.closeSidepanelTab()\` after completing the operation, and/or inside \`ea.sidepanelTab.onFocus = (view) => { if (view !== ea.targetView) { ea.closeSidepanelTab(); } }\` to shut down when the user leaves the originating view.
+- Scripts can detect view change in \`onFocus(view)\` by comparing \`ea.targetView\` to the provided view parameter.
+- Persistence UX: scripts may offer a “Persist tab” control inside \`contentEl\` that calls \`ea.persistSidepanelTab()\`. Once persisted, hide that control; users can later remove the tab via the sidepanel close button (scripts cannot unpersist themselves, but can close themselves via ea.closeSidepanelTab()).
+- A dedicated section "sidepanelTabTypes.d.ts" in this document lists the ExcalidrawSidepanelTab function signatures.
+
 #### **1. The Core Workflow: Handling Element Immutability**
 
 *   **Central Rule:** Elements in the Excalidraw scene are immutable and should never be modified directly. Always use the ExcalidrawAutomate (EA) "workbench" pattern for modifications.
@@ -217,6 +227,7 @@ const ADDITIONAL_TYPE_DEFS_FOR_AI_TRAINING = [
 const TYPE_DEF_WHITELIST = [
   "lib/shared/ExcalidrawAutomate.d.ts",
   "lib/types/excalidrawAutomateTypes.d.ts",
+  "lib/types/sidepanelTabTypes.d.ts",
   "lib/types/penTypes.d.ts",
   "lib/types/utilTypes.d.ts",
   "lib/types/exportUtilTypes.d.ts",

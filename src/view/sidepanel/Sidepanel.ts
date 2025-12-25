@@ -3,7 +3,7 @@ import { ICON_NAME, VIEW_TYPE_SIDEPANEL } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
 import type { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import type { SidepanelTabOptions } from "src/types/excalidrawAutomateTypes";
+import type { SidepanelTabOptions } from "src/types/sidepanelTabTypes";
 import { getLastActiveExcalidrawView } from "src/utils/excalidrawAutomateUtils";
 import { ExcalidrawSidepanelTab } from "./SidepanelTab";
 
@@ -19,6 +19,9 @@ export class ExcalidrawSidepanelView extends ItemView {
 	private static singleton: ExcalidrawSidepanelView | null = null;
 	private static restoreSilent = false;
 
+	/**
+	 * Returns the singleton sidepanel view if it exists, optionally revealing the leaf unless restoration is running silently.
+	 */
 	public static getExisting(reveal: boolean = true): ExcalidrawSidepanelView | null {
 		const spView = ExcalidrawSidepanelView.singleton;
     if (spView && reveal && !ExcalidrawSidepanelView.restoreSilent) {
@@ -27,6 +30,9 @@ export class ExcalidrawSidepanelView extends ItemView {
     return spView;
 	}
 
+	/**
+	 * Ensures a sidepanel view exists (creating it if needed), optionally revealing it, and waits until DOM is ready.
+	 */
 	public static async getOrCreate(plugin: ExcalidrawPlugin, reveal: boolean = true): Promise<ExcalidrawSidepanelView | null> {
 		const effectiveReveal = reveal && !ExcalidrawSidepanelView.restoreSilent;
 		let leaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEPANEL)[0];
@@ -48,6 +54,9 @@ export class ExcalidrawSidepanelView extends ItemView {
 		return spView;
 	}
 
+	/**
+	 * Cleans up singleton references and detaches sidepanel leaves when the plugin unloads.
+	 */
 	public static onPluginUnload(plugin: ExcalidrawPlugin) {
 		ExcalidrawSidepanelView.singleton = null;
 		plugin.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEPANEL);
@@ -153,6 +162,9 @@ export class ExcalidrawSidepanelView extends ItemView {
 		this.updateEmptyStateVisibility();
 	}
 
+	/**
+	 * Tears down listeners, destroys tabs, and clears UI references when the sidepanel closes.
+	 */
 	protected async onClose() {
 		await super.onClose();
 		if (this.leafChangeRef) {
@@ -177,6 +189,9 @@ export class ExcalidrawSidepanelView extends ItemView {
 		await this.readyPromise;
 	}
 
+	/**
+	 * Creates or reuses a tab based on script identity and returns the active tab instance.
+	 */
 	public async createTab(config: TabCreationConfig = { title: "unknown" }): Promise<ExcalidrawSidepanelTab> {
 		await this.waitUntilReady();
 		const scriptName = config.scriptName;
@@ -199,6 +214,9 @@ export class ExcalidrawSidepanelView extends ItemView {
 		return tab;
 	}
 
+	/**
+	 * Marks a tab as persistent so its script is restored across sessions.
+	 */
 	public markTabPersistent(tab: ExcalidrawSidepanelTab) {
 		const scriptName = tab.scriptName;
 		if (!scriptName) {
@@ -213,6 +231,9 @@ export class ExcalidrawSidepanelView extends ItemView {
 		}
 	}
 
+	/**
+	 * Removes persistence metadata for a script-backed tab.
+	 */
 	public unmarkTabPersistent(scriptName?: string) {
 		if (!scriptName) {
 			return;
@@ -222,6 +243,9 @@ export class ExcalidrawSidepanelView extends ItemView {
 		}
 	}
 
+	/**
+	 * Removes a tab from the UI and state, running close hooks and updating active selection.
+	 */
 	public removeTab(tab: ExcalidrawSidepanelTab) {
 		tab.notifyWillClose();
 		this.tabs.delete(tab.id);
@@ -245,6 +269,9 @@ export class ExcalidrawSidepanelView extends ItemView {
 		this.updateEmptyStateVisibility();
 	}
 
+	/**
+	 * Activates the given tab (or clears active selection) and syncs UI controls.
+	 */
 	public setActiveTab(tab: ExcalidrawSidepanelTab | null) {
 		this.activeTabId = tab?.id ?? null;
 		this.tabs.forEach((candidate) => candidate.setActive(candidate === tab));
@@ -254,10 +281,16 @@ export class ExcalidrawSidepanelView extends ItemView {
 		this.updateEmptyStateVisibility();
 	}
 
+	/**
+	 * Returns a tab by its backing script name if present.
+	 */
 	public getTabByScript(scriptName: string): ExcalidrawSidepanelTab | null {
 		return this.scriptTabs.get(scriptName) ?? null;
 	}
 
+	/**
+	 * Checks whether a script has been marked for persistent restoration.
+	 */
 	public hasPersistentScript(scriptName: string): boolean {
 		return this.persistedScripts.has(scriptName);
 	}
@@ -287,6 +320,9 @@ export class ExcalidrawSidepanelView extends ItemView {
 		return tab;
 	}
 
+	/**
+	 * Restores persisted tabs on startup without revealing the panel, executing scripts to rebuild content.
+	 */
 	private async restorePersistedTabs(): Promise<void> {
 		if (this.restorePromise) {
 			return this.restorePromise;
@@ -311,6 +347,9 @@ export class ExcalidrawSidepanelView extends ItemView {
 		return this.restorePromise;
 	}
 
+	/**
+	 * Executes a script by name to reconstruct its sidepanel tab, updating title if needed.
+	 */
 	private async runScriptByName(scriptName: string, title: string) {
 		const scriptEngine = this.plugin.scriptEngine;
 		if (!scriptEngine) {
@@ -335,6 +374,9 @@ export class ExcalidrawSidepanelView extends ItemView {
 		}
 	}
 
+	/**
+	 * Persists current set of script tabs to plugin settings.
+	 */
 	private savePersistentScripts() {
 		this.plugin.settings.sidepanelTabs = Array.from(this.persistedScripts.entries()).map(([script, meta]) =>
 			JSON.stringify({ script, title: meta.title ?? script }),
@@ -342,6 +384,9 @@ export class ExcalidrawSidepanelView extends ItemView {
 		void this.plugin.saveSettings();
 	}
 
+	/**
+	 * Triggers focus handlers for the active tab using the last active Excalidraw view.
+	 */
 	private triggerActiveTabFocus(view = getLastActiveExcalidrawView(this.plugin)) {
 		if (!this.activeTabId) {
 			return;
@@ -364,6 +409,9 @@ export class ExcalidrawSidepanelView extends ItemView {
 		}
 	}
 
+	/**
+	 * Removes the select option corresponding to a tab and disables controls when empty.
+	 */
 	private removeTabOption(tab: ExcalidrawSidepanelTab) {
 		const option = this.tabOptions.get(tab.id);
 		if (option) {
@@ -379,6 +427,9 @@ export class ExcalidrawSidepanelView extends ItemView {
 		}
 	}
 
+	/**
+	 * Syncs the select option label with the tab title.
+	 */
 	private updateTabOptionTitle(tab: ExcalidrawSidepanelTab) {
 		const option = this.tabOptions.get(tab.id);
 		if (option) {
@@ -386,6 +437,9 @@ export class ExcalidrawSidepanelView extends ItemView {
 		}
 	}
 
+	/**
+	 * Shows empty-state messaging and disables controls when no tabs exist.
+	 */
 	private updateEmptyStateVisibility() {
 		const hasTabs = this.tabs.size > 0;
 		if (this.emptyStateEl) {

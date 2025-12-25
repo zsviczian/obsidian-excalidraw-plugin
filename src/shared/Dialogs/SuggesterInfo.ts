@@ -902,6 +902,31 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "createSidepanelTab",
+    code: "async createSidepanelTab(title: string, persist: boolean = false, options?: SidepanelTabOptions): Promise<ExcalidrawSidepanelTab | null>;",
+    desc: "Creates this EA instance's sidepanel tab; use the returned ExcalidrawSidepanelTab (setContent/setTitle, onOpen/onClose/onFocus, contentEl) to build the UI and lifecycle hooks.\n"+
+      "In case the script wants to replace the sidepanel tab it created earlier, call closeSidepanelTab() first, then createSidepanelTab() again.",
+    after: "",
+  },
+  {
+    field: "revealSidepanelTab",
+    code: "revealSidepanelTab(): ExcalidrawSidepanelTab | null;",
+    desc: "Reveals the sidepanel tab associated with this EA instance if it exists and returns it.",
+    after: "",
+  },
+  {
+    field: "persistSidepanelTab",
+    code: "persistSidepanelTab(): ExcalidrawSidepanelTab | null;",
+    desc: "Pins the active script's sidepanel tab so it persists across Obsidian restarts and returns it.",
+    after: "",
+  },
+  {
+    field: "closeSidepanelTab",
+    code: "closeSidepanelTab(): void;",
+    desc: "Closes the sidepanel tab associated with this EA instance if present.",
+    after: "",
+  },
+  {
     field: "getleaf",
     code: "getLeaf(origo: WorkspaceLeaf, targetPane?: PaneTarget): WorkspaceLeaf;",
     desc: "Generates a new Obsidian Leaf following Excalidraw plugin settings such as open in Main Workspace or not, open in adjacent pane if available, etc.<br>" +
