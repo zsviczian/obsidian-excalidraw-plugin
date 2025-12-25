@@ -88,7 +88,7 @@ import { FrameRenderingOptions } from "src/types/utilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { AutoexportConfig } from "src/types/excalidrawViewTypes";
 import { FloatingModal } from "./Dialogs/FloatingModal";
-import { ExcalidrawSidepanelView, resolveSidepanelTab } from "src/view/sidepanel/Sidepanel";
+import { ExcalidrawSidepanelView } from "src/view/sidepanel/Sidepanel";
 import { ExcalidrawSidepanelTab } from "src/view/sidepanel/SidepanelTab";
 import { SidepanelTabOptions } from "src/types/excalidrawAutomateTypes";
 import { patchMobileView } from "src/utils/customEmbeddableUtils";

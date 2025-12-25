@@ -244,22 +244,3 @@ export class ExcalidrawSidepanelView extends ItemView {
 		void this.plugin.saveSettings();
 	}
 }
-
-export function resolveSidepanelTab(
-  spview: ExcalidrawSidepanelView,
-  scriptName: string,
-): ExcalidrawSidepanelTab | null {
-  if (scriptName) {
-    const match = spview.getTabByScript(scriptName);
-    if (match) {
-      return match;
-    }
-  }
-  if (this.sidepanelTab && (!scriptName || this.sidepanelTab.scriptName === scriptName)) {
-    return this.sidepanelTab;
-  }
-  if (this.activeScript) {
-    return spview.getTabByScript(this.activeScript);
-  }
-  return null;
-}
