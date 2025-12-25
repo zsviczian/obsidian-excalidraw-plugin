@@ -84,6 +84,8 @@ MINDMAP Builder
 Shortcuts (when input is focused):
 - ENTER: Add sibling
 - CTRL/CMD + ENTER: Drill down (follow new node)
+- CTRL/CMD + SHIFT + ENTER: Toggle node pin
+- ALT/OPT + SHIFT + ENTER: Toggle element box
 - SHIFT + ENTER: Add and Close
 - ALT/OPT + ARROWS: Navigate map nodes
 */
@@ -141,6 +143,7 @@ const INSTRUCTIONS = `
 - **SHIFT + ENTER**: Add the node and close the modeler.
 - **${isMac ? "OPT" : "ALT"} + Arrows**: Navigate through the mindmap nodes on the canvas.
 - **${isMac ? "OPT" : "ALT"} + C / X / V**: Copy, Cut, or Paste branches.
+- **${isMac ? "OPT" : "ALT"} + SHIFT + ENTER**: Box/Unbox selected node.
 - **${isMac ? "CMD" : "CTRL"} + SHIFT + ENTER**: Pin/Unpin location of a node. Pinned nodes will not be touched by auto layout.
 - **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
 - **Grouping**: Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
@@ -866,7 +869,6 @@ const setButtonDisabled = (btn, disabled) => {
 const modal = new ea.FloatingModal(app);
 modal.onOpen = () => {
   const { contentEl, titleEl, modalEl, headerEl } = modal;
-  modalEl.style.maxHeight = "70vh";
   ensureNodeSelected();
   contentEl.empty();
   titleEl.setText("Mind Map Builder");
@@ -880,7 +882,7 @@ modal.onOpen = () => {
   const bodyContainer = contentEl.createDiv();
   bodyContainer.style.width = "100%"
   
-  let strategyDropdown, autoLayoutToggle, pinBtn, refreshBtn, cutBtn, copyBtn;
+  let strategyDropdown, autoLayoutToggle, pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn;
 
   const updateStatus = () => {
     const all = ea.getViewElements();
@@ -889,10 +891,13 @@ modal.onOpen = () => {
     
     if (sel) {
       const isPinned = sel.customData?.isPinned === true;
-      if(pinBtn) {
+      if (pinBtn) {
         pinBtn.setIcon(isPinned ? "pin" : "pin-off");
         pinBtn.setTooltip(`${isPinned ? "This element is pinned. Click to unpin" : "This element is not pinned. Click to pin"} the location of the selected element (${isMac ? "CMD" : "CTRL"}+SHIFT+Enter)`);
         setButtonDisabled(pinBtn, false);
+      }
+      if (boxBtn) {
+        setButtonDisabled(boxBtn, false);
       }
 
       setButtonDisabled(refreshBtn, false);
@@ -918,6 +923,7 @@ modal.onOpen = () => {
       setButtonDisabled(refreshBtn, true);
       setButtonDisabled(copyBtn, true);
       setButtonDisabled(cutBtn, true);
+      setButtonDisabled(boxBtn, true);
     }
   };
 
@@ -928,60 +934,146 @@ modal.onOpen = () => {
     inputEl.placeholder = "Concept...";
   });
 
+  const togglePin = async () => {
+    const sel = ea.getViewSelectedElement();
+    if (sel) {
+      const newPinnedState = !(sel.customData?.isPinned === true);
+      ea.copyViewElementsToEAforEditing([sel]);
+      ea.addAppendUpdateCustomData(sel.id, { isPinned: newPinnedState });
+      await ea.addElementsToView(false, false, true, true);
+      ea.clear();
+      refresh();
+      updateStatus();
+    }
+    inputEl.focus();
+  }
+
   inputRow.addExtraButton(btn => {
     pinBtn = btn;
-    btn.onClick(async () => {
-      const sel = ea.getViewSelectedElement();
-      if (sel) {
-        const newPinnedState = !(sel.customData?.isPinned === true);
-        ea.copyViewElementsToEAforEditing([sel]);
-        ea.addAppendUpdateCustomData(sel.id, { isPinned: newPinnedState });
-        await ea.addElementsToView(false, false, true, true);
-        ea.clear();
-        updateStatus();
+    btn.onClick(togglePin);
+  });
+
+  const padding = 30;
+  const toggleBox = async () => {
+    let sel = ea.getViewSelectedElement();
+    if (!sel) pturn;
+    sel = ea.getBoundTextElement(sel, true).sceneElement;
+    if (!sel) return;
+    let oldBindId, newBindId;
+    
+    const hasContainer = !!sel.containerId;
+    const ids = hasContainer ? [sel.id, sel.containerId] : [sel.id];
+    const allElements = ea.getViewElements();
+    const arrowsToUpdate = allElements.filter(el => el.type === "arrow" &&
+      (ids.contains(el.startBinding?.elementId) || ids.contains(el.endBinding?.elementId))
+    );
+
+    if (hasContainer) {
+      const containerId = oldBindId = sel.containerId;
+      newBindId = sel.id;
+      const container = allElements.find(el => el.id === containerId);
+      ea.copyViewElementsToEAforEditing(arrowsToUpdate.concat(sel, container));
+      const textEl = ea.getElement(sel.id);
+      ea.addAppendUpdateCustomData(textEl.id, {isPinned: !!container.customData?.isPinned});
+      textEl.containerId = null;
+      textEl.boundElements = []; //not null because I will add bound arrows a bit further down
+      ea.getElement(containerId).isDeleted = true;
+    } else {
+      ea.copyViewElementsToEAforEditing(arrowsToUpdate.concat(sel));
+
+      oldBindId = sel.id
+      const rectId = newBindId = ea.addRect(
+        sel.x - padding, 
+        sel.y - padding, 
+        sel.width + (padding * 2), 
+        sel.height + (padding * 2)
+      );
+      const rect = ea.getElement(rectId);
+      ea.addAppendUpdateCustomData(rectId, {isPinned: !!sel.customData?.isPinned});
+      rect.strokeColor = sel.strokeColor;
+      rect.strokeWidth = 2;
+      rect.roughness = api.getAppState().currentItemRoughness;
+      rect.roundness = roundedCorners ? { type: 3 } : null;
+      rect.backgroundColor = "transparent";
+
+      const textEl = ea.getElement(sel.id);
+      textEl.containerId = rectId;
+      textEl.boundElements = null;
+      rect.boundElements = [{ type: "text", id: sel.id }];
+    }
+    ea.getElements().filter(el => el.type === "arrow").forEach(a => {
+      if (a.startBinding?.elementId === oldBindId) {
+        a.startBinding.elementId = newBindId;
+        ea.getElement(newBindId).boundElements.push({type:"arrow", id: a.id});
+      }
+      if (a.endBinding?.elementId === oldBindId) {
+        a.endBinding.elementId = newBindId;
+        ea.getElement(newBindId).boundElements.push({type:"arrow", id: a.id});
       }
     });
+
+    await ea.addElementsToView(false, false);
+    ea.clear();
+
+    if(!hasContainer) {
+      api.updateContainerSize([ea.getViewElements().find(el => el.id === newBindId)]);
+    }
+    ea.selectElementsInView([newBindId]);
+    refresh();
+  }
+
+  inputRow.addExtraButton(btn => {
+    boxBtn = btn;
+    btn.setIcon("rectangle-horizontal");
+    btn.setTooltip("Toggle Box (Container)");
+    btn.onClick(toggleBox);
   });
+
+  refresh = async () => {
+    const sel = ea.getViewSelectedElement();
+    if (sel) {
+      const info = getHierarchy(sel, ea.getViewElements());
+      triggerGlobalLayout(info.rootId, true);
+      await ea.addElementsToView(false, false, true, true);
+      ea.clear();
+    }
+    inputEl.focus();
+  }
 
   inputRow.addExtraButton(btn => {
     refreshBtn = btn;
     btn.setIcon("refresh-ccw");
     btn.setTooltip("Force auto rearrange map. Will move all elements except for those that are pinned.");
-    btn.onClick(async () => {
-      const sel = ea.getViewSelectedElement();
-      if (sel) {
-        const info = getHierarchy(sel, ea.getViewElements());
-        triggerGlobalLayout(info.rootId, true);
-        await ea.addElementsToView(false, false, true, true);
-        ea.clear();
-      }
-    })
+    btn.onClick(refresh)
   });
   
+  let minMaxBtn;
+  const toggleMinMax = () => {
+    minMaxBtn.setIcon(isMinimized ? "maximize-2" : "minimize-2");
+    minMaxBtn.setTooltip(isMinimized ? "Maximize UI" : "Minimize UI");
+    const display = isMinimized ? "none" : "";
+    bodyContainer.style.display = display;
+    headerEl.style.display = display;
+    titleEl.style.display = display;
+    details.style.display = display;
+    modalEl.style.opacity = isMinimized ? "0.8" : "1";
+    inputRow.infoEl.style.display = display;
+    modalEl.style.paddingBottom = isMinimized ? "6px" : "";
+    modalEl.style.paddingRight = isMinimized ? "6px" : "";
+    modalEl.style.paddingLeft = isMinimized ? "6px" : "";
+    modalEl.style.minHeight = isMinimized ? "0px" : "";
+    inputRow.settingEl.style.padding = isMinimized ? "0" : "";
+    inputRow.settingEl.style.border = isMinimized ? "0" : "";
+    modalEl.style.maxHeight = isMinimized ? "calc(2 * var(--size-4-4) + 12px + var(--input-height))" : "70vh";
+  };
+
   inputRow.addExtraButton(btn => {
-    const updateIcon = () => {
-      btn.setIcon(isMinimized ? "maximize-2" : "minimize-2");
-      btn.setTooltip(isMinimized ? "Maximize UI" : "Minimize UI");
-      const display = isMinimized ? "none" : "";
-      bodyContainer.style.display = display;
-      headerEl.style.display = display;
-      titleEl.style.display = display;
-      details.style.display = display;
-      modalEl.style.opacity = isMinimized ? "0.8" : "1";
-      inputRow.infoEl.style.display = display;
-      modalEl.style.paddingBottom = isMinimized ? "6px" : "";
-      modalEl.style.paddingRight = isMinimized ? "6px" : "";
-      modalEl.style.paddingLeft = isMinimized ? "6px" : "";
-      modalEl.style.minHeight = isMinimized ? "0px" : "";
-      inputRow.settingEl.style.padding = isMinimized ? "0" : "";
-      inputRow.settingEl.style.border = isMinimized ? "0" : "";
-    };
-    updateIcon();
+    minMaxBtn = btn;
     btn.onClick(async () => {
       isMinimized = !isMinimized;
       ea.setScriptSettingValue(K_MINIMIZED, { value: isMinimized });
       dirty = true;
-      updateIcon();
+      toggleMinMax();
     });
   });
 
@@ -1029,7 +1121,7 @@ modal.onOpen = () => {
       inputEl.focus();
       updateStatus();
     };
-copyBtn = btnGrid.createEl("button", { 
+  copyBtn = btnGrid.createEl("button", { 
     text: "Copy", 
     attr: { style: "padding: 2px;", title: `Copy branch as text (${isMac ? "OPT" : "ALT"}+C)` } 
   });
@@ -1191,15 +1283,14 @@ copyBtn = btnGrid.createEl("button", {
     if (e.key === "Enter" && e.shiftKey && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       e.stopPropagation();
-      const sel = ea.getViewSelectedElement();
-      if (sel) {
-        const newPinnedState = !(sel.customData?.isPinned === true);
-        ea.copyViewElementsToEAforEditing([sel]);
-        ea.addAppendUpdateCustomData(sel.id, { isPinned: newPinnedState });
-        await ea.addElementsToView(false, false, true, true);
-        ea.clear();
-        updateStatus();
-      }
+      togglePin();
+      return;
+    }
+
+    if (e.key === "Enter" && e.shiftKey && e.altKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleBox();
       return;
     }
 
@@ -1275,7 +1366,10 @@ copyBtn = btnGrid.createEl("button", {
       await ea.saveScriptSettings();
     }
   };
-  setTimeout(() => inputEl.focus(), 200);
+  setTimeout(() => {
+    inputEl.focus();
+  }, 200);
+  toggleMinMax();
 };
 
 modal.open();
