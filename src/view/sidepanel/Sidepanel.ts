@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, type EventRef } from "obsidian";
+import { ItemView, WorkspaceLeaf, type EventRef, setIcon } from "obsidian";
 import { ICON_NAME, VIEW_TYPE_SIDEPANEL } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
@@ -56,10 +56,13 @@ export class ExcalidrawSidepanelView extends ItemView {
 	private tabs = new Map<string, ExcalidrawSidepanelTab>();
 	private scriptTabs = new Map<string, ExcalidrawSidepanelTab>();
 	private tabHosts = new Map<string, ExcalidrawAutomate>();
+	private tabOptions = new Map<string, HTMLOptionElement>();
 	private persistedScripts = new Map<string, { title: string }>();
 	private activeTabId: string | null = null;
-	private tabsEl: HTMLDivElement | null = null;
+	private selectEl: HTMLSelectElement | null = null;
+	private closeButtonEl: HTMLButtonElement | null = null;
 	private bodyEl: HTMLDivElement | null = null;
+	private emptyStateEl: HTMLDivElement | null = null;
 	private readyPromise: Promise<void>;
 	private resolveReady: (() => void) | null = null;
 	private restorePromise: Promise<void> | null = null;
@@ -113,9 +116,32 @@ export class ExcalidrawSidepanelView extends ItemView {
 		this.containerEl.empty();
 		this.containerEl.addClass("excalidraw-sidepanel-container");
 		const wrapper = this.containerEl.createDiv({ cls: "excalidraw-sidepanel" });
-		this.tabsEl = wrapper.createDiv({ cls: "excalidraw-sidepanel__tabs" });
-		this.tabsEl.setAttr("role", "tablist");
+		const controls = wrapper.createDiv({ cls: "excalidraw-sidepanel__controls" });
+		this.selectEl = controls.createEl("select", { cls: "excalidraw-sidepanel__select" });
+		this.selectEl.addEventListener("change", () => {
+			const targetId = this.selectEl?.value ?? null;
+			const tab = targetId ? this.tabs.get(targetId) ?? null : null;
+			this.setActiveTab(tab ?? null);
+		});
+		this.closeButtonEl = controls.createEl("button", {
+			cls: "excalidraw-sidepanel__close-button",
+			attr: { type: "button", "aria-label": "Close sidepanel tab" },
+		});
+		setIcon(this.closeButtonEl, "x");
+		this.closeButtonEl.addEventListener("click", () => {
+			if (!this.activeTabId) {
+				return;
+			}
+			const active = this.tabs.get(this.activeTabId);
+			if (active) {
+				this.removeTab(active);
+			}
+		});
 		this.bodyEl = wrapper.createDiv({ cls: "excalidraw-sidepanel__body" });
+		this.emptyStateEl = this.bodyEl.createDiv({ cls: "excalidraw-sidepanel__empty" });
+		this.emptyStateEl.setText("Excalidraw sidepanel is empty. Run a panel-enabled Excalidraw script to add a panel.");
+		this.selectEl.disabled = true;
+		this.closeButtonEl.disabled = true;
 		this.leafChangeRef = this.app.workspace.on("active-leaf-change", (leaf) => {
 			if (leaf === this.leaf) {
 				this.triggerActiveTabFocus();
@@ -124,6 +150,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 		this.resolveReady?.();
 		this.resolveReady = null;
 		void this.restorePersistedTabs();
+		this.updateEmptyStateVisibility();
 	}
 
 	protected async onClose() {
@@ -135,9 +162,12 @@ export class ExcalidrawSidepanelView extends ItemView {
 		this.tabs.forEach((tab) => tab.destroy());
 		this.tabs.clear();
 		this.scriptTabs.clear();
+		this.tabOptions.clear();
 		this.activeTabId = null;
-		this.tabsEl = null;
+		this.selectEl = null;
+		this.closeButtonEl = null;
 		this.bodyEl = null;
+		this.emptyStateEl = null;
 		if (ExcalidrawSidepanelView.singleton === this) {
 			ExcalidrawSidepanelView.singleton = null;
 		}
@@ -195,6 +225,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 	public removeTab(tab: ExcalidrawSidepanelTab) {
 		tab.notifyWillClose();
 		this.tabs.delete(tab.id);
+		this.removeTabOption(tab);
 		const scriptName = tab.scriptName;
 		if (scriptName && this.scriptTabs.get(scriptName) === tab) {
 			this.scriptTabs.delete(scriptName);
@@ -209,18 +240,18 @@ export class ExcalidrawSidepanelView extends ItemView {
 		if (this.activeTabId === tab.id) {
 			this.activeTabId = null;
 			const next = this.tabs.values().next().value as ExcalidrawSidepanelTab | undefined;
-			if (next) {
-				this.setActiveTab(next);
-			}
+			this.setActiveTab(next ?? null);
 		}
+		this.updateEmptyStateVisibility();
 	}
 
 	public setActiveTab(tab: ExcalidrawSidepanelTab | null) {
-		if (!tab) {
-			return;
-		}
-		this.activeTabId = tab.id;
+		this.activeTabId = tab?.id ?? null;
 		this.tabs.forEach((candidate) => candidate.setActive(candidate === tab));
+		if (this.selectEl) {
+			this.selectEl.value = tab?.id ?? "";
+		}
+		this.updateEmptyStateVisibility();
 	}
 
 	public getTabByScript(scriptName: string): ExcalidrawSidepanelTab | null {
@@ -232,7 +263,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 	}
 
 	private createTabInternal(title: string, scriptName?: string, options?: SidepanelTabOptions): ExcalidrawSidepanelTab {
-		if (!this.tabsEl || !this.bodyEl) {
+		if (!this.bodyEl) {
 			throw new Error("Sidepanel DOM is not ready");
 		}
 		const tab = new ExcalidrawSidepanelTab(
@@ -240,9 +271,10 @@ export class ExcalidrawSidepanelView extends ItemView {
 			{
 				activate: (target) => this.setActiveTab(target),
 				close: (target) => this.removeTab(target),
+				updateTitle: (target) => this.updateTabOptionTitle(target),
 				plugin: this.plugin,
 			},
-			{ tabsEl: this.tabsEl, bodyEl: this.bodyEl },
+			{ bodyEl: this.bodyEl },
 			scriptName,
 			options,
 		);
@@ -250,6 +282,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 			this.scriptTabs.set(scriptName, tab);
 		}
 		this.tabs.set(tab.id, tab);
+		this.addTabOption(tab);
 		this.setActiveTab(tab);
 		return tab;
 	}
@@ -316,6 +349,56 @@ export class ExcalidrawSidepanelView extends ItemView {
 		const active = this.tabs.get(this.activeTabId);
 		if (active) {
 			active.handleFocus(view ?? null);
+		}
+	}
+
+	private addTabOption(tab: ExcalidrawSidepanelTab) {
+		if (!this.selectEl) {
+			return;
+		}
+		const option = this.selectEl.createEl("option", { value: tab.id, text: tab.title });
+		this.tabOptions.set(tab.id, option);
+		this.selectEl.disabled = false;
+		if (this.closeButtonEl) {
+			this.closeButtonEl.disabled = false;
+		}
+	}
+
+	private removeTabOption(tab: ExcalidrawSidepanelTab) {
+		const option = this.tabOptions.get(tab.id);
+		if (option) {
+			option.remove();
+			this.tabOptions.delete(tab.id);
+		}
+		if (!this.tabOptions.size && this.selectEl) {
+			this.selectEl.disabled = true;
+			this.selectEl.value = "";
+		}
+		if (!this.tabOptions.size && this.closeButtonEl) {
+			this.closeButtonEl.disabled = true;
+		}
+	}
+
+	private updateTabOptionTitle(tab: ExcalidrawSidepanelTab) {
+		const option = this.tabOptions.get(tab.id);
+		if (option) {
+			option.text = tab.title;
+		}
+	}
+
+	private updateEmptyStateVisibility() {
+		const hasTabs = this.tabs.size > 0;
+		if (this.emptyStateEl) {
+			this.emptyStateEl.style.display = hasTabs ? "none" : "";
+		}
+		if (this.closeButtonEl) {
+			this.closeButtonEl.disabled = !hasTabs;
+		}
+		if (this.selectEl) {
+			this.selectEl.disabled = !hasTabs;
+			if (!hasTabs) {
+				this.selectEl.value = "";
+			}
 		}
 	}
 }

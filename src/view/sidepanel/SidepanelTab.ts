@@ -1,5 +1,4 @@
-import { setIcon, type CloseableComponent } from "obsidian";
-import { ICON_NAME } from "src/constants/constants";
+import type { CloseableComponent } from "obsidian";
 import type ExcalidrawPlugin from "src/core/main";
 import { getLastActiveExcalidrawView } from "src/utils/excalidrawAutomateUtils";
 import type { SidepanelTabOptions } from "src/types/excalidrawAutomateTypes";
@@ -8,11 +7,11 @@ import ExcalidrawView from "src/view/ExcalidrawView";
 type HostCallbacks = {
 	activate: (tab: ExcalidrawSidepanelTab) => void;
 	close: (tab: ExcalidrawSidepanelTab) => void;
+	updateTitle?: (tab: ExcalidrawSidepanelTab) => void;
 	plugin: ExcalidrawPlugin;
 };
 
 type Containers = {
-	tabsEl: HTMLElement;
 	bodyEl: HTMLElement;
 };
 
@@ -27,10 +26,6 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 	readonly contentEl: HTMLDivElement;
 	readonly titleEl: HTMLDivElement;
 	public shouldRestoreSelection = false;
-	private buttonEl: HTMLButtonElement;
-	private labelEl: HTMLSpanElement;
-	private iconEl: HTMLSpanElement;
-	private closeEl: HTMLButtonElement;
 	private closeCallback?: () => any;
 	private isClosed = false;
 	private isActive = false;
@@ -56,10 +51,7 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 		this.containerEl = this.modalEl;
 		this.titleEl = this.modalEl.createDiv({ cls: "excalidraw-sidepanel-tab__label" });
 		this.contentEl = this.modalEl.createDiv({ cls: "excalidraw-sidepanel-tab__content" });
-		this.buttonEl = this.createButton();
-		this.buttonEl.setAttr("aria-controls", this.id);
 		this.applyOptions(title, options);
-		this.buttonEl.addEventListener("click", () => this.open());
 	}
 
 	public get scriptName(): string | undefined {
@@ -74,33 +66,8 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 		this._scriptName = scriptName;
 	}
 
-	private createButton(): HTMLButtonElement {
-		const button = this.containers.tabsEl.createEl("button", {
-			cls: "excalidraw-sidepanel-tab__button",
-			attr: {
-				type: "button",
-				role: "tab",
-				"aria-selected": "false",
-			},
-		});
-		this.iconEl = button.createSpan({ cls: "excalidraw-sidepanel-tab__icon" });
-		this.labelEl = button.createSpan({ cls: "excalidraw-sidepanel-tab__button-label" });
-		this.closeEl = button.createEl("button", {
-			cls: "excalidraw-sidepanel-tab__close",
-			attr: { type: "button", "aria-label": "Close tab" },
-		});
-		this.closeEl.addEventListener("click", (evt) => {
-			evt.preventDefault();
-			evt.stopPropagation();
-			this.close();
-		});
-		setIcon(this.closeEl, "x");
-		return button;
-	}
-
 	private applyOptions(title: string, options?: SidepanelTabOptions) {
 		this.setTitle(title);
-		this.setIcon(options?.icon ?? ICON_NAME);
 		this.clear();
 	}
 
@@ -115,8 +82,7 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 	public setTitle(title: string) {
 		this._title = title;
 		this.titleEl.setText(title);
-		this.labelEl.setText(title);
-		this.buttonEl.setAttr("aria-label", title);
+		this.host.updateTitle?.(this);
 		return this;
 	}
 
@@ -135,15 +101,7 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 		return this;
 	}
 
-	public setIcon(iconId?: string) {
-		this.iconEl.empty();
-		if (iconId) {
-			setIcon(this.iconEl, iconId);
-			this.iconEl.removeClass("is-hidden");
-		} else {
-			this.iconEl.addClass("is-hidden");
-		}
-	}
+	public setIcon(_iconId?: string) {}
 
 	public focus() {
 		this.host.activate(this);
@@ -168,8 +126,6 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 		const becameActive = active && !this.isActive;
 		this.isActive = active;
 		this.modalEl.toggleClass("is-active", active);
-		this.buttonEl.setAttr("aria-selected", String(active));
-		this.buttonEl.toggleClass("is-active", active);
 		if (becameActive) {
 			const view = this.getLastActiveView();
 			void this.onOpen();
@@ -186,7 +142,6 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 	}
 
 	public destroy() {
-		this.buttonEl?.remove();
 		this.modalEl?.remove();
 	}
 

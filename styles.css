@@ -408,13 +408,44 @@ div.excalidraw-draginfo {
   height: 100%;
 }
 
-.excalidraw-sidepanel__tabs {
+.excalidraw-sidepanel__controls {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 0.35rem;
   padding: 0.35rem 0.5rem;
   border-bottom: 1px solid var(--divider-color, var(--background-modifier-border));
   background-color: var(--background-secondary);
+}
+
+.excalidraw-sidepanel__select {
+  flex: 1;
+}
+
+.excalidraw-sidepanel__close-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  border: 1px solid var(--divider-color, var(--background-modifier-border));
+  border-radius: 0.55rem;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  padding: 0;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.excalidraw-sidepanel__close-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.excalidraw-sidepanel__close-button:hover:not(:disabled) {
+  background: var(--background-modifier-hover);
+}
+
+.excalidraw-sidepanel__empty {
+  padding: 0.75rem;
+  color: var(--text-muted);
 }
 
 .excalidraw-sidepanel__body {
