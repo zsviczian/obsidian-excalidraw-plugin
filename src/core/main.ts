@@ -17,6 +17,7 @@ import {
 } from "obsidian";
 import {
   VIEW_TYPE_EXCALIDRAW,
+  VIEW_TYPE_SIDEPANEL,
   EXCALIDRAW_ICON,
   ICON_NAME,
   SCRIPTENGINE_ICON,
@@ -86,6 +87,7 @@ import { PluginFileManager } from "./managers/FileManager";
 import { ObserverManager } from "./managers/ObserverManager";
 import { PackageManager } from "./managers/PackageManager";
 import ExcalidrawView from "../view/ExcalidrawView";
+import { ExcalidrawSidepanelView } from "../view/sidepanel/Sidepanel";
 import { CommandManager } from "./managers/CommandManager";
 import { EventManager } from "./managers/EventManager";
 import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
@@ -281,6 +283,10 @@ export default class ExcalidrawPlugin extends Plugin {
           return new ExcalidrawLoading(leaf, this);
         }
       },
+    );
+    this.registerView(
+      VIEW_TYPE_SIDEPANEL,
+      (leaf: WorkspaceLeaf) => new ExcalidrawSidepanelView(leaf, this),
     );
     //Compatibility mode with .excalidraw files
     this.registerExtensions(["excalidraw"], VIEW_TYPE_EXCALIDRAW);
@@ -493,6 +499,10 @@ export default class ExcalidrawPlugin extends Plugin {
       console.error("Error setting up property types", e);
     }
     this.logStartupEvent("Property types set");
+
+    if (this.settings?.sidepanelTabs?.length) {
+      void ExcalidrawSidepanelView.getOrCreate(this, false);
+    }
   }
 
   public async awaitSettings() {
@@ -1156,6 +1166,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   onunload() {
+    ExcalidrawSidepanelView.onPluginUnload(this);
     const excalidrawViews = getExcalidrawViews(this.app);
     excalidrawViews.forEach(({leaf}) => {
       this.setMarkdownView(leaf);
@@ -1255,6 +1266,10 @@ export default class ExcalidrawPlugin extends Plugin {
   async saveSettings() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.saveSettings,`ExcalidrawPlugin.saveSettings`);
     await this.saveData(this.settings);
+  }
+
+  public async openSidepanel(reveal: boolean = true): Promise<ExcalidrawSidepanelView | null> {
+    return ExcalidrawSidepanelView.getOrCreate(this, reveal);
   }
 
   public getStencilLibrary(): {} {

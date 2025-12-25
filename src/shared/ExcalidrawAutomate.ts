@@ -88,6 +88,9 @@ import { FrameRenderingOptions } from "src/types/utilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { AutoexportConfig } from "src/types/excalidrawViewTypes";
 import { FloatingModal } from "./Dialogs/FloatingModal";
+import { ExcalidrawSidepanelView, resolveSidepanelTab } from "src/view/sidepanel/Sidepanel";
+import { ExcalidrawSidepanelTab } from "src/view/sidepanel/SidepanelTab";
+import { SidepanelTabOptions } from "src/types/excalidrawAutomateTypes";
 import { patchMobileView } from "src/utils/customEmbeddableUtils";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { AIRequest } from "src/types/AIUtilTypes";
@@ -544,11 +547,88 @@ export class ExcalidrawAutomate {
     gridSize: number;
   };
   colorPalette: {};
+  sidepanelTab: ExcalidrawSidepanelTab | null = null;
 
   constructor(plugin: ExcalidrawPlugin, view?: ExcalidrawView) {
     this.plugin = plugin;
     this.reset();
     this.targetView = view;
+  }
+  
+  /**
+   * Creates a new sidepanel tab associated with this ExcalidrawAutomate instance.
+   * If a sidepanel tab already exists for this instance, it will be closed first.
+   * @param title - The title of the sidepanel tab.
+   * @param options 
+   * @returns 
+   */
+  public async createSidepanelTab(
+    title: string,
+    options?: SidepanelTabOptions,
+  ): Promise<ExcalidrawSidepanelTab | null> {
+    if (this.sidepanelTab) {
+      this.closeSidepanelTab();
+    }
+    const scriptName = this.activeScript ?? nanoid(); //random name if no active script
+    const revealPanel = options?.reveal !== false;
+    const spView = await ExcalidrawSidepanelView.getOrCreate(this.plugin, revealPanel);
+    if (!spView) {
+      errorMessage("Unable to open sidepanel", "createSidepanelTab()");
+      return null;
+    }
+    const tab = await spView.createTab({ title, scriptName, options });
+    this.sidepanelTab = tab;
+    return tab;
+  }
+
+  /**
+   * Reveals the sidepanel tab associated with the sidepanelTab for this EA instance.
+   * @returns {ExcalidrawSidepanelTab | null} The revealed sidepanel tab or null on error.
+   */
+  public revealSidepanelTab(): ExcalidrawSidepanelTab | null {
+    if (!this.sidepanelTab) {
+      return;
+    }
+    const spView = ExcalidrawSidepanelView.getExisting(true);
+    if (!spView) {
+      return;
+    } 
+    spView.setActiveTab(this.sidepanelTab);
+    return this.sidepanelTab;
+  }
+
+  /**
+   * Pins the active script's sidepanel tab to be persistent across Obsidian restarts.
+   * @param options 
+   * @returns {Promise<ExcalidrawSidepanelTab | null>} The persisted sidepanel tab or null on error.
+   */
+  public persistSidepanelTab(): ExcalidrawSidepanelTab | null {
+    if (!this.activeScript && !this.sidepanelTab) {
+      errorMessage("No active script and sidepanel tab to persist", "persistSidepanelTab()");
+      return null;
+    }
+    const spView = ExcalidrawSidepanelView.getExisting();
+    if (!spView) {
+      return;
+    }
+    spView.markTabPersistent(this.sidepanelTab);
+    return this.sidepanelTab;
+  }
+
+  /**
+   * Closes the sidepanel tab associated with the sidepanelTab for this EA instance.
+   * @returns 
+   */
+  public closeSidepanelTab(): void {
+    if (!this.sidepanelTab) {
+      return;
+    }   
+    const spView = ExcalidrawSidepanelView.getExisting();
+    if (!spView) {
+      return;
+    }
+    spView.removeTab(this.sidepanelTab);
+    this.sidepanelTab = null;
   }
 
   /**
@@ -3763,6 +3843,7 @@ export class ExcalidrawAutomate {
     this.imagesDict = {};
     this.mostRecentMarkdownSVG = null;
     this.activeScript = null;
+    this.sidepanelTab = null;
     //@ts-ignore
     this.style = {};
     //@ts-ignore

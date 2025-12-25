@@ -37,6 +37,7 @@ export default {
   CONVERT_FILE_KEEP_EXT: "*.excalidraw => *.excalidraw.md",
   CONVERT_FILE_REPLACE_EXT: "*.excalidraw => *.md (Logseq compatibility)",
   DOWNLOAD_LIBRARY: "Export stencil library as an *.excalidrawlib file",
+  OPEN_SIDEPANEL: "Open Excalidraw Sidepanel",
   OPEN_EXISTING_NEW_PANE: "Open existing drawing - IN A NEW PANE",
   OPEN_EXISTING_ACTIVE_PANE:
     "Open existing drawing - IN THE CURRENT ACTIVE PANE",
@@ -154,6 +155,7 @@ export default {
   OPEN_AS_MD: "Open as Markdown",
   EXPORT_IMAGE: `Export Image`,
   OPEN_LINK: "Open selected text as link\n(SHIFT+CLICK to open in a new pane)",
+  EXCALIDRAW_SIDEPANEL: "Excalidraw Sidepanel",
   EXPORT_EXCALIDRAW: "Export to an .Excalidraw file",
   LINK_BUTTON_CLICK_NO_TEXT:
     "Select an element that contains an internal or external link.\n",

@@ -186,6 +186,7 @@ export interface ExcalidrawSettings {
   taskboneEnabled: boolean;
   taskboneAPIkey: string;
   pinnedScripts: string[];
+  sidepanelTabs: string[];
   customPens: PenStyle[];
   numberOfCustomPens: number;
   pdfScale: number;
@@ -377,6 +378,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   taskboneEnabled: false,
   taskboneAPIkey: "",
   pinnedScripts: [],
+  sidepanelTabs: [],
   customPens: [
     {...PENS["default"]},
     {...PENS["highlighter"]},

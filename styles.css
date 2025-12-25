@@ -397,6 +397,106 @@ div.excalidraw-draginfo {
   position: absolute !important;
 }
 
+.excalidraw-sidepanel-container {
+  height: 100%;
+}
+
+.excalidraw-sidepanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100%;
+}
+
+.excalidraw-sidepanel__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--divider-color, var(--background-modifier-border));
+  background-color: var(--background-secondary);
+}
+
+.excalidraw-sidepanel__body {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  background-color: var(--background-primary);
+}
+
+.excalidraw-sidepanel-tab {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+}
+
+.excalidraw-sidepanel-tab.is-active {
+  display: flex;
+}
+
+.excalidraw-sidepanel-tab__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.excalidraw-sidepanel-tab__content {
+  flex: 1;
+  overflow: auto;
+  padding: 0.5rem;
+}
+
+.excalidraw-sidepanel-tab__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.excalidraw-sidepanel-tab__button.is-active {
+  background: var(--background-primary-alt, var(--background-secondary));
+  color: var(--text-normal);
+}
+
+.excalidraw-sidepanel-tab__button:hover {
+  background: var(--background-primary-alt, var(--background-secondary));
+}
+
+.excalidraw-sidepanel-tab__icon {
+  display: inline-flex;
+}
+
+.excalidraw-sidepanel-tab__icon.is-hidden {
+  display: none;
+}
+
+.excalidraw-sidepanel-tab__close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  display: inline-flex;
+  padding: 0.1rem;
+  border-radius: 4px;
+}
+
+.excalidraw-sidepanel-tab__close:hover {
+  background: var(--background-modifier-hover);
+}
+
+.excalidraw-sidepanel-tab__close.is-hidden {
+  display: none;
+}
 /*Arrow Picker Popover Overflow*/
 /*
 .excalidraw .selected-shape-actions .Island.App-menu__left,
