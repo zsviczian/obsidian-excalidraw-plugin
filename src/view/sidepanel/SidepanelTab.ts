@@ -36,6 +36,11 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 	private isActive = false;
 	public onFocus: (view: ExcalidrawView | null) => void = () => {};
 
+  /**
+   * Called by ScriptEngine when the Excalidraw view associated with the ExcalidrawAutomate object for this sidepanel tab is closed and ea.targetView becomes null.
+   */
+  public onExcalidrawViewClosed: () => void = () => {};
+
 	constructor(
     title: string,
 		private host: HostCallbacks,

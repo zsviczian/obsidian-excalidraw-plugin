@@ -17,29 +17,31 @@ type TabCreationConfig = {
 
 export class ExcalidrawSidepanelView extends ItemView {
 	private static singleton: ExcalidrawSidepanelView | null = null;
+	private static restoreSilent = false;
 
 	public static getExisting(reveal: boolean = true): ExcalidrawSidepanelView | null {
 		const spView = ExcalidrawSidepanelView.singleton;
-    if (spView && reveal) {
+    if (spView && reveal && !ExcalidrawSidepanelView.restoreSilent) {
       spView.plugin.app.workspace.revealLeaf(spView.leaf);
     }
     return spView;
 	}
 
 	public static async getOrCreate(plugin: ExcalidrawPlugin, reveal: boolean = true): Promise<ExcalidrawSidepanelView | null> {
+		const effectiveReveal = reveal && !ExcalidrawSidepanelView.restoreSilent;
 		let leaf = plugin.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEPANEL)[0];
 		if (!leaf) {
 			leaf = plugin.app.workspace.getRightLeaf(false);
 			if (!leaf) {
 				return null;
 			}
-			await leaf.setViewState({ type: VIEW_TYPE_SIDEPANEL, active: reveal });
+			await leaf.setViewState({ type: VIEW_TYPE_SIDEPANEL, active: effectiveReveal });
 		}
 		const spView = leaf.view;
 		if (!(spView instanceof ExcalidrawSidepanelView)) {
 			return null;
 		}
-		if (reveal) {
+		if (effectiveReveal) {
 			plugin.app.workspace.revealLeaf(leaf);
 		}
 		await spView.waitUntilReady();
@@ -260,12 +262,17 @@ export class ExcalidrawSidepanelView extends ItemView {
 			if (!this.persistedScripts.size) {
 				return;
 			}
+			ExcalidrawSidepanelView.restoreSilent = true;
 			await this.plugin.awaitInit();
-			for (const [scriptName, meta] of Array.from(this.persistedScripts.entries())) {
-				if (!scriptName) {
-					continue;
+			try {
+				for (const [scriptName, meta] of Array.from(this.persistedScripts.entries())) {
+					if (!scriptName) {
+						continue;
+					}
+					await this.runScriptByName(scriptName, meta.title);
 				}
-				await this.runScriptByName(scriptName, meta.title);
+			} finally {
+				ExcalidrawSidepanelView.restoreSilent = false;
 			}
 		})();
 		return this.restorePromise;

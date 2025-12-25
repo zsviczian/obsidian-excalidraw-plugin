@@ -42,7 +42,12 @@ export class ScriptEngine {
     this.eaInstances.forEach((ea) => {
       if (ea.targetView === view) {
         eas.add(ea);
-        ea.destroy();
+        if(ea.sidepanelTab) {
+          ea.targetView = null;
+          ea.sidepanelTab.onExcalidrawViewClosed();
+        } else {
+          ea.destroy();
+        }
       }
     });
     this.eaInstances.removeObjects(eas);
