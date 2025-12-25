@@ -1,10 +1,14 @@
 import { setIcon, type CloseableComponent } from "obsidian";
 import { ICON_NAME } from "src/constants/constants";
+import type ExcalidrawPlugin from "src/core/main";
+import { getLastActiveExcalidrawView } from "src/utils/excalidrawAutomateUtils";
 import type { SidepanelTabOptions } from "src/types/excalidrawAutomateTypes";
+import ExcalidrawView from "src/view/ExcalidrawView";
 
 type HostCallbacks = {
 	activate: (tab: ExcalidrawSidepanelTab) => void;
 	close: (tab: ExcalidrawSidepanelTab) => void;
+	plugin: ExcalidrawPlugin;
 };
 
 type Containers = {
@@ -30,6 +34,7 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 	private closeCallback?: () => any;
 	private isClosed = false;
 	private isActive = false;
+	public onFocus: (view: ExcalidrawView | null) => void = () => {};
 
 	constructor(
     title: string,
@@ -161,12 +166,18 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 		this.buttonEl.setAttr("aria-selected", String(active));
 		this.buttonEl.toggleClass("is-active", active);
 		if (becameActive) {
+			const view = this.getLastActiveView();
 			void this.onOpen();
+			this.runFocusHandlers(view);
 		}
 	}
 
 	public notifyWillClose() {
 		this.runCloseHandlers();
+	}
+
+	public handleFocus(view?: ExcalidrawView | null) {
+		this.runFocusHandlers(view);
 	}
 
 	public destroy() {
@@ -183,5 +194,16 @@ export class ExcalidrawSidepanelTab implements CloseableComponent {
 			this.closeCallback();
 		}
 		this.onClose();
+	}
+
+	private runFocusHandlers(view?: ExcalidrawView | null) {
+		if (this.isClosed) {
+			return;
+		}
+		this.onFocus(view ?? this.getLastActiveView());
+	}
+
+	private getLastActiveView(): ExcalidrawView | null {
+		return getLastActiveExcalidrawView(this.host.plugin) ?? null;
 	}
 }

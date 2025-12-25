@@ -1,9 +1,10 @@
-import { ItemView, WorkspaceLeaf } from "obsidian";
+import { ItemView, WorkspaceLeaf, type EventRef } from "obsidian";
 import { ICON_NAME, VIEW_TYPE_SIDEPANEL } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
 import type { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import type { SidepanelTabOptions } from "src/types/excalidrawAutomateTypes";
+import { getLastActiveExcalidrawView } from "src/utils/excalidrawAutomateUtils";
 import { ExcalidrawSidepanelTab } from "./SidepanelTab";
 
 type TabCreationConfig = {
@@ -60,6 +61,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 	private readyPromise: Promise<void>;
 	private resolveReady: (() => void) | null = null;
 	private restorePromise: Promise<void> | null = null;
+	private leafChangeRef: EventRef | null = null;
 
 	constructor(leaf: WorkspaceLeaf, private plugin: ExcalidrawPlugin) {
 		super(leaf);
@@ -112,6 +114,11 @@ export class ExcalidrawSidepanelView extends ItemView {
 		this.tabsEl = wrapper.createDiv({ cls: "excalidraw-sidepanel__tabs" });
 		this.tabsEl.setAttr("role", "tablist");
 		this.bodyEl = wrapper.createDiv({ cls: "excalidraw-sidepanel__body" });
+		this.leafChangeRef = this.app.workspace.on("active-leaf-change", (leaf) => {
+			if (leaf === this.leaf) {
+				this.triggerActiveTabFocus();
+			}
+		});
 		this.resolveReady?.();
 		this.resolveReady = null;
 		void this.restorePersistedTabs();
@@ -119,6 +126,10 @@ export class ExcalidrawSidepanelView extends ItemView {
 
 	protected async onClose() {
 		await super.onClose();
+		if (this.leafChangeRef) {
+			this.app.workspace.offref(this.leafChangeRef);
+			this.leafChangeRef = null;
+		}
 		this.tabs.forEach((tab) => tab.destroy());
 		this.tabs.clear();
 		this.scriptTabs.clear();
@@ -227,6 +238,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 			{
 				activate: (target) => this.setActiveTab(target),
 				close: (target) => this.removeTab(target),
+				plugin: this.plugin,
 			},
 			{ tabsEl: this.tabsEl, bodyEl: this.bodyEl },
 			scriptName,
@@ -288,5 +300,15 @@ export class ExcalidrawSidepanelView extends ItemView {
 			JSON.stringify({ script, title: meta.title ?? script }),
 		);
 		void this.plugin.saveSettings();
+	}
+
+	private triggerActiveTabFocus(view = getLastActiveExcalidrawView(this.plugin)) {
+		if (!this.activeTabId) {
+			return;
+		}
+		const active = this.tabs.get(this.activeTabId);
+		if (active) {
+			active.handleFocus(view ?? null);
+		}
 	}
 }
