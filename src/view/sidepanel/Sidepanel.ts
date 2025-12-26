@@ -4,6 +4,7 @@ import ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
 import type { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { getLastActiveExcalidrawView } from "src/utils/excalidrawAutomateUtils";
+import type ExcalidrawView from "src/view/ExcalidrawView";
 import { ExcalidrawSidepanelTab } from "./SidepanelTab";
 
 type TabCreationConfig = {
@@ -428,6 +429,20 @@ export class ExcalidrawSidepanelView extends ItemView {
 
 	private notifyTabsWindowMigrated(win: Window) {
 		this.tabs.forEach((tab) => tab.handleWindowMigration(win));
+	}
+
+	/**
+	 * Clears references to a view from hosted ExcalidrawAutomate instances and notifies their tabs.
+	 */
+	public removeViewEAs(view: ExcalidrawView) {
+		this.tabHosts.forEach((hostEA, tabId) => {
+			if (!hostEA || hostEA.targetView !== view) {
+				return;
+			}
+			hostEA.targetView = null;
+			const tab = this.tabs.get(tabId);
+			tab?.onExcalidrawViewClosed();
+		});
 	}
 
 	private addTabOption(tab: ExcalidrawSidepanelTab) {

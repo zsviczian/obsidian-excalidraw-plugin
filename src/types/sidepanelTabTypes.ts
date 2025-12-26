@@ -10,7 +10,7 @@ import type ExcalidrawView from "src/view/ExcalidrawView";
  *    Reveal simply opens the obisidan sidepanel and the Excalidraw sidepanel view which already displays the active tab.
  * 2) Render UI into `contentEl` or use `setContent(...)` / `setTitle(...)`.
  * 3) Implement lifecycle hooks: `onOpen` (only runs when the user changes tabs in the Excalidraw sidepanel), `onFocus(view)` (runs on host focus changes), `onClose`/`setCloseCallback` (cleanup), `onExcalidrawViewClosed` (canvas closed).
- *    Use `onWindowMigrated` to reattach any window-bound event handlers if the sidepanel moves between the main workspace and a popout window (the DOM is reparented during this migration).
+ *    Use `onWindowMigrated(win)` to reattach any window-bound event handlers if the sidepanel moves between the main workspace and a popout window (the DOM is reparented during this migration). The `win` argument is the new Window hosting the sidepanel DOM.
  * 4) Use `setDisabled`, `focus`, `close`, `reset`, and persistence helpers (from host) as needed.
  * 5) Use ea.sidepanelTab.open() to show the sidepanel tab associated with the script.
  * 6) When the sidepanel is nolonger required the script should call ea.sidepanelTab.close() to close the tab and trigger cleanup.

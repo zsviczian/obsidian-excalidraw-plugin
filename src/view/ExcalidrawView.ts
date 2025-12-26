@@ -55,9 +55,11 @@ import {
   refreshTextDimensions,
   getContainerElement,
   syncInvalidIndices,
+  VIEW_TYPE_SIDEPANEL,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
+import { ExcalidrawSidepanelView } from "./sidepanel/Sidepanel";
 import { 
   repositionElementsToCursor,
   getTextElementsMatchingQuery,
@@ -2067,6 +2069,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
     if (this.plugin) {
       this.plugin.scriptEngine?.removeViewEAs(this);
+      const sidepanel = this.plugin.app.workspace.getLeavesOfType(VIEW_TYPE_SIDEPANEL)[0]?.view;
+      if (sidepanel && sidepanel instanceof ExcalidrawSidepanelView) {
+        sidepanel.removeViewEAs(this);
+      }
+      
       if(this.plugin.ea?.targetView === this) {
         this.plugin.ea.targetView = null;
       }
