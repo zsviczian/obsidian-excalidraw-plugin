@@ -109,8 +109,9 @@ const K_MINIMIZED = "Is Minimized";
 const K_GROUP = "Group Branches";
 const K_ARROWSTROKE = "Arrow Stroke Style";
 const K_CENTERTEXT = "Center text in nodes?";
-const api = ea.getExcalidrawAPI();
 
+const api = () => ea.getExcalidrawAPI();
+const appState = () => ea.getExcalidrawAPI().getAppState();
 const getVal = (key, def) => ea.getScriptSettingValue(key, { value: def }).value;
 
 let maxWidth = parseInt(getVal(K_WIDTH, 450));
@@ -125,13 +126,19 @@ let isSolidArrow = getVal(K_ARROWSTROKE, true) === true;
 let centerText = getVal(K_CENTERTEXT, true) === true;
 let autoLayoutDisabled = false;
 
-const FONT_SCALE = {
-  "Use scene fontsize": Array(4).fill(api.getAppState().currentItemFontSize),
-  "Fibonacci Scale": [68, 42, 26, 16],
-  "Normal Scale": [36, 28, 20, 16]
+const FONT_SCALE_TYPES = ["Use scene fontsize", "Fibonacci Scale", "Normal Scale"];
+const fontScale = (type) => {
+  switch (type) {
+    case "Use scene fontsize":
+      return Array(4).fill(appState().currentItemFontSize);
+    case "Fibonacci Scale": 
+      return [68, 42, 26, 16];
+    default: // "Normal Scale"
+      return [36, 28, 20, 16];
+  }
 }
 
-const getFontScale = (type) => FONT_SCALE[type] ?? FONT_SCALE["Normal Scale"];
+const getFontScale = (type) => fontScale(type) ?? fontScale("Normal Scale");
 
 const STROKE_WIDTHS = [6, 4, 2, 1, 0.5]; 
 const ownerWindow = ea.targetView.ownerWindow;
@@ -247,7 +254,7 @@ const getAngleFromCenter = (center, point) => {
 };
 
 const getDynamicColor = (existingColors) => {
-  const st = ea.getExcalidrawAPI().getAppState();
+  const st = appState();
   const bg = st.viewBackgroundColor === "transparent" ? "#ffffff" : st.viewBackgroundColor;
   const candidates = [];
   for (let i = 0; i < 10; i++) {
@@ -273,7 +280,7 @@ const getDynamicColor = (existingColors) => {
 };
 
 const getReadableColor = (hex) => {
-  const bg = ea.getExcalidrawAPI().getAppState().viewBackgroundColor;
+  const bg = appState().viewBackgroundColor;
   const cm = ea.getCM(hex);
   return ea.getCM(bg).isDark()
     ? cm.lightnessTo(80).stringHEX()
@@ -399,88 +406,93 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
   });
 };
 
-const triggerGlobalLayout = (rootId, force = false) => {
-  const allElements = ea.getViewElements();
-  const root = allElements.find(el => el.id === rootId);
-  ea.copyViewElementsToEAforEditing(allElements);
+const triggerGlobalLayout = async (rootId, force = false) => {
+  const run = async () => {
+    const allElements = ea.getViewElements();
+    const root = allElements.find(el => el.id === rootId);
+    ea.copyViewElementsToEAforEditing(allElements);
 
-  // Clear existing grouping info for mindmap components before rebuilding
-  if (groupBranches) {
-    ea.getElements().forEach(el => { el.groupIds = []; });
-  }
+    // Clear existing grouping info for mindmap components before rebuilding
+    if (groupBranches) {
+      ea.getElements().forEach(el => { el.groupIds = []; });
+    }
 
-  const l1Nodes = getChildrenNodes(rootId, allElements);
-  if (l1Nodes.length === 0) return;
+    const l1Nodes = getChildrenNodes(rootId, allElements);
+    if (l1Nodes.length === 0) return;
 
-  const mode = root.customData?.growthMode || currentModalGrowthMode;
-  const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
-  
-  const existingL1 = l1Nodes.filter(n => !n.customData?.mindmapNew);
-  const newL1 = l1Nodes.filter(n => n.customData?.mindmapNew);
-  
-  if (mode === "Radial") {
-    existingL1.sort((a, b) => getAngleFromCenter(rootCenter, {x: a.x + a.width/2, y: a.y + a.height/2}) - getAngleFromCenter(rootCenter, {x: b.x + b.width/2, y: b.y + b.height/2}));
-  } else {
-    existingL1.sort((a, b) => a.y - b.y);
-  }
-  
-  const sortedL1 = [...existingL1, ...newL1];
-  const count = sortedL1.length;
-  const radius = Math.max(Math.round(root.width*0.9), 260) + (count * 12);
-  
-  let startAngle, angleStep;
-  if (mode === "Right-facing") {
-    // Range starts at 30 deg span (75 to 105) and expands by 30 each step
-    const span = count <= 2 ? 30 : Math.min(120, 60 + (count - 3) * 30);
-    startAngle = 90 - (span / 2);
-    angleStep = count <= 1 ? 0 : span / (count - 1);
-  }
-  else if (mode === "Left-facing") {
-    // Mirror of Right-facing (centered at 270)
-    const span = count <= 2 ? 30 : Math.min(120, 60 + (count - 3) * 30);
-    startAngle = 270 + (span / 2);
-    angleStep = count <= 1 ? 0 : -span / (count - 1);
-  }
-  else {
-    startAngle = count <= 6 ? 30 : 20;
-    angleStep = count <= 6 ? 60 : (320 / (count - 1));
-  }
-
-  sortedL1.forEach((node, i) => {
-    const angleRad = (startAngle + (i * angleStep) - 90) * (Math.PI / 180);
-    const tCX = rootCenter.x + radius * Math.cos(angleRad);
-    const tCY = rootCenter.y + radius * Math.sin(angleRad);
+    const mode = root.customData?.growthMode || currentModalGrowthMode;
+    const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
     
-    const currentDist = Math.hypot((node.x + node.width/2) - rootCenter.x, (node.y + node.height/2) - rootCenter.y);
-    const isPinned = node.customData?.isPinned || (!force && !node.customData?.mindmapNew && currentDist > radius * 1.5);
-    const side = (isPinned
-      ? (node.x + node.width/2 > rootCenter.x)
-      : (tCX > rootCenter.x)
-    ) ? 1 : -1;
+    const existingL1 = l1Nodes.filter(n => !n.customData?.mindmapNew);
+    const newL1 = l1Nodes.filter(n => n.customData?.mindmapNew);
     
-    if (isPinned) {
-      layoutSubtree(node.id, node.x, node.y + node.height/2, side, allElements);
+    if (mode === "Radial") {
+      existingL1.sort((a, b) => getAngleFromCenter(rootCenter, {x: a.x + a.width/2, y: a.y + a.height/2}) - getAngleFromCenter(rootCenter, {x: b.x + b.width/2, y: b.y + b.height/2}));
+    } else {
+      existingL1.sort((a, b) => a.y - b.y);
+    }
+    
+    const sortedL1 = [...existingL1, ...newL1];
+    const count = sortedL1.length;
+    const radius = Math.max(Math.round(root.width*0.9), 260) + (count * 12);
+    
+    let startAngle, angleStep;
+    if (mode === "Right-facing") {
+      // Range starts at 30 deg span (75 to 105) and expands by 30 each step
+      const span = count <= 2 ? 30 : Math.min(120, 60 + (count - 3) * 30);
+      startAngle = 90 - (span / 2);
+      angleStep = count <= 1 ? 0 : span / (count - 1);
+    }
+    else if (mode === "Left-facing") {
+      // Mirror of Right-facing (centered at 270)
+      const span = count <= 2 ? 30 : Math.min(120, 60 + (count - 3) * 30);
+      startAngle = 270 + (span / 2);
+      angleStep = count <= 1 ? 0 : -span / (count - 1);
     }
     else {
-      layoutSubtree(node.id, tCX, tCY, side, allElements);
+      startAngle = count <= 6 ? 30 : 20;
+      angleStep = count <= 6 ? 60 : (320 / (count - 1));
     }
 
-    if (node.customData?.mindmapNew) {
-      ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
-    }
+    sortedL1.forEach((node, i) => {
+      const angleRad = (startAngle + (i * angleStep) - 90) * (Math.PI / 180);
+      const tCX = rootCenter.x + radius * Math.cos(angleRad);
+      const tCY = rootCenter.y + radius * Math.sin(angleRad);
+      
+      const currentDist = Math.hypot((node.x + node.width/2) - rootCenter.x, (node.y + node.height/2) - rootCenter.y);
+      const isPinned = node.customData?.isPinned || (!force && !node.customData?.mindmapNew && currentDist > radius * 1.5);
+      const side = (isPinned
+        ? (node.x + node.width/2 > rootCenter.x)
+        : (tCX > rootCenter.x)
+      ) ? 1 : -1;
+      
+      if (isPinned) {
+        layoutSubtree(node.id, node.x, node.y + node.height/2, side, allElements);
+      }
+      else {
+        layoutSubtree(node.id, tCX, tCY, side, allElements);
+      }
 
-    const arrow = allElements.find(a => a.type === "arrow" && a.customData?.isBranch && a.startBinding?.elementId === rootId && a.endBinding?.elementId === node.id);
-    if (arrow) {
-      const eaA = ea.getElement(arrow.id), eaC = ea.getElement(node.id);
-      const eX = eaC.x + eaC.width/2, eY = eaC.y + eaC.height/2;
-      eaA.x = rootCenter.x; eaA.y = rootCenter.y; eaA.points = [[0, 0], [eX - rootCenter.x, eY - rootCenter.y]];
-    }
+      if (node.customData?.mindmapNew) {
+        ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
+      }
 
-    // Apply recursive grouping to this L1 branch
-    if (groupBranches) {
-      applyRecursiveGrouping(node.id, allElements);
-    }
-  });
+      const arrow = allElements.find(a => a.type === "arrow" && a.customData?.isBranch && a.startBinding?.elementId === rootId && a.endBinding?.elementId === node.id);
+      if (arrow) {
+        const eaA = ea.getElement(arrow.id), eaC = ea.getElement(node.id);
+        const eX = eaC.x + eaC.width/2, eY = eaC.y + eaC.height/2;
+        eaA.x = rootCenter.x; eaA.y = rootCenter.y; eaA.points = [[0, 0], [eX - rootCenter.x, eY - rootCenter.y]];
+      }
+
+      // Apply recursive grouping to this L1 branch
+      if (groupBranches) {
+        applyRecursiveGrouping(node.id, allElements);
+      }
+    });
+  };
+  await run();
+  await ea.addElementsToView(false, false, true, true);
+  ea.clear();
 };
 
 // ---------------------------------------------------------------------------
@@ -490,7 +502,7 @@ const triggerGlobalLayout = (rootId, force = false) => {
 const addNode = async (text, follow = false, skipFinalLayout = false) => {
   if (!text || text.trim() === "") return;
   const allElements = ea.getViewElements();
-  const st = ea.getExcalidrawAPI().getAppState();
+  const st = appState();
   let parent = ea.getViewSelectedElement();
   if (parent?.containerId) {
     parent = allElements.find(el => el.id === parent.containerId);
@@ -590,8 +602,8 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     
     ea.copyViewElementsToEAforEditing([parent]);
     ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
-    ea.style.roughness = api.getAppState().currentItemRoughness;
-    ea.style.strokeStyle = isSolidArrow ? "solid" : api.getAppState().currentItemStrokeStyle;
+    ea.style.roughness = appState().currentItemRoughness;
+    ea.style.strokeStyle = isSolidArrow ? "solid" : appState().currentItemStrokeStyle;
     const startPoint = [parent.x + parent.width/2, parent.y + parent.height/2];
     const arrowId = ea.addArrow([startPoint, startPoint], {
       startObjectId: parent.id,
@@ -606,9 +618,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   ea.clear();
   
   if (!skipFinalLayout && rootId && !autoLayoutDisabled) { 
-    triggerGlobalLayout(rootId); 
-    await ea.addElementsToView(false, false, true, true);
-    ea.clear();
+    await triggerGlobalLayout(rootId);
   } else if (rootId && (autoLayoutDisabled || skipFinalLayout) && parent) {
     const allEls = ea.getViewElements();
     const node = allEls.find(el => el.id === newNodeId);
@@ -797,14 +807,12 @@ const pasteListToMap = async () => {
   }
 
   const info = getHierarchy(currentParent, ea.getViewElements());
-  triggerGlobalLayout(info.rootId);
-  await ea.addElementsToView(false, false, true, true);
-  ea.clear();
+  await triggerGlobalLayout(info.rootId);
 
   const allInView = ea.getViewElements();
   const targetToSelect = sel 
     ? allInView.find(e => e.id === sel.id) 
-    : allInView.find(e => e.id === pastedRoot?.id);
+    : allInView.find(e => e.id === currentParent?.id);
 
   if (targetToSelect) {
     ea.selectElementsInView([targetToSelect]);
@@ -814,9 +822,8 @@ const pasteListToMap = async () => {
 };
 
 // ---------------------------------------------------------------------------
-// 6. Navigation & Modal UI
+// 6. Navigation
 // ---------------------------------------------------------------------------
-
 const navigateMap = (key) => {
   const allElements = ea.getViewElements();
   const current = ea.getViewSelectedElement();
@@ -866,6 +873,112 @@ const setButtonDisabled = (btn, disabled) => {
   btn.extraSettingsEl.style.pointerEvents = disabled ? "none" : "";
 }
 
+// ---------------------------------------------------------------------------
+// 7. Map actions
+// ---------------------------------------------------------------------------
+const setMapAutolayout = async (endabled) => {
+  const sel = ea.getViewSelectedElement();
+  if (sel) {
+    const info = getHierarchy(sel, ea.getViewElements());
+    ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(e => e.id === info.rootId));
+    ea.addAppendUpdateCustomData(info.rootId, { autoLayoutDisabled: enabled });
+    await ea.addElementsToView(false, false, true, true);
+    ea.clear();
+  }
+}
+
+const refreshMapLayout = async () => {
+  const sel = ea.getViewSelectedElement();
+  if (sel) {
+    const info = getHierarchy(sel, ea.getViewElements());
+    await triggerGlobalLayout(info.rootId, true);
+  }
+}
+
+const togglePin = async () => {
+  const sel = ea.getViewSelectedElement();
+  if (sel) {
+    const newPinnedState = !(sel.customData?.isPinned === true);
+    ea.copyViewElementsToEAforEditing([sel]);
+    ea.addAppendUpdateCustomData(sel.id, { isPinned: newPinnedState });
+    await ea.addElementsToView(false, false, true, true);
+    ea.clear();
+    await refreshMapLayout();
+  }
+}
+
+const padding = 30;
+const toggleBox = async () => {
+  let sel = ea.getViewSelectedElement();
+  if (!sel) return;
+  sel = ea.getBoundTextElement(sel, true).sceneElement;
+  if (!sel) return;
+  let oldBindId, newBindId;
+  
+  const hasContainer = !!sel.containerId;
+  const ids = hasContainer ? [sel.id, sel.containerId] : [sel.id];
+  const allElements = ea.getViewElements();
+  const arrowsToUpdate = allElements.filter(el => el.type === "arrow" &&
+    (ids.contains(el.startBinding?.elementId) || ids.contains(el.endBinding?.elementId))
+  );
+
+  if (hasContainer) {
+    const containerId = oldBindId = sel.containerId;
+    newBindId = sel.id;
+    const container = allElements.find(el => el.id === containerId);
+    ea.copyViewElementsToEAforEditing(arrowsToUpdate.concat(sel, container));
+    const textEl = ea.getElement(sel.id);
+    ea.addAppendUpdateCustomData(textEl.id, {isPinned: !!container.customData?.isPinned});
+    textEl.containerId = null;
+    textEl.boundElements = []; //not null because I will add bound arrows a bit further down
+    ea.getElement(containerId).isDeleted = true;
+  } else {
+    ea.copyViewElementsToEAforEditing(arrowsToUpdate.concat(sel));
+
+    oldBindId = sel.id
+    const rectId = newBindId = ea.addRect(
+      sel.x - padding, 
+      sel.y - padding, 
+      sel.width + (padding * 2), 
+      sel.height + (padding * 2)
+    );
+    const rect = ea.getElement(rectId);
+    ea.addAppendUpdateCustomData(rectId, {isPinned: !!sel.customData?.isPinned});
+    rect.strokeColor = sel.strokeColor;
+    rect.strokeWidth = 2;
+    rect.roughness = appState().currentItemRoughness;
+    rect.roundness = roundedCorners ? { type: 3 } : null;
+    rect.backgroundColor = "transparent";
+
+    const textEl = ea.getElement(sel.id);
+    textEl.containerId = rectId;
+    textEl.boundElements = null;
+    rect.boundElements = [{ type: "text", id: sel.id }];
+  }
+  ea.getElements().filter(el => el.type === "arrow").forEach(a => {
+    if (a.startBinding?.elementId === oldBindId) {
+      a.startBinding.elementId = newBindId;
+      ea.getElement(newBindId).boundElements.push({type:"arrow", id: a.id});
+    }
+    if (a.endBinding?.elementId === oldBindId) {
+      a.endBinding.elementId = newBindId;
+      ea.getElement(newBindId).boundElements.push({type:"arrow", id: a.id});
+    }
+  });
+
+  await ea.addElementsToView(false, false);
+  ea.clear();
+
+  if(!hasContainer) {
+    api().updateContainerSize([ea.getViewElements().find(el => el.id === newBindId)]);
+  }
+  ea.selectElementsInView([newBindId]);
+  await refreshMapLayout();
+}
+
+// ---------------------------------------------------------------------------
+// 8. UI Modal
+// ---------------------------------------------------------------------------
 const modal = new ea.FloatingModal(app);
 modal.onOpen = () => {
   const { contentEl, titleEl, modalEl, headerEl } = modal;
@@ -884,7 +997,7 @@ modal.onOpen = () => {
   
   let strategyDropdown, autoLayoutToggle, pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn;
 
-  const updateStatus = () => {
+  const updateUI = () => {
     const all = ea.getViewElements();
     const sel = ea.getViewSelectedElement();
     const name = sel?.text || (sel?.type === "rectangle" ? "Root" : null);
@@ -934,117 +1047,33 @@ modal.onOpen = () => {
     inputEl.placeholder = "Concept...";
   });
 
-  const togglePin = async () => {
-    const sel = ea.getViewSelectedElement();
-    if (sel) {
-      const newPinnedState = !(sel.customData?.isPinned === true);
-      ea.copyViewElementsToEAforEditing([sel]);
-      ea.addAppendUpdateCustomData(sel.id, { isPinned: newPinnedState });
-      await ea.addElementsToView(false, false, true, true);
-      ea.clear();
-      refresh();
-      updateStatus();
-    }
-    inputEl.focus();
-  }
-
   inputRow.addExtraButton(btn => {
     pinBtn = btn;
-    btn.onClick(togglePin);
-  });
-
-  const padding = 30;
-  const toggleBox = async () => {
-    let sel = ea.getViewSelectedElement();
-    if (!sel) pturn;
-    sel = ea.getBoundTextElement(sel, true).sceneElement;
-    if (!sel) return;
-    let oldBindId, newBindId;
-    
-    const hasContainer = !!sel.containerId;
-    const ids = hasContainer ? [sel.id, sel.containerId] : [sel.id];
-    const allElements = ea.getViewElements();
-    const arrowsToUpdate = allElements.filter(el => el.type === "arrow" &&
-      (ids.contains(el.startBinding?.elementId) || ids.contains(el.endBinding?.elementId))
-    );
-
-    if (hasContainer) {
-      const containerId = oldBindId = sel.containerId;
-      newBindId = sel.id;
-      const container = allElements.find(el => el.id === containerId);
-      ea.copyViewElementsToEAforEditing(arrowsToUpdate.concat(sel, container));
-      const textEl = ea.getElement(sel.id);
-      ea.addAppendUpdateCustomData(textEl.id, {isPinned: !!container.customData?.isPinned});
-      textEl.containerId = null;
-      textEl.boundElements = []; //not null because I will add bound arrows a bit further down
-      ea.getElement(containerId).isDeleted = true;
-    } else {
-      ea.copyViewElementsToEAforEditing(arrowsToUpdate.concat(sel));
-
-      oldBindId = sel.id
-      const rectId = newBindId = ea.addRect(
-        sel.x - padding, 
-        sel.y - padding, 
-        sel.width + (padding * 2), 
-        sel.height + (padding * 2)
-      );
-      const rect = ea.getElement(rectId);
-      ea.addAppendUpdateCustomData(rectId, {isPinned: !!sel.customData?.isPinned});
-      rect.strokeColor = sel.strokeColor;
-      rect.strokeWidth = 2;
-      rect.roughness = api.getAppState().currentItemRoughness;
-      rect.roundness = roundedCorners ? { type: 3 } : null;
-      rect.backgroundColor = "transparent";
-
-      const textEl = ea.getElement(sel.id);
-      textEl.containerId = rectId;
-      textEl.boundElements = null;
-      rect.boundElements = [{ type: "text", id: sel.id }];
-    }
-    ea.getElements().filter(el => el.type === "arrow").forEach(a => {
-      if (a.startBinding?.elementId === oldBindId) {
-        a.startBinding.elementId = newBindId;
-        ea.getElement(newBindId).boundElements.push({type:"arrow", id: a.id});
-      }
-      if (a.endBinding?.elementId === oldBindId) {
-        a.endBinding.elementId = newBindId;
-        ea.getElement(newBindId).boundElements.push({type:"arrow", id: a.id});
-      }
+    btn.onClick(async ()=>{
+      await togglePin();
+      updateUI();
+      inputEl.focus();
     });
-
-    await ea.addElementsToView(false, false);
-    ea.clear();
-
-    if(!hasContainer) {
-      api.updateContainerSize([ea.getViewElements().find(el => el.id === newBindId)]);
-    }
-    ea.selectElementsInView([newBindId]);
-    refresh();
-  }
+  });
 
   inputRow.addExtraButton(btn => {
     boxBtn = btn;
     btn.setIcon("rectangle-horizontal");
     btn.setTooltip("Toggle Box (Container)");
-    btn.onClick(toggleBox);
+    btn.onClick(async () => {
+      await toggleBox();
+      inputEl.focus();
+    });
   });
-
-  refresh = async () => {
-    const sel = ea.getViewSelectedElement();
-    if (sel) {
-      const info = getHierarchy(sel, ea.getViewElements());
-      triggerGlobalLayout(info.rootId, true);
-      await ea.addElementsToView(false, false, true, true);
-      ea.clear();
-    }
-    inputEl.focus();
-  }
 
   inputRow.addExtraButton(btn => {
     refreshBtn = btn;
     btn.setIcon("refresh-ccw");
     btn.setTooltip("Force auto rearrange map. Will move all elements except for those that are pinned.");
-    btn.onClick(refresh)
+    btn.onClick(async ()=>{
+      await refreshMapLayout();
+      inputEl.focus();
+    });
   });
   
   let minMaxBtn;
@@ -1091,12 +1120,12 @@ modal.onOpen = () => {
       modalEl.style.borderWidth = "";
     }
     ensureNodeSelected();
-    updateStatus();
+    updateUI();
   });
 
   modalEl.addEventListener("pointerleave", () => {
-      modalEl.style.borderColor = "";
-      modalEl.style.borderWidth = "";
+    modalEl.style.borderColor = "";
+    modalEl.style.borderWidth = "";
   });
 
   inputRow.settingEl.style.display = "block";
@@ -1112,14 +1141,14 @@ modal.onOpen = () => {
       await addNode(inputEl.value, false);
       inputEl.value = "";
       inputEl.focus();
-      updateStatus();
+      updateUI();
     };
   btnGrid.createEl("button", { text: "Add+Follow", attr: {style: "padding: 2px;"} })
     .onclick = async () => {
       await addNode(inputEl.value, true);
       inputEl.value = "";
       inputEl.focus();
-      updateStatus();
+      updateUI();
     };
   copyBtn = btnGrid.createEl("button", { 
     text: "Copy", 
@@ -1154,9 +1183,7 @@ modal.onOpen = () => {
           await ea.addElementsToView(false, false, true, true);
           ea.clear();
           if (!autoLayoutDisabled) {
-            triggerGlobalLayout(info.rootId, true);
-            await ea.addElementsToView(false, false, true, true);
-            ea.clear();
+            await triggerGlobalLayout(info.rootId, true);
           }
         }
       });
@@ -1166,14 +1193,7 @@ modal.onOpen = () => {
     .setValue(autoLayoutDisabled)
     .onChange(async v => {
       autoLayoutDisabled = v;
-      const sel = ea.getViewSelectedElement();
-      if (sel) {
-        const info = getHierarchy(sel, ea.getViewElements());
-        ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(e => e.id === info.rootId));
-        ea.addAppendUpdateCustomData(info.rootId, { autoLayoutDisabled: v });
-        await ea.addElementsToView(false, false, true, true);
-        ea.clear();
-      }
+      setMapAutolayout(v);
     })
   ).components[0];
 
@@ -1186,9 +1206,7 @@ modal.onOpen = () => {
       const sel = ea.getViewSelectedElement();
       if (sel) {
         const info = getHierarchy(sel, ea.getViewElements());
-        triggerGlobalLayout(info.rootId);
-        await ea.addElementsToView(false, false, true, true);
-        ea.clear();
+        await triggerGlobalLayout(info.rootId);
       }
     })
   );
@@ -1246,7 +1264,7 @@ modal.onOpen = () => {
   new ea.obsidian.Setting(bodyContainer)
     .setName(K_FONTSIZE)
     .addDropdown(d => {
-      Object.keys(FONT_SCALE).forEach(key=>d.addOption(key,key));
+      FONT_SCALE_TYPES.forEach(key=>d.addOption(key,key));
       d.setValue(fontsizeScale);
       d.onChange(v => {
         fontsizeScale = v;
@@ -1283,14 +1301,17 @@ modal.onOpen = () => {
     if (e.key === "Enter" && e.shiftKey && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       e.stopPropagation();
-      togglePin();
+      await togglePin();
+      updateUI();
+      inputEl.focus();
       return;
     }
 
     if (e.key === "Enter" && e.shiftKey && e.altKey) {
       e.preventDefault();
       e.stopPropagation();
-      toggleBox();
+      await toggleBox();
+      inputEl.focus();
       return;
     }
 
@@ -1302,7 +1323,7 @@ modal.onOpen = () => {
       if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
         e.preventDefault();
         navigateMap(e.key);
-        updateStatus();
+        updateUI();
         return;
       }
     }
@@ -1316,59 +1337,26 @@ modal.onOpen = () => {
       else if (e.ctrlKey || e.metaKey) {
         await addNode(inputEl.value, true);
         inputEl.value = "";
-        updateStatus();
+        updateUI();
       }
       else {
         await addNode(inputEl.value, false);
         inputEl.value = "";
-        updateStatus();
+        updateUI();
       }
     }
   };
 
   ownerWindow.addEventListener("keydown", keyHandler, true);
 
-  const canvasPointerListener = (e) => {
-    if (!ea.targetView) {
-      modal.close();
-      return;
-    }
-    if (app.workspace.activeLeaf.view !== ea.targetView) return;
-    if (modal.modalEl.contains(e.target)) return;
-
-    setTimeout(() => {
-      const selection = ea.getViewSelectedElements();
-      const textEl = selection.find(el => el.type === "text");
-      let isEligible = false;
-
-      if (selection.length === 1 && textEl) {
-        isEligible = true;
-      } else if (selection.length === 2 && textEl) {
-        const other = selection.find(el => el.id !== textEl.id);
-        if (other && textEl.containerId === other.id && other.type !== "arrow") {
-          isEligible = true;
-        }
-      }
-
-      if (isEligible) {
-        updateStatus();
-      }
-    }, 50);
-  };
-
-  ownerWindow.addEventListener("pointerdown", canvasPointerListener);
-
-  updateStatus();
+  updateUI();
   modal.onClose = async () => {
     ownerWindow.removeEventListener("keydown", keyHandler, true);
-    ownerWindow.removeEventListener("pointerdown", canvasPointerListener);
     if (dirty) {
       await ea.saveScriptSettings();
     }
   };
-  setTimeout(() => {
-    inputEl.focus();
-  }, 200);
+  setTimeout(() => { inputEl.focus(); }, 200);
   toggleMinMax();
 };
 
