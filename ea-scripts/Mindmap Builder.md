@@ -5,7 +5,7 @@
 ![](https://youtu.be/dZguonMP2KU)
 
 ## 1. Overview
-**Mind Map Builder** transforms the Obsidian-Excalidraw canvas into a rapid brainstorming environment, allowing users to build complex, structured, and visually organized mind maps using primarily keyboard shortcuts. 
+**Mind Map Builder** transforms the Obsidian-Excalidraw canvas into a rapid brainstorming environment, allowing users to build complex, structured, and visually organized mind maps using primarily keyboard shortcuts.
 
 The script balances **automation** (auto-layout, recursive grouping, and contrast-aware coloring) with **explicit flexibility** (node pinning and redirection logic), ensuring that the mind map stays organized even as it grows to hundreds of nodes.
 
@@ -19,7 +19,7 @@ The primary goal is to minimize the "friction of drawing." Instead of manually d
 ## 3. Feature Set
 
 ### A. Intelligent Layout Engine
-The script features a recursive spacing engine that calculates the "subtree height" of every branch. 
+The script features a recursive spacing engine that calculates the "subtree height" of every branch.
 - **Growth Modes**: Supports Radial (circular), Right-facing, and Left-facing layouts.
 - **Radial Logic**: Distributes the first 6 nodes at 60° increments. Beyond 6 nodes, it compresses the arc to 320° to maintain a professional aesthetic and avoid overlapping the central node's vertical axis.
 - **Recursive Re-balancing**: Coordinates are recalculated across the tree to prevent overlaps while maintaining the user's chosen growth direction.
@@ -131,7 +131,7 @@ const fontScale = (type) => {
   switch (type) {
     case "Use scene fontsize":
       return Array(4).fill(appState().currentItemFontSize);
-    case "Fibonacci Scale": 
+    case "Fibonacci Scale":
       return [68, 42, 26, 16];
     default: // "Normal Scale"
       return [36, 28, 20, 16];
@@ -140,7 +140,7 @@ const fontScale = (type) => {
 
 const getFontScale = (type) => fontScale(type) ?? fontScale("Normal Scale");
 
-const STROKE_WIDTHS = [6, 4, 2, 1, 0.5]; 
+const STROKE_WIDTHS = [6, 4, 2, 1, 0.5];
 const ownerWindow = ea.targetView.ownerWindow;
 const isMac = ea.DEVICE.isMacOS || ea.DEVICE.isIOS;
 
@@ -167,7 +167,7 @@ const INSTRUCTIONS = `
 
 const ensureNodeSelected = () => {
   const selectedElements = ea.getViewSelectedElements();
-  
+
   if (selectedElements.length === 0) return;
 
   // 1. Handle Single Arrow Selection, deliberatly not filtering to el.customData?.isBranch
@@ -188,7 +188,7 @@ const ensureNodeSelected = () => {
   if (selectedElements.length > 1) {
     const selectedIds = new Set(selectedElements.map(el => el.id));
     const arrows = selectedElements.filter(el => el.type === "arrow");
-    
+
     const sourceIds = new Set();
     const sinkIds = new Set();
 
@@ -201,7 +201,7 @@ const ensureNodeSelected = () => {
       if (endId && selectedIds.has(endId)) sinkIds.add(endId);
     });
 
-    // The "Highest Ranking Parent" is a source within the group 
+    // The "Highest Ranking Parent" is a source within the group
     // that is NOT a sink of any arrow within that same group.
     const rootId = Array.from(sourceIds).find(id => !sinkIds.has(id));
 
@@ -213,7 +213,7 @@ const ensureNodeSelected = () => {
 };
 
 const getParentNode = (id, allElements) => {
-  const arrow = allElements.find(el => 
+  const arrow = allElements.find(el =>
     el.type === "arrow" && el.customData?.isBranch && el.endBinding?.elementId === id
   );
   if (!arrow) return null;
@@ -319,11 +319,11 @@ const getSubtreeHeight = (nodeId, allElements) => {
 const applyRecursiveGrouping = (nodeId, allElements) => {
   const children = getChildrenNodes(nodeId, allElements);
   const nodeIdsInSubtree = [nodeId];
-  
+
   children.forEach(child => {
     const subtreeIds = applyRecursiveGrouping(child.id, allElements);
     nodeIdsInSubtree.push(...subtreeIds);
-    
+
     // Find the arrow connecting nodeId to child
     const arrow = allElements.find(a => a.type === "arrow" && a.customData?.isBranch && a.startBinding?.elementId === nodeId && a.endBinding?.elementId === child.id);
     if (arrow) {
@@ -335,14 +335,14 @@ const applyRecursiveGrouping = (nodeId, allElements) => {
   if (nodeIdsInSubtree.length > 1) {
     ea.addToGroup(nodeIdsInSubtree);
   }
-  
+
   return nodeIdsInSubtree;
 };
 
 const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
   const node = allElements.find(el => el.id === nodeId);
   const eaNode = ea.getElement(nodeId);
-  
+
   const isPinned = node.customData?.isPinned === true;
 
   if (!isPinned) {
@@ -355,43 +355,43 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
 
   let effectiveSide = side;
   const parent = getParentNode(nodeId, allElements);
-  
+
   if (isPinned && parent) {
     const parentCenterX = parent.x + parent.width / 2;
     const nodeCenterX = currentX + node.width / 2;
     effectiveSide = nodeCenterX >= parentCenterX ? 1 : -1;
   }
 
-  if (!isPinned && eaNode.type === "text" && !eaNode.containerId && node.textAlign !== "center") { 
+  if (!isPinned && eaNode.type === "text" && !eaNode.containerId && node.textAlign !== "center") {
     eaNode.textAlign = (effectiveSide === 1) ? "left" : "right";
   }
 
   const children = getChildrenNodes(nodeId, allElements);
   sortChildrenStable(children);
   const subtreeHeight = getSubtreeHeight(nodeId, allElements);
-  
+
   let currentY = currentYCenter - subtreeHeight / 2;
-  
+
   children.forEach(child => {
     const childH = getSubtreeHeight(child.id, allElements);
-    
+
     layoutSubtree(
-      child.id, 
-      effectiveSide === 1 ? currentX + node.width + GAP_X : currentX - GAP_X, 
-      currentY + childH / 2, 
-      effectiveSide, 
+      child.id,
+      effectiveSide === 1 ? currentX + node.width + GAP_X : currentX - GAP_X,
+      currentY + childH / 2,
+      effectiveSide,
       allElements
     );
-    
+
     currentY += childH + GAP_Y;
 
-    const arrow = allElements.find(a => 
-      a.type === "arrow" && 
+    const arrow = allElements.find(a =>
+      a.type === "arrow" &&
       a.customData?.isBranch &&
-      a.startBinding?.elementId === nodeId && 
+      a.startBinding?.elementId === nodeId &&
       a.endBinding?.elementId === child.id
     );
-    
+
     if (arrow) {
       const eaArrow = ea.getElement(arrow.id);
       const eaChild = ea.getElement(child.id);
@@ -422,20 +422,20 @@ const triggerGlobalLayout = async (rootId, force = false) => {
 
     const mode = root.customData?.growthMode || currentModalGrowthMode;
     const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
-    
+
     const existingL1 = l1Nodes.filter(n => !n.customData?.mindmapNew);
     const newL1 = l1Nodes.filter(n => n.customData?.mindmapNew);
-    
+
     if (mode === "Radial") {
       existingL1.sort((a, b) => getAngleFromCenter(rootCenter, {x: a.x + a.width/2, y: a.y + a.height/2}) - getAngleFromCenter(rootCenter, {x: b.x + b.width/2, y: b.y + b.height/2}));
     } else {
       existingL1.sort((a, b) => a.y - b.y);
     }
-    
+
     const sortedL1 = [...existingL1, ...newL1];
     const count = sortedL1.length;
     const radius = Math.max(Math.round(root.width*0.9), 260) + (count * 12);
-    
+
     let startAngle, angleStep;
     if (mode === "Right-facing") {
       // Range starts at 30 deg span (75 to 105) and expands by 30 each step
@@ -458,14 +458,14 @@ const triggerGlobalLayout = async (rootId, force = false) => {
       const angleRad = (startAngle + (i * angleStep) - 90) * (Math.PI / 180);
       const tCX = rootCenter.x + radius * Math.cos(angleRad);
       const tCY = rootCenter.y + radius * Math.sin(angleRad);
-      
+
       const currentDist = Math.hypot((node.x + node.width/2) - rootCenter.x, (node.y + node.height/2) - rootCenter.y);
       const isPinned = node.customData?.isPinned || (!force && !node.customData?.mindmapNew && currentDist > radius * 1.5);
       const side = (isPinned
         ? (node.x + node.width/2 > rootCenter.x)
         : (tCX > rootCenter.x)
       ) ? 1 : -1;
-      
+
       if (isPinned) {
         layoutSubtree(node.id, node.x, node.y + node.height/2, side, allElements);
       }
@@ -516,7 +516,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     const info = getHierarchy(parent, allElements);
     depth = info.depth + 1; rootId = info.rootId;
     const rootEl = allElements.find(e => e.id === rootId);
-    
+
     if (depth === 1) {
         if (multicolor) {
             const existingColors = getChildrenNodes(parent.id, allElements).map(n => n.strokeColor);
@@ -531,7 +531,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
 
   const fontScale = getFontScale(fontsizeScale);
   ea.clear();
-  ea.style.fontFamily = st.currentItemFontFamily; 
+  ea.style.fontFamily = st.currentItemFontFamily;
   ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)];
   ea.style.roundness = roundedCorners ? { type: 3 } : null;
 
@@ -563,13 +563,13 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       y: rootEl.y + rootEl.height / 2
     };
     const side = (parent.x + parent.width/2 > rootCenter.x) ? 1 : -1;
-    
+
     const offset = (mode === "Radial" || mode === "Right-facing")
       ? rootEl.width*2
       : -rootEl.width;
     let px = parent.x + offset, py = parent.y;
     if (autoLayoutDisabled) {
-      const manualGapX = Math.round(parent.width * 1.3); 
+      const manualGapX = Math.round(parent.width * 1.3);
       const jitterX = (Math.random() - 0.5) * 150;
       const jitterY = (Math.random() - 0.5) * 150;
       const nodeW = shouldWrap ? maxWidth : metrics.width;
@@ -579,8 +579,8 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       py = (parent.y + parent.height/2) - (metrics.height / 2) + jitterY;
     }
 
-    const textAlign = centerText 
-      ? "center" 
+    const textAlign = centerText
+      ? "center"
       : (side === 1 ? "left" : "right");
 
     newNodeId = ea.addText(px, py, text, {
@@ -596,10 +596,10 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
         mindmapOrder: nextSiblingOrder
       });
     }
-    else { 
+    else {
       ea.addAppendUpdateCustomData(newNodeId, { mindmapOrder: nextSiblingOrder });
     }
-    
+
     ea.copyViewElementsToEAforEditing([parent]);
     ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
     ea.style.roughness = appState().currentItemRoughness;
@@ -616,8 +616,8 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
 
   await ea.addElementsToView(!parent, false, true, true);
   ea.clear();
-  
-  if (!skipFinalLayout && rootId && !autoLayoutDisabled) { 
+
+  if (!skipFinalLayout && rootId && !autoLayoutDisabled) {
     await triggerGlobalLayout(rootId);
   } else if (rootId && (autoLayoutDisabled || skipFinalLayout) && parent) {
     const allEls = ea.getViewElements();
@@ -633,7 +633,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       eaA.x = sX; eaA.y = sY;
       eaA.points = [[0, 0], [eX - sX, eY - sY]];
     }
-    
+
     if (groupBranches) {
       ea.getElements().forEach(el => { el.groupIds = []; });
       const l1Nodes = getChildrenNodes(rootId, allEls);
@@ -704,13 +704,13 @@ const copyMapAsText = async (cut = false) => {
     } else {
       str += `${"  ".repeat(depth - (isRootSelected ? 1 : 0))}- ${text}\n`;
     }
-    
+
     children.forEach(c => {
       if (cut) {
-        const arrow = all.find(a => 
-          a.type === "arrow" && 
-          a.customData?.isBranch && 
-          a.startBinding?.elementId === nodeId && 
+        const arrow = all.find(a =>
+          a.type === "arrow" &&
+          a.customData?.isBranch &&
+          a.startBinding?.elementId === nodeId &&
           a.endBinding?.elementId === c.id
         );
         if (arrow) elementsToDelete.push(arrow);
@@ -724,15 +724,15 @@ const copyMapAsText = async (cut = false) => {
   await navigator.clipboard.writeText(md);
 
   if (cut) {
-    const incomingArrow = all.find(a => 
-      a.type === "arrow" && 
-      a.customData?.isBranch && 
+    const incomingArrow = all.find(a =>
+      a.type === "arrow" &&
+      a.customData?.isBranch &&
       a.endBinding?.elementId === sel.id
     );
     if (incomingArrow) elementsToDelete.push(incomingArrow);
 
     ea.deleteViewElements(elementsToDelete);
-    
+
     if (parentNode) {
       ea.selectElementsInView([parentNode]);
     }
@@ -799,7 +799,7 @@ const pasteListToMap = async () => {
     while (stack.length > 1 && item.indent <= stack[stack.length - 1].indent) {
       stack.pop();
     }
-    
+
     const parentNode = stack[stack.length - 1].node;
     ea.selectElementsInView([parentNode]);
     const newNode = await addNode(item.text, false, true);
@@ -810,8 +810,8 @@ const pasteListToMap = async () => {
   await triggerGlobalLayout(info.rootId);
 
   const allInView = ea.getViewElements();
-  const targetToSelect = sel 
-    ? allInView.find(e => e.id === sel.id) 
+  const targetToSelect = sel
+    ? allInView.find(e => e.id === sel.id)
     : allInView.find(e => e.id === currentParent?.id);
 
   if (targetToSelect) {
@@ -914,7 +914,7 @@ const toggleBox = async () => {
   sel = ea.getBoundTextElement(sel, true).sceneElement;
   if (!sel) return;
   let oldBindId, newBindId;
-  
+
   const hasContainer = !!sel.containerId;
   const ids = hasContainer ? [sel.id, sel.containerId] : [sel.id];
   const allElements = ea.getViewElements();
@@ -937,9 +937,9 @@ const toggleBox = async () => {
 
     oldBindId = sel.id
     const rectId = newBindId = ea.addRect(
-      sel.x - padding, 
-      sel.y - padding, 
-      sel.width + (padding * 2), 
+      sel.x - padding,
+      sel.y - padding,
+      sel.width + (padding * 2),
       sel.height + (padding * 2)
     );
     const rect = ea.getElement(rectId);
@@ -985,22 +985,22 @@ modal.onOpen = () => {
   ensureNodeSelected();
   contentEl.empty();
   titleEl.setText("Mind Map Builder");
-  
+
   const details = contentEl.createEl("details");
   details.createEl("summary", { text: "Instructions & Shortcuts" });
   ea.obsidian.MarkdownRenderer.render(app, INSTRUCTIONS, details.createDiv(), "", ea.plugin);
-  
+
   const inputRow = new ea.obsidian.Setting(contentEl).setName("Node Text");
 
   const bodyContainer = contentEl.createDiv();
   bodyContainer.style.width = "100%"
-  
+
   let strategyDropdown, autoLayoutToggle, pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn;
 
   const updateUI = () => {
     const all = ea.getViewElements();
     const sel = ea.getViewSelectedElement();
-    
+
     if (sel) {
       const isPinned = sel.customData?.isPinned === true;
       if (pinBtn) {
@@ -1074,7 +1074,7 @@ modal.onOpen = () => {
       inputEl.focus();
     });
   });
-  
+
   let minMaxBtn;
   const toggleMinMax = () => {
     minMaxBtn.setIcon(isMinimized ? "maximize-2" : "minimize-2");
@@ -1149,21 +1149,21 @@ modal.onOpen = () => {
       inputEl.focus();
       updateUI();
     };
-  copyBtn = btnGrid.createEl("button", { 
-    text: "Copy", 
-    attr: { style: "padding: 2px;", title: `Copy branch as text (${isMac ? "OPT" : "ALT"}+C)` } 
+  copyBtn = btnGrid.createEl("button", {
+    text: "Copy",
+    attr: { style: "padding: 2px;", title: `Copy branch as text (${isMac ? "OPT" : "ALT"}+C)` }
   });
   copyBtn.onclick = copyMapAsText;
 
-  cutBtn = btnGrid.createEl("button", { 
-    text: "Cut", 
-    attr: { style: "padding: 2px;", title: `Cut branch as text (${isMac ? "OPT" : "ALT"}+X)` } 
+  cutBtn = btnGrid.createEl("button", {
+    text: "Cut",
+    attr: { style: "padding: 2px;", title: `Cut branch as text (${isMac ? "OPT" : "ALT"}+X)` }
   });
   cutBtn.onclick = () => copyMapAsText(true);
 
-  btnGrid.createEl("button", { 
-    text: "Paste", 
-    attr: { style: "padding: 2px;", title: `Paste list from clipboard (${isMac ? "OPT" : "ALT"}+V)` } 
+  btnGrid.createEl("button", {
+    text: "Paste",
+    attr: { style: "padding: 2px;", title: `Paste list from clipboard (${isMac ? "OPT" : "ALT"}+V)` }
   })
     .onclick = pasteListToMap;
   new ea.obsidian.Setting(bodyContainer)
@@ -1172,8 +1172,8 @@ modal.onOpen = () => {
       strategyDropdown = d;
       d.addOptions({ "Radial": "Radial", "Right-facing": "Right-facing", "Left-facing": "Left-facing" })
       .setValue(currentModalGrowthMode)
-      .onChange(async v => { 
-        currentModalGrowthMode = v; ea.setScriptSettingValue(K_GROWTH, { value: v }); dirty = true; 
+      .onChange(async v => {
+        currentModalGrowthMode = v; ea.setScriptSettingValue(K_GROWTH, { value: v }); dirty = true;
         const sel = ea.getViewSelectedElement();
         if (sel) {
           const info = getHierarchy(sel, ea.getViewElements());
