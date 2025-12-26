@@ -608,6 +608,33 @@ export class ExcalidrawAutomate {
   }
 
   /**
+   * Returns the WorkspaceLeaf hosting the Excalidraw sidepanel view.
+   * @returns {WorkspaceLeaf | null} The sidepanel leaf or null if not found.
+   */
+  public getSidepanelLeaf(): WorkspaceLeaf | null {
+    return ExcalidrawSidepanelView.getExisting(false)?.leaf ?? null;
+  }
+
+  /**
+   * Toggles the visibility of the Excalidraw sidepanel view.
+   * If the sidepanel is not in a leaf attached to the left or right split, no action is taken.
+   */
+  public toggleSidepanelView(): void {
+    const leaf = this.getSidepanelLeaf();
+    if (leaf) {
+      const root = leaf.getRoot();
+      if (root === this.plugin.app.workspace.leftSplit) {
+        this.plugin.app.workspace.leftSplit.toggle();
+        return;
+      }
+      if (root === this.plugin.app.workspace.rightSplit) {
+        this.plugin.app.workspace.rightSplit.toggle();
+        return;
+      }
+    }
+  }
+
+  /**
    * Pins the active script's sidepanel tab to be persistent across Obsidian restarts.
    * @param options 
    * @returns {Promise<ExcalidrawSidepanelTab | null>} The persisted sidepanel tab or null on error.

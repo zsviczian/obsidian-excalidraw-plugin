@@ -41,9 +41,15 @@ export class ExcalidrawSidepanelView extends ItemView {
 			}
 			await leaf.setViewState({ type: VIEW_TYPE_SIDEPANEL, active: effectiveReveal });
 		}
-		const spView = leaf.view;
+		let spView = leaf.view;
 		if (!(spView instanceof ExcalidrawSidepanelView)) {
-			return null;
+			// Obsidian startup sequence. Leaves constructors are not called until they are revealed.
+			// So when getOrCreate is called from a script, we may have a leaf of the right type but with a generic ItemView.
+			await leaf.setViewState({ type: VIEW_TYPE_SIDEPANEL, active: true });
+			spView = leaf.view;
+			if (!(spView instanceof ExcalidrawSidepanelView)) {
+				return null;
+			}
 		}
 		if (effectiveReveal) {
 			plugin.app.workspace.revealLeaf(leaf);

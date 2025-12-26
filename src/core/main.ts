@@ -499,10 +499,6 @@ export default class ExcalidrawPlugin extends Plugin {
       console.error("Error setting up property types", e);
     }
     this.logStartupEvent("Property types set");
-
-    if (this.settings?.sidepanelTabs?.length) {
-      void ExcalidrawSidepanelView.getOrCreate(this, false);
-    }
   }
 
   public async awaitSettings() {

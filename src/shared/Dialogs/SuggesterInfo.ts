@@ -913,10 +913,22 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "createSidepanelTab",
-    code: "async createSidepanelTab(title: string, persist: boolean = false, options?: SidepanelTabOptions): Promise<ExcalidrawSidepanelTab | null>;",
+    code: "async createSidepanelTab(title: string, persist: boolean = false, reveal: boolean = true,): Promise<ExcalidrawSidepanelTab | null>;",
     desc: "Creates this EA instance's sidepanel tab; use the returned ExcalidrawSidepanelTab (setContent/setTitle, onOpen/onClose/onFocus, contentEl) to build the UI and lifecycle hooks.\n"+
       "In case the script wants to replace the sidepanel tab it created earlier, call closeSidepanelTab() first, then createSidepanelTab() again.",
     after: "",
+  },
+  {
+    field: "getSidepanelLeaf",
+    code: "getSidepanelLeaf(): WorkspaceLeaf | null;",
+    desc: "Returns the WorkspaceLeaf hosting the Excalidraw sidepanel view, or null if the sidepanel is not present.",
+    after: "();"
+  },
+  {
+    field: "toggleSidepanelView",
+    code: "toggleSidepanelView(): void;",
+    desc: "Toggles the Excalidraw sidepanel visibility when the sidepanel is hosted in the left or right workspace split. If the sidepanel is not attached to a left/right sidebar, no action is taken.",
+    after: "();"
   },
   {
     field: "persistSidepanelTab",
