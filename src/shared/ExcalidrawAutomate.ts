@@ -551,7 +551,22 @@ export class ExcalidrawAutomate {
     this.reset();
     this.targetView = view;
   }
-  
+
+  /**
+   * Checks if there is an active sidepanel already associated with ea.activeScript
+   * If yes it returns the ExcalidrawSidepanelTab instance
+   * Note, this sidepanel tab may be associated with another ExcalidrawAutomate instance
+   * 
+   */
+  public checkForActiveSidepanelTab(): ExcalidrawSidepanelTab | null {
+    const spView = ExcalidrawSidepanelView.getExisting();
+    if (!spView) {
+      return null;
+    }
+    return spView.getTabByScript(this.activeScript);
+  }
+
+
   /**
    * Creates a new sidepanel tab associated with this ExcalidrawAutomate instance.
    * If a sidepanel tab already exists for this instance, it will be closed first.
