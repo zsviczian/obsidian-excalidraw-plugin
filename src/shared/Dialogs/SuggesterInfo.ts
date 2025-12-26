@@ -909,21 +909,9 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
-    field: "revealSidepanelTab",
-    code: "revealSidepanelTab(): ExcalidrawSidepanelTab | null;",
-    desc: "Reveals the sidepanel tab associated with this EA instance if it exists and returns it.",
-    after: "",
-  },
-  {
     field: "persistSidepanelTab",
     code: "persistSidepanelTab(): ExcalidrawSidepanelTab | null;",
     desc: "Pins the active script's sidepanel tab so it persists across Obsidian restarts and returns it.",
-    after: "",
-  },
-  {
-    field: "closeSidepanelTab",
-    code: "closeSidepanelTab(): void;",
-    desc: "Closes the sidepanel tab associated with this EA instance if present.",
     after: "",
   },
   {

@@ -1,7 +1,7 @@
 import type { CloseableComponent } from "obsidian";
 import type ExcalidrawPlugin from "src/core/main";
 import { getLastActiveExcalidrawView } from "src/utils/excalidrawAutomateUtils";
-import type { SidepanelTabOptions, SidepanelTab as SidepanelTabType } from "src/types/sidepanelTabTypes";
+import type { SidepanelTab as SidepanelTabType } from "src/types/sidepanelTabTypes";
 import ExcalidrawView from "src/view/ExcalidrawView";
 
 type HostCallbacks = {
@@ -43,7 +43,6 @@ export class ExcalidrawSidepanelTab implements CloseableComponent, SidepanelTabT
 		private host: HostCallbacks,
 		private containers: Containers,
 		scriptName?: string,
-		options?: SidepanelTabOptions,
 	) {
 		this._scriptName = scriptName;
 		this._title = title;
@@ -53,7 +52,7 @@ export class ExcalidrawSidepanelTab implements CloseableComponent, SidepanelTabT
 		this.containerEl = this.modalEl;
 		this.titleEl = this.modalEl.createDiv({ cls: "excalidraw-sidepanel-tab__label" });
 		this.contentEl = this.modalEl.createDiv({ cls: "excalidraw-sidepanel-tab__content" });
-		this.applyOptions(title, options);
+		this.setTitle(title);
 	}
 
 	public get scriptName(): string | undefined {
@@ -73,25 +72,17 @@ export class ExcalidrawSidepanelTab implements CloseableComponent, SidepanelTabT
 		this._scriptName = scriptName;
 	}
 
-	private applyOptions(title: string, options?: SidepanelTabOptions) {
-		this.setTitle(title);
-		this.clear();
-	}
-
-	/**
-	 * Reinitializes the tab title and clears previous content/handlers.
-   * Not intended for public use by EA scripts.
-	 */
-	public reset(title: string, options?: SidepanelTabOptions) {
-		this.applyOptions(title, options);
-	}
-
 	/**
 	 * Removes all child nodes from the content container.
 	 */
 	public clear() {
 		this.contentEl.empty();
 	}
+
+  public reset(title: string) {
+    this.setTitle(title);
+    this.clear();
+  }
 
 	/**
 	 * Updates the tab title label and notifies the host to refresh any UI affordances.

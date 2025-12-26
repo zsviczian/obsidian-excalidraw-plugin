@@ -93,7 +93,6 @@ import { ExcalidrawSidepanelTab } from "src/view/sidepanel/SidepanelTab";
 import { patchMobileView } from "src/utils/customEmbeddableUtils";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { AIRequest } from "src/types/AIUtilTypes";
-import { SidepanelTabOptions } from "src/types/sidepanelTabTypes";
 
 extendPlugins([
   HarmonyPlugin,
@@ -563,40 +562,23 @@ export class ExcalidrawAutomate {
   public async createSidepanelTab(
     title: string,
     persist: boolean = false,
-    options?: SidepanelTabOptions,
+    reveal: boolean = true,
   ): Promise<ExcalidrawSidepanelTab | null> {
     if (this.sidepanelTab) {
-      this.closeSidepanelTab();
+      this.sidepanelTab.close();
     }
     const scriptName = this.activeScript ?? nanoid(); //random name if no active script
-    const revealPanel = options?.reveal !== false;
-    const spView = await ExcalidrawSidepanelView.getOrCreate(this.plugin, revealPanel);
+    const spView = await ExcalidrawSidepanelView.getOrCreate(this.plugin, reveal);
     if (!spView) {
       errorMessage("Unable to open sidepanel", "createSidepanelTab()");
       return null;
     }
-    const tab = await spView.createTab({ title, scriptName, options, hostEA: this });
+    const tab = await spView.createTab({ title, scriptName, hostEA: this });
     this.sidepanelTab = tab;
     if (persist && this.activeScript) {
       this.persistSidepanelTab();
     }
     return tab;
-  }
-
-  /**
-   * Reveals the sidepanel tab associated with the sidepanelTab for this EA instance.
-   * @returns {ExcalidrawSidepanelTab | null} The revealed sidepanel tab or null on error.
-   */
-  public revealSidepanelTab(): ExcalidrawSidepanelTab | null {
-    if (!this.sidepanelTab) {
-      return;
-    }
-    const spView = ExcalidrawSidepanelView.getExisting(true);
-    if (!spView) {
-      return;
-    } 
-    spView.setActiveTab(this.sidepanelTab);
-    return this.sidepanelTab;
   }
 
   /**
@@ -615,22 +597,6 @@ export class ExcalidrawAutomate {
     }
     spView.markTabPersistent(this.sidepanelTab);
     return this.sidepanelTab;
-  }
-
-  /**
-   * Closes the sidepanel tab associated with the sidepanelTab for this EA instance.
-   * @returns 
-   */
-  public closeSidepanelTab(): void {
-    if (!this.sidepanelTab) {
-      return;
-    }   
-    const spView = ExcalidrawSidepanelView.getExisting();
-    if (!spView) {
-      return;
-    }
-    spView.removeTab(this.sidepanelTab);
-    this.sidepanelTab = null;
   }
 
   /**
@@ -2382,7 +2348,7 @@ export class ExcalidrawAutomate {
    * Clears elementsDict and imagesDict, and resets all style values to default.
    */
   reset():void {
-    this.closeSidepanelTab();
+    this.sidepanelTab?.close();
     this.clear();
     this.activeScript = null;
     this.style = {
@@ -3843,7 +3809,7 @@ export class ExcalidrawAutomate {
    * Destroys the ExcalidrawAutomate instance, clearing all references and data.
    */
   destroy(): void {
-    this.closeSidepanelTab();
+    this.sidepanelTab?.close();
     this.targetView = null;
     this.plugin = null;
     this.elementsDict = {};

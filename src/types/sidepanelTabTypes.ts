@@ -1,18 +1,17 @@
 import type ExcalidrawView from "src/view/ExcalidrawView";
 
-export interface SidepanelTabOptions {
-  reveal?: boolean;
-}
-
 /**
  * SidepanelTab defines the public surface of a sidepanel tab as exposed to scripts.
  * Tabs are lightweight modal-like containers with their own DOM (title/content) that the host sidepanel activates, focuses, and closes.
  * Typical flow for scripts:
- * 1) Create the tab via ea.createSidepanelTab(title, persist?, options?).
+ * 1) Create the tab via ea.createSidepanelTab(title, persist=false, reveal=true). Note the sidepanelTab is immediately created even if not revealed.
+ *    If the sidepanel tab is the first in the sidepanel, then onOpen will not be called becase the tab is already open/active.
+ *    Reveal simply opens the obisidan sidepanel and the Excalidraw sidepanel view which already displays the active tab.
  * 2) Render UI into `contentEl` or use `setContent(...)` / `setTitle(...)`.
- * 3) Implement lifecycle hooks: `onOpen` (runs when activated), `onFocus(view)` (runs on host focus changes), `onClose`/`setCloseCallback` (cleanup), `onExcalidrawViewClosed` (canvas closed).
+ * 3) Implement lifecycle hooks: `onOpen` (only runs when the user changes tabs in the Excalidraw sidepanel), `onFocus(view)` (runs on host focus changes), `onClose`/`setCloseCallback` (cleanup), `onExcalidrawViewClosed` (canvas closed).
  * 4) Use `setDisabled`, `focus`, `close`, `reset`, and persistence helpers (from host) as needed.
- * 5) Use ea.revealSidepanelTab() to show the sidepanel tab associated with the script.
+ * 5) Use ea.sidepanelTab.open() to show the sidepanel tab associated with the script.
+ * 6) When the sidepanel is nolonger required the script should call ea.sidepanelTab.close() to close the tab and trigger cleanup.
  * The sidpanel associated with an ea script is available on ea.sidepanelTab. Persisted tabs are restored on Obsidian startup, such that scripts associated with the persisted tabs are
  * loaded and executed on Excalidraw startup, and the scripts are in turn responsible for recreating their sidepanel tabs via ea.createSidepanelTab as per their normal script initiation sequence.
  * This description is intentionally explicit so an LLM can generate sidepanel-aware script code without inspecting the implementation.

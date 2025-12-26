@@ -3,7 +3,6 @@ import { ICON_NAME, VIEW_TYPE_SIDEPANEL } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
 import type { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import type { SidepanelTabOptions } from "src/types/sidepanelTabTypes";
 import { getLastActiveExcalidrawView } from "src/utils/excalidrawAutomateUtils";
 import { ExcalidrawSidepanelTab } from "./SidepanelTab";
 
@@ -12,7 +11,6 @@ type TabCreationConfig = {
 	scriptName?: string;
 	reuseExisting?: boolean;
 	hostEA?: ExcalidrawAutomate;
-	options?: SidepanelTabOptions;
 };
 
 export class ExcalidrawSidepanelView extends ItemView {
@@ -199,7 +197,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 		if (scriptName && reuse) {
 			const existing = this.scriptTabs.get(scriptName);
 			if (existing) {
-				existing.reset(config.title, config.options);
+				existing.reset(config.title);
 				this.setActiveTab(existing);
 				if (config.hostEA) {
 					this.tabHosts.set(existing.id, config.hostEA);
@@ -207,7 +205,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 				return existing;
 			}
 		}
-		const tab = this.createTabInternal(config.title, scriptName, config.options);
+		const tab = this.createTabInternal(config.title, scriptName);
 		if (config.hostEA) {
 			this.tabHosts.set(tab.id, config.hostEA);
 		}
@@ -295,7 +293,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 		return this.persistedScripts.has(scriptName);
 	}
 
-	private createTabInternal(title: string, scriptName?: string, options?: SidepanelTabOptions): ExcalidrawSidepanelTab {
+	private createTabInternal(title: string, scriptName?: string): ExcalidrawSidepanelTab {
 		if (!this.bodyEl) {
 			throw new Error("Sidepanel DOM is not ready");
 		}
@@ -309,7 +307,6 @@ export class ExcalidrawSidepanelView extends ItemView {
 			},
 			{ bodyEl: this.bodyEl },
 			scriptName,
-			options,
 		);
 		if (scriptName) {
 			this.scriptTabs.set(scriptName, tab);
