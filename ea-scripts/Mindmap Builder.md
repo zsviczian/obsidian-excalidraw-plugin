@@ -166,6 +166,7 @@ const INSTRUCTIONS = `
 // ---------------------------------------------------------------------------
 
 const ensureNodeSelected = () => {
+  if (!ea.targetView) return;
   const selectedElements = ea.getViewSelectedElements();
 
   if (selectedElements.length === 0) return;
@@ -428,6 +429,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
 };
 
 const triggerGlobalLayout = async (rootId, force = false) => {
+  if (!ea.targetView) return;
   const run = async () => {
     const allElements = ea.getViewElements();
     const root = allElements.find((el) => el.id === rootId);
@@ -541,6 +543,7 @@ const triggerGlobalLayout = async (rootId, force = false) => {
 // ---------------------------------------------------------------------------
 
 const addNode = async (text, follow = false, skipFinalLayout = false) => {
+  if (!ea.targetView) return;
   if (!text || text.trim() === "") return;
   const allElements = ea.getViewElements();
   const st = appState();
@@ -719,6 +722,7 @@ const getTextFromNode = (all, node) => {
 };
 
 const copyMapAsText = async (cut = false) => {
+  if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
   if (!sel) {
     new Notice("Select a node to copy.");
@@ -796,6 +800,7 @@ const copyMapAsText = async (cut = false) => {
 };
 
 const pasteListToMap = async () => {
+  if (!ea.targetView) return;
   const rawText = await navigator.clipboard.readText();
   if (!rawText) return;
 
@@ -874,9 +879,10 @@ const pasteListToMap = async () => {
 };
 
 // ---------------------------------------------------------------------------
-// 6. Navigation
+// 6. Map Actions
 // ---------------------------------------------------------------------------
 const navigateMap = (key) => {
+  if (!ea.targetView) return;
   const allElements = ea.getViewElements();
   const current = ea.getViewSelectedElement();
   if (!current) return;
@@ -921,18 +927,8 @@ const navigateMap = (key) => {
   }
 };
 
-const setButtonDisabled = (btn, disabled) => {
-  if (!btn) return;
-  btn.disabled = disabled;
-  if (!btn.extraSettingsEl) return;
-  btn.extraSettingsEl.style.opacity = disabled ? "0.5" : "";
-  btn.extraSettingsEl.style.pointerEvents = disabled ? "none" : "";
-};
-
-// ---------------------------------------------------------------------------
-// 7. Map actions
-// ---------------------------------------------------------------------------
 const setMapAutolayout = async (endabled) => {
+  if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
@@ -944,6 +940,7 @@ const setMapAutolayout = async (endabled) => {
 };
 
 const refreshMapLayout = async () => {
+  if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
@@ -952,6 +949,7 @@ const refreshMapLayout = async () => {
 };
 
 const togglePin = async () => {
+  if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
   if (sel) {
     const newPinnedState = !(sel.customData?.isPinned === true);
@@ -965,6 +963,7 @@ const togglePin = async () => {
 
 const padding = 30;
 const toggleBox = async () => {
+  if (!ea.targetView) return;
   let sel = ea.getViewSelectedElement();
   if (!sel) return;
   sel = ea.getBoundTextElement(sel, true).sceneElement;
@@ -1037,74 +1036,103 @@ const toggleBox = async () => {
 };
 
 // ---------------------------------------------------------------------------
-// 8. UI Modal
+// 7. UI Modal
 // ---------------------------------------------------------------------------
 const modal = new ea.FloatingModal(app);
-modal.onOpen = () => {
-  const { contentEl, titleEl, modalEl, headerEl } = modal;
-  ensureNodeSelected();
-  contentEl.empty();
-  titleEl.setText("Mind Map Builder");
+const { titleEl, modalEl, headerEl } = modal;
+let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown, autoLayoutToggle;
+let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, minMaxBtn;
 
-  const details = contentEl.createEl("details");
-  details.createEl("summary", { text: "Instructions & Shortcuts" });
-  ea.obsidian.MarkdownRenderer.render(app, INSTRUCTIONS, details.createDiv(), "", ea.plugin);
+const setButtonDisabled = (btn, disabled) => {
+  if (!btn) return;
+  btn.disabled = disabled;
+  if (!btn.extraSettingsEl) return;
+  btn.extraSettingsEl.style.opacity = disabled ? "0.5" : "";
+  btn.extraSettingsEl.style.pointerEvents = disabled ? "none" : "";
+};
 
-  const inputRow = new ea.obsidian.Setting(contentEl).setName("Node Text");
+const disableUI = () => {
+  if (pinBtn) pinBtn.setIcon("pin-off");
+  setButtonDisabled(pinBtn, true);
+  setButtonDisabled(refreshBtn, true);
+  setButtonDisabled(copyBtn, true);
+  setButtonDisabled(cutBtn, true);
+  setButtonDisabled(boxBtn, true);
+}
 
-  const bodyContainer = contentEl.createDiv();
-  bodyContainer.style.width = "100%";
+const updateUI = () => {
+  if (!ea.targetView) {
+    disableUI();
+    return;
+  }
+  const all = ea.getViewElements();
+  const sel = ea.getViewSelectedElement();
 
-  let strategyDropdown, autoLayoutToggle, pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn;
-
-  const updateUI = () => {
-    const all = ea.getViewElements();
-    const sel = ea.getViewSelectedElement();
-
-    if (sel) {
-      const isPinned = sel.customData?.isPinned === true;
-      if (pinBtn) {
-        pinBtn.setIcon(isPinned ? "pin" : "pin-off");
-        pinBtn.setTooltip(
-          `${isPinned
-            ? "This element is pinned. Click to unpin"
-            : "This element is not pinned. Click to pin"
-          } the location of the selected element (${isMac ? "CMD" : "CTRL"}+SHIFT+Enter)`,
-        );
-        setButtonDisabled(pinBtn, false);
-      }
-      if (boxBtn) {
-        setButtonDisabled(boxBtn, false);
-      }
-
-      setButtonDisabled(refreshBtn, false);
-
-      const info = getHierarchy(sel, all);
-      setButtonDisabled(cutBtn, info.rootId === sel.id);
-      setButtonDisabled(copyBtn, false);
-
-      const root = all.find((e) => e.id === info.rootId);
-      const mapStrategy = root.customData?.growthMode;
-      if (mapStrategy && mapStrategy !== currentModalGrowthMode) {
-        currentModalGrowthMode = mapStrategy;
-        strategyDropdown.setValue(mapStrategy);
-      }
-      const mapLayoutPref = root.customData?.autoLayoutDisabled === true;
-      if (mapLayoutPref !== autoLayoutDisabled) {
-        autoLayoutDisabled = mapLayoutPref;
-        autoLayoutToggle.setValue(mapLayoutPref);
-      }
-    } else {
-      if (pinBtn) pinBtn.setIcon("pin-off");
-      setButtonDisabled(pinBtn, true);
-      setButtonDisabled(refreshBtn, true);
-      setButtonDisabled(copyBtn, true);
-      setButtonDisabled(cutBtn, true);
-      setButtonDisabled(boxBtn, true);
+  if (sel) {
+    const isPinned = sel.customData?.isPinned === true;
+    if (pinBtn) {
+      pinBtn.setIcon(isPinned ? "pin" : "pin-off");
+      pinBtn.setTooltip(
+        `${isPinned
+          ? "This element is pinned. Click to unpin"
+          : "This element is not pinned. Click to pin"
+        } the location of the selected element (${isMac ? "CMD" : "CTRL"}+SHIFT+Enter)`,
+      );
+      setButtonDisabled(pinBtn, false);
     }
-  };
+    if (boxBtn) {
+      setButtonDisabled(boxBtn, false);
+    }
 
-  let inputEl;
+    setButtonDisabled(refreshBtn, false);
+
+    const info = getHierarchy(sel, all);
+    setButtonDisabled(cutBtn, info.rootId === sel.id);
+    setButtonDisabled(copyBtn, false);
+
+    const root = all.find((e) => e.id === info.rootId);
+    const mapStrategy = root.customData?.growthMode;
+    if (mapStrategy && mapStrategy !== currentModalGrowthMode) {
+      currentModalGrowthMode = mapStrategy;
+      strategyDropdown.setValue(mapStrategy);
+    }
+    const mapLayoutPref = root.customData?.autoLayoutDisabled === true;
+    if (mapLayoutPref !== autoLayoutDisabled) {
+      autoLayoutDisabled = mapLayoutPref;
+      autoLayoutToggle.setValue(mapLayoutPref);
+    }
+  } else {
+    disableUI();
+  }
+};
+
+const toggleMinMax = () => {
+  minMaxBtn.setIcon(isMinimized ? "maximize-2" : "minimize-2");
+  minMaxBtn.setTooltip(isMinimized ? "Maximize UI" : "Minimize UI");
+  const display = isMinimized ? "none" : "";
+  bodyContainer.style.display = display;
+  headerEl.style.display = display;
+  titleEl.style.display = display;
+  detailsEl.style.display = display;
+  modalEl.style.opacity = isMinimized ? "0.8" : "1";
+  inputRow.infoEl.style.display = display;
+  modalEl.style.paddingBottom = isMinimized ? "6px" : "";
+  modalEl.style.paddingRight = isMinimized ? "6px" : "";
+  modalEl.style.paddingLeft = isMinimized ? "6px" : "";
+  modalEl.style.minHeight = isMinimized ? "0px" : "";
+  inputRow.settingEl.style.padding = isMinimized ? "0" : "";
+  inputRow.settingEl.style.border = isMinimized ? "0" : "";
+  modalEl.style.maxHeight = isMinimized ? "calc(2 * var(--size-4-4) + 12px + var(--input-height))" : "70vh";
+};
+
+const renderHelp = (contentEl) => {
+  detailsEl = contentEl.createEl("details");
+  detailsEl.createEl("summary", { text: "Instructions & Shortcuts" });
+  ea.obsidian.MarkdownRenderer.render(app, INSTRUCTIONS, detailsEl.createDiv(), "", ea.plugin);
+}
+
+const renderInput = (contentEl) => {
+  inputRow = new ea.obsidian.Setting(contentEl).setName("Node Text");
   inputRow.addText((text) => {
     inputEl = text.inputEl;
     inputEl.style.width = "100%";
@@ -1140,26 +1168,6 @@ modal.onOpen = () => {
     });
   });
 
-  let minMaxBtn;
-  const toggleMinMax = () => {
-    minMaxBtn.setIcon(isMinimized ? "maximize-2" : "minimize-2");
-    minMaxBtn.setTooltip(isMinimized ? "Maximize UI" : "Minimize UI");
-    const display = isMinimized ? "none" : "";
-    bodyContainer.style.display = display;
-    headerEl.style.display = display;
-    titleEl.style.display = display;
-    details.style.display = display;
-    modalEl.style.opacity = isMinimized ? "0.8" : "1";
-    inputRow.infoEl.style.display = display;
-    modalEl.style.paddingBottom = isMinimized ? "6px" : "";
-    modalEl.style.paddingRight = isMinimized ? "6px" : "";
-    modalEl.style.paddingLeft = isMinimized ? "6px" : "";
-    modalEl.style.minHeight = isMinimized ? "0px" : "";
-    inputRow.settingEl.style.padding = isMinimized ? "0" : "";
-    inputRow.settingEl.style.border = isMinimized ? "0" : "";
-    modalEl.style.maxHeight = isMinimized ? "calc(2 * var(--size-4-4) + 12px + var(--input-height))" : "70vh";
-  };
-
   inputRow.addExtraButton((btn) => {
     minMaxBtn = btn;
     btn.onClick(async () => {
@@ -1170,31 +1178,14 @@ modal.onOpen = () => {
     });
   });
 
-  modalEl.addEventListener("pointerenter", () => {
-    if (!ea.targetView) {
-      new Notice("Host Excalidraw Window was closed");
-      modal.close();
-      return;
-    }
-    if (ea.targetView !== app.workspace.activeLeaf.view) {
-      modalEl.style.borderColor = "red";
-      modalEl.style.borderWidth = "3px";
-    } else {
-      modalEl.style.borderColor = "";
-      modalEl.style.borderWidth = "";
-    }
-    ensureNodeSelected();
-    updateUI();
-  });
-
-  modalEl.addEventListener("pointerleave", () => {
-    modalEl.style.borderColor = "";
-    modalEl.style.borderWidth = "";
-  });
-
   inputRow.settingEl.style.display = "block";
   inputRow.controlEl.style.width = "100%";
   inputRow.controlEl.style.marginTop = "8px";
+}
+
+const renderBody = (contentEl) => {
+  bodyContainer = contentEl.createDiv();
+  bodyContainer.style.width = "100%";
 
   const btnGrid = bodyContainer.createDiv({
     attr: {
@@ -1239,6 +1230,7 @@ modal.onOpen = () => {
     d.addOptions({ Radial: "Radial", "Right-facing": "Right-facing", "Left-facing": "Left-facing" })
       .setValue(currentModalGrowthMode)
       .onChange(async (v) => {
+        if (!ea.targetView) return;
         currentModalGrowthMode = v;
         ea.setScriptSettingValue(K_GROWTH, { value: v });
         dirty = true;
@@ -1256,15 +1248,18 @@ modal.onOpen = () => {
       });
   });
 
-  autoLayoutToggle = new ea.obsidian.Setting(bodyContainer).setName("Disable Auto-Layout").addToggle((t) =>
-    t.setValue(autoLayoutDisabled).onChange(async (v) => {
+  autoLayoutToggle = new ea.obsidian.Setting(bodyContainer).setName("Disable Auto-Layout").addToggle((t) => t
+    .setValue(autoLayoutDisabled)
+    .onChange(async (v) => {
       autoLayoutDisabled = v;
       setMapAutolayout(v);
     }),
   ).components[0];
 
-  new ea.obsidian.Setting(bodyContainer).setName("Group Branches").addToggle((t) =>
-    t.setValue(groupBranches).onChange(async (v) => {
+  new ea.obsidian.Setting(bodyContainer).setName("Group Branches").addToggle((t) => t
+    .setValue(groupBranches)
+    .onChange(async (v) => {
+      if (!ea.targetView) return;
       groupBranches = v;
       ea.setScriptSettingValue(K_GROUP, { value: v });
       dirty = true;
@@ -1298,16 +1293,15 @@ modal.onOpen = () => {
   );
 
   let sliderValDisplay;
-  const sliderSetting = new ea.obsidian.Setting(bodyContainer).setName("Max Wrap Width").addSlider((s) =>
-    s
-      .setLimits(100, 600, 10)
-      .setValue(maxWidth)
-      .onChange(async (v) => {
-        maxWidth = v;
-        sliderValDisplay.setText(`${v}px`);
-        ea.setScriptSettingValue(K_WIDTH, { value: v });
-        dirty = true;
-      }),
+  const sliderSetting = new ea.obsidian.Setting(bodyContainer).setName("Max Wrap Width").addSlider((s) => s
+    .setLimits(100, 600, 10)
+    .setValue(maxWidth)
+    .onChange(async (v) => {
+      maxWidth = v;
+      sliderValDisplay.setText(`${v}px`);
+      ea.setScriptSettingValue(K_WIDTH, { value: v });
+      dirty = true;
+    }),
   );
   sliderValDisplay = sliderSetting.descEl.createSpan({
     text: `${maxWidth}px`,
@@ -1317,8 +1311,9 @@ modal.onOpen = () => {
   new ea.obsidian.Setting(bodyContainer)
     .setName("Center text")
     .setDesc("Toggle off: align nodes to rigth/left depending; Toggle on: center the text.")
-    .addToggle((t) =>
-      t.setValue(centerText).onChange((v) => {
+    .addToggle((t) => t
+      .setValue(centerText)
+      .onChange((v) => {
         centerText = v;
         ea.setScriptSettingValue(K_CENTERTEXT, { value: v });
         dirty = true;
@@ -1335,98 +1330,139 @@ modal.onOpen = () => {
     });
   });
 
-  new ea.obsidian.Setting(bodyContainer).setName("Box Child Nodes").addToggle((t) =>
-    t.setValue(boxChildren).onChange((v) => {
+  new ea.obsidian.Setting(bodyContainer).setName("Box Child Nodes").addToggle((t) => t
+    .setValue(boxChildren)
+    .onChange((v) => {
       boxChildren = v;
       ea.setScriptSettingValue(K_BOX, { value: v });
       dirty = true;
     }),
   );
 
-  new ea.obsidian.Setting(bodyContainer).setName("Rounded Corners").addToggle((t) =>
-    t.setValue(roundedCorners).onChange((v) => {
+  new ea.obsidian.Setting(bodyContainer).setName("Rounded Corners").addToggle((t) => t
+    .setValue(roundedCorners)
+    .onChange((v) => {
       roundedCorners = v;
       ea.setScriptSettingValue(K_ROUND, { value: v });
       dirty = true;
     }),
   );
+}
 
-  const keyHandler = async (e) => {
-    if (ownerWindow.document.activeElement !== inputEl) return;
+const keyHandler = async (e) => {
+  if (!ownerWindow) return;
+  if (ownerWindow.document?.activeElement !== inputEl) return;
 
-    if (e.key === "Enter" && e.shiftKey && (e.ctrlKey || e.metaKey)) {
+  if (e.key === "Enter" && e.shiftKey && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    e.stopPropagation();
+    await togglePin();
+    updateUI();
+    inputEl.focus();
+    return;
+  }
+
+  if (e.key === "Enter" && e.shiftKey && e.altKey) {
+    e.preventDefault();
+    e.stopPropagation();
+    await toggleBox();
+    inputEl.focus();
+    return;
+  }
+
+  if (e.altKey) {
+    if (e.code === "KeyC") {
       e.preventDefault();
-      e.stopPropagation();
-      await togglePin();
+      copyMapAsText(false);
+      return;
+    }
+    if (e.code === "KeyX") {
+      e.preventDefault();
+      copyMapAsText(true);
+      return;
+    }
+    if (e.code === "KeyV") {
+      e.preventDefault();
+      pasteListToMap();
+      return;
+    }
+
+    if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
+      e.preventDefault();
+      navigateMap(e.key);
       updateUI();
-      inputEl.focus();
       return;
     }
+  }
+  if (e.key === "Enter") {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!inputEl.value) return;
+    if (e.shiftKey) {
+      await addNode(inputEl.value, false);
+      modal.close();
+    } else if (e.ctrlKey || e.metaKey) {
+      await addNode(inputEl.value, true);
+      inputEl.value = "";
+      updateUI();
+    } else {
+      await addNode(inputEl.value, false);
+      inputEl.value = "";
+      updateUI();
+    }
+  }
+};
 
-    if (e.key === "Enter" && e.shiftKey && e.altKey) {
-      e.preventDefault();
-      e.stopPropagation();
-      await toggleBox();
-      inputEl.focus();
+const addEventHandlers = () => {
+  modalEl.addEventListener("pointerenter", () => {
+    if (!ea.targetView) {
+      new Notice("Host Excalidraw Window was closed");
+      modal.close();
       return;
     }
-
-    if (e.altKey) {
-      if (e.code === "KeyC") {
-        e.preventDefault();
-        copyMapAsText(false);
-        return;
-      }
-      if (e.code === "KeyX") {
-        e.preventDefault();
-        copyMapAsText(true);
-        return;
-      }
-      if (e.code === "KeyV") {
-        e.preventDefault();
-        pasteListToMap();
-        return;
-      }
-
-      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
-        e.preventDefault();
-        navigateMap(e.key);
-        updateUI();
-        return;
-      }
+    if (ea.targetView !== app.workspace.activeLeaf.view) {
+      modalEl.style.borderColor = "red";
+      modalEl.style.borderWidth = "3px";
+    } else {
+      modalEl.style.borderColor = "";
+      modalEl.style.borderWidth = "";
     }
-    if (e.key === "Enter") {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!inputEl.value) return;
-      if (e.shiftKey) {
-        await addNode(inputEl.value, false);
-        modal.close();
-      } else if (e.ctrlKey || e.metaKey) {
-        await addNode(inputEl.value, true);
-        inputEl.value = "";
-        updateUI();
-      } else {
-        await addNode(inputEl.value, false);
-        inputEl.value = "";
-        updateUI();
-      }
-    }
-  };
+    ensureNodeSelected();
+    updateUI();
+  });
 
-  ownerWindow.addEventListener("keydown", keyHandler, true);
+  modalEl.addEventListener("pointerleave", () => {
+    modalEl.style.borderColor = "";
+    modalEl.style.borderWidth = "";
+  });
+
+  ownerWindow?.addEventListener("keydown", keyHandler, true);
+}
+
+modal.onOpen = () => {
+  const { contentEl } = modal;
+
+  ensureNodeSelected();
+  contentEl.empty();
+  titleEl.setText("Mind Map Builder");
+
+  renderHelp(contentEl);
+  renderInput(contentEl);
+  renderBody(contentEl);
+  addEventHandlers();
 
   updateUI();
-  modal.onClose = async () => {
-    ownerWindow.removeEventListener("keydown", keyHandler, true);
-    if (dirty) {
-      await ea.saveScriptSettings();
-    }
-  };
   setTimeout(() => {
     inputEl.focus();
   }, 200);
   toggleMinMax();
+};
+
+modal.onClose = async () => {
+  ownerWindow?.removeEventListener("keydown", keyHandler, true);
+  if (dirty) {
+    await ea.saveScriptSettings();
+  }
 };
 
 modal.open();
