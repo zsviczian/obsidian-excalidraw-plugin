@@ -22,6 +22,22 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 - Floating modal used by Excalidraw scripts did not work correctly in Obisidian popout windows.
 
 ## New in ExcalidrawAutomate
+- Implemented Excalidraw Sidepanel API for ExcalidrawAutomate. Scripts can now create custom Obsidian sidepanel tabs in the Excalidraw Sidepanel.
+  - New Command Palette action: "Open Excalidraw Sidepanel" will toggle the sidepanel visibility.
+  - The demo script making full use of the new sidepanel API is [Mindmap Builder](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/sidepanels/ea-scripts/Mindmap%20Builder.md) currently available in the sidepanels branch of Obsidian-Excalidraw repository. **Note: ** the version of Mindmap Builder in the script store is not updated yet to use the new sidepanel API.
+  - [ExcalidrawAutomate full library for LLM training.md](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/sidepanels/docs/AITrainingData/ExcalidrawAutomate%20full%20library%20for%20LLM%20training.md) also on the sidepanels branch includes all necessary training information to use sidepanels.
+
+  New functions in ExcalidrawAutomate. See also [SidepanelTab](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/sidepanels/src/types/sidepanelTabTypes.ts) type definition in the sidepanels branch.
+
+\`\`\`ts
+sidepanelTab: ExcalidrawSidepanelTab | null;
+checkForActiveSidepanelTabForScript(scriptName?: string): ExcalidrawSidepanelTab | null;
+createSidepanelTab(title: string, persist?: boolean, reveal?: boolean): Promise<ExcalidrawSidepanelTab | null>;
+getSidepanelLeaf(): WorkspaceLeaf | null;
+toggleSidepanelView(): void;
+persistSidepanelTab(): ExcalidrawSidepanelTab | null;
+\`\`\`
+
 - **setView() improvements**
   - Calling \`setView()\` now picks a sensible target automatically:
     - It prefers the **currently active Excalidraw view**.
