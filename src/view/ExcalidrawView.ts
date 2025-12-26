@@ -6060,7 +6060,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     elements: ExcalidrawElement[]
   ) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.zoomToElements, "ExcalidrawView.zoomToElements", selectResult, elements);
-    const api = this.excalidrawAPI;
+    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     if (!api) return;
 
     const zoomLevel = this.plugin.settings.zoomToFitMaxLevel;

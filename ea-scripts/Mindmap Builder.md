@@ -716,6 +716,19 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   const finalNode = ea.getViewElements().find((el) => el.id === newNodeId);
   if (follow || !parent) {
     ea.selectElementsInView([finalNode]);
+    api().zoomToFit([finalNode],1,ea.DEVICE.isMobile ? 0.75 : 0.85);
+    if(ea.DEVICE.isMobile) {
+      setTimeout(() => {
+        const st = appState();
+        const zoom = st.zoom.value;
+        const offset = (st.height / 4) / zoom;
+        ea.viewUpdateScene({
+          appState: {
+            scrollY: st.scrollY - offset,
+          }
+        });
+      });
+    }
   } else if (parent) {
     ea.selectElementsInView([parent]);
   }
