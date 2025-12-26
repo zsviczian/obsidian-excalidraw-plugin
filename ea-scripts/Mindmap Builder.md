@@ -141,7 +141,7 @@ const fontScale = (type) => {
 const getFontScale = (type) => fontScale(type) ?? fontScale("Normal Scale");
 
 const STROKE_WIDTHS = [6, 4, 2, 1, 0.5];
-const ownerWindow = ea.targetView.ownerWindow;
+const ownerWindow = ea.targetView?.ownerWindow;
 const isMac = ea.DEVICE.isMacOS || ea.DEVICE.isIOS;
 
 const INSTRUCTIONS = `
