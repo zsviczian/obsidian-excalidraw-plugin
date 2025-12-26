@@ -894,7 +894,6 @@ const pasteListToMap = async () => {
 // 6. Map Actions
 // ---------------------------------------------------------------------------
 const navigateMap = (key) => {
-  console.log(key);
   if (!ea.targetView) return;
   const allElements = ea.getViewElements();
   const current = ea.getViewSelectedElement();
@@ -1054,10 +1053,11 @@ const toggleBox = async () => {
 
 let detailsEl, inputEl, bodyContainer, strategyDropdown, autoLayoutToggle;
 let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn;
-let inputContainer; // Container for the input row
-let helpContainer; // Container for the help details
+let inputContainer;
+let helpContainer;
 let floatingInputModal = null;
 let isUndocked = getVal(K_MINIMIZED, false) === true; // Reusing K_MINIMIZED key for persistence state
+let sidepanelWindow;
 
 const setButtonDisabled = (btn, disabled) => {
   if (!btn) return;
@@ -1132,18 +1132,13 @@ const renderHelp = (container) => {
 const renderInput = (container, isFloating = false) => {
   container.empty();
   
-  // Clean up old references
   pinBtn = refreshBtn = boxBtn = dockBtn = inputEl = null;
 
   let inputRow = new ea.obsidian.Setting(container);
   
-  // In sidepanel: Input Row 1, Buttons Row 2
-  // In floating: All in one row
   if (!isFloating) {
     inputRow.setName("Node Text");
-    // Change setting layout to block to stack Label, Input, and Buttons vertically
     inputRow.settingEl.style.display = "block";
-    
     inputRow.controlEl.style.display = "block";
     inputRow.controlEl.style.width = "100%";
     inputRow.controlEl.style.marginTop = "8px";
@@ -1178,7 +1173,7 @@ const renderInput = (container, isFloating = false) => {
     inputRow.addExtraButton((btn) => {
       cb(btn);
       // If docked, move the button into our flex container
-      if (buttonContainer && btn.extraSettingsEl) {
+      if (!isFloating && buttonContainer && btn.extraSettingsEl) {
         buttonContainer.appendChild(btn.extraSettingsEl);
       }
     });
@@ -1393,26 +1388,23 @@ const renderBody = (contentEl) => {
   );
 };
 
-const toggleSidepanel = () => {
-  const leaf = ea.getSidepanelLeaf();
-  if (leaf) {
-    const root = leaf.getRoot();
-    if (root === app.workspace.leftSplit) {
-      app.workspace.leftSplit.toggle();
-    }
-    if (root === app.workspace.rightSplit) {
-      app.workspace.rightSplit.toggle();
-    }
+const toggleDock = async () => {
+  if (!ea.targetView) return;
+  
+  //hide/reveal the sidepanel if docked/undocked.
+  isSidepanelVisible = ea.getSidepanelLeaf().isVisible();
+  if (isUndocked && !isSidepanelVisible || isSidepanelVisible && !isUndocked) {
+    ea.toggleSidepanelView(); //this only handles the left and right sidepanel cases
   }
-}
-
-const toggleDock = () => {
-  if(!ea.targetView) return;
-  ea.toggleSidepanelView();
-  isUndocked = !isUndocked;
-  if(isUndocked) {
+  //if the sidepanel was moved to another workspace leave, potentially to a popout window,
+  // then the leaf must be revealed when dociking the input element
+  if (isUndocked) {
+    app.workspace.setActiveLeaf(ea.getSidepanelLeaf(), {focus: true});
+  } else {
     app.workspace.setActiveLeaf(ea.targetView.leaf, {focus: true});
   }
+
+  isUndocked = !isUndocked;
   ea.setScriptSettingValue(K_MINIMIZED, { value: isUndocked });
   dirty = true;
 
@@ -1422,10 +1414,12 @@ const toggleDock = () => {
     const { contentEl, titleEl, modalEl, headerEl } = floatingInputModal;
 
     floatingInputModal.onOpen = () => {
+      // Reparent the modal to the target view's window. 
       if (ea.targetView && modalEl.ownerDocument !== ea.targetView.ownerDocument) {
         ea.targetView.ownerDocument.body.appendChild(modalEl);
       }
-      const {x,y} = ea.targetView.contentEl.getBoundingClientRect();
+
+      const {x, y} = ea.targetView.contentEl.getBoundingClientRect();
       contentEl.empty();
       // Minimal styling for floating bar
       const closeEl = modalEl.querySelector(".modal-close-button");
@@ -1437,28 +1431,26 @@ const toggleDock = () => {
       modalEl.style.paddingRight = "6px";
       modalEl.style.paddingLeft = "6px";
       modalEl.style.minHeight = "0px";
-      modalEl.style.maxHeight = "calc(2 * var(--size-4-4) + 12px + var(--input-height))";
       modalEl.style.width = "fit-content";
       modalEl.style.height = "auto";    
       const container = floatingInputModal.contentEl.createDiv();
       renderInput(container, true);
       setTimeout(() => {
         inputEl?.focus();
-        modalEl.style.top = `${y+5}px`;
-        modalEl.style.left = `${x+5}px`;
+        //the modalEl is deliberately moved after a delay
+        //else event handlers in FloatingModal would override the move
+        modalEl.style.top = `${ y + 5 }px`;
+        modalEl.style.left = `${ x + 5 }px`;
       }, 100);
     };
 
     floatingInputModal.onClose = () => {
-      // If user closes floating modal manually (e.g. ESC), we should probably dock back or close everything.
-      // Here we assume if they close it, they want to dock back or stop.
-      // However, FloatingModal doesn't have a close button by default in EA, mainly closed via code.
       floatingInputModal = null;
       if (isUndocked) {
-        // If it was closed while state is still "Undocked" (e.g. via ESC), flip state and dock
+        // If closed manually, dock back
         isUndocked = false;
         ea.setScriptSettingValue(K_MINIMIZED, { value: false });
-        if (ea.sidepanelTab) renderInput(inputContainer, false);
+        if (ea.sidepanelTab && inputContainer) renderInput(inputContainer, false);
       }
     };
     
@@ -1468,6 +1460,11 @@ const toggleDock = () => {
   } else {
     // DOCK: Close floating, render in sidepanel
     if (floatingInputModal) {
+      // Explicitly remove the DOM element if we manually reparented it
+      // to ensure no ghost elements remain on the canvas window
+      if (floatingInputModal.modalEl && floatingInputModal.modalEl.parentElement) {
+        floatingInputModal.modalEl.remove();
+      }
       floatingInputModal.close(); 
       floatingInputModal = null;
     }
@@ -1478,15 +1475,17 @@ const toggleDock = () => {
   }
 };
 
-let sidepanelWindow;
-
 const keyHandler = async (e) => {
-  // Determine which window the input is currently in
+  // Determine which window the input is currently in.
+  // If floating, it lives in the targetView's window (due to reparenting).
+  // If docked, it lives in the sidepanel's window.
   const currentWindow = isUndocked && floatingInputModal 
     ? ea.targetView?.ownerWindow 
-    : sidepanelWindow; // Sidepanel is always in main window
+    : sidepanelWindow;
 
   if (!currentWindow) return;
+  
+  // Check if the input element is actually focused in that window
   if (currentWindow.document?.activeElement !== inputEl) return;
 
   if (e.key === "Enter" && e.shiftKey && (e.ctrlKey || e.metaKey)) {
@@ -1534,7 +1533,9 @@ const keyHandler = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     if (e.shiftKey) {
-      if (inputEl.value) await addNode(inputEl.value, false);
+      if (inputEl.value) {
+        await addNode(inputEl.value, false);
+      }
       toggleDock();
       return;
     }
@@ -1553,7 +1554,7 @@ const keyHandler = async (e) => {
 
 const canvasPointerListener = (e) => {
   if (!ea.targetView) return;
-  // If input is floating, check if click is inside it
+  // If input is floating, check if click is inside it to avoid deselecting/updating UI prematurely
   if (floatingInputModal && floatingInputModal.modalEl.contains(e.target)) return;
   
   setTimeout(() => {
@@ -1577,9 +1578,22 @@ const canvasPointerListener = (e) => {
   }, 50);
 };
 
+// --- Initialization Logic ---
+// 1. Checking for exsiting tab right at the beginning of the script (not needed here)
 // 2. Create new Sidepanel Tab
 ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   if (!tab) return;
+
+  // Handle re-binding listeners when the sidepanel is popped out or docked back
+  tab.onWindowMigrated = (newWin) => {
+    if (sidepanelWindow && sidepanelWindow !== newWin) {
+      sidepanelWindow.removeEventListener("keydown", keyHandler, true);
+    }
+    sidepanelWindow = newWin;
+    if (!isUndocked && sidepanelWindow) {
+      sidepanelWindow.addEventListener("keydown", keyHandler, true);
+    }
+  };
 
   tab.onOpen = () => {
     const contentEl = tab.contentEl;
@@ -1589,6 +1603,9 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
     renderHelp(contentEl);
     inputContainer = contentEl.createDiv(); // Place for Input Row
     renderBody(contentEl);
+
+    // Initial capture of the sidepanel's window context
+    sidepanelWindow = contentEl.ownerDocument.defaultView;
 
     // Initial Render
     if (isUndocked) {
@@ -1605,37 +1622,33 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   // 3. Handle View Changes and Event Listeners
   const setupEventListeners = (view) => {
     if (!view || !view.ownerWindow) return;
-    // Input key handling needs to be attached to the window where the input currently resides.
-    // However, the inputEl reference persists, so we attach to both main window and popout owner if needed,
-    // or just attach to the specific window logic inside keyHandler.
     
-    // We attach keydown to the View's window to handle shortcuts when canvas is focused? 
-    // No, instructions say "when input is focused".
-    // So we attach to the window containing the input.
-    
-    // For canvas interactions (pointerdown), we attach to the view's window.
+    // Canvas interactions (pointerdown) happen in the View's window
     view.ownerWindow.addEventListener("pointerdown", canvasPointerListener);
     
-    // Global key listener for input (attached to both potential windows to be safe, or manage dynamic switching)
-    // Since inputEl is unique, we can attach to window (for sidepanel) and view.ownerWindow (for floating)
-    const sidepanelHostWin = ea.getSidepanelLeaf()?.view?.contentEl.ownerDocument?.defaultView;
-    if (sidepanelWindow && sidepanelHostWin !== sidepanelWindow) {
-      sidepanelWindow.removeEventListener("keydown", keyHandler, true);
+    // Key handling logic:
+    // Attach to Sidepanel's window
+    if (!isUndocked && sidepanelWindow) {
+      sidepanelWindow.addEventListener("keydown", keyHandler, true);
     }
-    sidepanelWindow = sidepanelHostWin;
-    sidepanelWindow.addEventListener("keydown", keyHandler, true);
-    /*if (view.ownerWindow !== sidepanelWindow) {
+    
+    // Attach to View's window (for floating modal events if reparented)
+    if (isUndocked && view.ownerWindow && view.ownerWindow !== sidepanelWindow) {
       view.ownerWindow.addEventListener("keydown", keyHandler, true);
-    }*/
+    }
   };
 
   const removeEventListeners = (view) => {
     if (!view || !view.ownerWindow) return;
     view.ownerWindow.removeEventListener("pointerdown", canvasPointerListener);
-    sidepanelWindow.removeEventListener("keydown", keyHandler, true);
-    /*if (view.ownerWindow !== window) {
+    
+    if (sidepanelWindow) {
+      sidepanelWindow.removeEventListener("keydown", keyHandler, true);
+    }
+    // Clean up view window listener
+    if (view.ownerWindow && view.ownerWindow !== sidepanelWindow) {
       view.ownerWindow.removeEventListener("keydown", keyHandler, true);
-    }*/
+    }
   };
 
   tab.onFocus = (view) => {
@@ -1663,6 +1676,9 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
       removeEventListeners(ea.targetView);
     }
     if (floatingInputModal) {
+      if (floatingInputModal.modalEl && floatingInputModal.modalEl.parentElement) {
+        floatingInputModal.modalEl.remove();
+      }
       floatingInputModal.close();
       floatingInputModal = null;
     }
@@ -1671,7 +1687,7 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
     }
   };
 
-  // Initial setup
+  // Initial setup if a view is already active
   if (ea.targetView) {
     setupEventListeners(ea.targetView);
   }

@@ -80,6 +80,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 	private resolveReady: (() => void) | null = null;
 	private restorePromise: Promise<void> | null = null;
 	private leafChangeRef: EventRef | null = null;
+	private windowMigrationCleanup: (() => void) | null = null;
 
 	constructor(leaf: WorkspaceLeaf, private plugin: ExcalidrawPlugin) {
 		super(leaf);
@@ -125,6 +126,12 @@ export class ExcalidrawSidepanelView extends ItemView {
 
 	protected async onOpen() {
 		await super.onOpen();
+		const hasWindowMigrationAPI = typeof this.containerEl.onWindowMigrated === "function";
+		if (hasWindowMigrationAPI) {
+			this.windowMigrationCleanup = this.containerEl.onWindowMigrated((win: Window) => {
+				this.notifyTabsWindowMigrated(win);
+			});
+		}
 		ExcalidrawSidepanelView.singleton = this;
 		this.containerEl.empty();
 		this.containerEl.addClass("excalidraw-sidepanel-container");
@@ -171,19 +178,33 @@ export class ExcalidrawSidepanelView extends ItemView {
 	 */
 	protected async onClose() {
 		await super.onClose();
+		if (this.windowMigrationCleanup) {
+			this.windowMigrationCleanup();
+			this.windowMigrationCleanup = null;
+		}
 		if (this.leafChangeRef) {
 			this.app.workspace.offref(this.leafChangeRef);
 			this.leafChangeRef = null;
 		}
-		this.tabs.forEach((tab) => tab.destroy());
+		this.tabs.forEach((tab) => {
+			tab.notifyWillClose();
+			const hostEA = this.tabHosts.get(tab.id);
+			if (hostEA && hostEA.sidepanelTab === tab) {
+				hostEA.sidepanelTab = null;
+			}
+			this.tabHosts.delete(tab.id);
+			tab.destroy();
+		});
 		this.tabs.clear();
 		this.scriptTabs.clear();
 		this.tabOptions.clear();
+		this.tabHosts.clear();
 		this.activeTabId = null;
 		this.selectEl = null;
 		this.closeButtonEl = null;
 		this.bodyEl = null;
 		this.emptyStateEl = null;
+		this.containerEl.onWindowMigrated = null;
 		if (ExcalidrawSidepanelView.singleton === this) {
 			ExcalidrawSidepanelView.singleton = null;
 		}
@@ -403,6 +424,10 @@ export class ExcalidrawSidepanelView extends ItemView {
 		if (active) {
 			active.handleFocus(view ?? null);
 		}
+	}
+
+	private notifyTabsWindowMigrated(win: Window) {
+		this.tabs.forEach((tab) => tab.handleWindowMigration(win));
 	}
 
 	private addTabOption(tab: ExcalidrawSidepanelTab) {

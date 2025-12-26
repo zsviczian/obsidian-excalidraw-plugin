@@ -30,6 +30,7 @@ export class ExcalidrawSidepanelTab implements CloseableComponent, SidepanelTabT
 	private isClosed = false;
 	private isActive = false;
 	public onFocus: (view: ExcalidrawView | null) => void = () => {};
+	public onWindowMigrated: (win: Window) => void = () => {};
 
   /**
    * Called by ScriptEngine when the Excalidraw view associated with the ExcalidrawAutomate object for this sidepanel tab is closed and ea.targetView becomes null.
@@ -169,6 +170,16 @@ export class ExcalidrawSidepanelTab implements CloseableComponent, SidepanelTabT
 	 */
 	public handleFocus(view?: ExcalidrawView | null) {
 		this.runFocusHandlers(view);
+	}
+
+	/**
+	 * Notifies scripts that the tab's DOM migrated to a different Obsidian window.
+	 */
+	public handleWindowMigration(win: Window) {
+		if (this.isClosed) {
+			return;
+		}
+		this.onWindowMigrated(win);
 	}
 
 	/**
