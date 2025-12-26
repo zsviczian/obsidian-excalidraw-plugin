@@ -881,7 +881,7 @@ const setMapAutolayout = async (endabled) => {
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
     ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(e => e.id === info.rootId));
-    ea.addAppendUpdateCustomData(info.rootId, { autoLayoutDisabled: enabled });
+    ea.addAppendUpdateCustomData(info.rootId, { autoLayoutDisabled: endabled });
     await ea.addElementsToView(false, false, true, true);
     ea.clear();
   }
@@ -1000,7 +1000,6 @@ modal.onOpen = () => {
   const updateUI = () => {
     const all = ea.getViewElements();
     const sel = ea.getViewSelectedElement();
-    const name = sel?.text || (sel?.type === "rectangle" ? "Root" : null);
     
     if (sel) {
       const isPinned = sel.customData?.isPinned === true;
