@@ -553,17 +553,28 @@ export class ExcalidrawAutomate {
   }
 
   /**
-   * Checks if there is an active sidepanel already associated with ea.activeScript
-   * If yes it returns the ExcalidrawSidepanelTab instance
-   * Note, this sidepanel tab may be associated with another ExcalidrawAutomate instance
-   * 
-   */
-  public checkForActiveSidepanelTab(): ExcalidrawSidepanelTab | null {
+   * Return the active sidepanel tab for a script, if one exists.
+   * If scriptName is omitted the function checks ea.activeScript.
+   * At most one sidepanel tab may be open per script. If a tab exists this
+   * returns the corresponding ExcalidrawSidepanelTab; otherwise it returns
+   * undefined.
+   * The returned tab may be hosted by a different ExcalidrawAutomate instance.
+   * To determine whether the tab belongs to the current ea instance compare:
+   * sidepanelTab.getHostEA() === ea.
+   * In this case the script may wish to reuse the existing tab rather than create a new one.
+   * @param scriptName - Optional script name to query. Defaults to ea.activeScript.
+   * @returns The ExcalidrawSidepanelTab for the script, or undefined if none exists.
+*/
+  public checkForActiveSidepanelTabForScript(scriptName?: string): ExcalidrawSidepanelTab | null {
+    scriptName = scriptName ?? this.activeScript;
+    if (!scriptName) {
+      return null;
+    }
     const spView = ExcalidrawSidepanelView.getExisting();
     if (!spView) {
       return null;
     }
-    return spView.getTabByScript(this.activeScript);
+    return spView.getTabByScript(scriptName);
   }
 
 

@@ -205,7 +205,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 				return existing;
 			}
 		}
-		const tab = this.createTabInternal(config.title, scriptName);
+		const tab = this.createTabInternal(config.title, config.hostEA, scriptName);
 		if (config.hostEA) {
 			this.tabHosts.set(tab.id, config.hostEA);
 		}
@@ -293,7 +293,11 @@ export class ExcalidrawSidepanelView extends ItemView {
 		return this.persistedScripts.has(scriptName);
 	}
 
-	private createTabInternal(title: string, scriptName?: string): ExcalidrawSidepanelTab {
+	private createTabInternal(
+		title: string,
+		ea: ExcalidrawAutomate,
+		scriptName?: string,
+	): ExcalidrawSidepanelTab {
 		if (!this.bodyEl) {
 			throw new Error("Sidepanel DOM is not ready");
 		}
@@ -304,6 +308,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 				close: (target) => this.removeTab(target),
 				updateTitle: (target) => this.updateTabOptionTitle(target),
 				plugin: this.plugin,
+				ea,
 			},
 			{ bodyEl: this.bodyEl },
 			scriptName,

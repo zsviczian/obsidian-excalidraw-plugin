@@ -33,12 +33,31 @@ For a reference, follow the implementation pattern used in the "Printable Layout
 **Sidepanels and multi-view tooling:**
 - Sidepanels are for scripts that must stay open while users hop between multiple Excalidraw views. They should implement the SidepanelTab hooks (\`onOpen\`, \`onFocus(view)\`, \`onClose\`, \`onExcalidrawViewClosed\`) and manage their own \`ea.targetView\` explicitly.
 - Persisted sidepanel scripts are launched during plugin startup (e.g., Obsidian restart, plugin update) with \`ea.targetView === null\`. Scripts must handle this by deferring view-bound work until \`onFocus\` delivers a view; call \`ea.setView(view)\` when you decide to bind.
-- Each ea instance may host a single sidepanelTab. This sidepanel tab is stored in ea.sidepanelTab. Create the tab with \`ea.createSidepanelTab(title, persist=false, reveal=true)\`; the returned \`ea.sidepanelTab\` exposes \`contentEl\`, \`setContent\`, \`setTitle\`, \`setDisabled\`, \`setCloseCallback\`, \`open/close\`, and focus lifecycle hooks. Note auto-reveal during tab creation via ea.createSidepanelTab() is disabled during plugin startup. You can reveal a tab with \`ea.sidepanelTab?.open()\`. You can persist with \`ea.persistSidepanelTab()\` (tabs are restored and scripts re-run on next startup). Close with \`ea.sidepanelTab?.close()\`.
+- Each \`ea\` instance may host a single \`sidepanelTab\`. This sidepanel tab is stored in \`ea.sidepanelTab\`. Create the tab with \`ea.createSidepanelTab(title, persist=false, reveal=true)\`; the returned \`ea.sidepanelTab\` exposes \`contentEl\`, \`setContent\`, \`setTitle\`, \`setDisabled\`, \`setCloseCallback\`, \`open/close\`, and focus lifecycle hooks. Note auto-reveal during tab creation via \`ea.createSidepanelTab()\` is disabled during plugin startup. You can reveal a tab with \`ea.sidepanelTab?.open()\`. You can persist with \`ea.persistSidepanelTab()\` (tabs are restored and scripts re-run on next startup). Close with \`ea.sidepanelTab?.close()\`.
 - Mobile UX: sidepanels slide in without disturbing canvas layout and are better for longer forms than floating modals. Prefer them for complex inputs, especially on phones.
-- Auto-closing patterns: For scripts that use sidepanels, but perform operations that are single ExcalidrawView relevant, they can call \`ea.closeSidepanelTab()\` after completing the operation, and/or inside \`ea.sidepanelTab.onFocus = (view) => { if (view !== ea.targetView) { ea.sidepanelTab?.close(); } }\` to shut down when the user leaves the originating view.
-- Scripts can detect view change in \`onFocus(view)\` by comparing \`ea.targetView\` to the provided view parameter.
-- Persistence UX: scripts may offer a “Persist tab” control inside \`contentEl\` that calls \`ea.persistSidepanelTab()\`. Once persisted, hide that control; users can later remove the tab via the sidepanel close button (scripts cannot unpersist themselves, but can close themselves via ea.sidepanelTab?.close()).
-- A dedicated section "sidepanelTabTypes.d.ts" in this document lists the ExcalidrawSidepanelTab function signatures.
+- Auto-closing patterns: For scripts that use sidepanels but perform operations that are single-\`ExcalidrawView\` relevant, they can call \`ea.closeSidepanelTab()\` after completing the operation, and/or inside \`ea.sidepanelTab.onFocus = (view) => { if (view !== ea.targetView) { ea.sidepanelTab?.close(); } }\` to shut down when the user leaves the originating view.
+- Scripts can detect view change in \`onFocus(view)\` by comparing \`ea.targetView\` to the provided \`view\` parameter.
+- Persistence UX: scripts may offer a “Persist tab” control inside \`contentEl\` that calls \`ea.persistSidepanelTab()\`. Once persisted, hide that control; users can later remove the tab via the sidepanel close button (scripts cannot unpersist themselves, but can close themselves via \`ea.sidepanelTab?.close()\`).
+- Use \`checkForActiveSidepanelTabForScript\` to avoid creating duplicate tabs for the same script name. This method returns the \`ExcalidrawSidepanelTab\` associated with the supplied \`scriptName\` (or \`ea.activeScript\` when omitted), or \`null\` if none exists. It is intended to let a script detect an existing tab that may be owned by another \`ExcalidrawAutomate\` instance (for example, a persisted tab restored at startup). Typical pattern:
+  - Before creating a new sidepanel, call \`ea.checkForActiveSidepanelTabForScript()\` to see if a tab already exists.
+  - If a tab exists and \`tab.getHostEA() === ea\`, reuse it (your script already hosts it).
+  - If a tab exists but is hosted by a different \`ea\` instance, decide whether to reuse or hand off control — e.g. open the existing tab and exit to avoid duplicates.
+  - Note: persisted tabs restored on startup may be created with \`ea.targetView === null\` and hosted by a different \`ea\` instance; handle that case by waiting for \`onFocus\` before binding view-specific work.
+  - Example usage:
+    \`const sp = ea.checkForActiveSidepanelTabForScript();
+    if (sp) {
+      if (sp.getHostEA() === ea) {
+        // we already own the tab — reuse it
+        sp.open();
+      } else {
+        // another EA instance hosts the tab — open it for the user and exit
+        sp.open();
+        return;
+      }
+    }
+    // no existing tab — safe to create a new one
+    // ea.createSidepanelTab("My Script", false, true);\`
+- A dedicated section "sidepanelTabTypes.d.ts" in this document lists the \`ExcalidrawSidepanelTab\` function signatures.
 
 #### **1. The Core Workflow: Handling Element Immutability**
 

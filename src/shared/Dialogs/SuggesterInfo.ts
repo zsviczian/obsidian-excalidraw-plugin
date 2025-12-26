@@ -902,6 +902,16 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "checkForActiveSidepanelTabForScript",
+    code: "checkForActiveSidepanelTabForScript(scriptName?: string): ExcalidrawSidepanelTab | null;",
+    desc: "Returns the active sidepanel tab for the given script, or null if none exists. " +
+      "If scriptName is omitted the function checks ea.activeScript. " +
+      "At most one sidepanel tab may be open per script. " +
+      "The returned ExcalidrawSidepanelTab may be hosted by a different ExcalidrawAutomate instance — compare sidepanelTab.getHostEA() === ea to determine ownership. " +
+      "Useful to detect or reuse an existing tab instead of creating a new one.",
+    after: '("MyScript");'
+  },
+  {
     field: "createSidepanelTab",
     code: "async createSidepanelTab(title: string, persist: boolean = false, options?: SidepanelTabOptions): Promise<ExcalidrawSidepanelTab | null>;",
     desc: "Creates this EA instance's sidepanel tab; use the returned ExcalidrawSidepanelTab (setContent/setTitle, onOpen/onClose/onFocus, contentEl) to build the UI and lifecycle hooks.\n"+

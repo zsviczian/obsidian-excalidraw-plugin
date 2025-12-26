@@ -3,12 +3,14 @@ import type ExcalidrawPlugin from "src/core/main";
 import { getLastActiveExcalidrawView } from "src/utils/excalidrawAutomateUtils";
 import type { SidepanelTab as SidepanelTabType } from "src/types/sidepanelTabTypes";
 import ExcalidrawView from "src/view/ExcalidrawView";
+import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 
 type HostCallbacks = {
 	activate: (tab: ExcalidrawSidepanelTab) => void;
 	close: (tab: ExcalidrawSidepanelTab) => void;
 	updateTitle?: (tab: ExcalidrawSidepanelTab) => void;
 	plugin: ExcalidrawPlugin;
+	ea: ExcalidrawAutomate;
 };
 
 type Containers = {
@@ -207,5 +209,9 @@ export class ExcalidrawSidepanelTab implements CloseableComponent, SidepanelTabT
 	 */
 	private getLastActiveView(): ExcalidrawView | null {
 		return getLastActiveExcalidrawView(this.host.plugin) ?? null;
+	}
+
+	public getHostEA(): ExcalidrawAutomate {
+		return this.host.ea;
 	}
 }

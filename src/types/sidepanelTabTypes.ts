@@ -1,3 +1,4 @@
+import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 
 /**
@@ -62,4 +63,6 @@ export interface SidepanelTab {
 	onClose(): void;
 	/** Toggles pointer interactivity and opacity; returns the tab for chaining. */
 	setDisabled(disabled: boolean): this;
+	/** Returns the ExcalidrawAutomate instance associated with the sidepanel tab */
+	getHostEA(): ExcalidrawAutomate;
 }
