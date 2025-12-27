@@ -92,6 +92,8 @@ const existingTab = ea.checkForActiveSidepanelTabForScript();
 if (existingTab) {
   const hostEA = existingTab.getHostEA();
   if (hostEA && hostEA !== ea) {
+    hostEA.activateMindmap = true;
+    hostEA.setView(ea.targetView);
     existingTab.open();
     return;
   }
@@ -346,22 +348,11 @@ const getReadableColor = (hex) => {
 const GAP_X = 140;
 const GAP_Y = 30;
 
-const zoomToFit = (pushUp = false) => {
+const zoomToFit = () => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
   if (sel) api().zoomToFit([sel],10,getZoom());
-  if (pushUp) {
-    setTimeout(() => {
-      const st = appState();
-      const zoom = st.zoom.value;
-      const offset = (st.height / 4) / zoom;
-      ea.viewUpdateScene({
-        appState: {
-          scrollY: st.scrollY - offset,
-        }
-      });
-    });
-  }
+  focusInputEl();
 }
 
 const getMindmapOrder = (node) => {
@@ -768,7 +759,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     ea.selectElementsInView([parent]);
   }
   if (!parent) {
-    zoomToFit(ea.DEVICE.isMobile);
+    zoomToFit();
   }
   return finalNode;
 };
@@ -1154,6 +1145,13 @@ const registerMindmapHotkeys = () => {
   };
 };
 
+const focusInputEl = () => {
+  setTimeout(() => {
+    if(!inputEl || inputEl.disabled) return;
+    inputEl.focus();
+    if (!popScope) registerMindmapHotkeys();
+  }, 200);
+}
 
 const setButtonDisabled = (btn, disabled) => {
   if (!btn) return;
@@ -1287,7 +1285,7 @@ const renderInput = (container, isFloating = false) => {
     btn.onClick(async () => {
       await togglePin();
       updateUI();
-      inputEl.focus();
+      focusInputEl();
     });
   });
 
@@ -1297,7 +1295,7 @@ const renderInput = (container, isFloating = false) => {
     btn.setTooltip(`Toggle node box. (${isMac ? "OPT" : "ALT"}+SHIFT+Enter)`);
     btn.onClick(async () => {
       await toggleBox();
-      inputEl.focus();
+      focusInputEl();
     });
   });
 
@@ -1307,7 +1305,7 @@ const renderInput = (container, isFloating = false) => {
     btn.setTooltip("Force auto rearrange map.");
     btn.onClick(async () => {
       await refreshMapLayout();
-      inputEl.focus();
+      focusInputEl();
     });
   });
 
@@ -1317,8 +1315,8 @@ const renderInput = (container, isFloating = false) => {
     btn.setTooltip(
       (isFloating ? "Dock to Sidepanel" : "Undock to Floating Modal") + " (SHIFT+Enter)"
     );
-    btn.onClick(async () => {
-      await toggleDock();
+    btn.onClick(() => {
+      toggleDock({silent: false, forceDock: false, saveSetting: true})
     });
   });
   
@@ -1342,14 +1340,14 @@ const renderBody = (contentEl) => {
   }).onclick = async () => {
     await addNode(inputEl.value, false);
     inputEl.value = "";
-    inputEl.focus();
     updateUI();
+    focusInputEl();
   };
   btnGrid.createEl("button", { text: "Add+Follow", attr: { style: "padding: 2px;" } }).onclick = async () => {
     await addNode(inputEl.value, true);
     inputEl.value = "";
-    inputEl.focus();
     updateUI();
+    focusInputEl();
   };
   copyBtn = btnGrid.createEl("button", {
     text: "Copy",
@@ -1376,13 +1374,13 @@ const renderBody = (contentEl) => {
         zoomLevel = v;
         setVal(K_ZOOM, v);
         dirty = true;
-        zoomToFit(ea.DEVICE.isMobile);
+        zoomToFit();
       });
   });
   zoomSetting.addExtraButton(btn=>btn
     .setIcon("scan-search")
     .onClick(()=>{
-      zoomToFit(ea.DEVICE.isMobile);
+      zoomToFit();
     })
   );
 
@@ -1525,8 +1523,16 @@ const updateKeyHandlerLocation = () => {
   }
 };
 
-const toggleDock = async (silent = false, forceDock = false) => {
-  if (!ea.targetView && !forceDock) return;
+/**
+ * silent === true: sidepanel is not revealed after docking
+ * forceDock === true: if input is undocked, docking happens even if no ExcalidrawView is present
+ * saveSetting === true: the dock/undock status is saved to settings. When input is docked because
+ *   the ExcalidrawView was closed or when the user presses ESC to finish mindmapping, next time
+ *   Mindmap Builder is started it should remember the user preference
+ * 
+**/ 
+const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {}) => {
+  if (!ea.targetView && !(forceDock && isUndocked)) return;
   
   // Only reveal/hide UI if not silent
   if (!silent) {
@@ -1549,8 +1555,10 @@ const toggleDock = async (silent = false, forceDock = false) => {
   }
 
   isUndocked = !isUndocked;
-  setVal(K_UNDOCKED, isUndocked);
-  dirty = true;
+  if(saveSetting) {
+    setVal(K_UNDOCKED, isUndocked);
+    dirty = true;
+  }
 
   // Re-route keyboard events to the correct window
   updateKeyHandlerLocation();
@@ -1577,7 +1585,8 @@ const toggleDock = async (silent = false, forceDock = false) => {
       modalEl.style.padding = "6px";
       modalEl.style.minHeight = "0px";
       modalEl.style.width = "fit-content";
-      modalEl.style.height = "auto";    
+      modalEl.style.height = "auto";
+      modalEl.style.maxHeight = "calc(2 * var(--size-4-4) + 12px + var(--input-height))";
       const container = floatingInputModal.contentEl.createDiv();
       renderInput(container, true);
       setTimeout(() => {
@@ -1641,7 +1650,7 @@ const keyHandler = async (e) => {
     e.stopPropagation();
     if (isUndocked) {
       // Dock silently (don't reveal sidepanel)
-      toggleDock(true);
+      toggleDock({silent: true, forceDock: true, saveSetting: false});
     }
     return;
   }
@@ -1651,7 +1660,7 @@ const keyHandler = async (e) => {
     e.stopPropagation();
     await togglePin();
     updateUI();
-    inputEl.focus();
+    focusInputEl();
     return;
   }
 
@@ -1659,7 +1668,7 @@ const keyHandler = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     await toggleBox();
-    inputEl.focus();
+    focusInputEl();
     return;
   }
 
@@ -1699,7 +1708,7 @@ const keyHandler = async (e) => {
       if (inputEl.value) {
         await addNode(inputEl.value, false);
       }
-      toggleDock();
+      toggleDock({saveSetting: true});
       return;
     }
     if (!inputEl.value) return;
@@ -1758,11 +1767,12 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   // When the view closes, ensure we dock the input back so it's not lost in floating limbo
   tab.onExcalidrawViewClosed = () => {
     if (isUndocked) {
-      toggleDock(true, true); // Silent dock
+      toggleDock({silent: true, forceDock: true, saveSetting: false});
     }
   };
 
   tab.onOpen = () => {
+    console.log("tab onOpen");
     const contentEl = tab.contentEl;
     contentEl.empty();
     
@@ -1773,14 +1783,22 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
     sidepanelWindow = contentEl.ownerDocument.defaultView;
 
     if (isUndocked) {
-      toggleDock(); 
+      toggleDock({silent: true, forceDock: true, saveSetting: false});
     } else {
       renderInput(inputContainer, false);
     }
 
     ensureNodeSelected();
     updateUI();
-    setTimeout(() => inputEl?.focus(), 200);
+    focusInputEl();
+
+    if (ea.activateMindmap) {
+      ea.activateMindmap = false;
+      const undocPreference = getVal(K_UNDOCKED, false) === true;
+      if (undocPreference) {
+        setTimeout(()=>toggleDock({saveSetting: false}));
+      }
+    }
   };
 
   const setupEventListeners = (view) => {
@@ -1800,7 +1818,6 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
 
   tab.onFocus = (view) => {
     if (!view) return;
-    if (view === ea.targetView) return;
 
     // Cleanup old view
     if (ea.targetView) {
@@ -1816,6 +1833,7 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
     // Update UI for new view selection
     ensureNodeSelected();
     updateUI();
+    focusInputEl();
   };
 
   tab.onClose = async () => {

@@ -1557,6 +1557,8 @@ export interface SidepanelTab {
     setDisabled(disabled: boolean): this;
     /** Returns the ExcalidrawAutomate instance associated with the sidepanel tab */
     getHostEA(): ExcalidrawAutomate;
+    /** Returns whether the tab is currently visible in the UI */
+    isVisible(): boolean;
 }
 
 /* ***************************** */

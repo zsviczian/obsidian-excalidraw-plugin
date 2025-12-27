@@ -570,7 +570,7 @@ export class ExcalidrawAutomate {
     if (!scriptName) {
       return null;
     }
-    const spView = ExcalidrawSidepanelView.getExisting();
+    const spView = ExcalidrawSidepanelView.getExisting(false);
     if (!spView) {
       return null;
     }

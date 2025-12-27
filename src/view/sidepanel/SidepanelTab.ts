@@ -7,6 +7,7 @@ import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 
 type HostCallbacks = {
 	activate: (tab: ExcalidrawSidepanelTab) => void;
+  isVisible: () => boolean;
 	close: (tab: ExcalidrawSidepanelTab) => void;
 	updateTitle?: (tab: ExcalidrawSidepanelTab) => void;
 	plugin: ExcalidrawPlugin;
@@ -225,4 +226,8 @@ export class ExcalidrawSidepanelTab implements CloseableComponent, SidepanelTabT
 	public getHostEA(): ExcalidrawAutomate {
 		return this.host.ea;
 	}
+
+  public isVisible(): boolean {
+    return this.host.isVisible();
+  }
 }
