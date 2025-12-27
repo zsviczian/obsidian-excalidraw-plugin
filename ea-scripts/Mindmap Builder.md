@@ -199,6 +199,7 @@ const INSTRUCTIONS = `
 - **ENTER**: Add a sibling node and stay on the current parent for rapid entry.
 - **${isMac ? "CMD" : "CTRL"} + ENTER**: Add a child node and "drill down" (follow the new node).
 - **SHIFT + ENTER**: Dock/Undock floating input field.
+- **ESC**: If input field is floating, closes Mindmap Builder (without toggling the sidepanel)
 - **${isMac ? "OPT" : "ALT"} + SHIFT + ENTER**: Box/Unbox selected node.
 - **${isMac ? "CMD" : "CTRL"} + SHIFT + ENTER**: Pin/Unpin location of a node. Pinned nodes will not be touched by auto layout.
 - **${isMac ? "OPT" : "ALT"} + Arrows**: Navigate through the mindmap nodes on the canvas.
@@ -207,7 +208,6 @@ const INSTRUCTIONS = `
 - **${isMac ? "OPT" : "ALT"} + C / X / V**: Copy, Cut, or Paste branches.
 - **${isMac ? "OPT" : "ALT"} + Z**: Zoom to selected element. Pressing the key multiple times will cycle through the zoom presets.
 - **${isMac ? "OPT" : "ALT"} + F**: Focus (Center) selected element without changing zoom.
-- **ESC**: If input field is floating, closes Mindmap Builder
 - **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
 - **Grouping**: Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
 - **Copy/Paste**: Export/Import indented Markdown lists.
@@ -1842,7 +1842,6 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   };
 
   tab.onOpen = () => {
-    console.log("tab onOpen");
     const contentEl = tab.contentEl;
     contentEl.empty();
     
@@ -1886,7 +1885,7 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
     view.ownerWindow.removeEventListener("pointerdown", canvasPointerListener);
   };
 
-  tab.onFocus = (view) => {
+  const onFocus = (view) => {
     if (!view) return;
 
     // Cleanup old view
@@ -1906,7 +1905,27 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
     focusInputEl();
   };
 
+  tab.onFocus = (view) => onFocus(view);
+
+  const onActiveLeafChange = (leaf) => {
+    if (isUndocked && !!floatingInputModal && leaf && ea.isExcalidrawView(leaf.view)) {
+      onFocus(leaf.view);
+      const { modalEl } = floatingInputModal
+      if (ea.targetView && modalEl.ownerDocument !== ea.targetView.ownerDocument) {
+        ea.targetView.ownerDocument.body.appendChild(modalEl);
+      }
+      const {x, y} = ea.targetView.contentEl.getBoundingClientRect();
+      modalEl.style.top = `${ y + 5 }px`;
+      modalEl.style.left = `${ x + 5 }px`;
+    }
+  };
+  
+  // Register the global listener
+  const leafChangeRef = app.workspace.on("active-leaf-change", onActiveLeafChange);
+
+
   tab.onClose = async () => {
+    app.workspace.offref(leafChangeRef);
     if (popScope) popScope();
     if (ea.targetView) {
       removeEventListeners(ea.targetView);
