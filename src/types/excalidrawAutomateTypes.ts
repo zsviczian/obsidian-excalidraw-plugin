@@ -14,7 +14,7 @@ export type ScriptSettingValue = {
   hidden?: boolean,
   description?: string,
   valueset?: string[],
-  height?: number,
+  height?: number, //height of textarea in Plugin Settings if type is string
 };
 
 export type ImageInfo = {
