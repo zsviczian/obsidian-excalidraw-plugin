@@ -1111,6 +1111,18 @@ let helpContainer;
 let floatingInputModal = null;
 let sidepanelWindow;
 let popScope = null;
+let keydownHandlers = [];
+
+const removeKeydownHandlers = () => {
+  keydownHandlers.forEach((f)=>f());
+  keydownHandlers = [];
+}
+
+const registerKeydownHandler = (host, handler) => {
+  removeKeydownHandlers();
+  host.addEventListener("keydown", handler, true);
+  keydownHandlers.push(()=>host.removeEventListener("keydown", handler, true))
+}
 
 const registerMindmapHotkeys = () => {
   if (popScope) popScope();
@@ -1499,24 +1511,16 @@ const renderBody = (contentEl) => {
 };
 
 const updateKeyHandlerLocation = () => {
-  // Remove listener from both potential sources to ensure no duplication
-  if (sidepanelWindow) {
-    sidepanelWindow.removeEventListener("keydown", keyHandler, true);
-  }
-  if (ea.targetView && ea.targetView.ownerWindow) {
-    ea.targetView.ownerWindow.removeEventListener("keydown", keyHandler, true);
-  }
-
   // Attach to the appropriate window based on state
   if (isUndocked) {
     // Floating: Input is reparented to targetView's window
     if (ea.targetView && ea.targetView.ownerWindow) {
-      ea.targetView.ownerWindow.addEventListener("keydown", keyHandler, true);
+      registerKeydownHandler(ea.targetView.ownerWindow, keyHandler);
     }
   } else {
     // Docked: Input is in the sidepanel's window
     if (sidepanelWindow) {
-      sidepanelWindow.addEventListener("keydown", keyHandler, true);
+      registerKeydownHandler(sidepanelWindow, keyHandler);
     }
   }
 };
@@ -1744,13 +1748,10 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   if (!tab) return;
 
   tab.onWindowMigrated = (newWin) => {
-    if (sidepanelWindow && sidepanelWindow !== newWin) {
-      sidepanelWindow.removeEventListener("keydown", keyHandler, true);
-    }
     sidepanelWindow = newWin;
     // If we are docked, re-attach to the new window immediately
     if (!isUndocked && sidepanelWindow) {
-      sidepanelWindow.addEventListener("keydown", keyHandler, true);
+      registerKeydownHandler(sidepanelWindow, keyHandler);
     }
   };
 
@@ -1791,16 +1792,10 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   };
 
   const removeEventListeners = (view) => {
+    removeKeydownHandlers();
+    if (popScope) popScope();
     if (!view || !view.ownerWindow) return;
     view.ownerWindow.removeEventListener("pointerdown", canvasPointerListener);
-
-    if (sidepanelWindow) {
-      sidepanelWindow.removeEventListener("keydown", keyHandler, true);
-    }
-    // Clean up view window listener
-    if (view.ownerWindow && view.ownerWindow !== sidepanelWindow) {
-      view.ownerWindow.removeEventListener("keydown", keyHandler, true);
-    }
   };
 
   tab.onFocus = (view) => {
