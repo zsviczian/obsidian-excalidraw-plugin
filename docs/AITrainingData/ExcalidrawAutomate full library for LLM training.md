@@ -10445,7 +10445,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2025-12-26T22:46:12.259Z
+Generated on: 2025-12-27T08:11:39.940Z
 
 ---
 
@@ -19071,8 +19071,7 @@ if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.18.3")) 
 }
 
 // --- Initialization Logic ---
-
-// 1. Check for existing tab
+// Check for existing tab
 const existingTab = ea.checkForActiveSidepanelTabForScript();
 if (existingTab) {
   const hostEA = existingTab.getHostEA();
@@ -19092,28 +19091,65 @@ const K_BOX = "Box Children";
 const K_ROUND = "Rounded Corners";
 const K_GROWTH = "Growth Mode";
 const K_MULTICOLOR = "Multicolor Mode";
-const K_MINIMIZED = "Is Minimized";
+const K_UNDOCKED = "Is Undocked";
 const K_GROUP = "Group Branches";
 const K_ARROWSTROKE = "Arrow Stroke Style";
 const K_CENTERTEXT = "Center text in nodes?";
+const K_ZOOM = "Preferred Zoom Level";
+
+const FONT_SCALE_TYPES = ["Use scene fontsize", "Fibonacci Scale", "Normal Scale"];
+const GROWTH_TYPES = ["Radial", "Right-facing", "Left-facing"];
+const ZOOM_TYPES = ["Low","Medium","High"];
 
 const api = () => ea.getExcalidrawAPI();
 const appState = () => ea.getExcalidrawAPI().getAppState();
-const getVal = (key, def) => ea.getScriptSettingValue(key, { value: def }).value;
+const getVal = (key, def) => ea.getScriptSettingValue(key, typeof def === "object" ? def: { value: def }).value;
+
+const setVal = (key, value) => {
+  //value here is only a fallback
+  //when updating a setting value, the full ScriptSettingValue should be there
+  //as defined on the ScriptSettingValue type.
+  const def = ea.getScriptSettingValue(key, {value});
+  def.value = value;
+  ea.setScriptSettingValue(key, def);
+}
 
 let maxWidth = parseInt(getVal(K_WIDTH, 450));
-let fontsizeScale = getVal(K_FONTSIZE, "Normal Scale");
+let fontsizeScale = getVal(K_FONTSIZE, {value: "Normal Scale", valueset: FONT_SCALE_TYPES});
 let boxChildren = getVal(K_BOX, false) === true;
 let roundedCorners = getVal(K_ROUND, true) === true;
 let multicolor = getVal(K_MULTICOLOR, true) === true;
 let groupBranches = getVal(K_GROUP, true) === true;
-let currentModalGrowthMode = getVal(K_GROWTH, "Radial");
-let isMinimized = getVal(K_MINIMIZED, false) === true;
+let currentModalGrowthMode = getVal(K_GROWTH, {value: "Radial", valueset: GROWTH_TYPES});
+let isUndocked = getVal(K_UNDOCKED, false) === true;
 let isSolidArrow = getVal(K_ARROWSTROKE, true) === true;
 let centerText = getVal(K_CENTERTEXT, true) === true;
 let autoLayoutDisabled = false;
+let zoomLevel = getVal(K_ZOOM, {value: "Medium", valueset: ZOOM_TYPES});
 
-const FONT_SCALE_TYPES = ["Use scene fontsize", "Fibonacci Scale", "Normal Scale"];
+//migrating old settings values. This must stay in the code so existing users have their dataset migrated
+//when they first run the new version of the code
+if (!ea.getScriptSettingValue(K_FONTSIZE, {value: "Normal Scale", valueset: FONT_SCALE_TYPES}).hasOwnProperty("valueset")) {
+  ea.setScriptSettingValue (K_FONTSIZE, {value: fontsizeScale, valueset: FONT_SCALE_TYPES});
+  dirty = true;
+}
+
+if (!ea.getScriptSettingValue(K_GROWTH, {value: "Radial", valueset: GROWTH_TYPES}).hasOwnProperty("valueset")) {
+  ea.setScriptSettingValue (K_GROWTH, {value: currentModalGrowthMode, valueset: GROWTH_TYPES});
+  dirty = true;
+}
+
+const getZoom = () => {
+  switch (zoomLevel) {
+    case "Low":
+      return ea.DEVICE.isMobile ? 0.85 : 0.92;
+    case "High":
+      return ea.DEVICE.isMobile ? 0.50 : 0.60;
+    default:
+      return ea.DEVICE.isMobile ? 0.75 : 0.85;
+  }
+}
+
 const fontScale = (type) => {
   switch (type) {
     case "Use scene fontsize":
@@ -19135,10 +19171,13 @@ const INSTRUCTIONS = `
 - **ENTER**: Add a sibling node and stay on the current parent for rapid entry.
 - **${isMac ? "CMD" : "CTRL"} + ENTER**: Add a child node and "drill down" (follow the new node).
 - **SHIFT + ENTER**: Dock/Undock floating input field.
-- **${isMac ? "OPT" : "ALT"} + Arrows**: Navigate through the mindmap nodes on the canvas.
-- **${isMac ? "OPT" : "ALT"} + C / X / V**: Copy, Cut, or Paste branches.
 - **${isMac ? "OPT" : "ALT"} + SHIFT + ENTER**: Box/Unbox selected node.
 - **${isMac ? "CMD" : "CTRL"} + SHIFT + ENTER**: Pin/Unpin location of a node. Pinned nodes will not be touched by auto layout.
+- **${isMac ? "OPT" : "ALT"} + Arrows**: Navigate through the mindmap nodes on the canvas.
+- **${isMac ? "OPT" : "ALT"} + SHIFT + Arrows**: Navigate through the mindmap nodes on the canvas and zoom to element.
+- **${isMac ? "OPT" : "ALT"} + C / X / V**: Copy, Cut, or Paste branches.
+- **${isMac ? "OPT" : "ALT"} + Z**: Zoom to selected element.
+- **ESC**: If input field is floating, closes Mindmap Builder
 - **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
 - **Grouping**: Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
 - **Copy/Paste**: Export/Import indented Markdown lists.
@@ -19290,6 +19329,24 @@ const getReadableColor = (hex) => {
 
 const GAP_X = 140;
 const GAP_Y = 30;
+
+const zoomToFit = (pushUp = false) => {
+  if (!ea.targetView) return;
+  const sel = ea.getViewSelectedElement();
+  if (sel) api().zoomToFit([sel],10,getZoom());
+  if (pushUp) {
+    setTimeout(() => {
+      const st = appState();
+      const zoom = st.zoom.value;
+      const offset = (st.height / 4) / zoom;
+      ea.viewUpdateScene({
+        appState: {
+          scrollY: st.scrollY - offset,
+        }
+      });
+    });
+  }
+}
 
 const getMindmapOrder = (node) => {
   const o = node?.customData?.mindmapOrder;
@@ -19691,19 +19748,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   const finalNode = ea.getViewElements().find((el) => el.id === newNodeId);
   if (follow || !parent) {
     ea.selectElementsInView([finalNode]);
-    api().zoomToFit([finalNode],1,ea.DEVICE.isMobile ? 0.75 : 0.85);
-    if(ea.DEVICE.isMobile) {
-      setTimeout(() => {
-        const st = appState();
-        const zoom = st.zoom.value;
-        const offset = (st.height / 4) / zoom;
-        ea.viewUpdateScene({
-          appState: {
-            scrollY: st.scrollY - offset,
-          }
-        });
-      });
-    }
+    zoomToFit(ea.DEVICE.isMobile);
   } else if (parent) {
     ea.selectElementsInView([parent]);
   }
@@ -19881,7 +19926,8 @@ const pasteListToMap = async () => {
 // ---------------------------------------------------------------------------
 // 6. Map Actions
 // ---------------------------------------------------------------------------
-const navigateMap = (key) => {
+const navigateMap = (key, zoom = false) => {
+  debugger;
   if (!ea.targetView) return;
   const allElements = ea.getViewElements();
   const current = ea.getViewSelectedElement();
@@ -19893,6 +19939,7 @@ const navigateMap = (key) => {
     const children = getChildrenNodes(root.id, allElements);
     if (children.length) {
       ea.selectElementsInView([children[0]]);
+      if (zoom) zoomToFit();
     }
     return;
   }
@@ -19925,6 +19972,7 @@ const navigateMap = (key) => {
       : (idx + 1) % siblings.length;
     ea.selectElementsInView([siblings[idx === -1 ? 0 : nIdx]]);
   }
+  if (zoom) zoomToFit();
 };
 
 const setMapAutolayout = async (endabled) => {
@@ -20044,7 +20092,6 @@ let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn;
 let inputContainer;
 let helpContainer;
 let floatingInputModal = null;
-let isUndocked = getVal(K_MINIMIZED, false) === true; // Reusing K_MINIMIZED key for persistence state
 let sidepanelWindow;
 
 const setButtonDisabled = (btn, disabled) => {
@@ -20254,14 +20301,33 @@ const renderBody = (contentEl) => {
     text: "Paste",
     attr: { style: "padding: 2px;", title: `Paste list from clipboard (${isMac ? "OPT" : "ALT"}+V)` },
   }).onclick = pasteListToMap;
+
+  const zoomSetting = new ea.obsidian.Setting(bodyContainer);
+  zoomSetting.setName("Zoom Level").addDropdown((d) => {
+    ZOOM_TYPES.forEach((key) => d.addOption(key, key));
+    d.setValue(zoomLevel);
+    d.onChange((v) => {
+        zoomLevel = v;
+        setVal(K_ZOOM, v);
+        dirty = true;
+        zoomToFit(ea.DEVICE.isMobile);
+      });
+  });
+  zoomSetting.addExtraButton(btn=>btn
+    .setIcon("scan-search")
+    .onClick(()=>{
+      zoomToFit(ea.DEVICE.isMobile);
+    })
+  );
+
   new ea.obsidian.Setting(bodyContainer).setName("Growth Strategy").addDropdown((d) => {
     strategyDropdown = d;
-    d.addOptions({ Radial: "Radial", "Right-facing": "Right-facing", "Left-facing": "Left-facing" })
-      .setValue(currentModalGrowthMode)
-      .onChange(async (v) => {
+    GROWTH_TYPES.forEach((key) => d.addOption(key, key));
+    d.setValue(currentModalGrowthMode);
+    d.onChange(async (v) => {
         if (!ea.targetView) return;
         currentModalGrowthMode = v;
-        ea.setScriptSettingValue(K_GROWTH, { value: v });
+        setVal(K_GROWTH, v);
         dirty = true;
         const sel = ea.getViewSelectedElement();
         if (sel) {
@@ -20290,7 +20356,7 @@ const renderBody = (contentEl) => {
     .onChange(async (v) => {
       if (!ea.targetView) return;
       groupBranches = v;
-      ea.setScriptSettingValue(K_GROUP, { value: v });
+      setVal(K_GROUP, v);
       dirty = true;
       const sel = ea.getViewSelectedElement();
       if (sel) {
@@ -20308,7 +20374,7 @@ const renderBody = (contentEl) => {
     .addToggle((t) =>
       t.setValue(!isSolidArrow).onChange((v) => {
         isSolidArrow = !v;
-        ea.setScriptSettingValue(K_ARROWSTROKE, { value: !v });
+        setVal(K_ARROWSTROKE,  !v);
         dirty = true;
       }),
     );
@@ -20316,7 +20382,7 @@ const renderBody = (contentEl) => {
   new ea.obsidian.Setting(bodyContainer).setName("Multicolor Branches").addToggle((t) =>
     t.setValue(multicolor).onChange((v) => {
       multicolor = v;
-      ea.setScriptSettingValue(K_MULTICOLOR, { value: v });
+      setVal(K_MULTICOLOR, v);
       dirty = true;
     }),
   );
@@ -20328,7 +20394,7 @@ const renderBody = (contentEl) => {
     .onChange(async (v) => {
       maxWidth = v;
       sliderValDisplay.setText(`${v}px`);
-      ea.setScriptSettingValue(K_WIDTH, { value: v });
+      setVal(K_WIDTH, v);
       dirty = true;
     }),
   );
@@ -20344,7 +20410,7 @@ const renderBody = (contentEl) => {
       .setValue(centerText)
       .onChange((v) => {
         centerText = v;
-        ea.setScriptSettingValue(K_CENTERTEXT, { value: v });
+        setVal(K_CENTERTEXT, v);
         dirty = true;
       }),
     );
@@ -20354,7 +20420,7 @@ const renderBody = (contentEl) => {
     d.setValue(fontsizeScale);
     d.onChange((v) => {
       fontsizeScale = v;
-      ea.setScriptSettingValue(K_FONTSIZE, { value: v });
+      setVal(K_FONTSIZE, v);
       dirty = true;
     });
   });
@@ -20363,7 +20429,7 @@ const renderBody = (contentEl) => {
     .setValue(boxChildren)
     .onChange((v) => {
       boxChildren = v;
-      ea.setScriptSettingValue(K_BOX, { value: v });
+      setVal(K_BOX, v);
       dirty = true;
     }),
   );
@@ -20372,7 +20438,7 @@ const renderBody = (contentEl) => {
     .setValue(roundedCorners)
     .onChange((v) => {
       roundedCorners = v;
-      ea.setScriptSettingValue(K_ROUND, { value: v });
+      setVal(K_ROUND,  v);
       dirty = true;
     }),
   );
@@ -20425,7 +20491,7 @@ const toggleDock = async (silent = false, forceDock = false) => {
   }
 
   isUndocked = !isUndocked;
-  ea.setScriptSettingValue(K_MINIMIZED, { value: isUndocked });
+  setVal(K_UNDOCKED, isUndocked);
   dirty = true;
 
   // Re-route keyboard events to the correct window
@@ -20472,7 +20538,7 @@ const toggleDock = async (silent = false, forceDock = false) => {
       if (isUndocked) {
         // If closed manually (e.g. unexpected close), dock back silently
         isUndocked = false;
-        ea.setScriptSettingValue(K_MINIMIZED, { value: false });
+        setVal(K_UNDOCKED, false);
         updateKeyHandlerLocation(); // Restore listeners to sidepanel
         if (ea.sidepanelTab && inputContainer) renderInput(inputContainer, false);
       }
@@ -20491,7 +20557,7 @@ const toggleDock = async (silent = false, forceDock = false) => {
       floatingInputModal = null;
     }
     renderInput(inputContainer, false);
-    if(forceDock) return;
+    if (forceDock) return;
     if (!silent) {
       setTimeout(() => {
         inputEl?.focus();
@@ -20554,10 +20620,15 @@ const keyHandler = async (e) => {
       pasteListToMap();
       return;
     }
+    if (e.code === "KeyZ") {
+      e.preventDefault();
+      zoomToFit();
+      return;
+    }
 
     if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
       e.preventDefault();
-      navigateMap(e.key);
+      navigateMap(e.key, e.shiftKey);
       updateUI();
       return;
     }

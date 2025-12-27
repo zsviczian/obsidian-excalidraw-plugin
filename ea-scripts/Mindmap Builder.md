@@ -79,15 +79,6 @@ When enabled, the script groups elements from the "leaves" upward. A leaf node i
 All nodes use `textVerticalAlign: "middle"`. This ensures that connecting arrows always point to the geometric center of the text, maintaining visual alignment regardless of how many lines of text a node contains.
 
 ```js
-MINDMAP Builder
-==========================
-Shortcuts (when input is focused):
-- ENTER: Add sibling
-- CTRL/CMD + ENTER: Drill down (follow new node)
-- CTRL/CMD + SHIFT + ENTER: Toggle node pin
-- ALT/OPT + SHIFT + ENTER: Toggle element box
-- SHIFT + ENTER: Add and Close
-- ALT/OPT + ARROWS: Navigate map nodes
 */
 
 if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.18.3")) {
@@ -773,9 +764,11 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   const finalNode = ea.getViewElements().find((el) => el.id === newNodeId);
   if (follow || !parent) {
     ea.selectElementsInView([finalNode]);
-    zoomToFit(ea.DEVICE.isMobile);
   } else if (parent) {
     ea.selectElementsInView([parent]);
+  }
+  if (!parent) {
+    zoomToFit(ea.DEVICE.isMobile);
   }
   return finalNode;
 };
@@ -952,7 +945,6 @@ const pasteListToMap = async () => {
 // 6. Map Actions
 // ---------------------------------------------------------------------------
 const navigateMap = (key, zoom = false) => {
-  debugger;
   if (!ea.targetView) return;
   const allElements = ea.getViewElements();
   const current = ea.getViewSelectedElement();
@@ -1118,6 +1110,38 @@ let inputContainer;
 let helpContainer;
 let floatingInputModal = null;
 let sidepanelWindow;
+let popScope = null;
+
+const registerMindmapHotkeys = () => {
+  if (popScope) popScope();
+  const scope = app.keymap.getRootScope();
+  const handlers = [];
+
+  const reg = (mods, key) => {
+    const handler = scope.register(mods, key, (e) => true);
+    handlers.push(handler);
+    // Force the newly registered handler to the top of the stack
+    scope.keys.unshift(scope.keys.pop());
+  };
+
+  reg(["Mod"], "Enter");
+  reg(["Shift"], "Enter");
+  reg(["Mod", "Shift"], "Enter");
+  reg(["Alt", "Shift"], "Enter");
+
+  ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].forEach(k => {
+    reg(["Alt"], k);
+    reg(["Alt", "Shift"], k);
+  });
+
+  ["c", "x", "v", "z"].forEach(k => reg(["Alt"], k));
+
+  popScope = () => {
+    handlers.forEach(h => scope.unregister(h));
+    popScope = null;
+  };
+};
+
 
 const setButtonDisabled = (btn, disabled) => {
   if (!btn) return;
@@ -1219,6 +1243,11 @@ const renderInput = (container, isFloating = false) => {
       inputEl.style.maxWidth = "350px";
     }
     inputEl.placeholder = "Concept...";
+
+    inputEl.addEventListener("focus", registerMindmapHotkeys);
+    inputEl.addEventListener("blur", () => {
+      if (popScope) popScope();
+    });
   });
 
   // Create a specific container for buttons when docked to ensure they sit in one row aligned right
@@ -1559,6 +1588,7 @@ const toggleDock = async (silent = false, forceDock = false) => {
     };
 
     floatingInputModal.onClose = () => {
+      if (popScope) popScope();
       floatingInputModal = null;
       if (isUndocked) {
         // If closed manually (e.g. unexpected close), dock back silently
@@ -1763,7 +1793,7 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   const removeEventListeners = (view) => {
     if (!view || !view.ownerWindow) return;
     view.ownerWindow.removeEventListener("pointerdown", canvasPointerListener);
-    
+
     if (sidepanelWindow) {
       sidepanelWindow.removeEventListener("keydown", keyHandler, true);
     }
@@ -1794,6 +1824,7 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   };
 
   tab.onClose = async () => {
+    if (popScope) popScope();
     if (ea.targetView) {
       removeEventListeners(ea.targetView);
     }
