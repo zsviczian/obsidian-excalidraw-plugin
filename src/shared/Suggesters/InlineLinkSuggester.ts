@@ -1,73 +1,78 @@
-import {
-  App,
-  FuzzyMatch,
-  prepareFuzzySearch,
-  setIcon,
-} from "obsidian";
+import { App, FuzzyMatch, prepareFuzzySearch } from "obsidian";
 import { SuggestionModal } from "./SuggestionModal";
 import { LinkSuggestion } from "src/types/types";
 import ExcalidrawPlugin from "src/core/main";
-import {
-  AUDIO_TYPES,
-  CODE_TYPES,
-  ICON_NAME,
-  IMAGE_TYPES,
-  REG_LINKINDEX_INVALIDCHARS,
-  VIDEO_TYPES,
-} from "src/constants/constants";
+import { getLinkSuggestionsFiltered, renderLinkSuggestion } from "src/shared/Suggesters/LinkSuggesterUtils";
+import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
 
 /**
  * Inline link suggester that attaches to a specific input element.
  */
-export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> {
+export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> implements KeyBlocker {
   private readonly getSourcePath: () => string | undefined;
   private readonly plugin: ExcalidrawPlugin;
+  private readonly widthHost: HTMLElement;
+  private block = false;
 
   constructor(
     app: App,
     plugin: ExcalidrawPlugin,
     inputEl: HTMLInputElement,
     getSourcePath: () => string | undefined,
+    widthWrapper?: HTMLElement,
   ) {
-    const items = InlineLinkSuggester.collectItems(app);
+    const items = getLinkSuggestionsFiltered(app);
     super(app, inputEl, items);
     this.plugin = plugin;
     this.getSourcePath = getSourcePath;
+    this.widthHost = widthWrapper ?? inputEl;
     this.limit = 20;
     this.setPlaceholder("Start typing [[ to link...");
     this.emptyStateText = "No match";
+    this.syncWidth();
   }
 
+  public isBlockingKeys() {
+    return this.block;
+  }
 
   getItems(): LinkSuggestion[] {
-    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/422
-    return (
-      this.app.metadataCache
-        //@ts-ignore
-        .getLinkSuggestions()
-        //@ts-ignore
-        .filter((x) => !x.path.match(REG_LINKINDEX_INVALIDCHARS))
-    );
+    return getLinkSuggestionsFiltered(this.app);
+  }
+
+  /**
+   * Keep the suggestion dropdown aligned to the provided width host (input or wrapper).
+   */
+  private syncWidth() {
+    const width = this.widthHost?.clientWidth || this.widthHost?.getBoundingClientRect().width;
+    if (width) {
+      this.suggestEl.style.width = `${width}px`;
+      this.suggestEl.style.maxWidth = `${width}px`;
+    }
   }
 
   /**
    * Refreshes the suggestion data (e.g. when vault changes) without recreating the instance.
    */
   public refreshItems() {
-    this.items = InlineLinkSuggester.collectItems(this.app);
-  }
-
-  private static collectItems(app: App): LinkSuggestion[] {
-    // Obsidian core helper returns files, aliases, and unresolved links.
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const suggestions = app.metadataCache.getLinkSuggestions?.();
-    if (!suggestions) return [];
-    return suggestions.filter((x: LinkSuggestion) => !x.path.match(REG_LINKINDEX_INVALIDCHARS));
+    this.items = getLinkSuggestionsFiltered(this.app);
   }
 
   modifyInput(input: string): string {
     return input;
+  }
+
+  onInputChanged(): void {
+    const inputStr = this.modifyInput(this.inputEl.value);
+    if (inputStr.lastIndexOf("[[") === -1) {
+      this.suggester.setSuggestions([]);
+      if (this.popper?.deref()) {
+        this.popper.deref().destroy();
+      }
+      this.suggestEl.detach();
+      return;
+    }
+    super.onInputChanged();
   }
 
   getSuggestions(query: string): FuzzyMatch<LinkSuggestion>[] {
@@ -93,60 +98,20 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> {
     this.insertLink(linkString);
   }
 
+  selectSuggestion(value: FuzzyMatch<LinkSuggestion>, evt: MouseEvent | KeyboardEvent) {
+    evt?.preventDefault?.();
+    evt?.stopPropagation?.();
+    this.onChooseItem(value?.item);
+  }
+
+  open(): void {
+    this.block = true;
+    this.syncWidth();
+    super.open();
+  }
+
   renderSuggestion(result: FuzzyMatch<LinkSuggestion>, itemEl: HTMLElement) {
-    const { item, match: matches } = result || {};
-    itemEl.addClass("mod-complex");
-    const contentEl = itemEl.createDiv("suggestion-content");
-    const auxEl = itemEl.createDiv("suggestion-aux");
-    const titleEl = contentEl.createDiv("suggestion-title");
-    const noteEl = contentEl.createDiv("suggestion-note");
-
-    if (!item) {
-      titleEl.setText(this.emptyStateText);
-      itemEl.addClass("is-selected");
-      return;
-    }
-
-    const path = item.file?.path ?? item.path;
-    const pathLength = path.length - (item.file?.name.length ?? 0);
-    const matchElements = matches.matches.map(() =>
-      createSpan("suggestion-highlight")
-  );
-    const itemText = this.getItemText(item);
-    for (let i = pathLength; i < itemText.length; i++) {
-      const match = matches.matches.find((m) => m[0] === i);
-      if (match) {
-        const element = matchElements[matches.matches.indexOf(match)];
-        titleEl.appendChild(element);
-        element.appendText(itemText.substring(match[0], match[1]));
-        i += match[1] - match[0] - 1;
-        continue;
-      }
-      titleEl.appendText(itemText[i]);
-    }
-    noteEl.setText(path);
-
-    if (!item.file) {
-      setIcon(auxEl, "ghost");
-    } else if (this.plugin.isExcalidrawFile(item.file)) {
-      setIcon(auxEl, ICON_NAME);
-    } else if (item.file.extension === "md") {
-      setIcon(auxEl, "square-pen");
-    } else if (IMAGE_TYPES.includes(item.file.extension)) {
-      setIcon(auxEl, "image");
-    } else if (VIDEO_TYPES.includes(item.file.extension)) {
-      setIcon(auxEl, "monitor-play");
-    } else if (AUDIO_TYPES.includes(item.file.extension)) {
-      setIcon(auxEl, "file-audio");
-    } else if (CODE_TYPES.includes(item.file.extension)) {
-      setIcon(auxEl, "file-code");
-    } else if (item.file.extension === "canvas") {
-      setIcon(auxEl, "layout-dashboard");
-    } else if (item.file.extension === "pdf") {
-      setIcon(auxEl, "book-open-text");
-    } else {
-      auxEl.setText(item.file.extension);
-    }
+    renderLinkSuggestion(this.plugin, result, itemEl, this.emptyStateText);
   }
 
   private buildLink(item: LinkSuggestion): string {
@@ -182,7 +147,6 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> {
 
   // Keep listeners so the suggester can trigger multiple times in the same input session.
   close(): void {
-    // match SuggestionModal.close behaviour minus listener removal
     this.app.keymap.popScope(this.scope);
     this.suggester.setSuggestions([]);
     if (this.popper?.deref()) {
@@ -190,5 +154,8 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> {
     }
     this.suggestEl.detach();
     this.shouldNotOpen = false;
+    setTimeout(() => {
+      this.block = false;
+    });
   }
 }

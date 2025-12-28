@@ -182,7 +182,6 @@ export class FloatingModal extends Modal {
 
   private handleEscKey(e: KeyboardEvent) {
     if (e.key === "Escape") {
-      // Optionally stop propagation if you do not want other handlers firing
       e.stopPropagation();
       this.close();
     }

@@ -81,7 +81,7 @@ import { addBackOfTheNoteCard, sceneRemoveInternalLinks } from "../utils/excalid
 import { log } from "../utils/debugHelper";
 import { ExcalidrawLib } from "../types/excalidrawLib";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
-import { AddImageOptions, ImageInfo, ScriptSettingValue, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
+import { AddImageOptions, ImageInfo, KeyBlocker, ScriptSettingValue, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
 import { _measureText, cloneElement, createPNG, createSVG, ensureActiveScriptSettingsObject, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getFontFamily, getLastActiveExcalidrawView, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeBindMode, normalizeFixedPoint, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
 import { exportToPDF, getMarginValue, getPageDimensions } from "src/utils/exportUtils";
 import { PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties, ExportSettings} from "src/types/exportUtilTypes";
@@ -658,11 +658,12 @@ export class ExcalidrawAutomate {
    * "[[" typing, offers vault link choices (including aliases and unresolved links), and inserts
    * the selected link using relative linktext when the active Excalidraw view is known.
    * @param {HTMLInputElement} inputEl - The input element to enhance.
+   * @param {HTMLElement} [widthWrapper] - Optional element to determine suggester width.
    * @returns {InlineLinkSuggester} The suggester instance; call close() to detach.
    */
-  public attachInlineLinkSuggester(inputEl: HTMLInputElement): InlineLinkSuggester {
+  public attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement): KeyBlocker {
     const getSourcePath = () => this.targetView?.file?.path;
-    return new InlineLinkSuggester(this.plugin.app, this.plugin, inputEl, getSourcePath);
+    return new InlineLinkSuggester(this.plugin.app, this.plugin, inputEl, getSourcePath, widthWrapper);
   }
 
   /**
