@@ -46,6 +46,15 @@ For a reference, follow the implementation pattern used in the "Printable Layout
     // ea.createSidepanelTab("My Script", false, true);`
 - A dedicated section "sidepanelTabTypes.d.ts" in this document lists the `ExcalidrawSidepanelTab` function signatures.
 
+**Verifying plugin version**
+Unless you receive explicity instruction that version verification is required at the beginning of the script, do not include the following (or similar code block). Version checking is typically used when releasing a new script that builds on a brand new ExcalidrawAutomate feature and users must be prompted to update (and then is not removed from the code later, as it does no harm). However, in the vast majority of cases it is safe to assume that users have the most recent version of the plugin, in which case this version verification is not required, and is especially misleading with a seamingly random choice for the verified version.
+```ts
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.0.0")) {
+  new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
+  return;
+}
+```
+
 #### **1. The Core Workflow: Handling Element Immutability**
 
 *   **Central Rule:** Elements in the Excalidraw scene are immutable and should never be modified directly. Always use the ExcalidrawAutomate (EA) "workbench" pattern for modifications.
