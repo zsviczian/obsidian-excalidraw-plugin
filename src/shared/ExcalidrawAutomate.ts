@@ -43,6 +43,7 @@ import {
   addAppendUpdateCustomData,
   getSVG,
 } from "src/utils/utils";
+import { InlineLinkSuggester } from "./Suggesters/InlineLinkSuggester";
 import { getAttachmentsFolderAndFilePath, getExcalidrawViews, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "src/utils/obsidianUtils";
 import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI, SceneData } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile, EmbeddedFilesLoader } from "./EmbeddedFileLoader";
@@ -650,6 +651,18 @@ export class ExcalidrawAutomate {
     }
     spView.markTabPersistent(this.sidepanelTab);
     return this.sidepanelTab;
+  }
+
+  /**
+   * Attaches an inline link suggester to the provided input element. The suggester reacts to
+   * "[[" typing, offers vault link choices (including aliases and unresolved links), and inserts
+   * the selected link using relative linktext when the active Excalidraw view is known.
+   * @param {HTMLInputElement} inputEl - The input element to enhance.
+   * @returns {InlineLinkSuggester} The suggester instance; call close() to detach.
+   */
+  public attachInlineLinkSuggester(inputEl: HTMLInputElement): InlineLinkSuggester {
+    const getSourcePath = () => this.targetView?.file?.path;
+    return new InlineLinkSuggester(this.plugin.app, this.plugin, inputEl, getSourcePath);
   }
 
   /**

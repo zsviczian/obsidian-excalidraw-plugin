@@ -75,7 +75,7 @@ export class InsertLinkDialog extends FuzzySuggestModal<LinkSuggestion> {
     const path = item.file?.path ?? item.path;
 
     const pathLength = path.length - (item.file?.name.length ?? 0);
-    const matchElements = matches.matches.map((m) => {
+    const matchElements = matches.matches.map(() => {
       return createSpan("suggestion-highlight");
     });
     const itemText = this.getItemText(item);
