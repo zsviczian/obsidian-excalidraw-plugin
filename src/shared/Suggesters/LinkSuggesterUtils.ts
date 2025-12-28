@@ -18,7 +18,29 @@ export const getLinkSuggestionsFiltered = (app: App): LinkSuggestion[] => {
   // @ts-ignore Obsidian internal helper
   const suggestions = app.metadataCache.getLinkSuggestions?.();
   if (!suggestions) return [];
-  return suggestions.filter((x: LinkSuggestion) => !x.path.match(REG_LINKINDEX_INVALIDCHARS));
+  const filtered = suggestions.filter((x: LinkSuggestion) => !x.path.match(REG_LINKINDEX_INVALIDCHARS));
+
+  const now = Date.now();
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+
+  const isRecent = (s: LinkSuggestion) => !!s.file && now - s.file.stat.mtime <= weekMs;
+
+  return filtered.sort((a: LinkSuggestion, b: LinkSuggestion) => {
+    const aRecent = isRecent(a);
+    const bRecent = isRecent(b);
+
+    if (aRecent !== bRecent) {
+      return aRecent ? -1 : 1; // recent first
+    }
+
+    if (aRecent && bRecent && a.file && b.file && a.file.stat.mtime !== b.file.stat.mtime) {
+      return b.file.stat.mtime - a.file.stat.mtime; // newer recent first
+    }
+
+    const aKey = `${a.path}${a.alias ?? ""}`.toLowerCase();
+    const bKey = `${b.path}${b.alias ?? ""}`.toLowerCase();
+    return aKey.localeCompare(bKey);
+  });
 };
 
 /**

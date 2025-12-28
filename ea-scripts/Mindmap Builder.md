@@ -1095,7 +1095,7 @@ const togglePin = async () => {
     ea.addAppendUpdateCustomData(sel.id, { isPinned: newPinnedState });
     await ea.addElementsToView(false, false, true, true);
     ea.clear();
-    await refreshMapLayout();
+    if(!autoLayoutDisabled) await refreshMapLayout();
   }
 };
 
@@ -1170,7 +1170,7 @@ const toggleBox = async () => {
     api().updateContainerSize([ea.getViewElements().find((el) => el.id === newBindId)]);
   }
   ea.selectElementsInView([newBindId]);
-  await refreshMapLayout();
+  if(!autoLayoutDisabled) await refreshMapLayout();
 };
 
 // ---------------------------------------------------------------------------
@@ -1425,12 +1425,14 @@ const renderBody = (contentEl) => {
   }).onclick = async () => {
     await addNode(inputEl.value, false);
     inputEl.value = "";
+    if(!autoLayoutDisabled) await refreshMapLayout();
     updateUI();
     focusInputEl();
   };
   btnGrid.createEl("button", { text: "Add+Follow", attr: { style: "padding: 2px;" } }).onclick = async () => {
     await addNode(inputEl.value, true);
     inputEl.value = "";
+    if(!autoLayoutDisabled) await refreshMapLayout();
     updateUI();
     focusInputEl();
   };
@@ -1805,6 +1807,8 @@ const keyHandler = async (e) => {
     if (e.shiftKey) {
       if (inputEl.value) {
         await addNode(inputEl.value, false);
+        inputEl.value = "";
+        if(!autoLayoutDisabled) await refreshMapLayout();
       }
       toggleDock({saveSetting: true});
       return;
@@ -1813,10 +1817,12 @@ const keyHandler = async (e) => {
     if (e.ctrlKey || e.metaKey) {
       await addNode(inputEl.value, true);
       inputEl.value = "";
+      if(!autoLayoutDisabled) await refreshMapLayout();
       updateUI();
     } else {
       await addNode(inputEl.value, false);
       inputEl.value = "";
+      if(!autoLayoutDisabled) await refreshMapLayout();
       updateUI();
     }
   }
