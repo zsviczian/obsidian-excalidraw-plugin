@@ -298,6 +298,15 @@ export declare class ExcalidrawAutomate {
      */
     persistSidepanelTab(): ExcalidrawSidepanelTab | null;
     /**
+     * Attaches an inline link suggester to the provided input element. The suggester reacts to
+     * "[[" typing, offers vault link choices (including aliases and unresolved links), and inserts
+     * the selected link using relative linktext when the active Excalidraw view is known.
+     * @param {HTMLInputElement} inputEl - The input element to enhance.
+     * @param {HTMLElement} [widthWrapper] - Optional element to determine suggester width.
+     * @returns {KeyBlocker} The suggester instance; call close() to detach; call .isBlockingKeys() to check if suggester dropdown is open.
+     */
+    attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement): KeyBlocker;
+    /**
      * Returns the last recorded pointer position on the Excalidraw canvas.
      * @returns {{x:number, y:number}} The last recorded pointer position.
      */
@@ -1465,6 +1474,14 @@ export type ScriptSettingValue = {
     valueset?: string[];
     height?: number;
 };
+/**
+ * Marker for UI helpers (e.g., suggesters) that, while active, should signal
+ * host scripts to ignore or block their own keydown handlers.
+ */
+export interface KeyBlocker {
+    isBlockingKeys(): boolean;
+    close(): void;
+}
 export type ImageInfo = {
     mimeType: MimeType;
     id: FileId;

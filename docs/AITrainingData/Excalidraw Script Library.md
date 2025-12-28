@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2025-12-27T19:18:28.894Z
+Generated on: 2025-12-28T15:04:00.464Z
 
 ---
 
@@ -8549,7 +8549,7 @@ await ea.addElementsToView(false, false, true);
 ## 1. Overview
 **Mind Map Builder** transforms the Obsidian-Excalidraw canvas into a rapid brainstorming environment, allowing users to build complex, structured, and visually organized mind maps using primarily keyboard shortcuts.
 
-The script balances **automation** (auto-layout, recursive grouping, and contrast-aware coloring) with **explicit flexibility** (node pinning and redirection logic), ensuring that the mind map stays organized even as it grows to hundreds of nodes.
+The script balances **automation** (auto-layout, recursive grouping, and contrast-aware coloring) with **explicit flexibility** (node pinning and redirection logic), ensuring that the mind map stays organized even as it grows to hundreds of nodes. It leverages the Excalidraw Sidepanel API to provide a persistent control interface utilizing the Obsidian sidepanel, that can also be undocked into a floating modal.
 
 ## 2. Core Purpose
 The primary goal is to minimize the "friction of drawing." Instead of manually drawing boxes and arrows, the user focuses on the hierarchy of ideas. The script handles:
@@ -8575,50 +8575,66 @@ Nodes can be excluded from the auto-layout engine in two ways:
 - **Copy as Text**: Converts the visual map into an H1 header (Root) followed by an indented Markdown bullet list.
 - **Paste from Text**: Parses an indented Markdown list. It supports appending to an existing node or generating a brand-new map from a clipboard list.
 
-### D. Visual Styling & Accessibility
-- **Dynamic Contrast-Aware Coloring**: In "Multicolor Mode," Level 1 branches receive random colors validated for a minimum 3:1 contrast ratio against the current canvas background.
-- **Stroke Styles**: Users can choose to inherit the **Scene Stroke Style** (Solid, Dashed, Dotted) or force an **Always Solid** style for branch connectors to maintain a clean appearance.
+### D. Sidepanel & Docking
+- **Persistent UI**: The script utilizes `ea.createSidepanelTab` to maintain state and controls alongside the drawing canvas.
+- **Floating Mode**: The UI can be "undocked" (Shift+Enter) into a `FloatingModal` for a focus-mode experience or to move controls closer to the active drawing area on large screens.
+
+### E. Inline Link Suggester
+- **Contextual \[\[link\]\] autocomplete**: Input fields now use `ea.attachInlineLinkSuggester` so you can drop Obsidian links with in-line suggestions (supports aliases and unresolved links) without leaving the flow.
 
 ## 4. UI and User Experience
 
-### Focus Mode (Minimized UI)
-By clicking the **Minimize** icon, the modal collapses into a minimal input bar, hiding settings to maximize canvas visibility for power users.
+### Zoom Management
+The script includes "Preferred Zoom Level" settings (Low/Medium/High) to ensure the canvas automatically frames the active node comfortably during rapid entry, particularly useful on mobile devices vs desktop screens.
 
 ### Keyboard Shortcuts
 | Shortcut | Action |
 | :--- | :--- |
 | **ENTER** | Add a sibling node (stay on current parent). |
 | **CMD/CTRL + ENTER** | Add a child and "drill down" (select the new node). |
+| **SHIFT + ENTER** | **Dock/Undock** the input field (toggle between Sidepanel and Floating Modal). |
 | **CMD/CTRL + SHIFT + ENTER** | **Pin/Unpin** the location of the selected node. |
-| **SHIFT + ENTER** | Add node and close the modal. |
+| **OPT/ALT + SHIFT + ENTER** | **Box/Unbox** the selected node. |
 | **ALT/OPT + ARROWS** | Navigate the mind map structure (parent/child/sibling). |
+| **ALT/OPT + SHIFT + ARROWS** | Navigate the mind map structure (parent/child/sibling) and zoom to selected element |
+| **CMD/CTRL + SHIFT + ARROWS** | Navigate the mind map structure (parent/child/sibling) and focus to selected element |
+| **ALT/OPT + Z** | Zoom to selected element |
+| **ALT/OPT + C / X / V** | Copy, Cut, or Paste branches as Markdown. |
 
 ## 5. Settings and Persistence
 
 ### Global Settings
-Persisted across sessions:
+Persisted across sessions via `ea.setScriptSettings`:
 - **Max Text Width**: Point at which text wraps (Default: 450px).
 - **Font Scales**: Choice of Normal, Fibonacci, or Scene-based sizes.
+- **Preferred Zoom Level**: Controls auto-zoom intensity (Low/Medium/High).
 - **Recursive Grouping**: When enabled, groups sub-trees from the leaves upward.
+- **Is Undocked**: Remembers if the user prefers the UI floating or docked.
 
 ### Map-Specific Persistence (customData)
+The script uses `ea.addAppendUpdateCustomData` to store state on elements:
 - `growthMode`: Stored on the Root node (Radial, Left, or Right).
-- `isPinned`: Stored on individual nodes to bypass the layout engine.
-- `isBranch`: Stored on arrows to distinguish Mind Map connectors from standard annotations.
+- `autoLayoutDisabled`: Stored on the Root node to pause layout engine for specific maps.
+- `isPinned`: Stored on individual nodes (boolean) to bypass the layout engine.
+- `isBranch`: Stored on arrows (boolean) to distinguish Mind Map connectors from standard annotations.
+- `mindmapOrder`: Stored on nodes (number) to maintain manual sort order of siblings.
 
 ## 6. Special Logic Solutions
 
-### The "mindmapNew" Tag
-When a Level 1 node is created, it is temporarily tagged with `mindmapNew: true`. During the next layout cycle, the engine separates "Existing" nodes (which are sorted by their visual angle to allow manual re-ordering) from "New" nodes. New nodes are always appended to the end of the clockwise sequence. This prevents new nodes from "jumping" into the middle of an established branch order.
+### The "mindmapNew" Tag & Order Stability
+When a Level 1 node is created, it is temporarily tagged with `mindmapNew: true`. The layout engine uses this to separate "Existing" nodes from "New" nodes. Existing nodes are sorted by their `mindmapOrder` (or visual angle/Y-position if order is missing), while new nodes are appended to the end. This prevents new additions from scrambling the visual order of existing branches.
 
-### Arrow Focus Redirection
-When the script starts or the modal is re-activated, if an arrow is selected, the script automatically redirects selection to the `startBinding` node (or `endBinding`). If no bindings exist, it clears the selection. This prevents "Target: null" errors when the user accidentally clicks a connector.
+### Sidepanel Lifecycle Management
+The script implements `SidepanelTab` hooks (`onFocus`, `onClose`, `onWindowMigrated`) to handle:
+- **Context Switching**: Rebinding event listeners when the user switches between multiple Excalidraw views.
+- **Window Migration**: Re-attaching keyboard handlers when the sidepanel moves between the main window and a popout window.
+- **Auto-Docking**: Ensuring floating modals are docked back to the sidepanel when the view closes to prevent UI orphans.
 
 ### Recursive Grouping
 When enabled, the script groups elements from the "leaves" upward. A leaf node is grouped with its parent and the connecting arrow. That group is then nested into the grandparent's group. The **Root Exception**: The root node is never part of an L1 group, allowing users to move the central idea or detach whole branches easily.
 
-### Vertical Centering
-All nodes use `textVerticalAlign: "middle"`. This ensures that connecting arrows always point to the geometric center of the text, maintaining visual alignment regardless of how many lines of text a node contains.
+### Link suggester keydown events (Enter, Escape)
+- **Key-safe integration**: The suggester implements the `KeyBlocker` interface so the script's own key handlers pause while the suggester is active, preventing shortcut collisions during link insertion.
 
 ```js
 */
@@ -8665,6 +8681,11 @@ const api = () => ea.getExcalidrawAPI();
 const appState = () => ea.getExcalidrawAPI().getAppState();
 const getVal = (key, def) => ea.getScriptSettingValue(key, typeof def === "object" ? def: { value: def }).value;
 
+const saveSettings = async () => {
+  if (dirty) await ea.saveScriptSettings();
+  dirty = false;
+}
+
 const setVal = (key, value) => {
   //value here is only a fallback
   //when updating a setting value, the full ScriptSettingValue should be there
@@ -8672,6 +8693,13 @@ const setVal = (key, value) => {
   const def = ea.getScriptSettingValue(key, {value});
   def.value = value;
   ea.setScriptSettingValue(key, def);
+}
+
+//Remove setting keys no longer used
+const settingsTemp = ea.getScriptSettings();
+if(settingsTemp && settingsTemp.hasOwnProperty("Is Minimized")) {
+  delete settingsTemp["Is Minimized"];
+  dirty = true;
 }
 
 let maxWidth = parseInt(getVal(K_WIDTH, 450));
@@ -8699,8 +8727,8 @@ if (!ea.getScriptSettingValue(K_GROWTH, {value: "Radial", valueset: GROWTH_TYPES
   dirty = true;
 }
 
-const getZoom = () => {
-  switch (zoomLevel) {
+const getZoom = (level) => {
+  switch (level ?? zoomLevel) {
     case "Low":
       return ea.DEVICE.isMobile ? 0.85 : 0.92;
     case "High":
@@ -8731,13 +8759,15 @@ const INSTRUCTIONS = `
 - **ENTER**: Add a sibling node and stay on the current parent for rapid entry.
 - **${isMac ? "CMD" : "CTRL"} + ENTER**: Add a child node and "drill down" (follow the new node).
 - **SHIFT + ENTER**: Dock/Undock floating input field.
+- **ESC**: If input field is floating, closes Mindmap Builder (without toggling the sidepanel)
 - **${isMac ? "OPT" : "ALT"} + SHIFT + ENTER**: Box/Unbox selected node.
 - **${isMac ? "CMD" : "CTRL"} + SHIFT + ENTER**: Pin/Unpin location of a node. Pinned nodes will not be touched by auto layout.
 - **${isMac ? "OPT" : "ALT"} + Arrows**: Navigate through the mindmap nodes on the canvas.
 - **${isMac ? "OPT" : "ALT"} + SHIFT + Arrows**: Navigate through the mindmap nodes on the canvas and zoom to element.
+- **${isMac ? "CMD" : "CTRL"} + SHIFT + Arrows**: Navigate through the mindmap nodes on the canvas and focus (center) selected element.
 - **${isMac ? "OPT" : "ALT"} + C / X / V**: Copy, Cut, or Paste branches.
-- **${isMac ? "OPT" : "ALT"} + Z**: Zoom to selected element.
-- **ESC**: If input field is floating, closes Mindmap Builder
+- **${isMac ? "OPT" : "ALT"} + Z**: Zoom to selected element. Pressing the key multiple times will cycle through the zoom presets.
+- **${isMac ? "OPT" : "ALT"} + F**: Focus (Center) selected element without changing zoom.
 - **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
 - **Grouping**: Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
 - **Copy/Paste**: Export/Import indented Markdown lists.
@@ -8890,12 +8920,45 @@ const getReadableColor = (hex) => {
 const GAP_X = 140;
 const GAP_Y = 30;
 
-const zoomToFit = () => {
+let storedZoom = {elementID: undefined, level: undefined}
+const nextZoomLevel = (current) => {
+  const idx = ZOOM_TYPES.indexOf(current);
+  return idx === -1 ? ZOOM_TYPES[0] : ZOOM_TYPES[(idx + 1) % ZOOM_TYPES.length];
+};
+
+const zoomToFit = (isAltZ) => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
-  if (sel) api().zoomToFit([sel],10,getZoom());
+  if (sel) {
+    if (isAltZ && storedZoom.elementID === sel.id) {
+      const nextLevel = nextZoomLevel(storedZoom.level ?? zoomLevel);
+      storedZoom.level = nextLevel;
+      api().zoomToFit([sel],10,getZoom(nextLevel));
+    } else {
+      api().zoomToFit([sel],10,getZoom());
+      storedZoom = {elementID: sel.id, level: zoomLevel}
+    }
+  }
   focusInputEl();
 }
+
+const focusSelected = () => {
+  if (!ea.targetView) return;
+  const sel = ea.getViewSelectedElement();
+  if (!sel) return;
+
+  const { width, height, zoom } = appState();
+  const cx = sel.x + sel.width / 2;
+  const cy = sel.y + sel.height / 2;
+
+  const scrollX = width / (2 * zoom.value) - cx;
+  const scrollY = height / (2 * zoom.value) - cy;
+
+  api().updateScene({
+    appState: { scrollX, scrollY },
+  });
+  focusInputEl();
+};
 
 const getMindmapOrder = (node) => {
   const o = node?.customData?.mindmapOrder;
@@ -8978,7 +9041,19 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
   }
 
   const children = getChildrenNodes(nodeId, allElements);
-  sortChildrenStable(children);
+  
+  children.sort((a, b) => {
+    const dy = a.y - b.y;
+    if (dy !== 0) return dy;
+    return String(a.id).localeCompare(String(b.id));
+  });
+
+  children.forEach((child, i) => {
+    if (getMindmapOrder(child) !== i) {
+      ea.addAppendUpdateCustomData(child.id, { mindmapOrder: i });
+    }
+  });
+
   const subtreeHeight = getSubtreeHeight(nodeId, allElements);
 
   let currentY = currentYCenter - subtreeHeight / 2;
@@ -9075,6 +9150,10 @@ const triggerGlobalLayout = async (rootId, force = false) => {
     }
 
     sortedL1.forEach((node, i) => {
+      if (getMindmapOrder(node) !== i) {
+        ea.addAppendUpdateCustomData(node.id, { mindmapOrder: i });
+      }
+
       const angleRad = (startAngle + i * angleStep - 90) * (Math.PI / 180);
       const tCX = rootCenter.x + radius * Math.cos(angleRad);
       const tCY = rootCenter.y + radius * Math.sin(angleRad);
@@ -9477,7 +9556,8 @@ const pasteListToMap = async () => {
 // ---------------------------------------------------------------------------
 // 6. Map Actions
 // ---------------------------------------------------------------------------
-const navigateMap = (key, zoom = false) => {
+const navigateMap = ({key, zoom = false, focus = false} = {}) => {
+  if(!key) return;
   if (!ea.targetView) return;
   const allElements = ea.getViewElements();
   const current = ea.getViewSelectedElement();
@@ -9490,6 +9570,7 @@ const navigateMap = (key, zoom = false) => {
     if (children.length) {
       ea.selectElementsInView([children[0]]);
       if (zoom) zoomToFit();
+      if (focus) focusSelected(); 
     }
     return;
   }
@@ -9523,6 +9604,7 @@ const navigateMap = (key, zoom = false) => {
     ea.selectElementsInView([siblings[idx === -1 ? 0 : nIdx]]);
   }
   if (zoom) zoomToFit();
+  if (focus) focusSelected(); 
 };
 
 const setMapAutolayout = async (endabled) => {
@@ -9555,7 +9637,7 @@ const togglePin = async () => {
     ea.addAppendUpdateCustomData(sel.id, { isPinned: newPinnedState });
     await ea.addElementsToView(false, false, true, true);
     ea.clear();
-    await refreshMapLayout();
+    if(!autoLayoutDisabled) await refreshMapLayout();
   }
 };
 
@@ -9630,14 +9712,14 @@ const toggleBox = async () => {
     api().updateContainerSize([ea.getViewElements().find((el) => el.id === newBindId)]);
   }
   ea.selectElementsInView([newBindId]);
-  await refreshMapLayout();
+  if(!autoLayoutDisabled) await refreshMapLayout();
 };
 
 // ---------------------------------------------------------------------------
 // 7. UI Modal & Sidepanel Logic
 // ---------------------------------------------------------------------------
 
-let detailsEl, inputEl, bodyContainer, strategyDropdown, autoLayoutToggle;
+let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown, autoLayoutToggle, linkSuggester;
 let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn;
 let inputContainer;
 let helpContainer;
@@ -9677,9 +9759,10 @@ const registerMindmapHotkeys = () => {
   ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].forEach(k => {
     reg(["Alt"], k);
     reg(["Alt", "Shift"], k);
+    reg(["Alt", "Mod"], k);
   });
 
-  ["c", "x", "v", "z"].forEach(k => reg(["Alt"], k));
+  ["c", "x", "v", "z", "f"].forEach(k => reg(["Alt"], k));
 
   popScope = () => {
     handlers.forEach(h => scope.unregister(h));
@@ -9772,7 +9855,7 @@ const renderInput = (container, isFloating = false) => {
   
   pinBtn = refreshBtn = boxBtn = dockBtn = inputEl = null;
 
-  let inputRow = new ea.obsidian.Setting(container);
+  inputRow = new ea.obsidian.Setting(container);
   
   if (!isFloating) {
     inputRow.setName("Node Text");
@@ -9788,6 +9871,7 @@ const renderInput = (container, isFloating = false) => {
 
   inputRow.addText((text) => {
     inputEl = text.inputEl;
+    linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow.settingEl);
     if (!isFloating) {
       inputEl.style.width = "100%";
     } else {
@@ -9795,10 +9879,11 @@ const renderInput = (container, isFloating = false) => {
       inputEl.style.maxWidth = "350px";
     }
     inputEl.placeholder = "Concept...";
-
+a
     inputEl.addEventListener("focus", registerMindmapHotkeys);
     inputEl.addEventListener("blur", () => {
       if (popScope) popScope();
+      saveSettings();
     });
   });
 
@@ -9882,12 +9967,14 @@ const renderBody = (contentEl) => {
   }).onclick = async () => {
     await addNode(inputEl.value, false);
     inputEl.value = "";
+    if(!autoLayoutDisabled) await refreshMapLayout();
     updateUI();
     focusInputEl();
   };
   btnGrid.createEl("button", { text: "Add+Follow", attr: { style: "padding: 2px;" } }).onclick = async () => {
     await addNode(inputEl.value, true);
     inputEl.value = "";
+    if(!autoLayoutDisabled) await refreshMapLayout();
     updateUI();
     focusInputEl();
   };
@@ -10184,6 +10271,14 @@ const keyHandler = async (e) => {
 
   if (!currentWindow) return;
   
+  if (linkSuggester?.isBlockingKeys()) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    return;
+  }
+  
   // Check if the input element is actually focused
   if (currentWindow.document?.activeElement !== inputEl) return;
 
@@ -10232,13 +10327,18 @@ const keyHandler = async (e) => {
     }
     if (e.code === "KeyZ") {
       e.preventDefault();
-      zoomToFit();
+      zoomToFit(true);
+      return;
+    }
+    if (e.code === "KeyF") {
+      e.preventDefault();
+      focusSelected();
       return;
     }
 
     if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
       e.preventDefault();
-      navigateMap(e.key, e.shiftKey);
+      navigateMap({key: e.key, zoom: e.shiftKey, focus: e.ctrlKey});
       updateUI();
       return;
     }
@@ -10249,6 +10349,8 @@ const keyHandler = async (e) => {
     if (e.shiftKey) {
       if (inputEl.value) {
         await addNode(inputEl.value, false);
+        inputEl.value = "";
+        if(!autoLayoutDisabled) await refreshMapLayout();
       }
       toggleDock({saveSetting: true});
       return;
@@ -10257,10 +10359,12 @@ const keyHandler = async (e) => {
     if (e.ctrlKey || e.metaKey) {
       await addNode(inputEl.value, true);
       inputEl.value = "";
+      if(!autoLayoutDisabled) await refreshMapLayout();
       updateUI();
     } else {
       await addNode(inputEl.value, false);
       inputEl.value = "";
+      if(!autoLayoutDisabled) await refreshMapLayout();
       updateUI();
     }
   }
@@ -10314,7 +10418,6 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   };
 
   tab.onOpen = () => {
-    console.log("tab onOpen");
     const contentEl = tab.contentEl;
     contentEl.empty();
     
@@ -10358,7 +10461,7 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
     view.ownerWindow.removeEventListener("pointerdown", canvasPointerListener);
   };
 
-  tab.onFocus = (view) => {
+  const onFocus = (view) => {
     if (!view) return;
 
     // Cleanup old view
@@ -10378,7 +10481,29 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
     focusInputEl();
   };
 
+  tab.onFocus = (view) => onFocus(view);
+
+  const onActiveLeafChange = (leaf) => {
+    if (isUndocked && !!floatingInputModal && leaf && ea.isExcalidrawView(leaf.view)) {
+      onFocus(leaf.view);
+      const { modalEl } = floatingInputModal
+      if (ea.targetView && modalEl.ownerDocument !== ea.targetView.ownerDocument) {
+        ea.targetView.ownerDocument.body.appendChild(modalEl);
+        linkSuggester?.close();
+        linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow?.settingEl);
+      }
+      const {x, y} = ea.targetView.contentEl.getBoundingClientRect();
+      modalEl.style.top = `${ y + 5 }px`;
+      modalEl.style.left = `${ x + 5 }px`;
+    }
+  };
+  
+  // Register the global listener
+  const leafChangeRef = app.workspace.on("active-leaf-change", onActiveLeafChange);
+
+
   tab.onClose = async () => {
+    app.workspace.offref(leafChangeRef);
     if (popScope) popScope();
     if (ea.targetView) {
       removeEventListeners(ea.targetView);
@@ -10390,9 +10515,7 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
       floatingInputModal.close();
       floatingInputModal = null;
     }
-    if (dirty) {
-      await ea.saveScriptSettings();
-    }
+    await saveSettings();
   };
 
   // Initial setup if a view is already active
