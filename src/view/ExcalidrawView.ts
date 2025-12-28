@@ -2656,7 +2656,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   private getGridColor(bgColor: string, st: AppState): { Bold: string, Regular: string } {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getGridColor, "ExcalidrawView.getGridColor", bgColor, st);
-  
+    
     const cm = this.plugin.ea.getCM(bgColor);
     const isDark = cm.isDark();
   
@@ -4129,12 +4129,19 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       st = (this.excalidrawAPI as ExcalidrawImperativeAPI).getAppState();
       canvasColor = canvasColor ?? st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor;
     }
-    window.setTimeout(()=>this.updateScene(
-      {
-        appState:{
-          gridColor: this.getGridColor(canvasColor, st),
-        },
-        captureUpdate: CaptureUpdateAction.NEVER}));
+    window.setTimeout(()=>{
+      //migrate window scenario
+      if (!this.plugin || !this.excalidrawAPI) {
+        return;
+      }
+      this.updateScene(
+        {
+          appState:{
+            gridColor: this.getGridColor(canvasColor, st),
+          },
+          captureUpdate: CaptureUpdateAction.NEVER
+        })
+    });
   }
 
   public updateGridDirection(gridDirection: {horizontal: boolean, vertical: boolean}) {
@@ -5220,6 +5227,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.excalidrawAPI = api;
     //api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
     window.setTimeout(() => {
+      // window migration scenario
+      if (!this.plugin) return;
       this.onAfterLoadScene(true);
       this.excalidrawContainer?.focus();
     });
@@ -5785,8 +5794,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           onPointerDown: this.onPointerDown.bind(this),
           onMouseMove: this.onMouseMove.bind(this),
           onMouseOver: this.onMouseOver.bind(this),
-          onDragOver : this.dropManager.onDragOver.bind(this.dropManager),
-          onDragLeave: this.dropManager.onDragLeave.bind(this.dropManager),
+          onDragOver : this.dropManager?.onDragOver.bind(this.dropManager),
+          onDragLeave: this.dropManager?.onDragLeave.bind(this.dropManager),
         },
         React.createElement(
           Excalidraw,
@@ -5822,7 +5831,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             renderEmbeddableMenu: this.renderEmbeddableMenu.bind(this),
             onPaste: this.onPaste.bind(this),
             onThemeChange: this.onThemeChange.bind(this),
-            onDrop: this.dropManager.onDrop.bind(this.dropManager),
+            onDrop: this.dropManager?.onDrop.bind(this.dropManager),
             onBeforeTextEdit: this.onBeforeTextEdit.bind(this),
             onBeforeTextSubmit: this.onBeforeTextSubmit.bind(this),
             onLinkOpen: this.onLinkOpen.bind(this),

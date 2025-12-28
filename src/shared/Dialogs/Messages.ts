@@ -36,7 +36,10 @@ createSidepanelTab(title: string, persist?: boolean, reveal?: boolean): Promise<
 getSidepanelLeaf(): WorkspaceLeaf | null;
 toggleSidepanelView(): void;
 persistSidepanelTab(): ExcalidrawSidepanelTab | null;
+attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement): KeyBlocker;
 \`\`\`
+
+- Added inline link suggester helper \`attachInlineLinkSuggester()\` returning a KeyBlocker interface so host scripts can suppress their own keydown handlers while the suggester is active.
 
 - **setView() improvements**
   - Calling \`setView()\` now picks a sensible target automatically:

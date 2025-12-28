@@ -761,7 +761,9 @@ export class EmbeddedFilesLoader {
 
     const iterator = loadIterator.bind(this)();
     const concurency = this.plugin.settings.renderingConcurrency;
-    await new PromisePool(iterator, concurency).all();
+    if (!this.terminate) {
+      await new PromisePool(iterator, concurency).all();
+    }
     
     clearInterval(addFilesTimer);
 

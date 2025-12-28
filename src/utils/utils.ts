@@ -1219,23 +1219,37 @@ export class PromisePool<T> {
   }
 
   public all() {
-    const listener = (event: { data: { result: void | [number, T] } }) => {
-      if (event.data.result) {
-        // by default pool does not return the results, so we are gathering them manually
-        // with the correct call order (represented by the index in the tuple)
-        const [index, value] = event.data.result;
-        this.entries[index] = value;
+    try {
+      if (!this.pool) {
+        return Promise.resolve(Object.values(this.entries));
       }
-    };
 
-    this.pool.addEventListener("fulfilled", listener);
+      const listener = (event: { data: { result: void | [number, T] } }) => {
+        if (event.data.result) {
+          // by default pool does not return the results, so we are gathering them manually
+          // with the correct call order (represented by the index in the tuple)
+          const [index, value] = event.data.result;
+          this.entries[index] = value;
+        }
+      };
 
-    return this.pool.start().then(() => {
-      setTimeout(() => {
-        this.pool.removeEventListener("fulfilled", listener);
-      });
+      this.pool.addEventListener("fulfilled", listener);
 
-      return Object.values(this.entries);
-    });
+      return Promise.resolve(this.pool.start()).then(
+        () => {
+          setTimeout(() => {
+            this.pool?.removeEventListener("fulfilled", listener);
+          });
+          return Object.values(this.entries);
+        },
+        () => {
+          this.pool?.removeEventListener("fulfilled", listener);
+          // return partial results if the pool was aborted/destroyed
+          return Object.values(this.entries);
+        },
+      );
+    } catch (_error) {
+      return Promise.resolve(Object.values(this.entries));
+    }
   }
 }

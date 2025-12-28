@@ -659,7 +659,7 @@ export class ExcalidrawAutomate {
    * the selected link using relative linktext when the active Excalidraw view is known.
    * @param {HTMLInputElement} inputEl - The input element to enhance.
    * @param {HTMLElement} [widthWrapper] - Optional element to determine suggester width.
-   * @returns {InlineLinkSuggester} The suggester instance; call close() to detach.
+   * @returns {KeyBlocker} The suggester instance; call close() to detach; call .isBlockingKeys() to check if suggester dropdown is open.
    */
   public attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement): KeyBlocker {
     const getSourcePath = () => this.targetView?.file?.path;

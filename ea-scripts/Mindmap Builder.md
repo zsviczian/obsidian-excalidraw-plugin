@@ -37,6 +37,9 @@ Nodes can be excluded from the auto-layout engine in two ways:
 - **Persistent UI**: The script utilizes `ea.createSidepanelTab` to maintain state and controls alongside the drawing canvas.
 - **Floating Mode**: The UI can be "undocked" (Shift+Enter) into a `FloatingModal` for a focus-mode experience or to move controls closer to the active drawing area on large screens.
 
+### E. Inline Link Suggester
+- **Contextual \[\[link\]\] autocomplete**: Input fields now use `ea.attachInlineLinkSuggester` so you can drop Obsidian links with in-line suggestions (supports aliases and unresolved links) without leaving the flow.
+
 ## 4. UI and User Experience
 
 ### Zoom Management
@@ -88,6 +91,9 @@ The script implements `SidepanelTab` hooks (`onFocus`, `onClose`, `onWindowMigra
 ### Recursive Grouping
 When enabled, the script groups elements from the "leaves" upward. A leaf node is grouped with its parent and the connecting arrow. That group is then nested into the grandparent's group. The **Root Exception**: The root node is never part of an L1 group, allowing users to move the central idea or detach whole branches easily.
 
+### Link suggester keydown events (Enter, Escape)
+- **Key-safe integration**: The suggester implements the `KeyBlocker` interface so the script's own key handlers pause while the suggester is active, preventing shortcut collisions during link insertion.
+
 ```js
 */
 
@@ -133,6 +139,11 @@ const api = () => ea.getExcalidrawAPI();
 const appState = () => ea.getExcalidrawAPI().getAppState();
 const getVal = (key, def) => ea.getScriptSettingValue(key, typeof def === "object" ? def: { value: def }).value;
 
+const saveSettings = async () => {
+  if (dirty) await ea.saveScriptSettings();
+  dirty = false;
+}
+
 const setVal = (key, value) => {
   //value here is only a fallback
   //when updating a setting value, the full ScriptSettingValue should be there
@@ -140,6 +151,13 @@ const setVal = (key, value) => {
   const def = ea.getScriptSettingValue(key, {value});
   def.value = value;
   ea.setScriptSettingValue(key, def);
+}
+
+//Remove setting keys no longer used
+const settingsTemp = ea.getScriptSettings();
+if(settingsTemp && settingsTemp.hasOwnProperty("Is Minimized")) {
+  delete settingsTemp["Is Minimized"];
+  dirty = true;
 }
 
 let maxWidth = parseInt(getVal(K_WIDTH, 450));
@@ -1159,7 +1177,7 @@ const toggleBox = async () => {
 // 7. UI Modal & Sidepanel Logic
 // ---------------------------------------------------------------------------
 
-let detailsEl, inputEl, bodyContainer, strategyDropdown, autoLayoutToggle;
+let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown, autoLayoutToggle, linkSuggester;
 let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn;
 let inputContainer;
 let helpContainer;
@@ -1295,7 +1313,7 @@ const renderInput = (container, isFloating = false) => {
   
   pinBtn = refreshBtn = boxBtn = dockBtn = inputEl = null;
 
-  let inputRow = new ea.obsidian.Setting(container);
+  inputRow = new ea.obsidian.Setting(container);
   
   if (!isFloating) {
     inputRow.setName("Node Text");
@@ -1311,6 +1329,7 @@ const renderInput = (container, isFloating = false) => {
 
   inputRow.addText((text) => {
     inputEl = text.inputEl;
+    linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow.settingEl);
     if (!isFloating) {
       inputEl.style.width = "100%";
     } else {
@@ -1318,10 +1337,11 @@ const renderInput = (container, isFloating = false) => {
       inputEl.style.maxWidth = "350px";
     }
     inputEl.placeholder = "Concept...";
-
+a
     inputEl.addEventListener("focus", registerMindmapHotkeys);
     inputEl.addEventListener("blur", () => {
       if (popScope) popScope();
+      saveSettings();
     });
   });
 
@@ -1707,6 +1727,14 @@ const keyHandler = async (e) => {
 
   if (!currentWindow) return;
   
+  if (linkSuggester?.isBlockingKeys()) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    return;
+  }
+  
   // Check if the input element is actually focused
   if (currentWindow.document?.activeElement !== inputEl) return;
 
@@ -1913,6 +1941,8 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
       const { modalEl } = floatingInputModal
       if (ea.targetView && modalEl.ownerDocument !== ea.targetView.ownerDocument) {
         ea.targetView.ownerDocument.body.appendChild(modalEl);
+        linkSuggester?.close();
+        linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow?.settingEl);
       }
       const {x, y} = ea.targetView.contentEl.getBoundingClientRect();
       modalEl.style.top = `${ y + 5 }px`;
@@ -1937,9 +1967,7 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
       floatingInputModal.close();
       floatingInputModal = null;
     }
-    if (dirty) {
-      await ea.saveScriptSettings();
-    }
+    await saveSettings();
   };
 
   // Initial setup if a view is already active

@@ -937,6 +937,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "attachInlineLinkSuggester",
+    code: "attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement): KeyBlocker;",
+    desc: "Attaches an inline [[link]] suggester to an input. Optionally align width to a wrapper element. Returns a KeyBlocker so host scripts can skip their own keydown handlers while the suggester is active via isBlockingKeys(); call close() on the returned suggester to detach.",
+    after: "",
+  },
+  {
     field: "getleaf",
     code: "getLeaf(origo: WorkspaceLeaf, targetPane?: PaneTarget): WorkspaceLeaf;",
     desc: "Generates a new Obsidian Leaf following Excalidraw plugin settings such as open in Main Workspace or not, open in adjacent pane if available, etc.<br>" +

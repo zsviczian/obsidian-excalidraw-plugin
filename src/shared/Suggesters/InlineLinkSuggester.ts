@@ -13,6 +13,9 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
   private readonly plugin: ExcalidrawPlugin;
   private readonly widthHost: HTMLElement;
   private block = false;
+  private activeOpen = -1;
+  private activeClose = -1;
+  private caretPos = 0;
 
   constructor(
     app: App,
@@ -64,21 +67,32 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
 
   onInputChanged(): void {
     const inputStr = this.modifyInput(this.inputEl.value);
-    if (inputStr.lastIndexOf("[[") === -1) {
+    this.caretPos = this.inputEl.selectionStart ?? inputStr.length;
+
+    const active = this.findActiveLink(inputStr, this.caretPos);
+    if (!active) {
       this.suggester.setSuggestions([]);
       if (this.popper?.deref()) {
         this.popper.deref().destroy();
       }
       this.suggestEl.detach();
+      this.activeOpen = -1;
+      this.activeClose = -1;
+      setTimeout(() => {
+        this.block = false;
+      });
       return;
     }
+    this.activeOpen = active.open;
+    this.activeClose = active.close;
+    this.block = true;
     super.onInputChanged();
   }
 
   getSuggestions(query: string): FuzzyMatch<LinkSuggestion>[] {
-    const marker = query.lastIndexOf("[[");
-    if (marker === -1) return [];
-    const term = query.substring(marker + 2);
+    if (this.activeOpen === -1) return [];
+    const termEnd = this.caretPos ?? query.length;
+    const term = query.substring(this.activeOpen + 2, termEnd);
     const search = prepareFuzzySearch(term);
     return this.items
       .map((item) => {
@@ -157,5 +171,26 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
     setTimeout(() => {
       this.block = false;
     });
+  }
+
+  onEscape(): void {
+    this.close();
+    this.shouldNotOpen = false;
+  }
+
+  private findActiveLink(value: string, pos: number): {open: number; close: number} | null {
+    let searchFrom = 0;
+    let candidate: {open: number; close: number} | null = null;
+    while (true) {
+      const open = value.indexOf("[[", searchFrom);
+      if (open === -1 || open > pos) break;
+      const close = value.indexOf("]]", open + 2);
+      if (close === -1 || pos <= close) {
+        candidate = { open, close };
+        break;
+      }
+      searchFrom = close + 2;
+    }
+    return candidate;
   }
 }

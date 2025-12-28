@@ -23,6 +23,7 @@ export type ScriptSettingValue = {
  */
 export interface KeyBlocker {
   isBlockingKeys(): boolean;
+  close(): void;
 }
 
 export type ImageInfo = {
