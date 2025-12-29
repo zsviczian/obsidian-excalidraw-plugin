@@ -330,37 +330,93 @@ const getAngleFromCenter = (center, point) => {
   return angle < 0 ? angle + 360 : angle;
 };
 
+const randInt = (range) => Math.round(Math.random()*range);
+
 const getDynamicColor = (existingColors) => {
   const st = appState();
   const bg = st.viewBackgroundColor === "transparent" ? "#ffffff" : st.viewBackgroundColor;
+  const bgCM = ea.getCM(bg);
+  const isDarkBg = bgCM.isDark();
+
+  // Heavier weight on Hue to ensure "different colors" rather than just "different shades"
+  const getDist = (c1, c2) => {
+    let dh = Math.abs(c1.hue - c2.hue);
+    if (dh > 180) dh = 360 - dh;
+    const hScore = (dh / 1.8); 
+    return (hScore * 2) + Math.abs(c1.saturation - c2.saturation) + Math.abs(c1.lightness - c2.lightness);
+  };
+
+  let palette = st.colorPalette?.elementStroke || [];
+  if (Array.isArray(palette)) palette = palette.flat(Infinity);
+  
   const candidates = [];
-  for (let i = 0; i < 10; i++) {
-    const hex =
-      "#" +
-      Math.floor(Math.random() * 16777215)
-        .toString(16)
-        .padStart(6, "0");
-    const cm = ea.getCM(hex);
-    const contrast = cm.contrast({ bgColor: bg });
+
+  new Set(palette).forEach(hex => {
+    if (hex && hex !== "transparent") candidates.push({ hex, isPalette: true });
+  });
+
+  for (let h = 0; h < 360; h +=15+randInt(4)) {
+    const c = ea.getCM({ h: h, s: 75 + randInt(10), l: isDarkBg ? 65 + randInt(10) : 36 + randInt(8), a: 1 });
+    candidates.push({ hex: c.stringHEX(), isPalette: false });
+  }
+
+  // Process Candidates
+  const scored = candidates.map(c => {
+    let cm = ea.getCM(c.hex);
+    if (!cm) return null;
+    
+    // Auto-adjust for contrast if necessary
+    // If yellow/orange is too light for white bg, darken it.
+    let contrast = cm.contrast({ bgColor: bg });
+    if (contrast < 3) {
+      const originalL = cm.lightness;
+      // Try darkening/lightening to meet WCAG AA (3.0 for graphics)
+      const targetL = isDarkBg ? Math.min(originalL + 40, 90) : Math.max(originalL - 40, 20);
+      cm = cm.lightnessTo(targetL);
+      contrast = cm.contrast({ bgColor: bg });
+      c.hex = cm.stringHEX({alpha: false}); // Update the hex to the readable version
+    }
+
+    // Calculate minimum distance to ANY existing color on canvas
     let minDiff = 1000;
-    existingColors.forEach((exHex) => {
-      const exCM = ea.getCM(exHex);
-      const d =
-        Math.abs(cm.hue - exCM.hue) +
-        Math.abs(cm.saturation - exCM.saturation) +
-        Math.abs(cm.lightness - exCM.lightness);
-      if (d < minDiff) {
-        minDiff = d;
-      }
-    });
-    candidates.push({ hex: cm.stringHEX(), contrast, diff: minDiff });
-  }
-  let viable = candidates.filter((c) => c.contrast >= 3);
-  if (viable.length === 0) {
-    viable = candidates;
-  }
-  viable.sort((a, b) => b.diff + b.contrast * 10 - (a.diff + a.contrast * 10));
-  return viable[0].hex;
+    let closestColor = null;
+    
+    if (existingColors.length > 0) {
+      existingColors.forEach(exHex => {
+        const exCM = ea.getCM(exHex);
+        if (exCM) {
+          const d = getDist(cm, exCM);
+          if (d < minDiff) {
+            minDiff = d;
+            closestColor = exHex;
+          }
+        }
+      });
+    }
+
+    return { ...c, contrast, minDiff };
+  }).filter(c => c && c.contrast >= 2.5); // Filter out absolute invisible colors
+
+  // Sort Logic
+  scored.sort((a, b) => {
+    // Threshold for "This color is effectively the same as one already used"
+    // Distance of ~30 usually means same Hue family and similar shade
+    const threshold = 40; 
+    const aIsDistinct = a.minDiff > threshold;
+    const bIsDistinct = b.minDiff > threshold;
+
+    // 1. Priority: Distinctness from existing canvas elements
+    if (aIsDistinct && !bIsDistinct) return -1;
+    if (!aIsDistinct && bIsDistinct) return 1;
+
+    // 2. Priority: If both are distinct (or both are duplicates), prefer Palette
+    if (a.isPalette !== b.isPalette) return a.isPalette ? -1 : 1;
+
+    // 3. Priority: If both are palette (or both generated), pick the one most different from existing
+    return b.minDiff - a.minDiff;
+  });
+
+  return scored[0]?.hex || "#000000";
 };
 
 const getReadableColor = (hex) => {
@@ -671,6 +727,11 @@ const triggerGlobalLayout = async (rootId, force = false) => {
 // ---------------------------------------------------------------------------
 // 4. Add Node Logic
 // ---------------------------------------------------------------------------
+let mostRecentlyAddedNodeID;
+const getMostRecentlyAddedNode = () => {
+  if (!mostRecentlyAddedNodeID) return null;
+  return ea.getViewElements().find((el) => el.id === mostRecentlyAddedNodeID);
+}
 
 const addNode = async (text, follow = false, skipFinalLayout = false) => {
   if (!ea.targetView) return;
@@ -732,7 +793,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     });
     rootId = newNodeId;
   } else {
-    ea.style.strokeColor = getReadableColor(nodeColor);
+    ea.style.strokeColor = nodeColor; //getReadableColor(nodeColor);
     const rootEl = allElements.find((e) => e.id === rootId);
     const mode = rootEl.customData?.growthMode || currentModalGrowthMode;
     const rootCenter = {
@@ -840,6 +901,8 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   if (!parent) {
     zoomToFit();
   }
+
+  mostRecentlyAddedNodeID = finalNode.id; 
   return finalNode;
 };
 
@@ -1014,6 +1077,19 @@ const pasteListToMap = async () => {
 // ---------------------------------------------------------------------------
 // 6. Map Actions
 // ---------------------------------------------------------------------------
+const isNodeRightFromCenter = () => {
+  if (!ea.targetView) return;
+  const allElements = ea.getViewElements();
+  const current = ea.getViewSelectedElement();
+  if (!current) return;
+  const info = getHierarchy(current, allElements);
+  const root = allElements.find((e) => e.id === info.rootId);
+  const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
+  const curCenter = { x: current.x + current.width / 2, y: current.y + current.height / 2 };
+  return curCenter.x > rootCenter.x;
+}
+
+
 const navigateMap = ({key, zoom = false, focus = false} = {}) => {
   if(!key) return;
   if (!ea.targetView) return;
@@ -1028,7 +1104,7 @@ const navigateMap = ({key, zoom = false, focus = false} = {}) => {
     if (children.length) {
       ea.selectElementsInView([children[0]]);
       if (zoom) zoomToFit();
-      if (focus) focusSelected(); 
+      if (focus) focusSelected();
     }
     return;
   }
@@ -1186,6 +1262,48 @@ let sidepanelWindow;
 let popScope = null;
 let keydownHandlers = [];
 
+const ACTION_ADD = "Add";
+const ACTION_ADD_FOLLOW = "Add + follow";
+const ACTION_ADD_FOLLOW_FOCUS = "Add + follow + focus";
+const ACTION_ADD_FOLLOW_ZOOM = "Add + follow + zoom";
+const ACTION_PIN = "Pin/Unpin";
+const ACTION_BOX = "Box/Unbox";
+
+const ACTION_COPY = "Copy";
+const ACTION_CUT = "Cut";
+const ACTION_PASTE = "Paste";
+
+const ACTION_ZOOM = "Zoom";
+const ACTION_FOCUS = "Focus";
+const ACTION_NAVIGATE = "Navigate";
+const ACTION_NAVIGATE_ZOOM = "Navigate & zoom";
+const ACTION_NAVIGATE_FOCUS = "Navigate & focus";
+
+const ACTION_DOCK_UNDOC = "Dock/Undock";
+const ACTION_HIDE = "Dock & hide";
+
+const HOTKEYS = [
+  { action: ACTION_ADD, key: "Enter", modifiers: [] },
+  { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers: ["Mod", "Alt"] },
+  { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"] },
+  { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"] },
+  { action: ACTION_PIN, key: "KeyP", modifiers: ["ALT"] },
+  { action: ACTION_BOX, key: "KeyB", modifiers: ["ALT"] },
+  { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"] },
+  { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"] },
+  { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"] },
+  { action: ACTION_ZOOM, code: "KeyZ", modifiers: ["Alt"] },
+  { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"] },
+  { action: ACTION_DOCK_UNDOC, key: "Enter", modifiers: ["Shift"] },
+  { action: ACTION_HIDE, key: "Escape", modifiers: [] },
+];
+
+["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].forEach(key => {
+  HOTKEYS.push({ action: ACTION_NAVIGATE, key, modifiers: ["Alt"] });
+  HOTKEYS.push({ action: ACTION_NAVIGATE_ZOOM, key, modifiers: ["Alt", "Shift"] });
+  HOTKEYS.push({ action: ACTION_NAVIGATE_FOCUS, key, modifiers: ["Alt", "Mod"] });
+});
+
 const removeKeydownHandlers = () => {
   keydownHandlers.forEach((f)=>f());
   keydownHandlers = [];
@@ -1209,18 +1327,13 @@ const registerMindmapHotkeys = () => {
     scope.keys.unshift(scope.keys.pop());
   };
 
-  reg(["Mod"], "Enter");
-  reg(["Shift"], "Enter");
-  reg(["Mod", "Shift"], "Enter");
-  reg(["Alt", "Shift"], "Enter");
-
-  ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].forEach(k => {
-    reg(["Alt"], k);
-    reg(["Alt", "Shift"], k);
-    reg(["Alt", "Mod"], k);
+  HOTKEYS.forEach(h => {
+    if (h.key) reg(h.modifiers, h.key);
+    if (h.code) {
+      const char = h.code.replace("Key", "").toLowerCase();
+      reg(h.modifiers, char);
+    }
   });
-
-  ["c", "x", "v", "z", "f"].forEach(k => reg(["Alt"], k));
 
   popScope = () => {
     handlers.forEach(h => scope.unregister(h));
@@ -1721,6 +1834,25 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
   }
 };
 
+const getActionFromEvent = (e) => {
+  const isMod = e.ctrlKey || e.metaKey;
+  
+  const match = HOTKEYS.find(h => {
+    const keyMatch = h.code ? (e.code === h.code) : (e.key === h.key);
+    if (!keyMatch) return false;
+
+    const hasMod = h.modifiers.includes("Mod") || h.modifiers.includes("Ctrl") || h.modifiers.includes("Meta");
+    const hasShift = h.modifiers.includes("Shift");
+    const hasAlt = h.modifiers.includes("Alt");
+
+    return (isMod === hasMod) && 
+           (e.shiftKey === hasShift) && 
+           (e.altKey === hasAlt);
+  });
+
+  return match ? match.action : null;
+};
+
 const keyHandler = async (e) => {
   // Determine which window the input is currently in
   const currentWindow = isUndocked && floatingInputModal 
@@ -1740,91 +1872,106 @@ const keyHandler = async (e) => {
   // Check if the input element is actually focused
   if (currentWindow.document?.activeElement !== inputEl) return;
 
-  if (e.key === "Escape") {
-    e.preventDefault();
-    e.stopPropagation();
-    if (isUndocked) {
-      // Dock silently (don't reveal sidepanel)
-      toggleDock({silent: true, forceDock: true, saveSetting: false});
-    }
-    return;
-  }
+  const action = getActionFromEvent(e);
 
-  if (e.key === "Enter" && e.shiftKey && (e.ctrlKey || e.metaKey)) {
-    e.preventDefault();
-    e.stopPropagation();
-    await togglePin();
-    updateUI();
-    focusInputEl();
-    return;
-  }
+  if (!action) return;
 
-  if (e.key === "Enter" && e.shiftKey && e.altKey) {
-    e.preventDefault();
-    e.stopPropagation();
-    await toggleBox();
-    focusInputEl();
-    return;
-  }
+  e.preventDefault();
+  e.stopPropagation();
 
-  if (e.altKey) {
-    if (e.code === "KeyC") {
-      e.preventDefault();
-      copyMapAsText(false);
-      return;
-    }
-    if (e.code === "KeyX") {
-      e.preventDefault();
-      copyMapAsText(true);
-      return;
-    }
-    if (e.code === "KeyV") {
-      e.preventDefault();
-      pasteListToMap();
-      return;
-    }
-    if (e.code === "KeyZ") {
-      e.preventDefault();
-      zoomToFit(true);
-      return;
-    }
-    if (e.code === "KeyF") {
-      e.preventDefault();
-      focusSelected();
-      return;
-    }
-
-    if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
-      e.preventDefault();
-      navigateMap({key: e.key, zoom: e.shiftKey, focus: e.ctrlKey});
-      updateUI();
-      return;
-    }
-  }
-  if (e.key === "Enter") {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.shiftKey) {
-      if (inputEl.value) {
-        await addNode(inputEl.value, false);
-        inputEl.value = "";
-        if(!autoLayoutDisabled) await refreshMapLayout();
+  switch (action) {
+    case ACTION_HIDE:
+      if (isUndocked) {
+        toggleDock({silent: true, forceDock: true, saveSetting: false});
       }
+      break;
+
+    case ACTION_PIN:
+      await togglePin();
+      updateUI();
+      focusInputEl();
+      break;
+
+    case ACTION_BOX:
+      await toggleBox();
+      focusInputEl();
+      break;
+
+    case ACTION_COPY:
+      copyMapAsText(false);
+      break;
+
+    case ACTION_CUT:
+      copyMapAsText(true);
+      break;
+
+    case ACTION_PASTE:
+      pasteListToMap();
+      break;
+
+    case ACTION_ZOOM:
+      zoomToFit(true);
+      break;
+
+    case ACTION_FOCUS:
+      focusSelected();
+      break;
+
+    case ACTION_NAVIGATE:
+      navigateMap({key: e.key, zoom: false, focus: false});
+      updateUI();
+      break;
+
+    case ACTION_NAVIGATE_ZOOM:
+      navigateMap({key: e.key, zoom: true, focus: false});
+      updateUI();
+      break;
+
+    case ACTION_NAVIGATE_FOCUS:
+      navigateMap({key: e.key, zoom: false, focus: true});
+      updateUI();
+      break;
+
+    case ACTION_DOCK_UNDOC:
       toggleDock({saveSetting: true});
-      return;
-    }
-    if (!inputEl.value) return;
-    if (e.ctrlKey || e.metaKey) {
+      break;
+
+    case ACTION_ADD_FOLLOW:
+    case ACTION_ADD_FOLLOW_FOCUS:
+    case ACTION_ADD_FOLLOW_ZOOM:
+      if (!inputEl.value) return;
       await addNode(inputEl.value, true);
       inputEl.value = "";
       if(!autoLayoutDisabled) await refreshMapLayout();
       updateUI();
-    } else {
-      await addNode(inputEl.value, false);
-      inputEl.value = "";
-      if(!autoLayoutDisabled) await refreshMapLayout();
+      if (action === ACTION_ADD_FOLLOW_FOCUS) focusSelected();
+      if (action === ACTION_ADD_FOLLOW_ZOOM) zoomToFit();
+      break;
+    case ACTION_ADD:
+      if (inputEl.value) {
+        await addNode(inputEl.value, false);
+        inputEl.value = "";
+        if(!autoLayoutDisabled) await refreshMapLayout();
+      } else {
+        if(!mostRecentlyAddedNodeID) return;
+        const mostRecentNode = getMostRecentlyAddedNode();
+        const sel = ea.getViewSelectedElement();
+        if(mostRecentNode !== sel) {
+          ea.selectElementsInView([mostRecentNode]);
+          mostRecentlyAddedNodeID = null;
+        } else {
+          navigateMap({key: "ArrowDown", zoom: false, focus: false});
+          if(sel === ea.getViewSelectedElement()) {
+            //if only a single child then navigate up
+            navigateMap({
+              key: isNodeRightFromCenter() ? "ArrowLeft" : "ArrowRight",
+              zoom: false,
+              focus: false
+            });
+          }
+        }
+      }
       updateUI();
-    }
   }
 };
 
@@ -1877,18 +2024,18 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
 
   tab.onOpen = () => {
     const contentEl = tab.contentEl;
-    contentEl.empty();
-    
-    renderHelp(contentEl);
-    inputContainer = contentEl.createDiv(); 
-    renderBody(contentEl);
+    if (!contentEl.hasChildNodes()) {
+      renderHelp(contentEl);
+      inputContainer = contentEl.createDiv(); 
+      renderBody(contentEl);
 
-    sidepanelWindow = contentEl.ownerDocument.defaultView;
+      sidepanelWindow = contentEl.ownerDocument.defaultView;
 
-    if (isUndocked) {
-      toggleDock({silent: true, forceDock: true, saveSetting: false});
-    } else {
-      renderInput(inputContainer, false);
+      if (isUndocked) {
+        toggleDock({silent: true, forceDock: true, saveSetting: false});
+      } else {
+        renderInput(inputContainer, false);
+      }
     }
 
     ensureNodeSelected();
@@ -1942,9 +2089,15 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   tab.onFocus = (view) => onFocus(view);
 
   const onActiveLeafChange = (leaf) => {
-    if (isUndocked && !!floatingInputModal && leaf && ea.isExcalidrawView(leaf.view)) {
+    if(!isUndocked || !floatingInputModal || !leaf) {
+      return;
+    }
+    if (ea.isExcalidrawView(leaf.view)) {
       onFocus(leaf.view);
       const { modalEl } = floatingInputModal
+      if (modalEl.style.display === "none") {
+        modalEl.style.display = "";
+      }
       if (ea.targetView && modalEl.ownerDocument !== ea.targetView.ownerDocument) {
         ea.targetView.ownerDocument.body.appendChild(modalEl);
         linkSuggester?.close();
@@ -1953,6 +2106,11 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
       const {x, y} = ea.targetView.contentEl.getBoundingClientRect();
       modalEl.style.top = `${ y + 5 }px`;
       modalEl.style.left = `${ x + 5 }px`;
+    } else {
+      const { modalEl } = floatingInputModal;
+      if (modalEl.style.display !== "none") {
+        modalEl.style.display = "none";
+      }
     }
   };
   
