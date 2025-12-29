@@ -10464,7 +10464,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2025-12-28T15:04:00.464Z
+Generated on: 2025-12-29T21:36:58.174Z
 
 ---
 
@@ -19124,6 +19124,7 @@ const K_GROUP = "Group Branches";
 const K_ARROWSTROKE = "Arrow Stroke Style";
 const K_CENTERTEXT = "Center text in nodes?";
 const K_ZOOM = "Preferred Zoom Level";
+const K_HOTKEYS = "Hotkeys";
 
 const FONT_SCALE_TYPES = ["Use scene fontsize", "Fibonacci Scale", "Normal Scale"];
 const GROWTH_TYPES = ["Radial", "Right-facing", "Left-facing"];
@@ -19138,12 +19139,13 @@ const saveSettings = async () => {
   dirty = false;
 }
 
-const setVal = (key, value) => {
+const setVal = (key, value, hidden = false) => {
   //value here is only a fallback
   //when updating a setting value, the full ScriptSettingValue should be there
   //as defined on the ScriptSettingValue type.
-  const def = ea.getScriptSettingValue(key, {value});
+  const def = ea.getScriptSettingValue(key, {value, hidden});
   def.value = value;
+  if(hidden) def.hidden = true;
   ea.setScriptSettingValue(key, def);
 }
 
@@ -19207,19 +19209,82 @@ const STROKE_WIDTHS = [6, 4, 2, 1, 0.5];
 const ownerWindow = ea.targetView?.ownerWindow;
 const isMac = ea.DEVICE.isMacOS || ea.DEVICE.isIOS;
 
+const ACTION_ADD = "Add";
+const ACTION_ADD_FOLLOW = "Add + follow";
+const ACTION_ADD_FOLLOW_FOCUS = "Add + follow + focus";
+const ACTION_ADD_FOLLOW_ZOOM = "Add + follow + zoom";
+const ACTION_PIN = "Pin/Unpin";
+const ACTION_BOX = "Box/Unbox";
+
+const ACTION_COPY = "Copy";
+const ACTION_CUT = "Cut";
+const ACTION_PASTE = "Paste";
+
+const ACTION_ZOOM = "Cycle Zoom";
+const ACTION_FOCUS = "Focus (center) node";
+const ACTION_NAVIGATE = "Navigate";
+const ACTION_NAVIGATE_ZOOM = "Navigate & zoom";
+const ACTION_NAVIGATE_FOCUS = "Navigate & focus";
+
+const ACTION_DOCK_UNDOC = "Dock/Undock";
+const ACTION_HIDE = "Dock & hide";
+
+// Default configuration
+const DEFAULT_HOTKEYS = [
+  { action: ACTION_ADD, key: "Enter", modifiers: [], immutable: true }, // Logic relies on standard Enter behavior in input
+  { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers: ["Mod", "Alt"] },
+  { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"] },
+  { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"] },
+  { action: ACTION_PIN, key: "KeyP", modifiers: ["Alt"] },
+  { action: ACTION_BOX, key: "KeyB", modifiers: ["Alt"] },
+  { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"] },
+  { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"] },
+  { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"] },
+  { action: ACTION_ZOOM, code: "KeyZ", modifiers: ["Alt"] },
+  { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"] },
+  { action: ACTION_DOCK_UNDOC, key: "Enter", modifiers: ["Shift"] },
+  { action: ACTION_HIDE, key: "Escape", modifiers: [], immutable: true  },
+  { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true },
+  { action: ACTION_NAVIGATE_ZOOM, key: "ArrowKeys", modifiers: ["Alt", "Shift"], isNavigation: true },
+  { action: ACTION_NAVIGATE_FOCUS, key: "ArrowKeys", modifiers: ["Alt", "Mod"], isNavigation: true },
+];
+
+// Load hotkeys from settings or use default
+// IMPORTANT: Use JSON.parse/stringify to create a deep copy of defaults.
+// Otherwise, modifying userHotkeys modifies DEFAULT_HOTKEYS in memory, breaking the isModified check until restart.
+let userHotkeys = getVal(K_HOTKEYS, {value: JSON.parse(JSON.stringify(DEFAULT_HOTKEYS)), hidden: true});
+
+// Merge defaults in case new actions were added in an update
+if(userHotkeys.length !== DEFAULT_HOTKEYS.length) {
+  const merged = [...userHotkeys];
+  DEFAULT_HOTKEYS.forEach(d => {
+    if(!merged.find(u => u.action === d.action)) merged.push(JSON.parse(JSON.stringify(d)));
+  });
+  userHotkeys = merged;
+}
+
+// Generate the runtime HOTKEYS array used by getActionFromEvent
+const generateRuntimeHotkeys = () => {
+  const runtimeKeys = [];
+  userHotkeys.forEach(h => {
+    if (h.isNavigation) {
+      ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].forEach(key => {
+        runtimeKeys.push({ action: h.action, key, modifiers: h.modifiers });
+      });
+    } else {
+      runtimeKeys.push(h);
+    }
+  });
+  return runtimeKeys;
+};
+
+let RUNTIME_HOTKEYS = generateRuntimeHotkeys();
+
 const INSTRUCTIONS = `
-- **ENTER**: Add a sibling node and stay on the current parent for rapid entry.
-- **${isMac ? "CMD" : "CTRL"} + ENTER**: Add a child node and "drill down" (follow the new node).
-- **SHIFT + ENTER**: Dock/Undock floating input field.
-- **ESC**: If input field is floating, closes Mindmap Builder (without toggling the sidepanel)
-- **${isMac ? "OPT" : "ALT"} + SHIFT + ENTER**: Box/Unbox selected node.
-- **${isMac ? "CMD" : "CTRL"} + SHIFT + ENTER**: Pin/Unpin location of a node. Pinned nodes will not be touched by auto layout.
-- **${isMac ? "OPT" : "ALT"} + Arrows**: Navigate through the mindmap nodes on the canvas.
-- **${isMac ? "OPT" : "ALT"} + SHIFT + Arrows**: Navigate through the mindmap nodes on the canvas and zoom to element.
-- **${isMac ? "CMD" : "CTRL"} + SHIFT + Arrows**: Navigate through the mindmap nodes on the canvas and focus (center) selected element.
-- **${isMac ? "OPT" : "ALT"} + C / X / V**: Copy, Cut, or Paste branches.
-- **${isMac ? "OPT" : "ALT"} + Z**: Zoom to selected element. Pressing the key multiple times will cycle through the zoom presets.
-- **${isMac ? "OPT" : "ALT"} + F**: Focus (Center) selected element without changing zoom.
+- **ENTER**: Add a sibling node and stay on the current parent for rapid entry. If you press enter when the input field is empty the focus will move to the child node that was most recently added. Pressing enter subsequent times will iterate through the new child's siblings
+- **Hotkeys**: See configuration at the bottom of the sidepanel
+- **Dock/Undock**: You can dock/undock the input field using the dock/undock button or the configured hotkey
+- **ESC**: Docks the floating input field without activating the side panel
 - **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
 - **Grouping**: Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
 - **Copy/Paste**: Export/Import indented Markdown lists.
@@ -19324,37 +19389,93 @@ const getAngleFromCenter = (center, point) => {
   return angle < 0 ? angle + 360 : angle;
 };
 
+const randInt = (range) => Math.round(Math.random()*range);
+
 const getDynamicColor = (existingColors) => {
   const st = appState();
   const bg = st.viewBackgroundColor === "transparent" ? "#ffffff" : st.viewBackgroundColor;
+  const bgCM = ea.getCM(bg);
+  const isDarkBg = bgCM.isDark();
+
+  // Heavier weight on Hue to ensure "different colors" rather than just "different shades"
+  const getDist = (c1, c2) => {
+    let dh = Math.abs(c1.hue - c2.hue);
+    if (dh > 180) dh = 360 - dh;
+    const hScore = (dh / 1.8); 
+    return (hScore * 2) + Math.abs(c1.saturation - c2.saturation) + Math.abs(c1.lightness - c2.lightness);
+  };
+
+  let palette = st.colorPalette?.elementStroke || [];
+  if (Array.isArray(palette)) palette = palette.flat(Infinity);
+  
   const candidates = [];
-  for (let i = 0; i < 10; i++) {
-    const hex =
-      "#" +
-      Math.floor(Math.random() * 16777215)
-        .toString(16)
-        .padStart(6, "0");
-    const cm = ea.getCM(hex);
-    const contrast = cm.contrast({ bgColor: bg });
+
+  new Set(palette).forEach(hex => {
+    if (hex && hex !== "transparent") candidates.push({ hex, isPalette: true });
+  });
+
+  for (let h = 0; h < 360; h +=15+randInt(4)) {
+    const c = ea.getCM({ h: h, s: 75 + randInt(10), l: isDarkBg ? 65 + randInt(10) : 36 + randInt(8), a: 1 });
+    candidates.push({ hex: c.stringHEX(), isPalette: false });
+  }
+
+  // Process Candidates
+  const scored = candidates.map(c => {
+    let cm = ea.getCM(c.hex);
+    if (!cm) return null;
+    
+    // Auto-adjust for contrast if necessary
+    // If yellow/orange is too light for white bg, darken it.
+    let contrast = cm.contrast({ bgColor: bg });
+    if (contrast < 3) {
+      const originalL = cm.lightness;
+      // Try darkening/lightening to meet WCAG AA (3.0 for graphics)
+      const targetL = isDarkBg ? Math.min(originalL + 40, 90) : Math.max(originalL - 40, 20);
+      cm = cm.lightnessTo(targetL);
+      contrast = cm.contrast({ bgColor: bg });
+      c.hex = cm.stringHEX({alpha: false}); // Update the hex to the readable version
+    }
+
+    // Calculate minimum distance to ANY existing color on canvas
     let minDiff = 1000;
-    existingColors.forEach((exHex) => {
-      const exCM = ea.getCM(exHex);
-      const d =
-        Math.abs(cm.hue - exCM.hue) +
-        Math.abs(cm.saturation - exCM.saturation) +
-        Math.abs(cm.lightness - exCM.lightness);
-      if (d < minDiff) {
-        minDiff = d;
-      }
-    });
-    candidates.push({ hex: cm.stringHEX(), contrast, diff: minDiff });
-  }
-  let viable = candidates.filter((c) => c.contrast >= 3);
-  if (viable.length === 0) {
-    viable = candidates;
-  }
-  viable.sort((a, b) => b.diff + b.contrast * 10 - (a.diff + a.contrast * 10));
-  return viable[0].hex;
+    let closestColor = null;
+    
+    if (existingColors.length > 0) {
+      existingColors.forEach(exHex => {
+        const exCM = ea.getCM(exHex);
+        if (exCM) {
+          const d = getDist(cm, exCM);
+          if (d < minDiff) {
+            minDiff = d;
+            closestColor = exHex;
+          }
+        }
+      });
+    }
+
+    return { ...c, contrast, minDiff };
+  }).filter(c => c && c.contrast >= 2.5); // Filter out absolute invisible colors
+
+  // Sort Logic
+  scored.sort((a, b) => {
+    // Threshold for "This color is effectively the same as one already used"
+    // Distance of ~30 usually means same Hue family and similar shade
+    const threshold = 40; 
+    const aIsDistinct = a.minDiff > threshold;
+    const bIsDistinct = b.minDiff > threshold;
+
+    // 1. Priority: Distinctness from existing canvas elements
+    if (aIsDistinct && !bIsDistinct) return -1;
+    if (!aIsDistinct && bIsDistinct) return 1;
+
+    // 2. Priority: If both are distinct (or both are duplicates), prefer Palette
+    if (a.isPalette !== b.isPalette) return a.isPalette ? -1 : 1;
+
+    // 3. Priority: If both are palette (or both generated), pick the one most different from existing
+    return b.minDiff - a.minDiff;
+  });
+
+  return scored[0]?.hex || "#000000";
 };
 
 const getReadableColor = (hex) => {
@@ -19665,6 +19786,11 @@ const triggerGlobalLayout = async (rootId, force = false) => {
 // ---------------------------------------------------------------------------
 // 4. Add Node Logic
 // ---------------------------------------------------------------------------
+let mostRecentlyAddedNodeID;
+const getMostRecentlyAddedNode = () => {
+  if (!mostRecentlyAddedNodeID) return null;
+  return ea.getViewElements().find((el) => el.id === mostRecentlyAddedNodeID);
+}
 
 const addNode = async (text, follow = false, skipFinalLayout = false) => {
   if (!ea.targetView) return;
@@ -19726,7 +19852,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     });
     rootId = newNodeId;
   } else {
-    ea.style.strokeColor = getReadableColor(nodeColor);
+    ea.style.strokeColor = nodeColor; //getReadableColor(nodeColor);
     const rootEl = allElements.find((e) => e.id === rootId);
     const mode = rootEl.customData?.growthMode || currentModalGrowthMode;
     const rootCenter = {
@@ -19740,6 +19866,17 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       : -rootEl.width;
     let px = parent.x + offset,
       py = parent.y;
+    
+    // Ensure new node is placed below existing siblings so visual sort preserves order
+    if (!autoLayoutDisabled) {
+      const siblings = getChildrenNodes(parent.id, allElements);
+      if (siblings.length > 0) {
+        const sortedSiblings = siblings.sort((a, b) => a.y - b.y);
+        const lastSibling = sortedSiblings[sortedSiblings.length - 1];
+        py = lastSibling.y + lastSibling.height + GAP_Y; 
+      }
+    }
+
     if (autoLayoutDisabled) {
       const manualGapX = Math.round(parent.width * 1.3);
       const jitterX = (Math.random() - 0.5) * 150;
@@ -19834,6 +19971,8 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   if (!parent) {
     zoomToFit();
   }
+
+  mostRecentlyAddedNodeID = finalNode.id; 
   return finalNode;
 };
 
@@ -20008,6 +20147,19 @@ const pasteListToMap = async () => {
 // ---------------------------------------------------------------------------
 // 6. Map Actions
 // ---------------------------------------------------------------------------
+const isNodeRightFromCenter = () => {
+  if (!ea.targetView) return;
+  const allElements = ea.getViewElements();
+  const current = ea.getViewSelectedElement();
+  if (!current) return;
+  const info = getHierarchy(current, allElements);
+  const root = allElements.find((e) => e.id === info.rootId);
+  const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
+  const curCenter = { x: current.x + current.width / 2, y: current.y + current.height / 2 };
+  return curCenter.x > rootCenter.x;
+}
+
+
 const navigateMap = ({key, zoom = false, focus = false} = {}) => {
   if(!key) return;
   if (!ea.targetView) return;
@@ -20022,7 +20174,7 @@ const navigateMap = ({key, zoom = false, focus = false} = {}) => {
     if (children.length) {
       ea.selectElementsInView([children[0]]);
       if (zoom) zoomToFit();
-      if (focus) focusSelected(); 
+      if (focus) focusSelected();
     }
     return;
   }
@@ -20036,21 +20188,23 @@ const navigateMap = ({key, zoom = false, focus = false} = {}) => {
       const ch = getChildrenNodes(current.id, allElements);
       if (ch.length) ea.selectElementsInView([ch[0]]);
     }
-  } else if (key === "ArrowUp" || key === "ArrowDown") {
+} else if (key === "ArrowUp" || key === "ArrowDown") {
     const parent = getParentNode(current.id, allElements),
       siblings = getChildrenNodes(parent.id, allElements);
-    const mode = root.customData?.growthMode || currentModalGrowthMode;
-    if (mode === "Radial" && parent.id === root.id) {
-      siblings.sort(
-        (a, b) =>
-          getAngleFromCenter(rootCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
-          getAngleFromCenter(rootCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 }),
-      );
-    } else {
-      sortChildrenStable(siblings);
-    }
+    
+    // Calculate the immediate parent's center to sort siblings clockwise around it
+    const parentCenter = { x: parent.x + parent.width / 2, y: parent.y + parent.height / 2 };
+    
+    // Always sort by angle from 12 o'clock (0 degrees) to ensure clockwise navigation
+    // regardless of layout mode or hierarchy level
+    siblings.sort(
+      (a, b) =>
+        getAngleFromCenter(parentCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
+        getAngleFromCenter(parentCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 }),
+    );
+
     const idx = siblings.findIndex((s) => s.id === current.id);
-    const nIdx = key === "ArrowUp"
+    const nIdx = key === "ArrowUp" // Up = Counter-Clockwise (Previous), Down = Clockwise (Next)
       ? (idx - 1 + siblings.length) % siblings.length
       : (idx + 1) % siblings.length;
     ea.selectElementsInView([siblings[idx === -1 ? 0 : nIdx]]);
@@ -20203,18 +20357,13 @@ const registerMindmapHotkeys = () => {
     scope.keys.unshift(scope.keys.pop());
   };
 
-  reg(["Mod"], "Enter");
-  reg(["Shift"], "Enter");
-  reg(["Mod", "Shift"], "Enter");
-  reg(["Alt", "Shift"], "Enter");
-
-  ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].forEach(k => {
-    reg(["Alt"], k);
-    reg(["Alt", "Shift"], k);
-    reg(["Alt", "Mod"], k);
+  RUNTIME_HOTKEYS.forEach(h => {
+    if (h.key) reg(h.modifiers, h.key);
+    if (h.code) {
+      const char = h.code.replace("Key", "").toLowerCase();
+      reg(h.modifiers, char);
+    }
   });
-
-  ["c", "x", "v", "z", "f"].forEach(k => reg(["Alt"], k));
 
   popScope = () => {
     handlers.forEach(h => scope.unregister(h));
@@ -20310,7 +20459,6 @@ const renderInput = (container, isFloating = false) => {
   inputRow = new ea.obsidian.Setting(container);
   
   if (!isFloating) {
-    inputRow.setName("Node Text");
     inputRow.settingEl.style.display = "block";
     inputRow.controlEl.style.display = "block";
     inputRow.controlEl.style.width = "100%";
@@ -20331,7 +20479,6 @@ const renderInput = (container, isFloating = false) => {
       inputEl.style.maxWidth = "350px";
     }
     inputEl.placeholder = "Concept...";
-a
     inputEl.addEventListener("focus", registerMindmapHotkeys);
     inputEl.addEventListener("blur", () => {
       if (popScope) popScope();
@@ -20587,6 +20734,193 @@ const renderBody = (contentEl) => {
       dirty = true;
     }),
   );
+
+// ------------------------------------
+  // Hotkey Configuration Section
+  // ------------------------------------
+  const hkDetails = bodyContainer.createEl("details", {
+    attr: { style: "margin-top: 15px; border-top: 1px solid var(--background-modifier-border); padding-top: 10px;" }
+  });
+  hkDetails.createEl("summary", { text: "Hotkey Configuration", attr: { style: "cursor: pointer; font-weight: bold;" } });
+  
+  const hkContainer = hkDetails.createDiv();
+  hkContainer.createEl("p", {
+    text: "While the Mindmap Builder input field is active, the following hotkeys override standard Obsidian behaviors.",
+    attr: { style: "color: var(--text-muted); font-size: 0.85em; margin-bottom: 10px;" }
+  });
+
+  const refreshHotkeys = () => {
+    RUNTIME_HOTKEYS = generateRuntimeHotkeys();
+    // Re-register scope if currently active
+    if (popScope) registerMindmapHotkeys();
+    // Ensure event listeners are attached to the correct window
+    updateKeyHandlerLocation();
+  };
+
+  const saveHotkeys = () => {
+    setVal(K_HOTKEYS, userHotkeys, true);
+    dirty = true;
+    refreshHotkeys();
+  };
+
+  const getDisplayString = (h) => {
+    const parts = [];
+    if (h.modifiers.includes("Ctrl")) parts.push("Ctrl");
+    if (h.modifiers.includes("Meta")) parts.push("Cmd");
+    if (h.modifiers.includes("Mod")) parts.push(isMac ? "Cmd" : "Ctrl");
+    if (h.modifiers.includes("Alt")) parts.push(isMac ? "Opt" : "Alt");
+    if (h.modifiers.includes("Shift")) parts.push("Shift");
+    
+    if (h.code) parts.push(h.code.replace("Key", ""));
+    else if (h.key === "ArrowKeys") parts.push("Arrow Keys");
+    else if (h.key === " ") parts.push("Space");
+    else parts.push(h.key);
+    
+    return parts.join(" + ");
+  };
+
+  const isModified = (current) => {
+    const def = DEFAULT_HOTKEYS.find(d => d.action === current.action);
+    if (!def) return false;
+    
+    const k1 = current.code || current.key;
+    const k2 = def.code || def.key;
+    if (k1 !== k2) return true;
+    
+    if (current.modifiers.length !== def.modifiers.length) return true;
+    // Check if every modifier in current exists in def
+    return !current.modifiers.every(m => def.modifiers.includes(m));
+  };
+
+  const recordHotkey = (btn, hIndex, onUpdate) => {
+    const originalText = btn.innerHTML;
+    const label = btn.parentElement.querySelector(".setting-hotkey");
+    
+    btn.innerHTML = `Press hotkey...`;
+    btn.addClass("is-recording");
+    
+    // Correctly identify the window where the settings UI resides
+    const targetWindow = btn.ownerDocument.defaultView;
+
+    const handler = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Ignore modifier-only presses
+      if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return;
+
+      const mods = [];
+      if (e.ctrlKey) mods.push("Ctrl");
+      if (e.metaKey) mods.push("Meta");
+      if (e.altKey) mods.push("Alt");
+      if (e.shiftKey) mods.push("Shift");
+
+      let key = e.key;
+      let code = e.code;
+
+      if (key === " ") key = "Space";
+      
+      const targetConfig = userHotkeys[hIndex];
+      const isNav = targetConfig.isNavigation;
+
+      // Validation
+      if (isNav && !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
+        new Notice("This action requires Arrow Keys. Only modifiers can be changed.");
+        cleanup();
+        return;
+      }
+
+      // Check conflicts
+      const conflict = userHotkeys.find((h, i) => {
+        if (i === hIndex) return false;
+        
+        const sameMods = h.modifiers.length === mods.length && h.modifiers.every(m => mods.includes(m));
+        if (!sameMods) return false;
+        
+        if (h.isNavigation && isNav) return true;
+        if (h.isNavigation && key.startsWith("Arrow")) return true;
+        
+        const hKey = h.code ? h.code.replace("Key","") : h.key;
+        const eKey = code ? code.replace("Key","") : key;
+        return hKey.toLowerCase() === eKey.toLowerCase();
+      });
+
+      if (conflict) {
+        label.style.color = "var(--text-error)";
+        new Notice(`Conflict with "${conflict.action}"`);
+        setTimeout(() => label.style.color = "", 2000);
+      } else {
+        // Update setting
+        if (isNav) {
+          targetConfig.modifiers = mods.map(m => m === "Ctrl" || m === "Meta" ? "Mod" : m);
+        } else {
+          targetConfig.modifiers = mods.map(m => m === "Ctrl" || m === "Meta" ? "Mod" : m);
+          if (code && code.startsWith("Key")) {
+            targetConfig.code = code;
+            delete targetConfig.key;
+          } else {
+            targetConfig.key = key;
+            delete targetConfig.code;
+          }
+        }
+        saveHotkeys();
+        if(onUpdate) onUpdate();
+      }
+
+      cleanup();
+    };
+
+    const cleanup = () => {
+      btn.innerHTML = originalText;
+      btn.removeClass("is-recording");
+      targetWindow.removeEventListener("keydown", handler, true);
+    };
+
+    targetWindow.addEventListener("keydown", handler, true);
+  };
+
+  userHotkeys.forEach((h, index) => {
+    if (h.immutable) return;
+
+    const setting = new ea.obsidian.Setting(hkContainer)
+      .setName(h.action);
+    
+    const controlDiv = setting.controlEl;
+    controlDiv.addClass("setting-item-control");
+    
+    const hotkeyDisplay = controlDiv.createDiv("setting-command-hotkeys");
+    const span = hotkeyDisplay.createSpan("setting-hotkey");
+    
+    // UI Update logic scoped to this specific row
+    const restoreBtn = controlDiv.createSpan("clickable-icon setting-restore-hotkey-button");
+    restoreBtn.innerHTML = ea.obsidian.getIcon("rotate-ccw").outerHTML;
+    restoreBtn.ariaLabel = "Restore default";
+
+    const updateRowUI = () => {
+      span.textContent = getDisplayString(userHotkeys[index]);
+      restoreBtn.style.display = isModified(userHotkeys[index]) ? "" : "none";
+    };
+
+    // Initial render
+    updateRowUI();
+
+    restoreBtn.onclick = () => {
+      const def = DEFAULT_HOTKEYS.find(d => d.action === userHotkeys[index].action);
+      if (def) {
+        userHotkeys[index] = JSON.parse(JSON.stringify(def));
+        saveHotkeys();
+        updateRowUI();
+      }
+    };
+
+    const addBtn = controlDiv.createSpan("clickable-icon setting-add-hotkey-button");
+    addBtn.innerHTML = ea.obsidian.getIcon("plus-circle").outerHTML;
+    addBtn.ariaLabel = "Customize this hotkey";
+    addBtn.onclick = () => recordHotkey(addBtn, index, updateRowUI);
+  });
+
+  // Spacer to avoid overlap with Obsidian's status bar
+  bodyContainer.createDiv({ attr: { style: "height: 40px;" } });
 };
 
 const updateKeyHandlerLocation = () => {
@@ -20715,6 +21049,25 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
   }
 };
 
+const getActionFromEvent = (e) => {
+  const isMod = e.ctrlKey || e.metaKey;
+  
+  const match = RUNTIME_HOTKEYS.find(h => {
+    const keyMatch = h.code ? (e.code === h.code) : (e.key === h.key);
+    if (!keyMatch) return false;
+
+    const hasMod = h.modifiers.includes("Mod") || h.modifiers.includes("Ctrl") || h.modifiers.includes("Meta");
+    const hasShift = h.modifiers.includes("Shift");
+    const hasAlt = h.modifiers.includes("Alt");
+
+    return (isMod === hasMod) && 
+           (e.shiftKey === hasShift) && 
+           (e.altKey === hasAlt);
+  });
+
+  return match ? match.action : null;
+};
+
 const keyHandler = async (e) => {
   // Determine which window the input is currently in
   const currentWindow = isUndocked && floatingInputModal 
@@ -20734,91 +21087,106 @@ const keyHandler = async (e) => {
   // Check if the input element is actually focused
   if (currentWindow.document?.activeElement !== inputEl) return;
 
-  if (e.key === "Escape") {
-    e.preventDefault();
-    e.stopPropagation();
-    if (isUndocked) {
-      // Dock silently (don't reveal sidepanel)
-      toggleDock({silent: true, forceDock: true, saveSetting: false});
-    }
-    return;
-  }
+  const action = getActionFromEvent(e);
 
-  if (e.key === "Enter" && e.shiftKey && (e.ctrlKey || e.metaKey)) {
-    e.preventDefault();
-    e.stopPropagation();
-    await togglePin();
-    updateUI();
-    focusInputEl();
-    return;
-  }
+  if (!action) return;
 
-  if (e.key === "Enter" && e.shiftKey && e.altKey) {
-    e.preventDefault();
-    e.stopPropagation();
-    await toggleBox();
-    focusInputEl();
-    return;
-  }
+  e.preventDefault();
+  e.stopPropagation();
 
-  if (e.altKey) {
-    if (e.code === "KeyC") {
-      e.preventDefault();
-      copyMapAsText(false);
-      return;
-    }
-    if (e.code === "KeyX") {
-      e.preventDefault();
-      copyMapAsText(true);
-      return;
-    }
-    if (e.code === "KeyV") {
-      e.preventDefault();
-      pasteListToMap();
-      return;
-    }
-    if (e.code === "KeyZ") {
-      e.preventDefault();
-      zoomToFit(true);
-      return;
-    }
-    if (e.code === "KeyF") {
-      e.preventDefault();
-      focusSelected();
-      return;
-    }
-
-    if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
-      e.preventDefault();
-      navigateMap({key: e.key, zoom: e.shiftKey, focus: e.ctrlKey});
-      updateUI();
-      return;
-    }
-  }
-  if (e.key === "Enter") {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.shiftKey) {
-      if (inputEl.value) {
-        await addNode(inputEl.value, false);
-        inputEl.value = "";
-        if(!autoLayoutDisabled) await refreshMapLayout();
+  switch (action) {
+    case ACTION_HIDE:
+      if (isUndocked) {
+        toggleDock({silent: true, forceDock: true, saveSetting: false});
       }
+      break;
+
+    case ACTION_PIN:
+      await togglePin();
+      updateUI();
+      focusInputEl();
+      break;
+
+    case ACTION_BOX:
+      await toggleBox();
+      focusInputEl();
+      break;
+
+    case ACTION_COPY:
+      copyMapAsText(false);
+      break;
+
+    case ACTION_CUT:
+      copyMapAsText(true);
+      break;
+
+    case ACTION_PASTE:
+      pasteListToMap();
+      break;
+
+    case ACTION_ZOOM:
+      zoomToFit(true);
+      break;
+
+    case ACTION_FOCUS:
+      focusSelected();
+      break;
+
+    case ACTION_NAVIGATE:
+      navigateMap({key: e.key, zoom: false, focus: false});
+      updateUI();
+      break;
+
+    case ACTION_NAVIGATE_ZOOM:
+      navigateMap({key: e.key, zoom: true, focus: false});
+      updateUI();
+      break;
+
+    case ACTION_NAVIGATE_FOCUS:
+      navigateMap({key: e.key, zoom: false, focus: true});
+      updateUI();
+      break;
+
+    case ACTION_DOCK_UNDOC:
       toggleDock({saveSetting: true});
-      return;
-    }
-    if (!inputEl.value) return;
-    if (e.ctrlKey || e.metaKey) {
+      break;
+
+    case ACTION_ADD_FOLLOW:
+    case ACTION_ADD_FOLLOW_FOCUS:
+    case ACTION_ADD_FOLLOW_ZOOM:
+      if (!inputEl.value) return;
       await addNode(inputEl.value, true);
       inputEl.value = "";
       if(!autoLayoutDisabled) await refreshMapLayout();
       updateUI();
-    } else {
-      await addNode(inputEl.value, false);
-      inputEl.value = "";
-      if(!autoLayoutDisabled) await refreshMapLayout();
+      if (action === ACTION_ADD_FOLLOW_FOCUS) focusSelected();
+      if (action === ACTION_ADD_FOLLOW_ZOOM) zoomToFit();
+      break;
+    case ACTION_ADD:
+      if (inputEl.value) {
+        await addNode(inputEl.value, false);
+        inputEl.value = "";
+        if(!autoLayoutDisabled) await refreshMapLayout();
+      } else {
+        if(!mostRecentlyAddedNodeID) return;
+        const mostRecentNode = getMostRecentlyAddedNode();
+        const sel = ea.getViewSelectedElement();
+        if(mostRecentNode !== sel) {
+          ea.selectElementsInView([mostRecentNode]);
+          mostRecentlyAddedNodeID = null;
+        } else {
+          navigateMap({key: "ArrowDown", zoom: false, focus: false});
+          if(sel === ea.getViewSelectedElement()) {
+            //if only a single child then navigate up
+            navigateMap({
+              key: isNodeRightFromCenter() ? "ArrowLeft" : "ArrowRight",
+              zoom: false,
+              focus: false
+            });
+          }
+        }
+      }
       updateUI();
-    }
   }
 };
 
@@ -20871,18 +21239,18 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
 
   tab.onOpen = () => {
     const contentEl = tab.contentEl;
-    contentEl.empty();
-    
-    renderHelp(contentEl);
-    inputContainer = contentEl.createDiv(); 
-    renderBody(contentEl);
+    if (!contentEl.hasChildNodes()) {
+      renderHelp(contentEl);
+      inputContainer = contentEl.createDiv(); 
+      renderBody(contentEl);
 
-    sidepanelWindow = contentEl.ownerDocument.defaultView;
+      sidepanelWindow = contentEl.ownerDocument.defaultView;
 
-    if (isUndocked) {
-      toggleDock({silent: true, forceDock: true, saveSetting: false});
-    } else {
-      renderInput(inputContainer, false);
+      if (isUndocked) {
+        toggleDock({silent: true, forceDock: true, saveSetting: false});
+      } else {
+        renderInput(inputContainer, false);
+      }
     }
 
     ensureNodeSelected();
@@ -20936,9 +21304,15 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   tab.onFocus = (view) => onFocus(view);
 
   const onActiveLeafChange = (leaf) => {
-    if (isUndocked && !!floatingInputModal && leaf && ea.isExcalidrawView(leaf.view)) {
+    if(!isUndocked || !floatingInputModal || !leaf) {
+      return;
+    }
+    if (ea.isExcalidrawView(leaf.view)) {
       onFocus(leaf.view);
       const { modalEl } = floatingInputModal
+      if (modalEl.style.display === "none") {
+        modalEl.style.display = "";
+      }
       if (ea.targetView && modalEl.ownerDocument !== ea.targetView.ownerDocument) {
         ea.targetView.ownerDocument.body.appendChild(modalEl);
         linkSuggester?.close();
@@ -20947,6 +21321,11 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
       const {x, y} = ea.targetView.contentEl.getBoundingClientRect();
       modalEl.style.top = `${ y + 5 }px`;
       modalEl.style.left = `${ x + 5 }px`;
+    } else {
+      const { modalEl } = floatingInputModal;
+      if (modalEl.style.display !== "none") {
+        modalEl.style.display = "none";
+      }
     }
   };
   

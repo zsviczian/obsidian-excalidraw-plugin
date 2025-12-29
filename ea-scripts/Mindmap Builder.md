@@ -290,6 +290,7 @@ const INSTRUCTIONS = `
 - **ENTER**: Add a sibling node and stay on the current parent for rapid entry. If you press enter when the input field is empty the focus will move to the child node that was most recently added. Pressing enter subsequent times will iterate through the new child's siblings
 - **Hotkeys**: See configuration at the bottom of the sidepanel
 - **Dock/Undock**: You can dock/undock the input field using the dock/undock button or the configured hotkey
+- **ESC**: Docks the floating input field without activating the side panel
 - **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
 - **Grouping**: Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
 - **Copy/Paste**: Export/Import indented Markdown lists.
@@ -871,6 +872,17 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       : -rootEl.width;
     let px = parent.x + offset,
       py = parent.y;
+    
+    // Ensure new node is placed below existing siblings so visual sort preserves order
+    if (!autoLayoutDisabled) {
+      const siblings = getChildrenNodes(parent.id, allElements);
+      if (siblings.length > 0) {
+        const sortedSiblings = siblings.sort((a, b) => a.y - b.y);
+        const lastSibling = sortedSiblings[sortedSiblings.length - 1];
+        py = lastSibling.y + lastSibling.height + GAP_Y; 
+      }
+    }
+
     if (autoLayoutDisabled) {
       const manualGapX = Math.round(parent.width * 1.3);
       const jitterX = (Math.random() - 0.5) * 150;
