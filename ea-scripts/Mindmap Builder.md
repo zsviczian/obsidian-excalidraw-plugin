@@ -130,6 +130,7 @@ const K_GROUP = "Group Branches";
 const K_ARROWSTROKE = "Arrow Stroke Style";
 const K_CENTERTEXT = "Center text in nodes?";
 const K_ZOOM = "Preferred Zoom Level";
+const K_HOTKEYS = "Hotkeys";
 
 const FONT_SCALE_TYPES = ["Use scene fontsize", "Fibonacci Scale", "Normal Scale"];
 const GROWTH_TYPES = ["Radial", "Right-facing", "Left-facing"];
@@ -144,12 +145,13 @@ const saveSettings = async () => {
   dirty = false;
 }
 
-const setVal = (key, value) => {
+const setVal = (key, value, hidden = false) => {
   //value here is only a fallback
   //when updating a setting value, the full ScriptSettingValue should be there
   //as defined on the ScriptSettingValue type.
-  const def = ea.getScriptSettingValue(key, {value});
+  const def = ea.getScriptSettingValue(key, {value, hidden});
   def.value = value;
+  if(hidden) def.hidden = true;
   ea.setScriptSettingValue(key, def);
 }
 
@@ -213,19 +215,81 @@ const STROKE_WIDTHS = [6, 4, 2, 1, 0.5];
 const ownerWindow = ea.targetView?.ownerWindow;
 const isMac = ea.DEVICE.isMacOS || ea.DEVICE.isIOS;
 
+const ACTION_ADD = "Add";
+const ACTION_ADD_FOLLOW = "Add + follow";
+const ACTION_ADD_FOLLOW_FOCUS = "Add + follow + focus";
+const ACTION_ADD_FOLLOW_ZOOM = "Add + follow + zoom";
+const ACTION_PIN = "Pin/Unpin";
+const ACTION_BOX = "Box/Unbox";
+
+const ACTION_COPY = "Copy";
+const ACTION_CUT = "Cut";
+const ACTION_PASTE = "Paste";
+
+const ACTION_ZOOM = "Cycle Zoom";
+const ACTION_FOCUS = "Focus (center) node";
+const ACTION_NAVIGATE = "Navigate";
+const ACTION_NAVIGATE_ZOOM = "Navigate & zoom";
+const ACTION_NAVIGATE_FOCUS = "Navigate & focus";
+
+const ACTION_DOCK_UNDOC = "Dock/Undock";
+const ACTION_HIDE = "Dock & hide";
+
+// Default configuration
+const DEFAULT_HOTKEYS = [
+  { action: ACTION_ADD, key: "Enter", modifiers: [], immutable: true }, // Logic relies on standard Enter behavior in input
+  { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers: ["Mod", "Alt"] },
+  { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"] },
+  { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"] },
+  { action: ACTION_PIN, key: "KeyP", modifiers: ["Alt"] },
+  { action: ACTION_BOX, key: "KeyB", modifiers: ["Alt"] },
+  { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"] },
+  { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"] },
+  { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"] },
+  { action: ACTION_ZOOM, code: "KeyZ", modifiers: ["Alt"] },
+  { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"] },
+  { action: ACTION_DOCK_UNDOC, key: "Enter", modifiers: ["Shift"] },
+  { action: ACTION_HIDE, key: "Escape", modifiers: [], immutable: true  },
+  { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true },
+  { action: ACTION_NAVIGATE_ZOOM, key: "ArrowKeys", modifiers: ["Alt", "Shift"], isNavigation: true },
+  { action: ACTION_NAVIGATE_FOCUS, key: "ArrowKeys", modifiers: ["Alt", "Mod"], isNavigation: true },
+];
+
+// Load hotkeys from settings or use default
+// IMPORTANT: Use JSON.parse/stringify to create a deep copy of defaults.
+// Otherwise, modifying userHotkeys modifies DEFAULT_HOTKEYS in memory, breaking the isModified check until restart.
+let userHotkeys = getVal(K_HOTKEYS, {value: JSON.parse(JSON.stringify(DEFAULT_HOTKEYS)), hidden: true});
+
+// Merge defaults in case new actions were added in an update
+if(userHotkeys.length !== DEFAULT_HOTKEYS.length) {
+  const merged = [...userHotkeys];
+  DEFAULT_HOTKEYS.forEach(d => {
+    if(!merged.find(u => u.action === d.action)) merged.push(JSON.parse(JSON.stringify(d)));
+  });
+  userHotkeys = merged;
+}
+
+// Generate the runtime HOTKEYS array used by getActionFromEvent
+const generateRuntimeHotkeys = () => {
+  const runtimeKeys = [];
+  userHotkeys.forEach(h => {
+    if (h.isNavigation) {
+      ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].forEach(key => {
+        runtimeKeys.push({ action: h.action, key, modifiers: h.modifiers });
+      });
+    } else {
+      runtimeKeys.push(h);
+    }
+  });
+  return runtimeKeys;
+};
+
+let RUNTIME_HOTKEYS = generateRuntimeHotkeys();
+
 const INSTRUCTIONS = `
-- **ENTER**: Add a sibling node and stay on the current parent for rapid entry.
-- **${isMac ? "CMD" : "CTRL"} + ENTER**: Add a child node and "drill down" (follow the new node).
-- **SHIFT + ENTER**: Dock/Undock floating input field.
-- **ESC**: If input field is floating, closes Mindmap Builder (without toggling the sidepanel)
-- **${isMac ? "OPT" : "ALT"} + SHIFT + ENTER**: Box/Unbox selected node.
-- **${isMac ? "CMD" : "CTRL"} + SHIFT + ENTER**: Pin/Unpin location of a node. Pinned nodes will not be touched by auto layout.
-- **${isMac ? "OPT" : "ALT"} + Arrows**: Navigate through the mindmap nodes on the canvas.
-- **${isMac ? "OPT" : "ALT"} + SHIFT + Arrows**: Navigate through the mindmap nodes on the canvas and zoom to element.
-- **${isMac ? "CMD" : "CTRL"} + SHIFT + Arrows**: Navigate through the mindmap nodes on the canvas and focus (center) selected element.
-- **${isMac ? "OPT" : "ALT"} + C / X / V**: Copy, Cut, or Paste branches.
-- **${isMac ? "OPT" : "ALT"} + Z**: Zoom to selected element. Pressing the key multiple times will cycle through the zoom presets.
-- **${isMac ? "OPT" : "ALT"} + F**: Focus (Center) selected element without changing zoom.
+- **ENTER**: Add a sibling node and stay on the current parent for rapid entry. If you press enter when the input field is empty the focus will move to the child node that was most recently added. Pressing enter subsequent times will iterate through the new child's siblings
+- **Hotkeys**: See configuration at the bottom of the sidepanel
+- **Dock/Undock**: You can dock/undock the input field using the dock/undock button or the configured hotkey
 - **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
 - **Grouping**: Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
 - **Copy/Paste**: Export/Import indented Markdown lists.
@@ -1262,48 +1326,6 @@ let sidepanelWindow;
 let popScope = null;
 let keydownHandlers = [];
 
-const ACTION_ADD = "Add";
-const ACTION_ADD_FOLLOW = "Add + follow";
-const ACTION_ADD_FOLLOW_FOCUS = "Add + follow + focus";
-const ACTION_ADD_FOLLOW_ZOOM = "Add + follow + zoom";
-const ACTION_PIN = "Pin/Unpin";
-const ACTION_BOX = "Box/Unbox";
-
-const ACTION_COPY = "Copy";
-const ACTION_CUT = "Cut";
-const ACTION_PASTE = "Paste";
-
-const ACTION_ZOOM = "Zoom";
-const ACTION_FOCUS = "Focus";
-const ACTION_NAVIGATE = "Navigate";
-const ACTION_NAVIGATE_ZOOM = "Navigate & zoom";
-const ACTION_NAVIGATE_FOCUS = "Navigate & focus";
-
-const ACTION_DOCK_UNDOC = "Dock/Undock";
-const ACTION_HIDE = "Dock & hide";
-
-const HOTKEYS = [
-  { action: ACTION_ADD, key: "Enter", modifiers: [] },
-  { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers: ["Mod", "Alt"] },
-  { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"] },
-  { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"] },
-  { action: ACTION_PIN, key: "KeyP", modifiers: ["ALT"] },
-  { action: ACTION_BOX, key: "KeyB", modifiers: ["ALT"] },
-  { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"] },
-  { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"] },
-  { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"] },
-  { action: ACTION_ZOOM, code: "KeyZ", modifiers: ["Alt"] },
-  { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"] },
-  { action: ACTION_DOCK_UNDOC, key: "Enter", modifiers: ["Shift"] },
-  { action: ACTION_HIDE, key: "Escape", modifiers: [] },
-];
-
-["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].forEach(key => {
-  HOTKEYS.push({ action: ACTION_NAVIGATE, key, modifiers: ["Alt"] });
-  HOTKEYS.push({ action: ACTION_NAVIGATE_ZOOM, key, modifiers: ["Alt", "Shift"] });
-  HOTKEYS.push({ action: ACTION_NAVIGATE_FOCUS, key, modifiers: ["Alt", "Mod"] });
-});
-
 const removeKeydownHandlers = () => {
   keydownHandlers.forEach((f)=>f());
   keydownHandlers = [];
@@ -1327,7 +1349,7 @@ const registerMindmapHotkeys = () => {
     scope.keys.unshift(scope.keys.pop());
   };
 
-  HOTKEYS.forEach(h => {
+  RUNTIME_HOTKEYS.forEach(h => {
     if (h.key) reg(h.modifiers, h.key);
     if (h.code) {
       const char = h.code.replace("Key", "").toLowerCase();
@@ -1429,7 +1451,6 @@ const renderInput = (container, isFloating = false) => {
   inputRow = new ea.obsidian.Setting(container);
   
   if (!isFloating) {
-    inputRow.setName("Node Text");
     inputRow.settingEl.style.display = "block";
     inputRow.controlEl.style.display = "block";
     inputRow.controlEl.style.width = "100%";
@@ -1450,7 +1471,6 @@ const renderInput = (container, isFloating = false) => {
       inputEl.style.maxWidth = "350px";
     }
     inputEl.placeholder = "Concept...";
-a
     inputEl.addEventListener("focus", registerMindmapHotkeys);
     inputEl.addEventListener("blur", () => {
       if (popScope) popScope();
@@ -1706,6 +1726,193 @@ const renderBody = (contentEl) => {
       dirty = true;
     }),
   );
+
+// ------------------------------------
+  // Hotkey Configuration Section
+  // ------------------------------------
+  const hkDetails = bodyContainer.createEl("details", {
+    attr: { style: "margin-top: 15px; border-top: 1px solid var(--background-modifier-border); padding-top: 10px;" }
+  });
+  hkDetails.createEl("summary", { text: "Hotkey Configuration", attr: { style: "cursor: pointer; font-weight: bold;" } });
+  
+  const hkContainer = hkDetails.createDiv();
+  hkContainer.createEl("p", {
+    text: "While the Mindmap Builder input field is active, the following hotkeys override standard Obsidian behaviors.",
+    attr: { style: "color: var(--text-muted); font-size: 0.85em; margin-bottom: 10px;" }
+  });
+
+  const refreshHotkeys = () => {
+    RUNTIME_HOTKEYS = generateRuntimeHotkeys();
+    // Re-register scope if currently active
+    if (popScope) registerMindmapHotkeys();
+    // Ensure event listeners are attached to the correct window
+    updateKeyHandlerLocation();
+  };
+
+  const saveHotkeys = () => {
+    setVal(K_HOTKEYS, userHotkeys, true);
+    dirty = true;
+    refreshHotkeys();
+  };
+
+  const getDisplayString = (h) => {
+    const parts = [];
+    if (h.modifiers.includes("Ctrl")) parts.push("Ctrl");
+    if (h.modifiers.includes("Meta")) parts.push("Cmd");
+    if (h.modifiers.includes("Mod")) parts.push(isMac ? "Cmd" : "Ctrl");
+    if (h.modifiers.includes("Alt")) parts.push(isMac ? "Opt" : "Alt");
+    if (h.modifiers.includes("Shift")) parts.push("Shift");
+    
+    if (h.code) parts.push(h.code.replace("Key", ""));
+    else if (h.key === "ArrowKeys") parts.push("Arrow Keys");
+    else if (h.key === " ") parts.push("Space");
+    else parts.push(h.key);
+    
+    return parts.join(" + ");
+  };
+
+  const isModified = (current) => {
+    const def = DEFAULT_HOTKEYS.find(d => d.action === current.action);
+    if (!def) return false;
+    
+    const k1 = current.code || current.key;
+    const k2 = def.code || def.key;
+    if (k1 !== k2) return true;
+    
+    if (current.modifiers.length !== def.modifiers.length) return true;
+    // Check if every modifier in current exists in def
+    return !current.modifiers.every(m => def.modifiers.includes(m));
+  };
+
+  const recordHotkey = (btn, hIndex, onUpdate) => {
+    const originalText = btn.innerHTML;
+    const label = btn.parentElement.querySelector(".setting-hotkey");
+    
+    btn.innerHTML = `Press hotkey...`;
+    btn.addClass("is-recording");
+    
+    // Correctly identify the window where the settings UI resides
+    const targetWindow = btn.ownerDocument.defaultView;
+
+    const handler = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Ignore modifier-only presses
+      if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return;
+
+      const mods = [];
+      if (e.ctrlKey) mods.push("Ctrl");
+      if (e.metaKey) mods.push("Meta");
+      if (e.altKey) mods.push("Alt");
+      if (e.shiftKey) mods.push("Shift");
+
+      let key = e.key;
+      let code = e.code;
+
+      if (key === " ") key = "Space";
+      
+      const targetConfig = userHotkeys[hIndex];
+      const isNav = targetConfig.isNavigation;
+
+      // Validation
+      if (isNav && !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
+        new Notice("This action requires Arrow Keys. Only modifiers can be changed.");
+        cleanup();
+        return;
+      }
+
+      // Check conflicts
+      const conflict = userHotkeys.find((h, i) => {
+        if (i === hIndex) return false;
+        
+        const sameMods = h.modifiers.length === mods.length && h.modifiers.every(m => mods.includes(m));
+        if (!sameMods) return false;
+        
+        if (h.isNavigation && isNav) return true;
+        if (h.isNavigation && key.startsWith("Arrow")) return true;
+        
+        const hKey = h.code ? h.code.replace("Key","") : h.key;
+        const eKey = code ? code.replace("Key","") : key;
+        return hKey.toLowerCase() === eKey.toLowerCase();
+      });
+
+      if (conflict) {
+        label.style.color = "var(--text-error)";
+        new Notice(`Conflict with "${conflict.action}"`);
+        setTimeout(() => label.style.color = "", 2000);
+      } else {
+        // Update setting
+        if (isNav) {
+          targetConfig.modifiers = mods.map(m => m === "Ctrl" || m === "Meta" ? "Mod" : m);
+        } else {
+          targetConfig.modifiers = mods.map(m => m === "Ctrl" || m === "Meta" ? "Mod" : m);
+          if (code && code.startsWith("Key")) {
+            targetConfig.code = code;
+            delete targetConfig.key;
+          } else {
+            targetConfig.key = key;
+            delete targetConfig.code;
+          }
+        }
+        saveHotkeys();
+        if(onUpdate) onUpdate();
+      }
+
+      cleanup();
+    };
+
+    const cleanup = () => {
+      btn.innerHTML = originalText;
+      btn.removeClass("is-recording");
+      targetWindow.removeEventListener("keydown", handler, true);
+    };
+
+    targetWindow.addEventListener("keydown", handler, true);
+  };
+
+  userHotkeys.forEach((h, index) => {
+    if (h.immutable) return;
+
+    const setting = new ea.obsidian.Setting(hkContainer)
+      .setName(h.action);
+    
+    const controlDiv = setting.controlEl;
+    controlDiv.addClass("setting-item-control");
+    
+    const hotkeyDisplay = controlDiv.createDiv("setting-command-hotkeys");
+    const span = hotkeyDisplay.createSpan("setting-hotkey");
+    
+    // UI Update logic scoped to this specific row
+    const restoreBtn = controlDiv.createSpan("clickable-icon setting-restore-hotkey-button");
+    restoreBtn.innerHTML = ea.obsidian.getIcon("rotate-ccw").outerHTML;
+    restoreBtn.ariaLabel = "Restore default";
+
+    const updateRowUI = () => {
+      span.textContent = getDisplayString(userHotkeys[index]);
+      restoreBtn.style.display = isModified(userHotkeys[index]) ? "" : "none";
+    };
+
+    // Initial render
+    updateRowUI();
+
+    restoreBtn.onclick = () => {
+      const def = DEFAULT_HOTKEYS.find(d => d.action === userHotkeys[index].action);
+      if (def) {
+        userHotkeys[index] = JSON.parse(JSON.stringify(def));
+        saveHotkeys();
+        updateRowUI();
+      }
+    };
+
+    const addBtn = controlDiv.createSpan("clickable-icon setting-add-hotkey-button");
+    addBtn.innerHTML = ea.obsidian.getIcon("plus-circle").outerHTML;
+    addBtn.ariaLabel = "Customize this hotkey";
+    addBtn.onclick = () => recordHotkey(addBtn, index, updateRowUI);
+  });
+
+  // Spacer to avoid overlap with Obsidian's status bar
+  bodyContainer.createDiv({ attr: { style: "height: 40px;" } });
 };
 
 const updateKeyHandlerLocation = () => {
@@ -1837,7 +2044,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
 const getActionFromEvent = (e) => {
   const isMod = e.ctrlKey || e.metaKey;
   
-  const match = HOTKEYS.find(h => {
+  const match = RUNTIME_HOTKEYS.find(h => {
     const keyMatch = h.code ? (e.code === h.code) : (e.key === h.key);
     if (!keyMatch) return false;
 
