@@ -1182,21 +1182,23 @@ const navigateMap = ({key, zoom = false, focus = false} = {}) => {
       const ch = getChildrenNodes(current.id, allElements);
       if (ch.length) ea.selectElementsInView([ch[0]]);
     }
-  } else if (key === "ArrowUp" || key === "ArrowDown") {
+} else if (key === "ArrowUp" || key === "ArrowDown") {
     const parent = getParentNode(current.id, allElements),
       siblings = getChildrenNodes(parent.id, allElements);
-    const mode = root.customData?.growthMode || currentModalGrowthMode;
-    if (mode === "Radial" && parent.id === root.id) {
-      siblings.sort(
-        (a, b) =>
-          getAngleFromCenter(rootCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
-          getAngleFromCenter(rootCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 }),
-      );
-    } else {
-      sortChildrenStable(siblings);
-    }
+    
+    // Calculate the immediate parent's center to sort siblings clockwise around it
+    const parentCenter = { x: parent.x + parent.width / 2, y: parent.y + parent.height / 2 };
+    
+    // Always sort by angle from 12 o'clock (0 degrees) to ensure clockwise navigation
+    // regardless of layout mode or hierarchy level
+    siblings.sort(
+      (a, b) =>
+        getAngleFromCenter(parentCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
+        getAngleFromCenter(parentCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 }),
+    );
+
     const idx = siblings.findIndex((s) => s.id === current.id);
-    const nIdx = key === "ArrowUp"
+    const nIdx = key === "ArrowUp" // Up = Counter-Clockwise (Previous), Down = Clockwise (Next)
       ? (idx - 1 + siblings.length) % siblings.length
       : (idx + 1) % siblings.length;
     ea.selectElementsInView([siblings[idx === -1 ? 0 : nIdx]]);
