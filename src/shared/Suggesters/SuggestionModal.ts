@@ -26,9 +26,9 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
   private handleBlur: () => void;
   private handleMouseDown: (event: MouseEvent) => void;
   
-  constructor(app: App, inputEl: HTMLInputElement, items: T[]) {
+  constructor(app: App, inputEl: HTMLInputElement | HTMLTextAreaElement, items: T[]) {
     super(app);
-    this.inputEl = inputEl;
+    this.inputEl = inputEl as HTMLInputElement;
     this.items = items;
     
     // Pre-bind event handlers

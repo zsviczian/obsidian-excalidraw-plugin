@@ -94,6 +94,8 @@ import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFile
 import en from "src/lang/locale/en";
 import { get } from "http";
 import { getHighlightColor } from "src/utils/dynamicStyling";
+import { InlineLinkSuggester } from "src/shared/Suggesters/InlineLinkSuggester";
+import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
 
 declare const PLUGIN_VERSION:string;
 declare const INITIAL_TIMESTAMP: number;
@@ -1507,5 +1509,13 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public getHighlightColor(sceneBgColor: string, opacity: number = 1): string {
     return getHighlightColor(this.ea, sceneBgColor, opacity);
+  }
+
+  public attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement): KeyBlocker {
+    const getSourcePath = () => {
+      this.ea.setView();
+      return this.ea.targetView?.file?.path;
+    };
+    return new InlineLinkSuggester(this.app, this, inputEl, getSourcePath, widthWrapper, true);
   }
 }

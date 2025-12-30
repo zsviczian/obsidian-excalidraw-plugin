@@ -12,6 +12,7 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
   private readonly getSourcePath: () => string | undefined;
   private readonly plugin: ExcalidrawPlugin;
   private readonly widthHost: HTMLElement;
+  private readonly hasCustomWidthHost: boolean;
   private block = false;
   private activeOpen = -1;
   private activeClose = -1;
@@ -20,17 +21,23 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
   constructor(
     app: App,
     plugin: ExcalidrawPlugin,
-    inputEl: HTMLInputElement,
+    inputEl: HTMLInputElement | HTMLTextAreaElement,
     getSourcePath: () => string | undefined,
     widthWrapper?: HTMLElement,
+    surpessPlaceholder: boolean = false,
   ) {
     const items = getLinkSuggestionsFiltered(app);
     super(app, inputEl, items);
     this.plugin = plugin;
     this.getSourcePath = getSourcePath;
     this.widthHost = widthWrapper ?? inputEl;
+    this.hasCustomWidthHost = Boolean(widthWrapper);
     this.limit = 20;
-    this.setPlaceholder("Start typing [[ to link...");
+    if (!surpessPlaceholder) {
+      this.setPlaceholder("Start typing [[ to link...");
+    } else {
+      this.setPlaceholder("");
+    }
     this.emptyStateText = "No match";
     this.syncWidth();
   }
@@ -47,11 +54,29 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
    * Keep the suggestion dropdown aligned to the provided width host (input or wrapper).
    */
   private syncWidth() {
-    const width = this.widthHost?.clientWidth || this.widthHost?.getBoundingClientRect().width;
-    if (width) {
+    const hostRect = this.widthHost?.getBoundingClientRect();
+    const width = this.widthHost?.clientWidth || hostRect?.width;
+
+    if (width && this.hasCustomWidthHost) {
       this.suggestEl.style.width = `${width}px`;
       this.suggestEl.style.maxWidth = `${width}px`;
+      this.suggestEl.style.minWidth = "";
+      return;
     }
+
+    // When no dedicated width host is provided, keep a sensible min width but clamp to viewport.
+    const minWidth = width || this.inputEl.clientWidth || this.inputEl.getBoundingClientRect().width;
+    if (!minWidth) {
+      return;
+    }
+
+    const anchorRect = hostRect ?? this.inputEl.getBoundingClientRect();
+    const availableWidth = Math.max(0, window.innerWidth - anchorRect.left);
+    const clampedMinWidth = Math.min(minWidth, availableWidth);
+
+    this.suggestEl.style.width = "";
+    this.suggestEl.style.minWidth = `${clampedMinWidth}px`;
+    this.suggestEl.style.maxWidth = `${availableWidth}px`;
   }
 
   /**
@@ -121,6 +146,7 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
   open(): void {
     this.block = true;
     this.syncWidth();
+    this.suggestEl.style.pointerEvents = "all";
     super.open();
   }
 
