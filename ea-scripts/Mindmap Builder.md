@@ -636,13 +636,14 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
   const subtreeHeight = getSubtreeHeight(nodeId, allElements);
 
   let currentY = currentYCenter - subtreeHeight / 2;
+  const dynamicGapX = Math.max(GAP_X, subtreeHeight / 3);
 
   children.forEach((child) => {
     const childH = getSubtreeHeight(child.id, allElements);
 
     layoutSubtree(
       child.id,
-      effectiveSide === 1 ? currentX + node.width + GAP_X : currentX - GAP_X,
+      effectiveSide === 1 ? currentX + node.width + dynamicGapX : currentX - dynamicGapX,
       currentY + childH / 2,
       effectiveSide,
       allElements,
@@ -710,30 +711,51 @@ const triggerGlobalLayout = async (rootId, force = false) => {
 
     const sortedL1 = [...existingL1, ...newL1];
     const count = sortedL1.length;
-    const radius = Math.max(Math.round(root.width * 0.9), 260) + count * 12;
 
-    let startAngle, angleStep;
-    if (mode === "Right-facing") {
-      // Range starts at 30 deg span (75 to 105) and expands by 30 each step
-      const span = count <= 2 ? 30 : Math.min(120, 60 + (count - 3) * 30);
-      startAngle = 90 - span / 2;
-      angleStep = count <= 1 ? 0 : span / (count - 1);
-    } else if (mode === "Left-facing") {
-      // Mirror of Right-facing (centered at 270)
-      const span = count <= 2 ? 30 : Math.min(120, 60 + (count - 3) * 30);
-      startAngle = 270 + span / 2;
-      angleStep = count <= 1 ? 0 : -span / (count - 1);
-    } else {
-      startAngle = count <= 6 ? 30 : 20;
-      angleStep = count <= 6 ? 60 : 320 / (count - 1);
-    }
+    const l1Metrics = sortedL1.map(node => getSubtreeHeight(node.id, allElements));
+    const totalSubtreeHeight = l1Metrics.reduce((sum, h) => sum + h, 0);
+    const totalGapHeight = (count - 1) * GAP_Y;
+    const totalContentHeight = totalSubtreeHeight + totalGapHeight;
+
+    const radiusFromHeight = totalContentHeight / 2.0;
+    
+    const radius = Math.max(
+      Math.round(root.width * 0.9), 
+      260, 
+      radiusFromHeight
+    ) + count * 5;
+
+    const centerAngle = mode === "Left-facing" ? 270 : 90;
+    const totalThetaDeg = (totalContentHeight / radius) * (180 / Math.PI);
+    let currentAngleDirectional = centerAngle - totalThetaDeg / 2;
+    
+    let currentAngleRadial = count <= 6 ? 30 : 20;
 
     sortedL1.forEach((node, i) => {
       if (getMindmapOrder(node) !== i) {
         ea.addAppendUpdateCustomData(node.id, { mindmapOrder: i });
       }
 
-      const angleRad = (startAngle + i * angleStep - 90) * (Math.PI / 180);
+      const nodeHeight = l1Metrics[i];
+      const gapMultiplier = mode === "Radial" ? 2.5 : 1.0;
+      const effectiveGap = GAP_Y * gapMultiplier;
+      
+      const nodeSpanRad = nodeHeight / radius;
+      const gapSpanRad = effectiveGap / radius;
+      
+      const nodeSpanDeg = nodeSpanRad * (180 / Math.PI);
+      const gapSpanDeg = gapSpanRad * (180 / Math.PI);
+
+      let angleDeg;
+      if (mode === "Radial") {
+        angleDeg = currentAngleRadial + nodeSpanDeg / 2;
+        currentAngleRadial += nodeSpanDeg + gapSpanDeg;
+      } else {
+        angleDeg = currentAngleDirectional + nodeSpanDeg / 2;
+        currentAngleDirectional += nodeSpanDeg + gapSpanDeg;
+      }
+
+      const angleRad = (angleDeg - 90) * (Math.PI / 180);
       const tCX = rootCenter.x + radius * Math.cos(angleRad);
       const tCY = rootCenter.y + radius * Math.sin(angleRad);
 
@@ -778,7 +800,6 @@ const triggerGlobalLayout = async (rootId, force = false) => {
         ];
       }
 
-      // Apply recursive grouping to this L1 branch
       if (groupBranches) {
         applyRecursiveGrouping(node.id, allElements);
       }
@@ -2328,6 +2349,7 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
       modalEl.style.top = `${ y + 5 }px`;
       modalEl.style.left = `${ x + 5 }px`;
     } else {
+      if (leaf.view?.getViewType() === "excalidraw-sidepanel") return;
       const { modalEl } = floatingInputModal;
       if (modalEl.style.display !== "none") {
         modalEl.style.display = "none";
