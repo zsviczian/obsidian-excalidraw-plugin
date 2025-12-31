@@ -25,9 +25,10 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
     getSourcePath: () => string | undefined,
     widthWrapper?: HTMLElement,
     surpessPlaceholder: boolean = false,
+    collisionBoundary?: HTMLElement,
   ) {
     const items = getLinkSuggestionsFiltered(app);
-    super(app, inputEl, items);
+    super(app, inputEl, items, collisionBoundary);
     this.plugin = plugin;
     this.getSourcePath = getSourcePath;
     this.widthHost = widthWrapper ?? inputEl;
@@ -64,14 +65,15 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
       return;
     }
 
-    // When no dedicated width host is provided, keep a sensible min width but clamp to viewport.
     const minWidth = width || this.inputEl.clientWidth || this.inputEl.getBoundingClientRect().width;
     if (!minWidth) {
       return;
     }
 
     const anchorRect = hostRect ?? this.inputEl.getBoundingClientRect();
-    const availableWidth = Math.max(0, window.innerWidth - anchorRect.left);
+    const availableWidth = this.collisionBoundary
+      ? this.collisionBoundary.innerWidth - 16 //SuggestionModal padding
+      : Math.max(0, window.innerWidth - anchorRect.left - 16); 
     const clampedMinWidth = Math.min(minWidth, availableWidth);
 
     this.suggestEl.style.width = "";
