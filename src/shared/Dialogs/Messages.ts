@@ -18,6 +18,15 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.19.0":`
+## New
+- 🚀🎉🍾 Added **inline link autocomplete** to text element editing and element link editing. Simply start typing "[[" as you would in a normal markdown document.
+  - ‼️ removed add link button element-link editor
+  - ‼️ removed add link from context menu
+  - ‼️ added new setting under "Links, transclusion and TODOs" **Sync text-element link with text**
+    - The default behavior is OFF, because it feels more natural to manage the element link separately.
+    - When enabled (ON), Excalidraw matches pre-2.19.0 behavior: the first link in the text body is always copied to the element link field. SVG/PNG exports only keep links when the element link field holds a single link (not links inside the text body). Turn this ON if you rely on text-body links and want the element link to always mirror the first one. Turn it OFF if you manage the element link separately: for metadata like tags, inline link ontologies, or multiple links, e.g., dataview-style notes like '(reminds me of:: [[link]]) #noteToSelf'.
+- LaTeX formula is saved to element.customData.latexFormula. This can be helpful for various automation use cases.
+
 ## Fixed
 - Floating modal used by Excalidraw scripts did not work correctly in Obisidian popout windows.
 

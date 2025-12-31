@@ -1063,9 +1063,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if(!equation) return;
     }
 
-    //GenericInputPrompt.Prompt(this,this.plugin,this.app,t("ENTER_LATEX"),undefined,equation, undefined, 3)
-    LaTexPrompt.Prompt(this.app, t("ENTER_LATEX"), equation)
-    .then(async (formula: string) => {
+    const isLatexSuitAvailable = !!this.app.plugins.plugins["obsidian-latex-suite"];
+    (isLatexSuitAvailable
+      ? LaTexPrompt.Prompt(this.app, t("ENTER_LATEX"), equation)
+      : GenericInputPrompt.Prompt(
+        this,this.plugin,this.app,t("ENTER_LATEX"),undefined,equation, undefined, 3)
+    ).then(async (formula: string) => {
       if (!formula || formula === equation) {
         return;
       }
@@ -1073,6 +1076,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         latex: formula,
         isLoaded: false,
       });
+      const ea = getEA(this) as ExcalidrawAutomate;
+      ea.copyViewElementsToEAforEditing([el]);
+      ea.addAppendUpdateCustomData(el.id, {latexFormula: formula});
+      await ea.addElementsToView(false, false, false, false);
       await this.save(false);
       await updateEquation(
         formula,
@@ -1081,8 +1088,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         addFiles,
       );
       this.setDirty(1);
-    }, () => {} ); 
-  }
+    }, () => {} );
+  };
 
   async openEmbeddedLinkEditor(imgId:string) {
     const el = this.getViewElements().find((el:ExcalidrawElement)=>el.id === imgId && el.type==="image") as ExcalidrawImageElement;

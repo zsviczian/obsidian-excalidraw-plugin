@@ -2225,6 +2225,7 @@ export class ExcalidrawAutomate {
       image.size.height,
     );
     this.elementsDict[id].fileId = image.fileId;
+    this.addAppendUpdateCustomData(id, {latexFormula: tex});
     this.elementsDict[id].scale = [1, 1];
     return id;
   };
