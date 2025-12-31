@@ -5567,7 +5567,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent 
       ToolsPanel,
       {
         ref: this.toolsPanelRef,
-        visible: this.plugin.settings.pinObsidianTools,
+        visible: this.plugin.settings.pinObsidianTools && !DEVICE.isMobile,
         view: new WeakRef(this),
         centerPointer: () => this.setCurrentPositionToCenter(),
         observer: new WeakRef(observer.current),

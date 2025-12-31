@@ -514,7 +514,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   render() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.render, "ToolsPanel.render()");
     const view = this.getView();
-    const pinObsidianTools = view?.plugin.settings.pinObsidianTools ?? false;
+    const pinObsidianTools = (view?.plugin.settings.pinObsidianTools ?? false) && !DEVICE.isMobile;
     return (
       <div
         ref={this.containerRef}

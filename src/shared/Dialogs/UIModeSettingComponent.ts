@@ -69,9 +69,11 @@ export class UIModeSettingsComponent {
     new Setting(containerEl)
       .setName(t("PIN_OBSIDIAN_TOOLS_PANEL_NAME"))
       .setDesc(t("PIN_OBSIDIAN_TOOLS_PANEL_DESC"))
+      .setDisabled(DEVICE.isMobile)
       .addToggle((toggle: ToggleComponent) =>
         toggle
-          .setValue(this.settings.pinObsidianTools)
+          .setValue(DEVICE.isMobile ? false : this.settings.pinObsidianTools)
+          .setDisabled(DEVICE.isMobile)
           .onChange(async (value: boolean) => {
             this.settings.pinObsidianTools = value;
             updateToolsPanelVisibility(this.app);
