@@ -543,9 +543,8 @@ export default {
   LONG_PRESS_MOBILE_NAME: "Long press to open mobile",
   LONG_PRESS_MOBILE_DESC: "Long press delay in milliseconds to open an Excalidraw Drawing embedded in a Markdown file. ",
   DOUBLE_CLICK_LINK_OPEN_VIEW_MODE: "Allow double-click to open links in view mode",
-  ELEMENT_LINK_SYNC_NAME: "Sync element link with body link",
-  ELEMENT_LINK_SYNC_DESC: "When enabled, a link in a text element's content automatically becomes the element link. Keep this on if the body link and element link are usually the same. Turn it off when you want to store other metadata or a different link in the element link field, for example using dataview-style notes like (reminds me of:: [[link]]).",
-
+  ELEMENT_LINK_SYNC_NAME: "Sync text-element link with text",
+  ELEMENT_LINK_SYNC_DESC: "When enabled, Excalidraw matches pre-2.19.0 behavior: the first link in the text body is always copied to the element link field. SVG/PNG exports only keep links when the element link field holds a single link (not links inside the text body). Turn this ON if you rely on text-body links and want the element link to always mirror the first one. Turn it OFF if you manage the element link separately: for metadata like tags, inline link ontologies, or multiple links, e.g., dataview-style notes like '(reminds me of:: [[link]]) #noteToSelf'.",
   FOCUS_ON_EXISTING_TAB_NAME: "Focus on Existing Tab",
   FOCUS_ON_EXISTING_TAB_DESC: "When opening a link, Excalidraw will focus on the existing tab if the file is already open. " +
     "Enabling this setting overrides 'Reuse Adjacent Pane' when the file is already open except for the 'Open the back-of-the-note of the selected excalidraw image' command palette action.",

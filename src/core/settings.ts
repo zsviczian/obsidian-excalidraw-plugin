@@ -119,7 +119,6 @@ export interface ExcalidrawSettings {
   openInMainWorkspace: boolean;
   showLinkBrackets: boolean;
   syncElementLinkWithText: boolean;
-  //allowLinkSync: boolean;
   linkPrefix: string;
   urlPrefix: string;
   parseTODO: boolean;
@@ -316,9 +315,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   showSecondOrderLinks: true,
   focusOnFileTab: true,
   openInMainWorkspace: true,
-  showLinkBrackets: true,
-  syncElementLinkWithText: true,
-  //allowLinkSync: true,
+  showLinkBrackets: false,
+  syncElementLinkWithText: false,
   allowCtrlClick: true,
   forceWrap: false,
   pageTransclusionCharLimit: 200,
@@ -1891,19 +1889,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2571
-    //Solution is not completely straightforward, there is a link update in Excalidraw Data that also needs to be handled
-    /*new Setting(detailsEl)
-      .setName(t("LINK_DETECTION_NAME"))
-      .setDesc(fragWithHTML(t("LINK_DETECTION_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(!this.plugin.settings.allowLinkSync)
-          .onChange(value => {
-            this.plugin.settings.allowLinkSync = !value;
-            this.applySettingsUpdate(true);
-          }),
-      );*/
 
     new Setting(detailsEl)
       .setName(t("LINK_PREFIX_NAME"))

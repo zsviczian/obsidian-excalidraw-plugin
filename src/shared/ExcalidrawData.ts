@@ -940,7 +940,7 @@ export class ExcalidrawData {
             raw: text,
             parsed: parseRes.parsed,
           });
-          if (parseRes.link) {
+          if (parseRes.link && this.plugin.settings.syncElementLinkWithText) {
             textEl.link = parseRes.link;
           }
           //this will set the rawText field of text elements imported from files before 1.3.14, and from other instances of Excalidraw
@@ -1130,7 +1130,6 @@ export class ExcalidrawData {
       return (
         el.type !== "text" &&
         el.link &&
-        //el.link.startsWith("[[") &&
         !this.elementLinks.has(el.id)
       );
     });
@@ -1212,7 +1211,6 @@ export class ExcalidrawData {
           el.type !== "text" &&
           el.id === key &&
           el.link, //&&
-          //el.link.startsWith("[["),
       );
       if (el.length === 0) {
         this.elementLinks.delete(key); //if no longer in the scene, delete the text element
@@ -1442,6 +1440,7 @@ export class ExcalidrawData {
    */
   disableCompression: boolean = false;
   generateMDBase(deletedElements: ExcalidrawElement[] = []) {
+    const syncTextLinks = this.plugin.settings.syncElementLinkWithText;
     let outString = this.textElementCommentedOut ? "%%\n" : "";
     outString += `# Excalidraw Data\n\n## Text Elements\n`;
     if (this.plugin.settings.addDummyTextElement) {
@@ -1452,7 +1451,7 @@ export class ExcalidrawData {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566
       const element = this.scene.elements.filter((el:any)=>el.id===key);
       let elementString = this.textElements.get(key).raw;
-      if(element && element.length===1 && element[0].link && element[0].rawText === element[0].originalText) {
+      if(element && element.length===1 && element[0].link && (!syncTextLinks || element[0].rawText === element[0].originalText)) {
         //if(element[0].link.match(/^\[\[[^\]]*]]$/g)) { //apply this only to markdown links
           textElementLinks.set(key, element[0].link);
           //elementString = `%%***>>>text element-link:${element[0].link}<<<***%%` + elementString;
