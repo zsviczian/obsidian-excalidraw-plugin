@@ -17,10 +17,12 @@
       "DOM.Iterable"
     ],
     "jsx": "react",
+    "skipLibCheck": true
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx", "src/shared/Dialogs/OpenDrawing.ts",
+    "**/*.tsx",
+    "src/shared/Dialogs/OpenDrawing.ts",
     "src/types/types.d.ts",
   ]
 }

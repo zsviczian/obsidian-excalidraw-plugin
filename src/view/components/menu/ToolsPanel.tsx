@@ -460,7 +460,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   private islandOnPointerDown(event: React.PointerEvent) {
     const view = this.getView();
-    if (!view) return;
+    if (!view || view.plugin.settings.pinObsidianTools) return;
 
     const onDrag = (e: PointerEvent) => {
       e.preventDefault();
@@ -498,13 +498,16 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
           height: "100%",
           position: "absolute",
           touchAction: "none",
+          pointerEvents: "none",
         }}
       >
         <div
           className="Island"
           style={{
-            top: `${this.state.top}px`,
-            left: `${this.state.left}px`,
+            position: "absolute",
+            top: pinObsidianTools ? "62px" : `${this.state.top}px`,
+            left: pinObsidianTools ? "50%" : `${this.state.left}px`,
+            transform: pinObsidianTools ? "translateX(-50%)" : "none",
             width: `14.4rem`,
             display:
               (this.state.visible || pinObsidianTools) && !this.state.excalidrawViewMode
@@ -513,13 +516,14 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
             height: "fit-content",
             maxHeight: "400px",
             zIndex: 5,
+            pointerEvents: "auto",
           }}
         >
           <div
             style={{
               height: "26px",
               width: "100%",
-              cursor: "move",
+              cursor: pinObsidianTools ? "default" : "move",
             }}
             onClick={this.islandOnClick.bind(this)}
             onPointerDown={this.islandOnPointerDown.bind(this)}
