@@ -3674,7 +3674,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           textElement.rawText, //TODO: implement originalText support in ExcalidrawAutomate
         );
       if (link) {
-        textElement.link = link;
+        if (this.plugin.settings.syncElementLinkWithText) {
+          textElement.link = link;
+        } else {
+          textElement.hasTextLink = true;
+        }
       }
       if (this.textMode === TextMode.parsed && !textElement?.isDeleted) {
         const {text, x, y, width, height} = refreshTextDimensions(

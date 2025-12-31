@@ -108,14 +108,21 @@ For a reference, follow the implementation pattern used in the "Printable Layout
 #### **6. Best Practices and Advanced Techniques**
 
 *   **Embrace \`await\`:** Many EA functions are asynchronous and return a \`Promise\` (e.g., \`ea.addElementsToView()\`, \`ea.createSVG()\`, \`utils.inputPrompt()\`). **Always** use \`await\` when calling these functions to ensure your script executes in the correct order.
-*   **Version Checking:** At the beginning of your script, include a check like \`if(!ea.verifyMinimumPluginVersion("1.X.X")) { new Notice(...); return; }\` to ensure the user has a compatible version of the Excalidraw plugin, preventing errors from missing API functions.
 *   **Accessing Obsidian API:** The full Obsidian API is available via \`ea.obsidian\`. For example, use \`new ea.obsidian.Notice("message")\` or \`ea.obsidian.normalizePath(filepath)\`.
+*   **Accessing Excalidraw API:** The full Excalidraw API is available on ea.getExcalidrawAPI(), these API functions are Scene dependent. Additional support functions are avalable on ExcalidrawLib.
 *   **Visibility vs. Deletion:**
     *   To temporarily hide an element, set \`element.opacity = 0\`. It's good practice to store the original opacity in \`customData\` so it can be restored. It is also recommended to lock hidden elements so they do not get accidentally selected or moved around.
     *   To permanently remove an element from the scene, set \`element.isDeleted = true\`.
 *   **Image Handling:** When dealing with image elements, use \`ea.getViewFileForImageElement(imageElement)\` to get the corresponding \`TFile\` from the Obsidian vault. This is necessary for any logic that needs to read or manipulate the source image file.
 
-#### **7. Custom Pens and Perfect Freehand**
+#### **9. Text Element**
+*   There are three text properties.
+    *   **textElement.text** holds the wrapped, rendered text. This is what is displayed in the view. Excalidraw adds '\\n' linebreaks during dynamic wrapping.
+    *   **textElement.originalText** holds the rendered, but unwrapped text. Any '\\n' character in originalText is an intentional linebreak by the user. Rendered means that for example [[wiki links]] are rendered without the square brackets.
+    *   **textElement.rawText** holds the original raw text including intentional new line characters and the full markdown markup (thought currently only links are rendered, so markdown support is limited to these)
+*   When modifying element text from script, typically all 3 of these properties must be updated, though in case textElement.autoresize === true, or when a text element is bound in a container, excalidraw will update textElement.text following the size of the text element or the container.
+
+#### **8. Custom Pens and Perfect Freehand**
 
 Excalidraw's freehand tool is powered by the open-source Perfect Freehand library. The plugin exposes “custom pens” that bundle:
 - Canvas style for the next strokes (colors, width, fillStyle, roughness).

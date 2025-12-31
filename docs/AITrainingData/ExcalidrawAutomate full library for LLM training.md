@@ -95,14 +95,21 @@ For a reference, follow the implementation pattern used in the "Printable Layout
 #### **6. Best Practices and Advanced Techniques**
 
 *   **Embrace `await`:** Many EA functions are asynchronous and return a `Promise` (e.g., `ea.addElementsToView()`, `ea.createSVG()`, `utils.inputPrompt()`). **Always** use `await` when calling these functions to ensure your script executes in the correct order.
-*   **Version Checking:** At the beginning of your script, include a check like `if(!ea.verifyMinimumPluginVersion("1.X.X")) { new Notice(...); return; }` to ensure the user has a compatible version of the Excalidraw plugin, preventing errors from missing API functions.
 *   **Accessing Obsidian API:** The full Obsidian API is available via `ea.obsidian`. For example, use `new ea.obsidian.Notice("message")` or `ea.obsidian.normalizePath(filepath)`.
+*   **Accessing Excalidraw API:** The full Excalidraw API is available on ea.getExcalidrawAPI(), these API functions are Scene dependent. Additional support functions are avalable on ExcalidrawLib.
 *   **Visibility vs. Deletion:**
     *   To temporarily hide an element, set `element.opacity = 0`. It's good practice to store the original opacity in `customData` so it can be restored. It is also recommended to lock hidden elements so they do not get accidentally selected or moved around.
     *   To permanently remove an element from the scene, set `element.isDeleted = true`.
 *   **Image Handling:** When dealing with image elements, use `ea.getViewFileForImageElement(imageElement)` to get the corresponding `TFile` from the Obsidian vault. This is necessary for any logic that needs to read or manipulate the source image file.
 
-#### **7. Custom Pens and Perfect Freehand**
+#### **9. Text Element**
+*   There are three text properties.
+    *   **textElement.text** holds the wrapped, rendered text. This is what is displayed in the view. Excalidraw adds '\n' linebreaks during dynamic wrapping.
+    *   **textElement.originalText** holds the rendered, but unwrapped text. Any '\n' character in originalText is an intentional linebreak by the user. Rendered means that for example [[wiki links]] are rendered without the square brackets.
+    *   **textElement.rawText** holds the original raw text including intentional new line characters and the full markdown markup (thought currently only links are rendered, so markdown support is limited to these)
+*   When modifying element text from script, typically all 3 of these properties must be updated, though in case textElement.autoresize === true, or when a text element is bound in a container, excalidraw will update textElement.text following the size of the text element or the container.
+
+#### **8. Custom Pens and Perfect Freehand**
 
 Excalidraw's freehand tool is powered by the open-source Perfect Freehand library. The plugin exposes “custom pens” that bundle:
 - Canvas style for the next strokes (colors, width, fillStyle, roughness).
@@ -2097,6 +2104,7 @@ type _ExcalidrawElementBase = Readonly<{
     /** epoch (ms) timestamp of last element update */
     updated: number;
     link: string | null;
+    hasTextLink?: boolean;
     locked: boolean;
     customData?: Record<string, any>;
 }>;
@@ -2864,7 +2872,6 @@ export interface ExcalidrawProps {
     onContextMenu?: (element: readonly NonDeletedExcalidrawElement[], appState: AppState, onClose: (callback?: () => void) => void) => JSX.Element | null;
     aiEnabled?: boolean;
     showDeprecatedFonts?: boolean;
-    insertLinkAction?: (linkVal: string) => void;
     renderScrollbars?: boolean;
 }
 export type SceneData = {
@@ -10464,7 +10471,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2025-12-30T18:10:34.017Z
+Generated on: 2025-12-31T23:02:07.273Z
 
 ---
 
@@ -19168,6 +19175,7 @@ let isSolidArrow = getVal(K_ARROWSTROKE, true) === true;
 let centerText = getVal(K_CENTERTEXT, true) === true;
 let autoLayoutDisabled = false;
 let zoomLevel = getVal(K_ZOOM, {value: "Medium", valueset: ZOOM_TYPES});
+let editingNodeId = null;
 
 //migrating old settings values. This must stay in the code so existing users have their dataset migrated
 //when they first run the new version of the code
@@ -19213,6 +19221,7 @@ const ACTION_ADD = "Add";
 const ACTION_ADD_FOLLOW = "Add + follow";
 const ACTION_ADD_FOLLOW_FOCUS = "Add + follow + focus";
 const ACTION_ADD_FOLLOW_ZOOM = "Add + follow + zoom";
+const ACTION_EDIT = "Edit node";
 const ACTION_PIN = "Pin/Unpin";
 const ACTION_BOX = "Box/Unbox";
 
@@ -19226,7 +19235,7 @@ const ACTION_NAVIGATE = "Navigate";
 const ACTION_NAVIGATE_ZOOM = "Navigate & zoom";
 const ACTION_NAVIGATE_FOCUS = "Navigate & focus";
 
-const ACTION_DOCK_UNDOC = "Dock/Undock";
+const ACTION_DOCK_UNDOCK = "Dock/Undock";
 const ACTION_HIDE = "Dock & hide";
 
 // Default configuration
@@ -19235,6 +19244,7 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers: ["Mod", "Alt"] },
   { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"] },
   { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"] },
+  { action: ACTION_EDIT, code: "F2", modifiers: [] },
   { action: ACTION_PIN, key: "KeyP", modifiers: ["Alt"] },
   { action: ACTION_BOX, key: "KeyB", modifiers: ["Alt"] },
   { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"] },
@@ -19242,7 +19252,7 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"] },
   { action: ACTION_ZOOM, code: "KeyZ", modifiers: ["Alt"] },
   { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"] },
-  { action: ACTION_DOCK_UNDOC, key: "Enter", modifiers: ["Shift"] },
+  { action: ACTION_DOCK_UNDOCK, key: "Enter", modifiers: ["Shift"] },
   { action: ACTION_HIDE, key: "Escape", modifiers: [], immutable: true  },
   { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true },
   { action: ACTION_NAVIGATE_ZOOM, key: "ArrowKeys", modifiers: ["Alt", "Shift"], isNavigation: true },
@@ -19253,6 +19263,26 @@ const DEFAULT_HOTKEYS = [
 // IMPORTANT: Use JSON.parse/stringify to create a deep copy of defaults.
 // Otherwise, modifying userHotkeys modifies DEFAULT_HOTKEYS in memory, breaking the isModified check until restart.
 let userHotkeys = getVal(K_HOTKEYS, {value: JSON.parse(JSON.stringify(DEFAULT_HOTKEYS)), hidden: true});
+
+const getHotkeyDefByAction = (action) => userHotkeys.find((h)=>h.action === action);
+
+const getHotkeyDisplayString = (h) => {
+  const parts = [];
+  if (h.modifiers.includes("Ctrl")) parts.push("Ctrl");
+  if (h.modifiers.includes("Meta")) parts.push("Cmd");
+  if (h.modifiers.includes("Mod")) parts.push(isMac ? "Cmd" : "Ctrl");
+  if (h.modifiers.includes("Alt")) parts.push(isMac ? "Opt" : "Alt");
+  if (h.modifiers.includes("Shift")) parts.push("Shift");
+  
+  if (h.code) parts.push(h.code.replace("Key", ""));
+  else if (h.key === "ArrowKeys") parts.push("Arrow Keys");
+  else if (h.key === " ") parts.push("Space");
+  else parts.push(h.key);
+  
+  return parts.join(" + ");
+};
+
+const getActionHotkeyString = (action) => `(${getHotkeyDisplayString(getHotkeyDefByAction(action))})`;
 
 // Merge defaults in case new actions were added in an update
 if(userHotkeys.length !== DEFAULT_HOTKEYS.length) {
@@ -20000,12 +20030,14 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
 // ---------------------------------------------------------------------------
 // 5. Copy & Paste Engine
 // ---------------------------------------------------------------------------
-const getTextFromNode = (all, node) => {
-  if (node.type === "text") return node.originalText;
+const getTextFromNode = (all, node, getRaw = false) => {
+  if (node.type === "text") {
+    return getRaw ? node.rawText : node.originalText;
+  }
   const textId = node.boundElements?.find((be) => be.type === "text")?.id;
   if (!textId) return "";
   const textEl = all.find((el) => el.id === textId);
-  return textEl ? textEl.originalText : "";
+  return textEl ? (getRaw ? textEl.rawText : textEl.originalText) : "";
 };
 
 const copyMapAsText = async (cut = false) => {
@@ -20347,7 +20379,7 @@ const toggleBox = async () => {
 // ---------------------------------------------------------------------------
 
 let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown, autoLayoutToggle, linkSuggester;
-let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn;
+let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn;
 let inputContainer;
 let helpContainer;
 let floatingInputModal = null;
@@ -20415,6 +20447,9 @@ const disableUI = () => {
   setButtonDisabled(copyBtn, true);
   setButtonDisabled(cutBtn, true);
   setButtonDisabled(boxBtn, true);
+  setButtonDisabled(editBtn, true);
+  editingNodeId = null;
+  editBtn.extraSettingsEl.style.color = "";
 };
 
 const updateUI = () => {
@@ -20435,9 +20470,19 @@ const updateUI = () => {
         `${isPinned
           ? "This element is pinned. Click to unpin"
           : "This element is not pinned. Click to pin"
-        } the location of the selected element (${isMac ? "CMD" : "CTRL"}+SHIFT+Enter)`,
+        } the location of the selected element ${getActionHotkeyString(ACTION_PIN)}`,
       );
       setButtonDisabled(pinBtn, false);
+    }
+    const isEditing = editingNodeId && editingNodeId === sel.id;
+    if (editBtn) {
+      setButtonDisabled(editBtn, false);
+      if (isEditing) {
+        editBtn.extraSettingsEl.style.color = "var(--interactive-accent)";
+      } else {
+        editingNodeId = null;
+        editBtn.extraSettingsEl.style.color = "";
+      }
     }
     if (boxBtn) {
       setButtonDisabled(boxBtn, false);
@@ -20472,6 +20517,60 @@ const renderHelp = (container) => {
   ea.obsidian.MarkdownRenderer.render(app, INSTRUCTIONS, detailsEl.createDiv(), "", ea.plugin);
 };
 
+const startEditing = () => {
+  const sel = ea.getViewSelectedElement();
+  if (!sel) return;
+  const all = ea.getViewElements();
+  const text = getTextFromNode(all, sel, true);
+  inputEl.value = text;
+  editingNodeId = sel.id;
+  updateUI();
+  focusInputEl();
+};
+
+const commitEdit = async () => {
+  if (!editingNodeId) return;
+  const all = ea.getViewElements();
+  
+  let targetNode = all.find(el => el.id === editingNodeId);
+  if (!targetNode) return;
+
+  let textElId = targetNode.id;
+  if (targetNode.boundElements) {
+    const boundText = targetNode.boundElements.find(be => be.type === "text");
+    if (boundText) textElId = boundText.id;
+  }
+
+  const textEl = all.find(el => el.id === textElId && el.type === "text");
+  
+  if (textEl) {
+    ea.copyViewElementsToEAforEditing([textEl]);
+    const eaEl = ea.getElement(textEl.id);
+    eaEl.originalText = inputEl.value;
+    eaEl.rawText = inputEl.value;
+    
+    ea.refreshTextElementSize(eaEl.id);
+    
+    await ea.addElementsToView(false, false);
+    
+    if (textEl.containerId) {
+      const container = ea.getViewElements().find(el => el.id === textEl.containerId);
+      if (container) {
+        api().updateContainerSize([container]);
+      }
+    }
+
+    const hierarchyNode = targetNode.containerId ? all.find(el => el.id === targetNode.containerId) : textEl;
+    if (hierarchyNode && !autoLayoutDisabled) {
+      const info = getHierarchy(hierarchyNode, ea.getViewElements());
+      await triggerGlobalLayout(info.rootId);
+    }
+  }
+
+  editingNodeId = null;
+  inputEl.value = "";
+};
+
 const renderInput = (container, isFloating = false) => {
   container.empty();
   
@@ -20499,6 +20598,10 @@ const renderInput = (container, isFloating = false) => {
       inputEl.style.width = "70vw";
       inputEl.style.maxWidth = "350px";
     }
+    inputEl.ariaLabel = `Add (Enter)\n` +
+      `${ACTION_ADD_FOLLOW} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}\n` +
+      `${ACTION_ADD_FOLLOW_FOCUS} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}\n` +
+      `${ACTION_ADD_FOLLOW_ZOOM} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}\n`;
     inputEl.placeholder = "Concept...";
     inputEl.addEventListener("focus", registerMindmapHotkeys);
     inputEl.addEventListener("blur", () => {
@@ -20528,6 +20631,15 @@ const renderInput = (container, isFloating = false) => {
   };
 
   addButton((btn) => {
+    editBtn = btn;
+    btn.setIcon("pencil");
+    btn.setTooltip(`Edit text of selected node ${getActionHotkeyString(ACTION_EDIT)}`);
+    btn.onClick(() => {
+      startEditing();
+    });
+  });
+
+  addButton((btn) => {
     pinBtn = btn;
     btn.onClick(async () => {
       await togglePin();
@@ -20536,15 +20648,17 @@ const renderInput = (container, isFloating = false) => {
     });
   });
 
-  addButton((btn) => {
-    boxBtn = btn;
-    btn.setIcon("rectangle-horizontal");
-    btn.setTooltip(`Toggle node box. (${isMac ? "OPT" : "ALT"}+SHIFT+Enter)`);
-    btn.onClick(async () => {
-      await toggleBox();
-      focusInputEl();
+  if (!isFloating) {
+    addButton((btn) => {
+      boxBtn = btn;
+      btn.setIcon("rectangle-horizontal");
+      btn.setTooltip(`Toggle node box. ${getActionHotkeyString(ACTION_BOX)}`);
+      btn.onClick(async () => {
+        await toggleBox();
+        focusInputEl();
+      });
     });
-  });
+  };
 
   addButton((btn) => {
     refreshBtn = btn;
@@ -20560,7 +20674,7 @@ const renderInput = (container, isFloating = false) => {
     dockBtn = btn;
     btn.setIcon(isFloating ? "dock" : "external-link");
     btn.setTooltip(
-      (isFloating ? "Dock to Sidepanel" : "Undock to Floating Modal") + " (SHIFT+Enter)"
+      (isFloating ? "Dock to Sidepanel" : "Undock to Floating Modal") + ` ${getActionHotkeyString(ACTION_DOCK_UNDOCK)}`
     );
     btn.onClick(() => {
       toggleDock({silent: false, forceDock: false, saveSetting: true})
@@ -20756,7 +20870,7 @@ const renderBody = (contentEl) => {
     }),
   );
 
-// ------------------------------------
+  // ------------------------------------
   // Hotkey Configuration Section
   // ------------------------------------
   const hkDetails = bodyContainer.createEl("details", {
@@ -20782,22 +20896,6 @@ const renderBody = (contentEl) => {
     setVal(K_HOTKEYS, userHotkeys, true);
     dirty = true;
     refreshHotkeys();
-  };
-
-  const getDisplayString = (h) => {
-    const parts = [];
-    if (h.modifiers.includes("Ctrl")) parts.push("Ctrl");
-    if (h.modifiers.includes("Meta")) parts.push("Cmd");
-    if (h.modifiers.includes("Mod")) parts.push(isMac ? "Cmd" : "Ctrl");
-    if (h.modifiers.includes("Alt")) parts.push(isMac ? "Opt" : "Alt");
-    if (h.modifiers.includes("Shift")) parts.push("Shift");
-    
-    if (h.code) parts.push(h.code.replace("Key", ""));
-    else if (h.key === "ArrowKeys") parts.push("Arrow Keys");
-    else if (h.key === " ") parts.push("Space");
-    else parts.push(h.key);
-    
-    return parts.join(" + ");
   };
 
   const isModified = (current) => {
@@ -20918,7 +21016,7 @@ const renderBody = (contentEl) => {
     restoreBtn.ariaLabel = "Restore default";
 
     const updateRowUI = () => {
-      span.textContent = getDisplayString(userHotkeys[index]);
+      span.textContent = getHotkeyDisplayString(userHotkeys[index]);
       restoreBtn.style.display = isModified(userHotkeys[index]) ? "" : "none";
     };
 
@@ -21168,8 +21266,12 @@ const keyHandler = async (e) => {
       updateUI();
       break;
 
-    case ACTION_DOCK_UNDOC:
+    case ACTION_DOCK_UNDOCK:
       toggleDock({saveSetting: true});
+      break;
+
+    case ACTION_EDIT:
+      startEditing();
       break;
 
     case ACTION_ADD_FOLLOW:
@@ -21184,30 +21286,42 @@ const keyHandler = async (e) => {
       if (action === ACTION_ADD_FOLLOW_ZOOM) zoomToFit();
       break;
     case ACTION_ADD:
-      if (inputEl.value) {
-        await addNode(inputEl.value, false);
-        inputEl.value = "";
-        if(!autoLayoutDisabled) await refreshMapLayout();
+      const currentSel = ea.getViewSelectedElement();
+      if (
+        editingNodeId && currentSel &&
+        (currentSel.id === editingNodeId || currentSel.containerId === editingNodeId)
+      ) {
+        await commitEdit();
       } else {
-        if(!mostRecentlyAddedNodeID) return;
-        const mostRecentNode = getMostRecentlyAddedNode();
-        const sel = ea.getViewSelectedElement();
-        if(mostRecentNode !== sel) {
-          ea.selectElementsInView([mostRecentNode]);
-          mostRecentlyAddedNodeID = null;
+        if (editingNodeId) {
+          editingNodeId = null;
+        }
+        if (inputEl.value) {
+          await addNode(inputEl.value, false);
+          inputEl.value = "";
+          if(!autoLayoutDisabled) await refreshMapLayout();
         } else {
-          navigateMap({key: "ArrowDown", zoom: false, focus: false});
-          if(sel === ea.getViewSelectedElement()) {
-            //if only a single child then navigate up
-            navigateMap({
-              key: isNodeRightFromCenter() ? "ArrowLeft" : "ArrowRight",
-              zoom: false,
-              focus: false
-            });
+          if(!mostRecentlyAddedNodeID) return;
+          const mostRecentNode = getMostRecentlyAddedNode();
+          const sel = ea.getViewSelectedElement();
+          if(mostRecentNode !== sel) {
+            ea.selectElementsInView([mostRecentNode]);
+            mostRecentlyAddedNodeID = null;
+          } else {
+            navigateMap({key: "ArrowDown", zoom: false, focus: false});
+            if(sel === ea.getViewSelectedElement()) {
+              //if only a single child then navigate up
+              navigateMap({
+                key: isNodeRightFromCenter() ? "ArrowLeft" : "ArrowRight",
+                zoom: false,
+                focus: false
+              });
+            }
           }
         }
       }
       updateUI();
+      break;
   }
 };
 

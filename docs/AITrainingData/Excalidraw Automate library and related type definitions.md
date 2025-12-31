@@ -1901,6 +1901,7 @@ type _ExcalidrawElementBase = Readonly<{
     /** epoch (ms) timestamp of last element update */
     updated: number;
     link: string | null;
+    hasTextLink?: boolean;
     locked: boolean;
     customData?: Record<string, any>;
 }>;
@@ -2668,7 +2669,6 @@ export interface ExcalidrawProps {
     onContextMenu?: (element: readonly NonDeletedExcalidrawElement[], appState: AppState, onClose: (callback?: () => void) => void) => JSX.Element | null;
     aiEnabled?: boolean;
     showDeprecatedFonts?: boolean;
-    insertLinkAction?: (linkVal: string) => void;
     renderScrollbars?: boolean;
 }
 export type SceneData = {
