@@ -481,7 +481,35 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     this.penDownY = this.pos4 = event.clientY;
     view.ownerDocument.addEventListener("pointerup", onPointerUp);
     view.ownerDocument.addEventListener("pointermove", onDrag);
-  };
+  }
+
+  private renderSection(title: string, children: React.ReactNode, pinObsidianTools: boolean) {
+    if (pinObsidianTools) {
+      return (
+        <div className="Island" style={{
+          padding: "12px",
+          width: "fit-content",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+        }}>
+          <div style={{
+            fontSize: "0.85rem",
+            fontWeight: "500",
+            marginBottom: "4px",
+            color: "var(--icon-fill-color)",
+          }}>{title}</div>
+          {children}
+        </div>
+      );
+    }
+    return (
+      <fieldset>
+        <legend>{title}</legend>
+        {children}
+      </fieldset>
+    );
+  }
 
   render() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.render, "ToolsPanel.render()");
@@ -502,17 +530,21 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
         }}
       >
         <div
-          className="Island"
+          className={pinObsidianTools ? "" : "Island"}
           style={{
             position: "absolute",
-            top: pinObsidianTools ? "62px" : `${this.state.top}px`,
+            bottom: pinObsidianTools ? "20px" : "auto",
+            top: pinObsidianTools ? "auto" : `${this.state.top}px`,
             left: pinObsidianTools ? "50%" : `${this.state.left}px`,
             transform: pinObsidianTools ? "translateX(-50%)" : "none",
-            width: `14.4rem`,
+            width: pinObsidianTools ? "fit-content" : `14.4rem`,
             display:
               (this.state.visible || pinObsidianTools) && !this.state.excalidrawViewMode
-                ? "block"
+                ? "flex"
                 : "none",
+            flexDirection: pinObsidianTools ? "row" : "column",
+            gap: "12px",
+            alignItems: pinObsidianTools ? "flex-end" : "stretch",
             height: "fit-content",
             maxHeight: "400px",
             zIndex: 5,
@@ -520,31 +552,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
           }}
         >
           <div
-            style={{
-              height: "26px",
-              width: "100%",
-              cursor: pinObsidianTools ? "default" : "move",
-            }}
-            onClick={this.islandOnClick.bind(this)}
-            onPointerDown={this.islandOnPointerDown.bind(this)}
-          >
-            <svg
-              aria-hidden="true"
-              focusable="false"
-              role="img"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 228 26"
-            >
-              <path
-                stroke="var(--icon-fill-color)"
-                strokeWidth="2"
-                d="M40,7 h148 M40,13 h148 M40,19 h148"
-              />
-            </svg>
-          </div>
-          <div
-            className="Island App-menu__left scrollbar"
-            style={{
+            className={pinObsidianTools ? "" : "Island App-menu__left scrollbar"}
+            style={pinObsidianTools ? { display: "contents" } : {
+              marginTop: "24px",
               maxHeight: "350px",
               width: "initial",
               //@ts-ignore
@@ -552,97 +562,109 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
               display: this.state.minimized ? "none" : "block",
             }}
           >
-            <div className="selected-shape-actions">
-              <fieldset>
-                <legend>Utility actions</legend>
-                <div className="buttonList buttonListIcon">
-                  <ActionButton
-                    key={"scriptEngine"}
-                    title={t("INSTALL_SCRIPT_BUTTON")}
-                    action={this.actionOpenScriptInstallDialog.bind(this)}
-                    icon={ICONS.scriptEngine}
-                  />
-                  <ActionButton
-                    key={"release-notes"}
-                    title={t("READ_RELEASE_NOTES")}
-                    action={this.actionOpenReleaseNotes.bind(this)}
-                    icon={ICONS.releaseNotes}
-                  />
-                  {this.state.isPreviewMode === null ? (
+            <div
+              className="selected-shape-actions"
+              style={
+                pinObsidianTools
+                  ? {
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "flex-end",
+                    gap: "12px",
+                  }
+                  : {}
+              }
+            >
+              {this.renderSection("Utility actions", (
+                <>
+                  <div className="buttonList buttonListIcon">
                     <ActionButton
-                      key={"convert"}
-                      title={t("CONVERT_FILE")}
-                      action={(this.actionConvertExcalidrawToMD.bind(this))}
-                      icon={ICONS.convertFile}
+                      key={"scriptEngine"}
+                      title={t("INSTALL_SCRIPT_BUTTON")}
+                      action={this.actionOpenScriptInstallDialog.bind(this)}
+                      icon={ICONS.scriptEngine}
                     />
-                  ) : !this.state.isPreviewMode && (
                     <ActionButton
-                      key={"viewmode"}
-                      title={this.state.isPreviewMode ? t("PARSED") : t("RAW")}
-                      action={this.actionToggleViewMode.bind(this)}
+                      key={"release-notes"}
+                      title={t("READ_RELEASE_NOTES")}
+                      action={this.actionOpenReleaseNotes.bind(this)}
+                      icon={ICONS.releaseNotes}
+                    />
+                    {this.state.isPreviewMode === null ? (
+                      <ActionButton
+                        key={"convert"}
+                        title={t("CONVERT_FILE")}
+                        action={(this.actionConvertExcalidrawToMD.bind(this))}
+                        icon={ICONS.convertFile}
+                      />
+                    ) : !this.state.isPreviewMode && (
+                      <ActionButton
+                        key={"viewmode"}
+                        title={this.state.isPreviewMode ? t("PARSED") : t("RAW")}
+                        action={this.actionToggleViewMode.bind(this)}
+                        icon={
+                          this.state.isPreviewMode
+                            ? ICONS.rawMode
+                            : ICONS.parsedMode
+                        }
+                      />
+                    )}
+                    <ActionButton
+                      key={"ui-mode"}
+                      title={t("UI_MODE")}
+                      action={this.actionToggleTrayMode.bind(this)}
+                      icon={ICONS.trayMode}
+                    />
+                    <ActionButton
+                      key={"fullscreen"}
+                      title={
+                        this.state.isFullscreen
+                          ? t("EXIT_FULLSCREEN")
+                          : t("GOTO_FULLSCREEN")
+                      }
+                      action={this.actionToggleFullscreen.bind(this)}
                       icon={
-                        this.state.isPreviewMode
-                          ? ICONS.rawMode
-                          : ICONS.parsedMode
+                        this.state.isFullscreen
+                          ? ICONS.exitFullScreen
+                          : ICONS.gotoFullScreen
                       }
                     />
-                  )}
-                  <ActionButton
-                    key={"ui-mode"}
-                    title={t("UI_MODE")}
-                    action={this.actionToggleTrayMode.bind(this)}
-                    icon={ICONS.trayMode}
-                  />
-                  <ActionButton
-                    key={"fullscreen"}
-                    title={
-                      this.state.isFullscreen
-                        ? t("EXIT_FULLSCREEN")
-                        : t("GOTO_FULLSCREEN")
-                    }
-                    action={this.actionToggleFullscreen.bind(this)}
-                    icon={
-                      this.state.isFullscreen
-                        ? ICONS.exitFullScreen
-                        : ICONS.gotoFullScreen
-                    }
-                  />
-                </div>
-                <div className="buttonList buttonListIcon">
-                  <ActionButton
-                    key={"search"}
-                    title={t("SEARCH")}
-                    action={this.actionSearch.bind(this)}
-                    icon={ICONS.search}
-                  />
-                  <ActionButton
-                    key={"ocr"}
-                    title={t("RUN_OCR")}
-                    action={this.actionOCR.bind(this)}
-                    icon={ICONS.ocr}
-                  />
-                  <ActionButton
-                    key={"openLink"}
-                    title={t("OPEN_LINK_CLICK")}
-                    action={this.actionOpenLink.bind(this)}
-                    icon={ICONS.openLink}
-                  />
-                  <ActionButton
-                    key={"openLinkProperties"}
-                    title={t("OPEN_LINK_PROPS")}
-                    action={this.actionOpenLinkProperties.bind(this)}
-                    icon={ICONS.openLinkProperties}
-                  />
-                  <ActionButton
-                    key={"save"}
-                    title={t("FORCE_SAVE")}
-                    action={this.actionForceSave.bind(this)}
-                    icon={saveIcon(this.state.isDirty)}
-                  />
-                </div>
-              </fieldset>
-              <fieldset>
-                <legend>Export actions</legend>
+                  </div>
+                  <div className="buttonList buttonListIcon">
+                    <ActionButton
+                      key={"search"}
+                      title={t("SEARCH")}
+                      action={this.actionSearch.bind(this)}
+                      icon={ICONS.search}
+                    />
+                    <ActionButton
+                      key={"ocr"}
+                      title={t("RUN_OCR")}
+                      action={this.actionOCR.bind(this)}
+                      icon={ICONS.ocr}
+                    />
+                    <ActionButton
+                      key={"openLink"}
+                      title={t("OPEN_LINK_CLICK")}
+                      action={this.actionOpenLink.bind(this)}
+                      icon={ICONS.openLink}
+                    />
+                    <ActionButton
+                      key={"openLinkProperties"}
+                      title={t("OPEN_LINK_PROPS")}
+                      action={this.actionOpenLinkProperties.bind(this)}
+                      icon={ICONS.openLinkProperties}
+                    />
+                    <ActionButton
+                      key={"save"}
+                      title={t("FORCE_SAVE")}
+                      action={this.actionForceSave.bind(this)}
+                      icon={saveIcon(this.state.isDirty)}
+                    />
+                  </div>
+                </>
+              ), pinObsidianTools)}
+              {this.renderSection("Export actions", (
                 <div className="buttonList buttonListIcon">
                   <ActionButton
                     key={"lib"}
@@ -669,9 +691,8 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.copyElementLink}
                   />
                 </div>
-              </fieldset>
-              <fieldset>
-                <legend>Insert actions</legend>
+              ), pinObsidianTools)}
+              {this.renderSection("Insert actions", (
                 <div className="buttonList buttonListIcon">
                   <ActionButton
                     key={"anyfile"}
@@ -728,17 +749,42 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.Crop}
                   />
                 </div>
-              </fieldset>
-              {this.renderScriptButtons(false)}
-              {this.renderScriptButtons(true)}
+              ), pinObsidianTools)}
+              {this.renderScriptButtons(false, pinObsidianTools)}
+              {this.renderScriptButtons(true, pinObsidianTools)}
             </div>
           </div>
+          {!pinObsidianTools && (
+            <div
+              style={{
+                height: "26px",
+                width: "100%",
+                cursor: "move",
+              }}
+              onClick={this.islandOnClick.bind(this)}
+              onPointerDown={this.islandOnPointerDown.bind(this)}
+            >
+              <svg
+                aria-hidden="true"
+                focusable="false"
+                role="img"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 228 26"
+              >
+                <path
+                  stroke="var(--icon-fill-color)"
+                  strokeWidth="2"
+                  d="M40,7 h148 M40,13 h148 M40,19 h148"
+                />
+              </svg>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
-  private renderScriptButtons(isDownloaded: boolean) {
+  private renderScriptButtons(isDownloaded: boolean, pinObsidianTools: boolean) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.renderScriptButtons, "ToolsPanel.renderScriptButtons()");
     if (Object.keys(this.state.scriptIconMap).length === 0) {
       return "";
@@ -777,9 +823,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     scriptlist.push(scriptlist.shift());
     return (
       <>
-        {scriptlist.map((group, index) => (
-          <fieldset key={`${group}-${index}`}>
-            <legend>{isDownloaded ? group : (group === "" ? "User" : "User/" + group)}</legend>
+        {scriptlist.map((group, index) => {
+          const title = isDownloaded ? group : (group === "" ? "User" : "User/" + group);
+          const content = (
             <div className="buttonList buttonListIcon">
               {Object.entries(this.state.scriptIconMap)
                 .filter(([k, v]) => v.group === group)
@@ -800,8 +846,13 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   />
                 ))}
             </div>
-          </fieldset>
-        ))}
+          );
+          return (
+            <React.Fragment key={`${group}-${index}`}>
+              {this.renderSection(title, content, pinObsidianTools)}
+            </React.Fragment>
+          );
+        })}
       </>
     );
   }
