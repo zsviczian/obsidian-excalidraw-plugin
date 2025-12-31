@@ -58,7 +58,7 @@ import {
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
-import { 
+import {
   repositionElementsToCursor,
   getTextElementsMatchingQuery,
   cloneElement,
@@ -142,7 +142,7 @@ import { useDefaultExcalidrawFrame } from "../utils/customEmbeddableUtils";
 import { UniversalInsertFileModal } from "../shared/Dialogs/UniversalInsertFileModal";
 import { getMermaidText, shouldRenderMermaid } from "../utils/mermaidUtils";
 import { nanoid } from "nanoid";
-import { CustomMutationObserver, DEBUGGING, debug, log} from "../utils/debugHelper";
+import { CustomMutationObserver, DEBUGGING, debug, log } from "../utils/debugHelper";
 import { errorHTML, extractCodeBlocks, postOpenAI } from "../utils/AIUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { SelectCard } from "../shared/Dialogs/SelectCard";
@@ -167,7 +167,7 @@ const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
 const RE_TAIL = /^## Drawing\n.*```\n%%$(.*)/ms;
 
-declare const PLUGIN_VERSION:string;
+declare const PLUGIN_VERSION: string;
 
 declare module "obsidian" {
   interface Workspace {
@@ -222,14 +222,14 @@ export const addFiles = async (
   // update element.crop naturalWidth and naturalHeight in case scale of PDF loading has changed
   // update crop.x crop.y, crop.width, crop.height according to the new scale
   files
-    .filter((f:FileData) => view.excalidrawData.getFile(f.id)?.file?.extension === "pdf")
-    .forEach((f:FileData) => {
+    .filter((f: FileData) => view.excalidrawData.getFile(f.id)?.file?.extension === "pdf")
+    .forEach((f: FileData) => {
       s.scene.elements
-        .filter((el:ExcalidrawElement)=>el.type === "image" && el.fileId === f.id && (
+        .filter((el: ExcalidrawElement) => el.type === "image" && el.fileId === f.id && (
           (el.crop && el.crop?.naturalWidth !== f.size.width) || !el.customData?.pdfPageViewProps
         ))
-        .forEach((el:Mutable<ExcalidrawImageElement>) => {
-          if(el.crop) {
+        .forEach((el: Mutable<ExcalidrawImageElement>) => {
+          if (el.crop) {
             s.dirty = true;
             const scale = f.size.width / el.crop.naturalWidth;
             el.crop = {
@@ -241,9 +241,9 @@ export const addFiles = async (
               naturalHeight: f.size.height,
             };
           }
-          if(!el.customData?.pdfPageViewProps) {
+          if (!el.customData?.pdfPageViewProps) {
             s.dirty = true;
-            addAppendUpdateCustomData(el, { pdfPageViewProps: f.pdfPageViewProps});
+            addAppendUpdateCustomData(el, { pdfPageViewProps: f.pdfPageViewProps });
           }
         });
     });
@@ -278,14 +278,14 @@ export const addFiles = async (
 };
 
 const warningUnknowSeriousError = () => {
-  new Notice(t("WARNING_SERIOUS_ERROR"),60000);
+  new Notice(t("WARNING_SERIOUS_ERROR"), 60000);
 };
 
 type ActionButtons = "save" | "isRaw" | "link" | "scriptInstall";
 
 let windowMigratedDisableZoomOnce = false;
 
-export default class ExcalidrawView extends TextFileView implements HoverParent{
+export default class ExcalidrawView extends TextFileView implements HoverParent {
   private dropManager: DropManager;
   public hoverPopover: HoverPopover;
   private freedrawLastActiveTimestamp: number = 0;
@@ -293,7 +293,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   public excalidrawData: ExcalidrawData;
   //public excalidrawRef: React.MutableRefObject<any> = null;
   public excalidrawRoot: any;
-  public excalidrawAPI:any = null;
+  public excalidrawAPI: any = null;
   public excalidrawWrapperRef: React.MutableRefObject<any> = null;
   public toolsPanelRef: React.MutableRefObject<any> = null;
   public embeddableMenuRef: React.MutableRefObject<any> = null;
@@ -304,7 +304,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   public lastSaveTimestamp: number = 0; //used to validate if incoming file should sync with open file
   private lastLoadedFile: TFile = null;
   //store key state for view mode link resolution
-  private modifierKeyDown: ModifierKeys = {shiftKey:false, metaKey: false, ctrlKey: false, altKey: false}
+  private modifierKeyDown: ModifierKeys = { shiftKey: false, metaKey: false, ctrlKey: false, altKey: false }
   public currentPosition: Position = { x: 0, y: 0 }; //these are scene coord thus would be more apt to call them sceneX and sceneY, however due to scrits already using x and y, I will keep it as is
   //Obsidian 0.15.0
   public canvasNodeFactory: CanvasNodeFactory;
@@ -342,13 +342,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   private resizeBatchTimer: number = null;
   private resizeBatchWindowStart: number = 0;
   private lastAggregatedDh = 0;
-  private oldKeyboardScroll:{scrollY:number, scrollX:number}|null = null;
+  private oldKeyboardScroll: { scrollY: number, scrollX: number } | null = null;
 
   //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
   private isEditingTextResetTimer: number = null;
   private preventReloadResetTimer: number = null;
   private editingSelfResetTimer: number = null;
-  private colorChangeTimer:number = null;
+  private colorChangeTimer: number = null;
   private previousSceneVersion = 0;
   public previousBackgroundColor = "";
   public previousTheme = "";
@@ -362,14 +362,14 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   private hoverPoint = { x: 0, y: 0 };
   private hoverPreviewTarget: EventTarget = null;
-  private viewModeEnabled:boolean = false;
+  private viewModeEnabled: boolean = false;
   private lastMouseEvent: any = null;
   private editingTextElementId: string = null; //storing to handle on-screen keyboard hide events
-/*  private lastSceneSnapshot: any = null;
-  private lastViewDataSnapshot: any = null;*/
+  /*  private lastSceneSnapshot: any = null;
+    private lastViewDataSnapshot: any = null;*/
 
   id: string = (this.leaf as any).id;
-  public packages: Packages = {react: null, reactDOM: null, excalidrawLib: null};
+  public packages: Packages = { react: null, reactDOM: null, excalidrawLib: null };
 
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
@@ -380,7 +380,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.dropManager = new DropManager(this);
   }
 
-  get hookServer (): ExcalidrawAutomate {
+  get hookServer(): ExcalidrawAutomate {
     return this._hookServer;
   }
   get plugin(): ExcalidrawPlugin {
@@ -388,9 +388,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   }
   get excalidrawContainer(): HTMLDivElement {
     return this.excalidrawWrapperRef?.current?.firstElementChild;
-  }  
+  }
   get ownerDocument(): Document {
-    return DEVICE.isMobile?document:this.containerEl.ownerDocument;
+    return DEVICE.isMobile ? document : this.containerEl.ownerDocument;
   }
   get ownerWindow(): Window {
     return this.ownerDocument.defaultView;
@@ -400,16 +400,16 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     return document === this.ownerDocument;
   }
 
-  setHookServer(ea?:ExcalidrawAutomate) {
+  setHookServer(ea?: ExcalidrawAutomate) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setHookServer, "ExcalidrawView.setHookServer", ea);
-    if(ea) {
+    if (ea) {
       this._hookServer = ea;
     } else {
       this._hookServer = this._plugin.ea;
     }
   }
 
-  public getHookServer () {
+  public getHookServer() {
     return this.hookServer ?? this.plugin.ea;
   }
 
@@ -417,7 +417,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.preventAutozoom, "ExcalidrawView.preventAutozoom");
     this.semaphores.preventAutozoom = true;
     window.setTimeout(() => {
-      if(!this.semaphores) return;
+      if (!this.semaphores) return;
       this.semaphores.preventAutozoom = false;
     }, 1500);
   }
@@ -425,7 +425,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   public saveExcalidraw(scene?: any) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.saveExcalidraw, "ExcalidrawView.saveExcalidraw", scene);
     if (!scene) {
-      if(!this.excalidrawAPI) {
+      if (!this.excalidrawAPI) {
         return;
       }
       scene = this.getScene();
@@ -478,18 +478,18 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     );
   }
 
-  public getViewExportTheme(theme?:string):string {
-    if(theme) return theme;
-    if(!this.exportDialog) {
-      this.exportDialog = new ExportDialog(this.plugin, this,this.file);
+  public getViewExportTheme(theme?: string): string {
+    if (theme) return theme;
+    if (!this.exportDialog) {
+      this.exportDialog = new ExportDialog(this.plugin, this, this.file);
     }
     const ed = this.exportDialog;
     return ed ? ed.theme : getExportTheme(this.plugin, this.file, this.excalidrawAPI.getAppState().theme)
   }
 
-  public getViewExportEmbedScene(embedScene?:boolean):boolean {
-    if(!this.exportDialog) {
-      this.exportDialog = new ExportDialog(this.plugin, this,this.file);
+  public getViewExportEmbedScene(embedScene?: boolean): boolean {
+    if (!this.exportDialog) {
+      this.exportDialog = new ExportDialog(this.plugin, this, this.file);
     }
     const ed = this.exportDialog;
     return typeof embedScene === "undefined"
@@ -498,42 +498,42 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   }
 
   public getViewExportPadding(padding?: number): number {
-    if(typeof padding !== "undefined") return padding;
-    if(!this.exportDialog) {
-      this.exportDialog = new ExportDialog(this.plugin, this,this.file);
+    if (typeof padding !== "undefined") return padding;
+    if (!this.exportDialog) {
+      this.exportDialog = new ExportDialog(this.plugin, this, this.file);
     }
     const ed = this.exportDialog;
     return ed ? ed.padding : getExportPadding(this.plugin, this.file)
   }
 
   public getViewExportScale(scale?: number): number {
-    if(typeof scale !== "undefined") return scale;
-    if(!this.exportDialog) {
-      this.exportDialog = new ExportDialog(this.plugin, this,this.file);
+    if (typeof scale !== "undefined") return scale;
+    if (!this.exportDialog) {
+      this.exportDialog = new ExportDialog(this.plugin, this, this.file);
     }
     const ed = this.exportDialog;
     return ed ? ed.scale : getPNGScale(this.plugin, this.file);
   }
 
-  public getViewExportWithBackground(withBackground?:boolean) {
-    if(typeof withBackground !== "undefined") return withBackground;
-    if(!this.exportDialog) {
-      this.exportDialog = new ExportDialog(this.plugin, this,this.file);
+  public getViewExportWithBackground(withBackground?: boolean) {
+    if (typeof withBackground !== "undefined") return withBackground;
+    if (!this.exportDialog) {
+      this.exportDialog = new ExportDialog(this.plugin, this, this.file);
     }
     const ed = this.exportDialog;
     return ed ? !ed.transparent : getWithBackground(this.plugin, this.file)
   }
 
-  public getViewExportIncludeInternalLinks(includeInternalLinks?:boolean) {
-    if(typeof includeInternalLinks !== "undefined") return includeInternalLinks;
-    if(!this.exportDialog) {
-      this.exportDialog = new ExportDialog(this.plugin, this,this.file);
+  public getViewExportIncludeInternalLinks(includeInternalLinks?: boolean) {
+    if (typeof includeInternalLinks !== "undefined") return includeInternalLinks;
+    if (!this.exportDialog) {
+      this.exportDialog = new ExportDialog(this.plugin, this, this.file);
     }
     const ed = this.exportDialog;
     return ed ? ed.exportInternalLinks : getExportInternalLinks(this.plugin, this.file)
   }
-  
-  public async svg(scene: any, theme?:string, embedScene?: boolean, embedFont: boolean = false): Promise<SVGSVGElement> {
+
+  public async svg(scene: any, theme?: string, embedScene?: boolean, embedFont: boolean = false): Promise<SVGSVGElement> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.svg, "ExcalidrawView.svg", scene, theme, embedScene);
 
     const exportSettings: ExportSettings = {
@@ -560,8 +560,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     );
   }
 
-  public async saveSVG(data:{scene?: any, embedScene?: boolean, autoexportConfig?: AutoexportConfig }) {
-    if(!data) {
+  public async saveSVG(data: { scene?: any, embedScene?: boolean, autoexportConfig?: AutoexportConfig }) {
+    if (!data) {
       data = {};
     }
     let { scene, embedScene, autoexportConfig } = data;
@@ -573,8 +573,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       scene = this.getScene();
     }
 
-    const exportImage = async (filepath:string, theme?:string) => {
-      const svg = await this.svg(scene,theme, embedScene, true);
+    const exportImage = async (filepath: string, theme?: string) => {
+      const svg = await this.svg(scene, theme, embedScene, true);
       if (!svg) {
         return;
       }
@@ -584,22 +584,22 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         theme === "dark" ? ".dark.svg" : theme === "light" ? ".light.svg" : ".svg");
     }
 
-    if(autoexportConfig?.theme ? autoexportConfig.theme  === "both" : this.plugin.settings.autoExportLightAndDark) {
-      await exportImage(getIMGFilename(this.file.path, "dark.svg"),"dark");
-      await exportImage(getIMGFilename(this.file.path, "light.svg"),"light");
+    if (autoexportConfig?.theme ? autoexportConfig.theme === "both" : this.plugin.settings.autoExportLightAndDark) {
+      await exportImage(getIMGFilename(this.file.path, "dark.svg"), "dark");
+      await exportImage(getIMGFilename(this.file.path, "light.svg"), "light");
     } else {
       await exportImage(getIMGFilename(this.file.path, "svg"), autoexportConfig?.theme);
-    } 
+    }
   }
 
-  public async exportSVG(embedScene?: boolean, selectedOnly?: boolean):Promise<void> {
+  public async exportSVG(embedScene?: boolean, selectedOnly?: boolean): Promise<void> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.exportSVG, "ExcalidrawView.exportSVG", embedScene, selectedOnly);
     if (!this.excalidrawAPI || !this.file) {
       return;
     }
 
     const scene = this.getScene(selectedOnly);
-    if(!this.getViewExportIncludeInternalLinks()) {
+    if (!this.getViewExportIncludeInternalLinks()) {
       scene.elements = sceneRemoveInternalLinks(scene);
     }
     const svg = await this.svg(scene, undefined, embedScene, true);
@@ -609,13 +609,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     exportSVG(svg, this.file.basename);
   }
 
-  public async getSVG(embedScene?: boolean, selectedOnly?: boolean):Promise<SVGSVGElement> {
+  public async getSVG(embedScene?: boolean, selectedOnly?: boolean): Promise<SVGSVGElement> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getSVG, "ExcalidrawView.getSVG", embedScene, selectedOnly);
     if (!this.excalidrawAPI || !this.file) {
       return;
     }
 
-    const svg = await this.svg(this.getScene(selectedOnly),undefined,embedScene, true);
+    const svg = await this.svg(this.getScene(selectedOnly), undefined, embedScene, true);
     if (!svg) {
       return;
     }
@@ -630,9 +630,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (!this.excalidrawAPI || !this.file) {
       return;
     }
-  
+
     const scene = this.getScene(selectedOnly);
-    if(!this.getViewExportIncludeInternalLinks()) {
+    if (!this.getViewExportIncludeInternalLinks()) {
       scene.elements = sceneRemoveInternalLinks(scene);
     }
 
@@ -642,7 +642,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       false,
       true
     );
-  
+
     if (!svg) {
       return;
     }
@@ -660,16 +660,16 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           : this.exportDialog.fitToPage
       },
       pageProps: {
-        dimensions: getPageDimensions(pageSize, orientation, {width, height}),
+        dimensions: getPageDimensions(pageSize, orientation, { width, height }),
         backgroundColor: this.exportDialog.getPaperColor(),
         margin,
         alignment: this.exportDialog.alignment,
       },
-      filename: this.file.basename+".pdf",
+      filename: this.file.basename + ".pdf",
     });
   }
 
-  public async png(scene: any, theme?:string, embedScene?: boolean): Promise<Blob> {
+  public async png(scene: any, theme?: string, embedScene?: boolean): Promise<Blob> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.png, "ExcalidrawView.png", scene, theme, embedScene);
 
     const exportSettings: ExportSettings = {
@@ -695,8 +695,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     );
   }
 
-  public async savePNG(data: {scene?: any, embedScene?: boolean, autoexportConfig?: AutoexportConfig}) {
-    if(!data) {
+  public async savePNG(data: { scene?: any, embedScene?: boolean, autoexportConfig?: AutoexportConfig }) {
+    if (!data) {
       data = {};
     }
     let { scene, embedScene, autoexportConfig } = data;
@@ -708,7 +708,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       scene = this.getScene();
     }
 
-    const exportImage = async (filepath:string, theme?:string) => {
+    const exportImage = async (filepath: string, theme?: string) => {
       const png = await this.png(scene, theme, embedScene);
       if (!png) {
         return;
@@ -717,15 +717,15 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         theme === "dark" ? ".dark.png" : theme === "light" ? ".light.png" : ".png");
     }
 
-    if(autoexportConfig?.theme ? autoexportConfig.theme  === "both" : this.plugin.settings.autoExportLightAndDark) {
-      await exportImage(getIMGFilename(this.file.path, "dark.png"),"dark");
-      await exportImage(getIMGFilename(this.file.path, "light.png"),"light");
+    if (autoexportConfig?.theme ? autoexportConfig.theme === "both" : this.plugin.settings.autoExportLightAndDark) {
+      await exportImage(getIMGFilename(this.file.path, "dark.png"), "dark");
+      await exportImage(getIMGFilename(this.file.path, "light.png"), "light");
     } else {
       await exportImage(getIMGFilename(this.file.path, "png"), autoexportConfig?.theme);
     }
   }
 
-  public async exportPNGToClipboard(embedScene?:boolean, selectedOnly?: boolean) {
+  public async exportPNGToClipboard(embedScene?: boolean, selectedOnly?: boolean) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.exportPNGToClipboard, "ExcalidrawView.exportPNGToClipboard", embedScene, selectedOnly);
     if (!this.excalidrawAPI || !this.file) {
       return;
@@ -735,7 +735,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (!png) {
       return;
     }
-   
+
     // in Safari so far we need to construct the ClipboardItem synchronously
     // (i.e. in the same tick) otherwise browser will complain for lack of
     // user intent. Using a Promise ClipboardItem constructor solves this.
@@ -746,12 +746,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     await exportPNGToClipboard(png);
   }
 
-  public async exportPNG(embedScene?:boolean, selectedOnly?: boolean):Promise<void> {
+  public async exportPNG(embedScene?: boolean, selectedOnly?: boolean): Promise<void> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.exportPNG, "ExcalidrawView.exportPNG", embedScene, selectedOnly);
     if (!this.excalidrawAPI || !this.file) {
       return;
     }
-    
+
     const png = await this.png(this.getScene(selectedOnly), undefined, embedScene);
     if (!png) {
       return;
@@ -762,12 +762,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   public setPreventReload() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setPreventReload, "ExcalidrawView.setPreventReload");
     this.semaphores.preventReload = true;
-    this.preventReloadResetTimer = window.setTimeout(()=>this.semaphores.preventReload = false,PREVENT_RELOAD_TIMEOUT);
+    this.preventReloadResetTimer = window.setTimeout(() => this.semaphores.preventReload = false, PREVENT_RELOAD_TIMEOUT);
   }
 
   public clearPreventReloadTimer() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.clearPreventReloadTimer, "ExcalidrawView.clearPreventReloadTimer");
-    if(this.preventReloadResetTimer) {
+    if (this.preventReloadResetTimer) {
       window.clearTimeout(this.preventReloadResetTimer);
       this.preventReloadResetTimer = null;
     }
@@ -780,9 +780,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     await this.forceSave(true);
   }
 
-  public clearEmbeddableNodeIsEditingTimer () {
+  public clearEmbeddableNodeIsEditingTimer() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.clearEmbeddableNodeIsEditingTimer, "ExcalidrawView.clearEmbeddableNodeIsEditingTimer");
-    if(this.editingSelfResetTimer) {
+    if (this.editingSelfResetTimer) {
       window.clearTimeout(this.editingSelfResetTimer);
       this.editingSelfResetTimer = null;
     }
@@ -791,7 +791,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   public clearEmbeddableNodeIsEditing() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.clearEmbeddableNodeIsEditing, "ExcalidrawView.clearEmbeddableNodeIsEditing");
     this.clearEmbeddableNodeIsEditingTimer();
-    this.editingSelfResetTimer = window.setTimeout(()=>this.semaphores.embeddableIsEditingSelf = false,EMBEDDABLE_SEMAPHORE_TIMEOUT);
+    this.editingSelfResetTimer = window.setTimeout(() => this.semaphores.embeddableIsEditingSelf = false, EMBEDDABLE_SEMAPHORE_TIMEOUT);
   }
 
   async save(preventReload: boolean = true, forcesave: boolean = false, overrideEmbeddableIsEditingSelfDebounce: boolean = false) {
@@ -805,8 +805,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.save, `ExcalidrawView.save, view is unloading, aborting save`);
       return;
     }*/
-    
-    if(!this.isLoaded) {
+
+    if (!this.isLoaded) {
       return;
     }
     if (!overrideEmbeddableIsEditingSelfDebounce && this.semaphores.embeddableIsEditingSelf) {
@@ -819,12 +819,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
     this.semaphores.saving = true;
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.save, `ExcalidrawView.save, saving, dirty:${this.isDirty()}, preventReload:${preventReload}, forcesave:${forcesave}`);
-    
+
     //if there were no changes to the file super save will not save 
     //and consequently main.ts modifyEventHandler will not fire
     //this.reload will not be called
     //triggerReload is used to flag if there were no changes but file should be reloaded anyway
-    let triggerReload:boolean = false;
+    let triggerReload: boolean = false;
 
     if (
       !this.excalidrawAPI ||
@@ -850,7 +850,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         ) {
           await this.loadDrawing(
             false,
-            this.excalidrawAPI.getSceneElementsIncludingDeleted().filter((el:ExcalidrawElement)=>el.isDeleted)
+            this.excalidrawAPI.getSceneElementsIncludingDeleted().filter((el: ExcalidrawElement) => el.isDeleted)
           );
         }
 
@@ -865,17 +865,17 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
         //added this to avoid Electron crash when terminating a popout window and saving the drawing, need to check back
         //can likely be removed once this is resolved: https://github.com/electron/electron/issues/40607
-        if(this.semaphores?.viewunload) {
+        if (this.semaphores?.viewunload) {
           await this.prepareGetViewData();
           const d = this.getViewData();
           const plugin = this.plugin;
           const file = this.file;
-          window.setTimeout(async ()=>{
-            if(!d) return;
-            await plugin.app.vault.modify(file,d);
+          window.setTimeout(async () => {
+            if (!d) return;
+            await plugin.app.vault.modify(file, d);
             //this is a shady edge case, don't scrifice the BAK file in case the drawing is empty
             //await imageCache.addBAKToCache(file.path,d);                        
-          },200)
+          }, 200)
           this.semaphores.saving = false;
           return;
         }
@@ -891,18 +891,18 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         const path = this.file.path;
         const data = this.lastSavedData;
         //if the scene is empty, do not save to BAK (this could be due to a crash when the BAK should not be updated)
-        if(scene && scene.elements && scene.elements.length > 0) {
-          window.setTimeout(()=>imageCache.addBAKToCache(path,data),50);
+        if (scene && scene.elements && scene.elements.length > 0) {
+          window.setTimeout(() => imageCache.addBAKToCache(path, data), 50);
         }
         triggerReload = (this.lastSaveTimestamp === this.file.stat.mtime) &&
           !preventReload && forcesave;
         this.lastSaveTimestamp = this.file.stat.mtime;
         //this.clearDirty(); //moved to right after allow save, to avoid autosave collision with load drawing
-        
+
         //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/629
         //there were odd cases when preventReload semaphore did not get cleared and consequently a synchronized image
         //did not update the open drawing
-        if(preventReload) {
+        if (preventReload) {
           this.setPreventReload();
         }
       }
@@ -922,17 +922,18 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         if (this.getHookServer().onTriggerAutoexportHook) {
           try {
             autoexportConfig = this.getHookServer().onTriggerAutoexportHook({
-              excalidrawFile: this.file, autoexportConfig}) ?? autoexportConfig;
+              excalidrawFile: this.file, autoexportConfig
+            }) ?? autoexportConfig;
           } catch (e) {
-            errorlog({where: "ExcalidrawView.save", fn: this.getHookServer().onTriggerAutoexportHook, error: e});
+            errorlog({ where: "ExcalidrawView.save", fn: this.getHookServer().onTriggerAutoexportHook, error: e });
           }
         }
-        
+
         if (autoexportConfig.svg) {
-          this.saveSVG({autoexportConfig});
+          this.saveSVG({ autoexportConfig });
         }
         if (autoexportConfig.png) {
-          this.savePNG({autoexportConfig});
+          this.savePNG({ autoexportConfig });
         }
         if (autoexportConfig.excalidraw) {
           this.saveExcalidraw();
@@ -947,7 +948,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       warningUnknowSeriousError();
     }
     this.semaphores.saving = false;
-    if(triggerReload) {
+    if (triggerReload) {
       this.reload(true, this.file);
     }
     this.resetAutosaveTimer(); //next autosave period starts after save
@@ -970,7 +971,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
 
     const scene = this.getScene();
-    if(!scene) { 
+    if (!scene) {
       this.viewSaveData = this.data;
       return;
     }
@@ -980,21 +981,21 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     //otherwise deleted elements are discarded when loading the scene
     if (!this.compatibilityMode) {
 
-      const keys:[string,string][] = this.exportDialog?.dirty && this.exportDialog?.saveSettings
+      const keys: [string, string][] = this.exportDialog?.dirty && this.exportDialog?.saveSettings
         ? [
-            [FRONTMATTER_KEYS["export-padding"].name, this.exportDialog.padding.toString()],
-            [FRONTMATTER_KEYS["export-pngscale"].name, this.exportDialog.scale.toString()],
-            [FRONTMATTER_KEYS["export-dark"].name, this.exportDialog.theme === "dark" ? "true" : "false"],
-            [FRONTMATTER_KEYS["export-transparent"].name, this.exportDialog.transparent ? "true" : "false"],
-            [FRONTMATTER_KEYS["plugin"].name, this.textMode === TextMode.raw ? "raw" : "parsed"],
-            [FRONTMATTER_KEYS["export-embed-scene"].name, this.exportDialog.embedScene ? "true" : "false"],
-            [FRONTMATTER_KEYS["export-internal-links"].name, this.exportDialog.exportInternalLinks ? "true" : "false"],
-          ]
+          [FRONTMATTER_KEYS["export-padding"].name, this.exportDialog.padding.toString()],
+          [FRONTMATTER_KEYS["export-pngscale"].name, this.exportDialog.scale.toString()],
+          [FRONTMATTER_KEYS["export-dark"].name, this.exportDialog.theme === "dark" ? "true" : "false"],
+          [FRONTMATTER_KEYS["export-transparent"].name, this.exportDialog.transparent ? "true" : "false"],
+          [FRONTMATTER_KEYS["plugin"].name, this.textMode === TextMode.raw ? "raw" : "parsed"],
+          [FRONTMATTER_KEYS["export-embed-scene"].name, this.exportDialog.embedScene ? "true" : "false"],
+          [FRONTMATTER_KEYS["export-internal-links"].name, this.exportDialog.exportInternalLinks ? "true" : "false"],
+        ]
         : [
-            [FRONTMATTER_KEYS["plugin"].name, this.textMode === TextMode.raw ? "raw" : "parsed"]
-          ];
+          [FRONTMATTER_KEYS["plugin"].name, this.textMode === TextMode.raw ? "raw" : "parsed"]
+        ];
 
-      if(this.exportDialog?.dirty) {
+      if (this.exportDialog?.dirty) {
         this.exportDialog.dirty = false;
       }
 
@@ -1007,11 +1008,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
       const result = IS_WORKER_SUPPORTED
         ? (header + (await this.excalidrawData.generateMDAsync(
-            this.excalidrawAPI.getSceneElementsIncludingDeleted().filter((el:ExcalidrawElement)=>el.isDeleted) //will be concatenated to scene.elements
-          )) + tail)
+          this.excalidrawAPI.getSceneElementsIncludingDeleted().filter((el: ExcalidrawElement) => el.isDeleted) //will be concatenated to scene.elements
+        )) + tail)
         : (header + (this.excalidrawData.generateMDSync(
-            this.excalidrawAPI.getSceneElementsIncludingDeleted().filter((el:ExcalidrawElement)=>el.isDeleted) //will be concatenated to scene.elements
-          )) + tail)
+          this.excalidrawAPI.getSceneElementsIncludingDeleted().filter((el: ExcalidrawElement) => el.isDeleted) //will be concatenated to scene.elements
+        )) + tail)
 
       this.excalidrawData.disableCompression = false;
       this.viewSaveData = result;
@@ -1030,12 +1031,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     return this.viewSaveData ?? this.data;
   }
 
-  private hiddenMobileLeaves:[WorkspaceLeaf,string][] = [];
+  private hiddenMobileLeaves: [WorkspaceLeaf, string][] = [];
 
   restoreMobileLeaves() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.restoreMobileLeaves, "ExcalidrawView.restoreMobileLeaves");
-    if(this.hiddenMobileLeaves.length>0) {
-      this.hiddenMobileLeaves.forEach((x:[WorkspaceLeaf,string])=>{
+    if (this.hiddenMobileLeaves.length > 0) {
+      this.hiddenMobileLeaves.forEach((x: [WorkspaceLeaf, string]) => {
         x[0].containerEl.style.display = x[1];
       })
       this.hiddenMobileLeaves = [];
@@ -1043,57 +1044,57 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   }
 
   async openLaTeXEditor(eqId: string) {
-    if(await this.excalidrawData.syncElements(this.getScene())) {
+    if (await this.excalidrawData.syncElements(this.getScene())) {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1994
       await this.forceSave(true);
     }
-    const el = this.getViewElements().find((el:ExcalidrawElement)=>el.id === eqId && el.type==="image") as ExcalidrawImageElement;
-    if(!el) {
+    const el = this.getViewElements().find((el: ExcalidrawElement) => el.id === eqId && el.type === "image") as ExcalidrawImageElement;
+    if (!el) {
       return;
     }
-  
+
     const fileId = el.fileId;
 
     let equation = this.excalidrawData.getEquation(fileId)?.latex;
-    if(!equation) {
+    if (!equation) {
       await this.save(false);
       equation = this.excalidrawData.getEquation(fileId)?.latex;
-      if(!equation) return;
+      if (!equation) return;
     }
 
     //GenericInputPrompt.Prompt(this,this.plugin,this.app,t("ENTER_LATEX"),undefined,equation, undefined, 3)
     LaTexPrompt.Prompt(this.app, t("ENTER_LATEX"), equation)
-    .then(async (formula: string) => {
-      if (!formula || formula === equation) {
-        return;
-      }
-      this.excalidrawData.setEquation(fileId, {
-        latex: formula,
-        isLoaded: false,
-      });
-      await this.save(false);
-      await updateEquation(
-        formula,
-        fileId,
-        this,
-        addFiles,
-      );
-      this.setDirty(1);
-    }, () => {} ); 
+      .then(async (formula: string) => {
+        if (!formula || formula === equation) {
+          return;
+        }
+        this.excalidrawData.setEquation(fileId, {
+          latex: formula,
+          isLoaded: false,
+        });
+        await this.save(false);
+        await updateEquation(
+          formula,
+          fileId,
+          this,
+          addFiles,
+        );
+        this.setDirty(1);
+      }, () => { });
   }
 
-  async openEmbeddedLinkEditor(imgId:string) {
-    const el = this.getViewElements().find((el:ExcalidrawElement)=>el.id === imgId && el.type==="image") as ExcalidrawImageElement;
-    if(!el) {
+  async openEmbeddedLinkEditor(imgId: string) {
+    const el = this.getViewElements().find((el: ExcalidrawElement) => el.id === imgId && el.type === "image") as ExcalidrawImageElement;
+    if (!el) {
       return;
     }
     const fileId = el.fileId;
     const ef = this.excalidrawData.getFile(fileId);
-    if(!ef) {
+    if (!ef) {
       return
     }
     if (!ef.isHyperLink && !ef.isLocalLink && ef.file) {
-      const handler = async (link:string) => {
+      const handler = async (link: string) => {
         if (!link || ef.linkParts.original === link) {
           return;
         }
@@ -1102,19 +1103,19 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         ef.resetImage(this.file.path, link);
         this.excalidrawData.setFile(fileId, ef);
         this.setDirty(2);
-        if(originalAnchor !== nextAnchor) {
+        if (originalAnchor !== nextAnchor) {
           await toggleImageAnchoring(el, this, nextAnchor, ef)
         }
         await this.save(false);
         await sleep(100);
-        if(!this.plugin.isExcalidrawFile(ef.file) && !link.endsWith("|100%")) {
+        if (!this.plugin.isExcalidrawFile(ef.file) && !link.endsWith("|100%")) {
           const ea = getEA(this) as ExcalidrawAutomate;
-          let imgEl = this.getViewElements().find((x:ExcalidrawElement)=>x.id === el.id) as ExcalidrawImageElement;
-          if(!imgEl) {
+          let imgEl = this.getViewElements().find((x: ExcalidrawElement) => x.id === el.id) as ExcalidrawImageElement;
+          if (!imgEl) {
             ea.destroy();
             return;
           }
-          if(imgEl && await ea.resetImageAspectRatio(imgEl)) {
+          if (imgEl && await ea.resetImageAspectRatio(imgEl)) {
             await ea.addElementsToView(false);
           }
           ea.destroy();
@@ -1127,12 +1128,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         t("MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT_TITLE"),
         undefined,
         ef.linkParts.original,
-        [{iconId: "check", caption: "", action: (x:string)=>{x.replaceAll("\n","").trim()}}],
+        [{ iconId: "check", caption: "", action: (x: string) => { x.replaceAll("\n", "").trim() } }],
         3,
         false,
-        (container) => container.createEl("p",{text: fragWithHTML(t("MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT"))}),
+        (container) => container.createEl("p", { text: fragWithHTML(t("MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT")) }),
         false
-      ).then(handler.bind(this),()=>{});
+      ).then(handler.bind(this), () => { });
       return;
     }
   }
@@ -1140,27 +1141,27 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   toggleDisableBinding() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleDisableBinding, "ExcalidrawView.toggleDisableBinding");
     const newState = !this.excalidrawAPI.getAppState().invertBindingBehaviour;
-    this.updateScene({appState: {invertBindingBehaviour:newState}, captureUpdate: CaptureUpdateAction.NEVER,});
+    this.updateScene({ appState: { invertBindingBehaviour: newState }, captureUpdate: CaptureUpdateAction.NEVER, });
     new Notice(newState ? t("ARROW_BINDING_INVERSE_MODE") : t("ARROW_BINDING_NORMAL_MODE"));
   }
 
   toggleFrameRendering() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleFrameRendering, "ExcalidrawView.toggleFrameRendering");
     const frameRenderingSt = (this.excalidrawAPI as ExcalidrawImperativeAPI).getAppState().frameRendering;
-    this.updateScene({appState: {frameRendering: {...frameRenderingSt, enabled: !frameRenderingSt.enabled}}, captureUpdate: CaptureUpdateAction.NEVER,});
+    this.updateScene({ appState: { frameRendering: { ...frameRenderingSt, enabled: !frameRenderingSt.enabled } }, captureUpdate: CaptureUpdateAction.NEVER, });
     new Notice(frameRenderingSt.enabled ? t("FRAME_CLIPPING_ENABLED") : t("FRAME_CLIPPING_DISABLED"));
   }
 
   toggleFrameClipping() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleFrameClipping, "ExcalidrawView.toggleFrameClipping");
     const frameRenderingSt = (this.excalidrawAPI as ExcalidrawImperativeAPI).getAppState().frameRendering;
-    this.updateScene({appState: {frameRendering: {...frameRenderingSt, clip: !frameRenderingSt.clip}}, captureUpdate: CaptureUpdateAction.NEVER,});
+    this.updateScene({ appState: { frameRendering: { ...frameRenderingSt, clip: !frameRenderingSt.clip } }, captureUpdate: CaptureUpdateAction.NEVER, });
     new Notice(frameRenderingSt.clip ? "Frame Clipping: Enabled" : "Frame Clipping: Disabled");
   }
 
   gotoFullscreen() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.gotoFullscreen, "ExcalidrawView.gotoFullscreen");
-    if(this.plugin.leafChangeTimeout) {
+    if (this.plugin.leafChangeTimeout) {
       window.clearTimeout(this.plugin.leafChangeTimeout); //leafChangeTimeout is created on window in main.ts!!!
       this.plugin.clearLeafChangeTimeout();
     }
@@ -1171,39 +1172,39 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       this.toolsPanelRef.current.setFullscreen(true);
     }
 
-    const hide = (el:HTMLElement) => {
+    const hide = (el: HTMLElement) => {
       let tmpEl = el;
-      while(tmpEl && !tmpEl.hasClass("workspace-split")) {
+      while (tmpEl && !tmpEl.hasClass("workspace-split")) {
         el.addClass(SHOW);
         el = tmpEl;
         tmpEl = el.parentElement;
       }
-      if(el) {
+      if (el) {
         el.addClass(SHOW);
-        el.querySelectorAll(`div.workspace-split:not(.${SHOW})`).forEach(node=>{
-          if(node !== el) node.addClass(SHOW);
+        el.querySelectorAll(`div.workspace-split:not(.${SHOW})`).forEach(node => {
+          if (node !== el) node.addClass(SHOW);
         });
         el.querySelector(`div.workspace-leaf-content.${SHOW} > .view-header`).addClass(SHOW);
-        el.querySelectorAll(`div.workspace-tab-container.${SHOW} > div.workspace-leaf:not(.${SHOW})`).forEach(node=>node.addClass(SHOW));
-        el.querySelectorAll(`div.workspace-tabs.${SHOW} > div.workspace-tab-header-container`).forEach(node=>node.addClass(SHOW));
-        el.querySelectorAll(`div.workspace-split.${SHOW} > div.workspace-tabs:not(.${SHOW})`).forEach(node=>node.addClass(SHOW));
+        el.querySelectorAll(`div.workspace-tab-container.${SHOW} > div.workspace-leaf:not(.${SHOW})`).forEach(node => node.addClass(SHOW));
+        el.querySelectorAll(`div.workspace-tabs.${SHOW} > div.workspace-tab-header-container`).forEach(node => node.addClass(SHOW));
+        el.querySelectorAll(`div.workspace-split.${SHOW} > div.workspace-tabs:not(.${SHOW})`).forEach(node => node.addClass(SHOW));
       }
       const doc = this.ownerDocument;
-      doc.body.querySelectorAll(`div.workspace-split:not(.${SHOW})`).forEach(node=>{
-        if(node !== tmpEl) {
+      doc.body.querySelectorAll(`div.workspace-split:not(.${SHOW})`).forEach(node => {
+        if (node !== tmpEl) {
           node.addClass(HIDE);
         } else {
           node.addClass(SHOW);
         }
       });
       doc.body.querySelector(`div.workspace-leaf-content.${SHOW} > .view-header`).addClass(HIDE);
-      doc.body.querySelectorAll(`div.workspace-tab-container.${SHOW} > div.workspace-leaf:not(.${SHOW})`).forEach(node=>node.addClass(HIDE));
-      doc.body.querySelectorAll(`div.workspace-tabs.${SHOW} > div.workspace-tab-header-container`).forEach(node=>node.addClass(HIDE));
-      doc.body.querySelectorAll(`div.workspace-split.${SHOW} > div.workspace-tabs:not(.${SHOW})`).forEach(node=>node.addClass(HIDE));
-      doc.body.querySelectorAll(`div.workspace-ribbon`).forEach(node=>node.addClass(HIDE));
-      doc.body.querySelectorAll(`div.mobile-navbar`).forEach(node=>node.addClass(HIDE));
-      doc.body.querySelectorAll(`div.status-bar`).forEach(node=>node.addClass(HIDE));
-      doc.body.querySelectorAll(`div.titlebar`).forEach(node=>node.addClass(HIDE));
+      doc.body.querySelectorAll(`div.workspace-tab-container.${SHOW} > div.workspace-leaf:not(.${SHOW})`).forEach(node => node.addClass(HIDE));
+      doc.body.querySelectorAll(`div.workspace-tabs.${SHOW} > div.workspace-tab-header-container`).forEach(node => node.addClass(HIDE));
+      doc.body.querySelectorAll(`div.workspace-split.${SHOW} > div.workspace-tabs:not(.${SHOW})`).forEach(node => node.addClass(HIDE));
+      doc.body.querySelectorAll(`div.workspace-ribbon`).forEach(node => node.addClass(HIDE));
+      doc.body.querySelectorAll(`div.mobile-navbar`).forEach(node => node.addClass(HIDE));
+      doc.body.querySelectorAll(`div.status-bar`).forEach(node => node.addClass(HIDE));
+      doc.body.querySelectorAll(`div.titlebar`).forEach(node => node.addClass(HIDE));
     }
 
     hide(this.contentEl);
@@ -1221,8 +1222,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       this.toolsPanelRef.current.setFullscreen(false);
     }
     const doc = this.ownerDocument;
-    doc.querySelectorAll(".excalidraw-hidden").forEach(el=>el.removeClass(HIDE));
-    doc.querySelectorAll(".excalidraw-visible").forEach(el=>el.removeClass(SHOW));
+    doc.querySelectorAll(".excalidraw-hidden").forEach(el => el.removeClass(HIDE));
+    doc.querySelectorAll(".excalidraw-visible").forEach(el => el.removeClass(SHOW));
   }
 
   removeLinkTooltip() {
@@ -1237,11 +1238,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
   }
 
-  handleLinkHookCall(element:ExcalidrawElement,link:string, event:any):boolean {
+  handleLinkHookCall(element: ExcalidrawElement, link: string, event: any): boolean {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.handleLinkHookCall, "ExcalidrawView.handleLinkHookCall", element, link, event);
-    if(this.getHookServer().onLinkClickHook) {
+    if (this.getHookServer().onLinkClickHook) {
       try {
-        if(!this.getHookServer().onLinkClickHook(
+        if (!this.getHookServer().onLinkClickHook(
           element,
           link,
           event,
@@ -1251,15 +1252,15 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           return true;
         }
       } catch (e) {
-        errorlog({where: "ExcalidrawView.onLinkOpen", fn: this.getHookServer().onLinkClickHook, error: e});
+        errorlog({ where: "ExcalidrawView.onLinkOpen", fn: this.getHookServer().onLinkClickHook, error: e });
       }
     }
     return false;
   }
 
   private getLinkTextForElement(
-    selectedText:SelectedElementWithLink,
-    selectedElementWithLink?:SelectedElementWithLink,
+    selectedText: SelectedElementWithLink,
+    selectedElementWithLink?: SelectedElementWithLink,
     allowLinearElementClick: boolean = false,
   ): {
     linkText: string,
@@ -1269,13 +1270,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getLinkTextForElement, "ExcalidrawView.getLinkTextForElement", selectedText, selectedElementWithLink);
     if (selectedText?.id || selectedElementWithLink?.id) {
       let selectedTextElement: ExcalidrawTextElement = selectedText.id
-      ? this.excalidrawAPI.getSceneElements().find((el:ExcalidrawElement)=>el.id === selectedText.id)
-      : null;
+        ? this.excalidrawAPI.getSceneElements().find((el: ExcalidrawElement) => el.id === selectedText.id)
+        : null;
 
       let selectedElement = selectedElementWithLink.id
-      ? this.excalidrawAPI.getSceneElements().find((el:ExcalidrawElement)=>
+        ? this.excalidrawAPI.getSceneElements().find((el: ExcalidrawElement) =>
           el.id === selectedElementWithLink.id)
-      : null;
+        : null;
 
       //if the user clicked on the label of an arrow then the label will be captured in selectedElement, because
       //Excalidraw returns the container as the selected element. But in this case we want this to be treated as the
@@ -1284,30 +1285,30 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       //the label is an indication of wanting to navigate.
       if (!Boolean(selectedTextElement) && selectedElement?.type === "text") {
         const container = getContainerElement(selectedElement, arrayToMap(this.excalidrawAPI.getSceneElements()));
-        if(container?.type === "arrow") {
-          const x = getTextElementAtPointer(this.currentPosition,this);
-          if(x?.id === selectedElement.id) {
+        if (container?.type === "arrow") {
+          const x = getTextElementAtPointer(this.currentPosition, this);
+          if (x?.id === selectedElement.id) {
             selectedTextElement = selectedElement;
             selectedElement = null;
           }
         }
       }
-      
+
       //CTRL click on a linear element with a link will navigate instead of line editor
-      if(!allowLinearElementClick && ["arrow", "line"].includes(selectedElement?.type)) {
-        return {linkText: selectedElement.link, selectedElement: selectedElement, isLinearElement: true};
+      if (!allowLinearElementClick && ["arrow", "line"].includes(selectedElement?.type)) {
+        return { linkText: selectedElement.link, selectedElement: selectedElement, isLinearElement: true };
       }
 
       if (!selectedTextElement && selectedElement?.type === "text") {
-        if(!allowLinearElementClick) {
+        if (!allowLinearElementClick) {
           //CTRL click on a linear element with a link will navigate instead of line editor
           const container = getContainerElement(selectedElement, arrayToMap(this.excalidrawAPI.getSceneElements()));
-          if(container?.type !== "arrow") {
+          if (container?.type !== "arrow") {
             selectedTextElement = selectedElement as ExcalidrawTextElement;
             selectedElement = null;
           } else {
             const x = this.processLinkText(selectedElement.rawText, selectedElement as ExcalidrawTextElement, container, false);
-            return {linkText: x.linkText, selectedElement: container, isLinearElement: true};
+            return { linkText: x.linkText, selectedElement: container, isLinearElement: true };
           }
         } else {
           selectedTextElement = selectedElement as ExcalidrawTextElement;
@@ -1321,49 +1322,49 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           ? this.excalidrawData.getRawText(selectedText.id)
           : selectedText.text);
 
-      return {...this.processLinkText(linkText, selectedTextElement, selectedElement), isLinearElement: false};
+      return { ...this.processLinkText(linkText, selectedTextElement, selectedElement), isLinearElement: false };
     }
-    return {linkText: null, selectedElement: null, isLinearElement: false};
+    return { linkText: null, selectedElement: null, isLinearElement: false };
   }
 
-  
+
   processLinkText(linkText: string, selectedTextElement: ExcalidrawTextElement, selectedElement: ExcalidrawElement, shouldOpenLink: boolean = true) {
-    if(!linkText) {
-      return {linkText: null, selectedElement: null};
+    if (!linkText) {
+      return { linkText: null, selectedElement: null };
     }
 
-    if(linkText.startsWith("#")) {
-      return {linkText, selectedElement: selectedTextElement ?? selectedElement};
+    if (linkText.startsWith("#")) {
+      return { linkText, selectedElement: selectedTextElement ?? selectedElement };
     }
 
     const maybeObsidianLink = parseObsidianLink(linkText, this.app, shouldOpenLink);
-    if(typeof maybeObsidianLink === "string") {
+    if (typeof maybeObsidianLink === "string") {
       linkText = maybeObsidianLink;
     }
 
     const partsArray = REGEX_LINK.getResList(linkText);
     if (!linkText || partsArray.length === 0) {
       //the container link takes precedence over the text link
-      if(selectedTextElement?.containerId) {
-        const container = _getContainerElement(selectedTextElement, {elements: this.excalidrawAPI.getSceneElements()});
-        if(container) {
+      if (selectedTextElement?.containerId) {
+        const container = _getContainerElement(selectedTextElement, { elements: this.excalidrawAPI.getSceneElements() });
+        if (container) {
           linkText = container.link;
-          
-          if(linkText?.startsWith("#")) {
-            return {linkText, selectedElement: selectedTextElement ?? selectedElement};
+
+          if (linkText?.startsWith("#")) {
+            return { linkText, selectedElement: selectedTextElement ?? selectedElement };
           }
 
           const maybeObsidianLink = parseObsidianLink(linkText, this.app, shouldOpenLink);
-          if(typeof maybeObsidianLink === "string") {
+          if (typeof maybeObsidianLink === "string") {
             linkText = maybeObsidianLink;
           }
         }
       }
-      if(!linkText || partsArray.length === 0) {
+      if (!linkText || partsArray.length === 0) {
         linkText = selectedTextElement?.link;
       }
     }
-    return {linkText, selectedElement: selectedTextElement ?? selectedElement};
+    return { linkText, selectedElement: selectedTextElement ?? selectedElement };
   }
 
   async linkClick(
@@ -1375,87 +1376,87 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     allowLinearElementClick: boolean = false,
   ) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.linkClick, "ExcalidrawView.linkClick", ev, selectedText, selectedImage, selectedElementWithLink, keys);
-    if(!selectedText) selectedText = {id:null, text: null};
-    if(!selectedImage) selectedImage = {id:null, fileId: null};
-    if(!selectedElementWithLink) selectedElementWithLink = {id:null, text:null};
-    if(!ev && !keys) keys = emulateKeysForLinkClick("new-tab");
-    if( ev && !keys) keys = {shiftKey: ev.shiftKey, ctrlKey: ev.ctrlKey, metaKey: ev.metaKey, altKey: ev.altKey};
+    if (!selectedText) selectedText = { id: null, text: null };
+    if (!selectedImage) selectedImage = { id: null, fileId: null };
+    if (!selectedElementWithLink) selectedElementWithLink = { id: null, text: null };
+    if (!ev && !keys) keys = emulateKeysForLinkClick("new-tab");
+    if (ev && !keys) keys = { shiftKey: ev.shiftKey, ctrlKey: ev.ctrlKey, metaKey: ev.metaKey, altKey: ev.altKey };
 
     const linkClickType = linkClickModifierType(keys);
 
     let file = null;
     let subpath: string = null;
-    let {linkText, selectedElement, isLinearElement} = this.getLinkTextForElement(selectedText, selectedElementWithLink, allowLinearElementClick);
+    let { linkText, selectedElement, isLinearElement } = this.getLinkTextForElement(selectedText, selectedElementWithLink, allowLinearElementClick);
 
     //if (selectedText?.id || selectedElementWithLink?.id) {
     if (selectedElement) {
       if (!allowLinearElementClick && linkText && isLinearElement) {
-        if(this.semaphores.warnAboutLinearElementLinkClick) {
+        if (this.semaphores.warnAboutLinearElementLinkClick) {
           new Notice(t("LINEAR_ELEMENT_LINK_CLICK_ERROR"), 20000);
           this.semaphores.warnAboutLinearElementLinkClick = false;
         }
         return;
       }
       if (!linkText) {
-          return;
+        return;
       }
       linkText = linkText.replaceAll("\n", ""); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
 
-      if(this.handleLinkHookCall(selectedElement,linkText,ev)) return;
-      if(openExternalLink(linkText, this.app)) return;
+      if (this.handleLinkHookCall(selectedElement, linkText, ev)) return;
+      if (openExternalLink(linkText, this.app)) return;
 
-      const maybeObsidianLink = parseObsidianLink(linkText,this.app);
+      const maybeObsidianLink = parseObsidianLink(linkText, this.app);
       if (typeof maybeObsidianLink === "boolean" && maybeObsidianLink) return;
       if (typeof maybeObsidianLink === "string") {
         linkText = maybeObsidianLink;
       }
 
       const result = await linkPrompt(linkText, this.app, this);
-      if(!result) return;
+      if (!result) return;
       [file, linkText, subpath] = result;
     }
     if (selectedImage?.id) {
-      const imageElement = this.getScene().elements.find((el:ExcalidrawElement)=>el.id === selectedImage.id) as ExcalidrawImageElement;
+      const imageElement = this.getScene().elements.find((el: ExcalidrawElement) => el.id === selectedImage.id) as ExcalidrawImageElement;
       if (this.excalidrawData.hasEquation(selectedImage.fileId)) {
-        this.updateScene({appState: {contextMenu: null}});
+        this.updateScene({ appState: { contextMenu: null } });
         this.openLaTeXEditor(selectedImage.id);
         return;
       }
       if (this.excalidrawData.hasMermaid(selectedImage.fileId) || getMermaidText(imageElement)) {
-        if(shouldRenderMermaid) {
+        if (shouldRenderMermaid) {
           const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
-          api.updateScene({appState: {openDialog: { name: "ttd", tab: "mermaid" }}, captureUpdate: CaptureUpdateAction.NEVER })
+          api.updateScene({ appState: { openDialog: { name: "ttd", tab: "mermaid" } }, captureUpdate: CaptureUpdateAction.NEVER })
         }
         return;
       }
-      
+
       await this.save(false); //in case pasted images haven't been saved yet
       if (this.excalidrawData.hasFile(selectedImage.fileId)) {
         const fileId = selectedImage.fileId;
         const ef = this.excalidrawData.getFile(fileId);
         if (!ef.isHyperLink && !ef.isLocalLink && ef.file && linkClickType === "md-properties") {
-          this.updateScene({appState: {contextMenu: null}});
+          this.updateScene({ appState: { contextMenu: null } });
           this.openEmbeddedLinkEditor(selectedImage.id);
           return;
         }
         let secondOrderLinks: string = " ";
-        
+
         const backlinks = this.app.metadataCache?.getBacklinksForFile(ef.file)?.data;
         const secondOrderLinksSet = new Set<string>();
-        if(backlinks && this.plugin.settings.showSecondOrderLinks) {
+        if (backlinks && this.plugin.settings.showSecondOrderLinks) {
           const linkPaths = Object.keys(backlinks)
             .filter(path => (path !== this.file.path) && (path !== ef.file.path))
             .map(path => {
               const filepathParts = splitFolderAndFilename(path);
-              if(secondOrderLinksSet.has(path)) return "";
+              if (secondOrderLinksSet.has(path)) return "";
               secondOrderLinksSet.add(path);
               return `[[${path}|${t("LINKLIST_SECOND_ORDER_LINK")}: ${filepathParts.basename}]]`;
             });
           secondOrderLinks += linkPaths.join(" ");
         }
 
-        if(this.plugin.settings.showSecondOrderLinks && this.plugin.isExcalidrawFile(ef.file)) {
-          secondOrderLinks += getExcalidrawFileForwardLinks(this.app, ef.file, secondOrderLinksSet);             
+        if (this.plugin.settings.showSecondOrderLinks && this.plugin.isExcalidrawFile(ef.file)) {
+          secondOrderLinks += getExcalidrawFileForwardLinks(this.app, ef.file, secondOrderLinksSet);
         }
 
         const linkString = (ef.isHyperLink || ef.isLocalLink
@@ -1466,24 +1467,24 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             ? `[](${imageElement.link})`
             : imageElement.link
           : "");
-        
+
         const result = await linkPrompt(linkString + secondOrderLinks, this.app, this);
-        if(!result) return;
+        if (!result) return;
         [file, linkText, subpath] = result;
       }
     }
 
     if (!linkText) {
-      if(allowLinearElementClick) {
+      if (allowLinearElementClick) {
         return;
       }
       new Notice(t("LINK_BUTTON_CLICK_NO_TEXT"), 20000);
       return;
     }
 
-    const id = selectedImage.id??selectedText.id??selectedElementWithLink.id;
-    const el = this.excalidrawAPI.getSceneElements().filter((el:ExcalidrawElement)=>el.id === id)[0];
-    if(this.handleLinkHookCall(el,linkText,ev)) return;
+    const id = selectedImage.id ?? selectedText.id ?? selectedElementWithLink.id;
+    const el = this.excalidrawAPI.getSceneElements().filter((el: ExcalidrawElement) => el.id === id)[0];
+    if (this.handleLinkHookCall(el, linkText, ev)) return;
 
     try {
       if (linkClickType !== "active-pane" && this.isFullscreen()) {
@@ -1499,17 +1500,17 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         }).open();
         return;
       }
-      if(this.linksAlwaysOpenInANewPane && !anyModifierKeysPressed(keys)) {
+      if (this.linksAlwaysOpenInANewPane && !anyModifierKeysPressed(keys)) {
         keys = emulateKeysForLinkClick("new-pane");
       }
-      
+
       try {
         const drawIO = this.app.plugins.plugins["drawio-obsidian"];
-        if(drawIO && drawIO._loaded) {
-          if(file.extension === "svg") {
+        if (drawIO && drawIO._loaded) {
+          if (file.extension === "svg") {
             const svg = await this.app.vault.cachedRead(file);
-            if(/(&lt;|\<)(mxfile|mxgraph)/i.test(svg)) {
-              const leaf = getLeaf(this.plugin,this.leaf,keys);
+            if (/(&lt;|\<)(mxfile|mxgraph)/i.test(svg)) {
+              const leaf = getLeaf(this.plugin, this.leaf, keys);
               leaf.setViewState({
                 type: "diagram-edit",
                 state: {
@@ -1520,15 +1521,15 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             }
           }
         }
-      } catch(e) {
+      } catch (e) {
         console.error(e);
       }
-      
+
       //if link will open in the same pane I want to save the drawing before opening the link
       await this.forceSaveIfRequired();
       const { promise } = openLeaf({
         plugin: this.plugin,
-        fnGetLeaf: () => getLeaf(this.plugin,this.leaf,keys),
+        fnGetLeaf: () => getLeaf(this.plugin, this.leaf, keys),
         file,
         openState: {
           active: !this.linksAlwaysOpenInANewPane,
@@ -1541,7 +1542,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       new Notice(e, 4000);
     }
   }
-  
+
   async handleLinkClick(ev: MouseEvent | ModifierKeys, allowLinearElementClick: boolean = false) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.handleLinkClick, "ExcalidrawView.handleLinkClick", ev);
     this.removeLinkTooltip();
@@ -1567,7 +1568,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   onResize() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onResize, "ExcalidrawView.onResize");
     super.onResize();
-    if(this.plugin.leafChangeTimeout) return; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/723
+    if (this.plugin.leafChangeTimeout) return; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/723
     const api = this.excalidrawAPI;
     if (
       !this.plugin.settings.zoomToFitOnResize ||
@@ -1587,20 +1588,20 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   }
 
   excalidrawGetSceneVersion: (elements: ExcalidrawElement[]) => number;
-  getSceneVersion (elements: ExcalidrawElement[]):number {
-    if(!this.excalidrawGetSceneVersion) {
+  getSceneVersion(elements: ExcalidrawElement[]): number {
+    if (!this.excalidrawGetSceneVersion) {
       this.excalidrawGetSceneVersion = this.packages.excalidrawLib.getSceneVersion;
     }
-    return this.excalidrawGetSceneVersion(elements.filter(el=>!el.isDeleted));
+    return this.excalidrawGetSceneVersion(elements.filter(el => !el.isDeleted));
   }
 
-  public async forceSave(silent:boolean=false) {
+  public async forceSave(silent: boolean = false) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.forceSave, "ExcalidrawView.forceSave");
     if (this.semaphores.autosaving || this.semaphores.saving) {
-      if(!silent) new Notice(t("FORCE_SAVE_ABORTED"))
+      if (!silent) new Notice(t("FORCE_SAVE_ABORTED"))
       return;
     }
-    if(this.preventReloadResetTimer) {
+    if (this.preventReloadResetTimer) {
       window.clearTimeout(this.preventReloadResetTimer);
       this.preventReloadResetTimer = null;
     }
@@ -1610,25 +1611,25 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.plugin.triggerEmbedUpdates();
     this.loadSceneFiles();
     this.semaphores.forceSaving = false;
-    if(!silent) new Notice("Save successful", 1000);
+    if (!silent) new Notice("Save successful", 1000);
   }
 
   onload() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onload, "ExcalidrawView.onload");
-    if(this.plugin.settings.overrideObsidianFontSize) {
+    if (this.plugin.settings.overrideObsidianFontSize) {
       document.documentElement.style.fontSize = "";
     }
-  
+
     const apiMissing = Boolean(typeof this.containerEl.onWindowMigrated === "undefined")
     this.packages = this.plugin.getPackage(this.ownerWindow);
 
-    if(DEVICE.isDesktop && !apiMissing) {
-      if(this.ownerWindow !== window) {
+    if (DEVICE.isDesktop && !apiMissing) {
+      if (this.ownerWindow !== window) {
         this.plugin.initializeFonts();
       }
       this.destroyers.push(
         //this.containerEl.onWindowMigrated(this.leaf.rebuildView.bind(this))
-        this.containerEl.onWindowMigrated(async() => {
+        this.containerEl.onWindowMigrated(async () => {
           (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onload, "ExcalidrawView.onWindowMigrated");
           const f = this.file;
           const l = this.leaf;
@@ -1643,19 +1644,19 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         })
       );
     }
-    
+
     this.semaphores.scriptsReady = true;
-    
-    const wheelEvent = (ev:WheelEvent) => {
-      if(this.semaphores.wheelTimeout) window.clearTimeout(this.semaphores.wheelTimeout);
-      if(this.semaphores.hoverSleep && this.excalidrawAPI) this.clearHoverPreview();
-      this.semaphores.wheelTimeout = window.setTimeout(()=>{
+
+    const wheelEvent = (ev: WheelEvent) => {
+      if (this.semaphores.wheelTimeout) window.clearTimeout(this.semaphores.wheelTimeout);
+      if (this.semaphores.hoverSleep && this.excalidrawAPI) this.clearHoverPreview();
+      this.semaphores.wheelTimeout = window.setTimeout(() => {
         window.clearTimeout(this.semaphores.wheelTimeout);
         this.semaphores.wheelTimeout = null;
-      },1000);
+      }, 1000);
     }
 
-    this.registerDomEvent(this.containerEl,"wheel",wheelEvent, {passive: false});
+    this.registerDomEvent(this.containerEl, "wheel", wheelEvent, { passive: false });
 
     this.actionButtons = {
       scriptInstall: this.addAction(
@@ -1663,7 +1664,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         !DEVICE.isMobile ? t("INSTALL_SCRIPT_BUTTON") : "",
         () => {
           new ScriptInstallPrompt(this.plugin).open();
-      }),
+        }),
       save: this.addAction(
         DISK_ICON_NAME,
         !DEVICE.isMobile ? t("FORCE_SAVE") : "",
@@ -1680,11 +1681,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         (ev) => this.handleLinkClick(ev),
       ),
     }
-   /*this.actionButtons['isParsed'] = this.addAction(
-      TEXT_DISPLAY_PARSED_ICON_NAME,
-      t("PARSED"),
-      () => this.changeTextMode(TextMode.raw),
-    );*/
+    /*this.actionButtons['isParsed'] = this.addAction(
+       TEXT_DISPLAY_PARSED_ICON_NAME,
+       t("PARSED"),
+       () => this.changeTextMode(TextMode.raw),
+     );*/
 
     const ro = new ResizeObserver(() => {
       const height = this.contentEl.clientHeight;
@@ -1698,23 +1699,23 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.destroyers.push(() => ro.disconnect());
 
     this.app.workspace.onLayoutReady(async () => {
-      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onload,`ExcalidrawView.onload > app.workspace.onLayoutReady, file:${this.file?.name}, isActiveLeaf:${this?.app?.workspace?.activeLeaf === this.leaf}, is activeExcalidrawView set:${Boolean(this?.plugin?.activeExcalidrawView)}`);
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onload, `ExcalidrawView.onload > app.workspace.onLayoutReady, file:${this.file?.name}, isActiveLeaf:${this?.app?.workspace?.activeLeaf === this.leaf}, is activeExcalidrawView set:${Boolean(this?.plugin?.activeExcalidrawView)}`);
       //Leaf was moved to new window and ExcalidrawView was destructed.
       //Happens during Obsidian startup if View opens in new window.
-      if(!this.plugin) {
+      if (!this.plugin) {
         return;
       }
       await this.plugin.awaitInit();
       //implemented to overcome issue that activeLeafChangeEventHandler is not called when view is initialized from a saved workspace, since Obsidian 1.6.0
       let counter = 0;
-      while(counter++<50 && (!Boolean(this?.plugin?.activeLeafChangeEventHandler) || !Boolean(this.canvasNodeFactory))) {
-        await(sleep(50));
-        if(!this?.plugin) return;
+      while (counter++ < 50 && (!Boolean(this?.plugin?.activeLeafChangeEventHandler) || !Boolean(this.canvasNodeFactory))) {
+        await (sleep(50));
+        if (!this?.plugin) return;
       }
-      if(!Boolean(this?.plugin?.activeLeafChangeEventHandler)) return;
+      if (!Boolean(this?.plugin?.activeLeafChangeEventHandler)) return;
       if (Boolean(this.plugin.activeLeafChangeEventHandler) && (this?.app?.workspace?.activeLeaf === this.leaf)) {
         this.plugin.activeLeafChangeEventHandler(this.leaf);
-      }      
+      }
       await this.canvasNodeFactory.initialize();
       this.contentEl.addClass("excalidraw-view");
       //https://github.com/zsviczian/excalibrain/issues/28
@@ -1740,12 +1741,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       };
 
       const onBlurOrLeave = () => {
-        if(!this.excalidrawAPI || !this.excalidrawData.loaded || !this.isDirty()) {
+        if (!this.excalidrawAPI || !this.excalidrawData.loaded || !this.isDirty()) {
           return;
         }
         const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
         const st = api.getAppState();
-        if(st.activeTool.type !== "image" && st.activeEmbeddable?.state !== "active") {
+        if (st.activeTool.type !== "image" && st.activeEmbeddable?.state !== "active") {
           this.forceSave(true);
         }
       };
@@ -1763,10 +1764,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   //this is to solve sliding panes bug
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/9
-  private slidingPanesListner: ()=>void;
+  private slidingPanesListner: () => void;
   private async addSlidingPanesListner() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.addSlidingPanesListner, "ExcalidrawView.addSlidingPanesListner");
-    if(!this.plugin.settings.slidingPanesSupport) {
+    if (!this.plugin.settings.slidingPanesSupport) {
       return;
     }
 
@@ -1776,11 +1777,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
     };
     let rootSplit = this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt;
-    while(!rootSplit) {
+    while (!rootSplit) {
       await sleep(50);
       rootSplit = this.app.workspace.rootSplit as WorkspaceItem as WorkspaceItemExt;
     }
-    this.registerDomEvent(rootSplit.containerEl,"scroll",this.slidingPanesListner);
+    this.registerDomEvent(rootSplit.containerEl, "scroll", this.slidingPanesListner);
   }
 
   private removeSlidingPanesListner() {
@@ -1798,7 +1799,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   private offsetTop: number = 0;
   private addParentMoveObserver() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.addParentMoveObserver, "ExcalidrawView.addParentMoveObserver");
-    
+
     const parent =
       getParentOfClass(this.containerEl, "popover") ??
       getParentOfClass(this.containerEl, "workspace-leaf");
@@ -1875,8 +1876,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   private blockTextModeChange: boolean = false;
   public async changeTextMode(textMode: TextMode, reload: boolean = true) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.changeTextMode, "ExcalidrawView.changeTextMode", textMode, reload);
-    if(this.compatibilityMode) return;
-    if(this.blockTextModeChange) return;
+    if (this.compatibilityMode) return;
+    if (this.blockTextModeChange) return;
     this.blockTextModeChange = true;
     this.textMode = textMode;
     if (textMode === TextMode.parsed) {
@@ -1911,7 +1912,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setupAutosaveTimer, "ExcalidrawView.setupAutosaveTimer");
 
     const timer = async () => {
-      if(!this.isLoaded) {
+      if (!this.isLoaded) {
         this.autosaveTimer = window.setTimeout(
           timer,
           this.autosaveInterval,
@@ -1925,7 +1926,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         return;
       }
       const st = api.getAppState() as AppState;
-      const isFreedrawActive = (st.activeTool?.type === "freedraw") && (this.freedrawLastActiveTimestamp > (Date.now()-2000));
+      const isFreedrawActive = (st.activeTool?.type === "freedraw") && (this.freedrawLastActiveTimestamp > (Date.now() - 2000));
       const isEditingText = st.editingTextElement !== null;
       const isEditingNewElement = st.newElement !== null;
       //this will reset positioning of the cursor in case due to the popup keyboard,
@@ -1946,7 +1947,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         if (this.excalidrawAPI) {
           this.semaphores.autosaving = true;
           //changed from await to then to avoid lag during saving of large file
-          this.save().then(()=>this.semaphores.autosaving = false);
+          this.save().then(() => this.semaphores.autosaving = false);
         }
         this.autosaveTimer = window.setTimeout(
           timer,
@@ -1971,7 +1972,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   private resetAutosaveTimer() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.resetAutosaveTimer, "ExcalidrawView.resetAutosaveTimer");
-    if(!this.autosaveFunction) return;
+    if (!this.autosaveFunction) return;
 
     if (this.autosaveTimer) {
       window.clearTimeout(this.autosaveTimer);
@@ -1984,32 +1985,32 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   }
 
   unload(): void {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.unload,`ExcalidrawView.unload, file:${this.file?.name}`);
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.unload, `ExcalidrawView.unload, file:${this.file?.name}`);
     super.unload();
   }
 
   async onUnloadFile(file: TFile): Promise<void> {
     //deliberately not calling super.onUnloadFile() to avoid autosave (saved in unload)
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onUnloadFile,`ExcalidrawView.onUnloadFile, file:${this.file?.name}`);
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onUnloadFile, `ExcalidrawView.onUnloadFile, file:${this.file?.name}`);
     let counter = 0;
     while (this.semaphores.saving && (counter++ < 200)) {
       await sleep(50); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1988
-      if(counter++ === 15) {
+      if (counter++ === 15) {
         new Notice(t("SAVE_IS_TAKING_LONG"));
       }
-      if(counter === 80) {
+      if (counter === 80) {
         new Notice(t("SAVE_IS_TAKING_VERY_LONG"));
       }
     }
-    if(counter >= 200) {
+    if (counter >= 200) {
       new Notice("Unknown error, save is taking too long");
       return;
     }
     await this.forceSaveIfRequired();
   }
 
-  private async forceSaveIfRequired():Promise<boolean> {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.forceSaveIfRequired,`ExcalidrawView.forceSaveIfRequired`);
+  private async forceSaveIfRequired(): Promise<boolean> {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.forceSaveIfRequired, `ExcalidrawView.forceSaveIfRequired`);
     let watchdog = 0;
     let dirty = false;
     //if saving was already in progress
@@ -2018,16 +2019,16 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       dirty = true;
       await sleep(40);
     }
-    if(this.excalidrawAPI) {
+    if (this.excalidrawAPI) {
       this.checkSceneVersion(this.excalidrawAPI.getSceneElements());
-      if(this.isDirty()) {
+      if (this.isDirty()) {
         const path = this.file?.path;
         const plugin = this.plugin;
         window.setTimeout(() => {
           plugin.triggerEmbedUpdates(path)
-        },400);
+        }, 400);
         dirty = true;
-        await this.save(true,true,true);
+        await this.save(true, true, true);
       }
     }
     return dirty;
@@ -2035,17 +2036,17 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   //onClose happens after onunload
   protected async onClose(): Promise<void> {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onClose,`ExcalidrawView.onClose, file:${this.file?.name}`);
-    
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onClose, `ExcalidrawView.onClose, file:${this.file?.name}`);
+
     //I noticed Obsidian calls this function twice when disabling the plugin
     //once from "unregisterView"
     //the from "detachLeavesOfType"
-    if(!this.dropManager && !this.excalidrawRoot) return; //the view is already closed
+    if (!this.dropManager && !this.excalidrawRoot) return; //the view is already closed
 
     // This happens when the user right clicks a tab and selects delete
     // in this case the onDelete event handler tirggers, but then Obsidian's delete event handler reaches onclose first, and
     // when the function is called a second time via on delete an error is thrown.)
-    if(!this.file) return; 
+    if (!this.file) return;
 
     this.exitFullscreen();
 
@@ -2067,34 +2068,34 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
     if (this.plugin) {
       this.plugin.scriptEngine?.removeViewEAs(this);
-      if(this.plugin.ea?.targetView === this) {
+      if (this.plugin.ea?.targetView === this) {
         this.plugin.ea.targetView = null;
       }
     }
 
     this.excalidrawAPI = null;
-    
+
     if (this.dropManager) {
       this.dropManager.destroy();
       this.dropManager = null;
     }
 
-    if(this.canvasNodeFactory) {
+    if (this.canvasNodeFactory) {
       this.canvasNodeFactory.destroy();
       this.canvasNodeFactory = null;
     }
 
-    if(this.embeddableLeafRefs) {
+    if (this.embeddableLeafRefs) {
       this.embeddableLeafRefs.clear();
       this.embeddableLeafRefs = null;
     }
-    
-    if(this.embeddableRefs) {
+
+    if (this.embeddableRefs) {
       this.embeddableRefs.clear();
       this.embeddableRefs = null;
     }
 
-    if(this.actionButtons) {
+    if (this.actionButtons) {
       Object.values(this.actionButtons).forEach((el) => el.remove());
       this.actionButtons = null; //{} as Record<ActionButtons, HTMLElement>;
     }
@@ -2104,32 +2105,32 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       this.excalidrawData = null;
     };
 
-    if(this.exportDialog) {
+    if (this.exportDialog) {
       this.exportDialog.destroy();
       this.exportDialog = null;
     }
 
     this.hoverPreviewTarget = null;
 
-    if(this._hookServer?.targetView === this) {
+    if (this._hookServer?.targetView === this) {
       this._hookServer.targetView = null;
     }
     this._hookServer = null;
-    if(this.containerEl) {
+    if (this.containerEl) {
       this.containerEl.onWindowMigrated = null;
     }
 
     this.packages = null; //{react:null, reactDOM:null, excalidrawLib:null};
 
     let leafcount = 0;
-    this.app.workspace.iterateAllLeaves(l=>{
-      if(l === this.leaf) return;
+    this.app.workspace.iterateAllLeaves(l => {
+      if (l === this.leaf) return;
 
-      if(l.containerEl?.ownerDocument.defaultView === this.ownerWindow) {
+      if (l.containerEl?.ownerDocument.defaultView === this.ownerWindow) {
         leafcount++;
       }
     })
-    if(leafcount === 0 && this.plugin) {
+    if (leafcount === 0 && this.plugin) {
       this.plugin.deletePackage(this.ownerWindow);
     }
 
@@ -2155,11 +2156,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.semaphores.viewunload = true;
     this.semaphores.popoutUnload = (this.ownerDocument !== document) && (this.ownerDocument.body.querySelectorAll(".workspace-tab-header").length === 0);
 
-    if(this.getHookServer().onViewUnloadHook) {
+    if (this.getHookServer().onViewUnloadHook) {
       try {
         this.getHookServer().onViewUnloadHook(this);
-      } catch(e) {
-        errorlog({where: "ExcalidrawView.onunload", fn: this.getHookServer().onViewUnloadHook, error: e});
+      } catch (e) {
+        errorlog({ where: "ExcalidrawView.onunload", fn: this.getHookServer().onViewUnloadHook, error: e });
       }
     }
     const tooltip = this.containerEl?.ownerDocument?.body.querySelector(
@@ -2207,7 +2208,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       this.semaphores.wheelTimeout = null;
     }
 
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onunload,`ExcalidrawView.onunload, completed`);
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onunload, `ExcalidrawView.onunload, completed`);
   }
 
   /**
@@ -2221,7 +2222,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
    * @returns
    */
   public async reload(fullreload: boolean = false, file?: TFile) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.reload,`ExcalidrawView.reload, file:${this.file?.name}, fullreload:${fullreload}, file:${file?.name}`);
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.reload, `ExcalidrawView.reload, file:${this.file?.name}, fullreload:${fullreload}, file:${file?.name}`);
     const loadOnModifyTrigger = file && file === this.file;
 
     //once you've finished editing the embeddable, the first time the file
@@ -2231,11 +2232,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     //next time reload triggers the file will be reloaded as normal.
     if (this.semaphores.embeddableIsEditingSelf) {
       //console.log("reload - embeddable is editing")
-      if(this.editingSelfResetTimer) {
+      if (this.editingSelfResetTimer) {
         this.clearEmbeddableNodeIsEditingTimer();
         this.semaphores.embeddableIsEditingSelf = false;
       }
-      if(loadOnModifyTrigger) {
+      if (loadOnModifyTrigger) {
         this.data = await this.app.vault.read(this.file);
       }
       return;
@@ -2257,7 +2258,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (!this.file || !api) {
       return;
     }
-    
+
     if (loadOnModifyTrigger) {
       this.data = await this.app.vault.read(file);
       this.preventAutozoom();
@@ -2272,10 +2273,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.clearDirty();
   }
 
-  async zoomToElementId(id: string, hasGroupref:boolean) {
+  async zoomToElementId(id: string, hasGroupref: boolean) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.zoomToElementId, "ExcalidrawView.zoomToElementId", id, hasGroupref);
     let counter = 0;
-    while (!this.excalidrawAPI && counter++<100) await sleep(50); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/734
+    while (!this.excalidrawAPI && counter++ < 100) await sleep(50); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/734
     const api = this.excalidrawAPI;
     if (!api) {
       return;
@@ -2283,7 +2284,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const sceneElements = api.getSceneElements();
 
     let elements = sceneElements.filter((el: ExcalidrawElement) => el.id === id);
-    if(elements.length === 0) {
+    if (elements.length === 0) {
       const frame = getFrameBasedOnFrameNameOrId(id, sceneElements);
       if (frame) {
         elements = [frame];
@@ -2291,9 +2292,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         return;
       }
     }
-    if(hasGroupref) {
-      const groupElements = this.plugin.ea.getElementsInTheSameGroupWithElement(elements[0],sceneElements)
-      if(groupElements.length>0) {
+    if (hasGroupref) {
+      const groupElements = this.plugin.ea.getElementsInTheSameGroupWithElement(elements[0], sceneElements)
+      if (groupElements.length > 0) {
         elements = groupElements;
       }
     }
@@ -2334,10 +2335,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       let counter = 0;
       while (
         (this.semaphores.justLoaded ||
-        !this.isLoaded ||
-        !this.excalidrawAPI ||
-        this.excalidrawAPI?.getAppState()?.isLoading) &&
-        counter++<100
+          !this.isLoaded ||
+          !this.excalidrawAPI ||
+          this.excalidrawAPI?.getAppState()?.isLoading) &&
+        counter++ < 100
       ) await sleep(50); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/734
     }
 
@@ -2348,24 +2349,24 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           ? "#^area=" + state.subpath.substring(6)
           : state.subpath
     );
-    if(filenameParts.hasBlockref) {
+    if (filenameParts.hasBlockref) {
       window.setTimeout(async () => {
         await waitForExcalidraw();
-        if(filenameParts.blockref && !filenameParts.hasGroupref) {
-          if(!this.getScene()?.elements.find((el:ExcalidrawElement)=>el.id === filenameParts.blockref)) {
-            const cleanQuery = cleanSectionHeading(filenameParts.blockref).replaceAll(" ","");
+        if (filenameParts.blockref && !filenameParts.hasGroupref) {
+          if (!this.getScene()?.elements.find((el: ExcalidrawElement) => el.id === filenameParts.blockref)) {
+            const cleanQuery = cleanSectionHeading(filenameParts.blockref).replaceAll(" ", "");
             const blocks = await this.getBackOfTheNoteBlocks();
-            if(blocks.includes(cleanQuery)) {
+            if (blocks.includes(cleanQuery)) {
               this.setMarkdownView(state);
               return;
             }
           }
         }
-        window.setTimeout(()=>this.zoomToElementId(filenameParts.blockref, filenameParts.hasGroupref));
+        window.setTimeout(() => this.zoomToElementId(filenameParts.blockref, filenameParts.hasGroupref));
       });
     }
 
-    if(filenameParts.hasSectionref) {
+    if (filenameParts.hasSectionref) {
       query = [`# ${filenameParts.sectionref}`]
     } else if (state.line && state.line > 0) {
       query = [this.data.split("\n")[state.line]]; //was -1 https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2503
@@ -2378,35 +2379,35 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         const api = this.excalidrawAPI;
         if (!api) return;
         if (api.getAppState().isLoading) return;
-        
+
         const elements = api.getSceneElements() as ExcalidrawElement[];
-        if(query.length === 1) {
+        if (query.length === 1) {
           const elementId = query[0].match(/ \^([^ ]+)$/)?.[1] ?? query[0].match(/^([^ :]+): \[\[[^\]]+]]$/)?.[1];
-          if(elementId && elements.find((el)=>el.id === elementId)) {
+          if (elementId && elements.find((el) => el.id === elementId)) {
             this.preventAutozoom();
-            window.setTimeout(()=>this.zoomToElements(!api.getAppState().viewModeEnabled, [elements.find((el)=>el.id === elementId)]));
+            window.setTimeout(() => this.zoomToElements(!api.getAppState().viewModeEnabled, [elements.find((el) => el.id === elementId)]));
             return;
           }
 
         }
 
-        if(query.length === 1 && query[0].startsWith("[")) {
+        if (query.length === 1 && query[0].startsWith("[")) {
           const partsArray = REGEX_LINK.getResList(query[0]);
-          let parts = partsArray[0];     
-          if(parts) {
+          let parts = partsArray[0];
+          if (parts) {
             const linkText = REGEX_LINK.getLink(parts);
-            if(linkText) {
+            if (linkText) {
               const file = this.plugin.app.metadataCache.getFirstLinkpathDest(linkText, this.file.path);
-              if(file) {
-                let fileId:FileId[] = [];
-                this.excalidrawData.files.forEach((ef,fileID) => {
-                  if(ef.file?.path === file.path) fileId.push(fileID);
+              if (file) {
+                let fileId: FileId[] = [];
+                this.excalidrawData.files.forEach((ef, fileID) => {
+                  if (ef.file?.path === file.path) fileId.push(fileID);
                 });
-                if(fileId.length>0) {
-                  const images = elements.filter(el=>el.type === "image" && fileId.includes(el.fileId));
-                  if(images.length>0) {
+                if (fileId.length > 0) {
+                  const images = elements.filter(el => el.type === "image" && fileId.includes(el.fileId));
+                  if (images.length > 0) {
                     this.preventAutozoom();
-                    window.setTimeout(()=>this.zoomToElements(!api.getAppState().viewModeEnabled, images));
+                    window.setTimeout(() => this.zoomToElements(!api.getAppState().viewModeEnabled, images));
                     return;
                   }
                 }
@@ -2414,8 +2415,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             }
           }
         }
-  
-        if(!this.selectElementsMatchingQuery(
+
+        if (!this.selectElementsMatchingQuery(
           elements,
           query,
           !api.getAppState().viewModeEnabled,
@@ -2424,7 +2425,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         )) {
           const cleanQuery = cleanSectionHeading(query[0]);
           const sections = await this.getBackOfTheNoteSections();
-          if(sections.includes(cleanQuery) || this.data.includes(query[0])) {
+          if (sections.includes(cleanQuery) || this.data.includes(query[0])) {
             this.setMarkdownView(state);
             return;
           }
@@ -2443,7 +2444,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.canvasNodeFactory.purgeNodes();
     this.embeddableRefs.clear();
     this.embeddableLeafRefs.clear();
-    
+
     delete this.exportDialog;
     const api = this.excalidrawAPI;
     if (!api) {
@@ -2465,21 +2466,21 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     //It seems text file view gets the modified file event after sync before the modifyEventHandler in main.ts
     //reload can only be triggered via reload()
     await this.plugin.awaitInit();
-    if(this.lastLoadedFile === this.file) return;
+    if (this.lastLoadedFile === this.file) return;
     this.isLoaded = false;
-    if(!this.file) return;
-    if(this.plugin.settings.compareManifestToPluginVersion) checkVersionMismatch(this.plugin);
-    if(this.plugin.settings.showNewVersionNotification) checkExcalidrawVersion();
-    if(isMaskFile(this.plugin,this.file)) {
+    if (!this.file) return;
+    if (this.plugin.settings.compareManifestToPluginVersion) checkVersionMismatch(this.plugin);
+    if (this.plugin.settings.showNewVersionNotification) checkExcalidrawVersion();
+    if (isMaskFile(this.plugin, this.file)) {
       const notice = new Notice(t("MASK_FILE_NOTICE"), 5000);
       //add click and hold event listner to the notice
-      let noticeTimeout:number;
-      this.registerDomEvent(notice.noticeEl,"pointerdown", (ev:MouseEvent) => {
-        noticeTimeout = window.setTimeout(()=>{
+      let noticeTimeout: number;
+      this.registerDomEvent(notice.noticeEl, "pointerdown", (ev: MouseEvent) => {
+        noticeTimeout = window.setTimeout(() => {
           window.open("https://youtu.be/uHFd0XoHRxE");
-        },1000);
+        }, 1000);
       })
-      this.registerDomEvent(notice.noticeEl,"pointerup", (ev:MouseEvent) => {
+      this.registerDomEvent(notice.noticeEl, "pointerup", (ev: MouseEvent) => {
         window.clearTimeout(noticeTimeout);
       })
     }
@@ -2493,13 +2494,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setViewData, `ExcalidrawView.setViewData > app.workspace.onLayoutReady, file:${this.file?.name}, isActiveLeaf:${this?.app?.workspace?.activeLeaf === this.leaf}`);
       //the leaf moved to a window and ExcalidrawView was destructed
       //Happens during Obsidian startup if View opens in new window.
-      if(!this?.app) {
+      if (!this?.app) {
         return;
       }
       await this.plugin.awaitInit();
       let counter = 0;
-      while ((!this.semaphores.viewloaded || !this.file || !this.plugin.fourthFontLoaded) && counter++<50) await sleep(50);
-      if(!this.file) return;
+      while ((!this.semaphores.viewloaded || !this.file || !this.plugin.fourthFontLoaded) && counter++ < 50) await sleep(50);
+      if (!this.file) return;
       this.compatibilityMode = this.file.extension === "excalidraw";
       await this.plugin.loadSettings();
       if (this.compatibilityMode) {
@@ -2530,27 +2531,27 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           }
         } catch (e) {
           errorlog({ where: "ExcalidrawView.setViewData", error: e });
-          if(e.message === ERROR_IFRAME_CONVERSION_CANCELED) {
+          if (e.message === ERROR_IFRAME_CONVERSION_CANCELED) {
             this.setMarkdownView();
             return;
-          } 
+          }
           const file = this.file;
           const plugin = this.plugin;
           const leaf = this.leaf;
           (async () => {
-            let confirmation:boolean = true;
+            let confirmation: boolean = true;
             let counter = 0;
             const timestamp = Date.now();
             while (!imageCache.isReady() && confirmation) {
-              const message = `You've been now waiting for <b>${Math.round((Date.now()-timestamp)/1000)}</b> seconds. `
+              const message = `You've been now waiting for <b>${Math.round((Date.now() - timestamp) / 1000)}</b> seconds. `
               imageCache.initializationNotice = true;
               const confirmationPrompt = new MultiOptionConfirmationPrompt(plugin,
-                `${counter>0
-                  ? counter%4 === 0
+                `${counter > 0
+                  ? counter % 4 === 0
                     ? message + "The CACHE is still loading.<br><br>"
-                    : counter%4 === 1
+                    : counter % 4 === 1
                       ? message + "Watch the top right corner for the notification.<br><br>"
-                      : counter%4 === 2
+                      : counter % 4 === 2
                         ? message + "I really, really hope the backup will work for you! <br><br>"
                         : message + "I am sorry, it is taking a while, there is not much I can do... <br><br>"
                   : ""}${t("CACHE_NOT_READY")}`);
@@ -2561,22 +2562,21 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             const drawingBAK = await imageCache.getBAKFromCache(file.path);
             if (!drawingBAK) {
               new Notice(
-                `Error loading drawing:\n${e.message}${
-                  e.message === "Cannot read property 'index' of undefined"
-                    ? "\n'# Drawing' section is likely missing"
-                    : ""
+                `Error loading drawing:\n${e.message}${e.message === "Cannot read property 'index' of undefined"
+                  ? "\n'# Drawing' section is likely missing"
+                  : ""
                 }\n\nTry manually fixing the file or restoring an earlier version from sync history.`,
                 10000,
               );
               return;
             }
-            const confirmationPrompt = new MultiOptionConfirmationPrompt(plugin,t("BACKUP_AVAILABLE"));
+            const confirmationPrompt = new MultiOptionConfirmationPrompt(plugin, t("BACKUP_AVAILABLE"));
             confirmationPrompt.waitForClose.then(async (confirmed) => {
               if (confirmed) {
                 await this.app.vault.modify(file, drawingBAK);
                 plugin.excalidrawFileModes[leaf.id || file.path] = VIEW_TYPE_EXCALIDRAW;
                 setExcalidrawView(leaf);
-              } 
+              }
             });
 
 
@@ -2586,26 +2586,26 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         }
       }
 
-      if(imageCache.isReady() && this.excalidrawData.scene && this.excalidrawData.scene.elements && this.excalidrawData.scene.elements.length === 0) {
+      if (imageCache.isReady() && this.excalidrawData.scene && this.excalidrawData.scene.elements && this.excalidrawData.scene.elements.length === 0) {
         const backup = await imageCache.getBAKFromCache(this.file.path);
-        if(backup && backup.length > data.length) {
+        if (backup && backup.length > data.length) {
           setTimeout(async () => {
             const confirmationPrompt = new MultiOptionConfirmationPrompt(
-                this.plugin,
-                t("BACKUP_SAVE_AS_FILE"),
-                new Map([
-                  [t("BACKUP_CANCEL"), 0],
-                  [t("BACKUP_DELETE"), 2],
-                  [t("BACKUP_SAVE"), 1],
-                ]),
-                t("BACKUP_SAVE"),
-              );
+              this.plugin,
+              t("BACKUP_SAVE_AS_FILE"),
+              new Map([
+                [t("BACKUP_CANCEL"), 0],
+                [t("BACKUP_DELETE"), 2],
+                [t("BACKUP_SAVE"), 1],
+              ]),
+              t("BACKUP_SAVE"),
+            );
             const result = await confirmationPrompt.waitForClose;
-            if(result === 1) {
+            if (result === 1) {
               const path = getNewUniqueFilepath(this.app.vault, `${this.file.basename}.restored.${this.file.extension}`, this.file.parent.path);
-              const backupFile = await createFileAndAwaitMetacacheUpdate(this.app,path, backup);
+              const backupFile = await createFileAndAwaitMetacacheUpdate(this.app, path, backup);
               await imageCache.removeBAKFromCache(this.file.path);
-              this.plugin.openDrawing(backupFile,"new-tab");
+              this.plugin.openDrawing(backupFile, "new-tab");
             } else if (result === 2) {
               await imageCache.removeBAKFromCache(this.file.path);
             }
@@ -2614,17 +2614,17 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
       await this.loadDrawing(true);
 
-      onLoadMessages(this.plugin, this.excalidrawData.scene,this.data);
+      onLoadMessages(this.plugin, this.excalidrawData.scene, this.data);
 
-      if(this.plugin.ea.onFileOpenHook) {
+      if (this.plugin.ea.onFileOpenHook) {
         const tempEA = getEA(this);
         try {
-        await this.plugin.ea.onFileOpenHook({
-          ea: tempEA,
-          excalidrawFile: this.file,
-          view: this, 
-        });
-        } catch(e) {
+          await this.plugin.ea.onFileOpenHook({
+            ea: tempEA,
+            excalidrawFile: this.file,
+            view: this,
+          });
+        } catch (e) {
           errorlog({ where: "ExcalidrawView.setViewData.onFileOpenHook", error: e });
         } finally {
           tempEA.destroy();
@@ -2632,14 +2632,14 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
 
       const script = this.excalidrawData.getOnLoadScript();
-      if(script) {
-        const scriptname = this.file.basename+ "-onlaod-script";
+      if (script) {
+        const scriptname = this.file.basename + "-onlaod-script";
         const runScript = () => {
-          if(!this.excalidrawAPI) { //need to wait for Excalidraw to initialize
-            window.setTimeout(runScript.bind(this),200);
+          if (!this.excalidrawAPI) { //need to wait for Excalidraw to initialize
+            window.setTimeout(runScript.bind(this), 200);
             return;
           }
-          this.plugin.scriptEngine.executeScript(this,script,scriptname,this.file);
+          this.plugin.scriptEngine.executeScript(this, script, scriptname, this.file);
         }
         runScript();
       }
@@ -2649,13 +2649,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   private getGridColor(bgColor: string, st: AppState): { Bold: string, Regular: string } {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getGridColor, "ExcalidrawView.getGridColor", bgColor, st);
-  
+
     const cm = this.plugin.ea.getCM(bgColor);
     const isDark = cm.isDark();
-  
+
     let Regular: string;
     let Bold: string;
-    const opacity = this.plugin.settings.gridSettings.OPACITY/100;
+    const opacity = this.plugin.settings.gridSettings.OPACITY / 100;
 
     if (this.plugin.settings.gridSettings.DYNAMIC_COLOR) {
       // Dynamic color: concatenate opacity to the RGB string  !!! Excalidraw expects an RGBA string !!!
@@ -2665,17 +2665,17 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       // Custom color handling
       const customCM = this.plugin.ea.getCM(this.plugin.settings.gridSettings.COLOR);
       const customIsDark = customCM.isDark();
-      
+
       // Regular uses the custom color directly
       Regular = customCM.alphaTo(opacity).stringRGB({ alpha: true });
-      
+
       // Bold is 10 shades lighter or darker based on the custom color's darkness
       Bold = (customIsDark ? customCM.lighterBy(10) : customCM.darkerBy(10)).alphaTo(opacity).stringRGB({ alpha: true });
     }
-  
+
     return { Bold, Regular };
   }
-  
+
 
   public activeLoader: EmbeddedFilesLoader = null;
   private nextLoader: EmbeddedFilesLoader = null;
@@ -2684,7 +2684,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (!this.excalidrawAPI) {
       return;
     }
-    
+
     const loader = new EmbeddedFilesLoader(this.plugin);
 
     const runLoader = (l: EmbeddedFilesLoader) => {
@@ -2692,30 +2692,30 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       this.activeLoader = l;
       l.loadSceneFiles({
         excalidrawData: this.excalidrawData,
-        addFiles: (files: FileData[], isDark: boolean, final:boolean = true) => {
-          if(callback && final) {
+        addFiles: (files: FileData[], isDark: boolean, final: boolean = true) => {
+          if (callback && final) {
             callback();
           }
-          if(!this.file || !this.excalidrawAPI) {
+          if (!this.file || !this.excalidrawAPI) {
             return; //The view was closed in the mean time
           }
           if (files && files.length > 0) {
             addFiles(files, this, isDark);
           }
-          if(!final) return;
+          if (!final) return;
           this.activeLoader = null;
           if (this.nextLoader) {
             runLoader(this.nextLoader);
           } else {
             //in case one or more files have not loaded retry later hoping that sync has delivered the file in the mean time.
-            this.excalidrawData.getFiles().some(ef=>{
-              if(ef && !ef.file && ef.attemptCounter<30) {
+            this.excalidrawData.getFiles().some(ef => {
+              if (ef && !ef.file && ef.attemptCounter < 30) {
                 const currentFile = this.file.path;
-                window.setTimeout(async ()=>{
-                  if(this && this.excalidrawAPI && currentFile === this.file.path) {
+                window.setTimeout(async () => {
+                  if (this && this.excalidrawAPI && currentFile === this.file.path) {
                     this.loadSceneFiles();
                   }
-                },2000)
+                }, 2000)
                 return true;
               }
               return false;
@@ -2736,19 +2736,19 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   public async synchronizeWithData(inData: ExcalidrawData) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.synchronizeWithData, "ExcalidrawView.synchronizeWithData", inData);
-    if(this.semaphores.embeddableIsEditingSelf) {
+    if (this.semaphores.embeddableIsEditingSelf) {
       return;
     }
     //console.log("synchronizeWithData - embeddable is not editing");
     //check if saving, wait until not
     let counter = 0;
-    while(this.semaphores.saving && counter++<30) {
+    while (this.semaphores.saving && counter++ < 30) {
       await sleep(100);
     }
-    if(counter>=30) {
+    if (counter >= 30) {
       errorlog({
-        where:"ExcalidrawView.synchronizeWithData",
-        message:`Aborting sync with received file (${this.file.path}) because semaphores.saving remained true for ower 3 seconds`, 
+        where: "ExcalidrawView.synchronizeWithData",
+        message: `Aborting sync with received file (${this.file.path}) because semaphores.saving remained true for ower 3 seconds`,
         "fn": this.synchronizeWithData
       });
       return;
@@ -2757,14 +2757,14 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     let reloadFiles = new Set<FileId>();
 
     try {
-      const deletedIds = inData.deletedElements.map(el=>el.id);
+      const deletedIds = inData.deletedElements.map(el => el.id);
       const sceneElements = this.excalidrawAPI.getSceneElementsIncludingDeleted()
         //remove deleted elements
-        .filter((el: ExcalidrawElement)=>!deletedIds.contains(el.id));
-      const sceneElementIds = sceneElements.map((el:ExcalidrawElement)=>el.id);
+        .filter((el: ExcalidrawElement) => !deletedIds.contains(el.id));
+      const sceneElementIds = sceneElements.map((el: ExcalidrawElement) => el.id);
 
-      const manageMapChanges = (incomingElement: ExcalidrawElement ) => {
-        switch(incomingElement.type) {
+      const manageMapChanges = (incomingElement: ExcalidrawElement) => {
+        switch (incomingElement.type) {
           case "text":
             this.excalidrawData.textElements.set(
               incomingElement.id,
@@ -2772,7 +2772,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             );
             break;
           case "image":
-            if(inData.getFile(incomingElement.fileId)) {
+            if (inData.getFile(incomingElement.fileId)) {
               this.excalidrawData.setFile(
                 incomingElement.fileId,
                 inData.getFile(incomingElement.fileId)
@@ -2785,10 +2785,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               )
               reloadFiles.add(incomingElement.fileId);
             }
-          break;
+            break;
         }
 
-        if(inData.elementLinks.has(incomingElement.id)) {
+        if (inData.elementLinks.has(incomingElement.id)) {
           this.excalidrawData.elementLinks.set(
             incomingElement.id,
             inData.elementLinks.get(incomingElement.id)
@@ -2799,55 +2799,55 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
       //update items with higher version number then in scene
       inData.scene.elements.forEach((
-        incomingElement:ExcalidrawElement,
+        incomingElement: ExcalidrawElement,
         idx: number,
         inElements: ExcalidrawElement[]
-      )=>{
-        const sceneElement:ExcalidrawElement = sceneElements.filter(
-          (element:ExcalidrawElement)=>element.id === incomingElement.id
+      ) => {
+        const sceneElement: ExcalidrawElement = sceneElements.filter(
+          (element: ExcalidrawElement) => element.id === incomingElement.id
         )[0];
-        if(
-          sceneElement && 
-          (sceneElement.version < incomingElement.version || 
+        if (
+          sceneElement &&
+          (sceneElement.version < incomingElement.version ||
             //in case of competing versions of the truth, the incoming version will be honored
             (sceneElement.version === incomingElement.version &&
-             JSON.stringify(sceneElement) !== JSON.stringify(incomingElement))
+              JSON.stringify(sceneElement) !== JSON.stringify(incomingElement))
           )
         ) {
           manageMapChanges(incomingElement);
           //place into correct element layer sequence
           const currentLayer = sceneElementIds.indexOf(incomingElement.id);
           //remove current element from scene
-          const elToMove = sceneElements.splice(currentLayer,1);
-          if(idx === 0) {
-            sceneElements.splice(0,0,incomingElement);
-            if(currentLayer!== 0) {
-              sceneElementIds.splice(currentLayer,1);
-              sceneElementIds.splice(0,0,incomingElement.id);
-            } 
+          const elToMove = sceneElements.splice(currentLayer, 1);
+          if (idx === 0) {
+            sceneElements.splice(0, 0, incomingElement);
+            if (currentLayer !== 0) {
+              sceneElementIds.splice(currentLayer, 1);
+              sceneElementIds.splice(0, 0, incomingElement.id);
+            }
           } else {
-            const prevId = inElements[idx-1].id;
+            const prevId = inElements[idx - 1].id;
             const parentLayer = sceneElementIds.indexOf(prevId);
-            sceneElements.splice(parentLayer+1,0,incomingElement);
-            if(parentLayer!==currentLayer-1) {
-              sceneElementIds.splice(currentLayer,1)
-              sceneElementIds.splice(parentLayer+1,0,incomingElement.id);
+            sceneElements.splice(parentLayer + 1, 0, incomingElement);
+            if (parentLayer !== currentLayer - 1) {
+              sceneElementIds.splice(currentLayer, 1)
+              sceneElementIds.splice(parentLayer + 1, 0, incomingElement.id);
             }
           }
           return;
-        } else if(!sceneElement) {
+        } else if (!sceneElement) {
           manageMapChanges(incomingElement);
 
-          if(idx === 0) {
-            sceneElements.splice(0,0,incomingElement);
-            sceneElementIds.splice(0,0,incomingElement.id);
+          if (idx === 0) {
+            sceneElements.splice(0, 0, incomingElement);
+            sceneElementIds.splice(0, 0, incomingElement.id);
           } else {
-            const prevId = inElements[idx-1].id;
+            const prevId = inElements[idx - 1].id;
             const parentLayer = sceneElementIds.indexOf(prevId);
-            sceneElements.splice(parentLayer+1,0,incomingElement);
-            sceneElementIds.splice(parentLayer+1,0,incomingElement.id);
+            sceneElements.splice(parentLayer + 1, 0, incomingElement);
+            sceneElementIds.splice(parentLayer + 1, 0, incomingElement.id);
           }
-        } else if(sceneElement && incomingElement.type === "image") { //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/632
+        } else if (sceneElement && incomingElement.type === "image") { //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/632
           const incomingFile = inData.getFile(incomingElement.fileId);
           const sceneFile = this.excalidrawData.getFile(incomingElement.fileId);
 
@@ -2857,7 +2857,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             (incomingFile.hyperlink && (sceneFile.hyperlink !== incomingFile.hyperlink)) ||
             (incomingFile.linkParts?.original && (sceneFile.linkParts?.original !== incomingFile.linkParts?.original))
           )
-          if(shouldUpdate) {
+          if (shouldUpdate) {
             this.excalidrawData.setFile(
               incomingElement.fileId,
               inData.getFile(incomingElement.fileId)
@@ -2869,17 +2869,17 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       this.previousSceneVersion = this.getSceneVersion(sceneElements);
       //changing files could result in a race condition for sync. If at the end of sync there are differences
       //set dirty will trigger an autosave
-      if(this.getSceneVersion(inData.scene.elements) !== this.previousSceneVersion) {
+      if (this.getSceneVersion(inData.scene.elements) !== this.previousSceneVersion) {
         this.setDirty(3);
       }
-      this.updateScene({elements: sceneElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY});
-      if(reloadFiles.size>0) {
-        this.loadSceneFiles(false,reloadFiles);
+      this.updateScene({ elements: sceneElements, captureUpdate: CaptureUpdateAction.IMMEDIATELY });
+      if (reloadFiles.size > 0) {
+        this.loadSceneFiles(false, reloadFiles);
       }
-    } catch(e) {
+    } catch (e) {
       errorlog({
-        where:"ExcalidrawView.synchronizeWithData",
-        message:`Error during sync with received file (${this.file.path})`, 
+        where: "ExcalidrawView.synchronizeWithData",
+        message: `Error during sync with received file (${this.file.path})`,
         "fn": this.synchronizeWithData,
         error: e
       });
@@ -2894,7 +2894,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   public async loadDrawing(justloaded: boolean, deletedElements?: ExcalidrawElement[], isReloading: boolean = false) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.loadDrawing, "ExcalidrawView.loadDrawing", justloaded, deletedElements);
     const excalidrawData = this.excalidrawData.scene;
-    const isOpenInMultipleLeaves = getExcalidraAndMarkdowViewsForFile(this.app,this.file).length > 1;
+    const isOpenInMultipleLeaves = getExcalidraAndMarkdowViewsForFile(this.app, this.file).length > 1;
     this.semaphores.justLoaded = justloaded;
     this.clearDirty();
     const om = this.excalidrawData.getOpenMode();
@@ -2914,7 +2914,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
       this.updateScene(
         {
-          elements: excalidrawData.elements.concat(deletedElements??[]), //need to preserve deleted elements during autosave if images, links, etc. are updated
+          elements: excalidrawData.elements.concat(deletedElements ?? []), //need to preserve deleted elements during autosave if images, links, etc. are updated
           files: excalidrawData.files,
           captureUpdate: CaptureUpdateAction.NEVER,
         },
@@ -2925,13 +2925,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           //elements: excalidrawData.elements.concat(deletedElements??[]), //need to preserve deleted elements during autosave if images, links, etc. are updated
           appState: {
             ...isReloading && isOpenInMultipleLeaves
-              ? deleteAppStateKeys(excalidrawData.appState, ["scrollX","scrollY","zoom"])
+              ? deleteAppStateKeys(excalidrawData.appState, ["scrollX", "scrollY", "zoom"])
               : excalidrawData.appState,
             ...this.excalidrawData.selectedElementIds //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
               ? this.excalidrawData.selectedElementIds
               : {},
             ...excalidrawData.appState.frameRendering && excalidrawData.appState.frameRendering.markerName === undefined
-              ? { frameRendering: {...excalidrawData.appState.frameRendering, markerName: true, markerEnabled: true } }
+              ? { frameRendering: { ...excalidrawData.appState.frameRendering, markerName: true, markerEnabled: true } }
               : {},
             zenModeEnabled,
             viewModeEnabled,
@@ -2941,8 +2941,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             allowPinchZoom: this.plugin.settings.allowPinchZoom,
             allowWheelZoom: this.plugin.settings.allowWheelZoom,
             pinnedScripts: this.plugin.settings.pinnedScripts,
-            customPens: this.plugin.settings.customPens.slice(0,this.plugin.settings.numberOfCustomPens),
-            gridDirection: this.plugin.settings.gridSettings.GRID_DIRECTION ?? {horizontal: true, vertical: true},
+            customPens: this.plugin.settings.customPens.slice(0, this.plugin.settings.numberOfCustomPens),
+            gridDirection: this.plugin.settings.gridSettings.GRID_DIRECTION ?? { horizontal: true, vertical: true },
           },
           captureUpdate: CaptureUpdateAction.NEVER,
         },
@@ -2961,10 +2961,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         elements: excalidrawData.elements,
         appState: {
           ...isReloading && isOpenInMultipleLeaves
-            ? deleteAppStateKeys(excalidrawData.appState, ["scrollX","scrollY","zoom"])
+            ? deleteAppStateKeys(excalidrawData.appState, ["scrollX", "scrollY", "zoom"])
             : excalidrawData.appState,
           ...excalidrawData.appState.frameRendering && excalidrawData.appState.frameRendering.markerName === undefined
-            ? { frameRendering: {...excalidrawData.appState.frameRendering, markerName: true, markerEnabled: true } }
+            ? { frameRendering: { ...excalidrawData.appState.frameRendering, markerName: true, markerEnabled: true } }
             : {},
           zenModeEnabled: om.zenModeEnabled,
           viewModeEnabled: excalidrawData.elements.length > 0 ? om.viewModeEnabled : false,
@@ -2974,7 +2974,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           allowPinchZoom: this.plugin.settings.allowPinchZoom,
           allowWheelZoom: this.plugin.settings.allowWheelZoom,
           pinnedScripts: this.plugin.settings.pinnedScripts,
-          customPens: this.plugin.settings.customPens.slice(0,this.plugin.settings.numberOfCustomPens),
+          customPens: this.plugin.settings.customPens.slice(0, this.plugin.settings.numberOfCustomPens),
           gridDirection: this.plugin.settings.gridSettings.GRID_DIRECTION,
         },
         files: excalidrawData.files,
@@ -3012,22 +3012,22 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.setUIMode(uiMode);
   }
 
-  public setDirty(location?:number) {
-    if(this.semaphores.saving) return; //do not set dirty if saving
-    if(!this.isDirty()) {
+  public setDirty(location?: number) {
+    if (this.semaphores.saving) return; //do not set dirty if saving
+    if (!this.isDirty()) {
       //the autosave timer should start when the first stroke was made... thus avoiding an immediate impact by saving right then
       this.resetAutosaveTimer();
     }
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setDirty,`ExcalidrawView.setDirty, location:${location}`);
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setDirty, `ExcalidrawView.setDirty, location:${location}`);
     this.semaphores.dirty = this.file?.path;
     this.actionButtons['save'].querySelector("svg").addClass("excalidraw-dirty");
-    if(!this.semaphores.viewunload && this.toolsPanelRef?.current) {
+    if (!this.semaphores.viewunload && this.toolsPanelRef?.current) {
       this.toolsPanelRef.current.setDirty(true);
     }
-    if(!DEVICE.isMobile) {
-      if(requireApiVersion("0.16.0")) {
-        this.leaf.tabHeaderInnerIconEl.style.color="var(--color-accent)"
-        this.leaf.tabHeaderInnerTitleEl.style.color="var(--color-accent)"
+    if (!DEVICE.isMobile) {
+      if (requireApiVersion("0.16.0")) {
+        this.leaf.tabHeaderInnerIconEl.style.color = "var(--color-accent)"
+        this.leaf.tabHeaderInnerTitleEl.style.color = "var(--color-accent)"
       }
     }
   }
@@ -3037,14 +3037,14 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   }
 
   public clearDirty() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.clearDirty,`ExcalidrawView.clearDirty`);
-    if(this.semaphores.viewunload) return;
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.clearDirty, `ExcalidrawView.clearDirty`);
+    if (this.semaphores.viewunload) return;
     const api = this.excalidrawAPI;
     if (!api) {
       return;
     }
     this.semaphores.dirty = null;
-    if(this.toolsPanelRef?.current) {
+    if (this.toolsPanelRef?.current) {
       this.toolsPanelRef.current.setDirty(false);
     }
     const el = api.getSceneElements();
@@ -3052,17 +3052,17 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       this.previousSceneVersion = this.getSceneVersion(el);
     }
     this.actionButtons['save'].querySelector("svg").removeClass("excalidraw-dirty");
-    if(!DEVICE.isMobile) {
-      if(requireApiVersion("0.16.0")) {
-        this.leaf.tabHeaderInnerIconEl.style.color=""
-        this.leaf.tabHeaderInnerTitleEl.style.color=""
+    if (!DEVICE.isMobile) {
+      if (requireApiVersion("0.16.0")) {
+        this.leaf.tabHeaderInnerIconEl.style.color = ""
+        this.leaf.tabHeaderInnerTitleEl.style.color = ""
       }
     }
   }
 
   public async initializeToolsIconPanelAfterLoading() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.initializeToolsIconPanelAfterLoading,`ExcalidrawView.initializeToolsIconPanelAfterLoading`);
-    if(this.semaphores.viewunload) return;
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.initializeToolsIconPanelAfterLoading, `ExcalidrawView.initializeToolsIconPanelAfterLoading`);
+    if (this.semaphores.viewunload) return;
     const api = this.excalidrawAPI;
     if (!api) {
       return;
@@ -3071,7 +3071,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     //since Obsidian 1.6.0 onLayoutReady calls happen asynchronously compared to starting Excalidraw view
     //these validations are just to make sure that initialization is complete
     let counter = 0;
-    while(!this.plugin.scriptEngine && counter++<50) {
+    while (!this.plugin.scriptEngine && counter++ < 50) {
       sleep(50);
     }
 
@@ -3152,7 +3152,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   public convertTextElementToMarkdown(textElement: ExcalidrawTextElement, containerElement: ExcalidrawElement) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.convertTextElementToMarkdown, "ExcalidrawView.convertTextElementToMarkdown", textElement, containerElement);
-    if(!textElement) return;
+    if (!textElement) return;
     const prompt = new Prompt(
       this.app,
       "Filename",
@@ -3171,22 +3171,22 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         filename,
         folderpath,
       );
-      const text:string[] = [];
-      if(containerElement && containerElement.link) text.push(containerElement.link);
+      const text: string[] = [];
+      if (containerElement && containerElement.link) text.push(containerElement.link);
       text.push(textElement.rawText);
       const f = await createOrOverwriteFile(this.app, fname, text.join("\n"));
-      if(f) {
-        const ea:ExcalidrawAutomate = getEA(this);
-        const elements = containerElement ? [textElement,containerElement] : [textElement];
+      if (f) {
+        const ea: ExcalidrawAutomate = getEA(this);
+        const elements = containerElement ? [textElement, containerElement] : [textElement];
         ea.copyViewElementsToEAforEditing(elements);
-        ea.getElements().forEach(el=>el.isDeleted = true);
-        const [x,y,w,h] = containerElement
-          ? [containerElement.x,containerElement.y,containerElement.width,containerElement.height]
-          : [textElement.x, textElement.y, MAX_IMAGE_SIZE,MAX_IMAGE_SIZE];
-        const id = ea.addEmbeddable(x,y,w,h, undefined,f);
-        if(containerElement) {
-          const props:(keyof ExcalidrawElement)[] = ["backgroundColor", "fillStyle","roughness","roundness","strokeColor","strokeStyle","strokeWidth"];
-          props.forEach((prop)=>{
+        ea.getElements().forEach(el => el.isDeleted = true);
+        const [x, y, w, h] = containerElement
+          ? [containerElement.x, containerElement.y, containerElement.width, containerElement.height]
+          : [textElement.x, textElement.y, MAX_IMAGE_SIZE, MAX_IMAGE_SIZE];
+        const id = ea.addEmbeddable(x, y, w, h, undefined, f);
+        if (containerElement) {
+          const props: (keyof ExcalidrawElement)[] = ["backgroundColor", "fillStyle", "roughness", "roundness", "strokeColor", "strokeStyle", "strokeWidth"];
+          props.forEach((prop) => {
             const element = ea.getElement(id);
             if (prop in element) {
               (element as any)[prop] = containerElement[prop];
@@ -3199,44 +3199,44 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
     });
   }
-  
-  async addYouTubeThumbnail(link:string) {
+
+  async addYouTubeThumbnail(link: string) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.addYouTubeThumbnail, "ExcalidrawView.addYouTubeThumbnail", link);
     const thumbnailLink = await getYouTubeThumbnailLink(link);
     const ea = getEA(this) as ExcalidrawAutomate;
-    const id = await ea.addImage(0,0,thumbnailLink);
+    const id = await ea.addImage(0, 0, thumbnailLink);
     ea.getElement(id).link = link;
-    await ea.addElementsToView(true,true,true)
+    await ea.addElementsToView(true, true, true)
     ea.destroy();
 
   }
 
-  async addImageWithURL(link:string) {
+  async addImageWithURL(link: string) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.addImageWithURL, "ExcalidrawView.addImageWithURL", link);
     const ea = getEA(this) as ExcalidrawAutomate;
-    await ea.addImage(0,0,link);
-    await ea.addElementsToView(true,true,true);
+    await ea.addImage(0, 0, link);
+    await ea.addElementsToView(true, true, true);
     ea.destroy();
   }
 
-  async addImageSaveToVault(link:string) {
+  async addImageSaveToVault(link: string) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.addImageSaveToVault, "ExcalidrawView.addImageSaveToVault", link);
     const ea = getEA(this) as ExcalidrawAutomate;
     const mimeType = getMimeType(getURLImageExtension(link));
-    const dataURL = await getDataURLFromURL(link,mimeType,3000);
+    const dataURL = await getDataURLFromURL(link, mimeType, 3000);
     const fileId = await generateIdFromFile((new TextEncoder()).encode(dataURL as string).buffer)
-    const file = await this.excalidrawData.saveDataURLtoVault(dataURL,mimeType,fileId);
-    if(!file) {
+    const file = await this.excalidrawData.saveDataURLtoVault(dataURL, mimeType, fileId);
+    if (!file) {
       new Notice(t("ERROR_SAVING_IMAGE"));
       ea.destroy();
       return;
     }
-    await ea.addImage(0,0,file);
-    await ea.addElementsToView(true,true,true);
+    await ea.addImage(0, 0, file);
+    await ea.addElementsToView(true, true, true);
     ea.destroy();
   }
 
-  async addTextWithIframely(text:string) {
+  async addTextWithIframely(text: string) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.addTextWithIframely, "ExcalidrawView.addTextWithIframely", text);
     const id = await this.addText(text);
     const url = `http://iframely.server.crestify.com/iframely?url=${text}`;
@@ -3248,22 +3248,22 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       const ea = getEA(this) as ExcalidrawAutomate;
       const el = ea
         .getViewElements()
-        .filter((el) => el.type==="text" && el.id === id);
+        .filter((el) => el.type === "text" && el.id === id);
       if (el.length === 1) {
         ea.copyViewElementsToEAforEditing(el);
         const textElement = ea.getElement(el[0].id) as Mutable<ExcalidrawTextElement>;
         textElement.text = textElement.originalText = textElement.rawText =
-            `[${data.meta.title}](${text})`;
+          `[${data.meta.title}](${text})`;
         await ea.addElementsToView(false, false, false);
         ea.destroy();
       }
-    } catch(e) {
+    } catch (e) {
     };
   }
 
   onPaneMenu(menu: Menu, source: string): void {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onPaneMenu, "ExcalidrawView.onPaneMenu", menu, source);
-    if(this.excalidrawAPI && this.getViewSelectedElements().some(el=>el.type==="text")) {
+    if (this.excalidrawAPI && this.getViewSelectedElements().some(el => el.type === "text")) {
       menu.addItem(item => {
         item
           .setTitle(t("OPEN_LINK"))
@@ -3304,8 +3304,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             if (!this.excalidrawAPI || !this.file) {
               return;
             }
-            if(!this.exportDialog) {
-              this.exportDialog = new ExportDialog(this.plugin, this,this.file);
+            if (!this.exportDialog) {
+              this.exportDialog = new ExportDialog(this.plugin, this, this.file);
             }
             this.exportDialog.open();
           })
@@ -3316,7 +3316,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           .setTitle(t("INSTALL_SCRIPT_BUTTON"))
           .setIcon(SCRIPTENGINE_ICON_NAME)
           .setSection("pane")
-          .onClick(()=>{
+          .onClick(() => {
             new ScriptInstallPrompt(this.plugin).open();
           })
       })
@@ -3327,8 +3327,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const data: any = this.plugin.getStencilLibrary();
     return data?.library ? data.library : data?.libraryItems ?? [];
   }
-  
-  public setCurrentPositionToCenter(){
+
+  public setCurrentPositionToCenter() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setCurrentPositionToCenter, "ExcalidrawView.setCurrentPositionToCenter");
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     if (!api) {
@@ -3345,7 +3345,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     );
   };
 
-  private getSelectedTextElement(): SelectedElementWithLink{
+  private getSelectedTextElement(): SelectedElementWithLink {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getSelectedTextElement, "ExcalidrawView.getSelectedTextElement");
     const api = this.excalidrawAPI;
     if (!api) {
@@ -3373,7 +3373,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       return { id: selectedElement[0].id, text: selectedElement[0].text };
     } //a text element was selected. Return text
 
-    if (["image","arrow"].contains(selectedElement[0].type)) {
+    if (["image", "arrow"].contains(selectedElement[0].type)) {
       return { id: null, text: null };
     }
 
@@ -3518,7 +3518,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.addLink, "ExcalidrawView.addLink", markdownlink, path, alias);
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     const st = api.getAppState();
-    if(
+    if (
       !st.selectedElementIds ||
       (st.selectedElementIds && Object.keys(st.selectedElementIds).length !== 1)
     ) {
@@ -3526,32 +3526,32 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       return;
     }
     const selectedElementId = Object.keys(api.getAppState().selectedElementIds)[0];
-    const selectedElement = api.getSceneElements().find(el=>el.id === selectedElementId);
-    if(!selectedElement || (!Boolean(originalLink) && (selectedElement && selectedElement.link !== null) )) {
-      if(selectedElement) new Notice("Selected element already has a link. Inserting link as text.");
+    const selectedElement = api.getSceneElements().find(el => el.id === selectedElementId);
+    if (!selectedElement || (!Boolean(originalLink) && (selectedElement && selectedElement.link !== null))) {
+      if (selectedElement) new Notice("Selected element already has a link. Inserting link as text.");
       this.addText(markdownlink);
       return;
     }
     const ea = getEA(this) as ExcalidrawAutomate;
     ea.copyViewElementsToEAforEditing([selectedElement]);
-    if(originalLink?.match(/\[\[(.*?)\]\]/)?.[1]) {
-      markdownlink = originalLink.replace(/(\[\[.*?\]\])/,markdownlink);
+    if (originalLink?.match(/\[\[(.*?)\]\]/)?.[1]) {
+      markdownlink = originalLink.replace(/(\[\[.*?\]\])/, markdownlink);
     }
     ea.getElement(selectedElementId).link = markdownlink;
     await ea.addElementsToView(false, true);
     ea.destroy();
-    if(Boolean(originalLink)) {
+    if (Boolean(originalLink)) {
       this.updateScene({
         appState: {
           showHyperlinkPopup: {
-            newValue : "info", oldValue : "editor"
+            newValue: "info", oldValue: "editor"
           }
         }
       });
     }
   }
 
-  public async addText (
+  public async addText(
     text: string,
     fontFamily?: 1 | 2 | 3 | 4,
     save: boolean = true
@@ -3568,7 +3568,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     ea.style.fontFamily = fontFamily ?? st.currentItemFontFamily ?? 1;
     ea.style.fontSize = st.currentItemFontSize ?? 20;
     ea.style.textAlign = st.currentItemTextAlign ?? "left";
-    
+
     const { width, height } = st;
 
     const top = viewportCoordsToSceneCoords(
@@ -3585,7 +3585,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       },
       st,
     );
-    const isPointerOutsideVisibleArea = top.x>this.currentPosition.x || bottom.x<this.currentPosition.x || top.y>this.currentPosition.y || bottom.y<this.currentPosition.y;
+    const isPointerOutsideVisibleArea = top.x > this.currentPosition.x || bottom.x < this.currentPosition.x || top.y > this.currentPosition.y || bottom.y < this.currentPosition.y;
 
     const id = ea.addText(this.currentPosition.x, this.currentPosition.y, text);
     await this.addElements({
@@ -3609,7 +3609,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     newElements: ExcalidrawElement[];
     repositionToCursor?: boolean;
     save?: boolean;
-    images?: {[key: FileId]: ImageInfo};
+    images?: { [key: FileId]: ImageInfo };
     newElementsOnTop?: boolean;
     shouldRestoreElements?: boolean;
   }): Promise<boolean> {
@@ -3622,7 +3622,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const textElements = newElements.filter((el) => el.type == "text");
     for (let i = 0; i < textElements.length; i++) {
       const textElement = textElements[i] as Mutable<ExcalidrawTextElement>;
-      const {parseResult, link} =
+      const { parseResult, link } =
         await this.excalidrawData.addTextElement(
           textElement.id,
           textElement.text,
@@ -3632,8 +3632,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         textElement.link = link;
       }
       if (this.textMode === TextMode.parsed && !textElement?.isDeleted) {
-        const {text, x, y, width, height} = refreshTextDimensions(
-          textElement,null,elementsMap,parseResult
+        const { text, x, y, width, height } = refreshTextDimensions(
+          textElement, null, elementsMap, parseResult
         );
         textElement.text = text;
         textElement.originalText = parseResult;
@@ -3668,9 +3668,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const elements = newElementsOnTop
       ? el.concat(newElements.filter((e) => !removeList.includes(e.id)))
       : newElements.filter((e) => !removeList.includes(e.id)).concat(el);
-    
+
     const files: BinaryFileData[] = [];
-    if (images && Object.keys(images).length >0) {  
+    if (images && Object.keys(images).length > 0) {
       Object.keys(images).forEach((k: FileId) => {
         files.push({
           mimeType: images[k].mimeType,
@@ -3696,9 +3696,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             pdfPageViewProps: images[k].pdfPageViewProps,
           });
           this.excalidrawData.setFile(images[k].id, embeddedFile);
-          if(images[k].pdfPageViewProps) {
+          if (images[k].pdfPageViewProps) {
             elements.filter((e) => e.type === "image" && e.fileId === images[k].id).forEach((e) => {
-              addAppendUpdateCustomData(e, {pdfPageViewProps: images[k].pdfPageViewProps});
+              addAppendUpdateCustomData(e, { pdfPageViewProps: images[k].pdfPageViewProps });
             });
           }
         }
@@ -3719,7 +3719,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       shouldRestoreElements,
     );
 
-    if(files.length > 0) {
+    if (files.length > 0) {
       api.addFiles(files);
     }
 
@@ -3733,18 +3733,18 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     return true;
   };
 
-  public getScene (selectedOnly?: boolean) {
+  public getScene(selectedOnly?: boolean) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getScene, "ExcalidrawView.getScene", selectedOnly);
-/*    if (this.lastSceneSnapshot) {
-      return this.lastSceneSnapshot;
-    }*/
+    /*    if (this.lastSceneSnapshot) {
+          return this.lastSceneSnapshot;
+        }*/
     const api = this.excalidrawAPI;
     if (!api) {
       return null;
     }
     const el: ExcalidrawElement[] = selectedOnly ? this.getViewSelectedElements() : api.getSceneElements();
     const st: AppState = api.getAppState();
-    const files = {...api.getFiles()};
+    const files = { ...api.getFiles() };
 
     if (files) {
       const imgIds = el
@@ -3756,8 +3756,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       toDelete.forEach((k) => delete files[k]);
     }
 
-    const activeTool = {...st.activeTool};
-    if(!["freedraw","hand"].includes(activeTool.type)) {
+    const activeTool = { ...st.activeTool };
+    if (!["freedraw", "hand"].includes(activeTool.type)) {
       activeTool.type = "selection";
     }
     activeTool.customType = null;
@@ -3766,7 +3766,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     return {
       type: "excalidraw",
       version: 2,
-      source: GITHUB_RELEASES+PLUGIN_VERSION,
+      source: GITHUB_RELEASES + PLUGIN_VERSION,
       elements: el,
       //see also ExcalidrawAutomate async create(
       appState: {
@@ -3812,7 +3812,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
    */
   private refreshCanvasOffset() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.refreshCanvasOffset, "ExcalidrawView.refreshCanvasOffset");
-    if(this.contentEl.clientWidth === 0 || this.contentEl.clientHeight === 0) return;
+    if (this.contentEl.clientWidth === 0 || this.contentEl.clientHeight === 0) return;
     const api = this.excalidrawAPI;
     if (!api) {
       return;
@@ -3832,7 +3832,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (this.hoverPopover && !hoverContainerEl?.parentElement?.hasClass("hover-editor")) {
       this.hoverPreviewTarget = null;
       //@ts-ignore
-      if(this.hoverPopover.embed?.editor) {
+      if (this.hoverPopover.embed?.editor) {
         return;
       }
       this.hoverPopover?.hide();
@@ -3852,13 +3852,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
    * identify which element to navigate to on click
    * @returns 
    */
-  private identifyElementClicked () {
+  private identifyElementClicked() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.identifyElementClicked, "ExcalidrawView.identifyElementClicked");
     this.selectedTextElement = getTextElementAtPointer(this.currentPosition, this);
     if (this.selectedTextElement && this.selectedTextElement.id) {
       const event = new MouseEvent("click", {
         ctrlKey: !(DEVICE.isIOS || DEVICE.isMacOS) || this.modifierKeyDown.ctrlKey,
-        metaKey:  (DEVICE.isIOS || DEVICE.isMacOS) || this.modifierKeyDown.metaKey,
+        metaKey: (DEVICE.isIOS || DEVICE.isMacOS) || this.modifierKeyDown.metaKey,
         shiftKey: this.modifierKeyDown.shiftKey,
         altKey: this.modifierKeyDown.altKey,
       });
@@ -3870,7 +3870,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (this.selectedImageElement && this.selectedImageElement.id) {
       const event = new MouseEvent("click", {
         ctrlKey: !(DEVICE.isIOS || DEVICE.isMacOS) || this.modifierKeyDown.ctrlKey,
-        metaKey:  (DEVICE.isIOS || DEVICE.isMacOS) || this.modifierKeyDown.metaKey,
+        metaKey: (DEVICE.isIOS || DEVICE.isMacOS) || this.modifierKeyDown.metaKey,
         shiftKey: this.modifierKeyDown.shiftKey,
         altKey: this.modifierKeyDown.altKey,
       });
@@ -3883,7 +3883,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (this.selectedElementWithLink && this.selectedElementWithLink.id) {
       const event = new MouseEvent("click", {
         ctrlKey: !(DEVICE.isIOS || DEVICE.isMacOS) || this.modifierKeyDown.ctrlKey,
-        metaKey:  (DEVICE.isIOS || DEVICE.isMacOS) || this.modifierKeyDown.metaKey,
+        metaKey: (DEVICE.isIOS || DEVICE.isMacOS) || this.modifierKeyDown.metaKey,
         shiftKey: this.modifierKeyDown.shiftKey,
         altKey: this.modifierKeyDown.altKey,
       });
@@ -3894,15 +3894,15 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   };
 
   private showHoverPreview(linktext?: string, element?: ExcalidrawElement) {
-    if(this.hoverPreviewTarget) return; //hover preview is already shown
+    if (this.hoverPreviewTarget) return; //hover preview is already shown
     //(process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.showHoverPreview, "ExcalidrawView.showHoverPreview", linktext, element);
-    if(!this.lastMouseEvent) return;
+    if (!this.lastMouseEvent) return;
     const st = this.excalidrawAPI?.getAppState();
-    if(st?.editingTextElement || st?.newElement) return; //should not activate hover preview when element is being edited or dragged
-    if(this.semaphores.wheelTimeout) return;
+    if (st?.editingTextElement || st?.newElement) return; //should not activate hover preview when element is being edited or dragged
+    if (this.semaphores.wheelTimeout) return;
     //if link text is not provided, try to get it from the element
     if (!linktext) {
-      if(!this.currentPosition) return;
+      if (!this.currentPosition) return;
       linktext = "";
       const selectedEl = getTextElementAtPointer(this.currentPosition, this);
       if (!selectedEl || !selectedEl.text) {
@@ -3911,7 +3911,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         const selectedElementWithLink = (selectedImgElement?.id || selectedImgElement?.id)
           ? null
           : getElementWithLinkAtPointer(this.currentPosition, this);
-        element = this.excalidrawAPI.getSceneElements().find((el:ExcalidrawElement)=>el.id === selectedImgElement.id);
+        element = this.excalidrawAPI.getSceneElements().find((el: ExcalidrawElement) => el.id === selectedImgElement.id);
         if ((!selectedImgElement || !selectedImgElement.fileId) && !selectedElementWithLink?.id) {
           return;
         }
@@ -3920,17 +3920,17 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             return;
           }
           const ef = this.excalidrawData.getFile(selectedImgElement.fileId);
-          if(!ef.file) {
+          if (!ef.file) {
             return;
           }
           if (
             (ef.isHyperLink || ef.isLocalLink) || //web images don't have a preview
             (IMAGE_TYPES.contains(ef.file.extension)) || //images don't have a preview
             (ef.file.extension.toLowerCase() === "pdf") || //pdfs don't have a preview
-            (this.plugin.ea.isExcalidrawFile(ef.file)) 
+            (this.plugin.ea.isExcalidrawFile(ef.file))
           ) {//excalidraw files don't have a preview
             linktext = getLinkTextFromLink(element.link);
-            if(!linktext) return;
+            if (!linktext) return;
           } else {
             const ref = ef.linkParts.ref
               ? `#${ef.linkParts.isBlockRef ? "^" : ""}${ef.linkParts.ref}`
@@ -3941,12 +3941,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         }
         if (selectedElementWithLink?.id) {
           linktext = getLinkTextFromLink(selectedElementWithLink.text);
-          if(!linktext) return;
-          if(this.app.metadataCache.getFirstLinkpathDest(linktext.split("#")[0],this.file.path) === this.file) return;
+          if (!linktext) return;
+          if (this.app.metadataCache.getFirstLinkpathDest(linktext.split("#")[0], this.file.path) === this.file) return;
         }
       } else {
-        const {linkText, selectedElement} = this.getLinkTextForElement(selectedEl, selectedEl);
-        element = selectedElement; 
+        const { linkText, selectedElement } = this.getLinkTextForElement(selectedEl, selectedEl);
+        element = selectedElement;
         /*this.excalidrawAPI.getSceneElements().filter((el:ExcalidrawElement)=>el.id === selectedElement.id)[0];
           const text: string =
             this.textMode === TextMode.parsed
@@ -3954,13 +3954,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               : selectedElement.text;*/
 
         linktext = getLinkTextFromLink(linkText);
-        if(!linktext) return;
+        if (!linktext) return;
       }
     }
 
-    if(this.getHookServer().onLinkHoverHook) {
+    if (this.getHookServer().onLinkHoverHook) {
       try {
-        if(!this.getHookServer().onLinkHoverHook(
+        if (!this.getHookServer().onLinkHoverHook(
           element,
           linktext,
           this,
@@ -3969,7 +3969,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           return;
         }
       } catch (e) {
-        errorlog({where: "ExcalidrawView.showHoverPreview", fn: this.getHookServer().onLinkHoverHook, error: e});
+        errorlog({ where: "ExcalidrawView.showHoverPreview", fn: this.getHookServer().onLinkHoverHook, error: e });
       }
     }
 
@@ -4019,8 +4019,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
   };
 
-  private isLinkSelected():boolean {
-    return Boolean (
+  private isLinkSelected(): boolean {
+    return Boolean(
       this.getSelectedTextElement().id ||
       this.getSelectedImageElement().id ||
       this.getSelectedElementWithLink().id
@@ -4042,9 +4042,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   };
 
   private onPointerDown(e: PointerEvent) {
-    if (!(isWinCTRLorMacCMD(e)||isWinMETAorMacCTRL(e))) {
+    if (!(isWinCTRLorMacCMD(e) || isWinMETAorMacCTRL(e))) {
       return;
-    } 
+    }
     if (!this.plugin.settings.allowCtrlClick && !isWinMETAorMacCTRL(e)) {
       return;
     }
@@ -4054,7 +4054,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     //added setTimeout when I changed onClick(e: MouseEvent) to onPointerDown() in 1.7.9. 
     //Timeout is required for Excalidraw to first complete the selection action before execution
     //of the link click continues
-    window.setTimeout(()=>{ 
+    window.setTimeout(() => {
       if (!this.isLinkSelected()) return;
       this.handleLinkClick(e);
     });
@@ -4096,7 +4096,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         return;
       }
 
-      if(this.plugin.settings.doubleClickLinkOpenViewMode) {
+      if (this.plugin.settings.doubleClickLinkOpenViewMode) {
         //dobule click
         const now = Date.now();
         if ((now - this.doubleClickTimestamp) < 600 && (now - this.doubleClickTimestamp) > 40) {
@@ -4109,40 +4109,45 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (p.button === "up") {
       this.blockOnMouseButtonDown = false;
     }
-    if (isWinCTRLorMacCMD(this.modifierKeyDown) || 
-      (this.excalidrawAPI.getAppState().isViewModeEnabled && 
-      this.plugin.settings.hoverPreviewWithoutCTRL)) {
-      
+    if (isWinCTRLorMacCMD(this.modifierKeyDown) ||
+      (this.excalidrawAPI.getAppState().isViewModeEnabled &&
+        this.plugin.settings.hoverPreviewWithoutCTRL)) {
+
       this.showHoverPreview();
     }
   }
 
   public updateGridColor(canvasColor?: string, st?: any) {
-    if(!canvasColor) {
+    if (!canvasColor) {
       st = (this.excalidrawAPI as ExcalidrawImperativeAPI).getAppState();
       canvasColor = canvasColor ?? st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor;
     }
-    window.setTimeout(()=>this.updateScene(
+    window.setTimeout(() => this.updateScene(
       {
-        appState:{
+        appState: {
           gridColor: this.getGridColor(canvasColor, st),
         },
-        captureUpdate: CaptureUpdateAction.NEVER}));
+        captureUpdate: CaptureUpdateAction.NEVER
+      }));
   }
 
-  public updateGridDirection(gridDirection: {horizontal: boolean, vertical: boolean}) {
-    window.setTimeout(()=>this.updateScene({appState:{gridDirection: {
-      horizontal: gridDirection.horizontal,
-      vertical: gridDirection.vertical}
-    }, captureUpdate: CaptureUpdateAction.NEVER}));
+  public updateGridDirection(gridDirection: { horizontal: boolean, vertical: boolean }) {
+    window.setTimeout(() => this.updateScene({
+      appState: {
+        gridDirection: {
+          horizontal: gridDirection.horizontal,
+          vertical: gridDirection.vertical
+        }
+      }, captureUpdate: CaptureUpdateAction.NEVER
+    }));
   }
 
   private canvasColorChangeHook(st: AppState) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.canvasColorChangeHook, "ExcalidrawView.canvasColorChangeHook", st);
     const canvasColor = st.viewBackgroundColor === "transparent" ? "white" : st.viewBackgroundColor;
-    this.updateGridColor(canvasColor,st);
-    setDynamicStyle(this.plugin.ea,this,canvasColor,this.plugin.settings.dynamicStyling);
-    if(this.plugin.ea.onCanvasColorChangeHook) {
+    this.updateGridColor(canvasColor, st);
+    setDynamicStyle(this.plugin.ea, this, canvasColor, this.plugin.settings.dynamicStyling);
+    if (this.plugin.ea.onCanvasColorChangeHook) {
       try {
         this.plugin.ea.onCanvasColorChangeHook(
           this.plugin.ea,
@@ -4163,7 +4168,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   private checkSceneVersion(et: ExcalidrawElement[]) {
     const sceneVersion = this.getSceneVersion(et);
     if (
-      ((sceneVersion > 0 || 
+      ((sceneVersion > 0 ||
         (sceneVersion === 0 && et.length > 0)) && //Addressing the rare case when the last element is deleted from the scene
         sceneVersion !== this.previousSceneVersion)
     ) {
@@ -4172,24 +4177,24 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
   }
 
-  private shouldSaveImportedImage: boolean = false; 
-  private onChange (et: ExcalidrawElement[], st: AppState) {
-    if(st.activeTool?.type) {
-      if(st.activeTool.type === "image") {
-        if(st.selectedElementIds && Object.keys(st.selectedElementIds).length === 1) {
-          const selectedElement = et.filter(el=>el.id === Object.keys(st.selectedElementIds)[0])[0];
-          if(selectedElement && selectedElement.type === "image") {
+  private shouldSaveImportedImage: boolean = false;
+  private onChange(et: ExcalidrawElement[], st: AppState) {
+    if (st.activeTool?.type) {
+      if (st.activeTool.type === "image") {
+        if (st.selectedElementIds && Object.keys(st.selectedElementIds).length === 1) {
+          const selectedElement = et.filter(el => el.id === Object.keys(st.selectedElementIds)[0])[0];
+          if (selectedElement && selectedElement.type === "image") {
             this.shouldSaveImportedImage = true;
           }
         }
       }
-      if(st.activeTool.type === "selection" && this.shouldSaveImportedImage) {
+      if (st.activeTool.type === "selection" && this.shouldSaveImportedImage) {
         this.shouldSaveImportedImage = false;
-        setTimeout(()=>this.save(true, true),100); //image is being added to the scene
+        setTimeout(() => this.save(true, true), 100); //image is being added to the scene
       }
     }
 
-    if(st.newElement?.type === "freedraw") {
+    if (st.newElement?.type === "freedraw") {
       this.freedrawLastActiveTimestamp = Date.now();
     }
     if (
@@ -4202,11 +4207,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.viewModeEnabled = st.viewModeEnabled;
     if (this.semaphores.justLoaded) {
       const elcount = this.excalidrawData?.scene?.elements?.length ?? 0;
-      if( elcount>0 && et.length===0 ) return;
+      if (elcount > 0 && et.length === 0) return;
       this.semaphores.justLoaded = false;
       if (!this.semaphores.preventAutozoom && this.plugin.settings.zoomToFitOnOpen) {
-        if(getExcalidraAndMarkdowViewsForFile(this.app, this.file).length === 1) {
-          this.zoomToFit(false,true);
+        if (getExcalidraAndMarkdowViewsForFile(this.app, this.file).length === 1) {
+          this.zoomToFit(false, true);
         }
       }
       this.previousSceneVersion = this.getSceneVersion(et);
@@ -4215,20 +4220,20 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       this.canvasColorChangeHook(st);
       return;
     }
-    if(st.theme !== this.previousTheme && this.file === this.excalidrawData.file) {
+    if (st.theme !== this.previousTheme && this.file === this.excalidrawData.file) {
       this.previousTheme = st.theme;
       this.setDirty(5.1);
     }
-    if(st.viewBackgroundColor !== this.previousBackgroundColor && this.file === this.excalidrawData.file) {
+    if (st.viewBackgroundColor !== this.previousBackgroundColor && this.file === this.excalidrawData.file) {
       this.previousBackgroundColor = st.viewBackgroundColor;
       this.setDirty(6);
-      if(this.colorChangeTimer) {
+      if (this.colorChangeTimer) {
         window.clearTimeout(this.colorChangeTimer);
       }
-      this.colorChangeTimer = window.setTimeout(()=>{
+      this.colorChangeTimer = window.setTimeout(() => {
         this.canvasColorChangeHook(st);
         this.colorChangeTimer = null;
-      },50); //just enough time if the user is playing with color picker, the change is not too frequent.
+      }, 50); //just enough time if the user is playing with color picker, the change is not too frequent.
     }
     if (this.semaphores.dirty) {
       return;
@@ -4252,7 +4257,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       const lib = {
         type: "excalidrawlib",
         version: 2,
-        source: GITHUB_RELEASES+PLUGIN_VERSION,
+        source: GITHUB_RELEASES + PLUGIN_VERSION,
         libraryItems: items,
       };
 
@@ -4260,16 +4265,16 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     })();
   }
 
-  private onPaste (data: ClipboardData, event: ClipboardEvent | null) {
+  private onPaste(data: ClipboardData, event: ClipboardEvent | null) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onPaste, "ExcalidrawView.onPaste", data, event);
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     const ea = this.getHookServer();
-    if(data?.elements) {
+    if (data?.elements) {
       data.elements
-        .filter(el=>el.type==="text" && !el.hasOwnProperty("rawText"))
-        .forEach(el=>(el as Mutable<ExcalidrawTextElement>).rawText = (el as ExcalidrawTextElement).originalText);
+        .filter(el => el.type === "text" && !el.hasOwnProperty("rawText"))
+        .forEach(el => (el as Mutable<ExcalidrawTextElement>).rawText = (el as ExcalidrawTextElement).originalText);
     };
-    if(data && ea.onPasteHook) {
+    if (data && ea.onPasteHook) {
       try {
         const res = ea.onPasteHook({
           ea,
@@ -4279,102 +4284,102 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           view: this,
           pointerPosition: this.currentPosition,
         });
-        if(typeof res === "boolean" && res === false) return false;
+        if (typeof res === "boolean" && res === false) return false;
       } catch (e) {
-        errorlog({where: "ExcalidrawView.onPaste", fn: ea.onPasteHook, error: e});
+        errorlog({ where: "ExcalidrawView.onPaste", fn: ea.onPasteHook, error: e });
       }
     }
 
     // Disables Middle Mouse Button Paste Functionality on Linux
-    if(
-      !this.modifierKeyDown.ctrlKey 
+    if (
+      !this.modifierKeyDown.ctrlKey
       && typeof event !== "undefined"
-      && event !== null 
+      && event !== null
       && DEVICE.isLinux
     ) {
-      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onPaste,`ExcalidrawView.onPaste, Prevented what is likely middle mouse button paste.`);
+      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onPaste, `ExcalidrawView.onPaste, Prevented what is likely middle mouse button paste.`);
       return false;
     };
 
-    if(data && data.text && hyperlinkIsImage(data.text)) {
+    if (data && data.text && hyperlinkIsImage(data.text)) {
       this.addImageWithURL(data.text);
       return false;
     }
 
     const obsidianURLFilePath = getFilePathFromObsidianURL(data?.text);
-    if(obsidianURLFilePath) {
+    if (obsidianURLFilePath) {
       this.addImageWithURL(obsidianURLFilePath);
       return false;
     }
-    if(data && data.text && !this.modifierKeyDown.shiftKey) {
+    if (data && data.text && !this.modifierKeyDown.shiftKey) {
       const isCodeblock = Boolean(data.text.replaceAll("\r\n", "\n").replaceAll("\r", "\n").match(/^`{3}[^\n]*\n.+\n`{3}\s*$/ms));
-      if(isCodeblock) {
+      if (isCodeblock) {
         const clipboardText = data.text;
-        window.setTimeout(()=>this.pasteCodeBlock(clipboardText));
+        window.setTimeout(() => this.pasteCodeBlock(clipboardText));
         return false;
       }
 
-      if(isTextImageTransclusion(data.text,this, async (link, file)=>{
+      if (isTextImageTransclusion(data.text, this, async (link, file) => {
         const ea = getEA(this) as ExcalidrawAutomate;
-          if(IMAGE_TYPES.contains(file.extension)) {
-            ea.selectElementsInView([await insertImageToView (ea, this.currentPosition, file)]);
-            ea.destroy();
-          } else if(file.extension !== "pdf") {
-            ea.selectElementsInView([await insertEmbeddableToView (ea, this.currentPosition, file, link)]);
-            ea.destroy();
-          } else {
-            if(link.match(/^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/g)) {
-              const ea = getEA(this) as ExcalidrawAutomate;
-              const imgID = await ea.addImage(this.currentPosition.x, this.currentPosition.y,link.split("&rect=")[0]);
-              const el = ea.getElement(imgID) as Mutable<ExcalidrawImageElement>;
-              const fd = ea.imagesDict[el.fileId] as FileData;
-              el.crop = getPDFCropRect({
-                scale: this.plugin.settings.pdfScale,
-                link,
-                naturalHeight: fd.size.height,
-                naturalWidth: fd.size.width,
-                pdfPageViewProps: fd.pdfPageViewProps,
-              });
-              addAppendUpdateCustomData(el, {pdfPageViewProps: fd.pdfPageViewProps});
-              if(el.crop) {
-                el.width = el.crop.width/this.plugin.settings.pdfScale;
-                el.height = el.crop.height/this.plugin.settings.pdfScale;
-              }
-              el.link = `[[${link}]]`;
-              ea.addElementsToView(false,false).then(()=>ea.destroy());
-            } else {
-              const modal = new UniversalInsertFileModal(this.plugin, this);
-              modal.open(file, this.currentPosition);
+        if (IMAGE_TYPES.contains(file.extension)) {
+          ea.selectElementsInView([await insertImageToView(ea, this.currentPosition, file)]);
+          ea.destroy();
+        } else if (file.extension !== "pdf") {
+          ea.selectElementsInView([await insertEmbeddableToView(ea, this.currentPosition, file, link)]);
+          ea.destroy();
+        } else {
+          if (link.match(/^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/g)) {
+            const ea = getEA(this) as ExcalidrawAutomate;
+            const imgID = await ea.addImage(this.currentPosition.x, this.currentPosition.y, link.split("&rect=")[0]);
+            const el = ea.getElement(imgID) as Mutable<ExcalidrawImageElement>;
+            const fd = ea.imagesDict[el.fileId] as FileData;
+            el.crop = getPDFCropRect({
+              scale: this.plugin.settings.pdfScale,
+              link,
+              naturalHeight: fd.size.height,
+              naturalWidth: fd.size.width,
+              pdfPageViewProps: fd.pdfPageViewProps,
+            });
+            addAppendUpdateCustomData(el, { pdfPageViewProps: fd.pdfPageViewProps });
+            if (el.crop) {
+              el.width = el.crop.width / this.plugin.settings.pdfScale;
+              el.height = el.crop.height / this.plugin.settings.pdfScale;
             }
+            el.link = `[[${link}]]`;
+            ea.addElementsToView(false, false).then(() => ea.destroy());
+          } else {
+            const modal = new UniversalInsertFileModal(this.plugin, this);
+            modal.open(file, this.currentPosition);
           }
-          this.setDirty(9);
+        }
+        this.setDirty(9);
       })) {
         return false;
       }
 
       const quoteWithRef = obsidianPDFQuoteWithRef(data.text);
-      if(quoteWithRef) {                  
+      if (quoteWithRef) {
         const ea = getEA(this) as ExcalidrawAutomate;
         const st = api.getAppState();
         const strokeC = st.currentItemStrokeColor;
         const viewC = st.viewBackgroundColor;
         ea.style.strokeColor = strokeC === "transparent"
           ? ea.getCM(viewC === "transparent" ? "white" : viewC)
-              .invert()
-              .stringHEX({alpha: false})
+            .invert()
+            .stringHEX({ alpha: false })
           : strokeC;
         ea.style.fontFamily = st.currentItemFontFamily;
         ea.style.fontSize = st.currentItemFontSize;
         const textDims = ea.measureText(quoteWithRef.quote);
-        const textWidth = textDims.width + 2*30; //default padding
+        const textWidth = textDims.width + 2 * 30; //default padding
         const id = ea.addText(this.currentPosition.x, this.currentPosition.y, quoteWithRef.quote, {
           box: true,
           boxStrokeColor: "transparent",
-          width: Math.min(500,textWidth),
-          height: textDims.height + 2*30,
+          width: Math.min(500, textWidth),
+          height: textDims.height + 2 * 30,
         })
         ea.elementsDict[id].link = `[[${quoteWithRef.link}]]`;
-        ea.addElementsToView(false,false).then(()=>ea.destroy());
+        ea.addElementsToView(false, false).then(() => ea.destroy());
 
         return false;
       }
@@ -4382,8 +4387,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (data.elements) {
       //const onlyImages = data.elements.length > 0 && data.elements.every((el) => el.type === "image");
       //const preventReload = !onlyImages;
-      data.elements.filter(el=>el.type==="text" || el.link).forEach(el=>
-        updateElementIdsInScene({elements: data.elements as Mutable<ExcalidrawElement>[]},el, nanoid())
+      data.elements.filter(el => el.type === "text" || el.link).forEach(el =>
+        updateElementIdsInScene({ elements: data.elements as Mutable<ExcalidrawElement>[] }, el, nanoid())
       );
       window.setTimeout(() => this.save(false), 30); //removed prevent reload = false, as reload was triggered when pasted containers were processed and there was a conflict with the new elements
     }
@@ -4391,12 +4396,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     //process pasted text after it was processed into elements by Excalidraw
     //I let Excalidraw handle the paste first, e.g. to split text by lines
     //Only process text if it includes links or embeds that need to be parsed
-    if(data && data.text && data.text.match(/(\[\[[^\]]*]])|(\[[^\]]*]\([^)]*\))/gm)) {
-      const prevElements = api.getSceneElements().filter(el=>el.type === "text").map(el=>el.id);
+    if (data && data.text && data.text.match(/(\[\[[^\]]*]])|(\[[^\]]*]\([^)]*\))/gm)) {
+      const prevElements = api.getSceneElements().filter(el => el.type === "text").map(el => el.id);
 
-      window.setTimeout(async ()=>{
+      window.setTimeout(async () => {
         const sceneElements = api.getSceneElementsIncludingDeleted() as Mutable<ExcalidrawElement>[];
-        const newElements = sceneElements.filter(el=>el.type === "text" && !el.isDeleted && !prevElements.includes(el.id)) as ExcalidrawTextElement[];
+        const newElements = sceneElements.filter(el => el.type === "text" && !el.isDeleted && !prevElements.includes(el.id)) as ExcalidrawTextElement[];
 
         //collect would-be image elements and their corresponding files and links
         const imageElementsMap = new Map<ExcalidrawTextElement, [string, TFile]>();
@@ -4404,76 +4409,76 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         const callback = (link: string, file: TFile) => {
           imageElementsMap.set(element, [link, file]);
         }
-        newElements.forEach((el:ExcalidrawTextElement)=>{
+        newElements.forEach((el: ExcalidrawTextElement) => {
           element = el;
-          isTextImageTransclusion(el.originalText,this,callback);
+          isTextImageTransclusion(el.originalText, this, callback);
         });
 
         //if there are no image elements, save and return
         //Save will ensure links and embeds are parsed
-        if(imageElementsMap.size === 0) {
+        if (imageElementsMap.size === 0) {
           this.save(false); //saving because there still may be text transclusions
           return;
         };
-        
+
         //if there are image elements
         //first delete corresponding "old" text elements
-        for(const [el, [link, file]] of imageElementsMap) {
+        for (const [el, [link, file]] of imageElementsMap) {
           const clone = cloneElement(el);
           clone.isDeleted = true;
           this.excalidrawData.deleteTextElement(clone.id);
           sceneElements[sceneElements.indexOf(el)] = clone;
         }
-        this.updateScene({elements: sceneElements, captureUpdate: CaptureUpdateAction.NEVER});
+        this.updateScene({ elements: sceneElements, captureUpdate: CaptureUpdateAction.NEVER });
 
         //then insert images and embeds
         //shift text elements down to make space for images and embeds
-        const ea:ExcalidrawAutomate = getEA(this);
+        const ea: ExcalidrawAutomate = getEA(this);
         let offset = 0;
-        for(const el of newElements) {
-          const topleft = {x: el.x, y: el.y+offset};
-          if(imageElementsMap.has(el)) {
+        for (const el of newElements) {
+          const topleft = { x: el.x, y: el.y + offset };
+          if (imageElementsMap.has(el)) {
             const [link, file] = imageElementsMap.get(el);
-            if(IMAGE_TYPES.contains(file.extension)) {
-              const id = await insertImageToView (ea, topleft, file, undefined, false);
+            if (IMAGE_TYPES.contains(file.extension)) {
+              const id = await insertImageToView(ea, topleft, file, undefined, false);
               offset += ea.getElement(id).height - el.height;
-            } else if(file.extension !== "pdf") {
+            } else if (file.extension !== "pdf") {
               //isTextImageTransclusion will not return text only markdowns, this is here
               //for the future when we may want to support other embeddables
-              const id = await insertEmbeddableToView (ea, topleft, file, link, false);
+              const id = await insertEmbeddableToView(ea, topleft, file, link, false);
               offset += ea.getElement(id).height - el.height;
             } else {
               const modal = new UniversalInsertFileModal(this.plugin, this);
               modal.open(file, topleft);
             }
           } else {
-            if(offset !== 0) {
+            if (offset !== 0) {
               ea.copyViewElementsToEAforEditing([el]);
               ea.getElement(el.id).y = topleft.y;
             }
           }
         }
-        await ea.addElementsToView(false,true);
-        ea.selectElementsInView(newElements.map(el=>el.id));
+        await ea.addElementsToView(false, true);
+        ea.selectElementsInView(newElements.map(el => el.id));
         ea.destroy();
-      },200) //parse transclusion and links after paste
+      }, 200) //parse transclusion and links after paste
     }
     return true;
   }
 
-  private async onThemeChange (newTheme: string) {
+  private async onThemeChange(newTheme: string) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onThemeChange, "ExcalidrawView.onThemeChange", newTheme);
     //debug({where:"ExcalidrawView.onThemeChange",file:this.file.name,before:"this.loadSceneFiles",newTheme});
     this.excalidrawData.scene.appState.theme = newTheme;
     this.loadSceneFiles(true);
     this.toolsPanelRef?.current?.setTheme(newTheme);
     //Timeout is to allow appState to update
-    window.setTimeout(()=>setDynamicStyle(this.plugin.ea,this,this.previousBackgroundColor,this.plugin.settings.dynamicStyling));
+    window.setTimeout(() => setDynamicStyle(this.plugin.ea, this, this.previousBackgroundColor, this.plugin.settings.dynamicStyling));
   }
 
   //returns the raw text of the element which is the original text without parsing
   //in compatibility mode, returns the original text, and for backward compatibility the text if originalText is not available
-  private onBeforeTextEdit (textElement: ExcalidrawTextElement, isExistingElement: boolean): string {
+  private onBeforeTextEdit(textElement: ExcalidrawTextElement, isExistingElement: boolean): string {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onBeforeTextEdit, "ExcalidrawView.onBeforeTextEdit", textElement);
     /*const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     const st = api.getAppState();
@@ -4484,13 +4489,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       this.plugin.settings.dynamicStyling,
       api.getColorAtScenePoint({sceneX: this.currentPosition.x, sceneY: this.currentPosition.y})
     );*/
-    if(!isExistingElement) {
+    if (!isExistingElement) {
       return;
     }
     window.clearTimeout(this.isEditingTextResetTimer);
     this.isEditingTextResetTimer = null;
     this.semaphores.isEditingText = true; //to prevent autoresize on mobile when keyboard pops up
-    if(this.compatibilityMode) {
+    if (this.compatibilityMode) {
       return textElement.originalText ?? textElement.text;
     }
     const raw = this.excalidrawData.getRawText(textElement.id);
@@ -4501,26 +4506,26 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   }
 
 
-  private onBeforeTextSubmit (
+  private onBeforeTextSubmit(
     textElement: ExcalidrawTextElement,
     nextText: string,
     nextOriginalText: string,
     isDeleted: boolean,
-  ): {updatedNextOriginalText: string, nextLink: string} {
+  ): { updatedNextOriginalText: string, nextLink: string } {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onBeforeTextSubmit, "ExcalidrawView.onBeforeTextSubmit", textElement, nextText, nextOriginalText, isDeleted);
     const api = this.excalidrawAPI;
     if (!api) {
-      return {updatedNextOriginalText: null, nextLink: textElement?.link ?? null};
+      return { updatedNextOriginalText: null, nextLink: textElement?.link ?? null };
     }
 
     // 1. Set the isEditingText flag to true to prevent autoresize on mobile
     // 1500ms is an empirical number, the on-screen keyboard usually disappears in 1-2 seconds
     this.semaphores.isEditingText = true;
-    if(this.isEditingTextResetTimer) {
+    if (this.isEditingTextResetTimer) {
       window.clearTimeout(this.isEditingTextResetTimer);
     }
     this.isEditingTextResetTimer = window.setTimeout(() => {
-      if(typeof this.semaphores?.isEditingText !== "undefined") {
+      if (typeof this.semaphores?.isEditingText !== "undefined") {
         this.semaphores.isEditingText = false;
       }
       this.isEditingTextResetTimer = null;
@@ -4531,7 +4536,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (isDeleted) {
       this.excalidrawData.deleteTextElement(textElement.id);
       this.setDirty(7);
-      return {updatedNextOriginalText: null, nextLink: null};
+      return { updatedNextOriginalText: null, nextLink: null };
     }
 
     // 3. Check if the user accidently pasted Excalidraw data from the clipboard
@@ -4539,20 +4544,20 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     //    textElements cache and update the text element in the scene with a warning.
     const FORBIDDEN_TEXT = `{"type":"excalidraw/clipboard","elements":[{"`;
     const WARNING = t("WARNING_PASTING_ELEMENT_AS_TEXT");
-    if(nextOriginalText.startsWith(FORBIDDEN_TEXT)) {
-      window.setTimeout(()=>{
+    if (nextOriginalText.startsWith(FORBIDDEN_TEXT)) {
+      window.setTimeout(() => {
         const elements = this.excalidrawAPI.getSceneElements();
-        const el = elements.filter((el:ExcalidrawElement)=>el.id === textElement.id);
-        if(el.length === 1) {
+        const el = elements.filter((el: ExcalidrawElement) => el.id === textElement.id);
+        if (el.length === 1) {
           const clone = cloneElement(el[0]);
           clone.rawText = WARNING;
           elements[elements.indexOf(el[0])] = clone;
-          this.excalidrawData.setTextElement(clone.id,WARNING,()=>{});
-          this.updateScene({elements, captureUpdate: CaptureUpdateAction.NEVER});
+          this.excalidrawData.setTextElement(clone.id, WARNING, () => { });
+          this.updateScene({ elements, captureUpdate: CaptureUpdateAction.NEVER });
           api.history.clear();
         }
       });
-      return {updatedNextOriginalText:WARNING, nextLink:null};
+      return { updatedNextOriginalText: WARNING, nextLink: null };
     }
 
     const containerId = textElement.containerId;
@@ -4562,29 +4567,29 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     //    If the link is an image or a PDF file, replace the text element with the image or the PDF.
     //    If the link is an embedded markdown file, then display a message, but otherwise transclude the text step 5.
     //                              1                              2
-    if(isTextImageTransclusion(nextOriginalText, this, (link, file)=>{
-      window.setTimeout(async ()=>{
+    if (isTextImageTransclusion(nextOriginalText, this, (link, file) => {
+      window.setTimeout(async () => {
         const elements = this.excalidrawAPI.getSceneElements();
-        const el = elements.filter((el:ExcalidrawElement)=>el.id === textElement.id) as ExcalidrawTextElement[];
-        if(el.length === 1) {
-          const center = {x: el[0].x, y: el[0].y };
+        const el = elements.filter((el: ExcalidrawElement) => el.id === textElement.id) as ExcalidrawTextElement[];
+        if (el.length === 1) {
+          const center = { x: el[0].x, y: el[0].y };
           const clone = cloneElement(el[0]);
           clone.isDeleted = true;
           this.excalidrawData.deleteTextElement(clone.id);
           elements[elements.indexOf(el[0])] = clone;
-          this.updateScene({elements, captureUpdate: CaptureUpdateAction.NEVER});
-          const ea:ExcalidrawAutomate = getEA(this);
-          if(IMAGE_TYPES.contains(file.extension)) {
-            ea.selectElementsInView([await insertImageToView (ea, center, file)]);
+          this.updateScene({ elements, captureUpdate: CaptureUpdateAction.NEVER });
+          const ea: ExcalidrawAutomate = getEA(this);
+          if (IMAGE_TYPES.contains(file.extension)) {
+            ea.selectElementsInView([await insertImageToView(ea, center, file)]);
             ea.destroy();
-          } else if(file.extension !== "pdf") {
-            ea.selectElementsInView([await insertEmbeddableToView (ea, center, file, link)]);
+          } else if (file.extension !== "pdf") {
+            ea.selectElementsInView([await insertEmbeddableToView(ea, center, file, link)]);
             ea.destroy();
           } else {
             const linkParts = getLinkParts(link);
-            if(linkParts.page) {
+            if (linkParts.page) {
               const path = file.path + "#" + link.split("#")[1];
-              ea.selectElementsInView([await insertImageToView (ea, center, path)]);
+              ea.selectElementsInView([await insertImageToView(ea, center, path)]);
             } else {
               const modal = new UniversalInsertFileModal(this.plugin, this);
               modal.open(file, center);
@@ -4594,7 +4599,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         }
       });
     })) {
-      return {updatedNextOriginalText: null, nextLink: textElement.link};
+      return { updatedNextOriginalText: null, nextLink: textElement.link };
     }
 
     // 5. Check if the user made changes to the text, or
@@ -4609,18 +4614,18 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
       // setTextElement will invoke this callback function in case quick parse was not possible, the parsed text contains transclusions
       // in this case I need to update the scene asynchronously when parsing is complete
-      const callback = async (parsedText:string) => {
+      const callback = async (parsedText: string) => {
         //this callback function will only be invoked if quick parse fails, i.e. there is a transclusion in the raw text
-        if(this.textMode === TextMode.raw) return;
-        
+        if (this.textMode === TextMode.raw) return;
+
         const elements = this.excalidrawAPI.getSceneElements();
         const elementsMap = arrayToMap(elements);
-        const el = elements.filter((el:ExcalidrawElement)=>el.id === textElement.id);
-        if(el.length === 1) {
-          const container = getContainerElement(el[0],elementsMap);
+        const el = elements.filter((el: ExcalidrawElement) => el.id === textElement.id);
+        if (el.length === 1) {
+          const container = getContainerElement(el[0], elementsMap);
           const clone = cloneElement(el[0]);
-          if(!el[0]?.isDeleted) {
-            const {text, x, y, width, height} = refreshTextDimensions(el[0], container, elementsMap, parsedText);
+          if (!el[0]?.isDeleted) {
+            const { text, x, y, width, height } = refreshTextDimensions(el[0], container, elementsMap, parsedText);
 
             clone.x = x;
             clone.y = y;
@@ -4631,8 +4636,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           }
 
           elements[elements.indexOf(el[0])] = clone;
-          this.updateScene({elements, captureUpdate: CaptureUpdateAction.NEVER});
-          if(clone.containerId) this.updateContainerSize(clone.containerId);
+          this.updateScene({ elements, captureUpdate: CaptureUpdateAction.NEVER });
+          if (clone.containerId) this.updateContainerSize(clone.containerId);
           this.setDirty(8.1);
         }
         api.history.clear();
@@ -4657,19 +4662,19 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           this.updateContainerSize(containerId, true);
         }
         if (this.textMode === TextMode.raw) {
-          return {updatedNextOriginalText: nextOriginalText, nextLink: link};
+          return { updatedNextOriginalText: nextOriginalText, nextLink: link };
         } //text is displayed in raw, no need to clear the history, undo will not create problems
         if (nextOriginalText === parseResultOriginal) {
           if (link) {
             //don't forget the case: link-prefix:"" && link-brackets:true
-            return {updatedNextOriginalText: parseResultOriginal, nextLink: link};
+            return { updatedNextOriginalText: parseResultOriginal, nextLink: link };
           }
-          return {updatedNextOriginalText: null, nextLink: textElement.link};
+          return { updatedNextOriginalText: null, nextLink: textElement.link };
         } //There were no links to parse, raw text and parsed text are equivalent
         api.history.clear();
-        return {updatedNextOriginalText: parseResultOriginal, nextLink:link};
+        return { updatedNextOriginalText: parseResultOriginal, nextLink: link };
       }
-      return {updatedNextOriginalText: null, nextLink: textElement.link};
+      return { updatedNextOriginalText: null, nextLink: textElement.link };
     }
     // even if the text did not change, container sizes might need to be updated 
     if (containerId) {
@@ -4677,9 +4682,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
     if (this.textMode === TextMode.parsed) {
       const parseResultOriginal = this.excalidrawData.getParsedText(textElement.id);
-      return {updatedNextOriginalText: parseResultOriginal, nextLink: textElement.link};
+      return { updatedNextOriginalText: parseResultOriginal, nextLink: textElement.link };
     }
-    return {updatedNextOriginalText: null, nextLink: textElement.link};
+    return { updatedNextOriginalText: null, nextLink: textElement.link };
   }
 
   private async onLinkOpen(element: ExcalidrawElement, e: any): Promise<void> {
@@ -4692,18 +4697,18 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (!link || link === "") {
       return;
     }
-    window.setTimeout(()=>this.removeLinkTooltip(),500);
+    window.setTimeout(() => this.removeLinkTooltip(), 500);
 
     let event = e?.detail?.nativeEvent;
-    if(this.handleLinkHookCall(element,element.link,event)) return;
+    if (this.handleLinkHookCall(element, element.link, event)) return;
     //if(openExternalLink(element.link, this.app, !isSHIFT(event) && !isWinCTRLorMacCMD(event) && !isWinMETAorMacCTRL(event) && !isWinALTorMacOPT(event) ? element : undefined)) return;
-    if(openExternalLink(element.link, this.app)) return;
+    if (openExternalLink(element.link, this.app)) return;
 
     //if element is type text and element has multiple links, then submit the element text to linkClick to trigger link suggester
-    if(element.type === "text") {
+    if (element.type === "text") {
       const linkText = element.rawText.replaceAll("\n", ""); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
       const partsArray = REGEX_LINK.getResList(linkText);
-      if(partsArray.filter(p=>Boolean(p.value)).length > 1) {
+      if (partsArray.filter(p => Boolean(p.value)).length > 1) {
         link = linkText;
       }
     }
@@ -4716,7 +4721,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       event,
       null,
       null,
-      {id: element.id, text: link},
+      { id: element.id, text: link },
       event,
       true,
     );
@@ -4750,24 +4755,24 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   private onViewModeChange(isViewModeEnabled: boolean) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onViewModeChange, "ExcalidrawView.onViewModeChange", isViewModeEnabled);
-    if(!this.semaphores.viewunload) {
+    if (!this.semaphores.viewunload) {
       this.toolsPanelRef?.current?.setExcalidrawViewMode(
         isViewModeEnabled,
       );
     }
-    if(this.getHookServer().onViewModeChangeHook) {
+    if (this.getHookServer().onViewModeChangeHook) {
       try {
-        this.getHookServer().onViewModeChangeHook(isViewModeEnabled,this,this.getHookServer());
-      } catch(e) {
-        errorlog({where: "ExcalidrawView.onViewModeChange", fn: this.getHookServer().onViewModeChangeHook, error: e});
+        this.getHookServer().onViewModeChangeHook(isViewModeEnabled, this, this.getHookServer());
+      } catch (e) {
+        errorlog({ where: "ExcalidrawView.onViewModeChange", fn: this.getHookServer().onViewModeChangeHook, error: e });
       }
-      
+
     }
-  }  
+  }
 
   private async getBackOfTheNoteSections() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getBackOfTheNoteSections, "ExcalidrawView.getBackOfTheNoteSections");
-    return (await this.app.metadataCache.blockCache.getForFile({ isCancelled: () => false },this.file))
+    return (await this.app.metadataCache.blockCache.getForFile({ isCancelled: () => false }, this.file))
       .blocks.filter((b: any) => b.display && b.node?.type === "heading")
       .filter((b: any) => !MD_EX_SECTIONS.includes(b.display))
       .map((b: any) => cleanSectionHeading(b.display));
@@ -4775,52 +4780,52 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   private async getBackOfTheNoteBlocks() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getBackOfTheNoteBlocks, "ExcalidrawView.getBackOfTheNoteBlocks");
-    return (await this.app.metadataCache.blockCache.getForFile({ isCancelled: () => false },this.file))
-      .blocks.filter((b:any) => b.display && b.node && b.node.hasOwnProperty("type") && b.node.hasOwnProperty("id"))
-      .map((b:any) => cleanBlockRef(b.node.id));
+    return (await this.app.metadataCache.blockCache.getForFile({ isCancelled: () => false }, this.file))
+      .blocks.filter((b: any) => b.display && b.node && b.node.hasOwnProperty("type") && b.node.hasOwnProperty("id"))
+      .map((b: any) => cleanBlockRef(b.node.id));
   }
 
-  public getSingleSelectedImage(): {imageEl: ExcalidrawImageElement, embeddedFile: EmbeddedFile}  {
+  public getSingleSelectedImage(): { imageEl: ExcalidrawImageElement, embeddedFile: EmbeddedFile } {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getSingleSelectedImage, "ExcalidrawView.getSingleSelectedImage");
-    if(!this.excalidrawAPI) return null;
-    const els = this.getViewSelectedElements().filter(el=>el.type==="image");
-    if(els.length !== 1) {
+    if (!this.excalidrawAPI) return null;
+    const els = this.getViewSelectedElements().filter(el => el.type === "image");
+    if (els.length !== 1) {
       return null;
     }
     const el = els[0] as ExcalidrawImageElement;
     const imageFile = this.excalidrawData.getFile(el.fileId);
-    return {imageEl: el, embeddedFile: imageFile};
+    return { imageEl: el, embeddedFile: imageFile };
   }
 
   public async insertBackOfTheNoteCard(center: boolean = false) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.insertBackOfTheNoteCard, "ExcalidrawView.insertBackOfTheNoteCard");
     await this.forceSave(true);
-    const sections = await this.getBackOfTheNoteSections(); 
-    const selectCardDialog = new SelectCard(this.app,this,sections);
+    const sections = await this.getBackOfTheNoteSections();
+    const selectCardDialog = new SelectCard(this.app, this, sections);
     selectCardDialog.start(center);
   }
 
   public async moveBackOfTheNoteCardToFile(id?: string) {
-    id = id ?? this.getViewSelectedElements().filter(el=>el.type==="embeddable")[0]?.id;
+    id = id ?? this.getViewSelectedElements().filter(el => el.type === "embeddable")[0]?.id;
     const embeddableData = this.getEmbeddableLeafElementById(id);
     const child = embeddableData?.node?.child;
-    if(!child || (child.file !== this.file)) return;
+    if (!child || (child.file !== this.file)) return;
 
-    if(child.lastSavedData !== this.data) {
+    if (child.lastSavedData !== this.data) {
       await this.forceSave(true);
-      if(child.lastSavedData !== this.data) {
+      if (child.lastSavedData !== this.data) {
         new Notice(t("ERROR_TRY_AGAIN"));
         return;
       }
     }
-    const {folder, filepath:_} = await getAttachmentsFolderAndFilePath(
+    const { folder, filepath: _ } = await getAttachmentsFolderAndFilePath(
       this.app,
-      this.file.path, 
+      this.file.path,
       "dummy",
     );
     const filepath = getNewUniqueFilepath(
       this.app.vault,
-      child.subpath.replaceAll("#",""),
+      child.subpath.replaceAll("#", ""),
       folder,
     );
     let path = await ScriptEngine.inputPrompt(
@@ -4833,26 +4838,26 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       undefined,
       3,
     );
-    if(!path) return;
-    if(!path.endsWith(".md")) {
+    if (!path) return;
+    if (!path.endsWith(".md")) {
       path += ".md";
     }
-    const {folderpath, filename} = splitFolderAndFilename(path);
+    const { folderpath, filename } = splitFolderAndFilename(path);
     path = getNewUniqueFilepath(this.app.vault, filename, folderpath);
     try {
       const newFile = await createOrOverwriteFile(this.app, path, child.text);
-      if(!newFile) {
+      if (!newFile) {
         new Notice("Unexpected error");
         return;
       }
       const ea = getEA(this) as ExcalidrawAutomate;
-      ea.copyViewElementsToEAforEditing([this.getViewElements().find(el=>el.id === id)]);
+      ea.copyViewElementsToEAforEditing([this.getViewElements().find(el => el.id === id)]);
       ea.getElement(id).link = `[[${newFile.path}]]`;
-      this.data = this.data.split(child.heading+child.text).join("");
+      this.data = this.data.split(child.heading + child.text).join("");
       await ea.addElementsToView(false);
       ea.destroy();
       await this.forceSave(true);
-    } catch(e) {
+    } catch (e) {
       new Notice(`Unexpected error: ${e.message}`);
       return;
     }
@@ -4862,16 +4867,16 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     try {
       data = data.replaceAll("\r\n", "\n").replaceAll("\r", "\n").trim();
       const isCodeblock = Boolean(data.match(/^`{3}[^\n]*\n.+\n`{3}\s*$/ms));
-      if(!isCodeblock) {
-        const codeblockType = await GenericInputPrompt.Prompt(this,this.plugin,this.app,"type codeblock type","javascript, html, python, etc.","");
-        data = "```"+codeblockType.trim()+"\n"+data+"\n```";
+      if (!isCodeblock) {
+        const codeblockType = await GenericInputPrompt.Prompt(this, this.plugin, this.app, "type codeblock type", "javascript, html, python, etc.", "");
+        data = "```" + codeblockType.trim() + "\n" + data + "\n```";
       }
-      let title = (await GenericInputPrompt.Prompt(this,this.plugin,this.app,"Code Block Title","Enter title or leave empty for automatic title","")).trim();
-      if (title === "") {title = "Code Block";};
-      const sections = await this.getBackOfTheNoteSections(); 
+      let title = (await GenericInputPrompt.Prompt(this, this.plugin, this.app, "Code Block Title", "Enter title or leave empty for automatic title", "")).trim();
+      if (title === "") { title = "Code Block"; };
+      const sections = await this.getBackOfTheNoteSections();
       if (sections.includes(title)) {
-        let i=0;
-        while (sections.includes(`${title} ${++i}`)) {};
+        let i = 0;
+        while (sections.includes(`${title} ${++i}`)) { };
         title = `${title} ${i}`;
       }
       addBackOfTheNoteCard(this, title, false, data);
@@ -4879,11 +4884,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
   }
 
-  public async convertImageElWithURLToLocalFile(data: {imageEl: ExcalidrawImageElement, embeddedFile: EmbeddedFile}) {
+  public async convertImageElWithURLToLocalFile(data: { imageEl: ExcalidrawImageElement, embeddedFile: EmbeddedFile }) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.convertImageElWithURLToLocalFile, "ExcalidrawView.convertImageElWithURLToLocalFile", data);
-    const {imageEl, embeddedFile} = data;
+    const { imageEl, embeddedFile } = data;
     const imageDataURL = embeddedFile.getImage(false);
-    if(!imageDataURL && !imageDataURL.startsWith("data:")) {
+    if (!imageDataURL && !imageDataURL.startsWith("data:")) {
       new Notice("Image not found");
       return false;
     }
@@ -4891,12 +4896,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     ea.copyViewElementsToEAforEditing([imageEl]);
     const eaEl = ea.getElement(imageEl.id) as Mutable<ExcalidrawImageElement>;
     eaEl.fileId = fileid() as FileId;
-    if(!eaEl.link) {eaEl.link = embeddedFile.hyperlink};
+    if (!eaEl.link) { eaEl.link = embeddedFile.hyperlink };
     let dataURL = embeddedFile.getImage(false);
-    if(!dataURL.startsWith("data:")) {
+    if (!dataURL.startsWith("data:")) {
       new Notice("Attempting to download image from URL. This may take a long while. The operation will time out after max 1 minute");
       dataURL = await getDataURLFromURL(dataURL, embeddedFile.mimeType, 30000);
-      if(!dataURL.startsWith("data:")) {
+      if (!dataURL.startsWith("data:")) {
         new Notice("Failed. Could not download image!");
         return false;
       }
@@ -4910,18 +4915,18 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     });
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     api.addFiles(files);
-    await ea.addElementsToView(false,true);
+    await ea.addElementsToView(false, true);
     ea.destroy();
     new Notice("Image successfully converted to local file");
   }
 
   private insertLinkAction(linkVal: string) {
     let link = linkVal.match(/\[\[(.*?)\]\]/)?.[1];
-    if(!link) {
-      link = linkVal.replaceAll("[","").replaceAll("]","");
+    if (!link) {
+      link = linkVal.replaceAll("[", "").replaceAll("]", "");
       link = link.split("|")[0].trim();
     }
-    this.plugin.insertLinkDialog.start(this.file.path, (markdownlink: string, path:string, alias:string) => this.addLink(markdownlink, path, alias, linkVal), link);
+    this.plugin.insertLinkDialog.start(this.file.path, (markdownlink: string, path: string, alias: string) => this.addLink(markdownlink, path, alias, linkVal), link);
   }
 
   private onContextMenu(elements: readonly ExcalidrawElement[], appState: AppState, onClose: (callback?: () => void) => void) {
@@ -4931,7 +4936,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const selectedElementIds = Object.keys(api.getAppState().selectedElementIds);
     const areElementsSelected = selectedElementIds.length > 0;
 
-    if(this.isLinkSelected()) {
+    if (this.isLinkSelected()) {
       contextMenuActions.push([
         renderContextMenuAction(
           React,
@@ -4945,28 +4950,28 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       ]);
     }
 
-    if(appState.viewModeEnabled) {
+    if (appState.viewModeEnabled) {
       const isLaserOn = appState.activeTool?.type === "laser";
       contextMenuActions.push([
         renderContextMenuAction(
           React,
           isLaserOn ? t("LASER_OFF") : t("LASER_ON"),
           () => {
-            api.setActiveTool({type: isLaserOn ? "selection" : "laser"});
+            api.setActiveTool({ type: isLaserOn ? "selection" : "laser" });
           },
           onClose
         ),
-      ]);  
+      ]);
     }
 
-    if(!appState.viewModeEnabled) {
-      const selectedTextElements = this.getViewSelectedElements().filter(el=>el.type === "text");
-      if(selectedTextElements.length===1) {
+    if (!appState.viewModeEnabled) {
+      const selectedTextElements = this.getViewSelectedElements().filter(el => el.type === "text");
+      if (selectedTextElements.length === 1) {
         const selectedTextElement = selectedTextElements[0] as ExcalidrawTextElement;
-        const containerElement = (this.getViewElements() as ExcalidrawElement[]).find(el=>el.id === selectedTextElement.containerId);
-        
+        const containerElement = (this.getViewElements() as ExcalidrawElement[]).find(el => el.id === selectedTextElement.containerId);
+
         //if the text element in the container no longer has a link associated with it...
-        if(
+        if (
           containerElement &&
           selectedTextElement.link &&
           this.excalidrawData.getParsedText(selectedTextElement.id) === selectedTextElement.rawText
@@ -4988,22 +4993,22 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           ]);
         }
 
-        if(containerElement) {
+        if (containerElement) {
           contextMenuActions.push([
             renderContextMenuAction(
               React,
               t("SELECT_TEXTELEMENT_ONLY"),
               () => {
-                window.setTimeout(()=>
+                window.setTimeout(() =>
                   (this.excalidrawAPI as ExcalidrawImperativeAPI).selectElements([selectedTextElement])
                 );
               },
               onClose
             ),
-          ]);            
+          ]);
         }
 
-        if(!containerElement || (containerElement && containerElement.type !== "arrow")) {
+        if (!containerElement || (containerElement && containerElement.type !== "arrow")) {
           contextMenuActions.push([
             renderContextMenuAction(
               React,
@@ -5013,28 +5018,28 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               },
               onClose
             ),
-          ]);  
+          ]);
         }
       }
 
       const img = this.getSingleSelectedImage();
-      if(img &&  img.embeddedFile?.isHyperLink) {
+      if (img && img.embeddedFile?.isHyperLink) {
         contextMenuActions.push([
           renderContextMenuAction(
             React,
             t("CONVERT_URL_TO_FILE"),
             () => {
-              window.setTimeout(()=>this.convertImageElWithURLToLocalFile(img));
+              window.setTimeout(() => this.convertImageElWithURLToLocalFile(img));
             },
             onClose
           ),
-        ]);  
+        ]);
       }
 
-      if(
+      if (
         img && img.embeddedFile && img.embeddedFile.mimeType === "image/svg+xml" &&
         (!img.embeddedFile.file || (img.embeddedFile.file && !this.plugin.isExcalidrawFile(img.embeddedFile.file)))
-       ) {
+      ) {
         contextMenuActions.push([
           renderContextMenuAction(
             React,
@@ -5043,11 +5048,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               const base64Content = img.embeddedFile.getImage(false).split(',')[1];
               // Decoding the base64 content
               const svg = atob(base64Content);
-              if(!svg || svg === "") return;
+              if (!svg || svg === "") return;
               const ea = getEA(this) as ExcalidrawAutomate;
               ea.importSVG(svg);
-              ea.addToGroup(ea.getElements().map(el=>el.id));
-              await ea.addElementsToView(true, true, true,true);
+              ea.addToGroup(ea.getElements().map(el => el.id));
+              await ea.addElementsToView(true, true, true, true);
               ea.destroy();
             },
             onClose
@@ -5055,7 +5060,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         ]);
       }
 
-      if(areElementsSelected) {
+      if (areElementsSelected) {
         contextMenuActions.push([
           renderContextMenuAction(
             React,
@@ -5080,12 +5085,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         ]);
       }
 
-      if(this.getViewSelectedElements().filter(el=>el.type==="embeddable").length === 1) {
+      if (this.getViewSelectedElements().filter(el => el.type === "embeddable").length === 1) {
         const embeddableData = this.getEmbeddableLeafElementById(
-          this.getViewSelectedElements().filter(el=>el.type==="embeddable")[0].id
+          this.getViewSelectedElements().filter(el => el.type === "embeddable")[0].id
         );
         const child = embeddableData?.node?.child;
-        if(child && (child.file === this.file)) {
+        if (child && (child.file === this.file)) {
           contextMenuActions.push([
             renderContextMenuAction(
               React,
@@ -5125,7 +5130,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           React,
           t("INSERT_LINK"),
           () => {
-            this.plugin.insertLinkDialog.start(this.file.path, (markdownlink: string, path:string, alias:string) => this.addLink(markdownlink, path, alias));
+            this.plugin.insertLinkDialog.start(this.file.path, (markdownlink: string, path: string, alias: string) => this.addLink(markdownlink, path, alias));
           },
           onClose
         ),
@@ -5137,44 +5142,44 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           t("PASTE_CODEBLOCK"),
           async () => {
             const data = await navigator.clipboard?.readText();
-            if(!data || data.trim() === "") return;
+            if (!data || data.trim() === "") return;
             this.pasteCodeBlock(data);
           },
           onClose
         ),
       ])
 
-      if(
+      if (
         !areElementsSelected &&
-        elements.some(el=>el.type === "frame" && el.frameRole === "marker")
+        elements.some(el => el.type === "frame" && el.frameRole === "marker")
       ) {
-        const {frameRendering} = appState;
+        const { frameRendering } = appState;
         contextMenuActions.push([
           renderContextMenuAction(
             React,
             frameRendering.markerEnabled && frameRendering.enabled && frameRendering.outline
-            ? t("MARKER_FRAME_HIDE")
-            : t("MARKER_FRAME_SHOW"),
+              ? t("MARKER_FRAME_HIDE")
+              : t("MARKER_FRAME_SHOW"),
             () => {
               const markerEnabled = !(frameRendering.markerEnabled && frameRendering.enabled && frameRendering.outline);
-              if(markerEnabled) {
-                setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, enabled: true, outline: true, markerEnabled}}, captureUpdate: CaptureUpdateAction.NEVER}));
+              if (markerEnabled) {
+                setTimeout(() => this.updateScene({ appState: { frameRendering: { ...frameRendering, enabled: true, outline: true, markerEnabled } }, captureUpdate: CaptureUpdateAction.NEVER }));
               } else {
-                setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, markerEnabled}}, captureUpdate: CaptureUpdateAction.NEVER}));
+                setTimeout(() => this.updateScene({ appState: { frameRendering: { ...frameRendering, markerEnabled } }, captureUpdate: CaptureUpdateAction.NEVER }));
               }
             },
             onClose
           ),
         ]);
-        if(frameRendering.markerEnabled && frameRendering.enabled && frameRendering.outline) {
+        if (frameRendering.markerEnabled && frameRendering.enabled && frameRendering.outline) {
           contextMenuActions.push([
             renderContextMenuAction(
               React,
               frameRendering.markerName
-              ? t("MARKER_FRAME_TITLE_HIDE")
-              : t("MARKER_FRAME_TITLE_SHOW"),
+                ? t("MARKER_FRAME_TITLE_HIDE")
+                : t("MARKER_FRAME_TITLE_SHOW"),
               () => {
-                setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, markerName: !frameRendering.markerName}}, captureUpdate: CaptureUpdateAction.NEVER}));
+                setTimeout(() => this.updateScene({ appState: { frameRendering: { ...frameRendering, markerName: !frameRendering.markerName } }, captureUpdate: CaptureUpdateAction.NEVER }));
               },
               onClose
             ),
@@ -5183,8 +5188,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
     }
 
-    if(contextMenuActions.length === 0) return;
-    return React.createElement (
+    if (contextMenuActions.length === 0) return;
+    return React.createElement(
       "div",
       {},
       ...contextMenuActions,
@@ -5203,13 +5208,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   }
 
   private actionOpenExportImageDialog() {
-    if(!this.exportDialog) {
-      this.exportDialog = new ExportDialog(this.plugin, this,this.file);
+    if (!this.exportDialog) {
+      this.exportDialog = new ExportDialog(this.plugin, this, this.file);
     }
     this.exportDialog.open();
   }
 
-  private setExcalidrawAPI (api: ExcalidrawImperativeAPI) {
+  private setExcalidrawAPI(api: ExcalidrawImperativeAPI) {
     this.excalidrawAPI = api;
     //api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
     window.setTimeout(() => {
@@ -5222,7 +5227,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     return this.packages.react.createElement(
       this.packages.excalidrawLib.TTDDialog,
       {
-        onTextSubmit: async (input:string) => {
+        onTextSubmit: async (input: string) => {
           try {
             const response = await postOpenAI({
               systemPrompt: "The user will provide you with a text prompt. Your task is to generate a mermaid diagram based on the prompt. Use the graph, sequenceDiagram, flowchart or classDiagram types based on what best fits the request. Return a single message containing only the mermaid diagram in a codeblock. Avoid the use of `()` parenthesis in the mermaid script.",
@@ -5230,7 +5235,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               instruction: "Return a single message containing only the mermaid diagram in a codeblock.",
             })
 
-            if(!response) {
+            if (!response) {
               return {
                 error: new Error("Request failed"),
               };
@@ -5246,7 +5251,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               };
             }
 
-            if(!json?.choices?.[0]?.message?.content) {
+            if (!json?.choices?.[0]?.message?.content) {
               log(response);
               return {
                 error: new Error("Generation failed... see console log for details"),
@@ -5255,18 +5260,18 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
             let generatedResponse = extractCodeBlocks(json.choices[0]?.message?.content)[0]?.data;
 
-            if(!generatedResponse) {
+            if (!generatedResponse) {
               log(response);
               return {
                 error: new Error("Generation failed... see console log for details"),
               };
             }
 
-            if(generatedResponse.startsWith("mermaid")) {
-              generatedResponse = generatedResponse.replace(/^mermaid/,"").trim();
+            if (generatedResponse.startsWith("mermaid")) {
+              generatedResponse = generatedResponse.replace(/^mermaid/, "").trim();
             }
-            
-            return { generatedResponse, rateLimit:100, rateLimitRemaining:100 };
+
+            return { generatedResponse, rateLimit: 100, rateLimitRemaining: 100 };
           } catch (err: any) {
             throw new Error("Request failed");
           }
@@ -5279,8 +5284,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     return this.packages.react.createElement(
       this.packages.excalidrawLib.DiagramToCodePlugin,
       {
-        generate: async ({ frame, children }: 
-          {frame: ExcalidrawMagicFrameElement, children: readonly ExcalidrawElement[]}) => {
+        generate: async ({ frame, children }:
+          { frame: ExcalidrawMagicFrameElement, children: readonly ExcalidrawElement[] }) => {
           const appState = this.excalidrawAPI.getAppState();
           try {
             const blob = await this.packages.excalidrawLib.exportToBlob({
@@ -5294,18 +5299,18 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               files: this.excalidrawAPI.getFiles(),
               mimeType: "image/jpeg",
             });
-  
+
             const dataURL = await this.packages.excalidrawLib.getDataURL(blob);
             const textFromFrameChildren = this.packages.excalidrawLib.getTextFromElements(children);
-  
-            const response = await diagramToHTML ({
-              image:dataURL,
+
+            const response = await diagramToHTML({
+              image: dataURL,
               apiKey: this.plugin.settings.openAIAPIToken,
               text: textFromFrameChildren,
               theme: appState.theme,
               openAIURL: this.plugin.settings.openAIURL,
             });
-  
+
             if (!response.ok) {
               const json = await response.json();
               const text = json.error?.message || "Unknown error during generation";
@@ -5313,21 +5318,21 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
                 html: errorHTML(text),
               };
             }
-  
+
             const json = await response.json();
-            if(json.choices[0].message.content == null) {
+            if (json.choices[0].message.content == null) {
               return {
                 html: errorHTML("Nothing generated"),
               };
             }
 
-            const message = json.choices[0].message.content;  
-                
-            const html = message.slice(  
-              message.indexOf("<!DOCTYPE html>"),  
-              message.indexOf("</html>") + "</html>".length,  
+            const message = json.choices[0].message.content;
+
+            const html = message.slice(
+              message.indexOf("<!DOCTYPE html>"),
+              message.indexOf("</html>") + "</html>".length,
             );
-  
+
             return { html };
           } catch (err: any) {
             return {
@@ -5338,7 +5343,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
     );
   }
-  
+
 
   private ttdDialogTrigger() {
     return this.packages.react.createElement(
@@ -5374,8 +5379,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           WelcomeScreen.Center.Heading,
           {
             color: decoration,
-            message: nextRankDelta > 0 
-              ? `${rank}: ${nextRankDelta} ${t("WELCOME_RANK_NEXT")}` 
+            message: nextRankDelta > 0
+              ? `${rank}: ${nextRankDelta} ${t("WELCOME_RANK_NEXT")}`
               : `${rank}: ${t("WELCOME_RANK_LEGENDARY")}`,
           },
           title,
@@ -5449,22 +5454,22 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     );
   }
 
-  private renderCustomActionsMenu () {
+  private renderCustomActionsMenu() {
     const React = this.packages.react;
-    const {MainMenu} = this.packages.excalidrawLib;
+    const { MainMenu } = this.packages.excalidrawLib;
 
     return React.createElement(
-      MainMenu,          
+      MainMenu,
       {},
       React.createElement(MainMenu.DefaultItems.ChangeCanvasBackground),
       React.createElement(MainMenu.DefaultItems.ToggleTheme),
       React.createElement(MainMenu.Separator),
       !DEVICE.isPhone ? React.createElement(
         MainMenu.Item,
-        {              
+        {
           icon: ICONS.trayMode,
           "aria-label": t("ARIA_LABEL_TRAY_MODE"),
-          onSelect: ()=> {
+          onSelect: () => {
             const uiModes = new UIModeSettings(this.plugin);
             uiModes.open();
           },
@@ -5473,37 +5478,37 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       ) : null,
       React.createElement(
         MainMenu.Item,
-        {              
+        {
           icon: saveIcon(false),
           "aria-label": t("FORCE_SAVE"),
-          onSelect: ()=> this.forceSave(),
+          onSelect: () => this.forceSave(),
         },
         t("TRAY_SAVE")
       ),
       React.createElement(
         MainMenu.Item,
-        {              
+        {
           icon: ICONS.scriptEngine,
           "aria-label": t("TRAY_SCRIPT_LIBRARY_ARIA"),
-          onSelect: ()=> this.actionOpenScriptInstallPrompt(),
+          onSelect: () => this.actionOpenScriptInstallPrompt(),
         },
         t("TRAY_SCRIPT_LIBRARY")
       ),
       React.createElement(
         MainMenu.Item,
-        {              
+        {
           icon: ICONS.ExportImage,
           "aria-label": t("TRAY_EXPORT_ARIA"),
-          onSelect: ()=> this.actionOpenExportImageDialog(),
+          onSelect: () => this.actionOpenExportImageDialog(),
         },
         t("TRAY_EXPORT")
       ),
       React.createElement(
         MainMenu.Item,
-        {              
+        {
           icon: ICONS.switchToMarkdown,
           "aria-label": t("TRAY_SWITCH_TO_MD_ARIA"),
-          onSelect: ()=> this.openAsMarkdown(),
+          onSelect: () => this.openAsMarkdown(),
         },
         t("TRAY_SWITCH_TO_MD")
       ),
@@ -5513,17 +5518,17 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     );
   }
 
-  private renderEmbeddable (element: NonDeletedExcalidrawElement, appState: UIAppState) {
+  private renderEmbeddable(element: NonDeletedExcalidrawElement, appState: UIAppState) {
     const React = this.packages.react;
     try {
       const useExcalidrawFrame = useDefaultExcalidrawFrame(element);
 
-      if(!this.file || !element || !element.link || element.link.length === 0 || useExcalidrawFrame) {
+      if (!this.file || !element || !element.link || element.link.length === 0 || useExcalidrawFrame) {
         return null;
       }
 
-      if(element.link.match(REG_LINKINDEX_HYPERLINK) || element.link.startsWith("data:")) {
-        if(!useExcalidrawFrame) {
+      if (element.link.match(REG_LINKINDEX_HYPERLINK) || element.link.startsWith("data:")) {
+        if (!useExcalidrawFrame) {
           return renderWebView(element.link, this, element.id, appState);
         } else {
           return null;
@@ -5531,22 +5536,22 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
 
       const res = REGEX_LINK.getRes(element.link).next();
-      if(!res || (!res.value && res.done)) {
+      if (!res || (!res.value && res.done)) {
         return null;
       }
-    
+
       let linkText = REGEX_LINK.getLink(res);
-    
-      if(linkText.match(REG_LINKINDEX_HYPERLINK)) {
-        if(!useExcalidrawFrame) {
+
+      if (linkText.match(REG_LINKINDEX_HYPERLINK)) {
+        if (!useExcalidrawFrame) {
           return renderWebView(linkText, this, element.id, appState);
         } else {
           return null;
         }
       }
-      
-      return React.createElement(CustomEmbeddable, {element,view:this, appState, linkText});
-    } catch(e) {
+
+      return React.createElement(CustomEmbeddable, { element, view: this, appState, linkText });
+    } catch (e) {
       return null;
     }
   }
@@ -5559,19 +5564,19 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const React = this.packages.react;
 
     return React.createElement(
-      ToolsPanel, 
+      ToolsPanel,
       {
         ref: this.toolsPanelRef,
-        visible: false,
+        visible: this.plugin.settings.pinObsidianTools,
         view: new WeakRef(this),
-        centerPointer: ()=>this.setCurrentPositionToCenter(),
+        centerPointer: () => this.setCurrentPositionToCenter(),
         observer: new WeakRef(observer.current),
       }
     );
   }
 
-  private renderTopRightUI (isMobile: boolean, appState: AppState) {
-    return this.obsidianMenu?.renderButton (isMobile, appState);
+  private renderTopRightUI(isMobile: boolean, appState: AppState) {
+    return this.obsidianMenu?.renderButton(isMobile, appState);
   }
 
   private scheduleBatchedResize(currentDeltaHeight: number) {
@@ -5609,11 +5614,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   private onExcalidrawResize() {
     try {
       const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
-      if(!api) return;
+      if (!api) return;
       const width = this.contentEl.clientWidth;
       const height = this.contentEl.clientHeight;
-      if(width === 0 || height === 0) return;
-      
+      if (width === 0 || height === 0) return;
+
       //this is an aweful hack to prevent the on-screen keyboard pushing the canvas out of view.
       //The issue is that contrary to Excalidraw.com where the page is simply pushed up, in 
       //Obsidian the leaf has a fixed top. As a consequence the top of excalidrawWrapperDiv does not get pushed out of view
@@ -5628,37 +5633,37 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       //isEventOnSameElement attempts to solve https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1729
       //the issue is that when the user hides the keyboard with the keyboard hide button and not tapping on the screen, then editingTextElement is not null
       const isEventOnSameElement = this.editingTextElementId === st.editingTextElement?.id;
-      const isKeyboardOutEvent:Boolean = st.editingTextElement && !isEventOnSameElement;
-      const isKeyboardBackEvent:Boolean = (this.semaphores.isEditingText || isEventOnSameElement) && !isKeyboardOutEvent;
+      const isKeyboardOutEvent: Boolean = st.editingTextElement && !isEventOnSameElement;
+      const isKeyboardBackEvent: Boolean = (this.semaphores.isEditingText || isEventOnSameElement) && !isKeyboardOutEvent;
       this.editingTextElementId = isKeyboardOutEvent ? st.editingTextElement.id : null;
 
-      if(isKeyboardOutEvent) {
-          const elTop = st.editingTextElement.y;
-          const elHeight = (st.editingTextElement as any).height ?? 0;
-          const elCenterY = elTop + elHeight / 2;
+      if (isKeyboardOutEvent) {
+        const elTop = st.editingTextElement.y;
+        const elHeight = (st.editingTextElement as any).height ?? 0;
+        const elCenterY = elTop + elHeight / 2;
 
-          const visibleHeight = st.height / st.zoom.value;
-          // visibleTop is -scrollY in scene coords
-          const visibleTop = -st.scrollY;
-          const topThreeQuarterThreshold = visibleTop + visibleHeight * 0.75;
+        const visibleHeight = st.height / st.zoom.value;
+        // visibleTop is -scrollY in scene coords
+        const visibleTop = -st.scrollY;
+        const topThreeQuarterThreshold = visibleTop + visibleHeight * 0.75;
 
-          // If the editing text element is in the top 3/4 of the visible screen, do not change scroll
-          if (!(elCenterY >= visibleTop && elCenterY <= topThreeQuarterThreshold)) {
-            // Otherwise, vertically center the editing text element in the visible area
-            const desiredVisibleTop = elCenterY - visibleHeight / 2;
-            const newScrollY = -desiredVisibleTop;
+        // If the editing text element is in the top 3/4 of the visible screen, do not change scroll
+        if (!(elCenterY >= visibleTop && elCenterY <= topThreeQuarterThreshold)) {
+          // Otherwise, vertically center the editing text element in the visible area
+          const desiredVisibleTop = elCenterY - visibleHeight / 2;
+          const newScrollY = -desiredVisibleTop;
 
-            this.oldKeyboardScroll = {scrollY: st.scrollY, scrollX: st.scrollX};
-            this.updateScene({appState: {scrollY: newScrollY}, captureUpdate: CaptureUpdateAction.NEVER});
-          }
+          this.oldKeyboardScroll = { scrollY: st.scrollY, scrollX: st.scrollX };
+          this.updateScene({ appState: { scrollY: newScrollY }, captureUpdate: CaptureUpdateAction.NEVER });
+        }
 
-          this.containerEl.scrollIntoView();
+        this.containerEl.scrollIntoView();
       }
       if (isKeyboardBackEvent) {
-        if(this.oldKeyboardScroll != null) {
+        if (this.oldKeyboardScroll != null) {
           // Restore only vertical scroll; remove horizontal scroll completely
           this.updateScene({
-            appState: {scrollY: this.oldKeyboardScroll.scrollY},
+            appState: { scrollY: this.oldKeyboardScroll.scrollY },
             captureUpdate: CaptureUpdateAction.NEVER
           });
           this.oldKeyboardScroll = null;
@@ -5666,11 +5671,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         }
       }
       //end of aweful hack
-      
+
       if (this.toolsPanelRef && this.toolsPanelRef.current) {
         this.toolsPanelRef.current.updatePosition();
       }
-      if(this.ownerDocument !== document) {
+      if (this.ownerDocument !== document) {
         this.refreshCanvasOffset(); //because resizeobserver in Excalidraw does not seem to work when in Obsidian Window
       }
     } catch (err) {
@@ -5690,7 +5695,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     },
   ) {
     const React = this.packages.react;
-    const {Excalidraw} = this.packages.excalidrawLib;
+    const { Excalidraw } = this.packages.excalidrawLib;
 
     const excalidrawWrapperRef = React.useRef(null);
     const toolsPanelRef = React.useRef(null);
@@ -5737,9 +5742,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
     const observer = React.useRef(
       new ResizeObserver((entries) => {
-        if(!toolsPanelRef || !toolsPanelRef.current) return;
+        if (!toolsPanelRef || !toolsPanelRef.current) return;
         const { width, height } = entries[0].contentRect;
-        if(width===0 || height ===0) return;
+        if (width === 0 || height === 0) return;
         const dx = toolsPanelRef.current.onRightEdge
           ? toolsPanelRef.current.previousWidth - width
           : 0;
@@ -5778,7 +5783,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           onPointerDown: this.onPointerDown.bind(this),
           onMouseMove: this.onMouseMove.bind(this),
           onMouseOver: this.onMouseOver.bind(this),
-          onDragOver : this.dropManager.onDragOver.bind(this.dropManager),
+          onDragOver: this.dropManager.onDragOver.bind(this.dropManager),
           onDragLeave: this.dropManager.onDragLeave.bind(this.dropManager),
         },
         React.createElement(
@@ -5807,8 +5812,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             onPointerUpdate: this.onPointerUpdate.bind(this),
             libraryReturnUrl: "app://obsidian.md",
             autoFocus: true,
-            langCode: obsidianToExcalidrawMap[this.plugin.locale]??"en-EN",
-            aiEnabled: this.plugin.settings.aiEnabled??true,
+            langCode: obsidianToExcalidrawMap[this.plugin.locale] ?? "en-EN",
+            aiEnabled: this.plugin.settings.aiEnabled ?? true,
             onChange: this.onChange.bind(this),
             onLibraryChange: this.onLibraryChange.bind(this),
             renderTopRightUI: this.renderTopRightUI.bind(this), //(isMobile: boolean, appState: AppState) => this.obsidianMenu.renderButton (isMobile, appState),
@@ -5850,7 +5855,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   ) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.instantiateExcalidraw, "ExcalidrawView.instantiateExcalidraw", initdata);
     await this.plugin.awaitInit();
-    while(!this.semaphores.scriptsReady) {
+    while (!this.semaphores.scriptsReady) {
       await sleep(50);
     }
     const React = this.packages.react;
@@ -5859,7 +5864,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.clearDirty();
 
     this.excalidrawRoot = ReactDOM.createRoot(this.contentEl);
-    this.excalidrawRoot.render(React.createElement(this.excalidrawRootElement.bind(this,initdata)));
+    this.excalidrawRoot.render(React.createElement(this.excalidrawRootElement.bind(this, initdata)));
   }
 
   private updateContainerSize(containerId?: string, delay: boolean = false, justloaded: boolean = false) {
@@ -5871,11 +5876,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const update = () => {
       const containers = containerId
         ? api
-            .getSceneElements()
-            .filter((el: ExcalidrawElement) => el.id === containerId && el.type!=="arrow")
+          .getSceneElements()
+          .filter((el: ExcalidrawElement) => el.id === containerId && el.type !== "arrow")
         : api
-            .getSceneElements()
-            .filter(isContainer);
+          .getSceneElements()
+          .filter(isContainer);
       if (containers.length > 0) {
         if (justloaded) {
           //updateContainerSize will bump scene version which will trigger a false autosave
@@ -5895,11 +5900,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   public zoomToFit(delay: boolean = true, justLoaded: boolean = false) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.zoomToFit, "ExcalidrawView.zoomToFit", delay, justLoaded);
     //view is closing via onWindowMigrated
-    if(this.semaphores?.viewunload) {
+    if (this.semaphores?.viewunload) {
       return;
     }
     const modalContainer = document.body.querySelector("div.modal-container");
-    if(modalContainer) return; //do not autozoom when the command palette or other modal container is envoked on iPad
+    if (modalContainer) return; //do not autozoom when the command palette or other modal container is envoked on iPad
     const api = this.excalidrawAPI;
     if (!api || this.semaphores.isEditingText || this.semaphores.preventAutozoom) {
       return;
@@ -5909,9 +5914,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       return;
     }
     const maxZoom = this.plugin.settings.zoomToFitMaxLevel;
-    const elements = api.getSceneElements().filter((el:ExcalidrawElement)=>el.width<10000 && el.height<10000);
-    if((DEVICE.isMobile && elements.length>1000) || elements.length>2500) {
-      if(justLoaded) api.scrollToContent();
+    const elements = api.getSceneElements().filter((el: ExcalidrawElement) => el.width < 10000 && el.height < 10000);
+    if ((DEVICE.isMobile && elements.length > 1000) || elements.length > 2500) {
+      if (justLoaded) api.scrollToContent();
       return;
     }
     if (delay) {
@@ -5944,8 +5949,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       return false;
     }
     api.updateScene({
-      appState: { 
-        customPens: this.plugin.settings.customPens.slice(0,this.plugin.settings.numberOfCustomPens),
+      appState: {
+        customPens: this.plugin.settings.customPens.slice(0, this.plugin.settings.numberOfCustomPens),
       },
       captureUpdate: CaptureUpdateAction.NEVER,
     });
@@ -5982,7 +5987,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       return;
     }
     const disableContextMenu = api.getAppState().disableContextMenu;
-    this.updateScene({appState: {disableContextMenu: !disableContextMenu}, captureUpdate: CaptureUpdateAction.NEVER});
+    this.updateScene({ appState: { disableContextMenu: !disableContextMenu }, captureUpdate: CaptureUpdateAction.NEVER });
   }
 
   public setUIMode(mode: UIMode) {
@@ -5993,6 +5998,13 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
     api.setDesktopUIMode(mode);
     api.setTrayModeEnabled(mode === "tray");
+  }
+
+  public updateToolsPanelVisibility() {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updateToolsPanelVisibility, "ExcalidrawView.updateToolsPanelVisibility");
+    if (this.toolsPanelRef?.current) {
+      this.toolsPanelRef.current.updateVisibility();
+    }
   }
 
   /**
@@ -6011,7 +6023,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     selectResult: boolean = true,
     exactMatch: boolean = false, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
     selectGroup: boolean = false,
-  ):boolean {
+  ): boolean {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.selectElementsMatchingQuery, "ExcalidrawView.selectElementsMatchingQuery", query, selectResult, exactMatch, selectGroup);
     let match = getTextElementsMatchingQuery(
       elements.filter((el: ExcalidrawElement) => el.type === "text"),
@@ -6037,14 +6049,14 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       return false;
     }
 
-    if(selectGroup) {
-      const groupElements = this.plugin.ea.getElementsInTheSameGroupWithElement(match[0],elements)
-      if(groupElements.length>0) {
+    if (selectGroup) {
+      const groupElements = this.plugin.ea.getElementsInTheSameGroupWithElement(match[0], elements)
+      if (groupElements.length > 0) {
         match = groupElements;
       }
     }
 
-    this.zoomToElements(selectResult,match);
+    this.zoomToElements(selectResult, match);
     return true;
   }
 
@@ -6111,16 +6123,16 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             .map((be) => be.id)[0],
       );
 
-    if(includFrameChildren && elements.some(el=>el.type === "frame")) {
-      elements.filter(el=>el.type === "frame").forEach(frameEl => {
+    if (includFrameChildren && elements.some(el => el.type === "frame")) {
+      elements.filter(el => el.type === "frame").forEach(frameEl => {
         api.getSceneElements()
-          .filter(el=>el.frameId === frameEl.id)
-          .forEach(el=>elementIDs.add(el.id))
+          .filter(el => el.frameId === frameEl.id)
+          .forEach(el => elementIDs.add(el.id))
       })
     }
 
-    elements.forEach(el=>elementIDs.add(el.id));
-    containerBoundTextElmenetsReferencedInElements.forEach(id=>elementIDs.add(id));
+    elements.forEach(el => elementIDs.add(el.id));
+    containerBoundTextElmenetsReferencedInElements.forEach(id => elementIDs.add(id));
 
     return api
       .getSceneElements()
@@ -6159,8 +6171,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       return;
     }
 
-    if(typeof scene.storeAction === "string") {
-      switch(scene.storeAction) {
+    if (typeof scene.storeAction === "string") {
+      switch (scene.storeAction) {
         case "capture":
           scene.captureUpdate = CaptureUpdateAction.IMMEDIATELY;
           break;
@@ -6176,11 +6188,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (shouldRestoreElements) {
       scene.elements = restore(scene, null, null).elements;
     }
-    if(Boolean(scene.appState)) {
+    if (Boolean(scene.appState)) {
       //@ts-ignore
       scene.forceFlushSync = true;
     }
-    if(scene.elements) {
+    if (scene.elements) {
       scene.elements = syncInvalidIndices(scene.elements);
     }
     try {
@@ -6235,39 +6247,39 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     ref?: any
   ) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updateEmbeddableLeafRef, "ExcalidrawView.updateEmbeddableLeafRef", elementId, ref);
-    if(ref) {
+    if (ref) {
       this.embeddableLeafRefs.set(elementId, ref);
     } else {
       this.embeddableLeafRefs.delete(elementId);
     }
   }
 
-  public getEmbeddableLeafElementById(id: string): {leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function} | null {
+  public getEmbeddableLeafElementById(id: string): { leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function } | null {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getEmbeddableLeafElementById, "ExcalidrawView.getEmbeddableLeafElementById", id);
-    if(!id) return null;
+    if (!id) return null;
     const ref = this.embeddableLeafRefs.get(id);
-    if(!ref) {
+    if (!ref) {
       return null;
     }
-    return ref as {leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function};
+    return ref as { leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function };
   }
 
-  public getActiveEmbeddable ():{leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function}|null {
+  public getActiveEmbeddable(): { leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function } | null {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getActiveEmbeddable, "ExcalidrawView.getActiveEmbeddable");
-    if(!this.excalidrawAPI) return null;
+    if (!this.excalidrawAPI) return null;
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     const st = api.getAppState();
-    if(!st.activeEmbeddable || st.activeEmbeddable.state !== "active" ) return null;
+    if (!st.activeEmbeddable || st.activeEmbeddable.state !== "active") return null;
     return this.getEmbeddableLeafElementById(st.activeEmbeddable?.element?.id);
   }
 
   get editor(): any {
     const embeddable = this.getActiveEmbeddable();
-    if(embeddable) {
-      if(embeddable.node && embeddable.node.isEditing) {
+    if (embeddable) {
+      if (embeddable.node && embeddable.node.isEditing) {
         return embeddable.node.child.editor;
       }
-      if(embeddable.leaf?.view instanceof MarkdownView) {
+      if (embeddable.leaf?.view instanceof MarkdownView) {
         return embeddable.leaf.view.editor;
       }
     }
