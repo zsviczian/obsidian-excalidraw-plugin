@@ -5162,7 +5162,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           onClose
         ),
       ]);
-      contextMenuActions.push([
+      /*contextMenuActions.push([
         renderContextMenuAction(
           React,
           t("INSERT_LINK"),
@@ -5172,7 +5172,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           onClose
         ),
         // Add more context menu actions here if needed
-      ]);
+      ]);*/
       contextMenuActions.push([
         renderContextMenuAction(
           React,
