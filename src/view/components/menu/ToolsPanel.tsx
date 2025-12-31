@@ -544,7 +544,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                 : "none",
             flexDirection: pinObsidianTools ? "row" : "column",
             gap: "12px",
-            alignItems: pinObsidianTools ? "flex-end" : "stretch",
+            alignItems: pinObsidianTools ? "stretch" : "stretch",
             height: "fit-content",
             maxHeight: "400px",
             zIndex: 5,
@@ -569,7 +569,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   ? {
                     display: "flex",
                     flexDirection: "row",
-                    alignItems: "flex-end",
+                    alignItems: "stretch",
                     gap: "12px",
                   }
                   : {}
@@ -577,7 +577,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
             >
               {this.renderSection("Utility actions", (
                 <>
-                  <div className="buttonList buttonListIcon">
+                  <div className="buttonList buttonListIcon" style={{ flexWrap: "wrap", width: "160px" }}>
                     <ActionButton
                       key={"scriptEngine"}
                       title={t("INSTALL_SCRIPT_BUTTON")}
@@ -629,8 +629,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                           : ICONS.gotoFullScreen
                       }
                     />
-                  </div>
-                  <div className="buttonList buttonListIcon">
                     <ActionButton
                       key={"search"}
                       title={t("SEARCH")}
@@ -665,7 +663,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                 </>
               ), pinObsidianTools)}
               {this.renderSection("Export actions", (
-                <div className="buttonList buttonListIcon">
+                <div className="buttonList buttonListIcon" style={{ flexWrap: "wrap", width: "80px" }}>
                   <ActionButton
                     key={"lib"}
                     title={t("DOWNLOAD_LIBRARY")}
@@ -693,7 +691,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                 </div>
               ), pinObsidianTools)}
               {this.renderSection("Insert actions", (
-                <div className="buttonList buttonListIcon">
+                <div className="buttonList buttonListIcon" style={{ flexWrap: "wrap", width: "160px" }}>
                   <ActionButton
                     key={"anyfile"}
                     title={t("UNIVERSAL_ADD_FILE")}
@@ -826,7 +824,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
         {scriptlist.map((group, index) => {
           const title = isDownloaded ? group : (group === "" ? "User" : "User/" + group);
           const content = (
-            <div className="buttonList buttonListIcon">
+            <div className="buttonList buttonListIcon" style={pinObsidianTools ? { flexWrap: "wrap", width: "160px" } : {}}>
               {Object.entries(this.state.scriptIconMap)
                 .filter(([k, v]) => v.group === group)
                 .sort()
