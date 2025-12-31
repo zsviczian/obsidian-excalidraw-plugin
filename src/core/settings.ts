@@ -118,6 +118,7 @@ export interface ExcalidrawSettings {
   focusOnFileTab: boolean;
   openInMainWorkspace: boolean;
   showLinkBrackets: boolean;
+  syncElementLinkWithText: boolean;
   //allowLinkSync: boolean;
   linkPrefix: string;
   urlPrefix: string;
@@ -316,6 +317,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   focusOnFileTab: true,
   openInMainWorkspace: true,
   showLinkBrackets: true,
+  syncElementLinkWithText: true,
   //allowLinkSync: true,
   allowCtrlClick: true,
   forceWrap: false,
@@ -1816,6 +1818,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       undefined,
       (el) => (el.innerHTML = t("LINKS_DESC")),
     );
+
+    new Setting(detailsEl)
+      .setName(t("ELEMENT_LINK_SYNC_NAME"))
+      .setDesc(fragWithHTML(t("ELEMENT_LINK_SYNC_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.syncElementLinkWithText)
+          .onChange(async (value) => {
+            this.plugin.settings.syncElementLinkWithText = value;
+            this.applySettingsUpdate();
+          }),
+      );
 
     new Setting(detailsEl)
     .setName(t("SECOND_ORDER_LINKS_NAME"))

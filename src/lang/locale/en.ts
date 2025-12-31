@@ -543,6 +543,8 @@ export default {
   LONG_PRESS_MOBILE_NAME: "Long press to open mobile",
   LONG_PRESS_MOBILE_DESC: "Long press delay in milliseconds to open an Excalidraw Drawing embedded in a Markdown file. ",
   DOUBLE_CLICK_LINK_OPEN_VIEW_MODE: "Allow double-click to open links in view mode",
+  ELEMENT_LINK_SYNC_NAME: "Sync element link with body link",
+  ELEMENT_LINK_SYNC_DESC: "When enabled, a link in a text element's content automatically becomes the element link. Keep this on if the body link and element link are usually the same. Turn it off when you want to store other metadata or a different link in the element link field, for example using dataview-style notes like (reminds me of:: [[link]]).",
 
   FOCUS_ON_EXISTING_TAB_NAME: "Focus on Existing Tab",
   FOCUS_ON_EXISTING_TAB_DESC: "When opening a link, Excalidraw will focus on the existing tab if the file is already open. " +
