@@ -4983,6 +4983,15 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     new Notice("Image successfully converted to local file");
   }
 
+  private insertLinkAction(linkVal: string) {
+    let link = linkVal.match(/\[\[(.*?)\]\]/)?.[1];
+    if(!link) {
+      link = linkVal.replaceAll("[","").replaceAll("]","");
+      link = link.split("|")[0].trim();
+    }
+    this.plugin.insertLinkDialog.start(this.file.path, (markdownlink: string, path:string, alias:string) => this.addLink(markdownlink, path, alias, linkVal), link);
+  }
+
   private onContextMenu(elements: readonly ExcalidrawElement[], appState: AppState, onClose: (callback?: () => void) => void) {
     const React = this.packages.react;
     const contextMenuActions = [];
@@ -5179,17 +5188,19 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           onClose
         ),
       ]);
-      /*contextMenuActions.push([
-        renderContextMenuAction(
-          React,
-          t("INSERT_LINK"),
-          () => {
-            this.plugin.insertLinkDialog.start(this.file.path, (markdownlink: string, path:string, alias:string) => this.addLink(markdownlink, path, alias));
-          },
-          onClose
-        ),
-        // Add more context menu actions here if needed
-      ]);*/
+      if (DEVICE.isTablet || DEVICE.isMobile) {
+        contextMenuActions.push([
+          renderContextMenuAction(
+            React,
+            t("INSERT_LINK"),
+            () => {
+              this.plugin.insertLinkDialog.start(this.file.path, (markdownlink: string, path:string, alias:string) => this.addLink(markdownlink, path, alias));
+            },
+            onClose
+          ),
+          // Add more context menu actions here if needed
+        ]);
+      }
       contextMenuActions.push([
         renderContextMenuAction(
           React,
@@ -5888,6 +5899,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             renderEmbeddable: this.renderEmbeddable.bind(this),
             renderMermaid: shouldRenderMermaid,
             showDeprecatedFonts: true,
+            insertLinkAction: DEVICE.isDesktop ? undefined : this.insertLinkAction.bind(this),
           },
           this.renderCustomActionsMenu(),
           this.renderWelcomeScreen(),

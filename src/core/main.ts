@@ -1516,6 +1516,6 @@ export default class ExcalidrawPlugin extends Plugin {
       this.ea.setView();
       return this.ea.targetView?.file?.path;
     };
-    return new InlineLinkSuggester(this.app, this, inputEl, getSourcePath, widthWrapper, true, containerEl);
+    return new InlineLinkSuggester(this.app, this, inputEl, getSourcePath, widthWrapper, false, containerEl);
   }
 }

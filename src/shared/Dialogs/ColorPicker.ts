@@ -9,8 +9,8 @@ const CELL_GAP = 8;
 const POPUP_PADDING = 12;
 const MAX_HEIGHT = 260;
 
-const getColors = (palette: PaletteName, view?: ExcalidrawView): string[] => {
-	const raw = getViewColorPalette(palette, view) ?? [];
+const getColors = (palette: PaletteName, view?: ExcalidrawView, includeSceneColors: boolean = false): string[] => {
+	const raw = getViewColorPalette(palette, view, includeSceneColors) ?? [];
 	const flattened: string[] = [];
 
 	raw.forEach((entry: any) => {
@@ -85,8 +85,9 @@ export const showColorPicker = async (
 	palette: PaletteName,
 	anchorElement: HTMLElement,
 	view?: ExcalidrawView,
+	includeSceneColors: boolean = false,
 ): Promise<string | null> => {
-	const colors = getColors(palette, view);
+	const colors = getColors(palette, view, includeSceneColors);
 
 	if (!colors.length) {
 		return null;

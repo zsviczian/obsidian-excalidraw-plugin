@@ -231,9 +231,9 @@ export class PenSettingsModal extends Modal {
 		  )
       .addButton(button => {
         button
-          .setIcon("palette")
+          .setIcon("swatch-book")
           .onClick(async () => {
-            const selected = await showColorPicker("elementStroke", button.buttonEl, this.view);
+            const selected = await showColorPicker("elementStroke", button.buttonEl, this.view, true);
             if(!selected) {return;}
             strokeUseCurrentToggle?.setValue(false);
             sChangeBounce = true;
@@ -345,9 +345,9 @@ export class PenSettingsModal extends Modal {
         })
       .addButton(button => {
         button
-          .setIcon("palette")
+          .setIcon("swatch-book")
           .onClick(async () => {
-            const selected = await showColorPicker("elementBackground", button.buttonEl, this.view);
+            const selected = await showColorPicker("elementBackground", button.buttonEl, this.view, true);
             if(!selected) {return;}
             bgUseCurrentToggle?.setValue(false);
             bgtComponent?.setValue(false);

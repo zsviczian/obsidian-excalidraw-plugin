@@ -1443,6 +1443,27 @@ export declare class ExcalidrawAutomate {
      */
     getCM(color: TInput): ColorMaster;
     /**
+     * Get color palette for scene. If no palette is found, returns default Excalidraw color palette.
+     * @param {("canvasBackground"|"elementBackground"|"elementStroke")} palette - The palette type.
+     * @returns {([string, string, string, string, string][] | string[])} The color palette.
+     */
+    getViewColorPalette(palette: "canvasBackground" | "elementBackground" | "elementStroke"): (string[] | string)[];
+    /**
+     * Opens a palette popover anchored to the provided element and resolves with the selected color.
+     * @param {HTMLElement} anchorElement - The element to anchor the popover to.
+     * @param {"canvasBackground"|"elementBackground"|"elementStroke"} palette - Which palette to show.
+     * @param {boolean} [includeSceneColors=true] - Whether to include scene stroke/background colors in the palette.
+     * @returns {Promise<string|null>} Selected color or null if cancelled.
+     * example usage:
+     * const selected = await ea.showColorPicker(button.buttonEl, "elementStroke");
+     * if(selected) {
+     *   console.log("User selected color: " + selected);
+     * } else {
+     *   console.log("User cancelled color selection");
+     * }
+     */
+    showColorPicker(anchorElement: HTMLElement, palette: "canvasBackground" | "elementBackground" | "elementStroke", includeSceneColors?: boolean): Promise<string | null>;
+    /**
      * Gets the PolyBool class from https://github.com/velipso/polybooljs.
      * @returns {PolyBool} The PolyBool class.
      */
@@ -2669,6 +2690,7 @@ export interface ExcalidrawProps {
     onContextMenu?: (element: readonly NonDeletedExcalidrawElement[], appState: AppState, onClose: (callback?: () => void) => void) => JSX.Element | null;
     aiEnabled?: boolean;
     showDeprecatedFonts?: boolean;
+    insertLinkAction?: (linkVal: string) => void;
     renderScrollbars?: boolean;
 }
 export type SceneData = {

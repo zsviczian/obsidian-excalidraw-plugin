@@ -840,13 +840,13 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "getViewColorPalette",
-    code: "getViewColorPalette(palette: \"canvasBackground\"|\"elementBackground\"|\"elementStroke\"): [string, string, string, string, string][] | string[];",
+    code: "getViewColorPalette(palette: \"canvasBackground\"|\"elementBackground\"|\"elementStroke\"): (string[] | string)[];",
     desc: "Returns the current view's palette for canvas background, element background, or element stroke colors. Falls back to the default palette when no view is loaded or the palette is unavailable.",
     after: "(\"elementStroke\");",
   },
   {
     field: "showColorPicker",
-    code: "async showColorPicker(anchorElement: HTMLElement, palette: \"canvasBackground\"|\"elementBackground\"|\"elementStroke\"): Promise<string | null>;",
+    code: "async showColorPicker(anchorElement: HTMLElement, palette: \"canvasBackground\"|\"elementBackground\"|\"elementStroke\", includeSceneColors: boolean = true): Promise<string | null>;",
     desc: "Opens a palette popover anchored to the provided element and resolves with the selected color; returns null when dismissed.\n\n" +
       "Example Usage:\n" +
       'const selected = await ea.showColorPicker(button.buttonEl, "elementStroke");\n' +

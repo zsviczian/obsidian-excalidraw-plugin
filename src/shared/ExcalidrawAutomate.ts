@@ -3875,7 +3875,7 @@ export class ExcalidrawAutomate {
    * @param {("canvasBackground"|"elementBackground"|"elementStroke")} palette - The palette type.
    * @returns {([string, string, string, string, string][] | string[])} The color palette.
    */
-  getViewColorPalette(palette: "canvasBackground"|"elementBackground"|"elementStroke"): [string, string, string, string, string][] | string[] {
+  getViewColorPalette(palette: "canvasBackground"|"elementBackground"|"elementStroke"): (string[] | string)[] {
     return getViewColorPalette(palette, this.targetView);
   }
 
@@ -3883,6 +3883,7 @@ export class ExcalidrawAutomate {
    * Opens a palette popover anchored to the provided element and resolves with the selected color.
    * @param {HTMLElement} anchorElement - The element to anchor the popover to.
    * @param {"canvasBackground"|"elementBackground"|"elementStroke"} palette - Which palette to show.
+   * @param {boolean} [includeSceneColors=true] - Whether to include scene stroke/background colors in the palette.
    * @returns {Promise<string|null>} Selected color or null if cancelled.
    * example usage:
    * const selected = await ea.showColorPicker(button.buttonEl, "elementStroke");
@@ -3895,8 +3896,9 @@ export class ExcalidrawAutomate {
   public async showColorPicker(
     anchorElement: HTMLElement,
     palette: "canvasBackground"|"elementBackground"|"elementStroke",
+    includeSceneColors: boolean = true,
   ): Promise<string | null> {
-    return showColorPicker(palette, anchorElement, this.targetView);
+    return showColorPicker(palette, anchorElement, this.targetView, includeSceneColors);
   }
 
   /**

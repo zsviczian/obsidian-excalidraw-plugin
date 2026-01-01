@@ -97,8 +97,8 @@ When enabled, the script groups elements from the "leaves" upward. A leaf node i
 ```js
 */
 
-if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.18.3")) {
-  new Notice("Please update the Excalidraw Plugin to version 2.18.3 or higher.");
+if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.0")) {
+  new Notice("Please update the Excalidraw Plugin to version 2.19.0 or higher.");
   return;
 }
 
@@ -131,6 +131,7 @@ const K_ARROWSTROKE = "Arrow Stroke Style";
 const K_CENTERTEXT = "Center text in nodes?";
 const K_ZOOM = "Preferred Zoom Level";
 const K_HOTKEYS = "Hotkeys";
+const K_PALETTE = "Custom Palette";
 
 const FONT_SCALE_TYPES = ["Use scene fontsize", "Fibonacci Scale", "Normal Scale"];
 const GROWTH_TYPES = ["Radial", "Right-facing", "Left-facing"];
@@ -174,6 +175,7 @@ let isSolidArrow = getVal(K_ARROWSTROKE, true) === true;
 let centerText = getVal(K_CENTERTEXT, true) === true;
 let autoLayoutDisabled = false;
 let zoomLevel = getVal(K_ZOOM, {value: "Medium", valueset: ZOOM_TYPES});
+let customPalette = getVal(K_PALETTE, {value : {enabled: false, random: false, colors: []}, hidden: true}); 
 let editingNodeId = null;
 
 //migrating old settings values. This must stay in the code so existing users have their dataset migrated
@@ -421,6 +423,12 @@ const getAngleFromCenter = (center, point) => {
 const randInt = (range) => Math.round(Math.random()*range);
 
 const getDynamicColor = (existingColors) => {
+  if (multicolor && customPalette.enabled && customPalette.colors.length > 0) {
+    if (customPalette.random) {
+      return customPalette.colors[Math.floor(Math.random() * customPalette.colors.length)];
+    }
+    return customPalette.colors[existingColors.length % customPalette.colors.length];
+  }
   const st = appState();
   const bg = st.viewBackgroundColor === "transparent" ? "#ffffff" : st.viewBackgroundColor;
   const bgCM = ea.getCM(bg);
@@ -1511,13 +1519,6 @@ const updateUI = () => {
   }
 };
 
-const renderHelp = (container) => {
-  helpContainer = container.createDiv();
-  detailsEl = helpContainer.createEl("details");
-  detailsEl.createEl("summary", { text: "Instructions & Shortcuts" });
-  ea.obsidian.MarkdownRenderer.render(app, INSTRUCTIONS, detailsEl.createDiv(), "", ea.plugin);
-};
-
 const startEditing = () => {
   const sel = ea.getViewSelectedElement();
   if (!sel) return;
@@ -1571,6 +1572,211 @@ const commitEdit = async () => {
   editingNodeId = null;
   inputEl.value = "";
 };
+
+const renderHelp = (container) => {
+  helpContainer = container.createDiv();
+  detailsEl = helpContainer.createEl("details");
+  detailsEl.createEl("summary", { text: "Instructions & Shortcuts" });
+  ea.obsidian.MarkdownRenderer.render(app, INSTRUCTIONS, detailsEl.createDiv(), "", ea.plugin);
+};
+
+// ---------------------------------------------------------------------------
+// 8. Custom Colors: Palette Manager Modal
+// ---------------------------------------------------------------------------
+class PaletteManagerModal extends ea.obsidian.Modal {
+  constructor(app, settings, onUpdate) {
+    super(app);
+    this.settings = JSON.parse(JSON.stringify(settings));
+    this.onUpdate = onUpdate;
+    this.editIndex = -1; // -1 means adding new, >=0 means editing existing
+    this.tempColor = "#000000";
+  }
+
+  onOpen() {
+    this.display();
+  }
+
+  display() {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.createEl("h2", { text: "Mindmap Branch Palette" });
+
+    // --- Global Toggles ---
+    new ea.obsidian.Setting(contentEl)
+      .setName("Enable Custom Palette")
+      .setDesc("Use these colors instead of auto-generated ones.")
+      .addToggle(t => t
+        .setValue(this.settings.enabled)
+        .onChange(v => {
+          this.settings.enabled = v;
+          this.save();
+          this.display();
+        }));
+
+    if (this.settings.enabled) {
+      new ea.obsidian.Setting(contentEl)
+        .setName("Randomize Order")
+        .setDesc("Pick colors randomly instead of sequentially.")
+        .addToggle(t => t
+          .setValue(this.settings.random)
+          .onChange(v => {
+            this.settings.random = v;
+            this.save();
+          }));
+
+      contentEl.createEl("hr");
+
+      // --- Color List ---
+      const listContainer = contentEl.createDiv();
+      this.settings.colors.forEach((color, index) => {
+        const row = new ea.obsidian.Setting(listContainer);
+        
+        // Color Preview & Name
+        const nameEl = row.nameEl;
+        nameEl.style.display = "flex";
+        nameEl.style.alignItems = "center";
+        nameEl.style.gap = "10px";
+        
+        const preview = nameEl.createDiv();
+        preview.style.width = "20px";
+        preview.style.height = "20px";
+        preview.style.backgroundColor = color;
+        preview.style.border = "1px solid var(--background-modifier-border)";
+        preview.style.borderRadius = "4px";
+        
+        nameEl.createSpan({ text: color });
+
+        // Actions
+        row
+          .addExtraButton(btn => btn
+            .setIcon("arrow-big-up")
+            .setTooltip("Move Up")
+            .setDisabled(index === 0)
+            .onClick(() => {
+              if (index === 0) return;
+              [this.settings.colors[index - 1], this.settings.colors[index]] = 
+              [this.settings.colors[index], this.settings.colors[index - 1]];
+              this.save();
+              this.display();
+            }))
+          .addExtraButton(btn => btn
+            .setIcon("arrow-big-down")
+            .setTooltip("Move Down")
+            .setDisabled(index === this.settings.colors.length - 1)
+            .onClick(() => {
+              if (index === this.settings.colors.length - 1) return;
+              [this.settings.colors[index + 1], this.settings.colors[index]] = 
+              [this.settings.colors[index], this.settings.colors[index + 1]];
+              this.save();
+              this.display();
+            }))
+          .addExtraButton(btn => btn
+            .setIcon("pencil")
+            .setTooltip("Edit")
+            .onClick(() => {
+              this.editIndex = index;
+              this.tempColor = color;
+              this.display();
+            }))
+          .addExtraButton(btn => btn
+            .setIcon("trash-2")
+            .setTooltip("Delete")
+            .onClick(() => {
+              this.settings.colors.splice(index, 1);
+              if(this.editIndex === index) this.editIndex = -1;
+              this.save();
+              this.display();
+            }));
+      });
+
+      contentEl.createEl("hr");
+
+      // --- Add/Edit Area ---
+      contentEl.createEl("h4", { text: this.editIndex === -1 ? "Add New Color" : "Edit Color" });
+      
+      const getHex = (val) => {
+        const cm = ea.getCM(val);
+        return cm ? cm.stringHEX({alpha: false}) : "#000000";
+      };
+
+      const updateEditorState = (val, textComp, pickerComp) => {
+        this.tempColor = val;
+        if(textComp) textComp.inputEl.value = val;
+        if(pickerComp) pickerComp.setValue(getHex(val));
+      };
+
+      let textComponent, pickerComponent;
+
+      new ea.obsidian.Setting(contentEl)
+        .setName("Select Color")
+        .addText(text => {
+          textComponent = text;
+          text
+            .setValue(this.tempColor)
+            .onChange(value => {
+              this.tempColor = value;
+              pickerComponent.setValue(getHex(value));
+            });
+        })
+        .addColorPicker(picker => {
+          pickerComponent = picker;
+          picker
+            .setValue(getHex(this.tempColor))
+            .onChange(value => {
+              this.tempColor = value;
+              textComponent.setValue(value);
+            });
+        })
+        .addButton(btn => btn
+          .setIcon("swatch-book")
+          .setTooltip("Open Palette Picker")
+          .onClick(async () => {
+            const selected = await ea.showColorPicker(btn.buttonEl, "elementStroke");
+            if (selected) {
+              updateEditorState(selected, textComponent, pickerComponent);
+            }
+          }));
+
+      const actionContainer = contentEl.createDiv();
+      actionContainer.style.display = "flex";
+      actionContainer.style.justifyContent = "flex-end";
+      actionContainer.style.gap = "10px";
+      actionContainer.style.marginTop = "10px";
+
+      if (this.editIndex !== -1) {
+        const cancelBtn = actionContainer.createEl("button", { text: "Cancel Edit" });
+        cancelBtn.onclick = () => {
+          this.editIndex = -1;
+          this.tempColor = "#000000";
+          this.display();
+        };
+      }
+
+      const saveBtn = actionContainer.createEl("button", { 
+        text: this.editIndex === -1 ? "Add Color" : "Update Color",
+        cls: "mod-cta"
+      });
+      saveBtn.onclick = () => {
+        if (this.editIndex === -1) {
+          this.settings.colors.push(this.tempColor);
+        } else {
+          this.settings.colors[this.editIndex] = this.tempColor;
+          this.editIndex = -1;
+        }
+        this.save();
+        this.display();
+      };
+    }
+  }
+
+  save() {
+    this.onUpdate(this.settings);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 9. Render Functions
+// ---------------------------------------------------------------------------
 
 const renderInput = (container, isFloating = false) => {
   container.empty();
@@ -1807,13 +2013,27 @@ const renderBody = (contentEl) => {
       }),
     );
 
-  new ea.obsidian.Setting(bodyContainer).setName("Multicolor Branches").addToggle((t) =>
-    t.setValue(multicolor).onChange((v) => {
-      multicolor = v;
-      setVal(K_MULTICOLOR, v);
-      dirty = true;
-    }),
-  );
+  new ea.obsidian.Setting(bodyContainer)
+    .setName("Multicolor Branches")
+    .addToggle((t) =>
+      t.setValue(multicolor).onChange((v) => {
+        multicolor = v;
+        setVal(K_MULTICOLOR, v);
+        dirty = true;
+      }),
+    )
+    .addButton(btn => 
+      btn.setIcon("palette")
+         .setTooltip("Configure custom color palette for branches")
+         .onClick(() => {
+           const modal = new PaletteManagerModal(app, customPalette, (newSettings) => {
+             customPalette = newSettings;
+             setVal(K_PALETTE, customPalette, true); // save to script settings
+             dirty = true;
+           });
+           modal.open();
+         })
+    );
 
   let sliderValDisplay;
   const sliderSetting = new ea.obsidian.Setting(bodyContainer).setName("Max Wrap Width").addSlider((s) => s

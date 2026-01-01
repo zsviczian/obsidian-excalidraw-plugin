@@ -5,9 +5,9 @@ Scribble Helper can improve handwriting and add links. It lets you create and ed
 
 <a href="https://www.youtube.com/watch?v=BvYkOaly-QM" target="_blank"><img src ="https://i.ytimg.com/vi/BvYkOaly-QM/maxresdefault.jpg" style="width:560px;"></a>
 
-```javascript
+```js
 */
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.11.0")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.0")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -58,39 +58,10 @@ if(typeof win.ExcalidrawScribbleHelper.action === "undefined") {
 // Helper Functions 
 //---------------------------------------
 
-// Color Palette for stroke color setting
-// https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.8
-const defaultStrokeColors = [
-    "#000000", "#343a40", "#495057", "#c92a2a", "#a61e4d",
-    "#862e9c", "#5f3dc4", "#364fc7", "#1864ab", "#0b7285",
-    "#087f5b", "#2b8a3e", "#5c940d", "#e67700", "#d9480f"
-  ];
-
-function loadColorPalette() {
-  const st = api.getAppState();
-  const strokeColors = new Set();
-  let strokeColorPalette = st.colorPalette?.elementStroke ?? defaultStrokeColors;
-  if(Object.entries(strokeColorPalette).length === 0) {
-    strokeColorPalette = defaultStrokeColors;
-  }
-
-  ea.getViewElements().forEach(el => {
-    if(el.strokeColor.toLowerCase()==="transparent") return;
-    strokeColors.add(el.strokeColor);
-  });
-
-  strokeColorPalette.forEach(color => {
-    strokeColors.add(color)
-  });
-
-  strokeColors.add(st.currentItemStrokeColor ?? ea.style.strokeColor);
-  return strokeColors;
-}
-
 // Event handler management
 function addEventHandler(handler) {
   if(win.ExcalidrawScribbleHelper.eventHandler) {
-    win.removeEventListner("pointerdown", handler);
+    win.removeEventListener("pointerdown", handler);
   }
   win.addEventListener("pointerdown",handler);
   win.ExcalidrawScribbleHelper.eventHandler = handler;
@@ -147,19 +118,17 @@ function customControls (container) {
   const viewBackground = api.getAppState().viewBackgroundColor;
   const el1 = new ea.obsidian.Setting(container)
     .setName(`Text color`)
-    .addDropdown(dropdown => {
-      Array.from(loadColorPalette()).forEach(color => {
-        const options = dropdown.addOption(color, color).selectEl.options;
-        options[options.length-1].setAttribute("style",`color: ${color
-          }; background: ${viewBackground};`);
-      });
-      dropdown
-        .setValue(ea.style.strokeColor)
-        .onChange(value => {
-          ea.style.strokeColor = value;
-          el1.nameEl.style.color = value;
-        })
-    })
+    .addButton(button => button
+      .setIcon("swatch-book")
+      .onClick(async () => {
+        const selected = await ea.showColorPicker(button.buttonEl, "elementStroke");
+        if(selected) {
+          ea.style.strokeColor = selected;
+          el1.nameEl.style.color = selected;
+        }
+      })
+    );
+    
   el1.nameEl.style.color = ea.style.strokeColor;
   el1.nameEl.style.background = viewBackground;
   el1.nameEl.style.fontWeight = "bold";
