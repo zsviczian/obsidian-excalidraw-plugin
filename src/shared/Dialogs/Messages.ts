@@ -25,12 +25,14 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
   - ‼️ added new setting under "Links, transclusion and TODOs" **Sync text-element link with text**
     - The default behavior is OFF, because it feels more natural to manage the element link separately.
     - When enabled (ON), Excalidraw matches pre-2.19.0 behavior: the first link in the text body is always copied to the element link field. SVG/PNG exports only keep links when the element link field holds a single link (not links inside the text body). Turn this ON if you rely on text-body links and want the element link to always mirror the first one. Turn it OFF if you manage the element link separately: for metadata like tags, inline link ontologies, or multiple links, e.g., dataview-style notes like '(reminds me of:: [[link]]) #noteToSelf'.
-- LaTeX formula is saved to element.customData.latexFormula. This can be helpful for various automation use cases.
+- LaTeX formula is saved to \`element.customData.latex\`. This can be helpful for various automation use cases.
 
 ## Fixed
 - Floating modal used by Excalidraw scripts did not work correctly in Obisidian popout windows.
+- In onPaste if \`imageElement.customData.latex\` is present, it will treat the pasted images as a LaTeX formula, even if copied from Excalidraw.com or another Obsidian Vault.
 
-## New in ExcalidrawAutomate
+## New & fixed in ExcalidrawAutomate
+- \`ea.toClipboard()\` will now include the DataURL for included images from \`ea.imagesDict\`
 - Implemented Excalidraw Sidepanel API for ExcalidrawAutomate. Scripts can now create custom Obsidian sidepanel tabs in the Excalidraw Sidepanel.
   - New Command Palette action: "Open Excalidraw Sidepanel" will toggle the sidepanel visibility.
   - The demo script making full use of the new sidepanel API is [Mindmap Builder](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/sidepanels/ea-scripts/Mindmap%20Builder.md) currently available in the sidepanels branch of Obsidian-Excalidraw repository. **Note: ** the version of Mindmap Builder in the script store is not updated yet to use the new sidepanel API.

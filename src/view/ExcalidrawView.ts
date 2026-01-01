@@ -1078,7 +1078,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       });
       const ea = getEA(this) as ExcalidrawAutomate;
       ea.copyViewElementsToEAforEditing([el]);
-      ea.addAppendUpdateCustomData(el.id, {latexFormula: formula});
+      ea.addAppendUpdateCustomData(el.id, {latex: formula});
       await ea.addElementsToView(false, false, false, false);
       await this.save(false);
       await updateEquation(
@@ -4324,6 +4324,19 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       data.elements
         .filter(el=>el.type==="text" && !el.hasOwnProperty("rawText"))
         .forEach(el=>(el as Mutable<ExcalidrawTextElement>).rawText = (el as ExcalidrawTextElement).originalText);
+
+      data.elements
+        .filter((el): el is Mutable<ExcalidrawImageElement> => el.type === "image" && Boolean((el as any).customData?.latex))
+        .forEach((image) => {
+          const fileId = image.fileId;
+          const embeddedFile = this.excalidrawData.getFile(fileId);
+          const equation = this.excalidrawData.getEquation(fileId);
+          const mermaid = this.excalidrawData.getMermaid(fileId);
+
+          if (!embeddedFile && !equation && !mermaid) {
+            this.excalidrawData.setEquation(image.fileId, { latex: (image as any).customData.latex, isLoaded: true });
+          }
+        });
     };
     if(data && ea.onPasteHook) {
       try {

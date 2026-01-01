@@ -831,10 +831,29 @@ export class ExcalidrawAutomate {
       : null;
     let elements = template ? template.elements : [];
     elements = elements.concat(this.getElements());
+
+    const files: Record<FileId, {mimeType: MimeType; id: FileId; dataURL: DataURL; created: number}> = {
+      ...(template?.files ?? {}),
+    };
+
+    Object.keys(this.imagesDict).forEach((key: FileId) => {
+      const item = this.imagesDict[key];
+      if (!item?.dataURL || !item?.mimeType) {
+        return;
+      }
+      files[key] = {
+        mimeType: item.mimeType,
+        id: key,
+        dataURL: item.dataURL,
+        created: item.created ?? Date.now(),
+      };
+    });
+
     navigator.clipboard.writeText(
       JSON.stringify({
         type: "excalidraw/clipboard",
         elements,
+        files,
       }),
     );
   };
@@ -2225,7 +2244,7 @@ export class ExcalidrawAutomate {
       image.size.height,
     );
     this.elementsDict[id].fileId = image.fileId;
-    this.addAppendUpdateCustomData(id, {latexFormula: tex});
+    this.addAppendUpdateCustomData(id, {latex: tex});
     this.elementsDict[id].scale = [1, 1];
     return id;
   };
