@@ -32,6 +32,7 @@ import {
   DEVICE,
   mermaidToExcalidraw,
   refreshTextDimensions,
+  getDefaultColorPalette,
 } from "src/constants/constants";
 import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath, splitFolderAndFilename } from "src/utils/fileUtils";
 import {
@@ -77,7 +78,8 @@ import {
   extractCodeBlocks as _extractCodeBlocks,
 } from "../utils/AIUtils";
 import { EXCALIDRAW_AUTOMATE_INFO, EXCALIDRAW_SCRIPTENGINE_INFO } from "./Dialogs/SuggesterInfo";
-import { addBackOfTheNoteCard, sceneRemoveInternalLinks } from "../utils/excalidrawViewUtils";
+import { showColorPicker } from "./Dialogs/ColorPicker";
+import { addBackOfTheNoteCard, getViewColorPalette, sceneRemoveInternalLinks } from "../utils/excalidrawViewUtils";
 import { log } from "../utils/debugHelper";
 import { ExcalidrawLib } from "../types/excalidrawLib";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
@@ -94,6 +96,7 @@ import { ExcalidrawSidepanelTab } from "src/view/sidepanel/SidepanelTab";
 import { patchMobileView } from "src/utils/customEmbeddableUtils";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { AIRequest } from "src/types/AIUtilTypes";
+import { get } from "http";
 
 extendPlugins([
   HarmonyPlugin,
@@ -3865,6 +3868,35 @@ export class ExcalidrawAutomate {
       return cm.alphaTo(0);
     }
     return cm;
+  }
+
+  /**
+   * Get color palette for scene. If no palette is found, returns default Excalidraw color palette.
+   * @param {("canvasBackground"|"elementBackground"|"elementStroke")} palette - The palette type.
+   * @returns {([string, string, string, string, string][] | string[])} The color palette.
+   */
+  getViewColorPalette(palette: "canvasBackground"|"elementBackground"|"elementStroke"): [string, string, string, string, string][] | string[] {
+    return getViewColorPalette(palette, this.targetView);
+  }
+
+  /**
+   * Opens a palette popover anchored to the provided element and resolves with the selected color.
+   * @param {HTMLElement} anchorElement - The element to anchor the popover to.
+   * @param {"canvasBackground"|"elementBackground"|"elementStroke"} palette - Which palette to show.
+   * @returns {Promise<string|null>} Selected color or null if cancelled.
+   * example usage:
+   * const selected = await ea.showColorPicker(button.buttonEl, "elementStroke");
+   * if(selected) {
+   *   console.log("User selected color: " + selected);
+   * } else {
+   *   console.log("User cancelled color selection");
+   * }
+   */
+  public async showColorPicker(
+    anchorElement: HTMLElement,
+    palette: "canvasBackground"|"elementBackground"|"elementStroke",
+  ): Promise<string | null> {
+    return showColorPicker(palette, anchorElement, this.targetView);
   }
 
   /**

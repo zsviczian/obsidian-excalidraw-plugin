@@ -261,6 +261,40 @@ li[data-testid] {
   box-shadow: none;
 }
 
+.excalidraw-colorpicker-overlay {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 9998;
+}
+
+.excalidraw-colorpicker-popup {
+  position: absolute;
+  padding: 12px;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  z-index: 9999;
+  scrollbar-gutter: stable both-edges;
+}
+
+.excalidraw-colorpicker-grid {
+  display: grid;
+  overflow-y: auto;
+  padding-right: 4px;
+  max-height: 260px;
+}
+
+.excalidraw-colorpicker-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--interactive-accent-hover);
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
 textarea.excalidraw-wysiwyg {
   border: none;
   outline: none;

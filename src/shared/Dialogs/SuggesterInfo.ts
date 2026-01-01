@@ -839,6 +839,25 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "getViewColorPalette",
+    code: "getViewColorPalette(palette: \"canvasBackground\"|\"elementBackground\"|\"elementStroke\"): [string, string, string, string, string][] | string[];",
+    desc: "Returns the current view's palette for canvas background, element background, or element stroke colors. Falls back to the default palette when no view is loaded or the palette is unavailable.",
+    after: "(\"elementStroke\");",
+  },
+  {
+    field: "showColorPicker",
+    code: "async showColorPicker(anchorElement: HTMLElement, palette: \"canvasBackground\"|\"elementBackground\"|\"elementStroke\"): Promise<string | null>;",
+    desc: "Opens a palette popover anchored to the provided element and resolves with the selected color; returns null when dismissed.\n\n" +
+      "Example Usage:\n" +
+      'const selected = await ea.showColorPicker(button.buttonEl, "elementStroke");\n' +
+      "if(selected) {" +
+      'console.log("User selected color: " + selected);' +
+      "} else {" +
+      'console.log("User cancelled color selection");' +
+      "}",
+    after: "(buttonEl, \"elementStroke\");",
+  },
+  {
     field: "obsidian",
     code: "obsidian",
     desc: `Access functions and objects available on the ${hyperlink("https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts","Obsidian Module")}`,

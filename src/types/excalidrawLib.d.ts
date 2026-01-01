@@ -226,5 +226,6 @@ declare namespace ExcalidrawLib {
   function loadMermaid(): Promise<any>;
   function syncInvalidIndices(elements: readonly ExcalidrawElement[]): OrderedExcalidrawElement[];
   function syncMovedIndices(elements: readonly ExcalidrawElement[], movedElements: ElementsMap): OrderedExcalidrawElement[];
+  function getDefaultColorPalette(): [string, string, string, string, string][];
 }
 

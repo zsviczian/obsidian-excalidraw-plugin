@@ -106,6 +106,7 @@ export let {
   loadSceneFonts,
   loadMermaid,
   syncInvalidIndices,
+  getDefaultColorPalette,
 } = excalidrawLib;
 
 export function updateExcalidrawLib() {
@@ -156,6 +157,7 @@ export function updateExcalidrawLib() {
       loadSceneFonts,
       loadMermaid,
       syncInvalidIndices,
+      getDefaultColorPalette,
     } = excalidrawLib);
   } catch (error) {
     errorHandler.handleError(error, "updateExcalidrawLib", true);

@@ -26,6 +26,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
     - The default behavior is OFF, because it feels more natural to manage the element link separately.
     - When enabled (ON), Excalidraw matches pre-2.19.0 behavior: the first link in the text body is always copied to the element link field. SVG/PNG exports only keep links when the element link field holds a single link (not links inside the text body). Turn this ON if you rely on text-body links and want the element link to always mirror the first one. Turn it OFF if you manage the element link separately: for metadata like tags, inline link ontologies, or multiple links, e.g., dataview-style notes like '(reminds me of:: [[link]]) #noteToSelf'.
 - LaTeX formula is saved to \`element.customData.latex\`. This can be helpful for various automation use cases.
+- Color picker in Pen Settings to pick from the current view's color palette.
 
 ## Fixed
 - Floating modal used by Excalidraw scripts did not work correctly in Obisidian popout windows.
@@ -37,6 +38,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
   - New Command Palette action: "Open Excalidraw Sidepanel" will toggle the sidepanel visibility.
   - The demo script making full use of the new sidepanel API is [Mindmap Builder](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/sidepanels/ea-scripts/Mindmap%20Builder.md) currently available in the sidepanels branch of Obsidian-Excalidraw repository. **Note: ** the version of Mindmap Builder in the script store is not updated yet to use the new sidepanel API.
   - [ExcalidrawAutomate full library for LLM training.md](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/sidepanels/docs/AITrainingData/ExcalidrawAutomate%20full%20library%20for%20LLM%20training.md) also on the sidepanels branch includes all necessary training information to use sidepanels.
+- Added palette popover helper \`showColorPicker()\` (also used in Pen Settings and Mindmap Builder) to pick from the current view's canvas/element palettes.
 
   New functions in ExcalidrawAutomate. See also [SidepanelTab](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/sidepanels/src/types/sidepanelTabTypes.ts) type definition in the sidepanels branch.
 
@@ -48,6 +50,8 @@ getSidepanelLeaf(): WorkspaceLeaf | null;
 toggleSidepanelView(): void;
 persistSidepanelTab(): ExcalidrawSidepanelTab | null;
 attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement): KeyBlocker;
+getViewColorPalette(palette: "canvasBackground"|"elementBackground"|"elementStroke"): [string, string, string, string, string][] | string[];
+showColorPicker(anchorElement: HTMLElement, palette: "canvasBackground"|"elementBackground"|"elementStroke"): Promise<string | null>;
 \`\`\`
 
 - Added inline link suggester helper \`attachInlineLinkSuggester()\` returning a KeyBlocker interface so host scripts can suppress their own keydown handlers while the suggester is active.

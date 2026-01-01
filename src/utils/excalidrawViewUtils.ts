@@ -1,5 +1,5 @@
 
-import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS, AUDIO_TYPES, CARD_WIDTH, CARD_HEIGHT } from "src/constants/constants";
+import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS, AUDIO_TYPES, CARD_WIDTH, CARD_HEIGHT, getDefaultColorPalette } from "src/constants/constants";
 import { App, Modal, Notice, TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS, getExcalidrawMarkdownHeader } from "../shared/ExcalidrawData";
@@ -528,4 +528,19 @@ export function onLoadMessages(plugin: ExcalidrawPlugin, scene: {elements: Excal
       new Notice(t("DRAWING_HAS_BACK_OF_THE_CARD")); 
     }*/
   });
+}
+
+export function getViewColorPalette(
+  palette: "canvasBackground"|"elementBackground"|"elementStroke",
+  view?: ExcalidrawView
+): [string, string, string, string, string][] | string[] {
+  if (!view) {
+    return getDefaultColorPalette();
+  }
+  const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
+  const {colorPalette} = api.getAppState();
+  if (!colorPalette || !colorPalette.hasOwnProperty(palette)) {
+    return getDefaultColorPalette();
+  }
+  return colorPalette[palette];
 }
