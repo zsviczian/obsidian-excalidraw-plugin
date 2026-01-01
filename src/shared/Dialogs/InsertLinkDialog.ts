@@ -3,7 +3,7 @@ import { t } from "../../lang/helpers";
 import ExcalidrawPlugin from "src/core/main";
 import { getLink } from "src/utils/fileUtils";
 import { LinkSuggestion } from "src/types/types";
-import { getLinkSuggestionsFiltered, renderLinkSuggestion } from "src/shared/Suggesters/LinkSuggesterUtils";
+import { getLinkSuggestionsFiltered, getSortedLinkMatches, renderLinkSuggestion } from "src/shared/Suggesters/LinkSuggesterUtils";
 
 
 export class InsertLinkDialog extends FuzzySuggestModal<LinkSuggestion> {
@@ -54,6 +54,10 @@ export class InsertLinkDialog extends FuzzySuggestModal<LinkSuggestion> {
 
   renderSuggestion(result: FuzzyMatch<LinkSuggestion>, itemEl: HTMLElement) {
     renderLinkSuggestion(this.plugin, result, itemEl, this.emptyStateText);
+  }
+
+  getSuggestions(query: string): FuzzyMatch<LinkSuggestion>[] {
+    return getSortedLinkMatches(query, this.getItems());
   }
 
   onClose(): void {

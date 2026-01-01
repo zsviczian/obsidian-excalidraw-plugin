@@ -1,8 +1,8 @@
-import { App, FuzzyMatch, prepareFuzzySearch } from "obsidian";
+import { App, FuzzyMatch } from "obsidian";
 import { SuggestionModal } from "./SuggestionModal";
 import { LinkSuggestion } from "src/types/types";
 import ExcalidrawPlugin from "src/core/main";
-import { getLinkSuggestionsFiltered, renderLinkSuggestion } from "src/shared/Suggesters/LinkSuggesterUtils";
+import { getLinkSuggestionsFiltered, getSortedLinkMatches, renderLinkSuggestion } from "src/shared/Suggesters/LinkSuggesterUtils";
 import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
 
 /**
@@ -120,14 +120,7 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
     if (this.activeOpen === -1) return [];
     const termEnd = this.caretPos ?? query.length;
     const term = query.substring(this.activeOpen + 2, termEnd);
-    const search = prepareFuzzySearch(term);
-    return this.items
-      .map((item) => {
-        const target = `${item.path}${item.alias ? `|${item.alias}` : ""}`;
-        const match = search(target);
-        return match ? { item, match } : null;
-      })
-      .filter(Boolean) as FuzzyMatch<LinkSuggestion>[];
+    return getSortedLinkMatches(term, this.items);
   }
 
   getItemText(item: LinkSuggestion): string {

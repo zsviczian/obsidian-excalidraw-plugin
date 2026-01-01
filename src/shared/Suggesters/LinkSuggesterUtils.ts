@@ -1,4 +1,4 @@
-import { App, FuzzyMatch, setIcon } from "obsidian";
+import { App, FuzzyMatch, prepareFuzzySearch, setIcon } from "obsidian";
 import { LinkSuggestion } from "src/types/types";
 import {
   AUDIO_TYPES,
@@ -39,6 +39,45 @@ export const getLinkSuggestionsFiltered = (app: App): LinkSuggestion[] => {
 
     const aKey = `${a.path}${a.alias ?? ""}`.toLowerCase();
     const bKey = `${b.path}${b.alias ?? ""}`.toLowerCase();
+    return aKey.localeCompare(bKey);
+  });
+};
+
+/**
+ * Returns fuzzy matches sorted by fuzzy score, then recency, then name for stability.
+ */
+export const getSortedLinkMatches = (
+  term: string,
+  items: LinkSuggestion[],
+): FuzzyMatch<LinkSuggestion>[] => {
+  const search = prepareFuzzySearch(term);
+  const matches = items
+    .map((item) => {
+      const target = `${item.path}${item.alias ? `|${item.alias}` : ""}`;
+      const match = search(target);
+      return match ? { item, match } : null;
+    })
+    .filter(Boolean) as FuzzyMatch<LinkSuggestion>[];
+
+  const now = Date.now();
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+  const isRecent = (s: LinkSuggestion) => !!s.file && now - s.file.stat.mtime <= weekMs;
+
+  return matches.sort((a, b) => {
+    const aScore = a?.match?.score ?? 0;
+    const bScore = b?.match?.score ?? 0;
+    if (aScore !== bScore) return bScore - aScore;
+
+    const aRecent = isRecent(a.item);
+    const bRecent = isRecent(b.item);
+    if (aRecent !== bRecent) return aRecent ? -1 : 1; // recent first
+
+    if (aRecent && bRecent && a.item.file && b.item.file && a.item.file.stat.mtime !== b.item.file.stat.mtime) {
+      return b.item.file.stat.mtime - a.item.file.stat.mtime; // newer recent first
+    }
+
+    const aKey = `${a.item.path}${a.item.alias ?? ""}`.toLowerCase();
+    const bKey = `${b.item.path}${b.item.alias ?? ""}`.toLowerCase();
     return aKey.localeCompare(bKey);
   });
 };
