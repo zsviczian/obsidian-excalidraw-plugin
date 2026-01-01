@@ -852,8 +852,10 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     parent = allElements.find((el) => el.id === parent.containerId);
   }
 
+  const defaultNodeColor = ea.getCM(st.viewBackgroundColor).invert().stringHEX({alpha: false});
+
   let depth = 0,
-    nodeColor = "black",
+    nodeColor = defaultNodeColor,
     rootId;
   let nextSiblingOrder = 0;
   if (parent) {
@@ -888,7 +890,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
 
   let newNodeId;
   if (!parent) {
-    ea.style.strokeColor = multicolor ? "black" : st.currentItemStrokeColor;
+    ea.style.strokeColor = multicolor ? defaultNodeColor : st.currentItemStrokeColor;
     newNodeId = ea.addText(0, 0, text, {
       box: "rectangle",
       textAlign: "center",

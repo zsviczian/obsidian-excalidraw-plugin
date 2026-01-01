@@ -61,19 +61,24 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
     if (width && this.hasCustomWidthHost) {
       this.suggestEl.style.width = `${width}px`;
       this.suggestEl.style.maxWidth = `${width}px`;
-      this.suggestEl.style.minWidth = "";
+      this.suggestEl.style.minWidth = `${width}px`;
       return;
     }
 
-    const minWidth = width || this.inputEl.clientWidth || this.inputEl.getBoundingClientRect().width;
+    const minWidth = Math.max(width || this.inputEl.clientWidth || this.inputEl.getBoundingClientRect().width, 450);
     if (!minWidth) {
       return;
     }
 
     const anchorRect = hostRect ?? this.inputEl.getBoundingClientRect();
-    const availableWidth = this.collisionBoundary
+    let availableWidth = this.collisionBoundary
       ? this.collisionBoundary.innerWidth - 16 //SuggestionModal padding
-      : Math.max(0, window.innerWidth - anchorRect.left - 16); 
+      : Math.max(0, window.innerWidth - anchorRect.left - 16);
+    
+    if (!this.hasCustomWidthHost && minWidth <= 450) {
+      availableWidth = Math.min(availableWidth, 450);
+    }
+    
     const clampedMinWidth = Math.min(minWidth, availableWidth);
 
     this.suggestEl.style.width = "";
@@ -95,6 +100,21 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
   onInputChanged(): void {
     const inputStr = this.modifyInput(this.inputEl.value);
     this.caretPos = this.inputEl.selectionStart ?? inputStr.length;
+
+    // Do not show suggestions while a range is selected.
+    if ((this.inputEl.selectionEnd ?? this.caretPos) - (this.inputEl.selectionStart ?? 0) > 0) {
+      this.suggester.setSuggestions([]);
+      if (this.popper?.deref()) {
+        this.popper.deref().destroy();
+      }
+      this.suggestEl.detach();
+      this.activeOpen = -1;
+      this.activeClose = -1;
+      setTimeout(() => {
+        this.block = false;
+      });
+      return;
+    }
 
     const active = this.findActiveLink(inputStr, this.caretPos);
     if (!active) {

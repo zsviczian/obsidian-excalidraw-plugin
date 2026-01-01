@@ -54,8 +54,23 @@ export const getSortedLinkMatches = (
   const matches = items
     .map((item) => {
       const target = `${item.path}${item.alias ? `|${item.alias}` : ""}`;
-      const match = search(target);
-      return match ? { item, match } : null;
+      const matchFull = search(target);
+
+      if (!item.alias) {
+        return matchFull ? { item, match: matchFull } : null;
+      }
+
+      // Also search alias alone; if better, shift ranges to alias segment in the full string
+      const matchAliasOnly = search(item.alias);
+      let best = matchFull;
+
+      if (matchAliasOnly && (!best || matchAliasOnly.score > best.score)) {
+        const aliasOffset = item.path.length + 1; // position where alias starts in "path|alias"
+        const shiftedMatches = matchAliasOnly.matches.map(([from, to]) => [from + aliasOffset, to + aliasOffset]) as [number, number][];
+        best = { ...matchAliasOnly, matches: shiftedMatches } as typeof matchAliasOnly;
+      }
+
+      return best ? { item, match: best } : null;
     })
     .filter(Boolean) as FuzzyMatch<LinkSuggestion>[];
 
@@ -105,7 +120,8 @@ export const renderLinkSuggestion = (
   }
 
   const path = item.file?.path ?? item.path;
-  const pathLength = path.length - (item.file?.name.length ?? 0);
+  // For unresolved (ghost) files, highlight the full path. For resolved files, skip folder prefixes.
+  const pathLength = item.file ? path.length - (item.file?.name.length ?? 0) : 0;
   const matchElements = matches.matches.map(() => createSpan("suggestion-highlight"));
   const itemText = item.path + (item.alias ? `|${item.alias}` : "");
   for (let i = pathLength; i < itemText.length; i++) {
