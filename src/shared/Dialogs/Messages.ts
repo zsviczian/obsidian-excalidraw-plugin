@@ -28,6 +28,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 - LaTeX formula is saved to \`element.customData.latex\`. This can be helpful for various automation use cases.
 - Implemented Color Picker in Custom Pen Settings to pick from the current view's color palette.
 - Updated the **Scribble Helper** script with the new Color Picker to select the text color.
+- Updated the **Shade Maser** script with the new Color Picker to select the shading color.
 - **Mindmap Builder**
   - Uses new sidepanel, persistent across different drawings and autostarts with Obsidian.
   - You can now configure hotkeys

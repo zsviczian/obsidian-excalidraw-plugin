@@ -29,7 +29,7 @@ const HELP_TEXT = `
 
 `;
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.7.2")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.0")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -494,6 +494,50 @@ function showModal() {
           .setValue(ea.getCM(info.mappedTo).stringHEX({alpha: false}).toLowerCase());
 
         colorPicker.colorPickerEl.style.maxWidth = "2.5rem";
+
+        // Add palette picker button
+        const paletteButton = new ea.obsidian.Setting(row.controlEl)
+          .addButton(button => button
+            .setIcon("swatch-book")
+            .setTooltip("Pick from Palette")
+            .onClick(async () => {
+              const selected = await ea.showColorPicker(button.buttonEl, "elementStroke");
+              if (selected) {
+                try {
+                  const cm = ea.getCM(selected);
+                  if (cm) {
+                    const format = settings[FORMAT].value;
+                    
+                    // Preserve alpha from original color
+                    const currentInfo = currentColors.get(svgElement.id).colors.get(color);
+                    const originalAlpha = ea.getCM(currentInfo.mappedTo).alpha;
+                    cm.alphaTo(originalAlpha);
+                    const alpha = originalAlpha < 1 ? true : false;
+
+                    const newColor = format === "RGB" 
+                      ? cm.stringRGB({alpha , precision }).toLowerCase()
+                      : format === "HEX" 
+                        ? cm.stringHEX({alpha}).toLowerCase()
+                        : cm.stringHSL({alpha, precision }).toLowerCase();
+                    
+                    // Update text input
+                    textInput.setValue(newColor);
+                    
+                    // Update Color Picker visual
+                    colorPicker.setValue(cm.stringHEX({alpha: false}).toLowerCase());
+
+                    // Update SVG mapping
+                    currentInfo.mappedTo = newColor;
+                    run("Update SVG color");
+                  }
+                } catch (e) {
+                  console.error("Invalid color value:", e);
+                }
+              }
+            }));
+        paletteButton.settingEl.style.padding = "0";
+        paletteButton.settingEl.style.border = "0";
+        paletteButton.infoEl.style.display = "none";
   
         // Store references to the components
         colorInputs.set(color, {
