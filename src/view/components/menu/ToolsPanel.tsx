@@ -21,7 +21,7 @@ import { REM_VALUE } from "src/core/managers/StylesManager";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
 
-declare const PLUGIN_VERSION:string;
+declare const PLUGIN_VERSION: string;
 
 type PanelProps = {
   visible: boolean;
@@ -88,14 +88,14 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   updateScriptIconMap(scriptIconMap: ScriptIconMap) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updateScriptIconMap,"ToolsPanel.updateScriptIconMap()");
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updateScriptIconMap, "ToolsPanel.updateScriptIconMap()");
     this.setState(() => {
       return { scriptIconMap };
     });
   }
 
   setPreviewMode(isPreviewMode: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setPreviewMode,"ToolsPanel.setPreviewMode()");
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setPreviewMode, "ToolsPanel.setPreviewMode()");
     this.setState(() => {
       return {
         isPreviewMode,
@@ -104,7 +104,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setFullscreen(isFullscreen: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setFullscreen,"ToolsPanel.setFullscreen()");
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setFullscreen, "ToolsPanel.setFullscreen()");
     this.setState(() => {
       return {
         isFullscreen,
@@ -113,8 +113,8 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setDirty(isDirty: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setDirty,"ToolsPanel.setDirty()");
-    this.setState(()=> {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setDirty, "ToolsPanel.setDirty()");
+    this.setState(() => {
       return {
         isDirty,
       };
@@ -122,7 +122,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setExcalidrawViewMode(isViewModeEnabled: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setExcalidrawViewMode,"ToolsPanel.setExcalidrawViewMode()");
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setExcalidrawViewMode, "ToolsPanel.setExcalidrawViewMode()");
     this.setState(() => {
       return {
         excalidrawViewMode: isViewModeEnabled,
@@ -131,7 +131,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   toggleVisibility(isMobileOrZen: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleVisibility,"ToolsPanel.toggleVisibility()");
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleVisibility, "ToolsPanel.toggleVisibility()");
     this.setTopCenter(isMobileOrZen);
     this.setState((prevState: PanelState) => {
       return {
@@ -140,8 +140,13 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     });
   }
 
+  updateVisibility() {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updateVisibility, "ToolsPanel.updateVisibility()");
+    this.forceUpdate();
+  }
+
   setTheme(theme: "dark" | "light") {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setTheme,"ToolsPanel.setTheme()");
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setTheme, "ToolsPanel.setTheme()");
     this.setState((prevState: PanelState) => {
       return {
         theme,
@@ -150,14 +155,14 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setTopCenter(isMobileOrZen: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setTopCenter,"ToolsPanel.setTopCenter()");
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setTopCenter, "ToolsPanel.setTopCenter()");
     this.setState(() => {
       return {
         left:
           (this.containerRef.current.clientWidth -
             TOOLS_PANEL_WIDTH() -
             (isMobileOrZen ? 0 : TOOLS_PANEL_WIDTH() + 4)) /
-            2 +
+          2 +
           this.containerRef.current.parentElement.offsetLeft +
           (isMobileOrZen ? 0 : TOOLS_PANEL_WIDTH() + 4),
         top: 64 + this.containerRef.current.parentElement.offsetTop,
@@ -166,7 +171,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   updatePosition(deltaY: number = 0, deltaX: number = 0) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updatePosition,"ToolsPanel.updatePosition()");
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updatePosition, "ToolsPanel.updatePosition()");
     this.setState(() => {
       const {
         offsetTop,
@@ -195,14 +200,14 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
           top < parentOffsetTop
             ? parentOffsetTop
             : this.onBottomEdge
-            ? parentHeight - height + parentOffsetTop
-            : top,
+              ? parentHeight - height + parentOffsetTop
+              : top,
         left:
           left < parentOffsetLeft
             ? parentOffsetLeft
             : this.onRightEdge
-            ? parentWidth - width + parentOffsetLeft
-            : left,
+              ? parentWidth - width + parentOffsetLeft
+              : left,
       };
     });
   }
@@ -255,23 +260,23 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     search(view);
   }
 
-  actionOCR(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+  actionOCR(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     const view = this.getView();
     const plugin = view?.plugin;
     if (!view || !plugin) return;
-    if(!plugin.settings.taskboneEnabled) {
-      new Notice("Taskbone OCR is not enabled. Please go to plugins settings to enable it.",4000);
+    if (!plugin.settings.taskboneEnabled) {
+      new Notice("Taskbone OCR is not enabled. Please go to plugins settings to enable it.", 4000);
       return;
     }
-    plugin.taskbone.getTextForView(view, {forceReScan: isWinCTRLorMacCMD(e)});
+    plugin.taskbone.getTextForView(view, { forceReScan: isWinCTRLorMacCMD(e) });
   }
 
-  actionOpenLink(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+  actionOpenLink(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     const view = this.getView();
     if (!view) return;
     const event = new MouseEvent("click", {
       ctrlKey: e.ctrlKey || !(DEVICE.isIOS || DEVICE.isMacOS),
-      metaKey: e.metaKey ||  (DEVICE.isIOS || DEVICE.isMacOS),
+      metaKey: e.metaKey || (DEVICE.isIOS || DEVICE.isMacOS),
       shiftKey: e.shiftKey,
       altKey: e.altKey,
     });
@@ -305,8 +310,8 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   actionExportImage() {
     const view = this.getView();
     if (!view) return;
-    if(!view.exportDialog) {
-      view.exportDialog = new ExportDialog(view.plugin, view,view.file);
+    if (!view.exportDialog) {
+      view.exportDialog = new ExportDialog(view.plugin, view, view.file);
       view.exportDialog.createForm();
     }
     view.exportDialog.open();
@@ -318,10 +323,10 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     view.openAsMarkdown();
   }
 
-  actionLinkToElement(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+  actionLinkToElement(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     const view = this.getView();
     if (!view) return;
-    if(isWinALTorMacOPT(e)) {
+    if (isWinALTorMacOPT(e)) {
       openExternalLink("https://youtu.be/yZQoJg2RCKI", view.app);
       return;
     }
@@ -364,17 +369,17 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     plugin.insertMDDialog.start(view);
   }
 
-  actionInsertBackOfNote()  {
+  actionInsertBackOfNote() {
     const view = this.getView();
     if (!view) return;
     this.props.centerPointer();
     view.insertBackOfTheNoteCard();
   }
 
-  actionInsertLaTeX(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+  actionInsertLaTeX(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     const view = this.getView();
     if (!view) return;
-    if(isWinALTorMacOPT(e)) {
+    if (isWinALTorMacOPT(e)) {
       openExternalLink("https://youtu.be/r08wk-58DPk", view.app);
       return;
     }
@@ -389,18 +394,18 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     this.props.centerPointer();
     plugin.insertLinkDialog.start(
       view.file.path,
-      (text: string, fontFamily?: 1 | 2 | 3 | 4, save?: boolean) => view.addText (text, fontFamily, save),
+      (text: string, fontFamily?: 1 | 2 | 3 | 4, save?: boolean) => view.addText(text, fontFamily, save),
     );
   }
 
-  actionImportSVG(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+  actionImportSVG(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     const view = this.getView();
     const plugin = view?.plugin;
     if (!view || !plugin) return;
     plugin.importSVGDialog.start(view);
   }
-  
-  actionCropImage(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+
+  actionCropImage(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     // @ts-ignore
     this.view.app.commands.executeCommandById("obsidian-excalidraw-plugin:crop-image");
   }
@@ -427,15 +432,15 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
     await plugin.loadSettings();
     const index = plugin.settings.pinnedScripts.indexOf(key)
-    if(index > -1) {
-      plugin.settings.pinnedScripts.splice(index,1);
-      api?.setToast({message:`Pin removed: ${scriptName}`, duration: 3000, closable: true});
+    if (index > -1) {
+      plugin.settings.pinnedScripts.splice(index, 1);
+      api?.setToast({ message: `Pin removed: ${scriptName}`, duration: 3000, closable: true });
     } else {
       plugin.settings.pinnedScripts.push(key);
-      api?.setToast({message:`Pinned: ${scriptName}`, duration: 3000, closable: true})
+      api?.setToast({ message: `Pinned: ${scriptName}`, duration: 3000, closable: true })
     }
     await plugin.saveSettings();
-    getExcalidrawViews(plugin.app).forEach(excalidrawView=>excalidrawView.updatePinnedScripts());
+    getExcalidrawViews(plugin.app).forEach(excalidrawView => excalidrawView.updatePinnedScripts());
   }
 
   private islandOnClick(event: React.MouseEvent<HTMLDivElement, MouseEvent>) {
@@ -455,7 +460,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   private islandOnPointerDown(event: React.PointerEvent) {
     const view = this.getView();
-    if (!view) return;
+    if (!view || view.plugin.settings.pinObsidianTools) return;
 
     const onDrag = (e: PointerEvent) => {
       e.preventDefault();
@@ -476,10 +481,40 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     this.penDownY = this.pos4 = event.clientY;
     view.ownerDocument.addEventListener("pointerup", onPointerUp);
     view.ownerDocument.addEventListener("pointermove", onDrag);
-  };
+  }
+
+  private renderSection(title: string, children: React.ReactNode, pinObsidianTools: boolean) {
+    if (pinObsidianTools) {
+      return (
+        <div className="Island" style={{
+          padding: "12px",
+          width: "fit-content",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+        }}>
+          <div style={{
+            fontSize: "0.85rem",
+            fontWeight: "500",
+            marginBottom: "4px",
+            color: "var(--icon-fill-color)",
+          }}>{title}</div>
+          {children}
+        </div>
+      );
+    }
+    return (
+      <fieldset>
+        <legend>{title}</legend>
+        {children}
+      </fieldset>
+    );
+  }
 
   render() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.render,"ToolsPanel.render()");
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.render, "ToolsPanel.render()");
+    const view = this.getView();
+    const pinObsidianTools = (view?.plugin.settings.pinObsidianTools ?? false) && !DEVICE.isMobile;
     return (
       <div
         ref={this.containerRef}
@@ -491,49 +526,35 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
           height: "100%",
           position: "absolute",
           touchAction: "none",
+          pointerEvents: "none",
         }}
       >
         <div
-          className="Island"
+          className={pinObsidianTools ? "" : "Island"}
           style={{
-            top: `${this.state.top}px`,
-            left: `${this.state.left}px`,
-            width: `14.4rem`,
+            position: "absolute",
+            bottom: pinObsidianTools ? "20px" : "auto",
+            top: pinObsidianTools ? "auto" : `${this.state.top}px`,
+            left: pinObsidianTools ? "50%" : `${this.state.left}px`,
+            transform: pinObsidianTools ? "translateX(-50%)" : "none",
+            width: pinObsidianTools ? "fit-content" : `14.4rem`,
             display:
-              this.state.visible && !this.state.excalidrawViewMode
-                ? "block"
+              (this.state.visible || pinObsidianTools) && !this.state.excalidrawViewMode
+                ? "flex"
                 : "none",
+            flexDirection: pinObsidianTools ? "row" : "column",
+            gap: "12px",
+            alignItems: pinObsidianTools ? "stretch" : "stretch",
             height: "fit-content",
             maxHeight: "400px",
             zIndex: 5,
+            pointerEvents: "auto",
           }}
         >
           <div
-            style={{
-              height: "26px",
-              width: "100%",
-              cursor: "move",
-            }}
-            onClick={this.islandOnClick.bind(this)}
-            onPointerDown={this.islandOnPointerDown.bind(this)}
-          >
-            <svg
-              aria-hidden="true"
-              focusable="false"
-              role="img"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 228 26"
-            >
-              <path
-                stroke="var(--icon-fill-color)"
-                strokeWidth="2"
-                d="M40,7 h148 M40,13 h148 M40,19 h148"
-              />
-            </svg>
-          </div>
-          <div
-            className="Island App-menu__left scrollbar"
-            style={{
+            className={pinObsidianTools ? "" : "Island App-menu__left scrollbar"}
+            style={pinObsidianTools ? { display: "contents" } : {
+              marginTop: "24px",
               maxHeight: "350px",
               width: "initial",
               //@ts-ignore
@@ -541,98 +562,108 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
               display: this.state.minimized ? "none" : "block",
             }}
           >
-            <div className="selected-shape-actions">
-              <fieldset>
-                <legend>Utility actions</legend>
-                <div className="buttonList buttonListIcon">
-                  <ActionButton
-                    key={"scriptEngine"}
-                    title={t("INSTALL_SCRIPT_BUTTON")}
-                    action={this.actionOpenScriptInstallDialog.bind(this)}
-                    icon={ICONS.scriptEngine}
-                  />
-                  <ActionButton
-                    key={"release-notes"}
-                    title={t("READ_RELEASE_NOTES")}
-                    action={this.actionOpenReleaseNotes.bind(this)}
-                    icon={ICONS.releaseNotes}
-                  />
-                  {this.state.isPreviewMode === null ? (
+            <div
+              className="selected-shape-actions"
+              style={
+                pinObsidianTools
+                  ? {
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "stretch",
+                    gap: "12px",
+                  }
+                  : {}
+              }
+            >
+              {this.renderSection("Utility actions", (
+                <>
+                  <div className="buttonList buttonListIcon" style={{ flexWrap: "wrap", width: "160px" }}>
                     <ActionButton
-                      key={"convert"}
-                      title={t("CONVERT_FILE")}
-                      action={(this.actionConvertExcalidrawToMD.bind(this))}
-                      icon={ICONS.convertFile}
+                      key={"scriptEngine"}
+                      title={t("INSTALL_SCRIPT_BUTTON")}
+                      action={this.actionOpenScriptInstallDialog.bind(this)}
+                      icon={ICONS.scriptEngine}
                     />
-                  ) : !this.state.isPreviewMode && (
                     <ActionButton
-                      key={"viewmode"}
-                      title={this.state.isPreviewMode ? t("PARSED") : t("RAW")}
-                      action={this.actionToggleViewMode.bind(this)}
+                      key={"release-notes"}
+                      title={t("READ_RELEASE_NOTES")}
+                      action={this.actionOpenReleaseNotes.bind(this)}
+                      icon={ICONS.releaseNotes}
+                    />
+                    {this.state.isPreviewMode === null ? (
+                      <ActionButton
+                        key={"convert"}
+                        title={t("CONVERT_FILE")}
+                        action={(this.actionConvertExcalidrawToMD.bind(this))}
+                        icon={ICONS.convertFile}
+                      />
+                    ) : !this.state.isPreviewMode && (
+                      <ActionButton
+                        key={"viewmode"}
+                        title={this.state.isPreviewMode ? t("PARSED") : t("RAW")}
+                        action={this.actionToggleViewMode.bind(this)}
+                        icon={
+                          this.state.isPreviewMode
+                            ? ICONS.rawMode
+                            : ICONS.parsedMode
+                        }
+                      />
+                    )}
+                    <ActionButton
+                      key={"ui-mode"}
+                      title={t("UI_MODE")}
+                      action={this.actionToggleTrayMode.bind(this)}
+                      icon={ICONS.trayMode}
+                    />
+                    <ActionButton
+                      key={"fullscreen"}
+                      title={
+                        this.state.isFullscreen
+                          ? t("EXIT_FULLSCREEN")
+                          : t("GOTO_FULLSCREEN")
+                      }
+                      action={this.actionToggleFullscreen.bind(this)}
                       icon={
-                        this.state.isPreviewMode
-                          ? ICONS.rawMode
-                          : ICONS.parsedMode
+                        this.state.isFullscreen
+                          ? ICONS.exitFullScreen
+                          : ICONS.gotoFullScreen
                       }
                     />
-                  )}
-                  <ActionButton
-                    key={"ui-mode"}
-                    title={t("UI_MODE")}
-                    action={this.actionToggleTrayMode.bind(this)}
-                    icon={ICONS.trayMode}
-                  />
-                  <ActionButton
-                    key={"fullscreen"}
-                    title={
-                      this.state.isFullscreen
-                        ? t("EXIT_FULLSCREEN")
-                        : t("GOTO_FULLSCREEN")
-                    }
-                    action={this.actionToggleFullscreen.bind(this)}
-                    icon={
-                      this.state.isFullscreen
-                        ? ICONS.exitFullScreen
-                        : ICONS.gotoFullScreen
-                    }
-                  />
-                </div>
-                <div className="buttonList buttonListIcon">
-                  <ActionButton
-                    key={"search"}
-                    title={t("SEARCH")}
-                    action={this.actionSearch.bind(this)}
-                    icon={ICONS.search}
-                  />
-                  <ActionButton
-                    key={"ocr"}
-                    title={t("RUN_OCR")}
-                    action={this.actionOCR.bind(this)}
-                    icon={ICONS.ocr}
-                  />
-                  <ActionButton
-                    key={"openLink"}
-                    title={t("OPEN_LINK_CLICK")}
-                    action={this.actionOpenLink.bind(this)}
-                    icon={ICONS.openLink}
-                  />
-                  <ActionButton
-                    key={"openLinkProperties"}
-                    title={t("OPEN_LINK_PROPS")}
-                    action={this.actionOpenLinkProperties.bind(this)}
-                    icon={ICONS.openLinkProperties}
-                  />
-                  <ActionButton
-                    key={"save"}
-                    title={t("FORCE_SAVE")}
-                    action={this.actionForceSave.bind(this)}
-                    icon={saveIcon(this.state.isDirty)}
-                  />
-                </div>
-              </fieldset>
-              <fieldset>
-                <legend>Export actions</legend>
-                <div className="buttonList buttonListIcon">
+                    <ActionButton
+                      key={"search"}
+                      title={t("SEARCH")}
+                      action={this.actionSearch.bind(this)}
+                      icon={ICONS.search}
+                    />
+                    <ActionButton
+                      key={"ocr"}
+                      title={t("RUN_OCR")}
+                      action={this.actionOCR.bind(this)}
+                      icon={ICONS.ocr}
+                    />
+                    <ActionButton
+                      key={"openLink"}
+                      title={t("OPEN_LINK_CLICK")}
+                      action={this.actionOpenLink.bind(this)}
+                      icon={ICONS.openLink}
+                    />
+                    <ActionButton
+                      key={"openLinkProperties"}
+                      title={t("OPEN_LINK_PROPS")}
+                      action={this.actionOpenLinkProperties.bind(this)}
+                      icon={ICONS.openLinkProperties}
+                    />
+                    <ActionButton
+                      key={"save"}
+                      title={t("FORCE_SAVE")}
+                      action={this.actionForceSave.bind(this)}
+                      icon={saveIcon(this.state.isDirty)}
+                    />
+                  </div>
+                </>
+              ), pinObsidianTools)}
+              {this.renderSection("Export actions", (
+                <div className="buttonList buttonListIcon" style={{ flexWrap: "wrap", width: "80px" }}>
                   <ActionButton
                     key={"lib"}
                     title={t("DOWNLOAD_LIBRARY")}
@@ -658,10 +689,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.copyElementLink}
                   />
                 </div>
-              </fieldset>
-              <fieldset>
-                <legend>Insert actions</legend>
-                <div className="buttonList buttonListIcon">
+              ), pinObsidianTools)}
+              {this.renderSection("Insert actions", (
+                <div className="buttonList buttonListIcon" style={{ flexWrap: "wrap", width: "160px" }}>
                   <ActionButton
                     key={"anyfile"}
                     title={t("UNIVERSAL_ADD_FILE")}
@@ -679,7 +709,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     title={t("INSERT_PDF")}
                     action={this.actionInsertPDF.bind(this)}
                     icon={ICONS.insertPDF}
-                  />                  
+                  />
                   <ActionButton
                     key={"insertMD"}
                     title={t("INSERT_MD")}
@@ -717,18 +747,43 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     icon={ICONS.Crop}
                   />
                 </div>
-              </fieldset>
-              {this.renderScriptButtons(false)}
-              {this.renderScriptButtons(true)}
+              ), pinObsidianTools)}
+              {this.renderScriptButtons(false, pinObsidianTools)}
+              {this.renderScriptButtons(true, pinObsidianTools)}
             </div>
           </div>
+          {!pinObsidianTools && (
+            <div
+              style={{
+                height: "26px",
+                width: "100%",
+                cursor: "move",
+              }}
+              onClick={this.islandOnClick.bind(this)}
+              onPointerDown={this.islandOnPointerDown.bind(this)}
+            >
+              <svg
+                aria-hidden="true"
+                focusable="false"
+                role="img"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 228 26"
+              >
+                <path
+                  stroke="var(--icon-fill-color)"
+                  strokeWidth="2"
+                  d="M40,7 h148 M40,13 h148 M40,19 h148"
+                />
+              </svg>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
-  private renderScriptButtons(isDownloaded: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.renderScriptButtons,"ToolsPanel.renderScriptButtons()");
+  private renderScriptButtons(isDownloaded: boolean, pinObsidianTools: boolean) {
+    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.renderScriptButtons, "ToolsPanel.renderScriptButtons()");
     if (Object.keys(this.state.scriptIconMap).length === 0) {
       return "";
     }
@@ -738,7 +793,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     if (!view || !plugin) return null;
 
 
-    if(!plugin._loaded) {
+    if (!plugin._loaded) {
       return null;
     }
 
@@ -762,35 +817,40 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       .filter((k) => filterCondition(k))
       .forEach(k => groups.add(this.state.scriptIconMap[k].group))
 
-    const scriptlist = Array.from(groups).sort((a,b)=>a>b?1:-1);
+    const scriptlist = Array.from(groups).sort((a, b) => a > b ? 1 : -1);
     scriptlist.push(scriptlist.shift());
     return (
       <>
-      {scriptlist.map((group, index) => ( 
-        <fieldset key={`${group}-${index}`}>
-          <legend>{isDownloaded ? group : (group === "" ? "User" : "User/"+group)}</legend>
-          <div className="buttonList buttonListIcon">
-            {Object.entries(this.state.scriptIconMap)
-              .filter(([k,v])=>v.group === group)
-              .sort()
-              .map(([key,value])=>(
-                <ActionButton
-                  key={key}
-                  title={value.name}
-                  action={this.actionRunScript.bind(this,key)}
-                  longpress={this.actionPinScript.bind(this,key, value.name)}
-                  icon={
-                    new WeakRef(value.svgString
-                    ? stringToSVG(value.svgString)
-                    : (
-                      ICONS.cog
-                    )).deref()
-                  }
-                />
-              ))}
-          </div>
-        </fieldset>
-      ))}
+        {scriptlist.map((group, index) => {
+          const title = isDownloaded ? group : (group === "" ? "User" : "User/" + group);
+          const content = (
+            <div className="buttonList buttonListIcon" style={pinObsidianTools ? { flexWrap: "wrap", width: "160px" } : {}}>
+              {Object.entries(this.state.scriptIconMap)
+                .filter(([k, v]) => v.group === group)
+                .sort()
+                .map(([key, value]) => (
+                  <ActionButton
+                    key={key}
+                    title={value.name}
+                    action={this.actionRunScript.bind(this, key)}
+                    longpress={this.actionPinScript.bind(this, key, value.name)}
+                    icon={
+                      new WeakRef(value.svgString
+                        ? stringToSVG(value.svgString)
+                        : (
+                          ICONS.cog
+                        )).deref()
+                    }
+                  />
+                ))}
+            </div>
+          );
+          return (
+            <React.Fragment key={`${group}-${index}`}>
+              {this.renderSection(title, content, pinObsidianTools)}
+            </React.Fragment>
+          );
+        })}
       </>
     );
   }

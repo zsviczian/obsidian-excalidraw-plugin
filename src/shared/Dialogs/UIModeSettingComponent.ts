@@ -1,7 +1,7 @@
-import { Setting, DropdownComponent, App } from "obsidian";
+import { Setting, DropdownComponent, App, ToggleComponent } from "obsidian";
 import { t } from "src/lang/helpers";
 import { ExcalidrawSettings } from "src/core/settings";
-import { fragWithHTML, setLeftHandedMode, setUIMode } from "src/utils/utils";
+import { fragWithHTML, setLeftHandedMode, setUIMode, updateToolsPanelVisibility } from "src/utils/utils";
 import { DEVICE } from "src/constants/constants";
 
 export type UIMode = "full" | "compact" | "tray" | "phone";
@@ -67,17 +67,32 @@ export class UIModeSettingsComponent {
       );
 
     new Setting(containerEl)
+      .setName(t("PIN_OBSIDIAN_TOOLS_PANEL_NAME"))
+      .setDesc(t("PIN_OBSIDIAN_TOOLS_PANEL_DESC"))
+      .setDisabled(DEVICE.isMobile)
+      .addToggle((toggle: ToggleComponent) =>
+        toggle
+          .setValue(DEVICE.isMobile ? false : this.settings.pinObsidianTools)
+          .setDisabled(DEVICE.isMobile)
+          .onChange(async (value: boolean) => {
+            this.settings.pinObsidianTools = value;
+            updateToolsPanelVisibility(this.app);
+            this.onChange();
+          }),
+      );
+
+    new Setting(containerEl)
       .setName(t("LEFTHANDED_MODE_NAME"))
       .setDesc(fragWithHTML(t("LEFTHANDED_MODE_DESC")))
-      .addToggle((toggle) =>
+      .addToggle((toggle: ToggleComponent) =>
         toggle
           .setValue(this.settings.isLeftHanded)
-          .onChange(async (value) => {
+          .onChange(async (value: boolean) => {
             this.settings.isLeftHanded = value;
             //not clear why I need to do this. If I don't double apply the stylesheet changes 
             //then the style won't be applied in the popout windows
-            setLeftHandedMode(value); 
-            setTimeout(()=>setLeftHandedMode(value));
+            setLeftHandedMode(value);
+            setTimeout(() => setLeftHandedMode(value));
             this.onChange();
           }),
       );
