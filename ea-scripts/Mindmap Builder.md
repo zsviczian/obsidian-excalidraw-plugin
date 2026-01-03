@@ -2359,6 +2359,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
   if(saveSetting) {
     setVal(K_UNDOCKED, isUndocked);
     dirty = true;
+    saveSettings();
   }
 
   // Re-route keyboard events to the correct window

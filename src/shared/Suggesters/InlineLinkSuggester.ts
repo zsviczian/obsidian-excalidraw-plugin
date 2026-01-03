@@ -55,7 +55,7 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
    */
   private syncWidth() {
     const hostRect = this.widthHost?.getBoundingClientRect();
-    const width = this.widthHost?.clientWidth || hostRect?.width;
+    const width = hostRect?.width ?? this.widthHost?.clientWidth;
 
     if (width && this.hasCustomWidthHost) {
       this.suggestEl.style.width = `${width}px`;
@@ -74,8 +74,10 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
       ? this.collisionBoundary.innerWidth - 16 //SuggestionModal padding
       : Math.max(0, window.innerWidth - anchorRect.left - 16);
     
-    if (!this.hasCustomWidthHost && minWidth <= 450) {
-      availableWidth = Math.min(availableWidth, 450);
+    if (!this.hasCustomWidthHost) {
+      availableWidth = minWidth <= 450
+        ? Math.min(availableWidth, 450)
+        : Math.min(availableWidth, minWidth);
     }
     
     const clampedMinWidth = Math.min(minWidth, availableWidth);
