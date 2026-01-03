@@ -230,6 +230,27 @@ const STROKE_WIDTHS = [6, 4, 2, 1, 0.5];
 const ownerWindow = ea.targetView?.ownerWindow;
 const isMac = ea.DEVICE.isMacOS || ea.DEVICE.isIOS;
 
+const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg", "webp", "bmp", "ico", "jtif", "tif", "jfif", "avif"];
+
+const parseImageInput = (input) => {
+  const trimmed = input.trim();
+  if (!trimmed.startsWith("![[") || !trimmed.endsWith("]]")) return null;
+  
+  const content = trimmed.slice(3, -2);
+  const parts = content.split("|");
+  const path = parts[0];
+  
+  let width = null;
+  if (parts.length > 1) {
+    const last = parts[parts.length - 1];
+    if (/^\d+$/.test(last)) {
+      width = parseInt(last);
+    }
+  }
+  
+  return { path, width };
+};
+
 const ACTION_ADD = "Add";
 const ACTION_ADD_FOLLOW = "Add + follow";
 const ACTION_ADD_FOLLOW_FOCUS = "Add + follow + focus";
@@ -880,6 +901,19 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     parent = allElements.find((el) => el.id === parent.containerId);
   }
 
+  // --- Image Detection ---
+  const imageInfo = parseImageInput(text);
+  let imageFile = null;
+  if (imageInfo) {
+    imageFile = app.metadataCache.getFirstLinkpathDest(imageInfo.path, ea.targetView.file.path);
+    if (imageFile) {
+        const isEx = imageFile.extension === "md" && ea.isExcalidrawFile(imageFile);
+        if (!IMAGE_TYPES.includes(imageFile.extension.toLowerCase()) && !isEx) {
+            imageFile = null; 
+        }
+    }
+  }
+
   const defaultNodeColor = ea.getCM(st.viewBackgroundColor).invert().stringHEX({alpha: false});
 
   let depth = 0,
@@ -926,17 +960,27 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     curMaxW = getAdjustedMaxWidth(text, curMaxW).width;
   }
 
-
   let newNodeId;
   if (!parent) {
     ea.style.strokeColor = multicolor ? defaultNodeColor : st.currentItemStrokeColor;
-    newNodeId = ea.addText(0, 0, text, {
-      box: "rectangle",
-      textAlign: "center",
-      textVerticalAlign: "middle",
-      width: shouldWrap ? curMaxW : undefined,
-      autoResize: !shouldWrap,
-    });
+    
+    if (imageFile) {
+        newNodeId = await ea.addImage(0, 0, imageFile);
+        const el = ea.getElement(newNodeId);
+        const targetWidth = imageInfo.width || 400;
+        const ratio = el.width / el.height;
+        el.width = targetWidth;
+        el.height = targetWidth / ratio;
+    } else {
+        newNodeId = ea.addText(0, 0, text, {
+          box: "rectangle",
+          textAlign: "center",
+          textVerticalAlign: "middle",
+          width: shouldWrap ? curMaxW : undefined,
+          autoResize: !shouldWrap,
+        });
+    }
+    
     ea.addAppendUpdateCustomData(newNodeId, {
       growthMode: currentModalGrowthMode,
       autoLayoutDisabled: false,
@@ -983,13 +1027,24 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       ? "center"
       : side === 1 ? "left" : "right";
 
-    newNodeId = ea.addText(px, py, text, {
-      box: boxChildren ? "rectangle" : false,
-      textAlign,
-      textVerticalAlign: "middle",
-      width: shouldWrap ? curMaxW : undefined,
-      autoResize: !shouldWrap,
-    });
+    if (imageFile) {
+        newNodeId = await ea.addImage(px, py, imageFile);
+        const el = ea.getElement(newNodeId);
+        const targetWidth = imageInfo.width || 180;
+        const ratio = el.width / el.height;
+        el.width = targetWidth;
+        el.height = targetWidth / ratio;
+        if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
+    } else {
+        newNodeId = ea.addText(px, py, text, {
+          box: boxChildren ? "rectangle" : false,
+          textAlign,
+          textVerticalAlign: "middle",
+          width: shouldWrap ? curMaxW : undefined,
+          autoResize: !shouldWrap,
+        });
+    }
+
     if (depth === 1) {
       ea.addAppendUpdateCustomData(newNodeId, {
         mindmapNew: true,
@@ -1083,6 +1138,14 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
 // 5. Copy & Paste Engine
 // ---------------------------------------------------------------------------
 const getTextFromNode = (all, node, getRaw = false) => {
+  if (node.type === "image") {
+    const file = ea.getViewFileForImageElement(node);
+    if (file) {
+      // We use the full path to avoid ambiguity
+      return `![[${file.path}|${Math.round(node.width)}]]`;
+    }
+    return ""; 
+  }
   if (node.type === "text") {
     return getRaw ? node.rawText : node.originalText;
   }
@@ -2379,7 +2442,6 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
   if(saveSetting) {
     setVal(K_UNDOCKED, isUndocked);
     dirty = true;
-    saveSettings();
   }
 
   // Re-route keyboard events to the correct window
@@ -2700,10 +2762,13 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
 
     if (ea.activateMindmap) {
       ea.activateMindmap = false;
-      const undocPreference = getVal(K_UNDOCKED, false) === true;
-      if (undocPreference) {
+      const undockPreference = getVal(K_UNDOCKED, false);
+      if (undockPreference && !isUndocked) {
         setTimeout(()=>toggleDock({saveSetting: false}));
-      } else {
+      } else if (!undockPreference && isUndocked) {
+        setTimeout(()=>toggleDock({saveSetting: false}));
+        tab.reveal();
+      } else if (!undockPreference) {
         tab.reveal();
       }
     }

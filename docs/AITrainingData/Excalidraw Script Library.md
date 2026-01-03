@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-01-01T20:52:21.161Z
+Generated on: 2026-01-03T21:44:07.757Z
 
 ---
 
@@ -8582,24 +8582,33 @@ Nodes can be excluded from the auto-layout engine in two ways:
 ### E. Inline Link Suggester
 - **Contextual \[\[link\]\] autocomplete**: Input fields now use `ea.attachInlineLinkSuggester` so you can drop Obsidian links with in-line suggestions (supports aliases and unresolved links) without leaving the flow.
 
+### F. Custom Palette & Contrast Colors
+- **Custom palettes**: Define your own branch colors (ordered or random draw) with the palette manager; stored per-user in script settings.
+- **Contrast-aware defaults**: When no custom palette is set, colors are generated to maximize contrast against the canvas and existing siblings.
+
 ## 4. UI and User Experience
 
 ### Zoom Management
 The script includes "Preferred Zoom Level" settings (Low/Medium/High) to ensure the canvas automatically frames the active node comfortably during rapid entry, particularly useful on mobile devices vs desktop screens.
 
-### Keyboard Shortcuts
+### Default Keyboard Shortcuts
 | Shortcut | Action |
 | :--- | :--- |
-| **ENTER** | Add a sibling node (stay on current parent). |
-| **CMD/CTRL + ENTER** | Add a child and "drill down" (select the new node). |
-| **SHIFT + ENTER** | **Dock/Undock** the input field (toggle between Sidepanel and Floating Modal). |
-| **CMD/CTRL + SHIFT + ENTER** | **Pin/Unpin** the location of the selected node. |
-| **OPT/ALT + SHIFT + ENTER** | **Box/Unbox** the selected node. |
-| **ALT/OPT + ARROWS** | Navigate the mind map structure (parent/child/sibling). |
-| **ALT/OPT + SHIFT + ARROWS** | Navigate the mind map structure (parent/child/sibling) and zoom to selected element |
-| **CMD/CTRL + SHIFT + ARROWS** | Navigate the mind map structure (parent/child/sibling) and focus to selected element |
-| **ALT/OPT + Z** | Zoom to selected element |
-| **ALT/OPT + C / X / V** | Copy, Cut, or Paste branches as Markdown. |
+| **ENTER** | Add a sibling on the current parent; ENTER on empty input jumps to the most recent child/siblings. |
+| **CTRL/CMD + ALT + ENTER** | Add child and follow (selection stays on the new node). |
+| **CTRL/CMD + ENTER** | Add child, follow, and center the new node. |
+| **CTRL/CMD + SHIFT + ENTER** | Add child, follow, and zoom to fit. |
+| **SHIFT + ENTER** | Dock/Undock the input field. |
+| **F2** | Edit the selected node. |
+| **ALT + P** | Pin/Unpin the selected node. |
+| **ALT + B** | Box/Unbox the selected node. |
+| **ALT + C / X / V** | Copy, Cut, or Paste branches as Markdown. |
+| **ALT + Z** | Cycle zoom to the selected element. |
+| **ALT + F** | Focus (center) the selected node. |
+| **ALT + ARROWS** | Navigate the mind map (parent/child/sibling). |
+| **ALT + SHIFT + ARROWS** | Navigate and zoom to selection. |
+| **ALT + CTRL/CMD + ARROWS** | Navigate and focus selection. |
+| **ESC** | Dock and hide the floating input. |
 
 ## 5. Settings and Persistence
 
@@ -8607,6 +8616,9 @@ The script includes "Preferred Zoom Level" settings (Low/Medium/High) to ensure 
 Persisted across sessions via `ea.setScriptSettings`:
 - **Max Text Width**: Point at which text wraps (Default: 450px).
 - **Font Scales**: Choice of Normal, Fibonacci, or Scene-based sizes.
+- **Multicolor Mode**: Toggle automatic branch coloring; optionally configure a custom palette (ordered or random).
+- **Arrow Stroke Style**: Use scene stroke style or force solid branches.
+- **Center Text**: Toggle centered text vs directional alignment.
 - **Preferred Zoom Level**: Controls auto-zoom intensity (Low/Medium/High).
 - **Recursive Grouping**: When enabled, groups sub-trees from the leaves upward.
 - **Is Undocked**: Remembers if the user prefers the UI floating or docked.
@@ -8614,7 +8626,7 @@ Persisted across sessions via `ea.setScriptSettings`:
 ### Map-Specific Persistence (customData)
 The script uses `ea.addAppendUpdateCustomData` to store state on elements:
 - `growthMode`: Stored on the Root node (Radial, Left, or Right).
-- `autoLayoutDisabled`: Stored on the Root node to pause layout engine for specific maps.
+- `autoLayoutDisabled`: Stored on the Root node to pause layout engine for specific maps (toggle from UI).
 - `isPinned`: Stored on individual nodes (boolean) to bypass the layout engine.
 - `isBranch`: Stored on arrows (boolean) to distinguish Mind Map connectors from standard annotations.
 - `mindmapOrder`: Stored on nodes (number) to maintain manual sort order of siblings.
@@ -8760,6 +8772,27 @@ const STROKE_WIDTHS = [6, 4, 2, 1, 0.5];
 const ownerWindow = ea.targetView?.ownerWindow;
 const isMac = ea.DEVICE.isMacOS || ea.DEVICE.isIOS;
 
+const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg", "webp", "bmp", "ico", "jtif", "tif", "jfif", "avif"];
+
+const parseImageInput = (input) => {
+  const trimmed = input.trim();
+  if (!trimmed.startsWith("![[") || !trimmed.endsWith("]]")) return null;
+  
+  const content = trimmed.slice(3, -2);
+  const parts = content.split("|");
+  const path = parts[0];
+  
+  let width = null;
+  if (parts.length > 1) {
+    const last = parts[parts.length - 1];
+    if (/^\d+$/.test(last)) {
+      width = parseInt(last);
+    }
+  }
+  
+  return { path, width };
+};
+
 const ACTION_ADD = "Add";
 const ACTION_ADD_FOLLOW = "Add + follow";
 const ACTION_ADD_FOLLOW_FOCUS = "Add + follow + focus";
@@ -8788,8 +8821,8 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"] },
   { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"] },
   { action: ACTION_EDIT, code: "F2", modifiers: [] },
-  { action: ACTION_PIN, key: "KeyP", modifiers: ["Alt"] },
-  { action: ACTION_BOX, key: "KeyB", modifiers: ["Alt"] },
+  { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"] },
+  { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"] },
   { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"] },
   { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"] },
   { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"] },
@@ -9078,11 +9111,11 @@ const nextZoomLevel = (current) => {
   return idx === -1 ? ZOOM_TYPES[0] : ZOOM_TYPES[(idx + 1) % ZOOM_TYPES.length];
 };
 
-const zoomToFit = (isAltZ) => {
+const zoomToFit = (cycleLevels) => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
   if (sel) {
-    if (isAltZ && storedZoom.elementID === sel.id) {
+    if (cycleLevels && storedZoom.elementID === sel.id) {
       const nextLevel = nextZoomLevel(storedZoom.level ?? zoomLevel);
       storedZoom.level = nextLevel;
       api().zoomToFit([sel],10,getZoom(nextLevel));
@@ -9392,6 +9425,14 @@ const getMostRecentlyAddedNode = () => {
   return ea.getViewElements().find((el) => el.id === mostRecentlyAddedNodeID);
 }
 
+const getAdjustedMaxWidth = (text, max) => {
+  const fontString = `${ea.style.fontSize.toString()}px ${
+    ExcalidrawLib.getFontFamilyString({fontFamily: ea.style.fontFamily})}`;
+  const wrappedText = ExcalidrawLib.wrapText(text, fontString, max);
+  const optimalWidth = Math.ceil(ea.measureText(wrappedText).width);
+  return {width: Math.min(max, optimalWidth), wrappedText};
+}
+
 const addNode = async (text, follow = false, skipFinalLayout = false) => {
   if (!ea.targetView) return;
   if (!text || text.trim() === "") return;
@@ -9400,6 +9441,19 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   let parent = ea.getViewSelectedElement();
   if (parent?.containerId) {
     parent = allElements.find((el) => el.id === parent.containerId);
+  }
+
+  // --- Image Detection ---
+  const imageInfo = parseImageInput(text);
+  let imageFile = null;
+  if (imageInfo) {
+    imageFile = app.metadataCache.getFirstLinkpathDest(imageInfo.path, ea.targetView.file.path);
+    if (imageFile) {
+        const isEx = imageFile.extension === "md" && ea.isExcalidrawFile(imageFile);
+        if (!IMAGE_TYPES.includes(imageFile.extension.toLowerCase()) && !isEx) {
+            imageFile = null; 
+        }
+    }
   }
 
   const defaultNodeColor = ea.getCM(st.viewBackgroundColor).invert().stringHEX({alpha: false});
@@ -9424,7 +9478,14 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
         nodeColor = rootEl.strokeColor;
       }
     } else {
-      nodeColor = parent.strokeColor;
+      if (parent.type === "image") {
+        const incomingArrow = allElements.find(
+          (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === parent.id,
+        );
+        nodeColor = incomingArrow ? incomingArrow.strokeColor : parent.strokeColor;
+      } else {
+        nodeColor = parent.strokeColor;
+      }
     }
   }
 
@@ -9434,20 +9495,34 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)];
   ea.style.roundness = roundedCorners ? { type: 3 } : null;
 
-  const curMaxW = depth === 0 ? Math.max(400, maxWidth) : maxWidth;
+  let curMaxW = depth === 0 ? Math.max(400, maxWidth) : maxWidth;
   const metrics = ea.measureText(text);
   const shouldWrap = metrics.width > curMaxW;
+  if (shouldWrap) {
+    curMaxW = getAdjustedMaxWidth(text, curMaxW).width;
+  }
 
   let newNodeId;
   if (!parent) {
     ea.style.strokeColor = multicolor ? defaultNodeColor : st.currentItemStrokeColor;
-    newNodeId = ea.addText(0, 0, text, {
-      box: "rectangle",
-      textAlign: "center",
-      textVerticalAlign: "middle",
-      width: shouldWrap ? curMaxW : undefined,
-      autoResize: !shouldWrap,
-    });
+    
+    if (imageFile) {
+        newNodeId = await ea.addImage(0, 0, imageFile);
+        const el = ea.getElement(newNodeId);
+        const targetWidth = imageInfo.width || 400;
+        const ratio = el.width / el.height;
+        el.width = targetWidth;
+        el.height = targetWidth / ratio;
+    } else {
+        newNodeId = ea.addText(0, 0, text, {
+          box: "rectangle",
+          textAlign: "center",
+          textVerticalAlign: "middle",
+          width: shouldWrap ? curMaxW : undefined,
+          autoResize: !shouldWrap,
+        });
+    }
+    
     ea.addAppendUpdateCustomData(newNodeId, {
       growthMode: currentModalGrowthMode,
       autoLayoutDisabled: false,
@@ -9483,7 +9558,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       const manualGapX = Math.round(parent.width * 1.3);
       const jitterX = (Math.random() - 0.5) * 150;
       const jitterY = (Math.random() - 0.5) * 150;
-      const nodeW = shouldWrap ? maxWidth : metrics.width;
+      const nodeW = shouldWrap ? curMaxW : metrics.width;
       px = side === 1
         ? parent.x + parent.width + manualGapX + jitterX
         : parent.x - manualGapX - nodeW + jitterX;
@@ -9494,13 +9569,24 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       ? "center"
       : side === 1 ? "left" : "right";
 
-    newNodeId = ea.addText(px, py, text, {
-      box: boxChildren ? "rectangle" : false,
-      textAlign,
-      textVerticalAlign: "middle",
-      width: shouldWrap ? maxWidth : undefined,
-      autoResize: !shouldWrap,
-    });
+    if (imageFile) {
+        newNodeId = await ea.addImage(px, py, imageFile);
+        const el = ea.getElement(newNodeId);
+        const targetWidth = imageInfo.width || 180;
+        const ratio = el.width / el.height;
+        el.width = targetWidth;
+        el.height = targetWidth / ratio;
+        if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
+    } else {
+        newNodeId = ea.addText(px, py, text, {
+          box: boxChildren ? "rectangle" : false,
+          textAlign,
+          textVerticalAlign: "middle",
+          width: shouldWrap ? curMaxW : undefined,
+          autoResize: !shouldWrap,
+        });
+    }
+
     if (depth === 1) {
       ea.addAppendUpdateCustomData(newNodeId, {
         mindmapNew: true,
@@ -9511,6 +9597,18 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     }
 
     ea.copyViewElementsToEAforEditing([parent]);
+    
+    if (depth === 0 && !parent.customData?.growthMode) {
+      ea.addAppendUpdateCustomData(parent.id, {
+        growthMode: currentModalGrowthMode,
+        autoLayoutDisabled: false,
+      });
+    }
+    
+    if (parent.type === "image" && typeof parent.customData?.mindmapOrder === "undefined") {
+      ea.addAppendUpdateCustomData(parent.id, { mindmapOrder: 0 });
+    }
+
     ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
     ea.style.roughness = appState().currentItemRoughness;
     ea.style.strokeStyle = isSolidArrow ? "solid" : appState().currentItemStrokeStyle;
@@ -9582,6 +9680,14 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
 // 5. Copy & Paste Engine
 // ---------------------------------------------------------------------------
 const getTextFromNode = (all, node, getRaw = false) => {
+  if (node.type === "image") {
+    const file = ea.getViewFileForImageElement(node);
+    if (file) {
+      // We use the full path to avoid ambiguity
+      return `![[${file.path}|${Math.round(node.width)}]]`;
+    }
+    return ""; 
+  }
   if (node.type === "text") {
     return getRaw ? node.rawText : node.originalText;
   }
@@ -10027,7 +10133,8 @@ const updateUI = () => {
     }
     const isEditing = editingNodeId && editingNodeId === sel.id;
     if (editBtn) {
-      setButtonDisabled(editBtn, false);
+      const isImage = sel.type === "image";
+      setButtonDisabled(editBtn, isImage);
       if (isEditing) {
         editBtn.extraSettingsEl.style.color = "var(--interactive-accent)";
       } else {
@@ -10090,12 +10197,28 @@ const commitEdit = async () => {
   if (textEl) {
     ea.copyViewElementsToEAforEditing([textEl]);
     const eaEl = ea.getElement(textEl.id);
-    eaEl.originalText = inputEl.value;
-    eaEl.rawText = inputEl.value;
+    const text = inputEl.value;
+    eaEl.originalText = text;
+    eaEl.rawText = text;
+    ea.style.fontFamily = eaEl.fontFamily;
+    ea.style.fontSize = eaEl.fontSize;
+
+    if (eaEl.width <= maxWidth) {
+      const textWidth = ea.measureText(text).width;
+      const shouldWrap = textWidth > maxWidth;
+      if (!shouldWrap) {
+        eaEl.width = Math.ceil(textWidth)
+      } else {
+        const res = getAdjustedMaxWidth(text, maxWidth);
+        eaEl.width = res.width;
+        eaEl.text = res.wrappedText;
+      }
+    }
     
     ea.refreshTextElementSize(eaEl.id);
     
     await ea.addElementsToView(false, false);
+    ea.clear();
     
     if (textEl.containerId) {
       const container = ea.getViewElements().find(el => el.id === textEl.containerId);
@@ -10351,8 +10474,12 @@ const renderInput = (container, isFloating = false) => {
       `${ACTION_ADD_FOLLOW} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}\n` +
       `${ACTION_ADD_FOLLOW_FOCUS} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}\n` +
       `${ACTION_ADD_FOLLOW_ZOOM} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}\n`;
-    inputEl.placeholder = "Concept...";
-    inputEl.addEventListener("focus", registerMindmapHotkeys);
+    inputEl.placeholder = "Concept... type [[ to insert link";
+    inputEl.addEventListener("focus", () => {
+      registerMindmapHotkeys();
+      ensureNodeSelected();
+      updateUI();
+    });
     inputEl.addEventListener("blur", () => {
       if (popScope) popScope();
       saveSettings();
@@ -10446,7 +10573,7 @@ const renderBody = (contentEl) => {
   btnGrid.createEl("button", {
     text: "Add Sibling",
     cls: "mod-cta",
-    attr: { style: "padding: 2px;" },
+    attr: { style: "padding: 2px;", title: `(Enter)` },
   }).onclick = async () => {
     await addNode(inputEl.value, false);
     inputEl.value = "";
@@ -10454,7 +10581,7 @@ const renderBody = (contentEl) => {
     updateUI();
     focusInputEl();
   };
-  btnGrid.createEl("button", { text: "Add+Follow", attr: { style: "padding: 2px;" } }).onclick = async () => {
+  btnGrid.createEl("button", { text: "Add+Follow", attr: { style: "padding: 2px;", title: `${getActionHotkeyString(ACTION_ADD_FOLLOW)}`} }).onclick = async () => {
     await addNode(inputEl.value, true);
     inputEl.value = "";
     if(!autoLayoutDisabled) await refreshMapLayout();
@@ -10463,19 +10590,19 @@ const renderBody = (contentEl) => {
   };
   copyBtn = btnGrid.createEl("button", {
     text: "Copy",
-    attr: { style: "padding: 2px;", title: `Copy branch as text (${isMac ? "OPT" : "ALT"}+C)` },
+    attr: { style: "padding: 2px;", title: `Copy branch as text ${getActionHotkeyString(ACTION_COPY)}` },
   });
   copyBtn.onclick = copyMapAsText;
 
   cutBtn = btnGrid.createEl("button", {
     text: "Cut",
-    attr: { style: "padding: 2px;", title: `Cut branch as text (${isMac ? "OPT" : "ALT"}+X)` },
+    attr: { style: "padding: 2px;", title: `Cut branch as text ${getActionHotkeyString(ACTION_CUT)}` },
   });
   cutBtn.onclick = () => copyMapAsText(true);
 
   btnGrid.createEl("button", {
     text: "Paste",
-    attr: { style: "padding: 2px;", title: `Paste list from clipboard (${isMac ? "OPT" : "ALT"}+V)` },
+    attr: { style: "padding: 2px;", title: `Paste list from clipboard ${getActionHotkeyString(ACTION_PASTE)}` },
   }).onclick = pasteListToMap;
 
   const zoomSetting = new ea.obsidian.Setting(bodyContainer);
@@ -10491,8 +10618,9 @@ const renderBody = (contentEl) => {
   });
   zoomSetting.addExtraButton(btn=>btn
     .setIcon("scan-search")
+    .setTooltip(`Cycle element zoom ${getActionHotkeyString(ACTION_ZOOM)}`)
     .onClick(()=>{
-      zoomToFit();
+      zoomToFit(true);
     })
   );
 
@@ -10829,6 +10957,7 @@ const updateKeyHandlerLocation = () => {
  * 
 **/ 
 const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {}) => {
+  editingNodeId = null;
   if (!ea.targetView && !(forceDock && isUndocked)) return;
   
   // Only reveal/hide UI if not silent
@@ -11048,7 +11177,7 @@ const keyHandler = async (e) => {
       if (action === ACTION_ADD_FOLLOW_FOCUS) focusSelected();
       if (action === ACTION_ADD_FOLLOW_ZOOM) zoomToFit();
       break;
-    case ACTION_ADD:
+case ACTION_ADD:
       const currentSel = ea.getViewSelectedElement();
       if (
         editingNodeId && currentSel &&
@@ -11064,21 +11193,41 @@ const keyHandler = async (e) => {
           inputEl.value = "";
           if(!autoLayoutDisabled) await refreshMapLayout();
         } else {
-          if(!mostRecentlyAddedNodeID) return;
-          const mostRecentNode = getMostRecentlyAddedNode();
           const sel = ea.getViewSelectedElement();
-          if(mostRecentNode !== sel) {
-            ea.selectElementsInView([mostRecentNode]);
-            mostRecentlyAddedNodeID = null;
-          } else {
-            navigateMap({key: "ArrowDown", zoom: false, focus: false});
-            if(sel === ea.getViewSelectedElement()) {
-              //if only a single child then navigate up
-              navigateMap({
-                key: isNodeRightFromCenter() ? "ArrowLeft" : "ArrowRight",
-                zoom: false,
-                focus: false
-              });
+          const allElements = ea.getViewElements();
+
+          let handledRecent = false;
+          if(mostRecentlyAddedNodeID) {
+            const mostRecentNode = getMostRecentlyAddedNode();
+            if (mostRecentNode && sel) {
+              const selParent = getParentNode(sel.id, allElements);
+              const recentParent = getParentNode(mostRecentNode.id, allElements);
+              const isSameOrSibling = (sel.id === mostRecentNode.id) || 
+                (selParent && recentParent && selParent.id === recentParent.id);
+              if(!isSameOrSibling) {
+                ea.selectElementsInView([mostRecentNode]);
+                handledRecent = true;
+              } 
+            } else {
+              mostRecentlyAddedNodeID = null;
+            }
+          }
+          if (!handledRecent && sel) {
+            const parent = getParentNode(sel.id, allElements);
+            const siblings = parent ? getChildrenNodes(parent.id, allElements) : [];
+             
+            if (siblings.length > 1) {
+              navigateMap({key: "ArrowDown", zoom: false, focus: false});
+            }
+            else {
+              const children = getChildrenNodes(sel.id, allElements);
+              if (children.length > 0) {
+                sortChildrenStable(children);
+                ea.selectElementsInView([children[0]]);
+              } 
+              else if (parent) {
+                ea.selectElementsInView([parent]);
+              }
             }
           }
         }
@@ -11096,19 +11245,17 @@ const canvasPointerListener = (e) => {
   setTimeout(() => {
     if (!ea.targetView) return;
     const selection = ea.getViewSelectedElements();
-    const textEl = selection.find(el => el.type === "text");
-    let isEligible = false;
-
-    if (selection.length === 1 && textEl) {
-      isEligible = true;
-    } else if (selection.length === 2 && textEl) {
-      const other = selection.find(el => el.id !== textEl.id);
-      if (other && textEl.containerId === other.id && other.type !== "arrow") {
-        isEligible = true;
-      }
-    }
+    const isEligible = !!selection.find(el => el.customData && (
+      el.customData.hasOwnProperty("mindmapOrder") || 
+      el.customData.hasOwnProperty("isBranch") ||
+      el.customData.hasOwnProperty("growthMode")
+    ))
 
     if (isEligible) {
+      updateUI();
+    }
+    
+    if (!isEligible && !pinBtn.disabled) {
       updateUI();
     }
   }, 50);
@@ -11157,9 +11304,14 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
 
     if (ea.activateMindmap) {
       ea.activateMindmap = false;
-      const undocPreference = getVal(K_UNDOCKED, false) === true;
-      if (undocPreference) {
+      const undockPreference = getVal(K_UNDOCKED, false);
+      if (undockPreference && !isUndocked) {
         setTimeout(()=>toggleDock({saveSetting: false}));
+      } else if (!undockPreference && isUndocked) {
+        setTimeout(()=>toggleDock({saveSetting: false}));
+        tab.reveal();
+      } else if (!undockPreference) {
+        tab.reveal();
       }
     }
   };
@@ -15228,7 +15380,7 @@ const HELP_TEXT = `
 
 `;
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.7.2")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.0")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -15693,6 +15845,50 @@ function showModal() {
           .setValue(ea.getCM(info.mappedTo).stringHEX({alpha: false}).toLowerCase());
 
         colorPicker.colorPickerEl.style.maxWidth = "2.5rem";
+
+        // Add palette picker button
+        const paletteButton = new ea.obsidian.Setting(row.controlEl)
+          .addButton(button => button
+            .setIcon("swatch-book")
+            .setTooltip("Pick from Palette")
+            .onClick(async () => {
+              const selected = await ea.showColorPicker(button.buttonEl, "elementStroke");
+              if (selected) {
+                try {
+                  const cm = ea.getCM(selected);
+                  if (cm) {
+                    const format = settings[FORMAT].value;
+                    
+                    // Preserve alpha from original color
+                    const currentInfo = currentColors.get(svgElement.id).colors.get(color);
+                    const originalAlpha = ea.getCM(currentInfo.mappedTo).alpha;
+                    cm.alphaTo(originalAlpha);
+                    const alpha = originalAlpha < 1 ? true : false;
+
+                    const newColor = format === "RGB" 
+                      ? cm.stringRGB({alpha , precision }).toLowerCase()
+                      : format === "HEX" 
+                        ? cm.stringHEX({alpha}).toLowerCase()
+                        : cm.stringHSL({alpha, precision }).toLowerCase();
+                    
+                    // Update text input
+                    textInput.setValue(newColor);
+                    
+                    // Update Color Picker visual
+                    colorPicker.setValue(cm.stringHEX({alpha: false}).toLowerCase());
+
+                    // Update SVG mapping
+                    currentInfo.mappedTo = newColor;
+                    run("Update SVG color");
+                  }
+                } catch (e) {
+                  console.error("Invalid color value:", e);
+                }
+              }
+            }));
+        paletteButton.settingEl.style.padding = "0";
+        paletteButton.settingEl.style.border = "0";
+        paletteButton.infoEl.style.display = "none";
   
         // Store references to the components
         colorInputs.set(color, {
