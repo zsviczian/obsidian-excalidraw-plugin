@@ -1511,11 +1511,24 @@ export default class ExcalidrawPlugin extends Plugin {
     return getHighlightColor(this.ea, sceneBgColor, opacity);
   }
 
-  public attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement, containerEl?: HTMLDivElement): KeyBlocker {
+  /**
+   * Attaches an inline link suggester to the specified input element.
+   * @param inputEl The HTML input element to attach the suggester to.
+   * @param widthWrapper Optional HTML element to wrap the width of suggester element.
+   * @param containerEl Optional container element used as collision boundary.
+   * @param surpessPlaceholder Whether to suppress the placeholder text. Defaults to true.
+   * @returns A KeyBlocker instance for managing keyboard input.
+   */
+  public attachInlineLinkSuggester(
+    inputEl: HTMLInputElement,
+    widthWrapper?: HTMLElement,
+    containerEl?: HTMLDivElement,
+    surpessPlaceholder: boolean = true
+  ): KeyBlocker {
     const getSourcePath = () => {
       this.ea.setView();
       return this.ea.targetView?.file?.path;
     };
-    return new InlineLinkSuggester(this.app, this, inputEl, getSourcePath, widthWrapper, false, containerEl);
+    return new InlineLinkSuggester(this.app, this, inputEl, getSourcePath, widthWrapper, surpessPlaceholder, containerEl);
   }
 }

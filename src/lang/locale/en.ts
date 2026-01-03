@@ -1256,4 +1256,10 @@ export default {
   VERSION_MISMATCH_DISABLE_DESC: "You can re-enable this under: Settings → Excalidraw → Basic → Warn about incomplete plugin updates.",
   VERSION_MISMATCH_REDOWNLOAD: "Re-download plugin",
   VERSION_MISMATCH_IGNORE: "Ignore",
+
+  //InlineLinkSuggester.ts
+  INLINE_HINT: "Type [[ to search and insert a link",
+
+  //SuggestionModal.ts
+  SUGGESTION_NOMATCH: "No matches found",
 };

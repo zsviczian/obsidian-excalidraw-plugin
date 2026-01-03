@@ -6,6 +6,7 @@ import {
 } from "obsidian";
 import { createPopper, Instance as PopperInstance } from "@popperjs/core";
 import { Suggester } from "./Suggester";
+import { t } from "src/lang/helpers";
 
 export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
   items: T[] = [];
@@ -16,7 +17,7 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
   suggester: Suggester<FuzzyMatch<T>>;
   suggestEl: HTMLDivElement;
   promptEl: HTMLDivElement;
-  emptyStateText: string = "No match found";
+  emptyStateText: string = t("SUGGESTION_NOMATCH");
   limit: number = 100;
   shouldNotOpen: boolean;
   

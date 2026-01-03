@@ -246,8 +246,8 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"] },
   { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"] },
   { action: ACTION_EDIT, code: "F2", modifiers: [] },
-  { action: ACTION_PIN, key: "KeyP", modifiers: ["Alt"] },
-  { action: ACTION_BOX, key: "KeyB", modifiers: ["Alt"] },
+  { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"] },
+  { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"] },
   { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"] },
   { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"] },
   { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"] },
@@ -536,11 +536,11 @@ const nextZoomLevel = (current) => {
   return idx === -1 ? ZOOM_TYPES[0] : ZOOM_TYPES[(idx + 1) % ZOOM_TYPES.length];
 };
 
-const zoomToFit = (isAltZ) => {
+const zoomToFit = (cycleLevels) => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
   if (sel) {
-    if (isAltZ && storedZoom.elementID === sel.id) {
+    if (cycleLevels && storedZoom.elementID === sel.id) {
       const nextLevel = nextZoomLevel(storedZoom.level ?? zoomLevel);
       storedZoom.level = nextLevel;
       api().zoomToFit([sel],10,getZoom(nextLevel));
@@ -850,6 +850,14 @@ const getMostRecentlyAddedNode = () => {
   return ea.getViewElements().find((el) => el.id === mostRecentlyAddedNodeID);
 }
 
+const getAdjustedMaxWidth = (text, max) => {
+  const fontString = `${ea.style.fontSize.toString()}px ${
+    ExcalidrawLib.getFontFamilyString({fontFamily: ea.style.fontFamily})}`;
+  const wrappedText = ExcalidrawLib.wrapText(text, fontString, max);
+  const optimalWidth = Math.ceil(ea.measureText(wrappedText).width);
+  return {width: Math.min(max, optimalWidth), wrappedText};
+}
+
 const addNode = async (text, follow = false, skipFinalLayout = false) => {
   if (!ea.targetView) return;
   if (!text || text.trim() === "") return;
@@ -892,9 +900,13 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)];
   ea.style.roundness = roundedCorners ? { type: 3 } : null;
 
-  const curMaxW = depth === 0 ? Math.max(400, maxWidth) : maxWidth;
+  let curMaxW = depth === 0 ? Math.max(400, maxWidth) : maxWidth;
   const metrics = ea.measureText(text);
   const shouldWrap = metrics.width > curMaxW;
+  if (shouldWrap) {
+    curMaxW = getAdjustedMaxWidth(text, curMaxW).width;
+  }
+
 
   let newNodeId;
   if (!parent) {
@@ -941,7 +953,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       const manualGapX = Math.round(parent.width * 1.3);
       const jitterX = (Math.random() - 0.5) * 150;
       const jitterY = (Math.random() - 0.5) * 150;
-      const nodeW = shouldWrap ? maxWidth : metrics.width;
+      const nodeW = shouldWrap ? curMaxW : metrics.width;
       px = side === 1
         ? parent.x + parent.width + manualGapX + jitterX
         : parent.x - manualGapX - nodeW + jitterX;
@@ -956,7 +968,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       box: boxChildren ? "rectangle" : false,
       textAlign,
       textVerticalAlign: "middle",
-      width: shouldWrap ? maxWidth : undefined,
+      width: shouldWrap ? curMaxW : undefined,
       autoResize: !shouldWrap,
     });
     if (depth === 1) {
@@ -1548,12 +1560,28 @@ const commitEdit = async () => {
   if (textEl) {
     ea.copyViewElementsToEAforEditing([textEl]);
     const eaEl = ea.getElement(textEl.id);
-    eaEl.originalText = inputEl.value;
-    eaEl.rawText = inputEl.value;
+    const text = inputEl.value;
+    eaEl.originalText = text;
+    eaEl.rawText = text;
+    ea.style.fontFamily = eaEl.fontFamily;
+    ea.style.fontSize = eaEl.fontSize;
+
+    if (eaEl.width <= maxWidth) {
+      const textWidth = ea.measureText(text).width;
+      const shouldWrap = textWidth > maxWidth;
+      if (!shouldWrap) {
+        eaEl.width = Math.ceil(textWidth)
+      } else {
+        const res = getAdjustedMaxWidth(text, maxWidth);
+        eaEl.width = res.width;
+        eaEl.text = res.wrappedText;
+      }
+    }
     
     ea.refreshTextElementSize(eaEl.id);
     
     await ea.addElementsToView(false, false);
+    ea.clear();
     
     if (textEl.containerId) {
       const container = ea.getViewElements().find(el => el.id === textEl.containerId);
@@ -1809,8 +1837,12 @@ const renderInput = (container, isFloating = false) => {
       `${ACTION_ADD_FOLLOW} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}\n` +
       `${ACTION_ADD_FOLLOW_FOCUS} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}\n` +
       `${ACTION_ADD_FOLLOW_ZOOM} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}\n`;
-    inputEl.placeholder = "Concept...";
-    inputEl.addEventListener("focus", registerMindmapHotkeys);
+    inputEl.placeholder = "Concept... type [[ to insert link";
+    inputEl.addEventListener("focus", () => {
+      registerMindmapHotkeys();
+      ensureNodeSelected();
+      updateUI();
+    });
     inputEl.addEventListener("blur", () => {
       if (popScope) popScope();
       saveSettings();
@@ -1904,7 +1936,7 @@ const renderBody = (contentEl) => {
   btnGrid.createEl("button", {
     text: "Add Sibling",
     cls: "mod-cta",
-    attr: { style: "padding: 2px;" },
+    attr: { style: "padding: 2px;", title: `(Enter)` },
   }).onclick = async () => {
     await addNode(inputEl.value, false);
     inputEl.value = "";
@@ -1912,7 +1944,7 @@ const renderBody = (contentEl) => {
     updateUI();
     focusInputEl();
   };
-  btnGrid.createEl("button", { text: "Add+Follow", attr: { style: "padding: 2px;" } }).onclick = async () => {
+  btnGrid.createEl("button", { text: "Add+Follow", attr: { style: "padding: 2px;", title: `${getActionHotkeyString(ACTION_ADD_FOLLOW)}`} }).onclick = async () => {
     await addNode(inputEl.value, true);
     inputEl.value = "";
     if(!autoLayoutDisabled) await refreshMapLayout();
@@ -1921,19 +1953,19 @@ const renderBody = (contentEl) => {
   };
   copyBtn = btnGrid.createEl("button", {
     text: "Copy",
-    attr: { style: "padding: 2px;", title: `Copy branch as text (${isMac ? "OPT" : "ALT"}+C)` },
+    attr: { style: "padding: 2px;", title: `Copy branch as text ${getActionHotkeyString(ACTION_COPY)}` },
   });
   copyBtn.onclick = copyMapAsText;
 
   cutBtn = btnGrid.createEl("button", {
     text: "Cut",
-    attr: { style: "padding: 2px;", title: `Cut branch as text (${isMac ? "OPT" : "ALT"}+X)` },
+    attr: { style: "padding: 2px;", title: `Cut branch as text ${getActionHotkeyString(ACTION_CUT)}` },
   });
   cutBtn.onclick = () => copyMapAsText(true);
 
   btnGrid.createEl("button", {
     text: "Paste",
-    attr: { style: "padding: 2px;", title: `Paste list from clipboard (${isMac ? "OPT" : "ALT"}+V)` },
+    attr: { style: "padding: 2px;", title: `Paste list from clipboard ${getActionHotkeyString(ACTION_PASTE)}` },
   }).onclick = pasteListToMap;
 
   const zoomSetting = new ea.obsidian.Setting(bodyContainer);
@@ -1949,8 +1981,9 @@ const renderBody = (contentEl) => {
   });
   zoomSetting.addExtraButton(btn=>btn
     .setIcon("scan-search")
+    .setTooltip(`Cycle element zoom ${getActionHotkeyString(ACTION_ZOOM)}`)
     .onClick(()=>{
-      zoomToFit();
+      zoomToFit(true);
     })
   );
 
@@ -2287,6 +2320,7 @@ const updateKeyHandlerLocation = () => {
  * 
 **/ 
 const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {}) => {
+  editingNodeId = null;
   if (!ea.targetView && !(forceDock && isUndocked)) return;
   
   // Only reveal/hide UI if not silent
@@ -2554,19 +2588,17 @@ const canvasPointerListener = (e) => {
   setTimeout(() => {
     if (!ea.targetView) return;
     const selection = ea.getViewSelectedElements();
-    const textEl = selection.find(el => el.type === "text");
-    let isEligible = false;
-
-    if (selection.length === 1 && textEl) {
-      isEligible = true;
-    } else if (selection.length === 2 && textEl) {
-      const other = selection.find(el => el.id !== textEl.id);
-      if (other && textEl.containerId === other.id && other.type !== "arrow") {
-        isEligible = true;
-      }
-    }
+    const isEligible = !!selection.find(el => el.customData && (
+      el.customData.hasOwnProperty("mindmapOrder") || 
+      el.customData.hasOwnProperty("isBranch") ||
+      el.customData.hasOwnProperty("growthMode")
+    ))
 
     if (isEligible) {
+      updateUI();
+    }
+    
+    if (!isEligible && !pinBtn.disabled) {
       updateUI();
     }
   }, 50);
@@ -2618,6 +2650,8 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
       const undocPreference = getVal(K_UNDOCKED, false) === true;
       if (undocPreference) {
         setTimeout(()=>toggleDock({saveSetting: false}));
+      } else {
+        tab.reveal();
       }
     }
   };

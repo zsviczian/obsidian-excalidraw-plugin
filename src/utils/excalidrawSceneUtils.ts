@@ -20,6 +20,7 @@ export function updateElementIdsInScene(
   if(elementToChange.boundElements?.length>0) {
     elementToChange.boundElements.forEach( binding => {
       const boundEl = sceneElements.find(el=>el.id === binding.id) as unknown as Mutable<ExcalidrawElement>;
+      if(!boundEl) return;
       boundEl.boundElements?.filter(x=>x.id === elementToChange.id).forEach( x => {
         (x.id as Mutable<string>) = newID;
       });

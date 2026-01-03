@@ -10,6 +10,7 @@ type HostCallbacks = {
   isVisible: () => boolean;
 	close: (tab: ExcalidrawSidepanelTab) => void;
 	updateTitle?: (tab: ExcalidrawSidepanelTab) => void;
+  reveal: () => void;
 	plugin: ExcalidrawPlugin;
 	ea: ExcalidrawAutomate;
 };
@@ -230,4 +231,12 @@ export class ExcalidrawSidepanelTab implements CloseableComponent, SidepanelTabT
   public isVisible(): boolean {
     return this.host.isVisible();
   }
+
+  public reveal(): void {
+    if (!this.isActive) {
+      this.open();
+    }
+    this.host.reveal();
+  }
+
 }

@@ -4,6 +4,7 @@ import { LinkSuggestion } from "src/types/types";
 import ExcalidrawPlugin from "src/core/main";
 import { getLinkSuggestionsFiltered, getSortedLinkMatches, renderLinkSuggestion } from "src/shared/Suggesters/LinkSuggesterUtils";
 import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
+import { t } from "src/lang/helpers";
 
 /**
  * Inline link suggester that attaches to a specific input element.
@@ -35,9 +36,7 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
     this.hasCustomWidthHost = Boolean(widthWrapper);
     this.limit = 20;
     if (!surpessPlaceholder) {
-      this.setPlaceholder("Start typing [[ to link...");
-    } else {
-      this.setPlaceholder("");
+      this.setPlaceholder(t("INLINE_HINT"));
     }
     this.emptyStateText = "No match";
     this.syncWidth();

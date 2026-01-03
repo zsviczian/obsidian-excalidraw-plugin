@@ -339,6 +339,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 				ea,
         //@ts-ignore
         isVisible: () => this.leaf.isVisible?.(),
+        reveal: () => this.reveal(),
 			},
 			{ bodyEl: this.bodyEl },
 			scriptName,
@@ -505,4 +506,8 @@ export class ExcalidrawSidepanelView extends ItemView {
 			}
 		}
 	}
+
+  public reveal(): void {
+    this.app.workspace.revealLeaf(this.leaf);
+  }
 }
