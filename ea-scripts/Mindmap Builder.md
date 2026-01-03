@@ -2589,24 +2589,42 @@ case ACTION_ADD:
           inputEl.value = "";
           if(!autoLayoutDisabled) await refreshMapLayout();
         } else {
-          if(!mostRecentlyAddedNodeID) return;
-          const mostRecentNode = getMostRecentlyAddedNode();
           const sel = ea.getViewSelectedElement();
-          
-          if (!mostRecentNode || !sel) {
-             mostRecentlyAddedNodeID = null;
-             return;
-          }
-
           const allElements = ea.getViewElements();
-          const selParent = getParentNode(sel.id, allElements);
-          const recentParent = getParentNode(mostRecentNode.id, allElements);
-          const isSameOrSibling = (sel.id === mostRecentNode.id) || 
-            (selParent && recentParent && selParent.id === recentParent.id);
-          if(!isSameOrSibling) {
-            ea.selectElementsInView([mostRecentNode]);
-          } else {
-            navigateMap({key: "ArrowDown", zoom: false, focus: false});
+
+          let handledRecent = false;
+          if(mostRecentlyAddedNodeID) {
+            const mostRecentNode = getMostRecentlyAddedNode();
+            if (mostRecentNode && sel) {
+              const selParent = getParentNode(sel.id, allElements);
+              const recentParent = getParentNode(mostRecentNode.id, allElements);
+              const isSameOrSibling = (sel.id === mostRecentNode.id) || 
+                (selParent && recentParent && selParent.id === recentParent.id);
+              if(!isSameOrSibling) {
+                ea.selectElementsInView([mostRecentNode]);
+                handledRecent = true;
+              } 
+            } else {
+              mostRecentlyAddedNodeID = null;
+            }
+          }
+          if (!handledRecent && sel) {
+            const parent = getParentNode(sel.id, allElements);
+            const siblings = parent ? getChildrenNodes(parent.id, allElements) : [];
+             
+            if (siblings.length > 1) {
+              navigateMap({key: "ArrowDown", zoom: false, focus: false});
+            }
+            else {
+              const children = getChildrenNodes(sel.id, allElements);
+              if (children.length > 0) {
+                sortChildrenStable(children);
+                ea.selectElementsInView([children[0]]);
+              } 
+              else if (parent) {
+                ea.selectElementsInView([parent]);
+              }
+            }
           }
         }
       }
