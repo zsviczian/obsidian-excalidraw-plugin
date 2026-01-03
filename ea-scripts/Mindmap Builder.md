@@ -902,7 +902,14 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
         nodeColor = rootEl.strokeColor;
       }
     } else {
-      nodeColor = parent.strokeColor;
+      if (parent.type === "image") {
+        const incomingArrow = allElements.find(
+          (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === parent.id,
+        );
+        nodeColor = incomingArrow ? incomingArrow.strokeColor : parent.strokeColor;
+      } else {
+        nodeColor = parent.strokeColor;
+      }
     }
   }
 
@@ -993,6 +1000,18 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     }
 
     ea.copyViewElementsToEAforEditing([parent]);
+    
+    if (depth === 0 && !parent.customData?.growthMode) {
+      ea.addAppendUpdateCustomData(parent.id, {
+        growthMode: currentModalGrowthMode,
+        autoLayoutDisabled: false,
+      });
+    }
+    
+    if (parent.type === "image" && typeof parent.customData?.mindmapOrder === "undefined") {
+      ea.addAppendUpdateCustomData(parent.id, { mindmapOrder: 0 });
+    }
+
     ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
     ea.style.roughness = appState().currentItemRoughness;
     ea.style.strokeStyle = isSolidArrow ? "solid" : appState().currentItemStrokeStyle;
@@ -1509,7 +1528,8 @@ const updateUI = () => {
     }
     const isEditing = editingNodeId && editingNodeId === sel.id;
     if (editBtn) {
-      setButtonDisabled(editBtn, false);
+      const isImage = sel.type === "image";
+      setButtonDisabled(editBtn, isImage);
       if (isEditing) {
         editBtn.extraSettingsEl.style.color = "var(--interactive-accent)";
       } else {
@@ -2553,7 +2573,7 @@ const keyHandler = async (e) => {
       if (action === ACTION_ADD_FOLLOW_FOCUS) focusSelected();
       if (action === ACTION_ADD_FOLLOW_ZOOM) zoomToFit();
       break;
-    case ACTION_ADD:
+case ACTION_ADD:
       const currentSel = ea.getViewSelectedElement();
       if (
         editingNodeId && currentSel &&
@@ -2572,19 +2592,21 @@ const keyHandler = async (e) => {
           if(!mostRecentlyAddedNodeID) return;
           const mostRecentNode = getMostRecentlyAddedNode();
           const sel = ea.getViewSelectedElement();
-          if(mostRecentNode !== sel) {
+          
+          if (!mostRecentNode || !sel) {
+             mostRecentlyAddedNodeID = null;
+             return;
+          }
+
+          const allElements = ea.getViewElements();
+          const selParent = getParentNode(sel.id, allElements);
+          const recentParent = getParentNode(mostRecentNode.id, allElements);
+          const isSameOrSibling = (sel.id === mostRecentNode.id) || 
+            (selParent && recentParent && selParent.id === recentParent.id);
+          if(!isSameOrSibling) {
             ea.selectElementsInView([mostRecentNode]);
-            mostRecentlyAddedNodeID = null;
           } else {
             navigateMap({key: "ArrowDown", zoom: false, focus: false});
-            if(sel === ea.getViewSelectedElement()) {
-              //if only a single child then navigate up
-              navigateMap({
-                key: isNodeRightFromCenter() ? "ArrowLeft" : "ArrowRight",
-                zoom: false,
-                focus: false
-              });
-            }
           }
         }
       }
