@@ -40,24 +40,33 @@ Nodes can be excluded from the auto-layout engine in two ways:
 ### E. Inline Link Suggester
 - **Contextual \[\[link\]\] autocomplete**: Input fields now use `ea.attachInlineLinkSuggester` so you can drop Obsidian links with in-line suggestions (supports aliases and unresolved links) without leaving the flow.
 
+### F. Custom Palette & Contrast Colors
+- **Custom palettes**: Define your own branch colors (ordered or random draw) with the palette manager; stored per-user in script settings.
+- **Contrast-aware defaults**: When no custom palette is set, colors are generated to maximize contrast against the canvas and existing siblings.
+
 ## 4. UI and User Experience
 
 ### Zoom Management
 The script includes "Preferred Zoom Level" settings (Low/Medium/High) to ensure the canvas automatically frames the active node comfortably during rapid entry, particularly useful on mobile devices vs desktop screens.
 
-### Keyboard Shortcuts
+### Default Keyboard Shortcuts
 | Shortcut | Action |
 | :--- | :--- |
-| **ENTER** | Add a sibling node (stay on current parent). |
-| **CMD/CTRL + ENTER** | Add a child and "drill down" (select the new node). |
-| **SHIFT + ENTER** | **Dock/Undock** the input field (toggle between Sidepanel and Floating Modal). |
-| **CMD/CTRL + SHIFT + ENTER** | **Pin/Unpin** the location of the selected node. |
-| **OPT/ALT + SHIFT + ENTER** | **Box/Unbox** the selected node. |
-| **ALT/OPT + ARROWS** | Navigate the mind map structure (parent/child/sibling). |
-| **ALT/OPT + SHIFT + ARROWS** | Navigate the mind map structure (parent/child/sibling) and zoom to selected element |
-| **CMD/CTRL + SHIFT + ARROWS** | Navigate the mind map structure (parent/child/sibling) and focus to selected element |
-| **ALT/OPT + Z** | Zoom to selected element |
-| **ALT/OPT + C / X / V** | Copy, Cut, or Paste branches as Markdown. |
+| **ENTER** | Add a sibling on the current parent; ENTER on empty input jumps to the most recent child/siblings. |
+| **CTRL/CMD + ALT + ENTER** | Add child and follow (selection stays on the new node). |
+| **CTRL/CMD + ENTER** | Add child, follow, and center the new node. |
+| **CTRL/CMD + SHIFT + ENTER** | Add child, follow, and zoom to fit. |
+| **SHIFT + ENTER** | Dock/Undock the input field. |
+| **F2** | Edit the selected node. |
+| **ALT + P** | Pin/Unpin the selected node. |
+| **ALT + B** | Box/Unbox the selected node. |
+| **ALT + C / X / V** | Copy, Cut, or Paste branches as Markdown. |
+| **ALT + Z** | Cycle zoom to the selected element. |
+| **ALT + F** | Focus (center) the selected node. |
+| **ALT + ARROWS** | Navigate the mind map (parent/child/sibling). |
+| **ALT + SHIFT + ARROWS** | Navigate and zoom to selection. |
+| **ALT + CTRL/CMD + ARROWS** | Navigate and focus selection. |
+| **ESC** | Dock and hide the floating input. |
 
 ## 5. Settings and Persistence
 
@@ -65,6 +74,9 @@ The script includes "Preferred Zoom Level" settings (Low/Medium/High) to ensure 
 Persisted across sessions via `ea.setScriptSettings`:
 - **Max Text Width**: Point at which text wraps (Default: 450px).
 - **Font Scales**: Choice of Normal, Fibonacci, or Scene-based sizes.
+- **Multicolor Mode**: Toggle automatic branch coloring; optionally configure a custom palette (ordered or random).
+- **Arrow Stroke Style**: Use scene stroke style or force solid branches.
+- **Center Text**: Toggle centered text vs directional alignment.
 - **Preferred Zoom Level**: Controls auto-zoom intensity (Low/Medium/High).
 - **Recursive Grouping**: When enabled, groups sub-trees from the leaves upward.
 - **Is Undocked**: Remembers if the user prefers the UI floating or docked.
@@ -72,7 +84,7 @@ Persisted across sessions via `ea.setScriptSettings`:
 ### Map-Specific Persistence (customData)
 The script uses `ea.addAppendUpdateCustomData` to store state on elements:
 - `growthMode`: Stored on the Root node (Radial, Left, or Right).
-- `autoLayoutDisabled`: Stored on the Root node to pause layout engine for specific maps.
+- `autoLayoutDisabled`: Stored on the Root node to pause layout engine for specific maps (toggle from UI).
 - `isPinned`: Stored on individual nodes (boolean) to bypass the layout engine.
 - `isBranch`: Stored on arrows (boolean) to distinguish Mind Map connectors from standard annotations.
 - `mindmapOrder`: Stored on nodes (number) to maintain manual sort order of siblings.
