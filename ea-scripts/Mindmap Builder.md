@@ -229,8 +229,9 @@ const getFontScale = (type) => fontScale(type) ?? fontScale("Normal Scale");
 const STROKE_WIDTHS = [6, 4, 2, 1, 0.5];
 const ownerWindow = ea.targetView?.ownerWindow;
 const isMac = ea.DEVICE.isMacOS || ea.DEVICE.isIOS;
-
 const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg", "webp", "bmp", "ico", "jtif", "tif", "jfif", "avif"];
+const EMBEDED_OBJECT_WIDTH_ROOT = 400;
+const EMBEDED_OBJECT_WIDTH_CHILD = 180;
 
 const parseImageInput = (input) => {
   const trimmed = input.trim();
@@ -967,7 +968,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     if (imageFile) {
         newNodeId = await ea.addImage(0, 0, imageFile);
         const el = ea.getElement(newNodeId);
-        const targetWidth = imageInfo.width || 400;
+        const targetWidth = imageInfo.width || EMBEDED_OBJECT_WIDTH_ROOT;
         const ratio = el.width / el.height;
         el.width = targetWidth;
         el.height = targetWidth / ratio;
@@ -1030,7 +1031,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     if (imageFile) {
         newNodeId = await ea.addImage(px, py, imageFile);
         const el = ea.getElement(newNodeId);
-        const targetWidth = imageInfo.width || 180;
+        const targetWidth = imageInfo.width || EMBEDED_OBJECT_WIDTH_CHILD;
         const ratio = el.width / el.height;
         el.width = targetWidth;
         el.height = targetWidth / ratio;
