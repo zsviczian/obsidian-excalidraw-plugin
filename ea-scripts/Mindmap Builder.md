@@ -2,7 +2,7 @@
 
 # Mind Map Builder: Technical Specification & User Guide
 
-![](https://youtu.be/dZguonMP2KU)
+![](https://youtu.be/qY66yoobaX4)
 
 ## 1. Overview
 **Mind Map Builder** transforms the Obsidian-Excalidraw canvas into a rapid brainstorming environment, allowing users to build complex, structured, and visually organized mind maps using primarily keyboard shortcuts.
@@ -252,6 +252,12 @@ const parseImageInput = (input) => {
   return { path, width };
 };
 
+const parseEmbeddableInput = (input) => {
+  const trimmed = input.trim();
+  const match = trimmed.match(/^!\[\]\((https?:\/\/[^)]+)\)$/);
+  return match ? match[1] : null;
+};
+
 const ACTION_ADD = "Add";
 const ACTION_ADD_FOLLOW = "Add + follow";
 const ACTION_ADD_FOLLOW_FOCUS = "Add + follow + focus";
@@ -346,6 +352,9 @@ const generateRuntimeHotkeys = () => {
 let RUNTIME_HOTKEYS = generateRuntimeHotkeys();
 
 const INSTRUCTIONS = `
+<br>
+<div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
+
 - **ENTER**: Add a sibling node and stay on the current parent for rapid entry. If you press enter when the input field is empty the focus will move to the child node that was most recently added. Pressing enter subsequent times will iterate through the new child's siblings
 - **Hotkeys**: See configuration at the bottom of the sidepanel
 - **Dock/Undock**: You can dock/undock the input field using the dock/undock button or the configured hotkey
@@ -356,7 +365,7 @@ const INSTRUCTIONS = `
 
 😍 If you find this script helpful, please [buy me a coffee ☕](https://ko-fi.com/zsolt).
 
-<a href="https://www.youtube.com/watch?v=dZguonMP2KU" target="_blank"><img src ="https://i.ytimg.com/vi/dZguonMP2KU/maxresdefault.jpg" style="max-width:560px; width:100%"></a>
+<a href="https://www.youtube.com/watch?v=qY66yoobaX4" target="_blank"><img src ="https://i.ytimg.com/vi/qY66yoobaX4/maxresdefault.jpg" style="max-width:560px; width:100%"></a>
 `;
 
 // ---------------------------------------------------------------------------
@@ -915,6 +924,8 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     }
   }
 
+  const embeddableUrl = parseEmbeddableInput(text);
+
   const defaultNodeColor = ea.getCM(st.viewBackgroundColor).invert().stringHEX({alpha: false});
 
   let depth = 0,
@@ -937,7 +948,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
         nodeColor = rootEl.strokeColor;
       }
     } else {
-      if (parent.type === "image") {
+      if (parent.type === "image" || parent.type === "embeddable") {
         const incomingArrow = allElements.find(
           (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === parent.id,
         );
@@ -972,6 +983,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
         const ratio = el.width / el.height;
         el.width = targetWidth;
         el.height = targetWidth / ratio;
+    } else if (embeddableUrl) {
+        // Height 0 triggers auto-calculation of height based on aspect ratio
+        newNodeId = ea.addEmbeddable(0, 0, EMBEDED_OBJECT_WIDTH_ROOT, 0, embeddableUrl);
     } else {
         newNodeId = ea.addText(0, 0, text, {
           box: "rectangle",
@@ -1036,6 +1050,10 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
         el.width = targetWidth;
         el.height = targetWidth / ratio;
         if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
+    } else if (embeddableUrl) {
+        newNodeId = ea.addEmbeddable(px, py, EMBEDED_OBJECT_WIDTH_CHILD, 0, embeddableUrl);
+        const el = ea.getElement(newNodeId);
+        if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
     } else {
         newNodeId = ea.addText(px, py, text, {
           box: boxChildren ? "rectangle" : false,
@@ -1064,7 +1082,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       });
     }
     
-    if (parent.type === "image" && typeof parent.customData?.mindmapOrder === "undefined") {
+    if ((parent.type === "image" || parent.type === "embeddable") && typeof parent.customData?.mindmapOrder === "undefined") {
       ea.addAppendUpdateCustomData(parent.id, { mindmapOrder: 0 });
     }
 
@@ -1081,7 +1099,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     ea.addAppendUpdateCustomData(arrowId, { isBranch: true });
   }
 
-  await ea.addElementsToView(!parent, false, true, true);
+  await ea.addElementsToView(!parent, !!imageFile, true, true);
   ea.clear();
 
   if (!skipFinalLayout && rootId && !autoLayoutDisabled) {
@@ -1138,12 +1156,17 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
 // ---------------------------------------------------------------------------
 // 5. Copy & Paste Engine
 // ---------------------------------------------------------------------------
-const getTextFromNode = (all, node, getRaw = false) => {
+const getTextFromNode = (all, node, getRaw = false, shortPath = false) => {
+  if (node.type === "embeddable") {
+    return `![](${node.link})`;
+  }
   if (node.type === "image") {
     const file = ea.getViewFileForImageElement(node);
     if (file) {
       // We use the full path to avoid ambiguity
-      return `![[${file.path}|${Math.round(node.width)}]]`;
+      return shortPath
+        ? `![[${app.metadataCache.fileToLinktext(file,ea.targetView.file.path,true)}]]`
+        : `![[${file.path}|${Math.round(node.width)}]]`;
     }
     return ""; 
   }
@@ -1502,6 +1525,7 @@ let floatingInputModal = null;
 let sidepanelWindow;
 let popScope = null;
 let keydownHandlers = [];
+let recordingScope = null;
 
 const removeKeydownHandlers = () => {
   keydownHandlers.forEach((f)=>f());
@@ -1592,8 +1616,7 @@ const updateUI = () => {
     }
     const isEditing = editingNodeId && editingNodeId === sel.id;
     if (editBtn) {
-      const isImage = sel.type === "image";
-      setButtonDisabled(editBtn, isImage);
+      setButtonDisabled(editBtn, false);
       if (isEditing) {
         editBtn.extraSettingsEl.style.color = "var(--interactive-accent)";
       } else {
@@ -1631,7 +1654,7 @@ const startEditing = () => {
   const sel = ea.getViewSelectedElement();
   if (!sel) return;
   const all = ea.getViewElements();
-  const text = getTextFromNode(all, sel, true);
+  const text = getTextFromNode(all, sel, true, true);
   inputEl.value = text;
   editingNodeId = sel.id;
   updateUI();
@@ -2261,22 +2284,27 @@ const renderBody = (contentEl) => {
     return !current.modifiers.every(m => def.modifiers.includes(m));
   };
 
-  const recordHotkey = (btn, hIndex, onUpdate) => {
+const recordHotkey = (btn, hIndex, onUpdate) => {
     const originalText = btn.innerHTML;
     const label = btn.parentElement.querySelector(".setting-hotkey");
     
     btn.innerHTML = `Press hotkey...`;
     btn.addClass("is-recording");
     
-    // Correctly identify the window where the settings UI resides
-    const targetWindow = btn.ownerDocument.defaultView;
+    // 1. Create and push a new Scope to Obsidian's Keymap.
+    // This creates a new high-priority context.
+    recordingScope = new ea.obsidian.Scope();
+    app.keymap.pushScope(recordingScope);
 
     const handler = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+      // 2. Handle Escape to Abort
+      if (e.key === "Escape") {
+        cleanup();
+        return false;
+      }
       
-      // Ignore modifier-only presses
-      if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return;
+      // Ignore modifier-only presses (but return false to block them from bubbling)
+      if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return false;
 
       const mods = [];
       if (e.ctrlKey) mods.push("Ctrl");
@@ -2296,7 +2324,7 @@ const renderBody = (contentEl) => {
       if (isNav && !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
         new Notice("This action requires Arrow Keys. Only modifiers can be changed.");
         cleanup();
-        return;
+        return false;
       }
 
       // Check conflicts
@@ -2337,15 +2365,24 @@ const renderBody = (contentEl) => {
       }
 
       cleanup();
+      // Return false to preventDefault and stop propagation within Obsidian's keymap
+      return false;
     };
 
     const cleanup = () => {
+      // 3. Remove the scope to restore normal Obsidian hotkeys
+      if (recordingScope) {
+        app.keymap.popScope(recordingScope);
+        recordingScope = null;
+      }
+
       btn.innerHTML = originalText;
       btn.removeClass("is-recording");
-      targetWindow.removeEventListener("keydown", handler, true);
     };
 
-    targetWindow.addEventListener("keydown", handler, true);
+    // 4. Register a catch-all handler (null, null) on the scope
+    // This captures every keypress while the scope is active
+    recordingScope.register(null, null, handler);
   };
 
   userHotkeys.forEach((h, index) => {
@@ -2426,7 +2463,10 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
     // If docking and sidepanel is hidden, show it so we can see the input.
     // If undocking and sidepanel is visible, we might want to close it or keep it.
     // Logic from previous iteration:
-    if (isUndocked && !isSidepanelVisible || isSidepanelVisible && !isUndocked) {
+    if (isUndocked && !isSidepanelVisible) {
+      const leaf = ea.getSidepanelLeaf();
+      if (leaf) app.workspace.revealLeaf(leaf);
+    } else if (isSidepanelVisible && !isUndocked) {
       ea.toggleSidepanelView(); 
     }
     
@@ -2555,7 +2595,12 @@ const keyHandler = async (e) => {
   }
   
   // Check if the input element is actually focused
-  if (currentWindow.document?.activeElement !== inputEl) return;
+  if (currentWindow.document?.activeElement !== inputEl) {
+    if (e.key === "Escape" && isUndocked) {
+      toggleDock({silent: true, forceDock: true, saveSetting: false});
+    }
+    return;
+  }
 
   const action = getActionFromEvent(e);
 

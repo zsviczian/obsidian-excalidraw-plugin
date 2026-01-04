@@ -5,7 +5,7 @@ const room = Array.from(window.crypto.getRandomValues(new Uint8Array(10))).map((
 const key = (await window.crypto.subtle.exportKey("jwk",await window.crypto.subtle.generateKey({name:"AES-GCM",length:128},true,["encrypt", "decrypt"]))).k;
 const link = `https://excalidraw.com/#room=${room},${key}`;
 
-ea.addIFrame(0,0,800,600,link);
+ea.addEmbeddable(0,0,800,600,link);
 ea.addElementsToView(true,true);
 
 window.navigator.clipboard.writeText(link);

@@ -428,8 +428,15 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "addEmbeddable",
     code: "addEmbeddable(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile, embeddableCustomData?: EmbeddableMDCustomProps): string;",
-    desc: "Adds an iframe/webview (depending on content and platform) to the drawing. If url is not null then the iframe/webview will be loaded from the url. The url maybe a markdown link to an note in the Vault or a weblink. " +
-      "If url is null then the iframe/webview will be loaded from the file. Both the url and the file may not be null.<br>" + EMBEDDABLE_MDCUSTOMPROPS,
+    desc: "Adds an embeddable component (technically an iframe or webview depending on content and platform) to the drawing. If url is not null then the embeddable will be loaded from the url. The url maybe a markdown link to an note in the Vault or a weblink. " +
+      "If url is null then the embeddable will be loaded from the file. Both the url and the file may not be null.<br>" + EMBEDDABLE_MDCUSTOMPROPS,
+    after: "",
+  },
+  {
+    field: "addIFrame",
+    code: "addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile, html?: string): string;",
+    desc: "If the url or file attribute is provided then the iframe will insert an embeddable component (technically calling ea.addEmbeddable() in the background with the same parameters). The function is depricated in that case use addEmbeddable instead. \n" +
+      "If the html attribute is provided, then the function will create an 'iframe' element with the provided html content.",
     after: "",
   },
   {

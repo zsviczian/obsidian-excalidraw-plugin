@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-01-03T21:44:07.757Z
+Generated on: 2026-01-04T06:46:28.444Z
 
 ---
 
@@ -3981,7 +3981,7 @@ const room = Array.from(window.crypto.getRandomValues(new Uint8Array(10))).map((
 const key = (await window.crypto.subtle.exportKey("jwk",await window.crypto.subtle.generateKey({name:"AES-GCM",length:128},true,["encrypt", "decrypt"]))).k;
 const link = `https://excalidraw.com/#room=${room},${key}`;
 
-ea.addIFrame(0,0,800,600,link);
+ea.addEmbeddable(0,0,800,600,link);
 ea.addElementsToView(true,true);
 
 window.navigator.clipboard.writeText(link);

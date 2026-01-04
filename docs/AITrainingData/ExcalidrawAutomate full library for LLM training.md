@@ -800,7 +800,7 @@ export declare class ExcalidrawAutomate {
      */
     private boxedElement;
     /**
-     * Deprecated. Use addEmbeddable() instead.
+     * Use addEmbeddable() instead, unless you specifically need to pass HTML content and create a custom iframe.
      * Retained for backward compatibility.
      * @param {number} topX - The x-coordinate of the top-left corner.
      * @param {number} topY - The y-coordinate of the top-left corner.
@@ -808,16 +808,21 @@ export declare class ExcalidrawAutomate {
      * @param {number} height - The height of the iframe.
      * @param {string} [url] - The URL of the iframe.
      * @param {TFile} [file] - The file associated with the iframe.
+     * @param {string} [html] - The HTML content for the iframe.
      * @returns {string} The ID of the added iframe element.
      */
-    addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string;
+    addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile, html?: string): string;
     /**
      * Adds an embeddable element to the ExcalidrawAutomate instance.
+     * In case of urls, if the width and or height is set to 0 ExcalidrawAutomate will attempt to determine the dimensions based on the aspect ratio of the content.
+     * If both width and height are set to 0 the default size for youtube and vimeo embeddables (560x315) will be used. YouTube shorts will have a default size of 315x560.
+     * If only the width or height is set to 0 the other dimension will be calculated based on the aspect ratio of the content.
+     * If the calculated width is less than 560 or the calculated height is less than 315 the element will be scaled down proportionally, setting element.scale accordingly.
      * @param {number} topX - The x-coordinate of the top-left corner.
      * @param {number} topY - The y-coordinate of the top-left corner.
      * @param {number} width - The width of the embeddable element.
      * @param {number} height - The height of the embeddable element.
-     * @param {string} [url] - The URL of the embeddable element.
+     * @param {string} [url] - The URL of the embeddable element. The URL may be a dataURL as well (however such elements are not supported by Excalidraw.com).
      * @param {TFile} [file] - The file associated with the embeddable element.
      * @param {EmbeddableMDCustomProps} [embeddableCustomData] - Custom properties for the embeddable element.
      * @returns {string} The ID of the added embeddable element.
@@ -10494,7 +10499,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-01-03T21:44:07.757Z
+Generated on: 2026-01-04T06:46:28.444Z
 
 ---
 
@@ -14463,7 +14468,7 @@ const room = Array.from(window.crypto.getRandomValues(new Uint8Array(10))).map((
 const key = (await window.crypto.subtle.exportKey("jwk",await window.crypto.subtle.generateKey({name:"AES-GCM",length:128},true,["encrypt", "decrypt"]))).k;
 const link = `https://excalidraw.com/#room=${room},${key}`;
 
-ea.addIFrame(0,0,800,600,link);
+ea.addEmbeddable(0,0,800,600,link);
 ea.addElementsToView(true,true);
 
 window.navigator.clipboard.writeText(link);

@@ -18,6 +18,10 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.19.0":`
+<div class="excalidraw-videoWrapper">
+<a href="https://www.youtube.com/watch?v=qY66yoobaX4" target="_blank"><img src ="https://i.ytimg.com/vi/qY66yoobaX4/maxresdefault.jpg" style="width:100%;"></a>
+</div>
+
 ## New
 - 🚀🎉🍾 Added **inline link autocomplete** to text element editing and element link editing. Simply start typing "[[" as you would in a normal markdown document.
   - ‼️ removed add link button element-link editor on desktop
@@ -36,6 +40,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
   - You can define your own color palette for branches
   - Improved auto-layout algorithm to work better with larger subtrees
   - Includes inline link suggester
+  - Image and Embeddable nodes
 
 ## Fixed
 - Floating modal used by Excalidraw scripts did not work correctly in Obisidian popout windows.
@@ -45,11 +50,12 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 - \`ea.toClipboard()\` will now include the DataURL for included images from \`ea.imagesDict\`
 - Implemented Excalidraw Sidepanel API for ExcalidrawAutomate. Scripts can now create custom Obsidian sidepanel tabs in the Excalidraw Sidepanel.
   - New Command Palette action: "Open Excalidraw Sidepanel" will toggle the sidepanel visibility.
-  - The demo script making full use of the new sidepanel API is [Mindmap Builder](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/sidepanels/ea-scripts/Mindmap%20Builder.md) currently available in the sidepanels branch of Obsidian-Excalidraw repository. **Note: ** the version of Mindmap Builder in the script store is not updated yet to use the new sidepanel API.
-  - [ExcalidrawAutomate full library for LLM training.md](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/sidepanels/docs/AITrainingData/ExcalidrawAutomate%20full%20library%20for%20LLM%20training.md) also on the sidepanels branch includes all necessary training information to use sidepanels.
+  - The demo script making full use of the new sidepanel API is [Mindmap Builder](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Mindmap%20Builder.md).
+  - [ExcalidrawAutomate full library for LLM training.md](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/master/docs/AITrainingData/ExcalidrawAutomate%20full%20library%20for%20LLM%20training.md) includes all necessary training information to use sidepanels.
 - Added palette popover helper \`showColorPicker()\` (also used in Pen Settings and Mindmap Builder) to pick from the current view's canvas/element palettes.
+- Added inline link suggester helper \`attachInlineLinkSuggester()\` returning a KeyBlocker interface so host scripts can suppress their own keydown handlers while the suggester is active.
 
-  New functions in ExcalidrawAutomate. See also [SidepanelTab](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/sidepanels/src/types/sidepanelTabTypes.ts) type definition in the sidepanels branch.
+New functions in ExcalidrawAutomate. See also [SidepanelTab](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/src/types/sidepanelTabTypes.ts) type definition.
 
 \`\`\`ts
 sidepanelTab: ExcalidrawSidepanelTab | null;
@@ -62,8 +68,6 @@ attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement)
 getViewColorPalette(palette: "canvasBackground"|"elementBackground"|"elementStroke"): (string[] | string)[];
 showColorPicker(anchorElement: HTMLElement, palette: "canvasBackground"|"elementBackground"|"elementStroke", includeSceneColors: boolean = true): Promise<string | null>;
 \`\`\`
-
-- Added inline link suggester helper \`attachInlineLinkSuggester()\` returning a KeyBlocker interface so host scripts can suppress their own keydown handlers while the suggester is active.
 
 - **setView() improvements**
   - Calling \`setView()\` now picks a sensible target automatically:

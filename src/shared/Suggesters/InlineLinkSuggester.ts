@@ -18,6 +18,8 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
   private activeOpen = -1;
   private activeClose = -1;
   private caretPos = 0;
+  private activeAlias: string | null = null;
+  private activeSearchTerm = "";
 
   constructor(
     app: App,
@@ -111,6 +113,8 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
       this.suggestEl.detach();
       this.activeOpen = -1;
       this.activeClose = -1;
+      this.activeAlias = null;
+      this.activeSearchTerm = "";
       setTimeout(() => {
         this.block = false;
       });
@@ -126,6 +130,8 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
       this.suggestEl.detach();
       this.activeOpen = -1;
       this.activeClose = -1;
+      this.activeAlias = null;
+      this.activeSearchTerm = "";
       setTimeout(() => {
         this.block = false;
       });
@@ -133,14 +139,31 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
     }
     this.activeOpen = active.open;
     this.activeClose = active.close;
+    const activeInfo = this.extractActiveInfo(inputStr, this.caretPos, active.open, active.close);
+    this.activeAlias = activeInfo.alias;
+    this.activeSearchTerm = activeInfo.searchTerm;
+
+    // Hide suggester when editing alias section after a pipe.
+    if (activeInfo.inAlias) {
+      this.activeSearchTerm = "";
+      this.suggester.setSuggestions([]);
+      if (this.popper?.deref()) {
+        this.popper.deref().destroy();
+      }
+      this.suggestEl.detach();
+      setTimeout(() => {
+        this.block = false;
+      });
+      return;
+    }
+
     this.block = true;
     super.onInputChanged();
   }
 
   getSuggestions(query: string): FuzzyMatch<LinkSuggestion>[] {
     if (this.activeOpen === -1) return [];
-    const termEnd = this.caretPos ?? query.length;
-    const term = query.substring(this.activeOpen + 2, termEnd);
+    const term = this.activeSearchTerm ?? "";
     return getSortedLinkMatches(term, this.items);
   }
 
@@ -172,31 +195,38 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
 
   private buildLink(item: LinkSuggestion): string {
     const sourcePath = this.getSourcePath();
+    const aliasFromContext = this.activeAlias;
+    const aliasSuffix = aliasFromContext !== null
+      ? `|${aliasFromContext}`
+      : item.alias
+        ? `|${item.alias}`
+        : "";
     if (item.file) {
       const linktext = this.app.metadataCache.fileToLinktext(
         item.file,
         sourcePath ?? "",
         true,
       );
-      const alias = item.alias ? `|${item.alias}` : "";
-      return `[[${linktext}${alias}]]`;
+      return `[[${linktext}${aliasSuffix}]]`;
     }
     // unresolved/ghost
-    return `[[${item.path}${item.alias ? `|${item.alias}` : ""}]]`;
+    return `[[${item.path}${aliasSuffix}]]`;
   }
 
   private insertLink(link: string) {
     const cursor = this.inputEl.selectionStart ?? this.inputEl.value.length;
-    const textBefore = this.inputEl.value.substring(0, cursor);
-    const lastIdx = textBefore.lastIndexOf("[[");
-    if (lastIdx === -1) {
+    const start = this.activeOpen >= 0 ? this.activeOpen : this.inputEl.value.lastIndexOf("[[", cursor);
+    if (start === -1) {
       return;
     }
-    const prefix = this.inputEl.value.substring(0, lastIdx);
-    const suffix = this.inputEl.value.substring(cursor);
+    const closeIndex = this.activeClose >= 0 ? this.activeClose : this.inputEl.value.indexOf("]]", start + 2);
+    const end = closeIndex >= 0 ? closeIndex + 2 : cursor;
+
+    const prefix = this.inputEl.value.substring(0, start);
+    const suffix = this.inputEl.value.substring(end);
     this.inputEl.value = prefix + link + suffix;
     this.inputEl.dispatchEvent(new Event("input"));
-    const newPos = lastIdx + link.length;
+    const newPos = start + link.length;
     this.inputEl.setSelectionRange(newPos, newPos);
     this.close();
   }
@@ -234,5 +264,21 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
       searchFrom = close + 2;
     }
     return candidate;
+  }
+
+  private extractActiveInfo(value: string, caret: number, open: number, close: number): {alias: string | null; inAlias: boolean; searchTerm: string} {
+    const closeIndex = close >= 0 ? close : value.length;
+    const linkText = value.substring(open + 2, closeIndex);
+    const caretInLink = Math.max(0, Math.min(caret - (open + 2), linkText.length));
+    const pipeIndex = linkText.indexOf("|");
+    const alias = pipeIndex >= 0 ? linkText.substring(pipeIndex + 1) : null;
+    const inAlias = pipeIndex >= 0 && caretInLink > pipeIndex;
+
+    const linkPart = pipeIndex >= 0 ? linkText.substring(0, pipeIndex) : linkText;
+    const caretInLinkPart = Math.min(caretInLink, linkPart.length);
+    const rawTerm = linkPart.substring(0, caretInLinkPart);
+    const searchTerm = rawTerm.replace(/^.*[\\/]/, "");
+
+    return { alias, inAlias, searchTerm };
   }
 }

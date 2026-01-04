@@ -33,6 +33,7 @@ import {
   mermaidToExcalidraw,
   refreshTextDimensions,
   getDefaultColorPalette,
+  getFontFamilyString,
 } from "src/constants/constants";
 import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath, splitFolderAndFilename } from "src/utils/fileUtils";
 import {
@@ -84,7 +85,7 @@ import { log } from "../utils/debugHelper";
 import { ExcalidrawLib } from "../types/excalidrawLib";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
 import { AddImageOptions, ImageInfo, KeyBlocker, ScriptSettingValue, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
-import { _measureText, cloneElement, createPNG, createSVG, ensureActiveScriptSettingsObject, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getFontFamily, getLastActiveExcalidrawView, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeBindMode, normalizeFixedPoint, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
+import { _measureText, cloneElement, createPNG, createSVG, ensureActiveScriptSettingsObject, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getLastActiveExcalidrawView, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeBindMode, normalizeFixedPoint, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
 import { exportToPDF, getMarginValue, getPageDimensions } from "src/utils/exportUtils";
 import { PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties, ExportSettings} from "src/types/exportUtilTypes";
 import { FrameRenderingOptions } from "src/types/utilTypes";
@@ -96,7 +97,7 @@ import { ExcalidrawSidepanelTab } from "src/view/sidepanel/SidepanelTab";
 import { patchMobileView } from "src/utils/customEmbeddableUtils";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { AIRequest } from "src/types/AIUtilTypes";
-import { get } from "http";
+import { getAspectRatio } from "src/utils/YoutTubeUtils";
 
 extendPlugins([
   HarmonyPlugin,
@@ -773,20 +774,8 @@ export class ExcalidrawAutomate {
    * @returns {string} The font family string.
    */
   setFontFamily(val: number):string {
-    switch (val) {
-      case 1:
-        this.style.fontFamily = 4;
-        return getFontFamily(4);
-      case 2:
-        this.style.fontFamily = 2;
-        return getFontFamily(2);
-      case 3:
-        this.style.fontFamily = 3;
-        return getFontFamily(3);
-      default:
-        this.style.fontFamily = 1;
-        return getFontFamily(1);
-    }
+    this.style.fontFamily = val;
+    return getFontFamilyString({fontFamily:val})
   };
 
   /**
@@ -1556,12 +1545,13 @@ export class ExcalidrawAutomate {
       link,
       locked: false,
       frameId: null as string,
+      hasTextLink: eltype === "text" && link ? true : false,
       ...scale ? {scale} : {},
     };
   }
 
   /**
-   * Deprecated. Use addEmbeddable() instead.
+   * Use addEmbeddable() instead, unless you specifically need to pass HTML content and create a custom iframe.
    * Retained for backward compatibility.
    * @param {number} topX - The x-coordinate of the top-left corner.
    * @param {number} topY - The y-coordinate of the top-left corner.
@@ -1569,19 +1559,41 @@ export class ExcalidrawAutomate {
    * @param {number} height - The height of the iframe.
    * @param {string} [url] - The URL of the iframe.
    * @param {TFile} [file] - The file associated with the iframe.
+   * @param {string} [html] - The HTML content for the iframe.
    * @returns {string} The ID of the added iframe element.
    */
-  addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string {
+  addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile, html?: string): string {
+    if(html) {
+      const id = nanoid();
+      this.elementsDict[id] = this.boxedElement(
+        id,
+        "iframe",
+        topX,
+        topY,
+        width,
+        height,
+        null,
+        [1,1],
+      );
+      this.elementsDict[id].customData = {
+        generationData: { status: "done", html },
+      };
+      return id;
+    }
     return this.addEmbeddable(topX, topY, width, height, url, file);
   }
 
   /**
    * Adds an embeddable element to the ExcalidrawAutomate instance.
+   * In case of urls, if the width and or height is set to 0 ExcalidrawAutomate will attempt to determine the dimensions based on the aspect ratio of the content.
+   * If both width and height are set to 0 the default size for youtube and vimeo embeddables (560x315) will be used. YouTube shorts will have a default size of 315x560.
+   * If only the width or height is set to 0 the other dimension will be calculated based on the aspect ratio of the content.
+   * If the calculated width is less than 560 or the calculated height is less than 315 the element will be scaled down proportionally, setting element.scale accordingly.
    * @param {number} topX - The x-coordinate of the top-left corner.
    * @param {number} topY - The y-coordinate of the top-left corner.
    * @param {number} width - The width of the embeddable element.
    * @param {number} height - The height of the embeddable element.
-   * @param {string} [url] - The URL of the embeddable element.
+   * @param {string} [url] - The URL of the embeddable element. The URL may be a dataURL as well (however such elements are not supported by Excalidraw.com).
    * @param {TFile} [file] - The file associated with the embeddable element.
    * @param {EmbeddableMDCustomProps} [embeddableCustomData] - Custom properties for the embeddable element.
    * @returns {string} The ID of the added embeddable element.
@@ -1605,6 +1617,30 @@ export class ExcalidrawAutomate {
       return null;
     }
 
+    let scale: [number, number] = [1,1];
+
+    if (url) {
+      let { w, h } = getAspectRatio(url);
+      if (h > w) {
+        //swap width and height for portrait oriented content
+        [w, h] = [h, w];
+      }
+      if (width === 0 && height === 0) {
+        width = 560;
+        height = 560 * (h / w);
+      } else if (height === 0) {
+        height = width * (h / w);
+        if (width < 560) {
+          scale = [width / 560, width / 560];
+        }
+      } else if (width === 0) {
+        width = height * (w / h);
+        if (height < 315) {
+          scale = [height / 315, height / 315];
+        }
+      }
+    }
+
     const id = nanoid();
     this.elementsDict[id] = this.boxedElement(
       id,
@@ -1620,7 +1656,7 @@ export class ExcalidrawAutomate {
           false, //file.extension === "md", //changed this to false because embedable link navigation in ExcaliBrain
         )
       }]]` : "",
-      [1,1],
+      scale,
     );
     this.elementsDict[id].customData = {mdProps: embeddableCustomData ?? this.plugin.settings.embeddableMarkdownDefaults};
     return id;
