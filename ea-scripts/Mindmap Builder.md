@@ -758,9 +758,32 @@ const triggerGlobalLayout = async (rootId, force = false) => {
     ea.copyViewElementsToEAforEditing(allElements);
 
     // Clear existing grouping info for mindmap components before rebuilding
+    // Only ungroup elements that are part of the current mindmap structure
     if (groupBranches) {
-      ea.getElements().forEach((el) => {
-        el.groupIds = [];
+      const mindmapIds = new Set([rootId]);
+      const nodesToProcess = [rootId];
+      
+      while (nodesToProcess.length > 0) {
+        const currentId = nodesToProcess.pop();
+        const outgoingArrows = allElements.filter(
+          (el) => el.type === "arrow" && 
+                  el.customData?.isBranch && 
+                  el.startBinding?.elementId === currentId
+        );
+        
+        for (const arrow of outgoingArrows) {
+          mindmapIds.add(arrow.id);
+          const childId = arrow.endBinding?.elementId;
+          if (childId && !mindmapIds.has(childId)) {
+            mindmapIds.add(childId);
+            nodesToProcess.push(childId);
+          }
+        }
+      }
+
+      mindmapIds.forEach((id) => {
+        const el = ea.getElement(id);
+        if (el) el.groupIds = [];
       });
     }
 
