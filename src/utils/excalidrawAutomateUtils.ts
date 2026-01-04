@@ -191,10 +191,6 @@ export function getLineBox(
   };
 }
 
-export function getFontFamily(id: number):string {
-  return getFontFamilyString({fontFamily:id})
-}
-
 export function _measureText(
   newText: string,
   fontSize: number,
@@ -211,7 +207,7 @@ export function _measureText(
   }
   const metrics = measureText(
     newText,
-    `${fontSize.toString()}px ${getFontFamily(fontFamily)}` as any,
+    `${fontSize.toString()}px ${getFontFamilyString({fontFamily})}` as any,
     lineHeight
   );
   return { w: metrics.width, h: metrics.height };
@@ -850,7 +846,7 @@ export const cloneElement = (el: ExcalidrawElement):any => {
 }
 
 export const verifyMinimumPluginVersion = (requiredVersion: string): boolean => {
-  return PLUGIN_VERSION === requiredVersion || isVersionNewerThanOther(PLUGIN_VERSION,requiredVersion);
+  return PLUGIN_VERSION.split("-")[0] === requiredVersion || isVersionNewerThanOther(PLUGIN_VERSION.split("-")[0],requiredVersion);
 }
 
 export const getBoundTextElementId = (container: ExcalidrawElement | null) => {

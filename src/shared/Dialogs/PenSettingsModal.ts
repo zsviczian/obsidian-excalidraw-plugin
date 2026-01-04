@@ -9,6 +9,7 @@ import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { PENS } from "src/utils/pens";
 import { fragWithHTML } from "src/utils/utils";
 import { __values } from "tslib";
+import { showColorPicker } from "./ColorPicker";
 
 const EASINGFUNCTIONS: Record<string,string> = {
   linear: "linear",
@@ -55,7 +56,6 @@ export class PenSettingsModal extends Modal {
   ) {
     super(plugin.app);
     this.api = view.excalidrawAPI;
-
   }
 
   onOpen(): void {
@@ -157,6 +157,7 @@ export class PenSettingsModal extends Modal {
     let scSetting: Setting;
     let sccpComponent: ColorComponent;
     let sctComponent: TextComponent;
+    let strokeUseCurrentToggle: ToggleComponent;
     let strokeSetting: Setting;
     let [sHex, sOpacity] = hexColor(ps.strokeColor);
     let sChangeBounce:boolean = false;
@@ -164,7 +165,8 @@ export class PenSettingsModal extends Modal {
     strokeSetting = new Setting(ce)
       .setName(fragWithHTML(!Boolean(ps.strokeColor) ? "Stroke color: <b>Current</b>" : "Stroke color: <b>Preset color</b>"))
       .setDesc(fragWithHTML("Use <b>current</b> stroke color of the canvas, or set a specific <b>preset color</b> for the pen"))
-      .addToggle(toggle => 
+      .addToggle(toggle => {
+        strokeUseCurrentToggle = toggle;
         toggle
           .setValue(!Boolean(ps.strokeColor))
           .onChange(value=> {
@@ -181,8 +183,8 @@ export class PenSettingsModal extends Modal {
               }
               ps.strokeColor = sctComponent.getValue();
             }
-          })
-        )
+          });
+      })
     
     scSetting = new Setting(ce)
 		  .setName("Select stroke color")
@@ -225,8 +227,22 @@ export class PenSettingsModal extends Modal {
             ps.strokeColor = value + sOpacity;
             sctComponent.setValue(value + sOpacity);
           })
-        } 
+        }
 		  )
+      .addButton(button => {
+        button
+          .setIcon("swatch-book")
+          .onClick(async () => {
+            const selected = await showColorPicker("elementStroke", button.buttonEl, this.view, true);
+            if(!selected) {return;}
+            strokeUseCurrentToggle?.setValue(false);
+            sChangeBounce = true;
+            [sHex, sOpacity] = hexColor(selected);
+            ps.strokeColor = selected;
+            sctComponent.setValue(selected);
+            if(sHex) {sccpComponent.setValue(sHex);}
+          });
+      })
 
     scSetting.settingEl.style.display = !Boolean(ps.strokeColor) ? "none" : "";    
 
@@ -236,13 +252,15 @@ export class PenSettingsModal extends Modal {
     let bgcpComponent: ColorComponent;
     let bgctComponent: TextComponent;
     let bgtComponent: ToggleComponent;
+    let bgUseCurrentToggle: ToggleComponent;
     let fsSetting: Setting;
     let [bgHex, bgOpacity] = hexColor(ps.backgroundColor);
 
     bgSetting = new Setting(ce)
       .setName(fragWithHTML(!Boolean(ps.backgroundColor) ? "Background color: <b>Current</b>" : "Background color: <b>Preset color</b>"))
       .setDesc(fragWithHTML("Toggle to use the <b>current background color</b> of the canvas; or a <b>preset color</b>"))
-      .addToggle(toggle => 
+      .addToggle(toggle => {
+        bgUseCurrentToggle = toggle;
         toggle
           .setValue(!Boolean(ps.backgroundColor))
           .onChange(value=> {
@@ -260,8 +278,8 @@ export class PenSettingsModal extends Modal {
               }
               bgtComponent.setValue(false);
             }
-          })
-        )
+          });
+      })
 
 
     bgctSetting = new Setting(ce)
@@ -325,6 +343,21 @@ export class PenSettingsModal extends Modal {
             bgctComponent.setValue(value+bgOpacity)
 		      }) 
         })
+      .addButton(button => {
+        button
+          .setIcon("swatch-book")
+          .onClick(async () => {
+            const selected = await showColorPicker("elementBackground", button.buttonEl, this.view, true);
+            if(!selected) {return;}
+            bgUseCurrentToggle?.setValue(false);
+            bgtComponent?.setValue(false);
+            bgChangeBounce = true;
+            [bgHex, bgOpacity] = hexColor(selected);
+            ps.backgroundColor = selected;
+            bgctComponent.setValue(selected);
+            if(bgHex) {bgcpComponent.setValue(bgHex);}          
+          });
+      })
     
     bgcSetting.settingEl.style.display = (!Boolean(ps.backgroundColor) || ps.backgroundColor==="transparent") ? "none" : "";
 

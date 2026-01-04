@@ -1,9 +1,35 @@
 const REG_YOUTUBE = /^(?:http(?:s)?:\/\/)?(?:www\.)?youtu(?:be\.com|\.be)\/(embed\/|watch\?v=|shorts\/|playlist\?list=|embed\/videoseries\?list=)?([a-zA-Z0-9_-]+)(?:\?t=|.*&t=|\?start=|.*&start=)?([a-zA-Z0-9_-]+)?[^\s]*$/;
+const REG_VIMEO = /^(?:http(?:s)?:\/\/)?(?:(?:w){3}\.)?(?:player\.)?vimeo\.com\/(?:video\/)?([^?\s]+)(?:\?.*)?$/;
+
+export const isVimeo = (url: string): boolean => {
+  return Boolean(
+    url.match(REG_VIMEO)
+  );
+}
+
 export const isYouTube = (url: string): boolean => {
   return Boolean(
     url.match(REG_YOUTUBE)
   );
 }
+
+
+export const getAspectRatio = (url: string): { w: number; h: number } => {
+  const normalizedUrl = url.toLowerCase();
+
+  if (isYouTube(url)) {
+    const isShorts = normalizedUrl.includes("shorts/");
+    return isShorts ? { w: 9, h: 16 } : { w: 16, h: 9 };
+  }
+
+  if (isVimeo(url)) {
+    return { w: 16, h: 9 };
+  }
+
+  return { w: 1, h: 1 };
+}
+
+
 
 export const getYouTubeStartAt = (url: string): string => {
   const ytLink = url.match(REG_YOUTUBE);

@@ -6,6 +6,7 @@ import {
 } from "obsidian";
 import { createPopper, Instance as PopperInstance } from "@popperjs/core";
 import { Suggester } from "./Suggester";
+import { t } from "src/lang/helpers";
 
 export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
   items: T[] = [];
@@ -16,7 +17,7 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
   suggester: Suggester<FuzzyMatch<T>>;
   suggestEl: HTMLDivElement;
   promptEl: HTMLDivElement;
-  emptyStateText: string = "No match found";
+  emptyStateText: string = t("SUGGESTION_NOMATCH");
   limit: number = 100;
   shouldNotOpen: boolean;
   
@@ -25,11 +26,13 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
   private handleFocus: () => void;
   private handleBlur: () => void;
   private handleMouseDown: (event: MouseEvent) => void;
+  public readonly collisionBoundary?: HTMLElement;
   
-  constructor(app: App, inputEl: HTMLInputElement, items: T[]) {
+  constructor(app: App, inputEl: HTMLInputElement | HTMLTextAreaElement, items: T[], collisionBoundary?: HTMLElement) {
     super(app);
-    this.inputEl = inputEl;
+    this.inputEl = inputEl as HTMLInputElement;
     this.items = items;
+    this.collisionBoundary = collisionBoundary;
     
     // Pre-bind event handlers
     this.handleInput = this.onInputChanged.bind(this);
@@ -96,12 +99,22 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
 
       host.appendChild(this.suggestEl);
 
+      const boundary = this.collisionBoundary ?? host;
+
       this.popper = new WeakRef(createPopper(this.inputEl, this.suggestEl, {
         placement: "bottom-start",
         strategy: host.matches(".modal-container") ? "absolute" : "fixed",
         modifiers: [
           { name: "offset", options: { offset: [0, 10] } },
           { name: "flip", options: { fallbackPlacements: ["top"] } },
+          { name: 
+            "preventOverflow",
+            options: {
+              boundary,
+              altBoundary: true,
+              padding: { left: 8, right: 8 },
+            }
+          },
         ],
       }));
     //},50);

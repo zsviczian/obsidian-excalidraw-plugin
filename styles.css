@@ -261,6 +261,40 @@ li[data-testid] {
   box-shadow: none;
 }
 
+.excalidraw-colorpicker-overlay {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 9998;
+}
+
+.excalidraw-colorpicker-popup {
+  position: absolute;
+  padding: 12px;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  background-color: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  z-index: 9999;
+  scrollbar-gutter: stable both-edges;
+}
+
+.excalidraw-colorpicker-grid {
+  display: grid;
+  overflow-y: auto;
+  padding-right: 4px;
+  max-height: 260px;
+}
+
+.excalidraw-colorpicker-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--interactive-accent-hover);
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
 textarea.excalidraw-wysiwyg {
   border: none;
   outline: none;
@@ -397,6 +431,137 @@ div.excalidraw-draginfo {
   position: absolute !important;
 }
 
+.excalidraw-sidepanel-container {
+  height: 100%;
+}
+
+.excalidraw-sidepanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100%;
+}
+
+.excalidraw-sidepanel__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--divider-color, var(--background-modifier-border));
+  background-color: var(--background-secondary);
+}
+
+.excalidraw-sidepanel__select {
+  flex: 1;
+}
+
+.excalidraw-sidepanel__close-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  border: 1px solid var(--divider-color, var(--background-modifier-border));
+  border-radius: 0.55rem;
+  background: var(--background-primary);
+  color: var(--text-normal);
+  padding: 0;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.excalidraw-sidepanel__close-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.excalidraw-sidepanel__close-button:hover:not(:disabled) {
+  background: var(--background-modifier-hover);
+}
+
+.excalidraw-sidepanel__empty {
+  padding: 0.75rem;
+  color: var(--text-muted);
+}
+
+.excalidraw-sidepanel__body {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  background-color: var(--background-primary);
+}
+
+.excalidraw-sidepanel-tab {
+  display: none;
+  flex-direction: column;
+  height: 100%;
+}
+
+.excalidraw-sidepanel-tab.is-active {
+  display: flex;
+}
+
+.excalidraw-sidepanel-tab__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.excalidraw-sidepanel-tab__content {
+  flex: 1;
+  overflow: auto;
+  padding: 0.5rem;
+}
+
+.excalidraw-sidepanel-tab__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.excalidraw-sidepanel-tab__button.is-active {
+  background: var(--background-primary-alt, var(--background-secondary));
+  color: var(--text-normal);
+}
+
+.excalidraw-sidepanel-tab__button:hover {
+  background: var(--background-primary-alt, var(--background-secondary));
+}
+
+.excalidraw-sidepanel-tab__icon {
+  display: inline-flex;
+}
+
+.excalidraw-sidepanel-tab__icon.is-hidden {
+  display: none;
+}
+
+.excalidraw-sidepanel-tab__close {
+  border: none;
+  background: transparent;
+  color: inherit;
+  display: inline-flex;
+  padding: 0.1rem;
+  border-radius: 4px;
+}
+
+.excalidraw-sidepanel-tab__close:hover {
+  background: var(--background-modifier-hover);
+}
+
+.excalidraw-sidepanel-tab__close.is-hidden {
+  display: none;
+}
 /*Arrow Picker Popover Overflow*/
 /*
 .excalidraw .selected-shape-actions .Island.App-menu__left,

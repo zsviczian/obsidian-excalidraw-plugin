@@ -30,6 +30,35 @@ For a reference, follow the implementation pattern used in the "Printable Layout
 - Elements can be deleted from the scene by setting their isDeleted property to true.
 - The Obsidian.md module is available on ea.obsidian.
 
+**Sidepanels and multi-view tooling:**
+- Sidepanels are for scripts that must stay open while users hop between multiple Excalidraw views. They should implement the SidepanelTab hooks (\`onOpen\`, \`onFocus(view)\`, \`onClose\`, \`onExcalidrawViewClosed\`) and manage their own \`ea.targetView\` explicitly.
+- Persisted sidepanel scripts are launched during plugin startup (e.g., Obsidian restart, plugin update) with \`ea.targetView === null\`. Scripts must handle this by deferring view-bound work until \`onFocus\` delivers a view; call \`ea.setView(view)\` when you decide to bind.
+- Each \`ea\` instance may host a single \`sidepanelTab\`. This sidepanel tab is stored in \`ea.sidepanelTab\`. Create the tab with \`ea.createSidepanelTab(title, persist=false, reveal=true)\`; the returned \`ea.sidepanelTab\` exposes \`contentEl\`, \`setContent\`, \`setTitle\`, \`setDisabled\`, \`setCloseCallback\`, \`open/close\`, and focus lifecycle hooks. Note auto-reveal during tab creation via \`ea.createSidepanelTab()\` is disabled during plugin startup. You can reveal a tab with \`ea.sidepanelTab?.open()\`. You can persist with \`ea.persistSidepanelTab()\` (tabs are restored and scripts re-run on next startup). Close with \`ea.sidepanelTab?.close()\`.
+- Mobile UX: sidepanels slide in without disturbing canvas layout and are better for longer forms than floating modals. Prefer them for complex inputs, especially on phones.
+- Auto-closing patterns: For scripts that use sidepanels but perform operations that are single-\`ExcalidrawView\` relevant, they can call \`ea.closeSidepanelTab()\` after completing the operation, and/or inside \`ea.sidepanelTab.onFocus = (view) => { if (view !== ea.targetView) { ea.sidepanelTab?.close(); } }\` to shut down when the user leaves the originating view.
+- Scripts can detect view change in \`onFocus(view)\` by comparing \`ea.targetView\` to the provided \`view\` parameter.
+- Persistence UX: scripts may offer a “Persist tab” control inside \`contentEl\` that calls \`ea.persistSidepanelTab()\`. Once persisted, hide that control; users can later remove the tab via the sidepanel close button (scripts cannot unpersist themselves, but can close themselves via \`ea.sidepanelTab?.close()\`).
+- Use \`checkForActiveSidepanelTabForScript\` to avoid creating duplicate tabs for the same script name. This method returns the \`ExcalidrawSidepanelTab\` associated with the supplied \`scriptName\` (or \`ea.activeScript\` when omitted), or \`null\` if none exists. It is intended to let a script detect an existing tab that may be owned by another \`ExcalidrawAutomate\` instance (for example, a persisted tab restored at startup). Typical pattern:
+  - Before creating a new sidepanel, call \`ea.checkForActiveSidepanelTabForScript()\` to see if a tab already exists.
+  - If a tab exists and \`tab.getHostEA() === ea\`, reuse it (your script already hosts it).
+  - If a tab exists but is hosted by a different \`ea\` instance, decide whether to reuse or hand off control — e.g. open the existing tab and exit to avoid duplicates.
+  - Note: persisted tabs restored on startup may be created with \`ea.targetView === null\` and hosted by a different \`ea\` instance; handle that case by waiting for \`onFocus\` before binding view-specific work.
+  - Example usage:
+    \`const sp = ea.checkForActiveSidepanelTabForScript();
+    if (sp) {
+      if (sp.getHostEA() === ea) {
+        // we already own the tab — reuse it
+        sp.open();
+      } else {
+        // another EA instance hosts the tab — open it for the user and exit
+        sp.open();
+        return;
+      }
+    }
+    // no existing tab — safe to create a new one
+    // ea.createSidepanelTab("My Script", false, true);\`
+- A dedicated section "sidepanelTabTypes.d.ts" in this document lists the \`ExcalidrawSidepanelTab\` function signatures.
+
 #### **1. The Core Workflow: Handling Element Immutability**
 
 *   **Central Rule:** Elements in the Excalidraw scene are immutable and should never be modified directly. Always use the ExcalidrawAutomate (EA) "workbench" pattern for modifications.
@@ -79,14 +108,21 @@ For a reference, follow the implementation pattern used in the "Printable Layout
 #### **6. Best Practices and Advanced Techniques**
 
 *   **Embrace \`await\`:** Many EA functions are asynchronous and return a \`Promise\` (e.g., \`ea.addElementsToView()\`, \`ea.createSVG()\`, \`utils.inputPrompt()\`). **Always** use \`await\` when calling these functions to ensure your script executes in the correct order.
-*   **Version Checking:** At the beginning of your script, include a check like \`if(!ea.verifyMinimumPluginVersion("1.X.X")) { new Notice(...); return; }\` to ensure the user has a compatible version of the Excalidraw plugin, preventing errors from missing API functions.
 *   **Accessing Obsidian API:** The full Obsidian API is available via \`ea.obsidian\`. For example, use \`new ea.obsidian.Notice("message")\` or \`ea.obsidian.normalizePath(filepath)\`.
+*   **Accessing Excalidraw API:** The full Excalidraw API is available on ea.getExcalidrawAPI(), these API functions are Scene dependent. Additional support functions are avalable on ExcalidrawLib.
 *   **Visibility vs. Deletion:**
     *   To temporarily hide an element, set \`element.opacity = 0\`. It's good practice to store the original opacity in \`customData\` so it can be restored. It is also recommended to lock hidden elements so they do not get accidentally selected or moved around.
     *   To permanently remove an element from the scene, set \`element.isDeleted = true\`.
 *   **Image Handling:** When dealing with image elements, use \`ea.getViewFileForImageElement(imageElement)\` to get the corresponding \`TFile\` from the Obsidian vault. This is necessary for any logic that needs to read or manipulate the source image file.
 
-#### **7. Custom Pens and Perfect Freehand**
+#### **9. Text Element**
+*   There are three text properties.
+    *   **textElement.text** holds the wrapped, rendered text. This is what is displayed in the view. Excalidraw adds '\\n' linebreaks during dynamic wrapping.
+    *   **textElement.originalText** holds the rendered, but unwrapped text. Any '\\n' character in originalText is an intentional linebreak by the user. Rendered means that for example [[wiki links]] are rendered without the square brackets.
+    *   **textElement.rawText** holds the original raw text including intentional new line characters and the full markdown markup (thought currently only links are rendered, so markdown support is limited to these)
+*   When modifying element text from script, typically all 3 of these properties must be updated, though in case textElement.autoresize === true, or when a text element is bound in a container, excalidraw will update textElement.text following the size of the text element or the container.
+
+#### **8. Custom Pens and Perfect Freehand**
 
 Excalidraw's freehand tool is powered by the open-source Perfect Freehand library. The plugin exposes “custom pens” that bundle:
 - Canvas style for the next strokes (colors, width, fillStyle, roughness).
@@ -217,6 +253,7 @@ const ADDITIONAL_TYPE_DEFS_FOR_AI_TRAINING = [
 const TYPE_DEF_WHITELIST = [
   "lib/shared/ExcalidrawAutomate.d.ts",
   "lib/types/excalidrawAutomateTypes.d.ts",
+  "lib/types/sidepanelTabTypes.d.ts",
   "lib/types/penTypes.d.ts",
   "lib/types/utilTypes.d.ts",
   "lib/types/exportUtilTypes.d.ts",

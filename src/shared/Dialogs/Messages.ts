@@ -18,7 +18,57 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.19.0":`
-## New in ExcalidrawAutomate
+<div class="excalidraw-videoWrapper">
+<a href="https://www.youtube.com/watch?v=qY66yoobaX4" target="_blank"><img src ="https://i.ytimg.com/vi/qY66yoobaX4/maxresdefault.jpg" style="width:100%;"></a>
+</div>
+
+## New
+- 🚀🎉🍾 Added **inline link autocomplete** to text element editing and element link editing. Simply start typing "[[" as you would in a normal markdown document.
+  - ‼️ removed add link button element-link editor on desktop
+  - ‼️ removed add link from context menu on desktop
+  - ‼️ added new setting under "Links, transclusion and TODOs" **Sync text-element link with text**
+    - The default behavior is OFF, because it feels more natural to manage the element link separately.
+    - When enabled (ON), Excalidraw matches pre-2.19.0 behavior: the first link in the text body is always copied to the element link field. SVG/PNG exports only keep links when the element link field holds a single link (not links inside the text body). Turn this ON if you rely on text-body links and want the element link to always mirror the first one. Turn it OFF if you manage the element link separately: for metadata like tags, inline link ontologies, or multiple links, e.g., dataview-style notes like '(reminds me of:: [[link]]) #noteToSelf'.
+- LaTeX formula is saved to \`element.customData.latex\`. This can be helpful for various automation use cases.
+- Implemented Color Picker in Custom Pen Settings to pick from the current view's color palette.
+- Updated the **Scribble Helper** script with the new Color Picker to select the text color.
+- Updated the **Shade Maser** script with the new Color Picker to select the shading color.
+- **Mindmap Builder**
+  - Uses new sidepanel, persistent across different drawings and autostarts with Obsidian.
+  - You can now configure hotkeys
+  - Allows editing node text in place
+  - You can define your own color palette for branches
+  - Improved auto-layout algorithm to work better with larger subtrees
+  - Includes inline link suggester
+  - Image and Embeddable nodes
+
+## Fixed
+- Floating modal used by Excalidraw scripts did not work correctly in Obisidian popout windows.
+- In onPaste if \`imageElement.customData.latex\` is present, it will treat the pasted images as a LaTeX formula, even if copied from Excalidraw.com or another Obsidian Vault.
+
+## New & fixed in ExcalidrawAutomate
+- \`ea.toClipboard()\` will now include the DataURL for included images from \`ea.imagesDict\`
+- Implemented Excalidraw Sidepanel API for ExcalidrawAutomate. Scripts can now create custom Obsidian sidepanel tabs in the Excalidraw Sidepanel.
+  - New Command Palette action: "Open Excalidraw Sidepanel" will toggle the sidepanel visibility.
+  - The demo script making full use of the new sidepanel API is [Mindmap Builder](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Mindmap%20Builder.md).
+  - [ExcalidrawAutomate full library for LLM training.md](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/refs/heads/master/docs/AITrainingData/ExcalidrawAutomate%20full%20library%20for%20LLM%20training.md) includes all necessary training information to use sidepanels.
+- Added palette popover helper \`showColorPicker()\` (also used in Pen Settings and Mindmap Builder) to pick from the current view's canvas/element palettes.
+- Added inline link suggester helper \`attachInlineLinkSuggester()\` returning a KeyBlocker interface so host scripts can suppress their own keydown handlers while the suggester is active.
+
+New functions in ExcalidrawAutomate. See also [SidepanelTab](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/src/types/sidepanelTabTypes.ts) type definition.
+
+\`\`\`ts
+sidepanelTab: ExcalidrawSidepanelTab | null;
+checkForActiveSidepanelTabForScript(scriptName?: string): ExcalidrawSidepanelTab | null;
+createSidepanelTab(title: string, persist?: boolean, reveal?: boolean): Promise<ExcalidrawSidepanelTab | null>;
+getSidepanelLeaf(): WorkspaceLeaf | null;
+toggleSidepanelView(): void;
+persistSidepanelTab(): ExcalidrawSidepanelTab | null;
+attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement): KeyBlocker;
+getViewColorPalette(palette: "canvasBackground"|"elementBackground"|"elementStroke"): (string[] | string)[];
+showColorPicker(anchorElement: HTMLElement, palette: "canvasBackground"|"elementBackground"|"elementStroke", includeSceneColors: boolean = true): Promise<string | null>;
+\`\`\`
+
 - **setView() improvements**
   - Calling \`setView()\` now picks a sensible target automatically:
     - It prefers the **currently active Excalidraw view**.

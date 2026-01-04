@@ -401,6 +401,14 @@ export class CommandManager {
     });
 
     this.addCommand({
+      id: "excalidraw-open-sidepanel",
+      name: t("OPEN_SIDEPANEL"),
+      callback: () => {
+        void this.plugin.openSidepanel();
+      },
+    });
+
+    this.addCommand({
       id: "excalidraw-open",
       name: t("OPEN_EXISTING_NEW_PANE"),
       callback: () => {

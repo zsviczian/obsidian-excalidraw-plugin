@@ -1,5 +1,5 @@
 
-import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS, AUDIO_TYPES, CARD_WIDTH, CARD_HEIGHT } from "src/constants/constants";
+import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS, AUDIO_TYPES, CARD_WIDTH, CARD_HEIGHT, getDefaultColorPalette } from "src/constants/constants";
 import { App, Modal, Notice, TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS, getExcalidrawMarkdownHeader } from "../shared/ExcalidrawData";
@@ -528,4 +528,99 @@ export function onLoadMessages(plugin: ExcalidrawPlugin, scene: {elements: Excal
       new Notice(t("DRAWING_HAS_BACK_OF_THE_CARD")); 
     }*/
   });
+}
+
+export function getViewColorPalette(
+  palette: "canvasBackground"|"elementBackground"|"elementStroke",
+  view?: ExcalidrawView,
+  includeSceneColors: boolean = false,
+): (string[] | string)[] {
+  if (!view) {
+    return getDefaultColorPalette() as (string[] | string)[];
+  }
+
+  const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
+  const {colorPalette} = api.getAppState();
+  if (!colorPalette || !colorPalette.hasOwnProperty(palette)) {
+    return getDefaultColorPalette() as (string[] | string)[];
+  }
+
+  const basePalette = colorPalette[palette];
+
+  if (!Array.isArray(basePalette)) {
+    return [basePalette];
+  }
+
+  const cmFactory = view.hookServer?.getCM?.bind(view.hookServer) ?? view.plugin.ea.getCM.bind(view.plugin.ea);
+  const getLightness = (color: string): number => {
+    const cm = cmFactory?.(color);
+    const value = (cm as any)?.lightness;
+    return typeof value === "number" ? value : Number.POSITIVE_INFINITY;
+  };
+  const normalize = (color: string): string => {
+    if (!color) {return color;}
+    if (color.toLowerCase() === "transparent") {return "transparent";}
+    const cm = cmFactory?.(color);
+    if (cm && typeof (cm as any).stringHEX === "function") {
+      try {
+        const alpha = (cm as any).alpha;
+        const includeAlpha = typeof alpha === "number" ? alpha !== 1 : true;
+        return (cm as any).stringHEX({alpha: includeAlpha}).toLowerCase();
+      } catch {
+        // fall through to string coercion
+      }
+    }
+    if (cm && typeof (cm as any).toString === "function") {
+      return (cm as any).toString().toLowerCase();
+    }
+    return color.toLowerCase();
+  };
+
+  const groups = basePalette
+    .filter((entry) => Array.isArray(entry))
+    .map((entry) => (entry as string[]).slice().sort((a, b) => getLightness(b) - getLightness(a)));
+  const singles = basePalette.filter((entry) => typeof entry === "string") as string[];
+  const groupColors = groups
+    .flatMap((entry) => entry as string[])
+    .filter(Boolean)
+    .map((c) => normalize(c));
+  const groupColorSet = new Set(groupColors);
+
+  const seenSingles = new Set<string>();
+  const filteredSingles = singles.filter((entry) => {
+    const norm = normalize(entry);
+    if (!norm) {return false;}
+    if (groupColorSet.has(norm)) {return false;}
+    if (seenSingles.has(norm)) {return false;}
+    seenSingles.add(norm);
+    return true;
+  });
+
+  if (!includeSceneColors || !["elementBackground", "elementStroke"].includes(palette)) {
+    return [...groups, ...filteredSingles];
+  }
+
+  const flattenPalette = (pal: any[]): string[] => pal
+    .flatMap((entry: any) => Array.isArray(entry) ? entry : [entry])
+    .filter((color: any): color is string => typeof color === "string" && Boolean(color));
+
+  const paletteColors = flattenPalette(basePalette).map((c) => normalize(c));
+  const extraColors = new Set<string>(filteredSingles.filter((c) => c.toLowerCase() !== "transparent"));
+
+  view.getViewElements().forEach((el) => {
+    const color = (palette === "elementStroke" ? el.strokeColor : (el as any).backgroundColor) as string;
+    if (!color || normalize(color) === "transparent") {return;}
+    if (paletteColors.includes(normalize(color))) {return;}
+    extraColors.add(color);
+  });
+
+  if (!extraColors.size) {
+    return [...groups];
+  }
+
+  const sortedExtras = cmFactory
+    ? Array.from(extraColors).sort((a, b) => getLightness(b) - getLightness(a))
+    : Array.from(extraColors);
+
+  return [...groups, ...sortedExtras];
 }

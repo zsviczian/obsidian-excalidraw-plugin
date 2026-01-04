@@ -428,8 +428,15 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "addEmbeddable",
     code: "addEmbeddable(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile, embeddableCustomData?: EmbeddableMDCustomProps): string;",
-    desc: "Adds an iframe/webview (depending on content and platform) to the drawing. If url is not null then the iframe/webview will be loaded from the url. The url maybe a markdown link to an note in the Vault or a weblink. " +
-      "If url is null then the iframe/webview will be loaded from the file. Both the url and the file may not be null.<br>" + EMBEDDABLE_MDCUSTOMPROPS,
+    desc: "Adds an embeddable component (technically an iframe or webview depending on content and platform) to the drawing. If url is not null then the embeddable will be loaded from the url. The url maybe a markdown link to an note in the Vault or a weblink. " +
+      "If url is null then the embeddable will be loaded from the file. Both the url and the file may not be null.<br>" + EMBEDDABLE_MDCUSTOMPROPS,
+    after: "",
+  },
+  {
+    field: "addIFrame",
+    code: "addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile, html?: string): string;",
+    desc: "If the url or file attribute is provided then the iframe will insert an embeddable component (technically calling ea.addEmbeddable() in the background with the same parameters). The function is depricated in that case use addEmbeddable instead. \n" +
+      "If the html attribute is provided, then the function will create an 'iframe' element with the provided html content.",
     after: "",
   },
   {
@@ -839,6 +846,25 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "getViewColorPalette",
+    code: "getViewColorPalette(palette: \"canvasBackground\"|\"elementBackground\"|\"elementStroke\"): (string[] | string)[];",
+    desc: "Returns the current view's palette for canvas background, element background, or element stroke colors. Falls back to the default palette when no view is loaded or the palette is unavailable.",
+    after: "(\"elementStroke\");",
+  },
+  {
+    field: "showColorPicker",
+    code: "async showColorPicker(anchorElement: HTMLElement, palette: \"canvasBackground\"|\"elementBackground\"|\"elementStroke\", includeSceneColors: boolean = true): Promise<string | null>;",
+    desc: "Opens a palette popover anchored to the provided element and resolves with the selected color; returns null when dismissed.\n\n" +
+      "Example Usage:\n" +
+      'const selected = await ea.showColorPicker(button.buttonEl, "elementStroke");\n' +
+      "if(selected) {" +
+      'console.log("User selected color: " + selected);' +
+      "} else {" +
+      'console.log("User cancelled color selection");' +
+      "}",
+    after: "(buttonEl, \"elementStroke\");",
+  },
+  {
     field: "obsidian",
     code: "obsidian",
     desc: `Access functions and objects available on the ${hyperlink("https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts","Obsidian Module")}`,
@@ -899,6 +925,47 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     field: "getViewCenterPosition",
     code: "getViewCenterPosition(): {x: number, y: number};",
     desc: "@returns the center position of the current view in Excalidraw coordinates",
+    after: "",
+  },
+  {
+    field: "checkForActiveSidepanelTabForScript",
+    code: "checkForActiveSidepanelTabForScript(scriptName?: string): ExcalidrawSidepanelTab | null;",
+    desc: "Returns the active sidepanel tab for the given script, or null if none exists. " +
+      "If scriptName is omitted the function checks ea.activeScript. " +
+      "At most one sidepanel tab may be open per script. " +
+      "The returned ExcalidrawSidepanelTab may be hosted by a different ExcalidrawAutomate instance — compare sidepanelTab.getHostEA() === ea to determine ownership. " +
+      "Useful to detect or reuse an existing tab instead of creating a new one.",
+    after: '("MyScript");'
+  },
+  {
+    field: "createSidepanelTab",
+    code: "async createSidepanelTab(title: string, persist: boolean = false, reveal: boolean = true,): Promise<ExcalidrawSidepanelTab | null>;",
+    desc: "Creates this EA instance's sidepanel tab; use the returned ExcalidrawSidepanelTab (setContent/setTitle, onOpen/onClose/onFocus, contentEl) to build the UI and lifecycle hooks.\n"+
+      "In case the script wants to replace the sidepanel tab it created earlier, call closeSidepanelTab() first, then createSidepanelTab() again.",
+    after: "",
+  },
+  {
+    field: "getSidepanelLeaf",
+    code: "getSidepanelLeaf(): WorkspaceLeaf | null;",
+    desc: "Returns the WorkspaceLeaf hosting the Excalidraw sidepanel view, or null if the sidepanel is not present.",
+    after: "();"
+  },
+  {
+    field: "toggleSidepanelView",
+    code: "toggleSidepanelView(): void;",
+    desc: "Toggles the Excalidraw sidepanel visibility when the sidepanel is hosted in the left or right workspace split. If the sidepanel is not attached to a left/right sidebar, no action is taken.",
+    after: "();"
+  },
+  {
+    field: "persistSidepanelTab",
+    code: "persistSidepanelTab(): ExcalidrawSidepanelTab | null;",
+    desc: "Pins the active script's sidepanel tab so it persists across Obsidian restarts and returns it.",
+    after: "",
+  },
+  {
+    field: "attachInlineLinkSuggester",
+    code: "attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement): KeyBlocker;",
+    desc: "Attaches an inline [[link]] suggester to an input. Optionally align width to a wrapper element. Returns a KeyBlocker so host scripts can skip their own keydown handlers while the suggester is active via isBlockingKeys(); call close() on the returned suggester to detach.",
     after: "",
   },
   {

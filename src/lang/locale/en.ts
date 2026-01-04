@@ -37,6 +37,7 @@ export default {
   CONVERT_FILE_KEEP_EXT: "*.excalidraw => *.excalidraw.md",
   CONVERT_FILE_REPLACE_EXT: "*.excalidraw => *.md (Logseq compatibility)",
   DOWNLOAD_LIBRARY: "Export stencil library as an *.excalidrawlib file",
+  OPEN_SIDEPANEL: "Open Excalidraw Sidepanel",
   OPEN_EXISTING_NEW_PANE: "Open existing drawing - IN A NEW PANE",
   OPEN_EXISTING_ACTIVE_PANE:
     "Open existing drawing - IN THE CURRENT ACTIVE PANE",
@@ -154,6 +155,7 @@ export default {
   OPEN_AS_MD: "Open as Markdown",
   EXPORT_IMAGE: `Export Image`,
   OPEN_LINK: "Open selected text as link\n(SHIFT+CLICK to open in a new pane)",
+  EXCALIDRAW_SIDEPANEL: "Excalidraw Sidepanel",
   EXPORT_EXCALIDRAW: "Export to an .Excalidraw file",
   LINK_BUTTON_CLICK_NO_TEXT:
     "Select an element that contains an internal or external link.\n",
@@ -541,7 +543,8 @@ export default {
   LONG_PRESS_MOBILE_NAME: "Long press to open mobile",
   LONG_PRESS_MOBILE_DESC: "Long press delay in milliseconds to open an Excalidraw Drawing embedded in a Markdown file. ",
   DOUBLE_CLICK_LINK_OPEN_VIEW_MODE: "Allow double-click to open links in view mode",
-
+  ELEMENT_LINK_SYNC_NAME: "Sync text-element link with text",
+  ELEMENT_LINK_SYNC_DESC: "When enabled, Excalidraw matches pre-2.19.0 behavior: the first link in the text body is always copied to the element link field. SVG/PNG exports only keep links when the element link field holds a single link (not links inside the text body). Turn this ON if you rely on text-body links and want the element link to always mirror the first one. Turn it OFF if you manage the element link separately: for metadata like tags, inline link ontologies, or multiple links, e.g., dataview-style notes like '(reminds me of:: [[link]]) #noteToSelf'.",
   FOCUS_ON_EXISTING_TAB_NAME: "Focus on Existing Tab",
   FOCUS_ON_EXISTING_TAB_DESC: "When opening a link, Excalidraw will focus on the existing tab if the file is already open. " +
     "Enabling this setting overrides 'Reuse Adjacent Pane' when the file is already open except for the 'Open the back-of-the-note of the selected excalidraw image' command palette action.",
@@ -1253,4 +1256,10 @@ export default {
   VERSION_MISMATCH_DISABLE_DESC: "You can re-enable this under: Settings → Excalidraw → Basic → Warn about incomplete plugin updates.",
   VERSION_MISMATCH_REDOWNLOAD: "Re-download plugin",
   VERSION_MISMATCH_IGNORE: "Ignore",
+
+  //InlineLinkSuggester.ts
+  INLINE_HINT: "Type [[ to search and insert a link",
+
+  //SuggestionModal.ts
+  SUGGESTION_NOMATCH: "No matches found",
 };

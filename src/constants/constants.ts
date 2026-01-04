@@ -106,6 +106,7 @@ export let {
   loadSceneFonts,
   loadMermaid,
   syncInvalidIndices,
+  getDefaultColorPalette,
 } = excalidrawLib;
 
 export function updateExcalidrawLib() {
@@ -156,6 +157,7 @@ export function updateExcalidrawLib() {
       loadSceneFonts,
       loadMermaid,
       syncInvalidIndices,
+      getDefaultColorPalette,
     } = excalidrawLib);
   } catch (error) {
     errorHandler.handleError(error, "updateExcalidrawLib", true);
@@ -299,6 +301,7 @@ export const CaptureUpdateAction = {
 
 export const EMBEDDABLE_THEME_FRONTMATTER_VALUES = ["light", "dark", "auto", "dafault"];
 export const VIEW_TYPE_EXCALIDRAW = "excalidraw";
+export const VIEW_TYPE_SIDEPANEL = "excalidraw-sidepanel";
 export const VIEW_TYPE_EXCALIDRAW_LOADING = "excalidraw-loading";
 export const ICON_NAME = "excalidraw-icon";
 export const MAX_COLORS = 5;

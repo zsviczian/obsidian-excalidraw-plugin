@@ -118,7 +118,7 @@ export interface ExcalidrawSettings {
   focusOnFileTab: boolean;
   openInMainWorkspace: boolean;
   showLinkBrackets: boolean;
-  //allowLinkSync: boolean;
+  syncElementLinkWithText: boolean;
   linkPrefix: string;
   urlPrefix: string;
   parseTODO: boolean;
@@ -186,6 +186,7 @@ export interface ExcalidrawSettings {
   taskboneEnabled: boolean;
   taskboneAPIkey: string;
   pinnedScripts: string[];
+  sidepanelTabs: string[];
   customPens: PenStyle[];
   numberOfCustomPens: number;
   pdfScale: number;
@@ -314,8 +315,8 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   showSecondOrderLinks: true,
   focusOnFileTab: true,
   openInMainWorkspace: true,
-  showLinkBrackets: true,
-  //allowLinkSync: true,
+  showLinkBrackets: false,
+  syncElementLinkWithText: false,
   allowCtrlClick: true,
   forceWrap: false,
   pageTransclusionCharLimit: 200,
@@ -377,6 +378,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   taskboneEnabled: false,
   taskboneAPIkey: "",
   pinnedScripts: [],
+  sidepanelTabs: [],
   customPens: [
     {...PENS["default"]},
     {...PENS["highlighter"]},
@@ -1816,6 +1818,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     );
 
     new Setting(detailsEl)
+      .setName(t("ELEMENT_LINK_SYNC_NAME"))
+      .setDesc(fragWithHTML(t("ELEMENT_LINK_SYNC_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.syncElementLinkWithText)
+          .onChange(async (value) => {
+            this.plugin.settings.syncElementLinkWithText = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
     .setName(t("SECOND_ORDER_LINKS_NAME"))
     .setDesc(fragWithHTML(t("SECOND_ORDER_LINKS_DESC")))
     .addToggle((toggle) =>
@@ -1875,19 +1889,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2571
-    //Solution is not completely straightforward, there is a link update in Excalidraw Data that also needs to be handled
-    /*new Setting(detailsEl)
-      .setName(t("LINK_DETECTION_NAME"))
-      .setDesc(fragWithHTML(t("LINK_DETECTION_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(!this.plugin.settings.allowLinkSync)
-          .onChange(value => {
-            this.plugin.settings.allowLinkSync = !value;
-            this.applySettingsUpdate(true);
-          }),
-      );*/
 
     new Setting(detailsEl)
       .setName(t("LINK_PREFIX_NAME"))

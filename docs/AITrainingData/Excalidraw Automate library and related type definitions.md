@@ -257,7 +257,55 @@ export declare class ExcalidrawAutomate {
         gridSize: number;
     };
     colorPalette: {};
+    sidepanelTab: ExcalidrawSidepanelTab | null;
     constructor(plugin: ExcalidrawPlugin, view?: ExcalidrawView);
+    /**
+     * Return the active sidepanel tab for a script, if one exists.
+     * If scriptName is omitted the function checks ea.activeScript.
+     * At most one sidepanel tab may be open per script. If a tab exists this
+     * returns the corresponding ExcalidrawSidepanelTab; otherwise it returns
+     * undefined.
+     * The returned tab may be hosted by a different ExcalidrawAutomate instance.
+     * To determine whether the tab belongs to the current ea instance compare:
+     * sidepanelTab.getHostEA() === ea.
+     * In this case the script may wish to reuse the existing tab rather than create a new one.
+     * @param scriptName - Optional script name to query. Defaults to ea.activeScript.
+     * @returns The ExcalidrawSidepanelTab for the script, or undefined if none exists.
+  */
+    checkForActiveSidepanelTabForScript(scriptName?: string): ExcalidrawSidepanelTab | null;
+    /**
+     * Creates a new sidepanel tab associated with this ExcalidrawAutomate instance.
+     * If a sidepanel tab already exists for this instance, it will be closed first.
+     * @param title - The title of the sidepanel tab.
+     * @param options
+     * @returns
+     */
+    createSidepanelTab(title: string, persist?: boolean, reveal?: boolean): Promise<ExcalidrawSidepanelTab | null>;
+    /**
+     * Returns the WorkspaceLeaf hosting the Excalidraw sidepanel view.
+     * @returns {WorkspaceLeaf | null} The sidepanel leaf or null if not found.
+     */
+    getSidepanelLeaf(): WorkspaceLeaf | null;
+    /**
+     * Toggles the visibility of the Excalidraw sidepanel view.
+     * If the sidepanel is not in a leaf attached to the left or right split, no action is taken.
+     */
+    toggleSidepanelView(): void;
+    /**
+     * Pins the active script's sidepanel tab to be persistent across Obsidian restarts.
+     * @param options
+     * @returns {Promise<ExcalidrawSidepanelTab | null>} The persisted sidepanel tab or null on error.
+     */
+    persistSidepanelTab(): ExcalidrawSidepanelTab | null;
+    /**
+     * Attaches an inline link suggester to the provided input element. The suggester reacts to
+     * "[[" typing, offers vault link choices (including aliases and unresolved links), and inserts
+     * the selected link using relative linktext when the active Excalidraw view is known.
+     * @param {HTMLInputElement} inputEl - The input element to enhance.
+     * @param {HTMLElement} [widthWrapper] - Optional element to determine suggester width.
+     * @returns {KeyBlocker} The suggester instance; call close() to detach; call .isBlockingKeys() to check if suggester dropdown is open.
+     */
+    attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement): KeyBlocker;
     /**
      * Returns the last recorded pointer position on the Excalidraw canvas.
      * @returns {{x:number, y:number}} The last recorded pointer position.
@@ -549,7 +597,7 @@ export declare class ExcalidrawAutomate {
      */
     private boxedElement;
     /**
-     * Deprecated. Use addEmbeddable() instead.
+     * Use addEmbeddable() instead, unless you specifically need to pass HTML content and create a custom iframe.
      * Retained for backward compatibility.
      * @param {number} topX - The x-coordinate of the top-left corner.
      * @param {number} topY - The y-coordinate of the top-left corner.
@@ -557,16 +605,21 @@ export declare class ExcalidrawAutomate {
      * @param {number} height - The height of the iframe.
      * @param {string} [url] - The URL of the iframe.
      * @param {TFile} [file] - The file associated with the iframe.
+     * @param {string} [html] - The HTML content for the iframe.
      * @returns {string} The ID of the added iframe element.
      */
-    addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string;
+    addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile, html?: string): string;
     /**
      * Adds an embeddable element to the ExcalidrawAutomate instance.
+     * In case of urls, if the width and or height is set to 0 ExcalidrawAutomate will attempt to determine the dimensions based on the aspect ratio of the content.
+     * If both width and height are set to 0 the default size for youtube and vimeo embeddables (560x315) will be used. YouTube shorts will have a default size of 315x560.
+     * If only the width or height is set to 0 the other dimension will be calculated based on the aspect ratio of the content.
+     * If the calculated width is less than 560 or the calculated height is less than 315 the element will be scaled down proportionally, setting element.scale accordingly.
      * @param {number} topX - The x-coordinate of the top-left corner.
      * @param {number} topY - The y-coordinate of the top-left corner.
      * @param {number} width - The width of the embeddable element.
      * @param {number} height - The height of the embeddable element.
-     * @param {string} [url] - The URL of the embeddable element.
+     * @param {string} [url] - The URL of the embeddable element. The URL may be a dataURL as well (however such elements are not supported by Excalidraw.com).
      * @param {TFile} [file] - The file associated with the embeddable element.
      * @param {EmbeddableMDCustomProps} [embeddableCustomData] - Custom properties for the embeddable element.
      * @returns {string} The ID of the added embeddable element.
@@ -787,12 +840,34 @@ export declare class ExcalidrawAutomate {
     isExcalidrawFile(f: TFile): boolean;
     targetView: ExcalidrawView;
     /**
-     * Sets the target view for EA. All the view operations and the access to Excalidraw API will be performed on this view.
-     * If view is null or undefined, the function will first try setView("active"), then setView("first").
-     * @param {ExcalidrawView | "first" | "active"} [view] - The view to set as target.
-     * @returns {ExcalidrawView} The target view.
+     * Sets the target view for EA. All view operations and all access to the Excalidraw API
+     * will be performed on this view.
+     *
+     * Typical usage:
+     * - `setView()` to pick a sensible default automatically
+     * - `setView(excalidrawView)` to explicitly target a specific view
+     *
+     * Selectors:
+     * - If `view` is `null` or `undefined` (or `"auto"`), EA will pick a sensible default:
+     *   1) the currently active Excalidraw view (if any),
+     *   2) otherwise the last active Excalidraw view (if it is still available),
+     *   3) otherwise the `"first"` Excalidraw view in the workspace.
+     * - If `show` is `true`, the view will be revealed (brought to front) and focused.
+     *
+     * Deprecated selectors (kept for backward compatibility):
+     * - If `"active"` is provided, the currently active Excalidraw view will be used. If no
+     *   active Excalidraw view is available, the last active Excalidraw view will be used.
+     * - If `"first"` is provided, the target will be the first Excalidraw view returned by
+     *   Obsidian's workspace leaf collection (i.e., the first item in the current
+     *   `getExcalidrawViews()` result). **This ordering is managed by Obsidian and does not
+     *   necessarily match what a user would consider the “first”/“leftmost”/“topmost” view;
+     *   from a user's perspective it may appear effectively random.**
+     *
+     * @param {ExcalidrawView | "auto" | "first" | "active" | null | undefined} [view] - The view (or selector) to set as target.
+     * @param {boolean} [show=false] - Whether to reveal/focus the target view.
+     * @returns {ExcalidrawView} The ExcalidrawView that was set as `targetView` (or `null` if none found).
      */
-    setView(view?: ExcalidrawView | "first" | "active"): ExcalidrawView;
+    setView(view?: ExcalidrawView | "auto" | "first" | "active" | null, show?: boolean): ExcalidrawView;
     /**
      * Returns the Excalidraw API for the current view.
      * @returns {any} The Excalidraw API.
@@ -1373,6 +1448,27 @@ export declare class ExcalidrawAutomate {
      */
     getCM(color: TInput): ColorMaster;
     /**
+     * Get color palette for scene. If no palette is found, returns default Excalidraw color palette.
+     * @param {("canvasBackground"|"elementBackground"|"elementStroke")} palette - The palette type.
+     * @returns {([string, string, string, string, string][] | string[])} The color palette.
+     */
+    getViewColorPalette(palette: "canvasBackground" | "elementBackground" | "elementStroke"): (string[] | string)[];
+    /**
+     * Opens a palette popover anchored to the provided element and resolves with the selected color.
+     * @param {HTMLElement} anchorElement - The element to anchor the popover to.
+     * @param {"canvasBackground"|"elementBackground"|"elementStroke"} palette - Which palette to show.
+     * @param {boolean} [includeSceneColors=true] - Whether to include scene stroke/background colors in the palette.
+     * @returns {Promise<string|null>} Selected color or null if cancelled.
+     * example usage:
+     * const selected = await ea.showColorPicker(button.buttonEl, "elementStroke");
+     * if(selected) {
+     *   console.log("User selected color: " + selected);
+     * } else {
+     *   console.log("User cancelled color selection");
+     * }
+     */
+    showColorPicker(anchorElement: HTMLElement, palette: "canvasBackground" | "elementBackground" | "elementStroke", includeSceneColors?: boolean): Promise<string | null>;
+    /**
      * Gets the PolyBool class from https://github.com/velipso/polybooljs.
      * @returns {PolyBool} The PolyBool class.
      */
@@ -1404,6 +1500,14 @@ export type ScriptSettingValue = {
     valueset?: string[];
     height?: number;
 };
+/**
+ * Marker for UI helpers (e.g., suggesters) that, while active, should signal
+ * host scripts to ignore or block their own keydown handlers.
+ */
+export interface KeyBlocker {
+    isBlockingKeys(): boolean;
+    close(): void;
+}
 export type ImageInfo = {
     mimeType: MimeType;
     id: FileId;
@@ -1425,6 +1529,79 @@ export interface AddImageOptions {
     scale?: boolean;
     anchor?: boolean;
     colorMap?: ColorMap;
+}
+
+/* ************************************** */
+/* lib/types/sidepanelTabTypes.d.ts */
+/* ************************************** */
+/**
+ * SidepanelTab defines the public surface of a sidepanel tab as exposed to scripts.
+ * Tabs are lightweight modal-like containers with their own DOM (title/content) that the host sidepanel activates, focuses, and closes.
+ * Typical flow for scripts:
+ * 1) Create the tab via ea.createSidepanelTab(title, persist=false, reveal=true). Note the sidepanelTab is immediately created even if not revealed.
+ *    If the sidepanel tab is the first in the sidepanel, then onOpen will not be called becase the tab is already open/active.
+ *    Reveal simply opens the obisidan sidepanel and the Excalidraw sidepanel view which already displays the active tab.
+ * 2) Render UI into `contentEl` or use `setContent(...)` / `setTitle(...)`.
+ * 3) Implement lifecycle hooks: `onOpen` (only runs when the user changes tabs in the Excalidraw sidepanel), `onFocus(view)` (runs on host focus changes), `onClose`/`setCloseCallback` (cleanup), `onExcalidrawViewClosed` (canvas closed).
+ *    Use `onWindowMigrated(win)` to reattach any window-bound event handlers if the sidepanel moves between the main workspace and a popout window (the DOM is reparented during this migration). The `win` argument is the new Window hosting the sidepanel DOM.
+ * 4) Use `setDisabled`, `focus`, `close`, `reset`, and persistence helpers (from host) as needed.
+ * 5) Use ea.sidepanelTab.open() to show the sidepanel tab associated with the script.
+ * 6) When the sidepanel is nolonger required the script should call ea.sidepanelTab.close() to close the tab and trigger cleanup.
+ * The sidpanel associated with an ea script is available on ea.sidepanelTab. Persisted tabs are restored on Obsidian startup, such that scripts associated with the persisted tabs are
+ * loaded and executed on Excalidraw startup, and the scripts are in turn responsible for recreating their sidepanel tabs via ea.createSidepanelTab as per their normal script initiation sequence.
+ * This description is intentionally explicit so an LLM can generate sidepanel-aware script code without inspecting the implementation.
+ */
+export interface SidepanelTab {
+    /** Unique tab identifier used by the host sidepanel. */
+    readonly id: string;
+    /** Optional script name backing this tab (used for persistence and lookup). */
+    readonly scriptName?: string;
+    /** Current title shown in the sidepanel selector. */
+    readonly title: string;
+    /** Root container element for the tab (same as modalEl). */
+    readonly containerEl: HTMLDivElement;
+    /** Wrapper element for the tab. */
+    readonly modalEl: HTMLDivElement;
+    /** Content element where scripts render their UI. */
+    readonly contentEl: HTMLDivElement;
+    /** Title element whose text mirrors `title`. */
+    readonly titleEl: HTMLDivElement;
+    /**
+   * Focus hook fired when the host marks this tab active; set by scripts.
+   * Because sidpanel tabs may outlive their associated Excalidraw views on focus is designed to notify scripts of the most recently active view.
+   * The script can verify if the view has changed by comparing against ea.targetView (ea.targetView === view means no change).
+   * The script is responsible for calling ea.setView(view) if it wishes to bind to the new view.
+   * The script may also wish to call ea.clear() or ea.reset() to discard state associated with the prior view.
+   * In case the script performs view specific actions it should update its UI in onFocus when the received view !== ea.targetView.
+   * @param view The most recently active ExcalidrawView, or null if no ExcalidrawViews are present in the workspace.
+   */
+    onFocus: (view: ExcalidrawView | null) => void;
+    /** Hook fired when the associated Excalidraw view closes; set by ScriptEngine. */
+    onExcalidrawViewClosed: () => void;
+    /** Hook fired when the sidepanel's DOM is migrated to another window (e.g., into or out of a popout) so scripts can rebind listeners. */
+    onWindowMigrated: (win: Window) => void;
+    /** Clears all children from the content element. */
+    clear(): void;
+    /** Sets the tab title and updates host UI; returns the tab for chaining. */
+    setTitle(title: string): this;
+    /** Replaces tab content with text or a fragment; returns the tab for chaining. */
+    setContent(content: string | DocumentFragment): this;
+    /** Activates this tab within the host sidepanel. */
+    focus(): void;
+    /** Marks the tab open, activates it, and triggers `onOpen`. */
+    open(): void;
+    /** Runs close handlers then asks the host to remove the tab. */
+    close(): void;
+    /** Lifecycle hook called when the tab is opened/activated. */
+    onOpen(): Promise<void> | void;
+    /** Lifecycle hook called once when the tab closes. */
+    onClose(): void;
+    /** Toggles pointer interactivity and opacity; returns the tab for chaining. */
+    setDisabled(disabled: boolean): this;
+    /** Returns the ExcalidrawAutomate instance associated with the sidepanel tab */
+    getHostEA(): ExcalidrawAutomate;
+    /** Returns whether the tab is currently visible in the UI */
+    isVisible(): boolean;
 }
 
 /* ***************************** */
@@ -1750,6 +1927,7 @@ type _ExcalidrawElementBase = Readonly<{
     /** epoch (ms) timestamp of last element update */
     updated: number;
     link: string | null;
+    hasTextLink?: boolean;
     locked: boolean;
     customData?: Record<string, any>;
 }>;

@@ -32,6 +32,8 @@ import {
   DEVICE,
   mermaidToExcalidraw,
   refreshTextDimensions,
+  getDefaultColorPalette,
+  getFontFamilyString,
 } from "src/constants/constants";
 import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath, splitFolderAndFilename } from "src/utils/fileUtils";
 import {
@@ -43,6 +45,7 @@ import {
   addAppendUpdateCustomData,
   getSVG,
 } from "src/utils/utils";
+import { InlineLinkSuggester } from "./Suggesters/InlineLinkSuggester";
 import { getAttachmentsFolderAndFilePath, getExcalidrawViews, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "src/utils/obsidianUtils";
 import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI, SceneData } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile, EmbeddedFilesLoader } from "./EmbeddedFileLoader";
@@ -76,23 +79,25 @@ import {
   extractCodeBlocks as _extractCodeBlocks,
 } from "../utils/AIUtils";
 import { EXCALIDRAW_AUTOMATE_INFO, EXCALIDRAW_SCRIPTENGINE_INFO } from "./Dialogs/SuggesterInfo";
-import { addBackOfTheNoteCard, sceneRemoveInternalLinks } from "../utils/excalidrawViewUtils";
+import { showColorPicker } from "./Dialogs/ColorPicker";
+import { addBackOfTheNoteCard, getViewColorPalette, sceneRemoveInternalLinks } from "../utils/excalidrawViewUtils";
 import { log } from "../utils/debugHelper";
 import { ExcalidrawLib } from "../types/excalidrawLib";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
-import { AddImageOptions, ImageInfo, ScriptSettingValue, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
-import { _measureText, cloneElement, createPNG, createSVG, ensureActiveScriptSettingsObject, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getFontFamily, getLastActiveExcalidrawView, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeBindMode, normalizeFixedPoint, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
+import { AddImageOptions, ImageInfo, KeyBlocker, ScriptSettingValue, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
+import { _measureText, cloneElement, createPNG, createSVG, ensureActiveScriptSettingsObject, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getLastActiveExcalidrawView, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeBindMode, normalizeFixedPoint, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
 import { exportToPDF, getMarginValue, getPageDimensions } from "src/utils/exportUtils";
 import { PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties, ExportSettings} from "src/types/exportUtilTypes";
 import { FrameRenderingOptions } from "src/types/utilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { AutoexportConfig } from "src/types/excalidrawViewTypes";
 import { FloatingModal } from "./Dialogs/FloatingModal";
+import { ExcalidrawSidepanelView } from "src/view/sidepanel/Sidepanel";
+import { ExcalidrawSidepanelTab } from "src/view/sidepanel/SidepanelTab";
 import { patchMobileView } from "src/utils/customEmbeddableUtils";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { AIRequest } from "src/types/AIUtilTypes";
-import { arrow, end } from "@popperjs/core";
-import { start } from "repl";
+import { getAspectRatio } from "src/utils/YoutTubeUtils";
 
 extendPlugins([
   HarmonyPlugin,
@@ -544,11 +549,125 @@ export class ExcalidrawAutomate {
     gridSize: number;
   };
   colorPalette: {};
+  sidepanelTab: ExcalidrawSidepanelTab | null = null;
 
   constructor(plugin: ExcalidrawPlugin, view?: ExcalidrawView) {
     this.plugin = plugin;
     this.reset();
     this.targetView = view;
+  }
+
+  /**
+   * Return the active sidepanel tab for a script, if one exists.
+   * If scriptName is omitted the function checks ea.activeScript.
+   * At most one sidepanel tab may be open per script. If a tab exists this
+   * returns the corresponding ExcalidrawSidepanelTab; otherwise it returns
+   * undefined.
+   * The returned tab may be hosted by a different ExcalidrawAutomate instance.
+   * To determine whether the tab belongs to the current ea instance compare:
+   * sidepanelTab.getHostEA() === ea.
+   * In this case the script may wish to reuse the existing tab rather than create a new one.
+   * @param scriptName - Optional script name to query. Defaults to ea.activeScript.
+   * @returns The ExcalidrawSidepanelTab for the script, or undefined if none exists.
+*/
+  public checkForActiveSidepanelTabForScript(scriptName?: string): ExcalidrawSidepanelTab | null {
+    scriptName = scriptName ?? this.activeScript;
+    if (!scriptName) {
+      return null;
+    }
+    const spView = ExcalidrawSidepanelView.getExisting(false);
+    if (!spView) {
+      return null;
+    }
+    return spView.getTabByScript(scriptName);
+  }
+
+
+  /**
+   * Creates a new sidepanel tab associated with this ExcalidrawAutomate instance.
+   * If a sidepanel tab already exists for this instance, it will be closed first.
+   * @param title - The title of the sidepanel tab.
+   * @param options 
+   * @returns 
+   */
+  public async createSidepanelTab(
+    title: string,
+    persist: boolean = false,
+    reveal: boolean = true,
+  ): Promise<ExcalidrawSidepanelTab | null> {
+    if (this.sidepanelTab) {
+      this.sidepanelTab.close();
+    }
+    const scriptName = this.activeScript ?? nanoid(); //random name if no active script
+    const spView = await ExcalidrawSidepanelView.getOrCreate(this.plugin, reveal);
+    if (!spView) {
+      errorMessage("Unable to open sidepanel", "createSidepanelTab()");
+      return null;
+    }
+    const tab = await spView.createTab({ title, scriptName, hostEA: this });
+    this.sidepanelTab = tab;
+    if (persist && this.activeScript) {
+      this.persistSidepanelTab();
+    }
+    return tab;
+  }
+
+  /**
+   * Returns the WorkspaceLeaf hosting the Excalidraw sidepanel view.
+   * @returns {WorkspaceLeaf | null} The sidepanel leaf or null if not found.
+   */
+  public getSidepanelLeaf(): WorkspaceLeaf | null {
+    return ExcalidrawSidepanelView.getExisting(false)?.leaf ?? null;
+  }
+
+  /**
+   * Toggles the visibility of the Excalidraw sidepanel view.
+   * If the sidepanel is not in a leaf attached to the left or right split, no action is taken.
+   */
+  public toggleSidepanelView(): void {
+    const leaf = this.getSidepanelLeaf();
+    if (leaf) {
+      const root = leaf.getRoot();
+      if (root === this.plugin.app.workspace.leftSplit) {
+        this.plugin.app.workspace.leftSplit.toggle();
+        return;
+      }
+      if (root === this.plugin.app.workspace.rightSplit) {
+        this.plugin.app.workspace.rightSplit.toggle();
+        return;
+      }
+    }
+  }
+
+  /**
+   * Pins the active script's sidepanel tab to be persistent across Obsidian restarts.
+   * @param options 
+   * @returns {Promise<ExcalidrawSidepanelTab | null>} The persisted sidepanel tab or null on error.
+   */
+  public persistSidepanelTab(): ExcalidrawSidepanelTab | null {
+    if (!this.activeScript && !this.sidepanelTab) {
+      errorMessage("No active script and sidepanel tab to persist", "persistSidepanelTab()");
+      return null;
+    }
+    const spView = ExcalidrawSidepanelView.getExisting();
+    if (!spView) {
+      return;
+    }
+    spView.markTabPersistent(this.sidepanelTab);
+    return this.sidepanelTab;
+  }
+
+  /**
+   * Attaches an inline link suggester to the provided input element. The suggester reacts to
+   * "[[" typing, offers vault link choices (including aliases and unresolved links), and inserts
+   * the selected link using relative linktext when the active Excalidraw view is known.
+   * @param {HTMLInputElement} inputEl - The input element to enhance.
+   * @param {HTMLElement} [widthWrapper] - Optional element to determine suggester width.
+   * @returns {KeyBlocker} The suggester instance; call close() to detach; call .isBlockingKeys() to check if suggester dropdown is open.
+   */
+  public attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement): KeyBlocker {
+    const getSourcePath = () => this.targetView?.file?.path;
+    return new InlineLinkSuggester(this.plugin.app, this.plugin, inputEl, getSourcePath, widthWrapper);
   }
 
   /**
@@ -655,20 +774,8 @@ export class ExcalidrawAutomate {
    * @returns {string} The font family string.
    */
   setFontFamily(val: number):string {
-    switch (val) {
-      case 1:
-        this.style.fontFamily = 4;
-        return getFontFamily(4);
-      case 2:
-        this.style.fontFamily = 2;
-        return getFontFamily(2);
-      case 3:
-        this.style.fontFamily = 3;
-        return getFontFamily(3);
-      default:
-        this.style.fontFamily = 1;
-        return getFontFamily(1);
-    }
+    this.style.fontFamily = val;
+    return getFontFamilyString({fontFamily:val})
   };
 
   /**
@@ -716,10 +823,29 @@ export class ExcalidrawAutomate {
       : null;
     let elements = template ? template.elements : [];
     elements = elements.concat(this.getElements());
+
+    const files: Record<FileId, {mimeType: MimeType; id: FileId; dataURL: DataURL; created: number}> = {
+      ...(template?.files ?? {}),
+    };
+
+    Object.keys(this.imagesDict).forEach((key: FileId) => {
+      const item = this.imagesDict[key];
+      if (!item?.dataURL || !item?.mimeType) {
+        return;
+      }
+      files[key] = {
+        mimeType: item.mimeType,
+        id: key,
+        dataURL: item.dataURL,
+        created: item.created ?? Date.now(),
+      };
+    });
+
     navigator.clipboard.writeText(
       JSON.stringify({
         type: "excalidraw/clipboard",
         elements,
+        files,
       }),
     );
   };
@@ -785,6 +911,9 @@ export class ExcalidrawAutomate {
     eaElement?: Mutable<ExcalidrawTextElement>,
     sceneElement?: ExcalidrawTextElement
     } {
+    if (!element) {
+      return {};
+    }
     if(element.type === "text") {
       if(element.id in this.elementsDict) {
         return {eaElement: element as Mutable<ExcalidrawTextElement>};
@@ -1416,12 +1545,13 @@ export class ExcalidrawAutomate {
       link,
       locked: false,
       frameId: null as string,
+      hasTextLink: eltype === "text" && link ? true : false,
       ...scale ? {scale} : {},
     };
   }
 
   /**
-   * Deprecated. Use addEmbeddable() instead.
+   * Use addEmbeddable() instead, unless you specifically need to pass HTML content and create a custom iframe.
    * Retained for backward compatibility.
    * @param {number} topX - The x-coordinate of the top-left corner.
    * @param {number} topY - The y-coordinate of the top-left corner.
@@ -1429,19 +1559,41 @@ export class ExcalidrawAutomate {
    * @param {number} height - The height of the iframe.
    * @param {string} [url] - The URL of the iframe.
    * @param {TFile} [file] - The file associated with the iframe.
+   * @param {string} [html] - The HTML content for the iframe.
    * @returns {string} The ID of the added iframe element.
    */
-  addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string {
+  addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile, html?: string): string {
+    if(html) {
+      const id = nanoid();
+      this.elementsDict[id] = this.boxedElement(
+        id,
+        "iframe",
+        topX,
+        topY,
+        width,
+        height,
+        null,
+        [1,1],
+      );
+      this.elementsDict[id].customData = {
+        generationData: { status: "done", html },
+      };
+      return id;
+    }
     return this.addEmbeddable(topX, topY, width, height, url, file);
   }
 
   /**
    * Adds an embeddable element to the ExcalidrawAutomate instance.
+   * In case of urls, if the width and or height is set to 0 ExcalidrawAutomate will attempt to determine the dimensions based on the aspect ratio of the content.
+   * If both width and height are set to 0 the default size for youtube and vimeo embeddables (560x315) will be used. YouTube shorts will have a default size of 315x560.
+   * If only the width or height is set to 0 the other dimension will be calculated based on the aspect ratio of the content.
+   * If the calculated width is less than 560 or the calculated height is less than 315 the element will be scaled down proportionally, setting element.scale accordingly.
    * @param {number} topX - The x-coordinate of the top-left corner.
    * @param {number} topY - The y-coordinate of the top-left corner.
    * @param {number} width - The width of the embeddable element.
    * @param {number} height - The height of the embeddable element.
-   * @param {string} [url] - The URL of the embeddable element.
+   * @param {string} [url] - The URL of the embeddable element. The URL may be a dataURL as well (however such elements are not supported by Excalidraw.com).
    * @param {TFile} [file] - The file associated with the embeddable element.
    * @param {EmbeddableMDCustomProps} [embeddableCustomData] - Custom properties for the embeddable element.
    * @returns {string} The ID of the added embeddable element.
@@ -1465,6 +1617,30 @@ export class ExcalidrawAutomate {
       return null;
     }
 
+    let scale: [number, number] = [1,1];
+
+    if (url) {
+      let { w, h } = getAspectRatio(url);
+      if (h > w) {
+        //swap width and height for portrait oriented content
+        [w, h] = [h, w];
+      }
+      if (width === 0 && height === 0) {
+        width = 560;
+        height = 560 * (h / w);
+      } else if (height === 0) {
+        height = width * (h / w);
+        if (width < 560) {
+          scale = [width / 560, width / 560];
+        }
+      } else if (width === 0) {
+        width = height * (w / h);
+        if (height < 315) {
+          scale = [height / 315, height / 315];
+        }
+      }
+    }
+
     const id = nanoid();
     this.elementsDict[id] = this.boxedElement(
       id,
@@ -1480,7 +1656,7 @@ export class ExcalidrawAutomate {
           false, //file.extension === "md", //changed this to false because embedable link navigation in ExcaliBrain
         )
       }]]` : "",
-      [1,1],
+      scale,
     );
     this.elementsDict[id].customData = {mdProps: embeddableCustomData ?? this.plugin.settings.embeddableMarkdownDefaults};
     return id;
@@ -2107,6 +2283,7 @@ export class ExcalidrawAutomate {
       image.size.height,
     );
     this.elementsDict[id].fileId = image.fileId;
+    this.addAppendUpdateCustomData(id, {latex: tex});
     this.elementsDict[id].scale = [1, 1];
     return id;
   };
@@ -2297,6 +2474,7 @@ export class ExcalidrawAutomate {
    * Clears elementsDict and imagesDict, and resets all style values to default.
    */
   reset():void {
+    this.sidepanelTab?.close();
     this.clear();
     this.activeScript = null;
     this.style = {
@@ -3729,6 +3907,37 @@ export class ExcalidrawAutomate {
   }
 
   /**
+   * Get color palette for scene. If no palette is found, returns default Excalidraw color palette.
+   * @param {("canvasBackground"|"elementBackground"|"elementStroke")} palette - The palette type.
+   * @returns {([string, string, string, string, string][] | string[])} The color palette.
+   */
+  getViewColorPalette(palette: "canvasBackground"|"elementBackground"|"elementStroke"): (string[] | string)[] {
+    return getViewColorPalette(palette, this.targetView);
+  }
+
+  /**
+   * Opens a palette popover anchored to the provided element and resolves with the selected color.
+   * @param {HTMLElement} anchorElement - The element to anchor the popover to.
+   * @param {"canvasBackground"|"elementBackground"|"elementStroke"} palette - Which palette to show.
+   * @param {boolean} [includeSceneColors=true] - Whether to include scene stroke/background colors in the palette.
+   * @returns {Promise<string|null>} Selected color or null if cancelled.
+   * example usage:
+   * const selected = await ea.showColorPicker(button.buttonEl, "elementStroke");
+   * if(selected) {
+   *   console.log("User selected color: " + selected);
+   * } else {
+   *   console.log("User cancelled color selection");
+   * }
+   */
+  public async showColorPicker(
+    anchorElement: HTMLElement,
+    palette: "canvasBackground"|"elementBackground"|"elementStroke",
+    includeSceneColors: boolean = true,
+  ): Promise<string | null> {
+    return showColorPicker(palette, anchorElement, this.targetView, includeSceneColors);
+  }
+
+  /**
    * Gets the PolyBool class from https://github.com/velipso/polybooljs.
    * @returns {PolyBool} The PolyBool class.
    */
@@ -3757,6 +3966,7 @@ export class ExcalidrawAutomate {
    * Destroys the ExcalidrawAutomate instance, clearing all references and data.
    */
   destroy(): void {
+    this.sidepanelTab?.close();
     this.targetView = null;
     this.plugin = null;
     this.elementsDict = {};
