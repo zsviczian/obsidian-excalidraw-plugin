@@ -2818,7 +2818,6 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
         tab.reveal();
       }
     }
-  };
 
   const setupEventListeners = (view) => {
     if (!view || !view.ownerWindow) return;
