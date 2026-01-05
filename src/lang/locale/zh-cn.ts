@@ -37,6 +37,7 @@ export default {
   CONVERT_FILE_KEEP_EXT: "转换：*.excalidraw => *.excalidraw.md",
   CONVERT_FILE_REPLACE_EXT: "转换：*.excalidraw => *.md (兼容 Logseq)",
   DOWNLOAD_LIBRARY: "导出 stencil 库为 *.excalidrawlib 文件",
+  OPEN_SIDEPANEL: "打开 Excalidraw 侧边面板",
   OPEN_EXISTING_NEW_PANE: "打开已有的绘图 - 于新面板",
   OPEN_EXISTING_ACTIVE_PANE:
     "打开已有的绘图 - 于当前面板",
@@ -154,6 +155,7 @@ export default {
   OPEN_AS_MD: "打开为 Markdown",
   EXPORT_IMAGE: `导出为图片`,
   OPEN_LINK: "打开所选元素里的链接 \n（按住 Shift 在新面板打开）",
+  EXCALIDRAW_SIDEPANEL: "Excalidraw 侧边面板",
   EXPORT_EXCALIDRAW: "导出为 .excalidraw 文件（旧版绘图文件格式）",
   LINK_BUTTON_CLICK_NO_TEXT:
     "请选择一个包含内部或外部链接的元素。\n",
@@ -541,7 +543,8 @@ export default {
   LONG_PRESS_MOBILE_NAME: "长按打开（移动端）",
   LONG_PRESS_MOBILE_DESC: "长按打开在 Markdown 文档中嵌入的 Excalidraw 绘图。单位：毫秒。",
   DOUBLE_CLICK_LINK_OPEN_VIEW_MODE: "在查看模式下允许双击打开链接",
-
+  ELEMENT_LINK_SYNC_NAME: "文本元素同步正文链接",
+  ELEMENT_LINK_SYNC_DESC: "若开启，Excalidraw 将匹配 2.19.0 之前的行为：始终将正文第一个链接复制到元素链接字段。导出 SVG/PNG 仅在元素链接字段包含单个链接（不包括正文内的链接）时保留链接。开启：若你依赖正文链接并希望元素链接始终镜像第一个链接。关闭：若你独立管理元素链接，用于标签、行内链接本体等元数据、或多个链接，如 Dataview 风格的笔记 '(reminds me of:: [[link]]) #noteToSelf'。",
   FOCUS_ON_EXISTING_TAB_NAME: "聚焦于当前标签页",
   FOCUS_ON_EXISTING_TAB_DESC: "当打开一个链接时，如果该文件已经打开，Excalidraw 将会聚焦到现有的标签页上。" +
     "启用该项时，如果文件已打开，将覆盖“在相邻面板中打开”，但“打开所选绘图的背景笔记”命令面板操作除外。",
@@ -564,6 +567,12 @@ export default {
     "文本元素处于 PREVIEW 模式时，在内部链接的两侧显示中括号。<br>" +
     "可为某个绘图单独设置该项，方法是在其 frontmatter 中添加如 <code>"
   }${FRONTMATTER_KEYS["link-brackets"].name}: true/false</code> 的键值对。`,
+  /*LINK_DETECTION_NAME: "Do not auto-create element link from text",
+  LINK_DETECTION_DESC: "By default, Excalidraw will automatically create an element link when you type or paste a valid " +
+    "[[Obsidian link]] or a (web link) into a Text Element. This link overrides whatever element link you may have set previously. " +
+    "Even if you delete the element link, if the text element contains a valid link, Excalidraw will recreate the element link. " +
+    "If you turn this setting on, Excalidraw will not auto-create element links from text. You can still manually set element links " +
+    `Links in the text will still be navigable when you ${labelCTRL()} + CLICK the element.`,*/
   LINK_PREFIX_NAME: "内部链接的前缀",
   LINK_PREFIX_DESC: `${
     "文本元素处于 PREVIEW 模式时，如果其中包含链接，则添加此前缀。<br>" +
@@ -923,9 +932,9 @@ export default {
   SELECT_FILE_TO_LINK: "选择要以链接形式插入到当前绘图中的文件",
   SELECT_COMMAND_PLACEHOLDER: "选择要插入到当前绘图中的命令",
   SELECT_DRAWING: "选择要以图像形式嵌入到当前绘图中的图片或绘图文件",
-  TYPE_FILENAME: "键入要选择的绘图名称",
+  TYPE_FILENAME: "输入要选择的绘图名称",
   SELECT_FILE_OR_TYPE_NEW:
-    "选择已有绘图，或者键入新绘图文件的名称，然后按回车。",
+    "选择已有绘图，或者输入新绘图文件的名称，然后按回车。",
   SELECT_TO_EMBED: "选择要嵌入到当前 Markdown 文档中的绘图",
   SELECT_MD: "选择要以图像形式嵌入到当前绘图中的 Markdown 文档",
   SELECT_PDF: "选择要以图像形式嵌入到当前绘图中的 PDF",
@@ -1247,4 +1256,10 @@ export default {
   VERSION_MISMATCH_DISABLE_DESC: "可在以下位置重新启用：设置 → Excalidraw → 基本 → 警告插件更新不完整",
   VERSION_MISMATCH_REDOWNLOAD: "重新下载插件",
   VERSION_MISMATCH_IGNORE: "忽略",
+
+  //InlineLinkSuggester.ts
+  INLINE_HINT: "输入 [[ 以搜索并插入链接",
+
+  //SuggestionModal.ts
+  SUGGESTION_NOMATCH: "未找到匹配结果",
 };
