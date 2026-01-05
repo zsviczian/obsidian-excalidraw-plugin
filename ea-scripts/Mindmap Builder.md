@@ -362,7 +362,8 @@ const INSTRUCTIONS = `
 - **Dock/Undock**: You can dock/undock the input field using the dock/undock button or the configured hotkey
 - **ESC**: Docks the floating input field without activating the side panel
 - **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
-- **Grouping**: Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
+- **Grouping**:
+  - Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
 - **Copy/Paste**: Export/Import indented Markdown lists.
 
 😍 If you find this script helpful, please [buy me a coffee ☕](https://ko-fi.com/zsolt).
@@ -752,22 +753,35 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
   });
 };
 
-const triggerGlobalLayout = async (rootId, force = false) => {
+const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) => {
   if (!ea.targetView) return;
   const run = async () => {
     const allElements = ea.getViewElements();
     const root = allElements.find((el) => el.id === rootId);
+    
+    const l1Nodes = getChildrenNodes(rootId, allElements);
+    if (l1Nodes.length === 0) return;
+
     ea.copyViewElementsToEAforEditing(allElements);
 
-    // Ungroup the entire map recursively before rebuilding
+    const branchGroups = new Map();
+    if (!groupBranches && !forceUngroup) {
+      l1Nodes.forEach(l1 => {
+        const bIds = getBranchElementIds(l1.id, allElements);
+        // MODIFIED: Only look for common groups among elements that already belong to one
+        const existingGroupedEls = allElements.filter(e => bIds.includes(e.id) && e.groupIds?.length > 0);
+        if (existingGroupedEls.length > 0) {
+          const gId = ea.getCommonGroupForElements(existingGroupedEls);
+          if (gId) branchGroups.set(l1.id, gId);
+        }
+      });
+    }
+
     const mindmapIds = getBranchElementIds(rootId, allElements);
     mindmapIds.forEach((id) => {
       const el = ea.getElement(id);
       if (el) el.groupIds = [];
     });
-
-    const l1Nodes = getChildrenNodes(rootId, allElements);
-    if (l1Nodes.length === 0) return;
 
     const mode = root.customData?.growthMode || currentModalGrowthMode;
     const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
@@ -879,6 +893,15 @@ const triggerGlobalLayout = async (rootId, force = false) => {
       //Apply recursive grouping if enabled ---
       if (groupBranches) {
         applyRecursiveGrouping(node.id, allElements);
+      } else if (branchGroups.has(node.id)) {
+        // If recursive grouping is OFF, but this branch was previously grouped,
+        // re-apply the common group ID to all elements in the branch
+        const gId = branchGroups.get(node.id);
+        const currentBranchIds = getBranchElementIds(node.id, ea.getElements());
+        currentBranchIds.forEach(id => {
+          const el = ea.getElement(id);
+          if (el) el.groupIds = [gId];
+        });
       }
     });
   };
@@ -913,6 +936,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   if (parent?.containerId) {
     parent = allElements.find((el) => el.id === parent.containerId);
   }
+
+  let newNodeId;
+  let arrowId; 
 
   // --- Image Detection ---
   const imageInfo = parseImageInput(text);
@@ -975,7 +1001,6 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     curMaxW = getAdjustedMaxWidth(text, curMaxW).width;
   }
 
-  let newNodeId;
   if (!parent) {
     ea.style.strokeColor = multicolor ? defaultNodeColor : st.currentItemStrokeColor;
     
@@ -1093,7 +1118,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     ea.style.roughness = appState().currentItemRoughness;
     ea.style.strokeStyle = isSolidArrow ? "solid" : appState().currentItemStrokeStyle;
     const startPoint = [parent.x + parent.width / 2, parent.y + parent.height / 2];
-    const arrowId = ea.addArrow([startPoint, startPoint], {
+    arrowId = ea.addArrow([startPoint, startPoint], {
       startObjectId: parent.id,
       endObjectId: newNodeId,
       startArrowHead: null,
@@ -1136,6 +1161,27 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       });
       const l1Nodes = getChildrenNodes(rootId, allEls);
       l1Nodes.forEach((l1) => applyRecursiveGrouping(l1.id, allEls));
+    } else {
+      const { l1AncestorId } = getHierarchy(parent, allEls);
+      const bIds = getBranchElementIds(l1AncestorId, allEls);
+      
+      // Look for an existing group ID among the OLD elements of the branch
+      const existingGroupedEl = allEls.find(el => 
+        bIds.includes(el.id) && 
+        el.id !== newNodeId && 
+        el.id !== arrowId && 
+        el.groupIds?.length > 0
+      );
+      const commonGroupId = existingGroupedEl ? existingGroupedEl.groupIds[0] : null;
+      
+      if (commonGroupId) {
+        const newIds = [newNodeId, arrowId].filter(Boolean);
+        ea.copyViewElementsToEAforEditing(allEls.filter(el => newIds.includes(el.id)));
+        newIds.forEach(id => {
+          const el = ea.getElement(id);
+          if (el) el.groupIds = [commonGroupId];
+        });
+      }
     }
 
     await ea.addElementsToView(false, false, true, true);
@@ -1657,9 +1703,10 @@ const focusInputEl = () => {
 const setButtonDisabled = (btn, disabled) => {
   if (!btn) return;
   btn.disabled = disabled;
-  if (!btn.extraSettingsEl) return;
-  btn.extraSettingsEl.style.opacity = disabled ? "0.5" : "";
-  btn.extraSettingsEl.style.pointerEvents = disabled ? "none" : "";
+  const btnEl = btn.extraSettingsEl ?? btn.buttonEl;
+  if (!btnEl) return;
+  btnEl.style.opacity = disabled ? "0.5" : "";
+  btnEl.style.pointerEvents = disabled ? "none" : "";
 };
 
 const disableUI = () => {
@@ -1711,10 +1758,10 @@ const updateUI = () => {
       const all = ea.getViewElements();
       const ids = getBranchElementIds(sel.id, all);
       const isGrouped = ids.length > 1 && !!ea.getCommonGroupForElements(all.filter(el => ids.includes(el.id)));
-      
+
       toggleGroupBtn.setIcon(isGrouped ? "ungroup" : "group");
-      toggleGroupBtn.setTooltip(`${isGrouped ? "Ungroup" : "Group"} this branch ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
-      setButtonDisabled(toggleGroupBtn, ids.length <= 1);
+      toggleGroupBtn.setTooltip(`${isGrouped ? "Ungroup" : "Group"} this branch. Only available if "Group Branches" is disabled. ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
+      setButtonDisabled(toggleGroupBtn, groupBranches || ids.length <= 1);
     }
     if (boxBtn) {
       setButtonDisabled(boxBtn, false);
@@ -2231,14 +2278,15 @@ const renderBody = (contentEl) => {
       const sel = ea.getViewSelectedElement() || ea.getViewElements().find(el => !getParentNode(el.id, ea.getViewElements()));
       if (sel) {
           const info = getHierarchy(sel, ea.getViewElements());
-          await triggerGlobalLayout(info.rootId, true);
+          await triggerGlobalLayout(info.rootId, true, true);
+          updateUI();
         }
       })
     )
     .addButton((btn) => {
       toggleGroupBtn = btn;
       btn.setIcon("group");
-      btn.setTooltip(`Toggle grouping/ungroupding of a branch ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
+      btn.setTooltip(`Toggle grouping/ungroupding of a branch. Only available if "Group Branches" is disabled. ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
       btn.onClick(async () => {
         await toggleBranchGroup();
         focusInputEl();
