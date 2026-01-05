@@ -1462,7 +1462,7 @@ const togglePin = async () => {
   }
 };
 
-const padding = 30;
+const padding = 10;
 const toggleBox = async () => {
   if (!ea.targetView) return;
   let sel = ea.getViewSelectedElement();
@@ -2029,18 +2029,6 @@ const renderInput = (container, isFloating = false) => {
     });
   });
 
-  if (!isFloating) {
-    addButton((btn) => {
-      boxBtn = btn;
-      btn.setIcon("rectangle-horizontal");
-      btn.setTooltip(`Toggle node box. ${getActionHotkeyString(ACTION_BOX)}`);
-      btn.onClick(async () => {
-        await toggleBox();
-        focusInputEl();
-      });
-    });
-  };
-
   addButton((btn) => {
     refreshBtn = btn;
     btn.setIcon("refresh-ccw");
@@ -2152,15 +2140,19 @@ const renderBody = (contentEl) => {
       });
   });
 
-  autoLayoutToggle = new ea.obsidian.Setting(bodyContainer).setName("Disable Auto-Layout").addToggle((t) => t
-    .setValue(autoLayoutDisabled)
-    .onChange(async (v) => {
-      autoLayoutDisabled = v;
-      setMapAutolayout(v);
-    }),
-  ).components[0];
+  autoLayoutToggle = new ea.obsidian.Setting(bodyContainer)
+    .setName("Disable Auto-Layout")
+    .addToggle((t) => t
+      .setValue(autoLayoutDisabled)
+      .onChange(async (v) => {
+        autoLayoutDisabled = v;
+        setMapAutolayout(v);
+      }),
+    ).components[0];
 
-  new ea.obsidian.Setting(bodyContainer).setName("Group Branches").addToggle((t) => t
+  new ea.obsidian.Setting(bodyContainer)
+    .setName("Group Branches")
+    .addToggle((t) => t
     .setValue(groupBranches)
     .onChange(async (v) => {
       if (!ea.targetView) return;
@@ -2248,14 +2240,25 @@ const renderBody = (contentEl) => {
     });
   });
 
-  new ea.obsidian.Setting(bodyContainer).setName("Box Child Nodes").addToggle((t) => t
-    .setValue(boxChildren)
-    .onChange((v) => {
-      boxChildren = v;
-      setVal(K_BOX, v);
-      dirty = true;
-    }),
-  );
+  new ea.obsidian.Setting(bodyContainer)
+    .setName("Box Child Nodes")
+    .addToggle((t) => t
+      .setValue(boxChildren)
+      .onChange((v) => {
+        boxChildren = v;
+        setVal(K_BOX, v);
+        dirty = true;
+      }),
+    )
+    .addButton((btn) => {
+      boxBtn = btn;
+      btn.setIcon("rectangle-horizontal");
+      btn.setTooltip(`Toggle node box. ${getActionHotkeyString(ACTION_BOX)}`);
+      btn.onClick(async () => {
+        await toggleBox();
+        focusInputEl();
+      });
+    });
 
   new ea.obsidian.Setting(bodyContainer).setName("Rounded Corners").addToggle((t) => t
     .setValue(roundedCorners)
