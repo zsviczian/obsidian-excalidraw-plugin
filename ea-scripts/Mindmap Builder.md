@@ -265,6 +265,7 @@ const ACTION_ADD_FOLLOW_ZOOM = "Add + follow + zoom";
 const ACTION_EDIT = "Edit node";
 const ACTION_PIN = "Pin/Unpin";
 const ACTION_BOX = "Box/Unbox";
+const ACTION_TOGGLE_GROUP = "Group/Ungroup Single Branch";
 
 const ACTION_COPY = "Copy";
 const ACTION_CUT = "Cut";
@@ -288,6 +289,7 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_EDIT, code: "F2", modifiers: [] },
   { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"] },
   { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"] },
+  { action: ACTION_TOGGLE_GROUP, code: "KeyG", modifiers: ["Alt"] }, 
   { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"] },
   { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"] },
   { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"] },
@@ -757,35 +759,12 @@ const triggerGlobalLayout = async (rootId, force = false) => {
     const root = allElements.find((el) => el.id === rootId);
     ea.copyViewElementsToEAforEditing(allElements);
 
-    // Clear existing grouping info for mindmap components before rebuilding
-    // Only ungroup elements that are part of the current mindmap structure
-    if (groupBranches) {
-      const mindmapIds = new Set([rootId]);
-      const nodesToProcess = [rootId];
-      
-      while (nodesToProcess.length > 0) {
-        const currentId = nodesToProcess.pop();
-        const outgoingArrows = allElements.filter(
-          (el) => el.type === "arrow" && 
-                  el.customData?.isBranch && 
-                  el.startBinding?.elementId === currentId
-        );
-        
-        for (const arrow of outgoingArrows) {
-          mindmapIds.add(arrow.id);
-          const childId = arrow.endBinding?.elementId;
-          if (childId && !mindmapIds.has(childId)) {
-            mindmapIds.add(childId);
-            nodesToProcess.push(childId);
-          }
-        }
-      }
-
-      mindmapIds.forEach((id) => {
-        const el = ea.getElement(id);
-        if (el) el.groupIds = [];
-      });
-    }
+    // Ungroup the entire map recursively before rebuilding
+    const mindmapIds = getBranchElementIds(rootId, allElements);
+    mindmapIds.forEach((id) => {
+      const el = ea.getElement(id);
+      if (el) el.groupIds = [];
+    });
 
     const l1Nodes = getChildrenNodes(rootId, allElements);
     if (l1Nodes.length === 0) return;
@@ -897,6 +876,7 @@ const triggerGlobalLayout = async (rootId, force = false) => {
         ];
       }
 
+      //Apply recursive grouping if enabled ---
       if (groupBranches) {
         applyRecursiveGrouping(node.id, allElements);
       }
@@ -1449,6 +1429,85 @@ const refreshMapLayout = async () => {
   }
 };
 
+/**
+ * Collects all node IDs and arrow IDs belonging to a branch.
+ * Includes "isBranch" arrows and internal non-mindmap arrows.
+ */
+const getBranchElementIds = (nodeId, allElements) => {
+  const branchNodes = [nodeId];
+  const queue = [nodeId];
+  
+  // 1. Get all descendant nodes
+  while (queue.length > 0) {
+    const currentId = queue.shift();
+    const children = getChildrenNodes(currentId, allElements);
+    children.forEach(c => {
+      if (!branchNodes.includes(c.id)) {
+        branchNodes.push(c.id);
+        queue.push(c.id);
+      }
+    });
+  }
+
+  const nodeIdSet = new Set(branchNodes);
+  const branchElementIds = [...branchNodes];
+
+  // 2. Identify all relevant arrows connecting elements WITHIN this branch
+  allElements.forEach(el => {
+    if (el.type === "arrow") {
+      const startId = el.startBinding?.elementId;
+      const endId = el.endBinding?.elementId;
+      
+      // An arrow (isBranch or internal) is part of the group only if 
+      // BOTH ends are nodes within the branch set.
+      if (startId && endId && nodeIdSet.has(startId) && nodeIdSet.has(endId)) {
+        branchElementIds.push(el.id);
+      }
+    }
+  });
+
+  return branchElementIds;
+};
+
+/**
+ * Toggles a single flat group for the selected branch
+ */
+const toggleBranchGroup = async () => {
+  if (!ea.targetView) return;
+  const sel = ea.getViewSelectedElement();
+  if (!sel) return;
+
+  const allElements = ea.getViewElements();
+  const ids = getBranchElementIds(sel.id, allElements);
+  
+  if (ids.length <= 1) return;
+
+  ea.copyViewElementsToEAforEditing(allElements.filter(el => ids.includes(el.id)));
+  const workbenchEls = ea.getElements();
+  
+  let newGroupId;
+  const commonGroupId = ea.getCommonGroupForElements(workbenchEls);
+
+  if (commonGroupId) {
+    workbenchEls.forEach(el => {
+      el.groupIds = [];
+    });
+  } else {
+    newGroupId = ea.addToGroup(ids);
+  }
+
+  await ea.addElementsToView(false, false, true, true);
+  ea.clear();
+  
+  if (newGroupId) {
+    let selectedGroupIds = {};
+    selectedGroupIds[newGroupId] = true;
+    ea.viewUpdateScene({appState: {selectedGroupIds}})
+  }
+  
+  updateUI();
+};
+
 const togglePin = async () => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
@@ -1541,7 +1600,7 @@ const toggleBox = async () => {
 // ---------------------------------------------------------------------------
 
 let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown, autoLayoutToggle, linkSuggester;
-let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn;
+let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn, toggleGroupBtn;
 let inputContainer;
 let helpContainer;
 let floatingInputModal = null;
@@ -1611,6 +1670,7 @@ const disableUI = () => {
   setButtonDisabled(cutBtn, true);
   setButtonDisabled(boxBtn, true);
   setButtonDisabled(editBtn, true);
+  setButtonDisabled(toggleGroupBtn, true);
   editingNodeId = null;
   editBtn.extraSettingsEl.style.color = "";
 };
@@ -1646,6 +1706,15 @@ const updateUI = () => {
         editingNodeId = null;
         editBtn.extraSettingsEl.style.color = "";
       }
+    }
+    if (toggleGroupBtn) {
+      const all = ea.getViewElements();
+      const ids = getBranchElementIds(sel.id, all);
+      const isGrouped = ids.length > 1 && !!ea.getCommonGroupForElements(all.filter(el => ids.includes(el.id)));
+      
+      toggleGroupBtn.setIcon(isGrouped ? "ungroup" : "group");
+      toggleGroupBtn.setTooltip(`${isGrouped ? "Ungroup" : "Group"} this branch ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
+      setButtonDisabled(toggleGroupBtn, ids.length <= 1);
     }
     if (boxBtn) {
       setButtonDisabled(boxBtn, false);
@@ -2159,11 +2228,49 @@ const renderBody = (contentEl) => {
       groupBranches = v;
       setVal(K_GROUP, v);
       dirty = true;
-      const sel = ea.getViewSelectedElement();
+      const sel = ea.getViewSelectedElement() || ea.getViewElements().find(el => !getParentNode(el.id, ea.getViewElements()));
       if (sel) {
-        const info = getHierarchy(sel, ea.getViewElements());
-        await triggerGlobalLayout(info.rootId);
-      }
+          const info = getHierarchy(sel, ea.getViewElements());
+          await triggerGlobalLayout(info.rootId, true);
+        }
+      })
+    )
+    .addButton((btn) => {
+      toggleGroupBtn = btn;
+      btn.setIcon("group");
+      btn.setTooltip(`Toggle grouping/ungroupding of a branch ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
+      btn.onClick(async () => {
+        await toggleBranchGroup();
+        focusInputEl();
+      });
+    });
+
+  new ea.obsidian.Setting(bodyContainer)
+    .setName("Box Child Nodes")
+    .addToggle((t) => t
+      .setValue(boxChildren)
+      .onChange((v) => {
+        boxChildren = v;
+        setVal(K_BOX, v);
+        dirty = true;
+      }),
+    )
+    .addButton((btn) => {
+      boxBtn = btn;
+      btn.setIcon("rectangle-horizontal");
+      btn.setTooltip(`Toggle node box. ${getActionHotkeyString(ACTION_BOX)}`);
+      btn.onClick(async () => {
+        await toggleBox();
+        focusInputEl();
+      });
+    });
+
+  new ea.obsidian.Setting(bodyContainer).setName("Rounded Corners").addToggle((t) => t
+    .setValue(roundedCorners)
+    .onChange((v) => {
+      roundedCorners = v;
+      setVal(K_ROUND,  v);
+      dirty = true;
     }),
   );
 
@@ -2239,35 +2346,6 @@ const renderBody = (contentEl) => {
       dirty = true;
     });
   });
-
-  new ea.obsidian.Setting(bodyContainer)
-    .setName("Box Child Nodes")
-    .addToggle((t) => t
-      .setValue(boxChildren)
-      .onChange((v) => {
-        boxChildren = v;
-        setVal(K_BOX, v);
-        dirty = true;
-      }),
-    )
-    .addButton((btn) => {
-      boxBtn = btn;
-      btn.setIcon("rectangle-horizontal");
-      btn.setTooltip(`Toggle node box. ${getActionHotkeyString(ACTION_BOX)}`);
-      btn.onClick(async () => {
-        await toggleBox();
-        focusInputEl();
-      });
-    });
-
-  new ea.obsidian.Setting(bodyContainer).setName("Rounded Corners").addToggle((t) => t
-    .setValue(roundedCorners)
-    .onChange((v) => {
-      roundedCorners = v;
-      setVal(K_ROUND,  v);
-      dirty = true;
-    }),
-  );
 
   // ------------------------------------
   // Hotkey Configuration Section
@@ -2636,6 +2714,9 @@ const keyHandler = async (e) => {
   e.stopPropagation();
 
   switch (action) {
+    case ACTION_TOGGLE_GROUP: // Handle Alt+G
+      await toggleBranchGroup();
+      break;
     case ACTION_HIDE:
       if (isUndocked) {
         toggleDock({silent: true, forceDock: true, saveSetting: false});
