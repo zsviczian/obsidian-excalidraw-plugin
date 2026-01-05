@@ -1646,7 +1646,7 @@ const toggleBox = async () => {
 // ---------------------------------------------------------------------------
 
 let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown, autoLayoutToggle, linkSuggester;
-let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn, toggleGroupBtn;
+let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn, toggleGroupBtn, zoomBtn;
 let inputContainer;
 let helpContainer;
 let floatingInputModal = null;
@@ -1706,7 +1706,11 @@ const setButtonDisabled = (btn, disabled) => {
   const btnEl = btn.extraSettingsEl ?? btn.buttonEl;
   if (!btnEl) return;
   btnEl.style.opacity = disabled ? "0.5" : "";
-  btnEl.style.pointerEvents = disabled ? "none" : "";
+  btnEl.style.cursor = disabled ? "not-allowed" : "";
+  if (disabled && btn.buttonEl) {
+    btn.buttonEl.style.pointerEvents = "auto";
+    btn.buttonEl.style.cursor = "not-allowed";
+  }
 };
 
 const disableUI = () => {
@@ -1718,6 +1722,7 @@ const disableUI = () => {
   setButtonDisabled(boxBtn, true);
   setButtonDisabled(editBtn, true);
   setButtonDisabled(toggleGroupBtn, true);
+  setButtonDisabled(zoomBtn, true);
   editingNodeId = null;
   editBtn.extraSettingsEl.style.color = "";
 };
@@ -1763,10 +1768,8 @@ const updateUI = () => {
       toggleGroupBtn.setTooltip(`${isGrouped ? "Ungroup" : "Group"} this branch. Only available if "Group Branches" is disabled. ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
       setButtonDisabled(toggleGroupBtn, groupBranches || ids.length <= 1);
     }
-    if (boxBtn) {
-      setButtonDisabled(boxBtn, false);
-    }
-
+    setButtonDisabled(boxBtn, false);
+    setButtonDisabled(zoomBtn, false);
     setButtonDisabled(refreshBtn, false);
 
     const info = getHierarchy(sel, all);
@@ -2067,7 +2070,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
 const renderInput = (container, isFloating = false) => {
   container.empty();
   
-  pinBtn = refreshBtn = boxBtn = dockBtn = inputEl = null;
+  pinBtn = refreshBtn = dockBtn = inputEl = null;
 
   inputRow = new ea.obsidian.Setting(container);
   
@@ -2138,6 +2141,7 @@ const renderInput = (container, isFloating = false) => {
 
   addButton((btn) => {
     pinBtn = btn;
+    btn.setTooltip("Pin/Unpin location of a node. When pinned nodes won't get auto-arranged.")
     btn.onClick(async () => {
       await togglePin();
       updateUI();
@@ -2225,13 +2229,14 @@ const renderBody = (contentEl) => {
         zoomToFit();
       });
   });
-  zoomSetting.addExtraButton(btn=>btn
-    .setIcon("scan-search")
-    .setTooltip(`Cycle element zoom ${getActionHotkeyString(ACTION_ZOOM)}`)
-    .onClick(()=>{
-      zoomToFit(true);
-    })
-  );
+  zoomSetting.addExtraButton(btn=>{
+    zoomBtn = btn;
+    btn.setIcon("scan-search")
+      .setTooltip(`Cycle element zoom ${getActionHotkeyString(ACTION_ZOOM)}`)
+      .onClick(()=>{
+        zoomToFit(true);
+      })
+  });
 
   new ea.obsidian.Setting(bodyContainer).setName("Growth Strategy").addDropdown((d) => {
     strategyDropdown = d;
