@@ -919,10 +919,44 @@ const getMostRecentlyAddedNode = () => {
   return ea.getViewElements().find((el) => el.id === mostRecentlyAddedNodeID);
 }
 
+/**
+ * Convert Obsidian wiki links + markdown links into display text.
+ * Leaves other markdown markup intact.
+ */
+function renderLinksToText(input) {
+  if (typeof input !== "string" || !input) return input;
+  const isNumericOnly = (s) => /^\d+$/.test(s);
+  input = input.replace(/\[\[([^\]]+?)\]\]/g, (_m, inner) => {
+    const parts = String(inner).split("|");
+    const target = (parts[0] ?? "").trim();
+    if (!target) return _m;
+    let alias = (parts[1] ?? "").trim();
+    if (alias && isNumericOnly(alias)) alias = "";
+    if (alias && alias.includes("|")) {
+      alias = alias.split("|")[0].trim();
+      if (isNumericOnly(alias)) alias = "";
+    }
+    const cleanedTarget = target.replace(/(#\^.*$|#.*$)/, "").trim();
+    return alias || cleanedTarget || target;
+  });
+
+  input = input.replace(/\[([^\]]*)\]\(([^)]+)\)/g, (_m, rawLabel, rawDest) => {
+    const dest = String(rawDest ?? "").trim();
+    let label = String(rawLabel ?? "").trim();
+    if (!dest) return _m;
+    if (!label) return dest;
+    if (label.includes("|")) label = label.split("|")[0].trim();
+    if (!label || isNumericOnly(label)) return dest;
+    return label;
+  });
+
+  return input;
+}
+
 const getAdjustedMaxWidth = (text, max) => {
   const fontString = `${ea.style.fontSize.toString()}px ${
     ExcalidrawLib.getFontFamilyString({fontFamily: ea.style.fontFamily})}`;
-  const wrappedText = ExcalidrawLib.wrapText(text, fontString, max);
+  const wrappedText = ExcalidrawLib.wrapText(renderLinksToText(text), fontString, max);
   const optimalWidth = Math.ceil(ea.measureText(wrappedText).width);
   return {width: Math.min(max, optimalWidth), wrappedText};
 }
