@@ -282,30 +282,97 @@ const ACTION_HIDE = "Dock & hide";
 
 // Default configuration
 const DEFAULT_HOTKEYS = [
-  { action: ACTION_ADD, key: "Enter", modifiers: [], immutable: true }, // Logic relies on standard Enter behavior in input
-  { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers: ["Mod", "Alt"] },
-  { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"] },
-  { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"] },
-  { action: ACTION_EDIT, code: "F2", modifiers: [] },
-  { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"] },
-  { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"] },
-  { action: ACTION_TOGGLE_GROUP, code: "KeyG", modifiers: ["Alt"] }, 
-  { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"] },
-  { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"] },
-  { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"] },
-  { action: ACTION_ZOOM, code: "KeyZ", modifiers: ["Alt"] },
-  { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"] },
-  { action: ACTION_DOCK_UNDOCK, key: "Enter", modifiers: ["Shift"] },
-  { action: ACTION_HIDE, key: "Escape", modifiers: [], immutable: true  },
-  { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true },
-  { action: ACTION_NAVIGATE_ZOOM, key: "ArrowKeys", modifiers: ["Alt", "Shift"], isNavigation: true },
-  { action: ACTION_NAVIGATE_FOCUS, key: "ArrowKeys", modifiers: ["Alt", "Mod"], isNavigation: true },
+  { action: ACTION_ADD, key: "Enter", modifiers: [], immutable: true, isGlobal: false, isInputOnly: true }, // Logic relies on standard Enter behavior in input
+  { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers: ["Mod", "Alt"], isGlobal: false, isInputOnly: true },
+  { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"], isGlobal: false, isInputOnly: true },
+  { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"], isGlobal: false, isInputOnly: true },
+  { action: ACTION_EDIT, code: "F2", modifiers: [], isGlobal: false, isInputOnly: false },
+  { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"], isGlobal: false, isInputOnly: false },
+  { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"], isGlobal: true, isInputOnly: false },
+  { action: ACTION_TOGGLE_GROUP, code: "KeyG", modifiers: ["Alt"], isGlobal: false, isInputOnly: false }, 
+  { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"], isGlobal: false, isInputOnly: false },
+  { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"], isGlobal: false, isInputOnly: false },
+  { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"], isGlobal: false, isInputOnly: false },
+  { action: ACTION_ZOOM, code: "KeyZ", modifiers: ["Alt"], isGlobal: false, isInputOnly: false },
+  { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"], isGlobal: false, isInputOnly: false },
+  { action: ACTION_DOCK_UNDOCK, key: "Enter", modifiers: ["Shift"], isGlobal: false, isInputOnly: true },
+  { action: ACTION_HIDE, key: "Escape", modifiers: [], immutable: true , isGlobal: false, isInputOnly: true },
+  { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true, isGlobal: false, isInputOnly: false },
+  { action: ACTION_NAVIGATE_ZOOM, key: "ArrowKeys", modifiers: ["Alt", "Shift"], isNavigation: true, isGlobal: false, isInputOnly: false },
+  { action: ACTION_NAVIGATE_FOCUS, key: "ArrowKeys", modifiers: ["Alt", "Mod"], isNavigation: true, isGlobal: false, isInputOnly: false },
 ];
 
 // Load hotkeys from settings or use default
 // IMPORTANT: Use JSON.parse/stringify to create a deep copy of defaults.
 // Otherwise, modifying userHotkeys modifies DEFAULT_HOTKEYS in memory, breaking the isModified check until restart.
 let userHotkeys = getVal(K_HOTKEYS, {value: JSON.parse(JSON.stringify(DEFAULT_HOTKEYS)), hidden: true});
+
+/**
+ * Sync userHotkeys to DEFAULT_HOTKEYS by action.
+ * - Drops user actions not in DEFAULT
+ * - Adds missing actions from DEFAULT
+ * - For existing actions:
+ *    - keeps user values for existing keys
+ *    - adds missing keys from DEFAULT
+ *    - removes keys not in DEFAULT
+ */
+function updateUserHotkeys() {
+  let dirty = false;
+
+  const defaultByAction = new Map(DEFAULT_HOTKEYS.map(d => [d.action, d]));
+
+  const userByAction = new Map();
+  for (const u of userHotkeys) {
+    if (u && typeof u.action === "string" && defaultByAction.has(u.action)) {
+      userByAction.set(u.action, u);
+    } else if (u && u.action) {
+      // user action no longer exists in DEFAULT => dropped
+      dirty = true;
+    }
+  }
+
+  const next = [];
+
+  for (const d of DEFAULT_HOTKEYS) {
+    const u = userByAction.get(d.action);
+
+    if (!u) {
+      next.push(structuredClone ? structuredClone(d) : JSON.parse(JSON.stringify(d)));
+      dirty = true;
+      continue;
+    }
+
+    const cleaned = { action: d.action };
+
+    for (const key of Object.keys(d)) {
+      if (key === "action") continue;
+
+      if (Object.prototype.hasOwnProperty.call(u, key)) {
+        cleaned[key] = u[key];
+      } else {
+        cleaned[key] = d[key];
+        dirty = true;
+      }
+    }
+
+    for (const key of Object.keys(u)) {
+      if (key === "action") continue;
+      if (!Object.prototype.hasOwnProperty.call(d, key)) {
+        dirty = true;
+        break;
+      }
+    }
+
+    next.push(cleaned);
+  }
+
+  userHotkeys = next;
+  return dirty;
+}
+
+dirty = updateUserHotkeys();
+
+
 
 const getHotkeyDefByAction = (action) => userHotkeys.find((h)=>h.action === action);
 
@@ -2766,7 +2833,7 @@ const getActionFromEvent = (e) => {
            (e.altKey === hasAlt);
   });
 
-  return match ? match.action : null;
+  return match ? { action: match.action, isGlobal: match.isGlobal } :  { };
 };
 
 const keyHandler = async (e) => {
@@ -2785,17 +2852,17 @@ const keyHandler = async (e) => {
     return;
   }
   
+  const {action, isGlobal} = getActionFromEvent(e);
+
+  if (!action) return;
+
   // Check if the input element is actually focused
   if (currentWindow.document?.activeElement !== inputEl) {
     if (e.key === "Escape" && isUndocked) {
       toggleDock({silent: true, forceDock: true, saveSetting: false});
     }
-    return;
+    if (!isGlobal) return;
   }
-
-  const action = getActionFromEvent(e);
-
-  if (!action) return;
 
   e.preventDefault();
   e.stopPropagation();
