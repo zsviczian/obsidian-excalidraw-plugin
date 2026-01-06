@@ -46,7 +46,7 @@ import {
   EXPORT_IMG_ICON_NAME,
   viewportCoordsToSceneCoords,
   ERROR_IFRAME_CONVERSION_CANCELED,
-  restore,
+  restoreElements,
   obsidianToExcalidrawMap,
   MAX_IMAGE_SIZE,
   fileid,
@@ -6246,7 +6246,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
     const shouldRestoreElements = scene.elements && shouldRestore;
     if (shouldRestoreElements) {
-      scene.elements = restore(scene, null, null).elements;
+      scene.elements = restoreElements(scene.elements, null, {refreshDimensions: true, repairBindings: true});
     }
     if(Boolean(scene.appState)) {
       //@ts-ignore
@@ -6268,7 +6268,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if (!shouldRestoreElements) {
         //second attempt
         try {
-          scene.elements = restore(scene, null, null).elements;
+          scene.elements = restoreElements(scene.elements, null, {refreshDimensions: true, repairBindings: true});
           api.updateScene(scene);
         } catch (e) {
           errorlog({

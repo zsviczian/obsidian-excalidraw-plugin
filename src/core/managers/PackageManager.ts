@@ -75,7 +75,7 @@ export class PackageManager {
     return (
       typeof lib === 'object' && 
       lib !== null &&
-      typeof lib.restore === 'function' && 
+      typeof lib.restoreElements === 'function' && 
       typeof lib.exportToSvg === 'function'
     );
   }
