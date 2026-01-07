@@ -1126,12 +1126,19 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   // --- Image Detection ---
   const imageInfo = parseImageInput(text);
   let imageFile = null;
+  let isPdfRectLink = false;
+
   if (imageInfo) {
-    imageFile = app.metadataCache.getFirstLinkpathDest(imageInfo.path, ea.targetView.file.path);
-    if (imageFile) {
-        const isEx = imageFile.extension === "md" && ea.isExcalidrawFile(imageFile);
-        if (!IMAGE_TYPES.includes(imageFile.extension.toLowerCase()) && !isEx) {
-            imageFile = null; 
+    const pdfLinkRegex = /^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/;
+    if (imageInfo.path.match(pdfLinkRegex)) {
+        isPdfRectLink = true;
+    } else {
+        imageFile = app.metadataCache.getFirstLinkpathDest(imageInfo.path, ea.targetView.file.path);
+        if (imageFile) {
+            const isEx = imageFile.extension === "md" && ea.isExcalidrawFile(imageFile);
+            if (!IMAGE_TYPES.includes(imageFile.extension.toLowerCase()) && !isEx) {
+                imageFile = null; 
+            }
         }
     }
   }
@@ -1187,7 +1194,14 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   if (!parent) {
     ea.style.strokeColor = multicolor ? defaultNodeColor : st.currentItemStrokeColor;
     
-    if (imageFile) {
+    if (isPdfRectLink) {
+        newNodeId = await ea.addImage(0, 0, imageInfo.path);
+        const el = ea.getElement(newNodeId);
+        const targetWidth = imageInfo.width || EMBEDED_OBJECT_WIDTH_ROOT;
+        const ratio = el.width / el.height;
+        el.width = targetWidth;
+        el.height = targetWidth / ratio;
+    } else if (imageFile) {
         newNodeId = await ea.addImage(0, 0, imageFile);
         const el = ea.getElement(newNodeId);
         const targetWidth = imageInfo.width || EMBEDED_OBJECT_WIDTH_ROOT;
@@ -1253,7 +1267,15 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       ? "center"
       : side === 1 ? "left" : "right";
 
-    if (imageFile) {
+    if (isPdfRectLink) {
+        newNodeId = await ea.addImage(px, py, imageInfo.path);
+        const el = ea.getElement(newNodeId);
+        const targetWidth = imageInfo.width || EMBEDED_OBJECT_WIDTH_CHILD;
+        const ratio = el.width / el.height;
+        el.width = targetWidth;
+        el.height = targetWidth / ratio;
+        if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
+    } else if (imageFile) {
         newNodeId = await ea.addImage(px, py, imageFile);
         const el = ea.getElement(newNodeId);
         const targetWidth = imageInfo.width || EMBEDED_OBJECT_WIDTH_CHILD;
@@ -1310,7 +1332,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     ea.addAppendUpdateCustomData(arrowId, { isBranch: true });
   }
 
-  await ea.addElementsToView(!parent, !!imageFile, true, true);
+  await ea.addElementsToView(!parent, !!imageFile || isPdfRectLink, true, true);
   ea.clear();
 
   if (!skipFinalLayout && rootId && !autoLayoutDisabled) {
@@ -1494,6 +1516,9 @@ const pasteListToMap = async () => {
   const rawText = await navigator.clipboard.readText();
   if (!rawText) return;
 
+  const sel = ea.getViewSelectedElement();
+  let currentParent;
+
   const lines = rawText.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
 
   if (lines.length === 0) {
@@ -1505,8 +1530,10 @@ const pasteListToMap = async () => {
     const text = lines[0].replace(/^(\s*)(?:-|\*|\d+\.)\s+/, "").trim();
     
     if (text) {
-      await addNode(text, true, false);
-      new Notice("Pasted as child node.");
+      let currentParent = await addNode(text, true, false);
+      if (sel) {
+        ea.selectElementsInView([ea.getViewElements().find((el)=>el.id === sel.id)]);
+      }
       return;
     }
   }
@@ -1539,9 +1566,6 @@ const pasteListToMap = async () => {
     new Notice("No valid Markdown list found on clipboard.");
     return;
   }
-
-  const sel = ea.getViewSelectedElement();
-  let currentParent;
 
   if (!sel) {
     const minIndent = Math.min(...parsed.map((p) => p.indent));
@@ -1579,7 +1603,6 @@ const pasteListToMap = async () => {
   if (targetToSelect) {
     ea.selectElementsInView([targetToSelect]);
   }
-
   new Notice("Paste complete.");
 };
 
