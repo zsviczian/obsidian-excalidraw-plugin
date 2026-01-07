@@ -13,7 +13,7 @@ import ExcalidrawView, { getTextMode } from "src/view/ExcalidrawView";
 import {
   GITHUB_RELEASES,
   getCommonBoundingBox,
-  restoreElements,
+  restore,
   REG_LINKINDEX_INVALIDCHARS,
   THEME_FILTER,
   EXCALIDRAW_PLUGIN,
@@ -647,7 +647,7 @@ export function repositionElementsToCursor(
     element.y = element.y + offsetY;
   });
   
-  return restoreElements(elements, null, {refreshDimensions: true, repairBindings: true});
+  return restore({elements}, null, null).elements;
 }
 
 export const insertLaTeXToView = (view: ExcalidrawView, center: boolean = false) => {
