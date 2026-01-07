@@ -592,12 +592,15 @@ const getHierarchy = (el, allElements) => {
     curr = el,
     l1Id = el.id,
     rootId = el.id;
+  const visited = new Set([el.id]);
+
   while (true) {
     let p = getParentNode(curr.id, allElements);
-    if (!p) {
+    if (!p || visited.has(p.id)) {
       rootId = curr.id;
       break;
     }
+    visited.add(p.id);
     l1Id = curr.id;
     curr = p;
     depth++;
@@ -1660,37 +1663,57 @@ const refreshMapLayout = async () => {
  * Includes "isBranch" arrows and internal non-mindmap arrows.
  */
 const getBranchElementIds = (nodeId, allElements) => {
-  const branchNodes = [nodeId];
-  const queue = [nodeId];
-  
-  // 1. Get all descendant nodes
-  while (queue.length > 0) {
-    const currentId = queue.shift();
-    const children = getChildrenNodes(currentId, allElements);
-    children.forEach(c => {
-      if (!branchNodes.includes(c.id)) {
-        branchNodes.push(c.id);
-        queue.push(c.id);
-      }
-    });
-  }
 
-  const nodeIdSet = new Set(branchNodes);
-  const branchElementIds = [...branchNodes];
+  const childMap = new Map();
+  const allArrows = [];
 
-  // 2. Identify all relevant arrows connecting elements WITHIN this branch
-  allElements.forEach(el => {
+  for (let i = 0; i < allElements.length; i++) {
+    const el = allElements[i];
     if (el.type === "arrow") {
-      const startId = el.startBinding?.elementId;
-      const endId = el.endBinding?.elementId;
-      
-      // An arrow (isBranch or internal) is part of the group only if 
-      // BOTH ends are nodes within the branch set.
-      if (startId && endId && nodeIdSet.has(startId) && nodeIdSet.has(endId)) {
-        branchElementIds.push(el.id);
+      allArrows.push(el);
+      if (el.customData?.isBranch && el.startBinding?.elementId && el.endBinding?.elementId) {
+        const start = el.startBinding.elementId;
+        const end = el.endBinding.elementId;
+        
+        if (!childMap.has(start)) {
+          childMap.set(start, []);
+        }
+        childMap.get(start).push(end);
       }
     }
-  });
+  }
+
+  const branchNodes = new Set([nodeId]);
+  const queue = [nodeId];
+
+  while (queue.length > 0) {
+    const currentId = queue.shift();
+    const children = childMap.get(currentId);
+    
+    if (children) {
+      for (let i = 0; i < children.length; i++) {
+        const childId = children[i];
+        if (!branchNodes.has(childId)) {
+          branchNodes.add(childId);
+          queue.push(childId);
+        }
+      }
+    }
+  }
+
+  const branchElementIds = Array.from(branchNodes);
+
+  // 3. Identify all arrows (structural OR annotations) where BOTH ends are within the branch
+  for (let i = 0; i < allArrows.length; i++) {
+    const el = allArrows[i];
+    const startId = el.startBinding?.elementId;
+    const endId = el.endBinding?.elementId;
+    // An arrow (isBranch or internal) is part of the group only if 
+      // BOTH ends are nodes within the branch set.
+    if (startId && endId && branchNodes.has(startId) && branchNodes.has(endId)) {
+      branchElementIds.push(el.id);
+    }
+  }
 
   return branchElementIds;
 };
@@ -3204,6 +3227,7 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
 
   // When the view closes, ensure we dock the input back so it's not lost in floating limbo
   tab.onExcalidrawViewClosed = () => {
+    console.log("view closed");
     if (isUndocked) {
       toggleDock({silent: true, forceDock: true, saveSetting: false});
     }
@@ -3246,9 +3270,11 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   const setupEventListeners = (view) => {
     if (!view || !view.ownerWindow) return;
     if(removePointerDownHandler) removePointerDownHandler();
-    view.ownerWindow.addEventListener("pointerdown", canvasPointerListener);
+    const win = view.ownerWindow;
+
+    win.addEventListener("pointerdown", canvasPointerListener);
     removePointerDownHandler = () => {
-      view.ownerWindow.removeEventListener("pointerdown", canvasPointerListener);
+      if (win) win.removeEventListener("pointerdown", canvasPointerListener);
       removePointerDownHandler = null;
     }
     updateKeyHandlerLocation();
