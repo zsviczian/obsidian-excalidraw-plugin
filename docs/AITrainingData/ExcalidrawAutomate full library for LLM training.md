@@ -10499,7 +10499,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-01-06T08:26:39.386Z
+Generated on: 2026-01-07T15:58:51.129Z
 
 ---
 
@@ -19310,31 +19310,111 @@ const ACTION_DOCK_UNDOCK = "Dock/Undock";
 const ACTION_HIDE = "Dock & hide";
 
 // Default configuration
+// scope may be "input" | "excalidraw" | "global"
+// - input: the hotkey only works if the inputEl has focus
+// - excalidraw: the hotkey works when either the inputEl has focus or the sidepanelView leaf or the Excalidraw leaf is active
+// - global: the hotkey works across obsidian, when ever the Excalidraw view in ea.targetView is visible, i.e. the hotkey works even if the user is active in a leaf like pdf viewer, markdown note, open next to Excalidraw.
+// - none: ea.targetView not set or Excalidraw leaf not visible
+const SCOPE = {
+  input: 3,
+  excalidraw: 2,
+  global: 1,
+  none: 0,
+}
 const DEFAULT_HOTKEYS = [
-  { action: ACTION_ADD, key: "Enter", modifiers: [], immutable: true }, // Logic relies on standard Enter behavior in input
-  { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers: ["Mod", "Alt"] },
-  { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"] },
-  { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"] },
-  { action: ACTION_EDIT, code: "F2", modifiers: [] },
-  { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"] },
-  { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"] },
-  { action: ACTION_TOGGLE_GROUP, code: "KeyG", modifiers: ["Alt"] }, 
-  { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"] },
-  { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"] },
-  { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"] },
-  { action: ACTION_ZOOM, code: "KeyZ", modifiers: ["Alt"] },
-  { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"] },
-  { action: ACTION_DOCK_UNDOCK, key: "Enter", modifiers: ["Shift"] },
-  { action: ACTION_HIDE, key: "Escape", modifiers: [], immutable: true  },
-  { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true },
-  { action: ACTION_NAVIGATE_ZOOM, key: "ArrowKeys", modifiers: ["Alt", "Shift"], isNavigation: true },
-  { action: ACTION_NAVIGATE_FOCUS, key: "ArrowKeys", modifiers: ["Alt", "Mod"], isNavigation: true },
+  { action: ACTION_ADD, key: "Enter", modifiers: [], immutable: true, scope: SCOPE.input, isInputOnly: true }, // Logic relies on standard Enter behavior in input
+  { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers: ["Mod", "Alt"], scope: SCOPE.input, isInputOnly: true },
+  { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: true },
+  { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"], scope: SCOPE.input, isInputOnly: true },
+  { action: ACTION_EDIT, code: "F2", modifiers: [], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_TOGGLE_GROUP, code: "KeyG", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false }, 
+  { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_ZOOM, code: "KeyZ", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_DOCK_UNDOCK, key: "Enter", modifiers: ["Shift"], scope: SCOPE.input, isInputOnly: true },
+  { action: ACTION_HIDE, key: "Escape", modifiers: [], immutable: true , scope: SCOPE.excalidraw, isInputOnly: true },
+  { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_NAVIGATE_ZOOM, key: "ArrowKeys", modifiers: ["Alt", "Shift"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_NAVIGATE_FOCUS, key: "ArrowKeys", modifiers: ["Alt", "Mod"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
 ];
 
 // Load hotkeys from settings or use default
 // IMPORTANT: Use JSON.parse/stringify to create a deep copy of defaults.
 // Otherwise, modifying userHotkeys modifies DEFAULT_HOTKEYS in memory, breaking the isModified check until restart.
 let userHotkeys = getVal(K_HOTKEYS, {value: JSON.parse(JSON.stringify(DEFAULT_HOTKEYS)), hidden: true});
+let isRecordingHotkey = false;
+let cancelHotkeyRecording = null;
+
+/**
+ * Sync userHotkeys to DEFAULT_HOTKEYS by action.
+ * - Drops user actions not in DEFAULT
+ * - Adds missing actions from DEFAULT
+ * - For existing actions:
+ *    - keeps user values for existing keys
+ *    - adds missing keys from DEFAULT
+ *    - removes keys not in DEFAULT
+ */
+function updateUserHotkeys() {
+  let dirty = false;
+
+  const defaultByAction = new Map(DEFAULT_HOTKEYS.map(d => [d.action, d]));
+
+  const userByAction = new Map();
+  for (const u of userHotkeys) {
+    if (u && typeof u.action === "string" && defaultByAction.has(u.action)) {
+      userByAction.set(u.action, u);
+    } else if (u && u.action) {
+      // user action no longer exists in DEFAULT => dropped
+      dirty = true;
+    }
+  }
+
+  const next = [];
+
+  for (const d of DEFAULT_HOTKEYS) {
+    const u = userByAction.get(d.action);
+
+    if (!u) {
+      next.push(structuredClone ? structuredClone(d) : JSON.parse(JSON.stringify(d)));
+      dirty = true;
+      continue;
+    }
+
+    const cleaned = { action: d.action };
+
+    for (const key of Object.keys(d)) {
+      if (key === "action") continue;
+
+      if (Object.prototype.hasOwnProperty.call(u, key)) {
+        cleaned[key] = u[key];
+      } else {
+        cleaned[key] = d[key];
+        dirty = true;
+      }
+    }
+
+    for (const key of Object.keys(u)) {
+      if (key === "action") continue;
+      if (!Object.prototype.hasOwnProperty.call(d, key)) {
+        dirty = true;
+        break;
+      }
+    }
+
+    next.push(cleaned);
+  }
+
+  userHotkeys = next;
+  return dirty;
+}
+
+dirty = updateUserHotkeys();
+
+
 
 const getHotkeyDefByAction = (action) => userHotkeys.find((h)=>h.action === action);
 
@@ -19382,12 +19462,45 @@ const generateRuntimeHotkeys = () => {
 
 let RUNTIME_HOTKEYS = generateRuntimeHotkeys();
 
+/**
+ * Returns the current scope context for the hotkey
+**/
+const getHotkeyContext = () => {
+  if (!ea.targetView) return SCOPE.none;
+
+  const currentWindow = isUndocked && floatingInputModal 
+    ? ea.targetView?.ownerWindow 
+    : sidepanelWindow;
+  
+  if (currentWindow.document?.activeElement === inputEl) {
+    return SCOPE.input;
+  }
+
+  const leaf = app.workspace.activeLeaf;
+  if (
+    ea.targetView.leaf === leaf ||
+    (ea.getSidepanelLeaf() === leaf && ea.sidepanelTab.isVisible())
+  ) {
+    return SCOPE.excalidraw;
+  }
+
+  if (ea.targetView.leaf.isVisible()) {
+    return SCOPE.global;
+  }
+
+  return SCOPE.none;
+}
+
 const INSTRUCTIONS = `
 <br>
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 
 - **ENTER**: Add a sibling node and stay on the current parent for rapid entry. If you press enter when the input field is empty the focus will move to the child node that was most recently added. Pressing enter subsequent times will iterate through the new child's siblings
 - **Hotkeys**: See configuration at the bottom of the sidepanel
+- **Global vs Local Hotkeys**: Use the 🌐/⌨️ toggle in configuration.
+  - 🌐 **Global**: Works whenever Excalidraw is visible.
+  - 🎨 **Excalidraw**: Works whenever Excalidraw is active.
+  - ⌨️ **Local**: Works only when the MindMap input field is focused.
 - **Dock/Undock**: You can dock/undock the input field using the dock/undock button or the configured hotkey
 - **ESC**: Docks the floating input field without activating the side panel
 - **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
@@ -20714,8 +20827,9 @@ let inputContainer;
 let helpContainer;
 let floatingInputModal = null;
 let sidepanelWindow;
-let popScope = null;
+let popObsidianHotkeyScope = null;
 let keydownHandlers = [];
+let removePointerDownHandler = null;
 let recordingScope = null;
 
 const removeKeydownHandlers = () => {
@@ -20729,10 +20843,11 @@ const registerKeydownHandler = (host, handler) => {
   keydownHandlers.push(()=>host.removeEventListener("keydown", handler, true))
 }
 
-const registerMindmapHotkeys = () => {
-  if (popScope) popScope();
+const registerObsidianHotkeyOverrides = () => {
+  if (popObsidianHotkeyScope) popObsidianHotkeyScope();
   const scope = app.keymap.getRootScope();
   const handlers = [];
+  const context = getHotkeyContext();
 
   const reg = (mods, key) => {
     const handler = scope.register(mods, key, (e) => true);
@@ -20742,6 +20857,7 @@ const registerMindmapHotkeys = () => {
   };
 
   RUNTIME_HOTKEYS.forEach(h => {
+    if (context < scope) return;
     if (h.key) reg(h.modifiers, h.key);
     if (h.code) {
       const char = h.code.replace("Key", "").toLowerCase();
@@ -20749,17 +20865,20 @@ const registerMindmapHotkeys = () => {
     }
   });
 
-  popScope = () => {
+  if(handlers.length === 0) return;
+
+  popObsidianHotkeyScope = () => {
     handlers.forEach(h => scope.unregister(h));
-    popScope = null;
+    popObsidianHotkeyScope = null;
   };
 };
 
 const focusInputEl = () => {
   setTimeout(() => {
+    if(isRecordingHotkey) return;
     if(!inputEl || inputEl.disabled) return;
     inputEl.focus();
-    if (!popScope) registerMindmapHotkeys();
+    if (!popObsidianHotkeyScope) registerObsidianHotkeyOverrides();
   }, 200);
 }
 
@@ -21163,12 +21282,12 @@ const renderInput = (container, isFloating = false) => {
       `${ACTION_ADD_FOLLOW_ZOOM} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}\n`;
     inputEl.placeholder = "Concept... type [[ to insert link";
     inputEl.addEventListener("focus", () => {
-      registerMindmapHotkeys();
+      registerObsidianHotkeyOverrides();
       ensureNodeSelected();
       updateUI();
     });
     inputEl.addEventListener("blur", () => {
-      if (popScope) popScope();
+      if (popObsidianHotkeyScope) popObsidianHotkeyScope();
       saveSettings();
     });
   });
@@ -21480,7 +21599,7 @@ const renderBody = (contentEl) => {
   const refreshHotkeys = () => {
     RUNTIME_HOTKEYS = generateRuntimeHotkeys();
     // Re-register scope if currently active
-    if (popScope) registerMindmapHotkeys();
+    registerObsidianHotkeyOverrides();
     // Ensure event listeners are attached to the correct window
     updateKeyHandlerLocation();
   };
@@ -21504,20 +21623,33 @@ const renderBody = (contentEl) => {
     return !current.modifiers.every(m => def.modifiers.includes(m));
   };
 
-const recordHotkey = (btn, hIndex, onUpdate) => {
+  const recordHotkey = (btn, hIndex, onUpdate) => {
     const originalText = btn.innerHTML;
     const label = btn.parentElement.querySelector(".setting-hotkey");
     
     btn.innerHTML = `Press hotkey...`;
     btn.addClass("is-recording");
+    isRecordingHotkey = true;
     
-    // 1. Create and push a new Scope to Obsidian's Keymap.
-    // This creates a new high-priority context.
     recordingScope = new ea.obsidian.Scope();
     app.keymap.pushScope(recordingScope);
 
+    const cleanup = () => {
+      if (recordingScope) {
+        app.keymap.popObsidianHotkeyScope(recordingScope);
+        recordingScope = null;
+      }
+
+      btn.innerHTML = originalText;
+      btn.removeClass("is-recording");
+      
+      isRecordingHotkey = false;
+      cancelHotkeyRecording = null;
+    };
+
+    cancelHotkeyRecording = cleanup;
+
     const handler = (e) => {
-      // 2. Handle Escape to Abort
       if (e.key === "Escape") {
         cleanup();
         return false;
@@ -21589,19 +21721,6 @@ const recordHotkey = (btn, hIndex, onUpdate) => {
       return false;
     };
 
-    const cleanup = () => {
-      // 3. Remove the scope to restore normal Obsidian hotkeys
-      if (recordingScope) {
-        app.keymap.popScope(recordingScope);
-        recordingScope = null;
-      }
-
-      btn.innerHTML = originalText;
-      btn.removeClass("is-recording");
-    };
-
-    // 4. Register a catch-all handler (null, null) on the scope
-    // This captures every keypress while the scope is active
     recordingScope.register(null, null, handler);
   };
 
@@ -21614,6 +21733,54 @@ const recordHotkey = (btn, hIndex, onUpdate) => {
     const controlDiv = setting.controlEl;
     controlDiv.addClass("setting-item-control");
     
+    // Create UI elements
+    let scopeBtn = null;
+    let updateScopeUI = null;
+
+    if (!h.isInputOnly) {
+      scopeBtn = controlDiv.createSpan("clickable-icon setting-global-hotkey-button");
+      scopeBtn.style.marginRight = "8px";
+      
+      updateScopeUI = () => {
+        const scope = userHotkeys[index].scope;
+        switch (scope) {
+          case SCOPE.input:
+            scopeBtn.innerHTML = ea.obsidian.getIcon("keyboard").outerHTML;
+            scopeBtn.ariaLabel = "Local: Active only when MindMap Input is focused";
+            scopeBtn.style.color = "var(--text-muted)";
+            break;
+          case SCOPE.excalidraw:
+            scopeBtn.innerHTML = ea.obsidian.getIcon("excalidraw-icon").outerHTML;
+            scopeBtn.ariaLabel = "Excalidraw: Active whenever MindMap Input or Excalidraw is focused";
+            scopeBtn.style.color = "var(--interactive-accent)";
+            break;
+          case SCOPE.global:
+            scopeBtn.innerHTML = ea.obsidian.getIcon("globe").outerHTML;
+            scopeBtn.ariaLabel = "Global: Active everywhere in Obsidian, whenever the Excalidraw view is visible";
+            scopeBtn.style.color = "var(--text-error)";
+            break;
+        }
+      };
+
+      scopeBtn.onclick = () => {
+        switch (userHotkeys[index].scope) {
+          case SCOPE.input:
+            userHotkeys[index].scope = SCOPE.excalidraw;
+            break;
+          case SCOPE.excalidraw:
+            userHotkeys[index].scope = SCOPE.global;
+            break;
+          case SCOPE.global:
+            userHotkeys[index].scope = SCOPE.input;
+            break;
+        }
+        saveHotkeys();
+        updateScopeUI();
+      };
+
+      updateScopeUI();
+    }
+
     const hotkeyDisplay = controlDiv.createDiv("setting-command-hotkeys");
     const span = hotkeyDisplay.createSpan("setting-hotkey");
     
@@ -21625,6 +21792,7 @@ const recordHotkey = (btn, hIndex, onUpdate) => {
     const updateRowUI = () => {
       span.textContent = getHotkeyDisplayString(userHotkeys[index]);
       restoreBtn.style.display = isModified(userHotkeys[index]) ? "" : "none";
+      if (updateScopeUI) updateScopeUI();
     };
 
     // Initial render
@@ -21734,8 +21902,8 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
       modalEl.style.maxHeight = "calc(2 * var(--size-4-4) + 12px + var(--input-height))";
       const container = floatingInputModal.contentEl.createDiv();
       renderInput(container, true);
+      focusInputEl();
       setTimeout(() => {
-        inputEl?.focus();
         //the modalEl is repositioned after a delay
         //otherwise the event handlers in FloatingModal would override the move
         //leaving modalEl in the center of the view
@@ -21746,7 +21914,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
     };
 
     floatingInputModal.onClose = () => {
-      if (popScope) popScope();
+      if (popObsidianHotkeyScope) popObsidianHotkeyScope();
       floatingInputModal = null;
       if (isUndocked) {
         // If closed manually (e.g. unexpected close), dock back silently
@@ -21772,9 +21940,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
     renderInput(inputContainer, false);
     if (forceDock) return;
     if (!silent) {
-      setTimeout(() => {
-        inputEl?.focus();
-      }, 100);
+      focusInputEl();
     }
   }
 };
@@ -21795,11 +21961,12 @@ const getActionFromEvent = (e) => {
            (e.altKey === hasAlt);
   });
 
-  return match ? match.action : null;
+  return match ? { action: match.action, scope: match.scope } :  { };
 };
 
 const keyHandler = async (e) => {
-  // Determine which window the input is currently in
+  if (isRecordingHotkey) return;
+
   const currentWindow = isUndocked && floatingInputModal 
     ? ea.targetView?.ownerWindow 
     : sidepanelWindow;
@@ -21814,17 +21981,11 @@ const keyHandler = async (e) => {
     return;
   }
   
-  // Check if the input element is actually focused
-  if (currentWindow.document?.activeElement !== inputEl) {
-    if (e.key === "Escape" && isUndocked) {
-      toggleDock({silent: true, forceDock: true, saveSetting: false});
-    }
-    return;
-  }
-
-  const action = getActionFromEvent(e);
+  const {action, scope} = getActionFromEvent(e);
 
   if (!action) return;
+
+  if (getHotkeyContext() < scope) return;
 
   e.preventDefault();
   e.stopPropagation();
@@ -21834,7 +21995,10 @@ const keyHandler = async (e) => {
       await toggleBranchGroup();
       break;
     case ACTION_HIDE:
-      if (isUndocked) {
+      if (editingNodeId) {
+        editingNodeId = null;
+        updateUI();
+      } else if (isUndocked) {
         toggleDock({silent: true, forceDock: true, saveSetting: false});
       }
       break;
@@ -22045,47 +22209,58 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
 
   const setupEventListeners = (view) => {
     if (!view || !view.ownerWindow) return;
-    
+    if(removePointerDownHandler) removePointerDownHandler();
     view.ownerWindow.addEventListener("pointerdown", canvasPointerListener);
-
+    removePointerDownHandler = () => {
+      view.ownerWindow.removeEventListener("pointerdown", canvasPointerListener);
+      removePointerDownHandler = null;
+    }
     updateKeyHandlerLocation();
   };
 
   const removeEventListeners = (view) => {
     removeKeydownHandlers();
-    if (popScope) popScope();
+    if (popObsidianHotkeyScope) popObsidianHotkeyScope();
     if (!view || !view.ownerWindow) return;
-    view.ownerWindow.removeEventListener("pointerdown", canvasPointerListener);
+    if(removePointerDownHandler) removePointerDownHandler();
   };
 
   const onFocus = (view) => {
     if (!view) return;
 
-    // Cleanup old view
-    if (ea.targetView) {
-      removeEventListeners(ea.targetView);
+    if (ea.targetView !== view) {
+      if (ea.targetView) removeEventListeners(ea.targetView);
+      ea.setView(view);
+      ea.clear();
     }
 
-    // Set new view
-    ea.setView(view);
-
-    // Setup new view
     setupEventListeners(view);
-    
-    // Update UI for new view selection
+
     ensureNodeSelected();
     updateUI();
-    focusInputEl();
   };
 
   tab.onFocus = (view) => onFocus(view);
 
   const onActiveLeafChange = (leaf) => {
+    console.log("leaf change");
+    if (cancelHotkeyRecording) cancelHotkeyRecording();
+
+    if (ea.targetView !== leaf.view && ea.isExcalidrawView(leaf.view)) {
+      if (ea.targetView) removeEventListeners(ea.targetView);
+      ea.setView(leaf.view);
+      ea.clear();
+      setupEventListeners(leaf.view);
+    }
+    registerObsidianHotkeyOverrides();
+
     if(!isUndocked || !floatingInputModal || !leaf) {
       return;
     }
+
     if (ea.isExcalidrawView(leaf.view)) {
-      onFocus(leaf.view);
+      ensureNodeSelected();
+      updateUI();
       const { modalEl } = floatingInputModal
       if (modalEl.style.display === "none") {
         modalEl.style.display = "";
@@ -22113,7 +22288,7 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
 
   tab.onClose = async () => {
     app.workspace.offref(leafChangeRef);
-    if (popScope) popScope();
+    if (popObsidianHotkeyScope) popObsidianHotkeyScope();
     if (ea.targetView) {
       removeEventListeners(ea.targetView);
     }
