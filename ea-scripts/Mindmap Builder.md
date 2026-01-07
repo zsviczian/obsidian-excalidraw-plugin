@@ -258,6 +258,8 @@ const parseEmbeddableInput = (input) => {
   return match ? match[1] : null;
 };
 
+// ------------------------------------------------
+// ---------- HOTKEY SUPPORT FUNCTIONS ------------
 const ACTION_ADD = "Add";
 const ACTION_ADD_FOLLOW = "Add + follow";
 const ACTION_ADD_FOLLOW_FOCUS = "Add + follow + focus";
@@ -319,6 +321,30 @@ const DEFAULT_HOTKEYS = [
 let userHotkeys = getVal(K_HOTKEYS, {value: JSON.parse(JSON.stringify(DEFAULT_HOTKEYS)), hidden: true});
 let isRecordingHotkey = false;
 let cancelHotkeyRecording = null;
+
+function getObsidianHotkeys() {
+  const normMods = (mods = []) =>
+    mods.map(m => (m === "Mod" ? "Ctrl" : m)).sort(); // on Windows
+
+  const keyOf = (hk) => {
+    const key = hk.key ?? hk.code ?? "";
+    return JSON.stringify({ key, modifiers: normMods(hk.modifiers) });
+  };
+
+  const hotkeyMap = new Map();
+
+  app.commands.listCommands().forEach((cmd) => {
+    const custom = app.hotkeyManager.getHotkeys(cmd.id) || [];
+    const defaults = app.hotkeyManager.getDefaultHotkeys(cmd.id) || [];
+    const effective = custom.length ? custom : defaults;
+
+    effective.forEach((hk) => {
+      hotkeyMap.set(keyOf(hk), { name: cmd.name, id: cmd.id });
+    });
+  });
+
+  return hotkeyMap;
+};
 
 /**
  * Sync userHotkeys to DEFAULT_HOTKEYS by action.
@@ -2562,8 +2588,8 @@ const renderBody = (contentEl) => {
   hkDetails.createEl("summary", { text: "Hotkey Configuration", attr: { style: "cursor: pointer; font-weight: bold;" } });
   
   const hkContainer = hkDetails.createDiv();
-  hkContainer.createEl("p", {
-    text: "While the Mindmap Builder input field is active, the following hotkeys override standard Obsidian behaviors.",
+  const hint = hkContainer.createEl("p", {
+    text: "These hotkeys override some Obsidian defaults. They’re Local (⌨️) by default—active only when the MindMap input is focused. Use the 🌐/🎨/⌨️ toggle below to change scope: 🌐 Global (Excalidraw visible), 🎨 Excalidraw (Excalidraw focused), ⌨️ Local (input focused).",
     attr: { style: "color: var(--text-muted); font-size: 0.85em; margin-bottom: 10px;" }
   });
 
@@ -2607,7 +2633,7 @@ const renderBody = (contentEl) => {
 
     const cleanup = () => {
       if (recordingScope) {
-        app.keymap.popObsidianHotkeyScope(recordingScope);
+        app.keymap.popScope(recordingScope);
         recordingScope = null;
       }
 
@@ -2667,8 +2693,8 @@ const renderBody = (contentEl) => {
 
       if (conflict) {
         label.style.color = "var(--text-error)";
-        new Notice(`Conflict with "${conflict.action}"`);
-        setTimeout(() => label.style.color = "", 2000);
+        new Notice(`Conflict with "${conflict.action}"`, 6000);
+        setTimeout(() => label.style.color = "", 4000);
       } else {
         // Update setting
         if (isNav) {
@@ -3214,7 +3240,6 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   tab.onFocus = (view) => onFocus(view);
 
   const onActiveLeafChange = (leaf) => {
-    console.log("leaf change");
     if (cancelHotkeyRecording) cancelHotkeyRecording();
 
     if (ea.targetView !== leaf.view && ea.isExcalidrawView(leaf.view)) {
