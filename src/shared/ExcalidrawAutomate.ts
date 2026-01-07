@@ -32,7 +32,6 @@ import {
   DEVICE,
   mermaidToExcalidraw,
   refreshTextDimensions,
-  getDefaultColorPalette,
   getFontFamilyString,
 } from "src/constants/constants";
 import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath, splitFolderAndFilename } from "src/utils/fileUtils";
@@ -98,6 +97,7 @@ import { patchMobileView } from "src/utils/customEmbeddableUtils";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { AIRequest } from "src/types/AIUtilTypes";
 import { getAspectRatio } from "src/utils/YoutTubeUtils";
+import { getPDFCropRect } from "src/utils/PDFUtils";
 
 extendPlugins([
   HarmonyPlugin,
@@ -2189,33 +2189,39 @@ export class ExcalidrawAutomate {
       colorMap = topXOrOpts.colorMap;
     }
 
+    const pdfLinkRegex = /^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/;
+    const originalLink = typeof imageFile === "string" ? imageFile : null;
+    const imageFileForLoader = originalLink && pdfLinkRegex.test(originalLink)
+      ? originalLink.split("&rect=")[0]
+      : imageFile;
+
     const id = nanoid();
     const loader = new EmbeddedFilesLoader(
       this.plugin,
       this.canvas.theme === "dark",
     );
-    const image = (typeof imageFile === "string")
-      ? await loader.getObsidianImage(new EmbeddedFile(this.plugin, "", imageFile),0)
-      : await loader.getObsidianImage(imageFile,0);
+    const image = (typeof imageFileForLoader === "string")
+      ? await loader.getObsidianImage(new EmbeddedFile(this.plugin, "", imageFileForLoader),0)
+      : await loader.getObsidianImage(imageFileForLoader,0);
       
     if (!image) {
       return null;
     }
-    const fileId = typeof imageFile === "string"
+    const fileId = typeof imageFileForLoader === "string"
       ? image.fileId
-      : imageFile.extension === "md" || imageFile.extension.toLowerCase() === "pdf" ? fileid() as FileId : image.fileId;
+      : imageFileForLoader.extension === "md" || imageFileForLoader.extension.toLowerCase() === "pdf" ? fileid() as FileId : image.fileId;
     this.imagesDict[fileId] = {
       mimeType: image.mimeType,
       id: fileId,
       dataURL: image.dataURL,
       created: image.created,
-      isHyperLink: typeof imageFile === "string",
-      hyperlink: typeof imageFile === "string"
-        ? imageFile
+      isHyperLink: typeof imageFileForLoader === "string",
+      hyperlink: typeof imageFileForLoader === "string"
+        ? imageFileForLoader
         : null,
-      file: typeof imageFile === "string"
+      file: typeof imageFileForLoader === "string"
         ? null
-        : imageFile.path + (scale || !anchor ? "":"|100%"),
+        : imageFileForLoader.path + (scale || !anchor ? "":"|100%"),
       hasSVGwithBitmap: image.hasSVGwithBitmap,
       latex: null,
       size: { //must have the natural size here (e.g. for PDF cropping)
@@ -2243,6 +2249,22 @@ export class ExcalidrawAutomate {
     newEl.fileId = fileId;
     newEl.scale = [1, 1];
     newEl.crop = null;
+    if(originalLink && pdfLinkRegex.test(originalLink)) {
+      const fd = this.imagesDict[fileId];
+      newEl.crop = getPDFCropRect({
+        scale: this.plugin.settings.pdfScale,
+        link: originalLink,
+        naturalHeight: fd.size.height,
+        naturalWidth: fd.size.width,
+        pdfPageViewProps: fd.pdfPageViewProps,
+      });
+      addAppendUpdateCustomData(newEl, {pdfPageViewProps: fd.pdfPageViewProps});
+      if(newEl.crop) {
+        newEl.width = newEl.crop.width/this.plugin.settings.pdfScale;
+        newEl.height = newEl.crop.height/this.plugin.settings.pdfScale;
+      }
+      newEl.link = `[[${originalLink}]]`;
+    }
     if(!scale && anchor) {
       newEl.customData = {isAnchored: true}
     };
