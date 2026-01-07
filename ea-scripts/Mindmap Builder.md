@@ -322,28 +322,35 @@ let userHotkeys = getVal(K_HOTKEYS, {value: JSON.parse(JSON.stringify(DEFAULT_HO
 let isRecordingHotkey = false;
 let cancelHotkeyRecording = null;
 
-function getObsidianHotkeys() {
-  const normMods = (mods = []) =>
-    mods.map(m => (m === "Mod" ? "Ctrl" : m)).sort(); // on Windows
+const getObsidianConflict = (h) => {
+  if (!h) return null;
+  
+  const normalize = (s) => s.toLowerCase().replace("key", "");
+  const sortMods = (m) => [...m].sort().join(",");
+  
+  const keysToCheck = h.isNavigation 
+    ? ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]
+    : [h.code ? h.code : h.key];
 
-  const keyOf = (hk) => {
-    const key = hk.key ?? hk.code ?? "";
-    return JSON.stringify({ key, modifiers: normMods(hk.modifiers) });
-  };
+  const targetMods = sortMods(h.modifiers);
 
-  const hotkeyMap = new Map();
+  const commands = app.commands.listCommands();
+  for (const cmd of commands) {
+    const hotkeys = app.hotkeyManager.getHotkeys(cmd.id) || app.hotkeyManager.getDefaultHotkeys(cmd.id);
+    if (!hotkeys) continue;
 
-  app.commands.listCommands().forEach((cmd) => {
-    const custom = app.hotkeyManager.getHotkeys(cmd.id) || [];
-    const defaults = app.hotkeyManager.getDefaultHotkeys(cmd.id) || [];
-    const effective = custom.length ? custom : defaults;
-
-    effective.forEach((hk) => {
-      hotkeyMap.set(keyOf(hk), { name: cmd.name, id: cmd.id });
-    });
-  });
-
-  return hotkeyMap;
+    for (const hk of hotkeys) {
+      const hkKey = normalize(hk.key);
+      const hkMods = sortMods(hk.modifiers);
+      
+      for (const targetKeyRaw of keysToCheck) {
+        if (normalize(targetKeyRaw) === hkKey && targetMods === hkMods) {
+          return cmd.name;
+        }
+      }
+    }
+  }
+  return null;
 };
 
 /**
@@ -1846,6 +1853,7 @@ const registerObsidianHotkeyOverrides = () => {
   const handlers = [];
   const context = getHotkeyContext();
 
+  if (context === SCOPE.none) return;
   const reg = (mods, key) => {
     const handler = scope.register(mods, key, (e) => true);
     handlers.push(handler);
@@ -2589,7 +2597,7 @@ const renderBody = (contentEl) => {
   
   const hkContainer = hkDetails.createDiv();
   const hint = hkContainer.createEl("p", {
-    text: "These hotkeys override some Obsidian defaults. They’re Local (⌨️) by default—active only when the MindMap input is focused. Use the 🌐/🎨/⌨️ toggle below to change scope: 🌐 Global (Excalidraw visible), 🎨 Excalidraw (Excalidraw focused), ⌨️ Local (input focused).",
+    text: "These hotkeys may override some Obsidian defaults. They’re Local (⌨️) by default, active only when the MindMap input field is focused. Use the 🌐/🎨/⌨️ toggle to change hotkey scope: 🌐 Overrides Obsidian hotkeys whenever an Excalidraw tab is visible, 🎨 Overrides Obsidian hotkeys whenever Excalidraw is focused, ⌨️ Local (input focused).",
     attr: { style: "color: var(--text-muted); font-size: 0.85em; margin-bottom: 10px;" }
   });
 
@@ -2696,7 +2704,6 @@ const renderBody = (contentEl) => {
         new Notice(`Conflict with "${conflict.action}"`, 6000);
         setTimeout(() => label.style.color = "", 4000);
       } else {
-        // Update setting
         if (isNav) {
           targetConfig.modifiers = mods.map(m => m === "Ctrl" || m === "Meta" ? "Mod" : m);
         } else {
@@ -2710,6 +2717,14 @@ const renderBody = (contentEl) => {
           }
         }
         saveHotkeys();
+
+        if (targetConfig.scope === SCOPE.global) {
+          const obsConflict = getObsidianConflict(targetConfig);
+          if (obsConflict) {
+            new Notice(`⚠️ Obsidian Hotkey Conflict!\n\nThis key overrides:\n"${obsConflict}"`, 10000);
+          }
+        }
+
         if(onUpdate) onUpdate();
       }
 
@@ -2721,7 +2736,7 @@ const renderBody = (contentEl) => {
     recordingScope.register(null, null, handler);
   };
 
-  userHotkeys.forEach((h, index) => {
+userHotkeys.forEach((h, index) => {
     if (h.immutable) return;
 
     const setting = new ea.obsidian.Setting(hkContainer)
@@ -2730,14 +2745,48 @@ const renderBody = (contentEl) => {
     const controlDiv = setting.controlEl;
     controlDiv.addClass("setting-item-control");
     
-    // Create UI elements
     let scopeBtn = null;
     let updateScopeUI = null;
+
+    const hotkeyDisplay = controlDiv.createDiv("setting-command-hotkeys");
+    const span = hotkeyDisplay.createSpan("setting-hotkey");
+    const restoreBtn = controlDiv.createSpan("clickable-icon setting-restore-hotkey-button");
+    
+    const updateRowUI = () => {
+      span.textContent = getHotkeyDisplayString(userHotkeys[index]);
+      restoreBtn.style.display = isModified(userHotkeys[index]) ? "" : "none";
+      if (updateScopeUI) updateScopeUI();
+
+      const existingAlert = hotkeyDisplay.querySelector(".hotkey-conflict-icon");
+      if(existingAlert) existingAlert.remove();
+      span.removeClass("has-conflict");
+      span.style.color = "";
+
+      if (userHotkeys[index].scope === SCOPE.global) {
+        const conflict = getObsidianConflict(userHotkeys[index]);
+        if (conflict) {
+          span.addClass("has-conflict");
+          
+          const alert = hotkeyDisplay.createSpan("hotkey-conflict-icon");
+          alert.innerHTML = ea.obsidian.getIcon("octagon-alert").outerHTML;
+          alert.style.color = "var(--text-error)";
+          alert.style.marginLeft = "6px";
+          alert.style.display = "inline-flex"; // Ensure it sits nicely next to text
+          alert.style.cursor = "pointer";
+          alert.ariaLabel = `Overrides Obsidian command:\n${conflict}`;
+          alert.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            new Notice(`⚠️ Global Hotkey Conflict!\n\nThis key overrides:\n"${conflict}"`, 10000);
+          };
+        }
+      }
+    };
 
     if (!h.isInputOnly) {
       scopeBtn = controlDiv.createSpan("clickable-icon setting-global-hotkey-button");
       scopeBtn.style.marginRight = "8px";
-      
+
       updateScopeUI = () => {
         const scope = userHotkeys[index].scope;
         switch (scope) {
@@ -2760,41 +2809,28 @@ const renderBody = (contentEl) => {
       };
 
       scopeBtn.onclick = () => {
-        switch (userHotkeys[index].scope) {
-          case SCOPE.input:
-            userHotkeys[index].scope = SCOPE.excalidraw;
-            break;
-          case SCOPE.excalidraw:
-            userHotkeys[index].scope = SCOPE.global;
-            break;
-          case SCOPE.global:
-            userHotkeys[index].scope = SCOPE.input;
-            break;
-        }
+        const current = userHotkeys[index].scope;
+        let next = SCOPE.input;
+        if (current === SCOPE.input) next = SCOPE.excalidraw;
+        else if (current === SCOPE.excalidraw) next = SCOPE.global;
+        else if (current === SCOPE.global) next = SCOPE.input;
+        
+        userHotkeys[index].scope = next;
         saveHotkeys();
-        updateScopeUI();
-      };
 
+        if (next === SCOPE.global) {
+          const conflict = getObsidianConflict(userHotkeys[index]);
+          if (conflict) {
+            new Notice(`⚠️ Global Hotkey Conflict!\n\nThis key overrides:\n"${conflict}"`, 10000);
+          }
+        }        
+        updateRowUI();
+      };
       updateScopeUI();
     }
 
-    const hotkeyDisplay = controlDiv.createDiv("setting-command-hotkeys");
-    const span = hotkeyDisplay.createSpan("setting-hotkey");
-    
-    // UI Update logic scoped to this specific row
-    const restoreBtn = controlDiv.createSpan("clickable-icon setting-restore-hotkey-button");
     restoreBtn.innerHTML = ea.obsidian.getIcon("rotate-ccw").outerHTML;
     restoreBtn.ariaLabel = "Restore default";
-
-    const updateRowUI = () => {
-      span.textContent = getHotkeyDisplayString(userHotkeys[index]);
-      restoreBtn.style.display = isModified(userHotkeys[index]) ? "" : "none";
-      if (updateScopeUI) updateScopeUI();
-    };
-
-    // Initial render
-    updateRowUI();
-
     restoreBtn.onclick = () => {
       const def = DEFAULT_HOTKEYS.find(d => d.action === userHotkeys[index].action);
       if (def) {
@@ -2803,6 +2839,8 @@ const renderBody = (contentEl) => {
         updateRowUI();
       }
     };
+
+    updateRowUI();
 
     const addBtn = controlDiv.createSpan("clickable-icon setting-add-hotkey-button");
     addBtn.innerHTML = ea.obsidian.getIcon("plus-circle").outerHTML;
@@ -2963,6 +3001,7 @@ const getActionFromEvent = (e) => {
 
 const keyHandler = async (e) => {
   if (isRecordingHotkey) return;
+  if (!ea.targetView || !ea.targetView.leaf.isVisible()) return;
 
   const currentWindow = isUndocked && floatingInputModal 
     ? ea.targetView?.ownerWindow 
