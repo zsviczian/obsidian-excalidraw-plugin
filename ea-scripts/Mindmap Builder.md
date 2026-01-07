@@ -1495,15 +1495,30 @@ const pasteListToMap = async () => {
   if (!rawText) return;
 
   const lines = rawText.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
+
+  if (lines.length === 0) {
+    new Notice("Clipboard is empty.");
+    return;
+  }
+
+  if (lines.length === 1) {
+    const text = lines[0].replace(/^(\s*)(?:-|\*|\d+\.)\s+/, "").trim();
+    
+    if (text) {
+      await addNode(text, true, false);
+      new Notice("Pasted as child node.");
+      return;
+    }
+  }
+
   let parsed = [];
   let rootTextFromHeader = null;
 
   if (
-    lines.length === 0 ||
     !lines[0].match(/^(#+\s|\s*(?:-|\*|\d+)\s)/) ||
     !lines.every((line, idx) => idx === 0 || line.match(/^\s*(?:-|\*|\d+)\s/))
   ) {
-    new Notice("Paste aborted. Cliboard is not a bulleted list");
+    new Notice("Paste aborted. Clipboard is not a bulleted list");
     return;
   }
 
