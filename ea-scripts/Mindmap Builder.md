@@ -205,11 +205,11 @@ if (!ea.getScriptSettingValue(K_GROWTH, {value: "Radial", valueset: GROWTH_TYPES
 const getZoom = (level) => {
   switch (level ?? zoomLevel) {
     case "Low":
-      return ea.DEVICE.isMobile ? 0.85 : 0.92;
+      return ea.DEVICE.isMobile ? 0.20 : 0.10;
     case "High":
-      return ea.DEVICE.isMobile ? 0.50 : 0.60;
+      return ea.DEVICE.isMobile ? 0.60 : 0.50;
     default:
-      return ea.DEVICE.isMobile ? 0.75 : 0.85;
+      return ea.DEVICE.isMobile ? 0.35 : 0.25;
   }
 }
 
@@ -435,7 +435,7 @@ const getHotkeyDisplayString = (h) => {
   if (h.modifiers.includes("Shift")) parts.push("Shift");
   
   if (h.code) parts.push(h.code.replace("Key", ""));
-  else if (h.key === "ArrowKeys") parts.push("Arrow Keys");
+  else if (h.key === "ArrowKeys") parts.push("Arrow");
   else if (h.key === " ") parts.push("Space");
   else parts.push(h.key);
   
@@ -895,15 +895,11 @@ const toggleFold = async (mode = "all") => {
     await triggerGlobalLayout(info.rootId);
   }
 
-  const idsToScroll = [];
-  
-    const currentViewElements = ea.getViewElements();
+  const currentViewElements = ea.getViewElements();
   
   if (mode === "l1") {
     if (isFoldAction) {
-      idsToScroll.push(targetNode.id);
       const children = getChildrenNodes(targetNode.id, currentViewElements);
-      children.forEach(c => idsToScroll.push(c.id));
     }
   } else {
     // Mode "all" (Single node toggle)
@@ -911,26 +907,15 @@ const toggleFold = async (mode = "all") => {
     
     if (isPinned) {
       if (isFoldAction) {
-        idsToScroll.push(targetNode.id);
         const parent = getParentNode(targetNode.id, currentViewElements);
-        if (parent) idsToScroll.push(parent.id);
       } else {
-        idsToScroll.push(targetNode.id);
         const children = getChildrenNodes(targetNode.id, currentViewElements);
-        children.forEach(c => idsToScroll.push(c.id));
       }
     } else {
-      idsToScroll.push(targetNode.id);
     }
   }
 
-  if (idsToScroll.length > 0) {
-    const targets = currentViewElements.filter(el => idsToScroll.includes(el.id));
-    api().scrollToContent(targets, { 
-      fitToContent: true, 
-      animate: true 
-    });
-  }
+  zoomToFit("Low");
 };
 
 // ---------------------------------------------------------------------------
@@ -946,18 +931,22 @@ const nextZoomLevel = (current) => {
   return idx === -1 ? ZOOM_TYPES[0] : ZOOM_TYPES[(idx + 1) % ZOOM_TYPES.length];
 };
 
-const zoomToFit = (cycleLevels) => {
+const zoomToFit = (mode) => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
   if (sel) {
-    if (cycleLevels && storedZoom.elementID === sel.id) {
-      const nextLevel = nextZoomLevel(storedZoom.level ?? zoomLevel);
-      storedZoom.level = nextLevel;
-      api().zoomToFit([sel],10,getZoom(nextLevel));
-    } else {
-      api().zoomToFit([sel],10,getZoom());
-      storedZoom = {elementID: sel.id, level: zoomLevel}
+    let nextLevel = zoomLevel;
+    if (typeof mode === "string") {
+      nextLevel = mode;
+    } else if (!!mode && storedZoom.elementID === sel.id) {
+      nextLevel = nextZoomLevel(storedZoom.level ?? zoomLevel);
     }
+    storedZoom = {elementID: sel.id, level: nextLevel}
+    api().scrollToContent([sel], {
+      fitToViewport: true,
+      viewportZoomFactor: getZoom(nextLevel),
+      animate: true
+    });
   }
   focusInputEl();
 }
@@ -1871,24 +1860,47 @@ const isNodeRightFromCenter = () => {
 }
 
 
-const navigateMap = ({key, zoom = false, focus = false} = {}) => {
+const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
   if(!key) return;
   if (!ea.targetView) return;
-  const allElements = ea.getViewElements();
+  let allElements = ea.getViewElements();
   const current = ea.getViewSelectedElement();
   if (!current) return;
+
   const info = getHierarchy(current, allElements);
   const root = allElements.find((e) => e.id === info.rootId);
   const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
   if (current.id === root.id) {
+    if (current.customData?.isFolded) {
+      await toggleFold("all");
+      allElements = ea.getViewElements();
+    }
+
     const children = getChildrenNodes(root.id, allElements);
     if (children.length) {
-      ea.selectElementsInView([children[0]]);
+      const mode = root.customData?.growthMode || currentModalGrowthMode;
+      if (mode === "Radial") {
+        children.sort(
+          (a, b) =>
+            getAngleFromCenter(rootCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
+            getAngleFromCenter(rootCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 }),
+        );
+      } else {
+        children.sort((a, b) => a.y - b.y);
+      }
+
+      if (key === "ArrowLeft") {
+        ea.selectElementsInView([children[children.length - 1]]);
+      } else {
+        ea.selectElementsInView([children[0]]);
+      }
+
       if (zoom) zoomToFit();
       if (focus) focusSelected();
     }
     return;
   }
+
   if (key === "ArrowLeft" || key === "ArrowRight") {
     const curCenter = { x: current.x + current.width / 2, y: current.y + current.height / 2 };
     const isInRight = curCenter.x > rootCenter.x;
@@ -1896,10 +1908,14 @@ const navigateMap = ({key, zoom = false, focus = false} = {}) => {
     if (goIn) {
       ea.selectElementsInView([getParentNode(current.id, allElements)]);
     } else {
+      if (current.customData?.isFolded) {
+        await toggleFold("all");
+        allElements = ea.getViewElements();
+      }
       const ch = getChildrenNodes(current.id, allElements);
       if (ch.length) ea.selectElementsInView([ch[0]]);
     }
-} else if (key === "ArrowUp" || key === "ArrowDown") {
+  } else if (key === "ArrowUp" || key === "ArrowDown") {
     const parent = getParentNode(current.id, allElements),
       siblings = getChildrenNodes(parent.id, allElements);
     
@@ -1920,6 +1936,7 @@ const navigateMap = ({key, zoom = false, focus = false} = {}) => {
       : (idx + 1) % siblings.length;
     ea.selectElementsInView([siblings[idx === -1 ? 0 : nIdx]]);
   }
+
   if (zoom) zoomToFit();
   if (focus) focusSelected(); 
 };
