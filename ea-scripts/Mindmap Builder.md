@@ -109,24 +109,6 @@ When enabled, the script groups elements from the "leaves" upward. A leaf node i
 ```js
 */
 
-if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.0")) {
-  new Notice("Please update the Excalidraw Plugin to version 2.19.0 or higher.");
-  return;
-}
-
-// --- Initialization Logic ---
-// Check for existing tab
-const existingTab = ea.checkForActiveSidepanelTabForScript();
-if (existingTab) {
-  const hostEA = existingTab.getHostEA();
-  if (hostEA && hostEA !== ea) {
-    hostEA.activateMindmap = true;
-    hostEA.setView(ea.targetView);
-    existingTab.open();
-    return;
-  }
-}
-
 // ---------------------------------------------------------------------------
 // 1. Settings & Persistence Initialization
 // ---------------------------------------------------------------------------
@@ -145,13 +127,224 @@ const K_ZOOM = "Preferred Zoom Level";
 const K_HOTKEYS = "Hotkeys";
 const K_PALETTE = "Custom Palette";
 
-const FONT_SCALE_TYPES = ["Use scene fontsize", "Fibonacci Scale", "Normal Scale"];
-const GROWTH_TYPES = ["Radial", "Right-facing", "Left-facing"];
-const ZOOM_TYPES = ["Low","Medium","High"];
+// ---------------------------------------------------------------------------
+// Core Value Sets
+// ---------------------------------------------------------------------------
+const VALUE_SETS = Object.freeze({
+  SCOPE: Object.freeze({
+    input: 3,
+    excalidraw: 2,
+    global: 1,
+    none: 0,
+  }),
+  FONT_SCALE: Object.freeze(["Use scene fontsize", "Fibonacci Scale", "Normal Scale"]),
+  GROWTH: Object.freeze(["Radial", "Right-facing", "Left-facing"]),
+  ZOOM: Object.freeze(["Low", "Medium", "High"]),
+});
+
+const FONT_SCALE_TYPES = VALUE_SETS.FONT_SCALE;
+const GROWTH_TYPES = VALUE_SETS.GROWTH;
+const ZOOM_TYPES = VALUE_SETS.ZOOM;
+const SCOPE = VALUE_SETS.SCOPE;
+
+const ZOOM_LEVELS = Object.freeze({
+  Low: { desktop: 0.10, mobile: 0.20 },
+  Medium: { desktop: 0.25, mobile: 0.35 },
+  High: { desktop: 0.50, mobile: 0.60 },
+});
+
+const LOCALE = (localStorage.getItem("language") || "en").toLowerCase();
+
+const STRINGS = {
+  en: {
+    // Notices
+    NOTICE_UPDATE_PLUGIN: "Please update the Excalidraw Plugin to version 2.19.0 or higher.",
+    NOTICE_SELECT_NODE_TO_COPY: "Select a node to copy.",
+    NOTICE_MAP_CUT: "Map cut to clipboard.",
+    NOTICE_BRANCH_CUT: "Branch cut to clipboard.",
+    NOTICE_MAP_COPIED: "Map copied as markdown.",
+    NOTICE_BRANCH_COPIED: "Branch copied as bullet list.",
+    NOTICE_CLIPBOARD_EMPTY: "Clipboard is empty.",
+    NOTICE_PASTE_ABORTED: "Paste aborted. Clipboard does not start with a Markdown list or header.",
+    NOTICE_NO_LIST: "No valid Markdown list found on clipboard.",
+    NOTICE_PASTE_COMPLETE: "Paste complete.",
+    NOTICE_ACTION_REQUIRES_ARROWS: "This action requires Arrow Keys. Only modifiers can be changed.",
+    NOTICE_CONFLICT_WITH_ACTION: "Conflict with \"{action}\"",
+    NOTICE_OBSIDIAN_HOTKEY_CONFLICT: "⚠️ Obsidian Hotkey Conflict!\n\nThis key overrides:\n\"{command}\"",
+    NOTICE_GLOBAL_HOTKEY_CONFLICT: "⚠️ Global Hotkey Conflict!\n\nThis key overrides:\n\"{command}\"",
+
+    TOOLTIP_FOLD_BRANCH: "Fold/Unfold selected branch",
+    TOOLTIP_FOLD_L1_BRANCH: "Fold/Unfold children (Level 1)",
+    TOOLTIP_UNFOLD_BRANCH_ALL: "Unfold branch recursively",
+
+    // Action labels (display only)
+    ACTION_LABEL_ADD: "Add",
+    ACTION_LABEL_ADD_FOLLOW: "Add + follow",
+    ACTION_LABEL_ADD_FOLLOW_FOCUS: "Add + follow + focus",
+    ACTION_LABEL_ADD_FOLLOW_ZOOM: "Add + follow + zoom",
+    ACTION_LABEL_EDIT: "Edit node",
+    ACTION_LABEL_PIN: "Pin/Unpin",
+    ACTION_LABEL_BOX: "Box/Unbox",
+    ACTION_LABEL_TOGGLE_GROUP: "Group/Ungroup Single Branch",
+    ACTION_LABEL_COPY: "Copy",
+    ACTION_LABEL_CUT: "Cut",
+    ACTION_LABEL_PASTE: "Paste",
+    ACTION_LABEL_ZOOM: "Cycle Zoom",
+    ACTION_LABEL_FOCUS: "Focus (center) node",
+    ACTION_LABEL_NAVIGATE: "Navigate",
+    ACTION_LABEL_NAVIGATE_ZOOM: "Navigate & zoom",
+    ACTION_LABEL_NAVIGATE_FOCUS: "Navigate & focus",
+    ACTION_LABEL_FOLD: "Fold/Unfold Branch",
+    ACTION_LABEL_FOLD_L1: "Fold/Unfold to Level 1",
+    ACTION_LABEL_UNFOLD_ALL: "Unfold Branch Recursively",
+    ACTION_LABEL_DOCK_UNDOCK: "Dock/Undock",
+    ACTION_LABEL_HIDE: "Dock & hide",
+
+    // Tooltips (shared)
+    PIN_TOOLTIP_PINNED: "This element is pinned. Click to unpin the location of the selected element",
+    PIN_TOOLTIP_UNPINNED: "This element is not pinned. Click to pin the location of the selected element",
+    TOGGLE_GROUP_TOOLTIP_GROUP: "Group this branch. Only available if \"Group Branches\" is disabled.",
+    TOGGLE_GROUP_TOOLTIP_UNGROUP: "Ungroup this branch. Only available if \"Group Branches\" is disabled.",
+    TOOLTIP_EDIT_NODE: "Edit text of selected node",
+    TOOLTIP_PIN_INIT: "Pin/Unpin location of a node. When pinned nodes won't get auto-arranged.",
+    TOOLTIP_REFRESH: "Auto rearrange map.",
+    TOOLTIP_DOCK: "Dock to Sidepanel",
+    TOOLTIP_UNDOCK: "Undock to Floating Modal",
+    TOOLTIP_ZOOM_CYCLE: "Cycle element zoom",
+    TOOLTIP_TOGGLE_GROUP_BTN: "Toggle grouping/ungrouping of a branch. Only available if \"Group Branches\" is disabled.",
+    TOOLTIP_TOGGLE_BOX: "Toggle node box.",
+    TOOLTIP_CONFIGURE_PALETTE: "Configure custom color palette for branches",
+    TOOLTIP_MOVE_UP: "Move Up",
+    TOOLTIP_MOVE_DOWN: "Move Down",
+    TOOLTIP_EDIT_COLOR: "Edit",
+    TOOLTIP_DELETE_COLOR: "Delete",
+    TOOLTIP_OPEN_PALETTE_PICKER: "Open Palette Picker",
+
+    // Buttons and labels
+    DOCK_TITLE: "Mind Map Builder",
+    HELP_SUMMARY: "Instructions & Shortcuts",
+    INPUT_PLACEHOLDER: "Concept... type [[ to insert link",
+    BUTTON_ADD_SIBLING: "Add Sibling",
+    BUTTON_ADD_FOLLOW: "Add+Follow",
+    BUTTON_COPY: "Copy",
+    BUTTON_CUT: "Cut",
+    BUTTON_PASTE: "Paste",
+    TITLE_ADD_SIBLING: "Add sibling with Enter",
+    TITLE_ADD_FOLLOW: "Add and follow",
+    TITLE_COPY: "Copy branch as text",
+    TITLE_CUT: "Cut branch as text",
+    TITLE_PASTE: "Paste list from clipboard",
+    LABEL_ZOOM_LEVEL: "Zoom Level",
+    LABEL_GROWTH_STRATEGY: "Growth Strategy",
+    LABEL_DISABLE_AUTOLAYOUT: "Disable Auto-Layout",
+    LABEL_GROUP_BRANCHES: "Group Branches",
+    LABEL_BOX_CHILD_NODES: "Box Child Nodes",
+    LABEL_ROUNDED_CORNERS: "Rounded Corners",
+    LABEL_USE_SCENE_STROKE: "Use scene stroke style",
+    DESC_USE_SCENE_STROKE: "Use the latest stroke style (solid, dashed, dotted) from the scene, or always use solid style for branches.",
+    LABEL_MULTICOLOR_BRANCHES: "Multicolor Branches",
+    LABEL_MAX_WRAP_WIDTH: "Max Wrap Width",
+    LABEL_CENTER_TEXT: "Center text",
+    DESC_CENTER_TEXT: "Toggle off: align nodes to right/left depending; Toggle on: center the text.",
+    LABEL_FONT_SIZES: "Font Sizes",
+    HOTKEY_SECTION_TITLE: "Hotkey Configuration",
+    HOTKEY_HINT: "These hotkeys may override some Obsidian defaults. They’re Local (⌨️) by default, active only when the MindMap input field is focused. Use the 🌐/🎨/⌨️ toggle to change hotkey scope: 🌐 Overrides Obsidian hotkeys whenever an Excalidraw tab is visible, 🎨 Overrides Obsidian hotkeys whenever Excalidraw is focused, ⌨️ Local (input focused).",
+    RECORD_HOTKEY_PROMPT: "Press hotkey...",
+    ARIA_SCOPE_INPUT: "Local: Active only when MindMap Input is focused",
+    ARIA_SCOPE_EXCALIDRAW: "Excalidraw: Active whenever MindMap Input or Excalidraw is focused",
+    ARIA_SCOPE_GLOBAL: "Global: Active everywhere in Obsidian, whenever the Excalidraw view is visible",
+    ARIA_RESTORE_DEFAULT: "Restore default",
+    ARIA_CUSTOMIZE_HOTKEY: "Customize this hotkey",
+    ARIA_OVERRIDE_COMMAND: "Overrides Obsidian command:\n{command}",
+
+    // Palette manager
+    MODAL_PALETTE_TITLE: "Mindmap Branch Palette",
+    LABEL_ENABLE_CUSTOM_PALETTE: "Enable Custom Palette",
+    DESC_ENABLE_CUSTOM_PALETTE: "Use these colors instead of auto-generated ones.",
+    LABEL_RANDOMIZE_ORDER: "Randomize Order",
+    DESC_RANDOMIZE_ORDER: "Pick colors randomly instead of sequentially.",
+    HEADING_ADD_NEW_COLOR: "Add New Color",
+    HEADING_EDIT_COLOR: "Edit Color",
+    LABEL_SELECT_COLOR: "Select Color",
+    BUTTON_CANCEL_EDIT: "Cancel Edit",
+    BUTTON_ADD_COLOR: "Add Color",
+    BUTTON_UPDATE_COLOR: "Update Color",
+
+    // Misc
+    INPUT_TITLE_PASTE_ROOT: "Mindmap Builder Paste",
+  },
+};
+
+const t = (key, params = {}) => {
+  const str = STRINGS[LOCALE]?.[key] ?? STRINGS.en[key] ?? key;
+  return Object.keys(params).reduce((acc, pKey) => acc.replace(new RegExp(`{${pKey}}`, "g"), params[pKey]), str);
+};
+
+if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.0")) {
+  new Notice(t("NOTICE_UPDATE_PLUGIN"));
+  return;
+}
+
+// --- Initialization Logic ---
+// Check for existing tab
+const existingTab = ea.checkForActiveSidepanelTabForScript();
+if (existingTab) {
+  const hostEA = existingTab.getHostEA();
+  if (hostEA && hostEA !== ea) {
+    hostEA.activateMindmap = true;
+    hostEA.setView(ea.targetView);
+    existingTab.open();
+    return;
+  }
+}
 
 const api = () => ea.getExcalidrawAPI();
-const appState = () => ea.getExcalidrawAPI().getAppState();
+const getAppState = () => ea.getExcalidrawAPI().getAppState();
 const getVal = (key, def) => ea.getScriptSettingValue(key, typeof def === "object" ? def: { value: def }).value;
+// ---------------------------------------------------------------------------
+// Layout & Geometry Constants
+// ---------------------------------------------------------------------------
+const INDICATOR_OFFSET = 10;
+const INDICATOR_OPACITY = 40;
+const CONTAINER_PADDING = 10;
+const MANUAL_GAP_MULTIPLIER = 1.3;
+const MANUAL_JITTER_RANGE = 150;
+const ROOT_RADIUS_FACTOR = 0.9;
+const MIN_RADIUS = 260;
+const RADIUS_PADDING_PER_NODE = 5;
+const GAP_MULTIPLIER_RADIAL = 2.5;
+const GAP_MULTIPLIER_DIRECTIONAL = 1.0;
+
+// ---------------------------------------------------------------------------
+// Color & Palette Constants
+// ---------------------------------------------------------------------------
+const COLOR_CONTRAST_MIN = 2.5;
+const COLOR_DISTINCT_THRESHOLD = 40;
+const HUE_STEP_BASE = 15;
+const HUE_STEP_JITTER = 4;
+const SAT_BASE = 75;
+const SAT_JITTER = 10;
+const LIGHT_BASE_DARK = 65;
+const LIGHT_JITTER_DARK = 10;
+const LIGHT_BASE_LIGHT = 36;
+const LIGHT_JITTER_LIGHT = 8;
+
+// ---------------------------------------------------------------------------
+// Media & Embeds
+// ---------------------------------------------------------------------------
+const PDF_RECT_LINK_REGEX = /^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/;
+
+// ---------------------------------------------------------------------------
+// UI & Interaction Constants
+// ---------------------------------------------------------------------------
+const WRAP_WIDTH_MIN = 100;
+const WRAP_WIDTH_MAX = 600;
+const WRAP_WIDTH_STEP = 10;
+const FLOAT_MODAL_OPACITY = 0.8;
+const FLOAT_MODAL_OFFSET = 5;
+const FLOAT_MODAL_MAX_HEIGHT = "calc(2 * var(--size-4-4) + 12px + var(--input-height))";
+const NOTICE_DURATION_CONFLICT = 6000;
+const NOTICE_DURATION_GLOBAL_CONFLICT = 10000;
 
 const saveSettings = async () => {
   if (dirty) await ea.saveScriptSettings();
@@ -203,20 +396,14 @@ if (!ea.getScriptSettingValue(K_GROWTH, {value: "Right-facing", valueset: GROWTH
 }
 
 const getZoom = (level) => {
-  switch (level ?? zoomLevel) {
-    case "Low":
-      return ea.DEVICE.isMobile ? 0.20 : 0.10;
-    case "High":
-      return ea.DEVICE.isMobile ? 0.60 : 0.50;
-    default:
-      return ea.DEVICE.isMobile ? 0.35 : 0.25;
-  }
-}
+  const target = ZOOM_LEVELS[level ?? zoomLevel] || ZOOM_LEVELS.Medium;
+  return ea.DEVICE.isMobile ? target.mobile : target.desktop;
+};
 
 const fontScale = (type) => {
   switch (type) {
     case "Use scene fontsize":
-      return Array(4).fill(appState().currentItemFontSize);
+      return Array(4).fill(getAppState().currentItemFontSize);
     case "Fibonacci Scale":
       return [68, 42, 26, 16];
     default: // "Normal Scale"
@@ -280,9 +467,37 @@ const ACTION_NAVIGATE_ZOOM = "Navigate & zoom";
 const ACTION_NAVIGATE_FOCUS = "Navigate & focus";
 const ACTION_FOLD = "Fold/Unfold Branch";
 const ACTION_FOLD_L1 = "Fold/Unfold to Level 1";
+const ACTION_UNFOLD_ALL = "Unfold Branch Recursively";
 
 const ACTION_DOCK_UNDOCK = "Dock/Undock";
 const ACTION_HIDE = "Dock & hide";
+const ACTION_REARRANGE = "Rearrange Map";
+
+const ACTION_LABEL_KEYS = {
+  [ACTION_ADD]: "ACTION_LABEL_ADD",
+  [ACTION_ADD_FOLLOW]: "ACTION_LABEL_ADD_FOLLOW",
+  [ACTION_ADD_FOLLOW_FOCUS]: "ACTION_LABEL_ADD_FOLLOW_FOCUS",
+  [ACTION_ADD_FOLLOW_ZOOM]: "ACTION_LABEL_ADD_FOLLOW_ZOOM",
+  [ACTION_EDIT]: "ACTION_LABEL_EDIT",
+  [ACTION_PIN]: "ACTION_LABEL_PIN",
+  [ACTION_BOX]: "ACTION_LABEL_BOX",
+  [ACTION_TOGGLE_GROUP]: "ACTION_LABEL_TOGGLE_GROUP",
+  [ACTION_COPY]: "ACTION_LABEL_COPY",
+  [ACTION_CUT]: "ACTION_LABEL_CUT",
+  [ACTION_PASTE]: "ACTION_LABEL_PASTE",
+  [ACTION_ZOOM]: "ACTION_LABEL_ZOOM",
+  [ACTION_FOCUS]: "ACTION_LABEL_FOCUS",
+  [ACTION_NAVIGATE]: "ACTION_LABEL_NAVIGATE",
+  [ACTION_NAVIGATE_ZOOM]: "ACTION_LABEL_NAVIGATE_ZOOM",
+  [ACTION_NAVIGATE_FOCUS]: "ACTION_LABEL_NAVIGATE_FOCUS",
+  [ACTION_FOLD]: "ACTION_LABEL_FOLD",
+  [ACTION_FOLD_L1]: "ACTION_LABEL_FOLD_L1",
+  [ACTION_UNFOLD_ALL]: "ACTION_LABEL_UNFOLD_ALL",
+  [ACTION_DOCK_UNDOCK]: "ACTION_LABEL_DOCK_UNDOCK",
+  [ACTION_HIDE]: "ACTION_LABEL_HIDE",
+};
+
+const getActionLabel = (action) => t(ACTION_LABEL_KEYS[action] ?? action);
 
 // Default configuration
 // scope may be "input" | "excalidraw" | "global"
@@ -290,12 +505,6 @@ const ACTION_HIDE = "Dock & hide";
 // - excalidraw: the hotkey works when either the inputEl has focus or the sidepanelView leaf or the Excalidraw leaf is active
 // - global: the hotkey works across obsidian, when ever the Excalidraw view in ea.targetView is visible, i.e. the hotkey works even if the user is active in a leaf like pdf viewer, markdown note, open next to Excalidraw.
 // - none: ea.targetView not set or Excalidraw leaf not visible
-const SCOPE = {
-  input: 3,
-  excalidraw: 2,
-  global: 1,
-  none: 0,
-}
 const DEFAULT_HOTKEYS = [
   { action: ACTION_ADD, key: "Enter", modifiers: [], immutable: true, scope: SCOPE.input, isInputOnly: true }, // Logic relies on standard Enter behavior in input
   { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers: ["Mod", "Alt"], scope: SCOPE.input, isInputOnly: true },
@@ -315,8 +524,9 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_NAVIGATE_ZOOM, key: "ArrowKeys", modifiers: ["Alt", "Shift"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_NAVIGATE_FOCUS, key: "ArrowKeys", modifiers: ["Alt", "Mod"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_FOLD, code: "KeyA", modifiers: ["Alt", "Shift"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_FOLD_L1, code: "KeyA", modifiers: ["Ctrl", "Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_FOLD, code: "Digit1", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_FOLD_L1, code: "Digit2", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_UNFOLD_ALL, code: "Digit3", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
 ];
 
 // Load hotkeys from settings or use default
@@ -628,7 +838,7 @@ const getDynamicColor = (existingColors) => {
     }
     return customPalette.colors[existingColors.length % customPalette.colors.length];
   }
-  const st = appState();
+  const st = getAppState();
   const bg = st.viewBackgroundColor === "transparent" ? "#ffffff" : st.viewBackgroundColor;
   const bgCM = ea.getCM(bg);
   const isDarkBg = bgCM.isDark();
@@ -650,8 +860,15 @@ const getDynamicColor = (existingColors) => {
     if (hex && hex !== "transparent") candidates.push({ hex, isPalette: true });
   });
 
-  for (let h = 0; h < 360; h +=15+randInt(4)) {
-    const c = ea.getCM({ h: h, s: 75 + randInt(10), l: isDarkBg ? 65 + randInt(10) : 36 + randInt(8), a: 1 });
+  for (let h = 0; h < 360; h += HUE_STEP_BASE + randInt(HUE_STEP_JITTER)) {
+    const c = ea.getCM({
+      h,
+      s: SAT_BASE + randInt(SAT_JITTER),
+      l: isDarkBg
+        ? LIGHT_BASE_DARK + randInt(LIGHT_JITTER_DARK)
+        : LIGHT_BASE_LIGHT + randInt(LIGHT_JITTER_LIGHT),
+      a: 1
+    });
     candidates.push({ hex: c.stringHEX(), isPalette: false });
   }
 
@@ -690,13 +907,13 @@ const getDynamicColor = (existingColors) => {
     }
 
     return { ...c, contrast, minDiff };
-  }).filter(c => c && c.contrast >= 2.5); // Filter out absolute invisible colors
+  }).filter(c => c && c.contrast >= COLOR_CONTRAST_MIN); // Filter out absolute invisible colors
 
   // Sort Logic
   scored.sort((a, b) => {
     // Threshold for "This color is effectively the same as one already used"
     // Distance of ~30 usually means same Hue family and similar shade
-    const threshold = 40; 
+    const threshold = COLOR_DISTINCT_THRESHOLD; 
     const aIsDistinct = a.minDiff > threshold;
     const bIsDistinct = b.minDiff > threshold;
 
@@ -715,7 +932,7 @@ const getDynamicColor = (existingColors) => {
 };
 
 const getReadableColor = (hex) => {
-  const bg = appState().viewBackgroundColor;
+  const bg = getAppState().viewBackgroundColor;
   const cm = ea.getCM(hex);
   return ea.getCM(bg).isDark()
     ? cm.lightnessTo(80).stringHEX()
@@ -739,19 +956,19 @@ const manageFoldIndicator = (node, show, allElements) => {
       if (ind) {
         ind.isDeleted = false;
         ind.strokeColor = node.strokeColor;
-        ind.opacity = 40;
-        ind.x = node.x + node.width + 10;
+        ind.opacity = INDICATOR_OPACITY;
+        ind.x = node.x + node.width + INDICATOR_OFFSET;
         ind.y = node.y + node.height/2 - ind.height/2;
         return;
       }
     }
     
     // Create new indicator if none exists
-    const id = ea.addText(node.x + node.width + 10, node.y, "...");
+    const id = ea.addText(node.x + node.width + INDICATOR_OFFSET, node.y, "...");
     const ind = ea.getElement(id);
-    ind.fontSize = 20;
+    ind.fontSize = node.fontSize;
     ind.strokeColor = node.strokeColor;
-    ind.opacity = 40;
+    ind.opacity = INDICATOR_OPACITY;
     ind.textVerticalAlign = "middle";
     ind.textAlign = "left";
     ind.y = node.y + node.height/2 - ind.height/2;
@@ -861,7 +1078,7 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold)
   });
 };
 
-const toggleFold = async (mode = "all") => {
+const toggleFold = async (mode = "L0") => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
   if (!sel) return;
@@ -875,11 +1092,11 @@ const toggleFold = async (mode = "all") => {
 
   let isFoldAction = false; 
   
-  if (mode === "all") {
+  if (mode === "L0") {
     const isCurrentlyFolded = targetNode.customData?.isFolded === true;
     isFoldAction = !isCurrentlyFolded;
     ea.addAppendUpdateCustomData(targetNode.id, { isFolded: isFoldAction });
-  } else if (mode === "l1") {
+  } else if (mode === "L1") {
     ea.addAppendUpdateCustomData(targetNode.id, { isFolded: false });
     const children = getChildrenNodes(targetNode.id, wbElements);
     const anyChildFolded = children.some(child => child.customData?.isFolded === true);
@@ -888,6 +1105,14 @@ const toggleFold = async (mode = "all") => {
     children.forEach(child => {
       ea.addAppendUpdateCustomData(child.id, { isFolded: isFoldAction });
     });
+  } else if (mode === "ALL") {
+    const stack = [targetNode];
+    while (stack.length) {
+      const node = stack.pop();
+      ea.addAppendUpdateCustomData(node.id, { isFolded: false });
+      const children = getChildrenNodes(node.id, wbElements);
+      children.forEach(child => stack.push(child));
+    }
   }
 
   updateBranchVisibility(targetNode.id, false, wbElements, true);
@@ -902,12 +1127,12 @@ const toggleFold = async (mode = "all") => {
 
   const currentViewElements = ea.getViewElements();
   
-  if (mode === "l1") {
+  if (mode === "L1") {
     if (isFoldAction) {
       const children = getChildrenNodes(targetNode.id, currentViewElements);
     }
-  } else {
-    // Mode "all" (Single node toggle)
+  } else if (mode === "L0") {
+    // Mode "L0" (Single node toggle)
     const isPinned = targetNode.customData?.isPinned;
     
     if (isPinned) {
@@ -919,8 +1144,8 @@ const toggleFold = async (mode = "all") => {
     } else {
     }
   }
-
-  zoomToFit("Low");
+  ea.viewUpdateScene({appState: {selectedGroupIds: {}}});
+  focusSelected();
 };
 
 // ---------------------------------------------------------------------------
@@ -1058,7 +1283,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   if (node.customData?.foldIndicatorId) {
     const ind = ea.getElement(node.customData.foldIndicatorId);
     if(ind) {
-        ind.x = eaNode.x + eaNode.width + 10;
+        ind.x = eaNode.x + eaNode.width + INDICATOR_OFFSET;
         ind.y = eaNode.y + eaNode.height/2 - ind.height/2;
     }
   }
@@ -1197,10 +1422,10 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     const radiusFromHeight = totalContentHeight / 2.0;
     
     const radius = Math.max(
-      Math.round(root.width * 0.9), 
-      260, 
+      Math.round(root.width * ROOT_RADIUS_FACTOR), 
+      MIN_RADIUS, 
       radiusFromHeight
-    ) + count * 5;
+    ) + count * RADIUS_PADDING_PER_NODE;
 
     const centerAngle = mode === "Left-facing" ? 270 : 90;
     const totalThetaDeg = (totalContentHeight / radius) * (180 / Math.PI);
@@ -1213,7 +1438,7 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       }
 
       const nodeHeight = l1Metrics[i];
-      const gapMultiplier = mode === "Radial" ? 2.5 : 1.0;
+      const gapMultiplier = mode === "Radial" ? GAP_MULTIPLIER_RADIAL : GAP_MULTIPLIER_DIRECTIONAL;
       const effectiveGap = GAP_Y * gapMultiplier;
       
       const nodeSpanRad = nodeHeight / radius;
@@ -1352,14 +1577,14 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   if (!text || text.trim() === "") return;
   
   let allElements = ea.getViewElements();
-  const st = appState();
+  const st = getAppState();
   let parent = ea.getViewSelectedElement();
   if (parent?.containerId) {
     parent = allElements.find((el) => el.id === parent.containerId);
   }
 
   if (parent && parent.customData?.isFolded) {
-    await toggleFold("all");
+    await toggleFold("L0");
 
     allElements = ea.getViewElements();
     parent = allElements.find((el) => el.id === parent.id);
@@ -1374,8 +1599,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   let isPdfRectLink = false;
 
   if (imageInfo) {
-    const pdfLinkRegex = /^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/;
-    if (imageInfo.path.match(pdfLinkRegex)) {
+    if (imageInfo.path.match(PDF_RECT_LINK_REGEX)) {
         isPdfRectLink = true;
     } else {
         imageFile = app.metadataCache.getFirstLinkpathDest(imageInfo.path, ea.targetView.file.path);
@@ -1498,9 +1722,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     }
 
     if (autoLayoutDisabled) {
-      const manualGapX = Math.round(parent.width * 1.3);
-      const jitterX = (Math.random() - 0.5) * 150;
-      const jitterY = (Math.random() - 0.5) * 150;
+      const manualGapX = Math.round(parent.width * MANUAL_GAP_MULTIPLIER);
+      const jitterX = (Math.random() - 0.5) * MANUAL_JITTER_RANGE;
+      const jitterY = (Math.random() - 0.5) * MANUAL_JITTER_RANGE;
       const nodeW = shouldWrap ? curMaxW : metrics.width;
       px = side === 1
         ? parent.x + parent.width + manualGapX + jitterX
@@ -1565,8 +1789,8 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     }
 
     ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
-    ea.style.roughness = appState().currentItemRoughness;
-    ea.style.strokeStyle = isSolidArrow ? "solid" : appState().currentItemStrokeStyle;
+    ea.style.roughness = getAppState().currentItemRoughness;
+    ea.style.strokeStyle = isSolidArrow ? "solid" : getAppState().currentItemStrokeStyle;
     const startPoint = [parent.x + parent.width / 2, parent.y + parent.height / 2];
     arrowId = ea.addArrow([startPoint, startPoint], {
       startObjectId: parent.id,
@@ -1682,7 +1906,7 @@ const copyMapAsText = async (cut = false) => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
   if (!sel) {
-    new Notice("Select a node to copy.");
+    new Notice(t("NOTICE_SELECT_NODE_TO_COPY"));
     return;
   }
   const all = ea.getViewElements();
@@ -1757,9 +1981,9 @@ const copyMapAsText = async (cut = false) => {
       ea.selectElementsInView([parentNode]);
     }
 
-    new Notice(isRootSelected ? "Map cut to clipboard." : "Branch cut to clipboard.");
+    new Notice(isRootSelected ? t("NOTICE_MAP_CUT") : t("NOTICE_BRANCH_CUT"));
   } else {
-    new Notice(isRootSelected ? "Map copied as markdown." : "Branch copied as bullet list.");
+    new Notice(isRootSelected ? t("NOTICE_MAP_COPIED") : t("NOTICE_BRANCH_COPIED"));
   }
 };
 
@@ -1774,7 +1998,7 @@ const pasteListToMap = async () => {
   const lines = rawText.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
 
   if (lines.length === 0) {
-    new Notice("Clipboard is empty.");
+    new Notice(t("NOTICE_CLIPBOARD_EMPTY"));
     return;
   }
 
@@ -1797,7 +2021,7 @@ const pasteListToMap = async () => {
   const isListItem = (l) => l.match(/^(\s*)(?:-|\*|\d+\.)\s+(.*)$/);
 
   if (!isHeader(lines[0]) && !isListItem(lines[0])) {
-    new Notice("Paste aborted. Clipboard does not start with a Markdown list or header.");
+    new Notice(t("NOTICE_PASTE_ABORTED"));
     return;
   }
 
@@ -1817,7 +2041,7 @@ const pasteListToMap = async () => {
   });
 
   if (parsed.length === 0 && !rootTextFromHeader) {
-    new Notice("No valid Markdown list found on clipboard.");
+    new Notice(t("NOTICE_NO_LIST"));
     return;
   }
 
@@ -1828,7 +2052,7 @@ const pasteListToMap = async () => {
       currentParent = await addNode(topLevelItems[0].text, true, true);
       parsed.shift();
     } else {
-      currentParent = await addNode("Mindmap Builder Paste", true, true);
+      currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true);
     }
   } else {
     currentParent = sel;
@@ -1857,7 +2081,7 @@ const pasteListToMap = async () => {
   if (targetToSelect) {
     ea.selectElementsInView([targetToSelect]);
   }
-  new Notice("Paste complete.");
+  new Notice(t("NOTICE_PASTE_COMPLETE"));
 };
 
 // ---------------------------------------------------------------------------
@@ -1889,7 +2113,7 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
   
   if (current.id === root.id) {
     if (current.customData?.isFolded) {
-      await toggleFold("all");
+      await toggleFold("L0");
       allElements = ea.getViewElements();
     }
 
@@ -1960,7 +2184,7 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
       ea.selectElementsInView([getParentNode(current.id, allElements)]);
     } else {
       if (current.customData?.isFolded) {
-        await toggleFold("all");
+        await toggleFold("L0");
         allElements = ea.getViewElements();
       }
       const ch = getChildrenNodes(current.id, allElements);
@@ -1992,13 +2216,13 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
   if (focus) focusSelected(); 
 };
 
-const setMapAutolayout = async (endabled) => {
+const setMapAutolayout = async (enabled) => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
     ea.copyViewElementsToEAforEditing(ea.getViewElements().filter((e) => e.id === info.rootId));
-    ea.addAppendUpdateCustomData(info.rootId, { autoLayoutDisabled: endabled });
+    ea.addAppendUpdateCustomData(info.rootId, { autoLayoutDisabled: enabled });
     await ea.addElementsToView(false, false, true, true);
     ea.clear();
   }
@@ -2125,7 +2349,7 @@ const togglePin = async () => {
   }
 };
 
-const padding = 10;
+const padding = CONTAINER_PADDING;
 const toggleBox = async () => {
   if (!ea.targetView) return;
   let sel = ea.getViewSelectedElement();
@@ -2167,7 +2391,7 @@ const toggleBox = async () => {
     ea.addAppendUpdateCustomData(rectId, { isPinned: !!sel.customData?.isPinned });
     rect.strokeColor = sel.strokeColor;
     rect.strokeWidth = 2;
-    rect.roughness = appState().currentItemRoughness;
+    rect.roughness = getAppState().currentItemRoughness;
     rect.roundness = roundedCorners ? { type: 3 } : null;
     rect.backgroundColor = "transparent";
 
@@ -2205,6 +2429,7 @@ const toggleBox = async () => {
 
 let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown, autoLayoutToggle, linkSuggester;
 let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn, toggleGroupBtn, zoomBtn;
+let foldBtnL0, foldBtnL1, unfoldAllBtn;
 let inputContainer;
 let helpContainer;
 let floatingInputModal = null;
@@ -2214,32 +2439,38 @@ let keydownHandlers = [];
 let removePointerDownHandler = null;
 let recordingScope = null;
 
+// ---------------------------------------------------------------------------
+// Hotkey Wiring & Scope Helpers
+// ---------------------------------------------------------------------------
 const removeKeydownHandlers = () => {
   keydownHandlers.forEach((f)=>f());
   keydownHandlers = [];
-}
+};
 
+// ---------------------------------------------------------------------------
+// Focus Management & UI State
+// ---------------------------------------------------------------------------
 const registerKeydownHandler = (host, handler) => {
   removeKeydownHandlers();
   host.addEventListener("keydown", handler, true);
   keydownHandlers.push(()=>host.removeEventListener("keydown", handler, true))
-}
+};
 
 const registerObsidianHotkeyOverrides = () => {
   if (popObsidianHotkeyScope) popObsidianHotkeyScope();
-  const scope = app.keymap.getRootScope();
+  const keymapScope = app.keymap.getRootScope();
   const handlers = [];
   const context = getHotkeyContext();
 
   if (context === SCOPE.none) return;
   const reg = (mods, key) => {
-    const handler = scope.register(mods, key, (e) => true);
+    const handler = keymapScope.register(mods, key, (e) => true);
     handlers.push(handler);
-    scope.keys.unshift(scope.keys.pop());
+    keymapScope.keys.unshift(keymapScope.keys.pop());
   };
 
   RUNTIME_HOTKEYS.forEach(h => {
-    if (context < scope) return;
+    if (context < keymapScope) return;
     if (h.key) reg(h.modifiers, h.key);
     if (h.code) {
       const char = h.code.replace("Key", "").replace("Digit", "").toLowerCase();
@@ -2250,7 +2481,7 @@ const registerObsidianHotkeyOverrides = () => {
   if(handlers.length === 0) return;
 
   popObsidianHotkeyScope = () => {
-    handlers.forEach(h => scope.unregister(h));
+    handlers.forEach(h => keymapScope.unregister(h));
     popObsidianHotkeyScope = null;
   };
 };
@@ -2269,6 +2500,7 @@ const setButtonDisabled = (btn, disabled) => {
   btn.disabled = disabled;
   const btnEl = btn.extraSettingsEl ?? btn.buttonEl;
   if (!btnEl) return;
+  btnEl.tabIndex = disabled ? -1 : 0;
   btnEl.style.opacity = disabled ? "0.5" : "";
   btnEl.style.cursor = disabled ? "not-allowed" : "";
   if (disabled && btn.buttonEl) {
@@ -2284,6 +2516,9 @@ const disableUI = () => {
   setButtonDisabled(copyBtn, true);
   setButtonDisabled(cutBtn, true);
   setButtonDisabled(boxBtn, true);
+  setButtonDisabled(foldBtnL0, true);
+  setButtonDisabled(foldBtnL1, true);
+  setButtonDisabled(unfoldAllBtn, true);
   setButtonDisabled(editBtn, true);
   setButtonDisabled(toggleGroupBtn, true);
   setButtonDisabled(zoomBtn, true);
@@ -2306,10 +2541,7 @@ const updateUI = () => {
     if (pinBtn) {
       pinBtn.setIcon(isPinned ? "pin" : "pin-off");
       pinBtn.setTooltip(
-        `${isPinned
-          ? "This element is pinned. Click to unpin"
-          : "This element is not pinned. Click to pin"
-        } the location of the selected element ${getActionHotkeyString(ACTION_PIN)}`,
+        `${isPinned ? t("PIN_TOOLTIP_PINNED") : t("PIN_TOOLTIP_UNPINNED")} ${getActionHotkeyString(ACTION_PIN)}`,
       );
       setButtonDisabled(pinBtn, false);
     }
@@ -2329,10 +2561,16 @@ const updateUI = () => {
       const isGrouped = ids.length > 1 && !!ea.getCommonGroupForElements(all.filter(el => ids.includes(el.id)));
 
       toggleGroupBtn.setIcon(isGrouped ? "ungroup" : "group");
-      toggleGroupBtn.setTooltip(`${isGrouped ? "Ungroup" : "Group"} this branch. Only available if "Group Branches" is disabled. ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
+      const groupTooltip = isGrouped ? t("TOGGLE_GROUP_TOOLTIP_UNGROUP") : t("TOGGLE_GROUP_TOOLTIP_GROUP");
+      toggleGroupBtn.setTooltip(`${groupTooltip} ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
       setButtonDisabled(toggleGroupBtn, groupBranches || ids.length <= 1);
     }
+    const branchIds = getBranchElementIds(sel.id, all);
+    const hasFoldedInBranch = all.some(el => branchIds.contains(el.id) && el.type !== "arrow" && el.customData?.isFolded === true);
     setButtonDisabled(boxBtn, false);
+    setButtonDisabled(foldBtnL0, false);
+    setButtonDisabled(foldBtnL1, false);
+    setButtonDisabled(unfoldAllBtn, !hasFoldedInBranch);
     setButtonDisabled(zoomBtn, false);
     setButtonDisabled(refreshBtn, false);
 
@@ -2429,7 +2667,7 @@ const commitEdit = async () => {
 const renderHelp = (container) => {
   helpContainer = container.createDiv();
   detailsEl = helpContainer.createEl("details");
-  detailsEl.createEl("summary", { text: "Instructions & Shortcuts" });
+  detailsEl.createEl("summary", { text: t("HELP_SUMMARY") });
   ea.obsidian.MarkdownRenderer.render(app, INSTRUCTIONS, detailsEl.createDiv(), "", ea.plugin);
 };
 
@@ -2452,12 +2690,12 @@ class PaletteManagerModal extends ea.obsidian.Modal {
   display() {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.createEl("h2", { text: "Mindmap Branch Palette" });
+    contentEl.createEl("h2", { text: t("MODAL_PALETTE_TITLE") });
 
     // --- Global Toggles ---
     new ea.obsidian.Setting(contentEl)
-      .setName("Enable Custom Palette")
-      .setDesc("Use these colors instead of auto-generated ones.")
+      .setName(t("LABEL_ENABLE_CUSTOM_PALETTE"))
+      .setDesc(t("DESC_ENABLE_CUSTOM_PALETTE"))
       .addToggle(t => t
         .setValue(this.settings.enabled)
         .onChange(v => {
@@ -2468,8 +2706,8 @@ class PaletteManagerModal extends ea.obsidian.Modal {
 
     if (this.settings.enabled) {
       new ea.obsidian.Setting(contentEl)
-        .setName("Randomize Order")
-        .setDesc("Pick colors randomly instead of sequentially.")
+        .setName(t("LABEL_RANDOMIZE_ORDER"))
+        .setDesc(t("DESC_RANDOMIZE_ORDER"))
         .addToggle(t => t
           .setValue(this.settings.random)
           .onChange(v => {
@@ -2503,7 +2741,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
         row
           .addExtraButton(btn => btn
             .setIcon("arrow-big-up")
-            .setTooltip("Move Up")
+            .setTooltip(t("TOOLTIP_MOVE_UP"))
             .setDisabled(index === 0)
             .onClick(() => {
               if (index === 0) return;
@@ -2514,7 +2752,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
             }))
           .addExtraButton(btn => btn
             .setIcon("arrow-big-down")
-            .setTooltip("Move Down")
+            .setTooltip(t("TOOLTIP_MOVE_DOWN"))
             .setDisabled(index === this.settings.colors.length - 1)
             .onClick(() => {
               if (index === this.settings.colors.length - 1) return;
@@ -2525,7 +2763,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
             }))
           .addExtraButton(btn => btn
             .setIcon("pencil")
-            .setTooltip("Edit")
+            .setTooltip(t("TOOLTIP_EDIT_COLOR"))
             .onClick(() => {
               this.editIndex = index;
               this.tempColor = color;
@@ -2533,7 +2771,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
             }))
           .addExtraButton(btn => btn
             .setIcon("trash-2")
-            .setTooltip("Delete")
+            .setTooltip(t("TOOLTIP_DELETE_COLOR"))
             .onClick(() => {
               this.settings.colors.splice(index, 1);
               if(this.editIndex === index) this.editIndex = -1;
@@ -2545,7 +2783,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
       contentEl.createEl("hr");
 
       // --- Add/Edit Area ---
-      contentEl.createEl("h4", { text: this.editIndex === -1 ? "Add New Color" : "Edit Color" });
+      contentEl.createEl("h4", { text: this.editIndex === -1 ? t("HEADING_ADD_NEW_COLOR") : t("HEADING_EDIT_COLOR") });
       
       const getHex = (val) => {
         const cm = ea.getCM(val);
@@ -2561,7 +2799,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
       let textComponent, pickerComponent;
 
       new ea.obsidian.Setting(contentEl)
-        .setName("Select Color")
+        .setName(t("LABEL_SELECT_COLOR"))
         .addText(text => {
           textComponent = text;
           text
@@ -2582,7 +2820,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
         })
         .addButton(btn => btn
           .setIcon("swatch-book")
-          .setTooltip("Open Palette Picker")
+          .setTooltip(t("TOOLTIP_OPEN_PALETTE_PICKER"))
           .onClick(async () => {
             const selected = await ea.showColorPicker(btn.buttonEl, "elementStroke");
             if (selected) {
@@ -2597,7 +2835,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
       actionContainer.style.marginTop = "10px";
 
       if (this.editIndex !== -1) {
-        const cancelBtn = actionContainer.createEl("button", { text: "Cancel Edit" });
+        const cancelBtn = actionContainer.createEl("button", { text: t("BUTTON_CANCEL_EDIT") });
         cancelBtn.onclick = () => {
           this.editIndex = -1;
           this.tempColor = "#000000";
@@ -2606,7 +2844,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
       }
 
       const saveBtn = actionContainer.createEl("button", { 
-        text: this.editIndex === -1 ? "Add Color" : "Update Color",
+        text: this.editIndex === -1 ? t("BUTTON_ADD_COLOR") : t("BUTTON_UPDATE_COLOR"),
         cls: "mod-cta"
       });
       saveBtn.onclick = () => {
@@ -2635,6 +2873,7 @@ const renderInput = (container, isFloating = false) => {
   container.empty();
   
   pinBtn = refreshBtn = dockBtn = inputEl = null;
+  foldBtnL0 = foldBtnL1 = unfoldAllBtn = null;
 
   inputRow = new ea.obsidian.Setting(container);
   
@@ -2658,11 +2897,13 @@ const renderInput = (container, isFloating = false) => {
       inputEl.style.width = "70vw";
       inputEl.style.maxWidth = "350px";
     }
-    inputEl.ariaLabel = `Add (Enter)\n` +
-      `${ACTION_ADD_FOLLOW} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}\n` +
-      `${ACTION_ADD_FOLLOW_FOCUS} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}\n` +
-      `${ACTION_ADD_FOLLOW_ZOOM} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}\n`;
-    inputEl.placeholder = "Concept... type [[ to insert link";
+    inputEl.ariaLabel = [
+      `${getActionLabel(ACTION_ADD)} (Enter)`,
+      `${getActionLabel(ACTION_ADD_FOLLOW)} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}`,
+      `${getActionLabel(ACTION_ADD_FOLLOW_FOCUS)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}`,
+      `${getActionLabel(ACTION_ADD_FOLLOW_ZOOM)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}`,
+    ].join("\n");
+    inputEl.placeholder = t("INPUT_PLACEHOLDER");
     inputEl.addEventListener("focus", () => {
       registerObsidianHotkeyOverrides();
       ensureNodeSelected();
@@ -2687,6 +2928,8 @@ const renderInput = (container, isFloating = false) => {
   const addButton = (cb) => {
     inputRow.addExtraButton((btn) => {
       cb(btn);
+      if (btn.buttonEl) btn.buttonEl.tabIndex = 0;
+      if (btn.extraSettingsEl) btn.extraSettingsEl.tabIndex = 0;
       // If docked, move the button into our flex container
       if (!isFloating && buttonContainer && btn.extraSettingsEl) {
         buttonContainer.appendChild(btn.extraSettingsEl);
@@ -2697,7 +2940,8 @@ const renderInput = (container, isFloating = false) => {
   addButton((btn) => {
     editBtn = btn;
     btn.setIcon("pencil");
-    btn.setTooltip(`Edit text of selected node ${getActionHotkeyString(ACTION_EDIT)}`);
+    btn.setTooltip(`${t("TOOLTIP_EDIT_NODE")} ${getActionHotkeyString(ACTION_EDIT)}`);
+    btn.extraSettingsEl.setAttr("action",ACTION_EDIT);
     btn.onClick(() => {
       startEditing();
     });
@@ -2705,7 +2949,8 @@ const renderInput = (container, isFloating = false) => {
 
   addButton((btn) => {
     pinBtn = btn;
-    btn.setTooltip("Pin/Unpin location of a node. When pinned nodes won't get auto-arranged.")
+    btn.setTooltip(`${t("TOOLTIP_PIN_INIT")} ${getActionHotkeyString(ACTION_PIN)}`)
+    btn.extraSettingsEl.setAttr("action",ACTION_PIN);
     btn.onClick(async () => {
       await togglePin();
       updateUI();
@@ -2713,10 +2958,49 @@ const renderInput = (container, isFloating = false) => {
     });
   });
 
+  if (!isFloating) {
+    addButton((btn) => {
+      foldBtnL0 = btn;
+      btn.setIcon("wifi-low");
+      btn.setTooltip(`${t("TOOLTIP_FOLD_BRANCH")} ${getActionHotkeyString(ACTION_FOLD)}`);
+      btn.extraSettingsEl.setAttr("action", ACTION_FOLD);
+      btn.onClick(async () => {
+        await toggleFold("L0");
+        updateUI();
+        focusInputEl();
+      });
+    });
+
+    addButton((btn) => {
+      foldBtnL1 = btn;
+      btn.setIcon("wifi-high");
+      btn.setTooltip(`${t("TOOLTIP_FOLD_L1_BRANCH")} ${getActionHotkeyString(ACTION_FOLD_L1)}`);
+      btn.extraSettingsEl.setAttr("action", ACTION_FOLD_L1);
+      btn.onClick(async () => {
+        await toggleFold("L1");
+        updateUI();
+        focusInputEl();
+      });
+    });
+
+    addButton((btn) => {
+      unfoldAllBtn = btn;
+      btn.setIcon("wifi");
+      btn.setTooltip(`${t("TOOLTIP_UNFOLD_BRANCH_ALL")} ${getActionHotkeyString(ACTION_UNFOLD_ALL)}`);
+      btn.extraSettingsEl.setAttr("action", ACTION_UNFOLD_ALL);
+      btn.onClick(async () => {
+        await toggleFold("ALL");
+        updateUI();
+        focusInputEl();
+      });
+    });
+  }
+
   addButton((btn) => {
     refreshBtn = btn;
     btn.setIcon("refresh-ccw");
-    btn.setTooltip("Force auto rearrange map.");
+    btn.setTooltip(t("TOOLTIP_REFRESH"));
+    btn.extraSettingsEl.setAttr("action",ACTION_REARRANGE);
     btn.onClick(async () => {
       await refreshMapLayout();
       focusInputEl();
@@ -2726,8 +3010,9 @@ const renderInput = (container, isFloating = false) => {
   addButton((btn) => {
     dockBtn = btn;
     btn.setIcon(isFloating ? "dock" : "external-link");
+    btn.extraSettingsEl.setAttr("action",ACTION_DOCK_UNDOCK);
     btn.setTooltip(
-      (isFloating ? "Dock to Sidepanel" : "Undock to Floating Modal") + ` ${getActionHotkeyString(ACTION_DOCK_UNDOCK)}`
+      `${isFloating ? t("TOOLTIP_DOCK") : t("TOOLTIP_UNDOCK")} ${getActionHotkeyString(ACTION_DOCK_UNDOCK)}`
     );
     btn.onClick(() => {
       toggleDock({silent: false, forceDock: false, saveSetting: true})
@@ -2748,9 +3033,9 @@ const renderBody = (contentEl) => {
   });
 
   btnGrid.createEl("button", {
-    text: "Add Sibling",
+    text: t("BUTTON_ADD_SIBLING"),
     cls: "mod-cta",
-    attr: { style: "padding: 2px;", title: `(Enter)` },
+    attr: { style: "padding: 2px;", title: `${t("TITLE_ADD_SIBLING")} ${getActionHotkeyString(ACTION_ADD)}` },
   }).onclick = async () => {
     await addNode(inputEl.value, false);
     inputEl.value = "";
@@ -2758,7 +3043,7 @@ const renderBody = (contentEl) => {
     updateUI();
     focusInputEl();
   };
-  btnGrid.createEl("button", { text: "Add+Follow", attr: { style: "padding: 2px;", title: `${getActionHotkeyString(ACTION_ADD_FOLLOW)}`} }).onclick = async () => {
+  btnGrid.createEl("button", { text: t("BUTTON_ADD_FOLLOW"), attr: { style: "padding: 2px;", title: `${t("TITLE_ADD_FOLLOW")} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}`} }).onclick = async () => {
     await addNode(inputEl.value, true);
     inputEl.value = "";
     if(!autoLayoutDisabled) await refreshMapLayout();
@@ -2766,24 +3051,24 @@ const renderBody = (contentEl) => {
     focusInputEl();
   };
   copyBtn = btnGrid.createEl("button", {
-    text: "Copy",
-    attr: { style: "padding: 2px;", title: `Copy branch as text ${getActionHotkeyString(ACTION_COPY)}` },
+    text: t("BUTTON_COPY"),
+    attr: { style: "padding: 2px;", title: `${t("TITLE_COPY")} ${getActionHotkeyString(ACTION_COPY)}` },
   });
   copyBtn.onclick = copyMapAsText;
 
   cutBtn = btnGrid.createEl("button", {
-    text: "Cut",
-    attr: { style: "padding: 2px;", title: `Cut branch as text ${getActionHotkeyString(ACTION_CUT)}` },
+    text: t("BUTTON_CUT"),
+    attr: { style: "padding: 2px;", title: `${t("TITLE_CUT")} ${getActionHotkeyString(ACTION_CUT)}` },
   });
   cutBtn.onclick = () => copyMapAsText(true);
 
   btnGrid.createEl("button", {
-    text: "Paste",
-    attr: { style: "padding: 2px;", title: `Paste list from clipboard ${getActionHotkeyString(ACTION_PASTE)}` },
+    text: t("BUTTON_PASTE"),
+    attr: { style: "padding: 2px;", title: `${t("TITLE_PASTE")} ${getActionHotkeyString(ACTION_PASTE)}` },
   }).onclick = pasteListToMap;
 
   const zoomSetting = new ea.obsidian.Setting(bodyContainer);
-  zoomSetting.setName("Zoom Level").addDropdown((d) => {
+  zoomSetting.setName(t("LABEL_ZOOM_LEVEL")).addDropdown((d) => {
     ZOOM_TYPES.forEach((key) => d.addOption(key, key));
     d.setValue(zoomLevel);
     d.onChange((v) => {
@@ -2796,13 +3081,13 @@ const renderBody = (contentEl) => {
   zoomSetting.addExtraButton(btn=>{
     zoomBtn = btn;
     btn.setIcon("scan-search")
-      .setTooltip(`Cycle element zoom ${getActionHotkeyString(ACTION_ZOOM)}`)
+      .setTooltip(`${t("TOOLTIP_ZOOM_CYCLE")} ${getActionHotkeyString(ACTION_ZOOM)}`)
       .onClick(()=>{
         zoomToFit(true);
       })
   });
 
-  new ea.obsidian.Setting(bodyContainer).setName("Growth Strategy").addDropdown((d) => {
+  new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_GROWTH_STRATEGY")).addDropdown((d) => {
     strategyDropdown = d;
     GROWTH_TYPES.forEach((key) => d.addOption(key, key));
     d.setValue(currentModalGrowthMode);
@@ -2826,7 +3111,7 @@ const renderBody = (contentEl) => {
   });
 
   autoLayoutToggle = new ea.obsidian.Setting(bodyContainer)
-    .setName("Disable Auto-Layout")
+    .setName(t("LABEL_DISABLE_AUTOLAYOUT"))
     .addToggle((t) => t
       .setValue(autoLayoutDisabled)
       .onChange(async (v) => {
@@ -2836,7 +3121,7 @@ const renderBody = (contentEl) => {
     ).components[0];
 
   new ea.obsidian.Setting(bodyContainer)
-    .setName("Group Branches")
+    .setName(t("LABEL_GROUP_BRANCHES"))
     .addToggle((t) => t
     .setValue(groupBranches)
     .onChange(async (v) => {
@@ -2855,7 +3140,7 @@ const renderBody = (contentEl) => {
     .addButton((btn) => {
       toggleGroupBtn = btn;
       btn.setIcon("group");
-      btn.setTooltip(`Toggle grouping/ungroupding of a branch. Only available if "Group Branches" is disabled. ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
+      btn.setTooltip(`${t("TOOLTIP_TOGGLE_GROUP_BTN")} ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
       btn.onClick(async () => {
         await toggleBranchGroup();
         focusInputEl();
@@ -2863,7 +3148,7 @@ const renderBody = (contentEl) => {
     });
 
   new ea.obsidian.Setting(bodyContainer)
-    .setName("Box Child Nodes")
+    .setName(t("LABEL_BOX_CHILD_NODES"))
     .addToggle((t) => t
       .setValue(boxChildren)
       .onChange((v) => {
@@ -2875,14 +3160,14 @@ const renderBody = (contentEl) => {
     .addButton((btn) => {
       boxBtn = btn;
       btn.setIcon("rectangle-horizontal");
-      btn.setTooltip(`Toggle node box. ${getActionHotkeyString(ACTION_BOX)}`);
+      btn.setTooltip(`${t("TOOLTIP_TOGGLE_BOX")} ${getActionHotkeyString(ACTION_BOX)}`);
       btn.onClick(async () => {
         await toggleBox();
         focusInputEl();
       });
     });
 
-  new ea.obsidian.Setting(bodyContainer).setName("Rounded Corners").addToggle((t) => t
+  new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_ROUNDED_CORNERS")).addToggle((t) => t
     .setValue(roundedCorners)
     .onChange((v) => {
       roundedCorners = v;
@@ -2892,9 +3177,9 @@ const renderBody = (contentEl) => {
   );
 
   new ea.obsidian.Setting(bodyContainer)
-    .setName("Use scene stroke style")
+    .setName(t("LABEL_USE_SCENE_STROKE"))
     .setDesc(
-      "Use the latest stroke style (solid, dashed, dotted) from the scene, or always use solid style for branches.",
+      t("DESC_USE_SCENE_STROKE"),
     )
     .addToggle((t) =>
       t.setValue(!isSolidArrow).onChange((v) => {
@@ -2905,7 +3190,7 @@ const renderBody = (contentEl) => {
     );
 
   new ea.obsidian.Setting(bodyContainer)
-    .setName("Multicolor Branches")
+    .setName(t("LABEL_MULTICOLOR_BRANCHES"))
     .addToggle((t) =>
       t.setValue(multicolor).onChange((v) => {
         multicolor = v;
@@ -2915,7 +3200,7 @@ const renderBody = (contentEl) => {
     )
     .addButton(btn => 
       btn.setIcon("palette")
-        .setTooltip("Configure custom color palette for branches")
+        .setTooltip(t("TOOLTIP_CONFIGURE_PALETTE"))
         .onClick(() => {
           const modal = new PaletteManagerModal(app, customPalette, (newSettings) => {
             customPalette = newSettings;
@@ -2927,8 +3212,8 @@ const renderBody = (contentEl) => {
     );
 
   let sliderValDisplay;
-  const sliderSetting = new ea.obsidian.Setting(bodyContainer).setName("Max Wrap Width").addSlider((s) => s
-    .setLimits(100, 600, 10)
+  const sliderSetting = new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_MAX_WRAP_WIDTH")).addSlider((s) => s
+    .setLimits(WRAP_WIDTH_MIN, WRAP_WIDTH_MAX, WRAP_WIDTH_STEP)
     .setValue(maxWidth)
     .onChange(async (v) => {
       maxWidth = v;
@@ -2943,8 +3228,8 @@ const renderBody = (contentEl) => {
   });
 
   new ea.obsidian.Setting(bodyContainer)
-    .setName("Center text")
-    .setDesc("Toggle off: align nodes to rigth/left depending; Toggle on: center the text.")
+    .setName(t("LABEL_CENTER_TEXT"))
+    .setDesc(t("DESC_CENTER_TEXT"))
     .addToggle((t) => t
       .setValue(centerText)
       .onChange((v) => {
@@ -2954,7 +3239,7 @@ const renderBody = (contentEl) => {
       }),
     );
 
-  new ea.obsidian.Setting(bodyContainer).setName(K_FONTSIZE).addDropdown((d) => {
+  new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_FONT_SIZES")).addDropdown((d) => {
     FONT_SCALE_TYPES.forEach((key) => d.addOption(key, key));
     d.setValue(fontsizeScale);
     d.onChange((v) => {
@@ -2970,11 +3255,11 @@ const renderBody = (contentEl) => {
   const hkDetails = bodyContainer.createEl("details", {
     attr: { style: "margin-top: 15px; border-top: 1px solid var(--background-modifier-border); padding-top: 10px;" }
   });
-  hkDetails.createEl("summary", { text: "Hotkey Configuration", attr: { style: "cursor: pointer; font-weight: bold;" } });
+  hkDetails.createEl("summary", { text: t("HOTKEY_SECTION_TITLE"), attr: { style: "cursor: pointer; font-weight: bold;" } });
   
   const hkContainer = hkDetails.createDiv();
   const hint = hkContainer.createEl("p", {
-    text: "These hotkeys may override some Obsidian defaults. They’re Local (⌨️) by default, active only when the MindMap input field is focused. Use the 🌐/🎨/⌨️ toggle to change hotkey scope: 🌐 Overrides Obsidian hotkeys whenever an Excalidraw tab is visible, 🎨 Overrides Obsidian hotkeys whenever Excalidraw is focused, ⌨️ Local (input focused).",
+    text: t("HOTKEY_HINT"),
     attr: { style: "color: var(--text-muted); font-size: 0.85em; margin-bottom: 10px;" }
   });
 
@@ -3009,7 +3294,7 @@ const renderBody = (contentEl) => {
     const originalText = btn.innerHTML;
     const label = btn.parentElement.querySelector(".setting-hotkey");
     
-    btn.innerHTML = `Press hotkey...`;
+    btn.innerHTML = t("RECORD_HOTKEY_PROMPT");
     btn.addClass("is-recording");
     isRecordingHotkey = true;
     
@@ -3056,7 +3341,7 @@ const renderBody = (contentEl) => {
 
       // Validation
       if (isNav && !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
-        new Notice("This action requires Arrow Keys. Only modifiers can be changed.");
+        new Notice(t("NOTICE_ACTION_REQUIRES_ARROWS"));
         cleanup();
         return false;
       }
@@ -3078,7 +3363,7 @@ const renderBody = (contentEl) => {
 
       if (conflict) {
         label.style.color = "var(--text-error)";
-        new Notice(`Conflict with "${conflict.action}"`, 6000);
+        new Notice(t("NOTICE_CONFLICT_WITH_ACTION", { action: getActionLabel(conflict.action) }), NOTICE_DURATION_CONFLICT);
         setTimeout(() => label.style.color = "", 4000);
       } else {
         if (isNav) {
@@ -3098,7 +3383,7 @@ const renderBody = (contentEl) => {
         if (targetConfig.scope === SCOPE.global) {
           const obsConflict = getObsidianConflict(targetConfig);
           if (obsConflict) {
-            new Notice(`⚠️ Obsidian Hotkey Conflict!\n\nThis key overrides:\n"${obsConflict}"`, 10000);
+            new Notice(t("NOTICE_OBSIDIAN_HOTKEY_CONFLICT", { command: obsConflict }), NOTICE_DURATION_GLOBAL_CONFLICT);
           }
         }
 
@@ -3117,7 +3402,7 @@ const renderBody = (contentEl) => {
     if (h.immutable) return;
 
     const setting = new ea.obsidian.Setting(hkContainer)
-      .setName(h.action);
+      .setName(getActionLabel(h.action));
     setting.settingEl.style.paddingRight = "0";
     setting.settingEl.style.paddingLeft = "0";
     
@@ -3152,11 +3437,11 @@ const renderBody = (contentEl) => {
           alert.style.marginRight = "calc(-1 * var(--size-2-2))";
           alert.style.display = "inline-flex"; // Ensure it sits nicely next to text
           alert.style.cursor = "pointer";
-          alert.ariaLabel = `Overrides Obsidian command:\n${conflict}`;
+          alert.ariaLabel = t("ARIA_OVERRIDE_COMMAND", { command: conflict });
           alert.onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            new Notice(`⚠️ Global Hotkey Conflict!\n\nThis key overrides:\n"${conflict}"`, 10000);
+            new Notice(t("NOTICE_GLOBAL_HOTKEY_CONFLICT", { command: conflict }), NOTICE_DURATION_GLOBAL_CONFLICT);
           };
         }
       }
@@ -3171,17 +3456,17 @@ const renderBody = (contentEl) => {
         switch (scope) {
           case SCOPE.input:
             scopeBtn.innerHTML = ea.obsidian.getIcon("keyboard").outerHTML;
-            scopeBtn.ariaLabel = "Local: Active only when MindMap Input is focused";
+            scopeBtn.ariaLabel = t("ARIA_SCOPE_INPUT");
             scopeBtn.style.color = "var(--text-muted)";
             break;
           case SCOPE.excalidraw:
             scopeBtn.innerHTML = ea.obsidian.getIcon("excalidraw-icon").outerHTML;
-            scopeBtn.ariaLabel = "Excalidraw: Active whenever MindMap Input or Excalidraw is focused";
+            scopeBtn.ariaLabel = t("ARIA_SCOPE_EXCALIDRAW");
             scopeBtn.style.color = "var(--interactive-accent)";
             break;
           case SCOPE.global:
             scopeBtn.innerHTML = ea.obsidian.getIcon("globe").outerHTML;
-            scopeBtn.ariaLabel = "Global: Active everywhere in Obsidian, whenever the Excalidraw view is visible";
+            scopeBtn.ariaLabel = t("ARIA_SCOPE_GLOBAL");
             scopeBtn.style.color = "var(--text-error)";
             break;
         }
@@ -3200,7 +3485,7 @@ const renderBody = (contentEl) => {
         if (next === SCOPE.global) {
           const conflict = getObsidianConflict(userHotkeys[index]);
           if (conflict) {
-            new Notice(`⚠️ Global Hotkey Conflict!\n\nThis key overrides:\n"${conflict}"`, 10000);
+            new Notice(t("NOTICE_GLOBAL_HOTKEY_CONFLICT", { command: conflict }), NOTICE_DURATION_GLOBAL_CONFLICT);
           }
         }        
         updateRowUI();
@@ -3209,7 +3494,7 @@ const renderBody = (contentEl) => {
     }
 
     restoreBtn.innerHTML = ea.obsidian.getIcon("rotate-ccw").outerHTML;
-    restoreBtn.ariaLabel = "Restore default";
+    restoreBtn.ariaLabel = t("ARIA_RESTORE_DEFAULT");
     restoreBtn.onclick = () => {
       const def = DEFAULT_HOTKEYS.find(d => d.action === userHotkeys[index].action);
       if (def) {
@@ -3223,7 +3508,7 @@ const renderBody = (contentEl) => {
 
     const addBtn = controlDiv.createSpan("clickable-icon setting-add-hotkey-button");
     addBtn.innerHTML = ea.obsidian.getIcon("plus-circle").outerHTML;
-    addBtn.ariaLabel = "Customize this hotkey";
+    addBtn.ariaLabel = t("ARIA_CUSTOMIZE_HOTKEY");
     addBtn.onclick = () => recordHotkey(addBtn, index, updateRowUI);
   });
 
@@ -3231,21 +3516,51 @@ const renderBody = (contentEl) => {
   bodyContainer.createDiv({ attr: { style: "height: 40px;" } });
 };
 
+const MINDMAP_FOCUS_STYLE_ID = "excalidraw-mindmap-focus-style";
+
+const registerStyles = () => {
+  if (document.getElementById(MINDMAP_FOCUS_STYLE_ID)) return;
+  const styleEl = document.createElement("style");
+  styleEl.id = MINDMAP_FOCUS_STYLE_ID;
+  styleEl.textContent = [
+    ".excalidraw-mindmap-ui button:focus-visible,",
+    ".excalidraw-mindmap-ui .clickable-icon:focus-visible,",
+    ".excalidraw-mindmap-ui [tabindex]:focus-visible {",
+    "  outline: 2px solid var(--interactive-accent) !important;",
+    "  outline-offset: 2px;",
+    "  background-color: var(--interactive-accent);",
+    "  color: var(--background-primary);",
+    "}",
+    ".excalidraw-mindmap-ui .clickable-icon:focus-visible svg {",
+    "  color: inherit;",
+    "}",
+  ].join("\n");
+  document.head.appendChild(styleEl);
+};
+
+const removeStyles = () => {
+  const styleEl = document.getElementById(MINDMAP_FOCUS_STYLE_ID);
+  if (styleEl) styleEl.remove();
+};
+
 const updateKeyHandlerLocation = () => {
   // Attach to the appropriate window based on state
   if (isUndocked) {
     // Floating: Input is reparented to targetView's window
     if (ea.targetView && ea.targetView.ownerWindow) {
-      registerKeydownHandler(ea.targetView.ownerWindow, keyHandler);
+      registerKeydownHandler(ea.targetView.ownerWindow, handleKeydown);
     }
   } else {
     // Docked: Input is in the sidepanel's window
     if (sidepanelWindow) {
-      registerKeydownHandler(sidepanelWindow, keyHandler);
+      registerKeydownHandler(sidepanelWindow, handleKeydown);
     }
   }
 };
 
+// ---------------------------------------------------------------------------
+// Docking & Floating Input Management
+// ---------------------------------------------------------------------------
 /**
  * silent === true: sidepanel is not revealed after docking
  * forceDock === true: if input is undocked, docking happens even if no ExcalidrawView is present
@@ -3294,6 +3609,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
     // UNDOCK: Create floating modal
     floatingInputModal = new ea.FloatingModal(ea.plugin.app);
     const { contentEl, titleEl, modalEl, headerEl } = floatingInputModal;
+    modalEl.classList.add("excalidraw-mindmap-ui");
 
     floatingInputModal.onOpen = () => {
       // Reparent the modal to the target view's window. 
@@ -3308,12 +3624,12 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
       if (closeEl) closeEl.style.display = "none";
       titleEl.style.display = "none";
       headerEl.style.display = "none";
-      modalEl.style.opacity = "0.8";
+      modalEl.style.opacity = `${FLOAT_MODAL_OPACITY}`;
       modalEl.style.padding = "6px";
       modalEl.style.minHeight = "0px";
       modalEl.style.width = "fit-content";
       modalEl.style.height = "auto";
-      modalEl.style.maxHeight = "calc(2 * var(--size-4-4) + 12px + var(--input-height))";
+      modalEl.style.maxHeight = FLOAT_MODAL_MAX_HEIGHT;
       const container = floatingInputModal.contentEl.createDiv();
       renderInput(container, true);
       focusInputEl();
@@ -3322,8 +3638,8 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
         //otherwise the event handlers in FloatingModal would override the move
         //leaving modalEl in the center of the view
         //modalEl.style.top and left must stay in the timeout call
-        modalEl.style.top = `${ y + 5 }px`;
-        modalEl.style.left = `${ x + 5 }px`;
+        modalEl.style.top = `${ y + FLOAT_MODAL_OFFSET }px`;
+        modalEl.style.left = `${ x + FLOAT_MODAL_OFFSET }px`;
       }, 100);
     };
 
@@ -3378,7 +3694,7 @@ const getActionFromEvent = (e) => {
   return match ? { action: match.action, scope: match.scope } :  { };
 };
 
-const keyHandler = async (e) => {
+const handleKeydown = async (e) => {
   if (isRecordingHotkey) return;
   if (!ea.targetView || !ea.targetView.leaf.isVisible()) return;
 
@@ -3395,18 +3711,61 @@ const keyHandler = async (e) => {
     }
     return;
   }
-  
-  const {action, scope} = getActionFromEvent(e);
 
-  if (!action) return;
+  let {action, scope} = getActionFromEvent(e);
+  let context = getHotkeyContext();
 
-  if (getHotkeyContext() < scope) return;
+  // Local Tab handling for floating modal to keep focus cycling inside
+  if (!action && isUndocked && floatingInputModal && e.key === "Tab") {
+    const modalEl = floatingInputModal.modalEl;
+    if (modalEl) {
+      const selector = [
+        "input:not([disabled])",
+        "div:not([style*='not-allowed'])",
+      ].join(",");
+
+      const focusables = Array.from(modalEl.querySelectorAll(selector)).filter((el) => {
+        if (el.tabIndex === -1 || el.hidden) return false;
+        return el.offsetParent !== null || el.getClientRects().length > 0;
+      });
+
+      if (focusables.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        const active = modalEl.ownerDocument.activeElement;
+        let idx = focusables.indexOf(active);
+        if (idx === -1) idx = 0;
+        idx = e.shiftKey
+          ? (idx === 0 ? focusables.length - 1 : idx - 1)
+          : (idx === focusables.length - 1 ? 0 : idx + 1);
+        focusables[idx].focus();
+      }
+    }
+    return;
+  }
+
+  if (
+    e.key === "Enter" && context === SCOPE.excalidraw &&
+    ((isUndocked && floatingInputModal) || !isUndocked)
+   ) {
+    const modalEl = isUndocked ?floatingInputModal.modalEl : ea.sidepanelTab.containerEl;
+    const activeEl = modalEl?.ownerDocument.activeElement;
+    action = activeEl?.getAttribute("action");
+    if (!action) return;
+    context = SCOPE.input;
+  }
+
+  if (!action || context < scope) return;
 
   e.preventDefault();
   e.stopPropagation();
 
   switch (action) {
-    case ACTION_TOGGLE_GROUP: // Handle Alt+G
+    case ACTION_REARRANGE:
+      await refreshMapLayout();
+      focusInputEl();
+      break;
+    case ACTION_TOGGLE_GROUP:
       await toggleBranchGroup();
       break;
     case ACTION_HIDE:
@@ -3430,13 +3789,19 @@ const keyHandler = async (e) => {
       break;
 
     case ACTION_FOLD:
-      await toggleFold("all");
+      await toggleFold("L0");
       updateUI();
       focusInputEl();
       break;
 
     case ACTION_FOLD_L1:
-      await toggleFold("l1");
+      await toggleFold("L1");
+      updateUI();
+      focusInputEl();
+      break;
+
+    case ACTION_UNFOLD_ALL:
+      await toggleFold("ALL");
       updateUI();
       focusInputEl();
       break;
@@ -3555,7 +3920,7 @@ case ACTION_ADD:
   }
 };
 
-const canvasPointerListener = (e) => {
+const handleCanvasPointerDown = (e) => {
   if (!ea.targetView) return;
   // If input is floating, check if click is inside it to avoid deselecting/updating UI prematurely
   if (floatingInputModal && floatingInputModal.modalEl.contains(e.target)) return;
@@ -3582,14 +3947,14 @@ const canvasPointerListener = (e) => {
 // --- Initialization Logic ---
 // 1. Checking for exsiting tab right at the beginning of the script (not needed here)
 // 2. Create new Sidepanel Tab
-ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
+ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
   if (!tab) return;
-
+  registerStyles();
   tab.onWindowMigrated = (newWin) => {
     sidepanelWindow = newWin;
     // If we are docked, re-attach to the new window immediately
     if (!isUndocked && sidepanelWindow) {
-      registerKeydownHandler(sidepanelWindow, keyHandler);
+      registerKeydownHandler(sidepanelWindow, handleKeydown);
     }
   };
 
@@ -3603,6 +3968,7 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
 
   tab.onOpen = () => {
     const contentEl = tab.contentEl;
+    contentEl.classList.add("excalidraw-mindmap-ui");
     if (!contentEl.hasChildNodes()) {
       renderHelp(contentEl);
       inputContainer = contentEl.createDiv(); 
@@ -3640,9 +4006,9 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
     if(removePointerDownHandler) removePointerDownHandler();
     const win = view.ownerWindow;
 
-    win.addEventListener("pointerdown", canvasPointerListener);
+    win.addEventListener("pointerdown", handleCanvasPointerDown);
     removePointerDownHandler = () => {
-      if (win) win.removeEventListener("pointerdown", canvasPointerListener);
+      if (win) win.removeEventListener("pointerdown", handleCanvasPointerDown);
       removePointerDownHandler = null;
     }
     updateKeyHandlerLocation();
@@ -3714,13 +4080,13 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   // Register the global listener
   const leafChangeRef = app.workspace.on("active-leaf-change", onActiveLeafChange);
 
-
   tab.onClose = async () => {
     app.workspace.offref(leafChangeRef);
     if (popObsidianHotkeyScope) popObsidianHotkeyScope();
     if (ea.targetView) {
       removeEventListeners(ea.targetView);
     }
+    removeStyles();
     if (floatingInputModal) {
       if (floatingInputModal.modalEl && floatingInputModal.modalEl.parentElement) {
         floatingInputModal.modalEl.remove();
