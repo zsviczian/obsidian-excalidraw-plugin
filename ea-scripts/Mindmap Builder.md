@@ -1870,6 +1870,7 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
   const info = getHierarchy(current, allElements);
   const root = allElements.find((e) => e.id === info.rootId);
   const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
+  
   if (current.id === root.id) {
     if (current.customData?.isFolded) {
       await toggleFold("all");
@@ -1878,25 +1879,59 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
 
     const children = getChildrenNodes(root.id, allElements);
     if (children.length) {
-      const mode = root.customData?.growthMode || currentModalGrowthMode;
-      if (mode === "Radial") {
-        children.sort(
-          (a, b) =>
-            getAngleFromCenter(rootCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
-            getAngleFromCenter(rootCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 }),
-        );
+      // Sort by order/index first to establish the visual list sequence
+      sortChildrenStable(children);
+
+      let targetChild = null;
+
+      if (key === "ArrowUp") {
+        // First sibling
+        targetChild = children[0];
+      } else if (key === "ArrowDown") {
+        // Last sibling
+        targetChild = children[children.length - 1];
       } else {
-        children.sort((a, b) => a.y - b.y);
+        // Left/Right Logic
+        // Calculate relative positions
+        const childrenWithPos = children.map(c => {
+          const cCenter = { x: c.x + c.width / 2, y: c.y + c.height / 2 };
+          return {
+            node: c,
+            dx: cCenter.x - rootCenter.x,
+            dy: Math.abs(cCenter.y - rootCenter.y) // distance from horizontal centerline
+          };
+        });
+
+        if (key === "ArrowRight") {
+          // Find nodes to the right (dx > 0)
+          const rightNodes = childrenWithPos.filter(c => c.dx > 0);
+          if (rightNodes.length > 0) {
+            // Find the one closest to the middle (min dy)
+            rightNodes.sort((a, b) => a.dy - b.dy);
+            targetChild = rightNodes[0].node;
+          } else {
+            // Fallback if no nodes on right (e.g. Left-facing layout), select first in list
+            targetChild = children[0];
+          }
+        } else if (key === "ArrowLeft") {
+          // Find nodes to the left (dx < 0)
+          const leftNodes = childrenWithPos.filter(c => c.dx < 0);
+          if (leftNodes.length > 0) {
+            // Find the one closest to the middle (min dy)
+            leftNodes.sort((a, b) => a.dy - b.dy);
+            targetChild = leftNodes[0].node;
+          } else {
+            // Fallback if no nodes on left (e.g. Right-facing layout), select last in list
+            targetChild = children[children.length - 1];
+          }
+        }
       }
 
-      if (key === "ArrowLeft") {
-        ea.selectElementsInView([children[children.length - 1]]);
-      } else {
-        ea.selectElementsInView([children[0]]);
+      if (targetChild) {
+        ea.selectElementsInView([targetChild]);
+        if (zoom) zoomToFit();
+        if (focus) focusSelected();
       }
-
-      if (zoom) zoomToFit();
-      if (focus) focusSelected();
     }
     return;
   }
@@ -3410,17 +3445,17 @@ const keyHandler = async (e) => {
       break;
 
     case ACTION_NAVIGATE:
-      navigateMap({key: e.key, zoom: false, focus: false});
+      await navigateMap({key: e.key, zoom: false, focus: false});
       updateUI();
       break;
 
     case ACTION_NAVIGATE_ZOOM:
-      navigateMap({key: e.key, zoom: true, focus: false});
+      await navigateMap({key: e.key, zoom: true, focus: false});
       updateUI();
       break;
 
     case ACTION_NAVIGATE_FOCUS:
-      navigateMap({key: e.key, zoom: false, focus: true});
+      await navigateMap({key: e.key, zoom: false, focus: true});
       updateUI();
       break;
 
@@ -3483,7 +3518,7 @@ case ACTION_ADD:
             const siblings = parent ? getChildrenNodes(parent.id, allElements) : [];
 
             if (siblings.length > 1) {
-              navigateMap({key: "ArrowDown", zoom: false, focus: false});
+              await navigateMap({key: "ArrowDown", zoom: false, focus: false});
             }
             else {
               const children = getChildrenNodes(sel.id, allElements);
