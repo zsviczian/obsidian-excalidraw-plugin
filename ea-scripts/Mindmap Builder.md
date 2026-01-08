@@ -956,16 +956,11 @@ const focusSelected = () => {
   const sel = ea.getViewSelectedElement();
   if (!sel) return;
 
-  const { width, height, zoom } = appState();
-  const cx = sel.x + sel.width / 2;
-  const cy = sel.y + sel.height / 2;
-
-  const scrollX = width / (2 * zoom.value) - cx;
-  const scrollY = height / (2 * zoom.value) - cy;
-
-  api().updateScene({
-    appState: { scrollX, scrollY },
+  api().scrollToContent(sel,{ 
+    fitToContent: false,
+    animate: true,
   });
+
   focusInputEl();
 };
 
