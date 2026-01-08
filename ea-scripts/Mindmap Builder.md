@@ -3098,6 +3098,8 @@ userHotkeys.forEach((h, index) => {
 
     const setting = new ea.obsidian.Setting(hkContainer)
       .setName(h.action);
+    setting.settingEl.style.paddingRight = "0";
+    setting.settingEl.style.paddingLeft = "0";
     
     const controlDiv = setting.controlEl;
     controlDiv.addClass("setting-item-control");
@@ -3127,7 +3129,7 @@ userHotkeys.forEach((h, index) => {
           const alert = hotkeyDisplay.createSpan("hotkey-conflict-icon");
           alert.innerHTML = ea.obsidian.getIcon("octagon-alert").outerHTML;
           alert.style.color = "var(--text-error)";
-          alert.style.marginLeft = "6px";
+          alert.style.marginRight = "calc(-1 * var(--size-2-2))";
           alert.style.display = "inline-flex"; // Ensure it sits nicely next to text
           alert.style.cursor = "pointer";
           alert.ariaLabel = `Overrides Obsidian command:\n${conflict}`;
@@ -3142,7 +3144,7 @@ userHotkeys.forEach((h, index) => {
 
     if (!h.isInputOnly) {
       scopeBtn = controlDiv.createSpan("clickable-icon setting-global-hotkey-button");
-      scopeBtn.style.marginRight = "8px";
+      scopeBtn.style.marginRight = "calc(-1 * var(--size-2-2))";
 
       updateScopeUI = () => {
         const scope = userHotkeys[index].scope;
