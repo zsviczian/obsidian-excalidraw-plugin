@@ -209,6 +209,23 @@ const STRINGS = {
 
     // Misc
     INPUT_TITLE_PASTE_ROOT: "Mindmap Builder Paste",
+    INSTRUCTIONS: "- **ENTER**: Add a sibling node and stay on the current parent for rapid entry. "+
+      "If you press enter when the input field is empty the focus will move to the child node that was most recently added. " +
+      "Pressing enter subsequent times will iterate through the new child's siblings\n" +
+      "- **Hotkeys**: See configuration at the bottom of the sidepanel\n" +
+      "- **Global vs Local Hotkeys**: Use the 🌐/⌨️ toggle in configuration.\n" +
+      "  - 🌐 **Global**: Works whenever Excalidraw is visible.\n" +
+      "  - 🎨 **Excalidraw**: Works whenever Excalidraw is active.\n" +
+      "  - ⌨️ **Local**: Works only when the MindMap input field is focused.\n" +
+      "- **Dock/Undock**: You can dock/undock the input field using the dock/undock button or the configured hotkey\n" +
+      "- **Folding**: Fold/Unfold buttons only appear when the input is docked; when undocked, use the folding hotkeys.\n" +
+      "- **ESC**: Docks the floating input field without activating the side panel\n" +
+      "- **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.\n" +
+      "- **Grouping**:\n" +
+      "  - Enabling \"Group Branches\" recursively groups sub-trees from leaves up to the first level.\n" +
+      "- **Copy/Paste**: Export/Import indented Markdown lists.\n" +
+      "\n" +
+      "😍 If you find this script helpful, please [buy me a coffee ☕](https://ko-fi.com/zsolt).",
   },
 };
 
@@ -646,24 +663,11 @@ const getHotkeyContext = () => {
   return SCOPE.none;
 }
 
-const INSTRUCTIONS = `
+const getInstructions = () => `
 <br>
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 
-- **ENTER**: Add a sibling node and stay on the current parent for rapid entry. If you press enter when the input field is empty the focus will move to the child node that was most recently added. Pressing enter subsequent times will iterate through the new child's siblings
-- **Hotkeys**: See configuration at the bottom of the sidepanel
-- **Global vs Local Hotkeys**: Use the 🌐/⌨️ toggle in configuration.
-  - 🌐 **Global**: Works whenever Excalidraw is visible.
-  - 🎨 **Excalidraw**: Works whenever Excalidraw is active.
-  - ⌨️ **Local**: Works only when the MindMap input field is focused.
-- **Dock/Undock**: You can dock/undock the input field using the dock/undock button or the configured hotkey
-- **ESC**: Docks the floating input field without activating the side panel
-- **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
-- **Grouping**:
-  - Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
-- **Copy/Paste**: Export/Import indented Markdown lists.
-
-😍 If you find this script helpful, please [buy me a coffee ☕](https://ko-fi.com/zsolt).
+${t("INSTRUCTIONS")}
 
 <a href="https://www.youtube.com/watch?v=qY66yoobaX4" target="_blank"><img src ="https://i.ytimg.com/vi/qY66yoobaX4/maxresdefault.jpg" style="max-width:560px; width:100%"></a>
 `;
@@ -2605,7 +2609,7 @@ const renderHelp = (container) => {
   helpContainer = container.createDiv();
   detailsEl = helpContainer.createEl("details");
   detailsEl.createEl("summary", { text: t("HELP_SUMMARY") });
-  ea.obsidian.MarkdownRenderer.render(app, INSTRUCTIONS, detailsEl.createDiv(), "", ea.plugin);
+  ea.obsidian.MarkdownRenderer.render(app, getInstructions(), detailsEl.createDiv(), "", ea.plugin);
 };
 
 // ---------------------------------------------------------------------------
