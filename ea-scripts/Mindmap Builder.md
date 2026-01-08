@@ -278,6 +278,8 @@ const ACTION_FOCUS = "Focus (center) node";
 const ACTION_NAVIGATE = "Navigate";
 const ACTION_NAVIGATE_ZOOM = "Navigate & zoom";
 const ACTION_NAVIGATE_FOCUS = "Navigate & focus";
+const ACTION_FOLD = "Fold/Unfold Branch";
+const ACTION_FOLD_L1 = "Fold/Unfold to Level 1";
 
 const ACTION_DOCK_UNDOCK = "Dock/Undock";
 const ACTION_HIDE = "Dock & hide";
@@ -313,6 +315,8 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_NAVIGATE_ZOOM, key: "ArrowKeys", modifiers: ["Alt", "Shift"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_NAVIGATE_FOCUS, key: "ArrowKeys", modifiers: ["Alt", "Mod"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_FOLD, code: "KeyA", modifiers: ["Alt", "Shift"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_FOLD_L1, code: "KeyA", modifiers: ["Ctrl", "Alt"], scope: SCOPE.input, isInputOnly: false },
 ];
 
 // Load hotkeys from settings or use default
@@ -361,7 +365,7 @@ const getObsidianConflict = (h) => {
  *    - keeps user values for existing keys
  *    - adds missing keys from DEFAULT
  *    - removes keys not in DEFAULT
- */
+**/
 function updateUserHotkeys() {
   let dirty = false;
 
@@ -719,6 +723,190 @@ const getReadableColor = (hex) => {
 };
 
 // ---------------------------------------------------------------------------
+// Folding Logic
+// ---------------------------------------------------------------------------
+
+const manageFoldIndicator = (node, show, allElements) => {
+  const existingId = node.customData?.foldIndicatorId;
+  
+  if (show) {
+    if (existingId) {
+      // Check if it still exists in workbench and resurrect it
+      const ind = allElements.find(el => el.id === existingId);
+      if (ind) {
+        ind.opacity = 100;
+        ind.isDeleted = false;
+        ind.x = node.x + node.width + 10;
+        ind.y = node.y + node.height/2 - ind.height/2;
+        return;
+      }
+    }
+    
+    // Create new indicator if none exists
+    const id = ea.addText(node.x + node.width + 10, node.y, "...");
+    const ind = ea.getElement(id);
+    ind.fontSize = 20;
+    ind.strokeColor = "var(--text-muted)";
+    ind.textVerticalAlign = "middle";
+    ind.textAlign = "left";
+    ind.y = node.y + node.height/2 - ind.height/2;
+    
+    // Add to existing group if present
+    if (node.groupIds && node.groupIds.length > 0) {
+      ind.groupIds = [node.groupIds[0]];
+    } else {
+      // Or create a new group with the node
+      ea.addToGroup([node.id, id]);
+    }
+    
+    ea.addAppendUpdateCustomData(node.id, { foldIndicatorId: id });
+  } else {
+    // Hide/Delete indicator
+    if (existingId) {
+      const ind = allElements.find(el => el.id === existingId);
+      if (ind) ind.isDeleted = true;
+      ea.addAppendUpdateCustomData(node.id, { foldIndicatorId: undefined });
+    }
+  }
+};
+
+const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold) => {
+  const node = allElements.find(el => el.id === nodeId);
+  if (!node) return;
+
+  const isFolded = node.customData?.isFolded === true;
+  
+  // The root of the fold operation stays visible unless its parent was already hidden
+  const shouldHideThis = parentHidden && !isRootOfFold;
+
+  // 1. Update Node Visibility & Lock State
+  if (shouldHideThis) {
+    // Only save state if not already saved to avoid overwriting original state with hidden state
+    if (!node.customData?.foldState) {
+      // Safety: If for some reason opacity is already 0, assume 100 to avoid locking it invisible forever
+      const safeOpacity = node.opacity === 0 ? 100 : node.opacity;
+      ea.addAppendUpdateCustomData(nodeId, {
+        foldState: { opacity: safeOpacity, locked: node.locked }
+      });
+    }
+    node.opacity = 0;
+    node.locked = true;
+  } else {
+    // Restore original state
+    if (node.customData?.foldState) {
+      node.opacity = node.customData.foldState.opacity;
+      node.locked = node.customData.foldState.locked;
+      const d = {...node.customData};
+      delete d.foldState;
+      node.customData = d;
+    } else {
+      // Default fallback if no state was saved but we need to show
+      // Ensure we don't accidentally leave it at 0 if it was hidden
+      if (node.opacity === 0) node.opacity = 100;
+      node.locked = false;
+    }
+  }
+
+  // 2. Manage Indicator
+  // Show indicator if THIS node is visible, but it is folded (hiding its children)
+  const showIndicator = !shouldHideThis && isFolded;
+  manageFoldIndicator(node, showIndicator, allElements);
+
+  // 3. Process Children
+  // Children are hidden if THIS node is hidden OR if THIS node is marked folded
+  const childrenHidden = shouldHideThis || isFolded;
+  
+  const children = getChildrenNodes(nodeId, allElements);
+  
+  children.forEach(child => {
+    // Handle the connector arrow
+    const arrow = allElements.find(
+      a => a.type === "arrow" && 
+      a.customData?.isBranch && 
+      a.startBinding?.elementId === nodeId && 
+      a.endBinding?.elementId === child.id
+    );
+    
+    if (arrow) {
+      if (childrenHidden) {
+        if (!arrow.customData?.foldState) {
+          const safeOpacity = arrow.opacity === 0 ? 100 : arrow.opacity;
+          ea.addAppendUpdateCustomData(arrow.id, {
+            foldState: { opacity: safeOpacity, locked: arrow.locked }
+          });
+        }
+        arrow.opacity = 0;
+        arrow.locked = true;
+      } else {
+        if (arrow.customData?.foldState) {
+          arrow.opacity = arrow.customData.foldState.opacity;
+          arrow.locked = arrow.customData.foldState.locked;
+          const d = {...arrow.customData};
+          delete d.foldState;
+          arrow.customData = d;
+        } else {
+          if (arrow.opacity === 0) arrow.opacity = 100;
+          arrow.locked = false;
+        }
+      }
+    }
+    
+    // Recurse
+    updateBranchVisibility(child.id, childrenHidden, allElements, false);
+  });
+};
+
+const toggleFold = async (mode = "all") => {
+  if (!ea.targetView) return;
+  const sel = ea.getViewSelectedElement();
+  if (!sel) return;
+
+  const allElements = ea.getViewElements();
+  // We must load ALL elements to ensure we can traverse the tree
+  ea.copyViewElementsToEAforEditing(allElements);
+  const wbElements = ea.getElements();
+
+  const targetNode = wbElements.find(el => el.id === sel.id);
+  if (!targetNode) return;
+
+  if (mode === "all") {
+    // Simple toggle
+    const isCurrentlyFolded = targetNode.customData?.isFolded === true;
+    ea.addAppendUpdateCustomData(targetNode.id, { isFolded: !isCurrentlyFolded });
+  } else if (mode === "l1") {
+    // L1 Logic: Toggle the folding state of immediate children
+    
+    // 1. Ensure the selected node itself is open so we can see the L1 children
+    ea.addAppendUpdateCustomData(targetNode.id, { isFolded: false });
+    
+    const children = getChildrenNodes(targetNode.id, wbElements);
+    
+    // 2. Check state: Are ANY immediate children currently folded?
+    const anyChildFolded = children.some(child => child.customData?.isFolded === true);
+    
+    // 3. Determine action:
+    // If ANY are folded -> Unfold ALL (Expand to show L2)
+    // If NONE are folded -> Fold ALL (Collapse to hide L2)
+    const shouldFoldChildren = !anyChildFolded;
+    
+    children.forEach(child => {
+      ea.addAppendUpdateCustomData(child.id, { isFolded: shouldFoldChildren });
+    });
+  }
+
+  // Recalculate visibility tree starting from the target
+  updateBranchVisibility(targetNode.id, false, wbElements, true);
+
+  await ea.addElementsToView(false, false, true, true);
+  ea.clear();
+  
+  if (!autoLayoutDisabled) {
+    const info = getHierarchy(sel, ea.getViewElements());
+    await triggerGlobalLayout(info.rootId);
+  }
+};
+
+// ---------------------------------------------------------------------------
 // 3. Layout & Grouping Engine
 // ---------------------------------------------------------------------------
 
@@ -782,6 +970,11 @@ const sortChildrenStable = (children) => {
 };
 
 const getSubtreeHeight = (nodeId, allElements) => {
+  const node = allElements.find((el) => el.id === nodeId);
+  if (node?.customData?.isFolded) {
+    return node.height;
+  }
+
   const children = getChildrenNodes(nodeId, allElements);
   if (children.length === 0) return allElements.find((el) => el.id === nodeId).height;
   const total = children.reduce((sum, child) => sum + getSubtreeHeight(child.id, allElements), 0);
@@ -828,6 +1021,16 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
     eaNode.x = side === 1 ? targetX : targetX - node.width;
     eaNode.y = targetCenterY - node.height / 2;
   }
+
+  if (node.customData?.foldIndicatorId) {
+    const ind = ea.getElement(node.customData.foldIndicatorId);
+    if(ind) {
+        ind.x = eaNode.x + eaNode.width + 5;
+        ind.y = eaNode.y + eaNode.height/2 - ind.height/2;
+    }
+  }
+
+  if (node.customData?.isFolded) return;
 
   const currentX = eaNode.x;
   const currentYCenter = eaNode.y + node.height / 2;
@@ -1071,7 +1274,7 @@ const getMostRecentlyAddedNode = () => {
 /**
  * Convert Obsidian wiki links + markdown links into display text.
  * Leaves other markdown markup intact.
- */
+**/
 function renderLinksToText(input) {
   if (typeof input !== "string" || !input) return input;
   const isNumericOnly = (s) => /^\d+$/.test(s);
@@ -1446,10 +1649,6 @@ const copyMapAsText = async (cut = false) => {
   const isRootSelected = info.rootId === sel.id;
   const parentNode = getParentNode(sel.id, all);
 
-  if (isRootSelected) {
-    cut = false;
-  }
-
   const elementsToDelete = [];
 
   const buildList = (nodeId, depth = 0) => {
@@ -1462,6 +1661,11 @@ const copyMapAsText = async (cut = false) => {
         const boundEl = all.find((e) => e.id === be.id);
         if (boundEl) elementsToDelete.push(boundEl);
       });
+
+      if (node.customData?.foldIndicatorId) {
+        const ind = all.find(e => e.id === node.customData.foldIndicatorId);
+        if (ind) elementsToDelete.push(ind);
+      }
     }
 
     const children = getChildrenNodes(nodeId, all);
@@ -1505,9 +1709,9 @@ const copyMapAsText = async (cut = false) => {
       ea.selectElementsInView([parentNode]);
     }
 
-    new Notice("Branch cut to clipboard.");
+    new Notice(isRootSelected ? "Map cut to clipboard." : "Branch cut to clipboard.");
   } else {
-    new Notice("Branch copied as bullet list.");
+    new Notice(isRootSelected ? "Map copied as markdown." : "Branch copied as bullet list.");
   }
 };
 
@@ -1699,7 +1903,7 @@ const refreshMapLayout = async () => {
 /**
  * Collects all node IDs and arrow IDs belonging to a branch.
  * Includes "isBranch" arrows and internal non-mindmap arrows.
- */
+**/
 const getBranchElementIds = (nodeId, allElements) => {
 
   const childMap = new Map();
@@ -1758,7 +1962,7 @@ const getBranchElementIds = (nodeId, allElements) => {
 
 /**
  * Toggles a single flat group for the selected branch
- */
+**/
 const toggleBranchGroup = async () => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
@@ -2599,15 +2803,15 @@ const renderBody = (contentEl) => {
     )
     .addButton(btn => 
       btn.setIcon("palette")
-         .setTooltip("Configure custom color palette for branches")
-         .onClick(() => {
-           const modal = new PaletteManagerModal(app, customPalette, (newSettings) => {
-             customPalette = newSettings;
-             setVal(K_PALETTE, customPalette, true); // save to script settings
-             dirty = true;
-           });
-           modal.open();
-         })
+        .setTooltip("Configure custom color palette for branches")
+        .onClick(() => {
+          const modal = new PaletteManagerModal(app, customPalette, (newSettings) => {
+            customPalette = newSettings;
+            setVal(K_PALETTE, customPalette, true); // save to script settings
+            dirty = true;
+          });
+          modal.open();
+        })
     );
 
   let sliderValDisplay;
@@ -3053,8 +3257,8 @@ const getActionFromEvent = (e) => {
     const hasAlt = h.modifiers.includes("Alt");
 
     return (isMod === hasMod) && 
-           (e.shiftKey === hasShift) && 
-           (e.altKey === hasAlt);
+          (e.shiftKey === hasShift) && 
+          (e.altKey === hasAlt);
   });
 
   return match ? { action: match.action, scope: match.scope } :  { };
@@ -3108,6 +3312,18 @@ const keyHandler = async (e) => {
 
     case ACTION_BOX:
       await toggleBox();
+      focusInputEl();
+      break;
+
+    case ACTION_FOLD:
+      await toggleFold("all");
+      updateUI();
+      focusInputEl();
+      break;
+
+    case ACTION_FOLD_L1:
+      await toggleFold("l1");
+      updateUI();
       focusInputEl();
       break;
 
@@ -3203,7 +3419,7 @@ case ACTION_ADD:
           if (!handledRecent && sel) {
             const parent = getParentNode(sel.id, allElements);
             const siblings = parent ? getChildrenNodes(parent.id, allElements) : [];
-             
+
             if (siblings.length > 1) {
               navigateMap({key: "ArrowDown", zoom: false, focus: false});
             }
