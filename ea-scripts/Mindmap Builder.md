@@ -177,14 +177,14 @@ if(settingsTemp && settingsTemp.hasOwnProperty("Is Minimized")) {
 
 let maxWidth = parseInt(getVal(K_WIDTH, 450));
 let fontsizeScale = getVal(K_FONTSIZE, {value: "Normal Scale", valueset: FONT_SCALE_TYPES});
-let boxChildren = getVal(K_BOX, false) === true;
-let roundedCorners = getVal(K_ROUND, true) === true;
-let multicolor = getVal(K_MULTICOLOR, true) === true;
-let groupBranches = getVal(K_GROUP, true) === true;
-let currentModalGrowthMode = getVal(K_GROWTH, {value: "Radial", valueset: GROWTH_TYPES});
-let isUndocked = getVal(K_UNDOCKED, false) === true;
-let isSolidArrow = getVal(K_ARROWSTROKE, true) === true;
-let centerText = getVal(K_CENTERTEXT, true) === true;
+let boxChildren = getVal(K_BOX, false);
+let roundedCorners = getVal(K_ROUND, false);
+let multicolor = getVal(K_MULTICOLOR, true);
+let groupBranches = getVal(K_GROUP, false);
+let currentModalGrowthMode = getVal(K_GROWTH, {value: "Right-facing", valueset: GROWTH_TYPES});
+let isUndocked = getVal(K_UNDOCKED, false);
+let isSolidArrow = getVal(K_ARROWSTROKE, true);
+let centerText = getVal(K_CENTERTEXT, true);
 let autoLayoutDisabled = false;
 let zoomLevel = getVal(K_ZOOM, {value: "Medium", valueset: ZOOM_TYPES});
 let customPalette = getVal(K_PALETTE, {value : {enabled: false, random: false, colors: []}, hidden: true}); 
@@ -197,7 +197,7 @@ if (!ea.getScriptSettingValue(K_FONTSIZE, {value: "Normal Scale", valueset: FONT
   dirty = true;
 }
 
-if (!ea.getScriptSettingValue(K_GROWTH, {value: "Radial", valueset: GROWTH_TYPES}).hasOwnProperty("valueset")) {
+if (!ea.getScriptSettingValue(K_GROWTH, {value: "Right-facing", valueset: GROWTH_TYPES}).hasOwnProperty("valueset")) {
   ea.setScriptSettingValue (K_GROWTH, {value: currentModalGrowthMode, valueset: GROWTH_TYPES});
   dirty = true;
 }
@@ -329,7 +329,7 @@ let cancelHotkeyRecording = null;
 const getObsidianConflict = (h) => {
   if (!h) return null;
   
-  const normalize = (s) => s.toLowerCase().replace("key", "");
+  const normalize = (s) => s.toLowerCase().replace("key", "").replace("digit", "");
   const sortMods = (m) => [...m].sort().join(",");
   
   const keysToCheck = h.isNavigation 
@@ -434,7 +434,7 @@ const getHotkeyDisplayString = (h) => {
   if (h.modifiers.includes("Alt")) parts.push(isMac ? "Opt" : "Alt");
   if (h.modifiers.includes("Shift")) parts.push("Shift");
   
-  if (h.code) parts.push(h.code.replace("Key", ""));
+  if (h.code) parts.push(h.code.replace("Key", "").replace("Digit", ""));
   else if (h.key === "ArrowKeys") parts.push("Arrow");
   else if (h.key === " ") parts.push("Space");
   else parts.push(h.key);
@@ -727,15 +727,19 @@ const getReadableColor = (hex) => {
 // ---------------------------------------------------------------------------
 
 const manageFoldIndicator = (node, show, allElements) => {
+  if (show) {
+    const children = getChildrenNodes(node.id, allElements);
+    if (children.length === 0) show = false;
+  }
   const existingId = node.customData?.foldIndicatorId;
   
   if (show) {
     if (existingId) {
-      // Check if it still exists in workbench and resurrect it
       const ind = allElements.find(el => el.id === existingId);
       if (ind) {
-        ind.opacity = 100;
         ind.isDeleted = false;
+        ind.strokeColor = node.strokeColor;
+        ind.opacity = 40;
         ind.x = node.x + node.width + 10;
         ind.y = node.y + node.height/2 - ind.height/2;
         return;
@@ -746,7 +750,8 @@ const manageFoldIndicator = (node, show, allElements) => {
     const id = ea.addText(node.x + node.width + 10, node.y, "...");
     const ind = ea.getElement(id);
     ind.fontSize = 20;
-    ind.strokeColor = "var(--text-muted)";
+    ind.strokeColor = node.strokeColor;
+    ind.opacity = 40;
     ind.textVerticalAlign = "middle";
     ind.textAlign = "left";
     ind.y = node.y + node.height/2 - ind.height/2;
@@ -1345,11 +1350,19 @@ const getAdjustedMaxWidth = (text, max) => {
 const addNode = async (text, follow = false, skipFinalLayout = false) => {
   if (!ea.targetView) return;
   if (!text || text.trim() === "") return;
-  const allElements = ea.getViewElements();
+  
+  let allElements = ea.getViewElements();
   const st = appState();
   let parent = ea.getViewSelectedElement();
   if (parent?.containerId) {
     parent = allElements.find((el) => el.id === parent.containerId);
+  }
+
+  if (parent && parent.customData?.isFolded) {
+    await toggleFold("all");
+
+    allElements = ea.getViewElements();
+    parent = allElements.find((el) => el.id === parent.id);
   }
 
   let newNodeId;
@@ -1680,6 +1693,12 @@ const copyMapAsText = async (cut = false) => {
 
   const elementsToDelete = [];
 
+  // --- MODIFICATION START: Respect Obsidian Indentation Settings ---
+  const useTab = app.vault.getConfig("useTab");
+  const tabSize = app.vault.getConfig("tabSize");
+  const indentVal = useTab ? "\t" : " ".repeat(tabSize);
+  // --- MODIFICATION END ---
+
   const buildList = (nodeId, depth = 0) => {
     const node = all.find((e) => e.id === nodeId);
     if (!node) return "";
@@ -1704,7 +1723,7 @@ const copyMapAsText = async (cut = false) => {
     if (depth === 0 && isRootSelected) {
       str += `# ${text}\n\n`;
     } else {
-      str += `${"  ".repeat(depth - (isRootSelected ? 1 : 0))}- ${text}\n`;
+      str += `${indentVal.repeat(depth - (isRootSelected ? 1 : 0))}- ${text}\n`;
     }
 
     children.forEach((c) => {
@@ -1774,23 +1793,25 @@ const pasteListToMap = async () => {
   let parsed = [];
   let rootTextFromHeader = null;
 
-  if (
-    !lines[0].match(/^(#+\s|\s*(?:-|\*|\d+)\s)/) ||
-    !lines.every((line, idx) => idx === 0 || line.match(/^\s*(?:-|\*|\d+)\s/))
-  ) {
-    new Notice("Paste aborted. Clipboard is not a bulleted list");
+  const isHeader = (l) => l.match(/^#+\s/);
+  const isListItem = (l) => l.match(/^(\s*)(?:-|\*|\d+\.)\s+(.*)$/);
+
+  if (!isHeader(lines[0]) && !isListItem(lines[0])) {
+    new Notice("Paste aborted. Clipboard does not start with a Markdown list or header.");
     return;
   }
 
-  const delta = lines[0].match(/^#+\s/) ? 1 : 0;
+  const delta = isHeader(lines[0]) ? 1 : 0;
 
   lines.forEach((line) => {
-    if (line.match(/^#+\s/)) {
-      parsed.push({ indent: 0, text: line.substring(2).trim() });
+    if (isHeader(line)) {
+      parsed.push({ indent: 0, text: line.replace(/^#+\s/, "").trim() });
     } else {
-      const match = line.match(/^(\s*)(?:-|\*|\d+\.)\s+(.*)$/);
+      const match = isListItem(line);
       if (match) {
         parsed.push({ indent: delta + match[1].length, text: match[2].trim() });
+      } else if (parsed.length > 0) {
+        parsed[parsed.length - 1].text += "\n" + line.trim();
       }
     }
   });
@@ -2214,7 +2235,6 @@ const registerObsidianHotkeyOverrides = () => {
   const reg = (mods, key) => {
     const handler = scope.register(mods, key, (e) => true);
     handlers.push(handler);
-    // Force the newly registered handler to the top of the stack
     scope.keys.unshift(scope.keys.pop());
   };
 
@@ -2222,7 +2242,7 @@ const registerObsidianHotkeyOverrides = () => {
     if (context < scope) return;
     if (h.key) reg(h.modifiers, h.key);
     if (h.code) {
-      const char = h.code.replace("Key", "").toLowerCase();
+      const char = h.code.replace("Key", "").replace("Digit", "").toLowerCase();
       reg(h.modifiers, char);
     }
   });
@@ -3051,8 +3071,8 @@ const renderBody = (contentEl) => {
         if (h.isNavigation && isNav) return true;
         if (h.isNavigation && key.startsWith("Arrow")) return true;
         
-        const hKey = h.code ? h.code.replace("Key","") : h.key;
-        const eKey = code ? code.replace("Key","") : key;
+        const hKey = h.code ? h.code.replace("Key","").replace("Digit","") : h.key;
+        const eKey = code ? code.replace("Key","").replace("Digit","") : key;
         return hKey.toLowerCase() === eKey.toLowerCase();
       });
 
@@ -3065,7 +3085,7 @@ const renderBody = (contentEl) => {
           targetConfig.modifiers = mods.map(m => m === "Ctrl" || m === "Meta" ? "Mod" : m);
         } else {
           targetConfig.modifiers = mods.map(m => m === "Ctrl" || m === "Meta" ? "Mod" : m);
-          if (code && code.startsWith("Key")) {
+          if (code && (code.startsWith("Key") || code.startsWith("Digit"))) {
             targetConfig.code = code;
             delete targetConfig.key;
           } else {
@@ -3093,7 +3113,7 @@ const renderBody = (contentEl) => {
     recordingScope.register(null, null, handler);
   };
 
-userHotkeys.forEach((h, index) => {
+  userHotkeys.forEach((h, index) => {
     if (h.immutable) return;
 
     const setting = new ea.obsidian.Setting(hkContainer)
