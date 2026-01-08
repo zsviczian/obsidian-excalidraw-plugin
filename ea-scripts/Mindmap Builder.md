@@ -862,39 +862,29 @@ const toggleFold = async (mode = "all") => {
   if (!sel) return;
 
   const allElements = ea.getViewElements();
-  // We must load ALL elements to ensure we can traverse the tree
   ea.copyViewElementsToEAforEditing(allElements);
   const wbElements = ea.getElements();
 
   const targetNode = wbElements.find(el => el.id === sel.id);
   if (!targetNode) return;
 
+  let isFoldAction = false; 
+  
   if (mode === "all") {
-    // Simple toggle
     const isCurrentlyFolded = targetNode.customData?.isFolded === true;
-    ea.addAppendUpdateCustomData(targetNode.id, { isFolded: !isCurrentlyFolded });
+    isFoldAction = !isCurrentlyFolded;
+    ea.addAppendUpdateCustomData(targetNode.id, { isFolded: isFoldAction });
   } else if (mode === "l1") {
-    // L1 Logic: Toggle the folding state of immediate children
-    
-    // 1. Ensure the selected node itself is open so we can see the L1 children
     ea.addAppendUpdateCustomData(targetNode.id, { isFolded: false });
-    
     const children = getChildrenNodes(targetNode.id, wbElements);
-    
-    // 2. Check state: Are ANY immediate children currently folded?
     const anyChildFolded = children.some(child => child.customData?.isFolded === true);
-    
-    // 3. Determine action:
-    // If ANY are folded -> Unfold ALL (Expand to show L2)
-    // If NONE are folded -> Fold ALL (Collapse to hide L2)
-    const shouldFoldChildren = !anyChildFolded;
+    isFoldAction = !anyChildFolded;
     
     children.forEach(child => {
-      ea.addAppendUpdateCustomData(child.id, { isFolded: shouldFoldChildren });
+      ea.addAppendUpdateCustomData(child.id, { isFolded: isFoldAction });
     });
   }
 
-  // Recalculate visibility tree starting from the target
   updateBranchVisibility(targetNode.id, false, wbElements, true);
 
   await ea.addElementsToView(false, false, true, true);
@@ -903,6 +893,43 @@ const toggleFold = async (mode = "all") => {
   if (!autoLayoutDisabled) {
     const info = getHierarchy(sel, ea.getViewElements());
     await triggerGlobalLayout(info.rootId);
+  }
+
+  const idsToScroll = [];
+  
+    const currentViewElements = ea.getViewElements();
+  
+  if (mode === "l1") {
+    if (isFoldAction) {
+      idsToScroll.push(targetNode.id);
+      const children = getChildrenNodes(targetNode.id, currentViewElements);
+      children.forEach(c => idsToScroll.push(c.id));
+    }
+  } else {
+    // Mode "all" (Single node toggle)
+    const isPinned = targetNode.customData?.isPinned;
+    
+    if (isPinned) {
+      if (isFoldAction) {
+        idsToScroll.push(targetNode.id);
+        const parent = getParentNode(targetNode.id, currentViewElements);
+        if (parent) idsToScroll.push(parent.id);
+      } else {
+        idsToScroll.push(targetNode.id);
+        const children = getChildrenNodes(targetNode.id, currentViewElements);
+        children.forEach(c => idsToScroll.push(c.id));
+      }
+    } else {
+      idsToScroll.push(targetNode.id);
+    }
+  }
+
+  if (idsToScroll.length > 0) {
+    const targets = currentViewElements.filter(el => idsToScroll.includes(el.id));
+    api().scrollToContent(targets, { 
+      fitToContent: true, 
+      animate: true 
+    });
   }
 };
 
@@ -1011,7 +1038,7 @@ const applyRecursiveGrouping = (nodeId, allElements) => {
   return nodeIdsInSubtree;
 };
 
-const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
+const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlobalFolds) => {
   const node = allElements.find((el) => el.id === nodeId);
   const eaNode = ea.getElement(nodeId);
 
@@ -1020,12 +1047,29 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
   if (!isPinned) {
     eaNode.x = side === 1 ? targetX : targetX - node.width;
     eaNode.y = targetCenterY - node.height / 2;
+    
+    if (node.customData?.originalY !== undefined) {
+       ea.addAppendUpdateCustomData(nodeId, { originalY: undefined });
+    }
+  } else {
+    if (hasGlobalFolds) {
+      if (node.customData?.originalY === undefined) {
+        ea.addAppendUpdateCustomData(nodeId, { originalY: node.y });
+      }
+      
+      eaNode.y = targetCenterY - node.height / 2;      
+    } else {
+      if (node.customData?.originalY !== undefined) {
+        eaNode.y = node.customData.originalY;
+        ea.addAppendUpdateCustomData(nodeId, { originalY: undefined });
+      }
+    }
   }
 
   if (node.customData?.foldIndicatorId) {
     const ind = ea.getElement(node.customData.foldIndicatorId);
     if(ind) {
-        ind.x = eaNode.x + eaNode.width + 5;
+        ind.x = eaNode.x + eaNode.width + 10;
         ind.y = eaNode.y + eaNode.height/2 - ind.height/2;
     }
   }
@@ -1038,7 +1082,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
   let effectiveSide = side;
   const parent = getParentNode(nodeId, allElements);
 
-  if (isPinned && parent) {
+  if (parent) {
     const parentCenterX = parent.x + parent.width / 2;
     const nodeCenterX = currentX + node.width / 2;
     effectiveSide = nodeCenterX >= parentCenterX ? 1 : -1;
@@ -1076,6 +1120,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
       currentY + childH / 2,
       effectiveSide,
       allElements,
+      hasGlobalFolds
     );
 
     currentY += childH + GAP_Y;
@@ -1111,6 +1156,7 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     const allElements = ea.getViewElements();
     const root = allElements.find((el) => el.id === rootId);
     
+    const hasGlobalFolds = allElements.some(el => el.customData?.isFolded === true);
     const l1Nodes = getChildrenNodes(rootId, allElements);
     if (l1Nodes.length === 0) return;
 
@@ -1170,7 +1216,6 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     const centerAngle = mode === "Left-facing" ? 270 : 90;
     const totalThetaDeg = (totalContentHeight / radius) * (180 / Math.PI);
     let currentAngleDirectional = centerAngle - totalThetaDeg / 2;
-    
     let currentAngleRadial = count <= 6 ? 30 : 20;
 
     sortedL1.forEach((node, i) => {
@@ -1208,14 +1253,14 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       const isPinned =
         node.customData?.isPinned || (!force && !node.customData?.mindmapNew && currentDist > radius * 1.5);
       const side = (isPinned 
-        ? node.x + node.width / 2 > rootCenter.x
+        ? (node.x + node.width / 2) > rootCenter.x
         : tCX > rootCenter.x
       ) ? 1 : -1;
 
       if (isPinned) {
-        layoutSubtree(node.id, node.x, node.y + node.height / 2, side, allElements);
+        layoutSubtree(node.id, node.x, tCY, side, allElements, hasGlobalFolds);
       } else {
-        layoutSubtree(node.id, tCX, tCY, side, allElements);
+        layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds);
       }
 
       if (node.customData?.mindmapNew) {
