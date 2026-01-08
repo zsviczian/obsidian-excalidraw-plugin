@@ -4,82 +4,16 @@
 
 ![](https://youtu.be/qY66yoobaX4)
 
-## 1. Overview
+## Overview
 **Mind Map Builder** transforms the Obsidian-Excalidraw canvas into a rapid brainstorming environment, allowing users to build complex, structured, and visually organized mind maps using primarily keyboard shortcuts.
 
 The script balances **automation** (auto-layout, recursive grouping, and contrast-aware coloring) with **explicit flexibility** (node pinning and redirection logic), ensuring that the mind map stays organized even as it grows to hundreds of nodes. It leverages the Excalidraw Sidepanel API to provide a persistent control interface utilizing the Obsidian sidepanel, that can also be undocked into a floating modal.
 
-## 2. Core Purpose
-The primary goal is to minimize the "friction of drawing." Instead of manually drawing boxes and arrows, the user focuses on the hierarchy of ideas. The script handles:
-- **Spatial Arrangement**: Distributing nodes radially or directionally (Left/Right).
-- **Visual Hierarchy**: Automatically adjusting font sizes and arrow thicknesses based on depth.
-- **Selection Redirection**: Automatically shifting focus from connecting arrows to their associated nodes to ensure continuous workflow.
-- **Data Portability**: Enabling seamless transition between visual diagrams and Markdown bullet lists via the clipboard.
+## Technical notes
 
-## 3. Feature Set
-
-### A. Intelligent Layout Engine
-The script features a recursive spacing engine that calculates the "subtree height" of every branch.
-- **Growth Modes**: Supports Radial (circular), Right-facing, and Left-facing layouts.
-- **Radial Logic**: Distributes the first 6 nodes at 60° increments. Beyond 6 nodes, it compresses the arc to 320° to maintain a professional aesthetic and avoid overlapping the central node's vertical axis.
-- **Recursive Re-balancing**: Coordinates are recalculated across the tree to prevent overlaps while maintaining the user's chosen growth direction.
-
-### B. Pinning & Manual Placement
-Nodes can be excluded from the auto-layout engine in two ways:
-- **Explicit Pinning**: Users can toggle a "Pinned" state via UI or shortcut. Pinned nodes stay at their exact coordinates, while the engine still organizes their unpinned children relative to that fixed position.
-- **Manual Break-out**: If a node is dragged significantly outside the calculated auto-layout radius (> 1.5x radius), the engine treats it as deliberately placed and stops moving it automatically.
-
-### C. Import & Export (Markdown Sync)
-- **Copy as Text**: Converts the visual map into an H1 header (Root) followed by an indented Markdown bullet list.
-- **Paste from Text**: Parses an indented Markdown list. It supports appending to an existing node or generating a brand-new map from a clipboard list.
-
-### D. Sidepanel & Docking
+### Sidepanel & Docking
 - **Persistent UI**: The script utilizes `ea.createSidepanelTab` to maintain state and controls alongside the drawing canvas.
 - **Floating Mode**: The UI can be "undocked" (Shift+Enter) into a `FloatingModal` for a focus-mode experience or to move controls closer to the active drawing area on large screens.
-
-### E. Inline Link Suggester
-- **Contextual \[\[link\]\] autocomplete**: Input fields now use `ea.attachInlineLinkSuggester` so you can drop Obsidian links with in-line suggestions (supports aliases and unresolved links) without leaving the flow.
-
-### F. Custom Palette & Contrast Colors
-- **Custom palettes**: Define your own branch colors (ordered or random draw) with the palette manager; stored per-user in script settings.
-- **Contrast-aware defaults**: When no custom palette is set, colors are generated to maximize contrast against the canvas and existing siblings.
-
-## 4. UI and User Experience
-
-### Zoom Management
-The script includes "Preferred Zoom Level" settings (Low/Medium/High) to ensure the canvas automatically frames the active node comfortably during rapid entry, particularly useful on mobile devices vs desktop screens.
-
-### Default Keyboard Shortcuts
-| Shortcut | Action |
-| :--- | :--- |
-| **ENTER** | Add a sibling on the current parent; ENTER on empty input jumps to the most recent child/siblings. |
-| **CTRL/CMD + ALT + ENTER** | Add child and follow (selection stays on the new node). |
-| **CTRL/CMD + ENTER** | Add child, follow, and center the new node. |
-| **CTRL/CMD + SHIFT + ENTER** | Add child, follow, and zoom to fit. |
-| **SHIFT + ENTER** | Dock/Undock the input field. |
-| **F2** | Edit the selected node. |
-| **ALT + P** | Pin/Unpin the selected node. |
-| **ALT + B** | Box/Unbox the selected node. |
-| **ALT + C / X / V** | Copy, Cut, or Paste branches as Markdown. |
-| **ALT + Z** | Cycle zoom to the selected element. |
-| **ALT + F** | Focus (center) the selected node. |
-| **ALT + ARROWS** | Navigate the mind map (parent/child/sibling). |
-| **ALT + SHIFT + ARROWS** | Navigate and zoom to selection. |
-| **ALT + CTRL/CMD + ARROWS** | Navigate and focus selection. |
-| **ESC** | Dock and hide the floating input. |
-
-## 5. Settings and Persistence
-
-### Global Settings
-Persisted across sessions via `ea.setScriptSettings`:
-- **Max Text Width**: Point at which text wraps (Default: 450px).
-- **Font Scales**: Choice of Normal, Fibonacci, or Scene-based sizes.
-- **Multicolor Mode**: Toggle automatic branch coloring; optionally configure a custom palette (ordered or random).
-- **Arrow Stroke Style**: Use scene stroke style or force solid branches.
-- **Center Text**: Toggle centered text vs directional alignment.
-- **Preferred Zoom Level**: Controls auto-zoom intensity (Low/Medium/High).
-- **Recursive Grouping**: When enabled, groups sub-trees from the leaves upward.
-- **Is Undocked**: Remembers if the user prefers the UI floating or docked.
 
 ### Map-Specific Persistence (customData)
 The script uses `ea.addAppendUpdateCustomData` to store state on elements:
@@ -88,8 +22,11 @@ The script uses `ea.addAppendUpdateCustomData` to store state on elements:
 - `isPinned`: Stored on individual nodes (boolean) to bypass the layout engine.
 - `isBranch`: Stored on arrows (boolean) to distinguish Mind Map connectors from standard annotations.
 - `mindmapOrder`: Stored on nodes (number) to maintain manual sort order of siblings.
-
-## 6. Special Logic Solutions
+- `mindmapNew`: Stored on nodes (boolean) to tag freshly added items so new siblings append after existing order; cleared after layout.
+- `isFolded`: Stored on nodes (boolean) to collapse a branch and hide its descendants.
+- `foldIndicatorId`: Stored on nodes to track the ephemeral "…" indicator element that signals a folded branch.
+- `foldState`: Stored on nodes and branch arrows to cache their opacity/lock state while hidden so it can be restored when unfolded.
+- `originalY`: Stored on pinned nodes during global folds to remember their pre-fold Y coordinate for restoration when folds are removed.
 
 ### The "mindmapNew" Tag & Order Stability
 When a Level 1 node is created, it is temporarily tagged with `mindmapNew: true`. The layout engine uses this to separate "Existing" nodes from "New" nodes. Existing nodes are sorted by their `mindmapOrder` (or visual angle/Y-position if order is missing), while new nodes are appended to the end. This prevents new additions from scrambling the visual order of existing branches.
