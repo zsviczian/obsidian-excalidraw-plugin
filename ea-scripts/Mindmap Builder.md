@@ -1444,23 +1444,13 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
 
     ea.copyViewElementsToEAforEditing(allElements);
 
-    const branchGroups = new Map();
-    if (!groupBranches && !forceUngroup) {
-      l1Nodes.forEach(l1 => {
-        const bIds = getBranchElementIds(l1.id, allElements);
-        const existingGroupedEls = allElements.filter(e => bIds.includes(e.id) && e.groupIds?.length > 0);
-        if (existingGroupedEls.length > 0) {
-          const gId = ea.getCommonGroupForElements(existingGroupedEls);
-          if (gId) branchGroups.set(l1.id, gId);
-        }
+    if (groupBranches || forceUngroup) {
+      const mindmapIds = getBranchElementIds(rootId, allElements);
+      mindmapIds.forEach((id) => {
+        const el = ea.getElement(id);
+        if (el) el.groupIds = [];
       });
     }
-
-    const mindmapIds = getBranchElementIds(rootId, allElements);
-    mindmapIds.forEach((id) => {
-      const el = ea.getElement(id);
-      if (el) el.groupIds = [];
-    });
 
     const mode = root.customData?.growthMode || currentModalGrowthMode;
     const rootBox = getNodeBox(root, allElements);
@@ -1584,18 +1574,8 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
         ];
       }
 
-      //Apply recursive grouping if enabled ---
       if (groupBranches) {
         applyRecursiveGrouping(node.id, allElements);
-      } else if (branchGroups.has(node.id)) {
-        // If recursive grouping is OFF, but this branch was previously grouped,
-        // re-apply the common group ID to all elements in the branch
-        const gId = branchGroups.get(node.id);
-        const currentBranchIds = getBranchElementIds(node.id, ea.getElements());
-        currentBranchIds.forEach(id => {
-          const el = ea.getElement(id);
-          if (el) el.groupIds = [gId];
-        });
       }
     });
   };
@@ -1796,7 +1776,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       : -rootBox.width;
     let px = parentBox.minX + offset,
       py = parentBox.minY;
-    
+
     // Ensure new node is placed below existing siblings so visual sort preserves order
     if (!autoLayoutDisabled) {
       const siblings = getChildrenNodes(parent.id, allElements);
@@ -1804,7 +1784,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
         const sortedSiblings = siblings.sort((a, b) => a.y - b.y);
         const lastSibling = sortedSiblings[sortedSiblings.length - 1];
         const lastSiblingBox = getNodeBox(lastSibling, allElements);
-        py = lastSiblingBox.minY + lastSiblingBox.height + GAP_Y; 
+        py = lastSiblingBox.minY + lastSiblingBox.height + layoutSettings.GAP_Y; 
       }
     }
 
@@ -1886,6 +1866,14 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       endArrowHead: null,
     });
     ea.addAppendUpdateCustomData(arrowId, { isBranch: true });
+
+    if (!groupBranches && parent.groupIds?.length > 0) {
+      const pGroup = parent.groupIds[0];
+      const newNode = ea.getElement(newNodeId);
+      const newArrow = ea.getElement(arrowId);
+      if(newNode) newNode.groupIds = [pGroup];
+      if(newArrow) newArrow.groupIds = [pGroup];
+    }
   }
 
   await ea.addElementsToView(!parent, !!imageFile || isPdfRectLink, true, true);
