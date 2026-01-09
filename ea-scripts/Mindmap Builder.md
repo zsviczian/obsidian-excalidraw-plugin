@@ -27,6 +27,7 @@ The script uses `ea.addAppendUpdateCustomData` to store state on elements:
 - `foldIndicatorId`: Stored on nodes to track the ephemeral "…" indicator element that signals a folded branch.
 - `foldState`: Stored on nodes and branch arrows to cache their opacity/lock state while hidden so it can be restored when unfolded.
 - `originalY`: Stored on pinned nodes during global folds to remember their pre-fold Y coordinate for restoration when folds are removed.
+- `boundaryId`: Stored on nodes to track the ID of the boundary element (a closed polygon line) that visually encompasses the node's subtree.
 
 ### The "mindmapNew" Tag & Order Stability
 When a Level 1 node is created, it is temporarily tagged with `mindmapNew: true`. The layout engine uses this to separate "Existing" nodes from "New" nodes. Existing nodes are sorted by their `mindmapOrder` (or visual angle/Y-position if order is missing), while new nodes are appended to the end. This prevents new additions from scrambling the visual order of existing branches.
@@ -141,16 +142,17 @@ const STRINGS = {
     // Tooltips (shared)
     PIN_TOOLTIP_PINNED: "This element is pinned. Click to unpin the location of the selected element",
     PIN_TOOLTIP_UNPINNED: "This element is not pinned. Click to pin the location of the selected element",
-    TOGGLE_GROUP_TOOLTIP_GROUP: "Group this branch. Only available if \"Group Branches\" is disabled.",
-    TOGGLE_GROUP_TOOLTIP_UNGROUP: "Ungroup this branch. Only available if \"Group Branches\" is disabled.",
+    TOGGLE_GROUP_TOOLTIP_GROUP: "Group this branch. Only available if \"Group Branches\" is disabled",
+    TOGGLE_GROUP_TOOLTIP_UNGROUP: "Ungroup this branch. Only available if \"Group Branches\" is disabled",
     TOOLTIP_EDIT_NODE: "Edit text of selected node",
-    TOOLTIP_PIN_INIT: "Pin/Unpin location of a node. When pinned nodes won't get auto-arranged.",
-    TOOLTIP_REFRESH: "Auto rearrange map.",
+    TOOLTIP_PIN_INIT: "Pin/Unpin location of a node. When pinned nodes won't get auto-arranged",
+    TOOLTIP_REFRESH: "Auto rearrange map",
     TOOLTIP_DOCK: "Dock to Sidepanel",
     TOOLTIP_UNDOCK: "Undock to Floating Modal",
     TOOLTIP_ZOOM_CYCLE: "Cycle element zoom",
     TOOLTIP_TOGGLE_GROUP_BTN: "Toggle grouping/ungrouping of a branch. Only available if \"Group Branches\" is disabled.",
-    TOOLTIP_TOGGLE_BOX: "Toggle node box.",
+    TOOLTIP_TOGGLE_BOX: "Toggle node box",
+    TOOLTIP_TOGGLE_BOUNDARY: "Toggle subtree boundary", 
     TOOLTIP_CONFIGURE_PALETTE: "Configure custom color palette for branches",
     TOOLTIP_MOVE_UP: "Move Up",
     TOOLTIP_MOVE_DOWN: "Move Down",
@@ -523,6 +525,7 @@ const ACTION_NAVIGATE_FOCUS = "Navigate & focus";
 const ACTION_FOLD = "Fold/Unfold Branch";
 const ACTION_FOLD_L1 = "Fold/Unfold to Level 1";
 const ACTION_UNFOLD_ALL = "Unfold Branch Recursively";
+const ACTION_TOGGLE_BOUNDARY = "Toggle Boundary";
 
 const ACTION_DOCK_UNDOCK = "Dock/Undock";
 const ACTION_HIDE = "Dock & hide";
@@ -548,6 +551,7 @@ const ACTION_LABEL_KEYS = {
   [ACTION_FOLD]: "ACTION_LABEL_FOLD",
   [ACTION_FOLD_L1]: "ACTION_LABEL_FOLD_L1",
   [ACTION_UNFOLD_ALL]: "ACTION_LABEL_UNFOLD_ALL",
+  [ACTION_TOGGLE_BOUNDARY]: "TOOLTIP_TOGGLE_BOUNDARY", 
   [ACTION_DOCK_UNDOCK]: "ACTION_LABEL_DOCK_UNDOCK",
   [ACTION_HIDE]: "ACTION_LABEL_HIDE",
 };
@@ -568,6 +572,7 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_EDIT, code: "F2", modifiers: [], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_TOGGLE_BOUNDARY, code: "KeyB", modifiers: ["Alt", "Mod"], scope: SCOPE.input, inputOnly: false },
   { action: ACTION_TOGGLE_GROUP, code: "KeyG", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false }, 
   { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
@@ -1071,6 +1076,21 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold)
     }
   }
 
+  // Handle Boundary Visibility
+  // Boundary is hidden if the node itself is hidden OR if the node is folded (hiding children)
+if (node.customData?.boundaryId) {
+    const boundEl = allElements.find(el => el.id === node.customData.boundaryId);
+    if (boundEl) {
+      if (shouldHideThis || isFolded) {
+        boundEl.opacity = 0;
+        boundEl.locked = true; 
+      } else {
+        boundEl.opacity = 30;
+        boundEl.locked = false; // Ensure it's unlocked when visible per request
+      }
+    }
+  }
+
   // 2. Manage Indicator
   // Show indicator if THIS node is visible, but it is folded (hiding its children)
   const showIndicator = !shouldHideThis && isFolded;
@@ -1291,6 +1311,11 @@ const applyRecursiveGrouping = (nodeId, allElements) => {
   const children = getChildrenNodes(nodeId, allElements);
   const nodeIdsInSubtree = [nodeId];
 
+  const node = allElements.find(el => el.id === nodeId);
+  if (node?.customData?.boundaryId) {
+    nodeIdsInSubtree.push(node.customData.boundaryId);
+  }
+
   children.forEach((child) => {
     const subtreeIds = applyRecursiveGrouping(child.id, allElements);
     nodeIdsInSubtree.push(...subtreeIds);
@@ -1314,6 +1339,113 @@ const applyRecursiveGrouping = (nodeId, allElements) => {
   }
 
   return nodeIdsInSubtree;
+};
+
+// Monotone Chain Convex Hull Algorithm
+const getConvexHull = (points) => {
+  points.sort((a, b) => a[0] != b[0] ? a[0] - b[0] : a[1] - b[1]);
+
+  const n = points.length;
+  if (n <= 2) return points;
+  
+  const cross = (a, b, o) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+
+  const lower = [];
+  for (let i = 0; i < n; i++) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], points[i]) <= 0) {
+      lower.pop();
+    }
+    lower.push(points[i]);
+  }
+
+  const upper = [];
+  for (let i = n - 1; i >= 0; i--) {
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], points[i]) <= 0) {
+      upper.pop();
+    }
+    upper.push(points[i]);
+  }
+
+  upper.pop();
+  lower.pop();
+  return lower.concat(upper);
+};
+
+const updateNodeBoundary = (node, allElements) => {
+  const boundaryId = node.customData?.boundaryId;
+  
+  if (!boundaryId) {
+    return;
+  }
+
+  if (node.opacity === 0) return;
+
+  const ids = getBranchElementIds(node.id, allElements);
+  
+  const branchElements = allElements.filter(el => 
+    ids.includes(el.id) && 
+    el.id !== boundaryId && 
+    el.opacity > 0 && 
+    !el.isDeleted
+  );
+  
+  if (branchElements.length === 0) return;
+
+  const padding = 15;
+  let allPoints = [];
+
+  branchElements.forEach(el => {
+    const x1 = el.x - padding;
+    const y1 = el.y - padding;
+    const x2 = el.x + el.width + padding;
+    const y2 = el.y + el.height + padding;
+    
+    allPoints.push([x1, y1]);
+    allPoints.push([x2, y1]);
+    allPoints.push([x2, y2]);
+    allPoints.push([x1, y2]);
+  });
+
+  const hullPoints = getConvexHull(allPoints);
+  
+  if (hullPoints.length < 3) return;
+
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  hullPoints.forEach(p => {
+    if (p[0] < minX) minX = p[0];
+    if (p[1] < minY) minY = p[1];
+    if (p[0] > maxX) maxX = p[0];
+    if (p[1] > maxY) maxY = p[1];
+  });
+
+  const w = maxX - minX;
+  const h = maxY - minY;
+
+  let boundaryEl = ea.getElement(boundaryId);
+  
+  if (!boundaryEl) return;
+
+  boundaryEl.x = minX;
+  boundaryEl.y = minY;
+  boundaryEl.width = w;
+  boundaryEl.height = h;
+  
+  const normalizedPoints = hullPoints.map(p => [p[0] - minX, p[1] - minY]);
+  normalizedPoints.push([normalizedPoints[0][0], normalizedPoints[0][1]]); // Close loop
+  boundaryEl.points = normalizedPoints;
+  
+  boundaryEl.roundness = null; 
+  boundaryEl.polygon = true;
+  boundaryEl.locked = false; 
+  
+  if (node.groupIds.length > 0) {
+     // If node is grouped, boundary joins the group
+     if (!boundaryEl.groupIds || boundaryEl.groupIds.length === 0 || boundaryEl.groupIds[0] !== node.groupIds[0]) {
+         boundaryEl.groupIds = [node.groupIds[0]];
+     }
+  } else {
+     boundaryEl.groupIds = [];
+  }
 };
 
 const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlobalFolds) => {
@@ -1430,6 +1562,10 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
       ];
     }
   });
+  
+  if (node.customData?.boundaryId) {
+     updateNodeBoundary(node, ea.getElements());
+  }
 };
 
 const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) => {
@@ -2058,6 +2194,7 @@ const copyMapAsText = async (cut = false) => {
       ea.selectElementsInView([parentNode]);
     }
 
+    triggerGlobalLayout(info.rootId);
     new Notice(isRootSelected ? t("NOTICE_MAP_CUT") : t("NOTICE_BRANCH_CUT"));
   } else {
     new Notice(isRootSelected ? t("NOTICE_MAP_COPIED") : t("NOTICE_BRANCH_COPIED"));
@@ -2346,6 +2483,12 @@ const getBranchElementIds = (nodeId, allElements) => {
 
   while (queue.length > 0) {
     const currentId = queue.shift();
+
+    const currentNode = allElements.find(el => el.id === currentId);
+    if (currentNode?.customData?.boundaryId) {
+        branchNodes.add(currentNode.customData.boundaryId);
+    }
+
     const children = childMap.get(currentId);
     
     if (children) {
@@ -2468,7 +2611,7 @@ const toggleBox = async () => {
     ));
     const rect = ea.getElement(rectId);
     ea.addAppendUpdateCustomData(rectId, { isPinned: !!sel.customData?.isPinned });
-    rect.strokeColor = sel.strokeColor;
+    rect.strokeColor = ea.getCM(sel.strokeColor).stringRGB();
     rect.strokeWidth = 2;
     rect.roughness = getAppState().currentItemRoughness;
     rect.roundness = roundedCorners ? { type: 3 } : null;
@@ -2502,12 +2645,59 @@ const toggleBox = async () => {
   if(!autoLayoutDisabled) await refreshMapLayout();
 };
 
+const toggleBoundary = async () => {
+  if (!ea.targetView) return;
+  const sel = ea.getViewSelectedElement();
+  if (sel) {
+    ea.copyViewElementsToEAforEditing([sel]);
+    const eaSel = ea.getElement(sel.id);
+    
+    if (eaSel.customData?.boundaryId) {
+       const b = ea.getViewElements().find(el => el.id === eaSel.customData.boundaryId);
+       if(b) {
+         ea.copyViewElementsToEAforEditing([b]);
+         ea.getElement(b.id).isDeleted = true;
+       }
+       ea.addAppendUpdateCustomData(sel.id, { boundaryId: undefined });
+    } else {
+       const id = ea.generateElementId();
+       const st = getAppState();
+       const boundaryEl = {
+           id: id,
+           type: "line",
+           x: sel.x, y: sel.y, width: 1, height: 1,
+           angle: 0,
+           roughness: st.currentItemRoughness,
+           strokeColor: sel.strokeColor,
+           backgroundColor: sel.strokeColor,
+           fillStyle: "solid",
+           strokeWidth: 2,
+           strokeStyle: "solid",
+           roughness: 0,
+           opacity: 30,
+           points: [[0,0], [1,1], [0,0]],
+           polygon: true,
+           locked: false,
+           groupIds: sel.groupIds || []
+       };
+       ea.elementsDict[id] = boundaryEl;
+       ea.addAppendUpdateCustomData(sel.id, { boundaryId: id });
+    }
+
+    await ea.addElementsToView(false, false, false, true);
+    ea.clear();
+
+    const info = getHierarchy(sel, ea.getViewElements());
+    await triggerGlobalLayout(info.rootId, true);
+  }
+};
+
 // ---------------------------------------------------------------------------
 // 7. UI Modal & Sidepanel Logic
 // ---------------------------------------------------------------------------
 
 let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown, autoLayoutToggle, linkSuggester;
-let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn, toggleGroupBtn, zoomBtn;
+let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn, toggleGroupBtn, zoomBtn, boundaryBtn;
 let foldBtnL0, foldBtnL1, unfoldAllBtn;
 let inputContainer;
 let helpContainer;
@@ -3039,6 +3229,7 @@ const renderInput = (container, isFloating = false) => {
   
   pinBtn = refreshBtn = dockBtn = inputEl = null;
   foldBtnL0 = foldBtnL1 = unfoldAllBtn = null;
+  boundaryBtn = null; 
 
   inputRow = new ea.obsidian.Setting(container);
   
@@ -3124,6 +3315,17 @@ const renderInput = (container, isFloating = false) => {
   });
 
   if (!isFloating) {
+    addButton((btn) => {
+      boundaryBtn = btn;
+      btn.setIcon("cloud");
+      btn.setTooltip(`${t("TOOLTIP_TOGGLE_BOUNDARY")} ${getActionHotkeyString(ACTION_TOGGLE_BOUNDARY)}`);
+      btn.onClick(async () => {
+        await toggleBoundary();
+        updateUI();
+        focusInputEl();
+      });
+    });
+
     addButton((btn) => {
       foldBtnL0 = btn;
       btn.setIcon("wifi-low");
@@ -3963,6 +4165,12 @@ const handleKeydown = async (e) => {
 
     case ACTION_BOX:
       await toggleBox();
+      focusInputEl();
+      break;
+
+    case ACTION_TOGGLE_BOUNDARY:
+      await toggleBoundary();
+      updateUI();
       focusInputEl();
       break;
 
