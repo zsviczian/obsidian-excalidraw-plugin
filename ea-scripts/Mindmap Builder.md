@@ -1347,7 +1347,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   if (node.customData?.foldIndicatorId) {
     const ind = ea.getElement(node.customData.foldIndicatorId);
     if(ind) {
-        ind.x = eaNode.x + eaNode.width + INDICATOR_OFFSET;
+        ind.x = eaNode.x + eaNode.width + layoutSettings.INDICATOR_OFFSET;
         ind.y = eaNode.y + eaNode.height/2 - ind.height/2;
     }
   }
