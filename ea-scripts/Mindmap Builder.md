@@ -263,11 +263,14 @@ const INDICATOR_OPACITY = 40;
 const CONTAINER_PADDING = 10;
 const MANUAL_GAP_MULTIPLIER = 1.3;
 const MANUAL_JITTER_RANGE = 150;
-const ROOT_RADIUS_FACTOR = 0.9;
-const MIN_RADIUS = 260;
-const RADIUS_PADDING_PER_NODE = 5;
-const GAP_MULTIPLIER_RADIAL = 2.5;
-const GAP_MULTIPLIER_DIRECTIONAL = 1.0;
+const ROOT_RADIUS_FACTOR = 0.8;
+const MIN_RADIUS = 200;
+const RADIUS_PADDING_PER_NODE = 7;
+const GAP_MULTIPLIER_RADIAL = 3.1;
+const GAP_MULTIPLIER_DIRECTIONAL = 1.3;
+const GAP_X = 140;
+const GAP_Y = 30;
+const GAP_MULTIPLIER = 2; //used for nodes that do not have children, relative to font size
 
 // ---------------------------------------------------------------------------
 // Color & Palette Constants
@@ -1093,9 +1096,6 @@ const toggleFold = async (mode = "L0") => {
 // 3. Layout & Grouping Engine
 // ---------------------------------------------------------------------------
 
-const GAP_X = 140;
-const GAP_Y = 30;
-
 let storedZoom = {elementID: undefined, level: undefined}
 const nextZoomLevel = (current) => {
   const idx = ZOOM_TYPES.indexOf(current);
@@ -1140,12 +1140,26 @@ const getMindmapOrder = (node) => {
   return typeof o === "number" && Number.isFinite(o) ? o : 0;
 };
 
-const sortChildrenStable = (children) => {
+const getNodeBox = (node, allElements) => {
+  if (node.groupIds && node.groupIds.length > 0) {
+    const groupElements = ea.getElementsInTheSameGroupWithElement(node, allElements);
+    if(groupElements.length > 1) {
+       const box = ExcalidrawLib.getCommonBoundingBox(groupElements);
+       return { ...box, elements: groupElements, isGroup: true };
+    }
+  }
+  return { minX: node.x, minY: node.y, width: node.width, height: node.height, elements: [node], isGroup: false };
+};
+
+const sortChildrenStable = (children, allElements) => {
   children.sort((a, b) => {
     const ao = getMindmapOrder(a),
       bo = getMindmapOrder(b);
     if (ao !== bo) return ao - bo;
-    const dy = a.y - b.y;
+    // Fallback sort by Y position (visual order)
+    const ya = allElements ? getNodeBox(a, allElements).minY : a.y;
+    const yb = allElements ? getNodeBox(b, allElements).minY : b.y;
+    const dy = ya - yb;
     if (dy !== 0) return dy;
     return String(a.id).localeCompare(String(b.id));
   });
@@ -1158,9 +1172,20 @@ const getSubtreeHeight = (nodeId, allElements) => {
   }
 
   const children = getChildrenNodes(nodeId, allElements);
-  if (children.length === 0) return allElements.find((el) => el.id === nodeId).height;
-  const total = children.reduce((sum, child) => sum + getSubtreeHeight(child.id, allElements), 0);
-  return Math.max(allElements.find((el) => el.id === nodeId).height, total + (children.length - 1) * GAP_Y);
+  if (children.length === 0) return node.height;
+
+  let childrenHeight = 0;
+  children.forEach((child, index) => {
+    childrenHeight += getSubtreeHeight(child.id, allElements);
+    if (index < children.length - 1) {
+      const childNode = allElements.find((el) => el.id === child.id);
+      const isLeaf = getChildrenNodes(child.id, allElements).length === 0;
+      const gap = isLeaf ? Math.round(childNode.fontSize * GAP_MULTIPLIER) : GAP_Y;
+      childrenHeight += gap;
+    }
+  });
+
+  return Math.max(node.height, childrenHeight);
 };
 
 // Recursive grouping logic
@@ -1278,7 +1303,11 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
       hasGlobalFolds
     );
 
-    currentY += childH + GAP_Y;
+    const childNode = allElements.find((el) => el.id === child.id);
+    const isLeaf = getChildrenNodes(child.id, allElements).length === 0;
+    const gap = isLeaf ? Math.round(childNode.fontSize * GAP_MULTIPLIER) : GAP_Y;
+
+    currentY += childH + gap;
 
     const arrow = allElements.find(
       (a) =>
@@ -1321,7 +1350,6 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     if (!groupBranches && !forceUngroup) {
       l1Nodes.forEach(l1 => {
         const bIds = getBranchElementIds(l1.id, allElements);
-        // MODIFIED: Only look for common groups among elements that already belong to one
         const existingGroupedEls = allElements.filter(e => bIds.includes(e.id) && e.groupIds?.length > 0);
         if (existingGroupedEls.length > 0) {
           const gId = ea.getCommonGroupForElements(existingGroupedEls);
@@ -1337,19 +1365,27 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     });
 
     const mode = root.customData?.growthMode || currentModalGrowthMode;
-    const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
+    const rootBox = getNodeBox(root, allElements);
+    const rootCenter = { x: rootBox.minX + rootBox.width / 2, y: rootBox.minY + rootBox.height / 2 };
 
     const existingL1 = l1Nodes.filter((n) => !n.customData?.mindmapNew);
     const newL1 = l1Nodes.filter((n) => n.customData?.mindmapNew);
 
     if (mode === "Radial") {
       existingL1.sort(
-        (a, b) =>
-          getAngleFromCenter(rootCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
-          getAngleFromCenter(rootCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 }),
+        (a, b) => {
+          const boxA = getNodeBox(a, allElements);
+          const boxB = getNodeBox(b, allElements);
+          return getAngleFromCenter(rootCenter, { x: boxA.minX + boxA.width / 2, y: boxA.minY + boxA.height / 2 }) -
+          getAngleFromCenter(rootCenter, { x: boxB.minX + boxB.width / 2, y: boxB.minY + boxB.height / 2 })
+        }
       );
     } else {
-      existingL1.sort((a, b) => a.y - b.y);
+      existingL1.sort((a, b) => {
+          const boxA = getNodeBox(a, allElements);
+          const boxB = getNodeBox(b, allElements);
+          return boxA.minY - boxB.minY;
+      });
     }
 
     const sortedL1 = [...existingL1, ...newL1];
@@ -1363,7 +1399,7 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     const radiusFromHeight = totalContentHeight / 2.0;
     
     const radius = Math.max(
-      Math.round(root.width * ROOT_RADIUS_FACTOR), 
+      Math.round(rootBox.width * ROOT_RADIUS_FACTOR), 
       MIN_RADIUS, 
       radiusFromHeight
     ) + count * RADIUS_PADDING_PER_NODE;
@@ -1401,14 +1437,15 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       const tCX = rootCenter.x + radius * Math.cos(angleRad);
       const tCY = rootCenter.y + radius * Math.sin(angleRad);
 
+      const nodeBox = getNodeBox(node, allElements);
       const currentDist = Math.hypot(
-        node.x + node.width / 2 - rootCenter.x,
-        node.y + node.height / 2 - rootCenter.y,
+        nodeBox.minX + nodeBox.width / 2 - rootCenter.x,
+        nodeBox.minY + nodeBox.height / 2 - rootCenter.y,
       );
       const isPinned =
         node.customData?.isPinned || (!force && !node.customData?.mindmapNew && currentDist > radius * 1.5);
       const side = (isPinned 
-        ? (node.x + node.width / 2) > rootCenter.x
+        ? (nodeBox.minX + nodeBox.width / 2) > rootCenter.x
         : tCX > rootCenter.x
       ) ? 1 : -1;
 
@@ -1430,10 +1467,10 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
           a.endBinding?.elementId === node.id,
       );
       if (arrow) {
-        const eaA = ea.getElement(arrow.id),
-          eaC = ea.getElement(node.id);
-        const eX = eaC.x + eaC.width / 2,
-          eY = eaC.y + eaC.height / 2;
+        const eaA = ea.getElement(arrow.id);
+        const childBox = getNodeBox(ea.getElement(node.id), ea.getElements());
+        const eX = childBox.minX + childBox.width / 2,
+          eY = childBox.minY + childBox.height / 2;
         eaA.x = rootCenter.x;
         eaA.y = rootCenter.y;
         eaA.points = [
@@ -1639,18 +1676,21 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   } else {
     ea.style.strokeColor = nodeColor; //getReadableColor(nodeColor);
     const rootEl = allElements.find((e) => e.id === rootId);
+    const rootBox = getNodeBox(rootEl, allElements);
     const mode = rootEl.customData?.growthMode || currentModalGrowthMode;
     const rootCenter = {
-      x: rootEl.x + rootEl.width / 2,
-      y: rootEl.y + rootEl.height / 2,
+      x: rootBox.minX + rootBox.width / 2,
+      y: rootBox.minY + rootBox.height / 2,
     };
-    const side = parent.x + parent.width / 2 > rootCenter.x ? 1 : -1;
+    
+    const parentBox = getNodeBox(parent, allElements);
+    const side = parentBox.minX + parentBox.width / 2 > rootCenter.x ? 1 : -1;
 
     const offset = mode === "Radial" || mode === "Right-facing"
-      ? rootEl.width * 2
-      : -rootEl.width;
-    let px = parent.x + offset,
-      py = parent.y;
+      ? rootBox.width * 2
+      : -rootBox.width;
+    let px = parentBox.minX + offset,
+      py = parentBox.minY;
     
     // Ensure new node is placed below existing siblings so visual sort preserves order
     if (!autoLayoutDisabled) {
@@ -1658,19 +1698,20 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       if (siblings.length > 0) {
         const sortedSiblings = siblings.sort((a, b) => a.y - b.y);
         const lastSibling = sortedSiblings[sortedSiblings.length - 1];
-        py = lastSibling.y + lastSibling.height + GAP_Y; 
+        const lastSiblingBox = getNodeBox(lastSibling, allElements);
+        py = lastSiblingBox.minY + lastSiblingBox.height + GAP_Y; 
       }
     }
 
     if (autoLayoutDisabled) {
-      const manualGapX = Math.round(parent.width * MANUAL_GAP_MULTIPLIER);
+      const manualGapX = Math.round(parentBox.width * MANUAL_GAP_MULTIPLIER);
       const jitterX = (Math.random() - 0.5) * MANUAL_JITTER_RANGE;
       const jitterY = (Math.random() - 0.5) * MANUAL_JITTER_RANGE;
       const nodeW = shouldWrap ? curMaxW : metrics.width;
       px = side === 1
-        ? parent.x + parent.width + manualGapX + jitterX
-        : parent.x - manualGapX - nodeW + jitterX;
-      py = parent.y + parent.height / 2 - metrics.height / 2 + jitterY;
+        ? parentBox.minX + parentBox.width + manualGapX + jitterX
+        : parentBox.minX - manualGapX - nodeW + jitterX;
+      py = parentBox.minY + parentBox.height / 2 - metrics.height / 2 + jitterY;
     }
 
     const textAlign = centerText
@@ -1732,7 +1773,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
     ea.style.roughness = getAppState().currentItemRoughness;
     ea.style.strokeStyle = isSolidArrow ? "solid" : getAppState().currentItemStrokeStyle;
-    const startPoint = [parent.x + parent.width / 2, parent.y + parent.height / 2];
+    const startPoint = [parentBox.minX + parentBox.width / 2, parentBox.minY + parentBox.height / 2];
     arrowId = ea.addArrow([startPoint, startPoint], {
       startObjectId: parent.id,
       endObjectId: newNodeId,
@@ -1758,10 +1799,12 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
 
     if (arrow) {
       const eaA = ea.getElement(arrow.id);
-      const sX = parent.x + parent.width / 2,
-        sY = parent.y + parent.height / 2;
-      const eX = node.x + node.width / 2,
-        eY = node.y + node.height / 2;
+      const parentBox = getNodeBox(parent, allEls);
+      const sX = parentBox.minX + parentBox.width / 2,
+        sY = parentBox.minY + parentBox.height / 2;
+      const nodeBox = getNodeBox(node, allEls);
+      const eX = nodeBox.minX + nodeBox.width / 2,
+        eY = nodeBox.minY + nodeBox.height / 2;
       eaA.x = sX;
       eaA.y = sY;
       eaA.points = [
