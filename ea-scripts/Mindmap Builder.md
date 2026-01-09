@@ -1397,15 +1397,21 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     const totalContentHeight = totalSubtreeHeight + totalGapHeight;
 
     const radiusFromHeight = totalContentHeight / 2.0;
-    
-    const radius = Math.max(
-      Math.round(rootBox.width * ROOT_RADIUS_FACTOR), 
+
+    const radiusY = Math.max(
+      Math.round(rootBox.height * ROOT_RADIUS_FACTOR),
       MIN_RADIUS, 
       radiusFromHeight
     ) + count * RADIUS_PADDING_PER_NODE;
 
+    const radiusX = Math.max(
+      Math.round(rootBox.width * ROOT_RADIUS_FACTOR), 
+      MIN_RADIUS,
+      radiusY * 0.5 
+    ) + count * RADIUS_PADDING_PER_NODE;
+
     const centerAngle = mode === "Left-facing" ? 270 : 90;
-    const totalThetaDeg = (totalContentHeight / radius) * (180 / Math.PI);
+    const totalThetaDeg = (totalContentHeight / radiusY) * (180 / Math.PI);
     let currentAngleDirectional = centerAngle - totalThetaDeg / 2;
     let currentAngleRadial = count <= 6 ? 30 : 20;
 
@@ -1418,8 +1424,8 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       const gapMultiplier = mode === "Radial" ? GAP_MULTIPLIER_RADIAL : GAP_MULTIPLIER_DIRECTIONAL;
       const effectiveGap = GAP_Y * gapMultiplier;
       
-      const nodeSpanRad = nodeHeight / radius;
-      const gapSpanRad = effectiveGap / radius;
+      const nodeSpanRad = nodeHeight / radiusY;
+      const gapSpanRad = effectiveGap / radiusY;
       
       const nodeSpanDeg = nodeSpanRad * (180 / Math.PI);
       const gapSpanDeg = gapSpanRad * (180 / Math.PI);
@@ -1434,16 +1440,17 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       }
 
       const angleRad = (angleDeg - 90) * (Math.PI / 180);
-      const tCX = rootCenter.x + radius * Math.cos(angleRad);
-      const tCY = rootCenter.y + radius * Math.sin(angleRad);
+      const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
+      const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
 
       const nodeBox = getNodeBox(node, allElements);
+      const maxRadius = Math.max(radiusX, radiusY);
       const currentDist = Math.hypot(
         nodeBox.minX + nodeBox.width / 2 - rootCenter.x,
         nodeBox.minY + nodeBox.height / 2 - rootCenter.y,
       );
       const isPinned =
-        node.customData?.isPinned || (!force && !node.customData?.mindmapNew && currentDist > radius * 1.5);
+        node.customData?.isPinned || (!force && !node.customData?.mindmapNew && currentDist > maxRadius * 1.5);
       const side = (isPinned 
         ? (nodeBox.minX + nodeBox.width / 2) > rootCenter.x
         : tCX > rootCenter.x
