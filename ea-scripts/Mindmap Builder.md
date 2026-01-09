@@ -267,10 +267,11 @@ const ROOT_RADIUS_FACTOR = 0.8;
 const MIN_RADIUS = 200;
 const RADIUS_PADDING_PER_NODE = 7;
 const GAP_MULTIPLIER_RADIAL = 3.1;
-const GAP_MULTIPLIER_DIRECTIONAL = 1.3;
+const GAP_MULTIPLIER_DIRECTIONAL = 1.5;
 const GAP_X = 140;
 const GAP_Y = 30;
 const GAP_MULTIPLIER = 2; //used for nodes that do not have children, relative to font size
+const DIRECTIONAL_ARC_SPAN_RADIANS = 1;
 
 // ---------------------------------------------------------------------------
 // Color & Palette Constants
@@ -1396,7 +1397,7 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     const totalGapHeight = (count - 1) * GAP_Y;
     const totalContentHeight = totalSubtreeHeight + totalGapHeight;
 
-    const radiusFromHeight = totalContentHeight / 2.0;
+    const radiusFromHeight = totalContentHeight / DIRECTIONAL_ARC_SPAN_RADIANS;
 
     const radiusY = Math.max(
       Math.round(rootBox.height * ROOT_RADIUS_FACTOR),
@@ -1407,7 +1408,7 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     const radiusX = Math.max(
       Math.round(rootBox.width * ROOT_RADIUS_FACTOR), 
       MIN_RADIUS,
-      radiusY * 0.5 
+      radiusY * 0.2
     ) + count * RADIUS_PADDING_PER_NODE;
 
     const centerAngle = mode === "Left-facing" ? 270 : 90;
@@ -2626,8 +2627,10 @@ const commitEdit = async () => {
       const textWidth = ea.measureText(text).width;
       const shouldWrap = textWidth > maxWidth;
       if (!shouldWrap) {
-        eaEl.width = Math.ceil(textWidth)
+        eaEl.autoResize = true;
+        eaEl.width = Math.ceil(textWidth);
       } else {
+        eaEl.autoResize = false;
         const res = getAdjustedMaxWidth(text, maxWidth);
         eaEl.width = res.width;
         eaEl.text = res.wrappedText;
