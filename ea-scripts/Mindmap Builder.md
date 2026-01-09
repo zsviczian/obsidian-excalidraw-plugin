@@ -268,9 +268,9 @@ const MIN_RADIUS = 200;
 const RADIUS_PADDING_PER_NODE = 7;
 const GAP_MULTIPLIER_RADIAL = 3.1;
 const GAP_MULTIPLIER_DIRECTIONAL = 1.5;
-const GAP_X = 140;
-const GAP_Y = 30;
-const GAP_MULTIPLIER = 2; //used for nodes that do not have children, relative to font size
+const GAP_X = 120;
+const GAP_Y = 25;
+const GAP_MULTIPLIER = 0.6; //used for nodes that do not have children, relative to font size
 const DIRECTIONAL_ARC_SPAN_RADIANS = 1;
 
 // ---------------------------------------------------------------------------
@@ -1290,7 +1290,8 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   const subtreeHeight = getSubtreeHeight(nodeId, allElements);
 
   let currentY = currentYCenter - subtreeHeight / 2;
-  const dynamicGapX = Math.max(GAP_X, subtreeHeight / 3);
+  const dynamicGapX = GAP_X;
+  //const dynamicGapX = Math.max(GAP_X, subtreeHeight / 3);
 
   children.forEach((child) => {
     const childH = getSubtreeHeight(child.id, allElements);
