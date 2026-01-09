@@ -261,6 +261,8 @@ const TYPE_DEF_WHITELIST = [
   "lib/types/AIUtilTypes.d.ts",
   "node_modules/@zsviczian/excalidraw/types/element/src/types.d.ts",
   "node_modules/@zsviczian/excalidraw/types/excalidraw/types.d.ts",
+  "node_modules/@zsviczian/excalidraw/types/element/src/bounds.d.ts",
+  "node_modules/@zsviczian/excalidraw/types/excalidraw/components/App.d.ts",
 ];
 
 /**

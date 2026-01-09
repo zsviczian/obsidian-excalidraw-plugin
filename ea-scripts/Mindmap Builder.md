@@ -2056,6 +2056,8 @@ const pasteListToMap = async () => {
 
   const info = getHierarchy(currentParent, ea.getViewElements());
   await triggerGlobalLayout(info.rootId);
+  //when rendered text element, image elements, etc. have their sizes recalculated, a second round layout fixes resulting issues
+  await triggerGlobalLayout(info.rootId);
 
   const allInView = ea.getViewElements();
   const targetToSelect = sel
