@@ -63,6 +63,7 @@ const K_CENTERTEXT = "Center text in nodes?";
 const K_ZOOM = "Preferred Zoom Level";
 const K_HOTKEYS = "Hotkeys";
 const K_PALETTE = "Custom Palette";
+const K_LAYOUT = "Layout Config";
 
 // ---------------------------------------------------------------------------
 // Core Value Sets
@@ -173,7 +174,7 @@ const STRINGS = {
     TITLE_PASTE: "Paste list from clipboard",
     LABEL_ZOOM_LEVEL: "Zoom Level",
     LABEL_GROWTH_STRATEGY: "Growth Strategy",
-    LABEL_DISABLE_AUTOLAYOUT: "Disable Auto-Layout",
+    LABEL_AUTO_LAYOUT: "Auto-Layout",
     LABEL_GROUP_BRANCHES: "Group Branches",
     LABEL_BOX_CHILD_NODES: "Box Child Nodes",
     LABEL_ROUNDED_CORNERS: "Rounded Corners",
@@ -206,6 +207,37 @@ const STRINGS = {
     BUTTON_CANCEL_EDIT: "Cancel Edit",
     BUTTON_ADD_COLOR: "Add Color",
     BUTTON_UPDATE_COLOR: "Update Color",
+
+    // Layout configuration
+    MODAL_LAYOUT_TITLE: "Layout Configuration",
+    GAP_X:  "Gap X",
+    DESC_LAYOUT_GAP_X: "Horizontal distance between a parent and its children. Low: compact width. High: wide diagram.",
+    GAP_Y:  "Gap Y",
+    DESC_LAYOUT_GAP_Y: "Vertical distance between sibling branches. Low: compact height. High: airy separation.",
+    GAP_MULTIPLIER:  "Gap Multiplier",
+    DESC_LAYOUT_GAP_MULTIPLIER: "Vertical spacing for 'leaf' nodes (no children), relative to font size. Low: list-like stacking. High: standard tree spacing.",
+    DIRECTIONAL_ARC_SPAN_RADIANS:  "Directional Arc-span Radians",
+    DESC_LAYOUT_ARC_SPAN: "Curvature of the child list. Low (0.5): Flatter, list-like. High (2.0): Curved, organic, but risk of overlap.",
+    ROOT_RADIUS_FACTOR:  "Root Radius Factor",
+    DESC_LAYOUT_ROOT_RADIUS: "Multiplier for the Root node's bounding box to determine initial radius.",
+    MIN_RADIUS:  "Minimum Radius",
+    DESC_LAYOUT_MIN_RADIUS: "Minimum distance of Level 1 nodes from the Root center.",
+    RADIUS_PADDING_PER_NODE:  "Radius Padding per Node",
+    DESC_LAYOUT_RADIUS_PADDING: "Extra radius added per child node to accommodate dense maps.",
+    GAP_MULTIPLIER_RADIAL:  "Radial-layout Gap Multiplier",
+    DESC_LAYOUT_GAP_RADIAL: "Angular spacing multiplier for Radial mode.",
+    GAP_MULTIPLIER_DIRECTIONAL:  "Directional-layout Gap Multiplier",
+    DESC_LAYOUT_GAP_DIRECTIONAL: "Angular spacing multiplier for Left/Right modes.",
+    INDICATOR_OFFSET:  "Fold Indicator Offset",
+    DESC_LAYOUT_INDICATOR_OFFSET: "Distance of the '...' fold indicator from the node.",
+    INDICATOR_OPACITY:  "Fold Indicator Opacity",
+    DESC_LAYOUT_INDICATOR_OPACITY: "Opacity of the '...' fold indicator (0-100).",
+    CONTAINER_PADDING:  "Container Padding",
+    DESC_LAYOUT_CONTAINER_PADDING: "Padding inside the box when 'Box Child Nodes' or 'Box/Unbox' is used.",
+    MANUAL_GAP_MULTIPLIER:  "Manual-layout Gap Multiplier",
+    DESC_LAYOUT_MANUAL_GAP: "Spacing multiplier when adding nodes while Auto-Layout is disabled.",
+    MANUAL_JITTER_RANGE: "Manual-layout Jitter Range",
+    DESC_LAYOUT_MANUAL_JITTER: "Random position offset when adding nodes while Auto-Layout is disabled.",
 
     // Misc
     INPUT_TITLE_PASTE_ROOT: "Mindmap Builder Paste",
@@ -255,23 +287,88 @@ if (existingTab) {
 const api = () => ea.getExcalidrawAPI();
 const getAppState = () => ea.getExcalidrawAPI().getAppState();
 const getVal = (key, def) => ea.getScriptSettingValue(key, typeof def === "object" ? def: { value: def }).value;
+
 // ---------------------------------------------------------------------------
-// Layout & Geometry Constants
+// Layout & Geometry Settings
 // ---------------------------------------------------------------------------
-const INDICATOR_OFFSET = 10;
-const INDICATOR_OPACITY = 40;
-const CONTAINER_PADDING = 10;
-const MANUAL_GAP_MULTIPLIER = 1.3;
-const MANUAL_JITTER_RANGE = 150;
-const ROOT_RADIUS_FACTOR = 0.8;
-const MIN_RADIUS = 200;
-const RADIUS_PADDING_PER_NODE = 7;
-const GAP_MULTIPLIER_RADIAL = 3.1;
-const GAP_MULTIPLIER_DIRECTIONAL = 1.5;
-const GAP_X = 120;
-const GAP_Y = 25;
-const GAP_MULTIPLIER = 0.6; //used for nodes that do not have children, relative to font size
-const DIRECTIONAL_ARC_SPAN_RADIANS = 1;
+const LAYOUT_METADATA = {
+  GAP_X: { 
+    def: 120, min: 50, max: 400, step: 10, 
+    desc: t("DESC_LAYOUT_GAP_X"),
+    name: t("GAP_X"),
+  },
+  GAP_Y: { 
+    def: 25, min: 10, max: 150, step: 5, 
+    desc: t("DESC_LAYOUT_GAP_Y"),
+    name: t("GAP_Y"),
+  },
+  GAP_MULTIPLIER: { 
+    def: 0.6, min: 0.1, max: 3.0, step: 0.1, 
+    desc: t("DESC_LAYOUT_GAP_MULTIPLIER"),
+    name: t("GAP_MULTIPLIER"),
+  },
+  DIRECTIONAL_ARC_SPAN_RADIANS: { 
+    def: 1.0, min: 0.1, max: 3.14, step: 0.1, 
+    desc: t("DESC_LAYOUT_ARC_SPAN"),
+    name: t("DIRECTIONAL_ARC_SPAN_RADIANS"),
+  },
+  ROOT_RADIUS_FACTOR: { 
+    def: 0.8, min: 0.5, max: 2.0, step: 0.1, 
+    desc: t("DESC_LAYOUT_ROOT_RADIUS"),
+    name: t("ROOT_RADIUS_FACTOR"),
+  },
+  MIN_RADIUS: { 
+    def: 200, min: 100, max: 500, step: 10, 
+    desc: t("DESC_LAYOUT_MIN_RADIUS"),
+    name: t("MIN_RADIUS"),
+  },
+  RADIUS_PADDING_PER_NODE: { 
+    def: 7, min: 0, max: 20, step: 1, 
+    desc: t("DESC_LAYOUT_RADIUS_PADDING"),
+    name: t("RADIUS_PADDING_PER_NODE"),
+  },
+  GAP_MULTIPLIER_RADIAL: { 
+    def: 3.1, min: 1.0, max: 5.0, step: 0.1, 
+    desc: t("DESC_LAYOUT_GAP_RADIAL"),
+    name: t("GAP_MULTIPLIER_RADIAL"),
+  },
+  GAP_MULTIPLIER_DIRECTIONAL: { 
+    def: 1.5, min: 1.0, max: 3.0, step: 0.1, 
+    desc: t("DESC_LAYOUT_GAP_DIRECTIONAL"),
+    name: t("GAP_MULTIPLIER_DIRECTIONAL"),
+  },
+  INDICATOR_OFFSET: { 
+    def: 10, min: 5, max: 50, step: 5, 
+    desc: t("DESC_LAYOUT_INDICATOR_OFFSET"),
+    name: t("INDICATOR_OFFSET"),
+  },
+  INDICATOR_OPACITY: { 
+    def: 40, min: 10, max: 100, step: 10, 
+    desc: t("DESC_LAYOUT_INDICATOR_OPACITY"),
+    name: t("INDICATOR_OPACITY"),
+  },
+  CONTAINER_PADDING: { 
+    def: 10, min: 0, max: 50, step: 2, 
+    desc: t("DESC_LAYOUT_CONTAINER_PADDING"),
+    name: t("CONTAINER_PADDING"),
+  },
+  MANUAL_GAP_MULTIPLIER: { 
+    def: 1.3, min: 1.0, max: 2.0, step: 0.1, 
+    desc: t("DESC_LAYOUT_MANUAL_GAP"),
+    name: t("MANUAL_GAP_MULTIPLIER"),
+  },
+  MANUAL_JITTER_RANGE: { 
+    def: 300, min: 0, max: 400, step: 10, 
+    desc: t("DESC_LAYOUT_MANUAL_JITTER"),
+    name: t("MANUAL_JITTER_RANGE"),
+  }
+};
+
+let layoutSettings = getVal(K_LAYOUT, {value: {}, hidden: true});
+
+Object.keys(LAYOUT_METADATA).forEach(k => {
+  if (layoutSettings[k] === undefined) layoutSettings[k] = LAYOUT_METADATA[k].def;
+});
 
 // ---------------------------------------------------------------------------
 // Color & Palette Constants
@@ -901,19 +998,19 @@ const manageFoldIndicator = (node, show, allElements) => {
       if (ind) {
         ind.isDeleted = false;
         ind.strokeColor = node.strokeColor;
-        ind.opacity = INDICATOR_OPACITY;
-        ind.x = node.x + node.width + INDICATOR_OFFSET;
+        ind.opacity = layoutSettings.INDICATOR_OPACITY;
+        ind.x = node.x + node.width + layoutSettings.INDICATOR_OFFSET;
         ind.y = node.y + node.height/2 - ind.height/2;
         return;
       }
     }
     
     // Create new indicator if none exists
-    const id = ea.addText(node.x + node.width + INDICATOR_OFFSET, node.y, "...");
+    const id = ea.addText(node.x + node.width + layoutSettings.INDICATOR_OFFSET, node.y, "...");
     const ind = ea.getElement(id);
     ind.fontSize = node.fontSize;
     ind.strokeColor = node.strokeColor;
-    ind.opacity = INDICATOR_OPACITY;
+    ind.opacity = layoutSettings.INDICATOR_OPACITY;
     ind.textVerticalAlign = "middle";
     ind.textAlign = "left";
     ind.y = node.y + node.height/2 - ind.height/2;
@@ -1181,7 +1278,7 @@ const getSubtreeHeight = (nodeId, allElements) => {
     if (index < children.length - 1) {
       const childNode = allElements.find((el) => el.id === child.id);
       const isLeaf = getChildrenNodes(child.id, allElements).length === 0;
-      const gap = isLeaf ? Math.round(childNode.fontSize * GAP_MULTIPLIER) : GAP_Y;
+      const gap = isLeaf ? Math.round(childNode.fontSize * layoutSettings.GAP_MULTIPLIER) : layoutSettings.GAP_Y;
       childrenHeight += gap;
     }
   });
@@ -1290,8 +1387,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   const subtreeHeight = getSubtreeHeight(nodeId, allElements);
 
   let currentY = currentYCenter - subtreeHeight / 2;
-  const dynamicGapX = GAP_X;
-  //const dynamicGapX = Math.max(GAP_X, subtreeHeight / 3);
+  const dynamicGapX = layoutSettings.GAP_X;
 
   children.forEach((child) => {
     const childH = getSubtreeHeight(child.id, allElements);
@@ -1307,7 +1403,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
 
     const childNode = allElements.find((el) => el.id === child.id);
     const isLeaf = getChildrenNodes(child.id, allElements).length === 0;
-    const gap = isLeaf ? Math.round(childNode.fontSize * GAP_MULTIPLIER) : GAP_Y;
+    const gap = isLeaf ? Math.round(childNode.fontSize * layoutSettings.GAP_MULTIPLIER) : layoutSettings.GAP_Y;
 
     currentY += childH + gap;
 
@@ -1395,22 +1491,22 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
 
     const l1Metrics = sortedL1.map(node => getSubtreeHeight(node.id, allElements));
     const totalSubtreeHeight = l1Metrics.reduce((sum, h) => sum + h, 0);
-    const totalGapHeight = (count - 1) * GAP_Y;
+    const totalGapHeight = (count - 1) * layoutSettings.GAP_Y;
     const totalContentHeight = totalSubtreeHeight + totalGapHeight;
 
-    const radiusFromHeight = totalContentHeight / DIRECTIONAL_ARC_SPAN_RADIANS;
+    const radiusFromHeight = totalContentHeight / layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
 
     const radiusY = Math.max(
-      Math.round(rootBox.height * ROOT_RADIUS_FACTOR),
-      MIN_RADIUS, 
+      Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR),
+      layoutSettings.MIN_RADIUS, 
       radiusFromHeight
-    ) + count * RADIUS_PADDING_PER_NODE;
+    ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
 
     const radiusX = Math.max(
-      Math.round(rootBox.width * ROOT_RADIUS_FACTOR), 
-      MIN_RADIUS,
+      Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR), 
+      layoutSettings.MIN_RADIUS,
       radiusY * 0.2
-    ) + count * RADIUS_PADDING_PER_NODE;
+    ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
 
     const centerAngle = mode === "Left-facing" ? 270 : 90;
     const totalThetaDeg = (totalContentHeight / radiusY) * (180 / Math.PI);
@@ -1423,9 +1519,9 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       }
 
       const nodeHeight = l1Metrics[i];
-      const gapMultiplier = mode === "Radial" ? GAP_MULTIPLIER_RADIAL : GAP_MULTIPLIER_DIRECTIONAL;
-      const effectiveGap = GAP_Y * gapMultiplier;
-      
+      const gapMultiplier = mode === "Radial" ? layoutSettings.GAP_MULTIPLIER_RADIAL : layoutSettings.GAP_MULTIPLIER_DIRECTIONAL;
+      const effectiveGap = layoutSettings.GAP_Y * gapMultiplier;
+
       const nodeSpanRad = nodeHeight / radiusY;
       const gapSpanRad = effectiveGap / radiusY;
       
@@ -1713,9 +1809,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     }
 
     if (autoLayoutDisabled) {
-      const manualGapX = Math.round(parentBox.width * MANUAL_GAP_MULTIPLIER);
-      const jitterX = (Math.random() - 0.5) * MANUAL_JITTER_RANGE;
-      const jitterY = (Math.random() - 0.5) * MANUAL_JITTER_RANGE;
+      const manualGapX = Math.round(parentBox.width * layoutSettings.MANUAL_GAP_MULTIPLIER);
+      const jitterX = (Math.random() - 0.5) * layoutSettings.MANUAL_JITTER_RANGE;
+      const jitterY = (Math.random() - 0.5) * layoutSettings.MANUAL_JITTER_RANGE;
       const nodeW = shouldWrap ? curMaxW : metrics.width;
       px = side === 1
         ? parentBox.minX + parentBox.width + manualGapX + jitterX
@@ -2344,7 +2440,7 @@ const togglePin = async () => {
   }
 };
 
-const padding = CONTAINER_PADDING;
+const padding = layoutSettings.CONTAINER_PADDING;
 const toggleBox = async () => {
   if (!ea.targetView) return;
   let sel = ea.getViewSelectedElement();
@@ -2863,7 +2959,91 @@ class PaletteManagerModal extends ea.obsidian.Modal {
 }
 
 // ---------------------------------------------------------------------------
-// 9. Render Functions
+// 9. Layout Configuration Manager
+// ---------------------------------------------------------------------------
+class LayoutConfigModal extends ea.obsidian.Modal {
+  constructor(app, currentSettings, onUpdate) {
+    super(app);
+    this.settings = JSON.parse(JSON.stringify(currentSettings));
+    this.onUpdate = onUpdate;
+  }
+
+  onOpen() {
+    this.display();
+  }
+
+  display() {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.createEl("h2", { text: t("MODAL_LAYOUT_TITLE") });
+    
+    const container = contentEl.createDiv();
+    container.style.maxHeight = "70vh";
+    container.style.overflowY = "auto";
+    container.style.paddingRight = "10px";
+
+    Object.keys(LAYOUT_METADATA).forEach(key => {
+      const meta = LAYOUT_METADATA[key];
+      const setting = new ea.obsidian.Setting(container)
+        .setName(meta.name)
+        .setDesc(meta.desc);
+      
+      let valLabel;
+      setting.addSlider(slider => slider
+        .setLimits(meta.min, meta.max, meta.step)
+        .setValue(this.settings[key])
+        .onChange(value => {
+          this.settings[key] = value;
+          valLabel.setText(String(value));
+        })
+      );
+      
+      setting.settingEl.createDiv("", el => {
+        valLabel = el;
+        el.style.minWidth = "3em";
+        el.style.textAlign = "right";
+        el.innerText = String(this.settings[key]);
+      });
+
+      setting.addExtraButton(btn => btn
+        .setIcon("rotate-ccw")
+        .setTooltip("Reset to default")
+        .onClick(() => {
+          this.settings[key] = meta.def;
+          this.display();
+        })
+      );
+    });
+
+    const footer = contentEl.createDiv();
+    footer.style.marginTop = "20px";
+    footer.style.display = "flex";
+    footer.style.justifyContent = "space-between";
+
+    new ea.obsidian.Setting(footer)
+      .addButton(btn => btn
+        .setButtonText("Reset All to Defaults")
+        .setWarning()
+        .onClick(() => {
+          Object.keys(LAYOUT_METADATA).forEach(k => {
+            this.settings[k] = LAYOUT_METADATA[k].def;
+          });
+          this.display();
+        })
+      )
+      .addButton(btn => btn
+        .setButtonText("Save & Close")
+        .setCta()
+        .onClick(() => {
+          this.onUpdate(this.settings);
+          this.close();
+        })
+      );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 10. Render Functions
 // ---------------------------------------------------------------------------
 
 const renderInput = (container, isFloating = false) => {
@@ -3108,13 +3288,26 @@ const renderBody = (contentEl) => {
   });
 
   autoLayoutToggle = new ea.obsidian.Setting(bodyContainer)
-    .setName(t("LABEL_DISABLE_AUTOLAYOUT"))
+    .setName(t("LABEL_AUTO_LAYOUT"))
     .addToggle((t) => t
-      .setValue(autoLayoutDisabled)
+      .setValue(!autoLayoutDisabled)
       .onChange(async (v) => {
-        autoLayoutDisabled = v;
-        setMapAutolayout(v);
+        autoLayoutDisabled = !v;
+        setMapAutolayout(!v);
       }),
+    )
+    .addButton(btn => btn
+      .setIcon("pencil-ruler")
+      .setTooltip(t("TOOLTIP_CONFIGURE_LAYOUT"))
+      .onClick(() => {
+        const modal = new LayoutConfigModal(app, layoutSettings, (newSettings) => {
+          layoutSettings = newSettings;
+          setVal(K_LAYOUT, layoutSettings, true);
+          dirty = true;
+          if(!autoLayoutDisabled) refreshMapLayout(); // Auto-refresh if layout is active
+        });
+        modal.open();
+      })
     ).components[0];
 
   new ea.obsidian.Setting(bodyContainer)
