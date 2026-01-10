@@ -2262,6 +2262,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   }
 
   mostRecentlyAddedNodeID = finalNode.id;
+  focusInputEl();
   return finalNode;
 };
 
@@ -2969,7 +2970,7 @@ const registerObsidianHotkeyOverrides = () => {
   };
 
   RUNTIME_HOTKEYS.forEach(h => {
-    if (context < keymapScope) return;
+    if (context < h.scope) return;
     if (h.key) reg(h.modifiers, h.key);
     if (h.code) {
       const char = h.code.replace("Key", "").replace("Digit", "").toLowerCase();
@@ -3501,7 +3502,8 @@ const renderInput = (container, isFloating = false) => {
     secondaryButtonContainer = container.createDiv();
     secondaryButtonContainer.style.display = isFloatingPanelExpanded ? "flex" : "none";
     secondaryButtonContainer.style.justifyContent = "flex-end";
-    secondaryButtonContainer.style.gap = "6px";
+    secondaryButtonContainer.style.flexWrap = "wrap";
+    secondaryButtonContainer.style.gap = "4px";
     secondaryButtonContainer.style.marginTop = "6px";
     secondaryButtonContainer.style.flexWrap = "wrap";
   }
@@ -3538,7 +3540,8 @@ const renderInput = (container, isFloating = false) => {
     dockedButtonContainer = inputRow.controlEl.createDiv();
     dockedButtonContainer.style.display = "flex";
     dockedButtonContainer.style.justifyContent = "flex-end";
-    dockedButtonContainer.style.gap = "6px";
+    dockedButtonContainer.style.flexWrap = "wrap";
+    dockedButtonContainer.style.gap = "4px";
     dockedButtonContainer.style.marginTop = "6px";
   }
 
@@ -3697,6 +3700,38 @@ const renderInput = (container, isFloating = false) => {
   }, true);
 
   addButton((btn) => {
+    copyBtn = btn;
+    btn.setIcon("copy");
+    btn.setTooltip(`${t("ACTION_COPY")} ${getActionHotkeyString(ACTION_COPY)}`);
+    btn.extraSettingsEl.setAttr("action", ACTION_COPY);
+    btn.onClick(async () => {
+      copyMapAsText();
+      updateUI();
+    });
+  }, true);
+
+  addButton((btn) => {
+    cutBtn = btn;
+    btn.setIcon("scissors");
+    btn.setTooltip(`${t("ACTION_CUT")} ${getActionHotkeyString(ACTION_CUT)}`);
+    btn.extraSettingsEl.setAttr("action", ACTION_CUT);
+    btn.onClick(async () => {
+      copyMapAsText(true);
+      updateUI();
+    });
+  }, true);
+
+  addButton((btn) => {
+    btn.setIcon("clipboard");
+    btn.setTooltip(`${t("ACTION_PASTE")} ${getActionHotkeyString(ACTION_PASTE)}`);
+    btn.extraSettingsEl.setAttr("action", ACTION_PASTE);
+    btn.onClick(async () => {
+      pasteListToMap();
+      updateUI();
+    });
+  }, true);
+
+  addButton((btn) => {
     dockBtn = btn;
     btn.setIcon(isFloating ? "dock" : "external-link");
     btn.extraSettingsEl.setAttr("action",ACTION_DOCK_UNDOCK);
@@ -3714,47 +3749,6 @@ const renderInput = (container, isFloating = false) => {
 const renderBody = (contentEl) => {
   bodyContainer = contentEl.createDiv();
   bodyContainer.style.width = "100%";
-
-  const btnGrid = bodyContainer.createDiv({
-    attr: {
-      style: "display: grid; grid-template-columns: repeat(5, 1fr); gap:6px;",
-    },
-  });
-
-  btnGrid.createEl("button", {
-    text: t("BUTTON_ADD_SIBLING"),
-    cls: "mod-cta",
-    attr: { style: "padding: 2px;", title: `${t("TITLE_ADD_SIBLING")} ${getActionHotkeyString(ACTION_ADD)}` },
-  }).onclick = async () => {
-    await addNode(inputEl.value, false);
-    inputEl.value = "";
-    if(!autoLayoutDisabled) await refreshMapLayout();
-    updateUI();
-    focusInputEl();
-  };
-  btnGrid.createEl("button", { text: t("BUTTON_ADD_FOLLOW"), attr: { style: "padding: 2px;", title: `${t("TITLE_ADD_FOLLOW")} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}`} }).onclick = async () => {
-    await addNode(inputEl.value, true);
-    inputEl.value = "";
-    if(!autoLayoutDisabled) await refreshMapLayout();
-    updateUI();
-    focusInputEl();
-  };
-  copyBtn = btnGrid.createEl("button", {
-    text: t("BUTTON_COPY"),
-    attr: { style: "padding: 2px;", title: `${t("TITLE_COPY")} ${getActionHotkeyString(ACTION_COPY)}` },
-  });
-  copyBtn.onclick = copyMapAsText;
-
-  cutBtn = btnGrid.createEl("button", {
-    text: t("BUTTON_CUT"),
-    attr: { style: "padding: 2px;", title: `${t("TITLE_CUT")} ${getActionHotkeyString(ACTION_CUT)}` },
-  });
-  cutBtn.onclick = () => copyMapAsText(true);
-
-  btnGrid.createEl("button", {
-    text: t("BUTTON_PASTE"),
-    attr: { style: "padding: 2px;", title: `${t("TITLE_PASTE")} ${getActionHotkeyString(ACTION_PASTE)}` },
-  }).onclick = pasteListToMap;
 
   const zoomSetting = new ea.obsidian.Setting(bodyContainer);
   zoomSetting.setName(t("LABEL_ZOOM_LEVEL")).addDropdown((d) => {
@@ -4562,7 +4556,7 @@ const handleKeydown = async (e) => {
       if (action === ACTION_ADD_FOLLOW_FOCUS) focusSelected();
       if (action === ACTION_ADD_FOLLOW_ZOOM) zoomToFit();
       break;
-case ACTION_ADD:
+    case ACTION_ADD:
       const currentSel = ea.getViewSelectedElement();
       if (
         editingNodeId && currentSel &&
@@ -4694,6 +4688,9 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
       } else if (!undockPreference) {
         tab.reveal();
       }
+    } else {
+      setupEventListeners(ea.targetView);
+      if (!popObsidianHotkeyScope) registerObsidianHotkeyOverrides();
     }
   };
 
