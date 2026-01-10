@@ -28,6 +28,7 @@ The script uses `ea.addAppendUpdateCustomData` to store state on elements:
 - `foldState`: Stored on nodes and branch arrows to cache their opacity/lock state while hidden so it can be restored when unfolded.
 - `originalY`: Stored on pinned nodes during global folds to remember their pre-fold Y coordinate for restoration when folds are removed.
 - `boundaryId`: Stored on nodes to track the ID of the boundary element (a closed polygon line) that visually encompasses the node's subtree.
+- `isBoundary`: Stored on the line polygon to mark it is a boundary for a node.
 
 ### The "mindmapNew" Tag & Order Stability
 When a Level 1 node is created, it is temporarily tagged with `mindmapNew: true`. The layout engine uses this to separate "Existing" nodes from "New" nodes. Existing nodes are sorted by their `mindmapOrder` (or visual angle/Y-position if order is missing), while new nodes are appended to the end. This prevents new additions from scrambling the visual order of existing branches.
@@ -796,22 +797,29 @@ ${t("INSTRUCTIONS")}
 // 2. Traversal & Geometry Helpers
 // ---------------------------------------------------------------------------
 
+const getBoundaryHost = (selectedElements) => {
+  if (
+    selectedElements.length === 1 && selectedElements[0].type === "line" &&
+    selectedElements[0].customData.hasOwnProperty("isBoundary")
+  ) {
+    const sel = selectedElements[0];
+    // Check if this line is referenced as a boundaryId by any other element
+    const allElements = ea.getViewElements();
+    const owner = allElements.find(el => el.customData?.boundaryId === sel.id);
+    return owner;
+  }
+}
+
 const ensureNodeSelected = () => {
   if (!ea.targetView) return;
   const selectedElements = ea.getViewSelectedElements();
 
   if (selectedElements.length === 0) return;
 
-  // Handle Boundary Selection: If a boundary line is selected, select its owner
-  if (selectedElements.length === 1 && selectedElements[0].type === "line") {
-    const sel = selectedElements[0];
-    // Check if this line is referenced as a boundaryId by any other element
-    const allElements = ea.getViewElements();
-    const owner = allElements.find(el => el.customData?.boundaryId === sel.id);
-    if (owner) {
-      ea.selectElementsInView([owner]);
-      return;
-    }
+  const owner = getBoundaryHost(selectedElements);
+  if (owner) {
+    ea.selectElementsInView([owner]);
+    return;
   }
 
   // Handle Single Arrow Selection, deliberatly not filtering to el.customData?.isBranch
@@ -875,6 +883,8 @@ const getChildrenNodes = (id, allElements) => {
 };
 
 const getHierarchy = (el, allElements) => {
+  el = getBoundaryHost([el]) ?? el;
+
   let depth = 0,
     curr = el,
     l1Id = el.id,
@@ -2704,7 +2714,8 @@ const toggleBoundary = async () => {
            points: [[0,0], [1,1], [0,0]],
            polygon: true,
            locked: false,
-           groupIds: sel.groupIds || []
+           groupIds: sel.groupIds || [],
+           customData: {isBoundary: true},
        };
        ea.elementsDict[id] = boundaryEl;
        ea.addAppendUpdateCustomData(sel.id, { boundaryId: id });
@@ -4352,7 +4363,8 @@ const handleCanvasPointerDown = (e) => {
     const isEligible = !!selection.find(el => el.customData && (
       el.customData.hasOwnProperty("mindmapOrder") || 
       el.customData.hasOwnProperty("isBranch") ||
-      el.customData.hasOwnProperty("growthMode")
+      el.customData.hasOwnProperty("growthMode") ||
+      el.customData.hasOwnProperty("isBoundary")
     ))
 
     if (isEligible) {
