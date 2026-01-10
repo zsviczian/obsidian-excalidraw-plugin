@@ -1723,19 +1723,13 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     const newL1 = l1Nodes.filter((n) => n.customData?.mindmapNew);
 
     if (mode === "Radial") {
-      existingL1.sort(
-        (a, b) => {
-          const boxA = getNodeBox(a, allElements);
-          const boxB = getNodeBox(b, allElements);
-          return getAngleFromCenter(rootCenter, { x: boxA.minX + boxA.width / 2, y: boxA.minY + boxA.height / 2 }) -
-          getAngleFromCenter(rootCenter, { x: boxB.minX + boxB.width / 2, y: boxB.minY + boxB.height / 2 })
-        }
-      );
+      existingL1.sort((a, b) => {
+        return getAngleFromCenter(rootCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
+        getAngleFromCenter(rootCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 })
+      });
     } else {
       existingL1.sort((a, b) => {
-          const boxA = getNodeBox(a, allElements);
-          const boxB = getNodeBox(b, allElements);
-          return boxA.minY - boxB.minY;
+        return a.y - b.y;
       });
     }
 
