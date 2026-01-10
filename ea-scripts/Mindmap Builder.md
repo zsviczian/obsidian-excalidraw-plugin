@@ -1610,6 +1610,19 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     const allElements = ea.getViewElements();
     const root = allElements.find((el) => el.id === rootId);
 
+    // Snapshot positions and identify cross-link arrows
+    const originalPositions = new Map();
+    allElements.forEach(el => {
+       originalPositions.set(el.id, { x: el.x, y: el.y });
+    });
+
+    const crossLinkArrows = allElements.filter(el =>
+       el.type === "arrow" &&
+       !el.customData?.isBranch &&
+       el.startBinding?.elementId &&
+       el.endBinding?.elementId
+    );
+
     const hasGlobalFolds = allElements.some(el => el.customData?.isFolded === true);
     const l1Nodes = getChildrenNodes(rootId, allElements);
     if (l1Nodes.length === 0) return;
@@ -1748,6 +1761,41 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
 
       if (groupBranches) {
         applyRecursiveGrouping(node.id, allElements);
+      }
+    });
+
+    crossLinkArrows.forEach(arrow => {
+      const startId = arrow.startBinding.elementId;
+      const endId = arrow.endBinding.elementId;
+      const startNodeOld = originalPositions.get(startId);
+      const endNodeOld = originalPositions.get(endId);
+      const startNodeNew = ea.getElement(startId);
+      const endNodeNew = ea.getElement(endId);
+
+      if (startNodeOld && endNodeOld && startNodeNew && endNodeNew) {
+        const dsX = startNodeNew.x - startNodeOld.x;
+        const dsY = startNodeNew.y - startNodeOld.y;
+        const deX = endNodeNew.x - endNodeOld.x;
+        const deY = endNodeNew.y - endNodeOld.y;
+        if (dsX === 0 && dsY === 0 && deX === 0 && deY === 0) return;
+
+        const eaArrow = ea.getElement(arrow.id);
+        eaArrow.x += dsX;
+        eaArrow.y += dsY;
+
+        const diffX = deX - dsX;
+        const diffY = deY - dsY;
+
+        const len = eaArrow.points.length;
+        if (len > 0) {
+          eaArrow.points = eaArrow.points.map((p, i) => {
+            const t = i / (len - 1);
+            return [
+                p[0] + diffX * t,
+                p[1] + diffY * t
+            ];
+          });
+        }
       }
     });
   };
