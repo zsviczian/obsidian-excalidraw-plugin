@@ -296,73 +296,73 @@ const getVal = (key, def) => ea.getScriptSettingValue(key, typeof def === "objec
 // Layout & Geometry Settings
 // ---------------------------------------------------------------------------
 const LAYOUT_METADATA = {
-  GAP_X: { 
-    def: 120, min: 50, max: 400, step: 10, 
+  GAP_X: {
+    def: 120, min: 50, max: 400, step: 10,
     desc: t("DESC_LAYOUT_GAP_X"),
     name: t("GAP_X"),
   },
-  GAP_Y: { 
-    def: 25, min: 10, max: 150, step: 5, 
+  GAP_Y: {
+    def: 25, min: 10, max: 150, step: 5,
     desc: t("DESC_LAYOUT_GAP_Y"),
     name: t("GAP_Y"),
   },
-  GAP_MULTIPLIER: { 
-    def: 0.6, min: 0.1, max: 3.0, step: 0.1, 
+  GAP_MULTIPLIER: {
+    def: 0.6, min: 0.1, max: 3.0, step: 0.1,
     desc: t("DESC_LAYOUT_GAP_MULTIPLIER"),
     name: t("GAP_MULTIPLIER"),
   },
-  DIRECTIONAL_ARC_SPAN_RADIANS: { 
-    def: 1.0, min: 0.1, max: 3.14, step: 0.1, 
+  DIRECTIONAL_ARC_SPAN_RADIANS: {
+    def: 1.0, min: 0.1, max: 3.14, step: 0.1,
     desc: t("DESC_LAYOUT_ARC_SPAN"),
     name: t("DIRECTIONAL_ARC_SPAN_RADIANS"),
   },
-  ROOT_RADIUS_FACTOR: { 
-    def: 0.8, min: 0.5, max: 2.0, step: 0.1, 
+  ROOT_RADIUS_FACTOR: {
+    def: 0.8, min: 0.5, max: 2.0, step: 0.1,
     desc: t("DESC_LAYOUT_ROOT_RADIUS"),
     name: t("ROOT_RADIUS_FACTOR"),
   },
-  MIN_RADIUS: { 
-    def: 200, min: 100, max: 500, step: 10, 
+  MIN_RADIUS: {
+    def: 200, min: 100, max: 500, step: 10,
     desc: t("DESC_LAYOUT_MIN_RADIUS"),
     name: t("MIN_RADIUS"),
   },
-  RADIUS_PADDING_PER_NODE: { 
-    def: 7, min: 0, max: 20, step: 1, 
+  RADIUS_PADDING_PER_NODE: {
+    def: 7, min: 0, max: 20, step: 1,
     desc: t("DESC_LAYOUT_RADIUS_PADDING"),
     name: t("RADIUS_PADDING_PER_NODE"),
   },
-  GAP_MULTIPLIER_RADIAL: { 
-    def: 3.1, min: 1.0, max: 5.0, step: 0.1, 
+  GAP_MULTIPLIER_RADIAL: {
+    def: 3.1, min: 1.0, max: 5.0, step: 0.1,
     desc: t("DESC_LAYOUT_GAP_RADIAL"),
     name: t("GAP_MULTIPLIER_RADIAL"),
   },
-  GAP_MULTIPLIER_DIRECTIONAL: { 
-    def: 1.5, min: 1.0, max: 3.0, step: 0.1, 
+  GAP_MULTIPLIER_DIRECTIONAL: {
+    def: 1.5, min: 1.0, max: 3.0, step: 0.1,
     desc: t("DESC_LAYOUT_GAP_DIRECTIONAL"),
     name: t("GAP_MULTIPLIER_DIRECTIONAL"),
   },
-  INDICATOR_OFFSET: { 
-    def: 10, min: 5, max: 50, step: 5, 
+  INDICATOR_OFFSET: {
+    def: 10, min: 5, max: 50, step: 5,
     desc: t("DESC_LAYOUT_INDICATOR_OFFSET"),
     name: t("INDICATOR_OFFSET"),
   },
-  INDICATOR_OPACITY: { 
-    def: 40, min: 10, max: 100, step: 10, 
+  INDICATOR_OPACITY: {
+    def: 40, min: 10, max: 100, step: 10,
     desc: t("DESC_LAYOUT_INDICATOR_OPACITY"),
     name: t("INDICATOR_OPACITY"),
   },
-  CONTAINER_PADDING: { 
-    def: 10, min: 0, max: 50, step: 2, 
+  CONTAINER_PADDING: {
+    def: 10, min: 0, max: 50, step: 2,
     desc: t("DESC_LAYOUT_CONTAINER_PADDING"),
     name: t("CONTAINER_PADDING"),
   },
-  MANUAL_GAP_MULTIPLIER: { 
-    def: 1.3, min: 1.0, max: 2.0, step: 0.1, 
+  MANUAL_GAP_MULTIPLIER: {
+    def: 1.3, min: 1.0, max: 2.0, step: 0.1,
     desc: t("DESC_LAYOUT_MANUAL_GAP"),
     name: t("MANUAL_GAP_MULTIPLIER"),
   },
-  MANUAL_JITTER_RANGE: { 
-    def: 300, min: 0, max: 400, step: 10, 
+  MANUAL_JITTER_RANGE: {
+    def: 300, min: 0, max: 400, step: 10,
     desc: t("DESC_LAYOUT_MANUAL_JITTER"),
     name: t("MANUAL_JITTER_RANGE"),
   }
@@ -439,7 +439,7 @@ let isSolidArrow = getVal(K_ARROWSTROKE, true);
 let centerText = getVal(K_CENTERTEXT, true);
 let autoLayoutDisabled = false;
 let zoomLevel = getVal(K_ZOOM, {value: "Medium", valueset: ZOOM_TYPES});
-let customPalette = getVal(K_PALETTE, {value : {enabled: false, random: false, colors: []}, hidden: true}); 
+let customPalette = getVal(K_PALETTE, {value : {enabled: false, random: false, colors: []}, hidden: true});
 let editingNodeId = null;
 
 //migrating old settings values. This must stay in the code so existing users have their dataset migrated
@@ -482,11 +482,11 @@ const EMBEDED_OBJECT_WIDTH_CHILD = 180;
 const parseImageInput = (input) => {
   const trimmed = input.trim();
   if (!trimmed.startsWith("![[") || !trimmed.endsWith("]]")) return null;
-  
+
   const content = trimmed.slice(3, -2);
   const parts = content.split("|");
   const path = parts[0];
-  
+
   let width = null;
   if (parts.length > 1) {
     const last = parts[parts.length - 1];
@@ -494,7 +494,7 @@ const parseImageInput = (input) => {
       width = parseInt(last);
     }
   }
-  
+
   return { path, width };
 };
 
@@ -554,7 +554,7 @@ const ACTION_LABEL_KEYS = {
   [ACTION_FOLD]: "ACTION_LABEL_FOLD",
   [ACTION_FOLD_L1]: "ACTION_LABEL_FOLD_L1",
   [ACTION_UNFOLD_ALL]: "ACTION_LABEL_UNFOLD_ALL",
-  [ACTION_TOGGLE_BOUNDARY]: "TOOLTIP_TOGGLE_BOUNDARY", 
+  [ACTION_TOGGLE_BOUNDARY]: "TOOLTIP_TOGGLE_BOUNDARY",
   [ACTION_DOCK_UNDOCK]: "ACTION_LABEL_DOCK_UNDOCK",
   [ACTION_HIDE]: "ACTION_LABEL_HIDE",
   [ACTION_TOGGLE_FLOATING_EXTRAS]: "TOOLTIP_TOGGLE_FLOATING_EXTRAS",
@@ -578,11 +578,11 @@ const DEFAULT_HOTKEYS = [
   // Edit
   { action: ACTION_EDIT, code: "KeyE", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: false },
 
-  // Structure Modifiers 
+  // Structure Modifiers
   { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_TOGGLE_BOUNDARY, code: "KeyB", modifiers: ["Alt", "Shift"], scope: SCOPE.input, inputOnly: false },
-  { action: ACTION_TOGGLE_GROUP, code: "KeyG", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false }, 
+  { action: ACTION_TOGGLE_GROUP, code: "KeyG", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
 
   // Clipboard (Alt to distinguish from text editing)
   { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
@@ -616,11 +616,11 @@ let cancelHotkeyRecording = null;
 
 const getObsidianConflict = (h) => {
   if (!h) return null;
-  
+
   const normalize = (s) => s.toLowerCase().replace("key", "").replace("digit", "");
   const sortMods = (m) => [...m].sort().join(",");
-  
-  const keysToCheck = h.isNavigation 
+
+  const keysToCheck = h.isNavigation
     ? ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]
     : [h.code ? h.code : h.key];
 
@@ -634,7 +634,7 @@ const getObsidianConflict = (h) => {
     for (const hk of hotkeys) {
       const hkKey = normalize(hk.key);
       const hkMods = sortMods(hk.modifiers);
-      
+
       for (const targetKeyRaw of keysToCheck) {
         if (normalize(targetKeyRaw) === hkKey && targetMods === hkMods) {
           return cmd.name;
@@ -721,12 +721,12 @@ const getHotkeyDisplayString = (h) => {
   if (h.modifiers.includes("Mod")) parts.push(isMac ? "Cmd" : "Ctrl");
   if (h.modifiers.includes("Alt")) parts.push(isMac ? "Opt" : "Alt");
   if (h.modifiers.includes("Shift")) parts.push("Shift");
-  
+
   if (h.code) parts.push(h.code.replace("Key", "").replace("Digit", ""));
   else if (h.key === "ArrowKeys") parts.push("Arrow");
   else if (h.key === " ") parts.push("Space");
   else parts.push(h.key);
-  
+
   return parts.join(" + ");
 };
 
@@ -764,10 +764,10 @@ let RUNTIME_HOTKEYS = generateRuntimeHotkeys();
 const getHotkeyContext = () => {
   if (!ea.targetView) return SCOPE.none;
 
-  const currentWindow = isUndocked && floatingInputModal 
-    ? ea.targetView?.ownerWindow 
+  const currentWindow = isUndocked && floatingInputModal
+    ? ea.targetView?.ownerWindow
     : sidepanelWindow;
-  
+
   if (currentWindow.document?.activeElement === inputEl) {
     return SCOPE.input;
   }
@@ -933,13 +933,13 @@ const getDynamicColor = (existingColors) => {
   const getDist = (c1, c2) => {
     let dh = Math.abs(c1.hue - c2.hue);
     if (dh > 180) dh = 360 - dh;
-    const hScore = (dh / 1.8); 
+    const hScore = (dh / 1.8);
     return (hScore * 2) + Math.abs(c1.saturation - c2.saturation) + Math.abs(c1.lightness - c2.lightness);
   };
 
   let palette = st.colorPalette?.elementStroke || [];
   if (Array.isArray(palette)) palette = palette.flat(Infinity);
-  
+
   const candidates = [];
 
   new Set(palette).forEach(hex => {
@@ -962,7 +962,7 @@ const getDynamicColor = (existingColors) => {
   const scored = candidates.map(c => {
     let cm = ea.getCM(c.hex);
     if (!cm) return null;
-    
+
     // Auto-adjust for contrast if necessary
     // If yellow/orange is too light for white bg, darken it.
     let contrast = cm.contrast({ bgColor: bg });
@@ -978,7 +978,7 @@ const getDynamicColor = (existingColors) => {
     // Calculate minimum distance to ANY existing color on canvas
     let minDiff = 1000;
     let closestColor = null;
-    
+
     if (existingColors.length > 0) {
       existingColors.forEach(exHex => {
         const exCM = ea.getCM(exHex);
@@ -999,7 +999,7 @@ const getDynamicColor = (existingColors) => {
   scored.sort((a, b) => {
     // Threshold for "This color is effectively the same as one already used"
     // Distance of ~30 usually means same Hue family and similar shade
-    const threshold = COLOR_DISTINCT_THRESHOLD; 
+    const threshold = COLOR_DISTINCT_THRESHOLD;
     const aIsDistinct = a.minDiff > threshold;
     const bIsDistinct = b.minDiff > threshold;
 
@@ -1035,7 +1035,7 @@ const manageFoldIndicator = (node, show, allElements) => {
     if (children.length === 0) show = false;
   }
   const existingId = node.customData?.foldIndicatorId;
-  
+
   if (show) {
     if (existingId) {
       const ind = allElements.find(el => el.id === existingId);
@@ -1048,7 +1048,7 @@ const manageFoldIndicator = (node, show, allElements) => {
         return;
       }
     }
-    
+
     // Create new indicator if none exists
     const id = ea.addText(node.x + node.width + layoutSettings.INDICATOR_OFFSET, node.y, "...");
     const ind = ea.getElement(id);
@@ -1058,7 +1058,7 @@ const manageFoldIndicator = (node, show, allElements) => {
     ind.textVerticalAlign = "middle";
     ind.textAlign = "left";
     ind.y = node.y + node.height/2 - ind.height/2;
-    
+
     // Add to existing group if present
     if (node.groupIds && node.groupIds.length > 0) {
       ind.groupIds = [node.groupIds[0]];
@@ -1066,7 +1066,7 @@ const manageFoldIndicator = (node, show, allElements) => {
       // Or create a new group with the node
       ea.addToGroup([node.id, id]);
     }
-    
+
     ea.addAppendUpdateCustomData(node.id, { foldIndicatorId: id });
   } else {
     // Hide/Delete indicator
@@ -1083,7 +1083,7 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold)
   if (!node) return;
 
   const isFolded = node.customData?.isFolded === true;
-  
+
   // The root of the fold operation stays visible unless its parent was already hidden
   const shouldHideThis = parentHidden && !isRootOfFold;
 
@@ -1122,7 +1122,7 @@ if (node.customData?.boundaryId) {
     if (boundEl) {
       if (shouldHideThis || isFolded) {
         boundEl.opacity = 0;
-        boundEl.locked = true; 
+        boundEl.locked = true;
       } else {
         boundEl.opacity = 30;
         boundEl.locked = false; // Ensure it's unlocked when visible per request
@@ -1138,18 +1138,18 @@ if (node.customData?.boundaryId) {
   // 3. Process Children
   // Children are hidden if THIS node is hidden OR if THIS node is marked folded
   const childrenHidden = shouldHideThis || isFolded;
-  
+
   const children = getChildrenNodes(nodeId, allElements);
-  
+
   children.forEach(child => {
     // Handle the connector arrow
     const arrow = allElements.find(
-      a => a.type === "arrow" && 
-      a.customData?.isBranch && 
-      a.startBinding?.elementId === nodeId && 
+      a => a.type === "arrow" &&
+      a.customData?.isBranch &&
+      a.startBinding?.elementId === nodeId &&
       a.endBinding?.elementId === child.id
     );
-    
+
     if (arrow) {
       if (childrenHidden) {
         if (!arrow.customData?.foldState) {
@@ -1173,7 +1173,7 @@ if (node.customData?.boundaryId) {
         }
       }
     }
-    
+
     // Recurse
     updateBranchVisibility(child.id, childrenHidden, allElements, false);
   });
@@ -1191,8 +1191,8 @@ const toggleFold = async (mode = "L0") => {
   const targetNode = wbElements.find(el => el.id === sel.id);
   if (!targetNode) return;
 
-  let isFoldAction = false; 
-  
+  let isFoldAction = false;
+
   if (mode === "L0") {
     const isCurrentlyFolded = targetNode.customData?.isFolded === true;
     isFoldAction = !isCurrentlyFolded;
@@ -1202,7 +1202,7 @@ const toggleFold = async (mode = "L0") => {
     const children = getChildrenNodes(targetNode.id, wbElements);
     const anyChildFolded = children.some(child => child.customData?.isFolded === true);
     isFoldAction = !anyChildFolded;
-    
+
     children.forEach(child => {
       ea.addAppendUpdateCustomData(child.id, { isFolded: isFoldAction });
     });
@@ -1220,14 +1220,14 @@ const toggleFold = async (mode = "L0") => {
 
   await ea.addElementsToView(false, false, true, true);
   ea.clear();
-  
+
   if (!autoLayoutDisabled) {
     const info = getHierarchy(sel, ea.getViewElements());
     await triggerGlobalLayout(info.rootId);
   }
 
   const currentViewElements = ea.getViewElements();
-  
+
   if (mode === "L1") {
     if (isFoldAction) {
       const children = getChildrenNodes(targetNode.id, currentViewElements);
@@ -1235,7 +1235,7 @@ const toggleFold = async (mode = "L0") => {
   } else if (mode === "L0") {
     // Mode "L0" (Single node toggle)
     const isPinned = targetNode.customData?.isPinned;
-    
+
     if (isPinned) {
       if (isFoldAction) {
         const parent = getParentNode(targetNode.id, currentViewElements);
@@ -1283,7 +1283,7 @@ const focusSelected = () => {
   const sel = ea.getViewSelectedElement();
   if (!sel) return;
 
-  api().scrollToContent(sel,{ 
+  api().scrollToContent(sel,{
     fitToContent: false,
     animate: true,
   });
@@ -1383,7 +1383,7 @@ const getConvexHull = (points) => {
 
   const n = points.length;
   if (n <= 2) return points;
-  
+
   const cross = (a, b, o) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
 
   const lower = [];
@@ -1409,7 +1409,7 @@ const getConvexHull = (points) => {
 
 const updateNodeBoundary = (node, allElements) => {
   const boundaryId = node.customData?.boundaryId;
-  
+
   if (!boundaryId) {
     return;
   }
@@ -1417,14 +1417,14 @@ const updateNodeBoundary = (node, allElements) => {
   if (node.opacity === 0) return;
 
   const ids = getBranchElementIds(node.id, allElements);
-  
-  const branchElements = allElements.filter(el => 
-    ids.includes(el.id) && 
-    el.id !== boundaryId && 
-    el.opacity > 0 && 
+
+  const branchElements = allElements.filter(el =>
+    ids.includes(el.id) &&
+    el.id !== boundaryId &&
+    el.opacity > 0 &&
     !el.isDeleted
   );
-  
+
   if (branchElements.length === 0) return;
 
   const padding = 15;
@@ -1435,7 +1435,7 @@ const updateNodeBoundary = (node, allElements) => {
     const y1 = el.y - padding;
     const x2 = el.x + el.width + padding;
     const y2 = el.y + el.height + padding;
-    
+
     allPoints.push([x1, y1]);
     allPoints.push([x2, y1]);
     allPoints.push([x2, y2]);
@@ -1443,7 +1443,7 @@ const updateNodeBoundary = (node, allElements) => {
   });
 
   const hullPoints = getConvexHull(allPoints);
-  
+
   if (hullPoints.length < 3) return;
 
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -1458,22 +1458,22 @@ const updateNodeBoundary = (node, allElements) => {
   const h = maxY - minY;
 
   let boundaryEl = ea.getElement(boundaryId);
-  
+
   if (!boundaryEl) return;
 
   boundaryEl.x = minX;
   boundaryEl.y = minY;
   boundaryEl.width = w;
   boundaryEl.height = h;
-  
+
   const normalizedPoints = hullPoints.map(p => [p[0] - minX, p[1] - minY]);
   normalizedPoints.push([normalizedPoints[0][0], normalizedPoints[0][1]]); // Close loop
   boundaryEl.points = normalizedPoints;
-  
-  boundaryEl.roundness = null; 
+
+  boundaryEl.roundness = null;
   boundaryEl.polygon = true;
-  boundaryEl.locked = false; 
-  
+  boundaryEl.locked = false;
+
   if (node.groupIds.length > 0) {
      // If node is grouped, boundary joins the group
      if (!boundaryEl.groupIds || boundaryEl.groupIds.length === 0 || boundaryEl.groupIds[0] !== node.groupIds[0]) {
@@ -1493,7 +1493,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   if (!isPinned) {
     eaNode.x = side === 1 ? targetX : targetX - node.width;
     eaNode.y = targetCenterY - node.height / 2;
-    
+
     if (node.customData?.originalY !== undefined) {
        ea.addAppendUpdateCustomData(nodeId, { originalY: undefined });
     }
@@ -1502,8 +1502,8 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
       if (node.customData?.originalY === undefined) {
         ea.addAppendUpdateCustomData(nodeId, { originalY: node.y });
       }
-      
-      eaNode.y = targetCenterY - node.height / 2;      
+
+      eaNode.y = targetCenterY - node.height / 2;
     } else {
       if (node.customData?.originalY !== undefined) {
         eaNode.y = node.customData.originalY;
@@ -1539,7 +1539,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   }
 
   const children = getChildrenNodes(nodeId, allElements);
-  
+
   children.sort((a, b) => {
     const dy = a.y - b.y;
     if (dy !== 0) return dy;
@@ -1598,7 +1598,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
       ];
     }
   });
-  
+
   if (node.customData?.boundaryId) {
      updateNodeBoundary(node, ea.getElements());
   }
@@ -1609,7 +1609,7 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
   const run = async () => {
     const allElements = ea.getViewElements();
     const root = allElements.find((el) => el.id === rootId);
-    
+
     const hasGlobalFolds = allElements.some(el => el.customData?.isFolded === true);
     const l1Nodes = getChildrenNodes(rootId, allElements);
     if (l1Nodes.length === 0) return;
@@ -1660,12 +1660,12 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
 
     const radiusY = Math.max(
       Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR),
-      layoutSettings.MIN_RADIUS, 
+      layoutSettings.MIN_RADIUS,
       radiusFromHeight
     ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
 
     const radiusX = Math.max(
-      Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR), 
+      Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR),
       layoutSettings.MIN_RADIUS,
       radiusY * 0.2
     ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
@@ -1686,7 +1686,7 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
 
       const nodeSpanRad = nodeHeight / radiusY;
       const gapSpanRad = effectiveGap / radiusY;
-      
+
       const nodeSpanDeg = nodeSpanRad * (180 / Math.PI);
       const gapSpanDeg = gapSpanRad * (180 / Math.PI);
 
@@ -1711,7 +1711,7 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       );
       const isPinned =
         node.customData?.isPinned || (!force && !node.customData?.mindmapNew && currentDist > maxRadius * 1.5);
-      const side = (isPinned 
+      const side = (isPinned
         ? (nodeBox.minX + nodeBox.width / 2) > rootCenter.x
         : tCX > rootCenter.x
       ) ? 1 : -1;
@@ -1810,7 +1810,7 @@ const getAdjustedMaxWidth = (text, max) => {
 const addNode = async (text, follow = false, skipFinalLayout = false) => {
   if (!ea.targetView) return;
   if (!text || text.trim() === "") return;
-  
+
   let allElements = ea.getViewElements();
   const st = getAppState();
   let parent = ea.getViewSelectedElement();
@@ -1826,7 +1826,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   }
 
   let newNodeId;
-  let arrowId; 
+  let arrowId;
 
   // --- Image Detection ---
   const imageInfo = parseImageInput(text);
@@ -1841,7 +1841,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
         if (imageFile) {
             const isEx = imageFile.extension === "md" && ea.isExcalidrawFile(imageFile);
             if (!IMAGE_TYPES.includes(imageFile.extension.toLowerCase()) && !isEx) {
-                imageFile = null; 
+                imageFile = null;
             }
         }
     }
@@ -1897,7 +1897,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
 
   if (!parent) {
     ea.style.strokeColor = multicolor ? defaultNodeColor : st.currentItemStrokeColor;
-    
+
     if (isPdfRectLink) {
         newNodeId = await ea.addImage(0, 0, imageInfo.path);
         const el = ea.getElement(newNodeId);
@@ -1924,7 +1924,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
           autoResize: !shouldWrap,
         });
     }
-    
+
     ea.addAppendUpdateCustomData(newNodeId, {
       growthMode: currentModalGrowthMode,
       autoLayoutDisabled: false,
@@ -1939,7 +1939,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       x: rootBox.minX + rootBox.width / 2,
       y: rootBox.minY + rootBox.height / 2,
     };
-    
+
     const parentBox = getNodeBox(parent, allElements);
     const side = parentBox.minX + parentBox.width / 2 > rootCenter.x ? 1 : -1;
 
@@ -1956,7 +1956,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
         const sortedSiblings = siblings.sort((a, b) => a.y - b.y);
         const lastSibling = sortedSiblings[sortedSiblings.length - 1];
         const lastSiblingBox = getNodeBox(lastSibling, allElements);
-        py = lastSiblingBox.minY + lastSiblingBox.height + layoutSettings.GAP_Y; 
+        py = lastSiblingBox.minY + lastSiblingBox.height + layoutSettings.GAP_Y;
       }
     }
 
@@ -2015,14 +2015,14 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     }
 
     ea.copyViewElementsToEAforEditing([parent]);
-    
+
     if (depth === 0 && !parent.customData?.growthMode) {
       ea.addAppendUpdateCustomData(parent.id, {
         growthMode: currentModalGrowthMode,
         autoLayoutDisabled: false,
       });
     }
-    
+
     if ((parent.type === "image" || parent.type === "embeddable") && typeof parent.customData?.mindmapOrder === "undefined") {
       ea.addAppendUpdateCustomData(parent.id, { mindmapOrder: 0 });
     }
@@ -2087,16 +2087,16 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     } else {
       const { l1AncestorId } = getHierarchy(parent, allEls);
       const bIds = getBranchElementIds(l1AncestorId, allEls);
-      
+
       // Look for an existing group ID among the OLD elements of the branch
-      const existingGroupedEl = allEls.find(el => 
-        bIds.includes(el.id) && 
-        el.id !== newNodeId && 
-        el.id !== arrowId && 
+      const existingGroupedEl = allEls.find(el =>
+        bIds.includes(el.id) &&
+        el.id !== newNodeId &&
+        el.id !== arrowId &&
         el.groupIds?.length > 0
       );
       const commonGroupId = existingGroupedEl ? existingGroupedEl.groupIds[0] : null;
-      
+
       if (commonGroupId) {
         const newIds = [newNodeId, arrowId].filter(Boolean);
         ea.copyViewElementsToEAforEditing(allEls.filter(el => newIds.includes(el.id)));
@@ -2121,7 +2121,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     zoomToFit();
   }
 
-  mostRecentlyAddedNodeID = finalNode.id; 
+  mostRecentlyAddedNodeID = finalNode.id;
   return finalNode;
 };
 
@@ -2140,7 +2140,7 @@ const getTextFromNode = (all, node, getRaw = false, shortPath = false) => {
         ? `![[${app.metadataCache.fileToLinktext(file,ea.targetView.file.path,true)}]]`
         : `![[${file.path}|${Math.round(node.width)}]]`;
     }
-    return ""; 
+    return "";
   }
   if (node.type === "text") {
     return getRaw ? node.rawText : node.originalText;
@@ -2254,7 +2254,7 @@ const pasteListToMap = async () => {
 
   if (lines.length === 1) {
     const text = lines[0].replace(/^(\s*)(?:-|\*|\d+\.)\s+/, "").trim();
-    
+
     if (text) {
       let currentParent = await addNode(text, true, false);
       if (sel) {
@@ -2362,7 +2362,7 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
   const info = getHierarchy(current, allElements);
   const root = allElements.find((e) => e.id === info.rootId);
   const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
-  
+
   if (current.id === root.id) {
     if (current.customData?.isFolded) {
       await toggleFold("L0");
@@ -2445,10 +2445,10 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
   } else if (key === "ArrowUp" || key === "ArrowDown") {
     const parent = getParentNode(current.id, allElements),
       siblings = getChildrenNodes(parent.id, allElements);
-    
+
     // Calculate the immediate parent's center to sort siblings clockwise around it
     const parentCenter = { x: parent.x + parent.width / 2, y: parent.y + parent.height / 2 };
-    
+
     // Always sort by angle from 12 o'clock (0 degrees) to ensure clockwise navigation
     // regardless of layout mode or hierarchy level
     siblings.sort(
@@ -2465,7 +2465,7 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
   }
 
   if (zoom) zoomToFit();
-  if (focus) focusSelected(); 
+  if (focus) focusSelected();
 };
 
 const setMapAutolayout = async (enabled) => {
@@ -2505,7 +2505,7 @@ const getBranchElementIds = (nodeId, allElements) => {
       if (el.customData?.isBranch && el.startBinding?.elementId && el.endBinding?.elementId) {
         const start = el.startBinding.elementId;
         const end = el.endBinding.elementId;
-        
+
         if (!childMap.has(start)) {
           childMap.set(start, []);
         }
@@ -2526,7 +2526,7 @@ const getBranchElementIds = (nodeId, allElements) => {
     }
 
     const children = childMap.get(currentId);
-    
+
     if (children) {
       for (let i = 0; i < children.length; i++) {
         const childId = children[i];
@@ -2545,7 +2545,7 @@ const getBranchElementIds = (nodeId, allElements) => {
     const el = allArrows[i];
     const startId = el.startBinding?.elementId;
     const endId = el.endBinding?.elementId;
-    // An arrow (isBranch or internal) is part of the group only if 
+    // An arrow (isBranch or internal) is part of the group only if
       // BOTH ends are nodes within the branch set.
     if (startId && endId && branchNodes.has(startId) && branchNodes.has(endId)) {
       branchElementIds.push(el.id);
@@ -2565,12 +2565,12 @@ const toggleBranchGroup = async () => {
 
   const allElements = ea.getViewElements();
   const ids = getBranchElementIds(sel.id, allElements);
-  
+
   if (ids.length <= 1) return;
 
   ea.copyViewElementsToEAforEditing(allElements.filter(el => ids.includes(el.id)));
   const workbenchEls = ea.getElements();
-  
+
   let newGroupId;
   const commonGroupId = ea.getCommonGroupForElements(workbenchEls);
 
@@ -2584,13 +2584,13 @@ const toggleBranchGroup = async () => {
 
   await ea.addElementsToView(false, false, true, true);
   ea.clear();
-  
+
   if (newGroupId) {
     let selectedGroupIds = {};
     selectedGroupIds[newGroupId] = true;
     ea.viewUpdateScene({appState: {selectedGroupIds}})
   }
-  
+
   updateUI();
 };
 
@@ -2687,42 +2687,65 @@ const toggleBoundary = async () => {
   if (sel) {
     ea.copyViewElementsToEAforEditing([sel]);
     const eaSel = ea.getElement(sel.id);
-    
+    let newBoundaryId = null;
+
     if (eaSel.customData?.boundaryId) {
-       const b = ea.getViewElements().find(el => el.id === eaSel.customData.boundaryId);
-       if(b) {
-         ea.copyViewElementsToEAforEditing([b]);
-         ea.getElement(b.id).isDeleted = true;
-       }
-       ea.addAppendUpdateCustomData(sel.id, { boundaryId: undefined });
+      const b = ea.getViewElements().find(el => el.id === eaSel.customData.boundaryId);
+      if(b) {
+        ea.copyViewElementsToEAforEditing([b]);
+        ea.getElement(b.id).isDeleted = true;
+      }
+      ea.addAppendUpdateCustomData(sel.id, { boundaryId: undefined });
     } else {
-       const id = ea.generateElementId();
-       const st = getAppState();
-       const boundaryEl = {
-           id: id,
-           type: "line",
-           x: sel.x, y: sel.y, width: 1, height: 1,
-           angle: 0,
-           roughness: st.currentItemRoughness,
-           strokeColor: sel.strokeColor,
-           backgroundColor: sel.strokeColor,
-           fillStyle: "solid",
-           strokeWidth: 2,
-           strokeStyle: "solid",
-           roughness: 0,
-           opacity: 30,
-           points: [[0,0], [1,1], [0,0]],
-           polygon: true,
-           locked: false,
-           groupIds: sel.groupIds || [],
-           customData: {isBoundary: true},
-       };
-       ea.elementsDict[id] = boundaryEl;
-       ea.addAppendUpdateCustomData(sel.id, { boundaryId: id });
+      const id = ea.generateElementId();
+      newBoundaryId = id;
+      const st = getAppState();
+      const boundaryEl = {
+        id: id,
+        type: "line",
+        x: sel.x, y: sel.y, width: 1, height: 1,
+        angle: 0,
+        roughness: st.currentItemRoughness,
+        strokeColor: sel.strokeColor,
+        backgroundColor: sel.strokeColor,
+        fillStyle: "solid",
+        strokeWidth: 2,
+        strokeStyle: "solid",
+        roughness: 0,
+        opacity: 30,
+        points: [[0,0], [1,1], [0,0]],
+        polygon: true,
+        locked: false,
+        groupIds: sel.groupIds || [],
+        customData: {isBoundary: true},
+      };
+      ea.elementsDict[id] = boundaryEl;
+      ea.addAppendUpdateCustomData(sel.id, { boundaryId: id });
     }
 
     await ea.addElementsToView(false, false, false, true);
     ea.clear();
+
+    if (newBoundaryId) {
+      const els = ea.getViewElements();
+      let parentBoundaryIndex = -1;
+      let curr = sel;
+
+      while (curr) {
+        const parent = getParentNode(curr.id, els);
+        if (!parent) break;
+        if (parent.customData?.boundaryId) {
+          const pIndex = els.findIndex(el => el.id === parent.customData.boundaryId);
+          if (pIndex !== -1) {
+            parentBoundaryIndex = pIndex;
+            break;
+          }
+        }
+        curr = parent;
+      }
+      const targetIndex = parentBoundaryIndex !== -1 ? parentBoundaryIndex + 1 : 0;
+      ea.moveViewElementToZIndex(newBoundaryId, targetIndex);
+    }
 
     const info = getHierarchy(sel, ea.getViewElements());
     await triggerGlobalLayout(info.rootId, true);
@@ -2877,7 +2900,7 @@ const updateUI = () => {
         editBtn.extraSettingsEl.style.color = "";
       }
     }
-    
+
     const updateGroupBtn = (btn) => {
       if (!btn) return;
       const isGrouped = branchIds.length > 1 && !!ea.getCommonGroupForElements(all.filter(el => branchIds.includes(el.id)));
@@ -2937,7 +2960,7 @@ const startEditing = () => {
 const commitEdit = async () => {
   if (!editingNodeId) return;
   const all = ea.getViewElements();
-  
+
   let targetNode = all.find(el => el.id === editingNodeId);
   if (!targetNode) return;
 
@@ -2948,7 +2971,7 @@ const commitEdit = async () => {
   }
 
   const textEl = all.find(el => el.id === textElId && el.type === "text");
-  
+
   if (textEl) {
     ea.copyViewElementsToEAforEditing([textEl]);
     const eaEl = ea.getElement(textEl.id);
@@ -2971,12 +2994,12 @@ const commitEdit = async () => {
         eaEl.text = res.wrappedText;
       }
     }
-    
+
     ea.refreshTextElementSize(eaEl.id);
-    
+
     await ea.addElementsToView(false, false);
     ea.clear();
-    
+
     if (textEl.containerId) {
       const container = ea.getViewElements().find(el => el.id === textEl.containerId);
       if (container) {
@@ -3052,20 +3075,20 @@ class PaletteManagerModal extends ea.obsidian.Modal {
       const listContainer = contentEl.createDiv();
       this.settings.colors.forEach((color, index) => {
         const row = new ea.obsidian.Setting(listContainer);
-        
+
         // Color Preview & Name
         const nameEl = row.nameEl;
         nameEl.style.display = "flex";
         nameEl.style.alignItems = "center";
         nameEl.style.gap = "10px";
-        
+
         const preview = nameEl.createDiv();
         preview.style.width = "20px";
         preview.style.height = "20px";
         preview.style.backgroundColor = color;
         preview.style.border = "1px solid var(--background-modifier-border)";
         preview.style.borderRadius = "4px";
-        
+
         nameEl.createSpan({ text: color });
 
         // Actions
@@ -3076,7 +3099,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
             .setDisabled(index === 0)
             .onClick(() => {
               if (index === 0) return;
-              [this.settings.colors[index - 1], this.settings.colors[index]] = 
+              [this.settings.colors[index - 1], this.settings.colors[index]] =
               [this.settings.colors[index], this.settings.colors[index - 1]];
               this.save();
               this.display();
@@ -3087,7 +3110,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
             .setDisabled(index === this.settings.colors.length - 1)
             .onClick(() => {
               if (index === this.settings.colors.length - 1) return;
-              [this.settings.colors[index + 1], this.settings.colors[index]] = 
+              [this.settings.colors[index + 1], this.settings.colors[index]] =
               [this.settings.colors[index], this.settings.colors[index + 1]];
               this.save();
               this.display();
@@ -3115,7 +3138,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
 
       // --- Add/Edit Area ---
       contentEl.createEl("h4", { text: this.editIndex === -1 ? t("HEADING_ADD_NEW_COLOR") : t("HEADING_EDIT_COLOR") });
-      
+
       const getHex = (val) => {
         const cm = ea.getCM(val);
         return cm ? cm.stringHEX({alpha: false}) : "#000000";
@@ -3174,7 +3197,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
         };
       }
 
-      const saveBtn = actionContainer.createEl("button", { 
+      const saveBtn = actionContainer.createEl("button", {
         text: this.editIndex === -1 ? t("BUTTON_ADD_COLOR") : t("BUTTON_UPDATE_COLOR"),
         cls: "mod-cta"
       });
@@ -3214,7 +3237,7 @@ class LayoutConfigModal extends ea.obsidian.Modal {
     const { contentEl } = this;
     contentEl.empty();
     contentEl.createEl("h2", { text: t("MODAL_LAYOUT_TITLE") });
-    
+
     const container = contentEl.createDiv();
     container.style.maxHeight = "70vh";
     container.style.overflowY = "auto";
@@ -3225,7 +3248,7 @@ class LayoutConfigModal extends ea.obsidian.Modal {
       const setting = new ea.obsidian.Setting(container)
         .setName(meta.name)
         .setDesc(meta.desc);
-      
+
       let valLabel;
       setting.addSlider(slider => slider
         .setLimits(meta.min, meta.max, meta.step)
@@ -3235,7 +3258,7 @@ class LayoutConfigModal extends ea.obsidian.Modal {
           valLabel.setText(String(value));
         })
       );
-      
+
       setting.settingEl.createDiv("", el => {
         valLabel = el;
         el.style.minWidth = "3em";
@@ -3286,10 +3309,10 @@ class LayoutConfigModal extends ea.obsidian.Modal {
 
 const renderInput = (container, isFloating = false) => {
   container.empty();
-  
+
   pinBtn = refreshBtn = dockBtn = inputEl = null;
   foldBtnL0 = foldBtnL1 = unfoldAllBtn = null;
-  boundaryBtn = panelExpandBtn = null; 
+  boundaryBtn = panelExpandBtn = null;
   floatingGroupBtn, floatingBoxBtn, floatingZoomBtn = null;
 
   inputRow = new ea.obsidian.Setting(container);
@@ -3357,7 +3380,7 @@ const renderInput = (container, isFloating = false) => {
       cb(btn);
       if (btn.buttonEl) btn.buttonEl.tabIndex = 0;
       if (btn.extraSettingsEl) btn.extraSettingsEl.tabIndex = 0;
-      
+
       const el = btn.extraSettingsEl;
       if (!el) return;
 
@@ -3388,14 +3411,14 @@ const renderInput = (container, isFloating = false) => {
       updateUI();
     });
   }, false);
-  
+
   toggleFloatingExtras = null;
 
   if (isFloating) {
     toggleFloatingExtras = () => {
       isFloatingPanelExpanded = !isFloatingPanelExpanded;
       panelExpandBtn.setIcon(isFloatingPanelExpanded ? "panel-bottom-open" : "panel-top-open");
-      
+
       if (secondaryButtonContainer) {
         secondaryButtonContainer.style.display = isFloatingPanelExpanded ? "flex" : "none";
         if (floatingInputModal && floatingInputModal.modalEl) {
@@ -3517,7 +3540,7 @@ const renderInput = (container, isFloating = false) => {
       toggleDock({silent: false, forceDock: false, saveSetting: true})
     });
   }, true);
-  
+
   updateUI();
 };
 
@@ -3708,7 +3731,7 @@ const renderBody = (contentEl) => {
         dirty = true;
       }),
     )
-    .addButton(btn => 
+    .addButton(btn =>
       btn.setIcon("palette")
         .setTooltip(t("TOOLTIP_CONFIGURE_PALETTE"))
         .onClick(() => {
@@ -3766,7 +3789,7 @@ const renderBody = (contentEl) => {
     attr: { style: "margin-top: 15px; border-top: 1px solid var(--background-modifier-border); padding-top: 10px;" }
   });
   hkDetails.createEl("summary", { text: t("HOTKEY_SECTION_TITLE"), attr: { style: "cursor: pointer; font-weight: bold;" } });
-  
+
   const hkContainer = hkDetails.createDiv();
   const hint = hkContainer.createEl("p", {
     text: t("HOTKEY_HINT"),
@@ -3790,11 +3813,11 @@ const renderBody = (contentEl) => {
   const isModified = (current) => {
     const def = DEFAULT_HOTKEYS.find(d => d.action === current.action);
     if (!def) return false;
-    
+
     const k1 = current.code || current.key;
     const k2 = def.code || def.key;
     if (k1 !== k2) return true;
-    
+
     if (current.modifiers.length !== def.modifiers.length) return true;
     // Check if every modifier in current exists in def
     return !current.modifiers.every(m => def.modifiers.includes(m));
@@ -3803,11 +3826,11 @@ const renderBody = (contentEl) => {
   const recordHotkey = (btn, hIndex, onUpdate) => {
     const originalText = btn.innerHTML;
     const label = btn.parentElement.querySelector(".setting-hotkey");
-    
+
     btn.innerHTML = t("RECORD_HOTKEY_PROMPT");
     btn.addClass("is-recording");
     isRecordingHotkey = true;
-    
+
     recordingScope = new ea.obsidian.Scope();
     app.keymap.pushScope(recordingScope);
 
@@ -3819,7 +3842,7 @@ const renderBody = (contentEl) => {
 
       btn.innerHTML = originalText;
       btn.removeClass("is-recording");
-      
+
       isRecordingHotkey = false;
       cancelHotkeyRecording = null;
     };
@@ -3831,7 +3854,7 @@ const renderBody = (contentEl) => {
         cleanup();
         return false;
       }
-      
+
       // Ignore modifier-only presses (but return false to block them from bubbling)
       if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return false;
 
@@ -3845,7 +3868,7 @@ const renderBody = (contentEl) => {
       let code = e.code;
 
       if (key === " ") key = "Space";
-      
+
       const targetConfig = userHotkeys[hIndex];
       const isNav = targetConfig.isNavigation;
 
@@ -3859,13 +3882,13 @@ const renderBody = (contentEl) => {
       // Check conflicts
       const conflict = userHotkeys.find((h, i) => {
         if (i === hIndex) return false;
-        
+
         const sameMods = h.modifiers.length === mods.length && h.modifiers.every(m => mods.includes(m));
         if (!sameMods) return false;
-        
+
         if (h.isNavigation && isNav) return true;
         if (h.isNavigation && key.startsWith("Arrow")) return true;
-        
+
         const hKey = h.code ? h.code.replace("Key","").replace("Digit","") : h.key;
         const eKey = code ? code.replace("Key","").replace("Digit","") : key;
         return hKey.toLowerCase() === eKey.toLowerCase();
@@ -3915,17 +3938,17 @@ const renderBody = (contentEl) => {
       .setName(getActionLabel(h.action));
     setting.settingEl.style.paddingRight = "0";
     setting.settingEl.style.paddingLeft = "0";
-    
+
     const controlDiv = setting.controlEl;
     controlDiv.addClass("setting-item-control");
-    
+
     let scopeBtn = null;
     let updateScopeUI = null;
 
     const hotkeyDisplay = controlDiv.createDiv("setting-command-hotkeys");
     const span = hotkeyDisplay.createSpan("setting-hotkey");
     const restoreBtn = controlDiv.createSpan("clickable-icon setting-restore-hotkey-button");
-    
+
     const updateRowUI = () => {
       span.textContent = getHotkeyDisplayString(userHotkeys[index]);
       restoreBtn.style.display = isModified(userHotkeys[index]) ? "" : "none";
@@ -3940,7 +3963,7 @@ const renderBody = (contentEl) => {
         const conflict = getObsidianConflict(userHotkeys[index]);
         if (conflict) {
           span.addClass("has-conflict");
-          
+
           const alert = hotkeyDisplay.createSpan("hotkey-conflict-icon");
           alert.innerHTML = ea.obsidian.getIcon("octagon-alert").outerHTML;
           alert.style.color = "var(--text-error)";
@@ -3988,7 +4011,7 @@ const renderBody = (contentEl) => {
         if (current === SCOPE.input) next = SCOPE.excalidraw;
         else if (current === SCOPE.excalidraw) next = SCOPE.global;
         else if (current === SCOPE.global) next = SCOPE.input;
-        
+
         userHotkeys[index].scope = next;
         saveHotkeys();
 
@@ -3997,7 +4020,7 @@ const renderBody = (contentEl) => {
           if (conflict) {
             new Notice(t("NOTICE_GLOBAL_HOTKEY_CONFLICT", { command: conflict }), NOTICE_DURATION_GLOBAL_CONFLICT);
           }
-        }        
+        }
         updateRowUI();
       };
       updateScopeUI();
@@ -4077,12 +4100,12 @@ const updateKeyHandlerLocation = () => {
  * saveSetting === true: the dock/undock status is saved to settings. When input is docked because
  *   the ExcalidrawView was closed or when the user presses ESC to finish mindmapping, next time
  *   Mindmap Builder is started it should remember the user preference
- * 
-**/ 
+ *
+**/
 const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {}) => {
   editingNodeId = null;
   if (!ea.targetView && !(forceDock && isUndocked)) return;
-  
+
   // Only reveal/hide UI if not silent
   if (!silent) {
     const isSidepanelVisible = ea.getSidepanelLeaf().isVisible();
@@ -4094,9 +4117,9 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
       const leaf = ea.getSidepanelLeaf();
       if (leaf) app.workspace.revealLeaf(leaf);
     } else if (isSidepanelVisible && !isUndocked) {
-      ea.toggleSidepanelView(); 
+      ea.toggleSidepanelView();
     }
-    
+
     if (isUndocked) {
       // If we were undocked (now docking), focus the sidepanel
       app.workspace.setActiveLeaf(ea.getSidepanelLeaf(), {focus: true});
@@ -4122,14 +4145,14 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
     modalEl.classList.add("excalidraw-mindmap-ui");
 
     floatingInputModal.onOpen = () => {
-      // Reparent the modal to the target view's window. 
+      // Reparent the modal to the target view's window.
       if (ea.targetView && modalEl.ownerDocument !== ea.targetView.ownerDocument) {
         ea.targetView.ownerDocument.body.appendChild(modalEl);
       }
 
       const {x, y} = ea.targetView.contentEl.getBoundingClientRect();
       contentEl.empty();
-      
+
       const closeEl = modalEl.querySelector(".modal-close-button");
       if (closeEl) closeEl.style.display = "none";
       titleEl.style.display = "none";
@@ -4164,7 +4187,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
         if (ea.sidepanelTab && inputContainer) renderInput(inputContainer, false);
       }
     };
-    
+
     // Clear input from sidepanel
     inputContainer.empty();
     floatingInputModal.open();
@@ -4173,7 +4196,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
       if (floatingInputModal.modalEl && floatingInputModal.modalEl.parentElement) {
         floatingInputModal.modalEl.remove();
       }
-      floatingInputModal.close(); 
+      floatingInputModal.close();
       floatingInputModal = null;
     }
     renderInput(inputContainer, false);
@@ -4186,7 +4209,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
 
 const getActionFromEvent = (e) => {
   const isMod = e.ctrlKey || e.metaKey;
-  
+
   const match = RUNTIME_HOTKEYS.find(h => {
     const keyMatch = h.code ? (e.code === h.code) : (e.key === h.key);
     if (!keyMatch) return false;
@@ -4195,8 +4218,8 @@ const getActionFromEvent = (e) => {
     const hasShift = h.modifiers.includes("Shift");
     const hasAlt = h.modifiers.includes("Alt");
 
-    return (isMod === hasMod) && 
-          (e.shiftKey === hasShift) && 
+    return (isMod === hasMod) &&
+          (e.shiftKey === hasShift) &&
           (e.altKey === hasAlt);
   });
 
@@ -4207,12 +4230,12 @@ const handleKeydown = async (e) => {
   if (isRecordingHotkey) return;
   if (!ea.targetView || !ea.targetView.leaf.isVisible()) return;
 
-  const currentWindow = isUndocked && floatingInputModal 
-    ? ea.targetView?.ownerWindow 
+  const currentWindow = isUndocked && floatingInputModal
+    ? ea.targetView?.ownerWindow
     : sidepanelWindow;
 
   if (!currentWindow) return;
-  
+
   if (linkSuggester?.isBlockingKeys()) {
     if (e.key === "Escape") {
       e.preventDefault();
@@ -4396,12 +4419,12 @@ case ACTION_ADD:
             if (mostRecentNode && sel) {
               const selParent = getParentNode(sel.id, allElements);
               const recentParent = getParentNode(mostRecentNode.id, allElements);
-              const isSameOrSibling = (sel.id === mostRecentNode.id) || 
+              const isSameOrSibling = (sel.id === mostRecentNode.id) ||
                 (selParent && recentParent && selParent.id === recentParent.id);
               if(!isSameOrSibling) {
                 ea.selectElementsInView([mostRecentNode]);
                 handledRecent = true;
-              } 
+              }
             } else {
               mostRecentlyAddedNodeID = null;
             }
@@ -4418,7 +4441,7 @@ case ACTION_ADD:
               if (children.length > 0) {
                 sortChildrenStable(children);
                 ea.selectElementsInView([children[0]]);
-              } 
+              }
               else if (parent) {
                 ea.selectElementsInView([parent]);
               }
@@ -4435,12 +4458,12 @@ const handleCanvasPointerDown = (e) => {
   if (!ea.targetView) return;
   // If input is floating, check if click is inside it to avoid deselecting/updating UI prematurely
   if (floatingInputModal && floatingInputModal.modalEl.contains(e.target)) return;
-  
+
   setTimeout(() => {
     if (!ea.targetView) return;
     const selection = ea.getViewSelectedElements();
     const isEligible = !!selection.find(el => el.customData && (
-      el.customData.hasOwnProperty("mindmapOrder") || 
+      el.customData.hasOwnProperty("mindmapOrder") ||
       el.customData.hasOwnProperty("isBranch") ||
       el.customData.hasOwnProperty("growthMode") ||
       el.customData.hasOwnProperty("isBoundary")
@@ -4449,7 +4472,7 @@ const handleCanvasPointerDown = (e) => {
     if (isEligible) {
       updateUI();
     }
-    
+
     if (!isEligible && !pinBtn.disabled) {
       updateUI();
     }
@@ -4483,7 +4506,7 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
     contentEl.classList.add("excalidraw-mindmap-ui");
     if (!contentEl.hasChildNodes()) {
       renderHelp(contentEl);
-      inputContainer = contentEl.createDiv(); 
+      inputContainer = contentEl.createDiv();
       renderBody(contentEl);
 
       sidepanelWindow = contentEl.ownerDocument.defaultView;
@@ -4588,7 +4611,7 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
       }
     }
   };
-  
+
   // Register the global listener
   const leafChangeRef = app.workspace.on("active-leaf-change", onActiveLeafChange);
 
