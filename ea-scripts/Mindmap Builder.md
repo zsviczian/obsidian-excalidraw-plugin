@@ -2833,7 +2833,14 @@ const updateUI = () => {
   const sel = ea.getViewSelectedElement();
 
   if (sel) {
+    const info = getHierarchy(sel, all);
+    const isRootSelected = info.rootId === sel.id;
+    const root = all.find((e) => e.id === info.rootId);
     const isPinned = sel.customData?.isPinned === true;
+    const isEditing = editingNodeId && editingNodeId === sel.id;
+    const branchIds = getBranchElementIds(sel.id, all);
+    const hasFoldedInBranch = all.some(el => branchIds.contains(el.id) && el.type !== "arrow" && el.customData?.isFolded === true);
+
     if (pinBtn) {
       pinBtn.setIcon(isPinned ? "pin" : "pin-off");
       pinBtn.setTooltip(
@@ -2841,7 +2848,7 @@ const updateUI = () => {
       );
       setButtonDisabled(pinBtn, false);
     }
-    const isEditing = editingNodeId && editingNodeId === sel.id;
+
     if (editBtn) {
       setButtonDisabled(editBtn, false);
       if (isEditing) {
@@ -2851,29 +2858,13 @@ const updateUI = () => {
         editBtn.extraSettingsEl.style.color = "";
       }
     }
+    
     if (toggleGroupBtn) {
-      const all = ea.getViewElements();
-      const ids = getBranchElementIds(sel.id, all);
-      const isGrouped = ids.length > 1 && !!ea.getCommonGroupForElements(all.filter(el => ids.includes(el.id)));
-
+      const isGrouped = branchIds.length > 1 && !!ea.getCommonGroupForElements(all.filter(el => branchIds.includes(el.id)));
       toggleGroupBtn.setIcon(isGrouped ? "ungroup" : "group");
       const groupTooltip = isGrouped ? t("TOGGLE_GROUP_TOOLTIP_UNGROUP") : t("TOGGLE_GROUP_TOOLTIP_GROUP");
       toggleGroupBtn.setTooltip(`${groupTooltip} ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
-      setButtonDisabled(toggleGroupBtn, groupBranches || ids.length <= 1);
-    }
-    const branchIds = getBranchElementIds(sel.id, all);
-    const hasFoldedInBranch = all.some(el => branchIds.contains(el.id) && el.type !== "arrow" && el.customData?.isFolded === true);
-    setButtonDisabled(boxBtn, false);
-    setButtonDisabled(foldBtnL0, false);
-    setButtonDisabled(foldBtnL1, false);
-    setButtonDisabled(unfoldAllBtn, !hasFoldedInBranch);
-    setButtonDisabled(zoomBtn, false);
-
-    const info = getHierarchy(sel, all);
-    
-    if(boundaryBtn) {
-      setButtonDisabled(boundaryBtn, false);
-      if (info.rootId === sel.id) setButtonDisabled(boundaryBtn, true);
+      setButtonDisabled(toggleGroupBtn, groupBranches || branchIds.length <= 1);
     }
 
     if(refreshBtn) {
@@ -2881,20 +2872,27 @@ const updateUI = () => {
       refreshBtn.setTooltip(`${t("TOOLTIP_REFRESH")} ${getActionHotkeyString(ACTION_REARRANGE)}`);
     }
 
-    setButtonDisabled(cutBtn, info.rootId === sel.id);
+    setButtonDisabled(boxBtn, false);
+    setButtonDisabled(foldBtnL0, false);
+    setButtonDisabled(foldBtnL1, false);
+    setButtonDisabled(unfoldAllBtn, !hasFoldedInBranch);
+    setButtonDisabled(zoomBtn, false);
+    setButtonDisabled(boundaryBtn, isRootSelected);
+    setButtonDisabled(cutBtn, isRootSelected);
     setButtonDisabled(copyBtn, false);
 
-    const root = all.find((e) => e.id === info.rootId);
     const mapStrategy = root.customData?.growthMode;
     if (mapStrategy && mapStrategy !== currentModalGrowthMode) {
       currentModalGrowthMode = mapStrategy;
       if (strategyDropdown) strategyDropdown.setValue(mapStrategy);
     }
+
     const mapLayoutPref = root.customData?.autoLayoutDisabled === true;
     if (mapLayoutPref !== autoLayoutDisabled) {
       autoLayoutDisabled = mapLayoutPref;
       if (autoLayoutToggle) autoLayoutToggle.setValue(mapLayoutPref);
     }
+
   } else {
     disableUI();
   }
@@ -3271,7 +3269,7 @@ const renderInput = (container, renderMode = "docked") => {
   // Reset global references only for components we are about to render/replace
   if (!isSidebar) {
     pinBtn = refreshBtn = dockBtn = inputEl = null;
-    editBtn = toggleGroupBtn = zoomBtn = null;
+    editBtn = zoomBtn = null;
   }
   if (!isFloating) {
     foldBtnL0 = foldBtnL1 = unfoldAllBtn = boundaryBtn = null;
