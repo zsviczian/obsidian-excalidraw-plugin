@@ -2734,8 +2734,9 @@ const toggleBoundary = async () => {
 // ---------------------------------------------------------------------------
 
 let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown, autoLayoutToggle, linkSuggester;
-let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn, toggleGroupBtn, zoomBtn, boundaryBtn;
+let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn, toggleGroupBtn, zoomBtn, focusBtn, boundaryBtn;
 let foldBtnL0, foldBtnL1, unfoldAllBtn;
+let floatingGroupBtn, floatingBoxBtn, floatingZoomBtn;
 let panelExpandBtn;
 let isFloatingPanelExpanded = false;
 let toggleFloatingExtras = null;
@@ -2831,7 +2832,11 @@ const disableUI = () => {
   setButtonDisabled(editBtn, true);
   setButtonDisabled(toggleGroupBtn, true);
   setButtonDisabled(zoomBtn, true);
+  setButtonDisabled(focusBtn, true);
   setButtonDisabled(boundaryBtn, true);
+  setButtonDisabled(floatingGroupBtn, true);
+  setButtonDisabled(floatingBoxBtn, true);
+  setButtonDisabled(floatingZoomBtn, true);
   editingNodeId = null;
   if(editBtn) editBtn.extraSettingsEl.style.color = "";
 };
@@ -2873,24 +2878,30 @@ const updateUI = () => {
       }
     }
     
-    if (toggleGroupBtn) {
+    const updateGroupBtn = (btn) => {
+      if (!btn) return;
       const isGrouped = branchIds.length > 1 && !!ea.getCommonGroupForElements(all.filter(el => branchIds.includes(el.id)));
-      toggleGroupBtn.setIcon(isGrouped ? "ungroup" : "group");
+      btn.setIcon(isGrouped ? "ungroup" : "group");
       const groupTooltip = isGrouped ? t("TOGGLE_GROUP_TOOLTIP_UNGROUP") : t("TOGGLE_GROUP_TOOLTIP_GROUP");
-      toggleGroupBtn.setTooltip(`${groupTooltip} ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
-      setButtonDisabled(toggleGroupBtn, groupBranches || branchIds.length <= 1);
+      btn.setTooltip(`${groupTooltip} ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
+      setButtonDisabled(btn, groupBranches || branchIds.length <= 1);
     }
+    updateGroupBtn(toggleGroupBtn);
+    updateGroupBtn(floatingGroupBtn);
 
-    if(refreshBtn) {
+    if (refreshBtn) {
       setButtonDisabled(refreshBtn, false);
       refreshBtn.setTooltip(`${t("TOOLTIP_REFRESH")} ${getActionHotkeyString(ACTION_REARRANGE)}`);
     }
 
     setButtonDisabled(boxBtn, false);
+    setButtonDisabled(floatingBoxBtn, false);
     setButtonDisabled(foldBtnL0, false);
     setButtonDisabled(foldBtnL1, false);
     setButtonDisabled(unfoldAllBtn, !hasFoldedInBranch);
     setButtonDisabled(zoomBtn, false);
+    setButtonDisabled(focusBtn, false);
+    setButtonDisabled(floatingZoomBtn, false);
     setButtonDisabled(boundaryBtn, isRootSelected);
     setButtonDisabled(cutBtn, isRootSelected);
     setButtonDisabled(copyBtn, false);
@@ -3279,6 +3290,7 @@ const renderInput = (container, isFloating = false) => {
   pinBtn = refreshBtn = dockBtn = inputEl = null;
   foldBtnL0 = foldBtnL1 = unfoldAllBtn = null;
   boundaryBtn = panelExpandBtn = null; 
+  floatingGroupBtn, floatingBoxBtn, floatingZoomBtn = null;
 
   inputRow = new ea.obsidian.Setting(container);
   let secondaryButtonContainer = null;
@@ -3300,6 +3312,8 @@ const renderInput = (container, isFloating = false) => {
     secondaryButtonContainer.style.gap = "6px";
     secondaryButtonContainer.style.marginTop = "6px";
     secondaryButtonContainer.style.flexWrap = "wrap";
+    secondaryButtonContainer.style.overflow = "hidden";
+    secondaryButtonContainer.style.scrollbarWidth = "none";
   }
 
   inputRow.addText((text) => {
@@ -3397,7 +3411,46 @@ const renderInput = (container, isFloating = false) => {
       btn.extraSettingsEl.setAttr("action", ACTION_TOGGLE_FLOATING_EXTRAS);
       btn.onClick(toggleFloatingExtras);
     }, false);
+
+    addButton((btn) => {
+      floatingGroupBtn = btn;
+      btn.setIcon("group");
+      btn.extraSettingsEl.setAttr("action", ACTION_TOGGLE_GROUP);
+      btn.onClick(async () => {
+        await toggleBranchGroup();
+      });
+    }, true);
+
+    addButton((btn) => {
+      floatingBoxBtn = btn;
+      btn.setIcon("rectangle-horizontal");
+      btn.setTooltip(`${t("TOOLTIP_TOGGLE_BOX")} ${getActionHotkeyString(ACTION_BOX)}`);
+      btn.extraSettingsEl.setAttr("action", ACTION_BOX);
+      btn.onClick(async () => {
+        await toggleBox();
+      });
+    }, true);
+
+    addButton((btn) => {
+      floatingZoomBtn = btn;
+      btn.setIcon("scan-search");
+      btn.setTooltip(`${t("TOOLTIP_ZOOM_CYCLE")} ${getActionHotkeyString(ACTION_ZOOM)}`);
+      btn.extraSettingsEl.setAttr("action", ACTION_ZOOM);
+      btn.onClick(() => {
+        zoomToFit(true);
+      });
+    }, true);
   }
+
+  addButton((btn) => {
+    focusBtn = btn;
+    btn.setIcon("scan-eye");
+    btn.setTooltip(`${t("ACTION_LABEL_FOCUS")} ${getActionHotkeyString(ACTION_FOCUS)}`);
+    btn.extraSettingsEl.setAttr("action", ACTION_FOCUS);
+    btn.onClick(async () => {
+      focusSelected();
+    });
+  }, true);
 
   addButton((btn) => {
     boundaryBtn = btn;
@@ -4116,7 +4169,6 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
     inputContainer.empty();
     floatingInputModal.open();
   } else {
-    // DOCK: Close floating, render in sidepanel
     if (floatingInputModal) {
       if (floatingInputModal.modalEl && floatingInputModal.modalEl.parentElement) {
         floatingInputModal.modalEl.remove();
