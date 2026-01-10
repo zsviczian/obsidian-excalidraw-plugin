@@ -3152,6 +3152,644 @@ export type Offsets = Partial<{
     left: number;
 }>;
 
+/* ************************************** */
+/* node_modules/@zsviczian/excalidraw/types/element/src/bounds.d.ts */
+/* ************************************** */
+export type RectangleBox = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    angle: number;
+};
+export type SceneBounds = readonly [
+    sceneX: number,
+    sceneY: number,
+    sceneX2: number,
+    sceneY2: number
+];
+export declare class ElementBounds {
+    private static boundsCache;
+    private static nonRotatedBoundsCache;
+    static getBounds(element: ExcalidrawElement, elementsMap: ElementsMap, nonRotated?: boolean): Bounds;
+    private static calculateBounds;
+}
+export declare const getElementAbsoluteCoords: (element: ExcalidrawElement, elementsMap: ElementsMap, includeBoundText?: boolean) => [number, number, number, number, number, number];
+/**
+ * Given an element, return the line segments that make up the element.
+ *
+ * Uses helpers from /math
+ */
+export declare const getElementLineSegments: (element: ExcalidrawElement, elementsMap: ElementsMap) => LineSegment<GlobalPoint>[];
+/**
+ * Scene -> Scene coords, but in x1,x2,y1,y2 format.
+ *
+ * Rectangle here means any rectangular frame, not an excalidraw element.
+ */
+export declare const getRectangleBoxAbsoluteCoords: (boxSceneCoords: RectangleBox) => number[];
+export declare const getDiamondPoints: (element: ExcalidrawElement) => number[];
+export declare const getCubicBezierCurveBound: (p0: GlobalPoint, p1: GlobalPoint, p2: GlobalPoint, p3: GlobalPoint) => Bounds;
+export declare const getMinMaxXYFromCurvePathOps: (ops: Op[], transformXY?: (p: GlobalPoint) => GlobalPoint) => Bounds;
+export declare const getBoundsFromPoints: (points: ExcalidrawFreeDrawElement["points"]) => Bounds;
+/** @returns number in pixels */
+export declare const getArrowheadSize: (arrowhead: Arrowhead) => number;
+/** @returns number in degrees */
+export declare const getArrowheadAngle: (arrowhead: Arrowhead) => Degrees;
+export declare const getArrowheadPoints: (element: ExcalidrawLinearElement, shape: Drawable[], position: "start" | "end", arrowhead: Arrowhead) => number[] | null;
+export declare const getElementBounds: (element: ExcalidrawElement, elementsMap: ElementsMap, nonRotated?: boolean) => Bounds;
+export declare const getCommonBounds: (elements: ElementsMapOrArray, elementsMap?: ElementsMap) => Bounds;
+export declare const getDraggedElementsBounds: (elements: ExcalidrawElement[], dragOffset: {
+    x: number;
+    y: number;
+}) => number[];
+export declare const getResizedElementAbsoluteCoords: (element: ExcalidrawElement, nextWidth: number, nextHeight: number, normalizePoints: boolean) => Bounds;
+export declare const getElementPointsCoords: (element: ExcalidrawLinearElement, points: readonly (readonly [number, number])[]) => Bounds;
+export declare const getClosestElementBounds: (elements: readonly ExcalidrawElement[], from: {
+    x: number;
+    y: number;
+}) => Bounds;
+export interface BoundingBox {
+    minX: number;
+    minY: number;
+    maxX: number;
+    maxY: number;
+    midX: number;
+    midY: number;
+    width: number;
+    height: number;
+}
+export declare const getCommonBoundingBox: (elements: readonly ExcalidrawElement[] | readonly NonDeleted<ExcalidrawElement>[]) => BoundingBox;
+/**
+ * returns scene coords of user's editor viewport (visible canvas area) bounds
+ */
+export declare const getVisibleSceneBounds: ({ scrollX, scrollY, width, height, zoom, }: AppState) => SceneBounds;
+export declare const getCenterForBounds: (bounds: Bounds) => GlobalPoint;
+/**
+ * Get the axis-aligned bounding box for a given element
+ */
+export declare const aabbForElement: (element: Readonly<ExcalidrawElement>, elementsMap: ElementsMap, offset?: [number, number, number, number]) => Bounds;
+export declare const pointInsideBounds: <P extends GlobalPoint | LocalPoint>(p: P, bounds: Bounds) => boolean;
+export declare const doBoundsIntersect: (bounds1: Bounds | null, bounds2: Bounds | null) => boolean;
+export declare const elementCenterPoint: (element: ExcalidrawElement, elementsMap: ElementsMap, xOffset?: number, yOffset?: number) => GlobalPoint;
+
+/* ************************************** */
+/* node_modules/@zsviczian/excalidraw/types/excalidraw/components/App.d.ts */
+/* ************************************** */
+export declare const ExcalidrawContainerContext: React.Context<{
+    container: HTMLDivElement | null;
+    id: string | null;
+}>;
+export declare const useApp: () => AppClassProperties;
+export declare const useAppProps: () => AppProps;
+export declare const useEditorInterface: () => Readonly<{
+    formFactor: "phone" | "tablet" | "desktop";
+    desktopUIMode: "compact" | "full" | "tray";
+    userAgent: Readonly<{
+        isMobileDevice: boolean;
+        platform: "ios" | "android" | "other" | "unknown";
+    }>;
+    isTouchScreen: boolean;
+    canFitSidebar: boolean;
+    isLandscape: boolean;
+    preferTrayMode: boolean;
+}>;
+export declare const useStylesPanelMode: () => StylesPanelMode;
+export declare const useExcalidrawContainer: () => {
+    container: HTMLDivElement | null;
+    id: string | null;
+};
+export declare const useExcalidrawElements: () => readonly NonDeletedExcalidrawElement[];
+export declare const useExcalidrawAppState: () => AppState;
+export declare const useExcalidrawSetAppState: () => <K extends keyof AppState>(state: AppState | ((prevState: Readonly<AppState>, props: Readonly<any>) => AppState | Pick<AppState, K> | null) | Pick<AppState, K> | null, callback?: (() => void) | undefined) => void;
+export declare const useExcalidrawActionManager: () => ActionManager;
+declare class App extends React.Component<AppProps, AppState> {
+    canvas: AppClassProperties["canvas"];
+    interactiveCanvas: AppClassProperties["interactiveCanvas"];
+    rc: RoughCanvas;
+    unmounted: boolean;
+    actionManager: ActionManager;
+    editorInterface: EditorInterface;
+    private stylesPanelMode;
+    private excalidrawContainerRef;
+    scene: Scene;
+    fonts: Fonts;
+    renderer: Renderer;
+    visibleElements: readonly NonDeletedExcalidrawElement[];
+    private resizeObserver;
+    library: AppClassProperties["library"];
+    libraryItemsFromStorage: LibraryItems | undefined;
+    id: string;
+    private store;
+    private history;
+    private shouldRenderAllEmbeddables;
+    excalidrawContainerValue: {
+        container: HTMLDivElement | null;
+        id: string;
+    };
+    files: BinaryFiles;
+    imageCache: AppClassProperties["imageCache"];
+    private iFrameRefs;
+    /**
+     * Indicates whether the embeddable's url has been validated for rendering.
+     * If value not set, indicates that the validation is pending.
+     * Initially or on url change the flag is not reset so that we can guarantee
+     * the validation came from a trusted source (the editor).
+     **/
+    private embedsValidationStatus;
+    /** embeds that have been inserted to DOM (as a perf optim, we don't want to
+     * insert to DOM before user initially scrolls to them) */
+    private initializedEmbeds;
+    private handleToastClose;
+    private elementsPendingErasure;
+    flowChartCreator: FlowChartCreator;
+    private flowChartNavigator;
+    bindModeHandler: ReturnType<typeof setTimeout> | null;
+    hitLinkElement?: NonDeletedExcalidrawElement;
+    lastPointerDownEvent: React.PointerEvent<HTMLElement> | null;
+    lastPointerUpEvent: React.PointerEvent<HTMLElement> | PointerEvent | null;
+    lastPointerMoveEvent: PointerEvent | null;
+    lastPointerMoveCoords: {
+        x: number;
+        y: number;
+    } | null;
+    lastViewportPosition: {
+        x: number;
+        y: number;
+    };
+    allowMobileMode: boolean;
+    animationFrameHandler: AnimationFrameHandler;
+    laserTrails: LaserTrails;
+    eraserTrail: EraserTrail;
+    lassoTrail: LassoTrail;
+    onChangeEmitter: Emitter<[elements: readonly ExcalidrawElement[], appState: AppState, files: BinaryFiles]>;
+    onPointerDownEmitter: Emitter<[activeTool: {
+        lastActiveTool: import("../types").ActiveTool | null;
+        locked: boolean;
+        fromSelection: boolean;
+    } & import("../types").ActiveTool, pointerDownState: Readonly<{
+        origin: Readonly<{
+            x: number;
+            y: number;
+        }>;
+        originInGrid: Readonly<{
+            x: number;
+            y: number;
+        }>;
+        scrollbars: ReturnType<typeof isOverScrollBars>;
+        lastCoords: {
+            x: number;
+            y: number;
+        };
+        originalElements: Map<string, NonDeleted<ExcalidrawElement>>;
+        resize: {
+            handleType: import("@excalidraw/element").MaybeTransformHandleType;
+            isResizing: boolean;
+            offset: {
+                x: number;
+                y: number;
+            };
+            arrowDirection: "origin" | "end";
+            center: {
+                x: number;
+                y: number;
+            };
+        };
+        hit: {
+            element: NonDeleted<ExcalidrawElement> | null;
+            allHitElements: NonDeleted<ExcalidrawElement>[];
+            wasAddedToSelection: boolean;
+            hasBeenDuplicated: boolean;
+            hasHitCommonBoundingBoxOfSelectedElements: boolean;
+        };
+        withCmdOrCtrl: boolean;
+        drag: {
+            hasOccurred: boolean;
+            offset: {
+                x: number;
+                y: number;
+            } | null;
+            origin: {
+                x: number;
+                y: number;
+            };
+            blockDragging: boolean;
+        };
+        eventListeners: {
+            onMove: null | ReturnType<typeof import("@excalidraw/common").throttleRAF>;
+            onUp: null | ((event: PointerEvent) => void);
+            onKeyDown: null | ((event: KeyboardEvent) => void);
+            onKeyUp: null | ((event: KeyboardEvent) => void);
+        };
+        boxSelection: {
+            hasOccurred: boolean;
+        };
+    }>, event: React.PointerEvent<HTMLElement>]>;
+    onPointerUpEmitter: Emitter<[activeTool: {
+        lastActiveTool: import("../types").ActiveTool | null;
+        locked: boolean;
+        fromSelection: boolean;
+    } & import("../types").ActiveTool, pointerDownState: Readonly<{
+        origin: Readonly<{
+            x: number;
+            y: number;
+        }>;
+        originInGrid: Readonly<{
+            x: number;
+            y: number;
+        }>;
+        scrollbars: ReturnType<typeof isOverScrollBars>;
+        lastCoords: {
+            x: number;
+            y: number;
+        };
+        originalElements: Map<string, NonDeleted<ExcalidrawElement>>;
+        resize: {
+            handleType: import("@excalidraw/element").MaybeTransformHandleType;
+            isResizing: boolean;
+            offset: {
+                x: number;
+                y: number;
+            };
+            arrowDirection: "origin" | "end";
+            center: {
+                x: number;
+                y: number;
+            };
+        };
+        hit: {
+            element: NonDeleted<ExcalidrawElement> | null;
+            allHitElements: NonDeleted<ExcalidrawElement>[];
+            wasAddedToSelection: boolean;
+            hasBeenDuplicated: boolean;
+            hasHitCommonBoundingBoxOfSelectedElements: boolean;
+        };
+        withCmdOrCtrl: boolean;
+        drag: {
+            hasOccurred: boolean;
+            offset: {
+                x: number;
+                y: number;
+            } | null;
+            origin: {
+                x: number;
+                y: number;
+            };
+            blockDragging: boolean;
+        };
+        eventListeners: {
+            onMove: null | ReturnType<typeof import("@excalidraw/common").throttleRAF>;
+            onUp: null | ((event: PointerEvent) => void);
+            onKeyDown: null | ((event: KeyboardEvent) => void);
+            onKeyUp: null | ((event: KeyboardEvent) => void);
+        };
+        boxSelection: {
+            hasOccurred: boolean;
+        };
+    }>, event: PointerEvent]>;
+    onUserFollowEmitter: Emitter<[payload: OnUserFollowedPayload]>;
+    onScrollChangeEmitter: Emitter<[scrollX: number, scrollY: number, zoom: Readonly<{
+        value: import("../types").NormalizedZoomValue;
+    }>]>;
+    missingPointerEventCleanupEmitter: Emitter<[event: PointerEvent | null]>;
+    onRemoveEventListenersEmitter: Emitter<[]>;
+    constructor(props: AppProps);
+    updateEditorAtom: <Value, Args extends unknown[], Result>(atom: WritableAtom<Value, Args, Result>, ...args: Args) => Result;
+    private onWindowMessage;
+    private handleSkipBindMode;
+    private resetDelayedBindMode;
+    private previousHoveredBindableElement;
+    private handleDelayedBindModeChange;
+    private cacheEmbeddableRef;
+    /**
+     * Returns gridSize taking into account `gridModeEnabled`.
+     * If disabled, returns null.
+     */
+    getEffectiveGridSize: () => NullableGridSize;
+    private getHTMLIFrameElement;
+    private handleEmbeddableCenterClick;
+    private isIframeLikeElementCenter;
+    private updateEmbedValidationStatus;
+    private updateEmbeddables;
+    private renderEmbeddables;
+    private getFrameNameDOMId;
+    frameNameBoundsCache: FrameNameBoundsCache;
+    private resetEditingFrame;
+    private renderFrameNames;
+    private toggleOverscrollBehavior;
+    render(): import("react/jsx-runtime").JSX.Element;
+    focusContainer: AppClassProperties["focusContainer"];
+    getSceneElementsIncludingDeleted: () => readonly import("@excalidraw/element/types").OrderedExcalidrawElement[];
+    getSceneElementsMapIncludingDeleted: () => SceneElementsMap;
+    getSceneElements: () => readonly Ordered<NonDeletedExcalidrawElement>[];
+    onInsertElements: (elements: readonly ExcalidrawElement[]) => void;
+    onExportImage: (type: keyof typeof EXPORT_IMAGE_TYPES, elements: ExportedElements, opts: {
+        exportingFrame: ExcalidrawFrameLikeElement | null;
+    }) => Promise<void>;
+    private magicGenerations;
+    private updateMagicGeneration;
+    plugins: {
+        diagramToCode?: {
+            generate: GenerateDiagramToCode;
+        };
+    };
+    setPlugins(plugins: Partial<App["plugins"]>): void;
+    private onMagicFrameGenerate;
+    private onIframeSrcCopy;
+    onMagicframeToolSelect: () => void;
+    private openEyeDropper;
+    dismissLinearEditor: () => void;
+    syncActionResult: (actionResult: ActionResult) => void;
+    private onBlur;
+    private onUnload;
+    private disableEvent;
+    private resetHistory;
+    private resetStore;
+    /**
+     * Resets scene & history.
+     * ! Do not use to clear scene user action !
+     */
+    private resetScene;
+    private initializeScene;
+    private getFormFactor;
+    refreshEditorInterface: (preferTrayMode?: boolean) => void;
+    private reconcileStylesPanelMode;
+    /** TO BE USED LATER */
+    private setDesktopUIMode;
+    private isTouchScreen;
+    private setTrayModeEnabled;
+    isTrayModeEnabled: () => boolean;
+    private clearImageShapeCache;
+    componentDidMount(): Promise<void>;
+    componentWillUnmount(): void;
+    private onResize;
+    /** generally invoked only if fullscreen was invoked programmatically */
+    private onFullscreenChange;
+    private removeEventListeners;
+    private addEventListeners;
+    componentDidUpdate(prevProps: AppProps, prevState: AppState): void;
+    private renderInteractiveSceneCallback;
+    private onScroll;
+    private onCut;
+    private onCopy;
+    private static resetTapTwice;
+    private onTouchStart;
+    private onTouchEnd;
+    private insertClipboardContent;
+    pasteFromClipboard: (event: ClipboardEvent) => Promise<void>;
+    addElementsFromPasteOrLibrary: (opts: {
+        elements: readonly ExcalidrawElement[];
+        files: BinaryFiles | null;
+        position: {
+            clientX: number;
+            clientY: number;
+        } | "cursor" | "center";
+        retainSeed?: boolean;
+        fitToContent?: boolean;
+    }) => void;
+    private addElementsFromMixedContentPaste;
+    private addTextFromPaste;
+    setAppState: React.Component<any, AppState>["setState"];
+    removePointer: (event: React.PointerEvent<HTMLElement> | PointerEvent) => void;
+    toggleLock: (source?: "keyboard" | "ui") => void;
+    updateFrameRendering: (opts: Partial<AppState["frameRendering"]> | ((prevState: AppState["frameRendering"]) => Partial<AppState["frameRendering"]>)) => void;
+    togglePenMode: (force: boolean | null) => void;
+    onHandToolToggle: () => void;
+    /**
+     * Zooms on canvas viewport center
+     */
+    zoomCanvas: (
+    /**
+     * Decimal fraction, auto-clamped between MIN_ZOOM and MAX_ZOOM.
+     * 1 = 100% zoom, 2 = 200% zoom, 0.5 = 50% zoom
+     */
+    value: number) => void;
+    private cancelInProgressAnimation;
+    scrollToContent: (
+    /**
+     * target to scroll to
+     *
+     * - string - id of element or group, or url containing elementLink
+     * - ExcalidrawElement | ExcalidrawElement[] - element(s) objects
+     */
+    target?: string | ExcalidrawElement | readonly ExcalidrawElement[], opts?: ({
+        fitToContent?: boolean;
+        fitToViewport?: never;
+        viewportZoomFactor?: number;
+        animate?: boolean;
+        duration?: number;
+    } | {
+        fitToContent?: never;
+        fitToViewport?: boolean;
+        /** when fitToViewport=true, how much screen should the content cover,
+         * between 0.1 (10%) and 1 (100%)
+         */
+        viewportZoomFactor?: number;
+        animate?: boolean;
+        duration?: number;
+    }) & {
+        minZoom?: number;
+        maxZoom?: number;
+        canvasOffsets?: Offsets;
+    }) => void;
+    private maybeUnfollowRemoteUser;
+    /** use when changing scrollX/scrollY/zoom based on user interaction */
+    private translateCanvas;
+    setForceRenderAllEmbeddables: (force: boolean) => void;
+    zoomToFit: (target?: readonly ExcalidrawElement[], maxZoom?: number, //null will zoom to max based on viewport
+    margin?: number) => void;
+    getColorAtScenePoint: ({ sceneX, sceneY, }: {
+        sceneX: number;
+        sceneY: number;
+    }) => string | null;
+    startLineEditor: (el: ExcalidrawLinearElement, selectedPointsIndices?: number[] | null) => void;
+    refreshAllArrows: () => void;
+    updateContainerSize: (containers: NonDeletedExcalidrawElement[]) => void;
+    setToast: (toast: {
+        message: string;
+        closable?: boolean;
+        duration?: number;
+    } | null) => void;
+    restoreFileFromShare: () => Promise<void>;
+    /**
+     * adds supplied files to existing files in the appState.
+     * NOTE if file already exists in editor state, the file data is not updated
+     * */
+    addFiles: ExcalidrawImperativeAPI["addFiles"];
+    setMobileModeAllowed: (allow: boolean) => void;
+    private debounceClearHighlightSearchResults;
+    selectElements: ExcalidrawImperativeAPI["selectElements"];
+    bringToFront: ExcalidrawImperativeAPI["bringToFront"];
+    bringForward: ExcalidrawImperativeAPI["bringForward"];
+    sendToBack: ExcalidrawImperativeAPI["sendToBack"];
+    sendBackward: ExcalidrawImperativeAPI["sendBackward"];
+    private addMissingFiles;
+    updateScene: <K extends keyof AppState>(sceneData: {
+        elements?: SceneData["elements"];
+        appState?: Pick<AppState, K> | null;
+        collaborators?: SceneData["collaborators"];
+        /**
+         *  Controls which updates should be captured by the `Store`. Captured updates are emmitted and listened to by other components, such as `History` for undo / redo purposes.
+         *
+         *  - `CaptureUpdateAction.IMMEDIATELY`: Updates are immediately undoable. Use for most local updates.
+         *  - `CaptureUpdateAction.NEVER`: Updates never make it to undo/redo stack. Use for remote updates or scene initialization.
+         *  - `CaptureUpdateAction.EVENTUALLY`: Updates will be eventually be captured as part of a future increment.
+         *
+         * Check [API docs](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/api/props/excalidraw-api#captureUpdate) for more details.
+         *
+         * @default CaptureUpdateAction.EVENTUALLY
+         */
+        captureUpdate?: SceneData["captureUpdate"];
+        forceFlushSync?: boolean;
+    }) => void;
+    applyDeltas: (deltas: StoreDelta[], options?: ApplyToOptions) => [SceneElementsMap, AppState, boolean];
+    mutateElement: <TElement extends Mutable<ExcalidrawElement>>(element: TElement, updates: ElementUpdate<TElement>, informMutation?: boolean) => TElement;
+    private triggerRender;
+    /**
+     * @returns whether the menu was toggled on or off
+     */
+    toggleSidebar: ({ name, tab, force, }: {
+        name: SidebarName | null;
+        tab?: SidebarTabName;
+        force?: boolean;
+    }) => boolean;
+    private updateCurrentCursorPosition;
+    getEditorUIOffsets: () => Offsets;
+    private onKeyDown;
+    private onKeyUp;
+    private isToolSupported;
+    setActiveTool: (tool: ({
+        type: ToolType;
+    } | {
+        type: "custom";
+        customType: string;
+    }) & {
+        locked?: boolean;
+        fromSelection?: boolean;
+    }, keepSelection?: boolean) => void;
+    setOpenDialog: (dialogType: AppState["openDialog"]) => void;
+    private setCursor;
+    private resetCursor;
+    /**
+     * returns whether user is making a gesture with >= 2 fingers (points)
+     * on o touch screen (not on a trackpad). Currently only relates to Darwin
+     * (iOS/iPadOS,MacOS), but may work on other devices in the future if
+     * GestureEvent is standardized.
+     */
+    private isTouchScreenMultiTouchGesture;
+    getName: () => string;
+    private onGestureStart;
+    private onGestureChange;
+    private onGestureEnd;
+    private handleTextWysiwyg;
+    private deselectElements;
+    private getTextElementAtPosition;
+    private getElementAtPosition;
+    private getElementsAtPosition;
+    getElementHitThreshold(element: ExcalidrawElement): number;
+    private hitElement;
+    private getTextBindableContainerAtPosition;
+    private startTextEditing;
+    private debounceDoubleClickTimestamp;
+    private startImageCropping;
+    private finishImageCropping;
+    private handleCanvasDoubleClick;
+    private getElementLinkAtPosition;
+    private redirectToLink;
+    private getTopLayerFrameAtSceneCoords;
+    private handleCanvasPointerMove;
+    private handleEraser;
+    private handleTouchMove;
+    handleHoverSelectedLinearElement(linearElementEditor: LinearElementEditor, scenePointerX: number, scenePointerY: number): void;
+    private handleCanvasPointerDown;
+    private handleCanvasPointerUp;
+    private maybeOpenContextMenuAfterPointerDownOnTouchDevices;
+    private resetContextMenuTimer;
+    /**
+     * pointerup may not fire in certian cases (user tabs away...), so in order
+     * to properly cleanup pointerdown state, we need to fire any hanging
+     * pointerup handlers manually
+     */
+    private maybeCleanupAfterMissingPointerUp;
+    handleCanvasPanUsingWheelOrSpaceDrag: (event: React.PointerEvent<HTMLElement> | MouseEvent) => boolean;
+    private startRightClickPanning;
+    private updateGestureOnPointerDown;
+    private initialPointerDownState;
+    private handleDraggingScrollBar;
+    private clearSelectionIfNotUsingSelection;
+    /**
+     * @returns whether the pointer event has been completely handled
+     */
+    private handleSelectionOnPointerDown;
+    private isASelectedElement;
+    private isHittingCommonBoundingBoxOfSelectedElements;
+    private handleTextOnPointerDown;
+    private handleFreeDrawElementOnPointerDown;
+    insertIframeElement: ({ sceneX, sceneY, width, height, }: {
+        sceneX: number;
+        sceneY: number;
+        width: number;
+        height: number;
+    }) => NonDeleted<ExcalidrawIframeElement>;
+    insertEmbeddableElement: ({ sceneX, sceneY, link, }: {
+        sceneX: number;
+        sceneY: number;
+        link: string;
+    }) => NonDeleted<ExcalidrawEmbeddableElement> | undefined;
+    private newImagePlaceholder;
+    private handleLinearElementOnPointerDown;
+    private getCurrentItemRoundness;
+    private createGenericElementOnPointerDown;
+    private createFrameElementOnPointerDown;
+    private maybeCacheReferenceSnapPoints;
+    private maybeCacheVisibleGaps;
+    private onKeyDownFromPointerDownHandler;
+    private onKeyUpFromPointerDownHandler;
+    private onPointerMoveFromPointerDownHandler;
+    private handlePointerMoveOverScrollbars;
+    private onPointerUpFromPointerDownHandler;
+    private restoreReadyToEraseElements;
+    private eraseElements;
+    private initializeImage;
+    /**
+     * use during async image initialization,
+     * when the placeholder image could have been modified in the meantime,
+     * and when you don't want to loose those modifications
+     */
+    private getLatestInitializedImageElement;
+    private onImageToolbarButtonClick;
+    private getImageNaturalDimensions;
+    /** updates image cache, refreshing updated elements and/or setting status
+        to error for images that fail during <img> element creation */
+    private updateImageCache;
+    /** adds new images to imageCache and re-renders if needed */
+    private addNewImagesToImageCache;
+    /** generally you should use `addNewImagesToImageCache()` directly if you need
+     *  to render new images. This is just a failsafe  */
+    private scheduleImageRefresh;
+    private updateBindingEnabledOnPointerMove;
+    setSelection(elements: readonly NonDeletedExcalidrawElement[]): void;
+    private clearSelection;
+    private handleInteractiveCanvasRef;
+    private insertImages;
+    private handleAppOnDrop;
+    loadFileToCanvas: (file: File, fileHandle: FileSystemHandle | null) => Promise<void>;
+    private handleCanvasContextMenu;
+    private maybeDragNewGenericElement;
+    private maybeHandleCrop;
+    private maybeHandleResize;
+    private getContextMenuItems;
+    private handleWheel;
+    private getTextWysiwygSnappedToCenterPosition;
+    private savePointer;
+    private resetShouldCacheIgnoreZoomDebounced;
+    private updateDOMRect;
+    refresh: () => void;
+    private getCanvasOffsets;
+    watchState: () => void;
+    private updateLanguage;
+}
+export default App;
+
 ```
 
 ---
@@ -10245,29 +10883,23 @@ export declare const useI18n: () => {
 /* ************************************** */
 /* ./data/restore -> node_modules/@zsviczian/excalidraw/types/excalidraw/data/restore.d.ts */
 /* ************************************** */
-export declare const restore: (data: Pick<ImportedDataState, "appState" | "elements" | "files"> | null, 
-/**
- * Local AppState (`this.state` or initial state from localStorage) so that we
- * don't overwrite local state with default values (when values not
- * explicitly specified).
- * Supply `null` if you can't get access to it.
- */
-localAppState: Partial<AppState> | null | undefined, localElements: readonly ExcalidrawElement[] | null | undefined, elementsConfig?: {
-    refreshDimensions?: boolean;
-    repairBindings?: boolean;
-    deleteInvisibleElements?: boolean;
-}) => RestoredDataState;
 export declare const restoreAppState: (appState: ImportedDataState["appState"], localAppState: Partial<AppState> | null | undefined) => RestoredAppState;
-export declare const restoreElement: (element: Exclude<ExcalidrawElement, ExcalidrawSelectionElement>, targetElementsMap: Readonly<ElementsMap>, localElementsMap: Readonly<ElementsMap> | null | undefined, opts?: {
+export declare const restoreElement: (
+/** element to be restored */
+element: Exclude<ExcalidrawElement, ExcalidrawSelectionElement>, 
+/** all elements to be restored */
+targetElementsMap: Readonly<ElementsMap>, 
+/** used for additional context */
+existingElementsMap: Readonly<ElementsMap> | null | undefined, opts?: {
     deleteInvisibleElements?: boolean;
 }) => typeof element | null;
-export declare const restoreElements: (targetElements: ImportedDataState["elements"], 
-/** NOTE doesn't serve for reconciliation */
-localElements: Readonly<ElementsMapOrArray> | null | undefined, opts?: {
+export declare const restoreElements: <T extends ExcalidrawElement>(targetElements: readonly T[] | undefined | null, 
+/** used for additional context (e.g. repairing arrow bindings) */
+existingElements: Readonly<ElementsMapOrArray> | null | undefined, opts?: {
     refreshDimensions?: boolean;
     repairBindings?: boolean;
     deleteInvisibleElements?: boolean;
-} | undefined) => OrderedExcalidrawElement[];
+} | undefined) => CombineBrandsIfNeeded<T, OrderedExcalidrawElement>;
 export declare const restoreLibraryItems: (libraryItems: ImportedDataState["libraryItems"], defaultStatus: LibraryItem["status"]) => LibraryItem[];
 
 /* ************************************** */
@@ -10367,7 +10999,8 @@ export declare const loadFromBlob: (blob: Blob,
 /** @see restore.localAppState */
 localAppState: AppState | null, localElements: readonly ExcalidrawElement[] | null, 
 /** FileSystemHandle. Defaults to `blob.handle` if defined, otherwise null. */
-fileHandle?: FileSystemHandle | null) => Promise<import("./restore").RestoredDataState>;
+fileHandle?: FileSystemHandle | null) => Promise<{
+    elements: import("@excalidraw/element/types").OrderedExcalidrawElement[];
 export declare const loadLibraryFromBlob: (blob: Blob, defaultStatus?: LibraryItem["status"]) => Promise<LibraryItem[]>;
 export declare const loadSceneOrLibraryFromBlob: (blob: Blob | File, 
 /** @see restore.localAppState */
@@ -10451,13 +11084,6 @@ export declare const zoomToFitBounds: ({ bounds, appState, canvasOffsets, fitToV
         scrollX: number;
 
 /* ************************************** */
-/* ./data/transform -> node_modules/@zsviczian/excalidraw/types/excalidraw/data/transform.d.ts */
-/* ************************************** */
-export declare const convertToExcalidrawElements: (elementsSkeleton: ExcalidrawElementSkeleton[] | null, opts?: {
-    regenerateIds: boolean;
-}) => import("@excalidraw/element/types").OrderedExcalidrawElement[];
-
-/* ************************************** */
 /* @excalidraw/utils/withinBounds -> node_modules/@zsviczian/excalidraw/types/utils/src/withinBounds.d.ts */
 /* ************************************** */
 export declare const elementPartiallyOverlapsWithOrContainsBBox: (element: Element, bbox: Bounds) => boolean;
@@ -10499,7 +11125,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-01-07T15:58:51.129Z
+Generated on: 2026-01-09T18:48:33.692Z
 
 ---
 
@@ -19033,82 +19659,16 @@ await ea.addElementsToView(false, false, true);
 
 ![](YouTube: qY66yoobaX4)
 
-## 1. Overview
+## Overview
 **Mind Map Builder** transforms the Obsidian-Excalidraw canvas into a rapid brainstorming environment, allowing users to build complex, structured, and visually organized mind maps using primarily keyboard shortcuts.
 
 The script balances **automation** (auto-layout, recursive grouping, and contrast-aware coloring) with **explicit flexibility** (node pinning and redirection logic), ensuring that the mind map stays organized even as it grows to hundreds of nodes. It leverages the Excalidraw Sidepanel API to provide a persistent control interface utilizing the Obsidian sidepanel, that can also be undocked into a floating modal.
 
-## 2. Core Purpose
-The primary goal is to minimize the "friction of drawing." Instead of manually drawing boxes and arrows, the user focuses on the hierarchy of ideas. The script handles:
-- **Spatial Arrangement**: Distributing nodes radially or directionally (Left/Right).
-- **Visual Hierarchy**: Automatically adjusting font sizes and arrow thicknesses based on depth.
-- **Selection Redirection**: Automatically shifting focus from connecting arrows to their associated nodes to ensure continuous workflow.
-- **Data Portability**: Enabling seamless transition between visual diagrams and Markdown bullet lists via the clipboard.
+## Technical notes
 
-## 3. Feature Set
-
-### A. Intelligent Layout Engine
-The script features a recursive spacing engine that calculates the "subtree height" of every branch.
-- **Growth Modes**: Supports Radial (circular), Right-facing, and Left-facing layouts.
-- **Radial Logic**: Distributes the first 6 nodes at 60° increments. Beyond 6 nodes, it compresses the arc to 320° to maintain a professional aesthetic and avoid overlapping the central node's vertical axis.
-- **Recursive Re-balancing**: Coordinates are recalculated across the tree to prevent overlaps while maintaining the user's chosen growth direction.
-
-### B. Pinning & Manual Placement
-Nodes can be excluded from the auto-layout engine in two ways:
-- **Explicit Pinning**: Users can toggle a "Pinned" state via UI or shortcut. Pinned nodes stay at their exact coordinates, while the engine still organizes their unpinned children relative to that fixed position.
-- **Manual Break-out**: If a node is dragged significantly outside the calculated auto-layout radius (> 1.5x radius), the engine treats it as deliberately placed and stops moving it automatically.
-
-### C. Import & Export (Markdown Sync)
-- **Copy as Text**: Converts the visual map into an H1 header (Root) followed by an indented Markdown bullet list.
-- **Paste from Text**: Parses an indented Markdown list. It supports appending to an existing node or generating a brand-new map from a clipboard list.
-
-### D. Sidepanel & Docking
+### Sidepanel & Docking
 - **Persistent UI**: The script utilizes `ea.createSidepanelTab` to maintain state and controls alongside the drawing canvas.
 - **Floating Mode**: The UI can be "undocked" (Shift+Enter) into a `FloatingModal` for a focus-mode experience or to move controls closer to the active drawing area on large screens.
-
-### E. Inline Link Suggester
-- **Contextual \[\[link\]\] autocomplete**: Input fields now use `ea.attachInlineLinkSuggester` so you can drop Obsidian links with in-line suggestions (supports aliases and unresolved links) without leaving the flow.
-
-### F. Custom Palette & Contrast Colors
-- **Custom palettes**: Define your own branch colors (ordered or random draw) with the palette manager; stored per-user in script settings.
-- **Contrast-aware defaults**: When no custom palette is set, colors are generated to maximize contrast against the canvas and existing siblings.
-
-## 4. UI and User Experience
-
-### Zoom Management
-The script includes "Preferred Zoom Level" settings (Low/Medium/High) to ensure the canvas automatically frames the active node comfortably during rapid entry, particularly useful on mobile devices vs desktop screens.
-
-### Default Keyboard Shortcuts
-| Shortcut | Action |
-| :--- | :--- |
-| **ENTER** | Add a sibling on the current parent; ENTER on empty input jumps to the most recent child/siblings. |
-| **CTRL/CMD + ALT + ENTER** | Add child and follow (selection stays on the new node). |
-| **CTRL/CMD + ENTER** | Add child, follow, and center the new node. |
-| **CTRL/CMD + SHIFT + ENTER** | Add child, follow, and zoom to fit. |
-| **SHIFT + ENTER** | Dock/Undock the input field. |
-| **F2** | Edit the selected node. |
-| **ALT + P** | Pin/Unpin the selected node. |
-| **ALT + B** | Box/Unbox the selected node. |
-| **ALT + C / X / V** | Copy, Cut, or Paste branches as Markdown. |
-| **ALT + Z** | Cycle zoom to the selected element. |
-| **ALT + F** | Focus (center) the selected node. |
-| **ALT + ARROWS** | Navigate the mind map (parent/child/sibling). |
-| **ALT + SHIFT + ARROWS** | Navigate and zoom to selection. |
-| **ALT + CTRL/CMD + ARROWS** | Navigate and focus selection. |
-| **ESC** | Dock and hide the floating input. |
-
-## 5. Settings and Persistence
-
-### Global Settings
-Persisted across sessions via `ea.setScriptSettings`:
-- **Max Text Width**: Point at which text wraps (Default: 450px).
-- **Font Scales**: Choice of Normal, Fibonacci, or Scene-based sizes.
-- **Multicolor Mode**: Toggle automatic branch coloring; optionally configure a custom palette (ordered or random).
-- **Arrow Stroke Style**: Use scene stroke style or force solid branches.
-- **Center Text**: Toggle centered text vs directional alignment.
-- **Preferred Zoom Level**: Controls auto-zoom intensity (Low/Medium/High).
-- **Recursive Grouping**: When enabled, groups sub-trees from the leaves upward.
-- **Is Undocked**: Remembers if the user prefers the UI floating or docked.
 
 ### Map-Specific Persistence (customData)
 The script uses `ea.addAppendUpdateCustomData` to store state on elements:
@@ -19117,8 +19677,12 @@ The script uses `ea.addAppendUpdateCustomData` to store state on elements:
 - `isPinned`: Stored on individual nodes (boolean) to bypass the layout engine.
 - `isBranch`: Stored on arrows (boolean) to distinguish Mind Map connectors from standard annotations.
 - `mindmapOrder`: Stored on nodes (number) to maintain manual sort order of siblings.
-
-## 6. Special Logic Solutions
+- `mindmapNew`: Stored on nodes (boolean) to tag freshly added items so new siblings append after existing order; cleared after layout.
+- `isFolded`: Stored on nodes (boolean) to collapse a branch and hide its descendants.
+- `foldIndicatorId`: Stored on nodes to track the ephemeral "…" indicator element that signals a folded branch.
+- `foldState`: Stored on nodes and branch arrows to cache their opacity/lock state while hidden so it can be restored when unfolded.
+- `originalY`: Stored on pinned nodes during global folds to remember their pre-fold Y coordinate for restoration when folds are removed.
+- `boundaryId`: Stored on nodes to track the ID of the boundary element (a closed polygon line) that visually encompasses the node's subtree.
 
 ### The "mindmapNew" Tag & Order Stability
 When a Level 1 node is created, it is temporarily tagged with `mindmapNew: true`. The layout engine uses this to separate "Existing" nodes from "New" nodes. Existing nodes are sorted by their `mindmapOrder` (or visual angle/Y-position if order is missing), while new nodes are appended to the end. This prevents new additions from scrambling the visual order of existing branches.
@@ -19138,24 +19702,6 @@ When enabled, the script groups elements from the "leaves" upward. A leaf node i
 ```js
 */
 
-if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.0")) {
-  new Notice("Please update the Excalidraw Plugin to version 2.19.0 or higher.");
-  return;
-}
-
-// --- Initialization Logic ---
-// Check for existing tab
-const existingTab = ea.checkForActiveSidepanelTabForScript();
-if (existingTab) {
-  const hostEA = existingTab.getHostEA();
-  if (hostEA && hostEA !== ea) {
-    hostEA.activateMindmap = true;
-    hostEA.setView(ea.targetView);
-    existingTab.open();
-    return;
-  }
-}
-
 // ---------------------------------------------------------------------------
 // 1. Settings & Persistence Initialization
 // ---------------------------------------------------------------------------
@@ -19173,14 +19719,344 @@ const K_CENTERTEXT = "Center text in nodes?";
 const K_ZOOM = "Preferred Zoom Level";
 const K_HOTKEYS = "Hotkeys";
 const K_PALETTE = "Custom Palette";
+const K_LAYOUT = "Layout Config";
 
-const FONT_SCALE_TYPES = ["Use scene fontsize", "Fibonacci Scale", "Normal Scale"];
-const GROWTH_TYPES = ["Radial", "Right-facing", "Left-facing"];
-const ZOOM_TYPES = ["Low","Medium","High"];
+// ---------------------------------------------------------------------------
+// Core Value Sets
+// ---------------------------------------------------------------------------
+const VALUE_SETS = Object.freeze({
+  SCOPE: Object.freeze({
+    input: 3,
+    excalidraw: 2,
+    global: 1,
+    none: 0,
+  }),
+  FONT_SCALE: Object.freeze(["Use scene fontsize", "Fibonacci Scale", "Normal Scale"]),
+  GROWTH: Object.freeze(["Radial", "Right-facing", "Left-facing"]),
+  ZOOM: Object.freeze(["Low", "Medium", "High"]),
+});
+
+const FONT_SCALE_TYPES = VALUE_SETS.FONT_SCALE;
+const GROWTH_TYPES = VALUE_SETS.GROWTH;
+const ZOOM_TYPES = VALUE_SETS.ZOOM;
+const SCOPE = VALUE_SETS.SCOPE;
+
+const ZOOM_LEVELS = Object.freeze({
+  Low: { desktop: 0.10, mobile: 0.20 },
+  Medium: { desktop: 0.25, mobile: 0.35 },
+  High: { desktop: 0.50, mobile: 0.60 },
+});
+
+const LOCALE = (localStorage.getItem("language") || "en").toLowerCase();
+
+const STRINGS = {
+  en: {
+    // Notices
+    NOTICE_UPDATE_PLUGIN: "Please update the Excalidraw Plugin to version 2.19.0 or higher.",
+    NOTICE_SELECT_NODE_TO_COPY: "Select a node to copy.",
+    NOTICE_MAP_CUT: "Map cut to clipboard.",
+    NOTICE_BRANCH_CUT: "Branch cut to clipboard.",
+    NOTICE_MAP_COPIED: "Map copied as markdown.",
+    NOTICE_BRANCH_COPIED: "Branch copied as bullet list.",
+    NOTICE_CLIPBOARD_EMPTY: "Clipboard is empty.",
+    NOTICE_PASTE_ABORTED: "Paste aborted. Clipboard does not start with a Markdown list or header.",
+    NOTICE_NO_LIST: "No valid Markdown list found on clipboard.",
+    NOTICE_PASTE_COMPLETE: "Paste complete.",
+    NOTICE_ACTION_REQUIRES_ARROWS: "This action requires Arrow Keys. Only modifiers can be changed.",
+    NOTICE_CONFLICT_WITH_ACTION: "Conflict with \"{action}\"",
+    NOTICE_OBSIDIAN_HOTKEY_CONFLICT: "⚠️ Obsidian Hotkey Conflict!\n\nThis key overrides:\n\"{command}\"",
+    NOTICE_GLOBAL_HOTKEY_CONFLICT: "⚠️ Global Hotkey Conflict!\n\nThis key overrides:\n\"{command}\"",
+
+    TOOLTIP_FOLD_BRANCH: "Fold/Unfold selected branch",
+    TOOLTIP_FOLD_L1_BRANCH: "Fold/Unfold children (Level 1)",
+    TOOLTIP_UNFOLD_BRANCH_ALL: "Unfold branch recursively",
+
+    // Action labels (display only)
+    ACTION_LABEL_ADD: "Add",
+    ACTION_LABEL_ADD_FOLLOW: "Add + follow",
+    ACTION_LABEL_ADD_FOLLOW_FOCUS: "Add + follow + focus",
+    ACTION_LABEL_ADD_FOLLOW_ZOOM: "Add + follow + zoom",
+    ACTION_LABEL_EDIT: "Edit node",
+    ACTION_LABEL_PIN: "Pin/Unpin",
+    ACTION_LABEL_BOX: "Box/Unbox",
+    ACTION_LABEL_TOGGLE_GROUP: "Group/Ungroup Single Branch",
+    ACTION_LABEL_COPY: "Copy",
+    ACTION_LABEL_CUT: "Cut",
+    ACTION_LABEL_PASTE: "Paste",
+    ACTION_LABEL_ZOOM: "Cycle Zoom",
+    ACTION_LABEL_FOCUS: "Focus (center) node",
+    ACTION_LABEL_NAVIGATE: "Navigate",
+    ACTION_LABEL_NAVIGATE_ZOOM: "Navigate & zoom",
+    ACTION_LABEL_NAVIGATE_FOCUS: "Navigate & focus",
+    ACTION_LABEL_FOLD: "Fold/Unfold Branch",
+    ACTION_LABEL_FOLD_L1: "Fold/Unfold to Level 1",
+    ACTION_LABEL_UNFOLD_ALL: "Unfold Branch Recursively",
+    ACTION_LABEL_DOCK_UNDOCK: "Dock/Undock",
+    ACTION_LABEL_HIDE: "Dock & hide",
+
+    // Tooltips (shared)
+    PIN_TOOLTIP_PINNED: "This element is pinned. Click to unpin the location of the selected element",
+    PIN_TOOLTIP_UNPINNED: "This element is not pinned. Click to pin the location of the selected element",
+    TOGGLE_GROUP_TOOLTIP_GROUP: "Group this branch. Only available if \"Group Branches\" is disabled",
+    TOGGLE_GROUP_TOOLTIP_UNGROUP: "Ungroup this branch. Only available if \"Group Branches\" is disabled",
+    TOOLTIP_EDIT_NODE: "Edit text of selected node",
+    TOOLTIP_PIN_INIT: "Pin/Unpin location of a node. When pinned nodes won't get auto-arranged",
+    TOOLTIP_REFRESH: "Auto rearrange map",
+    TOOLTIP_DOCK: "Dock to Sidepanel",
+    TOOLTIP_UNDOCK: "Undock to Floating Modal",
+    TOOLTIP_ZOOM_CYCLE: "Cycle element zoom",
+    TOOLTIP_TOGGLE_GROUP_BTN: "Toggle grouping/ungrouping of a branch. Only available if \"Group Branches\" is disabled.",
+    TOOLTIP_TOGGLE_BOX: "Toggle node box",
+    TOOLTIP_TOGGLE_BOUNDARY: "Toggle subtree boundary", 
+    TOOLTIP_CONFIGURE_PALETTE: "Configure custom color palette for branches",
+    TOOLTIP_MOVE_UP: "Move Up",
+    TOOLTIP_MOVE_DOWN: "Move Down",
+    TOOLTIP_EDIT_COLOR: "Edit",
+    TOOLTIP_DELETE_COLOR: "Delete",
+    TOOLTIP_OPEN_PALETTE_PICKER: "Open Palette Picker",
+
+    // Buttons and labels
+    DOCK_TITLE: "Mind Map Builder",
+    HELP_SUMMARY: "Instructions & Shortcuts",
+    INPUT_PLACEHOLDER: "Concept... type [[ to insert link",
+    BUTTON_ADD_SIBLING: "Add Sibling",
+    BUTTON_ADD_FOLLOW: "Add+Follow",
+    BUTTON_COPY: "Copy",
+    BUTTON_CUT: "Cut",
+    BUTTON_PASTE: "Paste",
+    TITLE_ADD_SIBLING: "Add sibling with Enter",
+    TITLE_ADD_FOLLOW: "Add and follow",
+    TITLE_COPY: "Copy branch as text",
+    TITLE_CUT: "Cut branch as text",
+    TITLE_PASTE: "Paste list from clipboard",
+    LABEL_ZOOM_LEVEL: "Zoom Level",
+    LABEL_GROWTH_STRATEGY: "Growth Strategy",
+    LABEL_AUTO_LAYOUT: "Auto-Layout",
+    LABEL_GROUP_BRANCHES: "Group Branches",
+    LABEL_BOX_CHILD_NODES: "Box Child Nodes",
+    LABEL_ROUNDED_CORNERS: "Rounded Corners",
+    LABEL_USE_SCENE_STROKE: "Use scene stroke style",
+    DESC_USE_SCENE_STROKE: "Use the latest stroke style (solid, dashed, dotted) from the scene, or always use solid style for branches.",
+    LABEL_MULTICOLOR_BRANCHES: "Multicolor Branches",
+    LABEL_MAX_WRAP_WIDTH: "Max Wrap Width",
+    LABEL_CENTER_TEXT: "Center text",
+    DESC_CENTER_TEXT: "Toggle off: align nodes to right/left depending; Toggle on: center the text.",
+    LABEL_FONT_SIZES: "Font Sizes",
+    HOTKEY_SECTION_TITLE: "Hotkey Configuration",
+    HOTKEY_HINT: "These hotkeys may override some Obsidian defaults. They’re Local (⌨️) by default, active only when the MindMap input field is focused. Use the 🌐/🎨/⌨️ toggle to change hotkey scope: 🌐 Overrides Obsidian hotkeys whenever an Excalidraw tab is visible, 🎨 Overrides Obsidian hotkeys whenever Excalidraw is focused, ⌨️ Local (input focused).",
+    RECORD_HOTKEY_PROMPT: "Press hotkey...",
+    ARIA_SCOPE_INPUT: "Local: Active only when MindMap Input is focused",
+    ARIA_SCOPE_EXCALIDRAW: "Excalidraw: Active whenever MindMap Input or Excalidraw is focused",
+    ARIA_SCOPE_GLOBAL: "Global: Active everywhere in Obsidian, whenever the Excalidraw view is visible",
+    ARIA_RESTORE_DEFAULT: "Restore default",
+    ARIA_CUSTOMIZE_HOTKEY: "Customize this hotkey",
+    ARIA_OVERRIDE_COMMAND: "Overrides Obsidian command:\n{command}",
+
+    // Palette manager
+    MODAL_PALETTE_TITLE: "Mindmap Branch Palette",
+    LABEL_ENABLE_CUSTOM_PALETTE: "Enable Custom Palette",
+    DESC_ENABLE_CUSTOM_PALETTE: "Use these colors instead of auto-generated ones.",
+    LABEL_RANDOMIZE_ORDER: "Randomize Order",
+    DESC_RANDOMIZE_ORDER: "Pick colors randomly instead of sequentially.",
+    HEADING_ADD_NEW_COLOR: "Add New Color",
+    HEADING_EDIT_COLOR: "Edit Color",
+    LABEL_SELECT_COLOR: "Select Color",
+    BUTTON_CANCEL_EDIT: "Cancel Edit",
+    BUTTON_ADD_COLOR: "Add Color",
+    BUTTON_UPDATE_COLOR: "Update Color",
+
+    // Layout configuration
+    MODAL_LAYOUT_TITLE: "Layout Configuration",
+    GAP_X:  "Gap X",
+    DESC_LAYOUT_GAP_X: "Horizontal distance between a parent and its children. Low: compact width. High: wide diagram.",
+    GAP_Y:  "Gap Y",
+    DESC_LAYOUT_GAP_Y: "Vertical distance between sibling branches. Low: compact height. High: airy separation.",
+    GAP_MULTIPLIER:  "Gap Multiplier",
+    DESC_LAYOUT_GAP_MULTIPLIER: "Vertical spacing for 'leaf' nodes (no children), relative to font size. Low: list-like stacking. High: standard tree spacing.",
+    DIRECTIONAL_ARC_SPAN_RADIANS:  "Directional Arc-span Radians",
+    DESC_LAYOUT_ARC_SPAN: "Curvature of the child list. Low (0.5): Flatter, list-like. High (2.0): Curved, organic, but risk of overlap.",
+    ROOT_RADIUS_FACTOR:  "Root Radius Factor",
+    DESC_LAYOUT_ROOT_RADIUS: "Multiplier for the Root node's bounding box to determine initial radius.",
+    MIN_RADIUS:  "Minimum Radius",
+    DESC_LAYOUT_MIN_RADIUS: "Minimum distance of Level 1 nodes from the Root center.",
+    RADIUS_PADDING_PER_NODE:  "Radius Padding per Node",
+    DESC_LAYOUT_RADIUS_PADDING: "Extra radius added per child node to accommodate dense maps.",
+    GAP_MULTIPLIER_RADIAL:  "Radial-layout Gap Multiplier",
+    DESC_LAYOUT_GAP_RADIAL: "Angular spacing multiplier for Radial mode.",
+    GAP_MULTIPLIER_DIRECTIONAL:  "Directional-layout Gap Multiplier",
+    DESC_LAYOUT_GAP_DIRECTIONAL: "Angular spacing multiplier for Left/Right modes.",
+    INDICATOR_OFFSET:  "Fold Indicator Offset",
+    DESC_LAYOUT_INDICATOR_OFFSET: "Distance of the '...' fold indicator from the node.",
+    INDICATOR_OPACITY:  "Fold Indicator Opacity",
+    DESC_LAYOUT_INDICATOR_OPACITY: "Opacity of the '...' fold indicator (0-100).",
+    CONTAINER_PADDING:  "Container Padding",
+    DESC_LAYOUT_CONTAINER_PADDING: "Padding inside the box when 'Box Child Nodes' or 'Box/Unbox' is used.",
+    MANUAL_GAP_MULTIPLIER:  "Manual-layout Gap Multiplier",
+    DESC_LAYOUT_MANUAL_GAP: "Spacing multiplier when adding nodes while Auto-Layout is disabled.",
+    MANUAL_JITTER_RANGE: "Manual-layout Jitter Range",
+    DESC_LAYOUT_MANUAL_JITTER: "Random position offset when adding nodes while Auto-Layout is disabled.",
+
+    // Misc
+    INPUT_TITLE_PASTE_ROOT: "Mindmap Builder Paste",
+    INSTRUCTIONS: "- **ENTER**: Add a sibling node and stay on the current parent for rapid entry. "+
+      "If you press enter when the input field is empty the focus will move to the child node that was most recently added. " +
+      "Pressing enter subsequent times will iterate through the new child's siblings\n" +
+      "- **Hotkeys**: See configuration at the bottom of the sidepanel\n" +
+      "- **Global vs Local Hotkeys**: Use the 🌐/⌨️ toggle in configuration.\n" +
+      "  - 🌐 **Global**: Works whenever Excalidraw is visible.\n" +
+      "  - 🎨 **Excalidraw**: Works whenever Excalidraw is active.\n" +
+      "  - ⌨️ **Local**: Works only when the MindMap input field is focused.\n" +
+      "- **Dock/Undock**: You can dock/undock the input field using the dock/undock button or the configured hotkey\n" +
+      "- **Folding**: Fold/Unfold buttons only appear when the input is docked; when undocked, use the folding hotkeys.\n" +
+      "- **ESC**: Docks the floating input field without activating the side panel\n" +
+      "- **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.\n" +
+      "- **Grouping**:\n" +
+      "  - Enabling \"Group Branches\" recursively groups sub-trees from leaves up to the first level.\n" +
+      "- **Copy/Paste**: Export/Import indented Markdown lists.\n" +
+      "\n" +
+      "😍 If you find this script helpful, please [buy me a coffee ☕](https://ko-fi.com/zsolt).",
+  },
+};
+
+const t = (key, params = {}) => {
+  const str = STRINGS[LOCALE]?.[key] ?? STRINGS.en[key] ?? key;
+  return Object.keys(params).reduce((acc, pKey) => acc.replace(new RegExp(`{${pKey}}`, "g"), params[pKey]), str);
+};
+
+if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.0")) {
+  new Notice(t("NOTICE_UPDATE_PLUGIN"));
+  return;
+}
+
+// --- Initialization Logic ---
+// Check for existing tab
+const existingTab = ea.checkForActiveSidepanelTabForScript();
+if (existingTab) {
+  const hostEA = existingTab.getHostEA();
+  if (hostEA && hostEA !== ea) {
+    hostEA.activateMindmap = true;
+    hostEA.setView(ea.targetView);
+    existingTab.open();
+    return;
+  }
+}
 
 const api = () => ea.getExcalidrawAPI();
-const appState = () => ea.getExcalidrawAPI().getAppState();
+const getAppState = () => ea.getExcalidrawAPI().getAppState();
 const getVal = (key, def) => ea.getScriptSettingValue(key, typeof def === "object" ? def: { value: def }).value;
+
+// ---------------------------------------------------------------------------
+// Layout & Geometry Settings
+// ---------------------------------------------------------------------------
+const LAYOUT_METADATA = {
+  GAP_X: { 
+    def: 120, min: 50, max: 400, step: 10, 
+    desc: t("DESC_LAYOUT_GAP_X"),
+    name: t("GAP_X"),
+  },
+  GAP_Y: { 
+    def: 25, min: 10, max: 150, step: 5, 
+    desc: t("DESC_LAYOUT_GAP_Y"),
+    name: t("GAP_Y"),
+  },
+  GAP_MULTIPLIER: { 
+    def: 0.6, min: 0.1, max: 3.0, step: 0.1, 
+    desc: t("DESC_LAYOUT_GAP_MULTIPLIER"),
+    name: t("GAP_MULTIPLIER"),
+  },
+  DIRECTIONAL_ARC_SPAN_RADIANS: { 
+    def: 1.0, min: 0.1, max: 3.14, step: 0.1, 
+    desc: t("DESC_LAYOUT_ARC_SPAN"),
+    name: t("DIRECTIONAL_ARC_SPAN_RADIANS"),
+  },
+  ROOT_RADIUS_FACTOR: { 
+    def: 0.8, min: 0.5, max: 2.0, step: 0.1, 
+    desc: t("DESC_LAYOUT_ROOT_RADIUS"),
+    name: t("ROOT_RADIUS_FACTOR"),
+  },
+  MIN_RADIUS: { 
+    def: 200, min: 100, max: 500, step: 10, 
+    desc: t("DESC_LAYOUT_MIN_RADIUS"),
+    name: t("MIN_RADIUS"),
+  },
+  RADIUS_PADDING_PER_NODE: { 
+    def: 7, min: 0, max: 20, step: 1, 
+    desc: t("DESC_LAYOUT_RADIUS_PADDING"),
+    name: t("RADIUS_PADDING_PER_NODE"),
+  },
+  GAP_MULTIPLIER_RADIAL: { 
+    def: 3.1, min: 1.0, max: 5.0, step: 0.1, 
+    desc: t("DESC_LAYOUT_GAP_RADIAL"),
+    name: t("GAP_MULTIPLIER_RADIAL"),
+  },
+  GAP_MULTIPLIER_DIRECTIONAL: { 
+    def: 1.5, min: 1.0, max: 3.0, step: 0.1, 
+    desc: t("DESC_LAYOUT_GAP_DIRECTIONAL"),
+    name: t("GAP_MULTIPLIER_DIRECTIONAL"),
+  },
+  INDICATOR_OFFSET: { 
+    def: 10, min: 5, max: 50, step: 5, 
+    desc: t("DESC_LAYOUT_INDICATOR_OFFSET"),
+    name: t("INDICATOR_OFFSET"),
+  },
+  INDICATOR_OPACITY: { 
+    def: 40, min: 10, max: 100, step: 10, 
+    desc: t("DESC_LAYOUT_INDICATOR_OPACITY"),
+    name: t("INDICATOR_OPACITY"),
+  },
+  CONTAINER_PADDING: { 
+    def: 10, min: 0, max: 50, step: 2, 
+    desc: t("DESC_LAYOUT_CONTAINER_PADDING"),
+    name: t("CONTAINER_PADDING"),
+  },
+  MANUAL_GAP_MULTIPLIER: { 
+    def: 1.3, min: 1.0, max: 2.0, step: 0.1, 
+    desc: t("DESC_LAYOUT_MANUAL_GAP"),
+    name: t("MANUAL_GAP_MULTIPLIER"),
+  },
+  MANUAL_JITTER_RANGE: { 
+    def: 300, min: 0, max: 400, step: 10, 
+    desc: t("DESC_LAYOUT_MANUAL_JITTER"),
+    name: t("MANUAL_JITTER_RANGE"),
+  }
+};
+
+let layoutSettings = getVal(K_LAYOUT, {value: {}, hidden: true});
+
+Object.keys(LAYOUT_METADATA).forEach(k => {
+  if (layoutSettings[k] === undefined) layoutSettings[k] = LAYOUT_METADATA[k].def;
+});
+
+// ---------------------------------------------------------------------------
+// Color & Palette Constants
+// ---------------------------------------------------------------------------
+const COLOR_CONTRAST_MIN = 2.5;
+const COLOR_DISTINCT_THRESHOLD = 40;
+const HUE_STEP_BASE = 15;
+const HUE_STEP_JITTER = 4;
+const SAT_BASE = 75;
+const SAT_JITTER = 10;
+const LIGHT_BASE_DARK = 65;
+const LIGHT_JITTER_DARK = 10;
+const LIGHT_BASE_LIGHT = 36;
+const LIGHT_JITTER_LIGHT = 8;
+
+// ---------------------------------------------------------------------------
+// Media & Embeds
+// ---------------------------------------------------------------------------
+const PDF_RECT_LINK_REGEX = /^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/;
+
+// ---------------------------------------------------------------------------
+// UI & Interaction Constants
+// ---------------------------------------------------------------------------
+const WRAP_WIDTH_MIN = 100;
+const WRAP_WIDTH_MAX = 600;
+const WRAP_WIDTH_STEP = 10;
+const FLOAT_MODAL_OPACITY = 0.8;
+const FLOAT_MODAL_OFFSET = 5;
+const FLOAT_MODAL_MAX_HEIGHT = "calc(2 * var(--size-4-4) + 12px + var(--input-height))";
+const NOTICE_DURATION_CONFLICT = 6000;
+const NOTICE_DURATION_GLOBAL_CONFLICT = 10000;
 
 const saveSettings = async () => {
   if (dirty) await ea.saveScriptSettings();
@@ -19206,14 +20082,14 @@ if(settingsTemp && settingsTemp.hasOwnProperty("Is Minimized")) {
 
 let maxWidth = parseInt(getVal(K_WIDTH, 450));
 let fontsizeScale = getVal(K_FONTSIZE, {value: "Normal Scale", valueset: FONT_SCALE_TYPES});
-let boxChildren = getVal(K_BOX, false) === true;
-let roundedCorners = getVal(K_ROUND, true) === true;
-let multicolor = getVal(K_MULTICOLOR, true) === true;
-let groupBranches = getVal(K_GROUP, true) === true;
-let currentModalGrowthMode = getVal(K_GROWTH, {value: "Radial", valueset: GROWTH_TYPES});
-let isUndocked = getVal(K_UNDOCKED, false) === true;
-let isSolidArrow = getVal(K_ARROWSTROKE, true) === true;
-let centerText = getVal(K_CENTERTEXT, true) === true;
+let boxChildren = getVal(K_BOX, false);
+let roundedCorners = getVal(K_ROUND, false);
+let multicolor = getVal(K_MULTICOLOR, true);
+let groupBranches = getVal(K_GROUP, false);
+let currentModalGrowthMode = getVal(K_GROWTH, {value: "Right-facing", valueset: GROWTH_TYPES});
+let isUndocked = getVal(K_UNDOCKED, false);
+let isSolidArrow = getVal(K_ARROWSTROKE, true);
+let centerText = getVal(K_CENTERTEXT, true);
 let autoLayoutDisabled = false;
 let zoomLevel = getVal(K_ZOOM, {value: "Medium", valueset: ZOOM_TYPES});
 let customPalette = getVal(K_PALETTE, {value : {enabled: false, random: false, colors: []}, hidden: true}); 
@@ -19226,26 +20102,20 @@ if (!ea.getScriptSettingValue(K_FONTSIZE, {value: "Normal Scale", valueset: FONT
   dirty = true;
 }
 
-if (!ea.getScriptSettingValue(K_GROWTH, {value: "Radial", valueset: GROWTH_TYPES}).hasOwnProperty("valueset")) {
+if (!ea.getScriptSettingValue(K_GROWTH, {value: "Right-facing", valueset: GROWTH_TYPES}).hasOwnProperty("valueset")) {
   ea.setScriptSettingValue (K_GROWTH, {value: currentModalGrowthMode, valueset: GROWTH_TYPES});
   dirty = true;
 }
 
 const getZoom = (level) => {
-  switch (level ?? zoomLevel) {
-    case "Low":
-      return ea.DEVICE.isMobile ? 0.85 : 0.92;
-    case "High":
-      return ea.DEVICE.isMobile ? 0.50 : 0.60;
-    default:
-      return ea.DEVICE.isMobile ? 0.75 : 0.85;
-  }
-}
+  const target = ZOOM_LEVELS[level ?? zoomLevel] || ZOOM_LEVELS.Medium;
+  return ea.DEVICE.isMobile ? target.mobile : target.desktop;
+};
 
 const fontScale = (type) => {
   switch (type) {
     case "Use scene fontsize":
-      return Array(4).fill(appState().currentItemFontSize);
+      return Array(4).fill(getAppState().currentItemFontSize);
     case "Fibonacci Scale":
       return [68, 42, 26, 16];
     default: // "Normal Scale"
@@ -19287,6 +20157,8 @@ const parseEmbeddableInput = (input) => {
   return match ? match[1] : null;
 };
 
+// ------------------------------------------------
+// ---------- HOTKEY SUPPORT FUNCTIONS ------------
 const ACTION_ADD = "Add";
 const ACTION_ADD_FOLLOW = "Add + follow";
 const ACTION_ADD_FOLLOW_FOCUS = "Add + follow + focus";
@@ -19305,9 +20177,41 @@ const ACTION_FOCUS = "Focus (center) node";
 const ACTION_NAVIGATE = "Navigate";
 const ACTION_NAVIGATE_ZOOM = "Navigate & zoom";
 const ACTION_NAVIGATE_FOCUS = "Navigate & focus";
+const ACTION_FOLD = "Fold/Unfold Branch";
+const ACTION_FOLD_L1 = "Fold/Unfold to Level 1";
+const ACTION_UNFOLD_ALL = "Unfold Branch Recursively";
+const ACTION_TOGGLE_BOUNDARY = "Toggle Boundary";
 
 const ACTION_DOCK_UNDOCK = "Dock/Undock";
 const ACTION_HIDE = "Dock & hide";
+const ACTION_REARRANGE = "Rearrange Map";
+
+const ACTION_LABEL_KEYS = {
+  [ACTION_ADD]: "ACTION_LABEL_ADD",
+  [ACTION_ADD_FOLLOW]: "ACTION_LABEL_ADD_FOLLOW",
+  [ACTION_ADD_FOLLOW_FOCUS]: "ACTION_LABEL_ADD_FOLLOW_FOCUS",
+  [ACTION_ADD_FOLLOW_ZOOM]: "ACTION_LABEL_ADD_FOLLOW_ZOOM",
+  [ACTION_EDIT]: "ACTION_LABEL_EDIT",
+  [ACTION_PIN]: "ACTION_LABEL_PIN",
+  [ACTION_BOX]: "ACTION_LABEL_BOX",
+  [ACTION_TOGGLE_GROUP]: "ACTION_LABEL_TOGGLE_GROUP",
+  [ACTION_COPY]: "ACTION_LABEL_COPY",
+  [ACTION_CUT]: "ACTION_LABEL_CUT",
+  [ACTION_PASTE]: "ACTION_LABEL_PASTE",
+  [ACTION_ZOOM]: "ACTION_LABEL_ZOOM",
+  [ACTION_FOCUS]: "ACTION_LABEL_FOCUS",
+  [ACTION_NAVIGATE]: "ACTION_LABEL_NAVIGATE",
+  [ACTION_NAVIGATE_ZOOM]: "ACTION_LABEL_NAVIGATE_ZOOM",
+  [ACTION_NAVIGATE_FOCUS]: "ACTION_LABEL_NAVIGATE_FOCUS",
+  [ACTION_FOLD]: "ACTION_LABEL_FOLD",
+  [ACTION_FOLD_L1]: "ACTION_LABEL_FOLD_L1",
+  [ACTION_UNFOLD_ALL]: "ACTION_LABEL_UNFOLD_ALL",
+  [ACTION_TOGGLE_BOUNDARY]: "TOOLTIP_TOGGLE_BOUNDARY", 
+  [ACTION_DOCK_UNDOCK]: "ACTION_LABEL_DOCK_UNDOCK",
+  [ACTION_HIDE]: "ACTION_LABEL_HIDE",
+};
+
+const getActionLabel = (action) => t(ACTION_LABEL_KEYS[action] ?? action);
 
 // Default configuration
 // scope may be "input" | "excalidraw" | "global"
@@ -19315,12 +20219,6 @@ const ACTION_HIDE = "Dock & hide";
 // - excalidraw: the hotkey works when either the inputEl has focus or the sidepanelView leaf or the Excalidraw leaf is active
 // - global: the hotkey works across obsidian, when ever the Excalidraw view in ea.targetView is visible, i.e. the hotkey works even if the user is active in a leaf like pdf viewer, markdown note, open next to Excalidraw.
 // - none: ea.targetView not set or Excalidraw leaf not visible
-const SCOPE = {
-  input: 3,
-  excalidraw: 2,
-  global: 1,
-  none: 0,
-}
 const DEFAULT_HOTKEYS = [
   { action: ACTION_ADD, key: "Enter", modifiers: [], immutable: true, scope: SCOPE.input, isInputOnly: true }, // Logic relies on standard Enter behavior in input
   { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers: ["Mod", "Alt"], scope: SCOPE.input, isInputOnly: true },
@@ -19329,6 +20227,7 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_EDIT, code: "F2", modifiers: [], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_TOGGLE_BOUNDARY, code: "KeyB", modifiers: ["Alt", "Mod"], scope: SCOPE.input, inputOnly: false },
   { action: ACTION_TOGGLE_GROUP, code: "KeyG", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false }, 
   { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
@@ -19340,6 +20239,9 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_NAVIGATE_ZOOM, key: "ArrowKeys", modifiers: ["Alt", "Shift"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_NAVIGATE_FOCUS, key: "ArrowKeys", modifiers: ["Alt", "Mod"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_FOLD, code: "Digit1", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_FOLD_L1, code: "Digit2", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_UNFOLD_ALL, code: "Digit3", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
 ];
 
 // Load hotkeys from settings or use default
@@ -19349,6 +20251,37 @@ let userHotkeys = getVal(K_HOTKEYS, {value: JSON.parse(JSON.stringify(DEFAULT_HO
 let isRecordingHotkey = false;
 let cancelHotkeyRecording = null;
 
+const getObsidianConflict = (h) => {
+  if (!h) return null;
+  
+  const normalize = (s) => s.toLowerCase().replace("key", "").replace("digit", "");
+  const sortMods = (m) => [...m].sort().join(",");
+  
+  const keysToCheck = h.isNavigation 
+    ? ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]
+    : [h.code ? h.code : h.key];
+
+  const targetMods = sortMods(h.modifiers);
+
+  const commands = app.commands.listCommands();
+  for (const cmd of commands) {
+    const hotkeys = app.hotkeyManager.getHotkeys(cmd.id) || app.hotkeyManager.getDefaultHotkeys(cmd.id);
+    if (!hotkeys) continue;
+
+    for (const hk of hotkeys) {
+      const hkKey = normalize(hk.key);
+      const hkMods = sortMods(hk.modifiers);
+      
+      for (const targetKeyRaw of keysToCheck) {
+        if (normalize(targetKeyRaw) === hkKey && targetMods === hkMods) {
+          return cmd.name;
+        }
+      }
+    }
+  }
+  return null;
+};
+
 /**
  * Sync userHotkeys to DEFAULT_HOTKEYS by action.
  * - Drops user actions not in DEFAULT
@@ -19357,7 +20290,7 @@ let cancelHotkeyRecording = null;
  *    - keeps user values for existing keys
  *    - adds missing keys from DEFAULT
  *    - removes keys not in DEFAULT
- */
+**/
 function updateUserHotkeys() {
   let dirty = false;
 
@@ -19426,8 +20359,8 @@ const getHotkeyDisplayString = (h) => {
   if (h.modifiers.includes("Alt")) parts.push(isMac ? "Opt" : "Alt");
   if (h.modifiers.includes("Shift")) parts.push("Shift");
   
-  if (h.code) parts.push(h.code.replace("Key", ""));
-  else if (h.key === "ArrowKeys") parts.push("Arrow Keys");
+  if (h.code) parts.push(h.code.replace("Key", "").replace("Digit", ""));
+  else if (h.key === "ArrowKeys") parts.push("Arrow");
   else if (h.key === " ") parts.push("Space");
   else parts.push(h.key);
   
@@ -19491,24 +20424,11 @@ const getHotkeyContext = () => {
   return SCOPE.none;
 }
 
-const INSTRUCTIONS = `
+const getInstructions = () => `
 <br>
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 
-- **ENTER**: Add a sibling node and stay on the current parent for rapid entry. If you press enter when the input field is empty the focus will move to the child node that was most recently added. Pressing enter subsequent times will iterate through the new child's siblings
-- **Hotkeys**: See configuration at the bottom of the sidepanel
-- **Global vs Local Hotkeys**: Use the 🌐/⌨️ toggle in configuration.
-  - 🌐 **Global**: Works whenever Excalidraw is visible.
-  - 🎨 **Excalidraw**: Works whenever Excalidraw is active.
-  - ⌨️ **Local**: Works only when the MindMap input field is focused.
-- **Dock/Undock**: You can dock/undock the input field using the dock/undock button or the configured hotkey
-- **ESC**: Docks the floating input field without activating the side panel
-- **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
-- **Grouping**:
-  - Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
-- **Copy/Paste**: Export/Import indented Markdown lists.
-
-😍 If you find this script helpful, please [buy me a coffee ☕](https://ko-fi.com/zsolt).
+${t("INSTRUCTIONS")}
 
 <a href="YouTube: qY66yoobaX4" target="_blank"><img src ="https://i.ytimg.com/vi/qY66yoobaX4/maxresdefault.jpg" style="max-width:560px; width:100%"></a>
 `;
@@ -19588,12 +20508,15 @@ const getHierarchy = (el, allElements) => {
     curr = el,
     l1Id = el.id,
     rootId = el.id;
+  const visited = new Set([el.id]);
+
   while (true) {
     let p = getParentNode(curr.id, allElements);
-    if (!p) {
+    if (!p || visited.has(p.id)) {
       rootId = curr.id;
       break;
     }
+    visited.add(p.id);
     l1Id = curr.id;
     curr = p;
     depth++;
@@ -19617,7 +20540,7 @@ const getDynamicColor = (existingColors) => {
     }
     return customPalette.colors[existingColors.length % customPalette.colors.length];
   }
-  const st = appState();
+  const st = getAppState();
   const bg = st.viewBackgroundColor === "transparent" ? "#ffffff" : st.viewBackgroundColor;
   const bgCM = ea.getCM(bg);
   const isDarkBg = bgCM.isDark();
@@ -19639,8 +20562,15 @@ const getDynamicColor = (existingColors) => {
     if (hex && hex !== "transparent") candidates.push({ hex, isPalette: true });
   });
 
-  for (let h = 0; h < 360; h +=15+randInt(4)) {
-    const c = ea.getCM({ h: h, s: 75 + randInt(10), l: isDarkBg ? 65 + randInt(10) : 36 + randInt(8), a: 1 });
+  for (let h = 0; h < 360; h += HUE_STEP_BASE + randInt(HUE_STEP_JITTER)) {
+    const c = ea.getCM({
+      h,
+      s: SAT_BASE + randInt(SAT_JITTER),
+      l: isDarkBg
+        ? LIGHT_BASE_DARK + randInt(LIGHT_JITTER_DARK)
+        : LIGHT_BASE_LIGHT + randInt(LIGHT_JITTER_LIGHT),
+      a: 1
+    });
     candidates.push({ hex: c.stringHEX(), isPalette: false });
   }
 
@@ -19679,13 +20609,13 @@ const getDynamicColor = (existingColors) => {
     }
 
     return { ...c, contrast, minDiff };
-  }).filter(c => c && c.contrast >= 2.5); // Filter out absolute invisible colors
+  }).filter(c => c && c.contrast >= COLOR_CONTRAST_MIN); // Filter out absolute invisible colors
 
   // Sort Logic
   scored.sort((a, b) => {
     // Threshold for "This color is effectively the same as one already used"
     // Distance of ~30 usually means same Hue family and similar shade
-    const threshold = 40; 
+    const threshold = COLOR_DISTINCT_THRESHOLD; 
     const aIsDistinct = a.minDiff > threshold;
     const bIsDistinct = b.minDiff > threshold;
 
@@ -19704,7 +20634,7 @@ const getDynamicColor = (existingColors) => {
 };
 
 const getReadableColor = (hex) => {
-  const bg = appState().viewBackgroundColor;
+  const bg = getAppState().viewBackgroundColor;
   const cm = ea.getCM(hex);
   return ea.getCM(bg).isDark()
     ? cm.lightnessTo(80).stringHEX()
@@ -19712,11 +20642,232 @@ const getReadableColor = (hex) => {
 };
 
 // ---------------------------------------------------------------------------
-// 3. Layout & Grouping Engine
+// Folding Logic
 // ---------------------------------------------------------------------------
 
-const GAP_X = 140;
-const GAP_Y = 30;
+const manageFoldIndicator = (node, show, allElements) => {
+  if (show) {
+    const children = getChildrenNodes(node.id, allElements);
+    if (children.length === 0) show = false;
+  }
+  const existingId = node.customData?.foldIndicatorId;
+  
+  if (show) {
+    if (existingId) {
+      const ind = allElements.find(el => el.id === existingId);
+      if (ind) {
+        ind.isDeleted = false;
+        ind.strokeColor = node.strokeColor;
+        ind.opacity = layoutSettings.INDICATOR_OPACITY;
+        ind.x = node.x + node.width + layoutSettings.INDICATOR_OFFSET;
+        ind.y = node.y + node.height/2 - ind.height/2;
+        return;
+      }
+    }
+    
+    // Create new indicator if none exists
+    const id = ea.addText(node.x + node.width + layoutSettings.INDICATOR_OFFSET, node.y, "...");
+    const ind = ea.getElement(id);
+    ind.fontSize = node.fontSize;
+    ind.strokeColor = node.strokeColor;
+    ind.opacity = layoutSettings.INDICATOR_OPACITY;
+    ind.textVerticalAlign = "middle";
+    ind.textAlign = "left";
+    ind.y = node.y + node.height/2 - ind.height/2;
+    
+    // Add to existing group if present
+    if (node.groupIds && node.groupIds.length > 0) {
+      ind.groupIds = [node.groupIds[0]];
+    } else {
+      // Or create a new group with the node
+      ea.addToGroup([node.id, id]);
+    }
+    
+    ea.addAppendUpdateCustomData(node.id, { foldIndicatorId: id });
+  } else {
+    // Hide/Delete indicator
+    if (existingId) {
+      const ind = allElements.find(el => el.id === existingId);
+      if (ind) ind.isDeleted = true;
+      ea.addAppendUpdateCustomData(node.id, { foldIndicatorId: undefined });
+    }
+  }
+};
+
+const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold) => {
+  const node = allElements.find(el => el.id === nodeId);
+  if (!node) return;
+
+  const isFolded = node.customData?.isFolded === true;
+  
+  // The root of the fold operation stays visible unless its parent was already hidden
+  const shouldHideThis = parentHidden && !isRootOfFold;
+
+  // 1. Update Node Visibility & Lock State
+  if (shouldHideThis) {
+    // Only save state if not already saved to avoid overwriting original state with hidden state
+    if (!node.customData?.foldState) {
+      // Safety: If for some reason opacity is already 0, assume 100 to avoid locking it invisible forever
+      const safeOpacity = node.opacity === 0 ? 100 : node.opacity;
+      ea.addAppendUpdateCustomData(nodeId, {
+        foldState: { opacity: safeOpacity, locked: node.locked }
+      });
+    }
+    node.opacity = 0;
+    node.locked = true;
+  } else {
+    // Restore original state
+    if (node.customData?.foldState) {
+      node.opacity = node.customData.foldState.opacity;
+      node.locked = node.customData.foldState.locked;
+      const d = {...node.customData};
+      delete d.foldState;
+      node.customData = d;
+    } else {
+      // Default fallback if no state was saved but we need to show
+      // Ensure we don't accidentally leave it at 0 if it was hidden
+      if (node.opacity === 0) node.opacity = 100;
+      node.locked = false;
+    }
+  }
+
+  // Handle Boundary Visibility
+  // Boundary is hidden if the node itself is hidden OR if the node is folded (hiding children)
+if (node.customData?.boundaryId) {
+    const boundEl = allElements.find(el => el.id === node.customData.boundaryId);
+    if (boundEl) {
+      if (shouldHideThis || isFolded) {
+        boundEl.opacity = 0;
+        boundEl.locked = true; 
+      } else {
+        boundEl.opacity = 30;
+        boundEl.locked = false; // Ensure it's unlocked when visible per request
+      }
+    }
+  }
+
+  // 2. Manage Indicator
+  // Show indicator if THIS node is visible, but it is folded (hiding its children)
+  const showIndicator = !shouldHideThis && isFolded;
+  manageFoldIndicator(node, showIndicator, allElements);
+
+  // 3. Process Children
+  // Children are hidden if THIS node is hidden OR if THIS node is marked folded
+  const childrenHidden = shouldHideThis || isFolded;
+  
+  const children = getChildrenNodes(nodeId, allElements);
+  
+  children.forEach(child => {
+    // Handle the connector arrow
+    const arrow = allElements.find(
+      a => a.type === "arrow" && 
+      a.customData?.isBranch && 
+      a.startBinding?.elementId === nodeId && 
+      a.endBinding?.elementId === child.id
+    );
+    
+    if (arrow) {
+      if (childrenHidden) {
+        if (!arrow.customData?.foldState) {
+          const safeOpacity = arrow.opacity === 0 ? 100 : arrow.opacity;
+          ea.addAppendUpdateCustomData(arrow.id, {
+            foldState: { opacity: safeOpacity, locked: arrow.locked }
+          });
+        }
+        arrow.opacity = 0;
+        arrow.locked = true;
+      } else {
+        if (arrow.customData?.foldState) {
+          arrow.opacity = arrow.customData.foldState.opacity;
+          arrow.locked = arrow.customData.foldState.locked;
+          const d = {...arrow.customData};
+          delete d.foldState;
+          arrow.customData = d;
+        } else {
+          if (arrow.opacity === 0) arrow.opacity = 100;
+          arrow.locked = false;
+        }
+      }
+    }
+    
+    // Recurse
+    updateBranchVisibility(child.id, childrenHidden, allElements, false);
+  });
+};
+
+const toggleFold = async (mode = "L0") => {
+  if (!ea.targetView) return;
+  const sel = ea.getViewSelectedElement();
+  if (!sel) return;
+
+  const allElements = ea.getViewElements();
+  ea.copyViewElementsToEAforEditing(allElements);
+  const wbElements = ea.getElements();
+
+  const targetNode = wbElements.find(el => el.id === sel.id);
+  if (!targetNode) return;
+
+  let isFoldAction = false; 
+  
+  if (mode === "L0") {
+    const isCurrentlyFolded = targetNode.customData?.isFolded === true;
+    isFoldAction = !isCurrentlyFolded;
+    ea.addAppendUpdateCustomData(targetNode.id, { isFolded: isFoldAction });
+  } else if (mode === "L1") {
+    ea.addAppendUpdateCustomData(targetNode.id, { isFolded: false });
+    const children = getChildrenNodes(targetNode.id, wbElements);
+    const anyChildFolded = children.some(child => child.customData?.isFolded === true);
+    isFoldAction = !anyChildFolded;
+    
+    children.forEach(child => {
+      ea.addAppendUpdateCustomData(child.id, { isFolded: isFoldAction });
+    });
+  } else if (mode === "ALL") {
+    const stack = [targetNode];
+    while (stack.length) {
+      const node = stack.pop();
+      ea.addAppendUpdateCustomData(node.id, { isFolded: false });
+      const children = getChildrenNodes(node.id, wbElements);
+      children.forEach(child => stack.push(child));
+    }
+  }
+
+  updateBranchVisibility(targetNode.id, false, wbElements, true);
+
+  await ea.addElementsToView(false, false, true, true);
+  ea.clear();
+  
+  if (!autoLayoutDisabled) {
+    const info = getHierarchy(sel, ea.getViewElements());
+    await triggerGlobalLayout(info.rootId);
+  }
+
+  const currentViewElements = ea.getViewElements();
+  
+  if (mode === "L1") {
+    if (isFoldAction) {
+      const children = getChildrenNodes(targetNode.id, currentViewElements);
+    }
+  } else if (mode === "L0") {
+    // Mode "L0" (Single node toggle)
+    const isPinned = targetNode.customData?.isPinned;
+    
+    if (isPinned) {
+      if (isFoldAction) {
+        const parent = getParentNode(targetNode.id, currentViewElements);
+      } else {
+        const children = getChildrenNodes(targetNode.id, currentViewElements);
+      }
+    } else {
+    }
+  }
+  ea.viewUpdateScene({appState: {selectedGroupIds: {}}});
+  focusSelected();
+};
+
+// ---------------------------------------------------------------------------
+// 3. Layout & Grouping Engine
+// ---------------------------------------------------------------------------
 
 let storedZoom = {elementID: undefined, level: undefined}
 const nextZoomLevel = (current) => {
@@ -19724,18 +20875,22 @@ const nextZoomLevel = (current) => {
   return idx === -1 ? ZOOM_TYPES[0] : ZOOM_TYPES[(idx + 1) % ZOOM_TYPES.length];
 };
 
-const zoomToFit = (cycleLevels) => {
+const zoomToFit = (mode) => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
   if (sel) {
-    if (cycleLevels && storedZoom.elementID === sel.id) {
-      const nextLevel = nextZoomLevel(storedZoom.level ?? zoomLevel);
-      storedZoom.level = nextLevel;
-      api().zoomToFit([sel],10,getZoom(nextLevel));
-    } else {
-      api().zoomToFit([sel],10,getZoom());
-      storedZoom = {elementID: sel.id, level: zoomLevel}
+    let nextLevel = zoomLevel;
+    if (typeof mode === "string") {
+      nextLevel = mode;
+    } else if (!!mode && storedZoom.elementID === sel.id) {
+      nextLevel = nextZoomLevel(storedZoom.level ?? zoomLevel);
     }
+    storedZoom = {elementID: sel.id, level: nextLevel}
+    api().scrollToContent([sel], {
+      fitToViewport: true,
+      viewportZoomFactor: getZoom(nextLevel),
+      animate: true
+    });
   }
   focusInputEl();
 }
@@ -19745,16 +20900,11 @@ const focusSelected = () => {
   const sel = ea.getViewSelectedElement();
   if (!sel) return;
 
-  const { width, height, zoom } = appState();
-  const cx = sel.x + sel.width / 2;
-  const cy = sel.y + sel.height / 2;
-
-  const scrollX = width / (2 * zoom.value) - cx;
-  const scrollY = height / (2 * zoom.value) - cy;
-
-  api().updateScene({
-    appState: { scrollX, scrollY },
+  api().scrollToContent(sel,{ 
+    fitToContent: false,
+    animate: true,
   });
+
   focusInputEl();
 };
 
@@ -19763,28 +20913,63 @@ const getMindmapOrder = (node) => {
   return typeof o === "number" && Number.isFinite(o) ? o : 0;
 };
 
-const sortChildrenStable = (children) => {
+const getNodeBox = (node, allElements) => {
+  if (node.groupIds && node.groupIds.length > 0) {
+    const groupElements = ea.getElementsInTheSameGroupWithElement(node, allElements);
+    if(groupElements.length > 1) {
+       const box = ExcalidrawLib.getCommonBoundingBox(groupElements);
+       return { ...box, elements: groupElements, isGroup: true };
+    }
+  }
+  return { minX: node.x, minY: node.y, width: node.width, height: node.height, elements: [node], isGroup: false };
+};
+
+const sortChildrenStable = (children, allElements) => {
   children.sort((a, b) => {
     const ao = getMindmapOrder(a),
       bo = getMindmapOrder(b);
     if (ao !== bo) return ao - bo;
-    const dy = a.y - b.y;
+    // Fallback sort by Y position (visual order)
+    const ya = allElements ? getNodeBox(a, allElements).minY : a.y;
+    const yb = allElements ? getNodeBox(b, allElements).minY : b.y;
+    const dy = ya - yb;
     if (dy !== 0) return dy;
     return String(a.id).localeCompare(String(b.id));
   });
 };
 
 const getSubtreeHeight = (nodeId, allElements) => {
+  const node = allElements.find((el) => el.id === nodeId);
+  if (node?.customData?.isFolded) {
+    return node.height;
+  }
+
   const children = getChildrenNodes(nodeId, allElements);
-  if (children.length === 0) return allElements.find((el) => el.id === nodeId).height;
-  const total = children.reduce((sum, child) => sum + getSubtreeHeight(child.id, allElements), 0);
-  return Math.max(allElements.find((el) => el.id === nodeId).height, total + (children.length - 1) * GAP_Y);
+  if (children.length === 0) return node.height;
+
+  let childrenHeight = 0;
+  children.forEach((child, index) => {
+    childrenHeight += getSubtreeHeight(child.id, allElements);
+    if (index < children.length - 1) {
+      const childNode = allElements.find((el) => el.id === child.id);
+      const isLeaf = getChildrenNodes(child.id, allElements).length === 0;
+      const gap = isLeaf ? Math.round(childNode.fontSize * layoutSettings.GAP_MULTIPLIER) : layoutSettings.GAP_Y;
+      childrenHeight += gap;
+    }
+  });
+
+  return Math.max(node.height, childrenHeight);
 };
 
 // Recursive grouping logic
 const applyRecursiveGrouping = (nodeId, allElements) => {
   const children = getChildrenNodes(nodeId, allElements);
   const nodeIdsInSubtree = [nodeId];
+
+  const node = allElements.find(el => el.id === nodeId);
+  if (node?.customData?.boundaryId) {
+    nodeIdsInSubtree.push(node.customData.boundaryId);
+  }
 
   children.forEach((child) => {
     const subtreeIds = applyRecursiveGrouping(child.id, allElements);
@@ -19811,7 +20996,114 @@ const applyRecursiveGrouping = (nodeId, allElements) => {
   return nodeIdsInSubtree;
 };
 
-const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
+// Monotone Chain Convex Hull Algorithm
+const getConvexHull = (points) => {
+  points.sort((a, b) => a[0] != b[0] ? a[0] - b[0] : a[1] - b[1]);
+
+  const n = points.length;
+  if (n <= 2) return points;
+  
+  const cross = (a, b, o) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+
+  const lower = [];
+  for (let i = 0; i < n; i++) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], points[i]) <= 0) {
+      lower.pop();
+    }
+    lower.push(points[i]);
+  }
+
+  const upper = [];
+  for (let i = n - 1; i >= 0; i--) {
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], points[i]) <= 0) {
+      upper.pop();
+    }
+    upper.push(points[i]);
+  }
+
+  upper.pop();
+  lower.pop();
+  return lower.concat(upper);
+};
+
+const updateNodeBoundary = (node, allElements) => {
+  const boundaryId = node.customData?.boundaryId;
+  
+  if (!boundaryId) {
+    return;
+  }
+
+  if (node.opacity === 0) return;
+
+  const ids = getBranchElementIds(node.id, allElements);
+  
+  const branchElements = allElements.filter(el => 
+    ids.includes(el.id) && 
+    el.id !== boundaryId && 
+    el.opacity > 0 && 
+    !el.isDeleted
+  );
+  
+  if (branchElements.length === 0) return;
+
+  const padding = 15;
+  let allPoints = [];
+
+  branchElements.forEach(el => {
+    const x1 = el.x - padding;
+    const y1 = el.y - padding;
+    const x2 = el.x + el.width + padding;
+    const y2 = el.y + el.height + padding;
+    
+    allPoints.push([x1, y1]);
+    allPoints.push([x2, y1]);
+    allPoints.push([x2, y2]);
+    allPoints.push([x1, y2]);
+  });
+
+  const hullPoints = getConvexHull(allPoints);
+  
+  if (hullPoints.length < 3) return;
+
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  hullPoints.forEach(p => {
+    if (p[0] < minX) minX = p[0];
+    if (p[1] < minY) minY = p[1];
+    if (p[0] > maxX) maxX = p[0];
+    if (p[1] > maxY) maxY = p[1];
+  });
+
+  const w = maxX - minX;
+  const h = maxY - minY;
+
+  let boundaryEl = ea.getElement(boundaryId);
+  
+  if (!boundaryEl) return;
+
+  boundaryEl.x = minX;
+  boundaryEl.y = minY;
+  boundaryEl.width = w;
+  boundaryEl.height = h;
+  
+  const normalizedPoints = hullPoints.map(p => [p[0] - minX, p[1] - minY]);
+  normalizedPoints.push([normalizedPoints[0][0], normalizedPoints[0][1]]); // Close loop
+  boundaryEl.points = normalizedPoints;
+  
+  boundaryEl.roundness = null; 
+  boundaryEl.polygon = true;
+  boundaryEl.locked = false; 
+  
+  if (node.groupIds.length > 0) {
+     // If node is grouped, boundary joins the group
+     if (!boundaryEl.groupIds || boundaryEl.groupIds.length === 0 || boundaryEl.groupIds[0] !== node.groupIds[0]) {
+         boundaryEl.groupIds = [node.groupIds[0]];
+     }
+  } else {
+     boundaryEl.groupIds = [];
+  }
+};
+
+const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlobalFolds) => {
   const node = allElements.find((el) => el.id === nodeId);
   const eaNode = ea.getElement(nodeId);
 
@@ -19820,7 +21112,34 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
   if (!isPinned) {
     eaNode.x = side === 1 ? targetX : targetX - node.width;
     eaNode.y = targetCenterY - node.height / 2;
+    
+    if (node.customData?.originalY !== undefined) {
+       ea.addAppendUpdateCustomData(nodeId, { originalY: undefined });
+    }
+  } else {
+    if (hasGlobalFolds) {
+      if (node.customData?.originalY === undefined) {
+        ea.addAppendUpdateCustomData(nodeId, { originalY: node.y });
+      }
+      
+      eaNode.y = targetCenterY - node.height / 2;      
+    } else {
+      if (node.customData?.originalY !== undefined) {
+        eaNode.y = node.customData.originalY;
+        ea.addAppendUpdateCustomData(nodeId, { originalY: undefined });
+      }
+    }
   }
+
+  if (node.customData?.foldIndicatorId) {
+    const ind = ea.getElement(node.customData.foldIndicatorId);
+    if(ind) {
+        ind.x = eaNode.x + eaNode.width + layoutSettings.INDICATOR_OFFSET;
+        ind.y = eaNode.y + eaNode.height/2 - ind.height/2;
+    }
+  }
+
+  if (node.customData?.isFolded) return;
 
   const currentX = eaNode.x;
   const currentYCenter = eaNode.y + node.height / 2;
@@ -19828,7 +21147,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
   let effectiveSide = side;
   const parent = getParentNode(nodeId, allElements);
 
-  if (isPinned && parent) {
+  if (parent) {
     const parentCenterX = parent.x + parent.width / 2;
     const nodeCenterX = currentX + node.width / 2;
     effectiveSide = nodeCenterX >= parentCenterX ? 1 : -1;
@@ -19855,7 +21174,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
   const subtreeHeight = getSubtreeHeight(nodeId, allElements);
 
   let currentY = currentYCenter - subtreeHeight / 2;
-  const dynamicGapX = Math.max(GAP_X, subtreeHeight / 3);
+  const dynamicGapX = layoutSettings.GAP_X;
 
   children.forEach((child) => {
     const childH = getSubtreeHeight(child.id, allElements);
@@ -19866,9 +21185,14 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
       currentY + childH / 2,
       effectiveSide,
       allElements,
+      hasGlobalFolds
     );
 
-    currentY += childH + GAP_Y;
+    const childNode = allElements.find((el) => el.id === child.id);
+    const isLeaf = getChildrenNodes(child.id, allElements).length === 0;
+    const gap = isLeaf ? Math.round(childNode.fontSize * layoutSettings.GAP_MULTIPLIER) : layoutSettings.GAP_Y;
+
+    currentY += childH + gap;
 
     const arrow = allElements.find(
       (a) =>
@@ -19893,6 +21217,10 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
       ];
     }
   });
+  
+  if (node.customData?.boundaryId) {
+     updateNodeBoundary(node, ea.getElements());
+  }
 };
 
 const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) => {
@@ -19901,44 +21229,42 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     const allElements = ea.getViewElements();
     const root = allElements.find((el) => el.id === rootId);
     
+    const hasGlobalFolds = allElements.some(el => el.customData?.isFolded === true);
     const l1Nodes = getChildrenNodes(rootId, allElements);
     if (l1Nodes.length === 0) return;
 
     ea.copyViewElementsToEAforEditing(allElements);
 
-    const branchGroups = new Map();
-    if (!groupBranches && !forceUngroup) {
-      l1Nodes.forEach(l1 => {
-        const bIds = getBranchElementIds(l1.id, allElements);
-        // MODIFIED: Only look for common groups among elements that already belong to one
-        const existingGroupedEls = allElements.filter(e => bIds.includes(e.id) && e.groupIds?.length > 0);
-        if (existingGroupedEls.length > 0) {
-          const gId = ea.getCommonGroupForElements(existingGroupedEls);
-          if (gId) branchGroups.set(l1.id, gId);
-        }
+    if (groupBranches || forceUngroup) {
+      const mindmapIds = getBranchElementIds(rootId, allElements);
+      mindmapIds.forEach((id) => {
+        const el = ea.getElement(id);
+        if (el) el.groupIds = [];
       });
     }
 
-    const mindmapIds = getBranchElementIds(rootId, allElements);
-    mindmapIds.forEach((id) => {
-      const el = ea.getElement(id);
-      if (el) el.groupIds = [];
-    });
-
     const mode = root.customData?.growthMode || currentModalGrowthMode;
-    const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
+    const rootBox = getNodeBox(root, allElements);
+    const rootCenter = { x: rootBox.minX + rootBox.width / 2, y: rootBox.minY + rootBox.height / 2 };
 
     const existingL1 = l1Nodes.filter((n) => !n.customData?.mindmapNew);
     const newL1 = l1Nodes.filter((n) => n.customData?.mindmapNew);
 
     if (mode === "Radial") {
       existingL1.sort(
-        (a, b) =>
-          getAngleFromCenter(rootCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
-          getAngleFromCenter(rootCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 }),
+        (a, b) => {
+          const boxA = getNodeBox(a, allElements);
+          const boxB = getNodeBox(b, allElements);
+          return getAngleFromCenter(rootCenter, { x: boxA.minX + boxA.width / 2, y: boxA.minY + boxA.height / 2 }) -
+          getAngleFromCenter(rootCenter, { x: boxB.minX + boxB.width / 2, y: boxB.minY + boxB.height / 2 })
+        }
       );
     } else {
-      existingL1.sort((a, b) => a.y - b.y);
+      existingL1.sort((a, b) => {
+          const boxA = getNodeBox(a, allElements);
+          const boxB = getNodeBox(b, allElements);
+          return boxA.minY - boxB.minY;
+      });
     }
 
     const sortedL1 = [...existingL1, ...newL1];
@@ -19946,21 +21272,26 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
 
     const l1Metrics = sortedL1.map(node => getSubtreeHeight(node.id, allElements));
     const totalSubtreeHeight = l1Metrics.reduce((sum, h) => sum + h, 0);
-    const totalGapHeight = (count - 1) * GAP_Y;
+    const totalGapHeight = (count - 1) * layoutSettings.GAP_Y;
     const totalContentHeight = totalSubtreeHeight + totalGapHeight;
 
-    const radiusFromHeight = totalContentHeight / 2.0;
-    
-    const radius = Math.max(
-      Math.round(root.width * 0.9), 
-      260, 
+    const radiusFromHeight = totalContentHeight / layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
+
+    const radiusY = Math.max(
+      Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR),
+      layoutSettings.MIN_RADIUS, 
       radiusFromHeight
-    ) + count * 5;
+    ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+
+    const radiusX = Math.max(
+      Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR), 
+      layoutSettings.MIN_RADIUS,
+      radiusY * 0.2
+    ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
 
     const centerAngle = mode === "Left-facing" ? 270 : 90;
-    const totalThetaDeg = (totalContentHeight / radius) * (180 / Math.PI);
+    const totalThetaDeg = (totalContentHeight / radiusY) * (180 / Math.PI);
     let currentAngleDirectional = centerAngle - totalThetaDeg / 2;
-    
     let currentAngleRadial = count <= 6 ? 30 : 20;
 
     sortedL1.forEach((node, i) => {
@@ -19969,11 +21300,11 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       }
 
       const nodeHeight = l1Metrics[i];
-      const gapMultiplier = mode === "Radial" ? 2.5 : 1.0;
-      const effectiveGap = GAP_Y * gapMultiplier;
-      
-      const nodeSpanRad = nodeHeight / radius;
-      const gapSpanRad = effectiveGap / radius;
+      const gapMultiplier = mode === "Radial" ? layoutSettings.GAP_MULTIPLIER_RADIAL : layoutSettings.GAP_MULTIPLIER_DIRECTIONAL;
+      const effectiveGap = layoutSettings.GAP_Y * gapMultiplier;
+
+      const nodeSpanRad = nodeHeight / radiusY;
+      const gapSpanRad = effectiveGap / radiusY;
       
       const nodeSpanDeg = nodeSpanRad * (180 / Math.PI);
       const gapSpanDeg = gapSpanRad * (180 / Math.PI);
@@ -19988,24 +21319,26 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       }
 
       const angleRad = (angleDeg - 90) * (Math.PI / 180);
-      const tCX = rootCenter.x + radius * Math.cos(angleRad);
-      const tCY = rootCenter.y + radius * Math.sin(angleRad);
+      const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
+      const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
 
+      const nodeBox = getNodeBox(node, allElements);
+      const maxRadius = Math.max(radiusX, radiusY);
       const currentDist = Math.hypot(
-        node.x + node.width / 2 - rootCenter.x,
-        node.y + node.height / 2 - rootCenter.y,
+        nodeBox.minX + nodeBox.width / 2 - rootCenter.x,
+        nodeBox.minY + nodeBox.height / 2 - rootCenter.y,
       );
       const isPinned =
-        node.customData?.isPinned || (!force && !node.customData?.mindmapNew && currentDist > radius * 1.5);
+        node.customData?.isPinned || (!force && !node.customData?.mindmapNew && currentDist > maxRadius * 1.5);
       const side = (isPinned 
-        ? node.x + node.width / 2 > rootCenter.x
+        ? (nodeBox.minX + nodeBox.width / 2) > rootCenter.x
         : tCX > rootCenter.x
       ) ? 1 : -1;
 
       if (isPinned) {
-        layoutSubtree(node.id, node.x, node.y + node.height / 2, side, allElements);
+        layoutSubtree(node.id, node.x, tCY, side, allElements, hasGlobalFolds);
       } else {
-        layoutSubtree(node.id, tCX, tCY, side, allElements);
+        layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds);
       }
 
       if (node.customData?.mindmapNew) {
@@ -20020,10 +21353,10 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
           a.endBinding?.elementId === node.id,
       );
       if (arrow) {
-        const eaA = ea.getElement(arrow.id),
-          eaC = ea.getElement(node.id);
-        const eX = eaC.x + eaC.width / 2,
-          eY = eaC.y + eaC.height / 2;
+        const eaA = ea.getElement(arrow.id);
+        const childBox = getNodeBox(ea.getElement(node.id), ea.getElements());
+        const eX = childBox.minX + childBox.width / 2,
+          eY = childBox.minY + childBox.height / 2;
         eaA.x = rootCenter.x;
         eaA.y = rootCenter.y;
         eaA.points = [
@@ -20032,18 +21365,8 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
         ];
       }
 
-      //Apply recursive grouping if enabled ---
       if (groupBranches) {
         applyRecursiveGrouping(node.id, allElements);
-      } else if (branchGroups.has(node.id)) {
-        // If recursive grouping is OFF, but this branch was previously grouped,
-        // re-apply the common group ID to all elements in the branch
-        const gId = branchGroups.get(node.id);
-        const currentBranchIds = getBranchElementIds(node.id, ea.getElements());
-        currentBranchIds.forEach(id => {
-          const el = ea.getElement(id);
-          if (el) el.groupIds = [gId];
-        });
       }
     });
   };
@@ -20064,7 +21387,7 @@ const getMostRecentlyAddedNode = () => {
 /**
  * Convert Obsidian wiki links + markdown links into display text.
  * Leaves other markdown markup intact.
- */
+**/
 function renderLinksToText(input) {
   if (typeof input !== "string" || !input) return input;
   const isNumericOnly = (s) => /^\d+$/.test(s);
@@ -20106,11 +21429,19 @@ const getAdjustedMaxWidth = (text, max) => {
 const addNode = async (text, follow = false, skipFinalLayout = false) => {
   if (!ea.targetView) return;
   if (!text || text.trim() === "") return;
-  const allElements = ea.getViewElements();
-  const st = appState();
+  
+  let allElements = ea.getViewElements();
+  const st = getAppState();
   let parent = ea.getViewSelectedElement();
   if (parent?.containerId) {
     parent = allElements.find((el) => el.id === parent.containerId);
+  }
+
+  if (parent && parent.customData?.isFolded) {
+    await toggleFold("L0");
+
+    allElements = ea.getViewElements();
+    parent = allElements.find((el) => el.id === parent.id);
   }
 
   let newNodeId;
@@ -20119,12 +21450,18 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   // --- Image Detection ---
   const imageInfo = parseImageInput(text);
   let imageFile = null;
+  let isPdfRectLink = false;
+
   if (imageInfo) {
-    imageFile = app.metadataCache.getFirstLinkpathDest(imageInfo.path, ea.targetView.file.path);
-    if (imageFile) {
-        const isEx = imageFile.extension === "md" && ea.isExcalidrawFile(imageFile);
-        if (!IMAGE_TYPES.includes(imageFile.extension.toLowerCase()) && !isEx) {
-            imageFile = null; 
+    if (imageInfo.path.match(PDF_RECT_LINK_REGEX)) {
+        isPdfRectLink = true;
+    } else {
+        imageFile = app.metadataCache.getFirstLinkpathDest(imageInfo.path, ea.targetView.file.path);
+        if (imageFile) {
+            const isEx = imageFile.extension === "md" && ea.isExcalidrawFile(imageFile);
+            if (!IMAGE_TYPES.includes(imageFile.extension.toLowerCase()) && !isEx) {
+                imageFile = null; 
+            }
         }
     }
   }
@@ -20180,7 +21517,14 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   if (!parent) {
     ea.style.strokeColor = multicolor ? defaultNodeColor : st.currentItemStrokeColor;
     
-    if (imageFile) {
+    if (isPdfRectLink) {
+        newNodeId = await ea.addImage(0, 0, imageInfo.path);
+        const el = ea.getElement(newNodeId);
+        const targetWidth = imageInfo.width || EMBEDED_OBJECT_WIDTH_ROOT;
+        const ratio = el.width / el.height;
+        el.width = targetWidth;
+        el.height = targetWidth / ratio;
+    } else if (imageFile) {
         newNodeId = await ea.addImage(0, 0, imageFile);
         const el = ea.getElement(newNodeId);
         const targetWidth = imageInfo.width || EMBEDED_OBJECT_WIDTH_ROOT;
@@ -20208,45 +21552,57 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   } else {
     ea.style.strokeColor = nodeColor; //getReadableColor(nodeColor);
     const rootEl = allElements.find((e) => e.id === rootId);
+    const rootBox = getNodeBox(rootEl, allElements);
     const mode = rootEl.customData?.growthMode || currentModalGrowthMode;
     const rootCenter = {
-      x: rootEl.x + rootEl.width / 2,
-      y: rootEl.y + rootEl.height / 2,
+      x: rootBox.minX + rootBox.width / 2,
+      y: rootBox.minY + rootBox.height / 2,
     };
-    const side = parent.x + parent.width / 2 > rootCenter.x ? 1 : -1;
+    
+    const parentBox = getNodeBox(parent, allElements);
+    const side = parentBox.minX + parentBox.width / 2 > rootCenter.x ? 1 : -1;
 
     const offset = mode === "Radial" || mode === "Right-facing"
-      ? rootEl.width * 2
-      : -rootEl.width;
-    let px = parent.x + offset,
-      py = parent.y;
-    
+      ? rootBox.width * 2
+      : -rootBox.width;
+    let px = parentBox.minX + offset,
+      py = parentBox.minY;
+
     // Ensure new node is placed below existing siblings so visual sort preserves order
     if (!autoLayoutDisabled) {
       const siblings = getChildrenNodes(parent.id, allElements);
       if (siblings.length > 0) {
         const sortedSiblings = siblings.sort((a, b) => a.y - b.y);
         const lastSibling = sortedSiblings[sortedSiblings.length - 1];
-        py = lastSibling.y + lastSibling.height + GAP_Y; 
+        const lastSiblingBox = getNodeBox(lastSibling, allElements);
+        py = lastSiblingBox.minY + lastSiblingBox.height + layoutSettings.GAP_Y; 
       }
     }
 
     if (autoLayoutDisabled) {
-      const manualGapX = Math.round(parent.width * 1.3);
-      const jitterX = (Math.random() - 0.5) * 150;
-      const jitterY = (Math.random() - 0.5) * 150;
+      const manualGapX = Math.round(parentBox.width * layoutSettings.MANUAL_GAP_MULTIPLIER);
+      const jitterX = (Math.random() - 0.5) * layoutSettings.MANUAL_JITTER_RANGE;
+      const jitterY = (Math.random() - 0.5) * layoutSettings.MANUAL_JITTER_RANGE;
       const nodeW = shouldWrap ? curMaxW : metrics.width;
       px = side === 1
-        ? parent.x + parent.width + manualGapX + jitterX
-        : parent.x - manualGapX - nodeW + jitterX;
-      py = parent.y + parent.height / 2 - metrics.height / 2 + jitterY;
+        ? parentBox.minX + parentBox.width + manualGapX + jitterX
+        : parentBox.minX - manualGapX - nodeW + jitterX;
+      py = parentBox.minY + parentBox.height / 2 - metrics.height / 2 + jitterY;
     }
 
     const textAlign = centerText
       ? "center"
       : side === 1 ? "left" : "right";
 
-    if (imageFile) {
+    if (isPdfRectLink) {
+        newNodeId = await ea.addImage(px, py, imageInfo.path);
+        const el = ea.getElement(newNodeId);
+        const targetWidth = imageInfo.width || EMBEDED_OBJECT_WIDTH_CHILD;
+        const ratio = el.width / el.height;
+        el.width = targetWidth;
+        el.height = targetWidth / ratio;
+        if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
+    } else if (imageFile) {
         newNodeId = await ea.addImage(px, py, imageFile);
         const el = ea.getElement(newNodeId);
         const targetWidth = imageInfo.width || EMBEDED_OBJECT_WIDTH_CHILD;
@@ -20291,9 +21647,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     }
 
     ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
-    ea.style.roughness = appState().currentItemRoughness;
-    ea.style.strokeStyle = isSolidArrow ? "solid" : appState().currentItemStrokeStyle;
-    const startPoint = [parent.x + parent.width / 2, parent.y + parent.height / 2];
+    ea.style.roughness = getAppState().currentItemRoughness;
+    ea.style.strokeStyle = isSolidArrow ? "solid" : getAppState().currentItemStrokeStyle;
+    const startPoint = [parentBox.minX + parentBox.width / 2, parentBox.minY + parentBox.height / 2];
     arrowId = ea.addArrow([startPoint, startPoint], {
       startObjectId: parent.id,
       endObjectId: newNodeId,
@@ -20301,9 +21657,17 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       endArrowHead: null,
     });
     ea.addAppendUpdateCustomData(arrowId, { isBranch: true });
+
+    if (!groupBranches && parent.groupIds?.length > 0) {
+      const pGroup = parent.groupIds[0];
+      const newNode = ea.getElement(newNodeId);
+      const newArrow = ea.getElement(arrowId);
+      if(newNode) newNode.groupIds = [pGroup];
+      if(newArrow) newArrow.groupIds = [pGroup];
+    }
   }
 
-  await ea.addElementsToView(!parent, !!imageFile, true, true);
+  await ea.addElementsToView(!parent, !!imageFile || isPdfRectLink, true, true);
   ea.clear();
 
   if (!skipFinalLayout && rootId && !autoLayoutDisabled) {
@@ -20319,10 +21683,12 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
 
     if (arrow) {
       const eaA = ea.getElement(arrow.id);
-      const sX = parent.x + parent.width / 2,
-        sY = parent.y + parent.height / 2;
-      const eX = node.x + node.width / 2,
-        eY = node.y + node.height / 2;
+      const parentBox = getNodeBox(parent, allEls);
+      const sX = parentBox.minX + parentBox.width / 2,
+        sY = parentBox.minY + parentBox.height / 2;
+      const nodeBox = getNodeBox(node, allEls);
+      const eX = nodeBox.minX + nodeBox.width / 2,
+        eY = nodeBox.minY + nodeBox.height / 2;
       eaA.x = sX;
       eaA.y = sY;
       eaA.points = [
@@ -20408,7 +21774,7 @@ const copyMapAsText = async (cut = false) => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
   if (!sel) {
-    new Notice("Select a node to copy.");
+    new Notice(t("NOTICE_SELECT_NODE_TO_COPY"));
     return;
   }
   const all = ea.getViewElements();
@@ -20417,11 +21783,13 @@ const copyMapAsText = async (cut = false) => {
   const isRootSelected = info.rootId === sel.id;
   const parentNode = getParentNode(sel.id, all);
 
-  if (isRootSelected) {
-    cut = false;
-  }
-
   const elementsToDelete = [];
+
+  // --- MODIFICATION START: Respect Obsidian Indentation Settings ---
+  const useTab = app.vault.getConfig("useTab");
+  const tabSize = app.vault.getConfig("tabSize");
+  const indentVal = useTab ? "\t" : " ".repeat(tabSize);
+  // --- MODIFICATION END ---
 
   const buildList = (nodeId, depth = 0) => {
     const node = all.find((e) => e.id === nodeId);
@@ -20433,6 +21801,11 @@ const copyMapAsText = async (cut = false) => {
         const boundEl = all.find((e) => e.id === be.id);
         if (boundEl) elementsToDelete.push(boundEl);
       });
+
+      if (node.customData?.foldIndicatorId) {
+        const ind = all.find(e => e.id === node.customData.foldIndicatorId);
+        if (ind) elementsToDelete.push(ind);
+      }
     }
 
     const children = getChildrenNodes(nodeId, all);
@@ -20442,7 +21815,7 @@ const copyMapAsText = async (cut = false) => {
     if (depth === 0 && isRootSelected) {
       str += `# ${text}\n\n`;
     } else {
-      str += `${"  ".repeat(depth - (isRootSelected ? 1 : 0))}- ${text}\n`;
+      str += `${indentVal.repeat(depth - (isRootSelected ? 1 : 0))}- ${text}\n`;
     }
 
     children.forEach((c) => {
@@ -20476,9 +21849,10 @@ const copyMapAsText = async (cut = false) => {
       ea.selectElementsInView([parentNode]);
     }
 
-    new Notice("Branch cut to clipboard.");
+    triggerGlobalLayout(info.rootId);
+    new Notice(isRootSelected ? t("NOTICE_MAP_CUT") : t("NOTICE_BRANCH_CUT"));
   } else {
-    new Notice("Branch copied as bullet list.");
+    new Notice(isRootSelected ? t("NOTICE_MAP_COPIED") : t("NOTICE_BRANCH_COPIED"));
   }
 };
 
@@ -20487,39 +21861,58 @@ const pasteListToMap = async () => {
   const rawText = await navigator.clipboard.readText();
   if (!rawText) return;
 
-  const lines = rawText.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
-  let parsed = [];
-  let rootTextFromHeader = null;
+  const sel = ea.getViewSelectedElement();
+  let currentParent;
 
-  if (
-    lines.length === 0 ||
-    !lines[0].match(/^(#+\s|\s*(?:-|\*|\d+)\s)/) ||
-    !lines.every((line, idx) => idx === 0 || line.match(/^\s*(?:-|\*|\d+)\s/))
-  ) {
-    new Notice("Paste aborted. Cliboard is not a bulleted list");
+  const lines = rawText.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
+
+  if (lines.length === 0) {
+    new Notice(t("NOTICE_CLIPBOARD_EMPTY"));
     return;
   }
 
-  const delta = lines[0].match(/^#+\s/) ? 1 : 0;
+  if (lines.length === 1) {
+    const text = lines[0].replace(/^(\s*)(?:-|\*|\d+\.)\s+/, "").trim();
+    
+    if (text) {
+      let currentParent = await addNode(text, true, false);
+      if (sel) {
+        ea.selectElementsInView([ea.getViewElements().find((el)=>el.id === sel.id)]);
+      }
+      return;
+    }
+  }
+
+  let parsed = [];
+  let rootTextFromHeader = null;
+
+  const isHeader = (l) => l.match(/^#+\s/);
+  const isListItem = (l) => l.match(/^(\s*)(?:-|\*|\d+\.)\s+(.*)$/);
+
+  if (!isHeader(lines[0]) && !isListItem(lines[0])) {
+    new Notice(t("NOTICE_PASTE_ABORTED"));
+    return;
+  }
+
+  const delta = isHeader(lines[0]) ? 1 : 0;
 
   lines.forEach((line) => {
-    if (line.match(/^#+\s/)) {
-      parsed.push({ indent: 0, text: line.substring(2).trim() });
+    if (isHeader(line)) {
+      parsed.push({ indent: 0, text: line.replace(/^#+\s/, "").trim() });
     } else {
-      const match = line.match(/^(\s*)(?:-|\*|\d+\.)\s+(.*)$/);
+      const match = isListItem(line);
       if (match) {
         parsed.push({ indent: delta + match[1].length, text: match[2].trim() });
+      } else if (parsed.length > 0) {
+        parsed[parsed.length - 1].text += "\n" + line.trim();
       }
     }
   });
 
   if (parsed.length === 0 && !rootTextFromHeader) {
-    new Notice("No valid Markdown list found on clipboard.");
+    new Notice(t("NOTICE_NO_LIST"));
     return;
   }
-
-  const sel = ea.getViewSelectedElement();
-  let currentParent;
 
   if (!sel) {
     const minIndent = Math.min(...parsed.map((p) => p.indent));
@@ -20528,7 +21921,7 @@ const pasteListToMap = async () => {
       currentParent = await addNode(topLevelItems[0].text, true, true);
       parsed.shift();
     } else {
-      currentParent = await addNode("Mindmap Builder Paste", true, true);
+      currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true);
     }
   } else {
     currentParent = sel;
@@ -20548,6 +21941,8 @@ const pasteListToMap = async () => {
 
   const info = getHierarchy(currentParent, ea.getViewElements());
   await triggerGlobalLayout(info.rootId);
+  //when rendered text element, image elements, etc. have their sizes recalculated, a second round layout fixes resulting issues
+  await triggerGlobalLayout(info.rootId);
 
   const allInView = ea.getViewElements();
   const targetToSelect = sel
@@ -20557,8 +21952,7 @@ const pasteListToMap = async () => {
   if (targetToSelect) {
     ea.selectElementsInView([targetToSelect]);
   }
-
-  new Notice("Paste complete.");
+  new Notice(t("NOTICE_PASTE_COMPLETE"));
 };
 
 // ---------------------------------------------------------------------------
@@ -20577,24 +21971,82 @@ const isNodeRightFromCenter = () => {
 }
 
 
-const navigateMap = ({key, zoom = false, focus = false} = {}) => {
+const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
   if(!key) return;
   if (!ea.targetView) return;
-  const allElements = ea.getViewElements();
+  let allElements = ea.getViewElements();
   const current = ea.getViewSelectedElement();
   if (!current) return;
+
   const info = getHierarchy(current, allElements);
   const root = allElements.find((e) => e.id === info.rootId);
   const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
+  
   if (current.id === root.id) {
+    if (current.customData?.isFolded) {
+      await toggleFold("L0");
+      allElements = ea.getViewElements();
+    }
+
     const children = getChildrenNodes(root.id, allElements);
     if (children.length) {
-      ea.selectElementsInView([children[0]]);
-      if (zoom) zoomToFit();
-      if (focus) focusSelected();
+      // Sort by order/index first to establish the visual list sequence
+      sortChildrenStable(children);
+
+      let targetChild = null;
+
+      if (key === "ArrowUp") {
+        // First sibling
+        targetChild = children[0];
+      } else if (key === "ArrowDown") {
+        // Last sibling
+        targetChild = children[children.length - 1];
+      } else {
+        // Left/Right Logic
+        // Calculate relative positions
+        const childrenWithPos = children.map(c => {
+          const cCenter = { x: c.x + c.width / 2, y: c.y + c.height / 2 };
+          return {
+            node: c,
+            dx: cCenter.x - rootCenter.x,
+            dy: Math.abs(cCenter.y - rootCenter.y) // distance from horizontal centerline
+          };
+        });
+
+        if (key === "ArrowRight") {
+          // Find nodes to the right (dx > 0)
+          const rightNodes = childrenWithPos.filter(c => c.dx > 0);
+          if (rightNodes.length > 0) {
+            // Find the one closest to the middle (min dy)
+            rightNodes.sort((a, b) => a.dy - b.dy);
+            targetChild = rightNodes[0].node;
+          } else {
+            // Fallback if no nodes on right (e.g. Left-facing layout), select first in list
+            targetChild = children[0];
+          }
+        } else if (key === "ArrowLeft") {
+          // Find nodes to the left (dx < 0)
+          const leftNodes = childrenWithPos.filter(c => c.dx < 0);
+          if (leftNodes.length > 0) {
+            // Find the one closest to the middle (min dy)
+            leftNodes.sort((a, b) => a.dy - b.dy);
+            targetChild = leftNodes[0].node;
+          } else {
+            // Fallback if no nodes on left (e.g. Right-facing layout), select last in list
+            targetChild = children[children.length - 1];
+          }
+        }
+      }
+
+      if (targetChild) {
+        ea.selectElementsInView([targetChild]);
+        if (zoom) zoomToFit();
+        if (focus) focusSelected();
+      }
     }
     return;
   }
+
   if (key === "ArrowLeft" || key === "ArrowRight") {
     const curCenter = { x: current.x + current.width / 2, y: current.y + current.height / 2 };
     const isInRight = curCenter.x > rootCenter.x;
@@ -20602,10 +22054,14 @@ const navigateMap = ({key, zoom = false, focus = false} = {}) => {
     if (goIn) {
       ea.selectElementsInView([getParentNode(current.id, allElements)]);
     } else {
+      if (current.customData?.isFolded) {
+        await toggleFold("L0");
+        allElements = ea.getViewElements();
+      }
       const ch = getChildrenNodes(current.id, allElements);
       if (ch.length) ea.selectElementsInView([ch[0]]);
     }
-} else if (key === "ArrowUp" || key === "ArrowDown") {
+  } else if (key === "ArrowUp" || key === "ArrowDown") {
     const parent = getParentNode(current.id, allElements),
       siblings = getChildrenNodes(parent.id, allElements);
     
@@ -20626,17 +22082,18 @@ const navigateMap = ({key, zoom = false, focus = false} = {}) => {
       : (idx + 1) % siblings.length;
     ea.selectElementsInView([siblings[idx === -1 ? 0 : nIdx]]);
   }
+
   if (zoom) zoomToFit();
   if (focus) focusSelected(); 
 };
 
-const setMapAutolayout = async (endabled) => {
+const setMapAutolayout = async (enabled) => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
     ea.copyViewElementsToEAforEditing(ea.getViewElements().filter((e) => e.id === info.rootId));
-    ea.addAppendUpdateCustomData(info.rootId, { autoLayoutDisabled: endabled });
+    ea.addAppendUpdateCustomData(info.rootId, { autoLayoutDisabled: enabled });
     await ea.addElementsToView(false, false, true, true);
     ea.clear();
   }
@@ -20654,46 +22111,72 @@ const refreshMapLayout = async () => {
 /**
  * Collects all node IDs and arrow IDs belonging to a branch.
  * Includes "isBranch" arrows and internal non-mindmap arrows.
- */
+**/
 const getBranchElementIds = (nodeId, allElements) => {
-  const branchNodes = [nodeId];
-  const queue = [nodeId];
-  
-  // 1. Get all descendant nodes
-  while (queue.length > 0) {
-    const currentId = queue.shift();
-    const children = getChildrenNodes(currentId, allElements);
-    children.forEach(c => {
-      if (!branchNodes.includes(c.id)) {
-        branchNodes.push(c.id);
-        queue.push(c.id);
-      }
-    });
-  }
 
-  const nodeIdSet = new Set(branchNodes);
-  const branchElementIds = [...branchNodes];
+  const childMap = new Map();
+  const allArrows = [];
 
-  // 2. Identify all relevant arrows connecting elements WITHIN this branch
-  allElements.forEach(el => {
+  for (let i = 0; i < allElements.length; i++) {
+    const el = allElements[i];
     if (el.type === "arrow") {
-      const startId = el.startBinding?.elementId;
-      const endId = el.endBinding?.elementId;
-      
-      // An arrow (isBranch or internal) is part of the group only if 
-      // BOTH ends are nodes within the branch set.
-      if (startId && endId && nodeIdSet.has(startId) && nodeIdSet.has(endId)) {
-        branchElementIds.push(el.id);
+      allArrows.push(el);
+      if (el.customData?.isBranch && el.startBinding?.elementId && el.endBinding?.elementId) {
+        const start = el.startBinding.elementId;
+        const end = el.endBinding.elementId;
+        
+        if (!childMap.has(start)) {
+          childMap.set(start, []);
+        }
+        childMap.get(start).push(end);
       }
     }
-  });
+  }
+
+  const branchNodes = new Set([nodeId]);
+  const queue = [nodeId];
+
+  while (queue.length > 0) {
+    const currentId = queue.shift();
+
+    const currentNode = allElements.find(el => el.id === currentId);
+    if (currentNode?.customData?.boundaryId) {
+        branchNodes.add(currentNode.customData.boundaryId);
+    }
+
+    const children = childMap.get(currentId);
+    
+    if (children) {
+      for (let i = 0; i < children.length; i++) {
+        const childId = children[i];
+        if (!branchNodes.has(childId)) {
+          branchNodes.add(childId);
+          queue.push(childId);
+        }
+      }
+    }
+  }
+
+  const branchElementIds = Array.from(branchNodes);
+
+  // 3. Identify all arrows (structural OR annotations) where BOTH ends are within the branch
+  for (let i = 0; i < allArrows.length; i++) {
+    const el = allArrows[i];
+    const startId = el.startBinding?.elementId;
+    const endId = el.endBinding?.elementId;
+    // An arrow (isBranch or internal) is part of the group only if 
+      // BOTH ends are nodes within the branch set.
+    if (startId && endId && branchNodes.has(startId) && branchNodes.has(endId)) {
+      branchElementIds.push(el.id);
+    }
+  }
 
   return branchElementIds;
 };
 
 /**
  * Toggles a single flat group for the selected branch
- */
+**/
 const toggleBranchGroup = async () => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
@@ -20743,7 +22226,7 @@ const togglePin = async () => {
   }
 };
 
-const padding = 10;
+const padding = layoutSettings.CONTAINER_PADDING;
 const toggleBox = async () => {
   if (!ea.targetView) return;
   let sel = ea.getViewSelectedElement();
@@ -20783,9 +22266,9 @@ const toggleBox = async () => {
     ));
     const rect = ea.getElement(rectId);
     ea.addAppendUpdateCustomData(rectId, { isPinned: !!sel.customData?.isPinned });
-    rect.strokeColor = sel.strokeColor;
+    rect.strokeColor = ea.getCM(sel.strokeColor).stringRGB();
     rect.strokeWidth = 2;
-    rect.roughness = appState().currentItemRoughness;
+    rect.roughness = getAppState().currentItemRoughness;
     rect.roundness = roundedCorners ? { type: 3 } : null;
     rect.backgroundColor = "transparent";
 
@@ -20817,12 +22300,60 @@ const toggleBox = async () => {
   if(!autoLayoutDisabled) await refreshMapLayout();
 };
 
+const toggleBoundary = async () => {
+  if (!ea.targetView) return;
+  const sel = ea.getViewSelectedElement();
+  if (sel) {
+    ea.copyViewElementsToEAforEditing([sel]);
+    const eaSel = ea.getElement(sel.id);
+    
+    if (eaSel.customData?.boundaryId) {
+       const b = ea.getViewElements().find(el => el.id === eaSel.customData.boundaryId);
+       if(b) {
+         ea.copyViewElementsToEAforEditing([b]);
+         ea.getElement(b.id).isDeleted = true;
+       }
+       ea.addAppendUpdateCustomData(sel.id, { boundaryId: undefined });
+    } else {
+       const id = ea.generateElementId();
+       const st = getAppState();
+       const boundaryEl = {
+           id: id,
+           type: "line",
+           x: sel.x, y: sel.y, width: 1, height: 1,
+           angle: 0,
+           roughness: st.currentItemRoughness,
+           strokeColor: sel.strokeColor,
+           backgroundColor: sel.strokeColor,
+           fillStyle: "solid",
+           strokeWidth: 2,
+           strokeStyle: "solid",
+           roughness: 0,
+           opacity: 30,
+           points: [[0,0], [1,1], [0,0]],
+           polygon: true,
+           locked: false,
+           groupIds: sel.groupIds || []
+       };
+       ea.elementsDict[id] = boundaryEl;
+       ea.addAppendUpdateCustomData(sel.id, { boundaryId: id });
+    }
+
+    await ea.addElementsToView(false, false, false, true);
+    ea.clear();
+
+    const info = getHierarchy(sel, ea.getViewElements());
+    await triggerGlobalLayout(info.rootId, true);
+  }
+};
+
 // ---------------------------------------------------------------------------
 // 7. UI Modal & Sidepanel Logic
 // ---------------------------------------------------------------------------
 
 let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown, autoLayoutToggle, linkSuggester;
-let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn, toggleGroupBtn, zoomBtn;
+let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn, toggleGroupBtn, zoomBtn, boundaryBtn;
+let foldBtnL0, foldBtnL1, unfoldAllBtn;
 let inputContainer;
 let helpContainer;
 let floatingInputModal = null;
@@ -20832,35 +22363,41 @@ let keydownHandlers = [];
 let removePointerDownHandler = null;
 let recordingScope = null;
 
+// ---------------------------------------------------------------------------
+// Hotkey Wiring & Scope Helpers
+// ---------------------------------------------------------------------------
 const removeKeydownHandlers = () => {
   keydownHandlers.forEach((f)=>f());
   keydownHandlers = [];
-}
+};
 
+// ---------------------------------------------------------------------------
+// Focus Management & UI State
+// ---------------------------------------------------------------------------
 const registerKeydownHandler = (host, handler) => {
   removeKeydownHandlers();
   host.addEventListener("keydown", handler, true);
   keydownHandlers.push(()=>host.removeEventListener("keydown", handler, true))
-}
+};
 
 const registerObsidianHotkeyOverrides = () => {
   if (popObsidianHotkeyScope) popObsidianHotkeyScope();
-  const scope = app.keymap.getRootScope();
+  const keymapScope = app.keymap.getRootScope();
   const handlers = [];
   const context = getHotkeyContext();
 
+  if (context === SCOPE.none) return;
   const reg = (mods, key) => {
-    const handler = scope.register(mods, key, (e) => true);
+    const handler = keymapScope.register(mods, key, (e) => true);
     handlers.push(handler);
-    // Force the newly registered handler to the top of the stack
-    scope.keys.unshift(scope.keys.pop());
+    keymapScope.keys.unshift(keymapScope.keys.pop());
   };
 
   RUNTIME_HOTKEYS.forEach(h => {
-    if (context < scope) return;
+    if (context < keymapScope) return;
     if (h.key) reg(h.modifiers, h.key);
     if (h.code) {
-      const char = h.code.replace("Key", "").toLowerCase();
+      const char = h.code.replace("Key", "").replace("Digit", "").toLowerCase();
       reg(h.modifiers, char);
     }
   });
@@ -20868,7 +22405,7 @@ const registerObsidianHotkeyOverrides = () => {
   if(handlers.length === 0) return;
 
   popObsidianHotkeyScope = () => {
-    handlers.forEach(h => scope.unregister(h));
+    handlers.forEach(h => keymapScope.unregister(h));
     popObsidianHotkeyScope = null;
   };
 };
@@ -20887,6 +22424,7 @@ const setButtonDisabled = (btn, disabled) => {
   btn.disabled = disabled;
   const btnEl = btn.extraSettingsEl ?? btn.buttonEl;
   if (!btnEl) return;
+  btnEl.tabIndex = disabled ? -1 : 0;
   btnEl.style.opacity = disabled ? "0.5" : "";
   btnEl.style.cursor = disabled ? "not-allowed" : "";
   if (disabled && btn.buttonEl) {
@@ -20902,6 +22440,9 @@ const disableUI = () => {
   setButtonDisabled(copyBtn, true);
   setButtonDisabled(cutBtn, true);
   setButtonDisabled(boxBtn, true);
+  setButtonDisabled(foldBtnL0, true);
+  setButtonDisabled(foldBtnL1, true);
+  setButtonDisabled(unfoldAllBtn, true);
   setButtonDisabled(editBtn, true);
   setButtonDisabled(toggleGroupBtn, true);
   setButtonDisabled(zoomBtn, true);
@@ -20924,10 +22465,7 @@ const updateUI = () => {
     if (pinBtn) {
       pinBtn.setIcon(isPinned ? "pin" : "pin-off");
       pinBtn.setTooltip(
-        `${isPinned
-          ? "This element is pinned. Click to unpin"
-          : "This element is not pinned. Click to pin"
-        } the location of the selected element ${getActionHotkeyString(ACTION_PIN)}`,
+        `${isPinned ? t("PIN_TOOLTIP_PINNED") : t("PIN_TOOLTIP_UNPINNED")} ${getActionHotkeyString(ACTION_PIN)}`,
       );
       setButtonDisabled(pinBtn, false);
     }
@@ -20947,10 +22485,16 @@ const updateUI = () => {
       const isGrouped = ids.length > 1 && !!ea.getCommonGroupForElements(all.filter(el => ids.includes(el.id)));
 
       toggleGroupBtn.setIcon(isGrouped ? "ungroup" : "group");
-      toggleGroupBtn.setTooltip(`${isGrouped ? "Ungroup" : "Group"} this branch. Only available if "Group Branches" is disabled. ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
+      const groupTooltip = isGrouped ? t("TOGGLE_GROUP_TOOLTIP_UNGROUP") : t("TOGGLE_GROUP_TOOLTIP_GROUP");
+      toggleGroupBtn.setTooltip(`${groupTooltip} ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
       setButtonDisabled(toggleGroupBtn, groupBranches || ids.length <= 1);
     }
+    const branchIds = getBranchElementIds(sel.id, all);
+    const hasFoldedInBranch = all.some(el => branchIds.contains(el.id) && el.type !== "arrow" && el.customData?.isFolded === true);
     setButtonDisabled(boxBtn, false);
+    setButtonDisabled(foldBtnL0, false);
+    setButtonDisabled(foldBtnL1, false);
+    setButtonDisabled(unfoldAllBtn, !hasFoldedInBranch);
     setButtonDisabled(zoomBtn, false);
     setButtonDisabled(refreshBtn, false);
 
@@ -21013,8 +22557,10 @@ const commitEdit = async () => {
       const textWidth = ea.measureText(text).width;
       const shouldWrap = textWidth > maxWidth;
       if (!shouldWrap) {
-        eaEl.width = Math.ceil(textWidth)
+        eaEl.autoResize = true;
+        eaEl.width = Math.ceil(textWidth);
       } else {
+        eaEl.autoResize = false;
         const res = getAdjustedMaxWidth(text, maxWidth);
         eaEl.width = res.width;
         eaEl.text = res.wrappedText;
@@ -21047,8 +22593,8 @@ const commitEdit = async () => {
 const renderHelp = (container) => {
   helpContainer = container.createDiv();
   detailsEl = helpContainer.createEl("details");
-  detailsEl.createEl("summary", { text: "Instructions & Shortcuts" });
-  ea.obsidian.MarkdownRenderer.render(app, INSTRUCTIONS, detailsEl.createDiv(), "", ea.plugin);
+  detailsEl.createEl("summary", { text: t("HELP_SUMMARY") });
+  ea.obsidian.MarkdownRenderer.render(app, getInstructions(), detailsEl.createDiv(), "", ea.plugin);
 };
 
 // ---------------------------------------------------------------------------
@@ -21070,12 +22616,12 @@ class PaletteManagerModal extends ea.obsidian.Modal {
   display() {
     const { contentEl } = this;
     contentEl.empty();
-    contentEl.createEl("h2", { text: "Mindmap Branch Palette" });
+    contentEl.createEl("h2", { text: t("MODAL_PALETTE_TITLE") });
 
     // --- Global Toggles ---
     new ea.obsidian.Setting(contentEl)
-      .setName("Enable Custom Palette")
-      .setDesc("Use these colors instead of auto-generated ones.")
+      .setName(t("LABEL_ENABLE_CUSTOM_PALETTE"))
+      .setDesc(t("DESC_ENABLE_CUSTOM_PALETTE"))
       .addToggle(t => t
         .setValue(this.settings.enabled)
         .onChange(v => {
@@ -21086,8 +22632,8 @@ class PaletteManagerModal extends ea.obsidian.Modal {
 
     if (this.settings.enabled) {
       new ea.obsidian.Setting(contentEl)
-        .setName("Randomize Order")
-        .setDesc("Pick colors randomly instead of sequentially.")
+        .setName(t("LABEL_RANDOMIZE_ORDER"))
+        .setDesc(t("DESC_RANDOMIZE_ORDER"))
         .addToggle(t => t
           .setValue(this.settings.random)
           .onChange(v => {
@@ -21121,7 +22667,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
         row
           .addExtraButton(btn => btn
             .setIcon("arrow-big-up")
-            .setTooltip("Move Up")
+            .setTooltip(t("TOOLTIP_MOVE_UP"))
             .setDisabled(index === 0)
             .onClick(() => {
               if (index === 0) return;
@@ -21132,7 +22678,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
             }))
           .addExtraButton(btn => btn
             .setIcon("arrow-big-down")
-            .setTooltip("Move Down")
+            .setTooltip(t("TOOLTIP_MOVE_DOWN"))
             .setDisabled(index === this.settings.colors.length - 1)
             .onClick(() => {
               if (index === this.settings.colors.length - 1) return;
@@ -21143,7 +22689,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
             }))
           .addExtraButton(btn => btn
             .setIcon("pencil")
-            .setTooltip("Edit")
+            .setTooltip(t("TOOLTIP_EDIT_COLOR"))
             .onClick(() => {
               this.editIndex = index;
               this.tempColor = color;
@@ -21151,7 +22697,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
             }))
           .addExtraButton(btn => btn
             .setIcon("trash-2")
-            .setTooltip("Delete")
+            .setTooltip(t("TOOLTIP_DELETE_COLOR"))
             .onClick(() => {
               this.settings.colors.splice(index, 1);
               if(this.editIndex === index) this.editIndex = -1;
@@ -21163,7 +22709,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
       contentEl.createEl("hr");
 
       // --- Add/Edit Area ---
-      contentEl.createEl("h4", { text: this.editIndex === -1 ? "Add New Color" : "Edit Color" });
+      contentEl.createEl("h4", { text: this.editIndex === -1 ? t("HEADING_ADD_NEW_COLOR") : t("HEADING_EDIT_COLOR") });
       
       const getHex = (val) => {
         const cm = ea.getCM(val);
@@ -21179,7 +22725,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
       let textComponent, pickerComponent;
 
       new ea.obsidian.Setting(contentEl)
-        .setName("Select Color")
+        .setName(t("LABEL_SELECT_COLOR"))
         .addText(text => {
           textComponent = text;
           text
@@ -21200,7 +22746,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
         })
         .addButton(btn => btn
           .setIcon("swatch-book")
-          .setTooltip("Open Palette Picker")
+          .setTooltip(t("TOOLTIP_OPEN_PALETTE_PICKER"))
           .onClick(async () => {
             const selected = await ea.showColorPicker(btn.buttonEl, "elementStroke");
             if (selected) {
@@ -21215,7 +22761,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
       actionContainer.style.marginTop = "10px";
 
       if (this.editIndex !== -1) {
-        const cancelBtn = actionContainer.createEl("button", { text: "Cancel Edit" });
+        const cancelBtn = actionContainer.createEl("button", { text: t("BUTTON_CANCEL_EDIT") });
         cancelBtn.onclick = () => {
           this.editIndex = -1;
           this.tempColor = "#000000";
@@ -21224,7 +22770,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
       }
 
       const saveBtn = actionContainer.createEl("button", { 
-        text: this.editIndex === -1 ? "Add Color" : "Update Color",
+        text: this.editIndex === -1 ? t("BUTTON_ADD_COLOR") : t("BUTTON_UPDATE_COLOR"),
         cls: "mod-cta"
       });
       saveBtn.onclick = () => {
@@ -21246,13 +22792,99 @@ class PaletteManagerModal extends ea.obsidian.Modal {
 }
 
 // ---------------------------------------------------------------------------
-// 9. Render Functions
+// 9. Layout Configuration Manager
+// ---------------------------------------------------------------------------
+class LayoutConfigModal extends ea.obsidian.Modal {
+  constructor(app, currentSettings, onUpdate) {
+    super(app);
+    this.settings = JSON.parse(JSON.stringify(currentSettings));
+    this.onUpdate = onUpdate;
+  }
+
+  onOpen() {
+    this.display();
+  }
+
+  display() {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.createEl("h2", { text: t("MODAL_LAYOUT_TITLE") });
+    
+    const container = contentEl.createDiv();
+    container.style.maxHeight = "70vh";
+    container.style.overflowY = "auto";
+    container.style.paddingRight = "10px";
+
+    Object.keys(LAYOUT_METADATA).forEach(key => {
+      const meta = LAYOUT_METADATA[key];
+      const setting = new ea.obsidian.Setting(container)
+        .setName(meta.name)
+        .setDesc(meta.desc);
+      
+      let valLabel;
+      setting.addSlider(slider => slider
+        .setLimits(meta.min, meta.max, meta.step)
+        .setValue(this.settings[key])
+        .onChange(value => {
+          this.settings[key] = value;
+          valLabel.setText(String(value));
+        })
+      );
+      
+      setting.settingEl.createDiv("", el => {
+        valLabel = el;
+        el.style.minWidth = "3em";
+        el.style.textAlign = "right";
+        el.innerText = String(this.settings[key]);
+      });
+
+      setting.addExtraButton(btn => btn
+        .setIcon("rotate-ccw")
+        .setTooltip("Reset to default")
+        .onClick(() => {
+          this.settings[key] = meta.def;
+          this.display();
+        })
+      );
+    });
+
+    const footer = contentEl.createDiv();
+    footer.style.marginTop = "20px";
+    footer.style.display = "flex";
+    footer.style.justifyContent = "space-between";
+
+    new ea.obsidian.Setting(footer)
+      .addButton(btn => btn
+        .setButtonText("Reset All to Defaults")
+        .setWarning()
+        .onClick(() => {
+          Object.keys(LAYOUT_METADATA).forEach(k => {
+            this.settings[k] = LAYOUT_METADATA[k].def;
+          });
+          this.display();
+        })
+      )
+      .addButton(btn => btn
+        .setButtonText("Save & Close")
+        .setCta()
+        .onClick(() => {
+          this.onUpdate(this.settings);
+          this.close();
+        })
+      );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 10. Render Functions
 // ---------------------------------------------------------------------------
 
 const renderInput = (container, isFloating = false) => {
   container.empty();
   
   pinBtn = refreshBtn = dockBtn = inputEl = null;
+  foldBtnL0 = foldBtnL1 = unfoldAllBtn = null;
+  boundaryBtn = null; 
 
   inputRow = new ea.obsidian.Setting(container);
   
@@ -21276,11 +22908,13 @@ const renderInput = (container, isFloating = false) => {
       inputEl.style.width = "70vw";
       inputEl.style.maxWidth = "350px";
     }
-    inputEl.ariaLabel = `Add (Enter)\n` +
-      `${ACTION_ADD_FOLLOW} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}\n` +
-      `${ACTION_ADD_FOLLOW_FOCUS} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}\n` +
-      `${ACTION_ADD_FOLLOW_ZOOM} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}\n`;
-    inputEl.placeholder = "Concept... type [[ to insert link";
+    inputEl.ariaLabel = [
+      `${getActionLabel(ACTION_ADD)} (Enter)`,
+      `${getActionLabel(ACTION_ADD_FOLLOW)} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}`,
+      `${getActionLabel(ACTION_ADD_FOLLOW_FOCUS)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}`,
+      `${getActionLabel(ACTION_ADD_FOLLOW_ZOOM)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}`,
+    ].join("\n");
+    inputEl.placeholder = t("INPUT_PLACEHOLDER");
     inputEl.addEventListener("focus", () => {
       registerObsidianHotkeyOverrides();
       ensureNodeSelected();
@@ -21305,6 +22939,8 @@ const renderInput = (container, isFloating = false) => {
   const addButton = (cb) => {
     inputRow.addExtraButton((btn) => {
       cb(btn);
+      if (btn.buttonEl) btn.buttonEl.tabIndex = 0;
+      if (btn.extraSettingsEl) btn.extraSettingsEl.tabIndex = 0;
       // If docked, move the button into our flex container
       if (!isFloating && buttonContainer && btn.extraSettingsEl) {
         buttonContainer.appendChild(btn.extraSettingsEl);
@@ -21315,7 +22951,8 @@ const renderInput = (container, isFloating = false) => {
   addButton((btn) => {
     editBtn = btn;
     btn.setIcon("pencil");
-    btn.setTooltip(`Edit text of selected node ${getActionHotkeyString(ACTION_EDIT)}`);
+    btn.setTooltip(`${t("TOOLTIP_EDIT_NODE")} ${getActionHotkeyString(ACTION_EDIT)}`);
+    btn.extraSettingsEl.setAttr("action",ACTION_EDIT);
     btn.onClick(() => {
       startEditing();
     });
@@ -21323,7 +22960,8 @@ const renderInput = (container, isFloating = false) => {
 
   addButton((btn) => {
     pinBtn = btn;
-    btn.setTooltip("Pin/Unpin location of a node. When pinned nodes won't get auto-arranged.")
+    btn.setTooltip(`${t("TOOLTIP_PIN_INIT")} ${getActionHotkeyString(ACTION_PIN)}`)
+    btn.extraSettingsEl.setAttr("action",ACTION_PIN);
     btn.onClick(async () => {
       await togglePin();
       updateUI();
@@ -21331,10 +22969,60 @@ const renderInput = (container, isFloating = false) => {
     });
   });
 
+  if (!isFloating) {
+    addButton((btn) => {
+      boundaryBtn = btn;
+      btn.setIcon("cloud");
+      btn.setTooltip(`${t("TOOLTIP_TOGGLE_BOUNDARY")} ${getActionHotkeyString(ACTION_TOGGLE_BOUNDARY)}`);
+      btn.onClick(async () => {
+        await toggleBoundary();
+        updateUI();
+        focusInputEl();
+      });
+    });
+
+    addButton((btn) => {
+      foldBtnL0 = btn;
+      btn.setIcon("wifi-low");
+      btn.setTooltip(`${t("TOOLTIP_FOLD_BRANCH")} ${getActionHotkeyString(ACTION_FOLD)}`);
+      btn.extraSettingsEl.setAttr("action", ACTION_FOLD);
+      btn.onClick(async () => {
+        await toggleFold("L0");
+        updateUI();
+        focusInputEl();
+      });
+    });
+
+    addButton((btn) => {
+      foldBtnL1 = btn;
+      btn.setIcon("wifi-high");
+      btn.setTooltip(`${t("TOOLTIP_FOLD_L1_BRANCH")} ${getActionHotkeyString(ACTION_FOLD_L1)}`);
+      btn.extraSettingsEl.setAttr("action", ACTION_FOLD_L1);
+      btn.onClick(async () => {
+        await toggleFold("L1");
+        updateUI();
+        focusInputEl();
+      });
+    });
+
+    addButton((btn) => {
+      unfoldAllBtn = btn;
+      btn.setIcon("wifi");
+      btn.setTooltip(`${t("TOOLTIP_UNFOLD_BRANCH_ALL")} ${getActionHotkeyString(ACTION_UNFOLD_ALL)}`);
+      btn.extraSettingsEl.setAttr("action", ACTION_UNFOLD_ALL);
+      btn.onClick(async () => {
+        await toggleFold("ALL");
+        updateUI();
+        focusInputEl();
+      });
+    });
+  }
+
   addButton((btn) => {
     refreshBtn = btn;
     btn.setIcon("refresh-ccw");
-    btn.setTooltip("Force auto rearrange map.");
+    btn.setTooltip(t("TOOLTIP_REFRESH"));
+    btn.extraSettingsEl.setAttr("action",ACTION_REARRANGE);
     btn.onClick(async () => {
       await refreshMapLayout();
       focusInputEl();
@@ -21344,8 +23032,9 @@ const renderInput = (container, isFloating = false) => {
   addButton((btn) => {
     dockBtn = btn;
     btn.setIcon(isFloating ? "dock" : "external-link");
+    btn.extraSettingsEl.setAttr("action",ACTION_DOCK_UNDOCK);
     btn.setTooltip(
-      (isFloating ? "Dock to Sidepanel" : "Undock to Floating Modal") + ` ${getActionHotkeyString(ACTION_DOCK_UNDOCK)}`
+      `${isFloating ? t("TOOLTIP_DOCK") : t("TOOLTIP_UNDOCK")} ${getActionHotkeyString(ACTION_DOCK_UNDOCK)}`
     );
     btn.onClick(() => {
       toggleDock({silent: false, forceDock: false, saveSetting: true})
@@ -21366,9 +23055,9 @@ const renderBody = (contentEl) => {
   });
 
   btnGrid.createEl("button", {
-    text: "Add Sibling",
+    text: t("BUTTON_ADD_SIBLING"),
     cls: "mod-cta",
-    attr: { style: "padding: 2px;", title: `(Enter)` },
+    attr: { style: "padding: 2px;", title: `${t("TITLE_ADD_SIBLING")} ${getActionHotkeyString(ACTION_ADD)}` },
   }).onclick = async () => {
     await addNode(inputEl.value, false);
     inputEl.value = "";
@@ -21376,7 +23065,7 @@ const renderBody = (contentEl) => {
     updateUI();
     focusInputEl();
   };
-  btnGrid.createEl("button", { text: "Add+Follow", attr: { style: "padding: 2px;", title: `${getActionHotkeyString(ACTION_ADD_FOLLOW)}`} }).onclick = async () => {
+  btnGrid.createEl("button", { text: t("BUTTON_ADD_FOLLOW"), attr: { style: "padding: 2px;", title: `${t("TITLE_ADD_FOLLOW")} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}`} }).onclick = async () => {
     await addNode(inputEl.value, true);
     inputEl.value = "";
     if(!autoLayoutDisabled) await refreshMapLayout();
@@ -21384,24 +23073,24 @@ const renderBody = (contentEl) => {
     focusInputEl();
   };
   copyBtn = btnGrid.createEl("button", {
-    text: "Copy",
-    attr: { style: "padding: 2px;", title: `Copy branch as text ${getActionHotkeyString(ACTION_COPY)}` },
+    text: t("BUTTON_COPY"),
+    attr: { style: "padding: 2px;", title: `${t("TITLE_COPY")} ${getActionHotkeyString(ACTION_COPY)}` },
   });
   copyBtn.onclick = copyMapAsText;
 
   cutBtn = btnGrid.createEl("button", {
-    text: "Cut",
-    attr: { style: "padding: 2px;", title: `Cut branch as text ${getActionHotkeyString(ACTION_CUT)}` },
+    text: t("BUTTON_CUT"),
+    attr: { style: "padding: 2px;", title: `${t("TITLE_CUT")} ${getActionHotkeyString(ACTION_CUT)}` },
   });
   cutBtn.onclick = () => copyMapAsText(true);
 
   btnGrid.createEl("button", {
-    text: "Paste",
-    attr: { style: "padding: 2px;", title: `Paste list from clipboard ${getActionHotkeyString(ACTION_PASTE)}` },
+    text: t("BUTTON_PASTE"),
+    attr: { style: "padding: 2px;", title: `${t("TITLE_PASTE")} ${getActionHotkeyString(ACTION_PASTE)}` },
   }).onclick = pasteListToMap;
 
   const zoomSetting = new ea.obsidian.Setting(bodyContainer);
-  zoomSetting.setName("Zoom Level").addDropdown((d) => {
+  zoomSetting.setName(t("LABEL_ZOOM_LEVEL")).addDropdown((d) => {
     ZOOM_TYPES.forEach((key) => d.addOption(key, key));
     d.setValue(zoomLevel);
     d.onChange((v) => {
@@ -21414,13 +23103,13 @@ const renderBody = (contentEl) => {
   zoomSetting.addExtraButton(btn=>{
     zoomBtn = btn;
     btn.setIcon("scan-search")
-      .setTooltip(`Cycle element zoom ${getActionHotkeyString(ACTION_ZOOM)}`)
+      .setTooltip(`${t("TOOLTIP_ZOOM_CYCLE")} ${getActionHotkeyString(ACTION_ZOOM)}`)
       .onClick(()=>{
         zoomToFit(true);
       })
   });
 
-  new ea.obsidian.Setting(bodyContainer).setName("Growth Strategy").addDropdown((d) => {
+  new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_GROWTH_STRATEGY")).addDropdown((d) => {
     strategyDropdown = d;
     GROWTH_TYPES.forEach((key) => d.addOption(key, key));
     d.setValue(currentModalGrowthMode);
@@ -21444,17 +23133,30 @@ const renderBody = (contentEl) => {
   });
 
   autoLayoutToggle = new ea.obsidian.Setting(bodyContainer)
-    .setName("Disable Auto-Layout")
+    .setName(t("LABEL_AUTO_LAYOUT"))
     .addToggle((t) => t
-      .setValue(autoLayoutDisabled)
+      .setValue(!autoLayoutDisabled)
       .onChange(async (v) => {
-        autoLayoutDisabled = v;
-        setMapAutolayout(v);
+        autoLayoutDisabled = !v;
+        setMapAutolayout(!v);
       }),
+    )
+    .addButton(btn => btn
+      .setIcon("pencil-ruler")
+      .setTooltip(t("TOOLTIP_CONFIGURE_LAYOUT"))
+      .onClick(() => {
+        const modal = new LayoutConfigModal(app, layoutSettings, (newSettings) => {
+          layoutSettings = newSettings;
+          setVal(K_LAYOUT, layoutSettings, true);
+          dirty = true;
+          if(!autoLayoutDisabled) refreshMapLayout(); // Auto-refresh if layout is active
+        });
+        modal.open();
+      })
     ).components[0];
 
   new ea.obsidian.Setting(bodyContainer)
-    .setName("Group Branches")
+    .setName(t("LABEL_GROUP_BRANCHES"))
     .addToggle((t) => t
     .setValue(groupBranches)
     .onChange(async (v) => {
@@ -21473,7 +23175,7 @@ const renderBody = (contentEl) => {
     .addButton((btn) => {
       toggleGroupBtn = btn;
       btn.setIcon("group");
-      btn.setTooltip(`Toggle grouping/ungroupding of a branch. Only available if "Group Branches" is disabled. ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
+      btn.setTooltip(`${t("TOOLTIP_TOGGLE_GROUP_BTN")} ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
       btn.onClick(async () => {
         await toggleBranchGroup();
         focusInputEl();
@@ -21481,7 +23183,7 @@ const renderBody = (contentEl) => {
     });
 
   new ea.obsidian.Setting(bodyContainer)
-    .setName("Box Child Nodes")
+    .setName(t("LABEL_BOX_CHILD_NODES"))
     .addToggle((t) => t
       .setValue(boxChildren)
       .onChange((v) => {
@@ -21493,14 +23195,14 @@ const renderBody = (contentEl) => {
     .addButton((btn) => {
       boxBtn = btn;
       btn.setIcon("rectangle-horizontal");
-      btn.setTooltip(`Toggle node box. ${getActionHotkeyString(ACTION_BOX)}`);
+      btn.setTooltip(`${t("TOOLTIP_TOGGLE_BOX")} ${getActionHotkeyString(ACTION_BOX)}`);
       btn.onClick(async () => {
         await toggleBox();
         focusInputEl();
       });
     });
 
-  new ea.obsidian.Setting(bodyContainer).setName("Rounded Corners").addToggle((t) => t
+  new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_ROUNDED_CORNERS")).addToggle((t) => t
     .setValue(roundedCorners)
     .onChange((v) => {
       roundedCorners = v;
@@ -21510,9 +23212,9 @@ const renderBody = (contentEl) => {
   );
 
   new ea.obsidian.Setting(bodyContainer)
-    .setName("Use scene stroke style")
+    .setName(t("LABEL_USE_SCENE_STROKE"))
     .setDesc(
-      "Use the latest stroke style (solid, dashed, dotted) from the scene, or always use solid style for branches.",
+      t("DESC_USE_SCENE_STROKE"),
     )
     .addToggle((t) =>
       t.setValue(!isSolidArrow).onChange((v) => {
@@ -21523,7 +23225,7 @@ const renderBody = (contentEl) => {
     );
 
   new ea.obsidian.Setting(bodyContainer)
-    .setName("Multicolor Branches")
+    .setName(t("LABEL_MULTICOLOR_BRANCHES"))
     .addToggle((t) =>
       t.setValue(multicolor).onChange((v) => {
         multicolor = v;
@@ -21533,20 +23235,20 @@ const renderBody = (contentEl) => {
     )
     .addButton(btn => 
       btn.setIcon("palette")
-         .setTooltip("Configure custom color palette for branches")
-         .onClick(() => {
-           const modal = new PaletteManagerModal(app, customPalette, (newSettings) => {
-             customPalette = newSettings;
-             setVal(K_PALETTE, customPalette, true); // save to script settings
-             dirty = true;
-           });
-           modal.open();
-         })
+        .setTooltip(t("TOOLTIP_CONFIGURE_PALETTE"))
+        .onClick(() => {
+          const modal = new PaletteManagerModal(app, customPalette, (newSettings) => {
+            customPalette = newSettings;
+            setVal(K_PALETTE, customPalette, true); // save to script settings
+            dirty = true;
+          });
+          modal.open();
+        })
     );
 
   let sliderValDisplay;
-  const sliderSetting = new ea.obsidian.Setting(bodyContainer).setName("Max Wrap Width").addSlider((s) => s
-    .setLimits(100, 600, 10)
+  const sliderSetting = new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_MAX_WRAP_WIDTH")).addSlider((s) => s
+    .setLimits(WRAP_WIDTH_MIN, WRAP_WIDTH_MAX, WRAP_WIDTH_STEP)
     .setValue(maxWidth)
     .onChange(async (v) => {
       maxWidth = v;
@@ -21561,8 +23263,8 @@ const renderBody = (contentEl) => {
   });
 
   new ea.obsidian.Setting(bodyContainer)
-    .setName("Center text")
-    .setDesc("Toggle off: align nodes to rigth/left depending; Toggle on: center the text.")
+    .setName(t("LABEL_CENTER_TEXT"))
+    .setDesc(t("DESC_CENTER_TEXT"))
     .addToggle((t) => t
       .setValue(centerText)
       .onChange((v) => {
@@ -21572,7 +23274,7 @@ const renderBody = (contentEl) => {
       }),
     );
 
-  new ea.obsidian.Setting(bodyContainer).setName(K_FONTSIZE).addDropdown((d) => {
+  new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_FONT_SIZES")).addDropdown((d) => {
     FONT_SCALE_TYPES.forEach((key) => d.addOption(key, key));
     d.setValue(fontsizeScale);
     d.onChange((v) => {
@@ -21588,11 +23290,11 @@ const renderBody = (contentEl) => {
   const hkDetails = bodyContainer.createEl("details", {
     attr: { style: "margin-top: 15px; border-top: 1px solid var(--background-modifier-border); padding-top: 10px;" }
   });
-  hkDetails.createEl("summary", { text: "Hotkey Configuration", attr: { style: "cursor: pointer; font-weight: bold;" } });
+  hkDetails.createEl("summary", { text: t("HOTKEY_SECTION_TITLE"), attr: { style: "cursor: pointer; font-weight: bold;" } });
   
   const hkContainer = hkDetails.createDiv();
-  hkContainer.createEl("p", {
-    text: "While the Mindmap Builder input field is active, the following hotkeys override standard Obsidian behaviors.",
+  const hint = hkContainer.createEl("p", {
+    text: t("HOTKEY_HINT"),
     attr: { style: "color: var(--text-muted); font-size: 0.85em; margin-bottom: 10px;" }
   });
 
@@ -21627,7 +23329,7 @@ const renderBody = (contentEl) => {
     const originalText = btn.innerHTML;
     const label = btn.parentElement.querySelector(".setting-hotkey");
     
-    btn.innerHTML = `Press hotkey...`;
+    btn.innerHTML = t("RECORD_HOTKEY_PROMPT");
     btn.addClass("is-recording");
     isRecordingHotkey = true;
     
@@ -21636,7 +23338,7 @@ const renderBody = (contentEl) => {
 
     const cleanup = () => {
       if (recordingScope) {
-        app.keymap.popObsidianHotkeyScope(recordingScope);
+        app.keymap.popScope(recordingScope);
         recordingScope = null;
       }
 
@@ -21674,7 +23376,7 @@ const renderBody = (contentEl) => {
 
       // Validation
       if (isNav && !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
-        new Notice("This action requires Arrow Keys. Only modifiers can be changed.");
+        new Notice(t("NOTICE_ACTION_REQUIRES_ARROWS"));
         cleanup();
         return false;
       }
@@ -21689,22 +23391,21 @@ const renderBody = (contentEl) => {
         if (h.isNavigation && isNav) return true;
         if (h.isNavigation && key.startsWith("Arrow")) return true;
         
-        const hKey = h.code ? h.code.replace("Key","") : h.key;
-        const eKey = code ? code.replace("Key","") : key;
+        const hKey = h.code ? h.code.replace("Key","").replace("Digit","") : h.key;
+        const eKey = code ? code.replace("Key","").replace("Digit","") : key;
         return hKey.toLowerCase() === eKey.toLowerCase();
       });
 
       if (conflict) {
         label.style.color = "var(--text-error)";
-        new Notice(`Conflict with "${conflict.action}"`);
-        setTimeout(() => label.style.color = "", 2000);
+        new Notice(t("NOTICE_CONFLICT_WITH_ACTION", { action: getActionLabel(conflict.action) }), NOTICE_DURATION_CONFLICT);
+        setTimeout(() => label.style.color = "", 4000);
       } else {
-        // Update setting
         if (isNav) {
           targetConfig.modifiers = mods.map(m => m === "Ctrl" || m === "Meta" ? "Mod" : m);
         } else {
           targetConfig.modifiers = mods.map(m => m === "Ctrl" || m === "Meta" ? "Mod" : m);
-          if (code && code.startsWith("Key")) {
+          if (code && (code.startsWith("Key") || code.startsWith("Digit"))) {
             targetConfig.code = code;
             delete targetConfig.key;
           } else {
@@ -21713,6 +23414,14 @@ const renderBody = (contentEl) => {
           }
         }
         saveHotkeys();
+
+        if (targetConfig.scope === SCOPE.global) {
+          const obsConflict = getObsidianConflict(targetConfig);
+          if (obsConflict) {
+            new Notice(t("NOTICE_OBSIDIAN_HOTKEY_CONFLICT", { command: obsConflict }), NOTICE_DURATION_GLOBAL_CONFLICT);
+          }
+        }
+
         if(onUpdate) onUpdate();
       }
 
@@ -21728,76 +23437,99 @@ const renderBody = (contentEl) => {
     if (h.immutable) return;
 
     const setting = new ea.obsidian.Setting(hkContainer)
-      .setName(h.action);
+      .setName(getActionLabel(h.action));
+    setting.settingEl.style.paddingRight = "0";
+    setting.settingEl.style.paddingLeft = "0";
     
     const controlDiv = setting.controlEl;
     controlDiv.addClass("setting-item-control");
     
-    // Create UI elements
     let scopeBtn = null;
     let updateScopeUI = null;
 
+    const hotkeyDisplay = controlDiv.createDiv("setting-command-hotkeys");
+    const span = hotkeyDisplay.createSpan("setting-hotkey");
+    const restoreBtn = controlDiv.createSpan("clickable-icon setting-restore-hotkey-button");
+    
+    const updateRowUI = () => {
+      span.textContent = getHotkeyDisplayString(userHotkeys[index]);
+      restoreBtn.style.display = isModified(userHotkeys[index]) ? "" : "none";
+      if (updateScopeUI) updateScopeUI();
+
+      const existingAlert = hotkeyDisplay.querySelector(".hotkey-conflict-icon");
+      if(existingAlert) existingAlert.remove();
+      span.removeClass("has-conflict");
+      span.style.color = "";
+
+      if (userHotkeys[index].scope === SCOPE.global) {
+        const conflict = getObsidianConflict(userHotkeys[index]);
+        if (conflict) {
+          span.addClass("has-conflict");
+          
+          const alert = hotkeyDisplay.createSpan("hotkey-conflict-icon");
+          alert.innerHTML = ea.obsidian.getIcon("octagon-alert").outerHTML;
+          alert.style.color = "var(--text-error)";
+          alert.style.marginRight = "calc(-1 * var(--size-2-2))";
+          alert.style.display = "inline-flex"; // Ensure it sits nicely next to text
+          alert.style.cursor = "pointer";
+          alert.ariaLabel = t("ARIA_OVERRIDE_COMMAND", { command: conflict });
+          alert.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            new Notice(t("NOTICE_GLOBAL_HOTKEY_CONFLICT", { command: conflict }), NOTICE_DURATION_GLOBAL_CONFLICT);
+          };
+        }
+      }
+    };
+
     if (!h.isInputOnly) {
       scopeBtn = controlDiv.createSpan("clickable-icon setting-global-hotkey-button");
-      scopeBtn.style.marginRight = "8px";
-      
+      scopeBtn.style.marginRight = "calc(-1 * var(--size-2-2))";
+
       updateScopeUI = () => {
         const scope = userHotkeys[index].scope;
         switch (scope) {
           case SCOPE.input:
             scopeBtn.innerHTML = ea.obsidian.getIcon("keyboard").outerHTML;
-            scopeBtn.ariaLabel = "Local: Active only when MindMap Input is focused";
+            scopeBtn.ariaLabel = t("ARIA_SCOPE_INPUT");
             scopeBtn.style.color = "var(--text-muted)";
             break;
           case SCOPE.excalidraw:
             scopeBtn.innerHTML = ea.obsidian.getIcon("excalidraw-icon").outerHTML;
-            scopeBtn.ariaLabel = "Excalidraw: Active whenever MindMap Input or Excalidraw is focused";
+            scopeBtn.ariaLabel = t("ARIA_SCOPE_EXCALIDRAW");
             scopeBtn.style.color = "var(--interactive-accent)";
             break;
           case SCOPE.global:
             scopeBtn.innerHTML = ea.obsidian.getIcon("globe").outerHTML;
-            scopeBtn.ariaLabel = "Global: Active everywhere in Obsidian, whenever the Excalidraw view is visible";
+            scopeBtn.ariaLabel = t("ARIA_SCOPE_GLOBAL");
             scopeBtn.style.color = "var(--text-error)";
             break;
         }
       };
 
       scopeBtn.onclick = () => {
-        switch (userHotkeys[index].scope) {
-          case SCOPE.input:
-            userHotkeys[index].scope = SCOPE.excalidraw;
-            break;
-          case SCOPE.excalidraw:
-            userHotkeys[index].scope = SCOPE.global;
-            break;
-          case SCOPE.global:
-            userHotkeys[index].scope = SCOPE.input;
-            break;
-        }
+        const current = userHotkeys[index].scope;
+        let next = SCOPE.input;
+        if (current === SCOPE.input) next = SCOPE.excalidraw;
+        else if (current === SCOPE.excalidraw) next = SCOPE.global;
+        else if (current === SCOPE.global) next = SCOPE.input;
+        
+        userHotkeys[index].scope = next;
         saveHotkeys();
-        updateScopeUI();
-      };
 
+        if (next === SCOPE.global) {
+          const conflict = getObsidianConflict(userHotkeys[index]);
+          if (conflict) {
+            new Notice(t("NOTICE_GLOBAL_HOTKEY_CONFLICT", { command: conflict }), NOTICE_DURATION_GLOBAL_CONFLICT);
+          }
+        }        
+        updateRowUI();
+      };
       updateScopeUI();
     }
 
-    const hotkeyDisplay = controlDiv.createDiv("setting-command-hotkeys");
-    const span = hotkeyDisplay.createSpan("setting-hotkey");
-    
-    // UI Update logic scoped to this specific row
-    const restoreBtn = controlDiv.createSpan("clickable-icon setting-restore-hotkey-button");
     restoreBtn.innerHTML = ea.obsidian.getIcon("rotate-ccw").outerHTML;
-    restoreBtn.ariaLabel = "Restore default";
-
-    const updateRowUI = () => {
-      span.textContent = getHotkeyDisplayString(userHotkeys[index]);
-      restoreBtn.style.display = isModified(userHotkeys[index]) ? "" : "none";
-      if (updateScopeUI) updateScopeUI();
-    };
-
-    // Initial render
-    updateRowUI();
-
+    restoreBtn.ariaLabel = t("ARIA_RESTORE_DEFAULT");
     restoreBtn.onclick = () => {
       const def = DEFAULT_HOTKEYS.find(d => d.action === userHotkeys[index].action);
       if (def) {
@@ -21807,9 +23539,11 @@ const renderBody = (contentEl) => {
       }
     };
 
+    updateRowUI();
+
     const addBtn = controlDiv.createSpan("clickable-icon setting-add-hotkey-button");
     addBtn.innerHTML = ea.obsidian.getIcon("plus-circle").outerHTML;
-    addBtn.ariaLabel = "Customize this hotkey";
+    addBtn.ariaLabel = t("ARIA_CUSTOMIZE_HOTKEY");
     addBtn.onclick = () => recordHotkey(addBtn, index, updateRowUI);
   });
 
@@ -21817,21 +23551,51 @@ const renderBody = (contentEl) => {
   bodyContainer.createDiv({ attr: { style: "height: 40px;" } });
 };
 
+const MINDMAP_FOCUS_STYLE_ID = "excalidraw-mindmap-focus-style";
+
+const registerStyles = () => {
+  if (document.getElementById(MINDMAP_FOCUS_STYLE_ID)) return;
+  const styleEl = document.createElement("style");
+  styleEl.id = MINDMAP_FOCUS_STYLE_ID;
+  styleEl.textContent = [
+    ".excalidraw-mindmap-ui button:focus-visible,",
+    ".excalidraw-mindmap-ui .clickable-icon:focus-visible,",
+    ".excalidraw-mindmap-ui [tabindex]:focus-visible {",
+    "  outline: 2px solid var(--interactive-accent) !important;",
+    "  outline-offset: 2px;",
+    "  background-color: var(--interactive-accent);",
+    "  color: var(--background-primary);",
+    "}",
+    ".excalidraw-mindmap-ui .clickable-icon:focus-visible svg {",
+    "  color: inherit;",
+    "}",
+  ].join("\n");
+  document.head.appendChild(styleEl);
+};
+
+const removeStyles = () => {
+  const styleEl = document.getElementById(MINDMAP_FOCUS_STYLE_ID);
+  if (styleEl) styleEl.remove();
+};
+
 const updateKeyHandlerLocation = () => {
   // Attach to the appropriate window based on state
   if (isUndocked) {
     // Floating: Input is reparented to targetView's window
     if (ea.targetView && ea.targetView.ownerWindow) {
-      registerKeydownHandler(ea.targetView.ownerWindow, keyHandler);
+      registerKeydownHandler(ea.targetView.ownerWindow, handleKeydown);
     }
   } else {
     // Docked: Input is in the sidepanel's window
     if (sidepanelWindow) {
-      registerKeydownHandler(sidepanelWindow, keyHandler);
+      registerKeydownHandler(sidepanelWindow, handleKeydown);
     }
   }
 };
 
+// ---------------------------------------------------------------------------
+// Docking & Floating Input Management
+// ---------------------------------------------------------------------------
 /**
  * silent === true: sidepanel is not revealed after docking
  * forceDock === true: if input is undocked, docking happens even if no ExcalidrawView is present
@@ -21880,6 +23644,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
     // UNDOCK: Create floating modal
     floatingInputModal = new ea.FloatingModal(ea.plugin.app);
     const { contentEl, titleEl, modalEl, headerEl } = floatingInputModal;
+    modalEl.classList.add("excalidraw-mindmap-ui");
 
     floatingInputModal.onOpen = () => {
       // Reparent the modal to the target view's window. 
@@ -21894,12 +23659,12 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
       if (closeEl) closeEl.style.display = "none";
       titleEl.style.display = "none";
       headerEl.style.display = "none";
-      modalEl.style.opacity = "0.8";
+      modalEl.style.opacity = `${FLOAT_MODAL_OPACITY}`;
       modalEl.style.padding = "6px";
       modalEl.style.minHeight = "0px";
       modalEl.style.width = "fit-content";
       modalEl.style.height = "auto";
-      modalEl.style.maxHeight = "calc(2 * var(--size-4-4) + 12px + var(--input-height))";
+      modalEl.style.maxHeight = FLOAT_MODAL_MAX_HEIGHT;
       const container = floatingInputModal.contentEl.createDiv();
       renderInput(container, true);
       focusInputEl();
@@ -21908,8 +23673,8 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
         //otherwise the event handlers in FloatingModal would override the move
         //leaving modalEl in the center of the view
         //modalEl.style.top and left must stay in the timeout call
-        modalEl.style.top = `${ y + 5 }px`;
-        modalEl.style.left = `${ x + 5 }px`;
+        modalEl.style.top = `${ y + FLOAT_MODAL_OFFSET }px`;
+        modalEl.style.left = `${ x + FLOAT_MODAL_OFFSET }px`;
       }, 100);
     };
 
@@ -21957,15 +23722,16 @@ const getActionFromEvent = (e) => {
     const hasAlt = h.modifiers.includes("Alt");
 
     return (isMod === hasMod) && 
-           (e.shiftKey === hasShift) && 
-           (e.altKey === hasAlt);
+          (e.shiftKey === hasShift) && 
+          (e.altKey === hasAlt);
   });
 
   return match ? { action: match.action, scope: match.scope } :  { };
 };
 
-const keyHandler = async (e) => {
+const handleKeydown = async (e) => {
   if (isRecordingHotkey) return;
+  if (!ea.targetView || !ea.targetView.leaf.isVisible()) return;
 
   const currentWindow = isUndocked && floatingInputModal 
     ? ea.targetView?.ownerWindow 
@@ -21980,18 +23746,61 @@ const keyHandler = async (e) => {
     }
     return;
   }
-  
-  const {action, scope} = getActionFromEvent(e);
 
-  if (!action) return;
+  let {action, scope} = getActionFromEvent(e);
+  let context = getHotkeyContext();
 
-  if (getHotkeyContext() < scope) return;
+  // Local Tab handling for floating modal to keep focus cycling inside
+  if (!action && isUndocked && floatingInputModal && e.key === "Tab") {
+    const modalEl = floatingInputModal.modalEl;
+    if (modalEl) {
+      const selector = [
+        "input:not([disabled])",
+        "div:not([style*='not-allowed'])",
+      ].join(",");
+
+      const focusables = Array.from(modalEl.querySelectorAll(selector)).filter((el) => {
+        if (el.tabIndex === -1 || el.hidden) return false;
+        return el.offsetParent !== null || el.getClientRects().length > 0;
+      });
+
+      if (focusables.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        const active = modalEl.ownerDocument.activeElement;
+        let idx = focusables.indexOf(active);
+        if (idx === -1) idx = 0;
+        idx = e.shiftKey
+          ? (idx === 0 ? focusables.length - 1 : idx - 1)
+          : (idx === focusables.length - 1 ? 0 : idx + 1);
+        focusables[idx].focus();
+      }
+    }
+    return;
+  }
+
+  if (
+    e.key === "Enter" && context === SCOPE.excalidraw &&
+    ((isUndocked && floatingInputModal) || !isUndocked)
+   ) {
+    const modalEl = isUndocked ?floatingInputModal.modalEl : ea.sidepanelTab.containerEl;
+    const activeEl = modalEl?.ownerDocument.activeElement;
+    action = activeEl?.getAttribute("action");
+    if (!action) return;
+    context = SCOPE.input;
+  }
+
+  if (!action || context < scope) return;
 
   e.preventDefault();
   e.stopPropagation();
 
   switch (action) {
-    case ACTION_TOGGLE_GROUP: // Handle Alt+G
+    case ACTION_REARRANGE:
+      await refreshMapLayout();
+      focusInputEl();
+      break;
+    case ACTION_TOGGLE_GROUP:
       await toggleBranchGroup();
       break;
     case ACTION_HIDE:
@@ -22011,6 +23820,30 @@ const keyHandler = async (e) => {
 
     case ACTION_BOX:
       await toggleBox();
+      focusInputEl();
+      break;
+
+    case ACTION_TOGGLE_BOUNDARY:
+      await toggleBoundary();
+      updateUI();
+      focusInputEl();
+      break;
+
+    case ACTION_FOLD:
+      await toggleFold("L0");
+      updateUI();
+      focusInputEl();
+      break;
+
+    case ACTION_FOLD_L1:
+      await toggleFold("L1");
+      updateUI();
+      focusInputEl();
+      break;
+
+    case ACTION_UNFOLD_ALL:
+      await toggleFold("ALL");
+      updateUI();
       focusInputEl();
       break;
 
@@ -22035,17 +23868,17 @@ const keyHandler = async (e) => {
       break;
 
     case ACTION_NAVIGATE:
-      navigateMap({key: e.key, zoom: false, focus: false});
+      await navigateMap({key: e.key, zoom: false, focus: false});
       updateUI();
       break;
 
     case ACTION_NAVIGATE_ZOOM:
-      navigateMap({key: e.key, zoom: true, focus: false});
+      await navigateMap({key: e.key, zoom: true, focus: false});
       updateUI();
       break;
 
     case ACTION_NAVIGATE_FOCUS:
-      navigateMap({key: e.key, zoom: false, focus: true});
+      await navigateMap({key: e.key, zoom: false, focus: true});
       updateUI();
       break;
 
@@ -22106,9 +23939,9 @@ case ACTION_ADD:
           if (!handledRecent && sel) {
             const parent = getParentNode(sel.id, allElements);
             const siblings = parent ? getChildrenNodes(parent.id, allElements) : [];
-             
+
             if (siblings.length > 1) {
-              navigateMap({key: "ArrowDown", zoom: false, focus: false});
+              await navigateMap({key: "ArrowDown", zoom: false, focus: false});
             }
             else {
               const children = getChildrenNodes(sel.id, allElements);
@@ -22128,7 +23961,7 @@ case ACTION_ADD:
   }
 };
 
-const canvasPointerListener = (e) => {
+const handleCanvasPointerDown = (e) => {
   if (!ea.targetView) return;
   // If input is floating, check if click is inside it to avoid deselecting/updating UI prematurely
   if (floatingInputModal && floatingInputModal.modalEl.contains(e.target)) return;
@@ -22155,19 +23988,20 @@ const canvasPointerListener = (e) => {
 // --- Initialization Logic ---
 // 1. Checking for exsiting tab right at the beginning of the script (not needed here)
 // 2. Create new Sidepanel Tab
-ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
+ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
   if (!tab) return;
-
+  registerStyles();
   tab.onWindowMigrated = (newWin) => {
     sidepanelWindow = newWin;
     // If we are docked, re-attach to the new window immediately
     if (!isUndocked && sidepanelWindow) {
-      registerKeydownHandler(sidepanelWindow, keyHandler);
+      registerKeydownHandler(sidepanelWindow, handleKeydown);
     }
   };
 
   // When the view closes, ensure we dock the input back so it's not lost in floating limbo
   tab.onExcalidrawViewClosed = () => {
+    console.log("view closed");
     if (isUndocked) {
       toggleDock({silent: true, forceDock: true, saveSetting: false});
     }
@@ -22175,6 +24009,7 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
 
   tab.onOpen = () => {
     const contentEl = tab.contentEl;
+    contentEl.classList.add("excalidraw-mindmap-ui");
     if (!contentEl.hasChildNodes()) {
       renderHelp(contentEl);
       inputContainer = contentEl.createDiv(); 
@@ -22210,9 +24045,11 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   const setupEventListeners = (view) => {
     if (!view || !view.ownerWindow) return;
     if(removePointerDownHandler) removePointerDownHandler();
-    view.ownerWindow.addEventListener("pointerdown", canvasPointerListener);
+    const win = view.ownerWindow;
+
+    win.addEventListener("pointerdown", handleCanvasPointerDown);
     removePointerDownHandler = () => {
-      view.ownerWindow.removeEventListener("pointerdown", canvasPointerListener);
+      if (win) win.removeEventListener("pointerdown", handleCanvasPointerDown);
       removePointerDownHandler = null;
     }
     updateKeyHandlerLocation();
@@ -22243,7 +24080,6 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   tab.onFocus = (view) => onFocus(view);
 
   const onActiveLeafChange = (leaf) => {
-    console.log("leaf change");
     if (cancelHotkeyRecording) cancelHotkeyRecording();
 
     if (ea.targetView !== leaf.view && ea.isExcalidrawView(leaf.view)) {
@@ -22285,13 +24121,13 @@ ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
   // Register the global listener
   const leafChangeRef = app.workspace.on("active-leaf-change", onActiveLeafChange);
 
-
   tab.onClose = async () => {
     app.workspace.offref(leafChangeRef);
     if (popObsidianHotkeyScope) popObsidianHotkeyScope();
     if (ea.targetView) {
       removeEventListeners(ea.targetView);
     }
+    removeStyles();
     if (floatingInputModal) {
       if (floatingInputModal.modalEl && floatingInputModal.modalEl.parentElement) {
         floatingInputModal.modalEl.remove();

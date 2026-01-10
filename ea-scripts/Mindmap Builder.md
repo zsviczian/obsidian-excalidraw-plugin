@@ -565,23 +565,36 @@ const getActionLabel = (action) => t(ACTION_LABEL_KEYS[action] ?? action);
 // - global: the hotkey works across obsidian, when ever the Excalidraw view in ea.targetView is visible, i.e. the hotkey works even if the user is active in a leaf like pdf viewer, markdown note, open next to Excalidraw.
 // - none: ea.targetView not set or Excalidraw leaf not visible
 const DEFAULT_HOTKEYS = [
-  { action: ACTION_ADD, key: "Enter", modifiers: [], immutable: true, scope: SCOPE.input, isInputOnly: true }, // Logic relies on standard Enter behavior in input
+  // Creation - Enter based
+  { action: ACTION_ADD, key: "Enter", modifiers: [], immutable: true, scope: SCOPE.input, isInputOnly: true },
   { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers: ["Mod", "Alt"], scope: SCOPE.input, isInputOnly: true },
   { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: true },
   { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"], scope: SCOPE.input, isInputOnly: true },
-  { action: ACTION_EDIT, code: "F2", modifiers: [], scope: SCOPE.input, isInputOnly: false },
+
+  // Edit
+  { action: ACTION_EDIT, code: "KeyE", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: false },
+
+  // Structure Modifiers 
   { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_TOGGLE_BOUNDARY, code: "KeyB", modifiers: ["Alt", "Mod"], scope: SCOPE.input, inputOnly: false },
+  { action: ACTION_TOGGLE_BOUNDARY, code: "KeyB", modifiers: ["Alt", "Shift"], scope: SCOPE.input, inputOnly: false },
   { action: ACTION_TOGGLE_GROUP, code: "KeyG", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false }, 
+
+  // Clipboard (Alt to distinguish from text editing)
   { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_REARRANGE, code: "F5", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+
+  // View Actions
+  { action: ACTION_REARRANGE, code: "KeyR", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_ZOOM, code: "KeyZ", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+
+  //Window
   { action: ACTION_DOCK_UNDOCK, key: "Enter", modifiers: ["Shift"], scope: SCOPE.input, isInputOnly: true },
   { action: ACTION_HIDE, key: "Escape", modifiers: [], immutable: true , scope: SCOPE.excalidraw, isInputOnly: true },
+
+  //Navigation
   { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_NAVIGATE_ZOOM, key: "ArrowKeys", modifiers: ["Alt", "Shift"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_NAVIGATE_FOCUS, key: "ArrowKeys", modifiers: ["Alt", "Mod"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
