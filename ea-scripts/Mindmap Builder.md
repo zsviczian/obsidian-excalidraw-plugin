@@ -66,6 +66,7 @@ const K_ZOOM = "Preferred Zoom Level";
 const K_HOTKEYS = "Hotkeys";
 const K_PALETTE = "Custom Palette";
 const K_LAYOUT = "Layout Config";
+const K_ARROW_TYPE = "Arrow Type";
 
 // ---------------------------------------------------------------------------
 // Core Value Sets
@@ -178,6 +179,7 @@ const STRINGS = {
     TITLE_PASTE: "Paste list from clipboard",
     LABEL_ZOOM_LEVEL: "Zoom Level",
     LABEL_GROWTH_STRATEGY: "Growth Strategy",
+    LABEL_ARROW_TYPE: "Curved Connectors",
     LABEL_AUTO_LAYOUT: "Auto-Layout",
     LABEL_GROUP_BRANCHES: "Group Branches",
     LABEL_BOX_CHILD_NODES: "Box Child Nodes",
@@ -286,6 +288,16 @@ if (existingTab) {
     existingTab.open();
     return;
   }
+}
+
+if(!window.MindmapBuilder) {
+  window.MindmapBuilder = {
+    keydownHandlers: [],
+  }
+} else {
+  window.MindmapBuilder.keydownHandlers.forEach((f)=>f());
+  window.MindmapBuilder.keydownHandlers = [];
+  if(window.MindmapBuilder.removePointerDownHandler) window.MindmapBuilder.removePointerDownHandler();
 }
 
 const api = () => ea.getExcalidrawAPI();
@@ -427,6 +439,7 @@ if(settingsTemp && settingsTemp.hasOwnProperty("Is Minimized")) {
   dirty = true;
 }
 
+let arrowType = getVal(K_ARROW_TYPE, {value: "curved", valueset: ["curved", "straight"]});
 let maxWidth = parseInt(getVal(K_WIDTH, 450));
 let fontsizeScale = getVal(K_FONTSIZE, {value: "Normal Scale", valueset: FONT_SCALE_TYPES});
 let boxChildren = getVal(K_BOX, false);
@@ -1524,7 +1537,7 @@ const updateNodeBoundary = (node, allElements) => {
   normalizedPoints.push([normalizedPoints[0][0], normalizedPoints[0][1]]); // Close loop
   boundaryEl.points = normalizedPoints;
 
-  boundaryEl.roundness = null;
+  boundaryEl.roundness = arrowType === "curved" ? {type: 2} : null;
   boundaryEl.polygon = true;
   boundaryEl.locked = false;
 
@@ -1598,7 +1611,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
 
   const children = getChildrenNodes(nodeId, allElements);
 
-   const unpinnedChildren = children.filter(child => !child.customData?.isPinned);
+  const unpinnedChildren = children.filter(child => !child.customData?.isPinned);
   const pinnedChildren = children.filter(child => child.customData?.isPinned);
 
 
@@ -1665,16 +1678,60 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
     if (arrow) {
       const eaArrow = ea.getElement(arrow.id);
       const eaChild = ea.getElement(child.id);
-      const sX = currentX + node.width / 2;
+
+      // Determine relative position
+      const childCenterX = eaChild.x + eaChild.width / 2;
+      const parentCenterX = currentX + node.width / 2;
+      const isChildRight = childCenterX > parentCenterX;
+
+      // Configure Binding Points (using .0001/.9999 to avoid jumping effect)
+      const startRatio = isChildRight ? 0.9999 : 0.0001;
+      const endRatio = isChildRight ? 0.0001 : 0.9999;
+      const centerYRatio = 0.5001;
+
+      eaArrow.startBinding = {
+        ...eaArrow.startBinding,
+        elementId: node.id,
+        mode: "orbit",
+        fixedPoint: [startRatio, centerYRatio]
+      };
+
+      eaArrow.endBinding = {
+        ...eaArrow.endBinding,
+        elementId: child.id,
+        mode: "orbit",
+        fixedPoint: [endRatio, centerYRatio]
+      };
+
+      // Calculate coordinates based on the side connection points
+      const sX = isChildRight ? currentX + node.width : currentX;
       const sY = currentYCenter;
-      const eX = eaChild.x + eaChild.width / 2;
+      
+      const eX = isChildRight ? eaChild.x : eaChild.x + eaChild.width;
       const eY = eaChild.y + eaChild.height / 2;
+
       eaArrow.x = sX;
       eaArrow.y = sY;
-      eaArrow.points = [
-        [0, 0],
-        [eX - sX, eY - sY],
-      ];
+
+      const dx = eX - sX;
+      const dy = eY - sY;
+
+      if (arrowType === "straight") {
+        eaArrow.roundness = null;
+        eaArrow.points = [
+          [0, 0],
+          [dx, dy],
+        ];
+      } else {
+        // CURVED ARROW
+        eaArrow.roundness = { type: 2 };
+        eaArrow.points = [
+            [0, 0],
+            [dx / 3, dy * 0.25],
+            [dx * 2 / 3, dy * 0.75],
+            [dx, dy]
+        ];
+      }
     }
   });
 
@@ -1866,18 +1923,61 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
           a.endBinding?.elementId === node.id,
       );
       if (arrow) {
-        const eaA = ea.getElement(arrow.id);
+        const eaArrow = ea.getElement(arrow.id);
         const childBox = getNodeBox(ea.getElement(node.id), ea.getElements());
-        const eX = childBox.minX + childBox.width / 2,
-          eY = childBox.minY + childBox.height / 2;
-        eaA.x = rootCenter.x;
-        eaA.y = rootCenter.y;
-        eaA.points = [
-          [0, 0],
-          [eX - rootCenter.x, eY - rootCenter.y],
-        ];
+
+        const childCenterX = childBox.minX + childBox.width / 2;
+        const isChildRight = childCenterX > rootCenter.x;
+        
+        // Configure Binding Points (using .0001/.9999 to avoid jumping effect)
+        const startRatio = isChildRight ? 0.9999 : 0.0001;
+        const endRatio = isChildRight ? 0.0001 : 0.9999;
+        const centerYRatio = 0.5001;
+
+        eaArrow.startBinding = {
+            ...eaArrow.startBinding,
+            elementId: root.id,
+            mode: "orbit",
+            fixedPoint: [startRatio, centerYRatio]
+        };
+
+        eaArrow.endBinding = {
+            ...eaArrow.endBinding,
+            elementId: node.id,
+            mode: "orbit",
+            fixedPoint: [endRatio, centerYRatio]
+        };
+        
+        // Calculate coords from sides
+        const sX = isChildRight ? rootBox.minX + rootBox.width : rootBox.minX;
+        const sY = rootCenter.y;
+        
+        const eX = isChildRight ? childBox.minX : childBox.minX + childBox.width;
+        const eY = childBox.minY + childBox.height / 2;
+
+        eaArrow.x = sX;
+        eaArrow.y = sY;
+
+        const dx = eX - sX;
+        const dy = eY - sY;
+        
+        if (arrowType === "straight") {
+            eaArrow.roundness = null;
+            eaArrow.points = [
+                [0, 0],
+                [dx, dy]
+            ];
+        } else {
+            eaArrow.roundness = { type: 2 };
+            eaArrow.points = [
+                [0, 0],
+                [dx / 3, dy * 0.25],
+                [dx * 2 / 3, dy * 0.75],
+                [dx, dy]
+            ];
+        }
       }
-    }
+    };
 
     if (mode === "Radial") {
       const unpinnedL1 = l1Nodes.filter(n => !n.customData?.isPinned);
@@ -2305,6 +2405,8 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
     ea.style.roughness = getAppState().currentItemRoughness;
     ea.style.strokeStyle = isSolidArrow ? "solid" : getAppState().currentItemStrokeStyle;
+    
+    // Initial arrow creation with placeholder points
     const startPoint = [parentBox.minX + parentBox.width / 2, parentBox.minY + parentBox.height / 2];
     arrowId = ea.addArrow([startPoint, startPoint], {
       startObjectId: parent.id,
@@ -2312,6 +2414,15 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       startArrowHead: null,
       endArrowHead: null,
     });
+    const eaArrow = ea.getElement(arrowId);
+    
+    // Initialize Roundness based on Type
+    if(arrowType === "curved") {
+       eaArrow.roundness = { type: 2 };
+    } else {
+       eaArrow.roundness = null;
+    }
+    
     ea.addAppendUpdateCustomData(arrowId, { isBranch: true });
 
     if (!groupBranches && parent.groupIds?.length > 0) {
@@ -2340,19 +2451,58 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     ea.copyViewElementsToEAforEditing(groupBranches ? allEls : arrow ? [arrow] : []);
 
     if (arrow) {
-      const eaA = ea.getElement(arrow.id);
-      const parentBox = getNodeBox(parent, allEls);
-      const sX = parentBox.minX + parentBox.width / 2,
-        sY = parentBox.minY + parentBox.height / 2;
-      const nodeBox = getNodeBox(node, allEls);
-      const eX = nodeBox.minX + nodeBox.width / 2,
-        eY = nodeBox.minY + nodeBox.height / 2;
-      eaA.x = sX;
-      eaA.y = sY;
-      eaA.points = [
-        [0, 0],
-        [eX - sX, eY - sY],
-      ];
+      const eaArrow = ea.getElement(arrow.id);
+      const eaNode = ea.getElement(node.id);
+      
+      const parentCenterX = parent.x + parent.width / 2;
+      const childCenterX = node.x + node.width / 2;
+      const isChildRight = childCenterX > parentCenterX;
+
+      const startRatio = isChildRight ? 0.9999 : 0.0001;
+      const endRatio = isChildRight ? 0.0001 : 0.9999;
+      const centerYRatio = 0.5001;
+
+      eaArrow.startBinding = {
+        ...eaArrow.startBinding,
+        elementId: parent.id,
+        mode: "orbit",
+        fixedPoint: [startRatio, centerYRatio]
+      };
+
+      eaArrow.endBinding = {
+        ...eaArrow.endBinding,
+        elementId: node.id,
+        mode: "orbit",
+        fixedPoint: [endRatio, centerYRatio]
+      };
+
+      const sX = isChildRight ? parent.x + parent.width : parent.x;
+      const sY = parent.y + parent.height / 2;
+      
+      const eX = isChildRight ? node.x : node.x + node.width;
+      const eY = node.y + node.height / 2;
+
+      eaArrow.x = sX;
+      eaArrow.y = sY;
+
+      const dx = eX - sX;
+      const dy = eY - sY;
+
+      if (arrowType === "straight") {
+        eaArrow.roundness = null;
+        eaArrow.points = [
+          [0, 0],
+          [dx, dy],
+        ];
+      } else {
+        eaArrow.roundness = { type: 2 };
+        eaArrow.points = [
+          [0, 0],
+          [dx / 3, dy * 0.25],
+          [dx * 2 / 3, dy * 0.75],
+          [dx, dy]
+        ];
+      }
     }
 
     if (groupBranches) {
@@ -3009,13 +3159,13 @@ const toggleBoundary = async () => {
         fillStyle: "solid",
         strokeWidth: 2,
         strokeStyle: "solid",
-        roughness: 0,
         opacity: 30,
         points: [[0,0], [1,1], [0,0]],
         polygon: true,
         locked: false,
         groupIds: sel.groupIds || [],
         customData: {isBoundary: true},
+        roundness: arrowType === "curved" ? {type: 2} : null,
       };
 
       if (sel.groupIds.length > 0 && isMindmapGroup(sel.groupIds[0], ea.getViewElements())) {
@@ -3072,17 +3222,14 @@ let inputContainer;
 let helpContainer;
 let floatingInputModal = null;
 let sidepanelWindow;
-let popObsidianHotkeyScope = null;
-let keydownHandlers = [];
-let removePointerDownHandler = null;
 let recordingScope = null;
 
 // ---------------------------------------------------------------------------
 // Hotkey Wiring & Scope Helpers
 // ---------------------------------------------------------------------------
 const removeKeydownHandlers = () => {
-  keydownHandlers.forEach((f)=>f());
-  keydownHandlers = [];
+  window.MindmapBuilder.keydownHandlers.forEach((f)=>f());
+  window.MindmapBuilder.keydownHandlers = [];
 };
 
 // ---------------------------------------------------------------------------
@@ -3091,11 +3238,11 @@ const removeKeydownHandlers = () => {
 const registerKeydownHandler = (host, handler) => {
   removeKeydownHandlers();
   host.addEventListener("keydown", handler, true);
-  keydownHandlers.push(()=>host.removeEventListener("keydown", handler, true))
+  window.MindmapBuilder.keydownHandlers.push(()=>host.removeEventListener("keydown", handler, true))
 };
 
 const registerObsidianHotkeyOverrides = () => {
-  if (popObsidianHotkeyScope) popObsidianHotkeyScope();
+  if (window.MindmapBuilder.popObsidianHotkeyScope) window.MindmapBuilder.popObsidianHotkeyScope();
   const keymapScope = app.keymap.getRootScope();
   const handlers = [];
   const context = getHotkeyContext();
@@ -3118,9 +3265,9 @@ const registerObsidianHotkeyOverrides = () => {
 
   if(handlers.length === 0) return;
 
-  popObsidianHotkeyScope = () => {
+  window.MindmapBuilder.popObsidianHotkeyScope = () => {
     handlers.forEach(h => keymapScope.unregister(h));
-    popObsidianHotkeyScope = null;
+    delete window.MindmapBuilder.popObsidianHotkeyScope;
   };
 };
 
@@ -3129,7 +3276,7 @@ const focusInputEl = () => {
     if(isRecordingHotkey) return;
     if(!inputEl || inputEl.disabled) return;
     inputEl.focus();
-    if (!popObsidianHotkeyScope) registerObsidianHotkeyOverrides();
+    if (!window.MindmapBuilder.popObsidianHotkeyScope) registerObsidianHotkeyOverrides();
   }, 200);
 }
 
@@ -3668,7 +3815,7 @@ const renderInput = (container, isFloating = false) => {
       updateUI();
     });
     inputEl.addEventListener("blur", () => {
-      if (popObsidianHotkeyScope) popObsidianHotkeyScope();
+      if (window.MindmapBuilder.popObsidianHotkeyScope) window.MindmapBuilder.popObsidianHotkeyScope();
       saveSettings();
     });
   });
@@ -3930,6 +4077,18 @@ const renderBody = (contentEl) => {
         }
       });
   });
+
+  new ea.obsidian.Setting(bodyContainer)
+    .setName(t("LABEL_ARROW_TYPE"))
+    .addToggle((t) => t
+      .setValue(arrowType === "curved")
+      .onChange(async (v) => {
+        arrowType = v ? "curved" : "straight";
+        setVal(K_ARROW_TYPE, arrowType);
+        dirty = true;
+        refreshMapLayout();
+      }),
+    )
 
   autoLayoutToggle = new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_AUTO_LAYOUT"))
@@ -4477,7 +4636,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
     };
 
     floatingInputModal.onClose = () => {
-      if (popObsidianHotkeyScope) popObsidianHotkeyScope();
+      if (window.MindmapBuilder.popObsidianHotkeyScope) window.MindmapBuilder.popObsidianHotkeyScope();
       floatingInputModal = null;
       if (isUndocked) {
         // If closed manually (e.g. unexpected close), dock back silently
@@ -4828,28 +4987,28 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
       }
     } else {
       setupEventListeners(ea.targetView);
-      if (!popObsidianHotkeyScope) registerObsidianHotkeyOverrides();
+      if (!window.MindmapBuilder.popObsidianHotkeyScope) registerObsidianHotkeyOverrides();
     }
   };
 
   const setupEventListeners = (view) => {
     if (!view || !view.ownerWindow) return;
-    if(removePointerDownHandler) removePointerDownHandler();
+    if(window.MindmapBuilder.removePointerDownHandler) window.MindmapBuilder.removePointerDownHandler();
     const win = view.ownerWindow;
 
     win.addEventListener("pointerdown", handleCanvasPointerDown);
-    removePointerDownHandler = () => {
+    window.MindmapBuilder.removePointerDownHandler = () => {
       if (win) win.removeEventListener("pointerdown", handleCanvasPointerDown);
-      removePointerDownHandler = null;
+      delete window.MindmapBuilder.removePointerDownHandler;
     }
     updateKeyHandlerLocation();
   };
 
   const removeEventListeners = (view) => {
     removeKeydownHandlers();
-    if (popObsidianHotkeyScope) popObsidianHotkeyScope();
+    if (window.MindmapBuilder.popObsidianHotkeyScope) window.MindmapBuilder.popObsidianHotkeyScope();
     if (!view || !view.ownerWindow) return;
-    if(removePointerDownHandler) removePointerDownHandler();
+    if(window.MindmapBuilder.removePointerDownHandler) window.MindmapBuilder.removePointerDownHandler();
   };
 
   const onFocus = (view) => {
@@ -4913,7 +5072,7 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
 
   tab.onClose = async () => {
     app.workspace.offref(leafChangeRef);
-    if (popObsidianHotkeyScope) popObsidianHotkeyScope();
+    if (window.MindmapBuilder.popObsidianHotkeyScope) window.MindmapBuilder.popObsidianHotkeyScope();
     if (ea.targetView) {
       removeEventListeners(ea.targetView);
     }
