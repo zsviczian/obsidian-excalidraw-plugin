@@ -1197,7 +1197,7 @@ const toggleFold = async (mode = "L0") => {
   const targetNode = wbElements.find(el => el.id === sel.id);
   if (!targetNode) return;
 
-  const children = getChildrenNodes(targetNode.id, wbElements);  
+  const children = getChildrenNodes(targetNode.id, wbElements);
   if (children.length === 0) return;
 
   if (mode === "L1") {
@@ -1339,15 +1339,22 @@ const getSubtreeHeight = (nodeId, allElements) => {
   }
 
   const children = getChildrenNodes(nodeId, allElements);
-  if (children.length === 0) return node.height;
+
+  const unpinnedChildren = children.filter(child => !child.customData?.isPinned);
+
+  if (unpinnedChildren.length === 0) return node.height;
 
   let childrenHeight = 0;
-  children.forEach((child, index) => {
+  unpinnedChildren.forEach((child, index) => {
     childrenHeight += getSubtreeHeight(child.id, allElements);
-    if (index < children.length - 1) {
+    if (index < unpinnedChildren.length - 1) {
       const childNode = allElements.find((el) => el.id === child.id);
-      const isLeaf = getChildrenNodes(child.id, allElements).length === 0;
-      const gap = isLeaf ? Math.round(childNode.fontSize * layoutSettings.GAP_MULTIPLIER) : layoutSettings.GAP_Y;
+
+      // Check if this child is a leaf in the context of auto-layout (ignoring its pinned children)
+      const grandChildren = getChildrenNodes(child.id, allElements);
+      const hasUnpinnedGrandChildren = grandChildren.some(gc => !gc.customData?.isPinned);
+
+      const gap = !hasUnpinnedGrandChildren ? Math.round(childNode.fontSize * layoutSettings.GAP_MULTIPLIER) : layoutSettings.GAP_Y;
       childrenHeight += gap;
     }
   });
@@ -1359,14 +1366,14 @@ const getSubtreeHeight = (nodeId, allElements) => {
  * Determines if an element is part of the mindmap structure (Node, Branch Arrow, Boundary).
  */
 const isStructuralElement = (el, allElements) => {
-  if (el.customData?.isBranch) return true; 
-  if (el.customData?.growthMode) return true; 
-  if (el.customData?.isBoundary) return true; 
-  if (typeof el.customData?.mindmapOrder !== "undefined") return true; 
+  if (el.customData?.isBranch) return true;
+  if (el.customData?.growthMode) return true;
+  if (el.customData?.isBoundary) return true;
+  if (typeof el.customData?.mindmapOrder !== "undefined") return true;
 
-  const connectedArrow = allElements.find(a => 
-    a.type === "arrow" && 
-    a.customData?.isBranch && 
+  const connectedArrow = allElements.find(a =>
+    a.type === "arrow" &&
+    a.customData?.isBranch &&
     (a.startBinding?.elementId === el.id || a.endBinding?.elementId === el.id)
   );
   return !!connectedArrow;
@@ -1548,7 +1555,6 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
       if (node.customData?.originalY === undefined) {
         ea.addAppendUpdateCustomData(nodeId, { originalY: node.y });
       }
-
       eaNode.y = targetCenterY - node.height / 2;
     } else {
       if (node.customData?.originalY !== undefined) {
@@ -1592,41 +1598,62 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
 
   const children = getChildrenNodes(nodeId, allElements);
 
-  children.sort((a, b) => {
-    const dy = a.y - b.y;
-    if (dy !== 0) return dy;
-    return String(a.id).localeCompare(String(b.id));
+   const unpinnedChildren = children.filter(child => !child.customData?.isPinned);
+  const pinnedChildren = children.filter(child => child.customData?.isPinned);
+
+
+  if (unpinnedChildren.length > 0) {
+     unpinnedChildren.sort((a, b) => {
+      const dy = a.y - b.y;
+      if (dy !== 0) return dy;
+      return String(a.id).localeCompare(String(b.id));
+    });
+
+    unpinnedChildren.forEach((child, i) => {
+      if (getMindmapOrder(child) !== i) {
+        ea.addAppendUpdateCustomData(child.id, { mindmapOrder: i });
+      }
+    });
+
+    const subtreeHeight = getSubtreeHeight(nodeId, allElements);
+    let currentY = currentYCenter - subtreeHeight / 2;
+    const dynamicGapX = layoutSettings.GAP_X;
+
+    unpinnedChildren.forEach((child) => {
+      const childH = getSubtreeHeight(child.id, allElements);
+
+      layoutSubtree(
+        child.id,
+        effectiveSide === 1 ? currentX + node.width + dynamicGapX : currentX - dynamicGapX,
+        currentY + childH / 2,
+        effectiveSide,
+        allElements,
+        hasGlobalFolds
+      );
+
+      const childNode = allElements.find((el) => el.id === child.id);
+
+      const grandChildren = getChildrenNodes(child.id, allElements);
+      const hasUnpinnedGrandChildren = grandChildren.some(gc => !gc.customData?.isPinned);
+
+      const gap = !hasUnpinnedGrandChildren ? Math.round(childNode.fontSize * layoutSettings.GAP_MULTIPLIER) : layoutSettings.GAP_Y;
+
+      currentY += childH + gap;
+    });
+  }
+
+  pinnedChildren.forEach(child => {
+      layoutSubtree(
+        child.id,
+        child.x,
+        child.y + child.height/2,
+        effectiveSide,
+        allElements,
+        hasGlobalFolds
+      );
   });
 
-  children.forEach((child, i) => {
-    if (getMindmapOrder(child) !== i) {
-      ea.addAppendUpdateCustomData(child.id, { mindmapOrder: i });
-    }
-  });
-
-  const subtreeHeight = getSubtreeHeight(nodeId, allElements);
-
-  let currentY = currentYCenter - subtreeHeight / 2;
-  const dynamicGapX = layoutSettings.GAP_X;
-
-  children.forEach((child) => {
-    const childH = getSubtreeHeight(child.id, allElements);
-
-    layoutSubtree(
-      child.id,
-      effectiveSide === 1 ? currentX + node.width + dynamicGapX : currentX - dynamicGapX,
-      currentY + childH / 2,
-      effectiveSide,
-      allElements,
-      hasGlobalFolds
-    );
-
-    const childNode = allElements.find((el) => el.id === child.id);
-    const isLeaf = getChildrenNodes(child.id, allElements).length === 0;
-    const gap = isLeaf ? Math.round(childNode.fontSize * layoutSettings.GAP_MULTIPLIER) : layoutSettings.GAP_Y;
-
-    currentY += childH + gap;
-
+  children.forEach(child => {
     const arrow = allElements.find(
       (a) =>
         a.type === "arrow" &&
@@ -1737,98 +1764,100 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     const rootBox = getNodeBox(root, allElements);
     const rootCenter = { x: rootBox.minX + rootBox.width / 2, y: rootBox.minY + rootBox.height / 2 };
 
-    const existingL1 = l1Nodes.filter((n) => !n.customData?.mindmapNew);
-    const newL1 = l1Nodes.filter((n) => n.customData?.mindmapNew);
+    // Helper to calculate layout for a specific subset of L1 nodes
+    const processL1Subset = (nodes, centerAngle) => {
+      if (nodes.length === 0) return;
 
-    if (mode === "Radial") {
-      existingL1.sort((a, b) => {
-        return getAngleFromCenter(rootCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
-        getAngleFromCenter(rootCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 })
+      const unpinnedNodes = nodes.filter(n => !n.customData?.isPinned);
+      const pinnedNodes = nodes.filter(n => n.customData?.isPinned);
+
+      if (unpinnedNodes.length > 0) {
+        const existingNodes = unpinnedNodes.filter((n) => !n.customData?.mindmapNew);
+        const newNodes = unpinnedNodes.filter((n) => n.customData?.mindmapNew);
+
+        // Sort existing nodes by Y (visual order)
+        existingNodes.sort((a, b) => a.y - b.y);
+
+        const sortedNodes = [...existingNodes, ...newNodes];
+        const count = sortedNodes.length;
+
+        const l1Metrics = sortedNodes.map(node => getSubtreeHeight(node.id, allElements));
+        const totalSubtreeHeight = l1Metrics.reduce((sum, h) => sum + h, 0);
+        const totalGapHeight = (count - 1) * layoutSettings.GAP_Y;
+        const totalContentHeight = totalSubtreeHeight + totalGapHeight;
+
+        const radiusFromHeight = totalContentHeight / layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
+
+        const radiusY = Math.max(
+          Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR),
+          layoutSettings.MIN_RADIUS,
+          radiusFromHeight
+        ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+
+        const radiusX = Math.max(
+          Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR),
+          layoutSettings.MIN_RADIUS,
+          radiusY * 0.2
+        ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+
+        // Calculate starting angle based on content height to center vertically
+        const totalThetaDeg = (totalContentHeight / radiusY) * (180 / Math.PI);
+        let currentAngle = centerAngle - totalThetaDeg / 2;
+
+        sortedNodes.forEach((node, i) => {
+          if (getMindmapOrder(node) !== i) {
+            ea.addAppendUpdateCustomData(node.id, { mindmapOrder: i });
+          }
+
+          const nodeHeight = l1Metrics[i];
+          const gapMultiplier = layoutSettings.GAP_MULTIPLIER_DIRECTIONAL;
+          const effectiveGap = layoutSettings.GAP_Y * gapMultiplier;
+
+          const nodeSpanRad = nodeHeight / radiusY;
+          const gapSpanRad = effectiveGap / radiusY;
+
+          const nodeSpanDeg = nodeSpanRad * (180 / Math.PI);
+          const gapSpanDeg = gapSpanRad * (180 / Math.PI);
+
+          const angleDeg = currentAngle + nodeSpanDeg / 2;
+          currentAngle += nodeSpanDeg + gapSpanDeg;
+
+          const angleRad = (angleDeg - 90) * (Math.PI / 180);
+          const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
+          const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
+
+          const side = Math.cos(angleRad) > 0 ? 1 : -1;
+
+          layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds);
+
+          if (node.customData?.mindmapNew) {
+            ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
+          }
+
+          // Update arrow
+          updateL1Arrow(node);
+
+          if (groupBranches) {
+            applyRecursiveGrouping(node.id, allElements);
+          }
+        });
+      }
+
+      pinnedNodes.forEach(node => {
+        const nodeBox = getNodeBox(node, allElements);
+        const side = (nodeBox.minX + nodeBox.width / 2) > rootCenter.x ? 1 : -1;
+
+        layoutSubtree(node.id, node.x, node.y + node.height/2, side, allElements, hasGlobalFolds);
+
+        if (node.customData?.mindmapNew) {
+          ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
+        }
+        updateL1Arrow(node);
+        if (groupBranches) applyRecursiveGrouping(node.id, allElements);
       });
-    } else {
-      existingL1.sort((a, b) => {
-        return a.y - b.y;
-      });
-    }
+    };
 
-    const sortedL1 = [...existingL1, ...newL1];
-    const count = sortedL1.length;
-
-    const l1Metrics = sortedL1.map(node => getSubtreeHeight(node.id, allElements));
-    const totalSubtreeHeight = l1Metrics.reduce((sum, h) => sum + h, 0);
-    const totalGapHeight = (count - 1) * layoutSettings.GAP_Y;
-    const totalContentHeight = totalSubtreeHeight + totalGapHeight;
-
-    const radiusFromHeight = totalContentHeight / layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
-
-    const radiusY = Math.max(
-      Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR),
-      layoutSettings.MIN_RADIUS,
-      radiusFromHeight
-    ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
-
-    const radiusX = Math.max(
-      Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR),
-      layoutSettings.MIN_RADIUS,
-      radiusY * 0.2
-    ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
-
-    const centerAngle = mode === "Left-facing" ? 270 : 90;
-    const totalThetaDeg = (totalContentHeight / radiusY) * (180 / Math.PI);
-    let currentAngleDirectional = centerAngle - totalThetaDeg / 2;
-    let currentAngleRadial = count <= 6 ? 30 : 20;
-
-    sortedL1.forEach((node, i) => {
-      if (getMindmapOrder(node) !== i) {
-        ea.addAppendUpdateCustomData(node.id, { mindmapOrder: i });
-      }
-
-      const nodeHeight = l1Metrics[i];
-      const gapMultiplier = mode === "Radial" ? layoutSettings.GAP_MULTIPLIER_RADIAL : layoutSettings.GAP_MULTIPLIER_DIRECTIONAL;
-      const effectiveGap = layoutSettings.GAP_Y * gapMultiplier;
-
-      const nodeSpanRad = nodeHeight / radiusY;
-      const gapSpanRad = effectiveGap / radiusY;
-
-      const nodeSpanDeg = nodeSpanRad * (180 / Math.PI);
-      const gapSpanDeg = gapSpanRad * (180 / Math.PI);
-
-      let angleDeg;
-      if (mode === "Radial") {
-        angleDeg = currentAngleRadial + nodeSpanDeg / 2;
-        currentAngleRadial += nodeSpanDeg + gapSpanDeg;
-      } else {
-        angleDeg = currentAngleDirectional + nodeSpanDeg / 2;
-        currentAngleDirectional += nodeSpanDeg + gapSpanDeg;
-      }
-
-      const angleRad = (angleDeg - 90) * (Math.PI / 180);
-      const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
-      const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
-
-      const nodeBox = getNodeBox(node, allElements);
-      const maxRadius = Math.max(radiusX, radiusY);
-      const currentDist = Math.hypot(
-        nodeBox.minX + nodeBox.width / 2 - rootCenter.x,
-        nodeBox.minY + nodeBox.height / 2 - rootCenter.y,
-      );
-      const isPinned =
-        node.customData?.isPinned || (!force && !node.customData?.mindmapNew && currentDist > maxRadius * 1.5);
-      const side = (isPinned
-        ? (nodeBox.minX + nodeBox.width / 2) > rootCenter.x
-        : tCX > rootCenter.x
-      ) ? 1 : -1;
-
-      if (isPinned) {
-        layoutSubtree(node.id, node.x, tCY, side, allElements, hasGlobalFolds);
-      } else {
-        layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds);
-      }
-
-      if (node.customData?.mindmapNew) {
-        ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
-      }
-
+    const updateL1Arrow = (node) => {
       const arrow = allElements.find(
         (a) =>
           a.type === "arrow" &&
@@ -1848,11 +1877,102 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
           [eX - rootCenter.x, eY - rootCenter.y],
         ];
       }
+    }
 
-      if (groupBranches) {
-        applyRecursiveGrouping(node.id, allElements);
-      }
-    });
+    if (mode === "Radial") {
+      const unpinnedL1 = l1Nodes.filter(n => !n.customData?.isPinned);
+      const pinnedL1 = l1Nodes.filter(n => n.customData?.isPinned);
+
+      const existingL1 = unpinnedL1.filter((n) => !n.customData?.mindmapNew);
+      const newL1 = unpinnedL1.filter((n) => n.customData?.mindmapNew);
+
+      existingL1.sort((a, b) => {
+        return getAngleFromCenter(rootCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
+        getAngleFromCenter(rootCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 })
+      });
+
+      const sortedL1 = [...existingL1, ...newL1];
+      const count = sortedL1.length;
+
+      const l1Metrics = sortedL1.map(node => getSubtreeHeight(node.id, allElements));
+      const totalSubtreeHeight = l1Metrics.reduce((sum, h) => sum + h, 0);
+      const totalGapHeight = (count - 1) * layoutSettings.GAP_Y;
+      const totalContentHeight = totalSubtreeHeight + totalGapHeight;
+      const radiusFromHeight = totalContentHeight / layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
+
+      const radiusY = Math.max(
+        Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR),
+        layoutSettings.MIN_RADIUS,
+        radiusFromHeight
+      ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+
+      const radiusX = Math.max(
+        Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR),
+        layoutSettings.MIN_RADIUS,
+        radiusY * 0.2
+      ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+
+      let currentAngleRadial = count <= 6 ? 30 : 20;
+
+      // Layout Unpinned
+      sortedL1.forEach((node, i) => {
+        if (getMindmapOrder(node) !== i) ea.addAppendUpdateCustomData(node.id, { mindmapOrder: i });
+
+        const nodeHeight = l1Metrics[i];
+        const effectiveGap = layoutSettings.GAP_Y * layoutSettings.GAP_MULTIPLIER_RADIAL;
+        const nodeSpanDeg = (nodeHeight / radiusY) * (180 / Math.PI);
+        const gapSpanDeg = (effectiveGap / radiusY) * (180 / Math.PI);
+
+        const angleDeg = currentAngleRadial + nodeSpanDeg / 2;
+        currentAngleRadial += nodeSpanDeg + gapSpanDeg;
+
+        const angleRad = (angleDeg - 90) * (Math.PI / 180);
+        const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
+        const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
+
+        // Calculate side for unpinned
+        const side = tCX > rootCenter.x ? 1 : -1;
+
+        layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds);
+
+        if (node.customData?.mindmapNew) ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
+
+        updateL1Arrow(node);
+        if (groupBranches) applyRecursiveGrouping(node.id, allElements);
+      });
+
+      // Process Pinned
+      pinnedL1.forEach(node => {
+        const nodeBox = getNodeBox(node, allElements);
+        const side = (nodeBox.minX + nodeBox.width / 2) > rootCenter.x ? 1 : -1;
+        layoutSubtree(node.id, node.x, node.y + node.height/2, side, allElements, hasGlobalFolds);
+
+        if (node.customData?.mindmapNew) ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
+        updateL1Arrow(node);
+        if (groupBranches) applyRecursiveGrouping(node.id, allElements);
+      });
+
+    } else {
+      const leftNodes = [];
+      const rightNodes = [];
+
+      l1Nodes.forEach(node => {
+        if (node.customData?.mindmapNew) {
+           if (mode === "Right-facing") rightNodes.push(node);
+           else if (mode === "Left-facing") leftNodes.push(node);
+           else rightNodes.push(node);
+        } else {
+           // For existing nodes, respect their current visual side relative to root center
+           const nodeCenter = node.x + node.width / 2;
+           if (nodeCenter < rootCenter.x) leftNodes.push(node);
+           else rightNodes.push(node);
+        }
+      });
+
+      processL1Subset(rightNodes, 90);
+
+      processL1Subset(leftNodes, 270);
+    }
 
     crossLinkArrows.forEach(arrow => {
       const startId = arrow.startBinding.elementId;
@@ -1881,8 +2001,8 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
           eaArrow.points = eaArrow.points.map((p, i) => {
             const t = i / (len - 1);
             return [
-                p[0] + diffX * t,
-                p[1] + diffY * t
+              p[0] + diffX * t,
+              p[1] + diffY * t
             ];
           });
         }
@@ -2386,12 +2506,12 @@ const copyMapAsText = async (cut = false) => {
 
     if (parentNode) {
       const remainingChildren = getChildrenNodes(parentNode.id, ea.getViewElements());
-      
+
       if (remainingChildren.length === 0) {
         ea.copyViewElementsToEAforEditing([parentNode]);
-        ea.addAppendUpdateCustomData(parentNode.id, { 
-          isFolded: false, 
-          foldIndicatorId: undefined 
+        ea.addAppendUpdateCustomData(parentNode.id, {
+          isFolded: false,
+          foldIndicatorId: undefined
         });
 
         if (parentNode.customData?.foldIndicatorId) {
@@ -3107,7 +3227,7 @@ const updateUI = (sel) => {
 
     setButtonDisabled(boxBtn, false);
     setButtonDisabled(floatingBoxBtn, false);
-    setButtonDisabled(foldBtnL0, !hasChildren); 
+    setButtonDisabled(foldBtnL0, !hasChildren);
     setButtonDisabled(foldBtnL1, !hasGrandChildren);
     setButtonDisabled(unfoldAllBtn, !hasFoldedInBranch);
     setButtonDisabled(zoomBtn, false);
