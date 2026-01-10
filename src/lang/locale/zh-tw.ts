@@ -37,6 +37,7 @@ export default {
   CONVERT_FILE_KEEP_EXT: "轉換：*.excalidraw => *.excalidraw.md",
   CONVERT_FILE_REPLACE_EXT: "轉換：*.excalidraw => *.md (相容 Logseq)",
   DOWNLOAD_LIBRARY: "匯出 stencil 庫為 *.excalidrawlib 檔案",
+  OPEN_SIDEPANEL: "開啟 Excalidraw 側邊面板",
   OPEN_EXISTING_NEW_PANE: "開啟已有的繪圖 - 於新面板",
   OPEN_EXISTING_ACTIVE_PANE:
     "開啟已有的繪圖 - 於當前面板",
@@ -63,6 +64,7 @@ export default {
   MARKER_FRAME_TITLE_SHOW: "顯示標記畫框名稱",
   MARKER_FRAME_TITLE_HIDE: "隱藏標記畫框名稱",
   COPY_ELEMENT_LINK: "複製所選元素的 [[file#^id]] 連結",
+  FRAME_WITH_NAME: "按名稱複製畫框連結",
   COPY_DRAWING_LINK: "複製繪圖的 ![[drawing]] 連結",
   INSERT_LINK_TO_ELEMENT:
     `單擊=複製所選元素的 [[file#^id]] 連結\n${labelCTRL()}=複製元素所在分組為 [[file#^group=id]] 連結\n${labelSHIFT()}=複製所選元素所在區域為 [[file#^area=id]] 連結`,
@@ -153,6 +155,7 @@ export default {
   OPEN_AS_MD: "開啟為 Markdown",
   EXPORT_IMAGE: `匯出為圖片`,
   OPEN_LINK: "開啟所選元素裡的連結 \n（按住 Shift 在新面板開啟）",
+  EXCALIDRAW_SIDEPANEL: "Excalidraw 側邊面板",
   EXPORT_EXCALIDRAW: "匯出為 .excalidraw 檔案（舊版繪圖檔案格式）",
   LINK_BUTTON_CLICK_NO_TEXT:
     "請選擇一個包含內部或外部連結的元素。\n",
@@ -508,9 +511,8 @@ export default {
   GRID_DYNAMIC_COLOR_DESC:
     "<b>開啟：</b>更改網格顏色以匹配繪圖顏色。<br><b>關閉：</b>將以下顏色用作網格顏色。",
   GRID_COLOR_NAME: "網格顏色",
-  GRID_OPACITY_NAME: "網格透明度",
-  GRID_OPACITY_DESC: "設定網格的透明度。還將控制將箭頭繫結到元素時繫結框的透明度。" +
-    "0 全透明 ⟺ 100 不透明。",
+  GRID_OPACITY_NAME: "網格不透明度",
+  GRID_OPACITY_DESC: "設定網格的不透明度。0 全透明 ⟺ 100 不透明。",
   GRID_DIRECTION_NAME: "網格方向",
   GRID_DIRECTION_DESC: "第一個開關顯示/隱藏水平網格，第二個開關顯示/隱藏垂直網格。",
   GRID_HORIZONTAL: "渲染水平網格",
@@ -541,7 +543,8 @@ export default {
   LONG_PRESS_MOBILE_NAME: "長按開啟（移動端）",
   LONG_PRESS_MOBILE_DESC: "長按開啟在 Markdown 文件中嵌入的 Excalidraw 繪圖。單位：毫秒。",
   DOUBLE_CLICK_LINK_OPEN_VIEW_MODE: "在檢視模式下允許雙擊開啟連結",
-
+  ELEMENT_LINK_SYNC_NAME: "文字元素同步正文連結",
+  ELEMENT_LINK_SYNC_DESC: "若開啟，Excalidraw 將匹配 2.19.0 之前的行為：始終將正文第一個連結複製到元素連結欄位。匯出 SVG/PNG 僅在元素連結欄位包含單個連結（不包括正文內的連結）時保留連結。開啟：若你依賴正文連結並希望元素連結始終映象第一個連結。關閉：若你獨立管理元素連結，用於標籤、行內連結本體等元資料、或多個連結，如 Dataview 風格的筆記 '(reminds me of:: [[link]]) #noteToSelf'。",
   FOCUS_ON_EXISTING_TAB_NAME: "聚焦於當前標籤頁",
   FOCUS_ON_EXISTING_TAB_DESC: "當開啟一個連結時，如果該檔案已經開啟，Excalidraw 將會聚焦到現有的標籤頁上。" +
     "啟用該項時，如果檔案已開啟，將覆蓋“在相鄰面板中開啟”，但“開啟所選繪圖的背景筆記”命令面板操作除外。",
@@ -564,6 +567,12 @@ export default {
     "文字元素處於 PREVIEW 模式時，在內部連結的兩側顯示中括號。<br>" +
     "可為某個繪圖單獨設定該項，方法是在其 frontmatter 中新增如 <code>"
   }${FRONTMATTER_KEYS["link-brackets"].name}: true/false</code> 的鍵值對。`,
+  /*LINK_DETECTION_NAME: "Do not auto-create element link from text",
+  LINK_DETECTION_DESC: "By default, Excalidraw will automatically create an element link when you type or paste a valid " +
+    "[[Obsidian link]] or a (web link) into a Text Element. This link overrides whatever element link you may have set previously. " +
+    "Even if you delete the element link, if the text element contains a valid link, Excalidraw will recreate the element link. " +
+    "If you turn this setting on, Excalidraw will not auto-create element links from text. You can still manually set element links " +
+    `Links in the text will still be navigable when you ${labelCTRL()} + CLICK the element.`,*/
   LINK_PREFIX_NAME: "內部連結的字首",
   LINK_PREFIX_DESC: `${
     "文字元素處於 PREVIEW 模式時，如果其中包含連結，則新增此字首。<br>" +
@@ -585,9 +594,9 @@ export default {
     `<b>開啟：</b>在 Excalidraw <u>檢視模式（View）</u>下，滑鼠懸停在 <code>[[內部連結]]</code> 上即可預覽；` +
     "而在<u>普通模式（Normal）</u>下，滑鼠懸停在內部連結右上角的藍色標識上即可預覽。<br>" +
     `<b>關閉：</b>滑鼠懸停在 <code>[[內部連結]]</code> 上，並且按住 ${labelCTRL()} 才能預覽。`,
-  LINKOPACITY_NAME: "連結標識的透明度",
+  LINKOPACITY_NAME: "連結標識的不透明度",
   LINKOPACITY_DESC:
-    "含有連結的元素，其右上角的連結標識的透明度。0 全透明 ⟺ 100 不透明。",
+    "含有連結的元素，其右上角的連結標識的不透明度。0 全透明 ⟺ 100 不透明。",
   LINK_CTRL_CLICK_NAME:
     `按住 ${labelCTRL()} 並點選含有 [[連結]] 或 [別名](連結) 的文字來開啟連結`,
   LINK_CTRL_CLICK_DESC:
@@ -923,9 +932,9 @@ export default {
   SELECT_FILE_TO_LINK: "選擇要以連結形式插入到當前繪圖中的檔案",
   SELECT_COMMAND_PLACEHOLDER: "選擇要插入到當前繪圖中的命令",
   SELECT_DRAWING: "選擇要以影像形式嵌入到當前繪圖中的圖片或繪圖檔案",
-  TYPE_FILENAME: "鍵入要選擇的繪圖名稱",
+  TYPE_FILENAME: "輸入要選擇的繪圖名稱",
   SELECT_FILE_OR_TYPE_NEW:
-    "選擇已有繪圖，或者鍵入新繪圖檔案的名稱，然後按回車。",
+    "選擇已有繪圖，或者輸入新繪圖檔案的名稱，然後按回車。",
   SELECT_TO_EMBED: "選擇要嵌入到當前 Markdown 文件中的繪圖",
   SELECT_MD: "選擇要以影像形式嵌入到當前繪圖中的 Markdown 文件",
   SELECT_PDF: "選擇要以影像形式嵌入到當前繪圖中的 PDF",
@@ -1017,15 +1026,15 @@ export default {
   ES_FILENAME_VISIBLE: "顯示頁內標題",
   ES_BACKGROUND_HEAD: "背景色",
   ES_BACKGROUND_DESC_INFO: "點選此處檢視更多顏色資訊",
-  ES_BACKGROUND_DESC_DETAIL: "背景色僅影響預覽模式的 MD-Embeddable。在編輯模式，它會根據場景（透過筆記屬性設定）或外掛設定，遵循 Obsidian 的深色/淺色主題。背景色有兩層：元素背景色（下層顏色）和上層顏色。選擇“匹配元素”表示兩層都遵循元素背景色。選擇“匹配繪圖”或特定背景色不會改變元素背景色。設定透明度（如 50%）會將繪圖或選定的顏色與元素背景色混合。要移除元素背景色，可以在 Excalidraw 的元素屬性編輯器中將元素背景色設定為透明，這樣只有上層顏色生效。",
+  ES_BACKGROUND_DESC_DETAIL: "背景色僅影響預覽模式的 MD-Embeddable。在編輯模式，它會根據場景（透過筆記屬性設定）或外掛設定，遵循 Obsidian 的深色/淺色主題。背景色有兩層：元素背景色（下層顏色）和上層顏色。選擇“匹配元素”表示兩層都遵循元素背景色。選擇“匹配繪圖”或特定背景色不會改變元素背景色。設定不透明度（如 50%）會將繪圖或選定的顏色與元素背景色混合。要移除元素背景色，可以在 Excalidraw 的元素屬性編輯器中將元素背景色設定為透明，這樣只有上層顏色生效。",
   ES_BACKGROUND_MATCH_ELEMENT: "匹配元素背景色",
   ES_BACKGROUND_MATCH_CANVAS: "匹配繪圖背景色",
   ES_BACKGROUND_COLOR: "背景色",
   ES_BORDER_HEAD: "邊框顏色",
   ES_BORDER_COLOR: "邊框顏色",
   ES_BORDER_MATCH_ELEMENT: "匹配元素邊框顏色",
-  ES_BACKGROUND_OPACITY: "背景透明度",
-  ES_BORDER_OPACITY: "邊框透明度",
+  ES_BACKGROUND_OPACITY: "背景不透明度",
+  ES_BORDER_OPACITY: "邊框不透明度",
   ES_EMBEDDABLE_SETTINGS: "MD-Embeddable 設定",
   ES_USE_OBSIDIAN_DEFAULTS: "使用 Obsidian 預設設定",
   ES_ZOOM_100_RELATIVE_DESC: "使元素的縮放等級等於當前繪圖的縮放等級",
@@ -1247,4 +1256,10 @@ export default {
   VERSION_MISMATCH_DISABLE_DESC: "可在以下位置重新啟用：設定 → Excalidraw → 基本 → 警告外掛更新不完整",
   VERSION_MISMATCH_REDOWNLOAD: "重新下載外掛",
   VERSION_MISMATCH_IGNORE: "忽略",
+
+  //InlineLinkSuggester.ts
+  INLINE_HINT: "輸入 [[ 以搜尋並插入連結",
+
+  //SuggestionModal.ts
+  SUGGESTION_NOMATCH: "未找到匹配結果",
 };
