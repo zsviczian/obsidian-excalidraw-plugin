@@ -1185,6 +1185,14 @@ const toggleFold = async (mode = "L0") => {
   const targetNode = wbElements.find(el => el.id === sel.id);
   if (!targetNode) return;
 
+  const children = getChildrenNodes(targetNode.id, wbElements);  
+  if (children.length === 0) return;
+
+  if (mode === "L1") {
+    const hasGrandChildren = children.some(child => getChildrenNodes(child.id, wbElements).length > 0);
+    if (!hasGrandChildren) return;
+  }
+
   let isFoldAction = false;
 
   if (mode === "L0") {
@@ -1193,7 +1201,6 @@ const toggleFold = async (mode = "L0") => {
     ea.addAppendUpdateCustomData(targetNode.id, { isFolded: isFoldAction });
   } else if (mode === "L1") {
     ea.addAppendUpdateCustomData(targetNode.id, { isFolded: false });
-    const children = getChildrenNodes(targetNode.id, wbElements);
     const anyChildFolded = children.some(child => child.customData?.isFolded === true);
     isFoldAction = !anyChildFolded;
 
@@ -1205,8 +1212,8 @@ const toggleFold = async (mode = "L0") => {
     while (stack.length) {
       const node = stack.pop();
       ea.addAppendUpdateCustomData(node.id, { isFolded: false });
-      const children = getChildrenNodes(node.id, wbElements);
-      children.forEach(child => stack.push(child));
+      const currentChildren = getChildrenNodes(node.id, wbElements);
+      currentChildren.forEach(child => stack.push(child));
     }
   }
 
@@ -1224,7 +1231,7 @@ const toggleFold = async (mode = "L0") => {
 
   if (mode === "L1") {
     if (isFoldAction) {
-      const children = getChildrenNodes(targetNode.id, currentViewElements);
+      const currentChildren = getChildrenNodes(targetNode.id, currentViewElements);
     }
   } else if (mode === "L0") {
     // Mode "L0" (Single node toggle)
@@ -1234,7 +1241,7 @@ const toggleFold = async (mode = "L0") => {
       if (isFoldAction) {
         const parent = getParentNode(targetNode.id, currentViewElements);
       } else {
-        const children = getChildrenNodes(targetNode.id, currentViewElements);
+        const currentChildren = getChildrenNodes(targetNode.id, currentViewElements);
       }
     } else {
     }
@@ -2365,6 +2372,23 @@ const copyMapAsText = async (cut = false) => {
     ea.deleteViewElements(elementsToDelete);
 
     if (parentNode) {
+      const remainingChildren = getChildrenNodes(parentNode.id, ea.getViewElements());
+      
+      if (remainingChildren.length === 0) {
+        ea.copyViewElementsToEAforEditing([parentNode]);
+        ea.addAppendUpdateCustomData(parentNode.id, { 
+          isFolded: false, 
+          foldIndicatorId: undefined 
+        });
+
+        if (parentNode.customData?.foldIndicatorId) {
+          const indicator = ea.getViewElements().find(el => el.id === parentNode.customData.foldIndicatorId);
+          if (indicator) ea.deleteViewElements([indicator]);
+        }
+
+        await ea.addElementsToView(false, false, true, true);
+        ea.clear();
+      }
       ea.selectElementsInView([parentNode]);
     }
 
@@ -3030,6 +3054,9 @@ const updateUI = (sel) => {
     const isEditing = editingNodeId && editingNodeId === sel.id;
     const branchIds = getBranchElementIds(sel.id, all);
     const hasFoldedInBranch = all.some(el => branchIds.contains(el.id) && el.type !== "arrow" && el.customData?.isFolded === true);
+    const children = getChildrenNodes(sel.id, all);
+    const hasChildren = children.length > 0;
+    const hasGrandChildren = hasChildren && children.some(child => getChildrenNodes(child.id, all).length > 0);
 
     if (pinBtn) {
       pinBtn.setIcon(isPinned ? "pin" : "pin-off");
@@ -3067,8 +3094,8 @@ const updateUI = (sel) => {
 
     setButtonDisabled(boxBtn, false);
     setButtonDisabled(floatingBoxBtn, false);
-    setButtonDisabled(foldBtnL0, false);
-    setButtonDisabled(foldBtnL1, false);
+    setButtonDisabled(foldBtnL0, !hasChildren); 
+    setButtonDisabled(foldBtnL1, !hasGrandChildren);
     setButtonDisabled(unfoldAllBtn, !hasFoldedInBranch);
     setButtonDisabled(zoomBtn, false);
     setButtonDisabled(focusBtn, false);
@@ -4601,15 +4628,21 @@ case ACTION_ADD:
   }
 };
 
+let uiUpdateTimer = null;
+
 const handleCanvasPointerDown = (e) => {
   if (!ea.targetView) return;
-  // If input is floating, check if click is inside it to avoid deselecting/updating UI prematurely
   if (floatingInputModal && floatingInputModal.modalEl.contains(e.target)) return;
 
-  setTimeout(() => {
+  if (uiUpdateTimer) {
+    clearTimeout(uiUpdateTimer);
+  }
+
+  uiUpdateTimer = setTimeout(() => {
     if (!ea.targetView) return;
     const selection = getMindmapNodeFromSelection();
     updateUI(selection);
+    uiUpdateTimer = null;
   }, 50);
 };
 
