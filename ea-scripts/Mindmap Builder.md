@@ -3259,73 +3259,56 @@ class LayoutConfigModal extends ea.obsidian.Modal {
 // 10. Render Functions
 // ---------------------------------------------------------------------------
 
-// Accepts mode string ("docked", "floating", "sidebar")
-const renderInput = (container, renderMode = "docked") => {
+const renderInput = (container, isFloating = false) => {
   container.empty();
   
-  const isFloating = renderMode === "floating";
-  const isSidebar = renderMode === "sidebar";
-
-  // Reset global references only for components we are about to render/replace
-  if (!isSidebar) {
-    pinBtn = refreshBtn = dockBtn = inputEl = null;
-    editBtn = zoomBtn = null;
-  }
-  if (!isFloating) {
-    foldBtnL0 = foldBtnL1 = unfoldAllBtn = boundaryBtn = null;
-  }
+  pinBtn = refreshBtn = dockBtn = inputEl = null;
+  foldBtnL0 = foldBtnL1 = unfoldAllBtn = null;
+  boundaryBtn = null; 
 
   inputRow = new ea.obsidian.Setting(container);
   
-  if (renderMode === "docked") {
+  if (!isFloating) {
     inputRow.settingEl.style.display = "block";
     inputRow.controlEl.style.display = "block";
     inputRow.controlEl.style.width = "100%";
     inputRow.controlEl.style.marginTop = "8px";
-  } else if (isFloating) {
+  } else {
     inputRow.settingEl.style.border = "none";
     inputRow.settingEl.style.padding = "0";
     inputRow.infoEl.style.display = "none";
-  } else if (isSidebar) {
-    // In sidebar mode (when undocked), hide the input row visual container for text
-    inputRow.settingEl.style.display = "none"; 
-    // We still use inputRow as a container for buttons below, 
-    // but the text field itself shouldn't be added or visible.
   }
 
-  // Only add text input if not in sidebar-controls-only mode
-  if (!isSidebar) {
-    inputRow.addText((text) => {
-      inputEl = text.inputEl;
-      linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow.settingEl);
-      if (!isFloating) {
-        inputEl.style.width = "100%";
-      } else {
-        inputEl.style.width = "70vw";
-        inputEl.style.maxWidth = "350px";
-      }
-      inputEl.ariaLabel = [
-        `${getActionLabel(ACTION_ADD)} (Enter)`,
-        `${getActionLabel(ACTION_ADD_FOLLOW)} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}`,
-        `${getActionLabel(ACTION_ADD_FOLLOW_FOCUS)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}`,
-        `${getActionLabel(ACTION_ADD_FOLLOW_ZOOM)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}`,
-      ].join("\n");
-      inputEl.placeholder = t("INPUT_PLACEHOLDER");
-      inputEl.addEventListener("focus", () => {
-        registerObsidianHotkeyOverrides();
-        ensureNodeSelected();
-        updateUI();
-      });
-      inputEl.addEventListener("blur", () => {
-        if (popObsidianHotkeyScope) popObsidianHotkeyScope();
-        saveSettings();
-      });
+  inputRow.addText((text) => {
+    inputEl = text.inputEl;
+    linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow.settingEl);
+    if (!isFloating) {
+      inputEl.style.width = "100%";
+    } else {
+      inputEl.style.width = "70vw";
+      inputEl.style.maxWidth = "350px";
+    }
+    inputEl.ariaLabel = [
+      `${getActionLabel(ACTION_ADD)} (Enter)`,
+      `${getActionLabel(ACTION_ADD_FOLLOW)} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}`,
+      `${getActionLabel(ACTION_ADD_FOLLOW_FOCUS)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}`,
+      `${getActionLabel(ACTION_ADD_FOLLOW_ZOOM)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}`,
+    ].join("\n");
+    inputEl.placeholder = t("INPUT_PLACEHOLDER");
+    inputEl.addEventListener("focus", () => {
+      registerObsidianHotkeyOverrides();
+      ensureNodeSelected();
+      updateUI();
     });
-  }
+    inputEl.addEventListener("blur", () => {
+      if (popObsidianHotkeyScope) popObsidianHotkeyScope();
+      saveSettings();
+    });
+  });
 
   // Create a specific container for buttons when docked to ensure they sit in one row aligned right
   let buttonContainer;
-  if (!isFloating && !isSidebar) {
+  if (!isFloating) {
     buttonContainer = inputRow.controlEl.createDiv();
     buttonContainer.style.display = "flex";
     buttonContainer.style.justifyContent = "flex-end";
@@ -3333,28 +3316,7 @@ const renderInput = (container, renderMode = "docked") => {
     buttonContainer.style.marginTop = "6px";
   }
 
-  // For sidebar mode, we just append to the container since inputRow is hidden
-  if (isSidebar) {
-    buttonContainer = container.createDiv();
-    buttonContainer.style.display = "flex";
-    buttonContainer.style.flexWrap = "wrap";
-    buttonContainer.style.gap = "6px";
-    buttonContainer.style.marginTop = "6px";
-    buttonContainer.style.marginBottom = "6px";
-    buttonContainer.style.justifyContent = "center";
-    buttonContainer.style.padding = "6px";
-    buttonContainer.style.border = "1px solid var(--background-modifier-border)";
-    buttonContainer.style.borderRadius = "var(--radius-m)";
-  }
-
   const addButton = (cb) => {
-    // If sidebar mode, we create raw buttons because we aren't using the Setting structure normally
-    if (isSidebar) {
-      const btn = new ea.obsidian.ExtraButtonComponent(buttonContainer);
-      cb(btn);
-      return;
-    }
-
     inputRow.addExtraButton((btn) => {
       cb(btn);
       if (btn.buttonEl) btn.buttonEl.tabIndex = 0;
@@ -3366,31 +3328,27 @@ const renderInput = (container, renderMode = "docked") => {
     });
   };
 
-  // Add buttons based on mode
-  if (!isSidebar) {
-    addButton((btn) => {
-      editBtn = btn;
-      btn.setIcon("pencil");
-      btn.setTooltip(`${t("TOOLTIP_EDIT_NODE")} ${getActionHotkeyString(ACTION_EDIT)}`);
-      btn.extraSettingsEl.setAttr("action",ACTION_EDIT);
-      btn.onClick(() => {
-        startEditing();
-      });
+  addButton((btn) => {
+    editBtn = btn;
+    btn.setIcon("pencil");
+    btn.setTooltip(`${t("TOOLTIP_EDIT_NODE")} ${getActionHotkeyString(ACTION_EDIT)}`);
+    btn.extraSettingsEl.setAttr("action",ACTION_EDIT);
+    btn.onClick(() => {
+      startEditing();
     });
+  });
 
-    addButton((btn) => {
-      pinBtn = btn;
-      btn.setTooltip(`${t("TOOLTIP_PIN_INIT")} ${getActionHotkeyString(ACTION_PIN)}`)
-      btn.extraSettingsEl.setAttr("action",ACTION_PIN);
-      btn.onClick(async () => {
-        await togglePin();
-        updateUI();
-        focusInputEl();
-      });
+  addButton((btn) => {
+    pinBtn = btn;
+    btn.setTooltip(`${t("TOOLTIP_PIN_INIT")} ${getActionHotkeyString(ACTION_PIN)}`)
+    btn.extraSettingsEl.setAttr("action",ACTION_PIN);
+    btn.onClick(async () => {
+      await togglePin();
+      updateUI();
+      focusInputEl();
     });
-  }
+  });
 
-  // Boundary and Fold buttons show in Docked OR Sidebar mode
   if (!isFloating) {
     addButton((btn) => {
       boundaryBtn = btn;
@@ -3440,30 +3398,28 @@ const renderInput = (container, renderMode = "docked") => {
     });
   }
 
-  if (!isSidebar) {
-    addButton((btn) => {
-      refreshBtn = btn;
-      btn.setIcon("refresh-ccw");
-      btn.setTooltip(t("TOOLTIP_REFRESH"));
-      btn.extraSettingsEl.setAttr("action",ACTION_REARRANGE);
-      btn.onClick(async () => {
-        await refreshMapLayout();
-        focusInputEl();
-      });
+  addButton((btn) => {
+    refreshBtn = btn;
+    btn.setIcon("refresh-ccw");
+    btn.setTooltip(t("TOOLTIP_REFRESH"));
+    btn.extraSettingsEl.setAttr("action",ACTION_REARRANGE);
+    btn.onClick(async () => {
+      await refreshMapLayout();
+      focusInputEl();
     });
+  });
 
-    addButton((btn) => {
-      dockBtn = btn;
-      btn.setIcon(isFloating ? "dock" : "external-link");
-      btn.extraSettingsEl.setAttr("action",ACTION_DOCK_UNDOCK);
-      btn.setTooltip(
-        `${isFloating ? t("TOOLTIP_DOCK") : t("TOOLTIP_UNDOCK")} ${getActionHotkeyString(ACTION_DOCK_UNDOCK)}`
-      );
-      btn.onClick(() => {
-        toggleDock({silent: false, forceDock: false, saveSetting: true})
-      });
+  addButton((btn) => {
+    dockBtn = btn;
+    btn.setIcon(isFloating ? "dock" : "external-link");
+    btn.extraSettingsEl.setAttr("action",ACTION_DOCK_UNDOCK);
+    btn.setTooltip(
+      `${isFloating ? t("TOOLTIP_DOCK") : t("TOOLTIP_UNDOCK")} ${getActionHotkeyString(ACTION_DOCK_UNDOCK)}`
+    );
+    btn.onClick(() => {
+      toggleDock({silent: false, forceDock: false, saveSetting: true})
     });
-  }
+  });
   
   updateUI();
 };
@@ -4090,7 +4046,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
       modalEl.style.height = "auto";
       modalEl.style.maxHeight = FLOAT_MODAL_MAX_HEIGHT;
       const container = floatingInputModal.contentEl.createDiv();
-      renderInput(container, "floating");
+      renderInput(container, true);
       focusInputEl();
       setTimeout(() => {
         //the modalEl is repositioned after a delay
@@ -4110,12 +4066,12 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
         isUndocked = false;
         setVal(K_UNDOCKED, false);
         updateKeyHandlerLocation(); // Restore listeners to sidepanel
-        if (ea.sidepanelTab && inputContainer) renderInput(inputContainer, "docked");
+        if (ea.sidepanelTab && inputContainer) renderInput(inputContainer, false);
       }
     };
     
-    // Render sidepanel in "sidebar" mode (leftovers)
-    renderInput(inputContainer, "sidebar");
+    // Clear input from sidepanel
+    inputContainer.empty();
     floatingInputModal.open();
   } else {
     // DOCK: Close floating, render in sidepanel
@@ -4126,7 +4082,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
       floatingInputModal.close(); 
       floatingInputModal = null;
     }
-    renderInput(inputContainer, "docked");
+    renderInput(inputContainer, false);
     if (forceDock) return;
     if (!silent) {
       focusInputEl();
@@ -4444,7 +4400,7 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
       if (isUndocked) {
         toggleDock({silent: true, forceDock: true, saveSetting: false});
       } else {
-        renderInput(inputContainer, "docked");
+        renderInput(inputContainer, false);
       }
     }
 
