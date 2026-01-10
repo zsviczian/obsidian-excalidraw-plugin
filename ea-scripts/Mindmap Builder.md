@@ -813,7 +813,7 @@ const getBoundaryHost = (selectedElements) => {
   }
 }
 
-const ensureNodeSelected = () => {
+const getMindmapNodeFromSelection = () => {
   if (!ea.targetView) return;
   const selectedElements = ea.getViewSelectedElements();
 
@@ -821,8 +821,7 @@ const ensureNodeSelected = () => {
 
   const owner = getBoundaryHost(selectedElements);
   if (owner) {
-    ea.selectElementsInView([owner]);
-    return;
+    return owner;
   }
 
   // Handle Single Arrow Selection, deliberatly not filtering to el.customData?.isBranch
@@ -830,10 +829,7 @@ const ensureNodeSelected = () => {
     const sel = selectedElements[0];
     const targetId = sel.startBinding?.elementId || sel.endBinding?.elementId;
     if (targetId) {
-      const target = ea.getViewElements().find((el) => el.id === targetId);
-      if (target) ea.selectElementsInView([target]);
-    } else {
-      ea.selectElementsInView([]);
+      return ea.getViewElements().find((el) => el.id === targetId);
     }
     return;
   }
@@ -861,9 +857,15 @@ const ensureNodeSelected = () => {
     const rootId = Array.from(sourceIds).find((id) => !sinkIds.has(id));
 
     if (rootId) {
-      const target = selectedElements.find((el) => el.id === rootId);
-      if (target) ea.selectElementsInView([target]);
+      return selectedElements.find((el) => el.id === rootId);
     }
+  }
+}
+
+const ensureNodeSelected = () => {
+  const elementToSelect = getMindmapNodeFromSelection();
+  if (elementToSelect) {
+    ea.selectElementsInView([elementToSelect]);
   }
 };
 
@@ -1015,14 +1017,6 @@ const getDynamicColor = (existingColors) => {
   });
 
   return scored[0]?.hex || "#000000";
-};
-
-const getReadableColor = (hex) => {
-  const bg = getAppState().viewBackgroundColor;
-  const cm = ea.getCM(hex);
-  return ea.getCM(bg).isDark()
-    ? cm.lightnessTo(80).stringHEX()
-    : cm.lightnessTo(35).stringHEX();
 };
 
 // ---------------------------------------------------------------------------
@@ -1342,7 +1336,41 @@ const getSubtreeHeight = (nodeId, allElements) => {
   return Math.max(node.height, childrenHeight);
 };
 
-// Recursive grouping logic
+/**
+ * Determines if an element is part of the mindmap structure (Node, Branch Arrow, Boundary).
+ */
+const isStructuralElement = (el, allElements) => {
+  if (el.customData?.isBranch) return true; 
+  if (el.customData?.growthMode) return true; 
+  if (el.customData?.isBoundary) return true; 
+  if (typeof el.customData?.mindmapOrder !== "undefined") return true; 
+
+  const connectedArrow = allElements.find(a => 
+    a.type === "arrow" && 
+    a.customData?.isBranch && 
+    (a.startBinding?.elementId === el.id || a.endBinding?.elementId === el.id)
+  );
+  return !!connectedArrow;
+};
+
+/**
+ * A group is considered a "Mindmap Group" if it contains at least 2 structural elements.
+ * Groups with only 1 structural element (e.g. a Node grouped with a Sticker) are treated as decoration.
+ */
+const isMindmapGroup = (groupId, allElements) => {
+  const groupEls = allElements.filter(el => el.groupIds?.includes(groupId));
+  const structuralCount = groupEls.filter(el => isStructuralElement(el, allElements)).length;
+  return structuralCount >= 2;
+};
+
+/**
+ * Finds the first group ID in the element's group stack that qualifies as a Mindmap Group.
+ */
+const getStructuralGroup = (element, allElements) => {
+  if (!element.groupIds || element.groupIds.length === 0) return null;
+  return element.groupIds.find(gid => isMindmapGroup(gid, allElements));
+};
+
 const applyRecursiveGrouping = (nodeId, allElements) => {
   const children = getChildrenNodes(nodeId, allElements);
   const nodeIdsInSubtree = [nodeId];
@@ -1474,8 +1502,7 @@ const updateNodeBoundary = (node, allElements) => {
   boundaryEl.polygon = true;
   boundaryEl.locked = false;
 
-  if (node.groupIds.length > 0) {
-     // If node is grouped, boundary joins the group
+  if (node.groupIds.length > 0 && isMindmapGroup(node.groupIds[0], allElements)) {
      if (!boundaryEl.groupIds || boundaryEl.groupIds.length === 0 || boundaryEl.groupIds[0] !== node.groupIds[0]) {
          boundaryEl.groupIds = [node.groupIds[0]];
      }
@@ -1675,7 +1702,9 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       const mindmapIds = getBranchElementIds(rootId, allElements);
       mindmapIds.forEach((id) => {
         const el = ea.getElement(id);
-        if (el) el.groupIds = [];
+        if (el && el.groupIds) {
+          el.groupIds = el.groupIds.filter(gid => !isMindmapGroup(gid, allElements));
+        }
       });
     }
 
@@ -2038,7 +2067,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     });
     rootId = newNodeId;
   } else {
-    ea.style.strokeColor = nodeColor; //getReadableColor(nodeColor);
+    ea.style.strokeColor = nodeColor;
     const rootEl = allElements.find((e) => e.id === rootId);
     const rootBox = getNodeBox(rootEl, allElements);
     const mode = rootEl.customData?.growthMode || currentModalGrowthMode;
@@ -2148,10 +2177,12 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
 
     if (!groupBranches && parent.groupIds?.length > 0) {
       const pGroup = parent.groupIds[0];
-      const newNode = ea.getElement(newNodeId);
-      const newArrow = ea.getElement(arrowId);
-      if(newNode) newNode.groupIds = [pGroup];
-      if(newArrow) newArrow.groupIds = [pGroup];
+      if (isMindmapGroup(pGroup, allElements)) {
+        const newNode = ea.getElement(newNodeId);
+        const newArrow = ea.getElement(arrowId);
+        if(newNode) newNode.groupIds = [pGroup];
+        if(newArrow) newArrow.groupIds = [pGroup];
+      }
     }
   }
 
@@ -2187,7 +2218,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
 
     if (groupBranches) {
       ea.getElements().forEach((el) => {
-        el.groupIds = [];
+        if (el.groupIds) {
+          el.groupIds = el.groupIds.filter(gid => !isMindmapGroup(gid, allEls));
+        }
       });
       const l1Nodes = getChildrenNodes(rootId, allEls);
       l1Nodes.forEach((l1) => applyRecursiveGrouping(l1.id, allEls));
@@ -2195,14 +2228,13 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       const { l1AncestorId } = getHierarchy(parent, allEls);
       const bIds = getBranchElementIds(l1AncestorId, allEls);
 
-      // Look for an existing group ID among the OLD elements of the branch
       const existingGroupedEl = allEls.find(el =>
         bIds.includes(el.id) &&
         el.id !== newNodeId &&
         el.id !== arrowId &&
-        el.groupIds?.length > 0
+        getStructuralGroup(el, allEls)
       );
-      const commonGroupId = existingGroupedEl ? existingGroupedEl.groupIds[0] : null;
+      const commonGroupId = existingGroupedEl ? getStructuralGroup(existingGroupedEl, allEls) : null;
 
       if (commonGroupId) {
         const newIds = [newNodeId, arrowId].filter(Boolean);
@@ -2274,11 +2306,9 @@ const copyMapAsText = async (cut = false) => {
 
   const elementsToDelete = [];
 
-  // --- MODIFICATION START: Respect Obsidian Indentation Settings ---
   const useTab = app.vault.getConfig("useTab");
   const tabSize = app.vault.getConfig("tabSize");
   const indentVal = useTab ? "\t" : " ".repeat(tabSize);
-  // --- MODIFICATION END ---
 
   const buildList = (nodeId, depth = 0) => {
     const node = all.find((e) => e.id === nodeId);
@@ -2681,10 +2711,13 @@ const toggleBranchGroup = async () => {
 
   let newGroupId;
   const commonGroupId = ea.getCommonGroupForElements(workbenchEls);
+  const structuralGroupId = (commonGroupId && isMindmapGroup(commonGroupId, allElements)) ? commonGroupId : null;
 
-  if (commonGroupId) {
+  if (structuralGroupId) {
     workbenchEls.forEach(el => {
-      el.groupIds = [];
+      if (el.groupIds) {
+        el.groupIds = el.groupIds.filter(g => g !== structuralGroupId);
+      }
     });
   } else {
     newGroupId = ea.addToGroup(ids);
@@ -2827,6 +2860,13 @@ const toggleBoundary = async () => {
         groupIds: sel.groupIds || [],
         customData: {isBoundary: true},
       };
+
+      if (sel.groupIds.length > 0 && isMindmapGroup(sel.groupIds[0], ea.getViewElements())) {
+        boundaryEl.groupIds = [sel.groupIds[0]];
+      } else {
+        boundaryEl.groupIds = [];
+      }
+
       ea.elementsDict[id] = boundaryEl;
       ea.addAppendUpdateCustomData(sel.id, { boundaryId: id });
     }
@@ -2972,7 +3012,7 @@ const disableUI = () => {
   if(editBtn) editBtn.extraSettingsEl.style.color = "";
 };
 
-const updateUI = () => {
+const updateUI = (sel) => {
   if (!ea.targetView) {
     if(inputEl) inputEl.disabled = true;
     disableUI();
@@ -2980,7 +3020,7 @@ const updateUI = () => {
   }
   if(inputEl) inputEl.disabled = false;
   const all = ea.getViewElements();
-  const sel = ea.getViewSelectedElement();
+  sel = sel ?? ea.getViewSelectedElement();
 
   if (sel) {
     const info = getHierarchy(sel, all);
@@ -3443,8 +3483,6 @@ const renderInput = (container, isFloating = false) => {
     secondaryButtonContainer.style.gap = "6px";
     secondaryButtonContainer.style.marginTop = "6px";
     secondaryButtonContainer.style.flexWrap = "wrap";
-    secondaryButtonContainer.style.overflow = "hidden";
-    secondaryButtonContainer.style.scrollbarWidth = "none";
   }
 
   inputRow.addText((text) => {
@@ -3774,12 +3812,11 @@ const renderBody = (contentEl) => {
       dirty = true;
       const sel = ea.getViewSelectedElement() || ea.getViewElements().find(el => !getParentNode(el.id, ea.getViewElements()));
       if (sel) {
-          const info = getHierarchy(sel, ea.getViewElements());
-          await triggerGlobalLayout(info.rootId, true, true);
-          updateUI();
-        }
-      })
-    )
+        const info = getHierarchy(sel, ea.getViewElements());
+        await triggerGlobalLayout(info.rootId, true, true);
+        updateUI();
+      }
+    }))
     .addButton((btn) => {
       toggleGroupBtn = btn;
       btn.setIcon("group");
@@ -4167,6 +4204,8 @@ const registerStyles = () => {
     ".excalidraw-mindmap-ui button:focus-visible,",
     ".excalidraw-mindmap-ui .clickable-icon:focus-visible,",
     ".excalidraw-mindmap-ui [tabindex]:focus-visible {",
+    " overflow: hidden;",
+    " scrollbar-width: none;",
     "  outline: 2px solid var(--interactive-accent) !important;",
     "  outline-offset: 2px;",
     "  background-color: var(--interactive-accent);",
@@ -4569,21 +4608,8 @@ const handleCanvasPointerDown = (e) => {
 
   setTimeout(() => {
     if (!ea.targetView) return;
-    const selection = ea.getViewSelectedElements();
-    const isEligible = !!selection.find(el => el.customData && (
-      el.customData.hasOwnProperty("mindmapOrder") ||
-      el.customData.hasOwnProperty("isBranch") ||
-      el.customData.hasOwnProperty("growthMode") ||
-      el.customData.hasOwnProperty("isBoundary")
-    ))
-
-    if (isEligible) {
-      updateUI();
-    }
-
-    if (!isEligible && !pinBtn.disabled) {
-      updateUI();
-    }
+    const selection = getMindmapNodeFromSelection();
+    updateUI(selection);
   }, 50);
 };
 
