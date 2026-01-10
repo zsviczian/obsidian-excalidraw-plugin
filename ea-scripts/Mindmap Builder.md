@@ -1623,6 +1623,48 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
        el.endBinding?.elementId
     );
 
+    const branchIds = new Set(getBranchElementIds(rootId, allElements));
+    const groupToNodes = new Map();
+
+    allElements.forEach(el => {
+      if (branchIds.has(el.id) && el.type !== "arrow" && el.groupIds) {
+        el.groupIds.forEach(gid => {
+          if (!groupToNodes.has(gid)) groupToNodes.set(gid, new Set());
+          groupToNodes.get(gid).add(el);
+        });
+      }
+    });
+
+    const decorationsToUpdate = [];
+
+    allElements.forEach(el => {
+      const isCrossLink = el.type === "arrow" && el.startBinding?.elementId && el.endBinding?.elementId;
+      const isBoundary = el.customData?.isBoundary;
+      const isDecoration = !branchIds.has(el.id) && !isCrossLink && !isBoundary && el.groupIds && el.groupIds.length > 0;
+
+      if (isDecoration) {
+        const hostNodes = new Set();
+        el.groupIds.forEach(gid => {
+          const nodesInGroup = groupToNodes.get(gid);
+          if (nodesInGroup) {
+            nodesInGroup.forEach(node => hostNodes.add(node));
+          }
+        });
+
+        if (hostNodes.size > 0) {
+          const nodesArray = Array.from(hostNodes);
+          const box = ExcalidrawLib.getCommonBoundingBox(nodesArray);
+
+          decorationsToUpdate.push({
+            elementId: el.id,
+            hostNodeIds: nodesArray.map(n => n.id),
+            oldCx: box.minX + (box.width / 2),
+            oldCy: box.minY + (box.height / 2)
+          });
+        }
+      }
+    });
+
     const hasGlobalFolds = allElements.some(el => el.customData?.isFolded === true);
     const l1Nodes = getChildrenNodes(rootId, allElements);
     if (l1Nodes.length === 0) return;
@@ -1795,6 +1837,23 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
                 p[1] + diffY * t
             ];
           });
+        }
+      }
+    });
+
+    decorationsToUpdate.forEach(item => {
+      const currentHostNodes = item.hostNodeIds.map(id => ea.getElement(id) || allElements.find(x => x.id === id));
+      const box = ExcalidrawLib.getCommonBoundingBox(currentHostNodes);
+      const newCx = box.minX + (box.width / 2);
+      const newCy = box.minY + (box.height / 2);
+      const dx = newCx - item.oldCx;
+      const dy = newCy - item.oldCy;
+
+      if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
+        const decoration = ea.getElement(item.elementId);
+        if (decoration) {
+          decoration.x += dx;
+          decoration.y += dy;
         }
       }
     });
@@ -2201,6 +2260,7 @@ const getTextFromNode = (all, node, getRaw = false, shortPath = false) => {
 
 const copyMapAsText = async (cut = false) => {
   if (!ea.targetView) return;
+  ensureNodeSelected();
   const sel = ea.getViewSelectedElement();
   if (!sel) {
     new Notice(t("NOTICE_SELECT_NODE_TO_COPY"));
@@ -2594,7 +2654,7 @@ const getBranchElementIds = (nodeId, allElements) => {
     const startId = el.startBinding?.elementId;
     const endId = el.endBinding?.elementId;
     // An arrow (isBranch or internal) is part of the group only if
-      // BOTH ends are nodes within the branch set.
+    // BOTH ends are nodes within the branch set.
     if (startId && endId && branchNodes.has(startId) && branchNodes.has(endId)) {
       branchElementIds.push(el.id);
     }
