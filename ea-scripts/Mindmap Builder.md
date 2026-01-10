@@ -153,7 +153,8 @@ const STRINGS = {
     TOOLTIP_ZOOM_CYCLE: "Cycle element zoom",
     TOOLTIP_TOGGLE_GROUP_BTN: "Toggle grouping/ungrouping of a branch. Only available if \"Group Branches\" is disabled.",
     TOOLTIP_TOGGLE_BOX: "Toggle node box",
-    TOOLTIP_TOGGLE_BOUNDARY: "Toggle subtree boundary", 
+    TOOLTIP_TOGGLE_BOUNDARY: "Toggle subtree boundary",
+    TOOLTIP_TOGGLE_FLOATING_EXTRAS: "Toggle extra controls",
     TOOLTIP_CONFIGURE_PALETTE: "Configure custom color palette for branches",
     TOOLTIP_MOVE_UP: "Move Up",
     TOOLTIP_MOVE_DOWN: "Move Down",
@@ -531,6 +532,7 @@ const ACTION_TOGGLE_BOUNDARY = "Toggle Boundary";
 const ACTION_DOCK_UNDOCK = "Dock/Undock";
 const ACTION_HIDE = "Dock & hide";
 const ACTION_REARRANGE = "Rearrange Map";
+const ACTION_TOGGLE_FLOATING_EXTRAS = "Toggle Floating Extra Buttons";
 
 const ACTION_LABEL_KEYS = {
   [ACTION_ADD]: "ACTION_LABEL_ADD",
@@ -555,6 +557,7 @@ const ACTION_LABEL_KEYS = {
   [ACTION_TOGGLE_BOUNDARY]: "TOOLTIP_TOGGLE_BOUNDARY", 
   [ACTION_DOCK_UNDOCK]: "ACTION_LABEL_DOCK_UNDOCK",
   [ACTION_HIDE]: "ACTION_LABEL_HIDE",
+  [ACTION_TOGGLE_FLOATING_EXTRAS]: "TOOLTIP_TOGGLE_FLOATING_EXTRAS",
 };
 
 const getActionLabel = (action) => t(ACTION_LABEL_KEYS[action] ?? action);
@@ -1273,7 +1276,6 @@ const zoomToFit = (mode) => {
       animate: true
     });
   }
-  focusInputEl();
 }
 
 const focusSelected = () => {
@@ -1285,8 +1287,6 @@ const focusSelected = () => {
     fitToContent: false,
     animate: true,
   });
-
-  focusInputEl();
 };
 
 const getMindmapOrder = (node) => {
@@ -2736,6 +2736,9 @@ const toggleBoundary = async () => {
 let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown, autoLayoutToggle, linkSuggester;
 let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn, toggleGroupBtn, zoomBtn, boundaryBtn;
 let foldBtnL0, foldBtnL1, unfoldAllBtn;
+let panelExpandBtn;
+let isFloatingPanelExpanded = false;
+let toggleFloatingExtras = null;
 let inputContainer;
 let helpContainer;
 let floatingInputModal = null;
@@ -3275,10 +3278,11 @@ const renderInput = (container, isFloating = false) => {
   
   pinBtn = refreshBtn = dockBtn = inputEl = null;
   foldBtnL0 = foldBtnL1 = unfoldAllBtn = null;
-  boundaryBtn = null; 
+  boundaryBtn = panelExpandBtn = null; 
 
   inputRow = new ea.obsidian.Setting(container);
-  
+  let secondaryButtonContainer = null;
+
   if (!isFloating) {
     inputRow.settingEl.style.display = "block";
     inputRow.controlEl.style.display = "block";
@@ -3288,6 +3292,14 @@ const renderInput = (container, isFloating = false) => {
     inputRow.settingEl.style.border = "none";
     inputRow.settingEl.style.padding = "0";
     inputRow.infoEl.style.display = "none";
+
+    // Expandable container for floating mode
+    secondaryButtonContainer = container.createDiv();
+    secondaryButtonContainer.style.display = isFloatingPanelExpanded ? "flex" : "none";
+    secondaryButtonContainer.style.justifyContent = "flex-end";
+    secondaryButtonContainer.style.gap = "6px";
+    secondaryButtonContainer.style.marginTop = "6px";
+    secondaryButtonContainer.style.flexWrap = "wrap";
   }
 
   inputRow.addText((text) => {
@@ -3317,24 +3329,28 @@ const renderInput = (container, isFloating = false) => {
     });
   });
 
-  // Create a specific container for buttons when docked to ensure they sit in one row aligned right
-  let buttonContainer;
+  let dockedButtonContainer;
   if (!isFloating) {
-    buttonContainer = inputRow.controlEl.createDiv();
-    buttonContainer.style.display = "flex";
-    buttonContainer.style.justifyContent = "flex-end";
-    buttonContainer.style.gap = "6px";
-    buttonContainer.style.marginTop = "6px";
+    dockedButtonContainer = inputRow.controlEl.createDiv();
+    dockedButtonContainer.style.display = "flex";
+    dockedButtonContainer.style.justifyContent = "flex-end";
+    dockedButtonContainer.style.gap = "6px";
+    dockedButtonContainer.style.marginTop = "6px";
   }
 
-  const addButton = (cb) => {
+  const addButton = (cb, moveToSecondary = false) => {
     inputRow.addExtraButton((btn) => {
       cb(btn);
       if (btn.buttonEl) btn.buttonEl.tabIndex = 0;
       if (btn.extraSettingsEl) btn.extraSettingsEl.tabIndex = 0;
-      // If docked, move the button into our flex container
-      if (!isFloating && buttonContainer && btn.extraSettingsEl) {
-        buttonContainer.appendChild(btn.extraSettingsEl);
+      
+      const el = btn.extraSettingsEl;
+      if (!el) return;
+
+      if (!isFloating && dockedButtonContainer) {
+        dockedButtonContainer.appendChild(el);
+      } else if (isFloating && moveToSecondary && secondaryButtonContainer) {
+        secondaryButtonContainer.appendChild(el);
       }
     });
   };
@@ -3347,7 +3363,7 @@ const renderInput = (container, isFloating = false) => {
     btn.onClick(() => {
       startEditing();
     });
-  });
+  }, false);
 
   addButton((btn) => {
     pinBtn = btn;
@@ -3356,58 +3372,76 @@ const renderInput = (container, isFloating = false) => {
     btn.onClick(async () => {
       await togglePin();
       updateUI();
-      focusInputEl();
     });
-  });
+  }, false);
+  
+  toggleFloatingExtras = null;
 
-  if (!isFloating) {
-    addButton((btn) => {
-      boundaryBtn = btn;
-      btn.setIcon("cloud");
-      btn.setTooltip(`${t("TOOLTIP_TOGGLE_BOUNDARY")} ${getActionHotkeyString(ACTION_TOGGLE_BOUNDARY)}`);
-      btn.onClick(async () => {
-        await toggleBoundary();
-        updateUI();
-        focusInputEl();
-      });
-    });
-
-    addButton((btn) => {
-      foldBtnL0 = btn;
-      btn.setIcon("wifi-low");
-      btn.setTooltip(`${t("TOOLTIP_FOLD_BRANCH")} ${getActionHotkeyString(ACTION_FOLD)}`);
-      btn.extraSettingsEl.setAttr("action", ACTION_FOLD);
-      btn.onClick(async () => {
-        await toggleFold("L0");
-        updateUI();
-        focusInputEl();
-      });
-    });
+  if (isFloating) {
+    toggleFloatingExtras = () => {
+      isFloatingPanelExpanded = !isFloatingPanelExpanded;
+      panelExpandBtn.setIcon(isFloatingPanelExpanded ? "panel-bottom-open" : "panel-top-open");
+      
+      if (secondaryButtonContainer) {
+        secondaryButtonContainer.style.display = isFloatingPanelExpanded ? "flex" : "none";
+        if (floatingInputModal && floatingInputModal.modalEl) {
+            floatingInputModal.modalEl.style.maxHeight = isFloatingPanelExpanded ? "unset" : FLOAT_MODAL_MAX_HEIGHT;
+        }
+      }
+    };
 
     addButton((btn) => {
-      foldBtnL1 = btn;
-      btn.setIcon("wifi-high");
-      btn.setTooltip(`${t("TOOLTIP_FOLD_L1_BRANCH")} ${getActionHotkeyString(ACTION_FOLD_L1)}`);
-      btn.extraSettingsEl.setAttr("action", ACTION_FOLD_L1);
-      btn.onClick(async () => {
-        await toggleFold("L1");
-        updateUI();
-        focusInputEl();
-      });
-    });
-
-    addButton((btn) => {
-      unfoldAllBtn = btn;
-      btn.setIcon("wifi");
-      btn.setTooltip(`${t("TOOLTIP_UNFOLD_BRANCH_ALL")} ${getActionHotkeyString(ACTION_UNFOLD_ALL)}`);
-      btn.extraSettingsEl.setAttr("action", ACTION_UNFOLD_ALL);
-      btn.onClick(async () => {
-        await toggleFold("ALL");
-        updateUI();
-        focusInputEl();
-      });
-    });
+      panelExpandBtn = btn;
+      btn.setIcon(isFloatingPanelExpanded ? "panel-bottom-open" : "panel-top-open");
+      btn.setTooltip(t("TOOLTIP_TOGGLE_FLOATING_EXTRAS"));
+      btn.extraSettingsEl.setAttr("action", ACTION_TOGGLE_FLOATING_EXTRAS);
+      btn.onClick(toggleFloatingExtras);
+    }, false);
   }
+
+  addButton((btn) => {
+    boundaryBtn = btn;
+    btn.setIcon("cloud");
+    btn.setTooltip(`${t("TOOLTIP_TOGGLE_BOUNDARY")} ${getActionHotkeyString(ACTION_TOGGLE_BOUNDARY)}`);
+    btn.extraSettingsEl.setAttr("action", ACTION_TOGGLE_BOUNDARY);
+    btn.onClick(async () => {
+      await toggleBoundary();
+      updateUI();
+    });
+  }, true);
+
+  addButton((btn) => {
+    foldBtnL0 = btn;
+    btn.setIcon("wifi-low");
+    btn.setTooltip(`${t("TOOLTIP_FOLD_BRANCH")} ${getActionHotkeyString(ACTION_FOLD)}`);
+    btn.extraSettingsEl.setAttr("action", ACTION_FOLD);
+    btn.onClick(async () => {
+      await toggleFold("L0");
+      updateUI();
+    });
+  }, true);
+
+  addButton((btn) => {
+    foldBtnL1 = btn;
+    btn.setIcon("wifi-high");
+    btn.setTooltip(`${t("TOOLTIP_FOLD_L1_BRANCH")} ${getActionHotkeyString(ACTION_FOLD_L1)}`);
+    btn.extraSettingsEl.setAttr("action", ACTION_FOLD_L1);
+    btn.onClick(async () => {
+      await toggleFold("L1");
+      updateUI();
+    });
+  }, true);
+
+  addButton((btn) => {
+    unfoldAllBtn = btn;
+    btn.setIcon("wifi");
+    btn.setTooltip(`${t("TOOLTIP_UNFOLD_BRANCH_ALL")} ${getActionHotkeyString(ACTION_UNFOLD_ALL)}`);
+    btn.extraSettingsEl.setAttr("action", ACTION_UNFOLD_ALL);
+    btn.onClick(async () => {
+      await toggleFold("ALL");
+      updateUI();
+    });
+  }, true);
 
   addButton((btn) => {
     refreshBtn = btn;
@@ -3416,9 +3450,8 @@ const renderInput = (container, isFloating = false) => {
     btn.extraSettingsEl.setAttr("action",ACTION_REARRANGE);
     btn.onClick(async () => {
       await refreshMapLayout();
-      focusInputEl();
     });
-  });
+  }, true);
 
   addButton((btn) => {
     dockBtn = btn;
@@ -3430,7 +3463,7 @@ const renderInput = (container, isFloating = false) => {
     btn.onClick(() => {
       toggleDock({silent: false, forceDock: false, saveSetting: true})
     });
-  });
+  }, true);
   
   updateUI();
 };
@@ -3569,7 +3602,6 @@ const renderBody = (contentEl) => {
       btn.setTooltip(`${t("TOOLTIP_TOGGLE_GROUP_BTN")} ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
       btn.onClick(async () => {
         await toggleBranchGroup();
-        focusInputEl();
       });
     });
 
@@ -3589,7 +3621,6 @@ const renderBody = (contentEl) => {
       btn.setTooltip(`${t("TOOLTIP_TOGGLE_BOX")} ${getActionHotkeyString(ACTION_BOX)}`);
       btn.onClick(async () => {
         await toggleBox();
-        focusInputEl();
       });
     });
 
@@ -4187,9 +4218,11 @@ const handleKeydown = async (e) => {
   e.stopPropagation();
 
   switch (action) {
+    case ACTION_TOGGLE_FLOATING_EXTRAS:
+      toggleFloatingExtras?.();
+      break;
     case ACTION_REARRANGE:
       await refreshMapLayout();
-      focusInputEl();
       break;
     case ACTION_TOGGLE_GROUP:
       await toggleBranchGroup();
@@ -4206,36 +4239,30 @@ const handleKeydown = async (e) => {
     case ACTION_PIN:
       await togglePin();
       updateUI();
-      focusInputEl();
       break;
 
     case ACTION_BOX:
       await toggleBox();
-      focusInputEl();
       break;
 
     case ACTION_TOGGLE_BOUNDARY:
       await toggleBoundary();
       updateUI();
-      focusInputEl();
       break;
 
     case ACTION_FOLD:
       await toggleFold("L0");
       updateUI();
-      focusInputEl();
       break;
 
     case ACTION_FOLD_L1:
       await toggleFold("L1");
       updateUI();
-      focusInputEl();
       break;
 
     case ACTION_UNFOLD_ALL:
       await toggleFold("ALL");
       updateUI();
-      focusInputEl();
       break;
 
     case ACTION_COPY:
