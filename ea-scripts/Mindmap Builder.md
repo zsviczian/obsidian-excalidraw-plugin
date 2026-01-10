@@ -108,6 +108,7 @@ const STRINGS = {
     NOTICE_CLIPBOARD_EMPTY: "Clipboard is empty.",
     NOTICE_PASTE_ABORTED: "Paste aborted. Clipboard does not start with a Markdown list or header.",
     NOTICE_NO_LIST: "No valid Markdown list found on clipboard.",
+    NOTICE_PASTE_START: "Pasiting, please wait, this can take a while...",
     NOTICE_PASTE_COMPLETE: "Paste complete.",
     NOTICE_ACTION_REQUIRES_ARROWS: "This action requires Arrow Keys. Only modifiers can be changed.",
     NOTICE_CONFLICT_WITH_ACTION: "Conflict with \"{action}\"",
@@ -2721,7 +2722,9 @@ const pasteListToMap = async () => {
   }
 
   const delta = isHeader(lines[0]) ? 1 : 0;
-
+  
+  const notice = new Notice(t("NOTICE_PASTE_START"), 0);
+  await sleep(10);
   lines.forEach((line) => {
     if (isHeader(line)) {
       parsed.push({ indent: 0, text: line.replace(/^#+\s/, "").trim() });
@@ -2758,7 +2761,6 @@ const pasteListToMap = async () => {
     while (stack.length > 1 && item.indent <= stack[stack.length - 1].indent) {
       stack.pop();
     }
-
     const parentNode = stack[stack.length - 1].node;
     ea.selectElementsInView([parentNode]);
     const newNode = await addNode(item.text, false, true);
@@ -2778,7 +2780,8 @@ const pasteListToMap = async () => {
   if (targetToSelect) {
     ea.selectElementsInView([targetToSelect]);
   }
-  new Notice(t("NOTICE_PASTE_COMPLETE"));
+  notice.setMessage(t("NOTICE_PASTE_COMPLETE"));
+  notice.setAutoHide(4000);
 };
 
 // ---------------------------------------------------------------------------
