@@ -1030,38 +1030,50 @@ const manageFoldIndicator = (node, show, allElements) => {
   }
   const existingId = node.customData?.foldIndicatorId;
 
+  let side = 1;
+  const parent = getParentNode(node.id, allElements);
+  if (parent) {
+    const parentCenter = parent.x + parent.width / 2;
+    const nodeCenter = node.x + node.width / 2;
+    side = nodeCenter < parentCenter ? -1 : 1;
+  }
+
   if (show) {
+    let ind;
     if (existingId) {
-      const ind = allElements.find(el => el.id === existingId);
+      ind = allElements.find(el => el.id === existingId);
       if (ind) {
         ind.isDeleted = false;
         ind.strokeColor = node.strokeColor;
         ind.opacity = layoutSettings.INDICATOR_OPACITY;
-        ind.x = node.x + node.width + layoutSettings.INDICATOR_OFFSET;
-        ind.y = node.y + node.height/2 - ind.height/2;
-        return;
       }
     }
 
-    // Create new indicator if none exists
-    const id = ea.addText(node.x + node.width + layoutSettings.INDICATOR_OFFSET, node.y, "...");
-    const ind = ea.getElement(id);
-    ind.fontSize = node.fontSize;
-    ind.strokeColor = node.strokeColor;
-    ind.opacity = layoutSettings.INDICATOR_OPACITY;
-    ind.textVerticalAlign = "middle";
-    ind.textAlign = "left";
-    ind.y = node.y + node.height/2 - ind.height/2;
+    // Create new indicator if none exists or wasn't found
+    if (!ind) {
+      const id = ea.addText(0, 0, "...");
+      ind = ea.getElement(id);
+      ind.fontSize = node.fontSize;
+      ind.strokeColor = node.strokeColor;
+      ind.opacity = layoutSettings.INDICATOR_OPACITY;
+      ind.textVerticalAlign = "middle";
 
-    // Add to existing group if present
-    if (node.groupIds && node.groupIds.length > 0) {
-      ind.groupIds = [node.groupIds[0]];
-    } else {
-      // Or create a new group with the node
-      ea.addToGroup([node.id, id]);
+      if (node.groupIds && node.groupIds.length > 0) {
+        ind.groupIds = [node.groupIds[0]];
+      } else {
+        ea.addToGroup([node.id, id]);
+      }
+      ea.addAppendUpdateCustomData(node.id, { foldIndicatorId: id });
     }
 
-    ea.addAppendUpdateCustomData(node.id, { foldIndicatorId: id });
+    if (side === 1) {
+        ind.x = node.x + node.width + layoutSettings.INDICATOR_OFFSET;
+        ind.textAlign = "left";
+    } else {
+        ind.x = node.x - layoutSettings.INDICATOR_OFFSET - ind.width;
+        ind.textAlign = "right";
+    }
+    ind.y = node.y + node.height/2 - ind.height/2;
   } else {
     // Hide/Delete indicator
     if (existingId) {
@@ -1546,14 +1558,6 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
     }
   }
 
-  if (node.customData?.foldIndicatorId) {
-    const ind = ea.getElement(node.customData.foldIndicatorId);
-    if(ind) {
-        ind.x = eaNode.x + eaNode.width + layoutSettings.INDICATOR_OFFSET;
-        ind.y = eaNode.y + eaNode.height/2 - ind.height/2;
-    }
-  }
-
   if (node.customData?.isFolded) return;
 
   const currentX = eaNode.x;
@@ -1566,6 +1570,20 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
     const parentCenterX = parent.x + parent.width / 2;
     const nodeCenterX = currentX + node.width / 2;
     effectiveSide = nodeCenterX >= parentCenterX ? 1 : -1;
+  }
+
+  if (node.customData?.foldIndicatorId) {
+    const ind = ea.getElement(node.customData.foldIndicatorId);
+    if(ind) {
+        if (effectiveSide === 1) {
+            ind.x = eaNode.x + eaNode.width + layoutSettings.INDICATOR_OFFSET;
+            ind.textAlign = "left";
+        } else {
+            ind.x = eaNode.x - layoutSettings.INDICATOR_OFFSET - ind.width;
+            ind.textAlign = "right";
+        }
+        ind.y = eaNode.y + eaNode.height/2 - ind.height/2;
+    }
   }
 
   if (!isPinned && eaNode.type === "text" && !eaNode.containerId && node.textAlign !== "center") {
