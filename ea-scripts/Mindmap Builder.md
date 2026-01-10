@@ -577,6 +577,7 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_REARRANGE, code: "F5", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_ZOOM, code: "KeyZ", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_DOCK_UNDOCK, key: "Enter", modifiers: ["Shift"], scope: SCOPE.input, isInputOnly: true },
@@ -788,7 +789,19 @@ const ensureNodeSelected = () => {
 
   if (selectedElements.length === 0) return;
 
-  // 1. Handle Single Arrow Selection, deliberatly not filtering to el.customData?.isBranch
+  // Handle Boundary Selection: If a boundary line is selected, select its owner
+  if (selectedElements.length === 1 && selectedElements[0].type === "line") {
+    const sel = selectedElements[0];
+    // Check if this line is referenced as a boundaryId by any other element
+    const allElements = ea.getViewElements();
+    const owner = allElements.find(el => el.customData?.boundaryId === sel.id);
+    if (owner) {
+      ea.selectElementsInView([owner]);
+      return;
+    }
+  }
+
+  // Handle Single Arrow Selection, deliberatly not filtering to el.customData?.isBranch
   if (selectedElements.length === 1 && selectedElements[0].type === "arrow") {
     const sel = selectedElements[0];
     const targetId = sel.startBinding?.elementId || sel.endBinding?.elementId;
@@ -801,7 +814,7 @@ const ensureNodeSelected = () => {
     return;
   }
 
-  // 2. Handle Group Selection (Find Highest Ranking Parent)
+  // Handle Group Selection (Find Highest Ranking Parent)
   // deliberatly not filtering to el.customData?.isBranch
   if (selectedElements.length > 1) {
     const selectedIds = new Set(selectedElements.map((el) => el.id));
@@ -2791,17 +2804,18 @@ const disableUI = () => {
   setButtonDisabled(editBtn, true);
   setButtonDisabled(toggleGroupBtn, true);
   setButtonDisabled(zoomBtn, true);
+  setButtonDisabled(boundaryBtn, true);
   editingNodeId = null;
-  editBtn.extraSettingsEl.style.color = "";
+  if(editBtn) editBtn.extraSettingsEl.style.color = "";
 };
 
 const updateUI = () => {
   if (!ea.targetView) {
-    inputEl.disabled = true;
+    if(inputEl) inputEl.disabled = true;
     disableUI();
     return;
   }
-  inputEl.disabled = false;
+  if(inputEl) inputEl.disabled = false;
   const all = ea.getViewElements();
   const sel = ea.getViewSelectedElement();
 
@@ -2841,9 +2855,19 @@ const updateUI = () => {
     setButtonDisabled(foldBtnL1, false);
     setButtonDisabled(unfoldAllBtn, !hasFoldedInBranch);
     setButtonDisabled(zoomBtn, false);
-    setButtonDisabled(refreshBtn, false);
 
     const info = getHierarchy(sel, all);
+    
+    if(boundaryBtn) {
+      setButtonDisabled(boundaryBtn, false);
+      if (info.rootId === sel.id) setButtonDisabled(boundaryBtn, true);
+    }
+
+    if(refreshBtn) {
+      setButtonDisabled(refreshBtn, false);
+      refreshBtn.setTooltip(`${t("TOOLTIP_REFRESH")} ${getActionHotkeyString(ACTION_REARRANGE)}`);
+    }
+
     setButtonDisabled(cutBtn, info.rootId === sel.id);
     setButtonDisabled(copyBtn, false);
 
@@ -3224,56 +3248,73 @@ class LayoutConfigModal extends ea.obsidian.Modal {
 // 10. Render Functions
 // ---------------------------------------------------------------------------
 
-const renderInput = (container, isFloating = false) => {
+// Accepts mode string ("docked", "floating", "sidebar")
+const renderInput = (container, renderMode = "docked") => {
   container.empty();
   
-  pinBtn = refreshBtn = dockBtn = inputEl = null;
-  foldBtnL0 = foldBtnL1 = unfoldAllBtn = null;
-  boundaryBtn = null; 
+  const isFloating = renderMode === "floating";
+  const isSidebar = renderMode === "sidebar";
+
+  // Reset global references only for components we are about to render/replace
+  if (!isSidebar) {
+    pinBtn = refreshBtn = dockBtn = inputEl = null;
+    editBtn = toggleGroupBtn = zoomBtn = null;
+  }
+  if (!isFloating) {
+    foldBtnL0 = foldBtnL1 = unfoldAllBtn = boundaryBtn = null;
+  }
 
   inputRow = new ea.obsidian.Setting(container);
   
-  if (!isFloating) {
+  if (renderMode === "docked") {
     inputRow.settingEl.style.display = "block";
     inputRow.controlEl.style.display = "block";
     inputRow.controlEl.style.width = "100%";
     inputRow.controlEl.style.marginTop = "8px";
-  } else {
+  } else if (isFloating) {
     inputRow.settingEl.style.border = "none";
     inputRow.settingEl.style.padding = "0";
     inputRow.infoEl.style.display = "none";
+  } else if (isSidebar) {
+    // In sidebar mode (when undocked), hide the input row visual container for text
+    inputRow.settingEl.style.display = "none"; 
+    // We still use inputRow as a container for buttons below, 
+    // but the text field itself shouldn't be added or visible.
   }
 
-  inputRow.addText((text) => {
-    inputEl = text.inputEl;
-    linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow.settingEl);
-    if (!isFloating) {
-      inputEl.style.width = "100%";
-    } else {
-      inputEl.style.width = "70vw";
-      inputEl.style.maxWidth = "350px";
-    }
-    inputEl.ariaLabel = [
-      `${getActionLabel(ACTION_ADD)} (Enter)`,
-      `${getActionLabel(ACTION_ADD_FOLLOW)} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}`,
-      `${getActionLabel(ACTION_ADD_FOLLOW_FOCUS)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}`,
-      `${getActionLabel(ACTION_ADD_FOLLOW_ZOOM)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}`,
-    ].join("\n");
-    inputEl.placeholder = t("INPUT_PLACEHOLDER");
-    inputEl.addEventListener("focus", () => {
-      registerObsidianHotkeyOverrides();
-      ensureNodeSelected();
-      updateUI();
+  // Only add text input if not in sidebar-controls-only mode
+  if (!isSidebar) {
+    inputRow.addText((text) => {
+      inputEl = text.inputEl;
+      linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow.settingEl);
+      if (!isFloating) {
+        inputEl.style.width = "100%";
+      } else {
+        inputEl.style.width = "70vw";
+        inputEl.style.maxWidth = "350px";
+      }
+      inputEl.ariaLabel = [
+        `${getActionLabel(ACTION_ADD)} (Enter)`,
+        `${getActionLabel(ACTION_ADD_FOLLOW)} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}`,
+        `${getActionLabel(ACTION_ADD_FOLLOW_FOCUS)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}`,
+        `${getActionLabel(ACTION_ADD_FOLLOW_ZOOM)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}`,
+      ].join("\n");
+      inputEl.placeholder = t("INPUT_PLACEHOLDER");
+      inputEl.addEventListener("focus", () => {
+        registerObsidianHotkeyOverrides();
+        ensureNodeSelected();
+        updateUI();
+      });
+      inputEl.addEventListener("blur", () => {
+        if (popObsidianHotkeyScope) popObsidianHotkeyScope();
+        saveSettings();
+      });
     });
-    inputEl.addEventListener("blur", () => {
-      if (popObsidianHotkeyScope) popObsidianHotkeyScope();
-      saveSettings();
-    });
-  });
+  }
 
   // Create a specific container for buttons when docked to ensure they sit in one row aligned right
   let buttonContainer;
-  if (!isFloating) {
+  if (!isFloating && !isSidebar) {
     buttonContainer = inputRow.controlEl.createDiv();
     buttonContainer.style.display = "flex";
     buttonContainer.style.justifyContent = "flex-end";
@@ -3281,7 +3322,28 @@ const renderInput = (container, isFloating = false) => {
     buttonContainer.style.marginTop = "6px";
   }
 
+  // For sidebar mode, we just append to the container since inputRow is hidden
+  if (isSidebar) {
+    buttonContainer = container.createDiv();
+    buttonContainer.style.display = "flex";
+    buttonContainer.style.flexWrap = "wrap";
+    buttonContainer.style.gap = "6px";
+    buttonContainer.style.marginTop = "6px";
+    buttonContainer.style.marginBottom = "6px";
+    buttonContainer.style.justifyContent = "center";
+    buttonContainer.style.padding = "6px";
+    buttonContainer.style.border = "1px solid var(--background-modifier-border)";
+    buttonContainer.style.borderRadius = "var(--radius-m)";
+  }
+
   const addButton = (cb) => {
+    // If sidebar mode, we create raw buttons because we aren't using the Setting structure normally
+    if (isSidebar) {
+      const btn = new ea.obsidian.ExtraButtonComponent(buttonContainer);
+      cb(btn);
+      return;
+    }
+
     inputRow.addExtraButton((btn) => {
       cb(btn);
       if (btn.buttonEl) btn.buttonEl.tabIndex = 0;
@@ -3293,27 +3355,31 @@ const renderInput = (container, isFloating = false) => {
     });
   };
 
-  addButton((btn) => {
-    editBtn = btn;
-    btn.setIcon("pencil");
-    btn.setTooltip(`${t("TOOLTIP_EDIT_NODE")} ${getActionHotkeyString(ACTION_EDIT)}`);
-    btn.extraSettingsEl.setAttr("action",ACTION_EDIT);
-    btn.onClick(() => {
-      startEditing();
+  // Add buttons based on mode
+  if (!isSidebar) {
+    addButton((btn) => {
+      editBtn = btn;
+      btn.setIcon("pencil");
+      btn.setTooltip(`${t("TOOLTIP_EDIT_NODE")} ${getActionHotkeyString(ACTION_EDIT)}`);
+      btn.extraSettingsEl.setAttr("action",ACTION_EDIT);
+      btn.onClick(() => {
+        startEditing();
+      });
     });
-  });
 
-  addButton((btn) => {
-    pinBtn = btn;
-    btn.setTooltip(`${t("TOOLTIP_PIN_INIT")} ${getActionHotkeyString(ACTION_PIN)}`)
-    btn.extraSettingsEl.setAttr("action",ACTION_PIN);
-    btn.onClick(async () => {
-      await togglePin();
-      updateUI();
-      focusInputEl();
+    addButton((btn) => {
+      pinBtn = btn;
+      btn.setTooltip(`${t("TOOLTIP_PIN_INIT")} ${getActionHotkeyString(ACTION_PIN)}`)
+      btn.extraSettingsEl.setAttr("action",ACTION_PIN);
+      btn.onClick(async () => {
+        await togglePin();
+        updateUI();
+        focusInputEl();
+      });
     });
-  });
+  }
 
+  // Boundary and Fold buttons show in Docked OR Sidebar mode
   if (!isFloating) {
     addButton((btn) => {
       boundaryBtn = btn;
@@ -3363,28 +3429,30 @@ const renderInput = (container, isFloating = false) => {
     });
   }
 
-  addButton((btn) => {
-    refreshBtn = btn;
-    btn.setIcon("refresh-ccw");
-    btn.setTooltip(t("TOOLTIP_REFRESH"));
-    btn.extraSettingsEl.setAttr("action",ACTION_REARRANGE);
-    btn.onClick(async () => {
-      await refreshMapLayout();
-      focusInputEl();
+  if (!isSidebar) {
+    addButton((btn) => {
+      refreshBtn = btn;
+      btn.setIcon("refresh-ccw");
+      btn.setTooltip(t("TOOLTIP_REFRESH"));
+      btn.extraSettingsEl.setAttr("action",ACTION_REARRANGE);
+      btn.onClick(async () => {
+        await refreshMapLayout();
+        focusInputEl();
+      });
     });
-  });
 
-  addButton((btn) => {
-    dockBtn = btn;
-    btn.setIcon(isFloating ? "dock" : "external-link");
-    btn.extraSettingsEl.setAttr("action",ACTION_DOCK_UNDOCK);
-    btn.setTooltip(
-      `${isFloating ? t("TOOLTIP_DOCK") : t("TOOLTIP_UNDOCK")} ${getActionHotkeyString(ACTION_DOCK_UNDOCK)}`
-    );
-    btn.onClick(() => {
-      toggleDock({silent: false, forceDock: false, saveSetting: true})
+    addButton((btn) => {
+      dockBtn = btn;
+      btn.setIcon(isFloating ? "dock" : "external-link");
+      btn.extraSettingsEl.setAttr("action",ACTION_DOCK_UNDOCK);
+      btn.setTooltip(
+        `${isFloating ? t("TOOLTIP_DOCK") : t("TOOLTIP_UNDOCK")} ${getActionHotkeyString(ACTION_DOCK_UNDOCK)}`
+      );
+      btn.onClick(() => {
+        toggleDock({silent: false, forceDock: false, saveSetting: true})
+      });
     });
-  });
+  }
   
   updateUI();
 };
@@ -4011,7 +4079,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
       modalEl.style.height = "auto";
       modalEl.style.maxHeight = FLOAT_MODAL_MAX_HEIGHT;
       const container = floatingInputModal.contentEl.createDiv();
-      renderInput(container, true);
+      renderInput(container, "floating");
       focusInputEl();
       setTimeout(() => {
         //the modalEl is repositioned after a delay
@@ -4031,12 +4099,12 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
         isUndocked = false;
         setVal(K_UNDOCKED, false);
         updateKeyHandlerLocation(); // Restore listeners to sidepanel
-        if (ea.sidepanelTab && inputContainer) renderInput(inputContainer, false);
+        if (ea.sidepanelTab && inputContainer) renderInput(inputContainer, "docked");
       }
     };
     
-    // Clear input from sidepanel
-    inputContainer.empty();
+    // Render sidepanel in "sidebar" mode (leftovers)
+    renderInput(inputContainer, "sidebar");
     floatingInputModal.open();
   } else {
     // DOCK: Close floating, render in sidepanel
@@ -4047,7 +4115,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
       floatingInputModal.close(); 
       floatingInputModal = null;
     }
-    renderInput(inputContainer, false);
+    renderInput(inputContainer, "docked");
     if (forceDock) return;
     if (!silent) {
       focusInputEl();
@@ -4365,7 +4433,7 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
       if (isUndocked) {
         toggleDock({silent: true, forceDock: true, saveSetting: false});
       } else {
-        renderInput(inputContainer, false);
+        renderInput(inputContainer, "docked");
       }
     }
 
