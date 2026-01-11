@@ -21,6 +21,7 @@ if (existingTab) {
 
 // Clean up previous event listeners if re-initializing
 const removeKeydownHandlers = () => {
+  if (!window.MindmapBuilder) return;
   window.MindmapBuilder.keydownHandlers.forEach((f)=>{
     try {
       f();
@@ -34,12 +35,12 @@ const removeKeydownHandlers = () => {
 const removeEventListeners = () => {
   removeKeydownHandlers();
   try {
-    if (window.MindmapBuilder.popObsidianHotkeyScope) window.MindmapBuilder.popObsidianHotkeyScope();
+    window.MindmapBuilder?.popObsidianHotkeyScope?.();
   } catch (e) {
     console.error("Mindmap Builder: Error popping hotkey scope:", e);
   }
   try {
-    if(window.MindmapBuilder.removePointerDownHandler) window.MindmapBuilder.removePointerDownHandler();
+    window.MindmapBuilder?.removePointerDownHandler?.();
   } catch (e) {
     console.error("Mindmap Builder: Error removing pointerdown handler:", e);
   }
@@ -1081,6 +1082,36 @@ const manageFoldIndicator = (node, show, allElements) => {
   }
 };
 
+// Helper to toggle visibility and save state
+const setElementVisibility = (el, hide) => {
+  if (hide) {
+    // Only save state if not already saved to avoid overwriting original state with hidden state
+    if (!el.customData?.foldState) {
+      // Safety: If for some reason opacity is already 0, assume 100 to avoid locking it invisible forever
+      const safeOpacity = el.opacity === 0 ? 100 : el.opacity;
+      ea.addAppendUpdateCustomData(el.id, {
+        foldState: { opacity: safeOpacity, locked: el.locked }
+      });
+    }
+    el.opacity = 0;
+    el.locked = true;
+  } else {
+    // Restore original state
+    if (el.customData?.foldState) {
+      el.opacity = el.customData.foldState.opacity;
+      el.locked = el.customData.foldState.locked;
+      const d = { ...el.customData
+      };
+      delete d.foldState;
+      el.customData = d;
+    } else {
+      // Default fallback if no state was saved but we need to show
+      if (el.opacity === 0) el.opacity = 100;
+      el.locked = false;
+    }
+  }
+};
+
 const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold) => {
   const node = allElements.find(el => el.id === nodeId);
   if (!node) return;
@@ -1090,37 +1121,51 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold)
   // The root of the fold operation stays visible unless its parent was already hidden
   const shouldHideThis = parentHidden && !isRootOfFold;
 
-  // 1. Update Node Visibility & Lock State
-  if (shouldHideThis) {
-    // Only save state if not already saved to avoid overwriting original state with hidden state
-    if (!node.customData?.foldState) {
-      // Safety: If for some reason opacity is already 0, assume 100 to avoid locking it invisible forever
-      const safeOpacity = node.opacity === 0 ? 100 : node.opacity;
-      ea.addAppendUpdateCustomData(nodeId, {
-        foldState: { opacity: safeOpacity, locked: node.locked }
-      });
-    }
-    node.opacity = 0;
-    node.locked = true;
-  } else {
-    // Restore original state
-    if (node.customData?.foldState) {
-      node.opacity = node.customData.foldState.opacity;
-      node.locked = node.customData.foldState.locked;
-      const d = {...node.customData};
-      delete d.foldState;
-      node.customData = d;
-    } else {
-      // Default fallback if no state was saved but we need to show
-      // Ensure we don't accidentally leave it at 0 if it was hidden
-      if (node.opacity === 0) node.opacity = 100;
-      node.locked = false;
-    }
+  setElementVisibility(node, shouldHideThis);
+
+  // Handle Decorations (Grouped elements like boxes, icons, stickers)
+  if (node.groupIds && node.groupIds.length > 0) {
+
+    const groupElements = ea.getElementsInTheSameGroupWithElement(node, allElements);
+    
+    const childrenIds = getChildrenNodes(nodeId, allElements).map(c => c.id);
+    
+    groupElements.forEach(el => {
+      if (el.id === node.id) return;
+      if (el.customData?.isBranch) return;
+      if (el.customData?.isBoundary) return;
+      if (el.id === node.customData?.foldIndicatorId) return;
+      if (childrenIds.includes(el.id)) return;
+
+      setElementVisibility(el, shouldHideThis);
+    });
   }
 
+  // Handle Crosslinks (Non-structural arrows connected to this node)
+  const crossLinks = allElements.filter(el => 
+    el.type === "arrow" && 
+    !el.customData?.isBranch && 
+    (el.startBinding?.elementId === node.id || el.endBinding?.elementId === node.id)
+  );
+
+  crossLinks.forEach(arrow => {
+    if (shouldHideThis) {
+      setElementVisibility(arrow, true);
+    } else {
+      const otherId = arrow.startBinding?.elementId === node.id 
+        ? arrow.endBinding?.elementId 
+        : arrow.startBinding?.elementId;
+      
+      const otherNode = allElements.find(e => e.id === otherId);
+      
+      if (otherNode && !otherNode.isDeleted && otherNode.opacity > 0) {
+         setElementVisibility(arrow, false);
+      }
+    }
+  });
+
   // Handle Boundary Visibility
-  // Boundary is hidden if the node itself is hidden OR if the node is folded (hiding children)
-if (node.customData?.boundaryId) {
+  if (node.customData?.boundaryId) {
     const boundEl = allElements.find(el => el.id === node.customData.boundaryId);
     if (boundEl) {
       if (shouldHideThis || isFolded) {
@@ -1128,18 +1173,16 @@ if (node.customData?.boundaryId) {
         boundEl.locked = true;
       } else {
         boundEl.opacity = 30;
-        boundEl.locked = false; // Ensure it's unlocked when visible per request
+        boundEl.locked = false;
       }
     }
   }
 
-  // 2. Manage Indicator
-  // Show indicator if THIS node is visible, but it is folded (hiding its children)
+  // Manage Indicator
   const showIndicator = !shouldHideThis && isFolded;
   manageFoldIndicator(node, showIndicator, allElements);
 
-  // 3. Process Children
-  // Children are hidden if THIS node is hidden OR if THIS node is marked folded
+  // Process Children
   const childrenHidden = shouldHideThis || isFolded;
 
   const children = getChildrenNodes(nodeId, allElements);
@@ -1154,27 +1197,7 @@ if (node.customData?.boundaryId) {
     );
 
     if (arrow) {
-      if (childrenHidden) {
-        if (!arrow.customData?.foldState) {
-          const safeOpacity = arrow.opacity === 0 ? 100 : arrow.opacity;
-          ea.addAppendUpdateCustomData(arrow.id, {
-            foldState: { opacity: safeOpacity, locked: arrow.locked }
-          });
-        }
-        arrow.opacity = 0;
-        arrow.locked = true;
-      } else {
-        if (arrow.customData?.foldState) {
-          arrow.opacity = arrow.customData.foldState.opacity;
-          arrow.locked = arrow.customData.foldState.locked;
-          const d = {...arrow.customData};
-          delete d.foldState;
-          arrow.customData = d;
-        } else {
-          if (arrow.opacity === 0) arrow.opacity = 100;
-          arrow.locked = false;
-        }
-      }
+      setElementVisibility(arrow, childrenHidden);
     }
 
     // Recurse
@@ -1246,6 +1269,7 @@ const toggleFold = async (mode = "L0") => {
   if (!autoLayoutDisabled) {
     const info = getHierarchy(sel, ea.getViewElements());
     await triggerGlobalLayout(info.rootId);
+    await triggerGlobalLayout(info.rootId); //boundaries sometime need a second pass
   }
 
   const currentViewElements = ea.getViewElements();
@@ -2826,19 +2850,6 @@ const pasteListToMap = async () => {
 // ---------------------------------------------------------------------------
 // 6. Map Actions
 // ---------------------------------------------------------------------------
-const isNodeRightFromCenter = () => {
-  if (!ea.targetView) return;
-  const allElements = ea.getViewElements();
-  const current = ea.getViewSelectedElement();
-  if (!current) return;
-  const info = getHierarchy(current, allElements);
-  const root = allElements.find((e) => e.id === info.rootId);
-  const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
-  const curCenter = { x: current.x + current.width / 2, y: current.y + current.height / 2 };
-  return curCenter.x > rootCenter.x;
-}
-
-
 const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
   if(!key) return;
   if (!ea.targetView) return;
@@ -2930,8 +2941,10 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
       if (ch.length) ea.selectElementsInView([ch[0]]);
     }
   } else if (key === "ArrowUp" || key === "ArrowDown") {
-    const parent = getParentNode(current.id, allElements),
-      siblings = getChildrenNodes(parent.id, allElements);
+    const parent = getParentNode(current.id, allElements);
+    if (!parent) return;
+
+    const siblings = getChildrenNodes(parent.id, allElements);
 
     // Calculate the immediate parent's center to sort siblings clockwise around it
     const parentCenter = { x: parent.x + parent.width / 2, y: parent.y + parent.height / 2 };
@@ -2945,10 +2958,31 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
     );
 
     const idx = siblings.findIndex((s) => s.id === current.id);
-    const nIdx = key === "ArrowUp" // Up = Counter-Clockwise (Previous), Down = Clockwise (Next)
-      ? (idx - 1 + siblings.length) % siblings.length
-      : (idx + 1) % siblings.length;
-    ea.selectElementsInView([siblings[idx === -1 ? 0 : nIdx]]);
+    const startIndex = (idx === -1 ? 0 : idx); // Start at 0 if current isn't found
+
+    const mapMode = root.customData?.growthMode || currentModalGrowthMode;
+    const currentIsLeftwardBranch = (current.x + current.width / 2) < (parent.x + parent.width / 2);
+    
+    // Reverse up/down for left-facing branches in directional modes
+    const shouldReverseArrows = 
+        ["Right-Left", "Left-facing", "Right-facing"].includes(mapMode) &&
+        currentIsLeftwardBranch;
+
+    let navigateForward; // true for next sibling (clockwise), false for previous (counter-clockwise)
+    if (shouldReverseArrows) {
+        navigateForward = (key === "ArrowUp"); // Reversed: Up moves forward, Down moves backward
+    } else {
+        navigateForward = (key === "ArrowDown"); // Normal: Down moves forward, Up moves backward
+    }
+
+    let nIdx;
+    if (navigateForward) {
+        nIdx = (startIndex + 1) % siblings.length;
+    } else {
+        nIdx = (startIndex - 1 + siblings.length) % siblings.length;
+    }
+    
+    ea.selectElementsInView([siblings[nIdx]]);
   }
 
   if (zoom) zoomToFit();
@@ -3272,7 +3306,7 @@ const registerKeydownHandler = (host, handler) => {
 };
 
 const registerObsidianHotkeyOverrides = () => {
-  if (window.MindmapBuilder.popObsidianHotkeyScope) window.MindmapBuilder.popObsidianHotkeyScope();
+  window.MindmapBuilder?.popObsidianHotkeyScope?.();
   const keymapScope = app.keymap.getRootScope();
   const handlers = [];
   const context = getHotkeyContext();
@@ -3306,7 +3340,7 @@ const focusInputEl = () => {
     if(isRecordingHotkey) return;
     if(!inputEl || inputEl.disabled) return;
     inputEl.focus();
-    if (!window.MindmapBuilder.popObsidianHotkeyScope) registerObsidianHotkeyOverrides();
+    if (!window.MindmapBuilder?.popObsidianHotkeyScope) registerObsidianHotkeyOverrides();
   }, 200);
 }
 
@@ -3843,7 +3877,7 @@ const renderInput = (container, isFloating = false) => {
       updateUI();
     });
     inputEl.addEventListener("blur", () => {
-      if (window.MindmapBuilder.popObsidianHotkeyScope) window.MindmapBuilder.popObsidianHotkeyScope();
+      window.MindmapBuilder?.popObsidianHotkeyScope?.();
       saveSettings();
     });
   });
@@ -4663,7 +4697,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
     };
 
     floatingInputModal.onClose = () => {
-      if (window.MindmapBuilder.popObsidianHotkeyScope) window.MindmapBuilder.popObsidianHotkeyScope();
+      window.MindmapBuilder?.popObsidianHotkeyScope?.();
       floatingInputModal = null;
       if (isUndocked) {
         // If closed manually (e.g. unexpected close), dock back silently
@@ -5014,13 +5048,13 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
       }
     } else {
       setupEventListeners(ea.targetView);
-      if (!window.MindmapBuilder.popObsidianHotkeyScope) registerObsidianHotkeyOverrides();
+      if (!window.MindmapBuilder?.popObsidianHotkeyScope) registerObsidianHotkeyOverrides();
     }
   };
 
   const setupEventListeners = (view) => {
     if (!view || !view.ownerWindow) return;
-    if(window.MindmapBuilder.removePointerDownHandler) window.MindmapBuilder.removePointerDownHandler();
+    window.MindmapBuilder?.removePointerDownHandler?.();
     const win = view.ownerWindow;
 
     win.addEventListener("pointerdown", handleCanvasPointerDown);
