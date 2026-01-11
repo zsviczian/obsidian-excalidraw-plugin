@@ -482,7 +482,23 @@ const parseImageInput = (input) => {
     }
   }
 
-  return { path, width };
+  let imageFile = null;
+  let isPdfRectLink = false;
+
+  const PDF_RECT_LINK_REGEX = /^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/;
+  if (path.match(PDF_RECT_LINK_REGEX)) {
+    isPdfRectLink = true;
+  } else {
+    imageFile = app.metadataCache.getFirstLinkpathDest(path, ea.targetView.file.path);
+    if (imageFile) {
+      const isEx = imageFile.extension === "md" && ea.isExcalidrawFile(imageFile);
+      if (!IMAGE_TYPES.includes(imageFile.extension.toLowerCase()) && !isEx) {
+        imageFile = null;
+      }
+    }
+  }
+
+  return { path, width, imageFile, isPdfRectLink };
 };
 
 const parseEmbeddableInput = (input) => {
@@ -2240,13 +2256,14 @@ const getAdjustedMaxWidth = (text, max) => {
   return {width: Math.min(max, optimalWidth), wrappedText};
 }
 
-const addImage = async (pathOrFile, width, x=0, y=0) => {
+const addImage = async (pathOrFile, width, leftFacing = false, x=0, y=0) => {
   const newNodeId = await ea.addImage(x, y, pathOrFile);
   const el = ea.getElement(newNodeId);
   const targetWidth = width || EMBEDED_OBJECT_WIDTH_ROOT;
   const ratio = el.width / el.height;
   el.width = targetWidth;
   el.height = targetWidth / ratio;
+  if (leftFacing) el.x = x - el.width;
   return newNodeId;
 }
 
@@ -2278,23 +2295,6 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
 
   // --- Image Detection ---
   const imageInfo = parseImageInput(text);
-  let imageFile = null;
-  let isPdfRectLink = false;
-  
-  if (imageInfo) {
-    const PDF_RECT_LINK_REGEX = /^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/;
-    if (imageInfo.path.match(PDF_RECT_LINK_REGEX)) {
-      isPdfRectLink = true;
-    } else {
-      imageFile = app.metadataCache.getFirstLinkpathDest(imageInfo.path, ea.targetView.file.path);
-      if (imageFile) {
-        const isEx = imageFile.extension === "md" && ea.isExcalidrawFile(imageFile);
-        if (!IMAGE_TYPES.includes(imageFile.extension.toLowerCase()) && !isEx) {
-          imageFile = null;
-        }
-      }
-    }
-  }
 
   const embeddableUrl = parseEmbeddableInput(text);
 
@@ -2344,10 +2344,10 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
   if (!parent) {
     ea.style.strokeColor = multicolor ? defaultNodeColor : st.currentItemStrokeColor;
 
-    if (isPdfRectLink) {
+    if (imageInfo?.isPdfRectLink) {
       newNodeId = await addImage(imageInfo.path, imageInfo.width);
-    } else if (imageFile) {
-      newNodeId = await addImage(imageFile, imageInfo.width);
+    } else if (imageInfo?.imageFile) {
+      newNodeId = await addImage(imageInfo.imageFile, imageInfo.width);
     } else if (embeddableUrl) {
       // Height 0 triggers auto-calculation of height based on aspect ratio
       newNodeId = ea.addEmbeddable(0, 0, EMBEDED_OBJECT_WIDTH_ROOT, 0, embeddableUrl);
@@ -2442,22 +2442,10 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
       ? "center"
       : side === 1 ? "left" : "right";
 
-    if (isPdfRectLink) {
-        newNodeId = await ea.addImage(px, py, imageInfo.path);
-        const el = ea.getElement(newNodeId);
-        const targetWidth = imageInfo.width || EMBEDED_OBJECT_WIDTH_CHILD;
-        const ratio = el.width / el.height;
-        el.width = targetWidth;
-        el.height = targetWidth / ratio;
-        if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
-    } else if (imageFile) {
-        newNodeId = await ea.addImage(px, py, imageFile);
-        const el = ea.getElement(newNodeId);
-        const targetWidth = imageInfo.width || EMBEDED_OBJECT_WIDTH_CHILD;
-        const ratio = el.width / el.height;
-        el.width = targetWidth;
-        el.height = targetWidth / ratio;
-        if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
+    if (imageInfo?.isPdfRectLink) {
+        newNodeId = await addImage(imageInfo.path, imageInfo.width, side === -1 && !autoLayoutDisabled, px, py);
+    } else if (imageInfo?.imageFile) {
+        newNodeId = await addImage(imageInfo.imageFile, imageInfo.width, side === -1 && !autoLayoutDisabled, px, py);
     } else if (embeddableUrl) {
         newNodeId = ea.addEmbeddable(px, py, EMBEDED_OBJECT_WIDTH_CHILD, 0, embeddableUrl);
         const el = ea.getElement(newNodeId);
@@ -2536,7 +2524,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
 
   await addElementsToView({
     repositionToCursor: !parent,
-    save: !!imageFile || isPdfRectLink
+    save: !!imageInfo?.imageFile || imageInfo?.isPdfRectLink
   });
 
   if (!skipFinalLayout && rootId && !autoLayoutDisabled) {
@@ -3491,32 +3479,164 @@ const commitEdit = async () => {
   let targetNode = all.find(el => el.id === editingNodeId);
   if (!targetNode) return;
 
+  // Identify the actual visual "node" (container or the element itself) for positioning/sizing
+  const visualNode = targetNode.containerId 
+    ? all.find(el => el.id === targetNode.containerId) 
+    : targetNode;
+
+  // Identify the text element if we are editing a container
   let textElId = targetNode.id;
   if (targetNode.boundElements) {
     const boundText = targetNode.boundElements.find(be => be.type === "text");
     if (boundText) textElId = boundText.id;
   }
-
   const textEl = all.find(el => el.id === textElId && el.type === "text");
+  const textInput = inputEl.value;
+  const imageInfo = parseImageInput(textInput);
+  const embeddableUrl = parseEmbeddableInput(textInput);
 
-  if (textEl) {
+  let newType = "text";
+  if (imageInfo?.isPdfRectLink || imageInfo?.imageFile) newType = "image";
+  else if (embeddableUrl) newType = "embeddable";
+
+  // Check if we are converting types (e.g. Text -> Image) OR if we are updating an existing non-text element
+  // (updating an existing image/embeddable is easier by replacement than property patching)
+  const isTypeChange = (textEl && newType !== "text") || (!textEl && newType !== targetNode.type);
+  const isNonTextUpdate = !textEl && newType === targetNode.type; // Updating an image source, etc.
+
+  if (isTypeChange || isNonTextUpdate) {
+    
+    // 1. Calculate Position (Center of old node)
+    const cx = visualNode.x + visualNode.width / 2;
+    const cy = visualNode.y + visualNode.height / 2;
+    
+    let newNodeId;
+
+    // 2. Create New Element
+    // We create at 0,0 first then center, or use specific logic
+    if (newType === "image") {
+       if (imageInfo?.isPdfRectLink) {
+        newNodeId = await addImage(imageInfo.path, imageInfo.width);
+       } else {
+        newNodeId = await addImage(imageInfo.imageFile, imageInfo.width);
+       }
+       const el = ea.getElement(newNodeId);
+       el.x = cx - el.width / 2;
+       el.y = cy - el.height / 2;
+    } else if (newType === "embeddable") {
+       // Height 0 triggers auto-calc in addEmbeddable, but we need position. 
+       newNodeId = ea.addEmbeddable(0, 0, EMBEDED_OBJECT_WIDTH_CHILD, 0, embeddableUrl);
+       const el = ea.getElement(newNodeId);
+       el.x = cx - el.width / 2;
+       el.y = cy - el.height / 2;
+    } else {
+      // Back to Text
+      const st = getAppState();
+      ea.style.fontFamily = st.currentItemFontFamily;
+      ea.style.fontSize = st.currentItemFontSize; // Or infer from old node if possible
+      ea.style.strokeColor = targetNode.strokeColor;
+      ea.style.backgroundColor = "transparent";
+      
+      newNodeId = ea.addText(cx, cy, textInput, {
+          textAlign: "center",
+          textVerticalAlign: "middle",
+          box: boxChildren ? "rectangle" : false
+      });
+      // addText positions based on top-left or center depending on args, 
+      // but let's ensure centering logic if needed or rely on layout later.
+    }
+
+    const newNode = ea.getElement(newNodeId);
+
+    // 3. Migrate Custom Data
+    const keysToCopy = [
+      "mindmapOrder", "isPinned", "growthMode", "autoLayoutDisabled", 
+      "isFolded", "foldIndicatorId", "foldState", "originalY", "boundaryId"
+    ];
+    const dataToCopy = {};
+    keysToCopy.forEach(k => {
+      if (visualNode.customData && visualNode.customData.hasOwnProperty(k)) {
+        dataToCopy[k] = visualNode.customData[k];
+      }
+    });
+    ea.addAppendUpdateCustomData(newNodeId, dataToCopy);
+
+    // 4. Migrate Groups (Decorations)
+    if (visualNode.groupIds && visualNode.groupIds.length > 0) {
+      newNode.groupIds = [...visualNode.groupIds];
+    }
+
+    // 5. Rewire Arrows
+    // Find all arrows connected to the OLD visual node (or textEl)
+    const idsToReplace = [visualNode.id];
+    if (textEl) idsToReplace.push(textEl.id);
+
+    const connectedArrows = all.filter(el => 
+      el.type === "arrow" && 
+      (idsToReplace.includes(el.startBinding?.elementId) || idsToReplace.includes(el.endBinding?.elementId))
+    );
+
+    if (connectedArrows.length > 0) {
+      ea.copyViewElementsToEAforEditing(connectedArrows);
+      const newBoundElements = [];
+      connectedArrows.forEach(arrow => {
+        const eaArrow = ea.getElement(arrow.id);
+        let isConnected = false;
+        if (idsToReplace.includes(eaArrow.startBinding?.elementId)) {
+          eaArrow.startBinding = { ...eaArrow.startBinding, elementId: newNodeId };
+          isConnected = true;
+        }
+        if (idsToReplace.includes(eaArrow.endBinding?.elementId)) {
+          eaArrow.endBinding = { ...eaArrow.endBinding, elementId: newNodeId };
+          isConnected = true;
+        }
+        if (isConnected) {
+            newBoundElements.push({ type: "arrow", id: arrow.id });
+        }
+      });
+      if (newBoundElements.length > 0) {
+        newNode.boundElements = [...(newNode.boundElements || []), ...newBoundElements];
+      }
+    }
+
+    // 6. Delete Old Elements
+    ea.copyViewElementsToEAforEditing([visualNode]);
+    ea.getElement(visualNode.id).isDeleted = true;
+    if (textEl && textEl.id !== visualNode.id) {
+       ea.copyViewElementsToEAforEditing([textEl]);
+       ea.getElement(textEl.id).isDeleted = true;
+    }
+
+    await addElementsToView();
+    
+    // Trigger Layout
+    if (!autoLayoutDisabled) {
+      const info = getHierarchy(visualNode, ea.getViewElements()); 
+      const newViewElements = ea.getViewElements();
+      const newViewNode = newViewElements.find(el => el.id === newNodeId);
+      if(newViewNode) {
+        const newInfo = getHierarchy(newViewNode, newViewElements);
+        await triggerGlobalLayout(newInfo.rootId);
+      }
+    }
+
+  } else if (textEl) {
     ea.copyViewElementsToEAforEditing([textEl]);
     const eaEl = ea.getElement(textEl.id);
-    const text = inputEl.value;
-    eaEl.originalText = text;
-    eaEl.rawText = text;
+    eaEl.originalText = textInput;
+    eaEl.rawText = textInput;
     ea.style.fontFamily = eaEl.fontFamily;
     ea.style.fontSize = eaEl.fontSize;
 
     if (eaEl.width <= maxWidth) {
-      const textWidth = ea.measureText(text).width;
+      const textWidth = ea.measureText(textInput).width;
       const shouldWrap = textWidth > maxWidth;
       if (!shouldWrap) {
         eaEl.autoResize = true;
         eaEl.width = Math.ceil(textWidth);
       } else {
         eaEl.autoResize = false;
-        const res = getAdjustedMaxWidth(text, maxWidth);
+        const res = getAdjustedMaxWidth(textInput, maxWidth);
         eaEl.width = res.width;
         eaEl.text = res.wrappedText;
       }
