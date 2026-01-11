@@ -46,16 +46,13 @@ When enabled, the script groups elements from the "leaves" upward. A leaf node i
 - **Key-safe integration**: The suggester implements the `KeyBlocker` interface so the script's own key handlers pause while the suggester is active, preventing shortcut collisions during link insertion.
 
 ```js
-// ---------------------------------------------------------------------------
-// Initialization logic
-// ---------------------------------------------------------------------------
+/* --- Initialization Logic --- */
 
 if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.0")) {
   new Notice("Please update the Excalidraw Plugin to version 2.19.0 or higher.");
   return;
 }
 
-// Check for existing tab
 const existingTab = ea.checkForActiveSidepanelTabForScript();
 if (existingTab) {
   const hostEA = existingTab.getHostEA();
@@ -67,7 +64,9 @@ if (existingTab) {
   }
 }
 
-// Clean up previous event listeners if re-initializing
+/**
+ * Cleans up previous keydown handlers to prevent duplicates.
+ */
 const removeKeydownHandlers = () => {
   if (!window.MindmapBuilder) return;
   window.MindmapBuilder.keydownHandlers.forEach((f)=>{
@@ -80,6 +79,9 @@ const removeKeydownHandlers = () => {
   window.MindmapBuilder.keydownHandlers = [];
 };
 
+/**
+ * Removes all event listeners and specific hooks attached to the window or workspace.
+ */
 const removeEventListeners = () => {
   removeKeydownHandlers();
   try {
@@ -1100,6 +1102,15 @@ const getDynamicColor = (existingColors) => {
 // Folding Logic
 // ---------------------------------------------------------------------------
 
+/**
+ * Manages the "..." fold indicator text element.
+ * Creates it if missing and show=true, hides it if show=false.
+ * Updates its position relative to the parent node.
+ * 
+ * @param {ExcalidrawElement} node - The parent node.
+ * @param {boolean} show - Whether to show the fold indicator.
+ * @param {ExcalidrawElement[]} allElements - All elements in the scene.
+ */
 const manageFoldIndicator = (node, show, allElements) => {
   if (show) {
     const children = getChildrenNodes(node.id, allElements);
@@ -1161,7 +1172,13 @@ const manageFoldIndicator = (node, show, allElements) => {
   }
 };
 
-// Helper to toggle visibility and save state
+/**
+ * Toggles visibility of an element by manipulating opacity and locked state.
+ * Saves the original state to customData for restoration.
+ * 
+ * @param {ExcalidrawElement} el - The element to update.
+ * @param {boolean} hide - Whether to hide the element.
+ */
 const setElementVisibility = (el, hide) => {
   if (hide) {
     // Only save state if not already saved to avoid overwriting original state with hidden state
@@ -1191,6 +1208,15 @@ const setElementVisibility = (el, hide) => {
   }
 };
 
+/**
+ * Recursively updates the visibility of a branch based on fold state.
+ * Handles nodes, connectors, grouped decorations, cross-links, and boundaries.
+ * 
+ * @param {string} nodeId - The ID of the current node.
+ * @param {boolean} parentHidden - Whether the parent is hidden (inherited visibility).
+ * @param {ExcalidrawElement[]} allElements - All elements in the scene.
+ * @param {boolean} isRootOfFold - Whether this node is the root of the fold operation (always visible itself).
+ */
 const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold) => {
   const node = allElements.find(el => el.id === nodeId);
   if (!node) return;
@@ -1284,6 +1310,12 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold)
   });
 };
 
+/**
+ * Toggles the folded state of the selected node's branch.
+ * Supports different modes: L0 (direct children), L1 (grandchildren), ALL (recursive).
+ * 
+ * @param {string} mode - "L0" | "L1" | "ALL"
+ */
 const toggleFold = async (mode = "L0") => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
@@ -1424,15 +1456,15 @@ const moveCrossLinks = (allElements, originalPositions) => {
 };
 
 const moveDecorations = (allElements, originalPositions, groupToNodes) => {
-  // Identify elements that are decorations (grouped but not structural parts of the tree)
+  // Identify decoration elements (grouped but non-structural)
   const decorationsToUpdate = [];
 
   allElements.forEach(el => {
-    // Structural elements (nodes, branch arrows, boundaries) are handled by the main layout logic
+    // Skip structural elements (handled by main layout)
     const isStructural = isStructuralElement(el, allElements);
     const isCrossLink = el.type === "arrow" && !el.customData?.isBranch && el.startBinding?.elementId && el.endBinding?.elementId;
     
-    // An element is a decoration if it's grouped but not structural and not a cross-link
+    // Decoration condition: Grouped, non-structural, not a cross-link
     const isDecoration = !isStructural && !isCrossLink && el.groupIds && el.groupIds.length > 0;
 
     if (isDecoration) {
@@ -1540,7 +1572,7 @@ const scaleDecorations = (oldNode, newNode, allElements) => {
     const relX = (decCx - oldCx) / (oldNode.width / 2);
     const relY = (decCy - oldCy) / (oldNode.height / 2);
 
-    // Heuristic: If center is within the old bounds, it's "Inside" -> Scale relative to center
+    // Inside check: Scale relative to center if within bounds
     const isInside = Math.abs(relX) <= 1.05 && Math.abs(relY) <= 1.05;
 
     if (isInside) {
@@ -1551,7 +1583,7 @@ const scaleDecorations = (oldNode, newNode, allElements) => {
       el.x = (newCx + newDx) - el.width / 2;
       el.y = (newCy + newDy) - el.height / 2;
     } else {
-      // "Outside" -> Anchor to nearest edge to preserve gap
+      // Outside: Anchor to nearest edge to preserve gap
       // Determine primary axis of separation
       if (Math.abs(relX) > Math.abs(relY)) {
         // Horizontal (Left/Right)
@@ -1664,7 +1696,7 @@ const getSubtreeHeight = (nodeId, allElements) => {
     if (index < unpinnedChildren.length - 1) {
       const childNode = allElements.find((el) => el.id === child.id);
 
-      // Check if this child is a leaf in the context of auto-layout (ignoring its pinned children)
+      // Check if child behaves as a leaf (ignoring pinned descendants)
       const grandChildren = getChildrenNodes(child.id, allElements);
       const hasUnpinnedGrandChildren = grandChildren.some(gc => !gc.customData?.isPinned);
 
@@ -2275,6 +2307,14 @@ const layoutL1Nodes = (nodes, options, context) => {
   });
 };
 
+/**
+ * Main layout execution function.
+ * Calculates positions for a tree rooted at rootId and moves elements.
+ * 
+ * @param {string} rootId - ID of the root node.
+ * @param {boolean} force - Force re-layout even if unchanged (unused currently).
+ * @param {boolean} forceUngroup - Force ungrouping of branches before layout.
+ */
 const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) => {
   if (!ea.targetView) return;
   const run = async () => {
@@ -2526,7 +2566,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
     } else if (imageInfo?.imageFile) {
       newNodeId = await addImage(imageInfo.imageFile, imageInfo.width);
     } else if (embeddableUrl) {
-      // Height 0 triggers auto-calculation of height based on aspect ratio
+      // Height 0 triggers auto-calculation based on aspect ratio
       newNodeId = ea.addEmbeddable(0, 0, EMBEDED_OBJECT_WIDTH_ROOT, 0, embeddableUrl);
     } else {
       ea.style.fillStyle = "solid";
@@ -2535,8 +2575,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
         box: "rectangle",
         textAlign: "center",
         textVerticalAlign: "middle",
-        //using different color reprsentation so frame can be easily
-        //recolored separately from text in Excalidraw UI
+        // Use a distinct color representation so the frame can be recolored separately from text
         boxStrokeColor: ea.getCM(ea.style.strokeColor).stringRGB(),
         width: shouldWrap ? curMaxW : undefined,
         autoResize: !shouldWrap,
@@ -2561,8 +2600,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
 
     const parentBox = getNodeBox(parent, allElements);
     
-    // Determine the likely direction of the new node to set initial offset correctly
-    // avoiding visual jumping when layout runs.
+    // Determine direction for initial offset to prevent visual jumping
     let targetSide = 1; // 1 = Right, -1 = Left
     if (depth === 1) {
       if (mode === "Left-facing") targetSide = -1;
@@ -2574,7 +2612,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
          else if (idx < 4) targetSide = -1;
          else targetSide = idx % 2 === 0 ? 1 : -1;
       } else {
-        // Radial or fallback -> Default to parent's relative side or Right
+        // Default to parent side or Right for Radial/Fallback layouts
         const parentCenterX = parentBox.minX + parentBox.width / 2;
         targetSide = parentCenterX > rootCenter.x ? 1 : -1;
       }
@@ -2593,7 +2631,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
     let px = parentBox.minX + offset,
       py = parentBox.minY;
 
-    // Ensure new node is placed below existing siblings so visual sort preserves order
+    // Ensure new node is placed below existing siblings to preserve visual order
     if (!autoLayoutDisabled) {
       const siblings = getChildrenNodes(parent.id, allElements);
       if (siblings.length > 0) {
@@ -2665,7 +2703,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
     ea.style.roughness = getAppState().currentItemRoughness;
     ea.style.strokeStyle = isSolidArrow ? "solid" : getAppState().currentItemStrokeStyle;
     
-    // Initial arrow creation with placeholder points
+    // Initial arrow creation (placeholder points)
     const startPoint = [parentBox.minX + parentBox.width / 2, parentBox.minY + parentBox.height / 2];
     arrowId = ea.addArrow([startPoint, startPoint], {
       startObjectId: parent.id,
@@ -2675,7 +2713,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
     });
     const eaArrow = ea.getElement(arrowId);
     
-    // Initialize Roundness based on Type
+    // Initialize Roundness based on arrow type
     if(arrowType === "curved") {
        eaArrow.roundness = { type: 2 };
     } else {
@@ -2783,6 +2821,10 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
 // ---------------------------------------------------------------------------
 // 5. Copy & Paste Engine
 // ---------------------------------------------------------------------------
+
+/**
+// Extracts text from a node, handling text elements, images, and embeddables.
+**/
 const getTextFromNode = (all, node, getRaw = false, shortPath = false) => {
   if (node.type === "embeddable") {
     return `![](${node.link})`;
@@ -2806,6 +2848,9 @@ const getTextFromNode = (all, node, getRaw = false, shortPath = false) => {
   return textEl ? (getRaw ? textEl.rawText : textEl.originalText) : "";
 };
 
+/**
+// Copies the selected tree or branch to the clipboard as Markdown text.
+**/
 const copyMapAsText = async (cut = false) => {
   if (!ea.targetView) return;
   ensureNodeSelected();
@@ -2907,6 +2952,9 @@ const copyMapAsText = async (cut = false) => {
   }
 };
 
+/**
+// Pastes a Markdown list from clipboard into the map, converting it to nodes.
+**/
 const pasteListToMap = async () => {
   if (!ea.targetView) return;
   const rawText = await navigator.clipboard.readText();
@@ -3002,7 +3050,7 @@ const pasteListToMap = async () => {
     ? getHierarchy(sel, ea.getViewElements()).rootId
     : currentParent.id;
   await triggerGlobalLayout(rootId);
-  //when rendered text element, image elements, etc. have their sizes recalculated, a second round layout fixes resulting issues
+  // Re-run layout to account for newly rendered element sizes (text/images)
   await triggerGlobalLayout(rootId);
 
   const allInView = ea.getViewElements();
@@ -3020,6 +3068,16 @@ const pasteListToMap = async () => {
 // ---------------------------------------------------------------------------
 // 6. Map Actions
 // ---------------------------------------------------------------------------
+
+/**
+ * Navigates the mindmap using arrow keys.
+ * Handles different layout modes (Radial, Directional) and folds.
+ * 
+ * @param {object} params
+ * @param {string} params.key - "ArrowUp" | "ArrowDown" | "ArrowLeft" | "ArrowRight"
+ * @param {boolean} params.zoom - whether to zoom to the new node
+ * @param {boolean} params.focus - whether to focus the new node
+ */
 const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
   if(!key) return;
   if (!ea.targetView) return;
@@ -3159,6 +3217,11 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
   if (focus) focusSelected();
 };
 
+/**
+ * Enables or disables auto-layout for the root of the currently selected tree.
+ * 
+ * @param {boolean} enabled - True to disable auto-layout, false to enable it.
+ */
 const setMapAutolayout = async (enabled) => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
@@ -3170,6 +3233,9 @@ const setMapAutolayout = async (enabled) => {
   }
 };
 
+/**
+ * Triggers a layout refresh for the tree containing the selected element.
+ */
 const refreshMapLayout = async () => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
@@ -3247,7 +3313,7 @@ const getBranchElementIds = (nodeId, allElements) => {
 };
 
 /**
- * Toggles a single flat group for the selected branch
+ * Toggles a single flat group for the selected branch.
 **/
 const toggleBranchGroup = async () => {
   if (!ea.targetView) return;
@@ -3287,6 +3353,10 @@ const toggleBranchGroup = async () => {
   updateUI();
 };
 
+/**
+ * Toggles the pinned state of the selected node.
+ * Pinned nodes are not moved by auto-layout.
+ */
 const togglePin = async () => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
@@ -3300,6 +3370,10 @@ const togglePin = async () => {
 };
 
 const padding = layoutSettings.CONTAINER_PADDING;
+/**
+ * Toggles a bounding box around the selected text element (node).
+ * Creates a rectangle container if one doesn't exist, or removes it if it does.
+ */
 const toggleBox = async () => {
   if (!ea.targetView) return;
   let sel = ea.getViewSelectedElement();
@@ -3372,6 +3446,9 @@ const toggleBox = async () => {
   if(!autoLayoutDisabled) await refreshMapLayout();
 };
 
+/**
+ * Toggles a visual boundary polygon around the selected node's subtree.
+ */
 const toggleBoundary = async () => {
   if (!ea.targetView) return;
   const sel = ea.getViewSelectedElement();
@@ -3656,12 +3733,12 @@ const commitEdit = async () => {
   let targetNode = all.find(el => el.id === editingNodeId);
   if (!targetNode) return;
 
-  // Identify the actual visual "node" (container or the element itself) for positioning/sizing
+  // Identify visual node (container or element) for positioning
   const visualNode = targetNode.containerId 
     ? all.find(el => el.id === targetNode.containerId) 
     : targetNode;
 
-  // Identify the text element if we are editing a container
+  // Identify text element within container
   let textElId = targetNode.id;
   if (targetNode.boundElements) {
     const boundText = targetNode.boundElements.find(be => be.type === "text");
@@ -3676,19 +3753,19 @@ const commitEdit = async () => {
   if (imageInfo?.isPdfRectLink || imageInfo?.imageFile) newType = "image";
   else if (embeddableUrl) newType = "embeddable";
 
-  // Check if we are converting types (e.g. Text -> Image) OR if we are updating an existing non-text element
+  // Check for type conversion (e.g. Text -> Image) or non-text update
   const isTypeChange = (textEl && newType !== "text") || (!textEl && newType !== targetNode.type);
   const isNonTextUpdate = !textEl && newType === targetNode.type;
 
   if (isTypeChange || isNonTextUpdate) {
     
-    // 1. Calculate Position (Center of old node)
+    // 1. Calculate center position
     const cx = visualNode.x + visualNode.width / 2;
     const cy = visualNode.y + visualNode.height / 2;
     
     let newNodeId;
 
-    // 2. Create New Element
+    // 2. Create new element based on type
     if (newType === "image") {
        if (imageInfo?.isPdfRectLink) {
         newNodeId = await addImage(imageInfo.path, imageInfo.width);
@@ -3720,11 +3797,10 @@ const commitEdit = async () => {
 
     const newNode = ea.getElement(newNodeId);
 
-    // Scale and reposition decorations based on the dimension change
-    // This must happen before visualNode is deleted so we can reference group members
+    // Scale decorations before deleting the old visual node
     scaleDecorations(visualNode, newNode, all);
 
-    // 3. Migrate Custom Data
+    // 3. Migrate custom data fields
     const keysToCopy = [
       "mindmapOrder", "isPinned", "growthMode", "autoLayoutDisabled", 
       "isFolded", "foldIndicatorId", "foldState", "originalY", "boundaryId"
@@ -3737,12 +3813,12 @@ const commitEdit = async () => {
     });
     ea.addAppendUpdateCustomData(newNodeId, dataToCopy);
 
-    // 4. Migrate Groups (Decorations)
+    // 4. Migrate Decorations
     if (visualNode.groupIds && visualNode.groupIds.length > 0) {
       newNode.groupIds = [...visualNode.groupIds];
     }
 
-    // 5. Rewire Arrows & Adjust Cross-links
+    // 5. Rewire arrows and adjust cross-links
     const idsToReplace = [visualNode.id];
     if (textEl) idsToReplace.push(textEl.id);
 
@@ -3808,7 +3884,7 @@ const commitEdit = async () => {
       }
     }
 
-    // 6. Delete Old Elements
+    // 6. Remove old elements
     ea.copyViewElementsToEAforEditing([visualNode]);
     ea.getElement(visualNode.id).isDeleted = true;
     if (textEl && textEl.id !== visualNode.id) {
@@ -3818,7 +3894,7 @@ const commitEdit = async () => {
 
     await addElementsToView();
     
-    // Trigger Layout
+    // Trigger global layout if enabled
     if (!autoLayoutDisabled) {
       const info = getHierarchy(visualNode, ea.getViewElements()); 
       const newViewElements = ea.getViewElements();
@@ -3902,7 +3978,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
     contentEl.empty();
     contentEl.createEl("h2", { text: t("MODAL_PALETTE_TITLE") });
 
-    // --- Global Toggles ---
+    /* --- Global Toggles --- */
     new ea.obsidian.Setting(contentEl)
       .setName(t("LABEL_ENABLE_CUSTOM_PALETTE"))
       .setDesc(t("DESC_ENABLE_CUSTOM_PALETTE"))
@@ -3927,7 +4003,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
 
       contentEl.createEl("hr");
 
-      // --- Color List ---
+      /* --- Color List --- */
       const listContainer = contentEl.createDiv();
       this.settings.colors.forEach((color, index) => {
         const row = new ea.obsidian.Setting(listContainer);
@@ -4965,13 +5041,10 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
   editingNodeId = null;
   if (!ea.targetView && !(forceDock && isUndocked)) return;
 
-  // Only reveal/hide UI if not silent
+  // Check visibility if not silent
   if (!silent) {
     const isSidepanelVisible = ea.getSidepanelLeaf().isVisible();
-    // If undocking and sidepanel is hidden, leave it hidden (we want the float).
-    // If docking and sidepanel is hidden, show it so we can see the input.
-    // If undocking and sidepanel is visible, we might want to close it or keep it.
-    // Logic from previous iteration:
+    // Manage sidepanel visibility based on docking state
     if (isUndocked && !isSidepanelVisible) {
       const leaf = ea.getSidepanelLeaf();
       if (leaf) app.workspace.revealLeaf(leaf);
@@ -4994,17 +5067,17 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
     dirty = true;
   }
 
-  // Re-route keyboard events to the correct window
+  // Update keyboard event routing
   updateKeyHandlerLocation();
 
   if (isUndocked) {
-    // UNDOCK: Create floating modal
+    // UNDOCK: Initialize floating modal
     floatingInputModal = new ea.FloatingModal(ea.plugin.app);
     const { contentEl, titleEl, modalEl, headerEl } = floatingInputModal;
     modalEl.classList.add("excalidraw-mindmap-ui");
 
     floatingInputModal.onOpen = () => {
-      // Reparent the modal to the target view's window.
+      // Reparent modal to target view window
       if (ea.targetView && modalEl.ownerDocument !== ea.targetView.ownerDocument) {
         ea.targetView.ownerDocument.body.appendChild(modalEl);
       }
@@ -5047,7 +5120,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
       }
     };
 
-    // Clear input from sidepanel
+    // Clear sidepanel input
     inputContainer.empty();
     floatingInputModal.open();
   } else {
@@ -5066,6 +5139,12 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
   }
 };
 
+/**
+ * Resolves a keyboard event to a configured action depending on modifier keys and settings.
+ * 
+ * @param {KeyboardEvent} e - The keyboard event.
+ * @returns {object} - { action, scope } or empty object if no match.
+ */
 const getActionFromEvent = (e) => {
   const isMod = e.ctrlKey || e.metaKey;
 
@@ -5085,6 +5164,12 @@ const getActionFromEvent = (e) => {
   return match ? { action: match.action, scope: match.scope } :  { };
 };
 
+/**
+ * Main keydown handler.
+ * Dispatches actions (add, edit, navigate, fold, etc.) based on hotkey settings.
+ * 
+ * @param {KeyboardEvent} e 
+ */
 const handleKeydown = async (e) => {
   if (isRecordingHotkey) return;
   if (!ea.targetView || !ea.targetView.leaf.isVisible()) return;
@@ -5315,6 +5400,12 @@ const handleKeydown = async (e) => {
 
 let uiUpdateTimer = null;
 
+/**
+ * Throttled handler for canvas clicks (pointer down).
+ * Updates the UI to reflect the new selection.
+ * 
+ * @param {PointerEvent} e 
+ */
 const handleCanvasPointerDown = (e) => {
   if (!ea.targetView) return;
   if (floatingInputModal && floatingInputModal.modalEl.contains(e.target)) return;
@@ -5331,10 +5422,9 @@ const handleCanvasPointerDown = (e) => {
   }, 50);
 };
 
-// --- Initialization Logic ---
-// 1. Checking for exsiting tab right at the beginning of the script (not needed here)
-// 2. Create new Sidepanel Tab
+/* --- Initialization Logic --- */
 ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
+
   if (!tab) return;
   registerStyles();
   tab.onWindowMigrated = (newWin) => {
