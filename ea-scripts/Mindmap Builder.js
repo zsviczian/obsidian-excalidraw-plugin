@@ -247,7 +247,7 @@ const VALUE_SETS = Object.freeze({
     none: 0,
   }),
   FONT_SCALE: Object.freeze(["Use scene fontsize", "Fibonacci Scale", "Normal Scale"]),
-  GROWTH: Object.freeze(["Radial", "Right-facing", "Left-facing", "Left-Right"]),
+  GROWTH: Object.freeze(["Radial", "Right-facing", "Left-facing", "Right-Left"]),
   ZOOM: Object.freeze(["Low", "Medium", "High"]),
 });
 
@@ -1779,11 +1779,13 @@ const layoutL1Nodes = (nodes, options, context) => {
     const existingNodes = unpinnedNodes.filter((n) => !n.customData?.mindmapNew);
     const newNodes = unpinnedNodes.filter((n) => n.customData?.mindmapNew);
 
-    // SORTING LOGIC
+    // SORTING LOGIC:
+    // Always sort by current visual position to respect manual user reordering.
+    // We update mindmapOrder immediately after to freeze this state.
     if (sortMethod === "vertical") {
       existingNodes.sort((a, b) => a.y - b.y);
     } else {
-      // Radial: Sort by angle to maintain rotational order
+      // Radial: Sort by current angle to maintain rotational order
       existingNodes.sort((a, b) => {
         return getAngleFromCenter(rootCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
           getAngleFromCenter(rootCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 });
@@ -1792,6 +1794,11 @@ const layoutL1Nodes = (nodes, options, context) => {
 
     const sortedNodes = [...existingNodes, ...newNodes];
     const count = sortedNodes.length;
+    
+    // Persist the visual order immediately so it sticks
+    sortedNodes.forEach((node, i) => {
+        ea.addAppendUpdateCustomData(node.id, { mindmapOrder: i });
+    });
 
     // METRICS & RADIUS CALCULATION
     const l1Metrics = sortedNodes.map(node => getSubtreeHeight(node.id, allElements));
@@ -1799,56 +1806,119 @@ const layoutL1Nodes = (nodes, options, context) => {
     const totalGapHeight = (count - 1) * layoutSettings.GAP_Y;
     const totalContentHeight = totalSubtreeHeight + totalGapHeight;
 
-    const radiusFromHeight = totalContentHeight / layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
+    let radiusY, radiusX, currentAngle;
 
-    const radiusY = Math.max(
-      Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR),
-      layoutSettings.MIN_RADIUS,
-      radiusFromHeight
-    ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+    // Check if this is the Left side of a directional map (Center approx 270 degrees)
+    const isLeftSide = sortMethod === "vertical" && Math.abs(centerAngle - 270) < 1;
 
-    const radiusX = Math.max(
-      Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR),
-      layoutSettings.MIN_RADIUS,
-      radiusY * 0.2
-    ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+    if (sortMethod === "radial") {
+      // RADIAL MODE: Distribute around full circle (2PI)
+      const radiusFromHeight = totalContentHeight / (2 * Math.PI); 
+      
+      radiusY = Math.max(
+        Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR),
+        layoutSettings.MIN_RADIUS,
+        radiusFromHeight
+      ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
 
-    // START ANGLE CALCULATION
-    let currentAngle;
-    if (sortMethod === "vertical") {
-      // Center the arc around the provided centerAngle
-      const totalThetaDeg = (totalContentHeight / radiusY) * (180 / Math.PI);
-      currentAngle = centerAngle - totalThetaDeg / 2;
+      radiusX = Math.max(
+        Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR),
+        layoutSettings.MIN_RADIUS,
+        radiusY // Keep circular
+      ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+      
+      // Start fixed at 20 degrees
+      currentAngle = 20;
+
     } else {
-      // Radial: Fixed start
-      currentAngle = count <= 6 ? 30 : 20;
+      // VERTICAL (Directional) MODE
+      const radiusFromHeight = totalContentHeight / layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
+
+      radiusY = Math.max(
+        Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR),
+        layoutSettings.MIN_RADIUS,
+        radiusFromHeight
+      ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+
+      radiusX = Math.max(
+        Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR),
+        layoutSettings.MIN_RADIUS,
+        radiusY * 0.2
+      ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+
+      // Center the arc around the provided centerAngle (90 or 270)
+      const totalThetaDeg = (totalContentHeight / radiusY) * (180 / Math.PI);
+      
+      if (isLeftSide) {
+        // Left Side: Iterate Top -> Bottom visually.
+        // On the left circle (180-360), Top is ~315 deg, Bottom is ~225 deg.
+        // Since we sort nodes Top->Bottom (Y ascending), we must start at the higher angle and decrement.
+        currentAngle = centerAngle + totalThetaDeg / 2;
+      } else {
+        // Right Side: Top is ~45 deg, Bottom is ~135 deg.
+        // We start at lower angle and increment.
+        currentAngle = centerAngle - totalThetaDeg / 2;
+      }
     }
 
     // PLACEMENT LOOP
     sortedNodes.forEach((node, i) => {
-      if (getMindmapOrder(node) !== i) {
-        ea.addAppendUpdateCustomData(node.id, { mindmapOrder: i });
-      }
-
       const nodeHeight = l1Metrics[i];
-      const effectiveGap = layoutSettings.GAP_Y * gapMultiplier;
+      let angleStep;
 
-      const nodeSpanRad = nodeHeight / radiusY;
-      const gapSpanRad = effectiveGap / radiusY;
+      if (sortMethod === "radial") {
+        // Calculate the angular span of the node itself
+        const nodeSpanDeg = (nodeHeight / radiusY) * (180 / Math.PI);
+        const gapSpanDeg = (layoutSettings.GAP_Y * gapMultiplier / radiusY) * (180 / Math.PI);
+        
+        // Dynamic Sector Sizing:
+        // Ensure at least 8 nodes fit perfectly (360/8 = 45deg). 
+        // If count > 8, shrink sector to fit (e.g. 360/10 = 36deg).
+        // Also ensure we never overlap large subtrees by taking the max of sector vs actual size.
+        const minSectorAngle = 360 / Math.max(count, 8);
+        angleStep = Math.max(minSectorAngle, nodeSpanDeg + gapSpanDeg);
 
-      const nodeSpanDeg = nodeSpanRad * (180 / Math.PI);
-      const gapSpanDeg = gapSpanRad * (180 / Math.PI);
+        const angleRad = (currentAngle - 90) * (Math.PI / 180);
+        const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
+        const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
+        const side = tCX > rootCenter.x ? 1 : -1;
+        
+        layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds);
+        
+        // Advance angle
+        currentAngle += angleStep;
 
-      const angleDeg = currentAngle + nodeSpanDeg / 2;
-      currentAngle += nodeSpanDeg + gapSpanDeg;
+      } else {
+        // Directional Logic (Left/Right)
+        const effectiveGap = layoutSettings.GAP_Y * gapMultiplier;
+        const nodeSpanRad = nodeHeight / radiusY;
+        const gapSpanRad = effectiveGap / radiusY;
+        const nodeSpanDeg = nodeSpanRad * (180 / Math.PI);
+        const gapSpanDeg = gapSpanRad * (180 / Math.PI);
 
-      const angleRad = (angleDeg - 90) * (Math.PI / 180);
-      const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
-      const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
+        let angleDeg;
 
-      const side = tCX > rootCenter.x ? 1 : -1;
+        if (isLeftSide) {
+           // Left side: Move Top -> Bottom (Decrease Angle)
+           // Center node in its span: Current (Top Edge) - Half Span
+           angleDeg = currentAngle - nodeSpanDeg / 2;
+           // Move cursor down: Current - (Full Span + Gap)
+           currentAngle -= (nodeSpanDeg + gapSpanDeg);
+        } else {
+           // Right side: Move Top -> Bottom (Increase Angle)
+           // Center node in its span: Current (Top Edge) + Half Span
+           angleDeg = currentAngle + nodeSpanDeg / 2;
+           // Move cursor down: Current + (Full Span + Gap)
+           currentAngle += (nodeSpanDeg + gapSpanDeg);
+        }
 
-      layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds);
+        const angleRad = (angleDeg - 90) * (Math.PI / 180);
+        const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
+        const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
+        const side = isLeftSide ? -1 : 1;
+
+        layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds);
+      }
 
       if (node.customData?.mindmapNew) {
         ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
@@ -1972,12 +2042,14 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       const leftNodes = [];
       const rightNodes = [];
 
+      // Determine which list nodes currently belong to based on their position
+      // This is crucial for Right-Left mode to maintain the user's intent if they drag a node across the center
       l1Nodes.forEach((node, index) => {
         if (mode === "Right-facing") {
           rightNodes.push(node);
         } else if (mode === "Left-facing") {
           leftNodes.push(node);
-        } else if (mode === "Left-Right") {
+        } else if (mode === "Right-Left") {
           if (node.customData?.mindmapNew) {
              if (index < 2) rightNodes.push(node);
              else if (index < 4) leftNodes.push(node);
@@ -2258,7 +2330,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     if (depth === 1) {
       if (mode === "Left-facing") targetSide = -1;
       else if (mode === "Right-facing") targetSide = 1;
-      else if (mode === "Left-Right") {
+      else if (mode === "Right-Left") {
          const siblings = getChildrenNodes(parent.id, allElements);
          const idx = siblings.length; // Index of the new node being added
          if (idx < 2) targetSide = 1;
@@ -2853,6 +2925,7 @@ const refreshMapLayout = async () => {
   const sel = ea.getViewSelectedElement();
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
+    await triggerGlobalLayout(info.rootId, true);
     await triggerGlobalLayout(info.rootId, true);
   }
 };
