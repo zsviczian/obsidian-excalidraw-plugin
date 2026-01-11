@@ -1583,11 +1583,12 @@ const updateNodeBoundary = (node, allElements) => {
 };
 
 const configureArrow = (context) => {
-  const {arrowId, isChildRight, startId, endId, coordinates} = context;
+  const {arrowId, isChildRight, startId, endId, coordinates, isRadial} = context;
   const {sX, sY, eX, eY} = coordinates;
 
   // Configure Binding Points (using .0001/.9999 to avoid jumping effect)
-  const startRatio = isChildRight ? 0.9999 : 0.0001;
+  // In Radial mode, bind to the center (0.5) of the root node
+  const startRatio = isRadial ? 0.50001 : (isChildRight ? 0.9999 : 0.0001);
   const endRatio = isChildRight ? 0.0001 : 0.9999;
   const centerYRatio = 0.5001;
 
@@ -1783,7 +1784,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
 };
 
 const updateL1Arrow = (node, context) => {
-  const { allElements, rootId, rootBox, rootCenter } = context;
+  const { allElements, rootId, rootBox, rootCenter, mode } = context;
 
   const arrow = allElements.find(
     (a) =>
@@ -1797,8 +1798,10 @@ const updateL1Arrow = (node, context) => {
 
     const childCenterX = childBox.minX + childBox.width / 2;
     const isChildRight = childCenterX > rootCenter.x;
+    const isRadial = mode === "Radial";
 
-    const sX = isChildRight ? rootBox.minX + rootBox.width : rootBox.minX;
+    // In Radial mode, start arrow from the center of the root node
+    const sX = isRadial ? rootCenter.x : (isChildRight ? rootBox.minX + rootBox.width : rootBox.minX);
     const sY = rootCenter.y;
     
     const eX = isChildRight ? childBox.minX : childBox.minX + childBox.width;
@@ -1807,6 +1810,7 @@ const updateL1Arrow = (node, context) => {
     configureArrow({
       arrowId: arrow.id, isChildRight, startId:rootId, endId: node.id,
       coordinates: {sX, sY, eX, eY},
+      isRadial
     });
   }
 };
@@ -2076,7 +2080,8 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       rootId,
       rootBox,
       rootCenter,
-      hasGlobalFolds
+      hasGlobalFolds,
+      mode
     };
 
     // --- MAIN EXECUTION BLOCK ---
@@ -2973,8 +2978,8 @@ const refreshMapLayout = async () => {
   const sel = ea.getViewSelectedElement();
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
-    await triggerGlobalLayout(info.rootId, true);
-    await triggerGlobalLayout(info.rootId, true);
+    await triggerGlobalLayout(info.rootId);
+    await triggerGlobalLayout(info.rootId);
   }
 };
 
@@ -3243,7 +3248,7 @@ const toggleBoundary = async () => {
     }
 
     const info = getHierarchy(sel, ea.getViewElements());
-    await triggerGlobalLayout(info.rootId, true);
+    await triggerGlobalLayout(info.rootId);
   }
 };
 
@@ -4102,7 +4107,7 @@ const renderBody = (contentEl) => {
           ea.addAppendUpdateCustomData(info.rootId, { growthMode: v });
           await addElementsToView();
           if (!autoLayoutDisabled) {
-            await triggerGlobalLayout(info.rootId, true);
+            await triggerGlobalLayout(info.rootId);
           }
         }
       });
@@ -4155,7 +4160,7 @@ const renderBody = (contentEl) => {
       const sel = ea.getViewSelectedElement() || ea.getViewElements().find(el => !getParentNode(el.id, ea.getViewElements()));
       if (sel) {
         const info = getHierarchy(sel, ea.getViewElements());
-        await triggerGlobalLayout(info.rootId, true, true);
+        await triggerGlobalLayout(info.rootId, true);
         updateUI();
       }
     }))
