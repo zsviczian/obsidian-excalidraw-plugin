@@ -533,22 +533,27 @@ const parseImageInput = (input) => {
   }
 
   let imageFile = null;
-  let isPdfRectLink = false;
+  let isImagePath = false;
 
   const PDF_RECT_LINK_REGEX = /^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/;
   if (path.match(PDF_RECT_LINK_REGEX)) {
-    isPdfRectLink = true;
+    isImagePath = true;
   } else {
-    imageFile = app.metadataCache.getFirstLinkpathDest(path, ea.targetView.file.path);
+    const pathParts = path.split("#");
+    imageFile = app.metadataCache.getFirstLinkpathDest(pathParts[0], ea.targetView.file.path);
     if (imageFile) {
       const isEx = imageFile.extension === "md" && ea.isExcalidrawFile(imageFile);
       if (!IMAGE_TYPES.includes(imageFile.extension.toLowerCase()) && !isEx) {
         imageFile = null;
       }
+      if (isEx && pathParts.length === 2) {
+        isImagePath = true;
+        imageFile = null;
+      }
     }
   }
 
-  return { path, width, imageFile, isPdfRectLink };
+  return { path, width, imageFile, isImagePath };
 };
 
 const parseEmbeddableInput = (input) => {
@@ -1348,7 +1353,7 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold)
  */
 const toggleFold = async (mode = "L0") => {
   if (!ea.targetView) return;
-  const sel = ea.getViewSelectedElement();
+  const sel = getMindmapNodeFromSelection();
   if (!sel) return;
 
   const allElements = ea.getViewElements();
@@ -1650,7 +1655,7 @@ const nextZoomLevel = (current) => {
 
 const zoomToFit = (mode) => {
   if (!ea.targetView) return;
-  const sel = ea.getViewSelectedElement();
+  const sel = getMindmapNodeFromSelection();
   if (sel) {
     let nextLevel = zoomLevel;
     if (typeof mode === "string") {
@@ -1669,7 +1674,7 @@ const zoomToFit = (mode) => {
 
 const focusSelected = () => {
   if (!ea.targetView) return;
-  const sel = ea.getViewSelectedElement();
+  const sel = getMindmapNodeFromSelection();
   if (!sel) return;
 
   api().scrollToContent(sel,{
@@ -2514,18 +2519,22 @@ const addImage = async (pathOrFile, width, leftFacing = false, x=0, y=0) => {
   return newNodeId;
 }
 
-const addNode = async (text, follow = false, skipFinalLayout = false, manualAllElements = null, manualParent = null) => {
+const addNode = async (text, follow = false, skipFinalLayout = false, batchModeAllElements = null, batchModeParent = null) => {
   if (!ea.targetView) return;
   if (!text || text.trim() === "") return;
 
   const st = getAppState();
-  const isManualMode = !!manualParent;
+  const isBatchMode = !!batchModeParent;
 
-  let allElements = manualAllElements || ea.getViewElements();
-  let parent = manualParent;
+  let allElements = batchModeAllElements || ea.getViewElements();
+  let parent = batchModeParent;
 
-  if (!isManualMode) {
-    parent = ea.getViewSelectedElement();
+  if (!isBatchMode) {
+    parent = getMindmapNodeFromSelection();
+    if (!parent) {
+      parent = ea.getViewSelectedElement();
+      usingCustomParent = !!parent;
+    }
     if (parent?.containerId) {
       parent = allElements.find((el) => el.id === parent.containerId);
     }
@@ -2576,7 +2585,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
   }
 
   const fontScale = getFontScale(fontsizeScale);
-  if (!isManualMode) ea.clear();
+  if (!isBatchMode) ea.clear();
   ea.style.fontFamily = st.currentItemFontFamily;
   ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)];
   ea.style.roundness = roundedCorners ? { type: 3 } : null;
@@ -2591,7 +2600,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
   if (!parent) {
     ea.style.strokeColor = multicolor ? defaultNodeColor : st.currentItemStrokeColor;
 
-    if (imageInfo?.isPdfRectLink) {
+    if (imageInfo?.isImagePath) {
       newNodeId = await addImage(imageInfo.path, imageInfo.width);
     } else if (imageInfo?.imageFile) {
       newNodeId = await addImage(imageInfo.imageFile, imageInfo.width);
@@ -2687,7 +2696,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
       ? "center"
       : side === 1 ? "left" : "right";
 
-    if (imageInfo?.isPdfRectLink) {
+    if (imageInfo?.isImagePath) {
         newNodeId = await addImage(imageInfo.path, imageInfo.width, side === -1 && !autoLayoutDisabled, px, py);
     } else if (imageInfo?.imageFile) {
         newNodeId = await addImage(imageInfo.imageFile, imageInfo.width, side === -1 && !autoLayoutDisabled, px, py);
@@ -2718,7 +2727,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
       ea.copyViewElementsToEAforEditing([parent]);
     }
 
-    if (depth === 0 && !parent.customData?.growthMode) {
+    if ((depth === 0 || usingCustomParent) && !parent.customData?.growthMode) {
       ea.addAppendUpdateCustomData(parent.id, {
         growthMode: currentModalGrowthMode,
         autoLayoutDisabled: false,
@@ -2763,13 +2772,13 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
     }
   }
 
-  if (isManualMode) {
+  if (isBatchMode) {
     return ea.getElement(newNodeId);
   }
 
   await addElementsToView({
     repositionToCursor: !parent,
-    save: !!imageInfo?.imageFile || imageInfo?.isPdfRectLink
+    save: !!imageInfo?.imageFile || imageInfo?.isImagePath
   });
 
   if (!skipFinalLayout && rootId && !autoLayoutDisabled) {
@@ -2884,7 +2893,7 @@ const getTextFromNode = (all, node, getRaw = false, shortPath = false) => {
 const copyMapAsText = async (cut = false) => {
   if (!ea.targetView) return;
   ensureNodeSelected();
-  const sel = ea.getViewSelectedElement();
+  const sel = getMindmapNodeFromSelection();
   if (!sel) {
     new Notice(t("NOTICE_SELECT_NODE_TO_COPY"));
     return;
@@ -2990,7 +2999,7 @@ const pasteListToMap = async () => {
   const rawText = await navigator.clipboard.readText();
   if (!rawText) return;
 
-  const sel = ea.getViewSelectedElement();
+  const sel = getMindmapNodeFromSelection();
   let currentParent;
 
   const lines = rawText.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
@@ -3254,7 +3263,7 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
  */
 const setMapAutolayout = async (enabled) => {
   if (!ea.targetView) return;
-  const sel = ea.getViewSelectedElement();
+  const sel = getMindmapNodeFromSelection();
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
     ea.copyViewElementsToEAforEditing(ea.getViewElements().filter((e) => e.id === info.rootId));
@@ -3268,7 +3277,7 @@ const setMapAutolayout = async (enabled) => {
  */
 const refreshMapLayout = async () => {
   if (!ea.targetView) return;
-  const sel = ea.getViewSelectedElement();
+  const sel = getMindmapNodeFromSelection();
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
     await triggerGlobalLayout(info.rootId);
@@ -3347,7 +3356,7 @@ const getBranchElementIds = (nodeId, allElements) => {
 **/
 const toggleBranchGroup = async () => {
   if (!ea.targetView) return;
-  const sel = ea.getViewSelectedElement();
+  const sel = getMindmapNodeFromSelection();
   if (!sel) return;
 
   const allElements = ea.getViewElements();
@@ -3757,7 +3766,7 @@ const updateUI = (sel) => {
 };
 
 const startEditing = () => {
-  const sel = ea.getViewSelectedElement();
+  const sel = getMindmapNodeFromSelection();
   if (!sel) return;
   const all = ea.getViewElements();
   const text = getTextFromNode(all, sel, true, true);
@@ -3791,7 +3800,7 @@ const commitEdit = async () => {
   const embeddableUrl = parseEmbeddableInput(textInput);
 
   let newType = "text";
-  if (imageInfo?.isPdfRectLink || imageInfo?.imageFile) newType = "image";
+  if (imageInfo?.isImagePath || imageInfo?.imageFile) newType = "image";
   else if (embeddableUrl) newType = "embeddable";
 
   // Check for type conversion (e.g. Text -> Image) or non-text update
@@ -3808,7 +3817,7 @@ const commitEdit = async () => {
 
     // 2. Create new element based on type
     if (newType === "image") {
-       if (imageInfo?.isPdfRectLink) {
+       if (imageInfo?.isImagePath) {
         newNodeId = await addImage(imageInfo.path, imageInfo.width);
        } else {
         newNodeId = await addImage(imageInfo.imageFile, imageInfo.width);
@@ -4587,7 +4596,7 @@ const renderBody = (contentEl) => {
         currentModalGrowthMode = v;
         setVal(K_GROWTH, v);
         dirty = true;
-        const sel = ea.getViewSelectedElement();
+        const sel = getMindmapNodeFromSelection();
         if (sel) {
           const info = getHierarchy(sel, ea.getViewElements());
           ea.copyViewElementsToEAforEditing(ea.getViewElements().filter((e) => e.id === info.rootId));
@@ -4644,7 +4653,7 @@ const renderBody = (contentEl) => {
       groupBranches = v;
       setVal(K_GROUP, v);
       dirty = true;
-      const sel = ea.getViewSelectedElement() || ea.getViewElements().find(el => !getParentNode(el.id, ea.getViewElements()));
+      const sel = getMindmapNodeFromSelection() || ea.getViewElements().find(el => !getParentNode(el.id, ea.getViewElements()));
       if (sel) {
         const info = getHierarchy(sel, ea.getViewElements());
         await triggerGlobalLayout(info.rootId, true);
@@ -5234,6 +5243,13 @@ const handleKeydown = async (e) => {
     return;
   }
 
+  if (
+    e.key === "Escape" && !isUndocked &&
+    inputEl.ownerDocument.activeElement !== inputEl
+  ) {
+    return;
+  }
+
   let {action, scope} = getActionFromEvent(e);
   let context = getHotkeyContext();
 
@@ -5384,7 +5400,7 @@ const handleKeydown = async (e) => {
       if (action === ACTION_ADD_FOLLOW_ZOOM) zoomToFit();
       break;
     case ACTION_ADD:
-      const currentSel = ea.getViewSelectedElement();
+      const currentSel = getMindmapNodeFromSelection() ?? ea.getViewSelectedElement();
       if (
         editingNodeId && currentSel &&
         (currentSel.id === editingNodeId || currentSel.containerId === editingNodeId)
@@ -5399,7 +5415,7 @@ const handleKeydown = async (e) => {
           inputEl.value = "";
           if(!autoLayoutDisabled) await refreshMapLayout();
         } else {
-          const sel = ea.getViewSelectedElement();
+          const sel = getMindmapNodeFromSelection();
           const allElements = ea.getViewElements();
 
           let handledRecent = false;
