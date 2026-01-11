@@ -1583,6 +1583,52 @@ const updateNodeBoundary = (node, allElements) => {
   }
 };
 
+const createArrow = (context) => {
+  const {eaArrow, isChildRight, startId, endId, coordinates} = context;
+  const {sX, sY, eX, eY} = coordinates;
+  // Configure Binding Points (using .0001/.9999 to avoid jumping effect)
+  const startRatio = isChildRight ? 0.9999 : 0.0001;
+  const endRatio = isChildRight ? 0.0001 : 0.9999;
+  const centerYRatio = 0.5001;
+
+  eaArrow.startBinding = {
+    ...eaArrow.startBinding,
+    elementId: startId,
+    mode: "orbit",
+    fixedPoint: [startRatio, centerYRatio]
+  };
+
+  eaArrow.endBinding = {
+    ...eaArrow.endBinding,
+    elementId: endId,
+    mode: "orbit",
+    fixedPoint: [endRatio, centerYRatio]
+  };
+
+  eaArrow.x = sX;
+  eaArrow.y = sY;
+
+  const dx = eX - sX;
+  const dy = eY - sY;
+
+  if (arrowType === "straight") {
+    eaArrow.roundness = null;
+    eaArrow.points = [
+      [0, 0],
+      [dx, dy],
+    ];
+  } else {
+    // CURVED ARROW
+    eaArrow.roundness = { type: 2 };
+    eaArrow.points = [
+        [0, 0],
+        [dx / 3, dy * 0.25],
+        [dx * 2 / 3, dy * 0.75],
+        [dx, dy]
+    ];
+  }
+};
+
 const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlobalFolds) => {
   const node = allElements.find((el) => el.id === nodeId);
   const eaNode = ea.getElement(nodeId);
@@ -1627,14 +1673,14 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   if (node.customData?.foldIndicatorId) {
     const ind = ea.getElement(node.customData.foldIndicatorId);
     if(ind) {
-        if (effectiveSide === 1) {
-            ind.x = eaNode.x + eaNode.width + layoutSettings.INDICATOR_OFFSET;
-            ind.textAlign = "left";
-        } else {
-            ind.x = eaNode.x - layoutSettings.INDICATOR_OFFSET - ind.width;
-            ind.textAlign = "right";
-        }
-        ind.y = eaNode.y + eaNode.height/2 - ind.height/2;
+      if (effectiveSide === 1) {
+          ind.x = eaNode.x + eaNode.width + layoutSettings.INDICATOR_OFFSET;
+          ind.textAlign = "left";
+      } else {
+          ind.x = eaNode.x - layoutSettings.INDICATOR_OFFSET - ind.width;
+          ind.textAlign = "right";
+      }
+      ind.y = eaNode.y + eaNode.height/2 - ind.height/2;
     }
   }
 
@@ -1649,7 +1695,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
 
 
   if (unpinnedChildren.length > 0) {
-     unpinnedChildren.sort((a, b) => {
+    unpinnedChildren.sort((a, b) => {
       const dy = a.y - b.y;
       if (dy !== 0) return dy;
       return String(a.id).localeCompare(String(b.id));
@@ -1690,14 +1736,14 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   }
 
   pinnedChildren.forEach(child => {
-      layoutSubtree(
-        child.id,
-        child.x,
-        child.y + child.height/2,
-        effectiveSide,
-        allElements,
-        hasGlobalFolds
-      );
+    layoutSubtree(
+      child.id,
+      child.x,
+      child.y + child.height/2,
+      effectiveSide,
+      allElements,
+      hasGlobalFolds
+    );
   });
 
   children.forEach(child => {
@@ -1718,60 +1764,161 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
       const parentCenterX = currentX + node.width / 2;
       const isChildRight = childCenterX > parentCenterX;
 
-      // Configure Binding Points (using .0001/.9999 to avoid jumping effect)
-      const startRatio = isChildRight ? 0.9999 : 0.0001;
-      const endRatio = isChildRight ? 0.0001 : 0.9999;
-      const centerYRatio = 0.5001;
-
-      eaArrow.startBinding = {
-        ...eaArrow.startBinding,
-        elementId: node.id,
-        mode: "orbit",
-        fixedPoint: [startRatio, centerYRatio]
-      };
-
-      eaArrow.endBinding = {
-        ...eaArrow.endBinding,
-        elementId: child.id,
-        mode: "orbit",
-        fixedPoint: [endRatio, centerYRatio]
-      };
-
-      // Calculate coordinates based on the side connection points
       const sX = isChildRight ? currentX + node.width : currentX;
       const sY = currentYCenter;
       
       const eX = isChildRight ? eaChild.x : eaChild.x + eaChild.width;
       const eY = eaChild.y + eaChild.height / 2;
 
-      eaArrow.x = sX;
-      eaArrow.y = sY;
-
-      const dx = eX - sX;
-      const dy = eY - sY;
-
-      if (arrowType === "straight") {
-        eaArrow.roundness = null;
-        eaArrow.points = [
-          [0, 0],
-          [dx, dy],
-        ];
-      } else {
-        // CURVED ARROW
-        eaArrow.roundness = { type: 2 };
-        eaArrow.points = [
-            [0, 0],
-            [dx / 3, dy * 0.25],
-            [dx * 2 / 3, dy * 0.75],
-            [dx, dy]
-        ];
-      }
+      createArrow({
+        eaArrow, isChildRight, startId:node.id, endId: child.id,
+        coordinates: {sX, sY, eX, eY},
+      });
     }
   });
 
   if (node.customData?.boundaryId) {
      updateNodeBoundary(node, ea.getElements());
   }
+};
+
+const updateL1Arrow = (node, context) => {
+  const { allElements, rootId, rootBox, rootCenter } = context;
+
+  const arrow = allElements.find(
+    (a) =>
+      a.type === "arrow" &&
+      a.customData?.isBranch &&
+      a.startBinding?.elementId === rootId &&
+      a.endBinding?.elementId === node.id,
+  );
+  if (arrow) {
+    const eaArrow = ea.getElement(arrow.id);
+    const childBox = getNodeBox(ea.getElement(node.id), ea.getElements());
+
+    const childCenterX = childBox.minX + childBox.width / 2;
+    const isChildRight = childCenterX > rootCenter.x;
+
+    const sX = isChildRight ? rootBox.minX + rootBox.width : rootBox.minX;
+    const sY = rootCenter.y;
+    
+    const eX = isChildRight ? childBox.minX : childBox.minX + childBox.width;
+    const eY = childBox.minY + childBox.height / 2;
+
+    createArrow({
+      eaArrow, isChildRight, startId:rootId, endId: node.id,
+      coordinates: {sX, sY, eX, eY},
+    });
+  }
+};
+
+/**
+ * Unified layout function for Level 1 nodes.
+ * Handles both Radial (sorted by angle) and Directional (sorted by Y, centered arc).
+ */
+const layoutL1Nodes = (nodes, options, context) => {
+  if (nodes.length === 0) return;
+  const { allElements, rootBox, rootCenter, hasGlobalFolds } = context;
+  const { sortMethod, centerAngle, gapMultiplier } = options;
+
+  const unpinnedNodes = nodes.filter(n => !n.customData?.isPinned);
+  const pinnedNodes = nodes.filter(n => n.customData?.isPinned);
+
+  if (unpinnedNodes.length > 0) {
+    const existingNodes = unpinnedNodes.filter((n) => !n.customData?.mindmapNew);
+    const newNodes = unpinnedNodes.filter((n) => n.customData?.mindmapNew);
+
+    // SORTING LOGIC
+    if (sortMethod === "vertical") {
+      existingNodes.sort((a, b) => a.y - b.y);
+    } else {
+      // Radial: Sort by angle to maintain rotational order
+      existingNodes.sort((a, b) => {
+        return getAngleFromCenter(rootCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
+          getAngleFromCenter(rootCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 });
+      });
+    }
+
+    const sortedNodes = [...existingNodes, ...newNodes];
+    const count = sortedNodes.length;
+
+    // METRICS & RADIUS CALCULATION
+    const l1Metrics = sortedNodes.map(node => getSubtreeHeight(node.id, allElements));
+    const totalSubtreeHeight = l1Metrics.reduce((sum, h) => sum + h, 0);
+    const totalGapHeight = (count - 1) * layoutSettings.GAP_Y;
+    const totalContentHeight = totalSubtreeHeight + totalGapHeight;
+
+    const radiusFromHeight = totalContentHeight / layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
+
+    const radiusY = Math.max(
+      Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR),
+      layoutSettings.MIN_RADIUS,
+      radiusFromHeight
+    ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+
+    const radiusX = Math.max(
+      Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR),
+      layoutSettings.MIN_RADIUS,
+      radiusY * 0.2
+    ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+
+    // START ANGLE CALCULATION
+    let currentAngle;
+    if (sortMethod === "vertical") {
+      // Center the arc around the provided centerAngle
+      const totalThetaDeg = (totalContentHeight / radiusY) * (180 / Math.PI);
+      currentAngle = centerAngle - totalThetaDeg / 2;
+    } else {
+      // Radial: Fixed start
+      currentAngle = count <= 6 ? 30 : 20;
+    }
+
+    // PLACEMENT LOOP
+    sortedNodes.forEach((node, i) => {
+      if (getMindmapOrder(node) !== i) {
+        ea.addAppendUpdateCustomData(node.id, { mindmapOrder: i });
+      }
+
+      const nodeHeight = l1Metrics[i];
+      const effectiveGap = layoutSettings.GAP_Y * gapMultiplier;
+
+      const nodeSpanRad = nodeHeight / radiusY;
+      const gapSpanRad = effectiveGap / radiusY;
+
+      const nodeSpanDeg = nodeSpanRad * (180 / Math.PI);
+      const gapSpanDeg = gapSpanRad * (180 / Math.PI);
+
+      const angleDeg = currentAngle + nodeSpanDeg / 2;
+      currentAngle += nodeSpanDeg + gapSpanDeg;
+
+      const angleRad = (angleDeg - 90) * (Math.PI / 180);
+      const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
+      const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
+
+      const side = tCX > rootCenter.x ? 1 : -1;
+
+      layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds);
+
+      if (node.customData?.mindmapNew) {
+        ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
+      }
+      updateL1Arrow(node, context);
+      if (groupBranches) applyRecursiveGrouping(node.id, allElements);
+    });
+  }
+
+  // PINNED NODES
+  pinnedNodes.forEach(node => {
+    const nodeBox = getNodeBox(node, allElements);
+    const side = (nodeBox.minX + nodeBox.width / 2) > rootCenter.x ? 1 : -1;
+    layoutSubtree(node.id, node.x, node.y + node.height/2, side, allElements, hasGlobalFolds);
+
+    if (node.customData?.mindmapNew) {
+      ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
+    }
+    updateL1Arrow(node, context);
+    if (groupBranches) applyRecursiveGrouping(node.id, allElements);
+  });
 };
 
 const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) => {
@@ -1783,14 +1930,14 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     // Snapshot positions and identify cross-link arrows
     const originalPositions = new Map();
     allElements.forEach(el => {
-       originalPositions.set(el.id, { x: el.x, y: el.y });
+      originalPositions.set(el.id, { x: el.x, y: el.y });
     });
 
     const crossLinkArrows = allElements.filter(el =>
-       el.type === "arrow" &&
-       !el.customData?.isBranch &&
-       el.startBinding?.elementId &&
-       el.endBinding?.elementId
+      el.type === "arrow" &&
+      !el.customData?.isBranch &&
+      el.startBinding?.elementId &&
+      el.endBinding?.elementId
     );
 
     const branchIds = new Set(getBranchElementIds(rootId, allElements));
@@ -1855,237 +2002,21 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     const rootBox = getNodeBox(root, allElements);
     const rootCenter = { x: rootBox.minX + rootBox.width / 2, y: rootBox.minY + rootBox.height / 2 };
 
-    // Helper to calculate layout for a specific subset of L1 nodes
-    const processL1Subset = (nodes, centerAngle) => {
-      if (nodes.length === 0) return;
-
-      const unpinnedNodes = nodes.filter(n => !n.customData?.isPinned);
-      const pinnedNodes = nodes.filter(n => n.customData?.isPinned);
-
-      if (unpinnedNodes.length > 0) {
-        const existingNodes = unpinnedNodes.filter((n) => !n.customData?.mindmapNew);
-        const newNodes = unpinnedNodes.filter((n) => n.customData?.mindmapNew);
-
-        // Sort existing nodes by Y (visual order)
-        existingNodes.sort((a, b) => a.y - b.y);
-
-        const sortedNodes = [...existingNodes, ...newNodes];
-        const count = sortedNodes.length;
-
-        const l1Metrics = sortedNodes.map(node => getSubtreeHeight(node.id, allElements));
-        const totalSubtreeHeight = l1Metrics.reduce((sum, h) => sum + h, 0);
-        const totalGapHeight = (count - 1) * layoutSettings.GAP_Y;
-        const totalContentHeight = totalSubtreeHeight + totalGapHeight;
-
-        const radiusFromHeight = totalContentHeight / layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
-
-        const radiusY = Math.max(
-          Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR),
-          layoutSettings.MIN_RADIUS,
-          radiusFromHeight
-        ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
-
-        const radiusX = Math.max(
-          Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR),
-          layoutSettings.MIN_RADIUS,
-          radiusY * 0.2
-        ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
-
-        // Calculate starting angle based on content height to center vertically
-        const totalThetaDeg = (totalContentHeight / radiusY) * (180 / Math.PI);
-        let currentAngle = centerAngle - totalThetaDeg / 2;
-
-        sortedNodes.forEach((node, i) => {
-          if (getMindmapOrder(node) !== i) {
-            ea.addAppendUpdateCustomData(node.id, { mindmapOrder: i });
-          }
-
-          const nodeHeight = l1Metrics[i];
-          const gapMultiplier = layoutSettings.GAP_MULTIPLIER_DIRECTIONAL;
-          const effectiveGap = layoutSettings.GAP_Y * gapMultiplier;
-
-          const nodeSpanRad = nodeHeight / radiusY;
-          const gapSpanRad = effectiveGap / radiusY;
-
-          const nodeSpanDeg = nodeSpanRad * (180 / Math.PI);
-          const gapSpanDeg = gapSpanRad * (180 / Math.PI);
-
-          const angleDeg = currentAngle + nodeSpanDeg / 2;
-          currentAngle += nodeSpanDeg + gapSpanDeg;
-
-          const angleRad = (angleDeg - 90) * (Math.PI / 180);
-          const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
-          const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
-
-          const side = Math.cos(angleRad) > 0 ? 1 : -1;
-
-          layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds);
-
-          if (node.customData?.mindmapNew) {
-            ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
-          }
-
-          // Update arrow
-          updateL1Arrow(node);
-
-          if (groupBranches) {
-            applyRecursiveGrouping(node.id, allElements);
-          }
-        });
-      }
-
-      pinnedNodes.forEach(node => {
-        const nodeBox = getNodeBox(node, allElements);
-        const side = (nodeBox.minX + nodeBox.width / 2) > rootCenter.x ? 1 : -1;
-
-        layoutSubtree(node.id, node.x, node.y + node.height/2, side, allElements, hasGlobalFolds);
-
-        if (node.customData?.mindmapNew) {
-          ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
-        }
-        updateL1Arrow(node);
-        if (groupBranches) applyRecursiveGrouping(node.id, allElements);
-      });
+    const layoutContext = {
+      allElements,
+      rootId,
+      rootBox,
+      rootCenter,
+      hasGlobalFolds
     };
 
-    const updateL1Arrow = (node) => {
-      const arrow = allElements.find(
-        (a) =>
-          a.type === "arrow" &&
-          a.customData?.isBranch &&
-          a.startBinding?.elementId === rootId &&
-          a.endBinding?.elementId === node.id,
-      );
-      if (arrow) {
-        const eaArrow = ea.getElement(arrow.id);
-        const childBox = getNodeBox(ea.getElement(node.id), ea.getElements());
-
-        const childCenterX = childBox.minX + childBox.width / 2;
-        const isChildRight = childCenterX > rootCenter.x;
-        
-        // Configure Binding Points (using .0001/.9999 to avoid jumping effect)
-        const startRatio = isChildRight ? 0.9999 : 0.0001;
-        const endRatio = isChildRight ? 0.0001 : 0.9999;
-        const centerYRatio = 0.5001;
-
-        eaArrow.startBinding = {
-            ...eaArrow.startBinding,
-            elementId: root.id,
-            mode: "orbit",
-            fixedPoint: [startRatio, centerYRatio]
-        };
-
-        eaArrow.endBinding = {
-            ...eaArrow.endBinding,
-            elementId: node.id,
-            mode: "orbit",
-            fixedPoint: [endRatio, centerYRatio]
-        };
-        
-        // Calculate coords from sides
-        const sX = isChildRight ? rootBox.minX + rootBox.width : rootBox.minX;
-        const sY = rootCenter.y;
-        
-        const eX = isChildRight ? childBox.minX : childBox.minX + childBox.width;
-        const eY = childBox.minY + childBox.height / 2;
-
-        eaArrow.x = sX;
-        eaArrow.y = sY;
-
-        const dx = eX - sX;
-        const dy = eY - sY;
-        
-        if (arrowType === "straight") {
-            eaArrow.roundness = null;
-            eaArrow.points = [
-                [0, 0],
-                [dx, dy]
-            ];
-        } else {
-            eaArrow.roundness = { type: 2 };
-            eaArrow.points = [
-                [0, 0],
-                [dx / 3, dy * 0.25],
-                [dx * 2 / 3, dy * 0.75],
-                [dx, dy]
-            ];
-        }
-      }
-    };
-
+    // --- MAIN EXECUTION BLOCK ---
     if (mode === "Radial") {
-      const unpinnedL1 = l1Nodes.filter(n => !n.customData?.isPinned);
-      const pinnedL1 = l1Nodes.filter(n => n.customData?.isPinned);
-
-      const existingL1 = unpinnedL1.filter((n) => !n.customData?.mindmapNew);
-      const newL1 = unpinnedL1.filter((n) => n.customData?.mindmapNew);
-
-      existingL1.sort((a, b) => {
-        return getAngleFromCenter(rootCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
-        getAngleFromCenter(rootCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 })
-      });
-
-      const sortedL1 = [...existingL1, ...newL1];
-      const count = sortedL1.length;
-
-      const l1Metrics = sortedL1.map(node => getSubtreeHeight(node.id, allElements));
-      const totalSubtreeHeight = l1Metrics.reduce((sum, h) => sum + h, 0);
-      const totalGapHeight = (count - 1) * layoutSettings.GAP_Y;
-      const totalContentHeight = totalSubtreeHeight + totalGapHeight;
-      const radiusFromHeight = totalContentHeight / layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
-
-      const radiusY = Math.max(
-        Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR),
-        layoutSettings.MIN_RADIUS,
-        radiusFromHeight
-      ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
-
-      const radiusX = Math.max(
-        Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR),
-        layoutSettings.MIN_RADIUS,
-        radiusY * 0.2
-      ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
-
-      let currentAngleRadial = count <= 6 ? 30 : 20;
-
-      // Layout Unpinned
-      sortedL1.forEach((node, i) => {
-        if (getMindmapOrder(node) !== i) ea.addAppendUpdateCustomData(node.id, { mindmapOrder: i });
-
-        const nodeHeight = l1Metrics[i];
-        const effectiveGap = layoutSettings.GAP_Y * layoutSettings.GAP_MULTIPLIER_RADIAL;
-        const nodeSpanDeg = (nodeHeight / radiusY) * (180 / Math.PI);
-        const gapSpanDeg = (effectiveGap / radiusY) * (180 / Math.PI);
-
-        const angleDeg = currentAngleRadial + nodeSpanDeg / 2;
-        currentAngleRadial += nodeSpanDeg + gapSpanDeg;
-
-        const angleRad = (angleDeg - 90) * (Math.PI / 180);
-        const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
-        const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
-
-        // Calculate side for unpinned
-        const side = tCX > rootCenter.x ? 1 : -1;
-
-        layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds);
-
-        if (node.customData?.mindmapNew) ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
-
-        updateL1Arrow(node);
-        if (groupBranches) applyRecursiveGrouping(node.id, allElements);
-      });
-
-      // Process Pinned
-      pinnedL1.forEach(node => {
-        const nodeBox = getNodeBox(node, allElements);
-        const side = (nodeBox.minX + nodeBox.width / 2) > rootCenter.x ? 1 : -1;
-        layoutSubtree(node.id, node.x, node.y + node.height/2, side, allElements, hasGlobalFolds);
-
-        if (node.customData?.mindmapNew) ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
-        updateL1Arrow(node);
-        if (groupBranches) applyRecursiveGrouping(node.id, allElements);
-      });
-
+      layoutL1Nodes(l1Nodes, {
+        sortMethod: "radial",
+        centerAngle: null,
+        gapMultiplier: layoutSettings.GAP_MULTIPLIER_RADIAL
+      }, layoutContext);
     } else {
       const leftNodes = [];
       const rightNodes = [];
@@ -2096,16 +2027,23 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
            else if (mode === "Left-facing") leftNodes.push(node);
            else rightNodes.push(node);
         } else {
-           // For existing nodes, respect their current visual side relative to root center
            const nodeCenter = node.x + node.width / 2;
            if (nodeCenter < rootCenter.x) leftNodes.push(node);
            else rightNodes.push(node);
         }
       });
 
-      processL1Subset(rightNodes, 90);
+      layoutL1Nodes(rightNodes, {
+        sortMethod: "vertical",
+        centerAngle: 90,
+        gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL
+      }, layoutContext);
 
-      processL1Subset(leftNodes, 270);
+      layoutL1Nodes(leftNodes, {
+        sortMethod: "vertical",
+        centerAngle: 270,
+        gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL
+      }, layoutContext);
     }
 
     crossLinkArrows.forEach(arrow => {
