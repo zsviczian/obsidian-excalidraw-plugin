@@ -92,6 +92,11 @@ const removeEventListeners = () => {
   } catch (e) {
     console.error("Mindmap Builder: Error removing pointerdown handler:", e);
   }
+  try {
+    window.MindmapBuilder?.removeActiveLeafListener?.();
+  } catch (e) {
+    console.error("Mindmap Builder: Error removing active-leaf-change listener:", e);
+  }
 };
 
 if(!window.MindmapBuilder) {
@@ -2283,6 +2288,16 @@ const getAdjustedMaxWidth = (text, max) => {
   return {width: Math.min(max, optimalWidth), wrappedText};
 }
 
+const addImage = async (pathOrFile, width, x=0, y=0) => {
+  const newNodeId = await ea.addImage(x, y, pathOrFile);
+  const el = ea.getElement(newNodeId);
+  const targetWidth = width || EMBEDED_OBJECT_WIDTH_ROOT;
+  const ratio = el.width / el.height;
+  el.width = targetWidth;
+  el.height = targetWidth / ratio;
+  return newNodeId;
+}
+
 const addNode = async (text, follow = false, skipFinalLayout = false, manualAllElements = null, manualParent = null) => {
   if (!ea.targetView) return;
   if (!text || text.trim() === "") return;
@@ -2378,36 +2393,26 @@ const addNode = async (text, follow = false, skipFinalLayout = false, manualAllE
     ea.style.strokeColor = multicolor ? defaultNodeColor : st.currentItemStrokeColor;
 
     if (isPdfRectLink) {
-        newNodeId = await ea.addImage(0, 0, imageInfo.path);
-        const el = ea.getElement(newNodeId);
-        const targetWidth = imageInfo.width || EMBEDED_OBJECT_WIDTH_ROOT;
-        const ratio = el.width / el.height;
-        el.width = targetWidth;
-        el.height = targetWidth / ratio;
+      newNodeId = await addImage(imageInfo.path, imageInfo.width);
     } else if (imageFile) {
-        newNodeId = await ea.addImage(0, 0, imageFile);
-        const el = ea.getElement(newNodeId);
-        const targetWidth = imageInfo.width || EMBEDED_OBJECT_WIDTH_ROOT;
-        const ratio = el.width / el.height;
-        el.width = targetWidth;
-        el.height = targetWidth / ratio;
+      newNodeId = await addImage(imageFile, imageInfo.width);
     } else if (embeddableUrl) {
-        // Height 0 triggers auto-calculation of height based on aspect ratio
-        newNodeId = ea.addEmbeddable(0, 0, EMBEDED_OBJECT_WIDTH_ROOT, 0, embeddableUrl);
+      // Height 0 triggers auto-calculation of height based on aspect ratio
+      newNodeId = ea.addEmbeddable(0, 0, EMBEDED_OBJECT_WIDTH_ROOT, 0, embeddableUrl);
     } else {
-        ea.style.fillStyle = "solid";
-        ea.style.backgroundColor = st.viewBackgroundColor;
-        newNodeId = ea.addText(0, 0, text, {
-          box: "rectangle",
-          textAlign: "center",
-          textVerticalAlign: "middle",
-          //using different color reprsentation so frame can be easily
-          //recolored separately from text in Excalidraw UI
-          boxStrokeColor: ea.getCM(ea.style.strokeColor).stringRGB(),
-          width: shouldWrap ? curMaxW : undefined,
-          autoResize: !shouldWrap,
-        });
-        ea.style.backgroundColor = "transparent";
+      ea.style.fillStyle = "solid";
+      ea.style.backgroundColor = st.viewBackgroundColor;
+      newNodeId = ea.addText(0, 0, text, {
+        box: "rectangle",
+        textAlign: "center",
+        textVerticalAlign: "middle",
+        //using different color reprsentation so frame can be easily
+        //recolored separately from text in Excalidraw UI
+        boxStrokeColor: ea.getCM(ea.style.strokeColor).stringRGB(),
+        width: shouldWrap ? curMaxW : undefined,
+        autoResize: !shouldWrap,
+      });
+      ea.style.backgroundColor = "transparent";
     }
 
     ea.addAppendUpdateCustomData(newNodeId, {
@@ -3349,6 +3354,10 @@ let recordingScope = null;
 // ---------------------------------------------------------------------------
 const registerKeydownHandler = (host, handler) => {
   removeKeydownHandlers();
+  if (!window.MindmapBuilder) return; //Mindmap Builder has closed
+  if (!window.MindmapBuilder.keydownHandlers) {
+    window.MindmapBuilder.keydownHandlers = [];
+  }
   host.addEventListener("keydown", handler, true);
   window.MindmapBuilder.keydownHandlers.push(()=>host.removeEventListener("keydown", handler, true))
 };
@@ -5111,6 +5120,14 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
       delete window.MindmapBuilder.removePointerDownHandler;
     }
     updateKeyHandlerLocation();
+    
+    if (!window.MindmapBuilder?.removeActiveLeafListener) {
+      const leafChangeRef = app.workspace.on("active-leaf-change", onActiveLeafChange);
+      window.MindmapBuilder.removeActiveLeafListener = () => {
+        app.workspace.offref(leafChangeRef);
+        delete window.MindmapBuilder.removeActiveLeafListener;
+      };
+    }
   };
 
   const onFocus = (view) => {
@@ -5169,11 +5186,7 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
     }
   };
 
-  // Register the global listener
-  const leafChangeRef = app.workspace.on("active-leaf-change", onActiveLeafChange);
-
   tab.onClose = async () => {
-    app.workspace.offref(leafChangeRef);
     removeEventListeners();
     delete window.MindmapBuilder;
     removeStyles();
