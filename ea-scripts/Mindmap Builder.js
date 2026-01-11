@@ -1180,6 +1180,10 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold)
 
   setElementVisibility(node, shouldHideThis);
 
+  // Set to track the ID of the main node AND any decorations grouped with it
+  // This allows us to detect crosslinks attached to decorations, not just the main node
+  const localNodeIds = new Set([node.id]);
+
   // Handle Decorations (Grouped elements like boxes, icons, stickers)
   if (node.groupIds && node.groupIds.length > 0) {
 
@@ -1195,21 +1199,28 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold)
       if (childrenIds.includes(el.id)) return;
 
       setElementVisibility(el, shouldHideThis);
+      localNodeIds.add(el.id);
     });
   }
 
-  // Handle Crosslinks (Non-structural arrows connected to this node)
+  // Handle Crosslinks (Non-structural arrows connected to this node OR its decorations)
   const crossLinks = allElements.filter(el => 
     el.type === "arrow" && 
     !el.customData?.isBranch && 
-    (el.startBinding?.elementId === node.id || el.endBinding?.elementId === node.id)
+    (
+      (el.startBinding && localNodeIds.has(el.startBinding.elementId)) || 
+      (el.endBinding && localNodeIds.has(el.endBinding.elementId))
+    )
   );
 
   crossLinks.forEach(arrow => {
     if (shouldHideThis) {
       setElementVisibility(arrow, true);
     } else {
-      const otherId = arrow.startBinding?.elementId === node.id 
+      // Determine which end is the "other" node
+      const isStartLocal = arrow.startBinding && localNodeIds.has(arrow.startBinding.elementId);
+      
+      const otherId = isStartLocal
         ? arrow.endBinding?.elementId 
         : arrow.startBinding?.elementId;
       
