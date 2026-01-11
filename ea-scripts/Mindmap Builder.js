@@ -834,13 +834,23 @@ const getBoundaryHost = (selectedElements) => {
 
 const getMindmapNodeFromSelection = () => {
   if (!ea.targetView) return;
-  const selectedElements = ea.getViewSelectedElements();
-
+  const selectedElements = ea.getViewSelectedElements().filter(el => el.customData && (
+    el.customData.hasOwnProperty("mindmapOrder") || el.customData.hasOwnProperty("isBranch") ||
+    el.customData.hasOwnProperty("growthMode") || el.customData.hasOwnProperty("isBoundary")
+  ));
   if (selectedElements.length === 0) return;
 
   const owner = getBoundaryHost(selectedElements);
   if (owner) {
     return owner;
+  }
+
+  if (
+    selectedElements.length === 1 && (
+      selectedElements[0].customData.hasOwnProperty("mindmapOrder") ||
+      selectedElements[0].customData.hasOwnProperty("growthMode")
+  )) {
+    return selectedElements[0];
   }
 
   // Handle Single Arrow Selection, deliberatly not filtering to el.customData?.isBranch
@@ -1319,6 +1329,208 @@ const toggleFold = async (mode = "L0") => {
 // ---------------------------------------------------------------------------
 // 3. Layout & Grouping Engine
 // ---------------------------------------------------------------------------
+const moveCrossLinks = (allElements, originalPositions) => {
+  const crossLinkArrows = allElements.filter(el =>
+    el.type === "arrow" &&
+    !el.customData?.isBranch &&
+    el.startBinding?.elementId &&
+    el.endBinding?.elementId
+  );
+
+  crossLinkArrows.forEach(arrow => {
+    const startId = arrow.startBinding.elementId;
+    const endId = arrow.endBinding.elementId;
+    const startNodeOld = originalPositions.get(startId);
+    const endNodeOld = originalPositions.get(endId);
+    const startNodeNew = ea.getElement(startId);
+    const endNodeNew = ea.getElement(endId);
+
+    if (startNodeOld && endNodeOld && startNodeNew && endNodeNew) {
+      const dsX = startNodeNew.x - startNodeOld.x;
+      const dsY = startNodeNew.y - startNodeOld.y;
+      const deX = endNodeNew.x - endNodeOld.x;
+      const deY = endNodeNew.y - endNodeOld.y;
+      if (dsX === 0 && dsY === 0 && deX === 0 && deY === 0) return;
+
+      const eaArrow = ea.getElement(arrow.id);
+      if (!eaArrow) return;
+      
+      eaArrow.x += dsX;
+      eaArrow.y += dsY;
+
+      const diffX = deX - dsX;
+      const diffY = deY - dsY;
+
+      const len = eaArrow.points.length;
+      if (len > 0) {
+        eaArrow.points = eaArrow.points.map((p, i) => {
+          const t = i / (len - 1);
+          return [
+            p[0] + diffX * t,
+            p[1] + diffY * t
+          ];
+        });
+      }
+    }
+  });
+};
+
+const moveDecorations = (allElements, originalPositions, groupToNodes) => {
+  // Identify elements that are decorations (grouped but not structural parts of the tree)
+  const decorationsToUpdate = [];
+
+  allElements.forEach(el => {
+    // Structural elements (nodes, branch arrows, boundaries) are handled by the main layout logic
+    const isStructural = isStructuralElement(el, allElements);
+    const isCrossLink = el.type === "arrow" && !el.customData?.isBranch && el.startBinding?.elementId && el.endBinding?.elementId;
+    
+    // An element is a decoration if it's grouped but not structural and not a cross-link
+    const isDecoration = !isStructural && !isCrossLink && el.groupIds && el.groupIds.length > 0;
+
+    if (isDecoration) {
+      const hostNodes = new Set();
+      el.groupIds.forEach(gid => {
+        const nodesInGroup = groupToNodes.get(gid);
+        if (nodesInGroup) {
+          nodesInGroup.forEach(node => hostNodes.add(node));
+        }
+      });
+
+      if (hostNodes.size > 0) {
+        const nodesArray = Array.from(hostNodes);
+        
+        let minXOld = Infinity, minYOld = Infinity, maxXOld = -Infinity, maxYOld = -Infinity;
+        let minXNew = Infinity, minYNew = Infinity, maxXNew = -Infinity, maxYNew = -Infinity;
+        
+        let validHost = false;
+
+        nodesArray.forEach(n => {
+           const oldPos = originalPositions.get(n.id);
+           const newEl = ea.getElement(n.id);
+           
+           if (oldPos && newEl) {
+             validHost = true;
+             // Old Box
+             minXOld = Math.min(minXOld, oldPos.x);
+             minYOld = Math.min(minYOld, oldPos.y);
+             maxXOld = Math.max(maxXOld, oldPos.x + n.width);
+             maxYOld = Math.max(maxYOld, oldPos.y + n.height);
+
+             // New Box
+             minXNew = Math.min(minXNew, newEl.x);
+             minYNew = Math.min(minYNew, newEl.y);
+             maxXNew = Math.max(maxXNew, newEl.x + newEl.width);
+             maxYNew = Math.max(maxYNew, newEl.y + newEl.height);
+           }
+        });
+
+        if (validHost) {
+          const oldCx = minXOld + (maxXOld - minXOld) / 2;
+          const oldCy = minYOld + (maxYOld - minYOld) / 2;
+          const newCx = minXNew + (maxXNew - minXNew) / 2;
+          const newCy = minYNew + (maxYNew - minYNew) / 2;
+
+          decorationsToUpdate.push({
+            elementId: el.id,
+            dx: newCx - oldCx,
+            dy: newCy - oldCy
+          });
+        }
+      }
+    }
+  });
+
+  decorationsToUpdate.forEach(item => {
+    if (Math.abs(item.dx) > 0.01 || Math.abs(item.dy) > 0.01) {
+      const decoration = ea.getElement(item.elementId);
+      if (decoration) {
+        decoration.x += item.dx;
+        decoration.y += item.dy;
+      }
+    }
+  });
+};
+
+/**
+ * Intelligent scaling for decorations when a node changes size.
+ * Uses "Edge Anchoring":
+ * - Elements inside the node (like text in a box) scale relative to the center.
+ * - Elements outside the node (like stickers/icons above) anchor to the nearest edge 
+ *   to preserve the visual gap, preventing them from flying away when the node grows significantly.
+ */
+const scaleDecorations = (oldNode, newNode, allElements) => {
+  if (!oldNode.groupIds || oldNode.groupIds.length === 0) return;
+
+  const groupElements = ea.getElementsInTheSameGroupWithElement(oldNode, allElements);
+  // Filter out the node itself and structural elements
+  const decorations = groupElements.filter(el => 
+    el.id !== oldNode.id && 
+    !isStructuralElement(el, allElements)
+  );
+
+  if (decorations.length === 0) return;
+
+  const oldCx = oldNode.x + oldNode.width / 2;
+  const oldCy = oldNode.y + oldNode.height / 2;
+  const newCx = newNode.x + newNode.width / 2;
+  const newCy = newNode.y + newNode.height / 2;
+
+  // Ratios for "Inside" elements
+  const ratioX = oldNode.width > 1 ? newNode.width / oldNode.width : 1;
+  const ratioY = oldNode.height > 1 ? newNode.height / oldNode.height : 1;
+
+  ea.copyViewElementsToEAforEditing(decorations);
+
+  decorations.forEach(dec => {
+    const el = ea.getElement(dec.id);
+    if (!el) return;
+
+    const decCx = dec.x + dec.width / 2;
+    const decCy = dec.y + dec.height / 2;
+
+    // Determine relative position (normalized -1 to 1)
+    const relX = (decCx - oldCx) / (oldNode.width / 2);
+    const relY = (decCy - oldCy) / (oldNode.height / 2);
+
+    // Heuristic: If center is within the old bounds, it's "Inside" -> Scale relative to center
+    const isInside = Math.abs(relX) <= 1.05 && Math.abs(relY) <= 1.05;
+
+    if (isInside) {
+      const dx = decCx - oldCx;
+      const dy = decCy - oldCy;
+      const newDx = dx * ratioX;
+      const newDy = dy * ratioY;
+      el.x = (newCx + newDx) - el.width / 2;
+      el.y = (newCy + newDy) - el.height / 2;
+    } else {
+      // "Outside" -> Anchor to nearest edge to preserve gap
+      // Determine primary axis of separation
+      if (Math.abs(relX) > Math.abs(relY)) {
+        // Horizontal (Left/Right)
+        const sign = Math.sign(relX);
+        const oldEdgeX = oldCx + (sign * oldNode.width / 2);
+        const gapX = decCx - oldEdgeX; // Preserve this gap
+        const newEdgeX = newCx + (sign * newNode.width / 2);
+        const newDecCx = newEdgeX + gapX;
+        
+        el.x = newDecCx - el.width / 2;
+        // For the minor axis (Y), scale relative to center to keep alignment
+        el.y = (newCy + (decCy - oldCy) * ratioY) - el.height / 2;
+      } else {
+        // Vertical (Top/Bottom)
+        const sign = Math.sign(relY);
+        const oldEdgeY = oldCy + (sign * oldNode.height / 2);
+        const gapY = decCy - oldEdgeY; // Preserve this gap
+        const newEdgeY = newCy + (sign * newNode.height / 2);
+        const newDecCy = newEdgeY + gapY;
+
+        el.y = newDecCy - el.height / 2;
+        // For the minor axis (X), scale relative to center
+        el.x = (newCx + (decCx - oldCx) * ratioX) - el.width / 2;
+      }
+    }
+  });
+};
 
 let storedZoom = {elementID: undefined, level: undefined}
 const nextZoomLevel = (current) => {
@@ -1802,9 +2014,9 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
 };
 
 const updateL1Arrow = (node, context) => {
-  const { allElements, rootId, rootBox, rootCenter, mode } = context;
+  const { rootId, rootCenter, mode } = context;
 
-  const arrow = allElements.find(
+  const arrow = ea.getElements().find(
     (a) =>
       a.type === "arrow" &&
       a.customData?.isBranch &&
@@ -1812,21 +2024,24 @@ const updateL1Arrow = (node, context) => {
       a.endBinding?.elementId === node.id,
   );
   if (arrow) {
-    const childBox = getNodeBox(ea.getElement(node.id), ea.getElements());
+    const childNode = ea.getElement(node.id);
+    const rootNode = ea.getElement(rootId);
+    
+    if (!childNode || !rootNode) return;
 
-    const childCenterX = childBox.minX + childBox.width / 2;
+    const childCenterX = childNode.x + childNode.width / 2;
     const isChildRight = childCenterX > rootCenter.x;
     const isRadial = mode === "Radial";
 
     // In Radial mode, start arrow from the center of the root node
-    const sX = isRadial ? rootCenter.x : (isChildRight ? rootBox.minX + rootBox.width : rootBox.minX);
+    const sX = isRadial ? rootCenter.x : (isChildRight ? rootNode.x + rootNode.width : rootNode.x);
     const sY = rootCenter.y;
     
-    const eX = isChildRight ? childBox.minX : childBox.minX + childBox.width;
-    const eY = childBox.minY + childBox.height / 2;
+    const eX = isChildRight ? childNode.x : childNode.x + childNode.width;
+    const eY = childNode.y + childNode.height / 2;
 
     configureArrow({
-      arrowId: arrow.id, isChildRight, startId:rootId, endId: node.id,
+      arrowId: arrow.id, isChildRight, startId: rootId, endId: node.id,
       coordinates: {sX, sY, eX, eY},
       isRadial
     });
@@ -2018,18 +2233,11 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     const allElements = ea.getViewElements();
     const root = allElements.find((el) => el.id === rootId);
 
-    // Snapshot positions and identify cross-link arrows
+    // Snapshot positions
     const originalPositions = new Map();
     allElements.forEach(el => {
       originalPositions.set(el.id, { x: el.x, y: el.y });
     });
-
-    const crossLinkArrows = allElements.filter(el =>
-      el.type === "arrow" &&
-      !el.customData?.isBranch &&
-      el.startBinding?.elementId &&
-      el.endBinding?.elementId
-    );
 
     const branchIds = new Set(getBranchElementIds(rootId, allElements));
     const groupToNodes = new Map();
@@ -2040,36 +2248,6 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
           if (!groupToNodes.has(gid)) groupToNodes.set(gid, new Set());
           groupToNodes.get(gid).add(el);
         });
-      }
-    });
-
-    const decorationsToUpdate = [];
-
-    allElements.forEach(el => {
-      const isCrossLink = el.type === "arrow" && el.startBinding?.elementId && el.endBinding?.elementId;
-      const isBoundary = el.customData?.isBoundary;
-      const isDecoration = !branchIds.has(el.id) && !isCrossLink && !isBoundary && el.groupIds && el.groupIds.length > 0;
-
-      if (isDecoration) {
-        const hostNodes = new Set();
-        el.groupIds.forEach(gid => {
-          const nodesInGroup = groupToNodes.get(gid);
-          if (nodesInGroup) {
-            nodesInGroup.forEach(node => hostNodes.add(node));
-          }
-        });
-
-        if (hostNodes.size > 0) {
-          const nodesArray = Array.from(hostNodes);
-          const box = ExcalidrawLib.getCommonBoundingBox(nodesArray);
-
-          decorationsToUpdate.push({
-            elementId: el.id,
-            hostNodeIds: nodesArray.map(n => n.id),
-            oldCx: box.minX + (box.width / 2),
-            oldCy: box.minY + (box.height / 2)
-          });
-        }
       }
     });
 
@@ -2114,7 +2292,6 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       const rightNodes = [];
 
       // Determine which list nodes currently belong to based on their position
-      // This is crucial for Right-Left mode to maintain the user's intent if they drag a node across the center
       l1Nodes.forEach((node, index) => {
         if (mode === "Right-facing") {
           rightNodes.push(node);
@@ -2122,14 +2299,14 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
           leftNodes.push(node);
         } else if (mode === "Right-Left") {
           if (node.customData?.mindmapNew) {
-             if (index < 2) rightNodes.push(node);
-             else if (index < 4) leftNodes.push(node);
-             else if (index % 2 === 0) rightNodes.push(node);
-             else leftNodes.push(node);
+            if (index < 2) rightNodes.push(node);
+            else if (index < 4) leftNodes.push(node);
+            else if (index % 2 === 0) rightNodes.push(node);
+            else leftNodes.push(node);
           } else {
-             const nodeCenter = node.x + node.width / 2;
-             if (nodeCenter < rootCenter.x) leftNodes.push(node);
-             else rightNodes.push(node);
+            const nodeCenter = node.x + node.width / 2;
+            if (nodeCenter < rootCenter.x) leftNodes.push(node);
+            else rightNodes.push(node);
           }
         } else {
           rightNodes.push(node);
@@ -2149,57 +2326,9 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       }, layoutContext);
     }
 
-    crossLinkArrows.forEach(arrow => {
-      const startId = arrow.startBinding.elementId;
-      const endId = arrow.endBinding.elementId;
-      const startNodeOld = originalPositions.get(startId);
-      const endNodeOld = originalPositions.get(endId);
-      const startNodeNew = ea.getElement(startId);
-      const endNodeNew = ea.getElement(endId);
+    moveCrossLinks(ea.getElements(), originalPositions);
+    moveDecorations(ea.getElements(), originalPositions, groupToNodes);
 
-      if (startNodeOld && endNodeOld && startNodeNew && endNodeNew) {
-        const dsX = startNodeNew.x - startNodeOld.x;
-        const dsY = startNodeNew.y - startNodeOld.y;
-        const deX = endNodeNew.x - endNodeOld.x;
-        const deY = endNodeNew.y - endNodeOld.y;
-        if (dsX === 0 && dsY === 0 && deX === 0 && deY === 0) return;
-
-        const eaArrow = ea.getElement(arrow.id);
-        eaArrow.x += dsX;
-        eaArrow.y += dsY;
-
-        const diffX = deX - dsX;
-        const diffY = deY - dsY;
-
-        const len = eaArrow.points.length;
-        if (len > 0) {
-          eaArrow.points = eaArrow.points.map((p, i) => {
-            const t = i / (len - 1);
-            return [
-              p[0] + diffX * t,
-              p[1] + diffY * t
-            ];
-          });
-        }
-      }
-    });
-
-    decorationsToUpdate.forEach(item => {
-      const currentHostNodes = item.hostNodeIds.map(id => ea.getElement(id) || allElements.find(x => x.id === id));
-      const box = ExcalidrawLib.getCommonBoundingBox(currentHostNodes);
-      const newCx = box.minX + (box.width / 2);
-      const newCy = box.minY + (box.height / 2);
-      const dx = newCx - item.oldCx;
-      const dy = newCy - item.oldCy;
-
-      if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
-        const decoration = ea.getElement(item.elementId);
-        if (decoration) {
-          decoration.x += dx;
-          decoration.y += dy;
-        }
-      }
-    });
   };
   await run();
   await addElementsToView();
@@ -3500,9 +3629,8 @@ const commitEdit = async () => {
   else if (embeddableUrl) newType = "embeddable";
 
   // Check if we are converting types (e.g. Text -> Image) OR if we are updating an existing non-text element
-  // (updating an existing image/embeddable is easier by replacement than property patching)
   const isTypeChange = (textEl && newType !== "text") || (!textEl && newType !== targetNode.type);
-  const isNonTextUpdate = !textEl && newType === targetNode.type; // Updating an image source, etc.
+  const isNonTextUpdate = !textEl && newType === targetNode.type;
 
   if (isTypeChange || isNonTextUpdate) {
     
@@ -3513,7 +3641,6 @@ const commitEdit = async () => {
     let newNodeId;
 
     // 2. Create New Element
-    // We create at 0,0 first then center, or use specific logic
     if (newType === "image") {
        if (imageInfo?.isPdfRectLink) {
         newNodeId = await addImage(imageInfo.path, imageInfo.width);
@@ -3524,7 +3651,6 @@ const commitEdit = async () => {
        el.x = cx - el.width / 2;
        el.y = cy - el.height / 2;
     } else if (newType === "embeddable") {
-       // Height 0 triggers auto-calc in addEmbeddable, but we need position. 
        newNodeId = ea.addEmbeddable(0, 0, EMBEDED_OBJECT_WIDTH_CHILD, 0, embeddableUrl);
        const el = ea.getElement(newNodeId);
        el.x = cx - el.width / 2;
@@ -3533,7 +3659,7 @@ const commitEdit = async () => {
       // Back to Text
       const st = getAppState();
       ea.style.fontFamily = st.currentItemFontFamily;
-      ea.style.fontSize = st.currentItemFontSize; // Or infer from old node if possible
+      ea.style.fontSize = st.currentItemFontSize; 
       ea.style.strokeColor = targetNode.strokeColor;
       ea.style.backgroundColor = "transparent";
       
@@ -3542,11 +3668,13 @@ const commitEdit = async () => {
           textVerticalAlign: "middle",
           box: boxChildren ? "rectangle" : false
       });
-      // addText positions based on top-left or center depending on args, 
-      // but let's ensure centering logic if needed or rely on layout later.
     }
 
     const newNode = ea.getElement(newNodeId);
+
+    // Scale and reposition decorations based on the dimension change
+    // This must happen before visualNode is deleted so we can reference group members
+    scaleDecorations(visualNode, newNode, all);
 
     // 3. Migrate Custom Data
     const keysToCopy = [
@@ -3566,8 +3694,7 @@ const commitEdit = async () => {
       newNode.groupIds = [...visualNode.groupIds];
     }
 
-    // 5. Rewire Arrows
-    // Find all arrows connected to the OLD visual node (or textEl)
+    // 5. Rewire Arrows & Adjust Cross-links
     const idsToReplace = [visualNode.id];
     if (textEl) idsToReplace.push(textEl.id);
 
@@ -3579,21 +3706,55 @@ const commitEdit = async () => {
     if (connectedArrows.length > 0) {
       ea.copyViewElementsToEAforEditing(connectedArrows);
       const newBoundElements = [];
+      
       connectedArrows.forEach(arrow => {
         const eaArrow = ea.getElement(arrow.id);
         let isConnected = false;
+        
+        // Calculate scale ratios for updating manual arrow points
+        const ratioX = visualNode.width > 1 ? newNode.width / visualNode.width : 1;
+        const ratioY = visualNode.height > 1 ? newNode.height / visualNode.height : 1;
+
         if (idsToReplace.includes(eaArrow.startBinding?.elementId)) {
           eaArrow.startBinding = { ...eaArrow.startBinding, elementId: newNodeId };
           isConnected = true;
+          // Scale start point relative to center
+          if (eaArrow.points.length > 0) {
+            const absX = arrow.x + arrow.points[0][0];
+            const absY = arrow.y + arrow.points[0][1];
+            const dx = absX - cx;
+            const dy = absY - cy;
+            const newAbsX = cx + dx * ratioX;
+            const newAbsY = cy + dy * ratioY;
+            // Shift whole arrow if start moves? No, just the point relative to arrow.x
+            // But dragging start point changes arrow.x/y usually. 
+            // Simplest: Shift arrow.x/y, adjust all points back? 
+            // Or just adjust points[0].
+            eaArrow.points[0] = [eaArrow.points[0][0] + (newAbsX - absX), eaArrow.points[0][1] + (newAbsY - absY)];
+          }
         }
+        
         if (idsToReplace.includes(eaArrow.endBinding?.elementId)) {
           eaArrow.endBinding = { ...eaArrow.endBinding, elementId: newNodeId };
           isConnected = true;
+          // Scale end point relative to center
+          if (eaArrow.points.length > 0) {
+            const lastIdx = eaArrow.points.length - 1;
+            const absX = arrow.x + arrow.points[lastIdx][0];
+            const absY = arrow.y + arrow.points[lastIdx][1];
+            const dx = absX - cx;
+            const dy = absY - cy;
+            const newAbsX = cx + dx * ratioX;
+            const newAbsY = cy + dy * ratioY;
+            eaArrow.points[lastIdx] = [eaArrow.points[lastIdx][0] + (newAbsX - absX), eaArrow.points[lastIdx][1] + (newAbsY - absY)];
+          }
         }
+        
         if (isConnected) {
             newBoundElements.push({ type: "arrow", id: arrow.id });
         }
       });
+      
       if (newBoundElements.length > 0) {
         newNode.boundElements = [...(newNode.boundElements || []), ...newBoundElements];
       }
@@ -3621,6 +3782,7 @@ const commitEdit = async () => {
     }
 
   } else if (textEl) {
+    // Normal text update...
     ea.copyViewElementsToEAforEditing([textEl]);
     const eaEl = ea.getElement(textEl.id);
     eaEl.originalText = textInput;
