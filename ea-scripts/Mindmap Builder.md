@@ -146,7 +146,7 @@ const STRINGS = {
     ACTION_LABEL_NAVIGATE_FOCUS: "Navigate & focus",
     ACTION_LABEL_FOLD: "Fold/Unfold Branch",
     ACTION_LABEL_FOLD_L1: "Fold/Unfold to Level 1",
-    ACTION_LABEL_UNFOLD_ALL: "Unfold Branch Recursively",
+    ACTION_LABEL_FOLD_ALL: "Fold/Unfold Branch Recursively",
     ACTION_LABEL_DOCK_UNDOCK: "Dock/Undock",
     ACTION_LABEL_HIDE: "Dock & hide",
 
@@ -556,7 +556,7 @@ const ACTION_NAVIGATE_ZOOM = "Navigate & zoom";
 const ACTION_NAVIGATE_FOCUS = "Navigate & focus";
 const ACTION_FOLD = "Fold/Unfold Branch";
 const ACTION_FOLD_L1 = "Fold/Unfold to Level 1";
-const ACTION_UNFOLD_ALL = "Unfold Branch Recursively";
+const ACTION_FOLD_ALL = "Fold/Unfold Branch Recursively";
 const ACTION_TOGGLE_BOUNDARY = "Toggle Boundary";
 
 const ACTION_DOCK_UNDOCK = "Dock/Undock";
@@ -583,7 +583,7 @@ const ACTION_LABEL_KEYS = {
   [ACTION_NAVIGATE_FOCUS]: "ACTION_LABEL_NAVIGATE_FOCUS",
   [ACTION_FOLD]: "ACTION_LABEL_FOLD",
   [ACTION_FOLD_L1]: "ACTION_LABEL_FOLD_L1",
-  [ACTION_UNFOLD_ALL]: "ACTION_LABEL_UNFOLD_ALL",
+  [ACTION_FOLD_ALL]: "ACTION_LABEL_FOLD_ALL",
   [ACTION_TOGGLE_BOUNDARY]: "TOOLTIP_TOGGLE_BOUNDARY",
   [ACTION_DOCK_UNDOCK]: "ACTION_LABEL_DOCK_UNDOCK",
   [ACTION_HIDE]: "ACTION_LABEL_HIDE",
@@ -634,7 +634,7 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_NAVIGATE_FOCUS, key: "ArrowKeys", modifiers: ["Alt", "Mod"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_FOLD, code: "Digit1", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_FOLD_L1, code: "Digit2", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_UNFOLD_ALL, code: "Digit3", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_FOLD_ALL, code: "Digit3", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
 ];
 
 // Load hotkeys from settings or use default
@@ -1265,13 +1265,26 @@ const toggleFold = async (mode = "L0") => {
       ea.addAppendUpdateCustomData(child.id, { isFolded: isFoldAction });
     });
   } else if (mode === "ALL") {
-    const stack = [targetNode];
+    ea.addAppendUpdateCustomData(targetNode.id, { isFolded: false });
+    const nonLeafDescendants = [];
+    const stack = [...children];
+    
     while (stack.length) {
       const node = stack.pop();
-      ea.addAppendUpdateCustomData(node.id, { isFolded: false });
-      const currentChildren = getChildrenNodes(node.id, wbElements);
-      currentChildren.forEach(child => stack.push(child));
+      const nodeChildren = getChildrenNodes(node.id, wbElements);
+      
+      if (nodeChildren.length > 0) {
+        nonLeafDescendants.push(node);
+        nodeChildren.forEach(child => stack.push(child));
+      }
     }
+
+    const anyDescendantFolded = nonLeafDescendants.some(node => node.customData?.isFolded === true);
+    isFoldAction = !anyDescendantFolded;
+
+    nonLeafDescendants.forEach(node => {
+      ea.addAppendUpdateCustomData(node.id, { isFolded: isFoldAction });
+    });
   }
 
   updateBranchVisibility(targetNode.id, false, wbElements, true);
@@ -1287,7 +1300,7 @@ const toggleFold = async (mode = "L0") => {
 
   if (mode === "L1") {
     if (isFoldAction) {
-      const currentChildren = getChildrenNodes(targetNode.id, currentViewElements);
+      getChildrenNodes(targetNode.id, currentViewElements);
     }
   } else if (mode === "L0") {
     // Mode "L0" (Single node toggle)
@@ -3286,7 +3299,7 @@ const toggleBoundary = async () => {
 
 let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown, autoLayoutToggle, linkSuggester;
 let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn, toggleGroupBtn, zoomBtn, focusBtn, boundaryBtn;
-let foldBtnL0, foldBtnL1, unfoldAllBtn;
+let foldBtnL0, foldBtnL1, foldBtnAll;
 let floatingGroupBtn, floatingBoxBtn, floatingZoomBtn;
 let panelExpandBtn;
 let isFloatingPanelExpanded = false;
@@ -3368,7 +3381,7 @@ const disableUI = () => {
   setButtonDisabled(boxBtn, true);
   setButtonDisabled(foldBtnL0, true);
   setButtonDisabled(foldBtnL1, true);
-  setButtonDisabled(unfoldAllBtn, true);
+  setButtonDisabled(foldBtnAll, true);
   setButtonDisabled(editBtn, true);
   setButtonDisabled(toggleGroupBtn, true);
   setButtonDisabled(zoomBtn, true);
@@ -3441,7 +3454,7 @@ const updateUI = (sel) => {
     setButtonDisabled(floatingBoxBtn, false);
     setButtonDisabled(foldBtnL0, !hasChildren);
     setButtonDisabled(foldBtnL1, !hasGrandChildren);
-    setButtonDisabled(unfoldAllBtn, !hasFoldedInBranch);
+    setButtonDisabled(foldBtnAll, !hasFoldedInBranch);
     setButtonDisabled(zoomBtn, false);
     setButtonDisabled(focusBtn, false);
     setButtonDisabled(floatingZoomBtn, false);
@@ -3830,7 +3843,7 @@ const renderInput = (container, isFloating = false) => {
   container.empty();
 
   pinBtn = refreshBtn = dockBtn = inputEl = null;
-  foldBtnL0 = foldBtnL1 = unfoldAllBtn = null;
+  foldBtnL0 = foldBtnL1 = foldBtnAll = null;
   boundaryBtn = panelExpandBtn = null;
   floatingGroupBtn, floatingBoxBtn, floatingZoomBtn = null;
 
@@ -4028,10 +4041,10 @@ const renderInput = (container, isFloating = false) => {
   }, true);
 
   addButton((btn) => {
-    unfoldAllBtn = btn;
+    foldBtnAll = btn;
     btn.setIcon("wifi");
-    btn.setTooltip(`${t("TOOLTIP_UNFOLD_BRANCH_ALL")} ${getActionHotkeyString(ACTION_UNFOLD_ALL)}`);
-    btn.extraSettingsEl.setAttr("action", ACTION_UNFOLD_ALL);
+    btn.setTooltip(`${t("TOOLTIP_UNFOLD_BRANCH_ALL")} ${getActionHotkeyString(ACTION_FOLD_ALL)}`);
+    btn.extraSettingsEl.setAttr("action", ACTION_FOLD_ALL);
     btn.onClick(async () => {
       await toggleFold("ALL");
       updateUI();
@@ -4857,7 +4870,7 @@ const handleKeydown = async (e) => {
       updateUI();
       break;
 
-    case ACTION_UNFOLD_ALL:
+    case ACTION_FOLD_ALL:
       await toggleFold("ALL");
       updateUI();
       break;
