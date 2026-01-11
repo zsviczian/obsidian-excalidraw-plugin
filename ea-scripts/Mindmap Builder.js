@@ -1574,12 +1574,20 @@ const configureArrow = (context) => {
     ];
   } else {
     eaArrow.roundness = { type: 2 };
-    eaArrow.points = [
+    if (isRadial) {
+      eaArrow.points = [
+        [0, 0],
+        [dx * 2 / 3, dy * 0.75],
+        [dx, dy]
+      ];
+    } else {
+      eaArrow.points = [
         [0, 0],
         [dx / 3, dy * 0.25],
         [dx * 2 / 3, dy * 0.75],
         [dx, dy]
-    ];
+      ];
+    }
   }
 };
 
@@ -2190,22 +2198,27 @@ const getAdjustedMaxWidth = (text, max) => {
   return {width: Math.min(max, optimalWidth), wrappedText};
 }
 
-const addNode = async (text, follow = false, skipFinalLayout = false) => {
+const addNode = async (text, follow = false, skipFinalLayout = false, manualAllElements = null, manualParent = null) => {
   if (!ea.targetView) return;
   if (!text || text.trim() === "") return;
 
-  let allElements = ea.getViewElements();
   const st = getAppState();
-  let parent = ea.getViewSelectedElement();
-  if (parent?.containerId) {
-    parent = allElements.find((el) => el.id === parent.containerId);
-  }
+  const isManualMode = !!manualParent;
 
-  if (parent && parent.customData?.isFolded) {
-    await toggleFold("L0");
+  let allElements = manualAllElements || ea.getViewElements();
+  let parent = manualParent;
 
-    allElements = ea.getViewElements();
-    parent = allElements.find((el) => el.id === parent.id);
+  if (!isManualMode) {
+    parent = ea.getViewSelectedElement();
+    if (parent?.containerId) {
+      parent = allElements.find((el) => el.id === parent.containerId);
+    }
+
+    if (parent && parent.customData?.isFolded) {
+      await toggleFold("L0");
+      allElements = ea.getViewElements();
+      parent = allElements.find((el) => el.id === parent.id);
+    }
   }
 
   let newNodeId;
@@ -2264,7 +2277,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   }
 
   const fontScale = getFontScale(fontsizeScale);
-  ea.clear();
+  if (!isManualMode) ea.clear();
   ea.style.fontFamily = st.currentItemFontFamily;
   ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)];
   ea.style.roundness = roundedCorners ? { type: 3 } : null;
@@ -2426,7 +2439,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       ea.addAppendUpdateCustomData(newNodeId, { mindmapOrder: nextSiblingOrder });
     }
 
-    ea.copyViewElementsToEAforEditing([parent]);
+    if (!ea.getElement(parent.id)) {
+      ea.copyViewElementsToEAforEditing([parent]);
+    }
 
     if (depth === 0 && !parent.customData?.growthMode) {
       ea.addAppendUpdateCustomData(parent.id, {
@@ -2471,6 +2486,10 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
         if(newArrow) newArrow.groupIds = [pGroup];
       }
     }
+  }
+
+  if (isManualMode) {
+    return ea.getElement(newNodeId);
   }
 
   await addElementsToView({
@@ -2741,34 +2760,43 @@ const pasteListToMap = async () => {
     return;
   }
 
+  ea.clear();
+
   if (!sel) {
     const minIndent = Math.min(...parsed.map((p) => p.indent));
     const topLevelItems = parsed.filter((p) => p.indent === minIndent);
     if (topLevelItems.length === 1) {
-      currentParent = await addNode(topLevelItems[0].text, true, true);
+      currentParent = await addNode(topLevelItems[0].text, true, true, [], null);
       parsed.shift();
     } else {
-      currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true);
+      currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true, [], null);
     }
   } else {
     currentParent = sel;
+    ea.copyViewElementsToEAforEditing([sel]);
+    currentParent = ea.getElement(sel.id);
   }
 
   const stack = [{ indent: -1, node: currentParent }];
+  const initialViewElements = ea.getViewElements();
   for (const item of parsed) {
     while (stack.length > 1 && item.indent <= stack[stack.length - 1].indent) {
       stack.pop();
     }
     const parentNode = stack[stack.length - 1].node;
-    ea.selectElementsInView([parentNode]);
-    const newNode = await addNode(item.text, false, true);
+    const currentAllElements = initialViewElements.concat(ea.getElements());
+    const newNode = await addNode(item.text, false, true, currentAllElements, parentNode);
     stack.push({ indent: item.indent, node: newNode });
   }
 
-  const info = getHierarchy(currentParent, ea.getViewElements());
-  await triggerGlobalLayout(info.rootId);
+  await addElementsToView();
+
+  const rootId = sel
+    ? getHierarchy(sel, ea.getViewElements()).rootId
+    : currentParent.id;
+  await triggerGlobalLayout(rootId);
   //when rendered text element, image elements, etc. have their sizes recalculated, a second round layout fixes resulting issues
-  await triggerGlobalLayout(info.rootId);
+  await triggerGlobalLayout(rootId);
 
   const allInView = ea.getViewElements();
   const targetToSelect = sel
