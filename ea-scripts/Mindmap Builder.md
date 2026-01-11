@@ -480,7 +480,7 @@ let boxChildren = getVal(K_BOX, false);
 let roundedCorners = getVal(K_ROUND, false);
 let multicolor = getVal(K_MULTICOLOR, true);
 let groupBranches = getVal(K_GROUP, false);
-let currentModalGrowthMode = getVal(K_GROWTH, {value: "Right-facing", valueset: GROWTH_TYPES});
+let currentModalGrowthMode = getVal(K_GROWTH, {value: "Right-Left", valueset: GROWTH_TYPES});
 let isUndocked = getVal(K_UNDOCKED, false);
 let isSolidArrow = getVal(K_ARROWSTROKE, true);
 let centerText = getVal(K_CENTERTEXT, true);
@@ -497,7 +497,7 @@ if (!ea.getScriptSettingValue(K_FONTSIZE, {value: "Normal Scale", valueset: FONT
   dirty = true;
 }
 
-if (!ea.getScriptSettingValue(K_GROWTH, {value: "Right-facing", valueset: GROWTH_TYPES}).hasOwnProperty("valueset")) {
+if (!ea.getScriptSettingValue(K_GROWTH, {value: "Right-Left", valueset: GROWTH_TYPES}).hasOwnProperty("valueset")) {
   ea.setScriptSettingValue (K_GROWTH, {value: currentModalGrowthMode, valueset: GROWTH_TYPES});
   dirty = true;
 }
@@ -3900,6 +3900,7 @@ const commitEdit = async () => {
       const newViewElements = ea.getViewElements();
       const newViewNode = newViewElements.find(el => el.id === newNodeId);
       if(newViewNode) {
+        ea.selectElementsInView([newViewNode]);
         const newInfo = getHierarchy(newViewNode, newViewElements);
         await triggerGlobalLayout(newInfo.rootId);
       }
