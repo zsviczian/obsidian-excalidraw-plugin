@@ -3411,7 +3411,6 @@ const updateUI = (sel) => {
     const isPinned = sel.customData?.isPinned === true;
     const isEditing = editingNodeId && editingNodeId === sel.id;
     const branchIds = getBranchElementIds(sel.id, all);
-    const hasFoldedInBranch = all.some(el => branchIds.contains(el.id) && el.type !== "arrow" && el.customData?.isFolded === true);
     const children = getChildrenNodes(sel.id, all);
     const hasChildren = children.length > 0;
     const hasGrandChildren = hasChildren && children.some(child => getChildrenNodes(child.id, all).length > 0);
@@ -3454,7 +3453,7 @@ const updateUI = (sel) => {
     setButtonDisabled(floatingBoxBtn, false);
     setButtonDisabled(foldBtnL0, !hasChildren);
     setButtonDisabled(foldBtnL1, !hasGrandChildren);
-    setButtonDisabled(foldBtnAll, !hasFoldedInBranch);
+    setButtonDisabled(foldBtnAll, !hasGrandChildren);
     setButtonDisabled(zoomBtn, false);
     setButtonDisabled(focusBtn, false);
     setButtonDisabled(floatingZoomBtn, false);
