@@ -848,10 +848,13 @@ const getMindmapNodeFromSelection = () => {
   }
 
   if (
-    selectedElements.length === 1 && (
+      selectedElements.length === 1 && (
       selectedElements[0].customData.hasOwnProperty("mindmapOrder") ||
       selectedElements[0].customData.hasOwnProperty("growthMode")
   )) {
+    if (selectedElements[0].type === "text" && selectedElements[0].boundElements.length === 0 && !!selectedElements[0].containerId) {
+      return ea.getViewElements().find((el) => el.id === selectedElements[0].containerId);
+    }
     return selectedElements[0];
   }
 
@@ -863,6 +866,22 @@ const getMindmapNodeFromSelection = () => {
       return ea.getViewElements().find((el) => el.id === targetId);
     }
     return;
+  }
+
+  // Possibly Text + Container Selection
+  if (selectedElements.length === 2) {
+    const textEl = selectedElements.find((el) => el.type === "text");
+    if (textEl && textEl.boundElements.length > 0 && textEl.customData.hasOwnProperty("mindmapOrder")) {
+      return textEl;
+    } else if (textEl) {
+      const containerId = textEl.containerId;
+      if (containerId) {
+        const container = selectedElements.find((el) => el.id === containerId);
+        if (container && container.boundElements.length > 0 && container.customData.hasOwnProperty("mindmapOrder")) {
+          return container;
+        }
+      }
+    }
   }
 
   // Handle Group Selection (Find Highest Ranking Parent)
@@ -3045,7 +3064,7 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
   if(!key) return;
   if (!ea.targetView) return;
   let allElements = ea.getViewElements();
-  const current = ea.getViewSelectedElement();
+  const current = getMindmapNodeFromSelection();
   if (!current) return;
 
   const info = getHierarchy(current, allElements);
@@ -3343,7 +3362,7 @@ const toggleBox = async () => {
   if (!sel) return;
   sel = ea.getBoundTextElement(sel, true).sceneElement;
   if (!sel) return;
-  let oldBindId, newBindId;
+  let oldBindId, newBindId, finalElId;
 
   const hasContainer = !!sel.containerId;
   const ids = hasContainer ? [sel.id, sel.containerId] : [sel.id];
@@ -3356,11 +3375,11 @@ const toggleBox = async () => {
 
   if (hasContainer) {
     const containerId = (oldBindId = sel.containerId);
-    newBindId = sel.id;
+    finalElId = newBindId = sel.id;
     const container = allElements.find((el) => el.id === containerId);
     ea.copyViewElementsToEAforEditing(arrowsToUpdate.concat(sel, container));
     const textEl = ea.getElement(sel.id);
-    ea.addAppendUpdateCustomData(textEl.id, { isPinned: !!container.customData?.isPinned });
+    ea.addAppendUpdateCustomData(textEl.id, { isPinned: !!container.customData?.isPinned, mindmapOrder: sel.customData?.mindmapOrder });
     textEl.containerId = null;
     textEl.boundElements = []; //not null because I will add bound arrows a bit further down
     ea.getElement(containerId).isDeleted = true;
@@ -3368,14 +3387,14 @@ const toggleBox = async () => {
     ea.copyViewElementsToEAforEditing(arrowsToUpdate.concat(sel));
 
     oldBindId = sel.id;
-    const rectId = (newBindId = ea.addRect(
+    const rectId = (finalElId = newBindId = ea.addRect(
       sel.x - padding,
       sel.y - padding,
       sel.width + padding * 2,
       sel.height + padding * 2,
     ));
     const rect = ea.getElement(rectId);
-    ea.addAppendUpdateCustomData(rectId, { isPinned: !!sel.customData?.isPinned });
+    ea.addAppendUpdateCustomData(rectId, { isPinned: !!sel.customData?.isPinned, mindmapOrder: sel.customData?.mindmapOrder });
     rect.strokeColor = ea.getCM(sel.strokeColor).stringRGB();
     rect.strokeWidth = 2;
     rect.roughness = getAppState().currentItemRoughness;
@@ -3400,12 +3419,15 @@ const toggleBox = async () => {
       }
     });
 
+  ea.getElement(oldBindId).boundElements = [];
+  delete ea.getElement(oldBindId).customData;
+
   await addElementsToView();
 
   if (!hasContainer) {
     api().updateContainerSize([ea.getViewElements().find((el) => el.id === newBindId)]);
   }
-  ea.selectElementsInView([newBindId]);
+  ea.selectElementsInView([finalElId]);
   if(!autoLayoutDisabled) await refreshMapLayout();
 };
 
@@ -5158,28 +5180,29 @@ const handleKeydown = async (e) => {
   // Local Tab handling for floating modal to keep focus cycling inside
   if (!action && isUndocked && floatingInputModal && e.key === "Tab") {
     const modalEl = floatingInputModal.modalEl;
-    if (modalEl) {
-      const selector = [
-        "input:not([disabled])",
-        "div:not([style*='not-allowed'])",
-      ].join(",");
+    if (!modalEl) return;
+    const activeEl = modalEl.ownerDocument.activeElement;
+    if (!modalEl.contains(activeEl)) return;
+    const selector = [
+      "input:not([disabled])",
+      "div:not([style*='not-allowed'])",
+    ].join(",");
 
-      const focusables = Array.from(modalEl.querySelectorAll(selector)).filter((el) => {
-        if (el.tabIndex === -1 || el.hidden) return false;
-        return el.offsetParent !== null || el.getClientRects().length > 0;
-      });
+    const focusables = Array.from(modalEl.querySelectorAll(selector)).filter((el) => {
+      if (el.tabIndex === -1 || el.hidden) return false;
+      return el.offsetParent !== null || el.getClientRects().length > 0;
+    });
 
-      if (focusables.length > 0) {
-        e.preventDefault();
-        e.stopPropagation();
-        const active = modalEl.ownerDocument.activeElement;
-        let idx = focusables.indexOf(active);
-        if (idx === -1) idx = 0;
-        idx = e.shiftKey
-          ? (idx === 0 ? focusables.length - 1 : idx - 1)
-          : (idx === focusables.length - 1 ? 0 : idx + 1);
-        focusables[idx].focus();
-      }
+    if (focusables.length > 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      const active = modalEl.ownerDocument.activeElement;
+      let idx = focusables.indexOf(active);
+      if (idx === -1) idx = 0;
+      idx = e.shiftKey
+        ? (idx === 0 ? focusables.length - 1 : idx - 1)
+        : (idx === focusables.length - 1 ? 0 : idx + 1);
+      focusables[idx].focus();
     }
     return;
   }
