@@ -296,7 +296,7 @@ const VALUE_SETS = Object.freeze({
     none: 0,
   }),
   FONT_SCALE: Object.freeze(["Use scene fontsize", "Fibonacci Scale", "Normal Scale"]),
-  GROWTH: Object.freeze(["Radial", "Right-facing", "Left-facing"]),
+  GROWTH: Object.freeze(["Radial", "Right-facing", "Left-facing", "Left-Right"]),
   ZOOM: Object.freeze(["Low", "Medium", "High"]),
 });
 
@@ -1583,13 +1583,16 @@ const updateNodeBoundary = (node, allElements) => {
   }
 };
 
-const createArrow = (context) => {
-  const {eaArrow, isChildRight, startId, endId, coordinates} = context;
+const configureArrow = (context) => {
+  const {arrowId, isChildRight, startId, endId, coordinates} = context;
   const {sX, sY, eX, eY} = coordinates;
+
   // Configure Binding Points (using .0001/.9999 to avoid jumping effect)
   const startRatio = isChildRight ? 0.9999 : 0.0001;
   const endRatio = isChildRight ? 0.0001 : 0.9999;
   const centerYRatio = 0.5001;
+
+  const eaArrow = ea.getElement(arrowId);
 
   eaArrow.startBinding = {
     ...eaArrow.startBinding,
@@ -1618,7 +1621,6 @@ const createArrow = (context) => {
       [dx, dy],
     ];
   } else {
-    // CURVED ARROW
     eaArrow.roundness = { type: 2 };
     eaArrow.points = [
         [0, 0],
@@ -1756,7 +1758,6 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
     );
 
     if (arrow) {
-      const eaArrow = ea.getElement(arrow.id);
       const eaChild = ea.getElement(child.id);
 
       // Determine relative position
@@ -1770,8 +1771,8 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
       const eX = isChildRight ? eaChild.x : eaChild.x + eaChild.width;
       const eY = eaChild.y + eaChild.height / 2;
 
-      createArrow({
-        eaArrow, isChildRight, startId:node.id, endId: child.id,
+      configureArrow({
+        arrowId: arrow.id, isChildRight, startId:node.id, endId: child.id,
         coordinates: {sX, sY, eX, eY},
       });
     }
@@ -1793,7 +1794,6 @@ const updateL1Arrow = (node, context) => {
       a.endBinding?.elementId === node.id,
   );
   if (arrow) {
-    const eaArrow = ea.getElement(arrow.id);
     const childBox = getNodeBox(ea.getElement(node.id), ea.getElements());
 
     const childCenterX = childBox.minX + childBox.width / 2;
@@ -1805,8 +1805,8 @@ const updateL1Arrow = (node, context) => {
     const eX = isChildRight ? childBox.minX : childBox.minX + childBox.width;
     const eY = childBox.minY + childBox.height / 2;
 
-    createArrow({
-      eaArrow, isChildRight, startId:rootId, endId: node.id,
+    configureArrow({
+      arrowId: arrow.id, isChildRight, startId:rootId, endId: node.id,
       coordinates: {sX, sY, eX, eY},
     });
   }
@@ -2021,15 +2021,24 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       const leftNodes = [];
       const rightNodes = [];
 
-      l1Nodes.forEach(node => {
-        if (node.customData?.mindmapNew) {
-           if (mode === "Right-facing") rightNodes.push(node);
-           else if (mode === "Left-facing") leftNodes.push(node);
-           else rightNodes.push(node);
+      l1Nodes.forEach((node, index) => {
+        if (mode === "Right-facing") {
+          rightNodes.push(node);
+        } else if (mode === "Left-facing") {
+          leftNodes.push(node);
+        } else if (mode === "Left-Right") {
+          if (node.customData?.mindmapNew) {
+             if (index < 2) rightNodes.push(node);
+             else if (index < 4) leftNodes.push(node);
+             else if (index % 2 === 0) rightNodes.push(node);
+             else leftNodes.push(node);
+          } else {
+             const nodeCenter = node.x + node.width / 2;
+             if (nodeCenter < rootCenter.x) leftNodes.push(node);
+             else rightNodes.push(node);
+          }
         } else {
-           const nodeCenter = node.x + node.width / 2;
-           if (nodeCenter < rootCenter.x) leftNodes.push(node);
-           else rightNodes.push(node);
+          rightNodes.push(node);
         }
       });
 
@@ -2182,15 +2191,15 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
   if (imageInfo) {
     const PDF_RECT_LINK_REGEX = /^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/;
     if (imageInfo.path.match(PDF_RECT_LINK_REGEX)) {
-        isPdfRectLink = true;
+      isPdfRectLink = true;
     } else {
-        imageFile = app.metadataCache.getFirstLinkpathDest(imageInfo.path, ea.targetView.file.path);
-        if (imageFile) {
-            const isEx = imageFile.extension === "md" && ea.isExcalidrawFile(imageFile);
-            if (!IMAGE_TYPES.includes(imageFile.extension.toLowerCase()) && !isEx) {
-                imageFile = null;
-            }
+      imageFile = app.metadataCache.getFirstLinkpathDest(imageInfo.path, ea.targetView.file.path);
+      if (imageFile) {
+        const isEx = imageFile.extension === "md" && ea.isExcalidrawFile(imageFile);
+        if (!IMAGE_TYPES.includes(imageFile.extension.toLowerCase()) && !isEx) {
+          imageFile = null;
         }
+      }
     }
   }
 
@@ -2198,10 +2207,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
 
   const defaultNodeColor = ea.getCM(st.viewBackgroundColor).invert().stringHEX({alpha: false});
 
-  let depth = 0,
-    nodeColor = defaultNodeColor,
-    rootId;
-  let nextSiblingOrder = 0;
+  let depth = 0, nodeColor = defaultNodeColor, rootId, nextSiblingOrder = 0;
   if (parent) {
     const siblings = getChildrenNodes(parent.id, allElements);
     nextSiblingOrder = Math.max(0, ...siblings.map(getMindmapOrder)) + 1;
@@ -2294,11 +2300,36 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     };
 
     const parentBox = getNodeBox(parent, allElements);
-    const side = parentBox.minX + parentBox.width / 2 > rootCenter.x ? 1 : -1;
+    
+    // Determine the likely direction of the new node to set initial offset correctly
+    // avoiding visual jumping when layout runs.
+    let targetSide = 1; // 1 = Right, -1 = Left
+    if (depth === 1) {
+      if (mode === "Left-facing") targetSide = -1;
+      else if (mode === "Right-facing") targetSide = 1;
+      else if (mode === "Left-Right") {
+         const siblings = getChildrenNodes(parent.id, allElements);
+         const idx = siblings.length; // Index of the new node being added
+         if (idx < 2) targetSide = 1;
+         else if (idx < 4) targetSide = -1;
+         else targetSide = idx % 2 === 0 ? 1 : -1;
+      } else {
+        // Radial or fallback -> Default to parent's relative side or Right
+        const parentCenterX = parentBox.minX + parentBox.width / 2;
+        targetSide = parentCenterX > rootCenter.x ? 1 : -1;
+      }
+    } else {
+       // Deep nodes follow parent's side
+       const parentCenterX = parentBox.minX + parentBox.width / 2;
+       targetSide = parentCenterX > rootCenter.x ? 1 : -1;
+    }
 
-    const offset = mode === "Radial" || mode === "Right-facing"
+    const side = targetSide;
+
+    const offset = (mode === "Radial" || side === 1)
       ? rootBox.width * 2
       : -rootBox.width;
+      
     let px = parentBox.minX + offset,
       py = parentBox.minY;
 
@@ -2431,28 +2462,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
     ea.copyViewElementsToEAforEditing(groupBranches ? allEls : arrow ? [arrow] : []);
 
     if (arrow) {
-      const eaArrow = ea.getElement(arrow.id);
       const parentCenterX = parent.x + parent.width / 2;
       const childCenterX = node.x + node.width / 2;
       const isChildRight = childCenterX > parentCenterX;
-
-      const startRatio = isChildRight ? 0.9999 : 0.0001;
-      const endRatio = isChildRight ? 0.0001 : 0.9999;
-      const centerYRatio = 0.5001;
-
-      eaArrow.startBinding = {
-        ...eaArrow.startBinding,
-        elementId: parent.id,
-        mode: "orbit",
-        fixedPoint: [startRatio, centerYRatio]
-      };
-
-      eaArrow.endBinding = {
-        ...eaArrow.endBinding,
-        elementId: node.id,
-        mode: "orbit",
-        fixedPoint: [endRatio, centerYRatio]
-      };
 
       const sX = isChildRight ? parent.x + parent.width : parent.x;
       const sY = parent.y + parent.height / 2;
@@ -2460,27 +2472,10 @@ const addNode = async (text, follow = false, skipFinalLayout = false) => {
       const eX = isChildRight ? node.x : node.x + node.width;
       const eY = node.y + node.height / 2;
 
-      eaArrow.x = sX;
-      eaArrow.y = sY;
-
-      const dx = eX - sX;
-      const dy = eY - sY;
-
-      if (arrowType === "straight") {
-        eaArrow.roundness = null;
-        eaArrow.points = [
-          [0, 0],
-          [dx, dy],
-        ];
-      } else {
-        eaArrow.roundness = { type: 2 };
-        eaArrow.points = [
-          [0, 0],
-          [dx / 3, dy * 0.25],
-          [dx * 2 / 3, dy * 0.75],
-          [dx, dy]
-        ];
-      }
+      configureArrow({
+        arrowId: arrow.id, isChildRight, startId:parent.id, endId: node.id,
+        coordinates: {sX, sY, eX, eY},
+      });
     }
 
     if (groupBranches) {
@@ -2677,7 +2672,7 @@ const pasteListToMap = async () => {
     const text = lines[0].replace(/^(\s*)(?:-|\*|\d+\.)\s+/, "").trim();
 
     if (text) {
-      let currentParent = await addNode(text, true, false);
+      currentParent = await addNode(text, true, false);
       if (sel) {
         ea.selectElementsInView([ea.getViewElements().find((el)=>el.id === sel.id)]);
       }
