@@ -872,7 +872,7 @@ const addElementsToView = async (
 const getBoundaryHost = (selectedElements) => {
   if (
     selectedElements.length === 1 && selectedElements[0].type === "line" &&
-    selectedElements[0].customData.hasOwnProperty("isBoundary")
+    selectedElements[0].customData?.hasOwnProperty("isBoundary")
   ) {
     const sel = selectedElements[0];
     // Check if this line is referenced as a boundaryId by any other element
@@ -3389,13 +3389,19 @@ const toggleBranchGroup = async () => {
  */
 const togglePin = async () => {
   if (!ea.targetView) return;
-  const sel = ea.getViewSelectedElement();
+  const sel = getMindmapNodeFromSelection();
   if (sel) {
+    const boundTextElement = ea.getBoundTextElement(sel, true)?.sceneElement;
     const newPinnedState = !(sel.customData?.isPinned === true);
-    ea.copyViewElementsToEAforEditing([sel]);
+    ea.copyViewElementsToEAforEditing(boundTextElement ? [sel, boundTextElement] : [sel]);
     ea.addAppendUpdateCustomData(sel.id, { isPinned: newPinnedState });
+    if (boundTextElement && !newPinnedState && boundTextElement.customData?.hasOwnProperty("isPinned")) {
+      delete ea.getElement(boundTextElement.id).customData.isPinned;
+    }
     await addElementsToView();
     if(!autoLayoutDisabled) await refreshMapLayout();
+    ea.selectElementsInView([sel.id]);
+    updateUI();
   }
 };
 
@@ -3406,7 +3412,7 @@ const padding = layoutSettings.CONTAINER_PADDING;
  */
 const toggleBox = async () => {
   if (!ea.targetView) return;
-  let sel = ea.getViewSelectedElement();
+  let sel = getMindmapNodeFromSelection();
   if (!sel) return;
   sel = ea.getBoundTextElement(sel, true).sceneElement;
   if (!sel) return;
@@ -3477,6 +3483,7 @@ const toggleBox = async () => {
   }
   ea.selectElementsInView([finalElId]);
   if(!autoLayoutDisabled) await refreshMapLayout();
+  updateUI();
 };
 
 /**
@@ -3484,7 +3491,7 @@ const toggleBox = async () => {
  */
 const toggleBoundary = async () => {
   if (!ea.targetView) return;
-  const sel = ea.getViewSelectedElement();
+  const sel = getMindmapNodeFromSelection();
   if (sel) {
     ea.copyViewElementsToEAforEditing([sel]);
     const eaSel = ea.getElement(sel.id);
@@ -3557,6 +3564,7 @@ const toggleBoundary = async () => {
     const info = getHierarchy(sel, ea.getViewElements());
     await triggerGlobalLayout(info.rootId);
   }
+  updateUI();
 };
 
 // ---------------------------------------------------------------------------
@@ -3672,7 +3680,7 @@ const updateUI = (sel) => {
   }
   if(inputEl) inputEl.disabled = false;
   const all = ea.getViewElements();
-  sel = sel ?? ea.getViewSelectedElement();
+  sel = sel ?? getMindmapNodeFromSelection();
 
   if (sel) {
     const info = getHierarchy(sel, all);
@@ -4374,7 +4382,7 @@ const renderInput = (container, isFloating = false) => {
     btn.extraSettingsEl.setAttr("action",ACTION_PIN);
     btn.onClick(async () => {
       await togglePin();
-      updateUI();
+      focusInputEl();
     });
   }, false);
 
@@ -4417,6 +4425,7 @@ const renderInput = (container, isFloating = false) => {
       btn.extraSettingsEl.setAttr("action", ACTION_BOX);
       btn.onClick(async () => {
         await toggleBox();
+        focusInputEl();
       });
     }, true);
 
@@ -4448,7 +4457,7 @@ const renderInput = (container, isFloating = false) => {
     btn.extraSettingsEl.setAttr("action", ACTION_TOGGLE_BOUNDARY);
     btn.onClick(async () => {
       await toggleBoundary();
-      updateUI();
+      focusInputEl();
     });
   }, true);
 
@@ -4460,6 +4469,7 @@ const renderInput = (container, isFloating = false) => {
     btn.onClick(async () => {
       await toggleFold("L0");
       updateUI();
+      focusInputEl();
     });
   }, true);
 
@@ -4471,6 +4481,7 @@ const renderInput = (container, isFloating = false) => {
     btn.onClick(async () => {
       await toggleFold("L1");
       updateUI();
+      focusInputEl();
     });
   }, true);
 
@@ -4482,6 +4493,7 @@ const renderInput = (container, isFloating = false) => {
     btn.onClick(async () => {
       await toggleFold("ALL");
       updateUI();
+      focusInputEl();
     });
   }, true);
 
@@ -5292,7 +5304,6 @@ const handleKeydown = async (e) => {
 
     case ACTION_PIN:
       await togglePin();
-      updateUI();
       break;
 
     case ACTION_BOX:
@@ -5301,7 +5312,6 @@ const handleKeydown = async (e) => {
 
     case ACTION_TOGGLE_BOUNDARY:
       await toggleBoundary();
-      updateUI();
       break;
 
     case ACTION_FOLD:
@@ -5472,7 +5482,6 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
 
   // When the view closes, ensure we dock the input back so it's not lost in floating limbo
   tab.onExcalidrawViewClosed = () => {
-    console.log("view closed");
     if (isUndocked) {
       toggleDock({silent: true, forceDock: true, saveSetting: false});
     }
