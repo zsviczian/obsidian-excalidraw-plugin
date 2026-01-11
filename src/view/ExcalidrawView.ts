@@ -1077,6 +1077,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       const ea = getEA(this) as ExcalidrawAutomate;
       ea.copyViewElementsToEAforEditing([el]);
       ea.addAppendUpdateCustomData(el.id, {latex: formula});
+      const dataurl = await ea.tex2dataURL(equation);
+      if (dataurl && dataurl.size.height > 0 && dataurl.size.width > 0) {
+        ea.addAppendUpdateCustomData(el.id, {
+          latexscale: {widthscale: el.width/dataurl.size.width, heightscale: el.height/dataurl.size.height}
+        });
+      }
       await ea.addElementsToView(false, false, false, false);
       await this.save(false);
       await updateEquation(
