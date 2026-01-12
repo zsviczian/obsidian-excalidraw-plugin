@@ -3,7 +3,6 @@
 // hotkey override problems
 // sort order in right-left mode when importing
 // option to clear hotkey (not to have one for the action)
-// commitEdit should determine font size based on tree depth and font setting
 
 /* --- Initialization Logic --- */
 
@@ -268,13 +267,14 @@ const VALUE_SETS = Object.freeze({
   FONT_SCALE: Object.freeze(["Use scene fontsize", "Fibonacci Scale", "Normal Scale"]),
   GROWTH: Object.freeze(["Radial", "Right-facing", "Left-facing", "Right-Left"]),
   ZOOM: Object.freeze(["Low", "Medium", "High"]),
+  ARROW: Object.freeze(["curved", "straight"]),
 });
 
 const FONT_SCALE_TYPES = VALUE_SETS.FONT_SCALE;
 const GROWTH_TYPES = VALUE_SETS.GROWTH;
 const ZOOM_TYPES = VALUE_SETS.ZOOM;
 const SCOPE = VALUE_SETS.SCOPE;
-
+const ARROW_TYPES = VALUE_SETS.ARROW;
 const ZOOM_LEVELS = Object.freeze({
   Low: { desktop: 0.10, mobile: 0.20 },
   Medium: { desktop: 0.25, mobile: 0.35 },
@@ -436,7 +436,7 @@ const FLOAT_MODAL_MAX_HEIGHT = "calc(2 * var(--size-4-4) + 12px + var(--input-he
 const NOTICE_DURATION_CONFLICT = 6000;
 const NOTICE_DURATION_GLOBAL_CONFLICT = 10000;
 
-let arrowType = getVal(K_ARROW_TYPE, {value: "curved", valueset: ["curved", "straight"]});
+let arrowType = getVal(K_ARROW_TYPE, {value: "curved", valueset: ARROW_TYPES});
 let maxWidth = parseInt(getVal(K_WIDTH, 450));
 let fontsizeScale = getVal(K_FONTSIZE, {value: "Normal Scale", valueset: FONT_SCALE_TYPES});
 let boxChildren = getVal(K_BOX, false);
@@ -1897,7 +1897,11 @@ const addEmbeddableNode = ({px = 0, py = 0, url, depth}) => {
   const height = isWikiLink
     ? width / 2
     : 0; // Height 0 triggers auto-calculation based on aspect ratio
-  return ea.addEmbeddable(px, py, width, height, url);
+  const embeddableId = ea.addEmbeddable(px, py, width, height, url);
+  if (isWikiLink) {
+    ea.getElement(embeddableId).scale = depth === 0 ? [0.5, 0.5] : [0.3, 0.3];
+  }
+  return embeddableId;
 }
 
 const updateRootNodeCustomData = async (data) => {
@@ -1905,7 +1909,7 @@ const updateRootNodeCustomData = async (data) => {
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
     ea.copyViewElementsToEAforEditing(ea.getViewElements().filter((e) => e.id === info.rootId));
-    ea.addAppendUpdateCustomData(info.rootId, { data });
+    ea.addAppendUpdateCustomData(info.rootId, { ...data });
     await addElementsToView();
     updateUI();
     return info;
@@ -2622,6 +2626,13 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       growthMode: currentModalGrowthMode,
       autoLayoutDisabled: false,
       arrowType: arrowType, // Save the arrow type on new root
+      fontsizeScale,
+      multicolor,
+      boxChildren,
+      roundedCorners,
+      maxWrapWidth: maxWidth,
+      isSolidArrow,
+      centerText
     });
     rootId = newNodeId;
   } else {
@@ -2736,6 +2747,13 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         growthMode: currentModalGrowthMode,
         autoLayoutDisabled: false,
         arrowType: arrowType,
+        fontsizeScale,
+        multicolor,
+        boxChildren,
+        roundedCorners,
+        maxWrapWidth: maxWidth,
+        isSolidArrow,
+        centerText
       });
     }
 
@@ -3652,6 +3670,8 @@ const toggleBoundary = async () => {
 
 let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown;
 let autoLayoutToggle, linkSuggester, arrowTypeToggle;
+let fontSizeDropdown, boxToggle, roundToggle, strokeToggle;
+let colorToggle, widthSlider, centerToggle;
 let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn;
 let toggleGroupBtn, zoomBtn, focusBtn, boundaryBtn;
 let foldBtnL0, foldBtnL1, foldBtnAll;
@@ -3664,7 +3684,6 @@ let helpContainer;
 let floatingInputModal = null;
 let sidepanelWindow;
 let recordingScope = null;
-
 // ---------------------------------------------------------------------------
 // Focus Management & UI State
 // ---------------------------------------------------------------------------
@@ -3824,22 +3843,63 @@ const updateUI = (sel) => {
     setButtonDisabled(copyBtn, false);
     setButtonDisabled(importOutlineBtn, !isLinkedFile);
 
-    const mapStrategy = root.customData?.growthMode;
-    if (mapStrategy && mapStrategy !== currentModalGrowthMode) {
+    // NEW: Load settings from root customData if they exist, otherwise keep current global
+    const cd = root.customData;
+    
+    const mapStrategy = cd?.growthMode;
+    if (typeof mapStrategy === "string" && mapStrategy !== currentModalGrowthMode && GROWTH_TYPES.includes(mapStrategy)) {
       currentModalGrowthMode = mapStrategy;
       if (strategyDropdown) strategyDropdown.setValue(mapStrategy);
     }
 
-    const mapLayoutPref = root.customData?.autoLayoutDisabled === true;
+    const mapLayoutPref = cd?.autoLayoutDisabled === true;
     if (mapLayoutPref !== autoLayoutDisabled) {
       autoLayoutDisabled = mapLayoutPref;
       if (autoLayoutToggle) autoLayoutToggle.setValue(mapLayoutPref);
     }
 
-    const mapArrowType = root.customData?.arrowType;
-    if (mapArrowType && mapArrowType !== arrowType) {
+    const mapArrowType = cd?.arrowType;
+    if (typeof mapArrowType === "string" && mapArrowType !== arrowType && ARROW_TYPES.includes(mapArrowType)) {
       arrowType = mapArrowType;
       if (arrowTypeToggle) arrowTypeToggle.setValue(arrowType === "curved");
+    }
+
+    if (cd?.fontsizeScale && cd.fontsizeScale !== fontsizeScale) {
+        fontsizeScale = cd.fontsizeScale;
+        if (fontSizeDropdown) fontSizeDropdown.setValue(fontsizeScale);
+    }
+
+    if (typeof cd?.multicolor === "boolean" && cd.multicolor !== multicolor) {
+        multicolor = cd.multicolor;
+        if (colorToggle) colorToggle.setValue(multicolor);
+    }
+
+    if (typeof cd?.boxChildren === "boolean" && cd.boxChildren !== boxChildren) {
+        boxChildren = cd.boxChildren;
+        if (boxToggle) boxToggle.setValue(boxChildren);
+    }
+
+    if (typeof cd?.roundedCorners === "boolean" && cd.roundedCorners !== roundedCorners) {
+        roundedCorners = cd.roundedCorners;
+        if (roundToggle) roundToggle.setValue(roundedCorners);
+    }
+
+    if (typeof cd?.maxWrapWidth === "number" && cd.maxWrapWidth !== maxWidth) {
+        maxWidth = cd.maxWrapWidth;
+        if (widthSlider) {
+          widthSlider.setValue(maxWidth);
+          if (widthSlider.valLabelEl) widthSlider.valLabelEl.setText(`${maxWidth}px`);
+        }
+    }
+
+    if (typeof cd?.isSolidArrow === "boolean" && cd.isSolidArrow !== isSolidArrow) {
+        isSolidArrow = cd.isSolidArrow;
+        if (strokeToggle) strokeToggle.setValue(!isSolidArrow);
+    }
+
+    if (typeof cd?.centerText === "boolean" && cd.centerText !== centerText) {
+        centerText = cd.centerText;
+        if (centerToggle) centerToggle.setValue(centerText);
     }
 
   } else {
@@ -3905,6 +3965,9 @@ const commitEdit = async () => {
     let newNodeId;
 
     // 2. Create new element based on type
+    // store/restore strokeColor (even if element type doesn't normally have a stroke color)
+    const st = getAppState();
+    ea.style.strokeColor = targetNode.strokeColor ?? st.currentItemStrokeColor;
     if (newType === "image") {
        if (imageInfo?.isImagePath) {
         newNodeId = await addImage(imageInfo.path, imageInfo.width);
@@ -3921,14 +3984,16 @@ const commitEdit = async () => {
        el.y = cy - el.height / 2;
     } else {
       // Back to Text
-      const st = getAppState();
+      if (ea.style.strokeColor === "transparent") ea.style.strokeColor = "black";
       ea.style.fontFamily = st.currentItemFontFamily;
       const fontScale = getFontScale(fontsizeScale);
       ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)]; 
-      
-      ea.style.strokeColor = targetNode.strokeColor;
       ea.style.backgroundColor = "transparent";
-      
+      const incomingArrow = all.find (el => 
+        el.type === "arrow" && visualNode.id === el.endBinding?.elementId);
+      if (incomingArrow) {
+        ea.style.strokeColor = incomingArrow.strokeColor;
+      }
       newNodeId = ea.addText(cx, cy, textInput, {
           textAlign: "center",
           textVerticalAlign: "middle",
@@ -3944,7 +4009,9 @@ const commitEdit = async () => {
     // 3. Migrate custom data fields
     const keysToCopy = [
       "mindmapOrder", "isPinned", "growthMode", "autoLayoutDisabled", 
-      "isFolded", "foldIndicatorId", "foldState", "originalY", "boundaryId"
+      "isFolded", "foldIndicatorId", "foldState", "originalY", "boundaryId",
+      "fontsizeScale", "multicolor", "boxChildren", "roundedCorners", 
+      "maxWrapWidth", "isSolidArrow", "centerText", "arrowType"
     ];
     const dataToCopy = {};
     keysToCopy.forEach(k => {
@@ -4037,7 +4104,6 @@ const commitEdit = async () => {
     
     // Trigger global layout if enabled
     if (!autoLayoutDisabled) {
-      const info = getHierarchy(visualNode, ea.getViewElements()); 
       const newViewElements = ea.getViewElements();
       const newViewNode = newViewElements.find(el => el.id === newNodeId);
       if(newViewNode) {
@@ -4648,14 +4714,13 @@ const renderBody = (contentEl) => {
     GROWTH_TYPES.forEach((key) => d.addOption(key, key));
     d.setValue(currentModalGrowthMode);
     d.onChange(async (v) => {
-      debugger;
       currentModalGrowthMode = v;
       setVal(K_GROWTH, v);
       dirty = true;
       if (!ea.targetView) return;
       const info = await updateRootNodeCustomData({ growthMode: v });
       if (!!info && !autoLayoutDisabled) {
-        await triggerGlobalLayout(info.rootId);
+        triggerGlobalLayout(info.rootId);
       }
     });
   });
@@ -4723,14 +4788,16 @@ const renderBody = (contentEl) => {
 
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_BOX_CHILD_NODES"))
-    .addToggle((t) => t
-      .setValue(boxChildren)
+    .addToggle((t) => {
+      boxToggle = t;
+      t.setValue(boxChildren)
       .onChange((v) => {
         boxChildren = v;
         setVal(K_BOX, v);
         dirty = true;
-      }),
-    )
+        updateRootNodeCustomData({ boxChildren: v });
+      })
+    })
     .addButton((btn) => {
       boxBtn = btn;
       btn.setIcon("rectangle-horizontal");
@@ -4738,37 +4805,43 @@ const renderBody = (contentEl) => {
       btn.onClick(() => performAction(ACTION_BOX));
     });
 
-  new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_ROUNDED_CORNERS")).addToggle((t) => t
-    .setValue(roundedCorners)
+  new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_ROUNDED_CORNERS")).addToggle((t) => {
+    roundToggle = t;
+    t.setValue(roundedCorners)
     .onChange((v) => {
       roundedCorners = v;
       setVal(K_ROUND,  v);
       dirty = true;
-    }),
-  );
+      updateRootNodeCustomData({ roundedCorners: v });
+    })
+  });
 
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_USE_SCENE_STROKE"))
     .setDesc(
       t("DESC_USE_SCENE_STROKE"),
     )
-    .addToggle((t) =>
+    .addToggle((t) => {
+      strokeToggle = t;
       t.setValue(!isSolidArrow).onChange((v) => {
         isSolidArrow = !v;
         setVal(K_ARROWSTROKE,  !v);
         dirty = true;
-      }),
-    );
+        updateRootNodeCustomData({ isSolidArrow: !v });
+      })
+    });
 
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_MULTICOLOR_BRANCHES"))
-    .addToggle((t) =>
+    .addToggle((t) => {
+      colorToggle = t;
       t.setValue(multicolor).onChange((v) => {
         multicolor = v;
         setVal(K_MULTICOLOR, v);
         dirty = true;
-      }),
-    )
+        updateRootNodeCustomData({ multicolor: v });
+      })
+    })
     .addButton(btn =>
       btn.setIcon("palette")
         .setTooltip(t("TOOLTIP_CONFIGURE_PALETTE"))
@@ -4783,40 +4856,48 @@ const renderBody = (contentEl) => {
     );
 
   let sliderValDisplay;
-  const sliderSetting = new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_MAX_WRAP_WIDTH")).addSlider((s) => s
-    .setLimits(WRAP_WIDTH_MIN, WRAP_WIDTH_MAX, WRAP_WIDTH_STEP)
+  const sliderSetting = new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_MAX_WRAP_WIDTH")).addSlider((s) => {
+    widthSlider = s;
+    s.setLimits(WRAP_WIDTH_MIN, WRAP_WIDTH_MAX, WRAP_WIDTH_STEP)
     .setValue(maxWidth)
-    .onChange(async (v) => {
+    .onChange((v) => {
       maxWidth = v;
       sliderValDisplay.setText(`${v}px`);
       setVal(K_WIDTH, v);
       dirty = true;
-    }),
-  );
+      updateRootNodeCustomData({ maxWrapWidth: v });
+    })
+  });
   sliderValDisplay = sliderSetting.descEl.createSpan({
     text: `${maxWidth}px`,
     attr: { style: "margin-left:10px; font-weight:bold;" },
   });
 
+  if(widthSlider) widthSlider.valLabelEl = sliderValDisplay;
+
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_CENTER_TEXT"))
     .setDesc(t("DESC_CENTER_TEXT"))
-    .addToggle((t) => t
-      .setValue(centerText)
+    .addToggle((t) => {
+      centerToggle = t; // NEW: Capture UI
+      t.setValue(centerText)
       .onChange((v) => {
         centerText = v;
         setVal(K_CENTERTEXT, v);
         dirty = true;
-      }),
-    );
+        updateRootNodeCustomData({ centerText: v }); // NEW: Update root
+      })
+    });
 
   new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_FONT_SIZES")).addDropdown((d) => {
+    fontSizeDropdown = d; // NEW: Capture UI
     FONT_SCALE_TYPES.forEach((key) => d.addOption(key, key));
     d.setValue(fontsizeScale);
     d.onChange((v) => {
       fontsizeScale = v;
       setVal(K_FONTSIZE, v);
       dirty = true;
+      updateRootNodeCustomData({ fontsizeScale: v }); // NEW: Update root
     });
   });
 
