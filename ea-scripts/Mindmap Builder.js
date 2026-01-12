@@ -6,6 +6,7 @@
 // commitEdit should determine font size based on tree depth and font setting
 // save curved connectors to root node
 
+
 /* --- Initialization Logic --- */
 
 if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.0")) {
@@ -1890,7 +1891,6 @@ const updateNodeBoundary = (node, allElements) => {
 };
 
 const addEmbeddableNode = ({px = 0, py = 0, url, depth}) => {
-  let newNodeId;
   isWikiLink = url.startsWith("[[");
   const width = isWikiLink
     ? (depth === 0 ? EMBEDED_OBJECT_WIDTH_ROOT : EMBEDED_OBJECT_WIDTH_CHILD)
@@ -2511,6 +2511,10 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
   let allElements = batchModeAllElements || ea.getViewElements();
   let parent = batchModeParent;
 
+  // custom parent is a non-mindmap node selected by the user to add a child to
+  // custom parents need to receive relevant mindmap customData later during the addNode process
+  let usingCustomParent = false;
+
   if (!isBatchMode) {
     parent = getMindmapNodeFromSelection();
     if (!parent) {
@@ -2705,9 +2709,16 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
 
     if (!ea.getElement(parent.id)) {
       ea.copyViewElementsToEAforEditing([parent]);
+      parent = ea.getElement(parent.id);
     }
 
-    if ((depth === 0 || usingCustomParent) && !parent.customData?.growthMode) {
+    // if the custom parent is already in a hierarchy, then formally make it the next sibling
+    if (depth > 1 && usingCustomParent && !parent.customData?.mindmapOrder) {
+      ea.addAppendUpdateCustomData(parent.id, { mindmapOrder: nextSiblingOrder });
+    }
+
+    // else make the customParent the root of the new mindmap
+    if ((depth === 0 || usingCustomParent) && !parent.customData?.growthMode && !parent.customData?.mindmapOrder) {
       ea.addAppendUpdateCustomData(parent.id, {
         growthMode: currentModalGrowthMode,
         autoLayoutDisabled: false,
