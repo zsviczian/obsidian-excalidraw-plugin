@@ -3175,6 +3175,58 @@ const importTextToMap = async (rawText) => {
     stack.push({ indent: item.indent, node: newNode });
   }
 
+  // -------------------------------------------------------------------------
+  // "Right-Left" Balanced Layout Adjustment for Imported L1 Nodes
+  // -------------------------------------------------------------------------
+  const rootIdForImport = sel
+    ? getHierarchy(sel, initialViewElements).rootId 
+    : currentParent.id;
+
+  const rootElForImport = sel 
+    ? initialViewElements.find(e => e.id === rootIdForImport) 
+    : currentParent;
+    
+  if (rootElForImport) {
+    const mode = rootElForImport.customData?.growthMode || currentModalGrowthMode;
+    if (mode === "Right-Left" && currentParent.id === rootIdForImport) {
+      
+      const eaElements = ea.getElements();
+      const importedL1Nodes = eaElements.filter(el => 
+        el.customData?.mindmapNew &&
+        eaElements.some(arrow => 
+           arrow.type === "arrow" && 
+           arrow.customData?.isBranch && 
+           arrow.startBinding?.elementId === currentParent.id && 
+           arrow.endBinding?.elementId === el.id
+        )
+      );
+
+      // Sort by assigned mindmapOrder to preserve import sequence
+      importedL1Nodes.sort((a, b) => (a.customData?.mindmapOrder || 0) - (b.customData?.mindmapOrder || 0));
+
+      if (importedL1Nodes.length > 0) {
+        // Balanced Distribution:
+        // First half -> Right
+        // Second half -> Left
+        // (If odd, Right gets one more)
+        const splitIndex = Math.ceil(importedL1Nodes.length / 2);
+
+        importedL1Nodes.forEach((node, i) => {
+          // Remove mindmapNew flag to bypass alternating distribution in triggerGlobalLayout
+          delete node.customData.mindmapNew;
+          
+          if (i < splitIndex) {
+             // Right Side: Force position to the right of root
+             node.x = rootElForImport.x + rootElForImport.width + 100;
+          } else {
+             // Left Side: Force position to the left of root
+             node.x = rootElForImport.x - node.width - 100;
+          }
+        });
+      }
+    }
+  }
+
   await addElementsToView();
 
   const rootId = sel
