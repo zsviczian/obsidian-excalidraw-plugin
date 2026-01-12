@@ -4,8 +4,6 @@
 // sort order in right-left mode when importing
 // option to clear hotkey (not to have one for the action)
 // commitEdit should determine font size based on tree depth and font setting
-// save curved connectors to root node
-
 
 /* --- Initialization Logic --- */
 
@@ -96,6 +94,7 @@ const STRINGS = {
     NOTICE_OBSIDIAN_HOTKEY_CONFLICT: "⚠️ Obsidian Hotkey Conflict!\n\nThis key overrides:\n\"{command}\"",
     NOTICE_GLOBAL_HOTKEY_CONFLICT: "⚠️ Global Hotkey Conflict!\n\nThis key overrides:\n\"{command}\"",
     NOTICE_NO_HEADINGS: "No headings found in the linked file.",
+    NOTICE_CANNOT_EDIT_MULTILINE: "Cannot edit multi-line nodes directly.\nDouble-click the element in Excalidraw to edit, then run auto re-arrange map to update the layout.",
 
     // Action labels (display only)
     ACTION_LABEL_ADD: "Add",
@@ -1901,6 +1900,19 @@ const addEmbeddableNode = ({px = 0, py = 0, url, depth}) => {
   return ea.addEmbeddable(px, py, width, height, url);
 }
 
+const updateRootNodeCustomData = async (data) => {
+  const sel = getMindmapNodeFromSelection();
+  if (sel) {
+    const info = getHierarchy(sel, ea.getViewElements());
+    ea.copyViewElementsToEAforEditing(ea.getViewElements().filter((e) => e.id === info.rootId));
+    ea.addAppendUpdateCustomData(info.rootId, { data });
+    await addElementsToView();
+    updateUI();
+    return info;
+  }
+  return null;
+}
+
 const configureArrow = (context) => {
   const {arrowId, isChildRight, startId, endId, coordinates, isRadial} = context;
   const {sX, sY, eX, eY} = coordinates;
@@ -2609,6 +2621,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     ea.addAppendUpdateCustomData(newNodeId, {
       growthMode: currentModalGrowthMode,
       autoLayoutDisabled: false,
+      arrowType: arrowType, // Save the arrow type on new root
     });
     rootId = newNodeId;
   } else {
@@ -2722,6 +2735,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       ea.addAppendUpdateCustomData(parent.id, {
         growthMode: currentModalGrowthMode,
         autoLayoutDisabled: false,
+        arrowType: arrowType,
       });
     }
 
@@ -3329,22 +3343,6 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
 };
 
 /**
- * Enables or disables auto-layout for the root of the currently selected tree.
- * 
- * @param {boolean} enabled - True to disable auto-layout, false to enable it.
- */
-const setMapAutolayout = async (enabled) => {
-  if (!ea.targetView) return;
-  const sel = getMindmapNodeFromSelection();
-  if (sel) {
-    const info = getHierarchy(sel, ea.getViewElements());
-    ea.copyViewElementsToEAforEditing(ea.getViewElements().filter((e) => e.id === info.rootId));
-    ea.addAppendUpdateCustomData(info.rootId, { autoLayoutDisabled: enabled });
-    await addElementsToView();
-  }
-};
-
-/**
  * Triggers a layout refresh for the tree containing the selected element.
  */
 const refreshMapLayout = async () => {
@@ -3652,8 +3650,10 @@ const toggleBoundary = async () => {
 // 7. UI Modal & Sidepanel Logic
 // ---------------------------------------------------------------------------
 
-let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown, autoLayoutToggle, linkSuggester;
-let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn, toggleGroupBtn, zoomBtn, focusBtn, boundaryBtn;
+let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown;
+let autoLayoutToggle, linkSuggester, arrowTypeToggle;
+let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn;
+let toggleGroupBtn, zoomBtn, focusBtn, boundaryBtn;
 let foldBtnL0, foldBtnL1, foldBtnAll;
 let floatingGroupBtn, floatingBoxBtn, floatingZoomBtn;
 let panelExpandBtn, importOutlineBtn;
@@ -3836,6 +3836,12 @@ const updateUI = (sel) => {
       if (autoLayoutToggle) autoLayoutToggle.setValue(mapLayoutPref);
     }
 
+    const mapArrowType = root.customData?.arrowType;
+    if (mapArrowType && mapArrowType !== arrowType) {
+      arrowType = mapArrowType;
+      if (arrowTypeToggle) arrowTypeToggle.setValue(arrowType === "curved");
+    }
+
   } else {
     disableUI();
   }
@@ -3846,6 +3852,10 @@ const startEditing = () => {
   if (!sel) return;
   const all = ea.getViewElements();
   const text = getTextFromNode(all, sel, true, true);
+  if (text.match(/\n/)) {
+    new Notice(`${t("NOTICE_CANNOT_EDIT_MULTILINE")} ${getActionHotkeyString(ACTION_REARRANGE)}`, 7000);
+    return;
+  }
   inputEl.value = text;
   editingNodeId = sel.id;
   updateUI();
@@ -3888,6 +3898,9 @@ const commitEdit = async () => {
     // 1. Calculate center position
     const cx = visualNode.x + visualNode.width / 2;
     const cy = visualNode.y + visualNode.height / 2;
+
+    const info = getHierarchy(visualNode, all);
+    const depth = info.depth;
     
     let newNodeId;
 
@@ -3902,7 +3915,7 @@ const commitEdit = async () => {
        el.x = cx - el.width / 2;
        el.y = cy - el.height / 2;
     } else if (newType === "embeddable") {
-       newNodeId = addEmbeddableNode({ url:embeddableUrl, depth:0 });
+       newNodeId = addEmbeddableNode({ url:embeddableUrl, depth });
        const el = ea.getElement(newNodeId);
        el.x = cx - el.width / 2;
        el.y = cy - el.height / 2;
@@ -3910,7 +3923,9 @@ const commitEdit = async () => {
       // Back to Text
       const st = getAppState();
       ea.style.fontFamily = st.currentItemFontFamily;
-      ea.style.fontSize = st.currentItemFontSize; 
+      const fontScale = getFontScale(fontsizeScale);
+      ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)]; 
+      
       ea.style.strokeColor = targetNode.strokeColor;
       ea.style.backgroundColor = "transparent";
       
@@ -4633,42 +4648,40 @@ const renderBody = (contentEl) => {
     GROWTH_TYPES.forEach((key) => d.addOption(key, key));
     d.setValue(currentModalGrowthMode);
     d.onChange(async (v) => {
-        if (!ea.targetView) return;
-        currentModalGrowthMode = v;
-        setVal(K_GROWTH, v);
-        dirty = true;
-        const sel = getMindmapNodeFromSelection();
-        if (sel) {
-          const info = getHierarchy(sel, ea.getViewElements());
-          ea.copyViewElementsToEAforEditing(ea.getViewElements().filter((e) => e.id === info.rootId));
-          ea.addAppendUpdateCustomData(info.rootId, { growthMode: v });
-          await addElementsToView();
-          if (!autoLayoutDisabled) {
-            await triggerGlobalLayout(info.rootId);
-          }
-        }
-      });
+      debugger;
+      currentModalGrowthMode = v;
+      setVal(K_GROWTH, v);
+      dirty = true;
+      if (!ea.targetView) return;
+      const info = await updateRootNodeCustomData({ growthMode: v });
+      if (!!info && !autoLayoutDisabled) {
+        await triggerGlobalLayout(info.rootId);
+      }
+    });
   });
 
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_ARROW_TYPE"))
-    .addToggle((t) => t
-      .setValue(arrowType === "curved")
-      .onChange(async (v) => {
+    .addToggle((t) => {
+      arrowTypeToggle = t;
+      t.setValue(arrowType === "curved")
+       .onChange(async (v) => {
         arrowType = v ? "curved" : "straight";
         setVal(K_ARROW_TYPE, arrowType);
         dirty = true;
+        if (!ea.targetView) return;
+        await updateRootNodeCustomData({ arrowType });
         refreshMapLayout();
-      }),
-    )
+      })
+    })
 
   autoLayoutToggle = new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_AUTO_LAYOUT"))
     .addToggle((t) => t
       .setValue(!autoLayoutDisabled)
-      .onChange(async (v) => {
+      .onChange((v) => {
         autoLayoutDisabled = !v;
-        setMapAutolayout(!v);
+        updateRootNodeCustomData({ autoLayoutDisabled: enabled });
       }),
     )
     .addButton(btn => btn
