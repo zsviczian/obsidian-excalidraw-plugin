@@ -1080,7 +1080,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       const dataurl = await ea.tex2dataURL(equation);
       if (dataurl && dataurl.size.height > 0 && dataurl.size.width > 0) {
         ea.addAppendUpdateCustomData(el.id, {
-          latexscale: {widthscale: el.width/dataurl.size.width, heightscale: el.height/dataurl.size.height}
+          latexscale: {scaleX: el.width/dataurl.size.width, scaleY: el.height/dataurl.size.height}
         });
       }
       await ea.addElementsToView(false, false, false, false);
@@ -1429,7 +1429,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     let file = null;
     let subpath: string = null;
     let {linkText, selectedElement, isLinearElement} = this.getLinkTextForElement(selectedText, selectedElementWithLink, allowLinearElementClick);
-
+    
     //if (selectedText?.id || selectedElementWithLink?.id) {
     if (selectedElement) {
       if (!allowLinearElementClick && linkText && isLinearElement) {
@@ -4153,7 +4153,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         //dobule click
         const now = Date.now();
         if ((now - this.doubleClickTimestamp) < 600 && (now - this.doubleClickTimestamp) > 40) {
-          this.identifyElementClicked();
+          this.identifyElementClicked(); 
         }
         this.doubleClickTimestamp = now;
       }
