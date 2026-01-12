@@ -4,6 +4,7 @@
 // sort order in right-left mode when importing
 // option to clear hotkey (not to have one for the action)
 // commitEdit should determine font size based on tree depth and font setting
+// save curved connectors to root node
 
 /* --- Initialization Logic --- */
 
