@@ -134,6 +134,7 @@ const STRINGS = {
     NOTICE_CONFLICT_WITH_ACTION: "Conflict with \"{action}\"",
     NOTICE_OBSIDIAN_HOTKEY_CONFLICT: "⚠️ Obsidian Hotkey Conflict!\n\nThis key overrides:\n\"{command}\"",
     NOTICE_GLOBAL_HOTKEY_CONFLICT: "⚠️ Global Hotkey Conflict!\n\nThis key overrides:\n\"{command}\"",
+    NOTICE_NO_HEADINGS: "No headings found in the linked file.",
 
     // Action labels (display only)
     ACTION_LABEL_ADD: "Add",
@@ -147,6 +148,7 @@ const STRINGS = {
     ACTION_LABEL_COPY: "Copy",
     ACTION_LABEL_CUT: "Cut",
     ACTION_LABEL_PASTE: "Paste",
+    ACTION_LABEL_IMPORT_OUTLINE: "Import Outline",
     ACTION_LABEL_ZOOM: "Cycle Zoom",
     ACTION_LABEL_FOCUS: "Focus (center) node",
     ACTION_LABEL_NAVIGATE: "Navigate",
@@ -182,6 +184,7 @@ const STRINGS = {
     TOOLTIP_FOLD_BRANCH: "Fold/Unfold selected branch",
     TOOLTIP_FOLD_L1_BRANCH: "Fold/Unfold children (Level 1)",
     TOOLTIP_UNFOLD_BRANCH_ALL: "Unfold branch recursively",
+    TOOLTIP_IMPORT_OUTLINE: "Import headings from linked file as child nodes",
 
     // Buttons and labels
     DOCK_TITLE: "Mind Map Builder",
@@ -540,7 +543,7 @@ const parseImageInput = (input) => {
     isImagePath = true;
   } else {
     const pathParts = path.split("#");
-    imageFile = app.metadataCache.getFirstLinkpathDest(pathParts[0], ea.targetView.file.path);
+    imageFile = file = app.metadataCache.getFirstLinkpathDest(pathParts[0], ea.targetView.file.path);
     if (imageFile) {
       const isEx = imageFile.extension === "md" && ea.isExcalidrawFile(imageFile);
       if (!IMAGE_TYPES.includes(imageFile.extension.toLowerCase()) && !isEx) {
@@ -553,13 +556,17 @@ const parseImageInput = (input) => {
     }
   }
 
-  return { path, width, imageFile, isImagePath };
+  return { path, width, imageFile, isImagePath, file};
 };
 
-const parseEmbeddableInput = (input) => {
+const parseEmbeddableInput = (input, imageInfo) => {
   const trimmed = input.trim();
   const match = trimmed.match(/^!\[\]\((https?:\/\/[^)]+)\)$/);
-  return match ? match[1] : null;
+  if (match) return match[1];
+  if (imageInfo && imageInfo.file && imageInfo.file.extension === "md" && !ea.isExcalidrawFile(imageInfo.file)) {
+    return `[[${imageInfo.path}]]`;
+  }
+  return null;
 };
 
 // ------------------------------------------------
@@ -577,6 +584,7 @@ const ACTION_TOGGLE_GROUP = "Group/Ungroup Single Branch";
 const ACTION_COPY = "Copy";
 const ACTION_CUT = "Cut";
 const ACTION_PASTE = "Paste";
+const ACTION_IMPORT_OUTLINE = "Import Outline from Linked File";
 
 const ACTION_ZOOM = "Cycle Zoom";
 const ACTION_FOCUS = "Focus (center) node";
@@ -605,6 +613,7 @@ const ACTION_LABEL_KEYS = {
   [ACTION_COPY]: "ACTION_LABEL_COPY",
   [ACTION_CUT]: "ACTION_LABEL_CUT",
   [ACTION_PASTE]: "ACTION_LABEL_PASTE",
+  [ACTION_IMPORT_OUTLINE]: "ACTION_LABEL_IMPORT_OUTLINE",
   [ACTION_ZOOM]: "ACTION_LABEL_ZOOM",
   [ACTION_FOCUS]: "ACTION_LABEL_FOCUS",
   [ACTION_NAVIGATE]: "ACTION_LABEL_NAVIGATE",
@@ -647,6 +656,7 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_IMPORT_OUTLINE, code: "KeyI", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
 
   // View Actions
   { action: ACTION_REARRANGE, code: "KeyR", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
@@ -1919,6 +1929,18 @@ const updateNodeBoundary = (node, allElements) => {
   }
 };
 
+const addEmbeddableNode = ({px = 0, py = 0, url, depth}) => {
+  let newNodeId;
+  isWikiLink = url.startsWith("[[");
+  const width = isWikiLink
+    ? (depth === 0 ? EMBEDED_OBJECT_WIDTH_ROOT : EMBEDED_OBJECT_WIDTH_CHILD)
+    : EMBEDED_OBJECT_WIDTH_CHILD;
+  const height = isWikiLink
+    ? width / 2
+    : 0; // Height 0 triggers auto-calculation based on aspect ratio
+  return ea.addEmbeddable(px, py, width, height, url);
+}
+
 const configureArrow = (context) => {
   const {arrowId, isChildRight, startId, endId, coordinates, isRadial} = context;
   const {sX, sY, eX, eY} = coordinates;
@@ -2551,8 +2573,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
 
   // --- Image Detection ---
   const imageInfo = parseImageInput(text);
-
-  const embeddableUrl = parseEmbeddableInput(text);
+  const embeddableUrl = parseEmbeddableInput(text, imageInfo);
 
   const defaultNodeColor = ea.getCM(st.viewBackgroundColor).invert().stringHEX({alpha: false});
 
@@ -2591,7 +2612,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
   ea.style.roundness = roundedCorners ? { type: 3 } : null;
 
   let curMaxW = depth === 0 ? Math.max(400, maxWidth) : maxWidth;
-  const metrics = ea.measureText(text);
+  const metrics = ea.measureText(renderLinksToText(text));
   const shouldWrap = metrics.width > curMaxW;
   if (shouldWrap) {
     curMaxW = getAdjustedMaxWidth(text, curMaxW).width;
@@ -2605,8 +2626,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     } else if (imageInfo?.imageFile) {
       newNodeId = await addImage(imageInfo.imageFile, imageInfo.width);
     } else if (embeddableUrl) {
-      // Height 0 triggers auto-calculation based on aspect ratio
-      newNodeId = ea.addEmbeddable(0, 0, EMBEDED_OBJECT_WIDTH_ROOT, 0, embeddableUrl);
+      newNodeId = addEmbeddableNode({ url:embeddableUrl, depth:0 });
     } else {
       ea.style.fillStyle = "solid";
       ea.style.backgroundColor = st.viewBackgroundColor;
@@ -2701,9 +2721,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     } else if (imageInfo?.imageFile) {
         newNodeId = await addImage(imageInfo.imageFile, imageInfo.width, side === -1 && !autoLayoutDisabled, px, py);
     } else if (embeddableUrl) {
-        newNodeId = ea.addEmbeddable(px, py, EMBEDED_OBJECT_WIDTH_CHILD, 0, embeddableUrl);
-        const el = ea.getElement(newNodeId);
-        if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
+      newNodeId = addEmbeddableNode({ px, py, url:embeddableUrl, depth });
+      const el = ea.getElement(newNodeId);
+      if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
     } else {
         newNodeId = ea.addText(px, py, text, {
           box: boxChildren ? "rectangle" : false,
@@ -2862,11 +2882,84 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
 // ---------------------------------------------------------------------------
 
 /**
+ * Checks if a node text contains exactly one wiki link to a markdown file and returns that TFile.
+ */
+const getNodeMarkdownFile = (nodeText) => {
+  if(!nodeText || !ea.targetView || !ea.targetView.file) return null;
+  // Match [[filename]] or [[filename|alias]] that takes up the whole string
+  const parts = nodeText.trim().match(/^\[\[([^#\|\]]+)[^\]]*]]$/);
+  if (!!parts?.[1]) {
+    const file = app.metadataCache.getFirstLinkpathDest(parts[1], ea.targetView.file.path);
+    return (file && file.extension === "md") ? file : null;
+  }
+  return null;
+}
+
+/**
+ * Generates a hierarchy of links based on the headings in the target file.
+ */
+const importOutline = async () => {
+  if (!ea.targetView) return;
+  
+  const sel = getMindmapNodeFromSelection();
+  if (!sel) {
+    new Notice("Select a node containing a link.");
+    return;
+  }
+
+  const allElements = ea.getViewElements();
+  const nodeText = getTextFromNode(allElements, sel, true, false); // Get raw text
+
+  const markdownFile = getNodeMarkdownFile(nodeText);
+  if (!markdownFile) {
+    new Notice(t("NOTICE_NO_LINKED_FILE"));
+    return;
+  }
+
+  const cache = await app.metadataCache.blockCache.getForFile({isCancelled: () => false}, markdownFile);
+  if (!cache || !cache.blocks) {
+    new Notice(t("NOTICE_NO_HEADINGS"));
+    return;
+  }
+
+  const shortFilePath = app.metadataCache.fileToLinktext(markdownFile, ea.targetView.file.path, true);
+  const outlines = [];
+
+  for (const block of cache.blocks) {
+    if (block.node.type === "heading") {
+      const depth = block.node.depth;
+      
+      // Strip markdown heading markers (# ) from display text
+      const rawHeadingText = block.display.replace(/^#+\s+/, "");
+
+      if (rawHeadingText === "Excalidraw Data") break;
+      
+      // Format Alias: Replace pipe with space to prevent broken links
+      const alias = rawHeadingText.replace(/\|/g, " ");
+      
+      // Format Anchor: replace specific chars (#|\:) with space for the link target
+      const anchor = rawHeadingText.replace(/[|#\\:]/g, " ");
+      
+      const indent = "  ".repeat(Math.max(0, depth - 1));
+      
+      outlines.push(`${indent}- [[${shortFilePath}#${anchor}|${alias}]]`);
+    }
+  }
+
+  if (outlines.length === 0) {
+    new Notice(t("NOTICE_NO_HEADINGS"));
+    return;
+  }
+
+  await importTextToMap(outlines.join("\n"));
+};
+
+/**
 // Extracts text from a node, handling text elements, images, and embeddables.
 **/
 const getTextFromNode = (all, node, getRaw = false, shortPath = false) => {
   if (node.type === "embeddable") {
-    return `![](${node.link})`;
+    return node.link.startsWith("[[") ? `!${node.link}` : `![](${node.link})`;
   }
   if (node.type === "image") {
     const file = ea.getViewFileForImageElement(node);
@@ -2992,11 +3085,10 @@ const copyMapAsText = async (cut = false) => {
 };
 
 /**
-// Pastes a Markdown list from clipboard into the map, converting it to nodes.
+// Core logic to parse a list string and add nodes to the map
 **/
-const pasteListToMap = async () => {
+const importTextToMap = async (rawText) => {
   if (!ea.targetView) return;
-  const rawText = await navigator.clipboard.readText();
   if (!rawText) return;
 
   const sel = getMindmapNodeFromSelection();
@@ -3004,10 +3096,7 @@ const pasteListToMap = async () => {
 
   const lines = rawText.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
 
-  if (lines.length === 0) {
-    new Notice(t("NOTICE_CLIPBOARD_EMPTY"));
-    return;
-  }
+  if (lines.length === 0) return;
 
   if (lines.length === 1) {
     const text = lines[0].replace(/^(\s*)(?:-|\*|\d+\.)\s+/, "").trim();
@@ -3102,6 +3191,18 @@ const pasteListToMap = async () => {
   }
   notice.setMessage(t("NOTICE_PASTE_COMPLETE"));
   notice.setAutoHide(4000);
+};
+
+/**
+// Pastes a Markdown list from clipboard into the map, converting it to nodes.
+**/
+const pasteListToMap = async () => {
+  const rawText = await navigator.clipboard.readText();
+  if (!rawText) {
+    new Notice(t("NOTICE_CLIPBOARD_EMPTY"));
+    return;
+  }
+  await importTextToMap(rawText);
 };
 
 // ---------------------------------------------------------------------------
@@ -3584,7 +3685,7 @@ let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown, autoLayoutTog
 let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn, toggleGroupBtn, zoomBtn, focusBtn, boundaryBtn;
 let foldBtnL0, foldBtnL1, foldBtnAll;
 let floatingGroupBtn, floatingBoxBtn, floatingZoomBtn;
-let panelExpandBtn;
+let panelExpandBtn, importOutlineBtn;
 let isFloatingPanelExpanded = false;
 let toggleFloatingExtras = null;
 let inputContainer;
@@ -3665,6 +3766,7 @@ const disableUI = () => {
   setButtonDisabled(refreshBtn, true);
   setButtonDisabled(copyBtn, true);
   setButtonDisabled(cutBtn, true);
+  setButtonDisabled(importOutlineBtn, true);
   setButtonDisabled(boxBtn, true);
   setButtonDisabled(foldBtnL0, true);
   setButtonDisabled(foldBtnL1, true);
@@ -3701,6 +3803,8 @@ const updateUI = (sel) => {
     const children = getChildrenNodes(sel.id, all);
     const hasChildren = children.length > 0;
     const hasGrandChildren = hasChildren && children.some(child => getChildrenNodes(child.id, all).length > 0);
+    const nodeText = getTextFromNode(all, sel, true, false);
+    const isLinkedFile = !!getNodeMarkdownFile(nodeText);
 
     if (pinBtn) {
       pinBtn.setIcon(isPinned ? "pin" : "pin-off");
@@ -3747,6 +3851,7 @@ const updateUI = (sel) => {
     setButtonDisabled(boundaryBtn, isRootSelected);
     setButtonDisabled(cutBtn, isRootSelected);
     setButtonDisabled(copyBtn, false);
+    setButtonDisabled(importOutlineBtn, !isLinkedFile);
 
     const mapStrategy = root.customData?.growthMode;
     if (mapStrategy && mapStrategy !== currentModalGrowthMode) {
@@ -3797,7 +3902,7 @@ const commitEdit = async () => {
   const textEl = all.find(el => el.id === textElId && el.type === "text");
   const textInput = inputEl.value;
   const imageInfo = parseImageInput(textInput);
-  const embeddableUrl = parseEmbeddableInput(textInput);
+  const embeddableUrl = parseEmbeddableInput(textInput, imageInfo);
 
   let newType = "text";
   if (imageInfo?.isImagePath || imageInfo?.imageFile) newType = "image";
@@ -3826,7 +3931,7 @@ const commitEdit = async () => {
        el.x = cx - el.width / 2;
        el.y = cy - el.height / 2;
     } else if (newType === "embeddable") {
-       newNodeId = ea.addEmbeddable(0, 0, EMBEDED_OBJECT_WIDTH_CHILD, 0, embeddableUrl);
+       newNodeId = addEmbeddableNode({ url:embeddableUrl, depth:0 });
        const el = ea.getElement(newNodeId);
        el.x = cx - el.width / 2;
        el.y = cy - el.height / 2;
@@ -3966,7 +4071,7 @@ const commitEdit = async () => {
     ea.style.fontSize = eaEl.fontSize;
 
     if (eaEl.width <= maxWidth) {
-      const textWidth = ea.measureText(textInput).width;
+      const textWidth = ea.measureText(renderLinksToText(textInput)).width;
       const shouldWrap = textWidth > maxWidth;
       if (!shouldWrap) {
         eaEl.autoResize = true;
@@ -4297,6 +4402,7 @@ const renderInput = (container, isFloating = false) => {
   foldBtnL0 = foldBtnL1 = foldBtnAll = null;
   boundaryBtn = panelExpandBtn = null;
   floatingGroupBtn, floatingBoxBtn, floatingZoomBtn = null;
+  importOutlineBtn = null;
 
   inputRow = new ea.obsidian.Setting(container);
   let secondaryButtonContainer = null;
@@ -4380,19 +4486,14 @@ const renderInput = (container, isFloating = false) => {
     btn.setIcon("pencil");
     btn.setTooltip(`${t("TOOLTIP_EDIT_NODE")} ${getActionHotkeyString(ACTION_EDIT)}`);
     btn.extraSettingsEl.setAttr("action",ACTION_EDIT);
-    btn.onClick(() => {
-      startEditing();
-    });
+    btn.onClick(() => performAction(ACTION_EDIT));
   }, false);
 
   addButton((btn) => {
     pinBtn = btn;
     btn.setTooltip(`${t("TOOLTIP_PIN_INIT")} ${getActionHotkeyString(ACTION_PIN)}`)
     btn.extraSettingsEl.setAttr("action",ACTION_PIN);
-    btn.onClick(async () => {
-      await togglePin();
-      focusInputEl();
-    });
+    btn.onClick(() => performAction(ACTION_PIN));
   }, false);
 
   toggleFloatingExtras = null;
@@ -4415,16 +4516,14 @@ const renderInput = (container, isFloating = false) => {
       btn.setIcon(isFloatingPanelExpanded ? "panel-bottom-open" : "panel-top-open");
       btn.setTooltip(t("TOOLTIP_TOGGLE_FLOATING_EXTRAS"));
       btn.extraSettingsEl.setAttr("action", ACTION_TOGGLE_FLOATING_EXTRAS);
-      btn.onClick(toggleFloatingExtras);
+      btn.onClick(() => performAction(ACTION_TOGGLE_FLOATING_EXTRAS));
     }, false);
 
     addButton((btn) => {
       floatingGroupBtn = btn;
       btn.setIcon("group");
       btn.extraSettingsEl.setAttr("action", ACTION_TOGGLE_GROUP);
-      btn.onClick(async () => {
-        await toggleBranchGroup();
-      });
+      btn.onClick(() => performAction(ACTION_TOGGLE_GROUP));
     }, true);
 
     addButton((btn) => {
@@ -4432,10 +4531,7 @@ const renderInput = (container, isFloating = false) => {
       btn.setIcon("rectangle-horizontal");
       btn.setTooltip(`${t("TOOLTIP_TOGGLE_BOX")} ${getActionHotkeyString(ACTION_BOX)}`);
       btn.extraSettingsEl.setAttr("action", ACTION_BOX);
-      btn.onClick(async () => {
-        await toggleBox();
-        focusInputEl();
-      });
+      btn.onClick(() => performAction(ACTION_BOX));
     }, true);
 
     addButton((btn) => {
@@ -4443,9 +4539,7 @@ const renderInput = (container, isFloating = false) => {
       btn.setIcon("scan-search");
       btn.setTooltip(`${t("TOOLTIP_ZOOM_CYCLE")} ${getActionHotkeyString(ACTION_ZOOM)}`);
       btn.extraSettingsEl.setAttr("action", ACTION_ZOOM);
-      btn.onClick(() => {
-        zoomToFit(true);
-      });
+      btn.onClick(() => performAction(ACTION_ZOOM));
     }, true);
   }
 
@@ -4454,9 +4548,7 @@ const renderInput = (container, isFloating = false) => {
     btn.setIcon("scan-eye");
     btn.setTooltip(`${t("ACTION_LABEL_FOCUS")} ${getActionHotkeyString(ACTION_FOCUS)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_FOCUS);
-    btn.onClick(async () => {
-      focusSelected();
-    });
+    btn.onClick(() => performAction(ACTION_FOCUS));
   }, true);
 
   addButton((btn) => {
@@ -4464,10 +4556,7 @@ const renderInput = (container, isFloating = false) => {
     btn.setIcon("cloud");
     btn.setTooltip(`${t("TOOLTIP_TOGGLE_BOUNDARY")} ${getActionHotkeyString(ACTION_TOGGLE_BOUNDARY)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_TOGGLE_BOUNDARY);
-    btn.onClick(async () => {
-      await toggleBoundary();
-      focusInputEl();
-    });
+    btn.onClick(() => performAction(ACTION_TOGGLE_BOUNDARY));
   }, true);
 
   addButton((btn) => {
@@ -4475,11 +4564,7 @@ const renderInput = (container, isFloating = false) => {
     btn.setIcon("wifi-low");
     btn.setTooltip(`${t("TOOLTIP_FOLD_BRANCH")} ${getActionHotkeyString(ACTION_FOLD)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_FOLD);
-    btn.onClick(async () => {
-      await toggleFold("L0");
-      updateUI();
-      focusInputEl();
-    });
+    btn.onClick(() => performAction(ACTION_FOLD));
   }, true);
 
   addButton((btn) => {
@@ -4487,11 +4572,7 @@ const renderInput = (container, isFloating = false) => {
     btn.setIcon("wifi-high");
     btn.setTooltip(`${t("TOOLTIP_FOLD_L1_BRANCH")} ${getActionHotkeyString(ACTION_FOLD_L1)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_FOLD_L1);
-    btn.onClick(async () => {
-      await toggleFold("L1");
-      updateUI();
-      focusInputEl();
-    });
+    btn.onClick(() => performAction(ACTION_FOLD_L1));
   }, true);
 
   addButton((btn) => {
@@ -4499,11 +4580,7 @@ const renderInput = (container, isFloating = false) => {
     btn.setIcon("wifi");
     btn.setTooltip(`${t("TOOLTIP_UNFOLD_BRANCH_ALL")} ${getActionHotkeyString(ACTION_FOLD_ALL)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_FOLD_ALL);
-    btn.onClick(async () => {
-      await toggleFold("ALL");
-      updateUI();
-      focusInputEl();
-    });
+    btn.onClick(() => performAction(ACTION_FOLD_ALL));
   }, true);
 
   addButton((btn) => {
@@ -4511,9 +4588,7 @@ const renderInput = (container, isFloating = false) => {
     btn.setIcon("refresh-ccw");
     btn.setTooltip(t("TOOLTIP_REFRESH"));
     btn.extraSettingsEl.setAttr("action",ACTION_REARRANGE);
-    btn.onClick(async () => {
-      await refreshMapLayout();
-    });
+    btn.onClick(() => performAction(ACTION_REARRANGE));
   }, true);
 
   addButton((btn) => {
@@ -4521,10 +4596,7 @@ const renderInput = (container, isFloating = false) => {
     btn.setIcon("copy");
     btn.setTooltip(`${t("ACTION_COPY")} ${getActionHotkeyString(ACTION_COPY)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_COPY);
-    btn.onClick(async () => {
-      copyMapAsText();
-      updateUI();
-    });
+    btn.onClick(() => performAction(ACTION_COPY));
   }, true);
 
   addButton((btn) => {
@@ -4532,20 +4604,22 @@ const renderInput = (container, isFloating = false) => {
     btn.setIcon("scissors");
     btn.setTooltip(`${t("ACTION_CUT")} ${getActionHotkeyString(ACTION_CUT)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_CUT);
-    btn.onClick(async () => {
-      copyMapAsText(true);
-      updateUI();
-    });
+    btn.onClick(() => performAction(ACTION_CUT));
   }, true);
 
   addButton((btn) => {
     btn.setIcon("clipboard");
     btn.setTooltip(`${t("ACTION_PASTE")} ${getActionHotkeyString(ACTION_PASTE)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_PASTE);
-    btn.onClick(async () => {
-      pasteListToMap();
-      updateUI();
-    });
+    btn.onClick(() => performAction(ACTION_PASTE));
+  }, true);
+
+  addButton((btn) => {
+    importOutlineBtn = btn;
+    btn.setIcon("list-tree");
+    btn.setTooltip(`${t("TOOLTIP_IMPORT_OUTLINE")} ${getActionHotkeyString(ACTION_IMPORT_OUTLINE)}`);
+    btn.extraSettingsEl.setAttr("action", ACTION_IMPORT_OUTLINE);
+    btn.onClick(() => performAction(ACTION_IMPORT_OUTLINE));
   }, true);
 
   addButton((btn) => {
@@ -4555,9 +4629,7 @@ const renderInput = (container, isFloating = false) => {
     btn.setTooltip(
       `${isFloating ? t("TOOLTIP_DOCK") : t("TOOLTIP_UNDOCK")} ${getActionHotkeyString(ACTION_DOCK_UNDOCK)}`
     );
-    btn.onClick(() => {
-      toggleDock({silent: false, forceDock: false, saveSetting: true})
-    });
+    btn.onClick(() => performAction(ACTION_DOCK_UNDOCK));
   }, true);
 
   updateUI();
@@ -4582,9 +4654,7 @@ const renderBody = (contentEl) => {
     zoomBtn = btn;
     btn.setIcon("scan-search")
       .setTooltip(`${t("TOOLTIP_ZOOM_CYCLE")} ${getActionHotkeyString(ACTION_ZOOM)}`)
-      .onClick(()=>{
-        zoomToFit(true);
-      })
+      .onClick(() => performAction(ACTION_ZOOM));
   });
 
   new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_GROWTH_STRATEGY")).addDropdown((d) => {
@@ -4638,7 +4708,7 @@ const renderBody = (contentEl) => {
           layoutSettings = newSettings;
           setVal(K_LAYOUT, layoutSettings, true);
           dirty = true;
-          if(!autoLayoutDisabled) refreshMapLayout(); // Auto-refresh if layout is active
+          if(!autoLayoutDisabled) refreshMapLayout();
         });
         modal.open();
       })
@@ -4664,9 +4734,7 @@ const renderBody = (contentEl) => {
       toggleGroupBtn = btn;
       btn.setIcon("group");
       btn.setTooltip(`${t("TOOLTIP_TOGGLE_GROUP_BTN")} ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
-      btn.onClick(async () => {
-        await toggleBranchGroup();
-      });
+      btn.onClick(() => performAction(ACTION_TOGGLE_GROUP));
     });
 
   new ea.obsidian.Setting(bodyContainer)
@@ -4683,9 +4751,7 @@ const renderBody = (contentEl) => {
       boxBtn = btn;
       btn.setIcon("rectangle-horizontal");
       btn.setTooltip(`${t("TOOLTIP_TOGGLE_BOX")} ${getActionHotkeyString(ACTION_BOX)}`);
-      btn.onClick(async () => {
-        await toggleBox();
-      });
+      btn.onClick(() => performAction(ACTION_BOX));
     });
 
   new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_ROUNDED_CORNERS")).addToggle((t) => t
@@ -5225,7 +5291,7 @@ const getActionFromEvent = (e) => {
  * 
  * @param {KeyboardEvent} e 
  */
-const handleKeydown = async (e) => {
+const handleKeydown = (e) => {
   if (isRecordingHotkey) return;
   if (!ea.targetView || !ea.targetView.leaf.isVisible()) return;
 
@@ -5299,6 +5365,11 @@ const handleKeydown = async (e) => {
   e.preventDefault();
   e.stopPropagation();
 
+  performAction(action, e);
+}
+
+const performAction = async (action, event) => {
+  if (!action || !ea.targetView) return;
   switch (action) {
     case ACTION_TOGGLE_FLOATING_EXTRAS:
       toggleFloatingExtras?.();
@@ -5351,10 +5422,17 @@ const handleKeydown = async (e) => {
 
     case ACTION_CUT:
       copyMapAsText(true);
+      updateUI();
       break;
 
     case ACTION_PASTE:
       pasteListToMap();
+      updateUI();
+      break;
+
+    case ACTION_IMPORT_OUTLINE:
+      await importOutline();
+      updateUI();
       break;
 
     case ACTION_ZOOM:
@@ -5366,17 +5444,17 @@ const handleKeydown = async (e) => {
       break;
 
     case ACTION_NAVIGATE:
-      await navigateMap({key: e.key, zoom: false, focus: false});
+      await navigateMap({key: event?.key, zoom: false, focus: false});
       updateUI();
       break;
 
     case ACTION_NAVIGATE_ZOOM:
-      await navigateMap({key: e.key, zoom: true, focus: false});
+      await navigateMap({key: event?.key, zoom: true, focus: false});
       updateUI();
       break;
 
     case ACTION_NAVIGATE_FOCUS:
-      await navigateMap({key: e.key, zoom: false, focus: true});
+      await navigateMap({key: event?.key, zoom: false, focus: true});
       updateUI();
       break;
 
