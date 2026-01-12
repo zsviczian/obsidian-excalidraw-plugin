@@ -3042,11 +3042,53 @@ const copyMapAsText = async (cut = false) => {
   const isRootSelected = info.rootId === sel.id;
   const parentNode = getParentNode(sel.id, all);
 
+  // Retrieve root to determine growthMode for sorting logic
+  const root = all.find(el => el.id === info.rootId);
+  const mode = root?.customData?.growthMode || currentModalGrowthMode;
+
   const elementsToDelete = [];
 
   const useTab = app.vault.getConfig("useTab");
   const tabSize = app.vault.getConfig("tabSize");
   const indentVal = useTab ? "\t" : " ".repeat(tabSize);
+
+  // --- Crosslink & Block Reference Logic ---
+  const branchIds = new Set(getBranchElementIds(sel.id, all));
+  
+  const nodeBlockRefs = new Map(); // NodeID -> "^blockId"
+  const nodeOutgoingLinks = new Map(); // NodeID -> ["^blockId", ...]
+
+  // Find arrows within this branch that are NOT structural branch arrows
+  const crossLinkArrows = all.filter(el => 
+    el.type === "arrow" && 
+    !el.customData?.isBranch && 
+    branchIds.has(el.startBinding?.elementId) && 
+    branchIds.has(el.endBinding?.elementId)
+  );
+
+  const hasCrosslinks = crossLinkArrows.length > 0;
+  // Use Loose List (empty lines) if crosslinks exist to support block refs, else Tight List
+  const lineSeparator = hasCrosslinks ? "\n\n" : "\n";
+
+  if (hasCrosslinks) {
+    crossLinkArrows.forEach(arrow => {
+      const startId = arrow.startBinding.elementId;
+      const endId = arrow.endBinding.elementId;
+
+      // Generate block ref for destination if not exists
+      if (!nodeBlockRefs.has(endId)) {
+        nodeBlockRefs.set(endId, "^" + ea.generateElementId().substring(0, 8));
+      }
+
+      // Record outgoing link for source
+      if (!nodeOutgoingLinks.has(startId)) {
+        nodeOutgoingLinks.set(startId, []);
+      }
+      nodeOutgoingLinks.get(startId).push(nodeBlockRefs.get(endId));
+      
+      if (cut) elementsToDelete.push(arrow);
+    });
+  }
 
   const buildList = (nodeId, depth = 0) => {
     const node = all.find((e) => e.id === nodeId);
@@ -3063,16 +3105,70 @@ const copyMapAsText = async (cut = false) => {
         const ind = all.find(e => e.id === node.customData.foldIndicatorId);
         if (ind) elementsToDelete.push(ind);
       }
+      
+      // Remove boundary if cutting
+      if (node.customData?.boundaryId) {
+        const boundary = all.find(e => e.id === node.customData.boundaryId);
+        if (boundary) elementsToDelete.push(boundary);
+      }
     }
 
-    const children = getChildrenNodes(nodeId, all);
-    sortChildrenStable(children);
-    let str = "";
-    const text = getTextFromNode(all, node);
-    if (depth === 0 && isRootSelected) {
-      str += `# ${text}\n\n`;
+    // --- Visual Sorting Logic ---
+    let children = getChildrenNodes(nodeId, all);
+    const parentCenter = { x: node.x + node.width / 2, y: node.y + node.height / 2 };
+
+    if (mode === "Radial") {
+      // Radial: Clockwise starting from Top (12 o'clock)
+      children.sort((a, b) => {
+          const centerA = { x: a.x + a.width / 2, y: a.y + a.height / 2 };
+          const centerB = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+          return getAngleFromCenter(parentCenter, centerA) - getAngleFromCenter(parentCenter, centerB);
+      });
+    } else if (mode === "Right-Left" && nodeId === info.rootId) {
+      // Right-Left Root: Right side (Top->Bottom) THEN Left side (Top->Bottom)
+      const right = [];
+      const left = [];
+      
+      children.forEach(child => {
+          const childCx = child.x + child.width / 2;
+          if (childCx > parentCenter.x) right.push(child);
+          else left.push(child);
+      });
+      
+      right.sort((a, b) => a.y - b.y);
+      left.sort((a, b) => a.y - b.y);
+      
+      children = [...right, ...left];
     } else {
-      str += `${indentVal.repeat(depth - (isRootSelected ? 1 : 0))}- ${text}\n`;
+      // Linear Modes (Right, Left) or Sub-branches: Top to Bottom
+      children.sort((a, b) => a.y - b.y);
+    }
+
+    let str = "";
+    let text = getTextFromNode(all, node);
+
+    // --- Append Metadata Suffixes ---
+    
+    // 1. Outgoing Crosslinks: [[#^ref|*]]
+    if (nodeOutgoingLinks.has(nodeId)) {
+      const links = nodeOutgoingLinks.get(nodeId).map(ref => `[[#${ref}|*]]`).join(" ");
+      text += ` ${links}`;
+    }
+
+    // 2. Boundary Tag
+    if (!!node.customData?.boundaryId) {
+      text += " #boundary";
+    }
+
+    // 3. Incoming Block Reference (Must be last)
+    if (nodeBlockRefs.has(nodeId)) {
+      text += ` ${nodeBlockRefs.get(nodeId)}`;
+    }
+
+    if (depth === 0 && isRootSelected) {
+      str += `# ${text}${lineSeparator}`;
+    } else {
+      str += `${indentVal.repeat(depth - (isRootSelected ? 1 : 0))}- ${text}${lineSeparator}`;
     }
 
     children.forEach((c) => {
@@ -3144,10 +3240,16 @@ const importTextToMap = async (rawText) => {
   if (lines.length === 0) return;
 
   if (lines.length === 1) {
-    const text = lines[0].replace(/^(\s*)(?:-|\*|\d+\.)\s+/, "").trim();
+    // Simple single line logic (existing behavior)
+    let text = lines[0].replace(/^(\s*)(?:-|\*|\d+\.)\s+/, "").trim();
+    
+    // Cleanup tags for single line paste too
+    text = text.replace(/\s#boundary\b/g, "");
+    text = text.replace(/\s\^([a-zA-Z0-9]{8})$/, "");
+    text = text.replace(/\[\[#\^([a-zA-Z0-9]{8})\|\*\]\]/g, "");
 
     if (text) {
-      currentParent = await addNode(text, true, false);
+      currentParent = await addNode(text.trim(), true, false);
       if (sel) {
         ea.selectElementsInView([ea.getViewElements().find((el)=>el.id === sel.id)]);
       }
@@ -3170,16 +3272,63 @@ const importTextToMap = async (rawText) => {
   
   const notice = new Notice(t("NOTICE_PASTE_START"), 0);
   await sleep(10);
+
+  // Maps for crosslink reconstruction
+  const blockRefToNodeId = new Map(); // ^12345678 -> newNodeId
+  const nodeToOutgoingRefs = new Map(); // newNodeId -> [^12345678, ...]
+  
+  // Regex patterns
+  const boundaryRegex = /\s#boundary\b/;
+  const blockRefRegex = /\s\^([a-zA-Z0-9]{8})$/;
+  const crossLinkRegex = /\[\[#\^([a-zA-Z0-9]{8})\|\*\]\]/g;
+
   lines.forEach((line) => {
+    let text = "";
+    let indent = 0;
+    
     if (isHeader(line)) {
-      parsed.push({ indent: 0, text: line.replace(/^#+\s/, "").trim() });
+      indent = 0;
+      text = line.replace(/^#+\s/, "").trim();
     } else {
       const match = isListItem(line);
       if (match) {
-        parsed.push({ indent: delta + match[1].length, text: match[2].trim() });
+        indent = delta + match[1].length;
+        text = match[2].trim();
       } else if (parsed.length > 0) {
+        // multiline handling
         parsed[parsed.length - 1].text += "\n" + line.trim();
+        return; // Skip the rest of processing for continuation lines
       }
+    }
+
+    if (text) {
+      // 1. Check for Boundary
+      const hasBoundary = boundaryRegex.test(text);
+      text = text.replace(boundaryRegex, "");
+
+      // 2. Check for Block Ref (ID)
+      const refMatch = text.match(blockRefRegex);
+      let blockRef = null;
+      if (refMatch) {
+        blockRef = refMatch[1];
+        text = text.replace(blockRefRegex, "");
+      }
+
+      // 3. Check for Crosslinks (Outgoing)
+      const outgoingRefs = [];
+      let linkMatch;
+      while ((linkMatch = crossLinkRegex.exec(text)) !== null) {
+        outgoingRefs.push(linkMatch[1]);
+      }
+      text = text.replace(crossLinkRegex, "");
+
+      parsed.push({ 
+        indent, 
+        text: text.trim(),
+        hasBoundary,
+        blockRef,
+        outgoingRefs 
+      });
     }
   });
 
@@ -3193,8 +3342,17 @@ const importTextToMap = async (rawText) => {
   if (!sel) {
     const minIndent = Math.min(...parsed.map((p) => p.indent));
     const topLevelItems = parsed.filter((p) => p.indent === minIndent);
+    
+    // Helper to process metadata on the root/first node
+    const processRootMeta = (item, id) => {
+        if(item.blockRef) blockRefToNodeId.set(item.blockRef, id);
+        if(item.outgoingRefs.length > 0) nodeToOutgoingRefs.set(id, item.outgoingRefs);
+        if(item.hasBoundary) createImportBoundary(id);
+    };
+
     if (topLevelItems.length === 1) {
       currentParent = await addNode(topLevelItems[0].text, true, true, [], null);
+      processRootMeta(topLevelItems[0], currentParent.id);
       parsed.shift();
     } else {
       currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true, [], null);
@@ -3207,6 +3365,38 @@ const importTextToMap = async (rawText) => {
 
   const stack = [{ indent: -1, node: currentParent }];
   const initialViewElements = ea.getViewElements();
+  
+  // Helper to create boundary during import (mimics toggleBoundary logic)
+  const createImportBoundary = (nodeId) => {
+    const node = ea.getElement(nodeId);
+    if (!node) return;
+    
+    const id = ea.generateElementId();
+    const st = getAppState();
+    const boundaryEl = {
+        id: id,
+        type: "line",
+        x: node.x, y: node.y, width: 1, height: 1,
+        angle: 0,
+        roughness: st.currentItemRoughness,
+        strokeColor: node.strokeColor,
+        backgroundColor: node.strokeColor,
+        fillStyle: "solid",
+        strokeWidth: 2,
+        strokeStyle: "solid",
+        opacity: 30,
+        points: [[0,0], [1,1], [0,0]],
+        polygon: true,
+        locked: false,
+        groupIds: node.groupIds || [],
+        customData: {isBoundary: true},
+        roundness: arrowType === "curved" ? {type: 2} : null,
+    };
+    
+    ea.elementsDict[id] = boundaryEl;
+    ea.addAppendUpdateCustomData(nodeId, { boundaryId: id });
+  };
+
   for (const item of parsed) {
     while (stack.length > 1 && item.indent <= stack[stack.length - 1].indent) {
       stack.pop();
@@ -3214,8 +3404,39 @@ const importTextToMap = async (rawText) => {
     const parentNode = stack[stack.length - 1].node;
     const currentAllElements = initialViewElements.concat(ea.getElements());
     const newNode = await addNode(item.text, false, true, currentAllElements, parentNode);
+    
+    // Process Metadata
+    if (item.blockRef) blockRefToNodeId.set(item.blockRef, newNode.id);
+    if (item.outgoingRefs.length > 0) nodeToOutgoingRefs.set(newNode.id, item.outgoingRefs);
+    if (item.hasBoundary) createImportBoundary(newNode.id);
+    
     stack.push({ indent: item.indent, node: newNode });
   }
+
+  // -------------------------------------------------------------------------
+  //  Generate Crosslinks
+  // -------------------------------------------------------------------------
+  nodeToOutgoingRefs.forEach((targetRefs, sourceId) => {
+    targetRefs.forEach(ref => {
+        const targetId = blockRefToNodeId.get(ref);
+        if (targetId) {
+            ea.connectObjects(
+                sourceId, null, 
+                targetId, null, 
+                {
+                    startArrowHead: null,
+                    endArrowHead: "triangle"
+                }
+            );
+            // Get the newly created arrow (last element) and style it
+            const elements = ea.getElements();
+            const arrow = elements[elements.length - 1];
+            if (arrow && arrow.type === "arrow") {
+                arrow.strokeStyle = "dashed";
+            }
+        }
+    });
+  });
 
   // -------------------------------------------------------------------------
   // "Right-Left" Balanced Layout Adjustment for Imported L1 Nodes
