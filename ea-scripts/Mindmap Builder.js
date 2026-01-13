@@ -198,10 +198,26 @@ const STRINGS = {
 
     // Layout configuration
     MODAL_LAYOUT_TITLE: "Layout Configuration",
+    // Section Headers
+    SECTION_GENERAL: "General Spacing",
+    SECTION_RADIAL: "Radial Layout (Clockwise)",
+    SECTION_DIRECTIONAL: "Directional Layout (Left/Right)",
+    SECTION_VISUALS: "Visual Elements",
+    SECTION_MANUAL: "Manual Mode Behavior",
+    // Radial Strings
+    RADIAL_ASPECT_RATIO: "Ellipse Aspect Ratio",
+    DESC_RADIAL_ASPECT_RATIO: "Controls the shape. < 1.0 is tall/narrow (0.7 = portrait). 1.0 is circular. > 1.0 is wide (landscape).",
+    RADIAL_POLE_GAP_BONUS: "Pole Gap Bonus",
+    DESC_RADIAL_POLE_GAP_BONUS: "Increases spacing between nodes at the Top and Bottom. Higher values push nodes further along the arc.",
+    RADIAL_START_ANGLE: "Start Angle",
+    DESC_RADIAL_START_ANGLE: "Where the first node appears (Degrees). 270 is North, 0 is East, 90 is South.",
+    RADIAL_MAX_SWEEP: "Max Sweep Angle",
+    DESC_RADIAL_MAX_SWEEP: "Total arc available to fill. 360 uses full circle. Lower values leave a gap between the first and last node.",
+    // Others
     GAP_X:  "Gap X",
-    DESC_LAYOUT_GAP_X: "Horizontal distance between a parent and its children. Low: compact width. High: wide diagram.",
+    DESC_LAYOUT_GAP_X: "Horizontal distance between parent and child nodes.",
     GAP_Y:  "Gap Y",
-    DESC_LAYOUT_GAP_Y: "Vertical distance between sibling branches. Low: compact height. High: airy separation.",
+    DESC_LAYOUT_GAP_Y: "Vertical distance between sibling nodes. Also used as the base gap for Radial layouts.",
     GAP_MULTIPLIER:  "Gap Multiplier",
     DESC_LAYOUT_GAP_MULTIPLIER: "Vertical spacing for 'leaf' nodes (no children), relative to font size. Low: list-like stacking. High: standard tree spacing.",
     DIRECTIONAL_ARC_SPAN_RADIANS:  "Directional Arc-span Radians",
@@ -209,7 +225,7 @@ const STRINGS = {
     ROOT_RADIUS_FACTOR:  "Root Radius Factor",
     DESC_LAYOUT_ROOT_RADIUS: "Multiplier for the Root node's bounding box to determine initial radius.",
     MIN_RADIUS:  "Minimum Radius",
-    DESC_LAYOUT_MIN_RADIUS: "Minimum distance of Level 1 nodes from the Root center.",
+    DESC_LAYOUT_MIN_RADIUS: "The absolute minimum distance from the root center to the first level of nodes.",
     RADIUS_PADDING_PER_NODE:  "Radius Padding per Node",
     DESC_LAYOUT_RADIUS_PADDING: "Extra radius added per child node to accommodate dense maps.",
     GAP_MULTIPLIER_RADIAL:  "Radial-layout Gap Multiplier",
@@ -332,72 +348,113 @@ const K_ARROW_TYPE = "Arrow Type";
 // Layout & Geometry Settings
 // ---------------------------------------------------------------------------
 const LAYOUT_METADATA = {
+  // --- General ---
   GAP_X: {
+    section: "SECTION_GENERAL",
     def: 120, min: 50, max: 400, step: 10,
     desc: t("DESC_LAYOUT_GAP_X"),
     name: t("GAP_X"),
   },
   GAP_Y: {
+    section: "SECTION_GENERAL",
     def: 25, min: 10, max: 150, step: 5,
     desc: t("DESC_LAYOUT_GAP_Y"),
     name: t("GAP_Y"),
   },
   GAP_MULTIPLIER: {
+    section: "SECTION_GENERAL",
     def: 0.6, min: 0.1, max: 3.0, step: 0.1,
     desc: t("DESC_LAYOUT_GAP_MULTIPLIER"),
     name: t("GAP_MULTIPLIER"),
   },
-  DIRECTIONAL_ARC_SPAN_RADIANS: {
-    def: 1.0, min: 0.1, max: 3.14, step: 0.1,
-    desc: t("DESC_LAYOUT_ARC_SPAN"),
-    name: t("DIRECTIONAL_ARC_SPAN_RADIANS"),
-  },
+
+  // --- Radial (New & Updated) ---
   ROOT_RADIUS_FACTOR: {
+    section: "SECTION_RADIAL",
     def: 0.8, min: 0.5, max: 2.0, step: 0.1,
     desc: t("DESC_LAYOUT_ROOT_RADIUS"),
     name: t("ROOT_RADIUS_FACTOR"),
   },
   MIN_RADIUS: {
-    def: 350, min: 150, max: 600, step: 10,
+    section: "SECTION_RADIAL",
+    def: 350, min: 150, max: 800, step: 10,
     desc: t("DESC_LAYOUT_MIN_RADIUS"),
     name: t("MIN_RADIUS"),
   },
-  RADIUS_PADDING_PER_NODE: {
-    def: 7, min: 0, max: 20, step: 1,
-    desc: t("DESC_LAYOUT_RADIUS_PADDING"),
-    name: t("RADIUS_PADDING_PER_NODE"),
+  RADIAL_ASPECT_RATIO: {
+    section: "SECTION_RADIAL",
+    def: 0.7, min: 0.5, max: 2.0, step: 0.1,
+    desc: t("DESC_RADIAL_ASPECT_RATIO"),
+    name: t("RADIAL_ASPECT_RATIO"),
   },
-  GAP_MULTIPLIER_RADIAL: {
-    def: 3.1, min: 1.0, max: 5.0, step: 0.1,
-    desc: t("DESC_LAYOUT_GAP_RADIAL"),
-    name: t("GAP_MULTIPLIER_RADIAL"),
+  RADIAL_POLE_GAP_BONUS: {
+    section: "SECTION_RADIAL",
+    def: 2.0, min: 0.0, max: 5.0, step: 0.1,
+    desc: t("DESC_RADIAL_POLE_GAP_BONUS"),
+    name: t("RADIAL_POLE_GAP_BONUS"),
+  },
+  RADIAL_START_ANGLE: {
+    section: "SECTION_RADIAL",
+    def: 280, min: 0, max: 360, step: 10,
+    desc: t("DESC_RADIAL_START_ANGLE"),
+    name: t("RADIAL_START_ANGLE"),
+  },
+  RADIAL_MAX_SWEEP: {
+    section: "SECTION_RADIAL",
+    def: 340, min: 180, max: 360, step: 10,
+    desc: t("DESC_RADIAL_MAX_SWEEP"),
+    name: t("RADIAL_MAX_SWEEP"),
+  },
+
+  // --- Directional ---
+  DIRECTIONAL_ARC_SPAN_RADIANS: {
+    section: "SECTION_DIRECTIONAL",
+    def: 1.0, min: 0.1, max: 3.14, step: 0.1,
+    desc: t("DESC_LAYOUT_ARC_SPAN"),
+    name: t("DIRECTIONAL_ARC_SPAN_RADIANS"),
   },
   GAP_MULTIPLIER_DIRECTIONAL: {
+    section: "SECTION_DIRECTIONAL",
     def: 1.5, min: 1.0, max: 3.0, step: 0.1,
     desc: t("DESC_LAYOUT_GAP_DIRECTIONAL"),
     name: t("GAP_MULTIPLIER_DIRECTIONAL"),
   },
+  RADIUS_PADDING_PER_NODE: {
+    section: "SECTION_DIRECTIONAL",
+    def: 7, min: 0, max: 20, step: 1,
+    desc: t("DESC_LAYOUT_RADIUS_PADDING"),
+    name: t("RADIUS_PADDING_PER_NODE"),
+  },
+
+  // --- Visuals ---
   INDICATOR_OFFSET: {
+    section: "SECTION_VISUALS",
     def: 10, min: 5, max: 50, step: 5,
     desc: t("DESC_LAYOUT_INDICATOR_OFFSET"),
     name: t("INDICATOR_OFFSET"),
   },
   INDICATOR_OPACITY: {
+    section: "SECTION_VISUALS",
     def: 40, min: 10, max: 100, step: 10,
     desc: t("DESC_LAYOUT_INDICATOR_OPACITY"),
     name: t("INDICATOR_OPACITY"),
   },
   CONTAINER_PADDING: {
+    section: "SECTION_VISUALS",
     def: 10, min: 0, max: 50, step: 2,
     desc: t("DESC_LAYOUT_CONTAINER_PADDING"),
     name: t("CONTAINER_PADDING"),
   },
+
+  // --- Manual Mode ---
   MANUAL_GAP_MULTIPLIER: {
+    section: "SECTION_MANUAL",
     def: 1.3, min: 1.0, max: 2.0, step: 0.1,
     desc: t("DESC_LAYOUT_MANUAL_GAP"),
     name: t("MANUAL_GAP_MULTIPLIER"),
   },
   MANUAL_JITTER_RANGE: {
+    section: "SECTION_MANUAL",
     def: 300, min: 0, max: 400, step: 10,
     desc: t("DESC_LAYOUT_MANUAL_JITTER"),
     name: t("MANUAL_JITTER_RANGE"),
@@ -2132,30 +2189,25 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight) => 
   const { allElements, rootBox, rootCenter, hasGlobalFolds } = context;
   const count = nodes.length;
 
-  // --- CONFIGURATION ---
-  const START_ANGLE = 280; 
-  const MAX_SWEEP_DEG = 340; 
-  const ASPECT_RATIO = 0.7; // radiusX = 0.7 * radiusY
+  // --- CONFIGURATION FROM SETTINGS ---
+  const START_ANGLE = layoutSettings.RADIAL_START_ANGLE; 
+  const MAX_SWEEP_DEG = layoutSettings.RADIAL_MAX_SWEEP; 
+  const ASPECT_RATIO = layoutSettings.RADIAL_ASPECT_RATIO;
+  const POLE_GAP_BONUS = layoutSettings.RADIAL_POLE_GAP_BONUS;
   
-  // Base gap size from settings
   const BASE_GAP = layoutSettings.GAP_Y * 2; 
   
-  // How much larger gaps should be at the poles (90/270 degrees).
-  // 2.0 means gaps at poles are (1 + 2.0) = 3x larger than at the sides.
-  const POLE_GAP_BONUS = 2.0;
-
   // 1. Determine Minimum Radius Baseline
   const minRadiusY = Math.max(
     Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR * 1.5),
     layoutSettings.MIN_RADIUS
   );
 
-  // 2. Iterative Dry Run
+  // 2. Iterative Dry Run to calculate Angular Needs
   let simAngle = START_ANGLE;
   let totalAngleUsed = 0;
   
-  // Use a fixed test radius for simulation to calculate angular needs
-  const testRadiusY = 1000; 
+  const testRadiusY = 1000; // Arbitrary high number for precision
   const testRadiusX = testRadiusY * ASPECT_RATIO;
 
   const nodeData = nodes.map((node, i) => {
@@ -2163,10 +2215,10 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight) => 
     const sinComp = Math.abs(Math.sin(rad));
     const cosComp = Math.abs(Math.cos(rad));
 
-    // Effective Size: Geometric projection
+    // Effective Size: Geometric projection (Width vs Height)
     const effSize = node.width * sinComp + l1Metrics[i] * cosComp;
 
-    // Dynamic Gap: Larger at poles
+    // Dynamic Gap: Increases at Poles (sinComp near 1)
     const isLast = i === count - 1;
     const dynamicGap = isLast ? 0 : BASE_GAP * (1 + sinComp * POLE_GAP_BONUS);
 
@@ -2176,12 +2228,12 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight) => 
       Math.pow(testRadiusX * Math.sin(rad), 2)
     );
 
-    // Calculate angular spans
+    // Angular spans
     const nodeSpan = (effSize / localR) * (180 / Math.PI);
     const gapSpan = (dynamicGap / localR) * (180 / Math.PI);
     const totalSpan = nodeSpan + gapSpan;
 
-    // Advance simulation
+    // Advance
     simAngle += totalSpan;
     totalAngleUsed += totalSpan;
 
@@ -2195,7 +2247,6 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight) => 
   const finalRadiusY = Math.max(minRadiusY, calculatedRadiusY);
   const finalRadiusX = finalRadiusY * ASPECT_RATIO;
 
-  // Recalculate true scaling factor
   const finalAdjustmentScale = testRadiusY / finalRadiusY;
 
   // --- FINAL PLACEMENT ---
@@ -2206,7 +2257,7 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight) => 
     const hasBoundary = !!node.customData?.boundaryId;
     const data = nodeData[i];
 
-    // Adjust pre-calculated spans
+    // Adjust spans to real radius
     const realNodeSpan = data.nodeSpan * finalAdjustmentScale;
     const realGapSpan = data.gapSpan * finalAdjustmentScale;
 
@@ -2216,16 +2267,14 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight) => 
 
     const dynamicSide = (normAngle > 90 && normAngle < 270) ? -1 : 1;
     
-    // Recalculate exact coords on the final ellipse
+    // Recalculate exact coords
     const rad = placementAngle * (Math.PI / 180);
     
-    // Calculate finalLocalR first
     const finalLocalR = (finalRadiusX * finalRadiusY) / Math.sqrt(
       Math.pow(finalRadiusY * Math.cos(rad), 2) + 
       Math.pow(finalRadiusX * Math.sin(rad), 2)
     );
 
-    // Now define placeR using finalLocalR
     const placeR = hasBoundary ? finalLocalR * 1.0 : finalLocalR; 
     
     const tCX = rootCenter.x + placeR * Math.cos(rad);
@@ -4738,38 +4787,72 @@ class LayoutConfigModal extends ea.obsidian.Modal {
     container.style.overflowY = "auto";
     container.style.paddingRight = "10px";
 
+    // Group keys by section
+    const groupedKeys = {};
     Object.keys(LAYOUT_METADATA).forEach(key => {
-      const meta = LAYOUT_METADATA[key];
-      const setting = new ea.obsidian.Setting(container)
-        .setName(meta.name)
-        .setDesc(meta.desc);
-
-      let valLabel;
-      setting.addSlider(slider => slider
-        .setLimits(meta.min, meta.max, meta.step)
-        .setValue(this.settings[key])
-        .onChange(value => {
-          this.settings[key] = value;
-          valLabel.setText(String(value));
-        })
-      );
-
-      setting.settingEl.createDiv("", el => {
-        valLabel = el;
-        el.style.minWidth = "3em";
-        el.style.textAlign = "right";
-        el.innerText = String(this.settings[key]);
-      });
-
-      setting.addExtraButton(btn => btn
-        .setIcon("rotate-ccw")
-        .setTooltip("Reset to default")
-        .onClick(() => {
-          this.settings[key] = meta.def;
-          this.display();
-        })
-      );
+      const section = LAYOUT_METADATA[key].section;
+      if (!groupedKeys[section]) groupedKeys[section] = [];
+      groupedKeys[section].push(key);
     });
+
+    const renderSection = (sectionKey, title) => {
+      if (!groupedKeys[sectionKey]) return;
+      
+      const details = container.createEl("details", { attr: { open: true } });
+      details.style.marginBottom = "10px";
+      details.style.border = "1px solid var(--background-modifier-border)";
+      details.style.borderRadius = "5px";
+      
+      const summary = details.createEl("summary");
+      summary.style.padding = "10px";
+      summary.style.fontWeight = "bold";
+      summary.style.cursor = "pointer";
+      summary.style.backgroundColor = "var(--background-secondary)";
+      summary.innerText = title;
+
+      const content = details.createDiv();
+      content.style.padding = "10px";
+
+      groupedKeys[sectionKey].forEach(key => {
+        const meta = LAYOUT_METADATA[key];
+        const setting = new ea.obsidian.Setting(content)
+          .setName(meta.name)
+          .setDesc(meta.desc);
+
+        let valLabel;
+        setting.addSlider(slider => slider
+          .setLimits(meta.min, meta.max, meta.step)
+          .setValue(this.settings[key])
+          .onChange(value => {
+            this.settings[key] = value;
+            valLabel.setText(String(value.toFixed(meta.step < 1 ? 1 : 0)));
+          })
+        );
+
+        setting.settingEl.createDiv("", el => {
+          valLabel = el;
+          el.style.minWidth = "3em";
+          el.style.textAlign = "right";
+          el.innerText = String(this.settings[key].toFixed(meta.step < 1 ? 1 : 0));
+        });
+
+        setting.addExtraButton(btn => btn
+          .setIcon("rotate-ccw")
+          .setTooltip("Reset to default")
+          .onClick(() => {
+            this.settings[key] = meta.def;
+            this.display();
+          })
+        );
+      });
+    };
+
+    // Render Sections in Order
+    renderSection("SECTION_GENERAL", t("SECTION_GENERAL"));
+    renderSection("SECTION_RADIAL", t("SECTION_RADIAL"));
+    renderSection("SECTION_DIRECTIONAL", t("SECTION_DIRECTIONAL"));
+    renderSection("SECTION_VISUALS", t("SECTION_VISUALS"));
+    renderSection("SECTION_MANUAL", t("SECTION_MANUAL"));
 
     const footer = contentEl.createDiv();
     footer.style.marginTop = "20px";
