@@ -2127,6 +2127,157 @@ const updateL1Arrow = (node, context) => {
   }
 };
 
+const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight) => {
+  const { allElements, rootBox, rootCenter, hasGlobalFolds } = context;
+  const count = nodes.length;
+
+  // --- RADIAL VERTICAL ELLIPSE DISTRIBUTION ---
+  const MIN_ARC = 300; // Force nodes to spread at least this many degrees
+  const MAX_ARC = 345; // Maximum degrees to prevent Node 1/Node N overlap
+  
+  // Calculate basic radii based on content mass
+  const radiusY = Math.max(
+    Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR * 1.5),
+    layoutSettings.MIN_RADIUS,
+    totalSubtreeHeight / 2.5
+  );
+  const radiusX = radiusY * 0.75; // 3:4 Vertical Ellipse
+
+  /**
+   * Helper: Get distance from center to perimeter at a specific angle
+   */
+  const getEffR = (angleDeg, rX, rY) => {
+    const rad = (angleDeg - 90) * (Math.PI / 180);
+    return (rX * rY) / Math.sqrt(Math.pow(rY * Math.cos(rad), 2) + Math.pow(rX * Math.sin(rad), 2));
+  };
+
+  /**
+   * Spacing Logic: 
+   * We calculate the minimum angular footprint, then scale the gaps so the 
+   * nodes occupy an aesthetically pleasing arc between MIN_ARC and MAX_ARC.
+   */
+  let totalRequiredAngle = 0;
+  const angularSpans = nodes.map((node, i) => {
+    const nodeRX = node.customData?.boundaryId ? radiusX * 0.85 : radiusX;
+    const nodeRY = node.customData?.boundaryId ? radiusY * 0.85 : radiusY;
+    const effR = getEffR((i / count) * 360, nodeRX, nodeRY);
+    
+    // Vertical nodes (poles) need ~30% more angular room for their corners
+    const poleRad = (((i / count) * 360) - 90) * (Math.PI / 180);
+    const poleFactor = 1 + (Math.abs(Math.sin(poleRad)) * 0.3);
+    
+    const span = ((l1Metrics[i] * poleFactor) / effR) * (180 / Math.PI);
+    totalRequiredAngle += span;
+    return span;
+  });
+
+  // Determine how much we need to scale the gaps to fill the circle correctly
+  const targetArc = Math.max(MIN_ARC, Math.min(MAX_ARC, totalRequiredAngle * 1.5));
+  const slackMultiplier = targetArc / totalRequiredAngle;
+
+  let currentAngle = 15; // Start at ~1 o'clock
+  nodes.forEach((node, i) => {
+    const isPinned = node.customData?.isPinned === true;
+    const hasBoundary = !!node.customData?.boundaryId;
+
+    // Logic: Boundary nodes move closer to center
+    const currentRX = hasBoundary ? radiusX * 0.82 : radiusX;
+    const currentRY = hasBoundary ? radiusY * 0.82 : radiusY;
+    
+    const nodeSpanDeg = angularSpans[i] * slackMultiplier;
+    
+    const placementAngle = currentAngle + nodeSpanDeg / 2;
+    const angleRad = (placementAngle - 90) * (Math.PI / 180);
+    
+    const tCX = rootCenter.x + currentRX * Math.cos(angleRad);
+    const tCY = rootCenter.y + currentRY * Math.sin(angleRad);
+    
+    // Face logic: Nodes on the left side of the root center face left
+    const dynamicSide = (placementAngle > 180 && placementAngle < 360) ? -1 : 1;
+
+    if (isPinned) {
+      layoutSubtree(node.id, node.x, node.y + node.height / 2, dynamicSide, allElements, hasGlobalFolds);
+    } else {
+      layoutSubtree(node.id, tCX, tCY, dynamicSide, allElements, hasGlobalFolds);
+    }
+    
+    currentAngle += nodeSpanDeg;
+
+    // Metadata & Arrow maintenance
+    if (node.customData?.mindmapNew) {
+      ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
+    }
+    updateL1Arrow(node, context);
+    if (groupBranches) applyRecursiveGrouping(node.id, allElements);
+  });
+};
+
+const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, isLeftSide, centerAngle, gapMultiplier) => {
+  const { allElements, rootBox, rootCenter, hasGlobalFolds } = context;
+  const count = nodes.length;
+
+  // --- VERTICAL DIRECTIONAL LAYOUT (RIGHT/LEFT) ---
+  const totalContentHeight = totalSubtreeHeight + (count - 1) * layoutSettings.GAP_Y;
+  const radiusFromHeight = totalContentHeight / layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
+  const radiusY = Math.max(Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR), layoutSettings.MIN_RADIUS, radiusFromHeight) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+  const radiusX = Math.max(Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR), layoutSettings.MIN_RADIUS, radiusY * 0.2) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+
+  const totalThetaDeg = (totalContentHeight / radiusY) * (180 / Math.PI);
+  let currentAngle = isLeftSide ? centerAngle + totalThetaDeg / 2 : centerAngle - totalThetaDeg / 2;
+
+  nodes.forEach((node, i) => {
+    const nodeHeight = l1Metrics[i];
+    const isPinned = node.customData?.isPinned === true;
+    const side = isLeftSide ? -1 : 1;
+
+    const getAngularInfo = (targetNode, height) => {
+      const angleRad = Math.atan2((targetNode.y + targetNode.height / 2) - rootCenter.y, (targetNode.x + targetNode.width / 2) - rootCenter.x);
+      const angleDeg = (angleRad * (180 / Math.PI)) + 90;
+      const normAngle = angleDeg < 0 ? angleDeg + 360 : angleDeg;
+      const spanDeg = (height / radiusY) * (180 / Math.PI);
+      return { center: normAngle, span: spanDeg, start: normAngle - spanDeg / 2, end: normAngle + spanDeg / 2 };
+    };
+
+    const effectiveGap = layoutSettings.GAP_Y * gapMultiplier;
+    const gapSpanDeg = (effectiveGap / radiusY) * (180 / Math.PI);
+    const nodeSpanDeg = (nodeHeight / radiusY) * (180 / Math.PI);
+
+    if (isPinned) {
+      layoutSubtree(node.id, node.x, node.y + node.height / 2, side, allElements, hasGlobalFolds);
+      const info = getAngularInfo(node, nodeHeight);
+      if (isLeftSide) {
+        if (currentAngle > info.start - gapSpanDeg) currentAngle = info.start - gapSpanDeg;
+      } else {
+        if (currentAngle < info.end + gapSpanDeg) currentAngle = info.end + gapSpanDeg;
+      }
+    } else {
+      const nextPinned = nodes.slice(i + 1).find(n => n.customData?.isPinned);
+      if (nextPinned) {
+        const nextInfo = getAngularInfo(nextPinned, getSubtreeHeight(nextPinned.id, allElements));
+        if (isLeftSide) {
+          if (currentAngle - nodeSpanDeg < nextInfo.end + gapSpanDeg) currentAngle = nextInfo.start - gapSpanDeg;
+        } else {
+          if (currentAngle + nodeSpanDeg > nextInfo.start - gapSpanDeg) currentAngle = nextInfo.end + gapSpanDeg;
+        }
+      }
+
+      let angleDeg = isLeftSide ? currentAngle - nodeSpanDeg / 2 : currentAngle + nodeSpanDeg / 2;
+      currentAngle = isLeftSide ? currentAngle - (nodeSpanDeg + gapSpanDeg) : currentAngle + (nodeSpanDeg + gapSpanDeg);
+
+      const angleRad = (angleDeg - 90) * (Math.PI / 180);
+      const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
+      const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
+      layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds);
+    }
+
+    if (node.customData?.mindmapNew) {
+      ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
+    }
+    updateL1Arrow(node, context);
+    if (groupBranches) applyRecursiveGrouping(node.id, allElements);
+  });
+};
+
 /**
  * Unified layout function for Level 1 nodes.
  * Uses a Vertical Ellipse for Radial mode. Ensures nodes are distributed across
@@ -2134,164 +2285,21 @@ const updateL1Arrow = (node, context) => {
  */
 const layoutL1Nodes = (nodes, options, context) => {
   if (nodes.length === 0) return;
-  const { allElements, rootId, rootBox, rootCenter, hasGlobalFolds } = context;
+  const { allElements } = context;
   const { sortMethod, centerAngle, gapMultiplier } = options;
 
   // SORTING: Respect the established mindmapOrder (0..N)
   nodes.sort((a, b) => getMindmapOrder(a) - getMindmapOrder(b));
 
-  const count = nodes.length;
   const l1Metrics = nodes.map(node => getSubtreeHeight(node.id, allElements));
   const totalSubtreeHeight = l1Metrics.reduce((sum, h) => sum + h, 0);
-  const baseGap = layoutSettings.GAP_Y * gapMultiplier;
 
-  let radiusY, radiusX;
   const isLeftSide = sortMethod === "vertical" && Math.abs((centerAngle ?? 0) - 270) < 1;
 
   if (sortMethod === "radial") {
-    // --- RADIAL VERTICAL ELLIPSE DISTRIBUTION ---
-    const MIN_ARC = 300; // Force nodes to spread at least this many degrees
-    const MAX_ARC = 345; // Maximum degrees to prevent Node 1/Node N overlap
-    
-    // Calculate basic radii based on content mass
-    radiusY = Math.max(
-      Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR * 1.5),
-      layoutSettings.MIN_RADIUS,
-      totalSubtreeHeight / 2.5
-    );
-    radiusX = radiusY * 0.75; // 3:4 Vertical Ellipse
-
-    /**
-     * Helper: Get distance from center to perimeter at a specific angle
-     */
-    const getEffR = (angleDeg, rX, rY) => {
-      const rad = (angleDeg - 90) * (Math.PI / 180);
-      return (rX * rY) / Math.sqrt(Math.pow(rY * Math.cos(rad), 2) + Math.pow(rX * Math.sin(rad), 2));
-    };
-
-    /**
-     * Spacing Logic: 
-     * We calculate the minimum angular footprint, then scale the gaps so the 
-     * nodes occupy an aesthetically pleasing arc between MIN_ARC and MAX_ARC.
-     */
-    let totalRequiredAngle = 0;
-    const angularSpans = nodes.map((node, i) => {
-      const nodeRX = node.customData?.boundaryId ? radiusX * 0.85 : radiusX;
-      const nodeRY = node.customData?.boundaryId ? radiusY * 0.85 : radiusY;
-      const effR = getEffR((i / count) * 360, nodeRX, nodeRY);
-      
-      // Vertical nodes (poles) need ~30% more angular room for their corners
-      const poleRad = (((i / count) * 360) - 90) * (Math.PI / 180);
-      const poleFactor = 1 + (Math.abs(Math.sin(poleRad)) * 0.3);
-      
-      const span = ((l1Metrics[i] * poleFactor) / effR) * (180 / Math.PI);
-      totalRequiredAngle += span;
-      return span;
-    });
-
-    // Determine how much we need to scale the gaps to fill the circle correctly
-    const targetArc = Math.max(MIN_ARC, Math.min(MAX_ARC, totalRequiredAngle * 1.5));
-    const slackMultiplier = targetArc / totalRequiredAngle;
-
-    let currentAngle = 15; // Start at ~1 o'clock
-    nodes.forEach((node, i) => {
-      const nodeHeight = l1Metrics[i];
-      const isPinned = node.customData?.isPinned === true;
-      const hasBoundary = !!node.customData?.boundaryId;
-
-      // Logic: Boundary nodes move closer to center
-      const currentRX = hasBoundary ? radiusX * 0.82 : radiusX;
-      const currentRY = hasBoundary ? radiusY * 0.82 : radiusY;
-      
-      const effR = getEffR(currentAngle, currentRX, currentRY);
-      const nodeSpanDeg = angularSpans[i] * slackMultiplier;
-      
-      const placementAngle = currentAngle + nodeSpanDeg / 2;
-      const angleRad = (placementAngle - 90) * (Math.PI / 180);
-      
-      const tCX = rootCenter.x + currentRX * Math.cos(angleRad);
-      const tCY = rootCenter.y + currentRY * Math.sin(angleRad);
-      
-      // Face logic: Nodes on the left side of the root center face left
-      const dynamicSide = (placementAngle > 180 && placementAngle < 360) ? -1 : 1;
-
-      if (isPinned) {
-        layoutSubtree(node.id, node.x, node.y + node.height / 2, dynamicSide, allElements, hasGlobalFolds);
-      } else {
-        layoutSubtree(node.id, tCX, tCY, dynamicSide, allElements, hasGlobalFolds);
-      }
-      
-      currentAngle += nodeSpanDeg;
-
-      // Metadata & Arrow maintenance
-      if (node.customData?.mindmapNew) {
-        ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
-      }
-      updateL1Arrow(node, context);
-      if (groupBranches) applyRecursiveGrouping(node.id, allElements);
-    });
-
+    radialL1Distribution(nodes, context, l1Metrics, totalSubtreeHeight);
   } else {
-    // --- VERTICAL DIRECTIONAL LAYOUT (RIGHT/LEFT) ---
-    const totalContentHeight = totalSubtreeHeight + (count - 1) * layoutSettings.GAP_Y;
-    const radiusFromHeight = totalContentHeight / layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
-    radiusY = Math.max(Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR), layoutSettings.MIN_RADIUS, radiusFromHeight) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
-    radiusX = Math.max(Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR), layoutSettings.MIN_RADIUS, radiusY * 0.2) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
-
-    const totalThetaDeg = (totalContentHeight / radiusY) * (180 / Math.PI);
-    let currentAngle = isLeftSide ? centerAngle + totalThetaDeg / 2 : centerAngle - totalThetaDeg / 2;
-
-    nodes.forEach((node, i) => {
-      const nodeHeight = l1Metrics[i];
-      const isPinned = node.customData?.isPinned === true;
-      const side = isLeftSide ? -1 : 1;
-
-      const getAngularInfo = (targetNode, height) => {
-        const angleRad = Math.atan2((targetNode.y + targetNode.height / 2) - rootCenter.y, (targetNode.x + targetNode.width / 2) - rootCenter.x);
-        const angleDeg = (angleRad * (180 / Math.PI)) + 90;
-        const normAngle = angleDeg < 0 ? angleDeg + 360 : angleDeg;
-        const spanDeg = (height / radiusY) * (180 / Math.PI);
-        return { center: normAngle, span: spanDeg, start: normAngle - spanDeg / 2, end: normAngle + spanDeg / 2 };
-      };
-
-      const effectiveGap = layoutSettings.GAP_Y * gapMultiplier;
-      const gapSpanDeg = (effectiveGap / radiusY) * (180 / Math.PI);
-      const nodeSpanDeg = (nodeHeight / radiusY) * (180 / Math.PI);
-
-      if (isPinned) {
-        layoutSubtree(node.id, node.x, node.y + node.height / 2, side, allElements, hasGlobalFolds);
-        const info = getAngularInfo(node, nodeHeight);
-        if (isLeftSide) {
-          if (currentAngle > info.start - gapSpanDeg) currentAngle = info.start - gapSpanDeg;
-        } else {
-          if (currentAngle < info.end + gapSpanDeg) currentAngle = info.end + gapSpanDeg;
-        }
-      } else {
-        const nextPinned = nodes.slice(i + 1).find(n => n.customData?.isPinned);
-        if (nextPinned) {
-          const nextInfo = getAngularInfo(nextPinned, getSubtreeHeight(nextPinned.id, allElements));
-          if (isLeftSide) {
-            if (currentAngle - nodeSpanDeg < nextInfo.end + gapSpanDeg) currentAngle = nextInfo.start - gapSpanDeg;
-          } else {
-            if (currentAngle + nodeSpanDeg > nextInfo.start - gapSpanDeg) currentAngle = nextInfo.end + gapSpanDeg;
-          }
-        }
-
-        let angleDeg = isLeftSide ? currentAngle - nodeSpanDeg / 2 : currentAngle + nodeSpanDeg / 2;
-        currentAngle = isLeftSide ? currentAngle - (nodeSpanDeg + gapSpanDeg) : currentAngle + (nodeSpanDeg + gapSpanDeg);
-
-        const angleRad = (angleDeg - 90) * (Math.PI / 180);
-        const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
-        const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
-        layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds);
-      }
-
-      if (node.customData?.mindmapNew) {
-        ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
-      }
-      updateL1Arrow(node, context);
-      if (groupBranches) applyRecursiveGrouping(node.id, allElements);
-    });
+    verticalL1Distribution(nodes, context, l1Metrics, totalSubtreeHeight, isLeftSide, centerAngle, gapMultiplier);
   }
 };
 
@@ -2398,7 +2406,6 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     if (!isModeSwitch && doVisualSort) {
       sortL1NodesBasedOnVisualSequence(l1Nodes, newMode, rootCenter);
     } else {
-      l1Nodes.sort((a, b) => getMindmapOrder(a) - getMindmapOrder(b));
       ea.addAppendUpdateCustomData(rootId, { growthMode: newMode });
     }
 
