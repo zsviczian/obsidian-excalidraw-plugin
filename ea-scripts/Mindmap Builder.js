@@ -2375,7 +2375,7 @@ const sortL1NodesBasedOnVisualSequence = (l1Nodes, mode, rootCenter) => {
   existingNodes.forEach((node, i) => {
     ea.addAppendUpdateCustomData(node.id, { mindmapOrder: i });
   });
-  
+
   newNodes.forEach((node, i) => {
     ea.addAppendUpdateCustomData(node.id, { mindmapOrder: existingNodes.length + i });
   });
@@ -2390,13 +2390,11 @@ const sortL1NodesBasedOnVisualSequence = (l1Nodes, mode, rootCenter) => {
  * @param {boolean} forceUngroup - Force ungrouping of branches before layout.
  */
 const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) => {
-  if (!ea.targetView) return;
-  const run = async (doVisualSort) => {
-    const allElements = ea.getViewElements();
-    const root = allElements.find((el) => el.id === rootId);
+  if (!ea.targetView) return; 
+  const run = async (allElements, root, doVisualSort) => {
     const oldMode = root.customData?.growthMode;
     const newMode = currentModalGrowthMode;
-
+    
     // Snapshot positions
     const originalPositions = new Map();
     allElements.forEach(el => {
@@ -2418,8 +2416,6 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     const hasGlobalFolds = allElements.some(el => el.customData?.isFolded === true);
     const l1Nodes = getChildrenNodes(rootId, allElements);
     if (l1Nodes.length === 0) return;
-
-    ea.copyViewElementsToEAforEditing(allElements);
 
     if (groupBranches || forceUngroup) {
       const mindmapIds = getBranchElementIds(rootId, allElements);
@@ -2496,12 +2492,31 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     moveDecorations(ea.getElements(), originalPositions, groupToNodes);
   };
 
-  await run(true);
+  ea.copyViewElementsToEAforEditing(ea.getViewElements());
+  let allElements = ea.getElements();
+  let root = allElements.find((el) => el.id === rootId);
+  if (!root) return;
+  
+  const mindmapIds = getBranchElementIds(rootId, allElements);
+  const structuralGroupId = getStructuralGroupForNode(mindmapIds, allElements);
+  if (structuralGroupId) {
+    removeGroupFromElements(structuralGroupId, allElements);
+  }
+
+  await run(allElements, root, true);
   await addElementsToView();
 
   // sometimes one pass is not enough to settle subtree positions and boundaries
-  await run(false);
+  ea.copyViewElementsToEAforEditing(ea.getViewElements());
+  allElements = ea.getElements();
+  root = allElements.find((el) => el.id === rootId);
+  await run(allElements, root, false);
+  
+  if (structuralGroupId) {
+    ea.addToGroup(mindmapIds);
+  }
   await addElementsToView();
+  ea.selectElementsInView([root.id]);
 };
 
 // ---------------------------------------------------------------------------
@@ -3760,6 +3775,32 @@ const getBranchElementIds = (nodeId, allElements) => {
 };
 
 /**
+ * 
+ * @param {*} nodeId 
+ * @param {*} workbenchEls ExcalidrawAutomate elements on the workbench
+ * @returns the group ID if a structural mindmap group exists for the branch, else null
+ */
+const getStructuralGroupForNode = (branchIds, workbenchEls) => {
+  const branchElementIds = workbenchEls.filter(el => branchIds.includes(el.id));
+  const commonGroupId = ea.getCommonGroupForElements(branchElementIds);
+  const structuralGroupId = (commonGroupId && isMindmapGroup(commonGroupId, workbenchEls)) ? commonGroupId : null;
+  return structuralGroupId;
+};
+
+/**
+ * 
+ * @param {*} groupId 
+ * @param {*} workbenchEls ExcalidrawAutomate elements on the workbench
+ */
+const removeGroupFromElements = (groupId, workbenchEls) => {
+  workbenchEls.forEach(el => {
+    if (el.groupIds) { 
+      el.groupIds = el.groupIds.filter(g => g !== groupId);
+    }
+  });
+}
+
+/**
  * Toggles a single flat group for the selected branch.
 **/
 const toggleBranchGroup = async () => {
@@ -3768,25 +3809,19 @@ const toggleBranchGroup = async () => {
   if (!sel) return;
 
   const allElements = ea.getViewElements();
-  const ids = getBranchElementIds(sel.id, allElements);
+  const branchIds = getBranchElementIds(sel.id, allElements);
 
-  if (ids.length <= 1) return;
+  if (branchIds.length <= 1) return;
 
-  ea.copyViewElementsToEAforEditing(allElements.filter(el => ids.includes(el.id)));
+  ea.copyViewElementsToEAforEditing(allElements.filter(el => branchIds.includes(el.id)));
   const workbenchEls = ea.getElements();
 
   let newGroupId;
-  const commonGroupId = ea.getCommonGroupForElements(workbenchEls);
-  const structuralGroupId = (commonGroupId && isMindmapGroup(commonGroupId, allElements)) ? commonGroupId : null;
-
+  const structuralGroupId = getStructuralGroupForNode(branchIds, workbenchEls);
   if (structuralGroupId) {
-    workbenchEls.forEach(el => {
-      if (el.groupIds) {
-        el.groupIds = el.groupIds.filter(g => g !== structuralGroupId);
-      }
-    });
+    removeGroupFromElements(structuralGroupId, workbenchEls);
   } else {
-    newGroupId = ea.addToGroup(ids);
+    newGroupId = ea.addToGroup(branchIds);
   }
 
   await addElementsToView();
