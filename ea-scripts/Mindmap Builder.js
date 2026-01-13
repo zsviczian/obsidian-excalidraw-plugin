@@ -134,6 +134,7 @@ const STRINGS = {
     TOOLTIP_TOGGLE_BOUNDARY: "Toggle subtree boundary",
     TOOLTIP_TOGGLE_FLOATING_EXTRAS: "Toggle extra controls",
     TOOLTIP_CONFIGURE_PALETTE: "Configure custom color palette for branches",
+    TOOLTIP_CONFIGURE_LAYOUT: "Configure layout settings",
     TOOLTIP_MOVE_UP: "Move Up",
     TOOLTIP_MOVE_DOWN: "Move Down",
     TOOLTIP_EDIT_COLOR: "Edit",
@@ -213,8 +214,8 @@ const STRINGS = {
     DESC_LAYOUT_RADIUS_PADDING: "Extra radius added per child node to accommodate dense maps.",
     GAP_MULTIPLIER_RADIAL:  "Radial-layout Gap Multiplier",
     DESC_LAYOUT_GAP_RADIAL: "Angular spacing multiplier for Radial mode.",
-    GAP_MULTIPLIER_DIRECTIONAL:  "Directional-layout Gap Multiplier",
-    DESC_LAYOUT_GAP_DIRECTIONAL: "Angular spacing multiplier for Left/Right modes.",
+    GAP_MULTIPLIER_DIRECTIONAL:  "Vertical-layout Gap Multiplier",
+    DESC_LAYOUT_GAP_DIRECTIONAL: "Spacing multiplier for Right-facing and Left-facing top level branches",
     INDICATOR_OFFSET:  "Fold Indicator Offset",
     DESC_LAYOUT_INDICATOR_OFFSET: "Distance of the '...' fold indicator from the node.",
     INDICATOR_OPACITY:  "Fold Indicator Opacity",
@@ -2131,79 +2132,114 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight) => 
   const { allElements, rootBox, rootCenter, hasGlobalFolds } = context;
   const count = nodes.length;
 
-  // --- RADIAL VERTICAL ELLIPSE DISTRIBUTION ---
-  const MIN_ARC = 300; // Force nodes to spread at least this many degrees
-  const MAX_ARC = 345; // Maximum degrees to prevent Node 1/Node N overlap
+  // --- CONFIGURATION ---
+  const START_ANGLE = 280; 
+  const MAX_SWEEP_DEG = 340; 
+  const ASPECT_RATIO = 0.7; // radiusX = 0.7 * radiusY
   
-  // Calculate basic radii based on content mass
-  const radiusY = Math.max(
+  // Base gap size from settings
+  const BASE_GAP = layoutSettings.GAP_Y * 2; 
+  
+  // How much larger gaps should be at the poles (90/270 degrees).
+  // 2.0 means gaps at poles are (1 + 2.0) = 3x larger than at the sides.
+  const POLE_GAP_BONUS = 2.0;
+
+  // 1. Determine Minimum Radius Baseline
+  const minRadiusY = Math.max(
     Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR * 1.5),
-    layoutSettings.MIN_RADIUS,
-    totalSubtreeHeight / 2.5
+    layoutSettings.MIN_RADIUS
   );
-  const radiusX = radiusY * 0.75; // 3:4 Vertical Ellipse
 
-  /**
-   * Helper: Get distance from center to perimeter at a specific angle
-   */
-  const getEffR = (angleDeg, rX, rY) => {
-    const rad = (angleDeg - 90) * (Math.PI / 180);
-    return (rX * rY) / Math.sqrt(Math.pow(rY * Math.cos(rad), 2) + Math.pow(rX * Math.sin(rad), 2));
-  };
+  // 2. Iterative Dry Run
+  let simAngle = START_ANGLE;
+  let totalAngleUsed = 0;
+  
+  // Use a fixed test radius for simulation to calculate angular needs
+  const testRadiusY = 1000; 
+  const testRadiusX = testRadiusY * ASPECT_RATIO;
 
-  /**
-   * Spacing Logic: 
-   * We calculate the minimum angular footprint, then scale the gaps so the 
-   * nodes occupy an aesthetically pleasing arc between MIN_ARC and MAX_ARC.
-   */
-  let totalRequiredAngle = 0;
-  const angularSpans = nodes.map((node, i) => {
-    const nodeRX = node.customData?.boundaryId ? radiusX * 0.85 : radiusX;
-    const nodeRY = node.customData?.boundaryId ? radiusY * 0.85 : radiusY;
-    const effR = getEffR((i / count) * 360, nodeRX, nodeRY);
-    
-    // Vertical nodes (poles) need ~30% more angular room for their corners
-    const poleRad = (((i / count) * 360) - 90) * (Math.PI / 180);
-    const poleFactor = 1 + (Math.abs(Math.sin(poleRad)) * 0.3);
-    
-    const span = ((l1Metrics[i] * poleFactor) / effR) * (180 / Math.PI);
-    totalRequiredAngle += span;
-    return span;
+  const nodeData = nodes.map((node, i) => {
+    const rad = simAngle * (Math.PI / 180);
+    const sinComp = Math.abs(Math.sin(rad));
+    const cosComp = Math.abs(Math.cos(rad));
+
+    // Effective Size: Geometric projection
+    const effSize = node.width * sinComp + l1Metrics[i] * cosComp;
+
+    // Dynamic Gap: Larger at poles
+    const isLast = i === count - 1;
+    const dynamicGap = isLast ? 0 : BASE_GAP * (1 + sinComp * POLE_GAP_BONUS);
+
+    // Local Radius at this angle
+    const localR = (testRadiusX * testRadiusY) / Math.sqrt(
+      Math.pow(testRadiusY * Math.cos(rad), 2) + 
+      Math.pow(testRadiusX * Math.sin(rad), 2)
+    );
+
+    // Calculate angular spans
+    const nodeSpan = (effSize / localR) * (180 / Math.PI);
+    const gapSpan = (dynamicGap / localR) * (180 / Math.PI);
+    const totalSpan = nodeSpan + gapSpan;
+
+    // Advance simulation
+    simAngle += totalSpan;
+    totalAngleUsed += totalSpan;
+
+    return { effSize, dynamicGap, nodeSpan, gapSpan };
   });
 
-  // Determine how much we need to scale the gaps to fill the circle correctly
-  const targetArc = Math.max(MIN_ARC, Math.min(MAX_ARC, totalRequiredAngle * 1.5));
-  const slackMultiplier = targetArc / totalRequiredAngle;
+  // 3. Scale Radius to Fit
+  const fitScale = Math.max(1.0, totalAngleUsed / MAX_SWEEP_DEG);
+  
+  const calculatedRadiusY = testRadiusY * fitScale;
+  const finalRadiusY = Math.max(minRadiusY, calculatedRadiusY);
+  const finalRadiusX = finalRadiusY * ASPECT_RATIO;
 
-  let currentAngle = 15; // Start at ~1 o'clock
+  // Recalculate true scaling factor
+  const finalAdjustmentScale = testRadiusY / finalRadiusY;
+
+  // --- FINAL PLACEMENT ---
+  let currentAngle = START_ANGLE;
+
   nodes.forEach((node, i) => {
     const isPinned = node.customData?.isPinned === true;
     const hasBoundary = !!node.customData?.boundaryId;
+    const data = nodeData[i];
 
-    // Logic: Boundary nodes move closer to center
-    const currentRX = hasBoundary ? radiusX * 0.82 : radiusX;
-    const currentRY = hasBoundary ? radiusY * 0.82 : radiusY;
+    // Adjust pre-calculated spans
+    const realNodeSpan = data.nodeSpan * finalAdjustmentScale;
+    const realGapSpan = data.gapSpan * finalAdjustmentScale;
+
+    // Center node in its slice
+    const placementAngle = currentAngle + (realNodeSpan / 2);
+    const normAngle = (placementAngle % 360 + 360) % 360;
+
+    const dynamicSide = (normAngle > 90 && normAngle < 270) ? -1 : 1;
     
-    const nodeSpanDeg = angularSpans[i] * slackMultiplier;
+    // Recalculate exact coords on the final ellipse
+    const rad = placementAngle * (Math.PI / 180);
     
-    const placementAngle = currentAngle + nodeSpanDeg / 2;
-    const angleRad = (placementAngle - 90) * (Math.PI / 180);
+    // Calculate finalLocalR first
+    const finalLocalR = (finalRadiusX * finalRadiusY) / Math.sqrt(
+      Math.pow(finalRadiusY * Math.cos(rad), 2) + 
+      Math.pow(finalRadiusX * Math.sin(rad), 2)
+    );
+
+    // Now define placeR using finalLocalR
+    const placeR = hasBoundary ? finalLocalR * 1.0 : finalLocalR; 
     
-    const tCX = rootCenter.x + currentRX * Math.cos(angleRad);
-    const tCY = rootCenter.y + currentRY * Math.sin(angleRad);
-    
-    // Face logic: Nodes on the left side of the root center face left
-    const dynamicSide = (placementAngle > 180 && placementAngle < 360) ? -1 : 1;
+    const tCX = rootCenter.x + placeR * Math.cos(rad);
+    const tCY = rootCenter.y + placeR * Math.sin(rad);
 
     if (isPinned) {
       layoutSubtree(node.id, node.x, node.y + node.height / 2, dynamicSide, allElements, hasGlobalFolds);
     } else {
       layoutSubtree(node.id, tCX, tCY, dynamicSide, allElements, hasGlobalFolds);
     }
-    
-    currentAngle += nodeSpanDeg;
 
-    // Metadata & Arrow maintenance
+    // Advance
+    currentAngle += realNodeSpan + realGapSpan;
+
     if (node.customData?.mindmapNew) {
       ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
     }
@@ -2331,11 +2367,17 @@ const sortL1NodesBasedOnVisualSequence = (l1Nodes, mode, rootCenter) => {
   };
      
   const sortFn = mode === "Radial" ? sortByAngle : sortByReadingOrder;
-  l1Nodes.sort(sortFn);
+  const existingNodes = l1Nodes.filter(n => !n.customData?.mindmapNew);
+  const newNodes = l1Nodes.filter(n => n.customData?.mindmapNew);
+  existingNodes.sort(sortFn);
 
   // Freeze logic mindmapOrder based on final sort
-  l1Nodes.forEach((node, i) => {
+  existingNodes.forEach((node, i) => {
     ea.addAppendUpdateCustomData(node.id, { mindmapOrder: i });
+  });
+  
+  newNodes.forEach((node, i) => {
+    ea.addAppendUpdateCustomData(node.id, { mindmapOrder: existingNodes.length + i });
   });
 };
 
