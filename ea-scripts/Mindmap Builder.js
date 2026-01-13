@@ -831,12 +831,13 @@ const addElementsToView = async (
     save = false,
     newElementsOnTop = true,
     shouldRestoreElements = true,
+    shouldSleep = false,
   } = {}
 ) => {
   if (!ea.targetView) return;
   await ea.addElementsToView(repositionToCursor, save, newElementsOnTop, shouldRestoreElements);
   ea.clear();
-  await sleep(10); // Allow Excalidraw to process the new elements
+  if (shouldSleep) await sleep(10); // Allow Excalidraw to process the new elements
 }
 
 // ---------------------------------------------------------------------------
@@ -1384,28 +1385,10 @@ const toggleFold = async (mode = "L0") => {
   if (!autoLayoutDisabled) {
     const info = getHierarchy(sel, ea.getViewElements());
     await triggerGlobalLayout(info.rootId);
-    await triggerGlobalLayout(info.rootId); //boundaries sometime need a second pass
   }
 
   const currentViewElements = ea.getViewElements();
 
-  if (mode === "L1") {
-    if (isFoldAction) {
-      getChildrenNodes(targetNode.id, currentViewElements);
-    }
-  } else if (mode === "L0") {
-    // Mode "L0" (Single node toggle)
-    const isPinned = targetNode.customData?.isPinned;
-
-    if (isPinned) {
-      if (isFoldAction) {
-        const parent = getParentNode(targetNode.id, currentViewElements);
-      } else {
-        const currentChildren = getChildrenNodes(targetNode.id, currentViewElements);
-      }
-    } else {
-    }
-  }
   ea.viewUpdateScene({appState: {selectedGroupIds: {}}});
   focusSelected();
 };
@@ -1982,22 +1965,6 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   if (!isPinned) {
     eaNode.x = side === 1 ? targetX : targetX - node.width;
     eaNode.y = targetCenterY - node.height / 2;
-
-    if (node.customData?.originalY !== undefined) {
-       ea.addAppendUpdateCustomData(nodeId, { originalY: undefined });
-    }
-  } else {
-    if (hasGlobalFolds) {
-      if (node.customData?.originalY === undefined) {
-        ea.addAppendUpdateCustomData(nodeId, { originalY: node.y });
-      }
-      eaNode.y = targetCenterY - node.height / 2;
-    } else {
-      if (node.customData?.originalY !== undefined) {
-        eaNode.y = node.customData.originalY;
-        ea.addAppendUpdateCustomData(nodeId, { originalY: undefined });
-      }
-    }
   }
 
   if (node.customData?.isFolded) return;
@@ -2162,158 +2129,160 @@ const updateL1Arrow = (node, context) => {
 
 /**
  * Unified layout function for Level 1 nodes.
- * Handles both Radial (sorted by angle) and Directional (sorted by Y, centered arc).
+ * Uses a Vertical Ellipse for Radial mode. Ensures nodes are distributed across
+ * the ellipse to prevent wrap-around overlap and maintain correct facing.
  */
 const layoutL1Nodes = (nodes, options, context) => {
   if (nodes.length === 0) return;
-  const { allElements, rootBox, rootCenter, hasGlobalFolds } = context;
+  const { allElements, rootId, rootBox, rootCenter, hasGlobalFolds } = context;
   const { sortMethod, centerAngle, gapMultiplier } = options;
 
-  const unpinnedNodes = nodes.filter(n => !n.customData?.isPinned);
-  const pinnedNodes = nodes.filter(n => n.customData?.isPinned);
+  // SORTING: Respect the established mindmapOrder (0..N)
+  nodes.sort((a, b) => getMindmapOrder(a) - getMindmapOrder(b));
 
-  if (unpinnedNodes.length > 0) {
-    const existingNodes = unpinnedNodes.filter((n) => !n.customData?.mindmapNew);
-    const newNodes = unpinnedNodes.filter((n) => n.customData?.mindmapNew);
+  const count = nodes.length;
+  const l1Metrics = nodes.map(node => getSubtreeHeight(node.id, allElements));
+  const totalSubtreeHeight = l1Metrics.reduce((sum, h) => sum + h, 0);
+  const baseGap = layoutSettings.GAP_Y * gapMultiplier;
 
-    // SORTING LOGIC:
-    // Always sort by current visual position to respect manual user reordering.
-    // We update mindmapOrder immediately after to freeze this state.
-    if (sortMethod === "vertical") {
-      existingNodes.sort((a, b) => a.y - b.y);
-    } else {
-      // Radial: Sort by current angle to maintain rotational order
-      existingNodes.sort((a, b) => {
-        return getAngleFromCenter(rootCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
-          getAngleFromCenter(rootCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 });
-      });
-    }
+  let radiusY, radiusX;
+  const isLeftSide = sortMethod === "vertical" && Math.abs((centerAngle ?? 0) - 270) < 1;
 
-    const sortedNodes = [...existingNodes, ...newNodes];
-    const count = sortedNodes.length;
+  if (sortMethod === "radial") {
+    // --- RADIAL VERTICAL ELLIPSE DISTRIBUTION ---
+    const MIN_ARC = 300; // Force nodes to spread at least this many degrees
+    const MAX_ARC = 345; // Maximum degrees to prevent Node 1/Node N overlap
     
-    // Persist the visual order immediately so it sticks
-    sortedNodes.forEach((node, i) => {
-        ea.addAppendUpdateCustomData(node.id, { mindmapOrder: i });
+    // Calculate basic radii based on content mass
+    radiusY = Math.max(
+      Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR * 1.5),
+      layoutSettings.MIN_RADIUS,
+      totalSubtreeHeight / 2.5
+    );
+    radiusX = radiusY * 0.75; // 3:4 Vertical Ellipse
+
+    /**
+     * Helper: Get distance from center to perimeter at a specific angle
+     */
+    const getEffR = (angleDeg, rX, rY) => {
+      const rad = (angleDeg - 90) * (Math.PI / 180);
+      return (rX * rY) / Math.sqrt(Math.pow(rY * Math.cos(rad), 2) + Math.pow(rX * Math.sin(rad), 2));
+    };
+
+    /**
+     * Spacing Logic: 
+     * We calculate the minimum angular footprint, then scale the gaps so the 
+     * nodes occupy an aesthetically pleasing arc between MIN_ARC and MAX_ARC.
+     */
+    let totalRequiredAngle = 0;
+    const angularSpans = nodes.map((node, i) => {
+      const nodeRX = node.customData?.boundaryId ? radiusX * 0.85 : radiusX;
+      const nodeRY = node.customData?.boundaryId ? radiusY * 0.85 : radiusY;
+      const effR = getEffR((i / count) * 360, nodeRX, nodeRY);
+      
+      // Vertical nodes (poles) need ~30% more angular room for their corners
+      const poleRad = (((i / count) * 360) - 90) * (Math.PI / 180);
+      const poleFactor = 1 + (Math.abs(Math.sin(poleRad)) * 0.3);
+      
+      const span = ((l1Metrics[i] * poleFactor) / effR) * (180 / Math.PI);
+      totalRequiredAngle += span;
+      return span;
     });
 
-    // METRICS & RADIUS CALCULATION
-    const l1Metrics = sortedNodes.map(node => getSubtreeHeight(node.id, allElements));
-    const totalSubtreeHeight = l1Metrics.reduce((sum, h) => sum + h, 0);
-    const totalGapHeight = (count - 1) * layoutSettings.GAP_Y;
-    const totalContentHeight = totalSubtreeHeight + totalGapHeight;
+    // Determine how much we need to scale the gaps to fill the circle correctly
+    const targetArc = Math.max(MIN_ARC, Math.min(MAX_ARC, totalRequiredAngle * 1.5));
+    const slackMultiplier = targetArc / totalRequiredAngle;
 
-    let radiusY, radiusX, currentAngle;
-
-    // Check if this is the Left side of a directional map (Center approx 270 degrees)
-    const isLeftSide = sortMethod === "vertical" && Math.abs(centerAngle - 270) < 1;
-
-    if (sortMethod === "radial") {
-      // RADIAL MODE: Distribute around full circle (2PI)
-      const radiusFromHeight = totalContentHeight / (2 * Math.PI); 
-      
-      radiusY = Math.max(
-        Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR),
-        layoutSettings.MIN_RADIUS,
-        radiusFromHeight
-      ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
-
-      radiusX = Math.max(
-        Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR),
-        layoutSettings.MIN_RADIUS,
-        radiusY // Keep circular
-      ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
-      
-      // Start fixed at 20 degrees
-      currentAngle = 20;
-
-    } else {
-      // VERTICAL (Directional) MODE
-      const radiusFromHeight = totalContentHeight / layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
-
-      radiusY = Math.max(
-        Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR),
-        layoutSettings.MIN_RADIUS,
-        radiusFromHeight
-      ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
-
-      radiusX = Math.max(
-        Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR),
-        layoutSettings.MIN_RADIUS,
-        radiusY * 0.2
-      ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
-
-      // Center the arc around the provided centerAngle (90 or 270)
-      const totalThetaDeg = (totalContentHeight / radiusY) * (180 / Math.PI);
-      
-      if (isLeftSide) {
-        // Left Side: Iterate Top -> Bottom visually.
-        // On the left circle (180-360), Top is ~315 deg, Bottom is ~225 deg.
-        // Since we sort nodes Top->Bottom (Y ascending), we must start at the higher angle and decrement.
-        currentAngle = centerAngle + totalThetaDeg / 2;
-      } else {
-        // Right Side: Top is ~45 deg, Bottom is ~135 deg.
-        // We start at lower angle and increment.
-        currentAngle = centerAngle - totalThetaDeg / 2;
-      }
-    }
-
-    // PLACEMENT LOOP
-    sortedNodes.forEach((node, i) => {
+    let currentAngle = 15; // Start at ~1 o'clock
+    nodes.forEach((node, i) => {
       const nodeHeight = l1Metrics[i];
-      let angleStep;
+      const isPinned = node.customData?.isPinned === true;
+      const hasBoundary = !!node.customData?.boundaryId;
 
-      if (sortMethod === "radial") {
-        // Calculate the angular span of the node itself
-        const nodeSpanDeg = (nodeHeight / radiusY) * (180 / Math.PI);
-        const gapSpanDeg = (layoutSettings.GAP_Y * gapMultiplier / radiusY) * (180 / Math.PI);
-        
-        // Dynamic Sector Sizing:
-        // Ensure at least 8 nodes fit perfectly (360/8 = 45deg). 
-        // If count > 8, shrink sector to fit (e.g. 360/10 = 36deg).
-        // Also ensure we never overlap large subtrees by taking the max of sector vs actual size.
-        const minSectorAngle = 360 / Math.max(count, 8);
-        angleStep = Math.max(minSectorAngle, nodeSpanDeg + gapSpanDeg);
+      // Logic: Boundary nodes move closer to center
+      const currentRX = hasBoundary ? radiusX * 0.82 : radiusX;
+      const currentRY = hasBoundary ? radiusY * 0.82 : radiusY;
+      
+      const effR = getEffR(currentAngle, currentRX, currentRY);
+      const nodeSpanDeg = angularSpans[i] * slackMultiplier;
+      
+      const placementAngle = currentAngle + nodeSpanDeg / 2;
+      const angleRad = (placementAngle - 90) * (Math.PI / 180);
+      
+      const tCX = rootCenter.x + currentRX * Math.cos(angleRad);
+      const tCY = rootCenter.y + currentRY * Math.sin(angleRad);
+      
+      // Face logic: Nodes on the left side of the root center face left
+      const dynamicSide = (placementAngle > 180 && placementAngle < 360) ? -1 : 1;
 
-        const angleRad = (currentAngle - 90) * (Math.PI / 180);
-        const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
-        const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
-        const side = tCX > rootCenter.x ? 1 : -1;
-        
-        layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds);
-        
-        // Advance angle
-        currentAngle += angleStep;
-
+      if (isPinned) {
+        layoutSubtree(node.id, node.x, node.y + node.height / 2, dynamicSide, allElements, hasGlobalFolds);
       } else {
-        // Directional Logic (Left/Right)
-        const effectiveGap = layoutSettings.GAP_Y * gapMultiplier;
-        const nodeSpanRad = nodeHeight / radiusY;
-        const gapSpanRad = effectiveGap / radiusY;
-        const nodeSpanDeg = nodeSpanRad * (180 / Math.PI);
-        const gapSpanDeg = gapSpanRad * (180 / Math.PI);
+        layoutSubtree(node.id, tCX, tCY, dynamicSide, allElements, hasGlobalFolds);
+      }
+      
+      currentAngle += nodeSpanDeg;
 
-        let angleDeg;
+      // Metadata & Arrow maintenance
+      if (node.customData?.mindmapNew) {
+        ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
+      }
+      updateL1Arrow(node, context);
+      if (groupBranches) applyRecursiveGrouping(node.id, allElements);
+    });
 
+  } else {
+    // --- VERTICAL DIRECTIONAL LAYOUT (RIGHT/LEFT) ---
+    const totalContentHeight = totalSubtreeHeight + (count - 1) * layoutSettings.GAP_Y;
+    const radiusFromHeight = totalContentHeight / layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
+    radiusY = Math.max(Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR), layoutSettings.MIN_RADIUS, radiusFromHeight) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+    radiusX = Math.max(Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR), layoutSettings.MIN_RADIUS, radiusY * 0.2) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+
+    const totalThetaDeg = (totalContentHeight / radiusY) * (180 / Math.PI);
+    let currentAngle = isLeftSide ? centerAngle + totalThetaDeg / 2 : centerAngle - totalThetaDeg / 2;
+
+    nodes.forEach((node, i) => {
+      const nodeHeight = l1Metrics[i];
+      const isPinned = node.customData?.isPinned === true;
+      const side = isLeftSide ? -1 : 1;
+
+      const getAngularInfo = (targetNode, height) => {
+        const angleRad = Math.atan2((targetNode.y + targetNode.height / 2) - rootCenter.y, (targetNode.x + targetNode.width / 2) - rootCenter.x);
+        const angleDeg = (angleRad * (180 / Math.PI)) + 90;
+        const normAngle = angleDeg < 0 ? angleDeg + 360 : angleDeg;
+        const spanDeg = (height / radiusY) * (180 / Math.PI);
+        return { center: normAngle, span: spanDeg, start: normAngle - spanDeg / 2, end: normAngle + spanDeg / 2 };
+      };
+
+      const effectiveGap = layoutSettings.GAP_Y * gapMultiplier;
+      const gapSpanDeg = (effectiveGap / radiusY) * (180 / Math.PI);
+      const nodeSpanDeg = (nodeHeight / radiusY) * (180 / Math.PI);
+
+      if (isPinned) {
+        layoutSubtree(node.id, node.x, node.y + node.height / 2, side, allElements, hasGlobalFolds);
+        const info = getAngularInfo(node, nodeHeight);
         if (isLeftSide) {
-           // Left side: Move Top -> Bottom (Decrease Angle)
-           // Center node in its span: Current (Top Edge) - Half Span
-           angleDeg = currentAngle - nodeSpanDeg / 2;
-           // Move cursor down: Current - (Full Span + Gap)
-           currentAngle -= (nodeSpanDeg + gapSpanDeg);
+          if (currentAngle > info.start - gapSpanDeg) currentAngle = info.start - gapSpanDeg;
         } else {
-           // Right side: Move Top -> Bottom (Increase Angle)
-           // Center node in its span: Current (Top Edge) + Half Span
-           angleDeg = currentAngle + nodeSpanDeg / 2;
-           // Move cursor down: Current + (Full Span + Gap)
-           currentAngle += (nodeSpanDeg + gapSpanDeg);
+          if (currentAngle < info.end + gapSpanDeg) currentAngle = info.end + gapSpanDeg;
         }
+      } else {
+        const nextPinned = nodes.slice(i + 1).find(n => n.customData?.isPinned);
+        if (nextPinned) {
+          const nextInfo = getAngularInfo(nextPinned, getSubtreeHeight(nextPinned.id, allElements));
+          if (isLeftSide) {
+            if (currentAngle - nodeSpanDeg < nextInfo.end + gapSpanDeg) currentAngle = nextInfo.start - gapSpanDeg;
+          } else {
+            if (currentAngle + nodeSpanDeg > nextInfo.start - gapSpanDeg) currentAngle = nextInfo.end + gapSpanDeg;
+          }
+        }
+
+        let angleDeg = isLeftSide ? currentAngle - nodeSpanDeg / 2 : currentAngle + nodeSpanDeg / 2;
+        currentAngle = isLeftSide ? currentAngle - (nodeSpanDeg + gapSpanDeg) : currentAngle + (nodeSpanDeg + gapSpanDeg);
 
         const angleRad = (angleDeg - 90) * (Math.PI / 180);
         const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
         const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
-        const side = isLeftSide ? -1 : 1;
-
         layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds);
       }
 
@@ -2324,18 +2293,41 @@ const layoutL1Nodes = (nodes, options, context) => {
       if (groupBranches) applyRecursiveGrouping(node.id, allElements);
     });
   }
+};
 
-  // PINNED NODES
-  pinnedNodes.forEach(node => {
-    const nodeBox = getNodeBox(node, allElements);
-    const side = (nodeBox.minX + nodeBox.width / 2) > rootCenter.x ? 1 : -1;
-    layoutSubtree(node.id, node.x, node.y + node.height/2, side, allElements, hasGlobalFolds);
+/**
+ * Sorts Level 1 nodes based on their current visual position and updates their mindmapOrder.
+ * For Radial maps, sorting is done by angle. For others, by Y-coordinate.
+ * Newly added nodes (mindmapNew) are always appended to the end of the visual sequence.
+**/
+const sortL1NodesBasedOnVisualSequence = (l1Nodes, mode, rootCenter) => {
+  if (l1Nodes.length === 0) return;
 
-    if (node.customData?.mindmapNew) {
-      ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
-    }
-    updateL1Arrow(node, context);
-    if (groupBranches) applyRecursiveGrouping(node.id, allElements);
+  /** 
+   * Helper to sort by Reading Order: Right-side Top-to-Bottom, then Left-side Top-to-Bottom.
+   * This serves as our canonical sequence for all directional modes and mode-switching.
+   */
+  const sortByReadingOrder = (a, b) => {
+    const aCX = a.x + a.width / 2;
+    const bCX = b.x + b.width / 2;
+    const aIsR = aCX > rootCenter.x;
+    const bIsR = bCX > rootCenter.x;
+    if (aIsR !== bIsR) return aIsR ? -1 : 1; 
+    return a.y - b.y; 
+  };
+
+  /** Helper to sort by Angle: Clockwise around the root center. */
+  const sortByAngle = (a, b) => {
+    return getAngleFromCenter(rootCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
+      getAngleFromCenter(rootCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 });
+  };
+     
+  const sortFn = mode === "Radial" ? sortByAngle : sortByReadingOrder;
+  l1Nodes.sort(sortFn);
+
+  // Freeze logic mindmapOrder based on final sort
+  l1Nodes.forEach((node, i) => {
+    ea.addAppendUpdateCustomData(node.id, { mindmapOrder: i });
   });
 };
 
@@ -2349,9 +2341,11 @@ const layoutL1Nodes = (nodes, options, context) => {
  */
 const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) => {
   if (!ea.targetView) return;
-  const run = async () => {
+  const run = async (doVisualSort) => {
     const allElements = ea.getViewElements();
     const root = allElements.find((el) => el.id === rootId);
+    const oldMode = root.customData?.growthMode;
+    const newMode = currentModalGrowthMode;
 
     // Snapshot positions
     const originalPositions = new Map();
@@ -2387,7 +2381,6 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       });
     }
 
-    const mode = root.customData?.growthMode || currentModalGrowthMode;
     const rootBox = getNodeBox(root, allElements);
     const rootCenter = { x: rootBox.minX + rootBox.width / 2, y: rootBox.minY + rootBox.height / 2 };
 
@@ -2397,11 +2390,20 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       rootBox,
       rootCenter,
       hasGlobalFolds,
-      mode
+      mode: newMode
     };
 
+    const isModeSwitch = oldMode && oldMode !== newMode;
+
+    if (!isModeSwitch && doVisualSort) {
+      sortL1NodesBasedOnVisualSequence(l1Nodes, newMode, rootCenter);
+    } else {
+      l1Nodes.sort((a, b) => getMindmapOrder(a) - getMindmapOrder(b));
+      ea.addAppendUpdateCustomData(rootId, { growthMode: newMode });
+    }
+
     // --- MAIN EXECUTION BLOCK ---
-    if (mode === "Radial") {
+    if (newMode === "Radial") {
       layoutL1Nodes(l1Nodes, {
         sortMethod: "radial",
         centerAngle: null,
@@ -2411,46 +2413,45 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       const leftNodes = [];
       const rightNodes = [];
 
-      // Determine which list nodes currently belong to based on their position
-      l1Nodes.forEach((node, index) => {
-        if (mode === "Right-facing") {
-          rightNodes.push(node);
-        } else if (mode === "Left-facing") {
-          leftNodes.push(node);
-        } else if (mode === "Right-Left") {
-          if (node.customData?.mindmapNew) {
-            if (index < 2) rightNodes.push(node);
-            else if (index < 4) leftNodes.push(node);
-            else if (index % 2 === 0) rightNodes.push(node);
+      if (newMode === "Right-Left") {
+        if (isModeSwitch) {
+          // Switch: Enforce geometric balance
+          const splitIdx = Math.ceil(l1Nodes.length / 2);
+          l1Nodes.forEach((node, i) => {
+            if (i < splitIdx) rightNodes.push(node);
             else leftNodes.push(node);
-          } else {
-            const nodeCenter = node.x + node.width / 2;
-            if (nodeCenter < rootCenter.x) leftNodes.push(node);
-            else rightNodes.push(node);
-          }
+          });
         } else {
-          rightNodes.push(node);
+          // Maintenance: Respect the user's manual side-choice
+          l1Nodes.forEach((node) => {
+            const nodeCX = node.x + node.width / 2;
+            if (nodeCX > rootCenter.x) rightNodes.push(node);
+            else leftNodes.push(node);
+          });
         }
-      });
+      } else if (newMode === "Left-facing") {
+        l1Nodes.forEach(node => leftNodes.push(node));
+      } else {
+        l1Nodes.forEach(node => rightNodes.push(node));
+      }
 
-      layoutL1Nodes(rightNodes, {
-        sortMethod: "vertical",
-        centerAngle: 90,
-        gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL
-      }, layoutContext);
-
-      layoutL1Nodes(leftNodes, {
-        sortMethod: "vertical",
-        centerAngle: 270,
-        gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL
-      }, layoutContext);
+      if (rightNodes.length > 0) {
+        layoutL1Nodes(rightNodes, { sortMethod: "vertical", centerAngle: 90, gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL }, layoutContext);
+      }
+      if (leftNodes.length > 0) {
+        layoutL1Nodes(leftNodes, { sortMethod: "vertical", centerAngle: 270, gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL }, layoutContext);
+      }
     }
 
     moveCrossLinks(ea.getElements(), originalPositions);
     moveDecorations(ea.getElements(), originalPositions, groupToNodes);
-
   };
-  await run();
+
+  await run(true);
+  await addElementsToView();
+
+  // sometimes one pass is not enough to settle subtree positions and boundaries
+  await run(false);
   await addElementsToView();
 };
 
@@ -2800,7 +2801,8 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
 
   await addElementsToView({
     repositionToCursor: !parent,
-    save: !!imageInfo?.imageFile || imageInfo?.isImagePath
+    save: !!imageInfo?.imageFile || imageInfo?.isImagePath,
+    shouldSleep: true, //to ensure images get properly loaded to excalidraw Files
   });
 
   if (!skipFinalLayout && rootId && !autoLayoutDisabled) {
@@ -3447,13 +3449,11 @@ const importTextToMap = async (rawText) => {
     }
   }
 
-  await addElementsToView();
+  await addElementsToView({ shouldSleep: true }); // in case there are images in the imported map
 
   const rootId = sel
     ? getHierarchy(sel, ea.getViewElements()).rootId
     : currentParent.id;
-  await triggerGlobalLayout(rootId);
-  // Re-run layout to account for newly rendered element sizes (text/images)
   await triggerGlobalLayout(rootId);
 
   const allInView = ea.getViewElements();
@@ -3640,7 +3640,6 @@ const refreshMapLayout = async () => {
   const sel = getMindmapNodeFromSelection();
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
-    await triggerGlobalLayout(info.rootId);
     await triggerGlobalLayout(info.rootId);
   }
 };
@@ -4281,7 +4280,7 @@ const commitEdit = async () => {
     // 3. Migrate custom data fields
     const keysToCopy = [
       "mindmapOrder", "isPinned", "growthMode", "autoLayoutDisabled", 
-      "isFolded", "foldIndicatorId", "foldState", "originalY", "boundaryId",
+      "isFolded", "foldIndicatorId", "foldState", "boundaryId",
       "fontsizeScale", "multicolor", "boxChildren", "roundedCorners", 
       "maxWrapWidth", "isSolidArrow", "centerText", "arrowType"
     ];
@@ -4410,7 +4409,7 @@ const commitEdit = async () => {
 
     ea.refreshTextElementSize(eaEl.id);
 
-    await addElementsToView();
+    await addElementsToView({shouldSleep: true}); //in case text was changed to image
 
     if (textEl.containerId) {
       const container = ea.getViewElements().find(el => el.id === textEl.containerId);
@@ -4990,9 +4989,13 @@ const renderBody = (contentEl) => {
       setVal(K_GROWTH, v);
       dirty = true;
       if (!ea.targetView) return;
-      const info = await updateRootNodeCustomData({ growthMode: v });
+      const sel = getMindmapNodeFromSelection();
+      if (!sel) return;
+      const info = getHierarchy(sel, ea.getViewElements());
       if (!!info && !autoLayoutDisabled) {
         triggerGlobalLayout(info.rootId);
+      } else {
+        await updateRootNodeCustomData({ growthMode: v });
       }
     });
   });
