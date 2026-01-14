@@ -3,12 +3,6 @@
 // hotkey override problems
 // option to clear hotkey (not to have one for the action)
 
-/*
-const mmbSource = ``;
-const script = ea.decompressFromBase64(mmbSource);
-const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
-await new AsyncFunction("ea", "utils", script)(ea, utils);
-
 /* --- Initialization Logic --- */
 
 if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.0")) {
@@ -1017,11 +1011,50 @@ const getParentNode = (id, allElements) => {
     : parent;
 };
 
+const buildElementMap = (allElements) => {
+  const map = new Map();
+  allElements.forEach((el) => map.set(el.id, el));
+  return map;
+};
+
+const buildChildrenMap = (allElements, elementById) => {
+  const childrenByParent = new Map();
+  const byId = elementById || buildElementMap(allElements);
+
+  allElements.forEach((el) => {
+    if (el.type === "arrow" && el.customData?.isBranch && el.startBinding?.elementId) {
+      const parentId = el.startBinding.elementId;
+      const child = byId.get(el.endBinding?.elementId);
+      if (!child) return;
+      if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
+      childrenByParent.get(parentId).push(child);
+    }
+  });
+
+  return childrenByParent;
+};
+
 const getChildrenNodes = (id, allElements) => {
   const arrows = allElements.filter(
     (el) => el.type === "arrow" && el.customData?.isBranch && el.startBinding?.elementId === id,
   );
   return arrows.map((a) => allElements.find((el) => el.id === a.endBinding?.elementId)).filter(Boolean);
+};
+
+const buildGroupToNodes = (branchIds, allElements) => {
+  const branchIdSet = new Set(branchIds);
+  const groupToNodes = new Map();
+
+  allElements.forEach(el => {
+    if (branchIdSet.has(el.id) && el.type !== "arrow" && el.groupIds) {
+      el.groupIds.forEach(gid => {
+        if (!groupToNodes.has(gid)) groupToNodes.set(gid, new Set());
+        groupToNodes.get(gid).add(el);
+      });
+    }
+  });
+
+  return groupToNodes;
 };
 
 const getHierarchy = (el, allElements) => {
@@ -1263,6 +1296,10 @@ const setElementVisibility = (el, hide) => {
       if (el.opacity === 0) el.opacity = 100;
       el.locked = false;
     }
+  }
+  const boundTextElement = ea.getBoundTextElement(el);
+  if (boundTextElement.eaElement && boundTextElement.eaElement !== el) {
+    setElementVisibility(boundTextElement?.eaElement, hide);
   }
 };
 
@@ -1734,26 +1771,35 @@ const sortChildrenStable = (children, allElements) => {
   });
 };
 
-const getSubtreeHeight = (nodeId, allElements) => {
-  const node = allElements.find((el) => el.id === nodeId);
-  if (node?.customData?.isFolded) {
-    return node.height;
+const getSubtreeHeight = (nodeId, allElements, childrenByParent, heightCache, elementById) => {
+  if (heightCache?.has(nodeId)) return heightCache.get(nodeId);
+
+  const node = elementById?.get(nodeId) ?? allElements.find((el) => el.id === nodeId);
+  if (!node) return 0;
+
+  if (node.customData?.isFolded) {
+    const foldedHeight = node.height;
+    if (heightCache) heightCache.set(nodeId, foldedHeight);
+    return foldedHeight;
   }
 
-  const children = getChildrenNodes(nodeId, allElements);
+  const children = childrenByParent?.get(nodeId) ?? getChildrenNodes(nodeId, allElements);
 
   const unpinnedChildren = children.filter(child => !child.customData?.isPinned);
 
-  if (unpinnedChildren.length === 0) return node.height;
+  if (unpinnedChildren.length === 0) {
+    if (heightCache) heightCache.set(nodeId, node.height);
+    return node.height;
+  }
 
   let childrenHeight = 0;
   unpinnedChildren.forEach((child, index) => {
-    childrenHeight += getSubtreeHeight(child.id, allElements);
+    childrenHeight += getSubtreeHeight(child.id, allElements, childrenByParent, heightCache, elementById);
     if (index < unpinnedChildren.length - 1) {
-      const childNode = allElements.find((el) => el.id === child.id);
+      const childNode = elementById?.get(child.id) ?? allElements.find((el) => el.id === child.id);
 
       // Check if child behaves as a leaf (ignoring pinned descendants)
-      const grandChildren = getChildrenNodes(child.id, allElements);
+      const grandChildren = childrenByParent?.get(child.id) ?? getChildrenNodes(child.id, allElements);
       const hasUnpinnedGrandChildren = grandChildren.some(gc => !gc.customData?.isPinned);
 
       const fontSize = childNode.fontSize ?? 20;
@@ -1762,7 +1808,9 @@ const getSubtreeHeight = (nodeId, allElements) => {
     }
   });
 
-  return Math.max(node.height, childrenHeight);
+  const result = Math.max(node.height, childrenHeight);
+  if (heightCache) heightCache.set(nodeId, result);
+  return result;
 };
 
 /**
@@ -1791,6 +1839,18 @@ const isMindmapGroup = (groupId, allElements) => {
   const structuralCount = groupEls.filter(el => isStructuralElement(el, allElements)).length;
   return structuralCount >= 2;
 };
+
+const collectCrosslinkIds = (allElements) => new Set(
+  allElements
+    .filter(el => el.type === "arrow" && !el.customData?.isBranch && el.startBinding?.elementId && el.endBinding?.elementId)
+    .map(el => el.id)
+);
+
+const collectDecorationIds = (allElements) => new Set(
+  allElements
+    .filter(el => el.groupIds && el.groupIds.length > 0 && !isStructuralElement(el, allElements))
+    .map(el => el.id)
+);
 
 /**
  * Finds the first group ID in the element's group stack that qualifies as a Mindmap Group.
@@ -2025,8 +2085,8 @@ const configureArrow = (context) => {
   }
 };
 
-const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlobalFolds) => {
-  const node = allElements.find((el) => el.id === nodeId);
+const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById) => {
+  const node = elementById?.get(nodeId) ?? allElements.find((el) => el.id === nodeId);
   const eaNode = ea.getElement(nodeId);
 
   const isPinned = node.customData?.isPinned === true;
@@ -2068,7 +2128,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
     eaNode.textAlign = effectiveSide === 1 ? "left" : "right";
   }
 
-  const children = getChildrenNodes(nodeId, allElements);
+  const children = childrenByParent?.get(nodeId) ?? getChildrenNodes(nodeId, allElements);
 
   const unpinnedChildren = children.filter(child => !child.customData?.isPinned);
   const pinnedChildren = children.filter(child => child.customData?.isPinned);
@@ -2087,12 +2147,12 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
       }
     });
 
-    const subtreeHeight = getSubtreeHeight(nodeId, allElements);
+    const subtreeHeight = getSubtreeHeight(nodeId, allElements, childrenByParent, heightCache, elementById);
     let currentY = currentYCenter - subtreeHeight / 2;
     const dynamicGapX = layoutSettings.GAP_X;
 
     unpinnedChildren.forEach((child) => {
-      const childH = getSubtreeHeight(child.id, allElements);
+      const childH = getSubtreeHeight(child.id, allElements, childrenByParent, heightCache, elementById);
 
       layoutSubtree(
         child.id,
@@ -2100,12 +2160,15 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
         currentY + childH / 2,
         effectiveSide,
         allElements,
-        hasGlobalFolds
+        hasGlobalFolds,
+        childrenByParent,
+        heightCache,
+        elementById,
       );
 
-      const childNode = allElements.find((el) => el.id === child.id);
+      const childNode = elementById?.get(child.id) ?? allElements.find((el) => el.id === child.id);
 
-      const grandChildren = getChildrenNodes(child.id, allElements);
+      const grandChildren = childrenByParent?.get(child.id) ?? getChildrenNodes(child.id, allElements);
       const hasUnpinnedGrandChildren = grandChildren.some(gc => !gc.customData?.isPinned);
 
       const fontSize = childNode.fontSize ?? 20;
@@ -2122,7 +2185,10 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
       child.y + child.height/2,
       effectiveSide,
       allElements,
-      hasGlobalFolds
+      hasGlobalFolds,
+      childrenByParent,
+      heightCache,
+      elementById,
     );
   });
 
@@ -2197,7 +2263,7 @@ const updateL1Arrow = (node, context) => {
 };
 
 const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight) => {
-  const { allElements, rootBox, rootCenter, hasGlobalFolds } = context;
+  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById } = context;
   const count = nodes.length;
 
   // --- CONFIGURATION FROM SETTINGS ---
@@ -2292,9 +2358,9 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight) => 
     const tCY = rootCenter.y + placeR * Math.sin(rad);
 
     if (isPinned) {
-      layoutSubtree(node.id, node.x, node.y + node.height / 2, dynamicSide, allElements, hasGlobalFolds);
+      layoutSubtree(node.id, node.x, node.y + node.height / 2, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById);
     } else {
-      layoutSubtree(node.id, tCX, tCY, dynamicSide, allElements, hasGlobalFolds);
+      layoutSubtree(node.id, tCX, tCY, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById);
     }
 
     // Advance
@@ -2309,7 +2375,7 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight) => 
 };
 
 const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, isLeftSide, centerAngle, gapMultiplier) => {
-  const { allElements, rootBox, rootCenter, hasGlobalFolds } = context;
+  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById } = context;
   const count = nodes.length;
 
   // --- VERTICAL DIRECTIONAL LAYOUT (RIGHT/LEFT) ---
@@ -2339,7 +2405,7 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
     const nodeSpanDeg = (nodeHeight / radiusY) * (180 / Math.PI);
 
     if (isPinned) {
-      layoutSubtree(node.id, node.x, node.y + node.height / 2, side, allElements, hasGlobalFolds);
+      layoutSubtree(node.id, node.x, node.y + node.height / 2, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById);
       const info = getAngularInfo(node, nodeHeight);
       if (isLeftSide) {
         if (currentAngle > info.start - gapSpanDeg) currentAngle = info.start - gapSpanDeg;
@@ -2349,7 +2415,7 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
     } else {
       const nextPinned = nodes.slice(i + 1).find(n => n.customData?.isPinned);
       if (nextPinned) {
-        const nextInfo = getAngularInfo(nextPinned, getSubtreeHeight(nextPinned.id, allElements));
+        const nextInfo = getAngularInfo(nextPinned, getSubtreeHeight(nextPinned.id, allElements, childrenByParent, heightCache, elementById));
         if (isLeftSide) {
           if (currentAngle - nodeSpanDeg < nextInfo.end + gapSpanDeg) currentAngle = nextInfo.start - gapSpanDeg;
         } else {
@@ -2363,7 +2429,7 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
       const angleRad = (angleDeg - 90) * (Math.PI / 180);
       const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
       const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
-      layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds);
+      layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById);
     }
 
     if (node.customData?.mindmapNew) {
@@ -2381,13 +2447,13 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
  */
 const layoutL1Nodes = (nodes, options, context) => {
   if (nodes.length === 0) return;
-  const { allElements } = context;
+  const { allElements, childrenByParent, heightCache, elementById } = context;
   const { sortMethod, centerAngle, gapMultiplier } = options;
 
   // SORTING: Respect the established mindmapOrder (0..N)
   nodes.sort((a, b) => getMindmapOrder(a) - getMindmapOrder(b));
 
-  const l1Metrics = nodes.map(node => getSubtreeHeight(node.id, allElements));
+  const l1Metrics = nodes.map(node => getSubtreeHeight(node.id, allElements, childrenByParent, heightCache, elementById));
   const totalSubtreeHeight = l1Metrics.reduce((sum, h) => sum + h, 0);
 
   const isLeftSide = sortMethod === "vertical" && Math.abs((centerAngle ?? 0) - 270) < 1;
@@ -2454,7 +2520,7 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
   const selectedElement = getMindmapNodeFromSelection();
   if (!selectedElement) return;
 
-  const run = async (allElements, mindmapIds, root, doVisualSort) => {
+  const run = async (allElements, mindmapIds, root, doVisualSort, sharedSets) => {
     const oldMode = root.customData?.growthMode;
     const newMode = currentModalGrowthMode;
     
@@ -2464,17 +2530,12 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       originalPositions.set(el.id, { x: el.x, y: el.y });
     });
 
-    const branchIds = new Set(getBranchElementIds(rootId, allElements));
-    const groupToNodes = new Map();
+    const elementById = buildElementMap(allElements);
+    const childrenByParent = buildChildrenMap(allElements, elementById);
+    const heightCache = new Map();
 
-    allElements.forEach(el => {
-      if (branchIds.has(el.id) && el.type !== "arrow" && el.groupIds) {
-        el.groupIds.forEach(gid => {
-          if (!groupToNodes.has(gid)) groupToNodes.set(gid, new Set());
-          groupToNodes.get(gid).add(el);
-        });
-      }
-    });
+    const branchIds = new Set(mindmapIds);
+    const groupToNodes = buildGroupToNodes(branchIds, allElements);
 
     const hasGlobalFolds = allElements.some(el => el.customData?.isFolded === true);
     const l1Nodes = getChildrenNodes(rootId, allElements);
@@ -2498,7 +2559,10 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       rootBox,
       rootCenter,
       hasGlobalFolds,
-      mode: newMode
+      mode: newMode,
+      childrenByParent,
+      heightCache,
+      elementById,
     };
 
     const isModeSwitch = oldMode && oldMode !== newMode;
@@ -2550,11 +2614,12 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       }
     }
 
-    const crosslinkSet = moveCrossLinks(ea.getElements(), originalPositions);
-    const decorationsSet = moveDecorations(ea.getElements(), originalPositions, groupToNodes);
-    const mindmapIdsSet = new Set(mindmapIds);
+    const { mindmapIdsSet, crosslinkIdSet, decorationIdSet } = sharedSets;
 
-    ea.getElements().filter(el => !mindmapIdsSet.has(el.id) && !crosslinkSet.has(el.id) && !decorationsSet.has(el.id)).forEach(el => {
+    moveCrossLinks(ea.getElements(), originalPositions);
+    moveDecorations(ea.getElements(), originalPositions, groupToNodes);
+
+    ea.getElements().filter(el => !mindmapIdsSet.has(el.id) && !crosslinkIdSet.has(el.id) && !decorationIdSet.has(el.id)).forEach(el => {
       delete ea.elementsDict[el.id];
     });
   };
@@ -2570,14 +2635,19 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     removeGroupFromElements(structuralGroupId, allElements);
   }
 
-  await run(allElements, mindmapIds, root, true);
+  const mindmapIdsSet = new Set(mindmapIds);
+  const crosslinkIdSet = collectCrosslinkIds(allElements);
+  const decorationIdSet = collectDecorationIds(allElements);
+  const sharedSets = { mindmapIdsSet, crosslinkIdSet, decorationIdSet };
+
+  await run(allElements, mindmapIds, root, true, sharedSets);
   await addElementsToView();
 
   // sometimes one pass is not enough to settle subtree positions and boundaries
   ea.copyViewElementsToEAforEditing(ea.getViewElements());
   allElements = ea.getElements();
   root = allElements.find((el) => el.id === rootId);
-  await run(allElements, mindmapIds, root, false);
+  await run(allElements, mindmapIds, root, false, sharedSets);
   
   if (structuralGroupId) {
     ea.addToGroup(mindmapIds);
@@ -2930,15 +3000,15 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     return ea.getElement(newNodeId);
   }
 
+  const hasImage = !!imageInfo?.imageFile || imageInfo?.isImagePath;
+
   await addElementsToView({
     repositionToCursor: !parent,
-    save: !!imageInfo?.imageFile || imageInfo?.isImagePath,
-    shouldSleep: true, //to ensure images get properly loaded to excalidraw Files
+    save: hasImage,
+    shouldSleep: hasImage, //to ensure images get properly loaded to excalidraw Files
   });
 
-  if (!skipFinalLayout && rootId && !autoLayoutDisabled) {
-    await triggerGlobalLayout(rootId);
-  } else if (rootId && (autoLayoutDisabled || skipFinalLayout) && parent) {
+  if (rootId && (autoLayoutDisabled || skipFinalLayout) && parent) {
     const allEls = ea.getViewElements();
     const node = allEls.find((el) => el.id === newNodeId);
     const arrow = allEls.find(
@@ -2996,7 +3066,6 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
 
     await addElementsToView();
   }
-
   const finalNode = ea.getViewElements().find((el) => el.id === newNodeId);
   if (follow || !parent) {
     ea.selectElementsInView([finalNode]);
@@ -3009,6 +3078,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
 
   mostRecentlyAddedNodeID = finalNode.id;
   focusInputEl();
+  await triggerGlobalLayout(rootId);
   return finalNode;
 };
 
@@ -5997,7 +6067,6 @@ const performAction = async (action, event) => {
       if (!inputEl.value) return;
       await addNode(inputEl.value, true);
       inputEl.value = "";
-      if(!autoLayoutDisabled) await refreshMapLayout();
       updateUI();
       if (action === ACTION_ADD_FOLLOW_FOCUS) focusSelected();
       if (action === ACTION_ADD_FOLLOW_ZOOM) zoomToFit();
@@ -6016,7 +6085,6 @@ const performAction = async (action, event) => {
         if (inputEl.value) {
           await addNode(inputEl.value, false);
           inputEl.value = "";
-          if(!autoLayoutDisabled) await refreshMapLayout();
         } else {
           const sel = getMindmapNodeFromSelection();
           const allElements = ea.getViewElements();
