@@ -3,6 +3,12 @@
 // hotkey override problems
 // option to clear hotkey (not to have one for the action)
 
+/*
+const mmbSource = ``;
+const script = ea.decompressFromBase64(mmbSource);
+const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
+await new AsyncFunction("ea", "utils", script)(ea, utils);
+
 /* --- Initialization Logic --- */
 
 if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.0")) {
@@ -1462,6 +1468,8 @@ const moveCrossLinks = (allElements, originalPositions) => {
     el.endBinding?.elementId
   );
 
+  const touched = new Set();
+
   crossLinkArrows.forEach(arrow => {
     const startId = arrow.startBinding.elementId;
     const endId = arrow.endBinding.elementId;
@@ -1471,6 +1479,7 @@ const moveCrossLinks = (allElements, originalPositions) => {
     const endNodeNew = ea.getElement(endId);
 
     if (startNodeOld && endNodeOld && startNodeNew && endNodeNew) {
+      touched.add(arrow.id);
       const dsX = startNodeNew.x - startNodeOld.x;
       const dsY = startNodeNew.y - startNodeOld.y;
       const deX = endNodeNew.x - endNodeOld.x;
@@ -1498,6 +1507,7 @@ const moveCrossLinks = (allElements, originalPositions) => {
       }
     }
   });
+  return touched;
 };
 
 const moveDecorations = (allElements, originalPositions, groupToNodes) => {
@@ -1574,6 +1584,7 @@ const moveDecorations = (allElements, originalPositions, groupToNodes) => {
       }
     }
   });
+  return new Set(decorationsToUpdate.map(d => d.elementId));
 };
 
 /**
@@ -2439,8 +2450,11 @@ const sortL1NodesBasedOnVisualSequence = (l1Nodes, mode, rootCenter) => {
  * @param {boolean} forceUngroup - Force ungrouping of branches before layout.
  */
 const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) => {
-  if (!ea.targetView) return; 
-  const run = async (allElements, root, doVisualSort) => {
+  if (!ea.targetView) return;
+  const selectedElement = getMindmapNodeFromSelection();
+  if (!selectedElement) return;
+
+  const run = async (allElements, mindmapIds, root, doVisualSort) => {
     const oldMode = root.customData?.growthMode;
     const newMode = currentModalGrowthMode;
     
@@ -2467,7 +2481,6 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     if (l1Nodes.length === 0) return;
 
     if (groupBranches || forceUngroup) {
-      const mindmapIds = getBranchElementIds(rootId, allElements);
       mindmapIds.forEach((id) => {
         const el = ea.getElement(id);
         if (el && el.groupIds) {
@@ -2537,8 +2550,13 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
       }
     }
 
-    moveCrossLinks(ea.getElements(), originalPositions);
-    moveDecorations(ea.getElements(), originalPositions, groupToNodes);
+    const crosslinkSet = moveCrossLinks(ea.getElements(), originalPositions);
+    const decorationsSet = moveDecorations(ea.getElements(), originalPositions, groupToNodes);
+    const mindmapIdsSet = new Set(mindmapIds);
+
+    ea.getElements().filter(el => !mindmapIdsSet.has(el.id) && !crosslinkSet.has(el.id) && !decorationsSet.has(el.id)).forEach(el => {
+      delete ea.elementsDict[el.id];
+    });
   };
 
   ea.copyViewElementsToEAforEditing(ea.getViewElements());
@@ -2552,20 +2570,20 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) 
     removeGroupFromElements(structuralGroupId, allElements);
   }
 
-  await run(allElements, root, true);
+  await run(allElements, mindmapIds, root, true);
   await addElementsToView();
 
   // sometimes one pass is not enough to settle subtree positions and boundaries
   ea.copyViewElementsToEAforEditing(ea.getViewElements());
   allElements = ea.getElements();
   root = allElements.find((el) => el.id === rootId);
-  await run(allElements, root, false);
+  await run(allElements, mindmapIds, root, false);
   
   if (structuralGroupId) {
     ea.addToGroup(mindmapIds);
   }
   await addElementsToView();
-  ea.selectElementsInView([root.id]);
+  ea.selectElementsInView([selectedElement.id]);
 };
 
 // ---------------------------------------------------------------------------
