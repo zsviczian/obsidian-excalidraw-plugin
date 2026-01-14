@@ -1230,9 +1230,10 @@ const manageFoldIndicator = (node, show, allElements) => {
 
     // Create new indicator if none exists or wasn't found
     if (!ind) {
+      const fontSize = ea.getBoundTextElement(node).eaElement?.fontSize || 20;
       const id = ea.addText(0, 0, "...");
       ind = ea.getElement(id);
-      ind.fontSize = node.fontSize;
+      ind.fontSize = fontSize;
       ind.strokeColor = node.strokeColor;
       ind.opacity = layoutSettings.INDICATOR_OPACITY;
       ind.textVerticalAlign = "middle";
