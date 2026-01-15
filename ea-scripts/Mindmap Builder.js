@@ -580,7 +580,7 @@ const parseEmbeddableInput = (input, imageInfo) => {
   const trimmed = input.trim();
   const match = trimmed.match(/^!\[\]\((https?:\/\/[^)]+)\)$/);
   if (match) return match[1];
-  const pathSplit = imageInfo.path?.split("#");
+  const pathSplit = imageInfo?.path?.split("#");
   if (imageInfo && imageInfo.file && imageInfo.file.extension === "md" &&
     // Not an Excalidraw File or maybe an Excalidraw file with a back-of-the-card note reference 
     (!ea.isExcalidrawFile(imageInfo.file) || pathSplit?.[1] && !pathSplit[1].startsWith("^"))
