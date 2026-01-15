@@ -667,8 +667,24 @@ export const insertLaTeXToView = (view: ExcalidrawView, center: boolean = false)
         3
       )
   ).then(async (formula: string) => {
+    const lastLatexEl = ea.getViewElements()
+        .filter((el) => el.type === "image" && view.excalidrawData.hasEquation(el.fileId))
+        .reduce(
+          (maxel, curr) => (!maxel || curr.updated > maxel.updated) ? curr : maxel,
+          undefined 
+        ) as ExcalidrawImageElement;
+    let scaleX = 1;
+    let scaleY = 1;
+    if (lastLatexEl) {
+      const equation = view.excalidrawData.getEquation(lastLatexEl.fileId);
+      const dataurl = await ea.tex2dataURL(equation.latex);
+      if (dataurl.size.width > 0 && dataurl.size.height > 0) {
+        scaleX = lastLatexEl.width/dataurl.size.width;
+        scaleY = lastLatexEl.height/dataurl.size.height;
+      }
+    }
     if (formula) {
-      const id = await ea.addLaTex(0, 0, formula);
+      const id = await ea.addLaTex(0, 0, formula, scaleX, scaleY);
       if(center) {
         const el = ea.getElement(id);
         let {width, height} = el;
