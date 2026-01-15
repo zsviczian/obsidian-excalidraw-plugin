@@ -17,7 +17,8 @@
     "build:all": "npm run build:mathjax && npm run build",
     "dev:mathjax": "cd MathjaxToSVG && npm run dev",
     "dev:all": "npm run dev:mathjax && npm run dev",
-    "doc": "npm run lib && node scripts/generate-script-library.js"
+    "doc": "npm run lib && node scripts/generate-script-library.js",
+    "mindmap": "node scripts/deploy-mindmap-builder.js"
   },
   "keywords": [],
   "author": "",
