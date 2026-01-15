@@ -450,7 +450,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addLaTex",
-    code: "async addLaTex(topX: number, topY: number, tex: string): Promise<string>;",
+    code: "async addLaTex(topX: number, topY: number, tex: string, scaleX: number = 1, scaleY: number = 1): Promise<string>;",
     desc: "This is an async function, you need to avait the results. Adds a LaTex element to the drawing. The tex string is the LaTex code. The function returns the id of the created element.",
     after: "",
   },
