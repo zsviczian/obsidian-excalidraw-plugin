@@ -1,15 +1,43 @@
-import { App, FuzzyMatch } from "obsidian";
+import { App, FuzzyMatch, TFile } from "obsidian";
 import { SuggestionModal } from "./SuggestionModal";
 import { LinkSuggestion } from "src/types/types";
 import ExcalidrawPlugin from "src/core/main";
-import { getLinkSuggestionsFiltered, getSortedLinkMatches, renderLinkSuggestion } from "src/shared/Suggesters/LinkSuggesterUtils";
+import {
+  getLinkSuggestionsFiltered,
+  getSortedLinkMatches,
+  renderHeadingSuggestionRow,
+  renderLinkSuggestion,
+  renderParagraphSuggestionRow,
+  fuzzyMatchTextItems,
+  fuzzyMatchParagraphsWithId,
+} from "src/shared/Suggesters/LinkSuggesterUtils";
 import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
 import { t } from "src/lang/helpers";
+import { nanoid } from "src/constants/constants";
+import { sleep } from "src/utils/utils";
+
+type HeadingSuggestion = {
+  kind: "heading";
+  heading: string;
+  level: number;
+  anchor: string;
+  file: TFile;
+};
+
+type ParagraphSuggestion = {
+  kind: "paragraph";
+  text: string;
+  id?: string;
+  file: TFile;
+  node: any;
+};
+
+type InlineSuggestion = LinkSuggestion | HeadingSuggestion | ParagraphSuggestion;
 
 /**
  * Inline link suggester that attaches to a specific input element.
  */
-export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> implements KeyBlocker {
+export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> implements KeyBlocker {
   private readonly getSourcePath: () => string | undefined;
   private readonly plugin: ExcalidrawPlugin;
   private readonly widthHost: HTMLElement;
@@ -20,6 +48,10 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
   private caretPos = 0;
   private activeAlias: string | null = null;
   private activeSearchTerm = "";
+  private activeFile: TFile | null = null;
+  private mode: "file" | "heading" | "block" | null = null;
+  private headingItems: HeadingSuggestion[] = [];
+  private paragraphItems: ParagraphSuggestion[] = [];
 
   constructor(
     app: App,
@@ -48,8 +80,8 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
     return this.block;
   }
 
-  getItems(): LinkSuggestion[] {
-    return getLinkSuggestionsFiltered(this.app);
+  getItems(): InlineSuggestion[] {
+    return getLinkSuggestionsFiltered(this.app) as InlineSuggestion[];
   }
 
   /**
@@ -93,93 +125,123 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
    * Refreshes the suggestion data (e.g. when vault changes) without recreating the instance.
    */
   public refreshItems() {
-    this.items = getLinkSuggestionsFiltered(this.app);
+    this.items = getLinkSuggestionsFiltered(this.app) as InlineSuggestion[];
   }
 
   modifyInput(input: string): string {
     return input;
   }
 
-  onInputChanged(): void {
+  async onInputChanged(): Promise<void> {
     const inputStr = this.modifyInput(this.inputEl.value);
     this.caretPos = this.inputEl.selectionStart ?? inputStr.length;
 
-    // Do not show suggestions while a range is selected.
     if ((this.inputEl.selectionEnd ?? this.caretPos) - (this.inputEl.selectionStart ?? 0) > 0) {
-      this.suggester.setSuggestions([]);
-      if (this.popper?.deref()) {
-        this.popper.deref().destroy();
-      }
-      this.suggestEl.detach();
-      this.activeOpen = -1;
-      this.activeClose = -1;
-      this.activeAlias = null;
-      this.activeSearchTerm = "";
-      setTimeout(() => {
-        this.block = false;
-      });
+      this.resetSuggestions();
       return;
     }
 
     const active = this.findActiveLink(inputStr, this.caretPos);
     if (!active) {
-      this.suggester.setSuggestions([]);
-      if (this.popper?.deref()) {
-        this.popper.deref().destroy();
-      }
-      this.suggestEl.detach();
-      this.activeOpen = -1;
-      this.activeClose = -1;
-      this.activeAlias = null;
-      this.activeSearchTerm = "";
-      setTimeout(() => {
-        this.block = false;
-      });
+      this.resetSuggestions();
       return;
     }
+
     this.activeOpen = active.open;
     this.activeClose = active.close;
-    const activeInfo = this.extractActiveInfo(inputStr, this.caretPos, active.open, active.close);
-    this.activeAlias = activeInfo.alias;
-    this.activeSearchTerm = activeInfo.searchTerm;
 
-    // Hide suggester when editing alias section after a pipe.
-    if (activeInfo.inAlias) {
-      this.activeSearchTerm = "";
-      this.suggester.setSuggestions([]);
-      if (this.popper?.deref()) {
-        this.popper.deref().destroy();
-      }
-      this.suggestEl.detach();
-      setTimeout(() => {
-        this.block = false;
-      });
+    const context = this.parseLinkContext(inputStr, this.caretPos, active.open, active.close);
+    this.activeAlias = context.alias;
+    this.activeSearchTerm = context.searchTerm;
+    this.activeFile = context.file;
+    this.mode = context.mode;
+
+    if (context.inAlias) {
+      this.resetSuggestions();
       return;
+    }
+
+    if (this.mode === "heading") {
+      await this.loadHeadings(this.activeFile);
+    } else if (this.mode === "block") {
+      await this.loadParagraphs(this.activeFile);
+    } else {
+      this.headingItems = [];
+      this.paragraphItems = [];
     }
 
     this.block = true;
-    super.onInputChanged();
+    await super.onInputChanged();
   }
 
-  getSuggestions(query: string): FuzzyMatch<LinkSuggestion>[] {
+  getSuggestions(query: string): FuzzyMatch<InlineSuggestion>[] {
     if (this.activeOpen === -1) return [];
+
+    if (this.mode === "heading") {
+      return fuzzyMatchTextItems(this.activeSearchTerm ?? "", this.headingItems, (h) => h.heading);
+    }
+
+    if (this.mode === "block") {
+      return fuzzyMatchParagraphsWithId(this.activeSearchTerm ?? "", this.paragraphItems);
+    }
+
     const term = this.activeSearchTerm ?? "";
-    return getSortedLinkMatches(term, this.items);
+    return getSortedLinkMatches(term, this.items as LinkSuggestion[]);
   }
 
-  getItemText(item: LinkSuggestion): string {
-    return item.path + (item.alias ? `|${item.alias}` : "");
+  private isHeading(item: InlineSuggestion): item is HeadingSuggestion {
+    return (item as HeadingSuggestion)?.kind === "heading";
   }
 
-  onChooseItem(item: LinkSuggestion): void {
-    const linkString = this.buildLink(item);
+  private isParagraph(item: InlineSuggestion): item is ParagraphSuggestion {
+    return (item as ParagraphSuggestion)?.kind === "paragraph";
+  }
+
+  getItemText(item: InlineSuggestion): string {
+    if (this.isHeading(item)) {
+      return item.heading;
+    }
+    if (this.isParagraph(item)) {
+      return item.text;
+    }
+    return (item as LinkSuggestion).path + ((item as LinkSuggestion).alias ? `|${(item as LinkSuggestion).alias}` : "");
+  }
+
+  async onChooseItem(item: InlineSuggestion | undefined): Promise<void> {
+    if (!item) return;
+
+    if (this.isHeading(item)) {
+      const linktext = this.app.metadataCache.fileToLinktext(
+        item.file,
+        this.getSourcePath() ?? "",
+        true,
+      );
+      const aliasSuffix = this.activeAlias !== null ? `|${this.activeAlias}` : "";
+      this.insertLink(`[[${linktext}#${item.anchor}${aliasSuffix}]]`);
+      return;
+    }
+
+    if (this.isParagraph(item)) {
+      const id = await this.ensureParagraphHasId(item);
+      if (!id) return;
+      const linktext = this.app.metadataCache.fileToLinktext(
+        item.file,
+        this.getSourcePath() ?? "",
+        true,
+      );
+      const aliasSuffix = this.activeAlias !== null ? `|${this.activeAlias}` : "";
+      this.insertLink(`[[${linktext}#^${id}${aliasSuffix}]]`);
+      return;
+    }
+
+    const linkString = this.buildLink(item as LinkSuggestion);
     this.insertLink(linkString);
   }
 
-  selectSuggestion(value: FuzzyMatch<LinkSuggestion>, evt: MouseEvent | KeyboardEvent) {
+  async selectSuggestion(value: FuzzyMatch<InlineSuggestion>, evt: MouseEvent | KeyboardEvent) {
     evt?.preventDefault?.();
     evt?.stopPropagation?.();
-    this.onChooseItem(value?.item);
+    await this.onChooseItem(value?.item);
   }
 
   open(): void {
@@ -189,8 +251,26 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
     super.open();
   }
 
-  renderSuggestion(result: FuzzyMatch<LinkSuggestion>, itemEl: HTMLElement) {
-    renderLinkSuggestion(this.plugin, result, itemEl, this.emptyStateText);
+  renderSuggestion(result: FuzzyMatch<InlineSuggestion>, itemEl: HTMLElement) {
+    const { item } = result || {};
+
+    if (this.isHeading(item as InlineSuggestion)) {
+      const note = item
+        ? this.app.metadataCache.fileToLinktext((item as HeadingSuggestion).file, this.getSourcePath() ?? "", true)
+        : "";
+      renderHeadingSuggestionRow(result as FuzzyMatch<HeadingSuggestion>, note, itemEl);
+      return;
+    }
+
+    if (this.isParagraph(item as InlineSuggestion)) {
+      const note = item
+        ? this.app.metadataCache.fileToLinktext((item as ParagraphSuggestion).file, this.getSourcePath() ?? "", true)
+        : "";
+      renderParagraphSuggestionRow(result as FuzzyMatch<ParagraphSuggestion>, note, itemEl);
+      return;
+    }
+
+    renderLinkSuggestion(this.plugin, result as FuzzyMatch<LinkSuggestion>, itemEl, this.emptyStateText);
   }
 
   private buildLink(item: LinkSuggestion): string {
@@ -229,6 +309,120 @@ export class InlineLinkSuggester extends SuggestionModal<LinkSuggestion> impleme
     const newPos = start + link.length;
     this.inputEl.setSelectionRange(newPos, newPos);
     this.close();
+  }
+
+  private resetSuggestions() {
+    this.suggester.setSuggestions([]);
+    if (this.popper?.deref()) {
+      this.popper.deref().destroy();
+    }
+    this.suggestEl.detach();
+    this.activeOpen = -1;
+    this.activeClose = -1;
+    this.activeAlias = null;
+    this.activeSearchTerm = "";
+    this.activeFile = null;
+    this.mode = null;
+    this.headingItems = [];
+    this.paragraphItems = [];
+    setTimeout(() => {
+      this.block = false;
+    });
+  }
+
+  private parseLinkContext(value: string, caret: number, open: number, close: number) {
+    const activeInfo = this.extractActiveInfo(value, caret, open, close);
+    const closeIndex = close >= 0 ? close : value.length;
+    const linkText = value.substring(open + 2, closeIndex);
+    const pipeIndex = linkText.indexOf("|");
+    const linkWithoutAlias = pipeIndex >= 0 ? linkText.substring(0, pipeIndex) : linkText;
+    const hashIndex = linkWithoutAlias.indexOf("#");
+    const caretInLink = Math.max(0, Math.min(caret - (open + 2), linkText.length));
+    const inSubpath = hashIndex >= 0 && caretInLink > hashIndex;
+    const isBlockMode = inSubpath && linkWithoutAlias.charAt(hashIndex + 1) === "^";
+    const basePath = hashIndex >= 0 ? linkWithoutAlias.substring(0, hashIndex) : linkWithoutAlias;
+    const subpathTerm = inSubpath
+      ? linkWithoutAlias.substring(hashIndex + (isBlockMode ? 2 : 1), caretInLink)
+      : "";
+    const file = basePath
+      ? this.app.metadataCache.getFirstLinkpathDest(basePath, this.getSourcePath() ?? "")
+      : null;
+
+    const mode = file && file.extension === "md" && inSubpath ? (isBlockMode ? "block" : "heading") : "file";
+    const searchTerm = mode === "file" ? activeInfo.searchTerm : subpathTerm;
+
+    return {
+      alias: activeInfo.alias,
+      inAlias: activeInfo.inAlias,
+      searchTerm,
+      file: mode === "file" ? null : file,
+      mode,
+    } as const;
+  }
+
+  private async loadHeadings(file: TFile | null) {
+    if (!file || file.extension !== "md") {
+      this.headingItems = [];
+      return;
+    }
+
+    const cache = await this.app.metadataCache.blockCache.getForFile({ isCancelled: () => false }, file);
+    const blocks = cache?.blocks ?? [];
+    this.headingItems = blocks
+      .filter((b: any) => b.display && b.node?.type === "heading")
+      .map((b: any) => ({
+        kind: "heading",
+        heading: this.cleanHeading(b.display),
+        anchor: this.cleanHeading(b.display),
+        level: b.node?.depth ?? b.node?.level ?? 1,
+        file,
+      }));
+  }
+
+  private async loadParagraphs(file: TFile | null) {
+    if (!file || file.extension !== "md") {
+      this.paragraphItems = [];
+      return;
+    }
+
+    const cache = await this.app.metadataCache.blockCache.getForFile({ isCancelled: () => false }, file);
+    const blocks = cache?.blocks ?? [];
+    this.paragraphItems = blocks
+      .filter((b: any) =>
+        b.display &&
+        b.node &&
+        (b.node.type === "paragraph" ||
+          b.node.type === "blockquote" ||
+          b.node.type === "listItem" ||
+          b.node.type === "table" ||
+          b.node.type === "callout"),
+      )
+      .map((b: any) => ({
+        kind: "paragraph",
+        text: b.display.trim(),
+        id: b.node?.id,
+        node: b.node,
+        file,
+      }));
+  }
+
+  private cleanHeading(display: string): string {
+    return display.replace(/^#+\s*/, "").trim();
+  }
+
+  private async ensureParagraphHasId(item: ParagraphSuggestion): Promise<string | null> {
+    if (item.id) return item.id;
+    const offset = item.node?.position?.end?.offset;
+    if (!offset) return null;
+    const fileContents = await this.plugin.app.vault.cachedRead(item.file);
+    const newId = nanoid();
+    await this.plugin.app.vault.modify(
+      item.file,
+      `${fileContents.slice(0, offset)} ^${newId}${fileContents.slice(offset)}`,
+    );
+    await sleep(200);
+    item.id = newId;
+    return newId;
   }
 
   // Keep listeners so the suggester can trigger multiple times in the same input session.

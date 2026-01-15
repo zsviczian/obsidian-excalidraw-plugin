@@ -97,6 +97,113 @@ export const getSortedLinkMatches = (
   });
 };
 
+const renderTextWithHighlights = (titleEl: HTMLElement, text: string, matches: [number, number][]) => {
+  if (!matches?.length) {
+    titleEl.setText(text);
+    return;
+  }
+  const sorted = [...matches].sort((a, b) => a[0] - b[0]);
+  for (let i = 0; i < text.length; i++) {
+    const match = sorted.find((m) => m[0] === i);
+    if (match) {
+      const span = createSpan("suggestion-highlight");
+      span.appendText(text.substring(match[0], match[1]));
+      titleEl.appendChild(span);
+      i = match[1] - 1;
+      continue;
+    }
+    titleEl.appendText(text[i]);
+  }
+};
+
+export const fuzzyMatchTextItems = <T>(
+  term: string,
+  items: T[],
+  getText: (item: T) => string,
+): FuzzyMatch<T>[] => {
+  const search = prepareFuzzySearch(term ?? "");
+  return items
+    .map((item) => {
+      const match = search(getText(item));
+      return match ? { item, match } : null;
+    })
+    .filter(Boolean) as FuzzyMatch<T>[];
+};
+
+export const fuzzyMatchParagraphsWithId = <T extends { id?: string; text: string }>(
+  term: string,
+  items: T[],
+): FuzzyMatch<T>[] => {
+  const search = prepareFuzzySearch(term ?? "");
+  const needle = term?.trim().replace(/^\^/, "").toLowerCase();
+  return items
+    .map((item) => {
+      const display = `${item.id ? `^${item.id} ` : ""}${item.text}`;
+      const match = search(display);
+      if (!match) return null;
+      if (item.id && needle) {
+        const idLower = item.id.toLowerCase();
+        if (idLower === needle) {
+          match.score = Number.MAX_SAFE_INTEGER; // strongest priority for exact id
+        } else if (idLower.includes(needle)) {
+          match.score = match.score + 1000; // strong priority if id contains term
+        }
+      }
+      return { item, match } as FuzzyMatch<T>;
+    })
+    .filter(Boolean)
+    .sort((a, b) => (b.match?.score ?? 0) - (a.match?.score ?? 0)) as FuzzyMatch<T>[];
+};
+
+export const renderHeadingSuggestionRow = (
+  result: FuzzyMatch<{ heading: string; level?: number }>,
+  note: string,
+  itemEl: HTMLElement,
+) => {
+  const { item, match } = result || {};
+  itemEl.addClass("suggestion-item");
+  itemEl.addClass("mod-complex");
+  const contentEl = itemEl.createDiv("suggestion-content");
+  const titleEl = contentEl.createDiv("suggestion-title");
+  if (!item) {
+    titleEl.setText("No match");
+    itemEl.addClass("is-selected");
+    return;
+  }
+  renderTextWithHighlights(titleEl, item.heading, match?.matches ?? []);
+  const noteEl = contentEl.createDiv("suggestion-note");
+  noteEl.setText(note ?? "");
+  const auxEl = itemEl.createDiv("suggestion-aux");
+  const flair = auxEl.createSpan("suggestion-flair");
+  flair.setText(`H${item.level ?? 1}`);
+};
+
+export const renderParagraphSuggestionRow = (
+  result: FuzzyMatch<{ text: string; id?: string }>,
+  note: string,
+  itemEl: HTMLElement,
+) => {
+  const { item, match } = result || {};
+  itemEl.addClass("suggestion-item");
+  itemEl.addClass("mod-complex");
+  const contentEl = itemEl.createDiv("suggestion-content");
+  const titleEl = contentEl.createDiv("suggestion-title");
+  if (!item) {
+    titleEl.setText("No match");
+    itemEl.addClass("is-selected");
+    return;
+  }
+  const display = `${item.id ? `^${item.id} ` : ""}${item.text}`;
+  renderTextWithHighlights(titleEl, display, match?.matches ?? []);
+  const noteEl = contentEl.createDiv("suggestion-note");
+  noteEl.setText(note ?? "");
+  if (item.id) {
+    const auxEl = itemEl.createDiv("suggestion-aux");
+    const flair = auxEl.createSpan("suggestion-flair");
+    flair.setText(`^${item.id}`);
+  }
+};
+
 /**
  * Standard rendering for link suggestions with icons and highlights.
  */
