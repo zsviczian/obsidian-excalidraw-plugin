@@ -2276,10 +2276,12 @@ export class ExcalidrawAutomate {
    * @param {number} topX - The x-coordinate of the top-left corner.
    * @param {number} topY - The y-coordinate of the top-left corner.
    * @param {string} tex - The LaTeX equation string.
+   * @param {number} [scaleX=1] - The x-scaling factor (post mathjax creation)
+   * @param {number} [scaleY=1] - The y-scaling factor (post mathjax creation)
    * @returns {Promise<string>} Promise resolving to the ID of the added LaTeX image element.
    */
-  async addLaTex(topX: number, topY: number, tex: string): Promise<string> {
-    if (!tex){
+  async addLaTex(topX: number, topY: number, tex: string, scaleX: number = 1, scaleY: number = 1): Promise<string> {
+    if (!tex || !scaleX || !scaleY){
       return null;
     }
     const id = nanoid();
@@ -2301,12 +2303,12 @@ export class ExcalidrawAutomate {
       "image",
       topX,
       topY,
-      image.size.width,
-      image.size.height,
+      image.size.width * Math.abs(scaleX),
+      image.size.height * Math.abs(scaleY),
     );
     this.elementsDict[id].fileId = image.fileId;
     this.addAppendUpdateCustomData(id, {latex: tex});
-    this.elementsDict[id].scale = [1, 1];
+    this.elementsDict[id].scale = [Math.sign(scaleX), Math.sign(scaleY)];
     return id;
   };
 
