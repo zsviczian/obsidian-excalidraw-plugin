@@ -3816,6 +3816,7 @@ export class ExcalidrawAutomate {
 
   /**
    * Moves the specified element to a specific position in the z-index.
+   * * Operates directly on the Excalidraw Scene in targetView, not through ExcalidrawAutomate elements.
    * @param {number} elementId - The ID of the element to move.
    * @param {number} newZIndex - The new z-index position for the element.
    */
