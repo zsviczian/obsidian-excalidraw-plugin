@@ -145,7 +145,9 @@ const STRINGS = {
     NOTICE_CANNOT_EDIT_MULTILINE: "Cannot edit multi-line nodes directly.\nDouble-click the element in Excalidraw to edit, then run auto re-arrange map to update the layout.",
 
     // Action labels (display only)
-    ACTION_LABEL_ADD: "Add",
+    ACTION_LABEL_ADD: "Add Child",
+    ACTION_LABEL_ADD_SIBLING_AFTER: "Add Next Sibling",
+    ACTION_LABEL_ADD_SIBLING_BEFORE: "Add Prev Sibling",
     ACTION_LABEL_ADD_FOLLOW: "Add + follow",
     ACTION_LABEL_ADD_FOLLOW_FOCUS: "Add + follow + focus",
     ACTION_LABEL_ADD_FOLLOW_ZOOM: "Add + follow + zoom",
@@ -199,12 +201,10 @@ const STRINGS = {
     DOCK_TITLE: "Mind Map Builder",
     HELP_SUMMARY: "Instructions & Shortcuts",
     INPUT_PLACEHOLDER: "Concept... type [[ to insert link",
-    BUTTON_ADD_SIBLING: "Add Sibling",
-    BUTTON_ADD_FOLLOW: "Add+Follow",
     BUTTON_COPY: "Copy",
     BUTTON_CUT: "Cut",
     BUTTON_PASTE: "Paste",
-    TITLE_ADD_SIBLING: "Add sibling with Enter",
+    TITLE_ADD_SIBLING: `Add sibling with ${ea.DEVICE.isMacOS || ea.DEVICE.isIOS ? "OPT" : "ALT"}+Enter`,
     TITLE_ADD_FOLLOW: "Add and follow",
     TITLE_COPY: "Copy branch as text",
     TITLE_CUT: "Cut branch as text",
@@ -224,7 +224,7 @@ const STRINGS = {
     DESC_CENTER_TEXT: "Toggle off: align nodes to right/left depending; Toggle on: center the text.",
     LABEL_FONT_SIZES: "Font Sizes",
     HOTKEY_SECTION_TITLE: "Hotkey Configuration",
-    HOTKEY_HINT: "These hotkeys may override some Obsidian defaults. They’re Local (⌨️) by default, active only when the MindMap input field is focused. Use the 🌐/🎨/⌨️ toggle to change hotkey scope: 🌐 Overrides Obsidian hotkeys whenever an Excalidraw tab is visible, 🎨 Overrides Obsidian hotkeys whenever Excalidraw is focused, ⌨️ Local (input focused).",
+    HOTKEY_HINT: "These hotkeys may override some Obsidian defaults. They're Local (⌨️) by default, active only when the MindMap input field is focused. Use the 🌐/🎨/⌨️ toggle to change hotkey scope: 🌐 Overrides Obsidian hotkeys whenever an Excalidraw tab is visible, 🎨 Overrides Obsidian hotkeys whenever Excalidraw is focused, ⌨️ Local (input focused).",
     RECORD_HOTKEY_PROMPT: "Press hotkey...",
     ARIA_SCOPE_INPUT: "Local: Active only when MindMap Input is focused",
     ARIA_SCOPE_EXCALIDRAW: "Excalidraw: Active whenever MindMap Input or Excalidraw is focused",
@@ -645,6 +645,8 @@ const parseEmbeddableInput = (input, imageInfo) => {
 // HOTKEY SUPPORT FUNCTIONS
 // ------------------------------------------------
 const ACTION_ADD = "Add";
+const ACTION_ADD_SIBLING_AFTER = "Add Next Sibling";
+const ACTION_ADD_SIBLING_BEFORE = "Add Prev Sibling";
 const ACTION_ADD_FOLLOW = "Add + follow";
 const ACTION_ADD_FOLLOW_FOCUS = "Add + follow + focus";
 const ACTION_ADD_FOLLOW_ZOOM = "Add + follow + zoom";
@@ -675,6 +677,8 @@ const ACTION_TOGGLE_FLOATING_EXTRAS = "Toggle Floating Extra Buttons";
 
 const ACTION_LABEL_KEYS = {
   [ACTION_ADD]: "ACTION_LABEL_ADD",
+  [ACTION_ADD_SIBLING_AFTER]: "ACTION_LABEL_ADD_SIBLING_AFTER",
+  [ACTION_ADD_SIBLING_BEFORE]: "ACTION_LABEL_ADD_SIBLING_BEFORE",
   [ACTION_ADD_FOLLOW]: "ACTION_LABEL_ADD_FOLLOW",
   [ACTION_ADD_FOLLOW_FOCUS]: "ACTION_LABEL_ADD_FOLLOW_FOCUS",
   [ACTION_ADD_FOLLOW_ZOOM]: "ACTION_LABEL_ADD_FOLLOW_ZOOM",
@@ -710,10 +714,16 @@ const getActionLabel = (action) => t(ACTION_LABEL_KEYS[action] ?? action);
 // - none: ea.targetView not set or Excalidraw leaf not visible
 const DEFAULT_HOTKEYS = [
   // Creation - Enter based
-  { action: ACTION_ADD, key: "Enter", modifiers: [], immutable: true, scope: SCOPE.input, isInputOnly: true },
+  { action: ACTION_ADD, key: "Enter", modifiers: [], scope: SCOPE.input, isInputOnly: true },
+  { action: ACTION_ADD_SIBLING_AFTER, key: "Enter", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: true },
+  { action: ACTION_ADD_SIBLING_BEFORE, key: "Enter", modifiers: ["Alt", "Shift"], scope: SCOPE.input, isInputOnly: true },
   { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers: ["Mod", "Alt"], scope: SCOPE.input, isInputOnly: true },
   { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: true },
   { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"], scope: SCOPE.input, isInputOnly: true },
+  
+  //Window
+  { action: ACTION_DOCK_UNDOCK, key: "Enter", modifiers: ["Shift"], scope: SCOPE.input, isInputOnly: true },
+  { action: ACTION_HIDE, key: "Escape", modifiers: [], scope: SCOPE.excalidraw, isInputOnly: true },
 
   // Edit
   { action: ACTION_EDIT, code: "KeyE", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: false },
@@ -734,10 +744,6 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_REARRANGE, code: "KeyR", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_ZOOM, code: "KeyZ", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-
-  //Window
-  { action: ACTION_DOCK_UNDOCK, key: "Enter", modifiers: ["Shift"], scope: SCOPE.input, isInputOnly: true },
-  { action: ACTION_HIDE, key: "Escape", modifiers: [], immutable: true , scope: SCOPE.excalidraw, isInputOnly: true },
 
   //Navigation
   { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
@@ -2774,7 +2780,7 @@ const addImage = async (pathOrFile, width, leftFacing = false, x=0, y=0) => {
   return newNodeId;
 }
 
-const addNode = async (text, follow = false, skipFinalLayout = false, batchModeAllElements = null, batchModeParent = null) => {
+const addNode = async (text, follow = false, skipFinalLayout = false, batchModeAllElements = null, batchModeParent = null, pos = null) => {
   if (!ea.targetView) return;
   if (!text || text.trim() === "") return;
 
@@ -2926,7 +2932,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
        targetSide = parentCenterX > rootCenter.x ? 1 : -1;
     }
 
-    const side = targetSide;
+    let side = targetSide;
 
     const offset = (mode === "Radial" || side === 1)
       ? rootBox.width * 2
@@ -2935,8 +2941,14 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     let px = parentBox.minX + offset,
       py = parentBox.minY;
 
-    // Ensure new node is placed below existing siblings to preserve visual order
-    if (!autoLayoutDisabled) {
+    // If pos is provided (e.g. from Add Sibling), override placement.
+    // This maintains the "same side" logic because the originator's X is used.
+    if (!autoLayoutDisabled && pos) {
+      px = pos.x;
+      py = pos.y;
+      // Recalculate side based on provided position relative to root
+      side = (px + (shouldWrap ? curMaxW : metrics.width) / 2 > rootCenter.x) ? 1 : -1;
+    } else if (!autoLayoutDisabled) { // Ensure new node is placed below existing siblings to preserve visual order
       const siblings = getChildrenNodes(parent.id, allElements);
       if (siblings.length > 0) {
         const sortedSiblings = siblings.sort((a, b) => a.y - b.y);
@@ -2944,9 +2956,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         const lastSiblingBox = getNodeBox(lastSibling, allElements);
         py = lastSiblingBox.minY + lastSiblingBox.height + layoutSettings.GAP_Y;
       }
-    }
-
-    if (autoLayoutDisabled) {
+    } else if (autoLayoutDisabled) {
       const manualGapX = Math.round(parentBox.width * layoutSettings.MANUAL_GAP_MULTIPLIER);
       const jitterX = (Math.random() - 0.5) * layoutSettings.MANUAL_JITTER_RANGE;
       const jitterY = (Math.random() - 0.5) * layoutSettings.MANUAL_JITTER_RANGE;
@@ -2956,7 +2966,6 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         : parentBox.minX - manualGapX - nodeW + jitterX;
       py = parentBox.minY + parentBox.height / 2 - metrics.height / 2 + jitterY;
     }
-
     const textAlign = centerText
       ? "center"
       : side === 1 ? "left" : "right";
@@ -2981,7 +2990,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
 
     if (depth === 1) {
       ea.addAppendUpdateCustomData(newNodeId, {
-        mindmapNew: true,
+        mindmapNew: !!pos ? false : true, // if position is provided a sibling is being added to a defined spot in the layout
         mindmapOrder: nextSiblingOrder,
       });
     } else {
@@ -3837,7 +3846,7 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
         await toggleFold("L0");
         allElements = ea.getViewElements();
       }
-      const ch = getChildrenNodes(current.id, allElements);
+      const ch = getChildrenNodes(current.id, allElements).sort((a, b) => (a.customData?.mindmapOrder ?? 100) - (b.customData?.mindmapOrder ?? 100));
       if (ch.length) ea.selectElementsInView([ch[0]]);
     }
   } else if (key === "ArrowUp" || key === "ArrowDown") {
@@ -5637,8 +5646,6 @@ const renderBody = (contentEl) => {
   };
 
   userHotkeys.forEach((h, index) => {
-    if (h.immutable) return;
-
     const setting = new ea.obsidian.Setting(hkContainer)
       .setName(getActionLabel(h.action));
     setting.settingEl.style.paddingRight = "0";
@@ -5746,6 +5753,10 @@ const renderBody = (contentEl) => {
 
     const addBtn = controlDiv.createSpan("clickable-icon setting-add-hotkey-button");
     addBtn.innerHTML = ea.obsidian.getIcon("plus-circle").outerHTML;
+    if (h.key === "Escape") {
+      addBtn.style.opacity = 0;
+      return;
+    }
     addBtn.ariaLabel = t("ARIA_CUSTOMIZE_HOTKEY");
     addBtn.onclick = () => recordHotkey(addBtn, index, updateRowUI);
   });
@@ -6019,6 +6030,55 @@ const handleKeydown = (e) => {
   performAction(action, e);
 }
 
+const addSibling = async (event, insertAfter=true) => {
+  if (!inputEl.value) return;
+  const dir = insertAfter ? 1 : -1;
+  const allElementsForSibling = ea.getViewElements();
+  const selectedForSibling = getMindmapNodeFromSelection();
+  
+  if (!selectedForSibling) {
+    await addNode(inputEl.value, true);
+  } else {
+    const info = getHierarchy(selectedForSibling, allElementsForSibling);
+    const root = allElementsForSibling.find(el => el.id === info.rootId);
+    const parentOfSelected = getParentNode(selectedForSibling.id, allElementsForSibling);
+    
+    // If parent exists, add to that parent (Sibling). 
+    // If no parent (Root was selected), add to selected (Child).
+    const targetParent = parentOfSelected ?? selectedForSibling;
+    
+    // Default position: slightly lower to ensure correct Y-sort order in directional maps
+    let pos = {
+      x: selectedForSibling.x,
+      y: selectedForSibling.y + selectedForSibling.height + dir*1,
+    };
+
+    // Specific logic for Radial L1 nodes:
+    // Position must be calculated via angle offset because triggerGlobalLayout sorts 
+    // L1 nodes in Radial maps clockwise by angle, not by Y-coordinate.
+    if (parentOfSelected && parentOfSelected.id === root.id && root.customData?.growthMode === "Radial") {
+      const rb = getNodeBox(root, allElementsForSibling);
+      const rc = { x: rb.minX + rb.width / 2, y: rb.minY + rb.height / 2 };
+      const sc = { x: selectedForSibling.x + selectedForSibling.width / 2, y: selectedForSibling.y + selectedForSibling.height / 2 };
+      
+      // Calculate the current angle and distance, then increment angle slightly (~5.7 degrees)
+      const angle = Math.atan2(sc.y - rc.y, sc.x - rc.x) + dir*0.2;
+      const dist = Math.hypot(sc.x - rc.x, sc.y - rc.y);
+      
+      pos = {
+        x: rc.x + Math.cos(angle) * dist - selectedForSibling.width / 2,
+        y: rc.y + Math.sin(angle) * dist - selectedForSibling.height / 2
+      };
+    }
+
+    ea.selectElementsInView([targetParent]);
+    await addNode(inputEl.value, false, false, null, null, pos);
+  }
+  inputEl.value = "";
+  updateUI();
+  await performAction(ACTION_ADD, event); // Move selection to new node
+}
+
 const performAction = async (action, event) => {
   if (!action || !ea.targetView) return;
   switch (action) {
@@ -6115,6 +6175,14 @@ const performAction = async (action, event) => {
 
     case ACTION_EDIT:
       startEditing();
+      break;
+
+    case ACTION_ADD_SIBLING_AFTER:
+      addSibling(event, true);
+      break;
+
+    case ACTION_ADD_SIBLING_BEFORE:
+      addSibling(event, false);
       break;
 
     case ACTION_ADD_FOLLOW:
