@@ -602,7 +602,7 @@ const parseImageInput = (input) => {
     }
   }
 
-  let imageFile = null;
+  let imageFile = file = null;
   let isImagePath = false;
 
   const PDF_RECT_LINK_REGEX = /^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/;
