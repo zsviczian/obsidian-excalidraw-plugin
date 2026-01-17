@@ -1,7 +1,6 @@
 /**
 
 Issues:
-- recursive ungrouping not working when started from a leaf (not the root)
 - if a node is grouped folding hides the node as well
 - Promote, demote not working reliably with CTRL+Arrow keys
 - scrollbar on extra buttons panel
@@ -2620,11 +2619,10 @@ const sortL1NodesBasedOnVisualSequence = (l1Nodes, mode, rootCenter) => {
  * Calculates positions for a tree rooted at rootId and moves elements.
  * 
  * @param {string} rootId - ID of the root node.
- * @param {boolean} force - Force re-layout even if unchanged (unused currently).
  * @param {boolean} forceUngroup - Force ungrouping of branches before layout.
  * @param {boolean} mustHonorMindmapOrder - If true, enforces the current mindmapOrder over visual position.
  */
-const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false, mustHonorMindmapOrder = false) => {
+const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindmapOrder = false) => {
   if (!ea.targetView) return;
   const selectedElement = getMindmapNodeFromSelection();
   if (!selectedElement) return;
@@ -3910,7 +3908,7 @@ const changeNodeOrder = async (key) => {
         await addElementsToView();
         
         // Trigger layout. mustHonorMindmapOrder=false ensures the engine sorts based on the NEW visual position
-        triggerGlobalLayout(root.id, false, false, false);
+        triggerGlobalLayout(root.id, false, false);
         return;
      }
   }
@@ -3950,7 +3948,7 @@ const changeNodeOrder = async (key) => {
       updateSubtreeFontSize(current.id, parentInfo.depth, allElements, rootFontScale);
 
       await addElementsToView();
-      triggerGlobalLayout(root.id, false, false, true);
+      triggerGlobalLayout(root.id, false, true);
       return;
     }
   }
@@ -4016,7 +4014,7 @@ const changeNodeOrder = async (key) => {
       updateSubtreeFontSize(current.id, parentInfo.depth + 2, allElements, rootFontScale);
       
       await addElementsToView();
-      triggerGlobalLayout(root.id, false, false, true);
+      triggerGlobalLayout(root.id, false, true);
     }
     return;
   }
@@ -4056,7 +4054,7 @@ const changeNodeOrder = async (key) => {
 
       await addElementsToView();
       // Trigger layout specifically honoring the new sort order
-      triggerGlobalLayout(root.id, false, false, true);
+      triggerGlobalLayout(root.id, false, true);
     }
   }
 }
@@ -4985,7 +4983,7 @@ const commitEdit = async () => {
       if(newViewNode) {
         ea.selectElementsInView([newViewNode]);
         const newInfo = getHierarchy(newViewNode, newViewElements);
-        await triggerGlobalLayout(newInfo.rootId, false, false, true);
+        await triggerGlobalLayout(newInfo.rootId, false, true);
       }
     }
 
