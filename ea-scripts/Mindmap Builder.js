@@ -3795,7 +3795,43 @@ const pasteListToMap = async () => {
 // 6. Map Actions
 // ---------------------------------------------------------------------------
 
-// this function should call triggerGlobalLayout with isNewSortOrder set to true, so mindmapOrder is respected (over visual position)
+/**
+ * Recursively updates the font size of a subtree based on the new depth level.
+ * Only updates if the current font size matches the default for its *previous* depth,
+ * preserving user customizations.
+ */
+const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => {
+  const fontScale = getFontScale(rootFontScale);
+  
+  const node = allElements.find(el => el.id === nodeId);
+  if (!node) return;
+
+  // Determine the node's *current* depth in the hierarchy to find its expected "old" font size
+  const currentHierarchy = getHierarchy(node, allElements);
+  const oldDepth = currentHierarchy.depth;
+
+  // Calculate standard sizes
+  const oldStandardSize = fontScale[Math.min(oldDepth, fontScale.length - 1)];
+  const newStandardSize = fontScale[Math.min(newDepth, fontScale.length - 1)];
+
+  // Update only if the user hasn't customized the font size
+  if (node.fontSize === oldStandardSize) {
+    const eaNode = ea.getElement(nodeId);
+    eaNode.fontSize = newStandardSize;
+    
+    // Refresh dimensions to fit new font size
+    if (eaNode.type === "text" || (eaNode.boundElements && eaNode.boundElements.some(b => b.type === "text"))) {
+      ea.refreshTextElementSize(eaNode.id);
+    }
+  }
+
+  // Recurse to children
+  const children = getChildrenNodes(nodeId, allElements);
+  children.forEach(child => {
+    updateSubtreeFontSize(child.id, newDepth + 1, allElements, rootFontScale);
+  });
+};
+
 const changeNodeOrder = async (key) => {
   if (!ea.targetView) return;
   const allElements = ea.getViewElements();
@@ -3804,6 +3840,8 @@ const changeNodeOrder = async (key) => {
   
   const info = getHierarchy(current, allElements);
   const root = allElements.find((e) => e.id === info.rootId);
+  const rootFontScale = root.customData?.fontsizeScale ?? fontsizeScale; // Get scale from root or global setting
+
   if (current.id === root.id) {
     new Notice(t("NOTICE_CANNOT_MOVE_ROOT"));
     return; // cannot reorder root
@@ -3898,6 +3936,11 @@ const changeNodeOrder = async (key) => {
       const parentOrder = getMindmapOrder(parent);
       ea.addAppendUpdateCustomData(current.id, { mindmapOrder: parentOrder + 0.5 });
       
+      // Update font sizes for the promoted subtree
+      // New depth is same as Parent's depth (since it becomes a sibling of Parent)
+      const parentInfo = getHierarchy(parent, allElements);
+      updateSubtreeFontSize(current.id, parentInfo.depth, allElements, rootFontScale);
+
       await addElementsToView();
       triggerGlobalLayout(root.id, false, false, true);
       return;
@@ -3912,7 +3955,6 @@ const changeNodeOrder = async (key) => {
     siblings.sort((a, b) => getMindmapOrder(a) - getMindmapOrder(b));
     
     if (siblings.length < 2) {
-      // Cannot demote if there are no siblings to accept the node
       new Notice("Cannot demote: No sibling found to accept this node.");
       return;
     }
@@ -3959,6 +4001,12 @@ const changeNodeOrder = async (key) => {
         : 0;
         
       ea.addAppendUpdateCustomData(current.id, { mindmapOrder: nextOrder });
+
+      // Update font sizes for the demoted subtree
+      // New depth is Parent's depth + 1 (since it becomes a child of Sibling)
+      // Hierarchy info of Parent is same depth as Sibling
+      const parentInfo = getHierarchy(parent, allElements);
+      updateSubtreeFontSize(current.id, parentInfo.depth + 1, allElements, rootFontScale);
       
       await addElementsToView();
       triggerGlobalLayout(root.id, false, false, true);
