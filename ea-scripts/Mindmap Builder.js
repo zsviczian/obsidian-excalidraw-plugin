@@ -147,6 +147,7 @@ const STRINGS = {
     NOTICE_CANNOT_MOVE_ROOT: "Cannot move the root node.",
     NOTICE_CANNOT_PRMOTE_L1: "Cannot promote Level 1 nodes.",
     NOTICE_CANNOT_DEMOTE: "Cannot demote node. No previous sibling to attach to.",
+    NOTICE_CANNOT_MOVE_AUTO_LAYOUT_DISABLED: "Cannot move nodes when Auto-Layout is disabled. Enable Auto-Layout first.",
 
     // Action labels (display only)
     ACTION_LABEL_ADD: "Add Child",
@@ -3786,6 +3787,10 @@ const changeNodeOrder = async (key) => {
     new Notice(t("NOTICE_CANNOT_MOVE_ROOT"));
     return; // cannot reorder root
   }
+  if (root.customData?.autoLayoutDisabled) {
+    new Notice(t("NOTICE_CANNOT_MOVE_AUTO_LAYOUT_DISABLED"));
+    return; // cannot reorder in auto-layout disabled maps
+  }
   if (current.customData?.isPinned) {
     new Notice(t("NOTICE_CANNOT_MOVE_PINNED"));
     return; // cannot reorder pinned nodes
@@ -3797,6 +3802,51 @@ const changeNodeOrder = async (key) => {
   const rootCenter = root.x + root.width / 2;
   const curCenter = current.x + current.width / 2;
   const isInRight = curCenter > rootCenter;
+
+  // ---------------------------------------------------------
+  // Feature: L1 Node Side Swap (Right-Left Map Exclusively)
+  // ---------------------------------------------------------
+  const isRightLeft = (root.customData?.growthMode === "Right-Left") || (!root.customData?.growthMode && currentModalGrowthMode === "Right-Left");
+  
+  if (parent.id === root.id && isRightLeft) {
+     const moveRight = !isInRight && key === "ArrowRight"; // Left Node -> Right Side
+     const moveLeft = isInRight && key === "ArrowLeft";    // Right Node -> Left Side
+
+     if (moveRight || moveLeft) {
+        // Calculate Delta to mirror across root center
+        // TargetX = RootX + (RootX - CurX) => Delta = 2 * (RootX - CurX)
+        const deltaX = 2 * (rootCenter - curCenter);
+        
+        // Gather all elements in branch + decorations
+        const branchIds = getBranchElementIds(current.id, allElements);
+        const elementsToMove = new Set();
+        
+        branchIds.forEach(id => {
+           const el = allElements.find(x => x.id === id);
+           if (el) {
+             elementsToMove.add(el);
+             // Include attached decorations (grouped elements)
+             if (el.groupIds && el.groupIds.length > 0) {
+                const groupEls = ea.getElementsInTheSameGroupWithElement(el, allElements);
+                groupEls.forEach(gEl => elementsToMove.add(gEl));
+             }
+           }
+        });
+        
+        const arr = Array.from(elementsToMove);
+        ea.copyViewElementsToEAforEditing(arr);
+        arr.forEach(el => {
+            const eaEl = ea.getElement(el.id);
+            eaEl.x += deltaX;
+        });
+        
+        await addElementsToView();
+        
+        // Trigger layout. isNewSortOrder=false ensures the engine sorts based on the NEW visual position
+        triggerGlobalLayout(root.id, false, false, false);
+        return;
+     }
+  }
 
   // 1. Structural Promotion (Left/Right Arrows moving "Inward")
   // Selected node must be rewired to parent of current parent (Grandparent)
