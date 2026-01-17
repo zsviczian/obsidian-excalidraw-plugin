@@ -1324,7 +1324,7 @@ const manageFoldIndicator = (node, show, allElements) => {
         ind.x = node.x - layoutSettings.INDICATOR_OFFSET - ind.width;
         ind.textAlign = "right";
     }
-    ind.y = node.y + node.height/2 - ind.height/2;
+    ind.y = node.y + node.height - ind.fontSize;
   } else {
     // Hide/Delete indicator
     if (existingId) {
@@ -2164,7 +2164,7 @@ const configureArrow = (context) => {
   }
 };
 
-const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, isNewSortOrder = false) => {
+const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder = false) => {
   const node = elementById?.get(nodeId) ?? allElements.find((el) => el.id === nodeId);
   const eaNode = ea.getElement(nodeId);
 
@@ -2214,10 +2214,10 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
 
   if (unpinnedChildren.length > 0) {
     // SORTING LOGIC:
-    // If isNewSortOrder is true: Explicitly sort by mindmapOrder to enforce the manual change.
-    // If isNewSortOrder is false: Fallback to visual Y-position to keep map strictly ordered by position (auto-layout).
+    // If mustHonorMindmapOrder is true: Explicitly sort by mindmapOrder to enforce the manual change.
+    // If mustHonorMindmapOrder is false: Fallback to visual Y-position to keep map strictly ordered by position (auto-layout).
     unpinnedChildren.sort((a, b) => {
-      if (isNewSortOrder) {
+      if (mustHonorMindmapOrder) {
         return getMindmapOrder(a) - getMindmapOrder(b);
       }
       const dy = a.y - b.y;
@@ -2226,7 +2226,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
     });
 
     // Only update mindmapOrder to match visual reality if we are NOT in a manual sort operation
-    if (!isNewSortOrder) {
+    if (!mustHonorMindmapOrder) {
       unpinnedChildren.forEach((child, i) => {
         if (getMindmapOrder(child) !== i) {
           ea.addAppendUpdateCustomData(child.id, { mindmapOrder: i });
@@ -2251,7 +2251,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
         childrenByParent,
         heightCache,
         elementById,
-        isNewSortOrder, // Propagate the flag recursively
+        mustHonorMindmapOrder, // Propagate the flag recursively
       );
 
       const childNode = elementById?.get(child.id) ?? allElements.find((el) => el.id === child.id);
@@ -2276,7 +2276,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
     childrenByParent,
     heightCache,
     elementById,
-    isNewSortOrder,
+    mustHonorMindmapOrder,
   ));
 
   // Update Arrows
@@ -2348,7 +2348,7 @@ const updateL1Arrow = (node, context) => {
   }
 };
 
-const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, isNewSortOrder = false) => {
+const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, mustHonorMindmapOrder = false) => {
   const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById } = context;
   const count = nodes.length;
 
@@ -2458,9 +2458,9 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, isN
     const tCY = rootCenter.y + placeR * Math.sin(rad);
 
     if (isPinned) {
-      layoutSubtree(node.id, node.x, node.y + node.height / 2, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, isNewSortOrder);
+      layoutSubtree(node.id, node.x, node.y + node.height / 2, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder);
     } else {
-      layoutSubtree(node.id, tCX, tCY, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, isNewSortOrder);
+      layoutSubtree(node.id, tCX, tCY, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder);
     }
 
     // Advance
@@ -2474,7 +2474,7 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, isN
   });
 };
 
-const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, isLeftSide, centerAngle, gapMultiplier, isNewSortOrder = false) => {
+const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, isLeftSide, centerAngle, gapMultiplier, mustHonorMindmapOrder = false) => {
   const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById } = context;
   const count = nodes.length;
 
@@ -2505,7 +2505,7 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
     const nodeSpanDeg = (nodeHeight / radiusY) * (180 / Math.PI);
 
     if (isPinned) {
-      layoutSubtree(node.id, node.x, node.y + node.height / 2, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, isNewSortOrder);
+      layoutSubtree(node.id, node.x, node.y + node.height / 2, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder);
       const info = getAngularInfo(node, nodeHeight);
       if (isLeftSide) {
         if (currentAngle > info.start - gapSpanDeg) currentAngle = info.start - gapSpanDeg;
@@ -2529,7 +2529,7 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
       const angleRad = (angleDeg - 90) * (Math.PI / 180);
       const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
       const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
-      layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, isNewSortOrder);
+      layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder);
     }
 
     if (node.customData?.mindmapNew) {
@@ -2545,7 +2545,7 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
  * Uses a Vertical Ellipse for Radial mode. Ensures nodes are distributed across
  * the ellipse to prevent wrap-around overlap and maintain correct facing.
  */
-const layoutL1Nodes = (nodes, options, context, isNewSortOrder = false) => {
+const layoutL1Nodes = (nodes, options, context, mustHonorMindmapOrder = false) => {
   if (nodes.length === 0) return;
   const { allElements, childrenByParent, heightCache, elementById } = context;
   const { sortMethod, centerAngle, gapMultiplier } = options;
@@ -2559,9 +2559,9 @@ const layoutL1Nodes = (nodes, options, context, isNewSortOrder = false) => {
   const isLeftSide = sortMethod === "vertical" && Math.abs((centerAngle ?? 0) - 270) < 1;
 
   if (sortMethod === "radial") {
-    radialL1Distribution(nodes, context, l1Metrics, totalSubtreeHeight, isNewSortOrder);
+    radialL1Distribution(nodes, context, l1Metrics, totalSubtreeHeight, mustHonorMindmapOrder);
   } else {
-    verticalL1Distribution(nodes, context, l1Metrics, totalSubtreeHeight, isLeftSide, centerAngle, gapMultiplier, isNewSortOrder);
+    verticalL1Distribution(nodes, context, l1Metrics, totalSubtreeHeight, isLeftSide, centerAngle, gapMultiplier, mustHonorMindmapOrder);
   }
 };
 
@@ -2614,14 +2614,14 @@ const sortL1NodesBasedOnVisualSequence = (l1Nodes, mode, rootCenter) => {
  * @param {string} rootId - ID of the root node.
  * @param {boolean} force - Force re-layout even if unchanged (unused currently).
  * @param {boolean} forceUngroup - Force ungrouping of branches before layout.
- * @param {boolean} isNewSortOrder - If true, enforces the current mindmapOrder over visual position.
+ * @param {boolean} mustHonorMindmapOrder - If true, enforces the current mindmapOrder over visual position.
  */
-const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false, isNewSortOrder = false) => {
+const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false, mustHonorMindmapOrder = false) => {
   if (!ea.targetView) return;
   const selectedElement = getMindmapNodeFromSelection();
   if (!selectedElement) return;
 
-  const run = async (allElements, mindmapIds, root, doVisualSort, sharedSets, isNewSortOrder = false) => {
+  const run = async (allElements, mindmapIds, root, doVisualSort, sharedSets, mustHonorMindmapOrder = false) => {
     const oldMode = root.customData?.growthMode;
     const newMode = currentModalGrowthMode;
     
@@ -2666,14 +2666,14 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false, 
       elementById,
     };
 
-    const isModeSwitch = isNewSortOrder || oldMode && oldMode !== newMode;
+    const isModeSwitch = mustHonorMindmapOrder || oldMode && oldMode !== newMode;
 
     // Only sort by visual sequence if we aren't enforcing a new manual sort order
     // AND if we aren't switching modes (which might necessitate a specific rebalance)
-    // Note: If isNewSortOrder is true, we explicitly rely on mindmapOrder set in changeNodeOrder
-    if (!isModeSwitch && doVisualSort && !isNewSortOrder) {
+    // Note: If mustHonorMindmapOrder is true, we explicitly rely on mindmapOrder set in changeNodeOrder
+    if (!isModeSwitch && doVisualSort && !mustHonorMindmapOrder) {
       sortL1NodesBasedOnVisualSequence(l1Nodes, newMode, rootCenter);
-    } else if (!isNewSortOrder) {
+    } else if (!mustHonorMindmapOrder) {
       // Just update the mode if we aren't re-sorting manually
       ea.addAppendUpdateCustomData(rootId, { growthMode: newMode });
     }
@@ -2684,13 +2684,13 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false, 
         sortMethod: "radial",
         centerAngle: null,
         gapMultiplier: layoutSettings.GAP_MULTIPLIER_RADIAL
-      }, layoutContext, isNewSortOrder);
+      }, layoutContext, mustHonorMindmapOrder);
     } else {
       const leftNodes = [];
       const rightNodes = [];
 
       if (newMode === "Right-Left") {
-        if (isModeSwitch && !isNewSortOrder) {
+        if (isModeSwitch && !mustHonorMindmapOrder) {
           // Switch (Auto-balance): Split evenly
           const splitIdx = Math.ceil(l1Nodes.length / 2);
           l1Nodes.forEach((node, i) => {
@@ -2699,7 +2699,7 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false, 
           });
         } else {
           // Maintenance or Manual Sort: Respect the user's manual side-choice (via coordinates or order)
-          // If isNewSortOrder is true, l1Nodes are already sorted by mindmapOrder.
+          // If mustHonorMindmapOrder is true, l1Nodes are already sorted by mindmapOrder.
           // We distribute them based on their current visual center relative to root.
           l1Nodes.forEach((node) => {
             const nodeCX = node.x + node.width / 2;
@@ -2714,10 +2714,10 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false, 
       }
 
       if (rightNodes.length > 0) {
-        layoutL1Nodes(rightNodes, { sortMethod: "vertical", centerAngle: 90, gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL }, layoutContext, isNewSortOrder);
+        layoutL1Nodes(rightNodes, { sortMethod: "vertical", centerAngle: 90, gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL }, layoutContext, mustHonorMindmapOrder);
       }
       if (leftNodes.length > 0) {
-        layoutL1Nodes(leftNodes, { sortMethod: "vertical", centerAngle: 270, gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL }, layoutContext, isNewSortOrder);
+        layoutL1Nodes(leftNodes, { sortMethod: "vertical", centerAngle: 270, gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL }, layoutContext, mustHonorMindmapOrder);
       }
     }
 
@@ -2747,14 +2747,14 @@ const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false, 
   const decorationIdSet = collectDecorationIds(allElements);
   const sharedSets = { mindmapIdsSet, crosslinkIdSet, decorationIdSet };
 
-  await run(allElements, mindmapIds, root, true, sharedSets, isNewSortOrder);
+  await run(allElements, mindmapIds, root, true, sharedSets, mustHonorMindmapOrder);
   await addElementsToView();
 
   // sometimes one pass is not enough to settle subtree positions and boundaries
   ea.copyViewElementsToEAforEditing(ea.getViewElements());
   allElements = ea.getElements();
   root = allElements.find((el) => el.id === rootId);
-  await run(allElements, mindmapIds, root, false, sharedSets, isNewSortOrder);
+  await run(allElements, mindmapIds, root, false, sharedSets, mustHonorMindmapOrder);
   
   if (structuralGroupId) {
     ea.addToGroup(mindmapIds);
@@ -3840,7 +3840,7 @@ const changeNodeOrder = async (key) => {
   
   const info = getHierarchy(current, allElements);
   const root = allElements.find((e) => e.id === info.rootId);
-  const rootFontScale = root.customData?.fontsizeScale ?? fontsizeScale; // Get scale from root or global setting
+  const rootFontScale = root.customData?.fontsizeScale ?? fontsizeScale;
 
   if (current.id === root.id) {
     new Notice(t("NOTICE_CANNOT_MOVE_ROOT"));
@@ -3901,7 +3901,7 @@ const changeNodeOrder = async (key) => {
         
         await addElementsToView();
         
-        // Trigger layout. isNewSortOrder=false ensures the engine sorts based on the NEW visual position
+        // Trigger layout. mustHonorMindmapOrder=false ensures the engine sorts based on the NEW visual position
         triggerGlobalLayout(root.id, false, false, false);
         return;
      }
@@ -4003,10 +4003,9 @@ const changeNodeOrder = async (key) => {
       ea.addAppendUpdateCustomData(current.id, { mindmapOrder: nextOrder });
 
       // Update font sizes for the demoted subtree
-      // New depth is Parent's depth + 1 (since it becomes a child of Sibling)
-      // Hierarchy info of Parent is same depth as Sibling
+      // New depth is Parent's Depth + 2 (Child of Sibling)
       const parentInfo = getHierarchy(parent, allElements);
-      updateSubtreeFontSize(current.id, parentInfo.depth + 1, allElements, rootFontScale);
+      updateSubtreeFontSize(current.id, parentInfo.depth + 2, allElements, rootFontScale);
       
       await addElementsToView();
       triggerGlobalLayout(root.id, false, false, true);
@@ -4978,7 +4977,7 @@ const commitEdit = async () => {
       if(newViewNode) {
         ea.selectElementsInView([newViewNode]);
         const newInfo = getHierarchy(newViewNode, newViewElements);
-        await triggerGlobalLayout(newInfo.rootId);
+        await triggerGlobalLayout(newInfo.rootId, false, false, true);
       }
     }
 
@@ -5349,7 +5348,6 @@ class LayoutConfigModal extends ea.obsidian.Modal {
 // ---------------------------------------------------------------------------
 // 10. Render Functions
 // ---------------------------------------------------------------------------
-
 const renderInput = (container, isFloating = false) => {
   container.empty();
 
@@ -5368,6 +5366,8 @@ const renderInput = (container, isFloating = false) => {
     inputRow.controlEl.style.width = "100%";
     inputRow.controlEl.style.marginTop = "8px";
   } else {
+    container.style.width = "70vw";
+    container.style.maxWidth = "450px";
     inputRow.settingEl.style.border = "none";
     inputRow.settingEl.style.padding = "0";
     inputRow.infoEl.style.display = "none";
@@ -5377,7 +5377,7 @@ const renderInput = (container, isFloating = false) => {
     secondaryButtonContainer.style.display = isFloatingPanelExpanded ? "flex" : "none";
     secondaryButtonContainer.style.justifyContent = "flex-end";
     secondaryButtonContainer.style.flexWrap = "wrap";
-    secondaryButtonContainer.style.gap = "4px";
+    secondaryButtonContainer.style.gap = "0px";
     secondaryButtonContainer.style.marginTop = "6px";
     secondaryButtonContainer.style.flexWrap = "wrap";
   }
@@ -5385,12 +5385,7 @@ const renderInput = (container, isFloating = false) => {
   inputRow.addText((text) => {
     inputEl = text.inputEl;
     linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow.settingEl);
-    if (!isFloating) {
-      inputEl.style.width = "100%";
-    } else {
-      inputEl.style.width = "70vw";
-      inputEl.style.maxWidth = "350px";
-    }
+    inputEl.style.width = "100%";
     inputEl.ariaLabel = [
       `${getActionLabel(ACTION_ADD)} (Enter)`,
       `${getActionLabel(ACTION_ADD_FOLLOW)} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}`,
