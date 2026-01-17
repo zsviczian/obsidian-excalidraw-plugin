@@ -3024,13 +3024,13 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       const el = ea.getElement(newNodeId);
       if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
     } else {
-        newNodeId = ea.addText(px, py, text, {
-          box: boxChildren ? "rectangle" : false,
-          textAlign,
-          textVerticalAlign: "middle",
-          width: shouldWrap ? curMaxW : undefined,
-          autoResize: !shouldWrap,
-        });
+      newNodeId = ea.addText(px, py, text, {
+        box: boxChildren ? "rectangle" : false,
+        textAlign,
+        textVerticalAlign: "middle",
+        width: shouldWrap ? curMaxW : undefined,
+        autoResize: !shouldWrap,
+      });
     }
 
     if (depth === 1) {
@@ -4391,7 +4391,7 @@ const toggleBox = async () => {
     const container = allElements.find((el) => el.id === containerId);
     ea.copyViewElementsToEAforEditing(arrowsToUpdate.concat(sel, container));
     const textEl = ea.getElement(sel.id);
-    ea.addAppendUpdateCustomData(textEl.id, { isPinned: !!container.customData?.isPinned, mindmapOrder: sel.customData?.mindmapOrder });
+    ea.addAppendUpdateCustomData(textEl.id, { isPinned: !!container.customData?.isPinned, mindmapOrder: container.customData?.mindmapOrder });
     textEl.containerId = null;
     textEl.boundElements = []; //not null because I will add bound arrows a bit further down
     ea.getElement(containerId).isDeleted = true;
@@ -6357,7 +6357,7 @@ const addSibling = async (event, insertAfter=true) => {
     // Default position: slightly lower to ensure correct Y-sort order in directional maps
     let pos = {
       x: selectedForSibling.x,
-      y: selectedForSibling.y + selectedForSibling.height + dir*1,
+      y: selectedForSibling.y + (insertAfter ? selectedForSibling.height : 0) + dir,
     };
 
     // Specific logic for Radial L1 nodes:
