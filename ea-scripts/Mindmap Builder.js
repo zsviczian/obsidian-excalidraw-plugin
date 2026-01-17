@@ -1856,33 +1856,40 @@ const getSubtreeHeight = (nodeId, allElements, childrenByParent, heightCache, el
   }
 
   const children = childrenByParent?.get(nodeId) ?? getChildrenNodes(nodeId, allElements);
-
   const unpinnedChildren = children.filter(child => !child.customData?.isPinned);
 
+  let totalHeight = 0;
+
   if (unpinnedChildren.length === 0) {
-    if (heightCache) heightCache.set(nodeId, node.height);
-    return node.height;
+    totalHeight = node.height;
+  } else {
+    let childrenHeight = 0;
+    unpinnedChildren.forEach((child, index) => {
+      childrenHeight += getSubtreeHeight(child.id, allElements, childrenByParent, heightCache, elementById);
+      if (index < unpinnedChildren.length - 1) {
+        const childNode = elementById?.get(child.id) ?? allElements.find((el) => el.id === child.id);
+
+        // Check if child behaves as a leaf (ignoring pinned descendants)
+        const grandChildren = childrenByParent?.get(child.id) ?? getChildrenNodes(child.id, allElements);
+        const hasUnpinnedGrandChildren = grandChildren.some(gc => !gc.customData?.isPinned);
+
+        const fontSize = childNode.fontSize ?? 20;
+        const gap = !hasUnpinnedGrandChildren ? Math.round(fontSize * layoutSettings.GAP_MULTIPLIER) : layoutSettings.GAP_Y;
+        childrenHeight += gap;
+      }
+    });
+    totalHeight = Math.max(node.height, childrenHeight);
   }
 
-  let childrenHeight = 0;
-  unpinnedChildren.forEach((child, index) => {
-    childrenHeight += getSubtreeHeight(child.id, allElements, childrenByParent, heightCache, elementById);
-    if (index < unpinnedChildren.length - 1) {
-      const childNode = elementById?.get(child.id) ?? allElements.find((el) => el.id === child.id);
+  // Feature: Boundary Spacing
+  // If the node has a visual boundary, add padding to the total subtree height
+  // The boundary adds 15px padding on all sides (see updateNodeBoundary), so we add 2*15=30px
+  if (node.customData?.boundaryId) {
+    totalHeight += 30;
+  }
 
-      // Check if child behaves as a leaf (ignoring pinned descendants)
-      const grandChildren = childrenByParent?.get(child.id) ?? getChildrenNodes(child.id, allElements);
-      const hasUnpinnedGrandChildren = grandChildren.some(gc => !gc.customData?.isPinned);
-
-      const fontSize = childNode.fontSize ?? 20;
-      const gap = !hasUnpinnedGrandChildren ? Math.round(fontSize * layoutSettings.GAP_MULTIPLIER) : layoutSettings.GAP_Y;
-      childrenHeight += gap;
-    }
-  });
-
-  const result = Math.max(node.height, childrenHeight);
-  if (heightCache) heightCache.set(nodeId, result);
-  return result;
+  if (heightCache) heightCache.set(nodeId, totalHeight);
+  return totalHeight;
 };
 
 /**
@@ -2347,7 +2354,7 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, isN
 
   // --- CONFIGURATION FROM SETTINGS ---
   const START_ANGLE = layoutSettings.RADIAL_START_ANGLE; 
-  const MAX_SWEEP_DEG = layoutSettings.RADIAL_MAX_SWEEP; 
+  const MAX_SWEEP_DEG = Math.min(layoutSettings.RADIAL_MAX_SWEEP/8*count, layoutSettings.RADIAL_MAX_SWEEP); 
   const ASPECT_RATIO = layoutSettings.RADIAL_ASPECT_RATIO;
   const POLE_GAP_BONUS = layoutSettings.RADIAL_POLE_GAP_BONUS;
   
@@ -4363,6 +4370,7 @@ const toggleBox = async () => {
     textEl.containerId = rectId;
     textEl.boundElements = null;
     rect.boundElements = [{ type: "text", id: sel.id }];
+    rect.groupIds = sel.groupIds ? [...sel.groupIds] : [];
   }
   ea.getElements()
     .filter((el) => el.type === "arrow")
@@ -4381,6 +4389,12 @@ const toggleBox = async () => {
   delete ea.getElement(oldBindId).customData;
 
   await addElementsToView();
+
+  if (!hasContainer) {
+    const textElement = ea.getViewElements().find((el) => el.id === sel.id);
+    const idx = ea.getViewElements().indexOf(textElement);
+    ea.moveViewElementToZIndex(textElement.containerId, idx);
+  }
 
   if (!hasContainer) {
     api().updateContainerSize([ea.getViewElements().find((el) => el.id === newBindId)]);
