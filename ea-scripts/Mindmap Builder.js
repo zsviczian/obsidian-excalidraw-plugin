@@ -3783,11 +3783,11 @@ const changeNodeOrder = async (key) => {
   const info = getHierarchy(current, allElements);
   const root = allElements.find((e) => e.id === info.rootId);
   if (current.id === root.id) {
-    notice.setMessage(t("NOTICE_CANNOT_MOVE_ROOT"));
+    new Notice(t("NOTICE_CANNOT_MOVE_ROOT"));
     return; // cannot reorder root
   }
   if (current.customData?.isPinned) {
-    notice.setMessage(t("NOTICE_CANNOT_MOVE_PINNED"));
+    new Notice(t("NOTICE_CANNOT_MOVE_PINNED"));
     return; // cannot reorder pinned nodes
   }
   
@@ -3834,16 +3834,64 @@ const changeNodeOrder = async (key) => {
   }
 
   if (isDemote) {
-    // Demotion: Selected node becomes child of previous sibling of current parent
+    // Demotion: Selected node becomes child of sibling of current parent
     const siblings = getChildrenNodes(parent.id, allElements);
+    
+    // Sort siblings to ensure we pick the correct visual neighbor based on mindmapOrder
+    siblings.sort((a, b) => getMindmapOrder(a) - getMindmapOrder(b));
+    
     if (siblings.length < 2) {
-      notice.setMessage(t("NOTICE_CANNOT_DEMOTE"));
+      // Cannot demote if there are no siblings to accept the node
+      new Notice("Cannot demote: No sibling found to accept this node.");
       return;
     }
+    
+    const currentIndex = siblings.findIndex(s => s.id === current.id);
+    
+    // Determine visual direction based on layout mode
+    // Radial Left side is inverted (Clockwise vs Counter-Clockwise list order)
     const mirrorBehavior = isInRight || currentModalGrowthMode !== "Radial";
+    
+    // Attempt to move to sibling ABOVE first
+    // Normal: Above is index-1. Radial Left: Above is index+1
+    let targetIndex = mirrorBehavior ? currentIndex - 1 : currentIndex + 1;
+    
+    // Fallback: If no sibling above, move to sibling BELOW
+    if (targetIndex < 0 || targetIndex >= siblings.length) {
+      targetIndex = mirrorBehavior ? currentIndex + 1 : currentIndex - 1;
+    }
+    
+    // Safety check
+    if (targetIndex < 0 || targetIndex >= siblings.length) return;
+    
+    const newParent = siblings[targetIndex];
+    
+    // Find the arrow to update structural binding
+    const arrow = allElements.find(
+      (a) => a.type === "arrow" && 
+      a.customData?.isBranch && 
+      a.startBinding?.elementId === parent.id && 
+      a.endBinding?.elementId === current.id
+    );
 
-    // ... implementation
-    triggerGlobalLayout(root.id, false, false, true);
+    if (arrow) {
+      ea.copyViewElementsToEAforEditing([arrow, current]);
+      const eaArrow = ea.getElement(arrow.id);
+      
+      // Rewire arrow to new parent
+      eaArrow.startBinding.elementId = newParent.id;
+      
+      // Determine new order: Append as last child of new parent
+      const newParentChildren = getChildrenNodes(newParent.id, allElements);
+      const nextOrder = newParentChildren.length > 0 
+        ? Math.max(...newParentChildren.map(getMindmapOrder)) + 1 
+        : 0;
+        
+      ea.addAppendUpdateCustomData(current.id, { mindmapOrder: nextOrder });
+      
+      await addElementsToView();
+      triggerGlobalLayout(root.id, false, false, true);
+    }
     return;
   }
 
