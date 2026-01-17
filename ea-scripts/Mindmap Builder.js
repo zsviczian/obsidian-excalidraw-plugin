@@ -2353,57 +2353,70 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, isN
   
   const BASE_GAP = layoutSettings.GAP_Y * 2; 
   
-  // 1. Determine Minimum Radius Baseline
+  // 1. Determine Minimum Radius Baseline based on root node size
+  // This avoids the previous hardcoded 1000px test radius which forced nodes too far out
   const minRadiusY = Math.max(
-    Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR * 1.5),
+    Math.round(Math.max(rootBox.height, rootBox.width) * layoutSettings.ROOT_RADIUS_FACTOR * 1.5),
     layoutSettings.MIN_RADIUS
   );
+  const minRadiusX = minRadiusY * ASPECT_RATIO;
 
-  // 2. Iterative Dry Run to calculate Angular Needs
+  // 2. Simulation Pass: Calculate angular space needed at Minimum Radius
   let simAngle = START_ANGLE;
-  let totalAngleUsed = 0;
-  
-  const testRadiusY = 1000; // Arbitrary high number for precision
-  const testRadiusX = testRadiusY * ASPECT_RATIO;
+  let totalRequiredSpan = 0;
 
-  const nodeData = nodes.map((node, i) => {
+  // Temporary storage for node angular data calculated at minRadius
+  const nodeSimData = nodes.map((node, i) => {
     const rad = simAngle * (Math.PI / 180);
+    // Local Radius at this angle for ellipse
+    const localR = (minRadiusX * minRadiusY) / Math.sqrt(
+      Math.pow(minRadiusY * Math.cos(rad), 2) + 
+      Math.pow(minRadiusX * Math.sin(rad), 2)
+    );
+    
     const sinComp = Math.abs(Math.sin(rad));
     const cosComp = Math.abs(Math.cos(rad));
-
-    // Effective Size: Geometric projection (Width vs Height)
+    // Projected size of node at this angle
     const effSize = node.width * sinComp + l1Metrics[i] * cosComp;
-
-    // Dynamic Gap: Increases at Poles (sinComp near 1)
-    const isLast = i === count - 1;
-    const dynamicGap = isLast ? 0 : BASE_GAP * (1 + sinComp * POLE_GAP_BONUS);
-
-    // Local Radius at this angle
-    const localR = (testRadiusX * testRadiusY) / Math.sqrt(
-      Math.pow(testRadiusY * Math.cos(rad), 2) + 
-      Math.pow(testRadiusX * Math.sin(rad), 2)
-    );
-
-    // Angular spans
+    
+    // Angular span of the node (degrees)
     const nodeSpan = (effSize / localR) * (180 / Math.PI);
-    const gapSpan = (dynamicGap / localR) * (180 / Math.PI);
+    
+    // Dynamic Gap: Increases at Poles
+    const isLast = i === count - 1;
+    const dynamicGapPx = isLast ? 0 : BASE_GAP * (1 + sinComp * POLE_GAP_BONUS);
+    const gapSpan = (dynamicGapPx / localR) * (180 / Math.PI);
+
     const totalSpan = nodeSpan + gapSpan;
-
-    // Advance
+    
+    // Advance simulation angle for next node
     simAngle += totalSpan;
-    totalAngleUsed += totalSpan;
+    totalRequiredSpan += totalSpan;
 
-    return { effSize, dynamicGap, nodeSpan, gapSpan };
+    return { node, nodeSpan, gapSpan };
   });
 
-  // 3. Scale Radius to Fit
-  const fitScale = Math.max(1.0, totalAngleUsed / MAX_SWEEP_DEG);
-  
-  const calculatedRadiusY = testRadiusY * fitScale;
-  const finalRadiusY = Math.max(minRadiusY, calculatedRadiusY);
-  const finalRadiusX = finalRadiusY * ASPECT_RATIO;
+  // 3. Determine Layout Strategy: Expand Radius OR Expand Angles
+  let finalRadiusY = minRadiusY;
+  let angleExpansionFactor = 1.0;
 
-  const finalAdjustmentScale = testRadiusY / finalRadiusY;
+  if (totalRequiredSpan > MAX_SWEEP_DEG) {
+    // Case A: Dense Map. Nodes don't fit in MAX_SWEEP at minRadius.
+    // Increase Radius to accommodate nodes within MAX_SWEEP.
+    // Logic: ArcLength = R * Theta. To reduce Theta sum to MAX_SWEEP, increase R proportionally.
+    const radiusScale = totalRequiredSpan / MAX_SWEEP_DEG;
+    finalRadiusY = minRadiusY * radiusScale;
+    
+    // Angles shrink proportionally to radius increase to maintain non-overlapping geometry
+    angleExpansionFactor = 1 / radiusScale;
+  } else {
+    // Case B: Sparse Map (e.g. < 8 nodes). Nodes fit easily.
+    // Keep Radius at Minimum to keep nodes close to root.
+    // Increase angular spacing to fill the MAX_SWEEP.
+    angleExpansionFactor = MAX_SWEEP_DEG / totalRequiredSpan;
+  }
+
+  const finalRadiusX = finalRadiusY * ASPECT_RATIO;
 
   // --- FINAL PLACEMENT ---
   let currentAngle = START_ANGLE;
@@ -2411,19 +2424,20 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, isN
   nodes.forEach((node, i) => {
     const isPinned = node.customData?.isPinned === true;
     const hasBoundary = !!node.customData?.boundaryId;
-    const data = nodeData[i];
+    const data = nodeSimData[i];
 
-    // Adjust spans to real radius
-    const realNodeSpan = data.nodeSpan * finalAdjustmentScale;
-    const realGapSpan = data.gapSpan * finalAdjustmentScale;
+    // Apply the expansion/compression factor to spans
+    const realNodeSpan = data.nodeSpan * angleExpansionFactor;
+    const realGapSpan = data.gapSpan * angleExpansionFactor;
 
     // Center node in its slice
     const placementAngle = currentAngle + (realNodeSpan / 2);
     const normAngle = (placementAngle % 360 + 360) % 360;
 
+    // Determine side for subtree layout direction
     const dynamicSide = (normAngle > 90 && normAngle < 270) ? -1 : 1;
     
-    // Recalculate exact coords
+    // Recalculate exact Cartesian coordinates at final radius
     const rad = placementAngle * (Math.PI / 180);
     
     const finalLocalR = (finalRadiusX * finalRadiusY) / Math.sqrt(
