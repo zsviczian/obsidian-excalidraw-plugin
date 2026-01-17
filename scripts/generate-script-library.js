@@ -554,8 +554,9 @@ function main() {
     .filter(
       (d) =>
         d.isFile() &&
-        d.name.endsWith('.md') &&
-        d.name.toLowerCase() !== 'index-new.md'
+        (d.name.endsWith('.md') || d.name.toLowerCase() === "mindmap builder.js") &&
+        d.name.toLowerCase() !== 'index-new.md' &&
+        d.name.toLowerCase() !== 'mindmap builder.md'
     )
     .map((d) => d.name)
     .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
