@@ -143,6 +143,10 @@ const STRINGS = {
     NOTICE_GLOBAL_HOTKEY_CONFLICT: "⚠️ Global Hotkey Conflict!\n\nThis key overrides:\n\"{command}\"",
     NOTICE_NO_HEADINGS: "No headings found in the linked file.",
     NOTICE_CANNOT_EDIT_MULTILINE: "Cannot edit multi-line nodes directly.\nDouble-click the element in Excalidraw to edit, then run auto re-arrange map to update the layout.",
+    NOTICE_CANNOT_MOVE_PINNED: "Cannot move pinned nodes. Unpin the node first.",
+    NOTICE_CANNOT_MOVE_ROOT: "Cannot move the root node.",
+    NOTICE_CANNOT_PRMOTE_L1: "Cannot promote Level 1 nodes.",
+    NOTICE_CANNOT_DEMOTE: "Cannot demote node. No previous sibling to attach to.",
 
     // Action labels (display only)
     ACTION_LABEL_ADD: "Add Child",
@@ -3778,7 +3782,14 @@ const changeNodeOrder = async (key) => {
   
   const info = getHierarchy(current, allElements);
   const root = allElements.find((e) => e.id === info.rootId);
-  if (current.id === root.id) return; // cannot reorder root
+  if (current.id === root.id) {
+    notice.setMessage(t("NOTICE_CANNOT_MOVE_ROOT"));
+    return; // cannot reorder root
+  }
+  if (current.customData?.isPinned) {
+    notice.setMessage(t("NOTICE_CANNOT_MOVE_PINNED"));
+    return; // cannot reorder pinned nodes
+  }
   
   const parent = getParentNode(current.id, allElements);
   if (!parent) return;
@@ -3790,6 +3801,7 @@ const changeNodeOrder = async (key) => {
   // 1. Structural Promotion (Left/Right Arrows moving "Inward")
   // Selected node must be rewired to parent of current parent (Grandparent)
   const isPromote = (isInRight && key === "ArrowLeft") || (!isInRight && key === "ArrowRight");
+  const isDemote = (isInRight && key === "ArrowRight") || (!isInRight && key === "ArrowLeft");
   
   if (isPromote) {
     if (parent.id === root.id) return; // Cannot promote L1 nodes (they are already attached to root)
@@ -3821,6 +3833,20 @@ const changeNodeOrder = async (key) => {
     }
   }
 
+  if (isDemote) {
+    // Demotion: Selected node becomes child of previous sibling of current parent
+    const siblings = getChildrenNodes(parent.id, allElements);
+    if (siblings.length < 2) {
+      notice.setMessage(t("NOTICE_CANNOT_DEMOTE"));
+      return;
+    }
+    const mirrorBehavior = isInRight || currentModalGrowthMode !== "Radial";
+
+    // ... implementation
+    triggerGlobalLayout(root.id, false, false, true);
+    return;
+  }
+
   // 2. Sibling Reordering (Up/Down Arrows)
   if (key === "ArrowUp" || key === "ArrowDown") {
     const siblings = getChildrenNodes(parent.id, allElements);
@@ -3833,18 +3859,16 @@ const changeNodeOrder = async (key) => {
     if (currentIndex === -1) return;
 
     let swapIndex = -1;
+    const mirrorBehavior = isInRight || currentModalGrowthMode !== "Radial";
     
     if (key === "ArrowUp") {
-      swapIndex = isInRight || currentModalGrowthMode !== "Radial" ? currentIndex - 1 : currentIndex + 1;
+      swapIndex = mirrorBehavior ? currentIndex - 1 : currentIndex + 1;
     } else {
-      swapIndex = isInRight || currentModalGrowthMode !== "Radial" ? currentIndex + 1 : currentIndex - 1;
+      swapIndex = mirrorBehavior ? currentIndex + 1 : currentIndex - 1;
     }
 
     // Boundary checks
     if (swapIndex >= 0 && swapIndex < siblings.length) {
-      // Swap order values
-      const swapNode = siblings[swapIndex];
-      
       // Re-normalize all orders to clean integers to prevent drift
       ea.copyViewElementsToEAforEditing(siblings);
       
