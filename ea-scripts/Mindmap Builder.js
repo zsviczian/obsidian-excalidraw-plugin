@@ -1,5 +1,13 @@
 /**
 
+Issues:
+- recursive ungrouping not working when started from a leaf (not the root)
+- if a node is grouped folding hides the node as well
+- Promote, demote not working reliably with CTRL+Arrow keys
+- scrollbar on extra buttons panel
+- with some layout changes the boundary got completely misplaced (look for hard coded constants)
+ 
+
 # Mind Map Builder: Technical Specification & User Guide
 
 ## Overview
