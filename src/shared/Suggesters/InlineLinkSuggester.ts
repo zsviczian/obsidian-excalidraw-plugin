@@ -42,6 +42,7 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
   private readonly plugin: ExcalidrawPlugin;
   private readonly widthHost: HTMLElement;
   private readonly hasCustomWidthHost: boolean;
+  private readonly handleBracketKeyDown: (event: KeyboardEvent) => void;
   private block = false;
   private activeOpen = -1;
   private activeClose = -1;
@@ -68,16 +69,44 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     this.getSourcePath = getSourcePath;
     this.widthHost = widthWrapper ?? inputEl;
     this.hasCustomWidthHost = Boolean(widthWrapper);
+    this.handleBracketKeyDown = (event: KeyboardEvent) => this.onBracketKeyDown(event);
     this.limit = 20;
     if (!surpessPlaceholder) {
       this.setPlaceholder(t("INLINE_HINT"));
     }
     this.emptyStateText = "No match";
     this.syncWidth();
+    this.inputEl.addEventListener("keydown", this.handleBracketKeyDown);
   }
 
   public isBlockingKeys() {
     return this.block;
+  }
+
+  private onBracketKeyDown(event: KeyboardEvent) {
+    if (event.key !== "[" || event.metaKey || event.ctrlKey || event.defaultPrevented || event.isComposing) {
+      return;
+    }
+
+    const selectionStart = this.inputEl.selectionStart;
+    const selectionEnd = this.inputEl.selectionEnd;
+    if (selectionStart === null || selectionEnd === null) {
+      return;
+    }
+
+    const hasSelection = selectionStart !== selectionEnd;
+    const value = this.inputEl.value;
+    const before = value.substring(0, selectionStart);
+    const selected = value.substring(selectionStart, selectionEnd);
+    const after = value.substring(selectionEnd);
+
+    event.preventDefault();
+
+    const insertion = hasSelection ? `[${selected}]` : "[]";
+    const cursorPos = selectionStart + 1 + (hasSelection ? selected.length : 0);
+    this.inputEl.value = `${before}${insertion}${after}`;
+    this.inputEl.setSelectionRange(cursorPos, cursorPos);
+    this.dispatchInputChange();
   }
 
   getItems(): InlineSuggestion[] {
@@ -299,13 +328,21 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     if (start === -1) {
       return;
     }
-    const closeIndex = this.activeClose >= 0 ? this.activeClose : this.inputEl.value.indexOf("]]", start + 2);
-    const end = closeIndex >= 0 ? closeIndex + 2 : cursor;
+
+    const nextOpen = this.inputEl.value.indexOf("[[", start + 2);
+    const fallbackClose = this.inputEl.value.indexOf("]]", start + 2);
+    const closeBelongsToLink = this.activeClose >= 0
+      ? true
+      : fallbackClose !== -1 && (nextOpen === -1 || fallbackClose < nextOpen);
+    const effectiveClose = this.activeClose >= 0 ? this.activeClose : closeBelongsToLink ? fallbackClose : -1;
+    // If no valid closing brackets are present for this link (e.g. another [[ appears first),
+    // only replace up to the current cursor to avoid swallowing subsequent text.
+    const end = effectiveClose >= 0 ? effectiveClose + 2 : cursor;
 
     const prefix = this.inputEl.value.substring(0, start);
     const suffix = this.inputEl.value.substring(end);
     this.inputEl.value = prefix + link + suffix;
-    this.inputEl.dispatchEvent(new Event("input"));
+    this.dispatchInputChange();
     const newPos = start + link.length;
     this.inputEl.setSelectionRange(newPos, newPos);
     this.close();
@@ -450,12 +487,22 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     while (true) {
       const open = value.indexOf("[[", searchFrom);
       if (open === -1 || open > pos) break;
-      const close = value.indexOf("]]", open + 2);
-      if (close === -1 || pos <= close) {
+      const nextOpen = value.indexOf("[[", open + 2);
+      const closeCandidate = value.indexOf("]]", open + 2);
+      const closeBelongsToLink = closeCandidate !== -1 && (nextOpen === -1 || closeCandidate < nextOpen);
+      const close = closeBelongsToLink ? closeCandidate : -1;
+      const caretInsideBrackets = pos > open + 1 && (close === -1 || pos <= close);
+      if (caretInsideBrackets) {
         candidate = { open, close };
         break;
       }
-      searchFrom = close + 2;
+      if (close !== -1) {
+        searchFrom = close + 2;
+      } else if (nextOpen !== -1) {
+        searchFrom = nextOpen + 2;
+      } else {
+        break;
+      }
     }
     return candidate;
   }
@@ -474,5 +521,15 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     const searchTerm = rawTerm.replace(/^.*[\\/]/, "");
 
     return { alias, inAlias, searchTerm };
+  }
+
+  private dispatchInputChange() {
+    const eventInit = { bubbles: true, composed: true, cancelable: true };
+    const inputEvt = typeof InputEvent !== "undefined"
+      ? new InputEvent("input", eventInit as InputEventInit)
+      : new Event("input", eventInit);
+    this.inputEl.dispatchEvent(inputEvt);
+    const changeEvt = new Event("change", eventInit);
+    this.inputEl.dispatchEvent(changeEvt);
   }
 }

@@ -381,6 +381,39 @@ export class ExcalidrawSidepanelView extends ItemView {
 	}
 
 	/**
+	 * Re-runs the script backing an existing tab, typically after the script file was updated.
+	 */
+	public async restartTabForScript(scriptName: string): Promise<void> {
+		await this.waitUntilReady();
+		if (!scriptName) {
+			return;
+		}
+		const tab = this.getTabByScript(scriptName);
+		if (!tab) {
+			return;
+		}
+
+		const title = tab.title;
+		const wasPersisted = this.persistedScripts.has(scriptName);
+
+		// Fully terminate the existing tab and its EA host before rerunning the script
+		// to avoid scripts early-exiting when they detect an already active tab.
+		this.removeTab(tab);
+
+		const previousSilent = ExcalidrawSidepanelView.restoreSilent;
+		ExcalidrawSidepanelView.restoreSilent = true;
+		try {
+			await this.runScriptByName(scriptName, title);
+			const restarted = this.getTabByScript(scriptName);
+			if (wasPersisted && restarted) {
+				this.markTabPersistent(restarted);
+			}
+		} finally {
+			ExcalidrawSidepanelView.restoreSilent = previousSilent;
+		}
+	}
+
+	/**
 	 * Executes a script by name to reconstruct its sidepanel tab, updating title if needed.
 	 */
 	private async runScriptByName(scriptName: string, title: string) {
