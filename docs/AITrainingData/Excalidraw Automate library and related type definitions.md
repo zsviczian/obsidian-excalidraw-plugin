@@ -3276,7 +3276,7 @@ declare class App extends React.Component<AppProps, AppState> {
     render(): import("react/jsx-runtime").JSX.Element;
     focusContainer: AppClassProperties["focusContainer"];
     getSceneElementsIncludingDeleted: () => readonly import("@excalidraw/element/types").OrderedExcalidrawElement[];
-    getSceneElementsMapIncludingDeleted: () => SceneElementsMap;
+    getSceneElementsMapIncludingDeleted: () => Map<string, Ordered<ExcalidrawElement>> & import("@excalidraw/common/utility-types").MakeBrand<"SceneElementsMap">;
     getSceneElements: () => readonly Ordered<NonDeletedExcalidrawElement>[];
     onInsertElements: (elements: readonly ExcalidrawElement[]) => void;
     onExportImage: (type: keyof typeof EXPORT_IMAGE_TYPES, elements: ExportedElements, opts: {

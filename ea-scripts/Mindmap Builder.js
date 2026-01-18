@@ -1,11 +1,4 @@
 /**
-
-Issues:
-- if a node is grouped folding hides the node as well
-- with some layout changes the boundary got completely misplaced (look for hard coded constants)
-
- 
-
 # Mind Map Builder: Technical Specification & User Guide
 
 ## Overview
@@ -208,6 +201,7 @@ const STRINGS = {
     TOOLTIP_FOLD_L1_BRANCH: "Fold/Unfold children (Level 1)",
     TOOLTIP_UNFOLD_BRANCH_ALL: "Unfold branch recursively",
     TOOLTIP_IMPORT_OUTLINE: "Import headings from linked file as child nodes",
+    TOOLTIP_RESET_TO_DEFAULT: "Reset to default",
 
     // Buttons and labels
     DOCK_TITLE: "Mind Map Builder",
@@ -307,14 +301,13 @@ const STRINGS = {
 
     // Misc
     INPUT_TITLE_PASTE_ROOT: "Mindmap Builder Paste",
-    INSTRUCTIONS: "- **ENTER**: Add a sibling node and stay on the current parent for rapid entry. "+
+    INSTRUCTIONS: "> [!Tip]\n" +
+      ">🚀 Become a MindMap Builder Pro with the Official [MindMap Builder Course](https://www.visual-thinking-workshop.com/mindmap)!\n" +
+      "\n" +
+      "- **ENTER**: Add a child node and stay on the current parent for rapid entry. "+
       "If you press enter when the input field is empty the focus will move to the child node that was most recently added. " +
       "Pressing enter subsequent times will iterate through the new child's siblings\n" +
       "- **Hotkeys**: See configuration at the bottom of the sidepanel\n" +
-      "- **Global vs Local Hotkeys**: Use the 🌐/⌨️ toggle in configuration.\n" +
-      "  - 🌐 **Global**: Works whenever Excalidraw is visible.\n" +
-      "  - 🎨 **Excalidraw**: Works whenever Excalidraw is active.\n" +
-      "  - ⌨️ **Local**: Works only when the MindMap input field is focused.\n" +
       "- **Dock/Undock**: You can dock/undock the input field using the dock/undock button or the configured hotkey\n" +
       "- **Folding**: Fold/Unfold buttons only appear when the input is docked; when undocked, use the folding hotkeys.\n" +
       "- **ESC**: Docks the floating input field without activating the side panel\n" +
@@ -432,13 +425,13 @@ const LAYOUT_METADATA = {
 
   // --- Radial (New & Updated) ---
   ROOT_RADIUS_FACTOR: {
-    section: "SECTION_RADIAL",
+    section: "SECTION_GENERAL",
     def: 0.8, min: 0.5, max: 2.0, step: 0.1,
     desc: t("DESC_LAYOUT_ROOT_RADIUS"),
     name: t("ROOT_RADIUS_FACTOR"),
   },
   MIN_RADIUS: {
-    section: "SECTION_RADIAL",
+    section: "SECTION_GENERAL",
     def: 350, min: 150, max: 800, step: 10,
     desc: t("DESC_LAYOUT_MIN_RADIUS"),
     name: t("MIN_RADIUS"),
@@ -952,11 +945,12 @@ const getHotkeyContext = () => {
 
 const getInstructions = () => `
 <br>
-<div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 
 ${t("INSTRUCTIONS")}
 
-<a href="https://www.youtube.com/watch?v=qY66yoobaX4" target="_blank"><img src ="https://i.ytimg.com/vi/qY66yoobaX4/maxresdefault.jpg" style="max-width:560px; width:100%"></a>
+<div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
+
+<a href="https://www.youtube.com/watch?v=5G9QF-u9w0Q" target="_blank"><img src ="https://i.ytimg.com/vi/5G9QF-u9w0Q/maxresdefault.jpg" style="max-width:560px; width:100%"></a>
 `;
 
 // addElementsToView with different defaults compared to EA
@@ -1418,6 +1412,11 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold)
       if (el.customData?.isBoundary) return;
       if (el.id === node.customData?.foldIndicatorId) return;
       if (childrenIds.includes(el.id)) return;
+
+      // Skip other structural elements (like parents or siblings in the same group).
+      // This prevents a hidden child node from hiding its visible parent/siblings 
+      // when "Group Branches" is active.
+      if (isStructuralElement(el, allElements)) return;
 
       setElementVisibility(el, shouldHideThis);
       localNodeIds.add(el.id);
@@ -5287,15 +5286,22 @@ class LayoutConfigModal extends ea.obsidian.Modal {
 
   display() {
     const { contentEl } = this;
+
+    let lastScrollPosition = 0;
+    const existingContainer = contentEl.querySelector(".layout-settings-container");
+    if (existingContainer) {
+      lastScrollPosition = existingContainer.scrollTop;
+    }
+
     contentEl.empty();
     contentEl.createEl("h2", { text: t("MODAL_LAYOUT_TITLE") });
 
     const container = contentEl.createDiv();
+    container.addClass("layout-settings-container");
     container.style.maxHeight = "70vh";
     container.style.overflowY = "auto";
     container.style.paddingRight = "10px";
 
-    // Group keys by section
     const groupedKeys = {};
     Object.keys(LAYOUT_METADATA).forEach(key => {
       const section = LAYOUT_METADATA[key].section;
@@ -5328,12 +5334,27 @@ class LayoutConfigModal extends ea.obsidian.Modal {
           .setDesc(meta.desc);
 
         let valLabel;
+        let resetButtonComp;
+
+        const updateResetButton = (val) => {
+          if (!resetButtonComp) return;
+          const isModified = Math.abs(val - meta.def) > 0.0001;
+          const el = resetButtonComp.extraSettingsEl;
+          
+          el.style.opacity = isModified ? "1" : "0";
+          el.style.pointerEvents = isModified ? "auto" : "none";
+          el.style.cursor = isModified ? "pointer" : "default";
+          if (isModified) el.setAttribute("tabindex", "0");
+          else el.setAttribute("tabindex", "-1");
+        };
+
         setting.addSlider(slider => slider
           .setLimits(meta.min, meta.max, meta.step)
           .setValue(this.settings[key])
           .onChange(value => {
             this.settings[key] = value;
             valLabel.setText(String(value.toFixed(meta.step < 1 ? 1 : 0)));
+            updateResetButton(value);
           })
         );
 
@@ -5344,14 +5365,17 @@ class LayoutConfigModal extends ea.obsidian.Modal {
           el.innerText = String(this.settings[key].toFixed(meta.step < 1 ? 1 : 0));
         });
 
-        setting.addExtraButton(btn => btn
-          .setIcon("rotate-ccw")
-          .setTooltip("Reset to default")
-          .onClick(() => {
-            this.settings[key] = meta.def;
-            this.display();
-          })
-        );
+        setting.addExtraButton(btn => {
+          resetButtonComp = btn;
+          btn
+            .setIcon("rotate-ccw")
+            .setTooltip(t("TOOLTIP_RESET_TO_DEFAULT"))
+            .onClick(() => {
+              this.settings[key] = meta.def;
+              this.display();
+            });
+          updateResetButton(this.settings[key]);
+        });
       });
     };
 
@@ -5386,6 +5410,7 @@ class LayoutConfigModal extends ea.obsidian.Modal {
           this.close();
         })
       );
+    container.scrollTop = lastScrollPosition;
   }
 }
 
