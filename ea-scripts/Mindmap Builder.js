@@ -2,9 +2,8 @@
 
 Issues:
 - if a node is grouped folding hides the node as well
-- Promote, demote not working reliably with CTRL+Arrow keys
-- scrollbar on extra buttons panel
 - with some layout changes the boundary got completely misplaced (look for hard coded constants)
+
  
 
 # Mind Map Builder: Technical Specification & User Guide
@@ -2820,10 +2819,10 @@ const getAdjustedMaxWidth = (text, max) => {
   return {width: Math.min(max, optimalWidth), wrappedText};
 }
 
-const addImage = async (pathOrFile, width, leftFacing = false, x=0, y=0) => {
+const addImage = async ({pathOrFile, width, leftFacing = false, x=0, y=0, depth = 0} = {}) => {
   const newNodeId = await ea.addImage(x, y, pathOrFile);
   const el = ea.getElement(newNodeId);
-  const targetWidth = width || EMBEDED_OBJECT_WIDTH_ROOT;
+  const targetWidth = width || (depth === 0 ? EMBEDED_OBJECT_WIDTH_ROOT : EMBEDED_OBJECT_WIDTH_CHILD);
   const ratio = el.width / el.height;
   el.width = targetWidth;
   el.height = targetWidth / ratio;
@@ -2916,14 +2915,24 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     ea.style.strokeColor = multicolor ? defaultNodeColor : st.currentItemStrokeColor;
 
     if (imageInfo?.isImagePath) {
-      newNodeId = await addImage(imageInfo.path, imageInfo.width);
+      newNodeId = await addImage({
+        pathOrFile: imageInfo.path,
+        width: imageInfo.width,
+        depth
+      });
     } else if (imageInfo?.imageFile) {
-      newNodeId = await addImage(imageInfo.imageFile, imageInfo.width);
+      newNodeId = await addImage({
+        pathOrFile: imageInfo.imageFile,
+        width: imageInfo.width,
+        depth
+      });
     } else if (embeddableUrl) {
       newNodeId = addEmbeddableNode({ url:embeddableUrl, depth:0 });
     } else {
       ea.style.fillStyle = "solid";
       ea.style.backgroundColor = st.viewBackgroundColor;
+      ea.style.strokeWidth = STROKE_WIDTHS[Math.min(0, STROKE_WIDTHS.length - 1)]
+      ea.style.roughness = getAppState().currentItemRoughness;
       newNodeId = ea.addText(0, 0, text, {
         box: "rectangle",
         textAlign: "center",
@@ -3022,14 +3031,30 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       : side === 1 ? "left" : "right";
 
     if (imageInfo?.isImagePath) {
-        newNodeId = await addImage(imageInfo.path, imageInfo.width, side === -1 && !autoLayoutDisabled, px, py);
+      newNodeId = await addImage({
+        pathOrFile: imageInfo.path,
+        width: imageInfo.width,
+        leftFacing: side === -1 && !autoLayoutDisabled,
+        x: px,
+        y: py,
+        depth
+      });
     } else if (imageInfo?.imageFile) {
-        newNodeId = await addImage(imageInfo.imageFile, imageInfo.width, side === -1 && !autoLayoutDisabled, px, py);
+      newNodeId = await addImage({
+        pathOrFile: imageInfo.imageFile,
+        width: imageInfo.width,
+        leftFacing: side === -1 && !autoLayoutDisabled,
+        x: px,
+        y: py,
+        depth
+      });
     } else if (embeddableUrl) {
       newNodeId = addEmbeddableNode({ px, py, url:embeddableUrl, depth });
       const el = ea.getElement(newNodeId);
       if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
     } else {
+      ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)]
+      ea.style.roughness = getAppState().currentItemRoughness;
       newNodeId = ea.addText(px, py, text, {
         box: boxChildren ? "rectangle" : false,
         textAlign,
@@ -4403,6 +4428,7 @@ const toggleBox = async () => {
     ea.getElement(containerId).isDeleted = true;
   } else {
     ea.copyViewElementsToEAforEditing(arrowsToUpdate.concat(sel));
+    const depth = getHierarchy(sel, allElements)?.depth || 0;
 
     oldBindId = sel.id;
     const rectId = (finalElId = newBindId = ea.addRect(
@@ -4414,7 +4440,7 @@ const toggleBox = async () => {
     const rect = ea.getElement(rectId);
     ea.addAppendUpdateCustomData(rectId, { isPinned: !!sel.customData?.isPinned, mindmapOrder: sel.customData?.mindmapOrder });
     rect.strokeColor = ea.getCM(sel.strokeColor).stringRGB();
-    rect.strokeWidth = 2;
+    rect.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
     rect.roughness = getAppState().currentItemRoughness;
     rect.roundness = roundedCorners ? { type: 3 } : null;
     rect.backgroundColor = "transparent";
@@ -4843,19 +4869,27 @@ const commitEdit = async () => {
     const st = getAppState();
     ea.style.strokeColor = targetNode.strokeColor ?? st.currentItemStrokeColor;
     if (newType === "image") {
-       if (imageInfo?.isImagePath) {
-        newNodeId = await addImage(imageInfo.path, imageInfo.width);
-       } else {
-        newNodeId = await addImage(imageInfo.imageFile, imageInfo.width);
-       }
-       const el = ea.getElement(newNodeId);
-       el.x = cx - el.width / 2;
-       el.y = cy - el.height / 2;
+      if (imageInfo?.isImagePath) {
+        newNodeId = await addImage({
+          pathOrFile: imageInfo.path,
+          width: imageInfo.width,
+          depth,
+        });
+      } else {
+        newNodeId = await addImage({
+          pathOrFile: imageInfo.imageFile,
+          width: imageInfo.width,
+          depth,
+        });
+      }
+      const el = ea.getElement(newNodeId);
+      el.x = cx - el.width / 2;
+      el.y = cy - el.height / 2;
     } else if (newType === "embeddable") {
-       newNodeId = addEmbeddableNode({ url:embeddableUrl, depth });
-       const el = ea.getElement(newNodeId);
-       el.x = cx - el.width / 2;
-       el.y = cy - el.height / 2;
+      newNodeId = addEmbeddableNode({ url:embeddableUrl, depth });
+      const el = ea.getElement(newNodeId);
+      el.x = cx - el.width / 2;
+      el.y = cy - el.height / 2;
     } else {
       // Back to Text
       if (ea.style.strokeColor === "transparent") ea.style.strokeColor = "black";
@@ -4863,11 +4897,13 @@ const commitEdit = async () => {
       const fontScale = getFontScale(fontsizeScale);
       ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)]; 
       ea.style.backgroundColor = "transparent";
+      ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
       const incomingArrow = all.find (el => 
         el.type === "arrow" && visualNode.id === el.endBinding?.elementId);
       if (incomingArrow) {
         ea.style.strokeColor = incomingArrow.strokeColor;
       }
+      ea.style.roughness = getAppState().currentItemRoughness;
       newNodeId = ea.addText(cx, cy, textInput, {
           textAlign: "center",
           textVerticalAlign: "middle",
@@ -4974,7 +5010,9 @@ const commitEdit = async () => {
        ea.getElement(textEl.id).isDeleted = true;
     }
 
-    await addElementsToView();
+    await addElementsToView({
+      shouldSleep: isTypeChange && (newType === "image"), //sleep if loading image
+    });
     
     // Trigger global layout if enabled
     if (!autoLayoutDisabled) {
@@ -6085,11 +6123,13 @@ const registerStyles = () => {
   const styleEl = document.createElement("style");
   styleEl.id = MINDMAP_FOCUS_STYLE_ID;
   styleEl.textContent = [
+    ".modal.excalidraw-mindmap-ui {",
+    " overflow: hidden;",
+    " scrollbar-width: none;",
+    "}",
     ".excalidraw-mindmap-ui button:focus-visible,",
     ".excalidraw-mindmap-ui .clickable-icon:focus-visible,",
     ".excalidraw-mindmap-ui [tabindex]:focus-visible {",
-    " overflow: hidden;",
-    " scrollbar-width: none;",
     "  outline: 2px solid var(--interactive-accent) !important;",
     "  outline-offset: 2px;",
     "  background-color: var(--interactive-accent);",
