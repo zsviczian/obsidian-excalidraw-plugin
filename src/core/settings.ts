@@ -2,6 +2,7 @@ import {
   App,
   ButtonComponent,
   DropdownComponent,
+  ExtraButtonComponent,
   getIcon,
   Modifier,
   normalizePath,
@@ -10,7 +11,7 @@ import {
   TextComponent,
   TFile,
 } from "obsidian";
-import { GITHUB_RELEASES, setRootElementSize } from "src/constants/constants";
+import { GITHUB_RELEASES, setRootElementSize, THEME_FILTER } from "src/constants/constants";
 import { t } from "src/lang/helpers";
 import type ExcalidrawPlugin from "src/core/main";
 import { PenStyle } from "src/types/penTypes";
@@ -38,7 +39,7 @@ import { ANNOTATED_PREFIX, CROPPED_PREFIX } from "src/utils/carveout";
 import { EDITOR_FADEOUT } from "src/core/editor/EditorHandler";
 import { setDebugging } from "src/utils/debugHelper";
 import { Rank } from "src/constants/actionIcons";
-import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
+import { TAG_AUTOEXPORT, TAG_IMAGECACHE, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
 import { HotkeyEditor } from "src/shared/Dialogs/HotkeyEditor";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { createSliderWithText } from "src/utils/sliderUtils";
@@ -48,6 +49,9 @@ import { UIMode, UIModeSettingsComponent } from "src/shared/Dialogs/UIModeSettin
 import { ScriptSettingValue } from "src/types/excalidrawAutomateTypes";
 
 export interface ExcalidrawSettings {
+  invertSVGforDarkMode: boolean;
+  invertBitmapforDarkMode: boolean;
+  themeFilter: string;
   copyLinkToElemenetAnchorTo100: boolean;
   copyFrameLinkByName: boolean;
   disableDoubleClickTextEditing: boolean;
@@ -239,6 +243,9 @@ export interface ExcalidrawSettings {
 declare const PLUGIN_VERSION:string;
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
+  invertSVGforDarkMode: true,
+  invertBitmapforDarkMode: false,
+  themeFilter: THEME_FILTER,
   copyLinkToElemenetAnchorTo100: false,
   copyFrameLinkByName: false,
   disableDoubleClickTextEditing: false,
@@ -2223,7 +2230,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       }
     });
 
-    new Setting(detailsEl)
+    const embedImageCacheSetting = new Setting(detailsEl)
       .setName(t("EMBED_IMAGE_CACHE_NAME"))
       .setDesc(fragWithHTML(t("EMBED_IMAGE_CACHE_DESC")))
       .addToggle((toggle) =>
@@ -2234,6 +2241,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           })
       )
+    embedImageCacheSetting.controlEl.setAttribute("id",TAG_IMAGECACHE);
     new Setting(detailsEl)
       .setName(t("SCENE_IMAGE_CACHE_NAME"))
       .setDesc(fragWithHTML(t("SCENE_IMAGE_CACHE_DESC")))
@@ -2416,6 +2424,64 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+    
+    new Setting(detailsEl)
+      .setName(t("EMBED_INVERT_SVG"))
+      .setDesc(fragWithHTML(t("EMBED_INVERT_SVG_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.invertSVGforDarkMode)
+          .onChange(async (value) => {
+            this.plugin.settings.invertSVGforDarkMode = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("EMBED_INVERT_BITMAP"))
+      .setDesc(fragWithHTML(t("EMBED_INVERT_BITMAP_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.invertBitmapforDarkMode)
+          .onChange(async (value) => {
+            this.plugin.settings.invertBitmapforDarkMode = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    let themeFilterSettingText:TextComponent;
+    let themeFilterResetButton:ExtraButtonComponent;
+    new Setting(detailsEl)
+      .setName(t("EMBED_THEME_FILTER_NAME"))
+      .setDesc(fragWithHTML(t("EMBED_THEME_FILTER_DESC")))
+      .addText((text) => {
+        themeFilterSettingText = text;
+        text
+          .setPlaceholder("e.g.: brightness(0.9) contrast(1.2)")
+          .setValue(this.plugin.settings.themeFilter)
+          .onChange(async (value) => {
+            this.plugin.settings.themeFilter = value;
+            this.applySettingsUpdate();
+            if (value !== THEME_FILTER) {
+              themeFilterResetButton.extraSettingsEl.style.display = "";
+            }
+          })
+      })
+      .addExtraButton((btn) => {
+        themeFilterResetButton = btn;
+        btn
+          .setIcon("rotate-ccw")
+          .setTooltip(t("RESET")!)
+          .onClick(() => {
+            themeFilterSettingText.setValue(THEME_FILTER);
+            this.plugin.settings.themeFilter = THEME_FILTER;
+            themeFilterResetButton.extraSettingsEl.style.display = "none";
+            this.applySettingsUpdate();
+          })
+      });
+    if(this.plugin.settings.themeFilter === THEME_FILTER) {
+      themeFilterResetButton.extraSettingsEl.style.display = "none";
+    }
 
     detailsEl = exportDetailsEl.createEl("details");
     detailsEl.createEl("summary", { 

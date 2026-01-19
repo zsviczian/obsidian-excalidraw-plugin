@@ -54,8 +54,6 @@ import { ExportSettings } from "src/types/exportUtilTypes";
 //and getObsidianImage is aborted if the file is already in the Watchdog stack
 const  markdownRendererRecursionWatcthdog = new Set<TFile>();
 
-
-
 /**
  * Function takes an SVG and replaces all fill and stroke colors with the ones in the colorMap
  * @param svg: SVGSVGElement
@@ -420,14 +418,21 @@ export class EmbeddedFilesLoader {
       hasSVGwithBitmap = true;
     }
 
-    if (hasSVGwithBitmap && isDark && !Boolean(maybeSVG)) { 
+    if (isDark && this.plugin.settings.invertSVGforDarkMode) {
+      svg.setAttribute("filter", this.plugin.settings.themeFilter);
+    }
+    if (isDark && hasSVGwithBitmap && !Boolean(maybeSVG) && (
+      (!this.plugin.settings.invertBitmapforDarkMode && this.plugin.settings.invertSVGforDarkMode) ||
+      (this.plugin.settings.invertBitmapforDarkMode && !this.plugin.settings.invertSVGforDarkMode)
+    )) {
       imageList.forEach((i) => {
         const id = i.parentElement?.id;
         svg.querySelectorAll(`use[href='#${id}']`).forEach((u) => {
-          u.setAttribute("filter", THEME_FILTER);
+          u.setAttribute("filter", this.plugin.settings.themeFilter);
         });
       });
     }
+    
     if (!hasSVGwithBitmap && svg.getAttribute("hasbitmap")) {
       hasSVGwithBitmap = true;
     }
@@ -1153,7 +1158,11 @@ export class EmbeddedFilesLoader {
     if (imageList.length > 0) {
       hasSVGwithBitmap = true;
     }
-    if (hasSVGwithBitmap && this.isDark) { 
+
+    if (this.isDark && hasSVGwithBitmap && (
+      (!this.plugin.settings.invertBitmapforDarkMode && this.plugin.settings.invertSVGforDarkMode) ||
+      (this.plugin.settings.invertBitmapforDarkMode && !this.plugin.settings.invertSVGforDarkMode)
+    )) {
       imageList.forEach(img => {
         if(img instanceof HTMLImageElement) {
           img.style.filter = THEME_FILTER;
@@ -1161,15 +1170,29 @@ export class EmbeddedFilesLoader {
       });
     }
 
+    /*if (hasSVGwithBitmap && this.isDark) { 
+      imageList.forEach(img => {
+        if(img instanceof HTMLImageElement) {
+          img.style.filter = THEME_FILTER;
+        }
+      });
+    }*/
+
     const xml = new XMLSerializer().serializeToString(mdDIV);
     const finalSVG = svg(xml, '<div class="excalidraw-md-footer"></div>', style);
     plugin.ea.mostRecentMarkdownSVG = parser.parseFromString(
       finalSVG,
       "image/svg+xml",
     ).firstElementChild as SVGSVGElement;
+
+    if (this.isDark && this.plugin.settings.invertSVGforDarkMode) {
+      plugin.ea.mostRecentMarkdownSVG.setAttribute("filter", this.plugin.settings.themeFilter);
+    }
+
     return {
-      dataURL: svgToBase64(finalSVG) as DataURL,
-      hasSVGwithBitmap
+      //dataURL: svgToBase64(finalSVG) as DataURL,
+      dataURL: svgToBase64(plugin.ea.mostRecentMarkdownSVG.outerHTML) as DataURL,
+      hasSVGwithBitmap: hasSVGwithBitmap || !!mdDIV.querySelector(".excalidraw-svg"),
     };
   };
 }
