@@ -578,7 +578,14 @@ export function scaleLoadedImage (
               el.crop = null;
             }
           }
-        } else if(maintainArea) {
+        }else if (el?.customData?.latexscale) { // scale latex
+          const scale = el?.customData?.latexscale;
+          dirty = true;
+          const elNewHeight = imgHeight * scale.scaleY;
+          const elNewWidth = imgWidth * scale.scaleX;
+          el.height = elNewHeight;
+          el.width = elNewWidth;
+        }else if(maintainArea) {
           const elAspectRatio = elWidth / elHeight;
           if (imgAspectRatio !== elAspectRatio) {
             dirty = true;

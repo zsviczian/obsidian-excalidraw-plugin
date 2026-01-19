@@ -17,6 +17,30 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.19.2":`
+## Fixed
+- Minor fixes to the link autocomplete functionality:
+  - Link suggester "eats up text" [#2603](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2603)
+  - "!" triggers the link suggester prematurely
+  - "\[\[" will now be auto-completed to "\[\[]]". Note, this is not available in MindMap Builder currently.
+
+## New
+- When a persistent Excalidraw script is updated via the script store, it will now automatically reload so the new script takes effect immediately.
+
+`,
+"2.19.1":`
+## Fixed
+- Excalidraw pointer offset issue on Obsidian Mobile 1.11.4 [#2607](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2607)
+
+## New
+- Inline autocomplete link suggester now supports Heading sections and block references.
+- Escaped "\\\\["  will now be rendered as "[" in text elements.
+- Scaling the LaTeX element when the formula is updated. [#2604](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2604) 🙏[@TravisLEBLANC1](https://github.com/TravisLEBLANC1)
+
+## New in ExcalidrawAutomate
+- Added PDF++ image link support to the \`addImage()\` function.
+
+`,
 "2.19.0":`
 <div class="excalidraw-videoWrapper">
 <a href="https://www.youtube.com/watch?v=qY66yoobaX4" target="_blank"><img src ="https://i.ytimg.com/vi/qY66yoobaX4/maxresdefault.jpg" style="width:100%;"></a>

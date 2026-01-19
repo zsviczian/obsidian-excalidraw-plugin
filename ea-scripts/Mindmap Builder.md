@@ -1,3072 +1,560 @@
 /*
 
-# Mind Map Builder: Technical Specification & User Guide
+# Mind Map Builder
 
-![](https://youtu.be/qY66yoobaX4)
+![](https://youtu.be/5G9QF-u9w0Q)
 
-## 1. Overview
+## Overview
 **Mind Map Builder** transforms the Obsidian-Excalidraw canvas into a rapid brainstorming environment, allowing users to build complex, structured, and visually organized mind maps using primarily keyboard shortcuts.
 
 The script balances **automation** (auto-layout, recursive grouping, and contrast-aware coloring) with **explicit flexibility** (node pinning and redirection logic), ensuring that the mind map stays organized even as it grows to hundreds of nodes. It leverages the Excalidraw Sidepanel API to provide a persistent control interface utilizing the Obsidian sidepanel, that can also be undocked into a floating modal.
 
-## 2. Core Purpose
-The primary goal is to minimize the "friction of drawing." Instead of manually drawing boxes and arrows, the user focuses on the hierarchy of ideas. The script handles:
-- **Spatial Arrangement**: Distributing nodes radially or directionally (Left/Right).
-- **Visual Hierarchy**: Automatically adjusting font sizes and arrow thicknesses based on depth.
-- **Selection Redirection**: Automatically shifting focus from connecting arrows to their associated nodes to ensure continuous workflow.
-- **Data Portability**: Enabling seamless transition between visual diagrams and Markdown bullet lists via the clipboard.
+> [!Tip]
+> 🚀 Become a MindMap Builder Pro with the Official [MindMap Builder Course](https://www.visual-thinking-workshop.com/mindmap)!
 
-## 3. Feature Set
+> [!Info]
+> Mindmap Builder is Minified and compressed to reduce size and improve performance. You can find the source here: [Mindmap Builder.js](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Mindmap%20Builder.js)
 
-### A. Intelligent Layout Engine
-The script features a recursive spacing engine that calculates the "subtree height" of every branch.
-- **Growth Modes**: Supports Radial (circular), Right-facing, and Left-facing layouts.
-- **Radial Logic**: Distributes the first 6 nodes at 60° increments. Beyond 6 nodes, it compresses the arc to 320° to maintain a professional aesthetic and avoid overlapping the central node's vertical axis.
-- **Recursive Re-balancing**: Coordinates are recalculated across the tree to prevent overlaps while maintaining the user's chosen growth direction.
+## Show Your Love!
 
-### B. Pinning & Manual Placement
-Nodes can be excluded from the auto-layout engine in two ways:
-- **Explicit Pinning**: Users can toggle a "Pinned" state via UI or shortcut. Pinned nodes stay at their exact coordinates, while the engine still organizes their unpinned children relative to that fixed position.
-- **Manual Break-out**: If a node is dragged significantly outside the calculated auto-layout radius (> 1.5x radius), the engine treats it as deliberately placed and stops moving it automatically.
+💖 **If you love MindMap Builder** say thank you, and [Buy me a Coffee](https://ko-fi.com/zsolt) 🍵
 
-### C. Import & Export (Markdown Sync)
-- **Copy as Text**: Converts the visual map into an H1 header (Root) followed by an indented Markdown bullet list.
-- **Paste from Text**: Parses an indented Markdown list. It supports appending to an existing node or generating a brand-new map from a clipboard list.
+## The Script
 
-### D. Sidepanel & Docking
-- **Persistent UI**: The script utilizes `ea.createSidepanelTab` to maintain state and controls alongside the drawing canvas.
-- **Floating Mode**: The UI can be "undocked" (Shift+Enter) into a `FloatingModal` for a focus-mode experience or to move controls closer to the active drawing area on large screens.
+```js*/
 
-### E. Inline Link Suggester
-- **Contextual \[\[link\]\] autocomplete**: Input fields now use `ea.attachInlineLinkSuggester` so you can drop Obsidian links with in-line suggestions (supports aliases and unresolved links) without leaving the flow.
-
-### F. Custom Palette & Contrast Colors
-- **Custom palettes**: Define your own branch colors (ordered or random draw) with the palette manager; stored per-user in script settings.
-- **Contrast-aware defaults**: When no custom palette is set, colors are generated to maximize contrast against the canvas and existing siblings.
-
-## 4. UI and User Experience
-
-### Zoom Management
-The script includes "Preferred Zoom Level" settings (Low/Medium/High) to ensure the canvas automatically frames the active node comfortably during rapid entry, particularly useful on mobile devices vs desktop screens.
-
-### Default Keyboard Shortcuts
-| Shortcut | Action |
-| :--- | :--- |
-| **ENTER** | Add a sibling on the current parent; ENTER on empty input jumps to the most recent child/siblings. |
-| **CTRL/CMD + ALT + ENTER** | Add child and follow (selection stays on the new node). |
-| **CTRL/CMD + ENTER** | Add child, follow, and center the new node. |
-| **CTRL/CMD + SHIFT + ENTER** | Add child, follow, and zoom to fit. |
-| **SHIFT + ENTER** | Dock/Undock the input field. |
-| **F2** | Edit the selected node. |
-| **ALT + P** | Pin/Unpin the selected node. |
-| **ALT + B** | Box/Unbox the selected node. |
-| **ALT + C / X / V** | Copy, Cut, or Paste branches as Markdown. |
-| **ALT + Z** | Cycle zoom to the selected element. |
-| **ALT + F** | Focus (center) the selected node. |
-| **ALT + ARROWS** | Navigate the mind map (parent/child/sibling). |
-| **ALT + SHIFT + ARROWS** | Navigate and zoom to selection. |
-| **ALT + CTRL/CMD + ARROWS** | Navigate and focus selection. |
-| **ESC** | Dock and hide the floating input. |
-
-## 5. Settings and Persistence
-
-### Global Settings
-Persisted across sessions via `ea.setScriptSettings`:
-- **Max Text Width**: Point at which text wraps (Default: 450px).
-- **Font Scales**: Choice of Normal, Fibonacci, or Scene-based sizes.
-- **Multicolor Mode**: Toggle automatic branch coloring; optionally configure a custom palette (ordered or random).
-- **Arrow Stroke Style**: Use scene stroke style or force solid branches.
-- **Center Text**: Toggle centered text vs directional alignment.
-- **Preferred Zoom Level**: Controls auto-zoom intensity (Low/Medium/High).
-- **Recursive Grouping**: When enabled, groups sub-trees from the leaves upward.
-- **Is Undocked**: Remembers if the user prefers the UI floating or docked.
-
-### Map-Specific Persistence (customData)
-The script uses `ea.addAppendUpdateCustomData` to store state on elements:
-- `growthMode`: Stored on the Root node (Radial, Left, or Right).
-- `autoLayoutDisabled`: Stored on the Root node to pause layout engine for specific maps (toggle from UI).
-- `isPinned`: Stored on individual nodes (boolean) to bypass the layout engine.
-- `isBranch`: Stored on arrows (boolean) to distinguish Mind Map connectors from standard annotations.
-- `mindmapOrder`: Stored on nodes (number) to maintain manual sort order of siblings.
-
-## 6. Special Logic Solutions
-
-### The "mindmapNew" Tag & Order Stability
-When a Level 1 node is created, it is temporarily tagged with `mindmapNew: true`. The layout engine uses this to separate "Existing" nodes from "New" nodes. Existing nodes are sorted by their `mindmapOrder` (or visual angle/Y-position if order is missing), while new nodes are appended to the end. This prevents new additions from scrambling the visual order of existing branches.
-
-### Sidepanel Lifecycle Management
-The script implements `SidepanelTab` hooks (`onFocus`, `onClose`, `onWindowMigrated`) to handle:
-- **Context Switching**: Rebinding event listeners when the user switches between multiple Excalidraw views.
-- **Window Migration**: Re-attaching keyboard handlers when the sidepanel moves between the main window and a popout window.
-- **Auto-Docking**: Ensuring floating modals are docked back to the sidepanel when the view closes to prevent UI orphans.
-
-### Recursive Grouping
-When enabled, the script groups elements from the "leaves" upward. A leaf node is grouped with its parent and the connecting arrow. That group is then nested into the grandparent's group. The **Root Exception**: The root node is never part of an L1 group, allowing users to move the central idea or detach whole branches easily.
-
-### Link suggester keydown events (Enter, Escape)
-- **Key-safe integration**: The suggester implements the `KeyBlocker` interface so the script's own key handlers pause while the suggester is active, preventing shortcut collisions during link insertion.
-
-```js
-*/
-
-if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.0")) {
-  new Notice("Please update the Excalidraw Plugin to version 2.19.0 or higher.");
-  return;
+if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.1")) {
+new Notice("Please update the Excalidraw Plugin to version 2.19.1 or higher.");
+return;
 }
 
-// --- Initialization Logic ---
-// Check for existing tab
 const existingTab = ea.checkForActiveSidepanelTabForScript();
 if (existingTab) {
-  const hostEA = existingTab.getHostEA();
-  if (hostEA && hostEA !== ea) {
-    hostEA.activateMindmap = true;
-    hostEA.setView(ea.targetView);
-    existingTab.open();
-    return;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// 1. Settings & Persistence Initialization
-// ---------------------------------------------------------------------------
-let dirty = false;
-const K_WIDTH = "Max Text Width";
-const K_FONTSIZE = "Font Sizes";
-const K_BOX = "Box Children";
-const K_ROUND = "Rounded Corners";
-const K_GROWTH = "Growth Mode";
-const K_MULTICOLOR = "Multicolor Mode";
-const K_UNDOCKED = "Is Undocked";
-const K_GROUP = "Group Branches";
-const K_ARROWSTROKE = "Arrow Stroke Style";
-const K_CENTERTEXT = "Center text in nodes?";
-const K_ZOOM = "Preferred Zoom Level";
-const K_HOTKEYS = "Hotkeys";
-const K_PALETTE = "Custom Palette";
-
-const FONT_SCALE_TYPES = ["Use scene fontsize", "Fibonacci Scale", "Normal Scale"];
-const GROWTH_TYPES = ["Radial", "Right-facing", "Left-facing"];
-const ZOOM_TYPES = ["Low","Medium","High"];
-
-const api = () => ea.getExcalidrawAPI();
-const appState = () => ea.getExcalidrawAPI().getAppState();
-const getVal = (key, def) => ea.getScriptSettingValue(key, typeof def === "object" ? def: { value: def }).value;
-
-const saveSettings = async () => {
-  if (dirty) await ea.saveScriptSettings();
-  dirty = false;
-}
-
-const setVal = (key, value, hidden = false) => {
-  //value here is only a fallback
-  //when updating a setting value, the full ScriptSettingValue should be there
-  //as defined on the ScriptSettingValue type.
-  const def = ea.getScriptSettingValue(key, {value, hidden});
-  def.value = value;
-  if(hidden) def.hidden = true;
-  ea.setScriptSettingValue(key, def);
-}
-
-//Remove setting keys no longer used
-const settingsTemp = ea.getScriptSettings();
-if(settingsTemp && settingsTemp.hasOwnProperty("Is Minimized")) {
-  delete settingsTemp["Is Minimized"];
-  dirty = true;
-}
-
-let maxWidth = parseInt(getVal(K_WIDTH, 450));
-let fontsizeScale = getVal(K_FONTSIZE, {value: "Normal Scale", valueset: FONT_SCALE_TYPES});
-let boxChildren = getVal(K_BOX, false) === true;
-let roundedCorners = getVal(K_ROUND, true) === true;
-let multicolor = getVal(K_MULTICOLOR, true) === true;
-let groupBranches = getVal(K_GROUP, true) === true;
-let currentModalGrowthMode = getVal(K_GROWTH, {value: "Radial", valueset: GROWTH_TYPES});
-let isUndocked = getVal(K_UNDOCKED, false) === true;
-let isSolidArrow = getVal(K_ARROWSTROKE, true) === true;
-let centerText = getVal(K_CENTERTEXT, true) === true;
-let autoLayoutDisabled = false;
-let zoomLevel = getVal(K_ZOOM, {value: "Medium", valueset: ZOOM_TYPES});
-let customPalette = getVal(K_PALETTE, {value : {enabled: false, random: false, colors: []}, hidden: true}); 
-let editingNodeId = null;
-
-//migrating old settings values. This must stay in the code so existing users have their dataset migrated
-//when they first run the new version of the code
-if (!ea.getScriptSettingValue(K_FONTSIZE, {value: "Normal Scale", valueset: FONT_SCALE_TYPES}).hasOwnProperty("valueset")) {
-  ea.setScriptSettingValue (K_FONTSIZE, {value: fontsizeScale, valueset: FONT_SCALE_TYPES});
-  dirty = true;
-}
-
-if (!ea.getScriptSettingValue(K_GROWTH, {value: "Radial", valueset: GROWTH_TYPES}).hasOwnProperty("valueset")) {
-  ea.setScriptSettingValue (K_GROWTH, {value: currentModalGrowthMode, valueset: GROWTH_TYPES});
-  dirty = true;
-}
-
-const getZoom = (level) => {
-  switch (level ?? zoomLevel) {
-    case "Low":
-      return ea.DEVICE.isMobile ? 0.85 : 0.92;
-    case "High":
-      return ea.DEVICE.isMobile ? 0.50 : 0.60;
-    default:
-      return ea.DEVICE.isMobile ? 0.75 : 0.85;
-  }
-}
-
-const fontScale = (type) => {
-  switch (type) {
-    case "Use scene fontsize":
-      return Array(4).fill(appState().currentItemFontSize);
-    case "Fibonacci Scale":
-      return [68, 42, 26, 16];
-    default: // "Normal Scale"
-      return [36, 28, 20, 16];
-  }
+	const hostEA = existingTab.getHostEA();
+	if (hostEA && hostEA !== ea) {
+		hostEA.activateMindmap = true;
+		hostEA.setView(ea.targetView);
+		existingTab.open();
+		return;
+	}
 };
 
-const getFontScale = (type) => fontScale(type) ?? fontScale("Normal Scale");
-
-const STROKE_WIDTHS = [6, 4, 2, 1, 0.5];
-const ownerWindow = ea.targetView?.ownerWindow;
-const isMac = ea.DEVICE.isMacOS || ea.DEVICE.isIOS;
-const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg", "webp", "bmp", "ico", "jtif", "tif", "jfif", "avif"];
-const EMBEDED_OBJECT_WIDTH_ROOT = 400;
-const EMBEDED_OBJECT_WIDTH_CHILD = 180;
-
-const parseImageInput = (input) => {
-  const trimmed = input.trim();
-  if (!trimmed.startsWith("![[") || !trimmed.endsWith("]]")) return null;
-  
-  const content = trimmed.slice(3, -2);
-  const parts = content.split("|");
-  const path = parts[0];
-  
-  let width = null;
-  if (parts.length > 1) {
-    const last = parts[parts.length - 1];
-    if (/^\d+$/.test(last)) {
-      width = parseInt(last);
-    }
-  }
-  
-  return { path, width };
-};
-
-const parseEmbeddableInput = (input) => {
-  const trimmed = input.trim();
-  const match = trimmed.match(/^!\[\]\((https?:\/\/[^)]+)\)$/);
-  return match ? match[1] : null;
-};
-
-const ACTION_ADD = "Add";
-const ACTION_ADD_FOLLOW = "Add + follow";
-const ACTION_ADD_FOLLOW_FOCUS = "Add + follow + focus";
-const ACTION_ADD_FOLLOW_ZOOM = "Add + follow + zoom";
-const ACTION_EDIT = "Edit node";
-const ACTION_PIN = "Pin/Unpin";
-const ACTION_BOX = "Box/Unbox";
-const ACTION_TOGGLE_GROUP = "Group/Ungroup Single Branch";
-
-const ACTION_COPY = "Copy";
-const ACTION_CUT = "Cut";
-const ACTION_PASTE = "Paste";
-
-const ACTION_ZOOM = "Cycle Zoom";
-const ACTION_FOCUS = "Focus (center) node";
-const ACTION_NAVIGATE = "Navigate";
-const ACTION_NAVIGATE_ZOOM = "Navigate & zoom";
-const ACTION_NAVIGATE_FOCUS = "Navigate & focus";
-
-const ACTION_DOCK_UNDOCK = "Dock/Undock";
-const ACTION_HIDE = "Dock & hide";
-
-// Default configuration
-const DEFAULT_HOTKEYS = [
-  { action: ACTION_ADD, key: "Enter", modifiers: [], immutable: true }, // Logic relies on standard Enter behavior in input
-  { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers: ["Mod", "Alt"] },
-  { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"] },
-  { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"] },
-  { action: ACTION_EDIT, code: "F2", modifiers: [] },
-  { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"] },
-  { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"] },
-  { action: ACTION_TOGGLE_GROUP, code: "KeyG", modifiers: ["Alt"] }, 
-  { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"] },
-  { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"] },
-  { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"] },
-  { action: ACTION_ZOOM, code: "KeyZ", modifiers: ["Alt"] },
-  { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"] },
-  { action: ACTION_DOCK_UNDOCK, key: "Enter", modifiers: ["Shift"] },
-  { action: ACTION_HIDE, key: "Escape", modifiers: [], immutable: true  },
-  { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true },
-  { action: ACTION_NAVIGATE_ZOOM, key: "ArrowKeys", modifiers: ["Alt", "Shift"], isNavigation: true },
-  { action: ACTION_NAVIGATE_FOCUS, key: "ArrowKeys", modifiers: ["Alt", "Mod"], isNavigation: true },
-];
-
-// Load hotkeys from settings or use default
-// IMPORTANT: Use JSON.parse/stringify to create a deep copy of defaults.
-// Otherwise, modifying userHotkeys modifies DEFAULT_HOTKEYS in memory, breaking the isModified check until restart.
-let userHotkeys = getVal(K_HOTKEYS, {value: JSON.parse(JSON.stringify(DEFAULT_HOTKEYS)), hidden: true});
-
-const getHotkeyDefByAction = (action) => userHotkeys.find((h)=>h.action === action);
-
-const getHotkeyDisplayString = (h) => {
-  const parts = [];
-  if (h.modifiers.includes("Ctrl")) parts.push("Ctrl");
-  if (h.modifiers.includes("Meta")) parts.push("Cmd");
-  if (h.modifiers.includes("Mod")) parts.push(isMac ? "Cmd" : "Ctrl");
-  if (h.modifiers.includes("Alt")) parts.push(isMac ? "Opt" : "Alt");
-  if (h.modifiers.includes("Shift")) parts.push("Shift");
-  
-  if (h.code) parts.push(h.code.replace("Key", ""));
-  else if (h.key === "ArrowKeys") parts.push("Arrow Keys");
-  else if (h.key === " ") parts.push("Space");
-  else parts.push(h.key);
-  
-  return parts.join(" + ");
-};
-
-const getActionHotkeyString = (action) => `(${getHotkeyDisplayString(getHotkeyDefByAction(action))})`;
-
-// Merge defaults in case new actions were added in an update
-if(userHotkeys.length !== DEFAULT_HOTKEYS.length) {
-  const merged = [...userHotkeys];
-  DEFAULT_HOTKEYS.forEach(d => {
-    if(!merged.find(u => u.action === d.action)) merged.push(JSON.parse(JSON.stringify(d)));
-  });
-  userHotkeys = merged;
-}
-
-// Generate the runtime HOTKEYS array used by getActionFromEvent
-const generateRuntimeHotkeys = () => {
-  const runtimeKeys = [];
-  userHotkeys.forEach(h => {
-    if (h.isNavigation) {
-      ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].forEach(key => {
-        runtimeKeys.push({ action: h.action, key, modifiers: h.modifiers });
-      });
-    } else {
-      runtimeKeys.push(h);
-    }
-  });
-  return runtimeKeys;
-};
-
-let RUNTIME_HOTKEYS = generateRuntimeHotkeys();
-
-const INSTRUCTIONS = `
-<br>
-<div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
-
-- **ENTER**: Add a sibling node and stay on the current parent for rapid entry. If you press enter when the input field is empty the focus will move to the child node that was most recently added. Pressing enter subsequent times will iterate through the new child's siblings
-- **Hotkeys**: See configuration at the bottom of the sidepanel
-- **Dock/Undock**: You can dock/undock the input field using the dock/undock button or the configured hotkey
-- **ESC**: Docks the floating input field without activating the side panel
-- **Coloring**: First level branches get unique colors (Multicolor mode). Descendants inherit parent's color.
-- **Grouping**:
-  - Enabling "Group Branches" recursively groups sub-trees from leaves up to the first level.
-- **Copy/Paste**: Export/Import indented Markdown lists.
-
-😍 If you find this script helpful, please [buy me a coffee ☕](https://ko-fi.com/zsolt).
-
-<a href="https://www.youtube.com/watch?v=qY66yoobaX4" target="_blank"><img src ="https://i.ytimg.com/vi/qY66yoobaX4/maxresdefault.jpg" style="max-width:560px; width:100%"></a>
-`;
-
-// ---------------------------------------------------------------------------
-// 2. Traversal & Geometry Helpers
-// ---------------------------------------------------------------------------
-
-const ensureNodeSelected = () => {
-  if (!ea.targetView) return;
-  const selectedElements = ea.getViewSelectedElements();
-
-  if (selectedElements.length === 0) return;
-
-  // 1. Handle Single Arrow Selection, deliberatly not filtering to el.customData?.isBranch
-  if (selectedElements.length === 1 && selectedElements[0].type === "arrow") {
-    const sel = selectedElements[0];
-    const targetId = sel.startBinding?.elementId || sel.endBinding?.elementId;
-    if (targetId) {
-      const target = ea.getViewElements().find((el) => el.id === targetId);
-      if (target) ea.selectElementsInView([target]);
-    } else {
-      ea.selectElementsInView([]);
-    }
-    return;
-  }
-
-  // 2. Handle Group Selection (Find Highest Ranking Parent)
-  // deliberatly not filtering to el.customData?.isBranch
-  if (selectedElements.length > 1) {
-    const selectedIds = new Set(selectedElements.map((el) => el.id));
-    const arrows = selectedElements.filter((el) => el.type === "arrow");
-
-    const sourceIds = new Set();
-    const sinkIds = new Set();
-
-    // Analyze arrows that connect elements WITHIN the current selection
-    arrows.forEach((arrow) => {
-      const startId = arrow.startBinding?.elementId;
-      const endId = arrow.endBinding?.elementId;
-
-      if (startId && selectedIds.has(startId)) sourceIds.add(startId);
-      if (endId && selectedIds.has(endId)) sinkIds.add(endId);
-    });
-
-    // The "Highest Ranking Parent" is a source within the group
-    // that is NOT a sink of any arrow within that same group.
-    const rootId = Array.from(sourceIds).find((id) => !sinkIds.has(id));
-
-    if (rootId) {
-      const target = selectedElements.find((el) => el.id === rootId);
-      if (target) ea.selectElementsInView([target]);
-    }
-  }
-};
-
-const getParentNode = (id, allElements) => {
-  const arrow = allElements.find(
-    (el) => el.type === "arrow" && el.customData?.isBranch && el.endBinding?.elementId === id,
-  );
-  if (!arrow) return null;
-  const parent = allElements.find((el) => el.id === arrow.startBinding?.elementId);
-  return parent?.containerId
-    ? allElements.find((el) => el.id === parent.containerId)
-    : parent;
-};
-
-const getChildrenNodes = (id, allElements) => {
-  const arrows = allElements.filter(
-    (el) => el.type === "arrow" && el.customData?.isBranch && el.startBinding?.elementId === id,
-  );
-  return arrows.map((a) => allElements.find((el) => el.id === a.endBinding?.elementId)).filter(Boolean);
-};
-
-const getHierarchy = (el, allElements) => {
-  let depth = 0,
-    curr = el,
-    l1Id = el.id,
-    rootId = el.id;
-  while (true) {
-    let p = getParentNode(curr.id, allElements);
-    if (!p) {
-      rootId = curr.id;
-      break;
-    }
-    l1Id = curr.id;
-    curr = p;
-    depth++;
-  }
-  return { depth, l1AncestorId: l1Id, rootId };
-};
-
-const getAngleFromCenter = (center, point) => {
-  let dx = point.x - center.x,
-    dy = point.y - center.y;
-  let angle = Math.atan2(dx, -dy) * (180 / Math.PI);
-  return angle < 0 ? angle + 360 : angle;
-};
-
-const randInt = (range) => Math.round(Math.random()*range);
-
-const getDynamicColor = (existingColors) => {
-  if (multicolor && customPalette.enabled && customPalette.colors.length > 0) {
-    if (customPalette.random) {
-      return customPalette.colors[Math.floor(Math.random() * customPalette.colors.length)];
-    }
-    return customPalette.colors[existingColors.length % customPalette.colors.length];
-  }
-  const st = appState();
-  const bg = st.viewBackgroundColor === "transparent" ? "#ffffff" : st.viewBackgroundColor;
-  const bgCM = ea.getCM(bg);
-  const isDarkBg = bgCM.isDark();
-
-  // Heavier weight on Hue to ensure "different colors" rather than just "different shades"
-  const getDist = (c1, c2) => {
-    let dh = Math.abs(c1.hue - c2.hue);
-    if (dh > 180) dh = 360 - dh;
-    const hScore = (dh / 1.8); 
-    return (hScore * 2) + Math.abs(c1.saturation - c2.saturation) + Math.abs(c1.lightness - c2.lightness);
-  };
-
-  let palette = st.colorPalette?.elementStroke || [];
-  if (Array.isArray(palette)) palette = palette.flat(Infinity);
-  
-  const candidates = [];
-
-  new Set(palette).forEach(hex => {
-    if (hex && hex !== "transparent") candidates.push({ hex, isPalette: true });
-  });
-
-  for (let h = 0; h < 360; h +=15+randInt(4)) {
-    const c = ea.getCM({ h: h, s: 75 + randInt(10), l: isDarkBg ? 65 + randInt(10) : 36 + randInt(8), a: 1 });
-    candidates.push({ hex: c.stringHEX(), isPalette: false });
-  }
-
-  // Process Candidates
-  const scored = candidates.map(c => {
-    let cm = ea.getCM(c.hex);
-    if (!cm) return null;
-    
-    // Auto-adjust for contrast if necessary
-    // If yellow/orange is too light for white bg, darken it.
-    let contrast = cm.contrast({ bgColor: bg });
-    if (contrast < 3) {
-      const originalL = cm.lightness;
-      // Try darkening/lightening to meet WCAG AA (3.0 for graphics)
-      const targetL = isDarkBg ? Math.min(originalL + 40, 90) : Math.max(originalL - 40, 20);
-      cm = cm.lightnessTo(targetL);
-      contrast = cm.contrast({ bgColor: bg });
-      c.hex = cm.stringHEX({alpha: false}); // Update the hex to the readable version
-    }
-
-    // Calculate minimum distance to ANY existing color on canvas
-    let minDiff = 1000;
-    let closestColor = null;
-    
-    if (existingColors.length > 0) {
-      existingColors.forEach(exHex => {
-        const exCM = ea.getCM(exHex);
-        if (exCM) {
-          const d = getDist(cm, exCM);
-          if (d < minDiff) {
-            minDiff = d;
-            closestColor = exHex;
-          }
-        }
-      });
-    }
-
-    return { ...c, contrast, minDiff };
-  }).filter(c => c && c.contrast >= 2.5); // Filter out absolute invisible colors
-
-  // Sort Logic
-  scored.sort((a, b) => {
-    // Threshold for "This color is effectively the same as one already used"
-    // Distance of ~30 usually means same Hue family and similar shade
-    const threshold = 40; 
-    const aIsDistinct = a.minDiff > threshold;
-    const bIsDistinct = b.minDiff > threshold;
-
-    // 1. Priority: Distinctness from existing canvas elements
-    if (aIsDistinct && !bIsDistinct) return -1;
-    if (!aIsDistinct && bIsDistinct) return 1;
-
-    // 2. Priority: If both are distinct (or both are duplicates), prefer Palette
-    if (a.isPalette !== b.isPalette) return a.isPalette ? -1 : 1;
-
-    // 3. Priority: If both are palette (or both generated), pick the one most different from existing
-    return b.minDiff - a.minDiff;
-  });
-
-  return scored[0]?.hex || "#000000";
-};
-
-const getReadableColor = (hex) => {
-  const bg = appState().viewBackgroundColor;
-  const cm = ea.getCM(hex);
-  return ea.getCM(bg).isDark()
-    ? cm.lightnessTo(80).stringHEX()
-    : cm.lightnessTo(35).stringHEX();
-};
-
-// ---------------------------------------------------------------------------
-// 3. Layout & Grouping Engine
-// ---------------------------------------------------------------------------
-
-const GAP_X = 140;
-const GAP_Y = 30;
-
-let storedZoom = {elementID: undefined, level: undefined}
-const nextZoomLevel = (current) => {
-  const idx = ZOOM_TYPES.indexOf(current);
-  return idx === -1 ? ZOOM_TYPES[0] : ZOOM_TYPES[(idx + 1) % ZOOM_TYPES.length];
-};
-
-const zoomToFit = (cycleLevels) => {
-  if (!ea.targetView) return;
-  const sel = ea.getViewSelectedElement();
-  if (sel) {
-    if (cycleLevels && storedZoom.elementID === sel.id) {
-      const nextLevel = nextZoomLevel(storedZoom.level ?? zoomLevel);
-      storedZoom.level = nextLevel;
-      api().zoomToFit([sel],10,getZoom(nextLevel));
-    } else {
-      api().zoomToFit([sel],10,getZoom());
-      storedZoom = {elementID: sel.id, level: zoomLevel}
-    }
-  }
-  focusInputEl();
-}
-
-const focusSelected = () => {
-  if (!ea.targetView) return;
-  const sel = ea.getViewSelectedElement();
-  if (!sel) return;
-
-  const { width, height, zoom } = appState();
-  const cx = sel.x + sel.width / 2;
-  const cy = sel.y + sel.height / 2;
-
-  const scrollX = width / (2 * zoom.value) - cx;
-  const scrollY = height / (2 * zoom.value) - cy;
-
-  api().updateScene({
-    appState: { scrollX, scrollY },
-  });
-  focusInputEl();
-};
-
-const getMindmapOrder = (node) => {
-  const o = node?.customData?.mindmapOrder;
-  return typeof o === "number" && Number.isFinite(o) ? o : 0;
-};
-
-const sortChildrenStable = (children) => {
-  children.sort((a, b) => {
-    const ao = getMindmapOrder(a),
-      bo = getMindmapOrder(b);
-    if (ao !== bo) return ao - bo;
-    const dy = a.y - b.y;
-    if (dy !== 0) return dy;
-    return String(a.id).localeCompare(String(b.id));
-  });
-};
-
-const getSubtreeHeight = (nodeId, allElements) => {
-  const children = getChildrenNodes(nodeId, allElements);
-  if (children.length === 0) return allElements.find((el) => el.id === nodeId).height;
-  const total = children.reduce((sum, child) => sum + getSubtreeHeight(child.id, allElements), 0);
-  return Math.max(allElements.find((el) => el.id === nodeId).height, total + (children.length - 1) * GAP_Y);
-};
-
-// Recursive grouping logic
-const applyRecursiveGrouping = (nodeId, allElements) => {
-  const children = getChildrenNodes(nodeId, allElements);
-  const nodeIdsInSubtree = [nodeId];
-
-  children.forEach((child) => {
-    const subtreeIds = applyRecursiveGrouping(child.id, allElements);
-    nodeIdsInSubtree.push(...subtreeIds);
-
-    // Find the arrow connecting nodeId to child
-    const arrow = allElements.find(
-      (a) =>
-        a.type === "arrow" &&
-        a.customData?.isBranch &&
-        a.startBinding?.elementId === nodeId &&
-        a.endBinding?.elementId === child.id,
-    );
-    if (arrow) {
-      nodeIdsInSubtree.push(arrow.id);
-    }
-  });
-
-  // Apply group in EA workbench
-  if (nodeIdsInSubtree.length > 1) {
-    ea.addToGroup(nodeIdsInSubtree);
-  }
-
-  return nodeIdsInSubtree;
-};
-
-const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements) => {
-  const node = allElements.find((el) => el.id === nodeId);
-  const eaNode = ea.getElement(nodeId);
-
-  const isPinned = node.customData?.isPinned === true;
-
-  if (!isPinned) {
-    eaNode.x = side === 1 ? targetX : targetX - node.width;
-    eaNode.y = targetCenterY - node.height / 2;
-  }
-
-  const currentX = eaNode.x;
-  const currentYCenter = eaNode.y + node.height / 2;
-
-  let effectiveSide = side;
-  const parent = getParentNode(nodeId, allElements);
-
-  if (isPinned && parent) {
-    const parentCenterX = parent.x + parent.width / 2;
-    const nodeCenterX = currentX + node.width / 2;
-    effectiveSide = nodeCenterX >= parentCenterX ? 1 : -1;
-  }
-
-  if (!isPinned && eaNode.type === "text" && !eaNode.containerId && node.textAlign !== "center") {
-    eaNode.textAlign = effectiveSide === 1 ? "left" : "right";
-  }
-
-  const children = getChildrenNodes(nodeId, allElements);
-  
-  children.sort((a, b) => {
-    const dy = a.y - b.y;
-    if (dy !== 0) return dy;
-    return String(a.id).localeCompare(String(b.id));
-  });
-
-  children.forEach((child, i) => {
-    if (getMindmapOrder(child) !== i) {
-      ea.addAppendUpdateCustomData(child.id, { mindmapOrder: i });
-    }
-  });
-
-  const subtreeHeight = getSubtreeHeight(nodeId, allElements);
-
-  let currentY = currentYCenter - subtreeHeight / 2;
-  const dynamicGapX = Math.max(GAP_X, subtreeHeight / 3);
-
-  children.forEach((child) => {
-    const childH = getSubtreeHeight(child.id, allElements);
-
-    layoutSubtree(
-      child.id,
-      effectiveSide === 1 ? currentX + node.width + dynamicGapX : currentX - dynamicGapX,
-      currentY + childH / 2,
-      effectiveSide,
-      allElements,
-    );
-
-    currentY += childH + GAP_Y;
-
-    const arrow = allElements.find(
-      (a) =>
-        a.type === "arrow" &&
-        a.customData?.isBranch &&
-        a.startBinding?.elementId === nodeId &&
-        a.endBinding?.elementId === child.id,
-    );
-
-    if (arrow) {
-      const eaArrow = ea.getElement(arrow.id);
-      const eaChild = ea.getElement(child.id);
-      const sX = currentX + node.width / 2;
-      const sY = currentYCenter;
-      const eX = eaChild.x + eaChild.width / 2;
-      const eY = eaChild.y + eaChild.height / 2;
-      eaArrow.x = sX;
-      eaArrow.y = sY;
-      eaArrow.points = [
-        [0, 0],
-        [eX - sX, eY - sY],
-      ];
-    }
-  });
-};
-
-const triggerGlobalLayout = async (rootId, force = false, forceUngroup = false) => {
-  if (!ea.targetView) return;
-  const run = async () => {
-    const allElements = ea.getViewElements();
-    const root = allElements.find((el) => el.id === rootId);
-    
-    const l1Nodes = getChildrenNodes(rootId, allElements);
-    if (l1Nodes.length === 0) return;
-
-    ea.copyViewElementsToEAforEditing(allElements);
-
-    const branchGroups = new Map();
-    if (!groupBranches && !forceUngroup) {
-      l1Nodes.forEach(l1 => {
-        const bIds = getBranchElementIds(l1.id, allElements);
-        // MODIFIED: Only look for common groups among elements that already belong to one
-        const existingGroupedEls = allElements.filter(e => bIds.includes(e.id) && e.groupIds?.length > 0);
-        if (existingGroupedEls.length > 0) {
-          const gId = ea.getCommonGroupForElements(existingGroupedEls);
-          if (gId) branchGroups.set(l1.id, gId);
-        }
-      });
-    }
-
-    const mindmapIds = getBranchElementIds(rootId, allElements);
-    mindmapIds.forEach((id) => {
-      const el = ea.getElement(id);
-      if (el) el.groupIds = [];
-    });
-
-    const mode = root.customData?.growthMode || currentModalGrowthMode;
-    const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
-
-    const existingL1 = l1Nodes.filter((n) => !n.customData?.mindmapNew);
-    const newL1 = l1Nodes.filter((n) => n.customData?.mindmapNew);
-
-    if (mode === "Radial") {
-      existingL1.sort(
-        (a, b) =>
-          getAngleFromCenter(rootCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
-          getAngleFromCenter(rootCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 }),
-      );
-    } else {
-      existingL1.sort((a, b) => a.y - b.y);
-    }
-
-    const sortedL1 = [...existingL1, ...newL1];
-    const count = sortedL1.length;
-
-    const l1Metrics = sortedL1.map(node => getSubtreeHeight(node.id, allElements));
-    const totalSubtreeHeight = l1Metrics.reduce((sum, h) => sum + h, 0);
-    const totalGapHeight = (count - 1) * GAP_Y;
-    const totalContentHeight = totalSubtreeHeight + totalGapHeight;
-
-    const radiusFromHeight = totalContentHeight / 2.0;
-    
-    const radius = Math.max(
-      Math.round(root.width * 0.9), 
-      260, 
-      radiusFromHeight
-    ) + count * 5;
-
-    const centerAngle = mode === "Left-facing" ? 270 : 90;
-    const totalThetaDeg = (totalContentHeight / radius) * (180 / Math.PI);
-    let currentAngleDirectional = centerAngle - totalThetaDeg / 2;
-    
-    let currentAngleRadial = count <= 6 ? 30 : 20;
-
-    sortedL1.forEach((node, i) => {
-      if (getMindmapOrder(node) !== i) {
-        ea.addAppendUpdateCustomData(node.id, { mindmapOrder: i });
-      }
-
-      const nodeHeight = l1Metrics[i];
-      const gapMultiplier = mode === "Radial" ? 2.5 : 1.0;
-      const effectiveGap = GAP_Y * gapMultiplier;
-      
-      const nodeSpanRad = nodeHeight / radius;
-      const gapSpanRad = effectiveGap / radius;
-      
-      const nodeSpanDeg = nodeSpanRad * (180 / Math.PI);
-      const gapSpanDeg = gapSpanRad * (180 / Math.PI);
-
-      let angleDeg;
-      if (mode === "Radial") {
-        angleDeg = currentAngleRadial + nodeSpanDeg / 2;
-        currentAngleRadial += nodeSpanDeg + gapSpanDeg;
-      } else {
-        angleDeg = currentAngleDirectional + nodeSpanDeg / 2;
-        currentAngleDirectional += nodeSpanDeg + gapSpanDeg;
-      }
-
-      const angleRad = (angleDeg - 90) * (Math.PI / 180);
-      const tCX = rootCenter.x + radius * Math.cos(angleRad);
-      const tCY = rootCenter.y + radius * Math.sin(angleRad);
-
-      const currentDist = Math.hypot(
-        node.x + node.width / 2 - rootCenter.x,
-        node.y + node.height / 2 - rootCenter.y,
-      );
-      const isPinned =
-        node.customData?.isPinned || (!force && !node.customData?.mindmapNew && currentDist > radius * 1.5);
-      const side = (isPinned 
-        ? node.x + node.width / 2 > rootCenter.x
-        : tCX > rootCenter.x
-      ) ? 1 : -1;
-
-      if (isPinned) {
-        layoutSubtree(node.id, node.x, node.y + node.height / 2, side, allElements);
-      } else {
-        layoutSubtree(node.id, tCX, tCY, side, allElements);
-      }
-
-      if (node.customData?.mindmapNew) {
-        ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
-      }
-
-      const arrow = allElements.find(
-        (a) =>
-          a.type === "arrow" &&
-          a.customData?.isBranch &&
-          a.startBinding?.elementId === rootId &&
-          a.endBinding?.elementId === node.id,
-      );
-      if (arrow) {
-        const eaA = ea.getElement(arrow.id),
-          eaC = ea.getElement(node.id);
-        const eX = eaC.x + eaC.width / 2,
-          eY = eaC.y + eaC.height / 2;
-        eaA.x = rootCenter.x;
-        eaA.y = rootCenter.y;
-        eaA.points = [
-          [0, 0],
-          [eX - rootCenter.x, eY - rootCenter.y],
-        ];
-      }
-
-      //Apply recursive grouping if enabled ---
-      if (groupBranches) {
-        applyRecursiveGrouping(node.id, allElements);
-      } else if (branchGroups.has(node.id)) {
-        // If recursive grouping is OFF, but this branch was previously grouped,
-        // re-apply the common group ID to all elements in the branch
-        const gId = branchGroups.get(node.id);
-        const currentBranchIds = getBranchElementIds(node.id, ea.getElements());
-        currentBranchIds.forEach(id => {
-          const el = ea.getElement(id);
-          if (el) el.groupIds = [gId];
-        });
-      }
-    });
-  };
-  await run();
-  await ea.addElementsToView(false, false, true, true);
-  ea.clear();
-};
-
-// ---------------------------------------------------------------------------
-// 4. Add Node Logic
-// ---------------------------------------------------------------------------
-let mostRecentlyAddedNodeID;
-const getMostRecentlyAddedNode = () => {
-  if (!mostRecentlyAddedNodeID) return null;
-  return ea.getViewElements().find((el) => el.id === mostRecentlyAddedNodeID);
-}
-
-const getAdjustedMaxWidth = (text, max) => {
-  const fontString = `${ea.style.fontSize.toString()}px ${
-    ExcalidrawLib.getFontFamilyString({fontFamily: ea.style.fontFamily})}`;
-  const wrappedText = ExcalidrawLib.wrapText(text, fontString, max);
-  const optimalWidth = Math.ceil(ea.measureText(wrappedText).width);
-  return {width: Math.min(max, optimalWidth), wrappedText};
-}
-
-const addNode = async (text, follow = false, skipFinalLayout = false) => {
-  if (!ea.targetView) return;
-  if (!text || text.trim() === "") return;
-  const allElements = ea.getViewElements();
-  const st = appState();
-  let parent = ea.getViewSelectedElement();
-  if (parent?.containerId) {
-    parent = allElements.find((el) => el.id === parent.containerId);
-  }
-
-  let newNodeId;
-  let arrowId; 
-
-  // --- Image Detection ---
-  const imageInfo = parseImageInput(text);
-  let imageFile = null;
-  if (imageInfo) {
-    imageFile = app.metadataCache.getFirstLinkpathDest(imageInfo.path, ea.targetView.file.path);
-    if (imageFile) {
-        const isEx = imageFile.extension === "md" && ea.isExcalidrawFile(imageFile);
-        if (!IMAGE_TYPES.includes(imageFile.extension.toLowerCase()) && !isEx) {
-            imageFile = null; 
-        }
-    }
-  }
-
-  const embeddableUrl = parseEmbeddableInput(text);
-
-  const defaultNodeColor = ea.getCM(st.viewBackgroundColor).invert().stringHEX({alpha: false});
-
-  let depth = 0,
-    nodeColor = defaultNodeColor,
-    rootId;
-  let nextSiblingOrder = 0;
-  if (parent) {
-    const siblings = getChildrenNodes(parent.id, allElements);
-    nextSiblingOrder = Math.max(0, ...siblings.map(getMindmapOrder)) + 1;
-    const info = getHierarchy(parent, allElements);
-    depth = info.depth + 1;
-    rootId = info.rootId;
-    const rootEl = allElements.find((e) => e.id === rootId);
-
-    if (depth === 1) {
-      if (multicolor) {
-        const existingColors = getChildrenNodes(parent.id, allElements).map((n) => n.strokeColor);
-        nodeColor = getDynamicColor(existingColors);
-      } else {
-        nodeColor = rootEl.strokeColor;
-      }
-    } else {
-      if (parent.type === "image" || parent.type === "embeddable") {
-        const incomingArrow = allElements.find(
-          (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === parent.id,
-        );
-        nodeColor = incomingArrow ? incomingArrow.strokeColor : parent.strokeColor;
-      } else {
-        nodeColor = parent.strokeColor;
-      }
-    }
-  }
-
-  const fontScale = getFontScale(fontsizeScale);
-  ea.clear();
-  ea.style.fontFamily = st.currentItemFontFamily;
-  ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)];
-  ea.style.roundness = roundedCorners ? { type: 3 } : null;
-
-  let curMaxW = depth === 0 ? Math.max(400, maxWidth) : maxWidth;
-  const metrics = ea.measureText(text);
-  const shouldWrap = metrics.width > curMaxW;
-  if (shouldWrap) {
-    curMaxW = getAdjustedMaxWidth(text, curMaxW).width;
-  }
-
-  if (!parent) {
-    ea.style.strokeColor = multicolor ? defaultNodeColor : st.currentItemStrokeColor;
-    
-    if (imageFile) {
-        newNodeId = await ea.addImage(0, 0, imageFile);
-        const el = ea.getElement(newNodeId);
-        const targetWidth = imageInfo.width || EMBEDED_OBJECT_WIDTH_ROOT;
-        const ratio = el.width / el.height;
-        el.width = targetWidth;
-        el.height = targetWidth / ratio;
-    } else if (embeddableUrl) {
-        // Height 0 triggers auto-calculation of height based on aspect ratio
-        newNodeId = ea.addEmbeddable(0, 0, EMBEDED_OBJECT_WIDTH_ROOT, 0, embeddableUrl);
-    } else {
-        newNodeId = ea.addText(0, 0, text, {
-          box: "rectangle",
-          textAlign: "center",
-          textVerticalAlign: "middle",
-          width: shouldWrap ? curMaxW : undefined,
-          autoResize: !shouldWrap,
-        });
-    }
-    
-    ea.addAppendUpdateCustomData(newNodeId, {
-      growthMode: currentModalGrowthMode,
-      autoLayoutDisabled: false,
-    });
-    rootId = newNodeId;
-  } else {
-    ea.style.strokeColor = nodeColor; //getReadableColor(nodeColor);
-    const rootEl = allElements.find((e) => e.id === rootId);
-    const mode = rootEl.customData?.growthMode || currentModalGrowthMode;
-    const rootCenter = {
-      x: rootEl.x + rootEl.width / 2,
-      y: rootEl.y + rootEl.height / 2,
-    };
-    const side = parent.x + parent.width / 2 > rootCenter.x ? 1 : -1;
-
-    const offset = mode === "Radial" || mode === "Right-facing"
-      ? rootEl.width * 2
-      : -rootEl.width;
-    let px = parent.x + offset,
-      py = parent.y;
-    
-    // Ensure new node is placed below existing siblings so visual sort preserves order
-    if (!autoLayoutDisabled) {
-      const siblings = getChildrenNodes(parent.id, allElements);
-      if (siblings.length > 0) {
-        const sortedSiblings = siblings.sort((a, b) => a.y - b.y);
-        const lastSibling = sortedSiblings[sortedSiblings.length - 1];
-        py = lastSibling.y + lastSibling.height + GAP_Y; 
-      }
-    }
-
-    if (autoLayoutDisabled) {
-      const manualGapX = Math.round(parent.width * 1.3);
-      const jitterX = (Math.random() - 0.5) * 150;
-      const jitterY = (Math.random() - 0.5) * 150;
-      const nodeW = shouldWrap ? curMaxW : metrics.width;
-      px = side === 1
-        ? parent.x + parent.width + manualGapX + jitterX
-        : parent.x - manualGapX - nodeW + jitterX;
-      py = parent.y + parent.height / 2 - metrics.height / 2 + jitterY;
-    }
-
-    const textAlign = centerText
-      ? "center"
-      : side === 1 ? "left" : "right";
-
-    if (imageFile) {
-        newNodeId = await ea.addImage(px, py, imageFile);
-        const el = ea.getElement(newNodeId);
-        const targetWidth = imageInfo.width || EMBEDED_OBJECT_WIDTH_CHILD;
-        const ratio = el.width / el.height;
-        el.width = targetWidth;
-        el.height = targetWidth / ratio;
-        if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
-    } else if (embeddableUrl) {
-        newNodeId = ea.addEmbeddable(px, py, EMBEDED_OBJECT_WIDTH_CHILD, 0, embeddableUrl);
-        const el = ea.getElement(newNodeId);
-        if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
-    } else {
-        newNodeId = ea.addText(px, py, text, {
-          box: boxChildren ? "rectangle" : false,
-          textAlign,
-          textVerticalAlign: "middle",
-          width: shouldWrap ? curMaxW : undefined,
-          autoResize: !shouldWrap,
-        });
-    }
-
-    if (depth === 1) {
-      ea.addAppendUpdateCustomData(newNodeId, {
-        mindmapNew: true,
-        mindmapOrder: nextSiblingOrder,
-      });
-    } else {
-      ea.addAppendUpdateCustomData(newNodeId, { mindmapOrder: nextSiblingOrder });
-    }
-
-    ea.copyViewElementsToEAforEditing([parent]);
-    
-    if (depth === 0 && !parent.customData?.growthMode) {
-      ea.addAppendUpdateCustomData(parent.id, {
-        growthMode: currentModalGrowthMode,
-        autoLayoutDisabled: false,
-      });
-    }
-    
-    if ((parent.type === "image" || parent.type === "embeddable") && typeof parent.customData?.mindmapOrder === "undefined") {
-      ea.addAppendUpdateCustomData(parent.id, { mindmapOrder: 0 });
-    }
-
-    ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
-    ea.style.roughness = appState().currentItemRoughness;
-    ea.style.strokeStyle = isSolidArrow ? "solid" : appState().currentItemStrokeStyle;
-    const startPoint = [parent.x + parent.width / 2, parent.y + parent.height / 2];
-    arrowId = ea.addArrow([startPoint, startPoint], {
-      startObjectId: parent.id,
-      endObjectId: newNodeId,
-      startArrowHead: null,
-      endArrowHead: null,
-    });
-    ea.addAppendUpdateCustomData(arrowId, { isBranch: true });
-  }
-
-  await ea.addElementsToView(!parent, !!imageFile, true, true);
-  ea.clear();
-
-  if (!skipFinalLayout && rootId && !autoLayoutDisabled) {
-    await triggerGlobalLayout(rootId);
-  } else if (rootId && (autoLayoutDisabled || skipFinalLayout) && parent) {
-    const allEls = ea.getViewElements();
-    const node = allEls.find((el) => el.id === newNodeId);
-    const arrow = allEls.find(
-      (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === newNodeId,
-    );
-
-    ea.copyViewElementsToEAforEditing(groupBranches ? allEls : arrow ? [arrow] : []);
-
-    if (arrow) {
-      const eaA = ea.getElement(arrow.id);
-      const sX = parent.x + parent.width / 2,
-        sY = parent.y + parent.height / 2;
-      const eX = node.x + node.width / 2,
-        eY = node.y + node.height / 2;
-      eaA.x = sX;
-      eaA.y = sY;
-      eaA.points = [
-        [0, 0],
-        [eX - sX, eY - sY],
-      ];
-    }
-
-    if (groupBranches) {
-      ea.getElements().forEach((el) => {
-        el.groupIds = [];
-      });
-      const l1Nodes = getChildrenNodes(rootId, allEls);
-      l1Nodes.forEach((l1) => applyRecursiveGrouping(l1.id, allEls));
-    } else {
-      const { l1AncestorId } = getHierarchy(parent, allEls);
-      const bIds = getBranchElementIds(l1AncestorId, allEls);
-      
-      // Look for an existing group ID among the OLD elements of the branch
-      const existingGroupedEl = allEls.find(el => 
-        bIds.includes(el.id) && 
-        el.id !== newNodeId && 
-        el.id !== arrowId && 
-        el.groupIds?.length > 0
-      );
-      const commonGroupId = existingGroupedEl ? existingGroupedEl.groupIds[0] : null;
-      
-      if (commonGroupId) {
-        const newIds = [newNodeId, arrowId].filter(Boolean);
-        ea.copyViewElementsToEAforEditing(allEls.filter(el => newIds.includes(el.id)));
-        newIds.forEach(id => {
-          const el = ea.getElement(id);
-          if (el) el.groupIds = [commonGroupId];
-        });
-      }
-    }
-
-    await ea.addElementsToView(false, false, true, true);
-    ea.clear();
-  }
-
-  const finalNode = ea.getViewElements().find((el) => el.id === newNodeId);
-  if (follow || !parent) {
-    ea.selectElementsInView([finalNode]);
-  } else if (parent) {
-    ea.selectElementsInView([parent]);
-  }
-  if (!parent) {
-    zoomToFit();
-  }
-
-  mostRecentlyAddedNodeID = finalNode.id; 
-  return finalNode;
-};
-
-// ---------------------------------------------------------------------------
-// 5. Copy & Paste Engine
-// ---------------------------------------------------------------------------
-const getTextFromNode = (all, node, getRaw = false, shortPath = false) => {
-  if (node.type === "embeddable") {
-    return `![](${node.link})`;
-  }
-  if (node.type === "image") {
-    const file = ea.getViewFileForImageElement(node);
-    if (file) {
-      // We use the full path to avoid ambiguity
-      return shortPath
-        ? `![[${app.metadataCache.fileToLinktext(file,ea.targetView.file.path,true)}]]`
-        : `![[${file.path}|${Math.round(node.width)}]]`;
-    }
-    return ""; 
-  }
-  if (node.type === "text") {
-    return getRaw ? node.rawText : node.originalText;
-  }
-  const textId = node.boundElements?.find((be) => be.type === "text")?.id;
-  if (!textId) return "";
-  const textEl = all.find((el) => el.id === textId);
-  return textEl ? (getRaw ? textEl.rawText : textEl.originalText) : "";
-};
-
-const copyMapAsText = async (cut = false) => {
-  if (!ea.targetView) return;
-  const sel = ea.getViewSelectedElement();
-  if (!sel) {
-    new Notice("Select a node to copy.");
-    return;
-  }
-  const all = ea.getViewElements();
-  const info = getHierarchy(sel, all);
-
-  const isRootSelected = info.rootId === sel.id;
-  const parentNode = getParentNode(sel.id, all);
-
-  if (isRootSelected) {
-    cut = false;
-  }
-
-  const elementsToDelete = [];
-
-  const buildList = (nodeId, depth = 0) => {
-    const node = all.find((e) => e.id === nodeId);
-    if (!node) return "";
-
-    if (cut) {
-      elementsToDelete.push(node);
-      node.boundElements?.forEach((be) => {
-        const boundEl = all.find((e) => e.id === be.id);
-        if (boundEl) elementsToDelete.push(boundEl);
-      });
-    }
-
-    const children = getChildrenNodes(nodeId, all);
-    sortChildrenStable(children);
-    let str = "";
-    const text = getTextFromNode(all, node);
-    if (depth === 0 && isRootSelected) {
-      str += `# ${text}\n\n`;
-    } else {
-      str += `${"  ".repeat(depth - (isRootSelected ? 1 : 0))}- ${text}\n`;
-    }
-
-    children.forEach((c) => {
-      if (cut) {
-        const arrow = all.find(
-          (a) =>
-            a.type === "arrow" &&
-            a.customData?.isBranch &&
-            a.startBinding?.elementId === nodeId &&
-            a.endBinding?.elementId === c.id,
-        );
-        if (arrow) elementsToDelete.push(arrow);
-      }
-      str += buildList(c.id, depth + 1);
-    });
-    return str;
-  };
-
-  const md = buildList(sel.id);
-  await navigator.clipboard.writeText(md);
-
-  if (cut) {
-    const incomingArrow = all.find(
-      (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === sel.id,
-    );
-    if (incomingArrow) elementsToDelete.push(incomingArrow);
-
-    ea.deleteViewElements(elementsToDelete);
-
-    if (parentNode) {
-      ea.selectElementsInView([parentNode]);
-    }
-
-    new Notice("Branch cut to clipboard.");
-  } else {
-    new Notice("Branch copied as bullet list.");
-  }
-};
-
-const pasteListToMap = async () => {
-  if (!ea.targetView) return;
-  const rawText = await navigator.clipboard.readText();
-  if (!rawText) return;
-
-  const lines = rawText.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
-  let parsed = [];
-  let rootTextFromHeader = null;
-
-  if (
-    lines.length === 0 ||
-    !lines[0].match(/^(#+\s|\s*(?:-|\*|\d+)\s)/) ||
-    !lines.every((line, idx) => idx === 0 || line.match(/^\s*(?:-|\*|\d+)\s/))
-  ) {
-    new Notice("Paste aborted. Cliboard is not a bulleted list");
-    return;
-  }
-
-  const delta = lines[0].match(/^#+\s/) ? 1 : 0;
-
-  lines.forEach((line) => {
-    if (line.match(/^#+\s/)) {
-      parsed.push({ indent: 0, text: line.substring(2).trim() });
-    } else {
-      const match = line.match(/^(\s*)(?:-|\*|\d+\.)\s+(.*)$/);
-      if (match) {
-        parsed.push({ indent: delta + match[1].length, text: match[2].trim() });
-      }
-    }
-  });
-
-  if (parsed.length === 0 && !rootTextFromHeader) {
-    new Notice("No valid Markdown list found on clipboard.");
-    return;
-  }
-
-  const sel = ea.getViewSelectedElement();
-  let currentParent;
-
-  if (!sel) {
-    const minIndent = Math.min(...parsed.map((p) => p.indent));
-    const topLevelItems = parsed.filter((p) => p.indent === minIndent);
-    if (topLevelItems.length === 1) {
-      currentParent = await addNode(topLevelItems[0].text, true, true);
-      parsed.shift();
-    } else {
-      currentParent = await addNode("Mindmap Builder Paste", true, true);
-    }
-  } else {
-    currentParent = sel;
-  }
-
-  const stack = [{ indent: -1, node: currentParent }];
-  for (const item of parsed) {
-    while (stack.length > 1 && item.indent <= stack[stack.length - 1].indent) {
-      stack.pop();
-    }
-
-    const parentNode = stack[stack.length - 1].node;
-    ea.selectElementsInView([parentNode]);
-    const newNode = await addNode(item.text, false, true);
-    stack.push({ indent: item.indent, node: newNode });
-  }
-
-  const info = getHierarchy(currentParent, ea.getViewElements());
-  await triggerGlobalLayout(info.rootId);
-
-  const allInView = ea.getViewElements();
-  const targetToSelect = sel
-    ? allInView.find((e) => e.id === sel.id)
-    : allInView.find((e) => e.id === currentParent?.id);
-
-  if (targetToSelect) {
-    ea.selectElementsInView([targetToSelect]);
-  }
-
-  new Notice("Paste complete.");
-};
-
-// ---------------------------------------------------------------------------
-// 6. Map Actions
-// ---------------------------------------------------------------------------
-const isNodeRightFromCenter = () => {
-  if (!ea.targetView) return;
-  const allElements = ea.getViewElements();
-  const current = ea.getViewSelectedElement();
-  if (!current) return;
-  const info = getHierarchy(current, allElements);
-  const root = allElements.find((e) => e.id === info.rootId);
-  const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
-  const curCenter = { x: current.x + current.width / 2, y: current.y + current.height / 2 };
-  return curCenter.x > rootCenter.x;
-}
-
-
-const navigateMap = ({key, zoom = false, focus = false} = {}) => {
-  if(!key) return;
-  if (!ea.targetView) return;
-  const allElements = ea.getViewElements();
-  const current = ea.getViewSelectedElement();
-  if (!current) return;
-  const info = getHierarchy(current, allElements);
-  const root = allElements.find((e) => e.id === info.rootId);
-  const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
-  if (current.id === root.id) {
-    const children = getChildrenNodes(root.id, allElements);
-    if (children.length) {
-      ea.selectElementsInView([children[0]]);
-      if (zoom) zoomToFit();
-      if (focus) focusSelected();
-    }
-    return;
-  }
-  if (key === "ArrowLeft" || key === "ArrowRight") {
-    const curCenter = { x: current.x + current.width / 2, y: current.y + current.height / 2 };
-    const isInRight = curCenter.x > rootCenter.x;
-    const goIn = (key === "ArrowLeft" && isInRight) || (key === "ArrowRight" && !isInRight);
-    if (goIn) {
-      ea.selectElementsInView([getParentNode(current.id, allElements)]);
-    } else {
-      const ch = getChildrenNodes(current.id, allElements);
-      if (ch.length) ea.selectElementsInView([ch[0]]);
-    }
-} else if (key === "ArrowUp" || key === "ArrowDown") {
-    const parent = getParentNode(current.id, allElements),
-      siblings = getChildrenNodes(parent.id, allElements);
-    
-    // Calculate the immediate parent's center to sort siblings clockwise around it
-    const parentCenter = { x: parent.x + parent.width / 2, y: parent.y + parent.height / 2 };
-    
-    // Always sort by angle from 12 o'clock (0 degrees) to ensure clockwise navigation
-    // regardless of layout mode or hierarchy level
-    siblings.sort(
-      (a, b) =>
-        getAngleFromCenter(parentCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
-        getAngleFromCenter(parentCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 }),
-    );
-
-    const idx = siblings.findIndex((s) => s.id === current.id);
-    const nIdx = key === "ArrowUp" // Up = Counter-Clockwise (Previous), Down = Clockwise (Next)
-      ? (idx - 1 + siblings.length) % siblings.length
-      : (idx + 1) % siblings.length;
-    ea.selectElementsInView([siblings[idx === -1 ? 0 : nIdx]]);
-  }
-  if (zoom) zoomToFit();
-  if (focus) focusSelected(); 
-};
-
-const setMapAutolayout = async (endabled) => {
-  if (!ea.targetView) return;
-  const sel = ea.getViewSelectedElement();
-  if (sel) {
-    const info = getHierarchy(sel, ea.getViewElements());
-    ea.copyViewElementsToEAforEditing(ea.getViewElements().filter((e) => e.id === info.rootId));
-    ea.addAppendUpdateCustomData(info.rootId, { autoLayoutDisabled: endabled });
-    await ea.addElementsToView(false, false, true, true);
-    ea.clear();
-  }
-};
-
-const refreshMapLayout = async () => {
-  if (!ea.targetView) return;
-  const sel = ea.getViewSelectedElement();
-  if (sel) {
-    const info = getHierarchy(sel, ea.getViewElements());
-    await triggerGlobalLayout(info.rootId, true);
-  }
-};
-
-/**
- * Collects all node IDs and arrow IDs belonging to a branch.
- * Includes "isBranch" arrows and internal non-mindmap arrows.
- */
-const getBranchElementIds = (nodeId, allElements) => {
-  const branchNodes = [nodeId];
-  const queue = [nodeId];
-  
-  // 1. Get all descendant nodes
-  while (queue.length > 0) {
-    const currentId = queue.shift();
-    const children = getChildrenNodes(currentId, allElements);
-    children.forEach(c => {
-      if (!branchNodes.includes(c.id)) {
-        branchNodes.push(c.id);
-        queue.push(c.id);
-      }
-    });
-  }
-
-  const nodeIdSet = new Set(branchNodes);
-  const branchElementIds = [...branchNodes];
-
-  // 2. Identify all relevant arrows connecting elements WITHIN this branch
-  allElements.forEach(el => {
-    if (el.type === "arrow") {
-      const startId = el.startBinding?.elementId;
-      const endId = el.endBinding?.elementId;
-      
-      // An arrow (isBranch or internal) is part of the group only if 
-      // BOTH ends are nodes within the branch set.
-      if (startId && endId && nodeIdSet.has(startId) && nodeIdSet.has(endId)) {
-        branchElementIds.push(el.id);
-      }
-    }
-  });
-
-  return branchElementIds;
-};
-
-/**
- * Toggles a single flat group for the selected branch
- */
-const toggleBranchGroup = async () => {
-  if (!ea.targetView) return;
-  const sel = ea.getViewSelectedElement();
-  if (!sel) return;
-
-  const allElements = ea.getViewElements();
-  const ids = getBranchElementIds(sel.id, allElements);
-  
-  if (ids.length <= 1) return;
-
-  ea.copyViewElementsToEAforEditing(allElements.filter(el => ids.includes(el.id)));
-  const workbenchEls = ea.getElements();
-  
-  let newGroupId;
-  const commonGroupId = ea.getCommonGroupForElements(workbenchEls);
-
-  if (commonGroupId) {
-    workbenchEls.forEach(el => {
-      el.groupIds = [];
-    });
-  } else {
-    newGroupId = ea.addToGroup(ids);
-  }
-
-  await ea.addElementsToView(false, false, true, true);
-  ea.clear();
-  
-  if (newGroupId) {
-    let selectedGroupIds = {};
-    selectedGroupIds[newGroupId] = true;
-    ea.viewUpdateScene({appState: {selectedGroupIds}})
-  }
-  
-  updateUI();
-};
-
-const togglePin = async () => {
-  if (!ea.targetView) return;
-  const sel = ea.getViewSelectedElement();
-  if (sel) {
-    const newPinnedState = !(sel.customData?.isPinned === true);
-    ea.copyViewElementsToEAforEditing([sel]);
-    ea.addAppendUpdateCustomData(sel.id, { isPinned: newPinnedState });
-    await ea.addElementsToView(false, false, true, true);
-    ea.clear();
-    if(!autoLayoutDisabled) await refreshMapLayout();
-  }
-};
-
-const padding = 10;
-const toggleBox = async () => {
-  if (!ea.targetView) return;
-  let sel = ea.getViewSelectedElement();
-  if (!sel) return;
-  sel = ea.getBoundTextElement(sel, true).sceneElement;
-  if (!sel) return;
-  let oldBindId, newBindId;
-
-  const hasContainer = !!sel.containerId;
-  const ids = hasContainer ? [sel.id, sel.containerId] : [sel.id];
-  const allElements = ea.getViewElements();
-  const arrowsToUpdate = allElements.filter(
-    (el) =>
-      el.type === "arrow" &&
-      (ids.contains(el.startBinding?.elementId) || ids.contains(el.endBinding?.elementId)),
-  );
-
-  if (hasContainer) {
-    const containerId = (oldBindId = sel.containerId);
-    newBindId = sel.id;
-    const container = allElements.find((el) => el.id === containerId);
-    ea.copyViewElementsToEAforEditing(arrowsToUpdate.concat(sel, container));
-    const textEl = ea.getElement(sel.id);
-    ea.addAppendUpdateCustomData(textEl.id, { isPinned: !!container.customData?.isPinned });
-    textEl.containerId = null;
-    textEl.boundElements = []; //not null because I will add bound arrows a bit further down
-    ea.getElement(containerId).isDeleted = true;
-  } else {
-    ea.copyViewElementsToEAforEditing(arrowsToUpdate.concat(sel));
-
-    oldBindId = sel.id;
-    const rectId = (newBindId = ea.addRect(
-      sel.x - padding,
-      sel.y - padding,
-      sel.width + padding * 2,
-      sel.height + padding * 2,
-    ));
-    const rect = ea.getElement(rectId);
-    ea.addAppendUpdateCustomData(rectId, { isPinned: !!sel.customData?.isPinned });
-    rect.strokeColor = sel.strokeColor;
-    rect.strokeWidth = 2;
-    rect.roughness = appState().currentItemRoughness;
-    rect.roundness = roundedCorners ? { type: 3 } : null;
-    rect.backgroundColor = "transparent";
-
-    const textEl = ea.getElement(sel.id);
-    textEl.containerId = rectId;
-    textEl.boundElements = null;
-    rect.boundElements = [{ type: "text", id: sel.id }];
-  }
-  ea.getElements()
-    .filter((el) => el.type === "arrow")
-    .forEach((a) => {
-      if (a.startBinding?.elementId === oldBindId) {
-        a.startBinding.elementId = newBindId;
-        ea.getElement(newBindId).boundElements.push({ type: "arrow", id: a.id });
-      }
-      if (a.endBinding?.elementId === oldBindId) {
-        a.endBinding.elementId = newBindId;
-        ea.getElement(newBindId).boundElements.push({ type: "arrow", id: a.id });
-      }
-    });
-
-  await ea.addElementsToView(false, false);
-  ea.clear();
-
-  if (!hasContainer) {
-    api().updateContainerSize([ea.getViewElements().find((el) => el.id === newBindId)]);
-  }
-  ea.selectElementsInView([newBindId]);
-  if(!autoLayoutDisabled) await refreshMapLayout();
-};
-
-// ---------------------------------------------------------------------------
-// 7. UI Modal & Sidepanel Logic
-// ---------------------------------------------------------------------------
-
-let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown, autoLayoutToggle, linkSuggester;
-let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn, toggleGroupBtn, zoomBtn;
-let inputContainer;
-let helpContainer;
-let floatingInputModal = null;
-let sidepanelWindow;
-let popScope = null;
-let keydownHandlers = [];
-let recordingScope = null;
-
-const removeKeydownHandlers = () => {
-  keydownHandlers.forEach((f)=>f());
-  keydownHandlers = [];
-}
-
-const registerKeydownHandler = (host, handler) => {
-  removeKeydownHandlers();
-  host.addEventListener("keydown", handler, true);
-  keydownHandlers.push(()=>host.removeEventListener("keydown", handler, true))
-}
-
-const registerMindmapHotkeys = () => {
-  if (popScope) popScope();
-  const scope = app.keymap.getRootScope();
-  const handlers = [];
-
-  const reg = (mods, key) => {
-    const handler = scope.register(mods, key, (e) => true);
-    handlers.push(handler);
-    // Force the newly registered handler to the top of the stack
-    scope.keys.unshift(scope.keys.pop());
-  };
-
-  RUNTIME_HOTKEYS.forEach(h => {
-    if (h.key) reg(h.modifiers, h.key);
-    if (h.code) {
-      const char = h.code.replace("Key", "").toLowerCase();
-      reg(h.modifiers, char);
-    }
-  });
-
-  popScope = () => {
-    handlers.forEach(h => scope.unregister(h));
-    popScope = null;
-  };
-};
-
-const focusInputEl = () => {
-  setTimeout(() => {
-    if(!inputEl || inputEl.disabled) return;
-    inputEl.focus();
-    if (!popScope) registerMindmapHotkeys();
-  }, 200);
-}
-
-const setButtonDisabled = (btn, disabled) => {
-  if (!btn) return;
-  btn.disabled = disabled;
-  const btnEl = btn.extraSettingsEl ?? btn.buttonEl;
-  if (!btnEl) return;
-  btnEl.style.opacity = disabled ? "0.5" : "";
-  btnEl.style.cursor = disabled ? "not-allowed" : "";
-  if (disabled && btn.buttonEl) {
-    btn.buttonEl.style.pointerEvents = "auto";
-    btn.buttonEl.style.cursor = "not-allowed";
-  }
-};
-
-const disableUI = () => {
-  if (pinBtn) pinBtn.setIcon("pin-off");
-  setButtonDisabled(pinBtn, true);
-  setButtonDisabled(refreshBtn, true);
-  setButtonDisabled(copyBtn, true);
-  setButtonDisabled(cutBtn, true);
-  setButtonDisabled(boxBtn, true);
-  setButtonDisabled(editBtn, true);
-  setButtonDisabled(toggleGroupBtn, true);
-  setButtonDisabled(zoomBtn, true);
-  editingNodeId = null;
-  editBtn.extraSettingsEl.style.color = "";
-};
-
-const updateUI = () => {
-  if (!ea.targetView) {
-    inputEl.disabled = true;
-    disableUI();
-    return;
-  }
-  inputEl.disabled = false;
-  const all = ea.getViewElements();
-  const sel = ea.getViewSelectedElement();
-
-  if (sel) {
-    const isPinned = sel.customData?.isPinned === true;
-    if (pinBtn) {
-      pinBtn.setIcon(isPinned ? "pin" : "pin-off");
-      pinBtn.setTooltip(
-        `${isPinned
-          ? "This element is pinned. Click to unpin"
-          : "This element is not pinned. Click to pin"
-        } the location of the selected element ${getActionHotkeyString(ACTION_PIN)}`,
-      );
-      setButtonDisabled(pinBtn, false);
-    }
-    const isEditing = editingNodeId && editingNodeId === sel.id;
-    if (editBtn) {
-      setButtonDisabled(editBtn, false);
-      if (isEditing) {
-        editBtn.extraSettingsEl.style.color = "var(--interactive-accent)";
-      } else {
-        editingNodeId = null;
-        editBtn.extraSettingsEl.style.color = "";
-      }
-    }
-    if (toggleGroupBtn) {
-      const all = ea.getViewElements();
-      const ids = getBranchElementIds(sel.id, all);
-      const isGrouped = ids.length > 1 && !!ea.getCommonGroupForElements(all.filter(el => ids.includes(el.id)));
-
-      toggleGroupBtn.setIcon(isGrouped ? "ungroup" : "group");
-      toggleGroupBtn.setTooltip(`${isGrouped ? "Ungroup" : "Group"} this branch. Only available if "Group Branches" is disabled. ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
-      setButtonDisabled(toggleGroupBtn, groupBranches || ids.length <= 1);
-    }
-    setButtonDisabled(boxBtn, false);
-    setButtonDisabled(zoomBtn, false);
-    setButtonDisabled(refreshBtn, false);
-
-    const info = getHierarchy(sel, all);
-    setButtonDisabled(cutBtn, info.rootId === sel.id);
-    setButtonDisabled(copyBtn, false);
-
-    const root = all.find((e) => e.id === info.rootId);
-    const mapStrategy = root.customData?.growthMode;
-    if (mapStrategy && mapStrategy !== currentModalGrowthMode) {
-      currentModalGrowthMode = mapStrategy;
-      if (strategyDropdown) strategyDropdown.setValue(mapStrategy);
-    }
-    const mapLayoutPref = root.customData?.autoLayoutDisabled === true;
-    if (mapLayoutPref !== autoLayoutDisabled) {
-      autoLayoutDisabled = mapLayoutPref;
-      if (autoLayoutToggle) autoLayoutToggle.setValue(mapLayoutPref);
-    }
-  } else {
-    disableUI();
-  }
-};
-
-const startEditing = () => {
-  const sel = ea.getViewSelectedElement();
-  if (!sel) return;
-  const all = ea.getViewElements();
-  const text = getTextFromNode(all, sel, true, true);
-  inputEl.value = text;
-  editingNodeId = sel.id;
-  updateUI();
-  focusInputEl();
-};
-
-const commitEdit = async () => {
-  if (!editingNodeId) return;
-  const all = ea.getViewElements();
-  
-  let targetNode = all.find(el => el.id === editingNodeId);
-  if (!targetNode) return;
-
-  let textElId = targetNode.id;
-  if (targetNode.boundElements) {
-    const boundText = targetNode.boundElements.find(be => be.type === "text");
-    if (boundText) textElId = boundText.id;
-  }
-
-  const textEl = all.find(el => el.id === textElId && el.type === "text");
-  
-  if (textEl) {
-    ea.copyViewElementsToEAforEditing([textEl]);
-    const eaEl = ea.getElement(textEl.id);
-    const text = inputEl.value;
-    eaEl.originalText = text;
-    eaEl.rawText = text;
-    ea.style.fontFamily = eaEl.fontFamily;
-    ea.style.fontSize = eaEl.fontSize;
-
-    if (eaEl.width <= maxWidth) {
-      const textWidth = ea.measureText(text).width;
-      const shouldWrap = textWidth > maxWidth;
-      if (!shouldWrap) {
-        eaEl.width = Math.ceil(textWidth)
-      } else {
-        const res = getAdjustedMaxWidth(text, maxWidth);
-        eaEl.width = res.width;
-        eaEl.text = res.wrappedText;
-      }
-    }
-    
-    ea.refreshTextElementSize(eaEl.id);
-    
-    await ea.addElementsToView(false, false);
-    ea.clear();
-    
-    if (textEl.containerId) {
-      const container = ea.getViewElements().find(el => el.id === textEl.containerId);
-      if (container) {
-        api().updateContainerSize([container]);
-      }
-    }
-
-    const hierarchyNode = targetNode.containerId ? all.find(el => el.id === targetNode.containerId) : textEl;
-    if (hierarchyNode && !autoLayoutDisabled) {
-      const info = getHierarchy(hierarchyNode, ea.getViewElements());
-      await triggerGlobalLayout(info.rootId);
-    }
-  }
-
-  editingNodeId = null;
-  inputEl.value = "";
-};
-
-const renderHelp = (container) => {
-  helpContainer = container.createDiv();
-  detailsEl = helpContainer.createEl("details");
-  detailsEl.createEl("summary", { text: "Instructions & Shortcuts" });
-  ea.obsidian.MarkdownRenderer.render(app, INSTRUCTIONS, detailsEl.createDiv(), "", ea.plugin);
-};
-
-// ---------------------------------------------------------------------------
-// 8. Custom Colors: Palette Manager Modal
-// ---------------------------------------------------------------------------
-class PaletteManagerModal extends ea.obsidian.Modal {
-  constructor(app, settings, onUpdate) {
-    super(app);
-    this.settings = JSON.parse(JSON.stringify(settings));
-    this.onUpdate = onUpdate;
-    this.editIndex = -1; // -1 means adding new, >=0 means editing existing
-    this.tempColor = "#000000";
-  }
-
-  onOpen() {
-    this.display();
-  }
-
-  display() {
-    const { contentEl } = this;
-    contentEl.empty();
-    contentEl.createEl("h2", { text: "Mindmap Branch Palette" });
-
-    // --- Global Toggles ---
-    new ea.obsidian.Setting(contentEl)
-      .setName("Enable Custom Palette")
-      .setDesc("Use these colors instead of auto-generated ones.")
-      .addToggle(t => t
-        .setValue(this.settings.enabled)
-        .onChange(v => {
-          this.settings.enabled = v;
-          this.save();
-          this.display();
-        }));
-
-    if (this.settings.enabled) {
-      new ea.obsidian.Setting(contentEl)
-        .setName("Randomize Order")
-        .setDesc("Pick colors randomly instead of sequentially.")
-        .addToggle(t => t
-          .setValue(this.settings.random)
-          .onChange(v => {
-            this.settings.random = v;
-            this.save();
-          }));
-
-      contentEl.createEl("hr");
-
-      // --- Color List ---
-      const listContainer = contentEl.createDiv();
-      this.settings.colors.forEach((color, index) => {
-        const row = new ea.obsidian.Setting(listContainer);
-        
-        // Color Preview & Name
-        const nameEl = row.nameEl;
-        nameEl.style.display = "flex";
-        nameEl.style.alignItems = "center";
-        nameEl.style.gap = "10px";
-        
-        const preview = nameEl.createDiv();
-        preview.style.width = "20px";
-        preview.style.height = "20px";
-        preview.style.backgroundColor = color;
-        preview.style.border = "1px solid var(--background-modifier-border)";
-        preview.style.borderRadius = "4px";
-        
-        nameEl.createSpan({ text: color });
-
-        // Actions
-        row
-          .addExtraButton(btn => btn
-            .setIcon("arrow-big-up")
-            .setTooltip("Move Up")
-            .setDisabled(index === 0)
-            .onClick(() => {
-              if (index === 0) return;
-              [this.settings.colors[index - 1], this.settings.colors[index]] = 
-              [this.settings.colors[index], this.settings.colors[index - 1]];
-              this.save();
-              this.display();
-            }))
-          .addExtraButton(btn => btn
-            .setIcon("arrow-big-down")
-            .setTooltip("Move Down")
-            .setDisabled(index === this.settings.colors.length - 1)
-            .onClick(() => {
-              if (index === this.settings.colors.length - 1) return;
-              [this.settings.colors[index + 1], this.settings.colors[index]] = 
-              [this.settings.colors[index], this.settings.colors[index + 1]];
-              this.save();
-              this.display();
-            }))
-          .addExtraButton(btn => btn
-            .setIcon("pencil")
-            .setTooltip("Edit")
-            .onClick(() => {
-              this.editIndex = index;
-              this.tempColor = color;
-              this.display();
-            }))
-          .addExtraButton(btn => btn
-            .setIcon("trash-2")
-            .setTooltip("Delete")
-            .onClick(() => {
-              this.settings.colors.splice(index, 1);
-              if(this.editIndex === index) this.editIndex = -1;
-              this.save();
-              this.display();
-            }));
-      });
-
-      contentEl.createEl("hr");
-
-      // --- Add/Edit Area ---
-      contentEl.createEl("h4", { text: this.editIndex === -1 ? "Add New Color" : "Edit Color" });
-      
-      const getHex = (val) => {
-        const cm = ea.getCM(val);
-        return cm ? cm.stringHEX({alpha: false}) : "#000000";
-      };
-
-      const updateEditorState = (val, textComp, pickerComp) => {
-        this.tempColor = val;
-        if(textComp) textComp.inputEl.value = val;
-        if(pickerComp) pickerComp.setValue(getHex(val));
-      };
-
-      let textComponent, pickerComponent;
-
-      new ea.obsidian.Setting(contentEl)
-        .setName("Select Color")
-        .addText(text => {
-          textComponent = text;
-          text
-            .setValue(this.tempColor)
-            .onChange(value => {
-              this.tempColor = value;
-              pickerComponent.setValue(getHex(value));
-            });
-        })
-        .addColorPicker(picker => {
-          pickerComponent = picker;
-          picker
-            .setValue(getHex(this.tempColor))
-            .onChange(value => {
-              this.tempColor = value;
-              textComponent.setValue(value);
-            });
-        })
-        .addButton(btn => btn
-          .setIcon("swatch-book")
-          .setTooltip("Open Palette Picker")
-          .onClick(async () => {
-            const selected = await ea.showColorPicker(btn.buttonEl, "elementStroke");
-            if (selected) {
-              updateEditorState(selected, textComponent, pickerComponent);
-            }
-          }));
-
-      const actionContainer = contentEl.createDiv();
-      actionContainer.style.display = "flex";
-      actionContainer.style.justifyContent = "flex-end";
-      actionContainer.style.gap = "10px";
-      actionContainer.style.marginTop = "10px";
-
-      if (this.editIndex !== -1) {
-        const cancelBtn = actionContainer.createEl("button", { text: "Cancel Edit" });
-        cancelBtn.onclick = () => {
-          this.editIndex = -1;
-          this.tempColor = "#000000";
-          this.display();
-        };
-      }
-
-      const saveBtn = actionContainer.createEl("button", { 
-        text: this.editIndex === -1 ? "Add Color" : "Update Color",
-        cls: "mod-cta"
-      });
-      saveBtn.onclick = () => {
-        if (this.editIndex === -1) {
-          this.settings.colors.push(this.tempColor);
-        } else {
-          this.settings.colors[this.editIndex] = this.tempColor;
-          this.editIndex = -1;
-        }
-        this.save();
-        this.display();
-      };
-    }
-  }
-
-  save() {
-    this.onUpdate(this.settings);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// 9. Render Functions
-// ---------------------------------------------------------------------------
-
-const renderInput = (container, isFloating = false) => {
-  container.empty();
-  
-  pinBtn = refreshBtn = dockBtn = inputEl = null;
-
-  inputRow = new ea.obsidian.Setting(container);
-  
-  if (!isFloating) {
-    inputRow.settingEl.style.display = "block";
-    inputRow.controlEl.style.display = "block";
-    inputRow.controlEl.style.width = "100%";
-    inputRow.controlEl.style.marginTop = "8px";
-  } else {
-    inputRow.settingEl.style.border = "none";
-    inputRow.settingEl.style.padding = "0";
-    inputRow.infoEl.style.display = "none";
-  }
-
-  inputRow.addText((text) => {
-    inputEl = text.inputEl;
-    linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow.settingEl);
-    if (!isFloating) {
-      inputEl.style.width = "100%";
-    } else {
-      inputEl.style.width = "70vw";
-      inputEl.style.maxWidth = "350px";
-    }
-    inputEl.ariaLabel = `Add (Enter)\n` +
-      `${ACTION_ADD_FOLLOW} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}\n` +
-      `${ACTION_ADD_FOLLOW_FOCUS} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}\n` +
-      `${ACTION_ADD_FOLLOW_ZOOM} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}\n`;
-    inputEl.placeholder = "Concept... type [[ to insert link";
-    inputEl.addEventListener("focus", () => {
-      registerMindmapHotkeys();
-      ensureNodeSelected();
-      updateUI();
-    });
-    inputEl.addEventListener("blur", () => {
-      if (popScope) popScope();
-      saveSettings();
-    });
-  });
-
-  // Create a specific container for buttons when docked to ensure they sit in one row aligned right
-  let buttonContainer;
-  if (!isFloating) {
-    buttonContainer = inputRow.controlEl.createDiv();
-    buttonContainer.style.display = "flex";
-    buttonContainer.style.justifyContent = "flex-end";
-    buttonContainer.style.gap = "6px";
-    buttonContainer.style.marginTop = "6px";
-  }
-
-  const addButton = (cb) => {
-    inputRow.addExtraButton((btn) => {
-      cb(btn);
-      // If docked, move the button into our flex container
-      if (!isFloating && buttonContainer && btn.extraSettingsEl) {
-        buttonContainer.appendChild(btn.extraSettingsEl);
-      }
-    });
-  };
-
-  addButton((btn) => {
-    editBtn = btn;
-    btn.setIcon("pencil");
-    btn.setTooltip(`Edit text of selected node ${getActionHotkeyString(ACTION_EDIT)}`);
-    btn.onClick(() => {
-      startEditing();
-    });
-  });
-
-  addButton((btn) => {
-    pinBtn = btn;
-    btn.setTooltip("Pin/Unpin location of a node. When pinned nodes won't get auto-arranged.")
-    btn.onClick(async () => {
-      await togglePin();
-      updateUI();
-      focusInputEl();
-    });
-  });
-
-  addButton((btn) => {
-    refreshBtn = btn;
-    btn.setIcon("refresh-ccw");
-    btn.setTooltip("Force auto rearrange map.");
-    btn.onClick(async () => {
-      await refreshMapLayout();
-      focusInputEl();
-    });
-  });
-
-  addButton((btn) => {
-    dockBtn = btn;
-    btn.setIcon(isFloating ? "dock" : "external-link");
-    btn.setTooltip(
-      (isFloating ? "Dock to Sidepanel" : "Undock to Floating Modal") + ` ${getActionHotkeyString(ACTION_DOCK_UNDOCK)}`
-    );
-    btn.onClick(() => {
-      toggleDock({silent: false, forceDock: false, saveSetting: true})
-    });
-  });
-  
-  updateUI();
-};
-
-const renderBody = (contentEl) => {
-  bodyContainer = contentEl.createDiv();
-  bodyContainer.style.width = "100%";
-
-  const btnGrid = bodyContainer.createDiv({
-    attr: {
-      style: "display: grid; grid-template-columns: repeat(5, 1fr); gap:6px;",
-    },
-  });
-
-  btnGrid.createEl("button", {
-    text: "Add Sibling",
-    cls: "mod-cta",
-    attr: { style: "padding: 2px;", title: `(Enter)` },
-  }).onclick = async () => {
-    await addNode(inputEl.value, false);
-    inputEl.value = "";
-    if(!autoLayoutDisabled) await refreshMapLayout();
-    updateUI();
-    focusInputEl();
-  };
-  btnGrid.createEl("button", { text: "Add+Follow", attr: { style: "padding: 2px;", title: `${getActionHotkeyString(ACTION_ADD_FOLLOW)}`} }).onclick = async () => {
-    await addNode(inputEl.value, true);
-    inputEl.value = "";
-    if(!autoLayoutDisabled) await refreshMapLayout();
-    updateUI();
-    focusInputEl();
-  };
-  copyBtn = btnGrid.createEl("button", {
-    text: "Copy",
-    attr: { style: "padding: 2px;", title: `Copy branch as text ${getActionHotkeyString(ACTION_COPY)}` },
-  });
-  copyBtn.onclick = copyMapAsText;
-
-  cutBtn = btnGrid.createEl("button", {
-    text: "Cut",
-    attr: { style: "padding: 2px;", title: `Cut branch as text ${getActionHotkeyString(ACTION_CUT)}` },
-  });
-  cutBtn.onclick = () => copyMapAsText(true);
-
-  btnGrid.createEl("button", {
-    text: "Paste",
-    attr: { style: "padding: 2px;", title: `Paste list from clipboard ${getActionHotkeyString(ACTION_PASTE)}` },
-  }).onclick = pasteListToMap;
-
-  const zoomSetting = new ea.obsidian.Setting(bodyContainer);
-  zoomSetting.setName("Zoom Level").addDropdown((d) => {
-    ZOOM_TYPES.forEach((key) => d.addOption(key, key));
-    d.setValue(zoomLevel);
-    d.onChange((v) => {
-        zoomLevel = v;
-        setVal(K_ZOOM, v);
-        dirty = true;
-        zoomToFit();
-      });
-  });
-  zoomSetting.addExtraButton(btn=>{
-    zoomBtn = btn;
-    btn.setIcon("scan-search")
-      .setTooltip(`Cycle element zoom ${getActionHotkeyString(ACTION_ZOOM)}`)
-      .onClick(()=>{
-        zoomToFit(true);
-      })
-  });
-
-  new ea.obsidian.Setting(bodyContainer).setName("Growth Strategy").addDropdown((d) => {
-    strategyDropdown = d;
-    GROWTH_TYPES.forEach((key) => d.addOption(key, key));
-    d.setValue(currentModalGrowthMode);
-    d.onChange(async (v) => {
-        if (!ea.targetView) return;
-        currentModalGrowthMode = v;
-        setVal(K_GROWTH, v);
-        dirty = true;
-        const sel = ea.getViewSelectedElement();
-        if (sel) {
-          const info = getHierarchy(sel, ea.getViewElements());
-          ea.copyViewElementsToEAforEditing(ea.getViewElements().filter((e) => e.id === info.rootId));
-          ea.addAppendUpdateCustomData(info.rootId, { growthMode: v });
-          await ea.addElementsToView(false, false, true, true);
-          ea.clear();
-          if (!autoLayoutDisabled) {
-            await triggerGlobalLayout(info.rootId, true);
-          }
-        }
-      });
-  });
-
-  autoLayoutToggle = new ea.obsidian.Setting(bodyContainer)
-    .setName("Disable Auto-Layout")
-    .addToggle((t) => t
-      .setValue(autoLayoutDisabled)
-      .onChange(async (v) => {
-        autoLayoutDisabled = v;
-        setMapAutolayout(v);
-      }),
-    ).components[0];
-
-  new ea.obsidian.Setting(bodyContainer)
-    .setName("Group Branches")
-    .addToggle((t) => t
-    .setValue(groupBranches)
-    .onChange(async (v) => {
-      if (!ea.targetView) return;
-      groupBranches = v;
-      setVal(K_GROUP, v);
-      dirty = true;
-      const sel = ea.getViewSelectedElement() || ea.getViewElements().find(el => !getParentNode(el.id, ea.getViewElements()));
-      if (sel) {
-          const info = getHierarchy(sel, ea.getViewElements());
-          await triggerGlobalLayout(info.rootId, true, true);
-          updateUI();
-        }
-      })
-    )
-    .addButton((btn) => {
-      toggleGroupBtn = btn;
-      btn.setIcon("group");
-      btn.setTooltip(`Toggle grouping/ungroupding of a branch. Only available if "Group Branches" is disabled. ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
-      btn.onClick(async () => {
-        await toggleBranchGroup();
-        focusInputEl();
-      });
-    });
-
-  new ea.obsidian.Setting(bodyContainer)
-    .setName("Box Child Nodes")
-    .addToggle((t) => t
-      .setValue(boxChildren)
-      .onChange((v) => {
-        boxChildren = v;
-        setVal(K_BOX, v);
-        dirty = true;
-      }),
-    )
-    .addButton((btn) => {
-      boxBtn = btn;
-      btn.setIcon("rectangle-horizontal");
-      btn.setTooltip(`Toggle node box. ${getActionHotkeyString(ACTION_BOX)}`);
-      btn.onClick(async () => {
-        await toggleBox();
-        focusInputEl();
-      });
-    });
-
-  new ea.obsidian.Setting(bodyContainer).setName("Rounded Corners").addToggle((t) => t
-    .setValue(roundedCorners)
-    .onChange((v) => {
-      roundedCorners = v;
-      setVal(K_ROUND,  v);
-      dirty = true;
-    }),
-  );
-
-  new ea.obsidian.Setting(bodyContainer)
-    .setName("Use scene stroke style")
-    .setDesc(
-      "Use the latest stroke style (solid, dashed, dotted) from the scene, or always use solid style for branches.",
-    )
-    .addToggle((t) =>
-      t.setValue(!isSolidArrow).onChange((v) => {
-        isSolidArrow = !v;
-        setVal(K_ARROWSTROKE,  !v);
-        dirty = true;
-      }),
-    );
-
-  new ea.obsidian.Setting(bodyContainer)
-    .setName("Multicolor Branches")
-    .addToggle((t) =>
-      t.setValue(multicolor).onChange((v) => {
-        multicolor = v;
-        setVal(K_MULTICOLOR, v);
-        dirty = true;
-      }),
-    )
-    .addButton(btn => 
-      btn.setIcon("palette")
-         .setTooltip("Configure custom color palette for branches")
-         .onClick(() => {
-           const modal = new PaletteManagerModal(app, customPalette, (newSettings) => {
-             customPalette = newSettings;
-             setVal(K_PALETTE, customPalette, true); // save to script settings
-             dirty = true;
-           });
-           modal.open();
-         })
-    );
-
-  let sliderValDisplay;
-  const sliderSetting = new ea.obsidian.Setting(bodyContainer).setName("Max Wrap Width").addSlider((s) => s
-    .setLimits(100, 600, 10)
-    .setValue(maxWidth)
-    .onChange(async (v) => {
-      maxWidth = v;
-      sliderValDisplay.setText(`${v}px`);
-      setVal(K_WIDTH, v);
-      dirty = true;
-    }),
-  );
-  sliderValDisplay = sliderSetting.descEl.createSpan({
-    text: `${maxWidth}px`,
-    attr: { style: "margin-left:10px; font-weight:bold;" },
-  });
-
-  new ea.obsidian.Setting(bodyContainer)
-    .setName("Center text")
-    .setDesc("Toggle off: align nodes to rigth/left depending; Toggle on: center the text.")
-    .addToggle((t) => t
-      .setValue(centerText)
-      .onChange((v) => {
-        centerText = v;
-        setVal(K_CENTERTEXT, v);
-        dirty = true;
-      }),
-    );
-
-  new ea.obsidian.Setting(bodyContainer).setName(K_FONTSIZE).addDropdown((d) => {
-    FONT_SCALE_TYPES.forEach((key) => d.addOption(key, key));
-    d.setValue(fontsizeScale);
-    d.onChange((v) => {
-      fontsizeScale = v;
-      setVal(K_FONTSIZE, v);
-      dirty = true;
-    });
-  });
-
-  // ------------------------------------
-  // Hotkey Configuration Section
-  // ------------------------------------
-  const hkDetails = bodyContainer.createEl("details", {
-    attr: { style: "margin-top: 15px; border-top: 1px solid var(--background-modifier-border); padding-top: 10px;" }
-  });
-  hkDetails.createEl("summary", { text: "Hotkey Configuration", attr: { style: "cursor: pointer; font-weight: bold;" } });
-  
-  const hkContainer = hkDetails.createDiv();
-  hkContainer.createEl("p", {
-    text: "While the Mindmap Builder input field is active, the following hotkeys override standard Obsidian behaviors.",
-    attr: { style: "color: var(--text-muted); font-size: 0.85em; margin-bottom: 10px;" }
-  });
-
-  const refreshHotkeys = () => {
-    RUNTIME_HOTKEYS = generateRuntimeHotkeys();
-    // Re-register scope if currently active
-    if (popScope) registerMindmapHotkeys();
-    // Ensure event listeners are attached to the correct window
-    updateKeyHandlerLocation();
-  };
-
-  const saveHotkeys = () => {
-    setVal(K_HOTKEYS, userHotkeys, true);
-    dirty = true;
-    refreshHotkeys();
-  };
-
-  const isModified = (current) => {
-    const def = DEFAULT_HOTKEYS.find(d => d.action === current.action);
-    if (!def) return false;
-    
-    const k1 = current.code || current.key;
-    const k2 = def.code || def.key;
-    if (k1 !== k2) return true;
-    
-    if (current.modifiers.length !== def.modifiers.length) return true;
-    // Check if every modifier in current exists in def
-    return !current.modifiers.every(m => def.modifiers.includes(m));
-  };
-
-const recordHotkey = (btn, hIndex, onUpdate) => {
-    const originalText = btn.innerHTML;
-    const label = btn.parentElement.querySelector(".setting-hotkey");
-    
-    btn.innerHTML = `Press hotkey...`;
-    btn.addClass("is-recording");
-    
-    // 1. Create and push a new Scope to Obsidian's Keymap.
-    // This creates a new high-priority context.
-    recordingScope = new ea.obsidian.Scope();
-    app.keymap.pushScope(recordingScope);
-
-    const handler = (e) => {
-      // 2. Handle Escape to Abort
-      if (e.key === "Escape") {
-        cleanup();
-        return false;
-      }
-      
-      // Ignore modifier-only presses (but return false to block them from bubbling)
-      if (["Control", "Shift", "Alt", "Meta"].includes(e.key)) return false;
-
-      const mods = [];
-      if (e.ctrlKey) mods.push("Ctrl");
-      if (e.metaKey) mods.push("Meta");
-      if (e.altKey) mods.push("Alt");
-      if (e.shiftKey) mods.push("Shift");
-
-      let key = e.key;
-      let code = e.code;
-
-      if (key === " ") key = "Space";
-      
-      const targetConfig = userHotkeys[hIndex];
-      const isNav = targetConfig.isNavigation;
-
-      // Validation
-      if (isNav && !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
-        new Notice("This action requires Arrow Keys. Only modifiers can be changed.");
-        cleanup();
-        return false;
-      }
-
-      // Check conflicts
-      const conflict = userHotkeys.find((h, i) => {
-        if (i === hIndex) return false;
-        
-        const sameMods = h.modifiers.length === mods.length && h.modifiers.every(m => mods.includes(m));
-        if (!sameMods) return false;
-        
-        if (h.isNavigation && isNav) return true;
-        if (h.isNavigation && key.startsWith("Arrow")) return true;
-        
-        const hKey = h.code ? h.code.replace("Key","") : h.key;
-        const eKey = code ? code.replace("Key","") : key;
-        return hKey.toLowerCase() === eKey.toLowerCase();
-      });
-
-      if (conflict) {
-        label.style.color = "var(--text-error)";
-        new Notice(`Conflict with "${conflict.action}"`);
-        setTimeout(() => label.style.color = "", 2000);
-      } else {
-        // Update setting
-        if (isNav) {
-          targetConfig.modifiers = mods.map(m => m === "Ctrl" || m === "Meta" ? "Mod" : m);
-        } else {
-          targetConfig.modifiers = mods.map(m => m === "Ctrl" || m === "Meta" ? "Mod" : m);
-          if (code && code.startsWith("Key")) {
-            targetConfig.code = code;
-            delete targetConfig.key;
-          } else {
-            targetConfig.key = key;
-            delete targetConfig.code;
-          }
-        }
-        saveHotkeys();
-        if(onUpdate) onUpdate();
-      }
-
-      cleanup();
-      // Return false to preventDefault and stop propagation within Obsidian's keymap
-      return false;
-    };
-
-    const cleanup = () => {
-      // 3. Remove the scope to restore normal Obsidian hotkeys
-      if (recordingScope) {
-        app.keymap.popScope(recordingScope);
-        recordingScope = null;
-      }
-
-      btn.innerHTML = originalText;
-      btn.removeClass("is-recording");
-    };
-
-    // 4. Register a catch-all handler (null, null) on the scope
-    // This captures every keypress while the scope is active
-    recordingScope.register(null, null, handler);
-  };
-
-  userHotkeys.forEach((h, index) => {
-    if (h.immutable) return;
-
-    const setting = new ea.obsidian.Setting(hkContainer)
-      .setName(h.action);
-    
-    const controlDiv = setting.controlEl;
-    controlDiv.addClass("setting-item-control");
-    
-    const hotkeyDisplay = controlDiv.createDiv("setting-command-hotkeys");
-    const span = hotkeyDisplay.createSpan("setting-hotkey");
-    
-    // UI Update logic scoped to this specific row
-    const restoreBtn = controlDiv.createSpan("clickable-icon setting-restore-hotkey-button");
-    restoreBtn.innerHTML = ea.obsidian.getIcon("rotate-ccw").outerHTML;
-    restoreBtn.ariaLabel = "Restore default";
-
-    const updateRowUI = () => {
-      span.textContent = getHotkeyDisplayString(userHotkeys[index]);
-      restoreBtn.style.display = isModified(userHotkeys[index]) ? "" : "none";
-    };
-
-    // Initial render
-    updateRowUI();
-
-    restoreBtn.onclick = () => {
-      const def = DEFAULT_HOTKEYS.find(d => d.action === userHotkeys[index].action);
-      if (def) {
-        userHotkeys[index] = JSON.parse(JSON.stringify(def));
-        saveHotkeys();
-        updateRowUI();
-      }
-    };
-
-    const addBtn = controlDiv.createSpan("clickable-icon setting-add-hotkey-button");
-    addBtn.innerHTML = ea.obsidian.getIcon("plus-circle").outerHTML;
-    addBtn.ariaLabel = "Customize this hotkey";
-    addBtn.onclick = () => recordHotkey(addBtn, index, updateRowUI);
-  });
-
-  // Spacer to avoid overlap with Obsidian's status bar
-  bodyContainer.createDiv({ attr: { style: "height: 40px;" } });
-};
-
-const updateKeyHandlerLocation = () => {
-  // Attach to the appropriate window based on state
-  if (isUndocked) {
-    // Floating: Input is reparented to targetView's window
-    if (ea.targetView && ea.targetView.ownerWindow) {
-      registerKeydownHandler(ea.targetView.ownerWindow, keyHandler);
-    }
-  } else {
-    // Docked: Input is in the sidepanel's window
-    if (sidepanelWindow) {
-      registerKeydownHandler(sidepanelWindow, keyHandler);
-    }
-  }
-};
-
-/**
- * silent === true: sidepanel is not revealed after docking
- * forceDock === true: if input is undocked, docking happens even if no ExcalidrawView is present
- * saveSetting === true: the dock/undock status is saved to settings. When input is docked because
- *   the ExcalidrawView was closed or when the user presses ESC to finish mindmapping, next time
- *   Mindmap Builder is started it should remember the user preference
- * 
-**/ 
-const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {}) => {
-  editingNodeId = null;
-  if (!ea.targetView && !(forceDock && isUndocked)) return;
-  
-  // Only reveal/hide UI if not silent
-  if (!silent) {
-    const isSidepanelVisible = ea.getSidepanelLeaf().isVisible();
-    // If undocking and sidepanel is hidden, leave it hidden (we want the float).
-    // If docking and sidepanel is hidden, show it so we can see the input.
-    // If undocking and sidepanel is visible, we might want to close it or keep it.
-    // Logic from previous iteration:
-    if (isUndocked && !isSidepanelVisible) {
-      const leaf = ea.getSidepanelLeaf();
-      if (leaf) app.workspace.revealLeaf(leaf);
-    } else if (isSidepanelVisible && !isUndocked) {
-      ea.toggleSidepanelView(); 
-    }
-    
-    if (isUndocked) {
-      // If we were undocked (now docking), focus the sidepanel
-      app.workspace.setActiveLeaf(ea.getSidepanelLeaf(), {focus: true});
-    } else {
-      // If we were docked (now undocking), focus the main view
-      app.workspace.setActiveLeaf(ea.targetView.leaf, {focus: true});
-    }
-  }
-
-  isUndocked = !isUndocked;
-  if(saveSetting) {
-    setVal(K_UNDOCKED, isUndocked);
-    dirty = true;
-  }
-
-  // Re-route keyboard events to the correct window
-  updateKeyHandlerLocation();
-
-  if (isUndocked) {
-    // UNDOCK: Create floating modal
-    floatingInputModal = new ea.FloatingModal(ea.plugin.app);
-    const { contentEl, titleEl, modalEl, headerEl } = floatingInputModal;
-
-    floatingInputModal.onOpen = () => {
-      // Reparent the modal to the target view's window. 
-      if (ea.targetView && modalEl.ownerDocument !== ea.targetView.ownerDocument) {
-        ea.targetView.ownerDocument.body.appendChild(modalEl);
-      }
-
-      const {x, y} = ea.targetView.contentEl.getBoundingClientRect();
-      contentEl.empty();
-      
-      const closeEl = modalEl.querySelector(".modal-close-button");
-      if (closeEl) closeEl.style.display = "none";
-      titleEl.style.display = "none";
-      headerEl.style.display = "none";
-      modalEl.style.opacity = "0.8";
-      modalEl.style.padding = "6px";
-      modalEl.style.minHeight = "0px";
-      modalEl.style.width = "fit-content";
-      modalEl.style.height = "auto";
-      modalEl.style.maxHeight = "calc(2 * var(--size-4-4) + 12px + var(--input-height))";
-      const container = floatingInputModal.contentEl.createDiv();
-      renderInput(container, true);
-      setTimeout(() => {
-        inputEl?.focus();
-        //the modalEl is repositioned after a delay
-        //otherwise the event handlers in FloatingModal would override the move
-        //leaving modalEl in the center of the view
-        //modalEl.style.top and left must stay in the timeout call
-        modalEl.style.top = `${ y + 5 }px`;
-        modalEl.style.left = `${ x + 5 }px`;
-      }, 100);
-    };
-
-    floatingInputModal.onClose = () => {
-      if (popScope) popScope();
-      floatingInputModal = null;
-      if (isUndocked) {
-        // If closed manually (e.g. unexpected close), dock back silently
-        isUndocked = false;
-        setVal(K_UNDOCKED, false);
-        updateKeyHandlerLocation(); // Restore listeners to sidepanel
-        if (ea.sidepanelTab && inputContainer) renderInput(inputContainer, false);
-      }
-    };
-    
-    // Clear input from sidepanel
-    inputContainer.empty();
-    floatingInputModal.open();
-  } else {
-    // DOCK: Close floating, render in sidepanel
-    if (floatingInputModal) {
-      if (floatingInputModal.modalEl && floatingInputModal.modalEl.parentElement) {
-        floatingInputModal.modalEl.remove();
-      }
-      floatingInputModal.close(); 
-      floatingInputModal = null;
-    }
-    renderInput(inputContainer, false);
-    if (forceDock) return;
-    if (!silent) {
-      setTimeout(() => {
-        inputEl?.focus();
-      }, 100);
-    }
-  }
-};
-
-const getActionFromEvent = (e) => {
-  const isMod = e.ctrlKey || e.metaKey;
-  
-  const match = RUNTIME_HOTKEYS.find(h => {
-    const keyMatch = h.code ? (e.code === h.code) : (e.key === h.key);
-    if (!keyMatch) return false;
-
-    const hasMod = h.modifiers.includes("Mod") || h.modifiers.includes("Ctrl") || h.modifiers.includes("Meta");
-    const hasShift = h.modifiers.includes("Shift");
-    const hasAlt = h.modifiers.includes("Alt");
-
-    return (isMod === hasMod) && 
-           (e.shiftKey === hasShift) && 
-           (e.altKey === hasAlt);
-  });
-
-  return match ? match.action : null;
-};
-
-const keyHandler = async (e) => {
-  // Determine which window the input is currently in
-  const currentWindow = isUndocked && floatingInputModal 
-    ? ea.targetView?.ownerWindow 
-    : sidepanelWindow;
-
-  if (!currentWindow) return;
-  
-  if (linkSuggester?.isBlockingKeys()) {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    return;
-  }
-  
-  // Check if the input element is actually focused
-  if (currentWindow.document?.activeElement !== inputEl) {
-    if (e.key === "Escape" && isUndocked) {
-      toggleDock({silent: true, forceDock: true, saveSetting: false});
-    }
-    return;
-  }
-
-  const action = getActionFromEvent(e);
-
-  if (!action) return;
-
-  e.preventDefault();
-  e.stopPropagation();
-
-  switch (action) {
-    case ACTION_TOGGLE_GROUP: // Handle Alt+G
-      await toggleBranchGroup();
-      break;
-    case ACTION_HIDE:
-      if (isUndocked) {
-        toggleDock({silent: true, forceDock: true, saveSetting: false});
-      }
-      break;
-
-    case ACTION_PIN:
-      await togglePin();
-      updateUI();
-      focusInputEl();
-      break;
-
-    case ACTION_BOX:
-      await toggleBox();
-      focusInputEl();
-      break;
-
-    case ACTION_COPY:
-      copyMapAsText(false);
-      break;
-
-    case ACTION_CUT:
-      copyMapAsText(true);
-      break;
-
-    case ACTION_PASTE:
-      pasteListToMap();
-      break;
-
-    case ACTION_ZOOM:
-      zoomToFit(true);
-      break;
-
-    case ACTION_FOCUS:
-      focusSelected();
-      break;
-
-    case ACTION_NAVIGATE:
-      navigateMap({key: e.key, zoom: false, focus: false});
-      updateUI();
-      break;
-
-    case ACTION_NAVIGATE_ZOOM:
-      navigateMap({key: e.key, zoom: true, focus: false});
-      updateUI();
-      break;
-
-    case ACTION_NAVIGATE_FOCUS:
-      navigateMap({key: e.key, zoom: false, focus: true});
-      updateUI();
-      break;
-
-    case ACTION_DOCK_UNDOCK:
-      toggleDock({saveSetting: true});
-      break;
-
-    case ACTION_EDIT:
-      startEditing();
-      break;
-
-    case ACTION_ADD_FOLLOW:
-    case ACTION_ADD_FOLLOW_FOCUS:
-    case ACTION_ADD_FOLLOW_ZOOM:
-      if (!inputEl.value) return;
-      await addNode(inputEl.value, true);
-      inputEl.value = "";
-      if(!autoLayoutDisabled) await refreshMapLayout();
-      updateUI();
-      if (action === ACTION_ADD_FOLLOW_FOCUS) focusSelected();
-      if (action === ACTION_ADD_FOLLOW_ZOOM) zoomToFit();
-      break;
-case ACTION_ADD:
-      const currentSel = ea.getViewSelectedElement();
-      if (
-        editingNodeId && currentSel &&
-        (currentSel.id === editingNodeId || currentSel.containerId === editingNodeId)
-      ) {
-        await commitEdit();
-      } else {
-        if (editingNodeId) {
-          editingNodeId = null;
-        }
-        if (inputEl.value) {
-          await addNode(inputEl.value, false);
-          inputEl.value = "";
-          if(!autoLayoutDisabled) await refreshMapLayout();
-        } else {
-          const sel = ea.getViewSelectedElement();
-          const allElements = ea.getViewElements();
-
-          let handledRecent = false;
-          if(mostRecentlyAddedNodeID) {
-            const mostRecentNode = getMostRecentlyAddedNode();
-            if (mostRecentNode && sel) {
-              const selParent = getParentNode(sel.id, allElements);
-              const recentParent = getParentNode(mostRecentNode.id, allElements);
-              const isSameOrSibling = (sel.id === mostRecentNode.id) || 
-                (selParent && recentParent && selParent.id === recentParent.id);
-              if(!isSameOrSibling) {
-                ea.selectElementsInView([mostRecentNode]);
-                handledRecent = true;
-              } 
-            } else {
-              mostRecentlyAddedNodeID = null;
-            }
-          }
-          if (!handledRecent && sel) {
-            const parent = getParentNode(sel.id, allElements);
-            const siblings = parent ? getChildrenNodes(parent.id, allElements) : [];
-             
-            if (siblings.length > 1) {
-              navigateMap({key: "ArrowDown", zoom: false, focus: false});
-            }
-            else {
-              const children = getChildrenNodes(sel.id, allElements);
-              if (children.length > 0) {
-                sortChildrenStable(children);
-                ea.selectElementsInView([children[0]]);
-              } 
-              else if (parent) {
-                ea.selectElementsInView([parent]);
-              }
-            }
-          }
-        }
-      }
-      updateUI();
-      break;
-  }
-};
-
-const canvasPointerListener = (e) => {
-  if (!ea.targetView) return;
-  // If input is floating, check if click is inside it to avoid deselecting/updating UI prematurely
-  if (floatingInputModal && floatingInputModal.modalEl.contains(e.target)) return;
-  
-  setTimeout(() => {
-    if (!ea.targetView) return;
-    const selection = ea.getViewSelectedElements();
-    const isEligible = !!selection.find(el => el.customData && (
-      el.customData.hasOwnProperty("mindmapOrder") || 
-      el.customData.hasOwnProperty("isBranch") ||
-      el.customData.hasOwnProperty("growthMode")
-    ))
-
-    if (isEligible) {
-      updateUI();
-    }
-    
-    if (!isEligible && !pinBtn.disabled) {
-      updateUI();
-    }
-  }, 50);
-};
-
-// --- Initialization Logic ---
-// 1. Checking for exsiting tab right at the beginning of the script (not needed here)
-// 2. Create new Sidepanel Tab
-ea.createSidepanelTab("Mind Map Builder", true, true).then((tab) => {
-  if (!tab) return;
-
-  tab.onWindowMigrated = (newWin) => {
-    sidepanelWindow = newWin;
-    // If we are docked, re-attach to the new window immediately
-    if (!isUndocked && sidepanelWindow) {
-      registerKeydownHandler(sidepanelWindow, keyHandler);
-    }
-  };
-
-  // When the view closes, ensure we dock the input back so it's not lost in floating limbo
-  tab.onExcalidrawViewClosed = () => {
-    if (isUndocked) {
-      toggleDock({silent: true, forceDock: true, saveSetting: false});
-    }
-  };
-
-  tab.onOpen = () => {
-    const contentEl = tab.contentEl;
-    if (!contentEl.hasChildNodes()) {
-      renderHelp(contentEl);
-      inputContainer = contentEl.createDiv(); 
-      renderBody(contentEl);
-
-      sidepanelWindow = contentEl.ownerDocument.defaultView;
-
-      if (isUndocked) {
-        toggleDock({silent: true, forceDock: true, saveSetting: false});
-      } else {
-        renderInput(inputContainer, false);
-      }
-    }
-
-    ensureNodeSelected();
-    updateUI();
-    focusInputEl();
-
-    if (ea.activateMindmap) {
-      ea.activateMindmap = false;
-      const undockPreference = getVal(K_UNDOCKED, false);
-      if (undockPreference && !isUndocked) {
-        setTimeout(()=>toggleDock({saveSetting: false}));
-      } else if (!undockPreference && isUndocked) {
-        setTimeout(()=>toggleDock({saveSetting: false}));
-        tab.reveal();
-      } else if (!undockPreference) {
-        tab.reveal();
-      }
-    }
-  };
-
-  const setupEventListeners = (view) => {
-    if (!view || !view.ownerWindow) return;
-    
-    view.ownerWindow.addEventListener("pointerdown", canvasPointerListener);
-
-    updateKeyHandlerLocation();
-  };
-
-  const removeEventListeners = (view) => {
-    removeKeydownHandlers();
-    if (popScope) popScope();
-    if (!view || !view.ownerWindow) return;
-    view.ownerWindow.removeEventListener("pointerdown", canvasPointerListener);
-  };
-
-  const onFocus = (view) => {
-    if (!view) return;
-
-    // Cleanup old view
-    if (ea.targetView) {
-      removeEventListeners(ea.targetView);
-    }
-
-    // Set new view
-    ea.setView(view);
-
-    // Setup new view
-    setupEventListeners(view);
-    
-    // Update UI for new view selection
-    ensureNodeSelected();
-    updateUI();
-    focusInputEl();
-  };
-
-  tab.onFocus = (view) => onFocus(view);
-
-  const onActiveLeafChange = (leaf) => {
-    if(!isUndocked || !floatingInputModal || !leaf) {
-      return;
-    }
-    if (ea.isExcalidrawView(leaf.view)) {
-      onFocus(leaf.view);
-      const { modalEl } = floatingInputModal
-      if (modalEl.style.display === "none") {
-        modalEl.style.display = "";
-      }
-      if (ea.targetView && modalEl.ownerDocument !== ea.targetView.ownerDocument) {
-        ea.targetView.ownerDocument.body.appendChild(modalEl);
-        linkSuggester?.close();
-        linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow?.settingEl);
-      }
-      const {x, y} = ea.targetView.contentEl.getBoundingClientRect();
-      modalEl.style.top = `${ y + 5 }px`;
-      modalEl.style.left = `${ x + 5 }px`;
-    } else {
-      if (leaf.view?.getViewType() === "excalidraw-sidepanel") return;
-      const { modalEl } = floatingInputModal;
-      if (modalEl.style.display !== "none") {
-        modalEl.style.display = "none";
-      }
-    }
-  };
-  
-  // Register the global listener
-  const leafChangeRef = app.workspace.on("active-leaf-change", onActiveLeafChange);
-
-
-  tab.onClose = async () => {
-    app.workspace.offref(leafChangeRef);
-    if (popScope) popScope();
-    if (ea.targetView) {
-      removeEventListeners(ea.targetView);
-    }
-    if (floatingInputModal) {
-      if (floatingInputModal.modalEl && floatingInputModal.modalEl.parentElement) {
-        floatingInputModal.modalEl.remove();
-      }
-      floatingInputModal.close();
-      floatingInputModal = null;
-    }
-    await saveSettings();
-  };
-
-  // Initial setup if a view is already active
-  if (ea.targetView) {
-    setupEventListeners(ea.targetView);
-  }
-  tab.open();
-});
+const mmbSource = `
+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`;
+const script = ea.decompressFromBase64(mmbSource.replaceAll("\n", "").trim())
+const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
+await new AsyncFunction("ea", "utils", script)(ea, utils);
