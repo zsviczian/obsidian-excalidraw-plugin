@@ -708,6 +708,9 @@ export class ExcalidrawAutomate {
    */
   public getAPI(view?:ExcalidrawView):ExcalidrawAutomate {
     const ea = new ExcalidrawAutomate(this.plugin, view);
+    if(view && view.excalidrawAPI) {
+      ea.setTheme(view.excalidrawAPI.getAppState().theme);
+    }
     this.plugin.eaInstances.push(ea);
     return ea;
   }

@@ -118,7 +118,7 @@ import {
 import { cleanBlockRef, cleanSectionHeading, closeLeafView, getAttachmentsFolderAndFilePath, getExcalidraAndMarkdowViewsForFile, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf, setExcalidrawView } from "../utils/obsidianUtils";
 import { splitFolderAndFilename } from "../utils/fileUtils";
 import { GenericInputPrompt, LaTexPrompt, MultiOptionConfirmationPrompt, NewFileActions, Prompt, linkPrompt } from "../shared/Dialogs/Prompt";
-import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
+import { ClipboardData, ParsedDataTransferFile } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
 import { updateEquation } from "../shared/LaTeX";
 import {
   EmbeddedFile,
@@ -330,6 +330,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     forceSaving: false,
     hoverSleep: false,
     wheelTimeout: null,
+    shouldSaveImportedImage: false,
   };
 
   public _plugin: ExcalidrawPlugin;
@@ -2200,6 +2201,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.semaphores.viewunload = true;
     this.semaphores.popoutUnload = (this.ownerDocument !== document) && (this.ownerDocument.body.querySelectorAll(".workspace-tab-header").length === 0);
 
+    if(this.shouldSaveImportedImageTimer) {
+      window.clearTimeout(this.shouldSaveImportedImageTimer);
+    }
+
     if(this.getHookServer().onViewUnloadHook) {
       try {
         this.getHookServer().onViewUnloadHook(this);
@@ -2634,7 +2639,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if(imageCache.isReady() && this.excalidrawData.scene && this.excalidrawData.scene.elements && this.excalidrawData.scene.elements.length === 0) {
         const backup = await imageCache.getBAKFromCache(this.file.path);
         if(backup && backup.length > data.length) {
-          setTimeout(async () => {
+          window.setTimeout(async () => {
             const confirmationPrompt = new MultiOptionConfirmationPrompt(
                 this.plugin,
                 t("BACKUP_SAVE_AS_FILE"),
@@ -4228,21 +4233,22 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
   }
 
-  private shouldSaveImportedImage: boolean = false; 
-  private onChange (et: ExcalidrawElement[], st: AppState) {
+  private onChange (et: ExcalidrawElement[], st: AppState, files: BinaryFileData[]) {
     if(st.activeTool?.type) {
       if(st.activeTool.type === "image") {
         if(st.selectedElementIds && Object.keys(st.selectedElementIds).length === 1) {
           const selectedElement = et.filter(el=>el.id === Object.keys(st.selectedElementIds)[0])[0];
           if(selectedElement && selectedElement.type === "image") {
-            this.shouldSaveImportedImage = true;
+            this.setShouldSaveImportedImageFlag();
           }
         }
       }
-      if(st.activeTool.type === "selection" && this.shouldSaveImportedImage) {
-        this.shouldSaveImportedImage = false;
-        setTimeout(()=>this.save(true, true),100); //image is being added to the scene
-      }
+    }
+    if(
+      this.semaphores.shouldSaveImportedImage &&
+      Object.values(files).some(file=> !file.hasOwnProperty("hasSVGwithBitmap"))
+    ) {
+      window.setTimeout(()=>this.forceSave(true)); //image is being added to the scene
     }
 
     if(st.newElement?.type === "freedraw") {
@@ -4316,10 +4322,24 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     })();
   }
 
-  private onPaste (data: ClipboardData, event: ClipboardEvent | null) {
+  private shouldSaveImportedImageTimer: number = null;
+  private setShouldSaveImportedImageFlag() {
+    this.semaphores.shouldSaveImportedImage = true;
+    if(this.shouldSaveImportedImageTimer) {
+      window.clearTimeout(this.shouldSaveImportedImageTimer);
+    }
+    this.shouldSaveImportedImageTimer = window.setTimeout(()=>this.semaphores.shouldSaveImportedImage = false, 3000);
+  }
+
+  private onPaste (data: ClipboardData, event: ClipboardEvent | null, files: ParsedDataTransferFile[]) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onPaste, "ExcalidrawView.onPaste", data, event);
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
     const ea = this.getHookServer();
+
+    if (files?.length || (data?.mixedContent && data.mixedContent.some(d=>d.type==="imageUrl"))) {
+      this.setShouldSaveImportedImageFlag();
+    }
+
     if(data?.elements) {
       data.elements
         .filter(el=>el.type==="text" && !el.hasOwnProperty("rawText"))
@@ -5228,9 +5248,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             () => {
               const markerEnabled = !(frameRendering.markerEnabled && frameRendering.enabled && frameRendering.outline);
               if(markerEnabled) {
-                setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, enabled: true, outline: true, markerEnabled}}, captureUpdate: CaptureUpdateAction.NEVER}));
+                window.setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, enabled: true, outline: true, markerEnabled}}, captureUpdate: CaptureUpdateAction.NEVER}));
               } else {
-                setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, markerEnabled}}, captureUpdate: CaptureUpdateAction.NEVER}));
+                window.setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, markerEnabled}}, captureUpdate: CaptureUpdateAction.NEVER}));
               }
             },
             onClose
@@ -5244,7 +5264,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               ? t("MARKER_FRAME_TITLE_HIDE")
               : t("MARKER_FRAME_TITLE_SHOW"),
               () => {
-                setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, markerName: !frameRendering.markerName}}, captureUpdate: CaptureUpdateAction.NEVER}));
+                window.setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, markerName: !frameRendering.markerName}}, captureUpdate: CaptureUpdateAction.NEVER}));
               },
               onClose
             ),
