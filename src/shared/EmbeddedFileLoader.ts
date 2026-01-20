@@ -121,6 +121,35 @@ const replaceSVGColors = (svg: SVGSVGElement | string, colorMap: ColorMap | null
   return svg;
 }
 
+const applyThemeFilterToBitmapDataURL = async (
+  dataURL: DataURL,
+  mimeType: MimeType,
+  themeFilter: string,
+): Promise<DataURL> =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = createEl("canvas");
+        const ctx = canvas.getContext("2d");
+        if(!ctx) {
+          reject(new Error("Canvas 2D context unavailable"));
+          return;
+        }
+
+        canvas.width = img.naturalWidth || img.width;
+        canvas.height = img.naturalHeight || img.height;
+        ctx.filter = themeFilter || THEME_FILTER;
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL(mimeType) as DataURL);
+      } catch (e) {
+        reject(e);
+      }
+    };
+    img.onerror = (e) => reject(e);
+    img.src = dataURL;
+  });
+
 export class EmbeddedFile {
   public file: TFile = null;
   public isSVGwithBitmap: boolean = false;
@@ -153,7 +182,15 @@ export class EmbeddedFile {
   }
 
   get hasSeparateDarkAndLightVersion(): boolean {
-    return this.isSVGwithBitmap || (this.file && this.file.extension.toLowerCase() === "pdf");
+    const isPDF = this.file && this.file.extension.toLowerCase() === "pdf";
+    const mime = this.mimeType?.toLowerCase?.();
+    const isBitmap = mime?.startsWith("image/") && mime !== "image/svg+xml";
+    const needsBitmapInversion =
+      !!this.plugin?.settings?.invertBitmapforDarkMode &&
+      isBitmap &&
+      !isPDF;
+
+    return needsBitmapInversion || this.isSVGwithBitmap || isPDF;
   }
 
   public resetImage(hostPath: string, imgPath: string) {
@@ -564,6 +601,25 @@ export class EmbeddedFilesLoader {
       markdownRendererRecursionWatcthdog.delete(file);
       dataURL = result.dataURL;
       hasSVGwithBitmap = result.hasSVGwithBitmap;
+    }
+
+    if (
+      this.isDark &&
+      this.plugin.settings.invertBitmapforDarkMode &&
+      dataURL &&
+      !isPDF &&
+      mimeType?.startsWith("image/") &&
+      mimeType !== "image/svg+xml"
+    ) {
+      try {
+        dataURL = await applyThemeFilterToBitmapDataURL(
+          dataURL,
+          mimeType,
+          this.plugin.settings.themeFilter,
+        );
+      } catch (error) {
+        errorlog({ where: "EmbeddedFileLoader._getObsidianImage", error });
+      }
     }
     try{
       const size = isPDF ? pdfSize : await getImageSize(dataURL);
