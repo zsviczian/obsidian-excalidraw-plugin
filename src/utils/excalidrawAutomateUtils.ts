@@ -59,15 +59,48 @@ export function isSVGColorInfo(obj: ColorMap | SVGColorInfo): boolean {
   );
 }
 
+const COLOR_MAP_INVERT_KEY = "invertindarkmode";
+const isReservedColorMapKey = (key: string) => key.toLocaleLowerCase() === COLOR_MAP_INVERT_KEY;
+
+//Normalize color maps and lift the invertInDarkMode flag out of color entries
+export function normalizeColorMap(colorMap?: ColorMap | null): ColorMap | null {
+  if (!colorMap || typeof colorMap !== "object") {
+    return null;
+  }
+
+  const normalized: ColorMap = {};
+  const invert = (colorMap as Record<string, unknown>).invertInDarkMode ?? (colorMap as Record<string, unknown>)[COLOR_MAP_INVERT_KEY];
+  if (typeof invert === "boolean") {
+    normalized.invertInDarkMode = invert;
+  }
+
+  for (const [key, value] of Object.entries(colorMap)) {
+    if (isReservedColorMapKey(key) || typeof value !== "string") {
+      continue;
+    }
+    const normalizedKey = key.toLocaleLowerCase();
+    const normalizedValue = value.toLocaleLowerCase();
+    normalized[normalizedKey] = normalizedValue;
+  }
+
+  return normalized;
+}
+
 export function mergeColorMapIntoSVGColorInfo(
   colorMap: ColorMap,
   svgColorInfo: SVGColorInfo
 ): SVGColorInfo {
-  if(colorMap) {
-    for(const key of Object.keys(colorMap)) {
-      if(svgColorInfo.has(key)) {
-        svgColorInfo.get(key).mappedTo = colorMap[key];
+  const normalized = normalizeColorMap(colorMap);
+  if(normalized) {
+    for(const key of Object.keys(normalized)) {
+      if(isReservedColorMapKey(key)) {
+        continue;
       }
+      const mappedTo = normalized[key];
+      if(!svgColorInfo.has(key) || typeof mappedTo !== "string") {
+        continue;
+      }
+      svgColorInfo.get(key).mappedTo = mappedTo;
     }
   }
   return svgColorInfo;
@@ -84,9 +117,23 @@ export function svgColorInfoToColorMap(svgColorInfo: SVGColorInfo): ColorMap {
 
 //Remove identical key-value pairs from a ColorMap
 export function filterColorMap(colorMap: ColorMap): ColorMap {
-  return Object.fromEntries(
-    Object.entries(colorMap).filter(([key, value]) => key.toLocaleLowerCase() !== value?.toLocaleLowerCase())
-  );
+  const normalized = normalizeColorMap(colorMap) ?? {};
+  const filtered: ColorMap = {};
+
+  if (typeof normalized.invertInDarkMode === "boolean") {
+    filtered.invertInDarkMode = normalized.invertInDarkMode;
+  }
+
+  Object.entries(normalized).forEach(([key, value]) => {
+    if (isReservedColorMapKey(key) || typeof value !== "string") {
+      return;
+    }
+    if (key.toLocaleLowerCase() !== value.toLocaleLowerCase()) {
+      filtered[key] = value;
+    }
+  });
+
+  return filtered;
 }
 
 export function updateOrAddSVGColorInfo(

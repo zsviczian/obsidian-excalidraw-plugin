@@ -85,7 +85,7 @@ import { log } from "../utils/debugHelper";
 import { ExcalidrawLib } from "../types/excalidrawLib";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
 import { AddImageOptions, ImageInfo, KeyBlocker, ScriptSettingValue, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
-import { _measureText, cloneElement, createPNG, createSVG, ensureActiveScriptSettingsObject, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getLastActiveExcalidrawView, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeBindMode, normalizeFixedPoint, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
+import { _measureText, cloneElement, createPNG, createSVG, ensureActiveScriptSettingsObject, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getLastActiveExcalidrawView, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeBindMode, normalizeColorMap, normalizeFixedPoint, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
 import { exportToPDF, getMarginValue, getPageDimensions } from "src/utils/exportUtils";
 import { PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties, ExportSettings} from "src/types/exportUtilTypes";
 import { FrameRenderingOptions } from "src/types/utilTypes";
@@ -2179,7 +2179,7 @@ export class ExcalidrawAutomate {
     anchor: boolean = true, //only has effect if scale is false. If anchor is true the image path will include |100%, if false the image will be inserted at 100%, but if resized by the user it won't pop back to 100% the next time Excalidraw is opened.
   ): Promise<string> {
 
-    let colorMap: ColorMap;
+    let colorMap: ColorMap | null = null;
     let topX: number;
     if(typeof topXOrOpts === "number") {
       topX = topXOrOpts;
@@ -2189,7 +2189,7 @@ export class ExcalidrawAutomate {
       imageFile = topXOrOpts.imageFile;
       scale = topXOrOpts.scale ?? true;
       anchor = topXOrOpts.anchor ?? true;
-      colorMap = topXOrOpts.colorMap;
+      colorMap = normalizeColorMap(topXOrOpts.colorMap);
     }
 
     const id = nanoid();
@@ -2225,7 +2225,7 @@ export class ExcalidrawAutomate {
         height: image.size.height,
         width: image.size.width,
       },
-      colorMap,
+      colorMap: colorMap ?? undefined,
       pdfPageViewProps: image.pdfPageViewProps,
     };
     if (scale && (Math.max(image.size.width, image.size.height) > MAX_IMAGE_SIZE)) {
@@ -2579,6 +2579,9 @@ export class ExcalidrawAutomate {
         this.targetView.leaf,
       );
     }
+    if (this.targetView && this.targetView.excalidrawAPI) {
+      this.setTheme(this.targetView.excalidrawAPI.getAppState().theme);
+    }
     return this.targetView;
   };
 
@@ -2687,10 +2690,11 @@ export class ExcalidrawAutomate {
    */
   getColorMapForImageElement(el: ExcalidrawElement): ColorMap {
     const cm = getEmbeddedFileForImageElment(this,el)?.colorMap 
-    if(!cm) {
+    const normalized = normalizeColorMap(cm);
+    if(!normalized) {
       return {};
     }
-    return cm;
+    return normalized;
   }
 
   /**
@@ -2728,7 +2732,9 @@ export class ExcalidrawAutomate {
         errorMessage("Must provide an image element and a colorMap as input", "updateViewSVGImageColorMap()");
         continue;
       }
-      if (!colorMap || typeof colorMap !== 'object' || Object.keys(colorMap).length === 0) {
+      const hasColorEntries = Object.keys(colorMap).some(key => key.toLocaleLowerCase() !== "invertindarkmode");
+      const hasInvertPreference = typeof (colorMap as Record<string, unknown>).invertInDarkMode === "boolean";
+      if (!colorMap || typeof colorMap !== 'object' || (!hasColorEntries && !hasInvertPreference)) {
         ef.colorMap = null;
       } else {
         ef.colorMap = colorMap;
