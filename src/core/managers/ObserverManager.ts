@@ -29,6 +29,9 @@ export class ObserverManager {
       if(this.settings.matchThemeTrigger) this.addThemeObserver();
       this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
       this.addModalContainerObserver();
+      if (this.app.isMobile) {
+        this.addWorkspaceDrawerObserver();
+      }
     } catch (e) {
       new Notice("Error adding ObserverManager", 6000);
       console.error("Error adding ObserverManager", e);
@@ -219,44 +222,60 @@ export class ObserverManager {
 
   private addWorkspaceDrawerObserver() {
     //when the user activates the sliding drawers on Obsidian Mobile
-    const leftWorkspaceDrawer = document.querySelector(
-      ".workspace-drawer.mod-left",
-    );
-    const rightWorkspaceDrawer = document.querySelector(
-      ".workspace-drawer.mod-right",
-    );
-    if (leftWorkspaceDrawer || rightWorkspaceDrawer) {
-      const action = async (m: MutationRecord[]) => {
-        if (
-          m[0].oldValue !== "display: none;" ||
-          !this.plugin.activeExcalidrawView ||
-          !this.plugin.activeExcalidrawView?.isDirty()
-        ) {
-          return;
+    if (this.workspaceDrawerLeftObserver || this.workspaceDrawerRightObserver) return;
+
+    const leftWorkspaceDrawer = document.querySelector<HTMLElement>(".workspace .workspace-drawer.mod-left");
+    const rightWorkspaceDrawer = document.querySelector<HTMLElement>(".workspace .workspace-drawer.mod-right");
+    if (!leftWorkspaceDrawer && !rightWorkspaceDrawer) return;
+
+    const parseDisplay = (value?: string | null): string => {
+      if (!value) return "";
+      const match = value.match(/display:\s*([^;]+);?/i);
+      return match ? match[1].trim() : "";
+    };
+
+    const action: MutationCallback = (mutations) => {
+      const activeView = this.plugin.activeExcalidrawView;
+      if (!activeView || activeView.semaphores?.viewunload) return;
+
+      for (const mutation of mutations) {
+        if (mutation.type !== "attributes" || mutation.attributeName !== "style") continue;
+
+        const target = mutation.target as HTMLElement;
+        const newDisplay = target.style.display;
+        const oldDisplay = parseDisplay(mutation.oldValue as string);
+
+        // Drawer finished closing: refresh to fix pointer offset after CSS transitions
+        if (newDisplay === "none" && oldDisplay !== "none") {
+          activeView.refresh();
+          continue;
         }
-        this.plugin.activeExcalidrawView.save();
-      };
-      const options = {
-        attributeOldValue: true,
-        attributeFilter: ["style"],
-      };
 
-      if (leftWorkspaceDrawer) {
-        this.workspaceDrawerLeftObserver = DEBUGGING
-          ? new CustomMutationObserver(action, "slidingDrawerLeftObserver")
-          : new MutationObserver(action);
-        this.workspaceDrawerLeftObserver.observe(leftWorkspaceDrawer, options);
+        // Drawer just opened after being hidden: keep the previous autosave safeguard
+        if (oldDisplay === "none" && newDisplay !== "none" && activeView.isDirty()) {
+          activeView.save();
+        }
       }
+    };
 
-      if (rightWorkspaceDrawer) {
-        this.workspaceDrawerRightObserver = DEBUGGING
-          ? new CustomMutationObserver(action, "slidingDrawerRightObserver")
-          : new MutationObserver(action);
-        this.workspaceDrawerRightObserver.observe(
-          rightWorkspaceDrawer,
-          options,
-        );
-      }
+    const options = {
+      attributes: true,
+      attributeOldValue: true,
+      attributeFilter: ["style"],
+    };
+
+    if (leftWorkspaceDrawer) {
+      this.workspaceDrawerLeftObserver = DEBUGGING
+        ? new CustomMutationObserver(action, "slidingDrawerLeftObserver")
+        : new MutationObserver(action);
+      this.workspaceDrawerLeftObserver.observe(leftWorkspaceDrawer, options);
+    }
+
+    if (rightWorkspaceDrawer) {
+      this.workspaceDrawerRightObserver = DEBUGGING
+        ? new CustomMutationObserver(action, "slidingDrawerRightObserver")
+        : new MutationObserver(action);
+      this.workspaceDrawerRightObserver.observe(rightWorkspaceDrawer, options);
     }
   }
 }

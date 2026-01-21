@@ -97,7 +97,7 @@ export let {
   exportToSvg,
   exportToBlob,
   mutateElement,
-  restoreElements,
+  restore,
   mermaidToExcalidraw,
   getFontFamilyString,
   getContainerElement,
@@ -124,7 +124,7 @@ export function updateExcalidrawLib() {
       'getCommonBoundingBox',
       'measureText',
       'getLineHeight',
-      'restoreElements'
+      'restore'
     ];
     
     for (const fnName of requiredFunctions) {
@@ -148,7 +148,7 @@ export function updateExcalidrawLib() {
       exportToSvg,
       exportToBlob,
       mutateElement,
-      restoreElements,
+      restore,
       mermaidToExcalidraw,
       getFontFamilyString,
       getContainerElement,

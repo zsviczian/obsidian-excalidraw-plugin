@@ -17,14 +17,15 @@
     "build:all": "npm run build:mathjax && npm run build",
     "dev:mathjax": "cd MathjaxToSVG && npm run dev",
     "dev:all": "npm run dev:mathjax && npm run dev",
-    "doc": "npm run lib && node scripts/generate-script-library.js"
+    "doc": "npm run lib && node scripts/generate-script-library.js",
+    "mindmap": "node scripts/deploy-mindmap-builder.js"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "dependencies": {
     "@popperjs/core": "^2.11.8",
-    "@zsviczian/excalidraw": "0.18.0-67",
+    "@zsviczian/excalidraw": "0.18.0-68",
     "chroma-js": "^3.1.2",
     "clsx": "^2.0.0",
     "@zsviczian/colormaster": "^1.2.2",

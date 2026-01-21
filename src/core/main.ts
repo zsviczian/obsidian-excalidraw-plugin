@@ -773,6 +773,26 @@ export default class ExcalidrawPlugin extends Plugin {
             if(Object.keys(this.scriptEngine.scriptIconMap).length === 0) {
               this.scriptEngine.loadScripts();
             }
+            const restartSidepanelTabIfActive = async () => {
+              if (!this.scriptEngine || !(scriptFile instanceof TFile)) {
+                return;
+              }
+              const scriptName = this.scriptEngine.getScriptName(scriptFile);
+              const spView = ExcalidrawSidepanelView.getExisting(false);
+              if (!spView || !scriptName || !spView.getTabByScript(scriptName)) {
+                return;
+              }
+              try {
+                await spView.restartTabForScript(scriptName);
+              } catch (error) {
+                errorlog({
+                  where: "ExcalidrawPlugin.registerInstallCodeblockProcessor.restartSidepanelTab",
+                  error,
+                  scriptName,
+                });
+              }
+            };
+            await restartSidepanelTabIfActive();
             new Notice(`Installed: ${(scriptFile as TFile).basename}`);
           } catch (e) {
             new Notice(`Error installing script: ${fname}`);

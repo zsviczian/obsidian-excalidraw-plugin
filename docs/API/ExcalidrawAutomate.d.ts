@@ -577,9 +577,11 @@ export declare class ExcalidrawAutomate {
      * @param {number} topX - The x-coordinate of the top-left corner.
      * @param {number} topY - The y-coordinate of the top-left corner.
      * @param {string} tex - The LaTeX equation string.
+     * @param {number} [scaleX=1] - The x-scaling factor (post mathjax creation)
+     * @param {number} [scaleY=1] - The y-scaling factor (post mathjax creation)
      * @returns {Promise<string>} Promise resolving to the ID of the added LaTeX image element.
      */
-    addLaTex(topX: number, topY: number, tex: string): Promise<string>;
+    addLaTex(topX: number, topY: number, tex: string, scaleX?: number, scaleY?: number): Promise<string>;
     /**
      * Returns the base64 dataURL of the LaTeX equation rendered as an SVG.
      * @param {string} tex - The LaTeX equation string.

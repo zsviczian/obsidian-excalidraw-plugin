@@ -1374,6 +1374,7 @@ export class ExcalidrawData {
       position = parts.value.index + parts.value[0].length;
     }
     outString += text.substring(position, text.length);
+    outString = this.unescapeSquareBrackets(outString);
     if (linkIcon) {
       outString = this.linkPrefix + outString;
     }
@@ -1392,6 +1393,10 @@ export class ExcalidrawData {
         .replaceAll(/^- \[[^\s]] /g,`${this.plugin.settings.done} `)
         .replaceAll(/\n- \[[^\s]] /g,`\n${this.plugin.settings.done} `)
       : text;
+  }
+
+  private unescapeSquareBrackets(text: string): string {
+    return text?.replaceAll(/\\\[/g, "[") ?? text;
   }
 
   /**
@@ -1451,6 +1456,7 @@ export class ExcalidrawData {
       position = parts.value.index + parts.value[0].length;
     }
     outString += text.substring(position, text.length);
+    outString = this.unescapeSquareBrackets(outString);
     if (linkIcon) {
       outString = this.linkPrefix + outString;
     }

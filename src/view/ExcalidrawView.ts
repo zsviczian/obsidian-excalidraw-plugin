@@ -46,11 +46,10 @@ import {
   EXPORT_IMG_ICON_NAME,
   viewportCoordsToSceneCoords,
   ERROR_IFRAME_CONVERSION_CANCELED,
-  restoreElements,
+  restore,
   obsidianToExcalidrawMap,
   MAX_IMAGE_SIZE,
   fileid,
-  sceneCoordsToViewportCoords,
   MD_EX_SECTIONS,
   refreshTextDimensions,
   getContainerElement,
@@ -152,7 +151,6 @@ import { Packages } from "../types/types";
 import React from "react";
 import { diagramToHTML } from "../utils/matic";
 import { IS_WORKER_SUPPORTED } from "../shared/Workers/compression-worker";
-import { getPDFCropRect } from "../utils/PDFUtils";
 import { AutoexportConfig, Position, ViewSemaphores } from "../types/excalidrawViewTypes";
 import { DropManager } from "./managers/DropManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
@@ -1080,6 +1078,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       const ea = getEA(this) as ExcalidrawAutomate;
       ea.copyViewElementsToEAforEditing([el]);
       ea.addAppendUpdateCustomData(el.id, {latex: formula});
+      const dataurl = await ea.tex2dataURL(equation);
+      if (dataurl && dataurl.size.height > 0 && dataurl.size.width > 0) {
+        ea.addAppendUpdateCustomData(el.id, {
+          latexscale: {scaleX: el.width/dataurl.size.width, scaleY: el.height/dataurl.size.height}
+        });
+      }
       await ea.addElementsToView(false, false, false, false);
       await this.save(false);
       await updateEquation(
@@ -1426,7 +1430,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     let file = null;
     let subpath: string = null;
     let {linkText, selectedElement, isLinearElement} = this.getLinkTextForElement(selectedText, selectedElementWithLink, allowLinearElementClick);
-
+    
     //if (selectedText?.id || selectedElementWithLink?.id) {
     if (selectedElement) {
       if (!allowLinearElementClick && linkText && isLinearElement) {
@@ -4154,7 +4158,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         //dobule click
         const now = Date.now();
         if ((now - this.doubleClickTimestamp) < 600 && (now - this.doubleClickTimestamp) > 40) {
-          this.identifyElementClicked();
+          this.identifyElementClicked(); 
         }
         this.doubleClickTimestamp = now;
       }
@@ -4404,32 +4408,18 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       }
 
       if(isTextImageTransclusion(data.text,this, async (link, file)=>{
-        const ea = getEA(this) as ExcalidrawAutomate;
           if(IMAGE_TYPES.contains(file.extension)) {
+            const ea = getEA(this) as ExcalidrawAutomate;
             ea.selectElementsInView([await insertImageToView (ea, this.currentPosition, file)]);
             ea.destroy();
           } else if(file.extension !== "pdf") {
+            const ea = getEA(this) as ExcalidrawAutomate;
             ea.selectElementsInView([await insertEmbeddableToView (ea, this.currentPosition, file, link)]);
             ea.destroy();
           } else {
             if(link.match(/^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/g)) {
               const ea = getEA(this) as ExcalidrawAutomate;
-              const imgID = await ea.addImage(this.currentPosition.x, this.currentPosition.y,link.split("&rect=")[0]);
-              const el = ea.getElement(imgID) as Mutable<ExcalidrawImageElement>;
-              const fd = ea.imagesDict[el.fileId] as FileData;
-              el.crop = getPDFCropRect({
-                scale: this.plugin.settings.pdfScale,
-                link,
-                naturalHeight: fd.size.height,
-                naturalWidth: fd.size.width,
-                pdfPageViewProps: fd.pdfPageViewProps,
-              });
-              addAppendUpdateCustomData(el, {pdfPageViewProps: fd.pdfPageViewProps});
-              if(el.crop) {
-                el.width = el.crop.width/this.plugin.settings.pdfScale;
-                el.height = el.crop.height/this.plugin.settings.pdfScale;
-              }
-              el.link = `[[${link}]]`;
+              await ea.addImage(this.currentPosition.x, this.currentPosition.y, link);
               ea.addElementsToView(false,false).then(()=>ea.destroy());
             } else {
               const modal = new UniversalInsertFileModal(this.plugin, this);
@@ -6266,7 +6256,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
     const shouldRestoreElements = scene.elements && shouldRestore;
     if (shouldRestoreElements) {
-      scene.elements = restoreElements(scene.elements, null, {refreshDimensions: true, repairBindings: true});
+      scene.elements = restore(scene, null, null).elements;
     }
     if(Boolean(scene.appState)) {
       //@ts-ignore
@@ -6288,7 +6278,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if (!shouldRestoreElements) {
         //second attempt
         try {
-          scene.elements = restoreElements(scene.elements, null, {refreshDimensions: true, repairBindings: true});
+          scene.elements = restore(scene, null, null).elements;
           api.updateScene(scene);
         } catch (e) {
           errorlog({
