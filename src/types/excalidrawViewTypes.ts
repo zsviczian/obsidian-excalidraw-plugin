@@ -67,4 +67,5 @@ export interface ViewSemaphores {
   saving: boolean;
   hoverSleep: boolean; //flag with timer to prevent hover preview from being triggered dozens of times
   wheelTimeout:number; //used to avoid hover preview while zooming
+  shouldSaveImportedImage: boolean; //forceSave after image import via the Excalidraw Image Tool or by way of paste
 }

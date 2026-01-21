@@ -97,7 +97,7 @@ export let {
   exportToSvg,
   exportToBlob,
   mutateElement,
-  restore,
+  restoreElements,
   mermaidToExcalidraw,
   getFontFamilyString,
   getContainerElement,
@@ -124,7 +124,7 @@ export function updateExcalidrawLib() {
       'getCommonBoundingBox',
       'measureText',
       'getLineHeight',
-      'restore'
+      'restoreElements'
     ];
     
     for (const fnName of requiredFunctions) {
@@ -148,7 +148,7 @@ export function updateExcalidrawLib() {
       exportToSvg,
       exportToBlob,
       mutateElement,
-      restore,
+      restoreElements,
       mermaidToExcalidraw,
       getFontFamilyString,
       getContainerElement,
@@ -214,7 +214,7 @@ export const ROUNDNESS = { //should at one point publish @zsviczian/excalidraw/t
   PROPORTIONAL_RADIUS: 2,
   ADAPTIVE_RADIUS: 3,
 } as const;
-export const THEME_FILTER = "invert(100%) hue-rotate(180deg) saturate(1.25)";
+export const THEME_FILTER = "invert(93%) hue-rotate(180deg) saturate(1.25)";
 export const GITHUB_RELEASES = "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/";
 export const URLFETCHTIMEOUT = 3000;
 export const PLUGIN_ID = "obsidian-excalidraw-plugin";

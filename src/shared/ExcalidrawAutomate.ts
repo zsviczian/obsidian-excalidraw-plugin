@@ -32,6 +32,7 @@ import {
   DEVICE,
   mermaidToExcalidraw,
   refreshTextDimensions,
+  getDefaultColorPalette,
   getFontFamilyString,
 } from "src/constants/constants";
 import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath, splitFolderAndFilename } from "src/utils/fileUtils";
@@ -84,7 +85,7 @@ import { log } from "../utils/debugHelper";
 import { ExcalidrawLib } from "../types/excalidrawLib";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
 import { AddImageOptions, ImageInfo, KeyBlocker, ScriptSettingValue, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
-import { _measureText, cloneElement, createPNG, createSVG, ensureActiveScriptSettingsObject, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getLastActiveExcalidrawView, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeBindMode, normalizeFixedPoint, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
+import { _measureText, cloneElement, createPNG, createSVG, ensureActiveScriptSettingsObject, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getLastActiveExcalidrawView, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeBindMode, normalizeColorMap, normalizeFixedPoint, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
 import { exportToPDF, getMarginValue, getPageDimensions } from "src/utils/exportUtils";
 import { PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties, ExportSettings} from "src/types/exportUtilTypes";
 import { FrameRenderingOptions } from "src/types/utilTypes";
@@ -97,7 +98,6 @@ import { patchMobileView } from "src/utils/customEmbeddableUtils";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { AIRequest } from "src/types/AIUtilTypes";
 import { getAspectRatio } from "src/utils/YoutTubeUtils";
-import { getPDFCropRect } from "src/utils/PDFUtils";
 
 extendPlugins([
   HarmonyPlugin,
@@ -708,6 +708,9 @@ export class ExcalidrawAutomate {
    */
   public getAPI(view?:ExcalidrawView):ExcalidrawAutomate {
     const ea = new ExcalidrawAutomate(this.plugin, view);
+    if(view && view.excalidrawAPI) {
+      ea.setTheme(view.excalidrawAPI.getAppState().theme);
+    }
     this.plugin.eaInstances.push(ea);
     return ea;
   }
@@ -2176,7 +2179,7 @@ export class ExcalidrawAutomate {
     anchor: boolean = true, //only has effect if scale is false. If anchor is true the image path will include |100%, if false the image will be inserted at 100%, but if resized by the user it won't pop back to 100% the next time Excalidraw is opened.
   ): Promise<string> {
 
-    let colorMap: ColorMap;
+    let colorMap: ColorMap | null = null;
     let topX: number;
     if(typeof topXOrOpts === "number") {
       topX = topXOrOpts;
@@ -2186,49 +2189,43 @@ export class ExcalidrawAutomate {
       imageFile = topXOrOpts.imageFile;
       scale = topXOrOpts.scale ?? true;
       anchor = topXOrOpts.anchor ?? true;
-      colorMap = topXOrOpts.colorMap;
+      colorMap = normalizeColorMap(topXOrOpts.colorMap);
     }
-
-    const pdfLinkRegex = /^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/;
-    const originalLink = typeof imageFile === "string" ? imageFile : null;
-    const imageFileForLoader = originalLink && pdfLinkRegex.test(originalLink)
-      ? originalLink.split("&rect=")[0]
-      : imageFile;
 
     const id = nanoid();
     const loader = new EmbeddedFilesLoader(
       this.plugin,
       this.canvas.theme === "dark",
     );
-    const image = (typeof imageFileForLoader === "string")
-      ? await loader.getObsidianImage(new EmbeddedFile(this.plugin, "", imageFileForLoader),0)
-      : await loader.getObsidianImage(imageFileForLoader,0);
+    const image = (typeof imageFile === "string")
+      ? await loader.getObsidianImage(new EmbeddedFile(this.plugin, "", imageFile),0)
+      : await loader.getObsidianImage(imageFile,0);
       
     if (!image) {
       return null;
     }
-    const fileId = typeof imageFileForLoader === "string"
+    const fileId = typeof imageFile === "string"
       ? image.fileId
-      : imageFileForLoader.extension === "md" || imageFileForLoader.extension.toLowerCase() === "pdf" ? fileid() as FileId : image.fileId;
+      : imageFile.extension === "md" || imageFile.extension.toLowerCase() === "pdf" ? fileid() as FileId : image.fileId;
     this.imagesDict[fileId] = {
       mimeType: image.mimeType,
       id: fileId,
       dataURL: image.dataURL,
       created: image.created,
-      isHyperLink: typeof imageFileForLoader === "string",
-      hyperlink: typeof imageFileForLoader === "string"
-        ? imageFileForLoader
+      isHyperLink: typeof imageFile === "string",
+      hyperlink: typeof imageFile === "string"
+        ? imageFile
         : null,
-      file: typeof imageFileForLoader === "string"
+      file: typeof imageFile === "string"
         ? null
-        : imageFileForLoader.path + (scale || !anchor ? "":"|100%"),
+        : imageFile.path + (scale || !anchor ? "":"|100%"),
       hasSVGwithBitmap: image.hasSVGwithBitmap,
       latex: null,
       size: { //must have the natural size here (e.g. for PDF cropping)
         height: image.size.height,
         width: image.size.width,
       },
-      colorMap,
+      colorMap: colorMap ?? undefined,
       pdfPageViewProps: image.pdfPageViewProps,
     };
     if (scale && (Math.max(image.size.width, image.size.height) > MAX_IMAGE_SIZE)) {
@@ -2249,22 +2246,6 @@ export class ExcalidrawAutomate {
     newEl.fileId = fileId;
     newEl.scale = [1, 1];
     newEl.crop = null;
-    if(originalLink && pdfLinkRegex.test(originalLink)) {
-      const fd = this.imagesDict[fileId];
-      newEl.crop = getPDFCropRect({
-        scale: this.plugin.settings.pdfScale,
-        link: originalLink,
-        naturalHeight: fd.size.height,
-        naturalWidth: fd.size.width,
-        pdfPageViewProps: fd.pdfPageViewProps,
-      });
-      addAppendUpdateCustomData(newEl, {pdfPageViewProps: fd.pdfPageViewProps});
-      if(newEl.crop) {
-        newEl.width = newEl.crop.width/this.plugin.settings.pdfScale;
-        newEl.height = newEl.crop.height/this.plugin.settings.pdfScale;
-      }
-      newEl.link = `[[${originalLink}]]`;
-    }
     if(!scale && anchor) {
       newEl.customData = {isAnchored: true}
     };
@@ -2276,12 +2257,10 @@ export class ExcalidrawAutomate {
    * @param {number} topX - The x-coordinate of the top-left corner.
    * @param {number} topY - The y-coordinate of the top-left corner.
    * @param {string} tex - The LaTeX equation string.
-   * @param {number} [scaleX=1] - The x-scaling factor (post mathjax creation)
-   * @param {number} [scaleY=1] - The y-scaling factor (post mathjax creation)
    * @returns {Promise<string>} Promise resolving to the ID of the added LaTeX image element.
    */
-  async addLaTex(topX: number, topY: number, tex: string, scaleX: number = 1, scaleY: number = 1): Promise<string> {
-    if (!tex || !scaleX || !scaleY){
+  async addLaTex(topX: number, topY: number, tex: string): Promise<string> {
+    if (!tex){
       return null;
     }
     const id = nanoid();
@@ -2303,12 +2282,12 @@ export class ExcalidrawAutomate {
       "image",
       topX,
       topY,
-      image.size.width * Math.abs(scaleX),
-      image.size.height * Math.abs(scaleY),
+      image.size.width,
+      image.size.height,
     );
     this.elementsDict[id].fileId = image.fileId;
     this.addAppendUpdateCustomData(id, {latex: tex});
-    this.elementsDict[id].scale = [Math.sign(scaleX), Math.sign(scaleY)];
+    this.elementsDict[id].scale = [1, 1];
     return id;
   };
 
@@ -2600,6 +2579,9 @@ export class ExcalidrawAutomate {
         this.targetView.leaf,
       );
     }
+    if (this.targetView && this.targetView.excalidrawAPI) {
+      this.setTheme(this.targetView.excalidrawAPI.getAppState().theme);
+    }
     return this.targetView;
   };
 
@@ -2708,10 +2690,11 @@ export class ExcalidrawAutomate {
    */
   getColorMapForImageElement(el: ExcalidrawElement): ColorMap {
     const cm = getEmbeddedFileForImageElment(this,el)?.colorMap 
-    if(!cm) {
+    const normalized = normalizeColorMap(cm);
+    if(!normalized) {
       return {};
     }
-    return cm;
+    return normalized;
   }
 
   /**
@@ -2749,7 +2732,9 @@ export class ExcalidrawAutomate {
         errorMessage("Must provide an image element and a colorMap as input", "updateViewSVGImageColorMap()");
         continue;
       }
-      if (!colorMap || typeof colorMap !== 'object' || Object.keys(colorMap).length === 0) {
+      const hasColorEntries = Object.keys(colorMap).some(key => key.toLocaleLowerCase() !== "invertindarkmode");
+      const hasInvertPreference = typeof (colorMap as Record<string, unknown>).invertInDarkMode === "boolean";
+      if (!colorMap || typeof colorMap !== 'object' || (!hasColorEntries && !hasInvertPreference)) {
         ef.colorMap = null;
       } else {
         ef.colorMap = colorMap;
@@ -3816,7 +3801,6 @@ export class ExcalidrawAutomate {
 
   /**
    * Moves the specified element to a specific position in the z-index.
-   * * Operates directly on the Excalidraw Scene in targetView, not through ExcalidrawAutomate elements.
    * @param {number} elementId - The ID of the element to move.
    * @param {number} newZIndex - The new z-index position for the element.
    */

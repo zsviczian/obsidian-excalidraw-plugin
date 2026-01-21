@@ -17,6 +17,12 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.20.0":`
+## New
+- Dark theme from Excalidraw.com [#10578](https://github.com/excalidraw/excalidraw/pull/10578)
+- New setting in Excalidraw plugin settings under "Embedding Excalidraw/Export Settings/Image Theme". You can now choose to invert embedded SVG/Excalidraw and Bitmap images in dark mode.
+- New Easter Egg feature, by adding {invertColors: true/false} after the embedded file in Excalidraw markdown view, you can control whether the embedded image inverts colors in dark mode or not, regardless of the global setting.
+`,
 "2.19.2":`
 ## Fixed
 - Minor fixes to the link autocomplete functionality:

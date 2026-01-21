@@ -38,6 +38,7 @@ import {
   arrayToMap,
   compressAsync,
 } from "../utils/utils";
+import { ColorMap } from "../types/embeddedFileLoaderTypes";
 import { cleanBlockRef, cleanSectionHeading, getAttachmentsFolderAndFilePath, isObsidianThemeDark } from "../utils/obsidianUtils";
 import {
   ExcalidrawElement,
@@ -144,6 +145,31 @@ export const REGEX_LINK = {
     }
     return len;
   },
+};
+
+const COLOR_MAP_INVERT_KEY = "invertindarkmode";
+const isReservedColorMapKey = (key: string) => key.toLocaleLowerCase() === COLOR_MAP_INVERT_KEY;
+const normalizeColorMapLocal = (colorMap?: ColorMap | null): ColorMap | null => {
+  if (!colorMap || typeof colorMap !== "object") {
+    return null;
+  }
+
+  const normalized: ColorMap = {};
+  const invert = (colorMap as Record<string, unknown>).invertInDarkMode ?? (colorMap as Record<string, unknown>)[COLOR_MAP_INVERT_KEY];
+  if (typeof invert === "boolean") {
+    normalized.invertInDarkMode = invert;
+  }
+
+  for (const [key, value] of Object.entries(colorMap)) {
+    if (isReservedColorMapKey(key) || typeof value !== "string") {
+      continue;
+    }
+    const normalizedKey = key.toLocaleLowerCase();
+    const normalizedValue = value.toLocaleLowerCase();
+    normalized[normalizedKey] = normalizedValue;
+  }
+
+  return normalized;
 };
 
 //added \n at and of DRAWING_REG: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/357
@@ -1497,7 +1523,8 @@ export class ExcalidrawData {
           const path = ef.file
             ? ef.linkParts.original.replace(PATHREG,this.app.metadataCache.fileToLinktext(ef.file,this.file.path))
             : ef.linkParts.original;
-          const colorMap = ef.colorMap ? " " + JSON.stringify(ef.colorMap) : "";
+          const normalizedColorMap = normalizeColorMapLocal(ef.colorMap);
+          const colorMap = normalizedColorMap ? " " + JSON.stringify(normalizedColorMap) : "";
           outString += `${key}: [[${path}]]${colorMap}\n\n`;
         }
       }
@@ -2014,6 +2041,7 @@ export class ExcalidrawData {
     }
 
     const parts = data.linkParts.original.split("#");
+    const normalizedColorMap = normalizeColorMapLocal(data.colorMap);
     this.plugin.filesMaster.set(fileId, {
       isHyperLink: false,
       isLocalLink: false,
@@ -2022,7 +2050,7 @@ export class ExcalidrawData {
         ? null
         : parts[1],
       hasSVGwithBitmap: data.isSVGwithBitmap,
-      colorMapJSON: data.colorMap ? JSON.stringify(data.colorMap) : null,
+      colorMapJSON: normalizedColorMap ? JSON.stringify(normalizedColorMap) : null,
     });
   }
 

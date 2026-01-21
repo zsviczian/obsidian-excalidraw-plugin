@@ -422,7 +422,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       "Set scale to false if you want to embed the image at 100% of its original size. Default is true which will insert a scaled image.\n"+
       "anchor will only be evaluated if scale is false. anchor true will add |100% to the end of the filename, resulting in an image that will always pop back to 100% when the source file is updated or when the Excalidraw file is reopened.\n"+
       "colorMap is only used for SVG images and nested Excalidraw images. See the Shade Master script and the Deconstruct Selected Elements script for examples using colorMap.\n"+
-      "type ColorMap = { [color: string]: string; }",
+      "Set colorMap.invertInDarkMode to force or disable dark-mode inversion for that image.\n"+
+      "type ColorMap = { [color: string]: string; invertInDarkMode?: boolean; }",
     after: "",
   },
   {
@@ -450,7 +451,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addLaTex",
-    code: "async addLaTex(topX: number, topY: number, tex: string, scaleX: number = 1, scaleY: number = 1): Promise<string>;",
+    code: "async addLaTex(topX: number, topY: number, tex: string): Promise<string>;",
     desc: "This is an async function, you need to avait the results. Adds a LaTex element to the drawing. The tex string is the LaTex code. The function returns the id of the created element.",
     after: "",
   },
@@ -561,7 +562,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     desc: 'Updates the color map of an SVG image element in the view. If a ColorMap is provided, it will be used directly. If an SVGColorInfo is provided, it will be converted to a ColorMap. The view will be marked as dirty (i.e. will be saved at next scheduled time) and the image will be reset using the color map.\n'+
           'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
           'type SVGColorInfo = Map<string, { mappedTo: string; fill: boolean; stroke: boolean; }>\n' +
-          'type ColorMap = { [color: string]: string; }',
+          'type ColorMap = { [color: string]: string; invertInDarkMode?: boolean; }',
     after: "",
   },
   {
@@ -569,7 +570,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     code: "getColorMapForImageElement(el: ExcalidrawElement): ColorMap",
     desc: 'Retrieves the color map for an image element. The color map contains information about the mapping of colors used in the image. If the element already has a color map, it will be returned. The colorMap does not include all colors in the image, only those that have been mapped.\n' +
           'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
-          'type ColorMap = { [color: string]: string; }',
+          'type ColorMap = { [color: string]: string; invertInDarkMode?: boolean; }',
     after: "",
   },
   {
