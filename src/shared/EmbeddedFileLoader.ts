@@ -766,8 +766,7 @@ export class EmbeddedFilesLoader {
             const data = getMermaidText(element);
             const result = await mermaidToExcalidraw(
               data,
-              { themeVariables: { fontSize: "20" } },
-              true
+              { themeVariables: { fontSize: "20" } }
             );
             if(!result) {
               return;

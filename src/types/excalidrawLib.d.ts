@@ -200,7 +200,6 @@ declare namespace ExcalidrawLib {
   function mermaidToExcalidraw(
     mermaidDefinition: string,
     opts: MermaidConfig,
-    forceSVG?: boolean,
   ): Promise<{
     elements?: ExcalidrawElement[];
     files?: any;
@@ -211,8 +210,8 @@ declare namespace ExcalidrawLib {
   var Excalidraw: any;
   var MainMenu: any;
   var WelcomeScreen: any;
-  var TTDDialogTrigger: any;
-  var TTDDialog: any;
+  var TTDDialogTrigger: typeof import("@zsviczian/excalidraw").TTDDialogTrigger;
+  var TTDDialog: typeof import("@zsviczian/excalidraw").TTDDialog;
   var DiagramToCodePlugin: (props: {
     generate: GenerateDiagramToCode;
   }) => any;

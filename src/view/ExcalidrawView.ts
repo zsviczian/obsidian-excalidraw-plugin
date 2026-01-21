@@ -136,7 +136,7 @@ import { getEA } from "src/core"
 import { anyModifierKeysPressed, emulateKeysForLinkClick, isWinALTorMacOPT, isWinCTRLorMacCMD, isWinMETAorMacCTRL, isSHIFT, linkClickModifierType, ModifierKeys } from "../utils/modifierkeyHelper";
 import { setDynamicStyle } from "../utils/dynamicStyling";
 import { CustomEmbeddable, renderWebView } from "./components/CustomEmbeddable";
-import { addBackOfTheNoteCard, deleteAppStateKeys, getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, isTextImageTransclusion, onLoadMessages, openExternalLink, parseObsidianLink, renderContextMenuAction, sceneRemoveInternalLinks, tmpBruteForceCleanup, toggleImageAnchoring } from "../utils/excalidrawViewUtils";
+import { addBackOfTheNoteCard, deleteAppStateKeys, getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, isTextImageTransclusion, onLoadMessages, openExternalLink, parseObsidianLink, renderContextMenuAction, sceneRemoveInternalLinks, setMobileNavbarPosition, tmpBruteForceCleanup, toggleImageAnchoring } from "../utils/excalidrawViewUtils";
 import { imageCache } from "../shared/ImageCache";
 import { CanvasNodeFactory, ObsidianCanvasNode } from "./managers/CanvasNodeFactory";
 import { EmbeddableMenu } from "./components/menu/EmbeddableActionsMenu";
@@ -145,7 +145,7 @@ import { UniversalInsertFileModal } from "../shared/Dialogs/UniversalInsertFileM
 import { getMermaidText, shouldRenderMermaid } from "../utils/mermaidUtils";
 import { nanoid } from "nanoid";
 import { CustomMutationObserver, DEBUGGING, debug, log} from "../utils/debugHelper";
-import { errorHTML, extractCodeBlocks, postOpenAI } from "../utils/AIUtils";
+import { errorHTML, extractCodeBlocks } from "../utils/AIUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { SelectCard } from "../shared/Dialogs/SelectCard";
 import { Packages } from "../types/types";
@@ -1182,6 +1182,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
 
     const hide = (el:HTMLElement) => {
+      el.style.marginTop = "0px";
       let tmpEl = el;
       while(tmpEl && !tmpEl.hasClass("workspace-split")) {
         el.addClass(SHOW);
@@ -1233,6 +1234,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const doc = this.ownerDocument;
     doc.querySelectorAll(".excalidraw-hidden").forEach(el=>el.removeClass(HIDE));
     doc.querySelectorAll(".excalidraw-visible").forEach(el=>el.removeClass(SHOW));
+    this.contentEl.style.marginTop = "";
   }
 
   removeLinkTooltip() {
@@ -1752,6 +1754,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         await(sleep(50));
         if(!this?.plugin) return;
       }
+      setMobileNavbarPosition(true);
       if(!Boolean(this?.plugin?.activeLeafChangeEventHandler)) return;
       if (Boolean(this.plugin.activeLeafChangeEventHandler) && (this?.app?.workspace?.activeLeaf === this.leaf)) {
         this.plugin.activeLeafChangeEventHandler(this.leaf);
@@ -2198,6 +2201,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     super.onunload();
     this.destroyers.forEach((destroyer) => destroyer());
     this.restoreMobileLeaves();
+    setMobileNavbarPosition(false);
     this.semaphores.viewunload = true;
     this.semaphores.popoutUnload = (this.ownerDocument !== document) && (this.ownerDocument.body.querySelectorAll(".workspace-tab-header").length === 0);
 
@@ -5311,56 +5315,120 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   };
 
   private ttdDialog() {
+    const systemPrompt = "The user will provide you with a text prompt. Your task is to generate a mermaid diagram based on the prompt. Use the graph, sequenceDiagram, flowchart or classDiagram types based on what best fits the request. Return a single message containing only the mermaid diagram in a codeblock. Avoid the use of `()` parenthesis in the mermaid script.";
+    const instruction = "Return a single message containing only the mermaid diagram in a codeblock.";
+
     return this.packages.react.createElement(
       this.packages.excalidrawLib.TTDDialog,
       {
-        onTextSubmit: async (input:string) => {
+        onTextSubmit: async (props: any) => {
+          const { messages = [], onChunk, onStreamCreated, signal } = props ?? {};
+          const {
+            openAIAPIToken,
+            openAIDefaultTextModel,
+            openAIDefaultTextModelMaxTokens,
+            openAIURL,
+          } = this.plugin.settings;
+
+          if (!openAIAPIToken) {
+            return {
+              error: new Error("OpenAI API Token is not set. Please set it in plugin settings."),
+            };
+          }
+
+          const requestMessages = [
+            { role: "system", content: systemPrompt },
+            ...messages,
+            { role: "user", content: instruction },
+          ];
+
+          // Determine which token limit parameter to use based on model
+          // Newer models (gpt-4o, gpt-5, o1, o3) use max_completion_tokens
+          // Older models use max_tokens
+          const useMaxCompletionTokens = openAIDefaultTextModel && 
+            (openAIDefaultTextModel.includes("gpt-4o") || 
+             openAIDefaultTextModel.includes("gpt-5") || 
+             openAIDefaultTextModel.includes("o1") || 
+             openAIDefaultTextModel.includes("o3"));
+          
+          const tokenLimitParam = openAIDefaultTextModelMaxTokens > 0 
+            ? (useMaxCompletionTokens 
+                ? { max_completion_tokens: openAIDefaultTextModelMaxTokens }
+                : { max_tokens: openAIDefaultTextModelMaxTokens })
+            : {};
+
           try {
-            const response = await postOpenAI({
-              systemPrompt: "The user will provide you with a text prompt. Your task is to generate a mermaid diagram based on the prompt. Use the graph, sequenceDiagram, flowchart or classDiagram types based on what best fits the request. Return a single message containing only the mermaid diagram in a codeblock. Avoid the use of `()` parenthesis in the mermaid script.",
-              text: input,
-              instruction: "Return a single message containing only the mermaid diagram in a codeblock.",
-            })
+            const resp = await fetch(openAIURL, {
+              method: "post",
+              body: JSON.stringify({
+                model: openAIDefaultTextModel,
+                ...tokenLimitParam,
+                messages: requestMessages,
+              }),
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${openAIAPIToken}`,
+              },
+              signal,
+            });
 
-            if(!response) {
+            onStreamCreated?.();
+
+            if (!resp) {
+              return { error: new Error("Request failed") };
+            }
+
+            const rateLimitHeader = resp.headers.get("x-ratelimit-limit");
+            const rateLimitRemainingHeader = resp.headers.get("x-ratelimit-remaining");
+            const rateLimit = rateLimitHeader && !Number.isNaN(Number(rateLimitHeader)) ? Number(rateLimitHeader) : null;
+            const rateLimitRemaining = rateLimitRemainingHeader && !Number.isNaN(Number(rateLimitRemainingHeader)) ? Number(rateLimitRemainingHeader) : null;
+
+            const json = await resp.json();
+            (process.env.NODE_ENV === "development") && DEBUGGING && debug(this.ttdDialog, `ExcalidrawView.ttdDialog > onTextSubmit, openAI response`, json);
+
+            if (!resp.ok || json?.error) {
+              log(json);
               return {
-                error: new Error("Request failed"),
+                error: new Error(json?.error?.message ?? `Request failed with status ${resp.status}`),
+                rateLimit,
+                rateLimitRemaining,
               };
             }
 
-            const json = response.json;
-            (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.ttdDialog, `ExcalidrawView.ttdDialog > onTextSubmit, openAI response`, response);
-
-            if (json?.error) {
-              log(response);
-              return {
-                error: new Error(json.error.message),
-              };
-            }
-
-            if(!json?.choices?.[0]?.message?.content) {
-              log(response);
+            const content = json?.choices?.[0]?.message?.content;
+            if (!content) {
+              log(json);
               return {
                 error: new Error("Generation failed... see console log for details"),
+                rateLimit,
+                rateLimitRemaining,
               };
             }
 
-            let generatedResponse = extractCodeBlocks(json.choices[0]?.message?.content)[0]?.data;
+            let generatedResponse = extractCodeBlocks(content)[0]?.data ?? content.trim();
 
-            if(!generatedResponse) {
-              log(response);
+            if (!generatedResponse) {
+              log(json);
               return {
                 error: new Error("Generation failed... see console log for details"),
+                rateLimit,
+                rateLimitRemaining,
               };
             }
 
-            if(generatedResponse.startsWith("mermaid")) {
-              generatedResponse = generatedResponse.replace(/^mermaid/,"").trim();
+            if (generatedResponse.startsWith("mermaid")) {
+              generatedResponse = generatedResponse.replace(/^mermaid/, "").trim();
             }
-            
-            return { generatedResponse, rateLimit:100, rateLimitRemaining:100 };
+
+            onChunk?.(generatedResponse);
+
+            return { generatedResponse, rateLimit, rateLimitRemaining };
           } catch (err: any) {
-            throw new Error("Request failed");
+            if (err?.name === "AbortError") {
+              return { error: new Error("Request aborted") };
+            }
+            console.log(err);
+            return { error: new Error("Request failed") };
           }
         },
       }

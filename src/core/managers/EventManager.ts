@@ -8,6 +8,7 @@ import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { DEVICE, FRONTMATTER_KEYS, ICON_NAME, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { t } from "src/lang/helpers";
+import { setMobileNavbarPosition } from "src/utils/excalidrawViewUtils";
 
 /**
  * Registers event listeners for the plugin
@@ -234,22 +235,7 @@ export class EventManager {
       this.plugin.removeModalContainerObserver();
     }
 
-    //!Temporary hack
-    //https://discord.com/channels/686053708261228577/817515900349448202/1031101635784613968
-    if (DEVICE.isMobile && newActiveviewEV && !previouslyActiveEV) {
-      const navbar = document.querySelector("body>.app-container>.mobile-navbar");
-      if(navbar && navbar instanceof HTMLDivElement) {
-        navbar.style.position="relative";
-      }
-    }
-
-    if (DEVICE.isMobile && !newActiveviewEV && previouslyActiveEV) {
-      const navbar = document.querySelector("body>.app-container>.mobile-navbar");
-      if(navbar && navbar instanceof HTMLDivElement) {
-        navbar.style.position="";
-      }
-    }
-
+    setMobileNavbarPosition(newActiveviewEV && !previouslyActiveEV);
     //----------------------
     //----------------------
 

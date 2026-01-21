@@ -1,5 +1,5 @@
 
-import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS, AUDIO_TYPES, CARD_WIDTH, CARD_HEIGHT, getDefaultColorPalette } from "src/constants/constants";
+import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS, AUDIO_TYPES, CARD_WIDTH, CARD_HEIGHT, getDefaultColorPalette, DEVICE } from "src/constants/constants";
 import { App, Modal, Notice, TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS, getExcalidrawMarkdownHeader } from "../shared/ExcalidrawData";
@@ -623,4 +623,15 @@ export function getViewColorPalette(
     : Array.from(extraColors);
 
   return [...groups, ...sortedExtras];
+}
+
+//!Temporary hack
+//https://discord.com/channels/686053708261228577/817515900349448202/1031101635784613968
+export const setMobileNavbarPosition = (dock:boolean) => {
+  if (DEVICE.isMobile && dock) {
+    const navbar = document.querySelector("body>.app-container>.mobile-navbar");
+    if(navbar && navbar instanceof HTMLDivElement) {
+      navbar.style.position= dock ? "relative" : "";
+    }
+  }
 }

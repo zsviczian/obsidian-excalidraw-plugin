@@ -22,6 +22,10 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 - Dark theme from Excalidraw.com [#10578](https://github.com/excalidraw/excalidraw/pull/10578)
 - New setting in Excalidraw plugin settings under "Embedding Excalidraw/Export Settings/Image Theme". You can now choose to invert embedded SVG/Excalidraw and Bitmap images in dark mode.
 - New Easter Egg feature, by adding {invertColors: true/false} after the embedded file in Excalidraw markdown view, you can control whether the embedded image inverts colors in dark mode or not, regardless of the global setting.
+- New chat-like interface for Mermaid TextToDiagrams (requries OpenAI API key set in Excalidraw plugin settings). [#10530](https://github.com/excalidraw/excalidraw/pull/10530)
+
+## Fixed
+- Full screen on phones left a large area at the top of the screen unused. Fixed issue with Obsidian Mobile Navigation bar floating on top of the Excaldiraw toolbar.
 `,
 "2.19.2":`
 ## Fixed
