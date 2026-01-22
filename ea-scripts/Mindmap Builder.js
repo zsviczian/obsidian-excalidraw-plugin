@@ -2209,8 +2209,9 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
     }
   }
 
-  if (!isPinned && eaNode.type === "text" && !eaNode.containerId && node.textAlign !== "center") {
-    eaNode.textAlign = effectiveSide === 1 ? "left" : "right";
+  const textElement = ea.getBoundTextElement(eaNode).eaElement;
+  if (textElement && !centerText && textElement.textAlign !== "center") {
+    textElement.textAlign = effectiveSide === 1 ? "left" : "right";
   }
 
   const children = childrenByParent?.get(nodeId) ?? getChildrenNodes(nodeId, allElements);
@@ -2611,7 +2612,7 @@ const sortL1NodesBasedOnVisualSequence = (l1Nodes, mode, rootCenter) => {
     ea.addAppendUpdateCustomData(node.id, { mindmapOrder: existingNodes.length + i });
   });
 };
-
+debugger;
 /**
  * Main layout execution function.
  * Calculates positions for a tree rooted at rootId and moves elements.
@@ -2746,7 +2747,17 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
     removeGroupFromElements(structuralGroupId, allElements);
   }
 
-  const mindmapIdsSet = new Set(mindmapIds);
+  // FIX: Expand mindmapIds to include bound elements (like Text inside Boxes)
+  // This ensures they are not filtered out by the cleanup step in `run`
+  const expandedMindmapIds = [...mindmapIds];
+  mindmapIds.forEach(id => {
+      const el = allElements.find(e => e.id === id);
+      if (el && el.boundElements) {
+          el.boundElements.forEach(be => expandedMindmapIds.push(be.id));
+      }
+  });
+
+  const mindmapIdsSet = new Set(expandedMindmapIds);
   const crosslinkIdSet = collectCrosslinkIds(allElements);
   const decorationIdSet = collectDecorationIds(allElements);
   const sharedSets = { mindmapIdsSet, crosslinkIdSet, decorationIdSet };
@@ -3356,7 +3367,7 @@ const copyMapAsText = async (cut = false) => {
   const branchIds = new Set(getBranchElementIds(sel.id, all));
   
   const nodeBlockRefs = new Map(); // NodeID -> "^blockId"
-  const nodeOutgoingLinks = new Map(); // NodeID -> ["^blockId", ...]
+  const nodeOutgoingLinks = new Map(); // NodeID -> ["text representation", ...]
 
   // Find arrows within this branch that are NOT structural branch arrows
   const crossLinkArrows = all.filter(el => 
@@ -3384,7 +3395,22 @@ const copyMapAsText = async (cut = false) => {
       if (!nodeOutgoingLinks.has(startId)) {
         nodeOutgoingLinks.set(startId, []);
       }
-      nodeOutgoingLinks.get(startId).push(nodeBlockRefs.get(endId));
+      
+      // Check for label on the arrow
+      const boundTextId = arrow.boundElements?.find(be => be.type === "text")?.id;
+      const labelTextElement = boundTextId ? all.find(el => el.id === boundTextId) : null;
+      const refString = nodeBlockRefs.get(endId);
+      
+      let linkText;
+      if (labelTextElement && labelTextElement.originalText) {
+        // Replace newlines with spaces for inline dataview field compatibility
+        const label = labelTextElement.originalText.replace(/\n/g, " ");
+        linkText = `(${label}:: [[#${refString}|*]])`;
+      } else {
+        linkText = `[[#${refString}|*]]`;
+      }
+
+      nodeOutgoingLinks.get(startId).push(linkText);
       
       if (cut) elementsToDelete.push(arrow);
     });
@@ -3449,9 +3475,9 @@ const copyMapAsText = async (cut = false) => {
 
     // --- Append Metadata Suffixes ---
     
-    // 1. Outgoing Crosslinks: [[#^ref|*]]
+    // 1. Outgoing Crosslinks
     if (nodeOutgoingLinks.has(nodeId)) {
-      const links = nodeOutgoingLinks.get(nodeId).map(ref => `[[#${ref}|*]]`).join(" ");
+      const links = nodeOutgoingLinks.get(nodeId).join(" ");
       text += ` ${links}`;
     }
 
@@ -3539,14 +3565,21 @@ const importTextToMap = async (rawText) => {
 
   if (lines.length === 0) return;
 
+  // Regex patterns
+  const boundaryRegex = /\s#boundary\b/;
+  const blockRefRegex = /\s\^([a-zA-Z0-9]{8})$/;
+  // Crosslink regex handling optional inline field syntax: (key:: [[#^ref|*]])
+  // Captures: 1=key(label), 2=ref
+  const crossLinkRegex = /(?:\(([^):]+)::\s*)?\[\[#\^([a-zA-Z0-9]{8})\|\*\]\](?:\))?/g;
+
   if (lines.length === 1) {
     // Simple single line logic (existing behavior)
     let text = lines[0].replace(/^(\s*)(?:-|\*|\d+\.)\s+/, "").trim();
     
     // Cleanup tags for single line paste too
-    text = text.replace(/\s#boundary\b/g, "");
-    text = text.replace(/\s\^([a-zA-Z0-9]{8})$/, "");
-    text = text.replace(/\[\[#\^([a-zA-Z0-9]{8})\|\*\]\]/g, "");
+    text = text.replace(boundaryRegex, "");
+    text = text.replace(blockRefRegex, "");
+    text = text.replace(crossLinkRegex, "");
 
     if (text) {
       currentParent = await addNode(text.trim(), true, false);
@@ -3575,13 +3608,8 @@ const importTextToMap = async (rawText) => {
 
   // Maps for crosslink reconstruction
   const blockRefToNodeId = new Map(); // ^12345678 -> newNodeId
-  const nodeToOutgoingRefs = new Map(); // newNodeId -> [^12345678, ...]
+  const nodeToOutgoingRefs = new Map(); // newNodeId -> [{ref: string, label: string}, ...]
   
-  // Regex patterns
-  const boundaryRegex = /\s#boundary\b/;
-  const blockRefRegex = /\s\^([a-zA-Z0-9]{8})$/;
-  const crossLinkRegex = /\[\[#\^([a-zA-Z0-9]{8})\|\*\]\]/g;
-
   lines.forEach((line) => {
     let text = "";
     let indent = 0;
@@ -3616,11 +3644,18 @@ const importTextToMap = async (rawText) => {
 
       // 3. Check for Crosslinks (Outgoing)
       const outgoingRefs = [];
-      let linkMatch;
-      while ((linkMatch = crossLinkRegex.exec(text)) !== null) {
-        outgoingRefs.push(linkMatch[1]);
-      }
-      text = text.replace(crossLinkRegex, "");
+      // Reset lastIndex because we're reusing the global regex
+      crossLinkRegex.lastIndex = 0;
+      
+      // We need to loop manually to strip the text while collecting matches
+      // We use replace with a callback to both extract data and remove the substring
+      text = text.replace(crossLinkRegex, (_match, label, ref) => {
+        outgoingRefs.push({
+          ref: ref,
+          label: label ? label.trim() : null
+        });
+        return "";
+      });
 
       parsed.push({ 
         indent, 
@@ -3717,10 +3752,12 @@ const importTextToMap = async (rawText) => {
   //  Generate Crosslinks
   // -------------------------------------------------------------------------
   nodeToOutgoingRefs.forEach((targetRefs, sourceId) => {
-    targetRefs.forEach(ref => {
+    targetRefs.forEach(targetObj => {
+        const { ref, label } = targetObj;
         const targetId = blockRefToNodeId.get(ref);
+        
         if (targetId) {
-            ea.connectObjects(
+            const arrowId = ea.connectObjects(
                 sourceId, null, 
                 targetId, null, 
                 {
@@ -3728,11 +3765,21 @@ const importTextToMap = async (rawText) => {
                     endArrowHead: "triangle"
                 }
             );
-            // Get the newly created arrow (last element) and style it
-            const elements = ea.getElements();
-            const arrow = elements[elements.length - 1];
-            if (arrow && arrow.type === "arrow") {
-                arrow.strokeStyle = "dashed";
+            
+            const arrowEl = ea.getElement(arrowId);
+            if (arrowEl) {
+                arrowEl.strokeStyle = "dashed";
+                
+                if (label) {
+                    const textId = ea.addText(0, 0, label);
+                    const textEl = ea.getElement(textId);
+                    
+                    textEl.containerId = arrowId;
+                    textEl.textAlign = "center";
+                    textEl.textVerticalAlign = "middle";
+                    
+                    arrowEl.boundElements = [{ type: "text", id: textId }];
+                }
             }
         }
     });
