@@ -174,6 +174,7 @@ const STRINGS = {
     ACTION_LABEL_FOLD_ALL: "Fold/Unfold Branch Recursively",
     ACTION_LABEL_DOCK_UNDOCK: "Dock/Undock",
     ACTION_LABEL_HIDE: "Dock & hide",
+    ACTION_LABEL_REARRANGE: "Rearrange Map",
 
     // Tooltips (shared)
     PIN_TOOLTIP_PINNED: "This element is pinned. Click to unpin the location of the selected element",
@@ -708,6 +709,7 @@ const ACTION_LABEL_KEYS = {
   [ACTION_TOGGLE_BOUNDARY]: "TOOLTIP_TOGGLE_BOUNDARY",
   [ACTION_DOCK_UNDOCK]: "ACTION_LABEL_DOCK_UNDOCK",
   [ACTION_HIDE]: "ACTION_LABEL_HIDE",
+  [ACTION_REARRANGE]: "ACTION_LABEL_REARRANGE",
   [ACTION_TOGGLE_FLOATING_EXTRAS]: "TOOLTIP_TOGGLE_FLOATING_EXTRAS",
 };
 
