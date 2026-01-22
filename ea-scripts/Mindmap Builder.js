@@ -200,7 +200,7 @@ const STRINGS = {
     TOOLTIP_OPEN_PALETTE_PICKER: "Open Palette Picker",
     TOOLTIP_FOLD_BRANCH: "Fold/Unfold selected branch",
     TOOLTIP_FOLD_L1_BRANCH: "Fold/Unfold children (Level 1)",
-    TOOLTIP_UNFOLD_BRANCH_ALL: "Unfold branch recursively",
+    TOOLTIP_FOLD_BRANCH_ALL: "Fold/Unfold branch recursively",
     TOOLTIP_IMPORT_OUTLINE: "Import headings from linked file as child nodes",
     TOOLTIP_RESET_TO_DEFAULT: "Reset to default",
 
@@ -5660,7 +5660,7 @@ const renderInput = (container, isFloating = false) => {
   addButton((btn) => {
     foldBtnAll = btn;
     btn.setIcon("wifi");
-    btn.setTooltip(`${t("TOOLTIP_UNFOLD_BRANCH_ALL")} ${getActionHotkeyString(ACTION_FOLD_ALL)}`);
+    btn.setTooltip(`${t("TOOLTIP_FOLD_BRANCH_ALL")} ${getActionHotkeyString(ACTION_FOLD_ALL)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_FOLD_ALL);
     btn.onClick(() => performAction(ACTION_FOLD_ALL));
   }, true);
