@@ -37,6 +37,8 @@ The script balances **automation** (auto-layout, recursive grouping, and contras
 `;
 
 const FOOTER = `
+const VERSION = "v${new Date().toISOString().slice(2, 10).replace(/-/g, ".")}";
+
 if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.1")) {
 new Notice("Please update the Excalidraw Plugin to version 2.19.1 or higher.");
 return;
@@ -59,7 +61,7 @@ const mmbSource = \`
 const FOOTER_TAIL = `\`;
 const script = ea.decompressFromBase64(mmbSource.replaceAll("\\n", "").trim())
 const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
-await new AsyncFunction("ea", "utils", script)(ea, utils);
+await new AsyncFunction("ea", "utils", "VERSION", script)(ea, utils, VERSION);
 `;
 
 function chunkString(input, size) {

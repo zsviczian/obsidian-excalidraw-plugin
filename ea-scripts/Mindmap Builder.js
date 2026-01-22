@@ -205,7 +205,7 @@ const STRINGS = {
 
     // Buttons and labels
     DOCK_TITLE: "Mind Map Builder",
-    HELP_SUMMARY: "Instructions & Shortcuts",
+    HELP_SUMMARY: "Help",
     INPUT_PLACEHOLDER: "Concept... type [[ to insert link",
     BUTTON_COPY: "Copy",
     BUTTON_CUT: "Cut",
@@ -2612,7 +2612,7 @@ const sortL1NodesBasedOnVisualSequence = (l1Nodes, mode, rootCenter) => {
     ea.addAppendUpdateCustomData(node.id, { mindmapOrder: existingNodes.length + i });
   });
 };
-debugger;
+
 /**
  * Main layout execution function.
  * Calculates positions for a tree rooted at rootId and moves elements.
@@ -2840,12 +2840,30 @@ const addImage = async ({pathOrFile, width, leftFacing = false, x=0, y=0, depth 
   return newNodeId;
 }
 
+/**
+ * Initializes the customData for a new Root node with the current global settings.
+ */
+const initializeRootCustomData = (nodeId) => {
+  ea.addAppendUpdateCustomData(nodeId, {
+    growthMode: currentModalGrowthMode,
+    autoLayoutDisabled: false,
+    arrowType: arrowType, // Save the arrow type on new root
+    fontsizeScale,
+    multicolor,
+    boxChildren,
+    roundedCorners,
+    maxWrapWidth: maxWidth,
+    isSolidArrow,
+    centerText
+  });
+};
+
 const addNode = async (text, follow = false, skipFinalLayout = false, batchModeAllElements = null, batchModeParent = null, pos = null) => {
   if (!ea.targetView) return;
   if (!text || text.trim() === "") return;
 
   const st = getAppState();
-  const isBatchMode = !!batchModeParent;
+  const isBatchMode = batchModeAllElements !== null;
 
   let allElements = batchModeAllElements || ea.getViewElements();
   let parent = batchModeParent;
@@ -2955,18 +2973,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       ea.style.backgroundColor = "transparent";
     }
 
-    ea.addAppendUpdateCustomData(newNodeId, {
-      growthMode: currentModalGrowthMode,
-      autoLayoutDisabled: false,
-      arrowType: arrowType, // Save the arrow type on new root
-      fontsizeScale,
-      multicolor,
-      boxChildren,
-      roundedCorners,
-      maxWrapWidth: maxWidth,
-      isSolidArrow,
-      centerText
-    });
+    initializeRootCustomData(newNodeId);
     rootId = newNodeId;
   } else {
     ea.style.strokeColor = nodeColor;
@@ -3095,18 +3102,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
 
     // else make the customParent the root of the new mindmap
     if ((depth === 0 || usingCustomParent) && !parent.customData?.growthMode && !parent.customData?.mindmapOrder) {
-      ea.addAppendUpdateCustomData(parent.id, {
-        growthMode: currentModalGrowthMode,
-        autoLayoutDisabled: false,
-        arrowType: arrowType,
-        fontsizeScale,
-        multicolor,
-        boxChildren,
-        roundedCorners,
-        maxWrapWidth: maxWidth,
-        isSolidArrow,
-        centerText
-      });
+      initializeRootCustomData(parent.id);
     }
 
     if ((parent.type === "image" || parent.type === "embeddable") && typeof parent.customData?.mindmapOrder === "undefined") {
@@ -3558,7 +3554,7 @@ const importTextToMap = async (rawText) => {
   if (!ea.targetView) return;
   if (!rawText) return;
 
-  const sel = getMindmapNodeFromSelection();
+  let sel = getMindmapNodeFromSelection();
   let currentParent;
 
   const lines = rawText.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
@@ -3644,17 +3640,14 @@ const importTextToMap = async (rawText) => {
 
       // 3. Check for Crosslinks (Outgoing)
       const outgoingRefs = [];
-      // Reset lastIndex because we're reusing the global regex
       crossLinkRegex.lastIndex = 0;
       
-      // We need to loop manually to strip the text while collecting matches
-      // We use replace with a callback to both extract data and remove the substring
       text = text.replace(crossLinkRegex, (_match, label, ref) => {
-        outgoingRefs.push({
-          ref: ref,
-          label: label ? label.trim() : null
-        });
-        return "";
+          outgoingRefs.push({
+              ref: ref,
+              label: label ? label.trim() : null
+          });
+          return "";
       });
 
       parsed.push({ 
@@ -3674,6 +3667,8 @@ const importTextToMap = async (rawText) => {
 
   ea.clear();
 
+  const rootSelected = !!sel;
+
   if (!sel) {
     const minIndent = Math.min(...parsed.map((p) => p.indent));
     const topLevelItems = parsed.filter((p) => p.indent === minIndent);
@@ -3686,11 +3681,11 @@ const importTextToMap = async (rawText) => {
     };
 
     if (topLevelItems.length === 1) {
-      currentParent = await addNode(topLevelItems[0].text, true, true, [], null);
+      sel = currentParent = await addNode(topLevelItems[0].text, true, true, [], null);
       processRootMeta(topLevelItems[0], currentParent.id);
       parsed.shift();
     } else {
-      currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true, [], null);
+      sel = currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true, [], null);
     }
   } else {
     currentParent = sel;
@@ -3699,7 +3694,10 @@ const importTextToMap = async (rawText) => {
   }
 
   const stack = [{ indent: -1, node: currentParent }];
-  const initialViewElements = ea.getViewElements();
+
+  if (rootSelected) {
+    ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(el=> !ea.getElement(el.id))); // ensure EA has copies of existing elements
+  }
   
   // Helper to create boundary during import (mimics toggleBoundary logic)
   const createImportBoundary = (nodeId) => {
@@ -3737,7 +3735,7 @@ const importTextToMap = async (rawText) => {
       stack.pop();
     }
     const parentNode = stack[stack.length - 1].node;
-    const currentAllElements = initialViewElements.concat(ea.getElements());
+    const currentAllElements = ea.getElements();
     const newNode = await addNode(item.text, false, true, currentAllElements, parentNode);
     
     // Process Metadata
@@ -3789,11 +3787,11 @@ const importTextToMap = async (rawText) => {
   // "Right-Left" Balanced Layout Adjustment for Imported L1 Nodes
   // -------------------------------------------------------------------------
   const rootIdForImport = sel
-    ? getHierarchy(sel, initialViewElements).rootId 
+    ? getHierarchy(sel, ea.getElements()).rootId 
     : currentParent.id;
 
   const rootElForImport = sel 
-    ? initialViewElements.find(e => e.id === rootIdForImport) 
+    ? ea.getElement(rootIdForImport) 
     : currentParent;
     
   if (rootElForImport) {
@@ -3837,12 +3835,7 @@ const importTextToMap = async (rawText) => {
     }
   }
 
-  await addElementsToView({ shouldSleep: true }); // in case there are images in the imported map
-
-  const rootId = sel
-    ? getHierarchy(sel, ea.getViewElements()).rootId
-    : currentParent.id;
-  await triggerGlobalLayout(rootId);
+  await addElementsToView({ repositionToCursor: true, shouldSleep: true }); // in case there are images in the imported map
 
   const allInView = ea.getViewElements();
   const targetToSelect = sel
@@ -3852,6 +3845,12 @@ const importTextToMap = async (rawText) => {
   if (targetToSelect) {
     ea.selectElementsInView([targetToSelect]);
   }
+
+  const rootId = sel
+    ? getHierarchy(sel, allInView).rootId
+    : currentParent.id;
+  await triggerGlobalLayout(rootId);
+
   notice.setMessage(t("NOTICE_PASTE_COMPLETE"));
   notice.setAutoHide(4000);
 };
@@ -5119,7 +5118,22 @@ const commitEdit = async () => {
 const renderHelp = (container) => {
   helpContainer = container.createDiv();
   detailsEl = helpContainer.createEl("details");
-  detailsEl.createEl("summary", { text: t("HELP_SUMMARY") });
+  const summary = detailsEl.createEl("summary", { 
+    attr: { style: "cursor: pointer;" }
+  });
+  
+  // Title
+  summary.createSpan({ 
+    text: t("HELP_SUMMARY"), 
+    attr: { style: "font-weight: bold;" } 
+  });
+  
+  // Version Number
+  summary.createSpan({ 
+    text: VERSION, 
+    attr: { style: "float: right; color: var(--text-muted); font-size: 0.8em;" } 
+  });
+  
   ea.obsidian.MarkdownRenderer.render(app, getInstructions(), detailsEl.createDiv(), "", ea.plugin);
 };
 
