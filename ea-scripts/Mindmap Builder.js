@@ -5674,7 +5674,7 @@ const renderInput = (container, isFloating = false) => {
   addButton((btn) => {
     copyBtn = btn;
     btn.setIcon("copy");
-    btn.setTooltip(`${t("ACTION_COPY")} ${getActionHotkeyString(ACTION_COPY)}`);
+    btn.setTooltip(`${t("ACTION_LABEL_COPY")} ${getActionHotkeyString(ACTION_COPY)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_COPY);
     btn.onClick(() => performAction(ACTION_COPY));
   }, true);
@@ -5682,14 +5682,14 @@ const renderInput = (container, isFloating = false) => {
   addButton((btn) => {
     cutBtn = btn;
     btn.setIcon("scissors");
-    btn.setTooltip(`${t("ACTION_CUT")} ${getActionHotkeyString(ACTION_CUT)}`);
+    btn.setTooltip(`${t("ACTION_LABEL_CUT")} ${getActionHotkeyString(ACTION_CUT)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_CUT);
     btn.onClick(() => performAction(ACTION_CUT));
   }, true);
 
   addButton((btn) => {
     btn.setIcon("clipboard");
-    btn.setTooltip(`${t("ACTION_PASTE")} ${getActionHotkeyString(ACTION_PASTE)}`);
+    btn.setTooltip(`${t("ACTION_LABEL_PASTE")} ${getActionHotkeyString(ACTION_PASTE)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_PASTE);
     btn.onClick(() => performAction(ACTION_PASTE));
   }, true);
