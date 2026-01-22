@@ -315,17 +315,16 @@ export default {
   AI_OPENAI_DEFAULT_MODEL_DESC:
     "The default AI model to use when generating text. This is a freetext field, so you can enter any valid OpenAI model name. " +
     "Find out more about the available models on the <a href='https://platform.openai.com/docs/models'>OpenAI website</a>.",
-  AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "Enter your default AI model here. e.g.: gpt-3.5-turbo-1106",
+  AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "Enter your default AI model here. e.g.: gpt-5-mini",
   AI_OPENAI_DEFAULT_MAX_TOKENS_NAME: "Max tokens",
   AI_OPENAI_DEFAULT_MAX_TOKENS_DESC:
     "Maximum number of tokens to generate in the API response. Set to 0 to omit the max_tokens field (useful for models that don't support this parameter, such as GPT-5).",
   AI_OPENAI_DEFAULT_IMAGE_MODEL_NAME: "Default Image Generation AI model",
   AI_OPENAI_DEFAULT_IMAGE_MODEL_DESC:
-    "The default AI model to use when generating images. Image editing and variations are only supported by dall-e-2 at this time by OpenAI, " +
-    "for this reason dall-e-2 will automatically be used in such cases regardless of this setting.<br>" +
+    "The default AI model to use when generating images. Image editing and variations are only supported by dall-e-2 and gpt-image-1 at this time by OpenAI.<br>" +
     "This is a freetext field, so you can enter any valid OpenAI model name. " +
     "Find out more about the available models on the <a href='https://platform.openai.com/docs/models'>OpenAI website</a>.",
-  AI_OPENAI_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "Enter your default Image Generation AI model here e.g.: dall-e-3",
+  AI_OPENAI_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "Enter your default Image Generation AI model here e.g.: gpt-image-1",
   AI_OPENAI_DEFAULT_VISION_MODEL_NAME: "Default AI vision model",
   AI_OPENAI_DEFAULT_VISION_MODEL_DESC:
     "The default AI vision model to use when generating text from images. This is a freetext field, so you can enter any valid OpenAI model name. " +
@@ -335,7 +334,7 @@ export default {
     "The default OpenAI API URL. This is a freetext field, so you can enter any valid OpenAI API compatible URL. " +
     "Excalidraw will use this URL when posting API requests to OpenAI. I am not doing any error handling on this field, so make sure you enter a valid URL and only change this if you know what you are doing. ",
   AI_OPENAI_DEFAULT_IMAGE_API_URL_NAME: "OpenAI Image Generation API URL",
-  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "Enter your default AI vision model here. e.g.: gpt-4o",
+  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "Enter your default AI vision model here. e.g.: gpt-5-mini",
   SAVING_HEAD: "Saving",
   SAVING_DESC: "In the 'Saving' section of Excalidraw Settings, you can configure how your drawings are saved. This includes options for compressing Excalidraw JSON in Markdown, setting autosave intervals for both desktop and mobile, defining filename formats, and choosing whether to use the .excalidraw.md or .md file extension. ",
   COMPRESS_NAME: "Compress Excalidraw JSON in Markdown",

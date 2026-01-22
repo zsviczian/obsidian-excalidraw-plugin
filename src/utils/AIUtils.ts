@@ -7,11 +7,12 @@ const handleImageEditPrompt = async (request: AIRequest) : Promise<RequestUrlRes
   const {
     openAIAPIToken,
     openAIImageEditsURL,
+    openAIDefaultImageGenerationModel,
   } = plugin.settings;
   const { image, text, imageGenerationProperties} = request;
 
   const body = new FormData();
-  body.append("model", "dall-e-2");
+  body.append("model", openAIDefaultImageGenerationModel);
   text.trim() !== "" && body.append("prompt", text);
 
   if (image) {
@@ -21,7 +22,7 @@ const handleImageEditPrompt = async (request: AIRequest) : Promise<RequestUrlRes
 
   if (imageGenerationProperties.mask) {
     const maskBlob = await fetch(imageGenerationProperties.mask).then((res) => res.blob());
-    body.append('mask', maskBlob, 'masik.png');
+    body.append('mask', maskBlob, 'mask.png');
   }
 
   imageGenerationProperties.size && body.append("size", imageGenerationProperties.size);
