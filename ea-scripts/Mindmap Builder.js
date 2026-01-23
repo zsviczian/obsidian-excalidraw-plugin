@@ -174,6 +174,7 @@ const STRINGS = {
     ACTION_LABEL_FOLD_ALL: "Fold/Unfold Branch Recursively",
     ACTION_LABEL_DOCK_UNDOCK: "Dock/Undock",
     ACTION_LABEL_HIDE: "Dock & hide",
+    ACTION_LABEL_REARRANGE: "Rearrange Map",
 
     // Tooltips (shared)
     PIN_TOOLTIP_PINNED: "This element is pinned. Click to unpin the location of the selected element",
@@ -199,7 +200,7 @@ const STRINGS = {
     TOOLTIP_OPEN_PALETTE_PICKER: "Open Palette Picker",
     TOOLTIP_FOLD_BRANCH: "Fold/Unfold selected branch",
     TOOLTIP_FOLD_L1_BRANCH: "Fold/Unfold children (Level 1)",
-    TOOLTIP_UNFOLD_BRANCH_ALL: "Unfold branch recursively",
+    TOOLTIP_FOLD_BRANCH_ALL: "Fold/Unfold branch recursively",
     TOOLTIP_IMPORT_OUTLINE: "Import headings from linked file as child nodes",
     TOOLTIP_RESET_TO_DEFAULT: "Reset to default",
 
@@ -270,31 +271,31 @@ const STRINGS = {
     RADIAL_MAX_SWEEP: "Max Sweep Angle",
     DESC_RADIAL_MAX_SWEEP: "Total arc available to fill. 360 uses full circle. Lower values leave a gap between the first and last node.",
     // Others
-    GAP_X:  "Gap X",
+    GAP_X: "Gap X",
     DESC_LAYOUT_GAP_X: "Horizontal distance between parent and child nodes.",
-    GAP_Y:  "Gap Y",
+    GAP_Y: "Gap Y",
     DESC_LAYOUT_GAP_Y: "Vertical distance between sibling nodes. Also used as the base gap for Radial layouts.",
-    GAP_MULTIPLIER:  "Gap Multiplier",
+    GAP_MULTIPLIER: "Gap Multiplier",
     DESC_LAYOUT_GAP_MULTIPLIER: "Vertical spacing for 'leaf' nodes (no children), relative to font size. Low: list-like stacking. High: standard tree spacing.",
-    DIRECTIONAL_ARC_SPAN_RADIANS:  "Directional Arc-span Radians",
+    DIRECTIONAL_ARC_SPAN_RADIANS: "Directional Arc-span Radians",
     DESC_LAYOUT_ARC_SPAN: "Curvature of the child list. Low (0.5): Flatter, list-like. High (2.0): Curved, organic, but risk of overlap.",
-    ROOT_RADIUS_FACTOR:  "Root Radius Factor",
+    ROOT_RADIUS_FACTOR: "Root Radius Factor",
     DESC_LAYOUT_ROOT_RADIUS: "Multiplier for the Root node's bounding box to determine initial radius.",
-    MIN_RADIUS:  "Minimum Radius",
+    MIN_RADIUS: "Minimum Radius",
     DESC_LAYOUT_MIN_RADIUS: "The absolute minimum distance from the root center to the first level of nodes.",
-    RADIUS_PADDING_PER_NODE:  "Radius Padding per Node",
+    RADIUS_PADDING_PER_NODE: "Radius Padding per Node",
     DESC_LAYOUT_RADIUS_PADDING: "Extra radius added per child node to accommodate dense maps.",
-    GAP_MULTIPLIER_RADIAL:  "Radial-layout Gap Multiplier",
+    GAP_MULTIPLIER_RADIAL: "Radial-layout Gap Multiplier",
     DESC_LAYOUT_GAP_RADIAL: "Angular spacing multiplier for Radial mode.",
-    GAP_MULTIPLIER_DIRECTIONAL:  "Vertical-layout Gap Multiplier",
+    GAP_MULTIPLIER_DIRECTIONAL: "Vertical-layout Gap Multiplier",
     DESC_LAYOUT_GAP_DIRECTIONAL: "Spacing multiplier for Right-facing and Left-facing top level branches",
-    INDICATOR_OFFSET:  "Fold Indicator Offset",
+    INDICATOR_OFFSET: "Fold Indicator Offset",
     DESC_LAYOUT_INDICATOR_OFFSET: "Distance of the '...' fold indicator from the node.",
-    INDICATOR_OPACITY:  "Fold Indicator Opacity",
+    INDICATOR_OPACITY: "Fold Indicator Opacity",
     DESC_LAYOUT_INDICATOR_OPACITY: "Opacity of the '...' fold indicator (0-100).",
-    CONTAINER_PADDING:  "Container Padding",
+    CONTAINER_PADDING: "Container Padding",
     DESC_LAYOUT_CONTAINER_PADDING: "Padding inside the box when 'Box Child Nodes' or 'Box/Unbox' is used.",
-    MANUAL_GAP_MULTIPLIER:  "Manual-layout Gap Multiplier",
+    MANUAL_GAP_MULTIPLIER: "Manual-layout Gap Multiplier",
     DESC_LAYOUT_MANUAL_GAP: "Spacing multiplier when adding nodes while Auto-Layout is disabled.",
     MANUAL_JITTER_RANGE: "Manual-layout Jitter Range",
     DESC_LAYOUT_MANUAL_JITTER: "Random position offset when adding nodes while Auto-Layout is disabled.",
@@ -304,7 +305,7 @@ const STRINGS = {
     INSTRUCTIONS: "> [!Tip]\n" +
       ">🚀 Become a MindMap Builder Pro with the Official [MindMap Builder Course](https://www.visual-thinking-workshop.com/mindmap)!\n" +
       "\n" +
-      "- **ENTER**: Add a child node and stay on the current parent for rapid entry. "+
+      "- **ENTER**: Add a child node and stay on the current parent for rapid entry. " +
       "If you press enter when the input field is empty the focus will move to the child node that was most recently added. " +
       "Pressing enter subsequent times will iterate through the new child's siblings\n" +
       "- **Hotkeys**: See configuration at the bottom of the sidepanel\n" +
@@ -319,6 +320,212 @@ const STRINGS = {
       "😍 If you find this script helpful, please [buy me a coffee ☕](https://ko-fi.com/zsolt).",
   },
 };
+
+/**
+ * @param {String} lang {@link LOCALE}
+ * @param {Object} content
+ */
+function addLocale(lang, content) {
+  STRINGS[lang] = content
+};
+
+addLocale("zh", {
+  // Notices
+  NOTICE_SELECT_NODE_TO_COPY: "请选择要复制的节点。",
+  NOTICE_MAP_CUT: "导图已剪切到剪贴板。",
+  NOTICE_BRANCH_CUT: "分支已剪切到剪贴板。",
+  NOTICE_MAP_COPIED: "导图已复制为 Markdown 格式。",
+  NOTICE_BRANCH_COPIED: "分支已复制为列表格式。",
+  NOTICE_CLIPBOARD_EMPTY: "剪贴板为空。",
+  NOTICE_PASTE_ABORTED: "粘贴中止。剪贴板内容非 Markdown 列表或标题。",
+  NOTICE_NO_LIST: "剪贴板中未发现有效的 Markdown 列表。",
+  NOTICE_PASTE_START: "正在粘贴，请稍候，可能需要一些时间…",
+  NOTICE_PASTE_COMPLETE: "粘贴完成。",
+  NOTICE_ACTION_REQUIRES_ARROWS: "此操作需要方向键。仅可修改修饰键。",
+  NOTICE_CONFLICT_WITH_ACTION: "与“{action}”操作冲突",
+  NOTICE_OBSIDIAN_HOTKEY_CONFLICT: "⚠️ Obsidian 热键冲突！\n\n此按键将覆盖：\n“{command}”",
+  NOTICE_GLOBAL_HOTKEY_CONFLICT: "⚠️ 全局热键冲突！\n\n此按键将覆盖：\n“{command}”",
+  NOTICE_NO_HEADINGS: "链接文件中未发现小标题。",
+  NOTICE_CANNOT_EDIT_MULTILINE: "无法直接编辑多行节点。\n请在 Excalidraw 中双击元素进行编辑，然后运行“自动重排导图”来更新布局。",
+  NOTICE_CANNOT_MOVE_PINNED: "无法移动已锁定的节点。请先解锁。",
+  NOTICE_CANNOT_MOVE_ROOT: "无法移动根节点。",
+  NOTICE_CANNOT_PRMOTE_L1: "无法提升 1 级节点。",
+  NOTICE_CANNOT_DEMOTE: "无法降级节点。没有可依附的前置同级节点。",
+  NOTICE_CANNOT_MOVE_AUTO_LAYOUT_DISABLED: "禁用自动布局时无法移动节点。请先启用自动布局。",
+
+  // Action labels (display only)
+  ACTION_LABEL_ADD: "添加子节点",
+  ACTION_LABEL_ADD_SIBLING_AFTER: "添加后置同级节点",
+  ACTION_LABEL_ADD_SIBLING_BEFORE: "添加前置同级节点",
+  ACTION_LABEL_ADD_FOLLOW: "添加 + 跟随",
+  ACTION_LABEL_ADD_FOLLOW_FOCUS: "添加 + 跟随 + 聚焦",
+  ACTION_LABEL_ADD_FOLLOW_ZOOM: "添加 + 跟随 + 缩放",
+  ACTION_LABEL_SORT_ORDER: "更改顺序/提升节点",
+  ACTION_LABEL_EDIT: "编辑节点",
+  ACTION_LABEL_PIN: "锁定/解锁",
+  ACTION_LABEL_BOX: "添加/移除边框",
+  ACTION_LABEL_TOGGLE_GROUP: "编组/解除编组单分支",
+  ACTION_LABEL_COPY: "复制",
+  ACTION_LABEL_CUT: "剪切",
+  ACTION_LABEL_PASTE: "粘贴",
+  ACTION_LABEL_IMPORT_OUTLINE: "导入大纲",
+  ACTION_LABEL_ZOOM: "循环缩放",
+  ACTION_LABEL_FOCUS: "聚焦（并居中）节点",
+  ACTION_LABEL_NAVIGATE: "导航",
+  ACTION_LABEL_NAVIGATE_ZOOM: "导航 & 缩放",
+  ACTION_LABEL_NAVIGATE_FOCUS: "导航 & 聚焦",
+  ACTION_LABEL_FOLD: "折叠/展开分支",
+  ACTION_LABEL_FOLD_L1: "折叠/展开 L1 子节点",
+  ACTION_LABEL_FOLD_ALL: "递归折叠/展开分支",
+  ACTION_LABEL_DOCK_UNDOCK: "停靠/取消停靠",
+  ACTION_LABEL_HIDE: "停靠 & 隐藏",
+  ACTION_LABEL_REARRANGE: "重排导图",
+
+  // Tooltips (shared)
+  PIN_TOOLTIP_PINNED: "此元素已锁定。点击解锁所选元素的位置。",
+  PIN_TOOLTIP_UNPINNED: "此元素未锁定。点击锁定所选元素的位置。",
+  TOGGLE_GROUP_TOOLTIP_GROUP: "编组此分支。仅在“分支编组”禁用时可用。",
+  TOGGLE_GROUP_TOOLTIP_UNGROUP: "解除编组此分支。仅在“分支编组”禁用时可用。",
+  TOOLTIP_EDIT_NODE: "编辑所选节点的文本",
+  TOOLTIP_PIN_INIT: "锁定/解锁节点位置。锁定的节点不会被自动重排。",
+  TOOLTIP_REFRESH: "自动重排导图",
+  TOOLTIP_DOCK: "停靠到侧边面板",
+  TOOLTIP_UNDOCK: "转为浮动窗口",
+  TOOLTIP_ZOOM_CYCLE: "循环切换元素缩放级别",
+  TOOLTIP_TOGGLE_GROUP_BTN: "切换分支的编组状态。仅在“分支编组”禁用时可用。",
+  TOOLTIP_TOGGLE_BOX: "切换节点边框",
+  TOOLTIP_TOGGLE_BOUNDARY: "切换子树边界",
+  TOOLTIP_TOGGLE_FLOATING_EXTRAS: "切换额外控件",
+  TOOLTIP_CONFIGURE_PALETTE: "为分支配置自定义调色板",
+  TOOLTIP_CONFIGURE_LAYOUT: "配置布局设置",
+  TOOLTIP_MOVE_UP: "上移",
+  TOOLTIP_MOVE_DOWN: "下移",
+  TOOLTIP_EDIT_COLOR: "编辑",
+  TOOLTIP_DELETE_COLOR: "删除",
+  TOOLTIP_OPEN_PALETTE_PICKER: "打开颜色选择器",
+  TOOLTIP_FOLD_BRANCH: "折叠/展开所选分支",
+  TOOLTIP_FOLD_L1_BRANCH: "折叠/展开 L1 子节点",
+  TOOLTIP_FOLD_BRANCH_ALL: "递归折叠/展开分支",
+  TOOLTIP_IMPORT_OUTLINE: "从链接文件中导入小标题作为子节点数据",
+  TOOLTIP_RESET_TO_DEFAULT: "恢复默认",
+
+  // Buttons and labels
+  DOCK_TITLE: "MindMap Builder",
+  HELP_SUMMARY: "帮助",
+  INPUT_PLACEHOLDER: "输入概念… 输入 [[ 插入链接",
+  BUTTON_COPY: "复制",
+  BUTTON_CUT: "剪切",
+  BUTTON_PASTE: "粘贴",
+  TITLE_ADD_SIBLING: `使用 ${ea.DEVICE.isMacOS || ea.DEVICE.isIOS ? "OPT" : "ALT"}+Enter 添加同级节点`,
+  TITLE_ADD_FOLLOW: "添加并跟随",
+  TITLE_COPY: "复制分支为文本",
+  TITLE_CUT: "剪切分支为文本",
+  TITLE_PASTE: "从剪贴板粘贴列表",
+  LABEL_ZOOM_LEVEL: "缩放级别",
+  LABEL_GROWTH_STRATEGY: "生长策略",
+  LABEL_ARROW_TYPE: "曲线连接",
+  LABEL_AUTO_LAYOUT: "自动布局",
+  LABEL_GROUP_BRANCHES: "分支编组",
+  LABEL_BOX_CHILD_NODES: "为子节点添加边框",
+  LABEL_ROUNDED_CORNERS: "圆角",
+  LABEL_USE_SCENE_STROKE: "使用场景线条样式",
+  DESC_USE_SCENE_STROKE: "使用场景中最新的线条样式（实线、虚线、点线），否则分支将始终使用实线。",
+  LABEL_MULTICOLOR_BRANCHES: "多色分支",
+  LABEL_MAX_WRAP_WIDTH: "最大折行宽度",
+  LABEL_CENTER_TEXT: "文本居中",
+  DESC_CENTER_TEXT: "关闭：根据位置左/右对齐；开启：文本强制居中。",
+  LABEL_FONT_SIZES: "字体大小",
+  HOTKEY_SECTION_TITLE: "热键配置",
+  HOTKEY_HINT: "这些热键可能覆盖 Obsidian 默认设置。热键作用域默认为局部（⌨️），使用 🌐/🎨/⌨️ 切换作用域：🌐 Excalidraw 标签页可见即生效，🎨 Excalidraw 聚焦时生效，⌨️ 输入框聚焦时生效。",
+  RECORD_HOTKEY_PROMPT: "按下热键…",
+  ARIA_SCOPE_INPUT: "局部（Local）：仅在输入框聚焦时生效",
+  ARIA_SCOPE_EXCALIDRAW: "Excalidraw：输入框或 Excalidraw 聚焦时生效",
+  ARIA_SCOPE_GLOBAL: "全局（Global）：在 Obsidian 任何位置，Excalidraw 可见即生效",
+  ARIA_RESTORE_DEFAULT: "恢复默认",
+  ARIA_CUSTOMIZE_HOTKEY: "自定义此热键",
+  ARIA_OVERRIDE_COMMAND: "将覆盖 Obsidian 命令：\n{command}",
+
+  // Palette manager
+  MODAL_PALETTE_TITLE: "导图分支调色板",
+  LABEL_ENABLE_CUSTOM_PALETTE: "启用自定义调色板",
+  DESC_ENABLE_CUSTOM_PALETTE: "使用以下颜色代替自动生成的颜色。",
+  LABEL_RANDOMIZE_ORDER: "随机顺序",
+  DESC_RANDOMIZE_ORDER: "随机选择颜色而非按顺序选择。",
+  HEADING_ADD_NEW_COLOR: "添加新颜色",
+  HEADING_EDIT_COLOR: "编辑颜色",
+  LABEL_SELECT_COLOR: "选择颜色",
+  BUTTON_CANCEL_EDIT: "取消编辑",
+  BUTTON_ADD_COLOR: "添加颜色",
+  BUTTON_UPDATE_COLOR: "更新颜色",
+
+  // Layout configuration
+  MODAL_LAYOUT_TITLE: "布局配置",
+  // Section Headers
+  SECTION_GENERAL: "常规间距",
+  SECTION_RADIAL: "径向布局（顺时针）",
+  SECTION_DIRECTIONAL: "定向布局（左/右）",
+  SECTION_VISUALS: "视觉元素",
+  SECTION_MANUAL: "手动模式行为",
+  // Radial Strings
+  RADIAL_ASPECT_RATIO: "椭圆长宽比",
+  DESC_RADIAL_ASPECT_RATIO: "控制形状。< 1.0 为瘦长（0.7 为纵向），1.0 为正圆，> 1.0 为宽扁（横向）。",
+  RADIAL_POLE_GAP_BONUS: "极点间距补偿",
+  DESC_RADIAL_POLE_GAP_BONUS: "增加椭圆南北两极区域内节点的间距。值越大，节点沿弧线推得越远。",
+  RADIAL_START_ANGLE: "起始角度",
+  DESC_RADIAL_START_ANGLE: "第一个节点出现的位置（度数）。270 为北，0 为东，90 为南。",
+  RADIAL_MAX_SWEEP: "最大扫过角度",
+  DESC_RADIAL_MAX_SWEEP: "分支可填充的弧范围。360 为全圆。较小的值会使圆不完整。",
+  // Others
+  GAP_X: "水平间距（Gap X）",
+  DESC_LAYOUT_GAP_X: "亲代节点与子节点之间的水平距离。",
+  GAP_Y: "垂直间距（Gap Y）",
+  DESC_LAYOUT_GAP_Y: "同级节点之间的垂直距离。径向布局中的基础间距。",
+  GAP_MULTIPLIER: "间距倍数",
+  DESC_LAYOUT_GAP_MULTIPLIER: "叶节点（无子节点的节点）的垂直间距，相对于字体大小。低：类似列表堆叠；高：标准树状间距。",
+  DIRECTIONAL_ARC_SPAN_RADIANS: "定向张开弧度（Arc-span Radians）",
+  DESC_LAYOUT_ARC_SPAN: "子节点排列的曲率。低（0.5）：较平，类似列表。高（2.0）：弯曲有机，但有重叠风险。",
+  ROOT_RADIUS_FACTOR: "根节点半径系数",
+  DESC_LAYOUT_ROOT_RADIUS: "相对于根节点边框的倍数，决定最初的半径。",
+  MIN_RADIUS: "最小半径",
+  DESC_LAYOUT_MIN_RADIUS: "从根节点中心到第一级节点的最小绝对距离。",
+  RADIUS_PADDING_PER_NODE: "单节点径向空白边距",
+  DESC_LAYOUT_RADIUS_PADDING: "每个子节点额外增加的半径，以适应密集型导图。",
+  GAP_MULTIPLIER_RADIAL: "径向布局间距倍数",
+  DESC_LAYOUT_GAP_RADIAL: "径向布局模式下的角度间距倍数。",
+  GAP_MULTIPLIER_DIRECTIONAL: "垂直方向间距倍数",
+  DESC_LAYOUT_GAP_DIRECTIONAL: "定向布局顶层分支之间的间距倍数。",
+  INDICATOR_OFFSET: "折叠指示符偏移",
+  DESC_LAYOUT_INDICATOR_OFFSET: "折叠指示符（三连点）距离节点的距离。",
+  INDICATOR_OPACITY: "折叠指示符不透明度",
+  DESC_LAYOUT_INDICATOR_OPACITY: "折叠指示符的不透明度（0-100）。",
+  CONTAINER_PADDING: "容器内边距",
+  DESC_LAYOUT_CONTAINER_PADDING: "使用边框样式时的内边距。",
+  MANUAL_GAP_MULTIPLIER: "手动布局间距倍数",
+  DESC_LAYOUT_MANUAL_GAP: "禁用自动布局时添加节点的间距倍数。",
+  MANUAL_JITTER_RANGE: "手动布局抖动范围",
+  DESC_LAYOUT_MANUAL_JITTER: "禁用自动布局时添加节点的随机位置偏移。",
+
+  // Misc
+  INPUT_TITLE_PASTE_ROOT: "MindMap Builder 粘贴",
+  INSTRUCTIONS: "> [!Tip]\n" +
+    ">🚀 想要进阶？欢迎参加官方 [MindMap Builder 课程](https://www.visual-thinking-workshop.com/mindmap)！\n" +
+    "\n" +
+    "- **ENTER**：添加子节点并保留在当前亲代节点上，方便快速输入。" +
+    "若输入框为空时按回车，焦点将移动到最新添加的子节点。" +
+    "连续按回车将在该节点的同级节点间循环切换。\n" +
+    "- **热键**：见侧边面板底部的配置选项。\n" +
+    "- **停靠/取消停靠**：使用按钮或配置好的热键来切换输入框位置。\n" +
+    "- **折叠**：仅在输入框停靠时显示按钮；取消停靠时请使用热键。\n" +
+    "- **ESC**：将浮动输入框停靠，但不激活侧边面板。\n" +
+    "- **着色**：顶层分支拥有独立颜色（多色模式），后代节点继承亲代颜色。\n" +
+    "- **编组**：\n" +
+    "  - 启用“分支编组”将递归地编组子树，从叶节点到顶层分支。\n" +
+    "- **复制/粘贴**：导出/导入含缩进的 Markdown 列表。\n" +
+    "\n" +
+    "😍 如果你觉得这个脚本有用，欢迎 [请我喝杯咖啡 ☕](https://ko-fi.com/zsolt)。",
+});
+
+addLocale("zh-tw", STRINGS["zh"]);
 
 const t = (key, params = {}) => {
   const str = STRINGS[LOCALE]?.[key] ?? STRINGS.en[key] ?? key;
@@ -708,6 +915,7 @@ const ACTION_LABEL_KEYS = {
   [ACTION_TOGGLE_BOUNDARY]: "TOOLTIP_TOGGLE_BOUNDARY",
   [ACTION_DOCK_UNDOCK]: "ACTION_LABEL_DOCK_UNDOCK",
   [ACTION_HIDE]: "ACTION_LABEL_HIDE",
+  [ACTION_REARRANGE]: "ACTION_LABEL_REARRANGE",
   [ACTION_TOGGLE_FLOATING_EXTRAS]: "TOOLTIP_TOGGLE_FLOATING_EXTRAS",
 };
 
@@ -5658,7 +5866,7 @@ const renderInput = (container, isFloating = false) => {
   addButton((btn) => {
     foldBtnAll = btn;
     btn.setIcon("wifi");
-    btn.setTooltip(`${t("TOOLTIP_UNFOLD_BRANCH_ALL")} ${getActionHotkeyString(ACTION_FOLD_ALL)}`);
+    btn.setTooltip(`${t("TOOLTIP_FOLD_BRANCH_ALL")} ${getActionHotkeyString(ACTION_FOLD_ALL)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_FOLD_ALL);
     btn.onClick(() => performAction(ACTION_FOLD_ALL));
   }, true);
@@ -5674,7 +5882,7 @@ const renderInput = (container, isFloating = false) => {
   addButton((btn) => {
     copyBtn = btn;
     btn.setIcon("copy");
-    btn.setTooltip(`${t("ACTION_COPY")} ${getActionHotkeyString(ACTION_COPY)}`);
+    btn.setTooltip(`${t("ACTION_LABEL_COPY")} ${getActionHotkeyString(ACTION_COPY)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_COPY);
     btn.onClick(() => performAction(ACTION_COPY));
   }, true);
@@ -5682,14 +5890,14 @@ const renderInput = (container, isFloating = false) => {
   addButton((btn) => {
     cutBtn = btn;
     btn.setIcon("scissors");
-    btn.setTooltip(`${t("ACTION_CUT")} ${getActionHotkeyString(ACTION_CUT)}`);
+    btn.setTooltip(`${t("ACTION_LABEL_CUT")} ${getActionHotkeyString(ACTION_CUT)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_CUT);
     btn.onClick(() => performAction(ACTION_CUT));
   }, true);
 
   addButton((btn) => {
     btn.setIcon("clipboard");
-    btn.setTooltip(`${t("ACTION_PASTE")} ${getActionHotkeyString(ACTION_PASTE)}`);
+    btn.setTooltip(`${t("ACTION_LABEL_PASTE")} ${getActionHotkeyString(ACTION_PASTE)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_PASTE);
     btn.onClick(() => performAction(ACTION_PASTE));
   }, true);
