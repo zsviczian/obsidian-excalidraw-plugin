@@ -10,6 +10,11 @@ type DataURL = string & { _brand: "DataURL" };
 type FileId = string & { _brand: "FileId" };
 const fileid = customAlphabet("1234567890abcdef", 40);
 
+type Tex2DataURLOptions = {
+  applyThemeFilter?: boolean;
+  themeFilter?: string;
+};
+
 let adaptor: LiteAdaptor;
 let html: any;
 let preamble: string;
@@ -38,7 +43,8 @@ async function getImageSize(src: string): Promise<{ height: number; width: numbe
 export async function tex2dataURL(
   tex: string,
   scale: number = 4,
-  plugin?: any
+  plugin?: any,
+  options?: Tex2DataURLOptions
 ): Promise<{
   mimeType: string;
   fileId: FileId;
@@ -80,6 +86,10 @@ export async function tex2dataURL(
     styleNode.setAttribute("type", "text/css");
     styleNode.appendChild(document.createTextNode(".mjx-solid { stroke-width: 80px; }"));
     svg.appendChild(styleNode);
+
+    if (options?.applyThemeFilter && options.themeFilter) {
+      svg.setAttribute("filter", options.themeFilter);
+    }
 
     if (svg) {
       if(svg.width.baseVal.valueInSpecifiedUnits < 2) {

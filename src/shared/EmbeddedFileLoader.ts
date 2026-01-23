@@ -157,6 +157,31 @@ const applyThemeFilterToBitmapDataURL = async (
     img.src = dataURL;
   });
 
+const applyThemeFilterToSVGDataURL = (
+  dataURL: DataURL,
+  themeFilter: string,
+): DataURL => {
+  const prefix = "data:image/svg+xml;base64,";
+  if (!dataURL || !dataURL.startsWith(prefix)) {
+    return dataURL;
+  }
+  try {
+    const svgText = atob(dataURL.substring(prefix.length));
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgText, "image/svg+xml");
+    const root = doc.documentElement;
+    if (!(root instanceof SVGSVGElement)) {
+      return dataURL;
+    }
+    const svg = root as SVGSVGElement;
+    svg.setAttribute("filter", themeFilter || THEME_FILTER);
+    const serialized = new XMLSerializer().serializeToString(doc);
+    return svgToBase64(serialized) as DataURL;
+  } catch (e) {
+    return dataURL;
+  }
+};
+
 export class EmbeddedFile {
   public file: TFile = null;
   public isSVGwithBitmap: boolean = false;
@@ -193,14 +218,14 @@ export class EmbeddedFile {
     const isPDF = this.file && this.file.extension.toLowerCase() === "pdf";
     const mime = this.mimeType?.toLowerCase?.();
     const isBitmap = mime?.startsWith("image/") && mime !== "image/svg+xml";
-    const invertPreference = getInvertPreference(this.colorMap, !!this.plugin?.settings?.invertBitmapforDarkMode);
-    const needsBitmapInversion =
-      invertPreference &&
-      isBitmap &&
-      !isPDF;
-    const needsPDFInversion = invertPreference && isPDF;
+    const invertBitmapPref = getInvertPreference(this.colorMap, !!this.plugin?.settings?.invertBitmapforDarkMode);
+    const invertSVGPref = getInvertPreference(this.colorMap, !!this.plugin?.settings?.invertSVGforDarkMode);
+    const isSVG = mime === "image/svg+xml";
 
-    return needsBitmapInversion || needsPDFInversion || this.isSVGwithBitmap;
+    const needsBitmapOrPDFInversion = isPDF || (invertBitmapPref && isBitmap);
+    const needsSVGInversion = invertSVGPref && isSVG;
+
+    return needsBitmapOrPDFInversion || needsSVGInversion || this.isSVGwithBitmap;
   }
 
   public resetImage(hostPath: string, imgPath: string) {
@@ -354,7 +379,11 @@ export class EmbeddedFilesLoader {
     this.pdfDocsMap.clear();
   }
 
-  public async getObsidianImage(inFile: TFile | EmbeddedFile, depth: number): Promise<{
+  public async getObsidianImage(
+    inFile: TFile | EmbeddedFile,
+    depth: number,
+    isDark?: boolean,
+  ): Promise<{
     mimeType: MimeType;
     fileId: FileId;
     dataURL: DataURL;
@@ -363,7 +392,10 @@ export class EmbeddedFilesLoader {
     size: { height: number; width: number };
     pdfPageViewProps?: PDFPageViewProps;
   }> {
-    const result = await this._getObsidianImage(inFile, depth);
+    if (typeof isDark === "boolean") {
+      this.isDark = isDark;
+    }
+    const result = await this._getObsidianImage(inFile, depth, isDark);
     this.emptyPDFDocsMap();
     return result;
   }
@@ -513,12 +545,26 @@ export class EmbeddedFilesLoader {
     return localPath;
   }
 
-  private async _getObsidianImage(inFile: TFile | EmbeddedFile, depth: number): Promise<ImgData> {
+  private async _getObsidianImage(
+    inFile: TFile | EmbeddedFile,
+    depth: number,
+    isDark?: boolean,
+  ): Promise<ImgData> {
     if (!this.plugin || !inFile) {
       return null;
     }
 
     const app = this.plugin.app;
+
+    const effectiveIsDark =
+      typeof isDark === "boolean"
+        ? isDark
+        : typeof this.isDark === "boolean"
+          ? this.isDark
+          : undefined;
+    if (typeof effectiveIsDark === "boolean") {
+      this.isDark = effectiveIsDark;
+    }
 
     const isHyperLink = inFile instanceof EmbeddedFile ? inFile.isHyperLink : false;
     const isLocalLink = inFile instanceof EmbeddedFile ? inFile.isLocalLink : false;
@@ -551,7 +597,11 @@ export class EmbeddedFilesLoader {
     let hasSVGwithBitmap = false;
     const isExcalidrawFile = !isHyperLink && !isLocalLink && this.plugin.isExcalidrawFile(file);
     const isPDF = !isHyperLink && !isLocalLink && file.extension.toLowerCase() === "pdf";
-    const invertBitmapInDarkMode = getInvertPreference(normalizedColorMap, isPDF || this.plugin.settings.invertBitmapforDarkMode);
+    const invertBitmapInDarkMode = getInvertPreference(
+      normalizedColorMap,
+      isPDF || this.plugin.settings.invertBitmapforDarkMode,
+    );
+    const invertSVGInDarkMode = getInvertPreference(normalizedColorMap, this.plugin.settings.invertSVGforDarkMode);
 
     if (
       !isHyperLink && !isPDF && !isLocalLink &&
@@ -572,7 +622,7 @@ export class EmbeddedFilesLoader {
     let dURL: DataURL = null;
     if (isExcalidrawFile) {
       const res = await this.getExcalidrawSVG({
-        isDark: this.isDark,
+        isDark: effectiveIsDark ?? this.isDark,
         file,
         depth,
         inFile,
@@ -622,7 +672,19 @@ export class EmbeddedFilesLoader {
     }
 
     if (
-      this.isDark &&
+      (effectiveIsDark ?? this.isDark) &&
+      invertSVGInDarkMode &&
+      dataURL &&
+      mimeType === "image/svg+xml"
+    ) {
+      dataURL = applyThemeFilterToSVGDataURL(
+        dataURL,
+        this.plugin.settings.themeFilter,
+      );
+    }
+
+    if (
+      (effectiveIsDark ?? this.isDark) &&
       invertBitmapInDarkMode &&
       dataURL &&
       mimeType?.startsWith("image/") &&
@@ -677,7 +739,9 @@ export class EmbeddedFilesLoader {
     }
     const entries = excalidrawData.getFileEntries();
     //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,isDark:this.isDark,sceneTheme:excalidrawData.scene.appState.theme});
-    if (this.isDark === undefined) {
+    if (isThemeChange) {
+      this.isDark = excalidrawData?.scene?.appState?.theme === "dark";
+    } else if (this.isDark === undefined) {
       this.isDark = excalidrawData?.scene?.appState?.theme === "dark";
     }
     let entry: IteratorResult<[FileId, EmbeddedFile]>;
@@ -737,9 +801,19 @@ export class EmbeddedFilesLoader {
           if (this.terminate) {
             return;
           }
-          if (!excalidrawData.getEquation(id).isLoaded) {
+          const invertPreference = getInvertPreference(equation?.colorMap, this.plugin.settings.invertSVGforDarkMode);
+          const shouldReloadForTheme = isThemeChange && invertPreference;
+          if (!excalidrawData.getEquation(id).isLoaded || shouldReloadForTheme) {
             const latex = equation.latex;
-            const data = await tex2dataURL(latex, 4, this.plugin);
+            const data = await tex2dataURL(
+              latex,
+              4,
+              this.plugin,
+              {
+                applyThemeFilter: this.isDark && this.plugin.settings.invertSVGforDarkMode,
+                themeFilter: this.plugin.settings.themeFilter,
+              },
+            );
             if (data) {
               const fileData = {
                 mimeType: data.mimeType,
@@ -748,7 +822,7 @@ export class EmbeddedFilesLoader {
                 created: data.created,
                 size: data.size,
                 hasSVGwithBitmap: false,
-                shouldScale: true
+                shouldScale: true,
               };
               files[batch].push(fileData);
             }
@@ -1135,7 +1209,7 @@ export class EmbeddedFilesLoader {
       const ef = new EmbeddedFile(plugin,file.path,src);
       //const f = app.metadataCache.getFirstLinkpathDest(src.split("#")[0],file.path);
       if(!ef.file) continue;
-      const embeddedFile = await this._getObsidianImage(ef,1);
+      const embeddedFile = await this._getObsidianImage(ef,1,this.isDark);
       const img = createEl("img");
       if(width) img.setAttribute("width", width);
       if(height) img.setAttribute("height", height);

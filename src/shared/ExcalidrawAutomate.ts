@@ -709,7 +709,7 @@ export class ExcalidrawAutomate {
   public getAPI(view?:ExcalidrawView):ExcalidrawAutomate {
     const ea = new ExcalidrawAutomate(this.plugin, view);
     if(view && view.excalidrawAPI) {
-      ea.setTheme(view.excalidrawAPI.getAppState().theme);
+      ea.canvas.theme = view.excalidrawAPI.getAppState().theme;
     }
     this.plugin.eaInstances.push(ea);
     return ea;
@@ -2198,8 +2198,8 @@ export class ExcalidrawAutomate {
       this.canvas.theme === "dark",
     );
     const image = (typeof imageFile === "string")
-      ? await loader.getObsidianImage(new EmbeddedFile(this.plugin, "", imageFile),0)
-      : await loader.getObsidianImage(imageFile,0);
+      ? await loader.getObsidianImage(new EmbeddedFile(this.plugin, "", imageFile),0, this.canvas.theme === "dark")
+      : await loader.getObsidianImage(imageFile,0, this.canvas.theme === "dark");
       
     if (!image) {
       return null;
@@ -2263,8 +2263,18 @@ export class ExcalidrawAutomate {
     if (!tex){
       return null;
     }
+    const currentTheme = this.targetView?.excalidrawAPI?.getAppState().theme ?? this.canvas.theme;
+    const applyFilter = currentTheme === "dark" && this.plugin.settings.invertSVGforDarkMode;
     const id = nanoid();
-    const image = await tex2dataURL(tex, 4, this.plugin);
+    const image = await tex2dataURL(
+      tex,
+      4,
+      this.plugin,
+      {
+        applyThemeFilter: applyFilter,
+        themeFilter: this.plugin.settings.themeFilter,
+      },
+    );
     if (!image) {
       return null;
     }
@@ -2299,7 +2309,8 @@ export class ExcalidrawAutomate {
    */
   async tex2dataURL(
     tex: string,
-    scale: number = 4 // Default scale value, adjust as needed
+    scale: number = 4, // Default scale value, adjust as needed
+    options?: { applyThemeFilter?: boolean; themeFilter?: string },
   ): Promise<{
     mimeType: MimeType;
     fileId: FileId;
@@ -2307,7 +2318,12 @@ export class ExcalidrawAutomate {
     created: number;
     size: { height: number; width: number };
   }> {
-    return await tex2dataURL(tex,scale, this.plugin);
+    const currentTheme = this.targetView?.excalidrawAPI?.getAppState().theme ?? this.canvas.theme;
+    const themeOptions = options ?? {
+      applyThemeFilter: currentTheme === "dark" && this.plugin.settings.invertSVGforDarkMode,
+      themeFilter: this.plugin.settings.themeFilter,
+    };
+    return await tex2dataURL(tex, scale, this.plugin, themeOptions);
   };
 
   /**
@@ -2580,7 +2596,7 @@ export class ExcalidrawAutomate {
       );
     }
     if (this.targetView && this.targetView.excalidrawAPI) {
-      this.setTheme(this.targetView.excalidrawAPI.getAppState().theme);
+      this.canvas.theme = this.targetView.excalidrawAPI.getAppState().theme;
     }
     return this.targetView;
   };
