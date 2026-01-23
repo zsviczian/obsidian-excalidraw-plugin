@@ -200,7 +200,6 @@ const STRINGS = {
     TOOLTIP_OPEN_PALETTE_PICKER: "Open Palette Picker",
     TOOLTIP_FOLD_BRANCH: "Fold/Unfold selected branch",
     TOOLTIP_FOLD_L1_BRANCH: "Fold/Unfold children (Level 1)",
-    TOOLTIP_FOLD_BRANCH_ALL: "Fold/Unfold branch recursively",
     TOOLTIP_IMPORT_OUTLINE: "Import headings from linked file as child nodes",
     TOOLTIP_RESET_TO_DEFAULT: "Reset to default",
 
@@ -405,7 +404,6 @@ addLocale("zh", {
   TOOLTIP_OPEN_PALETTE_PICKER: "打开颜色选择器",
   TOOLTIP_FOLD_BRANCH: "折叠/展开所选分支",
   TOOLTIP_FOLD_L1_BRANCH: "折叠/展开 L1 子节点",
-  TOOLTIP_FOLD_BRANCH_ALL: "递归折叠/展开分支",
   TOOLTIP_IMPORT_OUTLINE: "从链接文件中导入小标题作为子节点数据",
   TOOLTIP_RESET_TO_DEFAULT: "恢复默认",
 
@@ -5866,7 +5864,7 @@ const renderInput = (container, isFloating = false) => {
   addButton((btn) => {
     foldBtnAll = btn;
     btn.setIcon("wifi");
-    btn.setTooltip(`${t("TOOLTIP_FOLD_BRANCH_ALL")} ${getActionHotkeyString(ACTION_FOLD_ALL)}`);
+    btn.setTooltip(`${t("ACTION_FOLD_ALL")} ${getActionHotkeyString(ACTION_FOLD_ALL)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_FOLD_ALL);
     btn.onClick(() => performAction(ACTION_FOLD_ALL));
   }, true);
