@@ -197,14 +197,16 @@ declare namespace ExcalidrawLib {
 
   function getEmbedLink (link: string | null | undefined): EmbeddedLink;
 
-  function mermaidToExcalidraw(
+  const mermaidToExcalidraw: typeof import("@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/MermaidToExcalidrawLib").mermaidToExcalidraw;
+
+  /*function mermaidToExcalidraw(
     mermaidDefinition: string,
     opts: MermaidConfig,
   ): Promise<{
     elements?: ExcalidrawElement[];
     files?: any;
     error?: string;
-  } | undefined>;
+  } | undefined>;*/
 
   var getSceneVersion: any;
   var Excalidraw: any;
