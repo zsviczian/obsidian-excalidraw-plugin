@@ -13,7 +13,7 @@ import {
   FRONTMATTER_KEYS,
   getCSSFontDefinition,
 } from "../constants/constants";
-import { createSVG, normalizeColorMap } from "src/utils/excalidrawAutomateUtils";
+import { createSVG } from "src/utils/excalidrawAutomateUtils";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
 import { t } from "../lang/helpers";
 import { tex2dataURL } from "./LaTeX";
@@ -54,6 +54,8 @@ import { ExportSettings } from "src/types/exportUtilTypes";
 //and getObsidianImage is aborted if the file is already in the Watchdog stack
 const  markdownRendererRecursionWatcthdog = new Set<TFile>();
 
+
+
 /**
  * Function takes an SVG and replaces all fill and stroke colors with the ones in the colorMap
  * @param svg: SVGSVGElement
@@ -61,17 +63,13 @@ const  markdownRendererRecursionWatcthdog = new Set<TFile>();
  * @returns svg with colors replaced
  */
 const replaceSVGColors = (svg: SVGSVGElement | string, colorMap: ColorMap | null): SVGSVGElement | string => {
-  const normalizedColorMap = normalizeColorMap(colorMap);
-  if(!normalizedColorMap) {
+  if(!colorMap) {
     return svg;
   }
 
   if(typeof svg === 'string') {
     // Replace colors in the SVG string
-    for (const [oldColor, newColor] of Object.entries(normalizedColorMap)) {
-      if(typeof newColor !== "string" || oldColor === "invertInDarkMode") {
-        continue;
-      }
+    for (const [oldColor, newColor] of Object.entries(colorMap)) {
       if(oldColor === "stroke" || oldColor === "fill") {
         const [svgTag, prefix, suffix] = (svg.match(/(<svg[^>]*)(>)/i) || []) as string[];
         if (!svgTag) continue;
@@ -104,11 +102,11 @@ const replaceSVGColors = (svg: SVGSVGElement | string, colorMap: ColorMap | null
       const oldFill = node.getAttribute('fill')?.toLocaleLowerCase();
       const oldStroke = node.getAttribute('stroke')?.toLocaleLowerCase();
 
-      if (oldFill && typeof normalizedColorMap[oldFill] === "string") {
-        node.setAttribute('fill', normalizedColorMap[oldFill] as string);
+      if (oldFill && colorMap[oldFill]) {
+        node.setAttribute('fill', colorMap[oldFill]);
       }
-      if (oldStroke && typeof normalizedColorMap[oldStroke] === "string") {
-        node.setAttribute('stroke', normalizedColorMap[oldStroke] as string);
+      if (oldStroke && colorMap[oldStroke]) {
+        node.setAttribute('stroke', colorMap[oldStroke]);
       }
     }
     for(const child of node.childNodes) {
@@ -116,71 +114,14 @@ const replaceSVGColors = (svg: SVGSVGElement | string, colorMap: ColorMap | null
     }
   }
 
-  if(typeof normalizedColorMap.fill === "string") svg.setAttribute("fill", normalizedColorMap.fill);
-  if(typeof normalizedColorMap.stroke === "string") svg.setAttribute("stroke", normalizedColorMap.stroke);
+  if("fill" in colorMap) svg.setAttribute("fill", colorMap.fill);
+  if("stroke" in colorMap) svg.setAttribute("stroke", colorMap.stroke);
   for (const child of svg.childNodes) {
     childNodes(child);
   }
 
   return svg;
 }
-
-const getInvertPreference = (colorMap: ColorMap | null | undefined, fallback: boolean): boolean =>
-  typeof colorMap?.invertInDarkMode === "boolean" ? colorMap.invertInDarkMode : fallback;
-
-const applyThemeFilterToBitmapDataURL = async (
-  dataURL: DataURL,
-  mimeType: MimeType,
-  themeFilter: string,
-): Promise<DataURL> =>
-  new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      try {
-        const canvas = createEl("canvas");
-        const ctx = canvas.getContext("2d");
-        if(!ctx) {
-          reject(new Error("Canvas 2D context unavailable"));
-          return;
-        }
-
-        canvas.width = img.naturalWidth || img.width;
-        canvas.height = img.naturalHeight || img.height;
-        ctx.filter = themeFilter || THEME_FILTER;
-        ctx.drawImage(img, 0, 0);
-        resolve(canvas.toDataURL(mimeType) as DataURL);
-      } catch (e) {
-        reject(e);
-      }
-    };
-    img.onerror = (e) => reject(e);
-    img.src = dataURL;
-  });
-
-const applyThemeFilterToSVGDataURL = (
-  dataURL: DataURL,
-  themeFilter: string,
-): DataURL => {
-  const prefix = "data:image/svg+xml;base64,";
-  if (!dataURL || !dataURL.startsWith(prefix)) {
-    return dataURL;
-  }
-  try {
-    const svgText = atob(dataURL.substring(prefix.length));
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(svgText, "image/svg+xml");
-    const root = doc.documentElement;
-    if (!(root instanceof SVGSVGElement)) {
-      return dataURL;
-    }
-    const svg = root as SVGSVGElement;
-    svg.setAttribute("filter", themeFilter || THEME_FILTER);
-    const serialized = new XMLSerializer().serializeToString(doc);
-    return svgToBase64(serialized) as DataURL;
-  } catch (e) {
-    return dataURL;
-  }
-};
 
 export class EmbeddedFile {
   public file: TFile = null;
@@ -204,10 +145,9 @@ export class EmbeddedFile {
   constructor(plugin: ExcalidrawPlugin, hostPath: string, imgPath: string, colorMapJSON?: string) {
     this.plugin = plugin;
     this.resetImage(hostPath, imgPath);
-    if(this.file) { // && (this.plugin.isExcalidrawFile(this.file) || this.file.extension.toLowerCase() === "svg")) {
+    if(this.file && (this.plugin.isExcalidrawFile(this.file) || this.file.extension.toLowerCase() === "svg")) {
       try {
-        const parsedColorMap = colorMapJSON ? JSON.parse(colorMapJSON) : null;
-        this.colorMap = normalizeColorMap(parsedColorMap);
+        this.colorMap = colorMapJSON ? JSON.parse(colorMapJSON.toLocaleLowerCase()) : null;
       } catch (error) {
         this.colorMap = null;
       }
@@ -215,17 +155,7 @@ export class EmbeddedFile {
   }
 
   get hasSeparateDarkAndLightVersion(): boolean {
-    const isPDF = this.file && this.file.extension.toLowerCase() === "pdf";
-    const mime = this.mimeType?.toLowerCase?.();
-    const isBitmap = mime?.startsWith("image/") && mime !== "image/svg+xml";
-    const invertBitmapPref = getInvertPreference(this.colorMap, !!this.plugin?.settings?.invertBitmapforDarkMode);
-    const invertSVGPref = getInvertPreference(this.colorMap, !!this.plugin?.settings?.invertSVGforDarkMode);
-    const isSVG = mime === "image/svg+xml";
-
-    const needsBitmapOrPDFInversion = isPDF || (invertBitmapPref && isBitmap);
-    const needsSVGInversion = invertSVGPref && isSVG;
-
-    return needsBitmapOrPDFInversion || needsSVGInversion || this.isSVGwithBitmap;
+    return this.isSVGwithBitmap;
   }
 
   public resetImage(hostPath: string, imgPath: string) {
@@ -379,11 +309,7 @@ export class EmbeddedFilesLoader {
     this.pdfDocsMap.clear();
   }
 
-  public async getObsidianImage(
-    inFile: TFile | EmbeddedFile,
-    depth: number,
-    isDark?: boolean,
-  ): Promise<{
+  public async getObsidianImage(inFile: TFile | EmbeddedFile, depth: number): Promise<{
     mimeType: MimeType;
     fileId: FileId;
     dataURL: DataURL;
@@ -392,10 +318,7 @@ export class EmbeddedFilesLoader {
     size: { height: number; width: number };
     pdfPageViewProps?: PDFPageViewProps;
   }> {
-    if (typeof isDark === "boolean") {
-      this.isDark = isDark;
-    }
-    const result = await this._getObsidianImage(inFile, depth, isDark);
+    const result = await this._getObsidianImage(inFile, depth);
     this.emptyPDFDocsMap();
     return result;
   }
@@ -429,10 +352,7 @@ export class EmbeddedFilesLoader {
       skipInliningFonts: false,
     };
 
-    const colorMap = inFile instanceof EmbeddedFile ? inFile.colorMap : null;
-    const invertBitmapInDarkMode = getInvertPreference(colorMap, this.plugin.settings.invertBitmapforDarkMode);
-    const invertSVGInDarkMode = getInvertPreference(colorMap, this.plugin.settings.invertSVGforDarkMode);
-    const hasColorMap = Boolean(colorMap);
+    const hasColorMap = Boolean(inFile instanceof EmbeddedFile ? inFile.colorMap : null);
     const shouldUseCache = !hasColorMap && this.plugin.settings.allowImageCacheInScene && file && imageCache.isReady();
     const hasFilenameParts = Boolean((inFile instanceof EmbeddedFile) && inFile.filenameparts);
     const filenameParts = hasFilenameParts ? (inFile as EmbeddedFile).filenameparts : null;
@@ -489,7 +409,7 @@ export class EmbeddedFilesLoader {
           depth+1,
           getExportPadding(this.plugin, file),
         ),
-        colorMap
+        inFile instanceof EmbeddedFile ? inFile.colorMap : null
       ) as SVGSVGElement;
 
     //https://stackoverflow.com/questions/51154171/remove-css-filter-on-child-elements
@@ -500,21 +420,14 @@ export class EmbeddedFilesLoader {
       hasSVGwithBitmap = true;
     }
 
-    if (isDark && invertSVGInDarkMode) {
-      svg.setAttribute("filter", this.plugin.settings.themeFilter);
-    }
-    if (isDark && hasSVGwithBitmap && !Boolean(maybeSVG) && (
-      (!invertBitmapInDarkMode && invertSVGInDarkMode) ||
-      (invertBitmapInDarkMode && !invertSVGInDarkMode)
-    )) {
+    if (hasSVGwithBitmap && isDark && !Boolean(maybeSVG)) { 
       imageList.forEach((i) => {
         const id = i.parentElement?.id;
         svg.querySelectorAll(`use[href='#${id}']`).forEach((u) => {
-          u.setAttribute("filter", this.plugin.settings.themeFilter);
+          u.setAttribute("filter", THEME_FILTER);
         });
       });
     }
-    
     if (!hasSVGwithBitmap && svg.getAttribute("hasbitmap")) {
       hasSVGwithBitmap = true;
     }
@@ -545,34 +458,16 @@ export class EmbeddedFilesLoader {
     return localPath;
   }
 
-  private async _getObsidianImage(
-    inFile: TFile | EmbeddedFile,
-    depth: number,
-    isDark?: boolean,
-  ): Promise<ImgData> {
+  private async _getObsidianImage(inFile: TFile | EmbeddedFile, depth: number): Promise<ImgData> {
     if (!this.plugin || !inFile) {
       return null;
     }
 
     const app = this.plugin.app;
 
-    const effectiveIsDark =
-      typeof isDark === "boolean"
-        ? isDark
-        : typeof this.isDark === "boolean"
-          ? this.isDark
-          : undefined;
-    if (typeof effectiveIsDark === "boolean") {
-      this.isDark = effectiveIsDark;
-    }
-
     const isHyperLink = inFile instanceof EmbeddedFile ? inFile.isHyperLink : false;
     const isLocalLink = inFile instanceof EmbeddedFile ? inFile.isLocalLink : false;
     const hyperlink = inFile instanceof EmbeddedFile ? inFile.hyperlink : "";
-    const normalizedColorMap = inFile instanceof EmbeddedFile ? normalizeColorMap(inFile.colorMap) : null;
-    if (inFile instanceof EmbeddedFile) {
-      inFile.colorMap = normalizedColorMap;
-    }
     const file: TFile = inFile instanceof EmbeddedFile ? inFile.file : inFile;
     if(file && markdownRendererRecursionWatcthdog.has(file)) {
       new Notice(`Loading of ${file.path}. Please check if there is an inifinite loop of one file embedded in the other.`);
@@ -597,11 +492,6 @@ export class EmbeddedFilesLoader {
     let hasSVGwithBitmap = false;
     const isExcalidrawFile = !isHyperLink && !isLocalLink && this.plugin.isExcalidrawFile(file);
     const isPDF = !isHyperLink && !isLocalLink && file.extension.toLowerCase() === "pdf";
-    const invertBitmapInDarkMode = getInvertPreference(
-      normalizedColorMap,
-      isPDF || this.plugin.settings.invertBitmapforDarkMode,
-    );
-    const invertSVGInDarkMode = getInvertPreference(normalizedColorMap, this.plugin.settings.invertSVGforDarkMode);
 
     if (
       !isHyperLink && !isPDF && !isLocalLink &&
@@ -622,7 +512,7 @@ export class EmbeddedFilesLoader {
     let dURL: DataURL = null;
     if (isExcalidrawFile) {
       const res = await this.getExcalidrawSVG({
-        isDark: effectiveIsDark ?? this.isDark,
+        isDark: this.isDark,
         file,
         depth,
         inFile,
@@ -658,7 +548,7 @@ export class EmbeddedFilesLoader {
         )
       : excalidrawSVG ?? pdfDataURL ??
         (file?.extension === "svg"
-          ? await getSVGData(app, file, normalizedColorMap)
+          ? await getSVGData(app, file, inFile instanceof EmbeddedFile ? inFile.colorMap : null)
           : file?.extension === "md"
           ? null
           : await getDataURL(ab, mimeType));
@@ -669,36 +559,6 @@ export class EmbeddedFilesLoader {
       markdownRendererRecursionWatcthdog.delete(file);
       dataURL = result.dataURL;
       hasSVGwithBitmap = result.hasSVGwithBitmap;
-    }
-
-    if (
-      (effectiveIsDark ?? this.isDark) &&
-      invertSVGInDarkMode &&
-      dataURL &&
-      mimeType === "image/svg+xml"
-    ) {
-      dataURL = applyThemeFilterToSVGDataURL(
-        dataURL,
-        this.plugin.settings.themeFilter,
-      );
-    }
-
-    if (
-      (effectiveIsDark ?? this.isDark) &&
-      invertBitmapInDarkMode &&
-      dataURL &&
-      mimeType?.startsWith("image/") &&
-      mimeType !== "image/svg+xml"
-    ) {
-      try {
-        dataURL = await applyThemeFilterToBitmapDataURL(
-          dataURL,
-          mimeType,
-          this.plugin.settings.themeFilter,
-        );
-      } catch (error) {
-        errorlog({ where: "EmbeddedFileLoader._getObsidianImage", error });
-      }
     }
     try{
       const size = isPDF ? pdfSize : await getImageSize(dataURL);
@@ -739,9 +599,7 @@ export class EmbeddedFilesLoader {
     }
     const entries = excalidrawData.getFileEntries();
     //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,isDark:this.isDark,sceneTheme:excalidrawData.scene.appState.theme});
-    if (isThemeChange) {
-      this.isDark = excalidrawData?.scene?.appState?.theme === "dark";
-    } else if (this.isDark === undefined) {
+    if (this.isDark === undefined) {
       this.isDark = excalidrawData?.scene?.appState?.theme === "dark";
     }
     let entry: IteratorResult<[FileId, EmbeddedFile]>;
@@ -801,19 +659,9 @@ export class EmbeddedFilesLoader {
           if (this.terminate) {
             return;
           }
-          const invertPreference = getInvertPreference(equation?.colorMap, this.plugin.settings.invertSVGforDarkMode);
-          const shouldReloadForTheme = isThemeChange && invertPreference;
-          if (!excalidrawData.getEquation(id).isLoaded || shouldReloadForTheme) {
+          if (!excalidrawData.getEquation(id).isLoaded) {
             const latex = equation.latex;
-            const data = await tex2dataURL(
-              latex,
-              4,
-              this.plugin,
-              {
-                applyThemeFilter: this.isDark && this.plugin.settings.invertSVGforDarkMode,
-                themeFilter: this.plugin.settings.themeFilter,
-              },
-            );
+            const data = await tex2dataURL(latex, 4, this.plugin);
             if (data) {
               const fileData = {
                 mimeType: data.mimeType,
@@ -1209,7 +1057,7 @@ export class EmbeddedFilesLoader {
       const ef = new EmbeddedFile(plugin,file.path,src);
       //const f = app.metadataCache.getFirstLinkpathDest(src.split("#")[0],file.path);
       if(!ef.file) continue;
-      const embeddedFile = await this._getObsidianImage(ef,1,this.isDark);
+      const embeddedFile = await this._getObsidianImage(ef,1);
       const img = createEl("img");
       if(width) img.setAttribute("width", width);
       if(height) img.setAttribute("height", height);
@@ -1284,25 +1132,13 @@ export class EmbeddedFilesLoader {
     if (imageList.length > 0) {
       hasSVGwithBitmap = true;
     }
-
-    if (this.isDark && hasSVGwithBitmap && (
-      (!this.plugin.settings.invertBitmapforDarkMode && this.plugin.settings.invertSVGforDarkMode) ||
-      (this.plugin.settings.invertBitmapforDarkMode && !this.plugin.settings.invertSVGforDarkMode)
-    )) {
+    if (hasSVGwithBitmap && this.isDark) { 
       imageList.forEach(img => {
         if(img instanceof HTMLImageElement) {
           img.style.filter = THEME_FILTER;
         }
       });
     }
-
-    /*if (hasSVGwithBitmap && this.isDark) { 
-      imageList.forEach(img => {
-        if(img instanceof HTMLImageElement) {
-          img.style.filter = THEME_FILTER;
-        }
-      });
-    }*/
 
     const xml = new XMLSerializer().serializeToString(mdDIV);
     const finalSVG = svg(xml, '<div class="excalidraw-md-footer"></div>', style);
@@ -1310,15 +1146,9 @@ export class EmbeddedFilesLoader {
       finalSVG,
       "image/svg+xml",
     ).firstElementChild as SVGSVGElement;
-
-    if (this.isDark && this.plugin.settings.invertSVGforDarkMode) {
-      plugin.ea.mostRecentMarkdownSVG.setAttribute("filter", this.plugin.settings.themeFilter);
-    }
-
     return {
-      //dataURL: svgToBase64(finalSVG) as DataURL,
-      dataURL: svgToBase64(plugin.ea.mostRecentMarkdownSVG.outerHTML) as DataURL,
-      hasSVGwithBitmap: hasSVGwithBitmap || !!mdDIV.querySelector(".excalidraw-svg"),
+      dataURL: svgToBase64(finalSVG) as DataURL,
+      hasSVGwithBitmap
     };
   };
 }

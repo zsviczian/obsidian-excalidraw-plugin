@@ -3,7 +3,7 @@ import {
   FRONTMATTER_KEYS,
   CJK_FONTS,
 } from "src/constants/constants";
-import { TAG_AUTOEXPORT, TAG_IMAGECACHE, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
+import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
 import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/modifierkeyHelper";
 
 declare const PLUGIN_VERSION:string;
@@ -688,13 +688,6 @@ export default {
   EMBED_IMAGE_CACHE_NAME: "为嵌入到 Markdown 文档中的绘图创建预览图缓存",
   EMBED_IMAGE_CACHE_DESC: "可提高下次嵌入的速度。" +
     "但如果绘图包含子绘图，（当子绘图改变时）预览图不会更新，直到您打开绘图并手动保存。",
-  EMBED_INVERT_SVG: "深色主题下反转嵌入的 Excalidraw 绘图和 SVG 图像",
-  EMBED_INVERT_SVG_DESC: "重新打开绘图后生效。可能需要配合清除 <a href='#"+TAG_IMAGECACHE+"'>预览图缓存</a>。可为某个图像单独设置 colorMap.invertInDarkMode。",
-  EMBED_INVERT_BITMAP: "深色主题下反转嵌入的位图图像",
-  EMBED_INVERT_BITMAP_DESC: "重新打开绘图后生效。可能需要配合清除 <a href='#"+TAG_IMAGECACHE+"'>预览图缓存</a>。可为某个图像单独设置 colorMap.invertInDarkMode。",
-  EMBED_THEME_FILTER_NAME: "用于颜色反转的主题滤镜",
-  EMBED_THEME_FILTER_DESC: "谨慎修改。重新打开绘图后生效。可能需要配合清除 <a href='#"+TAG_IMAGECACHE+"'>预览图缓存</a>。",
-  RESET: "恢复默认",
   SCENE_IMAGE_CACHE_NAME: "缓存场景中嵌套的绘图",
   SCENE_IMAGE_CACHE_DESC: "Excalidraw 将智能地尝试识别嵌套的绘图的子元素是否发生变化，并更新缓存。" +
     "这将加快渲染过程，特别是在您的场景中有深度嵌套的绘图时。<br>" +

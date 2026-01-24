@@ -20,8 +20,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 "2.20.0":`
 ## New
 - Dark theme from Excalidraw.com [#10578](https://github.com/excalidraw/excalidraw/pull/10578)
-  - New setting in Excalidraw plugin settings under "Embedding Excalidraw/Export Settings/Image Theme". You can now choose to invert embedded SVG/Excalidraw and Bitmap images in dark mode.
-  - New Easter Egg feature, by adding {"invertColors": true/false} after the embedded file in Excalidraw markdown view, you can control whether the embedded image inverts colors in dark mode or not, regardless of the global setting.
+  - Easter egg: if you set **customData.invertInDarkmode = true** on an image element, the image will be inverted in dark mode. This is useful for some bitmap images that look better when inverted.
 - New from Excalidraw.com: chat-like interface for Mermaid TextToDiagrams (requires OpenAI API key set in Excalidraw plugin settings). [#10530](https://github.com/excalidraw/excalidraw/pull/10530)
   - Breaking change: the old force-SVG option for Mermaid diagrams is no longer supported. If a diagram can be rendered as Excalidraw it will be, else, an SVG will be used.
 

@@ -48,6 +48,5 @@ export type Size = {
 };
 
 export interface ColorMap {
-  invertInDarkMode?: boolean;
-  [color: string]: string | boolean | undefined;
+  [color: string]: string;
 };

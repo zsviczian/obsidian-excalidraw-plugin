@@ -59,48 +59,15 @@ export function isSVGColorInfo(obj: ColorMap | SVGColorInfo): boolean {
   );
 }
 
-const COLOR_MAP_INVERT_KEY = "invertindarkmode";
-const isReservedColorMapKey = (key: string) => key.toLocaleLowerCase() === COLOR_MAP_INVERT_KEY;
-
-//Normalize color maps and lift the invertInDarkMode flag out of color entries
-export function normalizeColorMap(colorMap?: ColorMap | null): ColorMap | null {
-  if (!colorMap || typeof colorMap !== "object") {
-    return null;
-  }
-
-  const normalized: ColorMap = {};
-  const invert = (colorMap as Record<string, unknown>).invertInDarkMode ?? (colorMap as Record<string, unknown>)[COLOR_MAP_INVERT_KEY];
-  if (typeof invert === "boolean") {
-    normalized.invertInDarkMode = invert;
-  }
-
-  for (const [key, value] of Object.entries(colorMap)) {
-    if (isReservedColorMapKey(key) || typeof value !== "string") {
-      continue;
-    }
-    const normalizedKey = key.toLocaleLowerCase();
-    const normalizedValue = value.toLocaleLowerCase();
-    normalized[normalizedKey] = normalizedValue;
-  }
-
-  return normalized;
-}
-
 export function mergeColorMapIntoSVGColorInfo(
   colorMap: ColorMap,
   svgColorInfo: SVGColorInfo
 ): SVGColorInfo {
-  const normalized = normalizeColorMap(colorMap);
-  if(normalized) {
-    for(const key of Object.keys(normalized)) {
-      if(isReservedColorMapKey(key)) {
-        continue;
+  if(colorMap) {
+    for(const key of Object.keys(colorMap)) {
+      if(svgColorInfo.has(key)) {
+        svgColorInfo.get(key).mappedTo = colorMap[key];
       }
-      const mappedTo = normalized[key];
-      if(!svgColorInfo.has(key) || typeof mappedTo !== "string") {
-        continue;
-      }
-      svgColorInfo.get(key).mappedTo = mappedTo;
     }
   }
   return svgColorInfo;
@@ -117,23 +84,9 @@ export function svgColorInfoToColorMap(svgColorInfo: SVGColorInfo): ColorMap {
 
 //Remove identical key-value pairs from a ColorMap
 export function filterColorMap(colorMap: ColorMap): ColorMap {
-  const normalized = normalizeColorMap(colorMap) ?? {};
-  const filtered: ColorMap = {};
-
-  if (typeof normalized.invertInDarkMode === "boolean") {
-    filtered.invertInDarkMode = normalized.invertInDarkMode;
-  }
-
-  Object.entries(normalized).forEach(([key, value]) => {
-    if (isReservedColorMapKey(key) || typeof value !== "string") {
-      return;
-    }
-    if (key.toLocaleLowerCase() !== value.toLocaleLowerCase()) {
-      filtered[key] = value;
-    }
-  });
-
-  return filtered;
+  return Object.fromEntries(
+    Object.entries(colorMap).filter(([key, value]) => key.toLocaleLowerCase() !== value?.toLocaleLowerCase())
+  );
 }
 
 export function updateOrAddSVGColorInfo(
@@ -714,8 +667,24 @@ export const insertLaTeXToView = (view: ExcalidrawView, center: boolean = false)
         3
       )
   ).then(async (formula: string) => {
+    const lastLatexEl = ea.getViewElements()
+        .filter((el) => el.type === "image" && view.excalidrawData.hasEquation(el.fileId))
+        .reduce(
+          (maxel, curr) => (!maxel || curr.updated > maxel.updated) ? curr : maxel,
+          undefined 
+        ) as ExcalidrawImageElement;
+    let scaleX = 1;
+    let scaleY = 1;
+    if (lastLatexEl) {
+      const equation = view.excalidrawData.getEquation(lastLatexEl.fileId);
+      const dataurl = await ea.tex2dataURL(equation.latex);
+      if (dataurl.size.width > 0 && dataurl.size.height > 0) {
+        scaleX = lastLatexEl.width/dataurl.size.width;
+        scaleY = lastLatexEl.height/dataurl.size.height;
+      }
+    }
     if (formula) {
-      const id = await ea.addLaTex(0, 0, formula);
+      const id = await ea.addLaTex(0, 0, formula, scaleX, scaleY);
       if(center) {
         const el = ea.getElement(id);
         let {width, height} = el;

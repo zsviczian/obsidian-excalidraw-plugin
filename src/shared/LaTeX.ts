@@ -53,7 +53,6 @@ export async function tex2dataURL(
   tex: string,
   scale: number = 4,
   plugin: ExcalidrawPlugin,
-  options?: { applyThemeFilter?: boolean; themeFilter?: string },
 ): Promise<{
   mimeType: MimeType;
   fileId: FileId;
@@ -62,7 +61,7 @@ export async function tex2dataURL(
   size: { height: number; width: number };
 }> {
   await loadMathJax();
-  return tex2dataURLExternal(tex, scale, plugin, options);
+  return tex2dataURLExternal(tex, scale, plugin);
 }
 
 export const clearMathJaxVariables = () => {

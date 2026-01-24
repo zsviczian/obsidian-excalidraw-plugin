@@ -50,7 +50,6 @@ import {
   obsidianToExcalidrawMap,
   MAX_IMAGE_SIZE,
   fileid,
-  sceneCoordsToViewportCoords,
   MD_EX_SECTIONS,
   refreshTextDimensions,
   getContainerElement,
@@ -152,7 +151,6 @@ import { Packages } from "../types/types";
 import React from "react";
 import { diagramToHTML } from "../utils/matic";
 import { IS_WORKER_SUPPORTED } from "../shared/Workers/compression-worker";
-import { getPDFCropRect } from "../utils/PDFUtils";
 import { AutoexportConfig, Position, ViewSemaphores } from "../types/excalidrawViewTypes";
 import { DropManager } from "./managers/DropManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
@@ -164,6 +162,7 @@ import { FileData } from "src/types/embeddedFileLoaderTypes";
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
 import { copyLinkToSelectedElementToClipboard } from "src/shared/Dialogs/copyLinkToSelectedElement";
+import { getPDFCropRect } from "src/utils/PDFUtils";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;

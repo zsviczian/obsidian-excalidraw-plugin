@@ -3,7 +3,7 @@ import {
   FRONTMATTER_KEYS,
   CJK_FONTS,
 } from "src/constants/constants";
-import { TAG_AUTOEXPORT, TAG_IMAGECACHE, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
+import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
 import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/modifierkeyHelper";
 
 declare const PLUGIN_VERSION:string;
@@ -688,13 +688,6 @@ export default {
   EMBED_IMAGE_CACHE_NAME: "Cache images for embedding in markdown",
   EMBED_IMAGE_CACHE_DESC: "Cache images for embedding in markdown. This will speed up the embedding process, but in case you compose images of several sub-component drawings, " +
     "the embedded image in Markdown won't update until you open the drawing and save it to trigger an update of the cache.",
-  EMBED_INVERT_SVG: "Invert embedded Excalidraw drawings and SVG images in dark mode",
-  EMBED_INVERT_SVG_DESC: "The change will only take affect when you reopen your drawing. When changing this setting, you may need to clear the <a href='#"+TAG_IMAGECACHE+"'>image cache</a>. This is the default for all images; set colorMap.invertInDarkMode to override per image.",
-  EMBED_INVERT_BITMAP: "Invert embedded bitmap images in dark mode",
-  EMBED_INVERT_BITMAP_DESC: "The change will only take affect when you reopen your drawing. When changing this setting, you may need to clear the <a href='#"+TAG_IMAGECACHE+"'>image cache</a>. This is the default for all images; set colorMap.invertInDarkMode to override per image.",
-  EMBED_THEME_FILTER_NAME: "Theme filter for color inversion",
-  EMBED_THEME_FILTER_DESC: "Modify this only if you know what you are doing. The change will only take affect when you reopen your drawing. When changing this setting, you may need to clear the <a href='#"+TAG_IMAGECACHE+"'>image cache</a>.",
-  RESET: "Reset to default",
   SCENE_IMAGE_CACHE_NAME: "Cache nested Excalidraws in Scene",
   SCENE_IMAGE_CACHE_DESC: "Cache nested Excalidraws in the Scene for faster scene rendering. This will speed up the rendering process, especially if you have deeply nested Excalidraws in your scene. " + 
     "Excalidraw will try to intelligently identify if any children of a nested Excalidraw have changed and will update the cache accordingly. " +
