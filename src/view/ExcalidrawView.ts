@@ -535,6 +535,43 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const ed = this.exportDialog;
     return ed ? ed.exportInternalLinks : getExportInternalLinks(this.plugin, this.file)
   }
+
+  private async loadFilesForExport(exportTheme: string): Promise<Record<FileId, BinaryFileData> | null> {
+    const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
+    if (!api || !this.excalidrawData) {
+      return null;
+    }
+
+    const viewTheme = api.getAppState().theme;
+    if (!exportTheme || exportTheme === viewTheme) {
+      return null;
+    }
+
+    const loader = new EmbeddedFilesLoader(this.plugin, exportTheme === "dark");
+    const collected: Record<FileId, BinaryFileData> = {};
+    let resolved = false;
+
+    await new Promise<void>((resolve) => {
+      loader.loadSceneFiles({
+        excalidrawData: this.excalidrawData,
+        addFiles: (files: FileData[], _isDark: boolean, final: boolean = true) => {
+          if (files && files.length > 0) {
+            files.forEach((f) => {
+              collected[f.id] = { ...f } as BinaryFileData;
+            });
+          }
+          if (final && !resolved) {
+            resolved = true;
+            resolve();
+          }
+        },
+        depth: 0,
+        isThemeChange: true,
+      });
+    });
+
+    return Object.keys(collected).length ? collected : null;
+  }
   
   public async svg(scene: any, theme?:string, embedScene?: boolean, embedFont: boolean = false): Promise<SVGSVGElement> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.svg, "ExcalidrawView.svg", scene, theme, embedScene);
@@ -546,13 +583,16 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       skipInliningFonts: !embedFont,
     };
 
+    const exportTheme = this.getViewExportTheme(theme);
+    const overrideFiles = await this.loadFilesForExport(exportTheme);
+
     return await getSVG(
       {
         ...scene,
         ...{
           appState: {
             ...scene.appState,
-            theme: this.getViewExportTheme(theme),
+            theme: exportTheme,
             exportEmbedScene: this.getViewExportEmbedScene(embedScene),
           },
         },
@@ -560,6 +600,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       exportSettings,
       this.getViewExportPadding(),
       this.file,
+      overrideFiles ?? undefined,
     );
   }
 
@@ -681,13 +722,16 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       isMask: isMaskFile(this.plugin, this.file),
     };
 
+    const exportTheme = this.getViewExportTheme(theme);
+    const overrideFiles = await this.loadFilesForExport(exportTheme);
+
     return await getPNG(
       {
         ...scene,
         ...{
           appState: {
             ...scene.appState,
-            theme: this.getViewExportTheme(theme),
+            theme: exportTheme,
             exportEmbedScene: this.getViewExportEmbedScene(embedScene),
           },
         },
@@ -695,6 +739,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       exportSettings,
       this.getViewExportPadding(),
       this.getViewExportScale(),
+      overrideFiles ?? undefined,
     );
   }
 

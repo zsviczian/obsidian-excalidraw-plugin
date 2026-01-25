@@ -29,6 +29,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 - Link indicator in top right corner remains visible even if element is set to transparent [#2625](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2625)
 - Loading PDF files with mixed page sizes results in distorted pages [#2578](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2578)
 - Some PDFs did not load in Excalidraw when importing PDFs as images. These were PDFs that used JPEG2000 compression for images. In some documents color profiles were off. Some text rendered with missing/incorrect glyphs.
+- Long standing issue, when exporting an image in a theme different from the current view (i.e. the image is open in dark mode, but you export it in light mode), and if the image included a nested Excalidraw image that includes a bitmap image, the bitmap image would be exported with inverted colors. Fixed.
 
 `,
 "2.19.2":`

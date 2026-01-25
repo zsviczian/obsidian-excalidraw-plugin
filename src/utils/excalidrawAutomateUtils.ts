@@ -1,5 +1,5 @@
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import ExcalidrawPlugin from "src/core/main";
 import {
   ExcalidrawElement,
@@ -394,6 +394,7 @@ export async function createPNG(
   depth: number,
   padding?: number,
   imagesDict?: any,
+  overrideFiles?: Record<ExcalidrawElement["id"], BinaryFileData>,
 ): Promise<Blob> {
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
@@ -435,6 +436,7 @@ export async function createPNG(
     },
     padding,
     scale,
+    overrideFiles,
   );
 }
 
@@ -510,6 +512,7 @@ export async function createSVG(
   imagesDict?: any,
   convertMarkdownLinksToObsidianURLs: boolean = false,
   includeInternalLinks: boolean = true,
+  overrideFiles?: Record<ExcalidrawElement["id"], BinaryFileData>,
 ): Promise<SVGSVGElement> {
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
@@ -560,6 +563,7 @@ export async function createSVG(
     },
     padding,
     null,
+    overrideFiles,
   );
 
   if (withTheme && theme === "dark") addFilterToForeignObjects(svg);

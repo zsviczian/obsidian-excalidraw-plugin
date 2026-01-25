@@ -343,6 +343,7 @@ export async function getSVG (
   exportSettings: ExportSettings,
   padding: number,
   srcFile: TFile|null, //if set, will replace markdown links with obsidian links
+  overrideFiles?: Record<ExcalidrawElement["id"], BinaryFileData>,
 ): Promise<SVGSVGElement> {
   let elements:ExcalidrawElement[] = scene.elements;
   if(elements.some(el => el.type === "embeddable")) {
@@ -359,10 +360,13 @@ export async function getSVG (
     })
     : elements;
 
+  const baseFiles = scene.files ?? {};
+  const files = overrideFiles ? { ...baseFiles, ...overrideFiles } : baseFiles;
+
   try {
     let svg: SVGSVGElement;
     if(exportSettings.isMask) {
-      const cropObject = new CropImage(elements, scene.files);
+      const cropObject = new CropImage(elements, files);
       svg = await cropObject.getCroppedSVG();
       cropObject.destroy();
     } else {
@@ -378,7 +382,7 @@ export async function getSVG (
           ? {frameRendering: exportSettings.frameRendering}
           : {},
         },
-        files: scene.files,
+        files,
         exportPadding: exportSettings.frameRendering?.enabled ? 0 : padding,
         exportingFrame: null,
         renderEmbeddables: true,
@@ -415,10 +419,14 @@ export async function getPNG (
   exportSettings: ExportSettings,
   padding: number,
   scale: number = 1,
+  overrideFiles?: Record<ExcalidrawElement["id"], BinaryFileData>,
 ): Promise<Blob> {
   try {
+    const baseFiles = scene.files ?? {};
+    const files = overrideFiles ? { ...baseFiles, ...overrideFiles } : baseFiles;
+
     if(exportSettings.isMask) {
-      const cropObject = new CropImage(scene.elements, scene.files);
+      const cropObject = new CropImage(scene.elements, files);
       const blob = await cropObject.getCroppedPNG();
       cropObject.destroy();
       return blob;
@@ -436,7 +444,7 @@ export async function getPNG (
         ? {frameRendering: exportSettings.frameRendering}
         : {},
       },
-      files: filterFiles(scene.files),
+      files: filterFiles(files),
       exportPadding: exportSettings.frameRendering?.enabled ? 0 : padding,
       mimeType: "image/png",
       getDimensions: (width: number, height: number) => ({
