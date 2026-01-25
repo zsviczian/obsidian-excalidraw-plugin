@@ -20,6 +20,7 @@ export class InsertPDFModal extends Modal {
   private lockAfterImport: boolean = true;
   private pagesToImport:number[] = [];
   private pageDimensions: {width: number, height: number} = {width: 0, height: 0};
+  private pageDimensionsByPage: Map<number, {width: number; height: number}> = new Map();
   private importScale = 0.3;
   private imageSizeMessage: HTMLElement;
   private pdfDoc: any;
@@ -63,6 +64,7 @@ export class InsertPDFModal extends Modal {
       this.pdfDoc.destroy();
       this.pdfDoc = null;
     }
+    this.pageDimensionsByPage.clear();
     this.plugin = null;
     this.view = null;
     this.app = null;
@@ -70,23 +72,44 @@ export class InsertPDFModal extends Modal {
     this.setImageSizeMessage  = null;
   }
 
-  private async getPDFPageDimensions (pdfDoc: any) {
-    try {
-      const scale = this.plugin.settings.pdfScale;
-      const canvas = createEl("canvas");
-      const page = await pdfDoc.getPage(1);
-      // Set scale
-      const viewport = page.getViewport({ scale });
-      this.pageDimensions.height = viewport.height; 
-      this.pageDimensions.width = viewport.width;
-
-      //https://github.com/excalidraw/excalidraw/issues/4036
-      canvas.width = 0;
-      canvas.height = 0;
-      this.setImageSizeMessage();
-    } catch(e) {
-      console.log(e);
+  private async loadPageDimensions(pages?: number[]) {
+    if(!this.pdfDoc) return;
+    const scale = this.plugin.settings.pdfScale;
+    const pagesToLoad = pages && pages.length > 0 ? [...new Set(pages)] : [1];
+    for (const pageNum of pagesToLoad) {
+      if(this.pageDimensionsByPage.has(pageNum)) continue;
+      try {
+        const page = await this.pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale });
+        this.pageDimensionsByPage.set(pageNum, { width: viewport.width, height: viewport.height });
+      } catch(e) {
+        console.log(e);
+      }
     }
+    this.pageDimensions = this.getMaxSelectedPageDimensions();
+    this.setImageSizeMessage();
+  }
+
+  private getMaxSelectedPageDimensions() {
+    let width = 0;
+    let height = 0;
+    const pages = this.pagesToImport.length > 0
+      ? this.pagesToImport
+      : Array.from(this.pageDimensionsByPage.keys());
+    pages.forEach((p) => {
+      const dims = this.pageDimensionsByPage.get(p);
+      if(!dims) return;
+      width = Math.max(width, dims.width);
+      height = Math.max(height, dims.height);
+    });
+    if(width === 0 || height === 0) {
+      const first = this.pageDimensionsByPage.values().next().value;
+      if(first) {
+        width = first.width;
+        height = first.height;
+      }
+    }
+    return { width, height };
   }
 
 
@@ -118,7 +141,11 @@ export class InsertPDFModal extends Modal {
     return this.pagesToImport;
   }
 
-  private setImageSizeMessage = () => this.imageSizeMessage.innerText = `${Math.round(this.pageDimensions.width*this.importScale)} x ${Math.round(this.pageDimensions.height*this.importScale)}`;
+  private setImageSizeMessage = () => {
+    if(!this.imageSizeMessage) return;
+    const dims = this.getMaxSelectedPageDimensions();
+    this.imageSizeMessage.innerText = `${Math.round(dims.width*this.importScale)} x ${Math.round(dims.height*this.importScale)}`;
+  };
 
   async createForm() {
     await this.plugin.loadSettings();
@@ -136,7 +163,7 @@ export class InsertPDFModal extends Modal {
 
 
     let numPagesMessage: HTMLParagraphElement;
-    let numPages: number;
+    let numPages: number = 0;
     let importButton: ButtonComponent;
     let importMessage: HTMLElement;
     
@@ -174,8 +201,15 @@ export class InsertPDFModal extends Modal {
     let pageRangesTextComponent: TextComponent
     let importPagesMessage: HTMLParagraphElement;
 
-    const rangeOnChange = (value:string) => {
+    const rangeOnChange = async (value:string) => {
       const pages = this.createPageListFromString(value);
+      if(this.pdfDoc && pages.length > 0) {
+        await this.loadPageDimensions(pages);
+      } else {
+        this.pageDimensionsByPage.clear();
+        this.pageDimensions = {width: 0, height: 0};
+        this.setImageSizeMessage();
+      }
       if(pages.length > 15) {
         importPagesMessage.innerHTML = `You are importing <b>${pages.length}</b> pages. ⚠️ This may take a while. ⚠️`;
       } else {
@@ -187,6 +221,10 @@ export class InsertPDFModal extends Modal {
     const setFile = async (file: TFile) => {
       if(this.pdfDoc) await this.pdfDoc.destroy();
       this.pdfDoc = null;
+      this.pageDimensionsByPage.clear();
+      this.pageDimensions = {width: 0, height: 0};
+      numPages = 0;
+      this.setImageSizeMessage();
 
       if(file) {
         this.pdfDoc = await getPDFDoc(file);
@@ -194,14 +232,16 @@ export class InsertPDFModal extends Modal {
         if(this.pdfDoc) {
           numPages = this.pdfDoc.numPages;
           pageRangesTextComponent.setValue(`1-${numPages}`);
-          rangeOnChange(`1-${numPages}`);
+          await rangeOnChange(`1-${numPages}`);
           importButtonMessages();
           numPagesMessages();
-          this.getPDFPageDimensions(this.pdfDoc);
         } else {
           importButton.setDisabled(true);
         }
-      } 
+      } else {
+        importButtonMessages();
+        numPagesMessages();
+      }
     }
 
     const search = new TextComponent(ce);
@@ -225,7 +265,7 @@ export class InsertPDFModal extends Modal {
         pageRangesTextComponent = text;
         text
           .setValue("")
-          .onChange((value) => rangeOnChange(value))
+          .onChange(async (value) => { await rangeOnChange(value); })
         text.inputEl.style.width = "100%";
       })
     importPagesMessage = ce.createEl("p", {text: ""});
@@ -382,9 +422,10 @@ export class InsertPDFModal extends Modal {
         el.innerText = ` ${this.gapSize.toString()}`;
       });
 
+    const initialDims = this.getMaxSelectedPageDimensions();
     const importSizeSetting = new Setting(ce)
       .setName("Imported page size")
-      .setDesc(`${this.pageDimensions.width*this.importScale} x ${this.pageDimensions.height*this.importScale}`)
+      .setDesc(`${Math.round(initialDims.width*this.importScale)} x ${Math.round(initialDims.height*this.importScale)}`)
       .addSlider(slider => slider
         .setLimits(0.1, 1.5, 0.1)
         .setValue(this.importScale)
@@ -395,6 +436,7 @@ export class InsertPDFModal extends Modal {
         }))
     
     this.imageSizeMessage = importSizeSetting.descEl;
+    this.setImageSizeMessage();
 
     const actionButton = new Setting(ce)
       .setDesc("Select a document first")
@@ -406,13 +448,22 @@ export class InsertPDFModal extends Modal {
             const ea = getEA(this.view) as ExcalidrawAutomate;
             let column = 0;
             let row = 0;
-            const imgWidth = Math.round(this.pageDimensions.width*this.importScale);
-            const imgHeight = Math.round(this.pageDimensions.height*this.importScale);
+            await this.loadPageDimensions(this.pagesToImport);
+            const maxPageDimensions = this.getMaxSelectedPageDimensions();
+            const cellWidth = Math.round(maxPageDimensions.width*this.importScale);
+            const cellHeight = Math.round(maxPageDimensions.height*this.importScale);
+            if(cellWidth === 0 || cellHeight === 0) {
+              importMessage.innerText = t("IPM_SELECT_PAGES_TO_IMPORT");
+              return;
+            }
             for(let i = 0; i < this.pagesToImport.length; i++) {
               const page = this.pagesToImport[i];
               importMessage.innerText = `Importing page ${page} (${i+1} of ${this.pagesToImport.length})`;
-              const topX = Math.round(this.pageDimensions.width*this.importScale*column + this.gapSize*column);
-              const topY = Math.round(this.pageDimensions.height*this.importScale*row + this.gapSize*row);
+              const dims = this.pageDimensionsByPage.get(page) ?? maxPageDimensions;
+              const imgWidth = Math.round(dims.width*this.importScale);
+              const imgHeight = Math.round(dims.height*this.importScale);
+              const topX = Math.round(cellWidth*column + this.gapSize*column);
+              const topY = Math.round(cellHeight*row + this.gapSize*row);
 
               ea.style.strokeColor = this.borderBox ? "#000000" : "transparent";
               const boxID = ea.addRect(
