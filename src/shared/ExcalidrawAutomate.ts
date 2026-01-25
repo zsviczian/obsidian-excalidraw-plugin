@@ -606,6 +606,7 @@ export class ExcalidrawAutomate {
     }
     const tab = await spView.createTab({ title, scriptName, hostEA: this });
     this.sidepanelTab = tab;
+    if (reveal) tab.reveal();
     if (persist && this.activeScript) {
       this.persistSidepanelTab();
     }

@@ -170,7 +170,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 		});
 		this.resolveReady?.();
 		this.resolveReady = null;
-		void this.restorePersistedTabs();
+		await this.restorePersistedTabs();
 		this.updateEmptyStateVisibility();
 	}
 

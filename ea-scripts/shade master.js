@@ -723,7 +723,7 @@ function refreshSelectionState() {
 }
 
 // Sidepanel initialization and logic
-ea.createSidepanelTab("Shade Master", true, true).then(tab => {
+ea.createSidepanelTab("Shade Master", false, true).then(tab => {
   if (!tab) return;
 
   const initializeAndRender = async () => {
