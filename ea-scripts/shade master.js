@@ -8,6 +8,7 @@ This script modifies the color lightness/hue/saturation/transparency of selected
 - The color of SVG elements and nested Excalidraw drawings will only be mapped. When mapping colors, the original image remains unchanged, only a mapping table is created and the image is recolored during rendering of your Excalidraw screen. In case you want to make manual changes you can also edit the mapping in Markdown View Mode under `## Embedded Files`
 
 If you select only a single SVG or nested Excalidraw element, then the script offers an additional feature. You can map colors one by one in the image. 
+```js
 */
 
 const HELP_TEXT = `
