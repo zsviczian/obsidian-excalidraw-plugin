@@ -28,6 +28,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 - Full screen on phones left a large area at the top of the screen unused. Fixed issue with Obsidian Mobile Navigation bar floating on top of the Excalidraw toolbar.
 - Link indicator in top right corner remains visible even if element is set to transparent [#2625](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2625)
 - Loading PDF files with mixed page sizes results in distorted pages [#2578](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2578)
+- Some PDFs did not load in Excalidraw when importing PDFs as images. These were PDFs that used JPEG2000 compression for images. In some documents color profiles were off. Some text rendered with missing/incorrect glyphs.
 
 `,
 "2.19.2":`

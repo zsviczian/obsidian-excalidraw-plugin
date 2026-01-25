@@ -305,7 +305,22 @@ export const arrayBufferToBase64 = (arrayBuffer: ArrayBuffer): string => {
 
 export const getPDFDoc = async (f: TFile): Promise<any> => {
   if(typeof window.pdfjsLib === "undefined") await loadPdfJs();
-  return await window.pdfjsLib.getDocument(EXCALIDRAW_PLUGIN.app.vault.getResourcePath(f)).promise;
+
+  const pdfjs = window.pdfjsLib;
+  const url = EXCALIDRAW_PLUGIN.app.vault.getResourcePath(f);
+
+  const workerSrc = pdfjs.GlobalWorkerOptions.workerSrc as string;
+  const workerDir = workerSrc?.replace(/pdf\.worker(\.min)?\.m?js$/, "");
+  const wasmUrl = workerDir ? `${workerDir}wasm/` : undefined;
+
+  return await pdfjs.getDocument({
+    url,
+    wasmUrl,
+    cMapUrl: "/lib/pdfjs/cmaps/",
+    cMapPacked: true,
+    standardFontDataUrl: "/lib/pdfjs/standard_fonts/",
+    iccUrl: "/lib/pdfjs/iccs/",
+  }).promise;
 }
 
 export const readLocalFile = async (filePath:string): Promise<string> => {
