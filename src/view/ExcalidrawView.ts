@@ -66,7 +66,8 @@ import {
   getFrameElementsMatchingQuery,
   getElementsWithLinkMatchingQuery,
   getImagesMatchingQuery,
-  getBoundTextElementId
+  getBoundTextElementId,
+  getEmbeddedFileForImageElment
 } from "../utils/excalidrawAutomateUtils";
 import { t } from "../lang/helpers";
 import {
@@ -5144,6 +5145,92 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             onClose
           ),
         ]);
+      }
+
+      const selectedImages = this.getViewSelectedElements().filter(el => el.type === "image") as ExcalidrawImageElement[];
+      if(selectedImages.length > 0) {
+        type ImageType = "svg" | "pdf" | "bitmap" | "excalidraw";
+
+        const getImageType = (embeddedFile: EmbeddedFile | null | undefined): ImageType | null => {
+          if(!embeddedFile) return null;
+          if(embeddedFile.file && this.plugin.isExcalidrawFile(embeddedFile.file)) return "excalidraw";
+          if(embeddedFile.file?.extension?.toLowerCase?.() === "pdf" || !!embeddedFile.pdfPageViewProps) return "pdf";
+          if(embeddedFile.mimeType === "image/svg+xml") return "svg";
+          return "bitmap";
+        };
+
+        const getInvertInDarkMode = (
+          imageEl: ExcalidrawImageElement,
+          embeddedFile: EmbeddedFile,
+          imageType: ImageType,
+        ): boolean => {
+          const invertBitmap = imageEl.customData?.invertBitmapInDarkmode;
+          if(imageType === "svg" || imageType === "excalidraw") {
+            return imageEl.customData?.doNotInvertSVGInDarkMode ? false : true;
+          }
+          if(imageType === "pdf") {
+            return typeof invertBitmap === "boolean" ? invertBitmap : true;
+          }
+          return typeof invertBitmap === "boolean" ? invertBitmap : false;
+        };
+
+        const imageMenuState = (() => {
+          const ea = getEA(this) as ExcalidrawAutomate;
+          try {
+            const imagesWithStatus = selectedImages
+              .map(el => {
+                const embeddedFile = getEmbeddedFileForImageElment(ea, el);
+                const imageType = getImageType(embeddedFile);
+                if(!embeddedFile || !imageType) return null;
+                return {
+                  el,
+                  imageType,
+                  invertInDarkMode: getInvertInDarkMode(el, embeddedFile, imageType),
+                };
+              })
+              .filter(Boolean) as { el: ExcalidrawImageElement; imageType: ImageType; invertInDarkMode: boolean; }[];
+            if(imagesWithStatus.length === 0) return null;
+            const reference = imagesWithStatus[0].invertInDarkMode;
+            if(!imagesWithStatus.every(img => img.invertInDarkMode === reference)) return null;
+            return { imagesWithStatus, invertInDarkMode: reference };
+          } finally {
+            ea.destroy();
+          }
+        })();
+
+        if(imageMenuState) {
+          const { imagesWithStatus, invertInDarkMode } = imageMenuState;
+          const newInvertState = !invertInDarkMode;
+          contextMenuActions.push([
+            renderContextMenuAction(
+              React,
+              newInvertState ? t("INVERT_IMAGES_IN_DARK_MODE") : t("DO_NOT_INVERT_IMAGES_IN_DARK_MODE"),
+              async () => {
+                const ea = getEA(this) as ExcalidrawAutomate;
+                ea.copyViewElementsToEAforEditing(imagesWithStatus.map(img => img.el));
+                imagesWithStatus.forEach(img => {
+                  const editableEl = ea.getElement(img.el.id) as Mutable<ExcalidrawImageElement>;
+                  const embeddedFile = getEmbeddedFileForImageElment(ea, editableEl);
+                  const imageType = getImageType(embeddedFile) ?? img.imageType;
+                  if(imageType === "svg" || imageType === "excalidraw") {
+                    addAppendUpdateCustomData(editableEl, {
+                      doNotInvertSVGInDarkMode: newInvertState ? undefined : true,
+                      invertBitmapInDarkmode: undefined,
+                    });
+                  } else {
+                    addAppendUpdateCustomData(editableEl, {
+                      invertBitmapInDarkmode: newInvertState,
+                      doNotInvertSVGInDarkMode: undefined,
+                    });
+                  }
+                });
+                await ea.addElementsToView(false);
+                ea.destroy();
+              },
+              onClose
+            ),
+          ]);
+        }
       }
 
       if(areElementsSelected) {

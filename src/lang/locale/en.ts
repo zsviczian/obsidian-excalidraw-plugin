@@ -93,6 +93,8 @@ export default {
   CONVERT_CARD_TO_FILE: "Move back-of-note card to File",
   ERROR_TRY_AGAIN: "Please try again.",
   PASTE_CODEBLOCK: "Paste code block",
+  INVERT_IMAGES_IN_DARK_MODE: "Invert image(s) in dark mode",
+  DO_NOT_INVERT_IMAGES_IN_DARK_MODE: "Do not invert image(s) in dark mode",
   INSERT_LATEX:
     `Insert LaTeX formula (e.g. \\binom{n}{k} = \\frac{n!}{k!(n-k)!}).`,
   ENTER_LATEX: "Enter a valid LaTeX expression",
