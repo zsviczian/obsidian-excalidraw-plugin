@@ -19,18 +19,19 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 `,
 "2.20.0":`
 ## New
-- Dark theme from Excalidraw.com [#10578](https://github.com/excalidraw/excalidraw/pull/10578)
-  - Easter egg: if you set **customData.invertInDarkmode = true** on an image element, the image will be inverted in dark mode. This is useful for some bitmap images that look better when inverted.
-- New from Excalidraw.com: chat-like interface for Mermaid TextToDiagrams (requires OpenAI API key set in Excalidraw plugin settings). [#10530](https://github.com/excalidraw/excalidraw/pull/10530)
-  - Breaking change: the old force-SVG option for Mermaid diagrams is no longer supported. If a diagram can be rendered as Excalidraw it will be, else, an SVG will be used.
+- Dark theme from Excalidraw.com [#10578](https://github.com/excalidraw/excalidraw/pull/10578) (including correct emoji rendering in dark mode 😍).
+- New image context-menu option (right-click an image) to control whether that image inverts in dark mode
+  - Default behavior: SVG-based images (including LaTeX, Mermaid, and nested Excalidraw images) invert in dark mode; bitmap images (PNG/JPG) do not.
+- New from Excalidraw.com: chat-style interface for Mermaid TextToDiagrams (requires an OpenAI API key configured in Excalidraw plugin settings). [#10530](https://github.com/excalidraw/excalidraw/pull/10530)
+  - Breaking change: the legacy “force SVG” option for Mermaid diagrams is no longer supported. If a diagram can be rendered as Excalidraw, it will be; otherwise, an SVG will be used.
+- Moved the Shade Master script to use the new Sidepanel (just like MindMap Builder).
 
 ## Fixed
-- Full screen on phones left a large area at the top of the screen unused. Fixed issue with Obsidian Mobile Navigation bar floating on top of the Excalidraw toolbar.
-- Link indicator in top right corner remains visible even if element is set to transparent [#2625](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2625)
-- Loading PDF files with mixed page sizes results in distorted pages [#2578](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2578)
-- Some PDFs did not load in Excalidraw when importing PDFs as images. These were PDFs that used JPEG2000 compression for images. In some documents color profiles were off. Some text rendered with missing/incorrect glyphs.
-- Long standing issue, when exporting an image in a theme different from the current view (i.e. the image is open in dark mode, but you export it in light mode), and if the image included a nested Excalidraw image that includes a bitmap image, the bitmap image would be exported with inverted colors. Fixed.
-
+- In full-screen mode on phones, a large area at the top of the screen was left unused. Also fixed an issue where the Obsidian Mobile navigation bar could overlap the Excalidraw toolbar.
+- The link indicator in the top-right corner would remain visible even when an element was set to transparent [#2625](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2625)
+- Importing PDFs with mixed page sizes could produce distorted pages [#2578](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2578)
+- Some PDFs failed to load when importing PDFs as images (notably documents using JPEG2000-compressed images). Also improved handling of certain color profiles and cases where text rendered with missing/incorrect glyphs.
+- A long-standing export issue: when exporting in a theme different from the current view (e.g., viewing in dark mode but exporting in light mode), nested Excalidraw images containing bitmap images could export with inverted colors.
 `,
 "2.19.2":`
 ## Fixed
