@@ -93,6 +93,8 @@ export default {
   CONVERT_CARD_TO_FILE: "将“背景笔记”卡片保存到文件",
   ERROR_TRY_AGAIN: "请重试。",
   PASTE_CODEBLOCK: "粘贴代码块",
+  INVERT_IMAGES_IN_DARK_MODE: "深色主题下反转颜色",
+  DO_NOT_INVERT_IMAGES_IN_DARK_MODE: "取消深色主题下反转颜色",
   INSERT_LATEX:
     `插入 LaTeX 公式到当前绘图中`,
   ENTER_LATEX: "输入 LaTeX 公式",
