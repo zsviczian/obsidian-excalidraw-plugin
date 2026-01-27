@@ -982,9 +982,11 @@ export declare class ExcalidrawAutomate {
      * @param {number} topX - The x-coordinate of the top-left corner.
      * @param {number} topY - The y-coordinate of the top-left corner.
      * @param {string} tex - The LaTeX equation string.
+     * @param {number} [scaleX=1] - The x-scaling factor (post mathjax creation)
+     * @param {number} [scaleY=1] - The y-scaling factor (post mathjax creation)
      * @returns {Promise<string>} Promise resolving to the ID of the added LaTeX image element.
      */
-    addLaTex(topX: number, topY: number, tex: string): Promise<string>;
+    addLaTex(topX: number, topY: number, tex: string, scaleX?: number, scaleY?: number): Promise<string>;
     /**
      * Returns the base64 dataURL of the LaTeX equation rendered as an SVG.
      * @param {string} tex - The LaTeX equation string.
@@ -1606,6 +1608,7 @@ export declare class ExcalidrawAutomate {
     cloneElement(element: ExcalidrawElement): ExcalidrawElement;
     /**
      * Moves the specified element to a specific position in the z-index.
+     * * Operates directly on the Excalidraw Scene in targetView, not through ExcalidrawAutomate elements.
      * @param {number} elementId - The ID of the element to move.
      * @param {number} newZIndex - The new z-index position for the element.
      */
@@ -2201,6 +2204,17 @@ export type ExcalidrawImageElement = _ExcalidrawElementBase & Readonly<{
     scale: [number, number];
     /** whether an element is cropped */
     crop: ImageCrop | null;
+    customData?: {
+        pdfPageViewProps?: {
+            left: number;
+            bottom: number;
+            right: number;
+            top: number;
+            rotate?: number;
+        };
+        doNotInvertSVGInDarkMode?: boolean;
+        invertBitmapInDarkmode?: boolean;
+    };
 }>;
 export type InitializedExcalidrawImageElement = MarkNonNullable<ExcalidrawImageElement, "fileId">;
 type FrameRole = null | "marker";
@@ -2838,7 +2852,7 @@ export interface ExcalidrawProps {
         button: "down" | "up";
         pointersMap: Gesture["pointers"];
     }) => void;
-    onPaste?: (data: ClipboardData, event: ClipboardEvent | null) => Promise<boolean> | boolean;
+    onPaste?: (data: ClipboardData, event: ClipboardEvent | null, files: ParsedDataTransferFile[]) => Promise<boolean> | boolean;
     onDrop?: (event: React.DragEvent<HTMLDivElement>) => Promise<boolean> | boolean;
     /**
      * Called when element(s) are duplicated so you can listen or modify as
@@ -2931,8 +2945,7 @@ export type UIOptions = Partial<{
      * Optionally control the editor form factor and desktop UI mode from the host app.
      * If not provided, we will take care of it internally.
      */
-    formFactor?: EditorInterface["formFactor"];
-    desktopUIMode?: EditorInterface["desktopUIMode"];
+    getFormFactor?: (editorWidth: number, editorHeight: number) => EditorInterface["formFactor"];
     /** @deprecated does nothing. Will be removed in 0.15 */
     welcomeScreen?: boolean;
 }>;
@@ -3479,7 +3492,7 @@ declare class App extends React.Component<AppProps, AppState> {
     render(): import("react/jsx-runtime").JSX.Element;
     focusContainer: AppClassProperties["focusContainer"];
     getSceneElementsIncludingDeleted: () => readonly import("@excalidraw/element/types").OrderedExcalidrawElement[];
-    getSceneElementsMapIncludingDeleted: () => Map<string, Ordered<ExcalidrawElement>> & import("@excalidraw/common/utility-types").MakeBrand<"SceneElementsMap">;
+    getSceneElementsMapIncludingDeleted: () => SceneElementsMap;
     getSceneElements: () => readonly Ordered<NonDeletedExcalidrawElement>[];
     onInsertElements: (elements: readonly ExcalidrawElement[]) => void;
     onExportImage: (type: keyof typeof EXPORT_IMAGE_TYPES, elements: ExportedElements, opts: {
@@ -10883,29 +10896,23 @@ export declare const useI18n: () => {
 /* ************************************** */
 /* ./data/restore -> node_modules/@zsviczian/excalidraw/types/excalidraw/data/restore.d.ts */
 /* ************************************** */
-export declare const restore: (data: Pick<ImportedDataState, "appState" | "elements" | "files"> | null, 
-/**
- * Local AppState (`this.state` or initial state from localStorage) so that we
- * don't overwrite local state with default values (when values not
- * explicitly specified).
- * Supply `null` if you can't get access to it.
- */
-localAppState: Partial<AppState> | null | undefined, localElements: readonly ExcalidrawElement[] | null | undefined, elementsConfig?: {
-    refreshDimensions?: boolean;
-    repairBindings?: boolean;
-    deleteInvisibleElements?: boolean;
-}) => RestoredDataState;
 export declare const restoreAppState: (appState: ImportedDataState["appState"], localAppState: Partial<AppState> | null | undefined) => RestoredAppState;
-export declare const restoreElement: (element: Exclude<ExcalidrawElement, ExcalidrawSelectionElement>, targetElementsMap: Readonly<ElementsMap>, localElementsMap: Readonly<ElementsMap> | null | undefined, opts?: {
+export declare const restoreElement: (
+/** element to be restored */
+element: Exclude<ExcalidrawElement, ExcalidrawSelectionElement>, 
+/** all elements to be restored */
+targetElementsMap: Readonly<ElementsMap>, 
+/** used for additional context */
+existingElementsMap: Readonly<ElementsMap> | null | undefined, opts?: {
     deleteInvisibleElements?: boolean;
 }) => typeof element | null;
-export declare const restoreElements: (targetElements: ImportedDataState["elements"], 
-/** NOTE doesn't serve for reconciliation */
-localElements: Readonly<ElementsMapOrArray> | null | undefined, opts?: {
+export declare const restoreElements: <T extends ExcalidrawElement>(targetElements: readonly T[] | undefined | null, 
+/** used for additional context (e.g. repairing arrow bindings) */
+existingElements: Readonly<ElementsMapOrArray> | null | undefined, opts?: {
     refreshDimensions?: boolean;
     repairBindings?: boolean;
     deleteInvisibleElements?: boolean;
-} | undefined) => OrderedExcalidrawElement[];
+} | undefined) => CombineBrandsIfNeeded<T, OrderedExcalidrawElement>;
 export declare const restoreLibraryItems: (libraryItems: ImportedDataState["libraryItems"], defaultStatus: LibraryItem["status"]) => LibraryItem[];
 
 /* ************************************** */
@@ -10966,14 +10973,14 @@ export declare const getContainerElement: (element: ExcalidrawTextElement | null
 /* ************************************** */
 /* ./components/TTDDialog/MermaidToExcalidrawLib -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/MermaidToExcalidrawLib.d.ts */
 /* ************************************** */
-export declare const mermaidToExcalidraw: (mermaidDefinition: string, opts: MermaidConfig, forceSVG?: boolean) => Promise<{
+export declare const mermaidToExcalidraw: (mermaidDefinition: string, opts: MermaidConfig) => Promise<{
     elements?: ExcalidrawElement[];
 
 /* ************************************** */
 /* ../excalidraw/obsidianUtils -> node_modules/@zsviczian/excalidraw/types/excalidraw/obsidianUtils.d.ts */
 /* ************************************** */
 export declare function getCSSFontDefinition(fontFamily: number): Promise<string>;
-export declare const getDefaultColorPalette: () => [string, string, string, string, string][];
+export declare const getDefaultColorPalette: () => readonly (readonly [string, string, string, string, string])[];
 export declare function getFontFamilies(): string[];
 export declare function getFontMetrics(fontFamily: ExcalidrawTextElement["fontFamily"], fontSize?: number): {
     unitsPerEm: number;
@@ -11005,7 +11012,8 @@ export declare const loadFromBlob: (blob: Blob,
 /** @see restore.localAppState */
 localAppState: AppState | null, localElements: readonly ExcalidrawElement[] | null, 
 /** FileSystemHandle. Defaults to `blob.handle` if defined, otherwise null. */
-fileHandle?: FileSystemHandle | null) => Promise<import("./restore").RestoredDataState>;
+fileHandle?: FileSystemHandle | null) => Promise<{
+    elements: import("@excalidraw/element/types").OrderedExcalidrawElement[];
 export declare const loadLibraryFromBlob: (blob: Blob, defaultStatus?: LibraryItem["status"]) => Promise<LibraryItem[]>;
 export declare const loadSceneOrLibraryFromBlob: (blob: Blob | File, 
 /** @see restore.localAppState */
@@ -11066,10 +11074,17 @@ export declare const DefaultSidebar: import("react").FC<Omit<MarkOptional<Omit<{
 /* ./components/TTDDialog/TTDDialog -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/TTDDialog.d.ts */
 /* ************************************** */
 export declare const TTDDialog: (props: {
-    onTextSubmit(value: string): Promise<OnTestSubmitRetValue>;
+    onTextSubmit: TTTDDialog.onTextSubmit;
+    renderWarning?: TTTDDialog.renderWarning;
+    persistenceAdapter: TTDPersistenceAdapter;
 } | {
     __fallback: true;
 }) => import("react/jsx-runtime").JSX.Element | null;
+
+/* ************************************** */
+/* ./components/TTDDialog/utils/TTDStreamFetch -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/utils/TTDStreamFetch.d.ts */
+/* ************************************** */
+export declare function TTDStreamFetch(options: StreamingOptions): Promise<TTTDDialog.OnTextSubmitRetValue>;
 
 /* ************************************** */
 /* ./actions/actionCanvas -> node_modules/@zsviczian/excalidraw/types/excalidraw/actions/actionCanvas.d.ts */
@@ -11087,13 +11102,6 @@ export declare const zoomToFitBounds: ({ bounds, appState, canvasOffsets, fitToV
 }) => {
     appState: {
         scrollX: number;
-
-/* ************************************** */
-/* ./data/transform -> node_modules/@zsviczian/excalidraw/types/excalidraw/data/transform.d.ts */
-/* ************************************** */
-export declare const convertToExcalidrawElements: (elementsSkeleton: ExcalidrawElementSkeleton[] | null, opts?: {
-    regenerateIds: boolean;
-}) => import("@excalidraw/element/types").OrderedExcalidrawElement[];
 
 /* ************************************** */
 /* @excalidraw/utils/withinBounds -> node_modules/@zsviczian/excalidraw/types/utils/src/withinBounds.d.ts */
@@ -11137,7 +11145,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-01-18T16:47:38.534Z
+Generated on: 2026-01-27T19:45:02.331Z
 
 ---
 
@@ -11614,7 +11622,7 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Mindmap%20Builder.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Mindmap%20Builder.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Rapid mind mapping workflow driven by keyboard shortcuts: add sibling/child nodes, auto-layout and branch styling, quick navigation, optional recursive grouping, and Markdown copy/paste import/export for bullet-list sync.<br><a href="YouTube: qY66yoobaX4" target="_blank"><img src ="https://i.ytimg.com/vi/qY66yoobaX4/maxresdefault.jpg" style="width:400px;"></a><br><a href='YouTube: qY66yoobaX4' target='_blank'>Link to video on YouTube</a><br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-mindmap-builder.png'></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Mindmap%20Builder.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Rapid mind mapping workflow driven by keyboard shortcuts: add sibling/child nodes, auto-layout and branch styling, quick navigation, optional recursive grouping, and Markdown copy/paste import/export for bullet-list sync.Sign up for the <a href="https://visual-thinking-workshop.com/mindmap" target="_blank">MindMap Builder Self-Paced Course</a>!<br><a href="YouTube: qY66yoobaX4" target="_blank"><img src ="https://i.ytimg.com/vi/qY66yoobaX4/maxresdefault.jpg" style="width:400px;"></a><br><a href='YouTube: qY66yoobaX4' target='_blank'>Link to video on YouTube</a><br><a href="YouTube: 5G9QF-u9w0Q" target="_blank"><img src ="https://i.ytimg.com/vi/5G9QF-u9w0Q/maxresdefault.jpg" style="width:400px;"></a><br><a href='YouTube: 5G9QF-u9w0Q' target='_blank'>Link to video on YouTube</a><br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-mindmap-builder.png'></td></tr></table>
 
 ## Mindmap connector
 ```excalidraw-script-install
@@ -19720,9 +19728,10 @@ When nodes resize (e.g. text edit), the script intelligently re-positions groupe
 
 **/
 /* --- Initialization Logic --- */
+const VERSION = "test";
 
-if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.0")) {
-  new Notice("Please update the Excalidraw Plugin to version 2.19.0 or higher.");
+if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.1")) {
+  new Notice("Please update the Excalidraw Plugin to version 2.19.1 or higher.");
   return;
 }
 
@@ -19841,6 +19850,7 @@ const STRINGS = {
     ACTION_LABEL_FOLD_ALL: "Fold/Unfold Branch Recursively",
     ACTION_LABEL_DOCK_UNDOCK: "Dock/Undock",
     ACTION_LABEL_HIDE: "Dock & hide",
+    ACTION_LABEL_REARRANGE: "Rearrange Map",
 
     // Tooltips (shared)
     PIN_TOOLTIP_PINNED: "This element is pinned. Click to unpin the location of the selected element",
@@ -19866,13 +19876,13 @@ const STRINGS = {
     TOOLTIP_OPEN_PALETTE_PICKER: "Open Palette Picker",
     TOOLTIP_FOLD_BRANCH: "Fold/Unfold selected branch",
     TOOLTIP_FOLD_L1_BRANCH: "Fold/Unfold children (Level 1)",
-    TOOLTIP_UNFOLD_BRANCH_ALL: "Unfold branch recursively",
+    TOOLTIP_FOLD_ALL: "Fold/Unfold Branch Recursively",
     TOOLTIP_IMPORT_OUTLINE: "Import headings from linked file as child nodes",
     TOOLTIP_RESET_TO_DEFAULT: "Reset to default",
 
     // Buttons and labels
     DOCK_TITLE: "Mind Map Builder",
-    HELP_SUMMARY: "Instructions & Shortcuts",
+    HELP_SUMMARY: "Help",
     INPUT_PLACEHOLDER: "Concept... type [[ to insert link",
     BUTTON_COPY: "Copy",
     BUTTON_CUT: "Cut",
@@ -19937,31 +19947,31 @@ const STRINGS = {
     RADIAL_MAX_SWEEP: "Max Sweep Angle",
     DESC_RADIAL_MAX_SWEEP: "Total arc available to fill. 360 uses full circle. Lower values leave a gap between the first and last node.",
     // Others
-    GAP_X:  "Gap X",
+    GAP_X: "Gap X",
     DESC_LAYOUT_GAP_X: "Horizontal distance between parent and child nodes.",
-    GAP_Y:  "Gap Y",
+    GAP_Y: "Gap Y",
     DESC_LAYOUT_GAP_Y: "Vertical distance between sibling nodes. Also used as the base gap for Radial layouts.",
-    GAP_MULTIPLIER:  "Gap Multiplier",
+    GAP_MULTIPLIER: "Gap Multiplier",
     DESC_LAYOUT_GAP_MULTIPLIER: "Vertical spacing for 'leaf' nodes (no children), relative to font size. Low: list-like stacking. High: standard tree spacing.",
-    DIRECTIONAL_ARC_SPAN_RADIANS:  "Directional Arc-span Radians",
+    DIRECTIONAL_ARC_SPAN_RADIANS: "Directional Arc-span Radians",
     DESC_LAYOUT_ARC_SPAN: "Curvature of the child list. Low (0.5): Flatter, list-like. High (2.0): Curved, organic, but risk of overlap.",
-    ROOT_RADIUS_FACTOR:  "Root Radius Factor",
+    ROOT_RADIUS_FACTOR: "Root Radius Factor",
     DESC_LAYOUT_ROOT_RADIUS: "Multiplier for the Root node's bounding box to determine initial radius.",
-    MIN_RADIUS:  "Minimum Radius",
+    MIN_RADIUS: "Minimum Radius",
     DESC_LAYOUT_MIN_RADIUS: "The absolute minimum distance from the root center to the first level of nodes.",
-    RADIUS_PADDING_PER_NODE:  "Radius Padding per Node",
+    RADIUS_PADDING_PER_NODE: "Radius Padding per Node",
     DESC_LAYOUT_RADIUS_PADDING: "Extra radius added per child node to accommodate dense maps.",
-    GAP_MULTIPLIER_RADIAL:  "Radial-layout Gap Multiplier",
+    GAP_MULTIPLIER_RADIAL: "Radial-layout Gap Multiplier",
     DESC_LAYOUT_GAP_RADIAL: "Angular spacing multiplier for Radial mode.",
-    GAP_MULTIPLIER_DIRECTIONAL:  "Vertical-layout Gap Multiplier",
+    GAP_MULTIPLIER_DIRECTIONAL: "Vertical-layout Gap Multiplier",
     DESC_LAYOUT_GAP_DIRECTIONAL: "Spacing multiplier for Right-facing and Left-facing top level branches",
-    INDICATOR_OFFSET:  "Fold Indicator Offset",
+    INDICATOR_OFFSET: "Fold Indicator Offset",
     DESC_LAYOUT_INDICATOR_OFFSET: "Distance of the '...' fold indicator from the node.",
-    INDICATOR_OPACITY:  "Fold Indicator Opacity",
+    INDICATOR_OPACITY: "Fold Indicator Opacity",
     DESC_LAYOUT_INDICATOR_OPACITY: "Opacity of the '...' fold indicator (0-100).",
-    CONTAINER_PADDING:  "Container Padding",
+    CONTAINER_PADDING: "Container Padding",
     DESC_LAYOUT_CONTAINER_PADDING: "Padding inside the box when 'Box Child Nodes' or 'Box/Unbox' is used.",
-    MANUAL_GAP_MULTIPLIER:  "Manual-layout Gap Multiplier",
+    MANUAL_GAP_MULTIPLIER: "Manual-layout Gap Multiplier",
     DESC_LAYOUT_MANUAL_GAP: "Spacing multiplier when adding nodes while Auto-Layout is disabled.",
     MANUAL_JITTER_RANGE: "Manual-layout Jitter Range",
     DESC_LAYOUT_MANUAL_JITTER: "Random position offset when adding nodes while Auto-Layout is disabled.",
@@ -19971,7 +19981,7 @@ const STRINGS = {
     INSTRUCTIONS: "> [!Tip]\n" +
       ">🚀 Become a MindMap Builder Pro with the Official [MindMap Builder Course](https://www.visual-thinking-workshop.com/mindmap)!\n" +
       "\n" +
-      "- **ENTER**: Add a child node and stay on the current parent for rapid entry. "+
+      "- **ENTER**: Add a child node and stay on the current parent for rapid entry. " +
       "If you press enter when the input field is empty the focus will move to the child node that was most recently added. " +
       "Pressing enter subsequent times will iterate through the new child's siblings\n" +
       "- **Hotkeys**: See configuration at the bottom of the sidepanel\n" +
@@ -19986,6 +19996,212 @@ const STRINGS = {
       "😍 If you find this script helpful, please [buy me a coffee ☕](https://ko-fi.com/zsolt).",
   },
 };
+
+/**
+ * @param {String} lang {@link LOCALE}
+ * @param {Object} content
+ */
+function addLocale(lang, content) {
+  STRINGS[lang] = content
+};
+
+addLocale("zh", {
+  // Notices
+  NOTICE_SELECT_NODE_TO_COPY: "请选择要复制的节点。",
+  NOTICE_MAP_CUT: "导图已剪切到剪贴板。",
+  NOTICE_BRANCH_CUT: "分支已剪切到剪贴板。",
+  NOTICE_MAP_COPIED: "导图已复制为 Markdown 格式。",
+  NOTICE_BRANCH_COPIED: "分支已复制为列表格式。",
+  NOTICE_CLIPBOARD_EMPTY: "剪贴板为空。",
+  NOTICE_PASTE_ABORTED: "粘贴中止。剪贴板内容非 Markdown 列表或标题。",
+  NOTICE_NO_LIST: "剪贴板中未发现有效的 Markdown 列表。",
+  NOTICE_PASTE_START: "正在粘贴，请稍候，可能需要一些时间…",
+  NOTICE_PASTE_COMPLETE: "粘贴完成。",
+  NOTICE_ACTION_REQUIRES_ARROWS: "此操作需要方向键。仅可修改修饰键。",
+  NOTICE_CONFLICT_WITH_ACTION: "与“{action}”操作冲突",
+  NOTICE_OBSIDIAN_HOTKEY_CONFLICT: "⚠️ Obsidian 热键冲突！\n\n此按键将覆盖：\n“{command}”",
+  NOTICE_GLOBAL_HOTKEY_CONFLICT: "⚠️ 全局热键冲突！\n\n此按键将覆盖：\n“{command}”",
+  NOTICE_NO_HEADINGS: "链接文件中未发现小标题。",
+  NOTICE_CANNOT_EDIT_MULTILINE: "无法直接编辑多行节点。\n请在 Excalidraw 中双击元素进行编辑，然后运行“自动重排导图”来更新布局。",
+  NOTICE_CANNOT_MOVE_PINNED: "无法移动已锁定的节点。请先解锁。",
+  NOTICE_CANNOT_MOVE_ROOT: "无法移动根节点。",
+  NOTICE_CANNOT_PRMOTE_L1: "无法提升 1 级节点。",
+  NOTICE_CANNOT_DEMOTE: "无法降级节点。没有可依附的前置同级节点。",
+  NOTICE_CANNOT_MOVE_AUTO_LAYOUT_DISABLED: "禁用自动布局时无法移动节点。请先启用自动布局。",
+
+  // Action labels (display only)
+  ACTION_LABEL_ADD: "添加子节点",
+  ACTION_LABEL_ADD_SIBLING_AFTER: "添加后置同级节点",
+  ACTION_LABEL_ADD_SIBLING_BEFORE: "添加前置同级节点",
+  ACTION_LABEL_ADD_FOLLOW: "添加 + 跟随",
+  ACTION_LABEL_ADD_FOLLOW_FOCUS: "添加 + 跟随 + 聚焦",
+  ACTION_LABEL_ADD_FOLLOW_ZOOM: "添加 + 跟随 + 缩放",
+  ACTION_LABEL_SORT_ORDER: "更改顺序/提升节点",
+  ACTION_LABEL_EDIT: "编辑节点",
+  ACTION_LABEL_PIN: "锁定/解锁",
+  ACTION_LABEL_BOX: "添加/移除边框",
+  ACTION_LABEL_TOGGLE_GROUP: "编组/解除编组单分支",
+  ACTION_LABEL_COPY: "复制",
+  ACTION_LABEL_CUT: "剪切",
+  ACTION_LABEL_PASTE: "粘贴",
+  ACTION_LABEL_IMPORT_OUTLINE: "导入大纲",
+  ACTION_LABEL_ZOOM: "循环缩放",
+  ACTION_LABEL_FOCUS: "聚焦（并居中）节点",
+  ACTION_LABEL_NAVIGATE: "导航",
+  ACTION_LABEL_NAVIGATE_ZOOM: "导航 & 缩放",
+  ACTION_LABEL_NAVIGATE_FOCUS: "导航 & 聚焦",
+  ACTION_LABEL_FOLD: "折叠/展开分支",
+  ACTION_LABEL_FOLD_L1: "折叠/展开 L1 子节点",
+  ACTION_LABEL_FOLD_ALL: "递归折叠/展开分支",
+  ACTION_LABEL_DOCK_UNDOCK: "停靠/取消停靠",
+  ACTION_LABEL_HIDE: "停靠 & 隐藏",
+  ACTION_LABEL_REARRANGE: "重排导图",
+
+  // Tooltips (shared)
+  PIN_TOOLTIP_PINNED: "此元素已锁定。点击解锁所选元素的位置。",
+  PIN_TOOLTIP_UNPINNED: "此元素未锁定。点击锁定所选元素的位置。",
+  TOGGLE_GROUP_TOOLTIP_GROUP: "编组此分支。仅在“分支编组”禁用时可用。",
+  TOGGLE_GROUP_TOOLTIP_UNGROUP: "解除编组此分支。仅在“分支编组”禁用时可用。",
+  TOOLTIP_EDIT_NODE: "编辑所选节点的文本",
+  TOOLTIP_PIN_INIT: "锁定/解锁节点位置。锁定的节点不会被自动重排。",
+  TOOLTIP_REFRESH: "自动重排导图",
+  TOOLTIP_DOCK: "停靠到侧边面板",
+  TOOLTIP_UNDOCK: "转为浮动窗口",
+  TOOLTIP_ZOOM_CYCLE: "循环切换元素缩放级别",
+  TOOLTIP_TOGGLE_GROUP_BTN: "切换分支的编组状态。仅在“分支编组”禁用时可用。",
+  TOOLTIP_TOGGLE_BOX: "切换节点边框",
+  TOOLTIP_TOGGLE_BOUNDARY: "切换子树边界",
+  TOOLTIP_TOGGLE_FLOATING_EXTRAS: "切换额外控件",
+  TOOLTIP_CONFIGURE_PALETTE: "为分支配置自定义调色板",
+  TOOLTIP_CONFIGURE_LAYOUT: "配置布局设置",
+  TOOLTIP_MOVE_UP: "上移",
+  TOOLTIP_MOVE_DOWN: "下移",
+  TOOLTIP_EDIT_COLOR: "编辑",
+  TOOLTIP_DELETE_COLOR: "删除",
+  TOOLTIP_OPEN_PALETTE_PICKER: "打开颜色选择器",
+  TOOLTIP_FOLD_BRANCH: "折叠/展开所选分支",
+  TOOLTIP_FOLD_L1_BRANCH: "折叠/展开 L1 子节点",
+  TOOLTIP_FOLD_ALL: "递归折叠/展开分支",
+  TOOLTIP_IMPORT_OUTLINE: "从链接文件中导入小标题作为子节点数据",
+  TOOLTIP_RESET_TO_DEFAULT: "恢复默认",
+
+  // Buttons and labels
+  DOCK_TITLE: "MindMap Builder",
+  HELP_SUMMARY: "帮助",
+  INPUT_PLACEHOLDER: "输入概念… 输入 [[ 插入链接",
+  BUTTON_COPY: "复制",
+  BUTTON_CUT: "剪切",
+  BUTTON_PASTE: "粘贴",
+  TITLE_ADD_SIBLING: `使用 ${ea.DEVICE.isMacOS || ea.DEVICE.isIOS ? "OPT" : "ALT"}+Enter 添加同级节点`,
+  TITLE_ADD_FOLLOW: "添加并跟随",
+  TITLE_COPY: "复制分支为文本",
+  TITLE_CUT: "剪切分支为文本",
+  TITLE_PASTE: "从剪贴板粘贴列表",
+  LABEL_ZOOM_LEVEL: "缩放级别",
+  LABEL_GROWTH_STRATEGY: "生长策略",
+  LABEL_ARROW_TYPE: "曲线连接",
+  LABEL_AUTO_LAYOUT: "自动布局",
+  LABEL_GROUP_BRANCHES: "分支编组",
+  LABEL_BOX_CHILD_NODES: "为子节点添加边框",
+  LABEL_ROUNDED_CORNERS: "圆角",
+  LABEL_USE_SCENE_STROKE: "使用场景线条样式",
+  DESC_USE_SCENE_STROKE: "使用场景中最新的线条样式（实线、虚线、点线），否则分支将始终使用实线。",
+  LABEL_MULTICOLOR_BRANCHES: "多色分支",
+  LABEL_MAX_WRAP_WIDTH: "最大折行宽度",
+  LABEL_CENTER_TEXT: "文本居中",
+  DESC_CENTER_TEXT: "关闭：根据位置左/右对齐；开启：文本强制居中。",
+  LABEL_FONT_SIZES: "字体大小",
+  HOTKEY_SECTION_TITLE: "热键配置",
+  HOTKEY_HINT: "这些热键可能覆盖 Obsidian 默认设置。热键作用域默认为局部（⌨️），使用 🌐/🎨/⌨️ 切换作用域：🌐 Excalidraw 标签页可见即生效，🎨 Excalidraw 聚焦时生效，⌨️ 输入框聚焦时生效。",
+  RECORD_HOTKEY_PROMPT: "按下热键…",
+  ARIA_SCOPE_INPUT: "局部（Local）：仅在输入框聚焦时生效",
+  ARIA_SCOPE_EXCALIDRAW: "Excalidraw：输入框或 Excalidraw 聚焦时生效",
+  ARIA_SCOPE_GLOBAL: "全局（Global）：在 Obsidian 任何位置，Excalidraw 可见即生效",
+  ARIA_RESTORE_DEFAULT: "恢复默认",
+  ARIA_CUSTOMIZE_HOTKEY: "自定义此热键",
+  ARIA_OVERRIDE_COMMAND: "将覆盖 Obsidian 命令：\n{command}",
+
+  // Palette manager
+  MODAL_PALETTE_TITLE: "导图分支调色板",
+  LABEL_ENABLE_CUSTOM_PALETTE: "启用自定义调色板",
+  DESC_ENABLE_CUSTOM_PALETTE: "使用以下颜色代替自动生成的颜色。",
+  LABEL_RANDOMIZE_ORDER: "随机顺序",
+  DESC_RANDOMIZE_ORDER: "随机选择颜色而非按顺序选择。",
+  HEADING_ADD_NEW_COLOR: "添加新颜色",
+  HEADING_EDIT_COLOR: "编辑颜色",
+  LABEL_SELECT_COLOR: "选择颜色",
+  BUTTON_CANCEL_EDIT: "取消编辑",
+  BUTTON_ADD_COLOR: "添加颜色",
+  BUTTON_UPDATE_COLOR: "更新颜色",
+
+  // Layout configuration
+  MODAL_LAYOUT_TITLE: "布局配置",
+  // Section Headers
+  SECTION_GENERAL: "常规间距",
+  SECTION_RADIAL: "径向布局（顺时针）",
+  SECTION_DIRECTIONAL: "定向布局（左/右）",
+  SECTION_VISUALS: "视觉元素",
+  SECTION_MANUAL: "手动模式行为",
+  // Radial Strings
+  RADIAL_ASPECT_RATIO: "椭圆长宽比",
+  DESC_RADIAL_ASPECT_RATIO: "控制形状。< 1.0 为瘦长（0.7 为纵向），1.0 为正圆，> 1.0 为宽扁（横向）。",
+  RADIAL_POLE_GAP_BONUS: "极点间距补偿",
+  DESC_RADIAL_POLE_GAP_BONUS: "增加椭圆南北两极区域内节点的间距。值越大，节点沿弧线推得越远。",
+  RADIAL_START_ANGLE: "起始角度",
+  DESC_RADIAL_START_ANGLE: "第一个节点出现的位置（度数）。270 为北，0 为东，90 为南。",
+  RADIAL_MAX_SWEEP: "最大扫过角度",
+  DESC_RADIAL_MAX_SWEEP: "分支可填充的弧范围。360 为全圆。较小的值会使圆不完整。",
+  // Others
+  GAP_X: "水平间距（Gap X）",
+  DESC_LAYOUT_GAP_X: "亲代节点与子节点之间的水平距离。",
+  GAP_Y: "垂直间距（Gap Y）",
+  DESC_LAYOUT_GAP_Y: "同级节点之间的垂直距离。径向布局中的基础间距。",
+  GAP_MULTIPLIER: "间距倍数",
+  DESC_LAYOUT_GAP_MULTIPLIER: "叶节点（无子节点的节点）的垂直间距，相对于字体大小。低：类似列表堆叠；高：标准树状间距。",
+  DIRECTIONAL_ARC_SPAN_RADIANS: "定向张开弧度（Arc-span Radians）",
+  DESC_LAYOUT_ARC_SPAN: "子节点排列的曲率。低（0.5）：较平，类似列表。高（2.0）：弯曲有机，但有重叠风险。",
+  ROOT_RADIUS_FACTOR: "根节点半径系数",
+  DESC_LAYOUT_ROOT_RADIUS: "相对于根节点边框的倍数，决定最初的半径。",
+  MIN_RADIUS: "最小半径",
+  DESC_LAYOUT_MIN_RADIUS: "从根节点中心到第一级节点的最小绝对距离。",
+  RADIUS_PADDING_PER_NODE: "单节点径向空白边距",
+  DESC_LAYOUT_RADIUS_PADDING: "每个子节点额外增加的半径，以适应密集型导图。",
+  GAP_MULTIPLIER_RADIAL: "径向布局间距倍数",
+  DESC_LAYOUT_GAP_RADIAL: "径向布局模式下的角度间距倍数。",
+  GAP_MULTIPLIER_DIRECTIONAL: "垂直方向间距倍数",
+  DESC_LAYOUT_GAP_DIRECTIONAL: "定向布局顶层分支之间的间距倍数。",
+  INDICATOR_OFFSET: "折叠指示符偏移",
+  DESC_LAYOUT_INDICATOR_OFFSET: "折叠指示符（三连点）距离节点的距离。",
+  INDICATOR_OPACITY: "折叠指示符不透明度",
+  DESC_LAYOUT_INDICATOR_OPACITY: "折叠指示符的不透明度（0-100）。",
+  CONTAINER_PADDING: "容器内边距",
+  DESC_LAYOUT_CONTAINER_PADDING: "使用边框样式时的内边距。",
+  MANUAL_GAP_MULTIPLIER: "手动布局间距倍数",
+  DESC_LAYOUT_MANUAL_GAP: "禁用自动布局时添加节点的间距倍数。",
+  MANUAL_JITTER_RANGE: "手动布局抖动范围",
+  DESC_LAYOUT_MANUAL_JITTER: "禁用自动布局时添加节点的随机位置偏移。",
+
+  // Misc
+  INPUT_TITLE_PASTE_ROOT: "MindMap Builder 粘贴",
+  INSTRUCTIONS: "> [!Tip]\n" +
+    ">🚀 想要进阶？欢迎参加官方 [MindMap Builder 课程](https://www.visual-thinking-workshop.com/mindmap)！\n" +
+    "\n" +
+    "- **ENTER**：添加子节点并保留在当前亲代节点上，方便快速输入。" +
+    "若输入框为空时按回车，焦点将移动到最新添加的子节点。" +
+    "连续按回车将在该节点的同级节点间循环切换。\n" +
+    "- **热键**：见侧边面板底部的配置选项。\n" +
+    "- **停靠/取消停靠**：使用按钮或配置好的热键来切换输入框位置。\n" +
+    "- **折叠**：仅在输入框停靠时显示按钮；取消停靠时请使用热键。\n" +
+    "- **ESC**：将浮动输入框停靠，但不激活侧边面板。\n" +
+    "- **着色**：顶层分支拥有独立颜色（多色模式），后代节点继承亲代颜色。\n" +
+    "- **编组**：\n" +
+    "  - 启用“分支编组”将递归地编组子树，从叶节点到顶层分支。\n" +
+    "- **复制/粘贴**：导出/导入含缩进的 Markdown 列表。\n" +
+    "\n" +
+    "😍 如果你觉得这个脚本有用，欢迎 [请我喝杯咖啡 ☕](https://ko-fi.com/zsolt)。",
+});
+
+addLocale("zh-tw", STRINGS["zh"]);
 
 const t = (key, params = {}) => {
   const str = STRINGS[LOCALE]?.[key] ?? STRINGS.en[key] ?? key;
@@ -20375,6 +20591,7 @@ const ACTION_LABEL_KEYS = {
   [ACTION_TOGGLE_BOUNDARY]: "TOOLTIP_TOGGLE_BOUNDARY",
   [ACTION_DOCK_UNDOCK]: "ACTION_LABEL_DOCK_UNDOCK",
   [ACTION_HIDE]: "ACTION_LABEL_HIDE",
+  [ACTION_REARRANGE]: "ACTION_LABEL_REARRANGE",
   [ACTION_TOGGLE_FLOATING_EXTRAS]: "TOOLTIP_TOGGLE_FLOATING_EXTRAS",
 };
 
@@ -21876,8 +22093,9 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
     }
   }
 
-  if (!isPinned && eaNode.type === "text" && !eaNode.containerId && node.textAlign !== "center") {
-    eaNode.textAlign = effectiveSide === 1 ? "left" : "right";
+  const textElement = ea.getBoundTextElement(eaNode).eaElement;
+  if (textElement && !centerText && textElement.textAlign !== "center") {
+    textElement.textAlign = effectiveSide === 1 ? "left" : "right";
   }
 
   const children = childrenByParent?.get(nodeId) ?? getChildrenNodes(nodeId, allElements);
@@ -22413,7 +22631,17 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
     removeGroupFromElements(structuralGroupId, allElements);
   }
 
-  const mindmapIdsSet = new Set(mindmapIds);
+  // FIX: Expand mindmapIds to include bound elements (like Text inside Boxes)
+  // This ensures they are not filtered out by the cleanup step in `run`
+  const expandedMindmapIds = [...mindmapIds];
+  mindmapIds.forEach(id => {
+      const el = allElements.find(e => e.id === id);
+      if (el && el.boundElements) {
+          el.boundElements.forEach(be => expandedMindmapIds.push(be.id));
+      }
+  });
+
+  const mindmapIdsSet = new Set(expandedMindmapIds);
   const crosslinkIdSet = collectCrosslinkIds(allElements);
   const decorationIdSet = collectDecorationIds(allElements);
   const sharedSets = { mindmapIdsSet, crosslinkIdSet, decorationIdSet };
@@ -22496,12 +22724,30 @@ const addImage = async ({pathOrFile, width, leftFacing = false, x=0, y=0, depth 
   return newNodeId;
 }
 
+/**
+ * Initializes the customData for a new Root node with the current global settings.
+ */
+const initializeRootCustomData = (nodeId) => {
+  ea.addAppendUpdateCustomData(nodeId, {
+    growthMode: currentModalGrowthMode,
+    autoLayoutDisabled: false,
+    arrowType: arrowType, // Save the arrow type on new root
+    fontsizeScale,
+    multicolor,
+    boxChildren,
+    roundedCorners,
+    maxWrapWidth: maxWidth,
+    isSolidArrow,
+    centerText
+  });
+};
+
 const addNode = async (text, follow = false, skipFinalLayout = false, batchModeAllElements = null, batchModeParent = null, pos = null) => {
   if (!ea.targetView) return;
   if (!text || text.trim() === "") return;
 
   const st = getAppState();
-  const isBatchMode = !!batchModeParent;
+  const isBatchMode = batchModeAllElements !== null;
 
   let allElements = batchModeAllElements || ea.getViewElements();
   let parent = batchModeParent;
@@ -22611,18 +22857,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       ea.style.backgroundColor = "transparent";
     }
 
-    ea.addAppendUpdateCustomData(newNodeId, {
-      growthMode: currentModalGrowthMode,
-      autoLayoutDisabled: false,
-      arrowType: arrowType, // Save the arrow type on new root
-      fontsizeScale,
-      multicolor,
-      boxChildren,
-      roundedCorners,
-      maxWrapWidth: maxWidth,
-      isSolidArrow,
-      centerText
-    });
+    initializeRootCustomData(newNodeId);
     rootId = newNodeId;
   } else {
     ea.style.strokeColor = nodeColor;
@@ -22751,18 +22986,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
 
     // else make the customParent the root of the new mindmap
     if ((depth === 0 || usingCustomParent) && !parent.customData?.growthMode && !parent.customData?.mindmapOrder) {
-      ea.addAppendUpdateCustomData(parent.id, {
-        growthMode: currentModalGrowthMode,
-        autoLayoutDisabled: false,
-        arrowType: arrowType,
-        fontsizeScale,
-        multicolor,
-        boxChildren,
-        roundedCorners,
-        maxWrapWidth: maxWidth,
-        isSolidArrow,
-        centerText
-      });
+      initializeRootCustomData(parent.id);
     }
 
     if ((parent.type === "image" || parent.type === "embeddable") && typeof parent.customData?.mindmapOrder === "undefined") {
@@ -23023,7 +23247,7 @@ const copyMapAsText = async (cut = false) => {
   const branchIds = new Set(getBranchElementIds(sel.id, all));
   
   const nodeBlockRefs = new Map(); // NodeID -> "^blockId"
-  const nodeOutgoingLinks = new Map(); // NodeID -> ["^blockId", ...]
+  const nodeOutgoingLinks = new Map(); // NodeID -> ["text representation", ...]
 
   // Find arrows within this branch that are NOT structural branch arrows
   const crossLinkArrows = all.filter(el => 
@@ -23051,7 +23275,22 @@ const copyMapAsText = async (cut = false) => {
       if (!nodeOutgoingLinks.has(startId)) {
         nodeOutgoingLinks.set(startId, []);
       }
-      nodeOutgoingLinks.get(startId).push(nodeBlockRefs.get(endId));
+      
+      // Check for label on the arrow
+      const boundTextId = arrow.boundElements?.find(be => be.type === "text")?.id;
+      const labelTextElement = boundTextId ? all.find(el => el.id === boundTextId) : null;
+      const refString = nodeBlockRefs.get(endId);
+      
+      let linkText;
+      if (labelTextElement && labelTextElement.originalText) {
+        // Replace newlines with spaces for inline dataview field compatibility
+        const label = labelTextElement.originalText.replace(/\n/g, " ");
+        linkText = `(${label}:: [[#${refString}|*]])`;
+      } else {
+        linkText = `[[#${refString}|*]]`;
+      }
+
+      nodeOutgoingLinks.get(startId).push(linkText);
       
       if (cut) elementsToDelete.push(arrow);
     });
@@ -23116,9 +23355,9 @@ const copyMapAsText = async (cut = false) => {
 
     // --- Append Metadata Suffixes ---
     
-    // 1. Outgoing Crosslinks: [[#^ref|*]]
+    // 1. Outgoing Crosslinks
     if (nodeOutgoingLinks.has(nodeId)) {
-      const links = nodeOutgoingLinks.get(nodeId).map(ref => `[[#${ref}|*]]`).join(" ");
+      const links = nodeOutgoingLinks.get(nodeId).join(" ");
       text += ` ${links}`;
     }
 
@@ -23199,21 +23438,28 @@ const importTextToMap = async (rawText) => {
   if (!ea.targetView) return;
   if (!rawText) return;
 
-  const sel = getMindmapNodeFromSelection();
+  let sel = getMindmapNodeFromSelection();
   let currentParent;
 
   const lines = rawText.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
 
   if (lines.length === 0) return;
 
+  // Regex patterns
+  const boundaryRegex = /\s#boundary\b/;
+  const blockRefRegex = /\s\^([a-zA-Z0-9]{8})$/;
+  // Crosslink regex handling optional inline field syntax: (key:: [[#^ref|*]])
+  // Captures: 1=key(label), 2=ref
+  const crossLinkRegex = /(?:\(([^):]+)::\s*)?\[\[#\^([a-zA-Z0-9]{8})\|\*\]\](?:\))?/g;
+
   if (lines.length === 1) {
     // Simple single line logic (existing behavior)
     let text = lines[0].replace(/^(\s*)(?:-|\*|\d+\.)\s+/, "").trim();
     
     // Cleanup tags for single line paste too
-    text = text.replace(/\s#boundary\b/g, "");
-    text = text.replace(/\s\^([a-zA-Z0-9]{8})$/, "");
-    text = text.replace(/\[\[#\^([a-zA-Z0-9]{8})\|\*\]\]/g, "");
+    text = text.replace(boundaryRegex, "");
+    text = text.replace(blockRefRegex, "");
+    text = text.replace(crossLinkRegex, "");
 
     if (text) {
       currentParent = await addNode(text.trim(), true, false);
@@ -23242,13 +23488,8 @@ const importTextToMap = async (rawText) => {
 
   // Maps for crosslink reconstruction
   const blockRefToNodeId = new Map(); // ^12345678 -> newNodeId
-  const nodeToOutgoingRefs = new Map(); // newNodeId -> [^12345678, ...]
+  const nodeToOutgoingRefs = new Map(); // newNodeId -> [{ref: string, label: string}, ...]
   
-  // Regex patterns
-  const boundaryRegex = /\s#boundary\b/;
-  const blockRefRegex = /\s\^([a-zA-Z0-9]{8})$/;
-  const crossLinkRegex = /\[\[#\^([a-zA-Z0-9]{8})\|\*\]\]/g;
-
   lines.forEach((line) => {
     let text = "";
     let indent = 0;
@@ -23283,11 +23524,15 @@ const importTextToMap = async (rawText) => {
 
       // 3. Check for Crosslinks (Outgoing)
       const outgoingRefs = [];
-      let linkMatch;
-      while ((linkMatch = crossLinkRegex.exec(text)) !== null) {
-        outgoingRefs.push(linkMatch[1]);
-      }
-      text = text.replace(crossLinkRegex, "");
+      crossLinkRegex.lastIndex = 0;
+      
+      text = text.replace(crossLinkRegex, (_match, label, ref) => {
+          outgoingRefs.push({
+              ref: ref,
+              label: label ? label.trim() : null
+          });
+          return "";
+      });
 
       parsed.push({ 
         indent, 
@@ -23306,6 +23551,8 @@ const importTextToMap = async (rawText) => {
 
   ea.clear();
 
+  const rootSelected = !!sel;
+
   if (!sel) {
     const minIndent = Math.min(...parsed.map((p) => p.indent));
     const topLevelItems = parsed.filter((p) => p.indent === minIndent);
@@ -23318,11 +23565,11 @@ const importTextToMap = async (rawText) => {
     };
 
     if (topLevelItems.length === 1) {
-      currentParent = await addNode(topLevelItems[0].text, true, true, [], null);
+      sel = currentParent = await addNode(topLevelItems[0].text, true, true, [], null);
       processRootMeta(topLevelItems[0], currentParent.id);
       parsed.shift();
     } else {
-      currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true, [], null);
+      sel = currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true, [], null);
     }
   } else {
     currentParent = sel;
@@ -23331,7 +23578,10 @@ const importTextToMap = async (rawText) => {
   }
 
   const stack = [{ indent: -1, node: currentParent }];
-  const initialViewElements = ea.getViewElements();
+
+  if (rootSelected) {
+    ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(el=> !ea.getElement(el.id))); // ensure EA has copies of existing elements
+  }
   
   // Helper to create boundary during import (mimics toggleBoundary logic)
   const createImportBoundary = (nodeId) => {
@@ -23369,7 +23619,7 @@ const importTextToMap = async (rawText) => {
       stack.pop();
     }
     const parentNode = stack[stack.length - 1].node;
-    const currentAllElements = initialViewElements.concat(ea.getElements());
+    const currentAllElements = ea.getElements();
     const newNode = await addNode(item.text, false, true, currentAllElements, parentNode);
     
     // Process Metadata
@@ -23384,10 +23634,12 @@ const importTextToMap = async (rawText) => {
   //  Generate Crosslinks
   // -------------------------------------------------------------------------
   nodeToOutgoingRefs.forEach((targetRefs, sourceId) => {
-    targetRefs.forEach(ref => {
+    targetRefs.forEach(targetObj => {
+        const { ref, label } = targetObj;
         const targetId = blockRefToNodeId.get(ref);
+        
         if (targetId) {
-            ea.connectObjects(
+            const arrowId = ea.connectObjects(
                 sourceId, null, 
                 targetId, null, 
                 {
@@ -23395,11 +23647,21 @@ const importTextToMap = async (rawText) => {
                     endArrowHead: "triangle"
                 }
             );
-            // Get the newly created arrow (last element) and style it
-            const elements = ea.getElements();
-            const arrow = elements[elements.length - 1];
-            if (arrow && arrow.type === "arrow") {
-                arrow.strokeStyle = "dashed";
+            
+            const arrowEl = ea.getElement(arrowId);
+            if (arrowEl) {
+                arrowEl.strokeStyle = "dashed";
+                
+                if (label) {
+                    const textId = ea.addText(0, 0, label);
+                    const textEl = ea.getElement(textId);
+                    
+                    textEl.containerId = arrowId;
+                    textEl.textAlign = "center";
+                    textEl.textVerticalAlign = "middle";
+                    
+                    arrowEl.boundElements = [{ type: "text", id: textId }];
+                }
             }
         }
     });
@@ -23409,11 +23671,11 @@ const importTextToMap = async (rawText) => {
   // "Right-Left" Balanced Layout Adjustment for Imported L1 Nodes
   // -------------------------------------------------------------------------
   const rootIdForImport = sel
-    ? getHierarchy(sel, initialViewElements).rootId 
+    ? getHierarchy(sel, ea.getElements()).rootId 
     : currentParent.id;
 
   const rootElForImport = sel 
-    ? initialViewElements.find(e => e.id === rootIdForImport) 
+    ? ea.getElement(rootIdForImport) 
     : currentParent;
     
   if (rootElForImport) {
@@ -23457,12 +23719,7 @@ const importTextToMap = async (rawText) => {
     }
   }
 
-  await addElementsToView({ shouldSleep: true }); // in case there are images in the imported map
-
-  const rootId = sel
-    ? getHierarchy(sel, ea.getViewElements()).rootId
-    : currentParent.id;
-  await triggerGlobalLayout(rootId);
+  await addElementsToView({ repositionToCursor: true, shouldSleep: true }); // in case there are images in the imported map
 
   const allInView = ea.getViewElements();
   const targetToSelect = sel
@@ -23472,6 +23729,12 @@ const importTextToMap = async (rawText) => {
   if (targetToSelect) {
     ea.selectElementsInView([targetToSelect]);
   }
+
+  const rootId = sel
+    ? getHierarchy(sel, allInView).rootId
+    : currentParent.id;
+  await triggerGlobalLayout(rootId);
+
   notice.setMessage(t("NOTICE_PASTE_COMPLETE"));
   notice.setAutoHide(4000);
 };
@@ -24739,7 +25002,22 @@ const commitEdit = async () => {
 const renderHelp = (container) => {
   helpContainer = container.createDiv();
   detailsEl = helpContainer.createEl("details");
-  detailsEl.createEl("summary", { text: t("HELP_SUMMARY") });
+  const summary = detailsEl.createEl("summary", { 
+    attr: { style: "cursor: pointer;" }
+  });
+  
+  // Title
+  summary.createSpan({ 
+    text: t("HELP_SUMMARY"), 
+    attr: { style: "font-weight: bold;" } 
+  });
+  
+  // Version Number
+  summary.createSpan({ 
+    text: VERSION, 
+    attr: { style: "float: right; color: var(--text-muted); font-size: 0.8em;" } 
+  });
+  
   ea.obsidian.MarkdownRenderer.render(app, getInstructions(), detailsEl.createDiv(), "", ea.plugin);
 };
 
@@ -25264,7 +25542,7 @@ const renderInput = (container, isFloating = false) => {
   addButton((btn) => {
     foldBtnAll = btn;
     btn.setIcon("wifi");
-    btn.setTooltip(`${t("TOOLTIP_UNFOLD_BRANCH_ALL")} ${getActionHotkeyString(ACTION_FOLD_ALL)}`);
+    btn.setTooltip(`${t("TOOLTIP_FOLD_ALL")} ${getActionHotkeyString(ACTION_FOLD_ALL)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_FOLD_ALL);
     btn.onClick(() => performAction(ACTION_FOLD_ALL));
   }, true);
@@ -25272,7 +25550,7 @@ const renderInput = (container, isFloating = false) => {
   addButton((btn) => {
     refreshBtn = btn;
     btn.setIcon("refresh-ccw");
-    btn.setTooltip(t("TOOLTIP_REFRESH"));
+    btn.setTooltip(`${t("TOOLTIP_REFRESH")} ${getActionHotkeyString(ACTION_REARRANGE)}`);
     btn.extraSettingsEl.setAttr("action",ACTION_REARRANGE);
     btn.onClick(() => performAction(ACTION_REARRANGE));
   }, true);
@@ -25280,7 +25558,7 @@ const renderInput = (container, isFloating = false) => {
   addButton((btn) => {
     copyBtn = btn;
     btn.setIcon("copy");
-    btn.setTooltip(`${t("ACTION_COPY")} ${getActionHotkeyString(ACTION_COPY)}`);
+    btn.setTooltip(`${t("ACTION_LABEL_COPY")} ${getActionHotkeyString(ACTION_COPY)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_COPY);
     btn.onClick(() => performAction(ACTION_COPY));
   }, true);
@@ -25288,14 +25566,14 @@ const renderInput = (container, isFloating = false) => {
   addButton((btn) => {
     cutBtn = btn;
     btn.setIcon("scissors");
-    btn.setTooltip(`${t("ACTION_CUT")} ${getActionHotkeyString(ACTION_CUT)}`);
+    btn.setTooltip(`${t("ACTION_LABEL_CUT")} ${getActionHotkeyString(ACTION_CUT)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_CUT);
     btn.onClick(() => performAction(ACTION_CUT));
   }, true);
 
   addButton((btn) => {
     btn.setIcon("clipboard");
-    btn.setTooltip(`${t("ACTION_PASTE")} ${getActionHotkeyString(ACTION_PASTE)}`);
+    btn.setTooltip(`${t("ACTION_LABEL_PASTE")} ${getActionHotkeyString(ACTION_PASTE)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_PASTE);
     btn.onClick(() => performAction(ACTION_PASTE));
   }, true);
@@ -30450,15 +30728,25 @@ const HELP_TEXT = `
     - Additionally if the same color is used as fill and stroke the color can only be mapped once
 - This is an experimental script - contributions welcome on GitHub via PRs
 
-😍 If you find this script helpful, please [buy me a coffee ☕](https://ko-fi.com/zsolt).
+<div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 
 <a href="YouTube: ISuORbVKyhQ" target="_blank"><img src ="https://i.ytimg.com/vi/ISuORbVKyhQ/maxresdefault.jpg" style="max-width:560px; width:100%"></a>
 
 `;
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.0")) {
-  new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.1")) {
+  new Notice("Please update the Excalidraw Plugin to version 2.19.1 or higher.");
   return;
+}
+
+const existingTab = ea.checkForActiveSidepanelTabForScript();
+if (existingTab) {
+  const hostEA = existingTab.getHostEA();
+  if (hostEA && hostEA !== ea) {
+    hostEA.setView(ea.targetView);
+    existingTab.open();
+    return;
+  }
 }
 
 /*
@@ -30476,22 +30764,10 @@ interface ColorMap {
 };
 */
 
-// Main script execution
-const allElements = ea.getViewSelectedElements();
-const svgImageElements = allElements.filter(el => {
-  if(el.type !== "image") return false;
-  const file = ea.getViewFileForImageElement(el);
-  if(!file) return false;
-  return el.type === "image" && (
-    file.extension === "svg" ||
-    ea.isExcalidrawFile(file)
-  );
-});
-
-if(allElements.length === 0) {
-  new Notice("Select at least one rectangle, ellipse, diamond, line, arrow, freedraw, text or SVG image elment");
-  return;
-}
+// Main script state variables
+let allElements = [];
+let svgImageElements = [];
+let lastSelectionIds = "";
 
 const originalColors = new Map();
 const currentColors = new Map();
@@ -30522,10 +30798,11 @@ if(!settings[STROKE]) {
 }
 
 function getRegularElements() {
+  if (!ea.targetView) return [];
   ea.clear();
   //loading view elements again as element objects change when colors are updated
-  const allElements = ea.getViewSelectedElements();
-  return allElements.filter(el => 
+  const viewElements = ea.getViewSelectedElements();
+  return viewElements.filter(el => 
     ["rectangle", "ellipse", "diamond", "line", "arrow", "freedraw", "text"].includes(el.type)
   );
 }
@@ -30547,6 +30824,10 @@ function updateViewImageColors() {
 }
 
 async function storeOriginalColors() {
+  // Clear previous state
+  originalColors.clear();
+  currentColors.clear();
+
   // Store colors for regular elements  
   for (const el of getRegularElements()) {
     const key = el.id;
@@ -30572,6 +30853,7 @@ async function storeOriginalColors() {
 }
 
 function copyOriginalsToCurrent() {
+  currentColors.clear();
   for (const [key, value] of originalColors.entries()) {
     if(value.type === "regular") {
       currentColors.set(key, {...value});
@@ -30751,26 +31033,40 @@ function slider(contentEl, action, min, max, step, invert) {
   }
 }
 
-function showModal() {
-  let debounceColorPicker = true;
-  const modal = new ea.FloatingModal(app);
-  let dirty = false;
+let debounceColorPicker = true;
 
-  modal.onOpen = async () => {
-    const { contentEl, modalEl } = modal;
-    const { width, height } = ea.getExcalidrawAPI().getAppState();
-    modal.bgOpacity = 0;
-    contentEl.createEl('h2', { text: 'Shade Master' });
-    
-    const helpDiv = contentEl.createEl("details", {
-      attr: { style: "margin-bottom: 1em;background: var(--background-secondary); padding: 1em; border-radius: 4px;" }});
-    helpDiv.createEl("summary", { text: "Help & Usage Guide", attr: { style: "cursor: pointer; color: var(--text-accent);" } });
-    const helpDetailsDiv = helpDiv.createEl("div", {
-      attr: { style: "margin-top: 0em; " }
+function renderSidepanel(contentEl) {
+  contentEl.empty();
+  
+  contentEl.createEl('h2', { text: 'Shade Master' });
+  
+  const helpDiv = contentEl.createEl("details", {
+    attr: { style: "margin-bottom: 1em;background: var(--background-secondary); padding: 1em; border-radius: 4px;" }});
+  helpDiv.createEl("summary", { text: "Help & Usage Guide", attr: { style: "cursor: pointer; color: var(--text-accent);" } });
+  const helpDetailsDiv = helpDiv.createEl("div", {
+    attr: { style: "margin-top: 0em; " }
+  });
+  
+  ea.obsidian.MarkdownRenderer.render(ea.plugin.app, HELP_TEXT, helpDetailsDiv, "", ea.plugin);
+
+  if (!ea.targetView) {
+    contentEl.createEl("p", { 
+      text: "No active Excalidraw view found. Please open a drawing and select elements to use Shade Master.",
+      attr: { style: "color: var(--text-muted);" }
     });
-    //helpDetailsDiv.innerHTML = HELP_TEXT;
-    await ea.obsidian.MarkdownRenderer.render(ea.plugin.app, HELP_TEXT, helpDetailsDiv, "", ea.plugin);
+    return;
+  }
 
+  const { width, height } = ea.getExcalidrawAPI().getAppState();
+
+  if(allElements.length === 0) {
+    contentEl.createEl("p", { 
+      text: "Select at least one rectangle, ellipse, diamond, line, arrow, freedraw, text or SVG image element",
+      attr: { style: "color: var(--text-warning);" }
+    });
+    // return; // Removed early return to allow rendering of the Close button
+  } else {
+    // Only render controls if elements are selected
     const component = new ea.obsidian.Setting(contentEl)
       .setName(FORMAT)
       .setDesc("Output color format")
@@ -30808,14 +31104,7 @@ function showModal() {
         })
       );
 
-    // lightness and saturation are on a scale of 0%-100%
-    // Hue is in degrees, 360 for the full circle
-    // transparency is on a range between 0 and 1 (equivalent to 0%-100%)
-    // The range for lightness, saturation and transparency are double since
-    // the input could be at either end of the scale
-    // The range for Hue is 360 since regarless of the position on the circle moving
-    // the slider to the two extremes will travel the entire circle
-    // To modify blacks and whites, lightness first needs to be changed to value between 1% and 99%
+    sliderResetters.length = 0; // Clear existing resetters
     sliderResetters.push(slider(contentEl, "Hue", 0, 360, 1, false));
     sliderResetters.push(slider(contentEl, "Saturation", 0, 200, 1, false));
     sliderResetters.push(slider(contentEl, "Lightness", 0, 200, 1, false));
@@ -30824,13 +31113,12 @@ function showModal() {
     // Add color pickers if a single SVG image is selected
     if (svgImageElements.length === 1) {
       const svgElement = svgImageElements[0];
-      //note that the objects in currentColors might get replaced when
-      //colors are reset, thus in the onChange functions I will always
-      //read currentColorInfo from currentColors based on svgElement.id
       const initialColorInfo = currentColors.get(svgElement.id).colors;
       const colorSection = contentEl.createDiv();
       colorSection.createEl('h3', { text: 'SVG Colors' });
       
+      colorInputs.clear(); // Clear old inputs map
+
       for (const [color, info] of initialColorInfo.entries()) {
         const row = new ea.obsidian.Setting(colorSection)
           .setName(color === "fill" ? "SVG default" : color)
@@ -30965,7 +31253,7 @@ function showModal() {
         paletteButton.settingEl.style.padding = "0";
         paletteButton.settingEl.style.border = "0";
         paletteButton.infoEl.style.display = "none";
-  
+
         // Store references to the components
         colorInputs.set(color, {
           textInput,
@@ -31009,50 +31297,39 @@ function showModal() {
         });
       }
     }
+  }
 
-    const buttons = new ea.obsidian.Setting(contentEl);
-    if(svgImageElements.length > 0) {
-      buttons.addButton(button => button
-        .setButtonText("Initialize SVG Colors")
-        .onClick(() => {
-          debounceColorPicker = true;
-          clearSVGMapping();
-        })
-      );
-    }
+  const buttons = new ea.obsidian.Setting(contentEl);
+  if(svgImageElements.length > 0) {
+    buttons.addButton(button => button
+      .setButtonText("Initialize SVG Colors")
+      .onClick(() => {
+        debounceColorPicker = true;
+        clearSVGMapping();
+      })
+    );
+  }
 
-    buttons
-      .addButton(button => button
-        .setButtonText("Reset")
-        .onClick(() => {
-          for (const resetter of sliderResetters) {
-            resetter();
-          }
-          copyOriginalsToCurrent();
-          setColors(originalColors);
-        }))
-      .addButton(button => button
-        .setButtonText("Close")
-        .setCta(true)
-        .onClick(() => modal.close()));
-    
-    const maxHeight = Math.round(height * 0.6);
-    const maxWidth = Math.round(width * 0.9);
-    modalEl.style.maxHeight = `${maxHeight}px`;
-    modalEl.style.maxWidth = `${maxWidth}px`;
-  };
+  if (allElements.length > 0) {
+    buttons.addButton(button => button
+      .setButtonText("Reset")
+      .onClick(() => {
+        for (const resetter of sliderResetters) {
+          resetter();
+        }
+        copyOriginalsToCurrent();
+        setColors(originalColors);
+      }));
+  }
 
-  modal.onClose = () => {
-    terminate = true;
-    if (dirty) {
-      ea.setScriptSettings(settings);
-    }
-    if(ea.targetView.isDirty()) {
-      ea.targetView.save(false);
-    }
-  };
-
-  modal.open();
+  buttons.addButton(button => button
+    .setButtonText("Close")
+    .onClick(() => {
+      if(ea.sidepanelTab) {
+        ea.sidepanelTab.close();
+      }
+      ea.toggleSidepanelView();
+    }));
 }
 
 function executeChange(isDecrease, step, action) {
@@ -31138,9 +31415,69 @@ function run(action="Hue", isDecrease=true, step=0) {
   if (!isRunning) processQueue();
 }
 
-await storeOriginalColors();
-showModal();
-processQueue();
+// Function to refresh internal state based on current selection
+function refreshSelectionState() {
+  if (!ea.targetView) {
+    allElements = [];
+    svgImageElements = [];
+    lastSelectionIds = "";
+    return;
+  }
+  allElements = ea.getViewSelectedElements();
+  svgImageElements = allElements.filter(el => {
+    if(el.type !== "image") return false;
+    const file = ea.getViewFileForImageElement(el);
+    if(!file) return false;
+    return el.type === "image" && (
+      file.extension === "svg" ||
+      ea.isExcalidrawFile(file)
+    );
+  });
+  lastSelectionIds = allElements.map(e => e.id).sort().join(",");
+}
+
+// Sidepanel initialization and logic
+ea.createSidepanelTab("Shade Master", false, true).then(tab => {
+  if (!tab) return;
+
+  const initializeAndRender = async () => {
+    refreshSelectionState();
+    await storeOriginalColors();
+    renderSidepanel(tab.contentEl);
+    processQueue();
+  };
+
+  tab.onOpen = async () => {
+    terminate = false;
+    // Initial load
+    await initializeAndRender();
+  };
+
+  tab.onFocus = async (view) => {
+    if (view && view !== ea.targetView) {
+      ea.setView(view);
+      ea.clear();
+    }
+    
+    // Check if selection changed
+    const currentSelectionStr = ea.getViewSelectedElements().map(e => e.id).sort().join(",");
+    if (currentSelectionStr !== lastSelectionIds) {
+      await initializeAndRender();
+    }
+  };
+
+  tab.onClose = async () => {
+    terminate = true;
+    if (dirty) {
+      ea.setScriptSettings(settings);
+    }
+    if(ea.targetView && ea.targetView.isDirty()) {
+      ea.targetView.save(false);
+    }
+  };
+
+  tab.open();
+});
 ```
 
 ---

@@ -331,7 +331,6 @@ function slider(contentEl, action, min, max, step, invert) {
 
 let debounceColorPicker = true;
 
-// Replaces showModal with renderSidepanel logic
 function renderSidepanel(contentEl) {
   contentEl.empty();
   
@@ -361,237 +360,238 @@ function renderSidepanel(contentEl) {
       text: "Select at least one rectangle, ellipse, diamond, line, arrow, freedraw, text or SVG image element",
       attr: { style: "color: var(--text-warning);" }
     });
-    return;
-  }
+    // return; // Removed early return to allow rendering of the Close button
+  } else {
+    // Only render controls if elements are selected
+    const component = new ea.obsidian.Setting(contentEl)
+      .setName(FORMAT)
+      .setDesc("Output color format")
+      .addDropdown(dropdown => dropdown
+        .addOptions({
+          "HSL": "HSL",
+          "RGB": "RGB",
+          "HEX": "HEX"
+        })
+        .setValue(settings[FORMAT].value)
+        .onChange(value => {
+          settings[FORMAT].value = value;
+          run();
+          dirty = true;
+        })
+      );
 
-  const component = new ea.obsidian.Setting(contentEl)
-    .setName(FORMAT)
-    .setDesc("Output color format")
-    .addDropdown(dropdown => dropdown
-      .addOptions({
-        "HSL": "HSL",
-        "RGB": "RGB",
-        "HEX": "HEX"
-      })
-      .setValue(settings[FORMAT].value)
-      .onChange(value => {
-        settings[FORMAT].value = value;
-        run();
-        dirty = true;
-      })
-    );
+    new ea.obsidian.Setting(contentEl)
+      .setName(STROKE)
+      .addToggle(toggle => toggle
+        .setValue(settings[STROKE].value)
+        .onChange(value => {
+          settings[STROKE].value = value;
+          dirty = true;
+        })
+      );
 
-  new ea.obsidian.Setting(contentEl)
-    .setName(STROKE)
-    .addToggle(toggle => toggle
-      .setValue(settings[STROKE].value)
-      .onChange(value => {
-        settings[STROKE].value = value;
-        dirty = true;
-      })
-    );
+    new ea.obsidian.Setting(contentEl)
+      .setName(BACKGROUND)
+      .addToggle(toggle => toggle
+        .setValue(settings[BACKGROUND].value)
+        .onChange(value => {
+          settings[BACKGROUND].value = value;
+          dirty = true;
+        })
+      );
 
-  new ea.obsidian.Setting(contentEl)
-    .setName(BACKGROUND)
-    .addToggle(toggle => toggle
-      .setValue(settings[BACKGROUND].value)
-      .onChange(value => {
-        settings[BACKGROUND].value = value;
-        dirty = true;
-      })
-    );
+    sliderResetters.length = 0; // Clear existing resetters
+    sliderResetters.push(slider(contentEl, "Hue", 0, 360, 1, false));
+    sliderResetters.push(slider(contentEl, "Saturation", 0, 200, 1, false));
+    sliderResetters.push(slider(contentEl, "Lightness", 0, 200, 1, false));
+    sliderResetters.push(slider(contentEl, "Transparency", 0, 2, 0.05, true));
 
-  sliderResetters.length = 0; // Clear existing resetters
-  sliderResetters.push(slider(contentEl, "Hue", 0, 360, 1, false));
-  sliderResetters.push(slider(contentEl, "Saturation", 0, 200, 1, false));
-  sliderResetters.push(slider(contentEl, "Lightness", 0, 200, 1, false));
-  sliderResetters.push(slider(contentEl, "Transparency", 0, 2, 0.05, true));
-
-  // Add color pickers if a single SVG image is selected
-  if (svgImageElements.length === 1) {
-    const svgElement = svgImageElements[0];
-    const initialColorInfo = currentColors.get(svgElement.id).colors;
-    const colorSection = contentEl.createDiv();
-    colorSection.createEl('h3', { text: 'SVG Colors' });
-    
-    colorInputs.clear(); // Clear old inputs map
-
-    for (const [color, info] of initialColorInfo.entries()) {
-      const row = new ea.obsidian.Setting(colorSection)
-        .setName(color === "fill" ? "SVG default" : color)
-        .setDesc(`${info.fill ? "Fill" : ""}${info.fill && info.stroke ? " & " : ""}${info.stroke ? "Stroke" : ""}`);
-      row.descEl.style.width = "100px";
-      row.nameEl.style.width = "100px";
-
-      // Create color preview div
-      const previewDiv = row.controlEl.createDiv();
-      previewDiv.style.width = "50px";
-      previewDiv.style.height = "20px";
-      previewDiv.style.border = "1px solid var(--background-modifier-border)";
-      if (color === "transparent") {
-        previewDiv.style.backgroundImage = "linear-gradient(45deg, #808080 25%, transparent 25%), linear-gradient(-45deg, #808080 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #808080 75%), linear-gradient(-45deg, transparent 75%, #808080 75%)";
-        previewDiv.style.backgroundSize = "10px 10px";
-        previewDiv.style.backgroundPosition = "0 0, 0 5px, 5px -5px, -5px 0px";
-      } else {
-        previewDiv.style.backgroundColor = ea.getCM(color).stringHEX({alpha: false}).toLowerCase();
-      }
+    // Add color pickers if a single SVG image is selected
+    if (svgImageElements.length === 1) {
+      const svgElement = svgImageElements[0];
+      const initialColorInfo = currentColors.get(svgElement.id).colors;
+      const colorSection = contentEl.createDiv();
+      colorSection.createEl('h3', { text: 'SVG Colors' });
       
-      const resetButton = new ea.obsidian.Setting(row.controlEl)
-        .addButton(button => button
-          .setButtonText(">>")
-          .setClass("reset-color-button")
-          .onClick(async () => {
-            const original = originalColors.get(svgElement.id);
-            const current = currentColors.get(svgElement.id);
-            if (original?.type === "svg") {
-              const originalInfo = original.colors.get(color);
-              const currentInfo = current.colors.get(color);
-              if (originalInfo) {
-                currentInfo.mappedTo = color;
-                run("reset single color");
+      colorInputs.clear(); // Clear old inputs map
+
+      for (const [color, info] of initialColorInfo.entries()) {
+        const row = new ea.obsidian.Setting(colorSection)
+          .setName(color === "fill" ? "SVG default" : color)
+          .setDesc(`${info.fill ? "Fill" : ""}${info.fill && info.stroke ? " & " : ""}${info.stroke ? "Stroke" : ""}`);
+        row.descEl.style.width = "100px";
+        row.nameEl.style.width = "100px";
+
+        // Create color preview div
+        const previewDiv = row.controlEl.createDiv();
+        previewDiv.style.width = "50px";
+        previewDiv.style.height = "20px";
+        previewDiv.style.border = "1px solid var(--background-modifier-border)";
+        if (color === "transparent") {
+          previewDiv.style.backgroundImage = "linear-gradient(45deg, #808080 25%, transparent 25%), linear-gradient(-45deg, #808080 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #808080 75%), linear-gradient(-45deg, transparent 75%, #808080 75%)";
+          previewDiv.style.backgroundSize = "10px 10px";
+          previewDiv.style.backgroundPosition = "0 0, 0 5px, 5px -5px, -5px 0px";
+        } else {
+          previewDiv.style.backgroundColor = ea.getCM(color).stringHEX({alpha: false}).toLowerCase();
+        }
+        
+        const resetButton = new ea.obsidian.Setting(row.controlEl)
+          .addButton(button => button
+            .setButtonText(">>")
+            .setClass("reset-color-button")
+            .onClick(async () => {
+              const original = originalColors.get(svgElement.id);
+              const current = currentColors.get(svgElement.id);
+              if (original?.type === "svg") {
+                const originalInfo = original.colors.get(color);
+                const currentInfo = current.colors.get(color);
+                if (originalInfo) {
+                  currentInfo.mappedTo = color;
+                  run("reset single color");
+                }
               }
-            }
-          }))
-        resetButton.settingEl.style.padding = "0";
-        resetButton.settingEl.style.border = "0";
+            }))
+          resetButton.settingEl.style.padding = "0";
+          resetButton.settingEl.style.border = "0";
 
-      // Add text input for color value
-      const textInput = new ea.obsidian.TextComponent(row.controlEl)
-        .setValue(info.mappedTo)
-        .setPlaceholder("Color value");
-      textInput.inputEl.style.width = "100%";
-      textInput.onChange(value => {
-        const lower = value.toLowerCase();
-        if (lower === color) return;
-        textInput.setValue(lower);
-      })
+        // Add text input for color value
+        const textInput = new ea.obsidian.TextComponent(row.controlEl)
+          .setValue(info.mappedTo)
+          .setPlaceholder("Color value");
+        textInput.inputEl.style.width = "100%";
+        textInput.onChange(value => {
+          const lower = value.toLowerCase();
+          if (lower === color) return;
+          textInput.setValue(lower);
+        })
 
-      const applyButtonComponent = new ea.obsidian.Setting(row.controlEl)
-        .addButton(button => button
-          .setIcon("check")
-          .setTooltip("Apply")
-          .onClick(async () => {
-            const value = textInput.getValue();
-            try {
-              if(!CSS.supports("color",value)) {
-                new Notice (`${value} is not a valid color string`);
-                return;
-              }
-              const cm = ea.getCM(value);
-              if (cm) {
-                const format = settings[FORMAT].value;
-                const alpha = cm.alpha < 1 ? true : false;
-                const newColor = format === "RGB" 
-                  ? cm.stringRGB({alpha , precision }).toLowerCase()
-                  : format === "HEX" 
-                    ? cm.stringHEX({alpha}).toLowerCase()
-                    : cm.stringHSL({alpha, precision }).toLowerCase();
-
-                textInput.setValue(newColor);
-                const currentInfo = currentColors.get(svgElement.id).colors;
-                currentInfo.get(color).mappedTo = newColor;
-                run("Update SVG color");
-                debounceColorPicker = true;
-                colorPicker.setValue(cm.stringHEX({alpha: false}).toLowerCase());
-              }
-            } catch (e) {
-              console.error("Invalid color value:", e);
-            }
-          }));
-        applyButtonComponent.settingEl.style.padding = "0";
-        applyButtonComponent.settingEl.style.border = "0";
-      
-      // Add color picker
-      const colorPicker = new ea.obsidian.ColorComponent(row.controlEl)
-        .setValue(ea.getCM(info.mappedTo).stringHEX({alpha: false}).toLowerCase());
-
-      colorPicker.colorPickerEl.style.maxWidth = "2.5rem";
-
-      // Add palette picker button
-      const paletteButton = new ea.obsidian.Setting(row.controlEl)
-        .addButton(button => button
-          .setIcon("swatch-book")
-          .setTooltip("Pick from Palette")
-          .onClick(async () => {
-            const selected = await ea.showColorPicker(button.buttonEl, "elementStroke");
-            if (selected) {
+        const applyButtonComponent = new ea.obsidian.Setting(row.controlEl)
+          .addButton(button => button
+            .setIcon("check")
+            .setTooltip("Apply")
+            .onClick(async () => {
+              const value = textInput.getValue();
               try {
-                const cm = ea.getCM(selected);
+                if(!CSS.supports("color",value)) {
+                  new Notice (`${value} is not a valid color string`);
+                  return;
+                }
+                const cm = ea.getCM(value);
                 if (cm) {
                   const format = settings[FORMAT].value;
-                  
-                  // Preserve alpha from original color
-                  const currentInfo = currentColors.get(svgElement.id).colors.get(color);
-                  const originalAlpha = ea.getCM(currentInfo.mappedTo).alpha;
-                  cm.alphaTo(originalAlpha);
-                  const alpha = originalAlpha < 1 ? true : false;
-
+                  const alpha = cm.alpha < 1 ? true : false;
                   const newColor = format === "RGB" 
                     ? cm.stringRGB({alpha , precision }).toLowerCase()
                     : format === "HEX" 
                       ? cm.stringHEX({alpha}).toLowerCase()
                       : cm.stringHSL({alpha, precision }).toLowerCase();
-                  
-                  // Update text input
-                  textInput.setValue(newColor);
-                  
-                  // Update Color Picker visual
-                  colorPicker.setValue(cm.stringHEX({alpha: false}).toLowerCase());
 
-                  // Update SVG mapping
-                  currentInfo.mappedTo = newColor;
+                  textInput.setValue(newColor);
+                  const currentInfo = currentColors.get(svgElement.id).colors;
+                  currentInfo.get(color).mappedTo = newColor;
                   run("Update SVG color");
+                  debounceColorPicker = true;
+                  colorPicker.setValue(cm.stringHEX({alpha: false}).toLowerCase());
                 }
               } catch (e) {
                 console.error("Invalid color value:", e);
               }
+            }));
+          applyButtonComponent.settingEl.style.padding = "0";
+          applyButtonComponent.settingEl.style.border = "0";
+        
+        // Add color picker
+        const colorPicker = new ea.obsidian.ColorComponent(row.controlEl)
+          .setValue(ea.getCM(info.mappedTo).stringHEX({alpha: false}).toLowerCase());
+
+        colorPicker.colorPickerEl.style.maxWidth = "2.5rem";
+
+        // Add palette picker button
+        const paletteButton = new ea.obsidian.Setting(row.controlEl)
+          .addButton(button => button
+            .setIcon("swatch-book")
+            .setTooltip("Pick from Palette")
+            .onClick(async () => {
+              const selected = await ea.showColorPicker(button.buttonEl, "elementStroke");
+              if (selected) {
+                try {
+                  const cm = ea.getCM(selected);
+                  if (cm) {
+                    const format = settings[FORMAT].value;
+                    
+                    // Preserve alpha from original color
+                    const currentInfo = currentColors.get(svgElement.id).colors.get(color);
+                    const originalAlpha = ea.getCM(currentInfo.mappedTo).alpha;
+                    cm.alphaTo(originalAlpha);
+                    const alpha = originalAlpha < 1 ? true : false;
+
+                    const newColor = format === "RGB" 
+                      ? cm.stringRGB({alpha , precision }).toLowerCase()
+                      : format === "HEX" 
+                        ? cm.stringHEX({alpha}).toLowerCase()
+                        : cm.stringHSL({alpha, precision }).toLowerCase();
+                    
+                    // Update text input
+                    textInput.setValue(newColor);
+                    
+                    // Update Color Picker visual
+                    colorPicker.setValue(cm.stringHEX({alpha: false}).toLowerCase());
+
+                    // Update SVG mapping
+                    currentInfo.mappedTo = newColor;
+                    run("Update SVG color");
+                  }
+                } catch (e) {
+                  console.error("Invalid color value:", e);
+                }
+              }
+            }));
+        paletteButton.settingEl.style.padding = "0";
+        paletteButton.settingEl.style.border = "0";
+        paletteButton.infoEl.style.display = "none";
+
+        // Store references to the components
+        colorInputs.set(color, {
+          textInput,
+          colorPicker,
+          previewDiv,
+          resetButton
+        });
+
+        colorPicker.colorPickerEl.addEventListener('click', () => {
+          debounceColorPicker = false;
+        });
+
+        colorPicker.onChange(async (value) => {
+          try {
+            if(!debounceColorPicker) {
+              const currentInfo = currentColors.get(svgElement.id).colors.get(color);
+              // Preserve alpha from original color
+              const originalAlpha = ea.getCM(currentInfo.mappedTo).alpha;
+              const cm = ea.getCM(value);
+              cm.alphaTo(originalAlpha);
+              const alpha = originalAlpha < 1 ? true : false;
+              const format = settings[FORMAT].value;
+              const newColor = format === "RGB" 
+                ? cm.stringRGB({alpha, precision }).toLowerCase()
+                : format === "HEX" 
+                  ? cm.stringHEX({alpha}).toLowerCase()
+                  : cm.stringHSL({alpha, precision }).toLowerCase();
+              
+              // Update text input
+              textInput.setValue(newColor);
+              
+              // Update SVG
+              currentInfo.mappedTo = newColor;
+              run("Update SVG color");
             }
-          }));
-      paletteButton.settingEl.style.padding = "0";
-      paletteButton.settingEl.style.border = "0";
-      paletteButton.infoEl.style.display = "none";
-
-      // Store references to the components
-      colorInputs.set(color, {
-        textInput,
-        colorPicker,
-        previewDiv,
-        resetButton
-      });
-
-      colorPicker.colorPickerEl.addEventListener('click', () => {
-        debounceColorPicker = false;
-      });
-
-      colorPicker.onChange(async (value) => {
-        try {
-          if(!debounceColorPicker) {
-            const currentInfo = currentColors.get(svgElement.id).colors.get(color);
-            // Preserve alpha from original color
-            const originalAlpha = ea.getCM(currentInfo.mappedTo).alpha;
-            const cm = ea.getCM(value);
-            cm.alphaTo(originalAlpha);
-            const alpha = originalAlpha < 1 ? true : false;
-            const format = settings[FORMAT].value;
-            const newColor = format === "RGB" 
-              ? cm.stringRGB({alpha, precision }).toLowerCase()
-              : format === "HEX" 
-                ? cm.stringHEX({alpha}).toLowerCase()
-                : cm.stringHSL({alpha, precision }).toLowerCase();
-            
-            // Update text input
-            textInput.setValue(newColor);
-            
-            // Update SVG
-            currentInfo.mappedTo = newColor;
-            run("Update SVG color");
+          } catch (e) {
+            console.error("Invalid color value:", e);
+          } finally {
+            debounceColorPicker = true;
           }
-        } catch (e) {
-          console.error("Invalid color value:", e);
-        } finally {
-          debounceColorPicker = true;
-        }
-      });
+        });
+      }
     }
   }
 
@@ -606,8 +606,8 @@ function renderSidepanel(contentEl) {
     );
   }
 
-  buttons
-    .addButton(button => button
+  if (allElements.length > 0) {
+    buttons.addButton(button => button
       .setButtonText("Reset")
       .onClick(() => {
         for (const resetter of sliderResetters) {
@@ -616,7 +616,16 @@ function renderSidepanel(contentEl) {
         copyOriginalsToCurrent();
         setColors(originalColors);
       }));
-      // Close button removed for sidepanel implementation
+  }
+
+  buttons.addButton(button => button
+    .setButtonText("Close")
+    .onClick(() => {
+      if(ea.sidepanelTab) {
+        ea.sidepanelTab.close();
+      }
+      ea.toggleSidepanelView();
+    }));
 }
 
 function executeChange(isDecrease, step, action) {

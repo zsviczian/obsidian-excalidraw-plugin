@@ -18,6 +18,18 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.20.0":`
+<div class="excalidraw-videoWrapper">
+<a href="https://www.youtube.com/watch?v=5G9QF-u9w0Q" target="_blank"><img src ="https://i.ytimg.com/vi/5G9QF-u9w0Q/maxresdefault.jpg" style="width:100%;"></a>
+</div>
+
+> [!Tip]- Learn MindMap Builder
+> Learn it fast with the low-cost [MindMap Builder course](https://visual-thinking-workshop.com/mindmap). Register before **31 Jan** to join a live Q&A:
+> - Sat Jan 31 @ 18:00 CET ([local time](https://www.timeanddate.com/worldclock/fixedtime.html?msg=MindMap+Builder+Launch+Party&iso=20260131T17&p1=%3A&ah=1))
+> - Sun Feb 1 @ 09:00 CET ([local time](https://www.timeanddate.com/worldclock/fixedtime.html?msg=MindMap+Builder+Launch+Party&iso=20260201T08&p1=%3A&ah=1))
+
+## Scripts
+- Moved [Shade Master](https://youtu.be/ISuORbVKyhQ) to use the new Excalidraw Sidepanel API (just like MindMap Builder).
+
 ## New
 - Dark theme from Excalidraw.com [#10578](https://github.com/excalidraw/excalidraw/pull/10578) (including correct emoji rendering in dark mode 😍).
 - New image context-menu option (right-click an image) to control whether that image inverts in dark mode

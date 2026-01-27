@@ -779,9 +779,11 @@ export declare class ExcalidrawAutomate {
      * @param {number} topX - The x-coordinate of the top-left corner.
      * @param {number} topY - The y-coordinate of the top-left corner.
      * @param {string} tex - The LaTeX equation string.
+     * @param {number} [scaleX=1] - The x-scaling factor (post mathjax creation)
+     * @param {number} [scaleY=1] - The y-scaling factor (post mathjax creation)
      * @returns {Promise<string>} Promise resolving to the ID of the added LaTeX image element.
      */
-    addLaTex(topX: number, topY: number, tex: string): Promise<string>;
+    addLaTex(topX: number, topY: number, tex: string, scaleX?: number, scaleY?: number): Promise<string>;
     /**
      * Returns the base64 dataURL of the LaTeX equation rendered as an SVG.
      * @param {string} tex - The LaTeX equation string.
@@ -1403,6 +1405,7 @@ export declare class ExcalidrawAutomate {
     cloneElement(element: ExcalidrawElement): ExcalidrawElement;
     /**
      * Moves the specified element to a specific position in the z-index.
+     * * Operates directly on the Excalidraw Scene in targetView, not through ExcalidrawAutomate elements.
      * @param {number} elementId - The ID of the element to move.
      * @param {number} newZIndex - The new z-index position for the element.
      */
@@ -1998,6 +2001,17 @@ export type ExcalidrawImageElement = _ExcalidrawElementBase & Readonly<{
     scale: [number, number];
     /** whether an element is cropped */
     crop: ImageCrop | null;
+    customData?: {
+        pdfPageViewProps?: {
+            left: number;
+            bottom: number;
+            right: number;
+            top: number;
+            rotate?: number;
+        };
+        doNotInvertSVGInDarkMode?: boolean;
+        invertBitmapInDarkmode?: boolean;
+    };
 }>;
 export type InitializedExcalidrawImageElement = MarkNonNullable<ExcalidrawImageElement, "fileId">;
 type FrameRole = null | "marker";
@@ -2635,7 +2649,7 @@ export interface ExcalidrawProps {
         button: "down" | "up";
         pointersMap: Gesture["pointers"];
     }) => void;
-    onPaste?: (data: ClipboardData, event: ClipboardEvent | null) => Promise<boolean> | boolean;
+    onPaste?: (data: ClipboardData, event: ClipboardEvent | null, files: ParsedDataTransferFile[]) => Promise<boolean> | boolean;
     onDrop?: (event: React.DragEvent<HTMLDivElement>) => Promise<boolean> | boolean;
     /**
      * Called when element(s) are duplicated so you can listen or modify as
@@ -2728,8 +2742,7 @@ export type UIOptions = Partial<{
      * Optionally control the editor form factor and desktop UI mode from the host app.
      * If not provided, we will take care of it internally.
      */
-    formFactor?: EditorInterface["formFactor"];
-    desktopUIMode?: EditorInterface["desktopUIMode"];
+    getFormFactor?: (editorWidth: number, editorHeight: number) => EditorInterface["formFactor"];
     /** @deprecated does nothing. Will be removed in 0.15 */
     welcomeScreen?: boolean;
 }>;
@@ -3276,7 +3289,7 @@ declare class App extends React.Component<AppProps, AppState> {
     render(): import("react/jsx-runtime").JSX.Element;
     focusContainer: AppClassProperties["focusContainer"];
     getSceneElementsIncludingDeleted: () => readonly import("@excalidraw/element/types").OrderedExcalidrawElement[];
-    getSceneElementsMapIncludingDeleted: () => Map<string, Ordered<ExcalidrawElement>> & import("@excalidraw/common/utility-types").MakeBrand<"SceneElementsMap">;
+    getSceneElementsMapIncludingDeleted: () => SceneElementsMap;
     getSceneElements: () => readonly Ordered<NonDeletedExcalidrawElement>[];
     onInsertElements: (elements: readonly ExcalidrawElement[]) => void;
     onExportImage: (type: keyof typeof EXPORT_IMAGE_TYPES, elements: ExportedElements, opts: {

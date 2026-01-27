@@ -32,9 +32,11 @@ export const setDynamicStyle = (
     return;
   }
   //const doc = view.ownerDocument;
+  const st = view?.excalidrawAPI?.getAppState?.();
+
   const isLightTheme = 
-    view?.excalidrawAPI?.getAppState?.()?.theme === "light" ||
-    view?.excalidrawData?.scene?.appState?.theme === "light";
+    st?.theme === "light" ||
+    st?.theme === "light";
 
   if (color==="transparent") {
     color = "#ffffff";
@@ -123,8 +125,8 @@ export const setDynamicStyle = (
     [`--h4-color`]: str(text),
     [`color`]: str(text),
     ['--excalidraw-caret-color']: textBackgroundColor
-      ? str(isLightTheme ? invertColor(textBackgroundColor) : ea.getCM(textBackgroundColor))
-      : str(isLightTheme ? text : cmBG()),
+        ? str(isLightTheme ? invertColor(textBackgroundColor) : ea.getCM(textBackgroundColor))
+        : (isLightTheme ? str(invertColor(color)): color),
     [`--select-highlight-color`]: str(gray1()),
     [`--color-gray-90`]: str(isDark?text.darkerBy(5):text.lighterBy(5)), //search background
     [`--color-gray-80`]: str(isDark?text.darkerBy(10):text.lighterBy(10)), //frame

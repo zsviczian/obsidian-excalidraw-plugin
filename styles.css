@@ -786,7 +786,7 @@ root {
 }
 
 textarea.excalidraw-wysiwyg, .excalidraw input {
-  caret-color: var(--excalidraw-caret-color);
+  caret-color: var(--excalidraw-caret-color) !important;
 }
 
 .excalidraw-settings-links-container {
@@ -840,7 +840,7 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 }
 
 .excalidraw textarea.ttd-dialog-input {
-  caret-color: var(--excalidraw-caret-color);
+  caret-color: var(--excalidraw-caret-color) !important;
 }
 
 .excalidraw .ToolIcon_type_button {
