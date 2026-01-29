@@ -4081,6 +4081,50 @@ const pasteListToMap = async () => {
 // ---------------------------------------------------------------------------
 
 /**
+ * Reconnects an arrow from one element to another.
+ * Updates the arrow's binding (start or end) and maintains the boundElements arrays
+ * of both the old and new parent nodes to ensure consistency.
+ * 
+ * @param {ExcalidrawElement} currentBindingElement - The node to disconnect from.
+ * @param {ExcalidrawElement} newBindingElement - The node to connect to.
+ * @param {ExcalidrawElement} arrow - The arrow element to rewire.
+ * @param {string} side - "start" or "end". Defaults to "start".
+ */
+const reconnectArrow = (currentBindingElement, newBindingElement, arrow, side = "start") => {
+  // 1. Ensure all involved elements are in the EA workbench
+  const elementsToCheck = [currentBindingElement, newBindingElement, arrow];
+  const elementsToCopy = elementsToCheck.filter(el => !ea.getElement(el.id));
+  
+  if (elementsToCopy.length > 0) {
+    ea.copyViewElementsToEAforEditing(elementsToCopy);
+  }
+
+  // 2. Retrieve mutable references from EA
+  const oldNode = ea.getElement(currentBindingElement.id);
+  const newNode = ea.getElement(newBindingElement.id);
+  const targetArrow = ea.getElement(arrow.id);
+
+  // 3. Update the Arrow's binding property
+  const bindingKey = side === "start" ? "startBinding" : "endBinding";
+  targetArrow[bindingKey] = {
+    ...(targetArrow[bindingKey] || {}),
+    elementId: newNode.id
+  };
+
+  // 4. Remove arrow reference from the Old Node's boundElements
+  if (oldNode.boundElements) {
+    oldNode.boundElements = oldNode.boundElements.filter(be => be.id !== targetArrow.id);
+  }
+
+  // 5. Add arrow reference to the New Node's boundElements
+  if (!newNode.boundElements) newNode.boundElements = [];
+  // Prevent duplicates
+  if (!newNode.boundElements.some(be => be.id === targetArrow.id)) {
+    newNode.boundElements.push({ type: "arrow", id: targetArrow.id });
+  }
+};
+
+/**
  * Recursively updates the font size of a subtree based on the new depth level.
  * Only updates if the current font size matches the default for its *previous* depth,
  * preserving user customizations.
@@ -4090,6 +4134,9 @@ const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => 
   
   const node = allElements.find(el => el.id === nodeId);
   if (!node) return;
+  if (!ea.getElement(nodeId)) {
+    ea.copyViewElementsToEAforEditing([node]);
+  }
 
   // Determine the node's *current* depth in the hierarchy to find its expected "old" font size
   const currentHierarchy = getHierarchy(node, allElements);
@@ -4146,11 +4193,14 @@ const changeNodeOrder = async (key) => {
   const rootCenter = root.x + root.width / 2;
   const curCenter = current.x + current.width / 2;
   const isInRight = curCenter > rootCenter;
+  const mapMode = root.customData?.growthMode || currentModalGrowthMode;
 
   // ---------------------------------------------------------
   // Feature: L1 Node Side Swap (Right-Left Map Exclusively)
   // ---------------------------------------------------------
-  const isRightLeft = (root.customData?.growthMode === "Right-Left") || (!root.customData?.growthMode && currentModalGrowthMode === "Right-Left");
+  const isRightLeft = (mapMode === "Right-Left");
+  const isRadial = (mapMode === "Radial");
+  const isLeftFacing = (mapMode === "Left-facing");
   
   if (parent.id === root.id && isRightLeft) {
      const moveRight = !isInRight && key === "ArrowRight"; // Left Node -> Right Side
@@ -4212,20 +4262,14 @@ const changeNodeOrder = async (key) => {
     );
 
     if (arrow) {
-      ea.copyViewElementsToEAforEditing([arrow, current]);
-      const eaArrow = ea.getElement(arrow.id);
-      // Rewire to Grandparent
-      eaArrow.startBinding.elementId = grandParent.id;
-      
-      // Determine new order: Place it after the old parent
+      reconnectArrow(parent, grandParent, arrow, "start");
       const parentOrder = getMindmapOrder(parent);
-      ea.addAppendUpdateCustomData(current.id, { mindmapOrder: parentOrder + 0.5 });
-      
-      // Update font sizes for the promoted subtree
-      // New depth is same as Parent's depth (since it becomes a sibling of Parent)
+      ea.copyViewElementsToEAforEditing([current]);
+      ea.addAppendUpdateCustomData(current.id, {
+        mindmapOrder: isRadial && !isInRight ? parentOrder - 0.5 : parentOrder + 0.5 
+      });
       const parentInfo = getHierarchy(parent, allElements);
       updateSubtreeFontSize(current.id, parentInfo.depth, allElements, rootFontScale);
-
       await addElementsToView();
       triggerGlobalLayout(root.id, false, true);
       return;
@@ -4247,8 +4291,7 @@ const changeNodeOrder = async (key) => {
     const currentIndex = siblings.findIndex(s => s.id === current.id);
     
     // Determine visual direction based on layout mode
-    // Radial Left side is inverted (Clockwise vs Counter-Clockwise list order)
-    const mirrorBehavior = isInRight || currentModalGrowthMode !== "Radial";
+    const mirrorBehavior = (isInRight && isRadial) || !isRadial;
     
     // Attempt to move to sibling ABOVE first
     // Normal: Above is index-1. Radial Left: Above is index+1
@@ -4273,25 +4316,18 @@ const changeNodeOrder = async (key) => {
     );
 
     if (arrow) {
-      ea.copyViewElementsToEAforEditing([arrow, current]);
-      const eaArrow = ea.getElement(arrow.id);
-      
-      // Rewire arrow to new parent
-      eaArrow.startBinding.elementId = newParent.id;
-      
+      reconnectArrow(parent, newParent, arrow, "start");
       // Determine new order: Append as last child of new parent
       const newParentChildren = getChildrenNodes(newParent.id, allElements);
       const nextOrder = newParentChildren.length > 0 
         ? Math.max(...newParentChildren.map(getMindmapOrder)) + 1 
         : 0;
-        
+      ea.copyViewElementsToEAforEditing([current]);
       ea.addAppendUpdateCustomData(current.id, { mindmapOrder: nextOrder });
-
       // Update font sizes for the demoted subtree
       // New depth is Parent's Depth + 2 (Child of Sibling)
       const parentInfo = getHierarchy(parent, allElements);
       updateSubtreeFontSize(current.id, parentInfo.depth + 2, allElements, rootFontScale);
-      
       await addElementsToView();
       triggerGlobalLayout(root.id, false, true);
     }
@@ -4310,8 +4346,11 @@ const changeNodeOrder = async (key) => {
     if (currentIndex === -1) return;
 
     let swapIndex = -1;
-    const mirrorBehavior = isInRight || currentModalGrowthMode !== "Radial";
+    const mirrorBehavior = (isInRight && isRadial) || !isRadial;
     
+    // Logic: 
+    // Radial Left: List is Bottom-to-Top (Clockwise). Up = Index+1 (Next).
+    // All Others: List is Top-to-Bottom. Up = Index-1 (Prev).
     if (key === "ArrowUp") {
       swapIndex = mirrorBehavior ? currentIndex - 1 : currentIndex + 1;
     } else {
@@ -4337,7 +4376,6 @@ const changeNodeOrder = async (key) => {
     }
   }
 }
-
 
 /**
  * Navigates the mindmap using arrow keys.
@@ -4373,10 +4411,10 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
       let targetChild = null;
 
       if (key === "ArrowUp") {
-        // First sibling
+        // First sibling (Visual Top, usually Index 0)
         targetChild = children[0];
       } else if (key === "ArrowDown") {
-        // Last sibling
+        // Last sibling (Visual Bottom, usually Index N)
         targetChild = children[children.length - 1];
       } else {
         // Left/Right Logic
@@ -4462,12 +4500,9 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
     const currentIsLeftwardBranch = (current.x + current.width / 2) < (parent.x + parent.width / 2);
     
     // Reverse up/down for left-facing branches in directional modes
-    const shouldReverseArrows = 
-        ["Right-Left", "Left-facing", "Right-facing"].includes(mapMode) &&
-        currentIsLeftwardBranch;
 
     let navigateForward; // true for next sibling (clockwise), false for previous (counter-clockwise)
-    if (shouldReverseArrows) {
+    if (currentIsLeftwardBranch) {
         navigateForward = (key === "ArrowUp"); // Reversed: Up moves forward, Down moves backward
     } else {
         navigateForward = (key === "ArrowDown"); // Normal: Down moves forward, Up moves backward
