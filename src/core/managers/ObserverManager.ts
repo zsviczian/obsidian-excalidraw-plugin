@@ -122,8 +122,9 @@ export class ObserverManager {
    */
   private async experimentalFileTypeDisplay() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.experimentalFileTypeDisplay, `ExcalidrawPlugin.experimentalFileTypeDisplay`);
+    const tagClassName = "excalidraw-filetype-tag";
     const insertFiletype = (el: HTMLElement) => {
-      if (el.childElementCount !== 1) {
+      if (!el || el.querySelector(`.${tagClassName}`)) {
         return;
       }
       const filename = el.getAttribute("data-path");
@@ -137,7 +138,7 @@ export class ObserverManager {
       if (this.plugin.isExcalidrawFile(f)) {
         el.insertAfter(
           createDiv({
-            cls: "nav-file-tag",
+            cls: ["nav-file-tag", tagClassName],
             text: this.settings.experimentalFileTag,
           }),
           el.firstChild,
@@ -147,14 +148,27 @@ export class ObserverManager {
 
     const fileExplorerObserverFn:MutationCallback = (mutationsList) => {
       (process.env.NODE_ENV === 'development') && DEBUGGING && debug(fileExplorerObserverFn, `ExcalidrawPlugin.experimentalFileTypeDisplay > fileExplorerObserverFn`, mutationsList);
-      const mutationsWithNodes = mutationsList.filter((mutation) => mutation.addedNodes.length > 0);
-      mutationsWithNodes.forEach((mutationNode) => {
-        mutationNode.addedNodes.forEach((node) => {
-          if (!(node instanceof Element)) {
-            return;
+      const ensureFiletypes = (target: Element | DocumentFragment) => {
+        target.querySelectorAll?.(".nav-file-title").forEach(insertFiletype);
+      };
+
+      mutationsList.forEach((mutation) => {
+        if (mutation.type === "childList") {
+          mutation.addedNodes.forEach((node) => {
+            if (node instanceof Element || node instanceof DocumentFragment) {
+              ensureFiletypes(node);
+            }
+          });
+          if (mutation.target instanceof Element) {
+            // Handles folders that were collapsed/expanded without adding nodes
+            ensureFiletypes(mutation.target);
           }
-          node.querySelectorAll(".nav-file-title").forEach(insertFiletype);
-        });
+          return;
+        }
+
+        if (mutation.type === "attributes" && mutation.target instanceof Element) {
+          ensureFiletypes(mutation.target);
+        }
       });
     };
 
@@ -169,6 +183,8 @@ export class ObserverManager {
       this.fileExplorerObserver.observe(container, {
         childList: true,
         subtree: true,
+        attributes: true,
+        attributeFilter: ["class", "aria-expanded"],
       });
     }
   }

@@ -17,6 +17,10 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.20.1":`
+## Fixed
+- Fixed Experimental file type display, available under miscellaneous settings. (Reported on Discord)
+`,
 "2.20.0":`
 <div class="excalidraw-videoWrapper">
 <a href="https://www.youtube.com/watch?v=5G9QF-u9w0Q" target="_blank"><img src ="https://i.ytimg.com/vi/5G9QF-u9w0Q/maxresdefault.jpg" style="width:100%;"></a>
