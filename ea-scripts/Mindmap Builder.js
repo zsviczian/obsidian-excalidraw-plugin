@@ -219,6 +219,8 @@ const STRINGS = {
     TITLE_PASTE: "Paste list from clipboard",
     LABEL_ZOOM_LEVEL: "Zoom Level",
     LABEL_GROWTH_STRATEGY: "Growth Strategy",
+    LABEL_FILL_SWEEP: "Fill Sweep Angle",
+    DESC_FILL_SWEEP: "Distribute nodes across the full Max Sweep Angle immediately, rather than growing the arc gradually as nodes are added.",
     LABEL_ARROW_TYPE: "Curved Connectors",
     LABEL_AUTO_LAYOUT: "Auto-Layout",
     LABEL_GROUP_BRANCHES: "Group Branches",
@@ -424,6 +426,8 @@ addLocale("zh", {
   TITLE_PASTE: "从剪贴板粘贴列表",
   LABEL_ZOOM_LEVEL: "缩放级别",
   LABEL_GROWTH_STRATEGY: "生长策略",
+  LABEL_FILL_SWEEP: "填充扫过角度",
+  DESC_FILL_SWEEP: "立即在整个“最大扫过角度”范围内分布节点，而不是随着节点数量增加逐渐扩大弧度。",
   LABEL_ARROW_TYPE: "曲线连接",
   LABEL_AUTO_LAYOUT: "自动布局",
   LABEL_GROUP_BRANCHES: "分支编组",
@@ -606,6 +610,7 @@ const K_HOTKEYS = "Hotkeys";
 const K_PALETTE = "Custom Palette";
 const K_LAYOUT = "Layout Config";
 const K_ARROW_TYPE = "Arrow Type";
+const K_FILL_SWEEP = "Fill Sweep";
 
 // ---------------------------------------------------------------------------
 // Layout & Geometry Settings
@@ -770,6 +775,7 @@ let centerText = getVal(K_CENTERTEXT, true);
 let autoLayoutDisabled = false;
 let zoomLevel = getVal(K_ZOOM, {value: "Medium", valueset: ZOOM_TYPES});
 let customPalette = getVal(K_PALETTE, {value : {enabled: false, random: false, colors: []}, hidden: true});
+let fillSweep = getVal(K_FILL_SWEEP, false);
 let editingNodeId = null;
 
 // -----------------------------------------------------------
@@ -2563,13 +2569,17 @@ const updateL1Arrow = (node, context) => {
   }
 };
 
-const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, mustHonorMindmapOrder = false) => {
+const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, options, mustHonorMindmapOrder = false) => {
   const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById } = context;
   const count = nodes.length;
 
   // --- CONFIGURATION FROM SETTINGS ---
   const START_ANGLE = layoutSettings.RADIAL_START_ANGLE; 
-  const MAX_SWEEP_DEG = Math.min(layoutSettings.RADIAL_MAX_SWEEP/8*count, layoutSettings.RADIAL_MAX_SWEEP); 
+  
+  // MODIFIED: Use options.fillSweep to force full sweep usage
+  const MAX_SWEEP_DEG = options.fillSweep 
+    ? layoutSettings.RADIAL_MAX_SWEEP 
+    : Math.min(layoutSettings.RADIAL_MAX_SWEEP/8*count, layoutSettings.RADIAL_MAX_SWEEP); 
   const ASPECT_RATIO = layoutSettings.RADIAL_ASPECT_RATIO;
   const POLE_GAP_BONUS = layoutSettings.RADIAL_POLE_GAP_BONUS;
   
@@ -2774,7 +2784,7 @@ const layoutL1Nodes = (nodes, options, context, mustHonorMindmapOrder = false) =
   const isLeftSide = sortMethod === "vertical" && Math.abs((centerAngle ?? 0) - 270) < 1;
 
   if (sortMethod === "radial") {
-    radialL1Distribution(nodes, context, l1Metrics, totalSubtreeHeight, mustHonorMindmapOrder);
+    radialL1Distribution(nodes, context, l1Metrics, totalSubtreeHeight, options, mustHonorMindmapOrder);
   } else {
     verticalL1Distribution(nodes, context, l1Metrics, totalSubtreeHeight, isLeftSide, centerAngle, gapMultiplier, mustHonorMindmapOrder);
   }
@@ -2897,7 +2907,8 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
       layoutL1Nodes(l1Nodes, {
         sortMethod: "radial",
         centerAngle: null,
-        gapMultiplier: layoutSettings.GAP_MULTIPLIER_RADIAL
+        gapMultiplier: layoutSettings.GAP_MULTIPLIER_RADIAL,
+        fillSweep: root.customData?.fillSweep ?? fillSweep
       }, layoutContext, mustHonorMindmapOrder);
     } else {
       const leftNodes = [];
@@ -3063,7 +3074,8 @@ const initializeRootCustomData = (nodeId) => {
     roundedCorners,
     maxWrapWidth: maxWidth,
     isSolidArrow,
-    centerText
+    centerText,
+    fillSweep
   });
 };
 
@@ -3960,35 +3972,35 @@ const importTextToMap = async (rawText) => {
   // -------------------------------------------------------------------------
   nodeToOutgoingRefs.forEach((targetRefs, sourceId) => {
     targetRefs.forEach(targetObj => {
-        const { ref, label } = targetObj;
-        const targetId = blockRefToNodeId.get(ref);
-        
-        if (targetId) {
-            const arrowId = ea.connectObjects(
-                sourceId, null, 
-                targetId, null, 
-                {
-                    startArrowHead: null,
-                    endArrowHead: "triangle"
-                }
-            );
+      const { ref, label } = targetObj;
+      const targetId = blockRefToNodeId.get(ref);
+
+      if (targetId) {
+        const arrowId = ea.connectObjects(
+          sourceId, null, 
+          targetId, null, 
+          {
+              startArrowHead: null,
+              endArrowHead: "triangle"
+          }
+        );
+
+        const arrowEl = ea.getElement(arrowId);
+        if (arrowEl) {
+          arrowEl.strokeStyle = "dashed";
+
+          if (label) {
+            const textId = ea.addText(0, 0, label);
+            const textEl = ea.getElement(textId);
             
-            const arrowEl = ea.getElement(arrowId);
-            if (arrowEl) {
-                arrowEl.strokeStyle = "dashed";
-                
-                if (label) {
-                    const textId = ea.addText(0, 0, label);
-                    const textEl = ea.getElement(textId);
-                    
-                    textEl.containerId = arrowId;
-                    textEl.textAlign = "center";
-                    textEl.textVerticalAlign = "middle";
-                    
-                    arrowEl.boundElements = [{ type: "text", id: textId }];
-                }
-            }
+            textEl.containerId = arrowId;
+            textEl.textAlign = "center";
+            textEl.textVerticalAlign = "middle";
+
+            arrowEl.boundElements = [{ type: "text", id: textId }];
+          }
         }
+      }
     });
   });
 
@@ -4044,7 +4056,7 @@ const importTextToMap = async (rawText) => {
     }
   }
 
-  await addElementsToView({ repositionToCursor: true, shouldSleep: true }); // in case there are images in the imported map
+  await addElementsToView({ repositionToCursor: false, shouldSleep: true }); // in case there are images in the imported map
 
   const allInView = ea.getViewElements();
   const targetToSelect = sel
@@ -4861,6 +4873,7 @@ let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown;
 let autoLayoutToggle, linkSuggester, arrowTypeToggle;
 let fontSizeDropdown, boxToggle, roundToggle, strokeToggle;
 let colorToggle, widthSlider, centerToggle;
+let fillSweepToggleSetting, fillSweepToggle;
 let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn;
 let toggleGroupBtn, zoomBtn, focusBtn, boundaryBtn;
 let foldBtnL0, foldBtnL1, foldBtnAll;
@@ -5091,6 +5104,15 @@ const updateUI = (sel) => {
         if (centerToggle) centerToggle.setValue(centerText);
     }
 
+    if (typeof cd?.fillSweep === "boolean" && cd.fillSweep !== fillSweep) {
+      fillSweep = cd.fillSweep;
+      if (fillSweepToggle) fillSweepToggle.setValue(fillSweep);
+    }
+
+    if (fillSweepToggleSetting && fillSweepToggleSetting.settingEl) {
+      const mode = cd?.growthMode || currentModalGrowthMode;
+      fillSweepToggleSetting.settingEl.style.display = mode === "Radial" ? "" : "none";
+    }
   } else {
     disableUI();
   }
@@ -5210,7 +5232,8 @@ const commitEdit = async () => {
       "mindmapOrder", "isPinned", "growthMode", "autoLayoutDisabled", 
       "isFolded", "foldIndicatorId", "foldState", "boundaryId",
       "fontsizeScale", "multicolor", "boxChildren", "roundedCorners", 
-      "maxWrapWidth", "isSolidArrow", "centerText", "arrowType"
+      "maxWrapWidth", "isSolidArrow", "centerText", "arrowType",
+      "fillSweep"
     ];
     const dataToCopy = {};
     keysToCopy.forEach(k => {
@@ -5989,6 +6012,9 @@ const renderBody = (contentEl) => {
       currentModalGrowthMode = v;
       setVal(K_GROWTH, v);
       dirty = true;
+      if (fillSweepToggleSetting) {
+        fillSweepToggleSetting.settingEl.style.display = v === "Radial" ? "" : "none";
+      }
       if (!ea.targetView) return;
       const sel = getMindmapNodeFromSelection();
       if (!sel) return;
@@ -6000,6 +6026,30 @@ const renderBody = (contentEl) => {
       }
     });
   });
+
+  fillSweepToggleSetting = new ea.obsidian.Setting(bodyContainer)
+    .setName(t("LABEL_FILL_SWEEP"))
+    .setDesc(t("DESC_FILL_SWEEP"))
+    .addToggle((t) => {
+      fillSweepToggle = t;
+      t.setValue(fillSweep)
+       .onChange(async (v) => {
+        fillSweep = v;
+        setVal(K_FILL_SWEEP, v);
+        dirty = true;
+        if (!ea.targetView) return;
+        const sel = getMindmapNodeFromSelection();
+        if (!sel) return;
+        const info = getHierarchy(sel, ea.getViewElements());
+        await updateRootNodeCustomData({ fillSweep: v });
+        if (!!info && !autoLayoutDisabled) {
+          await triggerGlobalLayout(info.rootId);
+        }
+      })
+    });
+  if (currentModalGrowthMode !== "Radial") {
+    fillSweepToggleSetting.settingEl.style.display = "none";
+  }
 
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_ARROW_TYPE"))
