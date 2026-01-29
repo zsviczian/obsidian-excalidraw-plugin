@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-01-27T19:45:02.331Z
+Generated on: 2026-01-29T19:00:28.930Z
 
 ---
 
@@ -8761,6 +8761,8 @@ const STRINGS = {
     TITLE_PASTE: "Paste list from clipboard",
     LABEL_ZOOM_LEVEL: "Zoom Level",
     LABEL_GROWTH_STRATEGY: "Growth Strategy",
+    LABEL_FILL_SWEEP: "Fill Sweep Angle",
+    DESC_FILL_SWEEP: "Distribute nodes across the full Max Sweep Angle immediately, rather than growing the arc gradually as nodes are added.",
     LABEL_ARROW_TYPE: "Curved Connectors",
     LABEL_AUTO_LAYOUT: "Auto-Layout",
     LABEL_GROUP_BRANCHES: "Group Branches",
@@ -8966,6 +8968,8 @@ addLocale("zh", {
   TITLE_PASTE: "从剪贴板粘贴列表",
   LABEL_ZOOM_LEVEL: "缩放级别",
   LABEL_GROWTH_STRATEGY: "生长策略",
+  LABEL_FILL_SWEEP: "填充扫过角度",
+  DESC_FILL_SWEEP: "立即在整个“最大扫过角度”范围内分布节点，而不是随着节点数量增加逐渐扩大弧度。",
   LABEL_ARROW_TYPE: "曲线连接",
   LABEL_AUTO_LAYOUT: "自动布局",
   LABEL_GROUP_BRANCHES: "分支编组",
@@ -9148,6 +9152,7 @@ const K_HOTKEYS = "Hotkeys";
 const K_PALETTE = "Custom Palette";
 const K_LAYOUT = "Layout Config";
 const K_ARROW_TYPE = "Arrow Type";
+const K_FILL_SWEEP = "Fill Sweep";
 
 // ---------------------------------------------------------------------------
 // Layout & Geometry Settings
@@ -9312,7 +9317,9 @@ let centerText = getVal(K_CENTERTEXT, true);
 let autoLayoutDisabled = false;
 let zoomLevel = getVal(K_ZOOM, {value: "Medium", valueset: ZOOM_TYPES});
 let customPalette = getVal(K_PALETTE, {value : {enabled: false, random: false, colors: []}, hidden: true});
+let fillSweep = getVal(K_FILL_SWEEP, false);
 let editingNodeId = null;
+let mostRecentlySelectedNodeID = null;
 
 // -----------------------------------------------------------
 // Cleanup an migration of old settings values
@@ -9616,8 +9623,6 @@ function updateUserHotkeys() {
 
 dirty = updateUserHotkeys();
 
-
-
 const getHotkeyDefByAction = (action) => userHotkeys.find((h)=>h.action === action);
 
 const getHotkeyDisplayString = (h) => {
@@ -9720,6 +9725,16 @@ const addElementsToView = async (
   if (shouldSleep) await sleep(10); // Allow Excalidraw to process the new elements
 }
 
+const selectNodeInView = (node) => {
+  if (!node) {
+    mostRecentlySelectedNodeID = null;
+    return;
+  }
+  const nodeId = typeof node === "string" ? node : node.id;
+  ea.selectElementsInView([nodeId]);
+  mostRecentlySelectedNodeID = nodeId;
+};
+
 // ---------------------------------------------------------------------------
 // 2. Traversal & Geometry Helpers
 // ---------------------------------------------------------------------------
@@ -9747,6 +9762,7 @@ const getMindmapNodeFromSelection = () => {
 
   const owner = getBoundaryHost(selectedElements);
   if (owner) {
+    mostRecentlySelectedNodeID = owner.id;
     return owner;
   }
 
@@ -9756,8 +9772,11 @@ const getMindmapNodeFromSelection = () => {
       selectedElements[0].customData.hasOwnProperty("growthMode")
   )) {
     if (selectedElements[0].type === "text" && selectedElements[0].boundElements.length === 0 && !!selectedElements[0].containerId) {
-      return ea.getViewElements().find((el) => el.id === selectedElements[0].containerId);
+      const node = ea.getViewElements().find((el) => el.id === selectedElements[0].containerId);
+      mostRecentlySelectedNodeID = node?.id;
+      return node;
     }
+    mostRecentlySelectedNodeID = selectedElements?.[0]?.id;
     return selectedElements[0];
   }
 
@@ -9766,7 +9785,9 @@ const getMindmapNodeFromSelection = () => {
     const sel = selectedElements[0];
     const targetId = sel.startBinding?.elementId || sel.endBinding?.elementId;
     if (targetId) {
-      return ea.getViewElements().find((el) => el.id === targetId);
+      const target = ea.getViewElements().find((el) => el.id === targetId);
+      mostRecentlySelectedNodeID = target?.id;
+      return target;
     }
     return;
   }
@@ -9775,12 +9796,14 @@ const getMindmapNodeFromSelection = () => {
   if (selectedElements.length === 2) {
     const textEl = selectedElements.find((el) => el.type === "text");
     if (textEl && textEl.boundElements.length > 0 && textEl.customData.hasOwnProperty("mindmapOrder")) {
+      mostRecentlySelectedNodeID = textEl.id;
       return textEl;
     } else if (textEl) {
       const containerId = textEl.containerId;
       if (containerId) {
         const container = selectedElements.find((el) => el.id === containerId);
         if (container && container.boundElements.length > 0 && container.customData.hasOwnProperty("mindmapOrder")) {
+          mostRecentlySelectedNodeID = container.id;
           return container;
         }
       }
@@ -9810,6 +9833,7 @@ const getMindmapNodeFromSelection = () => {
     const rootId = Array.from(sourceIds).find((id) => !sinkIds.has(id));
 
     if (rootId) {
+      mostRecentlySelectedNodeID = rootId;
       return selectedElements.find((el) => el.id === rootId);
     }
   }
@@ -9818,7 +9842,7 @@ const getMindmapNodeFromSelection = () => {
 const ensureNodeSelected = () => {
   const elementToSelect = getMindmapNodeFromSelection();
   if (elementToSelect) {
-    ea.selectElementsInView([elementToSelect]);
+    selectNodeInView(elementToSelect);
   }
 };
 
@@ -10541,7 +10565,20 @@ const nextZoomLevel = (current) => {
 
 const zoomToFit = (mode) => {
   if (!ea.targetView) return;
-  const sel = getMindmapNodeFromSelection();
+  let sel = getMindmapNodeFromSelection();
+  
+  // Fallback to most recently selected if nothing is currently selected
+  if (!sel && mostRecentlySelectedNodeID) {
+    const fallback = ea.getViewElements().find(el => el.id === mostRecentlySelectedNodeID);
+    if (fallback) {
+      sel = fallback;
+      selectNodeInView(sel);
+      focusInputEl();
+    } else {
+      mostRecentlySelectedNodeID = null;
+    }
+  }
+
   if (sel) {
     let nextLevel = zoomLevel;
     if (typeof mode === "string") {
@@ -10560,7 +10597,20 @@ const zoomToFit = (mode) => {
 
 const focusSelected = () => {
   if (!ea.targetView) return;
-  const sel = getMindmapNodeFromSelection();
+  let sel = getMindmapNodeFromSelection();
+  
+  // Fallback to most recently selected if nothing is currently selected
+  if (!sel && mostRecentlySelectedNodeID) {
+    const fallback = ea.getViewElements().find(el => el.id === mostRecentlySelectedNodeID);
+    if (fallback) {
+      sel = fallback;
+      selectNodeInView(sel);
+      focusInputEl();
+    } else {
+      mostRecentlySelectedNodeID = null;
+    }
+  }
+
   if (!sel) return;
 
   api().scrollToContent(sel,{
@@ -11105,13 +11155,17 @@ const updateL1Arrow = (node, context) => {
   }
 };
 
-const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, mustHonorMindmapOrder = false) => {
+const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, options, mustHonorMindmapOrder = false) => {
   const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById } = context;
   const count = nodes.length;
 
   // --- CONFIGURATION FROM SETTINGS ---
   const START_ANGLE = layoutSettings.RADIAL_START_ANGLE; 
-  const MAX_SWEEP_DEG = Math.min(layoutSettings.RADIAL_MAX_SWEEP/8*count, layoutSettings.RADIAL_MAX_SWEEP); 
+  
+  // MODIFIED: Use options.fillSweep to force full sweep usage
+  const MAX_SWEEP_DEG = options.fillSweep 
+    ? layoutSettings.RADIAL_MAX_SWEEP 
+    : Math.min(layoutSettings.RADIAL_MAX_SWEEP/8*count, layoutSettings.RADIAL_MAX_SWEEP); 
   const ASPECT_RATIO = layoutSettings.RADIAL_ASPECT_RATIO;
   const POLE_GAP_BONUS = layoutSettings.RADIAL_POLE_GAP_BONUS;
   
@@ -11316,7 +11370,7 @@ const layoutL1Nodes = (nodes, options, context, mustHonorMindmapOrder = false) =
   const isLeftSide = sortMethod === "vertical" && Math.abs((centerAngle ?? 0) - 270) < 1;
 
   if (sortMethod === "radial") {
-    radialL1Distribution(nodes, context, l1Metrics, totalSubtreeHeight, mustHonorMindmapOrder);
+    radialL1Distribution(nodes, context, l1Metrics, totalSubtreeHeight, options, mustHonorMindmapOrder);
   } else {
     verticalL1Distribution(nodes, context, l1Metrics, totalSubtreeHeight, isLeftSide, centerAngle, gapMultiplier, mustHonorMindmapOrder);
   }
@@ -11439,7 +11493,8 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
       layoutL1Nodes(l1Nodes, {
         sortMethod: "radial",
         centerAngle: null,
-        gapMultiplier: layoutSettings.GAP_MULTIPLIER_RADIAL
+        gapMultiplier: layoutSettings.GAP_MULTIPLIER_RADIAL,
+        fillSweep: root.customData?.fillSweep ?? fillSweep
       }, layoutContext, mustHonorMindmapOrder);
     } else {
       const leftNodes = [];
@@ -11526,7 +11581,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
     ea.addToGroup(mindmapIds);
   }
   await addElementsToView();
-  ea.selectElementsInView([selectedElement.id]);
+  selectNodeInView(selectedElement);
 };
 
 // ---------------------------------------------------------------------------
@@ -11605,7 +11660,8 @@ const initializeRootCustomData = (nodeId) => {
     roundedCorners,
     maxWrapWidth: maxWidth,
     isSolidArrow,
-    centerText
+    centerText,
+    fillSweep
   });
 };
 
@@ -11966,9 +12022,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
   }
   const finalNode = ea.getViewElements().find((el) => el.id === newNodeId);
   if (follow || !parent) {
-    ea.selectElementsInView([finalNode]);
+    selectNodeInView(finalNode);
   } else if (parent) {
-    ea.selectElementsInView([parent]);
+    selectNodeInView(parent);
   }
   if (!parent) {
     zoomToFit();
@@ -12288,7 +12344,7 @@ const copyMapAsText = async (cut = false) => {
 
         await addElementsToView();
       }
-      ea.selectElementsInView([parentNode]);
+      selectNodeInView(parentNode);
     }
 
     triggerGlobalLayout(info.rootId);
@@ -12331,7 +12387,7 @@ const importTextToMap = async (rawText) => {
     if (text) {
       currentParent = await addNode(text.trim(), true, false);
       if (sel) {
-        ea.selectElementsInView([ea.getViewElements().find((el)=>el.id === sel.id)]);
+        selectNodeInView(sel);
       }
       return;
     }
@@ -12502,35 +12558,35 @@ const importTextToMap = async (rawText) => {
   // -------------------------------------------------------------------------
   nodeToOutgoingRefs.forEach((targetRefs, sourceId) => {
     targetRefs.forEach(targetObj => {
-        const { ref, label } = targetObj;
-        const targetId = blockRefToNodeId.get(ref);
-        
-        if (targetId) {
-            const arrowId = ea.connectObjects(
-                sourceId, null, 
-                targetId, null, 
-                {
-                    startArrowHead: null,
-                    endArrowHead: "triangle"
-                }
-            );
+      const { ref, label } = targetObj;
+      const targetId = blockRefToNodeId.get(ref);
+
+      if (targetId) {
+        const arrowId = ea.connectObjects(
+          sourceId, null, 
+          targetId, null, 
+          {
+              startArrowHead: null,
+              endArrowHead: "triangle"
+          }
+        );
+
+        const arrowEl = ea.getElement(arrowId);
+        if (arrowEl) {
+          arrowEl.strokeStyle = "dashed";
+
+          if (label) {
+            const textId = ea.addText(0, 0, label);
+            const textEl = ea.getElement(textId);
             
-            const arrowEl = ea.getElement(arrowId);
-            if (arrowEl) {
-                arrowEl.strokeStyle = "dashed";
-                
-                if (label) {
-                    const textId = ea.addText(0, 0, label);
-                    const textEl = ea.getElement(textId);
-                    
-                    textEl.containerId = arrowId;
-                    textEl.textAlign = "center";
-                    textEl.textVerticalAlign = "middle";
-                    
-                    arrowEl.boundElements = [{ type: "text", id: textId }];
-                }
-            }
+            textEl.containerId = arrowId;
+            textEl.textAlign = "center";
+            textEl.textVerticalAlign = "middle";
+
+            arrowEl.boundElements = [{ type: "text", id: textId }];
+          }
         }
+      }
     });
   });
 
@@ -12586,7 +12642,7 @@ const importTextToMap = async (rawText) => {
     }
   }
 
-  await addElementsToView({ repositionToCursor: true, shouldSleep: true }); // in case there are images in the imported map
+  await addElementsToView({ repositionToCursor: false, shouldSleep: true }); // in case there are images in the imported map
 
   const allInView = ea.getViewElements();
   const targetToSelect = sel
@@ -12594,7 +12650,7 @@ const importTextToMap = async (rawText) => {
     : allInView.find((e) => e.id === currentParent?.id);
 
   if (targetToSelect) {
-    ea.selectElementsInView([targetToSelect]);
+    selectNodeInView(targetToSelect);
   }
 
   const rootId = sel
@@ -12623,6 +12679,50 @@ const pasteListToMap = async () => {
 // ---------------------------------------------------------------------------
 
 /**
+ * Reconnects an arrow from one element to another.
+ * Updates the arrow's binding (start or end) and maintains the boundElements arrays
+ * of both the old and new parent nodes to ensure consistency.
+ * 
+ * @param {ExcalidrawElement} currentBindingElement - The node to disconnect from.
+ * @param {ExcalidrawElement} newBindingElement - The node to connect to.
+ * @param {ExcalidrawElement} arrow - The arrow element to rewire.
+ * @param {string} side - "start" or "end". Defaults to "start".
+ */
+const reconnectArrow = (currentBindingElement, newBindingElement, arrow, side = "start") => {
+  // 1. Ensure all involved elements are in the EA workbench
+  const elementsToCheck = [currentBindingElement, newBindingElement, arrow];
+  const elementsToCopy = elementsToCheck.filter(el => !ea.getElement(el.id));
+  
+  if (elementsToCopy.length > 0) {
+    ea.copyViewElementsToEAforEditing(elementsToCopy);
+  }
+
+  // 2. Retrieve mutable references from EA
+  const oldNode = ea.getElement(currentBindingElement.id);
+  const newNode = ea.getElement(newBindingElement.id);
+  const targetArrow = ea.getElement(arrow.id);
+
+  // 3. Update the Arrow's binding property
+  const bindingKey = side === "start" ? "startBinding" : "endBinding";
+  targetArrow[bindingKey] = {
+    ...(targetArrow[bindingKey] || {}),
+    elementId: newNode.id
+  };
+
+  // 4. Remove arrow reference from the Old Node's boundElements
+  if (oldNode.boundElements) {
+    oldNode.boundElements = oldNode.boundElements.filter(be => be.id !== targetArrow.id);
+  }
+
+  // 5. Add arrow reference to the New Node's boundElements
+  if (!newNode.boundElements) newNode.boundElements = [];
+  // Prevent duplicates
+  if (!newNode.boundElements.some(be => be.id === targetArrow.id)) {
+    newNode.boundElements.push({ type: "arrow", id: targetArrow.id });
+  }
+};
+
+/**
  * Recursively updates the font size of a subtree based on the new depth level.
  * Only updates if the current font size matches the default for its *previous* depth,
  * preserving user customizations.
@@ -12632,6 +12732,9 @@ const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => 
   
   const node = allElements.find(el => el.id === nodeId);
   if (!node) return;
+  if (!ea.getElement(nodeId)) {
+    ea.copyViewElementsToEAforEditing([node]);
+  }
 
   // Determine the node's *current* depth in the hierarchy to find its expected "old" font size
   const currentHierarchy = getHierarchy(node, allElements);
@@ -12688,11 +12791,14 @@ const changeNodeOrder = async (key) => {
   const rootCenter = root.x + root.width / 2;
   const curCenter = current.x + current.width / 2;
   const isInRight = curCenter > rootCenter;
+  const mapMode = root.customData?.growthMode || currentModalGrowthMode;
 
   // ---------------------------------------------------------
   // Feature: L1 Node Side Swap (Right-Left Map Exclusively)
   // ---------------------------------------------------------
-  const isRightLeft = (root.customData?.growthMode === "Right-Left") || (!root.customData?.growthMode && currentModalGrowthMode === "Right-Left");
+  const isRightLeft = (mapMode === "Right-Left");
+  const isRadial = (mapMode === "Radial");
+  const isLeftFacing = (mapMode === "Left-facing");
   
   if (parent.id === root.id && isRightLeft) {
      const moveRight = !isInRight && key === "ArrowRight"; // Left Node -> Right Side
@@ -12754,20 +12860,14 @@ const changeNodeOrder = async (key) => {
     );
 
     if (arrow) {
-      ea.copyViewElementsToEAforEditing([arrow, current]);
-      const eaArrow = ea.getElement(arrow.id);
-      // Rewire to Grandparent
-      eaArrow.startBinding.elementId = grandParent.id;
-      
-      // Determine new order: Place it after the old parent
+      reconnectArrow(parent, grandParent, arrow, "start");
       const parentOrder = getMindmapOrder(parent);
-      ea.addAppendUpdateCustomData(current.id, { mindmapOrder: parentOrder + 0.5 });
-      
-      // Update font sizes for the promoted subtree
-      // New depth is same as Parent's depth (since it becomes a sibling of Parent)
+      ea.copyViewElementsToEAforEditing([current]);
+      ea.addAppendUpdateCustomData(current.id, {
+        mindmapOrder: isRadial && !isInRight ? parentOrder - 0.5 : parentOrder + 0.5 
+      });
       const parentInfo = getHierarchy(parent, allElements);
       updateSubtreeFontSize(current.id, parentInfo.depth, allElements, rootFontScale);
-
       await addElementsToView();
       triggerGlobalLayout(root.id, false, true);
       return;
@@ -12789,8 +12889,7 @@ const changeNodeOrder = async (key) => {
     const currentIndex = siblings.findIndex(s => s.id === current.id);
     
     // Determine visual direction based on layout mode
-    // Radial Left side is inverted (Clockwise vs Counter-Clockwise list order)
-    const mirrorBehavior = isInRight || currentModalGrowthMode !== "Radial";
+    const mirrorBehavior = (isInRight && isRadial) || !isRadial;
     
     // Attempt to move to sibling ABOVE first
     // Normal: Above is index-1. Radial Left: Above is index+1
@@ -12815,25 +12914,18 @@ const changeNodeOrder = async (key) => {
     );
 
     if (arrow) {
-      ea.copyViewElementsToEAforEditing([arrow, current]);
-      const eaArrow = ea.getElement(arrow.id);
-      
-      // Rewire arrow to new parent
-      eaArrow.startBinding.elementId = newParent.id;
-      
+      reconnectArrow(parent, newParent, arrow, "start");
       // Determine new order: Append as last child of new parent
       const newParentChildren = getChildrenNodes(newParent.id, allElements);
       const nextOrder = newParentChildren.length > 0 
         ? Math.max(...newParentChildren.map(getMindmapOrder)) + 1 
         : 0;
-        
+      ea.copyViewElementsToEAforEditing([current]);
       ea.addAppendUpdateCustomData(current.id, { mindmapOrder: nextOrder });
-
       // Update font sizes for the demoted subtree
       // New depth is Parent's Depth + 2 (Child of Sibling)
       const parentInfo = getHierarchy(parent, allElements);
       updateSubtreeFontSize(current.id, parentInfo.depth + 2, allElements, rootFontScale);
-      
       await addElementsToView();
       triggerGlobalLayout(root.id, false, true);
     }
@@ -12852,8 +12944,11 @@ const changeNodeOrder = async (key) => {
     if (currentIndex === -1) return;
 
     let swapIndex = -1;
-    const mirrorBehavior = isInRight || currentModalGrowthMode !== "Radial";
+    const mirrorBehavior = (isInRight && isRadial) || !isRadial;
     
+    // Logic: 
+    // Radial Left: List is Bottom-to-Top (Clockwise). Up = Index+1 (Next).
+    // All Others: List is Top-to-Bottom. Up = Index-1 (Prev).
     if (key === "ArrowUp") {
       swapIndex = mirrorBehavior ? currentIndex - 1 : currentIndex + 1;
     } else {
@@ -12879,7 +12974,6 @@ const changeNodeOrder = async (key) => {
     }
   }
 }
-
 
 /**
  * Navigates the mindmap using arrow keys.
@@ -12915,10 +13009,10 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
       let targetChild = null;
 
       if (key === "ArrowUp") {
-        // First sibling
+        // First sibling (Visual Top, usually Index 0)
         targetChild = children[0];
       } else if (key === "ArrowDown") {
-        // Last sibling
+        // Last sibling (Visual Bottom, usually Index N)
         targetChild = children[children.length - 1];
       } else {
         // Left/Right Logic
@@ -12958,7 +13052,7 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
       }
 
       if (targetChild) {
-        ea.selectElementsInView([targetChild]);
+        selectNodeInView(targetChild);
         if (zoom) zoomToFit();
         if (focus) focusSelected();
       }
@@ -12971,14 +13065,14 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
     const isInRight = curCenter.x > rootCenter.x;
     const goIn = (key === "ArrowLeft" && isInRight) || (key === "ArrowRight" && !isInRight);
     if (goIn) {
-      ea.selectElementsInView([getParentNode(current.id, allElements)]);
+      selectNodeInView(getParentNode(current.id, allElements));
     } else {
       if (current.customData?.isFolded) {
         await toggleFold("L0");
         allElements = ea.getViewElements();
       }
       const ch = getChildrenNodes(current.id, allElements).sort((a, b) => (a.customData?.mindmapOrder ?? 100) - (b.customData?.mindmapOrder ?? 100));
-      if (ch.length) ea.selectElementsInView([ch[0]]);
+      if (ch.length) selectNodeInView(ch[0]);
     }
   } else if (key === "ArrowUp" || key === "ArrowDown") {
     const parent = getParentNode(current.id, allElements);
@@ -13004,12 +13098,9 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
     const currentIsLeftwardBranch = (current.x + current.width / 2) < (parent.x + parent.width / 2);
     
     // Reverse up/down for left-facing branches in directional modes
-    const shouldReverseArrows = 
-        ["Right-Left", "Left-facing", "Right-facing"].includes(mapMode) &&
-        currentIsLeftwardBranch;
 
     let navigateForward; // true for next sibling (clockwise), false for previous (counter-clockwise)
-    if (shouldReverseArrows) {
+    if (currentIsLeftwardBranch) {
         navigateForward = (key === "ArrowUp"); // Reversed: Up moves forward, Down moves backward
     } else {
         navigateForward = (key === "ArrowDown"); // Normal: Down moves forward, Up moves backward
@@ -13021,8 +13112,7 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
     } else {
         nIdx = (startIndex - 1 + siblings.length) % siblings.length;
     }
-    
-    ea.selectElementsInView([siblings[nIdx]]);
+    selectNodeInView(siblings[nIdx]);
   }
 
   if (zoom) zoomToFit();
@@ -13185,7 +13275,7 @@ const togglePin = async () => {
     }
     await addElementsToView();
     if(!autoLayoutDisabled) await refreshMapLayout();
-    ea.selectElementsInView([sel.id]);
+    selectNodeInView(sel);
     updateUI();
   }
 };
@@ -13274,7 +13364,7 @@ const toggleBox = async () => {
   if (!hasContainer) {
     api().updateContainerSize([ea.getViewElements().find((el) => el.id === newBindId)]);
   }
-  ea.selectElementsInView([finalElId]);
+  selectNodeInView(finalElId);
   if(!autoLayoutDisabled) await refreshMapLayout();
   updateUI();
 };
@@ -13368,6 +13458,7 @@ let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown;
 let autoLayoutToggle, linkSuggester, arrowTypeToggle;
 let fontSizeDropdown, boxToggle, roundToggle, strokeToggle;
 let colorToggle, widthSlider, centerToggle;
+let fillSweepToggleSetting, fillSweepToggle;
 let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn;
 let toggleGroupBtn, zoomBtn, focusBtn, boundaryBtn;
 let foldBtnL0, foldBtnL1, foldBtnAll;
@@ -13598,8 +13689,23 @@ const updateUI = (sel) => {
         if (centerToggle) centerToggle.setValue(centerText);
     }
 
+    if (typeof cd?.fillSweep === "boolean" && cd.fillSweep !== fillSweep) {
+      fillSweep = cd.fillSweep;
+      if (fillSweepToggle) fillSweepToggle.setValue(fillSweep);
+    }
+
+    if (fillSweepToggleSetting && fillSweepToggleSetting.settingEl) {
+      const mode = cd?.growthMode || currentModalGrowthMode;
+      fillSweepToggleSetting.settingEl.style.display = mode === "Radial" ? "" : "none";
+    }
   } else {
     disableUI();
+    // Re-enable navigation buttons if we have a history node
+    if (mostRecentlySelectedNodeID) {
+      setButtonDisabled(zoomBtn, false);
+      setButtonDisabled(focusBtn, false);
+      setButtonDisabled(floatingZoomBtn, false);
+    }
   }
 };
 
@@ -13717,7 +13823,8 @@ const commitEdit = async () => {
       "mindmapOrder", "isPinned", "growthMode", "autoLayoutDisabled", 
       "isFolded", "foldIndicatorId", "foldState", "boundaryId",
       "fontsizeScale", "multicolor", "boxChildren", "roundedCorners", 
-      "maxWrapWidth", "isSolidArrow", "centerText", "arrowType"
+      "maxWrapWidth", "isSolidArrow", "centerText", "arrowType",
+      "fillSweep"
     ];
     const dataToCopy = {};
     keysToCopy.forEach(k => {
@@ -13815,7 +13922,7 @@ const commitEdit = async () => {
       const newViewElements = ea.getViewElements();
       const newViewNode = newViewElements.find(el => el.id === newNodeId);
       if(newViewNode) {
-        ea.selectElementsInView([newViewNode]);
+        selectNodeInView(newViewNode);
         const newInfo = getHierarchy(newViewNode, newViewElements);
         await triggerGlobalLayout(newInfo.rootId, false, true);
       }
@@ -14496,6 +14603,9 @@ const renderBody = (contentEl) => {
       currentModalGrowthMode = v;
       setVal(K_GROWTH, v);
       dirty = true;
+      if (fillSweepToggleSetting) {
+        fillSweepToggleSetting.settingEl.style.display = v === "Radial" ? "" : "none";
+      }
       if (!ea.targetView) return;
       const sel = getMindmapNodeFromSelection();
       if (!sel) return;
@@ -14507,6 +14617,30 @@ const renderBody = (contentEl) => {
       }
     });
   });
+
+  fillSweepToggleSetting = new ea.obsidian.Setting(bodyContainer)
+    .setName(t("LABEL_FILL_SWEEP"))
+    .setDesc(t("DESC_FILL_SWEEP"))
+    .addToggle((t) => {
+      fillSweepToggle = t;
+      t.setValue(fillSweep)
+       .onChange(async (v) => {
+        fillSweep = v;
+        setVal(K_FILL_SWEEP, v);
+        dirty = true;
+        if (!ea.targetView) return;
+        const sel = getMindmapNodeFromSelection();
+        if (!sel) return;
+        const info = getHierarchy(sel, ea.getViewElements());
+        await updateRootNodeCustomData({ fillSweep: v });
+        if (!!info && !autoLayoutDisabled) {
+          await triggerGlobalLayout(info.rootId);
+        }
+      })
+    });
+  if (currentModalGrowthMode !== "Radial") {
+    fillSweepToggleSetting.settingEl.style.display = "none";
+  }
 
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_ARROW_TYPE"))
@@ -15261,7 +15395,7 @@ const addSibling = async (event, insertAfter=true) => {
       };
     }
 
-    ea.selectElementsInView([targetParent]);
+    selectNodeInView(targetParent);
     await addNode(inputEl.value, false, false, null, null, pos);
   }
   inputEl.value = "";
@@ -15417,7 +15551,7 @@ const performAction = async (action, event) => {
               const isSameOrSibling = (sel.id === mostRecentNode.id) ||
                 (selParent && recentParent && selParent.id === recentParent.id);
               if(!isSameOrSibling) {
-                ea.selectElementsInView([mostRecentNode]);
+                selectNodeInView(mostRecentNode);
                 handledRecent = true;
               }
             } else {
@@ -15435,10 +15569,10 @@ const performAction = async (action, event) => {
               const children = getChildrenNodes(sel.id, allElements);
               if (children.length > 0) {
                 sortChildrenStable(children);
-                ea.selectElementsInView([children[0]]);
+                selectNodeInView(children[0]);
               }
               else if (parent) {
-                ea.selectElementsInView([parent]);
+                selectNodeInView(parent);
               }
             }
           }
@@ -15556,6 +15690,7 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
     if (!view) return;
 
     if (ea.targetView !== view) {
+      mostRecentlySelectedNodeID = null;
       if (ea.targetView) removeEventListeners(ea.targetView);
       ea.setView(view);
       ea.clear();
@@ -15573,6 +15708,7 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
     if (cancelHotkeyRecording) cancelHotkeyRecording();
 
     if (ea.targetView !== leaf.view && ea.isExcalidrawView(leaf.view)) {
+      mostRecentlySelectedNodeID = null;
       if (ea.targetView) removeEventListeners(ea.targetView);
       ea.setView(leaf.view);
       ea.clear();
@@ -19971,6 +20107,14 @@ function renderSidepanel(contentEl) {
         })
       );
 
+    // lightness and saturation are on a scale of 0%-100%
+    // Hue is in degrees, 360 for the full circle
+    // transparency is on a range between 0 and 1 (equivalent to 0%-100%)
+    // The range for lightness, saturation and transparency are double since
+    // the input could be at either end of the scale
+    // The range for Hue is 360 since regarless of the position on the circle moving
+    // the slider to the two extremes will travel the entire circle
+    // To modify blacks and whites, lightness first needs to be changed to value between 1% and 99%
     sliderResetters.length = 0; // Clear existing resetters
     sliderResetters.push(slider(contentEl, "Hue", 0, 360, 1, false));
     sliderResetters.push(slider(contentEl, "Saturation", 0, 200, 1, false));
@@ -19980,6 +20124,9 @@ function renderSidepanel(contentEl) {
     // Add color pickers if a single SVG image is selected
     if (svgImageElements.length === 1) {
       const svgElement = svgImageElements[0];
+      //note that the objects in currentColors might get replaced when
+      //colors are reset, thus in the onChange functions I will always
+      //read currentColorInfo from currentColors based on svgElement.id
       const initialColorInfo = currentColors.get(svgElement.id).colors;
       const colorSection = contentEl.createDiv();
       colorSection.createEl('h3', { text: 'SVG Colors' });
