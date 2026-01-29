@@ -777,6 +777,7 @@ let zoomLevel = getVal(K_ZOOM, {value: "Medium", valueset: ZOOM_TYPES});
 let customPalette = getVal(K_PALETTE, {value : {enabled: false, random: false, colors: []}, hidden: true});
 let fillSweep = getVal(K_FILL_SWEEP, false);
 let editingNodeId = null;
+let mostRecentlySelectedNodeID = null;
 
 // -----------------------------------------------------------
 // Cleanup an migration of old settings values
@@ -1080,8 +1081,6 @@ function updateUserHotkeys() {
 
 dirty = updateUserHotkeys();
 
-
-
 const getHotkeyDefByAction = (action) => userHotkeys.find((h)=>h.action === action);
 
 const getHotkeyDisplayString = (h) => {
@@ -1184,6 +1183,16 @@ const addElementsToView = async (
   if (shouldSleep) await sleep(10); // Allow Excalidraw to process the new elements
 }
 
+const selectNodeInView = (node) => {
+  if (!node) {
+    mostRecentlySelectedNodeID = null;
+    return;
+  }
+  const nodeId = typeof node === "string" ? node : node.id;
+  ea.selectElementsInView([nodeId]);
+  mostRecentlySelectedNodeID = nodeId;
+};
+
 // ---------------------------------------------------------------------------
 // 2. Traversal & Geometry Helpers
 // ---------------------------------------------------------------------------
@@ -1211,6 +1220,7 @@ const getMindmapNodeFromSelection = () => {
 
   const owner = getBoundaryHost(selectedElements);
   if (owner) {
+    mostRecentlySelectedNodeID = owner.id;
     return owner;
   }
 
@@ -1220,8 +1230,11 @@ const getMindmapNodeFromSelection = () => {
       selectedElements[0].customData.hasOwnProperty("growthMode")
   )) {
     if (selectedElements[0].type === "text" && selectedElements[0].boundElements.length === 0 && !!selectedElements[0].containerId) {
-      return ea.getViewElements().find((el) => el.id === selectedElements[0].containerId);
+      const node = ea.getViewElements().find((el) => el.id === selectedElements[0].containerId);
+      mostRecentlySelectedNodeID = node?.id;
+      return node;
     }
+    mostRecentlySelectedNodeID = selectedElements?.[0]?.id;
     return selectedElements[0];
   }
 
@@ -1230,7 +1243,9 @@ const getMindmapNodeFromSelection = () => {
     const sel = selectedElements[0];
     const targetId = sel.startBinding?.elementId || sel.endBinding?.elementId;
     if (targetId) {
-      return ea.getViewElements().find((el) => el.id === targetId);
+      const target = ea.getViewElements().find((el) => el.id === targetId);
+      mostRecentlySelectedNodeID = target?.id;
+      return target;
     }
     return;
   }
@@ -1239,12 +1254,14 @@ const getMindmapNodeFromSelection = () => {
   if (selectedElements.length === 2) {
     const textEl = selectedElements.find((el) => el.type === "text");
     if (textEl && textEl.boundElements.length > 0 && textEl.customData.hasOwnProperty("mindmapOrder")) {
+      mostRecentlySelectedNodeID = textEl.id;
       return textEl;
     } else if (textEl) {
       const containerId = textEl.containerId;
       if (containerId) {
         const container = selectedElements.find((el) => el.id === containerId);
         if (container && container.boundElements.length > 0 && container.customData.hasOwnProperty("mindmapOrder")) {
+          mostRecentlySelectedNodeID = container.id;
           return container;
         }
       }
@@ -1274,6 +1291,7 @@ const getMindmapNodeFromSelection = () => {
     const rootId = Array.from(sourceIds).find((id) => !sinkIds.has(id));
 
     if (rootId) {
+      mostRecentlySelectedNodeID = rootId;
       return selectedElements.find((el) => el.id === rootId);
     }
   }
@@ -1282,7 +1300,7 @@ const getMindmapNodeFromSelection = () => {
 const ensureNodeSelected = () => {
   const elementToSelect = getMindmapNodeFromSelection();
   if (elementToSelect) {
-    ea.selectElementsInView([elementToSelect]);
+    selectNodeInView(elementToSelect);
   }
 };
 
@@ -2005,7 +2023,20 @@ const nextZoomLevel = (current) => {
 
 const zoomToFit = (mode) => {
   if (!ea.targetView) return;
-  const sel = getMindmapNodeFromSelection();
+  let sel = getMindmapNodeFromSelection();
+  
+  // Fallback to most recently selected if nothing is currently selected
+  if (!sel && mostRecentlySelectedNodeID) {
+    const fallback = ea.getViewElements().find(el => el.id === mostRecentlySelectedNodeID);
+    if (fallback) {
+      sel = fallback;
+      selectNodeInView(sel);
+      focusInputEl();
+    } else {
+      mostRecentlySelectedNodeID = null;
+    }
+  }
+
   if (sel) {
     let nextLevel = zoomLevel;
     if (typeof mode === "string") {
@@ -2024,7 +2055,20 @@ const zoomToFit = (mode) => {
 
 const focusSelected = () => {
   if (!ea.targetView) return;
-  const sel = getMindmapNodeFromSelection();
+  let sel = getMindmapNodeFromSelection();
+  
+  // Fallback to most recently selected if nothing is currently selected
+  if (!sel && mostRecentlySelectedNodeID) {
+    const fallback = ea.getViewElements().find(el => el.id === mostRecentlySelectedNodeID);
+    if (fallback) {
+      sel = fallback;
+      selectNodeInView(sel);
+      focusInputEl();
+    } else {
+      mostRecentlySelectedNodeID = null;
+    }
+  }
+
   if (!sel) return;
 
   api().scrollToContent(sel,{
@@ -2995,7 +3039,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
     ea.addToGroup(mindmapIds);
   }
   await addElementsToView();
-  ea.selectElementsInView([selectedElement.id]);
+  selectNodeInView(selectedElement);
 };
 
 // ---------------------------------------------------------------------------
@@ -3436,9 +3480,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
   }
   const finalNode = ea.getViewElements().find((el) => el.id === newNodeId);
   if (follow || !parent) {
-    ea.selectElementsInView([finalNode]);
+    selectNodeInView(finalNode);
   } else if (parent) {
-    ea.selectElementsInView([parent]);
+    selectNodeInView(parent);
   }
   if (!parent) {
     zoomToFit();
@@ -3758,7 +3802,7 @@ const copyMapAsText = async (cut = false) => {
 
         await addElementsToView();
       }
-      ea.selectElementsInView([parentNode]);
+      selectNodeInView(parentNode);
     }
 
     triggerGlobalLayout(info.rootId);
@@ -3801,7 +3845,7 @@ const importTextToMap = async (rawText) => {
     if (text) {
       currentParent = await addNode(text.trim(), true, false);
       if (sel) {
-        ea.selectElementsInView([ea.getViewElements().find((el)=>el.id === sel.id)]);
+        selectNodeInView(sel);
       }
       return;
     }
@@ -4064,7 +4108,7 @@ const importTextToMap = async (rawText) => {
     : allInView.find((e) => e.id === currentParent?.id);
 
   if (targetToSelect) {
-    ea.selectElementsInView([targetToSelect]);
+    selectNodeInView(targetToSelect);
   }
 
   const rootId = sel
@@ -4466,7 +4510,7 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
       }
 
       if (targetChild) {
-        ea.selectElementsInView([targetChild]);
+        selectNodeInView(targetChild);
         if (zoom) zoomToFit();
         if (focus) focusSelected();
       }
@@ -4479,14 +4523,14 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
     const isInRight = curCenter.x > rootCenter.x;
     const goIn = (key === "ArrowLeft" && isInRight) || (key === "ArrowRight" && !isInRight);
     if (goIn) {
-      ea.selectElementsInView([getParentNode(current.id, allElements)]);
+      selectNodeInView(getParentNode(current.id, allElements));
     } else {
       if (current.customData?.isFolded) {
         await toggleFold("L0");
         allElements = ea.getViewElements();
       }
       const ch = getChildrenNodes(current.id, allElements).sort((a, b) => (a.customData?.mindmapOrder ?? 100) - (b.customData?.mindmapOrder ?? 100));
-      if (ch.length) ea.selectElementsInView([ch[0]]);
+      if (ch.length) selectNodeInView(ch[0]);
     }
   } else if (key === "ArrowUp" || key === "ArrowDown") {
     const parent = getParentNode(current.id, allElements);
@@ -4526,8 +4570,7 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
     } else {
         nIdx = (startIndex - 1 + siblings.length) % siblings.length;
     }
-    
-    ea.selectElementsInView([siblings[nIdx]]);
+    selectNodeInView(siblings[nIdx]);
   }
 
   if (zoom) zoomToFit();
@@ -4690,7 +4733,7 @@ const togglePin = async () => {
     }
     await addElementsToView();
     if(!autoLayoutDisabled) await refreshMapLayout();
-    ea.selectElementsInView([sel.id]);
+    selectNodeInView(sel);
     updateUI();
   }
 };
@@ -4779,7 +4822,7 @@ const toggleBox = async () => {
   if (!hasContainer) {
     api().updateContainerSize([ea.getViewElements().find((el) => el.id === newBindId)]);
   }
-  ea.selectElementsInView([finalElId]);
+  selectNodeInView(finalElId);
   if(!autoLayoutDisabled) await refreshMapLayout();
   updateUI();
 };
@@ -5115,6 +5158,12 @@ const updateUI = (sel) => {
     }
   } else {
     disableUI();
+    // Re-enable navigation buttons if we have a history node
+    if (mostRecentlySelectedNodeID) {
+      setButtonDisabled(zoomBtn, false);
+      setButtonDisabled(focusBtn, false);
+      setButtonDisabled(floatingZoomBtn, false);
+    }
   }
 };
 
@@ -5331,7 +5380,7 @@ const commitEdit = async () => {
       const newViewElements = ea.getViewElements();
       const newViewNode = newViewElements.find(el => el.id === newNodeId);
       if(newViewNode) {
-        ea.selectElementsInView([newViewNode]);
+        selectNodeInView(newViewNode);
         const newInfo = getHierarchy(newViewNode, newViewElements);
         await triggerGlobalLayout(newInfo.rootId, false, true);
       }
@@ -6804,7 +6853,7 @@ const addSibling = async (event, insertAfter=true) => {
       };
     }
 
-    ea.selectElementsInView([targetParent]);
+    selectNodeInView(targetParent);
     await addNode(inputEl.value, false, false, null, null, pos);
   }
   inputEl.value = "";
@@ -6960,7 +7009,7 @@ const performAction = async (action, event) => {
               const isSameOrSibling = (sel.id === mostRecentNode.id) ||
                 (selParent && recentParent && selParent.id === recentParent.id);
               if(!isSameOrSibling) {
-                ea.selectElementsInView([mostRecentNode]);
+                selectNodeInView(mostRecentNode);
                 handledRecent = true;
               }
             } else {
@@ -6978,10 +7027,10 @@ const performAction = async (action, event) => {
               const children = getChildrenNodes(sel.id, allElements);
               if (children.length > 0) {
                 sortChildrenStable(children);
-                ea.selectElementsInView([children[0]]);
+                selectNodeInView(children[0]);
               }
               else if (parent) {
-                ea.selectElementsInView([parent]);
+                selectNodeInView(parent);
               }
             }
           }
@@ -7099,6 +7148,7 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
     if (!view) return;
 
     if (ea.targetView !== view) {
+      mostRecentlySelectedNodeID = null;
       if (ea.targetView) removeEventListeners(ea.targetView);
       ea.setView(view);
       ea.clear();
@@ -7116,6 +7166,7 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
     if (cancelHotkeyRecording) cancelHotkeyRecording();
 
     if (ea.targetView !== leaf.view && ea.isExcalidrawView(leaf.view)) {
+      mostRecentlySelectedNodeID = null;
       if (ea.targetView) removeEventListeners(ea.targetView);
       ea.setView(leaf.view);
       ea.clear();
