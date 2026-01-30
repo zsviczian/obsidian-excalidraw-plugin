@@ -228,6 +228,8 @@ const STRINGS = {
     LABEL_ROUNDED_CORNERS: "Rounded Corners",
     LABEL_USE_SCENE_STROKE: "Use scene stroke style",
     DESC_USE_SCENE_STROKE: "Use the latest stroke style (solid, dashed, dotted) from the scene, or always use solid style for branches.",
+    LABEL_BRANCH_SCALE: "Branch Scale",
+    LABEL_BASE_WIDTH: "Base Thickness",
     LABEL_MULTICOLOR_BRANCHES: "Multicolor Branches",
     LABEL_MAX_WRAP_WIDTH: "Max Wrap Width",
     LABEL_CENTER_TEXT: "Center text",
@@ -435,6 +437,8 @@ addLocale("zh", {
   LABEL_ROUNDED_CORNERS: "圆角",
   LABEL_USE_SCENE_STROKE: "使用场景线条样式",
   DESC_USE_SCENE_STROKE: "使用场景中最新的线条样式（实线、虚线、点线），否则分支将始终使用实线。",
+  LABEL_BRANCH_SCALE: "分支粗细比例",
+  LABEL_BASE_WIDTH: "基础粗细",
   LABEL_MULTICOLOR_BRANCHES: "多色分支",
   LABEL_MAX_WRAP_WIDTH: "最大折行宽度",
   LABEL_CENTER_TEXT: "文本居中",
@@ -551,6 +555,7 @@ const VALUE_SETS = Object.freeze({
   GROWTH: Object.freeze(["Radial", "Right-facing", "Left-facing", "Right-Left"]),
   ZOOM: Object.freeze(["Low", "Medium", "High"]),
   ARROW: Object.freeze(["curved", "straight"]),
+  BRANCH_SCALE: Object.freeze(["Hierarchical", "Uniform"]),
 });
 
 const FONT_SCALE_TYPES = VALUE_SETS.FONT_SCALE;
@@ -558,6 +563,7 @@ const GROWTH_TYPES = VALUE_SETS.GROWTH;
 const ZOOM_TYPES = VALUE_SETS.ZOOM;
 const SCOPE = VALUE_SETS.SCOPE;
 const ARROW_TYPES = VALUE_SETS.ARROW;
+const BRANCH_SCALE_TYPES = VALUE_SETS.BRANCH_SCALE;
 const ZOOM_LEVELS = Object.freeze({
   Low: { desktop: 0.10, mobile: 0.20 },
   Medium: { desktop: 0.25, mobile: 0.35 },
@@ -599,6 +605,8 @@ const K_WIDTH = "Max Text Width";
 const K_FONTSIZE = "Font Sizes";
 const K_BOX = "Box Children";
 const K_ROUND = "Rounded Corners";
+const K_BRANCH_SCALE = "Branch Scale Style";
+const K_BASE_WIDTH = "Base Stroke Width";
 const K_GROWTH = "Growth Mode";
 const K_MULTICOLOR = "Multicolor Mode";
 const K_UNDOCKED = "Is Undocked";
@@ -799,7 +807,25 @@ if(settingsTemp && settingsTemp.hasOwnProperty("Is Minimized")) {
 }
 
 
-const STROKE_WIDTHS = [6, 4, 2, 1, 0.5];
+let branchScale = getVal(K_BRANCH_SCALE, {value: "Hierarchical", valueset: BRANCH_SCALE_TYPES});
+let baseStrokeWidth = parseFloat(getVal(K_BASE_WIDTH, {value: 6}));
+
+/**
+ * Calculates the stroke width for a branch based on depth and style.
+ * Hierarchical tapers linearly from base to 10% of base by depth 4.
+ * Uniform keeps the same width at every depth.
+ */
+const getStrokeWidthForDepth = (depth) => {
+  const base = Number.isFinite(baseStrokeWidth) ? baseStrokeWidth : 6;
+  const clampedDepth = Math.max(0, Math.min(depth ?? 0, 4));
+
+  if (branchScale === "Uniform") return base;
+
+  const min = Math.max(0.1, base * 0.1);
+  const slope = (min - base) / 4;
+  const val = slope * clampedDepth + base;
+  return Math.round(val * 100) / 100;
+};
 const ownerWindow = ea.targetView?.ownerWindow;
 const isMac = ea.DEVICE.isMacOS || ea.DEVICE.isIOS;
 const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg", "webp", "bmp", "ico", "jtif", "tif", "jfif", "avif"];
@@ -3154,7 +3180,9 @@ const initializeRootCustomData = (nodeId) => {
     maxWrapWidth: maxWidth,
     isSolidArrow,
     centerText,
-    fillSweep
+    fillSweep,
+    branchScale,
+    baseStrokeWidth,
   });
 };
 
@@ -3259,7 +3287,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     } else {
       ea.style.fillStyle = "solid";
       ea.style.backgroundColor = st.viewBackgroundColor;
-      ea.style.strokeWidth = STROKE_WIDTHS[Math.min(0, STROKE_WIDTHS.length - 1)]
+      ea.style.strokeWidth = getStrokeWidthForDepth(0);
       ea.style.roughness = getAppState().currentItemRoughness;
       newNodeId = ea.addText(0, 0, text, {
         box: "rectangle",
@@ -3370,7 +3398,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       const el = ea.getElement(newNodeId);
       if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
     } else {
-      ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)]
+      ea.style.strokeWidth = getStrokeWidthForDepth(depth);
       ea.style.roughness = getAppState().currentItemRoughness;
       newNodeId = ea.addText(px, py, text, {
         box: boxChildren ? "rectangle" : false,
@@ -3409,7 +3437,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       ea.addAppendUpdateCustomData(parent.id, { mindmapOrder: 0 });
     }
 
-    ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
+    ea.style.strokeWidth = getStrokeWidthForDepth(depth);
     ea.style.roughness = getAppState().currentItemRoughness;
     ea.style.strokeStyle = isSolidArrow ? "solid" : getAppState().currentItemStrokeStyle;
     
@@ -4847,7 +4875,7 @@ const toggleBox = async () => {
     const rect = ea.getElement(rectId);
     ea.addAppendUpdateCustomData(rectId, { isPinned: !!sel.customData?.isPinned, mindmapOrder: sel.customData?.mindmapOrder });
     rect.strokeColor = ea.getCM(sel.strokeColor).stringRGB();
-    rect.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
+    rect.strokeWidth = getStrokeWidthForDepth(depth);
     rect.roughness = getAppState().currentItemRoughness;
     rect.roundness = roundedCorners ? { type: 3 } : null;
     rect.backgroundColor = "transparent";
@@ -4978,6 +5006,7 @@ const toggleBoundary = async () => {
 let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown;
 let autoLayoutToggle, linkSuggester, arrowTypeToggle;
 let fontSizeDropdown, boxToggle, roundToggle, strokeToggle;
+let branchScaleDropdown, baseWidthSlider;
 let colorToggle, widthSlider, centerToggle;
 let fillSweepToggleSetting, fillSweepToggle;
 let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn;
@@ -5205,6 +5234,19 @@ const updateUI = (sel) => {
         if (strokeToggle) strokeToggle.setValue(!isSolidArrow);
     }
 
+    if (cd?.branchScale && BRANCH_SCALE_TYPES.includes(cd.branchScale) && cd.branchScale !== branchScale) {
+      branchScale = cd.branchScale;
+      if (branchScaleDropdown) branchScaleDropdown.setValue(branchScale);
+    }
+
+    if (typeof cd?.baseStrokeWidth === "number" && cd.baseStrokeWidth !== baseStrokeWidth) {
+      baseStrokeWidth = cd.baseStrokeWidth;
+      if (baseWidthSlider) {
+        baseWidthSlider.setValue(baseStrokeWidth);
+        if (baseWidthSlider.valLabelEl) baseWidthSlider.valLabelEl.setText(`${baseStrokeWidth}`);
+      }
+    }
+
     if (typeof cd?.centerText === "boolean" && cd.centerText !== centerText) {
         centerText = cd.centerText;
         if (centerToggle) centerToggle.setValue(centerText);
@@ -5320,7 +5362,7 @@ const commitEdit = async () => {
       const fontScale = getFontScale(fontsizeScale);
       ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)]; 
       ea.style.backgroundColor = "transparent";
-      ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
+      ea.style.strokeWidth = getStrokeWidthForDepth(depth);
       const incomingArrow = all.find (el => 
         el.type === "arrow" && visualNode.id === el.endBinding?.elementId);
       if (incomingArrow) {
@@ -5345,7 +5387,7 @@ const commitEdit = async () => {
       "isFolded", "foldIndicatorId", "foldState", "boundaryId",
       "fontsizeScale", "multicolor", "boxChildren", "roundedCorners", 
       "maxWrapWidth", "isSolidArrow", "centerText", "arrowType",
-      "fillSweep"
+      "fillSweep", "branchScale", "baseStrokeWidth"
     ];
     const dataToCopy = {};
     keysToCopy.forEach(k => {
@@ -6098,6 +6140,10 @@ const renderBody = (contentEl) => {
   bodyContainer = contentEl.createDiv();
   bodyContainer.style.width = "100%";
 
+  bodyContainer.createEl("div", {
+    attr: { style: "margin-right: 5px; margin-left: 5px; border-top: 1px solid var(--background-modifier-border);" }
+  });
+
   const zoomSetting = new ea.obsidian.Setting(bodyContainer);
   zoomSetting.setName(t("LABEL_ZOOM_LEVEL")).addDropdown((d) => {
     ZOOM_TYPES.forEach((key) => d.addOption(key, key));
@@ -6254,6 +6300,10 @@ const renderBody = (contentEl) => {
     })
   });
 
+  bodyContainer.createEl("div", {
+    attr: { style: "margin-right: 5px; margin-left: 5px; border-top: 1px solid var(--background-modifier-border);" }
+  });
+
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_USE_SCENE_STROKE"))
     .setDesc(
@@ -6268,6 +6318,41 @@ const renderBody = (contentEl) => {
         updateRootNodeCustomData({ isSolidArrow: !v });
       })
     });
+
+  new ea.obsidian.Setting(bodyContainer)
+    .setName(t("LABEL_BRANCH_SCALE"))
+    .addDropdown((d) => {
+      branchScaleDropdown = d;
+      BRANCH_SCALE_TYPES.forEach((key) => d.addOption(key, key));
+      d.setValue(branchScale);
+      d.onChange((v) => {
+        branchScale = v;
+        setVal(K_BRANCH_SCALE, v);
+        dirty = true;
+        updateRootNodeCustomData({ branchScale: v });
+      });
+    });
+
+  let baseWidthDisplay;
+  const baseWidthSetting = new ea.obsidian.Setting(bodyContainer)
+    .setName(t("LABEL_BASE_WIDTH"))
+    .addSlider((s) => {
+      baseWidthSlider = s;
+      s.setLimits(0.2, 10, 0.1)
+       .setValue(baseStrokeWidth)
+       .onChange((v) => {
+         baseStrokeWidth = v;
+         baseWidthDisplay.setText(`${v}`);
+         setVal(K_BASE_WIDTH, v);
+         dirty = true;
+         updateRootNodeCustomData({ baseStrokeWidth: v });
+       });
+    });
+  baseWidthDisplay = baseWidthSetting.descEl.createSpan({
+    text: `${baseStrokeWidth}`,
+    attr: { style: "margin-left:10px; font-weight:bold;" },
+  });
+  if (baseWidthSlider) baseWidthSlider.valLabelEl = baseWidthDisplay;
 
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_MULTICOLOR_BRANCHES"))
@@ -6293,6 +6378,10 @@ const renderBody = (contentEl) => {
         })
     );
 
+  bodyContainer.createEl("div", {
+    attr: { style: "margin-right: 5px; margin-left: 5px; border-top: 1px solid var(--background-modifier-border);" }
+  });
+
   let sliderValDisplay;
   const sliderSetting = new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_MAX_WRAP_WIDTH")).addSlider((s) => {
     widthSlider = s;
@@ -6317,25 +6406,25 @@ const renderBody = (contentEl) => {
     .setName(t("LABEL_CENTER_TEXT"))
     .setDesc(t("DESC_CENTER_TEXT"))
     .addToggle((t) => {
-      centerToggle = t; // NEW: Capture UI
+      centerToggle = t;
       t.setValue(centerText)
       .onChange((v) => {
         centerText = v;
         setVal(K_CENTERTEXT, v);
         dirty = true;
-        updateRootNodeCustomData({ centerText: v }); // NEW: Update root
+        updateRootNodeCustomData({ centerText: v });
       })
     });
 
   new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_FONT_SIZES")).addDropdown((d) => {
-    fontSizeDropdown = d; // NEW: Capture UI
+    fontSizeDropdown = d;
     FONT_SCALE_TYPES.forEach((key) => d.addOption(key, key));
     d.setValue(fontsizeScale);
     d.onChange((v) => {
       fontsizeScale = v;
       setVal(K_FONTSIZE, v);
       dirty = true;
-      updateRootNodeCustomData({ fontsizeScale: v }); // NEW: Update root
+      updateRootNodeCustomData({ fontsizeScale: v });
     });
   });
 
@@ -6343,7 +6432,7 @@ const renderBody = (contentEl) => {
   // Hotkey Configuration Section
   // ------------------------------------
   const hkDetails = bodyContainer.createEl("details", {
-    attr: { style: "margin-top: 15px; border-top: 1px solid var(--background-modifier-border); padding-top: 10px;" }
+    attr: { style: "margin-right: 5px; margin-left: 5px;margin-top: 15px; border-top: 1px solid var(--background-modifier-border); padding-top: 10px;" }
   });
   hkDetails.createEl("summary", { text: t("HOTKEY_SECTION_TITLE"), attr: { style: "cursor: pointer; font-weight: bold;" } });
 
