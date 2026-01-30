@@ -2371,6 +2371,41 @@ const updateRootNodeCustomData = async (data) => {
   return null;
 }
 
+const addUpdateArrowLabel = (arrow, text) => {
+  if (!arrow) {
+    return;
+  }
+  const maybeTextElement = ea.getBoundTextElement(arrow, true);
+  let textElement = maybeTextElement.eaElement;
+  if (!textElement && maybeTextElement.sceneElement) {
+    ea.copyViewElementsToEAforEditing([maybeTextElement.sceneElement]);
+    textElement = ea.getElement(maybeTextElement.sceneElement.id);
+  }
+  if (textElement) {
+    if (!text) {
+      textElement.isDeleted = true;
+    } else {
+      textElement.rawText = text;
+      textElement.text = text;
+      textElement.originalText = text;
+    }
+    return;
+  }
+  if (!text) {
+    return;
+  }
+  const x = arrow.x + arrow.width/2;
+  const y = arrow.y + arrow.height/2;
+  const textId = ea.addText(x, y, text);
+  const textEl = ea.getElement(textId);
+  
+  textEl.containerId = arrow.id;
+  textEl.textAlign = "center";
+  textEl.textVerticalAlign = "middle";
+
+  arrow.boundElements = [{ type: "text", id: textId }];
+}
+
 const configureArrow = (context) => {
   const {arrowId, isChildRight, startId, endId, coordinates, isRadial} = context;
   const {sX, sY, eX, eY} = coordinates;
@@ -4032,17 +4067,7 @@ const importTextToMap = async (rawText) => {
         const arrowEl = ea.getElement(arrowId);
         if (arrowEl) {
           arrowEl.strokeStyle = "dashed";
-
-          if (label) {
-            const textId = ea.addText(0, 0, label);
-            const textEl = ea.getElement(textId);
-            
-            textEl.containerId = arrowId;
-            textEl.textAlign = "center";
-            textEl.textVerticalAlign = "middle";
-
-            arrowEl.boundElements = [{ type: "text", id: textId }];
-          }
+          addUpdateArrowLabel(arrowEl, label);
         }
       }
     });
