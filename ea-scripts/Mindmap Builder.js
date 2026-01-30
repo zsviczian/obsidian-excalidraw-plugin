@@ -3158,7 +3158,7 @@ const initializeRootCustomData = (nodeId) => {
   });
 };
 
-const addNode = async (text, follow = false, skipFinalLayout = false, batchModeAllElements = null, batchModeParent = null, pos = null) => {
+const addNode = async (text, follow = false, skipFinalLayout = false, batchModeAllElements = null, batchModeParent = null, pos = null, ontology = null) => {
   if (!ea.targetView) return;
   if (!text || text.trim() === "") return;
 
@@ -3431,6 +3431,10 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     }
     
     ea.addAppendUpdateCustomData(arrowId, { isBranch: true });
+
+    if (ontology) {
+      addUpdateArrowLabel(eaArrow, ontology);
+    }
 
     if (!groupBranches && parent.groupIds?.length > 0) {
       const pGroup = parent.groupIds[0];
@@ -3769,6 +3773,21 @@ const copyMapAsText = async (cut = false) => {
     let str = "";
     let text = getTextFromNode(all, node);
 
+    let ontologyStr = "";
+    if (!isRootSelected || depth > 0) {
+      const incomingArrow = all.find(
+        (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === nodeId
+      );
+      if (incomingArrow) {
+        const boundTextId = incomingArrow.boundElements?.find(be => be.type === "text")?.id;
+        const boundTextEl = boundTextId ? all.find(el => el.id === boundTextId) : null;
+        if (boundTextEl && boundTextEl.originalText) {
+          // Replace newlines with spaces so it stays on one line
+          ontologyStr = boundTextEl.originalText.replace(/\n/g, " ") + ":: ";
+        }
+      }
+    }
+
     // --- Append Metadata Suffixes ---
     
     // 1. Outgoing Crosslinks
@@ -3788,9 +3807,9 @@ const copyMapAsText = async (cut = false) => {
     }
 
     if (depth === 0 && isRootSelected) {
-      str += `# ${text}${lineSeparator}`;
+      str += `# ${ontologyStr}${text}${lineSeparator}`;
     } else {
-      str += `${indentVal.repeat(depth - (isRootSelected ? 1 : 0))}- ${text}${lineSeparator}`;
+      str += `${indentVal.repeat(depth - (isRootSelected ? 1 : 0))}- ${ontologyStr}${text}${lineSeparator}`;
     }
 
     children.forEach((c) => {
@@ -3867,6 +3886,7 @@ const importTextToMap = async (rawText) => {
   // Crosslink regex handling optional inline field syntax: (key:: [[#^ref|*]])
   // Captures: 1=key(label), 2=ref
   const crossLinkRegex = /(?:\(([^):]+)::\s*)?\[\[#\^([a-zA-Z0-9]{8})\|\*\]\](?:\))?/g;
+  const ontologyRegex = /^(.+?)::\s*(.*)$/;
 
   if (lines.length === 1) {
     // Simple single line logic (existing behavior)
@@ -3877,8 +3897,16 @@ const importTextToMap = async (rawText) => {
     text = text.replace(blockRefRegex, "");
     text = text.replace(crossLinkRegex, "");
 
+    // Check for ontology on single line
+    const ontologyMatch = text.match(ontologyRegex);
+    let ontology = null;
+    if (ontologyMatch) {
+      ontology = ontologyMatch[1].trim();
+      text = ontologyMatch[2].trim();
+    }
+
     if (text) {
-      currentParent = await addNode(text.trim(), true, false);
+      currentParent = await addNode(text.trim(), true, false, null, null, null, ontology);
       if (sel) {
         selectNodeInView(sel);
       }
@@ -3950,12 +3978,21 @@ const importTextToMap = async (rawText) => {
           return "";
       });
 
+      // Non-greedy match for the first "::" separator
+      const ontologyMatch = text.match(ontologyRegex);
+      let ontology = null;
+      if (ontologyMatch) {
+        ontology = ontologyMatch[1].trim();
+        text = ontologyMatch[2].trim();
+      }
+
       parsed.push({ 
         indent, 
         text: text.trim(),
         hasBoundary,
         blockRef,
-        outgoingRefs 
+        outgoingRefs,
+        ontology // Pass the extracted ontology
       });
     }
   });
@@ -3981,7 +4018,8 @@ const importTextToMap = async (rawText) => {
     };
 
     if (topLevelItems.length === 1) {
-      sel = currentParent = await addNode(topLevelItems[0].text, true, true, [], null);
+      // Pass the root's ontology if it exists
+      sel = currentParent = await addNode(topLevelItems[0].text, true, true, [], null, null, topLevelItems[0].ontology);
       processRootMeta(topLevelItems[0], currentParent.id);
       parsed.shift();
     } else {
@@ -4036,7 +4074,7 @@ const importTextToMap = async (rawText) => {
     }
     const parentNode = stack[stack.length - 1].node;
     const currentAllElements = ea.getElements();
-    const newNode = await addNode(item.text, false, true, currentAllElements, parentNode);
+    const newNode = await addNode(item.text, false, true, currentAllElements, parentNode, null, item.ontology);
     
     // Process Metadata
     if (item.blockRef) blockRefToNodeId.set(item.blockRef, newNode.id);
@@ -4125,7 +4163,7 @@ const importTextToMap = async (rawText) => {
     }
   }
 
-  await addElementsToView({ repositionToCursor: false, shouldSleep: true }); // in case there are images in the imported map
+  await addElementsToView({ repositionToCursor: !rootSelected, shouldSleep: true }); // in case there are images in the imported map
 
   const allInView = ea.getViewElements();
   const targetToSelect = sel
