@@ -6,7 +6,7 @@ import ExcalidrawView from "src/view/ExcalidrawView";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 
 type HostCallbacks = {
-	activate: (tab: ExcalidrawSidepanelTab) => void;
+	activate: (tab: ExcalidrawSidepanelTab, reveal: boolean) => void;
   isVisible: () => boolean;
 	close: (tab: ExcalidrawSidepanelTab) => void;
 	updateTitle?: (tab: ExcalidrawSidepanelTab) => void;
@@ -116,15 +116,15 @@ export class ExcalidrawSidepanelTab implements CloseableComponent, SidepanelTabT
 	 * Activates the tab within the host sidepanel.
 	 */
 	public focus() {
-		this.host.activate(this);
+		this.host.activate(this, true);
 	}
 
 	/**
 	 * Marks the tab as open/active and triggers its onOpen lifecycle hook.
 	 */
-	public open() {
+	public open(reveal: boolean = true) {
 		this.isClosed = false;
-		this.host.activate(this);
+		this.host.activate(this, reveal);
 		void this.onOpen();
 	}
 

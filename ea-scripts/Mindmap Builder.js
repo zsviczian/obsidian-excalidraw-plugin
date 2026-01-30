@@ -66,7 +66,7 @@ if (existingTab) {
   if (hostEA && hostEA !== ea) {
     hostEA.activateMindmap = true;
     hostEA.setView(ea.targetView);
-    existingTab.open();
+    existingTab.open(false); // I will handle revealing in 
     return;
   }
 }
@@ -209,6 +209,7 @@ const STRINGS = {
     DOCK_TITLE: "Mind Map Builder",
     HELP_SUMMARY: "Help",
     INPUT_PLACEHOLDER: "Concept... type [[ to insert link",
+    ONTOLOGY_PLACEHOLDER: "Ontology (Arrow Label)",
     BUTTON_COPY: "Copy",
     BUTTON_CUT: "Cut",
     BUTTON_PASTE: "Paste",
@@ -418,6 +419,7 @@ addLocale("zh", {
   DOCK_TITLE: "MindMap Builder",
   HELP_SUMMARY: "帮助",
   INPUT_PLACEHOLDER: "输入概念… 输入 [[ 插入链接",
+  ONTOLOGY_PLACEHOLDER: "本体（箭头标签）",
   BUTTON_COPY: "复制",
   BUTTON_CUT: "剪切",
   BUTTON_PASTE: "粘贴",
@@ -1163,7 +1165,7 @@ const getHotkeyContext = () => {
     ? ea.targetView?.ownerWindow
     : sidepanelWindow;
 
-  if (currentWindow.document?.activeElement === inputEl) {
+  if (currentWindow.document?.activeElement === inputEl || currentWindow.document?.activeElement === ontologyEl) {
     return SCOPE.input;
   }
 
@@ -2428,6 +2430,7 @@ const addUpdateArrowLabel = (arrow, text) => {
   textEl.containerId = arrow.id;
   textEl.textAlign = "center";
   textEl.textVerticalAlign = "middle";
+  textEl.fontSize = Math.floor(textEl.fontSize / 2);
 
   arrow.boundElements = [{ type: "text", id: textId }];
 }
@@ -4275,6 +4278,7 @@ const reconnectArrow = (currentBindingElement, newBindingElement, arrow, side = 
  * Recursively updates the font size of a subtree based on the new depth level.
  * Only updates if the current font size matches the default for its *previous* depth,
  * preserving user customizations.
+ * Also updates the ontology label (if present) on the incoming arrow to be half the node's new size.
  */
 const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => {
   const fontScale = getFontScale(rootFontScale);
@@ -4301,6 +4305,32 @@ const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => 
     // Refresh dimensions to fit new font size
     if (eaNode.type === "text" || (eaNode.boundElements && eaNode.boundElements.some(b => b.type === "text"))) {
       ea.refreshTextElementSize(eaNode.id);
+    }
+  }
+
+  // Update Ontology (Arrow Label) size
+  // Find the arrow pointing TO this node
+  const incomingArrow = allElements.find(
+    (a) => a.type === "arrow" &&
+    a.customData?.isBranch &&
+    a.endBinding?.elementId === nodeId
+  );
+
+  if (incomingArrow) {
+    // Get the bound text element (ontology)
+    const maybeTextElement = ea.getBoundTextElement(incomingArrow, true);
+    let eaOntologyEl = maybeTextElement.eaElement;
+    
+    // If it exists in the scene but not yet in EA workbench, copy it
+    if (!eaOntologyEl && maybeTextElement.sceneElement) {
+      ea.copyViewElementsToEAforEditing([maybeTextElement.sceneElement]);
+      eaOntologyEl = ea.getElement(maybeTextElement.sceneElement.id);
+    }
+
+    // Apply half-size logic
+    if (eaOntologyEl) {
+      eaOntologyEl.fontSize = Math.floor(newStandardSize / 2);
+      ea.refreshTextElementSize(eaOntologyEl.id);
     }
   }
 
@@ -5004,6 +5034,9 @@ const toggleBoundary = async () => {
 // ---------------------------------------------------------------------------
 
 let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown;
+let lastFocusedInput = null;
+let isOntologyFocused = false;
+let ignoreFocusChanges = false;
 let autoLayoutToggle, linkSuggester, arrowTypeToggle;
 let fontSizeDropdown, boxToggle, roundToggle, strokeToggle;
 let branchScaleDropdown, baseWidthSlider;
@@ -5067,8 +5100,13 @@ const registerObsidianHotkeyOverrides = () => {
 const focusInputEl = () => {
   setTimeout(() => {
     if(isRecordingHotkey) return;
-    if(!inputEl || inputEl.disabled) return;
-    inputEl.focus();
+    const target = isOntologyFocused
+      ? (ontologyEl.disabled ? inputEl : ontologyEl)
+      : inputEl;
+    if(!target || target.disabled) {
+      return;
+    }
+    target.focus();
     if (!window.MindmapBuilder?.popObsidianHotkeyScope) registerObsidianHotkeyOverrides();
   }, 200);
 }
@@ -5113,12 +5151,14 @@ const disableUI = () => {
 const updateUI = (sel) => {
   if (!ea.targetView) {
     if(inputEl) inputEl.disabled = true;
+    if(ontologyEl) ontologyEl.disabled = true;
     disableUI();
     return;
   }
   if(inputEl) inputEl.disabled = false;
   const all = ea.getViewElements();
   sel = sel ?? getMindmapNodeFromSelection();
+  if(ontologyEl) ontologyEl.disabled = !sel;
 
   if (sel) {
     const info = getHierarchy(sel, all);
@@ -5281,10 +5321,23 @@ const startEditing = () => {
     new Notice(`${t("NOTICE_CANNOT_EDIT_MULTILINE")} ${getActionHotkeyString(ACTION_REARRANGE)}`, 7000);
     return;
   }
+
   inputEl.value = text;
+  
+  // Populate Ontology (Arrow Label)
+  // Find incoming arrow
+  const incomingArrow = all.find(
+    (a) => a.type === "arrow" && 
+    a.customData?.isBranch && 
+    a.endBinding?.elementId === sel.id
+  );
+  
+  ontologyEl.value  = ea.getBoundTextElement(incomingArrow, true)?.sceneElement.rawText || "";
+
   editingNodeId = sel.id;
   updateUI();
-  focusInputEl();
+
+  inputEl.focus();
 };
 
 const commitEdit = async () => {
@@ -5306,7 +5359,11 @@ const commitEdit = async () => {
     if (boundText) textElId = boundText.id;
   }
   const textEl = all.find(el => el.id === textElId && el.type === "text");
+  
+  // Get values from BOTH inputs
   const textInput = inputEl.value;
+  const ontologyInput = ontologyEl.value;
+  
   const imageInfo = parseImageInput(textInput);
   const embeddableUrl = parseEmbeddableInput(textInput, imageInfo);
 
@@ -5445,6 +5502,11 @@ const commitEdit = async () => {
         if (idsToReplace.includes(eaArrow.endBinding?.elementId)) {
           eaArrow.endBinding = { ...eaArrow.endBinding, elementId: newNodeId };
           isConnected = true;
+          
+          // --- Update Ontology for incoming arrow ---
+          // Since we are rewiring, this is the arrow pointing TO the new node
+          addUpdateArrowLabel(eaArrow, ontologyInput);
+
           // Scale end point relative to center
           if (eaArrow.points.length > 0) {
             const lastIdx = eaArrow.points.length - 1;
@@ -5515,6 +5577,19 @@ const commitEdit = async () => {
     }
 
     ea.refreshTextElementSize(eaEl.id);
+    
+    // --- Update Ontology (Incoming Arrow) ---
+    // We need to fetch the arrow that points TO this node
+    const incomingArrow = all.find(
+      (a) => a.type === "arrow" && 
+      a.customData?.isBranch && 
+      a.endBinding?.elementId === targetNode.id // Target node might be container
+    );
+    
+    if (incomingArrow) {
+      ea.copyViewElementsToEAforEditing([incomingArrow]);
+      addUpdateArrowLabel(ea.getElement(incomingArrow.id), ontologyInput);
+    }
 
     await addElementsToView({shouldSleep: true}); //in case text was changed to image
 
@@ -5534,6 +5609,7 @@ const commitEdit = async () => {
 
   editingNodeId = null;
   inputEl.value = "";
+  ontologyEl.value = "";
 };
 
 const renderHelp = (container) => {
@@ -5900,12 +5976,17 @@ class LayoutConfigModal extends ea.obsidian.Modal {
 // 10. Render Functions
 // ---------------------------------------------------------------------------
 const renderInput = (container, isFloating = false) => {
+  ignoreFocusChanges = true;
+  setTimeout(() => { 
+    ignoreFocusChanges = false;
+    lastFocusedInput.focus();
+  }, 200);
   container.empty();
 
-  pinBtn = refreshBtn = dockBtn = inputEl = null;
+  pinBtn = refreshBtn = dockBtn = inputEl = ontologyEl = null;
   foldBtnL0 = foldBtnL1 = foldBtnAll = null;
   boundaryBtn = panelExpandBtn = null;
-  floatingGroupBtn, floatingBoxBtn, floatingZoomBtn = null;
+  floatingGroupBtn = floatingBoxBtn = floatingZoomBtn = null;
   importOutlineBtn = null;
 
   inputRow = new ea.obsidian.Setting(container);
@@ -5933,27 +6014,85 @@ const renderInput = (container, isFloating = false) => {
     secondaryButtonContainer.style.flexWrap = "wrap";
   }
 
-  inputRow.addText((text) => {
-    inputEl = text.inputEl;
-    linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow.settingEl);
-    inputEl.style.width = "100%";
-    inputEl.ariaLabel = [
-      `${getActionLabel(ACTION_ADD)} (Enter)`,
-      `${getActionLabel(ACTION_ADD_FOLLOW)} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}`,
-      `${getActionLabel(ACTION_ADD_FOLLOW_FOCUS)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}`,
-      `${getActionLabel(ACTION_ADD_FOLLOW_ZOOM)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}`,
-    ].join("\n");
-    inputEl.placeholder = t("INPUT_PLACEHOLDER");
-    inputEl.addEventListener("focus", () => {
-      registerObsidianHotkeyOverrides();
-      ensureNodeSelected();
-      updateUI();
-    });
-    inputEl.addEventListener("blur", () => {
-      window.MindmapBuilder?.popObsidianHotkeyScope?.();
-      saveSettings();
-    });
+  // Clear default control element to build custom two-input layout
+  inputRow.controlEl.empty();
+  
+  const wrapper = inputRow.controlEl.createDiv("mindmap-input-wrapper");
+  
+  // --- Ontology Input ---
+  ontologyEl = wrapper.createEl("input", {
+    type: "text",
+    cls: "mindmap-input-ontology",
+    placeholder: t("ONTOLOGY_PLACEHOLDER")
   });
+  
+  // --- Main Input ---
+  inputEl = wrapper.createEl("input", {
+    type: "text",
+    cls: "mindmap-input-main",
+    placeholder: t("INPUT_PLACEHOLDER")
+  });
+
+  const updateFocusState = (focusedElement) => {
+    if (ignoreFocusChanges) return;
+    isOntologyFocused = (focusedElement === ontologyEl);
+    lastFocusedInput = focusedElement;
+    if (isOntologyFocused) {
+      ontologyEl.addClass("is-focused");
+      inputEl.addClass("is-shrunk");
+    } else {
+      ontologyEl.removeClass("is-focused");
+      inputEl.removeClass("is-shrunk");
+    }
+  };
+
+  const onFocus = (el) => {
+    if (ignoreFocusChanges) return;
+    updateFocusState(el);
+    registerObsidianHotkeyOverrides();
+    ensureNodeSelected();
+    updateUI();
+  }
+
+  // --- Restore State to New DOM Elements ---
+  // Apply the tracked focus state to the newly created elements immediately.
+  // This ensures that when focusInputEl() runs (via setTimeout in toggleDock),
+  // lastFocusedInput points to a valid, live DOM element.
+  if (isOntologyFocused) {
+    ontologyEl.addClass("is-focused");
+    inputEl.addClass("is-shrunk");
+    lastFocusedInput = ontologyEl;
+  } else {
+    ontologyEl.removeClass("is-focused");
+    inputEl.removeClass("is-shrunk");
+    lastFocusedInput = inputEl;
+  }
+
+  ontologyEl.addEventListener("focus", () => onFocus(ontologyEl));
+  inputEl.addEventListener("focus", () => onFocus(inputEl));
+
+  const onBlur = () => {
+    if (ignoreFocusChanges) return;
+    window.MindmapBuilder?.popObsidianHotkeyScope?.();
+    saveSettings();
+  };
+
+  ontologyEl.addEventListener("blur", onBlur);
+  inputEl.addEventListener("blur", onBlur);
+
+  // Initialize Link Suggester on Main Input
+  linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow.settingEl);
+
+  // Accessibility / ARIA labels
+  const ariaHelp = [
+    `${getActionLabel(ACTION_ADD)} (Enter)`,
+    `${getActionLabel(ACTION_ADD_FOLLOW)} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}`,
+    `${getActionLabel(ACTION_ADD_FOLLOW_FOCUS)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}`,
+    `${getActionLabel(ACTION_ADD_FOLLOW_ZOOM)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}`,
+  ].join("\n");
+  
+  inputEl.ariaLabel = ariaHelp;
+
 
   let dockedButtonContainer;
   if (!isFloating) {
@@ -6708,6 +6847,7 @@ const registerStyles = () => {
     " overflow: hidden;",
     " scrollbar-width: none;",
     "}",
+    // Focus styles
     ".excalidraw-mindmap-ui button:focus-visible,",
     ".excalidraw-mindmap-ui .clickable-icon:focus-visible,",
     ".excalidraw-mindmap-ui [tabindex]:focus-visible {",
@@ -6719,6 +6859,12 @@ const registerStyles = () => {
     ".excalidraw-mindmap-ui .clickable-icon:focus-visible svg {",
     "  color: inherit;",
     "}",
+    // New Flex Input Styles
+    ".mindmap-input-wrapper { display: flex; gap: 8px; width: 100%; transition: all 0.3s ease; }",
+    ".mindmap-input-ontology { flex: 1; transition: flex-grow 0.3s ease; min-width: 0; }",
+    ".mindmap-input-main { flex: 17; transition: flex-grow 0.3s ease; min-width: 0; }",
+    ".mindmap-input-ontology.is-focused { flex: 17; }",
+    ".mindmap-input-main.is-shrunk { flex: 1; }",
   ].join("\n");
   document.head.appendChild(styleEl);
 };
@@ -6814,7 +6960,6 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
       modalEl.style.maxHeight = FLOAT_MODAL_MAX_HEIGHT;
       const container = floatingInputModal.contentEl.createDiv();
       renderInput(container, true);
-      focusInputEl();
       setTimeout(() => {
         //the modalEl is repositioned after a delay
         //otherwise the event handlers in FloatingModal would override the move
@@ -6971,7 +7116,7 @@ const addSibling = async (event, insertAfter=true) => {
   const selectedForSibling = getMindmapNodeFromSelection();
   
   if (!selectedForSibling) {
-    await addNode(inputEl.value, true);
+    await addNode(inputEl.value, true, false, null, null, null, ontologyEl.value);
   } else {
     const info = getHierarchy(selectedForSibling, allElementsForSibling);
     const root = allElementsForSibling.find(el => el.id === info.rootId);
@@ -7006,9 +7151,10 @@ const addSibling = async (event, insertAfter=true) => {
     }
 
     selectNodeInView(targetParent);
-    await addNode(inputEl.value, false, false, null, null, pos);
+    await addNode(inputEl.value, false, false, null, null, pos, ontologyEl.value);
   }
   inputEl.value = "";
+  ontologyEl.value = "";
   updateUI();
   await performAction(ACTION_ADD, event); // Move selection to new node
 }
@@ -7128,8 +7274,9 @@ const performAction = async (action, event) => {
     case ACTION_ADD_FOLLOW_FOCUS:
     case ACTION_ADD_FOLLOW_ZOOM:
       if (!inputEl.value) return;
-      await addNode(inputEl.value, true);
+      await addNode(inputEl.value, true, false, null, null, null, ontologyEl.value);
       inputEl.value = "";
+      ontologyEl.value = "";
       updateUI();
       if (action === ACTION_ADD_FOLLOW_FOCUS) focusSelected();
       if (action === ACTION_ADD_FOLLOW_ZOOM) zoomToFit();
@@ -7146,8 +7293,9 @@ const performAction = async (action, event) => {
           editingNodeId = null;
         }
         if (inputEl.value) {
-          await addNode(inputEl.value, false);
+          await addNode(inputEl.value, false, false, null, null, null, ontologyEl.value);
           inputEl.value = "";
+          ontologyEl.value = "";
         } else {
           const sel = getMindmapNodeFromSelection();
           const allElements = ea.getViewElements();

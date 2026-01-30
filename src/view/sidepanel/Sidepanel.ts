@@ -336,9 +336,11 @@ export class ExcalidrawSidepanelView extends ItemView {
 		const tab = new ExcalidrawSidepanelTab(
       title,
 			{
-				activate: (target) => {
+				activate: (target, reveal) => {
 					this.setActiveTab(target);
-					this.reveal();
+					if (reveal) {
+						this.reveal();
+					}
 				},
 				close: (target) => this.removeTab(target),
 				updateTitle: (target) => this.updateTabOptionTitle(target),

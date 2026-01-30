@@ -56,8 +56,8 @@ export interface SidepanelTab {
 	setContent(content: string | DocumentFragment): this;
 	/** Activates this tab within the host sidepanel. */
 	focus(): void;
-	/** Marks the tab open, activates it, and triggers `onOpen`. */
-	open(): void;
+	/** Marks the tab open, activates it, and triggers `onOpen`. reveal default is true */
+	open(reveal?: boolean): void;
 	/** Runs close handlers then asks the host to remove the tab. */
 	close(): void;
 	/** Lifecycle hook called when the tab is opened/activated. */
