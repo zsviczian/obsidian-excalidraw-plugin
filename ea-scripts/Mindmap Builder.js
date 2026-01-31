@@ -5101,7 +5101,7 @@ const focusInputEl = () => {
   setTimeout(() => {
     if(isRecordingHotkey) return;
     const target = isOntologyFocused
-      ? (ontologyEl.disabled ? inputEl : ontologyEl)
+      ? (ontologyEl.style.display === "none" ? inputEl : ontologyEl)
       : inputEl;
     if(!target || target.disabled) {
       return;
@@ -5151,14 +5151,14 @@ const disableUI = () => {
 const updateUI = (sel) => {
   if (!ea.targetView) {
     if(inputEl) inputEl.disabled = true;
-    if(ontologyEl) ontologyEl.disabled = true;
+    if(ontologyEl) ontologyEl.style.display = "none";
     disableUI();
     return;
   }
   if(inputEl) inputEl.disabled = false;
   const all = ea.getViewElements();
   sel = sel ?? getMindmapNodeFromSelection();
-  if(ontologyEl) ontologyEl.disabled = !sel;
+  if(ontologyEl) ontologyEl.style.display = sel ? "" : "none";
 
   if (sel) {
     const info = getHierarchy(sel, all);
