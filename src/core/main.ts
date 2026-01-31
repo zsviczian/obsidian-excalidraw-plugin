@@ -60,6 +60,7 @@ import {
   isCallerFromTemplaterPlugin,
   versionUpdateCheckTimer,
   getFontMetrics,
+  calculateUIModeValue,
 } from "../utils/utils";
 import { foldExcalidrawSection, getExcalidrawViews, setExcalidrawView } from "../utils/obsidianUtils";
 import { FileId } from "@zsviczian/excalidraw/types/element/src/types";
@@ -96,6 +97,7 @@ import { get } from "http";
 import { getHighlightColor } from "src/utils/dynamicStyling";
 import { InlineLinkSuggester } from "src/shared/Suggesters/InlineLinkSuggester";
 import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
+import { UIMode } from "lib/shared/Dialogs/UIModeSettingComponent";
 
 declare const PLUGIN_VERSION:string;
 declare const INITIAL_TIMESTAMP: number;
@@ -1550,5 +1552,9 @@ export default class ExcalidrawPlugin extends Plugin {
       return this.ea.targetView?.file?.path;
     };
     return new InlineLinkSuggester(this.app, this, inputEl, getSourcePath, widthWrapper, surpessPlaceholder, containerEl);
+  }
+
+  public getPreferredUIMode(): UIMode {
+    return calculateUIModeValue(this.settings);
   }
 }

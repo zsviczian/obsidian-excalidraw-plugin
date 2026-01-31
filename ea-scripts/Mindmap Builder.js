@@ -6408,9 +6408,7 @@ const renderBody = (contentEl) => {
   bodyContainer = contentEl.createDiv();
   bodyContainer.style.width = "100%";
 
-  bodyContainer.createEl("div", {
-    attr: { style: "margin-right: 5px; margin-left: 5px; border-top: 1px solid var(--background-modifier-border);" }
-  });
+  bodyContainer.createEl("hr");
 
   const zoomSetting = new ea.obsidian.Setting(bodyContainer);
   zoomSetting.setName(t("LABEL_ZOOM_LEVEL")).addDropdown((d) => {
@@ -6477,21 +6475,6 @@ const renderBody = (contentEl) => {
     fillSweepToggleSetting.settingEl.style.display = "none";
   }
 
-  new ea.obsidian.Setting(bodyContainer)
-    .setName(t("LABEL_ARROW_TYPE"))
-    .addToggle((t) => {
-      arrowTypeToggle = t;
-      t.setValue(arrowType === "curved")
-       .onChange(async (v) => {
-        arrowType = v ? "curved" : "straight";
-        setVal(K_ARROW_TYPE, arrowType);
-        dirty = true;
-        if (!ea.targetView) return;
-        await updateRootNodeCustomData({ arrowType });
-        refreshMapLayout();
-      })
-    })
-
   autoLayoutToggle = new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_AUTO_LAYOUT"))
     .addToggle((t) => t
@@ -6501,7 +6484,7 @@ const renderBody = (contentEl) => {
         updateRootNodeCustomData({ autoLayoutDisabled: enabled });
       }),
     )
-    .addButton(btn => btn
+    .addExtraButton(btn=> btn
       .setIcon("pencil-ruler")
       .setTooltip(t("TOOLTIP_CONFIGURE_LAYOUT"))
       .onClick(() => {
@@ -6513,7 +6496,7 @@ const renderBody = (contentEl) => {
         });
         modal.open();
       })
-    ).components[0];
+    )
 
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_GROUP_BRANCHES"))
@@ -6531,12 +6514,14 @@ const renderBody = (contentEl) => {
         updateUI();
       }
     }))
-    .addButton((btn) => {
+    .addExtraButton((btn)=>{
       toggleGroupBtn = btn;
       btn.setIcon("group");
       btn.setTooltip(`${t("TOOLTIP_TOGGLE_GROUP_BTN")} ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
       btn.onClick(() => performAction(ACTION_TOGGLE_GROUP));
     });
+
+  bodyContainer.createEl("hr");
 
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_BOX_CHILD_NODES"))
@@ -6550,7 +6535,7 @@ const renderBody = (contentEl) => {
         updateRootNodeCustomData({ boxChildren: v });
       })
     })
-    .addButton((btn) => {
+    .addExtraButton((btn) => {
       boxBtn = btn;
       btn.setIcon("rectangle-horizontal");
       btn.setTooltip(`${t("TOOLTIP_TOGGLE_BOX")} ${getActionHotkeyString(ACTION_BOX)}`);
@@ -6568,9 +6553,22 @@ const renderBody = (contentEl) => {
     })
   });
 
-  bodyContainer.createEl("div", {
-    attr: { style: "margin-right: 5px; margin-left: 5px; border-top: 1px solid var(--background-modifier-border);" }
-  });
+  bodyContainer.createEl("hr");
+
+  new ea.obsidian.Setting(bodyContainer)
+    .setName(t("LABEL_ARROW_TYPE"))
+    .addToggle((t) => {
+      arrowTypeToggle = t;
+      t.setValue(arrowType === "curved")
+       .onChange(async (v) => {
+        arrowType = v ? "curved" : "straight";
+        setVal(K_ARROW_TYPE, arrowType);
+        dirty = true;
+        if (!ea.targetView) return;
+        await updateRootNodeCustomData({ arrowType });
+        refreshMapLayout();
+      })
+    })
 
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_USE_SCENE_STROKE"))
@@ -6651,22 +6649,20 @@ const renderBody = (contentEl) => {
         updateRootNodeCustomData({ multicolor: v });
       })
     })
-    .addButton(btn =>
-      btn.setIcon("palette")
-        .setTooltip(t("TOOLTIP_CONFIGURE_PALETTE"))
-        .onClick(() => {
-          const modal = new PaletteManagerModal(app, customPalette, (newSettings) => {
-            customPalette = newSettings;
-            setVal(K_PALETTE, customPalette, true); // save to script settings
-            dirty = true;
-          });
-          modal.open();
-        })
+    .addExtraButton((btn) => btn
+      .setIcon("palette")
+      .setTooltip(t("TOOLTIP_CONFIGURE_PALETTE"))
+      .onClick(() => {
+        const modal = new PaletteManagerModal(app, customPalette, (newSettings) => {
+          customPalette = newSettings;
+          setVal(K_PALETTE, customPalette, true); // save to script settings
+          dirty = true;
+        });
+        modal.open();
+      })
     );
 
-  bodyContainer.createEl("div", {
-    attr: { style: "margin-right: 5px; margin-left: 5px; border-top: 1px solid var(--background-modifier-border);" }
-  });
+  bodyContainer.createEl("hr");
 
   let sliderValDisplay;
   const sliderSetting = new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_MAX_WRAP_WIDTH")).addSlider((s) => {
@@ -6717,8 +6713,10 @@ const renderBody = (contentEl) => {
   // ------------------------------------
   // Hotkey Configuration Section
   // ------------------------------------
+  bodyContainer.createEl("hr");
+
   const hkDetails = bodyContainer.createEl("details", {
-    attr: { style: "margin-right: 5px; margin-left: 5px;margin-top: 15px; border-top: 1px solid var(--background-modifier-border); padding-top: 10px;" }
+    attr: { style: "margin-right: 5px; margin-left: 5px;" }
   });
   hkDetails.createEl("summary", { text: t("HOTKEY_SECTION_TITLE"), attr: { style: "cursor: pointer; font-weight: bold;" } });
 
@@ -7009,6 +7007,9 @@ const registerStyles = () => {
     "  background-color: var(--interactive-accent);",
     "  color: var(--background-primary);",
     "}",
+    ...ea.DEVICE.isDesktop
+      ? [".excalidraw-mindmap-ui hr {margin: 5px;}"]
+      : [".excalidraw-mindmap-ui hr {margin: 15px 5px;}"],
     ".excalidraw-mindmap-ui .clickable-icon:focus svg,",
     ".excalidraw-mindmap-ui .clickable-icon:focus-visible svg {",
     "  color: inherit;",

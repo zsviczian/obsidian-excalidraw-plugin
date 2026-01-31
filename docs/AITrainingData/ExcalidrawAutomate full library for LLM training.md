@@ -1794,8 +1794,8 @@ export interface SidepanelTab {
     setContent(content: string | DocumentFragment): this;
     /** Activates this tab within the host sidepanel. */
     focus(): void;
-    /** Marks the tab open, activates it, and triggers `onOpen`. */
-    open(): void;
+    /** Marks the tab open, activates it, and triggers `onOpen`. reveal default is true */
+    open(reveal?: boolean): void;
     /** Runs close handlers then asks the host to remove the tab. */
     close(): void;
     /** Lifecycle hook called when the tab is opened/activated. */
@@ -11073,13 +11073,16 @@ export declare const DefaultSidebar: import("react").FC<Omit<MarkOptional<Omit<{
 /* ************************************** */
 /* ./components/TTDDialog/TTDDialog -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/TTDDialog.d.ts */
 /* ************************************** */
-export declare const TTDDialog: (props: {
-    onTextSubmit: TTTDDialog.onTextSubmit;
-    renderWarning?: TTTDDialog.renderWarning;
-    persistenceAdapter: TTDPersistenceAdapter;
-} | {
-    __fallback: true;
-}) => import("react/jsx-runtime").JSX.Element | null;
+export declare const TTDDialog: {
+    (props: {
+        onTextSubmit: TTTDDialog.onTextSubmit;
+        renderWelcomeScreen?: TTTDDialog.renderWelcomeScreen;
+        renderWarning?: TTTDDialog.renderWarning;
+        persistenceAdapter: TTDPersistenceAdapter;
+    } | {
+        __fallback: true;
+    }): import("react/jsx-runtime").JSX.Element | null;
+    WelcomeMessage: () => import("react/jsx-runtime").JSX.Element;
 
 /* ************************************** */
 /* ./components/TTDDialog/utils/TTDStreamFetch -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/utils/TTDStreamFetch.d.ts */
@@ -11145,7 +11148,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-01-29T19:00:28.930Z
+Generated on: 2026-01-31T10:58:22.223Z
 
 ---
 
@@ -19741,7 +19744,7 @@ if (existingTab) {
   if (hostEA && hostEA !== ea) {
     hostEA.activateMindmap = true;
     hostEA.setView(ea.targetView);
-    existingTab.open();
+    existingTab.open(false); // I will handle revealing in 
     return;
   }
 }
@@ -19823,6 +19826,7 @@ const STRINGS = {
     NOTICE_CANNOT_PRMOTE_L1: "Cannot promote Level 1 nodes.",
     NOTICE_CANNOT_DEMOTE: "Cannot demote node. No previous sibling to attach to.",
     NOTICE_CANNOT_MOVE_AUTO_LAYOUT_DISABLED: "Cannot move nodes when Auto-Layout is disabled. Enable Auto-Layout first.",
+    NOTICE_BRANCH_WIDTH_MANUAL_OVERRIDE: "Branch width were not updated because some branch widths were manually modified.",
 
     // Action labels (display only)
     ACTION_LABEL_ADD: "Add Child",
@@ -19884,6 +19888,7 @@ const STRINGS = {
     DOCK_TITLE: "Mind Map Builder",
     HELP_SUMMARY: "Help",
     INPUT_PLACEHOLDER: "Concept... type [[ to insert link",
+    ONTOLOGY_PLACEHOLDER: "Ontology (Arrow Label)",
     BUTTON_COPY: "Copy",
     BUTTON_CUT: "Cut",
     BUTTON_PASTE: "Paste",
@@ -19903,6 +19908,8 @@ const STRINGS = {
     LABEL_ROUNDED_CORNERS: "Rounded Corners",
     LABEL_USE_SCENE_STROKE: "Use scene stroke style",
     DESC_USE_SCENE_STROKE: "Use the latest stroke style (solid, dashed, dotted) from the scene, or always use solid style for branches.",
+    LABEL_BRANCH_SCALE: "Branch Scale",
+    LABEL_BASE_WIDTH: "Base Thickness",
     LABEL_MULTICOLOR_BRANCHES: "Multicolor Branches",
     LABEL_MAX_WRAP_WIDTH: "Max Wrap Width",
     LABEL_CENTER_TEXT: "Center text",
@@ -20030,6 +20037,7 @@ addLocale("zh", {
   NOTICE_CANNOT_PRMOTE_L1: "无法提升 1 级节点。",
   NOTICE_CANNOT_DEMOTE: "无法降级节点。没有可依附的前置同级节点。",
   NOTICE_CANNOT_MOVE_AUTO_LAYOUT_DISABLED: "禁用自动布局时无法移动节点。请先启用自动布局。",
+  NOTICE_BRANCH_WIDTH_MANUAL_OVERRIDE: "分支粗细未更新，因为部分分支粗细已被手动修改。",
 
   // Action labels (display only)
   ACTION_LABEL_ADD: "添加子节点",
@@ -20091,6 +20099,7 @@ addLocale("zh", {
   DOCK_TITLE: "MindMap Builder",
   HELP_SUMMARY: "帮助",
   INPUT_PLACEHOLDER: "输入概念… 输入 [[ 插入链接",
+  ONTOLOGY_PLACEHOLDER: "本体（箭头标签）",
   BUTTON_COPY: "复制",
   BUTTON_CUT: "剪切",
   BUTTON_PASTE: "粘贴",
@@ -20110,6 +20119,8 @@ addLocale("zh", {
   LABEL_ROUNDED_CORNERS: "圆角",
   LABEL_USE_SCENE_STROKE: "使用场景线条样式",
   DESC_USE_SCENE_STROKE: "使用场景中最新的线条样式（实线、虚线、点线），否则分支将始终使用实线。",
+  LABEL_BRANCH_SCALE: "分支粗细比例",
+  LABEL_BASE_WIDTH: "基础粗细",
   LABEL_MULTICOLOR_BRANCHES: "多色分支",
   LABEL_MAX_WRAP_WIDTH: "最大折行宽度",
   LABEL_CENTER_TEXT: "文本居中",
@@ -20226,6 +20237,7 @@ const VALUE_SETS = Object.freeze({
   GROWTH: Object.freeze(["Radial", "Right-facing", "Left-facing", "Right-Left"]),
   ZOOM: Object.freeze(["Low", "Medium", "High"]),
   ARROW: Object.freeze(["curved", "straight"]),
+  BRANCH_SCALE: Object.freeze(["Hierarchical", "Uniform"]),
 });
 
 const FONT_SCALE_TYPES = VALUE_SETS.FONT_SCALE;
@@ -20233,6 +20245,7 @@ const GROWTH_TYPES = VALUE_SETS.GROWTH;
 const ZOOM_TYPES = VALUE_SETS.ZOOM;
 const SCOPE = VALUE_SETS.SCOPE;
 const ARROW_TYPES = VALUE_SETS.ARROW;
+const BRANCH_SCALE_TYPES = VALUE_SETS.BRANCH_SCALE;
 const ZOOM_LEVELS = Object.freeze({
   Low: { desktop: 0.10, mobile: 0.20 },
   Medium: { desktop: 0.25, mobile: 0.35 },
@@ -20274,6 +20287,8 @@ const K_WIDTH = "Max Text Width";
 const K_FONTSIZE = "Font Sizes";
 const K_BOX = "Box Children";
 const K_ROUND = "Rounded Corners";
+const K_BRANCH_SCALE = "Branch Scale Style";
+const K_BASE_WIDTH = "Base Stroke Width";
 const K_GROWTH = "Growth Mode";
 const K_MULTICOLOR = "Multicolor Mode";
 const K_UNDOCKED = "Is Undocked";
@@ -20474,7 +20489,32 @@ if(settingsTemp && settingsTemp.hasOwnProperty("Is Minimized")) {
 }
 
 
-const STROKE_WIDTHS = [6, 4, 2, 1, 0.5];
+let branchScale = getVal(K_BRANCH_SCALE, {value: "Hierarchical", valueset: BRANCH_SCALE_TYPES});
+let baseStrokeWidth = parseFloat(getVal(K_BASE_WIDTH, {value: 6}));
+
+/**
+ * Pure calculation logic for stroke width.
+ */
+const calculateStrokeWidth = (depth, baseWidth, scaleMode) => {
+  const base = Number.isFinite(baseWidth) ? baseWidth : 6;
+  const clampedDepth = Math.max(0, Math.min(depth ?? 0, 4));
+
+  if (scaleMode === "Uniform") return base;
+
+  const min = Math.max(0.1, base * 0.1);
+  const slope = (min - base) / 4;
+  const val = slope * clampedDepth + base;
+  return Math.round(val * 100) / 100;
+}
+
+/**
+ * Calculates the stroke width for a branch based on depth and style.
+ * Uses global settings.
+ */
+const getStrokeWidthForDepth = (depth) => {
+  return calculateStrokeWidth(depth, baseStrokeWidth, branchScale);
+};
+
 const ownerWindow = ea.targetView?.ownerWindow;
 const isMac = ea.DEVICE.isMacOS || ea.DEVICE.isIOS;
 const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg", "webp", "bmp", "ico", "jtif", "tif", "jfif", "avif"];
@@ -20812,7 +20852,7 @@ const getHotkeyContext = () => {
     ? ea.targetView?.ownerWindow
     : sidepanelWindow;
 
-  if (currentWindow.document?.activeElement === inputEl) {
+  if (currentWindow.document?.activeElement === inputEl || currentWindow.document?.activeElement === ontologyEl) {
     return SCOPE.input;
   }
 
@@ -22046,6 +22086,116 @@ const updateRootNodeCustomData = async (data) => {
   return null;
 }
 
+/**
+ * Recursively updates the stroke width of a subtree.
+ * Checks if the existing arrow matches the 'old' calculated width. 
+ * If it does, updates to 'new' width. If not, assumes manual override and skips.
+ */
+const updateBranchStrokes = async (rootId, oldBaseWidth, oldScaleMode, newBaseWidth, newScaleMode) => {
+  if (!ea.targetView) return;
+  const allElements = ea.getViewElements();
+  const root = allElements.find(el => el.id === rootId);
+  if (!root) return;
+
+  const elementsToUpdate = [];
+  let manualOverrideFound = false;
+
+  const traverse = (nodeId, depth) => {
+    const children = getChildrenNodes(nodeId, allElements);
+    
+    children.forEach(child => {
+      // Find the arrow connecting parent (nodeId) to child
+      const arrow = allElements.find(
+        a => a.type === "arrow" &&
+        a.customData?.isBranch &&
+        a.startBinding?.elementId === nodeId &&
+        a.endBinding?.elementId === child.id
+      );
+
+      if (arrow) {
+        // Calculate what the width *should* have been under old settings
+        // Note: 'depth' is parent depth. Arrow depth in addNode logic was 'depth' (where parent is depth-1).
+        // In addNode: 
+        // if !parent (root), depth=0. 
+        // if parent, info=getHierarchy(parent), depth = info.depth + 1. 
+        // strokeWidth = getStrokeWidthForDepth(depth).
+        // So the arrow leading TO the node at 'depth' uses 'depth' for calculation.
+        // Here, 'child' is at depth + 1 relative to 'nodeId' (which is at 'depth').
+        const childDepth = depth + 1;
+        
+        const expectedOldWidth = calculateStrokeWidth(childDepth, oldBaseWidth, oldScaleMode);
+        
+        // Allow a small floating point tolerance
+        if (Math.abs(arrow.strokeWidth - expectedOldWidth) < 0.05) {
+          const newWidth = calculateStrokeWidth(childDepth, newBaseWidth, newScaleMode);
+          if (Math.abs(arrow.strokeWidth - newWidth) > 0.001) {
+            elementsToUpdate.push({id: arrow.id, strokeWidth: newWidth});
+          }
+        } else {
+          // If it doesn't match old width, check if it matches new width (already updated?)
+          const expectedNewWidth = calculateStrokeWidth(childDepth, newBaseWidth, newScaleMode);
+          if (Math.abs(arrow.strokeWidth - expectedNewWidth) >= 0.05) {
+             manualOverrideFound = true;
+          }
+        }
+      }
+
+      traverse(child.id, depth + 1);
+    });
+  };
+
+  traverse(rootId, 0);
+
+  if (elementsToUpdate.length > 0) {
+    ea.copyViewElementsToEAforEditing(elementsToUpdate.map(i => allElements.find(e => e.id === i.id)));
+    elementsToUpdate.forEach(item => {
+      const el = ea.getElement(item.id);
+      if (el) el.strokeWidth = item.strokeWidth;
+    });
+    await addElementsToView();
+  }
+
+  if (manualOverrideFound) {
+    new Notice(t("NOTICE_BRANCH_WIDTH_MANUAL_OVERRIDE"));
+  }
+};
+
+const addUpdateArrowLabel = (arrow, text) => {
+  if (!arrow) {
+    return;
+  }
+  const maybeTextElement = ea.getBoundTextElement(arrow, true);
+  let textElement = maybeTextElement.eaElement;
+  if (!textElement && maybeTextElement.sceneElement) {
+    ea.copyViewElementsToEAforEditing([maybeTextElement.sceneElement]);
+    textElement = ea.getElement(maybeTextElement.sceneElement.id);
+  }
+  if (textElement) {
+    if (!text) {
+      textElement.isDeleted = true;
+    } else {
+      textElement.rawText = text;
+      textElement.text = text;
+      textElement.originalText = text;
+    }
+    return;
+  }
+  if (!text) {
+    return;
+  }
+  const x = arrow.x + arrow.width/2;
+  const y = arrow.y + arrow.height/2;
+  const textId = ea.addText(x, y, text);
+  const textEl = ea.getElement(textId);
+  
+  textEl.containerId = arrow.id;
+  textEl.textAlign = "center";
+  textEl.textVerticalAlign = "middle";
+  textEl.fontSize = Math.floor(textEl.fontSize / 2);
+
+  arrow.boundElements = [{ type: "text", id: textId }];
+}
+
 const configureArrow = (context) => {
   const {arrowId, isChildRight, startId, endId, coordinates, isRadial} = context;
   const {sX, sY, eX, eY} = coordinates;
@@ -22794,11 +22944,13 @@ const initializeRootCustomData = (nodeId) => {
     maxWrapWidth: maxWidth,
     isSolidArrow,
     centerText,
-    fillSweep
+    fillSweep,
+    branchScale,
+    baseStrokeWidth,
   });
 };
 
-const addNode = async (text, follow = false, skipFinalLayout = false, batchModeAllElements = null, batchModeParent = null, pos = null) => {
+const addNode = async (text, follow = false, skipFinalLayout = false, batchModeAllElements = null, batchModeParent = null, pos = null, ontology = null) => {
   if (!ea.targetView) return;
   if (!text || text.trim() === "") return;
 
@@ -22899,7 +23051,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     } else {
       ea.style.fillStyle = "solid";
       ea.style.backgroundColor = st.viewBackgroundColor;
-      ea.style.strokeWidth = STROKE_WIDTHS[Math.min(0, STROKE_WIDTHS.length - 1)]
+      ea.style.strokeWidth = getStrokeWidthForDepth(0);
       ea.style.roughness = getAppState().currentItemRoughness;
       newNodeId = ea.addText(0, 0, text, {
         box: "rectangle",
@@ -23010,7 +23162,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       const el = ea.getElement(newNodeId);
       if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
     } else {
-      ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)]
+      ea.style.strokeWidth = getStrokeWidthForDepth(depth);
       ea.style.roughness = getAppState().currentItemRoughness;
       newNodeId = ea.addText(px, py, text, {
         box: boxChildren ? "rectangle" : false,
@@ -23049,7 +23201,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       ea.addAppendUpdateCustomData(parent.id, { mindmapOrder: 0 });
     }
 
-    ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
+    ea.style.strokeWidth = getStrokeWidthForDepth(depth);
     ea.style.roughness = getAppState().currentItemRoughness;
     ea.style.strokeStyle = isSolidArrow ? "solid" : getAppState().currentItemStrokeStyle;
     
@@ -23071,6 +23223,10 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     }
     
     ea.addAppendUpdateCustomData(arrowId, { isBranch: true });
+
+    if (ontology) {
+      addUpdateArrowLabel(eaArrow, ontology);
+    }
 
     if (!groupBranches && parent.groupIds?.length > 0) {
       const pGroup = parent.groupIds[0];
@@ -23409,6 +23565,21 @@ const copyMapAsText = async (cut = false) => {
     let str = "";
     let text = getTextFromNode(all, node);
 
+    let ontologyStr = "";
+    if (!isRootSelected || depth > 0) {
+      const incomingArrow = all.find(
+        (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === nodeId
+      );
+      if (incomingArrow) {
+        const boundTextId = incomingArrow.boundElements?.find(be => be.type === "text")?.id;
+        const boundTextEl = boundTextId ? all.find(el => el.id === boundTextId) : null;
+        if (boundTextEl && boundTextEl.originalText) {
+          // Replace newlines with spaces so it stays on one line
+          ontologyStr = boundTextEl.originalText.replace(/\n/g, " ") + ":: ";
+        }
+      }
+    }
+
     // --- Append Metadata Suffixes ---
     
     // 1. Outgoing Crosslinks
@@ -23428,9 +23599,9 @@ const copyMapAsText = async (cut = false) => {
     }
 
     if (depth === 0 && isRootSelected) {
-      str += `# ${text}${lineSeparator}`;
+      str += `# ${ontologyStr}${text}${lineSeparator}`;
     } else {
-      str += `${indentVal.repeat(depth - (isRootSelected ? 1 : 0))}- ${text}${lineSeparator}`;
+      str += `${indentVal.repeat(depth - (isRootSelected ? 1 : 0))}- ${ontologyStr}${text}${lineSeparator}`;
     }
 
     children.forEach((c) => {
@@ -23507,6 +23678,7 @@ const importTextToMap = async (rawText) => {
   // Crosslink regex handling optional inline field syntax: (key:: [[#^ref|*]])
   // Captures: 1=key(label), 2=ref
   const crossLinkRegex = /(?:\(([^):]+)::\s*)?\[\[#\^([a-zA-Z0-9]{8})\|\*\]\](?:\))?/g;
+  const ontologyRegex = /^(.+?)::\s*(.*)$/;
 
   if (lines.length === 1) {
     // Simple single line logic (existing behavior)
@@ -23517,8 +23689,16 @@ const importTextToMap = async (rawText) => {
     text = text.replace(blockRefRegex, "");
     text = text.replace(crossLinkRegex, "");
 
+    // Check for ontology on single line
+    const ontologyMatch = text.match(ontologyRegex);
+    let ontology = null;
+    if (ontologyMatch) {
+      ontology = ontologyMatch[1].trim();
+      text = ontologyMatch[2].trim();
+    }
+
     if (text) {
-      currentParent = await addNode(text.trim(), true, false);
+      currentParent = await addNode(text.trim(), true, false, null, null, null, ontology);
       if (sel) {
         selectNodeInView(sel);
       }
@@ -23590,12 +23770,21 @@ const importTextToMap = async (rawText) => {
           return "";
       });
 
+      // Non-greedy match for the first "::" separator
+      const ontologyMatch = text.match(ontologyRegex);
+      let ontology = null;
+      if (ontologyMatch) {
+        ontology = ontologyMatch[1].trim();
+        text = ontologyMatch[2].trim();
+      }
+
       parsed.push({ 
         indent, 
         text: text.trim(),
         hasBoundary,
         blockRef,
-        outgoingRefs 
+        outgoingRefs,
+        ontology // Pass the extracted ontology
       });
     }
   });
@@ -23608,37 +23797,9 @@ const importTextToMap = async (rawText) => {
   ea.clear();
 
   const rootSelected = !!sel;
+  // Track boundaries created during this import to fix their z-index later
+  const createdBoundaries = [];
 
-  if (!sel) {
-    const minIndent = Math.min(...parsed.map((p) => p.indent));
-    const topLevelItems = parsed.filter((p) => p.indent === minIndent);
-    
-    // Helper to process metadata on the root/first node
-    const processRootMeta = (item, id) => {
-        if(item.blockRef) blockRefToNodeId.set(item.blockRef, id);
-        if(item.outgoingRefs.length > 0) nodeToOutgoingRefs.set(id, item.outgoingRefs);
-        if(item.hasBoundary) createImportBoundary(id);
-    };
-
-    if (topLevelItems.length === 1) {
-      sel = currentParent = await addNode(topLevelItems[0].text, true, true, [], null);
-      processRootMeta(topLevelItems[0], currentParent.id);
-      parsed.shift();
-    } else {
-      sel = currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true, [], null);
-    }
-  } else {
-    currentParent = sel;
-    ea.copyViewElementsToEAforEditing([sel]);
-    currentParent = ea.getElement(sel.id);
-  }
-
-  const stack = [{ indent: -1, node: currentParent }];
-
-  if (rootSelected) {
-    ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(el=> !ea.getElement(el.id))); // ensure EA has copies of existing elements
-  }
-  
   // Helper to create boundary during import (mimics toggleBoundary logic)
   const createImportBoundary = (nodeId) => {
     const node = ea.getElement(nodeId);
@@ -23668,15 +23829,47 @@ const importTextToMap = async (rawText) => {
     
     ea.elementsDict[id] = boundaryEl;
     ea.addAppendUpdateCustomData(nodeId, { boundaryId: id });
+    createdBoundaries.push({ nodeId, boundaryId: id });
   };
 
+  if (!sel) {
+    const minIndent = Math.min(...parsed.map((p) => p.indent));
+    const topLevelItems = parsed.filter((p) => p.indent === minIndent);
+    
+    // Helper to process metadata on the root/first node
+    const processRootMeta = (item, id) => {
+        if(item.blockRef) blockRefToNodeId.set(item.blockRef, id);
+        if(item.outgoingRefs.length > 0) nodeToOutgoingRefs.set(id, item.outgoingRefs);
+        if(item.hasBoundary) createImportBoundary(id);
+    };
+
+    if (topLevelItems.length === 1) {
+      // Pass the root's ontology if it exists
+      sel = currentParent = await addNode(topLevelItems[0].text, true, true, [], null, null, topLevelItems[0].ontology);
+      processRootMeta(topLevelItems[0], currentParent.id);
+      parsed.shift();
+    } else {
+      sel = currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true, [], null);
+    }
+  } else {
+    currentParent = sel;
+    ea.copyViewElementsToEAforEditing([sel]);
+    currentParent = ea.getElement(sel.id);
+  }
+
+  const stack = [{ indent: -1, node: currentParent }];
+
+  if (rootSelected) {
+    ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(el=> !ea.getElement(el.id))); // ensure EA has copies of existing elements
+  }
+  
   for (const item of parsed) {
     while (stack.length > 1 && item.indent <= stack[stack.length - 1].indent) {
       stack.pop();
     }
     const parentNode = stack[stack.length - 1].node;
     const currentAllElements = ea.getElements();
-    const newNode = await addNode(item.text, false, true, currentAllElements, parentNode);
+    const newNode = await addNode(item.text, false, true, currentAllElements, parentNode, null, item.ontology);
     
     // Process Metadata
     if (item.blockRef) blockRefToNodeId.set(item.blockRef, newNode.id);
@@ -23707,17 +23900,7 @@ const importTextToMap = async (rawText) => {
         const arrowEl = ea.getElement(arrowId);
         if (arrowEl) {
           arrowEl.strokeStyle = "dashed";
-
-          if (label) {
-            const textId = ea.addText(0, 0, label);
-            const textEl = ea.getElement(textId);
-            
-            textEl.containerId = arrowId;
-            textEl.textAlign = "center";
-            textEl.textVerticalAlign = "middle";
-
-            arrowEl.boundElements = [{ type: "text", id: textId }];
-          }
+          addUpdateArrowLabel(arrowEl, label);
         }
       }
     });
@@ -23775,7 +23958,50 @@ const importTextToMap = async (rawText) => {
     }
   }
 
-  await addElementsToView({ repositionToCursor: false, shouldSleep: true }); // in case there are images in the imported map
+  await addElementsToView({ repositionToCursor: !rootSelected, shouldSleep: true }); // in case there are images in the imported map
+
+  // -------------------------------------------------------------------------
+  //  Fix Z-Index for Created Boundaries (Parents Below Children)
+  // -------------------------------------------------------------------------
+  if (createdBoundaries.length > 0) {
+    const allEls = ea.getViewElements();
+    
+    const boundariesWithDepth = createdBoundaries.map(b => {
+      const node = allEls.find(e => e.id === b.nodeId);
+      // If node not found (rare), default to 0
+      const depth = node ? getHierarchy(node, allEls).depth : 0;
+      return { ...b, depth };
+    });
+
+    // Sort ascending depth (root -> leaves) so we position parents first
+    boundariesWithDepth.sort((a, b) => a.depth - b.depth);
+
+    for (const b of boundariesWithDepth) {
+      // Refresh view elements to get up-to-date indices after previous moves
+      const currentEls = ea.getViewElements();
+      
+      let parentBoundaryIndex = -1;
+      let curr = currentEls.find(e => e.id === b.nodeId);
+
+      // Find nearest ancestor with a boundary
+      while (curr) {
+        const parent = getParentNode(curr.id, currentEls);
+        if (!parent) break;
+        if (parent.customData?.boundaryId) {
+          const pIndex = currentEls.findIndex(el => el.id === parent.customData.boundaryId);
+          if (pIndex !== -1) {
+            parentBoundaryIndex = pIndex;
+            break;
+          }
+        }
+        curr = parent;
+      }
+      
+      // If parent boundary exists, place this one above it. Else bottom (0).
+      const targetIndex = parentBoundaryIndex !== -1 ? parentBoundaryIndex + 1 : 0;
+      ea.moveViewElementToZIndex(b.boundaryId, targetIndex);
+    }
+  }
 
   const allInView = ea.getViewElements();
   const targetToSelect = sel
@@ -23859,6 +24085,7 @@ const reconnectArrow = (currentBindingElement, newBindingElement, arrow, side = 
  * Recursively updates the font size of a subtree based on the new depth level.
  * Only updates if the current font size matches the default for its *previous* depth,
  * preserving user customizations.
+ * Also updates the ontology label (if present) on the incoming arrow to be half the node's new size.
  */
 const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => {
   const fontScale = getFontScale(rootFontScale);
@@ -23885,6 +24112,32 @@ const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => 
     // Refresh dimensions to fit new font size
     if (eaNode.type === "text" || (eaNode.boundElements && eaNode.boundElements.some(b => b.type === "text"))) {
       ea.refreshTextElementSize(eaNode.id);
+    }
+  }
+
+  // Update Ontology (Arrow Label) size
+  // Find the arrow pointing TO this node
+  const incomingArrow = allElements.find(
+    (a) => a.type === "arrow" &&
+    a.customData?.isBranch &&
+    a.endBinding?.elementId === nodeId
+  );
+
+  if (incomingArrow) {
+    // Get the bound text element (ontology)
+    const maybeTextElement = ea.getBoundTextElement(incomingArrow, true);
+    let eaOntologyEl = maybeTextElement.eaElement;
+    
+    // If it exists in the scene but not yet in EA workbench, copy it
+    if (!eaOntologyEl && maybeTextElement.sceneElement) {
+      ea.copyViewElementsToEAforEditing([maybeTextElement.sceneElement]);
+      eaOntologyEl = ea.getElement(maybeTextElement.sceneElement.id);
+    }
+
+    // Apply half-size logic
+    if (eaOntologyEl) {
+      eaOntologyEl.fontSize = Math.floor(newStandardSize / 2);
+      ea.refreshTextElementSize(eaOntologyEl.id);
     }
   }
 
@@ -24459,7 +24712,7 @@ const toggleBox = async () => {
     const rect = ea.getElement(rectId);
     ea.addAppendUpdateCustomData(rectId, { isPinned: !!sel.customData?.isPinned, mindmapOrder: sel.customData?.mindmapOrder });
     rect.strokeColor = ea.getCM(sel.strokeColor).stringRGB();
-    rect.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
+    rect.strokeWidth = getStrokeWidthForDepth(depth);
     rect.roughness = getAppState().currentItemRoughness;
     rect.roundness = roundedCorners ? { type: 3 } : null;
     rect.backgroundColor = "transparent";
@@ -24588,8 +24841,12 @@ const toggleBoundary = async () => {
 // ---------------------------------------------------------------------------
 
 let detailsEl, inputEl, inputRow, bodyContainer, strategyDropdown;
+let lastFocusedInput = null;
+let isOntologyFocused = false;
+let ignoreFocusChanges = false;
 let autoLayoutToggle, linkSuggester, arrowTypeToggle;
 let fontSizeDropdown, boxToggle, roundToggle, strokeToggle;
+let branchScaleDropdown, baseWidthSlider;
 let colorToggle, widthSlider, centerToggle;
 let fillSweepToggleSetting, fillSweepToggle;
 let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn;
@@ -24650,8 +24907,13 @@ const registerObsidianHotkeyOverrides = () => {
 const focusInputEl = () => {
   setTimeout(() => {
     if(isRecordingHotkey) return;
-    if(!inputEl || inputEl.disabled) return;
-    inputEl.focus();
+    const target = isOntologyFocused
+      ? (ontologyEl.style.display === "none" ? inputEl : ontologyEl)
+      : inputEl;
+    if(!target || target.disabled) {
+      return;
+    }
+    target.focus();
     if (!window.MindmapBuilder?.popObsidianHotkeyScope) registerObsidianHotkeyOverrides();
   }, 200);
 }
@@ -24696,12 +24958,14 @@ const disableUI = () => {
 const updateUI = (sel) => {
   if (!ea.targetView) {
     if(inputEl) inputEl.disabled = true;
+    if(ontologyEl) ontologyEl.style.display = "none";
     disableUI();
     return;
   }
   if(inputEl) inputEl.disabled = false;
   const all = ea.getViewElements();
   sel = sel ?? getMindmapNodeFromSelection();
+  if(ontologyEl) ontologyEl.style.display = sel ? "" : "none";
 
   if (sel) {
     const info = getHierarchy(sel, all);
@@ -24817,6 +25081,19 @@ const updateUI = (sel) => {
         if (strokeToggle) strokeToggle.setValue(!isSolidArrow);
     }
 
+    if (cd?.branchScale && BRANCH_SCALE_TYPES.includes(cd.branchScale) && cd.branchScale !== branchScale) {
+      branchScale = cd.branchScale;
+      if (branchScaleDropdown) branchScaleDropdown.setValue(branchScale);
+    }
+
+    if (typeof cd?.baseStrokeWidth === "number" && cd.baseStrokeWidth !== baseStrokeWidth) {
+      baseStrokeWidth = cd.baseStrokeWidth;
+      if (baseWidthSlider) {
+        baseWidthSlider.setValue(baseStrokeWidth);
+        if (baseWidthSlider.valLabelEl) baseWidthSlider.valLabelEl.setText(`${baseStrokeWidth}`);
+      }
+    }
+
     if (typeof cd?.centerText === "boolean" && cd.centerText !== centerText) {
         centerText = cd.centerText;
         if (centerToggle) centerToggle.setValue(centerText);
@@ -24851,10 +25128,23 @@ const startEditing = () => {
     new Notice(`${t("NOTICE_CANNOT_EDIT_MULTILINE")} ${getActionHotkeyString(ACTION_REARRANGE)}`, 7000);
     return;
   }
+
   inputEl.value = text;
+  
+  // Populate Ontology (Arrow Label)
+  // Find incoming arrow
+  const incomingArrow = all.find(
+    (a) => a.type === "arrow" && 
+    a.customData?.isBranch && 
+    a.endBinding?.elementId === sel.id
+  );
+  
+  ontologyEl.value  = ea.getBoundTextElement(incomingArrow, true)?.sceneElement.rawText || "";
+
   editingNodeId = sel.id;
   updateUI();
-  focusInputEl();
+
+  inputEl.focus();
 };
 
 const commitEdit = async () => {
@@ -24876,7 +25166,11 @@ const commitEdit = async () => {
     if (boundText) textElId = boundText.id;
   }
   const textEl = all.find(el => el.id === textElId && el.type === "text");
+  
+  // Get values from BOTH inputs
   const textInput = inputEl.value;
+  const ontologyInput = ontologyEl.value;
+  
   const imageInfo = parseImageInput(textInput);
   const embeddableUrl = parseEmbeddableInput(textInput, imageInfo);
 
@@ -24932,7 +25226,7 @@ const commitEdit = async () => {
       const fontScale = getFontScale(fontsizeScale);
       ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)]; 
       ea.style.backgroundColor = "transparent";
-      ea.style.strokeWidth = STROKE_WIDTHS[Math.min(depth, STROKE_WIDTHS.length - 1)];
+      ea.style.strokeWidth = getStrokeWidthForDepth(depth);
       const incomingArrow = all.find (el => 
         el.type === "arrow" && visualNode.id === el.endBinding?.elementId);
       if (incomingArrow) {
@@ -24957,7 +25251,7 @@ const commitEdit = async () => {
       "isFolded", "foldIndicatorId", "foldState", "boundaryId",
       "fontsizeScale", "multicolor", "boxChildren", "roundedCorners", 
       "maxWrapWidth", "isSolidArrow", "centerText", "arrowType",
-      "fillSweep"
+      "fillSweep", "branchScale", "baseStrokeWidth"
     ];
     const dataToCopy = {};
     keysToCopy.forEach(k => {
@@ -25015,6 +25309,11 @@ const commitEdit = async () => {
         if (idsToReplace.includes(eaArrow.endBinding?.elementId)) {
           eaArrow.endBinding = { ...eaArrow.endBinding, elementId: newNodeId };
           isConnected = true;
+          
+          // --- Update Ontology for incoming arrow ---
+          // Since we are rewiring, this is the arrow pointing TO the new node
+          addUpdateArrowLabel(eaArrow, ontologyInput);
+
           // Scale end point relative to center
           if (eaArrow.points.length > 0) {
             const lastIdx = eaArrow.points.length - 1;
@@ -25085,6 +25384,19 @@ const commitEdit = async () => {
     }
 
     ea.refreshTextElementSize(eaEl.id);
+    
+    // --- Update Ontology (Incoming Arrow) ---
+    // We need to fetch the arrow that points TO this node
+    const incomingArrow = all.find(
+      (a) => a.type === "arrow" && 
+      a.customData?.isBranch && 
+      a.endBinding?.elementId === targetNode.id // Target node might be container
+    );
+    
+    if (incomingArrow) {
+      ea.copyViewElementsToEAforEditing([incomingArrow]);
+      addUpdateArrowLabel(ea.getElement(incomingArrow.id), ontologyInput);
+    }
 
     await addElementsToView({shouldSleep: true}); //in case text was changed to image
 
@@ -25104,6 +25416,7 @@ const commitEdit = async () => {
 
   editingNodeId = null;
   inputEl.value = "";
+  ontologyEl.value = "";
 };
 
 const renderHelp = (container) => {
@@ -25470,12 +25783,17 @@ class LayoutConfigModal extends ea.obsidian.Modal {
 // 10. Render Functions
 // ---------------------------------------------------------------------------
 const renderInput = (container, isFloating = false) => {
+  ignoreFocusChanges = true;
+  setTimeout(() => { 
+    ignoreFocusChanges = false;
+    lastFocusedInput.focus();
+  }, 200);
   container.empty();
 
-  pinBtn = refreshBtn = dockBtn = inputEl = null;
+  pinBtn = refreshBtn = dockBtn = inputEl = ontologyEl = null;
   foldBtnL0 = foldBtnL1 = foldBtnAll = null;
   boundaryBtn = panelExpandBtn = null;
-  floatingGroupBtn, floatingBoxBtn, floatingZoomBtn = null;
+  floatingGroupBtn = floatingBoxBtn = floatingZoomBtn = null;
   importOutlineBtn = null;
 
   inputRow = new ea.obsidian.Setting(container);
@@ -25503,27 +25821,85 @@ const renderInput = (container, isFloating = false) => {
     secondaryButtonContainer.style.flexWrap = "wrap";
   }
 
-  inputRow.addText((text) => {
-    inputEl = text.inputEl;
-    linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow.settingEl);
-    inputEl.style.width = "100%";
-    inputEl.ariaLabel = [
-      `${getActionLabel(ACTION_ADD)} (Enter)`,
-      `${getActionLabel(ACTION_ADD_FOLLOW)} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}`,
-      `${getActionLabel(ACTION_ADD_FOLLOW_FOCUS)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}`,
-      `${getActionLabel(ACTION_ADD_FOLLOW_ZOOM)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}`,
-    ].join("\n");
-    inputEl.placeholder = t("INPUT_PLACEHOLDER");
-    inputEl.addEventListener("focus", () => {
-      registerObsidianHotkeyOverrides();
-      ensureNodeSelected();
-      updateUI();
-    });
-    inputEl.addEventListener("blur", () => {
-      window.MindmapBuilder?.popObsidianHotkeyScope?.();
-      saveSettings();
-    });
+  // Clear default control element to build custom two-input layout
+  inputRow.controlEl.empty();
+  
+  const wrapper = inputRow.controlEl.createDiv("mindmap-input-wrapper");
+  
+  // --- Ontology Input ---
+  ontologyEl = wrapper.createEl("input", {
+    type: "text",
+    cls: "mindmap-input-ontology",
+    placeholder: t("ONTOLOGY_PLACEHOLDER")
   });
+  
+  // --- Main Input ---
+  inputEl = wrapper.createEl("input", {
+    type: "text",
+    cls: "mindmap-input-main",
+    placeholder: t("INPUT_PLACEHOLDER")
+  });
+
+  const updateFocusState = (focusedElement) => {
+    if (ignoreFocusChanges) return;
+    isOntologyFocused = (focusedElement === ontologyEl);
+    lastFocusedInput = focusedElement;
+    if (isOntologyFocused) {
+      ontologyEl.addClass("is-focused");
+      inputEl.addClass("is-shrunk");
+    } else {
+      ontologyEl.removeClass("is-focused");
+      inputEl.removeClass("is-shrunk");
+    }
+  };
+
+  const onFocus = (el) => {
+    if (ignoreFocusChanges) return;
+    updateFocusState(el);
+    registerObsidianHotkeyOverrides();
+    ensureNodeSelected();
+    updateUI();
+  }
+
+  // --- Restore State to New DOM Elements ---
+  // Apply the tracked focus state to the newly created elements immediately.
+  // This ensures that when focusInputEl() runs (via setTimeout in toggleDock),
+  // lastFocusedInput points to a valid, live DOM element.
+  if (isOntologyFocused) {
+    ontologyEl.addClass("is-focused");
+    inputEl.addClass("is-shrunk");
+    lastFocusedInput = ontologyEl;
+  } else {
+    ontologyEl.removeClass("is-focused");
+    inputEl.removeClass("is-shrunk");
+    lastFocusedInput = inputEl;
+  }
+
+  ontologyEl.addEventListener("focus", () => onFocus(ontologyEl));
+  inputEl.addEventListener("focus", () => onFocus(inputEl));
+
+  const onBlur = () => {
+    if (ignoreFocusChanges) return;
+    window.MindmapBuilder?.popObsidianHotkeyScope?.();
+    saveSettings();
+  };
+
+  ontologyEl.addEventListener("blur", onBlur);
+  inputEl.addEventListener("blur", onBlur);
+
+  // Initialize Link Suggester on Main Input
+  linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow.settingEl);
+
+  // Accessibility / ARIA labels
+  const ariaHelp = [
+    `${getActionLabel(ACTION_ADD)} (Enter)`,
+    `${getActionLabel(ACTION_ADD_FOLLOW)} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}`,
+    `${getActionLabel(ACTION_ADD_FOLLOW_FOCUS)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}`,
+    `${getActionLabel(ACTION_ADD_FOLLOW_ZOOM)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}`,
+  ].join("\n");
+  
+  inputEl.ariaLabel = ariaHelp;
+
 
   let dockedButtonContainer;
   if (!isFloating) {
@@ -25531,7 +25907,7 @@ const renderInput = (container, isFloating = false) => {
     dockedButtonContainer.style.display = "flex";
     dockedButtonContainer.style.justifyContent = "flex-end";
     dockedButtonContainer.style.flexWrap = "wrap";
-    dockedButtonContainer.style.gap = "4px";
+    dockedButtonContainer.style.gap = "2px";
     dockedButtonContainer.style.marginTop = "6px";
   }
 
@@ -25710,6 +26086,8 @@ const renderBody = (contentEl) => {
   bodyContainer = contentEl.createDiv();
   bodyContainer.style.width = "100%";
 
+  bodyContainer.createEl("hr");
+
   const zoomSetting = new ea.obsidian.Setting(bodyContainer);
   zoomSetting.setName(t("LABEL_ZOOM_LEVEL")).addDropdown((d) => {
     ZOOM_TYPES.forEach((key) => d.addOption(key, key));
@@ -25775,21 +26153,6 @@ const renderBody = (contentEl) => {
     fillSweepToggleSetting.settingEl.style.display = "none";
   }
 
-  new ea.obsidian.Setting(bodyContainer)
-    .setName(t("LABEL_ARROW_TYPE"))
-    .addToggle((t) => {
-      arrowTypeToggle = t;
-      t.setValue(arrowType === "curved")
-       .onChange(async (v) => {
-        arrowType = v ? "curved" : "straight";
-        setVal(K_ARROW_TYPE, arrowType);
-        dirty = true;
-        if (!ea.targetView) return;
-        await updateRootNodeCustomData({ arrowType });
-        refreshMapLayout();
-      })
-    })
-
   autoLayoutToggle = new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_AUTO_LAYOUT"))
     .addToggle((t) => t
@@ -25799,7 +26162,7 @@ const renderBody = (contentEl) => {
         updateRootNodeCustomData({ autoLayoutDisabled: enabled });
       }),
     )
-    .addButton(btn => btn
+    .addExtraButton(btn=> btn
       .setIcon("pencil-ruler")
       .setTooltip(t("TOOLTIP_CONFIGURE_LAYOUT"))
       .onClick(() => {
@@ -25811,7 +26174,7 @@ const renderBody = (contentEl) => {
         });
         modal.open();
       })
-    ).components[0];
+    )
 
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_GROUP_BRANCHES"))
@@ -25829,12 +26192,14 @@ const renderBody = (contentEl) => {
         updateUI();
       }
     }))
-    .addButton((btn) => {
+    .addExtraButton((btn)=>{
       toggleGroupBtn = btn;
       btn.setIcon("group");
       btn.setTooltip(`${t("TOOLTIP_TOGGLE_GROUP_BTN")} ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
       btn.onClick(() => performAction(ACTION_TOGGLE_GROUP));
     });
+
+  bodyContainer.createEl("hr");
 
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_BOX_CHILD_NODES"))
@@ -25848,7 +26213,7 @@ const renderBody = (contentEl) => {
         updateRootNodeCustomData({ boxChildren: v });
       })
     })
-    .addButton((btn) => {
+    .addExtraButton((btn) => {
       boxBtn = btn;
       btn.setIcon("rectangle-horizontal");
       btn.setTooltip(`${t("TOOLTIP_TOGGLE_BOX")} ${getActionHotkeyString(ACTION_BOX)}`);
@@ -25866,6 +26231,23 @@ const renderBody = (contentEl) => {
     })
   });
 
+  bodyContainer.createEl("hr");
+
+  new ea.obsidian.Setting(bodyContainer)
+    .setName(t("LABEL_ARROW_TYPE"))
+    .addToggle((t) => {
+      arrowTypeToggle = t;
+      t.setValue(arrowType === "curved")
+       .onChange(async (v) => {
+        arrowType = v ? "curved" : "straight";
+        setVal(K_ARROW_TYPE, arrowType);
+        dirty = true;
+        if (!ea.targetView) return;
+        await updateRootNodeCustomData({ arrowType });
+        refreshMapLayout();
+      })
+    })
+
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_USE_SCENE_STROKE"))
     .setDesc(
@@ -25882,6 +26264,59 @@ const renderBody = (contentEl) => {
     });
 
   new ea.obsidian.Setting(bodyContainer)
+    .setName(t("LABEL_BRANCH_SCALE"))
+    .addDropdown((d) => {
+      branchScaleDropdown = d;
+      BRANCH_SCALE_TYPES.forEach((key) => d.addOption(key, key));
+      d.setValue(branchScale);
+      d.onChange(async (v) => {
+        const oldScale = branchScale;
+        branchScale = v;
+        setVal(K_BRANCH_SCALE, v);
+        dirty = true;
+        const info = await updateRootNodeCustomData({ branchScale: v });
+        if(info) {
+          await updateBranchStrokes(info.rootId, baseStrokeWidth, oldScale, baseStrokeWidth, branchScale);
+        }
+      });
+    });
+
+  let baseWidthDisplay;
+  let baseWidthUpdateTimer = null;
+  let baseWidthSnapshot = null;
+
+  const baseWidthSetting = new ea.obsidian.Setting(bodyContainer)
+    .setName(t("LABEL_BASE_WIDTH"))
+    .addSlider((s) => {
+      baseWidthSlider = s;
+      s.setLimits(0.2, 16, 0.1)
+       .setValue(baseStrokeWidth)
+       .onChange((v) => {
+         if (baseWidthUpdateTimer) clearTimeout(baseWidthUpdateTimer);
+         if (baseWidthSnapshot === null) baseWidthSnapshot = baseStrokeWidth;
+         
+         baseStrokeWidth = v;
+         baseWidthDisplay.setText(`${v}`);
+         setVal(K_BASE_WIDTH, v);
+         dirty = true;
+
+         baseWidthUpdateTimer = setTimeout(async () => {
+           const info = await updateRootNodeCustomData({ baseStrokeWidth: v });
+           if(info) {
+             await updateBranchStrokes(info.rootId, baseWidthSnapshot, branchScale, baseStrokeWidth, branchScale);
+           }
+           baseWidthSnapshot = null;
+           baseWidthUpdateTimer = null;
+         }, 500);
+       });
+    });
+  baseWidthDisplay = baseWidthSetting.descEl.createSpan({
+    text: `${baseStrokeWidth}`,
+    attr: { style: "margin-left:10px; font-weight:bold;" },
+  });
+  if (baseWidthSlider) baseWidthSlider.valLabelEl = baseWidthDisplay;
+
+  new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_MULTICOLOR_BRANCHES"))
     .addToggle((t) => {
       colorToggle = t;
@@ -25892,18 +26327,20 @@ const renderBody = (contentEl) => {
         updateRootNodeCustomData({ multicolor: v });
       })
     })
-    .addButton(btn =>
-      btn.setIcon("palette")
-        .setTooltip(t("TOOLTIP_CONFIGURE_PALETTE"))
-        .onClick(() => {
-          const modal = new PaletteManagerModal(app, customPalette, (newSettings) => {
-            customPalette = newSettings;
-            setVal(K_PALETTE, customPalette, true); // save to script settings
-            dirty = true;
-          });
-          modal.open();
-        })
+    .addExtraButton((btn) => btn
+      .setIcon("palette")
+      .setTooltip(t("TOOLTIP_CONFIGURE_PALETTE"))
+      .onClick(() => {
+        const modal = new PaletteManagerModal(app, customPalette, (newSettings) => {
+          customPalette = newSettings;
+          setVal(K_PALETTE, customPalette, true); // save to script settings
+          dirty = true;
+        });
+        modal.open();
+      })
     );
+
+  bodyContainer.createEl("hr");
 
   let sliderValDisplay;
   const sliderSetting = new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_MAX_WRAP_WIDTH")).addSlider((s) => {
@@ -25929,33 +26366,35 @@ const renderBody = (contentEl) => {
     .setName(t("LABEL_CENTER_TEXT"))
     .setDesc(t("DESC_CENTER_TEXT"))
     .addToggle((t) => {
-      centerToggle = t; // NEW: Capture UI
+      centerToggle = t;
       t.setValue(centerText)
       .onChange((v) => {
         centerText = v;
         setVal(K_CENTERTEXT, v);
         dirty = true;
-        updateRootNodeCustomData({ centerText: v }); // NEW: Update root
+        updateRootNodeCustomData({ centerText: v });
       })
     });
 
   new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_FONT_SIZES")).addDropdown((d) => {
-    fontSizeDropdown = d; // NEW: Capture UI
+    fontSizeDropdown = d;
     FONT_SCALE_TYPES.forEach((key) => d.addOption(key, key));
     d.setValue(fontsizeScale);
     d.onChange((v) => {
       fontsizeScale = v;
       setVal(K_FONTSIZE, v);
       dirty = true;
-      updateRootNodeCustomData({ fontsizeScale: v }); // NEW: Update root
+      updateRootNodeCustomData({ fontsizeScale: v });
     });
   });
 
   // ------------------------------------
   // Hotkey Configuration Section
   // ------------------------------------
+  bodyContainer.createEl("hr");
+
   const hkDetails = bodyContainer.createEl("details", {
-    attr: { style: "margin-top: 15px; border-top: 1px solid var(--background-modifier-border); padding-top: 10px;" }
+    attr: { style: "margin-right: 5px; margin-left: 5px;" }
   });
   hkDetails.createEl("summary", { text: t("HOTKEY_SECTION_TITLE"), attr: { style: "cursor: pointer; font-weight: bold;" } });
 
@@ -26223,7 +26662,10 @@ const renderBody = (contentEl) => {
 const MINDMAP_FOCUS_STYLE_ID = "excalidraw-mindmap-focus-style";
 
 const registerStyles = () => {
-  if (document.getElementById(MINDMAP_FOCUS_STYLE_ID)) return;
+  // Remove existing styles first to ensure updates are applied immediately
+  const existing = document.getElementById(MINDMAP_FOCUS_STYLE_ID);
+  if (existing) existing.remove();
+
   const styleEl = document.createElement("style");
   styleEl.id = MINDMAP_FOCUS_STYLE_ID;
   styleEl.textContent = [
@@ -26231,6 +26673,10 @@ const registerStyles = () => {
     " overflow: hidden;",
     " scrollbar-width: none;",
     "}",
+    // Focus styles
+    ".excalidraw-mindmap-ui button:focus,",
+    ".excalidraw-mindmap-ui .clickable-icon:focus,",
+    ".excalidraw-mindmap-ui [tabindex]:focus,",
     ".excalidraw-mindmap-ui button:focus-visible,",
     ".excalidraw-mindmap-ui .clickable-icon:focus-visible,",
     ".excalidraw-mindmap-ui [tabindex]:focus-visible {",
@@ -26239,9 +26685,19 @@ const registerStyles = () => {
     "  background-color: var(--interactive-accent);",
     "  color: var(--background-primary);",
     "}",
+    ...ea.DEVICE.isDesktop
+      ? [".excalidraw-mindmap-ui hr {margin: 5px;}"]
+      : [".excalidraw-mindmap-ui hr {margin: 15px 5px;}"],
+    ".excalidraw-mindmap-ui .clickable-icon:focus svg,",
     ".excalidraw-mindmap-ui .clickable-icon:focus-visible svg {",
     "  color: inherit;",
     "}",
+    // New Flex Input Styles
+    ".mindmap-input-wrapper { display: flex; gap: 8px; width: 100%; transition: all 0.3s ease; }",
+    ".mindmap-input-ontology { flex: 1; transition: flex-grow 0.3s ease; min-width: 0; }",
+    ".mindmap-input-main { flex: 17; transition: flex-grow 0.3s ease; min-width: 0; }",
+    ".mindmap-input-ontology.is-focused { flex: 17; }",
+    ".mindmap-input-main.is-shrunk { flex: 1; }",
   ].join("\n");
   document.head.appendChild(styleEl);
 };
@@ -26337,7 +26793,6 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
       modalEl.style.maxHeight = FLOAT_MODAL_MAX_HEIGHT;
       const container = floatingInputModal.contentEl.createDiv();
       renderInput(container, true);
-      focusInputEl();
       setTimeout(() => {
         //the modalEl is repositioned after a delay
         //otherwise the event handlers in FloatingModal would override the move
@@ -26494,7 +26949,7 @@ const addSibling = async (event, insertAfter=true) => {
   const selectedForSibling = getMindmapNodeFromSelection();
   
   if (!selectedForSibling) {
-    await addNode(inputEl.value, true);
+    await addNode(inputEl.value, true, false, null, null, null, ontologyEl.value);
   } else {
     const info = getHierarchy(selectedForSibling, allElementsForSibling);
     const root = allElementsForSibling.find(el => el.id === info.rootId);
@@ -26529,9 +26984,10 @@ const addSibling = async (event, insertAfter=true) => {
     }
 
     selectNodeInView(targetParent);
-    await addNode(inputEl.value, false, false, null, null, pos);
+    await addNode(inputEl.value, false, false, null, null, pos, ontologyEl.value);
   }
   inputEl.value = "";
+  ontologyEl.value = "";
   updateUI();
   await performAction(ACTION_ADD, event); // Move selection to new node
 }
@@ -26651,8 +27107,9 @@ const performAction = async (action, event) => {
     case ACTION_ADD_FOLLOW_FOCUS:
     case ACTION_ADD_FOLLOW_ZOOM:
       if (!inputEl.value) return;
-      await addNode(inputEl.value, true);
+      await addNode(inputEl.value, true, false, null, null, null, ontologyEl.value);
       inputEl.value = "";
+      ontologyEl.value = "";
       updateUI();
       if (action === ACTION_ADD_FOLLOW_FOCUS) focusSelected();
       if (action === ACTION_ADD_FOLLOW_ZOOM) zoomToFit();
@@ -26669,8 +27126,9 @@ const performAction = async (action, event) => {
           editingNodeId = null;
         }
         if (inputEl.value) {
-          await addNode(inputEl.value, false);
+          await addNode(inputEl.value, false, false, null, null, null, ontologyEl.value);
           inputEl.value = "";
+          ontologyEl.value = "";
         } else {
           const sel = getMindmapNodeFromSelection();
           const allElements = ea.getViewElements();

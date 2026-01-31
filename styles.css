@@ -464,7 +464,7 @@ div.excalidraw-draginfo {
   border-radius: 0.55rem;
   background: var(--background-primary);
   color: var(--text-normal);
-  padding: 0;
+  padding: 0 !important;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 

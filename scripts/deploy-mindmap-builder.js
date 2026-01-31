@@ -50,7 +50,7 @@ if (existingTab) {
 	if (hostEA && hostEA !== ea) {
 		hostEA.activateMindmap = true;
 		hostEA.setView(ea.targetView);
-		existingTab.open();
+		existingTab.open(false);
 		return;
 	}
 };

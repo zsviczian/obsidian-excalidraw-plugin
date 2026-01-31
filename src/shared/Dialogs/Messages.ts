@@ -20,6 +20,27 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 "2.20.1":`
 ## Fixed
 - Fixed Experimental file type display, available under miscellaneous settings. (Reported on Discord)
+- Fixed image inversion in dark mode on iOS devices. [#2636](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2636)
+- Fixed UI Mode switching on tablets was unreliable.
+
+## New/Fixed in MindMap Builder
+- **Connector Ontology**: Added support for labeling connection lines. A secondary input field (accessible via Shift+Tab) is now available in both docked and floating modes. Labels are preserved during copy/paste operations using inline Dataview syntax (e.g., link ontology:: node content).
+- **Connector Styling**: Introduced configuration settings for branch thickness and scaling strategies, allowing a choice between Hierarchical (tapering width by depth) or Uniform connector widths.
+- **Smart Resume**: The Focus and Zoom actions now target the most recently active node if no current selection is made. This automatically focuses the input field, allowing you to quickly resume mapping from where you left off.
+- **Radial Fill Sweep**: Added a "Fill Sweep Angle" option for Radial layouts. When enabled, nodes are distributed evenly across the full configured arc range, even when there are only a few nodes. (Visible only when Growth Strategy is set to "Radial").
+- **Radial Navigation**: Updated Level 1 node navigation in Radial maps to follow visual vertical alignment instead of rotational order. Up/Down keys now consistently move the selection visually up or down on both sides of the circle, matching the behavior of Right-Left layouts.
+- **Fixed**:
+  - Sidepanel opens on activation of MindMap Builder even in floating mode. Requires update of both Excalidraw and the MindMap Builder script.
+  - **Node Reordering**: Overhauled the logic for moving nodes via CMD/CTRL+Arrow to resolve unpredictability; nodes now move consistently to the intended locations.
+  - **iOS Navigation**: Resolved an issue where using the Tab key to cycle focus between components in the floating input window did not work reliably on iOS.
+  - **Boundary Layering**: Fixed an issue where sub-branch boundaries were placed above text elements when pasting a map; they now correctly render on the layer below the text.
+  - **Layout Stability**: Fixed an issue where the viewport would shift unexpectedly when pasting multiple elements onto an existing node in large scenes.
+
+> [!Tip]- Learn MindMap Builder
+> Learn it fast with the low-cost [MindMap Builder course](https://visual-thinking-workshop.com/mindmap). Register before **31 Jan** to join a live Q&A:
+> - Sat Jan 31 @ 18:00 CET ([local time](https://www.timeanddate.com/worldclock/fixedtime.html?msg=MindMap+Builder+Launch+Party&iso=20260131T17&p1=%3A&ah=1))
+> - Sun Feb 1 @ 09:00 CET ([local time](https://www.timeanddate.com/worldclock/fixedtime.html?msg=MindMap+Builder+Launch+Party&iso=20260201T08&p1=%3A&ah=1))
+
 `,
 "2.20.0":`
 <div class="excalidraw-videoWrapper">
