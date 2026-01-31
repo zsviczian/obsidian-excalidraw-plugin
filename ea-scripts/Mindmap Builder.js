@@ -2510,6 +2510,7 @@ const addUpdateArrowLabel = (arrow, text) => {
   const textId = ea.addText(x, y, text);
   const textEl = ea.getElement(textId);
   
+  textEl.strokeColor = arrow.strokeColor;
   textEl.containerId = arrow.id;
   textEl.textAlign = "center";
   textEl.textVerticalAlign = "middle";
@@ -3893,11 +3894,11 @@ const copyMapAsText = async (cut = false) => {
         (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === nodeId
       );
       if (incomingArrow) {
-        const boundTextId = incomingArrow.boundElements?.find(be => be.type === "text")?.id;
-        const boundTextEl = boundTextId ? all.find(el => el.id === boundTextId) : null;
-        if (boundTextEl && boundTextEl.originalText) {
+        const boundTextEl = ea.getBoundTextElement(incomingArrow,true).sceneElement;
+        if (boundTextEl && boundTextEl.rawText) {
           // Replace newlines with spaces so it stays on one line
-          ontologyStr = boundTextEl.originalText.replace(/\n/g, " ") + ":: ";
+          ontologyStr = boundTextEl.rawText.replace(/\n/g, " ") + ":: ";
+          elementsToDelete.push(boundTextEl);
         }
       }
     }
@@ -5461,7 +5462,7 @@ const startEditing = () => {
     a.endBinding?.elementId === sel.id
   );
   
-  ontologyEl.value  = ea.getBoundTextElement(incomingArrow, true)?.sceneElement.rawText || "";
+  ontologyEl.value  = ea.getBoundTextElement(incomingArrow, true)?.sceneElement?.rawText || "";
 
   editingNodeId = sel.id;
   updateUI();
