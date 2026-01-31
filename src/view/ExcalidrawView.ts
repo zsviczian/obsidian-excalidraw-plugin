@@ -1091,10 +1091,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   }
 
   async openLaTeXEditor(eqId: string) {
-    if(await this.excalidrawData.syncElements(this.getScene())) {
-      //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1994
-      await this.forceSave(true);
-    }
     const el = this.getViewElements().find((el:ExcalidrawElement)=>el.id === eqId && el.type==="image") as ExcalidrawImageElement;
     if(!el) {
       return;
@@ -1118,18 +1114,27 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if (!formula || formula === equation) {
         return;
       }
-      this.excalidrawData.setEquation(fileId, {
+      //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1994
+      const newFileId = fileid() as FileId;
+      this.excalidrawData.setEquation(newFileId, {
         latex: formula,
         isLoaded: false,
       });
       const ea = getEA(this) as ExcalidrawAutomate;
       ea.copyViewElementsToEAforEditing([el]);
       ea.addAppendUpdateCustomData(el.id, {latex: formula});
+      (ea.getElement(el.id) as Mutable<ExcalidrawImageElement>).fileId = newFileId;
+      const dataurl = await ea.tex2dataURL(equation);
+      if (dataurl && dataurl.size.height > 0 && dataurl.size.width > 0) {
+        ea.addAppendUpdateCustomData(el.id, {
+          latexscale: {scaleX: el.width/dataurl.size.width, scaleY: el.height/dataurl.size.height}
+        });
+      }
       await ea.addElementsToView(false, false, false, false);
       await this.save(false);
       await updateEquation(
         formula,
-        fileId,
+        newFileId,
         this,
         addFiles,
       );
@@ -4397,14 +4402,28 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       data.elements
         .filter((el): el is Mutable<ExcalidrawImageElement> => el.type === "image" && Boolean((el as any).customData?.latex))
         .forEach((image) => {
-          const fileId = image.fileId;
-          const embeddedFile = this.excalidrawData.getFile(fileId);
-          const equation = this.excalidrawData.getEquation(fileId);
-          const mermaid = this.excalidrawData.getMermaid(fileId);
-
-          if (!embeddedFile && !equation && !mermaid) {
-            this.excalidrawData.setEquation(image.fileId, { latex: (image as any).customData.latex, isLoaded: true });
-          }
+          //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2642
+          //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/593
+          //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/297
+          const newFileId = fileid() as FileId;
+          const filedata = data.files[image.fileId];
+          const tmpimg = new Image();
+          tmpimg.src = filedata.dataURL;
+          const tmpImageDict = {} as {[key:FileId] : ImageInfo};
+          tmpImageDict[newFileId] = {
+            mimeType : filedata.mimeType,
+            id : newFileId,
+            dataURL : filedata.dataURL,
+            created : Date.now(),
+            size : {width : tmpimg.naturalWidth , height: tmpimg.naturalHeight},
+            hasSVGwithBitmap : false,
+            latex : (image as any).customData?.latex
+          };
+          this.addElements({newElements : [], images : tmpImageDict});
+          data.files[newFileId] = data.files[image.fileId];
+          data.files[newFileId].id = newFileId;
+          image.fileId = newFileId;
+          this.excalidrawData.setEquation(newFileId as FileId, {latex:(image as any).customData?.latex, isLoaded:false});
         });
     };
     if(data && ea.onPasteHook) {
