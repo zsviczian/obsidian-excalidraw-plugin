@@ -148,6 +148,7 @@ const STRINGS = {
     NOTICE_CANNOT_PRMOTE_L1: "Cannot promote Level 1 nodes.",
     NOTICE_CANNOT_DEMOTE: "Cannot demote node. No previous sibling to attach to.",
     NOTICE_CANNOT_MOVE_AUTO_LAYOUT_DISABLED: "Cannot move nodes when Auto-Layout is disabled. Enable Auto-Layout first.",
+    NOTICE_BRANCH_WIDTH_MANUAL_OVERRIDE: "Branch width were not updated because some branch widths were manually modified.",
 
     // Action labels (display only)
     ACTION_LABEL_ADD: "Add Child",
@@ -358,6 +359,7 @@ addLocale("zh", {
   NOTICE_CANNOT_PRMOTE_L1: "无法提升 1 级节点。",
   NOTICE_CANNOT_DEMOTE: "无法降级节点。没有可依附的前置同级节点。",
   NOTICE_CANNOT_MOVE_AUTO_LAYOUT_DISABLED: "禁用自动布局时无法移动节点。请先启用自动布局。",
+  NOTICE_BRANCH_WIDTH_MANUAL_OVERRIDE: "分支粗细未更新，因为部分分支粗细已被手动修改。",
 
   // Action labels (display only)
   ACTION_LABEL_ADD: "添加子节点",
@@ -813,21 +815,28 @@ let branchScale = getVal(K_BRANCH_SCALE, {value: "Hierarchical", valueset: BRANC
 let baseStrokeWidth = parseFloat(getVal(K_BASE_WIDTH, {value: 6}));
 
 /**
- * Calculates the stroke width for a branch based on depth and style.
- * Hierarchical tapers linearly from base to 10% of base by depth 4.
- * Uniform keeps the same width at every depth.
+ * Pure calculation logic for stroke width.
  */
-const getStrokeWidthForDepth = (depth) => {
-  const base = Number.isFinite(baseStrokeWidth) ? baseStrokeWidth : 6;
+const calculateStrokeWidth = (depth, baseWidth, scaleMode) => {
+  const base = Number.isFinite(baseWidth) ? baseWidth : 6;
   const clampedDepth = Math.max(0, Math.min(depth ?? 0, 4));
 
-  if (branchScale === "Uniform") return base;
+  if (scaleMode === "Uniform") return base;
 
   const min = Math.max(0.1, base * 0.1);
   const slope = (min - base) / 4;
   const val = slope * clampedDepth + base;
   return Math.round(val * 100) / 100;
+}
+
+/**
+ * Calculates the stroke width for a branch based on depth and style.
+ * Uses global settings.
+ */
+const getStrokeWidthForDepth = (depth) => {
+  return calculateStrokeWidth(depth, baseStrokeWidth, branchScale);
 };
+
 const ownerWindow = ea.targetView?.ownerWindow;
 const isMac = ea.DEVICE.isMacOS || ea.DEVICE.isIOS;
 const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg", "webp", "bmp", "ico", "jtif", "tif", "jfif", "avif"];
@@ -2398,6 +2407,80 @@ const updateRootNodeCustomData = async (data) => {
   }
   return null;
 }
+
+/**
+ * Recursively updates the stroke width of a subtree.
+ * Checks if the existing arrow matches the 'old' calculated width. 
+ * If it does, updates to 'new' width. If not, assumes manual override and skips.
+ */
+const updateBranchStrokes = async (rootId, oldBaseWidth, oldScaleMode, newBaseWidth, newScaleMode) => {
+  if (!ea.targetView) return;
+  const allElements = ea.getViewElements();
+  const root = allElements.find(el => el.id === rootId);
+  if (!root) return;
+
+  const elementsToUpdate = [];
+  let manualOverrideFound = false;
+
+  const traverse = (nodeId, depth) => {
+    const children = getChildrenNodes(nodeId, allElements);
+    
+    children.forEach(child => {
+      // Find the arrow connecting parent (nodeId) to child
+      const arrow = allElements.find(
+        a => a.type === "arrow" &&
+        a.customData?.isBranch &&
+        a.startBinding?.elementId === nodeId &&
+        a.endBinding?.elementId === child.id
+      );
+
+      if (arrow) {
+        // Calculate what the width *should* have been under old settings
+        // Note: 'depth' is parent depth. Arrow depth in addNode logic was 'depth' (where parent is depth-1).
+        // In addNode: 
+        // if !parent (root), depth=0. 
+        // if parent, info=getHierarchy(parent), depth = info.depth + 1. 
+        // strokeWidth = getStrokeWidthForDepth(depth).
+        // So the arrow leading TO the node at 'depth' uses 'depth' for calculation.
+        // Here, 'child' is at depth + 1 relative to 'nodeId' (which is at 'depth').
+        const childDepth = depth + 1;
+        
+        const expectedOldWidth = calculateStrokeWidth(childDepth, oldBaseWidth, oldScaleMode);
+        
+        // Allow a small floating point tolerance
+        if (Math.abs(arrow.strokeWidth - expectedOldWidth) < 0.05) {
+          const newWidth = calculateStrokeWidth(childDepth, newBaseWidth, newScaleMode);
+          if (Math.abs(arrow.strokeWidth - newWidth) > 0.001) {
+            elementsToUpdate.push({id: arrow.id, strokeWidth: newWidth});
+          }
+        } else {
+          // If it doesn't match old width, check if it matches new width (already updated?)
+          const expectedNewWidth = calculateStrokeWidth(childDepth, newBaseWidth, newScaleMode);
+          if (Math.abs(arrow.strokeWidth - expectedNewWidth) >= 0.05) {
+             manualOverrideFound = true;
+          }
+        }
+      }
+
+      traverse(child.id, depth + 1);
+    });
+  };
+
+  traverse(rootId, 0);
+
+  if (elementsToUpdate.length > 0) {
+    ea.copyViewElementsToEAforEditing(elementsToUpdate.map(i => allElements.find(e => e.id === i.id)));
+    elementsToUpdate.forEach(item => {
+      const el = ea.getElement(item.id);
+      if (el) el.strokeWidth = item.strokeWidth;
+    });
+    await addElementsToView();
+  }
+
+  if (manualOverrideFound) {
+    new Notice(t("NOTICE_BRANCH_WIDTH_MANUAL_OVERRIDE"));
+  }
+};
 
 const addUpdateArrowLabel = (arrow, text) => {
   if (!arrow) {
@@ -4036,6 +4119,40 @@ const importTextToMap = async (rawText) => {
   ea.clear();
 
   const rootSelected = !!sel;
+  // Track boundaries created during this import to fix their z-index later
+  const createdBoundaries = [];
+
+  // Helper to create boundary during import (mimics toggleBoundary logic)
+  const createImportBoundary = (nodeId) => {
+    const node = ea.getElement(nodeId);
+    if (!node) return;
+    
+    const id = ea.generateElementId();
+    const st = getAppState();
+    const boundaryEl = {
+        id: id,
+        type: "line",
+        x: node.x, y: node.y, width: 1, height: 1,
+        angle: 0,
+        roughness: st.currentItemRoughness,
+        strokeColor: node.strokeColor,
+        backgroundColor: node.strokeColor,
+        fillStyle: "solid",
+        strokeWidth: 2,
+        strokeStyle: "solid",
+        opacity: 30,
+        points: [[0,0], [1,1], [0,0]],
+        polygon: true,
+        locked: false,
+        groupIds: node.groupIds || [],
+        customData: {isBoundary: true},
+        roundness: arrowType === "curved" ? {type: 2} : null,
+    };
+    
+    ea.elementsDict[id] = boundaryEl;
+    ea.addAppendUpdateCustomData(nodeId, { boundaryId: id });
+    createdBoundaries.push({ nodeId, boundaryId: id });
+  };
 
   if (!sel) {
     const minIndent = Math.min(...parsed.map((p) => p.indent));
@@ -4068,37 +4185,6 @@ const importTextToMap = async (rawText) => {
     ea.copyViewElementsToEAforEditing(ea.getViewElements().filter(el=> !ea.getElement(el.id))); // ensure EA has copies of existing elements
   }
   
-  // Helper to create boundary during import (mimics toggleBoundary logic)
-  const createImportBoundary = (nodeId) => {
-    const node = ea.getElement(nodeId);
-    if (!node) return;
-    
-    const id = ea.generateElementId();
-    const st = getAppState();
-    const boundaryEl = {
-        id: id,
-        type: "line",
-        x: node.x, y: node.y, width: 1, height: 1,
-        angle: 0,
-        roughness: st.currentItemRoughness,
-        strokeColor: node.strokeColor,
-        backgroundColor: node.strokeColor,
-        fillStyle: "solid",
-        strokeWidth: 2,
-        strokeStyle: "solid",
-        opacity: 30,
-        points: [[0,0], [1,1], [0,0]],
-        polygon: true,
-        locked: false,
-        groupIds: node.groupIds || [],
-        customData: {isBoundary: true},
-        roundness: arrowType === "curved" ? {type: 2} : null,
-    };
-    
-    ea.elementsDict[id] = boundaryEl;
-    ea.addAppendUpdateCustomData(nodeId, { boundaryId: id });
-  };
-
   for (const item of parsed) {
     while (stack.length > 1 && item.indent <= stack[stack.length - 1].indent) {
       stack.pop();
@@ -4195,6 +4281,49 @@ const importTextToMap = async (rawText) => {
   }
 
   await addElementsToView({ repositionToCursor: !rootSelected, shouldSleep: true }); // in case there are images in the imported map
+
+  // -------------------------------------------------------------------------
+  //  Fix Z-Index for Created Boundaries (Parents Below Children)
+  // -------------------------------------------------------------------------
+  if (createdBoundaries.length > 0) {
+    const allEls = ea.getViewElements();
+    
+    const boundariesWithDepth = createdBoundaries.map(b => {
+      const node = allEls.find(e => e.id === b.nodeId);
+      // If node not found (rare), default to 0
+      const depth = node ? getHierarchy(node, allEls).depth : 0;
+      return { ...b, depth };
+    });
+
+    // Sort ascending depth (root -> leaves) so we position parents first
+    boundariesWithDepth.sort((a, b) => a.depth - b.depth);
+
+    for (const b of boundariesWithDepth) {
+      // Refresh view elements to get up-to-date indices after previous moves
+      const currentEls = ea.getViewElements();
+      
+      let parentBoundaryIndex = -1;
+      let curr = currentEls.find(e => e.id === b.nodeId);
+
+      // Find nearest ancestor with a boundary
+      while (curr) {
+        const parent = getParentNode(curr.id, currentEls);
+        if (!parent) break;
+        if (parent.customData?.boundaryId) {
+          const pIndex = currentEls.findIndex(el => el.id === parent.customData.boundaryId);
+          if (pIndex !== -1) {
+            parentBoundaryIndex = pIndex;
+            break;
+          }
+        }
+        curr = parent;
+      }
+      
+      // If parent boundary exists, place this one above it. Else bottom (0).
+      const targetIndex = parentBoundaryIndex !== -1 ? parentBoundaryIndex + 1 : 0;
+      ea.moveViewElementToZIndex(b.boundaryId, targetIndex);
+    }
+  }
 
   const allInView = ea.getViewElements();
   const targetToSelect = sel
@@ -6100,7 +6229,7 @@ const renderInput = (container, isFloating = false) => {
     dockedButtonContainer.style.display = "flex";
     dockedButtonContainer.style.justifyContent = "flex-end";
     dockedButtonContainer.style.flexWrap = "wrap";
-    dockedButtonContainer.style.gap = "4px";
+    dockedButtonContainer.style.gap = "2px";
     dockedButtonContainer.style.marginTop = "6px";
   }
 
@@ -6464,27 +6593,45 @@ const renderBody = (contentEl) => {
       branchScaleDropdown = d;
       BRANCH_SCALE_TYPES.forEach((key) => d.addOption(key, key));
       d.setValue(branchScale);
-      d.onChange((v) => {
+      d.onChange(async (v) => {
+        const oldScale = branchScale;
         branchScale = v;
         setVal(K_BRANCH_SCALE, v);
         dirty = true;
-        updateRootNodeCustomData({ branchScale: v });
+        const info = await updateRootNodeCustomData({ branchScale: v });
+        if(info) {
+          await updateBranchStrokes(info.rootId, baseStrokeWidth, oldScale, baseStrokeWidth, branchScale);
+        }
       });
     });
 
   let baseWidthDisplay;
+  let baseWidthUpdateTimer = null;
+  let baseWidthSnapshot = null;
+
   const baseWidthSetting = new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_BASE_WIDTH"))
     .addSlider((s) => {
       baseWidthSlider = s;
-      s.setLimits(0.2, 10, 0.1)
+      s.setLimits(0.2, 16, 0.1)
        .setValue(baseStrokeWidth)
        .onChange((v) => {
+         if (baseWidthUpdateTimer) clearTimeout(baseWidthUpdateTimer);
+         if (baseWidthSnapshot === null) baseWidthSnapshot = baseStrokeWidth;
+         
          baseStrokeWidth = v;
          baseWidthDisplay.setText(`${v}`);
          setVal(K_BASE_WIDTH, v);
          dirty = true;
-         updateRootNodeCustomData({ baseStrokeWidth: v });
+
+         baseWidthUpdateTimer = setTimeout(async () => {
+           const info = await updateRootNodeCustomData({ baseStrokeWidth: v });
+           if(info) {
+             await updateBranchStrokes(info.rootId, baseWidthSnapshot, branchScale, baseStrokeWidth, branchScale);
+           }
+           baseWidthSnapshot = null;
+           baseWidthUpdateTimer = null;
+         }, 500);
        });
     });
   baseWidthDisplay = baseWidthSetting.descEl.createSpan({
@@ -6839,7 +6986,10 @@ const renderBody = (contentEl) => {
 const MINDMAP_FOCUS_STYLE_ID = "excalidraw-mindmap-focus-style";
 
 const registerStyles = () => {
-  if (document.getElementById(MINDMAP_FOCUS_STYLE_ID)) return;
+  // Remove existing styles first to ensure updates are applied immediately
+  const existing = document.getElementById(MINDMAP_FOCUS_STYLE_ID);
+  if (existing) existing.remove();
+
   const styleEl = document.createElement("style");
   styleEl.id = MINDMAP_FOCUS_STYLE_ID;
   styleEl.textContent = [
@@ -6848,6 +6998,9 @@ const registerStyles = () => {
     " scrollbar-width: none;",
     "}",
     // Focus styles
+    ".excalidraw-mindmap-ui button:focus,",
+    ".excalidraw-mindmap-ui .clickable-icon:focus,",
+    ".excalidraw-mindmap-ui [tabindex]:focus,",
     ".excalidraw-mindmap-ui button:focus-visible,",
     ".excalidraw-mindmap-ui .clickable-icon:focus-visible,",
     ".excalidraw-mindmap-ui [tabindex]:focus-visible {",
@@ -6856,6 +7009,7 @@ const registerStyles = () => {
     "  background-color: var(--interactive-accent);",
     "  color: var(--background-primary);",
     "}",
+    ".excalidraw-mindmap-ui .clickable-icon:focus svg,",
     ".excalidraw-mindmap-ui .clickable-icon:focus-visible svg {",
     "  color: inherit;",
     "}",
