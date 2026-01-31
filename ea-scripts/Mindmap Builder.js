@@ -2068,13 +2068,13 @@ const zoomToFit = (mode) => {
     if (fallback) {
       sel = fallback;
       selectNodeInView(sel);
+      focusInputEl();
     } else {
       mostRecentlySelectedNodeID = null;
     }
   }
   
   if (sel) {
-    focusInputEl();
     let nextLevel = zoomLevel;
     if (typeof mode === "string") {
       nextLevel = mode;
@@ -2100,13 +2100,13 @@ const focusSelected = () => {
     if (fallback) {
       sel = fallback;
       selectNodeInView(sel);
+      focusInputEl();
     } else {
       mostRecentlySelectedNodeID = null;
     }
   }
 
   if (!sel) return;
-  focusInputEl();
 
   api().scrollToContent(sel,{
     fitToContent: false,

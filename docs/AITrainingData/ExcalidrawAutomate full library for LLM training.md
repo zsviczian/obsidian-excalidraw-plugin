@@ -11148,7 +11148,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-01-31T13:44:34.383Z
+Generated on: 2026-01-31T13:54:04.603Z
 
 ---
 
@@ -21746,13 +21746,13 @@ const zoomToFit = (mode) => {
     if (fallback) {
       sel = fallback;
       selectNodeInView(sel);
+      focusInputEl();
     } else {
       mostRecentlySelectedNodeID = null;
     }
   }
   
   if (sel) {
-    focusInputEl();
     let nextLevel = zoomLevel;
     if (typeof mode === "string") {
       nextLevel = mode;
@@ -21778,13 +21778,13 @@ const focusSelected = () => {
     if (fallback) {
       sel = fallback;
       selectNodeInView(sel);
+      focusInputEl();
     } else {
       mostRecentlySelectedNodeID = null;
     }
   }
 
   if (!sel) return;
-  focusInputEl();
 
   api().scrollToContent(sel,{
     fitToContent: false,
