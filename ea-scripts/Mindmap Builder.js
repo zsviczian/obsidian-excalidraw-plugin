@@ -1212,10 +1212,11 @@ const addElementsToView = async (
     newElementsOnTop = true,
     shouldRestoreElements = true,
     shouldSleep = false,
+    commitToHistory = true,
   } = {}
 ) => {
   if (!ea.targetView) return;
-  await ea.addElementsToView(repositionToCursor, save, newElementsOnTop, shouldRestoreElements);
+  await ea.addElementsToView(repositionToCursor, save, newElementsOnTop, shouldRestoreElements, commitToHistory);
   ea.clear();
   if (shouldSleep) await sleep(10); // Allow Excalidraw to process the new elements
 }
@@ -5184,6 +5185,7 @@ let helpContainer;
 let floatingInputModal = null;
 let sidepanelWindow;
 let recordingScope = null;
+let disableTabEvents = false;
 // ---------------------------------------------------------------------------
 // Focus Management & UI State
 // ---------------------------------------------------------------------------
@@ -5355,6 +5357,7 @@ const updateUI = (sel) => {
 
     // NEW: Load settings from root customData if they exist, otherwise keep current global
     const cd = root.customData;
+    disableTabEvents = true;
     
     const mapStrategy = cd?.growthMode;
     if (typeof mapStrategy === "string" && mapStrategy !== currentModalGrowthMode && GROWTH_TYPES.includes(mapStrategy)) {
@@ -5434,6 +5437,7 @@ const updateUI = (sel) => {
       const mode = cd?.growthMode || currentModalGrowthMode;
       fillSweepToggleSetting.settingEl.style.display = mode === "Radial" ? "" : "none";
     }
+    disableTabEvents = false;
   } else {
     disableUI();
     // Re-enable navigation buttons if we have a history node
@@ -6423,6 +6427,8 @@ const renderBody = (contentEl) => {
     d.setValue(zoomLevel);
     d.onChange((v) => {
         zoomLevel = v;
+        if (disableTabEvents) return;
+
         setVal(K_ZOOM, v);
         dirty = true;
         zoomToFit();
@@ -6441,6 +6447,8 @@ const renderBody = (contentEl) => {
     d.setValue(currentModalGrowthMode);
     d.onChange(async (v) => {
       currentModalGrowthMode = v;
+      if (disableTabEvents) return;
+
       setVal(K_GROWTH, v);
       dirty = true;
       if (fillSweepToggleSetting) {
@@ -6466,6 +6474,8 @@ const renderBody = (contentEl) => {
       t.setValue(fillSweep)
        .onChange(async (v) => {
         fillSweep = v;
+        if (disableTabEvents) return;
+
         setVal(K_FILL_SWEEP, v);
         dirty = true;
         if (!ea.targetView) return;
@@ -6488,6 +6498,8 @@ const renderBody = (contentEl) => {
       .setValue(!autoLayoutDisabled)
       .onChange((v) => {
         autoLayoutDisabled = !v;
+        if (disableTabEvents) return;
+
         updateRootNodeCustomData({ autoLayoutDisabled: enabled });
       }),
     )
@@ -6512,6 +6524,8 @@ const renderBody = (contentEl) => {
     .onChange(async (v) => {
       if (!ea.targetView) return;
       groupBranches = v;
+      if (disableTabEvents) return;
+
       setVal(K_GROUP, v);
       dirty = true;
       const sel = getMindmapNodeFromSelection() || ea.getViewElements().find(el => !getParentNode(el.id, ea.getViewElements()));
@@ -6537,6 +6551,8 @@ const renderBody = (contentEl) => {
       t.setValue(boxChildren)
       .onChange((v) => {
         boxChildren = v;
+        if (disableTabEvents) return;
+
         setVal(K_BOX, v);
         dirty = true;
         updateRootNodeCustomData({ boxChildren: v });
@@ -6554,6 +6570,8 @@ const renderBody = (contentEl) => {
     t.setValue(roundedCorners)
     .onChange((v) => {
       roundedCorners = v;
+      if (disableTabEvents) return;
+
       setVal(K_ROUND,  v);
       dirty = true;
       updateRootNodeCustomData({ roundedCorners: v });
@@ -6569,6 +6587,8 @@ const renderBody = (contentEl) => {
       t.setValue(arrowType === "curved")
        .onChange(async (v) => {
         arrowType = v ? "curved" : "straight";
+        if (disableTabEvents) return;
+
         setVal(K_ARROW_TYPE, arrowType);
         dirty = true;
         if (!ea.targetView) return;
@@ -6586,6 +6606,8 @@ const renderBody = (contentEl) => {
       strokeToggle = t;
       t.setValue(!isSolidArrow).onChange((v) => {
         isSolidArrow = !v;
+        if (disableTabEvents) return;
+
         setVal(K_ARROWSTROKE,  !v);
         dirty = true;
         updateRootNodeCustomData({ isSolidArrow: !v });
@@ -6601,6 +6623,8 @@ const renderBody = (contentEl) => {
       d.onChange(async (v) => {
         const oldScale = branchScale;
         branchScale = v;
+        if (disableTabEvents) return;
+
         setVal(K_BRANCH_SCALE, v);
         dirty = true;
         const info = await updateRootNodeCustomData({ branchScale: v });
@@ -6622,13 +6646,13 @@ const renderBody = (contentEl) => {
        .setValue(baseStrokeWidth)
        .onChange((v) => {
          if (baseWidthUpdateTimer) clearTimeout(baseWidthUpdateTimer);
-         if (baseWidthSnapshot === null) baseWidthSnapshot = baseStrokeWidth;
-         
+         if (!disableTabEvents &&baseWidthSnapshot === null) baseWidthSnapshot = baseStrokeWidth;
          baseStrokeWidth = v;
          baseWidthDisplay.setText(`${v}`);
+        if (disableTabEvents) return;
+
          setVal(K_BASE_WIDTH, v);
          dirty = true;
-
          baseWidthUpdateTimer = setTimeout(async () => {
            const info = await updateRootNodeCustomData({ baseStrokeWidth: v });
            if(info) {
@@ -6649,12 +6673,15 @@ const renderBody = (contentEl) => {
     .setName(t("LABEL_MULTICOLOR_BRANCHES"))
     .addToggle((t) => {
       colorToggle = t;
-      t.setValue(multicolor).onChange((v) => {
-        multicolor = v;
-        setVal(K_MULTICOLOR, v);
-        dirty = true;
-        updateRootNodeCustomData({ multicolor: v });
-      })
+      t.setValue(multicolor)
+        .onChange((v) => {
+          multicolor = v;
+          if (disableTabEvents) return;
+
+          setVal(K_MULTICOLOR, v);
+          dirty = true;
+          updateRootNodeCustomData({ multicolor: v });
+        })
     })
     .addExtraButton((btn) => btn
       .setIcon("palette")
@@ -6679,6 +6706,8 @@ const renderBody = (contentEl) => {
     .onChange((v) => {
       maxWidth = v;
       sliderValDisplay.setText(`${v}px`);
+      if (disableTabEvents) return;
+
       setVal(K_WIDTH, v);
       dirty = true;
       updateRootNodeCustomData({ maxWrapWidth: v });
@@ -6699,6 +6728,8 @@ const renderBody = (contentEl) => {
       t.setValue(centerText)
       .onChange((v) => {
         centerText = v;
+        if (disableTabEvents) return;
+
         setVal(K_CENTERTEXT, v);
         dirty = true;
         updateRootNodeCustomData({ centerText: v });
@@ -6711,6 +6742,8 @@ const renderBody = (contentEl) => {
     d.setValue(fontsizeScale);
     d.onChange((v) => {
       fontsizeScale = v;
+      if (disableTabEvents) return;
+
       setVal(K_FONTSIZE, v);
       dirty = true;
       updateRootNodeCustomData({ fontsizeScale: v });
