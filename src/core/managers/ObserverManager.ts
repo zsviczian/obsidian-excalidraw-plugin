@@ -1,6 +1,7 @@
 import { debug, DEBUGGING } from "src/utils/debugHelper";
 import ExcalidrawPlugin from "src/core/main";
 import { CustomMutationObserver } from "src/utils/debugHelper";
+import { DEVICE } from "src/constants/constants";
 import { getExcalidrawViews, isObsidianThemeDark } from "src/utils/obsidianUtils";
 import { App, Notice, TFile } from "obsidian";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
@@ -176,15 +177,46 @@ export class ObserverManager {
       ? new CustomMutationObserver(fileExplorerObserverFn, "fileExplorerObserver")
       : new MutationObserver(fileExplorerObserverFn);
 
-    //the part that should only run after onLayoutReady
-    document.querySelectorAll(".nav-file-title").forEach(insertFiletype); //apply filetype to files already displayed
-    const container = document.querySelector(".nav-files-container");
-    if (container) {
-      this.fileExplorerObserver.observe(container, {
+    const attachObserversToContainers = (): boolean => {
+      const containers = Array.from(document.querySelectorAll(".nav-files-container"));
+      if (!containers.length) {
+        return false;
+      }
+
+      containers.forEach((container) => {
+        container.querySelectorAll(".nav-file-title").forEach(insertFiletype); //apply tags to items already shown
+        this.fileExplorerObserver.observe(container, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ["class", "aria-expanded"],
+        });
+      });
+
+      return true;
+    };
+
+    if (!attachObserversToContainers() && DEVICE.isMobile) {
+      // On mobile, the file explorer lives inside drawers and may not be in the DOM yet.
+      const waitForFileExplorer = new MutationObserver((mutations, observer) => {
+        for (const mutation of mutations) {
+          if (mutation.type !== "childList") continue;
+          const added = Array.from(mutation.addedNodes ?? []);
+          const hasContainer = added.some((node) =>
+            node instanceof Element &&
+            (node.matches?.(".nav-files-container") || node.querySelector?.(".nav-files-container")),
+          );
+          if (!hasContainer) continue;
+          if (attachObserversToContainers()) {
+            observer.disconnect();
+            break;
+          }
+        }
+      });
+
+      waitForFileExplorer.observe(document.body, {
         childList: true,
         subtree: true,
-        attributes: true,
-        attributeFilter: ["class", "aria-expanded"],
       });
     }
   }

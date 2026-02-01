@@ -208,6 +208,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       "getBoundTextElement(element: ExcalidrawElement, searchInView?: boolean): { eaElement?: Mutable<ExcalidrawTextElement>; sceneElement?: ExcalidrawTextElement; };",
     desc:
       "Returns an object describing the bound text element.\n" +
+      "@param element: ExcalidrawElement | ExcalidrawElement[] - The selected container with text (an array of 2 elements) to check.\n" +
       "If a text element is provided:\n" +
       " - returns { eaElement } if the element is in ea.elementsDict\n" +
       " - else (if searchInView is true) returns { sceneElement } if found in the targetView scene\n" +
@@ -616,8 +617,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addElementsToView",
-    code: "async addElementsToView(repositionToCursor?: boolean, save?: boolean, newElementsOnTop?: boolean,shouldRestoreElements?: boolean,): Promise<boolean>;",
-    desc: "Adds elements from elementsDict to the current view\nrepositionToCursor: default is false\nsave: default is true\nnewElementsOnTop: default is false, i.e. the new elements get to the bottom of the stack\nnewElementsOnTop controls whether elements created with ExcalidrawAutomate are added at the bottom of the stack or the top of the stack of elements already in the view\nNote that elements copied to the view with copyViewElementsToEAforEditing retain their position in the stack of elements in the view even if modified using EA",
+    code: "async addElementsToView(repositionToCursor?: boolean, save?: boolean, newElementsOnTop?: boolean,shouldRestoreElements?: boolean,captureUpdate?: CaptureUpdateActionType): Promise<boolean>;",
+    desc: "Adds elements from elementsDict to the current view\nrepositionToCursor: default is false\n" +
+      "save: default is true\n" +
+      "newElementsOnTop: default is false, i.e. the new elements get to the bottom of the stack\n" +
+      "newElementsOnTop controls whether elements created with ExcalidrawAutomate are added at the bottom of the stack or the top of the stack of elements already in the view\nNote that elements copied to the view with copyViewElementsToEAforEditing retain their position in the stack of elements in the view even if modified using EA\n" +
+      "captureUpdate controls undo/redo capture: 'IMMEDIATELY' records immediately (use for local updates), 'NEVER' skips undo tracking (remote/init changes), and 'EVENTUALLY' defers capture as part of multi-step async flows.",
     after: "",
   },
   {

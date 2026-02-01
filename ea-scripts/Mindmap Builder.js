@@ -803,6 +803,11 @@ let fillSweep = getVal(K_FILL_SWEEP, false);
 let editingNodeId = null;
 let mostRecentlySelectedNodeID = null;
 
+// Undo/Redo tracking
+let currentTransactionAccumulator = 0;
+let lastCommittedTransaction = null; // { steps: number, version: number }
+let redoAvailable = null; // { steps: number, version: number } - state after a batched undo
+
 // -----------------------------------------------------------
 // Cleanup an migration of old settings values
 // -----------------------------------------------------------
@@ -946,6 +951,10 @@ const ACTION_HIDE = "Dock & hide";
 const ACTION_REARRANGE = "Rearrange Map";
 const ACTION_TOGGLE_FLOATING_EXTRAS = "Toggle Floating Extra Buttons";
 
+const ACTION_UNDO = "Undo";
+const ACTION_REDO_Z = "Redo (Ctrl-Shift-Z)";
+const ACTION_REDO_Y = "Redo (Ctrl-Y)";
+
 const ACTION_LABEL_KEYS = {
   [ACTION_ADD]: "ACTION_LABEL_ADD",
   [ACTION_ADD_SIBLING_AFTER]: "ACTION_LABEL_ADD_SIBLING_AFTER",
@@ -975,6 +984,9 @@ const ACTION_LABEL_KEYS = {
   [ACTION_HIDE]: "ACTION_LABEL_HIDE",
   [ACTION_REARRANGE]: "ACTION_LABEL_REARRANGE",
   [ACTION_TOGGLE_FLOATING_EXTRAS]: "TOOLTIP_TOGGLE_FLOATING_EXTRAS",
+  [ACTION_UNDO]: "Undo",
+  [ACTION_REDO_Z]: "Redo",
+  [ACTION_REDO_Y]: "Redo"
 };
 
 const getActionLabel = (action) => t(ACTION_LABEL_KEYS[action] ?? action);
@@ -1026,6 +1038,11 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_FOLD, code: "Digit1", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_FOLD_L1, code: "Digit2", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_FOLD_ALL, code: "Digit3", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+
+  // Undo / Redo
+  { action: ACTION_UNDO, key: "z", modifiers: ["Mod"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true },
+  { action: ACTION_REDO_Z, key: "z", modifiers: ["Mod", "Shift"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true },
+  { action: ACTION_REDO_Y, key: "y", modifiers: ["Mod"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true },
 ];
 
 // Load hotkeys from settings or use default
@@ -1229,8 +1246,28 @@ const addElementsToView = async (
   } = {}
 ) => {
   if (!ea.targetView) return;
+
+  // Track transaction steps for Undo/Redo
+  if (["EVENTUALLY", "IMMEDIATELY"].includes(captureUpdate)) {
+    currentTransactionAccumulator++;
+  }
+
   await ea.addElementsToView(repositionToCursor, save, newElementsOnTop, shouldRestoreElements, captureUpdate);
   ea.clear();
+
+  // Commit transaction logic
+  if (captureUpdate === "IMMEDIATELY") {
+    // We only record the undo checkpoint when a visual commit happens
+    const currentSceneVersion = ExcalidrawLib.getSceneVersion(api().getSceneElements());
+    lastCommittedTransaction = {
+      steps: currentTransactionAccumulator,
+      version: currentSceneVersion
+    };
+    // Reset accumulator and clear redo availability since we pushed a new action
+    currentTransactionAccumulator = 0;
+    redoAvailable = null;
+  }
+
   if (shouldSleep) await sleep(10); // Allow Excalidraw to process the new elements
 }
 
@@ -6943,6 +6980,7 @@ const renderBody = (contentEl) => {
   };
 
   userHotkeys.forEach((h, index) => {
+    if (h.hidden) return;
     const setting = new ea.obsidian.Setting(hkContainer)
       .setName(getActionLabel(h.action));
     setting.settingEl.style.paddingRight = "0";
@@ -7269,6 +7307,10 @@ const getActionFromEvent = (e) => {
  * @param {KeyboardEvent} e 
  */
 const handleKeydown = (e) => {
+  // Fix for IME (Korean, Chinese, Japanese, etc.) composition issues
+  // Prevents "Enter" from triggering actions when it's just confirming a character selection
+  if (e.isComposing || e.keyCode === 229) return;
+
   if (isRecordingHotkey) return;
   if (!ea.targetView || !ea.targetView.leaf.isVisible()) return;
 
@@ -7573,6 +7615,49 @@ const performAction = async (action, event) => {
         }
       }
       updateUI();
+      break;
+
+    case ACTION_UNDO:
+      if (ea.targetView) {
+        const currentVer = ExcalidrawLib.getSceneVersion(api().getSceneElements());
+        if (lastCommittedTransaction && currentVer === lastCommittedTransaction.version && lastCommittedTransaction.steps > 0) {
+          for(let i=0; i<=lastCommittedTransaction.steps; i++) { // <= to include the final select step
+            api().history.undo();
+          }
+          const afterUndoVer = ExcalidrawLib.getSceneVersion(api().getSceneElements());
+          redoAvailable = {
+            steps: lastCommittedTransaction.steps,
+            version: afterUndoVer
+          };
+          lastCommittedTransaction = null;
+        } else {
+          api().history.undo();
+          lastCommittedTransaction = null;
+          redoAvailable = null;
+        }
+      }
+      break;
+
+    case ACTION_REDO_Z:
+    case ACTION_REDO_Y:
+      if (ea.targetView) {
+        const currentVer = ExcalidrawLib.getSceneVersion(api().getSceneElements());
+        if (redoAvailable && currentVer === redoAvailable.version && redoAvailable.steps > 0) {
+          for(let i=0; i<=redoAvailable.steps; i++) {
+             api().history.redo();
+          }
+          const afterRedoVer = ExcalidrawLib.getSceneVersion(api().getSceneElements());
+          lastCommittedTransaction = {
+            steps: redoAvailable.steps,
+            version: afterRedoVer
+          };
+          redoAvailable = null;
+        } else {
+          api().history.redo();
+          lastCommittedTransaction = null;
+          redoAvailable = null;
+        }
+      }
       break;
   }
 };

@@ -6,11 +6,22 @@ You can download the sample Obsidian Templater file from [here](https://gist.git
 You can download the demo PDF document showcased in the video from [here](https://zsviczian.github.io/DemoArticle-AtomicHabits.pdf)
 
 ```js*/
-const selectedElements = ea.getViewSelectedElements();
-if (selectedElements.length !== 1 || selectedElements[0].type === "arrow") {
+if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.20.2")) {
+  new Notice("Please update the Excalidraw Plugin to version 2.20.2 or higher.");
+  return;
+}
+
+let selectedElements = ea.getViewSelectedElements();
+const selectedTextElement = ea.getBoundTextElement(selectedElements, true)?.sceneElement;
+
+if ((!selectedTextElement && selectedElements.length !== 1) || selectedElements[0].type === "arrow") {
     new Notice("Select a single element that is not an arrow and not a frame");
     return;
 }
+
+// Detect Mindmap Builder nodes
+const startNode = selectedElements[0];
+const isMindMap = typeof startNode.customData?.growthMode !== "undefined" || typeof startNode.customData?.mindmapOrder !== "undefined";
 
 const visited = new Set(); // Avoiding recursive infinite loops
 delete window.ewm;
@@ -111,9 +122,8 @@ function getImageLink(f) {
 }
 
 function getBoundText(el) {
-    const textId = el.boundElements?.find(x => x.type === "text")?.id;
-    const text = ea.getViewElements().find(x => x.id === textId)?.originalText;
-    return text ? text + "\n" : "";
+  const text = ea.getBoundTextElement(el,true)?.sceneElement?.rawText;
+  return text ? text + "\n" : "";
 }
 
 async function getSectionText(file, section) {
@@ -174,8 +184,9 @@ async function getBlockText(file, blockref) {
 }
 
 async function getElementText(el) {
-    if (el.type === "text") {
-        return el.originalText;
+    const maybeTextEl = ea.getBoundTextElement(el,true)?.sceneElement;
+    if (maybeTextEl) {
+        return maybeTextEl.rawText;
     }
     if (el.type === "image") {
       const f = ea.getViewFileForImageElement(el);
@@ -213,16 +224,55 @@ async function crawl(el, level, isFirst = false) {
     visited.add(el.id);
 
     let result = await getElementText(el) + "\n";
+    let itemsToTraverse = [];
 
-    // Process all arrows connected to this element
-    const boundElementsData = el.boundElements.filter(x => x.type === "arrow");
-    const isFork = boundElementsData.length > (isFirst ? 1 : 2);
+    if (isMindMap) {
+        // --- Mindmap Traversal Logic ---
+        // 1. Get all elements to lookup connections
+        const allElements = ea.getViewElements();
+        
+        // 2. Find outgoing arrows marked as branches
+        const branchArrows = allElements.filter(a =>
+            a.type === "arrow" &&
+            a.customData?.isBranch &&
+            a.startBinding?.elementId === el.id // Only traverse downwards (Parent -> Child)
+        );
+
+        // 3. Map arrows to their target nodes for sorting
+        const childNodes = branchArrows.map(arrow => {
+            const node = allElements.find(e => e.id === arrow.endBinding?.elementId);
+            return { arrow, nextEl: node };
+        }).filter(x => x.nextEl); // Safety check
+
+        // 4. Sort by mindmapOrder (visual order)
+        childNodes.sort((a, b) => {
+             const orderA = a.nextEl.customData?.mindmapOrder ?? 0;
+             const orderB = b.nextEl.customData?.mindmapOrder ?? 0;
+             return orderA - orderB;
+        });
+
+        itemsToTraverse = childNodes;
+
+    } else {
+        // --- Standard Traversal Logic (Legacy) ---
+        // Use boundElements (incoming and outgoing) in creation order
+        const boundElementsData = el.boundElements?.filter(x => x.type === "arrow") || [];
+        
+        itemsToTraverse = boundElementsData.map(bindingData => {
+            const arrow = ea.getViewElements().find(x => x.id === bindingData.id);
+            if (!arrow) return null;
+            const nextEl = getNextElementFollowingArrow(el, arrow);
+            return { arrow, nextEl };
+        }).filter(x => x && x.nextEl);
+    }
+
+    // Determine indentation trigger (Fork)
+    const isFork = itemsToTraverse.length > (isFirst ? 1 : 2);
     if(isFork) level++;
     
-    for(const bindingData of boundElementsData) {
-        const arrow = ea.getViewElements().find(x=> x.id === bindingData.id);
-        const nextEl = getNextElementFollowingArrow(el, arrow);
-        if (nextEl && !visited.has(nextEl.id)) {
+    // Recursive Traversal
+    for(const {arrow, nextEl} of itemsToTraverse) {
+        if (!visited.has(nextEl.id)) {
             if(isFork) result += `\n${"#".repeat(level)} `;
             const arrowLabel = getBoundText(arrow);
             if (arrowLabel) {

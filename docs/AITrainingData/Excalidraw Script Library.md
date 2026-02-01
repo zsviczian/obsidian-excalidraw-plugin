@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-01-31T13:54:04.603Z
+Generated on: 2026-02-01T14:02:45.564Z
 
 ---
 
@@ -9284,10 +9284,21 @@ const LAYOUT_METADATA = {
 };
 
 let layoutSettings = getVal(K_LAYOUT, {value: {}, hidden: true});
+let layoutSettingsDirty = false;
 
 Object.keys(LAYOUT_METADATA).forEach(k => {
-  if (layoutSettings[k] === undefined) layoutSettings[k] = LAYOUT_METADATA[k].def;
+  const val = layoutSettings[k];
+  const def = LAYOUT_METADATA[k].def;
+  if (val === undefined || val === null || typeof val !== "number" || !Number.isFinite(val)) {
+    layoutSettings[k] = def;
+    layoutSettingsDirty = true;
+  }
 });
+
+if (layoutSettingsDirty) {
+  setVal(K_LAYOUT, layoutSettings, true);
+  dirty = true;
+}
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -9317,6 +9328,7 @@ const NOTICE_DURATION_GLOBAL_CONFLICT = 10000;
 
 let arrowType = getVal(K_ARROW_TYPE, {value: "curved", valueset: ARROW_TYPES});
 let maxWidth = parseInt(getVal(K_WIDTH, 450));
+if(isNaN(maxWidth)) maxWidth = 450;
 let fontsizeScale = getVal(K_FONTSIZE, {value: "Normal Scale", valueset: FONT_SCALE_TYPES});
 let boxChildren = getVal(K_BOX, false);
 let roundedCorners = getVal(K_ROUND, false);
@@ -9355,6 +9367,7 @@ if(settingsTemp && settingsTemp.hasOwnProperty("Is Minimized")) {
 
 let branchScale = getVal(K_BRANCH_SCALE, {value: "Hierarchical", valueset: BRANCH_SCALE_TYPES});
 let baseStrokeWidth = parseFloat(getVal(K_BASE_WIDTH, {value: 6}));
+if(isNaN(baseStrokeWidth)) baseStrokeWidth = 6;
 
 /**
  * Pure calculation logic for stroke width.
@@ -9754,10 +9767,11 @@ const addElementsToView = async (
     newElementsOnTop = true,
     shouldRestoreElements = true,
     shouldSleep = false,
+    captureUpdate = "IMMEDIATELY",
   } = {}
 ) => {
   if (!ea.targetView) return;
-  await ea.addElementsToView(repositionToCursor, save, newElementsOnTop, shouldRestoreElements);
+  await ea.addElementsToView(repositionToCursor, save, newElementsOnTop, shouldRestoreElements, captureUpdate);
   ea.clear();
   if (shouldSleep) await sleep(10); // Allow Excalidraw to process the new elements
 }
@@ -10370,7 +10384,7 @@ const toggleFold = async (mode = "L0") => {
 
   updateBranchVisibility(targetNode.id, false, wbElements, true);
 
-  await addElementsToView();
+  await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
 
   if (!autoLayoutDisabled) {
     const info = getHierarchy(sel, ea.getViewElements());
@@ -10943,7 +10957,7 @@ const updateRootNodeCustomData = async (data) => {
     const info = getHierarchy(sel, ea.getViewElements());
     ea.copyViewElementsToEAforEditing(ea.getViewElements().filter((e) => e.id === info.rootId));
     ea.addAppendUpdateCustomData(info.rootId, { ...data });
-    await addElementsToView();
+    await addElementsToView({ captureUpdate: "NEVER" });
     updateUI();
     return info;
   }
@@ -11016,7 +11030,7 @@ const updateBranchStrokes = async (rootId, oldBaseWidth, oldScaleMode, newBaseWi
       const el = ea.getElement(item.id);
       if (el) el.strokeWidth = item.strokeWidth;
     });
-    await addElementsToView();
+    await addElementsToView({ captureUpdate: "IMMEDIATELY" });
   }
 
   if (manualOverrideFound) {
@@ -11717,7 +11731,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
   const sharedSets = { mindmapIdsSet, crosslinkIdSet, decorationIdSet };
 
   await run(allElements, mindmapIds, root, true, sharedSets, mustHonorMindmapOrder);
-  await addElementsToView();
+  await addElementsToView({ captureUpdate: "EVENTUALLY" });
 
   // sometimes one pass is not enough to settle subtree positions and boundaries
   ea.copyViewElementsToEAforEditing(ea.getViewElements());
@@ -11728,7 +11742,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
   if (structuralGroupId) {
     ea.addToGroup(mindmapIds);
   }
-  await addElementsToView();
+  await addElementsToView({ captureUpdate: "IMMEDIATELY" });
   selectNodeInView(selectedElement);
 };
 
@@ -12114,6 +12128,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     repositionToCursor: !parent,
     save: hasImage,
     shouldSleep: hasImage, //to ensure images get properly loaded to excalidraw Files
+    captureUpdate: "EVENTUALLY",
   });
 
   if (rootId && (autoLayoutDisabled || skipFinalLayout) && parent) {
@@ -12172,7 +12187,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       }
     }
 
-    await addElementsToView();
+    await addElementsToView({ captureUpdate: "EVENTUALLY" });
   }
   const finalNode = ea.getViewElements().find((el) => el.id === newNodeId);
   if (follow || !parent) {
@@ -12511,7 +12526,7 @@ const copyMapAsText = async (cut = false) => {
           if (indicator) ea.deleteViewElements([indicator]);
         }
 
-        await addElementsToView();
+        await addElementsToView({ captureUpdate: "EVENTUALLY" });
       }
       selectNodeInView(parentNode);
     }
@@ -12628,11 +12643,11 @@ const importTextToMap = async (rawText) => {
       crossLinkRegex.lastIndex = 0;
       
       text = text.replace(crossLinkRegex, (_match, label, ref) => {
-          outgoingRefs.push({
-              ref: ref,
-              label: label ? label.trim() : null
-          });
-          return "";
+        outgoingRefs.push({
+          ref: ref,
+          label: label ? label.trim() : null
+        });
+        return "";
       });
 
       // Non-greedy match for the first "::" separator
@@ -12673,23 +12688,23 @@ const importTextToMap = async (rawText) => {
     const id = ea.generateElementId();
     const st = getAppState();
     const boundaryEl = {
-        id: id,
-        type: "line",
-        x: node.x, y: node.y, width: 1, height: 1,
-        angle: 0,
-        roughness: st.currentItemRoughness,
-        strokeColor: node.strokeColor,
-        backgroundColor: node.strokeColor,
-        fillStyle: "solid",
-        strokeWidth: 2,
-        strokeStyle: "solid",
-        opacity: 30,
-        points: [[0,0], [1,1], [0,0]],
-        polygon: true,
-        locked: false,
-        groupIds: node.groupIds || [],
-        customData: {isBoundary: true},
-        roundness: arrowType === "curved" ? {type: 2} : null,
+      id: id,
+      type: "line",
+      x: node.x, y: node.y, width: 1, height: 1,
+      angle: 0,
+      roughness: st.currentItemRoughness,
+      strokeColor: node.strokeColor,
+      backgroundColor: node.strokeColor,
+      fillStyle: "solid",
+      strokeWidth: 2,
+      strokeStyle: "solid",
+      opacity: 30,
+      points: [[0,0], [1,1], [0,0]],
+      polygon: true,
+      locked: false,
+      groupIds: node.groupIds || [],
+      customData: {isBoundary: true},
+      roundness: arrowType === "curved" ? {type: 2} : null,
     };
     
     ea.elementsDict[id] = boundaryEl;
@@ -12757,8 +12772,8 @@ const importTextToMap = async (rawText) => {
           sourceId, null, 
           targetId, null, 
           {
-              startArrowHead: null,
-              endArrowHead: "triangle"
+            startArrowHead: null,
+            endArrowHead: "triangle"
           }
         );
 
@@ -12823,7 +12838,11 @@ const importTextToMap = async (rawText) => {
     }
   }
 
-  await addElementsToView({ repositionToCursor: !rootSelected, shouldSleep: true }); // in case there are images in the imported map
+  await addElementsToView({
+    repositionToCursor: !rootSelected,
+    shouldSleep: true,
+    captureUpdate: "EVENTUALLY"
+  }); // in case there are images in the imported map
 
   // -------------------------------------------------------------------------
   //  Fix Z-Index for Created Boundaries (Parents Below Children)
@@ -13083,7 +13102,7 @@ const changeNodeOrder = async (key) => {
             eaEl.x += deltaX;
         });
         
-        await addElementsToView();
+        await addElementsToView({ captureUpdate: "EVENTUALLY" });
         
         // Trigger layout. mustHonorMindmapOrder=false ensures the engine sorts based on the NEW visual position
         triggerGlobalLayout(root.id, false, false);
@@ -13119,7 +13138,7 @@ const changeNodeOrder = async (key) => {
       });
       const parentInfo = getHierarchy(parent, allElements);
       updateSubtreeFontSize(current.id, parentInfo.depth, allElements, rootFontScale);
-      await addElementsToView();
+      await addElementsToView({ captureUpdate: "EVENTUALLY" });
       triggerGlobalLayout(root.id, false, true);
       return;
     }
@@ -13177,7 +13196,7 @@ const changeNodeOrder = async (key) => {
       // New depth is Parent's Depth + 2 (Child of Sibling)
       const parentInfo = getHierarchy(parent, allElements);
       updateSubtreeFontSize(current.id, parentInfo.depth + 2, allElements, rootFontScale);
-      await addElementsToView();
+      await addElementsToView({ captureUpdate: "EVENTUALLY" });
       triggerGlobalLayout(root.id, false, true);
     }
     return;
@@ -13219,7 +13238,7 @@ const changeNodeOrder = async (key) => {
         ea.addAppendUpdateCustomData(sib.id, { mindmapOrder: newOrder });
       });
 
-      await addElementsToView();
+      await addElementsToView({ captureUpdate: "EVENTUALLY" });
       // Trigger layout specifically honoring the new sort order
       triggerGlobalLayout(root.id, false, true);
     }
@@ -13498,7 +13517,7 @@ const toggleBranchGroup = async () => {
     newGroupId = ea.addToGroup(branchIds);
   }
 
-  await addElementsToView();
+  await addElementsToView({ captureUpdate: "IMMEDIATELY" });
 
   if (newGroupId) {
     let selectedGroupIds = {};
@@ -13524,7 +13543,7 @@ const togglePin = async () => {
     if (boundTextElement && !newPinnedState && boundTextElement.customData?.hasOwnProperty("isPinned")) {
       delete ea.getElement(boundTextElement.id).customData.isPinned;
     }
-    await addElementsToView();
+    await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
     if(!autoLayoutDisabled) await refreshMapLayout();
     selectNodeInView(sel);
     updateUI();
@@ -13604,7 +13623,7 @@ const toggleBox = async () => {
   ea.getElement(oldBindId).boundElements = [];
   delete ea.getElement(oldBindId).customData;
 
-  await addElementsToView();
+  await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
 
   if (!hasContainer) {
     const textElement = ea.getViewElements().find((el) => el.id === sel.id);
@@ -13672,7 +13691,7 @@ const toggleBoundary = async () => {
       ea.addAppendUpdateCustomData(sel.id, { boundaryId: id });
     }
 
-    await addElementsToView({newElementsOnTop: false});
+    await addElementsToView({ newElementsOnTop: false, captureUpdate: "EVENTUALLY" });
 
     if (newBoundaryId) {
       const els = ea.getViewElements();
@@ -13726,6 +13745,7 @@ let helpContainer;
 let floatingInputModal = null;
 let sidepanelWindow;
 let recordingScope = null;
+let disableTabEvents = false;
 // ---------------------------------------------------------------------------
 // Focus Management & UI State
 // ---------------------------------------------------------------------------
@@ -13836,6 +13856,8 @@ const updateUI = (sel) => {
   if(ontologyEl) ontologyEl.style.display = sel ? "" : "none";
 
   if (sel) {
+    disableTabEvents = true;
+
     const info = getHierarchy(sel, all);
     const isRootSelected = info.rootId === sel.id;
     const root = all.find((e) => e.id === info.rootId);
@@ -13910,65 +13932,83 @@ const updateUI = (sel) => {
       if (autoLayoutToggle) autoLayoutToggle.setValue(mapLayoutPref);
     }
 
-    const mapArrowType = cd?.arrowType;
+    const mapArrowType = cd?.arrowType ?? getVal(K_ARROW_TYPE, "curved");
     if (typeof mapArrowType === "string" && mapArrowType !== arrowType && ARROW_TYPES.includes(mapArrowType)) {
       arrowType = mapArrowType;
       if (arrowTypeToggle) arrowTypeToggle.setValue(arrowType === "curved");
     }
 
-    if (cd?.fontsizeScale && cd.fontsizeScale !== fontsizeScale) {
-        fontsizeScale = cd.fontsizeScale;
+    const mapFontScale = cd?.fontsizeScale ?? getVal(K_FONTSIZE, "Normal Scale");
+    if (mapFontScale !== fontsizeScale) {
+        fontsizeScale = mapFontScale;
         if (fontSizeDropdown) fontSizeDropdown.setValue(fontsizeScale);
     }
 
-    if (typeof cd?.multicolor === "boolean" && cd.multicolor !== multicolor) {
-        multicolor = cd.multicolor;
+    const mapMulticolor = typeof cd?.multicolor === "boolean" ? cd.multicolor : getVal(K_MULTICOLOR, true);
+    if (mapMulticolor !== multicolor) {
+        multicolor = mapMulticolor;
         if (colorToggle) colorToggle.setValue(multicolor);
     }
 
-    if (typeof cd?.boxChildren === "boolean" && cd.boxChildren !== boxChildren) {
-        boxChildren = cd.boxChildren;
+    const mapBoxChildren = typeof cd?.boxChildren === "boolean" ? cd.boxChildren : getVal(K_BOX, false);
+    if (mapBoxChildren !== boxChildren) {
+        boxChildren = mapBoxChildren;
         if (boxToggle) boxToggle.setValue(boxChildren);
     }
 
-    if (typeof cd?.roundedCorners === "boolean" && cd.roundedCorners !== roundedCorners) {
-        roundedCorners = cd.roundedCorners;
+    const mapRounded = typeof cd?.roundedCorners === "boolean" ? cd.roundedCorners : getVal(K_ROUND, false);
+    if (mapRounded !== roundedCorners) {
+        roundedCorners = mapRounded;
         if (roundToggle) roundToggle.setValue(roundedCorners);
     }
 
-    if (typeof cd?.maxWrapWidth === "number" && cd.maxWrapWidth !== maxWidth) {
-        maxWidth = cd.maxWrapWidth;
+    let defaultWidth = parseInt(getVal(K_WIDTH, 450));
+    if (isNaN(defaultWidth)) defaultWidth = 450;
+
+    const mapWidth = typeof cd?.maxWrapWidth === "number" ? cd.maxWrapWidth : defaultWidth;
+    
+    if (mapWidth !== maxWidth) {
+        maxWidth = mapWidth;
         if (widthSlider) {
           widthSlider.setValue(maxWidth);
           if (widthSlider.valLabelEl) widthSlider.valLabelEl.setText(`${maxWidth}px`);
         }
     }
 
-    if (typeof cd?.isSolidArrow === "boolean" && cd.isSolidArrow !== isSolidArrow) {
-        isSolidArrow = cd.isSolidArrow;
+    const mapSolid = typeof cd?.isSolidArrow === "boolean" ? cd.isSolidArrow : getVal(K_ARROWSTROKE, true);
+    if (mapSolid !== isSolidArrow) {
+        isSolidArrow = mapSolid;
         if (strokeToggle) strokeToggle.setValue(!isSolidArrow);
     }
 
-    if (cd?.branchScale && BRANCH_SCALE_TYPES.includes(cd.branchScale) && cd.branchScale !== branchScale) {
-      branchScale = cd.branchScale;
+    const mapBranchScale = (cd?.branchScale && BRANCH_SCALE_TYPES.includes(cd.branchScale)) ? cd.branchScale : getVal(K_BRANCH_SCALE, "Hierarchical");
+    if (mapBranchScale !== branchScale) {
+      branchScale = mapBranchScale;
       if (branchScaleDropdown) branchScaleDropdown.setValue(branchScale);
     }
 
-    if (typeof cd?.baseStrokeWidth === "number" && cd.baseStrokeWidth !== baseStrokeWidth) {
-      baseStrokeWidth = cd.baseStrokeWidth;
+    let defaultBaseStroke = parseFloat(getVal(K_BASE_WIDTH, 6));
+    if (isNaN(defaultBaseStroke)) defaultBaseStroke = 6;
+    
+    const mapBaseStroke = typeof cd?.baseStrokeWidth === "number" ? cd.baseStrokeWidth : defaultBaseStroke;
+
+    if (mapBaseStroke !== baseStrokeWidth) {
+      baseStrokeWidth = mapBaseStroke;
       if (baseWidthSlider) {
         baseWidthSlider.setValue(baseStrokeWidth);
         if (baseWidthSlider.valLabelEl) baseWidthSlider.valLabelEl.setText(`${baseStrokeWidth}`);
       }
     }
 
-    if (typeof cd?.centerText === "boolean" && cd.centerText !== centerText) {
-        centerText = cd.centerText;
+    const mapCenter = typeof cd?.centerText === "boolean" ? cd.centerText : getVal(K_CENTERTEXT, true);
+    if (mapCenter !== centerText) {
+        centerText = mapCenter;
         if (centerToggle) centerToggle.setValue(centerText);
     }
 
-    if (typeof cd?.fillSweep === "boolean" && cd.fillSweep !== fillSweep) {
-      fillSweep = cd.fillSweep;
+    const mapFillSweep = typeof cd?.fillSweep === "boolean" ? cd.fillSweep : getVal(K_FILL_SWEEP, false);
+    if (mapFillSweep !== fillSweep) {
+      fillSweep = mapFillSweep;
       if (fillSweepToggle) fillSweepToggle.setValue(fillSweep);
     }
 
@@ -13976,6 +14016,7 @@ const updateUI = (sel) => {
       const mode = cd?.growthMode || currentModalGrowthMode;
       fillSweepToggleSetting.settingEl.style.display = mode === "Radial" ? "" : "none";
     }
+    disableTabEvents = false;
   } else {
     disableUI();
     // Re-enable navigation buttons if we have a history node
@@ -14218,6 +14259,7 @@ const commitEdit = async () => {
 
     await addElementsToView({
       shouldSleep: isTypeChange && (newType === "image"), //sleep if loading image
+      captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
     });
     
     // Trigger global layout if enabled
@@ -14269,7 +14311,11 @@ const commitEdit = async () => {
       addUpdateArrowLabel(ea.getElement(incomingArrow.id), ontologyInput);
     }
 
-    await addElementsToView({shouldSleep: true}); //in case text was changed to image
+    const hierarchyNode = targetNode.containerId ? all.find(el => el.id === targetNode.containerId) : textEl;
+    await addElementsToView({
+      shouldSleep: true,
+      captureUpdate: !hierarchyNode || autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
+    }); //in case text was changed to image
 
     if (textEl.containerId) {
       const container = ea.getViewElements().find(el => el.id === textEl.containerId);
@@ -14278,7 +14324,6 @@ const commitEdit = async () => {
       }
     }
 
-    const hierarchyNode = targetNode.containerId ? all.find(el => el.id === targetNode.containerId) : textEl;
     if (hierarchyNode && !autoLayoutDisabled) {
       const info = getHierarchy(hierarchyNode, ea.getViewElements());
       await triggerGlobalLayout(info.rootId);
@@ -14965,6 +15010,8 @@ const renderBody = (contentEl) => {
     d.setValue(zoomLevel);
     d.onChange((v) => {
         zoomLevel = v;
+        if (disableTabEvents) return;
+
         setVal(K_ZOOM, v);
         dirty = true;
         zoomToFit();
@@ -14983,6 +15030,8 @@ const renderBody = (contentEl) => {
     d.setValue(currentModalGrowthMode);
     d.onChange(async (v) => {
       currentModalGrowthMode = v;
+      if (disableTabEvents) return;
+
       setVal(K_GROWTH, v);
       dirty = true;
       if (fillSweepToggleSetting) {
@@ -15008,6 +15057,8 @@ const renderBody = (contentEl) => {
       t.setValue(fillSweep)
        .onChange(async (v) => {
         fillSweep = v;
+        if (disableTabEvents) return;
+
         setVal(K_FILL_SWEEP, v);
         dirty = true;
         if (!ea.targetView) return;
@@ -15030,6 +15081,8 @@ const renderBody = (contentEl) => {
       .setValue(!autoLayoutDisabled)
       .onChange((v) => {
         autoLayoutDisabled = !v;
+        if (disableTabEvents) return;
+
         updateRootNodeCustomData({ autoLayoutDisabled: enabled });
       }),
     )
@@ -15054,6 +15107,8 @@ const renderBody = (contentEl) => {
     .onChange(async (v) => {
       if (!ea.targetView) return;
       groupBranches = v;
+      if (disableTabEvents) return;
+
       setVal(K_GROUP, v);
       dirty = true;
       const sel = getMindmapNodeFromSelection() || ea.getViewElements().find(el => !getParentNode(el.id, ea.getViewElements()));
@@ -15079,6 +15134,8 @@ const renderBody = (contentEl) => {
       t.setValue(boxChildren)
       .onChange((v) => {
         boxChildren = v;
+        if (disableTabEvents) return;
+
         setVal(K_BOX, v);
         dirty = true;
         updateRootNodeCustomData({ boxChildren: v });
@@ -15096,6 +15153,8 @@ const renderBody = (contentEl) => {
     t.setValue(roundedCorners)
     .onChange((v) => {
       roundedCorners = v;
+      if (disableTabEvents) return;
+
       setVal(K_ROUND,  v);
       dirty = true;
       updateRootNodeCustomData({ roundedCorners: v });
@@ -15111,6 +15170,8 @@ const renderBody = (contentEl) => {
       t.setValue(arrowType === "curved")
        .onChange(async (v) => {
         arrowType = v ? "curved" : "straight";
+        if (disableTabEvents) return;
+
         setVal(K_ARROW_TYPE, arrowType);
         dirty = true;
         if (!ea.targetView) return;
@@ -15128,6 +15189,8 @@ const renderBody = (contentEl) => {
       strokeToggle = t;
       t.setValue(!isSolidArrow).onChange((v) => {
         isSolidArrow = !v;
+        if (disableTabEvents) return;
+
         setVal(K_ARROWSTROKE,  !v);
         dirty = true;
         updateRootNodeCustomData({ isSolidArrow: !v });
@@ -15143,6 +15206,8 @@ const renderBody = (contentEl) => {
       d.onChange(async (v) => {
         const oldScale = branchScale;
         branchScale = v;
+        if (disableTabEvents) return;
+
         setVal(K_BRANCH_SCALE, v);
         dirty = true;
         const info = await updateRootNodeCustomData({ branchScale: v });
@@ -15164,13 +15229,13 @@ const renderBody = (contentEl) => {
        .setValue(baseStrokeWidth)
        .onChange((v) => {
          if (baseWidthUpdateTimer) clearTimeout(baseWidthUpdateTimer);
-         if (baseWidthSnapshot === null) baseWidthSnapshot = baseStrokeWidth;
-         
+         if (!disableTabEvents &&baseWidthSnapshot === null) baseWidthSnapshot = baseStrokeWidth;
          baseStrokeWidth = v;
          baseWidthDisplay.setText(`${v}`);
+        if (disableTabEvents) return;
+
          setVal(K_BASE_WIDTH, v);
          dirty = true;
-
          baseWidthUpdateTimer = setTimeout(async () => {
            const info = await updateRootNodeCustomData({ baseStrokeWidth: v });
            if(info) {
@@ -15191,12 +15256,15 @@ const renderBody = (contentEl) => {
     .setName(t("LABEL_MULTICOLOR_BRANCHES"))
     .addToggle((t) => {
       colorToggle = t;
-      t.setValue(multicolor).onChange((v) => {
-        multicolor = v;
-        setVal(K_MULTICOLOR, v);
-        dirty = true;
-        updateRootNodeCustomData({ multicolor: v });
-      })
+      t.setValue(multicolor)
+        .onChange((v) => {
+          multicolor = v;
+          if (disableTabEvents) return;
+
+          setVal(K_MULTICOLOR, v);
+          dirty = true;
+          updateRootNodeCustomData({ multicolor: v });
+        })
     })
     .addExtraButton((btn) => btn
       .setIcon("palette")
@@ -15221,6 +15289,8 @@ const renderBody = (contentEl) => {
     .onChange((v) => {
       maxWidth = v;
       sliderValDisplay.setText(`${v}px`);
+      if (disableTabEvents) return;
+
       setVal(K_WIDTH, v);
       dirty = true;
       updateRootNodeCustomData({ maxWrapWidth: v });
@@ -15241,6 +15311,8 @@ const renderBody = (contentEl) => {
       t.setValue(centerText)
       .onChange((v) => {
         centerText = v;
+        if (disableTabEvents) return;
+
         setVal(K_CENTERTEXT, v);
         dirty = true;
         updateRootNodeCustomData({ centerText: v });
@@ -15253,6 +15325,8 @@ const renderBody = (contentEl) => {
     d.setValue(fontsizeScale);
     d.onChange((v) => {
       fontsizeScale = v;
+      if (disableTabEvents) return;
+
       setVal(K_FONTSIZE, v);
       dirty = true;
       updateRootNodeCustomData({ fontsizeScale: v });

@@ -98,6 +98,7 @@ import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { AIRequest } from "src/types/AIUtilTypes";
 import { getAspectRatio } from "src/utils/YoutTubeUtils";
 import { getPDFCropRect } from "src/utils/PDFUtils";
+import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
 
 extendPlugins([
   HarmonyPlugin,
@@ -904,15 +905,20 @@ export class ExcalidrawAutomate {
    *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
    * If not found, returns {}.
    * Does not add the text element to elementsDict.
-   * @param element 
+   * @param element: ExcalidrawElement | ExcalidrawElement[] - The selected container with text (an array of 2 elements) to check.
    * @param searchInView - If true, searches in the targetView elements if not found in elementsDict.
    * @returns Object containing either eaElement or sceneElement or empty if not found.
    */
-  getBoundTextElement(element: ExcalidrawElement, searchInView: boolean = false): {
+  getBoundTextElement(element: ExcalidrawElement|ExcalidrawElement[], searchInView: boolean = false): {
     eaElement?: Mutable<ExcalidrawTextElement>,
     sceneElement?: ExcalidrawTextElement
     } {
     if (!element) {
+      return {};
+    }
+    if (Array.isArray(element) && element.length === 2) {
+      element = element[0];
+    } else if (Array.isArray(element)) {
       return {};
     }
     if(element.type === "text") {
@@ -3103,6 +3109,7 @@ export class ExcalidrawAutomate {
     save: boolean = true,
     newElementsOnTop: boolean = false,
     shouldRestoreElements: boolean = false,
+    captureUpdate: CaptureUpdateActionType = CaptureUpdateAction.IMMEDIATELY,
   ): Promise<boolean> {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "addElementsToView()");
@@ -3119,6 +3126,7 @@ export class ExcalidrawAutomate {
       images: this.imagesDict,
       newElementsOnTop,
       shouldRestoreElements,
+      captureUpdate,
     });
     return result;
   };

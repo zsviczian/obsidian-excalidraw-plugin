@@ -164,6 +164,8 @@ import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
 import { copyLinkToSelectedElementToClipboard } from "src/shared/Dialogs/copyLinkToSelectedElement";
 import { getPDFCropRect } from "src/utils/PDFUtils";
+import { ttdPersistenceAdapter } from "src/shared/TTDDialogPersistanceAdater";
+import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -3704,6 +3706,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     images,
     newElementsOnTop = false,
     shouldRestoreElements = false,
+    captureUpdate = CaptureUpdateAction.IMMEDIATELY,
   }: {
     newElements: ExcalidrawElement[];
     repositionToCursor?: boolean;
@@ -3711,6 +3714,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     images?: {[key: FileId]: ImageInfo};
     newElementsOnTop?: boolean;
     shouldRestoreElements?: boolean;
+    captureUpdate?: CaptureUpdateActionType;
   }): Promise<boolean> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.addElements, "ExcalidrawView.addElements", newElements, repositionToCursor, save, images, newElementsOnTop, shouldRestoreElements);
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
@@ -3817,7 +3821,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.updateScene(
       {
         elements,
-        captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+        captureUpdate,
       },
       shouldRestoreElements,
     );
@@ -5452,6 +5456,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     return this.packages.react.createElement(
       this.packages.excalidrawLib.TTDDialog,
       {
+        persistenceAdapter: ttdPersistenceAdapter,
         onTextSubmit: async (props: any) => {
           const { messages = [], onChunk, onStreamCreated, signal } = props ?? {};
           const {

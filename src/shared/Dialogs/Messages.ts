@@ -17,6 +17,35 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.20.2":`
+## New from Excalidraw.com
+- Arrow focus indicator [#10613](https://github.com/excalidraw/excalidraw/pull/10613)
+
+## Fixed
+- Experimental file type display now also works in Obsidian Mobile. (Reported on Discord)
+- Text to Mermaid stores chat history locally (i.e. not synchronized between devices).
+- Image positioning in crop editor [#2589](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2589), [#10726](https://github.com/excalidraw/excalidraw/pull/10726)
+
+## MindMap Builder
+- Implemented better undo support (effective only for the very last MindMap Builder action). Additionally, CMD/CTRL+Z and CTRL+Y, CMD+SHIFT+Z now work when the MindMap input window is focused.
+- Fixed: Double character input issue (IME Composition Error) when creating nodes [#2647](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2647)
+- Fixed: More robust error handling when the MindMap is corrupted or invalid.
+- Updated Excalidraw Writing Machine to support document generation from MindMaps. Writing Machine will honor the branch order. Requires update of the Writing Machine Script.
+
+## New in ExcalidrawAutomate
+- \`getBoundTextElement()\` now also accepts an \`ExcalidrawElement[]\` (2-element selection: container + text) in addition to a single element.
+- \`addElementsToView()\` extended with \`captureUpdate\` parameter (default: "IMMEDIATELY"). When set to false, the addition of elements will not be recorded in the view's history.
+
+\`\`\`ts
+  async addElementsToView(
+    repositionToCursor: boolean = false,
+    save: boolean = true,
+    newElementsOnTop: boolean = false,
+    shouldRestoreElements: boolean = false,
+    captureUpdate: CaptureUpdateActionType = CaptureUpdateAction.IMMEDIATELY,
+  ): Promise<boolean>
+\`\`\`
+`,
 "2.20.1":`
 ## Fixed
 - Fixed Experimental file type display, available under miscellaneous settings. (Reported on Discord)
