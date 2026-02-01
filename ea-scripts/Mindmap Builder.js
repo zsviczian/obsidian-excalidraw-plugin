@@ -742,10 +742,21 @@ const LAYOUT_METADATA = {
 };
 
 let layoutSettings = getVal(K_LAYOUT, {value: {}, hidden: true});
+let layoutSettingsDirty = false;
 
 Object.keys(LAYOUT_METADATA).forEach(k => {
-  if (layoutSettings[k] === undefined) layoutSettings[k] = LAYOUT_METADATA[k].def;
+  const val = layoutSettings[k];
+  const def = LAYOUT_METADATA[k].def;
+  if (val === undefined || val === null || typeof val !== "number" || !Number.isFinite(val)) {
+    layoutSettings[k] = def;
+    layoutSettingsDirty = true;
+  }
 });
+
+if (layoutSettingsDirty) {
+  setVal(K_LAYOUT, layoutSettings, true);
+  dirty = true;
+}
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -775,6 +786,7 @@ const NOTICE_DURATION_GLOBAL_CONFLICT = 10000;
 
 let arrowType = getVal(K_ARROW_TYPE, {value: "curved", valueset: ARROW_TYPES});
 let maxWidth = parseInt(getVal(K_WIDTH, 450));
+if(isNaN(maxWidth)) maxWidth = 450;
 let fontsizeScale = getVal(K_FONTSIZE, {value: "Normal Scale", valueset: FONT_SCALE_TYPES});
 let boxChildren = getVal(K_BOX, false);
 let roundedCorners = getVal(K_ROUND, false);
@@ -813,6 +825,7 @@ if(settingsTemp && settingsTemp.hasOwnProperty("Is Minimized")) {
 
 let branchScale = getVal(K_BRANCH_SCALE, {value: "Hierarchical", valueset: BRANCH_SCALE_TYPES});
 let baseStrokeWidth = parseFloat(getVal(K_BASE_WIDTH, {value: 6}));
+if(isNaN(baseStrokeWidth)) baseStrokeWidth = 6;
 
 /**
  * Pure calculation logic for stroke width.
@@ -5377,65 +5390,83 @@ const updateUI = (sel) => {
       if (autoLayoutToggle) autoLayoutToggle.setValue(mapLayoutPref);
     }
 
-    const mapArrowType = cd?.arrowType;
+    const mapArrowType = cd?.arrowType ?? getVal(K_ARROW_TYPE, "curved");
     if (typeof mapArrowType === "string" && mapArrowType !== arrowType && ARROW_TYPES.includes(mapArrowType)) {
       arrowType = mapArrowType;
       if (arrowTypeToggle) arrowTypeToggle.setValue(arrowType === "curved");
     }
 
-    if (cd?.fontsizeScale && cd.fontsizeScale !== fontsizeScale) {
-        fontsizeScale = cd.fontsizeScale;
+    const mapFontScale = cd?.fontsizeScale ?? getVal(K_FONTSIZE, "Normal Scale");
+    if (mapFontScale !== fontsizeScale) {
+        fontsizeScale = mapFontScale;
         if (fontSizeDropdown) fontSizeDropdown.setValue(fontsizeScale);
     }
 
-    if (typeof cd?.multicolor === "boolean" && cd.multicolor !== multicolor) {
-        multicolor = cd.multicolor;
+    const mapMulticolor = typeof cd?.multicolor === "boolean" ? cd.multicolor : getVal(K_MULTICOLOR, true);
+    if (mapMulticolor !== multicolor) {
+        multicolor = mapMulticolor;
         if (colorToggle) colorToggle.setValue(multicolor);
     }
 
-    if (typeof cd?.boxChildren === "boolean" && cd.boxChildren !== boxChildren) {
-        boxChildren = cd.boxChildren;
+    const mapBoxChildren = typeof cd?.boxChildren === "boolean" ? cd.boxChildren : getVal(K_BOX, false);
+    if (mapBoxChildren !== boxChildren) {
+        boxChildren = mapBoxChildren;
         if (boxToggle) boxToggle.setValue(boxChildren);
     }
 
-    if (typeof cd?.roundedCorners === "boolean" && cd.roundedCorners !== roundedCorners) {
-        roundedCorners = cd.roundedCorners;
+    const mapRounded = typeof cd?.roundedCorners === "boolean" ? cd.roundedCorners : getVal(K_ROUND, false);
+    if (mapRounded !== roundedCorners) {
+        roundedCorners = mapRounded;
         if (roundToggle) roundToggle.setValue(roundedCorners);
     }
 
-    if (typeof cd?.maxWrapWidth === "number" && cd.maxWrapWidth !== maxWidth) {
-        maxWidth = cd.maxWrapWidth;
+    let defaultWidth = parseInt(getVal(K_WIDTH, 450));
+    if (isNaN(defaultWidth)) defaultWidth = 450;
+
+    const mapWidth = typeof cd?.maxWrapWidth === "number" ? cd.maxWrapWidth : defaultWidth;
+    
+    if (mapWidth !== maxWidth) {
+        maxWidth = mapWidth;
         if (widthSlider) {
           widthSlider.setValue(maxWidth);
           if (widthSlider.valLabelEl) widthSlider.valLabelEl.setText(`${maxWidth}px`);
         }
     }
 
-    if (typeof cd?.isSolidArrow === "boolean" && cd.isSolidArrow !== isSolidArrow) {
-        isSolidArrow = cd.isSolidArrow;
+    const mapSolid = typeof cd?.isSolidArrow === "boolean" ? cd.isSolidArrow : getVal(K_ARROWSTROKE, true);
+    if (mapSolid !== isSolidArrow) {
+        isSolidArrow = mapSolid;
         if (strokeToggle) strokeToggle.setValue(!isSolidArrow);
     }
 
-    if (cd?.branchScale && BRANCH_SCALE_TYPES.includes(cd.branchScale) && cd.branchScale !== branchScale) {
-      branchScale = cd.branchScale;
+    const mapBranchScale = (cd?.branchScale && BRANCH_SCALE_TYPES.includes(cd.branchScale)) ? cd.branchScale : getVal(K_BRANCH_SCALE, "Hierarchical");
+    if (mapBranchScale !== branchScale) {
+      branchScale = mapBranchScale;
       if (branchScaleDropdown) branchScaleDropdown.setValue(branchScale);
     }
 
-    if (typeof cd?.baseStrokeWidth === "number" && cd.baseStrokeWidth !== baseStrokeWidth) {
-      baseStrokeWidth = cd.baseStrokeWidth;
+    let defaultBaseStroke = parseFloat(getVal(K_BASE_WIDTH, 6));
+    if (isNaN(defaultBaseStroke)) defaultBaseStroke = 6;
+    
+    const mapBaseStroke = typeof cd?.baseStrokeWidth === "number" ? cd.baseStrokeWidth : defaultBaseStroke;
+
+    if (mapBaseStroke !== baseStrokeWidth) {
+      baseStrokeWidth = mapBaseStroke;
       if (baseWidthSlider) {
         baseWidthSlider.setValue(baseStrokeWidth);
         if (baseWidthSlider.valLabelEl) baseWidthSlider.valLabelEl.setText(`${baseStrokeWidth}`);
       }
     }
 
-    if (typeof cd?.centerText === "boolean" && cd.centerText !== centerText) {
-        centerText = cd.centerText;
+    const mapCenter = typeof cd?.centerText === "boolean" ? cd.centerText : getVal(K_CENTERTEXT, true);
+    if (mapCenter !== centerText) {
+        centerText = mapCenter;
         if (centerToggle) centerToggle.setValue(centerText);
     }
 
-    if (typeof cd?.fillSweep === "boolean" && cd.fillSweep !== fillSweep) {
-      fillSweep = cd.fillSweep;
+    const mapFillSweep = typeof cd?.fillSweep === "boolean" ? cd.fillSweep : getVal(K_FILL_SWEEP, false);
+    if (mapFillSweep !== fillSweep) {
+      fillSweep = mapFillSweep;
       if (fillSweepToggle) fillSweepToggle.setValue(fillSweep);
     }
 
