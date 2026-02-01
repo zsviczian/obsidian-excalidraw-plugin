@@ -1212,11 +1212,11 @@ const addElementsToView = async (
     newElementsOnTop = true,
     shouldRestoreElements = true,
     shouldSleep = false,
-    commitToHistory = true,
+    captureUpdate = "IMMEDIATELY",
   } = {}
 ) => {
   if (!ea.targetView) return;
-  await ea.addElementsToView(repositionToCursor, save, newElementsOnTop, shouldRestoreElements, commitToHistory);
+  await ea.addElementsToView(repositionToCursor, save, newElementsOnTop, shouldRestoreElements, captureUpdate);
   ea.clear();
   if (shouldSleep) await sleep(10); // Allow Excalidraw to process the new elements
 }
@@ -1829,7 +1829,7 @@ const toggleFold = async (mode = "L0") => {
 
   updateBranchVisibility(targetNode.id, false, wbElements, true);
 
-  await addElementsToView();
+  await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
 
   if (!autoLayoutDisabled) {
     const info = getHierarchy(sel, ea.getViewElements());
@@ -2402,7 +2402,7 @@ const updateRootNodeCustomData = async (data) => {
     const info = getHierarchy(sel, ea.getViewElements());
     ea.copyViewElementsToEAforEditing(ea.getViewElements().filter((e) => e.id === info.rootId));
     ea.addAppendUpdateCustomData(info.rootId, { ...data });
-    await addElementsToView();
+    await addElementsToView({ captureUpdate: "NEVER" });
     updateUI();
     return info;
   }
@@ -2475,7 +2475,7 @@ const updateBranchStrokes = async (rootId, oldBaseWidth, oldScaleMode, newBaseWi
       const el = ea.getElement(item.id);
       if (el) el.strokeWidth = item.strokeWidth;
     });
-    await addElementsToView();
+    await addElementsToView({ captureUpdate: "IMMEDIATELY" });
   }
 
   if (manualOverrideFound) {
@@ -3176,7 +3176,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
   const sharedSets = { mindmapIdsSet, crosslinkIdSet, decorationIdSet };
 
   await run(allElements, mindmapIds, root, true, sharedSets, mustHonorMindmapOrder);
-  await addElementsToView();
+  await addElementsToView({ captureUpdate: "EVENTUALLY" });
 
   // sometimes one pass is not enough to settle subtree positions and boundaries
   ea.copyViewElementsToEAforEditing(ea.getViewElements());
@@ -3187,7 +3187,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
   if (structuralGroupId) {
     ea.addToGroup(mindmapIds);
   }
-  await addElementsToView();
+  await addElementsToView({ captureUpdate: "IMMEDIATELY" });
   selectNodeInView(selectedElement);
 };
 
@@ -3573,6 +3573,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     repositionToCursor: !parent,
     save: hasImage,
     shouldSleep: hasImage, //to ensure images get properly loaded to excalidraw Files
+    captureUpdate: "EVENTUALLY",
   });
 
   if (rootId && (autoLayoutDisabled || skipFinalLayout) && parent) {
@@ -3631,7 +3632,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       }
     }
 
-    await addElementsToView();
+    await addElementsToView({ captureUpdate: "EVENTUALLY" });
   }
   const finalNode = ea.getViewElements().find((el) => el.id === newNodeId);
   if (follow || !parent) {
@@ -3970,7 +3971,7 @@ const copyMapAsText = async (cut = false) => {
           if (indicator) ea.deleteViewElements([indicator]);
         }
 
-        await addElementsToView();
+        await addElementsToView({ captureUpdate: "EVENTUALLY" });
       }
       selectNodeInView(parentNode);
     }
@@ -4087,11 +4088,11 @@ const importTextToMap = async (rawText) => {
       crossLinkRegex.lastIndex = 0;
       
       text = text.replace(crossLinkRegex, (_match, label, ref) => {
-          outgoingRefs.push({
-              ref: ref,
-              label: label ? label.trim() : null
-          });
-          return "";
+        outgoingRefs.push({
+          ref: ref,
+          label: label ? label.trim() : null
+        });
+        return "";
       });
 
       // Non-greedy match for the first "::" separator
@@ -4132,23 +4133,23 @@ const importTextToMap = async (rawText) => {
     const id = ea.generateElementId();
     const st = getAppState();
     const boundaryEl = {
-        id: id,
-        type: "line",
-        x: node.x, y: node.y, width: 1, height: 1,
-        angle: 0,
-        roughness: st.currentItemRoughness,
-        strokeColor: node.strokeColor,
-        backgroundColor: node.strokeColor,
-        fillStyle: "solid",
-        strokeWidth: 2,
-        strokeStyle: "solid",
-        opacity: 30,
-        points: [[0,0], [1,1], [0,0]],
-        polygon: true,
-        locked: false,
-        groupIds: node.groupIds || [],
-        customData: {isBoundary: true},
-        roundness: arrowType === "curved" ? {type: 2} : null,
+      id: id,
+      type: "line",
+      x: node.x, y: node.y, width: 1, height: 1,
+      angle: 0,
+      roughness: st.currentItemRoughness,
+      strokeColor: node.strokeColor,
+      backgroundColor: node.strokeColor,
+      fillStyle: "solid",
+      strokeWidth: 2,
+      strokeStyle: "solid",
+      opacity: 30,
+      points: [[0,0], [1,1], [0,0]],
+      polygon: true,
+      locked: false,
+      groupIds: node.groupIds || [],
+      customData: {isBoundary: true},
+      roundness: arrowType === "curved" ? {type: 2} : null,
     };
     
     ea.elementsDict[id] = boundaryEl;
@@ -4216,8 +4217,8 @@ const importTextToMap = async (rawText) => {
           sourceId, null, 
           targetId, null, 
           {
-              startArrowHead: null,
-              endArrowHead: "triangle"
+            startArrowHead: null,
+            endArrowHead: "triangle"
           }
         );
 
@@ -4282,7 +4283,11 @@ const importTextToMap = async (rawText) => {
     }
   }
 
-  await addElementsToView({ repositionToCursor: !rootSelected, shouldSleep: true }); // in case there are images in the imported map
+  await addElementsToView({
+    repositionToCursor: !rootSelected,
+    shouldSleep: true,
+    captureUpdate: "EVENTUALLY"
+  }); // in case there are images in the imported map
 
   // -------------------------------------------------------------------------
   //  Fix Z-Index for Created Boundaries (Parents Below Children)
@@ -4542,7 +4547,7 @@ const changeNodeOrder = async (key) => {
             eaEl.x += deltaX;
         });
         
-        await addElementsToView();
+        await addElementsToView({ captureUpdate: "EVENTUALLY" });
         
         // Trigger layout. mustHonorMindmapOrder=false ensures the engine sorts based on the NEW visual position
         triggerGlobalLayout(root.id, false, false);
@@ -4578,7 +4583,7 @@ const changeNodeOrder = async (key) => {
       });
       const parentInfo = getHierarchy(parent, allElements);
       updateSubtreeFontSize(current.id, parentInfo.depth, allElements, rootFontScale);
-      await addElementsToView();
+      await addElementsToView({ captureUpdate: "EVENTUALLY" });
       triggerGlobalLayout(root.id, false, true);
       return;
     }
@@ -4636,7 +4641,7 @@ const changeNodeOrder = async (key) => {
       // New depth is Parent's Depth + 2 (Child of Sibling)
       const parentInfo = getHierarchy(parent, allElements);
       updateSubtreeFontSize(current.id, parentInfo.depth + 2, allElements, rootFontScale);
-      await addElementsToView();
+      await addElementsToView({ captureUpdate: "EVENTUALLY" });
       triggerGlobalLayout(root.id, false, true);
     }
     return;
@@ -4678,7 +4683,7 @@ const changeNodeOrder = async (key) => {
         ea.addAppendUpdateCustomData(sib.id, { mindmapOrder: newOrder });
       });
 
-      await addElementsToView();
+      await addElementsToView({ captureUpdate: "EVENTUALLY" });
       // Trigger layout specifically honoring the new sort order
       triggerGlobalLayout(root.id, false, true);
     }
@@ -4957,7 +4962,7 @@ const toggleBranchGroup = async () => {
     newGroupId = ea.addToGroup(branchIds);
   }
 
-  await addElementsToView();
+  await addElementsToView({ captureUpdate: "IMMEDIATELY" });
 
   if (newGroupId) {
     let selectedGroupIds = {};
@@ -4983,7 +4988,7 @@ const togglePin = async () => {
     if (boundTextElement && !newPinnedState && boundTextElement.customData?.hasOwnProperty("isPinned")) {
       delete ea.getElement(boundTextElement.id).customData.isPinned;
     }
-    await addElementsToView();
+    await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
     if(!autoLayoutDisabled) await refreshMapLayout();
     selectNodeInView(sel);
     updateUI();
@@ -5063,7 +5068,7 @@ const toggleBox = async () => {
   ea.getElement(oldBindId).boundElements = [];
   delete ea.getElement(oldBindId).customData;
 
-  await addElementsToView();
+  await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
 
   if (!hasContainer) {
     const textElement = ea.getViewElements().find((el) => el.id === sel.id);
@@ -5131,7 +5136,7 @@ const toggleBoundary = async () => {
       ea.addAppendUpdateCustomData(sel.id, { boundaryId: id });
     }
 
-    await addElementsToView({newElementsOnTop: false});
+    await addElementsToView({ newElementsOnTop: false, captureUpdate: "EVENTUALLY" });
 
     if (newBoundaryId) {
       const els = ea.getViewElements();
@@ -5296,6 +5301,8 @@ const updateUI = (sel) => {
   if(ontologyEl) ontologyEl.style.display = sel ? "" : "none";
 
   if (sel) {
+    disableTabEvents = true;
+
     const info = getHierarchy(sel, all);
     const isRootSelected = info.rootId === sel.id;
     const root = all.find((e) => e.id === info.rootId);
@@ -5357,7 +5364,6 @@ const updateUI = (sel) => {
 
     // NEW: Load settings from root customData if they exist, otherwise keep current global
     const cd = root.customData;
-    disableTabEvents = true;
     
     const mapStrategy = cd?.growthMode;
     if (typeof mapStrategy === "string" && mapStrategy !== currentModalGrowthMode && GROWTH_TYPES.includes(mapStrategy)) {
@@ -5680,6 +5686,7 @@ const commitEdit = async () => {
 
     await addElementsToView({
       shouldSleep: isTypeChange && (newType === "image"), //sleep if loading image
+      captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
     });
     
     // Trigger global layout if enabled
@@ -5731,7 +5738,11 @@ const commitEdit = async () => {
       addUpdateArrowLabel(ea.getElement(incomingArrow.id), ontologyInput);
     }
 
-    await addElementsToView({shouldSleep: true}); //in case text was changed to image
+    const hierarchyNode = targetNode.containerId ? all.find(el => el.id === targetNode.containerId) : textEl;
+    await addElementsToView({
+      shouldSleep: true,
+      captureUpdate: !hierarchyNode || autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
+    }); //in case text was changed to image
 
     if (textEl.containerId) {
       const container = ea.getViewElements().find(el => el.id === textEl.containerId);
@@ -5740,7 +5751,6 @@ const commitEdit = async () => {
       }
     }
 
-    const hierarchyNode = targetNode.containerId ? all.find(el => el.id === targetNode.containerId) : textEl;
     if (hierarchyNode && !autoLayoutDisabled) {
       const info = getHierarchy(hierarchyNode, ea.getViewElements());
       await triggerGlobalLayout(info.rootId);
