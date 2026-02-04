@@ -5753,7 +5753,7 @@ const commitEdit = async () => {
     }
 
     await addElementsToView({
-      shouldSleep: isTypeChange && (newType === "image"), //sleep if loading image
+      shouldSleep: ea.getElements().some(el => el.type === "image"), //sleep if loading image
       captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
     });
     
@@ -5808,7 +5808,7 @@ const commitEdit = async () => {
 
     const hierarchyNode = targetNode.containerId ? all.find(el => el.id === targetNode.containerId) : textEl;
     await addElementsToView({
-      shouldSleep: true,
+      shouldSleep: ea.getElements().some(el => el.type === "image"),
       captureUpdate: !hierarchyNode || autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
     }); //in case text was changed to image
 
