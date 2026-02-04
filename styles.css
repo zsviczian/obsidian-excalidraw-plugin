@@ -1099,3 +1099,7 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw-LatexPrompt .cm-editor {
   margin-top: 90px;
 }
+
+.excalidraw-filetype-tag {
+    order: 99;
+}
