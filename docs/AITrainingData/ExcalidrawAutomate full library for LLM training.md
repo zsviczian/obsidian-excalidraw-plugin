@@ -602,11 +602,11 @@ export declare class ExcalidrawAutomate {
      *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
      * If not found, returns {}.
      * Does not add the text element to elementsDict.
-     * @param element
+     * @param element: ExcalidrawElement | ExcalidrawElement[] - The selected container with text (an array of 2 elements) to check.
      * @param searchInView - If true, searches in the targetView elements if not found in elementsDict.
      * @returns Object containing either eaElement or sceneElement or empty if not found.
      */
-    getBoundTextElement(element: ExcalidrawElement, searchInView?: boolean): {
+    getBoundTextElement(element: ExcalidrawElement | ExcalidrawElement[], searchInView?: boolean): {
         eaElement?: Mutable<ExcalidrawTextElement>;
         sceneElement?: ExcalidrawTextElement;
     };
@@ -2383,7 +2383,6 @@ export type ConvertibleTypes = ConvertibleGenericTypes | ConvertibleLinearTypes;
 /* ************************************** */
 /* node_modules/@zsviczian/excalidraw/types/excalidraw/types.d.ts */
 /* ************************************** */
-export type { App };
 export type SocketId = string & {
     _brand: "SocketId";
 };
@@ -2506,7 +2505,6 @@ export type InteractiveCanvasAppState = Readonly<_CommonCanvasAppState & {
     multiElement: AppState["multiElement"];
     newElement: AppState["newElement"];
     isBindingEnabled: AppState["isBindingEnabled"];
-    invertBindingBehaviour: AppState["invertBindingBehaviour"];
     suggestedBinding: AppState["suggestedBinding"];
     isRotating: AppState["isRotating"];
     elementsToHighlight: AppState["elementsToHighlight"];
@@ -3080,8 +3078,6 @@ export interface ExcalidrawImperativeAPI {
     getSceneElementsMapIncludingDeleted: InstanceType<typeof App>["getSceneElementsMapIncludingDeleted"];
     history: {
         clear: InstanceType<typeof App>["resetHistory"];
-        undo: InstanceType<typeof App>["undo"];
-        redo: InstanceType<typeof App>["redo"];
     };
     setForceRenderAllEmbeddables: InstanceType<typeof App>["setForceRenderAllEmbeddables"];
     zoomToFit: InstanceType<typeof App>["zoomToFit"];
@@ -3325,13 +3321,7 @@ declare class App extends React.Component<AppProps, AppState> {
     lastPointerDownEvent: React.PointerEvent<HTMLElement> | null;
     lastPointerUpEvent: React.PointerEvent<HTMLElement> | PointerEvent | null;
     lastPointerMoveEvent: PointerEvent | null;
-    /** current frame pointer cords */
     lastPointerMoveCoords: {
-        x: number;
-        y: number;
-    } | null;
-    /** previous frame pointer coords */
-    previousPointerMoveCoords: {
         x: number;
         y: number;
     } | null;
@@ -3526,8 +3516,6 @@ declare class App extends React.Component<AppProps, AppState> {
     private onUnload;
     private disableEvent;
     private resetHistory;
-    private undo;
-    private redo;
     private resetStore;
     /**
      * Resets scene & history.
@@ -11085,16 +11073,13 @@ export declare const DefaultSidebar: import("react").FC<Omit<MarkOptional<Omit<{
 /* ************************************** */
 /* ./components/TTDDialog/TTDDialog -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/TTDDialog.d.ts */
 /* ************************************** */
-export declare const TTDDialog: {
-    (props: {
-        onTextSubmit: TTTDDialog.onTextSubmit;
-        renderWelcomeScreen?: TTTDDialog.renderWelcomeScreen;
-        renderWarning?: TTTDDialog.renderWarning;
-        persistenceAdapter: TTDPersistenceAdapter;
-    } | {
-        __fallback: true;
-    }): import("react/jsx-runtime").JSX.Element | null;
-    WelcomeMessage: () => import("react/jsx-runtime").JSX.Element;
+export declare const TTDDialog: (props: {
+    onTextSubmit: TTTDDialog.onTextSubmit;
+    renderWarning?: TTTDDialog.renderWarning;
+    persistenceAdapter: TTDPersistenceAdapter;
+} | {
+    __fallback: true;
+}) => import("react/jsx-runtime").JSX.Element | null;
 
 /* ************************************** */
 /* ./components/TTDDialog/utils/TTDStreamFetch -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/utils/TTDStreamFetch.d.ts */
@@ -11142,12 +11127,6 @@ export declare const isElementInsideBBox: (element: Element, bbox: Bounds, eithe
 export declare const DiagramToCodePlugin: (props: {
     generate: GenerateDiagramToCode;
 }) => null;
-
-/* ************************************** */
-/* ./components/CommandPalette/CommandPalette -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/CommandPalette/CommandPalette.d.ts */
-/* ************************************** */
-export declare const CommandPalette: ((props: CommandPaletteProps) => import("react/jsx-runtime").JSX.Element | null) & {
-    defaultItems: typeof defaultItems;
 ```
 
 ---
@@ -11166,7 +11145,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-02-01T14:02:45.564Z
+Generated on: 2026-02-04T21:21:39.803Z
 
 ---
 
@@ -15155,11 +15134,22 @@ You can download the sample Obsidian Templater file from [here](https://gist.git
 You can download the demo PDF document showcased in the video from [here](https://zsviczian.github.io/DemoArticle-AtomicHabits.pdf)
 
 ```js*/
-const selectedElements = ea.getViewSelectedElements();
-if (selectedElements.length !== 1 || selectedElements[0].type === "arrow") {
+if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.20.2")) {
+  new Notice("Please update the Excalidraw Plugin to version 2.20.2 or higher.");
+  return;
+}
+
+let selectedElements = ea.getViewSelectedElements();
+const selectedTextElement = ea.getBoundTextElement(selectedElements, true)?.sceneElement;
+
+if ((!selectedTextElement && selectedElements.length !== 1) || selectedElements[0].type === "arrow") {
     new Notice("Select a single element that is not an arrow and not a frame");
     return;
 }
+
+// Detect Mindmap Builder nodes
+const startNode = selectedElements[0];
+const isMindMap = typeof startNode.customData?.growthMode !== "undefined" || typeof startNode.customData?.mindmapOrder !== "undefined";
 
 const visited = new Set(); // Avoiding recursive infinite loops
 delete window.ewm;
@@ -15260,9 +15250,8 @@ function getImageLink(f) {
 }
 
 function getBoundText(el) {
-    const textId = el.boundElements?.find(x => x.type === "text")?.id;
-    const text = ea.getViewElements().find(x => x.id === textId)?.originalText;
-    return text ? text + "\n" : "";
+  const text = ea.getBoundTextElement(el,true)?.sceneElement?.rawText;
+  return text ? text + "\n" : "";
 }
 
 async function getSectionText(file, section) {
@@ -15323,8 +15312,9 @@ async function getBlockText(file, blockref) {
 }
 
 async function getElementText(el) {
-    if (el.type === "text") {
-        return el.originalText;
+    const maybeTextEl = ea.getBoundTextElement(el,true)?.sceneElement;
+    if (maybeTextEl) {
+        return maybeTextEl.rawText;
     }
     if (el.type === "image") {
       const f = ea.getViewFileForImageElement(el);
@@ -15362,16 +15352,55 @@ async function crawl(el, level, isFirst = false) {
     visited.add(el.id);
 
     let result = await getElementText(el) + "\n";
+    let itemsToTraverse = [];
 
-    // Process all arrows connected to this element
-    const boundElementsData = el.boundElements.filter(x => x.type === "arrow");
-    const isFork = boundElementsData.length > (isFirst ? 1 : 2);
+    if (isMindMap) {
+        // --- Mindmap Traversal Logic ---
+        // 1. Get all elements to lookup connections
+        const allElements = ea.getViewElements();
+        
+        // 2. Find outgoing arrows marked as branches
+        const branchArrows = allElements.filter(a =>
+            a.type === "arrow" &&
+            a.customData?.isBranch &&
+            a.startBinding?.elementId === el.id // Only traverse downwards (Parent -> Child)
+        );
+
+        // 3. Map arrows to their target nodes for sorting
+        const childNodes = branchArrows.map(arrow => {
+            const node = allElements.find(e => e.id === arrow.endBinding?.elementId);
+            return { arrow, nextEl: node };
+        }).filter(x => x.nextEl); // Safety check
+
+        // 4. Sort by mindmapOrder (visual order)
+        childNodes.sort((a, b) => {
+             const orderA = a.nextEl.customData?.mindmapOrder ?? 0;
+             const orderB = b.nextEl.customData?.mindmapOrder ?? 0;
+             return orderA - orderB;
+        });
+
+        itemsToTraverse = childNodes;
+
+    } else {
+        // --- Standard Traversal Logic (Legacy) ---
+        // Use boundElements (incoming and outgoing) in creation order
+        const boundElementsData = el.boundElements?.filter(x => x.type === "arrow") || [];
+        
+        itemsToTraverse = boundElementsData.map(bindingData => {
+            const arrow = ea.getViewElements().find(x => x.id === bindingData.id);
+            if (!arrow) return null;
+            const nextEl = getNextElementFollowingArrow(el, arrow);
+            return { arrow, nextEl };
+        }).filter(x => x && x.nextEl);
+    }
+
+    // Determine indentation trigger (Fork)
+    const isFork = itemsToTraverse.length > (isFirst ? 1 : 2);
     if(isFork) level++;
     
-    for(const bindingData of boundElementsData) {
-        const arrow = ea.getViewElements().find(x=> x.id === bindingData.id);
-        const nextEl = getNextElementFollowingArrow(el, arrow);
-        if (nextEl && !visited.has(nextEl.id)) {
+    // Recursive Traversal
+    for(const {arrow, nextEl} of itemsToTraverse) {
+        if (!visited.has(nextEl.id)) {
             if(isFork) result += `\n${"#".repeat(level)} `;
             const arrowLabel = getBoundText(arrow);
             if (arrowLabel) {
@@ -20499,6 +20528,11 @@ let fillSweep = getVal(K_FILL_SWEEP, false);
 let editingNodeId = null;
 let mostRecentlySelectedNodeID = null;
 
+// Undo/Redo tracking
+let currentTransactionAccumulator = 0;
+let lastCommittedTransaction = null; // { steps: number, version: number }
+let redoAvailable = null; // { steps: number, version: number } - state after a batched undo
+
 // -----------------------------------------------------------
 // Cleanup an migration of old settings values
 // -----------------------------------------------------------
@@ -20642,6 +20676,10 @@ const ACTION_HIDE = "Dock & hide";
 const ACTION_REARRANGE = "Rearrange Map";
 const ACTION_TOGGLE_FLOATING_EXTRAS = "Toggle Floating Extra Buttons";
 
+const ACTION_UNDO = "Undo";
+const ACTION_REDO_Z = "Redo (Ctrl-Shift-Z)";
+const ACTION_REDO_Y = "Redo (Ctrl-Y)";
+
 const ACTION_LABEL_KEYS = {
   [ACTION_ADD]: "ACTION_LABEL_ADD",
   [ACTION_ADD_SIBLING_AFTER]: "ACTION_LABEL_ADD_SIBLING_AFTER",
@@ -20671,6 +20709,9 @@ const ACTION_LABEL_KEYS = {
   [ACTION_HIDE]: "ACTION_LABEL_HIDE",
   [ACTION_REARRANGE]: "ACTION_LABEL_REARRANGE",
   [ACTION_TOGGLE_FLOATING_EXTRAS]: "TOOLTIP_TOGGLE_FLOATING_EXTRAS",
+  [ACTION_UNDO]: "Undo",
+  [ACTION_REDO_Z]: "Redo",
+  [ACTION_REDO_Y]: "Redo"
 };
 
 const getActionLabel = (action) => t(ACTION_LABEL_KEYS[action] ?? action);
@@ -20722,6 +20763,11 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_FOLD, code: "Digit1", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_FOLD_L1, code: "Digit2", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_FOLD_ALL, code: "Digit3", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+
+  // Undo / Redo
+  { action: ACTION_UNDO, key: "z", modifiers: ["Mod"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true },
+  { action: ACTION_REDO_Z, key: "z", modifiers: ["Mod", "Shift"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true },
+  { action: ACTION_REDO_Y, key: "y", modifiers: ["Mod"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true },
 ];
 
 // Load hotkeys from settings or use default
@@ -20925,8 +20971,28 @@ const addElementsToView = async (
   } = {}
 ) => {
   if (!ea.targetView) return;
+
+  // Track transaction steps for Undo/Redo
+  if (["EVENTUALLY", "IMMEDIATELY"].includes(captureUpdate)) {
+    currentTransactionAccumulator++;
+  }
+
   await ea.addElementsToView(repositionToCursor, save, newElementsOnTop, shouldRestoreElements, captureUpdate);
   ea.clear();
+
+  // Commit transaction logic
+  if (captureUpdate === "IMMEDIATELY") {
+    // We only record the undo checkpoint when a visual commit happens
+    const currentSceneVersion = ExcalidrawLib.getSceneVersion(api().getSceneElements());
+    lastCommittedTransaction = {
+      steps: currentTransactionAccumulator,
+      version: currentSceneVersion
+    };
+    // Reset accumulator and clear redo availability since we pushed a new action
+    currentTransactionAccumulator = 0;
+    redoAvailable = null;
+  }
+
   if (shouldSleep) await sleep(10); // Allow Excalidraw to process the new elements
 }
 
@@ -26639,6 +26705,7 @@ const renderBody = (contentEl) => {
   };
 
   userHotkeys.forEach((h, index) => {
+    if (h.hidden) return;
     const setting = new ea.obsidian.Setting(hkContainer)
       .setName(getActionLabel(h.action));
     setting.settingEl.style.paddingRight = "0";
@@ -26965,6 +27032,10 @@ const getActionFromEvent = (e) => {
  * @param {KeyboardEvent} e 
  */
 const handleKeydown = (e) => {
+  // Fix for IME (Korean, Chinese, Japanese, etc.) composition issues
+  // Prevents "Enter" from triggering actions when it's just confirming a character selection
+  if (e.isComposing || e.keyCode === 229) return;
+
   if (isRecordingHotkey) return;
   if (!ea.targetView || !ea.targetView.leaf.isVisible()) return;
 
@@ -27269,6 +27340,49 @@ const performAction = async (action, event) => {
         }
       }
       updateUI();
+      break;
+
+    case ACTION_UNDO:
+      if (ea.targetView) {
+        const currentVer = ExcalidrawLib.getSceneVersion(api().getSceneElements());
+        if (lastCommittedTransaction && currentVer === lastCommittedTransaction.version && lastCommittedTransaction.steps > 0) {
+          for(let i=0; i<=lastCommittedTransaction.steps; i++) { // <= to include the final select step
+            api().history.undo();
+          }
+          const afterUndoVer = ExcalidrawLib.getSceneVersion(api().getSceneElements());
+          redoAvailable = {
+            steps: lastCommittedTransaction.steps,
+            version: afterUndoVer
+          };
+          lastCommittedTransaction = null;
+        } else {
+          api().history.undo();
+          lastCommittedTransaction = null;
+          redoAvailable = null;
+        }
+      }
+      break;
+
+    case ACTION_REDO_Z:
+    case ACTION_REDO_Y:
+      if (ea.targetView) {
+        const currentVer = ExcalidrawLib.getSceneVersion(api().getSceneElements());
+        if (redoAvailable && currentVer === redoAvailable.version && redoAvailable.steps > 0) {
+          for(let i=0; i<=redoAvailable.steps; i++) {
+             api().history.redo();
+          }
+          const afterRedoVer = ExcalidrawLib.getSceneVersion(api().getSceneElements());
+          lastCommittedTransaction = {
+            steps: redoAvailable.steps,
+            version: afterRedoVer
+          };
+          redoAvailable = null;
+        } else {
+          api().history.redo();
+          lastCommittedTransaction = null;
+          redoAvailable = null;
+        }
+      }
       break;
   }
 };
