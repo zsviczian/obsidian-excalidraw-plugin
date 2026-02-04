@@ -18,7 +18,7 @@ export default {
   ZIP_CURRENT_FILE: "壓縮當前 Excalidraw 檔案",
   PUBLISH_SVG_CHECK: "Obsidian Publish：搜尋過期的 SVG 和 PNG 匯出檔案",
   EMBEDDABLE_PROPERTIES: "Embeddable 元素設定",
-  EMBEDDABLE_RELATIVE_ZOOM: "使元素的縮放等級等於當前繪圖的縮放等級",
+  EMBEDDABLE_RELATIVE_ZOOM: "使元素的縮放級別等於當前繪圖的縮放級別",
   OPEN_IMAGE_SOURCE: "開啟 Excalidraw 繪圖",
   INSTALL_SCRIPT: "安裝此指令碼",
   UPDATE_SCRIPT: "有可用更新 - 點選安裝",
@@ -30,7 +30,7 @@ export default {
     "指令碼已是最新 - 點選重新安裝",
   OPEN_AS_EXCALIDRAW: "開啟為 Excalidraw 繪圖",
   TOGGLE_MODE: "在 Excalidraw 和 Markdown 模式之間切換",
-  DUPLICATE_IMAGE: "複製選定的影像，並分配一個不同的影像 ID",
+  DUPLICATE_IMAGE: "複製所選影像，並分配一個不同的影像 ID",
   CONVERT_NOTE_TO_EXCALIDRAW: "轉換：空白 Markdown 文件 => Excalidraw 繪圖",
   CONVERT_EXCALIDRAW: "轉換： *.excalidraw => *.md",
   CREATE_NEW: "新建繪圖檔案",
@@ -93,6 +93,8 @@ export default {
   CONVERT_CARD_TO_FILE: "將“背景筆記”卡片儲存到檔案",
   ERROR_TRY_AGAIN: "請重試。",
   PASTE_CODEBLOCK: "貼上程式碼塊",
+  INVERT_IMAGES_IN_DARK_MODE: "深色主題下反轉顏色",
+  DO_NOT_INVERT_IMAGES_IN_DARK_MODE: "取消深色主題下反轉顏色",
   INSERT_LATEX:
     `插入 LaTeX 公式到當前繪圖中`,
   ENTER_LATEX: "輸入 LaTeX 公式",
@@ -298,7 +300,7 @@ export default {
   SCRIPT_FOLDER_DESC:
     "此資料夾用於存放 Excalidraw 自動化指令碼。" +
     "您可以在 Obsidian 命令面板中執行這些指令碼，" +
-    "還可以為喜歡的指令碼分配快捷鍵，就像為其他 Obsidian 命令分配快捷鍵一樣。<br>" +
+    "還可以為喜歡的指令碼分配熱鍵，就像為其他 Obsidian 命令分配熱鍵一樣。<br>" +
     "該項不能設為倉庫根目錄。",
   AI_HEAD: "AI（實驗性）",
   AI_DESC: `OpenAI GPT API 的設定。` +
@@ -315,17 +317,16 @@ export default {
   AI_OPENAI_DEFAULT_MODEL_DESC:
     "使用哪個 AI 模型來生成文字。請填寫有效的 OpenAI 模型名稱。" +
     "您可訪問 <a href='https://platform.openai.com/docs/models'>OpenAI 網站</a> 瞭解更多模型資訊。",
-  AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "gpt-3.5-turbo-1106",
+  AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "gpt-5-mini",
   AI_OPENAI_DEFAULT_MAX_TOKENS_NAME: "最大 token 數",
   AI_OPENAI_DEFAULT_MAX_TOKENS_DESC:
-    "API 生成的最大 token 數。設定為 0 以忽略 max_tokens 欄位（適用於不支援該引數的模型，如 GPT-5）。",
+    "API 響應中生成的最大 token 數。設定為 0 以忽略 max_tokens 欄位（適用於不支援該引數的模型，如 GPT-5）。",
   AI_OPENAI_DEFAULT_IMAGE_MODEL_NAME: "預設的圖片 AI 模型",
   AI_OPENAI_DEFAULT_IMAGE_MODEL_DESC:
-    "使用哪個 AI 模型來生成圖片。圖生圖會強制使用 dall-e-2 模型，" +
-    "因為目前只有該模型支援 Image editing and variations。" +
+    "使用哪個 AI 模型來生成圖片。圖生圖目前只有 dall-e-2 和 gpt-image-1 模型支援 Image editing and variations。" +
     "請填寫有效的 OpenAI 模型名稱。" +
     "您可訪問 <a href='https://platform.openai.com/docs/models'>OpenAI 網站</a> 瞭解更多模型資訊。",
-  AI_OPENAI_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "dall-e-3",
+  AI_OPENAI_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "gpt-image-1",
   AI_OPENAI_DEFAULT_VISION_MODEL_NAME: "預設的 AI 視覺模型",
   AI_OPENAI_DEFAULT_VISION_MODEL_DESC:
     "根據文字生成圖片時，使用哪個 AI 視覺模型。請填寫有效的 OpenAI 模型名稱。" +
@@ -335,7 +336,7 @@ export default {
     "預設的 OpenAI API URL。請填寫有效的 OpenAI API URL。" +
     "Excalidraw 會透過該 URL 傳送 API 請求給 OpenAI。我沒有對該項做任何錯誤處理，請謹慎修改。",
   AI_OPENAI_DEFAULT_IMAGE_API_URL_NAME: "OpenAI 圖片生成 API URL",
-  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "輸入預設 AI 模型名稱，如 gpt-4o",
+  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "輸入預設 AI 模型名稱，如 gpt-5-mini",
   SAVING_HEAD: "儲存",
   SAVING_DESC: "包括：壓縮，自動儲存的時間間隔，檔案的命名格式和副檔名等。",
   COMPRESS_NAME: "壓縮 Excalidraw JSON",
@@ -688,7 +689,7 @@ export default {
   EMBED_THEME_BACKGROUND: "影像的主題和背景色",
   EMBED_IMAGE_CACHE_NAME: "為嵌入到 Markdown 文件中的繪圖建立預覽圖快取",
   EMBED_IMAGE_CACHE_DESC: "可提高下次嵌入的速度。" +
-    "但如果繪圖包含子繪圖，（當子繪圖改變時）您需要開啟父繪圖並手動儲存，才能夠更新預覽圖。",
+    "但如果繪圖包含子繪圖，（當子繪圖改變時）預覽圖不會更新，直到您開啟繪圖並手動儲存。",
   SCENE_IMAGE_CACHE_NAME: "快取場景中巢狀的繪圖",
   SCENE_IMAGE_CACHE_DESC: "Excalidraw 將智慧地嘗試識別巢狀的繪圖的子元素是否發生變化，並更新快取。" +
     "這將加快渲染過程，特別是在您的場景中有深度巢狀的繪圖時。<br>" +
@@ -701,7 +702,7 @@ export default {
   EMBED_REUSE_EXPORTED_IMAGE_DESC:
     "該項與下方“匯出”部分“匯出設定”中的 <a href='#"+TAG_AUTOEXPORT+"'>自動匯出 SVG/PNG 副本</a> 選項配合使用。如果嵌入到 Markdown 文件中的繪圖檔案存在同名的 SVG/PNG 副本，則將其作為預覽圖，而不再重新生成。<br>" +
     "該項能夠提高 Markdown 文件的開啟速度，尤其是當嵌入到 Markdown 文件中的繪圖檔案中含有大量圖片或 MD-Embed 時。" +
-    "但是，該項也可能導致預覽圖無法即時反應繪圖檔案或者 Obsidian 主題的修改。<br>" +
+    "但是，該項也可能導致預覽圖無法立即響應繪圖檔案或者 Obsidian 主題的修改。<br>" +
     "該項僅作用於嵌入到 Markdown 文件中的繪圖。" +
     "該項無法提升繪圖檔案的開啟速度。詳見 <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>此說明</a>。",
   /*EMBED_PREVIEW_SVG_NAME: "生成 SVG 格式的預覽圖",
@@ -720,7 +721,7 @@ export default {
   EMBED_WIDTH_NAME: "預覽圖的預設寬度",
   EMBED_WIDTH_DESC:
     "嵌入到 Markdown 文件中的繪圖的預覽圖的預設寬度。該項也適用於滑鼠懸停時浮現的預覽圖。<br>" +
-    "可為某個要嵌入到 Markdown 文件中的繪圖檔案單獨設定，" +
+    "可為某個要嵌入到 Markdown 文件中的繪圖單獨設定，" +
     "方法是修改相應的內部連結格式為如 <code>![[drawing.excalidraw|100]]</code> 或 <code>[[drawing.excalidraw|100x100]]</code>。",
   EMBED_HEIGHT_NAME: "預覽圖的預設高度",
   EMBED_HEIGHT_DESC:
@@ -1026,7 +1027,7 @@ export default {
   ES_FILENAME_VISIBLE: "顯示頁內標題",
   ES_BACKGROUND_HEAD: "背景色",
   ES_BACKGROUND_DESC_INFO: "點選此處檢視更多顏色資訊",
-  ES_BACKGROUND_DESC_DETAIL: "背景色僅影響預覽模式的 MD-Embeddable。在編輯模式，它會根據場景（透過筆記屬性設定）或外掛設定，遵循 Obsidian 的深色/淺色主題。背景色有兩層：元素背景色（下層顏色）和上層顏色。選擇“匹配元素”表示兩層都遵循元素背景色。選擇“匹配繪圖”或特定背景色不會改變元素背景色。設定不透明度（如 50%）會將繪圖或選定的顏色與元素背景色混合。要移除元素背景色，可以在 Excalidraw 的元素屬性編輯器中將元素背景色設定為透明，這樣只有上層顏色生效。",
+  ES_BACKGROUND_DESC_DETAIL: "背景色僅影響預覽模式的 MD-Embeddable。在編輯模式，它會根據場景（透過筆記屬性設定）或外掛設定，遵循 Obsidian 的深色/淺色主題。背景色有兩層：元素背景色（下層顏色）和上層顏色。選擇“匹配元素”表示兩層都遵循元素背景色。選擇“匹配繪圖”或特定背景色不會改變元素背景色。設定不透明度（如 50%）會將繪圖或所選顏色與元素背景色混合。要移除元素背景色，可以在 Excalidraw 的元素屬性編輯器中將元素背景色設定為透明，這樣只有上層顏色生效。",
   ES_BACKGROUND_MATCH_ELEMENT: "匹配元素背景色",
   ES_BACKGROUND_MATCH_CANVAS: "匹配繪圖背景色",
   ES_BACKGROUND_COLOR: "背景色",
@@ -1037,7 +1038,7 @@ export default {
   ES_BORDER_OPACITY: "邊框不透明度",
   ES_EMBEDDABLE_SETTINGS: "MD-Embeddable 設定",
   ES_USE_OBSIDIAN_DEFAULTS: "使用 Obsidian 預設設定",
-  ES_ZOOM_100_RELATIVE_DESC: "使元素的縮放等級等於當前繪圖的縮放等級",
+  ES_ZOOM_100_RELATIVE_DESC: "使元素的縮放級別等於當前繪圖的縮放級別",
   ES_ZOOM_100: "Relative 100%",
 
   //Prompts.ts
