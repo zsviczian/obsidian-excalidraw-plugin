@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-02-04T21:21:39.803Z
+Generated on: 2026-02-05T21:00:50.232Z
 
 ---
 
@@ -2918,7 +2918,7 @@ const excalidrawTemplates = ea.getListOfTemplateFiles();
 if(typeof window.ExcalidrawDeconstructElements === "undefined") {
   window.ExcalidrawDeconstructElements = {
     openDeconstructedImage: true,
-    templatePath: excalidrawTemplates?.[0].path??""
+    templatePath: excalidrawTemplates?.[0]?.path??""
   };
 }
 
@@ -11913,6 +11913,7 @@ const initializeRootCustomData = (nodeId) => {
     fillSweep,
     branchScale,
     baseStrokeWidth,
+    layoutSettings: JSON.parse(JSON.stringify(layoutSettings)),
   });
 };
 
@@ -14099,6 +14100,16 @@ const updateUI = (sel) => {
       if (fillSweepToggle) fillSweepToggle.setValue(fillSweep);
     }
 
+    const mapLayoutSettings = cd?.layoutSettings;
+    if (mapLayoutSettings && typeof mapLayoutSettings === "object") {
+      layoutSettings = { ...layoutSettings, ...mapLayoutSettings };
+    } else {
+      const globalDefaults = getVal(K_LAYOUT, {});
+      Object.keys(LAYOUT_METADATA).forEach(k => {
+          layoutSettings[k] = globalDefaults[k] !== undefined ? globalDefaults[k] : LAYOUT_METADATA[k].def;
+      });
+    }
+
     if (fillSweepToggleSetting && fillSweepToggleSetting.settingEl) {
       const mode = cd?.growthMode || currentModalGrowthMode;
       fillSweepToggleSetting.settingEl.style.display = mode === "Radial" ? "" : "none";
@@ -14170,6 +14181,33 @@ const commitEdit = async () => {
   const textInput = inputEl.value;
   const ontologyInput = ontologyEl.value;
   
+  // Retrieve current text representation (raw, short path for images) to compare against input
+  const currentText = getTextFromNode(all, visualNode, true, true);
+  
+  // Find arrow pointing TO this node to check current ontology
+  // We need this for diffing, and potentially for updating later
+  const incomingArrow = all.find(
+    (a) => a.type === "arrow" && 
+    a.customData?.isBranch && 
+    a.endBinding?.elementId === targetNode.id // Target node might be container
+  );
+  
+  const currentOntology = incomingArrow 
+    ? (ea.getBoundTextElement(incomingArrow, true)?.sceneElement?.rawText || "")
+    : "";
+
+  const textChanged = textInput !== currentText;
+  const ontologyChanged = ontologyInput !== currentOntology;
+
+  // If nothing changed, exit early without modifying scene
+  if (!textChanged && !ontologyChanged) {
+    editingNodeId = null;
+    inputEl.value = "";
+    ontologyEl.value = "";
+    updateUI();
+    return;
+  }
+
   const imageInfo = parseImageInput(textInput);
   const embeddableUrl = parseEmbeddableInput(textInput, imageInfo);
 
@@ -14179,9 +14217,15 @@ const commitEdit = async () => {
 
   // Check for type conversion (e.g. Text -> Image) or non-text update
   const isTypeChange = (textEl && newType !== "text") || (!textEl && newType !== targetNode.type);
-  const isNonTextUpdate = !textEl && newType === targetNode.type;
+  
+  // Only consider it a non-text update (which requires recreation) if the text/path actually changed.
+  // If only ontology changed on an image node, we treat it as a standard update (else block).
+  const isNonTextUpdate = !textEl && newType === targetNode.type && textChanged;
 
   if (isTypeChange || isNonTextUpdate) {
+    // ---------------------------------------------------------
+    // Path A: Recreate Element (Type change or Image path change)
+    // ---------------------------------------------------------
     
     // 1. Calculate center position
     const cx = visualNode.x + visualNode.width / 2;
@@ -14226,8 +14270,6 @@ const commitEdit = async () => {
       ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)]; 
       ea.style.backgroundColor = "transparent";
       ea.style.strokeWidth = getStrokeWidthForDepth(depth);
-      const incomingArrow = all.find (el => 
-        el.type === "arrow" && visualNode.id === el.endBinding?.elementId);
       if (incomingArrow) {
         ea.style.strokeColor = incomingArrow.strokeColor;
       }
@@ -14250,7 +14292,7 @@ const commitEdit = async () => {
       "isFolded", "foldIndicatorId", "foldState", "boundaryId",
       "fontsizeScale", "multicolor", "boxChildren", "roundedCorners", 
       "maxWrapWidth", "isSolidArrow", "centerText", "arrowType",
-      "fillSweep", "branchScale", "baseStrokeWidth"
+      "fillSweep", "branchScale", "baseStrokeWidth", "layoutSettings"
     ];
     const dataToCopy = {};
     keysToCopy.forEach(k => {
@@ -14297,10 +14339,6 @@ const commitEdit = async () => {
             const dy = absY - cy;
             const newAbsX = cx + dx * ratioX;
             const newAbsY = cy + dy * ratioY;
-            // Shift whole arrow if start moves? No, just the point relative to arrow.x
-            // But dragging start point changes arrow.x/y usually. 
-            // Simplest: Shift arrow.x/y, adjust all points back? 
-            // Or just adjust points[0].
             eaArrow.points[0] = [eaArrow.points[0][0] + (newAbsX - absX), eaArrow.points[0][1] + (newAbsY - absY)];
           }
         }
@@ -14345,7 +14383,7 @@ const commitEdit = async () => {
     }
 
     await addElementsToView({
-      shouldSleep: isTypeChange && (newType === "image"), //sleep if loading image
+      shouldSleep: ea.getElements().some(el => el.type === "image"), //sleep if loading image
       captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
     });
     
@@ -14360,58 +14398,64 @@ const commitEdit = async () => {
       }
     }
 
-  } else if (textEl) {
-    // Normal text update...
-    ea.copyViewElementsToEAforEditing([textEl]);
-    const eaEl = ea.getElement(textEl.id);
-    eaEl.originalText = textInput;
-    eaEl.rawText = textInput;
-    ea.style.fontFamily = eaEl.fontFamily;
-    ea.style.fontSize = eaEl.fontSize;
+  } else {
+    // ---------------------------------------------------------
+    // Path B: Modify Existing Element
+    // ---------------------------------------------------------
 
-    if (eaEl.width <= maxWidth) {
-      const textWidth = ea.measureText(renderLinksToText(textInput)).width;
-      const shouldWrap = textWidth > maxWidth;
-      if (!shouldWrap) {
-        eaEl.autoResize = true;
-        eaEl.width = Math.ceil(textWidth);
-      } else {
-        eaEl.autoResize = false;
-        const res = getAdjustedMaxWidth(textInput, maxWidth);
-        eaEl.width = res.width;
-        eaEl.text = res.wrappedText;
-      }
-    }
-
-    ea.refreshTextElementSize(eaEl.id);
-    
-    // --- Update Ontology (Incoming Arrow) ---
-    // We need to fetch the arrow that points TO this node
-    const incomingArrow = all.find(
-      (a) => a.type === "arrow" && 
-      a.customData?.isBranch && 
-      a.endBinding?.elementId === targetNode.id // Target node might be container
-    );
-    
-    if (incomingArrow) {
+    // 1. Update Ontology (Incoming Arrow)
+    // Only perform if ontology has changed and arrow exists
+    if (ontologyChanged && incomingArrow) {
       ea.copyViewElementsToEAforEditing([incomingArrow]);
       addUpdateArrowLabel(ea.getElement(incomingArrow.id), ontologyInput);
     }
+    
+    // 2. Update Text Element Properties
+    // Only perform if text has changed and it is a Text element (images/embeddables handled in Path A if content changes)
+    if (textChanged && textEl) {
+      ea.copyViewElementsToEAforEditing([textEl]);
+      const eaEl = ea.getElement(textEl.id);
+      eaEl.originalText = textInput;
+      eaEl.rawText = textInput;
+      // Refresh family/size in case global settings changed, though this is optional
+      ea.style.fontFamily = eaEl.fontFamily;
+      ea.style.fontSize = eaEl.fontSize;
 
+      if (eaEl.width <= maxWidth) {
+        const textWidth = ea.measureText(renderLinksToText(textInput)).width;
+        const shouldWrap = textWidth > maxWidth;
+        if (!shouldWrap) {
+          eaEl.autoResize = true;
+          eaEl.width = Math.ceil(textWidth);
+        } else {
+          eaEl.autoResize = false;
+          const res = getAdjustedMaxWidth(textInput, maxWidth);
+          eaEl.width = res.width;
+          eaEl.text = res.wrappedText;
+        }
+      }
+
+      ea.refreshTextElementSize(eaEl.id);
+    }
+
+    // 3. Save Changes
     const hierarchyNode = targetNode.containerId ? all.find(el => el.id === targetNode.containerId) : textEl;
+    
     await addElementsToView({
-      shouldSleep: true,
+      shouldSleep: ea.getElements().some(el => el.type === "image"),
       captureUpdate: !hierarchyNode || autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
     }); //in case text was changed to image
 
-    if (textEl.containerId) {
+    // 4. Update Container Size (if text changed and container exists)
+    if (textChanged && textEl && textEl.containerId) {
       const container = ea.getViewElements().find(el => el.id === textEl.containerId);
       if (container) {
         api().updateContainerSize([container]);
       }
     }
 
-    if (hierarchyNode && !autoLayoutDisabled) {
+    // 5. Trigger Layout (only if text changed, as that affects dimensions)
+    if (textChanged && hierarchyNode && !autoLayoutDisabled) {
       const info = getHierarchy(hierarchyNode, ea.getViewElements());
       await triggerGlobalLayout(info.rootId);
     }
@@ -15170,7 +15214,7 @@ const renderBody = (contentEl) => {
         autoLayoutDisabled = !v;
         if (disableTabEvents) return;
 
-        updateRootNodeCustomData({ autoLayoutDisabled: enabled });
+        updateRootNodeCustomData({ autoLayoutDisabled });
       }),
     )
     .addExtraButton(btn=> btn
@@ -15181,6 +15225,7 @@ const renderBody = (contentEl) => {
           layoutSettings = newSettings;
           setVal(K_LAYOUT, layoutSettings, true);
           dirty = true;
+          updateRootNodeCustomData({ layoutSettings: newSettings });
           if(!autoLayoutDisabled) refreshMapLayout();
         });
         modal.open();

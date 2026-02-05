@@ -3321,6 +3321,7 @@ const initializeRootCustomData = (nodeId) => {
     fillSweep,
     branchScale,
     baseStrokeWidth,
+    layoutSettings: JSON.parse(JSON.stringify(layoutSettings)),
   });
 };
 
@@ -5507,6 +5508,16 @@ const updateUI = (sel) => {
       if (fillSweepToggle) fillSweepToggle.setValue(fillSweep);
     }
 
+    const mapLayoutSettings = cd?.layoutSettings;
+    if (mapLayoutSettings && typeof mapLayoutSettings === "object") {
+      layoutSettings = { ...layoutSettings, ...mapLayoutSettings };
+    } else {
+      const globalDefaults = getVal(K_LAYOUT, {});
+      Object.keys(LAYOUT_METADATA).forEach(k => {
+          layoutSettings[k] = globalDefaults[k] !== undefined ? globalDefaults[k] : LAYOUT_METADATA[k].def;
+      });
+    }
+
     if (fillSweepToggleSetting && fillSweepToggleSetting.settingEl) {
       const mode = cd?.growthMode || currentModalGrowthMode;
       fillSweepToggleSetting.settingEl.style.display = mode === "Radial" ? "" : "none";
@@ -5689,7 +5700,7 @@ const commitEdit = async () => {
       "isFolded", "foldIndicatorId", "foldState", "boundaryId",
       "fontsizeScale", "multicolor", "boxChildren", "roundedCorners", 
       "maxWrapWidth", "isSolidArrow", "centerText", "arrowType",
-      "fillSweep", "branchScale", "baseStrokeWidth"
+      "fillSweep", "branchScale", "baseStrokeWidth", "layoutSettings"
     ];
     const dataToCopy = {};
     keysToCopy.forEach(k => {
@@ -6622,6 +6633,7 @@ const renderBody = (contentEl) => {
           layoutSettings = newSettings;
           setVal(K_LAYOUT, layoutSettings, true);
           dirty = true;
+          updateRootNodeCustomData({ layoutSettings: newSettings });
           if(!autoLayoutDisabled) refreshMapLayout();
         });
         modal.open();
