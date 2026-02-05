@@ -21,7 +21,7 @@ const excalidrawTemplates = ea.getListOfTemplateFiles();
 if(typeof window.ExcalidrawDeconstructElements === "undefined") {
   window.ExcalidrawDeconstructElements = {
     openDeconstructedImage: true,
-    templatePath: excalidrawTemplates?.[0].path??""
+    templatePath: excalidrawTemplates?.[0]?.path??""
   };
 }
 
