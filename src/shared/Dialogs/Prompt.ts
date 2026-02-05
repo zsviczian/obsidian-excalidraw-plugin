@@ -25,10 +25,11 @@ import { ScriptEngine } from "../Scripts";
 import { openExternalLink, openTagSearch, parseObsidianLink } from "src/utils/excalidrawViewUtils";
 import { ButtonDefinition } from "src/types/promptTypes";
 import { EditorView, keymap } from "@codemirror/view";
-import { history } from "@codemirror/commands";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { parser } from "./math-only";
 import { LRLanguage } from "@codemirror/language";
 import { editorLivePreviewField } from "obsidian";
+import { Extension } from "@codemirror/state";
 
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;
@@ -121,41 +122,39 @@ export class LaTexPrompt extends Modal {
   }
 
   private display(value : string, container : HTMLDivElement) {
+
+    const minimalSetup = [
+      history(),
+      keymap.of([
+        ...defaultKeymap,
+        ...historyKeymap,
+      ])
+    ]
+    const extensions: Extension[] = [
+      // overriding default "Mod-Enter" from defaultKeymap (so first in array)
+      keymap.of([{
+        key:"Mod-Enter", 
+        run : () => {this.submitCallback(); return true;}
+      }]),
+      minimalSetup
+    ]
     if (this.latexsSuitePlugin) {
       // the language put eveything in a "math" node
       // surrounded by "math-begin" and "math-end" 
       // so that latex-suite always thinks we are in mathmode
       const language = LRLanguage.define({parser:parser});
-      const extensions = [
+      extensions.push([
         language, 
-        keymap.of([{
-          key:"Mod-Enter", 
-          run : () => {this.submitCallback(); return true;}
-        }]),
-        history(),
         editorLivePreviewField.init(() => false),
-        ... this.latexsSuitePlugin.editorExtensions
-      ];
-
-      this.editorView = new EditorView({ 
-        doc: value, 
-        parent : container,
-        extensions : extensions,
-      });
-    } else {
-      const extensions = [
-        keymap.of([{
-          key:"Mod-Enter", 
-          run : () => {this.submitCallback(); return true;}
-        }]),
-        history(),
-      ];
-      this.editorView = new EditorView({ 
-        doc: value, 
-        extensions : extensions,
-        parent : container,
-      });
+        this.latexsSuitePlugin.editorExtensions
+      ]);
     }
+
+    this.editorView = new EditorView({ 
+      doc: value, 
+      extensions : extensions,
+      parent : container,
+    });
 
     const buttonBarContainer: HTMLDivElement = container.createDiv();
     buttonBarContainer.addClass(`excalidraw-prompt-buttonbar-bottom`);
