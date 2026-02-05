@@ -6611,7 +6611,7 @@ const renderBody = (contentEl) => {
         autoLayoutDisabled = !v;
         if (disableTabEvents) return;
 
-        updateRootNodeCustomData({ autoLayoutDisabled: enabled });
+        updateRootNodeCustomData({ autoLayoutDisabled });
       }),
     )
     .addExtraButton(btn=> btn
