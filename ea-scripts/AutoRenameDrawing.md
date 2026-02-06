@@ -1,6 +1,11 @@
+```javascript
 /*
-#exclude
-```js*/
+name: AutoRenameDrawing
+description: Automatically renames a new drawing to the name of the PDF file after import the PDF.
+author: anicev1
+type: action
+jpg: https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/AutoRenameDrawing.png
+*/
 
 // --- SETUP ---
 if (window.pdfRenameWatcher) clearInterval(window.pdfRenameWatcher);
@@ -109,3 +114,4 @@ window.pdfRenameWatcher = setInterval(async () => {
         }
     }
 }, 1000);
+```
