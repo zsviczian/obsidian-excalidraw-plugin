@@ -53,6 +53,8 @@ When nodes resize (e.g. text edit), the script intelligently re-positions groupe
 
 **/
 
+const { get } = require("http");
+
 /* --- Initialization Logic --- */
 const VERSION = "test";
 
@@ -1246,7 +1248,6 @@ const addElementsToView = async (
     save = false,
     newElementsOnTop = true,
     shouldRestoreElements = true,
-    shouldSleep = false,
     captureUpdate = "IMMEDIATELY",
   } = {}
 ) => {
@@ -1258,6 +1259,7 @@ const addElementsToView = async (
   }
 
   await ea.addElementsToView(repositionToCursor, save, newElementsOnTop, shouldRestoreElements, captureUpdate);
+  const fileIds = new Set(ea.getElements().filter(el => el.fileId).map(el => el.fileId));
   ea.clear();
 
   // Commit transaction logic
@@ -1273,7 +1275,20 @@ const addElementsToView = async (
     redoAvailable = null;
   }
 
-  if (shouldSleep) await sleep(10); // Allow Excalidraw to process the new elements
+  if(fileIds.size === 0) return;
+  const checker = () => {
+    const loadedFiles = api().getFiles();
+    const loadedKeys = Object.keys(loadedFiles).filter(f => loadedFiles[f].dataURL);
+    for (const fileId of fileIds) {
+      if (!loadedKeys.find(f => f.id === fileId)) return false;
+    }
+    return true;
+  }
+  
+  let watchdog = 0;
+  while (!checker() && watchdog++ < 20) {
+    await sleep(15);
+  }
 }
 
 const selectNodeInView = (node) => {
@@ -3672,7 +3687,6 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
   await addElementsToView({
     repositionToCursor: !parent,
     save: hasImage,
-    shouldSleep: hasImage, //to ensure images get properly loaded to excalidraw Files
     captureUpdate: "EVENTUALLY",
   });
 
@@ -3835,12 +3849,15 @@ const getTextFromNode = (all, node, getRaw = false, shortPath = false) => {
     return node.link.startsWith("[[") ? `!${node.link}` : `![](${node.link})`;
   }
   if (node.type === "image") {
+    const embeddedFile = ea.targetView?.excalidrawData?.getFile(node.fileId);    
+    if (!embeddedFile) return "";
+    if (shortPath) {
+      const originalPath = embeddedFile.linkParts?.original;
+      return `![[${originalPath}|${Math.round(node.width)}]]`;
+    }
     const file = ea.getViewFileForImageElement(node);
     if (file) {
-      // We use the full path to avoid ambiguity
-      return shortPath
-        ? `![[${app.metadataCache.fileToLinktext(file,ea.targetView.file.path,true)}]]`
-        : `![[${file.path}|${Math.round(node.width)}]]`;
+      return  `![[${file.path}${embeddedFile.filenameparts?.linkpartReference}|${Math.round(node.width)}]]`;
     }
     return "";
   }
@@ -4385,7 +4402,6 @@ const importTextToMap = async (rawText) => {
 
   await addElementsToView({
     repositionToCursor: !rootSelected,
-    shouldSleep: true,
     captureUpdate: "EVENTUALLY"
   }); // in case there are images in the imported map
 
@@ -5547,10 +5563,19 @@ const registerObsidianHotkeyOverrides = () => {
   };
 };
 
-const focusInputEl = () => {
-  if(!isUndocked && ea.sidepanelTab && !ea.sidepanelTab.isVisible()) {
+const revealInputEl = () => {
+  const undockPreference = getVal(K_UNDOCKED, false);
+  if (undockPreference && !isUndocked) {
+    toggleDock({saveSetting: false});
+    return true;
+  } else if (!undockPreference && !isUndocked && ea.sidepanelTab && !ea.sidepanelTab.isVisible()) {
     ea.sidepanelTab.reveal();
   }
+  return false;
+}
+
+const focusInputEl = () => {
+  revealInputEl();
   setTimeout(() => {
     if(isRecordingHotkey) return;
     const target = isOntologyFocused
@@ -5805,26 +5830,25 @@ const startEditing = () => {
     new Notice(`${t("NOTICE_CANNOT_EDIT_MULTILINE")} ${getActionHotkeyString(ACTION_REARRANGE)}`, 7000);
     return;
   }
+  const didToggle = revealInputEl();
 
-  inputEl.value = text;
-  
-  // Populate Ontology (Arrow Label)
-  // Find incoming arrow
-  const incomingArrow = all.find(
-    (a) => a.type === "arrow" && 
-    a.customData?.isBranch && 
-    a.endBinding?.elementId === sel.id
-  );
-  
-  ontologyEl.value  = ea.getBoundTextElement(incomingArrow, true)?.sceneElement?.rawText || "";
+  setTimeout(() => {
+    inputEl.value = text;
+    
+    // Populate Ontology (Arrow Label)
+    // Find incoming arrow
+    const incomingArrow = all.find(
+      (a) => a.type === "arrow" && 
+      a.customData?.isBranch && 
+      a.endBinding?.elementId === sel.id
+    );
+    
+    ontologyEl.value  = ea.getBoundTextElement(incomingArrow, true)?.sceneElement?.rawText || "";
 
-  editingNodeId = sel.id;
-  updateUI();
-
-  if(!isUndocked && ea.sidepanelTab && !ea.sidepanelTab.isVisible()) {
-    ea.sidepanelTab.reveal();
-  }
-  inputEl.focus();
+    editingNodeId = sel.id;
+    updateUI();
+    inputEl.focus();
+  }, didToggle ? 200 : 0);
 };
 
 const commitEdit = async () => {
@@ -6053,7 +6077,6 @@ const commitEdit = async () => {
     }
 
     await addElementsToView({
-      shouldSleep: ea.getElements().some(el => el.type === "image"), //sleep if loading image
       captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
     });
     
@@ -6112,7 +6135,6 @@ const commitEdit = async () => {
     const hierarchyNode = targetNode.containerId ? all.find(el => el.id === targetNode.containerId) : textEl;
     
     await addElementsToView({
-      shouldSleep: ea.getElements().some(el => el.type === "image"),
       captureUpdate: !hierarchyNode || autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
     }); //in case text was changed to image
 
