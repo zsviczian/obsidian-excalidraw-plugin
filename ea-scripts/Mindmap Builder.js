@@ -52,6 +52,9 @@ When nodes resize (e.g. text edit), the script intelligently re-positions groupe
 - **Key-safe integration**: The suggester implements the `KeyBlocker` interface so the script's own key handlers pause while the suggester is active, preventing shortcut collisions during link insertion.
 
 **/
+
+const { ref } = require("process");
+
 /* --- Initialization Logic --- */
 const VERSION = "test";
 
@@ -268,6 +271,8 @@ const STRINGS = {
     SECTION_DIRECTIONAL: "Directional Layout (Left/Right)",
     SECTION_VISUALS: "Visual Elements",
     SECTION_MANUAL: "Manual Mode Behavior",
+    LAYOUT_RESET: "Reset All to Default",
+    LAYOUT_SAVE: "Save & Close",
     // Radial Strings
     RADIAL_ASPECT_RATIO: "Ellipse Aspect Ratio",
     DESC_RADIAL_ASPECT_RATIO: "Controls the shape. < 1.0 is tall/narrow (0.7 = portrait). 1.0 is circular. > 1.0 is wide (landscape).",
@@ -2446,8 +2451,8 @@ const addEmbeddableNode = ({px = 0, py = 0, url, depth}) => {
   return embeddableId;
 }
 
-const updateRootNodeCustomData = async (data) => {
-  const sel = getMindmapNodeFromSelection();
+const updateRootNodeCustomData = async (data, sel) => {
+  if (!sel) sel = getMindmapNodeFromSelection();
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
     ea.copyViewElementsToEAforEditing(ea.getViewElements().filter((e) => e.id === info.rootId));
@@ -4888,11 +4893,13 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
 /**
  * Triggers a layout refresh for the tree containing the selected element.
  */
-const refreshMapLayout = async () => {
+const refreshMapLayout = async (sel) => {
   if (!ea.targetView) return;
-  const sel = getMindmapNodeFromSelection();
+  if (autoLayoutDisabled) return;
+  if (!sel) sel = getMindmapNodeFromSelection();
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
+    if (!info || !info.rootId) return;
     await triggerGlobalLayout(info.rootId);
   }
 };
@@ -6093,7 +6100,7 @@ class PaletteManagerModal extends ea.obsidian.Modal {
 // ---------------------------------------------------------------------------
 // 9. Layout Configuration Manager
 // ---------------------------------------------------------------------------
-class LayoutConfigModal extends ea.obsidian.Modal {
+class LayoutConfigModal extends ea.FloatingModal { //obsidian.Modal
   constructor(app, currentSettings, onUpdate) {
     super(app);
     this.settings = JSON.parse(JSON.stringify(currentSettings));
@@ -6213,7 +6220,7 @@ class LayoutConfigModal extends ea.obsidian.Modal {
 
     new ea.obsidian.Setting(footer)
       .addButton(btn => btn
-        .setButtonText("Reset All to Defaults")
+        .setButtonText(t("LAYOUT_RESET"))
         .setWarning()
         .onClick(() => {
           Object.keys(LAYOUT_METADATA).forEach(k => {
@@ -6223,7 +6230,7 @@ class LayoutConfigModal extends ea.obsidian.Modal {
         })
       )
       .addButton(btn => btn
-        .setButtonText("Save & Close")
+        .setButtonText(t("LAYOUT_SAVE"))
         .setCta()
         .onClick(() => {
           this.onUpdate(this.settings);
@@ -6579,12 +6586,8 @@ const renderBody = (contentEl) => {
       if (!ea.targetView) return;
       const sel = getMindmapNodeFromSelection();
       if (!sel) return;
-      const info = getHierarchy(sel, ea.getViewElements());
-      if (!!info && !autoLayoutDisabled) {
-        triggerGlobalLayout(info.rootId);
-      } else {
-        await updateRootNodeCustomData({ growthMode: v });
-      }
+      await updateRootNodeCustomData({ growthMode: v }, sel);
+      await refreshMapLayout(sel);
     });
   });
 
@@ -6603,11 +6606,8 @@ const renderBody = (contentEl) => {
         if (!ea.targetView) return;
         const sel = getMindmapNodeFromSelection();
         if (!sel) return;
-        const info = getHierarchy(sel, ea.getViewElements());
-        await updateRootNodeCustomData({ fillSweep: v });
-        if (!!info && !autoLayoutDisabled) {
-          await triggerGlobalLayout(info.rootId);
-        }
+        await updateRootNodeCustomData({ fillSweep: v }, sel);
+        await refreshMapLayout(sel);
       })
     });
   if (currentModalGrowthMode !== "Radial") {
@@ -6618,23 +6618,25 @@ const renderBody = (contentEl) => {
     .setName(t("LABEL_AUTO_LAYOUT"))
     .addToggle((t) => t
       .setValue(!autoLayoutDisabled)
-      .onChange((v) => {
+      .onChange(async (v) => {
         autoLayoutDisabled = !v;
         if (disableTabEvents) return;
-
-        updateRootNodeCustomData({ autoLayoutDisabled });
+        await updateRootNodeCustomData({ autoLayoutDisabled }, sel);
+        await refreshMapLayout(sel);
       }),
     )
     .addExtraButton(btn=> btn
       .setIcon("pencil-ruler")
       .setTooltip(t("TOOLTIP_CONFIGURE_LAYOUT"))
       .onClick(() => {
-        const modal = new LayoutConfigModal(app, layoutSettings, (newSettings) => {
+        const modal = new LayoutConfigModal(app, layoutSettings, async (newSettings) => {
           layoutSettings = newSettings;
           setVal(K_LAYOUT, layoutSettings, true);
           dirty = true;
-          updateRootNodeCustomData({ layoutSettings: newSettings });
-          if(!autoLayoutDisabled) refreshMapLayout();
+          const sel = getMindmapNodeFromSelection();
+          if (!sel) return;
+          await updateRootNodeCustomData({ layoutSettings: newSettings }, sel);
+          await refreshMapLayout(sel);
         });
         modal.open();
       })
@@ -6648,15 +6650,10 @@ const renderBody = (contentEl) => {
       if (!ea.targetView) return;
       groupBranches = v;
       if (disableTabEvents) return;
-
       setVal(K_GROUP, v);
       dirty = true;
-      const sel = getMindmapNodeFromSelection() || ea.getViewElements().find(el => !getParentNode(el.id, ea.getViewElements()));
-      if (sel) {
-        const info = getHierarchy(sel, ea.getViewElements());
-        await triggerGlobalLayout(info.rootId, true);
-        updateUI();
-      }
+      await refreshMapLayout();
+      updateUI();
     }))
     .addExtraButton((btn)=>{
       toggleGroupBtn = btn;
@@ -6672,13 +6669,12 @@ const renderBody = (contentEl) => {
     .addToggle((t) => {
       boxToggle = t;
       t.setValue(boxChildren)
-      .onChange((v) => {
+      .onChange(async (v) => {
         boxChildren = v;
         if (disableTabEvents) return;
-
         setVal(K_BOX, v);
         dirty = true;
-        updateRootNodeCustomData({ boxChildren: v });
+        await updateRootNodeCustomData({ boxChildren: v });
       })
     })
     .addExtraButton((btn) => {
@@ -6691,13 +6687,12 @@ const renderBody = (contentEl) => {
   new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_ROUNDED_CORNERS")).addToggle((t) => {
     roundToggle = t;
     t.setValue(roundedCorners)
-    .onChange((v) => {
+    .onChange(async (v) => {
       roundedCorners = v;
       if (disableTabEvents) return;
-
       setVal(K_ROUND,  v);
       dirty = true;
-      updateRootNodeCustomData({ roundedCorners: v });
+      await updateRootNodeCustomData({ roundedCorners: v });
     })
   });
 
@@ -6715,8 +6710,10 @@ const renderBody = (contentEl) => {
         setVal(K_ARROW_TYPE, arrowType);
         dirty = true;
         if (!ea.targetView) return;
-        await updateRootNodeCustomData({ arrowType });
-        refreshMapLayout();
+        const sel = getMindmapNodeFromSelection();
+        if (!sel) return;
+        await updateRootNodeCustomData({ arrowType }, sel);
+        await refreshMapLayout(sel);
       })
     })
 
@@ -6727,13 +6724,13 @@ const renderBody = (contentEl) => {
     )
     .addToggle((t) => {
       strokeToggle = t;
-      t.setValue(!isSolidArrow).onChange((v) => {
+      t.setValue(!isSolidArrow).onChange(async (v) => {
         isSolidArrow = !v;
         if (disableTabEvents) return;
 
         setVal(K_ARROWSTROKE,  !v);
         dirty = true;
-        updateRootNodeCustomData({ isSolidArrow: !v });
+        await updateRootNodeCustomData({ isSolidArrow: !v });
       })
     });
 
@@ -6797,13 +6794,13 @@ const renderBody = (contentEl) => {
     .addToggle((t) => {
       colorToggle = t;
       t.setValue(multicolor)
-        .onChange((v) => {
+        .onChange(async (v) => {
           multicolor = v;
           if (disableTabEvents) return;
 
           setVal(K_MULTICOLOR, v);
           dirty = true;
-          updateRootNodeCustomData({ multicolor: v });
+          await updateRootNodeCustomData({ multicolor: v });
         })
     })
     .addExtraButton((btn) => btn
@@ -6812,7 +6809,7 @@ const renderBody = (contentEl) => {
       .onClick(() => {
         const modal = new PaletteManagerModal(app, customPalette, (newSettings) => {
           customPalette = newSettings;
-          setVal(K_PALETTE, customPalette, true); // save to script settings
+          setVal(K_PALETTE, customPalette, true);
           dirty = true;
         });
         modal.open();
@@ -6826,14 +6823,14 @@ const renderBody = (contentEl) => {
     widthSlider = s;
     s.setLimits(WRAP_WIDTH_MIN, WRAP_WIDTH_MAX, WRAP_WIDTH_STEP)
     .setValue(maxWidth)
-    .onChange((v) => {
+    .onChange(async (v) => {
       maxWidth = v;
       sliderValDisplay.setText(`${v}px`);
       if (disableTabEvents) return;
 
       setVal(K_WIDTH, v);
       dirty = true;
-      updateRootNodeCustomData({ maxWrapWidth: v });
+      await updateRootNodeCustomData({ maxWrapWidth: v });
     })
   });
   sliderValDisplay = sliderSetting.descEl.createSpan({
@@ -6849,13 +6846,13 @@ const renderBody = (contentEl) => {
     .addToggle((t) => {
       centerToggle = t;
       t.setValue(centerText)
-      .onChange((v) => {
+      .onChange(async (v) => {
         centerText = v;
         if (disableTabEvents) return;
 
         setVal(K_CENTERTEXT, v);
         dirty = true;
-        updateRootNodeCustomData({ centerText: v });
+        await updateRootNodeCustomData({ centerText: v });
       })
     });
 
@@ -6863,13 +6860,13 @@ const renderBody = (contentEl) => {
     fontSizeDropdown = d;
     FONT_SCALE_TYPES.forEach((key) => d.addOption(key, key));
     d.setValue(fontsizeScale);
-    d.onChange((v) => {
+    d.onChange(async (v) => {
       fontsizeScale = v;
       if (disableTabEvents) return;
 
       setVal(K_FONTSIZE, v);
       dirty = true;
-      updateRootNodeCustomData({ fontsizeScale: v });
+      await updateRootNodeCustomData({ fontsizeScale: v });
     });
   });
 
