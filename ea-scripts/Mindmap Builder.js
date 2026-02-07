@@ -5009,45 +5009,85 @@ const getDecorationAndCrossLinkIdsForBranches = (branchIds, allElements, rootId)
   const idsInBranch = new Set(branchIds);
   const decorationsAndCrossLInks = new Set();
 
+  // Pre-index elements by ID and GroupID to avoid O(N*M) lookups
+  const elementMap = new Map();
+  const groupMap = new Map();
+
+  for (const el of allElements) {
+    elementMap.set(el.id, el);
+    if (el.groupIds && el.groupIds.length > 0) {
+      for (const gid of el.groupIds) {
+        if (!groupMap.has(gid)) {
+          groupMap.set(gid, []);
+        }
+        groupMap.get(gid).push(el);
+      }
+    }
+  }
+
+  // Track processed groups to avoid redundant checks if multiple branch nodes share a group
+  const processedGroups = new Set();
+
   // Logic: Include elements that are grouped with our branch nodes, 
   // UNLESS that group also contains structural elements outside our branch (which would mean it's a parent group).
-  const idsToCheck = Array.from(idsInBranch);
-  idsToCheck.forEach(id => {
-    el = allElements.find(e => e.id === id);
+  for (const id of branchIds) {
+    const el = elementMap.get(id);
+    
     if (el && el.groupIds && el.groupIds.length > 0) {
-      el.groupIds.forEach(gid => {
-        // Find all members of this group
-        const groupMembers = allElements.filter(e => e.groupIds?.includes(gid));
+      for (const gid of el.groupIds) {
+        if (processedGroups.has(gid)) continue;
+        processedGroups.add(gid);
+        
+        const groupMembers = groupMap.get(gid) || [];
         
         // Check if this group belongs *exclusively* to the branch (or is a local decoration group)
         // We do this by checking if any 'structural' member of the group is OUTSIDE our branch.
-        const structuralMembers = groupMembers.filter(e => idsInBranch.has(e.id) || isStructuralElement(e, allElements, rootId));
-        const hasOutsider = structuralMembers.some(e => !idsInBranch.has(e.id));
+        let hasOutsider = false;
+        const structuralMembers = [];
+        
+        for (const member of groupMembers) {
+          if (idsInBranch.has(member.id) || isStructuralElement(member, allElements, rootId)) {
+            structuralMembers.push(member);
+            if (!idsInBranch.has(member.id)) {
+              hasOutsider = true;
+              break;
+            }
+          }
+        }
         
         if (!hasOutsider) {
           const structuralMemberIds = new Set(structuralMembers.map(e => e.id));
-          groupMembers.forEach(e => {
-            if(structuralMemberIds.has(e.id)) return;
-            decorationsAndCrossLInks.add(e.id)
-          });
+          for (const member of groupMembers) {
+            if (!structuralMemberIds.has(member.id)) {
+              decorationsAndCrossLInks.add(member.id);
+            }
+          }
         }
-      });
+      }
     }
-  });
+  }
 
   // 3. Include Arrows (Structural & Crosslinks)
   // Condition: Start AND End are in the set.
+  for (const el of allElements) {
+    // Skip if already in branch or already identified as decoration
+    if (idsInBranch.has(el.id) || decorationsAndCrossLInks.has(el.id)) continue;
 
-  allElements.filter(el => !idsInBranch.has(el.id) && el.type === "arrow" && !el.customData?.isBranch).forEach(arrow => {
-    if (arrow.startBinding?.elementId && arrow.endBinding?.elementId) {
-      if (idsInBranch.has(arrow.startBinding.elementId) && idsInBranch.has(arrow.endBinding.elementId)) {
-        decorationsAndCrossLInks.add(arrow.id);
-        const boundTextEl = ea.getBoundTextElement(arrow, true);
-        const textElId = boundTextEl?.sceneElement?.id ?? boundTextEl?.eaElement?.id;
-        boundTextEl?.sceneElement && decorationsAndCrossLInks.add(textElId);
+    if (el.type === "arrow" && !el.customData?.isBranch) {
+      if (el.startBinding?.elementId && el.endBinding?.elementId) {
+        if (idsInBranch.has(el.startBinding.elementId) && idsInBranch.has(el.endBinding.elementId)) {
+          decorationsAndCrossLInks.add(el.id);
+          
+          // Optimization: Check bound elements directly via elementMap instead of ea.getBoundTextElement (which might scan scene)
+          if (el.boundElements && el.boundElements.length > 0) {
+            for (const bound of el.boundElements) {
+               if (bound.type === "text") decorationsAndCrossLInks.add(bound.id);
+            }
+          }
+        }
       }
     }
-  });
+  }
 
   return Array.from(decorationsAndCrossLInks);
 };
