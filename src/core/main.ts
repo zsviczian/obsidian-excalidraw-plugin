@@ -97,7 +97,7 @@ import { get } from "http";
 import { getHighlightColor } from "src/utils/dynamicStyling";
 import { InlineLinkSuggester } from "src/shared/Suggesters/InlineLinkSuggester";
 import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
-import { UIMode } from "lib/shared/Dialogs/UIModeSettingComponent";
+import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 
 declare const PLUGIN_VERSION:string;
 declare const INITIAL_TIMESTAMP: number;
