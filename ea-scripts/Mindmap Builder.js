@@ -4577,6 +4577,99 @@ const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => 
   });
 };
 
+/**
+ * Recursively updates the stroke width of a subtree based on the new depth level.
+ * Only updates if the current width matches the default for its *previous* depth.
+ */
+const updateSubtreeStrokeWidth = (nodeId, newDepth, allElements, rootBaseWidth, rootBranchScale) => {
+  const node = allElements.find(el => el.id === nodeId);
+  if (!node) return;
+  
+  // Ensure mutable element exists
+  if (!ea.getElement(nodeId)) {
+    ea.copyViewElementsToEAforEditing([node]);
+  }
+
+  // Determine the node's *current* depth (before the move logic is logically finalized in hierarchy calculations) 
+  // to find its expected "old" width.
+  const currentHierarchy = getHierarchy(node, allElements);
+  const oldDepth = currentHierarchy.depth;
+
+  const oldStandardWidth = calculateStrokeWidth(oldDepth, rootBaseWidth, rootBranchScale);
+  const newStandardWidth = calculateStrokeWidth(newDepth, rootBaseWidth, rootBranchScale);
+  const tolerance = 0.05;
+
+  // 1. Update the incoming arrow (the connector)
+  const incomingArrow = allElements.find(
+    (a) => a.type === "arrow" &&
+    a.customData?.isBranch &&
+    a.endBinding?.elementId === nodeId
+  );
+
+  if (incomingArrow) {
+    if (!ea.getElement(incomingArrow.id)) ea.copyViewElementsToEAforEditing([incomingArrow]);
+    const eaArrow = ea.getElement(incomingArrow.id);
+    
+    // Update if it matches old standard
+    if (Math.abs(eaArrow.strokeWidth - oldStandardWidth) < tolerance) {
+      eaArrow.strokeWidth = newStandardWidth;
+    }
+  }
+
+  // 2. Update the Node itself (e.g. if it is a box)
+  // Text elements don't have stroke width, but containers do.
+  if (node.type !== "text" && Math.abs(node.strokeWidth - oldStandardWidth) < tolerance) {
+    const eaNode = ea.getElement(nodeId);
+    eaNode.strokeWidth = newStandardWidth;
+  }
+
+  // Recurse to children
+  const children = getChildrenNodes(nodeId, allElements);
+  children.forEach(child => {
+    updateSubtreeStrokeWidth(child.id, newDepth + 1, allElements, rootBaseWidth, rootBranchScale);
+  });
+};
+
+/**
+ * Recursively updates the color of a subtree.
+ * Acts as a flood-fill: only updates children that matched the old parent color.
+ * 
+ * @param {string} nodeId - Current node ID
+ * @param {string} oldColor - The color we are replacing (the color the branch used to be)
+ * @param {string} newColor - The color we are applying
+ * @param {ExcalidrawElement[]} allElements - Scene elements
+ */
+const updateSubtreeColor = (nodeId, oldColor, newColor, allElements) => {
+  const node = allElements.find(el => el.id === nodeId);
+  if (!node) return;
+
+  // If the node's color doesn't match the old branch color, 
+  // it implies a manual override or a sub-branch with a different color. Stop recursion.
+  if (node.strokeColor !== oldColor) return;
+
+  if (!ea.getElement(nodeId)) ea.copyViewElementsToEAforEditing([node]);
+  const eaNode = ea.getElement(nodeId);
+  eaNode.strokeColor = newColor;
+
+  // Update incoming arrow (Ontology/Connector)
+  const incomingArrow = allElements.find(
+    (a) => a.type === "arrow" &&
+    a.customData?.isBranch &&
+    a.endBinding?.elementId === nodeId
+  );
+
+  if (incomingArrow && incomingArrow.strokeColor === oldColor) {
+    if (!ea.getElement(incomingArrow.id)) ea.copyViewElementsToEAforEditing([incomingArrow]);
+    const eaArrow = ea.getElement(incomingArrow.id);
+    eaArrow.strokeColor = newColor;
+  }
+
+  const children = getChildrenNodes(nodeId, allElements);
+  children.forEach(child => {
+    updateSubtreeColor(child.id, oldColor, newColor, allElements);
+  });
+};
+
 const changeNodeOrder = async (key) => {
   if (!ea.targetView) return;
   const allElements = ea.getViewElements();
@@ -4585,7 +4678,11 @@ const changeNodeOrder = async (key) => {
   
   const info = getHierarchy(current, allElements);
   const root = allElements.find((e) => e.id === info.rootId);
+  
   const rootFontScale = root.customData?.fontsizeScale ?? fontsizeScale;
+  const rootBaseWidth = root.customData?.baseStrokeWidth ?? baseStrokeWidth;
+  const rootBranchScale = root.customData?.branchScale ?? branchScale;
+  const rootMulticolor = root.customData?.multicolor ?? multicolor;
 
   if (current.id === root.id) {
     new Notice(t("NOTICE_CANNOT_MOVE_ROOT"));
@@ -4682,7 +4779,18 @@ const changeNodeOrder = async (key) => {
         mindmapOrder: isRadial && !isInRight ? parentOrder - 0.5 : parentOrder + 0.5 
       });
       const parentInfo = getHierarchy(parent, allElements);
+      
       updateSubtreeFontSize(current.id, parentInfo.depth, allElements, rootFontScale);
+      updateSubtreeStrokeWidth(current.id, parentInfo.depth, allElements, rootBaseWidth, rootBranchScale);
+
+      // If we are promoting to Level 1 (Child of Root), give it a fresh color if multicolor is on.
+      // Otherwise, it keeps the parent's color (which is now its sibling).
+      if (grandParent.id === root.id && rootMulticolor) {
+         const existingL1Colors = getChildrenNodes(root.id, allElements).map(n => n.strokeColor);
+         const newColor = getDynamicColor(existingL1Colors);
+         updateSubtreeColor(current.id, current.strokeColor, newColor, allElements);
+      }
+
       await addElementsToView({ captureUpdate: "EVENTUALLY" });
       triggerGlobalLayout(root.id, false, true);
       return;
@@ -4737,10 +4845,21 @@ const changeNodeOrder = async (key) => {
         : 0;
       ea.copyViewElementsToEAforEditing([current]);
       ea.addAppendUpdateCustomData(current.id, { mindmapOrder: nextOrder });
-      // Update font sizes for the demoted subtree
+      
       // New depth is Parent's Depth + 2 (Child of Sibling)
       const parentInfo = getHierarchy(parent, allElements);
-      updateSubtreeFontSize(current.id, parentInfo.depth + 2, allElements, rootFontScale);
+      const newDepth = parentInfo.depth + 2;
+
+      // Update Fonts
+      updateSubtreeFontSize(current.id, newDepth, allElements, rootFontScale);
+
+      // Update Strokes
+      updateSubtreeStrokeWidth(current.id, newDepth, allElements, rootBaseWidth, rootBranchScale);
+
+      // Update Colors (Demotion)
+      // Adopt new parent's color if we are moving from a uniform branch
+      updateSubtreeColor(current.id, current.strokeColor, newParent.strokeColor, allElements);
+
       await addElementsToView({ captureUpdate: "EVENTUALLY" });
       triggerGlobalLayout(root.id, false, true);
     }
