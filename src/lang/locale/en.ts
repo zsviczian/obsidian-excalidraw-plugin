@@ -1220,7 +1220,7 @@ export default {
   UIFM_SECTION_HEAD: "Select section heading",
   UIFM_ANCHOR: "Anchor to 100% of original size",
   UIFM_ANCHOR_DESC: "This is a pro feature, use it only if you understand how it works. If enabled even if you change the size of the imported image in Excalidraw, the next time you open the drawing this image will pop back to 100% size. This is useful when embedding an atomic Excalidraw idea into another note and preserving relative sizing of text and icons.",
-  UIFM_BTN_EMBEDDABLE: "PDF as Embeddable",
+  UIFM_BTN_EMBEDDABLE: "as Embeddable",
   UIFM_BTN_PDF: "PDF as Image",
   UIFM_BTN_IMAGE: "as Image",
 

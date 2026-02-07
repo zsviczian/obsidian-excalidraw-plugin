@@ -484,6 +484,8 @@ addLocale("zh", {
   SECTION_DIRECTIONAL: "定向布局（左/右）",
   SECTION_VISUALS: "视觉元素",
   SECTION_MANUAL: "手动模式行为",
+  LAYOUT_RESET: "重置所有为默认值",
+  LAYOUT_SAVE: "保存并关闭",
   // Radial Strings
   RADIAL_ASPECT_RATIO: "椭圆长宽比",
   DESC_RADIAL_ASPECT_RATIO: "控制形状。< 1.0 为瘦长（0.7 为纵向），1.0 为正圆，> 1.0 为宽扁（横向）。",
@@ -636,13 +638,13 @@ const LAYOUT_METADATA = {
   // --- General ---
   GAP_X: {
     section: "SECTION_GENERAL",
-    def: 120, min: 50, max: 400, step: 10,
+    def: 120, min: 10, max: 400, step: 10,
     desc: t("DESC_LAYOUT_GAP_X"),
     name: t("GAP_X"),
   },
   GAP_Y: {
     section: "SECTION_GENERAL",
-    def: 25, min: 10, max: 150, step: 5,
+    def: 25, min: 5, max: 150, step: 5,
     desc: t("DESC_LAYOUT_GAP_Y"),
     name: t("GAP_Y"),
   },
@@ -662,7 +664,7 @@ const LAYOUT_METADATA = {
   },
   MIN_RADIUS: {
     section: "SECTION_GENERAL",
-    def: 350, min: 150, max: 800, step: 10,
+    def: 350, min: 30, max: 800, step: 10,
     desc: t("DESC_LAYOUT_MIN_RADIUS"),
     name: t("MIN_RADIUS"),
   },
@@ -686,7 +688,7 @@ const LAYOUT_METADATA = {
   },
   RADIAL_MAX_SWEEP: {
     section: "SECTION_RADIAL",
-    def: 340, min: 180, max: 360, step: 10,
+    def: 340, min: 90, max: 360, step: 10,
     desc: t("DESC_RADIAL_MAX_SWEEP"),
     name: t("RADIAL_MAX_SWEEP"),
   },
@@ -5906,7 +5908,7 @@ const renderHelp = (container) => {
 // ---------------------------------------------------------------------------
 // 8. Custom Colors: Palette Manager Modal
 // ---------------------------------------------------------------------------
-class PaletteManagerModal extends ea.obsidian.Modal {
+class PaletteManagerModal extends ea.FloatingModal {
   constructor(app, settings, onUpdate) {
     super(app);
     this.settings = JSON.parse(JSON.stringify(settings));
@@ -6100,15 +6102,24 @@ class PaletteManagerModal extends ea.obsidian.Modal {
 // ---------------------------------------------------------------------------
 // 9. Layout Configuration Manager
 // ---------------------------------------------------------------------------
-class LayoutConfigModal extends ea.FloatingModal { //obsidian.Modal
+class LayoutConfigModal extends ea.FloatingModal {
   constructor(app, currentSettings, onUpdate) {
     super(app);
     this.settings = JSON.parse(JSON.stringify(currentSettings));
     this.onUpdate = onUpdate;
+    this.updateTimer = null;
   }
 
   onOpen() {
     this.display();
+  }
+
+  triggerUpdate() {
+    if (this.updateTimer) clearTimeout(this.updateTimer);
+    this.updateTimer = setTimeout(() => {
+      this.onUpdate(this.settings);
+      this.updateTimer = null;
+    }, 500);
   }
 
   display() {
@@ -6182,6 +6193,7 @@ class LayoutConfigModal extends ea.FloatingModal { //obsidian.Modal
             this.settings[key] = value;
             valLabel.setText(String(value.toFixed(meta.step < 1 ? 1 : 0)));
             updateResetButton(value);
+            this.triggerUpdate();
           })
         );
 
@@ -6199,6 +6211,7 @@ class LayoutConfigModal extends ea.FloatingModal { //obsidian.Modal
             .setTooltip(t("TOOLTIP_RESET_TO_DEFAULT"))
             .onClick(() => {
               this.settings[key] = meta.def;
+              this.triggerUpdate();
               this.display();
             });
           updateResetButton(this.settings[key]);
@@ -6226,6 +6239,7 @@ class LayoutConfigModal extends ea.FloatingModal { //obsidian.Modal
           Object.keys(LAYOUT_METADATA).forEach(k => {
             this.settings[k] = LAYOUT_METADATA[k].def;
           });
+          this.triggerUpdate();
           this.display();
         })
       )
@@ -6233,6 +6247,7 @@ class LayoutConfigModal extends ea.FloatingModal { //obsidian.Modal
         .setButtonText(t("LAYOUT_SAVE"))
         .setCta()
         .onClick(() => {
+          if (this.updateTimer) clearTimeout(this.updateTimer);
           this.onUpdate(this.settings);
           this.close();
         })
