@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-02-05T21:00:50.232Z
+Generated on: 2026-02-07T15:57:09.154Z
 
 ---
 
@@ -8644,6 +8644,9 @@ When nodes resize (e.g. text edit), the script intelligently re-positions groupe
 - **Key-safe integration**: The suggester implements the `KeyBlocker` interface so the script's own key handlers pause while the suggester is active, preventing shortcut collisions during link insertion.
 
 **/
+
+const { get } = require("http");
+
 /* --- Initialization Logic --- */
 const VERSION = "test";
 
@@ -8860,6 +8863,8 @@ const STRINGS = {
     SECTION_DIRECTIONAL: "Directional Layout (Left/Right)",
     SECTION_VISUALS: "Visual Elements",
     SECTION_MANUAL: "Manual Mode Behavior",
+    LAYOUT_RESET: "Reset All to Default",
+    LAYOUT_SAVE: "Save & Close",
     // Radial Strings
     RADIAL_ASPECT_RATIO: "Ellipse Aspect Ratio",
     DESC_RADIAL_ASPECT_RATIO: "Controls the shape. < 1.0 is tall/narrow (0.7 = portrait). 1.0 is circular. > 1.0 is wide (landscape).",
@@ -9071,6 +9076,8 @@ addLocale("zh", {
   SECTION_DIRECTIONAL: "定向布局（左/右）",
   SECTION_VISUALS: "视觉元素",
   SECTION_MANUAL: "手动模式行为",
+  LAYOUT_RESET: "重置所有为默认值",
+  LAYOUT_SAVE: "保存并关闭",
   // Radial Strings
   RADIAL_ASPECT_RATIO: "椭圆长宽比",
   DESC_RADIAL_ASPECT_RATIO: "控制形状。< 1.0 为瘦长（0.7 为纵向），1.0 为正圆，> 1.0 为宽扁（横向）。",
@@ -9223,13 +9230,13 @@ const LAYOUT_METADATA = {
   // --- General ---
   GAP_X: {
     section: "SECTION_GENERAL",
-    def: 120, min: 50, max: 400, step: 10,
+    def: 120, min: 10, max: 400, step: 10,
     desc: t("DESC_LAYOUT_GAP_X"),
     name: t("GAP_X"),
   },
   GAP_Y: {
     section: "SECTION_GENERAL",
-    def: 25, min: 10, max: 150, step: 5,
+    def: 25, min: 5, max: 150, step: 5,
     desc: t("DESC_LAYOUT_GAP_Y"),
     name: t("GAP_Y"),
   },
@@ -9249,7 +9256,7 @@ const LAYOUT_METADATA = {
   },
   MIN_RADIUS: {
     section: "SECTION_GENERAL",
-    def: 350, min: 150, max: 800, step: 10,
+    def: 350, min: 30, max: 800, step: 10,
     desc: t("DESC_LAYOUT_MIN_RADIUS"),
     name: t("MIN_RADIUS"),
   },
@@ -9273,7 +9280,7 @@ const LAYOUT_METADATA = {
   },
   RADIAL_MAX_SWEEP: {
     section: "SECTION_RADIAL",
-    def: 340, min: 180, max: 360, step: 10,
+    def: 340, min: 90, max: 360, step: 10,
     desc: t("DESC_RADIAL_MAX_SWEEP"),
     name: t("RADIAL_MAX_SWEEP"),
   },
@@ -9833,7 +9840,6 @@ const addElementsToView = async (
     save = false,
     newElementsOnTop = true,
     shouldRestoreElements = true,
-    shouldSleep = false,
     captureUpdate = "IMMEDIATELY",
   } = {}
 ) => {
@@ -9845,6 +9851,7 @@ const addElementsToView = async (
   }
 
   await ea.addElementsToView(repositionToCursor, save, newElementsOnTop, shouldRestoreElements, captureUpdate);
+  const fileIds = new Set(ea.getElements().filter(el => el.fileId).map(el => el.fileId));
   ea.clear();
 
   // Commit transaction logic
@@ -9860,7 +9867,20 @@ const addElementsToView = async (
     redoAvailable = null;
   }
 
-  if (shouldSleep) await sleep(10); // Allow Excalidraw to process the new elements
+  if(fileIds.size === 0) return;
+  const checker = () => {
+    const loadedFiles = api().getFiles();
+    const loadedKeys = Object.keys(loadedFiles).filter(f => loadedFiles[f].dataURL);
+    for (const fileId of fileIds) {
+      if (!loadedKeys.find(f => f.id === fileId)) return false;
+    }
+    return true;
+  }
+  
+  let watchdog = 0;
+  while (!checker() && watchdog++ < 20) {
+    await sleep(15);
+  }
 }
 
 const selectNodeInView = (node) => {
@@ -9871,6 +9891,26 @@ const selectNodeInView = (node) => {
   const nodeId = typeof node === "string" ? node : node.id;
   ea.selectElementsInView([nodeId]);
   mostRecentlySelectedNodeID = nodeId;
+};
+
+const buildParentMap = (allElements, elementById) => {
+  const parentMap = new Map();
+  const byId = elementById || buildElementMap(allElements);
+
+  allElements.forEach((el) => {
+    if (el.type === "arrow" && el.customData?.isBranch && el.startBinding?.elementId && el.endBinding?.elementId) {
+      const parent = byId.get(el.startBinding.elementId);
+      const childId = el.endBinding.elementId;
+      
+      if (parent && childId) {
+        // Handle container nodes if applicable
+        const actualParent = parent.containerId ? byId.get(parent.containerId) : parent;
+        if(actualParent) parentMap.set(childId, actualParent);
+      }
+    }
+  });
+
+  return parentMap;
 };
 
 // ---------------------------------------------------------------------------
@@ -9984,7 +10024,14 @@ const ensureNodeSelected = () => {
   }
 };
 
-const getParentNode = (id, allElements) => {
+/**
+ * Retrieves the parent node of a specific element.
+ */
+const getParentNode = (id, allElements, parentMap = null) => {
+  if (parentMap && parentMap.has(id)) {
+    return parentMap.get(id);
+  }
+
   const arrow = allElements.find(
     (el) => el.type === "arrow" && el.customData?.isBranch && el.endBinding?.elementId === id,
   );
@@ -10041,8 +10088,17 @@ const buildGroupToNodes = (branchIds, allElements) => {
   return groupToNodes;
 };
 
-const getHierarchy = (el, allElements) => {
-  el = getBoundaryHost([el]) ?? el;
+/**
+ * Traverses up the tree to find the root and depth.
+ */
+const getHierarchy = (el, allElements, elementById = null, parentMap = null) => {
+  // Optimization: If we have an ID lookup, use it, otherwise perform search
+  if(elementById) {
+    el = getBoundaryHost([el]) ?? el;
+  } else {
+    // Legacy behavior for ad-hoc calls
+    el = getBoundaryHost([el]) ?? el;
+  }
 
   let depth = 0,
     curr = el,
@@ -10051,7 +10107,8 @@ const getHierarchy = (el, allElements) => {
   const visited = new Set([el.id]);
 
   while (true) {
-    let p = getParentNode(curr.id, allElements);
+    let p = getParentNode(curr.id, allElements, parentMap);
+    
     if (!p || visited.has(p.id)) {
       rootId = curr.id;
       break;
@@ -10297,7 +10354,7 @@ const setElementVisibility = (el, hide) => {
  * @param {ExcalidrawElement[]} allElements - All elements in the scene.
  * @param {boolean} isRootOfFold - Whether this node is the root of the fold operation (always visible itself).
  */
-const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold) => {
+const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold, rootId) => {
   const node = allElements.find(el => el.id === nodeId);
   if (!node) return;
 
@@ -10329,7 +10386,7 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold)
       // Skip other structural elements (like parents or siblings in the same group).
       // This prevents a hidden child node from hiding its visible parent/siblings 
       // when "Group Branches" is active.
-      if (isStructuralElement(el, allElements)) return;
+      if (isStructuralElement(el, allElements, rootId)) return;
 
       setElementVisibility(el, shouldHideThis);
       localNodeIds.add(el.id);
@@ -10402,7 +10459,7 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold)
     }
 
     // Recurse
-    updateBranchVisibility(child.id, childrenHidden, allElements, false);
+    updateBranchVisibility(child.id, childrenHidden, allElements, false, rootId);
   });
 };
 
@@ -10469,7 +10526,8 @@ const toggleFold = async (mode = "L0") => {
     });
   }
 
-  updateBranchVisibility(targetNode.id, false, wbElements, true);
+  const info = getHierarchy(sel, ea.getViewElements());
+  updateBranchVisibility(targetNode.id, false, wbElements, true, info.rootId);
 
   await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
 
@@ -10537,16 +10595,23 @@ const moveCrossLinks = (allElements, originalPositions) => {
   return touched;
 };
 
-const moveDecorations = (allElements, originalPositions, groupToNodes) => {
-  // Identify decoration elements (grouped but non-structural)
+const moveDecorations = (allElements, originalPositions, groupToNodes, rootId, elementById, parentMap) => {
+  const structuralIds = new Set();
+  if (rootId) {
+    allElements.forEach(el => {
+      if (isStructuralElement(el, allElements, rootId, elementById, parentMap)) {
+        structuralIds.add(el.id);
+      }
+    });
+  }
+
   const decorationsToUpdate = [];
 
   allElements.forEach(el => {
-    // Skip structural elements (handled by main layout)
-    const isStructural = isStructuralElement(el, allElements);
+    // Optimization: O(1) lookup instead of function call
+    const isStructural = structuralIds.has(el.id); 
     const isCrossLink = el.type === "arrow" && !el.customData?.isBranch && el.startBinding?.elementId && el.endBinding?.elementId;
     
-    // Decoration condition: Grouped, non-structural, not a cross-link
     const isDecoration = !isStructural && !isCrossLink && el.groupIds && el.groupIds.length > 0;
 
     if (isDecoration) {
@@ -10572,13 +10637,11 @@ const moveDecorations = (allElements, originalPositions, groupToNodes) => {
            
            if (oldPos && newEl) {
              validHost = true;
-             // Old Box
              minXOld = Math.min(minXOld, oldPos.x);
              minYOld = Math.min(minYOld, oldPos.y);
              maxXOld = Math.max(maxXOld, oldPos.x + n.width);
              maxYOld = Math.max(maxYOld, oldPos.y + n.height);
 
-             // New Box
              minXNew = Math.min(minXNew, newEl.x);
              minYNew = Math.min(minYNew, newEl.y);
              maxXNew = Math.max(maxXNew, newEl.x + newEl.width);
@@ -10621,14 +10684,14 @@ const moveDecorations = (allElements, originalPositions, groupToNodes) => {
  * - Elements outside the node (like stickers/icons above) anchor to the nearest edge 
  *   to preserve the visual gap, preventing them from flying away when the node grows significantly.
  */
-const scaleDecorations = (oldNode, newNode, allElements) => {
+const scaleDecorations = (oldNode, newNode, allElements, rootId) => {
   if (!oldNode.groupIds || oldNode.groupIds.length === 0) return;
 
   const groupElements = ea.getElementsInTheSameGroupWithElement(oldNode, allElements);
   // Filter out the node itself and structural elements
   const decorations = groupElements.filter(el => 
     el.id !== oldNode.id && 
-    !isStructuralElement(el, allElements)
+    !isStructuralElement(el, allElements, rootId)
   );
 
   if (decorations.length === 0) return;
@@ -10837,13 +10900,19 @@ const getSubtreeHeight = (nodeId, allElements, childrenByParent, heightCache, el
 };
 
 /**
- * Determines if an element is part of the mindmap structure (Node, Branch Arrow, Boundary).
+ * Determines if an element is part of the mindmap structure.
  */
-const isStructuralElement = (el, allElements) => {
-  if (el.customData?.isBranch) return true;
-  if (el.customData?.growthMode) return true;
-  if (el.customData?.isBoundary) return true;
-  if (typeof el.customData?.mindmapOrder !== "undefined") return true;
+const isStructuralElement = (el, allElements, rootId = null, elementById = null, parentMap = null) => {
+  const isStructuralType = el.customData?.isBranch || el.customData?.growthMode || el.customData?.isBoundary || typeof el.customData?.mindmapOrder !== "undefined";
+  
+  if (rootId && isStructuralType) {
+    // Optimization: Pass maps to getHierarchy to prevent O(N) lookups
+    const info = getHierarchy(el, allElements, elementById, parentMap);
+    if (info?.rootId === rootId) return true;
+    if (info?.rootId) return false; 
+  }
+
+  if (!rootId && isStructuralType) return true;
 
   const connectedArrow = allElements.find(a =>
     a.type === "arrow" &&
@@ -10857,9 +10926,9 @@ const isStructuralElement = (el, allElements) => {
  * A group is considered a "Mindmap Group" if it contains at least 2 structural elements.
  * Groups with only 1 structural element (e.g. a Node grouped with a Sticker) are treated as decoration.
  */
-const isMindmapGroup = (groupId, allElements) => {
+const isMindmapGroup = (groupId, allElements, rootId) => {
   const groupEls = allElements.filter(el => el.groupIds?.includes(groupId));
-  const structuralCount = groupEls.filter(el => isStructuralElement(el, allElements)).length;
+  const structuralCount = groupEls.filter(el => isStructuralElement(el, allElements, rootId)).length;
   return structuralCount >= 2;
 };
 
@@ -10869,18 +10938,18 @@ const collectCrosslinkIds = (allElements) => new Set(
     .map(el => el.id)
 );
 
-const collectDecorationIds = (allElements) => new Set(
+const collectDecorationIds = (allElements, rootId) => new Set(
   allElements
-    .filter(el => el.groupIds && el.groupIds.length > 0 && !isStructuralElement(el, allElements))
+    .filter(el => el.groupIds && el.groupIds.length > 0 && !isStructuralElement(el, allElements, rootId))
     .map(el => el.id)
 );
 
 /**
  * Finds the first group ID in the element's group stack that qualifies as a Mindmap Group.
  */
-const getStructuralGroup = (element, allElements) => {
+const getStructuralGroup = (element, allElements, rootId) => {
   if (!element.groupIds || element.groupIds.length === 0) return null;
-  return element.groupIds.find(gid => isMindmapGroup(gid, allElements));
+  return element.groupIds.find(gid => isMindmapGroup(gid, allElements, rootId));
 };
 
 const applyRecursiveGrouping = (nodeId, allElements) => {
@@ -10947,7 +11016,7 @@ const getConvexHull = (points) => {
   return lower.concat(upper);
 };
 
-const updateNodeBoundary = (node, allElements) => {
+const updateNodeBoundary = (node, allElements, rootId) => {
   const boundaryId = node.customData?.boundaryId;
 
   if (!boundaryId) {
@@ -11014,7 +11083,7 @@ const updateNodeBoundary = (node, allElements) => {
   boundaryEl.polygon = true;
   boundaryEl.locked = false;
 
-  if (node.groupIds.length > 0 && isMindmapGroup(node.groupIds[0], allElements)) {
+  if (node.groupIds.length > 0 && isMindmapGroup(node.groupIds[0], allElements, rootId)) {
      if (!boundaryEl.groupIds || boundaryEl.groupIds.length === 0 || boundaryEl.groupIds[0] !== node.groupIds[0]) {
          boundaryEl.groupIds = [node.groupIds[0]];
      }
@@ -11038,8 +11107,8 @@ const addEmbeddableNode = ({px = 0, py = 0, url, depth}) => {
   return embeddableId;
 }
 
-const updateRootNodeCustomData = async (data) => {
-  const sel = getMindmapNodeFromSelection();
+const updateRootNodeCustomData = async (data, sel) => {
+  if (!sel) sel = getMindmapNodeFromSelection();
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
     ea.copyViewElementsToEAforEditing(ea.getViewElements().filter((e) => e.id === info.rootId));
@@ -11219,7 +11288,7 @@ const configureArrow = (context) => {
   }
 };
 
-const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder = false) => {
+const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder = false, rootId, parentMap = null) => {
   const node = elementById?.get(nodeId) ?? allElements.find((el) => el.id === nodeId);
   const eaNode = ea.getElement(nodeId);
 
@@ -11236,7 +11305,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   const currentYCenter = eaNode.y + node.height / 2;
 
   let effectiveSide = side;
-  const parent = getParentNode(nodeId, allElements);
+  const parent = getParentNode(nodeId, allElements, parentMap);
 
   if (parent) {
     const parentCenterX = parent.x + parent.width / 2;
@@ -11307,7 +11376,9 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
         childrenByParent,
         heightCache,
         elementById,
-        mustHonorMindmapOrder, // Propagate the flag recursively
+        mustHonorMindmapOrder,
+        rootId,
+        parentMap,
       );
 
       const childNode = elementById?.get(child.id) ?? allElements.find((el) => el.id === child.id);
@@ -11333,6 +11404,8 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
     heightCache,
     elementById,
     mustHonorMindmapOrder,
+    rootId,
+    parentMap,
   ));
 
   // Update Arrows
@@ -11365,7 +11438,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   });
 
   if (node.customData?.boundaryId) {
-     updateNodeBoundary(node, ea.getElements());
+     updateNodeBoundary(node, ea.getElements(), rootId);
   }
 };
 
@@ -11405,7 +11478,7 @@ const updateL1Arrow = (node, context) => {
 };
 
 const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, options, mustHonorMindmapOrder = false) => {
-  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById } = context;
+  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById, rootId, parentMap } = context;
   const count = nodes.length;
 
   // --- CONFIGURATION FROM SETTINGS ---
@@ -11518,9 +11591,9 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, opt
     const tCY = rootCenter.y + placeR * Math.sin(rad);
 
     if (isPinned) {
-      layoutSubtree(node.id, node.x, node.y + node.height / 2, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder);
+      layoutSubtree(node.id, node.x, node.y + node.height / 2, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder, rootId, parentMap);
     } else {
-      layoutSubtree(node.id, tCX, tCY, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder);
+      layoutSubtree(node.id, tCX, tCY, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder, rootId, parentMap);
     }
 
     // Advance
@@ -11535,7 +11608,7 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, opt
 };
 
 const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, isLeftSide, centerAngle, gapMultiplier, mustHonorMindmapOrder = false) => {
-  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById } = context;
+  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById, rootId, parentMap } = context;
   const count = nodes.length;
 
   // --- VERTICAL DIRECTIONAL LAYOUT (RIGHT/LEFT) ---
@@ -11565,7 +11638,7 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
     const nodeSpanDeg = (nodeHeight / radiusY) * (180 / Math.PI);
 
     if (isPinned) {
-      layoutSubtree(node.id, node.x, node.y + node.height / 2, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder);
+      layoutSubtree(node.id, node.x, node.y + node.height / 2, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder, rootId, parentMap);
       const info = getAngularInfo(node, nodeHeight);
       if (isLeftSide) {
         if (currentAngle > info.start - gapSpanDeg) currentAngle = info.start - gapSpanDeg;
@@ -11589,7 +11662,7 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
       const angleRad = (angleDeg - 90) * (Math.PI / 180);
       const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
       const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
-      layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder);
+      layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder, rootId, parentMap);
     }
 
     if (node.customData?.mindmapNew) {
@@ -11691,6 +11764,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
     });
 
     const elementById = buildElementMap(allElements);
+    const parentMap = buildParentMap(allElements, elementById);
     const childrenByParent = buildChildrenMap(allElements, elementById);
     const heightCache = new Map();
 
@@ -11705,7 +11779,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
       mindmapIds.forEach((id) => {
         const el = ea.getElement(id);
         if (el && el.groupIds) {
-          el.groupIds = el.groupIds.filter(gid => !isMindmapGroup(gid, allElements));
+          el.groupIds = el.groupIds.filter(gid => !isMindmapGroup(gid, allElements, rootId));
         }
       });
     }
@@ -11723,27 +11797,23 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
       childrenByParent,
       heightCache,
       elementById,
+      parentMap,
     };
 
     const isModeSwitch = mustHonorMindmapOrder || oldMode && oldMode !== newMode;
 
-    // Only sort by visual sequence if we aren't enforcing a new manual sort order
-    // AND if we aren't switching modes (which might necessitate a specific rebalance)
-    // Note: If mustHonorMindmapOrder is true, we explicitly rely on mindmapOrder set in changeNodeOrder
     if (!isModeSwitch && doVisualSort && !mustHonorMindmapOrder) {
       sortL1NodesBasedOnVisualSequence(l1Nodes, newMode, rootCenter);
     } else if (!mustHonorMindmapOrder) {
-      // Just update the mode if we aren't re-sorting manually
       ea.addAppendUpdateCustomData(rootId, { growthMode: newMode });
     }
 
-    // --- MAIN EXECUTION BLOCK ---
     if (newMode === "Radial") {
       layoutL1Nodes(l1Nodes, {
         sortMethod: "radial",
         centerAngle: null,
         gapMultiplier: layoutSettings.GAP_MULTIPLIER_RADIAL,
-        fillSweep: root.customData?.fillSweep ?? fillSweep
+        fillSweep: root.customData?.fillSweep ?? fillSweep,
       }, layoutContext, mustHonorMindmapOrder);
     } else {
       const leftNodes = [];
@@ -11751,16 +11821,12 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
 
       if (newMode === "Right-Left") {
         if (isModeSwitch && !mustHonorMindmapOrder) {
-          // Switch (Auto-balance): Split evenly
           const splitIdx = Math.ceil(l1Nodes.length / 2);
           l1Nodes.forEach((node, i) => {
             if (i < splitIdx) rightNodes.push(node);
             else leftNodes.push(node);
           });
         } else {
-          // Maintenance or Manual Sort: Respect the user's manual side-choice (via coordinates or order)
-          // If mustHonorMindmapOrder is true, l1Nodes are already sorted by mindmapOrder.
-          // We distribute them based on their current visual center relative to root.
           l1Nodes.forEach((node) => {
             const nodeCX = node.x + node.width / 2;
             if (nodeCX > rootCenter.x) rightNodes.push(node);
@@ -11784,7 +11850,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
     const { mindmapIdsSet, crosslinkIdSet, decorationIdSet } = sharedSets;
 
     moveCrossLinks(ea.getElements(), originalPositions);
-    moveDecorations(ea.getElements(), originalPositions, groupToNodes);
+    moveDecorations(ea.getElements(), originalPositions, groupToNodes, rootId, elementById, parentMap);
 
     ea.getElements().filter(el => !mindmapIdsSet.has(el.id) && !crosslinkIdSet.has(el.id) && !decorationIdSet.has(el.id)).forEach(el => {
       delete ea.elementsDict[el.id];
@@ -11797,13 +11863,11 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
   if (!root) return;
   
   const mindmapIds = getBranchElementIds(rootId, allElements);
-  const structuralGroupId = getStructuralGroupForNode(mindmapIds, allElements);
+  const {structuralGroupId, groupedElementIds} = getStructuralGroupForNode(mindmapIds, allElements, rootId);
   if (structuralGroupId) {
     removeGroupFromElements(structuralGroupId, allElements);
   }
 
-  // FIX: Expand mindmapIds to include bound elements (like Text inside Boxes)
-  // This ensures they are not filtered out by the cleanup step in `run`
   const expandedMindmapIds = [...mindmapIds];
   mindmapIds.forEach(id => {
       const el = allElements.find(e => e.id === id);
@@ -11814,20 +11878,19 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
 
   const mindmapIdsSet = new Set(expandedMindmapIds);
   const crosslinkIdSet = collectCrosslinkIds(allElements);
-  const decorationIdSet = collectDecorationIds(allElements);
+  const decorationIdSet = collectDecorationIds(allElements, rootId);
   const sharedSets = { mindmapIdsSet, crosslinkIdSet, decorationIdSet };
 
   await run(allElements, mindmapIds, root, true, sharedSets, mustHonorMindmapOrder);
   await addElementsToView({ captureUpdate: "EVENTUALLY" });
 
-  // sometimes one pass is not enough to settle subtree positions and boundaries
   ea.copyViewElementsToEAforEditing(ea.getViewElements());
   allElements = ea.getElements();
   root = allElements.find((el) => el.id === rootId);
   await run(allElements, mindmapIds, root, false, sharedSets, mustHonorMindmapOrder);
   
   if (structuralGroupId) {
-    ea.addToGroup(mindmapIds);
+    ea.addToGroup(groupedElementIds);
   }
   await addElementsToView({ captureUpdate: "IMMEDIATELY" });
   selectNodeInView(selectedElement);
@@ -12196,12 +12259,13 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     }
 
     if (!groupBranches && parent.groupIds?.length > 0) {
-      const pGroup = parent.groupIds[0];
-      if (isMindmapGroup(pGroup, allElements)) {
+      const mindmapIds = getBranchElementIds(parent.id, ea.getViewElements());
+      const { structuralGroupId } = getStructuralGroupForNode(mindmapIds, allElements, rootId);
+      if (structuralGroupId) {
         const newNode = ea.getElement(newNodeId);
         const newArrow = ea.getElement(arrowId);
-        if(newNode) newNode.groupIds = [pGroup];
-        if(newArrow) newArrow.groupIds = [pGroup];
+        if(newNode) newNode.groupIds = [structuralGroupId];
+        if(newArrow) newArrow.groupIds = [structuralGroupId];
       }
     }
   }
@@ -12215,7 +12279,6 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
   await addElementsToView({
     repositionToCursor: !parent,
     save: hasImage,
-    shouldSleep: hasImage, //to ensure images get properly loaded to excalidraw Files
     captureUpdate: "EVENTUALLY",
   });
 
@@ -12248,7 +12311,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     if (groupBranches) {
       ea.getElements().forEach((el) => {
         if (el.groupIds) {
-          el.groupIds = el.groupIds.filter(gid => !isMindmapGroup(gid, allEls));
+          el.groupIds = el.groupIds.filter(gid => !isMindmapGroup(gid, allEls, rootId));
         }
       });
       const l1Nodes = getChildrenNodes(rootId, allEls);
@@ -12261,9 +12324,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         bIds.includes(el.id) &&
         el.id !== newNodeId &&
         el.id !== arrowId &&
-        getStructuralGroup(el, allEls)
+        getStructuralGroup(el, allEls, rootId)
       );
-      const commonGroupId = existingGroupedEl ? getStructuralGroup(existingGroupedEl, allEls) : null;
+      const commonGroupId = existingGroupedEl ? getStructuralGroup(existingGroupedEl, allEls, rootId) : null;
 
       if (commonGroupId) {
         const newIds = [newNodeId, arrowId].filter(Boolean);
@@ -12378,12 +12441,15 @@ const getTextFromNode = (all, node, getRaw = false, shortPath = false) => {
     return node.link.startsWith("[[") ? `!${node.link}` : `![](${node.link})`;
   }
   if (node.type === "image") {
+    const embeddedFile = ea.targetView?.excalidrawData?.getFile(node.fileId);    
+    if (!embeddedFile) return "";
+    if (shortPath) {
+      const originalPath = embeddedFile.linkParts?.original;
+      return `![[${originalPath}|${Math.round(node.width)}]]`;
+    }
     const file = ea.getViewFileForImageElement(node);
     if (file) {
-      // We use the full path to avoid ambiguity
-      return shortPath
-        ? `![[${app.metadataCache.fileToLinktext(file,ea.targetView.file.path,true)}]]`
-        : `![[${file.path}|${Math.round(node.width)}]]`;
+      return  `![[${file.path}${embeddedFile.filenameparts?.linkpartReference}|${Math.round(node.width)}]]`;
     }
     return "";
   }
@@ -12928,7 +12994,6 @@ const importTextToMap = async (rawText) => {
 
   await addElementsToView({
     repositionToCursor: !rootSelected,
-    shouldSleep: true,
     captureUpdate: "EVENTUALLY"
   }); // in case there are images in the imported map
 
@@ -13120,6 +13185,99 @@ const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => 
   });
 };
 
+/**
+ * Recursively updates the stroke width of a subtree based on the new depth level.
+ * Only updates if the current width matches the default for its *previous* depth.
+ */
+const updateSubtreeStrokeWidth = (nodeId, newDepth, allElements, rootBaseWidth, rootBranchScale) => {
+  const node = allElements.find(el => el.id === nodeId);
+  if (!node) return;
+  
+  // Ensure mutable element exists
+  if (!ea.getElement(nodeId)) {
+    ea.copyViewElementsToEAforEditing([node]);
+  }
+
+  // Determine the node's *current* depth (before the move logic is logically finalized in hierarchy calculations) 
+  // to find its expected "old" width.
+  const currentHierarchy = getHierarchy(node, allElements);
+  const oldDepth = currentHierarchy.depth;
+
+  const oldStandardWidth = calculateStrokeWidth(oldDepth, rootBaseWidth, rootBranchScale);
+  const newStandardWidth = calculateStrokeWidth(newDepth, rootBaseWidth, rootBranchScale);
+  const tolerance = 0.05;
+
+  // 1. Update the incoming arrow (the connector)
+  const incomingArrow = allElements.find(
+    (a) => a.type === "arrow" &&
+    a.customData?.isBranch &&
+    a.endBinding?.elementId === nodeId
+  );
+
+  if (incomingArrow) {
+    if (!ea.getElement(incomingArrow.id)) ea.copyViewElementsToEAforEditing([incomingArrow]);
+    const eaArrow = ea.getElement(incomingArrow.id);
+    
+    // Update if it matches old standard
+    if (Math.abs(eaArrow.strokeWidth - oldStandardWidth) < tolerance) {
+      eaArrow.strokeWidth = newStandardWidth;
+    }
+  }
+
+  // 2. Update the Node itself (e.g. if it is a box)
+  // Text elements don't have stroke width, but containers do.
+  if (node.type !== "text" && Math.abs(node.strokeWidth - oldStandardWidth) < tolerance) {
+    const eaNode = ea.getElement(nodeId);
+    eaNode.strokeWidth = newStandardWidth;
+  }
+
+  // Recurse to children
+  const children = getChildrenNodes(nodeId, allElements);
+  children.forEach(child => {
+    updateSubtreeStrokeWidth(child.id, newDepth + 1, allElements, rootBaseWidth, rootBranchScale);
+  });
+};
+
+/**
+ * Recursively updates the color of a subtree.
+ * Acts as a flood-fill: only updates children that matched the old parent color.
+ * 
+ * @param {string} nodeId - Current node ID
+ * @param {string} oldColor - The color we are replacing (the color the branch used to be)
+ * @param {string} newColor - The color we are applying
+ * @param {ExcalidrawElement[]} allElements - Scene elements
+ */
+const updateSubtreeColor = (nodeId, oldColor, newColor, allElements) => {
+  const node = allElements.find(el => el.id === nodeId);
+  if (!node) return;
+
+  // If the node's color doesn't match the old branch color, 
+  // it implies a manual override or a sub-branch with a different color. Stop recursion.
+  if (node.strokeColor !== oldColor) return;
+
+  if (!ea.getElement(nodeId)) ea.copyViewElementsToEAforEditing([node]);
+  const eaNode = ea.getElement(nodeId);
+  eaNode.strokeColor = newColor;
+
+  // Update incoming arrow (Ontology/Connector)
+  const incomingArrow = allElements.find(
+    (a) => a.type === "arrow" &&
+    a.customData?.isBranch &&
+    a.endBinding?.elementId === nodeId
+  );
+
+  if (incomingArrow && incomingArrow.strokeColor === oldColor) {
+    if (!ea.getElement(incomingArrow.id)) ea.copyViewElementsToEAforEditing([incomingArrow]);
+    const eaArrow = ea.getElement(incomingArrow.id);
+    eaArrow.strokeColor = newColor;
+  }
+
+  const children = getChildrenNodes(nodeId, allElements);
+  children.forEach(child => {
+    updateSubtreeColor(child.id, oldColor, newColor, allElements);
+  });
+};
+
 const changeNodeOrder = async (key) => {
   if (!ea.targetView) return;
   const allElements = ea.getViewElements();
@@ -13128,7 +13286,11 @@ const changeNodeOrder = async (key) => {
   
   const info = getHierarchy(current, allElements);
   const root = allElements.find((e) => e.id === info.rootId);
+  
   const rootFontScale = root.customData?.fontsizeScale ?? fontsizeScale;
+  const rootBaseWidth = root.customData?.baseStrokeWidth ?? baseStrokeWidth;
+  const rootBranchScale = root.customData?.branchScale ?? branchScale;
+  const rootMulticolor = root.customData?.multicolor ?? multicolor;
 
   if (current.id === root.id) {
     new Notice(t("NOTICE_CANNOT_MOVE_ROOT"));
@@ -13225,7 +13387,18 @@ const changeNodeOrder = async (key) => {
         mindmapOrder: isRadial && !isInRight ? parentOrder - 0.5 : parentOrder + 0.5 
       });
       const parentInfo = getHierarchy(parent, allElements);
+      
       updateSubtreeFontSize(current.id, parentInfo.depth, allElements, rootFontScale);
+      updateSubtreeStrokeWidth(current.id, parentInfo.depth, allElements, rootBaseWidth, rootBranchScale);
+
+      // If we are promoting to Level 1 (Child of Root), give it a fresh color if multicolor is on.
+      // Otherwise, it keeps the parent's color (which is now its sibling).
+      if (grandParent.id === root.id && rootMulticolor) {
+         const existingL1Colors = getChildrenNodes(root.id, allElements).map(n => n.strokeColor);
+         const newColor = getDynamicColor(existingL1Colors);
+         updateSubtreeColor(current.id, current.strokeColor, newColor, allElements);
+      }
+
       await addElementsToView({ captureUpdate: "EVENTUALLY" });
       triggerGlobalLayout(root.id, false, true);
       return;
@@ -13280,10 +13453,21 @@ const changeNodeOrder = async (key) => {
         : 0;
       ea.copyViewElementsToEAforEditing([current]);
       ea.addAppendUpdateCustomData(current.id, { mindmapOrder: nextOrder });
-      // Update font sizes for the demoted subtree
+      
       // New depth is Parent's Depth + 2 (Child of Sibling)
       const parentInfo = getHierarchy(parent, allElements);
-      updateSubtreeFontSize(current.id, parentInfo.depth + 2, allElements, rootFontScale);
+      const newDepth = parentInfo.depth + 2;
+
+      // Update Fonts
+      updateSubtreeFontSize(current.id, newDepth, allElements, rootFontScale);
+
+      // Update Strokes
+      updateSubtreeStrokeWidth(current.id, newDepth, allElements, rootBaseWidth, rootBranchScale);
+
+      // Update Colors (Demotion)
+      // Adopt new parent's color if we are moving from a uniform branch
+      updateSubtreeColor(current.id, current.strokeColor, newParent.strokeColor, allElements);
+
       await addElementsToView({ captureUpdate: "EVENTUALLY" });
       triggerGlobalLayout(root.id, false, true);
     }
@@ -13480,11 +13664,13 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
 /**
  * Triggers a layout refresh for the tree containing the selected element.
  */
-const refreshMapLayout = async () => {
+const refreshMapLayout = async (sel) => {
   if (!ea.targetView) return;
-  const sel = getMindmapNodeFromSelection();
+  if (autoLayoutDisabled) return;
+  if (!sel) sel = getMindmapNodeFromSelection();
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
+    if (!info || !info.rootId) return;
     await triggerGlobalLayout(info.rootId);
   }
 };
@@ -13561,11 +13747,12 @@ const getBranchElementIds = (nodeId, allElements) => {
  * @param {*} workbenchEls ExcalidrawAutomate elements on the workbench
  * @returns the group ID if a structural mindmap group exists for the branch, else null
  */
-const getStructuralGroupForNode = (branchIds, workbenchEls) => {
-  const branchElementIds = workbenchEls.filter(el => branchIds.includes(el.id));
-  const commonGroupId = ea.getCommonGroupForElements(branchElementIds);
-  const structuralGroupId = (commonGroupId && isMindmapGroup(commonGroupId, workbenchEls)) ? commonGroupId : null;
-  return structuralGroupId;
+const getStructuralGroupForNode = (branchIds, workbenchEls, rootId) => {
+  const decorationAndCrossLinkIds = getDecorationAndCrossLinkIdsForBranches(branchIds, workbenchEls, rootId);
+  const elements = workbenchEls.filter(el => branchIds.includes(el.id) || decorationAndCrossLinkIds.includes(el.id));
+  const commonGroupId = ea.getCommonGroupForElements(elements);
+  const structuralGroupId = (commonGroupId && isMindmapGroup(commonGroupId, workbenchEls, rootId)) ? commonGroupId : null;
+  return {structuralGroupId, groupedElementIds: structuralGroupId ? elements.map(e => e.id) : []};
 };
 
 /**
@@ -13581,6 +13768,93 @@ const removeGroupFromElements = (groupId, workbenchEls) => {
   });
 }
 
+const getDecorationAndCrossLinkIdsForBranches = (branchIds, allElements, rootId) => {
+  const idsInBranch = new Set(branchIds);
+  const decorationsAndCrossLInks = new Set();
+
+  // Pre-index elements by ID and GroupID to avoid O(N*M) lookups
+  const elementMap = new Map();
+  const groupMap = new Map();
+
+  for (const el of allElements) {
+    elementMap.set(el.id, el);
+    if (el.groupIds && el.groupIds.length > 0) {
+      for (const gid of el.groupIds) {
+        if (!groupMap.has(gid)) {
+          groupMap.set(gid, []);
+        }
+        groupMap.get(gid).push(el);
+      }
+    }
+  }
+
+  // Track processed groups to avoid redundant checks if multiple branch nodes share a group
+  const processedGroups = new Set();
+
+  // Logic: Include elements that are grouped with our branch nodes, 
+  // UNLESS that group also contains structural elements outside our branch (which would mean it's a parent group).
+  for (const id of branchIds) {
+    const el = elementMap.get(id);
+    
+    if (el && el.groupIds && el.groupIds.length > 0) {
+      for (const gid of el.groupIds) {
+        if (processedGroups.has(gid)) continue;
+        processedGroups.add(gid);
+        
+        const groupMembers = groupMap.get(gid) || [];
+        
+        // Check if this group belongs *exclusively* to the branch (or is a local decoration group)
+        // We do this by checking if any 'structural' member of the group is OUTSIDE our branch.
+        let hasOutsider = false;
+        const structuralMembers = [];
+        
+        for (const member of groupMembers) {
+          if (idsInBranch.has(member.id) || isStructuralElement(member, allElements, rootId)) {
+            structuralMembers.push(member);
+            if (!idsInBranch.has(member.id)) {
+              hasOutsider = true;
+              break;
+            }
+          }
+        }
+        
+        if (!hasOutsider) {
+          const structuralMemberIds = new Set(structuralMembers.map(e => e.id));
+          for (const member of groupMembers) {
+            if (!structuralMemberIds.has(member.id)) {
+              decorationsAndCrossLInks.add(member.id);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 3. Include Arrows (Structural & Crosslinks)
+  // Condition: Start AND End are in the set.
+  for (const el of allElements) {
+    // Skip if already in branch or already identified as decoration
+    if (idsInBranch.has(el.id) || decorationsAndCrossLInks.has(el.id)) continue;
+
+    if (el.type === "arrow" && !el.customData?.isBranch) {
+      if (el.startBinding?.elementId && el.endBinding?.elementId) {
+        if (idsInBranch.has(el.startBinding.elementId) && idsInBranch.has(el.endBinding.elementId)) {
+          decorationsAndCrossLInks.add(el.id);
+          
+          // Optimization: Check bound elements directly via elementMap instead of ea.getBoundTextElement (which might scan scene)
+          if (el.boundElements && el.boundElements.length > 0) {
+            for (const bound of el.boundElements) {
+               if (bound.type === "text") decorationsAndCrossLInks.add(bound.id);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return Array.from(decorationsAndCrossLInks);
+};
+
 /**
  * Toggles a single flat group for the selected branch.
 **/
@@ -13589,20 +13863,24 @@ const toggleBranchGroup = async () => {
   const sel = getMindmapNodeFromSelection();
   if (!sel) return;
 
+  const info = getHierarchy(sel, ea.getViewElements());
+  if (!info || !info.rootId) return;
+
   const allElements = ea.getViewElements();
   const branchIds = getBranchElementIds(sel.id, allElements);
+  const decorationAndCrossLinkIds = getDecorationAndCrossLinkIdsForBranches(branchIds, allElements, info.rootId);
 
   if (branchIds.length <= 1) return;
 
-  ea.copyViewElementsToEAforEditing(allElements.filter(el => branchIds.includes(el.id)));
+  ea.copyViewElementsToEAforEditing(allElements.filter(el => branchIds.includes(el.id) || decorationAndCrossLinkIds.includes(el.id)));
   const workbenchEls = ea.getElements();
 
   let newGroupId;
-  const structuralGroupId = getStructuralGroupForNode(branchIds, workbenchEls);
+  const {structuralGroupId} = getStructuralGroupForNode(branchIds, workbenchEls, info.rootId);
   if (structuralGroupId) {
     removeGroupFromElements(structuralGroupId, workbenchEls);
   } else {
-    newGroupId = ea.addToGroup(branchIds);
+    newGroupId = ea.addToGroup([...branchIds, ...decorationAndCrossLinkIds]);
   }
 
   await addElementsToView({ captureUpdate: "IMMEDIATELY" });
@@ -13734,6 +14012,7 @@ const toggleBoundary = async () => {
   if (!ea.targetView) return;
   const sel = getMindmapNodeFromSelection();
   if (sel) {
+    const info = getHierarchy(sel, ea.getViewElements());
     ea.copyViewElementsToEAforEditing([sel]);
     const eaSel = ea.getElement(sel.id);
     let newBoundaryId = null;
@@ -13769,7 +14048,7 @@ const toggleBoundary = async () => {
         roundness: arrowType === "curved" ? {type: 2} : null,
       };
 
-      if (sel.groupIds.length > 0 && isMindmapGroup(sel.groupIds[0], ea.getViewElements())) {
+      if (sel.groupIds.length > 0 && isMindmapGroup(sel.groupIds[0], ea.getViewElements(), info?.rootId)) {
         boundaryEl.groupIds = [sel.groupIds[0]];
       } else {
         boundaryEl.groupIds = [];
@@ -13802,7 +14081,6 @@ const toggleBoundary = async () => {
       ea.moveViewElementToZIndex(newBoundaryId, targetIndex);
     }
 
-    const info = getHierarchy(sel, ea.getViewElements());
     await triggerGlobalLayout(info.rootId);
   }
   updateUI();
@@ -13877,10 +14155,19 @@ const registerObsidianHotkeyOverrides = () => {
   };
 };
 
-const focusInputEl = () => {
-  if(!isUndocked && ea.sidepanelTab && !ea.sidepanelTab.isVisible()) {
+const revealInputEl = () => {
+  const undockPreference = getVal(K_UNDOCKED, false);
+  if (undockPreference && !isUndocked) {
+    toggleDock({saveSetting: false});
+    return true;
+  } else if (!undockPreference && !isUndocked && ea.sidepanelTab && !ea.sidepanelTab.isVisible()) {
     ea.sidepanelTab.reveal();
   }
+  return false;
+}
+
+const focusInputEl = () => {
+  revealInputEl();
   setTimeout(() => {
     if(isRecordingHotkey) return;
     const target = isOntologyFocused
@@ -14135,26 +14422,25 @@ const startEditing = () => {
     new Notice(`${t("NOTICE_CANNOT_EDIT_MULTILINE")} ${getActionHotkeyString(ACTION_REARRANGE)}`, 7000);
     return;
   }
+  const didToggle = revealInputEl();
 
-  inputEl.value = text;
-  
-  // Populate Ontology (Arrow Label)
-  // Find incoming arrow
-  const incomingArrow = all.find(
-    (a) => a.type === "arrow" && 
-    a.customData?.isBranch && 
-    a.endBinding?.elementId === sel.id
-  );
-  
-  ontologyEl.value  = ea.getBoundTextElement(incomingArrow, true)?.sceneElement?.rawText || "";
+  setTimeout(() => {
+    inputEl.value = text;
+    
+    // Populate Ontology (Arrow Label)
+    // Find incoming arrow
+    const incomingArrow = all.find(
+      (a) => a.type === "arrow" && 
+      a.customData?.isBranch && 
+      a.endBinding?.elementId === sel.id
+    );
+    
+    ontologyEl.value  = ea.getBoundTextElement(incomingArrow, true)?.sceneElement?.rawText || "";
 
-  editingNodeId = sel.id;
-  updateUI();
-
-  if(!isUndocked && ea.sidepanelTab && !ea.sidepanelTab.isVisible()) {
-    ea.sidepanelTab.reveal();
-  }
-  inputEl.focus();
+    editingNodeId = sel.id;
+    updateUI();
+    inputEl.focus();
+  }, didToggle ? 200 : 0);
 };
 
 const commitEdit = async () => {
@@ -14284,7 +14570,7 @@ const commitEdit = async () => {
     const newNode = ea.getElement(newNodeId);
 
     // Scale decorations before deleting the old visual node
-    scaleDecorations(visualNode, newNode, all);
+    scaleDecorations(visualNode, newNode, all, info.rootId);
 
     // 3. Migrate custom data fields
     const keysToCopy = [
@@ -14383,7 +14669,6 @@ const commitEdit = async () => {
     }
 
     await addElementsToView({
-      shouldSleep: ea.getElements().some(el => el.type === "image"), //sleep if loading image
       captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
     });
     
@@ -14442,7 +14727,6 @@ const commitEdit = async () => {
     const hierarchyNode = targetNode.containerId ? all.find(el => el.id === targetNode.containerId) : textEl;
     
     await addElementsToView({
-      shouldSleep: ea.getElements().some(el => el.type === "image"),
       captureUpdate: !hierarchyNode || autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
     }); //in case text was changed to image
 
@@ -14491,7 +14775,7 @@ const renderHelp = (container) => {
 // ---------------------------------------------------------------------------
 // 8. Custom Colors: Palette Manager Modal
 // ---------------------------------------------------------------------------
-class PaletteManagerModal extends ea.obsidian.Modal {
+class PaletteManagerModal extends ea.FloatingModal {
   constructor(app, settings, onUpdate) {
     super(app);
     this.settings = JSON.parse(JSON.stringify(settings));
@@ -14685,15 +14969,24 @@ class PaletteManagerModal extends ea.obsidian.Modal {
 // ---------------------------------------------------------------------------
 // 9. Layout Configuration Manager
 // ---------------------------------------------------------------------------
-class LayoutConfigModal extends ea.obsidian.Modal {
+class LayoutConfigModal extends ea.FloatingModal {
   constructor(app, currentSettings, onUpdate) {
     super(app);
     this.settings = JSON.parse(JSON.stringify(currentSettings));
     this.onUpdate = onUpdate;
+    this.updateTimer = null;
   }
 
   onOpen() {
     this.display();
+  }
+
+  triggerUpdate() {
+    if (this.updateTimer) clearTimeout(this.updateTimer);
+    this.updateTimer = setTimeout(() => {
+      this.onUpdate(this.settings);
+      this.updateTimer = null;
+    }, 500);
   }
 
   display() {
@@ -14767,6 +15060,7 @@ class LayoutConfigModal extends ea.obsidian.Modal {
             this.settings[key] = value;
             valLabel.setText(String(value.toFixed(meta.step < 1 ? 1 : 0)));
             updateResetButton(value);
+            this.triggerUpdate();
           })
         );
 
@@ -14784,6 +15078,7 @@ class LayoutConfigModal extends ea.obsidian.Modal {
             .setTooltip(t("TOOLTIP_RESET_TO_DEFAULT"))
             .onClick(() => {
               this.settings[key] = meta.def;
+              this.triggerUpdate();
               this.display();
             });
           updateResetButton(this.settings[key]);
@@ -14805,19 +15100,21 @@ class LayoutConfigModal extends ea.obsidian.Modal {
 
     new ea.obsidian.Setting(footer)
       .addButton(btn => btn
-        .setButtonText("Reset All to Defaults")
+        .setButtonText(t("LAYOUT_RESET"))
         .setWarning()
         .onClick(() => {
           Object.keys(LAYOUT_METADATA).forEach(k => {
             this.settings[k] = LAYOUT_METADATA[k].def;
           });
+          this.triggerUpdate();
           this.display();
         })
       )
       .addButton(btn => btn
-        .setButtonText("Save & Close")
+        .setButtonText(t("LAYOUT_SAVE"))
         .setCta()
         .onClick(() => {
+          if (this.updateTimer) clearTimeout(this.updateTimer);
           this.onUpdate(this.settings);
           this.close();
         })
@@ -15171,12 +15468,8 @@ const renderBody = (contentEl) => {
       if (!ea.targetView) return;
       const sel = getMindmapNodeFromSelection();
       if (!sel) return;
-      const info = getHierarchy(sel, ea.getViewElements());
-      if (!!info && !autoLayoutDisabled) {
-        triggerGlobalLayout(info.rootId);
-      } else {
-        await updateRootNodeCustomData({ growthMode: v });
-      }
+      await updateRootNodeCustomData({ growthMode: v }, sel);
+      await refreshMapLayout(sel);
     });
   });
 
@@ -15195,11 +15488,8 @@ const renderBody = (contentEl) => {
         if (!ea.targetView) return;
         const sel = getMindmapNodeFromSelection();
         if (!sel) return;
-        const info = getHierarchy(sel, ea.getViewElements());
-        await updateRootNodeCustomData({ fillSweep: v });
-        if (!!info && !autoLayoutDisabled) {
-          await triggerGlobalLayout(info.rootId);
-        }
+        await updateRootNodeCustomData({ fillSweep: v }, sel);
+        await refreshMapLayout(sel);
       })
     });
   if (currentModalGrowthMode !== "Radial") {
@@ -15210,23 +15500,25 @@ const renderBody = (contentEl) => {
     .setName(t("LABEL_AUTO_LAYOUT"))
     .addToggle((t) => t
       .setValue(!autoLayoutDisabled)
-      .onChange((v) => {
+      .onChange(async (v) => {
         autoLayoutDisabled = !v;
         if (disableTabEvents) return;
-
-        updateRootNodeCustomData({ autoLayoutDisabled });
+        await updateRootNodeCustomData({ autoLayoutDisabled }, sel);
+        await refreshMapLayout(sel);
       }),
     )
     .addExtraButton(btn=> btn
       .setIcon("pencil-ruler")
       .setTooltip(t("TOOLTIP_CONFIGURE_LAYOUT"))
       .onClick(() => {
-        const modal = new LayoutConfigModal(app, layoutSettings, (newSettings) => {
+        const modal = new LayoutConfigModal(app, layoutSettings, async (newSettings) => {
           layoutSettings = newSettings;
           setVal(K_LAYOUT, layoutSettings, true);
           dirty = true;
-          updateRootNodeCustomData({ layoutSettings: newSettings });
-          if(!autoLayoutDisabled) refreshMapLayout();
+          const sel = getMindmapNodeFromSelection();
+          if (!sel) return;
+          await updateRootNodeCustomData({ layoutSettings: newSettings }, sel);
+          await refreshMapLayout(sel);
         });
         modal.open();
       })
@@ -15240,15 +15532,10 @@ const renderBody = (contentEl) => {
       if (!ea.targetView) return;
       groupBranches = v;
       if (disableTabEvents) return;
-
       setVal(K_GROUP, v);
       dirty = true;
-      const sel = getMindmapNodeFromSelection() || ea.getViewElements().find(el => !getParentNode(el.id, ea.getViewElements()));
-      if (sel) {
-        const info = getHierarchy(sel, ea.getViewElements());
-        await triggerGlobalLayout(info.rootId, true);
-        updateUI();
-      }
+      await refreshMapLayout();
+      updateUI();
     }))
     .addExtraButton((btn)=>{
       toggleGroupBtn = btn;
@@ -15264,13 +15551,12 @@ const renderBody = (contentEl) => {
     .addToggle((t) => {
       boxToggle = t;
       t.setValue(boxChildren)
-      .onChange((v) => {
+      .onChange(async (v) => {
         boxChildren = v;
         if (disableTabEvents) return;
-
         setVal(K_BOX, v);
         dirty = true;
-        updateRootNodeCustomData({ boxChildren: v });
+        await updateRootNodeCustomData({ boxChildren: v });
       })
     })
     .addExtraButton((btn) => {
@@ -15283,13 +15569,12 @@ const renderBody = (contentEl) => {
   new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_ROUNDED_CORNERS")).addToggle((t) => {
     roundToggle = t;
     t.setValue(roundedCorners)
-    .onChange((v) => {
+    .onChange(async (v) => {
       roundedCorners = v;
       if (disableTabEvents) return;
-
       setVal(K_ROUND,  v);
       dirty = true;
-      updateRootNodeCustomData({ roundedCorners: v });
+      await updateRootNodeCustomData({ roundedCorners: v });
     })
   });
 
@@ -15307,8 +15592,10 @@ const renderBody = (contentEl) => {
         setVal(K_ARROW_TYPE, arrowType);
         dirty = true;
         if (!ea.targetView) return;
-        await updateRootNodeCustomData({ arrowType });
-        refreshMapLayout();
+        const sel = getMindmapNodeFromSelection();
+        if (!sel) return;
+        await updateRootNodeCustomData({ arrowType }, sel);
+        await refreshMapLayout(sel);
       })
     })
 
@@ -15319,13 +15606,13 @@ const renderBody = (contentEl) => {
     )
     .addToggle((t) => {
       strokeToggle = t;
-      t.setValue(!isSolidArrow).onChange((v) => {
+      t.setValue(!isSolidArrow).onChange(async (v) => {
         isSolidArrow = !v;
         if (disableTabEvents) return;
 
         setVal(K_ARROWSTROKE,  !v);
         dirty = true;
-        updateRootNodeCustomData({ isSolidArrow: !v });
+        await updateRootNodeCustomData({ isSolidArrow: !v });
       })
     });
 
@@ -15389,13 +15676,13 @@ const renderBody = (contentEl) => {
     .addToggle((t) => {
       colorToggle = t;
       t.setValue(multicolor)
-        .onChange((v) => {
+        .onChange(async (v) => {
           multicolor = v;
           if (disableTabEvents) return;
 
           setVal(K_MULTICOLOR, v);
           dirty = true;
-          updateRootNodeCustomData({ multicolor: v });
+          await updateRootNodeCustomData({ multicolor: v });
         })
     })
     .addExtraButton((btn) => btn
@@ -15404,7 +15691,7 @@ const renderBody = (contentEl) => {
       .onClick(() => {
         const modal = new PaletteManagerModal(app, customPalette, (newSettings) => {
           customPalette = newSettings;
-          setVal(K_PALETTE, customPalette, true); // save to script settings
+          setVal(K_PALETTE, customPalette, true);
           dirty = true;
         });
         modal.open();
@@ -15418,14 +15705,14 @@ const renderBody = (contentEl) => {
     widthSlider = s;
     s.setLimits(WRAP_WIDTH_MIN, WRAP_WIDTH_MAX, WRAP_WIDTH_STEP)
     .setValue(maxWidth)
-    .onChange((v) => {
+    .onChange(async (v) => {
       maxWidth = v;
       sliderValDisplay.setText(`${v}px`);
       if (disableTabEvents) return;
 
       setVal(K_WIDTH, v);
       dirty = true;
-      updateRootNodeCustomData({ maxWrapWidth: v });
+      await updateRootNodeCustomData({ maxWrapWidth: v });
     })
   });
   sliderValDisplay = sliderSetting.descEl.createSpan({
@@ -15441,13 +15728,13 @@ const renderBody = (contentEl) => {
     .addToggle((t) => {
       centerToggle = t;
       t.setValue(centerText)
-      .onChange((v) => {
+      .onChange(async (v) => {
         centerText = v;
         if (disableTabEvents) return;
 
         setVal(K_CENTERTEXT, v);
         dirty = true;
-        updateRootNodeCustomData({ centerText: v });
+        await updateRootNodeCustomData({ centerText: v });
       })
     });
 
@@ -15455,13 +15742,13 @@ const renderBody = (contentEl) => {
     fontSizeDropdown = d;
     FONT_SCALE_TYPES.forEach((key) => d.addOption(key, key));
     d.setValue(fontsizeScale);
-    d.onChange((v) => {
+    d.onChange(async (v) => {
       fontsizeScale = v;
       if (disableTabEvents) return;
 
       setVal(K_FONTSIZE, v);
       dirty = true;
-      updateRootNodeCustomData({ fontsizeScale: v });
+      await updateRootNodeCustomData({ fontsizeScale: v });
     });
   });
 

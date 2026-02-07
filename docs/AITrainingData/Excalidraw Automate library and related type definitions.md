@@ -2180,6 +2180,7 @@ export type ConvertibleTypes = ConvertibleGenericTypes | ConvertibleLinearTypes;
 /* ************************************** */
 /* node_modules/@zsviczian/excalidraw/types/excalidraw/types.d.ts */
 /* ************************************** */
+export type { App };
 export type SocketId = string & {
     _brand: "SocketId";
 };
@@ -2302,6 +2303,7 @@ export type InteractiveCanvasAppState = Readonly<_CommonCanvasAppState & {
     multiElement: AppState["multiElement"];
     newElement: AppState["newElement"];
     isBindingEnabled: AppState["isBindingEnabled"];
+    invertBindingBehaviour: AppState["invertBindingBehaviour"];
     suggestedBinding: AppState["suggestedBinding"];
     isRotating: AppState["isRotating"];
     elementsToHighlight: AppState["elementsToHighlight"];
@@ -2875,6 +2877,8 @@ export interface ExcalidrawImperativeAPI {
     getSceneElementsMapIncludingDeleted: InstanceType<typeof App>["getSceneElementsMapIncludingDeleted"];
     history: {
         clear: InstanceType<typeof App>["resetHistory"];
+        undo: InstanceType<typeof App>["undo"];
+        redo: InstanceType<typeof App>["redo"];
     };
     setForceRenderAllEmbeddables: InstanceType<typeof App>["setForceRenderAllEmbeddables"];
     zoomToFit: InstanceType<typeof App>["zoomToFit"];
@@ -3118,7 +3122,13 @@ declare class App extends React.Component<AppProps, AppState> {
     lastPointerDownEvent: React.PointerEvent<HTMLElement> | null;
     lastPointerUpEvent: React.PointerEvent<HTMLElement> | PointerEvent | null;
     lastPointerMoveEvent: PointerEvent | null;
+    /** current frame pointer cords */
     lastPointerMoveCoords: {
+        x: number;
+        y: number;
+    } | null;
+    /** previous frame pointer coords */
+    previousPointerMoveCoords: {
         x: number;
         y: number;
     } | null;
@@ -3313,6 +3323,8 @@ declare class App extends React.Component<AppProps, AppState> {
     private onUnload;
     private disableEvent;
     private resetHistory;
+    private undo;
+    private redo;
     private resetStore;
     /**
      * Resets scene & history.
