@@ -53,8 +53,6 @@ When nodes resize (e.g. text edit), the script intelligently re-positions groupe
 
 **/
 
-const { ref } = require("process");
-
 /* --- Initialization Logic --- */
 const VERSION = "test";
 
@@ -1712,7 +1710,7 @@ const setElementVisibility = (el, hide) => {
  * @param {ExcalidrawElement[]} allElements - All elements in the scene.
  * @param {boolean} isRootOfFold - Whether this node is the root of the fold operation (always visible itself).
  */
-const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold) => {
+const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold, rootId) => {
   const node = allElements.find(el => el.id === nodeId);
   if (!node) return;
 
@@ -1744,7 +1742,7 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold)
       // Skip other structural elements (like parents or siblings in the same group).
       // This prevents a hidden child node from hiding its visible parent/siblings 
       // when "Group Branches" is active.
-      if (isStructuralElement(el, allElements)) return;
+      if (isStructuralElement(el, allElements, rootId)) return;
 
       setElementVisibility(el, shouldHideThis);
       localNodeIds.add(el.id);
@@ -1817,7 +1815,7 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold)
     }
 
     // Recurse
-    updateBranchVisibility(child.id, childrenHidden, allElements, false);
+    updateBranchVisibility(child.id, childrenHidden, allElements, false, rootId);
   });
 };
 
@@ -1884,7 +1882,8 @@ const toggleFold = async (mode = "L0") => {
     });
   }
 
-  updateBranchVisibility(targetNode.id, false, wbElements, true);
+  const info = getHierarchy(sel, ea.getViewElements());
+  updateBranchVisibility(targetNode.id, false, wbElements, true, info.rootId);
 
   await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
 
@@ -1952,13 +1951,13 @@ const moveCrossLinks = (allElements, originalPositions) => {
   return touched;
 };
 
-const moveDecorations = (allElements, originalPositions, groupToNodes) => {
+const moveDecorations = (allElements, originalPositions, groupToNodes, rootId) => {
   // Identify decoration elements (grouped but non-structural)
   const decorationsToUpdate = [];
 
   allElements.forEach(el => {
     // Skip structural elements (handled by main layout)
-    const isStructural = isStructuralElement(el, allElements);
+    const isStructural = isStructuralElement(el, allElements, rootId);
     const isCrossLink = el.type === "arrow" && !el.customData?.isBranch && el.startBinding?.elementId && el.endBinding?.elementId;
     
     // Decoration condition: Grouped, non-structural, not a cross-link
@@ -2036,14 +2035,14 @@ const moveDecorations = (allElements, originalPositions, groupToNodes) => {
  * - Elements outside the node (like stickers/icons above) anchor to the nearest edge 
  *   to preserve the visual gap, preventing them from flying away when the node grows significantly.
  */
-const scaleDecorations = (oldNode, newNode, allElements) => {
+const scaleDecorations = (oldNode, newNode, allElements, rootId) => {
   if (!oldNode.groupIds || oldNode.groupIds.length === 0) return;
 
   const groupElements = ea.getElementsInTheSameGroupWithElement(oldNode, allElements);
   // Filter out the node itself and structural elements
   const decorations = groupElements.filter(el => 
     el.id !== oldNode.id && 
-    !isStructuralElement(el, allElements)
+    !isStructuralElement(el, allElements, rootId)
   );
 
   if (decorations.length === 0) return;
@@ -2254,11 +2253,15 @@ const getSubtreeHeight = (nodeId, allElements, childrenByParent, heightCache, el
 /**
  * Determines if an element is part of the mindmap structure (Node, Branch Arrow, Boundary).
  */
-const isStructuralElement = (el, allElements) => {
-  if (el.customData?.isBranch) return true;
-  if (el.customData?.growthMode) return true;
-  if (el.customData?.isBoundary) return true;
-  if (typeof el.customData?.mindmapOrder !== "undefined") return true;
+const isStructuralElement = (el, allElements, rootId = null) => {
+  const isStructuralType = el.customData?.isBranch ||el.customData?.growthMode || el.customData?.isBoundary || typeof el.customData?.mindmapOrder !== "undefined";
+  if (rootId && isStructuralType) {
+    const info = getHierarchy(el, ea.getViewElements());
+    if (info?.rootId === rootId) return true;
+    if (info?.rootId) return false; // If it belongs to a different root, it's not structural for the current tree
+  }
+
+  if (!rootId && isStructuralType) return true;
 
   const connectedArrow = allElements.find(a =>
     a.type === "arrow" &&
@@ -2272,9 +2275,9 @@ const isStructuralElement = (el, allElements) => {
  * A group is considered a "Mindmap Group" if it contains at least 2 structural elements.
  * Groups with only 1 structural element (e.g. a Node grouped with a Sticker) are treated as decoration.
  */
-const isMindmapGroup = (groupId, allElements) => {
+const isMindmapGroup = (groupId, allElements, rootId) => {
   const groupEls = allElements.filter(el => el.groupIds?.includes(groupId));
-  const structuralCount = groupEls.filter(el => isStructuralElement(el, allElements)).length;
+  const structuralCount = groupEls.filter(el => isStructuralElement(el, allElements, rootId)).length;
   return structuralCount >= 2;
 };
 
@@ -2284,18 +2287,18 @@ const collectCrosslinkIds = (allElements) => new Set(
     .map(el => el.id)
 );
 
-const collectDecorationIds = (allElements) => new Set(
+const collectDecorationIds = (allElements, rootId) => new Set(
   allElements
-    .filter(el => el.groupIds && el.groupIds.length > 0 && !isStructuralElement(el, allElements))
+    .filter(el => el.groupIds && el.groupIds.length > 0 && !isStructuralElement(el, allElements, rootId))
     .map(el => el.id)
 );
 
 /**
  * Finds the first group ID in the element's group stack that qualifies as a Mindmap Group.
  */
-const getStructuralGroup = (element, allElements) => {
+const getStructuralGroup = (element, allElements, rootId) => {
   if (!element.groupIds || element.groupIds.length === 0) return null;
-  return element.groupIds.find(gid => isMindmapGroup(gid, allElements));
+  return element.groupIds.find(gid => isMindmapGroup(gid, allElements, rootId));
 };
 
 const applyRecursiveGrouping = (nodeId, allElements) => {
@@ -2362,7 +2365,7 @@ const getConvexHull = (points) => {
   return lower.concat(upper);
 };
 
-const updateNodeBoundary = (node, allElements) => {
+const updateNodeBoundary = (node, allElements, rootId) => {
   const boundaryId = node.customData?.boundaryId;
 
   if (!boundaryId) {
@@ -2429,7 +2432,7 @@ const updateNodeBoundary = (node, allElements) => {
   boundaryEl.polygon = true;
   boundaryEl.locked = false;
 
-  if (node.groupIds.length > 0 && isMindmapGroup(node.groupIds[0], allElements)) {
+  if (node.groupIds.length > 0 && isMindmapGroup(node.groupIds[0], allElements, rootId)) {
      if (!boundaryEl.groupIds || boundaryEl.groupIds.length === 0 || boundaryEl.groupIds[0] !== node.groupIds[0]) {
          boundaryEl.groupIds = [node.groupIds[0]];
      }
@@ -2634,7 +2637,7 @@ const configureArrow = (context) => {
   }
 };
 
-const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder = false) => {
+const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder = false, rootId) => {
   const node = elementById?.get(nodeId) ?? allElements.find((el) => el.id === nodeId);
   const eaNode = ea.getElement(nodeId);
 
@@ -2722,7 +2725,8 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
         childrenByParent,
         heightCache,
         elementById,
-        mustHonorMindmapOrder, // Propagate the flag recursively
+        mustHonorMindmapOrder,
+        rootId,
       );
 
       const childNode = elementById?.get(child.id) ?? allElements.find((el) => el.id === child.id);
@@ -2748,6 +2752,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
     heightCache,
     elementById,
     mustHonorMindmapOrder,
+    rootId,
   ));
 
   // Update Arrows
@@ -2780,7 +2785,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   });
 
   if (node.customData?.boundaryId) {
-     updateNodeBoundary(node, ea.getElements());
+     updateNodeBoundary(node, ea.getElements(), rootId);
   }
 };
 
@@ -2820,7 +2825,7 @@ const updateL1Arrow = (node, context) => {
 };
 
 const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, options, mustHonorMindmapOrder = false) => {
-  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById } = context;
+  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById, rootId } = context;
   const count = nodes.length;
 
   // --- CONFIGURATION FROM SETTINGS ---
@@ -2933,9 +2938,9 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, opt
     const tCY = rootCenter.y + placeR * Math.sin(rad);
 
     if (isPinned) {
-      layoutSubtree(node.id, node.x, node.y + node.height / 2, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder);
+      layoutSubtree(node.id, node.x, node.y + node.height / 2, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder, rootId);
     } else {
-      layoutSubtree(node.id, tCX, tCY, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder);
+      layoutSubtree(node.id, tCX, tCY, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder, rootId);
     }
 
     // Advance
@@ -2950,7 +2955,7 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, opt
 };
 
 const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, isLeftSide, centerAngle, gapMultiplier, mustHonorMindmapOrder = false) => {
-  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById } = context;
+  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById, rootId } = context;
   const count = nodes.length;
 
   // --- VERTICAL DIRECTIONAL LAYOUT (RIGHT/LEFT) ---
@@ -2980,7 +2985,7 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
     const nodeSpanDeg = (nodeHeight / radiusY) * (180 / Math.PI);
 
     if (isPinned) {
-      layoutSubtree(node.id, node.x, node.y + node.height / 2, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder);
+      layoutSubtree(node.id, node.x, node.y + node.height / 2, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder, rootId);
       const info = getAngularInfo(node, nodeHeight);
       if (isLeftSide) {
         if (currentAngle > info.start - gapSpanDeg) currentAngle = info.start - gapSpanDeg;
@@ -3004,7 +3009,7 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
       const angleRad = (angleDeg - 90) * (Math.PI / 180);
       const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
       const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
-      layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder);
+      layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder, rootId);
     }
 
     if (node.customData?.mindmapNew) {
@@ -3120,7 +3125,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
       mindmapIds.forEach((id) => {
         const el = ea.getElement(id);
         if (el && el.groupIds) {
-          el.groupIds = el.groupIds.filter(gid => !isMindmapGroup(gid, allElements));
+          el.groupIds = el.groupIds.filter(gid => !isMindmapGroup(gid, allElements, rootId));
         }
       });
     }
@@ -3158,7 +3163,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
         sortMethod: "radial",
         centerAngle: null,
         gapMultiplier: layoutSettings.GAP_MULTIPLIER_RADIAL,
-        fillSweep: root.customData?.fillSweep ?? fillSweep
+        fillSweep: root.customData?.fillSweep ?? fillSweep,
       }, layoutContext, mustHonorMindmapOrder);
     } else {
       const leftNodes = [];
@@ -3199,7 +3204,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
     const { mindmapIdsSet, crosslinkIdSet, decorationIdSet } = sharedSets;
 
     moveCrossLinks(ea.getElements(), originalPositions);
-    moveDecorations(ea.getElements(), originalPositions, groupToNodes);
+    moveDecorations(ea.getElements(), originalPositions, groupToNodes, rootId);
 
     ea.getElements().filter(el => !mindmapIdsSet.has(el.id) && !crosslinkIdSet.has(el.id) && !decorationIdSet.has(el.id)).forEach(el => {
       delete ea.elementsDict[el.id];
@@ -3212,7 +3217,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
   if (!root) return;
   
   const mindmapIds = getBranchElementIds(rootId, allElements);
-  const structuralGroupId = getStructuralGroupForNode(mindmapIds, allElements);
+  const {structuralGroupId, groupedElementIds} = getStructuralGroupForNode(mindmapIds, allElements, rootId);
   if (structuralGroupId) {
     removeGroupFromElements(structuralGroupId, allElements);
   }
@@ -3229,7 +3234,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
 
   const mindmapIdsSet = new Set(expandedMindmapIds);
   const crosslinkIdSet = collectCrosslinkIds(allElements);
-  const decorationIdSet = collectDecorationIds(allElements);
+  const decorationIdSet = collectDecorationIds(allElements, rootId);
   const sharedSets = { mindmapIdsSet, crosslinkIdSet, decorationIdSet };
 
   await run(allElements, mindmapIds, root, true, sharedSets, mustHonorMindmapOrder);
@@ -3242,7 +3247,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
   await run(allElements, mindmapIds, root, false, sharedSets, mustHonorMindmapOrder);
   
   if (structuralGroupId) {
-    ea.addToGroup(mindmapIds);
+    ea.addToGroup(groupedElementIds);
   }
   await addElementsToView({ captureUpdate: "IMMEDIATELY" });
   selectNodeInView(selectedElement);
@@ -3611,12 +3616,13 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     }
 
     if (!groupBranches && parent.groupIds?.length > 0) {
-      const pGroup = parent.groupIds[0];
-      if (isMindmapGroup(pGroup, allElements)) {
+      const mindmapIds = getBranchElementIds(parent.id, ea.getViewElements());
+      const { structuralGroupId } = getStructuralGroupForNode(mindmapIds, allElements, rootId);
+      if (structuralGroupId) {
         const newNode = ea.getElement(newNodeId);
         const newArrow = ea.getElement(arrowId);
-        if(newNode) newNode.groupIds = [pGroup];
-        if(newArrow) newArrow.groupIds = [pGroup];
+        if(newNode) newNode.groupIds = [structuralGroupId];
+        if(newArrow) newArrow.groupIds = [structuralGroupId];
       }
     }
   }
@@ -3663,7 +3669,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     if (groupBranches) {
       ea.getElements().forEach((el) => {
         if (el.groupIds) {
-          el.groupIds = el.groupIds.filter(gid => !isMindmapGroup(gid, allEls));
+          el.groupIds = el.groupIds.filter(gid => !isMindmapGroup(gid, allEls, rootId));
         }
       });
       const l1Nodes = getChildrenNodes(rootId, allEls);
@@ -3676,9 +3682,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         bIds.includes(el.id) &&
         el.id !== newNodeId &&
         el.id !== arrowId &&
-        getStructuralGroup(el, allEls)
+        getStructuralGroup(el, allEls, rootId)
       );
-      const commonGroupId = existingGroupedEl ? getStructuralGroup(existingGroupedEl, allEls) : null;
+      const commonGroupId = existingGroupedEl ? getStructuralGroup(existingGroupedEl, allEls, rootId) : null;
 
       if (commonGroupId) {
         const newIds = [newNodeId, arrowId].filter(Boolean);
@@ -4978,11 +4984,12 @@ const getBranchElementIds = (nodeId, allElements) => {
  * @param {*} workbenchEls ExcalidrawAutomate elements on the workbench
  * @returns the group ID if a structural mindmap group exists for the branch, else null
  */
-const getStructuralGroupForNode = (branchIds, workbenchEls) => {
-  const branchElementIds = workbenchEls.filter(el => branchIds.includes(el.id));
-  const commonGroupId = ea.getCommonGroupForElements(branchElementIds);
-  const structuralGroupId = (commonGroupId && isMindmapGroup(commonGroupId, workbenchEls)) ? commonGroupId : null;
-  return structuralGroupId;
+const getStructuralGroupForNode = (branchIds, workbenchEls, rootId) => {
+  const decorationAndCrossLinkIds = getDecorationAndCrossLinkIdsForBranches(branchIds, workbenchEls, rootId);
+  const elements = workbenchEls.filter(el => branchIds.includes(el.id) || decorationAndCrossLinkIds.includes(el.id));
+  const commonGroupId = ea.getCommonGroupForElements(elements);
+  const structuralGroupId = (commonGroupId && isMindmapGroup(commonGroupId, workbenchEls, rootId)) ? commonGroupId : null;
+  return {structuralGroupId, groupedElementIds: structuralGroupId ? elements.map(e => e.id) : []};
 };
 
 /**
@@ -4998,6 +5005,53 @@ const removeGroupFromElements = (groupId, workbenchEls) => {
   });
 }
 
+const getDecorationAndCrossLinkIdsForBranches = (branchIds, allElements, rootId) => {
+  const idsInBranch = new Set(branchIds);
+  const decorationsAndCrossLInks = new Set();
+
+  // Logic: Include elements that are grouped with our branch nodes, 
+  // UNLESS that group also contains structural elements outside our branch (which would mean it's a parent group).
+  const idsToCheck = Array.from(idsInBranch);
+  idsToCheck.forEach(id => {
+    el = allElements.find(e => e.id === id);
+    if (el && el.groupIds && el.groupIds.length > 0) {
+      el.groupIds.forEach(gid => {
+        // Find all members of this group
+        const groupMembers = allElements.filter(e => e.groupIds?.includes(gid));
+        
+        // Check if this group belongs *exclusively* to the branch (or is a local decoration group)
+        // We do this by checking if any 'structural' member of the group is OUTSIDE our branch.
+        const structuralMembers = groupMembers.filter(e => idsInBranch.has(e.id) || isStructuralElement(e, allElements, rootId));
+        const hasOutsider = structuralMembers.some(e => !idsInBranch.has(e.id));
+        
+        if (!hasOutsider) {
+          const structuralMemberIds = new Set(structuralMembers.map(e => e.id));
+          groupMembers.forEach(e => {
+            if(structuralMemberIds.has(e.id)) return;
+            decorationsAndCrossLInks.add(e.id)
+          });
+        }
+      });
+    }
+  });
+
+  // 3. Include Arrows (Structural & Crosslinks)
+  // Condition: Start AND End are in the set.
+
+  allElements.filter(el => !idsInBranch.has(el.id) && el.type === "arrow" && !el.customData?.isBranch).forEach(arrow => {
+    if (arrow.startBinding?.elementId && arrow.endBinding?.elementId) {
+      if (idsInBranch.has(arrow.startBinding.elementId) && idsInBranch.has(arrow.endBinding.elementId)) {
+        decorationsAndCrossLInks.add(arrow.id);
+        const boundTextEl = ea.getBoundTextElement(arrow, true);
+        const textElId = boundTextEl?.sceneElement?.id ?? boundTextEl?.eaElement?.id;
+        boundTextEl?.sceneElement && decorationsAndCrossLInks.add(textElId);
+      }
+    }
+  });
+
+  return Array.from(decorationsAndCrossLInks);
+};
+
 /**
  * Toggles a single flat group for the selected branch.
 **/
@@ -5006,20 +5060,24 @@ const toggleBranchGroup = async () => {
   const sel = getMindmapNodeFromSelection();
   if (!sel) return;
 
+  const info = getHierarchy(sel, ea.getViewElements());
+  if (!info || !info.rootId) return;
+
   const allElements = ea.getViewElements();
   const branchIds = getBranchElementIds(sel.id, allElements);
+  const decorationAndCrossLinkIds = getDecorationAndCrossLinkIdsForBranches(branchIds, allElements, info.rootId);
 
   if (branchIds.length <= 1) return;
 
-  ea.copyViewElementsToEAforEditing(allElements.filter(el => branchIds.includes(el.id)));
+  ea.copyViewElementsToEAforEditing(allElements.filter(el => branchIds.includes(el.id) || decorationAndCrossLinkIds.includes(el.id)));
   const workbenchEls = ea.getElements();
 
   let newGroupId;
-  const structuralGroupId = getStructuralGroupForNode(branchIds, workbenchEls);
+  const {structuralGroupId} = getStructuralGroupForNode(branchIds, workbenchEls, info.rootId);
   if (structuralGroupId) {
     removeGroupFromElements(structuralGroupId, workbenchEls);
   } else {
-    newGroupId = ea.addToGroup(branchIds);
+    newGroupId = ea.addToGroup([...branchIds, ...decorationAndCrossLinkIds]);
   }
 
   await addElementsToView({ captureUpdate: "IMMEDIATELY" });
@@ -5151,6 +5209,7 @@ const toggleBoundary = async () => {
   if (!ea.targetView) return;
   const sel = getMindmapNodeFromSelection();
   if (sel) {
+    const info = getHierarchy(sel, ea.getViewElements());
     ea.copyViewElementsToEAforEditing([sel]);
     const eaSel = ea.getElement(sel.id);
     let newBoundaryId = null;
@@ -5186,7 +5245,7 @@ const toggleBoundary = async () => {
         roundness: arrowType === "curved" ? {type: 2} : null,
       };
 
-      if (sel.groupIds.length > 0 && isMindmapGroup(sel.groupIds[0], ea.getViewElements())) {
+      if (sel.groupIds.length > 0 && isMindmapGroup(sel.groupIds[0], ea.getViewElements(), info?.rootId)) {
         boundaryEl.groupIds = [sel.groupIds[0]];
       } else {
         boundaryEl.groupIds = [];
@@ -5219,7 +5278,6 @@ const toggleBoundary = async () => {
       ea.moveViewElementToZIndex(newBoundaryId, targetIndex);
     }
 
-    const info = getHierarchy(sel, ea.getViewElements());
     await triggerGlobalLayout(info.rootId);
   }
   updateUI();
@@ -5701,7 +5759,7 @@ const commitEdit = async () => {
     const newNode = ea.getElement(newNodeId);
 
     // Scale decorations before deleting the old visual node
-    scaleDecorations(visualNode, newNode, all);
+    scaleDecorations(visualNode, newNode, all, info.rootId);
 
     // 3. Migrate custom data fields
     const keysToCopy = [
