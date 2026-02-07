@@ -1286,6 +1286,26 @@ const selectNodeInView = (node) => {
   mostRecentlySelectedNodeID = nodeId;
 };
 
+const buildParentMap = (allElements, elementById) => {
+  const parentMap = new Map();
+  const byId = elementById || buildElementMap(allElements);
+
+  allElements.forEach((el) => {
+    if (el.type === "arrow" && el.customData?.isBranch && el.startBinding?.elementId && el.endBinding?.elementId) {
+      const parent = byId.get(el.startBinding.elementId);
+      const childId = el.endBinding.elementId;
+      
+      if (parent && childId) {
+        // Handle container nodes if applicable
+        const actualParent = parent.containerId ? byId.get(parent.containerId) : parent;
+        if(actualParent) parentMap.set(childId, actualParent);
+      }
+    }
+  });
+
+  return parentMap;
+};
+
 // ---------------------------------------------------------------------------
 // 2. Traversal & Geometry Helpers
 // ---------------------------------------------------------------------------
@@ -1397,7 +1417,14 @@ const ensureNodeSelected = () => {
   }
 };
 
-const getParentNode = (id, allElements) => {
+/**
+ * Retrieves the parent node of a specific element.
+ */
+const getParentNode = (id, allElements, parentMap = null) => {
+  if (parentMap && parentMap.has(id)) {
+    return parentMap.get(id);
+  }
+
   const arrow = allElements.find(
     (el) => el.type === "arrow" && el.customData?.isBranch && el.endBinding?.elementId === id,
   );
@@ -1454,8 +1481,17 @@ const buildGroupToNodes = (branchIds, allElements) => {
   return groupToNodes;
 };
 
-const getHierarchy = (el, allElements) => {
-  el = getBoundaryHost([el]) ?? el;
+/**
+ * Traverses up the tree to find the root and depth.
+ */
+const getHierarchy = (el, allElements, elementById = null, parentMap = null) => {
+  // Optimization: If we have an ID lookup, use it, otherwise perform search
+  if(elementById) {
+    el = getBoundaryHost([el]) ?? el;
+  } else {
+    // Legacy behavior for ad-hoc calls
+    el = getBoundaryHost([el]) ?? el;
+  }
 
   let depth = 0,
     curr = el,
@@ -1464,7 +1500,8 @@ const getHierarchy = (el, allElements) => {
   const visited = new Set([el.id]);
 
   while (true) {
-    let p = getParentNode(curr.id, allElements);
+    let p = getParentNode(curr.id, allElements, parentMap);
+    
     if (!p || visited.has(p.id)) {
       rootId = curr.id;
       break;
@@ -1951,16 +1988,23 @@ const moveCrossLinks = (allElements, originalPositions) => {
   return touched;
 };
 
-const moveDecorations = (allElements, originalPositions, groupToNodes, rootId) => {
-  // Identify decoration elements (grouped but non-structural)
+const moveDecorations = (allElements, originalPositions, groupToNodes, rootId, elementById, parentMap) => {
+  const structuralIds = new Set();
+  if (rootId) {
+    allElements.forEach(el => {
+      if (isStructuralElement(el, allElements, rootId, elementById, parentMap)) {
+        structuralIds.add(el.id);
+      }
+    });
+  }
+
   const decorationsToUpdate = [];
 
   allElements.forEach(el => {
-    // Skip structural elements (handled by main layout)
-    const isStructural = isStructuralElement(el, allElements, rootId);
+    // Optimization: O(1) lookup instead of function call
+    const isStructural = structuralIds.has(el.id); 
     const isCrossLink = el.type === "arrow" && !el.customData?.isBranch && el.startBinding?.elementId && el.endBinding?.elementId;
     
-    // Decoration condition: Grouped, non-structural, not a cross-link
     const isDecoration = !isStructural && !isCrossLink && el.groupIds && el.groupIds.length > 0;
 
     if (isDecoration) {
@@ -1986,13 +2030,11 @@ const moveDecorations = (allElements, originalPositions, groupToNodes, rootId) =
            
            if (oldPos && newEl) {
              validHost = true;
-             // Old Box
              minXOld = Math.min(minXOld, oldPos.x);
              minYOld = Math.min(minYOld, oldPos.y);
              maxXOld = Math.max(maxXOld, oldPos.x + n.width);
              maxYOld = Math.max(maxYOld, oldPos.y + n.height);
 
-             // New Box
              minXNew = Math.min(minXNew, newEl.x);
              minYNew = Math.min(minYNew, newEl.y);
              maxXNew = Math.max(maxXNew, newEl.x + newEl.width);
@@ -2251,14 +2293,16 @@ const getSubtreeHeight = (nodeId, allElements, childrenByParent, heightCache, el
 };
 
 /**
- * Determines if an element is part of the mindmap structure (Node, Branch Arrow, Boundary).
+ * Determines if an element is part of the mindmap structure.
  */
-const isStructuralElement = (el, allElements, rootId = null) => {
-  const isStructuralType = el.customData?.isBranch ||el.customData?.growthMode || el.customData?.isBoundary || typeof el.customData?.mindmapOrder !== "undefined";
+const isStructuralElement = (el, allElements, rootId = null, elementById = null, parentMap = null) => {
+  const isStructuralType = el.customData?.isBranch || el.customData?.growthMode || el.customData?.isBoundary || typeof el.customData?.mindmapOrder !== "undefined";
+  
   if (rootId && isStructuralType) {
-    const info = getHierarchy(el, ea.getViewElements());
+    // Optimization: Pass maps to getHierarchy to prevent O(N) lookups
+    const info = getHierarchy(el, allElements, elementById, parentMap);
     if (info?.rootId === rootId) return true;
-    if (info?.rootId) return false; // If it belongs to a different root, it's not structural for the current tree
+    if (info?.rootId) return false; 
   }
 
   if (!rootId && isStructuralType) return true;
@@ -2637,7 +2681,7 @@ const configureArrow = (context) => {
   }
 };
 
-const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder = false, rootId) => {
+const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder = false, rootId, parentMap = null) => {
   const node = elementById?.get(nodeId) ?? allElements.find((el) => el.id === nodeId);
   const eaNode = ea.getElement(nodeId);
 
@@ -2654,7 +2698,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   const currentYCenter = eaNode.y + node.height / 2;
 
   let effectiveSide = side;
-  const parent = getParentNode(nodeId, allElements);
+  const parent = getParentNode(nodeId, allElements, parentMap);
 
   if (parent) {
     const parentCenterX = parent.x + parent.width / 2;
@@ -2727,6 +2771,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
         elementById,
         mustHonorMindmapOrder,
         rootId,
+        parentMap,
       );
 
       const childNode = elementById?.get(child.id) ?? allElements.find((el) => el.id === child.id);
@@ -2753,6 +2798,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
     elementById,
     mustHonorMindmapOrder,
     rootId,
+    parentMap,
   ));
 
   // Update Arrows
@@ -2825,7 +2871,7 @@ const updateL1Arrow = (node, context) => {
 };
 
 const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, options, mustHonorMindmapOrder = false) => {
-  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById, rootId } = context;
+  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById, rootId, parentMap } = context;
   const count = nodes.length;
 
   // --- CONFIGURATION FROM SETTINGS ---
@@ -2938,9 +2984,9 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, opt
     const tCY = rootCenter.y + placeR * Math.sin(rad);
 
     if (isPinned) {
-      layoutSubtree(node.id, node.x, node.y + node.height / 2, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder, rootId);
+      layoutSubtree(node.id, node.x, node.y + node.height / 2, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder, rootId, parentMap);
     } else {
-      layoutSubtree(node.id, tCX, tCY, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder, rootId);
+      layoutSubtree(node.id, tCX, tCY, dynamicSide, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder, rootId, parentMap);
     }
 
     // Advance
@@ -2955,7 +3001,7 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, opt
 };
 
 const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, isLeftSide, centerAngle, gapMultiplier, mustHonorMindmapOrder = false) => {
-  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById, rootId } = context;
+  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById, rootId, parentMap } = context;
   const count = nodes.length;
 
   // --- VERTICAL DIRECTIONAL LAYOUT (RIGHT/LEFT) ---
@@ -2985,7 +3031,7 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
     const nodeSpanDeg = (nodeHeight / radiusY) * (180 / Math.PI);
 
     if (isPinned) {
-      layoutSubtree(node.id, node.x, node.y + node.height / 2, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder, rootId);
+      layoutSubtree(node.id, node.x, node.y + node.height / 2, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder, rootId, parentMap);
       const info = getAngularInfo(node, nodeHeight);
       if (isLeftSide) {
         if (currentAngle > info.start - gapSpanDeg) currentAngle = info.start - gapSpanDeg;
@@ -3009,7 +3055,7 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
       const angleRad = (angleDeg - 90) * (Math.PI / 180);
       const tCX = rootCenter.x + radiusX * Math.cos(angleRad);
       const tCY = rootCenter.y + radiusY * Math.sin(angleRad);
-      layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder, rootId);
+      layoutSubtree(node.id, tCX, tCY, side, allElements, hasGlobalFolds, childrenByParent, heightCache, elementById, mustHonorMindmapOrder, rootId, parentMap);
     }
 
     if (node.customData?.mindmapNew) {
@@ -3111,6 +3157,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
     });
 
     const elementById = buildElementMap(allElements);
+    const parentMap = buildParentMap(allElements, elementById);
     const childrenByParent = buildChildrenMap(allElements, elementById);
     const heightCache = new Map();
 
@@ -3143,21 +3190,17 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
       childrenByParent,
       heightCache,
       elementById,
+      parentMap,
     };
 
     const isModeSwitch = mustHonorMindmapOrder || oldMode && oldMode !== newMode;
 
-    // Only sort by visual sequence if we aren't enforcing a new manual sort order
-    // AND if we aren't switching modes (which might necessitate a specific rebalance)
-    // Note: If mustHonorMindmapOrder is true, we explicitly rely on mindmapOrder set in changeNodeOrder
     if (!isModeSwitch && doVisualSort && !mustHonorMindmapOrder) {
       sortL1NodesBasedOnVisualSequence(l1Nodes, newMode, rootCenter);
     } else if (!mustHonorMindmapOrder) {
-      // Just update the mode if we aren't re-sorting manually
       ea.addAppendUpdateCustomData(rootId, { growthMode: newMode });
     }
 
-    // --- MAIN EXECUTION BLOCK ---
     if (newMode === "Radial") {
       layoutL1Nodes(l1Nodes, {
         sortMethod: "radial",
@@ -3171,16 +3214,12 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
 
       if (newMode === "Right-Left") {
         if (isModeSwitch && !mustHonorMindmapOrder) {
-          // Switch (Auto-balance): Split evenly
           const splitIdx = Math.ceil(l1Nodes.length / 2);
           l1Nodes.forEach((node, i) => {
             if (i < splitIdx) rightNodes.push(node);
             else leftNodes.push(node);
           });
         } else {
-          // Maintenance or Manual Sort: Respect the user's manual side-choice (via coordinates or order)
-          // If mustHonorMindmapOrder is true, l1Nodes are already sorted by mindmapOrder.
-          // We distribute them based on their current visual center relative to root.
           l1Nodes.forEach((node) => {
             const nodeCX = node.x + node.width / 2;
             if (nodeCX > rootCenter.x) rightNodes.push(node);
@@ -3204,7 +3243,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
     const { mindmapIdsSet, crosslinkIdSet, decorationIdSet } = sharedSets;
 
     moveCrossLinks(ea.getElements(), originalPositions);
-    moveDecorations(ea.getElements(), originalPositions, groupToNodes, rootId);
+    moveDecorations(ea.getElements(), originalPositions, groupToNodes, rootId, elementById, parentMap);
 
     ea.getElements().filter(el => !mindmapIdsSet.has(el.id) && !crosslinkIdSet.has(el.id) && !decorationIdSet.has(el.id)).forEach(el => {
       delete ea.elementsDict[el.id];
@@ -3222,8 +3261,6 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
     removeGroupFromElements(structuralGroupId, allElements);
   }
 
-  // FIX: Expand mindmapIds to include bound elements (like Text inside Boxes)
-  // This ensures they are not filtered out by the cleanup step in `run`
   const expandedMindmapIds = [...mindmapIds];
   mindmapIds.forEach(id => {
       const el = allElements.find(e => e.id === id);
@@ -3240,7 +3277,6 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
   await run(allElements, mindmapIds, root, true, sharedSets, mustHonorMindmapOrder);
   await addElementsToView({ captureUpdate: "EVENTUALLY" });
 
-  // sometimes one pass is not enough to settle subtree positions and boundaries
   ea.copyViewElementsToEAforEditing(ea.getViewElements());
   allElements = ea.getElements();
   root = allElements.find((el) => el.id === rootId);
