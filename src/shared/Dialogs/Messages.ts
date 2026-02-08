@@ -17,6 +17,14 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.20.3":`
+## Fixed
+- Hover preview when hovering an element with a link in the scene was unreliable
+- If a text element had a link in the text body, in some situations the link became unresponsive to clicks. [#2660](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2660)
+
+## New
+- Added default keymap to latex editor [#2655](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2655) 🙏[superle3](https://github.com/superle3)
+`,
 "2.20.2":`
 ## New from Excalidraw.com
 - Arrow focus indicator [#10613](https://github.com/excalidraw/excalidraw/pull/10613)

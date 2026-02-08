@@ -1,7 +1,7 @@
 {
   "id": "obsidian-excalidraw-plugin",
   "name": "Excalidraw",
-  "version": "2.20.2",
+  "version": "2.20.3",
   "minAppVersion": "1.5.7",
   "description": "Sketch Your Mind. An Obsidian plugin to edit and view Excalidraw drawings. Enter the world of 4D Visual PKM.",
   "author": "Zsolt Viczian",

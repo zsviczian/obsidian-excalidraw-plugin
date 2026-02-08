@@ -3535,7 +3535,6 @@ export class ExcalidrawAutomate {
   getCommonGroupForElements(elements: ExcalidrawElement[]): string {
     const groupId = elements
       .map(el=>el.groupIds)
-      .filter(groupIds=>typeof groupIds !== "undefined" && groupIds.length > 0)
       .reduce((prev,cur)=>cur.filter(v=>prev.includes(v)));
     return groupId.length > 0 ? groupId[0] : null;
   }

@@ -55,6 +55,7 @@ import {
   getContainerElement,
   syncInvalidIndices,
   VIEW_TYPE_SIDEPANEL,
+  sceneCoordsToViewportCoords,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
@@ -4100,11 +4101,30 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
     this.semaphores.hoverSleep = true;
     window.setTimeout(() => (this.semaphores.hoverSleep = false), 500);
+    const baseMouseEvent = this.lastMouseEvent as MouseEvent | null;
+    const {x: sceneX, y: sceneY} = this.currentPosition;
+    const {x: clientX, y: clientY} = sceneCoordsToViewportCoords({sceneX, sceneY}, this.excalidrawAPI?.getAppState());
+    const normalizedMouseEvent = baseMouseEvent
+      ? new MouseEvent(baseMouseEvent.type || "mousemove", {
+          bubbles: true,
+          cancelable: true,
+          view: this.ownerWindow,
+          clientX,
+          clientY,
+          button: baseMouseEvent.button ?? 0,
+          buttons: baseMouseEvent.buttons ?? 0,
+          ctrlKey: !(DEVICE.isIOS || DEVICE.isMacOS),
+          metaKey: (DEVICE.isIOS || DEVICE.isMacOS),
+          shiftKey: false,
+          altKey: false,
+        })
+      : null;
     this.plugin.hover.linkText = linktext;
     this.plugin.hover.sourcePath = this.file.path;
-    this.hoverPreviewTarget = this.contentEl; //e.target;
+    this.hoverPreviewTarget = (this.lastMouseEvent?.target as HTMLElement) ?? this.contentEl; //e.target;
+    this.hoverPoint = this.currentPosition;
     this.app.workspace.trigger("hover-link", {
-      event: this.lastMouseEvent,
+      event: normalizedMouseEvent ?? this.lastMouseEvent,
       source: VIEW_TYPE_EXCALIDRAW,
       hoverParent: this,
       //https://discord.com/channels/686053708261228577/989603365606531104/1386783538795249715
@@ -4112,7 +4132,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       linktext: this.plugin.hover.linkText,
       sourcePath: this.plugin.hover.sourcePath,
     });
-    this.hoverPoint = this.currentPosition;
     if (this.isFullscreen()) {
       window.setTimeout(() => {
         const popover =
@@ -4134,6 +4153,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     )
   };
 
+  private lastKeyDownPosition: {x: number, y: number} = {x: 0, y: 0};
+  
+  private excalidrawDIVonKeyUp = (event: KeyboardEvent) => {
+    this.lastKeyDownPosition = {x: 0, y: 0};
+  };
+
   private excalidrawDIVonKeyDown(event: KeyboardEvent) {
     //(process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.excalidrawDIVonKeyDown, "ExcalidrawView.excalidrawDIVonKeyDown", event);
     if (this.semaphores?.viewunload) return;
@@ -4144,6 +4169,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       this.exitFullscreen();
     }
     if (isWinCTRLorMacCMD(event) && !isSHIFT(event) && !isWinALTorMacOPT(event)) {
+      const {x: lastX, y: lastY} = this.lastKeyDownPosition;
+      const {x: currentX, y: currentY} = this.currentPosition;
+      if (Math.abs(lastX - currentX) < 5 && Math.abs(lastY - currentY) < 5) {
+        return;
+      }
+      this.lastKeyDownPosition = {...this.currentPosition};
       this.showHoverPreview();
     }
   };
@@ -4816,11 +4847,21 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (containerId) {
       this.updateContainerSize(containerId, true);
     }
+    const parseResultOriginal = this.excalidrawData.getParsedResult(textElement.id);
     if (this.textMode === TextMode.parsed) {
-      const parseResultOriginal = this.excalidrawData.getParsedText(textElement.id);
-      return {updatedNextOriginalText: parseResultOriginal, nextLink: textElement.link};
+      return {
+        updatedNextOriginalText: parseResultOriginal.parsed,
+        nextLink: this.plugin.settings.syncElementLinkWithText
+        ? textElement.link
+        : (parseResultOriginal.hasTextLink ? textElement.rawText : null)
+      };
     }
-    return {updatedNextOriginalText: null, nextLink: textElement.link};
+    return {
+      updatedNextOriginalText: null,
+      nextLink: this.plugin.settings.syncElementLinkWithText
+      ? textElement.link
+      : (parseResultOriginal.hasTextLink ? textElement.rawText : null)
+    };
   }
 
   private async onLinkOpen(element: ExcalidrawElement, e: any): Promise<void> {
@@ -4829,25 +4870,28 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (!element) {
       return;
     }
-    let link = element.link;
-    if (!link || link === "") {
+
+    let textLink = "";
+    //if element is type text and element has multiple links, then submit the element text to linkClick to trigger link suggester
+    if(element.type === "text") {
+      const linkText = element.rawText.replaceAll("\n", ""); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
+      const partsArray = REGEX_LINK.getResList(linkText);
+      if(partsArray.filter(p=>Boolean(p.value)).length >= 1) {
+        textLink = linkText;
+      }
+    }
+
+    let link = (element.link ?? "") + " " + textLink;
+    link = link.trim();
+    if (!link) {
       return;
     }
     window.setTimeout(()=>this.removeLinkTooltip(),500);
 
     let event = e?.detail?.nativeEvent;
-    if(this.handleLinkHookCall(element,element.link,event)) return;
+    if(this.handleLinkHookCall(element,link,event)) return;
     //if(openExternalLink(element.link, this.app, !isSHIFT(event) && !isWinCTRLorMacCMD(event) && !isWinMETAorMacCTRL(event) && !isWinALTorMacOPT(event) ? element : undefined)) return;
-    if(openExternalLink(element.link, this.app)) return;
-
-    //if element is type text and element has multiple links, then submit the element text to linkClick to trigger link suggester
-    if(element.type === "text") {
-      const linkText = element.rawText.replaceAll("\n", ""); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
-      const partsArray = REGEX_LINK.getResList(linkText);
-      if(partsArray.filter(p=>Boolean(p.value)).length > 1) {
-        link = linkText;
-      }
-    }
+    if(openExternalLink(link, this.app)) return;
 
     if (!event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
       event = emulateKeysForLinkClick("new-tab");
@@ -4874,15 +4918,22 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       this.lastMouseEvent = event;
       this.lastMouseEvent.ctrlKey = !(DEVICE.isIOS || DEVICE.isMacOS) || this.lastMouseEvent.ctrlKey;
       this.lastMouseEvent.metaKey = (DEVICE.isIOS || DEVICE.isMacOS) || this.lastMouseEvent.metaKey;
-      const link = element.link;
-      if (!link || link === "") {
+      let textLink = "";
+      //if element is type text and element has multiple links, then submit the element text to linkClick to trigger link suggester
+      if(element.type === "text") {
+        const linkText = element.rawText.replaceAll("\n", ""); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
+        const partsArray = REGEX_LINK.getResList(linkText);
+        if(partsArray.filter(p=>Boolean(p.value)).length >= 1) {
+          textLink = linkText;
+        }
+      }
+
+      const link = element.link ?? textLink; //in case of hover, if the user hovers the link indicator then the element link has priority
+      if (!link) {
         return;
       }
-      if (link.startsWith("[[")) {
-        const linkMatch = link.match(/\[\[(?<link>.*?)\]\]/);
-        if (!linkMatch) {
-          return;
-        }
+      const linkMatch = link.match(/\[\[(?<link>.*?)\]\]/);
+      if (linkMatch) {
         let linkText = linkMatch.groups.link;
         this.showHoverPreview(linkText, element);
       }
@@ -6071,6 +6122,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           key: "abc",
           tabIndex: 0,
           onKeyDown: this.excalidrawDIVonKeyDown.bind(this),
+          onKeyUp: this.excalidrawDIVonKeyUp.bind(this),
           onPointerDown: this.onPointerDown.bind(this),
           onMouseMove: this.onMouseMove.bind(this),
           onMouseOver: this.onMouseOver.bind(this),

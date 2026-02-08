@@ -1000,7 +1000,7 @@ export class CommandManager {
           if(this.app.workspace.getActiveViewOfType(ExcalidrawView)) {
             const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
             const api = view?.excalidrawAPI as ExcalidrawImperativeAPI;
-            if(!api.isTrayModeEnabled()) return false;
+            if(!api || !api.isTrayModeEnabled()) return false;
             return true;
           }
           return false;
@@ -1025,12 +1025,7 @@ export class CommandManager {
       name: t("TOGGLE_ENABLE_CONTEXT_MENU"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          if(this.app.workspace.getActiveViewOfType(ExcalidrawView)) {
-            const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-            const api = view?.excalidrawAPI as ExcalidrawImperativeAPI;
-            return true;
-          }
-          return false;
+          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView));
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         view.toggleEnableContextMenu();
@@ -1042,7 +1037,7 @@ export class CommandManager {
       id: "flip-image",
       name: t("FLIP_IMAGE"),
       checkCallback: (checking:boolean) => {
-        if (!DEVICE.isDesktop) return;
+        if (!DEVICE.isDesktop) return false;
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if(!view) return false;
         if(!view.excalidrawAPI) return false;

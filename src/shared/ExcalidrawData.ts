@@ -471,7 +471,7 @@ export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,st
 export class ExcalidrawData {
   public textElements: Map<
     string,
-    { raw: string; parsed: string}
+    { raw: string; parsed: string; hasTextLink: boolean; }
   > = null;
   public scene: any = null;
   public deletedElements: ExcalidrawElement[] = [];
@@ -709,7 +709,7 @@ export class ExcalidrawData {
     this.selectedElementIds = {};
     this.textElements = new Map<
       string,
-      { raw: string; parsed: string}
+      { raw: string; parsed: string, hasTextLink: boolean }
     >();
     this.elementLinks = new Map<string, string>();
     if (this.file !== file) {
@@ -939,10 +939,12 @@ export class ExcalidrawData {
           this.textElements.set(id, {
             raw: text,
             parsed: parseRes.parsed,
+            hasTextLink: !!parseRes.link,
           });
           if (parseRes.link && this.plugin.settings.syncElementLinkWithText) {
             textEl.link = parseRes.link;
           }
+          textEl.hasTextLink = !!parseRes.link;
           //this will set the rawText field of text elements imported from files before 1.3.14, and from other instances of Excalidraw
           if (textEl && (!textEl.rawText || textEl.rawText === "")) {
             textEl.rawText = text;
@@ -1037,7 +1039,7 @@ export class ExcalidrawData {
     this.file = file;
     this.textElements = new Map<
       string,
-      { raw: string; parsed: string}
+      { raw: string; parsed: string; hasTextLink: boolean }
     >();
     this.elementLinks = new Map<string, string>();
     this.setShowLinkBrackets();
@@ -1112,9 +1114,11 @@ export class ExcalidrawData {
     }
     if (this.textMode === TextMode.parsed) {
       if (!text.parsed) {
+        const parseRes = await this.parse(text.raw);
         this.textElements.set(id, {
           raw: text.raw,
-          parsed: (await this.parse(text.raw)).parsed,
+          parsed: parseRes.parsed,
+          hasTextLink: !!parseRes.link,
         });
       }
       //console.log("parsed",this.textElements.get(id).parsed);
@@ -1185,17 +1189,18 @@ export class ExcalidrawData {
           this.textElements.set(id, {
             raw: text.raw,
             parsed: text.parsed,
+            hasTextLink: text.hasTextLink,
           });
           this.textElements.delete(te.id); //delete the old ID from the Map
         }
         if (!this.textElements.has(id)) {
           const raw = te.rawText && te.rawText !== "" ? te.rawText : te.text; //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
-          this.textElements.set(id, { raw, parsed: null});
+          this.textElements.set(id, { raw, parsed: null, hasTextLink: false});
           this.parseasync(id, raw);
         }
       } else if (!this.textElements.has(te.id)) {
         const raw = te.rawText && te.rawText !== "" ? te.rawText : te.text; //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
-        this.textElements.set(id, { raw, parsed: null});
+        this.textElements.set(id, { raw, parsed: null, hasTextLink: false});
         this.parseasync(id, raw);
       }
       
@@ -1238,9 +1243,11 @@ export class ExcalidrawData {
           ? el[0].rawText
           : (el[0].originalText ?? el[0].text);
         if (text !== (el[0].originalText ?? el[0].text)) {
+          const parseRes = await this.parse(text);
           this.textElements.set(key, {
             raw,
-            parsed: (await this.parse(raw)).parsed,
+            parsed: parseRes.parsed,
+            hasTextLink: !!parseRes.link,
           });
         }
       }
@@ -1248,9 +1255,11 @@ export class ExcalidrawData {
   }
 
   private async parseasync(key: string, raw: string) {
+    const parseRes = await this.parse(raw);
     this.textElements.set(key, {
       raw,
-      parsed: (await this.parse(raw)).parsed,
+      parsed: parseRes.parsed,
+      hasTextLink: !!parseRes.link,
     });
   }
 
@@ -1776,6 +1785,14 @@ export class ExcalidrawData {
     return t.parsed;
   }
 
+  public getParsedResult(id: string) {
+    const t = this.textElements.get(id);
+    if (!t) {
+      return null;
+    }
+    return t;
+  }
+
   /**
    * Attempts to quickparse (sycnhronously) the raw text.
    * 
@@ -1805,6 +1822,7 @@ export class ExcalidrawData {
       this.textElements.set(elementID, {
         raw: rawOriginalText,
         parsed: parseResult,
+        hasTextLink: !!link,
       });
       return [parseResult, link];
     }
@@ -1814,6 +1832,7 @@ export class ExcalidrawData {
       this.textElements.set(elementID, {
         raw: rawOriginalText,
         parsed: parsedText,
+        hasTextLink: !!parseRes.link,
       });
       if (parsedText) {
         updateSceneCallback(parsedText);
@@ -1831,6 +1850,7 @@ export class ExcalidrawData {
     this.textElements.set(elementID, {
       raw: rawOriginalText,
       parsed: parseResult.parsed,
+      hasTextLink: !!parseResult.link,
     });
     return {
       parseResult: parseResult.parsed,
