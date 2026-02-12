@@ -20,6 +20,7 @@ import {
   getFontFamilyString,
   getLineHeight,
   measureText,
+  nanoid,
 } from "src/constants/constants";
 import {
   //debug,
@@ -281,10 +282,19 @@ export async function getTemplate(
     }
     if(filenameParts.hasFrameref || filenameParts.hasClippedFrameref) {
       const el = getFrameBasedOnFrameNameOrId(filenameParts.blockref,scene.elements);
-      if(el) {
-        groupElements = el.frameRole === "marker"
-        ? plugin.ea.getElementsInArea(scene.elements, el).concat(el)
-        : plugin.ea.getElementsInFrame(el,scene.elements, filenameParts.hasClippedFrameref);
+      if(el.frameRole === "marker") {
+        const rect = cloneElement(el);
+        rect.type = "rectangle";
+        rect.id = nanoid();
+        rect.opacity = 0;
+        rect.roundness = null;
+        rect.roughness = 0;
+        rect.strokeWidth = 0.1;
+        rect.fillStyle = "solid";
+        scene.elements.push(rect);
+        groupElements = plugin.ea.getElementsInArea(scene.elements, rect).concat(el);
+      } else {
+        groupElements = plugin.ea.getElementsInFrame(el,scene.elements, filenameParts.hasClippedFrameref);
       }
     }
     if(filenameParts.hasArearef) {
@@ -583,7 +593,7 @@ export async function createSVG(
     }
     const isNonMarkerFrameRef = filenameParts.hasFrameref && el.length === 1 && el[0].type === "frame" && el[0].frameRole !== "marker";
 
-    if(el.length>0 && !isNonMarkerFrameRef) {
+    if (el.length > 0 && !isNonMarkerFrameRef) {
       const containerId = el[0].containerId;
       if(containerId) {
         el = el.concat(elements.filter((el: ExcalidrawElement)=>el.id === containerId));

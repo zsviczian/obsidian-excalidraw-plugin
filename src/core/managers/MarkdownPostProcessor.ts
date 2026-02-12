@@ -247,7 +247,7 @@ const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSetting
   return addSVGToImgSrc(img, svg, cacheReady, cacheKey);
 }
 
-const _getSVGNative = async ({filenameParts,theme,cacheReady,containerElement,file,exportSettings,loader}:{
+const _getSVGNative = async ({filenameParts,theme,cacheReady,containerElement,file,exportSettings,loader, width}:{
   filenameParts: FILENAMEPARTS,
   theme: string,
   cacheReady: boolean,
@@ -255,6 +255,7 @@ const _getSVGNative = async ({filenameParts,theme,cacheReady,containerElement,fi
   file: TFile,
   exportSettings: ExportSettings,
   loader: EmbeddedFilesLoader,
+  width?: number,
 }):Promise<HTMLDivElement> => {
   (process.env.NODE_ENV === 'development') && DEBUGGING && debug(_getSVGNative, `MarkdownPostProcessor.ts > _getSVGNative`);
   exportSettings.skipInliningFonts = false;
@@ -302,7 +303,11 @@ const _getSVGNative = async ({filenameParts,theme,cacheReady,containerElement,fi
     cacheReady && imageCache.addImageToCache(cacheKey,"", svg);
   }
 
-  svg.removeAttribute("width");
+  if(width && !isNaN(width)) {
+    svg.setAttribute("width", width.toString());
+  } else {
+    svg.removeAttribute("width");
+  }
   svg.removeAttribute("height");
   containerElement.append(svg);
   return containerElement;
@@ -378,7 +383,17 @@ const getIMG = async (
     case PreviewImageType.SVG:  {
       const img = createEl("div");
       setStyle({element:img,imgAttributes,onCanvas});
-      return await _getSVGNative({filenameParts,theme,cacheReady,containerElement: img,file,exportSettings,loader});
+      return await _getSVGNative({
+        filenameParts,
+        theme,
+        cacheReady,
+        containerElement: img,file,
+        exportSettings,
+        loader,
+        width: imgAttributes.fwidth
+         ? (!imgAttributes.fwidth.endsWith("%") ? parseInt(imgAttributes.fwidth) : 1000)
+         : undefined,
+      });
     }
   }
 };

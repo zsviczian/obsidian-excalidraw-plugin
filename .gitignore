@@ -17,7 +17,6 @@ tmp
 deploy.ps1
 
 #VSCode
-.vscode
 yarn.lock
 .DS_Store
 .lock
