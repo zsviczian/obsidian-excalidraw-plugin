@@ -17,10 +17,17 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.20.4":`
+## Fixed
+ - Obsidian 1.12.1: Excalidraw embeds in markdown files when using embed mode: NativeSVG stopped working.
+ - Color pickier supports 8-digit hex codes again. [#10772](https://github.com/excalidraw/excalidraw/issues/10772)
+ - Regression removed LaTeX scaling [#2668](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2668) 🙏[@TravisLEBLANC1](https://github.com/TravisLEBLANC1)
+ - Frame reference when using marker frames were malformed.
+`,
 "2.20.3":`
 ## Fixed
 - Hover preview when hovering an element with a link in the scene was unreliable
-- If a text element had a link in the text body, in some situations the link became unresponsive to clicks. [#2660](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2660)
+- If a text element had a link in the text body, in some situations, the link became unresponsive to clicks. [#2660](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2660)
 
 ## New
 - Added default keymap to latex editor [#2655](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2655) 🙏[superle3](https://github.com/superle3)
