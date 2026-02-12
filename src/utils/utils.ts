@@ -593,6 +593,9 @@ export function scaleLoadedImage (
           const elNewWidth = imgWidth * scale.scaleX;
           el.height = elNewHeight;
           el.width = elNewWidth;
+          // we won't need the latexscale anymore
+          // if we don't delete it, it will (maybe wrongfully) scale it back when reloading the view
+          addAppendUpdateCustomData(el, {latexscale : undefined});
         }else if(maintainArea) {
           const elAspectRatio = elWidth / elHeight;
           if (imgAspectRatio !== elAspectRatio) {
