@@ -19,10 +19,17 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 `,
 "2.20.4":`
 ## Fixed
- - Obsidian 1.12.1: Excalidraw embeds in markdown files when using embed mode: NativeSVG stopped working.
- - Color pickier supports 8-digit hex codes again. [#10772](https://github.com/excalidraw/excalidraw/issues/10772)
- - Regression removed LaTeX scaling [#2668](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2668) 🙏[@TravisLEBLANC1](https://github.com/TravisLEBLANC1)
- - Frame reference when using marker frames were malformed.
+- Fix NativeSVG embed mode into Markdown documents, ahead of the Obsidian 1.12.1 release. [#2665](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2665)
+- Color picker once again supports 8-digit hex codes (Hex color string with an opacity). [#10772](https://github.com/excalidraw/excalidraw/issues/10772)
+- Fixed regression that removed LaTeX scaling. [#2668](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2668) 🙏[@TravisLEBLANC1](https://github.com/TravisLEBLANC1)
+- Corrected malformed frame embeds when using marker frames.
+- Context menu options **“Do not invert image(s) in dark mode”** and **“Invert image(s) in dark mode”** now properly cascade when drawings are nested as images inside other drawings.
+- Improved performance of the [MindMap Builder script](https://visual-thinking-workshop.com/mindmap).
+
+## New
+- [Deconstruct Selected Elements script](https://youtu.be/HRtaaD34Zzg) now includes a folder selection option, allowing you to choose the destination folder for the generated image.
+- Arrow binding midpoints. When the projected point is close to center, snap it to the exact center. This way it's easier to create neat(er) simple arrow connections. [#10611](https://github.com/excalidraw/excalidraw/pull/10611)
+
 `,
 "2.20.3":`
 ## Fixed

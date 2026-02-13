@@ -418,16 +418,33 @@ export class EmbeddedFilesLoader {
     );
     if (imageList.length > 0) {
       hasSVGwithBitmap = true;
-    }
+    }  
 
     if (hasSVGwithBitmap && isDark && !Boolean(maybeSVG)) { 
       imageList.forEach((i) => {
         const id = i.parentElement?.id;
+        if (id.endsWith("-invert-bitmap")) return;
         svg.querySelectorAll(`use[href='#${id}']`).forEach((u) => {
           u.setAttribute("filter", THEME_FILTER);
         });
       });
     }
+
+    const svgsToInvert =  svg.querySelectorAll("symbol[id$='-no-invert-svg']");
+
+    if (svgsToInvert.length > 0) {
+      hasSVGwithBitmap = true;
+    }
+
+    if (svgsToInvert.length > 0 && isDark && !Boolean(maybeSVG)) {
+      svgsToInvert.forEach((i) => {
+        const id = i.id;
+        svg.querySelectorAll(`use[href='#${id}']`).forEach((u) => {
+          u.setAttribute("filter", THEME_FILTER);
+        });
+      });
+    }
+
     if (!hasSVGwithBitmap && svg.getAttribute("hasbitmap")) {
       hasSVGwithBitmap = true;
     }

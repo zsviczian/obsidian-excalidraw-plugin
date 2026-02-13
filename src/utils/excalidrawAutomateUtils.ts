@@ -282,7 +282,7 @@ export async function getTemplate(
     }
     if(filenameParts.hasFrameref || filenameParts.hasClippedFrameref) {
       const el = getFrameBasedOnFrameNameOrId(filenameParts.blockref,scene.elements);
-      if(el.frameRole === "marker") {
+      if(el && el.type === "frame" && el.frameRole === "marker") {
         const rect = cloneElement(el);
         rect.type = "rectangle";
         rect.id = nanoid();
