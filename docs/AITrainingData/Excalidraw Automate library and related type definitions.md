@@ -2377,7 +2377,10 @@ export interface AppState {
     selectionElement: NonDeletedExcalidrawElement | null;
     isBindingEnabled: boolean;
     startBoundElement: NonDeleted<ExcalidrawBindableElement> | null;
-    suggestedBinding: NonDeleted<ExcalidrawBindableElement> | null;
+    suggestedBinding: {
+        element: NonDeleted<ExcalidrawBindableElement>;
+        midPoint?: GlobalPoint;
+    } | null;
     frameToHighlight: NonDeleted<ExcalidrawFrameLikeElement> | null;
     frameRendering: {
         enabled: boolean;
@@ -2806,6 +2809,7 @@ export type AppClassProperties = {
     onPointerUpEmitter: App["onPointerUpEmitter"];
     updateEditorAtom: App["updateEditorAtom"];
     onPointerDownEmitter: App["onPointerDownEmitter"];
+    lastPointerMoveCoords: App["lastPointerMoveCoords"];
     bindModeHandler: App["bindModeHandler"];
 };
 export type PointerDownState = Readonly<{
