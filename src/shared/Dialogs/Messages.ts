@@ -17,6 +17,14 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.20.5":`
+## Fixed
+- Floating navigation bar styling not removed when closing Excalidraw view on Obsidian Mobile [#2673](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2673)
+- UI mode preference on Mobile Devices [#2670](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2670)
+
+## New
+- Added "Toggle Full Screen" button to toolbar after the "Insert Any File" button.
+`,
 "2.20.4":`
 ## Fixed
 - Fix NativeSVG embed mode into Markdown documents, ahead of the Obsidian 1.12.1 release. [#2665](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2665)

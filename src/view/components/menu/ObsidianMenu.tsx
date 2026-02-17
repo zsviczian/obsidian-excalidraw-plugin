@@ -156,6 +156,18 @@ export class ObsidianMenu {
     insertFileModal.open();
   }
 
+  private actionToggleFullscreen() {
+    if (this.view.isFullscreen()) {
+      this.view.exitFullscreen();
+    } else {
+      this.view.gotoFullscreen();
+    }
+    this.view.excalidrawAPI?.updateScene({
+      appState: {},
+      captureUpdate: CaptureUpdateAction.NEVER,
+    });
+  }
+
   public renderCustomPens (isMobile: boolean, appState: AppState) {
     return(
       appState.customPens?.map((_,index)=>{
@@ -256,6 +268,7 @@ export class ObsidianMenu {
   }
 
   public renderButton (isMobile: boolean, appState: AppState) {
+    const isFullscreen = this.view.isFullscreen();
     return (
       <div className={clsx(
         {
@@ -289,6 +302,20 @@ export class ObsidianMenu {
         >
           <div className="ToolIcon__icon" aria-label={t("UNIVERSAL_ADD_FILE")}>
             {ICONS["add-file"]}
+          </div>
+        </label>
+        <label
+          className={clsx(
+            "ToolIcon",
+            "ToolIcon_size_medium",
+            {
+              "is-mobile": isMobile,
+            },
+          )}
+          onClick={this.actionToggleFullscreen.bind(this)}
+        >
+          <div className="ToolIcon__icon" aria-label={isFullscreen ? t("EXIT_FULLSCREEN") : t("GOTO_FULLSCREEN")}>
+            {isFullscreen ? ICONS.exitFullScreen : ICONS.gotoFullScreen}
           </div>
         </label>
         {this.renderCustomPens(isMobile,appState)}

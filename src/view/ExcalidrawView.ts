@@ -131,7 +131,7 @@ import { ObsidianMenu } from "./components/menu/ObsidianMenu";
 import { ToolsPanel } from "./components/menu/ToolsPanel";
 import { ScriptEngine } from "../shared/Scripts";
 import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAtPointer } from "../utils/getElementAtPointer";
-import { excalidrawSword, ICONS, LogoWrapper, Rank, saveIcon, SwordColors } from "../constants/actionIcons";
+import { excalidrawSword, getTrayIcon, ICONS, LogoWrapper, Rank, saveIcon, SwordColors } from "../constants/actionIcons";
 import { ExportDialog } from "../shared/Dialogs/ExportDialog";
 import { getEA } from "src/core"
 import { anyModifierKeysPressed, emulateKeysForLinkClick, isWinALTorMacOPT, isWinCTRLorMacCMD, isWinMETAorMacCTRL, isSHIFT, linkClickModifierType, ModifierKeys } from "../utils/modifierkeyHelper";
@@ -2134,7 +2134,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   //onClose happens after onunload
   protected async onClose(): Promise<void> {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onClose,`ExcalidrawView.onClose, file:${this.file?.name}`);
-    
     //I noticed Obsidian calls this function twice when disabling the plugin
     //once from "unregisterView"
     //the from "detachLeavesOfType"
@@ -5812,10 +5811,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       React.createElement(MainMenu.DefaultItems.ChangeCanvasBackground),
       React.createElement(MainMenu.DefaultItems.ToggleTheme),
       React.createElement(MainMenu.Separator),
-      !DEVICE.isPhone ? React.createElement(
+      React.createElement(
         MainMenu.Item,
         {              
-          icon: ICONS.trayMode,
+          icon: getTrayIcon(),
           "aria-label": t("ARIA_LABEL_TRAY_MODE"),
           onSelect: ()=> {
             const uiModes = new UIModeSettings(this.plugin);
@@ -5823,7 +5822,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           },
         },
         t("TRAY_TRAY_MODE")
-      ) : null,
+      ),
       React.createElement(
         MainMenu.Item,
         {              
@@ -6342,11 +6341,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   public setUIMode(mode: UIMode) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setUIMode, "ExcalidrawView.setDesktopUIMode");
     const api = this.excalidrawAPI as ExcalidrawImperativeAPI;
-    if (mode === "phone") {
-      return;
-    }
     api.setDesktopUIMode(mode);
-    api.setTrayModeEnabled(mode === "tray");
   }
 
   /**

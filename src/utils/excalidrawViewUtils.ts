@@ -628,10 +628,14 @@ export function getViewColorPalette(
 //!Temporary hack
 //https://discord.com/channels/686053708261228577/817515900349448202/1031101635784613968
 export const setMobileNavbarPosition = (dock:boolean) => {
-  if (DEVICE.isMobile && dock) {
+  if (DEVICE.isMobile) {
     const navbar = document.querySelector("body>.app-container>.mobile-navbar");
     if(navbar && navbar instanceof HTMLDivElement) {
-      navbar.style.position= dock ? "relative" : "";
+      if (dock) {
+        navbar.addClass("excalidraw-mobile-navbar-docked");
+      } else {
+        navbar.removeClass("excalidraw-mobile-navbar-docked");
+      }
     }
   }
 }

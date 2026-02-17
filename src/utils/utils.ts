@@ -652,12 +652,16 @@ export function setLeftHandedMode (isLeftHanded: boolean) {
 };
 
 export function calculateUIModeValue(settings: ExcalidrawSettings): UIMode {
+  const phoneMode = settings.phoneUIMode ?? "mobile";
+  const tabletMode = settings.tabletUIMode ?? "compact";
+  const desktopMode = settings.desktopUIMode ?? "tray";
+
   return DEVICE.isPhone
-  ? "phone"
+  ? phoneMode
   : DEVICE.isTablet
-  ? settings.tabletUIMode
+  ? tabletMode
   : DEVICE.isDesktop
-  ? settings.desktopUIMode
+  ? desktopMode
   : "tray";
 }
 

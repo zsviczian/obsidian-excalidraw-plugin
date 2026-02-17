@@ -465,9 +465,13 @@ export default {
   DESKTOP_UI_MODE_DESC: "Select the default UI mode for desktop devices.",
   TABLET_UI_MODE_NAME: "Preferred Tablet Mode",
   TABLET_UI_MODE_DESC: "Select the default UI mode for tablet devices.",
+  PHONE_UI_MODE_NAME: "Preferred Phone Mode",
+  PHONE_UI_MODE_DESC: "Select the default UI mode for phone devices.",
   MODE_FULL: "Desktop-mode",
   MODE_COMPACT: "Compact-mode",
   MODE_TRAY: "Tray-mode",
+  MODE_PHONE: "Phone-mode",
+  REAPPLY_UI_MODE_BUTTON: "Reapply UI mode now",
   TRAY_MODE_NAME: "Enable tray-mode",
   PREFER_COMPACT_MODE_DESKTOP_NAME: "Prefer compact-mode on Desktop",
   PREFER_COMPACT_MODE_DESKTOP_DESC: "When toggling tray-mode on a desktop, if this option is enabled, Excalidraw will toggle between compact-mode and tray-mode. " +

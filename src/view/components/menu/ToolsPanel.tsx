@@ -1,8 +1,8 @@
 import clsx from "clsx";
-import { Notice, TFile } from "obsidian";
+import { Notice, TFile, getIcon } from "obsidian";
 import * as React from "react";
 import { ActionButton } from "./ActionButton";
-import { ICONS, saveIcon, stringToSVG } from "../../../constants/actionIcons";
+import { getTrayIcon, ICONS, saveIcon, stringToSVG } from "../../../constants/actionIcons";
 import { DEVICE, SCRIPT_INSTALL_FOLDER } from "../../../constants/constants";
 import { insertLaTeXToView, search } from "../../../utils/excalidrawAutomateUtils";
 import ExcalidrawView, { TextMode } from "../../ExcalidrawView";
@@ -580,7 +580,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     key={"ui-mode"}
                     title={t("UI_MODE")}
                     action={this.actionToggleTrayMode.bind(this)}
-                    icon={ICONS.trayMode}
+                    icon={getTrayIcon()}
                   />
                   <ActionButton
                     key={"fullscreen"}

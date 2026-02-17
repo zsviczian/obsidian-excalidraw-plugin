@@ -1,7 +1,6 @@
 import ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
 import { UIModeSettingsComponent } from "./UIModeSettingComponent";
-import { FloatingModal } from "./FloatingModal";
 import { Modal } from "obsidian";
 
 export class UIModeSettings extends Modal {
@@ -31,6 +30,7 @@ export class UIModeSettings extends Modal {
       this.plugin.settings,
       this.app,
       ()=>this.applySettingsUpdate(),
+      ()=>this.close(),
     ).render();
   }
 

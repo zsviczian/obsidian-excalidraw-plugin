@@ -92,6 +92,7 @@ export interface ExcalidrawSettings {
   isLeftHanded: boolean;
   desktopUIMode: UIMode;
   tabletUIMode: UIMode;
+  phoneUIMode: UIMode;
   iframeMatchExcalidrawTheme: boolean;
   matchTheme: boolean;
   matchThemeAlways: boolean;
@@ -283,6 +284,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   isLeftHanded: false,
   desktopUIMode: "tray",
   tabletUIMode: "compact",
+  phoneUIMode: "mobile",
   iframeMatchExcalidrawTheme: true,
   matchTheme: false,
   matchThemeAlways: false,

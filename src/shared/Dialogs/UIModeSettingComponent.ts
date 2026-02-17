@@ -4,9 +4,8 @@ import { ExcalidrawSettings } from "src/core/settings";
 import { fragWithHTML, setLeftHandedMode, setUIMode } from "src/utils/utils";
 import { DEVICE } from "src/constants/constants";
 
-export type UIMode = "full" | "compact" | "tray" | "phone";
+export type UIMode = "full" | "compact" | "tray" | "mobile";
 
-//setTrayMode(this.app, this.plugin.settings);
 //setDesktopUIMode(this.app, this.plugin.settings);
 
 
@@ -15,17 +14,20 @@ export class UIModeSettingsComponent {
   private settings: ExcalidrawSettings;
   private app: App;
   private onChange: () => void;
+  private reapplyButtonAction: ()=>void = null;
 
   constructor(
     containerEl: HTMLElement,
     settings: ExcalidrawSettings,
     app: App,
     onChange: () => void,
+    reapplyButtonAction: ()=>void = null,
   ) {
     this.containerEl = containerEl;
     this.settings = settings;
     this.app = app;
     this.onChange = onChange;
+    this.reapplyButtonAction = reapplyButtonAction;
   }
 
   render(): void {
@@ -54,12 +56,32 @@ export class UIModeSettingsComponent {
       .setDesc(t("TABLET_UI_MODE_DESC"))
       .addDropdown((dropdown: DropdownComponent) =>
         dropdown
+          .addOption("full", t("MODE_FULL"))
           .addOption("compact", t("MODE_COMPACT"))
           .addOption("tray", t("MODE_TRAY"))
           .setValue(this.settings.tabletUIMode)
           .onChange((value: UIMode) => {
             this.settings.tabletUIMode = value;
             if (DEVICE.isTablet) {
+              setUIMode(this.app, this.settings);
+            }
+            this.onChange();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName(t("PHONE_UI_MODE_NAME"))
+      .setDesc(t("PHONE_UI_MODE_DESC"))
+      .addDropdown((dropdown: DropdownComponent) =>
+        dropdown
+          .addOption("full", t("MODE_FULL"))
+          .addOption("compact", t("MODE_COMPACT"))
+          .addOption("tray", t("MODE_TRAY"))
+          .addOption("mobile", t("MODE_PHONE"))
+          .setValue(this.settings.phoneUIMode ?? "mobile")
+          .onChange((value: UIMode) => {
+            this.settings.phoneUIMode = value;
+            if (DEVICE.isPhone) {
               setUIMode(this.app, this.settings);
             }
             this.onChange();
@@ -81,6 +103,19 @@ export class UIModeSettingsComponent {
             this.onChange();
           }),
       );
+
+    if (this.reapplyButtonAction) {
+      new Setting(containerEl)
+        .addButton((button) =>
+          button
+            .setButtonText(t("REAPPLY_UI_MODE_BUTTON"))
+            .setCta()
+            .onClick(() => {
+              setUIMode(this.app, this.settings);
+              this.reapplyButtonAction();
+            }),
+        );
+    }
 
   }
 }

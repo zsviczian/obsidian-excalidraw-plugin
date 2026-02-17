@@ -1107,3 +1107,7 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 .excalidraw-filetype-tag {
     order: 99;
 }
+
+.excalidraw-mobile-navbar-docked {
+  position: relative;
+}

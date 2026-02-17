@@ -235,7 +235,7 @@ export class EventManager {
       this.plugin.removeModalContainerObserver();
     }
 
-    setMobileNavbarPosition(newActiveviewEV && !previouslyActiveEV);
+    setMobileNavbarPosition(!!newActiveviewEV);
     //----------------------
     //----------------------
 
