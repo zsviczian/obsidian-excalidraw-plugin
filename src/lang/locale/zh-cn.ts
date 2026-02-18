@@ -465,9 +465,13 @@ export default {
   DESKTOP_UI_MODE_DESC: "桌面端设备默认 UI 模式。",
   TABLET_UI_MODE_NAME: "平板端偏好模式",
   TABLET_UI_MODE_DESC: "平板端设备默认 UI 模式。",
+  PHONE_UI_MODE_NAME: "手机端偏好模式",
+  PHONE_UI_MODE_DESC: "手机端设备默认 UI 模式。",
   MODE_FULL: "Desktop-mode",
   MODE_COMPACT: "Compact-mode",
   MODE_TRAY: "Tray-mode",
+  MODE_PHONE: "Phone-mode",
+  REAPPLY_UI_MODE_BUTTON: "重新应用 UI 模式",
   TRAY_MODE_NAME: "启用托盘模式",
   PREFER_COMPACT_MODE_DESKTOP_NAME: "在桌面端偏好紧凑模式",
   PREFER_COMPACT_MODE_DESKTOP_DESC: "切换托盘模式时，开启该项，Excalidraw 将在紧凑模式与托盘模式之间切换。" +
