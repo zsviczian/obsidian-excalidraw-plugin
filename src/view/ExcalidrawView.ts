@@ -1269,6 +1269,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       doc.body.querySelectorAll(`div.mobile-navbar`).forEach(node=>node.addClass(HIDE));
       doc.body.querySelectorAll(`div.status-bar`).forEach(node=>node.addClass(HIDE));
       doc.body.querySelectorAll(`div.titlebar`).forEach(node=>node.addClass(HIDE));
+      const topPadding = doc.body.querySelector(".is-mobile .workspace > .mod-root");
+      if(topPadding && topPadding instanceof HTMLElement) {
+        topPadding.style.paddingTop = "0px";
+      }
     }
 
     hide(this.contentEl);
@@ -1288,6 +1292,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const doc = this.ownerDocument;
     doc.querySelectorAll(".excalidraw-hidden").forEach(el=>el.removeClass(HIDE));
     doc.querySelectorAll(".excalidraw-visible").forEach(el=>el.removeClass(SHOW));
+    const topPadding = doc.body.querySelector(".is-mobile .workspace > .mod-root");
+    if(topPadding && topPadding instanceof HTMLElement) {
+      topPadding.style.paddingTop = "";
+    }
     this.contentEl.style.marginTop = "";
   }
 
@@ -2112,6 +2120,19 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     let dirty = false;
     //if saving was already in progress
     //the function awaits the save to finish.
+    if(!this.excalidrawAPI) {
+      return false;
+    }
+    this.checkSceneVersion(this.excalidrawAPI.getSceneElements());
+    if(!this.isDirty()) {
+      if(!this.semaphores.saving) {
+        return false;
+      }
+      //check for Excalibrain view
+      if (this.hookServer && this.hookServer.onViewUnloadHook?.toString() === "e=>{this.scene&&this.scene.leaf===e.leaf&&this.stop()}") {
+        return false;
+      }
+    }
     while (this.semaphores.saving && watchdog++ < 200) {
       dirty = true;
       await sleep(40);
@@ -3223,7 +3244,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setMarkdownView, "ExcalidrawView.setMarkdownView", eState);
     //save before switching to markdown view.
     //this would also happen onClose, but it does not hurt to save it here
-    //this way isDirty() will return false in onClose, thuse
+    //this way isDirty() will return false in onClose, thus
     //saving here will not result in double save
     //there was a race condition when clicking a link with a section or block reference to the back-of-the-note
     //that resulted in a call to save after the view has been destroyed
