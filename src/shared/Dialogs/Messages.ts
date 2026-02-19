@@ -19,11 +19,11 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 `,
 "2.20.5":`
 ## Fixed
-- Floating navigation bar styling not removed when closing Excalidraw view on Obsidian Mobile [#2673](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2673)
-- UI mode preference on Mobile Devices [#2670](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2670)
+- Obsidian Mobile: The floating navigation bar got stuck at the bottom after closing Excalidraw or switching to a markdown note. [#2673](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2673)
+- "Toggle UI Mode" now includes a preference setting for Obsidian Phone as well. You can now set different default layouts for phone, tablet, and desktop. [#2670](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2670)
 
 ## New
-- Added "Toggle Full Screen" button to toolbar after the "Insert Any File" button.
+- Added "Toggle Full Screen" button to toolbar right next to the "Obsidian menu", and the "Insert Any File" button.
 `,
 "2.20.4":`
 ## Fixed
