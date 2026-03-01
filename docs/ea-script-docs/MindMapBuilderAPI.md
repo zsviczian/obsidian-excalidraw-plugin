@@ -106,6 +106,9 @@ Returns current selected mindmap node (if resolvable) and selected element IDs.
 #### `selectNode(nodeId?: string): MMResult<{ nodeId: string }>`
 Selects node by ID. If omitted, resolves from current selection context.
 
+#### `setInputFieldDockStatus({ isDocked }): Promise<MMResult<{ isDocked: boolean; isUndocked: boolean; sidepanelVisible: boolean }>>`
+Forces input UI mode to docked/undocked. When docking, it docks if needed and reveals sidepanel if hidden. When undocking, it undocks if needed and hides sidepanel if currently visible.
+
 ### Map structure and node content
 
 #### `getMindMapRoots(): MMResult<{ rootIds: string[] }>`
@@ -277,7 +280,14 @@ if (res.ok) {
 }
 ```
 
-### 6) Import markdown under selected node
+### 6) Force input dock/undock state
+
+```js
+await window.MindMapBuilderAPI.setInputFieldDockStatus({ isDocked: true });  // force docked input
+await window.MindMapBuilderAPI.setInputFieldDockStatus({ isDocked: false }); // force floating input
+```
+
+### 7) Import markdown under selected node
 
 ```js
 const md = `
@@ -292,14 +302,14 @@ const md = `
 await window.MindMapBuilderAPI.importMarkdown({ markdown: md });
 ```
 
-### 7) Export a branch to markdown
+### 8) Export a branch to markdown
 
 ```js
 const out = await window.MindMapBuilderAPI.exportMarkdown({ cut: false });
 if (out.ok) console.log(out.data.markdown);
 ```
 
-### 8) Get role-based IDs and style with ExcalidrawAutomate
+### 9) Get role-based IDs and style with ExcalidrawAutomate
 
 ```js
 const roots = window.MindMapBuilderAPI.getMindMapRoots();
@@ -311,7 +321,7 @@ if (!roles.ok) return;
 // Example: pass roles.data.nodes into your EA styling pipeline
 ```
 
-### 9) Build a feature showcase mindmap (Right-Left + boundaries)
+### 10) Build a feature showcase mindmap (Right-Left + boundaries)
 
 ```js
 (async () => {

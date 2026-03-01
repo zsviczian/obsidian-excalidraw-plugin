@@ -119,8 +119,8 @@ if(!window.MindmapBuilder) {
   removeEventListeners();
 }
 
-const api = () => ea.getExcalidrawAPI();
-const getAppState = () => ea.getExcalidrawAPI().getAppState();
+const api = () => ea?.getExcalidrawAPI();
+const getAppState = () => api()?.getAppState();
 
 // ---------------------------------------------------------------------------
 // LOCALIZATION
@@ -1616,6 +1616,30 @@ const buildGroupToNodes = (branchIds, allElements) => {
 };
 
 /**
+ * Returns the IDs of root nodes in the scene
+ * - A root node is defined as a node with `growthMode` that has only outgoing branch arrows, or no branch arrows at all.
+ * @returns {string[]} An array of root node IDs.
+ */
+const getMasterRoots = () => {
+  const all = ea.getViewElements();
+  const allMap = new Map(all.map((el) => [el.id, el]));
+  const maybeRoots = all.filter((el) => el.customData?.growthMode);
+  const roots = maybeRoots.filter((r) => {
+    const notRoot = r.boundElements.some((be) => {
+      if (be.type !== "arrow") return false;
+      const arrow = allMap.get(be.id);
+      if (!arrow) return false;
+      if (!arrow.customData?.isBranch) return false;
+      if (arrow.endBinding?.elementId === r.id) return true;
+      return false;
+    });
+    return !notRoot;
+  });
+
+  return roots.map((r) => r.id);
+};
+
+/**
  * Traverses up the tree to find the root and depth.
  */
 const getHierarchy = (el, allElements, elementById = null, parentMap = null) => {
@@ -2485,7 +2509,14 @@ const focusSelected = () => {
   let sel = getMindmapNodeFromSelection();
   
   // Fallback to most recently selected if nothing is currently selected
-  if (!sel && mostRecentlySelectedNodeID) {
+  if (!sel) {
+    if (!mostRecentlySelectedNodeID) {
+      const roots = getMasterRoots();
+      if (roots.length > 0) {
+        mostRecentlySelectedNodeID = roots[0];
+      }
+      if (!mostRecentlySelectedNodeID) return;
+    }
     const fallback = ea.getViewElements().find(el => el.id === mostRecentlySelectedNodeID);
     if (fallback) {
       sel = fallback;
@@ -9104,6 +9135,9 @@ const handleKeydown = (e) => {
 
   if (!currentWindow) return;
 
+  const st = getAppState();
+  if (!st || !!st.editingTextElement || !!st.selectedLinearElement?.isEditing || !!st.showHyperlinkPopup) return;
+
   if (linkSuggester?.isBlockingKeys()) {
     if (e.key === "Escape") {
       e.preventDefault();
@@ -9514,32 +9548,6 @@ const performAction = async (action, event) => {
       : "";
   };
 
-  const getMasterRoots = () => {
-    const all = ea.getViewElements();
-    const branchArrows = all.filter(
-      (a) =>
-        a.type === "arrow" &&
-        a.customData?.isBranch &&
-        a.startBinding?.elementId &&
-        a.endBinding?.elementId,
-    );
-
-    const parentIds = new Set();
-    const childIds = new Set();
-    branchArrows.forEach((a) => {
-      parentIds.add(a.startBinding.elementId);
-      childIds.add(a.endBinding.elementId);
-    });
-
-    const candidateIds = new Set([...parentIds, ...childIds]);
-    return Array.from(candidateIds).filter((id) => {
-      if (childIds.has(id)) return false;
-      const el = all.find((e) => e.id === id);
-      if (!el) return false;
-      return el.customData?.isAdditionalRoot !== true;
-    });
-  };
-
   const extractMapConfig = (rootNode) => ({
     growthMode: rootNode.customData?.growthMode || currentModalGrowthMode,
     autoLayoutDisabled: rootNode.customData?.autoLayoutDisabled === true,
@@ -9665,6 +9673,11 @@ const performAction = async (action, event) => {
       summary: "Selects a node by id or current selected node when omitted",
       params: [{ name: "nodeId", type: "string", required: false }],
       returns: "MMResult<{nodeId:string}>",
+    },
+    setInputFieldDockStatus: {
+      summary: "Forces docked/undocked input mode and applies matching sidepanel visibility",
+      params: [{ name: "isDocked", type: "boolean", required: true }],
+      returns: "Promise<MMResult<{isDocked:boolean,isUndocked:boolean,sidepanelVisible:boolean}>>",
     },
     getMindMapRoots: {
       summary: "Returns top-level mindmap root node ids",
@@ -9903,9 +9916,7 @@ const performAction = async (action, event) => {
     setView: (view) => {
       if (!view) return mmErr(MMError.INVALID_VIEW, "setView expects an ExcalidrawView object");
 
-      const isValid =
-        (ea.isExcalidrawView && ea.isExcalidrawView(view)) ||
-        (typeof view.getViewType === "function" && view.getViewType() === "excalidraw");
+      const isValid = !!ea?.isExcalidrawView(view);
 
       if (!isValid) return mmErr(MMError.INVALID_VIEW, "setView expects an ExcalidrawView object");
 
@@ -9935,8 +9946,42 @@ const performAction = async (action, event) => {
       const nodeRes = resolveNode(nodeId);
       if (!nodeRes.ok) return nodeRes;
       selectNodeInView(nodeRes.data);
+      performAction(ACTION_FOCUS);
       updateUI(nodeRes.data);
       return mmOk({ nodeId: nodeRes.data.id });
+    },
+
+    setInputFieldDockStatus: async ({ isDocked } = {}) => {
+      const viewErr = requireView();
+      if (viewErr) return viewErr;
+      if (typeof isDocked !== "boolean") {
+        return mmErr(MMError.INVALID_ARGUMENT, "setInputFieldDockStatus requires a boolean isDocked");
+      }
+
+      try {
+        const sidepanelLeaf = ea.getSidepanelLeaf?.();
+        const isSidepanelVisible = !!sidepanelLeaf?.isVisible?.();
+
+        if (isDocked) {
+          if (isUndocked) {
+            await performAction(ACTION_DOCK_UNDOCK);
+          } else if (!isSidepanelVisible && sidepanelLeaf) {
+            app.workspace.revealLeaf(sidepanelLeaf);
+          }
+        } else {
+          if (!isUndocked) {
+            await performAction(ACTION_DOCK_UNDOCK);
+          } else if (isSidepanelVisible) {
+            ea.toggleSidepanelView();
+          }
+        }
+
+        const finalSidepanelLeaf = ea.getSidepanelLeaf?.();
+        const sidepanelVisible = !!finalSidepanelLeaf?.isVisible?.();
+        return mmOk({ isDocked: !isUndocked, isUndocked, sidepanelVisible });
+      } catch (e) {
+        return mmErr(MMError.OPERATION_FAILED, "setInputFieldDockStatus failed", e);
+      }
     },
 
     getMindMapRoots: () => {
