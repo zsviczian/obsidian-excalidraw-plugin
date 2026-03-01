@@ -171,7 +171,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 			this.setActiveTab(tab ?? null);
 		});
 		this.closeButtonEl = controls.createEl("button", {
-			cls: "excalidraw-sidepanel__close-button",
+			cls: "clickable-icon", // reuse obsidian styling
 			attr: { type: "button", "aria-label": "Close sidepanel tab" },
 		});
 		setIcon(this.closeButtonEl, "x");

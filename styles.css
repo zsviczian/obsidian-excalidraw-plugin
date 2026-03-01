@@ -192,7 +192,7 @@ li[data-testid] {
 }
 
 .excalidraw-dirty {
-  color: red;
+  color: var(--text-error);
 }
 
 .workspace-leaf-content .excalidraw-view {
@@ -334,7 +334,7 @@ textarea.excalidraw-wysiwyg {
   padding-top: 0.05rem;
 }
 
-.excalidraw-container.theme--dark {
+.excalidraw-container.theme--dark {  /* unused */
   background-color: #121212;
   color: #fff;
 }
@@ -398,10 +398,6 @@ label.color-input-container > input {
   max-width: 13rem;
 }
 
-.excalidraw button {
-  width: initial;
-}
-
 .excalidraw input[type="color"] {
   width: 1.65rem;
   height: 1.65rem;
@@ -449,36 +445,14 @@ div.excalidraw-draginfo {
 .excalidraw-sidepanel__controls {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.35rem 0.5rem;
+  gap: var(--size-4-1);
+  padding: var(--size-4-2) var(--size-4-2);
   border-bottom: 1px solid var(--divider-color, var(--background-modifier-border));
   background-color: var(--background-secondary);
 }
 
 .excalidraw-sidepanel__select {
   flex: 1;
-}
-
-.excalidraw-sidepanel__close-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.6rem;
-  border: 1px solid var(--divider-color, var(--background-modifier-border));
-  border-radius: 0.55rem;
-  background: var(--background-primary);
-  color: var(--text-normal);
-  padding: 0 !important;
-  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
-}
-
-.excalidraw-sidepanel__close-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.excalidraw-sidepanel__close-button:hover:not(:disabled) {
-  background: var(--background-modifier-hover);
 }
 
 .excalidraw-sidepanel__empty {
@@ -520,7 +494,7 @@ div.excalidraw-draginfo {
   padding: 0.5rem;
 }
 
-.excalidraw-sidepanel-tab__button {
+.excalidraw-sidepanel-tab__button { /* probably unused */
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -1060,8 +1034,8 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   z-index: 9999;
 }
 
-.excalidraw .undo-redo-buttons button {
-  width: 3em;
+.excalidraw--tray .App-bottom-bar > .Island > .App-toolbar > .App-toolbar-content > .ToolIcon__icon:empty {
+  display: none;
 }
 
 .ExcalidrawObsidianMenu--mobile label.ToolIcon {
