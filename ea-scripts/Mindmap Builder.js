@@ -53,15 +53,15 @@ When nodes resize (e.g. text edit), the script intelligently re-positions groupe
 
 **/
 
-const { get } = require("http");
-
 /* --- Initialization Logic --- */
 const VERSION = "test";
 
-if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.1")) {
-  new Notice("Please update the Excalidraw Plugin to version 2.19.1 or higher.");
+if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.20.6")) {
+  new Notice("Please update the Excalidraw Plugin to version 2.20.6 or higher.");
   return;
 }
+
+ea.skipSidepanelScriptRestore();
 
 const existingTab = ea.checkForActiveSidepanelTabForScript();
 if (existingTab) {
@@ -121,6 +121,7 @@ if(!window.MindmapBuilder) {
 
 const api = () => ea?.getExcalidrawAPI();
 const getAppState = () => api()?.getAppState();
+const isViewSet = () => ea.targetView && ea.targetView._loaded;
 
 // ---------------------------------------------------------------------------
 // LOCALIZATION
@@ -1324,7 +1325,7 @@ let RUNTIME_HOTKEYS = generateRuntimeHotkeys();
  * Returns the current scope context for the hotkey
 **/
 const getHotkeyContext = () => {
-  if (!ea.targetView) return SCOPE.none;
+  if (!isViewSet()) return SCOPE.none;
 
   const currentWindow = isUndocked && floatingInputModal
     ? ea.targetView?.ownerWindow
@@ -1370,7 +1371,7 @@ const addElementsToView = async (
     captureUpdate = "IMMEDIATELY",
   } = {}
 ) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
 
   // Track transaction steps for Undo/Redo
   if (["EVENTUALLY", "IMMEDIATELY"].includes(captureUpdate)) {
@@ -1458,7 +1459,7 @@ const getBoundaryHost = (selectedElements) => {
 }
 
 const getMindmapNodeFromSelection = () => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const selectedElements = ea.getViewSelectedElements().filter(el => el.customData && (
     el.customData.hasOwnProperty("mindmapOrder") || el.customData.hasOwnProperty("isBranch") ||
     el.customData.hasOwnProperty("growthMode") || el.customData.hasOwnProperty("isBoundary")
@@ -2037,10 +2038,7 @@ const setElementVisibility = (el, hide) => {
     if (el.customData?.foldState) {
       el.opacity = el.customData.foldState.opacity;
       el.locked = el.customData.foldState.locked;
-      const d = { ...el.customData
-      };
-      delete d.foldState;
-      el.customData = d;
+      ea.addAppendUpdateCustomData(el.id, { foldState: undefined });
     } else {
       // Default fallback if no state was saved but we need to show
       if (el.opacity === 0) el.opacity = 100;
@@ -2178,7 +2176,7 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold,
  * @param {string} mode - "L0" | "L1" | "ALL"
  */
 const toggleFold = async (mode = "L0") => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const sel = getMindmapNodeFromSelection();
   if (!sel) return;
 
@@ -2473,7 +2471,7 @@ const nextZoomLevel = (current) => {
 };
 
 const zoomToFit = (mode) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   let sel = getMindmapNodeFromSelection();
   
   // Fallback to most recently selected if nothing is currently selected
@@ -2505,7 +2503,7 @@ const zoomToFit = (mode) => {
 }
 
 const focusSelected = () => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   let sel = getMindmapNodeFromSelection();
   
   // Fallback to most recently selected if nothing is currently selected
@@ -3033,7 +3031,7 @@ const updateRootNodeCustomData = async (data, sel) => {
  * If it does, updates to 'new' width. If not, assumes manual override and skips.
  */
 const updateBranchStrokes = async (rootId, oldBaseWidth, oldScaleMode, newBaseWidth, newScaleMode) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const allElements = ea.getViewElements();
   const root = allElements.find(el => el.id === rootId);
   if (!root) return;
@@ -4193,7 +4191,7 @@ const sortL1NodesBasedOnVisualSequence = (l1Nodes, mode, rootCenter) => {
  * @param {boolean} mustHonorMindmapOrder - If true, enforces the current mindmapOrder over visual position.
  */
 const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindmapOrder = false) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const selectedElement = getMindmapNodeFromSelection();
   if (!selectedElement) return;
 
@@ -4536,7 +4534,7 @@ const initializeRootCustomData = (nodeId) => {
 };
 
 const addNode = async (text, follow = false, skipFinalLayout = false, batchModeAllElements = null, batchModeParent = null, pos = null, ontology = null) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   if (!text || text.trim() === "") return;
 
   const st = getAppState();
@@ -4985,7 +4983,7 @@ const getNodeMarkdownFile = (nodeText) => {
  * Generates a hierarchy of links based on the headings in the target file.
  */
 const importOutline = async () => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   
   const sel = getMindmapNodeFromSelection();
   if (!sel) {
@@ -5072,8 +5070,8 @@ const getTextFromNode = (all, node, getRaw = false, shortPath = false) => {
 /**
 // Copies the selected tree or branch to the clipboard as Markdown text.
 **/
-const copyMapAsText = async (cut = false) => {
-  if (!ea.targetView) return;
+const copyMapAsText = async (cut = false, toClipboard = true) => {
+  if (!isViewSet()) return;
   ensureNodeSelected();
   const sel = getMindmapNodeFromSelection();
   if (!sel) {
@@ -5262,7 +5260,7 @@ const copyMapAsText = async (cut = false) => {
   };
 
   const md = buildList(sel.id);
-  await navigator.clipboard.writeText(md);
+  if(toClipboard) await navigator.clipboard.writeText(md);
 
   if (cut) {
     const incomingArrow = all.find(
@@ -5297,13 +5295,14 @@ const copyMapAsText = async (cut = false) => {
   } else {
     new Notice(isRootSelected ? t("NOTICE_MAP_COPIED") : t("NOTICE_BRANCH_COPIED"));
   }
+  return md;
 };
 
 /**
 // Core logic to parse a list string and add nodes to the map
 **/
 const importTextToMap = async (rawText) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   if (!rawText) return;
 
   let sel = getMindmapNodeFromSelection();
@@ -5589,7 +5588,7 @@ if (rootSelected) {
 
         importedL1Nodes.forEach((node, i) => {
           // Remove mindmapNew flag to bypass alternating distribution in triggerGlobalLayout
-          delete node.customData.mindmapNew;
+          ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
           
           if (i < splitIndex) {
              // Right Side: Force position to the right of root
@@ -5908,7 +5907,7 @@ const updateSubtreeColor = (nodeId, oldColor, newColor, allElements) => {
  * - Disabling submap root removes local layout metadata so descendants follow parent-root logic.
  */
 const toggleSubmapRoot = async () => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const sel = getMindmapNodeFromSelection();
   if (!sel) return;
 
@@ -5973,7 +5972,7 @@ const toggleSubmapRoot = async () => {
 };
 
 const changeNodeOrder = async (key) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const allElements = ea.getViewElements();
   const current = getMindmapNodeFromSelection();
   if (!current) return;
@@ -6275,7 +6274,7 @@ const changeNodeOrder = async (key) => {
  */
 const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
   if(!key) return;
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   let allElements = ea.getViewElements();
   const current = getMindmapNodeFromSelection();
   if (!current) return;
@@ -6427,7 +6426,7 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
  * Triggers a layout refresh for the tree containing the selected element.
  */
 const refreshMapLayout = async (sel) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   if (!sel) sel = getMindmapNodeFromSelection();
   if (sel) {
     const allElements = ea.getViewElements();
@@ -6668,7 +6667,7 @@ const getMindmapProjectElements = (rootId, allViewElements) => {
  * Toggles a single flat group for the selected branch.
 **/
 const toggleBranchGroup = async () => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const sel = getMindmapNodeFromSelection();
   if (!sel) return;
 
@@ -6708,7 +6707,7 @@ const toggleBranchGroup = async () => {
  * Pinned nodes are not moved by auto-layout.
  */
 const togglePin = async () => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const sel = getMindmapNodeFromSelection();
   if (sel) {
     const boundTextElement = ea.getBoundTextElement(sel, true)?.sceneElement;
@@ -6716,7 +6715,7 @@ const togglePin = async () => {
     ea.copyViewElementsToEAforEditing(boundTextElement ? [sel, boundTextElement] : [sel]);
     ea.addAppendUpdateCustomData(sel.id, { isPinned: newPinnedState });
     if (boundTextElement && !newPinnedState && boundTextElement.customData?.hasOwnProperty("isPinned")) {
-      delete ea.getElement(boundTextElement.id).customData.isPinned;
+      ea.addAppendUpdateCustomData(boundTextElement.id, { isPinned: undefined });
     }
     await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
     if(!autoLayoutDisabled) await refreshMapLayout();
@@ -6731,7 +6730,7 @@ const padding = layoutSettings.CONTAINER_PADDING;
  * Creates a rectangle container if one doesn't exist, or removes it if it does.
  */
 const toggleBox = async () => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   let sel = getMindmapNodeFromSelection();
   if (!sel) return;
   sel = ea.getBoundTextElement(sel, true).sceneElement;
@@ -6818,7 +6817,7 @@ const toggleBox = async () => {
  * Toggles a visual boundary polygon around the selected node's subtree.
  */
 const toggleBoundary = async () => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const sel = getMindmapNodeFromSelection();
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
@@ -7030,7 +7029,7 @@ const disableUI = () => {
 };
 
 const updateUI = (sel) => {
-  if (!ea.targetView) {
+  if (!isViewSet()) {
     if(inputEl) inputEl.disabled = true;
     if(ontologyEl) ontologyEl.style.display = "none";
     disableUI();
@@ -7829,7 +7828,7 @@ class LayoutConfigModal extends ea.FloatingModal {
   }
 
   handleFocusRefresh(evt) {
-    if (!ea.targetView) {
+    if (!isViewSet()) {
       this.close();
       return;
     }
@@ -8353,7 +8352,7 @@ const renderBody = (contentEl) => {
       if (fillSweepToggleSetting) {
         fillSweepToggleSetting.settingEl.style.display = v === "Radial" ? "" : "none";
       }
-      if (!ea.targetView) return;
+      if (!isViewSet()) return;
       const sel = getMindmapNodeFromSelection();
       if (!sel) return;
       await updateRootNodeCustomData({ growthMode: v }, sel);
@@ -8373,7 +8372,7 @@ const renderBody = (contentEl) => {
 
         setVal(K_FILL_SWEEP, v);
         dirty = true;
-        if (!ea.targetView) return;
+        if (!isViewSet()) return;
         const sel = getMindmapNodeFromSelection();
         if (!sel) return;
         await updateRootNodeCustomData({ fillSweep: v }, sel);
@@ -8420,7 +8419,7 @@ const renderBody = (contentEl) => {
     .addToggle((t) => t
     .setValue(groupBranches)
     .onChange(async (v) => {
-      if (!ea.targetView) return;
+      if (!isViewSet()) return;
       groupBranches = v;
       if (disableTabEvents) return;
       setVal(K_GROUP, v);
@@ -8482,7 +8481,7 @@ const renderBody = (contentEl) => {
 
         setVal(K_ARROW_TYPE, arrowType);
         dirty = true;
-        if (!ea.targetView) return;
+        if (!isViewSet()) return;
         const sel = getMindmapNodeFromSelection();
         if (!sel) return;
         await updateRootNodeCustomData({ arrowType }, sel);
@@ -9515,7 +9514,7 @@ const performAction = async (action, event) => {
   });
 
   const requireView = () => {
-    if (!ea.targetView) return mmErr(MMError.NO_VIEW, "No active ExcalidrawView");
+    if (!isViewSet()) return mmErr(MMError.NO_VIEW, "No active ExcalidrawView");
     return null;
   };
 
@@ -10128,13 +10127,7 @@ const performAction = async (action, event) => {
       }
 
       try {
-        await copyMapAsText(!!cut);
-        let markdown = "";
-        try {
-          markdown = await navigator.clipboard.readText();
-        } catch (clipErr) {
-          return mmErr(MMError.OPERATION_FAILED, "Export succeeded but clipboard read failed", clipErr);
-        }
+        const markdown = await copyMapAsText(!!cut, false);
         return mmOk({ markdown });
       } catch (e) {
         return mmErr(MMError.OPERATION_FAILED, "exportMarkdown failed", e);
@@ -10285,6 +10278,7 @@ const performAction = async (action, event) => {
   };
 
   window.MindMapBuilderAPI = API;
+  console.log("window.MindMapBuilderAPI initialized. For documentation visit: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/ea-script-docs/MindMapBuilderAPI.md", API);
 })();
 
 let uiUpdateTimer = null;
@@ -10296,7 +10290,7 @@ let uiUpdateTimer = null;
  * @param {PointerEvent} e 
  */
 const handleCanvasPointerDown = (e) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   if (floatingInputModal && floatingInputModal.modalEl.contains(e.target)) return;
 
   if (uiUpdateTimer) {
@@ -10304,7 +10298,7 @@ const handleCanvasPointerDown = (e) => {
   }
 
   uiUpdateTimer = setTimeout(() => {
-    if (!ea.targetView) return;
+    if (!isViewSet()) return;
     const selection = getMindmapNodeFromSelection();
     updateUI(selection);
     uiUpdateTimer = null;

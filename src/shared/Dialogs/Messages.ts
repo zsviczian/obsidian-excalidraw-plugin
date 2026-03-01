@@ -18,9 +18,16 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.20.6":`
-## Fixed
-- Significant performance improvement of MindMap Builder and all other scripts modifying elements in large scenes containing thousands of elements.
-- Multiple arrow related updates and fixes from Excalidraw.com [#10832](https://github.com/excalidraw/excalidraw/pull/10832) [#10831](https://github.com/excalidraw/excalidraw/pull/10831) [#10816](https://github.com/excalidraw/excalidraw/pull/10816)
+<div class="excalidraw-videoWrapper">
+<a href="https://www.youtube.com/watch?v=g-BiyQ7TJTM" target="_blank"><img src ="https://i.ytimg.com/vi/g-BiyQ7TJTM/maxresdefault.jpg" style="width:100%;"></a>
+</div>
+
+## New
+- Inline suggester now supports searching for tags in addition to files. Trigger with "#".
+- In Mindmap Builder
+  - Added Up-Facing, Down-Facing, and Up-Down maps
+  - Added submaps. You can now promote any node to be a new mindmap root (a sub-map). Sub-maps can have different layout settings such as different growth strategies, different colors, etc.
+  - Added experimental MindMap Builder API, accessible via \`window.MindMapBuilderAPI\`. See [MindMap Builder API documentation](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/ea-script-docs/MindMapBuilderAPI.md) for more. Essentially, the API allows mindmaps to be created using the Obsidian CLI.
 
 ## New from Excalidraw.com
 - Allow clicking on links and embeds with laser tool [#10797](https://github.com/excalidraw/excalidraw/pull/10797)
@@ -33,6 +40,14 @@ business_analysis, 2, 6, 9
 business_writing, 3, 7, 9
 stakeholder_mgmt, 1, 6, 10
 \`\`\`
+
+## New in ExcalidrawAutomate
+- Added \`skipScriptRestore(scriptName?: string): boolean\` function to the API. This allows scripts to queue a one-time skip marker so sidepanel persisted restoration will not re-run the script. Intended for startup race conditions where a script is started from the Command Palette/hotkey before the sidepanel has opened. If scriptName is omitted, the function uses ea.activeScript.
+
+## Fixed
+- Significant performance improvement of MindMap Builder and all other scripts modifying elements in large scenes containing thousands of elements.
+- Multiple arrow related updates and fixes from Excalidraw.com [#10832](https://github.com/excalidraw/excalidraw/pull/10832) [#10831](https://github.com/excalidraw/excalidraw/pull/10831) [#10816](https://github.com/excalidraw/excalidraw/pull/10816)
+- Hide MindMap Builder and other floating tools when creating a screenshot
 `,
 "2.20.5":`
 ## Fixed

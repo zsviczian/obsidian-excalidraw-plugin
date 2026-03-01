@@ -956,6 +956,15 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "();"
   },
   {
+    field: "skipSidepanelScriptRestore",
+    code: "skipSidepanelScriptRestore(scriptName?: string): boolean;",
+    desc: "Queues a one-time skip marker so sidepanel persisted restoration will not re-run the script. " +
+      "Intended for startup race conditions where a script is started from Command Palette/hotkey before the sidepanel has opened. " +
+      "If scriptName is omitted the function uses ea.activeScript. " +
+      "The marker is queued only when getSidepanelLeaf() is null; returns true when queued, otherwise false.",
+    after: "();"
+  },
+  {
     field: "toggleSidepanelView",
     code: "toggleSidepanelView(): void;",
     desc: "Toggles the Excalidraw sidepanel visibility when the sidepanel is hosted in the left or right workspace split. If the sidepanel is not attached to a left/right sidebar, no action is taken.",

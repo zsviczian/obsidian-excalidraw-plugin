@@ -614,12 +614,35 @@ export class ExcalidrawAutomate {
     return tab;
   }
 
+  
+
   /**
    * Returns the WorkspaceLeaf hosting the Excalidraw sidepanel view.
    * @returns {WorkspaceLeaf | null} The sidepanel leaf or null if not found.
    */
   public getSidepanelLeaf(): WorkspaceLeaf | null {
     return ExcalidrawSidepanelView.getExisting(false)?.leaf ?? null;
+  }
+
+  /**
+   * Queues the script to be skipped once during persisted sidepanel restoration.
+   * This is useful at startup when a script is launched via Command Palette/hotkey
+   * before the sidepanel view has opened and run its restoration sequence.
+   *
+   * The script is queued only if the sidepanel leaf is not yet available.
+   * @param scriptName - Optional script name. Defaults to ea.activeScript.
+   * @returns {boolean} True if a skip marker was queued, false otherwise.
+   */
+  public skipSidepanelScriptRestore(scriptName?: string): boolean {
+    scriptName = scriptName ?? this.activeScript;
+    if (!scriptName) {
+      return false;
+    }
+    if (this.getSidepanelLeaf()) {
+      return false;
+    }
+    ExcalidrawSidepanelView.skipScriptRestore(scriptName);
+    return true;
   }
 
   /**

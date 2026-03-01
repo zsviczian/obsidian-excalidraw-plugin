@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-02-28T16:08:34.043Z
+Generated on: 2026-03-01T14:56:51.528Z
 
 ---
 
@@ -8770,15 +8770,15 @@ When nodes resize (e.g. text edit), the script intelligently re-positions groupe
 
 **/
 
-const { get } = require("http");
-
 /* --- Initialization Logic --- */
 const VERSION = "test";
 
-if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.1")) {
-  new Notice("Please update the Excalidraw Plugin to version 2.19.1 or higher.");
+if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.20.6")) {
+  new Notice("Please update the Excalidraw Plugin to version 2.20.6 or higher.");
   return;
 }
+
+ea.skipSidepanelScriptRestore();
 
 const existingTab = ea.checkForActiveSidepanelTabForScript();
 if (existingTab) {
@@ -8836,8 +8836,9 @@ if(!window.MindmapBuilder) {
   removeEventListeners();
 }
 
-const api = () => ea.getExcalidrawAPI();
-const getAppState = () => ea.getExcalidrawAPI().getAppState();
+const api = () => ea?.getExcalidrawAPI();
+const getAppState = () => api()?.getAppState();
+const isViewSet = () => ea.targetView && ea.targetView._loaded;
 
 // ---------------------------------------------------------------------------
 // LOCALIZATION
@@ -8997,6 +8998,7 @@ const STRINGS = {
     SECTION_GENERAL: "General Spacing",
     SECTION_RADIAL: "Radial Layout (Clockwise)",
     SECTION_DIRECTIONAL: "Directional Layout (Left/Right)",
+    SECTION_VERTICAL: "Vertical Maps (Up/Down)",
     SECTION_VISUALS: "Visual Elements",
     SECTION_MANUAL: "Manual Mode Behavior",
     LAYOUT_RESET: "Reset All to Default",
@@ -9037,6 +9039,22 @@ const STRINGS = {
     DESC_LAYOUT_CONTAINER_PADDING: "Padding inside the box when 'Box Child Nodes' or 'Box/Unbox' is used.",
     MAX_SEGMENT_LENGTH: "Boundary Line Precision",
     DESC_LAYOUT_BOUNDARY_LINE_PRECISION: "Boundary smoothing precision. Smaller values are more precise (30 = Precise), larger values are rougher (200 = Rough).",
+    VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE: "Subtree Width Blend (Single-sided)",
+    DESC_VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE: "How strongly one-sided submaps (Right-facing / Left-facing) reserve horizontal sibling space in vertical maps. High impact.",
+    VERTICAL_SUBTREE_WIDTH_BLEND_DUAL: "Subtree Width Blend (Dual-sided)",
+    DESC_VERTICAL_SUBTREE_WIDTH_BLEND_DUAL: "How strongly dual-sided submaps (Right-Left) reserve horizontal sibling space in vertical maps. High impact.",
+    VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER: "Subtree Smooth Threshold Multiplier",
+    DESC_VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER: "Starts smooth compression after this multiple of Gap Y to avoid spacing jumps when adding more children. Usually subtle unless the map is large.",
+    VERTICAL_SUBTREE_SMOOTH_MIN_SCALE: "Subtree Smooth Minimum Scale",
+    DESC_VERTICAL_SUBTREE_SMOOTH_MIN_SCALE: "Minimum compression scale used by the vertical subtree width smoother. Higher values preserve more width. Usually subtle unless the map is large.",
+    HORIZONTAL_L1_SOFTCAP_THRESHOLD: "Horizontal L1 Soft Cap Threshold",
+    DESC_HORIZONTAL_L1_SOFTCAP_THRESHOLD: "Soft cap (px) before Up/Down Level-1 subtree widths are compressed. Medium to high impact on large maps.",
+    HORIZONTAL_L1_COMPRESSION_MIN_SCALE: "Horizontal L1 Compression Min Scale",
+    DESC_HORIZONTAL_L1_COMPRESSION_MIN_SCALE: "Minimum compression scale for Up/Down Level-1 width compression. Higher values preserve more width. Medium impact after soft cap is reached.",
+    VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO: "Compact Parent-Child Gap Ratio",
+    DESC_VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO: "In compact vertical subtrees, uses this fraction of Gap X for parent-child distance. Very high visible impact.",
+    DIRECTIONAL_CROSS_AXIS_RATIO: "Directional Cross-axis Ratio",
+    DESC_DIRECTIONAL_CROSS_AXIS_RATIO: "Cross-axis radius ratio for directional arc layouts (0.2 = flatter arcs, 1.0 = rounder arcs). High visual impact on L1 spread.",
     MANUAL_GAP_MULTIPLIER: "Manual-layout Gap Multiplier",
     DESC_LAYOUT_MANUAL_GAP: "Spacing multiplier when adding nodes while Auto-Layout is disabled.",
     MANUAL_JITTER_RANGE: "Manual-layout Jitter Range",
@@ -9223,6 +9241,7 @@ addLocale("zh", {
   SECTION_GENERAL: "常规间距",
   SECTION_RADIAL: "径向布局（顺时针）",
   SECTION_DIRECTIONAL: "定向布局（左/右）",
+  SECTION_VERTICAL: "垂直导图（上/下）",
   SECTION_VISUALS: "视觉元素",
   SECTION_MANUAL: "手动模式行为",
   LAYOUT_RESET: "重置所有为默认值",
@@ -9263,6 +9282,22 @@ addLocale("zh", {
   DESC_LAYOUT_CONTAINER_PADDING: "使用边框样式时的内边距。",
   MAX_SEGMENT_LENGTH: "边界线精度",
   DESC_LAYOUT_BOUNDARY_LINE_PRECISION: "边界平滑精度。值越小越精细（30 = 精细），值越大越粗略（200 = 粗略）。",
+  VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE: "子树宽度混合（单侧）",
+  DESC_VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE: "在垂直导图中，单侧子图（右向/左向）对同级水平占位宽度的影响强度。影响很大。",
+  VERTICAL_SUBTREE_WIDTH_BLEND_DUAL: "子树宽度混合（双侧）",
+  DESC_VERTICAL_SUBTREE_WIDTH_BLEND_DUAL: "在垂直导图中，双侧子图（右左）对同级水平占位宽度的影响强度。影响很大。",
+  VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER: "子树平滑阈值倍数",
+  DESC_VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER: "超过 Gap Y 的该倍数后开始平滑压缩，以避免新增第 2/3 个子节点时间距突增。通常在大图中更明显。",
+  VERTICAL_SUBTREE_SMOOTH_MIN_SCALE: "子树平滑最小尺度",
+  DESC_VERTICAL_SUBTREE_SMOOTH_MIN_SCALE: "垂直子树宽度平滑器使用的最小压缩尺度。值越大越保留原宽度。通常在大图中更明显。",
+  HORIZONTAL_L1_SOFTCAP_THRESHOLD: "水平 L1 软上限阈值",
+  DESC_HORIZONTAL_L1_SOFTCAP_THRESHOLD: "在上/下导图中，L1 子树宽度超过该像素值后开始压缩。对大图影响中到高。",
+  HORIZONTAL_L1_COMPRESSION_MIN_SCALE: "水平 L1 压缩最小尺度",
+  DESC_HORIZONTAL_L1_COMPRESSION_MIN_SCALE: "上/下导图 L1 宽度压缩使用的最小尺度。值越大越保留原宽度。达到软上限后影响中等。",
+  VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO: "紧凑父子间距比例",
+  DESC_VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO: "在紧凑垂直子树中，父子距离使用 Gap X 的该比例。可见影响非常大。",
+  DIRECTIONAL_CROSS_AXIS_RATIO: "定向布局横轴比例",
+  DESC_DIRECTIONAL_CROSS_AXIS_RATIO: "定向弧布局的横轴半径比例（0.2 更扁平，1.0 更圆）。对 L1 展开形态影响很大。",
   MANUAL_GAP_MULTIPLIER: "手动布局间距倍数",
   DESC_LAYOUT_MANUAL_GAP: "禁用自动布局时添加节点的间距倍数。",
   MANUAL_JITTER_RANGE: "手动布局抖动范围",
@@ -9454,6 +9489,56 @@ const LAYOUT_METADATA = {
     def: 7, min: 0, max: 20, step: 1,
     desc: t("DESC_LAYOUT_RADIUS_PADDING"),
     name: t("RADIUS_PADDING_PER_NODE"),
+  },
+
+  // --- Vertical Maps (Up/Down) ---
+  VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE: {
+    section: "SECTION_VERTICAL",
+    def: 0.35, min: 0.05, max: 1.2, step: 0.05,
+    desc: t("DESC_VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE"),
+    name: t("VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE"),
+  },
+  VERTICAL_SUBTREE_WIDTH_BLEND_DUAL: {
+    section: "SECTION_VERTICAL",
+    def: 0.6, min: 0.1, max: 1.4, step: 0.05,
+    desc: t("DESC_VERTICAL_SUBTREE_WIDTH_BLEND_DUAL"),
+    name: t("VERTICAL_SUBTREE_WIDTH_BLEND_DUAL"),
+  },
+  VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER: {
+    section: "SECTION_VERTICAL",
+    def: 6.0, min: 0.5, max: 20.0, step: 0.5,
+    desc: t("DESC_VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER"),
+    name: t("VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER"),
+  },
+  VERTICAL_SUBTREE_SMOOTH_MIN_SCALE: {
+    section: "SECTION_VERTICAL",
+    def: 240, min: 10, max: 1600, step: 10,
+    desc: t("DESC_VERTICAL_SUBTREE_SMOOTH_MIN_SCALE"),
+    name: t("VERTICAL_SUBTREE_SMOOTH_MIN_SCALE"),
+  },
+  HORIZONTAL_L1_SOFTCAP_THRESHOLD: {
+    section: "SECTION_VERTICAL",
+    def: 560, min: 20, max: 3000, step: 20,
+    desc: t("DESC_HORIZONTAL_L1_SOFTCAP_THRESHOLD"),
+    name: t("HORIZONTAL_L1_SOFTCAP_THRESHOLD"),
+  },
+  HORIZONTAL_L1_COMPRESSION_MIN_SCALE: {
+    section: "SECTION_VERTICAL",
+    def: 240, min: 10, max: 1600, step: 10,
+    desc: t("DESC_HORIZONTAL_L1_COMPRESSION_MIN_SCALE"),
+    name: t("HORIZONTAL_L1_COMPRESSION_MIN_SCALE"),
+  },
+  VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO: {
+    section: "SECTION_VERTICAL",
+    def: 0.55, min: 0.05, max: 1.3, step: 0.05,
+    desc: t("DESC_VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO"),
+    name: t("VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO"),
+  },
+  DIRECTIONAL_CROSS_AXIS_RATIO: {
+    section: "SECTION_VERTICAL",
+    def: 0.2, min: 0.05, max: 1.2, step: 0.05,
+    desc: t("DESC_DIRECTIONAL_CROSS_AXIS_RATIO"),
+    name: t("DIRECTIONAL_CROSS_AXIS_RATIO"),
   },
 
   // --- Visuals ---
@@ -9957,7 +10042,7 @@ let RUNTIME_HOTKEYS = generateRuntimeHotkeys();
  * Returns the current scope context for the hotkey
 **/
 const getHotkeyContext = () => {
-  if (!ea.targetView) return SCOPE.none;
+  if (!isViewSet()) return SCOPE.none;
 
   const currentWindow = isUndocked && floatingInputModal
     ? ea.targetView?.ownerWindow
@@ -10003,7 +10088,7 @@ const addElementsToView = async (
     captureUpdate = "IMMEDIATELY",
   } = {}
 ) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
 
   // Track transaction steps for Undo/Redo
   if (["EVENTUALLY", "IMMEDIATELY"].includes(captureUpdate)) {
@@ -10091,7 +10176,7 @@ const getBoundaryHost = (selectedElements) => {
 }
 
 const getMindmapNodeFromSelection = () => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const selectedElements = ea.getViewSelectedElements().filter(el => el.customData && (
     el.customData.hasOwnProperty("mindmapOrder") || el.customData.hasOwnProperty("isBranch") ||
     el.customData.hasOwnProperty("growthMode") || el.customData.hasOwnProperty("isBoundary")
@@ -10246,6 +10331,30 @@ const buildGroupToNodes = (branchIds, allElements) => {
   });
 
   return groupToNodes;
+};
+
+/**
+ * Returns the IDs of root nodes in the scene
+ * - A root node is defined as a node with `growthMode` that has only outgoing branch arrows, or no branch arrows at all.
+ * @returns {string[]} An array of root node IDs.
+ */
+const getMasterRoots = () => {
+  const all = ea.getViewElements();
+  const allMap = new Map(all.map((el) => [el.id, el]));
+  const maybeRoots = all.filter((el) => el.customData?.growthMode);
+  const roots = maybeRoots.filter((r) => {
+    const notRoot = r.boundElements.some((be) => {
+      if (be.type !== "arrow") return false;
+      const arrow = allMap.get(be.id);
+      if (!arrow) return false;
+      if (!arrow.customData?.isBranch) return false;
+      if (arrow.endBinding?.elementId === r.id) return true;
+      return false;
+    });
+    return !notRoot;
+  });
+
+  return roots.map((r) => r.id);
 };
 
 /**
@@ -10646,10 +10755,7 @@ const setElementVisibility = (el, hide) => {
     if (el.customData?.foldState) {
       el.opacity = el.customData.foldState.opacity;
       el.locked = el.customData.foldState.locked;
-      const d = { ...el.customData
-      };
-      delete d.foldState;
-      el.customData = d;
+      ea.addAppendUpdateCustomData(el.id, { foldState: undefined });
     } else {
       // Default fallback if no state was saved but we need to show
       if (el.opacity === 0) el.opacity = 100;
@@ -10787,7 +10893,7 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold,
  * @param {string} mode - "L0" | "L1" | "ALL"
  */
 const toggleFold = async (mode = "L0") => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const sel = getMindmapNodeFromSelection();
   if (!sel) return;
 
@@ -11082,7 +11188,7 @@ const nextZoomLevel = (current) => {
 };
 
 const zoomToFit = (mode) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   let sel = getMindmapNodeFromSelection();
   
   // Fallback to most recently selected if nothing is currently selected
@@ -11114,11 +11220,18 @@ const zoomToFit = (mode) => {
 }
 
 const focusSelected = () => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   let sel = getMindmapNodeFromSelection();
   
   // Fallback to most recently selected if nothing is currently selected
-  if (!sel && mostRecentlySelectedNodeID) {
+  if (!sel) {
+    if (!mostRecentlySelectedNodeID) {
+      const roots = getMasterRoots();
+      if (roots.length > 0) {
+        mostRecentlySelectedNodeID = roots[0];
+      }
+      if (!mostRecentlySelectedNodeID) return;
+    }
     const fallback = ea.getViewElements().find(el => el.id === mostRecentlySelectedNodeID);
     if (fallback) {
       sel = fallback;
@@ -11264,6 +11377,102 @@ const getSubtreeWidth = (nodeId, allElements, childrenByParent, widthCache, elem
 
   if (widthCache) widthCache.set(nodeId, totalWidth);
   return totalWidth;
+};
+
+const getVerticalPlacementWidth = (nodeId, allElements, childrenByParent, widthCache, elementById, placementWidthCache = null) => {
+  if (placementWidthCache?.has(nodeId)) return placementWidthCache.get(nodeId);
+
+  const node = elementById?.get(nodeId) ?? allElements.find((el) => el.id === nodeId);
+  if (!node) return 0;
+
+  const baseWidth = getSubtreeWidth(nodeId, allElements, childrenByParent, widthCache, elementById);
+
+  if (node.customData?.isAdditionalRoot !== true) {
+    if (placementWidthCache) placementWidthCache.set(nodeId, baseWidth);
+    return baseWidth;
+  }
+
+  const mode = node.customData?.growthMode;
+  if (!["Right-facing", "Left-facing", "Right-Left"].includes(mode)) {
+    if (placementWidthCache) placementWidthCache.set(nodeId, baseWidth);
+    return baseWidth;
+  }
+
+  const children = childrenByParent?.get(nodeId) ?? getChildrenNodes(nodeId, allElements);
+  const unpinnedChildren = children.filter(child => !child.customData?.isPinned);
+  if (unpinnedChildren.length === 0) {
+    if (placementWidthCache) placementWidthCache.set(nodeId, baseWidth);
+    return baseWidth;
+  }
+
+  const childWidths = unpinnedChildren.map((child) =>
+    getVerticalPlacementWidth(child.id, allElements, childrenByParent, widthCache, elementById, placementWidthCache)
+  );
+
+  const primaryGap = layoutSettings.GAP_X;
+  const compactMinWidth = node.width + layoutSettings.GAP_Y * 2;
+  let projectedWidth;
+
+  if (mode === "Right-facing" || mode === "Left-facing") {
+    const maxChildWidth = childWidths.reduce((max, width) => Math.max(max, width), 0);
+    const directionalRawWidth = Math.max(node.width, node.width + primaryGap + maxChildWidth);
+    // Single-sided directional submaps mostly expand away from siblings.
+    // Compress their reserved slot width to avoid over-spacing in vertical parent layout.
+    const singleSideBlend = layoutSettings.VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE ?? LAYOUT_METADATA.VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE.def;
+    projectedWidth = Math.max(
+      compactMinWidth,
+      node.width + (directionalRawWidth - node.width) * singleSideBlend,
+    );
+  } else {
+    const nodeCenterX = node.x + node.width / 2;
+    let leftMax = 0;
+    let rightMax = 0;
+
+    unpinnedChildren.forEach((child, index) => {
+      const childCenterX = child.x + child.width / 2;
+      if (childCenterX < nodeCenterX) {
+        leftMax = Math.max(leftMax, childWidths[index]);
+      } else {
+        rightMax = Math.max(rightMax, childWidths[index]);
+      }
+    });
+
+    const directionalRawWidth = node.width +
+      (leftMax > 0 ? primaryGap + leftMax : 0) +
+      (rightMax > 0 ? primaryGap + rightMax : 0);
+    // Dual-sided maps need more reserved width than single-sided ones, but still less than full bbox width.
+    const dualSideBlend = layoutSettings.VERTICAL_SUBTREE_WIDTH_BLEND_DUAL ?? LAYOUT_METADATA.VERTICAL_SUBTREE_WIDTH_BLEND_DUAL.def;
+    projectedWidth = Math.max(
+      compactMinWidth,
+      node.width + (Math.max(node.width, directionalRawWidth) - node.width) * dualSideBlend,
+    );
+  }
+
+  if (node.customData?.boundaryId) {
+    projectedWidth += 30;
+  }
+
+  const effectiveWidth = Math.min(baseWidth, projectedWidth);
+
+  // Smooth width growth so adding the 2nd/3rd child does not suddenly blow up sibling spacing.
+  const widthExtra = Math.max(0, effectiveWidth - node.width);
+  const smoothThresholdMultiplier = layoutSettings.VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER ?? LAYOUT_METADATA.VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER.def;
+  const softThreshold = Math.max(
+    layoutSettings.GAP_X,
+    layoutSettings.GAP_Y * smoothThresholdMultiplier,
+  );
+
+  let smoothedWidth = effectiveWidth;
+  if (widthExtra > softThreshold) {
+    const smoothMinScale = layoutSettings.VERTICAL_SUBTREE_SMOOTH_MIN_SCALE ?? LAYOUT_METADATA.VERTICAL_SUBTREE_SMOOTH_MIN_SCALE.def;
+    const compressionScale = Math.max(smoothMinScale, layoutSettings.GAP_X * 2);
+    const remaining = widthExtra - softThreshold;
+    const compressedRemaining = compressionScale * Math.log1p(remaining / compressionScale);
+    smoothedWidth = node.width + softThreshold + compressedRemaining;
+  }
+
+  if (placementWidthCache) placementWidthCache.set(nodeId, smoothedWidth);
+  return smoothedWidth;
 };
 
 /**
@@ -11539,7 +11748,7 @@ const updateRootNodeCustomData = async (data, sel) => {
  * If it does, updates to 'new' width. If not, assumes manual override and skips.
  */
 const updateBranchStrokes = async (rootId, oldBaseWidth, oldScaleMode, newBaseWidth, newScaleMode) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const allElements = ea.getViewElements();
   const root = allElements.find(el => el.id === rootId);
   if (!root) return;
@@ -12183,13 +12392,38 @@ const layoutSubtreeVertical = (nodeId, targetCenterX, targetY, side, allElements
       });
     }
 
-    const subtreeWidth = getSubtreeWidth(nodeId, allElements, childrenByParent, widthCache, elementById);
-    let currentX = currentXCenter - subtreeWidth / 2;
-    // Primary layout gap used for Parent-Child spacing (vertical)
-    const dynamicGapPrimary = layoutSettings.GAP_X;
+    const placementWidthCache = new Map();
+    const childWidths = unpinnedChildren.map((child) =>
+      getVerticalPlacementWidth(child.id, allElements, childrenByParent, widthCache, elementById, placementWidthCache)
+    );
+    const childrenRowWidth = childWidths.reduce((sum, width, index) => {
+      const childNode = elementById?.get(unpinnedChildren[index].id) ?? allElements.find((el) => el.id === unpinnedChildren[index].id);
+      const grandChildren = childrenByParent?.get(unpinnedChildren[index].id) ?? getChildrenNodes(unpinnedChildren[index].id, allElements);
+      const hasUnpinnedGrandChildren = grandChildren.some(gc => !gc.customData?.isPinned);
+      const fontSize = childNode?.fontSize ?? 20;
+      const gap = index < unpinnedChildren.length - 1
+        ? (!hasUnpinnedGrandChildren ? Math.round(fontSize * layoutSettings.GAP_MULTIPLIER) : layoutSettings.GAP_Y)
+        : 0;
+      return sum + width + gap;
+    }, 0);
 
-    unpinnedChildren.forEach((child) => {
-      const childW = getSubtreeWidth(child.id, allElements, childrenByParent, widthCache, elementById);
+    let currentX = currentXCenter - childrenRowWidth / 2;
+    // Primary layout gap used for Parent-Child spacing (vertical)
+    // Keep default spacing for larger branches, but tighten compact (1-2 child) subtrees.
+    const allChildrenCompact = unpinnedChildren.every((child) => {
+      const grandChildren = childrenByParent?.get(child.id) ?? getChildrenNodes(child.id, allElements);
+      return !grandChildren.some(gc => !gc.customData?.isPinned);
+    });
+    const compactGap = Math.max(
+      layoutSettings.GAP_Y,
+      Math.round(layoutSettings.GAP_X * (layoutSettings.VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO ?? LAYOUT_METADATA.VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO.def)),
+    );
+    const dynamicGapPrimary = (unpinnedChildren.length <= 2 && allChildrenCompact)
+      ? compactGap
+      : layoutSettings.GAP_X;
+
+    unpinnedChildren.forEach((child, index) => {
+      const childW = childWidths[index];
 
       layoutSubtreeVertical(
         child.id,
@@ -12406,7 +12640,8 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
   const totalContentHeight = totalSubtreeHeight + (count - 1) * layoutSettings.GAP_Y;
   const radiusFromHeight = totalContentHeight / layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
   const radiusY = Math.max(Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR), layoutSettings.MIN_RADIUS, radiusFromHeight) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
-  const radiusX = Math.max(Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR), layoutSettings.MIN_RADIUS, radiusY * 0.2) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+  const crossAxisRatio = layoutSettings.DIRECTIONAL_CROSS_AXIS_RATIO ?? LAYOUT_METADATA.DIRECTIONAL_CROSS_AXIS_RATIO.def;
+  const radiusX = Math.max(Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR), layoutSettings.MIN_RADIUS, radiusY * crossAxisRatio) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
 
   const totalThetaDeg = (totalContentHeight / radiusY) * (180 / Math.PI);
   let currentAngle = isLeftSide ? centerAngle + totalThetaDeg / 2 : centerAngle - totalThetaDeg / 2;
@@ -12469,19 +12704,50 @@ const horizontalL1Distribution = (nodes, context, l1Metrics, totalSubtreeWidth, 
   const count = nodes.length;
 
   // --- HORIZONTAL DIRECTIONAL LAYOUT (UP/DOWN) ---
-  const totalContentWidth = totalSubtreeWidth + (count - 1) * layoutSettings.GAP_Y;
-  const radiusFromWidth = totalContentWidth / layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
+  const compressDirectionalWidth = (node, rawWidth) => {
+    const nodeWidth = Math.max(node?.width ?? 0, 1);
+    if (rawWidth <= nodeWidth) return rawWidth;
+
+    const extra = rawWidth - nodeWidth;
+    const softCapThreshold = layoutSettings.HORIZONTAL_L1_SOFTCAP_THRESHOLD ?? LAYOUT_METADATA.HORIZONTAL_L1_SOFTCAP_THRESHOLD.def;
+    if (extra <= softCapThreshold) return rawWidth;
+
+    // Preserve small/medium maps, compress only very large subtree footprints.
+    const remaining = extra - softCapThreshold;
+    const compressionMinScale = layoutSettings.HORIZONTAL_L1_COMPRESSION_MIN_SCALE ?? LAYOUT_METADATA.HORIZONTAL_L1_COMPRESSION_MIN_SCALE.def;
+    const compressionScale = Math.max(compressionMinScale, (layoutSettings.GAP_X ?? LAYOUT_METADATA.GAP_X.def) * 2);
+    // log1p keeps growth monotonic while guaranteeing compressedRemaining <= remaining.
+    const compressedRemaining = compressionScale * Math.log1p(remaining / compressionScale);
+    return nodeWidth + softCapThreshold + compressedRemaining;
+  };
+
+  const effectiveWidths = nodes.map((node, i) => compressDirectionalWidth(node, l1Metrics[i]));
+  const effectiveWidthById = new Map(nodes.map((node, i) => [node.id, effectiveWidths[i]]));
+
+  const totalEffectiveWidth = effectiveWidths.reduce((sum, width) => sum + width, 0);
+  const effectiveGap = layoutSettings.GAP_Y * gapMultiplier;
+  const totalContentWidth = totalEffectiveWidth + (count - 1) * effectiveGap;
+
+  const baseArcSpan = layoutSettings.DIRECTIONAL_ARC_SPAN_RADIANS;
+  const baselineRadius = Math.max(
+    Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR),
+    layoutSettings.MIN_RADIUS,
+  ) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+  const pressure = totalContentWidth / Math.max(1, baselineRadius * baseArcSpan);
+  const adaptiveArcSpan = Math.min(Math.PI, Math.max(baseArcSpan, baseArcSpan * Math.sqrt(Math.max(1, pressure))));
+  const radiusFromWidth = totalContentWidth / adaptiveArcSpan;
   
   // Notice axis swaps: Radius Y calculates based on Width
   const radiusX = Math.max(Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR), layoutSettings.MIN_RADIUS, radiusFromWidth) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
-  const radiusY = Math.max(Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR), layoutSettings.MIN_RADIUS, radiusX * 0.2) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
+  const crossAxisRatio = layoutSettings.DIRECTIONAL_CROSS_AXIS_RATIO ?? LAYOUT_METADATA.DIRECTIONAL_CROSS_AXIS_RATIO.def;
+  const radiusY = Math.max(Math.round(rootBox.height * layoutSettings.ROOT_RADIUS_FACTOR), layoutSettings.MIN_RADIUS, radiusX * crossAxisRatio) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
 
   const totalThetaDeg = (totalContentWidth / radiusX) * (180 / Math.PI);
   // Reversing the angle spread depending on side to maintain visual reading flow
   let currentAngle = isTopSide ? centerAngle - totalThetaDeg / 2 : centerAngle + totalThetaDeg / 2;
 
   nodes.forEach((node, i) => {
-    const nodeWidth = l1Metrics[i];
+    const nodeWidth = effectiveWidths[i];
     const isPinned = node.customData?.isPinned === true;
     const side = isTopSide ? -1 : 1;
 
@@ -12493,7 +12759,6 @@ const horizontalL1Distribution = (nodes, context, l1Metrics, totalSubtreeWidth, 
       return { center: normAngle, span: spanDeg, start: normAngle - spanDeg / 2, end: normAngle + spanDeg / 2 };
     };
 
-    const effectiveGap = layoutSettings.GAP_Y * gapMultiplier;
     const gapSpanDeg = (effectiveGap / radiusX) * (180 / Math.PI);
     const nodeSpanDeg = (nodeWidth / radiusX) * (180 / Math.PI);
 
@@ -12508,7 +12773,8 @@ const horizontalL1Distribution = (nodes, context, l1Metrics, totalSubtreeWidth, 
     } else {
       const nextPinned = nodes.slice(i + 1).find(n => n.customData?.isPinned);
       if (nextPinned) {
-        const nextInfo = getAngularInfo(nextPinned, getSubtreeWidth(nextPinned.id, allElements, childrenByParent, widthCache, elementById));
+        const nextPinnedWidth = effectiveWidthById.get(nextPinned.id) ?? compressDirectionalWidth(nextPinned, getSubtreeWidth(nextPinned.id, allElements, childrenByParent, widthCache, elementById));
+        const nextInfo = getAngularInfo(nextPinned, nextPinnedWidth);
         if (isTopSide) {
            if (currentAngle + nodeSpanDeg > nextInfo.start - gapSpanDeg) currentAngle = nextInfo.start - gapSpanDeg - nodeSpanDeg;
         } else {
@@ -12642,7 +12908,7 @@ const sortL1NodesBasedOnVisualSequence = (l1Nodes, mode, rootCenter) => {
  * @param {boolean} mustHonorMindmapOrder - If true, enforces the current mindmapOrder over visual position.
  */
 const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindmapOrder = false) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const selectedElement = getMindmapNodeFromSelection();
   if (!selectedElement) return;
 
@@ -12985,7 +13251,7 @@ const initializeRootCustomData = (nodeId) => {
 };
 
 const addNode = async (text, follow = false, skipFinalLayout = false, batchModeAllElements = null, batchModeParent = null, pos = null, ontology = null) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   if (!text || text.trim() === "") return;
 
   const st = getAppState();
@@ -13434,7 +13700,7 @@ const getNodeMarkdownFile = (nodeText) => {
  * Generates a hierarchy of links based on the headings in the target file.
  */
 const importOutline = async () => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   
   const sel = getMindmapNodeFromSelection();
   if (!sel) {
@@ -13521,8 +13787,8 @@ const getTextFromNode = (all, node, getRaw = false, shortPath = false) => {
 /**
 // Copies the selected tree or branch to the clipboard as Markdown text.
 **/
-const copyMapAsText = async (cut = false) => {
-  if (!ea.targetView) return;
+const copyMapAsText = async (cut = false, toClipboard = true) => {
+  if (!isViewSet()) return;
   ensureNodeSelected();
   const sel = getMindmapNodeFromSelection();
   if (!sel) {
@@ -13711,7 +13977,7 @@ const copyMapAsText = async (cut = false) => {
   };
 
   const md = buildList(sel.id);
-  await navigator.clipboard.writeText(md);
+  if(toClipboard) await navigator.clipboard.writeText(md);
 
   if (cut) {
     const incomingArrow = all.find(
@@ -13746,13 +14012,14 @@ const copyMapAsText = async (cut = false) => {
   } else {
     new Notice(isRootSelected ? t("NOTICE_MAP_COPIED") : t("NOTICE_BRANCH_COPIED"));
   }
+  return md;
 };
 
 /**
 // Core logic to parse a list string and add nodes to the map
 **/
 const importTextToMap = async (rawText) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   if (!rawText) return;
 
   let sel = getMindmapNodeFromSelection();
@@ -14038,7 +14305,7 @@ if (rootSelected) {
 
         importedL1Nodes.forEach((node, i) => {
           // Remove mindmapNew flag to bypass alternating distribution in triggerGlobalLayout
-          delete node.customData.mindmapNew;
+          ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
           
           if (i < splitIndex) {
              // Right Side: Force position to the right of root
@@ -14357,7 +14624,7 @@ const updateSubtreeColor = (nodeId, oldColor, newColor, allElements) => {
  * - Disabling submap root removes local layout metadata so descendants follow parent-root logic.
  */
 const toggleSubmapRoot = async () => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const sel = getMindmapNodeFromSelection();
   if (!sel) return;
 
@@ -14422,7 +14689,7 @@ const toggleSubmapRoot = async () => {
 };
 
 const changeNodeOrder = async (key) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const allElements = ea.getViewElements();
   const current = getMindmapNodeFromSelection();
   if (!current) return;
@@ -14724,7 +14991,7 @@ const changeNodeOrder = async (key) => {
  */
 const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
   if(!key) return;
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   let allElements = ea.getViewElements();
   const current = getMindmapNodeFromSelection();
   if (!current) return;
@@ -14876,7 +15143,7 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
  * Triggers a layout refresh for the tree containing the selected element.
  */
 const refreshMapLayout = async (sel) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   if (!sel) sel = getMindmapNodeFromSelection();
   if (sel) {
     const allElements = ea.getViewElements();
@@ -15117,7 +15384,7 @@ const getMindmapProjectElements = (rootId, allViewElements) => {
  * Toggles a single flat group for the selected branch.
 **/
 const toggleBranchGroup = async () => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const sel = getMindmapNodeFromSelection();
   if (!sel) return;
 
@@ -15157,7 +15424,7 @@ const toggleBranchGroup = async () => {
  * Pinned nodes are not moved by auto-layout.
  */
 const togglePin = async () => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const sel = getMindmapNodeFromSelection();
   if (sel) {
     const boundTextElement = ea.getBoundTextElement(sel, true)?.sceneElement;
@@ -15165,7 +15432,7 @@ const togglePin = async () => {
     ea.copyViewElementsToEAforEditing(boundTextElement ? [sel, boundTextElement] : [sel]);
     ea.addAppendUpdateCustomData(sel.id, { isPinned: newPinnedState });
     if (boundTextElement && !newPinnedState && boundTextElement.customData?.hasOwnProperty("isPinned")) {
-      delete ea.getElement(boundTextElement.id).customData.isPinned;
+      ea.addAppendUpdateCustomData(boundTextElement.id, { isPinned: undefined });
     }
     await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
     if(!autoLayoutDisabled) await refreshMapLayout();
@@ -15180,7 +15447,7 @@ const padding = layoutSettings.CONTAINER_PADDING;
  * Creates a rectangle container if one doesn't exist, or removes it if it does.
  */
 const toggleBox = async () => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   let sel = getMindmapNodeFromSelection();
   if (!sel) return;
   sel = ea.getBoundTextElement(sel, true).sceneElement;
@@ -15267,7 +15534,7 @@ const toggleBox = async () => {
  * Toggles a visual boundary polygon around the selected node's subtree.
  */
 const toggleBoundary = async () => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   const sel = getMindmapNodeFromSelection();
   if (sel) {
     const info = getHierarchy(sel, ea.getViewElements());
@@ -15479,7 +15746,7 @@ const disableUI = () => {
 };
 
 const updateUI = (sel) => {
-  if (!ea.targetView) {
+  if (!isViewSet()) {
     if(inputEl) inputEl.disabled = true;
     if(ontologyEl) ontologyEl.style.display = "none";
     disableUI();
@@ -16244,35 +16511,86 @@ class PaletteManagerModal extends ea.FloatingModal {
 class LayoutConfigModal extends ea.FloatingModal {
   constructor(app, currentSettings, onUpdate) {
     super(app);
-    this.settings = JSON.parse(JSON.stringify(currentSettings));
+    this.settings = this.normalizeSettings(currentSettings);
     this.onUpdate = onUpdate;
     this.updateTimer = null;
+    this.focusRefreshHandler = (evt) => this.handleFocusRefresh(evt);
+    this.focusDoc = null;
+  }
+
+  normalizeSettings(settingsLike) {
+    const normalized = {};
+    Object.keys(LAYOUT_METADATA).forEach((key) => {
+      const meta = LAYOUT_METADATA[key];
+      const candidate = settingsLike?.[key];
+      normalized[key] = typeof candidate === "number" && Number.isFinite(candidate) ? candidate : meta.def;
+    });
+    return normalized;
   }
 
   onOpen() {
-    this.display();
+    this.display({ preserveSectionState: false });
+    this.focusDoc = this.contentEl?.ownerDocument ?? document;
+    this.focusDoc.addEventListener("focusin", this.focusRefreshHandler, true);
   }
 
   onClose() {
+    if (this.focusDoc) {
+      this.focusDoc.removeEventListener("focusin", this.focusRefreshHandler, true);
+      this.focusDoc = null;
+    }
     if (this.updateTimer) clearTimeout(this.updateTimer);
+    this.settings = this.normalizeSettings(this.settings);
     this.onUpdate(this.settings);
+  }
+
+  handleFocusRefresh(evt) {
+    if (!isViewSet()) {
+      this.close();
+      return;
+    }
+    if (!this.contentEl || !(this.contentEl.contains(evt.target) || this.modalEl.contains(evt.target))) return;
+
+    const sel = getMindmapNodeFromSelection();
+    if (!sel) return;
+
+    const allElements = ea.getViewElements();
+    const settingsRoot = getSettingsRootNode(sel, allElements) ?? sel;
+    const rootCfg = getRootConfigForNode(settingsRoot);
+    const nextSettings = this.normalizeSettings(rootCfg?.layoutSettings);
+    if (!nextSettings) return;
+
+    const currentSig = JSON.stringify(this.settings);
+    const nextSig = JSON.stringify(nextSettings);
+    if (currentSig === nextSig) return;
+
+    this.settings = nextSettings;
+    this.display({ preserveSectionState: true });
   }
 
   triggerUpdate() {
     if (this.updateTimer) clearTimeout(this.updateTimer);
     this.updateTimer = setTimeout(() => {
+      this.settings = this.normalizeSettings(this.settings);
       this.onUpdate(this.settings);
       this.updateTimer = null;
     }, 500);
   }
 
-  display() {
+  display({ preserveSectionState = true } = {}) {
     const { contentEl } = this;
 
     let lastScrollPosition = 0;
+    const previousSectionState = {};
     const existingContainer = contentEl.querySelector(".layout-settings-container");
     if (existingContainer) {
       lastScrollPosition = existingContainer.scrollTop;
+      if (preserveSectionState) {
+        existingContainer.querySelectorAll("details[data-layout-section]").forEach((detailsEl) => {
+          const sectionKey = detailsEl.getAttribute("data-layout-section");
+          if (sectionKey) previousSectionState[sectionKey] = detailsEl.open;
+        });
+      }
     }
 
     contentEl.empty();
@@ -16293,8 +16611,9 @@ class LayoutConfigModal extends ea.FloatingModal {
 
     const renderSection = (sectionKey, title) => {
       if (!groupedKeys[sectionKey]) return;
-      
-      const details = container.createEl("details", { attr: { open: true } });
+
+      const details = container.createEl("details", { attr: { "data-layout-section": sectionKey } });
+      details.open = preserveSectionState ? (previousSectionState[sectionKey] ?? false) : false;
       details.style.marginBottom = "10px";
       details.style.border = "1px solid var(--background-modifier-border)";
       details.style.borderRadius = "5px";
@@ -16332,7 +16651,7 @@ class LayoutConfigModal extends ea.FloatingModal {
 
         setting.addSlider(slider => slider
           .setLimits(meta.min, meta.max, meta.step)
-          .setValue(this.settings[key])
+          .setValue(this.settings[key] ?? meta.def)
           .onChange(value => {
             this.settings[key] = value;
             valLabel.setText(String(value.toFixed(meta.step < 1 ? 1 : 0)));
@@ -16367,6 +16686,7 @@ class LayoutConfigModal extends ea.FloatingModal {
     renderSection("SECTION_GENERAL", t("SECTION_GENERAL"));
     renderSection("SECTION_RADIAL", t("SECTION_RADIAL"));
     renderSection("SECTION_DIRECTIONAL", t("SECTION_DIRECTIONAL"));
+    renderSection("SECTION_VERTICAL", t("SECTION_VERTICAL"));
     renderSection("SECTION_VISUALS", t("SECTION_VISUALS"));
     renderSection("SECTION_MANUAL", t("SECTION_MANUAL"));
 
@@ -16749,7 +17069,7 @@ const renderBody = (contentEl) => {
       if (fillSweepToggleSetting) {
         fillSweepToggleSetting.settingEl.style.display = v === "Radial" ? "" : "none";
       }
-      if (!ea.targetView) return;
+      if (!isViewSet()) return;
       const sel = getMindmapNodeFromSelection();
       if (!sel) return;
       await updateRootNodeCustomData({ growthMode: v }, sel);
@@ -16769,7 +17089,7 @@ const renderBody = (contentEl) => {
 
         setVal(K_FILL_SWEEP, v);
         dirty = true;
-        if (!ea.targetView) return;
+        if (!isViewSet()) return;
         const sel = getMindmapNodeFromSelection();
         if (!sel) return;
         await updateRootNodeCustomData({ fillSweep: v }, sel);
@@ -16816,7 +17136,7 @@ const renderBody = (contentEl) => {
     .addToggle((t) => t
     .setValue(groupBranches)
     .onChange(async (v) => {
-      if (!ea.targetView) return;
+      if (!isViewSet()) return;
       groupBranches = v;
       if (disableTabEvents) return;
       setVal(K_GROUP, v);
@@ -16878,7 +17198,7 @@ const renderBody = (contentEl) => {
 
         setVal(K_ARROW_TYPE, arrowType);
         dirty = true;
-        if (!ea.targetView) return;
+        if (!isViewSet()) return;
         const sel = getMindmapNodeFromSelection();
         if (!sel) return;
         await updateRootNodeCustomData({ arrowType }, sel);
@@ -17531,6 +17851,9 @@ const handleKeydown = (e) => {
 
   if (!currentWindow) return;
 
+  const st = getAppState();
+  if (!st || !!st.editingTextElement || !!st.selectedLinearElement?.isEditing || !!st.showHyperlinkPopup) return;
+
   if (linkSuggester?.isBlockingKeys()) {
     if (e.key === "Escape") {
       e.preventDefault();
@@ -17908,7 +18231,7 @@ const performAction = async (action, event) => {
   });
 
   const requireView = () => {
-    if (!ea.targetView) return mmErr(MMError.NO_VIEW, "No active ExcalidrawView");
+    if (!isViewSet()) return mmErr(MMError.NO_VIEW, "No active ExcalidrawView");
     return null;
   };
 
@@ -17939,32 +18262,6 @@ const performAction = async (action, event) => {
     return incomingArrow
       ? (ea.getBoundTextElement(incomingArrow, true)?.sceneElement?.rawText || "")
       : "";
-  };
-
-  const getMasterRoots = () => {
-    const all = ea.getViewElements();
-    const branchArrows = all.filter(
-      (a) =>
-        a.type === "arrow" &&
-        a.customData?.isBranch &&
-        a.startBinding?.elementId &&
-        a.endBinding?.elementId,
-    );
-
-    const parentIds = new Set();
-    const childIds = new Set();
-    branchArrows.forEach((a) => {
-      parentIds.add(a.startBinding.elementId);
-      childIds.add(a.endBinding.elementId);
-    });
-
-    const candidateIds = new Set([...parentIds, ...childIds]);
-    return Array.from(candidateIds).filter((id) => {
-      if (childIds.has(id)) return false;
-      const el = all.find((e) => e.id === id);
-      if (!el) return false;
-      return el.customData?.isAdditionalRoot !== true;
-    });
   };
 
   const extractMapConfig = (rootNode) => ({
@@ -18092,6 +18389,11 @@ const performAction = async (action, event) => {
       summary: "Selects a node by id or current selected node when omitted",
       params: [{ name: "nodeId", type: "string", required: false }],
       returns: "MMResult<{nodeId:string}>",
+    },
+    setInputFieldDockStatus: {
+      summary: "Forces docked/undocked input mode and applies matching sidepanel visibility",
+      params: [{ name: "isDocked", type: "boolean", required: true }],
+      returns: "Promise<MMResult<{isDocked:boolean,isUndocked:boolean,sidepanelVisible:boolean}>>",
     },
     getMindMapRoots: {
       summary: "Returns top-level mindmap root node ids",
@@ -18330,9 +18632,7 @@ const performAction = async (action, event) => {
     setView: (view) => {
       if (!view) return mmErr(MMError.INVALID_VIEW, "setView expects an ExcalidrawView object");
 
-      const isValid =
-        (ea.isExcalidrawView && ea.isExcalidrawView(view)) ||
-        (typeof view.getViewType === "function" && view.getViewType() === "excalidraw");
+      const isValid = !!ea?.isExcalidrawView(view);
 
       if (!isValid) return mmErr(MMError.INVALID_VIEW, "setView expects an ExcalidrawView object");
 
@@ -18362,8 +18662,42 @@ const performAction = async (action, event) => {
       const nodeRes = resolveNode(nodeId);
       if (!nodeRes.ok) return nodeRes;
       selectNodeInView(nodeRes.data);
+      performAction(ACTION_FOCUS);
       updateUI(nodeRes.data);
       return mmOk({ nodeId: nodeRes.data.id });
+    },
+
+    setInputFieldDockStatus: async ({ isDocked } = {}) => {
+      const viewErr = requireView();
+      if (viewErr) return viewErr;
+      if (typeof isDocked !== "boolean") {
+        return mmErr(MMError.INVALID_ARGUMENT, "setInputFieldDockStatus requires a boolean isDocked");
+      }
+
+      try {
+        const sidepanelLeaf = ea.getSidepanelLeaf?.();
+        const isSidepanelVisible = !!sidepanelLeaf?.isVisible?.();
+
+        if (isDocked) {
+          if (isUndocked) {
+            await performAction(ACTION_DOCK_UNDOCK);
+          } else if (!isSidepanelVisible && sidepanelLeaf) {
+            app.workspace.revealLeaf(sidepanelLeaf);
+          }
+        } else {
+          if (!isUndocked) {
+            await performAction(ACTION_DOCK_UNDOCK);
+          } else if (isSidepanelVisible) {
+            ea.toggleSidepanelView();
+          }
+        }
+
+        const finalSidepanelLeaf = ea.getSidepanelLeaf?.();
+        const sidepanelVisible = !!finalSidepanelLeaf?.isVisible?.();
+        return mmOk({ isDocked: !isUndocked, isUndocked, sidepanelVisible });
+      } catch (e) {
+        return mmErr(MMError.OPERATION_FAILED, "setInputFieldDockStatus failed", e);
+      }
     },
 
     getMindMapRoots: () => {
@@ -18510,13 +18844,7 @@ const performAction = async (action, event) => {
       }
 
       try {
-        await copyMapAsText(!!cut);
-        let markdown = "";
-        try {
-          markdown = await navigator.clipboard.readText();
-        } catch (clipErr) {
-          return mmErr(MMError.OPERATION_FAILED, "Export succeeded but clipboard read failed", clipErr);
-        }
+        const markdown = await copyMapAsText(!!cut, false);
         return mmOk({ markdown });
       } catch (e) {
         return mmErr(MMError.OPERATION_FAILED, "exportMarkdown failed", e);
@@ -18666,7 +18994,8 @@ const performAction = async (action, event) => {
     },
   };
 
-  window.MindMapBuilder = API;
+  window.MindMapBuilderAPI = API;
+  console.log("window.MindMapBuilderAPI initialized. For documentation visit: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/ea-script-docs/MindMapBuilderAPI.md", API);
 })();
 
 let uiUpdateTimer = null;
@@ -18678,7 +19007,7 @@ let uiUpdateTimer = null;
  * @param {PointerEvent} e 
  */
 const handleCanvasPointerDown = (e) => {
-  if (!ea.targetView) return;
+  if (!isViewSet()) return;
   if (floatingInputModal && floatingInputModal.modalEl.contains(e.target)) return;
 
   if (uiUpdateTimer) {
@@ -18686,7 +19015,7 @@ const handleCanvasPointerDown = (e) => {
   }
 
   uiUpdateTimer = setTimeout(() => {
-    if (!ea.targetView) return;
+    if (!isViewSet()) return;
     const selection = getMindmapNodeFromSelection();
     updateUI(selection);
     uiUpdateTimer = null;
@@ -18833,6 +19162,7 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
   tab.onClose = async () => {
     removeEventListeners();
     delete window.MindmapBuilder;
+    delete window.MindMapBuilderAPI;
     removeStyles();
     if (floatingInputModal) {
       if (floatingInputModal.modalEl && floatingInputModal.modalEl.parentElement) {

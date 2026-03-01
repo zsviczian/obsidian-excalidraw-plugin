@@ -32,7 +32,13 @@ type ParagraphSuggestion = {
   node: any;
 };
 
-type InlineSuggestion = LinkSuggestion | HeadingSuggestion | ParagraphSuggestion;
+type TagSuggestion = {
+  kind: "tag";
+  tag: string;
+  count: number;
+};
+
+type InlineSuggestion = LinkSuggestion | HeadingSuggestion | ParagraphSuggestion | TagSuggestion;
 
 /**
  * Inline link suggester that attaches to a specific input element.
@@ -46,13 +52,16 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
   private block = false;
   private activeOpen = -1;
   private activeClose = -1;
+  private activeTagStart = -1;
+  private activeTagEnd = -1;
   private caretPos = 0;
   private activeAlias: string | null = null;
   private activeSearchTerm = "";
   private activeFile: TFile | null = null;
-  private mode: "file" | "heading" | "block" | null = null;
+  private mode: "file" | "heading" | "block" | "tag" | null = null;
   private headingItems: HeadingSuggestion[] = [];
   private paragraphItems: ParagraphSuggestion[] = [];
+  private tagItems: TagSuggestion[] = [];
 
   constructor(
     app: App,
@@ -171,39 +180,84 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     }
 
     const active = this.findActiveLink(inputStr, this.caretPos);
-    if (!active) {
+    if (active) {
+      this.activeOpen = active.open;
+      this.activeClose = active.close;
+      this.activeTagStart = -1;
+      this.activeTagEnd = -1;
+
+      const context = this.parseLinkContext(inputStr, this.caretPos, active.open, active.close);
+      this.activeAlias = context.alias;
+      this.activeSearchTerm = context.searchTerm;
+      this.activeFile = context.file;
+      this.mode = context.mode;
+
+      if (context.inAlias) {
+        this.resetSuggestions();
+        return;
+      }
+
+      if (this.mode === "heading") {
+        await this.loadHeadings(this.activeFile);
+      } else if (this.mode === "block") {
+        await this.loadParagraphs(this.activeFile);
+      } else {
+        this.headingItems = [];
+        this.paragraphItems = [];
+      }
+
+      this.tagItems = [];
+      this.block = true;
+      super.onInputChanged();
+      return;
+    }
+
+    const activeTag = this.findActiveTag(inputStr, this.caretPos);
+    if (!activeTag) {
       this.resetSuggestions();
       return;
     }
 
-    this.activeOpen = active.open;
-    this.activeClose = active.close;
-
-    const context = this.parseLinkContext(inputStr, this.caretPos, active.open, active.close);
-    this.activeAlias = context.alias;
-    this.activeSearchTerm = context.searchTerm;
-    this.activeFile = context.file;
-    this.mode = context.mode;
-
-    if (context.inAlias) {
-      this.resetSuggestions();
-      return;
-    }
-
-    if (this.mode === "heading") {
-      await this.loadHeadings(this.activeFile);
-    } else if (this.mode === "block") {
-      await this.loadParagraphs(this.activeFile);
-    } else {
-      this.headingItems = [];
-      this.paragraphItems = [];
-    }
+    this.activeOpen = -1;
+    this.activeClose = -1;
+    this.activeTagStart = activeTag.start;
+    this.activeTagEnd = activeTag.end;
+    this.activeAlias = null;
+    this.activeSearchTerm = activeTag.term;
+    this.activeFile = null;
+    this.mode = "tag";
+    this.headingItems = [];
+    this.paragraphItems = [];
+    this.tagItems = this.getTagSuggestions();
 
     this.block = true;
     await super.onInputChanged();
   }
 
+  private getTagSuggestions(): TagSuggestion[] {
+    const tags = (this.app.metadataCache as any).getTags?.() ?? {};
+    return Object.keys(tags)
+      .sort((a, b) => {
+        const countDiff = (tags[b] ?? 0) - (tags[a] ?? 0);
+        if (countDiff !== 0) return countDiff;
+        return a.localeCompare(b);
+      })
+      .map((tag) => ({
+        kind: "tag",
+        tag,
+        count: tags[tag] ?? 0,
+      }));
+  }
+
+  private getTagSearchValue(tag: string): string {
+    return tag.startsWith("#") ? tag.substring(1) : tag;
+  }
+
   getSuggestions(query: string): FuzzyMatch<InlineSuggestion>[] {
+    if (this.mode === "tag") {
+      return fuzzyMatchTextItems(this.activeSearchTerm ?? "", this.tagItems, (t) => this.getTagSearchValue(t.tag));
+    }
+
     if (this.activeOpen === -1) return [];
 
     if (this.mode === "heading") {
@@ -226,6 +280,10 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     return (item as ParagraphSuggestion)?.kind === "paragraph";
   }
 
+  private isTag(item: InlineSuggestion): item is TagSuggestion {
+    return (item as TagSuggestion)?.kind === "tag";
+  }
+
   getItemText(item: InlineSuggestion): string {
     if (this.isHeading(item)) {
       return item.heading;
@@ -233,11 +291,19 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     if (this.isParagraph(item)) {
       return item.text;
     }
+    if (this.isTag(item)) {
+      return item.tag;
+    }
     return (item as LinkSuggestion).path + ((item as LinkSuggestion).alias ? `|${(item as LinkSuggestion).alias}` : "");
   }
 
   async onChooseItem(item: InlineSuggestion | undefined): Promise<void> {
     if (!item) return;
+
+    if (this.isTag(item)) {
+      this.insertTag(item.tag);
+      return;
+    }
 
     if (this.isHeading(item)) {
       const linktext = this.app.metadataCache.fileToLinktext(
@@ -282,6 +348,13 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
 
   renderSuggestion(result: FuzzyMatch<InlineSuggestion>, itemEl: HTMLElement) {
     const { item } = result || {};
+
+    if (this.isTag(item as InlineSuggestion)) {
+      const tagItem = item as TagSuggestion;
+      itemEl.createDiv({ text: tagItem.tag });
+      itemEl.createEl("small", { text: `${tagItem.count}` });
+      return;
+    }
 
     if (this.isHeading(item as InlineSuggestion)) {
       const note = item
@@ -348,6 +421,22 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     this.close();
   }
 
+  private insertTag(tag: string) {
+    if (this.activeTagStart < 0) {
+      return;
+    }
+
+    const start = this.activeTagStart;
+    const end = this.activeTagEnd >= 0 ? this.activeTagEnd : this.inputEl.selectionStart ?? this.inputEl.value.length;
+    const prefix = this.inputEl.value.substring(0, start);
+    const suffix = this.inputEl.value.substring(end);
+    this.inputEl.value = `${prefix}${tag}${suffix}`;
+    this.dispatchInputChange();
+    const newPos = start + tag.length;
+    this.inputEl.setSelectionRange(newPos, newPos);
+    this.close();
+  }
+
   private resetSuggestions() {
     this.suggester.setSuggestions([]);
     if (this.popper?.deref()) {
@@ -356,12 +445,15 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     this.suggestEl.detach();
     this.activeOpen = -1;
     this.activeClose = -1;
+    this.activeTagStart = -1;
+    this.activeTagEnd = -1;
     this.activeAlias = null;
     this.activeSearchTerm = "";
     this.activeFile = null;
     this.mode = null;
     this.headingItems = [];
     this.paragraphItems = [];
+    this.tagItems = [];
     setTimeout(() => {
       this.block = false;
     });
@@ -505,6 +597,32 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
       }
     }
     return candidate;
+  }
+
+  private findActiveTag(value: string, caret: number): {start: number; end: number; term: string} | null {
+    const beforeCaret = value.substring(0, caret);
+    const match = beforeCaret.match(/(?:^|[\s\(\[\{>])#([^\s#\[\]\(\)\{\}\|]*)$/);
+    if (!match) {
+      return null;
+    }
+
+    const matchedText = match[0];
+    const hashOffset = matchedText.lastIndexOf("#");
+    if (hashOffset === -1) {
+      return null;
+    }
+
+    const start = caret - (matchedText.length - hashOffset);
+    let end = caret;
+    while (end < value.length && !/[\s#\[\]\(\)\{\}\|]/.test(value.charAt(end))) {
+      end++;
+    }
+
+    return {
+      start,
+      end,
+      term: match[1] ?? "",
+    };
   }
 
   private extractActiveInfo(value: string, caret: number, open: number, close: number): {alias: string | null; inAlias: boolean; searchTerm: string} {

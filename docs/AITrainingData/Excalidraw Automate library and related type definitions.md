@@ -287,6 +287,16 @@ export declare class ExcalidrawAutomate {
      */
     getSidepanelLeaf(): WorkspaceLeaf | null;
     /**
+     * Queues the script to be skipped once during persisted sidepanel restoration.
+     * This is useful at startup when a script is launched via Command Palette/hotkey
+     * before the sidepanel view has opened and run its restoration sequence.
+     *
+     * The script is queued only if the sidepanel leaf is not yet available.
+     * @param scriptName - Optional script name. Defaults to ea.activeScript.
+     * @returns {boolean} True if a skip marker was queued, false otherwise.
+     */
+    skipSidepanelScriptRestore(scriptName?: string): boolean;
+    /**
      * Toggles the visibility of the Excalidraw sidepanel view.
      * If the sidepanel is not in a leaf attached to the left or right split, no action is taken.
      */

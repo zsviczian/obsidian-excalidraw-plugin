@@ -40,10 +40,12 @@ The script balances **automation** (auto-layout, recursive grouping, and contras
 const FOOTER = `
 const VERSION = "v${new Date().toISOString().slice(2, 10).replace(/-/g, ".")}";
 
-if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.1")) {
-new Notice("Please update the Excalidraw Plugin to version 2.19.1 or higher.");
+if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.20.6")) {
+new Notice("Please update the Excalidraw Plugin to version 2.20.6 or higher.");
 return;
 }
+
+ea.skipSidepanelScriptRestore();
 
 const existingTab = ea.checkForActiveSidepanelTabForScript();
 if (existingTab) {

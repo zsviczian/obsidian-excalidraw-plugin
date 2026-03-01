@@ -17,6 +17,7 @@ type TabCreationConfig = {
 export class ExcalidrawSidepanelView extends ItemView {
 	private static singleton: ExcalidrawSidepanelView | null = null;
 	private static restoreSilent = false;
+	private static restoreSkipScripts = new Set<string>();
 
 	/**
 	 * Returns the singleton sidepanel view if it exists, optionally revealing the leaf unless restoration is running silently.
@@ -64,7 +65,32 @@ export class ExcalidrawSidepanelView extends ItemView {
 	 */
 	public static onPluginUnload(plugin: ExcalidrawPlugin) {
 		ExcalidrawSidepanelView.singleton = null;
+		ExcalidrawSidepanelView.restoreSkipScripts.clear();
 		plugin.app.workspace.detachLeavesOfType(VIEW_TYPE_SIDEPANEL);
+	}
+
+	/**
+	 * Queues a script to be skipped once during persisted sidepanel restoration.
+	 */
+	public static skipScriptRestore(scriptName?: string): void {
+		if (!scriptName) {
+			return;
+		}
+		ExcalidrawSidepanelView.restoreSkipScripts.add(scriptName);
+	}
+
+	/**
+	 * Returns whether a script restore should be skipped and consumes the skip marker.
+	 */
+	private static consumeScriptRestoreSkip(scriptName: string): boolean {
+		if (!scriptName) {
+			return false;
+		}
+		if (!ExcalidrawSidepanelView.restoreSkipScripts.has(scriptName)) {
+			return false;
+		}
+		ExcalidrawSidepanelView.restoreSkipScripts.delete(scriptName);
+		return true;
 	}
 
 	private tabs = new Map<string, ExcalidrawSidepanelTab>();
@@ -378,6 +404,12 @@ export class ExcalidrawSidepanelView extends ItemView {
 			try {
 				for (const [scriptName, meta] of Array.from(this.persistedScripts.entries())) {
 					if (!scriptName) {
+						continue;
+					}
+					if (ExcalidrawSidepanelView.consumeScriptRestoreSkip(scriptName)) {
+						continue;
+					}
+					if (this.getTabByScript(scriptName)) {
 						continue;
 					}
 					await this.runScriptByName(scriptName, meta.title);

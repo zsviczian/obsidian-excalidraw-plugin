@@ -132,6 +132,7 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
   let appBottonBarOriginalDisplay = "block";
   let layerUIWrapper: HTMLElement | null = null;
   let appBottomBar: HTMLElement | null = null;
+  const modalContainerOriginalDisplays = new Map<HTMLElement, string>();
 
   const originalStyle = {
     width: container.style.width,
@@ -143,6 +144,11 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
   };
 
   try {
+    const modalContainers = document.querySelectorAll<HTMLElement>(".modal-container");
+    modalContainers.forEach((modalContainer) => {
+      modalContainerOriginalDisplays.set(modalContainer, modalContainer.style.display);
+      modalContainer.style.display = "none";
+    });
     
     container.style.width = tileWidth + "px";
     container.style.height = tileHeight + "px";
@@ -286,6 +292,10 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
     if (appBottomBar) {
       appBottomBar.style.display = appBottonBarOriginalDisplay;
     }
+
+    modalContainerOriginalDisplays.forEach((display, modalContainer) => {
+      modalContainer.style.display = display;
+    });
     
     // Restore original state
     restoreState(savedState);
