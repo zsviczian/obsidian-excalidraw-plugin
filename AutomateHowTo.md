@@ -161,7 +161,7 @@ Number between 0 and 100. The opacity of an object, both stroke and fill.
 ### strokeSharpness, setStrokeSharpness()
 ```typescript
 type StrokeSharpness = "round" | "sharp";
-setStrokeSharpness(val:nmuber);
+setStrokeSharpness(val:number);
 ```
 strokeSharpness is a string.
 

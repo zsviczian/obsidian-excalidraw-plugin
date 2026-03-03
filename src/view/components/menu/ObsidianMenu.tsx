@@ -12,6 +12,7 @@ import { ICONS, penIcon, stringToSVG } from "../../../constants/actionIcons";
 import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
 import { t } from "src/lang/helpers";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
+import { CaptureUpdateAction } from "src/constants/constants";
 
 export function setPen (pen: PenStyle, api: any) {
   const st = api.getAppState();
@@ -34,7 +35,7 @@ export function setPen (pen: PenStyle, api: any) {
           }} 
         : null,
     },
-    storeAction: "update",
+    captureUpdate: CaptureUpdateAction.NEVER,
   })
 }
 
@@ -51,7 +52,7 @@ export function resetStrokeOptions (resetCustomPen:any, api: ExcalidrawImperativ
       resetCustomPen: null,
       ...clearCurrentStrokeOptions ? {currentStrokeOptions: null} : null,
     },
-    storeAction: "update",
+    captureUpdate: CaptureUpdateAction.NEVER
   });
 }
 
@@ -155,6 +156,18 @@ export class ObsidianMenu {
     insertFileModal.open();
   }
 
+  private actionToggleFullscreen() {
+    if (this.view.isFullscreen()) {
+      this.view.exitFullscreen();
+    } else {
+      this.view.gotoFullscreen();
+    }
+    this.view.excalidrawAPI?.updateScene({
+      appState: {},
+      captureUpdate: CaptureUpdateAction.NEVER,
+    });
+  }
+
   public renderCustomPens (isMobile: boolean, appState: AppState) {
     return(
       appState.customPens?.map((_,index)=>{
@@ -255,8 +268,14 @@ export class ObsidianMenu {
   }
 
   public renderButton (isMobile: boolean, appState: AppState) {
+    const isFullscreen = this.view.isFullscreen();
     return (
-      <>
+      <div className={clsx(
+        {
+          "ExcalidrawObsidianMenu--mobile": isMobile,
+          "ExcalidrawObsidianMenu": !isMobile,
+        },
+      )}>
         <label
           className={clsx(
             "ToolIcon",
@@ -285,9 +304,23 @@ export class ObsidianMenu {
             {ICONS["add-file"]}
           </div>
         </label>
+        <label
+          className={clsx(
+            "ToolIcon",
+            "ToolIcon_size_medium",
+            {
+              "is-mobile": isMobile,
+            },
+          )}
+          onClick={this.actionToggleFullscreen.bind(this)}
+        >
+          <div className="ToolIcon__icon" aria-label={isFullscreen ? t("EXIT_FULLSCREEN") : t("GOTO_FULLSCREEN")}>
+            {isFullscreen ? ICONS.exitFullScreen : ICONS.gotoFullScreen}
+          </div>
+        </label>
         {this.renderCustomPens(isMobile,appState)}
         {this.renderPinnedScriptButtons(isMobile,appState)}
-      </>
+      </div>
     );
   };
 

@@ -7,7 +7,8 @@ If you are enjoying the Excalidraw plugin then please support my work and enthus
 Jump ahead to the [[#List of available scripts]]
 
 # Introducing Excalidraw Automate Script Engine
-<iframe width="560" height="315" src="https://www.youtube.com/embed/hePJcObHIso" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+<a href="https://www.youtube.com/watch?v=hePJcObHIso" target="_blank"><img src ="https://i.ytimg.com/vi/hePJcObHIso/maxresdefault.jpg" style="width:560px;"></a>
 
 Script Engine scripts are installed in the `Downloaded` subfolder of the `Excalidraw Automate script folder` specified in plugin settings.
 
@@ -243,7 +244,7 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 ```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/OCR%20-%20Optical%20Character%20Recognition.md
 ```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/OCR%20-%20Optical%20Character%20Recognition.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">REQUIRES EXCALIDRAW 1.5.15<br>The script will  1) send the selected image file to [taskbone.com](https://taskbone.com) to extract the text from the image, and 2) will add the text to your drawing as a text element.<br><mark>⚠ Note that you will need to manually paste your token into the script after the first run! ⚠</mark><br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-ocr.jpg'><br><iframe width="560" height="315" src="https://www.youtube.com/embed/W2NMzR8s4eE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></td></tr></table>
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/OCR%20-%20Optical%20Character%20Recognition.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">REQUIRES EXCALIDRAW 1.5.15<br>The script will  1) send the selected image file to [taskbone.com](https://taskbone.com) to extract the text from the image, and 2) will add the text to your drawing as a text element.<br><mark>⚠ Note that you will need to manually paste your token into the script after the first run! ⚠</mark><br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-ocr.jpg'><br><a href="https://www.youtube.com/watch?v=W2NMzR8s4eE" target="_blank"><img src ="https://i.ytimg.com/vi/W2NMzR8s4eE/maxresdefault.jpg" style="width:560px;"></a></td></tr></table>
 
 ## Organic Line
 ```excalidraw-script-install

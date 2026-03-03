@@ -9,6 +9,7 @@ declare var LZString: any;
 let locale: Partial<typeof en> | null = null;
 
 function loadLocale(lang: string): Partial<typeof en> {
+  if(lang === "zh") lang = "zh-cn"; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2247
   if (Object.keys(PLUGIN_LANGUAGES).includes(lang)) {
     const decompressed = LZString.decompressFromBase64(PLUGIN_LANGUAGES[lang]);
     let x = {};

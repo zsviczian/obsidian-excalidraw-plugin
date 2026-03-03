@@ -2,6 +2,7 @@ import { App, MarkdownRenderer, Modal } from "obsidian";
 import { isVersionNewerThanOther } from "src/utils/utils";
 import ExcalidrawPlugin from "../../core/main";
 import { FIRST_RUN, RELEASE_NOTES } from "./Messages";
+import { t } from "src/lang/helpers";
 
 declare const PLUGIN_VERSION:string;
 
@@ -16,17 +17,23 @@ export class ReleaseNotes extends Modal {
   }
 
   onOpen(): void {
+    //@ts-ignore
+    const { containerEl, contentEl, titleEl, headerEl } = this;
     //this.contentEl.classList.add("excalidraw-release");
-    this.containerEl.classList.add("excalidraw-release");
-    this.titleEl.setText(`Welcome to Excalidraw ${this.version ?? ""}`);
+    containerEl.classList.add("excalidraw-release");
+    titleEl.setText(`${t("RN_WELCOME")} ${this.version ?? ""}`);
     this.createForm();
+
+    if(headerEl) headerEl.style.pointerEvents = "none"; // Disable pointer events on header to allow clicks through
   }
 
   async onClose() {
     this.contentEl.empty();
     await this.plugin.loadSettings();
-    this.plugin.settings.previousRelease = PLUGIN_VERSION
-    await this.plugin.saveSettings();
+    if(this.plugin.settings.previousRelease !== PLUGIN_VERSION) {
+      this.plugin.settings.previousRelease = PLUGIN_VERSION;
+      await this.plugin.saveSettings();
+    }
   }
 
   async createForm() {
@@ -39,7 +46,8 @@ export class ReleaseNotes extends Modal {
           .slice(0, 10)
           .join("\n\n---\n")
       : FIRST_RUN;
-    await MarkdownRenderer.renderMarkdown(
+    await MarkdownRenderer.render(
+      this.app,
       message,
       this.contentEl,
       "",

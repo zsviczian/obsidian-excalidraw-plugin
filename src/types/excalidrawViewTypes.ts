@@ -1,7 +1,7 @@
 // src/types/ExcalidrawViewTypes.ts
 
 import { WorkspaceLeaf } from "obsidian";
-import { FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import { ObsidianCanvasNode } from "../view/managers/CanvasNodeFactory";
 
 export type Position = { x: number; y: number };
@@ -22,11 +22,19 @@ export interface EmbeddableLeafRef {
   editNode?: Function;
 }
 
+export interface AutoexportConfig {
+  png: boolean; // Whether to auto-export to PNG
+  svg: boolean; // Whether to auto-export to SVG
+  excalidraw: boolean; // Whether to auto-export to Excalidraw format
+  theme: "light" | "dark" | "both"; // The theme to use for the export
+}
+
 export interface ViewSemaphores {
   warnAboutLinearElementLinkClick: boolean;
   //flag to prevent overwriting the changes the user makes in an embeddable view editing the back side of the drawing
   embeddableIsEditingSelf: boolean;
   popoutUnload: boolean; //the unloaded Excalidraw view was the last leaf in the popout window
+  viewloaded: boolean; //onLayoutReady in view.onload has completed.
   viewunload: boolean;
   //first time initialization of the view
   scriptsReady: boolean;
@@ -59,4 +67,5 @@ export interface ViewSemaphores {
   saving: boolean;
   hoverSleep: boolean; //flag with timer to prevent hover preview from being triggered dozens of times
   wheelTimeout:number; //used to avoid hover preview while zooming
+  shouldSaveImportedImage: boolean; //forceSave after image import via the Excalidraw Image Tool or by way of paste
 }

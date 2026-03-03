@@ -6,8 +6,7 @@ The script performs two different functions depending on the elements selected i
 ![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/golden-ratio.jpg)
 
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/2SHn_ruax-s" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-
+<a href="https://www.youtube.com/watch?v=2SHn_ruax-s" target="_blank"><img src ="https://i.ytimg.com/vi/2SHn_ruax-s/maxresdefault.jpg" style="width:560px;"></a>
 
 Gravitational point of spiral: $$\left[x,y\right]=\left[ x + \frac{{\text{width} \cdot \phi^2}}{{\phi^2 + 1}}\;, \; y + \frac{{\text{height} \cdot \phi^2}}{{\phi^2 + 1}} \right]$$
 Dimensions of inner rectangles in case of Double Spiral: $$[width, height] = \left[\frac{width\cdot(\phi^2+1)}{2\phi^2}\;, \;\frac{height\cdot(\phi^2+1)}{2\phi^2}\right]$$

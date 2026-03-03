@@ -16,13 +16,16 @@ export class PathSuggestionModal extends SuggestionModal<
   files: TFile[];
   text: TextComponent;
   cache: CachedMetadata;
+  private handleGetFile: () => void;
+
   constructor(app: App, input: TextComponent, items: TFile[]) {
     super(app, input.inputEl, items);
     this.files = [...items];
     this.text = input;
-    //this.getFile();
 
-    this.inputEl.addEventListener("input", this.getFile.bind(this));
+    // Pre-bind the handler
+    this.handleGetFile = this.getFile.bind(this);
+    this.inputEl.addEventListener("input", this.handleGetFile);
   }
 
   getFile() {
@@ -40,6 +43,12 @@ export class PathSuggestionModal extends SuggestionModal<
     }
     this.onInputChanged();
   }
+
+  close(): void {
+    this.inputEl.removeEventListener("input", this.handleGetFile);
+    super.close();
+  }
+
   getItemText(item: TFile | HeadingCache | BlockCache) {
     if (item instanceof TFile) {
       return item.path;
@@ -51,6 +60,7 @@ export class PathSuggestionModal extends SuggestionModal<
       return (<BlockCache>item).id;
     }
   }
+
   onChooseItem(item: TFile | HeadingCache | BlockCache) {
     if (item instanceof TFile) {
       this.text.setValue(item.basename);
@@ -64,6 +74,7 @@ export class PathSuggestionModal extends SuggestionModal<
       this.text.setValue(`${this.file.basename}^${(<BlockCache>item).id}`);
     }
   }
+
   selectSuggestion({ item }: FuzzyMatch<TFile | BlockCache | HeadingCache>) {
     let link: string;
     if (item instanceof TFile) {
@@ -79,6 +90,7 @@ export class PathSuggestionModal extends SuggestionModal<
 
     this.close();
   }
+
   renderSuggestion(
     result: FuzzyMatch<TFile | BlockCache | HeadingCache>,
     el: HTMLElement,
@@ -131,6 +143,7 @@ export class PathSuggestionModal extends SuggestionModal<
       content.setText((<BlockCache>item).id);
     }
   }
+
   get headings() {
     if (!this.file) {
       return [];
@@ -140,6 +153,7 @@ export class PathSuggestionModal extends SuggestionModal<
     }
     return this.cache.headings || [];
   }
+
   get blocks() {
     if (!this.file) {
       return [];
@@ -149,6 +163,7 @@ export class PathSuggestionModal extends SuggestionModal<
     }
     return Object.values(this.cache.blocks || {}) || [];
   }
+
   getItems() {
     const v = this.inputEl.value;
     if (/#/.test(v)) {

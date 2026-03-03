@@ -18,3 +18,10 @@ export enum PreviewImageType {
   SVGIMG = "SVGIMG",
   SVG = "SVG"
 }
+
+export interface FrameRenderingOptions {
+  enabled: boolean;
+  name: boolean;
+  outline: boolean;
+  clip: boolean;
+}

@@ -1,8 +1,8 @@
 //https://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
 //https://img.youtube.com/vi/uZz5MgzWXiM/maxresdefault.jpg
 
-import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/element/src/types";
+import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
 import {  
   DEFAULT_MD_EMBED_CSS,
@@ -15,7 +15,6 @@ import {
 } from "../constants/constants";
 import { createSVG } from "src/utils/excalidrawAutomateUtils";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
-import { ExportSettings } from "../view/ExcalidrawView";
 import { t } from "../lang/helpers";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "../core/main";
@@ -39,11 +38,12 @@ import {
   promiseTry,
   PromisePool,
 } from "../utils/utils";
-import { ValueOf } from "../types/types";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "../utils/mermaidUtils";
 import { mermaidToExcalidraw } from "src/constants/constants";
 import { ImageKey, imageCache } from "./ImageCache";
 import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
+import { ColorMap, ImgData, PDFPageViewProps, Size, MimeType, FileData } from "src/types/embeddedFileLoaderTypes";
+import { ExportSettings } from "src/types/exportUtilTypes";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -54,54 +54,7 @@ import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
 //and getObsidianImage is aborted if the file is already in the Watchdog stack
 const  markdownRendererRecursionWatcthdog = new Set<TFile>();
 
-export const IMAGE_MIME_TYPES = {
-  svg: "image/svg+xml",
-  png: "image/png",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  gif: "image/gif",
-  webp: "image/webp",
-  bmp: "image/bmp",
-  ico: "image/x-icon",
-  avif: "image/avif",
-  jfif: "image/jfif",
-} as const;
 
-type ImgData = {
-  mimeType: MimeType;
-  fileId: FileId;
-  dataURL: DataURL;
-  created: number;
-  hasSVGwithBitmap: boolean;
-  size: Size;
-  pdfPageViewProps?: PDFPageViewProps;
-};
-
-export declare type MimeType = ValueOf<typeof IMAGE_MIME_TYPES> | "application/octet-stream";
-
-export type FileData = BinaryFileData & {
-  size: Size;
-  hasSVGwithBitmap: boolean;
-  shouldScale: boolean; //true if image should maintain its area, false if image should display at 100% its size
-  pdfPageViewProps?: PDFPageViewProps;
-};
-
-export type PDFPageViewProps = {
-  left: number;
-  bottom: number;
-  right: number;
-  top: number;
-  rotate?: number; //may be undefined in legacy files
-}
-
-export type Size = {
-  height: number;
-  width: number;
-};
-
-export interface ColorMap {
-  [color: string]: string;
-};
 
 /**
  * Function takes an SVG and replaces all fill and stroke colors with the ones in the colorMap
@@ -201,6 +154,10 @@ export class EmbeddedFile {
     }
   }
 
+  get hasSeparateDarkAndLightVersion(): boolean {
+    return this.isSVGwithBitmap;
+  }
+
   public resetImage(hostPath: string, imgPath: string) {
     this.imgInverted = this.img = "";
     this.mtime = 0;
@@ -278,11 +235,12 @@ export class EmbeddedFile {
     if (this.fileChanged()) {
       this.imgInverted = this.img = "";
     }
+    this.isSVGwithBitmap = isSVGwithBitmap;
     this.mtime = this.isHyperLink || this.isLocalLink ? 0 : this.file.stat.mtime;
     this.pdfPageViewProps = pdfPageViewProps;
     this.size = size;
     this.mimeType = mimeType;
-    switch (isDark && isSVGwithBitmap) {
+    switch (isDark && this.hasSeparateDarkAndLightVersion) {
       case true:
         this.imgInverted = imgBase64;
         break;
@@ -290,7 +248,6 @@ export class EmbeddedFile {
         this.img = imgBase64;
         break; //bitmaps and SVGs without an embedded bitmap do not need a negative image
     }
-    this.isSVGwithBitmap = isSVGwithBitmap;
   }
 
   public isLoaded(isDark: boolean): boolean {
@@ -309,7 +266,7 @@ export class EmbeddedFile {
         return false;
       }
     }
-    if (this.isSVGwithBitmap && isDark) {
+    if (this.hasSeparateDarkAndLightVersion && isDark) {
       return this.imgInverted !== "";
     }
     return this.img !== "";
@@ -319,7 +276,7 @@ export class EmbeddedFile {
     if (!this.file && !this.isHyperLink && !this.isLocalLink) {
       return "";
     }
-    if (isDark && this.isSVGwithBitmap) {
+    if (this.hasSeparateDarkAndLightVersion && isDark) {
       return this.imgInverted;
     }
     return this.img; //images that are not SVGwithBitmap, only the light string is stored, since inverted and non-inverted are ===
@@ -461,16 +418,33 @@ export class EmbeddedFilesLoader {
     );
     if (imageList.length > 0) {
       hasSVGwithBitmap = true;
-    }
+    }  
 
     if (hasSVGwithBitmap && isDark && !Boolean(maybeSVG)) { 
       imageList.forEach((i) => {
         const id = i.parentElement?.id;
+        if (id.endsWith("-invert-bitmap")) return;
         svg.querySelectorAll(`use[href='#${id}']`).forEach((u) => {
           u.setAttribute("filter", THEME_FILTER);
         });
       });
     }
+
+    const svgsToInvert =  svg.querySelectorAll("symbol[id$='-no-invert-svg']");
+
+    if (svgsToInvert.length > 0) {
+      hasSVGwithBitmap = true;
+    }
+
+    if (svgsToInvert.length > 0 && isDark && !Boolean(maybeSVG)) {
+      svgsToInvert.forEach((i) => {
+        const id = i.id;
+        svg.querySelectorAll(`use[href='#${id}']`).forEach((u) => {
+          u.setAttribute("filter", THEME_FILTER);
+        });
+      });
+    }
+
     if (!hasSVGwithBitmap && svg.getAttribute("hasbitmap")) {
       hasSVGwithBitmap = true;
     }
@@ -608,7 +582,7 @@ export class EmbeddedFilesLoader {
       return {
         mimeType,
         fileId: await generateIdFromFile(
-          isHyperLink || isPDF || isExcalidrawFile ? (new TextEncoder()).encode(dataURL as string) : ab,
+          isHyperLink || isPDF || isExcalidrawFile ? (new TextEncoder()).encode(dataURL as string).buffer : ab,
           inFile instanceof EmbeddedFile ? inFile.filenameparts?.linkpartReference : undefined
         ),
         dataURL,
@@ -675,7 +649,7 @@ export class EmbeddedFilesLoader {
               };
               files[batch].push(fileData);
             }
-          } else if (embeddedFile.isSVGwithBitmap && (depth !== 0 || isThemeChange)) {
+          } else if (embeddedFile.hasSeparateDarkAndLightVersion && (depth !== 0 || isThemeChange)) {
             //this will reload the image in light/dark mode when switching themes
             const fileData: FileData = {
               mimeType: embeddedFile.mimeType,
@@ -704,7 +678,7 @@ export class EmbeddedFilesLoader {
           }
           if (!excalidrawData.getEquation(id).isLoaded) {
             const latex = equation.latex;
-            const data = await tex2dataURL(latex, 4, this.plugin.app);
+            const data = await tex2dataURL(latex, 4, this.plugin);
             if (data) {
               const fileData = {
                 mimeType: data.mimeType,
@@ -713,7 +687,7 @@ export class EmbeddedFilesLoader {
                 created: data.created,
                 size: data.size,
                 hasSVGwithBitmap: false,
-                shouldScale: true
+                shouldScale: true,
               };
               files[batch].push(fileData);
             }
@@ -731,8 +705,7 @@ export class EmbeddedFilesLoader {
             const data = getMermaidText(element);
             const result = await mermaidToExcalidraw(
               data,
-              { themeVariables: { fontSize: "20" } },
-              true
+              { themeVariables: { fontSize: "20" } }
             );
             if(!result) {
               return;
@@ -785,6 +758,10 @@ export class EmbeddedFilesLoader {
     }
 
     const addFilesTimer = setInterval(() => {
+      if (this.terminate) {
+        clearInterval(addFilesTimer);
+        return;
+      }
       if(files[batch].length === 0) {
         return;
       }
@@ -800,7 +777,9 @@ export class EmbeddedFilesLoader {
 
     const iterator = loadIterator.bind(this)();
     const concurency = this.plugin.settings.renderingConcurrency;
-    await new PromisePool(iterator, concurency).all();
+    if (!this.terminate) {
+      await new PromisePool(iterator, concurency).all();
+    }
     
     clearInterval(addFilesTimer);
 
@@ -1215,11 +1194,14 @@ export const generateIdFromFile = async (file: ArrayBuffer, key?: string): Promi
     }
 
     // Hash the combined data (file and key, if provided)
-    const hashBuffer = await window.crypto.subtle.digest("SHA-1", dataToHash);
+    // Ensure we pass an ArrayBuffer (not ArrayBufferLike) to subtle.digest
+    const buffer: ArrayBuffer = dataToHash.buffer.slice(
+      dataToHash.byteOffset,
+      dataToHash.byteOffset + dataToHash.byteLength
+    ) as ArrayBuffer;
+    const hashBuffer = await window.crypto.subtle.digest("SHA-1", buffer);
     id =
-      // Convert buffer to byte array
       Array.from(new Uint8Array(hashBuffer))
-        // Convert to hex string
         .map((byte) => byte.toString(16).padStart(2, "0"))
         .join("") as FileId;
   } catch (error) {

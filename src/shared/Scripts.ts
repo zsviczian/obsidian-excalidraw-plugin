@@ -8,13 +8,14 @@ import {
 import { PLUGIN_ID } from "../constants/constants";
 import ExcalidrawView from "../view/ExcalidrawView";
 import ExcalidrawPlugin from "../core/main";
-import { ButtonDefinition, GenericInputPrompt, GenericSuggester } from "./Dialogs/Prompt";
+import { GenericInputPrompt, GenericSuggester } from "./Dialogs/Prompt";
 import { getIMGFilename } from "../utils/fileUtils";
 import { splitFolderAndFilename } from "../utils/fileUtils";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import { WeakArray } from "./WeakArray";
-import { getExcalidrawViews } from "../utils/obsidianUtils";
+import { getExcalidrawViews, stripYamlFrontmatter } from "../utils/obsidianUtils";
+import { ButtonDefinition, InputPromptOptions } from "src/types/promptTypes";
 
 export type ScriptIconMap = {
   [key: string]: { name: string; group: string; svgString: string };
@@ -41,7 +42,12 @@ export class ScriptEngine {
     this.eaInstances.forEach((ea) => {
       if (ea.targetView === view) {
         eas.add(ea);
-        ea.destroy();
+        if(ea.sidepanelTab) {
+          ea.targetView = null;
+          ea.sidepanelTab.onExcalidrawViewClosed();
+        } else {
+          ea.destroy();
+        }
       }
     });
     this.eaInstances.removeObjects(eas);
@@ -179,6 +185,13 @@ export class ScriptEngine {
     return basename;
   }
 
+  public getScriptFileByName(scriptName: string): TFile | null {
+    return (
+      this.getListofScripts()?.find((file) => this.getScriptName(file) === scriptName) ??
+      null
+    );
+  }
+
   async addScriptIconToMap(scriptPath: string, name: string) {
     const svgFilePath = getIMGFilename(scriptPath, "svg");
     const file = this.app.vault.getAbstractFileByPath(svgFilePath);
@@ -190,7 +203,7 @@ export class ScriptEngine {
       ...this.scriptIconMap,
     };
     const splitname = splitFolderAndFilename(name)
-    this.scriptIconMap[scriptPath] = { name:splitname.filename, group: splitname.folderpath === "/" ? "" : splitname.folderpath, svgString };
+    this.scriptIconMap[scriptPath] = { name:splitname.filename, group: splitname.folderpath, svgString };
     this.updateToolPannels();
   }
 
@@ -210,9 +223,8 @@ export class ScriptEngine {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
           (async()=>{
-            const script = await this.app.vault.read(f);
+            const script = stripYamlFrontmatter(await this.app.vault.read(f));
             if(script) {
-              //remove YAML frontmatter if present
               this.executeScript(view, script, scriptName,f);
             }
           })()
@@ -249,17 +261,17 @@ export class ScriptEngine {
     delete this.app.commands.commands[commandId];
   }
 
-  async executeScript(view: ExcalidrawView, script: string, title: string, file: TFile) {
-    if (!view || !script || !title) {
+  async executeScript(view: ExcalidrawView = undefined, script: string, title: string, file: TFile) {
+    if (!script || !title) {
       return;
     }
     //addresses the situation when after paste text element IDs are not updated to 8 characters
     //linked to onPaste save issue with the false parameter
-    if(view.getScene().elements.some(el=>!el.isDeleted && el.type === "text" && el.id.length > 8)) {
+    if(view && view.getScene().elements.some(el=>!el.isDeleted && el.type === "text" && el.id.length > 8)) {
       await view.save(false, true);
     }
 
-    script = script.replace(/^---.*?---\n/gs, "");
+    script = stripYamlFrontmatter(script);
     const ea = getEA(view);
     this.eaInstances.push(ea);
     ea.activeScript = title;
@@ -271,7 +283,7 @@ export class ScriptEngine {
     //try {
     result = await new AsyncFunction("ea", "utils", script)(ea, {
       inputPrompt: (
-        header: string,
+        header: string | InputPromptOptions,
         placeholder?: string,
         value?: string,
         buttons?: ButtonDefinition[],
@@ -279,8 +291,23 @@ export class ScriptEngine {
         displayEditorButtons?: boolean,
         customComponents?: (container: HTMLElement) => void,
         blockPointerInputOutsideModal?: boolean,
-      ) =>
-        ScriptEngine.inputPrompt(
+        controlsOnTop?: boolean,
+        draggable?: boolean,
+      ) => {
+        if (typeof header === "object") {
+          const options = header as InputPromptOptions;
+          header = options.header;
+          placeholder = options.placeholder;
+          value = options.value;
+          buttons = options.buttons;
+          lines = options.lines;
+          displayEditorButtons = options.displayEditorButtons;
+          customComponents = options.customComponents;
+          blockPointerInputOutsideModal = options.blockPointerInputOutsideModal;
+          controlsOnTop = options.controlsOnTop;
+          draggable = options.draggable;
+        }
+        return ScriptEngine.inputPrompt(
           view,
           this.plugin,
           this.app,
@@ -292,7 +319,10 @@ export class ScriptEngine {
           displayEditorButtons,
           customComponents,
           blockPointerInputOutsideModal,
-        ),
+          controlsOnTop,
+          draggable
+        );
+      },
       suggester: (
         displayItems: string[],
         items: any[],
@@ -336,6 +366,8 @@ export class ScriptEngine {
     displayEditorButtons?: boolean,
     customComponents?: (container: HTMLElement) => void,
     blockPointerInputOutsideModal?: boolean,
+    controlsOnTop?: boolean,
+    draggable: boolean = false,
   ) {
     try {
       return await GenericInputPrompt.Prompt(
@@ -350,6 +382,8 @@ export class ScriptEngine {
         displayEditorButtons,
         customComponents,
         blockPointerInputOutsideModal,
+        controlsOnTop,
+        draggable
       );
     } catch {
       return undefined;

@@ -12,11 +12,11 @@ import {
   RoundnessType,
   ExcalidrawFrameElement,
   ExcalidrawTextContainer,
-} from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { ColorMap, MimeType } from "./EmbeddedFileLoader";
+} from "@zsviczian/excalidraw/types/element/src/types";
+import { ColorMap, MimeType } from "../types/embeddedFileLoaderTypes";
 import { Editor,  Notice, OpenViewState, RequestUrlResponse, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
-import ExcalidrawView, { ExportSettings, TextMode } from "src/view/ExcalidrawView";
+import ExcalidrawView, { TextMode } from "src/view/ExcalidrawView";
 import { ExcalidrawData, getMarkdownDrawingSection } from "./ExcalidrawData";
 import {
   FRONTMATTER,
@@ -25,7 +25,6 @@ import {
   COLOR_NAMES,
   fileid,
   GITHUB_RELEASES,
-  determineFocusDistance,
   getCommonBoundingBox,
   getLineHeight,
   getMaximumGroups,
@@ -33,8 +32,9 @@ import {
   DEVICE,
   mermaidToExcalidraw,
   refreshTextDimensions,
+  getFontFamilyString,
 } from "src/constants/constants";
-import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath } from "src/utils/fileUtils";
+import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath, splitFolderAndFilename } from "src/utils/fileUtils";
 import {
   //debug,
   getImageSize,
@@ -42,9 +42,11 @@ import {
   wrapTextAtCharLength,
   arrayToMap,
   addAppendUpdateCustomData,
+  getSVG,
 } from "src/utils/utils";
+import { InlineLinkSuggester } from "./Suggesters/InlineLinkSuggester";
 import { getAttachmentsFolderAndFilePath, getExcalidrawViews, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "src/utils/obsidianUtils";
-import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI, SceneData } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile, EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
 import { NewFileActions } from "src/shared/Dialogs/Prompt";
@@ -68,22 +70,35 @@ import {ConversionResult, svgToExcalidraw} from "src/shared/svgToExcalidraw/pars
 import { ROUNDNESS } from "src/constants/constants";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
 import { emulateKeysForLinkClick, PaneTarget } from "src/utils/modifierkeyHelper";
-import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import PolyBool from "polybooljs";
 import { EmbeddableMDCustomProps } from "./Dialogs/EmbeddableSettings";
 import {
-  AIRequest,
   postOpenAI as _postOpenAI,
   extractCodeBlocks as _extractCodeBlocks,
 } from "../utils/AIUtils";
 import { EXCALIDRAW_AUTOMATE_INFO, EXCALIDRAW_SCRIPTENGINE_INFO } from "./Dialogs/SuggesterInfo";
-import { addBackOfTheNoteCard } from "../utils/excalidrawViewUtils";
+import { showColorPicker } from "./Dialogs/ColorPicker";
+import { addBackOfTheNoteCard, getViewColorPalette, sceneRemoveInternalLinks } from "../utils/excalidrawViewUtils";
 import { log } from "../utils/debugHelper";
 import { ExcalidrawLib } from "../types/excalidrawLib";
-import { GlobalPoint } from "@zsviczian/excalidraw/types/math/types";
-import { AddImageOptions, ImageInfo, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
-import { _measureText, cloneElement, createPNG, createSVG, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getFontFamily, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
-import { exportToPDF, getMarginValue, getPageDimensions, PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties } from "src/utils/exportUtils";
+import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
+import { AddImageOptions, ImageInfo, KeyBlocker, ScriptSettingValue, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
+import { _measureText, cloneElement, createPNG, createSVG, ensureActiveScriptSettingsObject, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getLastActiveExcalidrawView, getLineBox, getTemplate, isColorStringTransparent, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeBindMode, normalizeFixedPoint, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
+import { exportToPDF, getMarginValue, getPageDimensions } from "src/utils/exportUtils";
+import { PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties, ExportSettings} from "src/types/exportUtilTypes";
+import { FrameRenderingOptions } from "src/types/utilTypes";
+import { CaptureUpdateAction } from "src/constants/constants";
+import { AutoexportConfig } from "src/types/excalidrawViewTypes";
+import { FloatingModal } from "./Dialogs/FloatingModal";
+import { ExcalidrawSidepanelView } from "src/view/sidepanel/Sidepanel";
+import { ExcalidrawSidepanelTab } from "src/view/sidepanel/SidepanelTab";
+import { patchMobileView } from "src/utils/customEmbeddableUtils";
+import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
+import { AIRequest } from "src/types/AIUtilTypes";
+import { getAspectRatio } from "src/utils/YoutTubeUtils";
+import { getPDFCropRect } from "src/utils/PDFUtils";
+import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
 
 extendPlugins([
   HarmonyPlugin,
@@ -140,7 +155,8 @@ const GAP = 4;
  * you may access this object via the variable `ea`. e.g. ea.addImage(); This ea object is already set to the targetView.
  * Through ea.obsidian all of the Obsidian API is available to the script. Thus you can create modal views, open files, etc.
  * You can access Obsidian type definitions here: https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts
- * In addition to the ea object, the script also receives the `utils` object. utils includes to utility functions: suggester and inputPrompt
+ * In addition to the ea instance, the script also receives the `utils` object. utils includes to utility functions: suggester and inputPrompt.
+ * You may access these via the variable `utils`. e.g. utils.suggester(...);
  *   - inputPrompt(inputPrompt: (
  *       header: string,
  *       placeholder?: string,
@@ -165,6 +181,15 @@ export class ExcalidrawAutomate {
   get obsidian() {
     return obsidian_module;
   };
+
+  /**
+   * This is a modified version of the Obsidian.Modal class
+   * that allows the modal to be dragged around the screen
+   * and that does not dim the background.
+   */
+  get FloatingModal() {
+    return FloatingModal;
+  }
 
   /**
    * Retrieves the laser pointer settings from the plugin.
@@ -315,6 +340,19 @@ export class ExcalidrawAutomate {
   }
 
   /**
+   * @param filepath - The file path to split into folder and filename.
+   * @returns object containing folderpath, filename, basename, and extension.
+   */
+  public splitFolderAndFilename(filepath: string) : {
+    folderpath: string;
+    filename: string;
+    basename: string;
+    extension: string;
+  } {
+    return splitFolderAndFilename(filepath);
+  }
+
+  /**
    * Generates a unique filepath by appending a number if file already exists.
    * @param {string} filename - Base filename.
    * @param {string} folderpath - Target folder path.
@@ -448,7 +486,7 @@ export class ExcalidrawAutomate {
    * @param {ExcalidrawView} [view] - The view to check.
    * @returns {{view:any}|{file:TFile, editor:Editor}|null} The active embeddable view or editor.
    */
-  public getActiveEmbeddableViewOrEditor (view?:ExcalidrawView): {view:any}|{file:TFile, editor:Editor}|null {
+  public getActiveEmbeddableViewOrEditor (view?:ExcalidrawView): {view:any}|{file:TFile, editor:Editor}|{node: ObsidianCanvasNode}|null {
     if (!this.targetView && !view) {
       return null;
     }
@@ -457,6 +495,9 @@ export class ExcalidrawAutomate {
     if(leafOrNode) {
       if(leafOrNode.node && leafOrNode.node.isEditing) {
         return {file: leafOrNode.node.file, editor: leafOrNode.node.child.editor};
+      }
+      if(leafOrNode.node) {
+        return {node: leafOrNode.node};
       }
       if(leafOrNode.leaf && leafOrNode.leaf.view) {
         return {view: leafOrNode.leaf.view};
@@ -509,11 +550,149 @@ export class ExcalidrawAutomate {
     gridSize: number;
   };
   colorPalette: {};
+  sidepanelTab: ExcalidrawSidepanelTab | null = null;
 
   constructor(plugin: ExcalidrawPlugin, view?: ExcalidrawView) {
     this.plugin = plugin;
     this.reset();
     this.targetView = view;
+  }
+
+  /**
+   * Return the active sidepanel tab for a script, if one exists.
+   * If scriptName is omitted the function checks ea.activeScript.
+   * At most one sidepanel tab may be open per script. If a tab exists this
+   * returns the corresponding ExcalidrawSidepanelTab; otherwise it returns
+   * undefined.
+   * The returned tab may be hosted by a different ExcalidrawAutomate instance.
+   * To determine whether the tab belongs to the current ea instance compare:
+   * sidepanelTab.getHostEA() === ea.
+   * In this case the script may wish to reuse the existing tab rather than create a new one.
+   * @param scriptName - Optional script name to query. Defaults to ea.activeScript.
+   * @returns The ExcalidrawSidepanelTab for the script, or undefined if none exists.
+*/
+  public checkForActiveSidepanelTabForScript(scriptName?: string): ExcalidrawSidepanelTab | null {
+    scriptName = scriptName ?? this.activeScript;
+    if (!scriptName) {
+      return null;
+    }
+    const spView = ExcalidrawSidepanelView.getExisting(false);
+    if (!spView) {
+      return null;
+    }
+    return spView.getTabByScript(scriptName);
+  }
+
+
+  /**
+   * Creates a new sidepanel tab associated with this ExcalidrawAutomate instance.
+   * If a sidepanel tab already exists for this instance, it will be closed first.
+   * @param title - The title of the sidepanel tab.
+   * @param options 
+   * @returns 
+   */
+  public async createSidepanelTab(
+    title: string,
+    persist: boolean = false,
+    reveal: boolean = true,
+  ): Promise<ExcalidrawSidepanelTab | null> {
+    if (this.sidepanelTab) {
+      this.sidepanelTab.close();
+    }
+    const scriptName = this.activeScript ?? nanoid(); //random name if no active script
+    const spView = await ExcalidrawSidepanelView.getOrCreate(this.plugin, reveal);
+    if (!spView) {
+      errorMessage("Unable to open sidepanel", "createSidepanelTab()");
+      return null;
+    }
+    const tab = await spView.createTab({ title, scriptName, hostEA: this });
+    this.sidepanelTab = tab;
+    if (reveal) tab.reveal();
+    if (persist && this.activeScript) {
+      this.persistSidepanelTab();
+    }
+    return tab;
+  }
+
+  
+
+  /**
+   * Returns the WorkspaceLeaf hosting the Excalidraw sidepanel view.
+   * @returns {WorkspaceLeaf | null} The sidepanel leaf or null if not found.
+   */
+  public getSidepanelLeaf(): WorkspaceLeaf | null {
+    return ExcalidrawSidepanelView.getExisting(false)?.leaf ?? null;
+  }
+
+  /**
+   * Queues the script to be skipped once during persisted sidepanel restoration.
+   * This is useful at startup when a script is launched via Command Palette/hotkey
+   * before the sidepanel view has opened and run its restoration sequence.
+   *
+   * The script is queued only if the sidepanel leaf is not yet available.
+   * @param scriptName - Optional script name. Defaults to ea.activeScript.
+   * @returns {boolean} True if a skip marker was queued, false otherwise.
+   */
+  public skipSidepanelScriptRestore(scriptName?: string): boolean {
+    scriptName = scriptName ?? this.activeScript;
+    if (!scriptName) {
+      return false;
+    }
+    if (this.getSidepanelLeaf()) {
+      return false;
+    }
+    ExcalidrawSidepanelView.skipScriptRestore(scriptName);
+    return true;
+  }
+
+  /**
+   * Toggles the visibility of the Excalidraw sidepanel view.
+   * If the sidepanel is not in a leaf attached to the left or right split, no action is taken.
+   */
+  public toggleSidepanelView(): void {
+    const leaf = this.getSidepanelLeaf();
+    if (leaf) {
+      const root = leaf.getRoot();
+      if (root === this.plugin.app.workspace.leftSplit) {
+        this.plugin.app.workspace.leftSplit.toggle();
+        return;
+      }
+      if (root === this.plugin.app.workspace.rightSplit) {
+        this.plugin.app.workspace.rightSplit.toggle();
+        return;
+      }
+    }
+  }
+
+  /**
+   * Pins the active script's sidepanel tab to be persistent across Obsidian restarts.
+   * @param options 
+   * @returns {Promise<ExcalidrawSidepanelTab | null>} The persisted sidepanel tab or null on error.
+   */
+  public persistSidepanelTab(): ExcalidrawSidepanelTab | null {
+    if (!this.activeScript && !this.sidepanelTab) {
+      errorMessage("No active script and sidepanel tab to persist", "persistSidepanelTab()");
+      return null;
+    }
+    const spView = ExcalidrawSidepanelView.getExisting();
+    if (!spView) {
+      return;
+    }
+    spView.markTabPersistent(this.sidepanelTab);
+    return this.sidepanelTab;
+  }
+
+  /**
+   * Attaches an inline link suggester to the provided input element. The suggester reacts to
+   * "[[" typing, offers vault link choices (including aliases and unresolved links), and inserts
+   * the selected link using relative linktext when the active Excalidraw view is known.
+   * @param {HTMLInputElement} inputEl - The input element to enhance.
+   * @param {HTMLElement} [widthWrapper] - Optional element to determine suggester width.
+   * @returns {KeyBlocker} The suggester instance; call close() to detach; call .isBlockingKeys() to check if suggester dropdown is open.
+   */
+  public attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement): KeyBlocker {
+    const getSourcePath = () => this.targetView?.file?.path;
+    return new InlineLinkSuggester(this.plugin.app, this.plugin, inputEl, getSourcePath, widthWrapper);
   }
 
   /**
@@ -526,6 +705,25 @@ export class ExcalidrawAutomate {
       return null;
     }
     return this.targetView.currentPosition;
+  }
+
+  /**
+   * Returns the center position of the current view in Excalidraw coordinates.
+   * @returns {{x:number, y:number}} The center position of the view.
+   */
+  public getViewCenterPosition(): {x:number, y:number} {
+    if (!this.targetView || !this.targetView?._loaded) {
+      errorMessage("targetView not set", "getExcalidrawAPI()");
+      return null;
+    }
+    const st = (this.getExcalidrawAPI() as ExcalidrawImperativeAPI).getAppState();
+    if (!st) return null;
+
+    const zoom = st.zoom?.value ?? 1;
+    const x = -st.scrollX + (st.width / 2) / zoom;
+    const y = -st.scrollY + (st.height / 2) / zoom;
+
+    return { x, y };
   }
 
   /**
@@ -601,20 +799,8 @@ export class ExcalidrawAutomate {
    * @returns {string} The font family string.
    */
   setFontFamily(val: number):string {
-    switch (val) {
-      case 1:
-        this.style.fontFamily = 4;
-        return getFontFamily(4);
-      case 2:
-        this.style.fontFamily = 2;
-        return getFontFamily(2);
-      case 3:
-        this.style.fontFamily = 3;
-        return getFontFamily(3);
-      default:
-        this.style.fontFamily = 1;
-        return getFontFamily(1);
-    }
+    this.style.fontFamily = val;
+    return getFontFamilyString({fontFamily:val})
   };
 
   /**
@@ -662,10 +848,29 @@ export class ExcalidrawAutomate {
       : null;
     let elements = template ? template.elements : [];
     elements = elements.concat(this.getElements());
+
+    const files: Record<FileId, {mimeType: MimeType; id: FileId; dataURL: DataURL; created: number}> = {
+      ...(template?.files ?? {}),
+    };
+
+    Object.keys(this.imagesDict).forEach((key: FileId) => {
+      const item = this.imagesDict[key];
+      if (!item?.dataURL || !item?.mimeType) {
+        return;
+      }
+      files[key] = {
+        mimeType: item.mimeType,
+        id: key,
+        dataURL: item.dataURL,
+        created: item.created ?? Date.now(),
+      };
+    });
+
     navigator.clipboard.writeText(
       JSON.stringify({
         type: "excalidraw/clipboard",
         elements,
+        files,
       }),
     );
   };
@@ -714,6 +919,64 @@ export class ExcalidrawAutomate {
   };
 
   /**
+   * Returns an object describing the bound text element.
+   * If a text element is provided:
+   *  - returns { eaElement } if the element is in ea.elementsDict
+   *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
+   * If a container element is provided, searches for the bound text element:
+   *  - returns { eaElement } if found in ea.elementsDict
+   *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
+   * If not found, returns {}.
+   * Does not add the text element to elementsDict.
+   * @param element: ExcalidrawElement | ExcalidrawElement[] - The selected container with text (an array of 2 elements) to check.
+   * @param searchInView - If true, searches in the targetView elements if not found in elementsDict.
+   * @returns Object containing either eaElement or sceneElement or empty if not found.
+   */
+  getBoundTextElement(element: ExcalidrawElement|ExcalidrawElement[], searchInView: boolean = false): {
+    eaElement?: Mutable<ExcalidrawTextElement>,
+    sceneElement?: ExcalidrawTextElement
+    } {
+    if (!element) {
+      return {};
+    }
+    if (Array.isArray(element) && element.length === 2) {
+      element = element[0];
+    } else if (Array.isArray(element)) {
+      return {};
+    }
+    if(element.type === "text") {
+      if(element.id in this.elementsDict) {
+        return {eaElement: element as Mutable<ExcalidrawTextElement>};
+      }
+
+      if (searchInView && this.targetView && this.targetView._loaded) {
+        const viewElements = this.getViewElements();
+        const ve = viewElements.find((e) => e.id === element.id);
+        if(ve) {
+          return {
+            sceneElement: ve as ExcalidrawTextElement
+          };
+        }
+      }
+      return {};
+    }
+    const boundElement = element.boundElements?.find((be) => be.type === "text");
+    if (!boundElement) {
+      return {};
+    }
+    let textElement = this.elementsDict[boundElement.id] as Mutable<ExcalidrawTextElement>;
+    if (textElement) {
+      return {eaElement: textElement};
+    }
+    if (!textElement && searchInView && this.targetView && this.targetView._loaded) {
+      const viewElements = this.getViewElements();
+      const ve = viewElements.find((e) => e.id === boundElement.id);
+      return {sceneElement: ve as ExcalidrawTextElement};
+    }
+    return {};
+  }
+
+  /**
    * Creates a drawing and saves it to the specified filename.
    * @param {Object} [params] - Parameters for creating the drawing.
    * @param {string} [params.filename] - The filename for the drawing. If null, default filename as defined in Excalidraw settings.
@@ -747,6 +1010,7 @@ export class ExcalidrawAutomate {
       "excalidraw-autoexport"?: boolean;
       "excalidraw-mask"?: boolean;
       "excalidraw-open-md"?: boolean;
+      "excalidraw-export-internal-links"?: boolean;
       "cssclasses"?: string;
     };
     plaintext?: string; //text to insert above the `# Text Elements` section
@@ -805,59 +1069,60 @@ export class ExcalidrawAutomate {
       frontmatter = mergeMarkdownFiles(template.frontmatter,frontmatter);
     }
 
+    const templateAppstate = template?.appState ?? {};
+    Object.keys(templateAppstate).forEach((key) => {
+      if(templateAppstate[key] === undefined) {
+        delete templateAppstate[key];
+      }
+    });
     const scene = {
       type: "excalidraw",
       version: 2,
       source: GITHUB_RELEASES+PLUGIN_VERSION,
       elements,
       appState: {
-        theme: template?.appState?.theme ?? this.canvas.theme,
+        ...templateAppstate,
+        theme: templateAppstate.theme ?? this.canvas.theme,
         viewBackgroundColor:
-          template?.appState?.viewBackgroundColor ??
+          templateAppstate.viewBackgroundColor ??
           this.canvas.viewBackgroundColor,
         currentItemStrokeColor:
-          template?.appState?.currentItemStrokeColor ??
+          templateAppstate.currentItemStrokeColor ??
           this.style.strokeColor,
         currentItemBackgroundColor:
-          template?.appState?.currentItemBackgroundColor ??
+          templateAppstate.currentItemBackgroundColor ??
           this.style.backgroundColor,
         currentItemFillStyle:
-          template?.appState?.currentItemFillStyle ?? this.style.fillStyle,
+          templateAppstate.currentItemFillStyle ?? this.style.fillStyle,
         currentItemStrokeWidth:
-          template?.appState?.currentItemStrokeWidth ??
+          templateAppstate.currentItemStrokeWidth ??
           this.style.strokeWidth,
         currentItemStrokeStyle:
-          template?.appState?.currentItemStrokeStyle ??
+          templateAppstate.currentItemStrokeStyle ??
           this.style.strokeStyle,
         currentItemRoughness:
-          template?.appState?.currentItemRoughness ?? this.style.roughness,
+          templateAppstate.currentItemRoughness ?? this.style.roughness,
         currentItemOpacity:
-          template?.appState?.currentItemOpacity ?? this.style.opacity,
+          templateAppstate.currentItemOpacity ?? this.style.opacity,
         currentItemFontFamily:
-          template?.appState?.currentItemFontFamily ?? this.style.fontFamily,
+          templateAppstate.currentItemFontFamily ?? this.style.fontFamily,
         currentItemFontSize:
-          template?.appState?.currentItemFontSize ?? this.style.fontSize,
+          templateAppstate.currentItemFontSize ?? this.style.fontSize,
         currentItemTextAlign:
-          template?.appState?.currentItemTextAlign ?? this.style.textAlign,
+          templateAppstate.currentItemTextAlign ?? this.style.textAlign,
         currentItemStartArrowhead:
-          template?.appState?.currentItemStartArrowhead ??
+          templateAppstate.currentItemStartArrowhead ??
           this.style.startArrowHead,
         currentItemEndArrowhead:
-          template?.appState?.currentItemEndArrowhead ??
+          templateAppstate.currentItemEndArrowhead ??
           this.style.endArrowHead,
-        currentItemRoundness: //type StrokeRoundness = "round" | "sharp"
-          template?.appState?.currentItemLinearStrokeSharpness ?? //legacy compatibility
-          template?.appState?.currentItemStrokeSharpness ?? //legacy compatibility
-          template?.appState?.currentItemRoundness ??
+        currentItemRoundness:
+          templateAppstate.currentItemLinearStrokeSharpness ??
+          templateAppstate.currentItemStrokeSharpness ??
+          templateAppstate.currentItemRoundness ??
           this.style.roundness ? "round":"sharp",
-        gridSize: template?.appState?.gridSize ?? this.canvas.gridSize,
-        colorPalette: template?.appState?.colorPalette ?? this.colorPalette,
-        ...template?.appState?.frameRendering
-          ? {frameRendering: template.appState.frameRendering}
-          : {},
-        ...template?.appState?.objectsSnapModeEnabled
-          ? {objectsSnapModeEnabled: template.appState.objectsSnapModeEnabled}
-          : {},
+        gridSize: templateAppstate.gridSize ?? this.canvas.gridSize,
+        colorPalette: templateAppstate.colorPalette ?? this.colorPalette,
       },
       files: template?.files ?? {},
     };
@@ -885,7 +1150,7 @@ export class ExcalidrawAutomate {
       Object.keys(this.imagesDict).forEach((key: FileId)=> {
         const item = this.imagesDict[key];
         if(item.latex) {
-          outString += `${key}: $$${item.latex}$$\n\n`;  
+          outString += `${key}: $$${item.latex.trim()}$$\n\n`;  
         } else {
           if(item.file) {
             if(item.file instanceof TFile) {
@@ -969,6 +1234,7 @@ export class ExcalidrawAutomate {
    *     margin: { left: 20, right: 20, top: 20, bottom: 20 },
    *     alignment: "center",
    *   }
+   *   filename: "example.pdf",
    * });
   */
   async createPDF({
@@ -1002,6 +1268,79 @@ export class ExcalidrawAutomate {
     await exportToPDF({SVG, scale, pageProps, filename});
   }
 
+ /**
+  * Creates an SVG representation of the current view.
+  *
+  * @param {Object} options - The options for creating the SVG.
+  * @param {boolean} [options.withBackground=true] - Whether to include the background in the SVG.
+  * @param {"light" | "dark"} [options.theme] - The theme to use for the SVG.
+  * @param {FrameRenderingOptions} [options.frameRendering={enabled: true, name: true, outline: true, clip: true}] - The frame rendering options.
+  * @param {number} [options.padding] - The padding to apply around the SVG.
+  * @param {boolean} [options.selectedOnly=false] - Whether to include only the selected elements in the SVG.
+  * @param {boolean} [options.skipInliningFonts=false] - Whether to skip inlining fonts in the SVG.
+  * @param {boolean} [options.embedScene=false] - Whether to embed the scene in the SVG.
+  * @param {ExcalidrawElement[]} [options.elementsOverride] - Optional override for the elements to include in the SVG. Primary to support the Printable Layout Wizard script
+  * @returns {Promise<SVGSVGElement>} A promise that resolves to the SVG element.
+ */
+  async createViewSVG({
+    withBackground = true,
+    theme,
+    frameRendering = {enabled: true, name: true, outline: true, clip: true},
+    padding,
+    selectedOnly = false,
+    skipInliningFonts = false,
+    embedScene = false,
+    elementsOverride,
+  } : {
+    withBackground?: boolean,
+    theme?: "light" | "dark",
+    frameRendering?: FrameRenderingOptions,
+    padding?: number,
+    selectedOnly?: boolean,
+    skipInliningFonts?: boolean,
+    embedScene?: boolean,
+    elementsOverride?: ExcalidrawElement[]
+  }): Promise<SVGSVGElement> {
+    if(!this.targetView || !this.targetView.file || !this.targetView._loaded) {
+      console.log("No view loaded");
+      return;
+    }
+    const view = this.targetView;
+    const scene = this.targetView.getScene(selectedOnly);
+
+    if(elementsOverride) {
+      scene.elements = elementsOverride;
+    }
+
+    if(!view.getViewExportIncludeInternalLinks()) {
+      scene.elements = sceneRemoveInternalLinks(scene);
+    }
+
+    const exportSettings: ExportSettings = {
+      withBackground: view.getViewExportWithBackground(withBackground),
+      withTheme: true,
+      isMask: isMaskFile(this.plugin, view.file),
+      skipInliningFonts,
+      frameRendering,
+    };
+
+    return await getSVG(
+      {
+        ...scene,
+        ...{
+          appState: {
+            ...scene.appState,
+            theme: view.getViewExportTheme(theme),
+            exportEmbedScene: view.getViewExportEmbedScene(embedScene),
+          },
+        },
+      },
+      exportSettings,
+      view.getViewExportPadding(padding),
+      view.file,
+    );
+  }
+
   /**
    * Creates an SVG image from the ExcalidrawAutomate elements and the template provided.
    * @param {string} [templatePath] - The template path to use for the SVG.
@@ -1019,6 +1358,8 @@ export class ExcalidrawAutomate {
     loader?: EmbeddedFilesLoader,
     theme?: string,
     padding?: number,
+    convertMarkdownLinksToObsidianURLs: boolean = false,
+    includeInternalLinks: boolean = true,
   ): Promise<SVGSVGElement> {
     if (!theme) {
       theme = this.plugin.settings.previewMatchObsidianTheme
@@ -1029,13 +1370,14 @@ export class ExcalidrawAutomate {
         ? "light"
         : undefined;
     }
-    if (theme && !exportSettings) {
+    if (!exportSettings) {
       exportSettings = {
         withBackground: this.plugin.settings.exportWithBackground,
         withTheme: true,
         isMask: false,
+        skipInliningFonts: !embedFont,
       };
-    }
+    }  
     if (!loader) {
       loader = new EmbeddedFilesLoader(
         this.plugin,
@@ -1055,7 +1397,9 @@ export class ExcalidrawAutomate {
       this.plugin,
       0,
       padding,
-      this.imagesDict
+      this.imagesDict,
+      convertMarkdownLinksToObsidianURLs,
+      includeInternalLinks,
     );
   };
 
@@ -1149,6 +1493,36 @@ export class ExcalidrawAutomate {
     return wrapTextAtCharLength(text, lineLen, this.plugin.settings.forceWrap);
   };
 
+  /** ROUNDNESS as defined in the Excalidraw packages/common/src/constants.ts
+   * Radius represented as 25% of element's largest side (width/height).
+   * Used for LEGACY and PROPORTIONAL_RADIUS algorithms, or when the element is
+   * below the cutoff size.
+   * export const DEFAULT_PROPORTIONAL_RADIUS = 0.25;
+   *
+   * Fixed radius for the ADAPTIVE_RADIUS algorithm. In pixels.
+   * export const DEFAULT_ADAPTIVE_RADIUS = 32;
+   *
+   * roundness type (algorithm)
+   * export const ROUNDNESS = {
+   *   Used for legacy rounding (rectangles), which currently works the same
+   *   as PROPORTIONAL_RADIUS, but we need to differentiate for UI purposes and
+   *   forwards-compat.
+   *   LEGACY: 1,
+   *
+   *   Used for linear elements & diamonds
+   *   PROPORTIONAL_RADIUS: 2,
+   *
+   *   Current default algorithm for rectangles, using fixed pixel radius.
+   *   It's working similarly to a regular border-radius, but attemps to make
+   *   radius visually similar across differnt element sizes, especially
+   *   very large and very small elements.
+   *
+   *   NOTE right now we don't allow configuration and use a constant radius
+   *   (see DEFAULT_ADAPTIVE_RADIUS constant)
+   *   ADAPTIVE_RADIUS: 3,
+   * } as const;
+   */
+
   /**
    * Utility function. Returns an element object using style settings and provided parameters.
    * @param {string} id - The element ID.
@@ -1200,12 +1574,14 @@ export class ExcalidrawAutomate {
       boundElements: [] as any,
       link,
       locked: false,
+      frameId: null as string,
+      hasTextLink: eltype === "text" && link ? true : false,
       ...scale ? {scale} : {},
     };
   }
 
   /**
-   * Deprecated. Use addEmbeddable() instead.
+   * Use addEmbeddable() instead, unless you specifically need to pass HTML content and create a custom iframe.
    * Retained for backward compatibility.
    * @param {number} topX - The x-coordinate of the top-left corner.
    * @param {number} topY - The y-coordinate of the top-left corner.
@@ -1213,19 +1589,41 @@ export class ExcalidrawAutomate {
    * @param {number} height - The height of the iframe.
    * @param {string} [url] - The URL of the iframe.
    * @param {TFile} [file] - The file associated with the iframe.
+   * @param {string} [html] - The HTML content for the iframe.
    * @returns {string} The ID of the added iframe element.
    */
-  addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile): string {
+  addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile, html?: string): string {
+    if(html) {
+      const id = nanoid();
+      this.elementsDict[id] = this.boxedElement(
+        id,
+        "iframe",
+        topX,
+        topY,
+        width,
+        height,
+        null,
+        [1,1],
+      );
+      this.elementsDict[id].customData = {
+        generationData: { status: "done", html },
+      };
+      return id;
+    }
     return this.addEmbeddable(topX, topY, width, height, url, file);
   }
 
   /**
    * Adds an embeddable element to the ExcalidrawAutomate instance.
+   * In case of urls, if the width and or height is set to 0 ExcalidrawAutomate will attempt to determine the dimensions based on the aspect ratio of the content.
+   * If both width and height are set to 0 the default size for youtube and vimeo embeddables (560x315) will be used. YouTube shorts will have a default size of 315x560.
+   * If only the width or height is set to 0 the other dimension will be calculated based on the aspect ratio of the content.
+   * If the calculated width is less than 560 or the calculated height is less than 315 the element will be scaled down proportionally, setting element.scale accordingly.
    * @param {number} topX - The x-coordinate of the top-left corner.
    * @param {number} topY - The y-coordinate of the top-left corner.
    * @param {number} width - The width of the embeddable element.
    * @param {number} height - The height of the embeddable element.
-   * @param {string} [url] - The URL of the embeddable element.
+   * @param {string} [url] - The URL of the embeddable element. The URL may be a dataURL as well (however such elements are not supported by Excalidraw.com).
    * @param {TFile} [file] - The file associated with the embeddable element.
    * @param {EmbeddableMDCustomProps} [embeddableCustomData] - Custom properties for the embeddable element.
    * @returns {string} The ID of the added embeddable element.
@@ -1249,6 +1647,30 @@ export class ExcalidrawAutomate {
       return null;
     }
 
+    let scale: [number, number] = [1,1];
+
+    if (url) {
+      let { w, h } = getAspectRatio(url);
+      if (h > w) {
+        //swap width and height for portrait oriented content
+        [w, h] = [h, w];
+      }
+      if (width === 0 && height === 0) {
+        width = 560;
+        height = 560 * (h / w);
+      } else if (height === 0) {
+        height = width * (h / w);
+        if (width < 560) {
+          scale = [width / 560, width / 560];
+        }
+      } else if (width === 0) {
+        width = height * (w / h);
+        if (height < 315) {
+          scale = [height / 315, height / 315];
+        }
+      }
+    }
+
     const id = nanoid();
     this.elementsDict[id] = this.boxedElement(
       id,
@@ -1264,7 +1686,7 @@ export class ExcalidrawAutomate {
           false, //file.extension === "md", //changed this to false because embedable link navigation in ExcaliBrain
         )
       }]]` : "",
-      [1,1],
+      scale,
     );
     this.elementsDict[id].customData = {mdProps: embeddableCustomData ?? this.plugin.settings.embeddableMarkdownDefaults};
     return id;
@@ -1587,7 +2009,9 @@ export class ExcalidrawAutomate {
       arrayToMap(this.getElements()),
       originalText,
     );
-    if(dimensions) {
+
+    if(dimensions && !formatting?.width) {
+
       textElement.width = dimensions.width;
       textElement.height = dimensions.height;
       textElement.x = dimensions.x;
@@ -1630,6 +2054,17 @@ export class ExcalidrawAutomate {
    * @param {"arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null} [formatting.endArrowHead] - The end arrowhead type.
    * @param {string} [formatting.startObjectId] - The ID of the start object.
    * @param {string} [formatting.endObjectId] - The ID of the end object.
+   * BindMode Determines whether the arrow remains outside the shape or is allowed to
+   * go all the way inside the shape up to the exact fixed point.
+   * @param {"inside" | "orbit"} [formatting.startBindMode] - The binding mode for the start object.
+   * @param {"inside" | "orbit"} [formatting.endBindMode] - The binding mode for the end object. 
+   * FixedPoint represents the fixed point binding information in form of a vertical and
+   * horizontal ratio (i.e. a percentage value in the 0.0-1.0 range). This ratio
+   * gives the user selected fixed point by multiplying the bound element width
+   * with fixedPoint[0] and the bound element height with fixedPoint[1] to get the
+   * bound element-local point coordinate.
+   * @param {[number, number]} [formatting.startFixedPoint] - The fixed point for the start object.
+   * @param {[number, number]} [formatting.endFixedPoint] - The fixed point for the end object.
    * @param {string} [id] - The ID of the arrow element.
    * @returns {string} The ID of the added arrow element.
    */
@@ -1640,37 +2075,40 @@ export class ExcalidrawAutomate {
       endArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
       startObjectId?: string;
       endObjectId?: string;
+      startBindMode?: "inside" | "orbit";
+      endBindMode?: "inside" | "orbit";
+      startFixedPoint?: [number, number];
+      endFixedPoint?: [number, number];
+      elbowed?: boolean;
     },
     id?: string,
   ): string {
+    const startFixedPoint = normalizeFixedPoint(formatting?.startFixedPoint);
+    const endFixedPoint = normalizeFixedPoint(formatting?.endFixedPoint);
+    const startMode = normalizeBindMode(formatting?.startBindMode);
+    const endMode = normalizeBindMode(formatting?.endBindMode);
     const box = getLineBox(points);
+    const elbowed = formatting?.elbowed ?? false;
+    const startElement = formatting?.startObjectId
+      ? this.getElement(formatting.startObjectId) as Mutable<ExcalidrawBindableElement>
+      : null;
+    const endElement = formatting?.endObjectId
+      ? this.getElement(formatting.endObjectId) as Mutable<ExcalidrawBindableElement>
+      : null;
     id = id ?? nanoid();
-    const startPoint = points[0] as GlobalPoint;
-    const endPoint = points[points.length - 1] as GlobalPoint;
     this.elementsDict[id] = {
       points: normalizeLinePoints(points),
+      elbowed,
       lastCommittedPoint: null,
       startBinding: {
         elementId: formatting?.startObjectId,
-        focus: formatting?.startObjectId
-          ? determineFocusDistance(
-              this.getElement(formatting?.startObjectId) as ExcalidrawBindableElement,
-              endPoint,
-              startPoint,
-            )
-          : 0.1,
-        gap: GAP,
+        mode: startMode,
+				fixedPoint: startFixedPoint,
       },
       endBinding: {
         elementId: formatting?.endObjectId,
-        focus: formatting?.endObjectId
-          ? determineFocusDistance(
-              this.getElement(formatting?.endObjectId) as ExcalidrawBindableElement,
-              startPoint,
-              endPoint,
-            )
-          : 0.1,
-        gap: GAP,
+        mode: endMode,
+				fixedPoint: endFixedPoint,
       },
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/388
       startArrowhead:
@@ -1683,20 +2121,20 @@ export class ExcalidrawAutomate {
           : this.style.endArrowHead,
       ...this.boxedElement(id, "arrow", points[0][0], points[0][1], box.w, box.h),
     };
-    if (formatting?.startObjectId) {
-      if (!this.elementsDict[formatting.startObjectId].boundElements) {
-        this.elementsDict[formatting.startObjectId].boundElements = [];
+    if (startElement) {
+      if (!startElement.boundElements) {
+        startElement.boundElements = [];
       }
-      this.elementsDict[formatting.startObjectId].boundElements.push({
+      (startElement.boundElements as Mutable<ExcalidrawElement["boundElements"]>).push({
         type: "arrow",
         id,
       });
     }
-    if (formatting?.endObjectId) {
-      if (!this.elementsDict[formatting.endObjectId].boundElements) {
-        this.elementsDict[formatting.endObjectId].boundElements = [];
+    if (endElement) {
+      if (!endElement.boundElements) {
+        endElement.boundElements = [];
       }
-      this.elementsDict[formatting.endObjectId].boundElements.push({
+      (endElement.boundElements as Mutable<ExcalidrawElement["boundElements"]>).push({
         type: "arrow",
         id,
       });
@@ -1781,33 +2219,39 @@ export class ExcalidrawAutomate {
       colorMap = topXOrOpts.colorMap;
     }
 
+    const pdfLinkRegex = /^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/;
+    const originalLink = typeof imageFile === "string" ? imageFile : null;
+    const imageFileForLoader = originalLink && pdfLinkRegex.test(originalLink)
+      ? originalLink.split("&rect=")[0]
+      : imageFile;
+
     const id = nanoid();
     const loader = new EmbeddedFilesLoader(
       this.plugin,
       this.canvas.theme === "dark",
     );
-    const image = (typeof imageFile === "string")
-      ? await loader.getObsidianImage(new EmbeddedFile(this.plugin, "", imageFile),0)
-      : await loader.getObsidianImage(imageFile,0);
+    const image = (typeof imageFileForLoader === "string")
+      ? await loader.getObsidianImage(new EmbeddedFile(this.plugin, "", imageFileForLoader),0)
+      : await loader.getObsidianImage(imageFileForLoader,0);
       
     if (!image) {
       return null;
     }
-    const fileId = typeof imageFile === "string"
+    const fileId = typeof imageFileForLoader === "string"
       ? image.fileId
-      : imageFile.extension === "md" || imageFile.extension.toLowerCase() === "pdf" ? fileid() as FileId : image.fileId;
+      : imageFileForLoader.extension === "md" || imageFileForLoader.extension.toLowerCase() === "pdf" ? fileid() as FileId : image.fileId;
     this.imagesDict[fileId] = {
       mimeType: image.mimeType,
       id: fileId,
       dataURL: image.dataURL,
       created: image.created,
-      isHyperLink: typeof imageFile === "string",
-      hyperlink: typeof imageFile === "string"
-        ? imageFile
+      isHyperLink: typeof imageFileForLoader === "string",
+      hyperlink: typeof imageFileForLoader === "string"
+        ? imageFileForLoader
         : null,
-      file: typeof imageFile === "string"
+      file: typeof imageFileForLoader === "string"
         ? null
-        : imageFile.path + (scale || !anchor ? "":"|100%"),
+        : imageFileForLoader.path + (scale || !anchor ? "":"|100%"),
       hasSVGwithBitmap: image.hasSVGwithBitmap,
       latex: null,
       size: { //must have the natural size here (e.g. for PDF cropping)
@@ -1831,10 +2275,28 @@ export class ExcalidrawAutomate {
       image.size.width,
       image.size.height,
     );
-    this.elementsDict[id].fileId = fileId;
-    this.elementsDict[id].scale = [1, 1];
+    const newEl = this.elementsDict[id] as Mutable<ExcalidrawImageElement>;
+    newEl.fileId = fileId;
+    newEl.scale = [1, 1];
+    newEl.crop = null;
+    if(originalLink && pdfLinkRegex.test(originalLink)) {
+      const fd = this.imagesDict[fileId];
+      newEl.crop = getPDFCropRect({
+        scale: this.plugin.settings.pdfScale,
+        link: originalLink,
+        naturalHeight: fd.size.height,
+        naturalWidth: fd.size.width,
+        pdfPageViewProps: fd.pdfPageViewProps,
+      });
+      addAppendUpdateCustomData(newEl, {pdfPageViewProps: fd.pdfPageViewProps});
+      if(newEl.crop) {
+        newEl.width = newEl.crop.width/this.plugin.settings.pdfScale;
+        newEl.height = newEl.crop.height/this.plugin.settings.pdfScale;
+      }
+      newEl.link = `[[${originalLink}]]`;
+    }
     if(!scale && anchor) {
-      this.elementsDict[id].customData = {isAnchored: true}
+      newEl.customData = {isAnchored: true}
     };
     return id;
   };
@@ -1844,11 +2306,16 @@ export class ExcalidrawAutomate {
    * @param {number} topX - The x-coordinate of the top-left corner.
    * @param {number} topY - The y-coordinate of the top-left corner.
    * @param {string} tex - The LaTeX equation string.
+   * @param {number} [scaleX=1] - The x-scaling factor (post mathjax creation)
+   * @param {number} [scaleY=1] - The y-scaling factor (post mathjax creation)
    * @returns {Promise<string>} Promise resolving to the ID of the added LaTeX image element.
    */
-  async addLaTex(topX: number, topY: number, tex: string): Promise<string> {
+  async addLaTex(topX: number, topY: number, tex: string, scaleX: number = 1, scaleY: number = 1): Promise<string> {
+    if (!tex || !scaleX || !scaleY){
+      return null;
+    }
     const id = nanoid();
-    const image = await tex2dataURL(tex, 4, this.plugin.app);
+    const image = await tex2dataURL(tex, 4, this.plugin);
     if (!image) {
       return null;
     }
@@ -1866,11 +2333,12 @@ export class ExcalidrawAutomate {
       "image",
       topX,
       topY,
-      image.size.width,
-      image.size.height,
+      image.size.width * Math.abs(scaleX),
+      image.size.height * Math.abs(scaleY),
     );
     this.elementsDict[id].fileId = image.fileId;
-    this.elementsDict[id].scale = [1, 1];
+    this.addAppendUpdateCustomData(id, {latex: tex});
+    this.elementsDict[id].scale = [Math.sign(scaleX), Math.sign(scaleY)];
     return id;
   };
 
@@ -1890,7 +2358,7 @@ export class ExcalidrawAutomate {
     created: number;
     size: { height: number; width: number };
   }> {
-    return await tex2dataURL(tex,scale, this.plugin.app);
+    return await tex2dataURL(tex,scale, this.plugin);
   };
 
   /**
@@ -2060,6 +2528,7 @@ export class ExcalidrawAutomate {
    * Clears elementsDict and imagesDict, and resets all style values to default.
    */
   reset():void {
+    this.sidepanelTab?.close();
     this.clear();
     this.activeScript = null;
     this.style = {
@@ -2094,35 +2563,72 @@ export class ExcalidrawAutomate {
   isExcalidrawFile(f: TFile): boolean {
     return this.plugin.isExcalidrawFile(f);
   };
+
   targetView: ExcalidrawView = null; //the view currently edited
   /**
-   * Sets the target view for EA. All the view operations and the access to Excalidraw API will be performend on this view.
-   * If view is null or undefined, the function will first try setView("active"), then setView("first").
-   * @param {ExcalidrawView | "first" | "active"} [view] - The view to set as target.
-   * @returns {ExcalidrawView} The target view.
+   * Sets the target view for EA. All view operations and all access to the Excalidraw API
+   * will be performed on this view.
+   *
+   * Typical usage:
+   * - `setView()` to pick a sensible default automatically
+   * - `setView(excalidrawView)` to explicitly target a specific view
+   *
+   * Selectors:
+   * - If `view` is `null` or `undefined` (or `"auto"`), EA will pick a sensible default:
+   *   1) the currently active Excalidraw view (if any),
+   *   2) otherwise the last active Excalidraw view (if it is still available),
+   *   3) otherwise the `"first"` Excalidraw view in the workspace.
+   * - If `show` is `true`, the view will be revealed (brought to front) and focused.
+   *
+   * Deprecated selectors (kept for backward compatibility):
+   * - If `"active"` is provided, the currently active Excalidraw view will be used. If no
+   *   active Excalidraw view is available, the last active Excalidraw view will be used.
+   * - If `"first"` is provided, the target will be the first Excalidraw view returned by
+   *   Obsidian's workspace leaf collection (i.e., the first item in the current
+   *   `getExcalidrawViews()` result). **This ordering is managed by Obsidian and does not
+   *   necessarily match what a user would consider the “first”/“leftmost”/“topmost” view;
+   *   from a user's perspective it may appear effectively random.**
+   *
+   * @param {ExcalidrawView | "auto" | "first" | "active" | null | undefined} [view] - The view (or selector) to set as target.
+   * @param {boolean} [show=false] - Whether to reveal/focus the target view.
+   * @returns {ExcalidrawView} The ExcalidrawView that was set as `targetView` (or `null` if none found).
    */
-  setView(view?: ExcalidrawView | "first" | "active"): ExcalidrawView {
-    if(!view) {
-      const v = this.plugin.app.workspace.getActiveViewOfType(ExcalidrawView);
-      if (v instanceof ExcalidrawView) {
-        this.targetView = v;
-      }
-      else {
-        this.targetView = getExcalidrawViews(this.plugin.app)[0];
-      }
-    }
-    if (view == "active") {
-      const v = this.plugin.app.workspace.getActiveViewOfType(ExcalidrawView);
-      if (!(v instanceof ExcalidrawView)) {
+  setView(view?: ExcalidrawView | "auto" | "first" | "active" | null, show: boolean = false): ExcalidrawView {
+    const app = this.plugin.app;
+    const workspace = app.workspace;
+    const setView = () => {
+      if(!view || view === "auto") {
+        view = workspace.getActiveViewOfType(ExcalidrawView);
+        if (view instanceof ExcalidrawView) {
+          this.targetView = view;
+          return;
+        }
+        view = getLastActiveExcalidrawView(this.plugin);
+        this.targetView = view ?? getExcalidrawViews(this.plugin.app)[0];
         return;
       }
-      this.targetView = v;
+      if (view == "active") {
+        view = workspace.getActiveViewOfType(ExcalidrawView);
+        if (view instanceof ExcalidrawView) {
+          this.targetView = view;
+          return;
+        }
+        this.targetView = getLastActiveExcalidrawView(this.plugin);
+        return;
+      }
+      if (view == "first") {
+        this.targetView = getExcalidrawViews(this.plugin.app)[0];
+        return;
+      }
+      if (view instanceof ExcalidrawView) {
+        this.targetView = view;
+      }
     }
-    if (view == "first") {
-      this.targetView = getExcalidrawViews(this.plugin.app)[0];
-    }
-    if (view instanceof ExcalidrawView) {
-      this.targetView = view;
+    setView();
+    if(show && this.targetView) {
+      this.plugin.app.workspace.revealLeaf(
+        this.targetView.leaf,
+      );
     }
     return this.targetView;
   };
@@ -2171,7 +2677,7 @@ export class ExcalidrawAutomate {
     this.targetView.updateScene({
       elements: el.filter((e: ExcalidrawElement) => !ids.includes(e.id)),
       appState: st,
-      storeAction: "capture",
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     });
     //this.targetView.save();
     return true;
@@ -2498,7 +3004,7 @@ export class ExcalidrawAutomate {
         appState: {
           viewModeEnabled: !isFullscreen,
         },
-        storeAction: "update",
+        captureUpdate: CaptureUpdateAction.NEVER,
       });
       this.targetView.toolsPanelRef?.current?.setExcalidrawViewMode(!isFullscreen);
     }
@@ -2520,7 +3026,7 @@ export class ExcalidrawAutomate {
       return;
     }
     const view = this.targetView as ExcalidrawView;
-    view.updateScene({appState:{viewModeEnabled: enabled}, storeAction: "update"});
+    view.updateScene({appState:{viewModeEnabled: enabled}, captureUpdate: CaptureUpdateAction.NEVER});
     view.toolsPanelRef?.current?.setExcalidrawViewMode(enabled);
   }
 
@@ -2530,17 +3036,19 @@ export class ExcalidrawAutomate {
    * @param {ExcalidrawElement[]} [scene.elements] - Array of elements in the scene.
    * @param {AppState} [scene.appState] - The app state of the scene.
    * @param {BinaryFileData} [scene.files] - The files in the scene.
-   * @param {boolean} [scene.commitToHistory] - Whether to commit the scene to history.
-   * @param {"capture" | "none" | "update"} [scene.storeAction] - The store action for the scene.
+   * @param {boolean} [scene.commitToHistory] - Whether to commit the scene to history. @deprecated Use scene.storageOption instead
+   * @param {"capture" | "none" | "update"} [scene.storeAction] - The store action for the scene. @deprecated Use scene.storageOption instead
+   * @param {"IMMEDIATELY" | "NEVER" | "EVENTUALLY"} [scene.captureUpdate] - The capture update action for the scene.
    * @param {boolean} [restore=false] - Whether to restore legacy elements in the scene.
    */
   viewUpdateScene (
     scene: {
       elements?: ExcalidrawElement[],
-      appState?: AppState,
+      appState?: AppState | {},
       files?: BinaryFileData,
       commitToHistory?: boolean,
       storeAction?: "capture" | "none" | "update",
+      captureUpdate?: SceneData["captureUpdate"],
     },
     restore: boolean = false,
   ):void {
@@ -2557,6 +3065,7 @@ export class ExcalidrawAutomate {
       appState: scene.appState,
       files: scene.files,
       storeAction: scene.storeAction,
+      captureUpdate: scene.captureUpdate,
     },restore);
   }
 
@@ -2623,20 +3132,26 @@ export class ExcalidrawAutomate {
     save: boolean = true,
     newElementsOnTop: boolean = false,
     shouldRestoreElements: boolean = false,
+    captureUpdate: CaptureUpdateActionType = CaptureUpdateAction.IMMEDIATELY,
   ): Promise<boolean> {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "addElementsToView()");
       return false;
     }
-    const elements = this.getElements();    
-    return await this.targetView.addElements({
+    const elements = this.getElements();
+    if(elements.some(el=>el.type === "embeddable")) {
+      patchMobileView(this.targetView);
+    }
+    const result = await this.targetView.addElements({
       newElements: elements,
       repositionToCursor,
       save,
       images: this.imagesDict,
       newElementsOnTop,
       shouldRestoreElements,
+      captureUpdate,
     });
+    return result;
   };
 
   /**
@@ -2774,7 +3289,86 @@ export class ExcalidrawAutomate {
    onImageFilePathHook: (data: {
     currentImageName: string; // Excalidraw generated name of the image, or the name received from the file system.
     drawingFilePath: string; // The full filepath of the Excalidraw file where the image is being used.
-  }) => string = null;  
+  }) => string | null = null;  
+
+  /**
+   * If set, this callback is triggered when the Excalidraw image is being exported to 
+   * .svg, .png, or .excalidraw.
+   * You can use this callback to customize the naming and path of the images. This allows
+   * you to place images into an assets folder.
+   * 
+   * If the function returns null or undefined, the normal Excalidraw operation will continue
+   * with the currentImageName and in the same folder as the Excalidraw file
+   * If a filepath is returned, that will be used. Include the full Vault filepath and filename
+   * with the file extension.
+   * If the new folder path does not exist, excalidraw will create it - you don't need to worry about that.
+   * ⚠️⚠️If an image already exists on the path, that will be overwritten. When returning
+   * your own image path, you must take care of unique filenames (if that is a requirement) ⚠️⚠️
+   * The current image name is the name generated by Excalidraw:
+   * - my-drawing.png
+   * - my-drawing.svg
+   * - my-drawing.excalidraw
+   * - my-drawing.dark.svg
+   * - my-drawing.light.svg
+   * - my-drawing.dark.png
+   * - my-drawing.light.png
+   * 
+   * @param data - An object containing the following properties:
+   *   @property {string} exportFilepath - Default export filepath for the image.
+   *   @property {string} exportExtension - The file extension of the export (e.g., .dark.svg, .png, .excalidraw).
+   *   @property {string} excalidrawFile - TFile: The Excalidraw file being exported.
+   *   @property {string} oldExcalidrawPath - If action === "move" The old path of the Excalidraw file, else undefined
+   *   @property {string} action - The action being performed: "export", "move", or "delete". move and delete reference the change to the Excalidraw file.
+   * 
+   * @returns {string} - The new filepath for the image including full vault path and extension.
+   * 
+   * Example usage:
+   * ```
+   * onImageFilePathHook: (data) => {
+   *   const { currentImageName, drawingFilePath, frontmatter } = data;
+   *   // Generate a new filepath based on the drawing file name and other criteria
+   *   const ext = currentImageName.split('.').pop();
+   *   if(frontmatter && frontmatter["my-custom-field"]) {
+   *   }
+   *   return `${drawingFileName} - ${currentImageName || 'image'}.${ext}`;
+   * }
+   * ```
+   */
+  onImageExportPathHook: (data: {
+    exportFilepath: string; // Default export filepath for the image.
+    exportExtension: string; // The file extension of the export (e.g., .dark.svg, .png, .excalidraw).
+    excalidrawFile: TFile; // The Excalidraw file being exported.
+    oldExcalidrawPath? : string; // The old path of the Excalidraw file, if it was moved/renamed. 
+    action: "export" | "move" | "delete";
+  }) => string | null = null;
+
+  /**
+   * Excalidraw supports auto-export of Excalidraw files to .png, .svg, and .excalidraw formats.
+   * 
+   * Auto-export of Excalidraw files can be controlled at multiple levels.
+   * 1) In plugin settings where you can set up default auto-export applicable to all your Excalidraw files.
+   * 2) However, if you do not want to auto-export every file, you can also control auto-export
+   *    at the file level using the 'excalidraw-autoexport' frontmatter property.
+   * 3) This hook gives you an additional layer of control over the auto-export process.
+   * 
+   * This hook is triggered when an Excalidraw file is being saved.
+   * 
+   * interface AutoexportConfig {
+   *   png: boolean; // Whether to auto-export to PNG
+   *   svg: boolean; // Whether to auto-export to SVG
+   *   excalidraw: boolean; // Whether to auto-export to Excalidraw format
+   *   theme: "light" | "dark" | "both"; // The theme to use for the export
+   * }
+   *
+   * @param {Object} data - The data for the hook.
+   * @param {AutoexportConfig} data.autoexportConfig - The current autoexport configuration.
+   * @param {TFile} data.excalidrawFile - The Excalidraw file being auto-exported.
+   * @returns {AutoexportConfig | null} - Return a modified AutoexportConfig to override the export behavior, or null to use the default.
+   */
+  onTriggerAutoexportHook: (data: {
+    autoexportConfig: AutoexportConfig;
+    excalidrawFile: TFile; // The Excalidraw file being auto-exported
+  }) => AutoexportConfig | null = null;
 
   /**
    * if set, this callback is triggered, when an Excalidraw file is opened
@@ -2851,6 +3445,32 @@ export class ExcalidrawAutomate {
     isMask: boolean = false,
   ): ExportSettings {
     return { withBackground, withTheme, isMask };
+  };
+
+
+  /**
+   * Gets the elements within a specific area.
+   * @param elements - The elements to check.
+   * @param param1 - The area to check against.
+   * @returns The elements within the area.
+   */
+  getElementsInArea(
+    elements: NonDeletedExcalidrawElement[],
+    element: NonDeletedExcalidrawElement,    
+  ):ExcalidrawElement[] {
+    const {x, y, width, height, id} = element;
+    return elements
+      .filter(el => {
+        if((el.type==="frame" && el.frameRole==="marker")) return false;
+        if(el.id === id) return true;
+        const {topX, topY, width:w, height:h} = this.getBoundingBox([el]);
+        const elLeft = topX;
+        const elTop = topY;
+        const elRight = topX + w;
+        const elBottom = topY + h;
+        // overlap exists if rectangles intersect
+        return !(elLeft >= x + width || elRight <= x || elTop >= y + height || elBottom <= y);
+      });
   };
 
   /**
@@ -2936,7 +3556,9 @@ export class ExcalidrawAutomate {
    * @returns {string | null} The groupId or null if not found.
    */
   getCommonGroupForElements(elements: ExcalidrawElement[]): string {
-    const groupId = elements.map(el=>el.groupIds).reduce((prev,cur)=>cur.filter(v=>prev.includes(v)));
+    const groupId = elements
+      .map(el=>el.groupIds)
+      .reduce((prev,cur)=>cur.filter(v=>prev.includes(v)));
     return groupId.length > 0 ? groupId[0] : null;
   }
 
@@ -3033,6 +3655,23 @@ export class ExcalidrawAutomate {
     this.plugin.settings.scriptEngineSettings[this.activeScript] = settings;
     await this.plugin.saveSettings();
   };
+
+  public setScriptSettingValue(key: string, value: ScriptSettingValue): void {
+    const settings = ensureActiveScriptSettingsObject(this);
+    if (!settings) return;
+    settings[key] = value;
+  }
+
+  public getScriptSettingValue(key: string, defaultValue: ScriptSettingValue): ScriptSettingValue {
+    const settings = ensureActiveScriptSettingsObject(this);
+    if (!settings) return defaultValue;
+    return settings[key] ?? defaultValue;
+  }
+
+  public async saveScriptSettings(): Promise<void> {
+    ensureActiveScriptSettingsObject(this);
+    await this.plugin.saveSettings();
+  }
 
   /**
    * Opens a file in a new workspace leaf or reuses an existing adjacent leaf depending on Excalidraw Plugin Settings.
@@ -3211,6 +3850,7 @@ export class ExcalidrawAutomate {
 
   /**
    * Moves the specified element to a specific position in the z-index.
+   * * Operates directly on the Excalidraw Scene in targetView, not through ExcalidrawAutomate elements.
    * @param {number} elementId - The ID of the element to move.
    * @param {number} newZIndex - The new z-index position for the element.
    */
@@ -3242,7 +3882,7 @@ export class ExcalidrawAutomate {
     elements.splice(newZIndex, 0, elements.splice(oldZIndex, 1)[0]);
     this.targetView.updateScene({
       elements,
-      storeAction: "capture",
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     });
   };
 
@@ -3326,6 +3966,37 @@ export class ExcalidrawAutomate {
   }
 
   /**
+   * Get color palette for scene. If no palette is found, returns default Excalidraw color palette.
+   * @param {("canvasBackground"|"elementBackground"|"elementStroke")} palette - The palette type.
+   * @returns {([string, string, string, string, string][] | string[])} The color palette.
+   */
+  getViewColorPalette(palette: "canvasBackground"|"elementBackground"|"elementStroke"): (string[] | string)[] {
+    return getViewColorPalette(palette, this.targetView);
+  }
+
+  /**
+   * Opens a palette popover anchored to the provided element and resolves with the selected color.
+   * @param {HTMLElement} anchorElement - The element to anchor the popover to.
+   * @param {"canvasBackground"|"elementBackground"|"elementStroke"} palette - Which palette to show.
+   * @param {boolean} [includeSceneColors=true] - Whether to include scene stroke/background colors in the palette.
+   * @returns {Promise<string|null>} Selected color or null if cancelled.
+   * example usage:
+   * const selected = await ea.showColorPicker(button.buttonEl, "elementStroke");
+   * if(selected) {
+   *   console.log("User selected color: " + selected);
+   * } else {
+   *   console.log("User cancelled color selection");
+   * }
+   */
+  public async showColorPicker(
+    anchorElement: HTMLElement,
+    palette: "canvasBackground"|"elementBackground"|"elementStroke",
+    includeSceneColors: boolean = true,
+  ): Promise<string | null> {
+    return showColorPicker(palette, anchorElement, this.targetView, includeSceneColors);
+  }
+
+  /**
    * Gets the PolyBool class from https://github.com/velipso/polybooljs.
    * @returns {PolyBool} The PolyBool class.
    */
@@ -3354,6 +4025,7 @@ export class ExcalidrawAutomate {
    * Destroys the ExcalidrawAutomate instance, clearing all references and data.
    */
   destroy(): void {
+    this.sidepanelTab?.close();
     this.targetView = null;
     this.plugin = null;
     this.elementsDict = {};

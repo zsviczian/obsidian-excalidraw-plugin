@@ -7,6 +7,8 @@ body:
       value: |
         🛠️ **Important: Please Read Before Submitting a Feature Request** 🛠️
 
+        Before you go further, please chat with [NotebookLM](https://notebooklm.google.com/notebook/42d76a2f-c11d-4002-9286-1683c43d0ab0), it may very well be that the feature you are looking for is already there, or you can find a suitable workaround.
+
         I develop Excalidraw primarily as a hobby, and I prioritize features that I personally use regularly. Features I don't use often break without me noticing, which is why the plugin is as stable as it is—because I rely on it every day. 
 
         **Your task isn't just to describe the feature you want, but to sell me on the idea**. If I'm not convinced that the feature would significantly benefit my own workflow, it's unlikely I'll spend my free hobby time on it. 

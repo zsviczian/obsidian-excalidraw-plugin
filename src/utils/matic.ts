@@ -1,5 +1,5 @@
-import { THEME } from "../constants/constants";
-import type { Theme } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { EXCALIDRAW_PLUGIN, THEME } from "../constants/constants";
+import type { Theme } from "@zsviczian/excalidraw/types/element/src/types";
 import type { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import type { OpenAIInput, OpenAIOutput } from "@zsviczian/excalidraw/types/excalidraw/data/ai/types";
 
@@ -36,14 +36,16 @@ export async function diagramToHTML({
   apiKey,
   text,
   theme = THEME.LIGHT,
+  openAIURL = "https://api.openai.com/v1/chat/completions",
 }: {
   image: DataURL;
   apiKey: string;
   text: string;
   theme?: Theme;
+  openAIURL?: string;
 }) {
   const body: OpenAIInput.ChatCompletionCreateParamsBase = {
-    model: "gpt-4-vision-preview",
+    model: EXCALIDRAW_PLUGIN.settings.openAIDefaultVisionModel,
     // 4096 are max output tokens allowed for `gpt-4-vision-preview` currently
     max_tokens: 4096,
     temperature: 0.1,
@@ -79,7 +81,7 @@ export async function diagramToHTML({
     | ({ ok: true } & OpenAIOutput.ChatCompletion)
     | ({ ok: false } & OpenAIOutput.APIError);
 
-  return await fetch("https://api.openai.com/v1/chat/completions", {
+  return await fetch(openAIURL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

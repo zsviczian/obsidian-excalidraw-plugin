@@ -1,0 +1,24 @@
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50.097575068473816 56.100231877975375" width="50.097575068473816" height="56.100231877975375" class="excalidraw-svg">
+  <!-- Linear calendar icon (same size/viewBox as original) -->
+
+  <g stroke="#1e1e1e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Binding rings -->
+    <path d="M16 3 L16 12" />
+    <path d="M34.5 3 L34.5 12" />
+
+    <!-- Outer calendar body -->
+    <rect x="4" y="9" width="42.097575068473816" height="44.100231877975375" rx="5" ry="5" />
+
+    <!-- Header separator -->
+    <path d="M4 19 L46.097575068473816 19" />
+
+    <!-- A single highlighted date block -->
+    <rect x="10" y="23" width="8" height="8" rx="1.5" ry="1.5" />
+
+    <!-- Linear agenda lines -->
+    <path d="M22 27 L42 27" />
+    <path d="M10 35 L42 35" />
+    <path d="M10 43 L42 43" />
+    <path d="M10 51 L30 51" />
+  </g>
+</svg>

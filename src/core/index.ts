@@ -2,7 +2,7 @@ import "obsidian";
 //import { ExcalidrawAutomate } from "./ExcalidrawAutomate";
 //export ExcalidrawAutomate from "./ExcalidrawAutomate";
 //export {ExcalidrawAutomate} from  "./ExcaildrawAutomate";
-export type { ExcalidrawBindableElement, ExcalidrawElement, FileId, FillStyle, StrokeRoundness, StrokeStyle } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+export type { ExcalidrawBindableElement, ExcalidrawElement, FileId, FillStyle, StrokeRoundness, StrokeStyle } from "@zsviczian/excalidraw/types/element/src/types";
 export type { Point } from "src/types/types";
 export const getEA = (view?:any): any => {
   try {

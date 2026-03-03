@@ -55,6 +55,7 @@ class ImageCache {
     this.db = null;
     this.plugin = null;
     this.app = null;
+    this.obsidanURLCache.forEach((url) => URL.revokeObjectURL(url));
     this.obsidanURLCache.clear();
     this.obsidanURLCache = null;
   }
@@ -179,6 +180,10 @@ class ImageCache {
           const fileExists = files.some((f: TFile) => f.path === filepath);
           const file = fileExists ? files.find((f: TFile) => f.path === filepath) : null;
           if (isLegacyKey || !file || (file && (file.stat.mtime > cursor.value.mtime)) || (!cursor.value.blob && !cursor.value.svg)) {
+            if(this.obsidanURLCache.has(key)) {
+              URL.revokeObjectURL(this.obsidanURLCache.get(key));
+              this.obsidanURLCache.delete(key);
+            }
             deletePromises.push(
               new Promise<void>((innerResolve, innerReject) => {
                 const deleteRequest = store.delete(cursor.primaryKey);
@@ -368,6 +373,9 @@ class ImageCache {
     const key = getKey(key_);
     store.put(data, key);
     if(!Boolean(svg)) {
+      if(this.obsidanURLCache.has(key) && this.obsidanURLCache.get(key) !== obsidianURL) {
+        URL.revokeObjectURL(this.obsidanURLCache.get(key));
+      }
       this.obsidanURLCache.set(key, obsidianURL);
     }
   }
@@ -382,10 +390,32 @@ class ImageCache {
     store.put(data, filepath);
   }
 
+  public async removeBAKFromCache(filepath: string): Promise<void> {
+    if (!this.isReady()) {
+      return; // Database not initialized yet
+    }
+
+    const transaction = this.db.transaction(this.backupStoreName, "readwrite");
+    const store = transaction.objectStore(this.backupStoreName);
+    
+    return new Promise<void>((resolve, reject) => {
+      const request = store.delete(filepath);
+      request.onsuccess = () => {
+        resolve();
+      };
+      request.onerror = () => {
+        reject(new Error(`Failed to remove backup file with key: ${filepath}`));
+      };
+    });
+  }
+
   public async clearImageCache(): Promise<void> {
     if (!this.isReady()) {
       return; // Database not initialized yet
     }
+
+    this.obsidanURLCache.forEach((url) => URL.revokeObjectURL(url));
+    this.obsidanURLCache.clear();
 
     return this.clear(this.cacheStoreName, "Image cache was cleared");
   }

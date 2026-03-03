@@ -8,12 +8,13 @@ import {
   TFile,
   Notice,
   TextAreaComponent,
+  getIcon,
 } from "obsidian";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import ExcalidrawPlugin from "../../core/main";
 import { escapeRegExp, getLinkParts, sleep } from "../../utils/utils";
 import { getLeaf, openLeaf } from "../../utils/obsidianUtils";
-import { checkAndCreateFolder, splitFolderAndFilename } from "src/utils/fileUtils";
+import { createOrOverwriteFile } from "src/utils/fileUtils";
 import { KeyEvent, isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
 import { t } from "src/lang/helpers";
 import { ExcalidrawElement, getEA } from "src/core";
@@ -22,8 +23,13 @@ import { MAX_IMAGE_SIZE, REG_LINKINDEX_INVALIDCHARS } from "src/constants/consta
 import { REGEX_LINK, REGEX_TAGS } from "../ExcalidrawData";
 import { ScriptEngine } from "../Scripts";
 import { openExternalLink, openTagSearch, parseObsidianLink } from "src/utils/excalidrawViewUtils";
-
-export type ButtonDefinition = { caption: string; tooltip?:string; action: Function };
+import { ButtonDefinition } from "src/types/promptTypes";
+import { EditorView, keymap } from "@codemirror/view";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { parser } from "./math-only";
+import { LRLanguage } from "@codemirror/language";
+import { editorLivePreviewField } from "obsidian";
+import { Extension } from "@codemirror/state";
 
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;
@@ -80,6 +86,147 @@ export class Prompt extends Modal {
   }
 }
 
+export class LaTexPrompt extends Modal {
+  public waitForClose : Promise<string>;
+  private promptEl: HTMLInputElement;
+  private resolvePromise: (input: string) => void;
+  private rejectPromise: (reason?: any) => void;
+  private editorView : EditorView;
+  private latexsSuitePlugin : any;
+
+  protected constructor(
+    app: App,
+    private prompt_text: string,
+    private default_value?: string,
+  ) {
+    super(app);
+    this.titleEl.setText(this.prompt_text);
+    this.contentEl.addClass("excalidraw-LatexPrompt");
+    this.latexsSuitePlugin = app.plugins.plugins["obsidian-latex-suite"];
+    const mainContentContainer: HTMLDivElement = this.contentEl.createDiv();
+    this.display(default_value, mainContentContainer);
+    this.waitForClose = new Promise<string>((resolve, reject) => {
+      this.resolvePromise = resolve;
+      this.rejectPromise = reject;
+    });
+    this.editorView.focus();
+  }
+
+  public static Prompt(app: App,
+    prompt_text?: string,
+    default_value?: string,
+  ): Promise<string>{
+    const latexprompt = new LaTexPrompt(app, prompt_text, default_value);
+
+    return latexprompt.waitForClose;
+  }
+
+  private display(value : string, container : HTMLDivElement) {
+
+    const minimalSetup = [
+      history(),
+      keymap.of([
+        ...defaultKeymap,
+        ...historyKeymap,
+      ])
+    ]
+    const extensions: Extension[] = [
+      // overriding default "Mod-Enter" from defaultKeymap (so first in array)
+      keymap.of([{
+        key:"Mod-Enter", 
+        run : () => {this.submitCallback(); return true;}
+      }]),
+      minimalSetup
+    ]
+    if (this.latexsSuitePlugin) {
+      // the language put eveything in a "math" node
+      // surrounded by "math-begin" and "math-end" 
+      // so that latex-suite always thinks we are in mathmode
+      const language = LRLanguage.define({parser:parser});
+      extensions.push([
+        language, 
+        editorLivePreviewField.init(() => false),
+        this.latexsSuitePlugin.editorExtensions
+      ]);
+    }
+
+    this.editorView = new EditorView({ 
+      doc: value, 
+      extensions : extensions,
+      parent : container,
+    });
+
+    const buttonBarContainer: HTMLDivElement = container.createDiv();
+    buttonBarContainer.addClass(`excalidraw-prompt-buttonbar-bottom`);
+    const actionButtonContainer: HTMLDivElement = buttonBarContainer.createDiv();
+
+    this.createButton(
+        actionButtonContainer,
+        "",
+        this.submitCallback.bind(this),
+        t("PROMPT_BUTTON_OK") ?? "",
+        undefined,
+        "check"
+      ).setCta().buttonEl.style.marginRight = "0";
+    this.createButton(
+        actionButtonContainer, 
+        "", 
+        this.cancelCallback.bind(this), 
+        t("PROMPT_BUTTON_CANCEL"),
+        undefined,
+        "x"
+      );
+    this.open();
+  }
+
+  private createButton(container: HTMLElement,
+    text: string,
+    callback: (evt: MouseEvent) => any,
+    tooltip: string = "",
+    margin: string = "5px",
+    iconId?:string,
+  ){
+    const btn = new ButtonComponent(container);
+    btn.buttonEl.style.padding = "0.5em";
+    btn.buttonEl.style.marginLeft = margin;
+    btn.setTooltip(tooltip);
+
+    if (iconId) {
+      btn.setIcon(iconId);
+    } else {
+      btn.setButtonText(text);
+    }
+
+    btn.onClick(callback);
+    return btn;
+  }
+  
+  private submitCallback(){
+    const res = this.editorView.state.doc.toString();
+    if (res.trim().length == 0) {
+      this.rejectPromise("empty latex");
+    } else { 
+      this.resolvePromise(res);
+    }
+    this.close();
+  }
+
+  private cancelCallback(){
+    this.rejectPromise("Canceled input");
+    this.close();
+  }
+
+  onOpen(): void {
+    super.onOpen();
+    this.editorView.focus();
+  }
+
+  onClose(): void {
+    this.contentEl.empty();
+    this.editorView.destroy();
+  }
+}
+
 export class GenericInputPrompt extends Modal {
   public waitForClose: Promise<string>;
   private view: ExcalidrawView;
@@ -98,6 +245,29 @@ export class GenericInputPrompt extends Modal {
   private selectionUpdateTimer: number = 0;
   private customComponents: (container: HTMLElement) => void;
   private blockPointerInputOutsideModal: boolean = false;
+  private controlsOnTop: boolean = false;
+  private draggable: boolean = false;
+  private cleanupDragListeners: (() => void) | null = null;
+
+  // Add event handler instance properties
+  private handleKeyDown = (evt: KeyboardEvent) => {
+    if ((evt.key === "Enter" && this.lines === 1) || (isWinCTRLorMacCMD(evt) && evt.key === "Enter")) {
+      evt.preventDefault();
+      this.submit();
+    }
+    if (this.displayEditorButtons && evt.key === "k" && isWinCTRLorMacCMD(evt)) {
+      evt.preventDefault();
+      this.linkBtnClickCallback();
+    } 
+  };
+
+  private handleCheckCaret = () => {
+    //timer is implemented because on iPad with pencil the button click generates an event on the textarea
+    this.selectionUpdateTimer = this.view.ownerWindow.setTimeout(() => {
+      this.selectionStart = this.inputComponent.inputEl.selectionStart;
+      this.selectionEnd = this.inputComponent.inputEl.selectionEnd;
+    }, 30);
+  };
 
   public static Prompt(
     view: ExcalidrawView,
@@ -111,6 +281,8 @@ export class GenericInputPrompt extends Modal {
     displayEditorButtons?: boolean,
     customComponents?: (container: HTMLElement) => void,
     blockPointerInputOutsideModal?: boolean,
+    controlsOnTop?: boolean,
+    draggable?: boolean,
   ): Promise<string> {
     const newPromptModal = new GenericInputPrompt(
       view,
@@ -124,6 +296,8 @@ export class GenericInputPrompt extends Modal {
       displayEditorButtons,
       customComponents,
       blockPointerInputOutsideModal,
+      controlsOnTop,
+      draggable,
     );
     return newPromptModal.waitForClose;
   }
@@ -135,11 +309,13 @@ export class GenericInputPrompt extends Modal {
     private header: string,
     placeholder?: string,
     value?: string,
-    buttons?: { caption: string; action: Function }[],
+    buttons?: ButtonDefinition[],
     lines?: number,
     displayEditorButtons?: boolean,
     customComponents?: (container: HTMLElement) => void,
     blockPointerInputOutsideModal?: boolean,
+    controlsOnTop?: boolean,
+    draggable?: boolean,
   ) {
     super(app);
     this.view = view;
@@ -151,6 +327,8 @@ export class GenericInputPrompt extends Modal {
     this.displayEditorButtons = this.lines > 1 ? (displayEditorButtons ?? false) : false;
     this.customComponents = customComponents;
     this.blockPointerInputOutsideModal = blockPointerInputOutsideModal ?? false;
+    this.controlsOnTop = controlsOnTop ?? false;
+    this.draggable = draggable ?? false;
 
     this.waitForClose = new Promise<string>((resolve, reject) => {
       this.resolvePromise = resolve;
@@ -173,13 +351,29 @@ export class GenericInputPrompt extends Modal {
     this.titleEl.textContent = this.header;
 
     const mainContentContainer: HTMLDivElement = this.contentEl.createDiv();
-    this.inputComponent = this.createInputField(
-      mainContentContainer,
-      this.placeholder,
-      this.input
-    );
-    this.customComponents?.(mainContentContainer);
-    this.createButtonBar(mainContentContainer);
+    
+    // Conditionally order elements based on controlsOnTop flag
+    if (this.controlsOnTop) {
+      // Create button bar first
+      this.customComponents?.(mainContentContainer);
+      this.createButtonBar(mainContentContainer);
+      
+      // Then add input field and custom components
+      this.inputComponent = this.createInputField(
+        mainContentContainer,
+        this.placeholder,
+        this.input
+      );
+    } else {
+      // Original order: input field, custom components, then buttons
+      this.inputComponent = this.createInputField(
+        mainContentContainer,
+        this.placeholder,
+        this.input
+      );
+      this.customComponents?.(mainContentContainer);
+      this.createButtonBar(mainContentContainer);
+    }
   }
 
   protected createInputField(
@@ -200,25 +394,15 @@ export class GenericInputPrompt extends Modal {
       .setValue(value ?? "")
       .onChange((value) => (this.input = value));
 
-    let i = 0;
-
-    const checkcaret = () => {
-      //timer is implemented because on iPad with pencil the button click generates an event on the textarea
-      this.selectionUpdateTimer = this.view.ownerWindow.setTimeout(() => {
-        this.selectionStart = this.inputComponent.inputEl.selectionStart;
-        this.selectionEnd = this.inputComponent.inputEl.selectionEnd;
-      }, 30);
-    }
-
-    textComponent.inputEl.addEventListener("keydown", this.keyDownCallback.bind(this));
-    textComponent.inputEl.addEventListener('keyup', checkcaret.bind(this)); // Every character written
-    textComponent.inputEl.addEventListener('pointerup', checkcaret.bind(this)); // Click down
-    textComponent.inputEl.addEventListener('touchend', checkcaret.bind(this)); // Click down
-    textComponent.inputEl.addEventListener('input', checkcaret.bind(this)); // Other input events
-    textComponent.inputEl.addEventListener('paste', checkcaret.bind(this)); // Clipboard actions
-    textComponent.inputEl.addEventListener('cut', checkcaret.bind(this));
-    textComponent.inputEl.addEventListener('select', checkcaret.bind(this)); // Some browsers support this event
-    textComponent.inputEl.addEventListener('selectionchange', checkcaret.bind(this));// Some browsers support this event
+    textComponent.inputEl.addEventListener("keydown", this.handleKeyDown);
+    textComponent.inputEl.addEventListener('keyup', this.handleCheckCaret);
+    textComponent.inputEl.addEventListener('pointerup', this.handleCheckCaret);
+    textComponent.inputEl.addEventListener('touchend', this.handleCheckCaret);
+    textComponent.inputEl.addEventListener('input', this.handleCheckCaret);
+    textComponent.inputEl.addEventListener('paste', this.handleCheckCaret);
+    textComponent.inputEl.addEventListener('cut', this.handleCheckCaret);
+    textComponent.inputEl.addEventListener('select', this.handleCheckCaret);
+    textComponent.inputEl.addEventListener('selectionchange', this.handleCheckCaret);
       
     return textComponent;
   }
@@ -229,23 +413,27 @@ export class GenericInputPrompt extends Modal {
     callback: (evt: MouseEvent) => any,
     tooltip: string = "",
     margin: string = "5px",
+    iconId?:string,
   ) {
     const btn = new ButtonComponent(container);
     btn.buttonEl.style.padding = "0.5em";
     btn.buttonEl.style.marginLeft = margin;
     btn.setTooltip(tooltip);
-    btn.setButtonText(text).onClick(callback);
+
+    if (iconId) {
+      btn.setIcon(iconId);
+    } else {
+      btn.setButtonText(text);
+    }
+
+    btn.onClick(callback);
     return btn;
   }
 
   private createButtonBar(mainContentContainer: HTMLDivElement) {
     const buttonBarContainer: HTMLDivElement = mainContentContainer.createDiv();
-    buttonBarContainer.style.display = "flex";
-    buttonBarContainer.style.justifyContent = "space-between";
-    buttonBarContainer.style.marginTop = "1rem";
-
+    buttonBarContainer.addClass(`excalidraw-prompt-buttonbar-${this.controlsOnTop ? "top" : "bottom"}`);
     const editorButtonContainer: HTMLDivElement = buttonBarContainer.createDiv();
-
     const actionButtonContainer: HTMLDivElement = buttonBarContainer.createDiv();
 
     if (this.buttons && this.buttons.length > 0) {
@@ -254,13 +442,17 @@ export class GenericInputPrompt extends Modal {
         const btn = new ButtonComponent(actionButtonContainer);
         btn.buttonEl.style.marginLeft="5px";
         if(button.tooltip) btn.setTooltip(button.tooltip);
-        btn.setButtonText(button.caption).onClick((evt: MouseEvent) => {
-          const res = button.action(this.input);
-          if (res) {
-            this.input = res;
-          }
-          this.submit();
-        });
+        button.iconId
+          ? btn.setIcon(button.iconId)
+          : btn.setButtonText(button.caption);
+        button.tooltip && btn.setTooltip(button.tooltip);
+        btn.onClick((evt: MouseEvent) => {
+            const res = button.action(this.input);
+            if (res) {
+              this.input = res;
+            }
+            this.submit();
+          });
         b = b ?? btn;
       }
       if (b) {
@@ -270,19 +462,32 @@ export class GenericInputPrompt extends Modal {
     } else {
       this.createButton(
         actionButtonContainer,
-        "✅",
+        "",
         this.submitClickCallback.bind(this),
+        t("PROMPT_BUTTON_OK") ?? "",
+        "5px",
+        "check",
       ).setCta().buttonEl.style.marginRight = "0";
     }
-    this.createButton(actionButtonContainer, "❌", this.cancelClickCallback.bind(this), t("PROMPT_BUTTON_CANCEL"));
+    
+    this.createButton(
+      actionButtonContainer,
+      "",
+      this.cancelClickCallback.bind(this),
+      t("PROMPT_BUTTON_CANCEL"),
+      "5px",
+      "x",
+    );
+  
     if(this.displayEditorButtons) {
-      this.createButton(editorButtonContainer, "⏎", ()=>this.insertStringBtnClickCallback("\n"), t("PROMPT_BUTTON_INSERT_LINE"), "0");
-      this.createButton(editorButtonContainer, "⌫", this.delBtnClickCallback.bind(this), "Delete");
-      this.createButton(editorButtonContainer, "⎵", ()=>this.insertStringBtnClickCallback(" "), t("PROMPT_BUTTON_INSERT_SPACE"));
+      this.createButton(editorButtonContainer, "", ()=>this.insertStringBtnClickCallback("\n"), t("PROMPT_BUTTON_INSERT_LINE"), "0", "corner-down-left");
+      this.createButton(editorButtonContainer, "", this.delBtnClickCallback.bind(this), "Delete", "5px", "delete");
+      this.createButton(editorButtonContainer, "", ()=>this.insertStringBtnClickCallback(" "), t("PROMPT_BUTTON_INSERT_SPACE"), "5px", "space");
+      this.createButton(editorButtonContainer, "", this.specialCharsBtnClickCallback.bind(this), t("PROMPT_BUTTON_SPECIAL_CHARS"), "5px", "at-sign");
       if(this.view) {
-        this.createButton(editorButtonContainer, "🔗", this.linkBtnClickCallback.bind(this), t("PROMPT_BUTTON_INSERT_LINK"));
+        this.createButton(editorButtonContainer, "", this.linkBtnClickCallback.bind(this), t("PROMPT_BUTTON_INSERT_LINK"), "5px", "link");
       }
-      this.createButton(editorButtonContainer, "🔠", this.uppercaseBtnClickCallback.bind(this), t("PROMPT_BUTTON_UPPERCASE"));
+      this.createButton(editorButtonContainer, "", this.uppercaseBtnClickCallback.bind(this), t("PROMPT_BUTTON_UPPERCASE"), "5px", "arrow-big-up");
     }
   }
 
@@ -349,17 +554,6 @@ export class GenericInputPrompt extends Modal {
     this.cancel();
   }
 
-  private keyDownCallback = (evt: KeyboardEvent) => {
-    if ((evt.key === "Enter" && this.lines === 1) || (isWinCTRLorMacCMD(evt) && evt.key === "Enter")) {
-      evt.preventDefault();
-      this.submit();
-    }
-    if (this.displayEditorButtons && evt.key === "k" && isWinCTRLorMacCMD(evt)) {
-      evt.preventDefault();
-      this.linkBtnClickCallback();
-    } 
-  };
-
   private submit() {
     this.didSubmit = true;
     this.close();
@@ -378,22 +572,225 @@ export class GenericInputPrompt extends Modal {
   }
 
   private removeInputListener() {
-    this.inputComponent?.inputEl?.removeEventListener(
-      "keydown",
-      this.keyDownCallback,
-    );
+    if (!this.inputComponent?.inputEl) return;
+    
+    const inputEl = this.inputComponent.inputEl;
+    inputEl.removeEventListener("keydown", this.handleKeyDown);
+    inputEl.removeEventListener('keyup', this.handleCheckCaret);
+    inputEl.removeEventListener('pointerup', this.handleCheckCaret);
+    inputEl.removeEventListener('touchend', this.handleCheckCaret);
+    inputEl.removeEventListener('input', this.handleCheckCaret);
+    inputEl.removeEventListener('paste', this.handleCheckCaret);
+    inputEl.removeEventListener('cut', this.handleCheckCaret);
+    inputEl.removeEventListener('select', this.handleCheckCaret);
+    inputEl.removeEventListener('selectionchange', this.handleCheckCaret);
+  }
+
+  private specialCharsBtnClickCallback = (evt: MouseEvent) => {
+    this.view.ownerWindow.clearTimeout(this.selectionUpdateTimer);
+    
+    // Remove any existing popup
+    const existingPopup = document.querySelector('.excalidraw-special-chars-popup');
+    if (existingPopup) {
+      existingPopup.remove();
+      return;
+    }
+    
+    // Create popup element
+    const popup = document.createElement('div');
+    popup.className = 'excalidraw-special-chars-popup';
+    popup.style.position = 'absolute';
+    popup.style.zIndex = '1000';
+    popup.style.background = 'var(--background-primary)';
+    popup.style.border = '1px solid var(--background-modifier-border)';
+    popup.style.borderRadius = '4px';
+    popup.style.padding = '4px';
+    popup.style.boxShadow = '0 2px 8px var(--background-modifier-box-shadow)';
+    popup.style.display = 'flex';
+    popup.style.flexWrap = 'wrap';
+    popup.style.maxWidth = '200px';
+    
+    // Position near the button
+    const rect = (evt.target as HTMLElement).getBoundingClientRect();
+    popup.style.top = `${rect.bottom + 5}px`;
+    popup.style.left = `${rect.left}px`;
+    
+    // Special characters to include
+    const specialChars = [',', '.', ':', ';', '!', '?', '"', '{', '}', '[', ']', '(', ')'];
+    
+    // Add character buttons
+    specialChars.forEach(char => {
+      const charButton = document.createElement('button');
+      charButton.textContent = char;
+      charButton.style.margin = '2px';
+      charButton.style.width = '28px';
+      charButton.style.height = '28px';
+      charButton.style.cursor = 'pointer';
+      charButton.style.background = 'var(--interactive-normal)';
+      charButton.style.border = 'none';
+      charButton.style.borderRadius = '4px';
+      
+      charButton.addEventListener('click', () => {
+        this.insertStringBtnClickCallback(char);
+        popup.remove();
+      });
+      
+      popup.appendChild(charButton);
+    });
+    
+    // Add click outside listener to close popup
+    const closePopupListener = (e: MouseEvent) => {
+      if (!popup.contains(e.target as Node) && 
+          (evt.target as HTMLElement) !== e.target) {
+        popup.remove();
+        document.removeEventListener('click', closePopupListener);
+      }
+    };
+    
+    // Add to document and set up listeners
+    document.body.appendChild(popup);
+    setTimeout(() => {
+      document.addEventListener('click', closePopupListener);
+    }, 10);
   }
 
   onOpen() {
     super.onOpen();
+    this.modalEl.classList.add("excalidraw-modal");
+    this.containerEl.classList.add("excalidraw-modal");
     this.inputComponent.inputEl.focus();
     this.inputComponent.inputEl.select();
+    
+    if (this.draggable) {
+      this.makeModalDraggable();
+    }
+  }
+
+  private makeModalDraggable() {
+    let isDragging = false;
+    let startX: number, startY: number, initialX: number, initialY: number;
+    let activeElement: HTMLElement | null = null;
+    let cursorPosition: { start: number; end: number } | null = null;
+
+    const modalEl = this.modalEl;
+    const header = modalEl.querySelector('.modal-titlebar') || modalEl.querySelector('.modal-title') || modalEl;
+    (header as HTMLElement).style.cursor = 'move';
+
+    // Track focus changes to store the last focused interactive element
+    const onFocusIn = (e: FocusEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'SELECT' || target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'BUTTON')) {
+        activeElement = target;
+        // Store cursor position for input/textarea elements (but not for number inputs)
+        if (target.tagName === 'TEXTAREA' || 
+            (target.tagName === 'INPUT' && (target as HTMLInputElement).type !== 'number')) {
+          const inputEl = target as HTMLInputElement | HTMLTextAreaElement;
+          cursorPosition = {
+            start: inputEl.selectionStart || 0,
+            end: inputEl.selectionEnd || 0
+          };
+        } else {
+          cursorPosition = null;
+        }
+      }
+    };
+
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as HTMLElement;
+      
+      // Don't allow dragging if clicking on interactive controls
+      if (target.tagName === 'INPUT' || 
+          target.tagName === 'TEXTAREA' || 
+          target.tagName === 'BUTTON' ||
+          target.tagName === 'SELECT' ||
+          target.closest('button') ||
+          target.closest('input') ||
+          target.closest('textarea') ||
+          target.closest('select')) {
+        return;
+      }
+      
+      // Allow dragging from header or modal content areas
+      if (!header.contains(target) && !modalEl.querySelector('.modal-content')?.contains(target)) {
+        return;
+      }
+      
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      const rect = modalEl.getBoundingClientRect();
+      initialX = rect.left;
+      initialY = rect.top;
+
+      modalEl.style.position = 'absolute';
+      modalEl.style.margin = '0';
+      modalEl.style.left = `${initialX}px`;
+      modalEl.style.top = `${initialY}px`;
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!isDragging) return;
+
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+
+      modalEl.style.left = `${initialX + dx}px`;
+      modalEl.style.top = `${initialY + dy}px`;
+    };
+
+    const onPointerUp = () => {
+      if (!isDragging) return;
+      isDragging = false;
+
+      // Restore focus and cursor position
+      if (activeElement && activeElement.isConnected) {
+        // Use setTimeout to ensure the pointer event is fully processed
+        setTimeout(() => {
+          activeElement.focus();
+          
+          // Restore cursor position for input/textarea elements (but not for number inputs)
+          if (cursorPosition && 
+              (activeElement.tagName === 'TEXTAREA' || 
+               (activeElement.tagName === 'INPUT' && (activeElement as HTMLInputElement).type !== 'number'))) {
+            const inputEl = activeElement as HTMLInputElement | HTMLTextAreaElement;
+            inputEl.setSelectionRange(cursorPosition.start, cursorPosition.end);
+          }
+        }, 0);
+      }
+    };
+
+    // Initialize activeElement with the main input field
+    activeElement = this.inputComponent.inputEl;
+    cursorPosition = {
+      start: this.inputComponent.inputEl.selectionStart || 0,
+      end: this.inputComponent.inputEl.selectionEnd || 0
+    };
+
+    // Set up event listeners
+    modalEl.addEventListener('focusin', onFocusIn);
+    modalEl.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+
+    // Store cleanup function for use in onClose
+    this.cleanupDragListeners = () => {
+      modalEl.removeEventListener('focusin', onFocusIn);
+      modalEl.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('pointerup', onPointerUp);
+    };
   }
 
   onClose() {
     super.onClose();
     this.resolveInput();
     this.removeInputListener();
+    
+    // Clean up drag listeners to prevent memory leaks
+    if (this.cleanupDragListeners) {
+      this.cleanupDragListeners();
+      this.cleanupDragListeners = null;
+    }
   }
 }
 
@@ -576,10 +973,7 @@ export class NewFileActions extends Modal {
         if (!this.path.match(/\.md$/)) {
           this.path = `${this.path}.md`;
         }
-        const folderpath = splitFolderAndFilename(this.path).folderpath;
-        checkAndCreateFolder(folderpath);
-        const f = await this.app.vault.create(this.path, data);
-        return f;
+        return await createOrOverwriteFile(this.app, this.path, data);
       };
 
       if(this.sourceElement) {
@@ -641,17 +1035,30 @@ export class NewFileActions extends Modal {
   }
 }
 
-export class ConfirmationPrompt extends Modal {
-  public waitForClose: Promise<boolean>;
-  private resolvePromise: (value: boolean) => void;
+export class MultiOptionConfirmationPrompt extends Modal {
+  public waitForClose: Promise<any>;
+  private resolvePromise: (value: any) => void;
   private rejectPromise: (reason?: any) => void;
-  private didConfirm: boolean = false;
+  private selectedValue: any = null;
   private readonly message: string;
+  private readonly buttons: Map<string, any>;
+  private ctaButtonLabel: string = null;
 
-  constructor(private plugin: ExcalidrawPlugin, message: string) {
+  constructor(private plugin: ExcalidrawPlugin, message: string, buttons?: Map<string, any>, ctaButtonLabel?: string) {
     super(plugin.app);
     this.message = message;
-    this.waitForClose = new Promise<boolean>((resolve, reject) => {
+    if (!buttons || buttons.size === 0) {
+      buttons = new Map<string, any>([
+        [t("PROMPT_BUTTON_CANCEL"), null],
+        [t("PROMPT_BUTTON_OK"), true],
+      ]);
+      if( !ctaButtonLabel) {
+        ctaButtonLabel = t("PROMPT_BUTTON_OK");
+      } 
+    }
+    this.ctaButtonLabel = ctaButtonLabel;
+    this.buttons = buttons;
+    this.waitForClose = new Promise<any>((resolve, reject) => {
       this.resolvePromise = resolve;
       this.rejectPromise = reject;
     });
@@ -671,14 +1078,35 @@ export class ConfirmationPrompt extends Modal {
     const buttonContainer = this.contentEl.createDiv();
     buttonContainer.style.display = "flex";
     buttonContainer.style.justifyContent = "flex-end";
+    buttonContainer.style.flexWrap = "wrap";
+    
+    // Convert Map to Array for easier iteration
+    const buttonEntries = Array.from(this.buttons.entries());
 
-    const cancelButton = this.createButton(buttonContainer, t("PROMPT_BUTTON_CANCEL"), this.cancelClickCallback.bind(this));
-    cancelButton.buttonEl.style.marginRight = "0.5rem";
+    // Add buttons in reverse order (last button will be on the right)
+    let ctaButton: HTMLButtonElement = null;
+    buttonEntries.reverse().forEach(([buttonText, value], index) => {
+      const button = this.createButton(buttonContainer, buttonText, () => {
+        this.selectedValue = value;
+        this.close();
+      });
+      
+      if (buttonText === this.ctaButtonLabel) {
+        ctaButton = button.buttonEl;
+        button.setCta();
+      }
+      
+      if (index < buttonEntries.length - 1) {
+        button.buttonEl.style.marginRight = "0.5rem";
+      }
+    });
 
-    const confirmButton = this.createButton(buttonContainer, t("PROMPT_BUTTON_OK"), this.confirmClickCallback.bind(this));
-    confirmButton.buttonEl.style.marginRight = "0";
-
-    cancelButton.buttonEl.focus();
+    // Set focus on the first button (visually last)
+    if(this.ctaButtonLabel) {
+      if (ctaButton) {
+        ctaButton.focus();
+      }
+    }
   }
 
   private createButton(container: HTMLElement, text: string, callback: (evt: MouseEvent) => void) {
@@ -687,16 +1115,6 @@ export class ConfirmationPrompt extends Modal {
     return button;
   }
 
-  private cancelClickCallback() {
-    this.didConfirm = false;
-    this.close();
-  };
-
-  private confirmClickCallback() {
-    this.didConfirm = true;
-    this.close();
-  };
-
   onOpen() {
     super.onOpen();
     this.contentEl.querySelector("button")?.focus();
@@ -704,11 +1122,7 @@ export class ConfirmationPrompt extends Modal {
 
   onClose() {
     super.onClose();
-    if (!this.didConfirm) {
-      this.resolvePromise(false);
-    } else {
-      this.resolvePromise(true);
-    }
+    this.resolvePromise(this.selectedValue);
   }
 }
 
@@ -778,6 +1192,7 @@ export async function linkPrompt(
     ...tagsArray,
   ];
 
+  await sleep(10); //obsidian modal link click immediately refocuses the editor, so we need to wait a bit
   if (items.length>1) {
     parts = await ScriptEngine.suggester(
       app,

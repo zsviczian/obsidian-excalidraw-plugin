@@ -21,7 +21,7 @@ The script will convert your drawing into a slideshow presentation.
 
 ```javascript
 */
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.1.7")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.8.0")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
@@ -46,6 +46,9 @@ const TRANSITION_DELAY = 1000; //maximum time for transition between slides in m
 const FRAME_SLEEP = 1; //milliseconds
 const EDIT_ZOOMOUT = 0.7; //70% of original slide zoom, set to a value between 1 and 0
 const FADE_LEVEL = 0.1; //opacity of the slideshow controls after fade delay (value between 0 and 1)
+const PRINT_SLIDE_WIDTH = 1920;
+const PRINT_SLIDE_HEIGHT = 1080;
+const MAX_ZOOM = 30; //3000%
 //using outerHTML because the SVG object returned by Obsidin is in the main workspace window
 //but excalidraw might be open in a popout window which has a different document object
 const SVG_COG = ea.obsidian.getIcon("lucide-settings").outerHTML;
@@ -57,6 +60,8 @@ const SVG_MAXIMIZE = ea.obsidian.getIcon("lucide-maximize").outerHTML;
 const SVG_MINIMIZE = ea.obsidian.getIcon("lucide-minimize").outerHTML;
 const SVG_LASER_ON = ea.obsidian.getIcon("lucide-hand").outerHTML;
 const SVG_LASER_OFF = ea.obsidian.getIcon("lucide-wand").outerHTML;
+const SVG_PRINTER = ea.obsidian.getIcon("lucide-printer").outerHTML;
+const SVG_REFOCUS = ea.obsidian.getIcon("lucide-scan-eye").outerHTML;
 
 //-------------------------------
 //utility & convenience functions
@@ -202,7 +207,7 @@ const gotoFullscreen = async () => {
 	}
 	await waitForExcalidrawResize();
 	const layerUIWrapper = contentEl.querySelector(".layer-ui__wrapper");
-	if(!layerUIWrapper.hasClass("excalidraw-hidden")) layerUIWrapper.addClass("excalidraw-hidden");
+	if(!layerUIWrapper?.hasClass("excalidraw-hidden")) layerUIWrapper.addClass("excalidraw-hidden");
 	if(toggleFullscreenButton) toggleFullscreenButton.innerHTML = SVG_MINIMIZE;
 	resetControlPanelElPosition();
 	isFullscreen = true;
@@ -271,11 +276,11 @@ if(presentationPathType==="line") {
 //-----------------------------
 // scroll-to-location functions
 //-----------------------------
-const getNavigationRect = ({ x1, y1, x2, y2 }) => {
-  const { width, height } = excalidrawAPI.getAppState();
+const getNavigationRect = ({ x1, y1, x2, y2, printDimensions }) => {
+  const { width, height } = printDimensions ? printDimensions : excalidrawAPI.getAppState();
   const ratioX = width / Math.abs(x1 - x2);
   const ratioY = height / Math.abs(y1 - y2);
-  let ratio = Math.min(Math.max(ratioX, ratioY), 30);
+  let ratio = Math.min(Math.max(ratioX, ratioY), MAX_ZOOM);
 
   const scaledWidth = Math.abs(x1 - x2) * ratio;
   const scaledHeight = Math.abs(y1 - y2) * ratio;
@@ -496,9 +501,22 @@ const createPresentationNavigationPanel = () => {
 	    }
 	  });
 	  
+	  el.createEl("button",{
+	    attr: {
+	      title: "Re-focus current slide (shortcut: HOME)"
+	    }
+	  }, button => {
+	    button.innerHTML = SVG_REFOCUS;
+	    button.onclick = () => {
+	      debugger;
+	      slide--;
+        navigate("fwd");
+	    }
+	  });
+	  
  	  el.createEl("button",{
 	    attr: {
-	      title: "Toggle fullscreen. If you hold ALT/OPT when starting the presentation it will not go fullscreen."
+	      title: "Toggle fullscreen. If you hold ALT/OPT when starting the presentation it will not go fullscreen. (shortcut: f)"
 	    },
 	  }, button => {
 	    toggleFullscreenButton = button;
@@ -534,6 +552,20 @@ const createPresentationNavigationPanel = () => {
 		    }
 		  });
 		}
+		if(ea.DEVICE.isDesktop) {
+      el.createEl("button",{
+        attr: {
+          style: `
+            margin-right: calc(var(--default-button-size)*0.25);`,
+          title: `Print to PDF\nClick to print slides at ${PRINT_SLIDE_WIDTH}x${
+            PRINT_SLIDE_HEIGHT}\nHold SHIFT to print the presentation as displayed`
+            //${!presentationPathLineEl ? "\nHold ALT/OPT to clip frames":""}`
+        }
+      }, button => {
+        button.innerHTML = SVG_PRINTER;
+        button.onclick = (e) => printToPDF(e);
+      });
+		}
 	  el.createEl("button",{
 	    attr: {
 	      style: `
@@ -542,7 +574,7 @@ const createPresentationNavigationPanel = () => {
 	    }
 	  }, button => {
 	    button.innerHTML = SVG_FINISH;
-	    button.onclick = () => exitPresentation()
+	    button.onclick = () => exitPresentation();
 	  });
 	});
 }
@@ -573,7 +605,7 @@ const keydownListener = (e) => {
       navigate("fwd");
       break;
     case "Home":
-      slide = -1;
+      slide--;
       navigate("fwd");
       break;
     case "e": 
@@ -582,6 +614,9 @@ const keydownListener = (e) => {
         await toggleArrowVisibility(false);
         exitPresentation(true);
       })()
+      break;
+    case "f":
+      toggleFullscreen();
       break;
   }
 }
@@ -742,6 +777,114 @@ const exitPresentation = async (openForEdit = false) => {
 }
 
 //--------------------------
+// Print to PDF
+//--------------------------
+let notice;
+let noticeEl;
+function setSingleNotice(message) {
+  if(noticeEl?.parentElement) {
+    notice.setMessage(message);
+    return;
+  }
+  notice = new Notice(message, 0);
+  noticeEl = notice.containerEl ?? notice.noticeEl;
+}
+
+function hideSingleNotice() {
+  if(noticeEl?.parentElement) {
+    notice.hide();
+  }
+}
+
+const translateToZero = ({ top, left, bottom, right }, padding) => {
+  const {topX, topY, width, height} = ea.getBoundingBox(ea.getViewElements());
+  const newTop = top - (topY - padding);
+  const newLeft = left - (topX - padding);
+  const newBottom = bottom - (topY - padding);
+  const newRight = right - (topX - padding);
+
+  return {
+    top: newTop,
+    left: newLeft,
+    bottom: newBottom,
+    right: newRight,
+  };
+}
+
+const getElementPlaceholdersForMarkerFrames = () => {
+  const viewMarkerFrames = ea.getViewElements().filter(el=>el.type === "frame" && el.frameRole === "marker");
+  if(viewMarkerFrames.length === 0) return;
+  ea.clear();
+  ea.style.opacity = 0;
+  ea.style.roughness = 0;
+	ea.style.fillStyle = "solid";
+	ea.style.backgroundColor = "black"
+	ea.style.strokeWidth = 0.01;
+
+  for (const frame of viewMarkerFrames) {
+	  ea.addRect(frame.x, frame.y, frame.width, frame.height);
+  }
+  return ea.getViewElements().concat(ea.getElements());
+}
+
+const printToPDF = async (e) => {
+  const slideWidth = e.shiftKey ? excalidrawAPI.getAppState().width : PRINT_SLIDE_WIDTH;
+  const slideHeight = e.shiftKey ? excalidrawAPI.getAppState().height : PRINT_SLIDE_HEIGHT;
+  //const shouldClipFrames = !presentationPathLineEl && e.altKey;
+  const shouldClipFrames = false;
+  //huge padding to ensure the HD window always fits the width
+  //no padding if frames are clipped
+  const padding =  shouldClipFrames ? 0 : Math.round(Math.max(slideWidth,slideHeight)/2)+10;
+  const st = ea.getExcalidrawAPI().getAppState();
+  setSingleNotice("Generating image. This can take a longer time depending on the size of the image and speed of your device");
+  const elementsOverride = getElementPlaceholdersForMarkerFrames();
+  const svg = await ea.createViewSVG({
+    withBackground: true,
+    theme: st.theme,
+    frameRendering: { enabled: shouldClipFrames, name: false, outline: false, clip: shouldClipFrames },
+    padding,
+    selectedOnly: false,
+    skipInliningFonts: false,
+    embedScene: false,
+    elementsOverride,
+  });
+  const pages = [];
+  for(i=0;i<slides.length;i++) {
+    setSingleNotice(`Generating slide ${i+1}`);
+    const s = slides[i];
+    const  { top, left, bottom, right } = translateToZero(
+      getNavigationRect({
+        ...s,
+        printDimensions: {width: slideWidth, height: slideHeight}
+      }), padding
+    );
+    //always create the new SVG in the main Obsidian workspace (not the popout window, if present)
+    const host = window.createDiv();
+    host.innerHTML = svg.outerHTML;
+    const clonedSVG = host.firstElementChild;
+    const width = Math.abs(left-right);
+    const height = Math.abs(top-bottom);
+    clonedSVG.setAttribute("viewBox", `${left} ${top} ${width} ${height}`);
+    clonedSVG.setAttribute("width", `${width}`);
+    clonedSVG.setAttribute("height", `${height}`);
+    pages.push(clonedSVG);
+  }
+  const bgColor = ea.getExcalidrawAPI().getAppState().viewBackgroundColor;
+  setSingleNotice("Creating PDF Document");
+  ea.createPDF({
+    SVG: pages,
+    scale: { fitToPage: true },
+    pageProps: {
+      dimensions: { width: slideWidth, height: slideHeight },
+      backgroundColor: bgColor,
+      margin: { left: 0, right: 0, top: 0, bottom: 0 },
+      alignment: "center"
+    }, 
+    filename: ea.targetView.file.basename + ".pdf",
+  }).then(()=>hideSingleNotice());
+}
+
+//--------------------------
 // Start presentation or open presentation settings on double click
 //--------------------------
 const start = async () => {
@@ -768,7 +911,11 @@ const start = async () => {
 }
 
 const timestamp = Date.now();
-if(window.ExcalidrawSlideshow && (window.ExcalidrawSlideshow.script === utils.scriptFile.path) && (timestamp - window.ExcalidrawSlideshow.timestamp <400) ) {
+if(
+  window.ExcalidrawSlideshow &&
+  (window.ExcalidrawSlideshow.script === utils.scriptFile.path) &&
+  (timestamp - window.ExcalidrawSlideshow.timestamp <400)
+) {
   if(window.ExcalidrawSlideshowStartTimer) {
     window.clearTimeout(window.ExcalidrawSlideshowStartTimer);
     delete window.ExcalidrawSlideshowStartTimer;

@@ -1,63 +1,18 @@
 import { Notice, RequestUrlResponse } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
-
-type MessageContent =
-  | string
-  | (string | { type: "image_url"; image_url: string })[];
-
-export type GPTCompletionRequest = {
-  model: string;
-  messages?: {
-    role?: "system" | "user" | "assistant" | "function";
-    content?: MessageContent;
-    name?: string | undefined;
-  }[];
-  functions?: any[] | undefined;
-  function_call?: any | undefined;
-  stream?: boolean | undefined;
-  temperature?: number | undefined;
-  top_p?: number | undefined;
-  max_tokens?: number | undefined;
-  n?: number | undefined;
-  best_of?: number | undefined;
-  frequency_penalty?: number | undefined;
-  presence_penalty?: number | undefined;
-  logit_bias?:
-    | {
-        [x: string]: number;
-      }
-    | undefined;
-  stop?: (string[] | string) | undefined;
-  size?: string;
-  quality?: "standard" | "hd";
-  prompt?: string;
-  image?: string;
-  mask?: string;
-};
-
-export type AIRequest = {
-  image?: string;
-  text?: string;
-  instruction?: string;
-  systemPrompt?: string;
-  imageGenerationProperties?: {
-    size?: string; //depends on model
-    quality?: "standard" | "hd"; //depends on model
-    n?: number; //dall-e-3 only accepts 1
-    mask?: string; //dall-e-2 only (image editing)
-  };
-};
+import { GPTCompletionRequest, AIRequest } from "src/types/AIUtilTypes";
 
 const handleImageEditPrompt = async (request: AIRequest) : Promise<RequestUrlResponse> => {
   const plugin: ExcalidrawPlugin = window.ExcalidrawAutomate.plugin;
   const {
     openAIAPIToken,
     openAIImageEditsURL,
+    openAIDefaultImageGenerationModel,
   } = plugin.settings;
   const { image, text, imageGenerationProperties} = request;
 
   const body = new FormData();
-  body.append("model", "dall-e-2");
+  body.append("model", openAIDefaultImageGenerationModel);
   text.trim() !== "" && body.append("prompt", text);
 
   if (image) {
@@ -67,7 +22,7 @@ const handleImageEditPrompt = async (request: AIRequest) : Promise<RequestUrlRes
 
   if (imageGenerationProperties.mask) {
     const maskBlob = await fetch(imageGenerationProperties.mask).then((res) => res.blob());
-    body.append('mask', maskBlob, 'masik.png');
+    body.append('mask', maskBlob, 'mask.png');
   }
 
   imageGenerationProperties.size && body.append("size", imageGenerationProperties.size);
@@ -104,6 +59,7 @@ const handleGenericPrompt = async (request: AIRequest) : Promise<RequestUrlRespo
   const {
     openAIAPIToken,
     openAIDefaultTextModel,
+    openAIDefaultTextModelMaxTokens,
     openAIDefaultVisionModel,
     openAIURL,
     openAIImageGenerationURL,
@@ -118,7 +74,7 @@ const handleGenericPrompt = async (request: AIRequest) : Promise<RequestUrlRespo
     case "text":
       body = {
         model: openAIDefaultTextModel,
-        max_tokens: 4096,
+        ...(openAIDefaultTextModelMaxTokens > 0 && { max_tokens: openAIDefaultTextModelMaxTokens }),
         messages: [
           ...(systemPrompt && systemPrompt.trim() !=="" ? [{role: "system" as const,content: systemPrompt}] : []),
           {
@@ -132,7 +88,7 @@ const handleGenericPrompt = async (request: AIRequest) : Promise<RequestUrlRespo
     case "image":
       body = {
         model: openAIDefaultVisionModel,
-        max_tokens: 4096,
+        ...(openAIDefaultTextModelMaxTokens > 0 && { max_tokens: openAIDefaultTextModelMaxTokens }),
         messages: [
           ...(systemPrompt && systemPrompt.trim() !=="" ? [{role: "system" as const,content: systemPrompt}] : []),
           {
