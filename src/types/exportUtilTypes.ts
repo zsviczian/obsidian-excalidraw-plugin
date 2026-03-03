@@ -50,7 +50,7 @@ export const STANDARD_PAGE_SIZES = {
   Legal: { width: 816, height: 1344 },     // 8.5 × 14 inches
   Letter: { width: 816, height: 1056 },    // 8.5 × 11 inches
   Tabloid: { width: 1056, height: 1632 },  // 11 × 17 inches
-  Ledger: STANDARD_PAGE_SIZES['Tabloid'],   // Tabloid and Ledger sizes are the same
+  Ledger: { width: 1056, height: 1632 },   // Tabloid and Ledger sizes are the same
   "HD Screen": { width: 1920, height: 1080 },// 16:9 aspect ratio
   "MATCH IMAGE": { width: 0, height: 0 },    // 0 means use the current screen size
 } as const;
