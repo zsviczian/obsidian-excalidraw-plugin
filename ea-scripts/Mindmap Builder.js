@@ -5734,8 +5734,9 @@ const reconnectArrow = (currentBindingElement, newBindingElement, arrow, side = 
  * preserving user customizations.
  * Also updates the ontology label (if present) on the incoming arrow to be half the node's new size.
  */
-const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => {
-  const fontScale = getFontScale(rootFontScale);
+const updateSubtreeFontSize = (nodeId, newDepth, oldDepth, allElements, newFontScaleType, oldFontScaleType) => {
+  const newFontScale = getFontScale(newFontScaleType);
+  const oldFontScale = getFontScale(oldFontScaleType);
   
   const node = allElements.find(el => el.id === nodeId);
   if (!node) return;
@@ -5743,13 +5744,9 @@ const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => 
     ea.copyViewElementsToEAforEditing([node]);
   }
 
-  // Determine the node's *current* depth in the hierarchy to find its expected "old" font size
-  const currentHierarchy = getHierarchy(node, allElements);
-  const oldDepth = currentHierarchy.depth;
-
-  // Calculate standard sizes
-  const oldStandardSize = fontScale[Math.min(oldDepth, fontScale.length - 1)];
-  const newStandardSize = fontScale[Math.min(newDepth, fontScale.length - 1)];
+  // Calculate standard sizes based on the old and new contexts
+  const oldStandardSize = oldFontScale[Math.min(oldDepth, oldFontScale.length - 1)];
+  const newStandardSize = newFontScale[Math.min(newDepth, newFontScale.length - 1)];
 
   // Update only if the user hasn't customized the font size
   if (node.fontSize === oldStandardSize) {
@@ -5782,16 +5779,22 @@ const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => 
     }
 
     // Apply half-size logic
-    if (eaOntologyEl) {
+    if (eaOntologyEl && eaOntologyEl.fontSize === Math.floor(oldStandardSize / 2)) {
       eaOntologyEl.fontSize = Math.floor(newStandardSize / 2);
       ea.refreshTextElementSize(eaOntologyEl.id);
     }
   }
 
+  // Stop recursion if this node is an additional root (submap). 
+  // Its own node size updates to match the parent, but its children scale relative to IT.
+  if (node.customData?.isAdditionalRoot === true) {
+     return;
+  }
+
   // Recurse to children
   const children = getChildrenNodes(nodeId, allElements);
   children.forEach(child => {
-    updateSubtreeFontSize(child.id, newDepth + 1, allElements, rootFontScale);
+    updateSubtreeFontSize(child.id, newDepth + 1, oldDepth + 1, allElements, newFontScaleType, oldFontScaleType);
   });
 };
 
@@ -5799,7 +5802,7 @@ const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => 
  * Recursively updates the stroke width of a subtree based on the new depth level.
  * Only updates if the current width matches the default for its *previous* depth.
  */
-const updateSubtreeStrokeWidth = (nodeId, newDepth, allElements, rootBaseWidth, rootBranchScale) => {
+const updateSubtreeStrokeWidth = (nodeId, newDepth, oldDepth, allElements, newBaseWidth, newBranchScale, oldBaseWidth, oldBranchScale) => {
   const node = allElements.find(el => el.id === nodeId);
   if (!node) return;
   
@@ -5808,13 +5811,8 @@ const updateSubtreeStrokeWidth = (nodeId, newDepth, allElements, rootBaseWidth, 
     ea.copyViewElementsToEAforEditing([node]);
   }
 
-  // Determine the node's *current* depth (before the move logic is logically finalized in hierarchy calculations) 
-  // to find its expected "old" width.
-  const currentHierarchy = getHierarchy(node, allElements);
-  const oldDepth = currentHierarchy.depth;
-
-  const oldStandardWidth = calculateStrokeWidth(oldDepth, rootBaseWidth, rootBranchScale);
-  const newStandardWidth = calculateStrokeWidth(newDepth, rootBaseWidth, rootBranchScale);
+  const oldStandardWidth = calculateStrokeWidth(oldDepth, oldBaseWidth, oldBranchScale);
+  const newStandardWidth = calculateStrokeWidth(newDepth, newBaseWidth, newBranchScale);
   const tolerance = 0.05;
 
   // 1. Update the incoming arrow (the connector)
@@ -5841,10 +5839,15 @@ const updateSubtreeStrokeWidth = (nodeId, newDepth, allElements, rootBaseWidth, 
     eaNode.strokeWidth = newStandardWidth;
   }
 
+  // Stop recursion if this node is an additional root (submap).
+  if (node.customData?.isAdditionalRoot === true) {
+     return;
+  }
+
   // Recurse to children
   const children = getChildrenNodes(nodeId, allElements);
   children.forEach(child => {
-    updateSubtreeStrokeWidth(child.id, newDepth + 1, allElements, rootBaseWidth, rootBranchScale);
+    updateSubtreeStrokeWidth(child.id, newDepth + 1, oldDepth + 1, allElements, newBaseWidth, newBranchScale, oldBaseWidth, oldBranchScale);
   });
 };
 
@@ -5990,9 +5993,6 @@ const changeNodeOrder = async (key) => {
     : (currentSettingsRoot || allElements.find((e) => e.id === info.rootId));
   if (!root) return;
   
-  const rootFontScale = root.customData?.fontsizeScale ?? fontsizeScale;
-  const rootBaseWidth = root.customData?.baseStrokeWidth ?? baseStrokeWidth;
-  const rootBranchScale = root.customData?.branchScale ?? branchScale;
   const rootMulticolor = root.customData?.multicolor ?? multicolor;
 
   if (current.id === root.id) {
@@ -6018,6 +6018,11 @@ const changeNodeOrder = async (key) => {
   const isRadial = (mapMode === "Radial");
 
   const isInPositive = isVerticalMode ? (curCenterY > rootCenterY) : (curCenter > rootCenter);
+
+  // --- GET OLD SETTINGS ROOT AND OLD DEPTH ---
+  const oldSettingsRoot = getSettingsRootNode(parent, allElements) || allElements.find(e => e.id === info.rootId);
+  const oldDepth = getDepthFromAncestor(current.id, oldSettingsRoot.id, allElements);
+  const oldRootCfg = getRootConfigForNode(oldSettingsRoot);
 
   // ---------------------------------------------------------
   // Feature: L1 Node Side Swap 
@@ -6086,19 +6091,24 @@ const changeNodeOrder = async (key) => {
     );
 
     if (arrow) {
+      // Find new settings root and depth relative to the target parent
+      const newSettingsRoot = getSettingsRootNode(grandParent, allElements) || allElements.find(e => e.id === info.rootId);
+      const newRootCfg = getRootConfigForNode(newSettingsRoot);
+      const newDepth = getDepthFromAncestor(grandParent.id, newSettingsRoot.id, allElements) + 1;
+
       reconnectArrow(parent, grandParent, arrow, "start");
       const parentOrder = getMindmapOrder(parent);
       const promoteTargetRoot = parent.customData?.isAdditionalRoot === true
-        ? (getSettingsRootNode(grandParent, allElements) || root)
+        ? newSettingsRoot
         : root;
+      
       ea.copyViewElementsToEAforEditing([current]);
       ea.addAppendUpdateCustomData(current.id, {
         mindmapOrder: isRadial && !isInPositive ? parentOrder - 0.5 : parentOrder + 0.5
       });
-      const parentInfo = getHierarchy(parent, allElements);
       
-      updateSubtreeFontSize(current.id, parentInfo.depth, allElements, rootFontScale);
-      updateSubtreeStrokeWidth(current.id, parentInfo.depth, allElements, rootBaseWidth, rootBranchScale);
+      updateSubtreeFontSize(current.id, newDepth, oldDepth, allElements, newRootCfg.fontsizeScale, oldRootCfg.fontsizeScale);
+      updateSubtreeStrokeWidth(current.id, newDepth, oldDepth, allElements, newRootCfg.baseStrokeWidth, newRootCfg.branchScale, oldRootCfg.baseStrokeWidth, oldRootCfg.branchScale);
 
       // If we are promoting to Level 1 (Child of Root), give it a fresh color if multicolor is on.
       // Otherwise, it keeps the parent's color (which is now its sibling).
@@ -6160,6 +6170,11 @@ const changeNodeOrder = async (key) => {
     );
 
     if (arrow) {
+      // Find new settings root and calculate depth using the demoted parent context
+      const newSettingsRoot = getSettingsRootNode(newParent, allElements) || allElements.find(e => e.id === info.rootId);
+      const newRootCfg = getRootConfigForNode(newSettingsRoot);
+      const newDepth = getDepthFromAncestor(newParent.id, newSettingsRoot.id, allElements) + 1;
+
       reconnectArrow(parent, newParent, arrow, "start");
       // Determine new order: Append as last child of new parent
       const newParentChildren = getChildrenNodes(newParent.id, allElements);
@@ -6177,15 +6192,8 @@ const changeNodeOrder = async (key) => {
           ea.addAppendUpdateCustomData(current.id, { mindmapOrder: nextOrder });
       }
       
-      // New depth is Parent's Depth + 2 (Child of Sibling)
-      const parentInfo = getHierarchy(parent, allElements);
-      const newDepth = parentInfo.depth + 2;
-
-      // Update Fonts
-      updateSubtreeFontSize(current.id, newDepth, allElements, rootFontScale);
-
-      // Update Strokes
-      updateSubtreeStrokeWidth(current.id, newDepth, allElements, rootBaseWidth, rootBranchScale);
+      updateSubtreeFontSize(current.id, newDepth, oldDepth, allElements, newRootCfg.fontsizeScale, oldRootCfg.fontsizeScale);
+      updateSubtreeStrokeWidth(current.id, newDepth, oldDepth, allElements, newRootCfg.baseStrokeWidth, newRootCfg.branchScale, oldRootCfg.baseStrokeWidth, oldRootCfg.branchScale);
 
       // Update Colors (Demotion)
       // Adopt new parent's color if we are moving from a uniform branch
