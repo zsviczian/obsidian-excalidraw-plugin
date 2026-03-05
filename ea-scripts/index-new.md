@@ -151,6 +151,7 @@ These are the scripts I use most often. I tried to order them by importance, but
 |----|-----|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Boolean%20Operations.svg"/></div>|[[#Boolean Operations]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Custom%20Zoom.svg"/></div>|[[#Custom Zoom]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Mouse%20Wheel%20Zoom.svg"/></div>|[[#Mouse Wheel Zoom]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Copy%20Selected%20Element%20Styles%20to%20Global.svg"/></div>|[[#Copy Selected Element Styles to Global]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/ExcaliAI.svg"/></div>|[[#ExcaliAI]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Excalidraw%20Writing%20Machine.svg"/></div>|[[#Excalidraw Writing Machine]]|
@@ -489,6 +490,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Modify%20background%20color%20opacity.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Modify%20background%20color%20opacity.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script changes the opacity of the background color of the selected boxes. The default background color in Excalidraw is so dark that the text is hard to read. You can lighten the color a bit by setting transparency. And you can tweak the transparency over and over again until you're happy with it. Although excalidraw has the opacity option in its native property Settings, it also changes the transparency of the border. Use this script to change only the opacity of the background color without affecting the border.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-modify-background-color-opacity.png'></td></tr></table>
+
+## Mouse Wheel Zoom
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Mouse%20Wheel%20Zoom.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/OMEG-Lu'>@OMEG-Lu</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Mouse%20Wheel%20Zoom.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Automatically converts mouse wheel scroll into zoom in/out, while leaving trackpad gestures unaffected (two-finger scroll still pans, pinch still zooms). The script detects whether a wheel event comes from a mouse or a trackpad using heuristics and re-dispatches mouse wheel events as zoom-toward-cursor actions. Run the script again to toggle the behavior off.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-mouse-wheel-zoom.png'></td></tr></table>
 
 ## Normalize Selected Arrows
 ```excalidraw-script-install
