@@ -5069,6 +5069,7 @@ const getTextFromNode = (all, node, getRaw = false, shortPath = false) => {
 
 /**
 // Copies the selected tree or branch to the clipboard as Markdown text.
+// Now supports extracting Submaps into separate ## Headings referenced by ![[#Links]]
 **/
 const copyMapAsText = async (cut = false, toClipboard = true) => {
   if (!isViewSet()) return;
@@ -5086,9 +5087,9 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
 
   // Retrieve root to determine growthMode for sorting logic
   const root = all.find(el => el.id === info.rootId);
-  const mode = root?.customData?.growthMode || currentModalGrowthMode;
+  const defaultMode = root?.customData?.growthMode || currentModalGrowthMode;
 
-  const elementsToDelete = [];
+  const elementsToDelete =[];
 
   const useTab = app.vault.getConfig("useTab");
   const tabSize = app.vault.getConfig("tabSize");
@@ -5124,7 +5125,7 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
 
       // Record outgoing link for source
       if (!nodeOutgoingLinks.has(startId)) {
-        nodeOutgoingLinks.set(startId, []);
+        nodeOutgoingLinks.set(startId,[]);
       }
       
       // Check for label on the arrow
@@ -5147,7 +5148,9 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
     });
   }
 
-  const buildList = (nodeId, depth = 0) => {
+  const submapsQueue =[];
+
+  const buildList = (nodeId, depth = 0, isSubmapChild = false, isPrintRoot = false) => {
     const node = all.find((e) => e.id === nodeId);
     if (!node) return "";
 
@@ -5170,42 +5173,12 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
       }
     }
 
-    // --- Visual Sorting Logic ---
-    let children = getChildrenNodes(nodeId, all);
-    const parentCenter = { x: node.x + node.width / 2, y: node.y + node.height / 2 };
-
-    if (mode === "Radial") {
-      // Radial: Clockwise starting from Top (12 o'clock)
-      children.sort((a, b) => {
-          const centerA = { x: a.x + a.width / 2, y: a.y + a.height / 2 };
-          const centerB = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
-          return getAngleFromCenter(parentCenter, centerA) - getAngleFromCenter(parentCenter, centerB);
-      });
-    } else if (mode === "Right-Left" && nodeId === info.rootId) {
-      // Right-Left Root: Right side (Top->Bottom) THEN Left side (Top->Bottom)
-      const right = [];
-      const left = [];
-      
-      children.forEach(child => {
-          const childCx = child.x + child.width / 2;
-          if (childCx > parentCenter.x) right.push(child);
-          else left.push(child);
-      });
-      
-      right.sort((a, b) => a.y - b.y);
-      left.sort((a, b) => a.y - b.y);
-      
-      children = [...right, ...left];
-    } else {
-      // Linear Modes (Right, Left) or Sub-branches: Top to Bottom
-      children.sort((a, b) => a.y - b.y);
-    }
-
     let str = "";
     let text = getTextFromNode(all, node);
 
     let ontologyStr = "";
-    if (!isRootSelected || depth > 0) {
+    // Fetch ontology if it's not the absolute root, or if it's a child within a submap layout
+    if ((!isRootSelected || depth > 0) || isSubmapChild) {
       const incomingArrow = all.find(
         (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === nodeId
       );
@@ -5214,33 +5187,72 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
         if (boundTextEl && boundTextEl.rawText) {
           // Replace newlines with spaces so it stays on one line
           ontologyStr = boundTextEl.rawText.replace(/\n/g, " ") + ":: ";
-          elementsToDelete.push(boundTextEl);
+          if (cut) elementsToDelete.push(boundTextEl);
         }
       }
     }
 
     // --- Append Metadata Suffixes ---
-    
-    // 1. Outgoing Crosslinks
-    if (nodeOutgoingLinks.has(nodeId)) {
-      const links = nodeOutgoingLinks.get(nodeId).join(" ");
-      text += ` ${links}`;
+    let refSuffixes = "";
+    if (nodeOutgoingLinks.has(nodeId)) refSuffixes += ` ${nodeOutgoingLinks.get(nodeId).join(" ")}`;
+    if (node.customData?.boundaryId) refSuffixes += " #boundary";
+    if (nodeBlockRefs.has(nodeId)) refSuffixes += ` ${nodeBlockRefs.get(nodeId)}`;
+
+    // --- Submap Extraction Logic ---
+    // If this node is an additional root AND it's not the immediate element we are printing the section for
+    if (!isPrintRoot && node.customData?.isAdditionalRoot) {
+      let submapTitle = text;
+      // Clean up Image strings to use as clean anchor links
+      if (submapTitle.startsWith("![[") && submapTitle.endsWith("]]")) {
+          submapTitle = submapTitle.slice(3, -2).split("|")[0];
+      } else if (submapTitle.startsWith("![") && submapTitle.endsWith(")")) {
+          submapTitle = "Submap " + nodeId.substring(0, 4);
+      }
+      
+      const linkText = `![[#${submapTitle}]]`;
+      const repeatCount = Math.max(0, depth - (isRootSelected ? 1 : 0));
+      let currentIndent = isSubmapChild ? indentVal.repeat(depth) : indentVal.repeat(repeatCount);
+      
+      str += `${currentIndent}- ${ontologyStr}${linkText}${refSuffixes}${lineSeparator}`;
+      submapsQueue.push({ id: nodeId, title: submapTitle });
+      
+      return str; // Do not recurse into children here; they belong in the ## section
     }
 
-    // 2. Boundary Tag
-    if (!!node.customData?.boundaryId) {
-      text += " #boundary";
-    }
-
-    // 3. Incoming Block Reference (Must be last)
-    if (nodeBlockRefs.has(nodeId)) {
-      text += ` ${nodeBlockRefs.get(nodeId)}`;
-    }
-
-    if (depth === 0 && isRootSelected) {
-      str += `# ${ontologyStr}${text}${lineSeparator}`;
+    if (depth === 0 && isRootSelected && !isSubmapChild) {
+      str += `# ${ontologyStr}${text}${refSuffixes}${lineSeparator}`;
     } else {
-      str += `${indentVal.repeat(depth - (isRootSelected ? 1 : 0))}- ${ontologyStr}${text}${lineSeparator}`;
+      const repeatCount = Math.max(0, depth - (isRootSelected ? 1 : 0));
+      let currentIndent = isSubmapChild ? indentVal.repeat(depth) : indentVal.repeat(repeatCount);
+      str += `${currentIndent}- ${ontologyStr}${text}${refSuffixes}${lineSeparator}`;
+    }
+
+    // --- Visual Sorting Logic ---
+    let children = getChildrenNodes(nodeId, all);
+    const parentCenter = { x: node.x + node.width / 2, y: node.y + node.height / 2 };
+    
+    // Honor local submap modes
+    const mode = node.customData?.isAdditionalRoot ? node.customData.growthMode : defaultMode;
+
+    if (mode === "Radial") {
+      children.sort((a, b) => {
+          const centerA = { x: a.x + a.width / 2, y: a.y + a.height / 2 };
+          const centerB = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+          return getAngleFromCenter(parentCenter, centerA) - getAngleFromCenter(parentCenter, centerB);
+      });
+    } else if (mode === "Right-Left" && nodeId === info.rootId) {
+      const right = [];
+      const left =[];
+      children.forEach(child => {
+          const childCx = child.x + child.width / 2;
+          if (childCx > parentCenter.x) right.push(child);
+          else left.push(child);
+      });
+      right.sort((a, b) => a.y - b.y);
+      left.sort((a, b) => a.y - b.y);
+      children = [...right, ...left];
+    } else {
+      children.sort((a, b) => a.y - b.y);
     }
 
     children.forEach((c) => {
@@ -5254,12 +5266,65 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
         );
         if (arrow) elementsToDelete.push(arrow);
       }
-      str += buildList(c.id, depth + 1);
+      // Children of a printRoot are not the printRoot
+      str += buildList(c.id, depth + 1, isSubmapChild, false); 
     });
     return str;
   };
 
-  const md = buildList(sel.id);
+  let md = buildList(sel.id, 0, false, true);
+
+  // --- Process Queued Submaps ---
+  const processedSubmaps = new Set();
+  while (submapsQueue.length > 0) {
+    const submapObj = submapsQueue.shift();
+    if (processedSubmaps.has(submapObj.id)) continue;
+    processedSubmaps.add(submapObj.id);
+
+    md += `\n## ${submapObj.title}\n`;
+
+    const submapNode = all.find(e => e.id === submapObj.id);
+    let children = getChildrenNodes(submapObj.id, all);
+    
+    const parentCenter = { x: submapNode.x + submapNode.width / 2, y: submapNode.y + submapNode.height / 2 };
+    const mode = submapNode.customData?.growthMode || defaultMode;
+
+    if (mode === "Radial") {
+      children.sort((a, b) => {
+          const centerA = { x: a.x + a.width / 2, y: a.y + a.height / 2 };
+          const centerB = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+          return getAngleFromCenter(parentCenter, centerA) - getAngleFromCenter(parentCenter, centerB);
+      });
+    } else if (mode === "Right-Left") {
+      const right = [];
+      const left =[];
+      children.forEach(child => {
+          const childCx = child.x + child.width / 2;
+          if (childCx > parentCenter.x) right.push(child);
+          else left.push(child);
+      });
+      right.sort((a, b) => a.y - b.y);
+      left.sort((a, b) => a.y - b.y);
+      children = [...right, ...left];
+    } else {
+      children.sort((a, b) => a.y - b.y);
+    }
+
+    children.forEach((c) => {
+      if (cut) {
+        const arrow = all.find(
+          (a) =>
+            a.type === "arrow" &&
+            a.customData?.isBranch &&
+            a.startBinding?.elementId === submapObj.id &&
+            a.endBinding?.elementId === c.id,
+        );
+        if (arrow) elementsToDelete.push(arrow);
+      }
+      md += buildList(c.id, 0, true, false);
+    });
+  }
+
   if(toClipboard) await navigator.clipboard.writeText(md);
 
   if (cut) {
@@ -5299,7 +5364,8 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
 };
 
 /**
-// Core logic to parse a list string and add nodes to the map
+// Core logic to parse a list string and add nodes to the map.
+// Now dynamically links "## Submap" definitions to their "![[#Submap]]" embed nodes.
 **/
 const importTextToMap = async (rawText) => {
   if (!isViewSet()) return;
@@ -5315,21 +5381,17 @@ const importTextToMap = async (rawText) => {
   // Regex patterns
   const boundaryRegex = /\s#boundary\b/;
   const blockRefRegex = /\s\^([a-zA-Z0-9]{8})$/;
-  // Crosslink regex handling optional inline field syntax: (key:: [[#^ref|*]])
-  // Captures: 1=key(label), 2=ref
   const crossLinkRegex = /(?:\(([^):]+)::\s*)?\[\[#\^([a-zA-Z0-9]{8})\|\*\]\](?:\))?/g;
   const ontologyRegex = /^(.+?)::\s*(.*)$/;
+  const submapRefRegex = /^!\[\[#([^\]]+)\]\]$/; // Matches ![[#Submap Name]]
 
   if (lines.length === 1) {
-    // Simple single line logic (existing behavior)
     let text = lines[0].replace(/^(\s*)(?:-|\*|\d+\.)\s+/, "").trim();
     
-    // Cleanup tags for single line paste too
     text = text.replace(boundaryRegex, "");
     text = text.replace(blockRefRegex, "");
     text = text.replace(crossLinkRegex, "");
 
-    // Check for ontology on single line
     const ontologyMatch = text.match(ontologyRegex);
     let ontology = null;
     if (ontologyMatch) {
@@ -5337,8 +5399,18 @@ const importTextToMap = async (rawText) => {
       text = ontologyMatch[2].trim();
     }
 
+    let isSubmapRef = false;
+    const submapRefMatch = text.match(submapRefRegex);
+    if (submapRefMatch) {
+        isSubmapRef = true;
+        text = submapRefMatch[1].trim();
+    }
+
     if (text) {
       currentParent = await addNode(text.trim(), true, false, null, null, null, ontology);
+      if (isSubmapRef) {
+          ea.addAppendUpdateCustomData(currentParent.id, { isAdditionalRoot: true });
+      }
       if (sel) {
         selectNodeInView(sel);
       }
@@ -5346,7 +5418,7 @@ const importTextToMap = async (rawText) => {
     }
   }
 
-  let parsed = [];
+  let parsed =[];
   let rootTextFromHeader = null;
 
   const isHeader = (l) => l.match(/^#+\s/);
@@ -5362,17 +5434,25 @@ const importTextToMap = async (rawText) => {
   const notice = new Notice(t("NOTICE_PASTE_START"), 0);
   await sleep(10);
 
-  // Maps for crosslink reconstruction
+  // Maps for crosslink & submap reconstruction
   const blockRefToNodeId = new Map(); // ^12345678 -> newNodeId
   const nodeToOutgoingRefs = new Map(); // newNodeId -> [{ref: string, label: string}, ...]
   
-  lines.forEach((line) => {
+  lines.forEach((line, index) => {
     let text = "";
     let indent = 0;
+    let isSubmapDef = false;
     
     if (isHeader(line)) {
-      indent = 0;
-      text = line.replace(/^#+\s/, "").trim();
+      if (index === 0) {
+        indent = 0;
+        text = line.replace(/^#+\s/, "").trim();
+      } else {
+        // Subsequent headers signify details of a Submap
+        isSubmapDef = true;
+        text = line.replace(/^#+\s/, "").trim();
+        indent = -1; // Special indent pushes it strictly below its parent in stack validation
+      }
     } else {
       const match = isListItem(line);
       if (match) {
@@ -5381,16 +5461,14 @@ const importTextToMap = async (rawText) => {
       } else if (parsed.length > 0) {
         // multiline handling
         parsed[parsed.length - 1].text += "\n" + line.trim();
-        return; // Skip the rest of processing for continuation lines
+        return; 
       }
     }
 
-    if (text) {
-      // 1. Check for Boundary
+    if (text || isSubmapDef) {
       const hasBoundary = boundaryRegex.test(text);
       text = text.replace(boundaryRegex, "");
 
-      // 2. Check for Block Ref (ID)
       const refMatch = text.match(blockRefRegex);
       let blockRef = null;
       if (refMatch) {
@@ -5398,33 +5476,37 @@ const importTextToMap = async (rawText) => {
         text = text.replace(blockRefRegex, "");
       }
 
-      // 3. Check for Crosslinks (Outgoing)
-      const outgoingRefs = [];
+      const outgoingRefs =[];
       crossLinkRegex.lastIndex = 0;
-      
       text = text.replace(crossLinkRegex, (_match, label, ref) => {
-        outgoingRefs.push({
-          ref: ref,
-          label: label ? label.trim() : null
-        });
+        outgoingRefs.push({ ref: ref, label: label ? label.trim() : null });
         return "";
       });
 
-      // Non-greedy match for the first "::" separator
       const ontologyMatch = text.match(ontologyRegex);
       let ontology = null;
       if (ontologyMatch) {
         ontology = ontologyMatch[1].trim();
         text = ontologyMatch[2].trim();
       }
+      
+      let isSubmapRef = false;
+      text = text.trim();
+      const submapRefMatch = text.match(submapRefRegex);
+      if (submapRefMatch) {
+          isSubmapRef = true;
+          text = submapRefMatch[1].trim();
+      }
 
       parsed.push({ 
         indent, 
-        text: text.trim(),
+        text,
         hasBoundary,
         blockRef,
         outgoingRefs,
-        ontology // Pass the extracted ontology
+        ontology,
+        isSubmapDef,
+        isSubmapRef
       });
     }
   });
@@ -5437,10 +5519,8 @@ const importTextToMap = async (rawText) => {
   ea.clear();
 
   const rootSelected = !!sel;
-  // Track boundaries created during this import to fix their z-index later
-  const createdBoundaries = [];
+  const createdBoundaries =[];
 
-  // Helper to create boundary during import (mimics toggleBoundary logic)
   const createImportBoundary = (nodeId) => {
     const node = ea.getElement(nodeId);
     if (!node) return;
@@ -5462,7 +5542,7 @@ const importTextToMap = async (rawText) => {
       points: [[0,0], [1,1], [0,0]],
       polygon: true,
       locked: false,
-      groupIds: node.groupIds || [],
+      groupIds: node.groupIds ||[],
       customData: {isBoundary: true},
       roundness: arrowType === "curved" ? {type: 2} : null,
     };
@@ -5472,24 +5552,28 @@ const importTextToMap = async (rawText) => {
     createdBoundaries.push({ nodeId, boundaryId: id });
   };
 
+  const submapNodesByName = new Map();
+
   if (!sel) {
     const minIndent = Math.min(...parsed.map((p) => p.indent));
-    const topLevelItems = parsed.filter((p) => p.indent === minIndent);
+    const topLevelItems = parsed.filter((p) => p.indent === minIndent && !p.isSubmapDef);
     
-    // Helper to process metadata on the root/first node
     const processRootMeta = (item, id) => {
         if(item.blockRef) blockRefToNodeId.set(item.blockRef, id);
         if(item.outgoingRefs.length > 0) nodeToOutgoingRefs.set(id, item.outgoingRefs);
         if(item.hasBoundary) createImportBoundary(id);
+        if(item.isSubmapRef) {
+            ea.addAppendUpdateCustomData(id, { isAdditionalRoot: true });
+            submapNodesByName.set(item.text, ea.getElement(id));
+        }
     };
 
     if (topLevelItems.length === 1) {
-      // Pass the root's ontology if it exists
       sel = currentParent = await addNode(topLevelItems[0].text, true, true, [], null, null, topLevelItems[0].ontology);
       processRootMeta(topLevelItems[0], currentParent.id);
       parsed.shift();
     } else {
-      sel = currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true, [], null);
+      sel = currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true,[], null);
     }
   } else {
     currentParent = sel;
@@ -5499,15 +5583,32 @@ const importTextToMap = async (rawText) => {
 
   const stack = [{ indent: -1, node: currentParent }];
 
-if (rootSelected) {
+  if (rootSelected) {
     const allViewElements = ea.getViewElements();
     const info = getHierarchy(sel, allViewElements);
     const projectElements = getMindmapProjectElements(info.rootId, allViewElements);
-    // ensure EA has copies of existing tree elements, not the entire scene
     ea.copyViewElementsToEAforEditing(projectElements.filter(el => !ea.getElement(el.id))); 
   }
   
   for (const item of parsed) {
+    // Relocate stack parser root when encountering a ## Submap Header
+    if (item.isSubmapDef) {
+        const targetNode = submapNodesByName.get(item.text);
+        if (targetNode) {
+            stack.length = 0;
+            stack.push({ indent: -1, node: targetNode });
+        } else {
+            // Edge case: Submap def without embed. Create at root to salvage data.
+            const currentAllElements = ea.getElements();
+            const newNode = await addNode(item.text, false, true, currentAllElements, currentParent, null, null);
+            ea.addAppendUpdateCustomData(newNode.id, { isAdditionalRoot: true });
+            submapNodesByName.set(item.text, newNode);
+            stack.length = 0;
+            stack.push({ indent: -1, node: newNode });
+        }
+        continue;
+    }
+
     while (stack.length > 1 && item.indent <= stack[stack.length - 1].indent) {
       stack.pop();
     }
@@ -5519,6 +5620,10 @@ if (rootSelected) {
     if (item.blockRef) blockRefToNodeId.set(item.blockRef, newNode.id);
     if (item.outgoingRefs.length > 0) nodeToOutgoingRefs.set(newNode.id, item.outgoingRefs);
     if (item.hasBoundary) createImportBoundary(newNode.id);
+    if (item.isSubmapRef) {
+        ea.addAppendUpdateCustomData(newNode.id, { isAdditionalRoot: true });
+        submapNodesByName.set(item.text, newNode);
+    }
     
     stack.push({ indent: item.indent, node: newNode });
   }
@@ -5576,25 +5681,17 @@ if (rootSelected) {
         )
       );
 
-      // Sort by assigned mindmapOrder to preserve import sequence
       importedL1Nodes.sort((a, b) => (a.customData?.mindmapOrder || 0) - (b.customData?.mindmapOrder || 0));
 
       if (importedL1Nodes.length > 0) {
-        // Balanced Distribution:
-        // First half -> Right
-        // Second half -> Left
-        // (If odd, Right gets one more)
         const splitIndex = Math.ceil(importedL1Nodes.length / 2);
 
         importedL1Nodes.forEach((node, i) => {
-          // Remove mindmapNew flag to bypass alternating distribution in triggerGlobalLayout
           ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
           
           if (i < splitIndex) {
-             // Right Side: Force position to the right of root
              node.x = rootElForImport.x + rootElForImport.width + 100;
           } else {
-             // Left Side: Force position to the left of root
              node.x = rootElForImport.x - node.width - 100;
           }
         });
@@ -5605,7 +5702,7 @@ if (rootSelected) {
   await addElementsToView({
     repositionToCursor: !rootSelected,
     captureUpdate: "EVENTUALLY"
-  }); // in case there are images in the imported map
+  });
 
   // -------------------------------------------------------------------------
   //  Fix Z-Index for Created Boundaries (Parents Below Children)
@@ -5615,22 +5712,18 @@ if (rootSelected) {
     
     const boundariesWithDepth = createdBoundaries.map(b => {
       const node = allEls.find(e => e.id === b.nodeId);
-      // If node not found (rare), default to 0
       const depth = node ? getHierarchy(node, allEls).depth : 0;
       return { ...b, depth };
     });
 
-    // Sort ascending depth (root -> leaves) so we position parents first
     boundariesWithDepth.sort((a, b) => a.depth - b.depth);
 
     for (const b of boundariesWithDepth) {
-      // Refresh view elements to get up-to-date indices after previous moves
       const currentEls = ea.getViewElements();
       
       let parentBoundaryIndex = -1;
       let curr = currentEls.find(e => e.id === b.nodeId);
 
-      // Find nearest ancestor with a boundary
       while (curr) {
         const parent = getParentNode(curr.id, currentEls);
         if (!parent) break;
@@ -5644,7 +5737,6 @@ if (rootSelected) {
         curr = parent;
       }
       
-      // If parent boundary exists, place this one above it. Else bottom (0).
       const targetIndex = parentBoundaryIndex !== -1 ? parentBoundaryIndex + 1 : 0;
       ea.moveViewElementToZIndex(b.boundaryId, targetIndex);
     }
@@ -5894,6 +5986,17 @@ const updateSubtreeColor = (nodeId, oldColor, newColor, allElements) => {
     if (!ea.getElement(incomingArrow.id)) ea.copyViewElementsToEAforEditing([incomingArrow]);
     const eaArrow = ea.getElement(incomingArrow.id);
     eaArrow.strokeColor = newColor;
+
+    // Update the Ontology label (bound text element) of the arrow
+    const maybeTextElement = ea.getBoundTextElement(incomingArrow, true);
+    let eaOntologyEl = maybeTextElement.eaElement;
+    if (!eaOntologyEl && maybeTextElement.sceneElement) {
+      ea.copyViewElementsToEAforEditing([maybeTextElement.sceneElement]);
+      eaOntologyEl = ea.getElement(maybeTextElement.sceneElement.id);
+    }
+    if (eaOntologyEl) {
+      eaOntologyEl.strokeColor = newColor;
+    }
   }
 
   const children = getChildrenNodes(nodeId, allElements);
@@ -5992,8 +6095,6 @@ const changeNodeOrder = async (key) => {
     ? (getSettingsRootNode(parent, allElements) || currentSettingsRoot || allElements.find((e) => e.id === info.rootId))
     : (currentSettingsRoot || allElements.find((e) => e.id === info.rootId));
   if (!root) return;
-  
-  const rootMulticolor = root.customData?.multicolor ?? multicolor;
 
   if (current.id === root.id) {
     new Notice(t("NOTICE_CANNOT_MOVE_ROOT"));
@@ -6110,16 +6211,25 @@ const changeNodeOrder = async (key) => {
       updateSubtreeFontSize(current.id, newDepth, oldDepth, allElements, newRootCfg.fontsizeScale, oldRootCfg.fontsizeScale);
       updateSubtreeStrokeWidth(current.id, newDepth, oldDepth, allElements, newRootCfg.baseStrokeWidth, newRootCfg.branchScale, oldRootCfg.baseStrokeWidth, oldRootCfg.branchScale);
 
-      // If we are promoting to Level 1 (Child of Root), give it a fresh color if multicolor is on.
-      // Otherwise, it keeps the parent's color (which is now its sibling).
-      if (grandParent.id === root.id && rootMulticolor) {
-         let newColor = current.customData?.previousL1Color;
-         if (!newColor) {
-             const existingL1Colors = getChildrenNodes(root.id, allElements).map(n => n.strokeColor);
-             newColor = getDynamicColor(existingL1Colors);
-         }
-         updateSubtreeColor(current.id, current.strokeColor, newColor, allElements);
+      // --- Update Colors (Promotion) ---
+      const isTargetL1 = (grandParent.id === promoteTargetRoot.id);
+      let targetColor;
+      
+      if (isTargetL1) {
+          if (newRootCfg.multicolor) {
+              targetColor = current.customData?.previousL1Color;
+              if (!targetColor) {
+                  const existingL1Colors = getChildrenNodes(promoteTargetRoot.id, allElements).map(n => n.strokeColor);
+                  targetColor = getDynamicColor(existingL1Colors);
+              }
+          } else {
+              targetColor = promoteTargetRoot.strokeColor;
+          }
+      } else {
+          targetColor = grandParent.strokeColor;
       }
+      
+      updateSubtreeColor(current.id, current.strokeColor, targetColor, allElements);
 
       await addElementsToView({ captureUpdate: "EVENTUALLY" });
       triggerGlobalLayout(promoteTargetRoot.id, false, true);
@@ -6182,8 +6292,8 @@ const changeNodeOrder = async (key) => {
       
       ea.copyViewElementsToEAforEditing([current]);
       
-      // Store previous L1 color if we are demoting from L1
-      if (parent.id === root.id) {
+      // Store previous L1 color if we are demoting from an L1 position
+      if (parent.id === oldSettingsRoot.id) {
           ea.addAppendUpdateCustomData(current.id, { 
               mindmapOrder: nextOrder,
               previousL1Color: current.strokeColor
@@ -6195,9 +6305,23 @@ const changeNodeOrder = async (key) => {
       updateSubtreeFontSize(current.id, newDepth, oldDepth, allElements, newRootCfg.fontsizeScale, oldRootCfg.fontsizeScale);
       updateSubtreeStrokeWidth(current.id, newDepth, oldDepth, allElements, newRootCfg.baseStrokeWidth, newRootCfg.branchScale, oldRootCfg.baseStrokeWidth, oldRootCfg.branchScale);
 
-      // Update Colors (Demotion)
-      // Adopt new parent's color if we are moving from a uniform branch
-      updateSubtreeColor(current.id, current.strokeColor, newParent.strokeColor, allElements);
+      // --- Update Colors (Demotion) ---
+      // If the node we are attaching to IS a settings root, we are becoming an L1 of a submap.
+      const isTargetL1 = (newParent.id === newSettingsRoot.id);
+      let targetColor;
+      
+      if (isTargetL1) {
+          if (newRootCfg.multicolor) {
+              const existingL1Colors = getChildrenNodes(newSettingsRoot.id, allElements).map(n => n.strokeColor);
+              targetColor = getDynamicColor(existingL1Colors);
+          } else {
+              targetColor = newSettingsRoot.strokeColor;
+          }
+      } else {
+          targetColor = newParent.strokeColor;
+      }
+
+      updateSubtreeColor(current.id, current.strokeColor, targetColor, allElements);
 
       await addElementsToView({ captureUpdate: "EVENTUALLY" });
       triggerGlobalLayout(root.id, false, true);
