@@ -190,6 +190,7 @@ const STRINGS = {
     ACTION_LABEL_HIDE: "Dock & hide",
     ACTION_LABEL_REARRANGE: "Rearrange Map",
     ACTION_LABEL_TOGGLE_SUBMAP_ROOT: "Start/End Submap Root",
+    ACTION_LABEL_TOGGLE_CHECKBOX: "Toggle Checkbox Status",
 
     // Tooltips (shared)
     PIN_TOOLTIP_PINNED: "This element is pinned. Click to unpin the location of the selected element",
@@ -220,6 +221,7 @@ const STRINGS = {
     TOOLTIP_RESET_TO_DEFAULT: "Reset to default",
     TOOLTIP_SUBMAP_ROOT_ADD: "Start submap from selected node",
     TOOLTIP_SUBMAP_ROOT_REMOVE: "Convert submap root back to a normal node",
+    TOOLTIP_TOGGLE_CHECKBOX: "Toggle task checkbox status",
 
     // Buttons and labels
     DOCK_TITLE: "Mind Map Builder",
@@ -433,6 +435,7 @@ addLocale("zh", {
   ACTION_LABEL_HIDE: "停靠 & 隐藏",
   ACTION_LABEL_REARRANGE: "重排导图",
   ACTION_LABEL_TOGGLE_SUBMAP_ROOT: "开始/结束子图根节点",
+  ACTION_LABEL_TOGGLE_CHECKBOX: "切换复选框状态",
 
   // Tooltips (shared)
   PIN_TOOLTIP_PINNED: "此元素已锁定。点击解锁所选元素的位置。",
@@ -463,6 +466,7 @@ addLocale("zh", {
   TOOLTIP_RESET_TO_DEFAULT: "恢复默认",
   TOOLTIP_SUBMAP_ROOT_ADD: "从所选节点开始子图",
   TOOLTIP_SUBMAP_ROOT_REMOVE: "将子图根节点恢复为普通节点",
+  TOOLTIP_TOGGLE_CHECKBOX: "切换任务复选框状态",
 
   // Buttons and labels
   DOCK_TITLE: "MindMap Builder",
@@ -1051,6 +1055,7 @@ const ACTION_ADD_FOLLOW_FOCUS = "Add + follow + focus";
 const ACTION_ADD_FOLLOW_ZOOM = "Add + follow + zoom";
 const ACTION_SORT_ORDER = "Change Order/Promote Node";
 const ACTION_EDIT = "Edit node";
+const ACTION_TOGGLE_CHECKBOX = "Toggle Checkbox";
 const ACTION_PIN = "Pin/Unpin";
 const ACTION_BOX = "Box/Unbox";
 const ACTION_TOGGLE_GROUP = "Group/Ungroup Single Branch";
@@ -1089,6 +1094,7 @@ const ACTION_LABEL_KEYS = {
   [ACTION_ADD_FOLLOW_ZOOM]: "ACTION_LABEL_ADD_FOLLOW_ZOOM",
   [ACTION_SORT_ORDER]: "ACTION_LABEL_SORT_ORDER",
   [ACTION_EDIT]: "ACTION_LABEL_EDIT",
+  [ACTION_TOGGLE_CHECKBOX]: "ACTION_LABEL_TOGGLE_CHECKBOX",
   [ACTION_PIN]: "ACTION_LABEL_PIN",
   [ACTION_BOX]: "ACTION_LABEL_BOX",
   [ACTION_TOGGLE_GROUP]: "ACTION_LABEL_TOGGLE_GROUP",
@@ -1140,6 +1146,7 @@ const DEFAULT_HOTKEYS = [
   { action: ACTION_EDIT, code: "KeyE", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: false },
 
   // Structure Modifiers
+  { action: ACTION_TOGGLE_CHECKBOX, code: "KeyL", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
   { action: ACTION_TOGGLE_BOUNDARY, code: "KeyB", modifiers: ["Alt", "Shift"], scope: SCOPE.input, inputOnly: false },
@@ -5198,6 +5205,16 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
     if (node.customData?.boundaryId) refSuffixes += " #boundary";
     if (nodeBlockRefs.has(nodeId)) refSuffixes += ` ${nodeBlockRefs.get(nodeId)}`;
 
+     // --- Extract Task Info ---
+     let isTask = false;
+     let taskPrefix = "";
+     const taskMatch = text.match(/^- \[[ xX]\] /);
+     if (taskMatch) {
+       isTask = true;
+       taskPrefix = taskMatch[0]; // Retain "- [ ] " or "- [x] "
+       text = text.substring(taskPrefix.length); // Strip it temporarily for clean assembly
+     }
+
     // --- Submap Extraction Logic ---
     // If this node is an additional root AND it's not the immediate element we are printing the section for
     if (!isPrintRoot && node.customData?.isAdditionalRoot) {
@@ -5212,19 +5229,28 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
       const linkText = `![[#${submapTitle}]]`;
       const repeatCount = Math.max(0, depth - (isRootSelected ? 1 : 0));
       let currentIndent = isSubmapChild ? indentVal.repeat(depth) : indentVal.repeat(repeatCount);
-      
-      str += `${currentIndent}- ${ontologyStr}${linkText}${refSuffixes}${lineSeparator}`;
+
+      // Inject task prefix if available
+      if (isTask) {
+        str += `${currentIndent}${taskPrefix}${ontologyStr}${linkText}${refSuffixes}${lineSeparator}`;
+      } else {
+        str += `${currentIndent}- ${ontologyStr}${linkText}${refSuffixes}${lineSeparator}`;
+      }
       submapsQueue.push({ id: nodeId, title: submapTitle });
       
       return str; // Do not recurse into children here; they belong in the ## section
     }
 
     if (depth === 0 && isRootSelected && !isSubmapChild) {
-      str += `# ${ontologyStr}${text}${refSuffixes}${lineSeparator}`;
+      str += `# ${taskPrefix}${ontologyStr}${text}${refSuffixes}${lineSeparator}`;
     } else {
       const repeatCount = Math.max(0, depth - (isRootSelected ? 1 : 0));
       let currentIndent = isSubmapChild ? indentVal.repeat(depth) : indentVal.repeat(repeatCount);
-      str += `${currentIndent}- ${ontologyStr}${text}${refSuffixes}${lineSeparator}`;
+      if (isTask) {
+        str += `${currentIndent}${taskPrefix}${ontologyStr}${text}${refSuffixes}${lineSeparator}`;
+      } else {
+        str += `${currentIndent}- ${ontologyStr}${text}${refSuffixes}${lineSeparator}`;
+      }
     }
 
     // --- Visual Sorting Logic ---
@@ -5386,7 +5412,17 @@ const importTextToMap = async (rawText) => {
   const submapRefRegex = /^!\[\[#([^\]]+)\]\]$/; // Matches ![[#Submap Name]]
 
   if (lines.length === 1) {
-    let text = lines[0].replace(/^(\s*)(?:-|\*|\d+\.)\s+/, "").trim();
+     let text = lines[0];
+     const listMatch = text.match(/^(\s*)(?:-|\*|\d+\.)\s+(.*)$/);
+     if (listMatch) {
+       text = listMatch[2].trim();
+       if (/^\[[ xX]\] /.test(text)) {
+          // Retain task syntax if it was an imported list item
+          text = "- " + text;
+       }
+     } else {
+       text = text.trim();
+     }
     
     text = text.replace(boundaryRegex, "");
     text = text.replace(blockRefRegex, "");
@@ -5457,7 +5493,12 @@ const importTextToMap = async (rawText) => {
       const match = isListItem(line);
       if (match) {
         indent = delta + match[1].length;
-        text = match[2].trim();
+        let extractedText = match[2].trim();
+        // Check if list item has task bracket syntax
+        if (/^\[[ xX]\] /.test(extractedText)) {
+            extractedText = "- " + extractedText;
+        }
+        text = extractedText;
       } else if (parsed.length > 0) {
         // multiline handling
         parsed[parsed.length - 1].text += "\n" + line.trim();
@@ -6856,6 +6897,62 @@ const togglePin = async () => {
   }
 };
 
+const toggleCheckboxStatus = async () => {
+  if (!isViewSet()) return;
+  const sel = getMindmapNodeFromSelection();
+  if (!sel) return;
+
+  const all = ea.getViewElements();
+  // Find the text element specifically (if it's a container, grab its bound text)
+  let textElId = sel.type === "text" ? sel.id : null;
+  if (!textElId && sel.boundElements) {
+    const boundText = sel.boundElements.find(be => be.type === "text");
+    if (boundText) textElId = boundText.id;
+  }
+  if (!textElId) return;
+
+  const textEl = all.find(el => el.id === textElId);
+  if (!textEl) return;
+
+  let rawText = textEl.rawText;
+  const taskRegex = /^- \[([ xX])\] (.*)/s; // Regex to catch '- [ ] ' or '- [x] ' including newlines
+  const match = rawText.match(taskRegex);
+
+  let newText = "";
+  if (match) {
+    const status = match[1];
+    const content = match[2];
+    if (status === " ") {
+      newText = `- [x] ${content}`; // Complete it
+    } else {
+      newText = `${content}`; // Remove task
+    }
+  } else {
+    newText = `- [ ] ${rawText}`; // Not a task -> make it a task
+  }
+
+  ea.copyViewElementsToEAforEditing([textEl]);
+  const eaEl = ea.getElement(textEl.id);
+  eaEl.rawText = newText;
+  eaEl.text = newText;
+  eaEl.originalText = newText;
+  ea.refreshTextElementSize(eaEl.id);
+
+  await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
+
+  // Excalidraw dynamically updates the container size when text changes
+  if (eaEl.containerId) {
+     const updatedContainer = ea.getViewElements().find(el => el.id === eaEl.containerId);
+     if(updatedContainer) api().updateContainerSize([updatedContainer]);
+  }
+
+  // Refresh Map layout in case the new checkbox padding alters the box width
+  if (!autoLayoutDisabled) {
+     const info = getHierarchy(sel, ea.getViewElements());
+     await triggerGlobalLayout(info.rootId);
+  }
+};
+
 const padding = layoutSettings.CONTAINER_PADDING;
 /**
  * Toggles a bounding box around the selected text element (node).
@@ -7044,7 +7141,7 @@ let toggleGroupBtn, zoomBtn, focusBtn, boundaryBtn;
 let submapRootBtn;
 let foldBtnL0, foldBtnL1, foldBtnAll;
 let floatingGroupBtn, floatingBoxBtn, floatingZoomBtn;
-let panelExpandBtn, importOutlineBtn;
+let panelExpandBtn, importOutlineBtn, toggleCheckboxBtn;
 let isFloatingPanelExpanded = false;
 let toggleFloatingExtras = null;
 let inputContainer;
@@ -7153,6 +7250,7 @@ const disableUI = () => {
   setButtonDisabled(focusBtn, true);
   setButtonDisabled(boundaryBtn, true);
   setButtonDisabled(submapRootBtn, true);
+  setButtonDisabled(toggleCheckboxBtn, true);
   setButtonDisabled(floatingGroupBtn, true);
   setButtonDisabled(floatingBoxBtn, true);
   setButtonDisabled(floatingZoomBtn, true);
@@ -7188,6 +7286,12 @@ const updateUI = (sel) => {
     const hasGrandChildren = hasChildren && children.some(child => getChildrenNodes(child.id, all).length > 0);
     const nodeText = getTextFromNode(all, sel, true, false);
     const isLinkedFile = !!getNodeMarkdownFile(nodeText);
+
+    // Add logic to enable/disable checkbox button
+    if (toggleCheckboxBtn) {
+      const isTextNode = sel.type === "text" || (sel.boundElements && sel.boundElements.some(be => be.type === "text"));
+      setButtonDisabled(toggleCheckboxBtn, !isTextNode);
+    }
 
     if (pinBtn) {
       pinBtn.setIcon(isPinned ? "pin" : "pin-off");
@@ -8150,7 +8254,7 @@ const renderInput = (container, isFloating = false) => {
   foldBtnL0 = foldBtnL1 = foldBtnAll = null;
   boundaryBtn = panelExpandBtn = null;
   floatingGroupBtn = floatingBoxBtn = floatingZoomBtn = null;
-  importOutlineBtn = null;
+  importOutlineBtn = toggleCheckboxBtn = null;
 
   inputRow = new ea.obsidian.Setting(container);
   let secondaryButtonContainer = null;
@@ -8162,7 +8266,7 @@ const renderInput = (container, isFloating = false) => {
     inputRow.controlEl.style.marginTop = "8px";
   } else {
     container.style.width = "70vw";
-    container.style.maxWidth = "450px";
+    container.style.maxWidth = "calc((var(--icon-size) + 2 * var(--size-2-3)) * 17)";
     inputRow.settingEl.style.border = "none";
     inputRow.settingEl.style.padding = "0";
     inputRow.infoEl.style.display = "none";
@@ -8298,6 +8402,15 @@ const renderInput = (container, isFloating = false) => {
     btn.extraSettingsEl.setAttr("action",ACTION_PIN);
     btn.onClick(() => performAction(ACTION_PIN));
   }, false);
+
+  // --- Add the Checkbox Toggle Button ---
+  addButton((btn) => {
+    toggleCheckboxBtn = btn;
+    btn.setIcon("square-check-big");
+    btn.setTooltip(`${t("TOOLTIP_TOGGLE_CHECKBOX")} ${getActionHotkeyString(ACTION_TOGGLE_CHECKBOX)}`);
+    btn.extraSettingsEl.setAttr("action", ACTION_TOGGLE_CHECKBOX);
+    btn.onClick(() => performAction(ACTION_TOGGLE_CHECKBOX));
+  }, true); // moveToSecondary = true puts it in the secondary container
 
   toggleFloatingExtras = null;
 
@@ -9413,6 +9526,11 @@ const performAction = async (action, event) => {
       await togglePin();
       break;
 
+    case ACTION_TOGGLE_CHECKBOX:
+      await toggleCheckboxStatus();
+      updateUI();
+      break;
+
     case ACTION_TOGGLE_SUBMAP_ROOT:
       await toggleSubmapRoot();
       break;
@@ -9705,6 +9823,7 @@ const performAction = async (action, event) => {
     ADD_FOLLOW_FOCUS: ACTION_ADD_FOLLOW_FOCUS,
     ADD_FOLLOW_ZOOM: ACTION_ADD_FOLLOW_ZOOM,
     EDIT: ACTION_EDIT,
+    TOGGLE_CHECKBOX: ACTION_TOGGLE_CHECKBOX,
     PIN: ACTION_PIN,
     BOX: ACTION_BOX,
     TOGGLE_BOUNDARY: ACTION_TOGGLE_BOUNDARY,
