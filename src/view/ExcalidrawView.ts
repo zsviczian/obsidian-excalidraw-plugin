@@ -1112,12 +1112,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       if(!equation) return;
     }
 
-    const isLatexSuitAvailable = !!this.app.plugins.plugins["obsidian-latex-suite"];
-    (isLatexSuitAvailable
-      ? LaTexPrompt.Prompt(this.app, t("ENTER_LATEX"), equation)
-      : GenericInputPrompt.Prompt(
-        this,this.plugin,this.app,t("ENTER_LATEX"),undefined,equation, undefined, 3)
-    ).then(async (formula: string) => {
+    LaTexPrompt.Prompt(this.app, t("ENTER_LATEX"), equation)
+    .then(async (formula: string) => {
       if (!formula || formula === equation) {
         return;
       }
