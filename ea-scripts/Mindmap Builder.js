@@ -2582,6 +2582,16 @@ const getSubtreeHeight = (nodeId, allElements, childrenByParent, heightCache, el
     return foldedHeight;
   }
 
+  // Bypass calculation and use the true visual bounding box for manual submaps
+  if (node.customData?.isAdditionalRoot && node.customData?.autoLayoutDisabled) {
+    const branchIds = getBranchElementIds(nodeId, allElements);
+    const branchElements = allElements.filter(el => branchIds.includes(el.id) && el.opacity > 0 && !el.isDeleted);
+    const bbox = ea.getBoundingBox(branchElements);
+    const height = bbox.height;
+    if (heightCache) heightCache.set(nodeId, height);
+    return height;
+  }
+
   const children = childrenByParent?.get(nodeId) ?? getChildrenNodes(nodeId, allElements);
   const unpinnedChildren = children.filter(child => !child.customData?.isPinned);
 
@@ -2677,7 +2687,8 @@ const getVerticalPlacementWidth = (nodeId, allElements, childrenByParent, widthC
 
   const baseWidth = getSubtreeWidth(nodeId, allElements, childrenByParent, widthCache, elementById);
 
-  if (node.customData?.isAdditionalRoot !== true) {
+  // Short-circuit if this is a manual submap
+  if (node.customData?.isAdditionalRoot !== true || node.customData?.autoLayoutDisabled === true) {
     if (placementWidthCache) placementWidthCache.set(nodeId, baseWidth);
     return baseWidth;
   }
@@ -3385,10 +3396,15 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   const eaNode = ea.getElement(nodeId);
 
   const isPinned = node.customData?.isPinned === true;
+  let dx = 0, dy = 0;
 
   if (!isPinned) {
-    eaNode.x = side === 1 ? targetX : targetX - node.width;
-    eaNode.y = targetCenterY - node.height / 2;
+    const newX = side === 1 ? targetX : targetX - node.width;
+    const newY = targetCenterY - node.height / 2;
+    dx = newX - eaNode.x;
+    dy = newY - eaNode.y;
+    eaNode.x = newX;
+    eaNode.y = newY;
   }
 
   if (node.customData?.isFolded) return;
@@ -3430,7 +3446,32 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   // Additional roots are laid out as independent local maps for their descendants.
   // The additional-root node itself stays positioned by the parent layout pass.
   if (node.customData?.isAdditionalRoot === true) {
-    layoutChildrenAsAdditionalRoot(nodeId, allElements, hasGlobalFolds, childrenByParent, heightCache, null, elementById, mustHonorMindmapOrder, parentMap);
+    if (node.customData?.autoLayoutDisabled) {
+      // Shift all descendants to maintain manual layout relative to this root
+      if (dx !== 0 || dy !== 0) {
+        const branchIds = getBranchElementIds(nodeId, allElements);
+        const descendants = branchIds.filter(id => id !== nodeId);
+        descendants.forEach(descId => {
+          const descNode = elementById?.get(descId) ?? allElements.find(e => e.id === descId);
+          // Do not shift pinned elements
+          if (descNode?.customData?.isPinned) return;
+          // Do not shift non-branch arrows because moveCrossLinks automatically handles them
+          if (descNode && descNode.type === "arrow" && !descNode.customData?.isBranch) return;
+          
+          if (!ea.getElement(descId)) {
+             if (descNode) ea.copyViewElementsToEAforEditing([descNode]);
+          }
+          const descEl = ea.getElement(descId);
+          if (descEl) {
+             descEl.x += dx;
+             descEl.y += dy;
+          }
+        });
+      }
+    } else {
+      layoutChildrenAsAdditionalRoot(nodeId, allElements, hasGlobalFolds, childrenByParent, heightCache, null, elementById, mustHonorMindmapOrder, parentMap);
+    }
+    
     if (node.customData?.boundaryId) {
       updateNodeBoundary(node, ea.getElements(), rootId);
     }
@@ -3604,10 +3645,15 @@ const layoutSubtreeVertical = (nodeId, targetCenterX, targetY, side, allElements
   const eaNode = ea.getElement(nodeId);
 
   const isPinned = node.customData?.isPinned === true;
+  let dx = 0, dy = 0;
 
   if (!isPinned) {
-    eaNode.x = targetCenterX - node.width / 2;
-    eaNode.y = side === 1 ? targetY : targetY - node.height;
+    const newX = targetCenterX - node.width / 2;
+    const newY = side === 1 ? targetY : targetY - node.height;
+    dx = newX - eaNode.x;
+    dy = newY - eaNode.y;
+    eaNode.x = newX;
+    eaNode.y = newY;
   }
 
   if (node.customData?.isFolded) return;
@@ -3650,7 +3696,32 @@ const layoutSubtreeVertical = (nodeId, targetCenterX, targetY, side, allElements
   // Additional roots are laid out as independent local maps for their descendants.
   // The additional-root node itself stays positioned by the parent layout pass.
   if (node.customData?.isAdditionalRoot === true) {
-    layoutChildrenAsAdditionalRoot(nodeId, allElements, hasGlobalFolds, childrenByParent, null, widthCache, elementById, mustHonorMindmapOrder, parentMap);
+    if (node.customData?.autoLayoutDisabled) {
+      // Shift all descendants to maintain manual layout relative to this root
+      if (dx !== 0 || dy !== 0) {
+        const branchIds = getBranchElementIds(nodeId, allElements);
+        const descendants = branchIds.filter(id => id !== nodeId);
+        descendants.forEach(descId => {
+          const descNode = elementById?.get(descId) ?? allElements.find(e => e.id === descId);
+          // Do not shift pinned elements
+          if (descNode?.customData?.isPinned) return;
+          // Do not shift non-branch arrows because moveCrossLinks automatically handles them
+          if (descNode && descNode.type === "arrow" && !descNode.customData?.isBranch) return;
+          
+          if (!ea.getElement(descId)) {
+             if (descNode) ea.copyViewElementsToEAforEditing([descNode]);
+          }
+          const descEl = ea.getElement(descId);
+          if (descEl) {
+             descEl.x += dx;
+             descEl.y += dy;
+          }
+        });
+      }
+    } else {
+      layoutChildrenAsAdditionalRoot(nodeId, allElements, hasGlobalFolds, childrenByParent, null, widthCache, elementById, mustHonorMindmapOrder, parentMap);
+    }
+    
     if (node.customData?.boundaryId) {
       updateNodeBoundary(node, ea.getElements(), rootId);
     }
@@ -7362,11 +7433,6 @@ const updateUI = (sel) => {
     updateGroupBtn(toggleGroupBtn);
     updateGroupBtn(floatingGroupBtn);
 
-    if (refreshBtn) {
-      setButtonDisabled(refreshBtn, false);
-      refreshBtn.setTooltip(`${t("TOOLTIP_REFRESH")} ${getActionHotkeyString(ACTION_REARRANGE)}`);
-    }
-
     setButtonDisabled(boxBtn, false);
     setButtonDisabled(floatingBoxBtn, false);
     setButtonDisabled(foldBtnL0, !hasChildren);
@@ -7397,6 +7463,11 @@ const updateUI = (sel) => {
     if (mapLayoutPref !== autoLayoutDisabled) {
       autoLayoutDisabled = mapLayoutPref;
       if (autoLayoutToggle) autoLayoutToggle.setValue(!mapLayoutPref);
+    }
+
+    if (refreshBtn) {
+      setButtonDisabled(refreshBtn, autoLayoutDisabled);
+      refreshBtn.setTooltip(`${t("TOOLTIP_REFRESH")} ${getActionHotkeyString(ACTION_REARRANGE)}`);
     }
 
     const mapArrowType = cd?.arrowType ?? getVal(K_ARROW_TYPE, "curved");
