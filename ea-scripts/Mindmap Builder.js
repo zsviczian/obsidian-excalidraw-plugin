@@ -5141,9 +5141,9 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
       const refString = nodeBlockRefs.get(endId);
       
       let linkText;
-      if (labelTextElement && labelTextElement.originalText) {
+      if (labelTextElement && labelTextElement.rawText) {
         // Replace newlines with spaces for inline dataview field compatibility
-        const label = labelTextElement.originalText.replace(/\n/g, " ");
+        const label = labelTextElement.rawText.replace(/\n/g, " ");
         linkText = `(${label}:: [[#${refString}|*]])`;
       } else {
         linkText = `[[#${refString}|*]]`;
@@ -5181,7 +5181,7 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
     }
 
     let str = "";
-    let text = getTextFromNode(all, node);
+    let text = getTextFromNode(all, node, true);
 
     let ontologyStr = "";
     // Fetch ontology if it's not the absolute root, or if it's a child within a submap layout
@@ -5605,8 +5605,10 @@ const importTextToMap = async (rawText) => {
   const submapNodesByName = new Map();
 
   if (!sel) {
-    const minIndent = Math.min(...parsed.map((p) => p.indent));
-    const topLevelItems = parsed.filter((p) => p.indent === minIndent && !p.isSubmapDef);
+    // Filter out submap definitions (-1 indent) to accurately find the true top-level items
+    const nonSubmapItems = parsed.filter((p) => !p.isSubmapDef);
+    const minIndent = Math.min(...nonSubmapItems.map((p) => p.indent));
+    const topLevelItems = nonSubmapItems.filter((p) => p.indent === minIndent);
     
     const processRootMeta = (item, id) => {
         if(item.blockRef) blockRefToNodeId.set(item.blockRef, id);
@@ -5618,10 +5620,18 @@ const importTextToMap = async (rawText) => {
         }
     };
 
+    // If there is exactly one top-level item, it becomes the new master root
     if (topLevelItems.length === 1) {
-      sel = currentParent = await addNode(topLevelItems[0].text, true, true, [], null, null, topLevelItems[0].ontology);
-      processRootMeta(topLevelItems[0], currentParent.id);
-      parsed.shift();
+      const rootItem = topLevelItems[0];
+      const rootIndex = parsed.indexOf(rootItem);
+      
+      sel = currentParent = await addNode(rootItem.text, true, true,[], null, null, rootItem.ontology);
+      processRootMeta(rootItem, currentParent.id);
+      
+      // Safely extract the root item from the array so it isn't rendered twice
+      if (rootIndex !== -1) {
+          parsed.splice(rootIndex, 1);
+      }
     } else {
       sel = currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true,[], null);
     }
