@@ -1044,8 +1044,16 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   z-index: 9999;
 }
 
-.excalidraw--tray .App-bottom-bar > .Island > .App-toolbar > .App-toolbar-content > .ToolIcon__icon:empty {
-  display: none;
+.excalidraw--tray .App-bottom-bar > .Island > .App-toolbar > .App-toolbar-content {
+  /* This will render the undo/redo buttons as if they weren't
+  in a separate container, but simply part of the row */
+  > :not([class]) {
+    display: contents;
+  }
+
+  > .ToolIcon__icon:empty {
+    display: none;
+  }
 }
 
 .excalidraw .excalidraw-ui-top-right.library-and-pen,
