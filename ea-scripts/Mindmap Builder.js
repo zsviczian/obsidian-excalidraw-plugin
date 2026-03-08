@@ -5205,15 +5205,15 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
     if (node.customData?.boundaryId) refSuffixes += " #boundary";
     if (nodeBlockRefs.has(nodeId)) refSuffixes += ` ${nodeBlockRefs.get(nodeId)}`;
 
-     // --- Extract Task Info ---
-     let isTask = false;
-     let taskPrefix = "";
-     const taskMatch = text.match(/^- \[[ xX]\] /);
-     if (taskMatch) {
+    // --- Extract Task Info ---
+    let isTask = false;
+    let taskPrefix = "";
+    const taskMatch = text.match(/^- \[[ xX]\] /);
+    if (taskMatch) {
        isTask = true;
        taskPrefix = taskMatch[0]; // Retain "- [ ] " or "- [x] "
        text = text.substring(taskPrefix.length); // Strip it temporarily for clean assembly
-     }
+    }
 
     // --- Submap Extraction Logic ---
     // If this node is an additional root AND it's not the immediate element we are printing the section for
@@ -5302,6 +5302,12 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
 
   // --- Process Queued Submaps ---
   const processedSubmaps = new Set();
+
+  // Add divider if submaps exist
+  if (submapsQueue.length > 0) {
+    md += `\n---\n`;
+  }
+
   while (submapsQueue.length > 0) {
     const submapObj = submapsQueue.shift();
     if (processedSubmaps.has(submapObj.id)) continue;
@@ -5323,7 +5329,7 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
       });
     } else if (mode === "Right-Left") {
       const right = [];
-      const left =[];
+      const left = [];
       children.forEach(child => {
           const childCx = child.x + child.width / 2;
           if (childCx > parentCenter.x) right.push(child);
@@ -5400,7 +5406,11 @@ const importTextToMap = async (rawText) => {
   let sel = getMindmapNodeFromSelection();
   let currentParent;
 
-  const lines = rawText.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
+  // Filter out empty lines AND divider lines
+  const lines = rawText.split(/\r\n|\n|\r/).filter((l) => {
+    const trimmed = l.trim();
+    return trimmed !== "" && !/^-{3,}$/.test(trimmed);
+  });
 
   if (lines.length === 0) return;
 
@@ -5412,21 +5422,20 @@ const importTextToMap = async (rawText) => {
   const submapRefRegex = /^!\[\[#([^\]]+)\]\]$/; // Matches ![[#Submap Name]]
 
   if (lines.length === 1) {
-     let text = lines[0];
-     const listMatch = text.match(/^(\s*)(?:-|\*|\d+\.)\s+(.*)$/);
-     if (listMatch) {
-       text = listMatch[2].trim();
-       if (/^\[[ xX]\] /.test(text)) {
-          // Retain task syntax if it was an imported list item
-          text = "- " + text;
-       }
-     } else {
-       text = text.trim();
-     }
+    let text = lines[0];
+    const listMatch = text.match(/^(\s*)(?:-|\*|\d+\.)\s+(.*)$/);
+    if (listMatch) {
+      text = listMatch[2].trim();
+      if (/^\[[ xX]\] /.test(text)) {
+        // Retain task syntax if it was an imported list item
+        text = "- " + text;
+      }
+    } else {
+      text = text.trim();
+    }
     
     text = text.replace(boundaryRegex, "");
     text = text.replace(blockRefRegex, "");
-    text = text.replace(crossLinkRegex, "");
 
     const ontologyMatch = text.match(ontologyRegex);
     let ontology = null;
