@@ -4375,6 +4375,8 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
   let allElements = ea.getElements();
   let root = allElements.find((el) => el.id === rootId);
   if (!root) return;
+
+  if (root.customData?.autoLayoutDisabled) return;
   
   const mindmapIds = getBranchElementIds(rootId, allElements);
   const {structuralGroupId, groupedElementIds} = getStructuralGroupForNode(mindmapIds, allElements, rootId);
@@ -4503,8 +4505,13 @@ const getAdjustedMaxWidth = (text, max) => {
   const fontString = `${ea.style.fontSize.toString()}px ${
     ExcalidrawLib.getFontFamilyString({fontFamily: ea.style.fontFamily})}`;
   const wrappedText = ExcalidrawLib.wrapText(renderLinksToText(text), fontString, max);
-  const optimalWidth = Math.ceil(ea.measureText(wrappedText).width);
-  return {width: Math.min(max, optimalWidth), wrappedText};
+  const metrics = ea.measureText(wrappedText);
+  const optimalWidth = Math.ceil(metrics.width);
+  return {
+    width: Math.min(max, optimalWidth), 
+    height: metrics.height, 
+    wrappedText
+  };
 }
 
 const addImage = async ({pathOrFile, width, leftFacing = false, x=0, y=0, depth = 0} = {}) => {
@@ -4620,12 +4627,16 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
   ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)];
   ea.style.roundness = (rootCfgForAdd?.roundedCorners ?? roundedCorners) ? { type: 3 } : null;
 
-  const effectiveMaxWrap = rootCfgForAdd?.maxWrapWidth ?? maxWidth;
+const effectiveMaxWrap = rootCfgForAdd?.maxWrapWidth ?? maxWidth;
   let curMaxW = depth === 0 ? Math.max(400, effectiveMaxWrap) : effectiveMaxWrap;
   const metrics = ea.measureText(renderLinksToText(text));
   const shouldWrap = metrics.width > curMaxW;
+  let curMaxH = metrics.height;
+
   if (shouldWrap) {
-    curMaxW = getAdjustedMaxWidth(text, curMaxW).width;
+    const res = getAdjustedMaxWidth(text, curMaxW);
+    curMaxW = res.width;
+    curMaxH = res.height;
   }
 
   if (!parent) {
@@ -4657,6 +4668,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         // Use a distinct color representation so the frame can be recolored separately from text
         boxStrokeColor: ea.getCM(ea.style.strokeColor).stringRGB(),
         width: shouldWrap ? curMaxW : undefined,
+        height: shouldWrap ? curMaxH : undefined,
         autoResize: !shouldWrap,
       });
       ea.style.backgroundColor = "transparent";
@@ -4811,6 +4823,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         textAlign,
         textVerticalAlign: "middle",
         width: shouldWrap ? curMaxW : undefined,
+        height: shouldWrap ? curMaxH : undefined,
         autoResize: !shouldWrap,
       });
     }
@@ -7241,7 +7254,7 @@ const focusInputEl = () => {
 const setButtonDisabled = (btn, disabled) => {
   if (!btn) return;
   btn.disabled = disabled;
-  const btnEl = btn.extraSettingsEl ?? btn.buttonEl;
+  const btnEl = btn.extraSettingsEl ?? btn.buttonEl ?? btn.toggleEl;
   if (!btnEl) return;
   btnEl.tabIndex = disabled ? -1 : 0;
   btnEl.style.opacity = disabled ? "0.5" : "";
@@ -7273,6 +7286,7 @@ const disableUI = () => {
   setButtonDisabled(floatingGroupBtn, true);
   setButtonDisabled(floatingBoxBtn, true);
   setButtonDisabled(floatingZoomBtn, true);
+  setButtonDisabled(autoLayoutToggle, true);
   editingNodeId = null;
   if(editBtn) editBtn.extraSettingsEl.style.color = "";
 };
@@ -7368,6 +7382,7 @@ const updateUI = (sel) => {
     setButtonDisabled(cutBtn, isMasterRootSelected);
     setButtonDisabled(copyBtn, false);
     setButtonDisabled(importOutlineBtn, !isLinkedFile);
+    setButtonDisabled(autoLayoutToggle, false);
 
     // NEW: Load settings from root customData if they exist, otherwise keep current global
     const cd = root?.customData ?? {};
@@ -7381,7 +7396,7 @@ const updateUI = (sel) => {
     const mapLayoutPref = cd?.autoLayoutDisabled === true;
     if (mapLayoutPref !== autoLayoutDisabled) {
       autoLayoutDisabled = mapLayoutPref;
-      if (autoLayoutToggle) autoLayoutToggle.setValue(mapLayoutPref);
+      if (autoLayoutToggle) autoLayoutToggle.setValue(!mapLayoutPref);
     }
 
     const mapArrowType = cd?.arrowType ?? getVal(K_ARROW_TYPE, "curved");
@@ -7793,6 +7808,7 @@ const commitEdit = async () => {
           eaEl.autoResize = false;
           const res = getAdjustedMaxWidth(textInput, maxWidth);
           eaEl.width = res.width;
+          eaEl.height = res.height;
           eaEl.text = res.wrappedText;
         }
       }
@@ -8647,17 +8663,20 @@ const renderBody = (contentEl) => {
     fillSweepToggleSetting.settingEl.style.display = "none";
   }
 
-  autoLayoutToggle = new ea.obsidian.Setting(bodyContainer)
+  new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_AUTO_LAYOUT"))
-    .addToggle((t) => t
-      .setValue(!autoLayoutDisabled)
+    .addToggle((t) => {
+      autoLayoutToggle = t;
+      t.setValue(!autoLayoutDisabled)
       .onChange(async (v) => {
+        const sel = getMindmapNodeFromSelection();
+        if (!sel) return;
         autoLayoutDisabled = !v;
         if (disableTabEvents) return;
         await updateRootNodeCustomData({ autoLayoutDisabled }, sel);
         await refreshMapLayout(sel);
-      }),
-    )
+      });
+    })
     .addExtraButton(btn=> btn
       .setIcon("pencil-ruler")
       .setTooltip(t("TOOLTIP_CONFIGURE_LAYOUT"))
