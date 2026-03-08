@@ -192,7 +192,7 @@ li[data-testid] {
 }
 
 .excalidraw-dirty {
-  color: red;
+  color: var(--text-error);
 }
 
 .workspace-leaf-content .excalidraw-view {
@@ -325,6 +325,7 @@ textarea.excalidraw-wysiwyg {
   --default-icon-size: 1rem !important;
   --lg-button-size: 1.8rem !important;
   --lg-icon-size: 1rem !important;
+  --editor-container-padding: var(--size-4-2);
 }
 
 .excalidraw .tray-zoom {
@@ -334,7 +335,7 @@ textarea.excalidraw-wysiwyg {
   padding-top: 0.05rem;
 }
 
-.excalidraw-container.theme--dark {
+.excalidraw-container.theme--dark {  /* unused */
   background-color: #121212;
   color: #fff;
 }
@@ -349,10 +350,6 @@ textarea.excalidraw-wysiwyg {
   max-height: 10rem;
 }
 
-.excalidraw .FixedSideContainer_side_top {
-  top: 0.3rem;
-}
-
 .excalidraw .ToolIcon__keybinding {
   font-size: 0.45rem !important;
 }
@@ -365,13 +362,6 @@ textarea.excalidraw-wysiwyg {
 
 label.color-input-container > input {
   max-width: 5rem;
-}
-
-.excalidraw .FixedSideContainer_side_top {
-  left: 10px !important;
-  top: 10px !important;
-  right: 10px;
-  bottom: 10px !important;
 }
 
 .excalidraw-hidden {
@@ -396,10 +386,6 @@ label.color-input-container > input {
 
 .excalidraw .panelColumn .buttonList {
   max-width: 13rem;
-}
-
-.excalidraw button {
-  width: initial;
 }
 
 .excalidraw input[type="color"] {
@@ -435,6 +421,26 @@ div.excalidraw-draginfo {
   position: absolute !important;
 }
 
+/* In Obsidian-Excalidraw, the Sidebar-Trigger is sometimes in a Container/
+   Island, so it shall be styled like any other of its .ToolIcon siblings */
+.excalidraw :where(.mobile-misc-tools-container, .tray-misc-tools-container) .sidebar-trigger {
+  background-color: unset;
+  border-radius: 0;
+  box-shadow: none;
+  /* this appears to me as the least impactful way of undoing the upstream mess */
+  --lg-button-size: var(--button-height, var(--default-button-size));
+
+  &:hover {
+    background-color: var(--button-hover-bg);
+  }
+
+  &:active {
+    background-color: var(--button-hover-bg);
+    box-shadow: none;
+    border: 1px solid var(--button-active-border);
+  }
+}
+
 .excalidraw-sidepanel-container {
   height: 100%;
 }
@@ -449,36 +455,14 @@ div.excalidraw-draginfo {
 .excalidraw-sidepanel__controls {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.35rem 0.5rem;
+  gap: var(--size-4-1);
+  padding: var(--size-4-2) var(--size-4-2);
   border-bottom: 1px solid var(--divider-color, var(--background-modifier-border));
   background-color: var(--background-secondary);
 }
 
 .excalidraw-sidepanel__select {
   flex: 1;
-}
-
-.excalidraw-sidepanel__close-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.6rem;
-  border: 1px solid var(--divider-color, var(--background-modifier-border));
-  border-radius: 0.55rem;
-  background: var(--background-primary);
-  color: var(--text-normal);
-  padding: 0 !important;
-  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
-}
-
-.excalidraw-sidepanel__close-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.excalidraw-sidepanel__close-button:hover:not(:disabled) {
-  background: var(--background-modifier-hover);
 }
 
 .excalidraw-sidepanel__empty {
@@ -520,7 +504,7 @@ div.excalidraw-draginfo {
   padding: 0.5rem;
 }
 
-.excalidraw-sidepanel-tab__button {
+.excalidraw-sidepanel-tab__button { /* probably unused */
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -1060,20 +1044,15 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   z-index: 9999;
 }
 
-.excalidraw .undo-redo-buttons button {
-  width: 3em;
-}
-
-.ExcalidrawObsidianMenu--mobile label.ToolIcon {
-  margin-left: 4px;
+.excalidraw--tray .App-bottom-bar > .Island > .App-toolbar > .App-toolbar-content > .ToolIcon__icon:empty {
+  display: none;
 }
 
 .excalidraw .excalidraw-ui-top-right.library-and-pen,
-.ExcalidrawObsidianMenu--mobile {
-  display: flex;
+.excalidraw.excalidraw--mobile .excalidraw-ui-top-right {
   flex-direction: row;
   flex-wrap: wrap;
-  row-gap: 4px;
+  gap: var(--size-4-1);
   justify-content: center;
   align-items: center;
 }
@@ -1082,14 +1061,16 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
   margin: auto;
 }
 
-.ExcalidrawObsidianMenu {
-  display: flex;
-  flex-direction: column;
+.excalidraw :is(.mobile-misc-tools-container, .tray-misc-tools-container) {
+  margin-right: unset;
+
+  &.layer-ui__wrapper__top-right--compact {
+    gap: 0; /* there shouldn't be a larger gap in a "compact" mode */
+  }
 }
 
 .excalidraw .FixedSideContainer_side_top {
     padding-top: 0 !important;
-
 }
 
 .excalidraw .ToolIcon.ToolIcon__penMode {
