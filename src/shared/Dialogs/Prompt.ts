@@ -30,6 +30,7 @@ import { parser } from "./math-only";
 import { LRLanguage } from "@codemirror/language";
 import { editorLivePreviewField } from "obsidian";
 import { Extension } from "@codemirror/state";
+import { FloatingModal } from "./FloatingModal";
 
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;
@@ -86,7 +87,7 @@ export class Prompt extends Modal {
   }
 }
 
-export class LaTexPrompt extends Modal {
+export class LaTexPrompt extends FloatingModal {
   public waitForClose : Promise<string>;
   private promptEl: HTMLInputElement;
   private resolvePromise: (input: string) => void;
@@ -103,6 +104,7 @@ export class LaTexPrompt extends Modal {
     this.titleEl.setText(this.prompt_text);
     this.contentEl.addClass("excalidraw-LatexPrompt");
     this.latexsSuitePlugin = app.plugins.plugins["obsidian-latex-suite"];
+    super.enableKeyCapture(); // otherwise latex-suite (or Ctrl-Enter) do not get the key event
     const mainContentContainer: HTMLDivElement = this.contentEl.createDiv();
     this.display(default_value, mainContentContainer);
     this.waitForClose = new Promise<string>((resolve, reject) => {
@@ -138,7 +140,7 @@ export class LaTexPrompt extends Modal {
       }]),
       minimalSetup
     ]
-    if (this.latexsSuitePlugin) {
+    if (!!this.latexsSuitePlugin) {
       // the language put eveything in a "math" node
       // surrounded by "math-begin" and "math-end" 
       // so that latex-suite always thinks we are in mathmode

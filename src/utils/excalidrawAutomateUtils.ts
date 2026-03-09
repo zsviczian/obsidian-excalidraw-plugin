@@ -667,20 +667,8 @@ export function repositionElementsToCursor(
 export const insertLaTeXToView = (view: ExcalidrawView, center: boolean = false) => {
   const app = view.plugin.app;
   const ea = getEA(view) as ExcalidrawAutomate;
-  const isLatexSuitAvailable = !!app.plugins.plugins["obsidian-latex-suite"];
-  (isLatexSuitAvailable
-    ? LaTexPrompt.Prompt(app, t("ENTER_LATEX"), view.plugin.settings.latexBoilerplate)
-    : GenericInputPrompt.Prompt(
-        view,
-        view.plugin,
-        app,
-        t("ENTER_LATEX"),
-        "\\color{red}\\oint_S {E_n dA = \\frac{1}{{\\varepsilon _0 }}} Q_{inside}",
-        view.plugin.settings.latexBoilerplate,
-        undefined,
-        3
-      )
-  ).then(async (formula: string) => {
+  LaTexPrompt.Prompt(app, t("ENTER_LATEX"), view.plugin.settings.latexBoilerplate)
+  .then(async (formula: string) => {
     const lastLatexEl = ea.getViewElements()
         .filter((el) => el.type === "image" && view.excalidrawData.hasEquation(el.fileId))
         .reduce(
