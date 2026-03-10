@@ -166,7 +166,7 @@ import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
 import { copyLinkToSelectedElementToClipboard } from "src/shared/Dialogs/copyLinkToSelectedElement";
 import { getPDFCropRect } from "src/utils/PDFUtils";
 import { ttdPersistenceAdapter } from "src/shared/TTDDialogPersistanceAdater";
-import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
+import { CaptureUpdateActionType, isBindingEnabled } from "@zsviczian/excalidraw/types/element/src";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -1199,9 +1199,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   toggleDisableBinding() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleDisableBinding, "ExcalidrawView.toggleDisableBinding");
-    const newState = !this.excalidrawAPI.getAppState().invertBindingBehaviour;
-    this.updateScene({appState: {invertBindingBehaviour:newState}, captureUpdate: CaptureUpdateAction.NEVER,});
-    new Notice(newState ? t("ARROW_BINDING_INVERSE_MODE") : t("ARROW_BINDING_NORMAL_MODE"));
+    const newState = (this.excalidrawAPI.getAppState().bindingPreference === "enabled") ? "disabled" : "enabled";
+    this.updateScene({appState: {bindingPreference:newState}, captureUpdate: CaptureUpdateAction.NEVER,});
+    new Notice(newState === "disabled" ? t("ARROW_BINDING_INVERSE_MODE") : t("ARROW_BINDING_NORMAL_MODE"));
   }
 
   toggleFrameRendering() {
@@ -3952,6 +3952,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         objectsSnapModeEnabled: st.objectsSnapModeEnabled,
         activeTool,
         disableContextMenu: st.disableContextMenu,
+        bindingPreference: st.bindingPreference,
+        isBindingEnabled: st.isBindingEnabled,
+        isMidpointSnappingEnabled: st.isMidpointSnappingEnabled,
       },
       prevTextMode: this.prevTextMode,
       files,
