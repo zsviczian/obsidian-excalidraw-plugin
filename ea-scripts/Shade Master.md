@@ -7,33 +7,41 @@ This script modifies the color lightness/hue/saturation/transparency of selected
 - The color of SVG elements and nested Excalidraw drawings will only be mapped. When mapping colors, the original image remains unchanged, only a mapping table is created and the image is recolored during rendering of your Excalidraw screen. In case you want to make manual changes you can also edit the mapping in Markdown View Mode under `## Embedded Files`
 
 If you select only a single SVG or nested Excalidraw element, then the script offers an additional feature. You can map colors one by one in the image. 
-```js*/
+```js
+*/
 
 const HELP_TEXT = `
-<ul>
-<li dir="auto">Select SVG images, nested Excalidraw drawings and/or regular Excalidraw elements</li>
-<li dir="auto">For a single selected image, you can map colors individually in the color mapping section</li>
-<li dir="auto">For Excalidraw elements: stroke and background colors are modified permanently</li>
-<li dir="auto">For SVG/nested drawings: original files stay unchanged, color mapping is stored under <code>## Embedded Files</code></li>
-<li dir="auto">Using color maps helps maintain links between drawings while allowing different color themes</li>
-<li dir="auto">Sliders work on relative scale - the amount of change is applied to current values</li>
-<li dir="auto">Unlike Excalidraw's opacity setting which affects the whole element:
-<ul>
-<li dir="auto">Shade Master can set different opacity for stroke vs background</li>
-<li dir="auto">Note: SVG/nested drawing colors are mapped at color name level, thus "black" is different from "#000000"</li>
-<li dir="auto">Additionally if the same color is used as fill and stroke the color can only be mapped once</li>
-</ul>
-</li>
-<li dir="auto">This is an experimental script - contributions welcome on GitHub via PRs</li>
-</ul>
-<div class="excalidraw-videoWrapper"><div>
-<iframe src="https://www.youtube.com/embed/ISuORbVKyhQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-</div></div>
+- Select SVG images, nested Excalidraw drawings and/or regular Excalidraw elements
+- For a single selected image, you can map colors individually in the color mapping section
+- For Excalidraw elements: stroke and background colors are modified permanently
+- For SVG/nested drawings: original files stay unchanged, color mapping is stored under \`## Embedded Files\`
+- Using color maps helps maintain links between drawings while allowing different color themes
+- Sliders work on relative scale - the amount of change is applied to current values
+- Unlike Excalidraw's opacity setting which affects the whole element:
+    - Shade Master can set different opacity for stroke vs background
+    - **Note:** SVG/nested drawing colors are mapped at color name level, thus "black" is different from "#000000"
+    - Additionally if the same color is used as fill and stroke the color can only be mapped once
+- This is an experimental script - contributions welcome on GitHub via PRs
+
+<div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
+
+<a href="https://www.youtube.com/watch?v=ISuORbVKyhQ" target="_blank"><img src ="https://i.ytimg.com/vi/ISuORbVKyhQ/maxresdefault.jpg" style="max-width:560px; width:100%"></a>
+
 `;
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.7.2")) {
-  new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.1")) {
+  new Notice("Please update the Excalidraw Plugin to version 2.19.1 or higher.");
   return;
+}
+
+const existingTab = ea.checkForActiveSidepanelTabForScript();
+if (existingTab) {
+  const hostEA = existingTab.getHostEA();
+  if (hostEA && hostEA !== ea) {
+    hostEA.setView(ea.targetView);
+    existingTab.open();
+    return;
+  }
 }
 
 /*
@@ -51,22 +59,10 @@ interface ColorMap {
 };
 */
 
-// Main script execution
-const allElements = ea.getViewSelectedElements();
-const svgImageElements = allElements.filter(el => {
-  if(el.type !== "image") return false;
-  const file = ea.getViewFileForImageElement(el);
-  if(!file) return false;
-  return el.type === "image" && (
-    file.extension === "svg" ||
-    ea.isExcalidrawFile(file)
-  );
-});
-
-if(allElements.length === 0) {
-  new Notice("Select at least one rectangle, ellipse, diamond, line, arrow, freedraw, text or SVG image elment");
-  return;
-}
+// Main script state variables
+let allElements = [];
+let svgImageElements = [];
+let lastSelectionIds = "";
 
 const originalColors = new Map();
 const currentColors = new Map();
@@ -97,10 +93,11 @@ if(!settings[STROKE]) {
 }
 
 function getRegularElements() {
+  if (!ea.targetView) return [];
   ea.clear();
   //loading view elements again as element objects change when colors are updated
-  const allElements = ea.getViewSelectedElements();
-  return allElements.filter(el => 
+  const viewElements = ea.getViewSelectedElements();
+  return viewElements.filter(el => 
     ["rectangle", "ellipse", "diamond", "line", "arrow", "freedraw", "text"].includes(el.type)
   );
 }
@@ -122,6 +119,10 @@ function updateViewImageColors() {
 }
 
 async function storeOriginalColors() {
+  // Clear previous state
+  originalColors.clear();
+  currentColors.clear();
+
   // Store colors for regular elements  
   for (const el of getRegularElements()) {
     const key = el.id;
@@ -147,6 +148,7 @@ async function storeOriginalColors() {
 }
 
 function copyOriginalsToCurrent() {
+  currentColors.clear();
   for (const [key, value] of originalColors.entries()) {
     if(value.type === "regular") {
       currentColors.set(key, {...value});
@@ -326,25 +328,40 @@ function slider(contentEl, action, min, max, step, invert) {
   }
 }
 
-function showModal() {
-  let debounceColorPicker = true;
-  const modal = new ea.obsidian.Modal(app);
-  let dirty = false;
+let debounceColorPicker = true;
 
-  modal.onOpen = async () => {
-    const { contentEl, modalEl } = modal;
-    const { width, height } = ea.getExcalidrawAPI().getAppState();
-    modal.bgOpacity = 0;
-    contentEl.createEl('h2', { text: 'Shade Master' });
-    
-    const helpDiv = contentEl.createEl("details", {
-      attr: { style: "margin-bottom: 1em;background: var(--background-secondary); padding: 1em; border-radius: 4px;" }});
-    helpDiv.createEl("summary", { text: "Help & Usage Guide", attr: { style: "cursor: pointer; color: var(--text-accent);" } });
-    const helpDetailsDiv = helpDiv.createEl("div", {
-      attr: { style: "margin-top: 0em; " }
+function renderSidepanel(contentEl) {
+  contentEl.empty();
+  
+  contentEl.createEl('h2', { text: 'Shade Master' });
+  
+  const helpDiv = contentEl.createEl("details", {
+    attr: { style: "margin-bottom: 1em;background: var(--background-secondary); padding: 1em; border-radius: 4px;" }});
+  helpDiv.createEl("summary", { text: "Help & Usage Guide", attr: { style: "cursor: pointer; color: var(--text-accent);" } });
+  const helpDetailsDiv = helpDiv.createEl("div", {
+    attr: { style: "margin-top: 0em; " }
+  });
+  
+  ea.obsidian.MarkdownRenderer.render(ea.plugin.app, HELP_TEXT, helpDetailsDiv, "", ea.plugin);
+
+  if (!ea.targetView) {
+    contentEl.createEl("p", { 
+      text: "No active Excalidraw view found. Please open a drawing and select elements to use Shade Master.",
+      attr: { style: "color: var(--text-muted);" }
     });
-    helpDetailsDiv.innerHTML = HELP_TEXT;
+    return;
+  }
 
+  const { width, height } = ea.getExcalidrawAPI().getAppState();
+
+  if(allElements.length === 0) {
+    contentEl.createEl("p", { 
+      text: "Select at least one rectangle, ellipse, diamond, line, arrow, freedraw, text or SVG image element",
+      attr: { style: "color: var(--text-warning);" }
+    });
+    // return; // Removed early return to allow rendering of the Close button
+  } else {
+    // Only render controls if elements are selected
     const component = new ea.obsidian.Setting(contentEl)
       .setName(FORMAT)
       .setDesc("Output color format")
@@ -390,6 +407,7 @@ function showModal() {
     // The range for Hue is 360 since regarless of the position on the circle moving
     // the slider to the two extremes will travel the entire circle
     // To modify blacks and whites, lightness first needs to be changed to value between 1% and 99%
+    sliderResetters.length = 0; // Clear existing resetters
     sliderResetters.push(slider(contentEl, "Hue", 0, 360, 1, false));
     sliderResetters.push(slider(contentEl, "Saturation", 0, 200, 1, false));
     sliderResetters.push(slider(contentEl, "Lightness", 0, 200, 1, false));
@@ -405,6 +423,8 @@ function showModal() {
       const colorSection = contentEl.createDiv();
       colorSection.createEl('h3', { text: 'SVG Colors' });
       
+      colorInputs.clear(); // Clear old inputs map
+
       for (const [color, info] of initialColorInfo.entries()) {
         const row = new ea.obsidian.Setting(colorSection)
           .setName(color === "fill" ? "SVG default" : color)
@@ -495,7 +515,51 @@ function showModal() {
           .setValue(ea.getCM(info.mappedTo).stringHEX({alpha: false}).toLowerCase());
 
         colorPicker.colorPickerEl.style.maxWidth = "2.5rem";
-  
+
+        // Add palette picker button
+        const paletteButton = new ea.obsidian.Setting(row.controlEl)
+          .addButton(button => button
+            .setIcon("swatch-book")
+            .setTooltip("Pick from Palette")
+            .onClick(async () => {
+              const selected = await ea.showColorPicker(button.buttonEl, "elementStroke");
+              if (selected) {
+                try {
+                  const cm = ea.getCM(selected);
+                  if (cm) {
+                    const format = settings[FORMAT].value;
+                    
+                    // Preserve alpha from original color
+                    const currentInfo = currentColors.get(svgElement.id).colors.get(color);
+                    const originalAlpha = ea.getCM(currentInfo.mappedTo).alpha;
+                    cm.alphaTo(originalAlpha);
+                    const alpha = originalAlpha < 1 ? true : false;
+
+                    const newColor = format === "RGB" 
+                      ? cm.stringRGB({alpha , precision }).toLowerCase()
+                      : format === "HEX" 
+                        ? cm.stringHEX({alpha}).toLowerCase()
+                        : cm.stringHSL({alpha, precision }).toLowerCase();
+                    
+                    // Update text input
+                    textInput.setValue(newColor);
+                    
+                    // Update Color Picker visual
+                    colorPicker.setValue(cm.stringHEX({alpha: false}).toLowerCase());
+
+                    // Update SVG mapping
+                    currentInfo.mappedTo = newColor;
+                    run("Update SVG color");
+                  }
+                } catch (e) {
+                  console.error("Invalid color value:", e);
+                }
+              }
+            }));
+        paletteButton.settingEl.style.padding = "0";
+        paletteButton.settingEl.style.border = "0";
+        paletteButton.infoEl.style.display = "none";
+
         // Store references to the components
         colorInputs.set(color, {
           textInput,
@@ -539,106 +603,39 @@ function showModal() {
         });
       }
     }
+  }
 
-    const buttons = new ea.obsidian.Setting(contentEl);
-    if(svgImageElements.length > 0) {
-      buttons.addButton(button => button
-        .setButtonText("Initialize SVG Colors")
-        .onClick(() => {
-          debounceColorPicker = true;
-          clearSVGMapping();
-        })
-      );
-    }
+  const buttons = new ea.obsidian.Setting(contentEl);
+  if(svgImageElements.length > 0) {
+    buttons.addButton(button => button
+      .setButtonText("Initialize SVG Colors")
+      .onClick(() => {
+        debounceColorPicker = true;
+        clearSVGMapping();
+      })
+    );
+  }
 
-    buttons
-      .addButton(button => button
-        .setButtonText("Reset")
-        .onClick(() => {
-          for (const resetter of sliderResetters) {
-            resetter();
-          }
-          copyOriginalsToCurrent();
-          setColors(originalColors);
-        }))
-      .addButton(button => button
-        .setButtonText("Close")
-        .setCta(true)
-        .onClick(() => modal.close()));
+  if (allElements.length > 0) {
+    buttons.addButton(button => button
+      .setButtonText("Reset")
+      .onClick(() => {
+        for (const resetter of sliderResetters) {
+          resetter();
+        }
+        copyOriginalsToCurrent();
+        setColors(originalColors);
+      }));
+  }
 
-    makeModalDraggable(modalEl);
-    
-    const maxHeight = Math.round(height * 0.6);
-    const maxWidth = Math.round(width * 0.9);
-    modalEl.style.maxHeight = `${maxHeight}px`;
-    modalEl.style.maxWidth = `${maxWidth}px`;
-  };
-
-  modal.onClose = () => {
-    terminate = true;
-    if (dirty) {
-      ea.setScriptSettings(settings);
-    }
-    if(ea.targetView.isDirty()) {
-      ea.targetView.save(false);
-    }
-  };
-
-  modal.open();
-}
-
-/**
- * Add draggable functionality to the modal element.
- * @param {HTMLElement} modalEl - The modal element to make draggable.
- */
-function makeModalDraggable(modalEl) {
-  let isDragging = false;
-  let startX, startY, initialX, initialY;
-
-  const header = modalEl.querySelector('.modal-titlebar') || modalEl; // Default to modalEl if no titlebar
-  header.style.cursor = 'move';
-
-  const onPointerDown = (e) => {
-    // Ensure the event target isn't an interactive element like slider, button, or input
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
-
-    isDragging = true;
-    startX = e.clientX;
-    startY = e.clientY;
-    const rect = modalEl.getBoundingClientRect();
-    initialX = rect.left;
-    initialY = rect.top;
-
-    modalEl.style.position = 'absolute';
-    modalEl.style.margin = '0';
-    modalEl.style.left = `${initialX}px`;
-    modalEl.style.top = `${initialY}px`;
-  };
-
-  const onPointerMove = (e) => {
-    if (!isDragging) return;
-
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-
-    modalEl.style.left = `${initialX + dx}px`;
-    modalEl.style.top = `${initialY + dy}px`;
-  };
-
-  const onPointerUp = () => {
-    isDragging = false;
-  };
-
-  header.addEventListener('pointerdown', onPointerDown);
-  document.addEventListener('pointermove', onPointerMove);
-  document.addEventListener('pointerup', onPointerUp);
-
-  // Clean up event listeners on modal close
-  modalEl.addEventListener('remove', () => {
-    header.removeEventListener('pointerdown', onPointerDown);
-    document.removeEventListener('pointermove', onPointerMove);
-    document.removeEventListener('pointerup', onPointerUp);
-  });
+  buttons.addButton(button => button
+    .setButtonText("Close")
+    .onClick(() => {
+      if(ea.sidepanelTab) {
+        ea.sidepanelTab.close();
+      }
+      ea.toggleSidepanelView();
+    }));
 }
 
 function executeChange(isDecrease, step, action) {
@@ -724,6 +721,66 @@ function run(action="Hue", isDecrease=true, step=0) {
   if (!isRunning) processQueue();
 }
 
-await storeOriginalColors();
-showModal();
-processQueue();
+// Function to refresh internal state based on current selection
+function refreshSelectionState() {
+  if (!ea.targetView) {
+    allElements = [];
+    svgImageElements = [];
+    lastSelectionIds = "";
+    return;
+  }
+  allElements = ea.getViewSelectedElements();
+  svgImageElements = allElements.filter(el => {
+    if(el.type !== "image") return false;
+    const file = ea.getViewFileForImageElement(el);
+    if(!file) return false;
+    return el.type === "image" && (
+      file.extension === "svg" ||
+      ea.isExcalidrawFile(file)
+    );
+  });
+  lastSelectionIds = allElements.map(e => e.id).sort().join(",");
+}
+
+// Sidepanel initialization and logic
+ea.createSidepanelTab("Shade Master", false, true).then(tab => {
+  if (!tab) return;
+
+  const initializeAndRender = async () => {
+    refreshSelectionState();
+    await storeOriginalColors();
+    renderSidepanel(tab.contentEl);
+    processQueue();
+  };
+
+  tab.onOpen = async () => {
+    terminate = false;
+    // Initial load
+    await initializeAndRender();
+  };
+
+  tab.onFocus = async (view) => {
+    if (view && view !== ea.targetView) {
+      ea.setView(view);
+      ea.clear();
+    }
+    
+    // Check if selection changed
+    const currentSelectionStr = ea.getViewSelectedElements().map(e => e.id).sort().join(",");
+    if (currentSelectionStr !== lastSelectionIds) {
+      await initializeAndRender();
+    }
+  };
+
+  tab.onClose = async () => {
+    terminate = true;
+    if (dirty) {
+      ea.setScriptSettings(settings);
+    }
+    if(ea.targetView && ea.targetView.isDirty()) {
+      ea.targetView.save(false);
+    }
+  };
+
+  tab.open();
+});

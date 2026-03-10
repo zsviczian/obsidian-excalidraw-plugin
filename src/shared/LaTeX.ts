@@ -1,9 +1,9 @@
 // LaTeX.ts
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import ExcalidrawView from "../view/ExcalidrawView";
-import { FileData, MimeType } from "./EmbeddedFileLoader";
-import { FileId } from "@zsviczian/excalidraw/types/excalidraw/element/types";
-import { App } from "obsidian";
+import { FileData, MimeType } from "src/types/embeddedFileLoaderTypes";
+import { FileId } from "@zsviczian/excalidraw/types/element/src/types";
+import ExcalidrawPlugin from "src/core/main";
 
 declare const loadMathjaxToSVG: Function;
 let mathjaxLoaded = false;
@@ -52,7 +52,7 @@ export const updateEquation = async (
 export async function tex2dataURL(
   tex: string,
   scale: number = 4,
-  app: App,
+  plugin: ExcalidrawPlugin,
 ): Promise<{
   mimeType: MimeType;
   fileId: FileId;
@@ -61,7 +61,7 @@ export async function tex2dataURL(
   size: { height: number; width: number };
 }> {
   await loadMathJax();
-  return tex2dataURLExternal(tex, scale, app);
+  return tex2dataURLExternal(tex, scale, plugin);
 }
 
 export const clearMathJaxVariables = () => {

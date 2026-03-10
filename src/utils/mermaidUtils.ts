@@ -1,4 +1,4 @@
-import { ExcalidrawElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { requireApiVersion } from "obsidian";
 
 export function getMermaidImageElements (elements: ExcalidrawElement[]):ExcalidrawImageElement[] {

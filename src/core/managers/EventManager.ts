@@ -1,13 +1,14 @@
 import { WorkspaceLeaf, TFile, Editor, MarkdownView, MarkdownFileInfo, MetadataCache, App, EventRef, Menu, FileView } from "obsidian";
-import { ExcalidrawElement } from "@zsviczian/excalidraw/types/excalidraw/element/types";
+import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { getLink } from "../../utils/fileUtils";
-import { editorInsertText, getExcalidrawViews, getParentOfClass, setExcalidrawView } from "../../utils/obsidianUtils";
+import { editorInsertText, getExcalidrawViews, getParentOfClass, isUnwantedLeaf, setExcalidrawView } from "../../utils/obsidianUtils";
 import ExcalidrawPlugin from "src/core/main";
 import { DEBUGGING, debug } from "src/utils/debugHelper";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { DEVICE, FRONTMATTER_KEYS, ICON_NAME, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { t } from "src/lang/helpers";
+import { setMobileNavbarPosition } from "src/utils/excalidrawViewUtils";
 
 /**
  * Registers event listeners for the plugin
@@ -21,6 +22,7 @@ export class EventManager {
   private removeEventLisnters:(()=>void)[] = []; //only used if I register an event directly, not via Obsidian's registerEvent
   private previouslyActiveLeaf: WorkspaceLeaf;
   private splitViewLeafSwitchTimestamp: number = 0;
+  private debunceActiveLeafChangeHandlerTimer: number|null = null;
 
   get settings() {
     return this.plugin.settings;
@@ -51,6 +53,10 @@ export class EventManager {
     if(this.leafChangeTimeout) {
       window.clearTimeout(this.leafChangeTimeout);
       this.leafChangeTimeout = null;
+    }
+    if(this.debunceActiveLeafChangeHandlerTimer) {
+      window.clearTimeout(this.debunceActiveLeafChangeHandlerTimer);
+      this.debunceActiveLeafChangeHandlerTimer = null;
     }
     this.removeEventLisnters.forEach((removeEventListener) =>
       removeEventListener(),
@@ -101,6 +107,15 @@ export class EventManager {
 
     this.registerEvent(this.app.workspace.on("file-menu", this.onFileMenuHandler.bind(this)));
     this.plugin.registerEvent(this.plugin.app.workspace.on("editor-menu", this.onEditorMenuHandler.bind(this)));
+  }
+
+  public setDebounceActiveLeafChangeHandler() {
+    if(this.debunceActiveLeafChangeHandlerTimer) {
+      window.clearTimeout(this.debunceActiveLeafChangeHandlerTimer);
+    }
+    this.debunceActiveLeafChangeHandlerTimer = window.setTimeout(() => {
+      this.debunceActiveLeafChangeHandlerTimer = null;
+    }, 50);
   }
 
   private onLayoutChangeHandler() {
@@ -164,8 +179,28 @@ export class EventManager {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onActiveLeafChangeHandler,`onActiveLeafChangeEventHandler`, leaf);
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/723
 
+     if(this.debunceActiveLeafChangeHandlerTimer) {
+       return;
+     }
+
+    //In Obsidian 1.8.x the active excalidraw leaf is obscured by an empty leaf without a parent
+    //This hack resolves it
+    if(this.app.workspace.activeLeaf === leaf && isUnwantedLeaf(leaf)) {
+      leaf.detach();
+      return;
+    }
+
     if (leaf.view && leaf.view.getViewType() === "pdf") {
       this.plugin.lastPDFLeafID = leaf.id;
+    }
+
+    if (leaf.view && leaf.view.getViewType() === VIEW_TYPE_EXCALIDRAW) {
+      this.plugin.lastActiveExcalidrawLeafID = leaf.id;
+    } else {
+      const lastLeaf = this.app.workspace.getLeafById(this.plugin.lastActiveExcalidrawLeafID);
+      if(!lastLeaf || !(lastLeaf.view instanceof ExcalidrawView)) {
+        this.plugin.lastActiveExcalidrawLeafID = null;
+      }
     }
 
     if(this.leafChangeTimeout) {
@@ -200,28 +235,13 @@ export class EventManager {
       this.plugin.removeModalContainerObserver();
     }
 
-    //!Temporary hack
-    //https://discord.com/channels/686053708261228577/817515900349448202/1031101635784613968
-    if (DEVICE.isMobile && newActiveviewEV && !previouslyActiveEV) {
-      const navbar = document.querySelector("body>.app-container>.mobile-navbar");
-      if(navbar && navbar instanceof HTMLDivElement) {
-        navbar.style.position="relative";
-      }
-    }
-
-    if (DEVICE.isMobile && !newActiveviewEV && previouslyActiveEV) {
-      const navbar = document.querySelector("body>.app-container>.mobile-navbar");
-      if(navbar && navbar instanceof HTMLDivElement) {
-        navbar.style.position="";
-      }
-    }
-
+    setMobileNavbarPosition(!!newActiveviewEV);
     //----------------------
     //----------------------
 
     if (previouslyActiveEV && previouslyActiveEV !== newActiveviewEV) {
       if (previouslyActiveEV.leaf !== leaf) {
-        //if loading new view to same leaf then don't save. Excalidarw view will take care of saving anyway.
+        //if loading new view to same leaf then don't save. Excalidraw view will take care of saving anyway.
         //avoid double saving
         if(previouslyActiveEV?.isDirty() && !previouslyActiveEV.semaphores?.viewunload) {
           await previouslyActiveEV.save(true); //this will update transclusions in the drawing

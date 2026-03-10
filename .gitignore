@@ -14,10 +14,13 @@ data.json
 lib
 dist
 tmp
+deploy.ps1
 
 #VSCode
-.vscode
 yarn.lock
 .DS_Store
 .lock
 .lock
+
+# Obsidian files
+Obsidian

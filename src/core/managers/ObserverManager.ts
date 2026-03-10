@@ -1,8 +1,10 @@
 import { debug, DEBUGGING } from "src/utils/debugHelper";
 import ExcalidrawPlugin from "src/core/main";
 import { CustomMutationObserver } from "src/utils/debugHelper";
+import { DEVICE } from "src/constants/constants";
 import { getExcalidrawViews, isObsidianThemeDark } from "src/utils/obsidianUtils";
 import { App, Notice, TFile } from "obsidian";
+import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 
 export class ObserverManager {
   private plugin: ExcalidrawPlugin;
@@ -28,6 +30,9 @@ export class ObserverManager {
       if(this.settings.matchThemeTrigger) this.addThemeObserver();
       this.experimentalFileTypeDisplayToggle(this.settings.experimentalFileType);
       this.addModalContainerObserver();
+      if (this.app.isMobile) {
+        this.addWorkspaceDrawerObserver();
+      }
     } catch (e) {
       new Notice("Error adding ObserverManager", 6000);
       console.error("Error adding ObserverManager", e);
@@ -40,19 +45,20 @@ export class ObserverManager {
     this.removeModalContainerObserver();
     if (this.workspaceDrawerLeftObserver) {
       this.workspaceDrawerLeftObserver.disconnect();
+      this.workspaceDrawerLeftObserver = null;
     }
     if (this.workspaceDrawerRightObserver) {
       this.workspaceDrawerRightObserver.disconnect();
+      this.workspaceDrawerRightObserver = null;
     }
     if (this.fileExplorerObserver) {
       this.fileExplorerObserver.disconnect();
+      this.fileExplorerObserver = null;
     }
-    if (this.workspaceDrawerRightObserver) {
-      this.workspaceDrawerRightObserver.disconnect();
-    }
-    if (this.workspaceDrawerLeftObserver) {
-      this.workspaceDrawerLeftObserver.disconnect();
-    }
+
+    this.plugin = null;
+    this.app = null;
+    this.activeViewDoc = null;
   }
 
   public addThemeObserver() {
@@ -117,8 +123,9 @@ export class ObserverManager {
    */
   private async experimentalFileTypeDisplay() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.experimentalFileTypeDisplay, `ExcalidrawPlugin.experimentalFileTypeDisplay`);
+    const tagClassName = "excalidraw-filetype-tag";
     const insertFiletype = (el: HTMLElement) => {
-      if (el.childElementCount !== 1) {
+      if (!el || el.querySelector(`.${tagClassName}`)) {
         return;
       }
       const filename = el.getAttribute("data-path");
@@ -130,9 +137,9 @@ export class ObserverManager {
         return;
       }
       if (this.plugin.isExcalidrawFile(f)) {
-        el.insertBefore(
+        el.insertAfter(
           createDiv({
-            cls: "nav-file-tag",
+            cls: ["nav-file-tag", tagClassName],
             text: this.settings.experimentalFileTag,
           }),
           el.firstChild,
@@ -142,14 +149,27 @@ export class ObserverManager {
 
     const fileExplorerObserverFn:MutationCallback = (mutationsList) => {
       (process.env.NODE_ENV === 'development') && DEBUGGING && debug(fileExplorerObserverFn, `ExcalidrawPlugin.experimentalFileTypeDisplay > fileExplorerObserverFn`, mutationsList);
-      const mutationsWithNodes = mutationsList.filter((mutation) => mutation.addedNodes.length > 0);
-      mutationsWithNodes.forEach((mutationNode) => {
-        mutationNode.addedNodes.forEach((node) => {
-          if (!(node instanceof Element)) {
-            return;
+      const ensureFiletypes = (target: Element | DocumentFragment) => {
+        target.querySelectorAll?.(".nav-file-title").forEach(insertFiletype);
+      };
+
+      mutationsList.forEach((mutation) => {
+        if (mutation.type === "childList") {
+          mutation.addedNodes.forEach((node) => {
+            if (node instanceof Element || node instanceof DocumentFragment) {
+              ensureFiletypes(node);
+            }
+          });
+          if (mutation.target instanceof Element) {
+            // Handles folders that were collapsed/expanded without adding nodes
+            ensureFiletypes(mutation.target);
           }
-          node.querySelectorAll(".nav-file-title").forEach(insertFiletype);
-        });
+          return;
+        }
+
+        if (mutation.type === "attributes" && mutation.target instanceof Element) {
+          ensureFiletypes(mutation.target);
+        }
       });
     };
 
@@ -157,11 +177,44 @@ export class ObserverManager {
       ? new CustomMutationObserver(fileExplorerObserverFn, "fileExplorerObserver")
       : new MutationObserver(fileExplorerObserverFn);
 
-    //the part that should only run after onLayoutReady
-    document.querySelectorAll(".nav-file-title").forEach(insertFiletype); //apply filetype to files already displayed
-    const container = document.querySelector(".nav-files-container");
-    if (container) {
-      this.fileExplorerObserver.observe(container, {
+    const attachObserversToContainers = (): boolean => {
+      const containers = Array.from(document.querySelectorAll(".nav-files-container"));
+      if (!containers.length) {
+        return false;
+      }
+
+      containers.forEach((container) => {
+        container.querySelectorAll(".nav-file-title").forEach(insertFiletype); //apply tags to items already shown
+        this.fileExplorerObserver.observe(container, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ["class", "aria-expanded"],
+        });
+      });
+
+      return true;
+    };
+
+    if (!attachObserversToContainers() && DEVICE.isMobile) {
+      // On mobile, the file explorer lives inside drawers and may not be in the DOM yet.
+      const waitForFileExplorer = new MutationObserver((mutations, observer) => {
+        for (const mutation of mutations) {
+          if (mutation.type !== "childList") continue;
+          const added = Array.from(mutation.addedNodes ?? []);
+          const hasContainer = added.some((node) =>
+            node instanceof Element &&
+            (node.matches?.(".nav-files-container") || node.querySelector?.(".nav-files-container")),
+          );
+          if (!hasContainer) continue;
+          if (attachObserversToContainers()) {
+            observer.disconnect();
+            break;
+          }
+        }
+      });
+
+      waitForFileExplorer.observe(document.body, {
         childList: true,
         subtree: true,
       });
@@ -183,17 +236,20 @@ export class ObserverManager {
     //The user clicks settings, or "open another vault", or the command palette
     const modalContainerObserverFn: MutationCallback = async (m: MutationRecord[]) => {
       (process.env.NODE_ENV === 'development') && DEBUGGING && debug(modalContainerObserverFn,`ExcalidrawPlugin.modalContainerObserverFn`, m);
+      const view = this.plugin.activeExcalidrawView;
       if (
         (m.length !== 1) ||
         (m[0].type !== "childList") ||
         (m[0].addedNodes.length !== 1) ||
-        (!this.plugin.activeExcalidrawView) ||
-        this.plugin.activeExcalidrawView?.semaphores?.viewunload ||
-        (!this.plugin.activeExcalidrawView?.isDirty())
+        (!view) ||
+        view.semaphores?.viewunload ||
+        (!view.isDirty())
       ) {
         return;
       }
-      this.plugin.activeExcalidrawView.save();
+      
+      const { errorMessage } = (view.excalidrawAPI as ExcalidrawImperativeAPI).getAppState();
+      if (!errorMessage) this.plugin.activeExcalidrawView.save();
     };
 
     this.modalContainerObserver = DEBUGGING
@@ -214,44 +270,60 @@ export class ObserverManager {
 
   private addWorkspaceDrawerObserver() {
     //when the user activates the sliding drawers on Obsidian Mobile
-    const leftWorkspaceDrawer = document.querySelector(
-      ".workspace-drawer.mod-left",
-    );
-    const rightWorkspaceDrawer = document.querySelector(
-      ".workspace-drawer.mod-right",
-    );
-    if (leftWorkspaceDrawer || rightWorkspaceDrawer) {
-      const action = async (m: MutationRecord[]) => {
-        if (
-          m[0].oldValue !== "display: none;" ||
-          !this.plugin.activeExcalidrawView ||
-          !this.plugin.activeExcalidrawView?.isDirty()
-        ) {
-          return;
+    if (this.workspaceDrawerLeftObserver || this.workspaceDrawerRightObserver) return;
+
+    const leftWorkspaceDrawer = document.querySelector<HTMLElement>(".workspace .workspace-drawer.mod-left");
+    const rightWorkspaceDrawer = document.querySelector<HTMLElement>(".workspace .workspace-drawer.mod-right");
+    if (!leftWorkspaceDrawer && !rightWorkspaceDrawer) return;
+
+    const parseDisplay = (value?: string | null): string => {
+      if (!value) return "";
+      const match = value.match(/display:\s*([^;]+);?/i);
+      return match ? match[1].trim() : "";
+    };
+
+    const action: MutationCallback = (mutations) => {
+      const activeView = this.plugin.activeExcalidrawView;
+      if (!activeView || activeView.semaphores?.viewunload) return;
+
+      for (const mutation of mutations) {
+        if (mutation.type !== "attributes" || mutation.attributeName !== "style") continue;
+
+        const target = mutation.target as HTMLElement;
+        const newDisplay = target.style.display;
+        const oldDisplay = parseDisplay(mutation.oldValue as string);
+
+        // Drawer finished closing: refresh to fix pointer offset after CSS transitions
+        if (newDisplay === "none" && oldDisplay !== "none") {
+          activeView.refresh();
+          continue;
         }
-        this.plugin.activeExcalidrawView.save();
-      };
-      const options = {
-        attributeOldValue: true,
-        attributeFilter: ["style"],
-      };
 
-      if (leftWorkspaceDrawer) {
-        this.workspaceDrawerLeftObserver = DEBUGGING
-          ? new CustomMutationObserver(action, "slidingDrawerLeftObserver")
-          : new MutationObserver(action);
-        this.workspaceDrawerLeftObserver.observe(leftWorkspaceDrawer, options);
+        // Drawer just opened after being hidden: keep the previous autosave safeguard
+        if (oldDisplay === "none" && newDisplay !== "none" && activeView.isDirty()) {
+          activeView.save();
+        }
       }
+    };
 
-      if (rightWorkspaceDrawer) {
-        this.workspaceDrawerRightObserver = DEBUGGING
-          ? new CustomMutationObserver(action, "slidingDrawerRightObserver")
-          : new MutationObserver(action);
-        this.workspaceDrawerRightObserver.observe(
-          rightWorkspaceDrawer,
-          options,
-        );
-      }
+    const options = {
+      attributes: true,
+      attributeOldValue: true,
+      attributeFilter: ["style"],
+    };
+
+    if (leftWorkspaceDrawer) {
+      this.workspaceDrawerLeftObserver = DEBUGGING
+        ? new CustomMutationObserver(action, "slidingDrawerLeftObserver")
+        : new MutationObserver(action);
+      this.workspaceDrawerLeftObserver.observe(leftWorkspaceDrawer, options);
+    }
+
+    if (rightWorkspaceDrawer) {
+      this.workspaceDrawerRightObserver = DEBUGGING
+        ? new CustomMutationObserver(action, "slidingDrawerRightObserver")
+        : new MutationObserver(action);
+      this.workspaceDrawerRightObserver.observe(rightWorkspaceDrawer, options);
     }
   }
 }

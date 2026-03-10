@@ -23,8 +23,8 @@ const elements = ea.getViewSelectedElements().filter(
     el.groupIds.some(id => id.startsWith(ShadowGroupMarker)) ||
     (["line", "arrow"].includes(el.type) && el.roundness === null)
 );
-if(elements.length === 0) {
-  new Notice ("Select ellipses, rectangles or diamonds");
+if(elements.length < 2) {
+  new Notice ("Select ellipses, rectangles, diamonds; or lines and arrows with sharp edges");
   return;
 }
 
@@ -69,10 +69,15 @@ const result = polyboolAction({
 const polygonHierachy = subordinateInnerPolygons(result.regions);
 drawPolygonHierachy(polygonHierachy);
 ea.deleteViewElements(elements);
+setPolygonTrue();
 ea.addElementsToView(false,false,true);
 return;
 
-
+function setPolygonTrue() {
+  ea.getElements().filter(el=>el.type==="line").forEach(el => {
+    el.polygon = true;
+  });
+}
 
 function traceElement(element) {
   const diamondPath = (diamond) => [

@@ -44,19 +44,19 @@ import {
   ExcalidrawImageElement,
   ExcalidrawTextElement,
   FileId,
-} from "@zsviczian/excalidraw/types/excalidraw/element/types";
+} from "@zsviczian/excalidraw/types/element/src/types";
 import { BinaryFiles, DataURL, SceneData } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { EmbeddedFile, MimeType } from "./EmbeddedFileLoader";
-import { ConfirmationPrompt } from "./Dialogs/Prompt";
+import { EmbeddedFile } from "./EmbeddedFileLoader";
+import { MimeType } from "src/types/embeddedFileLoaderTypes";
+import { MultiOptionConfirmationPrompt } from "./Dialogs/Prompt";
 import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "../utils/mermaidUtils";
 import { DEBUGGING, debug } from "../utils/debugHelper";
-import { Mutable } from "@zsviczian/excalidraw/types/excalidraw/utility-types";
+import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { updateElementIdsInScene } from "../utils/excalidrawSceneUtils";
-import { checkAndCreateFolder, getNewUniqueFilepath, splitFolderAndFilename } from "../utils/fileUtils";
+import {  importFileToVault } from "../utils/fileUtils";
 import { t } from "../lang/helpers";
 import { displayFontMessage } from "../utils/excalidrawViewUtils";
 import { getPDFRect } from "../utils/PDFUtils";
-import { create } from "domain";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -305,7 +305,11 @@ const RE_TEXTELEMENTS_FALLBACK_2 = /(.*)##? Text Elements(?:\n|$)/m;
 
 const RE_DRAWING = /^(%%\n+)?##? Drawing\n/m;
 
-export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,string][]):string => {
+export function getExcalidrawMarkdownHeader (data: string): {
+  header: string,
+  shouldFixTrailingHashtag: boolean,
+  processingOk: boolean,
+} {
   //The base case scenario is at the top, continued with fallbacks in order of likelihood and file structure
   //change history for sake of backward compatibility
 
@@ -440,10 +444,18 @@ export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,st
     }
   }
   if (trimLocation === -1) {
-    return data.endsWith("\n") ? data : (data + "\n");
+    return {header:data.endsWith("\n") ? data : (data + "\n"), shouldFixTrailingHashtag, processingOk: false};
   }
 
-  let header = updateFrontmatterInString(data.substring(0, trimLocation),keys);
+  return {header: data.substring(0, trimLocation), shouldFixTrailingHashtag, processingOk: true};
+}
+
+export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,string][]):string => {
+
+  const {header, shouldFixTrailingHashtag, processingOk} = getExcalidrawMarkdownHeader(data);
+  if(!processingOk) return header;
+  
+  const updatedHeader = updateFrontmatterInString(header, keys);
   //this should be removed at a later time. Left it here to remediate 1.4.9 mistake
   /*const REG_IMG = /(^---[\w\W]*?---\n)(!\[\[.*?]]\n(%%\n)?)/m; //(%%\n)? because of 1.4.8-beta... to be backward compatible with anyone who installed that version
   if (header.match(REG_IMG)) {
@@ -451,15 +463,15 @@ export const getExcalidrawMarkdownHeaderSection = (data:string, keys?:[string,st
   }*/
   //end of remove
   return shouldFixTrailingHashtag
-    ? header + "\n#\n"
-    : header.endsWith("\n") ? header : (header + "\n");
+    ? updatedHeader + "\n#\n"
+    : updatedHeader.endsWith("\n") ? header : (header + "\n");
 }
 
 
 export class ExcalidrawData {
   public textElements: Map<
     string,
-    { raw: string; parsed: string}
+    { raw: string; parsed: string; hasTextLink: boolean; }
   > = null;
   public scene: any = null;
   public deletedElements: ExcalidrawElement[] = [];
@@ -568,6 +580,10 @@ export class ExcalidrawData {
       //add containerId to TextElements if missing
       if (el.type === "text" && !el.containerId) {
         el.containerId = null;
+      }
+
+      if (el.type === "text" && !el.originalText) {
+        el.originalText = el.rawText ?? el.text ?? "";
       }
 
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/494
@@ -693,7 +709,7 @@ export class ExcalidrawData {
     this.selectedElementIds = {};
     this.textElements = new Map<
       string,
-      { raw: string; parsed: string}
+      { raw: string; parsed: string, hasTextLink: boolean }
     >();
     this.elementLinks = new Map<string, string>();
     if (this.file !== file) {
@@ -749,6 +765,27 @@ export class ExcalidrawData {
 
     this.deletedElements = this.scene.elements.filter((el:ExcalidrawElement)=>el.isDeleted);
     this.scene.elements = this.scene.elements.filter((el:ExcalidrawElement)=>!el.isDeleted);
+
+        //once off migration of legacy scenes
+    if(this.scene?.elements?.some((el:any)=>el.type==="iframe" && !el.customData)) {
+        const prompt = new MultiOptionConfirmationPrompt(
+          this.plugin,
+          "This file contains embedded frames " +
+          "which will be migrated to a newer version for compatibility with " +
+          "<a href='https://excalidraw.com'>excalidraw.com</a>.<br>🔄 If you're using Obsidian on " + 
+          "multiple devices, you may proceed now, but please, before opening this " +
+          "file on your other devices, update Excalidraw on those as well.<br>🔍 More info is available "+
+          "<a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.9.9'>here</a>.<br>🌐 " +
+          "<a href='https://translate.google.com/?sl=en&tl=zh-CN&text=This%20file%20contains%20embedded%20frames%20which%20will%20be%20migrated%20to%20a%20newer%20version%20for%20compatibility%20with%20excalidraw.com.%0A%0AIf%20you%27re%20using%20Obsidian%20on%20multiple%20devices%2C%20you%20may%20proceed%20now%2C%20but%20please%2C%20before%20opening%20this%20file%20on%20your%20other%20devices%2C%20update%20Excalidraw%20on%20those%20as%20well.%0A%0AMore%20info%20is%20available%20here%3A%20https%3A%2F%2Fgithub.com%2Fzsviczian%2Fobsidian-excalidraw-plugin%2Freleases%2Ftag%2F1.9.9%27%3Ehere%3C%2Fa%3E.&op=translate'>" +
+          "Translate</a>.",
+        );
+        prompt.contentEl.focus();
+        const confirmation = await prompt.waitForClose
+        if(!confirmation) {
+          throw new Error(ERROR_IFRAME_CONVERSION_CANCELED);
+        }
+    }
+    this.initializeNonInitializedFields();
     
     const timer = window.setTimeout(()=>{
       const notice = new Notice(t("FONT_LOAD_SLOW"),15000);
@@ -790,27 +827,6 @@ export class ExcalidrawData {
       }
       delete this.scene.appState.gridColor.MajorGridFrequency;
     }
-
-    //once off migration of legacy scenes
-    if(this.scene?.elements?.some((el:any)=>el.type==="iframe" && !el.customData)) {
-        const prompt = new ConfirmationPrompt(
-          this.plugin,
-          "This file contains embedded frames " +
-          "which will be migrated to a newer version for compatibility with " +
-          "<a href='https://excalidraw.com'>excalidraw.com</a>.<br>🔄 If you're using Obsidian on " + 
-          "multiple devices, you may proceed now, but please, before opening this " +
-          "file on your other devices, update Excalidraw on those as well.<br>🔍 More info is available "+
-          "<a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.9.9'>here</a>.<br>🌐 " +
-          "<a href='https://translate.google.com/?sl=en&tl=zh-CN&text=This%20file%20contains%20embedded%20frames%20which%20will%20be%20migrated%20to%20a%20newer%20version%20for%20compatibility%20with%20excalidraw.com.%0A%0AIf%20you%27re%20using%20Obsidian%20on%20multiple%20devices%2C%20you%20may%20proceed%20now%2C%20but%20please%2C%20before%20opening%20this%20file%20on%20your%20other%20devices%2C%20update%20Excalidraw%20on%20those%20as%20well.%0A%0AMore%20info%20is%20available%20here%3A%20https%3A%2F%2Fgithub.com%2Fzsviczian%2Fobsidian-excalidraw-plugin%2Freleases%2Ftag%2F1.9.9%27%3Ehere%3C%2Fa%3E.&op=translate'>" +
-          "Translate</a>.",
-        );
-        prompt.contentEl.focus();
-        const confirmation = await prompt.waitForClose
-        if(!confirmation) {
-          throw new Error(ERROR_IFRAME_CONVERSION_CANCELED);
-        }
-    }
-    this.initializeNonInitializedFields();
 
     data = data.substring(0, sceneJSONandPOS.pos);
 
@@ -923,10 +939,12 @@ export class ExcalidrawData {
           this.textElements.set(id, {
             raw: text,
             parsed: parseRes.parsed,
+            hasTextLink: !!parseRes.link,
           });
-          if (parseRes.link) {
+          if (parseRes.link && this.plugin.settings.syncElementLinkWithText) {
             textEl.link = parseRes.link;
           }
+          textEl.hasTextLink = !!parseRes.link;
           //this will set the rawText field of text elements imported from files before 1.3.14, and from other instances of Excalidraw
           if (textEl && (!textEl.rawText || textEl.rawText === "")) {
             textEl.rawText = text;
@@ -1021,7 +1039,7 @@ export class ExcalidrawData {
     this.file = file;
     this.textElements = new Map<
       string,
-      { raw: string; parsed: string}
+      { raw: string; parsed: string; hasTextLink: boolean }
     >();
     this.elementLinks = new Map<string, string>();
     this.setShowLinkBrackets();
@@ -1096,9 +1114,11 @@ export class ExcalidrawData {
     }
     if (this.textMode === TextMode.parsed) {
       if (!text.parsed) {
+        const parseRes = await this.parse(text.raw);
         this.textElements.set(id, {
           raw: text.raw,
-          parsed: (await this.parse(text.raw)).parsed,
+          parsed: parseRes.parsed,
+          hasTextLink: !!parseRes.link,
         });
       }
       //console.log("parsed",this.textElements.get(id).parsed);
@@ -1114,7 +1134,6 @@ export class ExcalidrawData {
       return (
         el.type !== "text" &&
         el.link &&
-        //el.link.startsWith("[[") &&
         !this.elementLinks.has(el.id)
       );
     });
@@ -1170,17 +1189,18 @@ export class ExcalidrawData {
           this.textElements.set(id, {
             raw: text.raw,
             parsed: text.parsed,
+            hasTextLink: text.hasTextLink,
           });
           this.textElements.delete(te.id); //delete the old ID from the Map
         }
         if (!this.textElements.has(id)) {
           const raw = te.rawText && te.rawText !== "" ? te.rawText : te.text; //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
-          this.textElements.set(id, { raw, parsed: null});
+          this.textElements.set(id, { raw, parsed: null, hasTextLink: false});
           this.parseasync(id, raw);
         }
       } else if (!this.textElements.has(te.id)) {
         const raw = te.rawText && te.rawText !== "" ? te.rawText : te.text; //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
-        this.textElements.set(id, { raw, parsed: null});
+        this.textElements.set(id, { raw, parsed: null, hasTextLink: false});
         this.parseasync(id, raw);
       }
       
@@ -1196,7 +1216,6 @@ export class ExcalidrawData {
           el.type !== "text" &&
           el.id === key &&
           el.link, //&&
-          //el.link.startsWith("[["),
       );
       if (el.length === 0) {
         this.elementLinks.delete(key); //if no longer in the scene, delete the text element
@@ -1224,9 +1243,11 @@ export class ExcalidrawData {
           ? el[0].rawText
           : (el[0].originalText ?? el[0].text);
         if (text !== (el[0].originalText ?? el[0].text)) {
+          const parseRes = await this.parse(text);
           this.textElements.set(key, {
             raw,
-            parsed: (await this.parse(raw)).parsed,
+            parsed: parseRes.parsed,
+            hasTextLink: !!parseRes.link,
           });
         }
       }
@@ -1234,9 +1255,11 @@ export class ExcalidrawData {
   }
 
   private async parseasync(key: string, raw: string) {
+    const parseRes = await this.parse(raw);
     this.textElements.set(key, {
       raw,
-      parsed: (await this.parse(raw)).parsed,
+      parsed: parseRes.parsed,
+      hasTextLink: !!parseRes.link,
     });
   }
 
@@ -1334,6 +1357,7 @@ export class ExcalidrawData {
       position = parts.value.index + parts.value[0].length;
     }
     outString += text.substring(position, text.length);
+    outString = this.unescapeSquareBrackets(outString);
     if (linkIcon) {
       outString = this.linkPrefix + outString;
     }
@@ -1352,6 +1376,10 @@ export class ExcalidrawData {
         .replaceAll(/^- \[[^\s]] /g,`${this.plugin.settings.done} `)
         .replaceAll(/\n- \[[^\s]] /g,`\n${this.plugin.settings.done} `)
       : text;
+  }
+
+  private unescapeSquareBrackets(text: string): string {
+    return text?.replaceAll(/\\\[/g, "[") ?? text;
   }
 
   /**
@@ -1411,6 +1439,7 @@ export class ExcalidrawData {
       position = parts.value.index + parts.value[0].length;
     }
     outString += text.substring(position, text.length);
+    outString = this.unescapeSquareBrackets(outString);
     if (linkIcon) {
       outString = this.linkPrefix + outString;
     }
@@ -1426,6 +1455,7 @@ export class ExcalidrawData {
    */
   disableCompression: boolean = false;
   generateMDBase(deletedElements: ExcalidrawElement[] = []) {
+    const syncTextLinks = this.plugin.settings.syncElementLinkWithText;
     let outString = this.textElementCommentedOut ? "%%\n" : "";
     outString += `# Excalidraw Data\n\n## Text Elements\n`;
     if (this.plugin.settings.addDummyTextElement) {
@@ -1436,7 +1466,7 @@ export class ExcalidrawData {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566
       const element = this.scene.elements.filter((el:any)=>el.id===key);
       let elementString = this.textElements.get(key).raw;
-      if(element && element.length===1 && element[0].link && element[0].rawText === element[0].originalText) {
+      if(element && element.length===1 && element[0].link && (!syncTextLinks || element[0].rawText === element[0].originalText)) {
         //if(element[0].link.match(/^\[\[[^\]]*]]$/g)) { //apply this only to markdown links
           textElementLinks.set(key, element[0].link);
           //elementString = `%%***>>>text element-link:${element[0].link}<<<***%%` + elementString;
@@ -1462,7 +1492,7 @@ export class ExcalidrawData {
         : "";
     if (this.equations.size > 0) {
       for (const key of this.equations.keys()) {
-        outString += `${key}: $$${this.equations.get(key).latex}$$\n\n`;
+        outString += `${key}: $$${this.equations.get(key).latex.trim()}$$\n\n`;
       }
     }
     if (this.files.size > 0) {
@@ -1547,37 +1577,15 @@ export class ExcalidrawData {
       }
     }
 
-    let hookFilepath:string;
-    const ea = this.view?.getHookServer();
-    if(ea?.onImageFilePathHook) {
-      hookFilepath = ea.onImageFilePathHook({
-        currentImageName: fname,
-        drawingFilePath: this.view?.file?.path,
-      })
-    }
-
-    let filepath:string;
-    if(hookFilepath) {
-      const {folderpath, filename} = splitFolderAndFilename(hookFilepath);
-      await checkAndCreateFolder(folderpath);
-      filepath = getNewUniqueFilepath(this.app.vault,filename,folderpath);
-    } else {
-      const x = await getAttachmentsFolderAndFilePath(this.app, this.file.path, fname);
-      filepath = getNewUniqueFilepath(this.app.vault,fname,x.folder);
-    }
-
     const arrayBuffer = await getBinaryFileFromDataURL(dataURL);
     if(!arrayBuffer) return null;
 
-    const file = await this.app.vault.createBinary(
-      filepath,
-      arrayBuffer,
-    );
+    const file = await importFileToVault(this.app, fname, arrayBuffer, this.file, this.view);
 
     const embeddedFile = new EmbeddedFile(
       this.plugin,
       this.file.path,
-      filepath,
+      file.path,
     );
     
     embeddedFile.setImage({
@@ -1777,6 +1785,14 @@ export class ExcalidrawData {
     return t.parsed;
   }
 
+  public getParsedResult(id: string) {
+    const t = this.textElements.get(id);
+    if (!t) {
+      return null;
+    }
+    return t;
+  }
+
   /**
    * Attempts to quickparse (sycnhronously) the raw text.
    * 
@@ -1806,6 +1822,7 @@ export class ExcalidrawData {
       this.textElements.set(elementID, {
         raw: rawOriginalText,
         parsed: parseResult,
+        hasTextLink: !!link,
       });
       return [parseResult, link];
     }
@@ -1815,6 +1832,7 @@ export class ExcalidrawData {
       this.textElements.set(elementID, {
         raw: rawOriginalText,
         parsed: parsedText,
+        hasTextLink: !!parseRes.link,
       });
       if (parsedText) {
         updateSceneCallback(parsedText);
@@ -1832,6 +1850,7 @@ export class ExcalidrawData {
     this.textElements.set(elementID, {
       raw: rawOriginalText,
       parsed: parseResult.parsed,
+      hasTextLink: !!parseResult.link,
     });
     return {
       parseResult: parseResult.parsed,

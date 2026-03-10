@@ -1,21 +1,25 @@
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { t } from "src/lang/helpers";
+import { CaptureUpdateAction } from "src/constants/constants";
+import { FloatingModal } from "./FloatingModal";
+import ExcalidrawView from "src/view/ExcalidrawView";
+import { Setting } from "obsidian";
 
-export const showFrameSettings = (ea: ExcalidrawAutomate) => {
-  const {enabled, clip, name, outline} = ea.getExcalidrawAPI().getAppState().frameRendering;
+export const showFrameSettings = (view: ExcalidrawView) => {
+  const {enabled, clip, name, outline, markerName, markerEnabled} = view.excalidrawAPI.getAppState().frameRendering;
   
   // Create modal dialog
-  const frameSettingsModal = new ea.obsidian.Modal(ea.plugin.app);
+  const frameSettingsModal = new FloatingModal(view.app);
   
   frameSettingsModal.onOpen = () => {
     const {contentEl} = frameSettingsModal;
     
     contentEl.createEl("h1", {text: t("FRAME_SETTINGS_TITLE")});
     
-    const settings = { enabled, clip, name, outline };
+    const settings = { enabled, clip, name, outline, markerName, markerEnabled };
 
     // Add toggles
-    const enableFramesSetting = new ea.obsidian.Setting(contentEl)
+    new Setting(contentEl)
       .setName(t("FRAME_SETTINGS_ENABLE"))
       .addToggle(toggle => toggle
         .setValue(settings.enabled)
@@ -27,21 +31,21 @@ export const showFrameSettings = (ea: ExcalidrawAutomate) => {
         })
       );
 
-    const displayFrameNameSetting = new ea.obsidian.Setting(contentEl)
+    const displayFrameNameSetting = new Setting(contentEl)
       .setName(t("FRAME_SETTIGNS_NAME"))
       .addToggle(toggle => toggle
         .setValue(settings.name)
         .onChange(value => settings.name = value)
       );
 
-    const displayFrameOutlineSetting = new ea.obsidian.Setting(contentEl)
+    const displayFrameOutlineSetting = new Setting(contentEl)
       .setName(t("FRAME_SETTINGS_OUTLINE"))
       .addToggle(toggle => toggle
         .setValue(settings.outline)
         .onChange(value => settings.outline = value)
       );
 
-    const enableFrameClippingSetting = new ea.obsidian.Setting(contentEl)
+    const enableFrameClippingSetting = new Setting(contentEl)
       .setName(t("FRAME_SETTINGS_CLIP"))
       .addToggle(toggle => toggle
         .setValue(settings.clip)
@@ -54,26 +58,23 @@ export const showFrameSettings = (ea: ExcalidrawAutomate) => {
     hideComponent(enableFrameClippingSetting, !settings.enabled);
 
     // Add OK button
-    new ea.obsidian.Setting(contentEl)
+    new Setting(contentEl)
       .addButton(button => button
         .setButtonText("OK")
         .onClick(() => {
           // Update appState with new settings
-          ea.viewUpdateScene({
+          view.updateScene({
             // @ts-ignore
             appState: {
               frameRendering: settings
             },
-            storeAction: "update",
+            captureUpdate: CaptureUpdateAction.NEVER,
           });
           frameSettingsModal.close();
         })
       );
   };
 
-  frameSettingsModal.onClose = () => {
-    ea.destroy();
-  }
   frameSettingsModal.open();
 };
 
