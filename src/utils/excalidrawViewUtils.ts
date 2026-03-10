@@ -323,34 +323,29 @@ export async function addBackOfTheNoteCard(
 export function renderContextMenuAction(
   React: any,
   label: string,
-  action: Function,
+  action: () => void,
   onClose: (callback?: () => void) => void,
+  actionId?: string,
+  checked: boolean = false,
 ) {
-  return React.createElement (
+  return React.createElement(
     "li",          
     {
       key: nanoid(),
-      onClick: () => {
-        onClose(()=>action())
-      },
+      onClick: () => onClose(action),
+      "data-testid": actionId
     },
     React.createElement(
       "button",
-      {              
-        className: "context-menu-item",
-      },
+      { className: checked ? "context-menu-item checkmark" : "context-menu-item" },
       React.createElement(
         "div",
-        {
-          className: "context-menu-item__label",
-        },
+        { className: "context-menu-item__label" },
         label,
       ),
       React.createElement(
         "kbd",
-        {
-          className: "context-menu-item__shortcut",
-        },
+        { className: "context-menu-item__shortcut" },
         "", //this is where the shortcut may go in the future
       ),
     )

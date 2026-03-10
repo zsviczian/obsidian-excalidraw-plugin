@@ -132,8 +132,6 @@ export default {
   CONVERT_TO_MARKDOWN: "Преобразовать в файл...",
   SELECT_TEXTELEMENT_ONLY: "Выбрать только текстовый элемент (не контейнер)",
   REMOVE_LINK: "Удалить ссылку на текстовый элемент",
-  LASER_ON: "Включить лазерный указатель",
-  LASER_OFF: "Отключить лазерный указатель",
   WELCOME_RANK_NEXT: "Больше рисунков до следующего ранга!",
   WELCOME_RANK_LEGENDARY: "Вы на вершине. Продолжайте быть легендарным!",
   WELCOME_COMMAND_PALETTE: 'Введите «Excalidraw» в палитре коман',

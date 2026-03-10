@@ -59,9 +59,7 @@ export default {
   TOGGLE_LOCK: "Alternar Elemento de Texto entre edición RAW y VISTA PREVIA",
   DELETE_FILE: "Eliminar imagen o archivo Markdown seleccionado de la Bóveda de Obsidian",
   MARKER_FRAME_SHOW: "Mostrar Marker Frames(marcos de marcador)",
-  MARKER_FRAME_HIDE: "Ocultar Marker Frames(marcos de marcador)",
   MARKER_FRAME_TITLE_SHOW: "Mostrar títulos de Marker Frames(marcos de marcador)",
-  MARKER_FRAME_TITLE_HIDE: "Ocultar títulos de Marker Frames(marcos de marcador)",
   COPY_ELEMENT_LINK: "Copiar [[enlace]] para el/los elemento(s) seleccionado(s)",
   COPY_DRAWING_LINK: "Copiar ![[enlace incrustado]] de este bosquejo",
   INSERT_LINK_TO_ELEMENT:
@@ -184,8 +182,6 @@ export default {
   CONVERT_TO_MARKDOWN: "Convertir a archivo...",
   SELECT_TEXTELEMENT_ONLY: "Seleccionar solo elemento de texto (no contenedor)",
   REMOVE_LINK: "Eliminar enlace del elemento de texto",
-  LASER_ON: "Activar puntero láser",
-  LASER_OFF: "Desactivar puntero láser",
   WELCOME_RANK_NEXT: "¡más bosquejos hasta el siguiente rango!",
   WELCOME_RANK_LEGENDARY: "Estás en la cima. ¡Sigue siendo legendario!",
   WELCOME_COMMAND_PALETTE: 'Escribe "Excalidraw" en la Paleta de Comandos',
