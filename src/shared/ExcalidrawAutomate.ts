@@ -920,6 +920,9 @@ export class ExcalidrawAutomate {
 
   /**
    * Returns an object describing the bound text element.
+   * 
+   * IMPORTANT: The returned object contains EITHER `eaElement` OR `sceneElement`, never both. 
+   * 
    * If a text element is provided:
    *  - returns { eaElement } if the element is in ea.elementsDict
    *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
@@ -928,6 +931,15 @@ export class ExcalidrawAutomate {
    *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
    * If not found, returns {}.
    * Does not add the text element to elementsDict.
+   * 
+   * Recommended usage pattern for editing:
+   * const boundText = ea.getBoundTextElement(container, true);
+   * let textEl = boundText.eaElement;
+   * if (!textEl && boundText.sceneElement) {
+   *   ea.copyViewElementsToEAforEditing([boundText.sceneElement]);
+   *   textEl = ea.getElement(boundText.sceneElement.id);
+   * }
+   * if (textEl) { ... safely modify textEl ... }
    * @param element: ExcalidrawElement | ExcalidrawElement[] - The selected container with text (an array of 2 elements) to check.
    * @param searchInView - If true, searches in the targetView elements if not found in elementsDict.
    * @returns Object containing either eaElement or sceneElement or empty if not found.
