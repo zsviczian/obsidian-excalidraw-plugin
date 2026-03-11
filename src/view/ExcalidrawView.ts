@@ -5539,6 +5539,11 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   private setExcalidrawAPI (api: ExcalidrawImperativeAPI) {
     this.excalidrawAPI = api;
     //api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
+  };
+
+  private onExcalidrawInitialize(api: ExcalidrawImperativeAPI) {
+    // Ensure we keep the latest editor API reference before running scene-dependent setup.
+    this.setExcalidrawAPI(api);
     window.setTimeout(() => {
       // window migration scenario
       if (!this.plugin) return;
@@ -6179,7 +6184,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         React.createElement(
           Excalidraw,
           {
-            excalidrawAPI: (this.setExcalidrawAPI.bind(this)),
+            onExcalidrawAPI: this.setExcalidrawAPI.bind(this),
+            onInitialize: this.onExcalidrawInitialize.bind(this),
             width: "100%", //dimensions.width,
             height: "100%", //dimensions.height,
             UIOptions:
