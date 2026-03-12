@@ -131,7 +131,7 @@ import { ObsidianMenu } from "./components/menu/ObsidianMenu";
 import { ToolsPanel } from "./components/menu/ToolsPanel";
 import { ScriptEngine } from "../shared/Scripts";
 import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAtPointer } from "../utils/getElementAtPointer";
-import { excalidrawSword, getTrayIcon, ICONS, LogoWrapper, Rank, saveIcon, SwordColors } from "../constants/actionIcons";
+import { excalidrawSword, ICONS, LogoWrapper, Rank, saveIcon, SwordColors } from "../constants/actionIcons";
 import { ExportDialog } from "../shared/Dialogs/ExportDialog";
 import { getEA } from "src/core"
 import { anyModifierKeysPressed, emulateKeysForLinkClick, isWinALTorMacOPT, isWinCTRLorMacCMD, isWinMETAorMacCTRL, isSHIFT, linkClickModifierType, ModifierKeys } from "../utils/modifierkeyHelper";
@@ -5853,7 +5853,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       React.createElement(
         MainMenu.Item,
         {              
-          icon: getTrayIcon(),
+          icon: ICONS.tray,
           "aria-label": t("ARIA_LABEL_TRAY_MODE"),
           onSelect: ()=> {
             const uiModes = new UIModeSettings(this.plugin);

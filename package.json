@@ -31,7 +31,6 @@
     "@zsviczian/colormaster": "^1.2.2",
     "gl-matrix": "^3.4.3",
     "js-yaml": "^4.1.0",
-    "lucide-react": "^0.479.0",
     "mathjax-full": "^3.2.2",
     "monkey-around": "^2.3.0",
     "nanoid": "^4.0.2",
