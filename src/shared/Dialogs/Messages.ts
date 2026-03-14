@@ -17,6 +17,16 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.21.0":`
+## Fixed
+- Sizing of embedded images in Markdown when image type is set to SVG. [#2685](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2685)
+
+## New
+- LaTeX editor is now floating [#2684](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2684) 🙏[@TravisLEBLANC1](https://github.com/TravisLEBLANC1)
+- Inline link suggester now supports triggers \`![[drawing#^frame=\` and \`![[drawing#^clippedframe=\`, thus it is easy to reference frames like slides or parts of images in your different drawings.
+- Support for mermaid Entity Relationship Diagrams, new ERD/cardinality arrowheads [#10940](https://github.com/excalidraw/excalidraw/pull/10940)
+- New Context Menu options to disable arrow binding and midpoint snapping. [#10906](https://github.com/excalidraw/excalidraw/pull/10906)
+`,
 "2.20.6":`
 <div class="excalidraw-videoWrapper">
 <a href="https://www.youtube.com/watch?v=g-BiyQ7TJTM" target="_blank"><img src ="https://i.ytimg.com/vi/g-BiyQ7TJTM/maxresdefault.jpg" style="width:100%;"></a>

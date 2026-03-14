@@ -15,6 +15,7 @@ import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
 import { t } from "src/lang/helpers";
 import { nanoid } from "src/constants/constants";
 import { sleep } from "src/utils/utils";
+import { getEA } from "src/core";
 
 type HeadingSuggestion = {
   kind: "heading";
@@ -38,7 +39,16 @@ type TagSuggestion = {
   count: number;
 };
 
-type InlineSuggestion = LinkSuggestion | HeadingSuggestion | ParagraphSuggestion | TagSuggestion;
+type FrameSuggestion = {
+  kind: "frame";
+  label: string;
+  target: string;
+  id: string;
+  file: TFile;
+  refKind: "frame" | "clippedframe";
+};
+
+type InlineSuggestion = LinkSuggestion | HeadingSuggestion | ParagraphSuggestion | TagSuggestion | FrameSuggestion;
 
 /**
  * Inline link suggester that attaches to a specific input element.
@@ -58,9 +68,10 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
   private activeAlias: string | null = null;
   private activeSearchTerm = "";
   private activeFile: TFile | null = null;
-  private mode: "file" | "heading" | "block" | "tag" | null = null;
+  private mode: "file" | "heading" | "block" | "frame" | "clippedframe" | "tag" | null = null;
   private headingItems: HeadingSuggestion[] = [];
   private paragraphItems: ParagraphSuggestion[] = [];
+  private frameItems: FrameSuggestion[] = [];
   private tagItems: TagSuggestion[] = [];
 
   constructor(
@@ -201,9 +212,12 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
         await this.loadHeadings(this.activeFile);
       } else if (this.mode === "block") {
         await this.loadParagraphs(this.activeFile);
+      } else if (this.mode === "frame" || this.mode === "clippedframe") {
+        await this.loadFrames(this.activeFile, this.mode);
       } else {
         this.headingItems = [];
         this.paragraphItems = [];
+        this.frameItems = [];
       }
 
       this.tagItems = [];
@@ -228,6 +242,7 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     this.mode = "tag";
     this.headingItems = [];
     this.paragraphItems = [];
+    this.frameItems = [];
     this.tagItems = this.getTagSuggestions();
 
     this.block = true;
@@ -268,6 +283,10 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
       return fuzzyMatchParagraphsWithId(this.activeSearchTerm ?? "", this.paragraphItems);
     }
 
+    if (this.mode === "frame" || this.mode === "clippedframe") {
+      return fuzzyMatchTextItems(this.activeSearchTerm ?? "", this.frameItems, (f) => f.label);
+    }
+
     const term = this.activeSearchTerm ?? "";
     return getSortedLinkMatches(term, this.items as LinkSuggestion[]);
   }
@@ -284,6 +303,10 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     return (item as TagSuggestion)?.kind === "tag";
   }
 
+  private isFrame(item: InlineSuggestion): item is FrameSuggestion {
+    return (item as FrameSuggestion)?.kind === "frame";
+  }
+
   getItemText(item: InlineSuggestion): string {
     if (this.isHeading(item)) {
       return item.heading;
@@ -293,6 +316,9 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     }
     if (this.isTag(item)) {
       return item.tag;
+    }
+    if (this.isFrame(item)) {
+      return item.label;
     }
     return (item as LinkSuggestion).path + ((item as LinkSuggestion).alias ? `|${(item as LinkSuggestion).alias}` : "");
   }
@@ -326,6 +352,17 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
       );
       const aliasSuffix = this.activeAlias !== null ? `|${this.activeAlias}` : "";
       this.insertLink(`[[${linktext}#^${id}${aliasSuffix}]]`);
+      return;
+    }
+
+    if (this.isFrame(item)) {
+      const linktext = this.app.metadataCache.fileToLinktext(
+        item.file,
+        this.getSourcePath() ?? "",
+        true,
+      );
+      const aliasSuffix = this.activeAlias !== null ? `|${this.activeAlias}` : "";
+      this.insertLink(`[[${linktext}#^${item.refKind}=${item.target}${aliasSuffix}]]`);
       return;
     }
 
@@ -369,6 +406,13 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
         ? this.app.metadataCache.fileToLinktext((item as ParagraphSuggestion).file, this.getSourcePath() ?? "", true)
         : "";
       renderParagraphSuggestionRow(result as FuzzyMatch<ParagraphSuggestion>, note, itemEl);
+      return;
+    }
+
+    if (this.isFrame(item as InlineSuggestion)) {
+      const frameItem = item as FrameSuggestion;
+      const note = this.app.metadataCache.fileToLinktext(frameItem.file, this.getSourcePath() ?? "", true);
+      this.renderFrameSuggestionRow(result as FuzzyMatch<FrameSuggestion>, note, itemEl);
       return;
     }
 
@@ -453,6 +497,7 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     this.mode = null;
     this.headingItems = [];
     this.paragraphItems = [];
+    this.frameItems = [];
     this.tagItems = [];
     setTimeout(() => {
       this.block = false;
@@ -468,17 +513,27 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     const hashIndex = linkWithoutAlias.indexOf("#");
     const caretInLink = Math.max(0, Math.min(caret - (open + 2), linkText.length));
     const inSubpath = hashIndex >= 0 && caretInLink > hashIndex;
-    const isBlockMode = inSubpath && linkWithoutAlias.charAt(hashIndex + 1) === "^";
     const basePath = hashIndex >= 0 ? linkWithoutAlias.substring(0, hashIndex) : linkWithoutAlias;
-    const subpathTerm = inSubpath
-      ? linkWithoutAlias.substring(hashIndex + (isBlockMode ? 2 : 1), caretInLink)
-      : "";
+    const subpathRaw = inSubpath ? linkWithoutAlias.substring(hashIndex + 1, caretInLink) : "";
     const file = basePath
       ? this.app.metadataCache.getFirstLinkpathDest(basePath, this.getSourcePath() ?? "")
       : null;
 
-    const mode = file && file.extension === "md" && inSubpath ? (isBlockMode ? "block" : "heading") : "file";
-    const searchTerm = mode === "file" ? activeInfo.searchTerm : subpathTerm;
+    let mode: "file" | "heading" | "block" | "frame" | "clippedframe" = "file";
+    let searchTerm = activeInfo.searchTerm;
+    if (file && inSubpath) {
+      if (subpathRaw.startsWith("^frame=") && this.plugin.isExcalidrawFile(file)) {
+        mode = "frame";
+        searchTerm = subpathRaw.substring("^frame=".length);
+      } else if (subpathRaw.startsWith("^clippedframe=") && this.plugin.isExcalidrawFile(file)) {
+        mode = "clippedframe";
+        searchTerm = subpathRaw.substring("^clippedframe=".length);
+      } else if (file.extension === "md") {
+        const isBlockMode = subpathRaw.startsWith("^");
+        mode = isBlockMode ? "block" : "heading";
+        searchTerm = isBlockMode ? subpathRaw.substring(1) : subpathRaw;
+      }
+    }
 
     return {
       alias: activeInfo.alias,
@@ -487,6 +542,49 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
       file: mode === "file" ? null : file,
       mode,
     } as const;
+  }
+
+  private async loadFrames(file: TFile | null, refKind: "frame" | "clippedframe") {
+    this.frameItems = [];
+    if (!file || !this.plugin.isExcalidrawFile(file)) {
+      return;
+    }
+
+    const ea = getEA();
+    const scene = await ea?.getSceneFromFile?.(file);
+    const frames = (scene?.elements ?? []).filter((el: any) => el?.type === "frame" && !el?.isDeleted);
+    if (!frames.length) {
+      return;
+    }
+
+    const nameCounts = new Map<string, number>();
+    frames.forEach((frame: any) => {
+      const rawName = typeof frame?.name === "string" ? frame.name.trim() : "";
+      if (!rawName) {
+        return;
+      }
+      nameCounts.set(rawName, (nameCounts.get(rawName) ?? 0) + 1);
+    });
+
+    this.frameItems = frames.map((frame: any) => {
+      const id = frame?.id ?? "";
+      const rawName = typeof frame?.name === "string" ? frame.name.trim() : "";
+      const hasName = rawName.length > 0;
+      const isDuplicateName = hasName && (nameCounts.get(rawName) ?? 0) > 1;
+      const label = hasName
+        ? (isDuplicateName ? `${rawName} (${id})` : rawName)
+        : id;
+      const target = hasName && !isDuplicateName ? rawName : id;
+
+      return {
+        kind: "frame",
+        label,
+        target,
+        id,
+        file,
+        refKind,
+      };
+    });
   }
 
   private async loadHeadings(file: TFile | null) {
@@ -537,6 +635,53 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
 
   private cleanHeading(display: string): string {
     return display.replace(/^#+\s*/, "").trim();
+  }
+
+  private renderFrameSuggestionRow(
+    result: FuzzyMatch<FrameSuggestion>,
+    note: string,
+    itemEl: HTMLElement,
+  ) {
+    const { item, match } = result || {};
+    itemEl.addClass("suggestion-item");
+    itemEl.addClass("mod-complex");
+
+    const contentEl = itemEl.createDiv("suggestion-content");
+    const titleEl = contentEl.createDiv("suggestion-title");
+    if (!item) {
+      titleEl.setText(this.emptyStateText);
+      itemEl.addClass("is-selected");
+      return;
+    }
+
+    this.renderTextWithHighlights(titleEl, item.label, match?.matches ?? []);
+
+    const noteEl = contentEl.createDiv("suggestion-note");
+    noteEl.setText(note ?? "");
+
+    const auxEl = itemEl.createDiv("suggestion-aux");
+    const flair = auxEl.createSpan("suggestion-flair");
+    flair.setText(`^${item.refKind}=${item.target}`);
+  }
+
+  private renderTextWithHighlights(titleEl: HTMLElement, text: string, matches: [number, number][]) {
+    if (!matches?.length) {
+      titleEl.setText(text);
+      return;
+    }
+
+    const sorted = [...matches].sort((a, b) => a[0] - b[0]);
+    for (let i = 0; i < text.length; i++) {
+      const m = sorted.find((range) => range[0] === i);
+      if (m) {
+        const span = createSpan("suggestion-highlight");
+        span.appendText(text.substring(m[0], m[1]));
+        titleEl.appendChild(span);
+        i = m[1] - 1;
+        continue;
+      }
+      titleEl.appendText(text[i]);
+    }
   }
 
   private async ensureParagraphHasId(item: ParagraphSuggestion): Promise<string | null> {
