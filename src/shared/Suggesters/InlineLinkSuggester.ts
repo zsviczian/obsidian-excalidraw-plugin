@@ -482,11 +482,7 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
   }
 
   private resetSuggestions() {
-    this.suggester.setSuggestions([]);
-    if (this.popper?.deref()) {
-      this.popper.deref().destroy();
-    }
-    this.suggestEl.detach();
+    this.close();
     this.activeOpen = -1;
     this.activeClose = -1;
     this.activeTagStart = -1;
@@ -499,9 +495,6 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     this.paragraphItems = [];
     this.frameItems = [];
     this.tagItems = [];
-    setTimeout(() => {
-      this.block = false;
-    });
   }
 
   private parseLinkContext(value: string, caret: number, open: number, close: number) {
@@ -701,7 +694,9 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
 
   // Keep listeners so the suggester can trigger multiple times in the same input session.
   close(): void {
-    this.app.keymap.popScope(this.scope);
+    if (this.suggestEl.isConnected) {
+      this.app.keymap.popScope(this.scope);
+    }
     this.suggester.setSuggestions([]);
     if (this.popper?.deref()) {
       this.popper.deref().destroy();

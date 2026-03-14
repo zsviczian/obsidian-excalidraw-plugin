@@ -20,6 +20,7 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 "2.21.0":`
 ## Fixed
 - Sizing of embedded images in Markdown when image type is set to SVG. [#2685](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2685)
+- Fixed Enter, Up/Down arrows, and TAB keys stop working in text element after deleting the \`#\` character [#2704](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2704)
 
 ## New
 - LaTeX editor is now floating [#2684](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2684) 🙏[@TravisLEBLANC1](https://github.com/TravisLEBLANC1)
