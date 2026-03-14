@@ -2877,6 +2877,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       });
       return;
     }
+    if(!inData.scene) {
+      return;
+    }
     this.semaphores.saving = true;
     let reloadFiles = new Set<FileId>();
 

@@ -1129,54 +1129,54 @@ const getActionLabel = (action) => t(ACTION_LABEL_KEYS[action] ?? action);
 // - excalidraw: the hotkey works when either the inputEl has focus or the sidepanelView leaf or the Excalidraw leaf is active
 // - global: the hotkey works across obsidian, when ever the Excalidraw view in ea.targetView is visible, i.e. the hotkey works even if the user is active in a leaf like pdf viewer, markdown note, open next to Excalidraw.
 // - none: ea.targetView not set or Excalidraw leaf not visible
-const DEFAULT_HOTKEYS = [
+const DEFAULT_HOTKEYS =[
   // Creation - Enter based
-  { action: ACTION_ADD, key: "Enter", modifiers: [], scope: SCOPE.input, isInputOnly: true },
-  { action: ACTION_ADD_SIBLING_AFTER, key: "Enter", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: true },
-  { action: ACTION_ADD_SIBLING_BEFORE, key: "Enter", modifiers: ["Alt", "Shift"], scope: SCOPE.input, isInputOnly: true },
-  { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers: ["Mod", "Alt"], scope: SCOPE.input, isInputOnly: true },
-  { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: true },
-  { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"], scope: SCOPE.input, isInputOnly: true },
+  { action: ACTION_ADD, key: "Enter", modifiers: [], scope: SCOPE.input, isInputOnly: true, requiresNode: false },
+  { action: ACTION_ADD_SIBLING_AFTER, key: "Enter", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: true, requiresNode: false },
+  { action: ACTION_ADD_SIBLING_BEFORE, key: "Enter", modifiers: ["Alt", "Shift"], scope: SCOPE.input, isInputOnly: true, requiresNode: false },
+  { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers:["Mod", "Alt"], scope: SCOPE.input, isInputOnly: true, requiresNode: false },
+  { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: true, requiresNode: false },
+  { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"], scope: SCOPE.input, isInputOnly: true, requiresNode: false },
   
   //Window
-  { action: ACTION_DOCK_UNDOCK, key: "Enter", modifiers: ["Shift"], scope: SCOPE.input, isInputOnly: true },
-  { action: ACTION_HIDE, key: "Escape", modifiers: [], scope: SCOPE.excalidraw, isInputOnly: true },
+  { action: ACTION_DOCK_UNDOCK, key: "Enter", modifiers: ["Shift"], scope: SCOPE.input, isInputOnly: true, requiresNode: false },
+  { action: ACTION_HIDE, key: "Escape", modifiers:[], scope: SCOPE.excalidraw, isInputOnly: true, requiresNode: false },
 
   // Edit
-  { action: ACTION_EDIT, code: "KeyE", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_EDIT, code: "KeyE", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
 
   // Structure Modifiers
-  { action: ACTION_TOGGLE_CHECKBOX, code: "KeyL", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_TOGGLE_BOUNDARY, code: "KeyB", modifiers: ["Alt", "Shift"], scope: SCOPE.input, inputOnly: false },
-  { action: ACTION_TOGGLE_SUBMAP_ROOT, code: "KeyJ", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_TOGGLE_GROUP, code: "KeyG", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_TOGGLE_CHECKBOX, code: "KeyL", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_TOGGLE_BOUNDARY, code: "KeyB", modifiers: ["Alt", "Shift"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_TOGGLE_SUBMAP_ROOT, code: "KeyJ", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_TOGGLE_GROUP, code: "KeyG", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
 
   // Clipboard (Alt to distinguish from text editing)
-  { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_IMPORT_OUTLINE, code: "KeyI", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: false },
+  { action: ACTION_IMPORT_OUTLINE, code: "KeyI", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
 
   // View Actions
-  { action: ACTION_REARRANGE, code: "KeyR", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_ZOOM, code: "KeyZ", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_REARRANGE, code: "KeyR", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_ZOOM, code: "KeyZ", modifiers:["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: false },
 
   //Navigation
-  { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_NAVIGATE_ZOOM, key: "ArrowKeys", modifiers: ["Alt", "Shift"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_NAVIGATE_FOCUS, key: "ArrowKeys", modifiers: ["Alt", "Mod"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_SORT_ORDER, code: "ArrowKeys", modifiers: ["Mod"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_FOLD, code: "Digit1", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_FOLD_L1, code: "Digit2", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_FOLD_ALL, code: "Digit3", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true, scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_NAVIGATE_ZOOM, key: "ArrowKeys", modifiers: ["Alt", "Shift"], isNavigation: true, scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_NAVIGATE_FOCUS, key: "ArrowKeys", modifiers: ["Alt", "Mod"], isNavigation: true, scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_SORT_ORDER, code: "ArrowKeys", modifiers: ["Mod"], isNavigation: true, scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_FOLD, code: "Digit1", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_FOLD_L1, code: "Digit2", modifiers:["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_FOLD_ALL, code: "Digit3", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
 
   // Undo / Redo
-  { action: ACTION_UNDO, key: "z", modifiers: ["Mod"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true },
-  { action: ACTION_REDO_Z, key: "z", modifiers: ["Mod", "Shift"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true },
-  { action: ACTION_REDO_Y, key: "y", modifiers: ["Mod"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true },
+  { action: ACTION_UNDO, key: "z", modifiers: ["Mod"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true, requiresNode: false },
+  { action: ACTION_REDO_Z, key: "z", modifiers: ["Mod", "Shift"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true, requiresNode: false },
+  { action: ACTION_REDO_Y, key: "y", modifiers: ["Mod"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true, requiresNode: false },
 ];
 
 // Load hotkeys from settings or use default
@@ -1221,8 +1221,10 @@ const getObsidianConflict = (h) => {
  * Sync userHotkeys to DEFAULT_HOTKEYS by action.
  * - Drops user actions not in DEFAULT
  * - Adds missing actions from DEFAULT
+ * - Structural attributes (isInputOnly, requiresNode, isNavigation, hidden) 
+ *   ALWAYS come from DEFAULT_HOTKEYS and are excluded from the saved state.
  * - For existing actions:
- *    - keeps user values for existing keys
+ *    - keeps user values for configurable keys (modifiers, key, code, scope)
  *    - adds missing keys from DEFAULT
  *    - removes keys not in DEFAULT
 **/
@@ -1230,6 +1232,8 @@ function updateUserHotkeys() {
   let dirty = false;
 
   const defaultByAction = new Map(DEFAULT_HOTKEYS.map(d => [d.action, d]));
+  // These properties dictate script logic and should never be overridden by user settings
+  const structuralKeys =["isInputOnly", "requiresNode", "isNavigation", "hidden"];
 
   const userByAction = new Map();
   for (const u of userHotkeys) {
@@ -1241,7 +1245,7 @@ function updateUserHotkeys() {
     }
   }
 
-  const next = [];
+  const next =[];
 
   for (const d of DEFAULT_HOTKEYS) {
     const u = userByAction.get(d.action);
@@ -1257,6 +1261,12 @@ function updateUserHotkeys() {
     for (const key of Object.keys(d)) {
       if (key === "action") continue;
 
+      // Always inherit structural properties directly from defaults
+      if (structuralKeys.includes(key)) {
+        cleaned[key] = d[key];
+        continue; // Do NOT mark dirty just because this key is missing in the user config
+      }
+
       if (Object.prototype.hasOwnProperty.call(u, key)) {
         cleaned[key] = u[key];
       } else {
@@ -1267,7 +1277,11 @@ function updateUserHotkeys() {
 
     for (const key of Object.keys(u)) {
       if (key === "action") continue;
-      if (!Object.prototype.hasOwnProperty.call(d, key)) {
+      // If the user object has a structural key (e.g. from an older version's save),
+      // mark as dirty so we flush a cleaned version back to disk.
+      if (structuralKeys.includes(key)) {
+        dirty = true;
+      } else if (!Object.prototype.hasOwnProperty.call(d, key)) {
         dirty = true;
         break;
       }
@@ -1317,7 +1331,7 @@ const generateRuntimeHotkeys = () => {
   userHotkeys.forEach(h => {
     if (h.isNavigation) {
       ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].forEach(key => {
-        runtimeKeys.push({ action: h.action, key, modifiers: h.modifiers });
+        runtimeKeys.push({ action: h.action, key, modifiers: h.modifiers, scope: h.scope, requiresNode: h.requiresNode, isInputOnly: h.isInputOnly });
       });
     } else {
       runtimeKeys.push(h);
@@ -5916,6 +5930,391 @@ const pasteListToMap = async () => {
   await importTextToMap(rawText);
 };
 
+/**
+ * Injects raw elements (e.g. from Excalidraw JSON) directly into the mindmap.
+ * It manages EA hydration, parent alignment, styling, and creates the required branch arrow.
+ */
+const attachClipboardElementsAsNode = async (els, parent, files) => {
+  ea.clear();
+  const allElements = ea.getViewElements();
+  
+  const newElementIds =[];
+  const idMap = new Map();
+  els.forEach(el => {
+    idMap.set(el.id, ea.generateElementId());
+  });
+  
+  els.forEach(el => {
+    const newEl = JSON.parse(JSON.stringify(el));
+    newEl.id = idMap.get(newEl.id);
+    if (newEl.containerId && idMap.has(newEl.containerId)) {
+      newEl.containerId = idMap.get(newEl.containerId);
+    }
+    if (newEl.boundElements) {
+      newEl.boundElements.forEach(be => {
+        if (idMap.has(be.id)) be.id = idMap.get(be.id);
+      });
+    }
+    newEl.groupIds = [];
+    
+    ea.elementsDict[newEl.id] = newEl;
+    newElementIds.push(newEl.id);
+  });
+
+  if (files) {
+     for (const fileId of Object.keys(files)) {
+        ea.imagesDict[fileId] = files[fileId];
+     }
+  }
+
+  // Identify the target anchor element (container bounding box takes priority over text)
+  const textEl = newElementIds.map(id => ea.getElement(id)).find(e => e.type === "text");
+  const containerEl = newElementIds.map(id => ea.getElement(id)).find(e => ["rectangle", "ellipse", "diamond"].includes(e.type));
+  const mainElement = containerEl || textEl || ea.getElement(newElementIds[0]);
+
+  // Layout calculations
+  const siblings = getChildrenNodes(parent.id, allElements);
+  const nextSiblingOrder = Math.max(0, ...siblings.map(getMindmapOrder)) + 1;
+  const settingsRoot = getSettingsRootNode(parent, allElements) || allElements.find((e) => e.id === getHierarchy(parent, allElements).rootId);
+  const rootId = settingsRoot?.id;
+  const rootCfgForAdd = getRootConfigForNode(settingsRoot);
+  const parentDepthFromSettingsRoot = getDepthFromAncestor(parent.id, rootId, allElements);
+  const depth = parentDepthFromSettingsRoot + 1;
+
+  if (mainElement.type === "embeddable") {
+     const targetWidth = depth === 0 ? EMBEDED_OBJECT_WIDTH_ROOT : EMBEDED_OBJECT_WIDTH_CHILD;
+     const ratio = mainElement.width / mainElement.height;
+     mainElement.width = targetWidth;
+     mainElement.height = targetWidth / ratio;
+  }
+
+  const rootBox = getNodeBox(settingsRoot, allElements);
+  const parentBox = getNodeBox(parent, allElements);
+  const mode = rootCfgForAdd?.growthMode || currentModalGrowthMode;
+  const rootCenter = { x: rootBox.minX + rootBox.width / 2, y: rootBox.minY + rootBox.height / 2 };
+  
+  const isVerticalMode = ["Up-facing", "Down-facing", "Up-Down"].includes(mode);
+  let targetSide = 1;
+  
+  if (depth === 1) {
+    if (mode === "Left-facing" || mode === "Up-facing") targetSide = -1;
+    else if (mode === "Right-facing" || mode === "Down-facing") targetSide = 1;
+    else if (mode === "Right-Left" || mode === "Up-Down") {
+       const idx = siblings.length;
+       if (idx < 2) targetSide = 1;
+       else if (idx < 4) targetSide = -1;
+       else targetSide = idx % 2 === 0 ? 1 : -1;
+    } else {
+      if (isVerticalMode) {
+        const parentCenterY = parentBox.minY + parentBox.height / 2;
+        targetSide = parentCenterY > rootCenter.y ? 1 : -1;
+      } else {
+        const parentCenterX = parentBox.minX + parentBox.width / 2;
+        targetSide = parentCenterX > rootCenter.x ? 1 : -1;
+      }
+    }
+  } else {
+     if (isVerticalMode) {
+        const parentCenterY = parentBox.minY + parentBox.height / 2;
+        targetSide = parentCenterY > rootCenter.y ? 1 : -1;
+     } else {
+        const parentCenterX = parentBox.minX + parentBox.width / 2;
+        targetSide = parentCenterX > rootCenter.x ? 1 : -1;
+     }
+  }
+
+  let px = parentBox.minX, py = parentBox.minY;
+  if (isVerticalMode) {
+    px = parentBox.minX + parentBox.width / 2 - mainElement.width / 2;
+    py = parentBox.minY + (targetSide === 1 ? parentBox.height + layoutSettings.GAP_X : -layoutSettings.GAP_X - mainElement.height);
+  } else {
+    px = targetSide === 1 ? parentBox.minX + parentBox.width + layoutSettings.GAP_X : parentBox.minX - layoutSettings.GAP_X - mainElement.width;
+    py = parentBox.minY + parentBox.height / 2 - mainElement.height / 2;
+  }
+
+  const dx = px - mainElement.x;
+  const dy = py - mainElement.y;
+  newElementIds.forEach(id => {
+    const el = ea.getElement(id);
+    el.x += dx;
+    el.y += dy;
+  });
+
+  ea.addAppendUpdateCustomData(mainElement.id, {
+    mindmapNew: true,
+    mindmapOrder: nextSiblingOrder
+  });
+
+  // Create connector Arrow
+  const effectiveArrowType = rootCfgForAdd?.arrowType ?? arrowType;
+  const startPoint =[parentBox.minX + parentBox.width / 2, parentBox.minY + parentBox.height / 2];
+  const arrowId = ea.addArrow([startPoint, startPoint], {
+    startObjectId: parent.id,
+    endObjectId: mainElement.id,
+    startArrowHead: null,
+    endArrowHead: null,
+  });
+  
+  const eaArrow = ea.getElement(arrowId);
+  eaArrow.roundness = effectiveArrowType === "curved" ? { type: 2 } : null;
+  ea.addAppendUpdateCustomData(arrowId, { isBranch: true });
+  
+  // Style coloring (embeddables preserve internal colors, but containers/text inherit branch color)
+  let nodeColor;
+  if (depth === 1) {
+    if (rootCfgForAdd.multicolor) {
+      const existingColors = getChildrenNodes(parent.id, allElements).map((n) => n.strokeColor);
+      nodeColor = getDynamicColor(existingColors);
+    } else {
+      nodeColor = settingsRoot.strokeColor;
+    }
+  } else {
+    nodeColor = parent.strokeColor;
+  }
+  
+  eaArrow.strokeColor = nodeColor;
+  if (containerEl) {
+     containerEl.strokeColor = nodeColor;
+  } else if (textEl && mainElement.type !== "embeddable") {
+     textEl.strokeColor = nodeColor;
+  }
+
+  await addElementsToView({ captureUpdate: "EVENTUALLY" });
+  
+  const finalNode = ea.getViewElements().find((el) => el.id === mainElement.id);
+  selectNodeInView(finalNode);
+  
+  await triggerGlobalLayout(rootId);
+};
+
+/**
+ * Takes an image element that was natively pasted into the canvas, positions it in the mindmap,
+ * scales it appropriately, creates the connector, and triggers the layout engine.
+ */
+const attachPastedImageAsNode = async (imageEl, parent) => {
+  ea.clear();
+  const allElements = ea.getViewElements();
+  
+  ea.copyViewElementsToEAforEditing([imageEl]);
+  const mainElement = ea.getElement(imageEl.id);
+
+  // Layout calculations
+  const siblings = getChildrenNodes(parent.id, allElements);
+  const nextSiblingOrder = Math.max(0, ...siblings.map(getMindmapOrder)) + 1;
+  const settingsRoot = getSettingsRootNode(parent, allElements) || allElements.find((e) => e.id === getHierarchy(parent, allElements).rootId);
+  const rootId = settingsRoot?.id;
+  const rootCfgForAdd = getRootConfigForNode(settingsRoot);
+  const parentDepthFromSettingsRoot = getDepthFromAncestor(parent.id, rootId, allElements);
+  const depth = parentDepthFromSettingsRoot + 1;
+
+  const targetWidth = depth === 0 ? EMBEDED_OBJECT_WIDTH_ROOT : EMBEDED_OBJECT_WIDTH_CHILD;
+  const ratio = mainElement.width / mainElement.height;
+  mainElement.width = targetWidth;
+  mainElement.height = targetWidth / ratio;
+
+  const rootBox = getNodeBox(settingsRoot, allElements);
+  const parentBox = getNodeBox(parent, allElements);
+  const mode = rootCfgForAdd?.growthMode || currentModalGrowthMode;
+  const rootCenter = { x: rootBox.minX + rootBox.width / 2, y: rootBox.minY + rootBox.height / 2 };
+  
+  const isVerticalMode =["Up-facing", "Down-facing", "Up-Down"].includes(mode);
+  let targetSide = 1;
+  
+  if (depth === 1) {
+    if (mode === "Left-facing" || mode === "Up-facing") targetSide = -1;
+    else if (mode === "Right-facing" || mode === "Down-facing") targetSide = 1;
+    else if (mode === "Right-Left" || mode === "Up-Down") {
+       const idx = siblings.length;
+       if (idx < 2) targetSide = 1;
+       else if (idx < 4) targetSide = -1;
+       else targetSide = idx % 2 === 0 ? 1 : -1;
+    } else {
+      if (isVerticalMode) {
+        const parentCenterY = parentBox.minY + parentBox.height / 2;
+        targetSide = parentCenterY > rootCenter.y ? 1 : -1;
+      } else {
+        const parentCenterX = parentBox.minX + parentBox.width / 2;
+        targetSide = parentCenterX > rootCenter.x ? 1 : -1;
+      }
+    }
+  } else {
+     if (isVerticalMode) {
+        const parentCenterY = parentBox.minY + parentBox.height / 2;
+        targetSide = parentCenterY > rootCenter.y ? 1 : -1;
+     } else {
+        const parentCenterX = parentBox.minX + parentBox.width / 2;
+        targetSide = parentCenterX > rootCenter.x ? 1 : -1;
+     }
+  }
+
+  let px = parentBox.minX, py = parentBox.minY;
+  if (isVerticalMode) {
+    px = parentBox.minX + parentBox.width / 2 - mainElement.width / 2;
+    py = parentBox.minY + (targetSide === 1 ? parentBox.height + layoutSettings.GAP_X : -layoutSettings.GAP_X - mainElement.height);
+  } else {
+    px = targetSide === 1 ? parentBox.minX + parentBox.width + layoutSettings.GAP_X : parentBox.minX - layoutSettings.GAP_X - mainElement.width;
+    py = parentBox.minY + parentBox.height / 2 - mainElement.height / 2;
+  }
+
+  mainElement.x = px;
+  mainElement.y = py;
+
+  ea.addAppendUpdateCustomData(mainElement.id, {
+    mindmapNew: true,
+    mindmapOrder: nextSiblingOrder
+  });
+
+  const effectiveArrowType = rootCfgForAdd?.arrowType ?? arrowType;
+  const startPoint =[parentBox.minX + parentBox.width / 2, parentBox.minY + parentBox.height / 2];
+  const arrowId = ea.addArrow([startPoint, startPoint], {
+    startObjectId: parent.id,
+    endObjectId: mainElement.id,
+    startArrowHead: null,
+    endArrowHead: null,
+  });
+  
+  const eaArrow = ea.getElement(arrowId);
+  eaArrow.roundness = effectiveArrowType === "curved" ? { type: 2 } : null;
+  ea.addAppendUpdateCustomData(arrowId, { isBranch: true });
+  
+  let nodeColor;
+  if (depth === 1) {
+    if (rootCfgForAdd.multicolor) {
+      const existingColors = getChildrenNodes(parent.id, allElements).map((n) => n.strokeColor);
+      nodeColor = getDynamicColor(existingColors);
+    } else {
+      nodeColor = settingsRoot.strokeColor;
+    }
+  } else {
+    nodeColor = parent.strokeColor;
+  }
+  eaArrow.strokeColor = nodeColor;
+
+  await addElementsToView({ captureUpdate: "EVENTUALLY" });
+  
+  const finalNode = ea.getViewElements().find((el) => el.id === mainElement.id);
+  selectNodeInView(finalNode);
+  
+  await triggerGlobalLayout(rootId);
+  await triggerGlobalLayout(rootId); // Trigger twice to ensure stable layout after async file handling
+};
+
+/**
+ * Intelligent paste dispatcher. Parses clipboard for Element JSON / Raw Images,
+ * falling back to bulk Markdown list parsing if standard.
+ */
+const pasteElementToMap = async () => {
+  if (!isViewSet()) return;
+  const sel = getMindmapNodeFromSelection();
+  
+  // Standard text-list paste handles root-level initialization better
+  if (!sel) {
+    await pasteListToMap();
+    return;
+  }
+
+  let rawText = "";
+  try {
+    rawText = await navigator.clipboard.readText();
+  } catch (e) {}
+
+  let isSingleImageJSON = false;
+  let clipboardData = null;
+  const excalidrawClipboardPayload = rawText && rawText.includes('"type":"excalidraw/clipboard"');
+
+  // Scenario 2: Excalidraw Element JSON (Single Element or Container+Text)
+  if (excalidrawClipboardPayload) {
+    try {
+       clipboardData = JSON.parse(rawText);
+    } catch (e) {}
+
+    if (clipboardData && clipboardData.elements) {
+      const els = clipboardData.elements.filter(e => !e.isDeleted);
+      const isSingleElement = els.length === 1 && ["embeddable", "text"].includes(els[0].type);
+      
+      const textEl = els.find(e => e.type === "text");
+      const containerEl = els.find(e => ["rectangle", "ellipse", "diamond"].includes(e.type));
+      const isContainerText = els.length === 2 && textEl && containerEl && textEl.containerId === containerEl.id;
+      
+      // If it is a single image in JSON, we will dispatch a synthetic paste event 
+      // so Excalidraw handles the file natively.
+      isSingleImageJSON = els.length === 1 && els[0].type === "image";
+
+      if (isSingleElement || isContainerText) {
+        await attachClipboardElementsAsNode(els, sel, clipboardData.files);
+        return;
+      }
+    }
+  }
+
+  // Scenario 1: Native image payload intercepted from system clipboard
+  let hasImageBlob = false;
+  let blob = null;
+  let mimeType = null;
+  try {
+    const items = await navigator.clipboard.read();
+    for (const item of items) {
+      const imageType = item.types.find(t => t.startsWith("image/"));
+      if (imageType) {
+        hasImageBlob = true;
+        mimeType = imageType;
+        blob = await item.getType(imageType);
+        break;
+      }
+    }
+  } catch (e) { }
+
+  if (hasImageBlob || isSingleImageJSON) {
+    const beforeIds = new Set(ea.getViewElements().map(e => e.id));
+    
+    // Trigger native paste so Excalidraw natively handles file saving/uploading
+    // by constructing a synthetic ClipboardEvent
+    const dt = new DataTransfer();
+    if (hasImageBlob && blob) {
+      const file = new File([blob], `Pasted image.${mimeType.split("/")[1] || "png"}`, { type: mimeType });
+      dt.items.add(file);
+    } else if (isSingleImageJSON) {
+      dt.setData("text/plain", rawText);
+    }
+    
+    const pasteEvent = new ClipboardEvent("paste", {
+      clipboardData: dt,
+      bubbles: true,
+      cancelable: true
+    });
+    
+    // Dispatch the event to the Excalidraw container to trigger native event listeners
+    const targetEl = ea.targetView.contentEl.querySelector(".excalidraw") || ea.targetView.contentEl;
+    targetEl.dispatchEvent(pasteEvent);
+    
+    let newImageEl = null;
+    // Poll to wait for Excalidraw to finish async file saving and element generation
+    for (let i = 0; i < 40; i++) {
+      await sleep(50);
+      const currentElements = ea.getViewElements();
+      const added = currentElements.filter(e => !beforeIds.has(e.id) && e.type === "image");
+      
+      // Wait until Excalidraw has assigned a fileId to the new image
+      if (added.length > 0 && added[added.length - 1].fileId) {
+         newImageEl = added[added.length - 1]; // Pick the most recently dropped element
+         break;
+      }
+    }
+    
+    if (newImageEl) {
+       await sleep(200); // Give Excalidraw time to finish async file saving & placement
+       await attachPastedImageAsNode(newImageEl, sel);
+    }
+    return;
+  }
+
+  // Fallback to Outline parser
+  if (!excalidrawClipboardPayload) {
+    await pasteListToMap();
+  } else {
+    new Notice(t("NOTICE_PASTE_ABORTED"));
+  }
+};
 // ---------------------------------------------------------------------------
 // 6. Map Actions
 // ---------------------------------------------------------------------------
@@ -9020,8 +9419,14 @@ const renderBody = (contentEl) => {
     updateKeyHandlerLocation();
   };
 
-  const saveHotkeys = () => {
-    setVal(K_HOTKEYS, userHotkeys, true);
+const saveHotkeys = () => {
+    // Strip out structural keys before saving to settings to maintain a single source of truth
+    const hotkeysToSave = userHotkeys.map(h => {
+      const { isInputOnly, requiresNode, isNavigation, hidden, ...configurableProps } = h;
+      return configurableProps;
+    });
+
+    setVal(K_HOTKEYS, hotkeysToSave, true);
     dirty = true;
     refreshHotkeys();
   };
@@ -9447,7 +9852,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
  * Resolves a keyboard event to a configured action depending on modifier keys and settings.
  * 
  * @param {KeyboardEvent} e - The keyboard event.
- * @returns {object} - { action, scope } or empty object if no match.
+ * @returns {object} - { action, scope, requiresNode } or empty object if no match.
  */
 const getActionFromEvent = (e) => {
   const isMod = e.ctrlKey || e.metaKey;
@@ -9465,7 +9870,7 @@ const getActionFromEvent = (e) => {
           (e.altKey === hasAlt);
   });
 
-  return match ? { action: match.action, scope: match.scope } :  { };
+  return match ? { action: match.action, scope: match.scope ?? SCOPE.none, requiresNode: match.requiresNode } :  { };
 };
 
 /**
@@ -9506,7 +9911,9 @@ const handleKeydown = (e) => {
     return;
   }
 
-  let {action, scope} = getActionFromEvent(e);
+  let {action, scope, requiresNode} = getActionFromEvent(e);
+  if (!action && !["Tab", "Enter"].includes(e.key)) return;
+
   let context = getHotkeyContext();
 
   // Local Tab handling for floating modal to keep focus cycling inside
@@ -9515,7 +9922,7 @@ const handleKeydown = (e) => {
     if (!modalEl) return;
     const activeEl = modalEl.ownerDocument.activeElement;
     if (!modalEl.contains(activeEl)) return;
-    const selector = [
+    const selector =[
       "input:not([disabled])",
       "div:not([style*='not-allowed'])",
     ].join(",");
@@ -9551,6 +9958,21 @@ const handleKeydown = (e) => {
   }
 
   if (!action || context < scope) return;
+
+  // Verify active node requirement
+  if (requiresNode && !getMindmapNodeFromSelection()) {
+    return;
+  }
+
+  // Verify transaction state for Undo
+  if (action === ACTION_UNDO && lastCommittedTransaction === null) {
+    return;
+  }
+
+  // Verify transaction state for Redo
+  if ((action === ACTION_REDO_Z || action === ACTION_REDO_Y) && redoAvailable === null) {
+    return;
+  }
 
   e.preventDefault();
   e.stopPropagation();
@@ -9677,7 +10099,7 @@ const performAction = async (action, event) => {
       break;
 
     case ACTION_PASTE:
-      pasteListToMap();
+      await pasteElementToMap();
       updateUI();
       break;
 
