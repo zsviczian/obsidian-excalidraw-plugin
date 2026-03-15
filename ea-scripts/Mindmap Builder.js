@@ -6322,6 +6322,7 @@ const pasteElementToMap = async () => {
     
     if (newImageEl && file) {
       // Silently delete the temporary pasted image
+      await sleep(200); //likely unnecessary contingencey to ensure Excalidraw has finished processing the new image before we delete it
       const imageID = newImageEl.id;
       ea.clear();
       ea.copyViewElementsToEAforEditing([newImageEl]);
