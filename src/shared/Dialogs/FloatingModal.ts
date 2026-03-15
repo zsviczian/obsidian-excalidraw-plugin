@@ -1,4 +1,5 @@
 import { App, Modal } from "obsidian";
+import { clamp } from "@radix-ui/number";
 
 function getClientPoint(e: PointerEvent | TouchEvent) {
   if (e.type.startsWith("touch")) {
@@ -26,13 +27,13 @@ function isPointOnText(e: PointerEvent | TouchEvent, doc: Document): boolean {
   let offset: number | null = null;
 
   // Chromium/Firefox-ish
-  const caretPos = (doc as any).caretPositionFromPoint?.(pt.x, pt.y);
+  const caretPos = doc.caretPositionFromPoint?.(pt.x, pt.y);
   if (caretPos?.offsetNode) {
     offsetNode = caretPos.offsetNode;
     offset = typeof caretPos.offset === "number" ? caretPos.offset : null;
   } else {
     // Safari/WebKit
-    const caretRange = (doc as any).caretRangeFromPoint?.(pt.x, pt.y);
+    const caretRange = doc.caretRangeFromPoint?.(pt.x, pt.y);
     if (caretRange?.startContainer) {
       offsetNode = caretRange.startContainer;
       offset = typeof caretRange.startOffset === "number" ? caretRange.startOffset : null;
@@ -67,14 +68,13 @@ export class FloatingModal extends Modal {
   private dragging = false;
   private offsetX = 0;
   private offsetY = 0;
-  private pointerDownHandler: (e: PointerEvent | TouchEvent) => void;
-  private pointerMoveHandler: (e: PointerEvent | TouchEvent) => void;
-  private pointerUpHandler: () => void;
+  private readonly pointerDownHandler: (e: PointerEvent | TouchEvent) => void;
+  private readonly pointerMoveHandler: (e: PointerEvent | TouchEvent) => void;
+  private readonly pointerUpHandler: () => void;
 
   private disableKeyCapture = true; // new flag: when true, let keystrokes pass through to workspace
-  private previousActive: HTMLElement | null = null; // stores element focused before opening
-  private escListener: (e: KeyboardEvent) => void;
-  private modalKeydownStopHandler: (e: KeyboardEvent) => void; // store handler so we can remove it
+  private previousActive?: HTMLElement = null; // stores element focused before opening
+  private readonly modalKeydownStopHandler: (e: KeyboardEvent) => void; // store handler so we can remove it
   private ownerWindow: Window = window;
   private ownerDocument: Document = document;
 
@@ -84,8 +84,22 @@ export class FloatingModal extends Modal {
     this.pointerDownHandler = this.handlePointerDown.bind(this);
     this.pointerMoveHandler = this.handlePointerMove.bind(this);
     this.pointerUpHandler = this.handlePointerUp.bind(this);
-    this.escListener = this.handleEscKey.bind(this);
     this.modalKeydownStopHandler = (ev: KeyboardEvent) => ev.stopPropagation();
+
+    this.setDimBackground(false);
+  }
+
+  protected shouldNotStartDrag(target: HTMLElement, event: PointerEvent | TouchEvent): boolean {
+    return Boolean(
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement ||
+      target instanceof HTMLButtonElement ||
+      isPointOnText(event, this.ownerDocument) ||
+      target.closest(".clickable-icon") ||
+      // ensure close button never starts drag
+      target.closest(".modal-close-button")
+    )
   }
 
   private handlePointerDown(e: PointerEvent | TouchEvent): void {
@@ -93,15 +107,7 @@ export class FloatingModal extends Modal {
     const target = e.target as HTMLElement;
 
     // Ignore if clicking on interactive elements
-    if (
-      target instanceof HTMLInputElement ||
-      target instanceof HTMLTextAreaElement ||
-      target instanceof HTMLSelectElement ||
-      target instanceof HTMLButtonElement ||
-      isPointOnText(e, this.ownerDocument) ||
-      target.closest(".clickable-icon") ||
-      target.closest(".modal-close-button") // ensure close button never starts drag
-    ) {
+    if (this.shouldNotStartDrag(target, e)) {
       return;
     }
 
@@ -149,25 +155,18 @@ export class FloatingModal extends Modal {
     e.preventDefault();
     if (e.type === "touchmove") e.stopPropagation();
 
-    let clientX, clientY;
+    const { clientX, clientY } = (e.type === "touchmove") ?
+        (e as TouchEvent).touches[0] : e as PointerEvent;
 
-    if (e.type === "touchmove") {
-      const touch = (e as TouchEvent).touches[0];
-      clientX = touch.clientX;
-      clientY = touch.clientY;
-    } else {
-      const pointerEvent = e as PointerEvent;
-      clientX = pointerEvent.clientX;
-      clientY = pointerEvent.clientY;
-    }
-
-    const x = clientX - this.offsetX;
-    const y = clientY - this.offsetY;
+    // Prevent moving the modal offscreen
+    const { width, height } = modalEl.getBoundingClientRect();
+    const margin = 8;
+    const x = clamp(clientX - this.offsetX, [margin, this.ownerWindow.innerWidth - width - margin]);
+    const y = clamp(clientY - this.offsetY, [margin, this.ownerWindow.innerHeight - height - margin]);
 
     // Position the modal element
     modalEl.style.left = `${x}px`;
     modalEl.style.top = `${y}px`;
-    modalEl.style.transform = "none"; // Remove centering transform
   }
 
   private handlePointerUp(): void {
@@ -180,13 +179,6 @@ export class FloatingModal extends Modal {
     this.ownerDocument.removeEventListener("touchcancel", this.pointerUpHandler);
   }
 
-  private handleEscKey(e: KeyboardEvent) {
-    if (e.key === "Escape") {
-      e.stopPropagation();
-      this.close();
-    }
-  }
-
   open(): void {
     super.open();
     this.ownerDocument = this.modalEl.ownerDocument ?? document;
@@ -195,20 +187,17 @@ export class FloatingModal extends Modal {
     if (this.disableKeyCapture) {
       this.previousActive = this.ownerDocument.activeElement as HTMLElement | null;
       try {
-        // @ts-ignore pop modal's key scope so keys are not intercepted
+        // Release modal scope so focus and key handling can return to the workspace.
+        // @ts-ignore
         this.app.keymap.popScope(this.scope);
       } catch {}
-      try {
-        // @ts-ignore prevent automatic selection / focus restoration
-        this.shouldRestoreSelection = false;
-      } catch {}
+      // prevent automatic selection / focus restoration
+      this.shouldRestoreSelection = false;
     }
     setTimeout(() => {
-      //@ts-ignore
-      const { containerEl, modalEl, bgEl, headerEl } = this;
-      containerEl.style.pointerEvents = "none";
-      if (bgEl) bgEl.style.display = "none";
-      if (headerEl) headerEl.style.pointerEvents = "none";
+      // @ts-ignore
+      const { containerEl, modalEl, bgEl } = this;
+      containerEl.addClass("mod-excalidraw-draggable")
 
       // Set initial position and make modal draggable
       if (modalEl) {
@@ -224,9 +213,6 @@ export class FloatingModal extends Modal {
         modalEl.style.left = `${centerX}px`;
         modalEl.style.top = `${centerY}px`;
         modalEl.style.transform = "none";
-        const modalStyle = this.ownerWindow.getComputedStyle(modalEl);
-        modalEl.style.borderBottomLeftRadius = modalStyle.borderTopLeftRadius;
-        modalEl.style.borderBottomRightRadius = modalStyle.borderTopRightRadius;
 
         // Add event listeners for both pointer and touch events
         modalEl.addEventListener("pointerdown", this.pointerDownHandler as (e: PointerEvent) => void);
@@ -237,6 +223,12 @@ export class FloatingModal extends Modal {
         if (this.disableKeyCapture) {
           // Prevent the modal from stealing focus
           modalEl.setAttr("tabindex", "-1");
+
+          // In order to propagate keypresses, modal container and backdrop
+          // need to ignore (and thus propagate) any pointerEvents.
+          containerEl.style.pointerEvents = "none";
+          if (bgEl) bgEl.style.pointerEvents = "none";
+
           // Refocus previous element (if still in DOM)
           if (this.previousActive?.isConnected) {
             this.previousActive.focus({ preventScroll: true });
@@ -244,8 +236,6 @@ export class FloatingModal extends Modal {
           // Stop key events originating inside the modal from bubbling back
           modalEl.addEventListener("keydown", this.modalKeydownStopHandler, { capture: true });
         }
-        // Add ESC listener (capture to run before underlying workspace)
-        this.ownerDocument.addEventListener("keydown", this.escListener, { capture: true });
 
         // NEW: re-enable pointer events on the close button so it is tappable on mobile
         const closeBtn = containerEl.querySelector(".modal-close-button");
@@ -271,7 +261,6 @@ export class FloatingModal extends Modal {
     }
     // Remove any remaining document event listeners
     this.handlePointerUp();
-    this.ownerDocument.removeEventListener("keydown", this.escListener, { capture: true });
 
     super.close();
   }
