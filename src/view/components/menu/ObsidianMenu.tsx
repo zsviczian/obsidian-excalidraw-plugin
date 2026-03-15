@@ -270,12 +270,7 @@ export class ObsidianMenu {
   public renderButton (isMobile: boolean, appState: AppState) {
     const isFullscreen = this.view.isFullscreen();
     return (
-      <div className={clsx(
-        {
-          "ExcalidrawObsidianMenu--mobile": isMobile,
-          "ExcalidrawObsidianMenu": !isMobile,
-        },
-      )}>
+      <>
         <label
           className={clsx(
             "ToolIcon",
@@ -284,7 +279,7 @@ export class ObsidianMenu {
               "is-mobile": isMobile,
             },
           )}
-          onClick={this.actionShowHideMenu.bind(this,isMobile,appState)}
+          onClick={this.actionShowHideMenu.bind(this, isMobile, appState)}
         >
           <div className="ToolIcon__icon" aria-label={t("OBSIDIAN_TOOLS_PANEL")}>
             {ICONS.obsidian}
@@ -318,9 +313,9 @@ export class ObsidianMenu {
             {isFullscreen ? ICONS.exitFullScreen : ICONS.gotoFullScreen}
           </div>
         </label>
-        {this.renderCustomPens(isMobile,appState)}
-        {this.renderPinnedScriptButtons(isMobile,appState)}
-      </div>
+        {this.renderCustomPens(isMobile, appState)}
+        {this.renderPinnedScriptButtons(isMobile, appState)}
+      </>
     );
   };
 
