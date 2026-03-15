@@ -5471,13 +5471,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         ),
       ])
 
-      if (
-        !areElementsSelected &&
-        (
-          elements.some(el => el.type === "frame" && el.frameRole === "marker") ||
-          appState.frameRendering.markerEnabled === false
-        )
-      ) {
+      if ( !areElementsSelected ) {
         const { frameRendering } = appState;
         const enabled = frameRendering.markerEnabled && frameRendering.enabled && frameRendering.outline;
         contextMenuActions.push([
