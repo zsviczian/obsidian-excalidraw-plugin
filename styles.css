@@ -118,14 +118,10 @@ li[data-testid] {
   padding: 0 !important;
   border-color: transparent !important;
   border: 0 !important;
-  box-shadow: 0 !important;
   background-color: transparent !important;
   overflow-y: auto !important;
-} 
-
-.excalidraw .popover {
   position: fixed !important;
-}
+} 
 
 .disable-zen-mode--visible {
   color: var(--text-primary-color);
