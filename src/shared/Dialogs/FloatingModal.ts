@@ -186,6 +186,11 @@ export class FloatingModal extends Modal {
     // NEW: capture previously focused element & release Obsidian modal key trapping
     if (this.disableKeyCapture) {
       this.previousActive = this.ownerDocument.activeElement as HTMLElement | null;
+      try {
+        // Release modal scope so focus and key handling can return to the workspace.
+        // @ts-ignore
+        this.app.keymap.popScope(this.scope);
+      } catch {}
       // prevent automatic selection / focus restoration
       this.shouldRestoreSelection = false;
     }
