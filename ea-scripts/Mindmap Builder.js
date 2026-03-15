@@ -1400,7 +1400,7 @@ const addElementsToView = async (
   }
 
   await ea.addElementsToView(repositionToCursor, save, newElementsOnTop, shouldRestoreElements, captureUpdate);
-  const fileIds = new Set(ea.getElements().filter(el => el.fileId).map(el => el.fileId));
+  const fileIds = new Set(ea.getElements().filter(el => el.fileId && !el.isDeleted).map(el => el.fileId));
   ea.clear();
 
   // Commit transaction logic
@@ -5921,8 +5921,8 @@ const importTextToMap = async (rawText) => {
 /**
 // Pastes a Markdown list from clipboard into the map, converting it to nodes.
 **/
-const pasteListToMap = async () => {
-  const rawText = await navigator.clipboard.readText();
+const pasteListToMap = async (contentToPaste = null) => {
+  const rawText = contentToPaste || await navigator.clipboard.readText();
   if (!rawText) {
     new Notice(t("NOTICE_CLIPBOARD_EMPTY"));
     return;
@@ -5931,277 +5931,8 @@ const pasteListToMap = async () => {
 };
 
 /**
- * Injects raw elements (e.g. from Excalidraw JSON) directly into the mindmap.
- * It manages EA hydration, parent alignment, styling, and creates the required branch arrow.
- */
-const attachClipboardElementsAsNode = async (els, parent, files) => {
-  ea.clear();
-  const allElements = ea.getViewElements();
-  
-  const newElementIds =[];
-  const idMap = new Map();
-  els.forEach(el => {
-    idMap.set(el.id, ea.generateElementId());
-  });
-  
-  els.forEach(el => {
-    const newEl = JSON.parse(JSON.stringify(el));
-    newEl.id = idMap.get(newEl.id);
-    if (newEl.containerId && idMap.has(newEl.containerId)) {
-      newEl.containerId = idMap.get(newEl.containerId);
-    }
-    if (newEl.boundElements) {
-      newEl.boundElements.forEach(be => {
-        if (idMap.has(be.id)) be.id = idMap.get(be.id);
-      });
-    }
-    newEl.groupIds = [];
-    
-    ea.elementsDict[newEl.id] = newEl;
-    newElementIds.push(newEl.id);
-  });
-
-  if (files) {
-     for (const fileId of Object.keys(files)) {
-        ea.imagesDict[fileId] = files[fileId];
-     }
-  }
-
-  // Identify the target anchor element (container bounding box takes priority over text)
-  const textEl = newElementIds.map(id => ea.getElement(id)).find(e => e.type === "text");
-  const containerEl = newElementIds.map(id => ea.getElement(id)).find(e => ["rectangle", "ellipse", "diamond"].includes(e.type));
-  const mainElement = containerEl || textEl || ea.getElement(newElementIds[0]);
-
-  // Layout calculations
-  const siblings = getChildrenNodes(parent.id, allElements);
-  const nextSiblingOrder = Math.max(0, ...siblings.map(getMindmapOrder)) + 1;
-  const settingsRoot = getSettingsRootNode(parent, allElements) || allElements.find((e) => e.id === getHierarchy(parent, allElements).rootId);
-  const rootId = settingsRoot?.id;
-  const rootCfgForAdd = getRootConfigForNode(settingsRoot);
-  const parentDepthFromSettingsRoot = getDepthFromAncestor(parent.id, rootId, allElements);
-  const depth = parentDepthFromSettingsRoot + 1;
-
-  if (mainElement.type === "embeddable") {
-     const targetWidth = depth === 0 ? EMBEDED_OBJECT_WIDTH_ROOT : EMBEDED_OBJECT_WIDTH_CHILD;
-     const ratio = mainElement.width / mainElement.height;
-     mainElement.width = targetWidth;
-     mainElement.height = targetWidth / ratio;
-  }
-
-  const rootBox = getNodeBox(settingsRoot, allElements);
-  const parentBox = getNodeBox(parent, allElements);
-  const mode = rootCfgForAdd?.growthMode || currentModalGrowthMode;
-  const rootCenter = { x: rootBox.minX + rootBox.width / 2, y: rootBox.minY + rootBox.height / 2 };
-  
-  const isVerticalMode = ["Up-facing", "Down-facing", "Up-Down"].includes(mode);
-  let targetSide = 1;
-  
-  if (depth === 1) {
-    if (mode === "Left-facing" || mode === "Up-facing") targetSide = -1;
-    else if (mode === "Right-facing" || mode === "Down-facing") targetSide = 1;
-    else if (mode === "Right-Left" || mode === "Up-Down") {
-       const idx = siblings.length;
-       if (idx < 2) targetSide = 1;
-       else if (idx < 4) targetSide = -1;
-       else targetSide = idx % 2 === 0 ? 1 : -1;
-    } else {
-      if (isVerticalMode) {
-        const parentCenterY = parentBox.minY + parentBox.height / 2;
-        targetSide = parentCenterY > rootCenter.y ? 1 : -1;
-      } else {
-        const parentCenterX = parentBox.minX + parentBox.width / 2;
-        targetSide = parentCenterX > rootCenter.x ? 1 : -1;
-      }
-    }
-  } else {
-     if (isVerticalMode) {
-        const parentCenterY = parentBox.minY + parentBox.height / 2;
-        targetSide = parentCenterY > rootCenter.y ? 1 : -1;
-     } else {
-        const parentCenterX = parentBox.minX + parentBox.width / 2;
-        targetSide = parentCenterX > rootCenter.x ? 1 : -1;
-     }
-  }
-
-  let px = parentBox.minX, py = parentBox.minY;
-  if (isVerticalMode) {
-    px = parentBox.minX + parentBox.width / 2 - mainElement.width / 2;
-    py = parentBox.minY + (targetSide === 1 ? parentBox.height + layoutSettings.GAP_X : -layoutSettings.GAP_X - mainElement.height);
-  } else {
-    px = targetSide === 1 ? parentBox.minX + parentBox.width + layoutSettings.GAP_X : parentBox.minX - layoutSettings.GAP_X - mainElement.width;
-    py = parentBox.minY + parentBox.height / 2 - mainElement.height / 2;
-  }
-
-  const dx = px - mainElement.x;
-  const dy = py - mainElement.y;
-  newElementIds.forEach(id => {
-    const el = ea.getElement(id);
-    el.x += dx;
-    el.y += dy;
-  });
-
-  ea.addAppendUpdateCustomData(mainElement.id, {
-    mindmapNew: true,
-    mindmapOrder: nextSiblingOrder
-  });
-
-  // Create connector Arrow
-  const effectiveArrowType = rootCfgForAdd?.arrowType ?? arrowType;
-  const startPoint =[parentBox.minX + parentBox.width / 2, parentBox.minY + parentBox.height / 2];
-  const arrowId = ea.addArrow([startPoint, startPoint], {
-    startObjectId: parent.id,
-    endObjectId: mainElement.id,
-    startArrowHead: null,
-    endArrowHead: null,
-  });
-  
-  const eaArrow = ea.getElement(arrowId);
-  eaArrow.roundness = effectiveArrowType === "curved" ? { type: 2 } : null;
-  ea.addAppendUpdateCustomData(arrowId, { isBranch: true });
-  
-  // Style coloring (embeddables preserve internal colors, but containers/text inherit branch color)
-  let nodeColor;
-  if (depth === 1) {
-    if (rootCfgForAdd.multicolor) {
-      const existingColors = getChildrenNodes(parent.id, allElements).map((n) => n.strokeColor);
-      nodeColor = getDynamicColor(existingColors);
-    } else {
-      nodeColor = settingsRoot.strokeColor;
-    }
-  } else {
-    nodeColor = parent.strokeColor;
-  }
-  
-  eaArrow.strokeColor = nodeColor;
-  if (containerEl) {
-     containerEl.strokeColor = nodeColor;
-  } else if (textEl && mainElement.type !== "embeddable") {
-     textEl.strokeColor = nodeColor;
-  }
-
-  await addElementsToView({ captureUpdate: "EVENTUALLY" });
-  
-  const finalNode = ea.getViewElements().find((el) => el.id === mainElement.id);
-  selectNodeInView(finalNode);
-  
-  await triggerGlobalLayout(rootId);
-};
-
-/**
- * Takes an image element that was natively pasted into the canvas, positions it in the mindmap,
- * scales it appropriately, creates the connector, and triggers the layout engine.
- */
-const attachPastedImageAsNode = async (imageEl, parent) => {
-  ea.clear();
-  const allElements = ea.getViewElements();
-  
-  ea.copyViewElementsToEAforEditing([imageEl]);
-  const mainElement = ea.getElement(imageEl.id);
-
-  // Layout calculations
-  const siblings = getChildrenNodes(parent.id, allElements);
-  const nextSiblingOrder = Math.max(0, ...siblings.map(getMindmapOrder)) + 1;
-  const settingsRoot = getSettingsRootNode(parent, allElements) || allElements.find((e) => e.id === getHierarchy(parent, allElements).rootId);
-  const rootId = settingsRoot?.id;
-  const rootCfgForAdd = getRootConfigForNode(settingsRoot);
-  const parentDepthFromSettingsRoot = getDepthFromAncestor(parent.id, rootId, allElements);
-  const depth = parentDepthFromSettingsRoot + 1;
-
-  const targetWidth = depth === 0 ? EMBEDED_OBJECT_WIDTH_ROOT : EMBEDED_OBJECT_WIDTH_CHILD;
-  const ratio = mainElement.width / mainElement.height;
-  mainElement.width = targetWidth;
-  mainElement.height = targetWidth / ratio;
-
-  const rootBox = getNodeBox(settingsRoot, allElements);
-  const parentBox = getNodeBox(parent, allElements);
-  const mode = rootCfgForAdd?.growthMode || currentModalGrowthMode;
-  const rootCenter = { x: rootBox.minX + rootBox.width / 2, y: rootBox.minY + rootBox.height / 2 };
-  
-  const isVerticalMode =["Up-facing", "Down-facing", "Up-Down"].includes(mode);
-  let targetSide = 1;
-  
-  if (depth === 1) {
-    if (mode === "Left-facing" || mode === "Up-facing") targetSide = -1;
-    else if (mode === "Right-facing" || mode === "Down-facing") targetSide = 1;
-    else if (mode === "Right-Left" || mode === "Up-Down") {
-       const idx = siblings.length;
-       if (idx < 2) targetSide = 1;
-       else if (idx < 4) targetSide = -1;
-       else targetSide = idx % 2 === 0 ? 1 : -1;
-    } else {
-      if (isVerticalMode) {
-        const parentCenterY = parentBox.minY + parentBox.height / 2;
-        targetSide = parentCenterY > rootCenter.y ? 1 : -1;
-      } else {
-        const parentCenterX = parentBox.minX + parentBox.width / 2;
-        targetSide = parentCenterX > rootCenter.x ? 1 : -1;
-      }
-    }
-  } else {
-     if (isVerticalMode) {
-        const parentCenterY = parentBox.minY + parentBox.height / 2;
-        targetSide = parentCenterY > rootCenter.y ? 1 : -1;
-     } else {
-        const parentCenterX = parentBox.minX + parentBox.width / 2;
-        targetSide = parentCenterX > rootCenter.x ? 1 : -1;
-     }
-  }
-
-  let px = parentBox.minX, py = parentBox.minY;
-  if (isVerticalMode) {
-    px = parentBox.minX + parentBox.width / 2 - mainElement.width / 2;
-    py = parentBox.minY + (targetSide === 1 ? parentBox.height + layoutSettings.GAP_X : -layoutSettings.GAP_X - mainElement.height);
-  } else {
-    px = targetSide === 1 ? parentBox.minX + parentBox.width + layoutSettings.GAP_X : parentBox.minX - layoutSettings.GAP_X - mainElement.width;
-    py = parentBox.minY + parentBox.height / 2 - mainElement.height / 2;
-  }
-
-  mainElement.x = px;
-  mainElement.y = py;
-
-  ea.addAppendUpdateCustomData(mainElement.id, {
-    mindmapNew: true,
-    mindmapOrder: nextSiblingOrder
-  });
-
-  const effectiveArrowType = rootCfgForAdd?.arrowType ?? arrowType;
-  const startPoint =[parentBox.minX + parentBox.width / 2, parentBox.minY + parentBox.height / 2];
-  const arrowId = ea.addArrow([startPoint, startPoint], {
-    startObjectId: parent.id,
-    endObjectId: mainElement.id,
-    startArrowHead: null,
-    endArrowHead: null,
-  });
-  
-  const eaArrow = ea.getElement(arrowId);
-  eaArrow.roundness = effectiveArrowType === "curved" ? { type: 2 } : null;
-  ea.addAppendUpdateCustomData(arrowId, { isBranch: true });
-  
-  let nodeColor;
-  if (depth === 1) {
-    if (rootCfgForAdd.multicolor) {
-      const existingColors = getChildrenNodes(parent.id, allElements).map((n) => n.strokeColor);
-      nodeColor = getDynamicColor(existingColors);
-    } else {
-      nodeColor = settingsRoot.strokeColor;
-    }
-  } else {
-    nodeColor = parent.strokeColor;
-  }
-  eaArrow.strokeColor = nodeColor;
-
-  await addElementsToView({ captureUpdate: "EVENTUALLY" });
-  
-  const finalNode = ea.getViewElements().find((el) => el.id === mainElement.id);
-  selectNodeInView(finalNode);
-  
-  await triggerGlobalLayout(rootId);
-  await triggerGlobalLayout(rootId); // Trigger twice to ensure stable layout after async file handling
-};
-
-/**
  * Intelligent paste dispatcher. Parses clipboard for Element JSON / Raw Images,
- * falling back to bulk Markdown list parsing if standard.
+ * translates them to Markdown strings, and passes them to `addNode()`.
  */
 const pasteElementToMap = async () => {
   if (!isViewSet()) return;
@@ -6219,11 +5950,11 @@ const pasteElementToMap = async () => {
   } catch (e) {}
 
   let isSingleImageJSON = false;
-  let clipboardData = null;
   const excalidrawClipboardPayload = rawText && rawText.includes('"type":"excalidraw/clipboard"');
 
-  // Scenario 2: Excalidraw Element JSON (Single Element or Container+Text)
+  // Scenario 1: Excalidraw Element JSON (Single Element or Container+Text)
   if (excalidrawClipboardPayload) {
+    let clipboardData;
     try {
        clipboardData = JSON.parse(rawText);
     } catch (e) {}
@@ -6233,21 +5964,58 @@ const pasteElementToMap = async () => {
       const isSingleElement = els.length === 1 && ["embeddable", "text"].includes(els[0].type);
       
       const textEl = els.find(e => e.type === "text");
-      const containerEl = els.find(e => ["rectangle", "ellipse", "diamond"].includes(e.type));
+      const containerEl = els.find(e =>["rectangle", "ellipse", "diamond"].includes(e.type));
       const isContainerText = els.length === 2 && textEl && containerEl && textEl.containerId === containerEl.id;
       
-      // If it is a single image in JSON, we will dispatch a synthetic paste event 
-      // so Excalidraw handles the file natively.
       isSingleImageJSON = els.length === 1 && els[0].type === "image";
 
       if (isSingleElement || isContainerText) {
-        await attachClipboardElementsAsNode(els, sel, clipboardData.files);
-        return;
+        let textToPaste = "";
+        let shapeToPaste = null;
+
+        if (isContainerText) {
+          textToPaste = textEl.rawText;
+          shapeToPaste = containerEl.type;
+        } else if (els[0].type === "text") {
+          textToPaste = els[0].rawText;
+        } else if (els[0].type === "embeddable") {
+          const link = els[0].link;
+          if (link.match(/^https?:\/\//i)) {
+            textToPaste = `![](${link})`;
+          } else {
+            textToPaste = link.startsWith("[[") ? `!${link}` : `![[${link}]]`;
+          }
+          if (textToPaste) {
+            pasteListToMap(textToPaste);
+            return;
+          }
+        }
+
+        if (textToPaste) {
+          // Add as a normal node using central logic
+          const newNode = await addNode(textToPaste, false, false, null, null, null, null);
+          
+          // Recreate the shape if it was inside a container
+          if (shapeToPaste) {
+             const isContainer = ["rectangle", "ellipse", "diamond"].includes(newNode.type);
+             if (isContainer) {
+                if (newNode.type !== shapeToPaste) {
+                  selectNodeInView(newNode);
+                  await toggleBox(); // Removes auto-added box of the wrong shape
+                  await toggleBox(shapeToPaste); // Re-adds correct shape box
+                }
+             } else {
+                selectNodeInView(newNode);
+                await toggleBox(shapeToPaste);
+             }
+          }
+          return;
+        }
       }
     }
   }
 
-  // Scenario 1: Native image payload intercepted from system clipboard
+  // Scenario 2: Native image payload intercepted from system clipboard or Single Image JSON
   let hasImageBlob = false;
   let blob = null;
   let mimeType = null;
@@ -6262,13 +6030,12 @@ const pasteElementToMap = async () => {
         break;
       }
     }
-  } catch (e) { }
+  } catch (e) {}
 
   if (hasImageBlob || isSingleImageJSON) {
     const beforeIds = new Set(ea.getViewElements().map(e => e.id));
     
-    // Trigger native paste so Excalidraw natively handles file saving/uploading
-    // by constructing a synthetic ClipboardEvent
+    // Trigger native paste via synthetic event so Excalidraw saves the file natively
     const dt = new DataTransfer();
     if (hasImageBlob && blob) {
       const file = new File([blob], `Pasted image.${mimeType.split("/")[1] || "png"}`, { type: mimeType });
@@ -6283,27 +6050,53 @@ const pasteElementToMap = async () => {
       cancelable: true
     });
     
-    // Dispatch the event to the Excalidraw container to trigger native event listeners
     const targetEl = ea.targetView.contentEl.querySelector(".excalidraw") || ea.targetView.contentEl;
+    const originallySelectedElement = ea.getViewSelectedElement();
     targetEl.dispatchEvent(pasteEvent);
     
     let newImageEl = null;
-    // Poll to wait for Excalidraw to finish async file saving and element generation
+    let file = null;
+    let savedOnce = false;
+    // Poll to wait for Excalidraw to assign a fileId to the new image
     for (let i = 0; i < 40; i++) {
       await sleep(50);
       const currentElements = ea.getViewElements();
       const added = currentElements.filter(e => !beforeIds.has(e.id) && e.type === "image");
       
       // Wait until Excalidraw has assigned a fileId to the new image
-      if (added.length > 0 && added[added.length - 1].fileId) {
-         newImageEl = added[added.length - 1]; // Pick the most recently dropped element
+      if (added.length > 0) {
+         const tmpNewImageEl = added[added.length - 1];
+         if (!tmpNewImageEl.fileId) {
+           continue; // Still waiting for fileId assignment
+         }
+         const sceneFiles = api().getFiles();
+         if (!sceneFiles[tmpNewImageEl.fileId]) {
+          continue; // fileId not yet recognized in scene
+         }
+         file = ea.getViewFileForImageElement(tmpNewImageEl);
+         if (!file) {
+           if (!savedOnce && ea.targetView.isDirty()) {
+             savedOnce = true;
+             await ea.targetView.save();
+           }
+           continue; // Excalidraw file retrieval not yet working
+         }
+         newImageEl = tmpNewImageEl;
          break;
       }
     }
     
-    if (newImageEl) {
-       await sleep(200); // Give Excalidraw time to finish async file saving & placement
-       await attachPastedImageAsNode(newImageEl, sel);
+    if (newImageEl && file) {
+      // Silently delete the temporary pasted image
+      const imageID = newImageEl.id;
+      ea.clear();
+      ea.copyViewElementsToEAforEditing([newImageEl]);
+      ea.getElement(imageID).isDeleted = true;
+      await addElementsToView({ captureUpdate: "EVENTUALLY", shouldRestoreElements: false });
+      
+      ea.selectElementsInView([originallySelectedElement.id]); // Reselect original node because paste image steals selection
+      const imagePath = `![[${file.path}]]`;
+      await pasteListToMap(imagePath);
     }
     return;
   }
@@ -7458,9 +7251,10 @@ const toggleCheckboxStatus = async () => {
 const padding = layoutSettings.CONTAINER_PADDING;
 /**
  * Toggles a bounding box around the selected text element (node).
- * Creates a rectangle container if one doesn't exist, or removes it if it does.
+ * Creates a container if one doesn't exist, or removes it if it does.
+ * @param {string} shape - "rectangle" | "ellipse" | "diamond"
  */
-const toggleBox = async () => {
+const toggleBox = async (shape = "rectangle") => {
   if (!isViewSet()) return;
   let sel = getMindmapNodeFromSelection();
   if (!sel) return;
@@ -7474,7 +7268,7 @@ const toggleBox = async () => {
   const arrowsToUpdate = allElements.filter(
     (el) =>
       el.type === "arrow" &&
-      (ids.contains(el.startBinding?.elementId) || ids.contains(el.endBinding?.elementId)),
+      (ids.includes(el.startBinding?.elementId) || ids.includes(el.endBinding?.elementId)),
   );
 
   if (hasContainer) {
@@ -7485,32 +7279,37 @@ const toggleBox = async () => {
     const textEl = ea.getElement(sel.id);
     ea.addAppendUpdateCustomData(textEl.id, { isPinned: !!container.customData?.isPinned, mindmapOrder: container.customData?.mindmapOrder });
     textEl.containerId = null;
-    textEl.boundElements = []; //not null because I will add bound arrows a bit further down
+    textEl.boundElements =[]; //not null because I will add bound arrows a bit further down
     ea.getElement(containerId).isDeleted = true;
   } else {
     ea.copyViewElementsToEAforEditing(arrowsToUpdate.concat(sel));
     const depth = getHierarchy(sel, allElements)?.depth || 0;
 
     oldBindId = sel.id;
-    const rectId = (finalElId = newBindId = ea.addRect(
-      sel.x - padding,
-      sel.y - padding,
-      sel.width + padding * 2,
-      sel.height + padding * 2,
-    ));
+    
+    let rectId;
+    if (shape === "ellipse") {
+      rectId = ea.addEllipse(sel.x - padding, sel.y - padding, sel.width + padding * 2, sel.height + padding * 2);
+    } else if (shape === "diamond") {
+      rectId = ea.addDiamond(sel.x - padding, sel.y - padding, sel.width + padding * 2, sel.height + padding * 2);
+    } else {
+      rectId = ea.addRect(sel.x - padding, sel.y - padding, sel.width + padding * 2, sel.height + padding * 2);
+    }
+    
+    finalElId = newBindId = rectId;
     const rect = ea.getElement(rectId);
     ea.addAppendUpdateCustomData(rectId, { isPinned: !!sel.customData?.isPinned, mindmapOrder: sel.customData?.mindmapOrder });
     rect.strokeColor = ea.getCM(sel.strokeColor).stringRGB();
     rect.strokeWidth = getStrokeWidthForDepth(depth);
     rect.roughness = getAppState().currentItemRoughness;
-    rect.roundness = roundedCorners ? { type: 3 } : null;
+    rect.roundness = (roundedCorners) ? { type: 3 } : null;
     rect.backgroundColor = "transparent";
 
     const textEl = ea.getElement(sel.id);
     textEl.containerId = rectId;
     textEl.boundElements = null;
-    rect.boundElements = [{ type: "text", id: sel.id }];
-    rect.groupIds = sel.groupIds ? [...sel.groupIds] : [];
+    rect.boundElements =[{ type: "text", id: sel.id }];
+    rect.groupIds = sel.groupIds ? [...sel.groupIds] :[];
   }
   ea.getElements()
     .filter((el) => el.type === "arrow")
@@ -7525,7 +7324,7 @@ const toggleBox = async () => {
       }
     });
 
-  ea.getElement(oldBindId).boundElements = [];
+  ea.getElement(oldBindId).boundElements =[];
   delete ea.getElement(oldBindId).customData;
 
   await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
