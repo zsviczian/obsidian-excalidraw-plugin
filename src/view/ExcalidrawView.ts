@@ -5173,42 +5173,31 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     const selectedElementIds = Object.keys(api.getAppState().selectedElementIds);
     const areElementsSelected = selectedElementIds.length > 0;
 
-    if(this.isLinkSelected()) {
+    if (this.isLinkSelected()) {
+      const isFormula = !(this.getSelectedTextElement()?.id) &&
+          this.excalidrawData.hasEquation(this.getSelectedImageElement()?.fileId)
       contextMenuActions.push([
         renderContextMenuAction(
           React,
-          t("OPEN_LINK_CLICK"),
+          isFormula ? t("EDIT_LATEX") : t("OPEN_LINK_CLICK"),
           () => {
             const event = emulateKeysForLinkClick("new-tab");
             this.handleLinkClick(event, true);
           },
-          onClose
+          onClose,
+          isFormula ? "editFormula" : "openLink"
         ),
       ]);
     }
 
-    if(appState.viewModeEnabled) {
-      const isLaserOn = appState.activeTool?.type === "laser";
-      contextMenuActions.push([
-        renderContextMenuAction(
-          React,
-          isLaserOn ? t("LASER_OFF") : t("LASER_ON"),
-          () => {
-            api.setActiveTool({type: isLaserOn ? "selection" : "laser"});
-          },
-          onClose
-        ),
-      ]);  
-    }
-
-    if(!appState.viewModeEnabled) {
-      const selectedTextElements = this.getViewSelectedElements().filter(el=>el.type === "text");
-      if(selectedTextElements.length===1) {
+    if (!appState.viewModeEnabled) {
+      const selectedTextElements = this.getViewSelectedElements().filter(el => el.type === "text");
+      if (selectedTextElements.length === 1) {
         const selectedTextElement = selectedTextElements[0] as ExcalidrawTextElement;
-        const containerElement = (this.getViewElements() as ExcalidrawElement[]).find(el=>el.id === selectedTextElement.containerId);
+        const containerElement = (this.getViewElements() as ExcalidrawElement[]).find(el => el.id === selectedTextElement.containerId);
         
         //if the text element in the container no longer has a link associated with it...
-        if(
+        if (
           containerElement &&
           selectedTextElement.link &&
           this.excalidrawData.getParsedText(selectedTextElement.id) === selectedTextElement.rawText
@@ -5225,27 +5214,29 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
                 await ea.addElementsToView(false);
                 ea.destroy();
               },
-              onClose
+              onClose,
+              "removeLink"
             ),
           ]);
         }
 
-        if(containerElement) {
+        if (containerElement) {
           contextMenuActions.push([
             renderContextMenuAction(
               React,
               t("SELECT_TEXTELEMENT_ONLY"),
               () => {
-                window.setTimeout(()=>
+                window.setTimeout(() =>
                   (this.excalidrawAPI as ExcalidrawImperativeAPI).selectElements([selectedTextElement])
                 );
               },
-              onClose
+              onClose,
+              "selectTextWithoutContainer"
             ),
           ]);            
         }
 
-        if(!containerElement || (containerElement && containerElement.type !== "arrow")) {
+        if (!containerElement || (containerElement && containerElement.type !== "arrow")) {
           contextMenuActions.push([
             renderContextMenuAction(
               React,
@@ -5253,28 +5244,30 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               () => {
                 this.convertTextElementToMarkdown(selectedTextElement, containerElement);
               },
-              onClose
+              onClose,
+              "convertToMarkdown"
             ),
           ]);  
         }
       }
 
       const img = this.getSingleSelectedImage();
-      if(img &&  img.embeddedFile?.isHyperLink) {
+      if (img?.embeddedFile?.isHyperLink) {
         contextMenuActions.push([
           renderContextMenuAction(
             React,
             t("CONVERT_URL_TO_FILE"),
             () => {
-              window.setTimeout(()=>this.convertImageElWithURLToLocalFile(img));
+              window.setTimeout(() => this.convertImageElWithURLToLocalFile(img));
             },
-            onClose
+            onClose,
+            "convertImgUrlToFile"
           ),
         ]);  
       }
 
-      if(
-        img && img.embeddedFile && img.embeddedFile.mimeType === "image/svg+xml" &&
+      if (
+        img?.embeddedFile?.mimeType === "image/svg+xml" &&
         (!img.embeddedFile.file || (img.embeddedFile.file && !this.plugin.isExcalidrawFile(img.embeddedFile.file)))
        ) {
         contextMenuActions.push([
@@ -5285,27 +5278,28 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               const base64Content = img.embeddedFile.getImage(false).split(',')[1];
               // Decoding the base64 content
               const svg = atob(base64Content);
-              if(!svg || svg === "") return;
+              if (!svg || svg === "") return;
               const ea = getEA(this) as ExcalidrawAutomate;
               ea.importSVG(svg);
-              ea.addToGroup(ea.getElements().map(el=>el.id));
+              ea.addToGroup(ea.getElements().map(el => el.id));
               await ea.addElementsToView(true, true, true,true);
               ea.destroy();
             },
-            onClose
+            onClose,
+            "convertSvgToStrokes"
           ),
         ]);
       }
 
       const selectedImages = this.getViewSelectedElements().filter(el => el.type === "image") as ExcalidrawImageElement[];
-      if(selectedImages.length > 0) {
+      if (selectedImages.length > 0) {
         type ImageType = "svg" | "pdf" | "bitmap" | "excalidraw";
 
-        const getImageType = (embeddedFile: EmbeddedFile | null | undefined): ImageType | null => {
-          if(!embeddedFile) return null;
-          if(embeddedFile.file && this.plugin.isExcalidrawFile(embeddedFile.file)) return "excalidraw";
-          if(embeddedFile.file?.extension?.toLowerCase?.() === "pdf" || !!embeddedFile.pdfPageViewProps) return "pdf";
-          if(embeddedFile.mimeType === "image/svg+xml") return "svg";
+        const getImageType = (embeddedFile?: EmbeddedFile): ImageType | null => {
+          if (!embeddedFile) return null;
+          if (embeddedFile.file && this.plugin.isExcalidrawFile(embeddedFile.file)) return "excalidraw";
+          if (embeddedFile.file?.extension?.toLowerCase?.() === "pdf" || !!embeddedFile.pdfPageViewProps) return "pdf";
+          if (embeddedFile.mimeType === "image/svg+xml") return "svg";
           return "bitmap";
         };
 
@@ -5315,13 +5309,14 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           imageType: ImageType,
         ): boolean => {
           const invertBitmap = imageEl.customData?.invertBitmapInDarkmode;
-          if(imageType === "svg" || imageType === "excalidraw") {
-            return imageEl.customData?.doNotInvertSVGInDarkMode ? false : true;
+          switch (imageType) {
+            case "svg":
+            case "excalidraw":
+              return !imageEl.customData?.doNotInvertSVGInDarkMode;
+            case "pdf":
+              return invertBitmap ?? true;
           }
-          if(imageType === "pdf") {
-            return typeof invertBitmap === "boolean" ? invertBitmap : true;
-          }
-          return typeof invertBitmap === "boolean" ? invertBitmap : false;
+          return invertBitmap ?? false;
         };
 
         const imageMenuState = (() => {
@@ -5331,7 +5326,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               .map(el => {
                 const embeddedFile = getEmbeddedFileForImageElment(ea, el);
                 const imageType = getImageType(embeddedFile);
-                if(!embeddedFile || !imageType) return null;
+                if (!embeddedFile || !imageType) return null;
                 return {
                   el,
                   imageType,
@@ -5339,22 +5334,22 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
                 };
               })
               .filter(Boolean) as { el: ExcalidrawImageElement; imageType: ImageType; invertInDarkMode: boolean; }[];
-            if(imagesWithStatus.length === 0) return null;
+            if (imagesWithStatus.length === 0) return null;
             const reference = imagesWithStatus[0].invertInDarkMode;
-            if(!imagesWithStatus.every(img => img.invertInDarkMode === reference)) return null;
+            if (!imagesWithStatus.every(img => img.invertInDarkMode === reference)) return null;
             return { imagesWithStatus, invertInDarkMode: reference };
           } finally {
             ea.destroy();
           }
         })();
 
-        if(imageMenuState) {
+        if (imageMenuState) {
           const { imagesWithStatus, invertInDarkMode } = imageMenuState;
           const newInvertState = !invertInDarkMode;
           contextMenuActions.push([
             renderContextMenuAction(
               React,
-              newInvertState ? t("INVERT_IMAGES_IN_DARK_MODE") : t("DO_NOT_INVERT_IMAGES_IN_DARK_MODE"),
+              t("INVERT_IMAGES_IN_DARK_MODE"),
               async () => {
                 const ea = getEA(this) as ExcalidrawAutomate;
                 ea.copyViewElementsToEAforEditing(imagesWithStatus.map(img => img.el));
@@ -5362,7 +5357,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
                   const editableEl = ea.getElement(img.el.id) as Mutable<ExcalidrawImageElement>;
                   const embeddedFile = getEmbeddedFileForImageElment(ea, editableEl);
                   const imageType = getImageType(embeddedFile) ?? img.imageType;
-                  if(imageType === "svg" || imageType === "excalidraw") {
+                  if (imageType === "svg" || imageType === "excalidraw") {
                     addAppendUpdateCustomData(editableEl, {
                       doNotInvertSVGInDarkMode: newInvertState ? undefined : true,
                       invertBitmapInDarkmode: undefined,
@@ -5377,21 +5372,22 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
                 await ea.addElementsToView(false);
                 ea.destroy();
               },
-              onClose
+              onClose,
+              "invertImageInDarkmode",
+              invertInDarkMode
             ),
           ]);
         }
       }
 
-      if(areElementsSelected) {
+      if (areElementsSelected) {
         contextMenuActions.push([
           renderContextMenuAction(
             React,
             t("COPY_ELEMENT_LINK"),
-            () => {
-              this.copyLinkToSelectedElementToClipboard("");
-            },
-            onClose
+            () => this.copyLinkToSelectedElementToClipboard(""),
+            onClose,
+            "copyElementLink"
           ),
         ]);
       } else {
@@ -5403,25 +5399,24 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               const path = this.file.path.match(/(.*)(\.md)$/)?.[1];
               navigator.clipboard.writeText(`![[${path ?? this.file.path}]]`);
             },
-            onClose
+            onClose,
+            "copyDrawingLink"
           ),
         ]);
       }
 
-      if(this.getViewSelectedElements().filter(el=>el.type==="embeddable").length === 1) {
+      if (this.getViewSelectedElements().filter(el=> el.type === "embeddable").length === 1) {
         const embeddableData = this.getEmbeddableLeafElementById(
-          this.getViewSelectedElements().filter(el=>el.type==="embeddable")[0].id
+          this.getViewSelectedElements().find(el => el.type === "embeddable").id
         );
-        const child = embeddableData?.node?.child;
-        if(child && (child.file === this.file)) {
+        if (embeddableData?.node?.child?.file === this.file) {
           contextMenuActions.push([
             renderContextMenuAction(
               React,
               t("CONVERT_CARD_TO_FILE"),
-              () => {
-                this.moveBackOfTheNoteCardToFile();
-              },
-              onClose
+              () => this.moveBackOfTheNoteCardToFile(),
+              onClose,
+              "convertCardToFile"
             ),
           ]);
         }
@@ -5431,10 +5426,9 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         renderContextMenuAction(
           React,
           t("INSERT_CARD"),
-          () => {
-            this.insertBackOfTheNoteCard();
-          },
-          onClose
+          () => this.insertBackOfTheNoteCard(),
+          onClose,
+          "insertCard"
         ),
       ]);
       contextMenuActions.push([
@@ -5445,7 +5439,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             const insertFileModal = new UniversalInsertFileModal(this.plugin, this);
             insertFileModal.open();
           },
-          onClose
+          onClose,
+          "insertAnyFile"
         ),
       ]);
       if (DEVICE.isTablet || DEVICE.isMobile) {
@@ -5456,7 +5451,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             () => {
               this.plugin.insertLinkDialog.start(this.file.path, (markdownlink: string, path:string, alias:string) => this.addLink(markdownlink, path, alias));
             },
-            onClose
+            onClose,
+            "insertLinkToFile"
           ),
           // Add more context menu actions here if needed
         ]);
@@ -5467,55 +5463,55 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           t("PASTE_CODEBLOCK"),
           async () => {
             const data = await navigator.clipboard?.readText();
-            if(!data || data.trim() === "") return;
+            if (!data || data.trim() === "") return;
             this.pasteCodeBlock(data);
           },
-          onClose
+          onClose,
+          "pasteCodeblock"
         ),
       ])
 
-      if(
+      if (
         !areElementsSelected &&
-        elements.some(el=>el.type === "frame" && el.frameRole === "marker")
+        elements.some(el => el.type === "frame" && el.frameRole === "marker")
       ) {
-        const {frameRendering} = appState;
+        const { frameRendering } = appState;
+        const enabled = frameRendering.markerEnabled && frameRendering.enabled && frameRendering.outline;
         contextMenuActions.push([
           renderContextMenuAction(
             React,
-            frameRendering.markerEnabled && frameRendering.enabled && frameRendering.outline
-            ? t("MARKER_FRAME_HIDE")
-            : t("MARKER_FRAME_SHOW"),
+            t("MARKER_FRAME_SHOW"),
             () => {
-              const markerEnabled = !(frameRendering.markerEnabled && frameRendering.enabled && frameRendering.outline);
-              if(markerEnabled) {
-                window.setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, enabled: true, outline: true, markerEnabled}}, captureUpdate: CaptureUpdateAction.NEVER}));
-              } else {
-                window.setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, markerEnabled}}, captureUpdate: CaptureUpdateAction.NEVER}));
-              }
+              window.setTimeout(() => this.updateScene({
+                appState: { frameRendering: {...frameRendering, ...(enabled ? {} : { enabled: true, outline: true }), markerEnabled: !enabled } },
+                captureUpdate: CaptureUpdateAction.NEVER
+              }));
             },
-            onClose
+            onClose,
+            "toggleMarkerFrames",
+            enabled
           ),
         ]);
-        if(frameRendering.markerEnabled && frameRendering.enabled && frameRendering.outline) {
+        if (frameRendering.markerEnabled && frameRendering.enabled && frameRendering.outline) {
           contextMenuActions.push([
             renderContextMenuAction(
               React,
-              frameRendering.markerName
-              ? t("MARKER_FRAME_TITLE_HIDE")
-              : t("MARKER_FRAME_TITLE_SHOW"),
+              t("MARKER_FRAME_TITLE_SHOW"),
               () => {
                 window.setTimeout(() => this.updateScene({appState: {frameRendering: {...frameRendering, markerName: !frameRendering.markerName}}, captureUpdate: CaptureUpdateAction.NEVER}));
               },
-              onClose
+              onClose,
+              "toggleMarkerFrameTitles",
+              frameRendering.markerName
             ),
           ]);
         }
       }
     }
 
-    if(contextMenuActions.length === 0) return;
-    return React.createElement (
-      "div",
+    if (contextMenuActions.length === 0) return;
+    return React.createElement(
+      React.Fragment,
       {},
       ...contextMenuActions,
       React.createElement(
