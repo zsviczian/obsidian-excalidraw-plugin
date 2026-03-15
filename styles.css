@@ -584,11 +584,17 @@ div.excalidraw-draginfo {
 }
 
 .excalidraw .embeddable-menu {
-    width: fit-content;
-    height: fit-content;
-    position: absolute;
-    display: block;
-    z-index: var(--zIndex-layerUI);
+  width: fit-content;
+  height: fit-content;
+  position: absolute;
+  display: block;
+  z-index: var(--zIndex-canvasButtons);
+  transition: opacity var(--anim-duration-fast) ease-in-out;
+
+  /* slower fadeout */
+  &[style*="opacity: 0.2;"] {
+    transition-duration: var(--anim-duration-moderate);
+  }
 }
 
 .excalidraw .welcome-screen-center__logo svg {
@@ -1110,4 +1116,8 @@ textarea.excalidraw-wysiwyg, .excalidraw input {
 
 .excalidraw-mobile-navbar-docked {
   position: relative;
+}
+
+.excalidraw svg.svg-icon {
+  color: var(--icon-fill-color);
 }

@@ -1,4 +1,1 @@
-<svg viewBox="0 0 50 30" xmlns="http://www.w3.org/2000/svg">
-  <text fill="currentColor" x="10" y="30" font-size="16px" font-weight="light">A</text>
-  <text fill="currentColor" x="22" y="30" font-size="36px" font-weight="light">A</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon lucide-a-large-small"><path d="m15 16 2.536-7.328a1.02 1.02 1 0 1 1.928 0L22 16"/><path d="M15.697 14h5.606"/><path d="m2 16 4.039-9.69a.5.5 0 0 1 .923 0L11 16"/><path d="M3.304 13h6.392"/></svg>
