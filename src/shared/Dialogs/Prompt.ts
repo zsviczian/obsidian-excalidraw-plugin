@@ -7,8 +7,7 @@ import {
   Instruction,
   TFile,
   Notice,
-  TextAreaComponent,
-  getIcon,
+  TextAreaComponent
 } from "obsidian";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import ExcalidrawPlugin from "../../core/main";
@@ -93,7 +92,7 @@ export class LaTexPrompt extends FloatingModal {
   private resolvePromise: (input: string) => void;
   private rejectPromise: (reason?: any) => void;
   private editorView : EditorView;
-  private latexsSuitePlugin : any;
+  private readonly latexsSuitePlugin : any;
 
   protected constructor(
     app: App,
@@ -114,11 +113,15 @@ export class LaTexPrompt extends FloatingModal {
     this.editorView.focus();
   }
 
+  protected shouldNotStartDrag(target: HTMLElement, event: PointerEvent | TouchEvent): boolean {
+    return target.closest(".cm-editor") != null || super.shouldNotStartDrag(target, event);
+  }
+
   public static Prompt(app: App,
     prompt_text?: string,
     default_value?: string,
   ): Promise<string>{
-    const latexprompt = new LaTexPrompt(app, prompt_text, default_value);
+    const latexprompt = new this(app, prompt_text, default_value);
 
     return latexprompt.waitForClose;
   }
@@ -138,9 +141,11 @@ export class LaTexPrompt extends FloatingModal {
         key:"Mod-Enter", 
         run : () => {this.submitCallback(); return true;}
       }]),
+      // obsidian class to inherit styling
+      EditorView.editorAttributes.of({class: "multi-select-container"}),
       minimalSetup
     ]
-    if (!!this.latexsSuitePlugin) {
+    if (this.latexsSuitePlugin) {
       // the language put eveything in a "math" node
       // surrounded by "math-begin" and "math-end" 
       // so that latex-suite always thinks we are in mathmode

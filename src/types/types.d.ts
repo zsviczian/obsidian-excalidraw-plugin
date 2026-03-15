@@ -83,6 +83,17 @@ declare module "obsidian" {
   interface Menu {
     items: MenuItem[];
   }
+  interface Modal {
+    /**
+     * Whether to *dim* the background behind the modal. If {@link dimmed} is `true`, the
+     * opacity-value from [setBackgroundOpacity]{@link Modal#setBackgroundOpacity} or
+     * the default of `0.85` is used.
+     * @note The hidden backdrop will still catch focus.
+     */
+    setDimBackground(dimmed: boolean): Modal;
+    /** Sets the opacity of the Modal backdrop. */
+    setBackgroundOpacity(opacity: number): Modal;
+  }
   interface Keymap {
     getRootScope(): Scope;
   }
