@@ -21,9 +21,10 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 ## Fixed
 - Sizing of embedded images in Markdown when image type is set to SVG. [#2685](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2685)
 - Fixed Enter, Up/Down arrows, and TAB keys stop working in text element after deleting the \`#\` character [#2704](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2704)
+- Context menu styling [#2697](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2697) 🙏[@heinrich26](https://github.com/heinrich26)
 
 ## New
-- LaTeX editor is now floating [#2684](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2684) 🙏[@TravisLEBLANC1](https://github.com/TravisLEBLANC1)
+- LaTeX editor is now floating [#2684](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2684) 🙏[@TravisLEBLANC1](https://github.com/TravisLEBLANC1), [#2698](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2698) 🙏[@heinrich26](https://github.com/heinrich26)
 - Inline link suggester now supports triggers \`![[drawing#^frame=\` and \`![[drawing#^clippedframe=\`, thus it is easy to reference frames like slides or parts of images in your different drawings.
 - Support for mermaid Entity Relationship Diagrams, new ERD/cardinality arrowheads [#10940](https://github.com/excalidraw/excalidraw/pull/10940)
 - New Context Menu options to disable arrow binding and midpoint snapping. [#10906](https://github.com/excalidraw/excalidraw/pull/10906)
