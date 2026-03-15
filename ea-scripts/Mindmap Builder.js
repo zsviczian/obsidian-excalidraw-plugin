@@ -56,8 +56,8 @@ When nodes resize (e.g. text edit), the script intelligently re-positions groupe
 /* --- Initialization Logic --- */
 const VERSION = "test";
 
-if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.20.6")) {
-  new Notice("Please update the Excalidraw Plugin to version 2.20.6 or higher.");
+if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.21.0")) {
+  new Notice("Please update the Excalidraw Plugin to version 2.21.0 or higher.");
   return;
 }
 
@@ -191,6 +191,7 @@ const STRINGS = {
     ACTION_LABEL_REARRANGE: "Rearrange Map",
     ACTION_LABEL_TOGGLE_SUBMAP_ROOT: "Start/End Submap Root",
     ACTION_LABEL_TOGGLE_CHECKBOX: "Toggle Checkbox Status",
+    ACTION_LABEL_TOGGLE_EMBED: "Toggle Embed/Link",
 
     // Tooltips (shared)
     PIN_TOOLTIP_PINNED: "This element is pinned. Click to unpin the location of the selected element",
@@ -222,6 +223,7 @@ const STRINGS = {
     TOOLTIP_SUBMAP_ROOT_ADD: "Start submap from selected node",
     TOOLTIP_SUBMAP_ROOT_REMOVE: "Convert submap root back to a normal node",
     TOOLTIP_TOGGLE_CHECKBOX: "Toggle task checkbox status",
+    TOOLTIP_TOGGLE_EMBED: "Toggle node between Embed and Link",
 
     // Buttons and labels
     DOCK_TITLE: "Mind Map Builder",
@@ -436,6 +438,7 @@ addLocale("zh", {
   ACTION_LABEL_REARRANGE: "重排导图",
   ACTION_LABEL_TOGGLE_SUBMAP_ROOT: "开始/结束子图根节点",
   ACTION_LABEL_TOGGLE_CHECKBOX: "切换复选框状态",
+  ACTION_LABEL_TOGGLE_EMBED: "切换嵌入/链接",
 
   // Tooltips (shared)
   PIN_TOOLTIP_PINNED: "此元素已锁定。点击解锁所选元素的位置。",
@@ -467,6 +470,7 @@ addLocale("zh", {
   TOOLTIP_SUBMAP_ROOT_ADD: "从所选节点开始子图",
   TOOLTIP_SUBMAP_ROOT_REMOVE: "将子图根节点恢复为普通节点",
   TOOLTIP_TOGGLE_CHECKBOX: "切换任务复选框状态",
+  TOOLTIP_TOGGLE_EMBED: "在嵌入和链接之间切换节点",
 
   // Buttons and labels
   DOCK_TITLE: "MindMap Builder",
@@ -672,6 +676,7 @@ addLocale("zh-tw", {
   ACTION_LABEL_REARRANGE: "重排導圖",
   ACTION_LABEL_TOGGLE_SUBMAP_ROOT: "開始/結束子圖根節點",
   ACTION_LABEL_TOGGLE_CHECKBOX: "切換複選框狀態",
+  ACTION_LABEL_TOGGLE_EMBED: "切換嵌入/連結",
 
   // Tooltips (shared)
   PIN_TOOLTIP_PINNED: "此元素已鎖定。點選解鎖所選元素的位置。",
@@ -703,6 +708,7 @@ addLocale("zh-tw", {
   TOOLTIP_SUBMAP_ROOT_ADD: "從所選節點開始子圖",
   TOOLTIP_SUBMAP_ROOT_REMOVE: "將子圖根節點恢復為普通節點",
   TOOLTIP_TOGGLE_CHECKBOX: "切換任務複選框狀態",
+  TOOLTIP_TOGGLE_EMBED: "在嵌入和連結之間切換節點",
 
   // Buttons and labels
   DOCK_TITLE: "MindMap Builder",
@@ -1309,6 +1315,7 @@ const ACTION_FOLD_L1 = "Fold/Unfold to Level 1";
 const ACTION_FOLD_ALL = "Fold/Unfold Branch Recursively";
 const ACTION_TOGGLE_BOUNDARY = "Toggle Boundary";
 const ACTION_TOGGLE_SUBMAP_ROOT = "Toggle Submap Root";
+const ACTION_TOGGLE_EMBED = "Toggle Embed/Link";
 
 const ACTION_DOCK_UNDOCK = "Dock/Undock";
 const ACTION_HIDE = "Dock & hide";
@@ -1346,6 +1353,7 @@ const ACTION_LABEL_KEYS = {
   [ACTION_FOLD_ALL]: "ACTION_LABEL_FOLD_ALL",
   [ACTION_TOGGLE_BOUNDARY]: "TOOLTIP_TOGGLE_BOUNDARY",
   [ACTION_TOGGLE_SUBMAP_ROOT]: "ACTION_LABEL_TOGGLE_SUBMAP_ROOT",
+  [ACTION_TOGGLE_EMBED]: "ACTION_LABEL_TOGGLE_EMBED",
   [ACTION_DOCK_UNDOCK]: "ACTION_LABEL_DOCK_UNDOCK",
   [ACTION_HIDE]: "ACTION_LABEL_HIDE",
   [ACTION_REARRANGE]: "ACTION_LABEL_REARRANGE",
@@ -1386,6 +1394,7 @@ const DEFAULT_HOTKEYS =[
   { action: ACTION_TOGGLE_BOUNDARY, code: "KeyB", modifiers: ["Alt", "Shift"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
   { action: ACTION_TOGGLE_SUBMAP_ROOT, code: "KeyJ", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
   { action: ACTION_TOGGLE_GROUP, code: "KeyG", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_TOGGLE_EMBED, code: "KeyE", modifiers:["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
 
   // Clipboard (Alt to distinguish from text editing)
   { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
@@ -4786,44 +4795,13 @@ const getMostRecentlyAddedNode = () => {
   return ea.getViewElements().find((el) => el.id === mostRecentlyAddedNodeID);
 }
 
-/**
- * Convert Obsidian wiki links + markdown links into display text.
- * Leaves other markdown markup intact.
-**/
-function renderLinksToText(input) {
-  if (typeof input !== "string" || !input) return input;
-  const isNumericOnly = (s) => /^\d+$/.test(s);
-  input = input.replace(/\[\[([^\]]+?)\]\]/g, (_m, inner) => {
-    const parts = String(inner).split("|");
-    const target = (parts[0] ?? "").trim();
-    if (!target) return _m;
-    let alias = (parts[1] ?? "").trim();
-    if (alias && isNumericOnly(alias)) alias = "";
-    if (alias && alias.includes("|")) {
-      alias = alias.split("|")[0].trim();
-      if (isNumericOnly(alias)) alias = "";
-    }
-    const cleanedTarget = target.replace(/(#\^.*$|#.*$)/, "").trim();
-    return alias || cleanedTarget || target;
-  });
-
-  input = input.replace(/\[([^\]]*)\]\(([^)]+)\)/g, (_m, rawLabel, rawDest) => {
-    const dest = String(rawDest ?? "").trim();
-    let label = String(rawLabel ?? "").trim();
-    if (!dest) return _m;
-    if (!label) return dest;
-    if (label.includes("|")) label = label.split("|")[0].trim();
-    if (!label || isNumericOnly(label)) return dest;
-    return label;
-  });
-
-  return input;
-}
-
-const getAdjustedMaxWidth = (text, max) => {
+const getAdjustedMaxWidth = async (text, max) => {
   const fontString = `${ea.style.fontSize.toString()}px ${
     ExcalidrawLib.getFontFamilyString({fontFamily: ea.style.fontFamily})}`;
-  const wrappedText = ExcalidrawLib.wrapText(renderLinksToText(text), fontString, max);
+
+  const parsedText = (await ea.parseText(text)) ?? text;
+  
+  const wrappedText = ExcalidrawLib.wrapText(parsedText, fontString, max);
   const metrics = ea.measureText(wrappedText);
   const optimalWidth = Math.ceil(metrics.width);
   return {
@@ -4946,14 +4924,17 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
   ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)];
   ea.style.roundness = (rootCfgForAdd?.roundedCorners ?? roundedCorners) ? { type: 3 } : null;
 
-const effectiveMaxWrap = rootCfgForAdd?.maxWrapWidth ?? maxWidth;
+  const effectiveMaxWrap = rootCfgForAdd?.maxWrapWidth ?? maxWidth;
   let curMaxW = depth === 0 ? Math.max(400, effectiveMaxWrap) : effectiveMaxWrap;
-  const metrics = ea.measureText(renderLinksToText(text));
+  
+  // --- ADDED AWAIT EA.PARSETEXT AND AWAIT GETADJUSTEDMAXWIDTH ---
+  const renderedText = (await ea.parseText(text)) ?? text;
+  const metrics = ea.measureText(renderedText);
   const shouldWrap = metrics.width > curMaxW;
   let curMaxH = metrics.height;
 
   if (shouldWrap) {
-    const res = getAdjustedMaxWidth(text, curMaxW);
+    const res = await getAdjustedMaxWidth(text, curMaxW);
     curMaxW = res.width;
     curMaxH = res.height;
   }
@@ -5008,7 +4989,7 @@ const effectiveMaxWrap = rootCfgForAdd?.maxWrapWidth ?? maxWidth;
     const parentBox = getNodeBox(parent, allElements);
     
     // Determine direction for initial offset to prevent visual jumping
-    const isVerticalMode = ["Up-facing", "Down-facing", "Up-Down"].includes(mode);
+    const isVerticalMode =["Up-facing", "Down-facing", "Up-Down"].includes(mode);
 
     let targetSide = 1; // 1 = Right/Down, -1 = Left/Up
     if (depth === 1) {
@@ -5180,7 +5161,7 @@ const effectiveMaxWrap = rootCfgForAdd?.maxWrapWidth ?? maxWidth;
     ea.style.strokeStyle = effectiveIsSolidArrow ? "solid" : getAppState().currentItemStrokeStyle;
     
     // Initial arrow creation (placeholder points)
-    const startPoint = [parentBox.minX + parentBox.width / 2, parentBox.minY + parentBox.height / 2];
+    const startPoint =[parentBox.minX + parentBox.width / 2, parentBox.minY + parentBox.height / 2];
     arrowId = ea.addArrow([startPoint, startPoint], {
       startObjectId: parent.id,
       endObjectId: newNodeId,
@@ -5233,7 +5214,7 @@ const effectiveMaxWrap = rootCfgForAdd?.maxWrapWidth ?? maxWidth;
       (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === newNodeId,
     );
 
-    ea.copyViewElementsToEAforEditing(groupBranches ? allEls : arrow ? [arrow] : []);
+    ea.copyViewElementsToEAforEditing(groupBranches ? allEls : arrow ? [arrow] :[]);
 
     if (arrow) {
       const parentCenterX = parent.x + parent.width / 2;
@@ -7483,6 +7464,50 @@ const toggleCheckboxStatus = async () => {
   }
 };
 
+/**
+ * Toggles the selected node between an embed (![[...]]) and a link ([[...|alias]]).
+ * Cleans the markdown '# ' characters when mapping the section name to the alias.
+ */
+const toggleEmbedStatus = async () => {
+  if (!isViewSet()) return;
+  const sel = getMindmapNodeFromSelection();
+  if (!sel) return;
+
+  const all = ea.getViewElements();
+  const visualNode = sel.containerId ? all.find(el => el.id === sel.containerId) : sel;
+  const nodeText = getTextFromNode(all, visualNode, true, true).trim();
+
+  // Match: ! (optional) | [[ | NoteName#SectionName | | Alias (optional) | ]]
+  const linkRegex = /^(!?)\[\[([^\]]+?#([^\]|]+))(?:\|[^\]]*)?\]\]$/;
+  const match = nodeText.match(linkRegex);
+
+  if (!match) return;
+
+  const isEmbed = match[1] === "!";
+  const linkCore = match[2]; 
+  const sectionRef = match[3];
+
+  let newText = "";
+  if (isEmbed) {
+    // Strip leading markdown heading characters (e.g. '### ') for the alias
+    const alias = sectionRef.replace(/^#+\s*/, "").trim();
+    newText = `[[${linkCore}|${alias}]]`;
+  } else {
+    newText = `![[${linkCore}]]`;
+  }
+
+  // Hack into the established edit flow
+  editingNodeId = sel.id;
+  inputEl.value = newText;
+  
+  // Preserve ontology 
+  const incomingArrow = all.find(a => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === sel.id);
+  ontologyEl.value = incomingArrow ? (ea.getBoundTextElement(incomingArrow, true)?.sceneElement?.rawText || "") : "";
+
+  // Delegate the heavy lifting of completely recreating elements & mappings to commitEdit()
+  await commitEdit();
+};
+
 const padding = layoutSettings.CONTAINER_PADDING;
 /**
  * Toggles a bounding box around the selected text element (node).
@@ -7677,7 +7702,7 @@ let toggleGroupBtn, zoomBtn, focusBtn, boundaryBtn;
 let submapRootBtn;
 let foldBtnL0, foldBtnL1, foldBtnAll;
 let floatingGroupBtn, floatingBoxBtn, floatingZoomBtn;
-let panelExpandBtn, importOutlineBtn, toggleCheckboxBtn;
+let panelExpandBtn, importOutlineBtn, toggleCheckboxBtn, toggleEmbedBtn;
 let isFloatingPanelExpanded = false;
 let toggleFloatingExtras = null;
 let inputContainer;
@@ -7787,6 +7812,7 @@ const disableUI = () => {
   setButtonDisabled(boundaryBtn, true);
   setButtonDisabled(submapRootBtn, true);
   setButtonDisabled(toggleCheckboxBtn, true);
+  setButtonDisabled(toggleEmbedBtn, true);
   setButtonDisabled(floatingGroupBtn, true);
   setButtonDisabled(floatingBoxBtn, true);
   setButtonDisabled(floatingZoomBtn, true);
@@ -7824,10 +7850,17 @@ const updateUI = (sel) => {
     const nodeText = getTextFromNode(all, sel, true, false);
     const isLinkedFile = !!getNodeMarkdownFile(nodeText);
 
-    // Add logic to enable/disable checkbox button
     if (toggleCheckboxBtn) {
       const isTextNode = sel.type === "text" || (sel.boundElements && sel.boundElements.some(be => be.type === "text"));
       setButtonDisabled(toggleCheckboxBtn, !isTextNode);
+    }
+
+    if (toggleEmbedBtn) {
+      const visualNode = sel.containerId ? all.find(el => el.id === sel.containerId) : sel;
+      const nodeText = getTextFromNode(all, visualNode, true, true).trim();
+      // Regex matches only exact format: [[NoteName#SectionName]] or ![[NoteName#SectionName]] with optional alias
+      const linkRegex = /^!?\[\[([^\]]+?#[^\]|]+)(?:\|[^\]]*)?\]\]$/;
+      setButtonDisabled(toggleEmbedBtn, !linkRegex.test(nodeText));
     }
 
     if (pinBtn) {
@@ -8103,7 +8136,7 @@ const commitEdit = async () => {
   // Only consider it a non-text update (which requires recreation) if the text/path actually changed.
   // If only ontology changed on an image node, we treat it as a standard update (else block).
   const isNonTextUpdate = !textEl && newType === targetNode.type && textChanged;
-
+  let containerToUpdate = null;
   if (isTypeChange || isNonTextUpdate) {
     // ---------------------------------------------------------
     // Path A: Recreate Element (Type change or Image path change)
@@ -8156,11 +8189,42 @@ const commitEdit = async () => {
         ea.style.strokeColor = incomingArrow.strokeColor;
       }
       ea.style.roughness = getAppState().currentItemRoughness;
-      newNodeId = ea.addText(cx, cy, textInput, {
+
+      const renderedText = await ea.parseText(textInput);
+      const metrics = ea.measureText(renderedText);
+      const shouldWrap = metrics.width > maxWidth;
+      
+      let finalWidth = Math.ceil(metrics.width);
+      let finalHeight = metrics.height;
+      let finalWrappedText = renderedText;
+      
+      if (shouldWrap) {
+        const res = await getAdjustedMaxWidth(textInput, maxWidth);
+        finalWidth = res.width;
+        finalHeight = res.height;
+        finalWrappedText = res.wrappedText;
+      }
+
+      newNodeId = ea.addText(cx, cy, renderedText, {
           textAlign: "center",
           textVerticalAlign: "middle",
-          box: boxChildren ? "rectangle" : false
+          box: boxChildren ? "rectangle" : false,
+          width: shouldWrap ? finalWidth : undefined,
+          height: shouldWrap ? finalHeight : undefined,
+          autoResize: boxChildren ? false : !shouldWrap
       });
+
+      containerToUpdate = boxChildren ? ea.getElement(newNodeId) : null;
+
+      // Explicitly overwrite raw, original and text properties to handle links correctly
+      newTextElement = boxChildren ? ea.getElement(containerToUpdate.boundElements[0].id) : containerToUpdate;
+      newTextElement.rawText = textInput;
+      newTextElement.originalText = renderedText;
+      newTextElement.text = finalWrappedText;
+      if (!shouldWrap) {
+        newTextElement.width = finalWidth;
+        newTextElement.height = finalHeight;
+      }
     }
 
     const newNode = ea.getElement(newNodeId);
@@ -8169,7 +8233,7 @@ const commitEdit = async () => {
     scaleDecorations(visualNode, newNode, all, info.rootId);
 
     // 3. Migrate custom data fields
-    const keysToCopy = [
+    const keysToCopy =[
       "mindmapOrder", "isPinned", "growthMode", "autoLayoutDisabled", 
       "isFolded", "foldIndicatorId", "foldState", "boundaryId",
       "fontsizeScale", "multicolor", "boxChildren", "roundedCorners", 
@@ -8186,7 +8250,7 @@ const commitEdit = async () => {
 
     // 4. Migrate Decorations
     if (visualNode.groupIds && visualNode.groupIds.length > 0) {
-      newNode.groupIds = [...visualNode.groupIds];
+      newNode.groupIds =[...visualNode.groupIds];
     }
 
     // 5. Rewire arrows and adjust cross-links
@@ -8200,7 +8264,7 @@ const commitEdit = async () => {
 
     if (connectedArrows.length > 0) {
       ea.copyViewElementsToEAforEditing(connectedArrows);
-      const newBoundElements = [];
+      const newBoundElements =[];
       
       connectedArrows.forEach(arrow => {
         const eaArrow = ea.getElement(arrow.id);
@@ -8296,25 +8360,30 @@ const commitEdit = async () => {
     if (textChanged && textEl) {
       ea.copyViewElementsToEAforEditing([textEl]);
       const eaEl = ea.getElement(textEl.id);
-      eaEl.originalText = textInput;
+      
+      const renderedText = await ea.parseText(textInput);
+      
       eaEl.rawText = textInput;
+      eaEl.originalText = renderedText;
+      
       // Refresh family/size in case global settings changed, though this is optional
       ea.style.fontFamily = eaEl.fontFamily;
       ea.style.fontSize = eaEl.fontSize;
 
-      if (eaEl.width <= maxWidth) {
-        const textWidth = ea.measureText(renderLinksToText(textInput)).width;
-        const shouldWrap = textWidth > maxWidth;
-        if (!shouldWrap) {
-          eaEl.autoResize = true;
-          eaEl.width = Math.ceil(textWidth);
-        } else {
-          eaEl.autoResize = false;
-          const res = getAdjustedMaxWidth(textInput, maxWidth);
-          eaEl.width = res.width;
-          eaEl.height = res.height;
-          eaEl.text = res.wrappedText;
-        }
+      const metrics = ea.measureText(renderedText);
+      const shouldWrap = metrics.width > maxWidth;
+      
+      if (!shouldWrap) {
+        eaEl.autoResize = true;
+        eaEl.width = Math.ceil(metrics.width);
+        eaEl.height = metrics.height;
+        eaEl.text = renderedText;
+      } else {
+        eaEl.autoResize = false;
+        const res = await getAdjustedMaxWidth(textInput, maxWidth);
+        eaEl.width = res.width;
+        eaEl.height = res.height;
+        eaEl.text = res.wrappedText;
       }
 
       ea.refreshTextElementSize(eaEl.id);
@@ -8333,6 +8402,10 @@ const commitEdit = async () => {
       if (container) {
         api().updateContainerSize([container]);
       }
+    }
+
+    if (containerToUpdate) {
+      api().updateContainerSize([containerToUpdate]);
     }
 
     // 5. Trigger Layout (only if text changed, as that affects dimensions)
@@ -8942,14 +9015,21 @@ const renderInput = (container, isFloating = false) => {
     btn.onClick(() => performAction(ACTION_PIN));
   }, false);
 
-  // --- Add the Checkbox Toggle Button ---
   addButton((btn) => {
     toggleCheckboxBtn = btn;
     btn.setIcon("square-check-big");
     btn.setTooltip(`${t("TOOLTIP_TOGGLE_CHECKBOX")} ${getActionHotkeyString(ACTION_TOGGLE_CHECKBOX)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_TOGGLE_CHECKBOX);
     btn.onClick(() => performAction(ACTION_TOGGLE_CHECKBOX));
-  }, true); // moveToSecondary = true puts it in the secondary container
+  }, true);
+
+  addButton((btn) => {
+    toggleEmbedBtn = btn;
+    btn.setIcon("file-sliders");
+    btn.setTooltip(`${t("TOOLTIP_TOGGLE_EMBED")} ${getActionHotkeyString(ACTION_TOGGLE_EMBED)}`);
+    btn.extraSettingsEl.setAttr("action", ACTION_TOGGLE_EMBED);
+    btn.onClick(() => performAction(ACTION_TOGGLE_EMBED));
+  }, true); 
 
   toggleFloatingExtras = null;
 
@@ -10095,6 +10175,11 @@ const performAction = async (action, event) => {
       await toggleCheckboxStatus();
       updateUI();
       break;
+
+    case ACTION_TOGGLE_EMBED:
+      await toggleEmbedStatus();
+      updateUI();
+    break;
 
     case ACTION_TOGGLE_SUBMAP_ROOT:
       await toggleSubmapRoot();
