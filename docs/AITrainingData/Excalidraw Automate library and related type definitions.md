@@ -401,6 +401,9 @@ export declare class ExcalidrawAutomate {
     getElement(id: string): Mutable<ExcalidrawElement>;
     /**
      * Returns an object describing the bound text element.
+     *
+     * IMPORTANT: The returned object contains EITHER `eaElement` OR `sceneElement`, never both.
+     *
      * If a text element is provided:
      *  - returns { eaElement } if the element is in ea.elementsDict
      *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
@@ -409,6 +412,15 @@ export declare class ExcalidrawAutomate {
      *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
      * If not found, returns {}.
      * Does not add the text element to elementsDict.
+     *
+     * Recommended usage pattern for editing:
+     * const boundText = ea.getBoundTextElement(container, true);
+     * let textEl = boundText.eaElement;
+     * if (!textEl && boundText.sceneElement) {
+     *   ea.copyViewElementsToEAforEditing([boundText.sceneElement]);
+     *   textEl = ea.getElement(boundText.sceneElement.id);
+     * }
+     * if (textEl) { ... safely modify textEl ... }
      * @param element: ExcalidrawElement | ExcalidrawElement[] - The selected container with text (an array of 2 elements) to check.
      * @param searchInView - If true, searches in the targetView elements if not found in elementsDict.
      * @returns Object containing either eaElement or sceneElement or empty if not found.
@@ -2106,7 +2118,10 @@ export type PointsPositionUpdates = Map<Index, {
     point: LocalPoint;
     isDragging?: boolean;
 }>;
-export type Arrowhead = "arrow" | "bar" | "dot" | "circle" | "circle_outline" | "triangle" | "triangle_outline" | "diamond" | "diamond_outline" | "crowfoot_one" | "crowfoot_many" | "crowfoot_one_or_many";
+export type CardinalityArrowhead = "cardinality_one" | "cardinality_many" | "cardinality_one_or_many" | "cardinality_exactly_one" | "cardinality_zero_or_one" | "cardinality_zero_or_many";
+export type ArrowheadLegacy = "dot" | "crowfoot_one" | "crowfoot_many" | "crowfoot_one_or_many";
+export type Arrowhead = "arrow" | "bar" | "circle" | "circle_outline" | "triangle" | "triangle_outline" | "diamond" | "diamond_outline" | CardinalityArrowhead;
+export type AnyArrowhead = Arrowhead | ArrowheadLegacy;
 export type ExcalidrawLinearElement = _ExcalidrawElementBase & Readonly<{
     type: "line" | "arrow";
     points: readonly LocalPoint[];
@@ -2314,7 +2329,7 @@ export type InteractiveCanvasAppState = Readonly<_CommonCanvasAppState & {
     multiElement: AppState["multiElement"];
     newElement: AppState["newElement"];
     isBindingEnabled: AppState["isBindingEnabled"];
-    invertBindingBehaviour: AppState["invertBindingBehaviour"];
+    isMidpointSnappingEnabled: AppState["isMidpointSnappingEnabled"];
     suggestedBinding: AppState["suggestedBinding"];
     isRotating: AppState["isRotating"];
     elementsToHighlight: AppState["elementsToHighlight"];
@@ -2387,7 +2402,15 @@ export interface AppState {
      * - set on pointer down, updated during pointer move
      */
     selectionElement: NonDeletedExcalidrawElement | null;
+    /**
+     * tracking current arrow binding editor state (takes into account
+     * `bindingPreference` and keyboard modifiers (ctrl/alt)
+     */
     isBindingEnabled: boolean;
+    /** user arrow binding preference */
+    bindingPreference: "enabled" | "disabled";
+    /** user preference whether arrow snap to midpoints while binding */
+    isMidpointSnappingEnabled: boolean;
     startBoundElement: NonDeleted<ExcalidrawBindableElement> | null;
     suggestedBinding: {
         element: NonDeleted<ExcalidrawBindableElement>;
@@ -2496,7 +2519,7 @@ export interface AppState {
     selectedElementsAreBeingDragged: boolean;
     shouldCacheIgnoreZoom: boolean;
     toast: {
-        message: string;
+        message: React.ReactNode;
         closable?: boolean;
         duration?: number;
     } | null;
@@ -2518,7 +2541,7 @@ export interface AppState {
     height: number;
     offsetTop: number;
     offsetLeft: number;
-    fileHandle: FileSystemHandle | null;
+    fileHandle: FileSystemFileHandle | null;
     collaborators: Map<SocketId, Collaborator>;
     stats: {
         open: boolean;
@@ -2561,7 +2584,6 @@ export interface AppState {
         fill: string;
         nameColor: string;
     };
-    invertBindingBehaviour: boolean;
     selectedLinearElement: LinearElementEditor | null;
     snapLines: readonly SnapLine[];
     originSnapOffset: {
@@ -2647,11 +2669,36 @@ export type OnUserFollowedPayload = {
     userToFollow: UserToFollow;
     action: "FOLLOW" | "UNFOLLOW";
 };
+export type OnExportProgress = {
+    type: "progress";
+    message?: React.ReactNode;
+    /** 0-1 range */
+    progress?: number;
+};
 export interface ExcalidrawProps {
     onChange?: (elements: readonly OrderedExcalidrawElement[], appState: AppState, files: BinaryFiles) => void;
+    /**
+     * note: only subscribes if the props.onIncrement is defined on initial render
+     */
     onIncrement?: (event: DurableIncrement | EphemeralIncrement) => void;
     initialData?: (() => MaybePromise<ExcalidrawInitialDataState | null>) | MaybePromise<ExcalidrawInitialDataState | null>;
-    excalidrawAPI?: (api: ExcalidrawImperativeAPI) => void;
+    /**
+     * Invoked as soon as the Excalidraw API is available
+     * NOTE editor is not yet mounted, and state is not yet initialized
+     */
+    onExcalidrawAPI?: (api: ExcalidrawImperativeAPI | null) => void;
+    /**
+     * Invoked once the editor root is mounted.
+     */
+    onMount?: (payload: ExcalidrawMountPayload) => void;
+    /**
+     * Invoked when the editor root is unmounted.
+     */
+    onUnmount?: () => void;
+    /**
+     * Invoked once the initial scene is loaded.
+     */
+    onInitialize?: (api: ExcalidrawImperativeAPI) => void;
     isCollaborating?: boolean;
     onPointerUpdate?: (payload: {
         pointer: {
@@ -2724,6 +2771,29 @@ export interface ExcalidrawProps {
     showDeprecatedFonts?: boolean;
     insertLinkAction?: (linkVal: string) => void;
     renderScrollbars?: boolean;
+    /**
+     * Called before exporting to a file.
+     *
+     * Allows the host app to intercept and delay saving until async operations
+     * (e.g., images are loaded) complete.
+     *
+     * If Promise/AsyncGenerator is returned, a progress toast will be shown
+     * until the operation completes. Generator can yield progress updates.
+     */
+    onExport?: (
+    /** type of export. Currently we only call for JSON exports or
+     * JSON-embedded PNG (which is also identified as `json` type here)*/
+    type: "json", data: {
+        elements: readonly ExcalidrawElement[];
+        appState: AppState;
+        files: BinaryFiles;
+    }, options: {
+        /** signal that gets aborted if user cancels the export (e.g. closes
+         * the native file picker dialog). In that case, you can either
+         * return immediately, or throw AbortError.
+         */
+        signal: AbortSignal;
+    }) => MaybePromise<void> | AsyncGenerator<OnExportProgress, void>;
 }
 export type SceneData = {
     elements?: ImportedDataState["elements"];
@@ -2776,6 +2846,8 @@ export type AppProps = Merge<ExcalidrawProps, {
 export type AppClassProperties = {
     props: AppProps;
     state: AppState;
+    api: App["api"];
+    sessionExportThemeOverride: App["sessionExportThemeOverride"];
     interactiveCanvas: HTMLCanvasElement | null;
     /** static canvas */
     canvas: HTMLCanvasElement;
@@ -2817,8 +2889,11 @@ export type AppClassProperties = {
     onPointerUpEmitter: App["onPointerUpEmitter"];
     updateEditorAtom: App["updateEditorAtom"];
     onPointerDownEmitter: App["onPointerDownEmitter"];
+    onEvent: App["onEvent"];
+    onStateChange: App["onStateChange"];
     lastPointerMoveCoords: App["lastPointerMoveCoords"];
     bindModeHandler: App["bindModeHandler"];
+    setAppState: App["setAppState"];
 };
 export type PointerDownState = Readonly<{
     origin: Readonly<{
@@ -2879,7 +2954,18 @@ export type PointerDownState = Readonly<{
     };
 }>;
 export type UnsubscribeCallback = () => void;
+export type ExcalidrawMountPayload = {
+    excalidrawAPI: ExcalidrawImperativeAPI;
+    container: HTMLDivElement | null;
+};
+export type ExcalidrawImperativeAPIEventMap = {
+    "editor:mount": [payload: ExcalidrawMountPayload];
+    "editor:initialize": [api: ExcalidrawImperativeAPI];
+    "editor:unmount": [];
+};
 export interface ExcalidrawImperativeAPI {
+    /** Whether the editor has been unmounted and the API is no longer usable. */
+    isDestroyed: boolean;
     updateScene: InstanceType<typeof App>["updateScene"];
     applyDeltas: InstanceType<typeof App>["applyDeltas"];
     mutateElement: InstanceType<typeof App>["mutateElement"];
@@ -2936,6 +3022,8 @@ export interface ExcalidrawImperativeAPI {
     onPointerUp: (callback: (activeTool: AppState["activeTool"], pointerDownState: PointerDownState, event: PointerEvent) => void) => UnsubscribeCallback;
     onScrollChange: (callback: (scrollX: number, scrollY: number, zoom: Zoom) => void) => UnsubscribeCallback;
     onUserFollow: (callback: (payload: OnUserFollowedPayload) => void) => UnsubscribeCallback;
+    onStateChange: InstanceType<typeof App>["onStateChange"];
+    onEvent: InstanceType<typeof App>["onEvent"];
 }
 export type FrameNameBounds = {
     x: number;
@@ -3020,7 +3108,7 @@ export declare const getBoundsFromPoints: (points: ExcalidrawFreeDrawElement["po
 export declare const getArrowheadSize: (arrowhead: Arrowhead) => number;
 /** @returns number in degrees */
 export declare const getArrowheadAngle: (arrowhead: Arrowhead) => Degrees;
-export declare const getArrowheadPoints: (element: ExcalidrawLinearElement, shape: Drawable[], position: "start" | "end", arrowhead: Arrowhead) => number[] | null;
+export declare const getArrowheadPoints: (element: ExcalidrawLinearElement, shape: Drawable[], position: "start" | "end", arrowhead: Arrowhead, offsetMultiplier?: number) => number[] | null;
 export declare const getElementBounds: (element: ExcalidrawElement, elementsMap: ElementsMap, nonRotated?: boolean) => Bounds;
 export declare const getCommonBounds: (elements: ElementsMapOrArray, elementsMap?: ElementsMap) => Bounds;
 export declare const getDraggedElementsBounds: (elements: ExcalidrawElement[], dragOffset: {
@@ -3060,10 +3148,26 @@ export declare const elementCenterPoint: (element: ExcalidrawElement, elementsMa
 /* ************************************** */
 /* node_modules/@zsviczian/excalidraw/types/excalidraw/components/App.d.ts */
 /* ************************************** */
+declare const editorLifecycleEventBehavior: {
+    readonly "editor:mount": {
+        readonly cardinality: "once";
+        readonly replay: "last";
+    };
+    readonly "editor:initialize": {
+        readonly cardinality: "once";
+        readonly replay: "last";
+    };
+    readonly "editor:unmount": {
+        readonly cardinality: "once";
+        readonly replay: "last";
+    };
+};
 export declare const ExcalidrawContainerContext: React.Context<{
     container: HTMLDivElement | null;
     id: string | null;
 }>;
+export declare const ExcalidrawAPIContext: React.Context<ExcalidrawImperativeAPI | null>;
+export declare const ExcalidrawAPISetContext: React.Context<((api: ExcalidrawImperativeAPI | null) => void) | null>;
 export declare const useApp: () => AppClassProperties;
 export declare const useAppProps: () => AppProps;
 export declare const useEditorInterface: () => Readonly<{
@@ -3086,9 +3190,14 @@ export declare const useExcalidrawElements: () => readonly NonDeletedExcalidrawE
 export declare const useExcalidrawAppState: () => AppState;
 export declare const useExcalidrawSetAppState: () => <K extends keyof AppState>(state: AppState | ((prevState: Readonly<AppState>, props: Readonly<any>) => AppState | Pick<AppState, K> | null) | Pick<AppState, K> | null, callback?: (() => void) | undefined) => void;
 export declare const useExcalidrawActionManager: () => ActionManager;
+/**
+ * Requires wrapping your component in <ExcalidrawAPIContext.Provider>
+ */
+export declare const useExcalidrawAPI: () => ExcalidrawImperativeAPI | null;
 declare class App extends React.Component<AppProps, AppState> {
     canvas: AppClassProperties["canvas"];
     interactiveCanvas: AppClassProperties["interactiveCanvas"];
+    sessionExportThemeOverride: AppState["theme"] | undefined;
     rc: RoughCanvas;
     unmounted: boolean;
     actionManager: ActionManager;
@@ -3123,8 +3232,12 @@ declare class App extends React.Component<AppProps, AppState> {
     /** embeds that have been inserted to DOM (as a perf optim, we don't want to
      * insert to DOM before user initially scrolls to them) */
     private initializedEmbeds;
-    private handleToastClose;
     private elementsPendingErasure;
+    private _initialized;
+    private readonly editorLifecycleEvents;
+    onEvent: AppEventBus<ExcalidrawImperativeAPIEventMap, typeof editorLifecycleEventBehavior>["on"];
+    private appStateObserver;
+    onStateChange: OnStateChange;
     flowChartCreator: FlowChartCreator;
     private flowChartNavigator;
     bindModeHandler: ReturnType<typeof setTimeout> | null;
@@ -3282,6 +3395,8 @@ declare class App extends React.Component<AppProps, AppState> {
     }>]>;
     missingPointerEventCleanupEmitter: Emitter<[event: PointerEvent | null]>;
     onRemoveEventListenersEmitter: Emitter<[]>;
+    api: ExcalidrawImperativeAPI;
+    private createExcalidrawAPI;
     constructor(props: AppProps);
     updateEditorAtom: <Value, Args extends unknown[], Result>(atom: WritableAtom<Value, Args, Result>, ...args: Args) => Result;
     private onWindowMessage;
@@ -3437,11 +3552,7 @@ declare class App extends React.Component<AppProps, AppState> {
     startLineEditor: (el: ExcalidrawLinearElement, selectedPointsIndices?: number[] | null) => void;
     refreshAllArrows: () => void;
     updateContainerSize: (containers: NonDeletedExcalidrawElement[]) => void;
-    setToast: (toast: {
-        message: string;
-        closable?: boolean;
-        duration?: number;
-    } | null) => void;
+    setToast: (toast: AppState["toast"]) => void;
     restoreFileFromShare: () => Promise<void>;
     /**
      * adds supplied files to existing files in the appState.
@@ -3599,13 +3710,12 @@ declare class App extends React.Component<AppProps, AppState> {
     /** generally you should use `addNewImagesToImageCache()` directly if you need
      *  to render new images. This is just a failsafe  */
     private scheduleImageRefresh;
-    private updateBindingEnabledOnPointerMove;
     setSelection(elements: readonly NonDeletedExcalidrawElement[]): void;
     private clearSelection;
     private handleInteractiveCanvasRef;
     private insertImages;
     private handleAppOnDrop;
-    loadFileToCanvas: (file: File, fileHandle: FileSystemHandle | null) => Promise<void>;
+    loadFileToCanvas: (file: File, fileHandle: FileSystemFileHandle | null) => Promise<void>;
     private handleCanvasContextMenu;
     private maybeDragNewGenericElement;
     private maybeHandleCrop;

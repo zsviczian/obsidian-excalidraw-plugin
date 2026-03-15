@@ -983,6 +983,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "parseText",
+    code: "async parseText(text: string): Promise<string | undefined>;",
+    desc: "Parses raw text through targetView.excalidrawData using the same parsing pipeline as ExcalidrawData (including transclusion resolution, link brackets, and link/url prefixes from frontmatter). Works only when ea.targetView is set and loaded.",
+    after: "",
+  },
+  {
     field: "getleaf",
     code: "getLeaf(origo: WorkspaceLeaf, targetPane?: PaneTarget): WorkspaceLeaf;",
     desc: "Generates a new Obsidian Leaf following Excalidraw plugin settings such as open in Main Workspace or not, open in adjacent pane if available, etc.<br>" +

@@ -449,3 +449,78 @@ class ImageCache {
 }
 
 export const imageCache = new ImageCache(DB_NAME, CACHE_STORE, BACKUP_STORE);
+
+/* -------------------------------------------------------- */
+/*                      Legacy cleanup                      */
+// early implementation used localStorage as the image cache,
+// which if not cleaned can cause Obsidian performance issues 
+/* -------------------------------------------------------- */
+const LEGACY_LS_PURGE_MARKER = "excalidraw-legacy-ls-purge-v1";
+
+type LegacyKeyShape = {
+  filepath: unknown;
+  blockref: unknown;
+  isDark: unknown;
+  isSVG: unknown;
+  scale: unknown;
+};
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const hasLegacyShape = (value: unknown): value is LegacyKeyShape => {
+  if (!isObject(value)) return false;
+  return (
+    "filepath" in value &&
+    "blockref" in value &&
+    "isDark" in value &&
+    "isSVG" in value &&
+    "scale" in value
+  );
+};
+
+export const purgeLegacyLocalStorageImageCache = (): string | null => {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) {
+      return null;
+    }
+
+    if (localStorage.getItem(LEGACY_LS_PURGE_MARKER) === "1") {
+      return null;
+    }
+
+    const keys = Object.keys(localStorage);
+    let deleted = 0;
+
+    for (const key of keys) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(key);
+      } catch {
+        continue;
+      }
+
+      if (!hasLegacyShape(parsed)) {
+        continue;
+      }
+
+      localStorage.removeItem(key);
+      deleted += 1;
+    }
+
+    localStorage.setItem(LEGACY_LS_PURGE_MARKER, "1");
+
+    if (deleted === 0) {
+      return null;
+    }
+
+    return "Purged " + deleted + " legacy localStorage image cache entr" + (deleted === 1 ? "y." : "ies.");
+  } catch {
+    return null;
+  }
+};
+
+const report = purgeLegacyLocalStorageImageCache();
+if (report) {
+  console.info(report);
+}

@@ -1368,6 +1368,20 @@ export class ExcalidrawData {
     return { parsed: outString, link };
   }
 
+  /**
+   * Public wrapper around the internal text parser.
+   *
+   * This reuses existing ExcalidrawData parsing behavior, including
+   * transclusions, link formatting, and prefix handling.
+   * @param text Raw text to parse.
+   * @returns Parsed text string.
+   */
+  public async parseText(text: string): Promise<string> {
+    if(!text) return;
+    const res = await this.parse(text);
+    return res.parsed;
+  }
+
   private parseCheckbox(text:string):string {
     return this.plugin.settings.parseTODO 
       ? text

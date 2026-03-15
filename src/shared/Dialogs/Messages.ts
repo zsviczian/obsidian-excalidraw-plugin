@@ -18,18 +18,36 @@ I build this plugin in my free time, as a labor of love. Curious about the philo
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.21.0":`
-## Fixed
-- Sizing of embedded images in Markdown when image type is set to SVG. [#2685](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2685)
-- Fixed Enter, Up/Down arrows, and TAB keys stop working in text element after deleting the \`#\` character [#2704](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2704)
-- Context menu styling [#2697](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2697) 🙏[@heinrich26](https://github.com/heinrich26)
-
 ## New
 - LaTeX editor is now floating [#2684](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2684) 🙏[@TravisLEBLANC1](https://github.com/TravisLEBLANC1), [#2698](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2698) 🙏[@heinrich26](https://github.com/heinrich26)
-- Inline link suggester now supports triggers \`![[drawing#^frame=\` and \`![[drawing#^clippedframe=\`, thus it is easy to reference frames like slides or parts of images in your different drawings.
-- Support for mermaid Entity Relationship Diagrams, new ERD/cardinality arrowheads [#10940](https://github.com/excalidraw/excalidraw/pull/10940)
-- New Context Menu options to disable arrow binding and midpoint snapping. [#10906](https://github.com/excalidraw/excalidraw/pull/10906)
-- Icons aligned with Obsidian style [#2703](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2703) 🙏[@heinrich26](https://github.com/heinrich26)
+- Inline link suggester supports new triggers \`![[drawing#^frame=\` and \`![[drawing#^clippedframe=\`, thus it is easy to reference frames like pdf pages, slides or other parts of your scene marked using marker frames.
+- Support for mermaid Entity Relationship Diagrams, and new ERD/cardinality arrowheads [#10940](https://github.com/excalidraw/excalidraw/pull/10940)
+- New Context Menu options to disable arrow binding and midpoint snapping [#10906](https://github.com/excalidraw/excalidraw/pull/10906)
+- Improved UI styling and icons are better aligned with Obsidian [#2703](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2703), [#2687](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2687), [#2697](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2697) 🙏[@heinrich26](https://github.com/heinrich26)
 
+## Fixed
+- Sizing of embedded images in Markdown when image type is set to SVG [#2685](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2685)
+- Fixed Enter, Up/Down arrows, and TAB keys stopped working in text elements after deleting the \`#\` character [#2704](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2704)
+
+## MindMap Builder
+- Fixed navigation (arrow keys) scoping and recognition
+- Added new feature to paste images and single Excalidraw elements like container with text, text element, or image element directly as a map leaf (using the MindMap Builder default paste shortcut: ALT/OPT+V)
+- Added new action to toggle a markdown link between markdown embeddable and link as text. Default shortcut is ALT/OPT+E.
+
+## New in ExcalidrawAutomate
+\`\`\`ts
+/**
+ * Parses text using the target view's ExcalidrawData parser.
+ *
+ * This reuses ExcalidrawData parsing logic directly, including transclusion
+ * resolution, link bracket rendering, and link/url prefixes based on the
+ * target file's frontmatter.
+ *
+ * @param {string} text - Raw text to parse.
+ * @returns {Promise<string | undefined>} Parsed text, or undefined when input/view is unavailable.
+ */
+public async parseText (text: string): Promise<string | undefined>;
+\`\`\`
 `,
 "2.20.6":`
 <div class="excalidraw-videoWrapper">

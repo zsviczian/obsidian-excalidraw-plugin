@@ -17,7 +17,10 @@ import { ColorMap, MimeType } from "../types/embeddedFileLoaderTypes";
 import { Editor,  Notice, OpenViewState, RequestUrlResponse, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
 import ExcalidrawView, { TextMode } from "src/view/ExcalidrawView";
-import { ExcalidrawData, getMarkdownDrawingSection } from "./ExcalidrawData";
+import {
+  ExcalidrawData,
+  getMarkdownDrawingSection,
+} from "./ExcalidrawData";
 import {
   FRONTMATTER,
   nanoid,
@@ -693,6 +696,23 @@ export class ExcalidrawAutomate {
   public attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement): KeyBlocker {
     const getSourcePath = () => this.targetView?.file?.path;
     return new InlineLinkSuggester(this.plugin.app, this.plugin, inputEl, getSourcePath, widthWrapper);
+  }
+
+  /**
+   * Parses text using the target view's ExcalidrawData parser.
+   *
+   * This reuses ExcalidrawData parsing logic directly, including transclusion
+   * resolution, link bracket rendering, and link/url prefixes based on the
+   * target file's frontmatter.
+   *
+   * @param {string} text - Raw text to parse.
+   * @returns {Promise<string | undefined>} Parsed text, or undefined when input/view is unavailable.
+   */
+  public async parseText (text: string): Promise<string | undefined> {
+    if(!text) return;
+    if (!this.targetView || !this.targetView?._loaded) return;
+    if (!this.targetView.excalidrawData) return;
+    return await this.targetView.excalidrawData.parseText(text);
   }
 
   /**

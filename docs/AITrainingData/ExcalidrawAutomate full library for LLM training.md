@@ -604,6 +604,9 @@ export declare class ExcalidrawAutomate {
     getElement(id: string): Mutable<ExcalidrawElement>;
     /**
      * Returns an object describing the bound text element.
+     *
+     * IMPORTANT: The returned object contains EITHER `eaElement` OR `sceneElement`, never both.
+     *
      * If a text element is provided:
      *  - returns { eaElement } if the element is in ea.elementsDict
      *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
@@ -612,6 +615,15 @@ export declare class ExcalidrawAutomate {
      *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
      * If not found, returns {}.
      * Does not add the text element to elementsDict.
+     *
+     * Recommended usage pattern for editing:
+     * const boundText = ea.getBoundTextElement(container, true);
+     * let textEl = boundText.eaElement;
+     * if (!textEl && boundText.sceneElement) {
+     *   ea.copyViewElementsToEAforEditing([boundText.sceneElement]);
+     *   textEl = ea.getElement(boundText.sceneElement.id);
+     * }
+     * if (textEl) { ... safely modify textEl ... }
      * @param element: ExcalidrawElement | ExcalidrawElement[] - The selected container with text (an array of 2 elements) to check.
      * @param searchInView - If true, searches in the targetView elements if not found in elementsDict.
      * @returns Object containing either eaElement or sceneElement or empty if not found.
@@ -2309,7 +2321,10 @@ export type PointsPositionUpdates = Map<Index, {
     point: LocalPoint;
     isDragging?: boolean;
 }>;
-export type Arrowhead = "arrow" | "bar" | "dot" | "circle" | "circle_outline" | "triangle" | "triangle_outline" | "diamond" | "diamond_outline" | "crowfoot_one" | "crowfoot_many" | "crowfoot_one_or_many";
+export type CardinalityArrowhead = "cardinality_one" | "cardinality_many" | "cardinality_one_or_many" | "cardinality_exactly_one" | "cardinality_zero_or_one" | "cardinality_zero_or_many";
+export type ArrowheadLegacy = "dot" | "crowfoot_one" | "crowfoot_many" | "crowfoot_one_or_many";
+export type Arrowhead = "arrow" | "bar" | "circle" | "circle_outline" | "triangle" | "triangle_outline" | "diamond" | "diamond_outline" | CardinalityArrowhead;
+export type AnyArrowhead = Arrowhead | ArrowheadLegacy;
 export type ExcalidrawLinearElement = _ExcalidrawElementBase & Readonly<{
     type: "line" | "arrow";
     points: readonly LocalPoint[];
@@ -2517,7 +2532,7 @@ export type InteractiveCanvasAppState = Readonly<_CommonCanvasAppState & {
     multiElement: AppState["multiElement"];
     newElement: AppState["newElement"];
     isBindingEnabled: AppState["isBindingEnabled"];
-    invertBindingBehaviour: AppState["invertBindingBehaviour"];
+    isMidpointSnappingEnabled: AppState["isMidpointSnappingEnabled"];
     suggestedBinding: AppState["suggestedBinding"];
     isRotating: AppState["isRotating"];
     elementsToHighlight: AppState["elementsToHighlight"];
@@ -2590,7 +2605,15 @@ export interface AppState {
      * - set on pointer down, updated during pointer move
      */
     selectionElement: NonDeletedExcalidrawElement | null;
+    /**
+     * tracking current arrow binding editor state (takes into account
+     * `bindingPreference` and keyboard modifiers (ctrl/alt)
+     */
     isBindingEnabled: boolean;
+    /** user arrow binding preference */
+    bindingPreference: "enabled" | "disabled";
+    /** user preference whether arrow snap to midpoints while binding */
+    isMidpointSnappingEnabled: boolean;
     startBoundElement: NonDeleted<ExcalidrawBindableElement> | null;
     suggestedBinding: {
         element: NonDeleted<ExcalidrawBindableElement>;
@@ -2699,7 +2722,7 @@ export interface AppState {
     selectedElementsAreBeingDragged: boolean;
     shouldCacheIgnoreZoom: boolean;
     toast: {
-        message: string;
+        message: React.ReactNode;
         closable?: boolean;
         duration?: number;
     } | null;
@@ -2721,7 +2744,7 @@ export interface AppState {
     height: number;
     offsetTop: number;
     offsetLeft: number;
-    fileHandle: FileSystemHandle | null;
+    fileHandle: FileSystemFileHandle | null;
     collaborators: Map<SocketId, Collaborator>;
     stats: {
         open: boolean;
@@ -2764,7 +2787,6 @@ export interface AppState {
         fill: string;
         nameColor: string;
     };
-    invertBindingBehaviour: boolean;
     selectedLinearElement: LinearElementEditor | null;
     snapLines: readonly SnapLine[];
     originSnapOffset: {
@@ -2850,11 +2872,36 @@ export type OnUserFollowedPayload = {
     userToFollow: UserToFollow;
     action: "FOLLOW" | "UNFOLLOW";
 };
+export type OnExportProgress = {
+    type: "progress";
+    message?: React.ReactNode;
+    /** 0-1 range */
+    progress?: number;
+};
 export interface ExcalidrawProps {
     onChange?: (elements: readonly OrderedExcalidrawElement[], appState: AppState, files: BinaryFiles) => void;
+    /**
+     * note: only subscribes if the props.onIncrement is defined on initial render
+     */
     onIncrement?: (event: DurableIncrement | EphemeralIncrement) => void;
     initialData?: (() => MaybePromise<ExcalidrawInitialDataState | null>) | MaybePromise<ExcalidrawInitialDataState | null>;
-    excalidrawAPI?: (api: ExcalidrawImperativeAPI) => void;
+    /**
+     * Invoked as soon as the Excalidraw API is available
+     * NOTE editor is not yet mounted, and state is not yet initialized
+     */
+    onExcalidrawAPI?: (api: ExcalidrawImperativeAPI | null) => void;
+    /**
+     * Invoked once the editor root is mounted.
+     */
+    onMount?: (payload: ExcalidrawMountPayload) => void;
+    /**
+     * Invoked when the editor root is unmounted.
+     */
+    onUnmount?: () => void;
+    /**
+     * Invoked once the initial scene is loaded.
+     */
+    onInitialize?: (api: ExcalidrawImperativeAPI) => void;
     isCollaborating?: boolean;
     onPointerUpdate?: (payload: {
         pointer: {
@@ -2927,6 +2974,29 @@ export interface ExcalidrawProps {
     showDeprecatedFonts?: boolean;
     insertLinkAction?: (linkVal: string) => void;
     renderScrollbars?: boolean;
+    /**
+     * Called before exporting to a file.
+     *
+     * Allows the host app to intercept and delay saving until async operations
+     * (e.g., images are loaded) complete.
+     *
+     * If Promise/AsyncGenerator is returned, a progress toast will be shown
+     * until the operation completes. Generator can yield progress updates.
+     */
+    onExport?: (
+    /** type of export. Currently we only call for JSON exports or
+     * JSON-embedded PNG (which is also identified as `json` type here)*/
+    type: "json", data: {
+        elements: readonly ExcalidrawElement[];
+        appState: AppState;
+        files: BinaryFiles;
+    }, options: {
+        /** signal that gets aborted if user cancels the export (e.g. closes
+         * the native file picker dialog). In that case, you can either
+         * return immediately, or throw AbortError.
+         */
+        signal: AbortSignal;
+    }) => MaybePromise<void> | AsyncGenerator<OnExportProgress, void>;
 }
 export type SceneData = {
     elements?: ImportedDataState["elements"];
@@ -2979,6 +3049,8 @@ export type AppProps = Merge<ExcalidrawProps, {
 export type AppClassProperties = {
     props: AppProps;
     state: AppState;
+    api: App["api"];
+    sessionExportThemeOverride: App["sessionExportThemeOverride"];
     interactiveCanvas: HTMLCanvasElement | null;
     /** static canvas */
     canvas: HTMLCanvasElement;
@@ -3020,8 +3092,11 @@ export type AppClassProperties = {
     onPointerUpEmitter: App["onPointerUpEmitter"];
     updateEditorAtom: App["updateEditorAtom"];
     onPointerDownEmitter: App["onPointerDownEmitter"];
+    onEvent: App["onEvent"];
+    onStateChange: App["onStateChange"];
     lastPointerMoveCoords: App["lastPointerMoveCoords"];
     bindModeHandler: App["bindModeHandler"];
+    setAppState: App["setAppState"];
 };
 export type PointerDownState = Readonly<{
     origin: Readonly<{
@@ -3082,7 +3157,18 @@ export type PointerDownState = Readonly<{
     };
 }>;
 export type UnsubscribeCallback = () => void;
+export type ExcalidrawMountPayload = {
+    excalidrawAPI: ExcalidrawImperativeAPI;
+    container: HTMLDivElement | null;
+};
+export type ExcalidrawImperativeAPIEventMap = {
+    "editor:mount": [payload: ExcalidrawMountPayload];
+    "editor:initialize": [api: ExcalidrawImperativeAPI];
+    "editor:unmount": [];
+};
 export interface ExcalidrawImperativeAPI {
+    /** Whether the editor has been unmounted and the API is no longer usable. */
+    isDestroyed: boolean;
     updateScene: InstanceType<typeof App>["updateScene"];
     applyDeltas: InstanceType<typeof App>["applyDeltas"];
     mutateElement: InstanceType<typeof App>["mutateElement"];
@@ -3139,6 +3225,8 @@ export interface ExcalidrawImperativeAPI {
     onPointerUp: (callback: (activeTool: AppState["activeTool"], pointerDownState: PointerDownState, event: PointerEvent) => void) => UnsubscribeCallback;
     onScrollChange: (callback: (scrollX: number, scrollY: number, zoom: Zoom) => void) => UnsubscribeCallback;
     onUserFollow: (callback: (payload: OnUserFollowedPayload) => void) => UnsubscribeCallback;
+    onStateChange: InstanceType<typeof App>["onStateChange"];
+    onEvent: InstanceType<typeof App>["onEvent"];
 }
 export type FrameNameBounds = {
     x: number;
@@ -3223,7 +3311,7 @@ export declare const getBoundsFromPoints: (points: ExcalidrawFreeDrawElement["po
 export declare const getArrowheadSize: (arrowhead: Arrowhead) => number;
 /** @returns number in degrees */
 export declare const getArrowheadAngle: (arrowhead: Arrowhead) => Degrees;
-export declare const getArrowheadPoints: (element: ExcalidrawLinearElement, shape: Drawable[], position: "start" | "end", arrowhead: Arrowhead) => number[] | null;
+export declare const getArrowheadPoints: (element: ExcalidrawLinearElement, shape: Drawable[], position: "start" | "end", arrowhead: Arrowhead, offsetMultiplier?: number) => number[] | null;
 export declare const getElementBounds: (element: ExcalidrawElement, elementsMap: ElementsMap, nonRotated?: boolean) => Bounds;
 export declare const getCommonBounds: (elements: ElementsMapOrArray, elementsMap?: ElementsMap) => Bounds;
 export declare const getDraggedElementsBounds: (elements: ExcalidrawElement[], dragOffset: {
@@ -3263,10 +3351,26 @@ export declare const elementCenterPoint: (element: ExcalidrawElement, elementsMa
 /* ************************************** */
 /* node_modules/@zsviczian/excalidraw/types/excalidraw/components/App.d.ts */
 /* ************************************** */
+declare const editorLifecycleEventBehavior: {
+    readonly "editor:mount": {
+        readonly cardinality: "once";
+        readonly replay: "last";
+    };
+    readonly "editor:initialize": {
+        readonly cardinality: "once";
+        readonly replay: "last";
+    };
+    readonly "editor:unmount": {
+        readonly cardinality: "once";
+        readonly replay: "last";
+    };
+};
 export declare const ExcalidrawContainerContext: React.Context<{
     container: HTMLDivElement | null;
     id: string | null;
 }>;
+export declare const ExcalidrawAPIContext: React.Context<ExcalidrawImperativeAPI | null>;
+export declare const ExcalidrawAPISetContext: React.Context<((api: ExcalidrawImperativeAPI | null) => void) | null>;
 export declare const useApp: () => AppClassProperties;
 export declare const useAppProps: () => AppProps;
 export declare const useEditorInterface: () => Readonly<{
@@ -3289,9 +3393,14 @@ export declare const useExcalidrawElements: () => readonly NonDeletedExcalidrawE
 export declare const useExcalidrawAppState: () => AppState;
 export declare const useExcalidrawSetAppState: () => <K extends keyof AppState>(state: AppState | ((prevState: Readonly<AppState>, props: Readonly<any>) => AppState | Pick<AppState, K> | null) | Pick<AppState, K> | null, callback?: (() => void) | undefined) => void;
 export declare const useExcalidrawActionManager: () => ActionManager;
+/**
+ * Requires wrapping your component in <ExcalidrawAPIContext.Provider>
+ */
+export declare const useExcalidrawAPI: () => ExcalidrawImperativeAPI | null;
 declare class App extends React.Component<AppProps, AppState> {
     canvas: AppClassProperties["canvas"];
     interactiveCanvas: AppClassProperties["interactiveCanvas"];
+    sessionExportThemeOverride: AppState["theme"] | undefined;
     rc: RoughCanvas;
     unmounted: boolean;
     actionManager: ActionManager;
@@ -3326,8 +3435,12 @@ declare class App extends React.Component<AppProps, AppState> {
     /** embeds that have been inserted to DOM (as a perf optim, we don't want to
      * insert to DOM before user initially scrolls to them) */
     private initializedEmbeds;
-    private handleToastClose;
     private elementsPendingErasure;
+    private _initialized;
+    private readonly editorLifecycleEvents;
+    onEvent: AppEventBus<ExcalidrawImperativeAPIEventMap, typeof editorLifecycleEventBehavior>["on"];
+    private appStateObserver;
+    onStateChange: OnStateChange;
     flowChartCreator: FlowChartCreator;
     private flowChartNavigator;
     bindModeHandler: ReturnType<typeof setTimeout> | null;
@@ -3485,6 +3598,8 @@ declare class App extends React.Component<AppProps, AppState> {
     }>]>;
     missingPointerEventCleanupEmitter: Emitter<[event: PointerEvent | null]>;
     onRemoveEventListenersEmitter: Emitter<[]>;
+    api: ExcalidrawImperativeAPI;
+    private createExcalidrawAPI;
     constructor(props: AppProps);
     updateEditorAtom: <Value, Args extends unknown[], Result>(atom: WritableAtom<Value, Args, Result>, ...args: Args) => Result;
     private onWindowMessage;
@@ -3640,11 +3755,7 @@ declare class App extends React.Component<AppProps, AppState> {
     startLineEditor: (el: ExcalidrawLinearElement, selectedPointsIndices?: number[] | null) => void;
     refreshAllArrows: () => void;
     updateContainerSize: (containers: NonDeletedExcalidrawElement[]) => void;
-    setToast: (toast: {
-        message: string;
-        closable?: boolean;
-        duration?: number;
-    } | null) => void;
+    setToast: (toast: AppState["toast"]) => void;
     restoreFileFromShare: () => Promise<void>;
     /**
      * adds supplied files to existing files in the appState.
@@ -3802,13 +3913,12 @@ declare class App extends React.Component<AppProps, AppState> {
     /** generally you should use `addNewImagesToImageCache()` directly if you need
      *  to render new images. This is just a failsafe  */
     private scheduleImageRefresh;
-    private updateBindingEnabledOnPointerMove;
     setSelection(elements: readonly NonDeletedExcalidrawElement[]): void;
     private clearSelection;
     private handleInteractiveCanvasRef;
     private insertImages;
     private handleAppOnDrop;
-    loadFileToCanvas: (file: File, fileHandle: FileSystemHandle | null) => Promise<void>;
+    loadFileToCanvas: (file: File, fileHandle: FileSystemFileHandle | null) => Promise<void>;
     private handleCanvasContextMenu;
     private maybeDragNewGenericElement;
     private maybeHandleCrop;
@@ -11034,15 +11144,15 @@ export declare const getDataURL: (file: Blob | File) => Promise<DataURL>;
 export declare const loadFromBlob: (blob: Blob, 
 /** @see restore.localAppState */
 localAppState: AppState | null, localElements: readonly ExcalidrawElement[] | null, 
-/** FileSystemHandle. Defaults to `blob.handle` if defined, otherwise null. */
-fileHandle?: FileSystemHandle | null) => Promise<{
+/** FileSystemFileHandle. Defaults to `blob.handle` if defined, otherwise null. */
+fileHandle?: FileSystemFileHandle | null) => Promise<{
     elements: import("@excalidraw/element/types").OrderedExcalidrawElement[];
 export declare const loadLibraryFromBlob: (blob: Blob, defaultStatus?: LibraryItem["status"]) => Promise<LibraryItem[]>;
 export declare const loadSceneOrLibraryFromBlob: (blob: Blob | File, 
 /** @see restore.localAppState */
 localAppState: AppState | null, localElements: readonly ExcalidrawElement[] | null, 
-/** FileSystemHandle. Defaults to `blob.handle` if defined, otherwise null. */
-fileHandle?: FileSystemHandle | null) => Promise<{
+/** FileSystemFileHandle. Defaults to `blob.handle` if defined, otherwise null. */
+fileHandle?: FileSystemFileHandle | null) => Promise<{
     type: "application/vnd.excalidraw+json";
 
 /* ************************************** */
@@ -11081,8 +11191,11 @@ export declare const Button: ({ type, onSelect, selected, children, className, .
 /* ************************************** */
 /* ./components/App -> node_modules/@zsviczian/excalidraw/types/excalidraw/components/App.d.ts */
 /* ************************************** */
+export declare const ExcalidrawAPIContext: React.Context<ExcalidrawImperativeAPI | null>;
+export declare const ExcalidrawAPISetContext: React.Context<((api: ExcalidrawImperativeAPI | null) => void) | null>;
 export declare const useEditorInterface: () => Readonly<{
     formFactor: "phone" | "tablet" | "desktop";
+export declare const useExcalidrawAPI: () => ExcalidrawImperativeAPI | null;
 export declare const useStylesPanelMode: () => StylesPanelMode;
 
 /* ************************************** */
@@ -11159,12 +11272,6 @@ export declare const DiagramToCodePlugin: (props: {
 /* ************************************** */
 export declare const CommandPalette: ((props: CommandPaletteProps) => import("react/jsx-runtime").JSX.Element | null) & {
     defaultItems: typeof defaultItems;
-
-/* ************************************** */
-/* ./charts -> node_modules/@zsviczian/excalidraw/types/excalidraw/charts.d.ts */
-/* ************************************** */
-export declare const renderSpreadsheet: (chartType: string, spreadsheet: Spreadsheet, x: number, y: number) => ChartElements;
-export declare const tryParseSpreadsheet: (text: string) => ParseSpreadsheetResult;
 ```
 
 ---
@@ -11183,7 +11290,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-03-01T14:56:51.528Z
+Generated on: 2026-03-15T11:41:32.602Z
 
 ---
 
@@ -11267,7 +11374,7 @@ These are the scripts I use most often. I tried to order them by importance, but
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Fixed%20vertical%20distance.svg"/></div>|[[#Fixed vertical distance]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Golden%20Ratio.svg"/></div>|[[#Golden Ratio]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Grid%20Selected%20Images.svg"/></div>|[[#Grid selected images]]|
-|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-mindmap-builder.png"/></div>|[[#Mindmap Builder]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Mindmap%20Builder.svg"/></div>|[[#Mindmap Builder]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Mindmap%20format.svg"/></div>|[[#Mindmap format]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Printable%20Layout%20Wizard.svg"/></div>|[[#Printable Layout Wizard]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Zoom%20to%20Fit%20Selected%20Elements.svg"/></div>|[[#Zoom to Fit Selected Elements]]|
@@ -20078,6 +20185,7 @@ const STRINGS = {
     ACTION_LABEL_HIDE: "Dock & hide",
     ACTION_LABEL_REARRANGE: "Rearrange Map",
     ACTION_LABEL_TOGGLE_SUBMAP_ROOT: "Start/End Submap Root",
+    ACTION_LABEL_TOGGLE_CHECKBOX: "Toggle Checkbox Status",
 
     // Tooltips (shared)
     PIN_TOOLTIP_PINNED: "This element is pinned. Click to unpin the location of the selected element",
@@ -20108,6 +20216,7 @@ const STRINGS = {
     TOOLTIP_RESET_TO_DEFAULT: "Reset to default",
     TOOLTIP_SUBMAP_ROOT_ADD: "Start submap from selected node",
     TOOLTIP_SUBMAP_ROOT_REMOVE: "Convert submap root back to a normal node",
+    TOOLTIP_TOGGLE_CHECKBOX: "Toggle task checkbox status",
 
     // Buttons and labels
     DOCK_TITLE: "Mind Map Builder",
@@ -20290,8 +20399,8 @@ addLocale("zh", {
   NOTICE_BRANCH_WIDTH_MANUAL_OVERRIDE: "分支粗细未更新，因为部分分支粗细已被手动修改。",
   NOTICE_CANNOT_CHANGE_MASTER_ROOT: "主根节点不能被转换。",
   NOTICE_SUBMAP_ROOT_ADDED: "已启用子图根节点。",
-  NOTICE_SUBMAP_ROOT_REMOVED: "已移除子图根节点。其子节点将按上级根节点布局重排。",
-  CONFIRM_REMOVE_SUBMAP_ROOT: "要将此子图根节点恢复为普通节点吗？\n\n它将失去本地布局元数据，并且其子节点将按父级根节点的布局逻辑重排。",
+  NOTICE_SUBMAP_ROOT_REMOVED: "已移除子图根节点。其子节点将按亲代根节点布局重排。",
+  CONFIRM_REMOVE_SUBMAP_ROOT: "恢复为普通节点吗？\n\n它将失去本地布局元数据，其子节点将按亲代根节点布局重排。",
 
   // Action labels (display only)
   ACTION_LABEL_ADD: "添加子节点",
@@ -20321,6 +20430,7 @@ addLocale("zh", {
   ACTION_LABEL_HIDE: "停靠 & 隐藏",
   ACTION_LABEL_REARRANGE: "重排导图",
   ACTION_LABEL_TOGGLE_SUBMAP_ROOT: "开始/结束子图根节点",
+  ACTION_LABEL_TOGGLE_CHECKBOX: "切换复选框状态",
 
   // Tooltips (shared)
   PIN_TOOLTIP_PINNED: "此元素已锁定。点击解锁所选元素的位置。",
@@ -20351,6 +20461,7 @@ addLocale("zh", {
   TOOLTIP_RESET_TO_DEFAULT: "恢复默认",
   TOOLTIP_SUBMAP_ROOT_ADD: "从所选节点开始子图",
   TOOLTIP_SUBMAP_ROOT_REMOVE: "将子图根节点恢复为普通节点",
+  TOOLTIP_TOGGLE_CHECKBOX: "切换任务复选框状态",
 
   // Buttons and labels
   DOCK_TITLE: "MindMap Builder",
@@ -20432,7 +20543,7 @@ addLocale("zh", {
   GAP_Y: "垂直间距（Gap Y）",
   DESC_LAYOUT_GAP_Y: "同级节点之间的垂直距离。径向布局中的基础间距。",
   GAP_MULTIPLIER: "间距倍数",
-  DESC_LAYOUT_GAP_MULTIPLIER: "叶节点（无子节点的节点）的垂直间距，相对于字体大小。低：类似列表堆叠；高：标准树状间距。",
+  DESC_LAYOUT_GAP_MULTIPLIER: "叶节点（无子节点的节点）相对于字体大小的垂直间距。低：类似列表堆叠；高：标准树状间距。",
   DIRECTIONAL_ARC_SPAN_RADIANS: "定向张开弧度（Arc-span Radians）",
   DESC_LAYOUT_ARC_SPAN: "子节点排列的曲率。低（0.5）：较平，类似列表。高（2.0）：弯曲有机，但有重叠风险。",
   ROOT_RADIUS_FACTOR: "根节点半径系数",
@@ -20453,22 +20564,22 @@ addLocale("zh", {
   DESC_LAYOUT_CONTAINER_PADDING: "使用边框样式时的内边距。",
   MAX_SEGMENT_LENGTH: "边界线精度",
   DESC_LAYOUT_BOUNDARY_LINE_PRECISION: "边界平滑精度。值越小越精细（30 = 精细），值越大越粗略（200 = 粗略）。",
-  VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE: "子树宽度混合（单侧）",
-  DESC_VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE: "在垂直导图中，单侧子图（右向/左向）对同级水平占位宽度的影响强度。影响很大。",
-  VERTICAL_SUBTREE_WIDTH_BLEND_DUAL: "子树宽度混合（双侧）",
-  DESC_VERTICAL_SUBTREE_WIDTH_BLEND_DUAL: "在垂直导图中，双侧子图（右左）对同级水平占位宽度的影响强度。影响很大。",
-  VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER: "子树平滑阈值倍数",
-  DESC_VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER: "超过 Gap Y 的该倍数后开始平滑压缩，以避免新增第 2/3 个子节点时间距突增。通常在大图中更明显。",
-  VERTICAL_SUBTREE_SMOOTH_MIN_SCALE: "子树平滑最小尺度",
-  DESC_VERTICAL_SUBTREE_SMOOTH_MIN_SCALE: "垂直子树宽度平滑器使用的最小压缩尺度。值越大越保留原宽度。通常在大图中更明显。",
-  HORIZONTAL_L1_SOFTCAP_THRESHOLD: "水平 L1 软上限阈值",
-  DESC_HORIZONTAL_L1_SOFTCAP_THRESHOLD: "在上/下导图中，L1 子树宽度超过该像素值后开始压缩。对大图影响中到高。",
-  HORIZONTAL_L1_COMPRESSION_MIN_SCALE: "水平 L1 压缩最小尺度",
-  DESC_HORIZONTAL_L1_COMPRESSION_MIN_SCALE: "上/下导图 L1 宽度压缩使用的最小尺度。值越大越保留原宽度。达到软上限后影响中等。",
-  VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO: "紧凑父子间距比例",
-  DESC_VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO: "在紧凑垂直子树中，父子距离使用 Gap X 的该比例。可见影响非常大。",
-  DIRECTIONAL_CROSS_AXIS_RATIO: "定向布局横轴比例",
-  DESC_DIRECTIONAL_CROSS_AXIS_RATIO: "定向弧布局的横轴半径比例（0.2 更扁平，1.0 更圆）。对 L1 展开形态影响很大。",
+  VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE: "子树宽度参与度（单侧）",
+  DESC_VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE: "垂直导图中，单侧生长的子图占用（左/右）水平空间的强度。影响程度高。",
+  VERTICAL_SUBTREE_WIDTH_BLEND_DUAL: "子树宽度参与度（双侧）",
+  DESC_VERTICAL_SUBTREE_WIDTH_BLEND_DUAL: "垂直导图中，双侧生长的子图占用（左右）水平空间的强度。影响程度高。",
+  VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER: "子树平滑压缩触发倍数",
+  DESC_VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER: "超过 Gap Y 乘以该倍数后开始平滑压缩，避免新增子节点间距突变。通常在大导图中更明显。",
+  VERTICAL_SUBTREE_SMOOTH_MIN_SCALE: "子树平滑压缩下限",
+  DESC_VERTICAL_SUBTREE_SMOOTH_MIN_SCALE: "垂直子树宽度平滑压缩到的最小值。值越大越保留原宽度。通常在大导图中更明显。",
+  HORIZONTAL_L1_SOFTCAP_THRESHOLD: "L1 水平方向软上限",
+  DESC_HORIZONTAL_L1_SOFTCAP_THRESHOLD: "超过该 px 值后，上/下 L1 子树宽度开始压缩。对大导图影响程度中到高。",
+  HORIZONTAL_L1_COMPRESSION_MIN_SCALE: "L1 水平方向压缩下限",
+  DESC_HORIZONTAL_L1_COMPRESSION_MIN_SCALE: "上/下 L1 宽度压缩到的最小值。值越大越保留原宽度。达到软上限后影响中等。",
+  VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO: "紧凑亲子间距比例",
+  DESC_VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO: "紧凑垂直子树中，亲子间距使用 Gap X 乘以该比例。极大影响视觉效果。",
+  DIRECTIONAL_CROSS_AXIS_RATIO: "正交轴之比",
+  DESC_DIRECTIONAL_CROSS_AXIS_RATIO: "与垂直于生长方向的轴（Cross-axis）的半径之比（0.2 = 扁，1.0 = 圆）。极大影响 L1 展开形态。",
   MANUAL_GAP_MULTIPLIER: "手动布局间距倍数",
   DESC_LAYOUT_MANUAL_GAP: "禁用自动布局时添加节点的间距倍数。",
   MANUAL_JITTER_RANGE: "手动布局抖动范围",
@@ -20494,7 +20605,241 @@ addLocale("zh", {
     "😍 如果你觉得这个脚本有用，欢迎 [请我喝杯咖啡 ☕](https://ko-fi.com/zsolt)。",
 });
 
-addLocale("zh-tw", STRINGS["zh"]);
+addLocale("zh-tw", {
+  // Notices
+  NOTICE_SELECT_NODE_TO_COPY: "請選擇要複製的節點。",
+  NOTICE_MAP_CUT: "導圖已剪下到剪貼簿。",
+  NOTICE_BRANCH_CUT: "分支已剪下到剪貼簿。",
+  NOTICE_MAP_COPIED: "導圖已複製為 Markdown 格式。",
+  NOTICE_BRANCH_COPIED: "分支已複製為列表格式。",
+  NOTICE_CLIPBOARD_EMPTY: "剪貼簿為空。",
+  NOTICE_PASTE_ABORTED: "貼上中止。剪貼簿內容非 Markdown 列表或標題。",
+  NOTICE_NO_LIST: "剪貼簿中未發現有效的 Markdown 列表。",
+  NOTICE_PASTE_START: "正在貼上，請稍候，可能需要一些時間…",
+  NOTICE_PASTE_COMPLETE: "貼上完成。",
+  NOTICE_ACTION_REQUIRES_ARROWS: "此操作需要方向鍵。僅可修改修飾鍵。",
+  NOTICE_CONFLICT_WITH_ACTION: "與“{action}”操作衝突",
+  NOTICE_OBSIDIAN_HOTKEY_CONFLICT: "⚠️ Obsidian 熱鍵衝突！\n\n此按鍵將覆蓋：\n“{command}”",
+  NOTICE_GLOBAL_HOTKEY_CONFLICT: "⚠️ 全域性熱鍵衝突！\n\n此按鍵將覆蓋：\n“{command}”",
+  NOTICE_NO_HEADINGS: "連結檔案中未發現小標題。",
+  NOTICE_CANNOT_EDIT_MULTILINE: "無法直接編輯多行節點。\n請在 Excalidraw 中雙擊元素進行編輯，然後執行“自動重排導圖”來更新佈局。",
+  NOTICE_CANNOT_MOVE_PINNED: "無法移動已鎖定的節點。請先解鎖。",
+  NOTICE_CANNOT_MOVE_ROOT: "無法移動根節點。",
+  NOTICE_CANNOT_PRMOTE_L1: "無法提升 1 級節點。",
+  NOTICE_CANNOT_DEMOTE: "無法降級節點。沒有可依附的前置同級節點。",
+  NOTICE_SELECT_NODE_CONTAINING_LINK: "請選擇包含連結的節點。",
+  NOTICE_CANNOT_DEMOTE_NO_SIBLING_TO_ACCEPT: "無法降級：未找到可接收此節點的同級節點。",
+  NOTICE_CANNOT_DEMOTE_NO_VALID_SIBLING: "無法降級：沒有可附加的有效同級節點。",
+  NOTICE_CANNOT_DEMOTE_CROSS_SIDE_NOT_ALLOWED: "無法降級：不允許跨側降級。",
+  NOTICE_CANNOT_MOVE_AUTO_LAYOUT_DISABLED: "停用自動佈局時無法移動節點。請先啟用自動佈局。",
+  NOTICE_BRANCH_WIDTH_MANUAL_OVERRIDE: "分支粗細未更新，因為部分分支粗細已被手動修改。",
+  NOTICE_CANNOT_CHANGE_MASTER_ROOT: "主根節點不能被轉換。",
+  NOTICE_SUBMAP_ROOT_ADDED: "已啟用子圖根節點。",
+  NOTICE_SUBMAP_ROOT_REMOVED: "已移除子圖根節點。其子節點將按親代根節點佈局重排。",
+  CONFIRM_REMOVE_SUBMAP_ROOT: "恢復為普通節點嗎？\n\n它將失去本地佈局元資料，其子節點將按親代根節點佈局重排。",
+
+  // Action labels (display only)
+  ACTION_LABEL_ADD: "新增子節點",
+  ACTION_LABEL_ADD_SIBLING_AFTER: "新增後置同級節點",
+  ACTION_LABEL_ADD_SIBLING_BEFORE: "新增前置同級節點",
+  ACTION_LABEL_ADD_FOLLOW: "新增 + 跟隨",
+  ACTION_LABEL_ADD_FOLLOW_FOCUS: "新增 + 跟隨 + 聚焦",
+  ACTION_LABEL_ADD_FOLLOW_ZOOM: "新增 + 跟隨 + 縮放",
+  ACTION_LABEL_SORT_ORDER: "更改順序/提升節點",
+  ACTION_LABEL_EDIT: "編輯節點",
+  ACTION_LABEL_PIN: "鎖定/解鎖",
+  ACTION_LABEL_BOX: "新增/移除邊框",
+  ACTION_LABEL_TOGGLE_GROUP: "編組/解除編組單分支",
+  ACTION_LABEL_COPY: "複製",
+  ACTION_LABEL_CUT: "剪下",
+  ACTION_LABEL_PASTE: "貼上",
+  ACTION_LABEL_IMPORT_OUTLINE: "匯入大綱",
+  ACTION_LABEL_ZOOM: "迴圈縮放",
+  ACTION_LABEL_FOCUS: "聚焦（並居中）節點",
+  ACTION_LABEL_NAVIGATE: "導航",
+  ACTION_LABEL_NAVIGATE_ZOOM: "導航 & 縮放",
+  ACTION_LABEL_NAVIGATE_FOCUS: "導航 & 聚焦",
+  ACTION_LABEL_FOLD: "摺疊/展開分支",
+  ACTION_LABEL_FOLD_L1: "摺疊/展開 L1 子節點",
+  ACTION_LABEL_FOLD_ALL: "遞迴摺疊/展開分支",
+  ACTION_LABEL_DOCK_UNDOCK: "停靠/取消停靠",
+  ACTION_LABEL_HIDE: "停靠 & 隱藏",
+  ACTION_LABEL_REARRANGE: "重排導圖",
+  ACTION_LABEL_TOGGLE_SUBMAP_ROOT: "開始/結束子圖根節點",
+  ACTION_LABEL_TOGGLE_CHECKBOX: "切換複選框狀態",
+
+  // Tooltips (shared)
+  PIN_TOOLTIP_PINNED: "此元素已鎖定。點選解鎖所選元素的位置。",
+  PIN_TOOLTIP_UNPINNED: "此元素未鎖定。點選鎖定所選元素的位置。",
+  TOGGLE_GROUP_TOOLTIP_GROUP: "編組此分支。僅在“分支編組”停用時可用。",
+  TOGGLE_GROUP_TOOLTIP_UNGROUP: "解除編組此分支。僅在“分支編組”停用時可用。",
+  TOOLTIP_EDIT_NODE: "編輯所選節點的文字",
+  TOOLTIP_PIN_INIT: "鎖定/解鎖節點位置。鎖定的節點不會被自動重排。",
+  TOOLTIP_REFRESH: "自動重排導圖",
+  TOOLTIP_DOCK: "停靠到側邊面板",
+  TOOLTIP_UNDOCK: "轉為浮動視窗",
+  TOOLTIP_ZOOM_CYCLE: "迴圈切換元素縮放級別",
+  TOOLTIP_TOGGLE_GROUP_BTN: "切換分支的編組狀態。僅在“分支編組”停用時可用。",
+  TOOLTIP_TOGGLE_BOX: "切換節點邊框",
+  TOOLTIP_TOGGLE_BOUNDARY: "切換子樹邊界",
+  TOOLTIP_TOGGLE_FLOATING_EXTRAS: "切換額外控制元件",
+  TOOLTIP_CONFIGURE_PALETTE: "為分支配置自定義調色盤",
+  TOOLTIP_CONFIGURE_LAYOUT: "配置佈局設定",
+  TOOLTIP_MOVE_UP: "上移",
+  TOOLTIP_MOVE_DOWN: "下移",
+  TOOLTIP_EDIT_COLOR: "編輯",
+  TOOLTIP_DELETE_COLOR: "刪除",
+  TOOLTIP_OPEN_PALETTE_PICKER: "開啟顏色選擇器",
+  TOOLTIP_FOLD_BRANCH: "摺疊/展開所選分支",
+  TOOLTIP_FOLD_L1_BRANCH: "摺疊/展開 L1 子節點",
+  TOOLTIP_FOLD_ALL: "遞迴摺疊/展開分支",
+  TOOLTIP_IMPORT_OUTLINE: "從連結檔案中匯入小標題作為子節點資料",
+  TOOLTIP_RESET_TO_DEFAULT: "恢復預設",
+  TOOLTIP_SUBMAP_ROOT_ADD: "從所選節點開始子圖",
+  TOOLTIP_SUBMAP_ROOT_REMOVE: "將子圖根節點恢復為普通節點",
+  TOOLTIP_TOGGLE_CHECKBOX: "切換任務複選框狀態",
+
+  // Buttons and labels
+  DOCK_TITLE: "MindMap Builder",
+  HELP_SUMMARY: "幫助",
+  INPUT_PLACEHOLDER: "輸入概念… 輸入 [[ 插入連結",
+  ONTOLOGY_PLACEHOLDER: "本體（箭頭標籤）",
+  BUTTON_COPY: "複製",
+  BUTTON_CUT: "剪下",
+  BUTTON_PASTE: "貼上",
+  TITLE_ADD_SIBLING: `使用 ${ea.DEVICE.isMacOS || ea.DEVICE.isIOS ? "OPT" : "ALT"}+Enter 新增同級節點`,
+  TITLE_ADD_FOLLOW: "新增並跟隨",
+  TITLE_COPY: "複製分支為文字",
+  TITLE_CUT: "剪下分支為文字",
+  TITLE_PASTE: "從剪貼簿貼上列表",
+  LABEL_ZOOM_LEVEL: "縮放級別",
+  LABEL_GROWTH_STRATEGY: "生長策略",
+  LABEL_FILL_SWEEP: "填充掃過角度",
+  DESC_FILL_SWEEP: "立即在整個“最大掃過角度”範圍內分佈節點，而不是隨著節點數量增加逐漸擴大弧度。",
+  LABEL_ARROW_TYPE: "曲線連線",
+  LABEL_AUTO_LAYOUT: "自動佈局",
+  LABEL_GROUP_BRANCHES: "分支編組",
+  LABEL_BOX_CHILD_NODES: "為子節點新增邊框",
+  LABEL_ROUNDED_CORNERS: "圓角",
+  LABEL_USE_SCENE_STROKE: "使用場景線條樣式",
+  DESC_USE_SCENE_STROKE: "使用場景中最新的線條樣式（實線、虛線、點線），否則分支將始終使用實線。",
+  LABEL_BRANCH_SCALE: "分支粗細比例",
+  LABEL_BASE_WIDTH: "基礎粗細",
+  LABEL_MULTICOLOR_BRANCHES: "多色分支",
+  LABEL_MAX_WRAP_WIDTH: "最大折行寬度",
+  LABEL_CENTER_TEXT: "文字居中",
+  DESC_CENTER_TEXT: "關閉：根據位置左/右對齊；開啟：文字強制居中。",
+  LABEL_FONT_SIZES: "字型大小",
+  HOTKEY_SECTION_TITLE: "熱鍵配置",
+  HOTKEY_HINT: "這些熱鍵可能覆蓋 Obsidian 預設設定。熱鍵作用域預設為區域性（⌨️），使用 🌐/🎨/⌨️ 切換作用域：🌐 Excalidraw 標籤頁可見即生效，🎨 Excalidraw 聚焦時生效，⌨️ 輸入框聚焦時生效。",
+  RECORD_HOTKEY_PROMPT: "按下熱鍵…",
+  ARIA_SCOPE_INPUT: "區域性（Local）：僅在輸入框聚焦時生效",
+  ARIA_SCOPE_EXCALIDRAW: "Excalidraw：輸入框或 Excalidraw 聚焦時生效",
+  ARIA_SCOPE_GLOBAL: "全域性（Global）：在 Obsidian 任何位置，Excalidraw 可見即生效",
+  ARIA_RESTORE_DEFAULT: "恢復預設",
+  ARIA_CUSTOMIZE_HOTKEY: "自定義此熱鍵",
+  ARIA_OVERRIDE_COMMAND: "將覆蓋 Obsidian 命令：\n{command}",
+
+  // Palette manager
+  MODAL_PALETTE_TITLE: "導圖分支調色盤",
+  LABEL_ENABLE_CUSTOM_PALETTE: "啟用自定義調色盤",
+  DESC_ENABLE_CUSTOM_PALETTE: "使用以下顏色代替自動生成的顏色。",
+  LABEL_RANDOMIZE_ORDER: "隨機順序",
+  DESC_RANDOMIZE_ORDER: "隨機選擇顏色而非按順序選擇。",
+  HEADING_ADD_NEW_COLOR: "新增新顏色",
+  HEADING_EDIT_COLOR: "編輯顏色",
+  LABEL_SELECT_COLOR: "選擇顏色",
+  BUTTON_CANCEL_EDIT: "取消編輯",
+  BUTTON_ADD_COLOR: "新增顏色",
+  BUTTON_UPDATE_COLOR: "更新顏色",
+
+  // Layout configuration
+  MODAL_LAYOUT_TITLE: "佈局配置",
+  // Section Headers
+  SECTION_GENERAL: "常規間距",
+  SECTION_RADIAL: "徑向佈局（順時針）",
+  SECTION_DIRECTIONAL: "定向佈局（左/右）",
+  SECTION_VERTICAL: "垂直導圖（上/下）",
+  SECTION_VISUALS: "視覺元素",
+  SECTION_MANUAL: "手動模式行為",
+  LAYOUT_RESET: "重置所有為預設值",
+  LAYOUT_SAVE: "儲存並關閉",
+  // Radial Strings
+  RADIAL_ASPECT_RATIO: "橢圓長寬比",
+  DESC_RADIAL_ASPECT_RATIO: "控制形狀。< 1.0 為瘦長（0.7 為縱向），1.0 為正圓，> 1.0 為寬扁（橫向）。",
+  RADIAL_POLE_GAP_BONUS: "極點間距補償",
+  DESC_RADIAL_POLE_GAP_BONUS: "增加橢圓南北兩極區域內節點的間距。值越大，節點沿弧線推得越遠。",
+  RADIAL_START_ANGLE: "起始角度",
+  DESC_RADIAL_START_ANGLE: "第一個節點出現的位置（度數）。270 為北，0 為東，90 為南。",
+  RADIAL_MAX_SWEEP: "最大掃過角度",
+  DESC_RADIAL_MAX_SWEEP: "分支可填充的弧範圍。360 為全圓。較小的值會使圓不完整。",
+  // Others
+  GAP_X: "水平間距（Gap X）",
+  DESC_LAYOUT_GAP_X: "親代節點與子節點之間的水平距離。",
+  GAP_Y: "垂直間距（Gap Y）",
+  DESC_LAYOUT_GAP_Y: "同級節點之間的垂直距離。徑向佈局中的基礎間距。",
+  GAP_MULTIPLIER: "間距倍數",
+  DESC_LAYOUT_GAP_MULTIPLIER: "葉節點（無子節點的節點）相對於字型大小的垂直間距。低：類似列表堆疊；高：標準樹狀間距。",
+  DIRECTIONAL_ARC_SPAN_RADIANS: "定向張開弧度（Arc-span Radians）",
+  DESC_LAYOUT_ARC_SPAN: "子節點排列的曲率。低（0.5）：較平，類似列表。高（2.0）：彎曲有機，但有重疊風險。",
+  ROOT_RADIUS_FACTOR: "根節點半徑係數",
+  DESC_LAYOUT_ROOT_RADIUS: "相對於根節點邊框的倍數，決定最初的半徑。",
+  MIN_RADIUS: "最小半徑",
+  DESC_LAYOUT_MIN_RADIUS: "從根節點中心到第一級節點的最小絕對距離。",
+  RADIUS_PADDING_PER_NODE: "單節點徑向空白邊距",
+  DESC_LAYOUT_RADIUS_PADDING: "每個子節點額外增加的半徑，以適應密集型導圖。",
+  GAP_MULTIPLIER_RADIAL: "徑向佈局間距倍數",
+  DESC_LAYOUT_GAP_RADIAL: "徑向佈局模式下的角度間距倍數。",
+  GAP_MULTIPLIER_DIRECTIONAL: "垂直方向間距倍數",
+  DESC_LAYOUT_GAP_DIRECTIONAL: "定向佈局頂層分支之間的間距倍數。",
+  INDICATOR_OFFSET: "摺疊指示符偏移",
+  DESC_LAYOUT_INDICATOR_OFFSET: "摺疊指示符（三連點）距離節點的距離。",
+  INDICATOR_OPACITY: "摺疊指示符不透明度",
+  DESC_LAYOUT_INDICATOR_OPACITY: "摺疊指示符的不透明度（0-100）。",
+  CONTAINER_PADDING: "容器內邊距",
+  DESC_LAYOUT_CONTAINER_PADDING: "使用邊框樣式時的內邊距。",
+  MAX_SEGMENT_LENGTH: "邊界線精度",
+  DESC_LAYOUT_BOUNDARY_LINE_PRECISION: "邊界平滑精度。值越小越精細（30 = 精細），值越大越粗略（200 = 粗略）。",
+  VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE: "子樹寬度參與度（單側）",
+  DESC_VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE: "垂直導圖中，單側生長的子圖佔用（左/右）水平空間的強度。影響程度高。",
+  VERTICAL_SUBTREE_WIDTH_BLEND_DUAL: "子樹寬度參與度（雙側）",
+  DESC_VERTICAL_SUBTREE_WIDTH_BLEND_DUAL: "垂直導圖中，雙側生長的子圖佔用（左右）水平空間的強度。影響程度高。",
+  VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER: "子樹平滑壓縮觸發倍數",
+  DESC_VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER: "超過 Gap Y 乘以該倍數後開始平滑壓縮，避免新增子節點間距突變。通常在大導圖中更明顯。",
+  VERTICAL_SUBTREE_SMOOTH_MIN_SCALE: "子樹平滑壓縮下限",
+  DESC_VERTICAL_SUBTREE_SMOOTH_MIN_SCALE: "垂直子樹寬度平滑壓縮到的最小值。值越大越保留原寬度。通常在大導圖中更明顯。",
+  HORIZONTAL_L1_SOFTCAP_THRESHOLD: "L1 水平方向軟上限",
+  DESC_HORIZONTAL_L1_SOFTCAP_THRESHOLD: "超過該 px 值後，上/下 L1 子樹寬度開始壓縮。對大導圖影響程度中到高。",
+  HORIZONTAL_L1_COMPRESSION_MIN_SCALE: "L1 水平方向壓縮下限",
+  DESC_HORIZONTAL_L1_COMPRESSION_MIN_SCALE: "上/下 L1 寬度壓縮到的最小值。值越大越保留原寬度。達到軟上限後影響中等。",
+  VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO: "緊湊親子間距比例",
+  DESC_VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO: "緊湊垂直子樹中，親子間距使用 Gap X 乘以該比例。極大影響視覺效果。",
+  DIRECTIONAL_CROSS_AXIS_RATIO: "正交軸之比",
+  DESC_DIRECTIONAL_CROSS_AXIS_RATIO: "與垂直於生長方向的軸（Cross-axis）的半徑之比（0.2 = 扁，1.0 = 圓）。極大影響 L1 展開形態。",
+  MANUAL_GAP_MULTIPLIER: "手動佈局間距倍數",
+  DESC_LAYOUT_MANUAL_GAP: "停用自動佈局時新增節點的間距倍數。",
+  MANUAL_JITTER_RANGE: "手動佈局抖動範圍",
+  DESC_LAYOUT_MANUAL_JITTER: "停用自動佈局時新增節點的隨機位置偏移。",
+
+  // Misc
+  INPUT_TITLE_PASTE_ROOT: "MindMap Builder 貼上",
+  INSTRUCTIONS: "> [!Tip]\n" +
+    ">🚀 想要進階？歡迎參加官方 [MindMap Builder 課程](https://www.visual-thinking-workshop.com/mindmap)！\n" +
+    "\n" +
+    "- **ENTER**：新增子節點並保留在當前親代節點上，方便快速輸入。" +
+    "若輸入框為空時按回車，焦點將移動到最新新增的子節點。" +
+    "連續按回車將在該節點的同級節點間迴圈切換。\n" +
+    "- **熱鍵**：見側邊面板底部的配置選項。\n" +
+    "- **停靠/取消停靠**：使用按鈕或配置好的熱鍵來切換輸入框位置。\n" +
+    "- **摺疊**：僅在輸入框停靠時顯示按鈕；取消停靠時請使用熱鍵。\n" +
+    "- **ESC**：將浮動輸入框停靠，但不啟用側邊面板。\n" +
+    "- **著色**：頂層分支擁有獨立顏色（多色模式），後代節點繼承親代顏色。\n" +
+    "- **編組**：\n" +
+    "  - 啟用“分支編組”將遞迴地編組子樹，從葉節點到頂層分支。\n" +
+    "- **複製/貼上**：匯出/匯入含縮排的 Markdown 列表。\n" +
+    "\n" +
+    "😍 如果你覺得這個指令碼有用，歡迎 [請我喝杯咖啡 ☕](https://ko-fi.com/zsolt)。",
+});
 
 const t = (key, params = {}) => {
   const str = STRINGS[LOCALE]?.[key] ?? STRINGS.en[key] ?? key;
@@ -20939,6 +21284,7 @@ const ACTION_ADD_FOLLOW_FOCUS = "Add + follow + focus";
 const ACTION_ADD_FOLLOW_ZOOM = "Add + follow + zoom";
 const ACTION_SORT_ORDER = "Change Order/Promote Node";
 const ACTION_EDIT = "Edit node";
+const ACTION_TOGGLE_CHECKBOX = "Toggle Checkbox";
 const ACTION_PIN = "Pin/Unpin";
 const ACTION_BOX = "Box/Unbox";
 const ACTION_TOGGLE_GROUP = "Group/Ungroup Single Branch";
@@ -20977,6 +21323,7 @@ const ACTION_LABEL_KEYS = {
   [ACTION_ADD_FOLLOW_ZOOM]: "ACTION_LABEL_ADD_FOLLOW_ZOOM",
   [ACTION_SORT_ORDER]: "ACTION_LABEL_SORT_ORDER",
   [ACTION_EDIT]: "ACTION_LABEL_EDIT",
+  [ACTION_TOGGLE_CHECKBOX]: "ACTION_LABEL_TOGGLE_CHECKBOX",
   [ACTION_PIN]: "ACTION_LABEL_PIN",
   [ACTION_BOX]: "ACTION_LABEL_BOX",
   [ACTION_TOGGLE_GROUP]: "ACTION_LABEL_TOGGLE_GROUP",
@@ -21011,53 +21358,54 @@ const getActionLabel = (action) => t(ACTION_LABEL_KEYS[action] ?? action);
 // - excalidraw: the hotkey works when either the inputEl has focus or the sidepanelView leaf or the Excalidraw leaf is active
 // - global: the hotkey works across obsidian, when ever the Excalidraw view in ea.targetView is visible, i.e. the hotkey works even if the user is active in a leaf like pdf viewer, markdown note, open next to Excalidraw.
 // - none: ea.targetView not set or Excalidraw leaf not visible
-const DEFAULT_HOTKEYS = [
+const DEFAULT_HOTKEYS =[
   // Creation - Enter based
-  { action: ACTION_ADD, key: "Enter", modifiers: [], scope: SCOPE.input, isInputOnly: true },
-  { action: ACTION_ADD_SIBLING_AFTER, key: "Enter", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: true },
-  { action: ACTION_ADD_SIBLING_BEFORE, key: "Enter", modifiers: ["Alt", "Shift"], scope: SCOPE.input, isInputOnly: true },
-  { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers: ["Mod", "Alt"], scope: SCOPE.input, isInputOnly: true },
-  { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: true },
-  { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"], scope: SCOPE.input, isInputOnly: true },
+  { action: ACTION_ADD, key: "Enter", modifiers: [], scope: SCOPE.input, isInputOnly: true, requiresNode: false },
+  { action: ACTION_ADD_SIBLING_AFTER, key: "Enter", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: true, requiresNode: false },
+  { action: ACTION_ADD_SIBLING_BEFORE, key: "Enter", modifiers: ["Alt", "Shift"], scope: SCOPE.input, isInputOnly: true, requiresNode: false },
+  { action: ACTION_ADD_FOLLOW, key: "Enter", modifiers:["Mod", "Alt"], scope: SCOPE.input, isInputOnly: true, requiresNode: false },
+  { action: ACTION_ADD_FOLLOW_FOCUS, key: "Enter", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: true, requiresNode: false },
+  { action: ACTION_ADD_FOLLOW_ZOOM, key: "Enter", modifiers: ["Mod", "Shift"], scope: SCOPE.input, isInputOnly: true, requiresNode: false },
   
   //Window
-  { action: ACTION_DOCK_UNDOCK, key: "Enter", modifiers: ["Shift"], scope: SCOPE.input, isInputOnly: true },
-  { action: ACTION_HIDE, key: "Escape", modifiers: [], scope: SCOPE.excalidraw, isInputOnly: true },
+  { action: ACTION_DOCK_UNDOCK, key: "Enter", modifiers: ["Shift"], scope: SCOPE.input, isInputOnly: true, requiresNode: false },
+  { action: ACTION_HIDE, key: "Escape", modifiers:[], scope: SCOPE.excalidraw, isInputOnly: true, requiresNode: false },
 
   // Edit
-  { action: ACTION_EDIT, code: "KeyE", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_EDIT, code: "KeyE", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
 
   // Structure Modifiers
-  { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_TOGGLE_BOUNDARY, code: "KeyB", modifiers: ["Alt", "Shift"], scope: SCOPE.input, inputOnly: false },
-  { action: ACTION_TOGGLE_SUBMAP_ROOT, code: "KeyJ", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_TOGGLE_GROUP, code: "KeyG", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_TOGGLE_CHECKBOX, code: "KeyL", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_TOGGLE_BOUNDARY, code: "KeyB", modifiers: ["Alt", "Shift"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_TOGGLE_SUBMAP_ROOT, code: "KeyJ", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_TOGGLE_GROUP, code: "KeyG", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
 
   // Clipboard (Alt to distinguish from text editing)
-  { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_IMPORT_OUTLINE, code: "KeyI", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_COPY, code: "KeyC", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_CUT, code: "KeyX", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_PASTE, code: "KeyV", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: false },
+  { action: ACTION_IMPORT_OUTLINE, code: "KeyI", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
 
   // View Actions
-  { action: ACTION_REARRANGE, code: "KeyR", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_ZOOM, code: "KeyZ", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_REARRANGE, code: "KeyR", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_ZOOM, code: "KeyZ", modifiers:["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_FOCUS, code: "KeyF", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: false },
 
   //Navigation
-  { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_NAVIGATE_ZOOM, key: "ArrowKeys", modifiers: ["Alt", "Shift"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_NAVIGATE_FOCUS, key: "ArrowKeys", modifiers: ["Alt", "Mod"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_SORT_ORDER, code: "ArrowKeys", modifiers: ["Mod"], isNavigation: true, scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_FOLD, code: "Digit1", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_FOLD_L1, code: "Digit2", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
-  { action: ACTION_FOLD_ALL, code: "Digit3", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false },
+  { action: ACTION_NAVIGATE, key: "ArrowKeys", modifiers: ["Alt"], isNavigation: true, scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_NAVIGATE_ZOOM, key: "ArrowKeys", modifiers: ["Alt", "Shift"], isNavigation: true, scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_NAVIGATE_FOCUS, key: "ArrowKeys", modifiers: ["Alt", "Mod"], isNavigation: true, scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_SORT_ORDER, code: "ArrowKeys", modifiers: ["Mod"], isNavigation: true, scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_FOLD, code: "Digit1", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_FOLD_L1, code: "Digit2", modifiers:["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_FOLD_ALL, code: "Digit3", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
 
   // Undo / Redo
-  { action: ACTION_UNDO, key: "z", modifiers: ["Mod"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true },
-  { action: ACTION_REDO_Z, key: "z", modifiers: ["Mod", "Shift"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true },
-  { action: ACTION_REDO_Y, key: "y", modifiers: ["Mod"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true },
+  { action: ACTION_UNDO, key: "z", modifiers: ["Mod"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true, requiresNode: false },
+  { action: ACTION_REDO_Z, key: "z", modifiers: ["Mod", "Shift"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true, requiresNode: false },
+  { action: ACTION_REDO_Y, key: "y", modifiers: ["Mod"], scope: SCOPE.excalidraw, isInputOnly: false, hidden: true, requiresNode: false },
 ];
 
 // Load hotkeys from settings or use default
@@ -21102,8 +21450,10 @@ const getObsidianConflict = (h) => {
  * Sync userHotkeys to DEFAULT_HOTKEYS by action.
  * - Drops user actions not in DEFAULT
  * - Adds missing actions from DEFAULT
+ * - Structural attributes (isInputOnly, requiresNode, isNavigation, hidden) 
+ *   ALWAYS come from DEFAULT_HOTKEYS and are excluded from the saved state.
  * - For existing actions:
- *    - keeps user values for existing keys
+ *    - keeps user values for configurable keys (modifiers, key, code, scope)
  *    - adds missing keys from DEFAULT
  *    - removes keys not in DEFAULT
 **/
@@ -21111,6 +21461,8 @@ function updateUserHotkeys() {
   let dirty = false;
 
   const defaultByAction = new Map(DEFAULT_HOTKEYS.map(d => [d.action, d]));
+  // These properties dictate script logic and should never be overridden by user settings
+  const structuralKeys =["isInputOnly", "requiresNode", "isNavigation", "hidden"];
 
   const userByAction = new Map();
   for (const u of userHotkeys) {
@@ -21122,7 +21474,7 @@ function updateUserHotkeys() {
     }
   }
 
-  const next = [];
+  const next =[];
 
   for (const d of DEFAULT_HOTKEYS) {
     const u = userByAction.get(d.action);
@@ -21138,6 +21490,12 @@ function updateUserHotkeys() {
     for (const key of Object.keys(d)) {
       if (key === "action") continue;
 
+      // Always inherit structural properties directly from defaults
+      if (structuralKeys.includes(key)) {
+        cleaned[key] = d[key];
+        continue; // Do NOT mark dirty just because this key is missing in the user config
+      }
+
       if (Object.prototype.hasOwnProperty.call(u, key)) {
         cleaned[key] = u[key];
       } else {
@@ -21148,7 +21506,11 @@ function updateUserHotkeys() {
 
     for (const key of Object.keys(u)) {
       if (key === "action") continue;
-      if (!Object.prototype.hasOwnProperty.call(d, key)) {
+      // If the user object has a structural key (e.g. from an older version's save),
+      // mark as dirty so we flush a cleaned version back to disk.
+      if (structuralKeys.includes(key)) {
+        dirty = true;
+      } else if (!Object.prototype.hasOwnProperty.call(d, key)) {
         dirty = true;
         break;
       }
@@ -21198,7 +21560,7 @@ const generateRuntimeHotkeys = () => {
   userHotkeys.forEach(h => {
     if (h.isNavigation) {
       ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].forEach(key => {
-        runtimeKeys.push({ action: h.action, key, modifiers: h.modifiers });
+        runtimeKeys.push({ action: h.action, key, modifiers: h.modifiers, scope: h.scope, requiresNode: h.requiresNode, isInputOnly: h.isInputOnly });
       });
     } else {
       runtimeKeys.push(h);
@@ -21267,7 +21629,7 @@ const addElementsToView = async (
   }
 
   await ea.addElementsToView(repositionToCursor, save, newElementsOnTop, shouldRestoreElements, captureUpdate);
-  const fileIds = new Set(ea.getElements().filter(el => el.fileId).map(el => el.fileId));
+  const fileIds = new Set(ea.getElements().filter(el => el.fileId && !el.isDeleted).map(el => el.fileId));
   ea.clear();
 
   // Commit transaction logic
@@ -22463,6 +22825,16 @@ const getSubtreeHeight = (nodeId, allElements, childrenByParent, heightCache, el
     return foldedHeight;
   }
 
+  // Bypass calculation and use the true visual bounding box for manual submaps
+  if (node.customData?.isAdditionalRoot && node.customData?.autoLayoutDisabled) {
+    const branchIds = getBranchElementIds(nodeId, allElements);
+    const branchElements = allElements.filter(el => branchIds.includes(el.id) && el.opacity > 0 && !el.isDeleted);
+    const bbox = ea.getBoundingBox(branchElements);
+    const height = bbox.height;
+    if (heightCache) heightCache.set(nodeId, height);
+    return height;
+  }
+
   const children = childrenByParent?.get(nodeId) ?? getChildrenNodes(nodeId, allElements);
   const unpinnedChildren = children.filter(child => !child.customData?.isPinned);
 
@@ -22558,7 +22930,8 @@ const getVerticalPlacementWidth = (nodeId, allElements, childrenByParent, widthC
 
   const baseWidth = getSubtreeWidth(nodeId, allElements, childrenByParent, widthCache, elementById);
 
-  if (node.customData?.isAdditionalRoot !== true) {
+  // Short-circuit if this is a manual submap
+  if (node.customData?.isAdditionalRoot !== true || node.customData?.autoLayoutDisabled === true) {
     if (placementWidthCache) placementWidthCache.set(nodeId, baseWidth);
     return baseWidth;
   }
@@ -23266,10 +23639,15 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   const eaNode = ea.getElement(nodeId);
 
   const isPinned = node.customData?.isPinned === true;
+  let dx = 0, dy = 0;
 
   if (!isPinned) {
-    eaNode.x = side === 1 ? targetX : targetX - node.width;
-    eaNode.y = targetCenterY - node.height / 2;
+    const newX = side === 1 ? targetX : targetX - node.width;
+    const newY = targetCenterY - node.height / 2;
+    dx = newX - eaNode.x;
+    dy = newY - eaNode.y;
+    eaNode.x = newX;
+    eaNode.y = newY;
   }
 
   if (node.customData?.isFolded) return;
@@ -23311,7 +23689,32 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   // Additional roots are laid out as independent local maps for their descendants.
   // The additional-root node itself stays positioned by the parent layout pass.
   if (node.customData?.isAdditionalRoot === true) {
-    layoutChildrenAsAdditionalRoot(nodeId, allElements, hasGlobalFolds, childrenByParent, heightCache, null, elementById, mustHonorMindmapOrder, parentMap);
+    if (node.customData?.autoLayoutDisabled) {
+      // Shift all descendants to maintain manual layout relative to this root
+      if (dx !== 0 || dy !== 0) {
+        const branchIds = getBranchElementIds(nodeId, allElements);
+        const descendants = branchIds.filter(id => id !== nodeId);
+        descendants.forEach(descId => {
+          const descNode = elementById?.get(descId) ?? allElements.find(e => e.id === descId);
+          // Do not shift pinned elements
+          if (descNode?.customData?.isPinned) return;
+          // Do not shift non-branch arrows because moveCrossLinks automatically handles them
+          if (descNode && descNode.type === "arrow" && !descNode.customData?.isBranch) return;
+          
+          if (!ea.getElement(descId)) {
+             if (descNode) ea.copyViewElementsToEAforEditing([descNode]);
+          }
+          const descEl = ea.getElement(descId);
+          if (descEl) {
+             descEl.x += dx;
+             descEl.y += dy;
+          }
+        });
+      }
+    } else {
+      layoutChildrenAsAdditionalRoot(nodeId, allElements, hasGlobalFolds, childrenByParent, heightCache, null, elementById, mustHonorMindmapOrder, parentMap);
+    }
+    
     if (node.customData?.boundaryId) {
       updateNodeBoundary(node, ea.getElements(), rootId);
     }
@@ -23485,10 +23888,15 @@ const layoutSubtreeVertical = (nodeId, targetCenterX, targetY, side, allElements
   const eaNode = ea.getElement(nodeId);
 
   const isPinned = node.customData?.isPinned === true;
+  let dx = 0, dy = 0;
 
   if (!isPinned) {
-    eaNode.x = targetCenterX - node.width / 2;
-    eaNode.y = side === 1 ? targetY : targetY - node.height;
+    const newX = targetCenterX - node.width / 2;
+    const newY = side === 1 ? targetY : targetY - node.height;
+    dx = newX - eaNode.x;
+    dy = newY - eaNode.y;
+    eaNode.x = newX;
+    eaNode.y = newY;
   }
 
   if (node.customData?.isFolded) return;
@@ -23531,7 +23939,32 @@ const layoutSubtreeVertical = (nodeId, targetCenterX, targetY, side, allElements
   // Additional roots are laid out as independent local maps for their descendants.
   // The additional-root node itself stays positioned by the parent layout pass.
   if (node.customData?.isAdditionalRoot === true) {
-    layoutChildrenAsAdditionalRoot(nodeId, allElements, hasGlobalFolds, childrenByParent, null, widthCache, elementById, mustHonorMindmapOrder, parentMap);
+    if (node.customData?.autoLayoutDisabled) {
+      // Shift all descendants to maintain manual layout relative to this root
+      if (dx !== 0 || dy !== 0) {
+        const branchIds = getBranchElementIds(nodeId, allElements);
+        const descendants = branchIds.filter(id => id !== nodeId);
+        descendants.forEach(descId => {
+          const descNode = elementById?.get(descId) ?? allElements.find(e => e.id === descId);
+          // Do not shift pinned elements
+          if (descNode?.customData?.isPinned) return;
+          // Do not shift non-branch arrows because moveCrossLinks automatically handles them
+          if (descNode && descNode.type === "arrow" && !descNode.customData?.isBranch) return;
+          
+          if (!ea.getElement(descId)) {
+             if (descNode) ea.copyViewElementsToEAforEditing([descNode]);
+          }
+          const descEl = ea.getElement(descId);
+          if (descEl) {
+             descEl.x += dx;
+             descEl.y += dy;
+          }
+        });
+      }
+    } else {
+      layoutChildrenAsAdditionalRoot(nodeId, allElements, hasGlobalFolds, childrenByParent, null, widthCache, elementById, mustHonorMindmapOrder, parentMap);
+    }
+    
     if (node.customData?.boundaryId) {
       updateNodeBoundary(node, ea.getElements(), rootId);
     }
@@ -24256,6 +24689,8 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
   let allElements = ea.getElements();
   let root = allElements.find((el) => el.id === rootId);
   if (!root) return;
+
+  if (root.customData?.autoLayoutDisabled) return;
   
   const mindmapIds = getBranchElementIds(rootId, allElements);
   const {structuralGroupId, groupedElementIds} = getStructuralGroupForNode(mindmapIds, allElements, rootId);
@@ -24384,8 +24819,13 @@ const getAdjustedMaxWidth = (text, max) => {
   const fontString = `${ea.style.fontSize.toString()}px ${
     ExcalidrawLib.getFontFamilyString({fontFamily: ea.style.fontFamily})}`;
   const wrappedText = ExcalidrawLib.wrapText(renderLinksToText(text), fontString, max);
-  const optimalWidth = Math.ceil(ea.measureText(wrappedText).width);
-  return {width: Math.min(max, optimalWidth), wrappedText};
+  const metrics = ea.measureText(wrappedText);
+  const optimalWidth = Math.ceil(metrics.width);
+  return {
+    width: Math.min(max, optimalWidth), 
+    height: metrics.height, 
+    wrappedText
+  };
 }
 
 const addImage = async ({pathOrFile, width, leftFacing = false, x=0, y=0, depth = 0} = {}) => {
@@ -24501,12 +24941,16 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
   ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)];
   ea.style.roundness = (rootCfgForAdd?.roundedCorners ?? roundedCorners) ? { type: 3 } : null;
 
-  const effectiveMaxWrap = rootCfgForAdd?.maxWrapWidth ?? maxWidth;
+const effectiveMaxWrap = rootCfgForAdd?.maxWrapWidth ?? maxWidth;
   let curMaxW = depth === 0 ? Math.max(400, effectiveMaxWrap) : effectiveMaxWrap;
   const metrics = ea.measureText(renderLinksToText(text));
   const shouldWrap = metrics.width > curMaxW;
+  let curMaxH = metrics.height;
+
   if (shouldWrap) {
-    curMaxW = getAdjustedMaxWidth(text, curMaxW).width;
+    const res = getAdjustedMaxWidth(text, curMaxW);
+    curMaxW = res.width;
+    curMaxH = res.height;
   }
 
   if (!parent) {
@@ -24538,6 +24982,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         // Use a distinct color representation so the frame can be recolored separately from text
         boxStrokeColor: ea.getCM(ea.style.strokeColor).stringRGB(),
         width: shouldWrap ? curMaxW : undefined,
+        height: shouldWrap ? curMaxH : undefined,
         autoResize: !shouldWrap,
       });
       ea.style.backgroundColor = "transparent";
@@ -24692,6 +25137,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         textAlign,
         textVerticalAlign: "middle",
         width: shouldWrap ? curMaxW : undefined,
+        height: shouldWrap ? curMaxH : undefined,
         autoResize: !shouldWrap,
       });
     }
@@ -24957,6 +25403,7 @@ const getTextFromNode = (all, node, getRaw = false, shortPath = false) => {
 
 /**
 // Copies the selected tree or branch to the clipboard as Markdown text.
+// Now supports extracting Submaps into separate ## Headings referenced by ![[#Links]]
 **/
 const copyMapAsText = async (cut = false, toClipboard = true) => {
   if (!isViewSet()) return;
@@ -24974,9 +25421,9 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
 
   // Retrieve root to determine growthMode for sorting logic
   const root = all.find(el => el.id === info.rootId);
-  const mode = root?.customData?.growthMode || currentModalGrowthMode;
+  const defaultMode = root?.customData?.growthMode || currentModalGrowthMode;
 
-  const elementsToDelete = [];
+  const elementsToDelete =[];
 
   const useTab = app.vault.getConfig("useTab");
   const tabSize = app.vault.getConfig("tabSize");
@@ -25012,7 +25459,7 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
 
       // Record outgoing link for source
       if (!nodeOutgoingLinks.has(startId)) {
-        nodeOutgoingLinks.set(startId, []);
+        nodeOutgoingLinks.set(startId,[]);
       }
       
       // Check for label on the arrow
@@ -25021,9 +25468,9 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
       const refString = nodeBlockRefs.get(endId);
       
       let linkText;
-      if (labelTextElement && labelTextElement.originalText) {
+      if (labelTextElement && labelTextElement.rawText) {
         // Replace newlines with spaces for inline dataview field compatibility
-        const label = labelTextElement.originalText.replace(/\n/g, " ");
+        const label = labelTextElement.rawText.replace(/\n/g, " ");
         linkText = `(${label}:: [[#${refString}|*]])`;
       } else {
         linkText = `[[#${refString}|*]]`;
@@ -25035,7 +25482,9 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
     });
   }
 
-  const buildList = (nodeId, depth = 0) => {
+  const submapsQueue =[];
+
+  const buildList = (nodeId, depth = 0, isSubmapChild = false, isPrintRoot = false) => {
     const node = all.find((e) => e.id === nodeId);
     if (!node) return "";
 
@@ -25058,42 +25507,12 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
       }
     }
 
-    // --- Visual Sorting Logic ---
-    let children = getChildrenNodes(nodeId, all);
-    const parentCenter = { x: node.x + node.width / 2, y: node.y + node.height / 2 };
-
-    if (mode === "Radial") {
-      // Radial: Clockwise starting from Top (12 o'clock)
-      children.sort((a, b) => {
-          const centerA = { x: a.x + a.width / 2, y: a.y + a.height / 2 };
-          const centerB = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
-          return getAngleFromCenter(parentCenter, centerA) - getAngleFromCenter(parentCenter, centerB);
-      });
-    } else if (mode === "Right-Left" && nodeId === info.rootId) {
-      // Right-Left Root: Right side (Top->Bottom) THEN Left side (Top->Bottom)
-      const right = [];
-      const left = [];
-      
-      children.forEach(child => {
-          const childCx = child.x + child.width / 2;
-          if (childCx > parentCenter.x) right.push(child);
-          else left.push(child);
-      });
-      
-      right.sort((a, b) => a.y - b.y);
-      left.sort((a, b) => a.y - b.y);
-      
-      children = [...right, ...left];
-    } else {
-      // Linear Modes (Right, Left) or Sub-branches: Top to Bottom
-      children.sort((a, b) => a.y - b.y);
-    }
-
     let str = "";
-    let text = getTextFromNode(all, node);
+    let text = getTextFromNode(all, node, true);
 
     let ontologyStr = "";
-    if (!isRootSelected || depth > 0) {
+    // Fetch ontology if it's not the absolute root, or if it's a child within a submap layout
+    if ((!isRootSelected || depth > 0) || isSubmapChild) {
       const incomingArrow = all.find(
         (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === nodeId
       );
@@ -25102,33 +25521,91 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
         if (boundTextEl && boundTextEl.rawText) {
           // Replace newlines with spaces so it stays on one line
           ontologyStr = boundTextEl.rawText.replace(/\n/g, " ") + ":: ";
-          elementsToDelete.push(boundTextEl);
+          if (cut) elementsToDelete.push(boundTextEl);
         }
       }
     }
 
     // --- Append Metadata Suffixes ---
-    
-    // 1. Outgoing Crosslinks
-    if (nodeOutgoingLinks.has(nodeId)) {
-      const links = nodeOutgoingLinks.get(nodeId).join(" ");
-      text += ` ${links}`;
+    let refSuffixes = "";
+    if (nodeOutgoingLinks.has(nodeId)) refSuffixes += ` ${nodeOutgoingLinks.get(nodeId).join(" ")}`;
+    if (node.customData?.boundaryId) refSuffixes += " #boundary";
+    if (nodeBlockRefs.has(nodeId)) refSuffixes += ` ${nodeBlockRefs.get(nodeId)}`;
+
+    // --- Extract Task Info ---
+    let isTask = false;
+    let taskPrefix = "";
+    const taskMatch = text.match(/^- \[[ xX]\] /);
+    if (taskMatch) {
+       isTask = true;
+       taskPrefix = taskMatch[0]; // Retain "- [ ] " or "- [x] "
+       text = text.substring(taskPrefix.length); // Strip it temporarily for clean assembly
     }
 
-    // 2. Boundary Tag
-    if (!!node.customData?.boundaryId) {
-      text += " #boundary";
+    // --- Submap Extraction Logic ---
+    // If this node is an additional root AND it's not the immediate element we are printing the section for
+    if (!isPrintRoot && node.customData?.isAdditionalRoot) {
+      let submapTitle = text;
+      // Clean up Image strings to use as clean anchor links
+      if (submapTitle.startsWith("![[") && submapTitle.endsWith("]]")) {
+          submapTitle = submapTitle.slice(3, -2).split("|")[0];
+      } else if (submapTitle.startsWith("![") && submapTitle.endsWith(")")) {
+          submapTitle = "Submap " + nodeId.substring(0, 4);
+      }
+      
+      const linkText = `![[#${submapTitle}]]`;
+      const repeatCount = Math.max(0, depth - (isRootSelected ? 1 : 0));
+      let currentIndent = isSubmapChild ? indentVal.repeat(depth) : indentVal.repeat(repeatCount);
+
+      // Inject task prefix if available
+      if (isTask) {
+        str += `${currentIndent}${taskPrefix}${ontologyStr}${linkText}${refSuffixes}${lineSeparator}`;
+      } else {
+        str += `${currentIndent}- ${ontologyStr}${linkText}${refSuffixes}${lineSeparator}`;
+      }
+      submapsQueue.push({ id: nodeId, title: submapTitle });
+      
+      return str; // Do not recurse into children here; they belong in the ## section
     }
 
-    // 3. Incoming Block Reference (Must be last)
-    if (nodeBlockRefs.has(nodeId)) {
-      text += ` ${nodeBlockRefs.get(nodeId)}`;
-    }
-
-    if (depth === 0 && isRootSelected) {
-      str += `# ${ontologyStr}${text}${lineSeparator}`;
+    if (depth === 0 && isRootSelected && !isSubmapChild) {
+      str += `# ${taskPrefix}${ontologyStr}${text}${refSuffixes}${lineSeparator}`;
     } else {
-      str += `${indentVal.repeat(depth - (isRootSelected ? 1 : 0))}- ${ontologyStr}${text}${lineSeparator}`;
+      const repeatCount = Math.max(0, depth - (isRootSelected ? 1 : 0));
+      let currentIndent = isSubmapChild ? indentVal.repeat(depth) : indentVal.repeat(repeatCount);
+      if (isTask) {
+        str += `${currentIndent}${taskPrefix}${ontologyStr}${text}${refSuffixes}${lineSeparator}`;
+      } else {
+        str += `${currentIndent}- ${ontologyStr}${text}${refSuffixes}${lineSeparator}`;
+      }
+    }
+
+    // --- Visual Sorting Logic ---
+    let children = getChildrenNodes(nodeId, all);
+    const parentCenter = { x: node.x + node.width / 2, y: node.y + node.height / 2 };
+    
+    // Honor local submap modes
+    const mode = node.customData?.isAdditionalRoot ? node.customData.growthMode : defaultMode;
+
+    if (mode === "Radial") {
+      children.sort((a, b) => {
+          const centerA = { x: a.x + a.width / 2, y: a.y + a.height / 2 };
+          const centerB = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+          return getAngleFromCenter(parentCenter, centerA) - getAngleFromCenter(parentCenter, centerB);
+      });
+    } else if (mode === "Right-Left" && nodeId === info.rootId) {
+      const right = [];
+      const left =[];
+      children.forEach(child => {
+          const childCx = child.x + child.width / 2;
+          if (childCx > parentCenter.x) right.push(child);
+          else left.push(child);
+      });
+      right.sort((a, b) => a.y - b.y);
+      left.sort((a, b) => a.y - b.y);
+      children = [...right, ...left];
+    } else {
+      children.sort((a, b) => a.y - b.y);
     }
 
     children.forEach((c) => {
@@ -25142,12 +25619,71 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
         );
         if (arrow) elementsToDelete.push(arrow);
       }
-      str += buildList(c.id, depth + 1);
+      // Children of a printRoot are not the printRoot
+      str += buildList(c.id, depth + 1, isSubmapChild, false); 
     });
     return str;
   };
 
-  const md = buildList(sel.id);
+  let md = buildList(sel.id, 0, false, true);
+
+  // --- Process Queued Submaps ---
+  const processedSubmaps = new Set();
+
+  // Add divider if submaps exist
+  if (submapsQueue.length > 0) {
+    md += `\n---\n`;
+  }
+
+  while (submapsQueue.length > 0) {
+    const submapObj = submapsQueue.shift();
+    if (processedSubmaps.has(submapObj.id)) continue;
+    processedSubmaps.add(submapObj.id);
+
+    md += `\n## ${submapObj.title}\n`;
+
+    const submapNode = all.find(e => e.id === submapObj.id);
+    let children = getChildrenNodes(submapObj.id, all);
+    
+    const parentCenter = { x: submapNode.x + submapNode.width / 2, y: submapNode.y + submapNode.height / 2 };
+    const mode = submapNode.customData?.growthMode || defaultMode;
+
+    if (mode === "Radial") {
+      children.sort((a, b) => {
+          const centerA = { x: a.x + a.width / 2, y: a.y + a.height / 2 };
+          const centerB = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+          return getAngleFromCenter(parentCenter, centerA) - getAngleFromCenter(parentCenter, centerB);
+      });
+    } else if (mode === "Right-Left") {
+      const right = [];
+      const left = [];
+      children.forEach(child => {
+          const childCx = child.x + child.width / 2;
+          if (childCx > parentCenter.x) right.push(child);
+          else left.push(child);
+      });
+      right.sort((a, b) => a.y - b.y);
+      left.sort((a, b) => a.y - b.y);
+      children = [...right, ...left];
+    } else {
+      children.sort((a, b) => a.y - b.y);
+    }
+
+    children.forEach((c) => {
+      if (cut) {
+        const arrow = all.find(
+          (a) =>
+            a.type === "arrow" &&
+            a.customData?.isBranch &&
+            a.startBinding?.elementId === submapObj.id &&
+            a.endBinding?.elementId === c.id,
+        );
+        if (arrow) elementsToDelete.push(arrow);
+      }
+      md += buildList(c.id, 0, true, false);
+    });
+  }
+
   if(toClipboard) await navigator.clipboard.writeText(md);
 
   if (cut) {
@@ -25187,7 +25723,8 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
 };
 
 /**
-// Core logic to parse a list string and add nodes to the map
+// Core logic to parse a list string and add nodes to the map.
+// Now dynamically links "## Submap" definitions to their "![[#Submap]]" embed nodes.
 **/
 const importTextToMap = async (rawText) => {
   if (!isViewSet()) return;
@@ -25196,28 +25733,37 @@ const importTextToMap = async (rawText) => {
   let sel = getMindmapNodeFromSelection();
   let currentParent;
 
-  const lines = rawText.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
+  // Filter out empty lines AND divider lines
+  const lines = rawText.split(/\r\n|\n|\r/).filter((l) => {
+    const trimmed = l.trim();
+    return trimmed !== "" && !/^-{3,}$/.test(trimmed);
+  });
 
   if (lines.length === 0) return;
 
   // Regex patterns
   const boundaryRegex = /\s#boundary\b/;
   const blockRefRegex = /\s\^([a-zA-Z0-9]{8})$/;
-  // Crosslink regex handling optional inline field syntax: (key:: [[#^ref|*]])
-  // Captures: 1=key(label), 2=ref
   const crossLinkRegex = /(?:\(([^):]+)::\s*)?\[\[#\^([a-zA-Z0-9]{8})\|\*\]\](?:\))?/g;
   const ontologyRegex = /^(.+?)::\s*(.*)$/;
+  const submapRefRegex = /^!\[\[#([^\]]+)\]\]$/; // Matches ![[#Submap Name]]
 
   if (lines.length === 1) {
-    // Simple single line logic (existing behavior)
-    let text = lines[0].replace(/^(\s*)(?:-|\*|\d+\.)\s+/, "").trim();
+    let text = lines[0];
+    const listMatch = text.match(/^(\s*)(?:-|\*|\d+\.)\s+(.*)$/);
+    if (listMatch) {
+      text = listMatch[2].trim();
+      if (/^\[[ xX]\] /.test(text)) {
+        // Retain task syntax if it was an imported list item
+        text = "- " + text;
+      }
+    } else {
+      text = text.trim();
+    }
     
-    // Cleanup tags for single line paste too
     text = text.replace(boundaryRegex, "");
     text = text.replace(blockRefRegex, "");
-    text = text.replace(crossLinkRegex, "");
 
-    // Check for ontology on single line
     const ontologyMatch = text.match(ontologyRegex);
     let ontology = null;
     if (ontologyMatch) {
@@ -25225,8 +25771,18 @@ const importTextToMap = async (rawText) => {
       text = ontologyMatch[2].trim();
     }
 
+    let isSubmapRef = false;
+    const submapRefMatch = text.match(submapRefRegex);
+    if (submapRefMatch) {
+        isSubmapRef = true;
+        text = submapRefMatch[1].trim();
+    }
+
     if (text) {
       currentParent = await addNode(text.trim(), true, false, null, null, null, ontology);
+      if (isSubmapRef) {
+          ea.addAppendUpdateCustomData(currentParent.id, { isAdditionalRoot: true });
+      }
       if (sel) {
         selectNodeInView(sel);
       }
@@ -25234,7 +25790,7 @@ const importTextToMap = async (rawText) => {
     }
   }
 
-  let parsed = [];
+  let parsed =[];
   let rootTextFromHeader = null;
 
   const isHeader = (l) => l.match(/^#+\s/);
@@ -25250,35 +25806,46 @@ const importTextToMap = async (rawText) => {
   const notice = new Notice(t("NOTICE_PASTE_START"), 0);
   await sleep(10);
 
-  // Maps for crosslink reconstruction
+  // Maps for crosslink & submap reconstruction
   const blockRefToNodeId = new Map(); // ^12345678 -> newNodeId
   const nodeToOutgoingRefs = new Map(); // newNodeId -> [{ref: string, label: string}, ...]
   
-  lines.forEach((line) => {
+  lines.forEach((line, index) => {
     let text = "";
     let indent = 0;
+    let isSubmapDef = false;
     
     if (isHeader(line)) {
-      indent = 0;
-      text = line.replace(/^#+\s/, "").trim();
+      if (index === 0) {
+        indent = 0;
+        text = line.replace(/^#+\s/, "").trim();
+      } else {
+        // Subsequent headers signify details of a Submap
+        isSubmapDef = true;
+        text = line.replace(/^#+\s/, "").trim();
+        indent = -1; // Special indent pushes it strictly below its parent in stack validation
+      }
     } else {
       const match = isListItem(line);
       if (match) {
         indent = delta + match[1].length;
-        text = match[2].trim();
+        let extractedText = match[2].trim();
+        // Check if list item has task bracket syntax
+        if (/^\[[ xX]\] /.test(extractedText)) {
+            extractedText = "- " + extractedText;
+        }
+        text = extractedText;
       } else if (parsed.length > 0) {
         // multiline handling
         parsed[parsed.length - 1].text += "\n" + line.trim();
-        return; // Skip the rest of processing for continuation lines
+        return; 
       }
     }
 
-    if (text) {
-      // 1. Check for Boundary
+    if (text || isSubmapDef) {
       const hasBoundary = boundaryRegex.test(text);
       text = text.replace(boundaryRegex, "");
 
-      // 2. Check for Block Ref (ID)
       const refMatch = text.match(blockRefRegex);
       let blockRef = null;
       if (refMatch) {
@@ -25286,33 +25853,37 @@ const importTextToMap = async (rawText) => {
         text = text.replace(blockRefRegex, "");
       }
 
-      // 3. Check for Crosslinks (Outgoing)
-      const outgoingRefs = [];
+      const outgoingRefs =[];
       crossLinkRegex.lastIndex = 0;
-      
       text = text.replace(crossLinkRegex, (_match, label, ref) => {
-        outgoingRefs.push({
-          ref: ref,
-          label: label ? label.trim() : null
-        });
+        outgoingRefs.push({ ref: ref, label: label ? label.trim() : null });
         return "";
       });
 
-      // Non-greedy match for the first "::" separator
       const ontologyMatch = text.match(ontologyRegex);
       let ontology = null;
       if (ontologyMatch) {
         ontology = ontologyMatch[1].trim();
         text = ontologyMatch[2].trim();
       }
+      
+      let isSubmapRef = false;
+      text = text.trim();
+      const submapRefMatch = text.match(submapRefRegex);
+      if (submapRefMatch) {
+          isSubmapRef = true;
+          text = submapRefMatch[1].trim();
+      }
 
       parsed.push({ 
         indent, 
-        text: text.trim(),
+        text,
         hasBoundary,
         blockRef,
         outgoingRefs,
-        ontology // Pass the extracted ontology
+        ontology,
+        isSubmapDef,
+        isSubmapRef
       });
     }
   });
@@ -25325,10 +25896,8 @@ const importTextToMap = async (rawText) => {
   ea.clear();
 
   const rootSelected = !!sel;
-  // Track boundaries created during this import to fix their z-index later
-  const createdBoundaries = [];
+  const createdBoundaries =[];
 
-  // Helper to create boundary during import (mimics toggleBoundary logic)
   const createImportBoundary = (nodeId) => {
     const node = ea.getElement(nodeId);
     if (!node) return;
@@ -25350,7 +25919,7 @@ const importTextToMap = async (rawText) => {
       points: [[0,0], [1,1], [0,0]],
       polygon: true,
       locked: false,
-      groupIds: node.groupIds || [],
+      groupIds: node.groupIds ||[],
       customData: {isBoundary: true},
       roundness: arrowType === "curved" ? {type: 2} : null,
     };
@@ -25360,24 +25929,38 @@ const importTextToMap = async (rawText) => {
     createdBoundaries.push({ nodeId, boundaryId: id });
   };
 
+  const submapNodesByName = new Map();
+
   if (!sel) {
-    const minIndent = Math.min(...parsed.map((p) => p.indent));
-    const topLevelItems = parsed.filter((p) => p.indent === minIndent);
+    // Filter out submap definitions (-1 indent) to accurately find the true top-level items
+    const nonSubmapItems = parsed.filter((p) => !p.isSubmapDef);
+    const minIndent = Math.min(...nonSubmapItems.map((p) => p.indent));
+    const topLevelItems = nonSubmapItems.filter((p) => p.indent === minIndent);
     
-    // Helper to process metadata on the root/first node
     const processRootMeta = (item, id) => {
         if(item.blockRef) blockRefToNodeId.set(item.blockRef, id);
         if(item.outgoingRefs.length > 0) nodeToOutgoingRefs.set(id, item.outgoingRefs);
         if(item.hasBoundary) createImportBoundary(id);
+        if(item.isSubmapRef) {
+            ea.addAppendUpdateCustomData(id, { isAdditionalRoot: true });
+            submapNodesByName.set(item.text, ea.getElement(id));
+        }
     };
 
+    // If there is exactly one top-level item, it becomes the new master root
     if (topLevelItems.length === 1) {
-      // Pass the root's ontology if it exists
-      sel = currentParent = await addNode(topLevelItems[0].text, true, true, [], null, null, topLevelItems[0].ontology);
-      processRootMeta(topLevelItems[0], currentParent.id);
-      parsed.shift();
+      const rootItem = topLevelItems[0];
+      const rootIndex = parsed.indexOf(rootItem);
+      
+      sel = currentParent = await addNode(rootItem.text, true, true,[], null, null, rootItem.ontology);
+      processRootMeta(rootItem, currentParent.id);
+      
+      // Safely extract the root item from the array so it isn't rendered twice
+      if (rootIndex !== -1) {
+          parsed.splice(rootIndex, 1);
+      }
     } else {
-      sel = currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true, [], null);
+      sel = currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true,[], null);
     }
   } else {
     currentParent = sel;
@@ -25387,15 +25970,32 @@ const importTextToMap = async (rawText) => {
 
   const stack = [{ indent: -1, node: currentParent }];
 
-if (rootSelected) {
+  if (rootSelected) {
     const allViewElements = ea.getViewElements();
     const info = getHierarchy(sel, allViewElements);
     const projectElements = getMindmapProjectElements(info.rootId, allViewElements);
-    // ensure EA has copies of existing tree elements, not the entire scene
     ea.copyViewElementsToEAforEditing(projectElements.filter(el => !ea.getElement(el.id))); 
   }
   
   for (const item of parsed) {
+    // Relocate stack parser root when encountering a ## Submap Header
+    if (item.isSubmapDef) {
+        const targetNode = submapNodesByName.get(item.text);
+        if (targetNode) {
+            stack.length = 0;
+            stack.push({ indent: -1, node: targetNode });
+        } else {
+            // Edge case: Submap def without embed. Create at root to salvage data.
+            const currentAllElements = ea.getElements();
+            const newNode = await addNode(item.text, false, true, currentAllElements, currentParent, null, null);
+            ea.addAppendUpdateCustomData(newNode.id, { isAdditionalRoot: true });
+            submapNodesByName.set(item.text, newNode);
+            stack.length = 0;
+            stack.push({ indent: -1, node: newNode });
+        }
+        continue;
+    }
+
     while (stack.length > 1 && item.indent <= stack[stack.length - 1].indent) {
       stack.pop();
     }
@@ -25407,6 +26007,10 @@ if (rootSelected) {
     if (item.blockRef) blockRefToNodeId.set(item.blockRef, newNode.id);
     if (item.outgoingRefs.length > 0) nodeToOutgoingRefs.set(newNode.id, item.outgoingRefs);
     if (item.hasBoundary) createImportBoundary(newNode.id);
+    if (item.isSubmapRef) {
+        ea.addAppendUpdateCustomData(newNode.id, { isAdditionalRoot: true });
+        submapNodesByName.set(item.text, newNode);
+    }
     
     stack.push({ indent: item.indent, node: newNode });
   }
@@ -25464,25 +26068,17 @@ if (rootSelected) {
         )
       );
 
-      // Sort by assigned mindmapOrder to preserve import sequence
       importedL1Nodes.sort((a, b) => (a.customData?.mindmapOrder || 0) - (b.customData?.mindmapOrder || 0));
 
       if (importedL1Nodes.length > 0) {
-        // Balanced Distribution:
-        // First half -> Right
-        // Second half -> Left
-        // (If odd, Right gets one more)
         const splitIndex = Math.ceil(importedL1Nodes.length / 2);
 
         importedL1Nodes.forEach((node, i) => {
-          // Remove mindmapNew flag to bypass alternating distribution in triggerGlobalLayout
           ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
           
           if (i < splitIndex) {
-             // Right Side: Force position to the right of root
              node.x = rootElForImport.x + rootElForImport.width + 100;
           } else {
-             // Left Side: Force position to the left of root
              node.x = rootElForImport.x - node.width - 100;
           }
         });
@@ -25493,7 +26089,7 @@ if (rootSelected) {
   await addElementsToView({
     repositionToCursor: !rootSelected,
     captureUpdate: "EVENTUALLY"
-  }); // in case there are images in the imported map
+  });
 
   // -------------------------------------------------------------------------
   //  Fix Z-Index for Created Boundaries (Parents Below Children)
@@ -25503,22 +26099,18 @@ if (rootSelected) {
     
     const boundariesWithDepth = createdBoundaries.map(b => {
       const node = allEls.find(e => e.id === b.nodeId);
-      // If node not found (rare), default to 0
       const depth = node ? getHierarchy(node, allEls).depth : 0;
       return { ...b, depth };
     });
 
-    // Sort ascending depth (root -> leaves) so we position parents first
     boundariesWithDepth.sort((a, b) => a.depth - b.depth);
 
     for (const b of boundariesWithDepth) {
-      // Refresh view elements to get up-to-date indices after previous moves
       const currentEls = ea.getViewElements();
       
       let parentBoundaryIndex = -1;
       let curr = currentEls.find(e => e.id === b.nodeId);
 
-      // Find nearest ancestor with a boundary
       while (curr) {
         const parent = getParentNode(curr.id, currentEls);
         if (!parent) break;
@@ -25532,7 +26124,6 @@ if (rootSelected) {
         curr = parent;
       }
       
-      // If parent boundary exists, place this one above it. Else bottom (0).
       const targetIndex = parentBoundaryIndex !== -1 ? parentBoundaryIndex + 1 : 0;
       ea.moveViewElementToZIndex(b.boundaryId, targetIndex);
     }
@@ -25559,8 +26150,8 @@ if (rootSelected) {
 /**
 // Pastes a Markdown list from clipboard into the map, converting it to nodes.
 **/
-const pasteListToMap = async () => {
-  const rawText = await navigator.clipboard.readText();
+const pasteListToMap = async (contentToPaste = null) => {
+  const rawText = contentToPaste || await navigator.clipboard.readText();
   if (!rawText) {
     new Notice(t("NOTICE_CLIPBOARD_EMPTY"));
     return;
@@ -25568,6 +26159,185 @@ const pasteListToMap = async () => {
   await importTextToMap(rawText);
 };
 
+/**
+ * Intelligent paste dispatcher. Parses clipboard for Element JSON / Raw Images,
+ * translates them to Markdown strings, and passes them to `addNode()`.
+ */
+const pasteElementToMap = async () => {
+  if (!isViewSet()) return;
+  const sel = getMindmapNodeFromSelection();
+  
+  // Standard text-list paste handles root-level initialization better
+  if (!sel) {
+    await pasteListToMap();
+    return;
+  }
+
+  let rawText = "";
+  try {
+    rawText = await navigator.clipboard.readText();
+  } catch (e) {}
+
+  let isSingleImageJSON = false;
+  const excalidrawClipboardPayload = rawText && rawText.includes('"type":"excalidraw/clipboard"');
+
+  // Scenario 1: Excalidraw Element JSON (Single Element or Container+Text)
+  if (excalidrawClipboardPayload) {
+    let clipboardData;
+    try {
+       clipboardData = JSON.parse(rawText);
+    } catch (e) {}
+
+    if (clipboardData && clipboardData.elements) {
+      const els = clipboardData.elements.filter(e => !e.isDeleted);
+      const isSingleElement = els.length === 1 && ["embeddable", "text"].includes(els[0].type);
+      
+      const textEl = els.find(e => e.type === "text");
+      const containerEl = els.find(e =>["rectangle", "ellipse", "diamond"].includes(e.type));
+      const isContainerText = els.length === 2 && textEl && containerEl && textEl.containerId === containerEl.id;
+      
+      isSingleImageJSON = els.length === 1 && els[0].type === "image";
+
+      if (isSingleElement || isContainerText) {
+        let textToPaste = "";
+        let shapeToPaste = null;
+
+        if (isContainerText) {
+          textToPaste = textEl.rawText;
+          shapeToPaste = containerEl.type;
+        } else if (els[0].type === "text") {
+          textToPaste = els[0].rawText;
+        } else if (els[0].type === "embeddable") {
+          const link = els[0].link;
+          if (link.match(/^https?:\/\//i)) {
+            textToPaste = `![](${link})`;
+          } else {
+            textToPaste = link.startsWith("[[") ? `!${link}` : `![[${link}]]`;
+          }
+          if (textToPaste) {
+            pasteListToMap(textToPaste);
+            return;
+          }
+        }
+
+        if (textToPaste) {
+          // Add as a normal node using central logic
+          const newNode = await addNode(textToPaste, false, false, null, null, null, null);
+          
+          // Recreate the shape if it was inside a container
+          if (shapeToPaste) {
+             const isContainer = ["rectangle", "ellipse", "diamond"].includes(newNode.type);
+             if (isContainer) {
+                if (newNode.type !== shapeToPaste) {
+                  selectNodeInView(newNode);
+                  await toggleBox(); // Removes auto-added box of the wrong shape
+                  await toggleBox(shapeToPaste); // Re-adds correct shape box
+                }
+             } else {
+                selectNodeInView(newNode);
+                await toggleBox(shapeToPaste);
+             }
+          }
+          return;
+        }
+      }
+    }
+  }
+
+  // Scenario 2: Native image payload intercepted from system clipboard or Single Image JSON
+  let hasImageBlob = false;
+  let blob = null;
+  let mimeType = null;
+  try {
+    const items = await navigator.clipboard.read();
+    for (const item of items) {
+      const imageType = item.types.find(t => t.startsWith("image/"));
+      if (imageType) {
+        hasImageBlob = true;
+        mimeType = imageType;
+        blob = await item.getType(imageType);
+        break;
+      }
+    }
+  } catch (e) {}
+
+  if (hasImageBlob || isSingleImageJSON) {
+    const beforeIds = new Set(ea.getViewElements().map(e => e.id));
+    
+    // Trigger native paste via synthetic event so Excalidraw saves the file natively
+    const dt = new DataTransfer();
+    if (hasImageBlob && blob) {
+      const file = new File([blob], `Pasted image.${mimeType.split("/")[1] || "png"}`, { type: mimeType });
+      dt.items.add(file);
+    } else if (isSingleImageJSON) {
+      dt.setData("text/plain", rawText);
+    }
+    
+    const pasteEvent = new ClipboardEvent("paste", {
+      clipboardData: dt,
+      bubbles: true,
+      cancelable: true
+    });
+    
+    const targetEl = ea.targetView.contentEl.querySelector(".excalidraw") || ea.targetView.contentEl;
+    const originallySelectedElement = ea.getViewSelectedElement();
+    targetEl.dispatchEvent(pasteEvent);
+    
+    let newImageEl = null;
+    let file = null;
+    let savedOnce = false;
+    // Poll to wait for Excalidraw to assign a fileId to the new image
+    for (let i = 0; i < 40; i++) {
+      await sleep(50);
+      const currentElements = ea.getViewElements();
+      const added = currentElements.filter(e => !beforeIds.has(e.id) && e.type === "image");
+      
+      // Wait until Excalidraw has assigned a fileId to the new image
+      if (added.length > 0) {
+         const tmpNewImageEl = added[added.length - 1];
+         if (!tmpNewImageEl.fileId) {
+           continue; // Still waiting for fileId assignment
+         }
+         const sceneFiles = api().getFiles();
+         if (!sceneFiles[tmpNewImageEl.fileId]) {
+          continue; // fileId not yet recognized in scene
+         }
+         file = ea.getViewFileForImageElement(tmpNewImageEl);
+         if (!file) {
+           if (!savedOnce && ea.targetView.isDirty()) {
+             savedOnce = true;
+             await ea.targetView.save();
+           }
+           continue; // Excalidraw file retrieval not yet working
+         }
+         newImageEl = tmpNewImageEl;
+         break;
+      }
+    }
+    
+    if (newImageEl && file) {
+      // Silently delete the temporary pasted image
+      await sleep(200); //likely unnecessary contingencey to ensure Excalidraw has finished processing the new image before we delete it
+      const imageID = newImageEl.id;
+      ea.clear();
+      ea.copyViewElementsToEAforEditing([newImageEl]);
+      ea.getElement(imageID).isDeleted = true;
+      await addElementsToView({ captureUpdate: "EVENTUALLY", shouldRestoreElements: false });
+      
+      ea.selectElementsInView([originallySelectedElement.id]); // Reselect original node because paste image steals selection
+      const imagePath = `![[${file.path}]]`;
+      await pasteListToMap(imagePath);
+    }
+    return;
+  }
+
+  // Fallback to Outline parser
+  if (!excalidrawClipboardPayload) {
+    await pasteListToMap();
+  } else {
+    new Notice(t("NOTICE_PASTE_ABORTED"));
+  }
+};
 // ---------------------------------------------------------------------------
 // 6. Map Actions
 // ---------------------------------------------------------------------------
@@ -25622,8 +26392,9 @@ const reconnectArrow = (currentBindingElement, newBindingElement, arrow, side = 
  * preserving user customizations.
  * Also updates the ontology label (if present) on the incoming arrow to be half the node's new size.
  */
-const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => {
-  const fontScale = getFontScale(rootFontScale);
+const updateSubtreeFontSize = (nodeId, newDepth, oldDepth, allElements, newFontScaleType, oldFontScaleType) => {
+  const newFontScale = getFontScale(newFontScaleType);
+  const oldFontScale = getFontScale(oldFontScaleType);
   
   const node = allElements.find(el => el.id === nodeId);
   if (!node) return;
@@ -25631,13 +26402,9 @@ const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => 
     ea.copyViewElementsToEAforEditing([node]);
   }
 
-  // Determine the node's *current* depth in the hierarchy to find its expected "old" font size
-  const currentHierarchy = getHierarchy(node, allElements);
-  const oldDepth = currentHierarchy.depth;
-
-  // Calculate standard sizes
-  const oldStandardSize = fontScale[Math.min(oldDepth, fontScale.length - 1)];
-  const newStandardSize = fontScale[Math.min(newDepth, fontScale.length - 1)];
+  // Calculate standard sizes based on the old and new contexts
+  const oldStandardSize = oldFontScale[Math.min(oldDepth, oldFontScale.length - 1)];
+  const newStandardSize = newFontScale[Math.min(newDepth, newFontScale.length - 1)];
 
   // Update only if the user hasn't customized the font size
   if (node.fontSize === oldStandardSize) {
@@ -25670,16 +26437,22 @@ const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => 
     }
 
     // Apply half-size logic
-    if (eaOntologyEl) {
+    if (eaOntologyEl && eaOntologyEl.fontSize === Math.floor(oldStandardSize / 2)) {
       eaOntologyEl.fontSize = Math.floor(newStandardSize / 2);
       ea.refreshTextElementSize(eaOntologyEl.id);
     }
   }
 
+  // Stop recursion if this node is an additional root (submap). 
+  // Its own node size updates to match the parent, but its children scale relative to IT.
+  if (node.customData?.isAdditionalRoot === true) {
+     return;
+  }
+
   // Recurse to children
   const children = getChildrenNodes(nodeId, allElements);
   children.forEach(child => {
-    updateSubtreeFontSize(child.id, newDepth + 1, allElements, rootFontScale);
+    updateSubtreeFontSize(child.id, newDepth + 1, oldDepth + 1, allElements, newFontScaleType, oldFontScaleType);
   });
 };
 
@@ -25687,7 +26460,7 @@ const updateSubtreeFontSize = (nodeId, newDepth, allElements, rootFontScale) => 
  * Recursively updates the stroke width of a subtree based on the new depth level.
  * Only updates if the current width matches the default for its *previous* depth.
  */
-const updateSubtreeStrokeWidth = (nodeId, newDepth, allElements, rootBaseWidth, rootBranchScale) => {
+const updateSubtreeStrokeWidth = (nodeId, newDepth, oldDepth, allElements, newBaseWidth, newBranchScale, oldBaseWidth, oldBranchScale) => {
   const node = allElements.find(el => el.id === nodeId);
   if (!node) return;
   
@@ -25696,13 +26469,8 @@ const updateSubtreeStrokeWidth = (nodeId, newDepth, allElements, rootBaseWidth, 
     ea.copyViewElementsToEAforEditing([node]);
   }
 
-  // Determine the node's *current* depth (before the move logic is logically finalized in hierarchy calculations) 
-  // to find its expected "old" width.
-  const currentHierarchy = getHierarchy(node, allElements);
-  const oldDepth = currentHierarchy.depth;
-
-  const oldStandardWidth = calculateStrokeWidth(oldDepth, rootBaseWidth, rootBranchScale);
-  const newStandardWidth = calculateStrokeWidth(newDepth, rootBaseWidth, rootBranchScale);
+  const oldStandardWidth = calculateStrokeWidth(oldDepth, oldBaseWidth, oldBranchScale);
+  const newStandardWidth = calculateStrokeWidth(newDepth, newBaseWidth, newBranchScale);
   const tolerance = 0.05;
 
   // 1. Update the incoming arrow (the connector)
@@ -25729,10 +26497,15 @@ const updateSubtreeStrokeWidth = (nodeId, newDepth, allElements, rootBaseWidth, 
     eaNode.strokeWidth = newStandardWidth;
   }
 
+  // Stop recursion if this node is an additional root (submap).
+  if (node.customData?.isAdditionalRoot === true) {
+     return;
+  }
+
   // Recurse to children
   const children = getChildrenNodes(nodeId, allElements);
   children.forEach(child => {
-    updateSubtreeStrokeWidth(child.id, newDepth + 1, allElements, rootBaseWidth, rootBranchScale);
+    updateSubtreeStrokeWidth(child.id, newDepth + 1, oldDepth + 1, allElements, newBaseWidth, newBranchScale, oldBaseWidth, oldBranchScale);
   });
 };
 
@@ -25779,6 +26552,17 @@ const updateSubtreeColor = (nodeId, oldColor, newColor, allElements) => {
     if (!ea.getElement(incomingArrow.id)) ea.copyViewElementsToEAforEditing([incomingArrow]);
     const eaArrow = ea.getElement(incomingArrow.id);
     eaArrow.strokeColor = newColor;
+
+    // Update the Ontology label (bound text element) of the arrow
+    const maybeTextElement = ea.getBoundTextElement(incomingArrow, true);
+    let eaOntologyEl = maybeTextElement.eaElement;
+    if (!eaOntologyEl && maybeTextElement.sceneElement) {
+      ea.copyViewElementsToEAforEditing([maybeTextElement.sceneElement]);
+      eaOntologyEl = ea.getElement(maybeTextElement.sceneElement.id);
+    }
+    if (eaOntologyEl) {
+      eaOntologyEl.strokeColor = newColor;
+    }
   }
 
   const children = getChildrenNodes(nodeId, allElements);
@@ -25877,11 +26661,6 @@ const changeNodeOrder = async (key) => {
     ? (getSettingsRootNode(parent, allElements) || currentSettingsRoot || allElements.find((e) => e.id === info.rootId))
     : (currentSettingsRoot || allElements.find((e) => e.id === info.rootId));
   if (!root) return;
-  
-  const rootFontScale = root.customData?.fontsizeScale ?? fontsizeScale;
-  const rootBaseWidth = root.customData?.baseStrokeWidth ?? baseStrokeWidth;
-  const rootBranchScale = root.customData?.branchScale ?? branchScale;
-  const rootMulticolor = root.customData?.multicolor ?? multicolor;
 
   if (current.id === root.id) {
     new Notice(t("NOTICE_CANNOT_MOVE_ROOT"));
@@ -25906,6 +26685,11 @@ const changeNodeOrder = async (key) => {
   const isRadial = (mapMode === "Radial");
 
   const isInPositive = isVerticalMode ? (curCenterY > rootCenterY) : (curCenter > rootCenter);
+
+  // --- GET OLD SETTINGS ROOT AND OLD DEPTH ---
+  const oldSettingsRoot = getSettingsRootNode(parent, allElements) || allElements.find(e => e.id === info.rootId);
+  const oldDepth = getDepthFromAncestor(current.id, oldSettingsRoot.id, allElements);
+  const oldRootCfg = getRootConfigForNode(oldSettingsRoot);
 
   // ---------------------------------------------------------
   // Feature: L1 Node Side Swap 
@@ -25974,30 +26758,44 @@ const changeNodeOrder = async (key) => {
     );
 
     if (arrow) {
+      // Find new settings root and depth relative to the target parent
+      const newSettingsRoot = getSettingsRootNode(grandParent, allElements) || allElements.find(e => e.id === info.rootId);
+      const newRootCfg = getRootConfigForNode(newSettingsRoot);
+      const newDepth = getDepthFromAncestor(grandParent.id, newSettingsRoot.id, allElements) + 1;
+
       reconnectArrow(parent, grandParent, arrow, "start");
       const parentOrder = getMindmapOrder(parent);
       const promoteTargetRoot = parent.customData?.isAdditionalRoot === true
-        ? (getSettingsRootNode(grandParent, allElements) || root)
+        ? newSettingsRoot
         : root;
+      
       ea.copyViewElementsToEAforEditing([current]);
       ea.addAppendUpdateCustomData(current.id, {
         mindmapOrder: isRadial && !isInPositive ? parentOrder - 0.5 : parentOrder + 0.5
       });
-      const parentInfo = getHierarchy(parent, allElements);
       
-      updateSubtreeFontSize(current.id, parentInfo.depth, allElements, rootFontScale);
-      updateSubtreeStrokeWidth(current.id, parentInfo.depth, allElements, rootBaseWidth, rootBranchScale);
+      updateSubtreeFontSize(current.id, newDepth, oldDepth, allElements, newRootCfg.fontsizeScale, oldRootCfg.fontsizeScale);
+      updateSubtreeStrokeWidth(current.id, newDepth, oldDepth, allElements, newRootCfg.baseStrokeWidth, newRootCfg.branchScale, oldRootCfg.baseStrokeWidth, oldRootCfg.branchScale);
 
-      // If we are promoting to Level 1 (Child of Root), give it a fresh color if multicolor is on.
-      // Otherwise, it keeps the parent's color (which is now its sibling).
-      if (grandParent.id === root.id && rootMulticolor) {
-         let newColor = current.customData?.previousL1Color;
-         if (!newColor) {
-             const existingL1Colors = getChildrenNodes(root.id, allElements).map(n => n.strokeColor);
-             newColor = getDynamicColor(existingL1Colors);
-         }
-         updateSubtreeColor(current.id, current.strokeColor, newColor, allElements);
+      // --- Update Colors (Promotion) ---
+      const isTargetL1 = (grandParent.id === promoteTargetRoot.id);
+      let targetColor;
+      
+      if (isTargetL1) {
+          if (newRootCfg.multicolor) {
+              targetColor = current.customData?.previousL1Color;
+              if (!targetColor) {
+                  const existingL1Colors = getChildrenNodes(promoteTargetRoot.id, allElements).map(n => n.strokeColor);
+                  targetColor = getDynamicColor(existingL1Colors);
+              }
+          } else {
+              targetColor = promoteTargetRoot.strokeColor;
+          }
+      } else {
+          targetColor = grandParent.strokeColor;
       }
+      
+      updateSubtreeColor(current.id, current.strokeColor, targetColor, allElements);
 
       await addElementsToView({ captureUpdate: "EVENTUALLY" });
       triggerGlobalLayout(promoteTargetRoot.id, false, true);
@@ -26048,6 +26846,11 @@ const changeNodeOrder = async (key) => {
     );
 
     if (arrow) {
+      // Find new settings root and calculate depth using the demoted parent context
+      const newSettingsRoot = getSettingsRootNode(newParent, allElements) || allElements.find(e => e.id === info.rootId);
+      const newRootCfg = getRootConfigForNode(newSettingsRoot);
+      const newDepth = getDepthFromAncestor(newParent.id, newSettingsRoot.id, allElements) + 1;
+
       reconnectArrow(parent, newParent, arrow, "start");
       // Determine new order: Append as last child of new parent
       const newParentChildren = getChildrenNodes(newParent.id, allElements);
@@ -26055,8 +26858,8 @@ const changeNodeOrder = async (key) => {
       
       ea.copyViewElementsToEAforEditing([current]);
       
-      // Store previous L1 color if we are demoting from L1
-      if (parent.id === root.id) {
+      // Store previous L1 color if we are demoting from an L1 position
+      if (parent.id === oldSettingsRoot.id) {
           ea.addAppendUpdateCustomData(current.id, { 
               mindmapOrder: nextOrder,
               previousL1Color: current.strokeColor
@@ -26065,19 +26868,26 @@ const changeNodeOrder = async (key) => {
           ea.addAppendUpdateCustomData(current.id, { mindmapOrder: nextOrder });
       }
       
-      // New depth is Parent's Depth + 2 (Child of Sibling)
-      const parentInfo = getHierarchy(parent, allElements);
-      const newDepth = parentInfo.depth + 2;
+      updateSubtreeFontSize(current.id, newDepth, oldDepth, allElements, newRootCfg.fontsizeScale, oldRootCfg.fontsizeScale);
+      updateSubtreeStrokeWidth(current.id, newDepth, oldDepth, allElements, newRootCfg.baseStrokeWidth, newRootCfg.branchScale, oldRootCfg.baseStrokeWidth, oldRootCfg.branchScale);
 
-      // Update Fonts
-      updateSubtreeFontSize(current.id, newDepth, allElements, rootFontScale);
+      // --- Update Colors (Demotion) ---
+      // If the node we are attaching to IS a settings root, we are becoming an L1 of a submap.
+      const isTargetL1 = (newParent.id === newSettingsRoot.id);
+      let targetColor;
+      
+      if (isTargetL1) {
+          if (newRootCfg.multicolor) {
+              const existingL1Colors = getChildrenNodes(newSettingsRoot.id, allElements).map(n => n.strokeColor);
+              targetColor = getDynamicColor(existingL1Colors);
+          } else {
+              targetColor = newSettingsRoot.strokeColor;
+          }
+      } else {
+          targetColor = newParent.strokeColor;
+      }
 
-      // Update Strokes
-      updateSubtreeStrokeWidth(current.id, newDepth, allElements, rootBaseWidth, rootBranchScale);
-
-      // Update Colors (Demotion)
-      // Adopt new parent's color if we are moving from a uniform branch
-      updateSubtreeColor(current.id, current.strokeColor, newParent.strokeColor, allElements);
+      updateSubtreeColor(current.id, current.strokeColor, targetColor, allElements);
 
       await addElementsToView({ captureUpdate: "EVENTUALLY" });
       triggerGlobalLayout(root.id, false, true);
@@ -26612,12 +27422,69 @@ const togglePin = async () => {
   }
 };
 
+const toggleCheckboxStatus = async () => {
+  if (!isViewSet()) return;
+  const sel = getMindmapNodeFromSelection();
+  if (!sel) return;
+
+  const all = ea.getViewElements();
+  // Find the text element specifically (if it's a container, grab its bound text)
+  let textElId = sel.type === "text" ? sel.id : null;
+  if (!textElId && sel.boundElements) {
+    const boundText = sel.boundElements.find(be => be.type === "text");
+    if (boundText) textElId = boundText.id;
+  }
+  if (!textElId) return;
+
+  const textEl = all.find(el => el.id === textElId);
+  if (!textEl) return;
+
+  let rawText = textEl.rawText;
+  const taskRegex = /^- \[([ xX])\] (.*)/s; // Regex to catch '- [ ] ' or '- [x] ' including newlines
+  const match = rawText.match(taskRegex);
+
+  let newText = "";
+  if (match) {
+    const status = match[1];
+    const content = match[2];
+    if (status === " ") {
+      newText = `- [x] ${content}`; // Complete it
+    } else {
+      newText = `${content}`; // Remove task
+    }
+  } else {
+    newText = `- [ ] ${rawText}`; // Not a task -> make it a task
+  }
+
+  ea.copyViewElementsToEAforEditing([textEl]);
+  const eaEl = ea.getElement(textEl.id);
+  eaEl.rawText = newText;
+  eaEl.text = newText;
+  eaEl.originalText = newText;
+  ea.refreshTextElementSize(eaEl.id);
+
+  await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
+
+  // Excalidraw dynamically updates the container size when text changes
+  if (eaEl.containerId) {
+     const updatedContainer = ea.getViewElements().find(el => el.id === eaEl.containerId);
+     if(updatedContainer) api().updateContainerSize([updatedContainer]);
+  }
+
+  // Refresh Map layout in case the new checkbox padding alters the box width
+  if (!autoLayoutDisabled) {
+     const info = getHierarchy(sel, ea.getViewElements());
+     await triggerGlobalLayout(info.rootId);
+  }
+};
+
 const padding = layoutSettings.CONTAINER_PADDING;
 /**
  * Toggles a bounding box around the selected text element (node).
- * Creates a rectangle container if one doesn't exist, or removes it if it does.
+ * Creates a container if one doesn't exist, or removes it if it does.
+ * @param {string} shape - "rectangle" | "ellipse" | "diamond"
  */
-const toggleBox = async () => {
+const toggleBox = async (shape = "rectangle") => {
   if (!isViewSet()) return;
   let sel = getMindmapNodeFromSelection();
   if (!sel) return;
@@ -26631,7 +27498,7 @@ const toggleBox = async () => {
   const arrowsToUpdate = allElements.filter(
     (el) =>
       el.type === "arrow" &&
-      (ids.contains(el.startBinding?.elementId) || ids.contains(el.endBinding?.elementId)),
+      (ids.includes(el.startBinding?.elementId) || ids.includes(el.endBinding?.elementId)),
   );
 
   if (hasContainer) {
@@ -26642,32 +27509,37 @@ const toggleBox = async () => {
     const textEl = ea.getElement(sel.id);
     ea.addAppendUpdateCustomData(textEl.id, { isPinned: !!container.customData?.isPinned, mindmapOrder: container.customData?.mindmapOrder });
     textEl.containerId = null;
-    textEl.boundElements = []; //not null because I will add bound arrows a bit further down
+    textEl.boundElements =[]; //not null because I will add bound arrows a bit further down
     ea.getElement(containerId).isDeleted = true;
   } else {
     ea.copyViewElementsToEAforEditing(arrowsToUpdate.concat(sel));
     const depth = getHierarchy(sel, allElements)?.depth || 0;
 
     oldBindId = sel.id;
-    const rectId = (finalElId = newBindId = ea.addRect(
-      sel.x - padding,
-      sel.y - padding,
-      sel.width + padding * 2,
-      sel.height + padding * 2,
-    ));
+    
+    let rectId;
+    if (shape === "ellipse") {
+      rectId = ea.addEllipse(sel.x - padding, sel.y - padding, sel.width + padding * 2, sel.height + padding * 2);
+    } else if (shape === "diamond") {
+      rectId = ea.addDiamond(sel.x - padding, sel.y - padding, sel.width + padding * 2, sel.height + padding * 2);
+    } else {
+      rectId = ea.addRect(sel.x - padding, sel.y - padding, sel.width + padding * 2, sel.height + padding * 2);
+    }
+    
+    finalElId = newBindId = rectId;
     const rect = ea.getElement(rectId);
     ea.addAppendUpdateCustomData(rectId, { isPinned: !!sel.customData?.isPinned, mindmapOrder: sel.customData?.mindmapOrder });
     rect.strokeColor = ea.getCM(sel.strokeColor).stringRGB();
     rect.strokeWidth = getStrokeWidthForDepth(depth);
     rect.roughness = getAppState().currentItemRoughness;
-    rect.roundness = roundedCorners ? { type: 3 } : null;
+    rect.roundness = (roundedCorners) ? { type: 3 } : null;
     rect.backgroundColor = "transparent";
 
     const textEl = ea.getElement(sel.id);
     textEl.containerId = rectId;
     textEl.boundElements = null;
-    rect.boundElements = [{ type: "text", id: sel.id }];
-    rect.groupIds = sel.groupIds ? [...sel.groupIds] : [];
+    rect.boundElements =[{ type: "text", id: sel.id }];
+    rect.groupIds = sel.groupIds ? [...sel.groupIds] :[];
   }
   ea.getElements()
     .filter((el) => el.type === "arrow")
@@ -26682,7 +27554,7 @@ const toggleBox = async () => {
       }
     });
 
-  ea.getElement(oldBindId).boundElements = [];
+  ea.getElement(oldBindId).boundElements =[];
   delete ea.getElement(oldBindId).customData;
 
   await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
@@ -26800,7 +27672,7 @@ let toggleGroupBtn, zoomBtn, focusBtn, boundaryBtn;
 let submapRootBtn;
 let foldBtnL0, foldBtnL1, foldBtnAll;
 let floatingGroupBtn, floatingBoxBtn, floatingZoomBtn;
-let panelExpandBtn, importOutlineBtn;
+let panelExpandBtn, importOutlineBtn, toggleCheckboxBtn;
 let isFloatingPanelExpanded = false;
 let toggleFloatingExtras = null;
 let inputContainer;
@@ -26881,7 +27753,7 @@ const focusInputEl = () => {
 const setButtonDisabled = (btn, disabled) => {
   if (!btn) return;
   btn.disabled = disabled;
-  const btnEl = btn.extraSettingsEl ?? btn.buttonEl;
+  const btnEl = btn.extraSettingsEl ?? btn.buttonEl ?? btn.toggleEl;
   if (!btnEl) return;
   btnEl.tabIndex = disabled ? -1 : 0;
   btnEl.style.opacity = disabled ? "0.5" : "";
@@ -26909,9 +27781,11 @@ const disableUI = () => {
   setButtonDisabled(focusBtn, true);
   setButtonDisabled(boundaryBtn, true);
   setButtonDisabled(submapRootBtn, true);
+  setButtonDisabled(toggleCheckboxBtn, true);
   setButtonDisabled(floatingGroupBtn, true);
   setButtonDisabled(floatingBoxBtn, true);
   setButtonDisabled(floatingZoomBtn, true);
+  setButtonDisabled(autoLayoutToggle, true);
   editingNodeId = null;
   if(editBtn) editBtn.extraSettingsEl.style.color = "";
 };
@@ -26944,6 +27818,12 @@ const updateUI = (sel) => {
     const hasGrandChildren = hasChildren && children.some(child => getChildrenNodes(child.id, all).length > 0);
     const nodeText = getTextFromNode(all, sel, true, false);
     const isLinkedFile = !!getNodeMarkdownFile(nodeText);
+
+    // Add logic to enable/disable checkbox button
+    if (toggleCheckboxBtn) {
+      const isTextNode = sel.type === "text" || (sel.boundElements && sel.boundElements.some(be => be.type === "text"));
+      setButtonDisabled(toggleCheckboxBtn, !isTextNode);
+    }
 
     if (pinBtn) {
       pinBtn.setIcon(isPinned ? "pin" : "pin-off");
@@ -26981,11 +27861,6 @@ const updateUI = (sel) => {
     updateGroupBtn(toggleGroupBtn);
     updateGroupBtn(floatingGroupBtn);
 
-    if (refreshBtn) {
-      setButtonDisabled(refreshBtn, false);
-      refreshBtn.setTooltip(`${t("TOOLTIP_REFRESH")} ${getActionHotkeyString(ACTION_REARRANGE)}`);
-    }
-
     setButtonDisabled(boxBtn, false);
     setButtonDisabled(floatingBoxBtn, false);
     setButtonDisabled(foldBtnL0, !hasChildren);
@@ -27001,6 +27876,7 @@ const updateUI = (sel) => {
     setButtonDisabled(cutBtn, isMasterRootSelected);
     setButtonDisabled(copyBtn, false);
     setButtonDisabled(importOutlineBtn, !isLinkedFile);
+    setButtonDisabled(autoLayoutToggle, false);
 
     // NEW: Load settings from root customData if they exist, otherwise keep current global
     const cd = root?.customData ?? {};
@@ -27014,7 +27890,12 @@ const updateUI = (sel) => {
     const mapLayoutPref = cd?.autoLayoutDisabled === true;
     if (mapLayoutPref !== autoLayoutDisabled) {
       autoLayoutDisabled = mapLayoutPref;
-      if (autoLayoutToggle) autoLayoutToggle.setValue(mapLayoutPref);
+      if (autoLayoutToggle) autoLayoutToggle.setValue(!mapLayoutPref);
+    }
+
+    if (refreshBtn) {
+      setButtonDisabled(refreshBtn, autoLayoutDisabled);
+      refreshBtn.setTooltip(`${t("TOOLTIP_REFRESH")} ${getActionHotkeyString(ACTION_REARRANGE)}`);
     }
 
     const mapArrowType = cd?.arrowType ?? getVal(K_ARROW_TYPE, "curved");
@@ -27426,6 +28307,7 @@ const commitEdit = async () => {
           eaEl.autoResize = false;
           const res = getAdjustedMaxWidth(textInput, maxWidth);
           eaEl.width = res.width;
+          eaEl.height = res.height;
           eaEl.text = res.wrappedText;
         }
       }
@@ -27906,7 +28788,7 @@ const renderInput = (container, isFloating = false) => {
   foldBtnL0 = foldBtnL1 = foldBtnAll = null;
   boundaryBtn = panelExpandBtn = null;
   floatingGroupBtn = floatingBoxBtn = floatingZoomBtn = null;
-  importOutlineBtn = null;
+  importOutlineBtn = toggleCheckboxBtn = null;
 
   inputRow = new ea.obsidian.Setting(container);
   let secondaryButtonContainer = null;
@@ -27918,7 +28800,7 @@ const renderInput = (container, isFloating = false) => {
     inputRow.controlEl.style.marginTop = "8px";
   } else {
     container.style.width = "70vw";
-    container.style.maxWidth = "450px";
+    container.style.maxWidth = "calc((var(--icon-size) + 2 * var(--size-2-3)) * 17)";
     inputRow.settingEl.style.border = "none";
     inputRow.settingEl.style.padding = "0";
     inputRow.infoEl.style.display = "none";
@@ -28054,6 +28936,15 @@ const renderInput = (container, isFloating = false) => {
     btn.extraSettingsEl.setAttr("action",ACTION_PIN);
     btn.onClick(() => performAction(ACTION_PIN));
   }, false);
+
+  // --- Add the Checkbox Toggle Button ---
+  addButton((btn) => {
+    toggleCheckboxBtn = btn;
+    btn.setIcon("square-check-big");
+    btn.setTooltip(`${t("TOOLTIP_TOGGLE_CHECKBOX")} ${getActionHotkeyString(ACTION_TOGGLE_CHECKBOX)}`);
+    btn.extraSettingsEl.setAttr("action", ACTION_TOGGLE_CHECKBOX);
+    btn.onClick(() => performAction(ACTION_TOGGLE_CHECKBOX));
+  }, true); // moveToSecondary = true puts it in the secondary container
 
   toggleFloatingExtras = null;
 
@@ -28271,17 +29162,20 @@ const renderBody = (contentEl) => {
     fillSweepToggleSetting.settingEl.style.display = "none";
   }
 
-  autoLayoutToggle = new ea.obsidian.Setting(bodyContainer)
+  new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_AUTO_LAYOUT"))
-    .addToggle((t) => t
-      .setValue(!autoLayoutDisabled)
+    .addToggle((t) => {
+      autoLayoutToggle = t;
+      t.setValue(!autoLayoutDisabled)
       .onChange(async (v) => {
+        const sel = getMindmapNodeFromSelection();
+        if (!sel) return;
         autoLayoutDisabled = !v;
         if (disableTabEvents) return;
         await updateRootNodeCustomData({ autoLayoutDisabled }, sel);
         await refreshMapLayout(sel);
-      }),
-    )
+      });
+    })
     .addExtraButton(btn=> btn
       .setIcon("pencil-ruler")
       .setTooltip(t("TOOLTIP_CONFIGURE_LAYOUT"))
@@ -28554,8 +29448,14 @@ const renderBody = (contentEl) => {
     updateKeyHandlerLocation();
   };
 
-  const saveHotkeys = () => {
-    setVal(K_HOTKEYS, userHotkeys, true);
+const saveHotkeys = () => {
+    // Strip out structural keys before saving to settings to maintain a single source of truth
+    const hotkeysToSave = userHotkeys.map(h => {
+      const { isInputOnly, requiresNode, isNavigation, hidden, ...configurableProps } = h;
+      return configurableProps;
+    });
+
+    setVal(K_HOTKEYS, hotkeysToSave, true);
     dirty = true;
     refreshHotkeys();
   };
@@ -28981,7 +29881,7 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
  * Resolves a keyboard event to a configured action depending on modifier keys and settings.
  * 
  * @param {KeyboardEvent} e - The keyboard event.
- * @returns {object} - { action, scope } or empty object if no match.
+ * @returns {object} - { action, scope, requiresNode } or empty object if no match.
  */
 const getActionFromEvent = (e) => {
   const isMod = e.ctrlKey || e.metaKey;
@@ -28999,7 +29899,7 @@ const getActionFromEvent = (e) => {
           (e.altKey === hasAlt);
   });
 
-  return match ? { action: match.action, scope: match.scope } :  { };
+  return match ? { action: match.action, scope: match.scope ?? SCOPE.none, requiresNode: match.requiresNode } :  { };
 };
 
 /**
@@ -29040,7 +29940,9 @@ const handleKeydown = (e) => {
     return;
   }
 
-  let {action, scope} = getActionFromEvent(e);
+  let {action, scope, requiresNode} = getActionFromEvent(e);
+  if (!action && !["Tab", "Enter"].includes(e.key)) return;
+
   let context = getHotkeyContext();
 
   // Local Tab handling for floating modal to keep focus cycling inside
@@ -29049,7 +29951,7 @@ const handleKeydown = (e) => {
     if (!modalEl) return;
     const activeEl = modalEl.ownerDocument.activeElement;
     if (!modalEl.contains(activeEl)) return;
-    const selector = [
+    const selector =[
       "input:not([disabled])",
       "div:not([style*='not-allowed'])",
     ].join(",");
@@ -29085,6 +29987,21 @@ const handleKeydown = (e) => {
   }
 
   if (!action || context < scope) return;
+
+  // Verify active node requirement
+  if (requiresNode && !getMindmapNodeFromSelection()) {
+    return;
+  }
+
+  // Verify transaction state for Undo
+  if (action === ACTION_UNDO && lastCommittedTransaction === null) {
+    return;
+  }
+
+  // Verify transaction state for Redo
+  if ((action === ACTION_REDO_Z || action === ACTION_REDO_Y) && redoAvailable === null) {
+    return;
+  }
 
   e.preventDefault();
   e.stopPropagation();
@@ -29169,6 +30086,11 @@ const performAction = async (action, event) => {
       await togglePin();
       break;
 
+    case ACTION_TOGGLE_CHECKBOX:
+      await toggleCheckboxStatus();
+      updateUI();
+      break;
+
     case ACTION_TOGGLE_SUBMAP_ROOT:
       await toggleSubmapRoot();
       break;
@@ -29206,7 +30128,7 @@ const performAction = async (action, event) => {
       break;
 
     case ACTION_PASTE:
-      pasteListToMap();
+      await pasteElementToMap();
       updateUI();
       break;
 
@@ -29461,6 +30383,7 @@ const performAction = async (action, event) => {
     ADD_FOLLOW_FOCUS: ACTION_ADD_FOLLOW_FOCUS,
     ADD_FOLLOW_ZOOM: ACTION_ADD_FOLLOW_ZOOM,
     EDIT: ACTION_EDIT,
+    TOGGLE_CHECKBOX: ACTION_TOGGLE_CHECKBOX,
     PIN: ACTION_PIN,
     BOX: ACTION_BOX,
     TOGGLE_BOUNDARY: ACTION_TOGGLE_BOUNDARY,
@@ -36341,7 +37264,7 @@ elements.forEach((el)=>{
 	ea.addText(el.x,el.y+i*el.height/text.length,text[i].trim());
   }
 });
-ea.addElementsToView(false,false,true);
+await ea.addElementsToView(false,false,true);
 ea.deleteViewElements(elements);
 ```
 

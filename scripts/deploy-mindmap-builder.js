@@ -40,8 +40,8 @@ The script balances **automation** (auto-layout, recursive grouping, and contras
 const FOOTER = `
 const VERSION = "v${new Date().toISOString().slice(2, 10).replace(/-/g, ".")}";
 
-if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.20.6")) {
-new Notice("Please update the Excalidraw Plugin to version 2.20.6 or higher.");
+if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.21.0")) {
+new Notice("Please update the Excalidraw Plugin to version 2.21.0 or higher.");
 return;
 }
 
