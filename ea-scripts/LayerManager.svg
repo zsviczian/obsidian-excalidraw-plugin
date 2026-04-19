@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" class="svg-icon layer-manager-icon">
   <polygon points="12 4.2 17.7 7.1 12 10 6.3 7.1" fill="currentColor" fill-opacity="0.55" />
   <polygon points="12 9.7 18.7 13 12 16.3 5.3 13" />
