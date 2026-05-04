@@ -1867,7 +1867,26 @@ const getMindmapNodeFromSelection = () => {
 }
 
 const ensureNodeSelected = () => {
-  const elementToSelect = getMindmapNodeFromSelection();
+  let elementToSelect = getMindmapNodeFromSelection();
+  
+  // Fallback: if nothing selected, try most recently selected or a root node
+  if (!elementToSelect) {
+    if (!mostRecentlySelectedNodeID) {
+      const roots = getMasterRoots();
+      if (roots.length > 0) {
+        mostRecentlySelectedNodeID = roots[0];
+      }
+    }
+    if (mostRecentlySelectedNodeID) {
+      const fallback = ea.getViewElements().find(el => el.id === mostRecentlySelectedNodeID);
+      if (fallback) {
+        elementToSelect = fallback;
+      } else {
+        mostRecentlySelectedNodeID = null;
+      }
+    }
+  }
+  
   if (elementToSelect) {
     selectNodeInView(elementToSelect);
   }
