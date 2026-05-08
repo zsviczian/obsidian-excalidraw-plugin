@@ -5,6 +5,10 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.22.4":`
+## Fixed
+- Error when saving pasted images from Excalidraw.com
+`,
 "2.22.3":`
 
 Feeling overwhelmed by Excalidraw’s endless features?

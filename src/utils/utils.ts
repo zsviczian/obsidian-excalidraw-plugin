@@ -55,9 +55,6 @@ declare module "obsidian" {
       direction: string,
     ): WorkspaceLeaf;
   }
-  interface Vault {
-    getAvailablePathForAttachments(filename: string, extension: string, file: TFile | null): Promise<string>
-  }
 }
 
 let versionMismatchChecked = false;

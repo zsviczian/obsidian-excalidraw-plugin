@@ -42,9 +42,7 @@ export const getAttachmentsFolderAndFilePath = async (
   activeViewFilePath: string,
   newFileName: string,
 ): Promise<{ folder: string; filepath: string }> => {
-  const { basename, extension } = splitFolderAndFilename(newFileName);
-  const activeViewFile = app.vault.getFileByPath(activeViewFilePath);
-  const attachmentFilePath = await app.vault.getAvailablePathForAttachments(basename, extension, activeViewFile);
+  const attachmentFilePath = await app.fileManager.getAvailablePathForAttachment(newFileName, activeViewFilePath)
   const { folderpath } = splitFolderAndFilename(attachmentFilePath);
   return {
     folder: folderpath,
