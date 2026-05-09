@@ -118,6 +118,115 @@ const PHONE_FOOTER_SAFE_AREA_CSS = `
 }
 `;
 
+type PersistedExcalidrawSettings = Partial<ExcalidrawSettings> & Record<string, unknown>;
+
+const LEGACY_AI_SETTING_KEYS: (keyof ExcalidrawSettings)[] = [
+  "openAIAPIToken",
+  "openAIDefaultTextModel",
+  "openAIDefaultTextModelMaxTokens",
+  "openAIDefaultVisionModel",
+  "openAIDefaultImageGenerationModel",
+  "openAIURL",
+  "openAIImageGenerationURL",
+  "openAIImageEditsURL",
+  "openAIImageVariationURL",
+];
+
+const AI_TEXT_SUFFIX = "/chat/completions";
+
+const normalizeAISettingURL = (value: unknown): string => {
+  return typeof value === "string"
+    ? value.trim().replace(/\/+$/, "")
+    : "";
+};
+
+const joinAISettingURL = (baseURL: string, path: string): string => {
+  if (!baseURL) return "";
+  return `${baseURL.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+};
+
+const hasNonEmptyString = (value: unknown): value is string => {
+  return typeof value === "string" && value.trim() !== "";
+};
+
+const hasPositiveNumber = (value: unknown): value is number => {
+  return typeof value === "number" && value > 0;
+};
+
+const stripLegacyAISettings = <T extends PersistedExcalidrawSettings>(settings: T): T => {
+  const sanitized = { ...settings };
+  LEGACY_AI_SETTING_KEYS.forEach((key) => {
+    delete sanitized[key];
+  });
+  return sanitized;
+};
+
+const migrateLegacyAISettings = (
+  settings: PersistedExcalidrawSettings,
+): { settings: PersistedExcalidrawSettings; didMigrate: boolean } => {
+  const migrated = { ...settings };
+  const migratedRecord = migrated as Record<string, unknown>;
+  let didMigrate = false;
+
+  const assignStringIfMissing = (key: keyof ExcalidrawSettings, value: unknown) => {
+    if (!hasNonEmptyString(value) || hasNonEmptyString(migrated[key])) return;
+    migratedRecord[key] = value.trim();
+    didMigrate = true;
+  };
+
+  const assignPositiveNumberIfMissing = (key: keyof ExcalidrawSettings, value: unknown) => {
+    if (!hasPositiveNumber(value) || hasPositiveNumber(migrated[key])) return;
+    migratedRecord[key] = value;
+    didMigrate = true;
+  };
+
+  assignStringIfMissing("aiAPIKey", settings.openAIAPIToken);
+  assignStringIfMissing("aiDefaultTextModel", settings.openAIDefaultTextModel);
+  assignStringIfMissing("aiDefaultVisionModel", settings.openAIDefaultVisionModel);
+  assignStringIfMissing("aiDefaultImageGenerationModel", settings.openAIDefaultImageGenerationModel);
+  assignPositiveNumberIfMissing("aiDefaultMaxTokens", settings.openAIDefaultTextModelMaxTokens);
+
+  const legacyTextEndpoint = normalizeAISettingURL(settings.openAIURL);
+  const inferredLegacyBaseURL = legacyTextEndpoint.endsWith(AI_TEXT_SUFFIX)
+    ? legacyTextEndpoint.slice(0, -AI_TEXT_SUFFIX.length)
+    : legacyTextEndpoint;
+
+  assignStringIfMissing("aiBaseURL", inferredLegacyBaseURL);
+
+  const effectiveBaseURL = normalizeAISettingURL(migrated.aiBaseURL) || inferredLegacyBaseURL;
+  const derivedTextEndpoint = joinAISettingURL(effectiveBaseURL, AI_TEXT_SUFFIX);
+
+  if (
+    hasNonEmptyString(legacyTextEndpoint)
+    && !hasNonEmptyString(migrated.aiTextEndpoint)
+    && legacyTextEndpoint !== derivedTextEndpoint
+  ) {
+    migrated.aiTextEndpoint = legacyTextEndpoint;
+    didMigrate = true;
+  }
+
+  const assignEndpointOverrideIfNeeded = (
+    key: keyof ExcalidrawSettings,
+    legacyValue: unknown,
+    suffix: string,
+  ) => {
+    const normalizedLegacyValue = normalizeAISettingURL(legacyValue);
+    if (!normalizedLegacyValue || hasNonEmptyString(migrated[key])) return;
+
+    const derivedEndpoint = joinAISettingURL(effectiveBaseURL, suffix);
+    if (!derivedEndpoint || normalizedLegacyValue !== derivedEndpoint) {
+      migratedRecord[key] = normalizedLegacyValue;
+      didMigrate = true;
+    }
+  };
+
+  assignEndpointOverrideIfNeeded("aiImageGenerationEndpoint", settings.openAIImageGenerationURL, "/images/generations");
+  assignEndpointOverrideIfNeeded("aiImageEditsEndpoint", settings.openAIImageEditsURL, "/images/edits");
+  assignEndpointOverrideIfNeeded("aiImageVariationsEndpoint", settings.openAIImageVariationURL, "/images/variations");
+
+  return { settings: migrated, didMigrate };
+};
+
 export default class ExcalidrawPlugin extends Plugin {
   private fileManager: PluginFileManager;
   private observerManager: ObserverManager;
@@ -1310,7 +1419,10 @@ export default class ExcalidrawPlugin extends Plugin {
   ) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.loadSettings,`ExcalidrawPlugin.loadSettings`, opts);
     if(typeof opts.reEnableAutosave === "undefined") opts.reEnableAutosave = false;
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const rawSettings = ((await this.loadData()) ?? {}) as PersistedExcalidrawSettings;
+    const { settings: migratedSettings, didMigrate } = migrateLegacyAISettings(rawSettings);
+    const persistedSettings = stripLegacyAISettings(migratedSettings);
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, persistedSettings);
     if(!this.settings.previewImageType) { //migration 1.9.13
       if(typeof this.settings.displaySVGInPreview === "undefined") {
         this.settings.previewImageType = PreviewImageType.SVGIMG;
@@ -1320,13 +1432,16 @@ export default class ExcalidrawPlugin extends Plugin {
           : PreviewImageType.PNG; 
       }
     }
+    if (didMigrate) {
+      await this.saveData(persistedSettings);
+    }
     if(opts.reEnableAutosave) this.settings.autosave = true;
     setDebugging(this.settings.isDebugMode);
   }
 
   async saveSettings() {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.saveSettings,`ExcalidrawPlugin.saveSettings`);
-    await this.saveData(this.settings);
+    await this.saveData(stripLegacyAISettings(this.settings as PersistedExcalidrawSettings));
   }
 
   public async openSidepanel(reveal: boolean = true): Promise<ExcalidrawSidepanelView | null> {

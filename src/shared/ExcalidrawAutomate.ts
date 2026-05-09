@@ -79,6 +79,7 @@ import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import PolyBool from "polybooljs";
 import { EmbeddableMDCustomProps } from "./Dialogs/EmbeddableSettings";
 import {
+  postAI as _postAI,
   postOpenAI as _postOpenAI,
   extractCodeBlocks as _extractCodeBlocks,
 } from "../utils/AIUtils";
@@ -287,6 +288,15 @@ export class ExcalidrawAutomate {
     if (isMissing) {
       log("Description not available for this function.");
     }
+  }
+
+  /**
+   * Posts an AI request to the currently configured provider and returns the response.
+   * @param {AIRequest} request - The AI request configuration.
+   * @returns {Promise<RequestUrlResponse>} Promise resolving to the provider-normalized API response.
+   */
+  public async postAI(request: AIRequest): Promise<RequestUrlResponse> {
+    return await _postAI(request);
   }
 
   /**
@@ -2229,7 +2239,7 @@ export class ExcalidrawAutomate {
    * Adds an image element to the ExcalidrawAutomate instance.
    * @param {number | AddImageOptions} topXOrOpts - The x-coordinate of the top-left corner or an options object.
    * @param {number} topY - The y-coordinate of the top-left corner.
-   * @param {TFile | string} imageFile - The image file or URL.
+    * @param {TFile | string} imageFile - The image file, hyperlink, vault path, PDF++ reference, or data URL.
    * @param {boolean} [scale=true] - Whether to scale the image to MAX_IMAGE_SIZE.
    * @param {boolean} [anchor=true] - Whether to anchor the image at 100% size.
    * @returns {Promise<string>} Promise resolving to the ID of the added image element.
@@ -2256,19 +2266,33 @@ export class ExcalidrawAutomate {
     }
 
     const pdfLinkRegex = /^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/;
+    const isDataURL = typeof imageFile === "string" && imageFile.startsWith("data:image/");
     const originalLink = typeof imageFile === "string" ? imageFile : null;
     const imageFileForLoader = originalLink && pdfLinkRegex.test(originalLink)
       ? originalLink.split("&rect=")[0]
       : imageFile;
 
     const id = nanoid();
-    const loader = new EmbeddedFilesLoader(
-      this.plugin,
-      this.canvas.theme === "dark",
-    );
-    const image = (typeof imageFileForLoader === "string")
-      ? await loader.getObsidianImage(new EmbeddedFile(this.plugin, "", imageFileForLoader),0)
-      : await loader.getObsidianImage(imageFileForLoader,0);
+    const dataURL = isDataURL ? originalLink : null;
+    const image = isDataURL
+      ? {
+        mimeType: dataURL.substring(5, dataURL.indexOf(";")) as MimeType,
+        fileId: fileid() as FileId,
+        dataURL: dataURL as DataURL,
+        created: Date.now(),
+        size: await getImageSize(dataURL),
+        hasSVGwithBitmap: false,
+        pdfPageViewProps: null as any,
+      }
+      : await (() => {
+        const loader = new EmbeddedFilesLoader(
+          this.plugin,
+          this.canvas.theme === "dark",
+        );
+        return typeof imageFileForLoader === "string"
+          ? loader.getObsidianImage(new EmbeddedFile(this.plugin, "", imageFileForLoader),0)
+          : loader.getObsidianImage(imageFileForLoader,0);
+      })();
       
     if (!image) {
       return null;
@@ -2281,11 +2305,11 @@ export class ExcalidrawAutomate {
       id: fileId,
       dataURL: image.dataURL,
       created: image.created,
-      isHyperLink: typeof imageFileForLoader === "string",
-      hyperlink: typeof imageFileForLoader === "string"
+      isHyperLink: typeof imageFileForLoader === "string" && !isDataURL,
+      hyperlink: typeof imageFileForLoader === "string" && !isDataURL
         ? imageFileForLoader
         : null,
-      file: typeof imageFileForLoader === "string"
+      file: typeof imageFileForLoader === "string" || isDataURL
         ? null
         : imageFileForLoader.path + (scale || !anchor ? "":"|100%"),
       hasSVGwithBitmap: image.hasSVGwithBitmap,

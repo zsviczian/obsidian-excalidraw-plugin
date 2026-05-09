@@ -64,7 +64,7 @@ const systemPrompts = {
   "Edit an image": {
     prompt: null,
     type: "image-edit",
-    help: "Image elements will be used as the Image. Shapes on top of the image will be the Mask. Use the prompt to instruct Dall-e about the changes. Dall-e-2 model will be used."
+    help: "Image elements will be used as the Image. Shapes on top of the image will be the Mask. Use the prompt to instruct Dall-e about the changes. In the image below shapes are merged into a black mask, the unmasked image is shown as a red shape."
   },
   "Generate an image from image and prompt": {
     prompt: "Your task involves receiving an image and a textual prompt from the user. Your goal is to craft a detailed, accurate, and descriptive narrative of the image, tailored for effective image generation. Utilize the user-provided text prompt to inform and guide your depiction of the image. Ensure the resulting image remains text-free.",
@@ -98,7 +98,6 @@ const systemPrompts = {
   },
 }
 
-const IMAGE_WARNING = "The generated image is linked through a temporary OpenAI URL and will be removed in approximately 30 minutes. To save it permanently, choose 'Save image from URL to local file' from the Obsidian Command Palette."
 // --------------------------------------
 // Initialize values and settings
 // --------------------------------------
@@ -112,8 +111,8 @@ if(!settings["Agent's Task"]) {
   await ea.setScriptSettings(settings);
 }
 
-const OPENAI_API_KEY = ea.plugin.settings.openAIAPIToken;
-if(!OPENAI_API_KEY || OPENAI_API_KEY === "") {
+const AI_API_KEY = ea.plugin.settings.aiAPIKey || ea.plugin.settings.openAIAPIToken;
+if(!AI_API_KEY || AI_API_KEY === "") {
   new Notice("You must first configure your API key in Excalidraw Plugin Settings");
   return;
 }
@@ -130,7 +129,7 @@ let imageModel, valideSizes;
 const setImageModelAndSizes = () => {
   imageModel = systemPrompts[agentTask].type === "image-edit"
     ? "dall-e-2"
-    : ea.plugin.settings.openAIDefaultImageGenerationModel;
+    : (ea.plugin.settings.aiDefaultImageGenerationModel || ea.plugin.settings.openAIDefaultImageGenerationModel || "gpt-image-1");
   validSizes = imageModel === "dall-e-2"
     ? [`256x256`, `512x512`, `1024x1024`]
     : (imageModel === "dall-e-3"
@@ -332,6 +331,18 @@ const setMermaidDataToStorage = (mermaidDefinition) => {
     return false;
   }
 };
+
+const getGeneratedImageSource = (result) => {
+  const image = result?.json?.data?.[0];
+  if (!image) return null;
+  if (image.url) return image.url;
+  if (image.b64_json) {
+    const format = result?.json?.output_format ?? "png";
+    const mimeType = format === "jpg" ? "jpeg" : format;
+    return `data:image/${mimeType};base64,${image.b64_json}`;
+  }
+  return null;
+};
   
 // --------------------------------------
 // Submit Prompt
@@ -348,15 +359,17 @@ const generateImage = async(text, spinnerID, bb, silent=false) => {
   
   const result = await ea.postOpenAI(requestObject);
   console.log({result, json:result?.json});
+
+  const imageSource = getGeneratedImageSource(result);
   
-  if(!result?.json?.data?.[0]?.url) {
+  if(!imageSource) {
     await errorMessage(spinnerID, result?.json?.error?.message);
     return;
   }
   
   const spinner = ea.getElement(spinnerID)
   spinner.isDeleted = true;
-  const imageID = await ea.addImage(spinner.x, spinner.y, result.json.data[0].url);
+  const imageID = await ea.addImage(spinner.x, spinner.y, imageSource);
   const imageEl = ea.getElement(imageID);
   const revisedPrompt = result.json.data[0].revised_prompt;
   if(revisedPrompt && !silent) {
@@ -374,11 +387,7 @@ const generateImage = async(text, spinnerID, bb, silent=false) => {
   
   await ea.addElementsToView(false, true, true);
   if(silent) return;
-  ea.getExcalidrawAPI().setToast({
-    message: IMAGE_WARNING,
-    duration: 15000,
-    closable: true
-  });
+
 }
 
 const run = async (text) => {
@@ -460,20 +469,16 @@ const run = async (text) => {
   }
 
   if(isImageEditRequest) {   
-    if(!result?.json?.data?.[0]?.url) {
+    const imageSource = getGeneratedImageSource(result);
+    if(!imageSource) {
       await errorMessage(spinnerID, result?.json?.error?.message);
       return;
     }
     
     const spinner = ea.getElement(spinnerID)
     spinner.isDeleted = true;
-    const imageID = await ea.addImage(spinner.x, spinner.y, result.json.data[0].url);    
+    const imageID = await ea.addImage(spinner.x, spinner.y, imageSource);    
     await ea.addElementsToView(false, true, true);
-    ea.getExcalidrawAPI().setToast({
-      message: IMAGE_WARNING,
-      duration: 15000,
-      closable: true
-    });
     return;
   }
 
@@ -639,7 +644,6 @@ configModal.onOpen = async () => {
 
   imageSizeSetting = new ea.obsidian.Setting(contentEl)
     .setName("Select image size")
-    .setDesc(fragWithHTML("<mark>⚠️ Important ⚠️</mark>: " + IMAGE_WARNING))
     .addDropdown(dropdown=>{
       validSizes.forEach(size=>dropdown.addOption(size,size));
       imageSizeSettingDropdown = dropdown;

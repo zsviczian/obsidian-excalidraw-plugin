@@ -143,7 +143,7 @@ import { UniversalInsertFileModal } from "../shared/Dialogs/UniversalInsertFileM
 import { getMermaidText, shouldRenderMermaid } from "../utils/mermaidUtils";
 import { nanoid } from "nanoid";
 import { CustomMutationObserver, DEBUGGING, debug, log} from "../utils/debugHelper";
-import { errorHTML, extractCodeBlocks } from "../utils/AIUtils";
+import { errorHTML, extractCodeBlocks, generateAIText } from "../utils/AIUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { SelectCard } from "../shared/Dialogs/SelectCard";
 import { Packages } from "../types/types";
@@ -5696,79 +5696,37 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         persistenceAdapter: ttdPersistenceAdapter,
         onTextSubmit: async (props: any) => {
           const { messages = [], onChunk, onStreamCreated, signal } = props ?? {};
-          const {
-            openAIAPIToken,
-            openAIDefaultTextModel,
-            openAIDefaultTextModelMaxTokens,
-            openAIURL,
-          } = this.plugin.settings;
+          const apiKey = this.plugin.settings.aiAPIKey || this.plugin.settings.openAIAPIToken;
 
-          if (!openAIAPIToken) {
+          if (!apiKey) {
             return {
-              error: new Error("OpenAI API Token is not set. Please set it in plugin settings."),
+              error: new Error("AI API key is not set. Please set it in plugin settings."),
             };
           }
 
-          const requestMessages = [
-            { role: "system", content: systemPrompt },
-            ...messages,
-            { role: "user", content: instruction },
-          ];
-
-          // Determine which token limit parameter to use based on model
-          // Newer models (gpt-4o, gpt-5, o1, o3) use max_completion_tokens
-          // Older models use max_tokens
-          const useMaxCompletionTokens = openAIDefaultTextModel && 
-            (openAIDefaultTextModel.includes("gpt-4o") || 
-             openAIDefaultTextModel.includes("gpt-5") || 
-             openAIDefaultTextModel.includes("o1") || 
-             openAIDefaultTextModel.includes("o3"));
-          
-          const tokenLimitParam = openAIDefaultTextModelMaxTokens > 0 
-            ? (useMaxCompletionTokens 
-                ? { max_completion_tokens: openAIDefaultTextModelMaxTokens }
-                : { max_tokens: openAIDefaultTextModelMaxTokens })
-            : {};
-
           try {
-            const resp = await fetch(openAIURL, {
-              method: "post",
-              body: JSON.stringify({
-                model: openAIDefaultTextModel,
-                ...tokenLimitParam,
-                messages: requestMessages,
-              }),
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${openAIAPIToken}`,
-              },
+            onStreamCreated?.();
+
+            const { response, json, content, rateLimit, rateLimitRemaining } = await generateAIText({
+              systemPrompt,
+              messages,
+              instruction,
+            }, {
+              plugin: this.plugin,
               signal,
             });
 
-            onStreamCreated?.();
-
-            if (!resp) {
-              return { error: new Error("Request failed") };
-            }
-
-            const rateLimitHeader = resp.headers.get("x-ratelimit-limit");
-            const rateLimitRemainingHeader = resp.headers.get("x-ratelimit-remaining");
-            const rateLimit = rateLimitHeader && !Number.isNaN(Number(rateLimitHeader)) ? Number(rateLimitHeader) : null;
-            const rateLimitRemaining = rateLimitRemainingHeader && !Number.isNaN(Number(rateLimitRemainingHeader)) ? Number(rateLimitRemainingHeader) : null;
-
-            const json = await resp.json();
             (process.env.NODE_ENV === "development") && DEBUGGING && debug(this.ttdDialog, `ExcalidrawView.ttdDialog > onTextSubmit, openAI response`, json);
 
-            if (!resp.ok || json?.error) {
+            if (!response || response.status < 200 || response.status >= 300 || json?.error) {
               log(json);
               return {
-                error: new Error(json?.error?.message ?? `Request failed with status ${resp.status}`),
+                error: new Error(json?.error?.message ?? `Request failed with status ${response?.status ?? 0}`),
                 rateLimit,
                 rateLimitRemaining,
               };
             }
 
-            const content = json?.choices?.[0]?.message?.content;
             if (!content) {
               log(json);
               return {
@@ -5778,7 +5736,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               };
             }
 
-            let generatedResponse = extractCodeBlocks(content)[0]?.data ?? content.trim();
+            let generatedResponse = extractCodeBlocks(content)
+              .find(block => (block.type ?? "").toLowerCase() === "mermaid")?.data
+              ?? extractCodeBlocks(content)[0]?.data
+              ?? content.trim();
 
             if (!generatedResponse) {
               log(json);
@@ -5833,35 +5794,24 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   
             const response = await diagramToHTML ({
               image:dataURL,
-              apiKey: this.plugin.settings.openAIAPIToken,
               text: textFromFrameChildren,
               theme: appState.theme,
-              openAIURL: this.plugin.settings.openAIURL,
             });
   
             if (!response.ok) {
-              const json = await response.json();
-              const text = json.error?.message || "Unknown error during generation";
+              const text = response.error || response.json?.error?.message || "Unknown error during generation";
               return {
                 html: errorHTML(text),
               };
             }
-  
-            const json = await response.json();
-            if(json.choices[0].message.content == null) {
+
+            if (!response.html) {
               return {
                 html: errorHTML("Nothing generated"),
               };
             }
 
-            const message = json.choices[0].message.content;  
-                
-            const html = message.slice(  
-              message.indexOf("<!DOCTYPE html>"),  
-              message.indexOf("</html>") + "</html>".length,  
-            );
-  
-            return { html };
+            return { html: response.html };
           } catch (err: any) {
             return {
               html: errorHTML("Request failed"),

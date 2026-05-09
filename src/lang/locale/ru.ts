@@ -231,35 +231,58 @@ export default {
   AI_DESC: `В настройках "ИИ" вы можете настроить параметры использования GPT API OpenAI. ` +
     `Пока API OpenAI находится в бета-версии, его использование строго ограничено - поэтому мы требуем, чтобы вы использовали свой собственный ключ API. ` +
     `Вы можете создать аккаунт OpenAI, добавить небольшой кредит (минимум 5 долларов) и сгенерировать свой собственный ключ API. ` +
-    `После установки API-ключа вы сможете использовать инструменты искусственного интеллекта в Excalidraw.`,
-  AI_OPENAI_TOKEN_NAME: "Ключ API OpenAI",
-  AI_OPENAI_TOKEN_DESC: "Вы можете получить свой ключ API OpenAI из вашего <a href='https://platform.openai.com/api-keys'>OpenAI аккаунта</a>.",
-  AI_OPENAI_TOKEN_PLACEHOLDER: "Введите свой ключ API OpenAI здесь",
-  AI_OPENAI_DEFAULT_MODEL_NAME: "Модель ИИ по умолчанию",
-  AI_OPENAI_DEFAULT_MODEL_DESC:
-    "Модель ИИ по умолчанию, используемая при генерации текста. Это поле свободного текста, поэтому вы можете ввести любое действительное имя модели OpenAI. " +
-    "Узнайте больше о доступных моделях на <a href='https://platform.openai.com/docs/models'>OpenAI сайте</a>.",
-  AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "Введите здесь модель искусственного интеллекта по умолчанию, например: gpt-3.5-turbo-1106.",
-  AI_OPENAI_DEFAULT_MAX_TOKENS_NAME: "Максимальное количество токенов",
-  AI_OPENAI_DEFAULT_MAX_TOKENS_DESC:
-    "Максимальное количество токенов для генерации в ответе API. Установите значение 0, чтобы пропустить поле max_tokens (полезно для моделей, которые не поддерживают этот параметр, таких как GPT-5).",
-  AI_OPENAI_DEFAULT_IMAGE_MODEL_NAME: "Модель ИИ для генерации изображений по умолчанию",
-  AI_OPENAI_DEFAULT_IMAGE_MODEL_DESC:
-    "Модель ИИ по умолчанию, используемая при генерации изображений. Редактирование и изменение изображений поддерживается OpenAI только в dall-e-2, " +
-    "поэтому dall-e-2 будет автоматически использоваться в таких случаях независимо от этой настройки.<br>" +
-    "Это поле свободного текста, поэтому вы можете ввести любое действительное имя модели OpenAI. " +
-    "Узнайте больше о доступных моделях на <a href='https://platform.openai.com/docs/models'>OpenAI сайте</a>.",
-  AI_OPENAI_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "Введите здесь модель ИИ Image Generation по умолчанию, например: dall-e-3.",
-  AI_OPENAI_DEFAULT_VISION_MODEL_NAME: "Модель видения ИИ по умолчанию",
-  AI_OPENAI_DEFAULT_VISION_MODEL_DESC:
-    "Модель зрения ИИ по умолчанию, используемая при генерации текста из изображений. Это поле свободного текста, поэтому вы можете ввести любое действительное имя модели OpenAI. " +
-    "Узнайте больше о доступных моделях на <a href='https://platform.openai.com/docs/models'>OpenAI сайте</a>.",
-  AI_OPENAI_DEFAULT_API_URL_NAME: "URL-адрес API OpenAI",
-  AI_OPENAI_DEFAULT_API_URL_DESC:
-    "URL-адрес OpenAI API по умолчанию. Это поле свободного текста, поэтому вы можете ввести любой действительный URL, совместимый с OpenAI API. " +
-    "Excalidraw будет использовать этот URL при отправке API-запросов в OpenAI. Я не делаю никакой обработки ошибок в этом поле, поэтому убедитесь, что вы вводите правильный URL и изменяйте его только в том случае, если вы знаете, что делаете. ",
-  AI_OPENAI_DEFAULT_IMAGE_API_URL_NAME: "URL-адрес API генерации изображений OpenAI",
-  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "Введите здесь модель зрения ИИ по умолчанию. Например: gpt-4o",
+    `После установки API-ключа вы сможете использовать инструменты искусственного интеллекта в Excalidraw. ` +
+    `Эти параметры используются ExcalidrawAutomate, Mermaid chat и diagram-to-code. В большинстве случаев достаточно указать провайдера, API-ключ и модели по умолчанию. Переопределения конечных точек оставляйте пустыми, если ваш провайдер не требует собственных URL. Старые настройки ИИ, привязанные только к OpenAI, будут автоматически перенесены сюда при первом запуске.`,
+  AI_ENABLED_NAME: "Включить функции ИИ",
+  AI_ENABLED_DESC: "Чтобы изменения вступили в силу, необходимо заново открыть Excalidraw.",
+  AI_PROVIDER_NAME: "Провайдер ИИ",
+  AI_PROVIDER_DESC:
+    "Выберите провайдера, используемого общим слоем ИИ. Пункт OpenAI-compatible также подходит для локальных конечных точек, таких как LM Studio, vLLM или OpenWebUI.",
+  AI_PROVIDER_OPTION_OPENAI: "OpenAI",
+  AI_PROVIDER_OPTION_ANTHROPIC: "Anthropic / Claude",
+  AI_PROVIDER_OPTION_GOOGLE: "Google / Gemini",
+  AI_PROVIDER_OPTION_XAI: "xAI / Grok",
+  AI_PROVIDER_OPTION_OPENAI_COMPATIBLE: "Совместимый с OpenAI / локальный",
+  AI_PROVIDER_API_KEY_NAME: "API-ключ ИИ",
+  AI_PROVIDER_API_KEY_DESC:
+    "Основной API-ключ, используемый общим слоем ИИ. Значение скрыто, пока поле не находится в фокусе.",
+  AI_PROVIDER_API_KEY_PLACEHOLDER: "API-ключ провайдера",
+  AI_PROVIDER_BASE_URL_NAME: "Базовый URL ИИ",
+  AI_PROVIDER_BASE_URL_DESC:
+    "Необязательный базовый URL провайдера. Используйте его для локальных OpenAI-совместимых серверов или собственных шлюзов. Можно указать как базовый URL, например https://api.openai.com/v1, так и полный endpoint чата, например https://api.openai.com/v1/chat/completions; Excalidraw автоматически нормализует известные OpenAI-подобные endpoints.",
+  AI_PROVIDER_BASE_URL_PLACEHOLDER: "например: https://api.openai.com/v1",
+  AI_PROVIDER_TEXT_ENDPOINT_NAME: "Переопределение endpoint текста ИИ",
+  AI_PROVIDER_TEXT_ENDPOINT_DESC:
+    "Необязательное полное переопределение endpoint для текстовых и vision-запросов. Оставьте пустым, чтобы он вычислялся из базового URL и провайдера. Большинству пользователей это поле не нужно.",
+  AI_PROVIDER_TEXT_ENDPOINT_PLACEHOLDER: "Необязательный полный endpoint текста",
+  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_NAME: "Переопределение endpoint генерации изображений ИИ",
+  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_DESC:
+    "Необязательное полное переопределение endpoint для запросов генерации изображений. Оставьте пустым, если только ваш провайдер не использует нестандартный путь.",
+  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_PLACEHOLDER: "Необязательный полный endpoint генерации изображений",
+  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_NAME: "Переопределение endpoint редактирования изображений ИИ",
+  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_DESC:
+    "Необязательное полное переопределение endpoint для запросов редактирования изображений. Оставьте пустым, если только ваш провайдер не использует нестандартный путь.",
+  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_PLACEHOLDER: "Необязательный полный endpoint редактирования изображений",
+  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_NAME: "Переопределение endpoint вариаций изображений ИИ",
+  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_DESC:
+    "Необязательное полное переопределение endpoint для запросов вариаций изображений. Оставьте пустым, если только ваш провайдер не использует нестандартный путь.",
+  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_PLACEHOLDER: "Необязательный полный endpoint вариаций изображений",
+  AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME: "Модель текста ИИ по умолчанию",
+  AI_PROVIDER_DEFAULT_TEXT_MODEL_DESC:
+    "Модель по умолчанию для текстовых запросов, таких как Mermaid chat.",
+  AI_PROVIDER_DEFAULT_TEXT_MODEL_PLACEHOLDER: "например: gpt-5-mini, claude-sonnet, gemini-2.5-pro",
+  AI_PROVIDER_DEFAULT_VISION_MODEL_NAME: "Модель vision ИИ по умолчанию",
+  AI_PROVIDER_DEFAULT_VISION_MODEL_DESC:
+    "Модель по умолчанию для задач понимания изображений, таких как diagram-to-code или запросы с изображением и текстом.",
+  AI_PROVIDER_DEFAULT_VISION_MODEL_PLACEHOLDER: "например: gpt-5-mini, claude-sonnet, gemini-2.5-flash",
+  AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME: "Модель изображений ИИ по умолчанию",
+  AI_PROVIDER_DEFAULT_IMAGE_MODEL_DESC:
+    "Модель по умолчанию для генерации и редактирования изображений. Сейчас это в первую очередь актуально для OpenAI или OpenAI-совместимых image endpoints.",
+  AI_PROVIDER_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "например: gpt-image-1",
+  AI_PROVIDER_DEFAULT_MAX_TOKENS_NAME: "Максимум токенов ИИ по умолчанию",
+  AI_PROVIDER_DEFAULT_MAX_TOKENS_DESC:
+    "Общий лимит токенов для текстовых ответов. Применяется к provider-aware текстовым и vision-запросам. Используйте 0, чтобы полностью убрать поле лимита токенов.",
+  AI_PROVIDER_DEFAULT_MAX_TOKENS_PLACEHOLDER: "например: 4096",
   SAVING_HEAD: "Сохранение",
   SAVING_DESC: "В разделе 'Сохранение' раздела Настройки Excalidraw вы можете настроить способ сохранения ваших чертежей. Сюда входят опции сжатия Excalidraw JSON в Markdown, установки интервалов автосохранения для настольных и мобильных компьютеров, определения форматов имен файлов, а также выбора расширения файла .excalidraw.md или .md. ",
   COMPRESS_NAME: "Сжатие Excalidraw JSON в формате Markdown",

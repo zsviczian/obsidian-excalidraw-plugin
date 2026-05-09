@@ -418,7 +418,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "addImage",
     code: "async addImage(opts: {topX: number, topY: number, imageFile: TFile|string, scale?: boolean, anchor?: boolean, colorMap?: ColorMap}): Promise<string>;",
-    desc: "imageFile may be a TFile or a string that contains a hyperlink.\n" +
+    desc: "imageFile may be a TFile or a string containing an http(s)/ftp/file hyperlink, a vault path, or a data URL such as 'data:image/png;base64,...'.\n" +
       "imageFile may also be an obsidian filepath including a reference eg.: 'path/my.pdf#page=3'\n" +
       "Set scale to false if you want to embed the image at 100% of its original size. Default is true which will insert a scaled image.\n" +
       "anchor will only be evaluated if scale is false. anchor true will add |100% to the end of the filename, resulting in an image that will always pop back to 100% when the source file is updated or when the Excalidraw file is reopened.\n" +
@@ -1032,6 +1032,26 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "postAI",
+    code: "async postAI(request: AIRequest): Promise<RequestUrlResponse>",
+    desc:
+      "This asynchronous function should be awaited. It posts the supplied request to the currently configured AI provider and returns a normalized OpenAI-compatible response payload for backwards compatibility.<br>" +
+      "<b>AIRequest</b> supports these fields:<br>" +
+      "<code>{ provider?, image?, text?, instruction?, systemPrompt?, messages?, temperature?, maxTokens?, imageGenerationProperties? }</code><br>" +
+      "<b>provider</b>: optional override for the configured provider. Supported values are openai, anthropic, google, xai, and openai-compatible.<br>" +
+      "<b>image</b>: either a data URL string or <code>{url:string}</code>. Use this with vision requests or image edits.<br>" +
+      "<b>text</b>: the main user prompt.<br>" +
+      "<b>instruction</b>: optional extra user instruction appended after the main prompt.<br>" +
+      "<b>systemPrompt</b>: optional system message.<br>" +
+      "<b>messages</b>: optional chat history in the form <code>{role:" + '"system"|"user"|"assistant"' + ", content:string | [{type:" + '"text"' + ", text:string} | {type:" + '"image"' + ", image:string | {url:string}}]}</code>.<br>" +
+      "<b>temperature</b> and <b>maxTokens</b>: optional generation controls.<br>" +
+      "<b>imageGenerationProperties</b>: <code>{ size?, quality?, n?, mask? }</code>. If present, Excalidraw uses the image generation/edit pipeline. <code>mask</code> accepts the same format as <code>image</code>.<br>" +
+      "<b>RequestUrlResponse</b> returns:<br>" +
+      "<code>{ status:number, headers:Record<string,string>, text:string, json:any, arrayBuffer:ArrayBuffer }</code><br>" +
+      "For text models, <code>json</code> is normalized to an OpenAI-style chat completion object, so existing scripts can continue reading <code>json.choices[0].message.content</code>. For image models, <code>json</code> preserves the image endpoint response such as <code>json.data[0].url</code>.",
+    after: "",
+  },
+  {
     field: "extractCodeBlocks",
     code: "extractCodeBlocks(markdown: string): { data: string, type: string }[]",
     desc: "Grabs the codeblock content from the supplied markdown string. Returns an array of dictionaries with the codeblock content and type",
@@ -1041,15 +1061,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     field: "postOpenAI",
     code: "async postOpenAI(request: AIRequest): Promise<RequestUrlResponse>",
     desc:
-      "This asynchronous function should be awaited. It posts the supplied request to the OpenAI API and returns the response.<br>" +
-      "The response is a dictionary with the following keys:<br><code>{image, text, instruction, systemPrompt, responseType}</code><br>"+
-      "<b>image</b> should be a dataURL - use ea.createPNGBase64()<br>"+
-      "<b>systemPrompt</b>: if <code>undefined</code> the message to OpenAI will not include a system prompt<br>"+
-      "<b>text</b> is the actual user prompt, a request must have either an image or a text<br>"+
-      "<b>instruction</b> is a user prompt sent as a separate element in the message - I use it to reinforce the type of response I am seeing (e.g. mermaid in a codeblock)<br>"+
-      `<b>imageGenerationProperties</b> if provided then the dall-e model will be used. <code> imageGenerationProperties?: {size?: string, quality?: "standard" | "hd"; n?: number; mask?: string; }</code><br>` +
-      "Different openAI models accept different parameters fr size, quality, n and mask. Consult the API documenation for more information.<br>" +
-      `RequestUrlResponse is defined in the ${hyperlink("https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts","Obsidian API")}`,
+      "Backwards-compatible alias for <code>postAI()</code>. Existing scripts can keep calling this function without changes. The request object and response object are the same as documented for <code>postAI()</code>, but the function name is preserved for compatibility with older ExcalidrawAutomate scripts.",
     after: "",
   },
   {

@@ -12,9 +12,59 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
   - A new setting under plugin settings in **Image caching and rendering optimization** lets you control cache retention in days, so you can balance disk usage against how long these cached images are kept available.
   - The cache is local to each device. It is not synced through Obsidian Sync or your vault, so each device builds and maintains its own cache independently.
 - Placeholder image for empty drawings.
+- AI support is now provider-aware across the plugin. You can choose between OpenAI, Anthropic/Claude, Google/Gemini, xAI/Grok, or an OpenAI-compatible/local endpoint.
+  - The shared AI configuration is now used by ExcalidrawAutomate, Mermaid chat, diagram-to-code, and related AI features.
+  - Older OpenAI-specific AI settings are migrated automatically into the new shared AI settings on first run.
 
 ## Fixed
 - Error when saving pasted images from Excalidraw.com
+- Fixed Mermaid chat / text-to-diagram and diagram-to-code to use the shared AI layer and honor the configured provider, model, API key, and endpoint settings.
+- Fixed the ExcaliAI script to work with the new shared AI settings, including OpenAI image responses that return \`b64_json\` instead of a hosted URL.
+
+## New in ExcalidrawAutomate
+- Added new AI helper functions for scripts while retaining backward compatibility for existing \`postOpenAI()\` integrations.
+- Added \`extractCodeBlocks()\` to simplify parsing model responses that return fenced code blocks.
+- Updated \`addImage()\` to accept \`data:image/...\` data URLs directly, in addition to files, hyperlinks, vault paths, and PDF++ references.
+
+\`\`\`ts
+/**
+ * Posts an AI request to the currently configured provider and returns the response.
+ * @param {AIRequest} request - The AI request configuration.
+ * @returns {Promise<RequestUrlResponse>} Promise resolving to the provider-normalized API response.
+ */
+public async postAI(request: AIRequest): Promise<RequestUrlResponse>;
+
+/**
+ * Posts an AI request to the OpenAI API and returns the response.
+ * @param {AIRequest} request - The AI request configuration.
+ * @returns {Promise<RequestUrlResponse>} Promise resolving to the API response.
+ */
+public async postOpenAI(request: AIRequest): Promise<RequestUrlResponse>;
+
+/**
+ * Extracts code blocks from markdown text.
+ * @param {string} markdown - The markdown string to parse.
+ * @returns {Array<{ data: string, type: string }>} Array of objects containing code block contents and types.
+ */
+public extractCodeBlocks(markdown: string): { data: string, type: string }[];
+
+/**
+ * Adds an image element to the ExcalidrawAutomate instance.
+ * @param {number | AddImageOptions} topXOrOpts - The x-coordinate of the top-left corner or an options object.
+ * @param {number} topY - The y-coordinate of the top-left corner.
+ * @param {TFile | string} imageFile - The image file, hyperlink, vault path, PDF++ reference, or data URL.
+ * @param {boolean} [scale=true] - Whether to scale the image to MAX_IMAGE_SIZE.
+ * @param {boolean} [anchor=true] - Whether to anchor the image at 100% size.
+ * @returns {Promise<string>} Promise resolving to the ID of the added image element.
+ */
+async addImage(
+  topXOrOpts: number | AddImageOptions,
+  topY: number,
+  imageFile: TFile | string,
+  scale: boolean = true,
+  anchor: boolean = true,
+): Promise<string>;
+\`\`\`
 `,
 "2.22.3":`
 

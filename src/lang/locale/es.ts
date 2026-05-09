@@ -294,38 +294,58 @@ export default {
   AI_DESC: `En la configuración de "IA", puedes configurar opciones para usar la API GPT de OpenAI. ` +
     `Aunque la API de OpenAI está en fase beta, su uso es estrictamente limitado; por lo tanto, requerimos que uses tu propia API KEY (clave de API). ` +
     `Puedes crear una cuenta de OpenAI, agregar un pequeño crédito (mínimo 5 USD) y generar tu propia API KEY (clave de API) ` +
-    `Una vez que la API KEY (clave de API) esté configurada, podrás usar las herramientas de IA en Excalidraw.`,
+    `Una vez que la API KEY (clave de API) esté configurada, podrás usar las herramientas de IA en Excalidraw. ` +
+    `Estos ajustes se usan en ExcalidrawAutomate, Mermaid chat y diagram-to-code. En la mayoría de los casos solo necesitas configurar el proveedor, la clave API y los modelos predeterminados. Deja vacías las anulaciones de endpoints salvo que tu proveedor requiera URL personalizadas. Las configuraciones antiguas de IA específicas de OpenAI se migrarán aquí automáticamente en el primer inicio.`,
   AI_ENABLED_NAME: "Habilitar funcionalidades de IA",
   AI_ENABLED_DESC: "Necesitas reabrir Excalidraw para que los cambios surtan efecto.",
-  AI_OPENAI_TOKEN_NAME: "OpenAI API key (Clave de API de OpenAI)",
-  AI_OPENAI_TOKEN_DESC:
-    "Puedes obtener tu API KEY (clave de API) de OpenAI desde tu <a href='https://platform.openai.com/api-keys'></a>.",
-  AI_OPENAI_TOKEN_PLACEHOLDER: "Ingresa tu API Key (clave de API) de OpenAI aquí",
-  AI_OPENAI_DEFAULT_MODEL_NAME: "Modelo de IA predeterminado",
-  AI_OPENAI_DEFAULT_MODEL_DESC:
-    "El modelo de IA predeterminado para usar al generar texto. Este es un campo de texto libre, así que puedes ingresar cualquier nombre de modelo de OpenAI válido. " +
-    "Encuentra más información sobre los modelos disponibles en el sitio web de OpenAI: <a href='https://platform.openai.com/docs/models'></a>.",
-  AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "Ingresa aquí tu modelo de IA predeterminado. Ej.: gpt-3.5-turbo-1106",
-  AI_OPENAI_DEFAULT_MAX_TOKENS_NAME: "Tokens máximos",
-  AI_OPENAI_DEFAULT_MAX_TOKENS_DESC:
-    "Número máximo de tokens a generar en la respuesta de la API. Establece en 0 para omitir el campo max_tokens (útil para modelos que no admiten este parámetro, como GPT-5).",
-  AI_OPENAI_DEFAULT_IMAGE_MODEL_NAME: "Modelo de IA predeterminado para generación de imágenes",
-  AI_OPENAI_DEFAULT_IMAGE_MODEL_DESC:
-    "El modelo de IA predeterminado para usar al generar imágenes. La edición y variaciones de imágenes solo son compatibles con Dall-E 2 en este momento por parte de OpenAI, " +
-    "por esta razón, Dall-E 2 se usará automáticamente en tales casos, independientemente de esta configuración.<br>" +
-    "Este es un campo de texto libre, así que puedes ingresar cualquier nombre de modelo de OpenAI válido. " +
-    "Encuentra más información sobre los modelos disponibles en el sitio web de OpenAI: <a href='https://platform.openai.com/docs/models'></a>.",
-  AI_OPENAI_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "Ingresa aquí tu modelo de IA predeterminado para generación de imágenes. Ej.: Dall-E 3",
-  AI_OPENAI_DEFAULT_VISION_MODEL_NAME: "Modelo de visión de IA predeterminado",
-  AI_OPENAI_DEFAULT_VISION_MODEL_DESC:
-    "El modelo de visión de IA predeterminado para usar al generar texto a partir de imágenes. Este es un campo de texto libre, así que puedes ingresar cualquier nombre de modelo de OpenAI válido. " +
-    "Find out more about the available models on the <a href='https://platform.openai.com/docs/models'>OpenAI website</a>.",
-  AI_OPENAI_DEFAULT_API_URL_NAME: "URL de la API de OpenAI",
-  AI_OPENAI_DEFAULT_API_URL_DESC:
-    "La URL predeterminada de la API de OpenAI. Este es un campo de texto libre, así que puedes ingresar cualquier URL compatible con la API de OpenAI válida. " +
-    "Excalidraw usará esta URL al enviar solicitudes a la API de OpenAI. No realizo manejo de errores en este campo, así que asegúrate de ingresar una URL válida y solo cámbiala si sabes lo que estás haciendo. ",
-  AI_OPENAI_DEFAULT_IMAGE_API_URL_NAME: "URL de la API de Generación de Imágenes de OpenAI",
-  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "Ingresa aquí tu modelo de visión de IA predeterminado. Ej.: gpt-4o",
+  AI_PROVIDER_NAME: "Proveedor de IA",
+  AI_PROVIDER_DESC:
+    "Elige el proveedor usado por la capa compartida de IA. OpenAI-compatible también cubre endpoints locales como LM Studio, vLLM u OpenWebUI.",
+  AI_PROVIDER_OPTION_OPENAI: "OpenAI",
+  AI_PROVIDER_OPTION_ANTHROPIC: "Anthropic / Claude",
+  AI_PROVIDER_OPTION_GOOGLE: "Google / Gemini",
+  AI_PROVIDER_OPTION_XAI: "xAI / Grok",
+  AI_PROVIDER_OPTION_OPENAI_COMPATIBLE: "Compatible con OpenAI / local",
+  AI_PROVIDER_API_KEY_NAME: "Clave API de IA",
+  AI_PROVIDER_API_KEY_DESC:
+    "Clave API principal usada por la capa compartida de IA. El valor permanece oculto salvo cuando el campo tiene el foco.",
+  AI_PROVIDER_API_KEY_PLACEHOLDER: "Clave API del proveedor",
+  AI_PROVIDER_BASE_URL_NAME: "URL base de IA",
+  AI_PROVIDER_BASE_URL_DESC:
+    "URL base opcional del proveedor. Úsala para servidores locales compatibles con OpenAI o pasarelas autoalojadas. Puedes introducir una URL base como https://api.openai.com/v1 o un endpoint completo de chat como https://api.openai.com/v1/chat/completions; Excalidraw normalizará automáticamente los endpoints conocidos con formato OpenAI.",
+  AI_PROVIDER_BASE_URL_PLACEHOLDER: "p. ej.: https://api.openai.com/v1",
+  AI_PROVIDER_TEXT_ENDPOINT_NAME: "Anulación del endpoint de texto de IA",
+  AI_PROVIDER_TEXT_ENDPOINT_DESC:
+    "Anulación opcional del endpoint completo para solicitudes de texto y visión. Déjalo vacío para derivarlo de la URL base y el proveedor. La mayoría de usuarios no necesita rellenarlo.",
+  AI_PROVIDER_TEXT_ENDPOINT_PLACEHOLDER: "Endpoint completo opcional de texto",
+  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_NAME: "Anulación del endpoint de generación de imágenes de IA",
+  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_DESC:
+    "Anulación opcional del endpoint completo para solicitudes de generación de imágenes. Déjalo vacío salvo que tu proveedor exponga esta función en una ruta no estándar.",
+  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_PLACEHOLDER: "Endpoint completo opcional de generación de imágenes",
+  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_NAME: "Anulación del endpoint de edición de imágenes de IA",
+  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_DESC:
+    "Anulación opcional del endpoint completo para solicitudes de edición de imágenes. Déjalo vacío salvo que tu proveedor exponga esta función en una ruta no estándar.",
+  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_PLACEHOLDER: "Endpoint completo opcional de edición de imágenes",
+  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_NAME: "Anulación del endpoint de variaciones de imágenes de IA",
+  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_DESC:
+    "Anulación opcional del endpoint completo para solicitudes de variaciones de imágenes. Déjalo vacío salvo que tu proveedor exponga esta función en una ruta no estándar.",
+  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_PLACEHOLDER: "Endpoint completo opcional de variaciones de imágenes",
+  AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME: "Modelo de texto predeterminado de IA",
+  AI_PROVIDER_DEFAULT_TEXT_MODEL_DESC:
+    "Modelo predeterminado usado para solicitudes solo de texto, como Mermaid chat.",
+  AI_PROVIDER_DEFAULT_TEXT_MODEL_PLACEHOLDER: "p. ej.: gpt-5-mini, claude-sonnet, gemini-2.5-pro",
+  AI_PROVIDER_DEFAULT_VISION_MODEL_NAME: "Modelo de visión predeterminado de IA",
+  AI_PROVIDER_DEFAULT_VISION_MODEL_DESC:
+    "Modelo predeterminado usado para tareas de comprensión de imágenes, como diagram-to-code o solicitudes con imagen y texto.",
+  AI_PROVIDER_DEFAULT_VISION_MODEL_PLACEHOLDER: "p. ej.: gpt-5-mini, claude-sonnet, gemini-2.5-flash",
+  AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME: "Modelo de imagen predeterminado de IA",
+  AI_PROVIDER_DEFAULT_IMAGE_MODEL_DESC:
+    "Modelo predeterminado usado para generación y edición de imágenes. Hoy esto es especialmente relevante para OpenAI o endpoints de imagen compatibles con OpenAI.",
+  AI_PROVIDER_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "p. ej.: gpt-image-1",
+  AI_PROVIDER_DEFAULT_MAX_TOKENS_NAME: "Máximo de tokens predeterminado de IA",
+  AI_PROVIDER_DEFAULT_MAX_TOKENS_DESC:
+    "Límite compartido de tokens para respuestas de texto. Se aplica a solicitudes de texto y visión conscientes del proveedor. Usa 0 para omitir por completo el campo del límite de tokens.",
+  AI_PROVIDER_DEFAULT_MAX_TOKENS_PLACEHOLDER: "p. ej.: 4096",
   SAVING_HEAD: "Guardar",
   SAVING_DESC: "En la sección 'Guardar' de la Configuración de Excalidraw, puedes configurar cómo se guardan tus bosquejos. Esto incluye opciones para comprimir el JSON de Excalidraw en Markdown, establecer intervalos de autoguardado para escritorio y móvil, definir formatos de nombre de archivo y elegir si usar la extensión de archivo .excalidraw.md o .md. ",
   COMPRESS_NAME: "Comprimir JSON de Excalidraw en Markdown",

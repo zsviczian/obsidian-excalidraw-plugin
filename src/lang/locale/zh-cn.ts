@@ -308,37 +308,58 @@ export default {
   AI_DESC: `OpenAI GPT API 的设置。` +
     `目前 OpenAI API 还处于测试阶段，您需要使用自己的 API key。` +
     `创建 OpenAI 账户，充值至少 5 美元，生成 API key，` +
-    `然后就可以在 Excalidraw 中配置并使用 AI。`,
+    `然后就可以在 Excalidraw 中配置并使用 AI。` +
+    `这些设置会被 ExcalidrawAutomate、Mermaid chat 和 diagram-to-code 共用。大多数情况下，您只需要设置提供商、API key 和默认模型。除非您的提供商要求自定义 URL，否则请将各 endpoint 覆盖项留空。旧的 OpenAI 专用 AI 设置会在首次运行时自动迁移到这里。`,
   AI_ENABLED_NAME: "启用 AI 功能",
   AI_ENABLED_DESC: "您需要重新打开 Excalidraw 才能使更改生效。",
-  AI_OPENAI_TOKEN_NAME: "OpenAI API key",
-  AI_OPENAI_TOKEN_DESC:
-    "您可以访问您的 <a href='https://platform.openai.com/api-keys'>OpenAI 账户</a> 来获取自己的 OpenAI API key。",
-  AI_OPENAI_TOKEN_PLACEHOLDER: "OpenAI API key",
-  AI_OPENAI_DEFAULT_MODEL_NAME: "默认的文本 AI 模型",
-  AI_OPENAI_DEFAULT_MODEL_DESC:
-    "使用哪个 AI 模型来生成文本。请填写有效的 OpenAI 模型名称。" +
-    "您可访问 <a href='https://platform.openai.com/docs/models'>OpenAI 网站</a> 了解更多模型信息。",
-  AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER: "gpt-5-mini",
-  AI_OPENAI_DEFAULT_MAX_TOKENS_NAME: "最大 token 数",
-  AI_OPENAI_DEFAULT_MAX_TOKENS_DESC:
-    "API 响应中生成的最大 token 数。设置为 0 以忽略 max_tokens 字段（适用于不支持该参数的模型，如 GPT-5）。",
-  AI_OPENAI_DEFAULT_IMAGE_MODEL_NAME: "默认的图片 AI 模型",
-  AI_OPENAI_DEFAULT_IMAGE_MODEL_DESC:
-    "使用哪个 AI 模型来生成图片。图生图目前只有 dall-e-2 和 gpt-image-1 模型支持 Image editing and variations。" +
-    "请填写有效的 OpenAI 模型名称。" +
-    "您可访问 <a href='https://platform.openai.com/docs/models'>OpenAI 网站</a> 了解更多模型信息。",
-  AI_OPENAI_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "gpt-image-1",
-  AI_OPENAI_DEFAULT_VISION_MODEL_NAME: "默认的 AI 视觉模型",
-  AI_OPENAI_DEFAULT_VISION_MODEL_DESC:
-    "根据文本生成图片时，使用哪个 AI 视觉模型。请填写有效的 OpenAI 模型名称。" +
-    "您可访问 <a href='https://platform.openai.com/docs/models'>OpenAI 网站</a> 了解更多模型信息。",
-  AI_OPENAI_DEFAULT_API_URL_NAME: "OpenAI API URL",
-  AI_OPENAI_DEFAULT_API_URL_DESC:
-    "默认的 OpenAI API URL。请填写有效的 OpenAI API URL。" +
-    "Excalidraw 会通过该 URL 发送 API 请求给 OpenAI。我没有对该项做任何错误处理，请谨慎修改。",
-  AI_OPENAI_DEFAULT_IMAGE_API_URL_NAME: "OpenAI 图片生成 API URL",
-  AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER: "输入默认 AI 模型名称，如 gpt-5-mini",
+  AI_PROVIDER_NAME: "AI 提供商",
+  AI_PROVIDER_DESC:
+    "选择共享 AI 层使用的提供商。OpenAI-compatible 也包括 LM Studio、vLLM 或 OpenWebUI 等本地 endpoint。",
+  AI_PROVIDER_OPTION_OPENAI: "OpenAI",
+  AI_PROVIDER_OPTION_ANTHROPIC: "Anthropic / Claude",
+  AI_PROVIDER_OPTION_GOOGLE: "Google / Gemini",
+  AI_PROVIDER_OPTION_XAI: "xAI / Grok",
+  AI_PROVIDER_OPTION_OPENAI_COMPATIBLE: "OpenAI 兼容 / 本地",
+  AI_PROVIDER_API_KEY_NAME: "AI API key",
+  AI_PROVIDER_API_KEY_DESC:
+    "共享 AI 层使用的主 API key。除非输入框获得焦点，否则该值会被隐藏。",
+  AI_PROVIDER_API_KEY_PLACEHOLDER: "提供商 API key",
+  AI_PROVIDER_BASE_URL_NAME: "AI 基础 URL",
+  AI_PROVIDER_BASE_URL_DESC:
+    "可选的提供商基础 URL。可用于本地 OpenAI 兼容服务器或自托管网关。您既可以填写类似 https://api.openai.com/v1 的基础 URL，也可以填写类似 https://api.openai.com/v1/chat/completions 的完整聊天 endpoint；Excalidraw 会自动规范化已知的 OpenAI 风格 endpoint。",
+  AI_PROVIDER_BASE_URL_PLACEHOLDER: "例如：https://api.openai.com/v1",
+  AI_PROVIDER_TEXT_ENDPOINT_NAME: "AI 文本 endpoint 覆盖",
+  AI_PROVIDER_TEXT_ENDPOINT_DESC:
+    "可选的完整 endpoint 覆盖，用于文本和视觉请求。留空时会根据基础 URL 和提供商自动推导。大多数用户无需填写。",
+  AI_PROVIDER_TEXT_ENDPOINT_PLACEHOLDER: "可选的完整文本 endpoint",
+  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_NAME: "AI 图像生成 endpoint 覆盖",
+  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_DESC:
+    "可选的完整 endpoint 覆盖，用于图像生成请求。除非您的提供商使用非标准路径，否则请留空。",
+  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_PLACEHOLDER: "可选的完整图像生成 endpoint",
+  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_NAME: "AI 图像编辑 endpoint 覆盖",
+  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_DESC:
+    "可选的完整 endpoint 覆盖，用于图像编辑请求。除非您的提供商使用非标准路径，否则请留空。",
+  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_PLACEHOLDER: "可选的完整图像编辑 endpoint",
+  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_NAME: "AI 图像变体 endpoint 覆盖",
+  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_DESC:
+    "可选的完整 endpoint 覆盖，用于图像变体请求。除非您的提供商使用非标准路径，否则请留空。",
+  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_PLACEHOLDER: "可选的完整图像变体 endpoint",
+  AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME: "AI 默认文本模型",
+  AI_PROVIDER_DEFAULT_TEXT_MODEL_DESC:
+    "用于 Mermaid chat 等纯文本请求的默认模型。",
+  AI_PROVIDER_DEFAULT_TEXT_MODEL_PLACEHOLDER: "例如：gpt-5-mini、claude-sonnet、gemini-2.5-pro",
+  AI_PROVIDER_DEFAULT_VISION_MODEL_NAME: "AI 默认视觉模型",
+  AI_PROVIDER_DEFAULT_VISION_MODEL_DESC:
+    "用于 diagram-to-code 或图文混合提示等图像理解任务的默认模型。",
+  AI_PROVIDER_DEFAULT_VISION_MODEL_PLACEHOLDER: "例如：gpt-5-mini、claude-sonnet、gemini-2.5-flash",
+  AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME: "AI 默认图像模型",
+  AI_PROVIDER_DEFAULT_IMAGE_MODEL_DESC:
+    "用于图像生成和图像编辑的默认模型。目前这主要适用于 OpenAI 或兼容 OpenAI 的图像 endpoint。",
+  AI_PROVIDER_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "例如：gpt-image-1",
+  AI_PROVIDER_DEFAULT_MAX_TOKENS_NAME: "AI 默认最大 token 数",
+  AI_PROVIDER_DEFAULT_MAX_TOKENS_DESC:
+    "文本响应的共享 token 上限。适用于具备 provider 感知能力的文本和视觉请求。填入 0 可完全省略 token 上限字段。",
+  AI_PROVIDER_DEFAULT_MAX_TOKENS_PLACEHOLDER: "例如：4096",
   SAVING_HEAD: "保存",
   SAVING_DESC: "包括：压缩，自动保存的时间间隔，文件的命名格式和扩展名等。",
   COMPRESS_NAME: "压缩 Excalidraw JSON",

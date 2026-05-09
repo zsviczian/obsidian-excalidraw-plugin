@@ -1,7 +1,7 @@
 import { EXCALIDRAW_PLUGIN, THEME } from "../constants/constants";
 import type { Theme } from "@zsviczian/excalidraw/types/element/src/types";
 import type { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
-import type { OpenAIInput, OpenAIOutput } from "@zsviczian/excalidraw/types/excalidraw/data/ai/types";
+import { extractCodeBlocks, generateAIText } from "./AIUtils";
 
 export type MagicCacheData =
   | {
@@ -33,60 +33,52 @@ Please output JUST THE HTML file containing your best attempt at implementing th
 
 export async function diagramToHTML({
   image,
-  apiKey,
   text,
   theme = THEME.LIGHT,
-  openAIURL = "https://api.openai.com/v1/chat/completions",
 }: {
   image: DataURL;
-  apiKey: string;
   text: string;
   theme?: Theme;
-  openAIURL?: string;
 }) {
-  const body: OpenAIInput.ChatCompletionCreateParamsBase = {
-    model: EXCALIDRAW_PLUGIN.settings.openAIDefaultVisionModel,
-    // 4096 are max output tokens allowed for `gpt-4-vision-preview` currently
-    max_tokens: 4096,
-    temperature: 0.1,
-    messages: [
-      {
-        role: "system",
-        content: SYSTEM_PROMPT,
-      },
-      {
-        role: "user",
-        content: [
-          {
-            type: "image_url",
-            image_url: {
-              url: image,
-              detail: "high",
-            },
-          },
-          {
-            type: "text",
-            text: `Above is the reference wireframe. Please make a new website based on these and return just the HTML file. Also, please make it for the ${theme} theme. What follows are the wireframe's text annotations (if any)...`,
-          },
-          {
-            type: "text",
-            text,
-          },
-        ],
-      },
-    ],
-  };
-
-  let result:
-    | ({ ok: true } & OpenAIOutput.ChatCompletion)
-    | ({ ok: false } & OpenAIOutput.APIError);
-
-  return await fetch(openAIURL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
+  const result = await generateAIText({
+    image: { url: image },
+    text,
+    systemPrompt: SYSTEM_PROMPT,
+    instruction: `Above is the reference wireframe. Please make a new website based on these and return just the HTML file. Also, please make it for the ${theme} theme. What follows are the wireframe's text annotations (if any)...`,
+    maxTokens: 4096,
+  }, {
+    plugin: EXCALIDRAW_PLUGIN,
   });
+
+  if (!result.response || result.response.status < 200 || result.response.status >= 300 || result.json?.error) {
+    return {
+      ok: false,
+      error: result.json?.error?.message ?? `Request failed with status ${result.response?.status ?? 0}`,
+      json: result.json,
+    };
+  }
+
+  const htmlBlock = extractCodeBlocks(result.content).find(block => (block.type ?? "").toLowerCase() === "html");
+  const contentText = result.content?.trim() ?? "";
+  const doctypeIndex = contentText.indexOf("<!DOCTYPE html>");
+  const htmlOpenIndex = contentText.indexOf("<html");
+  const startIndex = doctypeIndex >= 0 ? doctypeIndex : htmlOpenIndex;
+  const endIndex = contentText.lastIndexOf("</html>");
+  const html = htmlBlock?.data ?? ((startIndex >= 0 && endIndex >= 0)
+    ? contentText.slice(startIndex, endIndex + "</html>".length)
+    : null);
+
+  if (!html) {
+    return {
+      ok: false,
+      error: "Nothing generated",
+      json: result.json,
+    };
+  }
+
+  return {
+    ok: true,
+    html,
+    json: result.json,
+  };
 }

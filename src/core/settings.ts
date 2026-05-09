@@ -214,6 +214,17 @@ export interface ExcalidrawSettings {
   canvasImmersiveEmbed: boolean,
   startupScriptPath: string,
   aiEnabled: boolean,
+  aiProvider: "openai" | "anthropic" | "google" | "xai" | "openai-compatible",
+  aiAPIKey: string,
+  aiBaseURL: string,
+  aiTextEndpoint: string,
+  aiImageGenerationEndpoint: string,
+  aiImageEditsEndpoint: string,
+  aiImageVariationsEndpoint: string,
+  aiDefaultTextModel: string,
+  aiDefaultVisionModel: string,
+  aiDefaultImageGenerationModel: string,
+  aiDefaultMaxTokens: number,
   openAIAPIToken: string,
   openAIDefaultTextModel: string,
   openAIDefaultTextModelMaxTokens: number,
@@ -241,6 +252,19 @@ export interface ExcalidrawSettings {
 }
 
 declare const PLUGIN_VERSION:string;
+
+const configurePasswordTextInput = (text: TextComponent) => {
+  const { inputEl } = text;
+  inputEl.type = "password";
+  inputEl.autocomplete = "off";
+  inputEl.spellcheck = false;
+  inputEl.addEventListener("focus", () => {
+    inputEl.type = "text";
+  });
+  inputEl.addEventListener("blur", () => {
+    inputEl.type = "password";
+  });
+};
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   copyLinkToElemenetAnchorTo100: false,
@@ -436,6 +460,17 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   canvasImmersiveEmbed: true,
   startupScriptPath: "",
   aiEnabled: true,
+  aiProvider: "openai",
+  aiAPIKey: "",
+  aiBaseURL: "",
+  aiTextEndpoint: "",
+  aiImageGenerationEndpoint: "",
+  aiImageEditsEndpoint: "",
+  aiImageVariationsEndpoint: "",
+  aiDefaultTextModel: "",
+  aiDefaultVisionModel: "",
+  aiDefaultImageGenerationModel: "",
+  aiDefaultMaxTokens: 0,
   openAIAPIToken: "",
   openAIDefaultTextModel: "gpt-5-mini",
   openAIDefaultTextModelMaxTokens: 4096,
@@ -1271,95 +1306,165 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     }
 
     new Setting(detailsEl)
-      .setName(t("AI_OPENAI_TOKEN_NAME"))
-      .setDesc(fragWithHTML(t("AI_OPENAI_TOKEN_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("AI_OPENAI_TOKEN_PLACEHOLDER"))
-          .setValue(this.plugin.settings.openAIAPIToken)
+      .setName(t("AI_PROVIDER_NAME"))
+      .setDesc(t("AI_PROVIDER_DESC"))
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("openai", t("AI_PROVIDER_OPTION_OPENAI"))
+          .addOption("anthropic", t("AI_PROVIDER_OPTION_ANTHROPIC"))
+          .addOption("google", t("AI_PROVIDER_OPTION_GOOGLE"))
+          .addOption("xai", t("AI_PROVIDER_OPTION_XAI"))
+          .addOption("openai-compatible", t("AI_PROVIDER_OPTION_OPENAI_COMPATIBLE"))
+          .setValue(this.plugin.settings.aiProvider)
           .onChange(async (value) => {
-            this.plugin.settings.openAIAPIToken = value;
+            this.plugin.settings.aiProvider = value as typeof this.plugin.settings.aiProvider;
             this.applySettingsUpdate();
           }),
       );
 
     new Setting(detailsEl)
-      .setName(t("AI_OPENAI_DEFAULT_MODEL_NAME"))
-      .setDesc(fragWithHTML(t("AI_OPENAI_DEFAULT_MODEL_DESC")))
+      .setName(t("AI_PROVIDER_API_KEY_NAME"))
+      .setDesc(fragWithHTML(t("AI_PROVIDER_API_KEY_DESC")))
+      .addText((text) => {
+        configurePasswordTextInput(text);
+        return text
+          .setPlaceholder(t("AI_PROVIDER_API_KEY_PLACEHOLDER"))
+          .setValue(this.plugin.settings.aiAPIKey)
+          .onChange(async (value) => {
+            this.plugin.settings.aiAPIKey = value;
+            this.applySettingsUpdate();
+          });
+      });
+
+    new Setting(detailsEl)
+      .setName(t("AI_PROVIDER_BASE_URL_NAME"))
+      .setDesc(fragWithHTML(t("AI_PROVIDER_BASE_URL_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder(t("AI_OPENAI_DEFAULT_MODEL_PLACEHOLDER"))
-          .setValue(this.plugin.settings.openAIDefaultTextModel)
+          .setPlaceholder(t("AI_PROVIDER_BASE_URL_PLACEHOLDER"))
+          .setValue(this.plugin.settings.aiBaseURL)
           .onChange(async (value) => {
-            this.plugin.settings.openAIDefaultTextModel = value;
+            this.plugin.settings.aiBaseURL = value;
             this.applySettingsUpdate();
           }),
       );
 
     new Setting(detailsEl)
-      .setName(t("AI_OPENAI_DEFAULT_MAX_TOKENS_NAME"))
-      .setDesc(fragWithHTML(t("AI_OPENAI_DEFAULT_MAX_TOKENS_DESC")))
+      .setName(t("AI_PROVIDER_TEXT_ENDPOINT_NAME"))
+      .setDesc(fragWithHTML(t("AI_PROVIDER_TEXT_ENDPOINT_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("e.g.: 4096")
-          .setValue(this.plugin.settings.openAIDefaultTextModelMaxTokens.toString())
+          .setPlaceholder(t("AI_PROVIDER_TEXT_ENDPOINT_PLACEHOLDER"))
+          .setValue(this.plugin.settings.aiTextEndpoint)
+          .onChange(async (value) => {
+            this.plugin.settings.aiTextEndpoint = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_NAME"))
+      .setDesc(fragWithHTML(t("AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder(t("AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_PLACEHOLDER"))
+          .setValue(this.plugin.settings.aiImageGenerationEndpoint)
+          .onChange(async (value) => {
+            this.plugin.settings.aiImageGenerationEndpoint = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("AI_PROVIDER_IMAGE_EDITS_ENDPOINT_NAME"))
+      .setDesc(fragWithHTML(t("AI_PROVIDER_IMAGE_EDITS_ENDPOINT_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder(t("AI_PROVIDER_IMAGE_EDITS_ENDPOINT_PLACEHOLDER"))
+          .setValue(this.plugin.settings.aiImageEditsEndpoint)
+          .onChange(async (value) => {
+            this.plugin.settings.aiImageEditsEndpoint = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_NAME"))
+      .setDesc(fragWithHTML(t("AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder(t("AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_PLACEHOLDER"))
+          .setValue(this.plugin.settings.aiImageVariationsEndpoint)
+          .onChange(async (value) => {
+            this.plugin.settings.aiImageVariationsEndpoint = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME"))
+      .setDesc(fragWithHTML(t("AI_PROVIDER_DEFAULT_TEXT_MODEL_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder(t("AI_PROVIDER_DEFAULT_TEXT_MODEL_PLACEHOLDER"))
+          .setValue(this.plugin.settings.aiDefaultTextModel)
+          .onChange(async (value) => {
+            this.plugin.settings.aiDefaultTextModel = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("AI_PROVIDER_DEFAULT_VISION_MODEL_NAME"))
+      .setDesc(fragWithHTML(t("AI_PROVIDER_DEFAULT_VISION_MODEL_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder(t("AI_PROVIDER_DEFAULT_VISION_MODEL_PLACEHOLDER"))
+          .setValue(this.plugin.settings.aiDefaultVisionModel)
+          .onChange(async (value) => {
+            this.plugin.settings.aiDefaultVisionModel = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME"))
+      .setDesc(fragWithHTML(t("AI_PROVIDER_DEFAULT_IMAGE_MODEL_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder(t("AI_PROVIDER_DEFAULT_IMAGE_MODEL_PLACEHOLDER"))
+          .setValue(this.plugin.settings.aiDefaultImageGenerationModel)
+          .onChange(async (value) => {
+            this.plugin.settings.aiDefaultImageGenerationModel = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("AI_PROVIDER_DEFAULT_MAX_TOKENS_NAME"))
+      .setDesc(fragWithHTML(t("AI_PROVIDER_DEFAULT_MAX_TOKENS_DESC")))
+      .addText((text) =>
+        text
+          .setPlaceholder(t("AI_PROVIDER_DEFAULT_MAX_TOKENS_PLACEHOLDER"))
+          .setValue(this.plugin.settings.aiDefaultMaxTokens.toString())
           .onChange(async (value) => {
             const intVal = parseInt(value);
             if (isNaN(intVal) && value !== "") {
-              text.setValue(this.plugin.settings.openAIDefaultTextModelMaxTokens.toString());
+              text.setValue(this.plugin.settings.aiDefaultMaxTokens.toString());
               return;
             }
             if (value === "") {
-              this.plugin.settings.openAIDefaultTextModelMaxTokens = 4096;
-              text.setValue("4096");
+              this.plugin.settings.aiDefaultMaxTokens = 0;
+              text.setValue("0");
               this.applySettingsUpdate();
               return;
             }
             if (intVal < 0) {
-              text.setValue(this.plugin.settings.openAIDefaultTextModelMaxTokens.toString());
+              text.setValue(this.plugin.settings.aiDefaultMaxTokens.toString());
               return;
             }
-            this.plugin.settings.openAIDefaultTextModelMaxTokens = intVal;
+            this.plugin.settings.aiDefaultMaxTokens = intVal;
             text.setValue(intVal.toString());
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(detailsEl)
-      .setName(t("AI_OPENAI_DEFAULT_VISION_MODEL_NAME"))
-      .setDesc(fragWithHTML(t("AI_OPENAI_DEFAULT_VISION_MODEL_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("AI_OPENAI_DEFAULT_VISION_MODEL_PLACEHOLDER"))
-          .setValue(this.plugin.settings.openAIDefaultVisionModel)
-          .onChange(async (value) => {
-            this.plugin.settings.openAIDefaultVisionModel = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(detailsEl)
-      .setName(t("AI_OPENAI_DEFAULT_IMAGE_MODEL_NAME"))
-      .setDesc(fragWithHTML(t("AI_OPENAI_DEFAULT_IMAGE_MODEL_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("AI_OPENAI_DEFAULT_IMAGE_MODEL_PLACEHOLDER"))
-          .setValue(this.plugin.settings.openAIDefaultImageGenerationModel)
-          .onChange(async (value) => {
-            this.plugin.settings.openAIDefaultImageGenerationModel = value;
-            this.applySettingsUpdate();
-          }),
-      );
-      
-    new Setting(detailsEl)
-      .setName(t("AI_OPENAI_DEFAULT_API_URL_NAME"))
-      .setDesc(fragWithHTML(t("AI_OPENAI_DEFAULT_API_URL_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder("e.g.: https://api.openai.com/v1/chat/completions")
-          .setValue(this.plugin.settings.openAIURL)
-          .onChange(async (value) => {
-            this.plugin.settings.openAIURL = value;
             this.applySettingsUpdate();
           }),
       );
@@ -1943,7 +2048,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     new ModifierKeySettingsComponent(
       detailsEl,
       this.plugin.settings.modifierKeyConfig,
-      this.applySettingsUpdate,
+      this.applySettingsUpdate.bind(this),
     ).render();
 
     // ------------------------------------------------
