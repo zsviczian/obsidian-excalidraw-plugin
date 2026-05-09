@@ -11,6 +11,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
   - When a scene is opened again on the same device, cached images are shown immediately while validation of nested changes continues in the background. This should noticeably improve loading times for scenes you access regularly.
   - A new setting under plugin settings in **Image caching and rendering optimization** lets you control cache retention in days, so you can balance disk usage against how long these cached images are kept available.
   - The cache is local to each device. It is not synced through Obsidian Sync or your vault, so each device builds and maintains its own cache independently.
+- Placeholder image for empty drawings.
 
 ## Fixed
 - Error when saving pasted images from Excalidraw.com

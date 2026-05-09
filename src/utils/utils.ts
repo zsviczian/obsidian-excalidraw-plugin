@@ -44,6 +44,7 @@ import { FileData } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 import ExcalidrawView from "../view/ExcalidrawView";
+import { emptyDrawingElements } from "src/constants/emptydrawing";
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
@@ -352,6 +353,8 @@ export async function getSVG (
   const baseFiles = scene.files ?? {};
   const files = overrideFiles ? { ...baseFiles, ...overrideFiles } : baseFiles;
 
+  elements = elements.filter((el:ExcalidrawElement)=>el.isDeleted !== true);
+
   try {
     let svg: SVGSVGElement;
     if(exportSettings.isMask) {
@@ -359,8 +362,11 @@ export async function getSVG (
       svg = await cropObject.getCroppedSVG();
       cropObject.destroy();
     } else {
+      if(elements.length === 0) {
+        elements = emptyDrawingElements;
+      }
       svg = await exportToSvg({
-        elements: elements.filter((el:ExcalidrawElement)=>el.isDeleted !== true),
+        elements,
         appState: {
           ...scene.appState,
           exportBackground: exportSettings.withBackground,
@@ -414,15 +420,22 @@ export async function getPNG (
     const baseFiles = scene.files ?? {};
     const files = overrideFiles ? { ...baseFiles, ...overrideFiles } : baseFiles;
 
+    let elements = scene.elements;
+    elements = elements.filter((el:ExcalidrawElement)=>el.isDeleted !== true);
+
     if(exportSettings.isMask) {
-      const cropObject = new CropImage(scene.elements, files);
+      const cropObject = new CropImage(elements, files);
       const blob = await cropObject.getCroppedPNG();
       cropObject.destroy();
       return blob;
     }
 
+    if(elements.length === 0) {
+      elements = emptyDrawingElements;
+    }
+
     return await exportToBlob({
-      elements: scene.elements.filter((el:ExcalidrawElement)=>el.isDeleted !== true),
+      elements,
       appState: {
         ...scene.appState,
         exportBackground: exportSettings.withBackground,
