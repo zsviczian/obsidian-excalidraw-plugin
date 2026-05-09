@@ -82,6 +82,7 @@ export interface ExcalidrawSettings {
   displaySVGInPreview: boolean; //No longer used since 1.9.13
   previewImageType: PreviewImageType; //Introduced with 1.9.13
   renderingConcurrency: number;
+  imageCacheRetentionDays: number;
   allowImageCache: boolean;
   allowImageCacheInScene: boolean;
   displayExportedImageIfAvailable: boolean;
@@ -276,6 +277,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   displaySVGInPreview: false,
   previewImageType: PreviewImageType.SVG,
   renderingConcurrency: 3,
+  imageCacheRetentionDays: 30,
   allowImageCache: true,
   allowImageCacheInScene: true,
   displayExportedImageIfAvailable: false,
@@ -2365,6 +2367,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         this.plugin.settings.renderingConcurrency = value;
         this.applySettingsUpdate();
       }
+    });
+
+    createSliderWithText(detailsEl, {
+      name: t("IMAGE_CACHE_RETENTION_DAYS_NAME"),
+      desc: fragWithHTML(t("IMAGE_CACHE_RETENTION_DAYS_DESC")),
+      min: 1,
+      max: 365,
+      step: 1,
+      value: this.plugin.settings.imageCacheRetentionDays,
+      onChange: (value) => {
+        this.plugin.settings.imageCacheRetentionDays = value;
+        this.applySettingsUpdate();
+      },
+      minWidth: "3em",
     });
 
     new Setting(detailsEl)

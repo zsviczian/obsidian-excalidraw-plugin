@@ -805,7 +805,7 @@ export const getTextElementsMatchingQuery = (
         return m[1] === q.toLowerCase();
       }
       const text = el.customData?.text2Path?.text ?? el.rawText.toLowerCase().replaceAll("\n", " ").trim();
-      return text.match(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1" https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
+      return text.includes(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1" https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
     }));
 }
 
@@ -840,7 +840,7 @@ export const getFrameElementsMatchingQuery = (
        ? el.name.toLowerCase().replaceAll("\n", " ").trim()
        : "";
 
-      return text.match(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1" https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
+      return text.includes(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1" https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
     }));
 }
 
@@ -866,7 +866,7 @@ export const getElementsWithLinkMatchingQuery = (
       const text = el.link.toLowerCase().trim();
       return exactMatch
         ? (text === q.toLowerCase())
-        : text.match(q.toLowerCase());
+        : text.includes(q.toLowerCase());
     }));
 }
 

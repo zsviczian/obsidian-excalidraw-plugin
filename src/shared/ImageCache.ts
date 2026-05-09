@@ -1,5 +1,6 @@
 import { App, Notice, TFile } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
+import { PDFPageViewProps, Size } from "src/types/embeddedFileLoaderTypes";
 import { convertSVGStringToElement } from "../utils/utils";
 import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
 import { hasExcalidrawEmbeddedImagesTreeChanged } from "../utils/fileUtils";
@@ -9,12 +10,21 @@ const DB_NAME = "Excalidraw " + app.appId;
 const CACHE_STORE = "imageCache";
 const BACKUP_STORE = "drawingBAK";
 
-type FileCacheData = { mtime: number; blob?: Blob; svg?: string};
+type FileCacheData = {
+  mtime: number;
+  lastAccessed?: number;
+  blob?: Blob;
+  svg?: string;
+  renderScale?: number;
+  size?: Size;
+  pdfPageViewProps?: PDFPageViewProps;
+};
 type BackupData = string;
 type BackupKey = string;
 
 export type ImageKey = {
   filepath: string;
+  cacheId?: string;
   blockref: string;
   sectionref: string;
   isDark: boolean;
@@ -24,8 +34,13 @@ export type ImageKey = {
   inlineFonts: boolean;
 } & FILENAMEPARTS;
 
+type GetImageFromCacheOptions = {
+  skipDependencyCheck?: boolean;
+  minRenderScale?: number;
+};
+
 const getKey = (key: ImageKey): string =>
-  `${key.filepath}#${key.blockref??""}#${key.sectionref??""}#${key.isDark ? 1 : 0}#${
+  `${key.filepath}#${key.cacheId??""}#${key.blockref??""}#${key.sectionref??""}#${key.isDark ? 1 : 0}#${
     key.hasGroupref}#${key.hasArearef}#${key.hasFrameref}#${key.hasClippedFrameref}#${
     key.hasSectionref}#${key.inlineFonts}#${
     key.previewImageType === PreviewImageType.SVGIMG
@@ -47,6 +62,30 @@ class ImageCache {
   private obsidanURLCache = new Map<string, string>();
   private purgeInvalidCacheTimer: number = null;
   private purgeInvalidBackupTimer: number = null;
+
+  private getCacheRetentionCutoff(): number {
+    const retentionDays = Math.max(1, this.plugin?.settings?.imageCacheRetentionDays ?? 30);
+    return Date.now() - retentionDays * 24 * 60 * 60 * 1000;
+  }
+
+  private touchCacheData(key: string, cacheData: FileCacheData): void {
+    if (!this.db) {
+      return;
+    }
+    const nextLastAccessed = Date.now();
+    // Avoid rewriting IndexedDB on every cache hit while still keeping actively used
+    // entries alive for retention-based purging.
+    if (cacheData.lastAccessed && (nextLastAccessed - cacheData.lastAccessed) < 60 * 1000) {
+      return;
+    }
+
+    const transaction = this.db.transaction(this.cacheStoreName, "readwrite");
+    const store = transaction.objectStore(this.cacheStoreName);
+    store.put({
+      ...cacheData,
+      lastAccessed: nextLastAccessed,
+    }, key);
+  }
 
   public destroy(): void {
     this.isInitializing = true;
@@ -175,11 +214,13 @@ class ImageCache {
         const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>).result;
         if(cursor) {
           const key = cursor.key as string;
-          const isLegacyKey = key.split("#").length-1 < 12; // introduced hasGroupref, etc. in 1.9.28 // introduced hasClippedFrameref in 2.2.10 //introduced inlineFonts 2.2.11
+          const isLegacyKey = key.split("#").length-1 < 13; // introduced hasGroupref, etc. in 1.9.28 // introduced hasClippedFrameref in 2.2.10 //introduced inlineFonts 2.2.11 //introduced cacheId in 2.23.x
           const filepath = key.split("#")[0];
           const fileExists = files.some((f: TFile) => f.path === filepath);
           const file = fileExists ? files.find((f: TFile) => f.path === filepath) : null;
-          if (isLegacyKey || !file || (file && (file.stat.mtime > cursor.value.mtime)) || (!cursor.value.blob && !cursor.value.svg)) {
+          const lastAccessed = cursor.value.lastAccessed ?? cursor.value.mtime;
+          const isExpired = lastAccessed < this.getCacheRetentionCutoff();
+          if (isLegacyKey || !file || (file && (file.stat.mtime > cursor.value.mtime)) || (!cursor.value.blob && !cursor.value.svg) || isExpired) {
             if(this.obsidanURLCache.has(key)) {
               URL.revokeObjectURL(this.obsidanURLCache.get(key));
               this.obsidanURLCache.delete(key);
@@ -301,45 +342,78 @@ class ImageCache {
 
   private fullyInitialized = false;
 
-  public async getImageFromCache(key_: ImageKey): Promise<string | SVGSVGElement | undefined> {
+  private async getResolvedCacheData(
+    key_: ImageKey,
+    options?: GetImageFromCacheOptions,
+  ): Promise<{ cacheData: FileCacheData; key: string } | undefined> {
     if (!this.isReady()) {
-      return null; // Database not initialized yet
+      return undefined;
     }
 
     const key = getKey(key_);
 
     try {
       const cachedData = this.fullyInitialized
-      ? await this.getCacheData(key)
-      : await Promise.race([
-          this.getCacheData(key),
-          new Promise<undefined>((_,reject) => setTimeout(() => {
-            reject(undefined);
-          }, 100))
-        ]);
+        ? await this.getCacheData(key)
+        : await Promise.race([
+            this.getCacheData(key),
+            new Promise<undefined>((_, reject) => setTimeout(() => {
+              reject(undefined);
+            }, 100))
+          ]);
       this.fullyInitialized = true;
-      if(!cachedData) return undefined;
+      if (!cachedData) return undefined;
 
       const file = this.app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
       if (!file || !(file instanceof TFile)) return undefined;
-      if (cachedData && (cachedData.mtime >= file.stat.mtime)) {
-        if(hasExcalidrawEmbeddedImagesTreeChanged(file, cachedData.mtime, this.plugin)) {
-          return undefined;
-        }
-        if(cachedData.svg) {
-          return convertSVGStringToElement(cachedData.svg);
-        }
-        if(this.obsidanURLCache.has(key)) {
-          return this.obsidanURLCache.get(key);
-        }
-        const obsidianURL = URL.createObjectURL(cachedData.blob);
-        this.obsidanURLCache.set(key, obsidianURL);
-        return obsidianURL;
+      if (cachedData.mtime < file.stat.mtime) {
+        return undefined;
       }
-      return undefined;
-    } catch(e) {
+      if (
+        !options?.skipDependencyCheck &&
+        hasExcalidrawEmbeddedImagesTreeChanged(file, cachedData.mtime, this.plugin)
+      ) {
+        return undefined;
+      }
+      // Validated reads can require a minimum render scale so lower-resolution PDF
+      // snapshots are upgraded in the background without blocking the first paint.
+      const cachedRenderScale = cachedData.renderScale ?? key_.scale;
+      if (options?.minRenderScale && cachedRenderScale < options.minRenderScale) {
+        return undefined;
+      }
+      this.touchCacheData(key, cachedData);
+      return { cacheData: cachedData, key };
+    } catch (e) {
       return undefined;
     }
+  }
+
+  public async getImageCacheData(
+    key_: ImageKey,
+    options?: GetImageFromCacheOptions,
+  ): Promise<FileCacheData | undefined> {
+    return (await this.getResolvedCacheData(key_, options))?.cacheData;
+  }
+
+  public async getImageFromCache(
+    key_: ImageKey,
+    options?: GetImageFromCacheOptions,
+  ): Promise<string | SVGSVGElement | undefined> {
+    const resolved = await this.getResolvedCacheData(key_, options);
+    if (!resolved) {
+      return undefined;
+    }
+
+    const { cacheData, key } = resolved;
+    if(cacheData.svg) {
+      return convertSVGStringToElement(cacheData.svg);
+    }
+    if(this.obsidanURLCache.has(key)) {
+      return this.obsidanURLCache.get(key);
+    }
+    const obsidianURL = URL.createObjectURL(cacheData.blob);
+    this.obsidanURLCache.set(key, obsidianURL);
+    return obsidianURL;
   }
 
   public async getBAKFromCache(filepath: string): Promise<BackupData | null> {
@@ -351,7 +425,12 @@ class ImageCache {
   }
 
   //cache SVG should have the width and height parameters and not the embedded font
-  public addImageToCache(key_: ImageKey, obsidianURL: string, image: Blob|SVGSVGElement): void {
+  public addImageToCache(
+    key_: ImageKey,
+    obsidianURL: string,
+    image: Blob|SVGSVGElement,
+    metadata?: Partial<FileCacheData>,
+  ): void {
     if (!this.isReady()) {
       return; // Database not initialized yet
     }
@@ -367,12 +446,13 @@ class ImageCache {
     } else {
      blob = image as Blob;
     }
-    const data: FileCacheData = { mtime: Date.now(), blob, svg};
+    const now = Date.now();
+    const data: FileCacheData = { mtime: now, lastAccessed: now, blob, svg, ...metadata };
     const transaction = this.db.transaction(this.cacheStoreName, "readwrite");
     const store = transaction.objectStore(this.cacheStoreName);
     const key = getKey(key_);
     store.put(data, key);
-    if(!Boolean(svg)) {
+    if(!Boolean(svg) && obsidianURL) {
       if(this.obsidanURLCache.has(key) && this.obsidanURLCache.get(key) !== obsidianURL) {
         URL.revokeObjectURL(this.obsidanURLCache.get(key));
       }

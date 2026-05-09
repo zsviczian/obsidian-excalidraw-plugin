@@ -1,4 +1,3 @@
-import type { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import type {
   ExcalidrawElement,
   ExcalidrawImageElement,
@@ -6,7 +5,6 @@ import type {
 import { getCommonBoundingBox, restoreElements } from "src/constants/constants";
 import { getEA } from "src/core";
 import { t } from "src/lang/helpers";
-import type { ExcalidrawData } from "src/shared/ExcalidrawData";
 import type { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 
@@ -38,100 +36,6 @@ export function repositionElementsToCursor(
 
   return restoreElements(elements, null, { refreshDimensions: true, repairBindings: true });
 }
-
-export const getTextElementsMatchingQuery = (
-  elements: ExcalidrawElement[],
-  query: string[],
-  exactMatch: boolean = false,
-): ExcalidrawElement[] => {
-  if (!elements || elements.length === 0 || !query || query.length === 0) {
-    return [];
-  }
-
-  return elements.filter((el: any) =>
-    el.type === "text" &&
-    query.some((q) => {
-      if (exactMatch) {
-        const text = el.customData?.text2Path?.text ?? el.rawText.toLowerCase().split("\n")[0].trim();
-        const m = text.match(/^#*(# .*)/);
-        if (!m || m.length !== 2) {
-          return false;
-        }
-        return m[1] === q.toLowerCase();
-      }
-      const text = el.customData?.text2Path?.text ?? el.rawText.toLowerCase().replaceAll("\n", " ").trim();
-      return text.match(q.toLowerCase());
-    }),
-  );
-};
-
-export const getFrameElementsMatchingQuery = (
-  elements: ExcalidrawElement[],
-  query: string[],
-  exactMatch: boolean = false,
-): ExcalidrawElement[] => {
-  if (!elements || elements.length === 0 || !query || query.length === 0) {
-    return [];
-  }
-
-  return elements.filter((el: any) =>
-    el.type === "frame" &&
-    query.some((q) => {
-      if (exactMatch) {
-        const text = el.name?.toLowerCase().split("\n")[0].trim() ?? "";
-        const m = text.match(/^#*(# .*)/);
-        if (!m || m.length !== 2) {
-          return false;
-        }
-        return m[1] === q.toLowerCase();
-      }
-      const text = el.name ? el.name.toLowerCase().replaceAll("\n", " ").trim() : "";
-      return text.match(q.toLowerCase());
-    }),
-  );
-};
-
-export const getElementsWithLinkMatchingQuery = (
-  elements: ExcalidrawElement[],
-  query: string[],
-  exactMatch: boolean = false,
-): ExcalidrawElement[] => {
-  if (!elements || elements.length === 0 || !query || query.length === 0) {
-    return [];
-  }
-
-  return elements.filter((el: any) =>
-    el.link &&
-    query.some((q) => {
-      const text = el.link.toLowerCase().trim();
-      return exactMatch ? text === q.toLowerCase() : text.match(q.toLowerCase());
-    }),
-  );
-};
-
-export const getImagesMatchingQuery = (
-  elements: ExcalidrawElement[],
-  query: string[],
-  excalidrawData: ExcalidrawData,
-  exactMatch: boolean = false,
-): ExcalidrawElement[] => {
-  if (!elements || elements.length === 0 || !query || query.length === 0) {
-    return [];
-  }
-
-  return elements.filter((el: ExcalidrawElement) =>
-    el.type === "image" &&
-    query.some((q) => {
-      const filename = excalidrawData.getFile(el.fileId)?.file?.basename.toLowerCase().trim();
-      const equation = excalidrawData.getEquation(el.fileId)?.latex?.toLocaleLowerCase().trim();
-      const text = filename ?? equation;
-      if (!text) {
-        return false;
-      }
-      return exactMatch ? text === q.toLowerCase() : text.match(q.toLowerCase());
-    }),
-  );
-};
 
 export const cloneElement = (el: ExcalidrawElement): any => {
   const newEl = JSON.parse(JSON.stringify(el));

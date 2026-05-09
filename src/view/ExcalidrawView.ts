@@ -63,11 +63,7 @@ import { TextMode, getTextMode } from "../shared/TextMode";
 import { ExcalidrawSidepanelView } from "./sidepanel/Sidepanel";
 import { 
   repositionElementsToCursor,
-  getTextElementsMatchingQuery,
   cloneElement,
-  getFrameElementsMatchingQuery,
-  getElementsWithLinkMatchingQuery,
-  getImagesMatchingQuery,
   getBoundTextElementId,
 } from "../utils/excalidrawViewHelpers";
 import { t } from "../lang/helpers";
@@ -168,6 +164,12 @@ import { copyLinkToSelectedElementToClipboard } from "src/shared/Dialogs/copyLin
 import { getPDFCropRect } from "src/utils/PDFUtils";
 import { ttdPersistenceAdapter } from "src/shared/TTDDialogPersistanceAdater";
 import { CaptureUpdateActionType, isBindingEnabled } from "@zsviczian/excalidraw/types/element/src";
+import {
+  getTextElementsMatchingQuery,
+  getFrameElementsMatchingQuery,
+  getElementsWithLinkMatchingQuery,
+  getImagesMatchingQuery,
+} from "src/utils/excalidrawAutomateUtils";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -268,6 +270,7 @@ export const addFiles = async (
         isDark: !!isDark,
         isSVGwithBitmap: f.hasSVGwithBitmap,
         pdfPageViewProps: f.pdfPageViewProps,
+        renderScale: f.renderScale,
       });
     }
     if (view.excalidrawData.hasEquation(f.id)) {
@@ -2185,6 +2188,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
     this.clearPreventReloadTimer();
     this.clearEmbeddableNodeIsEditingTimer();
+    this.cancelDeferredSceneFileValidation();
     if (this.activeLoader) {
       this.activeLoader.terminate = true;
       this.activeLoader.emptyPDFDocsMap();
@@ -2346,6 +2350,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       window.clearTimeout(this.semaphores.wheelTimeout);
       this.semaphores.wheelTimeout = null;
     }
+    this.cancelDeferredSceneFileValidation();
     if (this.activeLoader) {
       this.activeLoader.terminate = true;
       this.activeLoader.emptyPDFDocsMap();
@@ -2599,6 +2604,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     if (!api) {
       return;
     }
+    this.cancelDeferredSceneFileValidation();
     if (this.activeLoader) {
       this.activeLoader.terminate = true;
       this.activeLoader = null;
@@ -2829,10 +2835,90 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   public activeLoader: EmbeddedFilesLoader = null;
   private nextLoader: EmbeddedFilesLoader = null;
+  private deferredValidationLoader: EmbeddedFilesLoader = null;
+  private deferredValidationTimer: number | null = null;
+  // File IDs collected during the stale-first pass. These are the only files that
+  // need a validated retry after the scene is already visible.
+  private pendingDeferredValidationFileIDs: Set<FileId> = new Set();
+
+  private cancelDeferredSceneFileValidation() {
+    if (this.deferredValidationTimer) {
+      window.clearTimeout(this.deferredValidationTimer);
+      this.deferredValidationTimer = null;
+    }
+    if (this.deferredValidationLoader) {
+      this.deferredValidationLoader.terminate = true;
+      this.deferredValidationLoader.emptyPDFDocsMap();
+      this.deferredValidationLoader = null;
+    }
+  }
+
+  private addDeferredValidationCandidates(fileIDs?: Set<FileId>) {
+    if (!fileIDs || fileIDs.size === 0) {
+      return;
+    }
+    fileIDs.forEach((fileId) => this.pendingDeferredValidationFileIDs.add(fileId));
+  }
+
+  private scheduleDeferredSceneFileValidation(
+    fileIDs: Set<FileId>,
+    isThemeChange: boolean,
+  ) {
+    this.cancelDeferredSceneFileValidation();
+    if (!fileIDs || fileIDs.size === 0 || !this.file || !this.excalidrawAPI) {
+      return;
+    }
+
+    const currentFile = this.file.path;
+    const loader = new EmbeddedFilesLoader(this.plugin);
+    this.deferredValidationTimer = window.setTimeout(() => {
+      this.deferredValidationTimer = null;
+      if (!this.file || !this.excalidrawAPI || this.file.path !== currentFile) {
+        return;
+      }
+
+      this.deferredValidationLoader = loader;
+      // Second pass is intentionally conservative: revalidate only stale-first
+      // candidates, run one at a time, and emit only regenerated images.
+      loader.loadSceneFiles({
+        excalidrawData: this.excalidrawData,
+        addFiles: (files: FileData[], isDark: boolean, final: boolean = true) => {
+          if(!this.file || !this.excalidrawAPI || this.file.path !== currentFile) {
+            if (final && this.deferredValidationLoader === loader) {
+              this.deferredValidationLoader = null;
+            }
+            return;
+          }
+          if (files && files.length > 0) {
+            addFiles(files, this, isDark);
+          }
+          if (!final) {
+            return;
+          }
+          if (this.deferredValidationLoader === loader) {
+            this.deferredValidationLoader = null;
+          }
+        },
+        depth: 0,
+        isThemeChange,
+        fileIDWhiteList: fileIDs,
+        forceReloadFileIDs: fileIDs,
+        cacheValidation: "validated",
+        validationConcurrency: 1,
+        emitPolicy: "changed-only",
+      });
+    }, 250);
+  }
+
   public async loadSceneFiles(isThemeChange: boolean = false, fileIDWhiteList?: Set<FileId>, callback?: Function) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.loadSceneFiles, "ExcalidrawView.loadSceneFiles", isThemeChange);
     if (!this.excalidrawAPI) {
       return;
+    }
+
+    this.cancelDeferredSceneFileValidation();
+    if (!this.activeLoader) {
+      this.pendingDeferredValidationFileIDs.clear();
     }
     
     const loader = new EmbeddedFilesLoader(this.plugin);
@@ -2857,6 +2943,12 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
           if (this.nextLoader) {
             runLoader(this.nextLoader);
           } else {
+            // Once the scene is painted, validate cached candidates in the background
+            // so unchanged cache hits do not delay the initial scene load.
+            if (this.pendingDeferredValidationFileIDs.size > 0) {
+              this.scheduleDeferredSceneFileValidation(new Set(this.pendingDeferredValidationFileIDs), isThemeChange);
+              this.pendingDeferredValidationFileIDs.clear();
+            }
             //in case one or more files have not loaded retry later hoping that sync has delivered the file in the mean time.
             this.excalidrawData.getFiles().some(ef=>{
               if(ef && !ef.file && ef.attemptCounter<30) {
@@ -2875,6 +2967,10 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         depth: 0,
         isThemeChange,
         fileIDWhiteList,
+        cacheValidation: "stale-first",
+        onDeferredValidationCandidates: (fileIds: Set<FileId>) => {
+          this.addDeferredValidationCandidates(fileIds);
+        },
       });
     };
     if (!this.activeLoader) {
@@ -3869,6 +3965,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             isDark: st.theme === "dark",
             isSVGwithBitmap: images[k].hasSVGwithBitmap,
             pdfPageViewProps: images[k].pdfPageViewProps,
+            renderScale: images[k].renderScale,
           });
           this.excalidrawData.setFile(images[k].id, embeddedFile);
           if(images[k].pdfPageViewProps) {

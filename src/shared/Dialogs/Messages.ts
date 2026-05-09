@@ -5,13 +5,19 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
-"2.22.4":`
+"2.23.0":`
+## New
+- Added image cache for nested images, including nested Excalidraw drawings and PDF page renders.
+  - When a scene is opened again on the same device, cached images are shown immediately while validation of nested changes continues in the background. This should noticeably improve loading times for scenes you access regularly.
+  - A new setting under plugin settings in **Image caching and rendering optimization** lets you control cache retention in days, so you can balance disk usage against how long these cached images are kept available.
+  - The cache is local to each device. It is not synced through Obsidian Sync or your vault, so each device builds and maintains its own cache independently.
+
 ## Fixed
 - Error when saving pasted images from Excalidraw.com
 `,
 "2.22.3":`
 
-Feeling overwhelmed by Excalidraw’s endless features?
+Feeling overwhelmed by Excalidraw's endless features?
 
 It's not just a drawing tool. Inside Obsidian, it becomes a thinking tool.  
 To unlock linking, embedding, and referencing, you need a mindset shift.

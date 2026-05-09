@@ -50,6 +50,22 @@ import { ExportSettings } from "src/types/exportUtilTypes";
 //and getObsidianImage is aborted if the file is already in the Watchdog stack
 const  markdownRendererRecursionWatcthdog = new Set<TFile>();
 
+type CacheValidationMode = "validated" | "stale-first";
+
+type LoadImageOptions = {
+  cacheValidation?: CacheValidationMode;
+  onStaleCacheHit?: () => void;
+};
+
+type LoadSceneEmitPolicy = "all" | "changed-only";
+
+const getPDFCacheId = (linkParts: LinkParts, pageNum: number): string => {
+  // Different crops of the same PDF page must not overwrite each other in cache,
+  // so the cache key uses the full PDF page/reference fragment when present.
+  const pdfRef = linkParts.original?.match(/#([^|]*)/)?.[1];
+  return pdfRef && pdfRef !== "" ? pdfRef : `page=${pageNum}`;
+};
+
 
 
 /**
@@ -137,6 +153,7 @@ export class EmbeddedFile {
   public hyperlink:DataURL;
   public colorMap: ColorMap | null = null;
   public pdfPageViewProps: PDFPageViewProps;
+  public renderScale: number = 0;
 
   constructor(plugin: ExcalidrawPlugin, hostPath: string, imgPath: string, colorMapJSON?: string) {
     this.plugin = plugin;
@@ -151,12 +168,13 @@ export class EmbeddedFile {
   }
 
   get hasSeparateDarkAndLightVersion(): boolean {
-    return this.isSVGwithBitmap;
+    return this.isSVGwithBitmap || this.file?.extension?.toLowerCase?.() === "pdf";
   }
 
   public resetImage(hostPath: string, imgPath: string) {
     this.imgInverted = this.img = "";
     this.mtime = 0;
+    this.renderScale = 0;
 
     if(imgPath.startsWith("https://") || imgPath.startsWith("http://") || imgPath.startsWith("ftp://") || imgPath.startsWith("ftps://")) {
       this.isHyperLink = true;
@@ -216,13 +234,14 @@ export class EmbeddedFile {
     return this.mtime !== this.file.stat.mtime;
   }
 
-  public setImage({ imgBase64, mimeType, size, isDark, isSVGwithBitmap, pdfPageViewProps } : {
+  public setImage({ imgBase64, mimeType, size, isDark, isSVGwithBitmap, pdfPageViewProps, renderScale } : {
     imgBase64: string;
     mimeType: MimeType;
     size: Size;
     isDark: boolean;
     isSVGwithBitmap: boolean;
     pdfPageViewProps?: PDFPageViewProps;
+    renderScale?: number;
   }
   ) {
     if (!this.file && !this.isHyperLink && !this.isLocalLink) {
@@ -234,6 +253,7 @@ export class EmbeddedFile {
     this.isSVGwithBitmap = isSVGwithBitmap;
     this.mtime = this.isHyperLink || this.isLocalLink ? 0 : this.file.stat.mtime;
     this.pdfPageViewProps = pdfPageViewProps;
+    this.renderScale = renderScale ?? 0;
     this.size = size;
     this.mimeType = mimeType;
     switch (isDark && this.hasSeparateDarkAndLightVersion) {
@@ -260,6 +280,12 @@ export class EmbeddedFile {
       }
       if (this.fileChanged()) {
         return false;
+      }
+      if (this.file.extension?.toLowerCase?.() === "pdf" && this.renderScale > 0) {
+        const hasImageForTheme = this.hasSeparateDarkAndLightVersion && isDark
+          ? this.imgInverted !== ""
+          : this.img !== "";
+        return hasImageForTheme && this.renderScale >= this.plugin.settings.pdfScale;
       }
     }
     if (this.hasSeparateDarkAndLightVersion && isDark) {
@@ -336,6 +362,8 @@ export class EmbeddedFilesLoader {
     inFile,
     hasSVGwithBitmap,
     elements = [],
+    cacheValidation = "validated",
+    onStaleCacheHit,
   }: {
     isDark: boolean;
     file: TFile;
@@ -343,7 +371,9 @@ export class EmbeddedFilesLoader {
     inFile: TFile | EmbeddedFile;
     hasSVGwithBitmap: boolean;
     elements?: ExcalidrawElement[];
-  }) : Promise<{dataURL: DataURL, hasSVGwithBitmap:boolean}> {
+    cacheValidation?: CacheValidationMode;
+    onStaleCacheHit?: () => void;
+  }) : Promise<{dataURL: DataURL, hasSVGwithBitmap:boolean, loadedFromCache?: boolean}> {
     //debug({where:"EmbeddedFileLoader.getExcalidrawSVG",uid:this.uid,file:file.name});
     const isMask = isMaskFile(this.plugin, file);
     const forceTheme = hasExportTheme(this.plugin, file)
@@ -388,8 +418,14 @@ export class EmbeddedFilesLoader {
     }
 
     const maybeSVG = shouldUseCache
-    ? await imageCache.getImageFromCache(cacheKey)
+    ? await imageCache.getImageFromCache(cacheKey, {
+        skipDependencyCheck: cacheValidation === "stale-first",
+      })
     : undefined;
+
+    if (maybeSVG && cacheValidation === "stale-first") {
+      onStaleCacheHit?.();
+    }
 
     const svg = (maybeSVG && (maybeSVG instanceof SVGSVGElement))
     ? maybeSVG
@@ -469,7 +505,7 @@ export class EmbeddedFilesLoader {
       Boolean(vb[3]) && svg.setAttribute("height", vb[3]);
     }
     const dURL = svgToBase64(svg.outerHTML) as DataURL;
-    return {dataURL: dURL as DataURL, hasSVGwithBitmap};
+    return {dataURL: dURL as DataURL, hasSVGwithBitmap, loadedFromCache: Boolean(maybeSVG)};
   };
 
   //this is a fix for backward compatibility - I messed up with generating the local link
@@ -481,7 +517,11 @@ export class EmbeddedFilesLoader {
     return localPath;
   }
 
-  private async _getObsidianImage(inFile: TFile | EmbeddedFile, depth: number): Promise<ImgData> {
+  private async _getObsidianImage(
+    inFile: TFile | EmbeddedFile,
+    depth: number,
+    options?: LoadImageOptions,
+  ): Promise<ImgData> {
     if (!this.plugin || !inFile) {
       return null;
     }
@@ -534,6 +574,7 @@ export class EmbeddedFilesLoader {
           : await app.vault.readBinary(file);
 
       let dURL: DataURL = null;
+      let excalidrawLoadedFromCache = false;
       if (isExcalidrawFile) {
         const res = await this.getExcalidrawSVG({
           isDark: this.isDark,
@@ -541,16 +582,19 @@ export class EmbeddedFilesLoader {
           depth,
           inFile,
           hasSVGwithBitmap,
+          cacheValidation: options?.cacheValidation,
+          onStaleCacheHit: options?.onStaleCacheHit,
         });
         dURL = res.dataURL;
         hasSVGwithBitmap = res.hasSVGwithBitmap;
+        excalidrawLoadedFromCache = !!res.loadedFromCache;
       }
 
       const excalidrawSVG = isExcalidrawFile ? dURL : null;
 
-      const [pdfDataURL, pdfSize, pdfPageViewProps] = isPDF
-        ? await this.pdfToDataURL(file,linkParts)
-        : [null, null, null];
+      const [pdfDataURL, pdfSize, pdfPageViewProps, pdfRenderScale, pdfLoadedFromCache] = isPDF
+        ? await this.pdfToDataURL(file, linkParts, options)
+        : [null, null, null, null, false];
 
       let mimeType: MimeType = isPDF
         ? "image/png"
@@ -597,9 +641,11 @@ export class EmbeddedFilesLoader {
         ),
         dataURL,
         created: isHyperLink || isLocalLink ? 0 : file.stat.mtime,
+        loadedFromCache: isExcalidrawFile ? excalidrawLoadedFromCache : pdfLoadedFromCache,
         hasSVGwithBitmap,
         size,
         pdfPageViewProps,
+        renderScale: pdfRenderScale,
       };
     } catch (error) {
       errorlog({
@@ -619,12 +665,22 @@ export class EmbeddedFilesLoader {
     depth,
     isThemeChange = false,
     fileIDWhiteList,
+    forceReloadFileIDs,
+    cacheValidation = "validated",
+    validationConcurrency,
+    emitPolicy = "all",
+    onDeferredValidationCandidates,
   }: {
     excalidrawData: ExcalidrawData;
     addFiles: (files: FileData[], isDark: boolean, final?: boolean) => void;
     depth: number;
     isThemeChange?: boolean;
     fileIDWhiteList?: Set<FileId>;
+    forceReloadFileIDs?: Set<FileId>;
+    cacheValidation?: CacheValidationMode;
+    validationConcurrency?: number;
+    emitPolicy?: LoadSceneEmitPolicy;
+    onDeferredValidationCandidates?: (fileIds: Set<FileId>) => void;
   }) {
     
     if(depth > 7) {
@@ -655,6 +711,8 @@ export class EmbeddedFilesLoader {
     const files: FileData[][] = [];
     files.push([]);
     let batch = 0;
+    // Only stale-first cache hits are queued for the cheap second pass.
+    const deferredValidationFileIds = new Set<FileId>();
 
     function* loadIterator(this: EmbeddedFilesLoader):Generator<Promise<void>> {
       while (!(entry = entries.next()).done) {
@@ -665,19 +723,27 @@ export class EmbeddedFilesLoader {
           if(this.terminate) {
             return;
           }
-          if (!embeddedFile.isLoaded(this.isDark)) {
+          const shouldForceReload = forceReloadFileIDs?.has(id);
+          if (shouldForceReload || !embeddedFile.isLoaded(this.isDark)) {
             //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"embedded Files are not loaded"});
-            const data = await this._getObsidianImage(embeddedFile, depth);
+            const data = await this._getObsidianImage(embeddedFile, depth, {
+              cacheValidation,
+              onStaleCacheHit: cacheValidation === "stale-first"
+                ? () => deferredValidationFileIds.add(id)
+                : undefined,
+            });
             if (data) {
               const fileData: FileData = {
                 mimeType: data.mimeType,
                 id: id,
                 dataURL: data.dataURL,
                 created: data.created,
+                loadedFromCache: data.loadedFromCache,
                 size: data.size,
                 hasSVGwithBitmap: data.hasSVGwithBitmap,
                 shouldScale: embeddedFile.shouldScale(),
                 pdfPageViewProps: data.pdfPageViewProps,
+                renderScale: data.renderScale,
               };
               files[batch].push(fileData);
             }
@@ -692,6 +758,7 @@ export class EmbeddedFilesLoader {
               hasSVGwithBitmap: embeddedFile.isSVGwithBitmap,
               shouldScale: embeddedFile.shouldScale(),
               pdfPageViewProps: embeddedFile.pdfPageViewProps,
+              renderScale: embeddedFile.renderScale,
             };
             files[batch].push(fileData);
           }
@@ -810,8 +877,10 @@ export class EmbeddedFilesLoader {
       if(files[batch].length === 0) {
         return;
       }
+      // During deferred validation, only regenerated results should reach addFiles.
+      const batchFiles = files[batch].filter(f=>emitPolicy === "all" || !f.loadedFromCache);
       try  {
-        addFiles(files[batch], this.isDark, false);
+        addFiles(batchFiles, this.isDark, false);
       }
       catch(e) {
         errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
@@ -822,7 +891,7 @@ export class EmbeddedFilesLoader {
 
     try {
       const iterator = loadIterator.bind(this)();
-      const concurency = this.plugin.settings.renderingConcurrency;
+      const concurency = validationConcurrency ?? this.plugin.settings.renderingConcurrency;
       if (!this.terminate) {
         await new PromisePool(iterator, concurency).all();
       }
@@ -832,9 +901,14 @@ export class EmbeddedFilesLoader {
         return;
       }
       //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"add Files"});
+      if (deferredValidationFileIds.size > 0) {
+        onDeferredValidationCandidates?.(deferredValidationFileIds);
+      }
+      // Same filter for the final flush so validated cache hits remain a no-op.
+      const batchFiles = files[batch].filter(f=>emitPolicy === "all" || !f.loadedFromCache);
       try {
         //in try block because by the time files are loaded the user may have closed the view
-        addFiles(files[batch], this.isDark, true);
+        addFiles(batchFiles, this.isDark, true);
       } catch (e) {
         errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
       }
@@ -847,14 +921,61 @@ export class EmbeddedFilesLoader {
   private async pdfToDataURL(
     file: TFile,
     linkParts: LinkParts,
-  ): Promise<[DataURL,Size, PDFPageViewProps]> {
+    options?: LoadImageOptions,
+  ): Promise<[DataURL,Size, PDFPageViewProps, number, boolean]> {
     try {
       let width = 0, height = 0;
+      const pageNum = isNaN(linkParts.page) ? 1 : (linkParts.page??1);
+      const requestedScale = this.plugin.settings.pdfScale;
+      const shouldUseCache = imageCache.isReady() && (!options || this.plugin.settings.allowImageCacheInScene);
+      const cacheKey: ImageKey = {
+        filepath: file.path,
+        cacheId: getPDFCacheId(linkParts, pageNum),
+        hasBlockref: false,
+        hasGroupref: false,
+        hasTaskbone: false,
+        hasArearef: false,
+        hasFrameref: false,
+        hasClippedFrameref: false,
+        hasSectionref: false,
+        blockref: null,
+        sectionref: null,
+        linkpartReference: null,
+        linkpartAlias: null,
+        isDark: !!this.isDark,
+        previewImageType: PreviewImageType.PNG,
+        scale: 0,
+        isTransparent: false,
+        inlineFonts: false,
+      };
+      const cachedData = shouldUseCache
+        ? await imageCache.getImageCacheData(cacheKey, {
+            skipDependencyCheck: options?.cacheValidation === "stale-first",
+            minRenderScale: options?.cacheValidation === "stale-first" ? undefined : requestedScale,
+          })
+        : undefined;
+
+      if (cachedData?.blob) {
+        const cachedScale = cachedData.renderScale ?? requestedScale;
+        // Stale-first accepts an older PDF raster immediately, but still marks it
+        // for deferred validation when the requested scale has increased.
+        if (options?.cacheValidation === "stale-first" && cachedScale < requestedScale) {
+          options?.onStaleCacheHit?.();
+        }
+        return [
+          `data:image/png;base64,${await blobToBase64(cachedData.blob)}` as DataURL,
+          cachedData.size,
+          cachedData.pdfPageViewProps,
+          cachedScale,
+          true,
+        ];
+      }
+
       let pdfDoc = this.pdfDocsMap.get(file.path);
       if(!pdfDoc) {
         pdfDoc = await getPDFDoc(file);
         if(!pdfDoc) {
-          return [null, null, null];
+          return [null, null, null, null, false];
         }
         this.pdfDocs.add(pdfDoc);
         if(!this.pdfDocsMap.has(file.path)) {
@@ -863,8 +984,8 @@ export class EmbeddedFilesLoader {
       } else {
         this.pdfDocs.add(pdfDoc);
       }
-      const pageNum = isNaN(linkParts.page) ? 1 : (linkParts.page??1);
-      const scale = this.plugin.settings.pdfScale;
+
+      const scale = requestedScale;
       const cropRect = linkParts.ref.split("rect=")[1]?.split(",").map(x=>parseInt(x));
       const validRect = cropRect && cropRect.length === 4 && cropRect.every(x=>!isNaN(x));
       let viewProps: PDFPageViewProps;
@@ -992,19 +1113,35 @@ export class EmbeddedFilesLoader {
 
       const canvas = await renderPage(pageNum); 
       if(canvas) {
-        const result: [DataURL,Size, PDFPageViewProps] = [`data:image/png;base64,${await new Promise((resolve, reject) => {
-          canvas.toBlob(async (blob) => {
-            const dataURL = await blobToBase64(blob);
-            resolve(dataURL);
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((pngBlob) => {
+            if (!pngBlob) {
+              reject(new Error("Failed to convert PDF canvas to blob."));
+              return;
+            }
+            resolve(pngBlob);
           });
-        })}` as DataURL, {width, height}, viewProps];
+        });
+        const base64 = await blobToBase64(blob);
+        shouldUseCache && imageCache.addImageToCache(cacheKey, "", blob, {
+          renderScale: requestedScale,
+          size: {width, height},
+          pdfPageViewProps: viewProps,
+        });
+        const result: [DataURL,Size, PDFPageViewProps, number, boolean] = [
+          `data:image/png;base64,${base64}` as DataURL,
+          {width, height},
+          viewProps,
+          requestedScale,
+          false,
+        ];
         canvas.width = 0; //free memory iOS bug
         canvas.height = 0;
         return result;
       }
     } catch(e) {
       console.log(e);
-      return [null, null, null];
+      return [null, null, null, null, false];
     }
   }
 

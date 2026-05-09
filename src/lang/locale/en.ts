@@ -692,6 +692,13 @@ export default {
   RENDERING_CONCURRENCY_DESC:
     "Number of parallel workers to use for image rendering. Increasing this number will speed up the rendering process, but may slow down the rest of the system. " +
     "The default value is 3. You can increase this number if you have a powerful system.",
+  IMAGE_CACHE_RETENTION_DAYS_NAME: "Local image cache retention",
+  IMAGE_CACHE_RETENTION_DAYS_DESC:
+    "How many days Excalidraw should keep locally cached rendered assets such as nested Excalidraw images and PDF pages before unused cache entries are purged. " +
+    "Cached items remain available while they are being used, and their timer is refreshed when they are read from cache.<br><br>" +
+    "This only affects Excalidraw's local cache on the current device. It does <b>not</b> change your vault size, your attachments, or your sync payload. " +
+    "The practical impact is local disk or browser-storage usage inside Obsidian. This can matter on phones and on desktops with tighter browser storage quotas or limited free disk space.<br><br>" +
+    "Lower values reclaim local cache space sooner but may force more rerendering of PDFs and embedded drawings. Higher values keep repeat loads faster at the cost of more local cache storage.",
   EXPORT_SUBHEAD: "Export Settings",
   EMBED_SIZING: "Image sizing",
   EMBED_THEME_BACKGROUND: "Image theme and background color",

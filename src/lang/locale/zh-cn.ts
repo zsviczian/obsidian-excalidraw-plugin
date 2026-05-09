@@ -692,6 +692,13 @@ export default {
   RENDERING_CONCURRENCY_DESC:
     "用于图像渲染的并行工作线程数。增加该值可以加快渲染速度，但可能会减慢系统其他部分的运行速度。" +
     "默认值为 3。如果您的系统性能强大，可以增加该值。",
+  IMAGE_CACHE_RETENTION_DAYS_NAME: "本地图像缓存保留时间",
+  IMAGE_CACHE_RETENTION_DAYS_DESC:
+    "设置 Excalidraw 在清理未使用缓存前，保留本地已渲染资源（如嵌套 Excalidraw 图像和 PDF 页面）的天数。" +
+    "缓存项在被读取时会刷新其保留时间。<br><br>" +
+    "这只影响当前设备上 Excalidraw 的本地 缓存。它<b>不会</b>改变您的库体积、附件文件或同步数据量。" +
+    "实际影响的是 Obsidian 内部本地磁盘或浏览器存储占用。在手机以及浏览器存储配额较紧或剩余磁盘空间有限的桌面设备上，这一点可能尤其重要。<br><br>" +
+    "较小的值会更快回收本地缓存空间，但可能导致 PDF 和嵌入绘图需要更频繁地重新渲染。较大的值会保留更久的缓存，以换取更快的加载速度。",
   EXPORT_SUBHEAD: "导出",
   EMBED_SIZING: "图像尺寸",
   EMBED_THEME_BACKGROUND: "图像的主题和背景色",

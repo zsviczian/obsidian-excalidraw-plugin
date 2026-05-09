@@ -692,6 +692,13 @@ export default {
   RENDERING_CONCURRENCY_DESC:
     "用於影像渲染的並行工作執行緒數。增加該值可以加快渲染速度，但可能會減慢系統其他部分的執行速度。" +
     "預設值為 3。如果您的系統性能強大，可以增加該值。",
+  IMAGE_CACHE_RETENTION_DAYS_NAME: "本地影像快取保留時間",
+  IMAGE_CACHE_RETENTION_DAYS_DESC:
+    "設定 Excalidraw 在清理未使用快取之前，保留本地已渲染資源（例如巢狀 Excalidraw 影像與 PDF 頁面）的天數。" +
+    "快取項目在被讀取時會更新其保留時間。<br><br>" +
+    "這只影響目前裝置上的 Excalidraw 本地 快取。它<b>不會</b>改變您的 Vault 大小、附件檔案或同步資料量。" +
+    "實際影響的是 Obsidian 內部使用的本機磁碟或瀏覽器儲存空間。在手機，以及瀏覽器儲存配額較緊或可用磁碟空間有限的桌面裝置上，這點可能特別重要。<br><br>" +
+    "較小的值會更快回收本地快取空間，但可能讓 PDF 與嵌入繪圖更常重新渲染。較大的值則會保留較久的快取，以換取更快的載入速度。",
   EXPORT_SUBHEAD: "匯出",
   EMBED_SIZING: "影像尺寸",
   EMBED_THEME_BACKGROUND: "影像的主題和背景色",

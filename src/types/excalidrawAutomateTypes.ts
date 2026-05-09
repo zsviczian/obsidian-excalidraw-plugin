@@ -39,6 +39,7 @@ export type ImageInfo = {
   size?: Size,
   colorMap?: ColorMap,
   pdfPageViewProps?: PDFPageViewProps,
+  renderScale?: number,
 }
 
 export interface AddImageOptions {

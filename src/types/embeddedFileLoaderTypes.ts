@@ -20,18 +20,22 @@ export type ImgData = {
   fileId: FileId;
   dataURL: DataURL;
   created: number;
+  loadedFromCache?: boolean;
   hasSVGwithBitmap: boolean;
   size: Size;
   pdfPageViewProps?: PDFPageViewProps;
+  renderScale?: number;
 };
 
 export declare type MimeType = ValueOf<typeof IMAGE_MIME_TYPES> | "application/octet-stream";
 
 export type FileData = BinaryFileData & {
   size: Size;
+  loadedFromCache?: boolean;
   hasSVGwithBitmap: boolean;
   shouldScale: boolean; //true if image should maintain its area, false if image should display at 100% its size
   pdfPageViewProps?: PDFPageViewProps;
+  renderScale?: number;
 };
 
 export type PDFPageViewProps = {
