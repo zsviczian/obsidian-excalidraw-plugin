@@ -7,7 +7,7 @@
 ```js*/
 let dirty=false;
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.0.12")) {
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.23.0")) {
   new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
   return;
 }
