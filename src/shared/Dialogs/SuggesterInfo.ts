@@ -1037,15 +1037,22 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     desc:
       "This asynchronous function should be awaited. It posts the supplied request to the currently configured AI provider and returns a normalized OpenAI-compatible response payload for backwards compatibility.<br>" +
       "<b>AIRequest</b> supports these fields:<br>" +
-      "<code>{ provider?, image?, text?, instruction?, systemPrompt?, messages?, temperature?, maxTokens?, imageGenerationProperties? }</code><br>" +
+      "<code>{ provider?, baseURL?, apiKey?, model?, image?, text?, instruction?, systemPrompt?, messages?, temperature?, maxOutgoingTokens?, maxTokens?, imageGenerationProperties? }</code><br>" +
       "<b>provider</b>: optional override for the configured provider. Supported values are openai, anthropic, google, xai, and openai-compatible.<br>" +
-      "<b>image</b>: either a data URL string or <code>{url:string}</code>. Use this with vision requests or image edits.<br>" +
+      "<b>baseURL</b>: optional request-level provider base URL override. Use this for local models, custom gateways, or temporary endpoint switching.<br>" +
+      "<b>apiKey</b>: optional request-level API key override.<br>" +
+      "<b>model</b>: optional request-level model override. This applies to text, vision, and image-generation requests.<br>" +
+      "<b>image</b>: either a data URL string or <code>{url:string}|{dataURL:string}</code>. Use this with vision requests or image edits.<br>" +
       "<b>text</b>: the main user prompt.<br>" +
       "<b>instruction</b>: optional extra user instruction appended after the main prompt.<br>" +
       "<b>systemPrompt</b>: optional system message.<br>" +
-      "<b>messages</b>: optional chat history in the form <code>{role:" + '"system"|"user"|"assistant"' + ", content:string | [{type:" + '"text"' + ", text:string} | {type:" + '"image"' + ", image:string | {url:string}}]}</code>.<br>" +
-      "<b>temperature</b> and <b>maxTokens</b>: optional generation controls.<br>" +
+      "<b>messages</b>: optional chat history in the form <code>{role:" + '"system"|"user"|"assistant"' + ", content:string | [{type:" + '"text"' + ", text:string} | {type:" + '"image"' + ", image:string | {url:string}|{dataURL:string}} | {type:" + '"file"' + ", file:string | {url:string}|{dataURL:string}} | {type:" + '"audio"' + ", audio:string | {url:string}|{dataURL:string}}]}</code>.<br>" +
+      "This enables chat-style interfaces by preserving prior turns in <code>messages</code>, similar to Mermaid chat.<br>" +
+      "<b>temperature</b>: optional generation control.<br>" +
+      "<b>maxOutgoingTokens</b>: optional approximate budget for outgoing text content. Excalidraw trims older text content first while keeping the latest messages and attached files.<br>" +
+      "<b>maxTokens</b>: optional response-size limit.<br>" +
       "<b>imageGenerationProperties</b>: <code>{ size?, quality?, n?, mask? }</code>. If present, Excalidraw uses the image generation/edit pipeline. <code>mask</code> accepts the same format as <code>image</code>.<br>" +
+      "<b>File support by provider</b>: Google accepts inline file/audio parts such as PDFs and voice clips. Anthropic currently accepts PDF document parts. OpenAI/OpenAI-compatible/xAI remain limited to text plus images in the current chat-completions pipeline.<br>" +
       "<b>RequestUrlResponse</b> returns:<br>" +
       "<code>{ status:number, headers:Record<string,string>, text:string, json:any, arrayBuffer:ArrayBuffer }</code><br>" +
       "For text models, <code>json</code> is normalized to an OpenAI-style chat completion object, so existing scripts can continue reading <code>json.choices[0].message.content</code>. For image models, <code>json</code> preserves the image endpoint response such as <code>json.data[0].url</code>.",

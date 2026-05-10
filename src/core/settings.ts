@@ -46,6 +46,9 @@ import { PDFExportSettingsComponent, PDFExportSettings } from "src/shared/Dialog
 import { ContentSearcher } from "src/shared/components/ContentSearcher";
 import { UIMode, UIModeSettingsComponent } from "src/shared/Dialogs/UIModeSettingComponent";
 import { ScriptSettingValue } from "src/types/excalidrawAutomateTypes";
+import { AIImageModelCapability, AIImageModelConfig, AIModelConfig, AIProviderProfile } from "src/types/AIUtilTypes";
+import { AIProviderProfileModal } from "src/shared/Dialogs/AIProviderProfileModal";
+import { AIModelConfigModal } from "src/shared/Dialogs/AIModelConfigModal";
 
 export interface ExcalidrawSettings {
   copyLinkToElemenetAnchorTo100: boolean;
@@ -214,6 +217,10 @@ export interface ExcalidrawSettings {
   canvasImmersiveEmbed: boolean,
   startupScriptPath: string,
   aiEnabled: boolean,
+  aiProviderProfiles: Record<string, AIProviderProfile>,
+  aiTextModelConfigs: Record<string, AIModelConfig>,
+  aiVisionModelConfigs: Record<string, AIModelConfig>,
+  aiImageModelConfigs: Record<string, AIImageModelConfig>,
   aiProvider: "openai" | "anthropic" | "google" | "xai" | "openai-compatible",
   aiAPIKey: string,
   aiBaseURL: string,
@@ -224,7 +231,10 @@ export interface ExcalidrawSettings {
   aiDefaultTextModel: string,
   aiDefaultVisionModel: string,
   aiDefaultImageGenerationModel: string,
-  aiDefaultMaxTokens: number,
+  aiImageModelCapabilities: Record<string, AIImageModelCapability>,
+  aiDefaultMaxOutgoingTokens: number,
+  aiDefaultMaxResponseTokens: number,
+  aiDefaultMaxTokens: number, //legacy migration source, do not use directly
   openAIAPIToken: string,
   openAIDefaultTextModel: string,
   openAIDefaultTextModelMaxTokens: number,
@@ -265,6 +275,115 @@ const configurePasswordTextInput = (text: TextComponent) => {
     inputEl.type = "password";
   });
 };
+
+const KNOWN_AI_IMAGE_MODEL_CAPABILITIES: Record<string, AIImageModelCapability> = {
+  "dall-e-2": {
+    supportedSizes: ["256x256", "512x512", "1024x1024"],
+    supportsImageEdits: true,
+  },
+  "dall-e-3": {
+    supportedSizes: ["1024x1024", "1792x1024", "1024x1792"],
+    supportsImageEdits: false,
+  },
+  "gpt-image-1": {
+    supportedSizes: ["1024x1024", "1536x1024", "1024x1536"],
+    supportsImageEdits: true,
+  },
+  "gpt-image-1-mini": {
+    supportedSizes: ["1024x1024", "1536x1024", "1024x1536"],
+    supportsImageEdits: true,
+  },
+  "gpt-image-1.5": {
+    supportedSizes: ["1024x1024", "1536x1024", "1024x1536"],
+    supportsImageEdits: true,
+  },
+  "gpt-image-2": {
+    supportedSizes: ["1024x1024", "1536x1024", "1024x1536", "2048x2048"],
+    supportsImageEdits: true,
+  },
+};
+
+const cloneKnownAIImageModelCapabilities = () => Object.fromEntries(
+  Object.entries(KNOWN_AI_IMAGE_MODEL_CAPABILITIES).map(([model, capability]) => [
+    model,
+    {
+      supportedSizes: [...capability.supportedSizes],
+      supportsImageEdits: capability.supportsImageEdits,
+    },
+  ]),
+);
+
+export const KNOWN_AI_PROVIDER_PROFILES: Record<string, AIProviderProfile> = {
+  "OpenAI": {
+    provider: "openai",
+    apiKey: "",
+    baseURL: "https://api.openai.com/v1",
+  },
+  "Anthropic": {
+    provider: "anthropic",
+    apiKey: "",
+    baseURL: "https://api.anthropic.com/v1",
+  },
+  "Google Gemini": {
+    provider: "google",
+    apiKey: "",
+    baseURL: "https://generativelanguage.googleapis.com/v1beta",
+  },
+  "xAI": {
+    provider: "xai",
+    apiKey: "",
+    baseURL: "https://api.x.ai/v1",
+  },
+  "OpenAI-compatible": {
+    provider: "openai-compatible",
+    apiKey: "",
+    baseURL: "https://api.openai.com/v1",
+  },
+};
+
+export const cloneKnownAIProviderProfiles = () => Object.fromEntries(
+  Object.entries(KNOWN_AI_PROVIDER_PROFILES).map(([profileId, profile]) => [
+    profileId,
+    { ...profile },
+  ]),
+);
+
+export const KNOWN_AI_TEXT_MODEL_CONFIGS: Record<string, AIModelConfig> = {
+  "gpt-5-mini": {
+    providerId: "OpenAI",
+    model: "gpt-5-mini",
+    endpoint: "",
+  },
+};
+
+export const KNOWN_AI_VISION_MODEL_CONFIGS: Record<string, AIModelConfig> = {
+  "gpt-5-mini": {
+    providerId: "OpenAI",
+    model: "gpt-5-mini",
+    endpoint: "",
+  },
+};
+
+export const KNOWN_AI_IMAGE_MODEL_CONFIGS: Record<string, AIImageModelConfig> = Object.fromEntries(
+  Object.entries(cloneKnownAIImageModelCapabilities()).map(([modelId, capability]) => [
+    modelId,
+    {
+      providerId: "OpenAI",
+      model: modelId,
+      ...capability,
+    },
+  ]),
+);
+
+export const cloneModelConfigs = <TConfig extends AIModelConfig>(configs: Record<string, TConfig>) => Object.fromEntries(
+  Object.entries(configs).map(([configId, config]) => [
+    configId,
+    {
+      ...config,
+      ...("supportedSizes" in config ? { supportedSizes: [...((config as unknown as AIImageModelConfig).supportedSizes ?? [])] } : {}),
+    },
+  ]),
+) as Record<string, TConfig>;
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   copyLinkToElemenetAnchorTo100: false,
@@ -460,6 +579,10 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   canvasImmersiveEmbed: true,
   startupScriptPath: "",
   aiEnabled: true,
+  aiProviderProfiles: cloneKnownAIProviderProfiles(),
+  aiTextModelConfigs: cloneModelConfigs(KNOWN_AI_TEXT_MODEL_CONFIGS),
+  aiVisionModelConfigs: cloneModelConfigs(KNOWN_AI_VISION_MODEL_CONFIGS),
+  aiImageModelConfigs: cloneModelConfigs(KNOWN_AI_IMAGE_MODEL_CONFIGS),
   aiProvider: "openai",
   aiAPIKey: "",
   aiBaseURL: "",
@@ -467,9 +590,12 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   aiImageGenerationEndpoint: "",
   aiImageEditsEndpoint: "",
   aiImageVariationsEndpoint: "",
-  aiDefaultTextModel: "",
-  aiDefaultVisionModel: "",
-  aiDefaultImageGenerationModel: "",
+  aiDefaultTextModel: "gpt-5-mini",
+  aiDefaultVisionModel: "gpt-5-mini",
+  aiDefaultImageGenerationModel: "gpt-image-1",
+  aiImageModelCapabilities: cloneKnownAIImageModelCapabilities(),
+  aiDefaultMaxOutgoingTokens: 0,
+  aiDefaultMaxResponseTokens: 0,
   aiDefaultMaxTokens: 0,
   openAIAPIToken: "",
   openAIDefaultTextModel: "gpt-5-mini",
@@ -1305,169 +1431,411 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       detailsEl.style.display = "none";
     }
 
-    new Setting(detailsEl)
-      .setName(t("AI_PROVIDER_NAME"))
-      .setDesc(t("AI_PROVIDER_DESC"))
-      .addDropdown((dropdown) =>
-        dropdown
-          .addOption("openai", t("AI_PROVIDER_OPTION_OPENAI"))
-          .addOption("anthropic", t("AI_PROVIDER_OPTION_ANTHROPIC"))
-          .addOption("google", t("AI_PROVIDER_OPTION_GOOGLE"))
-          .addOption("xai", t("AI_PROVIDER_OPTION_XAI"))
-          .addOption("openai-compatible", t("AI_PROVIDER_OPTION_OPENAI_COMPATIBLE"))
-          .setValue(this.plugin.settings.aiProvider)
-          .onChange(async (value) => {
-            this.plugin.settings.aiProvider = value as typeof this.plugin.settings.aiProvider;
-            this.applySettingsUpdate();
-          }),
-      );
+    let selectedProviderProfile = Object.keys(this.plugin.settings.aiProviderProfiles ?? {})[0] || "OpenAI";
+    let selectedTextModelConfig = this.plugin.settings.aiDefaultTextModel?.trim() || Object.keys(this.plugin.settings.aiTextModelConfigs ?? {})[0] || "gpt-5-mini";
+    let selectedVisionModelConfig = this.plugin.settings.aiDefaultVisionModel?.trim() || Object.keys(this.plugin.settings.aiVisionModelConfigs ?? {})[0] || "gpt-5-mini";
+    let selectedImageModelConfig = this.plugin.settings.aiDefaultImageGenerationModel?.trim() || Object.keys(this.plugin.settings.aiImageModelConfigs ?? {})[0] || "gpt-image-1";
 
-    new Setting(detailsEl)
-      .setName(t("AI_PROVIDER_API_KEY_NAME"))
-      .setDesc(fragWithHTML(t("AI_PROVIDER_API_KEY_DESC")))
-      .addText((text) => {
-        configurePasswordTextInput(text);
-        return text
-          .setPlaceholder(t("AI_PROVIDER_API_KEY_PLACEHOLDER"))
-          .setValue(this.plugin.settings.aiAPIKey)
-          .onChange(async (value) => {
-            this.plugin.settings.aiAPIKey = value;
+    const getProviderProfiles = () => {
+      return this.plugin.settings.aiProviderProfiles && Object.keys(this.plugin.settings.aiProviderProfiles).length > 0
+        ? this.plugin.settings.aiProviderProfiles
+        : cloneKnownAIProviderProfiles();
+    };
+
+    const getModelConfigs = (kind: "text" | "vision" | "image") => {
+      const settingsMap = kind === "text"
+        ? this.plugin.settings.aiTextModelConfigs
+        : kind === "vision"
+          ? this.plugin.settings.aiVisionModelConfigs
+          : this.plugin.settings.aiImageModelConfigs;
+      if (settingsMap && Object.keys(settingsMap).length > 0) return settingsMap;
+      return kind === "text"
+        ? cloneModelConfigs(KNOWN_AI_TEXT_MODEL_CONFIGS)
+        : kind === "vision"
+          ? cloneModelConfigs(KNOWN_AI_VISION_MODEL_CONFIGS)
+          : cloneModelConfigs(KNOWN_AI_IMAGE_MODEL_CONFIGS);
+    };
+
+    const setProviderProfiles = (profiles: Record<string, AIProviderProfile>) => {
+      this.plugin.settings.aiProviderProfiles = Object.fromEntries(
+        Object.entries(profiles).sort(([left], [right]) => left.localeCompare(right)),
+      );
+    };
+
+    const setModelConfigs = (
+      kind: "text" | "vision" | "image",
+      configs: Record<string, AIModelConfig> | Record<string, AIImageModelConfig>,
+    ) => {
+      const sorted = Object.fromEntries(
+        Object.entries(configs).sort(([left], [right]) => left.localeCompare(right)),
+      );
+      if (kind === "text") this.plugin.settings.aiTextModelConfigs = sorted as Record<string, AIModelConfig>;
+      if (kind === "vision") this.plugin.settings.aiVisionModelConfigs = sorted as Record<string, AIModelConfig>;
+      if (kind === "image") this.plugin.settings.aiImageModelConfigs = sorted as Record<string, AIImageModelConfig>;
+    };
+
+    const sortProfiles = () => {
+      setProviderProfiles(getProviderProfiles());
+    };
+
+    const sortModelConfigs = (kind: "text" | "vision" | "image") => {
+      setModelConfigs(kind, getModelConfigs(kind));
+    };
+
+    const getValidSelection = (kind: "text" | "vision" | "image") => {
+      const configs = getModelConfigs(kind);
+      const optionValues = Object.keys(configs);
+      const selectedValue = kind === "text"
+        ? selectedTextModelConfig
+        : kind === "vision"
+          ? selectedVisionModelConfig
+          : selectedImageModelConfig;
+      if (selectedValue && configs[selectedValue]) return selectedValue;
+      return optionValues[0] ?? "";
+    };
+
+    const providerContainer = detailsEl.createDiv();
+    providerContainer.addClass("excalidraw-ai-provider-table");
+    const textModelContainer = detailsEl.createDiv();
+    const visionModelContainer = detailsEl.createDiv();
+    const imageModelContainer = detailsEl.createDiv();
+
+    const getProviderTypeLabel = (provider: "openai" | "anthropic" | "google" | "xai" | "openai-compatible") => {
+      switch (provider) {
+        case "anthropic": return t("AI_PROVIDER_OPTION_ANTHROPIC");
+        case "google": return t("AI_PROVIDER_OPTION_GOOGLE");
+        case "xai": return t("AI_PROVIDER_OPTION_XAI");
+        case "openai-compatible": return t("AI_PROVIDER_OPTION_OPENAI_COMPATIBLE");
+        default: return t("AI_PROVIDER_OPTION_OPENAI");
+      }
+    };
+
+    const getApiStatusMarkup = (isConfigured: boolean) => {
+      const color = isConfigured ? "var(--text-accent)" : "var(--text-error)";
+      const label = isConfigured ? t("AI_PROVIDER_API_KEY_SET") : t("AI_PROVIDER_API_KEY_NOT_SET");
+      return `<span style=\"color: ${color}; font-weight: 600;\">${label}</span>`;
+    };
+
+    const updateModelProviderReferences = (previousProviderId: string, nextProviderId: string) => {
+      (["text", "vision", "image"] as const).forEach((kind) => {
+        const updatedConfigs = { ...getModelConfigs(kind) };
+        let changed = false;
+        Object.values(updatedConfigs).forEach((config) => {
+          if (config.providerId === previousProviderId) {
+            config.providerId = nextProviderId;
+            changed = true;
+          }
+        });
+        if (changed) {
+          setModelConfigs(kind, updatedConfigs);
+        }
+      });
+    };
+
+    const openProviderProfileModal = (profileId?: string) => {
+      const profiles = getProviderProfiles();
+      new AIProviderProfileModal(this.app, Object.keys(profiles), async (nextProfileId, nextProfile, previousProfileId) => {
+        const updatedProfiles = { ...getProviderProfiles() };
+        if (previousProfileId && previousProfileId !== nextProfileId) {
+          delete updatedProfiles[previousProfileId];
+          updateModelProviderReferences(previousProfileId, nextProfileId);
+        }
+        updatedProfiles[nextProfileId] = { ...nextProfile };
+        setProviderProfiles(updatedProfiles);
+        selectedProviderProfile = nextProfileId;
+        renderAISettings();
+        this.applySettingsUpdate();
+      }, {
+        previousProfileId: profileId,
+        initialProfileId: profileId,
+        initialProfile: profileId ? profiles[profileId] : undefined,
+      }).open();
+    };
+
+    const openModelConfigModal = (kind: "text" | "vision" | "image", modelId?: string) => {
+      const configs = getModelConfigs(kind);
+      new AIModelConfigModal(this.app, Object.keys(configs), async (nextModelId, nextConfig, previousModelId) => {
+        const updatedConfigs = { ...getModelConfigs(kind) };
+        if (previousModelId && previousModelId !== nextModelId) {
+          delete updatedConfigs[previousModelId];
+        }
+        updatedConfigs[nextModelId] = { ...nextConfig };
+        if (kind === "text") {
+          setModelConfigs(kind, updatedConfigs);
+          selectedTextModelConfig = nextModelId;
+          this.plugin.settings.aiDefaultTextModel = nextModelId;
+        }
+        if (kind === "vision") {
+          setModelConfigs(kind, updatedConfigs);
+          selectedVisionModelConfig = nextModelId;
+          this.plugin.settings.aiDefaultVisionModel = nextModelId;
+        }
+        if (kind === "image") {
+          setModelConfigs(kind, updatedConfigs as Record<string, AIImageModelConfig>);
+          selectedImageModelConfig = nextModelId;
+          this.plugin.settings.aiDefaultImageGenerationModel = nextModelId;
+        }
+        renderAISettings();
+        this.applySettingsUpdate();
+      }, {
+        kind,
+        providerIds: Object.keys(getProviderProfiles()),
+        previousModelId: modelId,
+        initialModelId: modelId,
+        initialConfig: modelId ? configs[modelId] : undefined,
+      }).open();
+    };
+
+    const renderProviderSetting = () => {
+      providerContainer.empty();
+      const profiles = getProviderProfiles();
+      const optionValues = Object.keys(profiles).sort((left, right) => left.localeCompare(right));
+      if (!selectedProviderProfile || !profiles[selectedProviderProfile]) {
+        selectedProviderProfile = optionValues[0] ?? "OpenAI";
+      }
+      const headerSetting = new Setting(providerContainer)
+        .setName(t("AI_PROVIDER_NAME"))
+        .setDesc(fragWithHTML(t("AI_PROVIDER_DESC")))
+        .addExtraButton((button) => {
+          button.setIcon("circle-plus").setTooltip(t("AI_PROVIDER_ADD")).onClick(() => openProviderProfileModal());
+        })
+        .addExtraButton((button) => {
+          button.setIcon("rotate-ccw").setTooltip(t("AI_PROVIDER_RESTORE_DEFAULTS")).onClick(async () => {
+            const restoredProfiles = cloneKnownAIProviderProfiles();
+            setProviderProfiles(restoredProfiles);
+            const fallbackProviderId = Object.keys(restoredProfiles)[0] ?? "OpenAI";
+            (["text", "vision", "image"] as const).forEach((kind) => {
+              const updatedConfigs = { ...getModelConfigs(kind) };
+              let changed = false;
+              Object.values(updatedConfigs).forEach((config) => {
+                if (!restoredProfiles[config.providerId]) {
+                  config.providerId = fallbackProviderId;
+                  changed = true;
+                }
+              });
+              if (changed) {
+                setModelConfigs(kind, updatedConfigs);
+              }
+            });
+            selectedProviderProfile = fallbackProviderId;
+            renderAISettings();
             this.applySettingsUpdate();
           });
+        });
+      headerSetting.settingEl.addClass("excalidraw-ai-provider-table__header");
+
+      optionValues.forEach((providerId) => {
+        const profile = profiles[providerId];
+        const apiStatus = getApiStatusMarkup(Boolean(profile.apiKey?.trim()));
+        const providerSetting = new Setting(providerContainer)
+          .setName(providerId)
+          .setDesc(fragWithHTML(
+            t("AI_PROVIDER_PROFILE_ROW_DESC")
+              .replace("{{providerType}}", getProviderTypeLabel(profile.provider))
+              .replace("{{apiKey}}", apiStatus),
+          ))
+          .addExtraButton((button) => {
+            button.setIcon("pencil").setTooltip(t("AI_PROVIDER_EDIT")).onClick(() => openProviderProfileModal(providerId));
+          })
+          .addExtraButton((button) => {
+            button
+              .setIcon("trash")
+              .setTooltip(t("AI_PROVIDER_REMOVE"))
+              .setDisabled(optionValues.length <= 1)
+              .onClick(async () => {
+                const replacementProfileId = optionValues.find((value) => value !== providerId) ?? optionValues[0];
+                const updatedProfiles = { ...profiles };
+                delete updatedProfiles[providerId];
+                setProviderProfiles(updatedProfiles);
+                updateModelProviderReferences(providerId, replacementProfileId);
+                selectedProviderProfile = replacementProfileId;
+                renderAISettings();
+                this.applySettingsUpdate();
+              });
+          });
+        providerSetting.settingEl.addClass("excalidraw-ai-provider-table__row");
       });
+    };
 
-    new Setting(detailsEl)
-      .setName(t("AI_PROVIDER_BASE_URL_NAME"))
-      .setDesc(fragWithHTML(t("AI_PROVIDER_BASE_URL_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("AI_PROVIDER_BASE_URL_PLACEHOLDER"))
-          .setValue(this.plugin.settings.aiBaseURL)
-          .onChange(async (value) => {
-            this.plugin.settings.aiBaseURL = value;
-            this.applySettingsUpdate();
-          }),
-      );
+    const renderModelSetting = (kind: "text" | "vision" | "image") => {
+      const container = kind === "text" ? textModelContainer : kind === "vision" ? visionModelContainer : imageModelContainer;
+      container.empty();
+      const configs = getModelConfigs(kind);
+      const optionValues = Object.keys(configs).sort((left, right) => left.localeCompare(right));
+      const selectedValue = getValidSelection(kind);
+      const config = configs[selectedValue] as AIModelConfig | AIImageModelConfig;
+      const providerProfile = getProviderProfiles()[config.providerId];
+      const apiStatus = getApiStatusMarkup(Boolean(providerProfile?.apiKey?.trim()));
 
-    new Setting(detailsEl)
-      .setName(t("AI_PROVIDER_TEXT_ENDPOINT_NAME"))
-      .setDesc(fragWithHTML(t("AI_PROVIDER_TEXT_ENDPOINT_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("AI_PROVIDER_TEXT_ENDPOINT_PLACEHOLDER"))
-          .setValue(this.plugin.settings.aiTextEndpoint)
-          .onChange(async (value) => {
-            this.plugin.settings.aiTextEndpoint = value;
-            this.applySettingsUpdate();
-          }),
-      );
+      const description = kind === "image"
+        ? t("AI_PROVIDER_DEFAULT_IMAGE_MODEL_DESC")
+          .replace("{{provider}}", config.providerId)
+          .replace("{{providerType}}", providerProfile ? getProviderTypeLabel(providerProfile.provider) : "")
+          .replace("{{apiKey}}", apiStatus)
+          .replace("{{model}}", config.model)
+          .replace("{{sizes}}", (config as AIImageModelConfig).supportedSizes.join(", "))
+          .replace("{{supportsImageEdits}}", (config as AIImageModelConfig).supportsImageEdits
+            ? t("AI_IMAGE_MODEL_CAPABILITIES_EDITS_YES")
+            : t("AI_IMAGE_MODEL_CAPABILITIES_EDITS_NO"))
+        : (kind === "vision" ? t("AI_PROVIDER_DEFAULT_VISION_MODEL_DESC") : t("AI_PROVIDER_DEFAULT_TEXT_MODEL_DESC"))
+          .replace("{{provider}}", config.providerId)
+          .replace("{{apiKey}}", apiStatus)
+          .replace("{{model}}", config.model)
+          .replace("{{endpoint}}", config.endpoint?.trim() || t("AI_MODEL_CONFIG_DERIVED_ENDPOINT"))
+          .replace("{{providerType}}", providerProfile ? getProviderTypeLabel(providerProfile.provider) : "");
 
-    new Setting(detailsEl)
-      .setName(t("AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_NAME"))
-      .setDesc(fragWithHTML(t("AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_PLACEHOLDER"))
-          .setValue(this.plugin.settings.aiImageGenerationEndpoint)
-          .onChange(async (value) => {
-            this.plugin.settings.aiImageGenerationEndpoint = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(detailsEl)
-      .setName(t("AI_PROVIDER_IMAGE_EDITS_ENDPOINT_NAME"))
-      .setDesc(fragWithHTML(t("AI_PROVIDER_IMAGE_EDITS_ENDPOINT_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("AI_PROVIDER_IMAGE_EDITS_ENDPOINT_PLACEHOLDER"))
-          .setValue(this.plugin.settings.aiImageEditsEndpoint)
-          .onChange(async (value) => {
-            this.plugin.settings.aiImageEditsEndpoint = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(detailsEl)
-      .setName(t("AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_NAME"))
-      .setDesc(fragWithHTML(t("AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_PLACEHOLDER"))
-          .setValue(this.plugin.settings.aiImageVariationsEndpoint)
-          .onChange(async (value) => {
-            this.plugin.settings.aiImageVariationsEndpoint = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(detailsEl)
-      .setName(t("AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME"))
-      .setDesc(fragWithHTML(t("AI_PROVIDER_DEFAULT_TEXT_MODEL_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("AI_PROVIDER_DEFAULT_TEXT_MODEL_PLACEHOLDER"))
-          .setValue(this.plugin.settings.aiDefaultTextModel)
-          .onChange(async (value) => {
-            this.plugin.settings.aiDefaultTextModel = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(detailsEl)
-      .setName(t("AI_PROVIDER_DEFAULT_VISION_MODEL_NAME"))
-      .setDesc(fragWithHTML(t("AI_PROVIDER_DEFAULT_VISION_MODEL_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("AI_PROVIDER_DEFAULT_VISION_MODEL_PLACEHOLDER"))
-          .setValue(this.plugin.settings.aiDefaultVisionModel)
-          .onChange(async (value) => {
-            this.plugin.settings.aiDefaultVisionModel = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(detailsEl)
-      .setName(t("AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME"))
-      .setDesc(fragWithHTML(t("AI_PROVIDER_DEFAULT_IMAGE_MODEL_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("AI_PROVIDER_DEFAULT_IMAGE_MODEL_PLACEHOLDER"))
-          .setValue(this.plugin.settings.aiDefaultImageGenerationModel)
-          .onChange(async (value) => {
-            this.plugin.settings.aiDefaultImageGenerationModel = value;
-            this.applySettingsUpdate();
-          }),
-      );
-
-    new Setting(detailsEl)
-      .setName(t("AI_PROVIDER_DEFAULT_MAX_TOKENS_NAME"))
-      .setDesc(fragWithHTML(t("AI_PROVIDER_DEFAULT_MAX_TOKENS_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("AI_PROVIDER_DEFAULT_MAX_TOKENS_PLACEHOLDER"))
-          .setValue(this.plugin.settings.aiDefaultMaxTokens.toString())
-          .onChange(async (value) => {
-            const intVal = parseInt(value);
-            if (isNaN(intVal) && value !== "") {
-              text.setValue(this.plugin.settings.aiDefaultMaxTokens.toString());
-              return;
-            }
-            if (value === "") {
-              this.plugin.settings.aiDefaultMaxTokens = 0;
-              text.setValue("0");
+      new Setting(container)
+        .setName(kind === "vision"
+          ? t("AI_PROVIDER_DEFAULT_VISION_MODEL_NAME")
+          : kind === "image"
+            ? t("AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME")
+            : t("AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME"))
+        .setDesc(fragWithHTML(description))
+        .addDropdown((dropdown) => {
+          optionValues.forEach((value) => dropdown.addOption(value, value));
+          return dropdown
+            .setValue(selectedValue)
+            .onChange(async (value) => {
+              if (kind === "text") {
+                selectedTextModelConfig = value;
+                this.plugin.settings.aiDefaultTextModel = value;
+              }
+              if (kind === "vision") {
+                selectedVisionModelConfig = value;
+                this.plugin.settings.aiDefaultVisionModel = value;
+              }
+              if (kind === "image") {
+                selectedImageModelConfig = value;
+                this.plugin.settings.aiDefaultImageGenerationModel = value;
+              }
+              renderAISettings();
               this.applySettingsUpdate();
-              return;
+            });
+        })
+        .addExtraButton((button) => {
+          button.setIcon("pencil").setTooltip(t("AI_MODEL_EDIT")).onClick(() => openModelConfigModal(kind, selectedValue));
+        })
+        .addExtraButton((button) => {
+          button.setIcon("circle-plus").setTooltip(t("AI_MODEL_ADD")).onClick(() => openModelConfigModal(kind));
+        })
+        .addExtraButton((button) => {
+          button
+            .setIcon("trash")
+            .setTooltip(t("AI_MODEL_REMOVE"))
+            .setDisabled(optionValues.length <= 1)
+            .onClick(async () => {
+              const updatedConfigs = { ...configs };
+              delete updatedConfigs[selectedValue];
+              setModelConfigs(kind, updatedConfigs);
+              const nextSelection = Object.keys(getModelConfigs(kind))[0] ?? "";
+              if (kind === "text") {
+                selectedTextModelConfig = nextSelection;
+                this.plugin.settings.aiDefaultTextModel = nextSelection;
+              }
+              if (kind === "vision") {
+                selectedVisionModelConfig = nextSelection;
+                this.plugin.settings.aiDefaultVisionModel = nextSelection;
+              }
+              if (kind === "image") {
+                selectedImageModelConfig = nextSelection;
+                this.plugin.settings.aiDefaultImageGenerationModel = nextSelection;
+              }
+              renderAISettings();
+              this.applySettingsUpdate();
+            });
+        })
+        .addExtraButton((button) => {
+          button.setIcon("rotate-ccw").setTooltip(t("AI_MODEL_RESTORE_DEFAULTS")).onClick(async () => {
+            if (kind === "text") setModelConfigs(kind, cloneModelConfigs(KNOWN_AI_TEXT_MODEL_CONFIGS));
+            if (kind === "vision") setModelConfigs(kind, cloneModelConfigs(KNOWN_AI_VISION_MODEL_CONFIGS));
+            if (kind === "image") setModelConfigs(kind, cloneModelConfigs(KNOWN_AI_IMAGE_MODEL_CONFIGS));
+            const nextSelection = Object.keys(getModelConfigs(kind))[0] ?? "";
+            if (kind === "text") {
+              selectedTextModelConfig = nextSelection;
+              this.plugin.settings.aiDefaultTextModel = nextSelection;
             }
-            if (intVal < 0) {
-              text.setValue(this.plugin.settings.aiDefaultMaxTokens.toString());
-              return;
+            if (kind === "vision") {
+              selectedVisionModelConfig = nextSelection;
+              this.plugin.settings.aiDefaultVisionModel = nextSelection;
             }
-            this.plugin.settings.aiDefaultMaxTokens = intVal;
-            text.setValue(intVal.toString());
+            if (kind === "image") {
+              selectedImageModelConfig = nextSelection;
+              this.plugin.settings.aiDefaultImageGenerationModel = nextSelection;
+            }
+            renderAISettings();
             this.applySettingsUpdate();
-          }),
-      );
+          });
+        });
+    };
+
+    const renderAISettings = () => {
+      renderProviderSetting();
+      renderModelSetting("text");
+      renderModelSetting("vision");
+      renderModelSetting("image");
+    };
+
+    const addNumberSetting = (
+      parentEl: HTMLElement,
+      name: string,
+      desc: string,
+      placeholder: string,
+      getter: () => number,
+      setter: (value: number) => void,
+    ) => {
+      new Setting(parentEl)
+        .setName(name)
+        .setDesc(fragWithHTML(desc))
+        .addText((text) =>
+          text
+            .setPlaceholder(placeholder)
+            .setValue(getter().toString())
+            .onChange(async (value) => {
+              const intVal = parseInt(value, 10);
+              if (isNaN(intVal) && value !== "") {
+                text.setValue(getter().toString());
+                return;
+              }
+              if (value === "") {
+                setter(0);
+                text.setValue("0");
+                this.applySettingsUpdate();
+                return;
+              }
+              if (intVal < 0) {
+                text.setValue(getter().toString());
+                return;
+              }
+              setter(intVal);
+              text.setValue(intVal.toString());
+              this.applySettingsUpdate();
+            }),
+        );
+    };
+
+    renderAISettings();
+
+    addNumberSetting(
+      detailsEl,
+      t("AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_NAME"),
+      t("AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_DESC"),
+      t("AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_PLACEHOLDER"),
+      () => this.plugin.settings.aiDefaultMaxOutgoingTokens,
+      (value) => {
+        this.plugin.settings.aiDefaultMaxOutgoingTokens = value;
+      },
+    );
+
+    addNumberSetting(
+      detailsEl,
+      t("AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_NAME"),
+      t("AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_DESC"),
+      t("AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_PLACEHOLDER"),
+      () => this.plugin.settings.aiDefaultMaxResponseTokens,
+      (value) => {
+        this.plugin.settings.aiDefaultMaxResponseTokens = value;
+      },
+    );
 
     // ------------------------------------------------
     // Display

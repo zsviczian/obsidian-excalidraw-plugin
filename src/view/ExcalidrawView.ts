@@ -5696,13 +5696,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         persistenceAdapter: ttdPersistenceAdapter,
         onTextSubmit: async (props: any) => {
           const { messages = [], onChunk, onStreamCreated, signal } = props ?? {};
-          const apiKey = this.plugin.settings.aiAPIKey || this.plugin.settings.openAIAPIToken;
-
-          if (!apiKey) {
-            return {
-              error: new Error("AI API key is not set. Please set it in plugin settings."),
-            };
-          }
 
           try {
             onStreamCreated?.();

@@ -488,6 +488,70 @@ label.color-input-container > input {
   min-width: 10em;
 }
 
+.excalidraw-ai-provider-table {
+  margin: auto;
+  width: 80%;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--background-primary-alt);
+}
+
+.excalidraw-ai-provider-table > .setting-item {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-bottom: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+.excalidraw-ai-provider-table__header {
+  padding-left: 1rem;
+  border-bottom: 2px solid var(--background-modifier-border-hover);
+  background: color-mix(in srgb, var(--background-secondary) 82%, var(--background-modifier-hover) 18%);
+}
+
+.excalidraw-ai-provider-table__row {
+  padding-left: 1rem;
+  min-height: 0;
+}
+
+.excalidraw-ai-provider-table__row + .excalidraw-ai-provider-table__row {
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.excalidraw-ai-provider-table__row .setting-item-info,
+.excalidraw-ai-provider-table__header .setting-item-info {
+  padding-top: 0.15rem;
+  padding-bottom: 0.15rem;
+}
+
+.excalidraw-ai-provider-table__row .setting-item-name,
+.excalidraw-ai-provider-table__header .setting-item-name {
+  margin-bottom: 0.1rem;
+}
+
+.excalidraw-ai-provider-table__row .setting-item-description,
+.excalidraw-ai-provider-table__header .setting-item-description {
+  line-height: 1.3;
+}
+
+.excalidraw-ai-provider-table__row .setting-item-control,
+.excalidraw-ai-provider-table__header .setting-item-control {
+  gap: 0.35rem;
+  padding-left: 0.5rem;
+}
+
+@media (max-width: 480px) {
+  .excalidraw-ai-provider-table {
+    margin-left: 0.2rem;
+  }
+
+  .excalidraw-ai-provider-table__row,
+  .excalidraw-ai-provider-table__header {
+    padding-left: 0.15rem;
+  }
+}
+
 div.excalidraw-draginfo {
   position: absolute;
   z-index: 1000;

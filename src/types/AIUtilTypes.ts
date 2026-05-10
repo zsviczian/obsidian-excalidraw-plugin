@@ -1,6 +1,33 @@
 export type AIProvider = "openai" | "anthropic" | "google" | "xai" | "openai-compatible";
 
-export type AIImageInput = string | { url: string };
+export type AIFileInput =
+  | string
+  | { url: string; filename?: string; mimeType?: string }
+  | { dataURL: string; filename?: string; mimeType?: string };
+
+export type AIImageInput =
+  | string
+  | { url: string; detail?: "low" | "high" | "auto"; filename?: string; mimeType?: string }
+  | { dataURL: string; detail?: "low" | "high" | "auto"; filename?: string; mimeType?: string };
+
+export type AIImageModelCapability = {
+  supportedSizes: string[];
+  supportsImageEdits: boolean;
+};
+
+export type AIProviderProfile = {
+  provider: AIProvider;
+  apiKey: string;
+  baseURL: string;
+};
+
+export type AIModelConfig = {
+  providerId: string;
+  model: string;
+  endpoint?: string;
+};
+
+export type AIImageModelConfig = AIModelConfig & AIImageModelCapability;
 
 export type OpenAIImageURLPart = {
   type: "image_url";
@@ -44,7 +71,9 @@ export type GPTCompletionRequest = {
 
 export type AIRequestMessagePart =
   | { type: "text"; text: string }
-  | { type: "image"; image: AIImageInput };
+  | { type: "image"; image: AIImageInput }
+  | { type: "file"; file: AIFileInput }
+  | { type: "audio"; audio: AIFileInput };
 
 export type AIRequestMessage = {
   role: "system" | "user" | "assistant";
@@ -53,12 +82,16 @@ export type AIRequestMessage = {
 
 export type AIRequest = {
   provider?: AIProvider;
+  baseURL?: string;
+  apiKey?: string;
+  model?: string;
   image?: AIImageInput;
   text?: string;
   instruction?: string;
   systemPrompt?: string;
   messages?: AIRequestMessage[];
   temperature?: number;
+  maxOutgoingTokens?: number;
   maxTokens?: number;
   imageGenerationProperties?: {
     size?: string; //depends on model

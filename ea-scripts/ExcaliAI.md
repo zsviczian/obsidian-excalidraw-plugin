@@ -111,32 +111,197 @@ if(!settings["Agent's Task"]) {
   await ea.setScriptSettings(settings);
 }
 
-const AI_API_KEY = ea.plugin.settings.aiAPIKey || ea.plugin.settings.openAIAPIToken;
-if(!AI_API_KEY || AI_API_KEY === "") {
-  new Notice("You must first configure your API key in Excalidraw Plugin Settings");
-  return;
-}
-
 let userPrompt = settings["User Prompt"] ?? "";
 let agentTask = settings["Agent's Task"];
 let imageSize = settings["Image Size"]??"1024x1024";
+let selectedImageModel = settings["Image Model"] ?? "";
 
 if(!systemPrompts.hasOwnProperty(agentTask)) {
   agentTask = Object.keys(systemPrompts)[0];
 }
-let imageModel, valideSizes;
+let imageModel, validSizes;
+
+const getConfiguredImageModel = () => (
+  ea.plugin.settings.aiDefaultImageGenerationModel
+  || ea.plugin.settings.openAIDefaultImageGenerationModel
+  || "gpt-image-1"
+);
+
+const getProviderProfiles = () => (
+  ea.plugin.settings.aiProviderProfiles ?? {}
+);
+
+const getImageModelConfigs = () => (
+  ea.plugin.settings.aiImageModelConfigs ?? {}
+);
+
+const getImageModelConfigId = (modelId) => {
+  const configs = getImageModelConfigs();
+  if(configs[modelId]) {
+    return modelId;
+  }
+  return Object.keys(configs).find(configId => configs[configId]?.model === modelId) ?? "";
+};
+
+const getImageModelConfig = (modelId) => {
+  const configId = getImageModelConfigId(modelId);
+  return configId ? getImageModelConfigs()[configId] ?? null : null;
+};
+
+const getAvailableImageModels = () => {
+  const configuredModels = Object.keys(getImageModelConfigs()).sort((left, right) => left.localeCompare(right));
+  if(configuredModels.length > 0) {
+    return configuredModels;
+  }
+  return [getConfiguredImageModel()];
+};
+
+const getValidSizesForModel = (model) => {
+  const configuredSizes = getImageModelConfig(model)?.supportedSizes
+    ?.map(size => size?.trim())
+    .filter(Boolean);
+  if(configuredSizes?.length) {
+    return configuredSizes;
+  }
+  return ["1024x1024"];
+};
+
+const modelSupportsImageEdits = (model) => (
+  getImageModelConfig(model)?.supportsImageEdits !== false
+);
+
+const getResolvedImageModelSelection = (requestedModelId = selectedImageModel) => {
+  const availableModels = getAvailableImageModels();
+  const resolvedModelId = getImageModelConfigId(requestedModelId)
+    || getImageModelConfigId(getConfiguredImageModel())
+    || availableModels[0]
+    || requestedModelId
+    || "gpt-image-1";
+  const modelConfig = getImageModelConfig(resolvedModelId);
+  const providerProfiles = getProviderProfiles();
+  const providerId = modelConfig?.providerId ?? Object.keys(providerProfiles)[0] ?? "";
+  const providerProfile = providerProfiles[providerId] ?? null;
+
+  return {
+    modelId: resolvedModelId,
+    modelConfig,
+    providerId,
+    providerProfile,
+    requestConfig: {
+      provider: providerProfile?.provider,
+      baseURL: providerProfile?.baseURL,
+      apiKey: providerProfile?.apiKey?.trim(),
+      model: modelConfig?.model ?? resolvedModelId,
+    },
+  };
+};
+
+const getImageModelValidationMessage = (modelId, {requireEditSupport = false} = {}) => {
+  const imageSelection = getResolvedImageModelSelection(modelId);
+  if(!imageSelection.modelConfig) {
+    return `The selected image model (${modelId || "unknown"}) is not configured in Excalidraw AI settings.`;
+  }
+  if(!imageSelection.providerProfile) {
+    return `The provider profile (${imageSelection.providerId || "unknown"}) for image model ${imageSelection.modelId} is missing from Excalidraw AI settings.`;
+  }
+  if(!["openai", "openai-compatible"].includes(imageSelection.providerProfile.provider)) {
+    return `ExcaliAI image generation currently requires an OpenAI or OpenAI-compatible provider. ${imageSelection.modelId} is assigned to ${imageSelection.providerId} (${imageSelection.providerProfile.provider}).`;
+  }
+  if(!imageSelection.requestConfig.apiKey) {
+    return `The selected provider profile (${imageSelection.providerId}) does not have an API key configured.`;
+  }
+  if(requireEditSupport && imageSelection.modelConfig.supportsImageEdits === false) {
+    return `The configured image model (${imageSelection.modelId}) is not marked as supporting image edits in Excalidraw settings.`;
+  }
+  return "";
+};
+
+const getImageRequestErrorMessage = (result, modelId) => {
+  const baseMessage = result?.json?.error?.message ?? "Something went wrong while processing the image request.";
+  const errorContext = result?.json?.error;
+  const imageSelection = getResolvedImageModelSelection(modelId);
+  const contextParts = [];
+  if(errorContext?.provider) {
+    contextParts.push(`provider=${errorContext.provider}`);
+  }
+  if(errorContext?.status) {
+    contextParts.push(`status=${errorContext.status}`);
+  }
+  if(errorContext?.endpoint) {
+    contextParts.push(`endpoint=${errorContext.endpoint}`);
+  }
+  if(errorContext?.imageRequest?.model) {
+    contextParts.push(`model=${errorContext.imageRequest.model}`);
+  }
+  if(errorContext?.imageRequest?.size) {
+    contextParts.push(`size=${errorContext.imageRequest.size}`);
+  }
+  if(errorContext?.imageRequest?.mode) {
+    contextParts.push(`mode=${errorContext.imageRequest.mode}`);
+  }
+  const contextText = contextParts.length > 0 ? ` (${contextParts.join(", ")})` : "";
+  if(
+    baseMessage === "The server had an error while processing your request. Sorry about that!"
+    && imageSelection.providerProfile?.provider === "openai"
+    && imageSelection.requestConfig.model?.startsWith("gpt-image-")
+  ) {
+    return `${baseMessage}${contextText} Check that the selected provider profile (${imageSelection.providerId}) has a valid API key and that your OpenAI organization has GPT Image access enabled for ${imageSelection.requestConfig.model}.`;
+  }
+  return `${baseMessage}${contextText}`;
+};
+
+const getTaskValidationMessage = ({isImageGenRequest, isImageEditRequest, activeImageSelection}) => {
+  if(isImageGenRequest || isImageEditRequest) {
+    return getImageModelValidationMessage(activeImageSelection.modelId, {
+      requireEditSupport: isImageEditRequest,
+    });
+  }
+  return "";
+};
+
+const getActiveImageModel = () => {
+  return getResolvedImageModelSelection(selectedImageModel).modelId;
+};
+
+const parseImageSize = (size) => {
+  const [width, height] = (size ?? "1024x1024").split("x").map(value => parseInt(value, 10));
+  if(Number.isNaN(width) || Number.isNaN(height) || width <= 0 || height <= 0) {
+    return {width: 1024, height: 1024};
+  }
+  return {width, height};
+};
+
+const getEditTargetBoundingBox = (bb, size) => {
+  const {width: targetWidth, height: targetHeight} = parseImageSize(size);
+  const targetRatio = targetWidth/targetHeight;
+  const sourceRatio = bb.width/bb.height;
+
+  let width = bb.width;
+  let height = bb.height;
+  let topX = bb.topX;
+  let topY = bb.topY;
+
+  if(sourceRatio > targetRatio) {
+    height = width/targetRatio;
+    topY = bb.topY - (height - bb.height)/2;
+  } else if(sourceRatio < targetRatio) {
+    width = height*targetRatio;
+    topX = bb.topX - (width - bb.width)/2;
+  }
+
+  return {topX, topY, width, height, targetWidth, targetHeight};
+};
 
 const setImageModelAndSizes = () => {
-  imageModel = systemPrompts[agentTask].type === "image-edit"
-    ? "dall-e-2"
-    : (ea.plugin.settings.aiDefaultImageGenerationModel || ea.plugin.settings.openAIDefaultImageGenerationModel || "gpt-image-1");
-  validSizes = imageModel === "dall-e-2"
-    ? [`256x256`, `512x512`, `1024x1024`]
-    : (imageModel === "dall-e-3"
-      ? [`1024x1024`, `1792x1024`, `1024x1792`]
-      : [`1024x1024`])
+  const nextImageModel = getActiveImageModel();
+  if(selectedImageModel !== nextImageModel) {
+    dirty = true;
+  }
+  imageModel = nextImageModel;
+  selectedImageModel = imageModel;
+  validSizes = getValidSizesForModel(imageModel);
   if(!validSizes.includes(imageSize)) {
-    imageSize = "1024x1024";
+    imageSize = validSizes[0] ?? "1024x1024";
     dirty = true;
   }
 }
@@ -201,12 +366,9 @@ const createMask = async (dataURL) => {
   });
 }
 
-//https://platform.openai.com/docs/api-reference/images/createEdit
-//dall-e-2 image edit only works on square images
-//if targetDalleImageEdit === true then the image and the mask will be returned in two separate dataURLs
-let squareBB;
-
-const generateCanvasDataURL = async (view, targetDalleImageEdit=false) => {
+// For image edits, the selected content is padded to the requested output aspect ratio
+// so the exported image and mask match the requested model size.
+const generateCanvasDataURL = async (view, targetImageEdit=false) => {
   let PADDING = 5;
   await view.forceSave(true); //to ensure recently embedded PNG and other images are saved to file
   const viewElements = ea.getViewSelectedElements();
@@ -226,30 +388,20 @@ const generateCanvasDataURL = async (view, targetDalleImageEdit=false) => {
   
   let exportSettings = {withBackground: true, withTheme: true};
   
-  if(targetDalleImageEdit) {
+  if(targetImageEdit) {
     PADDING = 0;  
     const strokeColor = ea.style.strokeColor;
     const backgroundColor = ea.style.backgroundColor;
     ea.style.backgroundColor = "transparent";
     ea.style.strokeColor = "transparent";
-    let rectID;
-    if(bb.height > bb.width) {
-      rectID = ea.addRect(bb.topX-(bb.height-bb.width)/2, bb.topY,bb.height, bb.height);
-    }
-    if(bb.width > bb.height) {
-      rectID = ea.addRect(bb.topX, bb.topY-(bb.width-bb.height)/2,bb.width, bb.width);
-    }
-    if(bb.height === bb.width) {
-      rectID = ea.addRect(bb.topX, bb.topY, bb.width, bb.height);
-    }
+    const targetBounds = getEditTargetBoundingBox(bb, imageSize);
+    const rectID = ea.addRect(targetBounds.topX, targetBounds.topY, targetBounds.width, targetBounds.height);
     const rect = ea.getElement(rectID);
-    squareBB = {topX: rect.x-PADDING, topY: rect.y-PADDING, width: rect.width + 2*PADDING, height: rect.height + 2*PADDING};
     ea.style.strokeColor = strokeColor;
     ea.style.backgroundColor = backgroundColor;
     ea.getElements().filter(el=>el.type === "image").forEach(el=>{el.isDeleted = true});
 
-    dalleWidth = parseInt(imageSize.split("x")[0]);
-    scale = dalleWidth/squareBB.width;
+    scale = targetBounds.targetWidth/rect.width;
     exportSettings = {withBackground: false, withTheme: true};
     maskDataURL= await ea.createPNGBase64(
       null, scale, exportSettings, loader, "light", PADDING
@@ -348,7 +500,16 @@ const getGeneratedImageSource = (result) => {
 // Submit Prompt
 // --------------------------------------
 const generateImage = async(text, spinnerID, bb, silent=false) => {
+  const validationMessage = getImageModelValidationMessage(selectedImageModel);
+  if(validationMessage) {
+    new Notice(validationMessage, 8000);
+    await errorMessage(spinnerID, validationMessage);
+    return;
+  }
+
+  const imageSelection = getResolvedImageModelSelection(selectedImageModel);
   const requestObject = {
+    ...imageSelection.requestConfig,
     text,
     imageGenerationProperties: {
       size: imageSize, 
@@ -357,13 +518,13 @@ const generateImage = async(text, spinnerID, bb, silent=false) => {
     },
   };
   
-  const result = await ea.postOpenAI(requestObject);
+  const result = await ea.postAI(requestObject);
   console.log({result, json:result?.json});
 
   const imageSource = getGeneratedImageSource(result);
   
   if(!imageSource) {
-    await errorMessage(spinnerID, result?.json?.error?.message);
+    await errorMessage(spinnerID, getImageRequestErrorMessage(result, imageSelection.modelId));
     return;
   }
   
@@ -400,6 +561,17 @@ const run = async (text) => {
   const outputType = outputTypes[systemPrompt.type];
   const isImageGenRequest = outputType.blocktype === "image" || outputType.blocktype === "image-silent";
   const isImageEditRequest = systemPrompt.type === "image-edit";
+  const activeImageSelection = getResolvedImageModelSelection(selectedImageModel);
+  const validationMessage = getTaskValidationMessage({
+    isImageGenRequest,
+    isImageEditRequest,
+    activeImageSelection,
+  });
+
+  if(validationMessage) {
+    new Notice(validationMessage, 8000);
+    return;
+  }
 
   if(isImageEditRequest) {
     if(!text) {
@@ -438,6 +610,7 @@ const run = async (text) => {
   
   const requestObject = isImageEditRequest
   ? {
+      ...activeImageSelection.requestConfig,
       ...imageDataURL ? {image: {url: imageDataURL}} : {},
       ...(text && text.trim() !== "") ? {text} : {},
       imageGenerationProperties: {
@@ -455,7 +628,7 @@ const run = async (text) => {
     }
   
   //Get result from GPT
-  const result = await ea.postOpenAI(requestObject);
+  const result = await ea.postAI(requestObject);
   console.log({result, json:result?.json});
 
   //checking that EA has completed. Because the postOpenAI call is an async await
@@ -471,7 +644,7 @@ const run = async (text) => {
   if(isImageEditRequest) {   
     const imageSource = getGeneratedImageSource(result);
     if(!imageSource) {
-      await errorMessage(spinnerID, result?.json?.error?.message);
+      await errorMessage(spinnerID, getImageRequestErrorMessage(result, activeImageSelection.modelId));
       return;
     }
     
@@ -570,7 +743,39 @@ configModal.onOpen = async () => {
   const contentEl = configModal.contentEl;
   contentEl.createEl("h1", {text: "ExcaliAI"});
 
-  let systemPromptTextArea, systemPromptDiv, imageSizeSetting, imageSizeSettingDropdown, helpEl;
+  let systemPromptTextArea, systemPromptDiv, imageModelSetting, imageModelSettingDropdown, imageSizeSetting, imageSizeSettingDropdown, helpEl, imageModelHelpEl;
+
+  const updateImageModelHelp = () => {
+    if(!imageModelHelpEl) return;
+    const configuredSizes = validSizes.length > 0 ? validSizes.join(", ") : "1024x1024";
+    const editSupportText = modelSupportsImageEdits(imageModel)
+      ? "supports image edits"
+      : "does not support image edits";
+    imageModelHelpEl.innerHTML = `<b>Image model:</b> ${imageModel}. <b>Configured sizes:</b> ${configuredSizes}. This model ${editSupportText}. If the selected image or mask does not match the chosen aspect ratio, ExcaliAI expands and pads the export frame around the selection to fit the target ratio. It does not crop the selected content.`;
+  };
+
+  const refreshImageSizeDropdown = () => {
+    if(!imageSizeSettingDropdown) return;
+    while (imageSizeSettingDropdown.selectEl.options.length > 0) {
+      imageSizeSettingDropdown.selectEl.remove(0);
+    }
+    validSizes.forEach(size=>imageSizeSettingDropdown.addOption(size,size));
+    imageSizeSettingDropdown.setValue(imageSize);
+  };
+
+  const refreshImageModelDropdown = () => {
+    if(!imageModelSettingDropdown) return;
+    while (imageModelSettingDropdown.selectEl.options.length > 0) {
+      imageModelSettingDropdown.selectEl.remove(0);
+    }
+    getAvailableImageModels().forEach(model=>imageModelSettingDropdown.addOption(model,model));
+    imageModelSettingDropdown.setValue(imageModel);
+  };
+
+  const updateHelpText = () => {
+    helpEl.innerHTML = `<b>Help: </b>` + systemPrompts[agentTask].help;
+    updateImageModelHelp();
+  };
   
   new ea.obsidian.Setting(contentEl)
     .setName("What would you like to do?")
@@ -589,13 +794,13 @@ configModal.onOpen = async () => {
           ({imageDataURL, maskDataURL} = await generateCanvasDataURL(ea.targetView, systemPrompts[value].type === "image-edit"));
           addPreviewImage();
           setImageModelAndSizes();
-          while (imageSizeSettingDropdown.selectEl.options.length > 0) { imageSizeSettingDropdown.selectEl.remove(0); }
-          validSizes.forEach(size=>imageSizeSettingDropdown.addOption(size,size));
-          imageSizeSettingDropdown.setValue(imageSize);
+          refreshImageModelDropdown();
+          refreshImageSizeDropdown();
         }
+        imageModelSetting.settingEl.style.display = isImageGenerationTask() ? "" : "none";
         imageSizeSetting.settingEl.style.display = isImageGenerationTask() ? "" : "none";
         const prompt = systemPrompts[value].prompt;
-        helpEl.innerHTML = `<b>Help: </b>` + systemPrompts[value].help;
+        updateHelpText();
         if(prompt) {
           systemPromptDiv.style.display = "";
           systemPromptTextArea.setValue(systemPrompts[value].prompt);
@@ -606,7 +811,8 @@ configModal.onOpen = async () => {
    })
 
   helpEl = contentEl.createEl("p");
-  helpEl.innerHTML = `<b>Help: </b>` + systemPrompts[agentTask].help;
+  imageModelHelpEl = contentEl.createEl("p");
+  updateHelpText();
 
   systemPromptDiv = contentEl.createDiv();
   systemPromptDiv.createEl("h4", {text: "Customize System Prompt"});
@@ -642,8 +848,32 @@ configModal.onOpen = async () => {
   userPromptSetting.descEl.style.display = "none";
   userPromptSetting.infoEl.style.display = "none";
 
+  imageModelSetting = new ea.obsidian.Setting(contentEl)
+    .setName("Select image model")
+    .setDesc("Configured in Excalidraw AI settings.")
+    .addDropdown(dropdown=>{
+      getAvailableImageModels().forEach(model=>dropdown.addOption(model,model));
+      imageModelSettingDropdown = dropdown;
+      dropdown
+        .setValue(imageModel)
+        .onChange(async (value) => {
+          dirty = true;
+          selectedImageModel = value;
+          setImageModelAndSizes();
+          refreshImageModelDropdown();
+          refreshImageSizeDropdown();
+          updateImageModelHelp();
+          if(systemPrompts[agentTask].type === "image-edit") {
+            ({imageDataURL, maskDataURL} = await generateCanvasDataURL(ea.targetView, true));
+            addPreviewImage();
+          }
+        });
+   })
+  imageModelSetting.settingEl.style.display = isImageGenerationTask() ? "" : "none";
+
   imageSizeSetting = new ea.obsidian.Setting(contentEl)
     .setName("Select image size")
+    .setDesc("Configured in Excalidraw AI settings for the active image model.")
     .addDropdown(dropdown=>{
       validSizes.forEach(size=>dropdown.addOption(size,size));
       imageSizeSettingDropdown = dropdown;
@@ -652,6 +882,7 @@ configModal.onOpen = async () => {
         .onChange(async (value) => {
           dirty = true;
           imageSize = value;
+          updateImageModelHelp();
           if(systemPrompts[agentTask].type === "image-edit") {
             ({imageDataURL, maskDataURL} = await generateCanvasDataURL(ea.targetView, true));
             addPreviewImage();
@@ -687,6 +918,7 @@ configModal.onClose = () => {
   if(dirty) {
     settings["User Prompt"] = userPrompt;
     settings["Agent's Task"] = agentTask;
+    settings["Image Model"] = selectedImageModel;
     settings["Image Size"] = imageSize;
     ea.setScriptSettings(settings);
   }
