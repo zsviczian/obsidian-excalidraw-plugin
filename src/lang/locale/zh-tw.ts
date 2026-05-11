@@ -931,6 +931,15 @@ export default {
   FIELD_SUGGESTER_DESC:
     "開啟後，當您在編輯器中輸入 <code>excalidraw-</code> 或者 <code>ea.</code> 時，會彈出一個帶有函式說明的自動補全提示選單。<br>" +
     "該功能借鑑了 Breadcrumbs 和 Templater 外掛。",
+  ENABLE_ONLOAD_SCRIPTS_NAME: "啟用 onload 腳本",
+  ENABLE_ONLOAD_SCRIPTS_CONFIRMATION:
+    "此檔案包含 <code>excalidraw-onload-script</code>。是否啟用 onload 腳本？",
+  ENABLE_ONLOAD_SCRIPTS_CONFIRM_ENABLE: "啟用腳本",
+  ENABLE_ONLOAD_SCRIPTS_CONFIRM_DENY: "不允許",
+  ENABLE_ONLOAD_SCRIPTS_DESC:
+    "啟用後，Excalidraw 會在你之後開啟的所有繪圖中執行檔案層級的 <code>excalidraw-onload-script</code>，直到你關閉此設定。 " +
+    "如果你從未知來源下載 Markdown 檔案，這會帶來風險：惡意人士可以使用 <code>excalidraw-onload-script</code> " +
+    "在 Obsidian 中執行任何命令，並且有可能將資料傳送到網際網路。只有在你信任該檔案及其來源時才啟用此功能。",
   STARTUP_SCRIPT_NAME: "起動指令碼",
   STARTUP_SCRIPT_DESC:
     "外掛啟動時將自動執行該指令碼。可用於為您的 Excalidraw 自動化指令碼設定鉤子。" +

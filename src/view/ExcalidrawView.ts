@@ -2790,14 +2790,35 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       const script = this.excalidrawData.getOnLoadScript();
       if(script) {
         const scriptname = this.file.basename+ "-onlaod-script";
-        const runScript = () => {
+        const runScript = async () => {
           if(!this.excalidrawAPI) { //need to wait for Excalidraw to initialize
-            window.setTimeout(runScript.bind(this),200);
+            window.setTimeout((): void => { void runScript(); },200);
             return;
           }
           this.plugin.scriptEngine.executeScript(this,script,scriptname,this.file);
         }
-        runScript();
+        let allowOnloadScript = this.plugin.settings.enableOnloadScripts;
+        if (!allowOnloadScript) {
+          const onloadScriptPromptButtons = new Map<string, boolean>([
+            [t("ENABLE_ONLOAD_SCRIPTS_CONFIRM_DENY"), null],
+            [t("ENABLE_ONLOAD_SCRIPTS_CONFIRM_ENABLE"), true],
+          ]);
+          const confirmationPrompt = new MultiOptionConfirmationPrompt(
+            this.plugin,
+            `<strong>${t("ENABLE_ONLOAD_SCRIPTS_NAME")}</strong><br>${t("ENABLE_ONLOAD_SCRIPTS_CONFIRMATION")}` +
+              `<br><br>${t("ENABLE_ONLOAD_SCRIPTS_DESC")}`,
+            onloadScriptPromptButtons,
+            t("ENABLE_ONLOAD_SCRIPTS_CONFIRM_DENY"),
+          );
+          allowOnloadScript = await confirmationPrompt.waitForClose;
+          if (allowOnloadScript) {
+            this.plugin.settings.enableOnloadScripts = true;
+            await this.plugin.saveSettings();
+          }
+        }
+        if (allowOnloadScript) {
+          await runScript();
+        }
       }
       this.isLoaded = true;
     });

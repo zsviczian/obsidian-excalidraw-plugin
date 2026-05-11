@@ -1050,6 +1050,7 @@ export class MultiOptionConfirmationPrompt extends Modal {
   private readonly message: string;
   private readonly buttons: Map<string, any>;
   private ctaButtonLabel: string = null;
+  private ctaButtonEl: HTMLButtonElement | null = null;
 
   constructor(private plugin: ExcalidrawPlugin, message: string, buttons?: Map<string, any>, ctaButtonLabel?: string) {
     super(plugin.app);
@@ -1060,7 +1061,7 @@ export class MultiOptionConfirmationPrompt extends Modal {
         [t("PROMPT_BUTTON_OK"), true],
       ]);
       if( !ctaButtonLabel) {
-        ctaButtonLabel = t("PROMPT_BUTTON_OK");
+        ctaButtonLabel = t("PROMPT_BUTTON_CANCEL");
       } 
     }
     this.ctaButtonLabel = ctaButtonLabel;
@@ -1090,16 +1091,16 @@ export class MultiOptionConfirmationPrompt extends Modal {
     // Convert Map to Array for easier iteration
     const buttonEntries = Array.from(this.buttons.entries());
 
-    // Add buttons in reverse order (last button will be on the right)
-    let ctaButton: HTMLButtonElement = null;
-    buttonEntries.reverse().forEach(([buttonText, value], index) => {
+    // Preserve caller-provided button order so fallback focus semantics are predictable.
+    this.ctaButtonEl = null;
+    buttonEntries.forEach(([buttonText, value], index) => {
       const button = this.createButton(buttonContainer, buttonText, () => {
         this.selectedValue = value;
         this.close();
       });
       
       if (buttonText === this.ctaButtonLabel) {
-        ctaButton = button.buttonEl;
+        this.ctaButtonEl = button.buttonEl;
         button.setCta();
       }
       
@@ -1109,10 +1110,8 @@ export class MultiOptionConfirmationPrompt extends Modal {
     });
 
     // Set focus on the first button (visually last)
-    if(this.ctaButtonLabel) {
-      if (ctaButton) {
-        ctaButton.focus();
-      }
+    if(this.ctaButtonLabel && this.ctaButtonEl) {
+      this.ctaButtonEl.focus();
     }
   }
 
@@ -1124,7 +1123,10 @@ export class MultiOptionConfirmationPrompt extends Modal {
 
   onOpen() {
     super.onOpen();
-    this.contentEl.querySelector("button")?.focus();
+    const defaultButton = this.ctaButtonEl ?? this.contentEl.querySelector("button");
+    // Obsidian modal open may apply its own autofocus after onOpen; defer to enforce default keyboard action.
+    window.setTimeout(() => defaultButton?.focus(), 0);
+    window.setTimeout(() => defaultButton?.focus(), 50);
   }
 
   onClose() {

@@ -967,6 +967,15 @@ export default {
   FIELD_SUGGESTER_DESC:
     "Field Suggester borrowed from Breadcrumbs and Templater plugins. The Field Suggester will show an autocomplete menu " +
     "when you type <code>excalidraw-</code> or <code>ea.</code> with function description as hints on the individual items in the list.",
+  ENABLE_ONLOAD_SCRIPTS_NAME: "Enable onload scripts",
+  ENABLE_ONLOAD_SCRIPTS_CONFIRMATION:
+    "This file includes an <code>excalidraw-onload-script</code>. Do you want to enable onload scripts?",
+  ENABLE_ONLOAD_SCRIPTS_CONFIRM_ENABLE: "Enable scripts",
+  ENABLE_ONLOAD_SCRIPTS_CONFIRM_DENY: "Do not allow",
+  ENABLE_ONLOAD_SCRIPTS_DESC:
+    "If enabled, Excalidraw will execute file-level <code>excalidraw-onload-script</code> code in all drawings you open from now on, until you disable this setting. " +
+    "This creates a risk if you download markdown files from unknown sources: a malicious actor can use <code>excalidraw-onload-script</code> " +
+    "to run any command in Obsidian and potentially transfer data to the internet. Only enable this if you trust the file and its source.",
   STARTUP_SCRIPT_NAME: "Startup script",
   STARTUP_SCRIPT_DESC:
     "If set, excalidraw will execute the script at plugin startup. This is useful if you want to set any of the Excalidraw Automate hooks. The startup script is a markdown file " +

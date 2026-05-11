@@ -781,6 +781,15 @@ FILENAME_HEAD: "Имя файла",
   FIELD_SUGGESTER_DESC:
     "Предложение полей (Suggester) позаимствован у плагинов Breadcrumbs и Templater. Предложение полей (Suggester) полей будет показывать " +
     "меню автозаполнения при вводе текста с описанием функций <code>excalidraw-</code> или <code>ea.</code> в качестве подсказок для отдельных элементов в списке.",
+  ENABLE_ONLOAD_SCRIPTS_NAME: "Включить onload-скрипты",
+  ENABLE_ONLOAD_SCRIPTS_CONFIRMATION:
+    "Этот файл содержит <code>excalidraw-onload-script</code>. Включить onload-скрипты?",
+  ENABLE_ONLOAD_SCRIPTS_CONFIRM_ENABLE: "Включить скрипты",
+  ENABLE_ONLOAD_SCRIPTS_CONFIRM_DENY: "Не разрешать",
+  ENABLE_ONLOAD_SCRIPTS_DESC:
+    "Если эта настройка включена, Excalidraw будет выполнять <code>excalidraw-onload-script</code> на уровне файла во всех рисунках, которые вы откроете далее, пока вы не отключите эту настройку. " +
+    "Это создаёт риск, если вы загружаете Markdown-файлы из неизвестных источников: злоумышленник может использовать <code>excalidraw-onload-script</code> " +
+    "для запуска любой команды в Obsidian и потенциальной передачи данных в интернет. Включайте это только если доверяете файлу и его источнику.",
   STARTUP_SCRIPT_NAME: "Сценарий запуска",
   STARTUP_SCRIPT_DESC:
     "Если этот параметр установлен, excalidraw будет выполнять скрипт при запуске плагина. Это полезно, если вы хотите установить какой-либо из крючков Excalidraw Automate. " +

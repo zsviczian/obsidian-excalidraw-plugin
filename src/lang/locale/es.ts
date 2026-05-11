@@ -888,6 +888,15 @@ FILENAME_HEAD: "Nombre de archivo",
   FIELD_SUGGESTER_DESC:
     "El sugeridor de campos, tomado de los complementos Breadcrumbs y Templater, mostrará un menú de autocompletar " +
     "cuando escribas <code>excalidraw-</code> o <code>ea.</code> , con descripciones de las funciones como pistas para cada elemento en la lista.",
+  ENABLE_ONLOAD_SCRIPTS_NAME: "Habilitar scripts de carga",
+  ENABLE_ONLOAD_SCRIPTS_CONFIRMATION:
+    "Este archivo incluye un <code>excalidraw-onload-script</code>. ¿Quieres habilitar los scripts de carga?",
+  ENABLE_ONLOAD_SCRIPTS_CONFIRM_ENABLE: "Habilitar scripts",
+  ENABLE_ONLOAD_SCRIPTS_CONFIRM_DENY: "No permitir",
+  ENABLE_ONLOAD_SCRIPTS_DESC:
+    "Si está habilitado, Excalidraw ejecutará el <code>excalidraw-onload-script</code> a nivel de archivo en todos los dibujos que abras a partir de ahora, hasta que desactives esta opción. " +
+    "Esto crea un riesgo si descargas archivos Markdown de fuentes desconocidas: un actor malicioso puede usar <code>excalidraw-onload-script</code> " +
+    "para ejecutar cualquier comando en Obsidian y potencialmente transferir datos a internet. Actívalo solo si confías en el archivo y en su origen.",
   STARTUP_SCRIPT_NAME: "Script de inicio",
   STARTUP_SCRIPT_DESC:
     "Si está configurado, Excalidraw ejecutará el script al iniciar el complemento. Esto es útil si quieres establecer cualquiera de los hooks de Excalidraw Automate. El script de inicio es un archivo Markdown " +

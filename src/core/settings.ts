@@ -163,6 +163,7 @@ export interface ExcalidrawSettings {
   addDummyTextElement: boolean;
   zoteroCompatibility: boolean;
   fieldSuggester: boolean;
+  enableOnloadScripts: boolean;
   //loadCount: number; //version 1.2 migration counter
   drawingOpenCount: number;
   library: string;
@@ -497,6 +498,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   addDummyTextElement: false,
   zoteroCompatibility: false,
   fieldSuggester: true,
+  enableOnloadScripts: false,
   compatibilityMode: false,
   //loadCount: 0,
   drawingOpenCount: 0,
@@ -3679,6 +3681,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setValue(this.plugin.settings.fieldSuggester)
         .onChange(async (value) => {
           this.plugin.settings.fieldSuggester = value;
+          this.applySettingsUpdate();
+        }),
+    );
+
+    new Setting(detailsEl)
+    .setName(t("ENABLE_ONLOAD_SCRIPTS_NAME"))
+    .setDesc(fragWithHTML(t("ENABLE_ONLOAD_SCRIPTS_DESC")))
+    .addToggle((toggle) =>
+      toggle
+        .setValue(this.plugin.settings.enableOnloadScripts)
+        .onChange(async (value) => {
+          this.plugin.settings.enableOnloadScripts = value;
           this.applySettingsUpdate();
         }),
     );

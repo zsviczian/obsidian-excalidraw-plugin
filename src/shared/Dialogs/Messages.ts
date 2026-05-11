@@ -7,6 +7,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
 "2.23.0":`
 ## New
+- Added a new setting under *Excalidraw Automate* to opt-in to \`excalidraw-onload-scripts\`.
 - Added image cache for nested images, including nested Excalidraw drawings and PDF page renders.
   - When a scene is opened again on the same device, cached images are shown immediately while validation of nested changes continues in the background. This should noticeably improve loading times for scenes you access regularly.
   - A new setting under plugin settings in **Image caching and rendering optimization** lets you control cache retention in days, so you can balance disk usage against how long these cached images are kept available.
