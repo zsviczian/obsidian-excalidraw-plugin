@@ -1831,6 +1831,9 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
           padding-right: 0;
           margin-bottom: 0.45rem;
         }
+        .excali-ai-task-editor-header .setting-item-control {
+          width: fit-content !important;  
+        }
         .excali-ai-task-editor-modal .excali-ai-task-editor-field .setting-item-control {
           width: 100%;
           display: flex;
