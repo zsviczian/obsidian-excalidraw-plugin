@@ -312,6 +312,8 @@ export default {
     `These settings are used by ExcalidrawAutomate, Mermaid chat, diagram-to-code, and related AI features. Configure one or more provider profiles, then assign your text, vision, and image models to those providers. Older OpenAI-specific AI settings are migrated here automatically on first run.`,
   AI_ENABLED_NAME: "Enable AI features",
   AI_ENABLED_DESC: "You need to reopen Excalidraw for the changes to take effect.",
+  AI_VERBOSE_LOGGING_NAME: "Enable verbose AI logging",
+  AI_VERBOSE_LOGGING_DESC: "Write detailed AI request and response diagnostics to the developer console. Leave this off unless you are troubleshooting.",
   AI_PROVIDER_NAME: "Define available providers",
   AI_PROVIDER_DESC:
     "Define the provider profiles available to the model lists below. Text, Vision, and Image each select their provider separately.",
@@ -339,7 +341,7 @@ export default {
   AI_PROVIDER_BASE_URL_PLACEHOLDER: "e.g.: https://api.openai.com/v1",
   AI_PROVIDER_TEXT_ENDPOINT_NAME: "AI text endpoint override",
   AI_PROVIDER_TEXT_ENDPOINT_DESC:
-    "Optional full endpoint override for text and vision requests. Leave blank to derive it from the base URL and provider. Most users should keep this empty.",
+    "Optional full endpoint override for text and multimodal requests. Leave blank to derive it from the base URL and provider. Most users should keep this empty.",
   AI_PROVIDER_TEXT_ENDPOINT_PLACEHOLDER: "Optional full text endpoint",
   AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_NAME: "AI image generation endpoint override",
   AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_DESC:
@@ -353,9 +355,9 @@ export default {
   AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_DESC:
     "Optional full endpoint override for image variation requests. Leave blank unless your provider exposes image variations on a non-standard path.",
   AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_PLACEHOLDER: "Optional full image variations endpoint",
-  AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME: "Text model",
+  AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME: "Text and multimodal model",
   AI_PROVIDER_DEFAULT_TEXT_MODEL_DESC:
-    "Model used for text-only requests such as Mermaid chat.<br>Provider: {{provider}} ({{providerType}})<br>API key: {{apiKey}}<br>Model name: {{model}}<br>Endpoint: {{endpoint}}",
+    "Model used for text chat and image-aware requests such as Mermaid chat, diagram-to-code, and wireframe analysis.<br>Provider: {{provider}} ({{providerType}})<br>API key: {{apiKey}}<br>Model name: {{model}}<br>Endpoint: {{endpoint}}<br>Multimodal support: {{multimodalSupport}}",
   AI_PROVIDER_DEFAULT_TEXT_MODEL_PLACEHOLDER: "e.g.: gpt-5-mini, claude-sonnet, gemini-2.5-pro",
   AI_PROVIDER_DEFAULT_VISION_MODEL_NAME: "Vision model",
   AI_PROVIDER_DEFAULT_VISION_MODEL_DESC:
@@ -363,7 +365,7 @@ export default {
   AI_PROVIDER_DEFAULT_VISION_MODEL_PLACEHOLDER: "e.g.: gpt-5-mini, claude-sonnet, gemini-2.5-flash",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME: "Image model",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_DESC:
-    "Model used for image generation and image edits. Use the Edit, Add, and Remove buttons to modify the list.<br>Provider: {{provider}} ({{providerType}})<br>API key: {{apiKey}}<br>Model name: {{model}}<br>Supported resolutions: {{sizes}}<br>Supports image edits: {{supportsImageEdits}}",
+    "Model used for image generation, prompt-based transforms, and mask edits. Use the Edit, Add, and Remove buttons to modify the list.<br>Provider: {{provider}} ({{providerType}})<br>API key: {{apiKey}}<br>Model name: {{model}}<br>Supported resolutions: {{sizes}}<br>Prompt transforms: {{supportsPromptImageTransforms}}<br>Mask edits: {{supportsMaskImageEdits}}",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "e.g.: gpt-image-1",
   AI_MODEL_CONFIG_DERIVED_ENDPOINT: "Derived from the selected provider",
   AI_MODEL_EDIT: "Edit model",
@@ -372,19 +374,25 @@ export default {
   AI_MODEL_RESTORE_DEFAULTS: "Restore model defaults",
   AI_IMAGE_MODEL_CAPABILITIES_NAME: "Image model capabilities",
   AI_IMAGE_MODEL_CAPABILITIES_DESC:
-    "Manage stored image model metadata such as supported resolutions and image edit support. Example: see the <a href=\"https://platform.openai.com/docs/guides/image-generation\" target=\"_blank\" rel=\"noopener noreferrer\">OpenAI image generation docs</a> to look up supported sizes.",
+    "Manage stored image model metadata such as supported resolutions, prompt-transform support, and mask-edit support. Example: see the <a href=\"https://platform.openai.com/docs/guides/image-generation\" target=\"_blank\" rel=\"noopener noreferrer\">OpenAI image generation docs</a> to look up supported sizes.",
   AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "Restore known defaults",
   AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "Add",
   AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "Edit",
   AI_IMAGE_MODEL_CAPABILITIES_REMOVE_MODEL: "Remove entry",
   AI_IMAGE_MODEL_CAPABILITIES_CURRENT_ENTRY_NAME: "Selected model entry",
   AI_IMAGE_MODEL_CAPABILITIES_CURRENT_ENTRY_DESC:
-    "<b>{{model}}</b><br>Supported resolutions: {{sizes}}<br>Supports image edits: {{supportsImageEdits}}",
+    "<b>{{model}}</b><br>Supported resolutions: {{sizes}}<br>Prompt transforms: {{supportsPromptImageTransforms}}<br>Mask edits: {{supportsMaskImageEdits}}",
   AI_IMAGE_MODEL_CAPABILITIES_SIZES_NAME: "Supported resolutions",
   AI_IMAGE_MODEL_CAPABILITIES_SIZES_PLACEHOLDER: "1024x1024, 1536x1024, 1024x1536",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_NAME: "Supports image edits",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_DESC:
     "Disable this when the model can generate images but does not support image edits or masks.",
+  AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_NAME: "Prompt image transforms",
+  AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_DESC:
+    "Enable this when the model accepts an input image plus a text prompt for non-masked edits.",
+  AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_NAME: "Mask image edits",
+  AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_DESC:
+    "Enable this when the model supports replacing selected regions of an input image with a mask.",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_YES: "Yes",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_NO: "No",
   AI_IMAGE_MODEL_CAPABILITY_MODAL_ADD_TITLE: "Add image model entry",
@@ -427,6 +435,8 @@ export default {
   AI_MODEL_CONFIG_MODAL_ENDPOINT_NAME: "Endpoint override",
   AI_MODEL_CONFIG_MODAL_ENDPOINT_DESC: "Optional full endpoint override for this model. Leave blank to derive it from the provider profile.",
   AI_MODEL_CONFIG_MODAL_ENDPOINT_PLACEHOLDER: "Optional full endpoint",
+  AI_MODEL_CONFIG_MODAL_MULTIMODAL_NAME: "Multimodal support",
+  AI_MODEL_CONFIG_MODAL_MULTIMODAL_DESC: "Allow this text model to accept image inputs for analysis and diagram-to-code style tasks.",
   AI_MODEL_CONFIG_MODAL_NAME_REQUIRED: "Entry name is required.",
   AI_MODEL_CONFIG_MODAL_PROVIDER_REQUIRED: "Select a provider profile.",
   AI_MODEL_CONFIG_MODAL_MODEL_REQUIRED: "Model name is required.",
@@ -443,7 +453,7 @@ export default {
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_PLACEHOLDER: "e.g.: 8000",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_NAME: "AI default response token limit",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_DESC:
-    "Default value for AIRequest.maxTokens. This limits text or vision responses returned by the model. It does not affect direct image generation or image edit endpoints.",
+    "Default value for AIRequest.maxTokens. This limits text or multimodal responses returned by the model. It does not affect direct image generation or image edit endpoints.",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_PLACEHOLDER: "e.g.: 4096",
   SAVING_HEAD: "Saving",
   SAVING_DESC: "In the 'Saving' section of Excalidraw Settings, you can configure how your drawings are saved. This includes options for compressing Excalidraw JSON in Markdown, setting autosave intervals for both desktop and mobile, defining filename formats, and choosing whether to use the .excalidraw.md or .md file extension. ",

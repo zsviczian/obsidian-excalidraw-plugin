@@ -81,6 +81,13 @@ import { EmbeddableMDCustomProps } from "./Dialogs/EmbeddableSettings";
 import {
   postAI as _postAI,
   postOpenAI as _postOpenAI,
+  getAISettings as _getAISettings,
+  generateAIText as _generateAIText,
+  analyzeAIImage as _analyzeAIImage,
+  generateAIImage as _generateAIImage,
+  transformAIImage as _transformAIImage,
+  maskEditAIImage as _maskEditAIImage,
+  createAIChatSession as _createAIChatSession,
   extractCodeBlocks as _extractCodeBlocks,
 } from "../utils/AIUtils";
 import { EXCALIDRAW_AUTOMATE_INFO, EXCALIDRAW_SCRIPTENGINE_INFO } from "./Dialogs/SuggesterInfo";
@@ -102,7 +109,7 @@ import { ExcalidrawSidepanelView } from "src/view/sidepanel/Sidepanel";
 import { ExcalidrawSidepanelTab } from "src/view/sidepanel/SidepanelTab";
 import { patchMobileView } from "src/utils/customEmbeddableUtils";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
-import { AIRequest } from "src/types/AIUtilTypes";
+import { AIRequest, ExcalidrawAISettings } from "src/types/AIUtilTypes";
 import { getAspectRatio } from "src/utils/YoutTubeUtils";
 import { getPDFCropRect } from "src/utils/PDFUtils";
 import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
@@ -296,7 +303,7 @@ export class ExcalidrawAutomate {
    * @returns {Promise<RequestUrlResponse>} Promise resolving to the provider-normalized API response.
    */
   public async postAI(request: AIRequest): Promise<RequestUrlResponse> {
-    return await _postAI(request);
+    return await _postAI(request, { plugin: this.plugin });
   }
 
   /**
@@ -305,8 +312,57 @@ export class ExcalidrawAutomate {
    * @returns {Promise<RequestUrlResponse>} Promise resolving to the API response.
    */
   public async postOpenAI(request: AIRequest): Promise<RequestUrlResponse> {
-    return await _postOpenAI(request);
+    return await _postOpenAI(request, { plugin: this.plugin });
   } 
+
+  /**
+   * Returns the sanitized Excalidraw AI configuration currently available to scripts.
+   */
+  public getAISettings(): ExcalidrawAISettings | null {
+    return _getAISettings(this.plugin);
+  }
+
+  /**
+   * Sends a text or multimodal chat request to the configured AI text model.
+   */
+  public async generateAIText(request: AIRequest) {
+    return await _generateAIText(request, { plugin: this.plugin });
+  }
+
+  /**
+   * Sends an image-analysis request to the configured multimodal text model.
+   */
+  public async analyzeAIImage(request: AIRequest) {
+    return await _analyzeAIImage(request, { plugin: this.plugin });
+  }
+
+  /**
+   * Generates a new image using the configured AI image model.
+   */
+  public async generateAIImage(request: AIRequest) {
+    return await _generateAIImage(request, { plugin: this.plugin });
+  }
+
+  /**
+   * Applies a prompt-driven edit to an input image using the configured AI image model.
+   */
+  public async transformAIImage(request: AIRequest) {
+    return await _transformAIImage(request, { plugin: this.plugin });
+  }
+
+  /**
+   * Applies a mask-based edit to an input image using the configured AI image model.
+   */
+  public async maskEditAIImage(request: AIRequest) {
+    return await _maskEditAIImage(request, { plugin: this.plugin });
+  }
+
+  /**
+   * Creates a lightweight chat session wrapper that preserves prior messages between calls.
+   */
+  public createAIChatSession(initialRequest: Omit<AIRequest, "messages"> = {}) {
+    return _createAIChatSession(initialRequest, { plugin: this.plugin });
+  }
 
   /**
    * Extracts code blocks from markdown text.

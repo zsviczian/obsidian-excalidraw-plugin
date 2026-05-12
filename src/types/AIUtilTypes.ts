@@ -12,7 +12,8 @@ export type AIImageInput =
 
 export type AIImageModelCapability = {
   supportedSizes: string[];
-  supportsImageEdits: boolean;
+  supportsPromptImageTransforms: boolean;
+  supportsMaskImageEdits: boolean;
 };
 
 export type AIProviderProfile = {
@@ -25,9 +26,26 @@ export type AIModelConfig = {
   providerId: string;
   model: string;
   endpoint?: string;
+  multimodalSupport?: boolean;
 };
 
 export type AIImageModelConfig = AIModelConfig & AIImageModelCapability;
+
+export type ExcalidrawAISettings = {
+  enabled: boolean;
+  providerProfiles: Record<string, {
+    provider: AIProvider;
+    baseURL: string;
+    hasApiKey: boolean;
+  }>;
+  textModels: Record<string, AIModelConfig>;
+  imageModels: Record<string, AIImageModelConfig>;
+  defaultTextModel: string;
+  defaultMultimodalTextModel: string;
+  defaultImageModel: string;
+  defaultMaxOutgoingTokens: number;
+  defaultMaxResponseTokens: number;
+};
 
 export type OpenAIImageURLPart = {
   type: "image_url";
@@ -85,6 +103,8 @@ export type AIRequest = {
   baseURL?: string;
   apiKey?: string;
   model?: string;
+  textModelId?: string;
+  imageModelId?: string;
   image?: AIImageInput;
   text?: string;
   instruction?: string;

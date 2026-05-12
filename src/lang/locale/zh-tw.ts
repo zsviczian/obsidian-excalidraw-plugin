@@ -312,6 +312,8 @@ export default {
     `這些設定會被 ExcalidrawAutomate、Mermaid chat 和 diagram-to-code 共用。大多數情況下，您只需要設定供應商、API key 和預設模型。除非您的供應商要求自訂 URL，否則請將各 endpoint 覆寫欄位留空。舊的 OpenAI 專用 AI 設定會在首次執行時自動遷移到這裡。`,
   AI_ENABLED_NAME: "啟用 AI 功能",
   AI_ENABLED_DESC: "您需要重新開啟 Excalidraw 才能使更改生效。",
+  AI_VERBOSE_LOGGING_NAME: "啟用詳細 AI 日誌",
+  AI_VERBOSE_LOGGING_DESC: "將詳細的 AI 請求與回應診斷資訊寫入開發者主控台。除非您正在排查問題，否則請保持關閉。",
   AI_PROVIDER_NAME: "定義可用供應商",
   AI_PROVIDER_DESC:
     "定義下方模型清單可用的供應商設定。文字、視覺與圖像模型各自獨立選擇供應商。",
@@ -339,7 +341,7 @@ export default {
   AI_PROVIDER_BASE_URL_PLACEHOLDER: "例如：https://api.openai.com/v1",
   AI_PROVIDER_TEXT_ENDPOINT_NAME: "AI 文字 endpoint 覆寫",
   AI_PROVIDER_TEXT_ENDPOINT_DESC:
-    "可選的完整 endpoint 覆寫，用於文字與視覺請求。留空時會根據基礎 URL 和供應商自動推導。大多數使用者不需要填寫。",
+    "可選的完整 endpoint 覆寫，用於文字與多模態請求。留空時會根據基礎 URL 和供應商自動推導。大多數使用者不需要填寫。",
   AI_PROVIDER_TEXT_ENDPOINT_PLACEHOLDER: "可選的完整文字 endpoint",
   AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_NAME: "AI 圖像生成 endpoint 覆寫",
   AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_DESC:
@@ -353,9 +355,9 @@ export default {
   AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_DESC:
     "可選的完整 endpoint 覆寫，用於圖像變體請求。除非您的供應商使用非標準路徑，否則請留空。",
   AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_PLACEHOLDER: "可選的完整圖像變體 endpoint",
-  AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME: "文字模型",
+  AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME: "文字與多模態模型",
   AI_PROVIDER_DEFAULT_TEXT_MODEL_DESC:
-    "用於 Mermaid chat 等純文字請求的模型。<br>供應商：{{provider}}（{{providerType}}）<br>API key：{{apiKey}}<br>模型名稱：{{model}}<br>Endpoint：{{endpoint}}",
+    "用於文字聊天與圖像理解請求的模型，例如 Mermaid chat、diagram-to-code 與線框圖分析。<br>供應商：{{provider}}（{{providerType}}）<br>API key：{{apiKey}}<br>模型名稱：{{model}}<br>Endpoint：{{endpoint}}<br>多模態支援：{{multimodalSupport}}",
   AI_PROVIDER_DEFAULT_TEXT_MODEL_PLACEHOLDER: "例如：gpt-5-mini、claude-sonnet、gemini-2.5-pro",
   AI_PROVIDER_DEFAULT_VISION_MODEL_NAME: "視覺模型",
   AI_PROVIDER_DEFAULT_VISION_MODEL_DESC:
@@ -363,7 +365,7 @@ export default {
   AI_PROVIDER_DEFAULT_VISION_MODEL_PLACEHOLDER: "例如：gpt-5-mini、claude-sonnet、gemini-2.5-flash",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME: "圖像模型",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_DESC:
-    "用於圖像生成與圖像編輯的模型。使用「編輯」、「新增」、「刪除」按鈕修改列表。<br>供應商：{{provider}}（{{providerType}}）<br>API key：{{apiKey}}<br>模型名稱：{{model}}<br>支援的解析度：{{sizes}}<br>支援圖像編輯：{{supportsImageEdits}}",
+    "用於圖像生成、提示詞驅動的圖像轉換與遮罩編輯的模型。使用「編輯」、「新增」、「刪除」按鈕修改列表。<br>供應商：{{provider}}（{{providerType}}）<br>API key：{{apiKey}}<br>模型名稱：{{model}}<br>支援的解析度：{{sizes}}<br>提示詞圖像轉換：{{supportsPromptImageTransforms}}<br>遮罩編輯：{{supportsMaskImageEdits}}",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "例如：gpt-image-1",
   AI_MODEL_CONFIG_DERIVED_ENDPOINT: "由所選供應商推導",
   AI_MODEL_EDIT: "編輯模型",
@@ -372,19 +374,25 @@ export default {
   AI_MODEL_RESTORE_DEFAULTS: "還原預設模型",
   AI_IMAGE_MODEL_CAPABILITIES_NAME: "圖像模型能力",
   AI_IMAGE_MODEL_CAPABILITIES_DESC:
-    "在這裡管理圖像模型中繼資料，例如支援的解析度與是否支援圖像編輯。舉例來說，你可以在 <a href=\"https://platform.openai.com/docs/guides/image-generation\" target=\"_blank\" rel=\"noopener noreferrer\">OpenAI 圖像生成文件</a> 中查詢支援的尺寸。",
+    "在這裡管理圖像模型中繼資料，例如支援的解析度、是否支援提示詞圖像轉換，以及是否支援遮罩編輯。舉例來說，你可以在 <a href=\"https://platform.openai.com/docs/guides/image-generation\" target=\"_blank\" rel=\"noopener noreferrer\">OpenAI 圖像生成文件</a> 中查詢支援的尺寸。",
   AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "還原已知預設值",
   AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "新增",
   AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "編輯",
   AI_IMAGE_MODEL_CAPABILITIES_REMOVE_MODEL: "刪除項目",
   AI_IMAGE_MODEL_CAPABILITIES_CURRENT_ENTRY_NAME: "目前選取的模型項目",
   AI_IMAGE_MODEL_CAPABILITIES_CURRENT_ENTRY_DESC:
-    "<b>{{model}}</b><br>支援的解析度：{{sizes}}<br>支援圖像編輯：{{supportsImageEdits}}",
+    "<b>{{model}}</b><br>支援的解析度：{{sizes}}<br>提示詞圖像轉換：{{supportsPromptImageTransforms}}<br>遮罩編輯：{{supportsMaskImageEdits}}",
   AI_IMAGE_MODEL_CAPABILITIES_SIZES_NAME: "支援的解析度",
   AI_IMAGE_MODEL_CAPABILITIES_SIZES_PLACEHOLDER: "1024x1024, 1536x1024, 1024x1536",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_NAME: "支援圖像編輯",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_DESC:
     "如果模型只能生成圖像但不支援圖像編輯或遮罩，請關閉此項。",
+  AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_NAME: "提示詞圖像轉換",
+  AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_DESC:
+    "當模型支援使用輸入圖像與文字提示詞進行無遮罩編輯時，請啟用此項。",
+  AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_NAME: "遮罩圖像編輯",
+  AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_DESC:
+    "當模型支援使用遮罩替換輸入圖像的局部區域時，請啟用此項。",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_YES: "是",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_NO: "否",
   AI_IMAGE_MODEL_CAPABILITY_MODAL_ADD_TITLE: "新增圖像模型項目",
@@ -401,13 +409,15 @@ export default {
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_MODEL_REQUIRED: "必須填寫模型 ID。",
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_SIZE_REQUIRED: "至少新增一個支援的解析度。",
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_DUPLICATE_MODEL: "此模型 ID 已存在項目。",
+  AI_MODEL_CONFIG_MODAL_MULTIMODAL_NAME: "多模態支援",
+  AI_MODEL_CONFIG_MODAL_MULTIMODAL_DESC: "允許此文字模型接收圖像輸入，用於分析與 diagram-to-code 類型任務。",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_NAME: "AI 預設輸出 token 預算",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_DESC:
     "AIRequest.maxOutgoingTokens 的預設值。Excalidraw 會將其作為送出文字的近似預算，並優先裁切較長提示詞或較舊的聊天記錄。它也可能影響圖像請求中附帶送出的文字。",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_PLACEHOLDER: "例如：8000",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_NAME: "AI 預設回應 token 上限",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_DESC:
-    "AIRequest.maxTokens 的預設值。它限制模型回傳的文字或視覺回應，不影響直接圖像生成或圖像編輯 endpoint。",
+    "AIRequest.maxTokens 的預設值。它限制模型回傳的文字或多模態回應，不影響直接圖像生成或圖像編輯 endpoint。",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_PLACEHOLDER: "例如：4096",
   SAVING_HEAD: "儲存",
   SAVING_DESC: "包括：壓縮，自動儲存的時間間隔，檔案的命名格式和副檔名等。",

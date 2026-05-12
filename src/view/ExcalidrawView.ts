@@ -5776,7 +5776,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
               return { error: new Error("Request aborted") };
             }
             console.log(err);
-            return { error: new Error("Request failed") };
+            return { error: new Error(err?.message ?? "Request failed") };
           }
         },
       }
@@ -5828,7 +5828,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
             return { html: response.html };
           } catch (err: any) {
             return {
-              html: errorHTML("Request failed"),
+              html: errorHTML(err?.message ?? "Request failed"),
             };
           }
         },

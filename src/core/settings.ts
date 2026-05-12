@@ -218,6 +218,7 @@ export interface ExcalidrawSettings {
   canvasImmersiveEmbed: boolean,
   startupScriptPath: string,
   aiEnabled: boolean,
+  aiVerboseLogging: boolean,
   aiProviderProfiles: Record<string, AIProviderProfile>,
   aiTextModelConfigs: Record<string, AIModelConfig>,
   aiVisionModelConfigs: Record<string, AIModelConfig>,
@@ -230,6 +231,7 @@ export interface ExcalidrawSettings {
   aiImageEditsEndpoint: string,
   aiImageVariationsEndpoint: string,
   aiDefaultTextModel: string,
+  aiDefaultMultimodalModel: string,
   aiDefaultVisionModel: string,
   aiDefaultImageGenerationModel: string,
   aiImageModelCapabilities: Record<string, AIImageModelCapability>,
@@ -280,27 +282,58 @@ const configurePasswordTextInput = (text: TextComponent) => {
 const KNOWN_AI_IMAGE_MODEL_CAPABILITIES: Record<string, AIImageModelCapability> = {
   "dall-e-2": {
     supportedSizes: ["256x256", "512x512", "1024x1024"],
-    supportsImageEdits: true,
+    supportsPromptImageTransforms: true,
+    supportsMaskImageEdits: true,
   },
   "dall-e-3": {
     supportedSizes: ["1024x1024", "1792x1024", "1024x1792"],
-    supportsImageEdits: false,
+    supportsPromptImageTransforms: false,
+    supportsMaskImageEdits: false,
   },
   "gpt-image-1": {
     supportedSizes: ["1024x1024", "1536x1024", "1024x1536"],
-    supportsImageEdits: true,
+    supportsPromptImageTransforms: true,
+    supportsMaskImageEdits: true,
   },
   "gpt-image-1-mini": {
     supportedSizes: ["1024x1024", "1536x1024", "1024x1536"],
-    supportsImageEdits: true,
+    supportsPromptImageTransforms: true,
+    supportsMaskImageEdits: true,
   },
   "gpt-image-1.5": {
     supportedSizes: ["1024x1024", "1536x1024", "1024x1536"],
-    supportsImageEdits: true,
+    supportsPromptImageTransforms: true,
+    supportsMaskImageEdits: true,
   },
   "gpt-image-2": {
     supportedSizes: ["1024x1024", "1536x1024", "1024x1536", "2048x2048"],
-    supportsImageEdits: true,
+    supportsPromptImageTransforms: true,
+    supportsMaskImageEdits: true,
+  },
+  "gemini-2.5-flash-image": {
+    supportedSizes: ["1024x1024"],
+    supportsPromptImageTransforms: true,
+    supportsMaskImageEdits: false,
+  },
+  "gemini-3.1-flash-image-preview": {
+    supportedSizes: ["1024x1024"],
+    supportsPromptImageTransforms: true,
+    supportsMaskImageEdits: false,
+  },
+  "gemini-3-pro-image-preview": {
+    supportedSizes: ["1024x1024"],
+    supportsPromptImageTransforms: true,
+    supportsMaskImageEdits: false,
+  },
+  "grok-imagine-image-quality": {
+    supportedSizes: ["1024x1024"],
+    supportsPromptImageTransforms: true,
+    supportsMaskImageEdits: false,
+  },
+  "grok-imagine-image-pro": {
+    supportedSizes: ["1024x1024"],
+    supportsPromptImageTransforms: true,
+    supportsMaskImageEdits: false,
   },
 };
 
@@ -309,7 +342,8 @@ const cloneKnownAIImageModelCapabilities = () => Object.fromEntries(
     model,
     {
       supportedSizes: [...capability.supportedSizes],
-      supportsImageEdits: capability.supportsImageEdits,
+      supportsPromptImageTransforms: capability.supportsPromptImageTransforms,
+      supportsMaskImageEdits: capability.supportsMaskImageEdits,
     },
   ]),
 );
@@ -354,34 +388,106 @@ export const KNOWN_AI_TEXT_MODEL_CONFIGS: Record<string, AIModelConfig> = {
     providerId: "OpenAI",
     model: "gpt-5-mini",
     endpoint: "",
+    multimodalSupport: true,
   },
-};
-
-export const KNOWN_AI_VISION_MODEL_CONFIGS: Record<string, AIModelConfig> = {
-  "gpt-5-mini": {
-    providerId: "OpenAI",
-    model: "gpt-5-mini",
+  "claude-sonnet-4-5": {
+    providerId: "Anthropic",
+    model: "claude-sonnet-4-5",
     endpoint: "",
+    multimodalSupport: true,
+  },
+  "gemini-2.5-pro": {
+    providerId: "Google Gemini",
+    model: "gemini-2.5-pro",
+    endpoint: "",
+    multimodalSupport: true,
+  },
+  "grok-4-fast": {
+    providerId: "xAI",
+    model: "grok-4-fast",
+    endpoint: "",
+    multimodalSupport: true,
   },
 };
 
-export const KNOWN_AI_IMAGE_MODEL_CONFIGS: Record<string, AIImageModelConfig> = Object.fromEntries(
-  Object.entries(cloneKnownAIImageModelCapabilities()).map(([modelId, capability]) => [
+export const KNOWN_AI_VISION_MODEL_CONFIGS: Record<string, AIModelConfig> = Object.fromEntries(
+  Object.entries(KNOWN_AI_TEXT_MODEL_CONFIGS).map(([modelId, config]) => [
     modelId,
-    {
-      providerId: "OpenAI",
-      model: modelId,
-      ...capability,
-    },
+    { ...config },
   ]),
 );
+
+export const KNOWN_AI_IMAGE_MODEL_CONFIGS: Record<string, AIImageModelConfig> = {
+  "dall-e-2": {
+    providerId: "OpenAI",
+    model: "dall-e-2",
+    ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["dall-e-2"],
+  },
+  "dall-e-3": {
+    providerId: "OpenAI",
+    model: "dall-e-3",
+    ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["dall-e-3"],
+  },
+  "gpt-image-1": {
+    providerId: "OpenAI",
+    model: "gpt-image-1",
+    ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["gpt-image-1"],
+  },
+  "gpt-image-1-mini": {
+    providerId: "OpenAI",
+    model: "gpt-image-1-mini",
+    ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["gpt-image-1-mini"],
+  },
+  "gpt-image-1.5": {
+    providerId: "OpenAI",
+    model: "gpt-image-1.5",
+    ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["gpt-image-1.5"],
+  },
+  "gpt-image-2": {
+    providerId: "OpenAI",
+    model: "gpt-image-2",
+    ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["gpt-image-2"],
+  },
+  "gemini-2.5-flash-image": {
+    providerId: "Google Gemini",
+    model: "gemini-2.5-flash-image",
+    ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["gemini-2.5-flash-image"],
+  },
+  "gemini-3.1-flash-image-preview": {
+    providerId: "Google Gemini",
+    model: "gemini-3.1-flash-image-preview",
+    ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["gemini-3.1-flash-image-preview"],
+  },
+  "gemini-3-pro-image-preview": {
+    providerId: "Google Gemini",
+    model: "gemini-3-pro-image-preview",
+    ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["gemini-3-pro-image-preview"],
+  },
+  "grok-imagine-image-quality": {
+    providerId: "xAI",
+    model: "grok-imagine-image-quality",
+    ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["grok-imagine-image-quality"],
+  },
+  "grok-imagine-image-pro": {
+    providerId: "xAI",
+    model: "grok-imagine-image-pro",
+    ...KNOWN_AI_IMAGE_MODEL_CAPABILITIES["grok-imagine-image-pro"],
+  },
+};
 
 export const cloneModelConfigs = <TConfig extends AIModelConfig>(configs: Record<string, TConfig>) => Object.fromEntries(
   Object.entries(configs).map(([configId, config]) => [
     configId,
     {
       ...config,
+      ...((config as AIModelConfig).multimodalSupport !== undefined ? { multimodalSupport: (config as AIModelConfig).multimodalSupport } : {}),
       ...("supportedSizes" in config ? { supportedSizes: [...((config as unknown as AIImageModelConfig).supportedSizes ?? [])] } : {}),
+      ...((config as unknown as AIImageModelConfig).supportsPromptImageTransforms !== undefined
+        ? { supportsPromptImageTransforms: (config as unknown as AIImageModelConfig).supportsPromptImageTransforms }
+        : {}),
+      ...((config as unknown as AIImageModelConfig).supportsMaskImageEdits !== undefined
+        ? { supportsMaskImageEdits: (config as unknown as AIImageModelConfig).supportsMaskImageEdits }
+        : {}),
     },
   ]),
 ) as Record<string, TConfig>;
@@ -581,6 +687,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   canvasImmersiveEmbed: true,
   startupScriptPath: "",
   aiEnabled: true,
+  aiVerboseLogging: false,
   aiProviderProfiles: cloneKnownAIProviderProfiles(),
   aiTextModelConfigs: cloneModelConfigs(KNOWN_AI_TEXT_MODEL_CONFIGS),
   aiVisionModelConfigs: cloneModelConfigs(KNOWN_AI_VISION_MODEL_CONFIGS),
@@ -593,6 +700,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   aiImageEditsEndpoint: "",
   aiImageVariationsEndpoint: "",
   aiDefaultTextModel: "gpt-5-mini",
+  aiDefaultMultimodalModel: "gpt-5-mini",
   aiDefaultVisionModel: "gpt-5-mini",
   aiDefaultImageGenerationModel: "gpt-image-1",
   aiImageModelCapabilities: cloneKnownAIImageModelCapabilities(),
@@ -1427,6 +1535,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
+    new Setting(detailsEl)
+      .setName(t("AI_VERBOSE_LOGGING_NAME"))
+      .setDesc(fragWithHTML(t("AI_VERBOSE_LOGGING_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.aiVerboseLogging ?? false)
+          .onChange(async (value) => {
+            this.plugin.settings.aiVerboseLogging = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
     detailsEl = detailsEl.createDiv();
     aiEl = detailsEl;
     if(!(this.plugin.settings.aiEnabled??true)) {
@@ -1434,8 +1554,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     }
 
     let selectedProviderProfile = Object.keys(this.plugin.settings.aiProviderProfiles ?? {})[0] || "OpenAI";
-    let selectedTextModelConfig = this.plugin.settings.aiDefaultTextModel?.trim() || Object.keys(this.plugin.settings.aiTextModelConfigs ?? {})[0] || "gpt-5-mini";
-    let selectedVisionModelConfig = this.plugin.settings.aiDefaultVisionModel?.trim() || Object.keys(this.plugin.settings.aiVisionModelConfigs ?? {})[0] || "gpt-5-mini";
+    let selectedTextModelConfig = this.plugin.settings.aiDefaultTextModel?.trim()
+      || this.plugin.settings.aiDefaultVisionModel?.trim()
+      || Object.keys(this.plugin.settings.aiTextModelConfigs ?? {})[0]
+      || Object.keys(this.plugin.settings.aiVisionModelConfigs ?? {})[0]
+      || "gpt-5-mini";
     let selectedImageModelConfig = this.plugin.settings.aiDefaultImageGenerationModel?.trim() || Object.keys(this.plugin.settings.aiImageModelConfigs ?? {})[0] || "gpt-image-1";
 
     const getProviderProfiles = () => {
@@ -1444,18 +1567,32 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         : cloneKnownAIProviderProfiles();
     };
 
-    const getModelConfigs = (kind: "text" | "vision" | "image") => {
-      const settingsMap = kind === "text"
-        ? this.plugin.settings.aiTextModelConfigs
-        : kind === "vision"
-          ? this.plugin.settings.aiVisionModelConfigs
-          : this.plugin.settings.aiImageModelConfigs;
-      if (settingsMap && Object.keys(settingsMap).length > 0) return settingsMap;
-      return kind === "text"
-        ? cloneModelConfigs(KNOWN_AI_TEXT_MODEL_CONFIGS)
-        : kind === "vision"
-          ? cloneModelConfigs(KNOWN_AI_VISION_MODEL_CONFIGS)
-          : cloneModelConfigs(KNOWN_AI_IMAGE_MODEL_CONFIGS);
+    const getModelConfigs = (kind: "text" | "image") => {
+      if (kind === "text") {
+        if (this.plugin.settings.aiTextModelConfigs && Object.keys(this.plugin.settings.aiTextModelConfigs).length > 0) {
+          return this.plugin.settings.aiTextModelConfigs;
+        }
+
+        if (this.plugin.settings.aiVisionModelConfigs && Object.keys(this.plugin.settings.aiVisionModelConfigs).length > 0) {
+          return Object.fromEntries(
+            Object.entries(this.plugin.settings.aiVisionModelConfigs).map(([modelId, config]) => [
+              modelId,
+              {
+                ...config,
+                multimodalSupport: config.multimodalSupport ?? true,
+              },
+            ]),
+          );
+        }
+
+        return cloneModelConfigs(KNOWN_AI_TEXT_MODEL_CONFIGS);
+      }
+
+      if (this.plugin.settings.aiImageModelConfigs && Object.keys(this.plugin.settings.aiImageModelConfigs).length > 0) {
+        return this.plugin.settings.aiImageModelConfigs;
+      }
+
+      return cloneModelConfigs(KNOWN_AI_IMAGE_MODEL_CONFIGS);
     };
 
     const setProviderProfiles = (profiles: Record<string, AIProviderProfile>) => {
@@ -1465,14 +1602,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     };
 
     const setModelConfigs = (
-      kind: "text" | "vision" | "image",
+      kind: "text" | "image",
       configs: Record<string, AIModelConfig> | Record<string, AIImageModelConfig>,
     ) => {
       const sorted = Object.fromEntries(
         Object.entries(configs).sort(([left], [right]) => left.localeCompare(right)),
       );
       if (kind === "text") this.plugin.settings.aiTextModelConfigs = sorted as Record<string, AIModelConfig>;
-      if (kind === "vision") this.plugin.settings.aiVisionModelConfigs = sorted as Record<string, AIModelConfig>;
       if (kind === "image") this.plugin.settings.aiImageModelConfigs = sorted as Record<string, AIImageModelConfig>;
     };
 
@@ -1480,18 +1616,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       setProviderProfiles(getProviderProfiles());
     };
 
-    const sortModelConfigs = (kind: "text" | "vision" | "image") => {
+    const sortModelConfigs = (kind: "text" | "image") => {
       setModelConfigs(kind, getModelConfigs(kind));
     };
 
-    const getValidSelection = (kind: "text" | "vision" | "image") => {
+    const getValidSelection = (kind: "text" | "image") => {
       const configs = getModelConfigs(kind);
       const optionValues = Object.keys(configs);
       const selectedValue = kind === "text"
         ? selectedTextModelConfig
-        : kind === "vision"
-          ? selectedVisionModelConfig
-          : selectedImageModelConfig;
+        : selectedImageModelConfig;
       if (selectedValue && configs[selectedValue]) return selectedValue;
       return optionValues[0] ?? "";
     };
@@ -1499,7 +1633,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const providerContainer = detailsEl.createDiv();
     providerContainer.addClass("excalidraw-ai-provider-table");
     const textModelContainer = detailsEl.createDiv();
-    const visionModelContainer = detailsEl.createDiv();
     const imageModelContainer = detailsEl.createDiv();
 
     const getProviderTypeLabel = (provider: "openai" | "anthropic" | "google" | "xai" | "openai-compatible") => {
@@ -1519,7 +1652,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     };
 
     const updateModelProviderReferences = (previousProviderId: string, nextProviderId: string) => {
-      (["text", "vision", "image"] as const).forEach((kind) => {
+      (["text", "image"] as const).forEach((kind) => {
         const updatedConfigs = { ...getModelConfigs(kind) };
         let changed = false;
         Object.values(updatedConfigs).forEach((config) => {
@@ -1554,7 +1687,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       }).open();
     };
 
-    const openModelConfigModal = (kind: "text" | "vision" | "image", modelId?: string) => {
+    const openModelConfigModal = (kind: "text" | "image", modelId?: string) => {
       const configs = getModelConfigs(kind);
       new AIModelConfigModal(this.app, Object.keys(configs), async (nextModelId, nextConfig, previousModelId) => {
         const updatedConfigs = { ...getModelConfigs(kind) };
@@ -1566,11 +1699,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           setModelConfigs(kind, updatedConfigs);
           selectedTextModelConfig = nextModelId;
           this.plugin.settings.aiDefaultTextModel = nextModelId;
-        }
-        if (kind === "vision") {
-          setModelConfigs(kind, updatedConfigs);
-          selectedVisionModelConfig = nextModelId;
-          this.plugin.settings.aiDefaultVisionModel = nextModelId;
+          this.plugin.settings.aiDefaultMultimodalModel = nextModelId;
         }
         if (kind === "image") {
           setModelConfigs(kind, updatedConfigs as Record<string, AIImageModelConfig>);
@@ -1606,7 +1735,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             const restoredProfiles = cloneKnownAIProviderProfiles();
             setProviderProfiles(restoredProfiles);
             const fallbackProviderId = Object.keys(restoredProfiles)[0] ?? "OpenAI";
-            (["text", "vision", "image"] as const).forEach((kind) => {
+            (["text", "image"] as const).forEach((kind) => {
               const updatedConfigs = { ...getModelConfigs(kind) };
               let changed = false;
               Object.values(updatedConfigs).forEach((config) => {
@@ -1659,8 +1788,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       });
     };
 
-    const renderModelSetting = (kind: "text" | "vision" | "image") => {
-      const container = kind === "text" ? textModelContainer : kind === "vision" ? visionModelContainer : imageModelContainer;
+    const renderModelSetting = (kind: "text" | "image") => {
+      const container = kind === "text" ? textModelContainer : imageModelContainer;
       container.empty();
       const configs = getModelConfigs(kind);
       const optionValues = Object.keys(configs).sort((left, right) => left.localeCompare(right));
@@ -1668,6 +1797,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       const config = configs[selectedValue] as AIModelConfig | AIImageModelConfig;
       const providerProfile = getProviderProfiles()[config.providerId];
       const apiStatus = getApiStatusMarkup(Boolean(providerProfile?.apiKey?.trim()));
+      const getBooleanLabel = (value: boolean) => value
+        ? t("AI_IMAGE_MODEL_CAPABILITIES_EDITS_YES")
+        : t("AI_IMAGE_MODEL_CAPABILITIES_EDITS_NO");
 
       const description = kind === "image"
         ? t("AI_PROVIDER_DEFAULT_IMAGE_MODEL_DESC")
@@ -1676,22 +1808,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .replace("{{apiKey}}", apiStatus)
           .replace("{{model}}", config.model)
           .replace("{{sizes}}", (config as AIImageModelConfig).supportedSizes.join(", "))
-          .replace("{{supportsImageEdits}}", (config as AIImageModelConfig).supportsImageEdits
-            ? t("AI_IMAGE_MODEL_CAPABILITIES_EDITS_YES")
-            : t("AI_IMAGE_MODEL_CAPABILITIES_EDITS_NO"))
-        : (kind === "vision" ? t("AI_PROVIDER_DEFAULT_VISION_MODEL_DESC") : t("AI_PROVIDER_DEFAULT_TEXT_MODEL_DESC"))
+          .replace("{{supportsPromptImageTransforms}}", getBooleanLabel((config as AIImageModelConfig).supportsPromptImageTransforms))
+          .replace("{{supportsMaskImageEdits}}", getBooleanLabel((config as AIImageModelConfig).supportsMaskImageEdits))
+        : t("AI_PROVIDER_DEFAULT_TEXT_MODEL_DESC")
           .replace("{{provider}}", config.providerId)
           .replace("{{apiKey}}", apiStatus)
           .replace("{{model}}", config.model)
           .replace("{{endpoint}}", config.endpoint?.trim() || t("AI_MODEL_CONFIG_DERIVED_ENDPOINT"))
-          .replace("{{providerType}}", providerProfile ? getProviderTypeLabel(providerProfile.provider) : "");
+          .replace("{{providerType}}", providerProfile ? getProviderTypeLabel(providerProfile.provider) : "")
+          .replace("{{multimodalSupport}}", getBooleanLabel(config.multimodalSupport !== false));
 
       new Setting(container)
-        .setName(kind === "vision"
-          ? t("AI_PROVIDER_DEFAULT_VISION_MODEL_NAME")
-          : kind === "image"
-            ? t("AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME")
-            : t("AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME"))
+        .setName(kind === "image"
+          ? t("AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME")
+          : t("AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME"))
         .setDesc(fragWithHTML(description))
         .addDropdown((dropdown) => {
           optionValues.forEach((value) => dropdown.addOption(value, value));
@@ -1701,10 +1831,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               if (kind === "text") {
                 selectedTextModelConfig = value;
                 this.plugin.settings.aiDefaultTextModel = value;
-              }
-              if (kind === "vision") {
-                selectedVisionModelConfig = value;
-                this.plugin.settings.aiDefaultVisionModel = value;
+                this.plugin.settings.aiDefaultMultimodalModel = value;
               }
               if (kind === "image") {
                 selectedImageModelConfig = value;
@@ -1733,10 +1860,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               if (kind === "text") {
                 selectedTextModelConfig = nextSelection;
                 this.plugin.settings.aiDefaultTextModel = nextSelection;
-              }
-              if (kind === "vision") {
-                selectedVisionModelConfig = nextSelection;
-                this.plugin.settings.aiDefaultVisionModel = nextSelection;
+                this.plugin.settings.aiDefaultMultimodalModel = nextSelection;
               }
               if (kind === "image") {
                 selectedImageModelConfig = nextSelection;
@@ -1749,16 +1873,12 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .addExtraButton((button) => {
           button.setIcon("rotate-ccw").setTooltip(t("AI_MODEL_RESTORE_DEFAULTS")).onClick(async () => {
             if (kind === "text") setModelConfigs(kind, cloneModelConfigs(KNOWN_AI_TEXT_MODEL_CONFIGS));
-            if (kind === "vision") setModelConfigs(kind, cloneModelConfigs(KNOWN_AI_VISION_MODEL_CONFIGS));
             if (kind === "image") setModelConfigs(kind, cloneModelConfigs(KNOWN_AI_IMAGE_MODEL_CONFIGS));
             const nextSelection = Object.keys(getModelConfigs(kind))[0] ?? "";
             if (kind === "text") {
               selectedTextModelConfig = nextSelection;
               this.plugin.settings.aiDefaultTextModel = nextSelection;
-            }
-            if (kind === "vision") {
-              selectedVisionModelConfig = nextSelection;
-              this.plugin.settings.aiDefaultVisionModel = nextSelection;
+              this.plugin.settings.aiDefaultMultimodalModel = nextSelection;
             }
             if (kind === "image") {
               selectedImageModelConfig = nextSelection;
@@ -1773,7 +1893,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const renderAISettings = () => {
       renderProviderSetting();
       renderModelSetting("text");
-      renderModelSetting("vision");
       renderModelSetting("image");
     };
 
