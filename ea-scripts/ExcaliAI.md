@@ -54,6 +54,91 @@ const VALID_TASK_INPUT_RULES = Object.values(TASK_INPUT_RULES);
 const VALID_TASK_MASK_MODES = Object.values(TASK_MASK_MODES);
 const VALID_TASK_RUNTIME_APIS = Object.values(TASK_RUNTIME_APIS);
 
+const TASK_EXECUTION_MODE_META = {
+  [TASK_EXECUTION_MODES.TEXT_RESULT]: {
+    label: "Text response",
+    description: "Uses the text or multimodal model and returns structured output such as HTML, Mermaid, a mind map, or Excalidraw strokes.",
+  },
+  [TASK_EXECUTION_MODES.IMAGE_PROMPT]: {
+    label: "Write prompt, then generate image",
+    description: "Uses the text model to write an image prompt from the canvas selection and/or user prompt, then sends that prompt to the image model.",
+  },
+  [TASK_EXECUTION_MODES.IMAGE_DIRECT]: {
+    label: "Send prompt straight to image model",
+    description: "Sends only the user's prompt to the image model. No text-model prompt writing step and no canvas image input.",
+  },
+  [TASK_EXECUTION_MODES.IMAGE_EDIT]: {
+    label: "Edit selected image",
+    description: "Uses the selected image as the source and applies either a mask edit or a prompt-based transform.",
+  },
+};
+
+const TASK_RESULT_TYPE_META = {
+  [TASK_RESULT_TYPES.HTML]: {
+    label: "HTML",
+    description: "Embeds the response as a single HTML result.",
+  },
+  [TASK_RESULT_TYPES.MINDMAP]: {
+    label: "Mind Map",
+    description: "Imports the response into MindMap Builder.",
+    runtimeRequirement: TASK_RUNTIME_APIS.MINDMAP_BUILDER,
+  },
+  [TASK_RESULT_TYPES.MERMAID]: {
+    label: "Mermaid",
+    description: "Creates a Mermaid diagram.",
+  },
+  [TASK_RESULT_TYPES.SVG]: {
+    label: "Excalidraw Strokes",
+    description: "Uses SVG behind the scenes to generate Excalidraw strokes.",
+  },
+  [TASK_RESULT_TYPES.IMAGE]: {
+    label: "Image + prompt note",
+    description: "Generates an image and adds the model's revised prompt underneath when available.",
+  },
+  [TASK_RESULT_TYPES.IMAGE_SILENT]: {
+    label: "Image only",
+    description: "Generates only the image, without adding the revised prompt underneath.",
+  },
+};
+
+const getTaskExecutionModeMeta = (mode) => (
+  TASK_EXECUTION_MODE_META[mode] ?? TASK_EXECUTION_MODE_META[TASK_EXECUTION_MODES.TEXT_RESULT]
+);
+
+const getTaskExecutionModeLabel = (mode) => (
+  getTaskExecutionModeMeta(mode).label
+);
+
+const getTaskExecutionModeDescription = (mode) => (
+  getTaskExecutionModeMeta(mode).description
+);
+
+const getTaskResultTypeMeta = (resultType) => (
+  TASK_RESULT_TYPE_META[resultType] ?? TASK_RESULT_TYPE_META[TASK_RESULT_TYPES.HTML]
+);
+
+const getTaskResultTypeLabel = (resultType) => (
+  getTaskResultTypeMeta(resultType).label
+);
+
+const getTaskResultTypeDescription = (resultType) => (
+  getTaskResultTypeMeta(resultType).description
+);
+
+const getTaskRuntimeRequirement = (taskConfig) => (
+  getTaskResultTypeMeta(taskConfig?.execution?.resultType ?? TASK_RESULT_TYPES.HTML).runtimeRequirement
+  ?? TASK_RUNTIME_APIS.NONE
+);
+
+const getTaskRuntimeRequirementLabel = (runtimeRequirement) => {
+  switch(runtimeRequirement) {
+    case TASK_RUNTIME_APIS.MINDMAP_BUILDER:
+      return "MindMap Builder";
+    default:
+      return "None";
+  }
+};
+
 const normalizeEnumValue = (value, validValues, fallbackValue) => (
   validValues.includes(value) ? value : fallbackValue
 );
@@ -147,11 +232,7 @@ const normalizeTaskConfig = (task = {}, index = 0) => {
           ? TASK_MASK_MODES.OPTIONAL
           : TASK_MASK_MODES.DISABLED,
       ),
-      requiresApi: normalizeEnumValue(
-        execution.requiresApi ?? TASK_RUNTIME_APIS.NONE,
-        VALID_TASK_RUNTIME_APIS,
-        TASK_RUNTIME_APIS.NONE,
-      ),
+      requiresApi: getTaskResultTypeMeta(resultType).runtimeRequirement ?? TASK_RUNTIME_APIS.NONE,
     },
   };
 };
@@ -197,7 +278,7 @@ const createDefaultTaskConfigs = () => ([
   {
     id: "convert-sketch-to-shapes",
     name: "Convert sketch to shapes",
-    help: "Convert selected sketches into SVG shapes. Works best with a small number of simple shapes. Experimental.",
+    help: "Convert selected sketches into Excalidraw strokes. Works best with a small number of simple shapes. Experimental.",
     systemPrompt: `Given an image featuring various geometric shapes drawn by the user, your objective is to analyze the input and generate SVG code that accurately represents these shapes. Your output will be the SVG code enclosed in an HTML code block.`,
     outputInstruction: getDefaultOutputInstruction(TASK_RESULT_TYPES.SVG),
     execution: {
@@ -212,7 +293,7 @@ const createDefaultTaskConfigs = () => ([
   {
     id: "create-a-simple-excalidraw-icon",
     name: "Create a simple Excalidraw icon",
-    help: "Turn a text prompt into a simple SVG icon and insert it into Excalidraw. Text prompt only. Experimental.",
+    help: "Turn a text prompt into a simple icon and insert it into Excalidraw as strokes. Text prompt only. Experimental.",
     systemPrompt: `Given a description of an SVG image from the user, your objective is to generate the corresponding SVG code. Avoid incorporating textual elements within the generated SVG. Your output should be the resulting SVG code enclosed in an HTML code block.`,
     outputInstruction: getDefaultOutputInstruction(TASK_RESULT_TYPES.SVG),
     execution: {
@@ -347,7 +428,7 @@ const createDefaultTaskConfigs = () => ([
   {
     id: "create-mindmap",
     name: "Create Mindmap",
-    help: "Create a hierarchical mind map from the selected image, if any, and your prompt, then import it into Mind Map Builder. Requires the Mind Map Builder API to be available.",
+    help: "Create a hierarchical mind map from the selected image, if any, and your prompt, then import it into MindMap Builder. Requires MindMap Builder to be available.",
     systemPrompt: "You will receive a text prompt and may also receive an image. Create a mind map as a hierarchical plain-text outline based on the image content, if provided, and the text prompt. Return only the mind map. Use exactly one markdown H1 heading for the central node, then - bullets for branches and indented - bullets for sub-branches. Do not use bold, italics, code fences, numbering, commentary, or any markdown formatting other than the heading and bullet list.",
     outputInstruction: getDefaultOutputInstruction(TASK_RESULT_TYPES.MINDMAP),
     execution: {
@@ -473,7 +554,7 @@ const parsePositiveInteger = (value) => {
 const getTaskConfigs = () => settings.config?.tasks ?? [];
 
 const isTaskRuntimeAvailable = (taskConfig) => {
-  switch(taskConfig?.execution?.requiresApi ?? TASK_RUNTIME_APIS.NONE) {
+  switch(getTaskRuntimeRequirement(taskConfig)) {
     case TASK_RUNTIME_APIS.MINDMAP_BUILDER:
       return Boolean(window?.MindMapBuilderAPI);
     default:
@@ -569,27 +650,27 @@ const getTaskConfigValidationMessage = (taskConfig = getActiveTaskConfig()) => {
   const isImageResultType = resultType === TASK_RESULT_TYPES.IMAGE || resultType === TASK_RESULT_TYPES.IMAGE_SILENT;
 
   if(mode === TASK_EXECUTION_MODES.TEXT_RESULT && isImageResultType) {
-    return `Task \"${taskConfig.name}\" uses an image result type with Text result mode. Use Image prompt or Direct image mode instead.`;
+    return `Task \"${taskConfig.name}\" uses an image result with ${getTaskExecutionModeLabel(TASK_EXECUTION_MODES.TEXT_RESULT)}. Use ${getTaskExecutionModeLabel(TASK_EXECUTION_MODES.IMAGE_PROMPT)} or ${getTaskExecutionModeLabel(TASK_EXECUTION_MODES.IMAGE_DIRECT)} instead.`;
   }
 
   if(mode === TASK_EXECUTION_MODES.IMAGE_PROMPT && !isImageResultType) {
-    return `Task \"${taskConfig.name}\" must use an image result type when Image prompt mode is selected.`;
+    return `Task \"${taskConfig.name}\" must use an image result when ${getTaskExecutionModeLabel(TASK_EXECUTION_MODES.IMAGE_PROMPT)} is selected.`;
   }
 
   if(mode === TASK_EXECUTION_MODES.IMAGE_DIRECT && !isImageResultType) {
-    return `Task \"${taskConfig.name}\" must use an image result type when Direct image mode is selected.`;
+    return `Task \"${taskConfig.name}\" must use an image result when ${getTaskExecutionModeLabel(TASK_EXECUTION_MODES.IMAGE_DIRECT)} is selected.`;
   }
 
   if(mode === TASK_EXECUTION_MODES.IMAGE_DIRECT && taskConfig.execution.imageInput !== TASK_INPUT_RULES.DISABLED) {
-    return `Task \"${taskConfig.name}\" cannot send a canvas image in Direct image mode.`;
+    return `Task \"${taskConfig.name}\" cannot send a canvas image when ${getTaskExecutionModeLabel(TASK_EXECUTION_MODES.IMAGE_DIRECT)} is selected.`;
   }
 
   if(mode === TASK_EXECUTION_MODES.IMAGE_EDIT && resultType !== TASK_RESULT_TYPES.IMAGE) {
-    return `Task \"${taskConfig.name}\" must use the image result type when Image edit mode is selected.`;
+    return `Task \"${taskConfig.name}\" must use the image result when ${getTaskExecutionModeLabel(TASK_EXECUTION_MODES.IMAGE_EDIT)} is selected.`;
   }
 
   if(mode !== TASK_EXECUTION_MODES.IMAGE_EDIT && maskMode !== TASK_MASK_MODES.DISABLED) {
-    return `Task \"${taskConfig.name}\" can only enable mask mode when Image edit mode is selected.`;
+    return `Task \"${taskConfig.name}\" can only enable mask mode when ${getTaskExecutionModeLabel(TASK_EXECUTION_MODES.IMAGE_EDIT)} is selected.`;
   }
 
   return "";
@@ -1407,13 +1488,13 @@ const run = async (text) => {
     case "mindmap": {
       const mmb = window?.MindMapBuilderAPI;
       if(!mmb?.setView || !mmb?.importMarkdown) {
-        await errorMessage(spinnerID, "Mind Map Builder API is not available.");
+        await errorMessage(spinnerID, "MindMap Builder is not available.");
         return;
       }
 
       const setViewResult = mmb.setView(ea.targetView);
       if(!setViewResult?.ok) {
-        await errorMessage(spinnerID, setViewResult?.error?.message || "Could not connect to Mind Map Builder.");
+        await errorMessage(spinnerID, setViewResult?.error?.message || "Could not connect to MindMap Builder.");
         return;
       }
 
@@ -1425,7 +1506,7 @@ const run = async (text) => {
 
       ea.getElement(spinnerID).isDeleted = true;
       await ea.addElementsToView(false, true, true);
-      new Notice("Mind map created in Mind Map Builder.", 8000);
+      new Notice("Mind map created in MindMap Builder.", 8000);
       break;
     }
     case "svg":
@@ -1573,6 +1654,7 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
   const taskModal = new ea.obsidian.Modal(app);
   taskModal.modalEl.style.width = "100%";
   taskModal.modalEl.style.maxWidth = "1100px";
+  taskModal.modalEl.classList.add("excali-ai-task-editor-modal");
 
   let editorDirty = false;
   let refreshingEditorFields = false;
@@ -1589,8 +1671,8 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
   let userPromptDropdown;
   let imageInputDropdown;
   let maskModeDropdown;
-  let requiresApiDropdown;
   let validationEl;
+  let taskHeaderSetting;
   let taskIdSetting;
   let taskNameSetting;
   let helpSetting;
@@ -1601,7 +1683,12 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
   let userPromptSetting;
   let imageInputSetting;
   let maskModeSetting;
-  let requiresApiSetting;
+
+  const addTaskEditorFieldClass = (setting, className = "excali-ai-task-editor-field") => {
+    if(setting?.settingEl) {
+      setting.settingEl.classList.add(className);
+    }
+  };
 
   const getEditorTask = () => editableTasks.find(taskConfig => taskConfig.id === editorTaskId) ?? null;
 
@@ -1640,12 +1727,14 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
       userPromptSetting,
       imageInputSetting,
       maskModeSetting,
-      requiresApiSetting,
     ].forEach(setting => {
       if(setting) {
         setting.settingEl.style.display = hasTask ? "" : "none";
       }
     });
+
+    updateExecutionModeDescription();
+    updateResultTypeDescription();
 
     if(!taskConfig) {
       return;
@@ -1663,6 +1752,30 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
     if(maskModeSetting) {
       maskModeSetting.settingEl.style.display = mode === TASK_EXECUTION_MODES.IMAGE_EDIT ? "" : "none";
     }
+  };
+
+  const updateExecutionModeDescription = () => {
+    if(!executionModeSetting) return;
+    const taskConfig = getEditorTask();
+    if(!taskConfig) {
+      executionModeSetting.descEl.setText("Determines how the task runs.");
+      return;
+    }
+    executionModeSetting.descEl.innerHTML = `Determines how the task runs.<br><span class="excali-ai-task-editor-note">${getTaskExecutionModeDescription(taskConfig.execution.mode)}</span>`;
+  };
+
+  const updateResultTypeDescription = () => {
+    if(!resultTypeSetting) return;
+    const taskConfig = getEditorTask();
+    if(!taskConfig) {
+      resultTypeSetting.descEl.setText("Controls how ExcaliAI interprets the model response.");
+      return;
+    }
+    const runtimeRequirement = getTaskRuntimeRequirement(taskConfig);
+    const runtimeText = runtimeRequirement !== TASK_RUNTIME_APIS.NONE
+      ? `<br><span class="excali-ai-task-editor-accent">Requires: ${getTaskRuntimeRequirementLabel(runtimeRequirement)}</span>`
+      : "";
+    resultTypeSetting.descEl.innerHTML = `Controls how ExcaliAI interprets the model response.<br><span class="excali-ai-task-editor-note">${getTaskResultTypeDescription(taskConfig.execution.resultType)}</span>${runtimeText}`;
   };
 
   const updateTaskEditorValidation = () => {
@@ -1696,7 +1809,6 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
     if(userPromptDropdown) userPromptDropdown.setValue(taskConfig?.execution?.userPrompt ?? TASK_INPUT_RULES.OPTIONAL);
     if(imageInputDropdown) imageInputDropdown.setValue(taskConfig?.execution?.imageInput ?? TASK_INPUT_RULES.OPTIONAL);
     if(maskModeDropdown) maskModeDropdown.setValue(taskConfig?.execution?.maskMode ?? TASK_MASK_MODES.DISABLED);
-    if(requiresApiDropdown) requiresApiDropdown.setValue(taskConfig?.execution?.requiresApi ?? TASK_RUNTIME_APIS.NONE);
     refreshingEditorFields = false;
     refreshTaskEditorDropdown();
     updateTaskEditorVisibility();
@@ -1705,14 +1817,79 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
 
   taskModal.onOpen = () => {
     const contentEl = taskModal.contentEl;
+    contentEl.createEl("style", {
+      text: `
+        .excali-ai-task-editor-modal {
+          width: min(1100px, calc(100vw - 1rem)) !important;
+          max-width: min(1100px, calc(100vw - 1rem)) !important;
+        }
+        .excali-ai-task-editor-modal .excali-ai-task-editor-field {
+          display: block;
+        }
+        .excali-ai-task-editor-modal .excali-ai-task-editor-field .setting-item-info {
+          max-width: none;
+          padding-right: 0;
+          margin-bottom: 0.45rem;
+        }
+        .excali-ai-task-editor-modal .excali-ai-task-editor-field .setting-item-control {
+          width: 100%;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.75rem;
+          align-items: stretch;
+        }
+        .excali-ai-task-editor-modal .excali-ai-task-editor-field .setting-item-control > :not(button) {
+          flex: 1 1 100%;
+          min-width: 0;
+        }
+        .excali-ai-task-editor-modal .excali-ai-task-editor-field .setting-item-control button {
+          flex: 0 0 auto;
+        }
+        .excali-ai-task-editor-modal .excali-ai-task-editor-field input[type="text"],
+        .excali-ai-task-editor-modal .excali-ai-task-editor-field input[type="number"],
+        .excali-ai-task-editor-modal .excali-ai-task-editor-field select,
+        .excali-ai-task-editor-modal .excali-ai-task-editor-field textarea {
+          width: 100%;
+          max-width: none;
+          box-sizing: border-box;
+        }
+        .excali-ai-task-editor-modal .excali-ai-task-editor-field textarea {
+          resize: vertical;
+        }
+        .excali-ai-task-editor-modal .excali-ai-task-editor-header .setting-item-info {
+          max-width: none;
+        }
+        .excali-ai-task-editor-modal .excali-ai-task-editor-header .setting-item-control {
+          width: 100%;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          align-items: center;
+        }
+        .excali-ai-task-editor-modal .excali-ai-task-editor-note {
+          color: var(--text-muted);
+        }
+        .excali-ai-task-editor-modal .excali-ai-task-editor-accent {
+          color: var(--text-accent);
+          font-weight: 600;
+        }
+        @media (max-width: 700px) {
+          .excali-ai-task-editor-modal .excali-ai-task-editor-header .setting-item-control > * {
+            flex: 1 1 100%;
+          }
+        }
+      `,
+    });
     contentEl.createEl("h1", {text: "ExcaliAI Task Editor"});
     contentEl.createEl("p", {text: "Tasks are stored in ExcaliAI's script settings JSON. Edit the fields below to add, remove, or change how a task runs."});
 
-    new ea.obsidian.Setting(contentEl)
+    taskHeaderSetting = new ea.obsidian.Setting(contentEl)
       .setName("Task")
       .setDesc("Select which task to edit.")
       .addDropdown(dropdown => {
         taskSelectDropdown = dropdown;
+        dropdown.selectEl.style.flex = "1 1 220px";
+        dropdown.selectEl.style.minWidth = "220px";
         refreshTaskEditorDropdown();
         dropdown.onChange(value => {
           if(refreshingEditorFields) return;
@@ -1751,14 +1928,16 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
         editorDirty = true;
         populateTaskEditorFields();
       }));
+    addTaskEditorFieldClass(taskHeaderSetting, "excali-ai-task-editor-header");
 
     validationEl = contentEl.createEl("p");
 
     taskIdSetting = new ea.obsidian.Setting(contentEl)
       .setName("Task ID")
-      .setDesc("Stable settings key. It is normalized to lowercase and dashes.")
+      .setDesc("Settings key, normalized to lowercase with dashes.")
       .addText(text => {
         taskIdText = text;
+        text.inputEl.style.width = "100%";
         text.onChange(value => {
           if(refreshingEditorFields) return;
           const taskConfig = getEditorTask();
@@ -1770,12 +1949,14 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
           populateTaskEditorFields();
         });
       });
+    addTaskEditorFieldClass(taskIdSetting);
 
     taskNameSetting = new ea.obsidian.Setting(contentEl)
       .setName("Task name")
       .setDesc("Shown in the ExcaliAI task picker.")
       .addText(text => {
         taskNameText = text;
+        text.inputEl.style.width = "100%";
         text.onChange(value => {
           if(refreshingEditorFields) return;
           const taskConfig = getEditorTask();
@@ -1786,6 +1967,7 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
           updateTaskEditorValidation();
         });
       });
+    addTaskEditorFieldClass(taskNameSetting);
 
     helpSetting = new ea.obsidian.Setting(contentEl)
       .setName("Task help")
@@ -1802,10 +1984,11 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
           editorDirty = true;
         });
       });
+    addTaskEditorFieldClass(helpSetting);
 
     systemPromptSetting = new ea.obsidian.Setting(contentEl)
       .setName("System prompt")
-      .setDesc("Sent to the text model for text-result and image-prompt tasks.")
+      .setDesc("Sent to the text model when the task uses a text-model step.")
       .addTextArea(text => {
         systemPromptTextArea = text;
         text.inputEl.style.minHeight = "10em";
@@ -1818,10 +2001,11 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
           editorDirty = true;
         });
       });
+    addTaskEditorFieldClass(systemPromptSetting);
 
     outputInstructionSetting = new ea.obsidian.Setting(contentEl)
       .setName("Output instruction")
-      .setDesc("Controls the output format for text-result and image-prompt tasks.")
+      .setDesc("Controls the expected response format when the task uses a text-model step.")
       .addTextArea(text => {
         outputInstructionTextArea = text;
         text.inputEl.style.minHeight = "6em";
@@ -1834,16 +2018,17 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
           editorDirty = true;
         });
       });
+    addTaskEditorFieldClass(outputInstructionSetting);
 
     executionModeSetting = new ea.obsidian.Setting(contentEl)
       .setName("Execution mode")
-      .setDesc("Determines whether the task returns text, generates an image prompt, sends the prompt straight to the image model, or edits an image.")
+      .setDesc("Determines how the task runs.")
       .addDropdown(dropdown => {
         executionModeDropdown = dropdown;
-        dropdown.addOption(TASK_EXECUTION_MODES.TEXT_RESULT, "Text result");
-        dropdown.addOption(TASK_EXECUTION_MODES.IMAGE_PROMPT, "Image prompt");
-        dropdown.addOption(TASK_EXECUTION_MODES.IMAGE_DIRECT, "Direct image");
-        dropdown.addOption(TASK_EXECUTION_MODES.IMAGE_EDIT, "Image edit");
+        dropdown.addOption(TASK_EXECUTION_MODES.TEXT_RESULT, getTaskExecutionModeLabel(TASK_EXECUTION_MODES.TEXT_RESULT));
+        dropdown.addOption(TASK_EXECUTION_MODES.IMAGE_PROMPT, getTaskExecutionModeLabel(TASK_EXECUTION_MODES.IMAGE_PROMPT));
+        dropdown.addOption(TASK_EXECUTION_MODES.IMAGE_DIRECT, getTaskExecutionModeLabel(TASK_EXECUTION_MODES.IMAGE_DIRECT));
+        dropdown.addOption(TASK_EXECUTION_MODES.IMAGE_EDIT, getTaskExecutionModeLabel(TASK_EXECUTION_MODES.IMAGE_EDIT));
         dropdown.onChange(value => {
           if(refreshingEditorFields) return;
           const taskConfig = getEditorTask();
@@ -1873,27 +2058,31 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
           populateTaskEditorFields();
         });
       });
+    addTaskEditorFieldClass(executionModeSetting);
 
     resultTypeSetting = new ea.obsidian.Setting(contentEl)
       .setName("Result type")
       .setDesc("Controls how ExcaliAI interprets the model response.")
       .addDropdown(dropdown => {
         resultTypeDropdown = dropdown;
-        dropdown.addOption(TASK_RESULT_TYPES.HTML, "HTML");
-        dropdown.addOption(TASK_RESULT_TYPES.MINDMAP, "Mind map");
-        dropdown.addOption(TASK_RESULT_TYPES.MERMAID, "Mermaid");
-        dropdown.addOption(TASK_RESULT_TYPES.SVG, "SVG");
-        dropdown.addOption(TASK_RESULT_TYPES.IMAGE, "Image");
-        dropdown.addOption(TASK_RESULT_TYPES.IMAGE_SILENT, "Image (silent prompt)");
+        dropdown.addOption(TASK_RESULT_TYPES.HTML, getTaskResultTypeLabel(TASK_RESULT_TYPES.HTML));
+        dropdown.addOption(TASK_RESULT_TYPES.MINDMAP, getTaskResultTypeLabel(TASK_RESULT_TYPES.MINDMAP));
+        dropdown.addOption(TASK_RESULT_TYPES.MERMAID, getTaskResultTypeLabel(TASK_RESULT_TYPES.MERMAID));
+        dropdown.addOption(TASK_RESULT_TYPES.SVG, getTaskResultTypeLabel(TASK_RESULT_TYPES.SVG));
+        dropdown.addOption(TASK_RESULT_TYPES.IMAGE, getTaskResultTypeLabel(TASK_RESULT_TYPES.IMAGE));
+        dropdown.addOption(TASK_RESULT_TYPES.IMAGE_SILENT, getTaskResultTypeLabel(TASK_RESULT_TYPES.IMAGE_SILENT));
         dropdown.onChange(value => {
           if(refreshingEditorFields) return;
           const taskConfig = getEditorTask();
           if(!taskConfig) return;
           taskConfig.execution.resultType = value;
+          taskConfig.execution.requiresApi = getTaskResultTypeMeta(value).runtimeRequirement ?? TASK_RUNTIME_APIS.NONE;
           editorDirty = true;
+          updateResultTypeDescription();
           updateTaskEditorValidation();
         });
       });
+    addTaskEditorFieldClass(resultTypeSetting);
 
     userPromptSetting = new ea.obsidian.Setting(contentEl)
       .setName("User prompt")
@@ -1911,6 +2100,7 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
           editorDirty = true;
         });
       });
+    addTaskEditorFieldClass(userPromptSetting);
 
     imageInputSetting = new ea.obsidian.Setting(contentEl)
       .setName("Canvas image input")
@@ -1929,10 +2119,11 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
           updateTaskEditorValidation();
         });
       });
+    addTaskEditorFieldClass(imageInputSetting);
 
     maskModeSetting = new ea.obsidian.Setting(contentEl)
       .setName("Mask mode")
-      .setDesc("Available only for image-edit tasks.")
+      .setDesc("Available only in Edit selected image mode.")
       .addDropdown(dropdown => {
         maskModeDropdown = dropdown;
         dropdown.addOption(TASK_MASK_MODES.DISABLED, "Disabled");
@@ -1947,23 +2138,7 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
           updateTaskEditorValidation();
         });
       });
-
-    requiresApiSetting = new ea.obsidian.Setting(contentEl)
-      .setName("Runtime requirement")
-      .setDesc("Hide the task unless a runtime API is available.")
-      .addDropdown(dropdown => {
-        requiresApiDropdown = dropdown;
-        dropdown.addOption(TASK_RUNTIME_APIS.NONE, "None");
-        dropdown.addOption(TASK_RUNTIME_APIS.MINDMAP_BUILDER, "Mind Map Builder API");
-        dropdown.onChange(value => {
-          if(refreshingEditorFields) return;
-          const taskConfig = getEditorTask();
-          if(!taskConfig) return;
-          taskConfig.execution.requiresApi = value;
-          editorDirty = true;
-          updateTaskEditorValidation();
-        });
-      });
+    addTaskEditorFieldClass(maskModeSetting);
 
     new ea.obsidian.Setting(contentEl)
       .addButton(button => button.setButtonText("Done").setCta().onClick(() => taskModal.close()));
