@@ -7,7 +7,8 @@ type SaveHandler = (modelId: string, capability: AIImageModelCapability, previou
 
 export class AIImageModelCapabilityModal extends Modal {
   private modelId: string;
-  private supportsImageEdits: boolean;
+  private supportsPromptImageTransforms: boolean;
+  private supportsMaskImageEdits: boolean;
   private supportedSizes: string[];
   private onKeyDown: (ev: KeyboardEvent) => void;
   private listenerHost: Document | null = null;
@@ -24,7 +25,8 @@ export class AIImageModelCapabilityModal extends Modal {
   ) {
     super(app);
     this.modelId = options.initialModelId ?? "";
-    this.supportsImageEdits = options.initialCapability?.supportsImageEdits ?? true;
+    this.supportsPromptImageTransforms = options.initialCapability?.supportsPromptImageTransforms ?? true;
+    this.supportsMaskImageEdits = options.initialCapability?.supportsMaskImageEdits ?? true;
     this.supportedSizes = [...(options.initialCapability?.supportedSizes?.length
       ? options.initialCapability.supportedSizes
       : ["1024x1024"])];
@@ -64,13 +66,24 @@ export class AIImageModelCapabilityModal extends Modal {
       );
 
     new Setting(contentEl)
-      .setName(t("AI_IMAGE_MODEL_CAPABILITIES_EDITS_NAME"))
-      .setDesc(t("AI_IMAGE_MODEL_CAPABILITIES_EDITS_DESC"))
+      .setName(t("AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_NAME"))
+      .setDesc(t("AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_DESC"))
       .addToggle((toggle) =>
         toggle
-          .setValue(this.supportsImageEdits)
+          .setValue(this.supportsPromptImageTransforms)
           .onChange((value) => {
-            this.supportsImageEdits = value;
+            this.supportsPromptImageTransforms = value;
+          }),
+      );
+
+    new Setting(contentEl)
+      .setName(t("AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_NAME"))
+      .setDesc(t("AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_DESC"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.supportsMaskImageEdits)
+          .onChange((value) => {
+            this.supportsMaskImageEdits = value;
           }),
       );
 
@@ -166,7 +179,8 @@ export class AIImageModelCapabilityModal extends Modal {
       normalizedModelId,
       {
         supportedSizes: normalizedSizes,
-        supportsImageEdits: this.supportsImageEdits,
+        supportsPromptImageTransforms: this.supportsPromptImageTransforms,
+        supportsMaskImageEdits: this.supportsMaskImageEdits,
       },
       this.options.previousModelId,
     );

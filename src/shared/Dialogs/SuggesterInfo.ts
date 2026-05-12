@@ -1059,6 +1059,66 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "getAISettings",
+    code: "getAISettings(): ExcalidrawAISettings | null",
+    desc:
+      "Returns the sanitized AI configuration currently available to ExcalidrawAutomate scripts.<br>" +
+      "The returned object includes enabled state, provider profiles with <code>provider</code>, <code>baseURL</code>, and <code>hasApiKey</code>, the configured text/image model maps, the default text/image model IDs, and the default outgoing/response token budgets.<br>" +
+      "Use this instead of reading <code>ea.plugin.settings</code> directly when building AI-driven scripts.",
+    after: "",
+  },
+  {
+    field: "generateAIText",
+    code: "async generateAIText(request: AIRequest)",
+    desc:
+      "High-level wrapper around <code>postAI()</code> for text and multimodal chat requests.<br>" +
+      "Returns an object with <code>response</code>, <code>json</code>, <code>content</code>, <code>rateLimit</code>, and <code>rateLimitRemaining</code>.<br>" +
+      "Use this when you want the assistant text directly instead of manually reading <code>json.choices[0].message.content</code>.",
+    after: "",
+  },
+  {
+    field: "analyzeAIImage",
+    code: "async analyzeAIImage(request: AIRequest)",
+    desc:
+      "High-level wrapper for multimodal image-analysis requests.<br>" +
+      "Supply an image in <code>request.image</code> or in message parts and optionally add <code>text</code>, <code>instruction</code>, or <code>messages</code>.<br>" +
+      "The configured text model must have multimodal support enabled.",
+    after: "",
+  },
+  {
+    field: "generateAIImage",
+    code: "async generateAIImage(request: AIRequest)",
+    desc:
+      "Generates a new image using the configured image model.<br>" +
+      "Returns <code>{ response, json, images, firstImage, revisedPrompt }</code> where <code>images</code> contains normalized image results with <code>url</code>, <code>b64_json</code>, <code>dataURL</code>, <code>mimeType</code>, and optional <code>revisedPrompt</code>.",
+    after: "",
+  },
+  {
+    field: "transformAIImage",
+    code: "async transformAIImage(request: AIRequest)",
+    desc:
+      "Applies a prompt-based transform to an input image using the configured image model.<br>" +
+      "Requires <code>request.image</code>. This is intended for providers/models that support image plus prompt edits without a mask.",
+    after: "",
+  },
+  {
+    field: "maskEditAIImage",
+    code: "async maskEditAIImage(request: AIRequest)",
+    desc:
+      "Applies a mask-based edit to an input image using the configured image model.<br>" +
+      "Requires both <code>request.image</code> and <code>request.imageGenerationProperties.mask</code>.",
+    after: "",
+  },
+  {
+    field: "createAIChatSession",
+    code: "createAIChatSession(initialRequest?: Omit<AIRequest, \"messages\">)",
+    desc:
+      "Creates a lightweight AI chat session helper that preserves prior conversation turns between calls.<br>" +
+      "The returned object exposes <code>getMessages()</code>, <code>reset()</code>, and <code>send(message, requestOverrides?)</code>.<br>" +
+      "Use this when a script needs Mermaid-style iterative prompting without manually maintaining the message array.",
+    after: "",
+  },
+  {
     field: "extractCodeBlocks",
     code: "extractCodeBlocks(markdown: string): { data: string, type: string }[]",
     desc: "Grabs the codeblock content from the supplied markdown string. Returns an array of dictionaries with the codeblock content and type",

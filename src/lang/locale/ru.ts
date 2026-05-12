@@ -235,6 +235,8 @@ export default {
     `Эти параметры используются ExcalidrawAutomate, Mermaid chat и diagram-to-code. В большинстве случаев достаточно указать провайдера, API-ключ и модели по умолчанию. Переопределения конечных точек оставляйте пустыми, если ваш провайдер не требует собственных URL. Старые настройки ИИ, привязанные только к OpenAI, будут автоматически перенесены сюда при первом запуске.`,
   AI_ENABLED_NAME: "Включить функции ИИ",
   AI_ENABLED_DESC: "Чтобы изменения вступили в силу, необходимо заново открыть Excalidraw.",
+  AI_VERBOSE_LOGGING_NAME: "Включить подробное логирование ИИ",
+  AI_VERBOSE_LOGGING_DESC: "Выводит подробную диагностику AI-запросов и ответов в консоль разработчика. Оставляйте выключенным, если не занимаетесь отладкой.",
   AI_PROVIDER_NAME: "Определить доступных провайдеров",
   AI_PROVIDER_DESC:
     "Определите профили провайдеров, доступные для списков моделей ниже. Текст, Vision и Image выбирают своего провайдера отдельно.",
@@ -262,7 +264,7 @@ export default {
   AI_PROVIDER_BASE_URL_PLACEHOLDER: "например: https://api.openai.com/v1",
   AI_PROVIDER_TEXT_ENDPOINT_NAME: "Переопределение endpoint текста ИИ",
   AI_PROVIDER_TEXT_ENDPOINT_DESC:
-    "Необязательное полное переопределение endpoint для текстовых и vision-запросов. Оставьте пустым, чтобы он вычислялся из базового URL и провайдера. Большинству пользователей это поле не нужно.",
+    "Необязательное полное переопределение endpoint для текстовых и мультимодальных запросов. Оставьте пустым, чтобы он вычислялся из базового URL и провайдера. Большинству пользователей это поле не нужно.",
   AI_PROVIDER_TEXT_ENDPOINT_PLACEHOLDER: "Необязательный полный endpoint текста",
   AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_NAME: "Переопределение endpoint генерации изображений ИИ",
   AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_DESC:
@@ -276,9 +278,9 @@ export default {
   AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_DESC:
     "Необязательное полное переопределение endpoint для запросов вариаций изображений. Оставьте пустым, если только ваш провайдер не использует нестандартный путь.",
   AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_PLACEHOLDER: "Необязательный полный endpoint вариаций изображений",
-  AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME: "Текстовая модель",
+  AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME: "Текстовая и мультимодальная модель",
   AI_PROVIDER_DEFAULT_TEXT_MODEL_DESC:
-    "Модель для текстовых запросов, например Mermaid chat.<br>Провайдер: {{provider}} ({{providerType}})<br>API key: {{apiKey}}<br>Имя модели: {{model}}<br>Endpoint: {{endpoint}}",
+    "Модель для текстового чата и запросов с изображениями, например Mermaid chat, diagram-to-code и анализа вайрфреймов.<br>Провайдер: {{provider}} ({{providerType}})<br>API key: {{apiKey}}<br>Имя модели: {{model}}<br>Endpoint: {{endpoint}}<br>Мультимодальная поддержка: {{multimodalSupport}}",
   AI_PROVIDER_DEFAULT_TEXT_MODEL_PLACEHOLDER: "например: gpt-5-mini, claude-sonnet, gemini-2.5-pro",
   AI_PROVIDER_DEFAULT_VISION_MODEL_NAME: "Vision-модель",
   AI_PROVIDER_DEFAULT_VISION_MODEL_DESC:
@@ -286,7 +288,7 @@ export default {
   AI_PROVIDER_DEFAULT_VISION_MODEL_PLACEHOLDER: "например: gpt-5-mini, claude-sonnet, gemini-2.5-flash",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME: "Модель изображений",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_DESC:
-    "Модель для генерации и редактирования изображений. Используйте кнопки редактирования, добавления и удаления, чтобы менять список.<br>Провайдер: {{provider}} ({{providerType}})<br>API key: {{apiKey}}<br>Имя модели: {{model}}<br>Поддерживаемые разрешения: {{sizes}}<br>Поддерживает редактирование изображений: {{supportsImageEdits}}",
+    "Модель для генерации изображений, prompt-редактирования и редактирования с маской. Используйте кнопки редактирования, добавления и удаления, чтобы менять список.<br>Провайдер: {{provider}} ({{providerType}})<br>API key: {{apiKey}}<br>Имя модели: {{model}}<br>Поддерживаемые разрешения: {{sizes}}<br>Prompt-редактирование: {{supportsPromptImageTransforms}}<br>Редактирование с маской: {{supportsMaskImageEdits}}",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "например: gpt-image-1",
   AI_MODEL_CONFIG_DERIVED_ENDPOINT: "Определяется выбранным провайдером",
   AI_MODEL_EDIT: "Изменить модель",
@@ -295,19 +297,25 @@ export default {
   AI_MODEL_RESTORE_DEFAULTS: "Восстановить модели по умолчанию",
   AI_IMAGE_MODEL_CAPABILITIES_NAME: "Возможности моделей изображений",
   AI_IMAGE_MODEL_CAPABILITIES_DESC:
-    "Здесь настраиваются метаданные моделей изображений: поддерживаемые разрешения и наличие редактирования изображений. Например, поддерживаемые размеры можно посмотреть в <a href=\"https://platform.openai.com/docs/guides/image-generation\" target=\"_blank\" rel=\"noopener noreferrer\">документации OpenAI по генерации изображений</a>.",
+    "Здесь настраиваются метаданные моделей изображений: поддерживаемые разрешения, поддержка prompt-редактирования и поддержка масок. Например, поддерживаемые размеры можно посмотреть в <a href=\"https://platform.openai.com/docs/guides/image-generation\" target=\"_blank\" rel=\"noopener noreferrer\">документации OpenAI по генерации изображений</a>.",
   AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "Восстановить известные значения",
   AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "Добавить",
   AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "Изменить",
   AI_IMAGE_MODEL_CAPABILITIES_REMOVE_MODEL: "Удалить запись",
   AI_IMAGE_MODEL_CAPABILITIES_CURRENT_ENTRY_NAME: "Выбранная запись модели",
   AI_IMAGE_MODEL_CAPABILITIES_CURRENT_ENTRY_DESC:
-    "<b>{{model}}</b><br>Поддерживаемые разрешения: {{sizes}}<br>Поддерживает редактирование изображений: {{supportsImageEdits}}",
+    "<b>{{model}}</b><br>Поддерживаемые разрешения: {{sizes}}<br>Prompt-редактирование: {{supportsPromptImageTransforms}}<br>Редактирование с маской: {{supportsMaskImageEdits}}",
   AI_IMAGE_MODEL_CAPABILITIES_SIZES_NAME: "Поддерживаемые разрешения",
   AI_IMAGE_MODEL_CAPABILITIES_SIZES_PLACEHOLDER: "1024x1024, 1536x1024, 1024x1536",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_NAME: "Поддерживает редактирование изображений",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_DESC:
     "Отключите, если модель умеет только генерировать изображения, но не поддерживает редактирование или маски.",
+  AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_NAME: "Prompt-редактирование изображений",
+  AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_DESC:
+    "Включите, если модель принимает входное изображение и текстовый prompt для редактирования без маски.",
+  AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_NAME: "Редактирование изображений с маской",
+  AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_DESC:
+    "Включите, если модель умеет заменять выбранные области входного изображения с помощью маски.",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_YES: "Да",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_NO: "Нет",
   AI_IMAGE_MODEL_CAPABILITY_MODAL_ADD_TITLE: "Добавить запись модели изображений",
@@ -324,13 +332,15 @@ export default {
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_MODEL_REQUIRED: "Требуется ID модели.",
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_SIZE_REQUIRED: "Добавьте хотя бы одно поддерживаемое разрешение.",
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_DUPLICATE_MODEL: "Запись модели с таким ID уже существует.",
+  AI_MODEL_CONFIG_MODAL_MULTIMODAL_NAME: "Мультимодальная поддержка",
+  AI_MODEL_CONFIG_MODAL_MULTIMODAL_DESC: "Разрешает этой текстовой модели принимать изображения для анализа и задач в стиле diagram-to-code.",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_NAME: "Бюджет исходящих токенов ИИ по умолчанию",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_DESC:
     "Значение по умолчанию для AIRequest.maxOutgoingTokens. Это приблизительный бюджет для исходящего текста; Excalidraw сначала сокращает длинные подсказки и старую историю чата. Также влияет на текст, отправляемый вместе с image-запросами.",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_PLACEHOLDER: "например: 8000",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_NAME: "Лимит токенов ответа ИИ по умолчанию",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_DESC:
-    "Значение по умолчанию для AIRequest.maxTokens. Ограничивает текстовые и vision-ответы модели. Не влияет на прямые endpoint'ы генерации и редактирования изображений.",
+    "Значение по умолчанию для AIRequest.maxTokens. Ограничивает текстовые и мультимодальные ответы модели. Не влияет на прямые endpoint'ы генерации и редактирования изображений.",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_PLACEHOLDER: "например: 4096",
   SAVING_HEAD: "Сохранение",
   SAVING_DESC: "В разделе 'Сохранение' раздела Настройки Excalidraw вы можете настроить способ сохранения ваших чертежей. Сюда входят опции сжатия Excalidraw JSON в Markdown, установки интервалов автосохранения для настольных и мобильных компьютеров, определения форматов имен файлов, а также выбора расширения файла .excalidraw.md или .md. ",

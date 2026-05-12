@@ -33,13 +33,19 @@ export class AIModelConfigModal<TConfig extends AIModelConfig | AIImageModelConf
       providerId: options.initialConfig?.providerId ?? firstProviderId,
       model: options.initialConfig?.model ?? "",
       endpoint: options.initialConfig?.endpoint ?? "",
+      ...(options.kind === "text"
+        ? {
+            multimodalSupport: options.initialConfig?.multimodalSupport ?? true,
+          }
+        : {}),
       ...(
         options.kind === "image"
           ? {
               supportedSizes: [...(((options.initialConfig as AIImageModelConfig | undefined)?.supportedSizes?.length)
                 ? (options.initialConfig as AIImageModelConfig).supportedSizes
                 : ["1024x1024"])],
-              supportsImageEdits: (options.initialConfig as AIImageModelConfig | undefined)?.supportsImageEdits ?? true,
+              supportsPromptImageTransforms: (options.initialConfig as AIImageModelConfig | undefined)?.supportsPromptImageTransforms ?? true,
+              supportsMaskImageEdits: (options.initialConfig as AIImageModelConfig | undefined)?.supportsMaskImageEdits ?? true,
             }
           : {}
       ),
@@ -138,6 +144,19 @@ export class AIModelConfigModal<TConfig extends AIModelConfig | AIImageModelConf
         );
     }
 
+    if (this.options.kind === "text") {
+      new Setting(contentEl)
+        .setName(t("AI_MODEL_CONFIG_MODAL_MULTIMODAL_NAME"))
+        .setDesc(t("AI_MODEL_CONFIG_MODAL_MULTIMODAL_DESC"))
+        .addToggle((toggle) =>
+          toggle
+            .setValue(this.config.multimodalSupport !== false)
+            .onChange((value) => {
+              this.config.multimodalSupport = value;
+            }),
+        );
+    }
+
     if (this.options.kind === "image") {
       const imageConfig = this.config as AIImageModelConfig;
       contentEl.createEl("h3", { text: t("AI_IMAGE_MODEL_CAPABILITIES_SIZES_NAME") });
@@ -180,13 +199,24 @@ export class AIModelConfigModal<TConfig extends AIModelConfig | AIImageModelConf
         );
 
       new Setting(contentEl)
-        .setName(t("AI_IMAGE_MODEL_CAPABILITIES_EDITS_NAME"))
-        .setDesc(t("AI_IMAGE_MODEL_CAPABILITIES_EDITS_DESC"))
+        .setName(t("AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_NAME"))
+        .setDesc(t("AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_DESC"))
         .addToggle((toggle) =>
           toggle
-            .setValue(imageConfig.supportsImageEdits)
+            .setValue(imageConfig.supportsPromptImageTransforms)
             .onChange((value) => {
-              imageConfig.supportsImageEdits = value;
+              imageConfig.supportsPromptImageTransforms = value;
+            }),
+        );
+
+      new Setting(contentEl)
+        .setName(t("AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_NAME"))
+        .setDesc(t("AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_DESC"))
+        .addToggle((toggle) =>
+          toggle
+            .setValue(imageConfig.supportsMaskImageEdits)
+            .onChange((value) => {
+              imageConfig.supportsMaskImageEdits = value;
             }),
         );
     }

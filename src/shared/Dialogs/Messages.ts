@@ -14,16 +14,20 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
   - The cache is local to each device. It is not synced through Obsidian Sync or your vault, so each device builds and maintains its own cache independently.
 - Placeholder image for empty drawings.
 - AI support is now provider-aware across the plugin. You can choose between OpenAI, Anthropic/Claude, Google/Gemini, xAI/Grok, or an OpenAI-compatible/local endpoint.
-  - The shared AI configuration is now used by ExcalidrawAutomate, Mermaid chat, diagram-to-code, and related AI features.
+  - AI settings now use shared provider profiles plus text/multimodal model lists, image model lists, default model selection, token budgets, and an optional verbose developer-console logging toggle for troubleshooting.
+  - The shared AI configuration is now used by ExcalidrawAutomate, Mermaid chat, diagram-to-code, ExcaliAI, and related AI features.
   - Older OpenAI-specific AI settings are migrated automatically into the new shared AI settings on first run.
 
 ## Fixed
 - Error when saving pasted images from Excalidraw.com
 - Fixed Mermaid chat / text-to-diagram and diagram-to-code to use the shared AI layer and honor the configured provider, model, API key, and endpoint settings.
-- Fixed the ExcaliAI script to work with the new shared AI settings, including OpenAI image responses that return \`b64_json\` instead of a hosted URL.
+- Fixed the ExcaliAI script to work with the new shared AI settings, including provider-aware text and image model selection, prompt transforms vs mask edits, and OpenAI image responses that return \`b64_json\` instead of a hosted URL.
 
 ## New in ExcalidrawAutomate
-- Added new AI helper functions for scripts while retaining backward compatibility for existing \`postOpenAI()\` integrations.
+- Added new provider-aware AI helper functions for scripts while retaining backward compatibility for existing \`postOpenAI()\` integrations.
+  - Added \`getAISettings()\` to inspect the shared AI settings from scripts.
+  - Added \`analyzeAIImage()\`, \`generateAIImage()\`, \`transformAIImage()\`, and \`maskEditAIImage()\` for shared text/image workflows.
+  - Added \`createAIChatSession()\` to preserve chat history between calls without manually maintaining the \`messages\` array.
 - Added \`extractCodeBlocks()\` to simplify parsing model responses that return fenced code blocks.
 - Updated \`addImage()\` to accept \`data:image/...\` data URLs directly, in addition to files, hyperlinks, vault paths, and PDF++ references.
 
@@ -36,11 +40,53 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 public async postAI(request: AIRequest): Promise<RequestUrlResponse>;
 
 /**
- * Posts an AI request to the OpenAI API and returns the response.
+ * Backwards-compatible alias for \`postAI()\`.
+ * Existing scripts can keep calling \`postOpenAI()\` while using the shared provider, model, API key, and endpoint settings.
  * @param {AIRequest} request - The AI request configuration.
- * @returns {Promise<RequestUrlResponse>} Promise resolving to the API response.
+ * @returns {Promise<RequestUrlResponse>} Promise resolving to the provider-normalized API response.
  */
 public async postOpenAI(request: AIRequest): Promise<RequestUrlResponse>;
+
+/**
+ * Returns the shared AI settings exposed to scripts.
+ * @returns {ExcalidrawAISettings | null} Shared AI settings or null if AI is unavailable.
+ */
+public getAISettings(): ExcalidrawAISettings | null;
+
+/**
+ * Sends an image-aware text request using the shared multimodal routing.
+ * @param {AIRequest} request - The AI request configuration.
+ * @returns {Promise<GenerateAITextResult>} Promise resolving to normalized text output.
+ */
+public async analyzeAIImage(request: AIRequest): Promise<GenerateAITextResult>;
+
+/**
+ * Generates a new image using the configured image model.
+ * @param {AIRequest} request - The AI request configuration.
+ * @returns {Promise<GenerateAIImageResult>} Promise resolving to normalized image output.
+ */
+public async generateAIImage(request: AIRequest): Promise<GenerateAIImageResult>;
+
+/**
+ * Applies a prompt-based transform to an input image.
+ * @param {AIRequest} request - The AI request configuration.
+ * @returns {Promise<GenerateAIImageResult>} Promise resolving to normalized image output.
+ */
+public async transformAIImage(request: AIRequest): Promise<GenerateAIImageResult>;
+
+/**
+ * Applies a mask-based edit to an input image.
+ * @param {AIRequest} request - The AI request configuration.
+ * @returns {Promise<GenerateAIImageResult>} Promise resolving to normalized image output.
+ */
+public async maskEditAIImage(request: AIRequest): Promise<GenerateAIImageResult>;
+
+/**
+ * Creates a lightweight chat session helper that preserves prior conversation turns between calls.
+ * @param {Omit<AIRequest, "messages">} initialRequest - Default request fields applied to every send.
+ * @returns {AIChatSession} Chat session helper with \`getMessages()\`, \`reset()\`, and \`send()\`.
+ */
+public createAIChatSession(initialRequest?: Omit<AIRequest, "messages">): AIChatSession;
 
 /**
  * Extracts code blocks from markdown text.

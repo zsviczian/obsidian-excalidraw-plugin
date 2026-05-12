@@ -298,6 +298,8 @@ export default {
     `Estos ajustes se usan en ExcalidrawAutomate, Mermaid chat y diagram-to-code. En la mayoría de los casos solo necesitas configurar el proveedor, la clave API y los modelos predeterminados. Deja vacías las anulaciones de endpoints salvo que tu proveedor requiera URL personalizadas. Las configuraciones antiguas de IA específicas de OpenAI se migrarán aquí automáticamente en el primer inicio.`,
   AI_ENABLED_NAME: "Habilitar funcionalidades de IA",
   AI_ENABLED_DESC: "Necesitas reabrir Excalidraw para que los cambios surtan efecto.",
+  AI_VERBOSE_LOGGING_NAME: "Habilitar registro detallado de IA",
+  AI_VERBOSE_LOGGING_DESC: "Escribe diagnósticos detallados de solicitudes y respuestas de IA en la consola de desarrollador. Déjalo desactivado salvo que estés solucionando un problema.",
   AI_PROVIDER_NAME: "Definir proveedores disponibles",
   AI_PROVIDER_DESC:
     "Define los perfiles de proveedor disponibles para las listas de modelos de abajo. Texto, Visión e Imagen seleccionan su proveedor por separado.",
@@ -325,7 +327,7 @@ export default {
   AI_PROVIDER_BASE_URL_PLACEHOLDER: "p. ej.: https://api.openai.com/v1",
   AI_PROVIDER_TEXT_ENDPOINT_NAME: "Anulación del endpoint de texto de IA",
   AI_PROVIDER_TEXT_ENDPOINT_DESC:
-    "Anulación opcional del endpoint completo para solicitudes de texto y visión. Déjalo vacío para derivarlo de la URL base y el proveedor. La mayoría de usuarios no necesita rellenarlo.",
+    "Anulación opcional del endpoint completo para solicitudes de texto y multimodales. Déjalo vacío para derivarlo de la URL base y el proveedor. La mayoría de usuarios no necesita rellenarlo.",
   AI_PROVIDER_TEXT_ENDPOINT_PLACEHOLDER: "Endpoint completo opcional de texto",
   AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_NAME: "Anulación del endpoint de generación de imágenes de IA",
   AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_DESC:
@@ -339,9 +341,9 @@ export default {
   AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_DESC:
     "Anulación opcional del endpoint completo para solicitudes de variaciones de imágenes. Déjalo vacío salvo que tu proveedor exponga esta función en una ruta no estándar.",
   AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_PLACEHOLDER: "Endpoint completo opcional de variaciones de imágenes",
-  AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME: "Modelo de texto",
+  AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME: "Modelo de texto y multimodal",
   AI_PROVIDER_DEFAULT_TEXT_MODEL_DESC:
-    "Modelo usado para solicitudes solo de texto, como Mermaid chat.<br>Proveedor: {{provider}} ({{providerType}})<br>Clave API: {{apiKey}}<br>Nombre del modelo: {{model}}<br>Endpoint: {{endpoint}}",
+    "Modelo usado para chat de texto y solicitudes con imágenes, como Mermaid chat, diagram-to-code y análisis de wireframes.<br>Proveedor: {{provider}} ({{providerType}})<br>Clave API: {{apiKey}}<br>Nombre del modelo: {{model}}<br>Endpoint: {{endpoint}}<br>Compatibilidad multimodal: {{multimodalSupport}}",
   AI_PROVIDER_DEFAULT_TEXT_MODEL_PLACEHOLDER: "p. ej.: gpt-5-mini, claude-sonnet, gemini-2.5-pro",
   AI_PROVIDER_DEFAULT_VISION_MODEL_NAME: "Modelo de visión",
   AI_PROVIDER_DEFAULT_VISION_MODEL_DESC:
@@ -349,7 +351,7 @@ export default {
   AI_PROVIDER_DEFAULT_VISION_MODEL_PLACEHOLDER: "p. ej.: gpt-5-mini, claude-sonnet, gemini-2.5-flash",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME: "Modelo de imagen",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_DESC:
-    "Modelo usado para generación y edición de imágenes. Usa los botones Editar, Agregar y Eliminar para modificar la lista.<br>Proveedor: {{provider}} ({{providerType}})<br>Clave API: {{apiKey}}<br>Nombre del modelo: {{model}}<br>Resoluciones compatibles: {{sizes}}<br>Admite edición de imágenes: {{supportsImageEdits}}",
+    "Modelo usado para generación de imágenes, transformaciones guiadas por prompt y ediciones con máscara. Usa los botones Editar, Agregar y Eliminar para modificar la lista.<br>Proveedor: {{provider}} ({{providerType}})<br>Clave API: {{apiKey}}<br>Nombre del modelo: {{model}}<br>Resoluciones compatibles: {{sizes}}<br>Transformaciones por prompt: {{supportsPromptImageTransforms}}<br>Ediciones con máscara: {{supportsMaskImageEdits}}",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "p. ej.: gpt-image-1",
   AI_MODEL_CONFIG_DERIVED_ENDPOINT: "Derivado del proveedor seleccionado",
   AI_MODEL_EDIT: "Editar modelo",
@@ -358,19 +360,25 @@ export default {
   AI_MODEL_RESTORE_DEFAULTS: "Restaurar modelos predeterminados",
   AI_IMAGE_MODEL_CAPABILITIES_NAME: "Capacidades del modelo de imagen",
   AI_IMAGE_MODEL_CAPABILITIES_DESC:
-    "Administra aquí los metadatos de los modelos de imagen, como resoluciones compatibles y soporte para edición de imágenes. Por ejemplo, puedes consultar los tamaños compatibles en la <a href=\"https://platform.openai.com/docs/guides/image-generation\" target=\"_blank\" rel=\"noopener noreferrer\">documentación de generación de imágenes de OpenAI</a>.",
+    "Administra aquí los metadatos de los modelos de imagen, como resoluciones compatibles, soporte para transformaciones por prompt y soporte para ediciones con máscara. Por ejemplo, puedes consultar los tamaños compatibles en la <a href=\"https://platform.openai.com/docs/guides/image-generation\" target=\"_blank\" rel=\"noopener noreferrer\">documentación de generación de imágenes de OpenAI</a>.",
   AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "Restaurar valores conocidos",
   AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "Agregar",
   AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "Editar",
   AI_IMAGE_MODEL_CAPABILITIES_REMOVE_MODEL: "Eliminar entrada",
   AI_IMAGE_MODEL_CAPABILITIES_CURRENT_ENTRY_NAME: "Entrada de modelo seleccionada",
   AI_IMAGE_MODEL_CAPABILITIES_CURRENT_ENTRY_DESC:
-    "<b>{{model}}</b><br>Resoluciones compatibles: {{sizes}}<br>Admite edición de imágenes: {{supportsImageEdits}}",
+    "<b>{{model}}</b><br>Resoluciones compatibles: {{sizes}}<br>Transformaciones por prompt: {{supportsPromptImageTransforms}}<br>Ediciones con máscara: {{supportsMaskImageEdits}}",
   AI_IMAGE_MODEL_CAPABILITIES_SIZES_NAME: "Resoluciones compatibles",
   AI_IMAGE_MODEL_CAPABILITIES_SIZES_PLACEHOLDER: "1024x1024, 1536x1024, 1024x1536",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_NAME: "Admite edición de imágenes",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_DESC:
     "Desactiva esta opción si el modelo puede generar imágenes pero no admite edición de imágenes ni máscaras.",
+  AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_NAME: "Transformaciones de imagen por prompt",
+  AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_DESC:
+    "Actívalo cuando el modelo acepte una imagen de entrada más un prompt de texto para ediciones sin máscara.",
+  AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_NAME: "Ediciones de imagen con máscara",
+  AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_DESC:
+    "Actívalo cuando el modelo admita reemplazar regiones concretas de una imagen de entrada mediante una máscara.",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_YES: "Sí",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_NO: "No",
   AI_IMAGE_MODEL_CAPABILITY_MODAL_ADD_TITLE: "Agregar entrada de modelo de imagen",
@@ -387,13 +395,15 @@ export default {
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_MODEL_REQUIRED: "El ID del modelo es obligatorio.",
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_SIZE_REQUIRED: "Agrega al menos una resolución compatible.",
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_DUPLICATE_MODEL: "Ya existe una entrada con este ID de modelo.",
+  AI_MODEL_CONFIG_MODAL_MULTIMODAL_NAME: "Compatibilidad multimodal",
+  AI_MODEL_CONFIG_MODAL_MULTIMODAL_DESC: "Permite que este modelo de texto acepte imágenes para análisis y tareas tipo diagram-to-code.",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_NAME: "Presupuesto predeterminado de tokens salientes de IA",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_DESC:
     "Valor predeterminado para AIRequest.maxOutgoingTokens. Excalidraw lo usa como presupuesto aproximado para el texto saliente y recorta primero los prompts largos o el historial de chat antiguo. También puede afectar al texto enviado con solicitudes de imagen.",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_PLACEHOLDER: "p. ej.: 8000",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_NAME: "Límite predeterminado de tokens de respuesta de IA",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_DESC:
-    "Valor predeterminado para AIRequest.maxTokens. Limita las respuestas de texto o visión devueltas por el modelo. No afecta a los endpoints directos de generación o edición de imágenes.",
+    "Valor predeterminado para AIRequest.maxTokens. Limita las respuestas de texto o multimodales devueltas por el modelo. No afecta a los endpoints directos de generación o edición de imágenes.",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_PLACEHOLDER: "p. ej.: 4096",
   SAVING_HEAD: "Guardar",
   SAVING_DESC: "En la sección 'Guardar' de la Configuración de Excalidraw, puedes configurar cómo se guardan tus bosquejos. Esto incluye opciones para comprimir el JSON de Excalidraw en Markdown, establecer intervalos de autoguardado para escritorio y móvil, definir formatos de nombre de archivo y elegir si usar la extensión de archivo .excalidraw.md o .md. ",

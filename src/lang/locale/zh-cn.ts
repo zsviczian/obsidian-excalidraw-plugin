@@ -312,6 +312,8 @@ export default {
     `这些设置会被 ExcalidrawAutomate、Mermaid chat 和 diagram-to-code 共用。大多数情况下，您只需要设置提供商、API key 和默认模型。除非您的提供商要求自定义 URL，否则请将各 endpoint 覆盖项留空。旧的 OpenAI 专用 AI 设置会在首次运行时自动迁移到这里。`,
   AI_ENABLED_NAME: "启用 AI 功能",
   AI_ENABLED_DESC: "您需要重新打开 Excalidraw 才能使更改生效。",
+  AI_VERBOSE_LOGGING_NAME: "启用详细 AI 日志",
+  AI_VERBOSE_LOGGING_DESC: "将详细的 AI 请求和响应诊断信息写入开发者控制台。除非您正在排查问题，否则请保持关闭。",
   AI_PROVIDER_NAME: "定义可用提供商",
   AI_PROVIDER_DESC:
     "定义下方模型列表可用的提供商配置。文本、视觉和图像模型各自独立选择提供商。",
@@ -339,7 +341,7 @@ export default {
   AI_PROVIDER_BASE_URL_PLACEHOLDER: "例如：https://api.openai.com/v1",
   AI_PROVIDER_TEXT_ENDPOINT_NAME: "AI 文本 endpoint 覆盖",
   AI_PROVIDER_TEXT_ENDPOINT_DESC:
-    "可选的完整 endpoint 覆盖，用于文本和视觉请求。留空时会根据基础 URL 和提供商自动推导。大多数用户无需填写。",
+    "可选的完整 endpoint 覆盖，用于文本和多模态请求。留空时会根据基础 URL 和提供商自动推导。大多数用户无需填写。",
   AI_PROVIDER_TEXT_ENDPOINT_PLACEHOLDER: "可选的完整文本 endpoint",
   AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_NAME: "AI 图像生成 endpoint 覆盖",
   AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_DESC:
@@ -353,9 +355,9 @@ export default {
   AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_DESC:
     "可选的完整 endpoint 覆盖，用于图像变体请求。除非您的提供商使用非标准路径，否则请留空。",
   AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_PLACEHOLDER: "可选的完整图像变体 endpoint",
-  AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME: "文本模型",
+  AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME: "文本与多模态模型",
   AI_PROVIDER_DEFAULT_TEXT_MODEL_DESC:
-    "用于 Mermaid chat 等纯文本请求的模型。<br>提供商：{{provider}}（{{providerType}}）<br>API key：{{apiKey}}<br>模型名称：{{model}}<br>Endpoint：{{endpoint}}",
+    "用于文本聊天和图像理解请求的模型，例如 Mermaid chat、diagram-to-code 和线框图分析。<br>提供商：{{provider}}（{{providerType}}）<br>API key：{{apiKey}}<br>模型名称：{{model}}<br>Endpoint：{{endpoint}}<br>多模态支持：{{multimodalSupport}}",
   AI_PROVIDER_DEFAULT_TEXT_MODEL_PLACEHOLDER: "例如：gpt-5-mini、claude-sonnet、gemini-2.5-pro",
   AI_PROVIDER_DEFAULT_VISION_MODEL_NAME: "视觉模型",
   AI_PROVIDER_DEFAULT_VISION_MODEL_DESC:
@@ -363,7 +365,7 @@ export default {
   AI_PROVIDER_DEFAULT_VISION_MODEL_PLACEHOLDER: "例如：gpt-5-mini、claude-sonnet、gemini-2.5-flash",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME: "图像模型",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_DESC:
-    "用于图像生成和图像编辑的模型。使用“编辑”“添加”“删除”按钮修改列表。<br>提供商：{{provider}}（{{providerType}}）<br>API key：{{apiKey}}<br>模型名称：{{model}}<br>支持的分辨率：{{sizes}}<br>支持图像编辑：{{supportsImageEdits}}",
+    "用于图像生成、基于提示词的图像变换和蒙版编辑的模型。使用“编辑”“添加”“删除”按钮修改列表。<br>提供商：{{provider}}（{{providerType}}）<br>API key：{{apiKey}}<br>模型名称：{{model}}<br>支持的分辨率：{{sizes}}<br>提示词图像变换：{{supportsPromptImageTransforms}}<br>蒙版编辑：{{supportsMaskImageEdits}}",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "例如：gpt-image-1",
   AI_MODEL_CONFIG_DERIVED_ENDPOINT: "由所选提供商推导",
   AI_MODEL_EDIT: "编辑模型",
@@ -372,19 +374,25 @@ export default {
   AI_MODEL_RESTORE_DEFAULTS: "恢复默认模型",
   AI_IMAGE_MODEL_CAPABILITIES_NAME: "图像模型能力",
   AI_IMAGE_MODEL_CAPABILITIES_DESC:
-    "在这里管理图像模型元数据，例如支持的分辨率和是否支持图像编辑。例如，你可以在 <a href=\"https://platform.openai.com/docs/guides/image-generation\" target=\"_blank\" rel=\"noopener noreferrer\">OpenAI 图像生成文档</a> 中查询支持的尺寸。",
+    "在这里管理图像模型元数据，例如支持的分辨率、是否支持提示词图像变换以及是否支持蒙版编辑。例如，你可以在 <a href=\"https://platform.openai.com/docs/guides/image-generation\" target=\"_blank\" rel=\"noopener noreferrer\">OpenAI 图像生成文档</a> 中查询支持的尺寸。",
   AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "恢复已知默认值",
   AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "添加",
   AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "编辑",
   AI_IMAGE_MODEL_CAPABILITIES_REMOVE_MODEL: "删除条目",
   AI_IMAGE_MODEL_CAPABILITIES_CURRENT_ENTRY_NAME: "当前选中的模型条目",
   AI_IMAGE_MODEL_CAPABILITIES_CURRENT_ENTRY_DESC:
-    "<b>{{model}}</b><br>支持的分辨率：{{sizes}}<br>支持图像编辑：{{supportsImageEdits}}",
+    "<b>{{model}}</b><br>支持的分辨率：{{sizes}}<br>提示词图像变换：{{supportsPromptImageTransforms}}<br>蒙版编辑：{{supportsMaskImageEdits}}",
   AI_IMAGE_MODEL_CAPABILITIES_SIZES_NAME: "支持的分辨率",
   AI_IMAGE_MODEL_CAPABILITIES_SIZES_PLACEHOLDER: "1024x1024, 1536x1024, 1024x1536",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_NAME: "支持图像编辑",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_DESC:
     "如果该模型只能生成图像但不支持图像编辑或蒙版，请关闭此项。",
+  AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_NAME: "提示词图像变换",
+  AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_DESC:
+    "当模型支持使用输入图像加文本提示词进行无蒙版编辑时，请启用此项。",
+  AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_NAME: "蒙版图像编辑",
+  AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_DESC:
+    "当模型支持使用蒙版替换输入图像的局部区域时，请启用此项。",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_YES: "是",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_NO: "否",
   AI_IMAGE_MODEL_CAPABILITY_MODAL_ADD_TITLE: "添加图像模型条目",
@@ -401,13 +409,15 @@ export default {
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_MODEL_REQUIRED: "必须填写模型 ID。",
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_SIZE_REQUIRED: "至少添加一个支持的分辨率。",
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_DUPLICATE_MODEL: "该模型 ID 已存在条目。",
+  AI_MODEL_CONFIG_MODAL_MULTIMODAL_NAME: "多模态支持",
+  AI_MODEL_CONFIG_MODAL_MULTIMODAL_DESC: "允许该文本模型接收图像输入，用于分析和 diagram-to-code 类任务。",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_NAME: "AI 默认输出 token 预算",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_DESC:
     "AIRequest.maxOutgoingTokens 的默认值。Excalidraw 会将其作为发送文本的近似预算，并优先裁剪较长的提示词或较早的聊天历史。它也可能影响图像请求中附带发送的文本。",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_PLACEHOLDER: "例如：8000",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_NAME: "AI 默认响应 token 上限",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_DESC:
-    "AIRequest.maxTokens 的默认值。它限制模型返回的文本或视觉响应，不影响直接图像生成或图像编辑 endpoint。",
+    "AIRequest.maxTokens 的默认值。它限制模型返回的文本或多模态响应，不影响直接图像生成或图像编辑 endpoint。",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_PLACEHOLDER: "例如：4096",
   SAVING_HEAD: "保存",
   SAVING_DESC: "包括：压缩，自动保存的时间间隔，文件的命名格式和扩展名等。",

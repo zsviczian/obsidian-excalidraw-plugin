@@ -46,7 +46,6 @@ import {
   cloneKnownAIProviderProfiles,
   cloneModelConfigs,
   KNOWN_AI_TEXT_MODEL_CONFIGS,
-  KNOWN_AI_VISION_MODEL_CONFIGS,
   KNOWN_AI_IMAGE_MODEL_CONFIGS,
 } from "./settings";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
@@ -131,6 +130,8 @@ type PersistedExcalidrawSettings = Partial<ExcalidrawSettings> & Record<string, 
 
 const LEGACY_AI_SETTING_KEYS: (keyof ExcalidrawSettings)[] = [
   "aiDefaultMaxTokens",
+  "aiDefaultMultimodalModel",
+  "aiDefaultVisionModel",
   "aiProvider",
   "aiAPIKey",
   "aiBaseURL",
@@ -139,6 +140,7 @@ const LEGACY_AI_SETTING_KEYS: (keyof ExcalidrawSettings)[] = [
   "aiImageEditsEndpoint",
   "aiImageVariationsEndpoint",
   "aiImageModelCapabilities",
+  "aiVisionModelConfigs",
   "openAIAPIToken",
   "openAIDefaultTextModel",
   "openAIDefaultTextModelMaxTokens",
@@ -207,8 +209,11 @@ const migrateLegacyAISettings = (
   };
 
   assignStringIfMissing("aiAPIKey", settings.openAIAPIToken);
+  assignStringIfMissing("aiDefaultMultimodalModel", settings.aiDefaultVisionModel);
+  assignStringIfMissing("aiDefaultMultimodalModel", settings.openAIDefaultVisionModel);
   assignStringIfMissing("aiDefaultTextModel", settings.openAIDefaultTextModel);
-  assignStringIfMissing("aiDefaultVisionModel", settings.openAIDefaultVisionModel);
+  assignStringIfMissing("aiDefaultTextModel", settings.aiDefaultVisionModel);
+  assignStringIfMissing("aiDefaultTextModel", settings.openAIDefaultVisionModel);
   assignStringIfMissing("aiDefaultImageGenerationModel", settings.openAIDefaultImageGenerationModel);
   assignPositiveNumberIfMissing("aiDefaultMaxResponseTokens", settings.aiDefaultMaxTokens);
   assignPositiveNumberIfMissing("aiDefaultMaxResponseTokens", settings.openAIDefaultTextModelMaxTokens);
@@ -267,17 +272,13 @@ const migrateLegacyAISettings = (
 
   const ensureModelConfigs = (kind: "text" | "vision" | "image") => {
     if (kind === "text" && migrated.aiTextModelConfigs && Object.keys(migrated.aiTextModelConfigs).length > 0) return migrated.aiTextModelConfigs;
-    if (kind === "vision" && migrated.aiVisionModelConfigs && Object.keys(migrated.aiVisionModelConfigs).length > 0) return migrated.aiVisionModelConfigs;
     if (kind === "image" && migrated.aiImageModelConfigs && Object.keys(migrated.aiImageModelConfigs).length > 0) return migrated.aiImageModelConfigs;
 
     const defaults = kind === "text"
       ? cloneModelConfigs(KNOWN_AI_TEXT_MODEL_CONFIGS)
-      : kind === "vision"
-        ? cloneModelConfigs(KNOWN_AI_VISION_MODEL_CONFIGS)
-        : cloneModelConfigs(KNOWN_AI_IMAGE_MODEL_CONFIGS);
+      : cloneModelConfigs(KNOWN_AI_IMAGE_MODEL_CONFIGS);
 
     if (kind === "text") migrated.aiTextModelConfigs = defaults;
-    if (kind === "vision") migrated.aiVisionModelConfigs = defaults;
     if (kind === "image") migrated.aiImageModelConfigs = defaults as typeof migrated.aiImageModelConfigs;
     didMigrate = true;
     return defaults;
@@ -295,10 +296,15 @@ const migrateLegacyAISettings = (
     didMigrate = true;
   }
 
-  const textModelId = (migrated.aiDefaultTextModel || settings.openAIDefaultTextModel || "gpt-5-mini").trim();
-  const visionModelId = (migrated.aiDefaultVisionModel || settings.openAIDefaultVisionModel || "gpt-5-mini").trim();
+  const textModelId = (migrated.aiDefaultTextModel || settings.aiDefaultVisionModel || settings.openAIDefaultTextModel || settings.openAIDefaultVisionModel || "gpt-5-mini").trim();
+  const multimodalTextModelId = (migrated.aiDefaultMultimodalModel || settings.aiDefaultVisionModel || settings.openAIDefaultVisionModel || textModelId).trim();
   const imageModelId = (migrated.aiDefaultImageGenerationModel || settings.openAIDefaultImageGenerationModel || "gpt-image-1").trim();
-  const legacyCapabilities = settings.aiImageModelCapabilities as Record<string, { supportedSizes?: string[]; supportsImageEdits?: boolean }> | undefined;
+  const legacyCapabilities = settings.aiImageModelCapabilities as Record<string, {
+    supportedSizes?: string[];
+    supportsPromptImageTransforms?: boolean;
+    supportsMaskImageEdits?: boolean;
+    supportsImageEdits?: boolean;
+  }> | undefined;
 
   const textModels = ensureModelConfigs("text");
   if (!hadTextModelConfigs) {
@@ -306,33 +312,83 @@ const migrateLegacyAISettings = (
       providerId: providerProfileId,
       model: textModelId,
       endpoint: migrated.aiTextEndpoint ?? "",
+      multimodalSupport: true,
     };
   }
 
-  const visionModels = ensureModelConfigs("vision");
-  if (!hadVisionModelConfigs) {
-    visionModels[visionModelId] = {
-      providerId: providerProfileId,
-      model: visionModelId,
-      endpoint: migrated.aiTextEndpoint ?? "",
-    };
+  if (hadVisionModelConfigs && migrated.aiVisionModelConfigs) {
+    Object.entries(migrated.aiVisionModelConfigs).forEach(([modelId, config]) => {
+      const existingConfig = textModels[modelId];
+      if (!existingConfig) {
+        textModels[modelId] = {
+          ...config,
+          multimodalSupport: config.multimodalSupport ?? true,
+        };
+        didMigrate = true;
+        return;
+      }
+
+      if (existingConfig.multimodalSupport === undefined) {
+        existingConfig.multimodalSupport = config.multimodalSupport ?? true;
+        didMigrate = true;
+      }
+    });
   }
+
+  Object.values(textModels).forEach((config) => {
+    if (config.multimodalSupport === undefined) {
+      config.multimodalSupport = true;
+      didMigrate = true;
+    }
+  });
 
   const imageModels = ensureModelConfigs("image") as Record<string, typeof KNOWN_AI_IMAGE_MODEL_CONFIGS[string]>;
   if (!hadImageModelConfigs) {
+    const legacySupportsImageEdits = legacyCapabilities?.[imageModelId]?.supportsImageEdits;
     imageModels[imageModelId] = {
       providerId: providerProfileId,
       model: imageModelId,
       supportedSizes: [...(legacyCapabilities?.[imageModelId]?.supportedSizes?.length
         ? legacyCapabilities[imageModelId].supportedSizes
         : imageModels[imageModelId]?.supportedSizes ?? ["1024x1024"])],
-      supportsImageEdits: legacyCapabilities?.[imageModelId]?.supportsImageEdits ?? imageModels[imageModelId]?.supportsImageEdits ?? true,
+      supportsPromptImageTransforms: legacyCapabilities?.[imageModelId]?.supportsPromptImageTransforms ?? imageModels[imageModelId]?.supportsPromptImageTransforms ?? legacySupportsImageEdits ?? true,
+      supportsMaskImageEdits: legacyCapabilities?.[imageModelId]?.supportsMaskImageEdits ?? imageModels[imageModelId]?.supportsMaskImageEdits ?? legacySupportsImageEdits ?? true,
     };
   }
 
+  Object.entries(imageModels).forEach(([modelId, config]) => {
+    const legacyConfig = config as typeof config & { supportsImageEdits?: boolean };
+    const legacySupportsImageEdits = legacyCapabilities?.[modelId]?.supportsImageEdits ?? legacyConfig.supportsImageEdits;
+    const nextConfig = {
+      ...config,
+      supportsPromptImageTransforms: config.supportsPromptImageTransforms ?? legacyCapabilities?.[modelId]?.supportsPromptImageTransforms ?? legacySupportsImageEdits ?? true,
+      supportsMaskImageEdits: config.supportsMaskImageEdits ?? legacyCapabilities?.[modelId]?.supportsMaskImageEdits ?? legacySupportsImageEdits ?? true,
+    };
+
+    if (
+      nextConfig.supportsPromptImageTransforms !== config.supportsPromptImageTransforms
+      || nextConfig.supportsMaskImageEdits !== config.supportsMaskImageEdits
+      || legacyConfig.supportsImageEdits !== undefined
+    ) {
+      imageModels[modelId] = nextConfig;
+      delete (imageModels[modelId] as typeof nextConfig & { supportsImageEdits?: boolean }).supportsImageEdits;
+      didMigrate = true;
+    }
+  });
+
   if (!migrated.aiDefaultTextModel) migrated.aiDefaultTextModel = textModelId;
-  if (!migrated.aiDefaultVisionModel) migrated.aiDefaultVisionModel = visionModelId;
+  if (!migrated.aiDefaultMultimodalModel) migrated.aiDefaultMultimodalModel = multimodalTextModelId;
   if (!migrated.aiDefaultImageGenerationModel) migrated.aiDefaultImageGenerationModel = imageModelId;
+
+  if (migrated.aiDefaultVisionModel !== undefined) {
+    delete migratedRecord.aiDefaultVisionModel;
+    didMigrate = true;
+  }
+
+  if (migrated.aiVisionModelConfigs !== undefined) {
+    delete migratedRecord.aiVisionModelConfigs;
+    didMigrate = true;
+  }
 
   return { settings: migrated, didMigrate };
 };
