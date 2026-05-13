@@ -812,7 +812,6 @@ export default class ExcalidrawPlugin extends Plugin {
   private async setPropertyTypes() {
     if(!this.settings.loadPropertySuggestions) return;
     const app = this.app;
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setPropertyTypes, `ExcalidrawPlugin.setPropertyTypes`);
     Object.keys(FRONTMATTER_KEYS).forEach((key) => {
       if(FRONTMATTER_KEYS[key].depricated === true) return;
       const {name, type} = FRONTMATTER_KEYS[key];
@@ -821,7 +820,6 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public async initializeFonts() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.initializeFonts, `ExcalidrawPlugin.initializeFonts`);
     const cjkFontDataURLs = await getCJKDataURLs(this);
     if(typeof cjkFontDataURLs === "boolean" && !cjkFontDataURLs) {
       new Notice(t("FONTS_LOAD_ERROR") + this.settings.fontAssetsPath,6000);
@@ -939,7 +937,6 @@ export default class ExcalidrawPlugin extends Plugin {
   }
   
   private getOpenObsidianDocuments(): Document[] {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getOpenObsidianDocuments,`ExcalidrawPlugin.getOpenObsidianDocuments`);
     const visitedDocs = new Set<Document>();
     this.app.workspace.iterateAllLeaves((leaf)=>{
       const ownerDocument = DEVICE.isMobile?document:leaf.view.containerEl.ownerDocument;   
@@ -954,7 +951,6 @@ export default class ExcalidrawPlugin extends Plugin {
    * Must be called after the workspace is ready
    */
   private switchToExcalidrawAfterLoad() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.switchToExcalidrawAfterLoad, `ExcalidrawPlugin.switchToExcalidrawAfterLoad`);
     let leaf: WorkspaceLeaf;
     for (leaf of this.app.workspace.getLeavesOfType("markdown")) {
       if ( leaf.view instanceof MarkdownView && this.isExcalidrawFile(leaf.view.file)) {
@@ -1200,7 +1196,6 @@ export default class ExcalidrawPlugin extends Plugin {
     this.registerMarkdownPostProcessor(markdownPostProcessor);
     
     this.app.workspace.onLayoutReady(async () => {
-      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.addMarkdownPostProcessor, `ExcalidrawPlugin.addMarkdownPostProcessor > app.workspace.onLayoutReady`);
       await this.awaitInit();
       // internal-link quick preview
       this.registerEvent(this.app.workspace.on("hover-link", hoverEvent));
@@ -1214,7 +1209,6 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public enableLegacyFilePopoverObserver() {
     if(!this.legacyExcalidrawPopoverObserver) {
-      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.enableLegacyFilePopoverObserver, `ExcalidrawPlugin.enableLegacyFilePopoverObserver > enabling`)
       //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
       this.legacyExcalidrawPopoverObserver = legacyExcalidrawPopoverObserver;
       this.legacyExcalidrawPopoverObserver.observe(document.body, { childList: true, subtree: false });
@@ -1287,7 +1281,6 @@ export default class ExcalidrawPlugin extends Plugin {
       around(Workspace.prototype, {
         getActiveViewOfType(old) {
           return dedupe(key, old, function(...args) {
-            (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.registerMonkeyPatches, `ExcalidrawPlugin.MonkeyPatch >getActiveViewOfType`, key, old, ...args);
             const result = old && old.apply(this, args);
             const maybeEAView = self.app?.workspace?.activeLeaf?.view;
             if(!maybeEAView || !(maybeEAView instanceof ExcalidrawView)) return result;
@@ -1340,7 +1333,6 @@ export default class ExcalidrawPlugin extends Plugin {
 
         setViewState(next) {
           return function (state: ViewState, ...rest: any[]) {
-            (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.registerMonkeyPatches, `ExcalidrawPlugin.MonkeyPatch > setViewState`, next);
             const markdownViewLoaded = 
               self._loaded && // Don't force excalidraw mode during shutdown
               state.type === "markdown" && // If we have a markdown file
@@ -1388,7 +1380,6 @@ export default class ExcalidrawPlugin extends Plugin {
    * @returns 
    */
   private async runStartupScript() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.runStartupScript, `ExcalidrawPlugin.runStartupScript`);
     if(!this.settings.startupScriptPath || this.settings.startupScriptPath === "") {
       return;
     }
@@ -1487,7 +1478,6 @@ export default class ExcalidrawPlugin extends Plugin {
    * Intended to be called from onLayoutReady in onload()
    */
   private async registerEventListeners() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.registerEventListeners,`ExcalidrawPlugin.registerEventListeners`);
     await this.awaitInit();
 
     const metaCache: MetadataCache = this.app.metadataCache;
@@ -1583,7 +1573,6 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public async loadSettings(opts: { reEnableAutosave?: boolean } = { reEnableAutosave: false }
   ) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.loadSettings,`ExcalidrawPlugin.loadSettings`, opts);
     if(typeof opts.reEnableAutosave === "undefined") opts.reEnableAutosave = false;
     const rawSettings = ((await this.loadData()) ?? {}) as PersistedExcalidrawSettings;
     const { settings: migratedSettings, didMigrate } = migrateLegacyAISettings(rawSettings);
@@ -1606,7 +1595,6 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   async saveSettings() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.saveSettings,`ExcalidrawPlugin.saveSettings`);
     await this.saveData(stripLegacyAISettings(this.settings as PersistedExcalidrawSettings));
   }
 
@@ -1615,7 +1603,6 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public getStencilLibrary(): object {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getStencilLibrary,`ExcalidrawPlugin.getStencilLibrary`);
     if (
       this.settings.library === "" ||
       this.settings.library === "deprecated"
@@ -1626,7 +1613,6 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public async setStencilLibrary(library: object) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setStencilLibrary,`ExcalidrawPlugin.setStencilLibrary`, library);
     this.settings.library = "deprecated";
     if(JSON.stringify(this.settings.library2) === JSON.stringify(library)) {
       return;
@@ -1636,7 +1622,6 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public triggerEmbedUpdates(filepath?: string) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.triggerEmbedUpdates,`ExcalidrawPlugin.triggerEmbedUpdates`, filepath);
     const visitedDocs = new Set<Document>();
     this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
 //    this.app.workspace.iterateAllLeaves((leaf)=>{

@@ -67,7 +67,6 @@ export class ObserverManager {
     if (!matchThemeTrigger) return;
 
     const themeObserverFn:MutationCallback = async (mutations: MutationRecord[]) => {
-      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(themeObserverFn, `ExcalidrawPlugin.addThemeObserver`, mutations);
       const { matchThemeTrigger } = this.settings;
       if (!matchThemeTrigger) return;
 
@@ -122,7 +121,6 @@ export class ObserverManager {
    * The function is called from onload()
    */
   private async experimentalFileTypeDisplay() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.experimentalFileTypeDisplay, `ExcalidrawPlugin.experimentalFileTypeDisplay`);
     const tagClassName = "excalidraw-filetype-tag";
     const insertFiletype = (el: HTMLElement) => {
       if (!el || el.querySelector(`.${tagClassName}`)) {
@@ -148,7 +146,6 @@ export class ObserverManager {
     };
 
     const fileExplorerObserverFn:MutationCallback = (mutationsList) => {
-      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(fileExplorerObserverFn, `ExcalidrawPlugin.experimentalFileTypeDisplay > fileExplorerObserverFn`, mutationsList);
       const ensureFiletypes = (target: Element | DocumentFragment) => {
         target.querySelectorAll?.(".nav-file-title").forEach(insertFiletype);
       };
@@ -235,7 +232,6 @@ export class ObserverManager {
     }
     //The user clicks settings, or "open another vault", or the command palette
     const modalContainerObserverFn: MutationCallback = async (m: MutationRecord[]) => {
-      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(modalContainerObserverFn,`ExcalidrawPlugin.modalContainerObserverFn`, m);
       const view = this.plugin.activeExcalidrawView;
       if (
         (m.length !== 1) ||

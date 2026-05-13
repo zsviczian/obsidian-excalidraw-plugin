@@ -405,7 +405,6 @@ export class PluginFileManager {
    * @returns 
    */
   public async renameEventHandler (file: TAbstractFile, oldPath: string) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.renameEventHandler, `ExcalidrawPlugin.renameEventHandler`, file, oldPath);
     if (!(file instanceof TFile)) {
       return;
     }
@@ -459,7 +458,6 @@ export class PluginFileManager {
   }
 
   public async modifyEventHandler (file: TFile) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.modifyEventHandler,`FileManager.modifyEventHandler`, file);
     const excalidrawViews = getExcalidrawViews(this.app);
     excalidrawViews.forEach(async (excalidrawView) => {
       if(excalidrawView.semaphores?.viewunload) {
@@ -563,7 +561,6 @@ export class PluginFileManager {
    * @returns 
    */
   public async deleteEventHandler (file: TFile) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.deleteEventHandler,`ExcalidrawPlugin.deleteEventHandler`, file);
     if (!(file instanceof TFile)) {
       return;
     }

@@ -89,14 +89,12 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   updateScriptIconMap(scriptIconMap: ScriptIconMap) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updateScriptIconMap,"ToolsPanel.updateScriptIconMap()");
     this.setState(() => {
       return { scriptIconMap };
     });
   }
 
   setPreviewMode(isPreviewMode: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setPreviewMode,"ToolsPanel.setPreviewMode()");
     this.setState(() => {
       return {
         isPreviewMode,
@@ -105,7 +103,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setFullscreen(isFullscreen: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setFullscreen,"ToolsPanel.setFullscreen()");
     this.setState(() => {
       return {
         isFullscreen,
@@ -114,7 +111,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setDirty(isDirty: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setDirty,"ToolsPanel.setDirty()");
     this.setState(()=> {
       return {
         isDirty,
@@ -123,7 +119,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setExcalidrawViewMode(isViewModeEnabled: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setExcalidrawViewMode,"ToolsPanel.setExcalidrawViewMode()");
     this.setState(() => {
       return {
         excalidrawViewMode: isViewModeEnabled,
@@ -132,7 +127,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   toggleVisibility(isMobileOrZen: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleVisibility,"ToolsPanel.toggleVisibility()");
     this.setTopCenter(isMobileOrZen);
     this.setState((prevState: PanelState) => {
       return {
@@ -142,7 +136,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setTheme(theme: "dark" | "light") {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setTheme,"ToolsPanel.setTheme()");
     this.setState((prevState: PanelState) => {
       return {
         theme,
@@ -151,7 +144,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setTopCenter(isMobileOrZen: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setTopCenter,"ToolsPanel.setTopCenter()");
     this.setState(() => {
       return {
         left:
@@ -167,7 +159,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   updatePosition(deltaY: number = 0, deltaX: number = 0) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updatePosition,"ToolsPanel.updatePosition()");
     this.setState(() => {
       const {
         offsetTop,
@@ -490,7 +481,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   };
 
   render() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.render,"ToolsPanel.render()");
     return (
       <div
         ref={this.containerRef}
@@ -745,7 +735,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   private renderScriptButtons(isDownloaded: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.renderScriptButtons,"ToolsPanel.renderScriptButtons()");
     if (Object.keys(this.state.scriptIconMap).length === 0) {
       return "";
     }

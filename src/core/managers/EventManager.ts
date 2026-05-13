@@ -181,7 +181,6 @@ export class EventManager {
   }
 
   public async onActiveLeafChangeHandler (leaf: WorkspaceLeaf) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onActiveLeafChangeHandler,`onActiveLeafChangeEventHandler`, leaf);
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/723
 
      if(this.debunceActiveLeafChangeHandlerTimer) {
@@ -317,7 +316,6 @@ export class EventManager {
   }
 
   private onFileMenuSaveActiveDrawing () {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onFileMenuSaveActiveDrawing,`onFileMenuSaveActiveDrawing`);
     if (
       !this.activeExcalidrawView ||
       !this.activeExcalidrawView?.isDirty()
@@ -328,7 +326,6 @@ export class EventManager {
   };
 
   private onFileMenuHandler(menu: Menu, file: TFile, source: string, leaf: WorkspaceLeaf) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onFileMenuHandler, `EventManager.onFileMenuHandler`, file, source, leaf);
     if (!leaf) return;
     const view = leaf.view;
     if(!view || !(view instanceof MarkdownView)) return;

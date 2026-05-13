@@ -416,7 +416,6 @@ export const foldExcalidrawSection = (view: MarkdownView) => {
 };
 
 export async function setExcalidrawView(leaf: WorkspaceLeaf) {
-  (process.env.NODE_ENV === 'development') && DEBUGGING && debug(setExcalidrawView,`setExcalidrawView`, leaf);
   await leaf.setViewState({
     type: VIEW_TYPE_EXCALIDRAW,
     state: leaf.view.getState(),
@@ -425,7 +424,6 @@ export async function setExcalidrawView(leaf: WorkspaceLeaf) {
 }
 
 export async function closeLeafView(leaf: WorkspaceLeaf) {
-  (process.env.NODE_ENV === 'development') && DEBUGGING && debug(setExcalidrawView,`setExcalidrawView`, leaf);
   await leaf.setViewState({
     type: "empty",
     state: {},

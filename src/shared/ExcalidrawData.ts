@@ -1101,7 +1101,6 @@ export class ExcalidrawData {
         te.width = width;
         te.height = height;
       } catch(e) {
-        (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updateSceneTextElements, `ExcalidrawData.updateSceneTextElements, textElement:${te?.id}`, te, this.updateSceneTextElements);
       }
     }
   }

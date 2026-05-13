@@ -109,10 +109,6 @@ export class PackageManager {
    */
   public getPackage(win: Window): Packages {
     try {
-      if ((process.env.NODE_ENV === 'development') && DEBUGGING) {
-        debug(this.getPackage, `PackageManager.getPackage`, win);
-      }
-
       // Return existing package if available
       if (this.packageMap.has(win)) {
         const pkg = this.packageMap.get(win);

@@ -80,7 +80,6 @@ export class DropManager {
   }
 
   public onDrop (event: React.DragEvent<HTMLDivElement>): boolean {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onDrop, "ExcalidrawView.onDrop", event);
     if(this.draginfoDiv) {
       this.ownerDocument.body.removeChild(this.draginfoDiv);
       delete this.draginfoDiv;
@@ -609,7 +608,6 @@ export class DropManager {
   }
 
   private dropAction(transfer: DataTransfer) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.dropAction, "ExcalidrawView.dropAction");
     // Return a 'copy' or 'link' action according to the content types, or undefined if no recognized type
     const files = (this.app as any).dragManager.draggable?.files;
     if (files) {
