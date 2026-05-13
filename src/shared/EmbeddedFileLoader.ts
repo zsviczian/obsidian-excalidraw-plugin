@@ -869,9 +869,9 @@ export class EmbeddedFilesLoader {
       };
     }
 
-    const addFilesTimer = setInterval(() => {
+    const addFilesTimer = window.setInterval(() => {
       if (this.terminate) {
-        clearInterval(addFilesTimer);
+        window.clearInterval(addFilesTimer);
         return;
       }
       if(files[batch].length === 0) {

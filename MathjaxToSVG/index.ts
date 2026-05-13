@@ -76,10 +76,7 @@ export async function tex2dataURL(
     
 	//https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2195
 	//https://stackoverflow.com/a/77181931
-	let styleNode = document.createElement('style');
-    styleNode.setAttribute("type", "text/css");
-    styleNode.appendChild(document.createTextNode(".mjx-solid { stroke-width: 80px; }"));
-    svg.appendChild(styleNode);
+	svg.insertAdjacentHTML("beforeend", "<style>.mjx-solid { stroke-width: 80px; }</style>");
 
     if (svg) {
       if(svg.width.baseVal.valueInSpecifiedUnits < 2) {
