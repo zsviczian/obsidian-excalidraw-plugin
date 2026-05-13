@@ -450,6 +450,18 @@ label.color-input-container > input {
   display: none !important;
 }
 
+.excalidraw-display-none {
+  display: none !important;
+}
+
+.excalidraw-display-block {
+  display: block !important;
+}
+
+.excalidraw-display-flex {
+  display: flex !important;
+}
+
 .excalidraw .App-toolbar-content .dropdown-menu {
   max-height: 70vh;
   overflow-y: auto;

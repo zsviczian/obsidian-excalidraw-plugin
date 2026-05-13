@@ -194,7 +194,7 @@ export function setRootElementSize(size?:number) {
   }
   const tempElement = document.createElement('div');
   tempElement.style.fontSize = '1rem';
-  tempElement.style.display = 'none'; // Hide the element
+  tempElement.hidden = true;
   document.body.appendChild(tempElement);
   const computedStyle = getComputedStyle(tempElement);
   const pixelSize = parseFloat(computedStyle.fontSize);

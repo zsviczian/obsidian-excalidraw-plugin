@@ -30,6 +30,7 @@ import { getExcalidrawFileForwardLinks } from "../../utils/excalidrawViewUtils";
 import { linkPrompt } from "../../shared/Dialogs/Prompt";
 import { isHTMLElement } from "../../utils/typechecks";
 import { ExportSettings } from "src/types/exportUtilTypes";
+import { setElementDisplay } from "src/utils/htmlUtils";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -992,7 +993,7 @@ export const markdownPostProcessor = async (
   //in reading mode these elements should be hidden
   const excalidrawFile = Boolean(ctx.frontmatter?.hasOwnProperty("excalidraw-plugin"));
   if (!(isPreview || isMarkdownReadingMode || isPrinting) && excalidrawFile) {
-    el.style.display = "none";
+    setElementDisplay(el, "none");
     return;
   }
 

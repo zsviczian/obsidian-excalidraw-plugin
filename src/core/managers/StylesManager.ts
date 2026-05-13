@@ -88,7 +88,7 @@ export class StylesManager {
 
     const body = document.body;
     const iframe:HTMLIFrameElement = document.createElement("iframe");
-    iframe.style.display = "none";
+    iframe.hidden = true;
     body.appendChild(iframe);
 
     const iframeLoadedPromise = new Promise<void>((resolve) => {

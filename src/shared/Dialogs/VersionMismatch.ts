@@ -1,7 +1,7 @@
 import { Modal, Setting } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
-import { setSanitizedHtml } from "src/utils/htmlUtils";
+import { setElementDisplay, setSanitizedHtml } from "src/utils/htmlUtils";
 
 declare const PLUGIN_VERSION: string;
 
@@ -85,7 +85,7 @@ export class VersionMismatchPrompt extends Modal {
       this.close();
     });
 
-    buttonBar.style.display = "flex";
+    setElementDisplay(buttonBar, "flex");
     buttonBar.style.gap = "0.5rem";
     buttonBar.style.marginTop = "1rem";
     redownloadBtn.style.backgroundColor = "var(--interactive-accent)";

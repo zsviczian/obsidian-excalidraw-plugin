@@ -1,6 +1,7 @@
 import { Modal, Setting, TFile } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { getIMGFilename } from "src/utils/fileUtils";
+import { setElementDisplay } from "src/utils/htmlUtils";
 import { addYouTubeThumbnail } from "src/utils/utils";
 
 const haveLinkedFilesChanged = (depth: number, mtime: number, path: string, sourceList: Set<string>, plugin: ExcalidrawPlugin):boolean  => {
@@ -71,7 +72,7 @@ export class PublishOutOfDateFilesDialog extends Modal {
     const p = this.contentEl.createEl("p",{text: "Collecting data..."});
     const statusEl = this.contentEl.createEl("p", {text: "Status: "});
     const files = await listOfOutOfSyncImgExports(this.plugin, recursive, statusEl);
-    statusEl.style.display = "none";
+    setElementDisplay(statusEl, "none");
 
     if(!files || files.length === 0) {
       p.innerText = "No out of date files found.";

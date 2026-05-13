@@ -8,6 +8,7 @@ import ExcalidrawPlugin from "src/core/main";
 import { getAttachmentsFolderAndFilePath, splitFolderAndFilename } from "./pathUtils";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import { IMAGE_MIME_TYPES, MimeType } from "src/types/embeddedFileLoaderTypes";
+import { setElementDisplay } from "./htmlUtils";
 
 type ImageExtension = keyof typeof IMAGE_MIME_TYPES;
 
@@ -21,7 +22,7 @@ type ImageExtension = keyof typeof IMAGE_MIME_TYPES;
   const element = document.createElement("a");
   element.setAttribute("href", (encoding ? `${encoding},` : "") + data);
   element.setAttribute("download", filename);
-  element.style.display = "none";
+  setElementDisplay(element, "none");
   document.body.appendChild(element);
   element.click();
   document.body.removeChild(element);
