@@ -621,7 +621,7 @@ export class ExcalidrawAutomate {
     viewBackgroundColor: string;
     gridSize: number;
   };
-  colorPalette: {};
+  colorPalette: object;
   sidepanelTab: ExcalidrawSidepanelTab | null = null;
 
   constructor(plugin: ExcalidrawPlugin, view?: ExcalidrawView) {
@@ -3160,7 +3160,7 @@ export class ExcalidrawAutomate {
   viewUpdateScene (
     scene: {
       elements?: ExcalidrawElement[],
-      appState?: AppState | {},
+      appState?: AppState | object,
       files?: BinaryFileData,
       commitToHistory?: boolean,
       storeAction?: "capture" | "none" | "update",
@@ -3752,7 +3752,7 @@ export class ExcalidrawAutomate {
    * Saves settings in plugin settings, under the activeScript key.
    * @returns {Object} The script settings.
    */
-  getScriptSettings(): {} {
+  getScriptSettings(): object {
     if (!this.activeScript) {
       return null;
     }

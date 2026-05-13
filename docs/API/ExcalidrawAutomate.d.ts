@@ -247,7 +247,7 @@ export declare class ExcalidrawAutomate {
         viewBackgroundColor: string;
         gridSize: number;
     };
-    colorPalette: {};
+    colorPalette: object;
     constructor(plugin: ExcalidrawPlugin, view?: ExcalidrawView);
     /**
      * Returns the last recorded pointer position on the Excalidraw canvas.
@@ -986,7 +986,7 @@ export declare class ExcalidrawAutomate {
      * Saves settings in plugin settings, under the activeScript key.
      * @returns {Object} The script settings.
      */
-    getScriptSettings(): {};
+    getScriptSettings(): object;
     /**
      * Sets the script settings for the active script.
      * @param {Object} settings - The script settings to set.

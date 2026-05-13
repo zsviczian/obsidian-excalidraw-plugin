@@ -15,6 +15,6 @@ export async function getDataURL(
   });
 }
 
-export function errorlog(data: {}) {
+export function errorlog(data: object) {
   console.error({ plugin: "Excalidraw", ...data });
 }

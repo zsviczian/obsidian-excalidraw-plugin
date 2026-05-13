@@ -1614,7 +1614,7 @@ export default class ExcalidrawPlugin extends Plugin {
     return ExcalidrawSidepanelView.getOrCreate(this, reveal);
   }
 
-  public getStencilLibrary(): {} {
+  public getStencilLibrary(): object {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.getStencilLibrary,`ExcalidrawPlugin.getStencilLibrary`);
     if (
       this.settings.library === "" ||
@@ -1625,7 +1625,7 @@ export default class ExcalidrawPlugin extends Plugin {
     return JSON_parse(this.settings.library);
   }
 
-  public async setStencilLibrary(library: {}) {
+  public async setStencilLibrary(library: object) {
     (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setStencilLibrary,`ExcalidrawPlugin.setStencilLibrary`, library);
     this.settings.library = "deprecated";
     if(JSON.stringify(this.settings.library2) === JSON.stringify(library)) {

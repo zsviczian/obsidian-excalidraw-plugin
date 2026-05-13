@@ -168,7 +168,7 @@ export interface ExcalidrawSettings {
   //loadCount: number; //version 1.2 migration counter
   drawingOpenCount: number;
   library: string;
-  library2: {};
+  library2: object;
   //patchCommentBlock: boolean; //1.3.12
   imageElementNotice: boolean; //1.4.0
   //runWYSIWYGpatch: boolean; //1.4.9
