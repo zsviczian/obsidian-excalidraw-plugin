@@ -27,7 +27,7 @@ import {
   addYouTubeThumbnail,
   fragWithHTML,
 } from "src/utils/utils";
-import { setSanitizedHtml } from "src/utils/htmlUtils";
+import { setElementIconAndText, setSanitizedHtml } from "src/utils/htmlUtils";
 import { imageCache } from "src/shared/ImageCache";
 import { MultiOptionConfirmationPrompt } from "src/shared/Dialogs/Prompt";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
@@ -980,10 +980,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         "style": "margin: auto;"
       }},
       (a)=> {
-        //Lucide: message-circle-question-mark
-        a.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle-question-mark-icon lucide-message-circle-question-mark"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>${
-          t("NOTEBOOKLM_LINK_TEXT")
-        }`;
+        setElementIconAndText(a, "message-circle-question-mark", t("NOTEBOOKLM_LINK_TEXT"));
       }
     );
 
@@ -1073,37 +1070,37 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     
     const iconLinks = [
       { 
-        icon: getIcon("bug").outerHTML,
+        icon: "bug",
         href: "https://github.com/zsviczian/obsidian-excalidraw-plugin/issues",
         aria: t("LINKS_BUGS_ARIA"),
         text: t("LINKS_BUGS"),
       },
       {
-        icon: getIcon("globe").outerHTML,
+        icon: "globe",
         href: "https://community.sketch-your-mind.com/wiki",
         aria: t("LINKS_WIKI_ARIA"),
         text: t("LINKS_WIKI"),
       },
       { 
-        icon: getIcon("youtube").outerHTML,
+        icon: "youtube",
         href: "https://www.youtube.com/@VisualPKM",
         aria: t("LINKS_YT_ARIA"),
         text: t("LINKS_YT"),
       },
       { 
-        icon: getIcon("graduation-cap").outerHTML,
+        icon: "graduation-cap",
         href: "https://community.sketch-your-mind.com/ee",
         aria: t("LINKS_JOIN_SYM_ARIA"),
         text: t("LINKS_JOIN_SYM"),
       },
       { 
-        icon: getIcon("twitter").outerHTML,
+        icon: "twitter",
         href: "https://twitter.com/zsviczian",
         aria: t("LINKS_TWITTER"),
         text: t("LINKS_TWITTER"),
       },
       { 
-        icon: getIcon("book").outerHTML,
+        icon: "book",
         href: "https://sketch-your-mind.com",
         aria: t("LINKS_BOOK_ARIA"),
         text: t("LINKS_BOOK"),
@@ -1113,7 +1110,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const linksEl = containerEl.createDiv("setting-item-description excalidraw-settings-links-container");
     iconLinks.forEach(({ icon, href, aria, text }) => {
       linksEl.createEl("a",{href, attr: { "aria-label": aria }}, (a)=> {
-        a.innerHTML = icon + text;
+        setElementIconAndText(a, icon, text);
       });
     });
 

@@ -1,4 +1,4 @@
-import { sanitizeHTMLToDom } from "obsidian";
+import { sanitizeHTMLToDom, setIcon } from "obsidian";
 
 export const sanitizedFragment = (html: string): DocumentFragment =>
   sanitizeHTMLToDom(html ?? "");
@@ -13,4 +13,13 @@ export const setStyleText = (
   cssText: string,
 ): void => {
   styleEl.textContent = cssText ?? "";
+};
+
+export const setElementIconAndText = (
+  el: HTMLElement,
+  iconId: string,
+  text: string,
+): void => {
+  setIcon(el, iconId);
+  el.append(text ?? "");
 };

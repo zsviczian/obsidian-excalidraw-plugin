@@ -1,7 +1,7 @@
 import { t } from "src/lang/helpers";
 import { escapeRegExp } from "../../utils/utils";
 // @ts-ignore
-import { getIcon, htmlToMarkdown, Notice } from "obsidian";
+import { htmlToMarkdown, Notice, setIcon } from "obsidian";
 
 export class ContentSearcher {
   private contentDiv: HTMLElement;
@@ -46,7 +46,7 @@ export class ContentSearcher {
       },
       type: "button",
     });
-    this.prevButton.innerHTML = getIcon("arrow-up").outerHTML;
+    setIcon(this.prevButton, "arrow-up");
 
     this.nextButton = createEl("button", {
       cls: ["clickable-icon", "document-search-button"],
@@ -56,7 +56,7 @@ export class ContentSearcher {
       },
       type: "button",
     });
-    this.nextButton.innerHTML = getIcon("arrow-down").outerHTML;
+    setIcon(this.nextButton, "arrow-down");
 
     this.exportMarkdown = createEl("button", {
       cls: ["clickable-icon", "document-search-button"],
@@ -66,7 +66,7 @@ export class ContentSearcher {
       },
       type: "button",
     });
-    this.exportMarkdown.innerHTML = getIcon("clipboard-copy").outerHTML;
+    setIcon(this.exportMarkdown, "clipboard-copy");
 
     this.showHideButton = createEl("button", {
       cls: ["clickable-icon", "document-search-button", "search-visible"],
@@ -76,7 +76,7 @@ export class ContentSearcher {
       },
       type: "button",
     });
-    this.showHideButton.innerHTML = getIcon("minimize-2").outerHTML;
+    setIcon(this.showHideButton, "minimize-2");
 
     buttonContainer.appendChild(this.prevButton);
     buttonContainer.appendChild(this.nextButton);
@@ -139,13 +139,13 @@ export class ContentSearcher {
         this.showHideButton.addClass("search-hidden");
         this.searchBarWrapper.style.backgroundColor = "transparent";
         setOpacity("0");
-        this.showHideButton.innerHTML = getIcon("maximize-2").outerHTML;
+        setIcon(this.showHideButton, "maximize-2");
       } else {
         this.showHideButton.removeClass("search-hidden");
         this.showHideButton.addClass("search-visible");
         this.searchBarWrapper.style.backgroundColor = null;
         setOpacity(null);
-        this.showHideButton.innerHTML = getIcon("minimize-2").outerHTML;
+        setIcon(this.showHideButton, "minimize-2");
       }
     }
 
