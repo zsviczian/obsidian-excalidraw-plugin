@@ -148,13 +148,13 @@ export const REGEX_LINK = {
 const DRAWING_REG = /\n##? Drawing\n[^`]*(```json\n)([\s\S]*?)```\n/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
 const DRAWING_REG_FALLBACK = /\n##? Drawing\n(```json\n)?(.*)(```)?(%%)?/gm;
 export const DRAWING_COMPRESSED_REG =
-  /(\n##? Drawing\n[^`]*(?:```compressed\-json\n))([\s\S]*?)(```\n)/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
+  /(\n##? Drawing\n[^`]*(?:```compressed-json\n))([\s\S]*?)(```\n)/gm; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/182
 const DRAWING_COMPRESSED_REG_FALLBACK =
-  /(\n##? Drawing\n(?:```compressed\-json\n)?)(.*)((```)?(%%)?)/gm;
+  /(\n##? Drawing\n(?:```compressed-json\n)?)(.*)((```)?(%%)?)/gm;
 export const REG_LINKINDEX_HYPERLINK = /^\w+:\/\//;
 
 const isCompressedMD = (data: string): boolean => {
-  return data.match(/```compressed\-json\n/gm) !== null;
+  return data.match(/```compressed-json\n/gm) !== null;
 };
 
 const getDecompressedScene = (
@@ -250,36 +250,6 @@ export function getMarkdownDrawingSection(
     : `## Drawing\n\x60\x60\x60json\n${jsonString}\n\x60\x60\x60\n%%`;
   return result;
 }
-
-/**
- *
- * @param text - TextElement.text
- * @param originalText - TextElement.originalText
- * @returns null if the textElement is not wrapped or the longest line in the text element
- */
-const estimateMaxLineLen = (text: string, originalText: string): number => {
-  if (!originalText || !text) {
-    return null;
-  }
-  if (text === originalText) {
-    return null;
-  } //text will contain extra new line characters if wrapped
-  let maxLineLen = 0; //will be non-null if text is container bound and multi line
-  const splitText = text.split("\n");
-  if (splitText.length === 1) {
-    return null;
-  }
-  for (const line of splitText) {
-    const l = line.trim();  
-    if (l.length > maxLineLen) {
-      maxLineLen = l.length;
-    }
-  }
-  return maxLineLen;
-};
-
-const wrap = (text: string, lineLen: number) =>
-  lineLen ? wrapTextAtCharLength(text, lineLen, false, 0) : text;
 
 //WITHSECTION refers to back of the card note (see this.inputEl.onkeyup in SelectCard.ts)
 const RE_EXCALIDRAWDATA_WITHSECTION_OK = /^(#\n+)%%\n+# Excalidraw Data(?:\n|$)/m;
@@ -791,7 +761,7 @@ export class ExcalidrawData {
         displayFontMessage(this.app);
       }
     },5000);
-    const fontFaces = await loadSceneFonts(this.scene.elements);
+    await loadSceneFonts(this.scene.elements);
     clearTimeout(timer);
 
     if (!this.scene.files) {
@@ -974,7 +944,7 @@ export class ExcalidrawData {
         ? data.substring(indexOfNewEmbeddedFiles + embeddedFilesNewLength)
         : data.substring(indexOfOldEmbeddedFiles + embeddedFilesOldLength);
       //Load Embedded files
-      const REG_FILEID_FILEPATH = /([\w\d]*):\s*\!?\[\[([^\]]*)]]\s*(\{[^}]*})?\n/gm;
+      const REG_FILEID_FILEPATH = /([\w\d]*):\s*!?\[\[([^\]]*)]]\s*(\{[^}]*})?\n/gm;
       res = data.matchAll(REG_FILEID_FILEPATH);
       while (!(parts = res.next()).done) {
         const embeddedFile = new EmbeddedFile(
@@ -1508,7 +1478,7 @@ export class ExcalidrawData {
     }
     if (this.files.size > 0) {
       for (const key of this.files.keys()) {
-        const PATHREG = /(^[^#\|]*)/;
+        const PATHREG = /(^[^#|]*)/;
         const ef = this.files.get(key);
         if(ef.isHyperLink || ef.isLocalLink) {
           outString += `${key}: ${ef.hyperlink}\n\n`;
@@ -1611,7 +1581,6 @@ export class ExcalidrawData {
   }
 
   private syncCroppedPDFs() {
-    let dirty = false;
     const scene = this.scene as SceneDataWithFiles;
     const pdfScale = this.plugin.settings.pdfScale;
     scene.elements
@@ -1628,7 +1597,6 @@ export class ExcalidrawData {
         (restOfLink ? restOfLink : "]]");
       el.link = `[[${link}`;
       this.elementLinks.set(el.id, el.link);
-      dirty = true;
     });
   }
 

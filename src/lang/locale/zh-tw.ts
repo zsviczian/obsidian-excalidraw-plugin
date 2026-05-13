@@ -324,6 +324,8 @@ export default {
   AI_PROVIDER_OPTION_GOOGLE: "Google / Gemini",
   AI_PROVIDER_OPTION_XAI: "xAI / Grok",
   AI_PROVIDER_OPTION_OPENAI_COMPATIBLE: "OpenAI 相容 / 本地",
+  AI_PROVIDER_PROFILE_MODAL_OPENAI_COMPATIBLE_HINT:
+    "對於本機的 OpenAI 相容 LLM，如果不需要真正的 API key，請填入一個虛擬 key，否則 Excalidraw 不會將此設定識別為已設定。",
   AI_PROVIDER_BASE_URL_EMPTY: "由供應商類型推導",
   AI_PROVIDER_API_KEY_SET: "已設定",
   AI_PROVIDER_API_KEY_NOT_SET: "未設定",

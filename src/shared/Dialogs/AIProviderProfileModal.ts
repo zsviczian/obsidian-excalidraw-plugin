@@ -103,8 +103,22 @@ export class AIProviderProfileModal extends Modal {
           .setValue(this.profile.provider)
           .onChange((value) => {
             this.profile.provider = value as AIProvider;
+            updateProviderTypeHint();
           }),
       );
+
+    const providerTypeHintEl = contentEl.createDiv({
+      cls: "setting-item-description",
+    });
+    const updateProviderTypeHint = () => {
+      if (this.profile.provider === "openai-compatible") {
+        providerTypeHintEl.setText(t("AI_PROVIDER_PROFILE_MODAL_OPENAI_COMPATIBLE_HINT"));
+        return;
+      }
+
+      providerTypeHintEl.empty();
+    };
+    updateProviderTypeHint();
 
     new Setting(contentEl)
       .setName(t("AI_PROVIDER_PROFILE_MODAL_API_KEY_NAME"))

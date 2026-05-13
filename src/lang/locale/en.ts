@@ -422,6 +422,8 @@ export default {
   AI_PROVIDER_PROFILE_MODAL_BASE_URL_NAME: "Base URL",
   AI_PROVIDER_PROFILE_MODAL_BASE_URL_DESC: "Base URL used to derive the provider endpoints.",
   AI_PROVIDER_PROFILE_MODAL_BASE_URL_PLACEHOLDER: "e.g.: https://api.openai.com/v1",
+  AI_PROVIDER_PROFILE_MODAL_OPENAI_COMPATIBLE_HINT:
+    "For local OpenAI-compatible LLMs, enter a dummy API key if no real key is required so Excalidraw recognizes the profile as configured.",
   AI_PROVIDER_PROFILE_MODAL_NAME_REQUIRED: "Provider profile name is required.",
   AI_PROVIDER_PROFILE_MODAL_DUPLICATE_NAME: "A provider profile with this name already exists.",
   AI_MODEL_CONFIG_MODAL_NAME_NAME: "Entry name",

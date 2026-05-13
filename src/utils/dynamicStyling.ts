@@ -26,7 +26,7 @@ export const setDynamicStyle = (
     const toolspanel = view.toolsPanelRef?.current?.containerRef?.current;
     if(toolspanel) {
       let toolsStyle = toolspanel.getAttribute("style");
-      toolsStyle = toolsStyle.replace(/\-\-color\-primary.*/,"");
+      toolsStyle = toolsStyle.replace(/--color-primary.*/,"");
       toolspanel.setAttribute("style",toolsStyle);
     }
     return;
@@ -148,7 +148,7 @@ export const setDynamicStyle = (
   const toolspanel = view.toolsPanelRef?.current?.containerRef?.current;
   if(toolspanel) {
     let toolsStyle = toolspanel.getAttribute("style");
-    toolsStyle = toolsStyle.replace(/\-\-color\-primary.*/,"");
+    toolsStyle = toolsStyle.replace(/--color-primary.*/,"");
     toolspanel.setAttribute("style",toolsStyle+styleString);
   }
 

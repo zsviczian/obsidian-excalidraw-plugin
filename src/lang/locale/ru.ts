@@ -247,6 +247,8 @@ export default {
   AI_PROVIDER_OPTION_GOOGLE: "Google / Gemini",
   AI_PROVIDER_OPTION_XAI: "xAI / Grok",
   AI_PROVIDER_OPTION_OPENAI_COMPATIBLE: "Совместимый с OpenAI / локальный",
+  AI_PROVIDER_PROFILE_MODAL_OPENAI_COMPATIBLE_HINT:
+    "Для локальных LLM, совместимых с OpenAI, укажите фиктивный API key, если реальный не нужен, чтобы Excalidraw считал профиль настроенным.",
   AI_PROVIDER_BASE_URL_EMPTY: "Определяется типом провайдера",
   AI_PROVIDER_API_KEY_SET: "Настроено",
   AI_PROVIDER_API_KEY_NOT_SET: "Не настроено",

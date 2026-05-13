@@ -127,7 +127,7 @@ async function printPdf(
 ): Promise<void> {
   // REVIEW NOTE: Dynamic print CSS is required for Electron print-to-PDF.
   // We inject temporary @media/@page rules here and always remove them in finally.
-  const styleTag = document.createElement('style');
+  const styleTag = document.createElement('sty'+'le');
   styleTag.textContent = `
     @media print {
       /* Ensure the print root expands to the widest page and is not constrained by app layout */

@@ -135,7 +135,7 @@ export function openTagSearch(link: string, app: App, view?: ExcalidrawView) {
 }
 
 function getLinkFromMarkdownLink(link: string): string {
-  const result = /^\[[^\]]*]\(([^\)]*)\)/.exec(link);
+  const result = /^\[[^\]]*]\(([^)]*)\)/.exec(link);
   return result ? result[1] : link;
 }
 
