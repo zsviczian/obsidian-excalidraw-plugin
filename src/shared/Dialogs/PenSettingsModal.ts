@@ -8,6 +8,7 @@ import { ExtendedFillStyle, PenType } from "src/types/penTypes";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { PENS } from "src/utils/pens";
 import { fragWithHTML } from "src/utils/utils";
+import { setSanitizedHtml } from "src/utils/htmlUtils";
 import { __values } from "tslib";
 import { showColorPicker } from "./ColorPicker";
 
@@ -467,7 +468,7 @@ export class PenSettingsModal extends Modal {
 
     ce.createEl("h2",{text: "Perfect Freehand settings"});
     const p = ce.createEl("p");
-    p.innerHTML = `Read the Perfect Freehand documentation following <a href="https://github.com/steveruizok/perfect-freehand#documentation" target="_blank">this link</a>.`;
+    setSanitizedHtml(p, `Read the Perfect Freehand documentation following <a href="https://github.com/steveruizok/perfect-freehand#documentation" target="_blank">this link</a>.`);
 
     let tSetting: Setting;
     tSetting = new Setting(ce)

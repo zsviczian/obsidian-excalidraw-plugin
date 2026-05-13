@@ -45,6 +45,7 @@ import { ExportSettings } from "src/types/exportUtilTypes";
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 import ExcalidrawView from "../view/ExcalidrawView";
 import { emptyDrawingElements } from "src/constants/emptydrawing";
+import { sanitizedFragment } from "./htmlUtils";
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
@@ -933,7 +934,7 @@ export function isImagePartRef (parts: FILENAMEPARTS): boolean {
 }
 
 export function fragWithHTML (html: string) {
-  return createFragment((frag) => (frag.createDiv().innerHTML = html));
+  return createFragment((frag) => frag.appendChild(sanitizedFragment(html)));
 }
 
 export async function sleep (ms: number) {

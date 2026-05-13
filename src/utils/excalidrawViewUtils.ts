@@ -17,6 +17,7 @@ import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { EmbeddedFile } from "src/shared/EmbeddedFileLoader";
 import { CaptureUpdateAction } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
+import { setSanitizedHtml } from "./htmlUtils";
 
 export async function insertImageToView(
   ea: ExcalidrawAutomate,
@@ -473,7 +474,7 @@ export function displayFontMessage(app: App) {
     const releaseNotesHTML = t("FONT_INFO_DETAILED");
 
     const div = contentEl.createDiv({ cls: "release-notes" });
-    div.innerHTML = releaseNotesHTML;
+    setSanitizedHtml(div, releaseNotesHTML);
   }
 
   modal.open();

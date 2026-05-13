@@ -8,6 +8,7 @@ import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { t } from "src/lang/helpers";
+import { setSanitizedHtml } from "src/utils/htmlUtils";
 
 export class InsertPDFModal extends Modal {
   private borderBox: boolean = true;
@@ -195,7 +196,7 @@ export class InsertPDFModal extends Modal {
         numPagesMessage.innerText = t("IPM_SELECT_PDF");
         return;
       }
-      numPagesMessage.innerHTML = `There are <b>${numPages}</b> pages in the selected document.`;
+      setSanitizedHtml(numPagesMessage, `There are <b>${numPages}</b> pages in the selected document.`);
     }
 
     let pageRangesTextComponent: TextComponent
@@ -211,9 +212,9 @@ export class InsertPDFModal extends Modal {
         this.setImageSizeMessage();
       }
       if(pages.length > 15) {
-        importPagesMessage.innerHTML = `You are importing <b>${pages.length}</b> pages. ⚠️ This may take a while. ⚠️`;
+        setSanitizedHtml(importPagesMessage, `You are importing <b>${pages.length}</b> pages. ⚠️ This may take a while. ⚠️`);
       } else {
-        importPagesMessage.innerHTML = `You are importing <b>${pages.length}</b> pages.`;
+        setSanitizedHtml(importPagesMessage, `You are importing <b>${pages.length}</b> pages.`);
       }
       importButtonMessages();
     }

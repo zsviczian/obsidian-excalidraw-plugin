@@ -40,6 +40,7 @@ import { ImageKey, imageCache } from "./ImageCache";
 import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
 import { ColorMap, ImgData, PDFPageViewProps, Size, MimeType, FileData } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
+import { setStyleText } from "src/utils/htmlUtils";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -1316,7 +1317,7 @@ export class EmbeddedFilesLoader {
     if (style) {
       const styleEl = iframeDoc.createElement("style");
       styleEl.type = "text/css";
-      styleEl.innerHTML = style;
+      setStyleText(styleEl, style);
       iframeDoc.head.appendChild(styleEl);
     }
     const stylingDIV = iframeDoc.importNode(mdDIV, true);

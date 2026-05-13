@@ -27,6 +27,7 @@ import {
   addYouTubeThumbnail,
   fragWithHTML,
 } from "src/utils/utils";
+import { setSanitizedHtml } from "src/utils/htmlUtils";
 import { imageCache } from "src/shared/ImageCache";
 import { MultiOptionConfirmationPrompt } from "src/shared/Dialogs/Prompt";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
@@ -1046,7 +1047,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const excalidrawMasteryText = excalidrawMasteryContent.createDiv({
       cls: "excalidraw-mastery-promo__text",
     });
-    excalidrawMasteryText.innerHTML = t("EXCALIDRAW_MASTERY_PROMO_HTML");
+    setSanitizedHtml(excalidrawMasteryText, t("EXCALIDRAW_MASTERY_PROMO_HTML"));
     excalidrawMasteryText.querySelectorAll("a").forEach((anchor: HTMLAnchorElement) => {
       anchor.setAttribute("aria-label", t("EXCALIDRAW_MASTERY_PROMO_ARIA"));
       anchor.setAttribute("target", "_blank");
@@ -1329,7 +1330,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
 
     detailsEl.createDiv("", (el) => {
-      el.innerHTML = t("FILENAME_DESC");
+      setSanitizedHtml(el, t("FILENAME_DESC"));
     });
 
     const getFilenameSample = () => {
@@ -1346,7 +1347,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     };
 
     const filenameEl = detailsEl.createEl("p", { text: "" });
-    filenameEl.innerHTML = getFilenameSample();
+    setSanitizedHtml(filenameEl, getFilenameSample());
 
     new Setting(detailsEl)
       .setName(t("FILENAME_PREFIX_NAME"))
@@ -1361,7 +1362,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               "_",
             );
             text.setValue(this.plugin.settings.drawingFilenamePrefix);
-            filenameEl.innerHTML = getFilenameSample();
+            setSanitizedHtml(filenameEl, getFilenameSample());
             this.applySettingsUpdate();
           }),
       );
@@ -1374,7 +1375,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.drawingEmbedPrefixWithFilename)
           .onChange(async (value) => {
             this.plugin.settings.drawingEmbedPrefixWithFilename = value;
-            filenameEl.innerHTML = getFilenameSample();
+            setSanitizedHtml(filenameEl, getFilenameSample());
             this.applySettingsUpdate();
           }),
       );
@@ -1392,7 +1393,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               "_",
             );
             text.setValue(this.plugin.settings.drawingFilnameEmbedPostfix);
-            filenameEl.innerHTML = getFilenameSample();
+            setSanitizedHtml(filenameEl, getFilenameSample());
             this.applySettingsUpdate();
           }),
       );
@@ -1410,7 +1411,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               "_",
             );
             text.setValue(this.plugin.settings.drawingFilenameDateTime);
-            filenameEl.innerHTML = getFilenameSample();
+            setSanitizedHtml(filenameEl, getFilenameSample());
             this.applySettingsUpdate();
           }),
       );
@@ -1423,7 +1424,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.useExcalidrawExtension)
           .onChange(async (value) => {
             this.plugin.settings.useExcalidrawExtension = value;
-            filenameEl.innerHTML = getFilenameSample();
+            setSanitizedHtml(filenameEl, getFilenameSample());
             this.applySettingsUpdate();
           }),
       );
@@ -2038,7 +2039,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h3",
     });
     detailsEl.createEl("span", {}, (el) => {
-      el.innerHTML = t("HOTKEY_OVERRIDE_DESC");
+      setSanitizedHtml(el, t("HOTKEY_OVERRIDE_DESC"));
     });
 
     this.hotkeyEditor = new HotkeyEditor(detailsEl, this.plugin.settings, this.applySettingsUpdate);
@@ -2554,7 +2555,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     detailsEl.createEl(
       "span",
       undefined,
-      (el) => (el.innerHTML = t("LINKS_DESC")),
+      (el) => setSanitizedHtml(el, t("LINKS_DESC")),
     );
 
     new Setting(detailsEl)
@@ -2753,9 +2754,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate(true);
           }),
       );
-    s.descEl.innerHTML = `<code>![[doc#^ref]]{number}</code> ${t(
+    setSanitizedHtml(s.descEl, `<code>![[doc#^ref]]{number}</code> ${t(
       "TRANSCLUSION_WRAP_DESC",
-    )}`;
+    )}`);
 
     new Setting(detailsEl)
       .setName(t("PAGE_TRANSCLUSION_CHARCOUNT_NAME"))
@@ -3326,7 +3327,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     detailsEl.createEl("hr", { cls: "excalidraw-setting-hr" });
     detailsEl.createEl("span", {}, (el) => {
-      el.innerHTML = t("MD_EMBED_CUSTOMDATA_HEAD_DESC");
+      setSanitizedHtml(el, t("MD_EMBED_CUSTOMDATA_HEAD_DESC"));
     });
 
     new EmbeddalbeMDFileCustomDataSettingsComponent(
@@ -3585,7 +3586,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       });
   
       const cjkdescdiv = detailsEl.createDiv({ cls: "setting-item-description"  });
-      cjkdescdiv.innerHTML = t("OFFLINE_CJK_DESC");
+      setSanitizedHtml(cjkdescdiv, t("OFFLINE_CJK_DESC"));
 
       new Setting(detailsEl)
       .setName(t("CJK_ASSETS_FOLDER_NAME"))
@@ -3783,7 +3784,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     // ------------------------------------------------
     containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
     containerEl.createDiv( { cls: "setting-item-description"  }, (el)=>{
-      el.innerHTML = t("EA_DESC");
+      setSanitizedHtml(el, t("EA_DESC"));
     });
     detailsEl = containerEl.createEl("details");
     const eaDetailsEl = detailsEl;
@@ -3936,7 +3937,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.compatibilityMode)
           .onChange(async (value) => {
             this.plugin.settings.compatibilityMode = value;
-            filenameEl.innerHTML = getFilenameSample();
+            setSanitizedHtml(filenameEl, getFilenameSample());
             this.applySettingsUpdate();
           }),
       );

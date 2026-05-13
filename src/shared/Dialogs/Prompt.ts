@@ -30,6 +30,7 @@ import { LRLanguage } from "@codemirror/language";
 import { editorLivePreviewField } from "obsidian";
 import { Extension } from "@codemirror/state";
 import { FloatingModal } from "./FloatingModal";
+import { setSanitizedHtml } from "src/utils/htmlUtils";
 
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;
@@ -61,7 +62,7 @@ export class Prompt extends Modal {
       div = div.createDiv();
       div.style.width = "100%";
       const p = div.createEl("p");
-      p.innerHTML = this.prompt_desc;
+      setSanitizedHtml(p, this.prompt_desc);
     }
     const form = div.createEl("form");
     form.addClass("excalidraw-prompt-form");
@@ -1081,7 +1082,7 @@ export class MultiOptionConfirmationPrompt extends Modal {
 
     const messageEl = this.contentEl.createDiv();
     messageEl.style.marginBottom = "1rem";
-    messageEl.innerHTML = this.message;
+    setSanitizedHtml(messageEl, this.message);
 
     const buttonContainer = this.contentEl.createDiv();
     buttonContainer.style.display = "flex";

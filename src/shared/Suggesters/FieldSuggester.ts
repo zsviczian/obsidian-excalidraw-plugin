@@ -12,6 +12,7 @@ import {
   EXCALIDRAW_SCRIPTENGINE_INFO,
 } from "../Dialogs/SuggesterInfo";
 import type ExcalidrawPlugin from "../../core/main";
+import { setSanitizedHtml } from "src/utils/htmlUtils";
 
 /**
  * The field suggester recommends document properties in source mode, ea and utils function and attribute names.
@@ -92,7 +93,7 @@ export class FieldSuggester extends EditorSuggest<string> {
       el.createEl("code", { text: value.code });
     }
     if (value.desc) {
-      el.createDiv("div", (el) => (el.innerHTML = value.desc));
+      el.createDiv("div", (el) => setSanitizedHtml(el, value.desc));
     }
   }
 

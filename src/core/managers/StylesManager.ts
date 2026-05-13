@@ -2,6 +2,7 @@ import { WorkspaceWindow } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { getAllWindowDocuments } from "../../utils/obsidianUtils";
 import { DEBUGGING, debug } from "../../utils/debugHelper";
+import { setStyleText } from "src/utils/htmlUtils";
 
 export let REM_VALUE = 16;
 
@@ -136,19 +137,19 @@ export class StylesManager {
   private copyPropertiesToTheme(doc: Document) {
     const styleTags = this.stylesMap.get(doc);
     if (styleTags) {
-      styleTags.light.innerHTML = `.${EXCALIDRAW_CONTAINER_CLASS} .theme-light {\n${this.styleLight}\n}`;
-      styleTags.dark.innerHTML = `.${EXCALIDRAW_CONTAINER_CLASS} .theme-dark {\n${this.styleDark}\n}`;
+      setStyleText(styleTags.light, `.${EXCALIDRAW_CONTAINER_CLASS} .theme-light {\n${this.styleLight}\n}`);
+      setStyleText(styleTags.dark, `.${EXCALIDRAW_CONTAINER_CLASS} .theme-dark {\n${this.styleDark}\n}`);
     } else {
       const lightStyleTag = doc.createElement("style");
       lightStyleTag.type = "text/css";
       lightStyleTag.setAttribute("id", "excalidraw-embedded-light");
-      lightStyleTag.innerHTML = `.${EXCALIDRAW_CONTAINER_CLASS} .theme-light {\n${this.styleLight}\n}`;
+      setStyleText(lightStyleTag, `.${EXCALIDRAW_CONTAINER_CLASS} .theme-light {\n${this.styleLight}\n}`);
       doc.head.appendChild(lightStyleTag);
 
       const darkStyleTag = doc.createElement("style");
       darkStyleTag.type = "text/css";
       darkStyleTag.setAttribute("id", "excalidraw-embedded-dark");
-      darkStyleTag.innerHTML = `.${EXCALIDRAW_CONTAINER_CLASS} .theme-dark {\n${this.styleDark}\n}`;
+      setStyleText(darkStyleTag, `.${EXCALIDRAW_CONTAINER_CLASS} .theme-dark {\n${this.styleDark}\n}`);
       doc.head.appendChild(darkStyleTag);
 
       this.stylesMap.set(doc, {light: lightStyleTag, dark: darkStyleTag});
