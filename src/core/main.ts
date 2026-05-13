@@ -103,6 +103,7 @@ import { getHighlightColor } from "src/utils/dynamicStyling";
 import { InlineLinkSuggester } from "src/shared/Suggesters/InlineLinkSuggester";
 import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
+import { decryptPersistedAPIKeys,encryptPersistedAPIKeys } from "src/utils/settingsKeyObfuscation";
 
 declare const PLUGIN_VERSION:string;
 declare const INITIAL_TIMESTAMP: number;
@@ -1574,7 +1575,8 @@ export default class ExcalidrawPlugin extends Plugin {
     const rawSettings = ((await this.loadData()) ?? {}) as PersistedExcalidrawSettings;
     const { settings: migratedSettings, didMigrate } = migrateLegacyAISettings(rawSettings);
     const persistedSettings = stripLegacyAISettings(migratedSettings);
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, persistedSettings);
+    const decryptedSettings = decryptPersistedAPIKeys(persistedSettings);
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, decryptedSettings);
     if(!this.settings.previewImageType) { //migration 1.9.13
       if(typeof this.settings.displaySVGInPreview === "undefined") {
         this.settings.previewImageType = PreviewImageType.SVGIMG;
@@ -1584,15 +1586,18 @@ export default class ExcalidrawPlugin extends Plugin {
           : PreviewImageType.PNG; 
       }
     }
-    if (didMigrate) {
-      await this.saveData(persistedSettings);
+    const encryptedPersistedSettings = encryptPersistedAPIKeys(stripLegacyAISettings(this.settings as PersistedExcalidrawSettings));
+    const shouldPersistEncryptedSettings = JSON.stringify(encryptedPersistedSettings) !== JSON.stringify(persistedSettings);
+    if (didMigrate || shouldPersistEncryptedSettings) {
+      await this.saveData(encryptedPersistedSettings);
     }
     if(opts.reEnableAutosave) this.settings.autosave = true;
     setDebugging(this.settings.isDebugMode);
   }
 
   async saveSettings() {
-    await this.saveData(stripLegacyAISettings(this.settings as PersistedExcalidrawSettings));
+    const persistedSettings = stripLegacyAISettings(this.settings as PersistedExcalidrawSettings);
+    await this.saveData(encryptPersistedAPIKeys(persistedSettings));
   }
 
   public async openSidepanel(reveal: boolean = true): Promise<ExcalidrawSidepanelView | null> {

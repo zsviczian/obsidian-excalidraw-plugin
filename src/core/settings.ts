@@ -48,6 +48,7 @@ import { ScriptSettingValue } from "src/types/excalidrawAutomateTypes";
 import { AIImageModelCapability,AIImageModelConfig,AIModelConfig,AIProviderProfile } from "src/types/AIUtilTypes";
 import { AIProviderProfileModal } from "src/shared/Dialogs/AIProviderProfileModal";
 import { AIModelConfigModal } from "src/shared/Dialogs/AIModelConfigModal";
+import { decryptProviderProfiles } from "src/utils/settingsKeyObfuscation";
 
 export interface ExcalidrawSettings {
   copyLinkToElemenetAnchorTo100: boolean;
@@ -1576,9 +1577,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     let selectedImageModelConfig = this.plugin.settings.aiDefaultImageGenerationModel?.trim() || Object.keys(this.plugin.settings.aiImageModelConfigs ?? {})[0] || "gpt-image-1";
 
     const getProviderProfiles = () => {
-      return this.plugin.settings.aiProviderProfiles && Object.keys(this.plugin.settings.aiProviderProfiles).length > 0
+      const profiles = this.plugin.settings.aiProviderProfiles && Object.keys(this.plugin.settings.aiProviderProfiles).length > 0
         ? this.plugin.settings.aiProviderProfiles
         : cloneKnownAIProviderProfiles();
+      return decryptProviderProfiles(profiles);
     };
 
     const getModelConfigs = (kind: "text" | "image") => {
@@ -1624,14 +1626,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
       if (kind === "text") this.plugin.settings.aiTextModelConfigs = sorted as Record<string, AIModelConfig>;
       if (kind === "image") this.plugin.settings.aiImageModelConfigs = sorted as Record<string, AIImageModelConfig>;
-    };
-
-    const sortProfiles = () => {
-      setProviderProfiles(getProviderProfiles());
-    };
-
-    const sortModelConfigs = (kind: "text" | "image") => {
-      setModelConfigs(kind, getModelConfigs(kind));
     };
 
     const getValidSelection = (kind: "text" | "image") => {
@@ -3782,6 +3776,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     .setDesc(fragWithHTML(t("TASKBONE_APIKEY_DESC")))
     .addText((text) => {
       taskboneAPIKeyText = text;
+      configurePasswordTextInput(taskboneAPIKeyText);
       taskboneAPIKeyText
         .setValue(this.plugin.settings.taskboneAPIkey)
         .onChange(async (value) => {

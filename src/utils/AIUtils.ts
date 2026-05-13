@@ -13,6 +13,7 @@ AIRequestMessage,
 AIRequestMessagePart,
 GPTCompletionRequest,
 } from "src/types/AIUtilTypes";
+import { decryptProviderProfiles,decryptStoredAPIKey } from "src/utils/settingsKeyObfuscation";
 
 type NormalizedBinaryInput = {
   source: string;
@@ -263,11 +264,11 @@ const getResolvedProvider = (request: AIRequest, plugin: ExcalidrawPlugin): AIPr
 
 const getProviderProfiles = (plugin: ExcalidrawPlugin): Record<string, AIProviderProfile> => {
   return plugin.settings.aiProviderProfiles && Object.keys(plugin.settings.aiProviderProfiles).length > 0
-    ? plugin.settings.aiProviderProfiles
+    ? decryptProviderProfiles(plugin.settings.aiProviderProfiles)
     : {
         OpenAI: {
           provider: plugin.settings.aiProvider ?? "openai",
-          apiKey: plugin.settings.aiAPIKey || plugin.settings.openAIAPIToken,
+          apiKey: decryptStoredAPIKey(plugin.settings.aiAPIKey || plugin.settings.openAIAPIToken),
           baseURL: inferConfiguredBaseURL(plugin.settings.aiBaseURL)
             || inferLegacyBaseURL(plugin.settings.openAIURL, "/chat/completions")
             || DEFAULT_PROVIDER_BASE_URLS[plugin.settings.aiProvider ?? "openai"],
