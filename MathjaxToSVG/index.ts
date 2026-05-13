@@ -5,13 +5,26 @@ import {LiteAdaptor, liteAdaptor} from 'mathjax-full/js/adaptors/liteAdaptor.js'
 import {RegisterHTMLHandler} from 'mathjax-full/js/handlers/html.js';
 import {AllPackages} from 'mathjax-full/js/input/tex/AllPackages.js';
 import { customAlphabet } from "nanoid";
+import type { TAbstractFile } from "obsidian";
 
 type DataURL = string & { _brand: "DataURL" };
 type FileId = string & { _brand: "FileId" };
 const fileid = customAlphabet("1234567890abcdef", 40);
 
+type LatexPluginLike = {
+  app: {
+    vault: {
+      getAbstractFileByPath: (path: string) => TAbstractFile | null;
+      read: (file: TAbstractFile) => Promise<string>;
+    };
+  };
+  settings: {
+    latexPreambleLocation?: string;
+  };
+};
+
 let adaptor: LiteAdaptor;
-let html: any;
+let html: ReturnType<typeof mathjax.document>;
 let preamble: string;
 
 function svgToBase64(svg: string): string {
@@ -38,7 +51,7 @@ async function getImageSize(src: string): Promise<{ height: number; width: numbe
 export async function tex2dataURL(
   tex: string,
   scale: number = 4,
-  plugin?: any
+  plugin?: LatexPluginLike
 ): Promise<{
   mimeType: string;
   fileId: FileId;
@@ -46,8 +59,8 @@ export async function tex2dataURL(
   created: number;
   size: { height: number; width: number };
 }> {
-  let input: TeX<unknown, unknown, unknown>;
-  let output: SVG<unknown, unknown, unknown>;
+  let input: TeX<Record<string, never>, Record<string, never>, Record<string, never>>;
+  let output: SVG<Record<string, never>, Record<string, never>, Record<string, never>>;
 
   if(!adaptor) {
     if (plugin) {

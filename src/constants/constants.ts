@@ -169,8 +169,8 @@ export function updateExcalidrawLib() {
 export const FONTS_STYLE_ID = "excalidraw-custom-fonts";
 export const CJK_STYLE_ID = "excalidraw-cjk-fonts";
 
-export function JSON_parse(x: string): any {
-  return JSON.parse(x.replaceAll("&#91;", "["));
+export function JSON_parse<T>(x: string): T {
+  return JSON.parse(x.replaceAll("&#91;", "[")) as T;
 }
 export const isDarwin = /Mac|iPod|iPhone|iPad/.test(window.navigator.platform);
 

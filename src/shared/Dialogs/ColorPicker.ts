@@ -13,7 +13,7 @@ const getColors = (palette: PaletteName, view?: ExcalidrawView, includeSceneColo
 	const raw = getViewColorPalette(palette, view, includeSceneColors) ?? [];
 	const flattened: string[] = [];
 
-	raw.forEach((entry: any) => {
+	raw.forEach((entry: string[] | string) => {
 		if (Array.isArray(entry)) {
 			entry.forEach((color) => {
 				if (typeof color === "string" && color) {

@@ -4,7 +4,9 @@ import { LOCALE } from "src/constants/constants";
 import en from "./locale/en";
 
 declare const PLUGIN_LANGUAGES: Record<string, string>;
-declare var LZString: any;
+declare const LZString: {
+  decompressFromBase64: (value: string) => string;
+};
 
 let locale: Partial<typeof en> | null = null;
 

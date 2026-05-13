@@ -79,6 +79,6 @@ export const showFrameSettings = (view: ExcalidrawView) => {
 };
 
 // Function to hide or show a component
-function hideComponent(comp:any, value:any) {
+function hideComponent(comp: Setting, value: boolean) {
   comp.settingEl.style.display = value ? "none" : "";
 }

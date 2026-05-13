@@ -365,9 +365,19 @@ export class PluginFileManager {
     if (!data) {
       return "";
     }
-    const excalidrawData = JSON_parse(data);
-    const textElements = excalidrawData.elements?.filter(
-      (el: any) => el.type == "text",
+    type ExcalidrawSceneTextElement = {
+      id: string;
+      type?: string;
+      text?: string;
+      originalText?: string;
+    };
+    type ExcalidrawSceneData = {
+      elements?: ExcalidrawSceneTextElement[];
+    };
+
+    const excalidrawData = JSON_parse<ExcalidrawSceneData>(data);
+    const textElements = (excalidrawData.elements ?? []).filter(
+      (el) => el.type == "text",
     );
     let outString = `# Excalidraw Data\n\n## Text Elements\n`;
     let id: string;
