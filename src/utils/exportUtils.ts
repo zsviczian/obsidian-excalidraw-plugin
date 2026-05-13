@@ -3,7 +3,7 @@ import { DEVICE } from 'src/constants/constants';
 import { t } from 'src/lang/helpers';
 import { download } from './fileUtils';
 import { svgToBase64 } from './utils';
-import { PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFMargin, PDFPageAlignment, PDFPageMarginString, PDFPageProperties, STANDARD_PAGE_SIZES } from 'src/types/exportUtilTypes';
+import { PageDimensions,PageOrientation,PageSize,PDFExportScale,PDFMargin,PDFPageAlignment,PDFPageMarginString,PDFPageProperties,STANDARD_PAGE_SIZES } from 'src/types/exportUtilTypes';
 
 const DPI = 96;
 

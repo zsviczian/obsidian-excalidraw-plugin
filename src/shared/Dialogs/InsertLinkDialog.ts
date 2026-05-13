@@ -1,9 +1,9 @@
-import { FuzzyMatch, FuzzySuggestModal } from "obsidian";
+import { FuzzyMatch,FuzzySuggestModal } from "obsidian";
 import { t } from "../../lang/helpers";
 import ExcalidrawPlugin from "src/core/main";
 import { getLink } from "src/utils/fileUtils";
 import { LinkSuggestion } from "src/types/types";
-import { getLinkSuggestionsFiltered, getSortedLinkMatches, renderLinkSuggestion } from "src/shared/Suggesters/LinkSuggesterUtils";
+import { getLinkSuggestionsFiltered,getSortedLinkMatches,renderLinkSuggestion } from "src/shared/Suggesters/LinkSuggesterUtils";
 
 
 export class InsertLinkDialog extends FuzzySuggestModal<LinkSuggestion> {

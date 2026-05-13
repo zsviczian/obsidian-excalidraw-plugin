@@ -1,160 +1,160 @@
 import {
-  TextFileView,
-  WorkspaceLeaf,
-  TFile,
-  WorkspaceItem,
-  Notice,
-  Menu,
-  MarkdownView,
-  request,
-  requireApiVersion,
-  HoverParent,
-  HoverPopover,
+TextFileView,
+WorkspaceLeaf,
+TFile,
+WorkspaceItem,
+Notice,
+Menu,
+MarkdownView,
+request,
+requireApiVersion,
+HoverParent,
+HoverPopover,
 } from "obsidian";
 //import * as React from "react";
 //import * as ReactDOM from "react-dom";
 //import Excalidraw from "@zsviczian/excalidraw";
 import {
-  ExcalidrawElement,
-  ExcalidrawImageElement,
-  ExcalidrawMagicFrameElement,
-  ExcalidrawTextElement,
-  FileId,
-  NonDeletedExcalidrawElement,
+ExcalidrawElement,
+ExcalidrawImageElement,
+ExcalidrawMagicFrameElement,
+ExcalidrawTextElement,
+FileId,
+NonDeletedExcalidrawElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import {
-  AppState,
-  BinaryFileData,
-  DataURL,
-  ExcalidrawImperativeAPI,
-  Gesture,
-  LibraryItems,
-  SceneData,
-  UIAppState,
+AppState,
+BinaryFileData,
+DataURL,
+ExcalidrawImperativeAPI,
+Gesture,
+LibraryItems,
+SceneData,
+UIAppState,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import {
-  VIEW_TYPE_EXCALIDRAW,
-  ICON_NAME,
-  DISK_ICON_NAME,
-  SCRIPTENGINE_ICON_NAME,
-  TEXT_DISPLAY_RAW_ICON_NAME,
-  IMAGE_TYPES,
-  KEYCODE,
-  FRONTMATTER_KEYS,
-  DEVICE,
-  GITHUB_RELEASES,
-  EXPORT_IMG_ICON_NAME,
-  viewportCoordsToSceneCoords,
-  ERROR_IFRAME_CONVERSION_CANCELED,
-  restoreElements,
-  obsidianToExcalidrawMap,
-  MAX_IMAGE_SIZE,
-  fileid,
-  MD_EX_SECTIONS,
-  refreshTextDimensions,
-  getContainerElement,
-  syncInvalidIndices,
-  VIEW_TYPE_SIDEPANEL,
-  sceneCoordsToViewportCoords,
+VIEW_TYPE_EXCALIDRAW,
+ICON_NAME,
+DISK_ICON_NAME,
+SCRIPTENGINE_ICON_NAME,
+TEXT_DISPLAY_RAW_ICON_NAME,
+IMAGE_TYPES,
+KEYCODE,
+FRONTMATTER_KEYS,
+DEVICE,
+GITHUB_RELEASES,
+EXPORT_IMG_ICON_NAME,
+viewportCoordsToSceneCoords,
+ERROR_IFRAME_CONVERSION_CANCELED,
+restoreElements,
+obsidianToExcalidrawMap,
+MAX_IMAGE_SIZE,
+fileid,
+MD_EX_SECTIONS,
+refreshTextDimensions,
+getContainerElement,
+syncInvalidIndices,
+VIEW_TYPE_SIDEPANEL,
+sceneCoordsToViewportCoords,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
-import { TextMode, getTextMode } from "../shared/TextMode";
+import { TextMode,getTextMode } from "../shared/TextMode";
 import { ExcalidrawSidepanelView } from "./sidepanel/Sidepanel";
-import { 
-  repositionElementsToCursor,
-  cloneElement,
-  getBoundTextElementId,
+import {
+repositionElementsToCursor,
+cloneElement,
+getBoundTextElementId,
 } from "../utils/excalidrawViewHelpers";
 import { t } from "../lang/helpers";
 import {
-  ExcalidrawData,
-  REG_LINKINDEX_HYPERLINK,
-  REGEX_LINK,
-  AutoexportPreference,
-  getExcalidrawMarkdownHeaderSection,
+ExcalidrawData,
+REG_LINKINDEX_HYPERLINK,
+REGEX_LINK,
+AutoexportPreference,
+getExcalidrawMarkdownHeaderSection,
 } from "../shared/ExcalidrawData";
 import {
-  checkAndCreateFolder,
-  createFileAndAwaitMetacacheUpdate,
-  createOrOverwriteFile,
-  download,
-  exportImageToFile,
-  getDataURLFromURL,
-  getIMGFilename,
-  getMimeType,
-  getNewUniqueFilepath,
-  getURLImageExtension,
+checkAndCreateFolder,
+createFileAndAwaitMetacacheUpdate,
+createOrOverwriteFile,
+download,
+exportImageToFile,
+getDataURLFromURL,
+getIMGFilename,
+getMimeType,
+getNewUniqueFilepath,
+getURLImageExtension,
 } from "../utils/fileUtils";
 import {
-  checkExcalidrawVersion,
-  errorlog,
-  getEmbeddedFilenameParts,
-  getExportTheme,
-  getPNG,
-  getPNGScale,
-  getSVG,
-  getExportPadding,
-  getWithBackground,
-  hasExportTheme,
-  scaleLoadedImage,
-  hyperlinkIsImage,
-  getYouTubeThumbnailLink,
-  isContainer,
-  fragWithHTML,
-  isMaskFile,
-  _getContainerElement,
-  arrayToMap,
-  addAppendUpdateCustomData,
-  getFilePathFromObsidianURL,
-  getLinkParts,
-  checkVersionMismatch,
-  calculateUIModeValue,
-  getExportInternalLinks,
+checkExcalidrawVersion,
+errorlog,
+getEmbeddedFilenameParts,
+getExportTheme,
+getPNG,
+getPNGScale,
+getSVG,
+getExportPadding,
+getWithBackground,
+hasExportTheme,
+scaleLoadedImage,
+hyperlinkIsImage,
+getYouTubeThumbnailLink,
+isContainer,
+fragWithHTML,
+isMaskFile,
+_getContainerElement,
+arrayToMap,
+addAppendUpdateCustomData,
+getFilePathFromObsidianURL,
+getLinkParts,
+checkVersionMismatch,
+calculateUIModeValue,
+getExportInternalLinks,
 } from "../utils/utils";
-import { closeLeafView, getExcalidraAndMarkdowViewsForFile, getLeaf, getParentOfClass, obsidianPDFQuoteWithRef, openLeaf, setExcalidrawView } from "../utils/obsidianUtils";
-import { cleanBlockRef, cleanSectionHeading, getAttachmentsFolderAndFilePath } from "../utils/pathUtils";
+import { closeLeafView,getExcalidraAndMarkdowViewsForFile,getLeaf,getParentOfClass,obsidianPDFQuoteWithRef,openLeaf,setExcalidrawView } from "../utils/obsidianUtils";
+import { cleanBlockRef,cleanSectionHeading,getAttachmentsFolderAndFilePath } from "../utils/pathUtils";
 import { splitFolderAndFilename } from "../utils/fileUtils";
-import { GenericInputPrompt, LaTexPrompt, MultiOptionConfirmationPrompt, NewFileActions, Prompt, linkPrompt } from "../shared/Dialogs/Prompt";
-import { ClipboardData, ParsedDataTransferFile } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
+import { GenericInputPrompt,LaTexPrompt,MultiOptionConfirmationPrompt,NewFileActions,Prompt,linkPrompt } from "../shared/Dialogs/Prompt";
+import { ClipboardData,ParsedDataTransferFile } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
 import { updateEquation } from "../shared/LaTeX";
 import {
-  EmbeddedFile,
-  EmbeddedFilesLoader,
-  generateIdFromFile,
+EmbeddedFile,
+EmbeddedFilesLoader,
+generateIdFromFile,
 } from "../shared/EmbeddedFileLoader";
 import { ScriptInstallPrompt } from "../shared/Dialogs/ScriptInstallPrompt";
 import { ObsidianMenu } from "./components/menu/ObsidianMenu";
 import { ToolsPanel } from "./components/menu/ToolsPanel";
 import { ScriptEngine } from "../shared/Scripts";
-import { getTextElementAtPointer, getImageElementAtPointer, getElementWithLinkAtPointer } from "../utils/getElementAtPointer";
-import { excalidrawSword, ICONS, LogoWrapper, Rank, saveIcon, SwordColors } from "../constants/actionIcons";
+import { getTextElementAtPointer,getImageElementAtPointer,getElementWithLinkAtPointer } from "../utils/getElementAtPointer";
+import { excalidrawSword,ICONS,LogoWrapper,Rank,saveIcon,SwordColors } from "../constants/actionIcons";
 import { ExportDialog } from "../shared/Dialogs/ExportDialog";
-import { getEA } from "src/core"
-import { anyModifierKeysPressed, emulateKeysForLinkClick, isWinALTorMacOPT, isWinCTRLorMacCMD, isWinMETAorMacCTRL, isSHIFT, linkClickModifierType, ModifierKeys } from "../utils/modifierkeyHelper";
+import { getEA } from "src/core";
+import { anyModifierKeysPressed,emulateKeysForLinkClick,isWinALTorMacOPT,isWinCTRLorMacCMD,isWinMETAorMacCTRL,isSHIFT,linkClickModifierType,ModifierKeys } from "../utils/modifierkeyHelper";
 import { setDynamicStyle } from "../utils/dynamicStyling";
-import { CustomEmbeddable, renderWebView } from "./components/CustomEmbeddable";
-import { addBackOfTheNoteCard, deleteAppStateKeys, getExcalidrawFileForwardLinks, getFrameBasedOnFrameNameOrId, getLinkTextFromLink, insertEmbeddableToView, insertImageToView, isTextImageTransclusion, onLoadMessages, openExternalLink, parseObsidianLink, renderContextMenuAction, sceneRemoveInternalLinks, setMobileNavbarPosition, tmpBruteForceCleanup, toggleImageAnchoring } from "../utils/excalidrawViewUtils";
+import { CustomEmbeddable,renderWebView } from "./components/CustomEmbeddable";
+import { addBackOfTheNoteCard,deleteAppStateKeys,getExcalidrawFileForwardLinks,getFrameBasedOnFrameNameOrId,getLinkTextFromLink,insertEmbeddableToView,insertImageToView,isTextImageTransclusion,onLoadMessages,openExternalLink,parseObsidianLink,renderContextMenuAction,sceneRemoveInternalLinks,setMobileNavbarPosition,tmpBruteForceCleanup,toggleImageAnchoring } from "../utils/excalidrawViewUtils";
 import { imageCache } from "../shared/ImageCache";
-import { CanvasNodeFactory, ObsidianCanvasNode } from "./managers/CanvasNodeFactory";
+import { CanvasNodeFactory,ObsidianCanvasNode } from "./managers/CanvasNodeFactory";
 import { EmbeddableMenu } from "./components/menu/EmbeddableActionsMenu";
 import { useDefaultExcalidrawFrame } from "../utils/customEmbeddableUtils";
 import { UniversalInsertFileModal } from "../shared/Dialogs/UniversalInsertFileModal";
-import { getMermaidText, shouldRenderMermaid } from "../utils/mermaidUtils";
+import { getMermaidText,shouldRenderMermaid } from "../utils/mermaidUtils";
 import { nanoid } from "nanoid";
-import { CustomMutationObserver, DEBUGGING, debug, log} from "../utils/debugHelper";
-import { errorHTML, extractCodeBlocks, generateAIText } from "../utils/AIUtils";
+import { CustomMutationObserver,DEBUGGING,log } from "../utils/debugHelper";
+import { errorHTML,extractCodeBlocks,generateAIText } from "../utils/AIUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { SelectCard } from "../shared/Dialogs/SelectCard";
 import { Packages } from "../types/types";
 import React from "react";
 import { diagramToHTML } from "../utils/matic";
 import { IS_WORKER_SUPPORTED } from "../shared/Workers/compression-worker";
-import { AutoexportConfig, Position, ViewSemaphores } from "../types/excalidrawViewTypes";
+import { AutoexportConfig,Position,ViewSemaphores } from "../types/excalidrawViewTypes";
 import { DropManager } from "./managers/DropManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
-import { exportPNG, exportPNGToClipboard, exportSVG, exportToPDF, getMarginValue, getPageDimensions } from "src/utils/exportUtils";
-import { PageOrientation, PageSize, ExportSettings } from "src/types/exportUtilTypes";
+import { exportPNG,exportPNGToClipboard,exportSVG,exportToPDF,getMarginValue,getPageDimensions } from "src/utils/exportUtils";
+import { PageOrientation,PageSize,ExportSettings } from "src/types/exportUtilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { updateElementIdsInScene } from "src/utils/excalidrawSceneUtils";
 import { FileData } from "src/types/embeddedFileLoaderTypes";
@@ -163,12 +163,12 @@ import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
 import { copyLinkToSelectedElementToClipboard } from "src/shared/Dialogs/copyLinkToSelectedElement";
 import { getPDFCropRect } from "src/utils/PDFUtils";
 import { ttdPersistenceAdapter } from "src/shared/TTDDialogPersistanceAdater";
-import { CaptureUpdateActionType, isBindingEnabled } from "@zsviczian/excalidraw/types/element/src";
+import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
 import {
-  getTextElementsMatchingQuery,
-  getFrameElementsMatchingQuery,
-  getElementsWithLinkMatchingQuery,
-  getImagesMatchingQuery,
+getTextElementsMatchingQuery,
+getFrameElementsMatchingQuery,
+getElementsWithLinkMatchingQuery,
+getImagesMatchingQuery,
 } from "src/utils/excalidrawAutomateUtils";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;

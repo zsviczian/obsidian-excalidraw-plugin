@@ -1,8 +1,8 @@
-import { ButtonComponent, TFile, ToggleComponent } from "obsidian";
+import { ButtonComponent,TFile,ToggleComponent } from "obsidian";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import ExcalidrawPlugin from "../../core/main";
 import { getPDFDoc } from "src/utils/fileUtils";
-import {  Modal, Setting, TextComponent } from "obsidian";
+import { Modal,Setting,TextComponent } from "obsidian";
 import { FileSuggestionModal } from "../Suggesters/FileSuggestionModal";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";

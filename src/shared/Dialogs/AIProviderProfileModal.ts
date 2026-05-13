@@ -1,6 +1,6 @@
-import { App, Modal, Notice, Setting, TextComponent } from "obsidian";
+import { App,Modal,Notice,Setting,TextComponent } from "obsidian";
 import { t } from "src/lang/helpers";
-import { AIProvider, AIProviderProfile } from "src/types/AIUtilTypes";
+import { AIProvider,AIProviderProfile } from "src/types/AIUtilTypes";
 import { isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
 
 type SaveHandler = (profileId: string, profile: AIProviderProfile, previousProfileId?: string) => Promise<void> | void;

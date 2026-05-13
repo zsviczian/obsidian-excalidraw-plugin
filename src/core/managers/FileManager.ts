@@ -1,16 +1,14 @@
-import { debug } from "src/utils/debugHelper";
-import { App, FrontMatterCache, MarkdownView, MetadataCache, normalizePath, Notice, TAbstractFile, TFile, WorkspaceLeaf } from "obsidian";
-import { BLANK_DRAWING, DARK_BLANK_DRAWING, DEVICE, EXPORT_TYPES, FRONTMATTER, FRONTMATTER_KEYS, JSON_parse, nanoid, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
-import { Prompt, templatePromt } from "src/shared/Dialogs/Prompt";
-import { changeThemeOfExcalidrawMD, ExcalidrawData, getMarkdownDrawingSection } from "../../shared/ExcalidrawData";
+import { App,FrontMatterCache,MarkdownView,MetadataCache,normalizePath,Notice,TAbstractFile,TFile,WorkspaceLeaf } from "obsidian";
+import { BLANK_DRAWING,DARK_BLANK_DRAWING,DEVICE,EXPORT_TYPES,FRONTMATTER,FRONTMATTER_KEYS,JSON_parse,nanoid,VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
+import { Prompt,templatePromt } from "src/shared/Dialogs/Prompt";
+import { changeThemeOfExcalidrawMD,ExcalidrawData,getMarkdownDrawingSection } from "../../shared/ExcalidrawData";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { getTextMode } from "src/shared/TextMode";
 import ExcalidrawPlugin from "src/core/main";
-import { DEBUGGING } from "src/utils/debugHelper";
-import { checkAndCreateFolder, createFileAndAwaitMetacacheUpdate, download, getIMGFilename, getLink, getListOfTemplateFiles, getNewUniqueFilepath } from "src/utils/fileUtils";
+import { checkAndCreateFolder,createFileAndAwaitMetacacheUpdate,download,getIMGFilename,getLink,getListOfTemplateFiles,getNewUniqueFilepath } from "src/utils/fileUtils";
 import { PaneTarget } from "src/utils/modifierkeyHelper";
-import { getExcalidrawViews, getNewOrAdjacentLeaf, isObsidianThemeDark, openLeaf } from "src/utils/obsidianUtils";
-import { errorlog, getExportTheme } from "src/utils/utils";
+import { getExcalidrawViews,getNewOrAdjacentLeaf,isObsidianThemeDark,openLeaf } from "src/utils/obsidianUtils";
+import { errorlog,getExportTheme } from "src/utils/utils";
 import { imageCache } from "src/shared/ImageCache";
 
 export class PluginFileManager {

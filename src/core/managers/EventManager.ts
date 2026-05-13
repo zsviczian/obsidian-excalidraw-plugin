@@ -1,11 +1,10 @@
-import { WorkspaceLeaf, TFile, Editor, MarkdownView, MarkdownFileInfo, MetadataCache, App, EventRef, Menu, FileView } from "obsidian";
+import { WorkspaceLeaf,TFile,Editor,MarkdownView,MarkdownFileInfo,MetadataCache,App,EventRef,Menu,FileView } from "obsidian";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { getLink } from "../../utils/fileUtils";
-import { editorInsertText, getExcalidrawViews, getParentOfClass, isUnwantedLeaf, setExcalidrawView } from "../../utils/obsidianUtils";
+import { editorInsertText,getExcalidrawViews,getParentOfClass,isUnwantedLeaf,setExcalidrawView } from "../../utils/obsidianUtils";
 import ExcalidrawPlugin from "src/core/main";
-import { DEBUGGING, debug } from "src/utils/debugHelper";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { DEVICE, FRONTMATTER_KEYS, ICON_NAME, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
+import { FRONTMATTER_KEYS,ICON_NAME,VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { t } from "src/lang/helpers";
 import { setMobileNavbarPosition } from "src/utils/excalidrawViewUtils";

@@ -1,14 +1,14 @@
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { App, loadPdfJs, MetadataCache, normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
-import { DEVICE, EXCALIDRAW_PLUGIN, FRONTMATTER_KEYS, URLFETCHTIMEOUT } from "src/constants/constants";
+import { App,loadPdfJs,MetadataCache,normalizePath,Notice,requestUrl,RequestUrlResponse,TAbstractFile,TFile,TFolder,Vault } from "obsidian";
+import { DEVICE,EXCALIDRAW_PLUGIN,FRONTMATTER_KEYS,URLFETCHTIMEOUT } from "src/constants/constants";
 import { ExcalidrawSettings } from "src/core/settings";
-export { splitFolderAndFilename } from "./pathUtils";
-import { errorlog, getDataURL } from "./coreUtils";
+import { errorlog,getDataURL } from "./coreUtils";
 import ExcalidrawPlugin from "src/core/main";
-import { getAttachmentsFolderAndFilePath, splitFolderAndFilename } from "./pathUtils";
+import { getAttachmentsFolderAndFilePath,splitFolderAndFilename } from "./pathUtils";
 import type ExcalidrawView from "src/view/ExcalidrawView";
-import { IMAGE_MIME_TYPES, MimeType } from "src/types/embeddedFileLoaderTypes";
+import { IMAGE_MIME_TYPES,MimeType } from "src/types/embeddedFileLoaderTypes";
 import { setElementDisplay } from "./htmlUtils";
+export { splitFolderAndFilename } from "./pathUtils";
 
 type ImageExtension = keyof typeof IMAGE_MIME_TYPES;
 

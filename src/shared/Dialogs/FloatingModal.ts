@@ -1,4 +1,4 @@
-import { App, Modal } from "obsidian";
+import { App,Modal } from "obsidian";
 import { clamp } from "@radix-ui/number";
 
 function getClientPoint(e: PointerEvent | TouchEvent) {

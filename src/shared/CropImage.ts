@@ -1,4 +1,4 @@
-import { ExcalidrawElement,  FileId } from "@zsviczian/excalidraw/types/element/src/types";
+import { ExcalidrawElement,FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import { BinaryFileData } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { Notice } from "obsidian";
@@ -166,8 +166,6 @@ export class CropImage {
   }
 
   async getCroppedPNG(): Promise<Blob> {
-    //@ts-ignore
-    const PLUGIN = app.plugins.plugins["obsidian-excalidraw-plugin"];
     const svg = await this.buildSVG();
     return new Promise((resolve, reject) => {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2026

@@ -1,96 +1,94 @@
 import {
-  TFile,
-  Plugin,
-  WorkspaceLeaf,
-  addIcon,
-  App,
-  PluginManifest,
-  MarkdownView,
-  normalizePath,
-  ViewState,
-  Notice,
-  request,
-  MetadataCache,
-  Workspace,
-  TAbstractFile,
-  FrontMatterCache,
+TFile,
+Plugin,
+WorkspaceLeaf,
+addIcon,
+App,
+PluginManifest,
+MarkdownView,
+normalizePath,
+ViewState,
+Notice,
+request,
+MetadataCache,
+Workspace,
+TAbstractFile,
+FrontMatterCache,
 } from "obsidian";
 import {
-  VIEW_TYPE_EXCALIDRAW,
-  VIEW_TYPE_SIDEPANEL,
-  EXCALIDRAW_ICON,
-  ICON_NAME,
-  SCRIPTENGINE_ICON,
-  SCRIPTENGINE_ICON_NAME,
-  RERENDER_EVENT,
-  FRONTMATTER_KEYS,
-  FRONTMATTER,
-  JSON_parse,
-  SCRIPT_INSTALL_CODEBLOCK,
-  SCRIPT_INSTALL_FOLDER,
-  EXPORT_TYPES,
-  EXPORT_IMG_ICON_NAME,
-  EXPORT_IMG_ICON,
-  LOCALE,
-  setExcalidrawPlugin,
-  DEVICE,
-  FONTS_STYLE_ID,
-  CJK_STYLE_ID,
-  loadMermaid,
-  setRootElementSize,
+VIEW_TYPE_EXCALIDRAW,
+VIEW_TYPE_SIDEPANEL,
+EXCALIDRAW_ICON,
+ICON_NAME,
+SCRIPTENGINE_ICON,
+SCRIPTENGINE_ICON_NAME,
+RERENDER_EVENT,
+FRONTMATTER_KEYS,
+FRONTMATTER,
+JSON_parse,
+SCRIPT_INSTALL_CODEBLOCK,
+SCRIPT_INSTALL_FOLDER,
+EXPORT_TYPES,
+EXPORT_IMG_ICON_NAME,
+EXPORT_IMG_ICON,
+LOCALE,
+setExcalidrawPlugin,
+DEVICE,
+FONTS_STYLE_ID,
+CJK_STYLE_ID,
+loadMermaid,
+setRootElementSize,
 } from "../constants/constants";
 import {
-  ExcalidrawSettings,
-  DEFAULT_SETTINGS,
-  ExcalidrawSettingTab,
-  cloneKnownAIProviderProfiles,
-  cloneModelConfigs,
-  KNOWN_AI_TEXT_MODEL_CONFIGS,
-  KNOWN_AI_IMAGE_MODEL_CONFIGS,
+ExcalidrawSettings,
+DEFAULT_SETTINGS,
+ExcalidrawSettingTab,
+cloneKnownAIProviderProfiles,
+cloneModelConfigs,
+KNOWN_AI_TEXT_MODEL_CONFIGS,
+KNOWN_AI_IMAGE_MODEL_CONFIGS,
 } from "./settings";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
-import { initExcalidrawAutomate, insertLaTeXToView } from "src/utils/excalidrawAutomateUtils";
-import { around, dedupe } from "monkey-around";
+import { initExcalidrawAutomate,insertLaTeXToView } from "src/utils/excalidrawAutomateUtils";
+import { around,dedupe } from "monkey-around";
 import { t } from "../lang/helpers";
 import {
-  createOrOverwriteFile,
-  fileShouldDefaultAsExcalidraw,
-  getDrawingFilename,
-  getIMGFilename,
-  getNewUniqueFilepath,
+createOrOverwriteFile,
+fileShouldDefaultAsExcalidraw,
+getDrawingFilename,
+getIMGFilename,
+getNewUniqueFilepath,
 } from "../utils/fileUtils";
 import {
-  getFontDataURL,
-  errorlog,
-  setLeftHandedMode,
-  sleep,
-  isVersionNewerThanOther,
-  isCallerFromTemplaterPlugin,
-  versionUpdateCheckTimer,
-  getFontMetrics,
-  calculateUIModeValue,
+getFontDataURL,
+errorlog,sleep,
+isVersionNewerThanOther,
+isCallerFromTemplaterPlugin,
+versionUpdateCheckTimer,
+getFontMetrics,
+calculateUIModeValue
 } from "../utils/utils";
-import { foldExcalidrawSection, getExcalidrawViews, setExcalidrawView } from "../utils/obsidianUtils";
+import { foldExcalidrawSection,getExcalidrawViews,setExcalidrawView } from "../utils/obsidianUtils";
 import { FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import { ScriptEngine } from "../shared/Scripts";
-import { hoverEvent, initializeMarkdownPostProcessor, markdownPostProcessor, legacyExcalidrawPopoverObserver } from "./managers/MarkdownPostProcessor";
+import { hoverEvent,initializeMarkdownPostProcessor,markdownPostProcessor,legacyExcalidrawPopoverObserver } from "./managers/MarkdownPostProcessor";
 import { FieldSuggester } from "../shared/Suggesters/FieldSuggester";
 import { ReleaseNotes } from "../shared/Dialogs/ReleaseNotes";
-import { DeviceType, Packages } from "../types/types";
+import { DeviceType,Packages } from "../types/types";
 import { PreviewImageType } from "../types/utilTypes";
-import { emulateCTRLClickForLinks, linkClickModifierType, PaneTarget } from "../utils/modifierkeyHelper";
+import { emulateCTRLClickForLinks,linkClickModifierType,PaneTarget } from "../utils/modifierkeyHelper";
 import { imageCache } from "../shared/ImageCache";
 import { StylesManager } from "./managers/StylesManager";
-import { CustomMutationObserver, debug, log, DEBUGGING, setDebugging, ts } from "../utils/debugHelper";
+import { CustomMutationObserver,log,setDebugging } from "../utils/debugHelper";
 import { ExcalidrawConfig } from "../shared/ExcalidrawConfig";
 import { EditorHandler } from "./editor/EditorHandler";
 import { ExcalidrawLib } from "../types/excalidrawLib";
-import { Rank, SwordColors } from "../constants/actionIcons";
+import { Rank,SwordColors } from "../constants/actionIcons";
 import { RankMessage } from "../shared/Dialogs/RankMessage";
-import { initCompressionWorker, terminateCompressionWorker } from "../shared/Workers/compression-worker";
+import { initCompressionWorker,terminateCompressionWorker } from "../shared/Workers/compression-worker";
 import { WeakArray } from "../shared/WeakArray";
 import { getCJKDataURLs } from "../utils/CJKLoader";
-import { ExcalidrawLoading, switchToExcalidraw } from "../view/ExcalidrawLoading";
+import { ExcalidrawLoading,switchToExcalidraw } from "../view/ExcalidrawLoading";
 import { clearMathJaxVariables } from "../shared/LaTeX";
 import { PluginFileManager } from "./managers/FileManager";
 import { ObserverManager } from "./managers/ObserverManager";
@@ -101,7 +99,6 @@ import { CommandManager } from "./managers/CommandManager";
 import { EventManager } from "./managers/EventManager";
 import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
 import en from "src/lang/locale/en";
-import { get } from "http";
 import { getHighlightColor } from "src/utils/dynamicStyling";
 import { InlineLinkSuggester } from "src/shared/Suggesters/InlineLinkSuggester";
 import { KeyBlocker } from "src/types/excalidrawAutomateTypes";

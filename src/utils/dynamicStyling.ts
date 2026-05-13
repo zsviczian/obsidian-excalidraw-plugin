@@ -1,5 +1,5 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import CM, { ColorMaster } from "@zsviczian/colormaster";
+import CM,{ ColorMaster } from "@zsviczian/colormaster";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { DynamicStyle } from "src/types/types";

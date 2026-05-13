@@ -1,53 +1,49 @@
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { BinaryFileData,DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import ExcalidrawPlugin from "src/core/main";
 import { getTextMode } from "src/shared/TextMode";
 import {
-  ExcalidrawElement,
-  ExcalidrawImageElement,
-  FileId,
-  FixedPoint,
+ExcalidrawElement,
+ExcalidrawImageElement,
+FileId,
+FixedPoint,
 } from "@zsviczian/excalidraw/types/element/src/types";
-import { normalizePath, TFile } from "obsidian";
+import { normalizePath,TFile } from "obsidian";
 
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import {
-  GITHUB_RELEASES,
-  getCommonBoundingBox,
-  IMAGE_TYPES,
-  restoreElements,
-  REG_LINKINDEX_INVALIDCHARS,
-  THEME_FILTER,
-  EXCALIDRAW_PLUGIN,
-  getFontFamilyString,
-  getLineHeight,
-  measureText,
-  nanoid,
+GITHUB_RELEASES,
+getCommonBoundingBox,
+IMAGE_TYPES,
+restoreElements,
+REG_LINKINDEX_INVALIDCHARS,
+THEME_FILTER,
+EXCALIDRAW_PLUGIN,
+getFontFamilyString,
+getLineHeight,
+measureText,
+nanoid,
 } from "src/constants/constants";
 import {
-  //debug,
-  errorlog,
-  getEmbeddedFilenameParts,
-  getLinkParts,
-  getPNG,
-  getSVG,
-  isVersionNewerThanOther,
-  scaleLoadedImage,
+//debug,
+errorlog,
+getEmbeddedFilenameParts,
+getLinkParts,
+getPNG,
+getSVG,
+isVersionNewerThanOther,
+scaleLoadedImage,
 } from "src/utils/utils";
-import { GenericInputPrompt, LaTexPrompt, NewFileActions } from "src/shared/Dialogs/Prompt";
+import { LaTexPrompt } from "src/shared/Dialogs/Prompt";
 import { t } from "src/lang/helpers";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
-import {
-  postOpenAI as _postOpenAI,
-  extractCodeBlocks as _extractCodeBlocks,
-} from "../utils/AIUtils";
 import { EmbeddedFilesLoader } from "src/shared/EmbeddedFileLoader";
-import { ScriptSettingValue, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
-import { ExcalidrawData, getExcalidrawMarkdownHeaderSection, REG_LINKINDEX_HYPERLINK, REGEX_LINK } from "src/shared/ExcalidrawData";
-import { getFrameBasedOnFrameNameOrId, sceneRemoveInternalLinks } from "./excalidrawViewUtils";
+import { ScriptSettingValue,SVGColorInfo } from "src/types/excalidrawAutomateTypes";
+import { ExcalidrawData,getExcalidrawMarkdownHeaderSection,REG_LINKINDEX_HYPERLINK,REGEX_LINK } from "src/shared/ExcalidrawData";
+import { getFrameBasedOnFrameNameOrId,sceneRemoveInternalLinks } from "./excalidrawViewUtils";
 import { ScriptEngine } from "src/shared/Scripts";
 import { getEA } from "src/core";
-import { ColorMap, FileData } from "src/types/embeddedFileLoaderTypes";
+import { ColorMap,FileData } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
 
 declare const PLUGIN_VERSION:string;

@@ -1,6 +1,6 @@
-import { App, MarkdownRenderer, Modal } from "obsidian";
+import { App,MarkdownRenderer,Modal } from "obsidian";
 import ExcalidrawPlugin from "../../core/main";
-import { Rank, SwordColors } from "src/constants/actionIcons";
+import { Rank,SwordColors } from "src/constants/actionIcons";
 import { convertSVGStringToElement } from "src/utils/utils";
 
 export class RankMessage extends Modal {

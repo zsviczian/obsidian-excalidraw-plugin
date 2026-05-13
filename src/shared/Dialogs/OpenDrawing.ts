@@ -1,4 +1,4 @@
-import { App, FuzzySuggestModal, TFile } from "obsidian";
+import { App,FuzzySuggestModal,TFile } from "obsidian";
 import ExcalidrawPlugin from "../../core/main";
 import { EMPTY_MESSAGE } from "../../constants/constants";
 import { t } from "../../lang/helpers";

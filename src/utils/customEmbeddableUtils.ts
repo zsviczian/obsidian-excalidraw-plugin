@@ -1,7 +1,7 @@
 import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
-import { AUDIO_TYPES, DEVICE, REG_LINKINDEX_INVALIDCHARS, VIDEO_TYPES } from "src/constants/constants";
-import { ConstructableWorkspaceSplit, getContainerForDocument, getParentOfClass } from "./obsidianUtils";
-import { App, TFile, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
+import { AUDIO_TYPES,DEVICE,REG_LINKINDEX_INVALIDCHARS,VIDEO_TYPES } from "src/constants/constants";
+import { ConstructableWorkspaceSplit,getContainerForDocument,getParentOfClass } from "./obsidianUtils";
+import { App,TFile,WorkspaceLeaf,WorkspaceSplit } from "obsidian";
 import { getLinkParts } from "./sceneDataUtils";
 import ExcalidrawView from "src/view/ExcalidrawView";
 

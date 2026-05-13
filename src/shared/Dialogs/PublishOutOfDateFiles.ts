@@ -1,4 +1,4 @@
-import { Modal, Setting, TFile } from "obsidian";
+import { Modal,Setting,TFile } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { getIMGFilename } from "src/utils/fileUtils";
 import { setElementDisplay } from "src/utils/htmlUtils";

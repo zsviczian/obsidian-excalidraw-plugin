@@ -1,8 +1,8 @@
-import { App, Notice, TFile } from "obsidian";
+import { App,Notice,TFile } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
-import { PDFPageViewProps, Size } from "src/types/embeddedFileLoaderTypes";
+import { PDFPageViewProps,Size } from "src/types/embeddedFileLoaderTypes";
 import { convertSVGStringToElement } from "../utils/utils";
-import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
+import { FILENAMEPARTS,PreviewImageType } from "../types/utilTypes";
 import { hasExcalidrawEmbeddedImagesTreeChanged } from "../utils/fileUtils";
 
 //@ts-ignore

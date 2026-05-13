@@ -1,4 +1,3 @@
-import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { t } from "src/lang/helpers";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { FloatingModal } from "./FloatingModal";

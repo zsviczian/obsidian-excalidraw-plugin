@@ -1,30 +1,30 @@
 import {
-  App,
-  ButtonComponent,
-  Modal,
-  FuzzyMatch,
-  FuzzySuggestModal,
-  Instruction,
-  TFile,
-  Notice,
-  TextAreaComponent
+App,
+ButtonComponent,
+Modal,
+FuzzyMatch,
+FuzzySuggestModal,
+Instruction,
+TFile,
+Notice,
+TextAreaComponent
 } from "obsidian";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import ExcalidrawPlugin from "../../core/main";
-import { escapeRegExp, getLinkParts, sleep } from "../../utils/utils";
-import { getLeaf, openLeaf } from "../../utils/obsidianUtils";
+import { escapeRegExp,getLinkParts,sleep } from "../../utils/utils";
+import { getLeaf,openLeaf } from "../../utils/obsidianUtils";
 import { createOrOverwriteFile } from "src/utils/fileUtils";
-import { KeyEvent, isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
+import { KeyEvent,isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
 import { t } from "src/lang/helpers";
-import { ExcalidrawElement, getEA } from "src/core";
+import { ExcalidrawElement,getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { MAX_IMAGE_SIZE, REG_LINKINDEX_INVALIDCHARS } from "src/constants/constants";
-import { REGEX_LINK, REGEX_TAGS } from "../ExcalidrawData";
+import { MAX_IMAGE_SIZE,REG_LINKINDEX_INVALIDCHARS } from "src/constants/constants";
+import { REGEX_LINK,REGEX_TAGS } from "../ExcalidrawData";
 import { ScriptEngine } from "../Scripts";
-import { openExternalLink, openTagSearch, parseObsidianLink } from "src/utils/excalidrawViewUtils";
+import { openExternalLink,openTagSearch,parseObsidianLink } from "src/utils/excalidrawViewUtils";
 import { ButtonDefinition } from "src/types/promptTypes";
-import { EditorView, keymap } from "@codemirror/view";
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { EditorView,keymap } from "@codemirror/view";
+import { defaultKeymap,history,historyKeymap } from "@codemirror/commands";
 import { parser } from "./math-only";
 import { LRLanguage } from "@codemirror/language";
 import { editorLivePreviewField } from "obsidian";

@@ -1,17 +1,17 @@
-import { arrayBufferToBase64, base64ToArrayBuffer, Notice, RequestUrlResponse, requestUrl } from "obsidian";
+import { arrayBufferToBase64,base64ToArrayBuffer,Notice,RequestUrlResponse,requestUrl } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import {
-  AIImageModelConfig,
-  ExcalidrawAISettings,
-  AIFileInput,
-  AIImageInput,
-  AIModelConfig,
-  AIProvider,
-  AIProviderProfile,
-  AIRequest,
-  AIRequestMessage,
-  AIRequestMessagePart,
-  GPTCompletionRequest,
+AIImageModelConfig,
+ExcalidrawAISettings,
+AIFileInput,
+AIImageInput,
+AIModelConfig,
+AIProvider,
+AIProviderProfile,
+AIRequest,
+AIRequestMessage,
+AIRequestMessagePart,
+GPTCompletionRequest,
 } from "src/types/AIUtilTypes";
 
 type NormalizedBinaryInput = {

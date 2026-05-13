@@ -1,5 +1,5 @@
-import { normalizePath, type App } from "obsidian";
-import { REG_BLOCK_REF_CLEAN, REG_SECTION_REF_CLEAN } from "src/constants/constants";
+import { normalizePath,type App } from "obsidian";
+import { REG_BLOCK_REF_CLEAN,REG_SECTION_REF_CLEAN } from "src/constants/constants";
 
 export function splitFolderAndFilename(filepath: string | undefined): {
   folderpath: string;

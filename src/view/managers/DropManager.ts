@@ -1,18 +1,17 @@
 
-import { DEBUGGING, debug } from "src/utils/debugHelper";
 import ExcalidrawView from "../ExcalidrawView";
-import { App, Notice, TFile } from "obsidian";
-import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { DEVICE, IMAGE_TYPES, REG_LINKINDEX_INVALIDCHARS, viewportCoordsToSceneCoords } from "src/constants/constants";
-import { internalDragModifierType, isWinCTRLorMacCMD, localFileDragModifierType, modifierKeyTooltipMessages, webbrowserDragModifierType } from "src/utils/modifierkeyHelper";
-import { errorlog, hyperlinkIsImage, hyperlinkIsYouTubeLink } from "src/utils/utils";
+import { App,Notice,TFile } from "obsidian";
+import { AppState,ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { DEVICE,IMAGE_TYPES,REG_LINKINDEX_INVALIDCHARS,viewportCoordsToSceneCoords } from "src/constants/constants";
+import { internalDragModifierType,isWinCTRLorMacCMD,localFileDragModifierType,modifierKeyTooltipMessages,webbrowserDragModifierType } from "src/utils/modifierkeyHelper";
+import { errorlog,hyperlinkIsImage,hyperlinkIsYouTubeLink } from "src/utils/utils";
 import { InsertPDFModal } from "src/shared/Dialogs/InsertPDFModal";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { getEA } from "src/core";
-import { insertEmbeddableToView, insertImageToView } from "src/utils/excalidrawViewUtils";
+import { insertEmbeddableToView,insertImageToView } from "src/utils/excalidrawViewUtils";
 import { t } from "src/lang/helpers";
 import ExcalidrawPlugin from "src/core/main";
-import { getInternalLinkOrFileURLLink, getURLImageExtension, importFileToVault } from "src/utils/fileUtils";
+import { getInternalLinkOrFileURLLink,getURLImageExtension,importFileToVault } from "src/utils/fileUtils";
 import { ScriptEngine } from "src/shared/Scripts";
 import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
 import { Position } from "src/types/excalidrawViewTypes";

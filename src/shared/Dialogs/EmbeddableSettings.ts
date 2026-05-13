@@ -1,14 +1,14 @@
 import { ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
-import { Modal, Notice, Setting, TFile, ToggleComponent } from "obsidian";
+import { Modal,Notice,Setting,TFile } from "obsidian";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { t } from "src/lang/helpers";
 import ExcalidrawPlugin from "src/core/main";
-import { getNewUniqueFilepath, getPathWithoutExtension, splitFolderAndFilename } from "src/utils/fileUtils";
-import { addAppendUpdateCustomData, fragWithHTML } from "src/utils/utils";
-import { getYouTubeStartAt, isValidYouTubeStart, isYouTube, updateYouTubeStartTime } from "src/utils/YoutTubeUtils";
+import { getNewUniqueFilepath,getPathWithoutExtension,splitFolderAndFilename } from "src/utils/fileUtils";
+import { addAppendUpdateCustomData,fragWithHTML } from "src/utils/utils";
+import { getYouTubeStartAt,isValidYouTubeStart,isYouTube,updateYouTubeStartTime } from "src/utils/YoutTubeUtils";
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "./EmbeddableMDFileCustomDataSettingsComponent";
 import { isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";

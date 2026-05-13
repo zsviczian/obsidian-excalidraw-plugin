@@ -1,9 +1,9 @@
-import { App, FuzzySuggestModal, Notice } from "obsidian";
+import { App,FuzzySuggestModal,Notice } from "obsidian";
 import { t } from "../../lang/helpers";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { CARD_HEIGHT, CARD_WIDTH, MD_EX_SECTIONS } from "src/constants/constants";
+import { CARD_HEIGHT,CARD_WIDTH,MD_EX_SECTIONS } from "src/constants/constants";
 import { addBackOfTheNoteCard } from "src/utils/excalidrawViewUtils";
 
 export class SelectCard extends FuzzySuggestModal<string> {

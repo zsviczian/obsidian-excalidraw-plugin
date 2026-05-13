@@ -1,5 +1,5 @@
 import { RangeSetBuilder } from "@codemirror/state";
-import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from "@codemirror/view";
+import { Decoration,DecorationSet,EditorView,ViewPlugin,ViewUpdate } from "@codemirror/view";
 
 const o30 = Decoration.line({ attributes: {class: "ex-opacity-30"} });
 const o15 = Decoration.line({ attributes: {class: "ex-opacity-15"} });

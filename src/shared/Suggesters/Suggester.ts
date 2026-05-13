@@ -1,6 +1,6 @@
 import {
-  SuggestModal,
-  Scope,
+SuggestModal,
+Scope,
 } from "obsidian";
 
 export class Suggester<T> {

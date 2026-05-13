@@ -1,31 +1,31 @@
 import {
-  App,
-  MarkdownPostProcessorContext,
-  MetadataCache,
-  PaneType,
-  TFile,
-  Vault,
+App,
+MarkdownPostProcessorContext,
+MetadataCache,
+PaneType,
+TFile,
+Vault,
 } from "obsidian";
-import { DEVICE, RERENDER_EVENT } from "../../constants/constants";
+import { DEVICE,RERENDER_EVENT } from "../../constants/constants";
 import { EmbeddedFilesLoader } from "../../shared/EmbeddedFileLoader";
-import { createPNG, createSVG } from "../../utils/excalidrawAutomateUtils";
+import { createPNG,createSVG } from "../../utils/excalidrawAutomateUtils";
 import ExcalidrawPlugin from "../main";
-import {getIMGFilename,} from "../../utils/fileUtils";
+import { getIMGFilename,} from "../../utils/fileUtils";
 import {
-  getEmbeddedFilenameParts,
-  getExportTheme,
-  getQuickImagePreview,
-  getExportPadding,
-  getWithBackground,
-  hasExportTheme,
-  convertSVGStringToElement,
-  isMaskFile,
+getEmbeddedFilenameParts,
+getExportTheme,
+getQuickImagePreview,
+getExportPadding,
+getWithBackground,
+hasExportTheme,
+convertSVGStringToElement,
+isMaskFile,
 } from "../../utils/utils";
-import { getParentOfClass, isObsidianThemeDark, getFileCSSClasses } from "../../utils/obsidianUtils";
+import { getParentOfClass,isObsidianThemeDark,getFileCSSClasses } from "../../utils/obsidianUtils";
 import { linkClickModifierType } from "../../utils/modifierkeyHelper";
-import { ImageKey, imageCache } from "../../shared/ImageCache";
-import { FILENAMEPARTS, PreviewImageType } from "../../types/utilTypes";
-import { CustomMutationObserver, debug, DEBUGGING } from "../../utils/debugHelper";
+import { ImageKey,imageCache } from "../../shared/ImageCache";
+import { FILENAMEPARTS,PreviewImageType } from "../../types/utilTypes";
+import { CustomMutationObserver,DEBUGGING } from "../../utils/debugHelper";
 import { getExcalidrawFileForwardLinks } from "../../utils/excalidrawViewUtils";
 import { linkPrompt } from "../../shared/Dialogs/Prompt";
 import { isHTMLElement } from "../../utils/typechecks";

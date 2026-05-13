@@ -1,7 +1,6 @@
 import { Extension } from "@codemirror/state";
 import ExcalidrawPlugin from "src/core/main";
 import { HideTextBetweenCommentsExtension } from "./Fadeout";
-import { debug, DEBUGGING } from "src/utils/debugHelper";
 export const EDITOR_FADEOUT = "fadeOutExcalidrawMarkup";
 
 const editorExtensions: {[key:string]:Extension}= {

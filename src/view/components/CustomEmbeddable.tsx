@@ -1,12 +1,12 @@
-import {  ExcalidrawEmbeddableElement,  } from "@zsviczian/excalidraw/types/element/src/types";
+import { ExcalidrawEmbeddableElement,} from "@zsviczian/excalidraw/types/element/src/types";
 import ExcalidrawView from "src/view/ExcalidrawView";
-import { Notice, requireApiVersion, WorkspaceLeaf,  } from "obsidian";
+import { Notice,requireApiVersion,WorkspaceLeaf,} from "obsidian";
 import * as React from "react";
 import { isObsidianThemeDark } from "src/utils/obsidianUtils";
-import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES,  } from "src/constants/constants";
-import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { DEVICE,EXTENDED_EVENT_TYPES,KEYBOARD_EVENT_TYPES,} from "src/constants/constants";
+import { ExcalidrawImperativeAPI,UIAppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
-import { processLinkText, patchMobileView, setFileToLocalGraph, createLeaf, predictViewType } from "src/utils/customEmbeddableUtils";
+import { processLinkText,patchMobileView,setFileToLocalGraph,createLeaf,predictViewType } from "src/utils/customEmbeddableUtils";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { t } from "src/lang/helpers";
 

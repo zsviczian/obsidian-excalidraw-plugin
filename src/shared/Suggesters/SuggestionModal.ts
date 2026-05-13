@@ -1,10 +1,10 @@
 import {
-  FuzzyMatch,
-  App,
-  FuzzySuggestModal,
-  Scope,
+FuzzyMatch,
+App,
+FuzzySuggestModal,
+Scope,
 } from "obsidian";
-import { createPopper, Instance as PopperInstance } from "@popperjs/core";
+import { createPopper,Instance as PopperInstance } from "@popperjs/core";
 import { Suggester } from "./Suggester";
 import { t } from "src/lang/helpers";
 

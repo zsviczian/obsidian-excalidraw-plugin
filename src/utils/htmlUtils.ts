@@ -1,4 +1,4 @@
-import { sanitizeHTMLToDom, setIcon } from "obsidian";
+import { sanitizeHTMLToDom,setIcon } from "obsidian";
 
 const DISPLAY_CLASSES = [
   "excalidraw-display-none",

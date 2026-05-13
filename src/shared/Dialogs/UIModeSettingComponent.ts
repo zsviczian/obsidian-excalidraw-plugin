@@ -1,7 +1,7 @@
-import { Setting, DropdownComponent, App } from "obsidian";
+import { Setting,DropdownComponent,App } from "obsidian";
 import { t } from "src/lang/helpers";
 import { ExcalidrawSettings } from "src/core/settings";
-import { fragWithHTML, setLeftHandedMode, setUIMode } from "src/utils/utils";
+import { fragWithHTML,setLeftHandedMode,setUIMode } from "src/utils/utils";
 import { DEVICE } from "src/constants/constants";
 
 export type UIMode = "full" | "compact" | "tray" | "mobile";

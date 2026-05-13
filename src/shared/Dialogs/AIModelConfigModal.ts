@@ -1,6 +1,6 @@
-import { App, Modal, Notice, Setting } from "obsidian";
+import { App,Modal,Notice,Setting } from "obsidian";
 import { t } from "src/lang/helpers";
-import { AIImageModelConfig, AIModelConfig } from "src/types/AIUtilTypes";
+import { AIImageModelConfig,AIModelConfig } from "src/types/AIUtilTypes";
 import { isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
 
 type SaveHandler<TConfig extends AIModelConfig> = (modelId: string, config: TConfig, previousModelId?: string) => Promise<void> | void;

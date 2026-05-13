@@ -1,4 +1,4 @@
-import { App, MarkdownRenderer, Modal } from "obsidian";
+import { App,MarkdownRenderer,Modal } from "obsidian";
 import { isVersionNewerThanOther } from "src/utils/utils";
 import ExcalidrawPlugin from "../../core/main";
 import { RELEASE_NOTES } from "./Messages";

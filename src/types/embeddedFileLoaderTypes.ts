@@ -1,5 +1,5 @@
 import { FileId } from "@zsviczian/excalidraw/types/element/src/types";
-import { BinaryFileData, DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { BinaryFileData,DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ValueOf } from "../types/types";
 
 export const IMAGE_MIME_TYPES = {

@@ -1,4 +1,4 @@
-import { BaseComponent, Setting, Modifier } from 'obsidian';
+import { BaseComponent,Setting,Modifier } from 'obsidian';
 import { DEVICE } from 'src/constants/constants';
 import { t } from 'src/lang/helpers';
 import { ExcalidrawSettings } from 'src/core/settings';

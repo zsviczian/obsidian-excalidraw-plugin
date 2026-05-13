@@ -5,56 +5,53 @@
     originalText: this is the text without added linebreaks for wrapping. This will be parsed or markup depending on view mode
     rawText: text with original markdown markup and without the added linebreaks for wrapping
  */
-import { App, Notice, TFile } from "obsidian";
+import { App,Notice,TFile } from "obsidian";
 import {
-  nanoid,
-  fileid,
-  DEVICE,
-  EMBEDDABLE_THEME_FRONTMATTER_VALUES,
-  getLineHeight,
-  ERROR_IFRAME_CONVERSION_CANCELED,
-  JSON_parse,
-  FRONTMATTER_KEYS,
-  refreshTextDimensions,
-  getContainerElement,
-  loadSceneFonts,
+nanoid,
+fileid,
+DEVICE,
+EMBEDDABLE_THEME_FRONTMATTER_VALUES,
+getLineHeight,
+ERROR_IFRAME_CONVERSION_CANCELED,
+JSON_parse,
+FRONTMATTER_KEYS,
+refreshTextDimensions,
+getContainerElement,
+loadSceneFonts,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
 import { TextMode } from "./TextMode";
 import type ExcalidrawView from "../view/ExcalidrawView";
 import { addAppendUpdateCustomData } from "../utils/elementCustomDataUtils";
 import {
-  compress,
-  decompress,
-  getBinaryFileFromDataURL,
-  _getContainerElement,
-  getExportTheme,
-  getLinkParts,
-  hasExportTheme,
-  isVersionNewerThanOther,
-  LinkParts,
-  updateFrontmatterInString,
-  wrapTextAtCharLength,
-  arrayToMap,
-  compressAsync,
+compress,
+decompress,
+getBinaryFileFromDataURL,getExportTheme,
+getLinkParts,
+hasExportTheme,
+isVersionNewerThanOther,
+LinkParts,
+updateFrontmatterInString,
+wrapTextAtCharLength,
+arrayToMap,
+compressAsync
 } from "../utils/sceneDataUtils";
 import { isObsidianThemeDark } from "../utils/obsidianUtils";
-import { cleanBlockRef, cleanSectionHeading } from "../utils/pathUtils";
+import { cleanBlockRef,cleanSectionHeading } from "../utils/pathUtils";
 import {
-  ExcalidrawElement,
-  ExcalidrawImageElement,
-  ExcalidrawTextElement,
-  FileId,
+ExcalidrawElement,
+ExcalidrawImageElement,
+ExcalidrawTextElement,
+FileId,
 } from "@zsviczian/excalidraw/types/element/src/types";
-import { BinaryFiles, DataURL, SceneData } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { BinaryFiles,DataURL,SceneData } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile } from "./EmbeddedFileLoader";
 import { MimeType } from "src/types/embeddedFileLoaderTypes";
 import { MultiOptionConfirmationPrompt } from "./Dialogs/Prompt";
-import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "../utils/mermaidUtils";
-import { DEBUGGING, debug } from "../utils/debugHelper";
+import { getMermaidImageElements,getMermaidText,shouldRenderMermaid } from "../utils/mermaidUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { updateElementIdsInScene } from "../utils/excalidrawSceneUtils";
-import {  importFileToVault } from "../utils/fileUtils";
+import { importFileToVault } from "../utils/fileUtils";
 import { t } from "../lang/helpers";
 import { displayFontMessage } from "../utils/excalidrawViewUtils";
 import { getPDFRect } from "../utils/PDFUtils";

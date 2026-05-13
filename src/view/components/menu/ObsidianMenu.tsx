@@ -1,4 +1,4 @@
-import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { AppState,ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import clsx from "clsx";
 import { TFile } from "obsidian";
 import * as React from "react";
@@ -8,7 +8,7 @@ import ExcalidrawView from "src/view/ExcalidrawView";
 import { PenStyle } from "src/types/penTypes";
 import { PENS } from "src/utils/pens";
 import ExcalidrawPlugin from "../../../core/main";
-import { ICONS, penIcon, stringToSVG } from "../../../constants/actionIcons";
+import { ICONS,penIcon,stringToSVG } from "../../../constants/actionIcons";
 import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
 import { t } from "src/lang/helpers";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";

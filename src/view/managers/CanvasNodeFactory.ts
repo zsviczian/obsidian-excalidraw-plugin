@@ -8,10 +8,10 @@ node.render();
 container.appendChild(node.contentEl)
 */
 
-import { TFile, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
+import { TFile,WorkspaceLeaf,WorkspaceSplit } from "obsidian";
 import ExcalidrawView from "src/view/ExcalidrawView";
-import { getContainerForDocument, ConstructableWorkspaceSplit, isObsidianThemeDark } from "../../utils/obsidianUtils";
-import { CustomMutationObserver, DEBUGGING } from "../../utils/debugHelper";
+import { getContainerForDocument,ConstructableWorkspaceSplit,isObsidianThemeDark } from "../../utils/obsidianUtils";
+import { CustomMutationObserver,DEBUGGING } from "../../utils/debugHelper";
 
 declare module "obsidian" {
   interface Workspace {

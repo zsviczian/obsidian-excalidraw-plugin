@@ -1,9 +1,9 @@
-import {mathjax} from "mathjax-full/js/mathjax";
-import {TeX} from 'mathjax-full/js/input/tex.js';
-import {SVG} from 'mathjax-full/js/output/svg.js';
-import {LiteAdaptor, liteAdaptor} from 'mathjax-full/js/adaptors/liteAdaptor.js';
-import {RegisterHTMLHandler} from 'mathjax-full/js/handlers/html.js';
-import {AllPackages} from 'mathjax-full/js/input/tex/AllPackages.js';
+import { mathjax } from "mathjax-full/js/mathjax";
+import { TeX } from 'mathjax-full/js/input/tex.js';
+import { SVG } from 'mathjax-full/js/output/svg.js';
+import { LiteAdaptor,liteAdaptor } from 'mathjax-full/js/adaptors/liteAdaptor.js';
+import { RegisterHTMLHandler } from 'mathjax-full/js/handlers/html.js';
+import { AllPackages } from 'mathjax-full/js/input/tex/AllPackages.js';
 import { customAlphabet } from "nanoid";
 import type { TAbstractFile } from "obsidian";
 

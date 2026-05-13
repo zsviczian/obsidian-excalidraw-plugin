@@ -1,15 +1,15 @@
 import {
-  Editor,
-  EditorPosition,
-  EditorSuggest,
-  EditorSuggestContext,
-  EditorSuggestTriggerInfo,
-  TFile,
+Editor,
+EditorPosition,
+EditorSuggest,
+EditorSuggestContext,
+EditorSuggestTriggerInfo,
+TFile,
 } from "obsidian";
 import { FRONTMATTER_KEYS_INFO } from "../Dialogs/SuggesterInfo";
 import {
-  EXCALIDRAW_AUTOMATE_INFO,
-  EXCALIDRAW_SCRIPTENGINE_INFO,
+EXCALIDRAW_AUTOMATE_INFO,
+EXCALIDRAW_SCRIPTENGINE_INFO,
 } from "../Dialogs/SuggesterInfo";
 import type ExcalidrawPlugin from "../../core/main";
 import { setSanitizedHtml } from "src/utils/htmlUtils";

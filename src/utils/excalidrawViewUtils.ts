@@ -1,15 +1,15 @@
 
-import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS, AUDIO_TYPES, CARD_WIDTH, CARD_HEIGHT, getDefaultColorPalette, DEVICE } from "src/constants/constants";
-import { App, Modal, Notice, TFile } from "obsidian";
+import { MAX_IMAGE_SIZE,IMAGE_TYPES,ANIMATED_IMAGE_TYPES,MD_EX_SECTIONS,AUDIO_TYPES,CARD_WIDTH,CARD_HEIGHT,getDefaultColorPalette,DEVICE } from "src/constants/constants";
+import { App,Modal,Notice,TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS, getExcalidrawMarkdownHeader } from "../shared/ExcalidrawData";
+import { REGEX_LINK,REG_LINKINDEX_HYPERLINK,getExcalidrawMarkdownHeaderSection,REGEX_TAGS } from "../shared/ExcalidrawData";
 import ExcalidrawView from "src/view/ExcalidrawView";
-import { ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/element/src/types";
-import { getEmbeddedFilenameParts, getLinkParts, isImagePartRef } from "./utils";
+import { ExcalidrawElement,ExcalidrawFrameElement,ExcalidrawImageElement } from "@zsviczian/excalidraw/types/element/src/types";
+import { getEmbeddedFilenameParts,getLinkParts,isImagePartRef } from "./utils";
 import { getAudioElementHeight } from "./obsidianUtils";
 import { cleanSectionHeading } from "./pathUtils";
 import { getEA } from "src/core";
-import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { AppState,ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { nanoid } from "nanoid";
 import { t } from "src/lang/helpers";

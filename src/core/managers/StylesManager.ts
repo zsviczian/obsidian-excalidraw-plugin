@@ -1,7 +1,6 @@
 import { WorkspaceWindow } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { getAllWindowDocuments } from "../../utils/obsidianUtils";
-import { DEBUGGING, debug } from "../../utils/debugHelper";
 import { setStyleText } from "src/utils/htmlUtils";
 
 export let REM_VALUE = 16;

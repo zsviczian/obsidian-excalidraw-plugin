@@ -1,6 +1,6 @@
 import { ExcalidrawAutomate } from "../ExcalidrawAutomate";
-import {Notice, requestUrl} from "obsidian"
-import ExcalidrawPlugin from "../../core/main"
+import { Notice,requestUrl } from "obsidian";
+import ExcalidrawPlugin from "../../core/main";
 import FrontmatterEditor from "src/shared/Frontmatter";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { EmbeddedFilesLoader } from "../EmbeddedFileLoader";

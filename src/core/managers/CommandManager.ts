@@ -1,65 +1,65 @@
 import {
-  TFile,
-  App,
-  MarkdownView,
-  normalizePath,
-  Menu,
-  MenuItem,
-  Notice,
-  Command,
-  EventRef,
-  FileView,
+TFile,
+App,
+MarkdownView,
+normalizePath,
+Menu,
+MenuItem,
+Notice,
+Command,
+EventRef,
+FileView,
 } from "obsidian";
 import {
-  VIEW_TYPE_EXCALIDRAW,
-  ICON_NAME,
-  IMAGE_TYPES,
-  DEVICE,
-  CaptureUpdateAction,
-  sceneCoordsToViewportCoords,
-  fileid,
+VIEW_TYPE_EXCALIDRAW,
+ICON_NAME,
+IMAGE_TYPES,
+DEVICE,
+CaptureUpdateAction,
+sceneCoordsToViewportCoords,
+fileid,
 } from "../../constants/constants";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import { TextMode } from "../../shared/TextMode";
 import {
-  REGEX_LINK,
+REGEX_LINK,
 } from "../../shared/ExcalidrawData";
 import { ExcalidrawSettings } from "../settings";
-import { openDialogAction, OpenFileDialog } from "../../shared/Dialogs/OpenDrawing";
+import { openDialogAction,OpenFileDialog } from "../../shared/Dialogs/OpenDrawing";
 import { InsertLinkDialog } from "../../shared/Dialogs/InsertLinkDialog";
 import { InsertCommandDialog } from "../../shared/Dialogs/InsertCommandDialog";
 import { InsertImageDialog } from "../../shared/Dialogs/InsertImageDialog";
 import { ImportSVGDialog } from "../../shared/Dialogs/ImportSVGDialog";
 import { InsertMDDialog } from "../../shared/Dialogs/InsertMDDialog";
 import { ExcalidrawAutomate } from "../../shared/ExcalidrawAutomate";
-import { insertLaTeXToView, search } from "src/utils/excalidrawAutomateUtils";
+import { insertLaTeXToView,search } from "src/utils/excalidrawAutomateUtils";
 import { templatePromt } from "../../shared/Dialogs/Prompt";
 import { t } from "../../lang/helpers";
 import {
-  createOrOverwriteFile,
-  getAliasWithSize,
-  getAnnotationFileNameAndFolder,
-  getCropFileNameAndFolder,
-  getDrawingFilename,
-  getEmbedFilename,
-  getIMGFilename,
-  getLink,
-  getListOfTemplateFiles,
-  getURLImageExtension,
+createOrOverwriteFile,
+getAliasWithSize,
+getAnnotationFileNameAndFolder,
+getCropFileNameAndFolder,
+getDrawingFilename,
+getEmbedFilename,
+getIMGFilename,
+getLink,
+getListOfTemplateFiles,
+getURLImageExtension,
 } from "../../utils/fileUtils";
 import {
-  setLeftHandedMode,
-  sleep,
-  decompress,
-  getImageSize,
+setLeftHandedMode,
+sleep,
+decompress,
+getImageSize,
 } from "../../utils/utils";
-import { extractSVGPNGFileName, getActivePDFPageNumberFromPDFView, getExcalidrawViews, isObsidianThemeDark, mergeMarkdownFiles, setExcalidrawView } from "../../utils/obsidianUtils";
+import { extractSVGPNGFileName,getActivePDFPageNumberFromPDFView,getExcalidrawViews,isObsidianThemeDark,mergeMarkdownFiles,setExcalidrawView } from "../../utils/obsidianUtils";
 import { getAttachmentsFolderAndFilePath } from "../../utils/pathUtils";
-import { ExcalidrawElement, ExcalidrawEmbeddableElement, ExcalidrawImageElement, ExcalidrawTextElement, FileId } from "@zsviczian/excalidraw/types/element/src/types";
+import { ExcalidrawElement,ExcalidrawEmbeddableElement,ExcalidrawImageElement,ExcalidrawTextElement,FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import { ReleaseNotes } from "../../shared/Dialogs/ReleaseNotes";
 import { ScriptInstallPrompt } from "../../shared/Dialogs/ScriptInstallPrompt";
 import Taskbone from "../../shared/OCR/Taskbone";
-import { emulateCTRLClickForLinks, linkClickModifierType, PaneTarget } from "../../utils/modifierkeyHelper";
+import { emulateCTRLClickForLinks,linkClickModifierType,PaneTarget } from "../../utils/modifierkeyHelper";
 import { InsertPDFModal } from "../../shared/Dialogs/InsertPDFModal";
 import { ExportDialog } from "../../shared/Dialogs/ExportDialog";
 import { UniversalInsertFileModal } from "../../shared/Dialogs/UniversalInsertFileModal";
@@ -69,7 +69,7 @@ import { processLinkText } from "../../utils/customEmbeddableUtils";
 import { getEA } from "src/core";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
-import { carveOutImage, carveOutPDF, createImageCropperFile } from "../../utils/carveout";
+import { carveOutImage,carveOutPDF,createImageCropperFile } from "../../utils/carveout";
 import { showFrameSettings } from "../../shared/Dialogs/FrameSettings";
 import { insertImageToView } from "../../utils/excalidrawViewUtils";
 import ExcalidrawPlugin from "src/core/main";

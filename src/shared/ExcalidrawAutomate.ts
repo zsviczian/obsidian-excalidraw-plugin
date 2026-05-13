@@ -1,66 +1,66 @@
 import ExcalidrawPlugin from "src/core/main";
 import {
-  FillStyle,
-  StrokeStyle,
-  ExcalidrawElement,
-  ExcalidrawBindableElement,
-  FileId,
-  NonDeletedExcalidrawElement,
-  ExcalidrawImageElement,
-  ExcalidrawTextElement,
-  StrokeRoundness,
-  RoundnessType,
-  ExcalidrawFrameElement,
-  ExcalidrawTextContainer,
+FillStyle,
+StrokeStyle,
+ExcalidrawElement,
+ExcalidrawBindableElement,
+FileId,
+NonDeletedExcalidrawElement,
+ExcalidrawImageElement,
+ExcalidrawTextElement,
+StrokeRoundness,
+RoundnessType,
+ExcalidrawFrameElement,
+ExcalidrawTextContainer,
 } from "@zsviczian/excalidraw/types/element/src/types";
-import { ColorMap, MimeType } from "../types/embeddedFileLoaderTypes";
-import { Editor,  Notice, OpenViewState, RequestUrlResponse, TFile, TFolder, WorkspaceLeaf } from "obsidian";
+import { ColorMap,MimeType } from "../types/embeddedFileLoaderTypes";
+import { Editor,Notice,OpenViewState,RequestUrlResponse,TFile,TFolder,WorkspaceLeaf } from "obsidian";
 import * as obsidian_module from "obsidian";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { TextMode } from "src/shared/TextMode";
 import {
-  ExcalidrawData,
-  getMarkdownDrawingSection,
+ExcalidrawData,
+getMarkdownDrawingSection,
 } from "./ExcalidrawData";
 import {
-  FRONTMATTER,
-  nanoid,
-  MAX_IMAGE_SIZE,
-  COLOR_NAMES,
-  fileid,
-  GITHUB_RELEASES,
-  getCommonBoundingBox,
-  getLineHeight,
-  getMaximumGroups,
-  intersectElementWithLine,
-  DEVICE,
-  mermaidToExcalidraw,
-  refreshTextDimensions,
-  getFontFamilyString,
+FRONTMATTER,
+nanoid,
+MAX_IMAGE_SIZE,
+COLOR_NAMES,
+fileid,
+GITHUB_RELEASES,
+getCommonBoundingBox,
+getLineHeight,
+getMaximumGroups,
+intersectElementWithLine,
+DEVICE,
+mermaidToExcalidraw,
+refreshTextDimensions,
+getFontFamilyString,
 } from "src/constants/constants";
-import { blobToBase64, checkAndCreateFolder, getDrawingFilename, getExcalidrawEmbeddedFilesFiletree, getListOfTemplateFiles, getNewUniqueFilepath, splitFolderAndFilename } from "src/utils/fileUtils";
+import { blobToBase64,checkAndCreateFolder,getDrawingFilename,getExcalidrawEmbeddedFilesFiletree,getListOfTemplateFiles,getNewUniqueFilepath,splitFolderAndFilename } from "src/utils/fileUtils";
 import {
-  //debug,
-  getImageSize,
-  isMaskFile,
-  wrapTextAtCharLength,
-  arrayToMap,
-  addAppendUpdateCustomData,
-  getSVG,
+//debug,
+getImageSize,
+isMaskFile,
+wrapTextAtCharLength,
+arrayToMap,
+addAppendUpdateCustomData,
+getSVG,
 } from "src/utils/utils";
 import { InlineLinkSuggester } from "./Suggesters/InlineLinkSuggester";
-import { getExcalidrawViews, getLeaf, getNewOrAdjacentLeaf, isObsidianThemeDark, mergeMarkdownFiles, openLeaf } from "src/utils/obsidianUtils";
+import { getExcalidrawViews,getLeaf,getNewOrAdjacentLeaf,isObsidianThemeDark,mergeMarkdownFiles,openLeaf } from "src/utils/obsidianUtils";
 import { getAttachmentsFolderAndFilePath } from "src/utils/pathUtils";
-import { AppState, BinaryFileData,  DataURL,  ExcalidrawImperativeAPI, SceneData } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { EmbeddedFile, EmbeddedFilesLoader } from "./EmbeddedFileLoader";
+import { AppState,BinaryFileData,DataURL,ExcalidrawImperativeAPI,SceneData } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { EmbeddedFile,EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
 import { NewFileActions } from "src/shared/Dialogs/Prompt";
-import { ConnectionPoint, DeviceType, Point  } from "src/types/types";
-import CM, { ColorMaster, extendPlugins } from "@zsviczian/colormaster";
+import { ConnectionPoint,DeviceType,Point } from "src/types/types";
+import CM,{ ColorMaster,extendPlugins } from "@zsviczian/colormaster";
 import HarmonyPlugin from "@zsviczian/colormaster/plugins/harmony";
-import MixPlugin from "@zsviczian/colormaster/plugins/mix"
-import A11yPlugin from "@zsviczian/colormaster/plugins/accessibility"
-import NamePlugin from "@zsviczian/colormaster/plugins/name"
+import MixPlugin from "@zsviczian/colormaster/plugins/mix";
+import A11yPlugin from "@zsviczian/colormaster/plugins/accessibility";
+import NamePlugin from "@zsviczian/colormaster/plugins/name";
 import LCHPlugin from "@zsviczian/colormaster/plugins/lch";
 import LUVPlugin from "@zsviczian/colormaster/plugins/luv";
 import LABPlugin from "@zsviczian/colormaster/plugins/lab";
@@ -71,36 +71,36 @@ import HSVPlugin from "@zsviczian/colormaster/plugins/hsv";
 import RYBPlugin from "@zsviczian/colormaster/plugins/ryb";
 import CMYKPlugin from "@zsviczian/colormaster/plugins/cmyk";
 import { TInput } from "@zsviczian/colormaster/types";
-import {ConversionResult, svgToExcalidraw} from "src/shared/svgToExcalidraw/parser"
+import { ConversionResult,svgToExcalidraw } from "src/shared/svgToExcalidraw/parser";
 import { ROUNDNESS } from "src/constants/constants";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
-import { emulateKeysForLinkClick, PaneTarget } from "src/utils/modifierkeyHelper";
+import { emulateKeysForLinkClick,PaneTarget } from "src/utils/modifierkeyHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import PolyBool from "polybooljs";
 import { EmbeddableMDCustomProps } from "./Dialogs/EmbeddableSettings";
 import {
-  postAI as _postAI,
-  postOpenAI as _postOpenAI,
-  getAISettings as _getAISettings,
-  generateAIText as _generateAIText,
-  analyzeAIImage as _analyzeAIImage,
-  generateAIImage as _generateAIImage,
-  transformAIImage as _transformAIImage,
-  maskEditAIImage as _maskEditAIImage,
-  createAIChatSession as _createAIChatSession,
-  extractCodeBlocks as _extractCodeBlocks,
+postAI as _postAI,
+postOpenAI as _postOpenAI,
+getAISettings as _getAISettings,
+generateAIText as _generateAIText,
+analyzeAIImage as _analyzeAIImage,
+generateAIImage as _generateAIImage,
+transformAIImage as _transformAIImage,
+maskEditAIImage as _maskEditAIImage,
+createAIChatSession as _createAIChatSession,
+extractCodeBlocks as _extractCodeBlocks,
 } from "../utils/AIUtils";
-import { EXCALIDRAW_AUTOMATE_INFO, EXCALIDRAW_SCRIPTENGINE_INFO } from "./Dialogs/SuggesterInfo";
+import { EXCALIDRAW_AUTOMATE_INFO,EXCALIDRAW_SCRIPTENGINE_INFO } from "./Dialogs/SuggesterInfo";
 import { showColorPicker } from "./Dialogs/ColorPicker";
-import { addBackOfTheNoteCard, getViewColorPalette, sceneRemoveInternalLinks } from "../utils/excalidrawViewUtils";
+import { addBackOfTheNoteCard,getViewColorPalette,sceneRemoveInternalLinks } from "../utils/excalidrawViewUtils";
 import { log } from "../utils/debugHelper";
 import { ExcalidrawLib } from "../types/excalidrawLib";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
-import { AddImageOptions, ImageInfo, KeyBlocker, ScriptSettingValue, SVGColorInfo } from "src/types/excalidrawAutomateTypes";
-import { _measureText, cloneElement, createPNG, createSVG, ensureActiveScriptSettingsObject, errorMessage, filterColorMap, getEmbeddedFileForImageElment, getLineBox, getTemplate, isColorStringTransparent, isImageOrPDFTransclusion, isSVGColorInfo, mergeColorMapIntoSVGColorInfo, normalizeBindMode, normalizeFixedPoint, normalizeLinePoints, repositionElementsToCursor, svgColorInfoToColorMap, updateOrAddSVGColorInfo, verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
+import { AddImageOptions,ImageInfo,KeyBlocker,ScriptSettingValue,SVGColorInfo } from "src/types/excalidrawAutomateTypes";
+import { _measureText,cloneElement,createPNG,createSVG,ensureActiveScriptSettingsObject,errorMessage,filterColorMap,getEmbeddedFileForImageElment,getLineBox,getTemplate,isColorStringTransparent,isImageOrPDFTransclusion,isSVGColorInfo,mergeColorMapIntoSVGColorInfo,normalizeBindMode,normalizeFixedPoint,normalizeLinePoints,repositionElementsToCursor,svgColorInfoToColorMap,updateOrAddSVGColorInfo,verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
 import { getLastActiveExcalidrawView } from "src/utils/excalidrawViewLookup";
-import { exportToPDF, getMarginValue, getPageDimensions } from "src/utils/exportUtils";
-import { PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties, ExportSettings} from "src/types/exportUtilTypes";
+import { exportToPDF,getMarginValue,getPageDimensions } from "src/utils/exportUtils";
+import { PageDimensions,PageOrientation,PageSize,PDFExportScale,PDFPageProperties,ExportSettings } from "src/types/exportUtilTypes";
 import { FrameRenderingOptions } from "src/types/utilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { AutoexportConfig } from "src/types/excalidrawViewTypes";
@@ -109,7 +109,7 @@ import { ExcalidrawSidepanelView } from "src/view/sidepanel/Sidepanel";
 import { ExcalidrawSidepanelTab } from "src/view/sidepanel/SidepanelTab";
 import { patchMobileView } from "src/utils/customEmbeddableUtils";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
-import { AIRequest, ExcalidrawAISettings } from "src/types/AIUtilTypes";
+import { AIRequest,ExcalidrawAISettings } from "src/types/AIUtilTypes";
 import { getAspectRatio } from "src/utils/YoutTubeUtils";
 import { getPDFCropRect } from "src/utils/PDFUtils";
 import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";

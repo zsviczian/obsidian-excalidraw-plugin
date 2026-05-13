@@ -1,5 +1,4 @@
 import { Notice } from "obsidian";
-import { debug, DEBUGGING } from "./debugHelper";
 
 /**
  * Centralized error handling for the Excalidraw plugin

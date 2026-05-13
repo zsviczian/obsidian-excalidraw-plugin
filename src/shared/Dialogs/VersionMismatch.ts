@@ -1,7 +1,7 @@
-import { Modal, Setting } from "obsidian";
+import { Modal,Setting } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
-import { setElementDisplay, setSanitizedHtml } from "src/utils/htmlUtils";
+import { setElementDisplay,setSanitizedHtml } from "src/utils/htmlUtils";
 
 declare const PLUGIN_VERSION: string;
 

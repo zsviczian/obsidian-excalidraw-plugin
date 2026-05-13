@@ -1,12 +1,12 @@
-import { App, FuzzyMatch, prepareFuzzySearch, setIcon } from "obsidian";
+import { App,FuzzyMatch,prepareFuzzySearch,setIcon } from "obsidian";
 import { LinkSuggestion } from "src/types/types";
 import {
-  AUDIO_TYPES,
-  CODE_TYPES,
-  ICON_NAME,
-  IMAGE_TYPES,
-  REG_LINKINDEX_INVALIDCHARS,
-  VIDEO_TYPES,
+AUDIO_TYPES,
+CODE_TYPES,
+ICON_NAME,
+IMAGE_TYPES,
+REG_LINKINDEX_INVALIDCHARS,
+VIDEO_TYPES,
 } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
 

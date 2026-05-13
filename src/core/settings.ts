@@ -1,53 +1,51 @@
 import {
-  App,
-  ButtonComponent,
-  DropdownComponent,
-  getIcon,
-  Modifier,
-  normalizePath,
-  PluginSettingTab,
-  Setting,
-  TextComponent,
-  TFile,
+App,
+ButtonComponent,
+DropdownComponent,Modifier,
+normalizePath,
+PluginSettingTab,
+Setting,
+TextComponent,
+TFile
 } from "obsidian";
-import { GITHUB_RELEASES, LOGO_EXCALIDRAW_MASTERY, setRootElementSize } from "src/constants/constants";
+import { GITHUB_RELEASES,LOGO_EXCALIDRAW_MASTERY,setRootElementSize } from "src/constants/constants";
 import { t } from "src/lang/helpers";
 import type ExcalidrawPlugin from "src/core/main";
 import { PenStyle } from "src/types/penTypes";
-import { DynamicStyle, GridSettings } from "src/types/types";
+import { DynamicStyle,GridSettings } from "src/types/types";
 import { PreviewImageType } from "src/types/utilTypes";
 import { setDynamicStyle } from "src/utils/dynamicStyling";
 import {
-  createOrOverwriteFile,
-  getDrawingFilename,
-  getEmbedFilename,
+createOrOverwriteFile,
+getDrawingFilename,
+getEmbedFilename,
 } from "src/utils/fileUtils";
 import { PENS } from "src/utils/pens";
 import {
-  addYouTubeThumbnail,
-  fragWithHTML,
+addYouTubeThumbnail,
+fragWithHTML,
 } from "src/utils/utils";
-import { setElementIconAndText, setSanitizedHtml } from "src/utils/htmlUtils";
+import { setElementIconAndText,setSanitizedHtml } from "src/utils/htmlUtils";
 import { imageCache } from "src/shared/ImageCache";
 import { MultiOptionConfirmationPrompt } from "src/shared/Dialogs/Prompt";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "src/shared/Dialogs/EmbeddableMDFileCustomDataSettingsComponent";
 import { startupScript } from "src/constants/starutpscript";
-import { ModifierKeySet, ModifierSetType } from "src/utils/modifierkeyHelper";
+import { ModifierKeySet,ModifierSetType } from "src/utils/modifierkeyHelper";
 import { ModifierKeySettingsComponent } from "src/shared/Dialogs/ModifierKeySettings";
-import { ANNOTATED_PREFIX, CROPPED_PREFIX } from "src/utils/carveout";
+import { ANNOTATED_PREFIX,CROPPED_PREFIX } from "src/utils/carveout";
 import { EDITOR_FADEOUT } from "src/core/editor/EditorHandler";
 import { setDebugging } from "src/utils/debugHelper";
 import { Rank } from "src/constants/actionIcons";
-import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
+import { TAG_AUTOEXPORT,TAG_MDREADINGMODE,TAG_PDFEXPORT } from "src/constants/constSettingsTags";
 import { HotkeyEditor } from "src/shared/Dialogs/HotkeyEditor";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { createSliderWithText } from "src/utils/sliderUtils";
-import { PDFExportSettingsComponent, PDFExportSettings } from "src/shared/Dialogs/PDFExportSettingsComponent";
+import { PDFExportSettingsComponent,PDFExportSettings } from "src/shared/Dialogs/PDFExportSettingsComponent";
 import { ContentSearcher } from "src/shared/components/ContentSearcher";
-import { UIMode, UIModeSettingsComponent } from "src/shared/Dialogs/UIModeSettingComponent";
+import { UIMode,UIModeSettingsComponent } from "src/shared/Dialogs/UIModeSettingComponent";
 import { ScriptSettingValue } from "src/types/excalidrawAutomateTypes";
-import { AIImageModelCapability, AIImageModelConfig, AIModelConfig, AIProviderProfile } from "src/types/AIUtilTypes";
+import { AIImageModelCapability,AIImageModelConfig,AIModelConfig,AIProviderProfile } from "src/types/AIUtilTypes";
 import { AIProviderProfileModal } from "src/shared/Dialogs/AIProviderProfileModal";
 import { AIModelConfigModal } from "src/shared/Dialogs/AIModelConfigModal";
 

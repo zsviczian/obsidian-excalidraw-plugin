@@ -1,7 +1,6 @@
 import { updateExcalidrawLib } from "src/constants/constants";
 import { ExcalidrawLib } from "../../types/excalidrawLib";
 import { Packages } from "../../types/types";
-import { debug, DEBUGGING } from "../../utils/debugHelper";
 import { Notice } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { errorHandler } from "../../utils/ErrorHandler";

@@ -1,15 +1,14 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { ColorComponent, Modal, Setting, TextComponent, ToggleComponent } from "obsidian";
+import { ColorComponent,Modal,Setting,TextComponent,ToggleComponent } from "obsidian";
 import { COLOR_NAMES } from "src/constants/constants";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import ExcalidrawPlugin from "src/core/main";
 import { setPen } from "src/view/components/menu/ObsidianMenu";
-import { ExtendedFillStyle, PenType } from "src/types/penTypes";
+import { ExtendedFillStyle,PenType } from "src/types/penTypes";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { PENS } from "src/utils/pens";
 import { fragWithHTML } from "src/utils/utils";
 import { setSanitizedHtml } from "src/utils/htmlUtils";
-import { __values } from "tslib";
 import { showColorPicker } from "./ColorPicker";
 
 const EASINGFUNCTIONS: Record<string,string> = {
