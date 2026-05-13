@@ -22,7 +22,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "dependencies": {
     "@popperjs/core": "^2.11.8",
     "@zsviczian/excalidraw": "0.18.0-91",
