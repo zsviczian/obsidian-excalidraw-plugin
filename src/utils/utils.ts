@@ -1083,12 +1083,23 @@ export function isCallerFromTemplaterPlugin (stackTrace:string) {
 }
 
 export function convertSVGStringToElement (svg: string): SVGSVGElement {
-  const divElement = document.createElement("div");
-  divElement.innerHTML = svg;
-  const firstChild = divElement.firstChild;
-  if (firstChild instanceof SVGSVGElement) {
-    return firstChild;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svg, "image/svg+xml");
+
+  if (doc.querySelector("parsererror")) {
+    return;
   }
+
+  const root = doc.documentElement;
+  if (root instanceof SVGSVGElement) {
+    return root;
+  }
+
+  const nestedSvg = doc.querySelector("svg");
+  if (nestedSvg instanceof SVGSVGElement) {
+    return nestedSvg;
+  }
+
   return;
 }
 
