@@ -886,11 +886,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.settingsFocusoutHandler = null;
   }
 
+  private hasPendingActions(): boolean {
+    return this.requestUpdatePinnedPens || 
+           this.requestUpdateDynamicStyling || 
+           this.requestReloadDrawings || 
+           this.requestEmbedUpdate;
+  }
+
   private attachSettingsFocusoutHandler() {
     this.detachSettingsFocusoutHandler();
     this.settingsFocusoutHandler = (event: FocusEvent) => {
       window.setTimeout(() => {
-        if (!this.settingsDirty || !this.containerEl?.isConnected) {
+        if (!this.containerEl?.isConnected) {
           return;
         }
 
@@ -899,10 +906,42 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           return;
         }
 
-        void this.persistDirtySettings();
+        // Execute pending actions if settings are dirty or if there are pending actions
+        if (this.settingsDirty || this.hasPendingActions()) {
+          void this.persistDirtySettings().then(() => this.applyPendingActions());
+        }
       }, 0);
     };
     this.containerEl.addEventListener("focusout", this.settingsFocusoutHandler);
+  }
+
+  private async applyPendingActions() {
+    if (this.requestUpdatePinnedPens) {
+      this.requestUpdatePinnedPens = false;
+      getExcalidrawViews(this.app, true).forEach(excalidrawView =>
+        excalidrawView.updatePinnedCustomPens()
+      );
+    }
+    if (this.requestUpdateDynamicStyling) {
+      this.requestUpdateDynamicStyling = false;
+      getExcalidrawViews(this.app, true).forEach(excalidrawView =>
+        setDynamicStyle(this.plugin.ea, excalidrawView, excalidrawView.previousBackgroundColor, this.plugin.settings.dynamicStyling)
+      );
+    }
+    if (this.requestReloadDrawings) {
+      this.requestReloadDrawings = false;
+      const excalidrawViews = getExcalidrawViews(this.app, true);
+      for (const excalidrawView of excalidrawViews) {
+        await excalidrawView.save(false);
+        //debug({where:"ExcalidrawSettings.hide",file:v.view.file.name,before:"reload(true)"})
+        await excalidrawView.reload(true);
+      }
+      this.requestEmbedUpdate = true;
+    }
+    if (this.requestEmbedUpdate) {
+      this.requestEmbedUpdate = false;
+      this.plugin.triggerEmbedUpdates();
+    }
   }
 
   applySettingsUpdate(requestReloadDrawings: boolean = false) {
@@ -923,31 +962,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     }
 
     await this.persistDirtySettings();
-    if (this.requestUpdatePinnedPens) {
-      getExcalidrawViews(this.app, true).forEach(excalidrawView =>
-        excalidrawView.updatePinnedCustomPens()
-      )
-    }
-    if (this.requestUpdateDynamicStyling) {
-      getExcalidrawViews(this.app, true).forEach(excalidrawView =>
-          setDynamicStyle(this.plugin.ea,excalidrawView,excalidrawView.previousBackgroundColor,this.plugin.settings.dynamicStyling)
-      )
-    }
+    await this.applyPendingActions();
     this.hotkeyEditor.unload();
     if (this.hotkeyEditor.isDirty) {
       this.plugin.registerHotkeyOverrides();
-    }
-    if (this.requestReloadDrawings) {
-      const excalidrawViews = getExcalidrawViews(this.app, true);
-      for (const excalidrawView of excalidrawViews) {
-        await excalidrawView.save(false);
-        //debug({where:"ExcalidrawSettings.hide",file:v.view.file.name,before:"reload(true)"})
-        await excalidrawView.reload(true);
-      }
-      this.requestEmbedUpdate = true;
-    }
-    if (this.requestEmbedUpdate) {
-      this.plugin.triggerEmbedUpdates();
     }
     this.plugin.scriptEngine.updateScriptPath();
 /*    if(this.reloadMathJax) {

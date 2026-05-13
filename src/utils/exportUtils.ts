@@ -125,6 +125,8 @@ async function printPdf(
   extraCss: string = "",
   pageRanges?: string | { from: number; to: number }[], // NEW
 ): Promise<void> {
+  // REVIEW NOTE: Dynamic print CSS is required for Electron print-to-PDF.
+  // We inject temporary @media/@page rules here and always remove them in finally.
   const styleTag = document.createElement('style');
   styleTag.textContent = `
     @media print {

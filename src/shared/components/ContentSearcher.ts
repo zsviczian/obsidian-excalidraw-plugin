@@ -102,14 +102,21 @@ export class ContentSearcher {
     this.nextButton.onclick = () => this.navigateSearchResults("next");
     this.prevButton.onclick = () => this.navigateSearchResults("previous");
     this.exportMarkdown.onclick = () => {
-      // Get the full HTML content first
-      const fullHtml = this.contentDiv.outerHTML;
-      
-      // Find the index of the first <hr> element
-      const startIndex = fullHtml.indexOf('<hr');
-      
-      // Extract HTML from the first <hr> element onwards
-      const html = startIndex > -1 ? fullHtml.substring(startIndex) : fullHtml;
+      const exportContent = this.contentDiv.cloneNode(true) as HTMLElement;
+      exportContent.querySelector(".excalidraw-search")?.remove();
+
+      const childNodes = Array.from(exportContent.childNodes);
+      const startIndex = childNodes.findIndex(
+        (node) => node instanceof HTMLElement && node.tagName === "HR",
+      );
+      const nodesToExport = startIndex > -1 ? childNodes.slice(startIndex) : childNodes;
+      const htmlContainer = document.createElement("div");
+
+      nodesToExport.forEach((node) => {
+        htmlContainer.appendChild(node.cloneNode(true));
+      });
+
+      const html = htmlContainer.innerHTML;
 
       function replaceHeading(html:string,level:number):string {
         const re = new RegExp(`<summary class="excalidraw-setting-h${level}">([^<]+)<\/summary>`,"g");
@@ -236,9 +243,17 @@ export class ContentSearcher {
    * Remove all search highlights
    */
   public clearHighlights(): void {
+    const parentsToNormalize = new Set<Node>();
+
     this.contentDiv.querySelectorAll("mark.search-highlight").forEach((el) => {
-      el.outerHTML = el.innerHTML;
+      const parent = el.parentNode;
+      if (!parent) return;
+
+      parentsToNormalize.add(parent);
+      el.replaceWith(document.createTextNode(el.textContent ?? ""));
     });
+
+    parentsToNormalize.forEach((parent) => parent.normalize());
   }
 
   /**
