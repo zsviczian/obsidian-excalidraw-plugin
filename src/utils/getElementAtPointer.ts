@@ -7,7 +7,7 @@ import { getBoundTextElementId } from "src/utils/excalidrawViewHelpers";
 
 export const getElementsAtPointer = (
   pointer: any,
-  elements: ExcalidrawElement[],
+  elements: readonly ExcalidrawElement[],
   type?: string,
 ): ExcalidrawElement[] => {
   return elements.filter((e: ExcalidrawElement) => {

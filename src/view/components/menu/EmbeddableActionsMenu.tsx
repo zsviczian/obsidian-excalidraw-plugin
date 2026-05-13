@@ -200,7 +200,7 @@ export class EmbeddableMenu {
 
   private actionZoomToElement (element: ExcalidrawEmbeddableElement, maxLevel?: number) {
     if(!element) return;
-    const api = this.view.excalidrawAPI as ExcalidrawImperativeAPI;
+    const api = this.view.excalidrawAPI;
     api.zoomToFit([element], maxLevel ?? this.view.plugin.settings.zoomToFitMaxLevel, 0.1);
   }
 
@@ -235,7 +235,7 @@ export class EmbeddableMenu {
 
   renderButtons(appState: AppState) {
     const view = this.view;
-    const api = view?.excalidrawAPI as ExcalidrawImperativeAPI;
+    const api = view?.excalidrawAPI;
     if(!api) return null;
     if(!view.file) return null;
     const disableFrameButtons = appState.viewModeEnabled && !view.allowFrameButtonsInViewMode;

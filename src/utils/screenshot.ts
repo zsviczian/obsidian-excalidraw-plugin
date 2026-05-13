@@ -23,7 +23,7 @@ export async function captureScreenshot(view: ExcalidrawView, options: Screensho
   if (!wasFullscreen) {
     view.gotoFullscreen();
   }
-  const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
+  const api = view.excalidrawAPI;
   api.setForceRenderAllEmbeddables(true);
   options.selectedOnly = options.selectedOnly && (view.getViewSelectedElements().length > 0);
   const remote = window.require("electron").remote;

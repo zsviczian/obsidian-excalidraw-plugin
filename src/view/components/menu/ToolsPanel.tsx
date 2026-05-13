@@ -425,7 +425,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     const view = this.getView();
     const plugin = view?.plugin;
     if (!view || !plugin) return;
-    const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
+    const api = view.excalidrawAPI;
     await plugin.loadSettings();
     const index = plugin.settings.pinnedScripts.indexOf(key)
     if(index > -1) {

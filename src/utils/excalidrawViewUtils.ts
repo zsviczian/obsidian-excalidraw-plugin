@@ -4,7 +4,7 @@ import { App,Modal,Notice,TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { REGEX_LINK,REG_LINKINDEX_HYPERLINK,getExcalidrawMarkdownHeaderSection,REGEX_TAGS } from "../shared/ExcalidrawData";
 import ExcalidrawView from "src/view/ExcalidrawView";
-import { ExcalidrawElement,ExcalidrawFrameElement,ExcalidrawImageElement } from "@zsviczian/excalidraw/types/element/src/types";
+import { ExcalidrawElement,ExcalidrawFrameElement,ExcalidrawImageElement, NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { getEmbeddedFilenameParts,getLinkParts,isImagePartRef } from "./utils";
 import { getAudioElementHeight } from "./obsidianUtils";
 import { cleanSectionHeading } from "./pathUtils";
@@ -60,7 +60,7 @@ export async function insertEmbeddableToView (
   shouldInsertToView: boolean = true,
 ):Promise<string> {
   if(shouldInsertToView) {ea.clear();}
-  const api = ea.getExcalidrawAPI() as ExcalidrawImperativeAPI;
+  const api = ea.getExcalidrawAPI();
   const st = api.getAppState();
   
   if(ea.plugin.settings.embeddableMarkdownDefaults.backgroundMatchElement) {
@@ -147,7 +147,7 @@ function isInternalLink(link:string):boolean {
   return true;
 }
 
-export function sceneRemoveInternalLinks(scene: {elements: ExcalidrawElement[]}): ExcalidrawElement[] {
+export function sceneRemoveInternalLinks(scene: {elements: readonly ExcalidrawElement[]}): ExcalidrawElement[] {
   const elements: ExcalidrawElement[] = JSON.parse(JSON.stringify(scene.elements));
   elements.forEach(el => {
     if(!el.link) return;
@@ -244,7 +244,7 @@ export function getExcalidrawFileForwardLinks (
 
 export function getFrameBasedOnFrameNameOrId(
   frameName: string,
-  elements: ExcalidrawElement[],
+  elements: readonly NonDeletedExcalidrawElement[],
 ): ExcalidrawFrameElement | null {
   const frames = elements
     .filter((el: ExcalidrawElement)=>el.type==="frame")
@@ -309,7 +309,7 @@ export async function addBackOfTheNoteCard(
   );
   await ea.addElementsToView(!center, false, true);
 
-  const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
+  const api = view.excalidrawAPI;
   const el = ea.getViewElements().find(el=>el.id === id);
   api.selectElements([el]);
   if(activate) {
@@ -536,7 +536,7 @@ export function getViewColorPalette(
     return getDefaultColorPalette() as (string[] | string)[];
   }
 
-  const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
+  const api = view.excalidrawAPI;
   const {colorPalette} = api.getAppState();
   if (!colorPalette || !colorPalette.hasOwnProperty(palette)) {
     return getDefaultColorPalette() as (string[] | string)[];

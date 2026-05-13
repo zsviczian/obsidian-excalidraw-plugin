@@ -516,7 +516,7 @@ export class InsertPDFModal extends Modal {
               ea.addToGroup(ids);
             }
             await ea.addElementsToView(true,true,false);
-            const api = ea.getExcalidrawAPI() as ExcalidrawImperativeAPI;
+            const api = ea.getExcalidrawAPI();
             const ids = ea.getElements().map(el => el.id);
             const viewElements = ea.getViewElements().filter(el => ids.includes(el.id));
             api.selectElements(viewElements);

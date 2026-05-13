@@ -153,7 +153,7 @@ export const setDynamicStyle = (
   }
 
   window.setTimeout(()=>{
-    const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
+    const api = view.excalidrawAPI;
     if(!api) {
       view = null;
       ea = null;
@@ -178,7 +178,7 @@ export const setDynamicStyle = (
       ) {
         return;
       }
-      (view.excalidrawAPI as ExcalidrawImperativeAPI).mutateElement(e,{customData: f.customData});
+      (view.excalidrawAPI).mutateElement(e,{customData: f.customData});
     });
 
     view.updateScene({

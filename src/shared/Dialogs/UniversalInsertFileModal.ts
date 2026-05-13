@@ -21,7 +21,7 @@ export class UniversalInsertFileModal extends Modal {
     private view: ExcalidrawView,
   ) {
     super(plugin.app);
-    const appState = (view.excalidrawAPI as ExcalidrawImperativeAPI).getAppState();
+    const appState = (view.excalidrawAPI).getAppState();
     const containerRect = view.containerEl.getBoundingClientRect();
     const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight;

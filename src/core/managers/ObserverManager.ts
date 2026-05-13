@@ -244,7 +244,7 @@ export class ObserverManager {
         return;
       }
       
-      const { errorMessage } = (view.excalidrawAPI as ExcalidrawImperativeAPI).getAppState();
+      const { errorMessage } = (view.excalidrawAPI).getAppState();
       if (!errorMessage) this.plugin.activeExcalidrawView.save();
     };
 

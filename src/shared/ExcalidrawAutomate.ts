@@ -806,7 +806,7 @@ export class ExcalidrawAutomate {
       errorMessage("targetView not set", "getExcalidrawAPI()");
       return null;
     }
-    const st = (this.getExcalidrawAPI() as ExcalidrawImperativeAPI).getAppState();
+    const st = (this.getExcalidrawAPI()).getAppState();
     if (!st) return null;
 
     const zoom = st.zoom?.value ?? 1;
@@ -2751,9 +2751,9 @@ export class ExcalidrawAutomate {
 
   /**
    * Returns the Excalidraw API for the current view.
-   * @returns {any} The Excalidraw API.
+   * @returns {ExcalidrawImperativeAPI} The Excalidraw API.
    */
-  getExcalidrawAPI(): any {
+  getExcalidrawAPI(): ExcalidrawImperativeAPI {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "getExcalidrawAPI()");
       return null;
@@ -2763,9 +2763,9 @@ export class ExcalidrawAutomate {
 
   /**
    * Gets elements in the current view.
-   * @returns {ExcalidrawElement[]} Array of elements in the view.
+   * @returns {readonly ExcalidrawElement[]} Array of elements in the view.
    */
-  getViewElements(): ExcalidrawElement[] {
+  getViewElements(): readonly ExcalidrawElement[] {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "getViewElements()");
       return [];
@@ -2783,7 +2783,7 @@ export class ExcalidrawAutomate {
       errorMessage("targetView not set", "deleteViewElements()");
       return false;
     }
-    const api = this.targetView?.excalidrawAPI as ExcalidrawImperativeAPI;
+    const api = this.targetView?.excalidrawAPI;
     if (!api) {
       return false;
     }
@@ -3595,7 +3595,7 @@ export class ExcalidrawAutomate {
    * @param {ExcalidrawElement[]} elements - Array of elements to get the bounding box for.
    * @returns {{topX: number; topY: number; width: number; height: number}} The bounding box of the elements.
    */
-  getBoundingBox(elements: ExcalidrawElement[]): {
+  getBoundingBox(elements: readonly ExcalidrawElement[]): {
     topX: number; 
     topY: number;
     width: number;
@@ -3687,7 +3687,7 @@ export class ExcalidrawAutomate {
    */
   getElementsInTheSameGroupWithElement(
     element: ExcalidrawElement,
-    elements: ExcalidrawElement[],
+    elements: readonly NonDeletedExcalidrawElement[],
     includeFrameElements: boolean = false,
   ): ExcalidrawElement[] {
     if(!element || !elements) return [];
@@ -3734,7 +3734,7 @@ export class ExcalidrawAutomate {
    */
   getElementsInFrame(
     frameElement: ExcalidrawElement,
-    elements: ExcalidrawElement[],
+    elements: readonly NonDeletedExcalidrawElement[],
     shouldIncludeFrame: boolean = false,
   ): ExcalidrawElement[] {
     if(!frameElement || !elements || frameElement.type !== "frame") return [];
@@ -3976,7 +3976,7 @@ export class ExcalidrawAutomate {
       return;
     }
     const API = this.getExcalidrawAPI();
-    const elements = this.getViewElements();
+    const elements = this.getViewElements() as Mutable<ExcalidrawElement>[];
     const elementToMove = elements.filter((el: any) => el.id === elementId);
     if (elementToMove.length === 0) {
       errorMessage(

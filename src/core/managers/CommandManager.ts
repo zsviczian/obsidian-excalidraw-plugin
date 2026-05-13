@@ -338,7 +338,7 @@ export class CommandManager {
         }
         if(checking) return true;
         const ea = getEA(view) as ExcalidrawAutomate;
-        const api = ea.getExcalidrawAPI() as ExcalidrawImperativeAPI;
+        const api = ea.getExcalidrawAPI();
         ea.copyViewElementsToEAforEditing(els);
         const scale = 1/api.getAppState().zoom.value;
         ea.getElements().forEach((el: Mutable<ExcalidrawEmbeddableElement>)=>{
@@ -1026,7 +1026,7 @@ export class CommandManager {
           if(DEVICE.isMobile) return false;
           if(this.app.workspace.getActiveViewOfType(ExcalidrawView)) {
             const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-            const api = view?.excalidrawAPI as ExcalidrawImperativeAPI;
+            const api = view?.excalidrawAPI;
             if(!api || !api.isTrayModeEnabled()) return false;
             return true;
           }

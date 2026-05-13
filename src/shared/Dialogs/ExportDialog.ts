@@ -56,7 +56,7 @@ export class ExportDialog extends Modal {
   ) {
     super(plugin.app);
     this.ea = getEA(this.view);
-    this.api = this.ea.getExcalidrawAPI() as ExcalidrawImperativeAPI;
+    this.api = this.ea.getExcalidrawAPI();
     this.padding = getExportPadding(this.plugin,this.file);
     this.scale = getPNGScale(this.plugin,this.file)
     this.theme = getExportTheme(this.plugin, this.file, (this.api).getAppState().theme)

@@ -114,7 +114,7 @@ export class EmbeddableSettings extends Modal {
         button
           .setButtonText(t("ES_ZOOM_100"))
           .onClick(() => {
-            const api = this.view.excalidrawAPI as ExcalidrawImperativeAPI;
+            const api = this.view.excalidrawAPI;
             this.zoomValue = 1/api.getAppState().zoom.value;
             zoomSetting.setDesc(zoomValue());
           })
