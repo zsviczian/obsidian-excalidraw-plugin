@@ -1,6 +1,6 @@
-import { FuzzySuggestModal, TFile } from "obsidian";
+import { FuzzySuggestModal,TFile } from "obsidian";
 import { scaleToFullsizeModifier } from "src/utils/modifierkeyHelper";
-import { DEVICE, IMAGE_TYPES, REG_LINKINDEX_INVALIDCHARS } from "../../constants/constants";
+import { DEVICE,IMAGE_TYPES,REG_LINKINDEX_INVALIDCHARS } from "../../constants/constants";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import { t } from "../../lang/helpers";
 import ExcalidrawPlugin from "../../core/main";

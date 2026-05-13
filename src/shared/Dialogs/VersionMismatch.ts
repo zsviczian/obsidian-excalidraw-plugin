@@ -1,6 +1,7 @@
-import { Modal, Setting } from "obsidian";
+import { Modal,Setting } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
+import { setElementDisplay,setSanitizedHtml } from "src/utils/htmlUtils";
 
 declare const PLUGIN_VERSION: string;
 
@@ -42,18 +43,21 @@ export class VersionMismatchPrompt extends Modal {
 
     contentEl.createEl("h2", { text: t("VERSION_MISMATCH_HEADING") });
     const p1 = contentEl.createEl("p");
-    p1.innerHTML = t("VERSION_MISMATCH_NOTICE")
-      .replace("{VAL_RECORDED}", recorded)
-      .replace("{VAL_ACTUAL}", actual);
+    setSanitizedHtml(
+      p1,
+      t("VERSION_MISMATCH_NOTICE")
+        .replace("{VAL_RECORDED}", recorded)
+        .replace("{VAL_ACTUAL}", actual),
+    );
 
     const p2 = contentEl.createEl("p");
-    p2.innerHTML = t("VERSION_MISMATCH_CAUSE");
+    setSanitizedHtml(p2, t("VERSION_MISMATCH_CAUSE"));
 
     const p3 = contentEl.createEl("p");
-    p3.innerHTML = t("VERSION_MISMATCH_OPTIONS");
+    setSanitizedHtml(p3, t("VERSION_MISMATCH_OPTIONS"));
 
     const p4 = contentEl.createEl("p");
-    p4.innerHTML = t("VERSION_MISMATCH_NOTE");
+    setSanitizedHtml(p4, t("VERSION_MISMATCH_NOTE"));
 
     new Setting(contentEl)
       .setName(t("VERSION_MISMATCH_DISABLE_NAME"))
@@ -81,7 +85,7 @@ export class VersionMismatchPrompt extends Modal {
       this.close();
     });
 
-    buttonBar.style.display = "flex";
+    setElementDisplay(buttonBar, "flex");
     buttonBar.style.gap = "0.5rem";
     buttonBar.style.marginTop = "1rem";
     redownloadBtn.style.backgroundColor = "var(--interactive-accent)";

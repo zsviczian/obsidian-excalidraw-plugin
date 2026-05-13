@@ -1,4 +1,4 @@
-import { App, Modal } from "obsidian";
+import { App,Modal } from "obsidian";
 import { clamp } from "@radix-ui/number";
 
 function getClientPoint(e: PointerEvent | TouchEvent) {
@@ -194,7 +194,7 @@ export class FloatingModal extends Modal {
       // prevent automatic selection / focus restoration
       this.shouldRestoreSelection = false;
     }
-    setTimeout(() => {
+    window.setTimeout(() => {
       // @ts-ignore
       const { containerEl, modalEl, bgEl } = this;
       containerEl.addClass("mod-excalidraw-draggable")

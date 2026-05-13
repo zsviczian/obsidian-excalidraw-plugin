@@ -1,13 +1,13 @@
-import { ButtonComponent, DropdownComponent, TFile } from "obsidian";
+import { ButtonComponent,DropdownComponent,TFile } from "obsidian";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import ExcalidrawPlugin from "../../core/main";
-import {  Modal, Setting, TextComponent } from "obsidian";
+import { Modal,Setting,TextComponent } from "obsidian";
 import { FileSuggestionModal } from "../Suggesters/FileSuggestionModal";
-import { IMAGE_TYPES, sceneCoordsToViewportCoords, viewportCoordsToSceneCoords, MAX_IMAGE_SIZE, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS } from "src/constants/constants";
-import { insertEmbeddableToView, insertImageToView } from "src/utils/excalidrawViewUtils";
+import { IMAGE_TYPES,sceneCoordsToViewportCoords,viewportCoordsToSceneCoords,MAX_IMAGE_SIZE,ANIMATED_IMAGE_TYPES,MD_EX_SECTIONS } from "src/constants/constants";
+import { insertEmbeddableToView,insertImageToView } from "src/utils/excalidrawViewUtils";
 import { getEA } from "src/core";
 import { InsertPDFModal } from "./InsertPDFModal";
-import {  ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { cleanSectionHeading } from "src/utils/pathUtils";
 import { t } from "src/lang/helpers";
@@ -21,7 +21,7 @@ export class UniversalInsertFileModal extends Modal {
     private view: ExcalidrawView,
   ) {
     super(plugin.app);
-    const appState = (view.excalidrawAPI as ExcalidrawImperativeAPI).getAppState();
+    const appState = (view.excalidrawAPI).getAppState();
     const containerRect = view.containerEl.getBoundingClientRect();
     const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight;

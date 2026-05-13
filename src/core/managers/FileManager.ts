@@ -1,16 +1,14 @@
-import { debug } from "src/utils/debugHelper";
-import { App, FrontMatterCache, MarkdownView, MetadataCache, normalizePath, Notice, TAbstractFile, TFile, WorkspaceLeaf } from "obsidian";
-import { BLANK_DRAWING, DARK_BLANK_DRAWING, DEVICE, EXPORT_TYPES, FRONTMATTER, FRONTMATTER_KEYS, JSON_parse, nanoid, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
-import { Prompt, templatePromt } from "src/shared/Dialogs/Prompt";
-import { changeThemeOfExcalidrawMD, ExcalidrawData, getMarkdownDrawingSection } from "../../shared/ExcalidrawData";
+import { App,FrontMatterCache,MarkdownView,MetadataCache,normalizePath,Notice,TAbstractFile,TFile,WorkspaceLeaf } from "obsidian";
+import { BLANK_DRAWING,DARK_BLANK_DRAWING,DEVICE,EXPORT_TYPES,FRONTMATTER,FRONTMATTER_KEYS,JSON_parse,nanoid,VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
+import { Prompt,templatePromt } from "src/shared/Dialogs/Prompt";
+import { changeThemeOfExcalidrawMD,ExcalidrawData,getMarkdownDrawingSection } from "../../shared/ExcalidrawData";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { getTextMode } from "src/shared/TextMode";
 import ExcalidrawPlugin from "src/core/main";
-import { DEBUGGING } from "src/utils/debugHelper";
-import { checkAndCreateFolder, createFileAndAwaitMetacacheUpdate, download, getIMGFilename, getLink, getListOfTemplateFiles, getNewUniqueFilepath } from "src/utils/fileUtils";
+import { checkAndCreateFolder,createFileAndAwaitMetacacheUpdate,download,getIMGFilename,getLink,getListOfTemplateFiles,getNewUniqueFilepath } from "src/utils/fileUtils";
 import { PaneTarget } from "src/utils/modifierkeyHelper";
-import { getExcalidrawViews, getNewOrAdjacentLeaf, isObsidianThemeDark, openLeaf } from "src/utils/obsidianUtils";
-import { errorlog, getExportTheme } from "src/utils/utils";
+import { getExcalidrawViews,getNewOrAdjacentLeaf,isObsidianThemeDark,openLeaf } from "src/utils/obsidianUtils";
+import { errorlog,getExportTheme } from "src/utils/utils";
 import { imageCache } from "src/shared/ImageCache";
 
 export class PluginFileManager {
@@ -365,9 +363,19 @@ export class PluginFileManager {
     if (!data) {
       return "";
     }
-    const excalidrawData = JSON_parse(data);
-    const textElements = excalidrawData.elements?.filter(
-      (el: any) => el.type == "text",
+    type ExcalidrawSceneTextElement = {
+      id: string;
+      type?: string;
+      text?: string;
+      originalText?: string;
+    };
+    type ExcalidrawSceneData = {
+      elements?: ExcalidrawSceneTextElement[];
+    };
+
+    const excalidrawData = JSON_parse<ExcalidrawSceneData>(data);
+    const textElements = (excalidrawData.elements ?? []).filter(
+      (el) => el.type == "text",
     );
     let outString = `# Excalidraw Data\n\n## Text Elements\n`;
     let id: string;
@@ -405,7 +413,6 @@ export class PluginFileManager {
    * @returns 
    */
   public async renameEventHandler (file: TAbstractFile, oldPath: string) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.renameEventHandler, `ExcalidrawPlugin.renameEventHandler`, file, oldPath);
     if (!(file instanceof TFile)) {
       return;
     }
@@ -459,7 +466,6 @@ export class PluginFileManager {
   }
 
   public async modifyEventHandler (file: TFile) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.modifyEventHandler,`FileManager.modifyEventHandler`, file);
     const excalidrawViews = getExcalidrawViews(this.app);
     excalidrawViews.forEach(async (excalidrawView) => {
       if(excalidrawView.semaphores?.viewunload) {
@@ -563,7 +569,6 @@ export class PluginFileManager {
    * @returns 
    */
   public async deleteEventHandler (file: TFile) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.deleteEventHandler,`ExcalidrawPlugin.deleteEventHandler`, file);
     if (!(file instanceof TFile)) {
       return;
     }

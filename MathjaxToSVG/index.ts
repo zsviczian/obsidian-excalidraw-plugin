@@ -1,17 +1,30 @@
-import {mathjax} from "mathjax-full/js/mathjax";
-import {TeX} from 'mathjax-full/js/input/tex.js';
-import {SVG} from 'mathjax-full/js/output/svg.js';
-import {LiteAdaptor, liteAdaptor} from 'mathjax-full/js/adaptors/liteAdaptor.js';
-import {RegisterHTMLHandler} from 'mathjax-full/js/handlers/html.js';
-import {AllPackages} from 'mathjax-full/js/input/tex/AllPackages.js';
+import { mathjax } from "mathjax-full/js/mathjax";
+import { TeX } from 'mathjax-full/js/input/tex.js';
+import { SVG } from 'mathjax-full/js/output/svg.js';
+import { LiteAdaptor,liteAdaptor } from 'mathjax-full/js/adaptors/liteAdaptor.js';
+import { RegisterHTMLHandler } from 'mathjax-full/js/handlers/html.js';
+import { AllPackages } from 'mathjax-full/js/input/tex/AllPackages.js';
 import { customAlphabet } from "nanoid";
+import type { TAbstractFile } from "obsidian";
 
 type DataURL = string & { _brand: "DataURL" };
 type FileId = string & { _brand: "FileId" };
 const fileid = customAlphabet("1234567890abcdef", 40);
 
+type LatexPluginLike = {
+  app: {
+    vault: {
+      getAbstractFileByPath: (path: string) => TAbstractFile | null;
+      read: (file: TAbstractFile) => Promise<string>;
+    };
+  };
+  settings: {
+    latexPreambleLocation?: string;
+  };
+};
+
 let adaptor: LiteAdaptor;
-let html: any;
+let html: ReturnType<typeof mathjax.document>;
 let preamble: string;
 
 function svgToBase64(svg: string): string {
@@ -38,7 +51,7 @@ async function getImageSize(src: string): Promise<{ height: number; width: numbe
 export async function tex2dataURL(
   tex: string,
   scale: number = 4,
-  plugin?: any
+  plugin?: LatexPluginLike
 ): Promise<{
   mimeType: string;
   fileId: FileId;
@@ -46,8 +59,8 @@ export async function tex2dataURL(
   created: number;
   size: { height: number; width: number };
 }> {
-  let input: TeX<unknown, unknown, unknown>;
-  let output: SVG<unknown, unknown, unknown>;
+  let input: TeX<Record<string, never>, Record<string, never>, Record<string, never>>;
+  let output: SVG<Record<string, never>, Record<string, never>, Record<string, never>>;
 
   if(!adaptor) {
     if (plugin) {
@@ -76,10 +89,7 @@ export async function tex2dataURL(
     
 	//https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2195
 	//https://stackoverflow.com/a/77181931
-	let styleNode = document.createElement('style');
-    styleNode.setAttribute("type", "text/css");
-    styleNode.appendChild(document.createTextNode(".mjx-solid { stroke-width: 80px; }"));
-    svg.appendChild(styleNode);
+	svg.insertAdjacentHTML("beforeend", "<style>.mjx-solid { stroke-width: 80px; }</style>");
 
     if (svg) {
       if(svg.width.baseVal.valueInSpecifiedUnits < 2) {

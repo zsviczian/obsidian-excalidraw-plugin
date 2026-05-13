@@ -1,12 +1,12 @@
-import {  ExcalidrawEmbeddableElement,  } from "@zsviczian/excalidraw/types/element/src/types";
+import { ExcalidrawEmbeddableElement,} from "@zsviczian/excalidraw/types/element/src/types";
 import ExcalidrawView from "src/view/ExcalidrawView";
-import { Notice, requireApiVersion, WorkspaceLeaf,  } from "obsidian";
+import { Notice,requireApiVersion,WorkspaceLeaf,} from "obsidian";
 import * as React from "react";
 import { isObsidianThemeDark } from "src/utils/obsidianUtils";
-import { DEVICE, EXTENDED_EVENT_TYPES, KEYBOARD_EVENT_TYPES,  } from "src/constants/constants";
-import { ExcalidrawImperativeAPI, UIAppState } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { DEVICE,EXTENDED_EVENT_TYPES,KEYBOARD_EVENT_TYPES,} from "src/constants/constants";
+import { ExcalidrawImperativeAPI,UIAppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
-import { processLinkText, patchMobileView, setFileToLocalGraph, createLeaf, predictViewType } from "src/utils/customEmbeddableUtils";
+import { processLinkText,patchMobileView,setFileToLocalGraph,createLeaf,predictViewType } from "src/utils/customEmbeddableUtils";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { t } from "src/lang/helpers";
 
@@ -244,7 +244,7 @@ function setupPdfViewEnhancements(
               try { pdfObserverRef.current?.disconnect(); } catch {}
 
               // Re-setup on next tick to allow DOM to settle
-              setTimeout(() => {
+              window.setTimeout(() => {
                 if (leafRef.current?.node?.child?.containerEl?.isConnected) {
                   setupPdfViewEnhancements(
                     view,
@@ -284,7 +284,7 @@ function setupPdfViewEnhancements(
         if (el) {
           patchPDF();
           obs.disconnect();
-          if (timeoutId) clearTimeout(timeoutId);
+          if (timeoutId) window.clearTimeout(timeoutId);
         }
       });
       mo.observe(root as HTMLElement, { childList: true, subtree: true });
@@ -439,7 +439,7 @@ function RenderObsidianView(
       if(!view.ownerWindow.electronWindow.isAlwaysOnTop()) {
         //@ts-ignore
         view.ownerWindow.electronWindow.setAlwaysOnTop(true);
-        setTimeout(() => {
+        window.setTimeout(() => {
           //@ts-ignore
           view.ownerWindow.electronWindow.setAlwaysOnTop(false);
         }, 500);

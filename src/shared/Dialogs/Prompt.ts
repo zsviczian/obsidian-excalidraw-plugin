@@ -1,35 +1,36 @@
 import {
-  App,
-  ButtonComponent,
-  Modal,
-  FuzzyMatch,
-  FuzzySuggestModal,
-  Instruction,
-  TFile,
-  Notice,
-  TextAreaComponent
+App,
+ButtonComponent,
+Modal,
+FuzzyMatch,
+FuzzySuggestModal,
+Instruction,
+TFile,
+Notice,
+TextAreaComponent
 } from "obsidian";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import ExcalidrawPlugin from "../../core/main";
-import { escapeRegExp, getLinkParts, sleep } from "../../utils/utils";
-import { getLeaf, openLeaf } from "../../utils/obsidianUtils";
+import { escapeRegExp,getLinkParts,sleep } from "../../utils/utils";
+import { getLeaf,openLeaf } from "../../utils/obsidianUtils";
 import { createOrOverwriteFile } from "src/utils/fileUtils";
-import { KeyEvent, isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
+import { KeyEvent,isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
 import { t } from "src/lang/helpers";
-import { ExcalidrawElement, getEA } from "src/core";
+import { ExcalidrawElement,getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { MAX_IMAGE_SIZE, REG_LINKINDEX_INVALIDCHARS } from "src/constants/constants";
-import { REGEX_LINK, REGEX_TAGS } from "../ExcalidrawData";
+import { MAX_IMAGE_SIZE,REG_LINKINDEX_INVALIDCHARS } from "src/constants/constants";
+import { REGEX_LINK,REGEX_TAGS } from "../ExcalidrawData";
 import { ScriptEngine } from "../Scripts";
-import { openExternalLink, openTagSearch, parseObsidianLink } from "src/utils/excalidrawViewUtils";
+import { openExternalLink,openTagSearch,parseObsidianLink } from "src/utils/excalidrawViewUtils";
 import { ButtonDefinition } from "src/types/promptTypes";
-import { EditorView, keymap } from "@codemirror/view";
-import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { EditorView,keymap } from "@codemirror/view";
+import { defaultKeymap,history,historyKeymap } from "@codemirror/commands";
 import { parser } from "./math-only";
 import { LRLanguage } from "@codemirror/language";
 import { editorLivePreviewField } from "obsidian";
 import { Extension } from "@codemirror/state";
 import { FloatingModal } from "./FloatingModal";
+import { setSanitizedHtml } from "src/utils/htmlUtils";
 
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;
@@ -61,7 +62,7 @@ export class Prompt extends Modal {
       div = div.createDiv();
       div.style.width = "100%";
       const p = div.createEl("p");
-      p.innerHTML = this.prompt_desc;
+      setSanitizedHtml(p, this.prompt_desc);
     }
     const form = div.createEl("form");
     form.addClass("excalidraw-prompt-form");
@@ -656,7 +657,7 @@ export class GenericInputPrompt extends Modal {
     
     // Add to document and set up listeners
     document.body.appendChild(popup);
-    setTimeout(() => {
+    window.setTimeout(() => {
       document.addEventListener('click', closePopupListener);
     }, 10);
   }
@@ -752,7 +753,7 @@ export class GenericInputPrompt extends Modal {
       // Restore focus and cursor position
       if (activeElement && activeElement.isConnected) {
         // Use setTimeout to ensure the pointer event is fully processed
-        setTimeout(() => {
+        window.setTimeout(() => {
           activeElement.focus();
           
           // Restore cursor position for input/textarea elements (but not for number inputs)
@@ -1081,7 +1082,7 @@ export class MultiOptionConfirmationPrompt extends Modal {
 
     const messageEl = this.contentEl.createDiv();
     messageEl.style.marginBottom = "1rem";
-    messageEl.innerHTML = this.message;
+    setSanitizedHtml(messageEl, this.message);
 
     const buttonContainer = this.contentEl.createDiv();
     buttonContainer.style.display = "flex";

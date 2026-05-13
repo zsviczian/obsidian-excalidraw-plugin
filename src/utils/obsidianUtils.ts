@@ -1,15 +1,14 @@
 import {
-  App,
-  Editor,
-  FrontMatterCache,
-  MarkdownView,
-  OpenViewState, parseFrontMatterEntry, TextFileView, TFile, View, ViewState, Workspace, WorkspaceLeaf, WorkspaceSplit
+App,
+Editor,
+FrontMatterCache,
+MarkdownView,
+OpenViewState,parseFrontMatterEntry,TextFileView,TFile,View,ViewState,Workspace,WorkspaceLeaf,WorkspaceSplit
 } from "obsidian";
 import ExcalidrawPlugin from "../core/main";
-import { linkClickModifierType, ModifierKeys } from "./modifierkeyHelper";
-import { DEVICE, EXCALIDRAW_PLUGIN, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
+import { linkClickModifierType,ModifierKeys } from "./modifierkeyHelper";
+import { DEVICE,EXCALIDRAW_PLUGIN,VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import yaml from "js-yaml";
-import { debug, DEBUGGING } from "./debugHelper";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 
 export const getParentOfClass = (element: Element, cssClass: string):HTMLElement | null => {
@@ -416,7 +415,6 @@ export const foldExcalidrawSection = (view: MarkdownView) => {
 };
 
 export async function setExcalidrawView(leaf: WorkspaceLeaf) {
-  (process.env.NODE_ENV === 'development') && DEBUGGING && debug(setExcalidrawView,`setExcalidrawView`, leaf);
   await leaf.setViewState({
     type: VIEW_TYPE_EXCALIDRAW,
     state: leaf.view.getState(),
@@ -425,7 +423,6 @@ export async function setExcalidrawView(leaf: WorkspaceLeaf) {
 }
 
 export async function closeLeafView(leaf: WorkspaceLeaf) {
-  (process.env.NODE_ENV === 'development') && DEBUGGING && debug(setExcalidrawView,`setExcalidrawView`, leaf);
   await leaf.setViewState({
     type: "empty",
     state: {},

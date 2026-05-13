@@ -1,10 +1,10 @@
 import {
-  DEVICE,
-  FRONTMATTER_KEYS,
-  CJK_FONTS,
+DEVICE,
+FRONTMATTER_KEYS,
+CJK_FONTS,
 } from "src/constants/constants";
-import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
-import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/modifierKeyLabels";
+import { TAG_AUTOEXPORT,TAG_MDREADINGMODE,TAG_PDFEXPORT } from "src/constants/constSettingsTags";
+import { labelCTRL,labelMETA,labelSHIFT } from "src/utils/modifierKeyLabels";
 
 declare const PLUGIN_VERSION:string;
 
@@ -324,6 +324,8 @@ export default {
   AI_PROVIDER_OPTION_GOOGLE: "Google / Gemini",
   AI_PROVIDER_OPTION_XAI: "xAI / Grok",
   AI_PROVIDER_OPTION_OPENAI_COMPATIBLE: "OpenAI 兼容 / 本地",
+  AI_PROVIDER_PROFILE_MODAL_OPENAI_COMPATIBLE_HINT:
+    "对于本地的 OpenAI 兼容 LLM，如果不需要真实 API key，请填写一个虚拟 key，否则 Excalidraw 不会把该配置识别为已配置。",
   AI_PROVIDER_BASE_URL_EMPTY: "由提供商类型推导",
   AI_PROVIDER_API_KEY_SET: "已配置",
   AI_PROVIDER_API_KEY_NOT_SET: "未配置",

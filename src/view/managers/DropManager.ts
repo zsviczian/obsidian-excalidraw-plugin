@@ -1,18 +1,17 @@
 
-import { DEBUGGING, debug } from "src/utils/debugHelper";
 import ExcalidrawView from "../ExcalidrawView";
-import { App, Notice, TFile } from "obsidian";
-import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { DEVICE, IMAGE_TYPES, REG_LINKINDEX_INVALIDCHARS, viewportCoordsToSceneCoords } from "src/constants/constants";
-import { internalDragModifierType, isWinCTRLorMacCMD, localFileDragModifierType, modifierKeyTooltipMessages, webbrowserDragModifierType } from "src/utils/modifierkeyHelper";
-import { errorlog, hyperlinkIsImage, hyperlinkIsYouTubeLink } from "src/utils/utils";
+import { App,Notice,TFile } from "obsidian";
+import { AppState,ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { DEVICE,IMAGE_TYPES,REG_LINKINDEX_INVALIDCHARS,viewportCoordsToSceneCoords } from "src/constants/constants";
+import { internalDragModifierType,isWinCTRLorMacCMD,localFileDragModifierType,modifierKeyTooltipMessages,webbrowserDragModifierType } from "src/utils/modifierkeyHelper";
+import { errorlog,hyperlinkIsImage,hyperlinkIsYouTubeLink } from "src/utils/utils";
 import { InsertPDFModal } from "src/shared/Dialogs/InsertPDFModal";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { getEA } from "src/core";
-import { insertEmbeddableToView, insertImageToView } from "src/utils/excalidrawViewUtils";
+import { insertEmbeddableToView,insertImageToView } from "src/utils/excalidrawViewUtils";
 import { t } from "src/lang/helpers";
 import ExcalidrawPlugin from "src/core/main";
-import { getInternalLinkOrFileURLLink, getURLImageExtension, importFileToVault } from "src/utils/fileUtils";
+import { getInternalLinkOrFileURLLink,getURLImageExtension,importFileToVault } from "src/utils/fileUtils";
 import { ScriptEngine } from "src/shared/Scripts";
 import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
 import { Position } from "src/types/excalidrawViewTypes";
@@ -80,7 +79,6 @@ export class DropManager {
   }
 
   public onDrop (event: React.DragEvent<HTMLDivElement>): boolean {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onDrop, "ExcalidrawView.onDrop", event);
     if(this.draginfoDiv) {
       this.ownerDocument.body.removeChild(this.draginfoDiv);
       delete this.draginfoDiv;
@@ -609,7 +607,6 @@ export class DropManager {
   }
 
   private dropAction(transfer: DataTransfer) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.dropAction, "ExcalidrawView.dropAction");
     // Return a 'copy' or 'link' action according to the content types, or undefined if no recognized type
     const files = (this.app as any).dragManager.draggable?.files;
     if (files) {

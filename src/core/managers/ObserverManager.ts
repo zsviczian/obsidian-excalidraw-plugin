@@ -1,9 +1,9 @@
-import { debug, DEBUGGING } from "src/utils/debugHelper";
+import { DEBUGGING } from "src/utils/debugHelper";
 import ExcalidrawPlugin from "src/core/main";
 import { CustomMutationObserver } from "src/utils/debugHelper";
 import { DEVICE } from "src/constants/constants";
-import { getExcalidrawViews, isObsidianThemeDark } from "src/utils/obsidianUtils";
-import { App, Notice, TFile } from "obsidian";
+import { getExcalidrawViews,isObsidianThemeDark } from "src/utils/obsidianUtils";
+import { App,Notice,TFile } from "obsidian";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 
 export class ObserverManager {
@@ -67,7 +67,6 @@ export class ObserverManager {
     if (!matchThemeTrigger) return;
 
     const themeObserverFn:MutationCallback = async (mutations: MutationRecord[]) => {
-      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(themeObserverFn, `ExcalidrawPlugin.addThemeObserver`, mutations);
       const { matchThemeTrigger } = this.settings;
       if (!matchThemeTrigger) return;
 
@@ -78,7 +77,7 @@ export class ObserverManager {
       const darkClass = bodyClassList.contains('theme-dark');
       if (mutation?.oldValue?.includes('theme-dark') === darkClass) return;
 
-      setTimeout(()=>{ //run async to avoid blocking the UI
+      window.setTimeout(()=>{ //run async to avoid blocking the UI
         const theme = isObsidianThemeDark() ? "dark" : "light";
         const excalidrawViews = getExcalidrawViews(this.app, true);
         excalidrawViews.forEach(excalidrawView => {
@@ -122,7 +121,6 @@ export class ObserverManager {
    * The function is called from onload()
    */
   private async experimentalFileTypeDisplay() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.experimentalFileTypeDisplay, `ExcalidrawPlugin.experimentalFileTypeDisplay`);
     const tagClassName = "excalidraw-filetype-tag";
     const insertFiletype = (el: HTMLElement) => {
       if (!el || el.querySelector(`.${tagClassName}`)) {
@@ -148,7 +146,6 @@ export class ObserverManager {
     };
 
     const fileExplorerObserverFn:MutationCallback = (mutationsList) => {
-      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(fileExplorerObserverFn, `ExcalidrawPlugin.experimentalFileTypeDisplay > fileExplorerObserverFn`, mutationsList);
       const ensureFiletypes = (target: Element | DocumentFragment) => {
         target.querySelectorAll?.(".nav-file-title").forEach(insertFiletype);
       };
@@ -235,7 +232,6 @@ export class ObserverManager {
     }
     //The user clicks settings, or "open another vault", or the command palette
     const modalContainerObserverFn: MutationCallback = async (m: MutationRecord[]) => {
-      (process.env.NODE_ENV === 'development') && DEBUGGING && debug(modalContainerObserverFn,`ExcalidrawPlugin.modalContainerObserverFn`, m);
       const view = this.plugin.activeExcalidrawView;
       if (
         (m.length !== 1) ||
@@ -248,7 +244,7 @@ export class ObserverManager {
         return;
       }
       
-      const { errorMessage } = (view.excalidrawAPI as ExcalidrawImperativeAPI).getAppState();
+      const { errorMessage } = (view.excalidrawAPI).getAppState();
       if (!errorMessage) this.plugin.activeExcalidrawView.save();
     };
 

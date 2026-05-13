@@ -1,35 +1,33 @@
 import {
-  App,
-  Notice,
-  request,requestUrl,
-  TFile,
-  TFolder,
+App,
+Notice,
+request,requestUrl,
+TFile,
+TFolder,
 } from "obsidian";
 import { Random } from "roughjs/bin/math";
 import { BinaryFileData } from "@zsviczian/excalidraw/types/excalidraw/types";
-export { errorlog, getDataURL } from "./coreUtils";
-import { errorlog, getDataURL } from "./coreUtils";
+import { errorlog,getDataURL } from "./coreUtils";
 import {
-  exportToSvg,
-  exportToBlob,
-  IMAGE_TYPES,
-  FRONTMATTER_KEYS,
-  EXCALIDRAW_PLUGIN,
-  getCommonBoundingBox,
-  DEVICE,
-  getContainerElement,
-  SCRIPT_INSTALL_FOLDER,
-  VIEW_TYPE_EXCALIDRAW,
+exportToSvg,
+exportToBlob,
+IMAGE_TYPES,
+FRONTMATTER_KEYS,
+EXCALIDRAW_PLUGIN,
+getCommonBoundingBox,
+DEVICE,
+getContainerElement,
+SCRIPT_INSTALL_FOLDER,
+VIEW_TYPE_EXCALIDRAW,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
-import { ExcalidrawElement, ExcalidrawImageElement, ExcalidrawTextElement, ImageCrop } from "@zsviczian/excalidraw/types/element/src/types";
-import { getDataURLFromURL, getIMGFilename, getMimeType, getURLImageExtension } from "./fileUtils";
+import { ExcalidrawElement,ExcalidrawImageElement,ExcalidrawTextElement,ImageCrop } from "@zsviczian/excalidraw/types/element/src/types";
+import { getDataURLFromURL,getIMGFilename,getMimeType,getURLImageExtension } from "./fileUtils";
 import { generateEmbeddableLink } from "./customEmbeddableUtils";
 import { FILENAMEPARTS } from "../types/utilTypes";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
-import { getExcalidrawViews, getFileCSSClasses } from "./obsidianUtils";
-import { cleanBlockRef, cleanSectionHeading } from "./pathUtils";
-export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
+import { getExcalidrawViews,getFileCSSClasses } from "./obsidianUtils";
+import { cleanBlockRef,cleanSectionHeading } from "./pathUtils";
 import { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 import { updateElementLinksToObsidianLinks } from "./excalidrawAutomateUtils";
 import { CropImage } from "../shared/CropImage";
@@ -45,6 +43,9 @@ import { ExportSettings } from "src/types/exportUtilTypes";
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 import ExcalidrawView from "../view/ExcalidrawView";
 import { emptyDrawingElements } from "src/constants/emptydrawing";
+import { sanitizedFragment } from "./htmlUtils";
+export { errorlog, getDataURL } from "./coreUtils";
+export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
@@ -933,11 +934,11 @@ export function isImagePartRef (parts: FILENAMEPARTS): boolean {
 }
 
 export function fragWithHTML (html: string) {
-  return createFragment((frag) => (frag.createDiv().innerHTML = html));
+  return createFragment((frag) => frag.appendChild(sanitizedFragment(html)));
 }
 
 export async function sleep (ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 /**REACT 18 
@@ -1082,12 +1083,23 @@ export function isCallerFromTemplaterPlugin (stackTrace:string) {
 }
 
 export function convertSVGStringToElement (svg: string): SVGSVGElement {
-  const divElement = document.createElement("div");
-  divElement.innerHTML = svg;
-  const firstChild = divElement.firstChild;
-  if (firstChild instanceof SVGSVGElement) {
-    return firstChild;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svg, "image/svg+xml");
+
+  if (doc.querySelector("parsererror")) {
+    return;
   }
+
+  const root = doc.documentElement;
+  if (root instanceof SVGSVGElement) {
+    return root;
+  }
+
+  const nestedSvg = doc.querySelector("svg");
+  if (nestedSvg instanceof SVGSVGElement) {
+    return nestedSvg;
+  }
+
   return;
 }
 
@@ -1220,7 +1232,7 @@ export class PromisePool<T> {
 
       return Promise.resolve(this.pool.start()).then(
         () => {
-          setTimeout(() => {
+          window.setTimeout(() => {
             this.pool?.removeEventListener("fulfilled", listener);
           });
           return Object.values(this.entries);

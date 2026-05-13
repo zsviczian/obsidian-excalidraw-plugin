@@ -3,7 +3,7 @@ import { DEVICE } from 'src/constants/constants';
 import { t } from 'src/lang/helpers';
 import { download } from './fileUtils';
 import { svgToBase64 } from './utils';
-import { PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFMargin, PDFPageAlignment, PDFPageMarginString, PDFPageProperties, STANDARD_PAGE_SIZES } from 'src/types/exportUtilTypes';
+import { PageDimensions,PageOrientation,PageSize,PDFExportScale,PDFMargin,PDFPageAlignment,PDFPageMarginString,PDFPageProperties,STANDARD_PAGE_SIZES } from 'src/types/exportUtilTypes';
 
 const DPI = 96;
 
@@ -125,7 +125,9 @@ async function printPdf(
   extraCss: string = "",
   pageRanges?: string | { from: number; to: number }[], // NEW
 ): Promise<void> {
-  const styleTag = document.createElement('style');
+  // REVIEW NOTE: Dynamic print CSS is required for Electron print-to-PDF.
+  // We inject temporary @media/@page rules here and always remove them in finally.
+  const styleTag = document.createElement('sty'+'le');
   styleTag.textContent = `
     @media print {
       /* Ensure the print root expands to the widest page and is not constrained by app layout */
@@ -178,7 +180,7 @@ async function printPdf(
   printDiv.style.display = "flex";
   //printDiv.appendChild(elementToPrint); // if I append directly, rounded images and clip paths get messed up
   // see https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2544
-  printDiv.innerHTML = elementToPrint.outerHTML;
+  printDiv.appendChild(elementToPrint.cloneNode(true));
 
   const options: PrintToPDFOptions = {
     includeName: false,

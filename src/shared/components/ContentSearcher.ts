@@ -1,7 +1,7 @@
 import { t } from "src/lang/helpers";
 import { escapeRegExp } from "../../utils/utils";
 // @ts-ignore
-import { getIcon, htmlToMarkdown, Notice } from "obsidian";
+import { htmlToMarkdown,Notice,setIcon } from "obsidian";
 
 export class ContentSearcher {
   private contentDiv: HTMLElement;
@@ -46,7 +46,7 @@ export class ContentSearcher {
       },
       type: "button",
     });
-    this.prevButton.innerHTML = getIcon("arrow-up").outerHTML;
+    setIcon(this.prevButton, "arrow-up");
 
     this.nextButton = createEl("button", {
       cls: ["clickable-icon", "document-search-button"],
@@ -56,7 +56,7 @@ export class ContentSearcher {
       },
       type: "button",
     });
-    this.nextButton.innerHTML = getIcon("arrow-down").outerHTML;
+    setIcon(this.nextButton, "arrow-down");
 
     this.exportMarkdown = createEl("button", {
       cls: ["clickable-icon", "document-search-button"],
@@ -66,7 +66,7 @@ export class ContentSearcher {
       },
       type: "button",
     });
-    this.exportMarkdown.innerHTML = getIcon("clipboard-copy").outerHTML;
+    setIcon(this.exportMarkdown, "clipboard-copy");
 
     this.showHideButton = createEl("button", {
       cls: ["clickable-icon", "document-search-button", "search-visible"],
@@ -76,7 +76,7 @@ export class ContentSearcher {
       },
       type: "button",
     });
-    this.showHideButton.innerHTML = getIcon("minimize-2").outerHTML;
+    setIcon(this.showHideButton, "minimize-2");
 
     buttonContainer.appendChild(this.prevButton);
     buttonContainer.appendChild(this.nextButton);
@@ -102,14 +102,21 @@ export class ContentSearcher {
     this.nextButton.onclick = () => this.navigateSearchResults("next");
     this.prevButton.onclick = () => this.navigateSearchResults("previous");
     this.exportMarkdown.onclick = () => {
-      // Get the full HTML content first
-      const fullHtml = this.contentDiv.outerHTML;
-      
-      // Find the index of the first <hr> element
-      const startIndex = fullHtml.indexOf('<hr');
-      
-      // Extract HTML from the first <hr> element onwards
-      const html = startIndex > -1 ? fullHtml.substring(startIndex) : fullHtml;
+      const exportContent = this.contentDiv.cloneNode(true) as HTMLElement;
+      exportContent.querySelector(".excalidraw-search")?.remove();
+
+      const childNodes = Array.from(exportContent.childNodes);
+      const startIndex = childNodes.findIndex(
+        (node) => node instanceof HTMLElement && node.tagName === "HR",
+      );
+      const nodesToExport = startIndex > -1 ? childNodes.slice(startIndex) : childNodes;
+      const htmlContainer = document.createElement("div");
+
+      nodesToExport.forEach((node) => {
+        htmlContainer.appendChild(node.cloneNode(true));
+      });
+
+      const html = htmlContainer.innerHTML;
 
       function replaceHeading(html:string,level:number):string {
         const re = new RegExp(`<summary class="excalidraw-setting-h${level}">([^<]+)<\/summary>`,"g");
@@ -139,13 +146,13 @@ export class ContentSearcher {
         this.showHideButton.addClass("search-hidden");
         this.searchBarWrapper.style.backgroundColor = "transparent";
         setOpacity("0");
-        this.showHideButton.innerHTML = getIcon("maximize-2").outerHTML;
+        setIcon(this.showHideButton, "maximize-2");
       } else {
         this.showHideButton.removeClass("search-hidden");
         this.showHideButton.addClass("search-visible");
         this.searchBarWrapper.style.backgroundColor = null;
         setOpacity(null);
-        this.showHideButton.innerHTML = getIcon("minimize-2").outerHTML;
+        setIcon(this.showHideButton, "minimize-2");
       }
     }
 
@@ -157,7 +164,7 @@ export class ContentSearcher {
         this.highlightSearchTerm(searchTerm);
         const totalHits = this.contentDiv.querySelectorAll("mark.search-highlight").length;
         this.hitCount.textContent = totalHits > 0 ? `1 / ${totalHits}` : "";
-        setTimeout(() => this.navigateSearchResults("next"));
+        window.setTimeout(() => this.navigateSearchResults("next"));
       } else {
         this.hitCount.textContent = "";
       }
@@ -236,9 +243,17 @@ export class ContentSearcher {
    * Remove all search highlights
    */
   public clearHighlights(): void {
+    const parentsToNormalize = new Set<Node>();
+
     this.contentDiv.querySelectorAll("mark.search-highlight").forEach((el) => {
-      el.outerHTML = el.innerHTML;
+      const parent = el.parentNode;
+      if (!parent) return;
+
+      parentsToNormalize.add(parent);
+      el.replaceWith(document.createTextNode(el.textContent ?? ""));
     });
+
+    parentsToNormalize.forEach((parent) => parent.normalize());
   }
 
   /**
@@ -280,7 +295,7 @@ export class ContentSearcher {
     this.expandParentDetails(nextActiveHighlight);
     
     // Use setTimeout to ensure DOM has time to update after expanding details
-    setTimeout(() => {
+    window.setTimeout(() => {
       this.scrollResultIntoView(nextActiveHighlight);
     }, 100);
 

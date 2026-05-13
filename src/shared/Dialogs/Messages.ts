@@ -17,8 +17,10 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
   - AI settings now use shared provider profiles plus text/multimodal model lists, image model lists, default model selection, token budgets, and an optional verbose developer-console logging toggle for troubleshooting.
   - The shared AI configuration is now used by ExcalidrawAutomate, Mermaid chat, diagram-to-code, ExcaliAI, and related AI features.
   - Older OpenAI-specific AI settings are migrated automatically into the new shared AI settings on first run.
+- API key obfuscuation for plugin settings. This prevents your API keys to leak via Excalidraw plugin settings in case you open up your Vault to LLMs.
 
 ## Fixed
+- Findings listed on [Obsidian Community Plugin Info](https://community.obsidian.md/plugins/obsidian-excalidraw-plugin)
 - Error when saving pasted images from Excalidraw.com
 - Fixed Mermaid chat / text-to-diagram and diagram-to-code to use the shared AI layer and honor the configured provider, model, API key, and endpoint settings.
 - Fixed the ExcaliAI script to work with the new shared AI settings, including provider-aware text and image model selection, prompt transforms vs mask edits, and OpenAI image responses that return \`b64_json\` instead of a hosted URL.

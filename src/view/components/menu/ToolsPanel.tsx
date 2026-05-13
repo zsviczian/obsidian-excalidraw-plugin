@@ -1,10 +1,10 @@
 import clsx from "clsx";
-import { Notice, TFile } from "obsidian";
+import { Notice,TFile } from "obsidian";
 import * as React from "react";
 import { ActionButton } from "./ActionButton";
-import { ICONS, saveIcon, stringToSVG } from "../../../constants/actionIcons";
-import { DEVICE, SCRIPT_INSTALL_FOLDER } from "../../../constants/constants";
-import { insertLaTeXToView, search } from "../../../utils/excalidrawViewHelpers";
+import { ICONS,saveIcon,stringToSVG } from "../../../constants/actionIcons";
+import { DEVICE,SCRIPT_INSTALL_FOLDER } from "../../../constants/constants";
+import { insertLaTeXToView,search } from "../../../utils/excalidrawViewHelpers";
 import { TextMode } from "../../../shared/TextMode";
 import ExcalidrawView from "../../ExcalidrawView";
 import { t } from "../../../lang/helpers";
@@ -12,12 +12,11 @@ import { ReleaseNotes } from "../../../shared/Dialogs/ReleaseNotes";
 import { ScriptIconMap } from "../../../shared/Scripts";
 import { ScriptInstallPrompt } from "src/shared/Dialogs/ScriptInstallPrompt";
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { isWinALTorMacOPT, isWinCTRLorMacCMD, isSHIFT } from "src/utils/modifierkeyHelper";
+import { isWinALTorMacOPT,isWinCTRLorMacCMD,isSHIFT } from "src/utils/modifierkeyHelper";
 import { InsertPDFModal } from "src/shared/Dialogs/InsertPDFModal";
 import { ExportDialog } from "src/shared/Dialogs/ExportDialog";
 import { openExternalLink } from "src/utils/excalidrawViewUtils";
 import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
-import { DEBUGGING, debug } from "src/utils/debugHelper";
 import { REM_VALUE } from "src/core/managers/StylesManager";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
@@ -89,14 +88,12 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   updateScriptIconMap(scriptIconMap: ScriptIconMap) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updateScriptIconMap,"ToolsPanel.updateScriptIconMap()");
     this.setState(() => {
       return { scriptIconMap };
     });
   }
 
   setPreviewMode(isPreviewMode: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setPreviewMode,"ToolsPanel.setPreviewMode()");
     this.setState(() => {
       return {
         isPreviewMode,
@@ -105,7 +102,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setFullscreen(isFullscreen: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setFullscreen,"ToolsPanel.setFullscreen()");
     this.setState(() => {
       return {
         isFullscreen,
@@ -114,7 +110,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setDirty(isDirty: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setDirty,"ToolsPanel.setDirty()");
     this.setState(()=> {
       return {
         isDirty,
@@ -123,7 +118,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setExcalidrawViewMode(isViewModeEnabled: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setExcalidrawViewMode,"ToolsPanel.setExcalidrawViewMode()");
     this.setState(() => {
       return {
         excalidrawViewMode: isViewModeEnabled,
@@ -132,7 +126,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   toggleVisibility(isMobileOrZen: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.toggleVisibility,"ToolsPanel.toggleVisibility()");
     this.setTopCenter(isMobileOrZen);
     this.setState((prevState: PanelState) => {
       return {
@@ -142,7 +135,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setTheme(theme: "dark" | "light") {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setTheme,"ToolsPanel.setTheme()");
     this.setState((prevState: PanelState) => {
       return {
         theme,
@@ -151,7 +143,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setTopCenter(isMobileOrZen: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.setTopCenter,"ToolsPanel.setTopCenter()");
     this.setState(() => {
       return {
         left:
@@ -167,7 +158,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   updatePosition(deltaY: number = 0, deltaX: number = 0) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.updatePosition,"ToolsPanel.updatePosition()");
     this.setState(() => {
       const {
         offsetTop,
@@ -435,7 +425,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     const view = this.getView();
     const plugin = view?.plugin;
     if (!view || !plugin) return;
-    const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
+    const api = view.excalidrawAPI;
     await plugin.loadSettings();
     const index = plugin.settings.pinnedScripts.indexOf(key)
     if(index > -1) {
@@ -490,7 +480,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   };
 
   render() {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.render,"ToolsPanel.render()");
     return (
       <div
         ref={this.containerRef}
@@ -745,7 +734,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   private renderScriptButtons(isDownloaded: boolean) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.renderScriptButtons,"ToolsPanel.renderScriptButtons()");
     if (Object.keys(this.state.scriptIconMap).length === 0) {
       return "";
     }

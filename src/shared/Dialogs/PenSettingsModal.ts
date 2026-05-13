@@ -1,14 +1,14 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { ColorComponent, Modal, Setting, TextComponent, ToggleComponent } from "obsidian";
+import { ColorComponent,Modal,Setting,TextComponent,ToggleComponent } from "obsidian";
 import { COLOR_NAMES } from "src/constants/constants";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import ExcalidrawPlugin from "src/core/main";
 import { setPen } from "src/view/components/menu/ObsidianMenu";
-import { ExtendedFillStyle, PenType } from "src/types/penTypes";
+import { ExtendedFillStyle,PenType } from "src/types/penTypes";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { PENS } from "src/utils/pens";
 import { fragWithHTML } from "src/utils/utils";
-import { __values } from "tslib";
+import { setSanitizedHtml } from "src/utils/htmlUtils";
 import { showColorPicker } from "./ColorPicker";
 
 const EASINGFUNCTIONS: Record<string,string> = {
@@ -467,7 +467,7 @@ export class PenSettingsModal extends Modal {
 
     ce.createEl("h2",{text: "Perfect Freehand settings"});
     const p = ce.createEl("p");
-    p.innerHTML = `Read the Perfect Freehand documentation following <a href="https://github.com/steveruizok/perfect-freehand#documentation" target="_blank">this link</a>.`;
+    setSanitizedHtml(p, `Read the Perfect Freehand documentation following <a href="https://github.com/steveruizok/perfect-freehand#documentation" target="_blank">this link</a>.`);
 
     let tSetting: Setting;
     tSetting = new Setting(ce)

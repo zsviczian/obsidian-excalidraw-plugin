@@ -1,11 +1,10 @@
-import { WorkspaceLeaf, TFile, Editor, MarkdownView, MarkdownFileInfo, MetadataCache, App, EventRef, Menu, FileView } from "obsidian";
+import { WorkspaceLeaf,TFile,Editor,MarkdownView,MarkdownFileInfo,MetadataCache,App,EventRef,Menu,FileView } from "obsidian";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { getLink } from "../../utils/fileUtils";
-import { editorInsertText, getExcalidrawViews, getParentOfClass, isUnwantedLeaf, setExcalidrawView } from "../../utils/obsidianUtils";
+import { editorInsertText,getExcalidrawViews,getParentOfClass,isUnwantedLeaf,setExcalidrawView } from "../../utils/obsidianUtils";
 import ExcalidrawPlugin from "src/core/main";
-import { DEBUGGING, debug } from "src/utils/debugHelper";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { DEVICE, FRONTMATTER_KEYS, ICON_NAME, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
+import { FRONTMATTER_KEYS,ICON_NAME,VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { t } from "src/lang/helpers";
 import { setMobileNavbarPosition } from "src/utils/excalidrawViewUtils";
@@ -181,7 +180,6 @@ export class EventManager {
   }
 
   public async onActiveLeafChangeHandler (leaf: WorkspaceLeaf) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onActiveLeafChangeHandler,`onActiveLeafChangeEventHandler`, leaf);
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/723
 
      if(this.debunceActiveLeafChangeHandlerTimer) {
@@ -265,7 +263,7 @@ export class EventManager {
       //timeout gives time to the view being exited to finish saving
       const f = newActiveviewEV.file;
       if (newActiveviewEV.file) {
-        setTimeout(() => {
+        window.setTimeout(() => {
           if (!newActiveviewEV || !newActiveviewEV._loaded) {
             return;
           }
@@ -317,7 +315,6 @@ export class EventManager {
   }
 
   private onFileMenuSaveActiveDrawing () {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onFileMenuSaveActiveDrawing,`onFileMenuSaveActiveDrawing`);
     if (
       !this.activeExcalidrawView ||
       !this.activeExcalidrawView?.isDirty()
@@ -328,7 +325,6 @@ export class EventManager {
   };
 
   private onFileMenuHandler(menu: Menu, file: TFile, source: string, leaf: WorkspaceLeaf) {
-    (process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.onFileMenuHandler, `EventManager.onFileMenuHandler`, file, source, leaf);
     if (!leaf) return;
     const view = leaf.view;
     if(!view || !(view instanceof MarkdownView)) return;

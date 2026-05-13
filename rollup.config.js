@@ -49,7 +49,12 @@ const jsxRuntimeShim = `
 
 const mathjaxtosvg_pkg = isLib ? "" : fs.readFileSync("./MathjaxToSVG/dist/index.js", "utf8");
 
-const LANGUAGES = ['ru', 'zh-cn', 'zh-tw', 'es']; //english is not compressed as it is always loaded by default
+// Add non-English locales here to embed them as compressed payloads in main.js.
+// When adding a locale file:
+// 1) add its code to this list, 2) build once, 3) if build fails because the locale
+// contains a new dynamic expression, extend tokenizeLocaleContent below and mirror
+// the new token in src/lang/helpers.ts token resolution.
+const LANGUAGES = ['ru', 'zh-cn', 'zh-tw', 'es']; // english is loaded by default
 
 function trimLastSemicolon(input) {
   if (input.endsWith(";")) {
@@ -77,12 +82,144 @@ function minifyCode(code) {
   return minified.code;
 }
 
+// Build-time placeholders that are resolved at runtime in src/lang/helpers.ts.
+// Keep names stable and keep this map in sync with TOKENS in helpers.ts.
+const DEVICE_TOKEN_VALUES = {
+  IF_DESKTOP_START: "__EXD_IF_DESKTOP__",
+  IF_DESKTOP_END: "__EXD_END_IF_DESKTOP__",
+  IF_APPLE_START: "__EXD_IF_APPLE__",
+  IF_APPLE_ELSE: "__EXD_ELSE_APPLE__",
+  IF_APPLE_END: "__EXD_END_IF_APPLE__",
+  DEVTOOLS_SHORTCUT: "__EXD_DEVTOOLS_SHORTCUT__",
+};
+
+function replaceDesktopConditionalBlocks(input, deviceTokens) {
+  // Preserve desktop-only message fragments for runtime decision.
+  const start = "${DEVICE.isDesktop ? `";
+  const end = "` : \"\"}";
+  let output = "";
+  let cursor = 0;
+
+  while (true) {
+    const startIndex = input.indexOf(start, cursor);
+    if (startIndex === -1) {
+      output += input.slice(cursor);
+      break;
+    }
+
+    const contentStart = startIndex + start.length;
+    const endIndex = input.indexOf(end, contentStart);
+    if (endIndex === -1) {
+      output += input.slice(cursor);
+      break;
+    }
+
+    output += input.slice(cursor, startIndex);
+    output += `${deviceTokens.IF_DESKTOP_START}${input.slice(contentStart, endIndex)}${deviceTokens.IF_DESKTOP_END}`;
+    cursor = endIndex + end.length;
+  }
+
+  return output;
+}
+
+function replaceAppleTernaryBlocks(input, deviceTokens) {
+  // Preserve Apple vs non-Apple branch text for runtime decision.
+  const start = "(DEVICE.isIOS || DEVICE.isMacOS ? \"";
+  const separator = "\" : \"";
+  const end = "\")";
+  let output = "";
+  let cursor = 0;
+
+  while (true) {
+    const startIndex = input.indexOf(start, cursor);
+    if (startIndex === -1) {
+      output += input.slice(cursor);
+      break;
+    }
+
+    const trueStart = startIndex + start.length;
+    const separatorIndex = input.indexOf(separator, trueStart);
+    if (separatorIndex === -1) {
+      output += input.slice(cursor);
+      break;
+    }
+
+    const falseStart = separatorIndex + separator.length;
+    const endIndex = input.indexOf(end, falseStart);
+    if (endIndex === -1) {
+      output += input.slice(cursor);
+      break;
+    }
+
+    const trueValue = input.slice(trueStart, separatorIndex);
+    const falseValue = input.slice(falseStart, endIndex);
+
+    output += input.slice(cursor, startIndex);
+    output += `"${deviceTokens.IF_APPLE_START}${trueValue}${deviceTokens.IF_APPLE_ELSE}${falseValue}${deviceTokens.IF_APPLE_END}"`;
+    cursor = endIndex + end.length;
+  }
+
+  return output;
+}
+
+function tokenizeLocaleContent(content, deviceTokens = DEVICE_TOKEN_VALUES) {
+  let tokenized = content;
+
+  tokenized = replaceDesktopConditionalBlocks(tokenized, deviceTokens);
+  tokenized = replaceAppleTernaryBlocks(tokenized, deviceTokens);
+
+  // Add new replacements here when locale files introduce new dynamic snippets.
+  // Any new token emitted here must be handled in src/lang/helpers.ts.
+  const replacements = [
+    [/\$\{\s*labelALT\(\)\s*\}/g, "__EXD_LABEL_ALT__"],
+    [/\$\{\s*labelCTRL\(\)\s*\}/g, "__EXD_LABEL_CTRL__"],
+    [/\$\{\s*labelMETA\(\)\s*\}/g, "__EXD_LABEL_META__"],
+    [/\$\{\s*labelSHIFT\(\)\s*\}/g, "__EXD_LABEL_SHIFT__"],
+    [/\blabelALT\(\)/g, '"__EXD_LABEL_ALT__"'],
+    [/\blabelCTRL\(\)/g, '"__EXD_LABEL_CTRL__"'],
+    [/\blabelMETA\(\)/g, '"__EXD_LABEL_META__"'],
+    [/\blabelSHIFT\(\)/g, '"__EXD_LABEL_SHIFT__"'],
+    [/\$\{\s*FRONTMATTER_KEYS\["link-brackets"\]\.name\s*\}/g, "__EXD_FRONTMATTER_LINK_BRACKETS__"],
+    [/\$\{\s*FRONTMATTER_KEYS\["link-prefix"\]\.name\s*\}/g, "__EXD_FRONTMATTER_LINK_PREFIX__"],
+    [/\$\{\s*FRONTMATTER_KEYS\["url-prefix"\]\.name\s*\}/g, "__EXD_FRONTMATTER_URL_PREFIX__"],
+    [/\$\{\s*CJK_FONTS\s*\}/g, "__EXD_CJK_FONTS__"],
+    [/\$\{\s*PLUGIN_VERSION\s*\}/g, "__EXD_PLUGIN_VERSION__"],
+    ["${DEVICE.isIOS || DEVICE.isMacOS ? \"CMD+OPT+i\" : \"CTRL+SHIFT+i\"}", deviceTokens.DEVTOOLS_SHORTCUT],
+    ["${DEVICE.isMacOS ? \"CMD+OPT+i\" : \"CTRL+SHIFT+i\"}", deviceTokens.DEVTOOLS_SHORTCUT],
+  ];
+
+  for (const [pattern, replacement] of replacements) {
+    if (typeof pattern === "string") {
+      tokenized = tokenized.split(pattern).join(replacement);
+    } else {
+      tokenized = tokenized.replace(pattern, replacement);
+    }
+  }
+
+  return tokenized;
+}
+
+function serializeLocaleToJson(content) {
+  const assignmentCode = minifyCode(`x = ${content};`);
+  const locale = new Function(`
+    const TAG_AUTOEXPORT = "Autoexport";
+    const TAG_MDREADINGMODE = "MDReadingMode";
+    const TAG_PDFEXPORT = "PDFExport";
+    let x = {};
+    ${assignmentCode};
+    return x;
+  `)();
+  return JSON.stringify(locale);
+}
+
 function compressLanguageFile(lang) {
   const inputDir = "./src/lang/locale";
   const filePath = `${inputDir}/${lang}.ts`;
   let content = fs.readFileSync(filePath, "utf-8");
   content = trimLastSemicolon(content.split("export default")[1].trim());
-  return LZString.compressToBase64(minifyCode(`x = ${content};`));
+  const tokenizedContent = tokenizeLocaleContent(content);
+  const localeJson = serializeLocaleToJson(tokenizedContent);
+  return LZString.compressToBase64(localeJson);
 }
 
 const excalidraw_pkg = isLib ? "" : minifyCode(isProd

@@ -1,7 +1,7 @@
-import { EXCALIDRAW_PLUGIN, THEME } from "../constants/constants";
+import { EXCALIDRAW_PLUGIN,THEME } from "../constants/constants";
 import type { Theme } from "@zsviczian/excalidraw/types/element/src/types";
 import type { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { analyzeAIImage, extractCodeBlocks } from "./AIUtils";
+import { analyzeAIImage,extractCodeBlocks } from "./AIUtils";
 
 const DIAGRAM_TO_HTML_DEBUG_PREFIX = "[Excalidraw diagram-to-code debug]";
 const DIAGRAM_TO_HTML_DEBUG_MAX_LENGTH = 8000;

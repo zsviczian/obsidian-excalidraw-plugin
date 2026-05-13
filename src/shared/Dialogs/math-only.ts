@@ -14,7 +14,7 @@ Formatting_formatting-math_formatting-math-end_keyword_math_math- { "" }
     any { _ }
 }
 */
-import {LRParser} from "@lezer/lr"
+import { LRParser } from "@lezer/lr"
 export const parser = LRParser.deserialize({
   version: 14,
   states: "zOOOO?MrOOQOPOOOOOO'#Ca'#CaOYOPO'#C_OOOO?MtOOOOO-E6_-E6_QOOOOO",

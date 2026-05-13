@@ -1,6 +1,6 @@
 import ExcalidrawScene from "./elements/ExcalidrawScene";
 import Group from "./elements/Group";
-import { createTreeWalker, walk } from "./walker";
+import { createTreeWalker,walk } from "./walker";
 
 export type ConversionResult = {
   hasErrors: boolean;

@@ -1,54 +1,54 @@
 import {
-  App,
-  ButtonComponent,
-  DropdownComponent,
-  getIcon,
-  Modifier,
-  normalizePath,
-  PluginSettingTab,
-  Setting,
-  TextComponent,
-  TFile,
+App,
+ButtonComponent,
+DropdownComponent,Modifier,
+normalizePath,
+PluginSettingTab,
+Setting,
+TextComponent,
+TFile
 } from "obsidian";
-import { GITHUB_RELEASES, LOGO_EXCALIDRAW_MASTERY, setRootElementSize } from "src/constants/constants";
+import { GITHUB_RELEASES,LOGO_EXCALIDRAW_MASTERY,setRootElementSize } from "src/constants/constants";
 import { t } from "src/lang/helpers";
 import type ExcalidrawPlugin from "src/core/main";
 import { PenStyle } from "src/types/penTypes";
-import { DynamicStyle, GridSettings } from "src/types/types";
+import { DynamicStyle,GridSettings } from "src/types/types";
 import { PreviewImageType } from "src/types/utilTypes";
 import { setDynamicStyle } from "src/utils/dynamicStyling";
 import {
-  createOrOverwriteFile,
-  getDrawingFilename,
-  getEmbedFilename,
+createOrOverwriteFile,
+getDrawingFilename,
+getEmbedFilename,
 } from "src/utils/fileUtils";
 import { PENS } from "src/utils/pens";
 import {
-  addYouTubeThumbnail,
-  fragWithHTML,
+addYouTubeThumbnail,
+fragWithHTML,
 } from "src/utils/utils";
+import { setElementIconAndText,setSanitizedHtml } from "src/utils/htmlUtils";
 import { imageCache } from "src/shared/ImageCache";
 import { MultiOptionConfirmationPrompt } from "src/shared/Dialogs/Prompt";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "src/shared/Dialogs/EmbeddableMDFileCustomDataSettingsComponent";
 import { startupScript } from "src/constants/starutpscript";
-import { ModifierKeySet, ModifierSetType } from "src/utils/modifierkeyHelper";
+import { ModifierKeySet,ModifierSetType } from "src/utils/modifierkeyHelper";
 import { ModifierKeySettingsComponent } from "src/shared/Dialogs/ModifierKeySettings";
-import { ANNOTATED_PREFIX, CROPPED_PREFIX } from "src/utils/carveout";
+import { ANNOTATED_PREFIX,CROPPED_PREFIX } from "src/utils/carveout";
 import { EDITOR_FADEOUT } from "src/core/editor/EditorHandler";
 import { setDebugging } from "src/utils/debugHelper";
 import { Rank } from "src/constants/actionIcons";
-import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
+import { TAG_AUTOEXPORT,TAG_MDREADINGMODE,TAG_PDFEXPORT } from "src/constants/constSettingsTags";
 import { HotkeyEditor } from "src/shared/Dialogs/HotkeyEditor";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { createSliderWithText } from "src/utils/sliderUtils";
-import { PDFExportSettingsComponent, PDFExportSettings } from "src/shared/Dialogs/PDFExportSettingsComponent";
+import { PDFExportSettingsComponent,PDFExportSettings } from "src/shared/Dialogs/PDFExportSettingsComponent";
 import { ContentSearcher } from "src/shared/components/ContentSearcher";
-import { UIMode, UIModeSettingsComponent } from "src/shared/Dialogs/UIModeSettingComponent";
+import { UIMode,UIModeSettingsComponent } from "src/shared/Dialogs/UIModeSettingComponent";
 import { ScriptSettingValue } from "src/types/excalidrawAutomateTypes";
-import { AIImageModelCapability, AIImageModelConfig, AIModelConfig, AIProviderProfile } from "src/types/AIUtilTypes";
+import { AIImageModelCapability,AIImageModelConfig,AIModelConfig,AIProviderProfile } from "src/types/AIUtilTypes";
 import { AIProviderProfileModal } from "src/shared/Dialogs/AIProviderProfileModal";
 import { AIModelConfigModal } from "src/shared/Dialogs/AIModelConfigModal";
+import { decryptProviderProfiles } from "src/utils/settingsKeyObfuscation";
 
 export interface ExcalidrawSettings {
   copyLinkToElemenetAnchorTo100: boolean;
@@ -167,7 +167,7 @@ export interface ExcalidrawSettings {
   //loadCount: number; //version 1.2 migration counter
   drawingOpenCount: number;
   library: string;
-  library2: {};
+  library2: object;
   //patchCommentBlock: boolean; //1.3.12
   imageElementNotice: boolean; //1.4.0
   //runWYSIWYGpatch: boolean; //1.4.9
@@ -885,11 +885,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.settingsFocusoutHandler = null;
   }
 
+  private hasPendingActions(): boolean {
+    return this.requestUpdatePinnedPens || 
+           this.requestUpdateDynamicStyling || 
+           this.requestReloadDrawings || 
+           this.requestEmbedUpdate;
+  }
+
   private attachSettingsFocusoutHandler() {
     this.detachSettingsFocusoutHandler();
     this.settingsFocusoutHandler = (event: FocusEvent) => {
       window.setTimeout(() => {
-        if (!this.settingsDirty || !this.containerEl?.isConnected) {
+        if (!this.containerEl?.isConnected) {
           return;
         }
 
@@ -898,10 +905,42 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           return;
         }
 
-        void this.persistDirtySettings();
+        // Execute pending actions if settings are dirty or if there are pending actions
+        if (this.settingsDirty || this.hasPendingActions()) {
+          void this.persistDirtySettings().then(() => this.applyPendingActions());
+        }
       }, 0);
     };
     this.containerEl.addEventListener("focusout", this.settingsFocusoutHandler);
+  }
+
+  private async applyPendingActions() {
+    if (this.requestUpdatePinnedPens) {
+      this.requestUpdatePinnedPens = false;
+      getExcalidrawViews(this.app, true).forEach(excalidrawView =>
+        excalidrawView.updatePinnedCustomPens()
+      );
+    }
+    if (this.requestUpdateDynamicStyling) {
+      this.requestUpdateDynamicStyling = false;
+      getExcalidrawViews(this.app, true).forEach(excalidrawView =>
+        setDynamicStyle(this.plugin.ea, excalidrawView, excalidrawView.previousBackgroundColor, this.plugin.settings.dynamicStyling)
+      );
+    }
+    if (this.requestReloadDrawings) {
+      this.requestReloadDrawings = false;
+      const excalidrawViews = getExcalidrawViews(this.app, true);
+      for (const excalidrawView of excalidrawViews) {
+        await excalidrawView.save(false);
+        //debug({where:"ExcalidrawSettings.hide",file:v.view.file.name,before:"reload(true)"})
+        await excalidrawView.reload(true);
+      }
+      this.requestEmbedUpdate = true;
+    }
+    if (this.requestEmbedUpdate) {
+      this.requestEmbedUpdate = false;
+      this.plugin.triggerEmbedUpdates();
+    }
   }
 
   applySettingsUpdate(requestReloadDrawings: boolean = false) {
@@ -922,31 +961,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     }
 
     await this.persistDirtySettings();
-    if (this.requestUpdatePinnedPens) {
-      getExcalidrawViews(this.app, true).forEach(excalidrawView =>
-        excalidrawView.updatePinnedCustomPens()
-      )
-    }
-    if (this.requestUpdateDynamicStyling) {
-      getExcalidrawViews(this.app, true).forEach(excalidrawView =>
-          setDynamicStyle(this.plugin.ea,excalidrawView,excalidrawView.previousBackgroundColor,this.plugin.settings.dynamicStyling)
-      )
-    }
+    await this.applyPendingActions();
     this.hotkeyEditor.unload();
     if (this.hotkeyEditor.isDirty) {
       this.plugin.registerHotkeyOverrides();
-    }
-    if (this.requestReloadDrawings) {
-      const excalidrawViews = getExcalidrawViews(this.app, true);
-      for (const excalidrawView of excalidrawViews) {
-        await excalidrawView.save(false);
-        //debug({where:"ExcalidrawSettings.hide",file:v.view.file.name,before:"reload(true)"})
-        await excalidrawView.reload(true);
-      }
-      this.requestEmbedUpdate = true;
-    }
-    if (this.requestEmbedUpdate) {
-      this.plugin.triggerEmbedUpdates();
     }
     this.plugin.scriptEngine.updateScriptPath();
 /*    if(this.reloadMathJax) {
@@ -979,10 +997,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         "style": "margin: auto;"
       }},
       (a)=> {
-        //Lucide: message-circle-question-mark
-        a.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-circle-question-mark-icon lucide-message-circle-question-mark"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>${
-          t("NOTEBOOKLM_LINK_TEXT")
-        }`;
+        setElementIconAndText(a, "message-circle-question-mark", t("NOTEBOOKLM_LINK_TEXT"));
       }
     );
 
@@ -1046,7 +1061,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const excalidrawMasteryText = excalidrawMasteryContent.createDiv({
       cls: "excalidraw-mastery-promo__text",
     });
-    excalidrawMasteryText.innerHTML = t("EXCALIDRAW_MASTERY_PROMO_HTML");
+    setSanitizedHtml(excalidrawMasteryText, t("EXCALIDRAW_MASTERY_PROMO_HTML"));
     excalidrawMasteryText.querySelectorAll("a").forEach((anchor: HTMLAnchorElement) => {
       anchor.setAttribute("aria-label", t("EXCALIDRAW_MASTERY_PROMO_ARIA"));
       anchor.setAttribute("target", "_blank");
@@ -1072,37 +1087,37 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     
     const iconLinks = [
       { 
-        icon: getIcon("bug").outerHTML,
+        icon: "bug",
         href: "https://github.com/zsviczian/obsidian-excalidraw-plugin/issues",
         aria: t("LINKS_BUGS_ARIA"),
         text: t("LINKS_BUGS"),
       },
       {
-        icon: getIcon("globe").outerHTML,
+        icon: "globe",
         href: "https://community.sketch-your-mind.com/wiki",
         aria: t("LINKS_WIKI_ARIA"),
         text: t("LINKS_WIKI"),
       },
       { 
-        icon: getIcon("youtube").outerHTML,
+        icon: "youtube",
         href: "https://www.youtube.com/@VisualPKM",
         aria: t("LINKS_YT_ARIA"),
         text: t("LINKS_YT"),
       },
       { 
-        icon: getIcon("graduation-cap").outerHTML,
+        icon: "graduation-cap",
         href: "https://community.sketch-your-mind.com/ee",
         aria: t("LINKS_JOIN_SYM_ARIA"),
         text: t("LINKS_JOIN_SYM"),
       },
       { 
-        icon: getIcon("twitter").outerHTML,
+        icon: "twitter",
         href: "https://twitter.com/zsviczian",
         aria: t("LINKS_TWITTER"),
         text: t("LINKS_TWITTER"),
       },
       { 
-        icon: getIcon("book").outerHTML,
+        icon: "book",
         href: "https://sketch-your-mind.com",
         aria: t("LINKS_BOOK_ARIA"),
         text: t("LINKS_BOOK"),
@@ -1112,7 +1127,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const linksEl = containerEl.createDiv("setting-item-description excalidraw-settings-links-container");
     iconLinks.forEach(({ icon, href, aria, text }) => {
       linksEl.createEl("a",{href, attr: { "aria-label": aria }}, (a)=> {
-        a.innerHTML = icon + text;
+        setElementIconAndText(a, icon, text);
       });
     });
 
@@ -1329,7 +1344,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
 
     detailsEl.createDiv("", (el) => {
-      el.innerHTML = t("FILENAME_DESC");
+      setSanitizedHtml(el, t("FILENAME_DESC"));
     });
 
     const getFilenameSample = () => {
@@ -1346,7 +1361,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     };
 
     const filenameEl = detailsEl.createEl("p", { text: "" });
-    filenameEl.innerHTML = getFilenameSample();
+    setSanitizedHtml(filenameEl, getFilenameSample());
 
     new Setting(detailsEl)
       .setName(t("FILENAME_PREFIX_NAME"))
@@ -1361,7 +1376,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               "_",
             );
             text.setValue(this.plugin.settings.drawingFilenamePrefix);
-            filenameEl.innerHTML = getFilenameSample();
+            setSanitizedHtml(filenameEl, getFilenameSample());
             this.applySettingsUpdate();
           }),
       );
@@ -1374,7 +1389,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.drawingEmbedPrefixWithFilename)
           .onChange(async (value) => {
             this.plugin.settings.drawingEmbedPrefixWithFilename = value;
-            filenameEl.innerHTML = getFilenameSample();
+            setSanitizedHtml(filenameEl, getFilenameSample());
             this.applySettingsUpdate();
           }),
       );
@@ -1392,7 +1407,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               "_",
             );
             text.setValue(this.plugin.settings.drawingFilnameEmbedPostfix);
-            filenameEl.innerHTML = getFilenameSample();
+            setSanitizedHtml(filenameEl, getFilenameSample());
             this.applySettingsUpdate();
           }),
       );
@@ -1410,7 +1425,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               "_",
             );
             text.setValue(this.plugin.settings.drawingFilenameDateTime);
-            filenameEl.innerHTML = getFilenameSample();
+            setSanitizedHtml(filenameEl, getFilenameSample());
             this.applySettingsUpdate();
           }),
       );
@@ -1423,7 +1438,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.useExcalidrawExtension)
           .onChange(async (value) => {
             this.plugin.settings.useExcalidrawExtension = value;
-            filenameEl.innerHTML = getFilenameSample();
+            setSanitizedHtml(filenameEl, getFilenameSample());
             this.applySettingsUpdate();
           }),
       );
@@ -1562,9 +1577,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     let selectedImageModelConfig = this.plugin.settings.aiDefaultImageGenerationModel?.trim() || Object.keys(this.plugin.settings.aiImageModelConfigs ?? {})[0] || "gpt-image-1";
 
     const getProviderProfiles = () => {
-      return this.plugin.settings.aiProviderProfiles && Object.keys(this.plugin.settings.aiProviderProfiles).length > 0
+      const profiles = this.plugin.settings.aiProviderProfiles && Object.keys(this.plugin.settings.aiProviderProfiles).length > 0
         ? this.plugin.settings.aiProviderProfiles
         : cloneKnownAIProviderProfiles();
+      return decryptProviderProfiles(profiles);
     };
 
     const getModelConfigs = (kind: "text" | "image") => {
@@ -1610,14 +1626,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
       if (kind === "text") this.plugin.settings.aiTextModelConfigs = sorted as Record<string, AIModelConfig>;
       if (kind === "image") this.plugin.settings.aiImageModelConfigs = sorted as Record<string, AIImageModelConfig>;
-    };
-
-    const sortProfiles = () => {
-      setProviderProfiles(getProviderProfiles());
-    };
-
-    const sortModelConfigs = (kind: "text" | "image") => {
-      setModelConfigs(kind, getModelConfigs(kind));
     };
 
     const getValidSelection = (kind: "text" | "image") => {
@@ -2038,7 +2046,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h3",
     });
     detailsEl.createEl("span", {}, (el) => {
-      el.innerHTML = t("HOTKEY_OVERRIDE_DESC");
+      setSanitizedHtml(el, t("HOTKEY_OVERRIDE_DESC"));
     });
 
     this.hotkeyEditor = new HotkeyEditor(detailsEl, this.plugin.settings, this.applySettingsUpdate);
@@ -2554,7 +2562,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     detailsEl.createEl(
       "span",
       undefined,
-      (el) => (el.innerHTML = t("LINKS_DESC")),
+      (el) => setSanitizedHtml(el, t("LINKS_DESC")),
     );
 
     new Setting(detailsEl)
@@ -2753,9 +2761,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate(true);
           }),
       );
-    s.descEl.innerHTML = `<code>![[doc#^ref]]{number}</code> ${t(
+    setSanitizedHtml(s.descEl, `<code>![[doc#^ref]]{number}</code> ${t(
       "TRANSCLUSION_WRAP_DESC",
-    )}`;
+    )}`);
 
     new Setting(detailsEl)
       .setName(t("PAGE_TRANSCLUSION_CHARCOUNT_NAME"))
@@ -3326,7 +3334,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     detailsEl.createEl("hr", { cls: "excalidraw-setting-hr" });
     detailsEl.createEl("span", {}, (el) => {
-      el.innerHTML = t("MD_EMBED_CUSTOMDATA_HEAD_DESC");
+      setSanitizedHtml(el, t("MD_EMBED_CUSTOMDATA_HEAD_DESC"));
     });
 
     new EmbeddalbeMDFileCustomDataSettingsComponent(
@@ -3585,7 +3593,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       });
   
       const cjkdescdiv = detailsEl.createDiv({ cls: "setting-item-description"  });
-      cjkdescdiv.innerHTML = t("OFFLINE_CJK_DESC");
+      setSanitizedHtml(cjkdescdiv, t("OFFLINE_CJK_DESC"));
 
       new Setting(detailsEl)
       .setName(t("CJK_ASSETS_FOLDER_NAME"))
@@ -3768,6 +3776,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     .setDesc(fragWithHTML(t("TASKBONE_APIKEY_DESC")))
     .addText((text) => {
       taskboneAPIKeyText = text;
+      configurePasswordTextInput(taskboneAPIKeyText);
       taskboneAPIKeyText
         .setValue(this.plugin.settings.taskboneAPIkey)
         .onChange(async (value) => {
@@ -3783,7 +3792,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     // ------------------------------------------------
     containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
     containerEl.createDiv( { cls: "setting-item-description"  }, (el)=>{
-      el.innerHTML = t("EA_DESC");
+      setSanitizedHtml(el, t("EA_DESC"));
     });
     detailsEl = containerEl.createEl("details");
     const eaDetailsEl = detailsEl;
@@ -3936,7 +3945,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.compatibilityMode)
           .onChange(async (value) => {
             this.plugin.settings.compatibilityMode = value;
-            filenameEl.innerHTML = getFilenameSample();
+            setSanitizedHtml(filenameEl, getFilenameSample());
             this.applySettingsUpdate();
           }),
       );

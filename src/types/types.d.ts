@@ -2,6 +2,20 @@ import { TFile } from "obsidian";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import { ExcalidrawLib } from "./excalidrawLib";
 
+export type ObsidianCommand = {
+  id: string;
+  name: string;
+  icon?: string;
+  mobileOnly?: boolean;
+  repeatable?: boolean;
+};
+
+export type ObsidianCommandManager = {
+  listCommands(): ObsidianCommand[];
+  executeCommandById(commandId: string): boolean;
+  commands: Record<string, ObsidianCommand>;
+};
+
 export type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
 
 export type Packages = {
@@ -59,6 +73,7 @@ declare module "obsidian" {
   interface App {
     internalPlugins: any;
     setting: any;
+    commands: ObsidianCommandManager;
     isMobile(): boolean;
     getObsidianUrl(file:TFile): string;
     metadataTypeManager: {

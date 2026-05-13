@@ -1,4 +1,4 @@
-import type { SavedChats, TTDPersistenceAdapter } from "@zsviczian/excalidraw";
+import type { SavedChats,TTDPersistenceAdapter } from "@zsviczian/excalidraw";
 
 const TTD_DB_NAME = "excalidraw-ttd";
 const TTD_DB_VERSION = 1;

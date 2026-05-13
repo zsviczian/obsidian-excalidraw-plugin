@@ -1,8 +1,8 @@
-import { App, Notice, TFile } from "obsidian";
+import { App,Notice,TFile } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
-import { PDFPageViewProps, Size } from "src/types/embeddedFileLoaderTypes";
+import { PDFPageViewProps,Size } from "src/types/embeddedFileLoaderTypes";
 import { convertSVGStringToElement } from "../utils/utils";
-import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
+import { FILENAMEPARTS,PreviewImageType } from "../types/utilTypes";
 import { hasExcalidrawEmbeddedImagesTreeChanged } from "../utils/fileUtils";
 
 //@ts-ignore
@@ -89,8 +89,8 @@ class ImageCache {
 
   public destroy(): void {
     this.isInitializing = true;
-    if(this.purgeInvalidCacheTimer) clearTimeout(this.purgeInvalidCacheTimer);
-    if(this.purgeInvalidBackupTimer) clearTimeout(this.purgeInvalidBackupTimer);
+    if(this.purgeInvalidCacheTimer) window.clearTimeout(this.purgeInvalidCacheTimer);
+    if(this.purgeInvalidBackupTimer) window.clearTimeout(this.purgeInvalidBackupTimer);
     this.db = null;
     this.plugin = null;
     this.app = null;
@@ -357,7 +357,7 @@ class ImageCache {
         ? await this.getCacheData(key)
         : await Promise.race([
             this.getCacheData(key),
-            new Promise<undefined>((_, reject) => setTimeout(() => {
+            new Promise<undefined>((_, reject) => window.setTimeout(() => {
               reject(undefined);
             }, 100))
           ]);

@@ -1,5 +1,4 @@
 import { Notice } from "obsidian";
-import { debug, DEBUGGING } from "./debugHelper";
 
 /**
  * Centralized error handling for the Excalidraw plugin
@@ -58,10 +57,6 @@ export class ErrorHandler {
       new Notice(formattedError, timeout || this.errorNoticeTimeout);
     }
 
-    // Debug output if debugging is enabled
-    if ((process.env.NODE_ENV === 'development') && DEBUGGING) {
-      debug(this.handleError, `ErrorHandler.handleError: ${context}`, errorObj);
-    }
   }
 
   /**

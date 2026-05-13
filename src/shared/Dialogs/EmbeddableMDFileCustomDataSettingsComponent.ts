@@ -1,4 +1,4 @@
-import { Setting, ToggleComponent } from "obsidian";
+import { Setting,ToggleComponent } from "obsidian";
 import { EmbeddableMDCustomProps } from "./EmbeddableSettings";
 import { fragWithHTML } from "src/utils/utils";
 import { t } from "src/lang/helpers";

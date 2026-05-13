@@ -1,15 +1,15 @@
 
-import { MAX_IMAGE_SIZE, IMAGE_TYPES, ANIMATED_IMAGE_TYPES, MD_EX_SECTIONS, AUDIO_TYPES, CARD_WIDTH, CARD_HEIGHT, getDefaultColorPalette, DEVICE } from "src/constants/constants";
-import { App, Modal, Notice, TFile } from "obsidian";
+import { MAX_IMAGE_SIZE,IMAGE_TYPES,ANIMATED_IMAGE_TYPES,MD_EX_SECTIONS,AUDIO_TYPES,CARD_WIDTH,CARD_HEIGHT,getDefaultColorPalette,DEVICE } from "src/constants/constants";
+import { App,Modal,Notice,TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { REGEX_LINK, REG_LINKINDEX_HYPERLINK, getExcalidrawMarkdownHeaderSection, REGEX_TAGS, getExcalidrawMarkdownHeader } from "../shared/ExcalidrawData";
+import { REGEX_LINK,REG_LINKINDEX_HYPERLINK,getExcalidrawMarkdownHeaderSection,REGEX_TAGS } from "../shared/ExcalidrawData";
 import ExcalidrawView from "src/view/ExcalidrawView";
-import { ExcalidrawElement, ExcalidrawFrameElement, ExcalidrawImageElement } from "@zsviczian/excalidraw/types/element/src/types";
-import { getEmbeddedFilenameParts, getLinkParts, isImagePartRef } from "./utils";
+import { ExcalidrawElement,ExcalidrawFrameElement,ExcalidrawImageElement, NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
+import { getEmbeddedFilenameParts,getLinkParts,isImagePartRef } from "./utils";
 import { getAudioElementHeight } from "./obsidianUtils";
 import { cleanSectionHeading } from "./pathUtils";
 import { getEA } from "src/core";
-import { AppState, ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { AppState,ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { nanoid } from "nanoid";
 import { t } from "src/lang/helpers";
@@ -17,6 +17,7 @@ import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { EmbeddedFile } from "src/shared/EmbeddedFileLoader";
 import { CaptureUpdateAction } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
+import { setSanitizedHtml } from "./htmlUtils";
 
 export async function insertImageToView(
   ea: ExcalidrawAutomate,
@@ -59,7 +60,7 @@ export async function insertEmbeddableToView (
   shouldInsertToView: boolean = true,
 ):Promise<string> {
   if(shouldInsertToView) {ea.clear();}
-  const api = ea.getExcalidrawAPI() as ExcalidrawImperativeAPI;
+  const api = ea.getExcalidrawAPI();
   const st = api.getAppState();
   
   if(ea.plugin.settings.embeddableMarkdownDefaults.backgroundMatchElement) {
@@ -134,7 +135,7 @@ export function openTagSearch(link: string, app: App, view?: ExcalidrawView) {
 }
 
 function getLinkFromMarkdownLink(link: string): string {
-  const result = /^\[[^\]]*]\(([^\)]*)\)/.exec(link);
+  const result = /^\[[^\]]*]\(([^)]*)\)/.exec(link);
   return result ? result[1] : link;
 }
 
@@ -146,7 +147,7 @@ function isInternalLink(link:string):boolean {
   return true;
 }
 
-export function sceneRemoveInternalLinks(scene: {elements: ExcalidrawElement[]}): ExcalidrawElement[] {
+export function sceneRemoveInternalLinks(scene: {elements: readonly ExcalidrawElement[]}): ExcalidrawElement[] {
   const elements: ExcalidrawElement[] = JSON.parse(JSON.stringify(scene.elements));
   elements.forEach(el => {
     if(!el.link) return;
@@ -243,7 +244,7 @@ export function getExcalidrawFileForwardLinks (
 
 export function getFrameBasedOnFrameNameOrId(
   frameName: string,
-  elements: ExcalidrawElement[],
+  elements: readonly NonDeletedExcalidrawElement[],
 ): ExcalidrawFrameElement | null {
   const frames = elements
     .filter((el: ExcalidrawElement)=>el.type==="frame")
@@ -308,7 +309,7 @@ export async function addBackOfTheNoteCard(
   );
   await ea.addElementsToView(!center, false, true);
 
-  const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
+  const api = view.excalidrawAPI;
   const el = ea.getViewElements().find(el=>el.id === id);
   api.selectElements([el]);
   if(activate) {
@@ -473,7 +474,7 @@ export function displayFontMessage(app: App) {
     const releaseNotesHTML = t("FONT_INFO_DETAILED");
 
     const div = contentEl.createDiv({ cls: "release-notes" });
-    div.innerHTML = releaseNotesHTML;
+    setSanitizedHtml(div, releaseNotesHTML);
   }
 
   modal.open();
@@ -511,7 +512,7 @@ export async function toggleImageAnchoring(
 }
 
 export function onLoadMessages(plugin: ExcalidrawPlugin, scene: {elements: ExcalidrawElement[], appState: AppState}, data: string) {
-  setTimeout(() => {
+  window.setTimeout(() => {
     if(!(scene.appState.frameRendering?.markerEnabled ?? true) && scene.elements.some(el=>el.type === "frame" && el.frameRole === "marker")) {
       new Notice(t("MARKER_FRAME_RENDERING_DISABLED_NOTICE"));
     }
@@ -535,7 +536,7 @@ export function getViewColorPalette(
     return getDefaultColorPalette() as (string[] | string)[];
   }
 
-  const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
+  const api = view.excalidrawAPI;
   const {colorPalette} = api.getAppState();
   if (!colorPalette || !colorPalette.hasOwnProperty(palette)) {
     return getDefaultColorPalette() as (string[] | string)[];

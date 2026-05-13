@@ -1,8 +1,8 @@
 import type {
-  ExcalidrawElement,
-  ExcalidrawImageElement,
+ExcalidrawElement,
+ExcalidrawImageElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
-import { getCommonBoundingBox, restoreElements } from "src/constants/constants";
+import { getCommonBoundingBox,restoreElements } from "src/constants/constants";
 import { getEA } from "src/core";
 import { t } from "src/lang/helpers";
 import type { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";

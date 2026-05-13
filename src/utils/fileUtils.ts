@@ -1,13 +1,14 @@
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { App, loadPdfJs, MetadataCache, normalizePath, Notice, requestUrl, RequestUrlResponse, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
-import { DEVICE, EXCALIDRAW_PLUGIN, FRONTMATTER_KEYS, URLFETCHTIMEOUT } from "src/constants/constants";
+import { App,loadPdfJs,MetadataCache,normalizePath,Notice,requestUrl,RequestUrlResponse,TAbstractFile,TFile,TFolder,Vault } from "obsidian";
+import { DEVICE,EXCALIDRAW_PLUGIN,FRONTMATTER_KEYS,URLFETCHTIMEOUT } from "src/constants/constants";
 import { ExcalidrawSettings } from "src/core/settings";
-export { splitFolderAndFilename } from "./pathUtils";
-import { errorlog, getDataURL } from "./coreUtils";
+import { errorlog,getDataURL } from "./coreUtils";
 import ExcalidrawPlugin from "src/core/main";
-import { getAttachmentsFolderAndFilePath, splitFolderAndFilename } from "./pathUtils";
+import { getAttachmentsFolderAndFilePath,splitFolderAndFilename } from "./pathUtils";
 import type ExcalidrawView from "src/view/ExcalidrawView";
-import { IMAGE_MIME_TYPES, MimeType } from "src/types/embeddedFileLoaderTypes";
+import { IMAGE_MIME_TYPES,MimeType } from "src/types/embeddedFileLoaderTypes";
+import { setElementDisplay } from "./htmlUtils";
+export { splitFolderAndFilename } from "./pathUtils";
 
 type ImageExtension = keyof typeof IMAGE_MIME_TYPES;
 
@@ -21,7 +22,7 @@ type ImageExtension = keyof typeof IMAGE_MIME_TYPES;
   const element = document.createElement("a");
   element.setAttribute("href", (encoding ? `${encoding},` : "") + data);
   element.setAttribute("download", filename);
-  element.style.display = "none";
+  setElementDisplay(element, "none");
   document.body.appendChild(element);
   element.click();
   document.body.removeChild(element);
@@ -155,7 +156,7 @@ export const getMimeType = (extension: string):MimeType => {
 const getFileFromURL = async (url: string, mimeType: MimeType, timeout: number = URLFETCHTIMEOUT): Promise<RequestUrlResponse> => {
   try {
     const timeoutPromise = new Promise<Response>((resolve) =>
-      setTimeout(() => resolve(null), timeout)
+      window.setTimeout(() => resolve(null), timeout)
     );
     
     const response = await Promise.race([
@@ -188,7 +189,7 @@ const getFileFromURL = async (url: string, mimeType: MimeType, timeout: number =
 const getFileFromURLFallback = async (url: string, mimeType: MimeType, timeout: number = URLFETCHTIMEOUT):Promise<RequestUrlResponse> => {
   try {
     const timeoutPromise = new Promise<RequestUrlResponse | null>((resolve) =>
-      setTimeout(() => resolve(null), timeout)
+      window.setTimeout(() => resolve(null), timeout)
     );
 
     return await Promise.race([
@@ -214,7 +215,7 @@ export const getDataURLFromURL = async (url: string, mimeType: MimeType, timeout
 /*
 const timeoutPromise = (timeout: number) => {
   return new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error(`Timeout after ${timeout}ms`)), timeout)
+    window.setTimeout(() => reject(new Error(`Timeout after ${timeout}ms`)), timeout)
   );
 };
 

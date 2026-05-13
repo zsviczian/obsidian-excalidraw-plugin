@@ -1,8 +1,8 @@
-import { App, FileView, WorkspaceLeaf } from "obsidian";
-import { act } from "react";
-import { DEVICE, VIEW_TYPE_EXCALIDRAW_LOADING } from "src/constants/constants";
+import { App,FileView,WorkspaceLeaf } from "obsidian";
+import { VIEW_TYPE_EXCALIDRAW_LOADING } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
-import { isUnwantedLeaf, setExcalidrawView } from "src/utils/obsidianUtils";
+import { setElementDisplay } from "src/utils/htmlUtils";
+import { isUnwantedLeaf,setExcalidrawView } from "src/utils/obsidianUtils";
 
 export async function switchToExcalidraw(app: App) {
   const leaves = app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW_LOADING);
@@ -46,7 +46,7 @@ export class ExcalidrawLoading extends FileView {
     });
     
     // Apply styling to center the text
-    loadingTextEl.style.display = "flex";
+    setElementDisplay(loadingTextEl, "flex");
     loadingTextEl.style.alignItems = "center";
     loadingTextEl.style.justifyContent = "center";
     loadingTextEl.style.height = "100%";

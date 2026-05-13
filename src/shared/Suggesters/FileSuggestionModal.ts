@@ -1,16 +1,16 @@
 import {
-  FuzzyMatch,
-  TFile,
-  CachedMetadata,
-  TextComponent,
-  App,
-  setIcon,
+FuzzyMatch,
+TFile,
+CachedMetadata,
+TextComponent,
+App,
+setIcon,
 } from "obsidian";
 import { SuggestionModal } from "./SuggestionModal";
 import { t } from "src/lang/helpers";
 import { LinkSuggestion } from "src/types/types";
 import ExcalidrawPlugin from "src/core/main";
-import { AUDIO_TYPES, CODE_TYPES, ICON_NAME, IMAGE_TYPES, VIDEO_TYPES } from "src/constants/constants";
+import { AUDIO_TYPES,CODE_TYPES,ICON_NAME,IMAGE_TYPES,VIDEO_TYPES } from "src/constants/constants";
 
 export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
   text: TextComponent;

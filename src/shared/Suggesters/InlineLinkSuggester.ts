@@ -1,15 +1,15 @@
-import { App, FuzzyMatch, TFile } from "obsidian";
+import { App,FuzzyMatch,TFile } from "obsidian";
 import { SuggestionModal } from "./SuggestionModal";
 import { LinkSuggestion } from "src/types/types";
 import ExcalidrawPlugin from "src/core/main";
 import {
-  getLinkSuggestionsFiltered,
-  getSortedLinkMatches,
-  renderHeadingSuggestionRow,
-  renderLinkSuggestion,
-  renderParagraphSuggestionRow,
-  fuzzyMatchTextItems,
-  fuzzyMatchParagraphsWithId,
+getLinkSuggestionsFiltered,
+getSortedLinkMatches,
+renderHeadingSuggestionRow,
+renderLinkSuggestion,
+renderParagraphSuggestionRow,
+fuzzyMatchTextItems,
+fuzzyMatchParagraphsWithId,
 } from "src/shared/Suggesters/LinkSuggesterUtils";
 import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
 import { t } from "src/lang/helpers";
@@ -703,7 +703,7 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     }
     this.suggestEl.detach();
     this.shouldNotOpen = false;
-    setTimeout(() => {
+    window.setTimeout(() => {
       this.block = false;
     });
   }

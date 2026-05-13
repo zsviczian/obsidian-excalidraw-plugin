@@ -1,4 +1,4 @@
-import type { TFile, App } from "obsidian";
+import type { TFile,App } from "obsidian";
 import { FRONTMATTER_KEYS } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
 import type { FILENAMEPARTS } from "src/types/utilTypes";
@@ -136,7 +136,7 @@ export function getExportPadding(plugin: ExcalidrawPlugin, file: TFile): number 
 }
 
 export function getEmbeddedFilenameParts(fname: string): FILENAMEPARTS {
-  const parts = fname?.match(/([^#\^]*)((#\^)(group=|area=|frame=|clippedframe=|taskbone)?([^\|]*)|(#)(group=|area=|frame=|clippedframe=|taskbone)?([^\^\|]*))(.*)/);
+  const parts = fname?.match(/([^#\^]*)((#\^)(group=|area=|frame=|clippedframe=|taskbone)?([^|]*)|(#)(group=|area=|frame=|clippedframe=|taskbone)?([^\^|]*))(.*)/);
   if (!parts) {
     return {
       filepath: fname,
@@ -236,7 +236,7 @@ export class PromisePool<T> {
 
       return Promise.resolve(this.pool.start()).then(
         () => {
-          setTimeout(() => {
+          window.setTimeout(() => {
             this.pool?.removeEventListener("fulfilled", listener);
           });
           return Object.values(this.entries);

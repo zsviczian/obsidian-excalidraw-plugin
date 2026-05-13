@@ -1,21 +1,21 @@
 import {
-  App,
-  Instruction,
-  normalizePath,
-  TAbstractFile,
-  TFile,
+App,
+Instruction,
+normalizePath,
+TAbstractFile,
+TFile,
 } from "obsidian";
 import { PLUGIN_ID } from "../constants/constants";
 import ExcalidrawView from "../view/ExcalidrawView";
 import ExcalidrawPlugin from "../core/main";
-import { GenericInputPrompt, GenericSuggester } from "./Dialogs/Prompt";
+import { GenericInputPrompt,GenericSuggester } from "./Dialogs/Prompt";
 import { getIMGFilename } from "../utils/fileUtils";
 import { splitFolderAndFilename } from "../utils/fileUtils";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import { WeakArray } from "./WeakArray";
-import { getExcalidrawViews, stripYamlFrontmatter } from "../utils/obsidianUtils";
-import { ButtonDefinition, InputPromptOptions } from "src/types/promptTypes";
+import { getExcalidrawViews,stripYamlFrontmatter } from "../utils/obsidianUtils";
+import { ButtonDefinition,InputPromptOptions } from "src/types/promptTypes";
 
 export type ScriptIconMap = {
   [key: string]: { name: string; group: string; svgString: string };

@@ -1,5 +1,5 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import CM, { ColorMaster } from "@zsviczian/colormaster";
+import CM,{ ColorMaster } from "@zsviczian/colormaster";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { DynamicStyle } from "src/types/types";
@@ -17,7 +17,7 @@ export const setDynamicStyle = (
 ) => {
   if(dynamicStyle === "none") {
     //view.excalidrawContainer?.removeAttribute("style");
-    setTimeout(()=>
+    window.setTimeout(()=>
       view.updateScene({
         appState:{dynamicStyle: {}}, 
         captureUpdate: CaptureUpdateAction.NEVER
@@ -26,7 +26,7 @@ export const setDynamicStyle = (
     const toolspanel = view.toolsPanelRef?.current?.containerRef?.current;
     if(toolspanel) {
       let toolsStyle = toolspanel.getAttribute("style");
-      toolsStyle = toolsStyle.replace(/\-\-color\-primary.*/,"");
+      toolsStyle = toolsStyle.replace(/--color-primary.*/,"");
       toolspanel.setAttribute("style",toolsStyle);
     }
     return;
@@ -148,12 +148,12 @@ export const setDynamicStyle = (
   const toolspanel = view.toolsPanelRef?.current?.containerRef?.current;
   if(toolspanel) {
     let toolsStyle = toolspanel.getAttribute("style");
-    toolsStyle = toolsStyle.replace(/\-\-color\-primary.*/,"");
+    toolsStyle = toolsStyle.replace(/--color-primary.*/,"");
     toolspanel.setAttribute("style",toolsStyle+styleString);
   }
 
-  setTimeout(()=>{
-    const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
+  window.setTimeout(()=>{
+    const api = view.excalidrawAPI;
     if(!api) {
       view = null;
       ea = null;
@@ -178,7 +178,7 @@ export const setDynamicStyle = (
       ) {
         return;
       }
-      (view.excalidrawAPI as ExcalidrawImperativeAPI).mutateElement(e,{customData: f.customData});
+      (view.excalidrawAPI).mutateElement(e,{customData: f.customData});
     });
 
     view.updateScene({

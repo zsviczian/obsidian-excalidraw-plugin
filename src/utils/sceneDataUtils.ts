@@ -1,9 +1,9 @@
-import type { ExcalidrawElement, ExcalidrawTextElement } from "@zsviczian/excalidraw/types/element/src/types";
+import type { ExcalidrawElement,ExcalidrawTextElement } from "@zsviczian/excalidraw/types/element/src/types";
 import type { TFile } from "obsidian";
-import { FRONTMATTER_KEYS, getContainerElement } from "src/constants/constants";
+import { FRONTMATTER_KEYS,getContainerElement } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
-import { getDataURLFromURL, getMimeType, getURLImageExtension } from "./fileUtils";
-import { cleanBlockRef, cleanSectionHeading } from "./pathUtils";
+import { getDataURLFromURL,getMimeType,getURLImageExtension } from "./fileUtils";
+import { cleanBlockRef,cleanSectionHeading } from "./pathUtils";
 import { runCompressionWorker } from "src/shared/Workers/compression-worker";
 
 declare var LZString: any;

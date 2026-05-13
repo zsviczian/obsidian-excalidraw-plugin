@@ -1,17 +1,17 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { Modal, Notice, Setting, TFile, ButtonComponent } from "obsidian";
+import { Modal,Notice,Setting,TFile } from "obsidian";
 import { getEA } from "src/core";
 import { DEVICE } from "src/constants/constants";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import ExcalidrawPlugin from "src/core/main";
-import { fragWithHTML, getExportInternalLinks, getExportPadding, getExportTheme, getPNGScale, getWithBackground, shouldEmbedScene } from "src/utils/utils";
-import { exportSVGToClipboard, exportPNG, exportPNGToClipboard } from "src/utils/exportUtils";
-import { PageOrientation, PageSize, PDFPageAlignment, PDFPageMarginString } from "src/types/exportUtilTypes";
+import { fragWithHTML,getExportInternalLinks,getExportPadding,getExportTheme,getPNGScale,getWithBackground,shouldEmbedScene } from "src/utils/utils";
+import { exportSVGToClipboard,exportPNG,exportPNGToClipboard } from "src/utils/exportUtils";
+import { PageOrientation,PageSize,PDFPageAlignment,PDFPageMarginString } from "src/types/exportUtilTypes";
 import { t } from "src/lang/helpers";
-import { PDFExportSettings, PDFExportSettingsComponent } from "./PDFExportSettingsComponent";
+import { PDFExportSettings,PDFExportSettingsComponent } from "./PDFExportSettingsComponent";
 import { captureScreenshot } from "src/utils/screenshot";
-import { exportImageToFile, getIMGFilename } from "src/utils/fileUtils";
+import { exportImageToFile,getIMGFilename } from "src/utils/fileUtils";
 
 
 
@@ -56,7 +56,7 @@ export class ExportDialog extends Modal {
   ) {
     super(plugin.app);
     this.ea = getEA(this.view);
-    this.api = this.ea.getExcalidrawAPI() as ExcalidrawImperativeAPI;
+    this.api = this.ea.getExcalidrawAPI();
     this.padding = getExportPadding(this.plugin,this.file);
     this.scale = getPNGScale(this.plugin,this.file)
     this.theme = getExportTheme(this.plugin, this.file, (this.api).getAppState().theme)
@@ -386,7 +386,7 @@ export class ExportDialog extends Modal {
       bPNG.onclick = () => {
         if(isScreenshot) {
           //allow dialog to close before taking screenshot
-          setTimeout(async () => {
+          window.setTimeout(async () => {
             const png = await captureScreenshot(this.view, {
               zoom: this.scale,
               margin: this.padding,
@@ -411,7 +411,7 @@ export class ExportDialog extends Modal {
     bPNGVault.onclick = () => {
       if(isScreenshot) {
         //allow dialog to close before taking screenshot
-        setTimeout(async () => {
+        window.setTimeout(async () => {
           const png = await captureScreenshot(this.view, {
             zoom: this.scale,
             margin: this.padding,
@@ -435,7 +435,7 @@ export class ExportDialog extends Modal {
     bPNGClipboard.onclick = async () => {
       if(isScreenshot) {
         //allow dialog to close before taking screenshot
-        setTimeout(async () => {
+        window.setTimeout(async () => {
           const png = await captureScreenshot(this.view, {
             zoom: this.scale,
             margin: this.padding,

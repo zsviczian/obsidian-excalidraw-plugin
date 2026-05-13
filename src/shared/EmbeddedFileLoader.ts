@@ -1,45 +1,46 @@
 //https://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
 //https://img.youtube.com/vi/uZz5MgzWXiM/maxresdefault.jpg
 
-import { ExcalidrawElement, FileId } from "@zsviczian/excalidraw/types/element/src/types";
+import { ExcalidrawElement,FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
-import {  
-  DEFAULT_MD_EMBED_CSS,
-  fileid,
-  IMAGE_TYPES,
-  nanoid,
-  THEME_FILTER,
-  FRONTMATTER_KEYS,
-  getCSSFontDefinition,
+import { App,MarkdownRenderer,Notice,TFile } from "obsidian";
+import {
+DEFAULT_MD_EMBED_CSS,
+fileid,
+IMAGE_TYPES,
+nanoid,
+THEME_FILTER,
+FRONTMATTER_KEYS,
+getCSSFontDefinition,
 } from "../constants/constants";
 import { createSVG } from "src/utils/excalidrawAutomateUtils";
-import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
+import { ExcalidrawData,getTransclusion } from "./ExcalidrawData";
 import { t } from "../lang/helpers";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "../core/main";
-import { blobToBase64, getDataURLFromURL, getMimeType, getPDFDoc, getURLImageExtension, readLocalFileBinary } from "../utils/fileUtils";
-import { errorlog, getDataURL } from "../utils/coreUtils";
-import { getExportTheme, getLinkParts, hasExportTheme, LinkParts } from "../utils/sceneDataUtils";
+import { blobToBase64,getDataURLFromURL,getMimeType,getPDFDoc,getURLImageExtension,readLocalFileBinary } from "../utils/fileUtils";
+import { errorlog,getDataURL } from "../utils/coreUtils";
+import { getExportTheme,getLinkParts,hasExportTheme,LinkParts } from "../utils/sceneDataUtils";
 import {
-  cropCanvas,
-  getEmbeddedFilenameParts,
-  getExportPadding,
-  getFontDataURL,
-  getImageSize,
-  getWithBackground,
-  hasExportBackground,
-  isMaskFile,
-  promiseTry,
-  PromisePool,
-  svgToBase64,
+cropCanvas,
+getEmbeddedFilenameParts,
+getExportPadding,
+getFontDataURL,
+getImageSize,
+getWithBackground,
+hasExportBackground,
+isMaskFile,
+promiseTry,
+PromisePool,
+svgToBase64,
 } from "../utils/embeddedAssetUtils";
-import { getMermaidImageElements, getMermaidText, shouldRenderMermaid } from "../utils/mermaidUtils";
+import { getMermaidImageElements,getMermaidText,shouldRenderMermaid } from "../utils/mermaidUtils";
 import { mermaidToExcalidraw } from "src/constants/constants";
-import { ImageKey, imageCache } from "./ImageCache";
-import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
-import { ColorMap, ImgData, PDFPageViewProps, Size, MimeType, FileData } from "src/types/embeddedFileLoaderTypes";
+import { ImageKey,imageCache } from "./ImageCache";
+import { FILENAMEPARTS,PreviewImageType } from "../types/utilTypes";
+import { ColorMap,ImgData,PDFPageViewProps,Size,MimeType,FileData } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
+import { setStyleText } from "src/utils/htmlUtils";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -869,9 +870,9 @@ export class EmbeddedFilesLoader {
       };
     }
 
-    const addFilesTimer = setInterval(() => {
+    const addFilesTimer = window.setInterval(() => {
       if (this.terminate) {
-        clearInterval(addFilesTimer);
+        window.clearInterval(addFilesTimer);
         return;
       }
       if(files[batch].length === 0) {
@@ -1316,7 +1317,7 @@ export class EmbeddedFilesLoader {
     if (style) {
       const styleEl = iframeDoc.createElement("style");
       styleEl.type = "text/css";
-      styleEl.innerHTML = style;
+      setStyleText(styleEl, style);
       iframeDoc.head.appendChild(styleEl);
     }
     const stylingDIV = iframeDoc.importNode(mdDIV, true);

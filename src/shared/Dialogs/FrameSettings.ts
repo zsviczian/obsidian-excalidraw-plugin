@@ -1,4 +1,3 @@
-import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { t } from "src/lang/helpers";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { FloatingModal } from "./FloatingModal";
@@ -79,6 +78,6 @@ export const showFrameSettings = (view: ExcalidrawView) => {
 };
 
 // Function to hide or show a component
-function hideComponent(comp:any, value:any) {
+function hideComponent(comp: Setting, value: boolean) {
   comp.settingEl.style.display = value ? "none" : "";
 }

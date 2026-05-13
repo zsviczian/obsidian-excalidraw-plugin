@@ -1,7 +1,6 @@
 import { updateExcalidrawLib } from "src/constants/constants";
 import { ExcalidrawLib } from "../../types/excalidrawLib";
 import { Packages } from "../../types/types";
-import { debug, DEBUGGING } from "../../utils/debugHelper";
 import { Notice } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { errorHandler } from "../../utils/ErrorHandler";
@@ -109,10 +108,6 @@ export class PackageManager {
    */
   public getPackage(win: Window): Packages {
     try {
-      if ((process.env.NODE_ENV === 'development') && DEBUGGING) {
-        debug(this.getPackage, `PackageManager.getPackage`, win);
-      }
-
       // Return existing package if available
       if (this.packageMap.has(win)) {
         const pkg = this.packageMap.get(win);
