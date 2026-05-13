@@ -264,7 +264,7 @@ export class EventManager {
       //timeout gives time to the view being exited to finish saving
       const f = newActiveviewEV.file;
       if (newActiveviewEV.file) {
-        setTimeout(() => {
+        window.setTimeout(() => {
           if (!newActiveviewEV || !newActiveviewEV._loaded) {
             return;
           }

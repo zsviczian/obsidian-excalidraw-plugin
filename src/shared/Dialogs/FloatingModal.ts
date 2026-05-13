@@ -194,7 +194,7 @@ export class FloatingModal extends Modal {
       // prevent automatic selection / focus restoration
       this.shouldRestoreSelection = false;
     }
-    setTimeout(() => {
+    window.setTimeout(() => {
       // @ts-ignore
       const { containerEl, modalEl, bgEl } = this;
       containerEl.addClass("mod-excalidraw-draggable")

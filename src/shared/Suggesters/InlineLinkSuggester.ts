@@ -703,7 +703,7 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     }
     this.suggestEl.detach();
     this.shouldNotOpen = false;
-    setTimeout(() => {
+    window.setTimeout(() => {
       this.block = false;
     });
   }

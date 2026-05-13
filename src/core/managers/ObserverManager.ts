@@ -77,7 +77,7 @@ export class ObserverManager {
       const darkClass = bodyClassList.contains('theme-dark');
       if (mutation?.oldValue?.includes('theme-dark') === darkClass) return;
 
-      setTimeout(()=>{ //run async to avoid blocking the UI
+      window.setTimeout(()=>{ //run async to avoid blocking the UI
         const theme = isObsidianThemeDark() ? "dark" : "light";
         const excalidrawViews = getExcalidrawViews(this.app, true);
         excalidrawViews.forEach(excalidrawView => {

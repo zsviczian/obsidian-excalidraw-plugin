@@ -512,7 +512,7 @@ export async function toggleImageAnchoring(
 }
 
 export function onLoadMessages(plugin: ExcalidrawPlugin, scene: {elements: ExcalidrawElement[], appState: AppState}, data: string) {
-  setTimeout(() => {
+  window.setTimeout(() => {
     if(!(scene.appState.frameRendering?.markerEnabled ?? true) && scene.elements.some(el=>el.type === "frame" && el.frameRole === "marker")) {
       new Notice(t("MARKER_FRAME_RENDERING_DISABLED_NOTICE"));
     }

@@ -386,7 +386,7 @@ export class ExportDialog extends Modal {
       bPNG.onclick = () => {
         if(isScreenshot) {
           //allow dialog to close before taking screenshot
-          setTimeout(async () => {
+          window.setTimeout(async () => {
             const png = await captureScreenshot(this.view, {
               zoom: this.scale,
               margin: this.padding,
@@ -411,7 +411,7 @@ export class ExportDialog extends Modal {
     bPNGVault.onclick = () => {
       if(isScreenshot) {
         //allow dialog to close before taking screenshot
-        setTimeout(async () => {
+        window.setTimeout(async () => {
           const png = await captureScreenshot(this.view, {
             zoom: this.scale,
             margin: this.padding,
@@ -435,7 +435,7 @@ export class ExportDialog extends Modal {
     bPNGClipboard.onclick = async () => {
       if(isScreenshot) {
         //allow dialog to close before taking screenshot
-        setTimeout(async () => {
+        window.setTimeout(async () => {
           const png = await captureScreenshot(this.view, {
             zoom: this.scale,
             margin: this.padding,

@@ -178,7 +178,7 @@ export class ObsidianMenu {
           appState.activeTool.type !== "freedraw" &&
           appState.currentStrokeOptions === pen.penOptions
         ) {
-          setTimeout(()=> resetStrokeOptions(appState.resetCustomPen, this.view.excalidrawAPI, false));
+          window.setTimeout(()=> resetStrokeOptions(appState.resetCustomPen, this.view.excalidrawAPI, false));
         }
         //if Pen settings are loaded, select custom pen when activating the freedraw element
         if (
@@ -187,7 +187,7 @@ export class ObsidianMenu {
           appState.currentStrokeOptions === pen.penOptions &&
           pen.freedrawOnly
         ) {
-          setTimeout(()=>setPen(this.activePen,this.view.excalidrawAPI));
+          window.setTimeout(()=>setPen(this.activePen,this.view.excalidrawAPI));
         }
 
         if(

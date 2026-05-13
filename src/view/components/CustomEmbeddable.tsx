@@ -244,7 +244,7 @@ function setupPdfViewEnhancements(
               try { pdfObserverRef.current?.disconnect(); } catch {}
 
               // Re-setup on next tick to allow DOM to settle
-              setTimeout(() => {
+              window.setTimeout(() => {
                 if (leafRef.current?.node?.child?.containerEl?.isConnected) {
                   setupPdfViewEnhancements(
                     view,
@@ -284,7 +284,7 @@ function setupPdfViewEnhancements(
         if (el) {
           patchPDF();
           obs.disconnect();
-          if (timeoutId) clearTimeout(timeoutId);
+          if (timeoutId) window.clearTimeout(timeoutId);
         }
       });
       mo.observe(root as HTMLElement, { childList: true, subtree: true });
@@ -439,7 +439,7 @@ function RenderObsidianView(
       if(!view.ownerWindow.electronWindow.isAlwaysOnTop()) {
         //@ts-ignore
         view.ownerWindow.electronWindow.setAlwaysOnTop(true);
-        setTimeout(() => {
+        window.setTimeout(() => {
           //@ts-ignore
           view.ownerWindow.electronWindow.setAlwaysOnTop(false);
         }, 500);

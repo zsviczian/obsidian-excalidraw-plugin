@@ -164,7 +164,7 @@ export class ContentSearcher {
         this.highlightSearchTerm(searchTerm);
         const totalHits = this.contentDiv.querySelectorAll("mark.search-highlight").length;
         this.hitCount.textContent = totalHits > 0 ? `1 / ${totalHits}` : "";
-        setTimeout(() => this.navigateSearchResults("next"));
+        window.setTimeout(() => this.navigateSearchResults("next"));
       } else {
         this.hitCount.textContent = "";
       }
@@ -295,7 +295,7 @@ export class ContentSearcher {
     this.expandParentDetails(nextActiveHighlight);
     
     // Use setTimeout to ensure DOM has time to update after expanding details
-    setTimeout(() => {
+    window.setTimeout(() => {
       this.scrollResultIntoView(nextActiveHighlight);
     }, 100);
 

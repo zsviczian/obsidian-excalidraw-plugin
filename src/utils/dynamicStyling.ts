@@ -17,7 +17,7 @@ export const setDynamicStyle = (
 ) => {
   if(dynamicStyle === "none") {
     //view.excalidrawContainer?.removeAttribute("style");
-    setTimeout(()=>
+    window.setTimeout(()=>
       view.updateScene({
         appState:{dynamicStyle: {}}, 
         captureUpdate: CaptureUpdateAction.NEVER
@@ -152,7 +152,7 @@ export const setDynamicStyle = (
     toolspanel.setAttribute("style",toolsStyle+styleString);
   }
 
-  setTimeout(()=>{
+  window.setTimeout(()=>{
     const api = view.excalidrawAPI as ExcalidrawImperativeAPI;
     if(!api) {
       view = null;

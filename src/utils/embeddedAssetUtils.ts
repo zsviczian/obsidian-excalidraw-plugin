@@ -236,7 +236,7 @@ export class PromisePool<T> {
 
       return Promise.resolve(this.pool.start()).then(
         () => {
-          setTimeout(() => {
+          window.setTimeout(() => {
             this.pool?.removeEventListener("fulfilled", listener);
           });
           return Object.values(this.entries);

@@ -872,7 +872,7 @@ export default class ExcalidrawPlugin extends Plugin {
         `@font-face{font-family:'Local Font';src:url("${fourthFontDataURL}");font-display: swap;font-weight: 400;`,
       ], ownerDocument);
     };
-    if(!this.fourthFontLoaded) setTimeout(()=>{this.fourthFontLoaded = true},100);
+    if(!this.fourthFontLoaded) window.setTimeout(()=>{this.fourthFontLoaded = true},100);
   }
 
   public async addFonts(declarations: string[],ownerDocument:Document = document, styleId:string = FONTS_STYLE_ID) {
@@ -1359,7 +1359,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
             if(markdownViewLoaded) {
               const leaf = this;
-              setTimeout(async ()=> {
+              window.setTimeout(async ()=> {
                 if(!leaf || !leaf.view || !(leaf.view instanceof MarkdownView) || 
                   !leaf.view.file || !self.isExcalidrawFile(leaf.view.file)
                 ) return;

@@ -89,8 +89,8 @@ class ImageCache {
 
   public destroy(): void {
     this.isInitializing = true;
-    if(this.purgeInvalidCacheTimer) clearTimeout(this.purgeInvalidCacheTimer);
-    if(this.purgeInvalidBackupTimer) clearTimeout(this.purgeInvalidBackupTimer);
+    if(this.purgeInvalidCacheTimer) window.clearTimeout(this.purgeInvalidCacheTimer);
+    if(this.purgeInvalidBackupTimer) window.clearTimeout(this.purgeInvalidBackupTimer);
     this.db = null;
     this.plugin = null;
     this.app = null;
@@ -357,7 +357,7 @@ class ImageCache {
         ? await this.getCacheData(key)
         : await Promise.race([
             this.getCacheData(key),
-            new Promise<undefined>((_, reject) => setTimeout(() => {
+            new Promise<undefined>((_, reject) => window.setTimeout(() => {
               reject(undefined);
             }, 100))
           ]);

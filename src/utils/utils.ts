@@ -938,7 +938,7 @@ export function fragWithHTML (html: string) {
 }
 
 export async function sleep (ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 /**REACT 18 
@@ -1232,7 +1232,7 @@ export class PromisePool<T> {
 
       return Promise.resolve(this.pool.start()).then(
         () => {
-          setTimeout(() => {
+          window.setTimeout(() => {
             this.pool?.removeEventListener("fulfilled", listener);
           });
           return Object.values(this.entries);

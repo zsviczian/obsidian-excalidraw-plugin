@@ -657,7 +657,7 @@ export class GenericInputPrompt extends Modal {
     
     // Add to document and set up listeners
     document.body.appendChild(popup);
-    setTimeout(() => {
+    window.setTimeout(() => {
       document.addEventListener('click', closePopupListener);
     }, 10);
   }
@@ -753,7 +753,7 @@ export class GenericInputPrompt extends Modal {
       // Restore focus and cursor position
       if (activeElement && activeElement.isConnected) {
         // Use setTimeout to ensure the pointer event is fully processed
-        setTimeout(() => {
+        window.setTimeout(() => {
           activeElement.focus();
           
           // Restore cursor position for input/textarea elements (but not for number inputs)

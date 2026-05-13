@@ -156,7 +156,7 @@ export const getMimeType = (extension: string):MimeType => {
 const getFileFromURL = async (url: string, mimeType: MimeType, timeout: number = URLFETCHTIMEOUT): Promise<RequestUrlResponse> => {
   try {
     const timeoutPromise = new Promise<Response>((resolve) =>
-      setTimeout(() => resolve(null), timeout)
+      window.setTimeout(() => resolve(null), timeout)
     );
     
     const response = await Promise.race([
@@ -189,7 +189,7 @@ const getFileFromURL = async (url: string, mimeType: MimeType, timeout: number =
 const getFileFromURLFallback = async (url: string, mimeType: MimeType, timeout: number = URLFETCHTIMEOUT):Promise<RequestUrlResponse> => {
   try {
     const timeoutPromise = new Promise<RequestUrlResponse | null>((resolve) =>
-      setTimeout(() => resolve(null), timeout)
+      window.setTimeout(() => resolve(null), timeout)
     );
 
     return await Promise.race([
@@ -215,7 +215,7 @@ export const getDataURLFromURL = async (url: string, mimeType: MimeType, timeout
 /*
 const timeoutPromise = (timeout: number) => {
   return new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error(`Timeout after ${timeout}ms`)), timeout)
+    window.setTimeout(() => reject(new Error(`Timeout after ${timeout}ms`)), timeout)
   );
 };
 
