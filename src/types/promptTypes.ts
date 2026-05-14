@@ -6,14 +6,14 @@ export type ButtonDefinition = {
 };
 
 export interface InputPromptOptions {
-  header: string,
-  placeholder?: string,
-  value?: string,
-  buttons?: ButtonDefinition[],
-  lines?: number,
-  displayEditorButtons?: boolean,
-  customComponents?: (container: HTMLElement) => void,
-  blockPointerInputOutsideModal?: boolean,
-  controlsOnTop?: boolean,
-  draggable?: boolean,
+  header: string;
+  placeholder?: string;
+  value?: string;
+  buttons?: ButtonDefinition[];
+  lines?: number;
+  displayEditorButtons?: boolean;
+  customComponents?: (container: HTMLElement) => void;
+  blockPointerInputOutsideModal?: boolean;
+  controlsOnTop?: boolean;
+  draggable?: boolean;
 }

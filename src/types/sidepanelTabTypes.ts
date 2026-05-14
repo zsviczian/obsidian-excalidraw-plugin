@@ -20,21 +20,21 @@ import type ExcalidrawView from "src/view/ExcalidrawView";
  */
 
 export interface SidepanelTab {
-	/** Unique tab identifier used by the host sidepanel. */
-	readonly id: string;
-	/** Optional script name backing this tab (used for persistence and lookup). */
-	readonly scriptName?: string;
-	/** Current title shown in the sidepanel selector. */
-	readonly title: string;
-	/** Root container element for the tab (same as modalEl). */
-	readonly containerEl: HTMLDivElement;
-	/** Wrapper element for the tab. */
-	readonly modalEl: HTMLDivElement;
-	/** Content element where scripts render their UI. */
-	readonly contentEl: HTMLDivElement;
-	/** Title element whose text mirrors `title`. */
-	readonly titleEl: HTMLDivElement;
-	/**
+  /** Unique tab identifier used by the host sidepanel. */
+  readonly id: string;
+  /** Optional script name backing this tab (used for persistence and lookup). */
+  readonly scriptName?: string;
+  /** Current title shown in the sidepanel selector. */
+  readonly title: string;
+  /** Root container element for the tab (same as modalEl). */
+  readonly containerEl: HTMLDivElement;
+  /** Wrapper element for the tab. */
+  readonly modalEl: HTMLDivElement;
+  /** Content element where scripts render their UI. */
+  readonly contentEl: HTMLDivElement;
+  /** Title element whose text mirrors `title`. */
+  readonly titleEl: HTMLDivElement;
+  /**
    * Focus hook fired when the host marks this tab active; set by scripts.
    * Because sidpanel tabs may outlive their associated Excalidraw views on focus is designed to notify scripts of the most recently active view.
    * The script can verify if the view has changed by comparing against ea.targetView (ea.targetView === view means no change).
@@ -43,31 +43,31 @@ export interface SidepanelTab {
    * In case the script performs view specific actions it should update its UI in onFocus when the received view !== ea.targetView.
    * @param view The most recently active ExcalidrawView, or null if no ExcalidrawViews are present in the workspace.
    */
-	onFocus: (view: ExcalidrawView | null) => void;
-	/** Hook fired when the associated Excalidraw view closes; set by ScriptEngine. */
-	onExcalidrawViewClosed: () => void;
-	/** Hook fired when the sidepanel's DOM is migrated to another window (e.g., into or out of a popout) so scripts can rebind listeners. */
-	onWindowMigrated: (win: Window) => void;
-	/** Clears all children from the content element. */
-	clear(): void;
-	/** Sets the tab title and updates host UI; returns the tab for chaining. */
-	setTitle(title: string): this;
-	/** Replaces tab content with text or a fragment; returns the tab for chaining. */
-	setContent(content: string | DocumentFragment): this;
-	/** Activates this tab within the host sidepanel. */
-	focus(): void;
-	/** Marks the tab open, activates it, and triggers `onOpen`. reveal default is true */
-	open(reveal?: boolean): void;
-	/** Runs close handlers then asks the host to remove the tab. */
-	close(): void;
-	/** Lifecycle hook called when the tab is opened/activated. */
-	onOpen(): Promise<void> | void;
-	/** Lifecycle hook called once when the tab closes. */
-	onClose(): void;
-	/** Toggles pointer interactivity and opacity; returns the tab for chaining. */
-	setDisabled(disabled: boolean): this;
-	/** Returns the ExcalidrawAutomate instance associated with the sidepanel tab */
-	getHostEA(): ExcalidrawAutomate;
+  onFocus: (view: ExcalidrawView | null) => void;
+  /** Hook fired when the associated Excalidraw view closes; set by ScriptEngine. */
+  onExcalidrawViewClosed: () => void;
+  /** Hook fired when the sidepanel's DOM is migrated to another window (e.g., into or out of a popout) so scripts can rebind listeners. */
+  onWindowMigrated: (win: Window) => void;
+  /** Clears all children from the content element. */
+  clear(): void;
+  /** Sets the tab title and updates host UI; returns the tab for chaining. */
+  setTitle(title: string): this;
+  /** Replaces tab content with text or a fragment; returns the tab for chaining. */
+  setContent(content: string | DocumentFragment): this;
+  /** Activates this tab within the host sidepanel. */
+  focus(): void;
+  /** Marks the tab open, activates it, and triggers `onOpen`. reveal default is true */
+  open(reveal?: boolean): void;
+  /** Runs close handlers then asks the host to remove the tab. */
+  close(): void;
+  /** Lifecycle hook called when the tab is opened/activated. */
+  onOpen(): Promise<void> | void;
+  /** Lifecycle hook called once when the tab closes. */
+  onClose(): void;
+  /** Toggles pointer interactivity and opacity; returns the tab for chaining. */
+  setDisabled(disabled: boolean): this;
+  /** Returns the ExcalidrawAutomate instance associated with the sidepanel tab */
+  getHostEA(): ExcalidrawAutomate;
   /** Returns whether the tab is currently visible in the UI */
   isVisible(): boolean;
 }

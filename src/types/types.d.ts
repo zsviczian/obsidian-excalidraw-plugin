@@ -19,32 +19,32 @@ export type ObsidianCommandManager = {
 export type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
 
 export type Packages = {
-  react: any,
-  reactDOM: any,
-  excalidrawLib: typeof ExcalidrawLib | null,
-}
+  react: any;
+  reactDOM: any;
+  excalidrawLib: typeof ExcalidrawLib | null;
+};
 
 export type ValueOf<T> = T[keyof T];
 
 export type DynamicStyle = "none" | "gray" | "colorful";
 
 export type GridSettings = {
-  DYNAMIC_COLOR: boolean;  // Whether the grid color is dynamic
-  COLOR: string;           // The grid color (in hex format)
-  OPACITY: number;         // The grid opacity (hex value between "00" and "FF")
-  GRID_DIRECTION: {horizontal: boolean, vertical: boolean}; // Whether the grid is horizontal or vertical
+  DYNAMIC_COLOR: boolean; // Whether the grid color is dynamic
+  COLOR: string; // The grid color (in hex format)
+  OPACITY: number; // The grid opacity (hex value between "00" and "FF")
+  GRID_DIRECTION: { horizontal: boolean; vertical: boolean }; // Whether the grid is horizontal or vertical
 };
 
 export type DeviceType = {
-  isDesktop: boolean,
-  isPhone: boolean,
-  isTablet: boolean,
-  isMobile: boolean,
-  isLinux: boolean,
-  isMacOS: boolean,
-  isWindows: boolean,
-  isIOS: boolean,
-  isAndroid: boolean,
+  isDesktop: boolean;
+  isPhone: boolean;
+  isTablet: boolean;
+  isMobile: boolean;
+  isLinux: boolean;
+  isMacOS: boolean;
+  isWindows: boolean;
+  isIOS: boolean;
+  isAndroid: boolean;
 };
 
 export type Point = [number, number];
@@ -53,16 +53,16 @@ export type LinkSuggestion = {
   file: TFile;
   path: string;
   alias?: string;
-}
+};
 
 declare global {
   interface Window {
-      ExcalidrawAutomate: ExcalidrawAutomate;
-      pdfjsLib: any;
-      eval: (x: string) => any;
-      React?: any;
-      ReactDOM?: any;
-      ExcalidrawLib?: any;
+    ExcalidrawAutomate: ExcalidrawAutomate;
+    pdfjsLib: any;
+    eval: (x: string) => any;
+    React?: any;
+    ReactDOM?: any;
+    ExcalidrawLib?: any;
   }
   interface File {
     path?: string;
@@ -75,9 +75,9 @@ declare module "obsidian" {
     setting: any;
     commands: ObsidianCommandManager;
     isMobile(): boolean;
-    getObsidianUrl(file:TFile): string;
+    getObsidianUrl(file: TFile): string;
     metadataTypeManager: {
-      setType(name:string, type:string): void;
+      setType(name: string, type: string): void;
     };
     plugins: {
       plugins: {
@@ -135,7 +135,7 @@ declare module "obsidian" {
   interface DataAdapter {
     url: {
       pathToFileURL(path: string): URL;
-    },
+    };
     basePath: string;
   }
   interface FoldPosition {
@@ -147,7 +147,7 @@ declare module "obsidian" {
     folds: FoldPosition[];
     lines: number;
   }
-  
+
   interface MarkdownSubView {
     applyFoldInfo(foldInfo: FoldInfo): void;
     getFoldInfo(): FoldInfo | null;
@@ -157,7 +157,14 @@ declare module "obsidian" {
   }*/
   interface MetadataCache {
     getBacklinksForFile(file: TFile): any;
-    getLinks(): { [id: string]: Array<{ link: string; displayText: string; original: string; position: any }> };
+    getLinks(): {
+      [id: string]: Array<{
+        link: string;
+        displayText: string;
+        original: string;
+        position: any;
+      }>;
+    };
     getCachedFiles(): string[];
   }
 
