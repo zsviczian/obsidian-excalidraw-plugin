@@ -1,9 +1,9 @@
 import {
-FuzzyMatch,
-CachedMetadata,
-TextComponent,
-App,
-TFolder,
+  FuzzyMatch,
+  CachedMetadata,
+  TextComponent,
+  App,
+  TFolder,
 } from "obsidian";
 import { SuggestionModal } from "./SuggestionModal";
 

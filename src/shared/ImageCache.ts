@@ -1,8 +1,8 @@
-import { App,Notice,TFile } from "obsidian";
+import { App, Notice, TFile } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
-import { PDFPageViewProps,Size } from "src/types/embeddedFileLoaderTypes";
+import { PDFPageViewProps, Size } from "src/types/embeddedFileLoaderTypes";
 import { convertSVGStringToElement } from "../utils/utils";
-import { FILENAMEPARTS,PreviewImageType } from "../types/utilTypes";
+import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
 import { hasExcalidrawEmbeddedImagesTreeChanged } from "../utils/fileUtils";
 const DB_NAME = "Excalidraw " + (app as unknown as { appId: string }).appId;
 const CACHE_STORE = "imageCache";
@@ -38,15 +38,17 @@ type GetImageFromCacheOptions = {
 };
 
 const getKey = (key: ImageKey): string =>
-  `${key.filepath}#${key.cacheId??""}#${key.blockref??""}#${key.sectionref??""}#${key.isDark ? 1 : 0}#${
-    key.hasGroupref}#${key.hasArearef}#${key.hasFrameref}#${key.hasClippedFrameref}#${
-    key.hasSectionref}#${key.inlineFonts}#${
+  `${key.filepath}#${key.cacheId ?? ""}#${key.blockref ?? ""}#${key.sectionref ?? ""}#${key.isDark ? 1 : 0}#${
+    key.hasGroupref
+  }#${key.hasArearef}#${key.hasFrameref}#${key.hasClippedFrameref}#${
+    key.hasSectionref
+  }#${key.inlineFonts}#${
     key.previewImageType === PreviewImageType.SVGIMG
       ? 1
       : key.previewImageType === PreviewImageType.PNG
         ? 0
-        : 2 
-  }#${key.scale}${key.isTransparent?"#t":""}`; //key.isSVG ? 1 : 0
+        : 2
+  }#${key.scale}${key.isTransparent ? "#t" : ""}`; //key.isSVG ? 1 : 0
 
 class ImageCache {
   private dbName: string;
@@ -62,7 +64,10 @@ class ImageCache {
   private purgeInvalidBackupTimer: number = null;
 
   private getCacheRetentionCutoff(): number {
-    const retentionDays = Math.max(1, this.plugin?.settings?.imageCacheRetentionDays ?? 30);
+    const retentionDays = Math.max(
+      1,
+      this.plugin?.settings?.imageCacheRetentionDays ?? 30,
+    );
     return Date.now() - retentionDays * 24 * 60 * 60 * 1000;
   }
 
@@ -73,22 +78,30 @@ class ImageCache {
     const nextLastAccessed = Date.now();
     // Avoid rewriting IndexedDB on every cache hit while still keeping actively used
     // entries alive for retention-based purging.
-    if (cacheData.lastAccessed && (nextLastAccessed - cacheData.lastAccessed) < 60 * 1000) {
+    if (
+      cacheData.lastAccessed &&
+      nextLastAccessed - cacheData.lastAccessed < 60 * 1000
+    ) {
       return;
     }
 
     const transaction = this.db.transaction(this.cacheStoreName, "readwrite");
     const store = transaction.objectStore(this.cacheStoreName);
-    store.put({
-      ...cacheData,
-      lastAccessed: nextLastAccessed,
-    }, key);
+    store.put(
+      {
+        ...cacheData,
+        lastAccessed: nextLastAccessed,
+      },
+      key,
+    );
   }
 
   public destroy(): void {
     this.isInitializing = true;
-    if(this.purgeInvalidCacheTimer) window.clearTimeout(this.purgeInvalidCacheTimer);
-    if(this.purgeInvalidBackupTimer) window.clearTimeout(this.purgeInvalidBackupTimer);
+    if (this.purgeInvalidCacheTimer)
+      window.clearTimeout(this.purgeInvalidCacheTimer);
+    if (this.purgeInvalidBackupTimer)
+      window.clearTimeout(this.purgeInvalidBackupTimer);
     this.db = null;
     this.plugin = null;
     this.app = null;
@@ -135,7 +148,11 @@ class ImageCache {
         };
 
         request.onerror = () => {
-          reject(new Error(`Failed to open or create IndexedDB database: ${this.dbName}`));
+          reject(
+            new Error(
+              `Failed to open or create IndexedDB database: ${this.dbName}`,
+            ),
+          );
         };
       });
 
@@ -166,7 +183,9 @@ class ImageCache {
           };
 
           upgradeRequest.onerror = () => {
-            reject(new Error(`Failed to upgrade IndexedDB database: ${this.dbName}`));
+            reject(
+              new Error(`Failed to upgrade IndexedDB database: ${this.dbName}`),
+            );
           };
         });
 
@@ -177,24 +196,28 @@ class ImageCache {
             resolve(db);
           };
           openRequest.onerror = () => {
-            reject(new Error(`Failed to open IndexedDB database: ${this.dbName}`));
+            reject(
+              new Error(`Failed to open IndexedDB database: ${this.dbName}`),
+            );
           };
         });
       }
 
-      this.purgeInvalidCacheTimer = window.setTimeout(async ()=>{
+      this.purgeInvalidCacheTimer = window.setTimeout(async () => {
         this.purgeInvalidCacheTimer = null;
         this.purgeInvalidCacheFiles();
       }, 60000);
 
-      this.purgeInvalidBackupTimer = window.setTimeout(async ()=>{
+      this.purgeInvalidBackupTimer = window.setTimeout(async () => {
         this.purgeInvalidBackupTimer = null;
         this.purgeInvalidBackupFiles();
       }, 120000);
     } finally {
       this.isInitializing = false;
-      if(this.initializationNotice) {
-        new Notice("Excalidraw Image Cache is Initialized - You may now retry opening your damaged drawing.");
+      if (this.initializationNotice) {
+        new Notice(
+          "Excalidraw Image Cache is Initialized - You may now retry opening your damaged drawing.",
+        );
         this.initializationNotice = false;
       }
       console.log("Initialized Excalidraw Image Cache");
@@ -203,23 +226,35 @@ class ImageCache {
 
   private async purgeInvalidCacheFiles(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      const transaction = this.db!.transaction(this.cacheStoreName, "readwrite");
+      const transaction = this.db!.transaction(
+        this.cacheStoreName,
+        "readwrite",
+      );
       const store = transaction.objectStore(this.cacheStoreName);
       const files = this.app.vault.getFiles();
       const deletePromises: Promise<void>[] = [];
       const request = store.openCursor();
       request.onsuccess = (event: Event) => {
-        const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>).result;
-        if(cursor) {
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>)
+          .result;
+        if (cursor) {
           const key = cursor.key as string;
-          const isLegacyKey = key.split("#").length-1 < 13; // introduced hasGroupref, etc. in 1.9.28 // introduced hasClippedFrameref in 2.2.10 //introduced inlineFonts 2.2.11 //introduced cacheId in 2.23.x
+          const isLegacyKey = key.split("#").length - 1 < 13; // introduced hasGroupref, etc. in 1.9.28 // introduced hasClippedFrameref in 2.2.10 //introduced inlineFonts 2.2.11 //introduced cacheId in 2.23.x
           const filepath = key.split("#")[0];
           const fileExists = files.some((f: TFile) => f.path === filepath);
-          const file = fileExists ? files.find((f: TFile) => f.path === filepath) : null;
+          const file = fileExists
+            ? files.find((f: TFile) => f.path === filepath)
+            : null;
           const lastAccessed = cursor.value.lastAccessed ?? cursor.value.mtime;
           const isExpired = lastAccessed < this.getCacheRetentionCutoff();
-          if (isLegacyKey || !file || (file && (file.stat.mtime > cursor.value.mtime)) || (!cursor.value.blob && !cursor.value.svg) || isExpired) {
-            if(this.obsidanURLCache.has(key)) {
+          if (
+            isLegacyKey ||
+            !file ||
+            (file && file.stat.mtime > cursor.value.mtime) ||
+            (!cursor.value.blob && !cursor.value.svg) ||
+            isExpired
+          ) {
+            if (this.obsidanURLCache.has(key)) {
               URL.revokeObjectURL(this.obsidanURLCache.get(key));
               this.obsidanURLCache.delete(key);
             }
@@ -229,10 +264,10 @@ class ImageCache {
                 deleteRequest.onsuccess = () => innerResolve();
                 deleteRequest.onerror = () => {
                   const error = deleteRequest.error;
-                  const errorMsg = `Failed to delete file with key: ${key}. Error: ${error.message}`
+                  const errorMsg = `Failed to delete file with key: ${key}. Error: ${error.message}`;
                   innerReject(new Error(errorMsg));
-                }
-              })
+                };
+              }),
             );
           }
           cursor.continue();
@@ -249,7 +284,7 @@ class ImageCache {
       request.onerror = () => {
         const error = request.error;
         console.log(error);
-        const errorMsg = `Failed to purge invalid files from IndexedDB. Error: ${error.message}`
+        const errorMsg = `Failed to purge invalid files from IndexedDB. Error: ${error.message}`;
         reject(new Error(errorMsg));
       };
     });
@@ -263,7 +298,8 @@ class ImageCache {
     const request = store.openCursor();
     return await new Promise<void>((resolve, reject) => {
       request.onsuccess = (event: Event) => {
-        const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>).result;
+        const cursor = (event.target as IDBRequest<IDBCursorWithValue | null>)
+          .result;
         if (cursor) {
           const key = cursor.key as BackupKey;
           const fileExists = files.some((f: TFile) => f.path === key);
@@ -273,8 +309,10 @@ class ImageCache {
                 const deleteRequest = store.delete(cursor.primaryKey);
                 deleteRequest.onsuccess = () => resolve();
                 deleteRequest.onerror = () =>
-                  reject(new Error(`Failed to delete backup file with key: ${key}`));
-              })
+                  reject(
+                    new Error(`Failed to delete backup file with key: ${key}`),
+                  );
+              }),
             );
           }
           cursor.continue();
@@ -287,17 +325,20 @@ class ImageCache {
             .catch((error) => reject(error));
         }
       };
-  
+
       request.onerror = () => {
         const error = request.error;
-        const errorMsg = `Failed to purge invalid backup files from IndexedDB. Error: ${error.message}`
+        const errorMsg = `Failed to purge invalid backup files from IndexedDB. Error: ${error.message}`;
         console.log(error);
         reject(new Error(errorMsg));
       };
     });
   }
 
-  private getObjectStore(mode: IDBTransactionMode, storeName: string): IDBObjectStore {
+  private getObjectStore(
+    mode: IDBTransactionMode,
+    storeName: string,
+  ): IDBObjectStore {
     const transaction = this.db!.transaction(storeName, mode);
     return transaction.objectStore(storeName);
   }
@@ -335,7 +376,12 @@ class ImageCache {
   }
 
   public isReady(): boolean {
-    return !!this.db && !this.isInitializing && !!this.plugin && this.plugin.settings.allowImageCache;
+    return (
+      !!this.db &&
+      !this.isInitializing &&
+      !!this.plugin &&
+      this.plugin.settings.allowImageCache
+    );
   }
 
   private fullyInitialized = false;
@@ -355,28 +401,39 @@ class ImageCache {
         ? await this.getCacheData(key)
         : await Promise.race([
             this.getCacheData(key),
-            new Promise<undefined>((_, reject) => window.setTimeout(() => {
-              reject(undefined);
-            }, 100))
+            new Promise<undefined>((_, reject) =>
+              window.setTimeout(() => {
+                reject(undefined);
+              }, 100),
+            ),
           ]);
       this.fullyInitialized = true;
       if (!cachedData) return undefined;
 
-      const file = this.app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
+      const file = this.app.vault.getAbstractFileByPath(
+        key_.filepath.split("#")[0],
+      );
       if (!file || !(file instanceof TFile)) return undefined;
       if (cachedData.mtime < file.stat.mtime) {
         return undefined;
       }
       if (
         !options?.skipDependencyCheck &&
-        hasExcalidrawEmbeddedImagesTreeChanged(file, cachedData.mtime, this.plugin)
+        hasExcalidrawEmbeddedImagesTreeChanged(
+          file,
+          cachedData.mtime,
+          this.plugin,
+        )
       ) {
         return undefined;
       }
       // Validated reads can require a minimum render scale so lower-resolution PDF
       // snapshots are upgraded in the background without blocking the first paint.
       const cachedRenderScale = cachedData.renderScale ?? key_.scale;
-      if (options?.minRenderScale && cachedRenderScale < options.minRenderScale) {
+      if (
+        options?.minRenderScale &&
+        cachedRenderScale < options.minRenderScale
+      ) {
         return undefined;
       }
       this.touchCacheData(key, cachedData);
@@ -403,10 +460,10 @@ class ImageCache {
     }
 
     const { cacheData, key } = resolved;
-    if(cacheData.svg) {
+    if (cacheData.svg) {
       return convertSVGStringToElement(cacheData.svg);
     }
-    if(this.obsidanURLCache.has(key)) {
+    if (this.obsidanURLCache.has(key)) {
       return this.obsidanURLCache.get(key);
     }
     const obsidianURL = URL.createObjectURL(cacheData.blob);
@@ -426,39 +483,52 @@ class ImageCache {
   public addImageToCache(
     key_: ImageKey,
     obsidianURL: string,
-    image: Blob|SVGSVGElement,
+    image: Blob | SVGSVGElement,
     metadata?: Partial<FileCacheData>,
   ): void {
     if (!this.isReady()) {
       return; // Database not initialized yet
     }
 
-    const file = this.app.vault.getAbstractFileByPath(key_.filepath.split("#")[0]);
+    const file = this.app.vault.getAbstractFileByPath(
+      key_.filepath.split("#")[0],
+    );
     if (!file || !(file instanceof TFile)) return;
-    
 
     let svg: string = null;
     let blob: Blob = null;
-    if(image instanceof SVGSVGElement) {
+    if (image instanceof SVGSVGElement) {
       svg = image.outerHTML;
     } else {
-     blob = image as Blob;
+      blob = image as Blob;
     }
     const now = Date.now();
-    const data: FileCacheData = { mtime: now, lastAccessed: now, blob, svg, ...metadata };
+    const data: FileCacheData = {
+      mtime: now,
+      lastAccessed: now,
+      blob,
+      svg,
+      ...metadata,
+    };
     const transaction = this.db.transaction(this.cacheStoreName, "readwrite");
     const store = transaction.objectStore(this.cacheStoreName);
     const key = getKey(key_);
     store.put(data, key);
-    if(!Boolean(svg) && obsidianURL) {
-      if(this.obsidanURLCache.has(key) && this.obsidanURLCache.get(key) !== obsidianURL) {
+    if (!Boolean(svg) && obsidianURL) {
+      if (
+        this.obsidanURLCache.has(key) &&
+        this.obsidanURLCache.get(key) !== obsidianURL
+      ) {
         URL.revokeObjectURL(this.obsidanURLCache.get(key));
       }
       this.obsidanURLCache.set(key, obsidianURL);
     }
   }
 
-  public async addBAKToCache(filepath: string, data: BackupData): Promise<void> {
+  public async addBAKToCache(
+    filepath: string,
+    data: BackupData,
+  ): Promise<void> {
     if (!this.isReady()) {
       return; // Database not initialized yet
     }
@@ -475,7 +545,7 @@ class ImageCache {
 
     const transaction = this.db.transaction(this.backupStoreName, "readwrite");
     const store = transaction.objectStore(this.backupStoreName);
-    
+
     return new Promise<void>((resolve, reject) => {
       const request = store.delete(filepath);
       request.onsuccess = () => {
@@ -510,20 +580,20 @@ class ImageCache {
     if (!this.isReady()) {
       return; // Database not initialized yet
     }
-  
+
     const transaction = this.db.transaction([storeName], "readwrite");
     const store = transaction.objectStore(storeName);
-  
+
     return new Promise<void>((resolve, reject) => {
       const request = store.clear();
       request.onsuccess = () => {
         new Notice(message);
         resolve();
       };
-      request.onerror = () => reject(new Error(`Failed to clear ${storeName}.`));
+      request.onerror = () =>
+        reject(new Error(`Failed to clear ${storeName}.`));
     });
   }
-
 }
 
 export const imageCache = new ImageCache(DB_NAME, CACHE_STORE, BACKUP_STORE);
@@ -531,7 +601,7 @@ export const imageCache = new ImageCache(DB_NAME, CACHE_STORE, BACKUP_STORE);
 /* -------------------------------------------------------- */
 /*                      Legacy cleanup                      */
 // early implementation used localStorage as the image cache,
-// which if not cleaned can cause Obsidian performance issues 
+// which if not cleaned can cause Obsidian performance issues
 /* -------------------------------------------------------- */
 const LEGACY_LS_PURGE_MARKER = "excalidraw-legacy-ls-purge-v1";
 
@@ -592,7 +662,12 @@ export const purgeLegacyLocalStorageImageCache = (): string | null => {
       return null;
     }
 
-    return "Purged " + deleted + " legacy localStorage image cache entr" + (deleted === 1 ? "y." : "ies.");
+    return (
+      "Purged " +
+      deleted +
+      " legacy localStorage image cache entr" +
+      (deleted === 1 ? "y." : "ies.")
+    );
   } catch {
     return null;
   }

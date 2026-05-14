@@ -1,27 +1,26 @@
-import { Setting,DropdownComponent,App } from "obsidian";
+import { Setting, DropdownComponent, App } from "obsidian";
 import { t } from "src/lang/helpers";
 import { ExcalidrawSettings } from "src/core/settings";
-import { fragWithHTML,setLeftHandedMode,setUIMode } from "src/utils/utils";
+import { fragWithHTML, setLeftHandedMode, setUIMode } from "src/utils/utils";
 import { DEVICE } from "src/constants/constants";
 
 export type UIMode = "full" | "compact" | "tray" | "mobile";
 
 //setDesktopUIMode(this.app, this.plugin.settings);
 
-
 export class UIModeSettingsComponent {
   private containerEl: HTMLElement;
   private settings: ExcalidrawSettings;
   private app: App;
   private onChange: () => void;
-  private reapplyButtonAction: ()=>void = null;
+  private reapplyButtonAction: () => void = null;
 
   constructor(
     containerEl: HTMLElement,
     settings: ExcalidrawSettings,
     app: App,
     onChange: () => void,
-    reapplyButtonAction: ()=>void = null,
+    reapplyButtonAction: () => void = null,
   ) {
     this.containerEl = containerEl;
     this.settings = settings;
@@ -92,27 +91,23 @@ export class UIModeSettingsComponent {
       .setName(t("LEFTHANDED_MODE_NAME"))
       .setDesc(fragWithHTML(t("LEFTHANDED_MODE_DESC")))
       .addToggle((toggle) =>
-        toggle
-          .setValue(this.settings.isLeftHanded)
-          .onChange(async (value) => {
-            this.settings.isLeftHanded = value;
-            setLeftHandedMode(value);
-            this.onChange();
-          }),
+        toggle.setValue(this.settings.isLeftHanded).onChange(async (value) => {
+          this.settings.isLeftHanded = value;
+          setLeftHandedMode(value);
+          this.onChange();
+        }),
       );
 
     if (this.reapplyButtonAction) {
-      new Setting(containerEl)
-        .addButton((button) =>
-          button
-            .setButtonText(t("REAPPLY_UI_MODE_BUTTON"))
-            .setCta()
-            .onClick(() => {
-              setUIMode(this.app, this.settings);
-              this.reapplyButtonAction();
-            }),
-        );
+      new Setting(containerEl).addButton((button) =>
+        button
+          .setButtonText(t("REAPPLY_UI_MODE_BUTTON"))
+          .setCta()
+          .onClick(() => {
+            setUIMode(this.app, this.settings);
+            this.reapplyButtonAction();
+          }),
+      );
     }
-
   }
 }

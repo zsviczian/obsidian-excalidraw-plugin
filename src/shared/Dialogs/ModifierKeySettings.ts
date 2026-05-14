@@ -1,7 +1,11 @@
 import { Setting } from "obsidian";
 import { DEVICE } from "src/constants/constants";
 import { t } from "src/lang/helpers";
-import { ModifierKeySet,ModifierSetType,modifierKeyTooltipMessages } from "src/utils/modifierkeyHelper";
+import {
+  ModifierKeySet,
+  ModifierSetType,
+  modifierKeyTooltipMessages,
+} from "src/utils/modifierkeyHelper";
 
 type ModifierKeyCategories = Partial<{
   [modifierSetType in ModifierSetType]: string;
@@ -25,7 +29,7 @@ export class ModifierKeySettingsComponent {
     },
     private update?: () => void,
   ) {
-    this.isMacOS = (DEVICE.isMacOS || DEVICE.isIOS);
+    this.isMacOS = DEVICE.isMacOS || DEVICE.isIOS;
   }
 
   render() {
@@ -38,23 +42,27 @@ export class ModifierKeySettingsComponent {
 
     Object.entries(CATEGORIES).forEach(([modifierSetType, label]) => {
       const detailsEl = this.contentEl.createEl("details");
-      detailsEl.createEl("summary", { 
+      detailsEl.createEl("summary", {
         text: label,
         cls: "excalidraw-setting-h4",
       });
-      
+
       const modifierKeys = modifierKeysConfig[modifierSetType];
       detailsEl.createDiv({
         text:
           t("DEFAULT_ACTION_DESC") +
-          (tooltipMessages[modifierSetType]?.[modifierKeys.defaultAction] ?? ""),
-        cls: "setting-item-description"
+          (tooltipMessages[modifierSetType]?.[modifierKeys.defaultAction] ??
+            ""),
+        cls: "setting-item-description",
       });
       // Ensure all LinkClickAction rules have ctrl_cmd enabled
       if (modifierSetType === "LinkClickAction") {
         let dirty = false;
         modifierKeys.rules.forEach((rule) => {
-          if (!rule.ctrl_cmd) { rule.ctrl_cmd = true; dirty = true; }
+          if (!rule.ctrl_cmd) {
+            rule.ctrl_cmd = true;
+            dirty = true;
+          }
         });
         if (dirty) this.update?.();
       }
@@ -76,9 +84,10 @@ export class ModifierKeySettingsComponent {
       });
 
       Object.entries(modifierKeys.rules).forEach(([_, rule]) => {
-        const setting = new Setting(detailsEl)
-          .setName(tooltipMessages[modifierSetType]?.[rule.result] ?? rule.result);
-        
+        const setting = new Setting(detailsEl).setName(
+          tooltipMessages[modifierSetType]?.[rule.result] ?? rule.result,
+        );
+
         setting.addToggle((toggle) =>
           toggle
             .setValue(rule.shift)
@@ -86,8 +95,8 @@ export class ModifierKeySettingsComponent {
             .onChange((value) => {
               rule.shift = value;
               this.update();
-            })
-          );
+            }),
+        );
         setting.addToggle((toggle) => {
           const isLinkClick = modifierSetType === "LinkClickAction";
           toggle
@@ -105,7 +114,7 @@ export class ModifierKeySettingsComponent {
             toggle.toggleEl.style.opacity = "0.5";
           }
         });
-        
+
         setting.addToggle((toggle) =>
           toggle
             .setValue(rule.alt_opt)
@@ -113,8 +122,8 @@ export class ModifierKeySettingsComponent {
             .onChange((value) => {
               rule.alt_opt = value;
               this.update();
-            })
-          );
+            }),
+        );
         setting.addToggle((toggle) =>
           toggle
             .setValue(rule.meta_ctrl)
@@ -122,8 +131,8 @@ export class ModifierKeySettingsComponent {
             .onChange((value) => {
               rule.meta_ctrl = value;
               this.update();
-            })
-          );
+            }),
+        );
       });
     });
   }

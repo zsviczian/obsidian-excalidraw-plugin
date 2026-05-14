@@ -1,30 +1,30 @@
 import { mat4 } from "gl-matrix";
 import { dimensionsFromPoints } from "./utils";
 import ExcalidrawScene from "./elements/ExcalidrawScene";
-import Group,{ getGroupAttrs } from "./elements/Group";
+import Group, { getGroupAttrs } from "./elements/Group";
 import {
-ExcalidrawElementBase,
-ExcalidrawRectangle,
-ExcalidrawEllipse,
-ExcalidrawLine,
-ExcalidrawDraw,
-createExRect,
-createExEllipse,
-createExLine,
-createExDraw,
-Point,
+  ExcalidrawElementBase,
+  ExcalidrawRectangle,
+  ExcalidrawEllipse,
+  ExcalidrawLine,
+  ExcalidrawDraw,
+  createExRect,
+  createExEllipse,
+  createExLine,
+  createExDraw,
+  Point,
 } from "./elements/ExcalidrawElement";
 import {
-presAttrsToElementValues,
-filterAttrsToElementValues,
-pointsAttrToPoints,
-has,
-get,
-getNum,
+  presAttrsToElementValues,
+  filterAttrsToElementValues,
+  pointsAttrToPoints,
+  has,
+  get,
+  getNum,
 } from "./attributes";
-import { getTransformMatrix,transformPoints } from "./transform";
+import { getTransformMatrix, transformPoints } from "./transform";
 import { pointsOnPath } from "points-on-path";
-import { randomId,getWindingOrder } from "./utils";
+import { randomId, getWindingOrder } from "./utils";
 import { ROUNDNESS } from "../../constants/constants";
 
 const SUPPORTED_TAGS = [
@@ -180,8 +180,6 @@ const walkers = {
       scene.elements.push(exEl);
       //throw new Error("Unable to create ex element");
     }
-
-    
 
     walk(args, args.tw.nextNode());
   },
@@ -362,7 +360,7 @@ const walkers = {
       y: result[13],
       width: result[0],
       height: result[5],
-      roundness: isRound ? {type:ROUNDNESS.LEGACY} : null,
+      roundness: isRound ? { type: ROUNDNESS.LEGACY } : null,
     };
 
     scene.elements.push(rect);

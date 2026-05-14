@@ -1,4 +1,4 @@
-import { App,FuzzySuggestModal } from "obsidian";
+import { App, FuzzySuggestModal } from "obsidian";
 import { t } from "../../lang/helpers";
 import type { ObsidianCommand } from "src/types/types";
 
@@ -43,9 +43,9 @@ export class InsertCommandDialog extends FuzzySuggestModal<ObsidianCommand> {
   }
 
   onClose(): void {
-    window.setTimeout(()=>{
+    window.setTimeout(() => {
       this.addText = null;
-    }) //onChooseItem must run first
+    }); //onChooseItem must run first
     super.onClose();
   }
 }

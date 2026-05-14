@@ -1,9 +1,13 @@
-import { App,FuzzySuggestModal,Notice } from "obsidian";
+import { App, FuzzySuggestModal, Notice } from "obsidian";
 import { t } from "../../lang/helpers";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { CARD_HEIGHT,CARD_WIDTH,MD_EX_SECTIONS } from "src/constants/constants";
+import {
+  CARD_HEIGHT,
+  CARD_WIDTH,
+  MD_EX_SECTIONS,
+} from "src/constants/constants";
 import { addBackOfTheNoteCard } from "src/utils/excalidrawViewUtils";
 
 export class SelectCard extends FuzzySuggestModal<string> {
@@ -14,7 +18,7 @@ export class SelectCard extends FuzzySuggestModal<string> {
   constructor(
     public app: App,
     private view: ExcalidrawView,
-    private sections: string[]
+    private sections: string[],
   ) {
     super(app);
     this.limit = 20;
@@ -29,12 +33,20 @@ export class SelectCard extends FuzzySuggestModal<string> {
       if (e.key == "Enter") {
         if (this.containerEl.innerText.includes(t("EMPTY_SECTION_MESSAGE"))) {
           const item = this.inputEl.value;
-          if(item === "" || MD_EX_SECTIONS.includes(item)) {
+          if (item === "" || MD_EX_SECTIONS.includes(item)) {
             new Notice(t("INVALID_SECTION_NAME"));
             this.close();
             return;
           }
-          addBackOfTheNoteCard(this.view, item, true, undefined, undefined, this.center, {x: this.x, y: this.y});
+          addBackOfTheNoteCard(
+            this.view,
+            item,
+            true,
+            undefined,
+            undefined,
+            this.center,
+            { x: this.x, y: this.y },
+          );
           this.close();
         }
       }
@@ -51,17 +63,20 @@ export class SelectCard extends FuzzySuggestModal<string> {
 
   onChooseItem(item: string): void {
     const ea = getEA(this.view) as ExcalidrawAutomate;
-    if(this.center) {
+    if (this.center) {
       const centerPos = ea.getViewCenterPosition();
-      if(centerPos) {
-        this.x = centerPos.x - (CARD_WIDTH / 2);
-        this.y = centerPos.y - (CARD_HEIGHT / 2);
+      if (centerPos) {
+        this.x = centerPos.x - CARD_WIDTH / 2;
+        this.y = centerPos.y - CARD_HEIGHT / 2;
       }
     }
 
     const id = ea.addEmbeddable(
-      this.x,this.y,CARD_WIDTH,CARD_HEIGHT,
-      `[[${this.view.file.path}#${item}]]`
+      this.x,
+      this.y,
+      CARD_WIDTH,
+      CARD_HEIGHT,
+      `[[${this.view.file.path}#${item}]]`,
     );
     (async () => {
       await ea.addElementsToView(!this.center, false, true);

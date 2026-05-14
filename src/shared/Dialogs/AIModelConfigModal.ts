@@ -1,9 +1,13 @@
-import { App,Modal,Notice,Setting } from "obsidian";
+import { App, Modal, Notice, Setting } from "obsidian";
 import { t } from "src/lang/helpers";
-import { AIImageModelConfig,AIModelConfig } from "src/types/AIUtilTypes";
+import { AIImageModelConfig, AIModelConfig } from "src/types/AIUtilTypes";
 import { isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
 
-type SaveHandler<TConfig extends AIModelConfig> = (modelId: string, config: TConfig, previousModelId?: string) => Promise<void> | void;
+type SaveHandler<TConfig extends AIModelConfig> = (
+  modelId: string,
+  config: TConfig,
+  previousModelId?: string,
+) => Promise<void> | void;
 
 type AIModelConfigModalOptions<TConfig extends AIModelConfig> = {
   kind: "text" | "vision" | "image";
@@ -13,7 +17,9 @@ type AIModelConfigModalOptions<TConfig extends AIModelConfig> = {
   initialConfig?: TConfig;
 };
 
-export class AIModelConfigModal<TConfig extends AIModelConfig | AIImageModelConfig> extends Modal {
+export class AIModelConfigModal<
+  TConfig extends AIModelConfig | AIImageModelConfig,
+> extends Modal {
   private modelId: string;
   private config: TConfig;
   private onKeyDown: (ev: KeyboardEvent) => void;
@@ -38,17 +44,22 @@ export class AIModelConfigModal<TConfig extends AIModelConfig | AIImageModelConf
             multimodalSupport: options.initialConfig?.multimodalSupport ?? true,
           }
         : {}),
-      ...(
-        options.kind === "image"
-          ? {
-              supportedSizes: [...(((options.initialConfig as AIImageModelConfig | undefined)?.supportedSizes?.length)
+      ...(options.kind === "image"
+        ? {
+            supportedSizes: [
+              ...((options.initialConfig as AIImageModelConfig | undefined)
+                ?.supportedSizes?.length
                 ? (options.initialConfig as AIImageModelConfig).supportedSizes
-                : ["1024x1024"])],
-              supportsPromptImageTransforms: (options.initialConfig as AIImageModelConfig | undefined)?.supportsPromptImageTransforms ?? true,
-              supportsMaskImageEdits: (options.initialConfig as AIImageModelConfig | undefined)?.supportsMaskImageEdits ?? true,
-            }
-          : {}
-      ),
+                : ["1024x1024"]),
+            ],
+            supportsPromptImageTransforms:
+              (options.initialConfig as AIImageModelConfig | undefined)
+                ?.supportsPromptImageTransforms ?? true,
+            supportsMaskImageEdits:
+              (options.initialConfig as AIImageModelConfig | undefined)
+                ?.supportsMaskImageEdits ?? true,
+          }
+        : {}),
     } as TConfig;
   }
 
@@ -59,15 +70,31 @@ export class AIModelConfigModal<TConfig extends AIModelConfig | AIImageModelConf
         ev.stopImmediatePropagation();
       }
     };
-    this.containerEl.addEventListener("mousedown", this.backdropInteractionHandler, true);
-    this.containerEl.addEventListener("click", this.backdropInteractionHandler, true);
+    this.containerEl.addEventListener(
+      "mousedown",
+      this.backdropInteractionHandler,
+      true,
+    );
+    this.containerEl.addEventListener(
+      "click",
+      this.backdropInteractionHandler,
+      true,
+    );
     this.createForm();
   }
 
   onClose() {
     if (this.backdropInteractionHandler) {
-      this.containerEl.removeEventListener("mousedown", this.backdropInteractionHandler, true);
-      this.containerEl.removeEventListener("click", this.backdropInteractionHandler, true);
+      this.containerEl.removeEventListener(
+        "mousedown",
+        this.backdropInteractionHandler,
+        true,
+      );
+      this.containerEl.removeEventListener(
+        "click",
+        this.backdropInteractionHandler,
+        true,
+      );
       this.backdropInteractionHandler = null;
     }
     if (this.listenerHost && this.onKeyDown) {
@@ -81,11 +108,17 @@ export class AIModelConfigModal<TConfig extends AIModelConfig | AIImageModelConf
     const isEdit = Boolean(this.options.previousModelId);
     switch (this.options.kind) {
       case "vision":
-        return isEdit ? t("AI_VISION_MODEL_MODAL_EDIT_TITLE") : t("AI_VISION_MODEL_MODAL_ADD_TITLE");
+        return isEdit
+          ? t("AI_VISION_MODEL_MODAL_EDIT_TITLE")
+          : t("AI_VISION_MODEL_MODAL_ADD_TITLE");
       case "image":
-        return isEdit ? t("AI_IMAGE_MODEL_MODAL_EDIT_TITLE") : t("AI_IMAGE_MODEL_MODAL_ADD_TITLE");
+        return isEdit
+          ? t("AI_IMAGE_MODEL_MODAL_EDIT_TITLE")
+          : t("AI_IMAGE_MODEL_MODAL_ADD_TITLE");
       default:
-        return isEdit ? t("AI_TEXT_MODEL_MODAL_EDIT_TITLE") : t("AI_TEXT_MODEL_MODAL_ADD_TITLE");
+        return isEdit
+          ? t("AI_TEXT_MODEL_MODAL_EDIT_TITLE")
+          : t("AI_TEXT_MODEL_MODAL_ADD_TITLE");
     }
   }
 
@@ -110,12 +143,12 @@ export class AIModelConfigModal<TConfig extends AIModelConfig | AIImageModelConf
       .setName(t("AI_MODEL_CONFIG_MODAL_PROVIDER_NAME"))
       .setDesc(t("AI_MODEL_CONFIG_MODAL_PROVIDER_DESC"))
       .addDropdown((dropdown) => {
-        this.options.providerIds.forEach((providerId) => dropdown.addOption(providerId, providerId));
-        return dropdown
-          .setValue(this.config.providerId)
-          .onChange((value) => {
-            this.config.providerId = value;
-          });
+        this.options.providerIds.forEach((providerId) =>
+          dropdown.addOption(providerId, providerId),
+        );
+        return dropdown.setValue(this.config.providerId).onChange((value) => {
+          this.config.providerId = value;
+        });
       });
 
     new Setting(contentEl)
@@ -159,17 +192,25 @@ export class AIModelConfigModal<TConfig extends AIModelConfig | AIImageModelConf
 
     if (this.options.kind === "image") {
       const imageConfig = this.config as AIImageModelConfig;
-      contentEl.createEl("h3", { text: t("AI_IMAGE_MODEL_CAPABILITIES_SIZES_NAME") });
-      contentEl.createEl("p", { text: t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_SIZES_DESC") });
+      contentEl.createEl("h3", {
+        text: t("AI_IMAGE_MODEL_CAPABILITIES_SIZES_NAME"),
+      });
+      contentEl.createEl("p", {
+        text: t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_SIZES_DESC"),
+      });
       const sizesContainer = contentEl.createDiv();
       const renderSizes = () => {
         sizesContainer.empty();
         imageConfig.supportedSizes.forEach((size, index) => {
           new Setting(sizesContainer)
-            .setName(`${t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_SIZE_LABEL")} ${index + 1}`)
+            .setName(
+              `${t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_SIZE_LABEL")} ${index + 1}`,
+            )
             .addText((text) =>
               text
-                .setPlaceholder(t("AI_IMAGE_MODEL_CAPABILITIES_SIZES_PLACEHOLDER"))
+                .setPlaceholder(
+                  t("AI_IMAGE_MODEL_CAPABILITIES_SIZES_PLACEHOLDER"),
+                )
                 .setValue(size)
                 .onChange((value) => {
                   imageConfig.supportedSizes[index] = value.trim();
@@ -177,7 +218,9 @@ export class AIModelConfigModal<TConfig extends AIModelConfig | AIImageModelConf
             )
             .addButton((button) =>
               button
-                .setButtonText(t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_REMOVE_SIZE"))
+                .setButtonText(
+                  t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_REMOVE_SIZE"),
+                )
                 .setDisabled(imageConfig.supportedSizes.length <= 1)
                 .onClick(() => {
                   imageConfig.supportedSizes.splice(index, 1);
@@ -188,15 +231,14 @@ export class AIModelConfigModal<TConfig extends AIModelConfig | AIImageModelConf
       };
       renderSizes();
 
-      new Setting(contentEl)
-        .addButton((button) =>
-          button
-            .setButtonText(t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_ADD_SIZE"))
-            .onClick(() => {
-              imageConfig.supportedSizes.push("1024x1024");
-              renderSizes();
-            }),
-        );
+      new Setting(contentEl).addButton((button) =>
+        button
+          .setButtonText(t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_ADD_SIZE"))
+          .onClick(() => {
+            imageConfig.supportedSizes.push("1024x1024");
+            renderSizes();
+          }),
+      );
 
       new Setting(contentEl)
         .setName(t("AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_NAME"))
@@ -271,25 +313,34 @@ export class AIModelConfigModal<TConfig extends AIModelConfig | AIImageModelConf
 
     if (this.options.kind === "image") {
       const imageConfig = this.config as AIImageModelConfig;
-      imageConfig.supportedSizes = Array.from(new Set(imageConfig.supportedSizes.map((size) => size.trim()).filter(Boolean)));
+      imageConfig.supportedSizes = Array.from(
+        new Set(
+          imageConfig.supportedSizes.map((size) => size.trim()).filter(Boolean),
+        ),
+      );
       if (imageConfig.supportedSizes.length === 0) {
         new Notice(t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_SIZE_REQUIRED"));
         return;
       }
     }
 
-    const duplicateExists = this.existingModelIds.includes(normalizedModelId)
-      && normalizedModelId !== this.options.previousModelId;
+    const duplicateExists =
+      this.existingModelIds.includes(normalizedModelId) &&
+      normalizedModelId !== this.options.previousModelId;
     if (duplicateExists) {
       new Notice(t("AI_MODEL_CONFIG_MODAL_DUPLICATE_NAME"));
       return;
     }
 
-    await this.onSave(normalizedModelId, {
-      ...this.config,
-      model: this.config.model.trim(),
-      endpoint: this.config.endpoint?.trim() || "",
-    } as TConfig, this.options.previousModelId);
+    await this.onSave(
+      normalizedModelId,
+      {
+        ...this.config,
+        model: this.config.model.trim(),
+        endpoint: this.config.endpoint?.trim() || "",
+      } as TConfig,
+      this.options.previousModelId,
+    );
     this.close();
   }
 }

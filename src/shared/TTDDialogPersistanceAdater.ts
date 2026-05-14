@@ -1,4 +1,4 @@
-import type { SavedChats,TTDPersistenceAdapter } from "@zsviczian/excalidraw";
+import type { SavedChats, TTDPersistenceAdapter } from "@zsviczian/excalidraw";
 
 const TTD_DB_NAME = "excalidraw-ttd";
 const TTD_DB_VERSION = 1;
@@ -10,22 +10,29 @@ const openTTDDatabase = async (): Promise<IDBDatabase | null> => {
     return null;
   }
 
-  return await new Promise<IDBDatabase>((resolve: (value: IDBDatabase) => void, reject: (reason?: unknown) => void): void => {
-    const request = indexedDB.open(TTD_DB_NAME, TTD_DB_VERSION);
+  return await new Promise<IDBDatabase>(
+    (
+      resolve: (value: IDBDatabase) => void,
+      reject: (reason?: unknown) => void,
+    ): void => {
+      const request = indexedDB.open(TTD_DB_NAME, TTD_DB_VERSION);
 
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains(TTD_STORE_NAME)) {
-        db.createObjectStore(TTD_STORE_NAME);
-      }
-    };
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(TTD_STORE_NAME)) {
+          db.createObjectStore(TTD_STORE_NAME);
+        }
+      };
 
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  }).catch((): null => null);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    },
+  ).catch((): null => null);
 };
 
-const readChatsFromStore = async (db: IDBDatabase): Promise<SavedChats | undefined> => {
+const readChatsFromStore = async (
+  db: IDBDatabase,
+): Promise<SavedChats | undefined> => {
   return await new Promise((resolve, reject) => {
     const tx = db.transaction(TTD_STORE_NAME, "readonly");
     const store = tx.objectStore(TTD_STORE_NAME);
@@ -36,7 +43,10 @@ const readChatsFromStore = async (db: IDBDatabase): Promise<SavedChats | undefin
   });
 };
 
-const writeChatsToStore = async (db: IDBDatabase, chats: SavedChats): Promise<void> => {
+const writeChatsToStore = async (
+  db: IDBDatabase,
+  chats: SavedChats,
+): Promise<void> => {
   return await new Promise((resolve, reject) => {
     const tx = db.transaction(TTD_STORE_NAME, "readwrite");
     const store = tx.objectStore(TTD_STORE_NAME);

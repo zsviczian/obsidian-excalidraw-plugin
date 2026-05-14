@@ -2,7 +2,7 @@
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { App } from "obsidian";
 import ExcalidrawView from "../view/ExcalidrawView";
-import { FileData,MimeType } from "src/types/embeddedFileLoaderTypes";
+import { FileData, MimeType } from "src/types/embeddedFileLoaderTypes";
 import { FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import ExcalidrawPlugin from "src/core/main";
 
@@ -17,13 +17,23 @@ type MathJaxData = {
 type MathJaxContext = App | ExcalidrawPlugin;
 
 type MathJaxModule = {
-  tex2dataURL: (tex: string, scale: number, pluginOrApp: MathJaxContext) => Promise<MathJaxData>;
+  tex2dataURL: (
+    tex: string,
+    scale: number,
+    pluginOrApp: MathJaxContext,
+  ) => Promise<MathJaxData>;
   clearMathJaxVariables: () => void;
 };
 
 declare const loadMathjaxToSVG: () => Promise<MathJaxModule>;
 let mathjaxLoaded = false;
-let tex2dataURLExternal: ((tex: string, scale: number, pluginOrApp: MathJaxContext) => Promise<MathJaxData>) | null = null;
+let tex2dataURLExternal:
+  | ((
+      tex: string,
+      scale: number,
+      pluginOrApp: MathJaxContext,
+    ) => Promise<MathJaxData>)
+  | null = null;
 let clearVariables: (() => void) | null = null;
 
 let loadMathJaxPromise: Promise<void> | null = null;

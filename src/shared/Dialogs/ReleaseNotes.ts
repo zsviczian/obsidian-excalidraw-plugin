@@ -1,10 +1,10 @@
-import { App,MarkdownRenderer,Modal } from "obsidian";
+import { App, MarkdownRenderer, Modal } from "obsidian";
 import { isVersionNewerThanOther } from "src/utils/utils";
 import ExcalidrawPlugin from "../../core/main";
 import { RELEASE_NOTES } from "./Messages";
 import { t } from "src/lang/helpers";
 
-declare const PLUGIN_VERSION:string;
+declare const PLUGIN_VERSION: string;
 
 type ReleaseNotesOptions = {
   message?: string;
@@ -17,7 +17,12 @@ export class ReleaseNotes extends Modal {
   private options: ReleaseNotesOptions;
   private version: string;
 
-  constructor(app: App, plugin: ExcalidrawPlugin, version: string, options: ReleaseNotesOptions = {}) {
+  constructor(
+    app: App,
+    plugin: ExcalidrawPlugin,
+    version: string,
+    options: ReleaseNotesOptions = {},
+  ) {
     super(app);
     this.plugin = plugin;
     this.options = options;
@@ -28,10 +33,12 @@ export class ReleaseNotes extends Modal {
     const { containerEl, titleEl, headerEl } = this;
     //this.contentEl.classList.add("excalidraw-release");
     containerEl.classList.add("excalidraw-release");
-    titleEl.setText(this.options.title ?? `${t("RN_WELCOME")} ${this.version ?? ""}`.trim());
+    titleEl.setText(
+      this.options.title ?? `${t("RN_WELCOME")} ${this.version ?? ""}`.trim(),
+    );
     this.createForm();
 
-    if(headerEl) headerEl.style.pointerEvents = "none"; // Disable pointer events on header to allow clicks through
+    if (headerEl) headerEl.style.pointerEvents = "none"; // Disable pointer events on header to allow clicks through
   }
 
   async onClose() {
@@ -40,7 +47,7 @@ export class ReleaseNotes extends Modal {
       return;
     }
     await this.plugin.loadSettings();
-    if(this.plugin.settings.previousRelease !== PLUGIN_VERSION) {
+    if (this.plugin.settings.previousRelease !== PLUGIN_VERSION) {
       this.plugin.settings.previousRelease = PLUGIN_VERSION;
       await this.plugin.saveSettings();
     }
@@ -49,13 +56,21 @@ export class ReleaseNotes extends Modal {
   async createForm() {
     let prevRelease = this.plugin.settings.previousRelease;
     prevRelease = this.version === prevRelease ? "0.0.0" : prevRelease;
-    const message = this.options.message ?? (this.version
-      ? Object.keys(RELEASE_NOTES)
-          .filter((key) => key === "Intro" || isVersionNewerThanOther(key,prevRelease))
-          .map((key: string) => `${key==="Intro" ? "" : `# ${key}\n`}${RELEASE_NOTES[key]}`)
-          .slice(0, 10)
-          .join("\n\n---\n")
-      : t("FIRST_RUN"));
+    const message =
+      this.options.message ??
+      (this.version
+        ? Object.keys(RELEASE_NOTES)
+            .filter(
+              (key) =>
+                key === "Intro" || isVersionNewerThanOther(key, prevRelease),
+            )
+            .map(
+              (key: string) =>
+                `${key === "Intro" ? "" : `# ${key}\n`}${RELEASE_NOTES[key]}`,
+            )
+            .slice(0, 10)
+            .join("\n\n---\n")
+        : t("FIRST_RUN"));
     await MarkdownRenderer.render(
       this.app,
       message,

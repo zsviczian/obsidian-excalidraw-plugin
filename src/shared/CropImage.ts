@@ -1,4 +1,7 @@
-import { ExcalidrawElement,FileId } from "@zsviczian/excalidraw/types/element/src/types";
+import {
+  ExcalidrawElement,
+  FileId,
+} from "@zsviczian/excalidraw/types/element/src/types";
 import { BinaryFileData } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { Notice } from "obsidian";
@@ -12,23 +15,23 @@ import { ExportSettings } from "src/types/exportUtilTypes";
 
 /**
  * Creates a masked image from an Excalidraw scene.
- * 
+ *
  * The scene must contain:
  * - One element.type="frame" element that defines the crop area
  * - One or more element.type="image" elements
  * - Zero or more non-image shape elements (rectangles, ellipses etc) that define the mask
- * 
+ *
  * The class splits the scene into two parts:
  * 1. Images (managed in imageEA)
  * 2. Mask shapes (managed in maskEA)
- * 
+ *
  * A transparent rectangle matching the combined bounding box is added to both
  * imageEA and maskEA to ensure consistent sizing between image and mask.
- * 
+ *
  * For performance, if there is only one image, it is not rotated, and
  * its size matches the bounding box,
  * the image data is used directly from cache rather than regenerating.
- * 
+ *
  * @example
  * const cropper = new CropImage(elements, files);
  * const pngBlob = await cropper.getCroppedPNG();
@@ -37,11 +40,11 @@ import { ExportSettings } from "src/types/exportUtilTypes";
 export class CropImage {
   private imageEA: ExcalidrawAutomate;
   private maskEA: ExcalidrawAutomate;
-  private bbox: {topX: number, topY: number, width: number, height: number};
+  private bbox: { topX: number; topY: number; width: number; height: number };
 
-  constructor (
+  constructor(
     private elements: ExcalidrawElement[],
-    files: Map<FileId,BinaryFileData>,
+    files: Map<FileId, BinaryFileData>,
   ) {
     const imageEA = getEA() as ExcalidrawAutomate;
     this.imageEA = imageEA;
@@ -54,20 +57,20 @@ export class CropImage {
     this.setBoundingEl(imageEA, "transparent");
     this.setBoundingEl(maskEA, "white"); //the bbox should not mask the image. White lets everything through.
 
-    elements.forEach(el => {
+    elements.forEach((el) => {
       const newEl = cloneElement(el) as Mutable<ExcalidrawElement>;
-      if(el.type !== "image" && el.type !== "frame") {
+      if (el.type !== "image" && el.type !== "frame") {
         newEl.opacity = 100;
         maskEA.elementsDict[el.id] = newEl;
       }
-      if(el.type === "image") {
+      if (el.type === "image") {
         imageEA.elementsDict[el.id] = newEl;
       }
-    })
+    });
 
-    Object.values(files).forEach(file => {
+    Object.values(files).forEach((file) => {
       imageEA.imagesDict[file.id] = file;
-    })
+    });
   }
 
   public destroy() {
@@ -78,9 +81,9 @@ export class CropImage {
     this.elements = null;
     this.bbox = null;
   }
-  
+
   private setBoundingEl(ea: ExcalidrawAutomate, bgColor: string) {
-    const {topX, topY, width, height} = this.bbox;
+    const { topX, topY, width, height } = this.bbox;
     ea.style.backgroundColor = bgColor;
     ea.style.strokeColor = "transparent";
     ea.style.strokeWidth = 0;
@@ -90,78 +93,111 @@ export class CropImage {
     ea.addRect(topX, topY, width, height);
   }
 
-  private getViewBoxAndSize(): {viewBox: string, vbWidth: number, vbHeight: number, width: number, height: number} {
-    const frames = this.elements.filter(el=>el.type === "frame");
-    if(frames.length > 1) {
-      new Notice("Multiple frames are not supported for image cropping. Discarding frames from mask.");
+  private getViewBoxAndSize(): {
+    viewBox: string;
+    vbWidth: number;
+    vbHeight: number;
+    width: number;
+    height: number;
+  } {
+    const frames = this.elements.filter((el) => el.type === "frame");
+    if (frames.length > 1) {
+      new Notice(
+        "Multiple frames are not supported for image cropping. Discarding frames from mask.",
+      );
     }
-    const images = this.imageEA.getElements().filter(el=>el.type === "image");
-    const {x: frameX, y: frameY, width: frameWidth, height: frameHeight} = frames.length === 1
+    const images = this.imageEA
+      .getElements()
+      .filter((el) => el.type === "image");
+    const {
+      x: frameX,
+      y: frameY,
+      width: frameWidth,
+      height: frameHeight,
+    } = frames.length === 1
       ? frames[0]
       : mapToXY(this.imageEA.getBoundingBox(images));
-    const {topX, topY, width, height} = this.bbox;
+    const { topX, topY, width, height } = this.bbox;
     return {
-      viewBox: `${frameX-topX} ${frameY-topY} ${frameWidth} ${frameHeight}`,
+      viewBox: `${frameX - topX} ${frameY - topY} ${frameWidth} ${frameHeight}`,
       vbWidth: frameWidth,
       vbHeight: frameHeight,
       width,
       height,
-    }
+    };
   }
 
-  private async getMaskSVG():Promise<{style: string, mask: string}> {
-    const exportSettings:ExportSettings = {
+  private async getMaskSVG(): Promise<{ style: string; mask: string }> {
+    const exportSettings: ExportSettings = {
       withBackground: false,
       withTheme: false,
       isMask: false,
-    }
+    };
 
-    const maskSVG = await this.maskEA.createSVG(null,true,exportSettings,null,null,0);
+    const maskSVG = await this.maskEA.createSVG(
+      null,
+      true,
+      exportSettings,
+      null,
+      null,
+      0,
+    );
     const defs = maskSVG.querySelector("defs");
     const styleEl = maskSVG.querySelector("style");
     const style = styleEl ? styleEl.outerHTML : "";
     defs.parentElement.removeChild(defs);
-    return {style, mask:maskSVG.innerHTML};
+    return { style, mask: maskSVG.innerHTML };
   }
 
   private async getImage() {
-    const exportSettings:ExportSettings = {
+    const exportSettings: ExportSettings = {
       withBackground: false,
       withTheme: false,
       isMask: false,
-    }
-    const images = this.imageEA.getElements().filter(el=>el.type === "image" && el.isDeleted === false);
-    const isRotated = images.some(el=>el.angle !== 0);
+    };
+    const images = this.imageEA
+      .getElements()
+      .filter((el) => el.type === "image" && el.isDeleted === false);
+    const isRotated = images.some((el) => el.angle !== 0);
     const imageDataURLs = Object.values(this.imageEA.imagesDict);
-    if(!isRotated && images.length === 1 && imageDataURLs.length === 1) {
+    if (!isRotated && images.length === 1 && imageDataURLs.length === 1) {
       const { width, height } = this.bbox;
-      if(images[0].width === width && images[0].height === height) {
+      if (images[0].width === width && images[0].height === height) {
         //get image from the cache if mask is not bigger than the image, and if there is a single image element
         return imageDataURLs[0].dataURL;
       }
     }
-    return await this.imageEA.createPNGBase64(null,1,exportSettings,null,null,0);
+    return await this.imageEA.createPNGBase64(
+      null,
+      1,
+      exportSettings,
+      null,
+      null,
+      0,
+    );
   }
 
   private async buildSVG(): Promise<SVGSVGElement> {
-    if(this.imageEA.getElements().filter(el=>el.type === "image").length === 0) {
+    if (
+      this.imageEA.getElements().filter((el) => el.type === "image").length ===
+      0
+    ) {
       new Notice("No image found. Cannot crop.");
       return;
     }
     const maskID = nanoid();
     const imageID = nanoid();
-    const {viewBox, vbWidth, vbHeight, width, height} = this.getViewBoxAndSize();
+    const { viewBox, vbWidth, vbHeight, width, height } =
+      this.getViewBoxAndSize();
     const parser = new DOMParser();
-    const {style, mask} = await this.getMaskSVG();
-    const svgString = `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="${viewBox}" width="${vbWidth}" height="${vbHeight}">\n` +
+    const { style, mask } = await this.getMaskSVG();
+    const svgString =
+      `<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="${viewBox}" width="${vbWidth}" height="${vbHeight}">\n` +
       `<symbol id="${imageID}"><image width="100%" height="100%" href="${await this.getImage()}"/></symbol>\n` +
       `<defs>${style}\n<mask id="${maskID}" x="0" y="0" width="${width}" height="${height}" maskUnits="userSpaceOnUse">\n${mask}\n</mask>\n</defs>\n` +
       `<use x="0" y="0" width="${width}" height="${height}" mask="url(#${maskID})" mask-type="alpha" href="#${imageID}"/>\n</svg>`;
-    return parser.parseFromString(
-      svgString,
-      "image/svg+xml",
-    ).firstElementChild as SVGSVGElement
-    
+    return parser.parseFromString(svgString, "image/svg+xml")
+      .firstElementChild as SVGSVGElement;
   }
 
   async getCroppedPNG(): Promise<Blob> {
@@ -170,32 +206,32 @@ export class CropImage {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2026
       const svgData = svg.outerHTML;
       //const svgData = new XMLSerializer().serializeToString(svg);
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-  
+      const canvas = document.createElement("canvas");
+      const context = canvas.getContext("2d");
+
       if (!context) {
-        reject('Unable to get 2D context');
+        reject("Unable to get 2D context");
         return;
       }
-  
+
       canvas.width = svg.width.baseVal.value;
       canvas.height = svg.height.baseVal.value;
-  
+
       const image = new Image();
       image.onload = () => {
         context.clearRect(0, 0, canvas.width, canvas.height);
         context.drawImage(image, 0, 0);
-  
+
         canvas.toBlob(
           (blob) => {
             if (blob) {
               resolve(blob);
             } else {
-              reject(new Error('Failed to convert to PNG'));
+              reject(new Error("Failed to convert to PNG"));
             }
           },
-          'image/png',
-          1 // image quality (0 - 1)
+          "image/png",
+          1, // image quality (0 - 1)
         );
       };
       image.src = svgToBase64(svgData);
@@ -207,11 +243,21 @@ export class CropImage {
   }
 }
 
-const mapToXY = ({topX, topY, width, height}: {topX: number, topY: number, width: number, height: number}): {x: number, y: number, width: number, height: number} => {
+const mapToXY = ({
+  topX,
+  topY,
+  width,
+  height,
+}: {
+  topX: number;
+  topY: number;
+  width: number;
+  height: number;
+}): { x: number; y: number; width: number; height: number } => {
   return {
     x: topX,
     y: topY,
     width,
     height,
-  }
-}
+  };
+};

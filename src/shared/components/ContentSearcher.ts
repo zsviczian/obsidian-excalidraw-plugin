@@ -1,6 +1,6 @@
 import { t } from "src/lang/helpers";
 import { escapeRegExp } from "../../utils/utils";
-import { htmlToMarkdown,Notice,setIcon } from "obsidian";
+import { htmlToMarkdown, Notice, setIcon } from "obsidian";
 
 export class ContentSearcher {
   private contentDiv: HTMLElement;
@@ -27,10 +27,17 @@ export class ContentSearcher {
    * Creates search UI elements styled like Obsidian's native search
    */
   private createSearchElements(): void {
-    this.searchBarWrapper = createDiv("excalidraw-search document-search-container");
+    this.searchBarWrapper = createDiv(
+      "excalidraw-search document-search-container",
+    );
     const documentSearch = createDiv("document-search");
-    this.inputContainer = createDiv("search-input-container document-search-input");
-    this.searchBar = createEl("input",{type: "text", placeholder: "Find..."});
+    this.inputContainer = createDiv(
+      "search-input-container document-search-input",
+    );
+    this.searchBar = createEl("input", {
+      type: "text",
+      placeholder: "Find...",
+    });
     this.hitCount = createDiv("document-search-count");
 
     this.inputContainer.appendChild(this.searchBar);
@@ -88,9 +95,9 @@ export class ContentSearcher {
     this.searchBarWrapper.appendChild(documentSearch);
 
     this.customElemenentContainer = createDiv();
-    if(this.customElement) {
+    if (this.customElement) {
       this.customElemenentContainer.appendChild(this.customElement);
-      this.searchBarWrapper.appendChild(this.customElemenentContainer)
+      this.searchBarWrapper.appendChild(this.customElemenentContainer);
     }
   }
 
@@ -108,7 +115,8 @@ export class ContentSearcher {
       const startIndex = childNodes.findIndex(
         (node) => node instanceof HTMLElement && node.tagName === "HR",
       );
-      const nodesToExport = startIndex > -1 ? childNodes.slice(startIndex) : childNodes;
+      const nodesToExport =
+        startIndex > -1 ? childNodes.slice(startIndex) : childNodes;
       const htmlContainer = document.createElement("div");
 
       nodesToExport.forEach((node) => {
@@ -117,30 +125,39 @@ export class ContentSearcher {
 
       const html = htmlContainer.innerHTML;
 
-      function replaceHeading(html:string,level:number):string {
-        const re = new RegExp(`<summary class="excalidraw-setting-h${level}">([^<]+)</summary>`,"g");
-        return html.replaceAll(re,`<summary class="excalidraw-setting-h${level}"><h${level}>$1</h${level}></summary>`);
+      function replaceHeading(html: string, level: number): string {
+        const re = new RegExp(
+          `<summary class="excalidraw-setting-h${level}">([^<]+)</summary>`,
+          "g",
+        );
+        return html.replaceAll(
+          re,
+          `<summary class="excalidraw-setting-h${level}"><h${level}>$1</h${level}></summary>`,
+        );
       }
 
-      let x = replaceHeading(html,1);
-      x = replaceHeading(x,2);
-      x = replaceHeading(x,3);
-      x = replaceHeading(x,4);
-      x = x.replaceAll(/<div class="setting-item-name">([^<]+)<\/div>/g,"<h5>$1</h5>");
+      let x = replaceHeading(html, 1);
+      x = replaceHeading(x, 2);
+      x = replaceHeading(x, 3);
+      x = replaceHeading(x, 4);
+      x = x.replaceAll(
+        /<div class="setting-item-name">([^<]+)<\/div>/g,
+        "<h5>$1</h5>",
+      );
 
       const md = htmlToMarkdown(x);
       window.navigator.clipboard.writeText(md);
       new Notice(t("SEARCH_COPIED_TO_CLIPBOARD"));
     };
     this.showHideButton.onclick = () => {
-      const setOpacity = (value:string|null) => {
+      const setOpacity = (value: string | null) => {
         this.inputContainer.style.opacity = value;
         this.prevButton.style.opacity = value;
         this.nextButton.style.opacity = value;
         this.exportMarkdown.style.opacity = value;
         this.customElemenentContainer.style.opacity = value;
-      }
-      if(this.showHideButton.hasClass("search-visible")) {
+      };
+      if (this.showHideButton.hasClass("search-visible")) {
         this.showHideButton.removeClass("search-visible");
         this.showHideButton.addClass("search-hidden");
         this.searchBarWrapper.style.backgroundColor = "transparent";
@@ -153,7 +170,7 @@ export class ContentSearcher {
         setOpacity(null);
         setIcon(this.showHideButton, "minimize-2");
       }
-    }
+    };
 
     this.searchBar.addEventListener("input", (e) => {
       this.clearHighlights();
@@ -161,7 +178,9 @@ export class ContentSearcher {
 
       if (searchTerm && searchTerm.length > 0) {
         this.highlightSearchTerm(searchTerm);
-        const totalHits = this.contentDiv.querySelectorAll("mark.search-highlight").length;
+        const totalHits = this.contentDiv.querySelectorAll(
+          "mark.search-highlight",
+        ).length;
         this.hitCount.textContent = totalHits > 0 ? `1 / ${totalHits}` : "";
         window.setTimeout(() => this.navigateSearchResults("next"));
       } else {
@@ -200,11 +219,13 @@ export class ContentSearcher {
       NodeFilter.SHOW_TEXT,
       {
         acceptNode: (node: Text) => {
-          return node.nodeValue!.toLowerCase().includes(searchTerm.toLowerCase()) ?
-            NodeFilter.FILTER_ACCEPT : 
-            NodeFilter.FILTER_REJECT;
-        }
-      }
+          return node
+            .nodeValue!.toLowerCase()
+            .includes(searchTerm.toLowerCase())
+            ? NodeFilter.FILTER_ACCEPT
+            : NodeFilter.FILTER_REJECT;
+        },
+      },
     );
 
     const nodesToReplace: Text[] = [];
@@ -212,28 +233,32 @@ export class ContentSearcher {
       nodesToReplace.push(walker.currentNode as Text);
     }
 
-    nodesToReplace.forEach(node => {
+    nodesToReplace.forEach((node) => {
       const nodeContent = node.nodeValue!;
       const newNode = document.createDocumentFragment();
 
       let lastIndex = 0;
       let match;
-      const regex = new RegExp(escapeRegExp(searchTerm), 'gi');
+      const regex = new RegExp(escapeRegExp(searchTerm), "gi");
 
       // Iterate over all matches in the text node
       while ((match = regex.exec(nodeContent)) !== null) {
-        const before = document.createTextNode(nodeContent.slice(lastIndex, match.index));
-        const highlighted = document.createElement('mark');
-        highlighted.className = 'search-highlight';
+        const before = document.createTextNode(
+          nodeContent.slice(lastIndex, match.index),
+        );
+        const highlighted = document.createElement("mark");
+        highlighted.className = "search-highlight";
         highlighted.textContent = match[0];
-        highlighted.classList.add('search-result');
+        highlighted.classList.add("search-result");
 
         newNode.appendChild(before);
         newNode.appendChild(highlighted);
 
         lastIndex = regex.lastIndex;
       }
-      newNode.appendChild(document.createTextNode(nodeContent.slice(lastIndex)));
+      newNode.appendChild(
+        document.createTextNode(nodeContent.slice(lastIndex)),
+      );
       node.replaceWith(newNode);
     });
   }
@@ -260,13 +285,13 @@ export class ContentSearcher {
    */
   public navigateSearchResults(direction: "next" | "previous"): void {
     const highlights: HTMLElement[] = Array.from(
-      this.contentDiv.querySelectorAll("mark.search-highlight")
+      this.contentDiv.querySelectorAll("mark.search-highlight"),
     );
 
     if (highlights.length === 0) return;
 
     const currentActiveIndex = highlights.findIndex((highlight) =>
-      highlight.classList.contains("active-highlight")
+      highlight.classList.contains("active-highlight"),
     );
 
     if (currentActiveIndex !== -1) {
@@ -289,10 +314,10 @@ export class ContentSearcher {
 
     const nextActiveHighlight = highlights[nextActiveIndex];
     nextActiveHighlight.classList.add("active-highlight");
-    
+
     // Expand all parent details elements
     this.expandParentDetails(nextActiveHighlight);
-    
+
     // Use setTimeout to ensure DOM has time to update after expanding details
     window.setTimeout(() => {
       this.scrollResultIntoView(nextActiveHighlight);
@@ -301,7 +326,7 @@ export class ContentSearcher {
     // Update the hit count
     this.hitCount.textContent = `${nextActiveIndex + 1} / ${highlights.length}`;
   }
-  
+
   /**
    * Expand all parent <details> elements to make the element visible
    */
@@ -320,7 +345,10 @@ export class ContentSearcher {
     const targetRatio = 2 / 3;
 
     if (!scrollContainer) {
-      const targetScrollTop = window.scrollY + element.getBoundingClientRect().top - window.innerHeight * targetRatio;
+      const targetScrollTop =
+        window.scrollY +
+        element.getBoundingClientRect().top -
+        window.innerHeight * targetRatio;
       window.scrollTo({
         top: Math.max(0, targetScrollTop),
         behavior: "smooth",
@@ -330,8 +358,14 @@ export class ContentSearcher {
 
     const containerRect = scrollContainer.getBoundingClientRect();
     const elementRect = element.getBoundingClientRect();
-    const targetScrollTop = scrollContainer.scrollTop + (elementRect.top - containerRect.top) - containerRect.height * targetRatio;
-    const maxScrollTop = Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight);
+    const targetScrollTop =
+      scrollContainer.scrollTop +
+      (elementRect.top - containerRect.top) -
+      containerRect.height * targetRatio;
+    const maxScrollTop = Math.max(
+      0,
+      scrollContainer.scrollHeight - scrollContainer.clientHeight,
+    );
 
     scrollContainer.scrollTo({
       top: Math.min(Math.max(0, targetScrollTop), maxScrollTop),

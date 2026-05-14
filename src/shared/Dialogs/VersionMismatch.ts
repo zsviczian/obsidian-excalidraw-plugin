@@ -1,14 +1,14 @@
-import { Modal,Setting } from "obsidian";
+import { Modal, Setting } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
-import { setElementDisplay,setSanitizedHtml } from "src/utils/htmlUtils";
+import { setElementDisplay, setSanitizedHtml } from "src/utils/htmlUtils";
 
 declare const PLUGIN_VERSION: string;
 
 /**
  * A modal dialog that informs the user about a version mismatch between the version recorded by Obsidian and the actual version of the plugin executable.
  * Explain that this can be the result of a partial sync, such as an Obsidian Sync Standard plan, which does not syncronize files larger than 5MB, and the plugin executable is larger.
- * Explain that changing the plugin version information in Obsidian can lead to unexpected behavior in plugins suchs as the Plugin Update Tracker plugin or the BRAT plugin. 
+ * Explain that changing the plugin version information in Obsidian can lead to unexpected behavior in plugins suchs as the Plugin Update Tracker plugin or the BRAT plugin.
  * The user has a toggle button to disable this check in the future. There is additional information that this can be reenabled in plugin settings.
  * The user can click update obsidian version info to match the plugin version, and open Obsidian settings to redownload the plugin.
  * The user can click ignore to dismiss the dialog.
@@ -19,9 +19,7 @@ export class VersionMismatchPrompt extends Modal {
   private resolved: boolean;
   private isDirty: boolean = false;
 
-  public constructor(
-    private plugin: ExcalidrawPlugin,
-  ) {
+  public constructor(private plugin: ExcalidrawPlugin) {
     super(plugin.app);
   }
 
@@ -62,8 +60,11 @@ export class VersionMismatchPrompt extends Modal {
     new Setting(contentEl)
       .setName(t("VERSION_MISMATCH_DISABLE_NAME"))
       .setDesc(t("VERSION_MISMATCH_DISABLE_DESC"))
-      .addToggle(tg =>
-        tg.setValue(!this.plugin.settings.compareManifestToPluginVersion ? true : false)
+      .addToggle((tg) =>
+        tg
+          .setValue(
+            !this.plugin.settings.compareManifestToPluginVersion ? true : false,
+          )
           .onChange(async (value) => {
             this.plugin.settings.compareManifestToPluginVersion = !value; // invert because label is Disable ...
             this.isDirty = true;
@@ -71,15 +72,21 @@ export class VersionMismatchPrompt extends Modal {
       );
 
     // Buttons row
-    const buttonBar = contentEl.createDiv({ cls: "ex-version-mismatch-buttons" });
+    const buttonBar = contentEl.createDiv({
+      cls: "ex-version-mismatch-buttons",
+    });
 
-    const redownloadBtn = buttonBar.createEl("button", { text: t("VERSION_MISMATCH_REDOWNLOAD") });
+    const redownloadBtn = buttonBar.createEl("button", {
+      text: t("VERSION_MISMATCH_REDOWNLOAD"),
+    });
     redownloadBtn.addEventListener("click", () => {
       this.resolved = true; // triggers opening settings in caller
       this.close();
     });
 
-    const ignoreBtn = buttonBar.createEl("button", { text: t("VERSION_MISMATCH_IGNORE") });
+    const ignoreBtn = buttonBar.createEl("button", {
+      text: t("VERSION_MISMATCH_IGNORE"),
+    });
     ignoreBtn.addEventListener("click", () => {
       this.resolved = false;
       this.close();
@@ -94,7 +101,7 @@ export class VersionMismatchPrompt extends Modal {
 
   async onClose() {
     super.onClose();
-    if(this.isDirty) {
+    if (this.isDirty) {
       await this.plugin.saveSettings();
     }
     if (!this.resolved) {

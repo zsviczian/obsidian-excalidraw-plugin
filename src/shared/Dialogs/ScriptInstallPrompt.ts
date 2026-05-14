@@ -1,4 +1,4 @@
-import { MarkdownRenderer,Modal,Notice,request } from "obsidian";
+import { MarkdownRenderer, Modal, Notice, request } from "obsidian";
 import ExcalidrawPlugin from "../../core/main";
 import { errorlog } from "../../utils/utils";
 import { log } from "src/utils/debugHelper";

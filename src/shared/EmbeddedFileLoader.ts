@@ -1,44 +1,70 @@
 //https://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
 //https://img.youtube.com/vi/uZz5MgzWXiM/maxresdefault.jpg
 
-import { ExcalidrawElement,FileId } from "@zsviczian/excalidraw/types/element/src/types";
-import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { App,MarkdownRenderer,Notice,TFile } from "obsidian";
 import {
-DEFAULT_MD_EMBED_CSS,
-fileid,
-IMAGE_TYPES,
-nanoid,
-THEME_FILTER,
-FRONTMATTER_KEYS,
-getCSSFontDefinition,
+  ExcalidrawElement,
+  FileId,
+} from "@zsviczian/excalidraw/types/element/src/types";
+import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
+import {
+  DEFAULT_MD_EMBED_CSS,
+  fileid,
+  IMAGE_TYPES,
+  nanoid,
+  THEME_FILTER,
+  FRONTMATTER_KEYS,
+  getCSSFontDefinition,
 } from "../constants/constants";
 import { createSVG } from "src/utils/excalidrawAutomateUtils";
-import { ExcalidrawData,getTransclusion } from "./ExcalidrawData";
+import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
 import { t } from "../lang/helpers";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "../core/main";
-import { blobToBase64,getDataURLFromURL,getMimeType,getPDFDoc,getURLImageExtension,readLocalFileBinary } from "../utils/fileUtils";
-import { errorlog,getDataURL } from "../utils/coreUtils";
-import { getExportTheme,getLinkParts,hasExportTheme,LinkParts } from "../utils/sceneDataUtils";
 import {
-cropCanvas,
-getEmbeddedFilenameParts,
-getExportPadding,
-getFontDataURL,
-getImageSize,
-getWithBackground,
-hasExportBackground,
-isMaskFile,
-promiseTry,
-PromisePool,
-svgToBase64,
+  blobToBase64,
+  getDataURLFromURL,
+  getMimeType,
+  getPDFDoc,
+  getURLImageExtension,
+  readLocalFileBinary,
+} from "../utils/fileUtils";
+import { errorlog, getDataURL } from "../utils/coreUtils";
+import {
+  getExportTheme,
+  getLinkParts,
+  hasExportTheme,
+  LinkParts,
+} from "../utils/sceneDataUtils";
+import {
+  cropCanvas,
+  getEmbeddedFilenameParts,
+  getExportPadding,
+  getFontDataURL,
+  getImageSize,
+  getWithBackground,
+  hasExportBackground,
+  isMaskFile,
+  promiseTry,
+  PromisePool,
+  svgToBase64,
 } from "../utils/embeddedAssetUtils";
-import { getMermaidImageElements,getMermaidText,shouldRenderMermaid } from "../utils/mermaidUtils";
+import {
+  getMermaidImageElements,
+  getMermaidText,
+  shouldRenderMermaid,
+} from "../utils/mermaidUtils";
 import { mermaidToExcalidraw } from "src/constants/constants";
-import { ImageKey,imageCache } from "./ImageCache";
-import { FILENAMEPARTS,PreviewImageType } from "../types/utilTypes";
-import { ColorMap,ImgData,PDFPageViewProps,Size,MimeType,FileData } from "src/types/embeddedFileLoaderTypes";
+import { ImageKey, imageCache } from "./ImageCache";
+import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
+import {
+  ColorMap,
+  ImgData,
+  PDFPageViewProps,
+  Size,
+  MimeType,
+  FileData,
+} from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { setStyleText } from "src/utils/htmlUtils";
 
@@ -49,7 +75,7 @@ import { setStyleText } from "src/utils/htmlUtils";
 //EmbeddedFileLoader cannot track the recursion depth (as it can when Excalidraw drawings are embedded)
 //For this reason, the markdown TFile is added to the Watchdog when rendering starts
 //and getObsidianImage is aborted if the file is already in the Watchdog stack
-const  markdownRendererRecursionWatcthdog = new Set<TFile>();
+const markdownRendererRecursionWatcthdog = new Set<TFile>();
 
 type CacheValidationMode = "validated" | "stale-first";
 
@@ -67,43 +93,46 @@ const getPDFCacheId = (linkParts: LinkParts, pageNum: number): string => {
   return pdfRef && pdfRef !== "" ? pdfRef : `page=${pageNum}`;
 };
 
-
-
 /**
  * Function takes an SVG and replaces all fill and stroke colors with the ones in the colorMap
  * @param svg: SVGSVGElement
  * @param colorMap: {[color: string]: string;} | null
  * @returns svg with colors replaced
  */
-const replaceSVGColors = (svg: SVGSVGElement | string, colorMap: ColorMap | null): SVGSVGElement | string => {
-  if(!colorMap) {
+const replaceSVGColors = (
+  svg: SVGSVGElement | string,
+  colorMap: ColorMap | null,
+): SVGSVGElement | string => {
+  if (!colorMap) {
     return svg;
   }
 
-  if(typeof svg === 'string') {
+  if (typeof svg === "string") {
     // Replace colors in the SVG string
     for (const [oldColor, newColor] of Object.entries(colorMap)) {
-      if(oldColor === "stroke" || oldColor === "fill") {
-        const [svgTag, prefix, suffix] = (svg.match(/(<svg[^>]*)(>)/i) || []) as string[];
+      if (oldColor === "stroke" || oldColor === "fill") {
+        const [svgTag, prefix, suffix] = (svg.match(/(<svg[^>]*)(>)/i) ||
+          []) as string[];
         if (!svgTag) continue;
-        
+
         svg = svg.replace(
           svgTag,
           svgTag.match(new RegExp(`${oldColor}=["'][^"']*["']`))
             ? prefix.replace(
-                new RegExp(`${oldColor}=["'][^"']*["']`,'i'), 
-                `${oldColor}="${newColor}"`) + suffix
-            : `${prefix} ${oldColor}="${newColor}"${suffix}`
+                new RegExp(`${oldColor}=["'][^"']*["']`, "i"),
+                `${oldColor}="${newColor}"`,
+              ) + suffix
+            : `${prefix} ${oldColor}="${newColor}"${suffix}`,
         );
         continue;
       }
-      const fillRegex = new RegExp(`fill="${oldColor}"`, 'gi');
+      const fillRegex = new RegExp(`fill="${oldColor}"`, "gi");
       svg = svg.replaceAll(fillRegex, `fill="${newColor}"`);
-      const fillStyleRegex = new RegExp(`fill:${oldColor}`, 'gi');
+      const fillStyleRegex = new RegExp(`fill:${oldColor}`, "gi");
       svg = svg.replaceAll(fillStyleRegex, `fill:${newColor}`);
-      const strokeRegex = new RegExp(`stroke="${oldColor}"`, 'gi');
+      const strokeRegex = new RegExp(`stroke="${oldColor}"`, "gi");
       svg = svg.replaceAll(strokeRegex, `stroke="${newColor}"`);
-      const strokeStyleRegex = new RegExp(`stroke:${oldColor}`, 'gi');
+      const strokeStyleRegex = new RegExp(`stroke:${oldColor}`, "gi");
       svg = svg.replaceAll(strokeStyleRegex, `stroke:${newColor}`);
     }
     return svg;
@@ -112,29 +141,29 @@ const replaceSVGColors = (svg: SVGSVGElement | string, colorMap: ColorMap | null
   // Modify the fill and stroke attributes of child nodes
   const childNodes = (node: ChildNode) => {
     if (node instanceof SVGElement) {
-      const oldFill = node.getAttribute('fill')?.toLocaleLowerCase();
-      const oldStroke = node.getAttribute('stroke')?.toLocaleLowerCase();
+      const oldFill = node.getAttribute("fill")?.toLocaleLowerCase();
+      const oldStroke = node.getAttribute("stroke")?.toLocaleLowerCase();
 
       if (oldFill && colorMap[oldFill]) {
-        node.setAttribute('fill', colorMap[oldFill]);
+        node.setAttribute("fill", colorMap[oldFill]);
       }
       if (oldStroke && colorMap[oldStroke]) {
-        node.setAttribute('stroke', colorMap[oldStroke]);
+        node.setAttribute("stroke", colorMap[oldStroke]);
       }
     }
-    for(const child of node.childNodes) {
+    for (const child of node.childNodes) {
       childNodes(child);
     }
-  }
+  };
 
-  if("fill" in colorMap) svg.setAttribute("fill", colorMap.fill);
-  if("stroke" in colorMap) svg.setAttribute("stroke", colorMap.stroke);
+  if ("fill" in colorMap) svg.setAttribute("fill", colorMap.fill);
+  if ("stroke" in colorMap) svg.setAttribute("stroke", colorMap.stroke);
   for (const child of svg.childNodes) {
     childNodes(child);
   }
 
   return svg;
-}
+};
 
 export class EmbeddedFile {
   public file: TFile = null;
@@ -146,22 +175,33 @@ export class EmbeddedFile {
   public mimeType: MimeType = "application/octet-stream";
   public size: Size = { height: 0, width: 0 };
   public linkParts: LinkParts;
-  public filenameparts: FILENAMEPARTS
+  public filenameparts: FILENAMEPARTS;
   private hostPath: string;
   public attemptCounter: number = 0;
   public isHyperLink: boolean = false;
   public isLocalLink: boolean = false;
-  public hyperlink:DataURL;
+  public hyperlink: DataURL;
   public colorMap: ColorMap | null = null;
   public pdfPageViewProps: PDFPageViewProps;
   public renderScale: number = 0;
 
-  constructor(plugin: ExcalidrawPlugin, hostPath: string, imgPath: string, colorMapJSON?: string) {
+  constructor(
+    plugin: ExcalidrawPlugin,
+    hostPath: string,
+    imgPath: string,
+    colorMapJSON?: string,
+  ) {
     this.plugin = plugin;
     this.resetImage(hostPath, imgPath);
-    if(this.file && (this.plugin.isExcalidrawFile(this.file) || this.file.extension.toLowerCase() === "svg")) {
+    if (
+      this.file &&
+      (this.plugin.isExcalidrawFile(this.file) ||
+        this.file.extension.toLowerCase() === "svg")
+    ) {
       try {
-        this.colorMap = colorMapJSON ? JSON.parse(colorMapJSON.toLocaleLowerCase()) : null;
+        this.colorMap = colorMapJSON
+          ? JSON.parse(colorMapJSON.toLocaleLowerCase())
+          : null;
       } catch (_) {
         this.colorMap = null;
       }
@@ -169,7 +209,9 @@ export class EmbeddedFile {
   }
 
   get hasSeparateDarkAndLightVersion(): boolean {
-    return this.isSVGwithBitmap || this.file?.extension?.toLowerCase?.() === "pdf";
+    return (
+      this.isSVGwithBitmap || this.file?.extension?.toLowerCase?.() === "pdf"
+    );
   }
 
   public resetImage(hostPath: string, imgPath: string) {
@@ -177,13 +219,18 @@ export class EmbeddedFile {
     this.mtime = 0;
     this.renderScale = 0;
 
-    if(imgPath.startsWith("https://") || imgPath.startsWith("http://") || imgPath.startsWith("ftp://") || imgPath.startsWith("ftps://")) {
+    if (
+      imgPath.startsWith("https://") ||
+      imgPath.startsWith("http://") ||
+      imgPath.startsWith("ftp://") ||
+      imgPath.startsWith("ftps://")
+    ) {
       this.isHyperLink = true;
       this.hyperlink = imgPath as DataURL;
       return;
-    };
+    }
 
-    if(imgPath.startsWith("file://")) {
+    if (imgPath.startsWith("file://")) {
       this.isLocalLink = true;
       this.hyperlink = imgPath as DataURL;
       return;
@@ -206,7 +253,7 @@ export class EmbeddedFile {
       hostPath,
     );
     if (!this.file) {
-      if(this.attemptCounter++ === 0) {
+      if (this.attemptCounter++ === 0) {
         new Notice(
           `Excalidraw Warning: could not find image file: ${imgPath}`,
           5000,
@@ -219,7 +266,7 @@ export class EmbeddedFile {
   }
 
   private fileChanged(): boolean {
-    if(this.isHyperLink || this.isLocalLink) {
+    if (this.isHyperLink || this.isLocalLink) {
       return false;
     }
     if (!this.file) {
@@ -227,7 +274,7 @@ export class EmbeddedFile {
         this.linkParts.path,
         this.hostPath,
       ); // maybe the file has synchronized in the mean time
-      if(!this.file) {
+      if (!this.file) {
         this.attemptCounter++;
         return false;
       }
@@ -235,7 +282,15 @@ export class EmbeddedFile {
     return this.mtime !== this.file.stat.mtime;
   }
 
-  public setImage({ imgBase64, mimeType, size, isDark, isSVGwithBitmap, pdfPageViewProps, renderScale } : {
+  public setImage({
+    imgBase64,
+    mimeType,
+    size,
+    isDark,
+    isSVGwithBitmap,
+    pdfPageViewProps,
+    renderScale,
+  }: {
     imgBase64: string;
     mimeType: MimeType;
     size: Size;
@@ -243,8 +298,7 @@ export class EmbeddedFile {
     isSVGwithBitmap: boolean;
     pdfPageViewProps?: PDFPageViewProps;
     renderScale?: number;
-  }
-  ) {
+  }) {
     if (!this.file && !this.isHyperLink && !this.isLocalLink) {
       return;
     }
@@ -252,7 +306,8 @@ export class EmbeddedFile {
       this.imgInverted = this.img = "";
     }
     this.isSVGwithBitmap = isSVGwithBitmap;
-    this.mtime = this.isHyperLink || this.isLocalLink ? 0 : this.file.stat.mtime;
+    this.mtime =
+      this.isHyperLink || this.isLocalLink ? 0 : this.file.stat.mtime;
     this.pdfPageViewProps = pdfPageViewProps;
     this.renderScale = renderScale ?? 0;
     this.size = size;
@@ -268,13 +323,13 @@ export class EmbeddedFile {
   }
 
   public isLoaded(isDark: boolean): boolean {
-    if(!this.isHyperLink && !this.isLocalLink) {  
+    if (!this.isHyperLink && !this.isLocalLink) {
       if (!this.file) {
         this.file = this.plugin.app.metadataCache.getFirstLinkpathDest(
           this.linkParts.path,
           this.hostPath,
         ); // maybe the file has synchronized in the mean time
-        if(!this.file) {
+        if (!this.file) {
           this.attemptCounter++;
           return true;
         }
@@ -282,11 +337,17 @@ export class EmbeddedFile {
       if (this.fileChanged()) {
         return false;
       }
-      if (this.file.extension?.toLowerCase?.() === "pdf" && this.renderScale > 0) {
-        const hasImageForTheme = this.hasSeparateDarkAndLightVersion && isDark
-          ? this.imgInverted !== ""
-          : this.img !== "";
-        return hasImageForTheme && this.renderScale >= this.plugin.settings.pdfScale;
+      if (
+        this.file.extension?.toLowerCase?.() === "pdf" &&
+        this.renderScale > 0
+      ) {
+        const hasImageForTheme =
+          this.hasSeparateDarkAndLightVersion && isDark
+            ? this.imgInverted !== ""
+            : this.img !== "";
+        return (
+          hasImageForTheme && this.renderScale >= this.plugin.settings.pdfScale
+        );
       }
     }
     if (this.hasSeparateDarkAndLightVersion && isDark) {
@@ -306,11 +367,19 @@ export class EmbeddedFile {
   }
 
   /**
-   * 
+   *
    * @returns true if image should scale such as the updated images has the same area as the previous images, false if the image should be displayed at 100%
    */
   public shouldScale() {
-    return this.isHyperLink || this.isLocalLink || !Boolean(this.linkParts && this.linkParts.original && this.linkParts.original.endsWith("|100%"));
+    return (
+      this.isHyperLink ||
+      this.isLocalLink ||
+      !Boolean(
+        this.linkParts &&
+        this.linkParts.original &&
+        this.linkParts.original.endsWith("|100%"),
+      )
+    );
   }
 }
 
@@ -340,7 +409,10 @@ export class EmbeddedFilesLoader {
     this.pdfDocsMap.clear();
   }
 
-  public async getObsidianImage(inFile: TFile | EmbeddedFile, depth: number): Promise<{
+  public async getObsidianImage(
+    inFile: TFile | EmbeddedFile,
+    depth: number,
+  ): Promise<{
     mimeType: MimeType;
     fileId: FileId;
     dataURL: DataURL;
@@ -355,8 +427,8 @@ export class EmbeddedFilesLoader {
       this.emptyPDFDocsMap();
     }
   }
-  
-  private async getExcalidrawSVG ({
+
+  private async getExcalidrawSVG({
     isDark,
     file,
     depth,
@@ -374,7 +446,11 @@ export class EmbeddedFilesLoader {
     elements?: ExcalidrawElement[];
     cacheValidation?: CacheValidationMode;
     onStaleCacheHit?: () => void;
-  }) : Promise<{dataURL: DataURL, hasSVGwithBitmap:boolean, loadedFromCache?: boolean}> {
+  }): Promise<{
+    dataURL: DataURL;
+    hasSVGwithBitmap: boolean;
+    loadedFromCache?: boolean;
+  }> {
     //debug({where:"EmbeddedFileLoader.getExcalidrawSVG",uid:this.uid,file:file.name});
     const isMask = isMaskFile(this.plugin, file);
     const forceTheme = hasExportTheme(this.plugin, file)
@@ -389,71 +465,94 @@ export class EmbeddedFilesLoader {
       skipInliningFonts: false,
     };
 
-    const hasColorMap = Boolean(inFile instanceof EmbeddedFile ? inFile.colorMap : null);
-    const shouldUseCache = !hasColorMap && this.plugin.settings.allowImageCacheInScene && file && imageCache.isReady();
-    const hasFilenameParts = Boolean((inFile instanceof EmbeddedFile) && inFile.filenameparts);
-    const filenameParts = hasFilenameParts ? (inFile as EmbeddedFile).filenameparts : null;
-    const cacheKey:ImageKey = {
-      ...hasFilenameParts? {
-        ...filenameParts,
-        inlineFonts: !exportSettings.skipInliningFonts, 
-      }: {
-        filepath: file.path,
-        hasBlockref: false,
-        hasGroupref: false,
-        hasTaskbone: false,
-        hasArearef: false,
-        hasFrameref: false,
-        hasClippedFrameref: false,
-        hasSectionref: false,
-        inlineFonts: !exportSettings.skipInliningFonts,
-        blockref: null,
-        sectionref: null,
-        linkpartReference: null,
-        linkpartAlias: null,
-      },
+    const hasColorMap = Boolean(
+      inFile instanceof EmbeddedFile ? inFile.colorMap : null,
+    );
+    const shouldUseCache =
+      !hasColorMap &&
+      this.plugin.settings.allowImageCacheInScene &&
+      file &&
+      imageCache.isReady();
+    const hasFilenameParts = Boolean(
+      inFile instanceof EmbeddedFile && inFile.filenameparts,
+    );
+    const filenameParts = hasFilenameParts
+      ? (inFile as EmbeddedFile).filenameparts
+      : null;
+    const cacheKey: ImageKey = {
+      ...(hasFilenameParts
+        ? {
+            ...filenameParts,
+            inlineFonts: !exportSettings.skipInliningFonts,
+          }
+        : {
+            filepath: file.path,
+            hasBlockref: false,
+            hasGroupref: false,
+            hasTaskbone: false,
+            hasArearef: false,
+            hasFrameref: false,
+            hasClippedFrameref: false,
+            hasSectionref: false,
+            inlineFonts: !exportSettings.skipInliningFonts,
+            blockref: null,
+            sectionref: null,
+            linkpartReference: null,
+            linkpartAlias: null,
+          }),
       isDark,
       previewImageType: PreviewImageType.SVG,
       scale: 1,
       isTransparent: !exportSettings.withBackground,
-    }
+    };
 
     const maybeSVG = shouldUseCache
-    ? await imageCache.getImageFromCache(cacheKey, {
-        skipDependencyCheck: cacheValidation === "stale-first",
-      })
-    : undefined;
+      ? await imageCache.getImageFromCache(cacheKey, {
+          skipDependencyCheck: cacheValidation === "stale-first",
+        })
+      : undefined;
 
     if (maybeSVG && cacheValidation === "stale-first") {
       onStaleCacheHit?.();
     }
 
-    const svg = (maybeSVG && (maybeSVG instanceof SVGSVGElement))
-    ? maybeSVG
-    : replaceSVGColors(
-        await createSVG(
-          hasFilenameParts
-            ? (filenameParts.hasGroupref || filenameParts.hasBlockref ||
-               filenameParts.hasSectionref || filenameParts.hasFrameref ||
-               filenameParts.hasClippedFrameref
-              ? filenameParts.filepath + filenameParts.linkpartReference
-              : file.path)
-            : file?.path,
-          false, //false
-          hasFilenameParts && filenameParts.hasClippedFrameref
-          ? {...exportSettings, frameRendering: {enabled: true, name: false, outline: false, clip: true}}
-          : exportSettings,
-          this,
-          forceTheme,
-          null,
-          null,
-          elements,
-          this.plugin,
-          depth+1,
-          getExportPadding(this.plugin, file),
-        ),
-        inFile instanceof EmbeddedFile ? inFile.colorMap : null
-      ) as SVGSVGElement;
+    const svg =
+      maybeSVG && maybeSVG instanceof SVGSVGElement
+        ? maybeSVG
+        : (replaceSVGColors(
+            await createSVG(
+              hasFilenameParts
+                ? filenameParts.hasGroupref ||
+                  filenameParts.hasBlockref ||
+                  filenameParts.hasSectionref ||
+                  filenameParts.hasFrameref ||
+                  filenameParts.hasClippedFrameref
+                  ? filenameParts.filepath + filenameParts.linkpartReference
+                  : file.path
+                : file?.path,
+              false, //false
+              hasFilenameParts && filenameParts.hasClippedFrameref
+                ? {
+                    ...exportSettings,
+                    frameRendering: {
+                      enabled: true,
+                      name: false,
+                      outline: false,
+                      clip: true,
+                    },
+                  }
+                : exportSettings,
+              this,
+              forceTheme,
+              null,
+              null,
+              elements,
+              this.plugin,
+              depth + 1,
+              getExportPadding(this.plugin, file),
+            ),
+            inFile instanceof EmbeddedFile ? inFile.colorMap : null,
+          ) as SVGSVGElement);
 
     //https://stackoverflow.com/questions/51154171/remove-css-filter-on-child-elements
     const imageList = svg.querySelectorAll(
@@ -463,7 +562,7 @@ export class EmbeddedFilesLoader {
       hasSVGwithBitmap = true;
     }
 
-    if (hasSVGwithBitmap && isDark && !Boolean(maybeSVG)) { 
+    if (hasSVGwithBitmap && isDark && !Boolean(maybeSVG)) {
       imageList.forEach((i) => {
         const id = i.parentElement?.id;
         if (id.endsWith("-invert-bitmap")) return;
@@ -473,7 +572,7 @@ export class EmbeddedFilesLoader {
       });
     }
 
-    const svgsToInvert =  svg.querySelectorAll("symbol[id$='-no-invert-svg']");
+    const svgsToInvert = svg.querySelectorAll("symbol[id$='-no-invert-svg']");
 
     if (svgsToInvert.length > 0) {
       hasSVGwithBitmap = true;
@@ -494,7 +593,7 @@ export class EmbeddedFilesLoader {
     if (shouldUseCache && !Boolean(maybeSVG)) {
       //cache SVG should have the width and height parameters and not the embedded font
       //see svgWithFont below
-      imageCache.addImageToCache(cacheKey,"", svg);
+      imageCache.addImageToCache(cacheKey, "", svg);
     }
 
     if (!svg.hasAttribute("width") && svg.hasAttribute("viewBox")) {
@@ -510,13 +609,17 @@ export class EmbeddedFilesLoader {
       }
     }
     const dURL = svgToBase64(svg.outerHTML) as DataURL;
-    return {dataURL: dURL as DataURL, hasSVGwithBitmap, loadedFromCache: Boolean(maybeSVG)};
-  };
+    return {
+      dataURL: dURL as DataURL,
+      hasSVGwithBitmap,
+      loadedFromCache: Boolean(maybeSVG),
+    };
+  }
 
   //this is a fix for backward compatibility - I messed up with generating the local link
   private getLocalPath(path: string) {
-    const localPath = path.split("file://")[1]
-    if(localPath.startsWith("/")) {
+    const localPath = path.split("file://")[1];
+    if (localPath.startsWith("/")) {
       return localPath.substring(1);
     }
     return localPath;
@@ -534,36 +637,43 @@ export class EmbeddedFilesLoader {
     try {
       const app = this.plugin.app;
 
-      const isHyperLink = inFile instanceof EmbeddedFile ? inFile.isHyperLink : false;
-      const isLocalLink = inFile instanceof EmbeddedFile ? inFile.isLocalLink : false;
+      const isHyperLink =
+        inFile instanceof EmbeddedFile ? inFile.isHyperLink : false;
+      const isLocalLink =
+        inFile instanceof EmbeddedFile ? inFile.isLocalLink : false;
       const hyperlink = inFile instanceof EmbeddedFile ? inFile.hyperlink : "";
       const file: TFile = inFile instanceof EmbeddedFile ? inFile.file : inFile;
-      if(file && markdownRendererRecursionWatcthdog.has(file)) {
-        new Notice(`Loading of ${file.path}. Please check if there is an inifinite loop of one file embedded in the other.`);
+      if (file && markdownRendererRecursionWatcthdog.has(file)) {
+        new Notice(
+          `Loading of ${file.path}. Please check if there is an inifinite loop of one file embedded in the other.`,
+        );
         return null;
       }
 
-      const linkParts =
-        isHyperLink
-          ? null
-          : inFile instanceof EmbeddedFile
-            ? inFile.linkParts
-            : {
-                original: file.path,
-                path: file.path,
-                isBlockRef: false,
-                ref: null,
-                width: this.plugin.settings.mdSVGwidth,
-                height: this.plugin.settings.mdSVGmaxHeight,
-                page: null,
-              };
+      const linkParts = isHyperLink
+        ? null
+        : inFile instanceof EmbeddedFile
+          ? inFile.linkParts
+          : {
+              original: file.path,
+              path: file.path,
+              isBlockRef: false,
+              ref: null,
+              width: this.plugin.settings.mdSVGwidth,
+              height: this.plugin.settings.mdSVGmaxHeight,
+              page: null,
+            };
 
       let hasSVGwithBitmap = false;
-      const isExcalidrawFile = !isHyperLink && !isLocalLink && this.plugin.isExcalidrawFile(file);
-      const isPDF = !isHyperLink && !isLocalLink && file.extension.toLowerCase() === "pdf";
+      const isExcalidrawFile =
+        !isHyperLink && !isLocalLink && this.plugin.isExcalidrawFile(file);
+      const isPDF =
+        !isHyperLink && !isLocalLink && file.extension.toLowerCase() === "pdf";
 
       if (
-        !isHyperLink && !isPDF && !isLocalLink &&
+        !isHyperLink &&
+        !isPDF &&
+        !isLocalLink &&
         !(
           IMAGE_TYPES.contains(file.extension) ||
           isExcalidrawFile ||
@@ -572,11 +682,14 @@ export class EmbeddedFilesLoader {
       ) {
         return null;
       }
-      const ab = isHyperLink || isPDF || isExcalidrawFile
-        ? null
-        : isLocalLink
-          ? await readLocalFileBinary(this.getLocalPath((inFile as EmbeddedFile).hyperlink))
-          : await app.vault.readBinary(file);
+      const ab =
+        isHyperLink || isPDF || isExcalidrawFile
+          ? null
+          : isLocalLink
+            ? await readLocalFileBinary(
+                this.getLocalPath((inFile as EmbeddedFile).hyperlink),
+              )
+            : await app.vault.readBinary(file);
 
       let dURL: DataURL = null;
       let excalidrawLoadedFromCache = false;
@@ -597,39 +710,50 @@ export class EmbeddedFilesLoader {
 
       const excalidrawSVG = isExcalidrawFile ? dURL : null;
 
-      const [pdfDataURL, pdfSize, pdfPageViewProps, pdfRenderScale, pdfLoadedFromCache] = isPDF
+      const [
+        pdfDataURL,
+        pdfSize,
+        pdfPageViewProps,
+        pdfRenderScale,
+        pdfLoadedFromCache,
+      ] = isPDF
         ? await this.pdfToDataURL(file, linkParts, options)
         : [null, null, null, null, false];
 
-      let mimeType: MimeType = isPDF
-        ? "image/png"
-        : "image/svg+xml";
+      let mimeType: MimeType = isPDF ? "image/png" : "image/svg+xml";
 
-      const extension = isHyperLink || isLocalLink
-        ? getURLImageExtension(hyperlink)
-        : file.extension;
+      const extension =
+        isHyperLink || isLocalLink
+          ? getURLImageExtension(hyperlink)
+          : file.extension;
       if (!isExcalidrawFile && !isPDF) {
         mimeType = getMimeType(extension);
       }
 
-      let dataURL =
-        isHyperLink
-        ? (
-            inFile instanceof EmbeddedFile
-              ? await getDataURLFromURL(inFile.hyperlink, mimeType)
-              : null
-          )
-        : excalidrawSVG ?? pdfDataURL ??
+      let dataURL = isHyperLink
+        ? inFile instanceof EmbeddedFile
+          ? await getDataURLFromURL(inFile.hyperlink, mimeType)
+          : null
+        : (excalidrawSVG ??
+          pdfDataURL ??
           (file?.extension === "svg"
-            ? await getSVGData(app, file, inFile instanceof EmbeddedFile ? inFile.colorMap : null)
+            ? await getSVGData(
+                app,
+                file,
+                inFile instanceof EmbeddedFile ? inFile.colorMap : null,
+              )
             : file?.extension === "md"
-            ? null
-            : await getDataURL(ab, mimeType));
+              ? null
+              : await getDataURL(ab, mimeType)));
 
-      if(!isHyperLink && !dataURL && !isLocalLink) {
+      if (!isHyperLink && !dataURL && !isLocalLink) {
         markdownRendererRecursionWatcthdog.add(file);
         try {
-          const result = await this.convertMarkdownToSVG(this.plugin, file, linkParts);
+          const result = await this.convertMarkdownToSVG(
+            this.plugin,
+            file,
+            linkParts,
+          );
           dataURL = result.dataURL;
           hasSVGwithBitmap = result.hasSVGwithBitmap;
         } finally {
@@ -641,12 +765,18 @@ export class EmbeddedFilesLoader {
       return {
         mimeType,
         fileId: await generateIdFromFile(
-          isHyperLink || isPDF || isExcalidrawFile ? (new TextEncoder()).encode(dataURL as string).buffer : ab,
-          inFile instanceof EmbeddedFile ? inFile.filenameparts?.linkpartReference : undefined
+          isHyperLink || isPDF || isExcalidrawFile
+            ? new TextEncoder().encode(dataURL as string).buffer
+            : ab,
+          inFile instanceof EmbeddedFile
+            ? inFile.filenameparts?.linkpartReference
+            : undefined,
         ),
         dataURL,
         created: isHyperLink || isLocalLink ? 0 : file.stat.mtime,
-        loadedFromCache: isExcalidrawFile ? excalidrawLoadedFromCache : pdfLoadedFromCache,
+        loadedFromCache: isExcalidrawFile
+          ? excalidrawLoadedFromCache
+          : pdfLoadedFromCache,
         hasSVGwithBitmap,
         size,
         pdfPageViewProps,
@@ -656,7 +786,10 @@ export class EmbeddedFilesLoader {
       errorlog({
         where: "EmbeddedFileLoader._getObsidianImage",
         uid: this.uid,
-        file: inFile instanceof EmbeddedFile ? inFile.file?.path ?? inFile.hyperlink : inFile?.path,
+        file:
+          inFile instanceof EmbeddedFile
+            ? (inFile.file?.path ?? inFile.hyperlink)
+            : inFile?.path,
         depth,
         error,
       });
@@ -687,9 +820,8 @@ export class EmbeddedFilesLoader {
     emitPolicy?: LoadSceneEmitPolicy;
     onDeferredValidationCandidates?: (fileIds: Set<FileId>) => void;
   }) {
-    
-    if(depth > 7) {
-      new Notice(t("INFINITE_LOOP_WARNING")+depth.toString(), 6000);
+    if (depth > 7) {
+      new Notice(t("INFINITE_LOOP_WARNING") + depth.toString(), 6000);
       return;
     }
     const entries = excalidrawData.getFileEntries();
@@ -700,18 +832,19 @@ export class EmbeddedFilesLoader {
     const createSafeLoadTask = (
       task: () => Promise<void>,
       context: Record<string, unknown>,
-    ) => promiseTry(async () => {
-      try {
-        await task();
-      } catch (error) {
-        errorlog({
-          where: "EmbeddedFileLoader.loadSceneFiles",
-          uid: this.uid,
-          ...context,
-          error,
-        });
-      }
-    });
+    ) =>
+      promiseTry(async () => {
+        try {
+          await task();
+        } catch (error) {
+          errorlog({
+            where: "EmbeddedFileLoader.loadSceneFiles",
+            uid: this.uid,
+            ...context,
+            error,
+          });
+        }
+      });
     let entry: IteratorResult<[FileId, EmbeddedFile]>;
     const files: FileData[][] = [];
     files.push([]);
@@ -719,159 +852,176 @@ export class EmbeddedFilesLoader {
     // Only stale-first cache hits are queued for the cheap second pass.
     const deferredValidationFileIds = new Set<FileId>();
 
-    function* loadIterator(this: EmbeddedFilesLoader):Generator<Promise<void>> {
+    function* loadIterator(
+      this: EmbeddedFilesLoader,
+    ): Generator<Promise<void>> {
       while (!(entry = entries.next()).done) {
-        if(fileIDWhiteList && !fileIDWhiteList.has(entry.value[0])) continue;
+        if (fileIDWhiteList && !fileIDWhiteList.has(entry.value[0])) continue;
         const embeddedFile: EmbeddedFile = entry.value[1];
         const id = entry.value[0];
-        yield createSafeLoadTask(async () => {
-          if(this.terminate) {
-            return;
-          }
-          const shouldForceReload = forceReloadFileIDs?.has(id);
-          if (shouldForceReload || !embeddedFile.isLoaded(this.isDark)) {
-            //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"embedded Files are not loaded"});
-            const data = await this._getObsidianImage(embeddedFile, depth, {
-              cacheValidation,
-              onStaleCacheHit: cacheValidation === "stale-first"
-                ? () => deferredValidationFileIds.add(id)
-                : undefined,
-            });
-            if (data) {
+        yield createSafeLoadTask(
+          async () => {
+            if (this.terminate) {
+              return;
+            }
+            const shouldForceReload = forceReloadFileIDs?.has(id);
+            if (shouldForceReload || !embeddedFile.isLoaded(this.isDark)) {
+              //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"embedded Files are not loaded"});
+              const data = await this._getObsidianImage(embeddedFile, depth, {
+                cacheValidation,
+                onStaleCacheHit:
+                  cacheValidation === "stale-first"
+                    ? () => deferredValidationFileIds.add(id)
+                    : undefined,
+              });
+              if (data) {
+                const fileData: FileData = {
+                  mimeType: data.mimeType,
+                  id: id,
+                  dataURL: data.dataURL,
+                  created: data.created,
+                  loadedFromCache: data.loadedFromCache,
+                  size: data.size,
+                  hasSVGwithBitmap: data.hasSVGwithBitmap,
+                  shouldScale: embeddedFile.shouldScale(),
+                  pdfPageViewProps: data.pdfPageViewProps,
+                  renderScale: data.renderScale,
+                };
+                files[batch].push(fileData);
+              }
+            } else if (
+              embeddedFile.hasSeparateDarkAndLightVersion &&
+              (depth !== 0 || isThemeChange)
+            ) {
+              //this will reload the image in light/dark mode when switching themes
               const fileData: FileData = {
-                mimeType: data.mimeType,
+                mimeType: embeddedFile.mimeType,
                 id: id,
-                dataURL: data.dataURL,
-                created: data.created,
-                loadedFromCache: data.loadedFromCache,
-                size: data.size,
-                hasSVGwithBitmap: data.hasSVGwithBitmap,
+                dataURL: embeddedFile.getImage(this.isDark) as DataURL,
+                created: embeddedFile.mtime,
+                size: embeddedFile.size,
+                hasSVGwithBitmap: embeddedFile.isSVGwithBitmap,
                 shouldScale: embeddedFile.shouldScale(),
-                pdfPageViewProps: data.pdfPageViewProps,
-                renderScale: data.renderScale,
+                pdfPageViewProps: embeddedFile.pdfPageViewProps,
+                renderScale: embeddedFile.renderScale,
               };
               files[batch].push(fileData);
             }
-          } else if (embeddedFile.hasSeparateDarkAndLightVersion && (depth !== 0 || isThemeChange)) {
-            //this will reload the image in light/dark mode when switching themes
-            const fileData: FileData = {
-              mimeType: embeddedFile.mimeType,
-              id: id,
-              dataURL: embeddedFile.getImage(this.isDark) as DataURL,
-              created: embeddedFile.mtime,
-              size: embeddedFile.size,
-              hasSVGwithBitmap: embeddedFile.isSVGwithBitmap,
-              shouldScale: embeddedFile.shouldScale(),
-              pdfPageViewProps: embeddedFile.pdfPageViewProps,
-              renderScale: embeddedFile.renderScale,
-            };
-            files[batch].push(fileData);
-          }
-        }, {
-          phase: "embedded-file",
-          fileId: id,
-          filepath: embeddedFile.file?.path ?? embeddedFile.hyperlink,
-          depth,
-        });
+          },
+          {
+            phase: "embedded-file",
+            fileId: id,
+            filepath: embeddedFile.file?.path ?? embeddedFile.hyperlink,
+            depth,
+          },
+        );
       }
 
       let equationItem;
       const equations = excalidrawData.getEquationEntries();
       while (!(equationItem = equations.next()).done) {
-        if(fileIDWhiteList && !fileIDWhiteList.has(equationItem.value[0])) continue;
+        if (fileIDWhiteList && !fileIDWhiteList.has(equationItem.value[0]))
+          continue;
         const equation = equationItem.value[1];
         const id = equationItem.value[0];
-        yield createSafeLoadTask(async () => {
-          if (this.terminate) {
-            return;
-          }
-          if (!excalidrawData.getEquation(id).isLoaded) {
-            const latex = equation.latex;
-            const data = await tex2dataURL(latex, 4, this.plugin);
-            if (data) {
-              const fileData = {
-                mimeType: data.mimeType,
-                id: id,
-                dataURL: data.dataURL,
-                created: data.created,
-                size: data.size,
-                hasSVGwithBitmap: false,
-                shouldScale: true,
-              };
-              files[batch].push(fileData);
-            }
-          }
-        }, {
-          phase: "equation",
-          fileId: id,
-          latex: equation?.latex,
-        });
-      }
-
-      if(shouldRenderMermaid()) {
-        const mermaidElements = getMermaidImageElements(excalidrawData.scene.elements);
-        for(const element of mermaidElements) {
-          yield createSafeLoadTask(async () => {
-            if(this.terminate) {
+        yield createSafeLoadTask(
+          async () => {
+            if (this.terminate) {
               return;
             }
-            const data = getMermaidText(element);
-            const result = await mermaidToExcalidraw(
-              data,
-              { themeVariables: { fontSize: "20" } }
-            );
-            if(!result) {
-              return;
-            }
-            if(result?.files) {
-              for (const key in result.files) {
+            if (!excalidrawData.getEquation(id).isLoaded) {
+              const latex = equation.latex;
+              const data = await tex2dataURL(latex, 4, this.plugin);
+              if (data) {
                 const fileData = {
-                  ...result.files[key],
-                  id: element.fileId,
-                  created: Date.now(),
+                  mimeType: data.mimeType,
+                  id: id,
+                  dataURL: data.dataURL,
+                  created: data.created,
+                  size: data.size,
                   hasSVGwithBitmap: false,
                   shouldScale: true,
-                  size: await getImageSize(result.files[key].dataURL),
                 };
                 files[batch].push(fileData);
               }
-              return;
             }
-            if(result?.elements) {
-              //handle case that mermaidToExcalidraw has implemented this type of diagram in the mean time
+          },
+          {
+            phase: "equation",
+            fileId: id,
+            latex: equation?.latex,
+          },
+        );
+      }
+
+      if (shouldRenderMermaid()) {
+        const mermaidElements = getMermaidImageElements(
+          excalidrawData.scene.elements,
+        );
+        for (const element of mermaidElements) {
+          yield createSafeLoadTask(
+            async () => {
               if (this.terminate) {
                 return;
               }
-              const res = await this.getExcalidrawSVG({
-                isDark: this.isDark,
-                file: null,
-                depth,
-                inFile: null,
-                hasSVGwithBitmap: false,
-                elements: result.elements
+              const data = getMermaidText(element);
+              const result = await mermaidToExcalidraw(data, {
+                themeVariables: { fontSize: "20" },
               });
-              if(res?.dataURL) {
-                const size = await getImageSize(res.dataURL);
-                const fileData:FileData = {
-                  mimeType: "image/svg+xml",
-                  id: element.fileId,
-                  dataURL: res.dataURL,
-                  created: Date.now(),
-                  hasSVGwithBitmap: res.hasSVGwithBitmap,
-                  size,
-                  shouldScale: true,
-                };
-                files[batch].push(fileData);
+              if (!result) {
+                return;
               }
-              return;
-            }
-          }, {
-            phase: "mermaid",
-            fileId: element.fileId,
-            elementId: element.id,
-          });
+              if (result?.files) {
+                for (const key in result.files) {
+                  const fileData = {
+                    ...result.files[key],
+                    id: element.fileId,
+                    created: Date.now(),
+                    hasSVGwithBitmap: false,
+                    shouldScale: true,
+                    size: await getImageSize(result.files[key].dataURL),
+                  };
+                  files[batch].push(fileData);
+                }
+                return;
+              }
+              if (result?.elements) {
+                //handle case that mermaidToExcalidraw has implemented this type of diagram in the mean time
+                if (this.terminate) {
+                  return;
+                }
+                const res = await this.getExcalidrawSVG({
+                  isDark: this.isDark,
+                  file: null,
+                  depth,
+                  inFile: null,
+                  hasSVGwithBitmap: false,
+                  elements: result.elements,
+                });
+                if (res?.dataURL) {
+                  const size = await getImageSize(res.dataURL);
+                  const fileData: FileData = {
+                    mimeType: "image/svg+xml",
+                    id: element.fileId,
+                    dataURL: res.dataURL,
+                    created: Date.now(),
+                    hasSVGwithBitmap: res.hasSVGwithBitmap,
+                    size,
+                    shouldScale: true,
+                  };
+                  files[batch].push(fileData);
+                }
+                return;
+              }
+            },
+            {
+              phase: "mermaid",
+              fileId: element.fileId,
+              elementId: element.id,
+            },
+          );
         }
-      };
+      }
     }
 
     const addFilesTimer = window.setInterval(() => {
@@ -879,15 +1029,16 @@ export class EmbeddedFilesLoader {
         window.clearInterval(addFilesTimer);
         return;
       }
-      if(files[batch].length === 0) {
+      if (files[batch].length === 0) {
         return;
       }
       // During deferred validation, only regenerated results should reach addFiles.
-      const batchFiles = files[batch].filter(f=>emitPolicy === "all" || !f.loadedFromCache);
-      try  {
+      const batchFiles = files[batch].filter(
+        (f) => emitPolicy === "all" || !f.loadedFromCache,
+      );
+      try {
         addFiles(batchFiles, this.isDark, false);
-      }
-      catch(e) {
+      } catch (e) {
         errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
       }
       files.push([]);
@@ -896,7 +1047,8 @@ export class EmbeddedFilesLoader {
 
     try {
       const iterator = loadIterator.bind(this)();
-      const concurency = validationConcurrency ?? this.plugin.settings.renderingConcurrency;
+      const concurency =
+        validationConcurrency ?? this.plugin.settings.renderingConcurrency;
       if (!this.terminate) {
         await new PromisePool(iterator, concurency).all();
       }
@@ -910,7 +1062,9 @@ export class EmbeddedFilesLoader {
         onDeferredValidationCandidates?.(deferredValidationFileIds);
       }
       // Same filter for the final flush so validated cache hits remain a no-op.
-      const batchFiles = files[batch].filter(f=>emitPolicy === "all" || !f.loadedFromCache);
+      const batchFiles = files[batch].filter(
+        (f) => emitPolicy === "all" || !f.loadedFromCache,
+      );
       try {
         //in try block because by the time files are loaded the user may have closed the view
         addFiles(batchFiles, this.isDark, true);
@@ -927,12 +1081,15 @@ export class EmbeddedFilesLoader {
     file: TFile,
     linkParts: LinkParts,
     options?: LoadImageOptions,
-  ): Promise<[DataURL,Size, PDFPageViewProps, number, boolean]> {
+  ): Promise<[DataURL, Size, PDFPageViewProps, number, boolean]> {
     try {
-      let width = 0, height = 0;
-      const pageNum = isNaN(linkParts.page) ? 1 : (linkParts.page??1);
+      let width = 0,
+        height = 0;
+      const pageNum = isNaN(linkParts.page) ? 1 : (linkParts.page ?? 1);
       const requestedScale = this.plugin.settings.pdfScale;
-      const shouldUseCache = imageCache.isReady() && (!options || this.plugin.settings.allowImageCacheInScene);
+      const shouldUseCache =
+        imageCache.isReady() &&
+        (!options || this.plugin.settings.allowImageCacheInScene);
       const cacheKey: ImageKey = {
         filepath: file.path,
         cacheId: getPDFCacheId(linkParts, pageNum),
@@ -956,7 +1113,10 @@ export class EmbeddedFilesLoader {
       const cachedData = shouldUseCache
         ? await imageCache.getImageCacheData(cacheKey, {
             skipDependencyCheck: options?.cacheValidation === "stale-first",
-            minRenderScale: options?.cacheValidation === "stale-first" ? undefined : requestedScale,
+            minRenderScale:
+              options?.cacheValidation === "stale-first"
+                ? undefined
+                : requestedScale,
           })
         : undefined;
 
@@ -964,7 +1124,10 @@ export class EmbeddedFilesLoader {
         const cachedScale = cachedData.renderScale ?? requestedScale;
         // Stale-first accepts an older PDF raster immediately, but still marks it
         // for deferred validation when the requested scale has increased.
-        if (options?.cacheValidation === "stale-first" && cachedScale < requestedScale) {
+        if (
+          options?.cacheValidation === "stale-first" &&
+          cachedScale < requestedScale
+        ) {
           options?.onStaleCacheHit?.();
         }
         return [
@@ -977,13 +1140,13 @@ export class EmbeddedFilesLoader {
       }
 
       let pdfDoc = this.pdfDocsMap.get(file.path);
-      if(!pdfDoc) {
+      if (!pdfDoc) {
         pdfDoc = await getPDFDoc(file);
-        if(!pdfDoc) {
+        if (!pdfDoc) {
           return [null, null, null, null, false];
         }
         this.pdfDocs.add(pdfDoc);
-        if(!this.pdfDocsMap.has(file.path)) {
+        if (!this.pdfDocsMap.has(file.path)) {
           this.pdfDocsMap.set(file.path, pdfDoc);
         }
       } else {
@@ -991,8 +1154,12 @@ export class EmbeddedFilesLoader {
       }
 
       const scale = requestedScale;
-      const cropRect = linkParts.ref.split("rect=")[1]?.split(",").map(x=>parseInt(x));
-      const validRect = cropRect && cropRect.length === 4 && cropRect.every(x=>!isNaN(x));
+      const cropRect = linkParts.ref
+        .split("rect=")[1]
+        ?.split(",")
+        .map((x) => parseInt(x));
+      const validRect =
+        cropRect && cropRect.length === 4 && cropRect.every((x) => !isNaN(x));
       let viewProps: PDFPageViewProps;
 
       const shouldRetryWithFreshDoc = (e: any): boolean => {
@@ -1005,7 +1172,7 @@ export class EmbeddedFilesLoader {
       };
 
       // Render the page
-      const renderPage = async (num:number) => {
+      const renderPage = async (num: number) => {
         //when obsidian loads there seems to be an occasional race condition where the rendering is cancelled
         //this is a workaround for that
         const maxRetries = 4;
@@ -1016,7 +1183,7 @@ export class EmbeddedFilesLoader {
               return null;
             }
 
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext("2d");
             // Get page
             const page = await pdfDoc.getPage(num);
             // Set scale
@@ -1026,22 +1193,21 @@ export class EmbeddedFilesLoader {
 
             const renderCtx = {
               canvasContext: ctx,
-              background: 'rgba(0,0,0,0)',
-              viewport
+              background: "rgba(0,0,0,0)",
+              viewport,
             };
 
             await page.render(renderCtx).promise;
 
             const [left, bottom, right, top] = page.view;
-            viewProps = {left, bottom, right, top};
+            viewProps = { left, bottom, right, top };
             viewProps.rotate = page.rotate;
 
-            if(validRect) {
-
+            if (validRect) {
               const pageHeight = top - bottom;
               const pageWidth = right - left;
 
-              if(!page.rotate || page.rotate === 0) {
+              if (!page.rotate || page.rotate === 0) {
                 width = (cropRect[2] - cropRect[0]) * scale;
                 height = (cropRect[3] - cropRect[1]) * scale;
 
@@ -1053,7 +1219,7 @@ export class EmbeddedFilesLoader {
                 };
                 return cropCanvas(canvas, crop);
               }
-              if(page.rotate === 90) {
+              if (page.rotate === 90) {
                 width = (cropRect[3] - cropRect[1]) * scale;
                 height = (cropRect[2] - cropRect[0]) * scale;
                 const crop = {
@@ -1065,7 +1231,7 @@ export class EmbeddedFilesLoader {
                 return cropCanvas(canvas, crop);
               }
 
-              if(page.rotate === 180) {
+              if (page.rotate === 180) {
                 width = (cropRect[2] - cropRect[0]) * scale;
                 height = (cropRect[3] - cropRect[1]) * scale;
                 const crop = {
@@ -1077,7 +1243,7 @@ export class EmbeddedFilesLoader {
                 return cropCanvas(canvas, crop);
               }
 
-              if(page.rotate === 270) {
+              if (page.rotate === 270) {
                 width = (cropRect[3] - cropRect[1]) * scale;
                 height = (cropRect[2] - cropRect[0]) * scale;
                 const crop = {
@@ -1109,15 +1275,15 @@ export class EmbeddedFilesLoader {
               }
             }
 
-            await sleep(50*(i+1));
+            await sleep(50 * (i + 1));
             continue;
           }
         }
         return null;
       };
 
-      const canvas = await renderPage(pageNum); 
-      if(canvas) {
+      const canvas = await renderPage(pageNum);
+      if (canvas) {
         const blob = await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((pngBlob) => {
             if (!pngBlob) {
@@ -1128,14 +1294,15 @@ export class EmbeddedFilesLoader {
           });
         });
         const base64 = await blobToBase64(blob);
-        shouldUseCache && imageCache.addImageToCache(cacheKey, "", blob, {
-          renderScale: requestedScale,
-          size: {width, height},
-          pdfPageViewProps: viewProps,
-        });
-        const result: [DataURL,Size, PDFPageViewProps, number, boolean] = [
+        shouldUseCache &&
+          imageCache.addImageToCache(cacheKey, "", blob, {
+            renderScale: requestedScale,
+            size: { width, height },
+            pdfPageViewProps: viewProps,
+          });
+        const result: [DataURL, Size, PDFPageViewProps, number, boolean] = [
           `data:image/png;base64,${base64}` as DataURL,
-          {width, height},
+          { width, height },
           viewProps,
           requestedScale,
           false,
@@ -1144,7 +1311,7 @@ export class EmbeddedFilesLoader {
         canvas.height = 0;
         return result;
       }
-    } catch(e) {
+    } catch (e) {
       console.log(e);
       return [null, null, null, null, false];
     }
@@ -1154,17 +1321,17 @@ export class EmbeddedFilesLoader {
     plugin: ExcalidrawPlugin,
     file: TFile,
     linkParts: LinkParts,
-  ): Promise<{dataURL: DataURL, hasSVGwithBitmap:boolean}> {
+  ): Promise<{ dataURL: DataURL; hasSVGwithBitmap: boolean }> {
     //1.
     //get the markdown text
     let hasSVGwithBitmap = false;
     const transclusion = await getTransclusion(linkParts, plugin.app, file);
-    let text = (transclusion.leadingHashes??"") + transclusion.contents;
+    let text = (transclusion.leadingHashes ?? "") + transclusion.contents;
     if (text === "") {
       text =
         "# Empty markdown file\nCTRL+Click here to open the file for editing in the current active pane, or CTRL+SHIFT+Click to open it in an adjacent pane.";
     }
-  
+
     //2.
     //get styles
     const fileCache = plugin.app.metadataCache.getFileCache(file);
@@ -1210,21 +1377,18 @@ export class EmbeddedFilesLoader {
         fontDef = font.fontDef;
         fontName = font.fontName;
     }
-  
-    if (
-      fileCache?.frontmatter && 
-      fileCache.frontmatter["banner"] !== null
-    ) {
-      text = text.replace(/banner:\s*.*/,""); //patch https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/814
+
+    if (fileCache?.frontmatter && fileCache.frontmatter["banner"] !== null) {
+      text = text.replace(/banner:\s*.*/, ""); //patch https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/814
     }
 
     const fontColor = fileCache?.frontmatter
-      ? fileCache.frontmatter[FRONTMATTER_KEYS["font-color"].name] ??
-        plugin.settings.mdFontColor
+      ? (fileCache.frontmatter[FRONTMATTER_KEYS["font-color"].name] ??
+        plugin.settings.mdFontColor)
       : plugin.settings.mdFontColor;
-  
+
     let style = fileCache?.frontmatter
-      ? fileCache.frontmatter[FRONTMATTER_KEYS["md-css"].name] ?? ""
+      ? (fileCache.frontmatter[FRONTMATTER_KEYS["md-css"].name] ?? "")
       : "";
     let frontmatterCSSisAfile = false;
     if (style && style !== "") {
@@ -1240,27 +1404,29 @@ export class EmbeddedFilesLoader {
           plugin.settings.mdCSS,
           file.path,
         );
-        style += f ? `\n${await plugin.app.vault.read(f)}` : DEFAULT_MD_EMBED_CSS;
+        style += f
+          ? `\n${await plugin.app.vault.read(f)}`
+          : DEFAULT_MD_EMBED_CSS;
       } else {
         style += DEFAULT_MD_EMBED_CSS;
       }
     }
-  
+
     const borderColor = fileCache?.frontmatter
-      ? fileCache.frontmatter[FRONTMATTER_KEYS["border-color"].name] ??
-        plugin.settings.mdBorderColor
+      ? (fileCache.frontmatter[FRONTMATTER_KEYS["border-color"].name] ??
+        plugin.settings.mdBorderColor)
       : plugin.settings.mdBorderColor;
-  
+
     if (borderColor && borderColor !== "" && !style.match(/svg/i)) {
       style += `svg{border:2px solid;color:${borderColor};transform:scale(.95)}`;
     }
-  
+
     //3.
     //SVG helper functions
     //the SVG will first have ~infinite height. After sizing this will be reduced
     let svgStyle = ` width="${linkParts.width}px" height="100000"`;
     let foreignObjectStyle = ` width="${linkParts.width}px" height="100%"`;
-  
+
     const svg = (xml: string, xmlFooter: string, style?: string) =>
       `<svg xmlns="http://www.w3.org/2000/svg"${svgStyle}>${
         style ? `<style>${style}</style>` : ""
@@ -1269,7 +1435,7 @@ export class EmbeddedFilesLoader {
       }</foreignObject>${
         fontDef !== "" ? `<defs><style>${fontDef}</style></defs>` : ""
       }</svg>`;
-  
+
     //4.
     //create document div - this will be the contents of the foreign object
     const mdDIV = createDiv();
@@ -1282,33 +1448,41 @@ export class EmbeddedFilesLoader {
     mdDIV.style.overflow = "auto";
     mdDIV.style.display = "block";
     mdDIV.style.color = fontColor && fontColor !== "" ? fontColor : "initial";
-  
+
     //await MarkdownRenderer.renderMarkdown(text, mdDIV, file.path, plugin);
-    await MarkdownRenderer.render(this.plugin.app,text,mdDIV,file.path,this.plugin);
+    await MarkdownRenderer.render(
+      this.plugin.app,
+      text,
+      mdDIV,
+      file.path,
+      this.plugin,
+    );
 
     mdDIV
       .querySelectorAll(":scope > *[class^='frontmatter']")
       .forEach((el) => mdDIV.removeChild(el));
-  
+
     await replaceBlobWithBase64(mdDIV); //because image cache returns a blob
-    const internalEmbeds = Array.from(mdDIV.querySelectorAll("span[class='internal-embed']"))
-    for(let i=0;i<internalEmbeds.length;i++) {
+    const internalEmbeds = Array.from(
+      mdDIV.querySelectorAll("span[class='internal-embed']"),
+    );
+    for (let i = 0; i < internalEmbeds.length; i++) {
       const el = internalEmbeds[i];
       const src = el.getAttribute("src");
-      if(!src) continue;
+      if (!src) continue;
       const width = el.getAttribute("width");
       const height = el.getAttribute("height");
-      const ef = new EmbeddedFile(plugin,file.path,src);
+      const ef = new EmbeddedFile(plugin, file.path, src);
       //const f = app.metadataCache.getFirstLinkpathDest(src.split("#")[0],file.path);
-      if(!ef.file) continue;
-      const embeddedFile = await this._getObsidianImage(ef,1);
+      if (!ef.file) continue;
+      const embeddedFile = await this._getObsidianImage(ef, 1);
       const img = createEl("img");
-      if(width) img.setAttribute("width", width);
-      if(height) img.setAttribute("height", height);
+      if (width) img.setAttribute("width", width);
+      if (height) img.setAttribute("height", height);
       img.src = embeddedFile.dataURL;
-      el.replaceWith(img);  
+      el.replaceWith(img);
     }
-  
+
     //5.1
     //get SVG size.
     //First I need to create a fully self contained copy of the document to convert
@@ -1328,7 +1502,7 @@ export class EmbeddedFilesLoader {
     const footerDIV = createDiv();
     footerDIV.setAttribute("class", "excalidraw-md-footer");
     iframeDoc.body.appendChild(footerDIV);
-  
+
     iframeDoc.body.querySelectorAll("*").forEach((el: HTMLElement) => {
       const elementStyle = el.style;
       const computedStyle = window.getComputedStyle(el);
@@ -1340,11 +1514,11 @@ export class EmbeddedFilesLoader {
       }
       el.setAttribute("style", style);
     });
-  
+
     const xmlINiframe = new XMLSerializer().serializeToString(stylingDIV);
     const xmlFooter = new XMLSerializer().serializeToString(footerDIV);
     document.body.removeChild(iframeHost);
-  
+
     //5.2
     //get SVG size
     const parser = new DOMParser();
@@ -1363,7 +1537,7 @@ export class EmbeddedFilesLoader {
       svgEl.querySelector(".excalidraw-md-host").scrollHeight + footerHeight;
     const svgHeight = height <= linkParts.height ? height : linkParts.height;
     document.body.removeChild(host);
-  
+
     //finalize SVG
     svgStyle = ` width="${linkParts.width}px" height="${svgHeight}px"`;
     foreignObjectStyle = ` width="${linkParts.width}px" height="${svgHeight}px"`;
@@ -1376,33 +1550,47 @@ export class EmbeddedFilesLoader {
     if (imageList.length > 0) {
       hasSVGwithBitmap = true;
     }
-    if (hasSVGwithBitmap && this.isDark) { 
-      imageList.forEach(img => {
-        if(img instanceof HTMLImageElement) {
+    if (hasSVGwithBitmap && this.isDark) {
+      imageList.forEach((img) => {
+        if (img instanceof HTMLImageElement) {
           img.style.filter = THEME_FILTER;
         }
       });
     }
 
     const xml = new XMLSerializer().serializeToString(mdDIV);
-    const finalSVG = svg(xml, '<div class="excalidraw-md-footer"></div>', style);
+    const finalSVG = svg(
+      xml,
+      '<div class="excalidraw-md-footer"></div>',
+      style,
+    );
     plugin.ea.mostRecentMarkdownSVG = parser.parseFromString(
       finalSVG,
       "image/svg+xml",
     ).firstElementChild as SVGSVGElement;
     return {
       dataURL: svgToBase64(finalSVG) as DataURL,
-      hasSVGwithBitmap
+      hasSVGwithBitmap,
     };
-  };
+  }
 }
 
-const getSVGData = async (app: App, file: TFile, colorMap: ColorMap | null): Promise<DataURL> => {
-  const svgString = replaceSVGColors(await app.vault.read(file), colorMap) as string;
+const getSVGData = async (
+  app: App,
+  file: TFile,
+  colorMap: ColorMap | null,
+): Promise<DataURL> => {
+  const svgString = replaceSVGColors(
+    await app.vault.read(file),
+    colorMap,
+  ) as string;
   return svgToBase64(svgString) as DataURL;
 };
 
-export const generateIdFromFile = async (file: ArrayBuffer, key?: string): Promise<FileId> => {
+export const generateIdFromFile = async (
+  file: ArrayBuffer,
+  key?: string,
+): Promise<FileId> => {
   let id: FileId;
   try {
     // Convert the file ArrayBuffer to a Uint8Array
@@ -1424,13 +1612,12 @@ export const generateIdFromFile = async (file: ArrayBuffer, key?: string): Promi
     // Ensure we pass an ArrayBuffer (not ArrayBufferLike) to subtle.digest
     const buffer: ArrayBuffer = dataToHash.buffer.slice(
       dataToHash.byteOffset,
-      dataToHash.byteOffset + dataToHash.byteLength
+      dataToHash.byteOffset + dataToHash.byteLength,
     ) as ArrayBuffer;
     const hashBuffer = await window.crypto.subtle.digest("SHA-1", buffer);
-    id =
-      Array.from(new Uint8Array(hashBuffer))
-        .map((byte) => byte.toString(16).padStart(2, "0"))
-        .join("") as FileId;
+    id = Array.from(new Uint8Array(hashBuffer))
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("") as FileId;
   } catch (error) {
     errorlog({ where: "EmbeddedFileLoader.generateIdFromFile", error });
     id = fileid() as FileId;
@@ -1438,8 +1625,12 @@ export const generateIdFromFile = async (file: ArrayBuffer, key?: string): Promi
   return id;
 };
 
-const replaceBlobWithBase64 = async (divElement: HTMLDivElement): Promise<void> => {
-  const images = divElement.querySelectorAll<HTMLImageElement>('img[src^="blob:app://obsidian.md"]');
+const replaceBlobWithBase64 = async (
+  divElement: HTMLDivElement,
+): Promise<void> => {
+  const images = divElement.querySelectorAll<HTMLImageElement>(
+    'img[src^="blob:app://obsidian.md"]',
+  );
 
   for (let img of images) {
     const blobUrl = img.src;

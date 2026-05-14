@@ -1,15 +1,15 @@
-import { App,FuzzyMatch,TFile } from "obsidian";
+import { App, FuzzyMatch, TFile } from "obsidian";
 import { SuggestionModal } from "./SuggestionModal";
 import { LinkSuggestion } from "src/types/types";
 import ExcalidrawPlugin from "src/core/main";
 import {
-getLinkSuggestionsFiltered,
-getSortedLinkMatches,
-renderHeadingSuggestionRow,
-renderLinkSuggestion,
-renderParagraphSuggestionRow,
-fuzzyMatchTextItems,
-fuzzyMatchParagraphsWithId,
+  getLinkSuggestionsFiltered,
+  getSortedLinkMatches,
+  renderHeadingSuggestionRow,
+  renderLinkSuggestion,
+  renderParagraphSuggestionRow,
+  fuzzyMatchTextItems,
+  fuzzyMatchParagraphsWithId,
 } from "src/shared/Suggesters/LinkSuggesterUtils";
 import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
 import { t } from "src/lang/helpers";
@@ -48,12 +48,20 @@ type FrameSuggestion = {
   refKind: "frame" | "clippedframe";
 };
 
-type InlineSuggestion = LinkSuggestion | HeadingSuggestion | ParagraphSuggestion | TagSuggestion | FrameSuggestion;
+type InlineSuggestion =
+  | LinkSuggestion
+  | HeadingSuggestion
+  | ParagraphSuggestion
+  | TagSuggestion
+  | FrameSuggestion;
 
 /**
  * Inline link suggester that attaches to a specific input element.
  */
-export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> implements KeyBlocker {
+export class InlineLinkSuggester
+  extends SuggestionModal<InlineSuggestion>
+  implements KeyBlocker
+{
   private readonly getSourcePath: () => string | undefined;
   private readonly plugin: ExcalidrawPlugin;
   private readonly widthHost: HTMLElement;
@@ -68,7 +76,14 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
   private activeAlias: string | null = null;
   private activeSearchTerm = "";
   private activeFile: TFile | null = null;
-  private mode: "file" | "heading" | "block" | "frame" | "clippedframe" | "tag" | null = null;
+  private mode:
+    | "file"
+    | "heading"
+    | "block"
+    | "frame"
+    | "clippedframe"
+    | "tag"
+    | null = null;
   private headingItems: HeadingSuggestion[] = [];
   private paragraphItems: ParagraphSuggestion[] = [];
   private frameItems: FrameSuggestion[] = [];
@@ -89,7 +104,8 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     this.getSourcePath = getSourcePath;
     this.widthHost = widthWrapper ?? inputEl;
     this.hasCustomWidthHost = Boolean(widthWrapper);
-    this.handleBracketKeyDown = (event: KeyboardEvent) => this.onBracketKeyDown(event);
+    this.handleBracketKeyDown = (event: KeyboardEvent) =>
+      this.onBracketKeyDown(event);
     this.limit = 20;
     if (!surpessPlaceholder) {
       this.setPlaceholder(t("INLINE_HINT"));
@@ -104,7 +120,13 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
   }
 
   private onBracketKeyDown(event: KeyboardEvent) {
-    if (event.key !== "[" || event.metaKey || event.ctrlKey || event.defaultPrevented || event.isComposing) {
+    if (
+      event.key !== "[" ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.defaultPrevented ||
+      event.isComposing
+    ) {
       return;
     }
 
@@ -147,7 +169,12 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
       return;
     }
 
-    const minWidth = Math.max(width || this.inputEl.clientWidth || this.inputEl.getBoundingClientRect().width, 450);
+    const minWidth = Math.max(
+      width ||
+        this.inputEl.clientWidth ||
+        this.inputEl.getBoundingClientRect().width,
+      450,
+    );
     if (!minWidth) {
       return;
     }
@@ -156,13 +183,14 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     let availableWidth = this.collisionBoundary
       ? this.collisionBoundary.innerWidth - 16 //SuggestionModal padding
       : Math.max(0, window.innerWidth - anchorRect.left - 16);
-    
+
     if (!this.hasCustomWidthHost) {
-      availableWidth = minWidth <= 450
-        ? Math.min(availableWidth, 450)
-        : Math.min(availableWidth, minWidth);
+      availableWidth =
+        minWidth <= 450
+          ? Math.min(availableWidth, 450)
+          : Math.min(availableWidth, minWidth);
     }
-    
+
     const clampedMinWidth = Math.min(minWidth, availableWidth);
 
     this.suggestEl.style.width = "";
@@ -185,7 +213,11 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     const inputStr = this.modifyInput(this.inputEl.value);
     this.caretPos = this.inputEl.selectionStart ?? inputStr.length;
 
-    if ((this.inputEl.selectionEnd ?? this.caretPos) - (this.inputEl.selectionStart ?? 0) > 0) {
+    if (
+      (this.inputEl.selectionEnd ?? this.caretPos) -
+        (this.inputEl.selectionStart ?? 0) >
+      0
+    ) {
       this.resetSuggestions();
       return;
     }
@@ -197,7 +229,12 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
       this.activeTagStart = -1;
       this.activeTagEnd = -1;
 
-      const context = this.parseLinkContext(inputStr, this.caretPos, active.open, active.close);
+      const context = this.parseLinkContext(
+        inputStr,
+        this.caretPos,
+        active.open,
+        active.close,
+      );
       this.activeAlias = context.alias;
       this.activeSearchTerm = context.searchTerm;
       this.activeFile = context.file;
@@ -270,21 +307,36 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
 
   getSuggestions(): FuzzyMatch<InlineSuggestion>[] {
     if (this.mode === "tag") {
-      return fuzzyMatchTextItems(this.activeSearchTerm ?? "", this.tagItems, (t) => this.getTagSearchValue(t.tag));
+      return fuzzyMatchTextItems(
+        this.activeSearchTerm ?? "",
+        this.tagItems,
+        (t) => this.getTagSearchValue(t.tag),
+      );
     }
 
     if (this.activeOpen === -1) return [];
 
     if (this.mode === "heading") {
-      return fuzzyMatchTextItems(this.activeSearchTerm ?? "", this.headingItems, (h) => h.heading);
+      return fuzzyMatchTextItems(
+        this.activeSearchTerm ?? "",
+        this.headingItems,
+        (h) => h.heading,
+      );
     }
 
     if (this.mode === "block") {
-      return fuzzyMatchParagraphsWithId(this.activeSearchTerm ?? "", this.paragraphItems);
+      return fuzzyMatchParagraphsWithId(
+        this.activeSearchTerm ?? "",
+        this.paragraphItems,
+      );
     }
 
     if (this.mode === "frame" || this.mode === "clippedframe") {
-      return fuzzyMatchTextItems(this.activeSearchTerm ?? "", this.frameItems, (f) => f.label);
+      return fuzzyMatchTextItems(
+        this.activeSearchTerm ?? "",
+        this.frameItems,
+        (f) => f.label,
+      );
     }
 
     const term = this.activeSearchTerm ?? "";
@@ -320,7 +372,12 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     if (this.isFrame(item)) {
       return item.label;
     }
-    return (item as LinkSuggestion).path + ((item as LinkSuggestion).alias ? `|${(item as LinkSuggestion).alias}` : "");
+    return (
+      (item as LinkSuggestion).path +
+      ((item as LinkSuggestion).alias
+        ? `|${(item as LinkSuggestion).alias}`
+        : "")
+    );
   }
 
   async onChooseItem(item: InlineSuggestion | undefined): Promise<void> {
@@ -337,7 +394,8 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
         this.getSourcePath() ?? "",
         true,
       );
-      const aliasSuffix = this.activeAlias !== null ? `|${this.activeAlias}` : "";
+      const aliasSuffix =
+        this.activeAlias !== null ? `|${this.activeAlias}` : "";
       this.insertLink(`[[${linktext}#${item.anchor}${aliasSuffix}]]`);
       return;
     }
@@ -350,7 +408,8 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
         this.getSourcePath() ?? "",
         true,
       );
-      const aliasSuffix = this.activeAlias !== null ? `|${this.activeAlias}` : "";
+      const aliasSuffix =
+        this.activeAlias !== null ? `|${this.activeAlias}` : "";
       this.insertLink(`[[${linktext}#^${id}${aliasSuffix}]]`);
       return;
     }
@@ -361,8 +420,11 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
         this.getSourcePath() ?? "",
         true,
       );
-      const aliasSuffix = this.activeAlias !== null ? `|${this.activeAlias}` : "";
-      this.insertLink(`[[${linktext}#^${item.refKind}=${item.target}${aliasSuffix}]]`);
+      const aliasSuffix =
+        this.activeAlias !== null ? `|${this.activeAlias}` : "";
+      this.insertLink(
+        `[[${linktext}#^${item.refKind}=${item.target}${aliasSuffix}]]`,
+      );
       return;
     }
 
@@ -370,7 +432,10 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     this.insertLink(linkString);
   }
 
-  async selectSuggestion(value: FuzzyMatch<InlineSuggestion>, evt: MouseEvent | KeyboardEvent) {
+  async selectSuggestion(
+    value: FuzzyMatch<InlineSuggestion>,
+    evt: MouseEvent | KeyboardEvent,
+  ) {
     evt?.preventDefault?.();
     evt?.stopPropagation?.();
     await this.onChooseItem(value?.item);
@@ -395,38 +460,68 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
 
     if (this.isHeading(item as InlineSuggestion)) {
       const note = item
-        ? this.app.metadataCache.fileToLinktext((item as HeadingSuggestion).file, this.getSourcePath() ?? "", true)
+        ? this.app.metadataCache.fileToLinktext(
+            (item as HeadingSuggestion).file,
+            this.getSourcePath() ?? "",
+            true,
+          )
         : "";
-      renderHeadingSuggestionRow(result as FuzzyMatch<HeadingSuggestion>, note, itemEl);
+      renderHeadingSuggestionRow(
+        result as FuzzyMatch<HeadingSuggestion>,
+        note,
+        itemEl,
+      );
       return;
     }
 
     if (this.isParagraph(item as InlineSuggestion)) {
       const note = item
-        ? this.app.metadataCache.fileToLinktext((item as ParagraphSuggestion).file, this.getSourcePath() ?? "", true)
+        ? this.app.metadataCache.fileToLinktext(
+            (item as ParagraphSuggestion).file,
+            this.getSourcePath() ?? "",
+            true,
+          )
         : "";
-      renderParagraphSuggestionRow(result as FuzzyMatch<ParagraphSuggestion>, note, itemEl);
+      renderParagraphSuggestionRow(
+        result as FuzzyMatch<ParagraphSuggestion>,
+        note,
+        itemEl,
+      );
       return;
     }
 
     if (this.isFrame(item as InlineSuggestion)) {
       const frameItem = item as FrameSuggestion;
-      const note = this.app.metadataCache.fileToLinktext(frameItem.file, this.getSourcePath() ?? "", true);
-      this.renderFrameSuggestionRow(result as FuzzyMatch<FrameSuggestion>, note, itemEl);
+      const note = this.app.metadataCache.fileToLinktext(
+        frameItem.file,
+        this.getSourcePath() ?? "",
+        true,
+      );
+      this.renderFrameSuggestionRow(
+        result as FuzzyMatch<FrameSuggestion>,
+        note,
+        itemEl,
+      );
       return;
     }
 
-    renderLinkSuggestion(this.plugin, result as FuzzyMatch<LinkSuggestion>, itemEl, this.emptyStateText);
+    renderLinkSuggestion(
+      this.plugin,
+      result as FuzzyMatch<LinkSuggestion>,
+      itemEl,
+      this.emptyStateText,
+    );
   }
 
   private buildLink(item: LinkSuggestion): string {
     const sourcePath = this.getSourcePath();
     const aliasFromContext = this.activeAlias;
-    const aliasSuffix = aliasFromContext !== null
-      ? `|${aliasFromContext}`
-      : item.alias
-        ? `|${item.alias}`
-        : "";
+    const aliasSuffix =
+      aliasFromContext !== null
+        ? `|${aliasFromContext}`
+        : item.alias
+          ? `|${item.alias}`
+          : "";
     if (item.file) {
       const linktext = this.app.metadataCache.fileToLinktext(
         item.file,
@@ -441,17 +536,26 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
 
   private insertLink(link: string) {
     const cursor = this.inputEl.selectionStart ?? this.inputEl.value.length;
-    const start = this.activeOpen >= 0 ? this.activeOpen : this.inputEl.value.lastIndexOf("[[", cursor);
+    const start =
+      this.activeOpen >= 0
+        ? this.activeOpen
+        : this.inputEl.value.lastIndexOf("[[", cursor);
     if (start === -1) {
       return;
     }
 
     const nextOpen = this.inputEl.value.indexOf("[[", start + 2);
     const fallbackClose = this.inputEl.value.indexOf("]]", start + 2);
-    const closeBelongsToLink = this.activeClose >= 0
-      ? true
-      : fallbackClose !== -1 && (nextOpen === -1 || fallbackClose < nextOpen);
-    const effectiveClose = this.activeClose >= 0 ? this.activeClose : closeBelongsToLink ? fallbackClose : -1;
+    const closeBelongsToLink =
+      this.activeClose >= 0
+        ? true
+        : fallbackClose !== -1 && (nextOpen === -1 || fallbackClose < nextOpen);
+    const effectiveClose =
+      this.activeClose >= 0
+        ? this.activeClose
+        : closeBelongsToLink
+          ? fallbackClose
+          : -1;
     // If no valid closing brackets are present for this link (e.g. another [[ appears first),
     // only replace up to the current cursor to avoid swallowing subsequent text.
     const end = effectiveClose >= 0 ? effectiveClose + 2 : cursor;
@@ -471,7 +575,10 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     }
 
     const start = this.activeTagStart;
-    const end = this.activeTagEnd >= 0 ? this.activeTagEnd : this.inputEl.selectionStart ?? this.inputEl.value.length;
+    const end =
+      this.activeTagEnd >= 0
+        ? this.activeTagEnd
+        : (this.inputEl.selectionStart ?? this.inputEl.value.length);
     const prefix = this.inputEl.value.substring(0, start);
     const suffix = this.inputEl.value.substring(end);
     this.inputEl.value = `${prefix}${tag}${suffix}`;
@@ -497,28 +604,51 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     this.tagItems = [];
   }
 
-  private parseLinkContext(value: string, caret: number, open: number, close: number) {
+  private parseLinkContext(
+    value: string,
+    caret: number,
+    open: number,
+    close: number,
+  ) {
     const activeInfo = this.extractActiveInfo(value, caret, open, close);
     const closeIndex = close >= 0 ? close : value.length;
     const linkText = value.substring(open + 2, closeIndex);
     const pipeIndex = linkText.indexOf("|");
-    const linkWithoutAlias = pipeIndex >= 0 ? linkText.substring(0, pipeIndex) : linkText;
+    const linkWithoutAlias =
+      pipeIndex >= 0 ? linkText.substring(0, pipeIndex) : linkText;
     const hashIndex = linkWithoutAlias.indexOf("#");
-    const caretInLink = Math.max(0, Math.min(caret - (open + 2), linkText.length));
+    const caretInLink = Math.max(
+      0,
+      Math.min(caret - (open + 2), linkText.length),
+    );
     const inSubpath = hashIndex >= 0 && caretInLink > hashIndex;
-    const basePath = hashIndex >= 0 ? linkWithoutAlias.substring(0, hashIndex) : linkWithoutAlias;
-    const subpathRaw = inSubpath ? linkWithoutAlias.substring(hashIndex + 1, caretInLink) : "";
+    const basePath =
+      hashIndex >= 0
+        ? linkWithoutAlias.substring(0, hashIndex)
+        : linkWithoutAlias;
+    const subpathRaw = inSubpath
+      ? linkWithoutAlias.substring(hashIndex + 1, caretInLink)
+      : "";
     const file = basePath
-      ? this.app.metadataCache.getFirstLinkpathDest(basePath, this.getSourcePath() ?? "")
+      ? this.app.metadataCache.getFirstLinkpathDest(
+          basePath,
+          this.getSourcePath() ?? "",
+        )
       : null;
 
     let mode: "file" | "heading" | "block" | "frame" | "clippedframe" = "file";
     let searchTerm = activeInfo.searchTerm;
     if (file && inSubpath) {
-      if (subpathRaw.startsWith("^frame=") && this.plugin.isExcalidrawFile(file)) {
+      if (
+        subpathRaw.startsWith("^frame=") &&
+        this.plugin.isExcalidrawFile(file)
+      ) {
         mode = "frame";
         searchTerm = subpathRaw.substring("^frame=".length);
-      } else if (subpathRaw.startsWith("^clippedframe=") && this.plugin.isExcalidrawFile(file)) {
+      } else if (
+        subpathRaw.startsWith("^clippedframe=") &&
+        this.plugin.isExcalidrawFile(file)
+      ) {
         mode = "clippedframe";
         searchTerm = subpathRaw.substring("^clippedframe=".length);
       } else if (file.extension === "md") {
@@ -537,7 +667,10 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     } as const;
   }
 
-  private async loadFrames(file: TFile | null, refKind: "frame" | "clippedframe") {
+  private async loadFrames(
+    file: TFile | null,
+    refKind: "frame" | "clippedframe",
+  ) {
     this.frameItems = [];
     if (!file || !this.plugin.isExcalidrawFile(file)) {
       return;
@@ -545,7 +678,9 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
 
     const ea = getEA();
     const scene = await ea?.getSceneFromFile?.(file);
-    const frames = (scene?.elements ?? []).filter((el: any) => el?.type === "frame" && !el?.isDeleted);
+    const frames = (scene?.elements ?? []).filter(
+      (el: any) => el?.type === "frame" && !el?.isDeleted,
+    );
     if (!frames.length) {
       return;
     }
@@ -565,7 +700,9 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
       const hasName = rawName.length > 0;
       const isDuplicateName = hasName && (nameCounts.get(rawName) ?? 0) > 1;
       const label = hasName
-        ? (isDuplicateName ? `${rawName} (${id})` : rawName)
+        ? isDuplicateName
+          ? `${rawName} (${id})`
+          : rawName
         : id;
       const target = hasName && !isDuplicateName ? rawName : id;
 
@@ -586,7 +723,10 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
       return;
     }
 
-    const cache = await this.app.metadataCache.blockCache.getForFile({ isCancelled: () => false }, file);
+    const cache = await this.app.metadataCache.blockCache.getForFile(
+      { isCancelled: () => false },
+      file,
+    );
     const blocks = cache?.blocks ?? [];
     this.headingItems = blocks
       .filter((b: any) => b.display && b.node?.type === "heading")
@@ -605,17 +745,21 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
       return;
     }
 
-    const cache = await this.app.metadataCache.blockCache.getForFile({ isCancelled: () => false }, file);
+    const cache = await this.app.metadataCache.blockCache.getForFile(
+      { isCancelled: () => false },
+      file,
+    );
     const blocks = cache?.blocks ?? [];
     this.paragraphItems = blocks
-      .filter((b: any) =>
-        b.display &&
-        b.node &&
-        (b.node.type === "paragraph" ||
-          b.node.type === "blockquote" ||
-          b.node.type === "listItem" ||
-          b.node.type === "table" ||
-          b.node.type === "callout"),
+      .filter(
+        (b: any) =>
+          b.display &&
+          b.node &&
+          (b.node.type === "paragraph" ||
+            b.node.type === "blockquote" ||
+            b.node.type === "listItem" ||
+            b.node.type === "table" ||
+            b.node.type === "callout"),
       )
       .map((b: any) => ({
         kind: "paragraph",
@@ -657,7 +801,11 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     flair.setText(`^${item.refKind}=${item.target}`);
   }
 
-  private renderTextWithHighlights(titleEl: HTMLElement, text: string, matches: [number, number][]) {
+  private renderTextWithHighlights(
+    titleEl: HTMLElement,
+    text: string,
+    matches: [number, number][],
+  ) {
     if (!matches?.length) {
       titleEl.setText(text);
       return;
@@ -677,7 +825,9 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     }
   }
 
-  private async ensureParagraphHasId(item: ParagraphSuggestion): Promise<string | null> {
+  private async ensureParagraphHasId(
+    item: ParagraphSuggestion,
+  ): Promise<string | null> {
     if (item.id) return item.id;
     const offset = item.node?.position?.end?.offset;
     if (!offset) return null;
@@ -713,17 +863,22 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     this.shouldNotOpen = false;
   }
 
-  private findActiveLink(value: string, pos: number): {open: number; close: number} | null {
+  private findActiveLink(
+    value: string,
+    pos: number,
+  ): { open: number; close: number } | null {
     let searchFrom = 0;
-    let candidate: {open: number; close: number} | null = null;
+    let candidate: { open: number; close: number } | null = null;
     while (true) {
       const open = value.indexOf("[[", searchFrom);
       if (open === -1 || open > pos) break;
       const nextOpen = value.indexOf("[[", open + 2);
       const closeCandidate = value.indexOf("]]", open + 2);
-      const closeBelongsToLink = closeCandidate !== -1 && (nextOpen === -1 || closeCandidate < nextOpen);
+      const closeBelongsToLink =
+        closeCandidate !== -1 && (nextOpen === -1 || closeCandidate < nextOpen);
       const close = closeBelongsToLink ? closeCandidate : -1;
-      const caretInsideBrackets = pos > open + 1 && (close === -1 || pos <= close);
+      const caretInsideBrackets =
+        pos > open + 1 && (close === -1 || pos <= close);
       if (caretInsideBrackets) {
         candidate = { open, close };
         break;
@@ -739,7 +894,10 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     return candidate;
   }
 
-  private findActiveTag(value: string, caret: number): {start: number; end: number; term: string} | null {
+  private findActiveTag(
+    value: string,
+    caret: number,
+  ): { start: number; end: number; term: string } | null {
     const beforeCaret = value.substring(0, caret);
     const match = beforeCaret.match(/(?:^|[\s([{>])#([^\s#[\](){}|]*)$/);
     if (!match) {
@@ -765,15 +923,24 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     };
   }
 
-  private extractActiveInfo(value: string, caret: number, open: number, close: number): {alias: string | null; inAlias: boolean; searchTerm: string} {
+  private extractActiveInfo(
+    value: string,
+    caret: number,
+    open: number,
+    close: number,
+  ): { alias: string | null; inAlias: boolean; searchTerm: string } {
     const closeIndex = close >= 0 ? close : value.length;
     const linkText = value.substring(open + 2, closeIndex);
-    const caretInLink = Math.max(0, Math.min(caret - (open + 2), linkText.length));
+    const caretInLink = Math.max(
+      0,
+      Math.min(caret - (open + 2), linkText.length),
+    );
     const pipeIndex = linkText.indexOf("|");
     const alias = pipeIndex >= 0 ? linkText.substring(pipeIndex + 1) : null;
     const inAlias = pipeIndex >= 0 && caretInLink > pipeIndex;
 
-    const linkPart = pipeIndex >= 0 ? linkText.substring(0, pipeIndex) : linkText;
+    const linkPart =
+      pipeIndex >= 0 ? linkText.substring(0, pipeIndex) : linkText;
     const caretInLinkPart = Math.min(caretInLink, linkPart.length);
     const rawTerm = linkPart.substring(0, caretInLinkPart);
     const searchTerm = rawTerm.replace(/^.*[\\/]/, "");
@@ -783,9 +950,10 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
 
   private dispatchInputChange() {
     const eventInit = { bubbles: true, composed: true, cancelable: true };
-    const inputEvt = typeof InputEvent !== "undefined"
-      ? new InputEvent("input", eventInit as InputEventInit)
-      : new Event("input", eventInit);
+    const inputEvt =
+      typeof InputEvent !== "undefined"
+        ? new InputEvent("input", eventInit as InputEventInit)
+        : new Event("input", eventInit);
     this.inputEl.dispatchEvent(inputEvt);
     const changeEvt = new Event("change", eventInit);
     this.inputEl.dispatchEvent(changeEvt);

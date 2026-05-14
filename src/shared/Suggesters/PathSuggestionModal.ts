@@ -1,11 +1,11 @@
 import {
-FuzzyMatch,
-TFile,
-BlockCache,
-HeadingCache,
-CachedMetadata,
-TextComponent,
-App,
+  FuzzyMatch,
+  TFile,
+  BlockCache,
+  HeadingCache,
+  CachedMetadata,
+  TextComponent,
+  App,
 } from "obsidian";
 import { SuggestionModal } from "./SuggestionModal";
 

@@ -5,7 +5,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
-"2.23.0":`
+  "2.23.0": `
 ## New
 - Added a new setting under *Excalidraw Automate* to opt-in to \`excalidraw-onload-scripts\`.
 - Added image cache for nested images, including nested Excalidraw drawings and PDF page renders.
@@ -115,7 +115,7 @@ async addImage(
 ): Promise<string>;
 \`\`\`
 `,
-"2.22.3":`
+  "2.22.3": `
 
 Feeling overwhelmed by Excalidraw's endless features?
 
@@ -139,7 +139,7 @@ Curious about the philosophy behind it?
 </div>
 
 `,
-"2.22.1": `
+  "2.22.1": `
 ## New
 - Added a command palette action to switch all currently open Excalidraw drawings to view mode.
   - While this temporary mode is enabled, any Excalidraw drawing opened afterward will also open in view mode.
@@ -153,7 +153,7 @@ Curious about the philosophy behind it?
 - copying a nested image fragment in Excalidraw and pasting to markdown lost the image block reference
 - modifier keys conflicted with Excalidraw alt-select (lasso) behavior
 `,
-"2.22.0":`
+  "2.22.0": `
 ## Fixed
 - Fixed misaligned panel buttons in tray mode [#2718](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2718) 🙏[@heinrich26](https://github.com/heinrich26)
 - Improved loading of nested Excalidraw files within a scene, with some additional performance gains.
@@ -168,7 +168,7 @@ Curious about the philosophy behind it?
 ## New
 - Added support for embedding the [Sheet Plus](obsidian://show-plugin?id=sheet-plus) plugin as an active embeddable element in Excalidraw. At the moment, changing the canvas theme between dark and light mode does not automatically re-render embedded sheets. To apply the theme change, close and reopen the drawing. This will likely be improved in a future update.
 `,
-"2.21.3":`
+  "2.21.3": `
 ## Fixed
 - Caret color for link editor, text elemnts in dark mode, color picker input element.
 - Link click behavior modifier keys setting in plugin settings now enforces CTRL/CMD for link clicks and improves on clarity of setting UI by adding a header row
@@ -177,13 +177,13 @@ Curious about the philosophy behind it?
 - Embed "SVG Image" to markdown should size correctly now when setting a percentage \`![[drawing|50%]]\` where 50% is relative to the width of the markdown note.
 
 `,
-"2.21.2":`
+  "2.21.2": `
 ## Fixed
 - The new ExcalidrawAutomate function \`parseText()\` broke if the text was a transcluded image or PDF document, causing downstream paste issues in MindMap Builder.
 - Custom pen sloppiness not being saved to a template drawing [#2715](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2715) 🙏[@sreedharsreeram](https://github.com/sreedharsreeram)
 
 `,
-"2.21.1":`
+  "2.21.1": `
 ## Fixed
 - Drawing and editor fails to initialize in a new window [#2713](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2713)
 - Duplicate selected image with a different image ID command palette action did not duplicate cropped PDF images.
@@ -193,7 +193,7 @@ Curious about the philosophy behind it?
 - Put caret at pointer position when clicking on selected text element [#10970](https://github.com/excalidraw/excalidraw/pull/10970)
 
 `,
-"2.21.0":`
+  "2.21.0": `
 ## New
 - LaTeX editor is now floating [#2684](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2684) 🙏[@TravisLEBLANC1](https://github.com/TravisLEBLANC1), [#2698](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2698) 🙏[@heinrich26](https://github.com/heinrich26)
 - Inline link suggester supports new triggers \`![[drawing#^frame=\` and \`![[drawing#^clippedframe=\`, thus it is easy to reference frames like pdf pages, slides or other parts of your scene marked using marker frames.
@@ -225,7 +225,7 @@ Curious about the philosophy behind it?
 public async parseText (text: string): Promise<string | undefined>;
 \`\`\`
 `,
-"2.20.6":`
+  "2.20.6": `
 <div class="excalidraw-videoWrapper">
 <a href="https://www.youtube.com/watch?v=g-BiyQ7TJTM" target="_blank"><img src ="https://i.ytimg.com/vi/g-BiyQ7TJTM/maxresdefault.jpg" style="width:100%;"></a>
 </div>
@@ -257,7 +257,7 @@ stakeholder_mgmt, 1, 6, 10
 - Multiple arrow related updates and fixes from Excalidraw.com [#10832](https://github.com/excalidraw/excalidraw/pull/10832) [#10831](https://github.com/excalidraw/excalidraw/pull/10831) [#10816](https://github.com/excalidraw/excalidraw/pull/10816)
 - Hide MindMap Builder and other floating tools when creating a screenshot
 `,
-"2.20.5":`
+  "2.20.5": `
 ## Fixed
 - Obsidian Mobile: The floating navigation bar got stuck at the bottom after closing Excalidraw or switching to a markdown note. [#2673](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2673)
 - "Toggle UI Mode" now includes a preference setting for Obsidian Phone as well. You can now set different default layouts for phone, tablet, and desktop. [#2670](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2670)
@@ -265,7 +265,7 @@ stakeholder_mgmt, 1, 6, 10
 ## New
 - Added "Toggle Full Screen" button to toolbar right next to the "Obsidian menu", and the "Insert Any File" button.
 `,
-"2.20.4":`
+  "2.20.4": `
 ## Fixed
 - Fix NativeSVG embed mode into Markdown documents, ahead of the Obsidian 1.12.1 release. [#2665](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2665)
 - Color picker once again supports 8-digit hex codes (Hex color string with an opacity). [#10772](https://github.com/excalidraw/excalidraw/issues/10772)
@@ -279,7 +279,7 @@ stakeholder_mgmt, 1, 6, 10
 - Arrow binding midpoints. When the projected point is close to center, snap it to the exact center. This way it's easier to create neat(er) simple arrow connections. [#10611](https://github.com/excalidraw/excalidraw/pull/10611)
 
 `,
-"2.20.3":`
+  "2.20.3": `
 ## Fixed
 - Hover preview when hovering an element with a link in the scene was unreliable
 - If a text element had a link in the text body, in some situations, the link became unresponsive to clicks. [#2660](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2660)
@@ -287,7 +287,7 @@ stakeholder_mgmt, 1, 6, 10
 ## New
 - Added default keymap to latex editor [#2655](https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/2655) 🙏[superle3](https://github.com/superle3)
 `,
-"2.20.2":`
+  "2.20.2": `
 ## New from Excalidraw.com
 - Arrow focus indicator [#10613](https://github.com/excalidraw/excalidraw/pull/10613)
 
@@ -316,7 +316,7 @@ stakeholder_mgmt, 1, 6, 10
   ): Promise<boolean>
 \`\`\`
 `,
-"2.20.1":`
+  "2.20.1": `
 ## Fixed
 - Fixed Experimental file type display, available under miscellaneous settings. (Reported on Discord)
 - Fixed image inversion in dark mode on iOS devices. [#2636](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2636)
@@ -341,7 +341,7 @@ stakeholder_mgmt, 1, 6, 10
 > - Sun Feb 1 @ 09:00 CET ([local time](https://www.timeanddate.com/worldclock/fixedtime.html?msg=MindMap+Builder+Launch+Party&iso=20260201T08&p1=%3A&ah=1))
 
 `,
-"2.20.0":`
+  "2.20.0": `
 <div class="excalidraw-videoWrapper">
 <a href="https://www.youtube.com/watch?v=5G9QF-u9w0Q" target="_blank"><img src ="https://i.ytimg.com/vi/5G9QF-u9w0Q/maxresdefault.jpg" style="width:100%;"></a>
 </div>

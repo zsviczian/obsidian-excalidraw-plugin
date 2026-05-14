@@ -1,62 +1,88 @@
 import ExcalidrawPlugin from "src/core/main";
 import {
-FillStyle,
-StrokeStyle,
-ExcalidrawElement,
-ExcalidrawBindableElement,
-FileId,
-NonDeletedExcalidrawElement,
-ExcalidrawImageElement,
-ExcalidrawTextElement,
-StrokeRoundness,
-RoundnessType,
-ExcalidrawFrameElement,
-ExcalidrawTextContainer,
+  FillStyle,
+  StrokeStyle,
+  ExcalidrawElement,
+  ExcalidrawBindableElement,
+  FileId,
+  NonDeletedExcalidrawElement,
+  ExcalidrawImageElement,
+  ExcalidrawTextElement,
+  StrokeRoundness,
+  RoundnessType,
+  ExcalidrawFrameElement,
+  ExcalidrawTextContainer,
 } from "@zsviczian/excalidraw/types/element/src/types";
-import { ColorMap,MimeType } from "../types/embeddedFileLoaderTypes";
-import { Editor,Notice,OpenViewState,RequestUrlResponse,TFile,TFolder,WorkspaceLeaf } from "obsidian";
+import { ColorMap, MimeType } from "../types/embeddedFileLoaderTypes";
+import {
+  Editor,
+  Notice,
+  OpenViewState,
+  RequestUrlResponse,
+  TFile,
+  TFolder,
+  WorkspaceLeaf,
+} from "obsidian";
 import * as obsidian_module from "obsidian";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { TextMode } from "src/shared/TextMode";
+import { ExcalidrawData, getMarkdownDrawingSection } from "./ExcalidrawData";
 import {
-ExcalidrawData,
-getMarkdownDrawingSection,
-} from "./ExcalidrawData";
-import {
-FRONTMATTER,
-nanoid,
-MAX_IMAGE_SIZE,
-COLOR_NAMES,
-fileid,
-GITHUB_RELEASES,
-getCommonBoundingBox,
-getLineHeight,
-getMaximumGroups,
-intersectElementWithLine,
-DEVICE,
-mermaidToExcalidraw,
-refreshTextDimensions,
-getFontFamilyString,
+  FRONTMATTER,
+  nanoid,
+  MAX_IMAGE_SIZE,
+  COLOR_NAMES,
+  fileid,
+  GITHUB_RELEASES,
+  getCommonBoundingBox,
+  getLineHeight,
+  getMaximumGroups,
+  intersectElementWithLine,
+  DEVICE,
+  mermaidToExcalidraw,
+  refreshTextDimensions,
+  getFontFamilyString,
 } from "src/constants/constants";
-import { blobToBase64,checkAndCreateFolder,getDrawingFilename,getExcalidrawEmbeddedFilesFiletree,getListOfTemplateFiles,getNewUniqueFilepath,splitFolderAndFilename } from "src/utils/fileUtils";
 import {
-//debug,
-getImageSize,
-isMaskFile,
-wrapTextAtCharLength,
-arrayToMap,
-addAppendUpdateCustomData,
-getSVG,
+  blobToBase64,
+  checkAndCreateFolder,
+  getDrawingFilename,
+  getExcalidrawEmbeddedFilesFiletree,
+  getListOfTemplateFiles,
+  getNewUniqueFilepath,
+  splitFolderAndFilename,
+} from "src/utils/fileUtils";
+import {
+  //debug,
+  getImageSize,
+  isMaskFile,
+  wrapTextAtCharLength,
+  arrayToMap,
+  addAppendUpdateCustomData,
+  getSVG,
 } from "src/utils/utils";
 import { InlineLinkSuggester } from "./Suggesters/InlineLinkSuggester";
-import { getExcalidrawViews,getLeaf,getNewOrAdjacentLeaf,isObsidianThemeDark,mergeMarkdownFiles,openLeaf } from "src/utils/obsidianUtils";
+import {
+  getExcalidrawViews,
+  getLeaf,
+  getNewOrAdjacentLeaf,
+  isObsidianThemeDark,
+  mergeMarkdownFiles,
+  openLeaf,
+} from "src/utils/obsidianUtils";
 import { getAttachmentsFolderAndFilePath } from "src/utils/pathUtils";
-import { AppState,BinaryFileData,DataURL,ExcalidrawImperativeAPI,SceneData } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { EmbeddedFile,EmbeddedFilesLoader } from "./EmbeddedFileLoader";
+import {
+  AppState,
+  BinaryFileData,
+  DataURL,
+  ExcalidrawImperativeAPI,
+  SceneData,
+} from "@zsviczian/excalidraw/types/excalidraw/types";
+import { EmbeddedFile, EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
 import { NewFileActions } from "src/shared/Dialogs/Prompt";
-import { ConnectionPoint,DeviceType,Point } from "src/types/types";
-import CM,{ ColorMaster,extendPlugins } from "@zsviczian/colormaster";
+import { ConnectionPoint, DeviceType, Point } from "src/types/types";
+import CM, { ColorMaster, extendPlugins } from "@zsviczian/colormaster";
 import HarmonyPlugin from "@zsviczian/colormaster/plugins/harmony";
 import MixPlugin from "@zsviczian/colormaster/plugins/mix";
 import A11yPlugin from "@zsviczian/colormaster/plugins/accessibility";
@@ -71,35 +97,87 @@ import HSVPlugin from "@zsviczian/colormaster/plugins/hsv";
 import RYBPlugin from "@zsviczian/colormaster/plugins/ryb";
 import CMYKPlugin from "@zsviczian/colormaster/plugins/cmyk";
 import { TInput } from "@zsviczian/colormaster/types";
-import { ConversionResult,svgToExcalidraw } from "src/shared/svgToExcalidraw/parser";
+import {
+  ConversionResult,
+  svgToExcalidraw,
+} from "src/shared/svgToExcalidraw/parser";
 import { ROUNDNESS } from "src/constants/constants";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
-import { emulateKeysForLinkClick,PaneTarget } from "src/utils/modifierkeyHelper";
+import {
+  emulateKeysForLinkClick,
+  PaneTarget,
+} from "src/utils/modifierkeyHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import PolyBool from "polybooljs";
 import { EmbeddableMDCustomProps } from "./Dialogs/EmbeddableSettings";
 import {
-postAI as _postAI,
-postOpenAI as _postOpenAI,
-getAISettings as _getAISettings,
-generateAIText as _generateAIText,
-analyzeAIImage as _analyzeAIImage,
-generateAIImage as _generateAIImage,
-transformAIImage as _transformAIImage,
-maskEditAIImage as _maskEditAIImage,
-createAIChatSession as _createAIChatSession,
-extractCodeBlocks as _extractCodeBlocks,
+  postAI as _postAI,
+  postOpenAI as _postOpenAI,
+  getAISettings as _getAISettings,
+  generateAIText as _generateAIText,
+  analyzeAIImage as _analyzeAIImage,
+  generateAIImage as _generateAIImage,
+  transformAIImage as _transformAIImage,
+  maskEditAIImage as _maskEditAIImage,
+  createAIChatSession as _createAIChatSession,
+  extractCodeBlocks as _extractCodeBlocks,
 } from "../utils/AIUtils";
-import { EXCALIDRAW_AUTOMATE_INFO,EXCALIDRAW_SCRIPTENGINE_INFO } from "./Dialogs/SuggesterInfo";
+import {
+  EXCALIDRAW_AUTOMATE_INFO,
+  EXCALIDRAW_SCRIPTENGINE_INFO,
+} from "./Dialogs/SuggesterInfo";
 import { showColorPicker } from "./Dialogs/ColorPicker";
-import { addBackOfTheNoteCard,getViewColorPalette,sceneRemoveInternalLinks } from "../utils/excalidrawViewUtils";
+import {
+  addBackOfTheNoteCard,
+  getViewColorPalette,
+  sceneRemoveInternalLinks,
+} from "../utils/excalidrawViewUtils";
 import { log } from "../utils/debugHelper";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
-import { AddImageOptions,ImageInfo,KeyBlocker,ScriptSettingValue,SVGColorInfo } from "src/types/excalidrawAutomateTypes";
-import { _measureText,cloneElement,createPNG,createSVG,ensureActiveScriptSettingsObject,errorMessage,filterColorMap,getEmbeddedFileForImageElment,getLineBox,getTemplate,isColorStringTransparent,isImageOrPDFTransclusion,isSVGColorInfo,mergeColorMapIntoSVGColorInfo,normalizeBindMode,normalizeFixedPoint,normalizeLinePoints,repositionElementsToCursor,svgColorInfoToColorMap,updateOrAddSVGColorInfo,verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
+import {
+  AddImageOptions,
+  ImageInfo,
+  KeyBlocker,
+  ScriptSettingValue,
+  SVGColorInfo,
+} from "src/types/excalidrawAutomateTypes";
+import {
+  _measureText,
+  cloneElement,
+  createPNG,
+  createSVG,
+  ensureActiveScriptSettingsObject,
+  errorMessage,
+  filterColorMap,
+  getEmbeddedFileForImageElment,
+  getLineBox,
+  getTemplate,
+  isColorStringTransparent,
+  isImageOrPDFTransclusion,
+  isSVGColorInfo,
+  mergeColorMapIntoSVGColorInfo,
+  normalizeBindMode,
+  normalizeFixedPoint,
+  normalizeLinePoints,
+  repositionElementsToCursor,
+  svgColorInfoToColorMap,
+  updateOrAddSVGColorInfo,
+  verifyMinimumPluginVersion,
+} from "src/utils/excalidrawAutomateUtils";
 import { getLastActiveExcalidrawView } from "src/utils/excalidrawViewLookup";
-import { exportToPDF,getMarginValue,getPageDimensions } from "src/utils/exportUtils";
-import { PageDimensions,PageOrientation,PageSize,PDFExportScale,PDFPageProperties,ExportSettings } from "src/types/exportUtilTypes";
+import {
+  exportToPDF,
+  getMarginValue,
+  getPageDimensions,
+} from "src/utils/exportUtils";
+import {
+  PageDimensions,
+  PageOrientation,
+  PageSize,
+  PDFExportScale,
+  PDFPageProperties,
+  ExportSettings,
+} from "src/types/exportUtilTypes";
 import { FrameRenderingOptions } from "src/types/utilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { AutoexportConfig } from "src/types/excalidrawViewTypes";
@@ -108,7 +186,7 @@ import { ExcalidrawSidepanelView } from "src/view/sidepanel/Sidepanel";
 import { ExcalidrawSidepanelTab } from "src/view/sidepanel/SidepanelTab";
 import { patchMobileView } from "src/utils/customEmbeddableUtils";
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
-import { AIRequest,ExcalidrawAISettings } from "src/types/AIUtilTypes";
+import { AIRequest, ExcalidrawAISettings } from "src/types/AIUtilTypes";
 import { getAspectRatio } from "src/utils/YoutTubeUtils";
 import { getPDFCropRect } from "src/utils/PDFUtils";
 import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
@@ -121,7 +199,9 @@ type ExcalidrawCustomDataValue =
   | ExcalidrawCustomDataValue[]
   | { [key: string]: ExcalidrawCustomDataValue };
 
-type ExcalidrawCustomDataPatch = Partial<Record<string, ExcalidrawCustomDataValue | undefined>>;
+type ExcalidrawCustomDataPatch = Partial<
+  Record<string, ExcalidrawCustomDataValue | undefined>
+>;
 type ExcalidrawAutomateHelpTarget = ((...args: any[]) => any) | string;
 
 extendPlugins([
@@ -137,10 +217,10 @@ extendPlugins([
   HWBPlugin,
   HSVPlugin,
   RYBPlugin,
-  CMYKPlugin
+  CMYKPlugin,
 ]);
 
-declare const PLUGIN_VERSION:string;
+declare const PLUGIN_VERSION: string;
 declare var LZString: any;
 
 const GAP = 4;
@@ -153,7 +233,7 @@ const GAP = 4;
  * To modify elements in the scene, you should first copy them over to EA using copyViewElementsToEAforEditing, make the necessary modifications,
  * then commit them back to the scene using addElementsToView().
  * To delete an element from the view set element.isDeleted = true and commit the changes to the scene using addElementsToView().
- * 
+ *
  * At a very high level, EA has 3 type of functions:
  * - functions that modify elements in the EA workbench
  * - functions that access elements and properties of the Scene
@@ -166,12 +246,12 @@ const GAP = 4;
  *   - ea.help() provides information about functions and properties in the ExcalidrawAutomate class intended for use in Developer Console
  *   - checkAndCreateFolder (thought this has been superceeded by app.vault.createFolder in the Obsidian API)
  *   - etc.
- * 
- * Note that some actions are asynchronous and require await to complete. e.g.: 
+ *
+ * Note that some actions are asynchronous and require await to complete. e.g.:
  *   - addImage()
  *   - convertStringToDataURL()
  *   - etc.
- * 
+ *
  * About the Excalidraw Automate Script Engine:
  * --------------------------------------------
  * Excalidraw Scripts utilize ExcalidrawAutomate. When the script is invoked Excalidraw passes an ExcalidrawAutomate instance to the script.
@@ -203,7 +283,7 @@ export class ExcalidrawAutomate {
    */
   get obsidian() {
     return obsidian_module;
-  };
+  }
 
   /**
    * This is a modified version of the Obsidian.Modal class
@@ -226,7 +306,7 @@ export class ExcalidrawAutomate {
    * Retrieves the device type information.
    * @returns {DeviceType} The device type.
    */
-  get DEVICE():DeviceType {
+  get DEVICE(): DeviceType {
     return DEVICE;
   }
 
@@ -241,47 +321,64 @@ export class ExcalidrawAutomate {
    * Add or modify keys in an element's customData while preserving existing keys.
    * Creates customData={} if it does not exist.
    * @param {string} id - The element ID in elementsDict to modify.
-  * @param {ExcalidrawCustomDataPatch} newData - Object containing key-value pairs to add/update. Set value to undefined to delete a key.
+   * @param {ExcalidrawCustomDataPatch} newData - Object containing key-value pairs to add/update. Set value to undefined to delete a key.
    * @returns {Mutable<ExcalidrawElement> | undefined} The modified element, or undefined if element does not exist.
    */
-  public addAppendUpdateCustomData(id:string, newData: ExcalidrawCustomDataPatch) {
+  public addAppendUpdateCustomData(
+    id: string,
+    newData: ExcalidrawCustomDataPatch,
+  ) {
     const el = this.elementsDict[id];
     if (!el) {
       return;
     }
-    return addAppendUpdateCustomData(el,newData);
+    return addAppendUpdateCustomData(el, newData);
   }
 
   /**
    * Displays help information for EA functions and properties intended to be used in Obsidian developer console.
-  * @param {ExcalidrawAutomateHelpTarget} target - Function reference or property name as string.
+   * @param {ExcalidrawAutomateHelpTarget} target - Function reference or property name as string.
    * Usage examples:
-   * - ea.help(ea.functionName) 
+   * - ea.help(ea.functionName)
    * - ea.help('propertyName')
    * - ea.help('utils.functionName')
    */
   public help(target: ExcalidrawAutomateHelpTarget) {
     if (!target) {
-      log("Usage: ea.help(ea.functionName) or ea.help('propertyName') or ea.help('utils.functionName') - notice property name and utils function name is in quotes");
+      log(
+        "Usage: ea.help(ea.functionName) or ea.help('propertyName') or ea.help('utils.functionName') - notice property name and utils function name is in quotes",
+      );
       return;
     }
-  
+
     let funcInfo;
-  
-    if (typeof target === 'function') {
-      funcInfo = EXCALIDRAW_AUTOMATE_INFO.find((info) => info.field === target.name);
-    } else if (typeof target === 'string') {
-      let stringTarget:string = target;
-      stringTarget = stringTarget.startsWith("utils.") ? stringTarget.substring(6) : stringTarget;
-      stringTarget = stringTarget.startsWith("ea.") ? stringTarget.substring(3) : stringTarget;
-      funcInfo = EXCALIDRAW_AUTOMATE_INFO.find((info) => info.field === stringTarget);
-      if(!funcInfo) {
-        funcInfo = EXCALIDRAW_SCRIPTENGINE_INFO.find((info) => info.field === stringTarget);
+
+    if (typeof target === "function") {
+      funcInfo = EXCALIDRAW_AUTOMATE_INFO.find(
+        (info) => info.field === target.name,
+      );
+    } else if (typeof target === "string") {
+      let stringTarget: string = target;
+      stringTarget = stringTarget.startsWith("utils.")
+        ? stringTarget.substring(6)
+        : stringTarget;
+      stringTarget = stringTarget.startsWith("ea.")
+        ? stringTarget.substring(3)
+        : stringTarget;
+      funcInfo = EXCALIDRAW_AUTOMATE_INFO.find(
+        (info) => info.field === stringTarget,
+      );
+      if (!funcInfo) {
+        funcInfo = EXCALIDRAW_SCRIPTENGINE_INFO.find(
+          (info) => info.field === stringTarget,
+        );
       }
     }
-  
-    if(!funcInfo) {
-      log("Usage: ea.help(ea.functionName) or ea.help('propertyName') or ea.help('utils.functionName') - notice property name and utils function name is in quotes");
+
+    if (!funcInfo) {
+      log(
+        "Usage: ea.help(ea.functionName) or ea.help('propertyName') or ea.help('utils.functionName') - notice property name and utils function name is in quotes",
+      );
       return;
     }
 
@@ -294,13 +391,19 @@ export class ExcalidrawAutomate {
       isMissing = false;
       const formattedDesc = funcInfo.desc
         .replaceAll("<br>", "\n")
-        .replace(/<code>(.*?)<\/code>/g, '%c\u200b$1%c') // Zero-width space
-        .replace(/<b>(.*?)<\/b>/g, '%c\u200b$1%c')      // Zero-width space
-        .replace(/<a onclick='window\.open\("(.*?)"\)'>(.*?)<\/a>/g, (_, href, text) => `%c\u200b${text}%c\u200b (link: ${href})`); // Zero-width non-joiner
-  
-      const styles = Array.from({ length: (formattedDesc.match(/%c/g) || []).length }, (_, i) => i % 2 === 0 ? 'color: #007bff;' : '');
+        .replace(/<code>(.*?)<\/code>/g, "%c\u200b$1%c") // Zero-width space
+        .replace(/<b>(.*?)<\/b>/g, "%c\u200b$1%c") // Zero-width space
+        .replace(
+          /<a onclick='window\.open\("(.*?)"\)'>(.*?)<\/a>/g,
+          (_, href, text) => `%c\u200b${text}%c\u200b (link: ${href})`,
+        ); // Zero-width non-joiner
+
+      const styles = Array.from(
+        { length: (formattedDesc.match(/%c/g) || []).length },
+        (_, i) => (i % 2 === 0 ? "color: #007bff;" : ""),
+      );
       log(`Description: ${formattedDesc}`, ...styles);
-    } 
+    }
     if (isMissing) {
       log("Description not available for this function.");
     }
@@ -322,7 +425,7 @@ export class ExcalidrawAutomate {
    */
   public async postOpenAI(request: AIRequest): Promise<RequestUrlResponse> {
     return await _postOpenAI(request, { plugin: this.plugin });
-  } 
+  }
 
   /**
    * Returns the sanitized Excalidraw AI configuration currently available to scripts.
@@ -378,7 +481,7 @@ export class ExcalidrawAutomate {
    * @param {string} markdown - The markdown string to parse.
    * @returns {Array<{ data: string, type: string }>} Array of objects containing code block contents and types.
    */
-  public extractCodeBlocks(markdown: string): { data: string, type: string }[] {
+  public extractCodeBlocks(markdown: string): { data: string; type: string }[] {
     return _extractCodeBlocks(markdown);
   }
 
@@ -388,16 +491,19 @@ export class ExcalidrawAutomate {
    * @param {string} [type="text/html"] - MIME type (default: "text/html").
    * @returns {Promise<string>} Promise resolving to the data URL string.
    */
-  public async convertStringToDataURL(data:string, type: string = "text/html"): Promise<string> {
+  public async convertStringToDataURL(
+    data: string,
+    type: string = "text/html",
+  ): Promise<string> {
     // Create a blob from the HTML string
     const blob = new Blob([data], { type });
-  
+
     // Read the blob as Data URL
     const base64String = await new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = () => {
-        if(typeof reader.result === "string") {
-          const base64String = reader.result.split(',')[1];
+        if (typeof reader.result === "string") {
+          const base64String = reader.result.split(",")[1];
           resolve(base64String);
         } else {
           resolve(null);
@@ -405,7 +511,7 @@ export class ExcalidrawAutomate {
       };
       reader.readAsDataURL(blob);
     });
-    if(base64String) {
+    if (base64String) {
       return `data:${type};base64,${base64String}`;
     }
     return "about:blank";
@@ -424,7 +530,7 @@ export class ExcalidrawAutomate {
    * @param filepath - The file path to split into folder and filename.
    * @returns object containing folderpath, filename, basename, and extension.
    */
-  public splitFolderAndFilename(filepath: string) : {
+  public splitFolderAndFilename(filepath: string): {
     folderpath: string;
     filename: string;
     basename: string;
@@ -457,10 +563,10 @@ export class ExcalidrawAutomate {
    * @returns {TFile[]} Array of embedded image TFiles.
    */
   public getEmbeddedImagesFiletree(excalidrawFile?: TFile): TFile[] {
-    if(!excalidrawFile && this.targetView && this.targetView.file) {
+    if (!excalidrawFile && this.targetView && this.targetView.file) {
       excalidrawFile = this.targetView.file;
     }
-    if(!excalidrawFile) {
+    if (!excalidrawFile) {
       return [];
     }
     return getExcalidrawEmbeddedFilesFiletree(excalidrawFile, this.plugin);
@@ -476,8 +582,16 @@ export class ExcalidrawAutomate {
       errorMessage("targetView not set", "getAttachmentFolderAndFilePath()");
       return null;
     }
-    const folderAndPath = await getAttachmentsFolderAndFilePath(this.plugin.app,this.targetView.file.path, filename);
-    return getNewUniqueFilepath(this.plugin.app.vault, filename, folderAndPath.folder);
+    const folderAndPath = await getAttachmentsFolderAndFilePath(
+      this.plugin.app,
+      this.targetView.file.path,
+      filename,
+    );
+    return getNewUniqueFilepath(
+      this.plugin.app.vault,
+      filename,
+      folderAndPath.folder,
+    );
   }
 
   /**
@@ -485,7 +599,7 @@ export class ExcalidrawAutomate {
    * @param {string} str - The string to compress.
    * @returns {string} The compressed base64 string.
    */
-  public compressToBase64(str:string): string {
+  public compressToBase64(str: string): string {
     return LZString.compressToBase64(str);
   }
 
@@ -494,13 +608,13 @@ export class ExcalidrawAutomate {
    * @param {string} data - The base64 string to decompress.
    * @returns {string} The decompressed string.
    */
-  public decompressFromBase64(data:string): string {
+  public decompressFromBase64(data: string): string {
     if (!data) throw new Error("No input string provided for decompression.");
-    let cleanedData = '';
+    let cleanedData = "";
     const length = data.length;
     for (let i = 0; i < length; i++) {
       const char = data[i];
-      if (char !== '\\n' && char !== '\\r') {
+      if (char !== "\\n" && char !== "\\r") {
         cleanedData += char;
       }
     }
@@ -513,7 +627,7 @@ export class ExcalidrawAutomate {
    * - create excalidraw file
    * - cancel action
    * The new file will be relative to this.targetView.file.path, unless parentFile is provided.
-   * If shouldOpenNewFile is true, the new file will be opened in a workspace leaf. 
+   * If shouldOpenNewFile is true, the new file will be opened in a workspace leaf.
    * targetPane control which leaf will be used for the new file.
    * Returns the TFile for the new file or null if the user cancelled the action.
    * @param {string} newFileNameOrPath - The new file name or path.
@@ -539,8 +653,8 @@ export class ExcalidrawAutomate {
       keys: modifierKeys,
       view: this.targetView,
       openNewFile: shouldOpenNewFile,
-      parentFile: parentFile
-    })
+      parentFile: parentFile,
+    });
     newFilePrompt.open();
     return await newFilePrompt.waitForClose;
   }
@@ -551,12 +665,9 @@ export class ExcalidrawAutomate {
    * @param {PaneTarget} [targetPane] - The target pane for the new leaf.
    * @returns {WorkspaceLeaf} The new or adjacent workspace leaf.
    */
-  public getLeaf (
-    origo: WorkspaceLeaf,
-    targetPane?: PaneTarget,
-  ): WorkspaceLeaf {
-    const modifierKeys = emulateKeysForLinkClick(targetPane??"new-tab");
-    return getLeaf(this.plugin,origo,modifierKeys);
+  public getLeaf(origo: WorkspaceLeaf, targetPane?: PaneTarget): WorkspaceLeaf {
+    const modifierKeys = emulateKeysForLinkClick(targetPane ?? "new-tab");
+    return getLeaf(this.plugin, origo, modifierKeys);
   }
 
   /**
@@ -567,21 +678,30 @@ export class ExcalidrawAutomate {
    * @param {ExcalidrawView} [view] - The view to check.
    * @returns {{view:any}|{file:TFile, editor:Editor}|null} The active embeddable view or editor.
    */
-  public getActiveEmbeddableViewOrEditor (view?:ExcalidrawView): {view:any}|{file:TFile, editor:Editor}|{node: ObsidianCanvasNode}|null {
+  public getActiveEmbeddableViewOrEditor(
+    view?: ExcalidrawView,
+  ):
+    | { view: any }
+    | { file: TFile; editor: Editor }
+    | { node: ObsidianCanvasNode }
+    | null {
     if (!this.targetView && !view) {
       return null;
     }
     view = view ?? this.targetView;
     const leafOrNode = view.getActiveEmbeddable();
-    if(leafOrNode) {
-      if(leafOrNode.node && leafOrNode.node.isEditing) {
-        return {file: leafOrNode.node.file, editor: leafOrNode.node.child.editor};
+    if (leafOrNode) {
+      if (leafOrNode.node && leafOrNode.node.isEditing) {
+        return {
+          file: leafOrNode.node.file,
+          editor: leafOrNode.node.child.editor,
+        };
       }
-      if(leafOrNode.node) {
-        return {node: leafOrNode.node};
+      if (leafOrNode.node) {
+        return { node: leafOrNode.node };
       }
-      if(leafOrNode.leaf && leafOrNode.leaf.view) {
-        return {view: leafOrNode.leaf.view};
+      if (leafOrNode.leaf && leafOrNode.leaf.view) {
+        return { view: leafOrNode.leaf.view };
       }
     }
     return null;
@@ -592,8 +712,8 @@ export class ExcalidrawAutomate {
    * @param {TFile} [file] - The file to check.
    * @returns {boolean} True if the file is a mask file, false otherwise.
    */
-  public isExcalidrawMaskFile(file?:TFile): boolean {
-    if(file) {
+  public isExcalidrawMaskFile(file?: TFile): boolean {
+    if (file) {
       return this.isExcalidrawFile(file) && isMaskFile(this.plugin, file);
     }
     if (!this.targetView || !this.targetView?.file) {
@@ -604,9 +724,9 @@ export class ExcalidrawAutomate {
   }
 
   plugin: ExcalidrawPlugin;
-  elementsDict: {[key:string]:any}; //contains the ExcalidrawElements currently edited in Automate indexed by el.id
-  imagesDict: {[key: FileId]: ImageInfo}; //the images files including DataURL, indexed by fileId
-  mostRecentMarkdownSVG:SVGSVGElement = null; //Markdown renderer will drop a copy of the most recent SVG here for debugging purposes
+  elementsDict: { [key: string]: any }; //contains the ExcalidrawElements currently edited in Automate indexed by el.id
+  imagesDict: { [key: FileId]: ImageInfo }; //the images files including DataURL, indexed by fileId
+  mostRecentMarkdownSVG: SVGSVGElement = null; //Markdown renderer will drop a copy of the most recent SVG here for debugging purposes
   style: {
     strokeColor: string; //https://www.w3schools.com/colors/default.asp
     backgroundColor: string;
@@ -651,8 +771,10 @@ export class ExcalidrawAutomate {
    * In this case the script may wish to reuse the existing tab rather than create a new one.
    * @param scriptName - Optional script name to query. Defaults to ea.activeScript.
    * @returns The ExcalidrawSidepanelTab for the script, or undefined if none exists.
-*/
-  public checkForActiveSidepanelTabForScript(scriptName?: string): ExcalidrawSidepanelTab | null {
+   */
+  public checkForActiveSidepanelTabForScript(
+    scriptName?: string,
+  ): ExcalidrawSidepanelTab | null {
     scriptName = scriptName ?? this.activeScript;
     if (!scriptName) {
       return null;
@@ -664,13 +786,12 @@ export class ExcalidrawAutomate {
     return spView.getTabByScript(scriptName);
   }
 
-
   /**
    * Creates a new sidepanel tab associated with this ExcalidrawAutomate instance.
    * If a sidepanel tab already exists for this instance, it will be closed first.
    * @param title - The title of the sidepanel tab.
-   * @param options 
-   * @returns 
+   * @param options
+   * @returns
    */
   public async createSidepanelTab(
     title: string,
@@ -681,7 +802,10 @@ export class ExcalidrawAutomate {
       this.sidepanelTab.close();
     }
     const scriptName = this.activeScript ?? nanoid(); //random name if no active script
-    const spView = await ExcalidrawSidepanelView.getOrCreate(this.plugin, reveal);
+    const spView = await ExcalidrawSidepanelView.getOrCreate(
+      this.plugin,
+      reveal,
+    );
     if (!spView) {
       errorMessage("Unable to open sidepanel", "createSidepanelTab()");
       return null;
@@ -694,8 +818,6 @@ export class ExcalidrawAutomate {
     }
     return tab;
   }
-
-  
 
   /**
    * Returns the WorkspaceLeaf hosting the Excalidraw sidepanel view.
@@ -747,12 +869,15 @@ export class ExcalidrawAutomate {
 
   /**
    * Pins the active script's sidepanel tab to be persistent across Obsidian restarts.
-   * @param options 
+   * @param options
    * @returns {Promise<ExcalidrawSidepanelTab | null>} The persisted sidepanel tab or null on error.
    */
   public persistSidepanelTab(): ExcalidrawSidepanelTab | null {
     if (!this.activeScript && !this.sidepanelTab) {
-      errorMessage("No active script and sidepanel tab to persist", "persistSidepanelTab()");
+      errorMessage(
+        "No active script and sidepanel tab to persist",
+        "persistSidepanelTab()",
+      );
       return null;
     }
     const spView = ExcalidrawSidepanelView.getExisting();
@@ -771,9 +896,18 @@ export class ExcalidrawAutomate {
    * @param {HTMLElement} [widthWrapper] - Optional element to determine suggester width.
    * @returns {KeyBlocker} The suggester instance; call close() to detach; call .isBlockingKeys() to check if suggester dropdown is open.
    */
-  public attachInlineLinkSuggester(inputEl: HTMLInputElement, widthWrapper?: HTMLElement): KeyBlocker {
+  public attachInlineLinkSuggester(
+    inputEl: HTMLInputElement,
+    widthWrapper?: HTMLElement,
+  ): KeyBlocker {
     const getSourcePath = () => this.targetView?.file?.path;
-    return new InlineLinkSuggester(this.plugin.app, this.plugin, inputEl, getSourcePath, widthWrapper);
+    return new InlineLinkSuggester(
+      this.plugin.app,
+      this.plugin,
+      inputEl,
+      getSourcePath,
+      widthWrapper,
+    );
   }
 
   /**
@@ -786,8 +920,8 @@ export class ExcalidrawAutomate {
    * @param {string} text - Raw text to parse.
    * @returns {Promise<string | undefined>} Parsed text, or undefined when input/view is unavailable.
    */
-  public async parseText (text: string): Promise<string | undefined> {
-    if(!text) return;
+  public async parseText(text: string): Promise<string | undefined> {
+    if (!text) return;
     if (!this.targetView || !this.targetView?._loaded) return;
     if (!this.targetView.excalidrawData) return;
     if (isImageOrPDFTransclusion(this, text)) return text;
@@ -798,7 +932,7 @@ export class ExcalidrawAutomate {
    * Returns the last recorded pointer position on the Excalidraw canvas.
    * @returns {{x:number, y:number}} The last recorded pointer position.
    */
-  public getViewLastPointerPosition(): {x:number, y:number} {
+  public getViewLastPointerPosition(): { x: number; y: number } {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "getExcalidrawAPI()");
       return null;
@@ -810,17 +944,17 @@ export class ExcalidrawAutomate {
    * Returns the center position of the current view in Excalidraw coordinates.
    * @returns {{x:number, y:number}} The center position of the view.
    */
-  public getViewCenterPosition(): {x:number, y:number} {
+  public getViewCenterPosition(): { x: number; y: number } {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "getExcalidrawAPI()");
       return null;
     }
-    const st = (this.getExcalidrawAPI()).getAppState();
+    const st = this.getExcalidrawAPI().getAppState();
     if (!st) return null;
 
     const zoom = st.zoom?.value ?? 1;
-    const x = -st.scrollX + (st.width / 2) / zoom;
-    const y = -st.scrollY + (st.height / 2) / zoom;
+    const x = -st.scrollX + st.width / 2 / zoom;
+    const y = -st.scrollY + st.height / 2 / zoom;
 
     return { x, y };
   }
@@ -830,7 +964,7 @@ export class ExcalidrawAutomate {
    * @param {ExcalidrawView} [view] - The view to get the API for.
    * @returns {ExcalidrawAutomate} The Excalidraw API.
    */
-  public getAPI(view?:ExcalidrawView):ExcalidrawAutomate {
+  public getAPI(view?: ExcalidrawView): ExcalidrawAutomate {
     const ea = new ExcalidrawAutomate(this.plugin, view);
     this.plugin.eaInstances.push(ea);
     return ea;
@@ -841,7 +975,7 @@ export class ExcalidrawAutomate {
    * @param {number} val - The fill style value (0: "hachure", 1: "cross-hatch", 2: "solid").
    * @returns {"hachure"|"cross-hatch"|"solid"} The fill style string.
    */
-  setFillStyle(val: number):"hachure"|"cross-hatch"|"solid" {
+  setFillStyle(val: number): "hachure" | "cross-hatch" | "solid" {
     switch (val) {
       case 0:
         this.style.fillStyle = "hachure";
@@ -853,14 +987,14 @@ export class ExcalidrawAutomate {
         this.style.fillStyle = "solid";
         return "solid";
     }
-  };
+  }
 
   /**
    * Sets the stroke style for new elements.
    * @param {number} val - The stroke style value (0: "solid", 1: "dashed", 2: "dotted").
    * @returns {"solid"|"dashed"|"dotted"} The stroke style string.
    */
-  setStrokeStyle(val: number):"solid"|"dashed"|"dotted" {
+  setStrokeStyle(val: number): "solid" | "dashed" | "dotted" {
     switch (val) {
       case 0:
         this.style.strokeStyle = "solid";
@@ -872,42 +1006,42 @@ export class ExcalidrawAutomate {
         this.style.strokeStyle = "dotted";
         return "dotted";
     }
-  };
+  }
 
   /**
    * Sets the stroke sharpness for new elements.
    * @param {number} val - The stroke sharpness value (0: "round", 1: "sharp").
    * @returns {"round"|"sharp"} The stroke sharpness string.
    */
-  setStrokeSharpness(val: number):"round"|"sharp" {
+  setStrokeSharpness(val: number): "round" | "sharp" {
     switch (val) {
       case 0:
         this.style.roundness = {
-          type: ROUNDNESS.LEGACY
-        }
+          type: ROUNDNESS.LEGACY,
+        };
         return "round";
       default:
         this.style.roundness = null; //sharp
         return "sharp";
     }
-  };
+  }
 
   /**
    * Sets the font family for new text elements.
    * @param {number} val - The font family value (1: Virgil, 2: Helvetica, 3: Cascadia).
    * @returns {string} The font family string.
    */
-  setFontFamily(val: number):string {
+  setFontFamily(val: number): string {
     this.style.fontFamily = val;
-    return getFontFamilyString({fontFamily:val})
-  };
+    return getFontFamilyString({ fontFamily: val });
+  }
 
   /**
    * Sets the theme for the canvas.
    * @param {number} val - The theme value (0: "light", 1: "dark").
    * @returns {"light"|"dark"} The theme string.
    */
-  setTheme(val: number):"light"|"dark" {
+  setTheme(val: number): "light" | "dark" {
     switch (val) {
       case 0:
         this.canvas.theme = "light";
@@ -916,7 +1050,7 @@ export class ExcalidrawAutomate {
         this.canvas.theme = "dark";
         return "dark";
     }
-  };
+  }
 
   /**
    * Generates a groupID and adds the groupId to all the elements in the objectIds array. Essentially grouping the elements in the view.
@@ -929,7 +1063,7 @@ export class ExcalidrawAutomate {
       this.elementsDict[objectId]?.groupIds?.push(id);
     });
     return id;
-  };
+  }
 
   /**
    * Copies elements from ExcalidrawAutomate to the clipboard as a valid Excalidraw JSON string.
@@ -942,13 +1076,16 @@ export class ExcalidrawAutomate {
           templatePath,
           false,
           new EmbeddedFilesLoader(this.plugin),
-          0
+          0,
         )
       : null;
     let elements = template ? template.elements : [];
     elements = elements.concat(this.getElements());
 
-    const files: Record<FileId, {mimeType: MimeType; id: FileId; dataURL: DataURL; created: number}> = {
+    const files: Record<
+      FileId,
+      { mimeType: MimeType; id: FileId; dataURL: DataURL; created: number }
+    > = {
       ...(template?.files ?? {}),
     };
 
@@ -972,27 +1109,35 @@ export class ExcalidrawAutomate {
         files,
       }),
     );
-  };
+  }
 
   /**
    * Extracts the Excalidraw Scene from an Excalidraw File.
    * @param {TFile} file - The Excalidraw file to extract the scene from.
    * @returns {Promise<{elements: ExcalidrawElement[]; appState: AppState;}>} Promise resolving to the Excalidraw scene.
    */
-  async getSceneFromFile(file: TFile): Promise<{elements: ExcalidrawElement[]; appState: AppState;}> {
-    if(!file) {
+  async getSceneFromFile(
+    file: TFile,
+  ): Promise<{ elements: ExcalidrawElement[]; appState: AppState }> {
+    if (!file) {
       errorMessage("file not found", "getScene()");
       return null;
     }
-    if(!this.isExcalidrawFile(file)) {
+    if (!this.isExcalidrawFile(file)) {
       errorMessage("file is not an Excalidraw file", "getScene()");
       return null;
     }
-    const template = await getTemplate(this.plugin,file.path,false,new EmbeddedFilesLoader(this.plugin),0);
+    const template = await getTemplate(
+      this.plugin,
+      file.path,
+      false,
+      new EmbeddedFilesLoader(this.plugin),
+      0,
+    );
     return {
       elements: template.elements,
-      appState: template.appState
-    }
+      appState: template.appState,
+    };
   }
 
   /**
@@ -1006,8 +1151,8 @@ export class ExcalidrawAutomate {
       elements.push(this.elementsDict[elementIds[i]]);
     }
     return elements;
-  };
-  
+  }
+
   /**
    * Gets a single element from ExcalidrawAutomate elementsDict.
    * @param {string} id - The element ID to retrieve.
@@ -1015,13 +1160,13 @@ export class ExcalidrawAutomate {
    */
   getElement(id: string): Mutable<ExcalidrawElement> {
     return this.elementsDict[id];
-  };
+  }
 
   /**
    * Returns an object describing the bound text element.
-   * 
-   * IMPORTANT: The returned object contains EITHER `eaElement` OR `sceneElement`, never both. 
-   * 
+   *
+   * IMPORTANT: The returned object contains EITHER `eaElement` OR `sceneElement`, never both.
+   *
    * If a text element is provided:
    *  - returns { eaElement } if the element is in ea.elementsDict
    *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
@@ -1030,7 +1175,7 @@ export class ExcalidrawAutomate {
    *  - else (if searchInView is true) returns { sceneElement } if found in the targetView scene
    * If not found, returns {}.
    * Does not add the text element to elementsDict.
-   * 
+   *
    * Recommended usage pattern for editing:
    * const boundText = ea.getBoundTextElement(container, true);
    * let textEl = boundText.eaElement;
@@ -1043,10 +1188,13 @@ export class ExcalidrawAutomate {
    * @param searchInView - If true, searches in the targetView elements if not found in elementsDict.
    * @returns Object containing either eaElement or sceneElement or empty if not found.
    */
-  getBoundTextElement(element: ExcalidrawElement|ExcalidrawElement[], searchInView: boolean = false): {
-    eaElement?: Mutable<ExcalidrawTextElement>,
-    sceneElement?: ExcalidrawTextElement
-    } {
+  getBoundTextElement(
+    element: ExcalidrawElement | ExcalidrawElement[],
+    searchInView: boolean = false,
+  ): {
+    eaElement?: Mutable<ExcalidrawTextElement>;
+    sceneElement?: ExcalidrawTextElement;
+  } {
     if (!element) {
       return {};
     }
@@ -1055,34 +1203,43 @@ export class ExcalidrawAutomate {
     } else if (Array.isArray(element)) {
       return {};
     }
-    if(element.type === "text") {
-      if(element.id in this.elementsDict) {
-        return {eaElement: element as Mutable<ExcalidrawTextElement>};
+    if (element.type === "text") {
+      if (element.id in this.elementsDict) {
+        return { eaElement: element as Mutable<ExcalidrawTextElement> };
       }
 
       if (searchInView && this.targetView && this.targetView._loaded) {
         const viewElements = this.getViewElements();
         const ve = viewElements.find((e) => e.id === element.id);
-        if(ve) {
+        if (ve) {
           return {
-            sceneElement: ve as ExcalidrawTextElement
+            sceneElement: ve as ExcalidrawTextElement,
           };
         }
       }
       return {};
     }
-    const boundElement = element.boundElements?.find((be) => be.type === "text");
+    const boundElement = element.boundElements?.find(
+      (be) => be.type === "text",
+    );
     if (!boundElement) {
       return {};
     }
-    let textElement = this.elementsDict[boundElement.id] as Mutable<ExcalidrawTextElement>;
+    let textElement = this.elementsDict[
+      boundElement.id
+    ] as Mutable<ExcalidrawTextElement>;
     if (textElement) {
-      return {eaElement: textElement};
+      return { eaElement: textElement };
     }
-    if (!textElement && searchInView && this.targetView && this.targetView._loaded) {
+    if (
+      !textElement &&
+      searchInView &&
+      this.targetView &&
+      this.targetView._loaded
+    ) {
       const viewElements = this.getViewElements();
       const ve = viewElements.find((e) => e.id === boundElement.id);
-      return {sceneElement: ve as ExcalidrawTextElement};
+      return { sceneElement: ve as ExcalidrawTextElement };
     }
     return {};
   }
@@ -1123,22 +1280,21 @@ export class ExcalidrawAutomate {
       "excalidraw-mask"?: boolean;
       "excalidraw-open-md"?: boolean;
       "excalidraw-export-internal-links"?: boolean;
-      "cssclasses"?: string;
+      cssclasses?: string;
     };
     plaintext?: string; //text to insert above the `# Text Elements` section
   }): Promise<string> {
-
     const template = params?.templatePath
       ? await getTemplate(
           this.plugin,
           params.templatePath,
           true,
           new EmbeddedFilesLoader(this.plugin),
-          0
+          0,
         )
       : null;
     if (template?.plaintext) {
-      if(params.plaintext) {
+      if (params.plaintext) {
         params.plaintext = params.plaintext + "\n\n" + template.plaintext;
       } else {
         params.plaintext = template.plaintext;
@@ -1162,33 +1318,31 @@ export class ExcalidrawAutomate {
       }
       frontmatter += "\n---\n";
     } else {
-      frontmatter = template?.frontmatter
-        ? template.frontmatter
-        : FRONTMATTER;
+      frontmatter = template?.frontmatter ? template.frontmatter : FRONTMATTER;
     }
 
     frontmatter += params.plaintext
-      ? (params.plaintext.endsWith("\n\n")
+      ? params.plaintext.endsWith("\n\n")
         ? params.plaintext
-        : (params.plaintext.endsWith("\n") 
+        : params.plaintext.endsWith("\n")
           ? params.plaintext + "\n"
-          : params.plaintext + "\n\n"))
+          : params.plaintext + "\n\n"
       : "";
-    if(template?.frontmatter && params?.frontmatterKeys) {
+    if (template?.frontmatter && params?.frontmatterKeys) {
       //the frontmatter tags supplyed to create take priority
-      frontmatter = mergeMarkdownFiles(template.frontmatter,frontmatter);
+      frontmatter = mergeMarkdownFiles(template.frontmatter, frontmatter);
     }
 
     const templateAppstate = template?.appState ?? {};
     Object.keys(templateAppstate).forEach((key) => {
-      if(templateAppstate[key] === undefined) {
+      if (templateAppstate[key] === undefined) {
         delete templateAppstate[key];
       }
     });
     const scene = {
       type: "excalidraw",
       version: 2,
-      source: GITHUB_RELEASES+PLUGIN_VERSION,
+      source: GITHUB_RELEASES + PLUGIN_VERSION,
       elements,
       appState: {
         ...templateAppstate,
@@ -1197,19 +1351,16 @@ export class ExcalidrawAutomate {
           templateAppstate.viewBackgroundColor ??
           this.canvas.viewBackgroundColor,
         currentItemStrokeColor:
-          templateAppstate.currentItemStrokeColor ??
-          this.style.strokeColor,
+          templateAppstate.currentItemStrokeColor ?? this.style.strokeColor,
         currentItemBackgroundColor:
           templateAppstate.currentItemBackgroundColor ??
           this.style.backgroundColor,
         currentItemFillStyle:
           templateAppstate.currentItemFillStyle ?? this.style.fillStyle,
         currentItemStrokeWidth:
-          templateAppstate.currentItemStrokeWidth ??
-          this.style.strokeWidth,
+          templateAppstate.currentItemStrokeWidth ?? this.style.strokeWidth,
         currentItemStrokeStyle:
-          templateAppstate.currentItemStrokeStyle ??
-          this.style.strokeStyle,
+          templateAppstate.currentItemStrokeStyle ?? this.style.strokeStyle,
         currentItemRoughness:
           templateAppstate.currentItemRoughness ?? this.style.roughness,
         currentItemOpacity:
@@ -1224,87 +1375,113 @@ export class ExcalidrawAutomate {
           templateAppstate.currentItemStartArrowhead ??
           this.style.startArrowHead,
         currentItemEndArrowhead:
-          templateAppstate.currentItemEndArrowhead ??
-          this.style.endArrowHead,
+          templateAppstate.currentItemEndArrowhead ?? this.style.endArrowHead,
         currentItemRoundness:
-          templateAppstate.currentItemLinearStrokeSharpness ??
+          (templateAppstate.currentItemLinearStrokeSharpness ??
           templateAppstate.currentItemStrokeSharpness ??
           templateAppstate.currentItemRoundness ??
-          this.style.roundness ? "round":"sharp",
+          this.style.roundness)
+            ? "round"
+            : "sharp",
         gridSize: templateAppstate.gridSize ?? this.canvas.gridSize,
         colorPalette: templateAppstate.colorPalette ?? this.colorPalette,
       },
       files: template?.files ?? {},
     };
 
-    const generateMD = ():string => {
-      const textElements = this.getElements().filter(el => el.type === "text") as ExcalidrawTextElement[];
+    const generateMD = (): string => {
+      const textElements = this.getElements().filter(
+        (el) => el.type === "text",
+      ) as ExcalidrawTextElement[];
       let outString = `# Excalidraw Data\n\n## Text Elements\n`;
-      textElements.forEach(te=> {
-        outString += `${te.rawText ?? (te.originalText ?? te.text)} ^${te.id}\n\n`;
+      textElements.forEach((te) => {
+        outString += `${te.rawText ?? te.originalText ?? te.text} ^${te.id}\n\n`;
       });
 
-      const elementsWithLinks = this.getElements().filter( el => el.type !== "text" && el.link)
-      elementsWithLinks.forEach(el=>{
+      const elementsWithLinks = this.getElements().filter(
+        (el) => el.type !== "text" && el.link,
+      );
+      elementsWithLinks.forEach((el) => {
         outString += `${el.link} ^${el.id}\n\n`;
-      })
-  
-      outString += Object.keys(this.imagesDict).length > 0
-        ? `\n## Embedded Files\n`
-        : "\n";
-        
-      const embeddedFile = (key: FileId, path: string, colorMap?:ColorMap): string => {
-        return `${key}: [[${path}]]${colorMap ? " " + JSON.stringify(colorMap): ""}\n\n`;
-      }
+      });
 
-      Object.keys(this.imagesDict).forEach((key: FileId)=> {
+      outString +=
+        Object.keys(this.imagesDict).length > 0
+          ? `\n## Embedded Files\n`
+          : "\n";
+
+      const embeddedFile = (
+        key: FileId,
+        path: string,
+        colorMap?: ColorMap,
+      ): string => {
+        return `${key}: [[${path}]]${colorMap ? " " + JSON.stringify(colorMap) : ""}\n\n`;
+      };
+
+      Object.keys(this.imagesDict).forEach((key: FileId) => {
         const item = this.imagesDict[key];
-        if(item.latex) {
-          outString += `${key}: $$${item.latex.trim()}$$\n\n`;  
+        if (item.latex) {
+          outString += `${key}: $$${item.latex.trim()}$$\n\n`;
         } else {
-          if(item.file) {
-            if(item.file instanceof TFile) {
-              outString += embeddedFile(key,item.file.path, item.colorMap);
+          if (item.file) {
+            if (item.file instanceof TFile) {
+              outString += embeddedFile(key, item.file.path, item.colorMap);
             } else {
-              outString += embeddedFile(key,item.file, item.colorMap);
+              outString += embeddedFile(key, item.file, item.colorMap);
             }
           } else {
             const hyperlinkSplit = item.hyperlink.split("#");
-            const file = this.plugin.app.vault.getAbstractFileByPath(hyperlinkSplit[0]);
-            if(file && file instanceof TFile) {
-              const hasFileRef = hyperlinkSplit.length === 2
+            const file = this.plugin.app.vault.getAbstractFileByPath(
+              hyperlinkSplit[0],
+            );
+            if (file && file instanceof TFile) {
+              const hasFileRef = hyperlinkSplit.length === 2;
               outString += hasFileRef
-                ? embeddedFile(key,`${file.path}#${hyperlinkSplit[1]}`, item.colorMap)
-                : embeddedFile(key,file.path, item.colorMap);
+                ? embeddedFile(
+                    key,
+                    `${file.path}#${hyperlinkSplit[1]}`,
+                    item.colorMap,
+                  )
+                : embeddedFile(key, file.path, item.colorMap);
             } else {
               outString += `${key}: ${item.hyperlink}\n\n`;
             }
           }
         }
-      })
+      });
       return outString + "%%\n";
-    }
+    };
 
     const filename = params?.filename
-      ? params.filename + (params.filename.endsWith(".md") ? "": ".excalidraw.md")
+      ? params.filename +
+        (params.filename.endsWith(".md") ? "" : ".excalidraw.md")
       : getDrawingFilename(this.plugin.settings);
-    const foldername = params?.foldername ? params.foldername : this.plugin.settings.folder;
+    const foldername = params?.foldername
+      ? params.foldername
+      : this.plugin.settings.folder;
     const initData = this.plugin.settings.compatibilityMode
       ? JSON.stringify(scene, null, "\t")
-      : frontmatter + generateMD() +
-        getMarkdownDrawingSection(JSON.stringify(scene, null, "\t"),this.plugin.settings.compress)
+      : frontmatter +
+        generateMD() +
+        getMarkdownDrawingSection(
+          JSON.stringify(scene, null, "\t"),
+          this.plugin.settings.compress,
+        );
 
-    if(params.silent) {
-      return (await this.plugin.createDrawing(filename,foldername,initData)).path;
+    if (params.silent) {
+      return (await this.plugin.createDrawing(filename, foldername, initData))
+        .path;
     } else {
       return this.plugin.createAndOpenDrawing(
         filename,
-        (params?.onNewPane ? params.onNewPane : false)?"new-pane":"active-pane",
+        (params?.onNewPane ? params.onNewPane : false)
+          ? "new-pane"
+          : "active-pane",
         foldername,
-        initData
+        initData,
       );
     }
-  };
+  }
 
   /**
    * Returns the dimensions of a standard page size in pixels.
@@ -1320,8 +1497,11 @@ export class ExcalidrawAutomate {
    * @example
    * const dimensions = getPageDimensions("A4", "portrait");
    * console.log(dimensions); // { width: 794.56, height: 1122.56 }
-  */
-  getPagePDFDimensions(pageSize: PageSize, orientation: PageOrientation): PageDimensions {
+   */
+  getPagePDFDimensions(
+    pageSize: PageSize,
+    orientation: PageOrientation,
+  ): PageDimensions {
     return getPageDimensions(pageSize, orientation);
   }
 
@@ -1346,7 +1526,7 @@ export class ExcalidrawAutomate {
    *   }
    *   filename: "example.pdf",
    * });
-  */
+   */
   async createPDF({
     SVG,
     scale = { fitToPage: 1, zoom: 1 },
@@ -1358,71 +1538,71 @@ export class ExcalidrawAutomate {
     pageProps?: PDFPageProperties;
     filename: string;
   }): Promise<void> {
-    if(!pageProps) {
+    if (!pageProps) {
       pageProps = {
         alignment: this.plugin.settings.pdfSettings.alignment,
         margin: getMarginValue(this.plugin.settings.pdfSettings.margin),
       };
     }
 
-    if(!pageProps.dimensions) {
+    if (!pageProps.dimensions) {
       pageProps.dimensions = getPageDimensions(
         this.plugin.settings.pdfSettings.pageSize,
-        this.plugin.settings.pdfSettings.pageOrientation
-      )
+        this.plugin.settings.pdfSettings.pageOrientation,
+      );
     }
-    if(!pageProps.backgroundColor) {
+    if (!pageProps.backgroundColor) {
       pageProps.backgroundColor = "#ffffff";
     }
-    
-    await exportToPDF({SVG, scale, pageProps, filename});
+
+    await exportToPDF({ SVG, scale, pageProps, filename });
   }
 
- /**
-  * Creates an SVG representation of the current view.
-  *
-  * @param {Object} options - The options for creating the SVG.
-  * @param {boolean} [options.withBackground=true] - Whether to include the background in the SVG.
-  * @param {"light" | "dark"} [options.theme] - The theme to use for the SVG.
-  * @param {FrameRenderingOptions} [options.frameRendering={enabled: true, name: true, outline: true, clip: true}] - The frame rendering options.
-  * @param {number} [options.padding] - The padding to apply around the SVG.
-  * @param {boolean} [options.selectedOnly=false] - Whether to include only the selected elements in the SVG.
-  * @param {boolean} [options.skipInliningFonts=false] - Whether to skip inlining fonts in the SVG.
-  * @param {boolean} [options.embedScene=false] - Whether to embed the scene in the SVG.
-  * @param {ExcalidrawElement[]} [options.elementsOverride] - Optional override for the elements to include in the SVG. Primary to support the Printable Layout Wizard script
-  * @returns {Promise<SVGSVGElement>} A promise that resolves to the SVG element.
- */
+  /**
+   * Creates an SVG representation of the current view.
+   *
+   * @param {Object} options - The options for creating the SVG.
+   * @param {boolean} [options.withBackground=true] - Whether to include the background in the SVG.
+   * @param {"light" | "dark"} [options.theme] - The theme to use for the SVG.
+   * @param {FrameRenderingOptions} [options.frameRendering={enabled: true, name: true, outline: true, clip: true}] - The frame rendering options.
+   * @param {number} [options.padding] - The padding to apply around the SVG.
+   * @param {boolean} [options.selectedOnly=false] - Whether to include only the selected elements in the SVG.
+   * @param {boolean} [options.skipInliningFonts=false] - Whether to skip inlining fonts in the SVG.
+   * @param {boolean} [options.embedScene=false] - Whether to embed the scene in the SVG.
+   * @param {ExcalidrawElement[]} [options.elementsOverride] - Optional override for the elements to include in the SVG. Primary to support the Printable Layout Wizard script
+   * @returns {Promise<SVGSVGElement>} A promise that resolves to the SVG element.
+   */
   async createViewSVG({
     withBackground = true,
     theme,
-    frameRendering = {enabled: true, name: true, outline: true, clip: true},
+    frameRendering = { enabled: true, name: true, outline: true, clip: true },
     padding,
     selectedOnly = false,
     skipInliningFonts = false,
     embedScene = false,
     elementsOverride,
-  } : {
-    withBackground?: boolean,
-    theme?: "light" | "dark",
-    frameRendering?: FrameRenderingOptions,
-    padding?: number,
-    selectedOnly?: boolean,
-    skipInliningFonts?: boolean,
-    embedScene?: boolean,
-    elementsOverride?: ExcalidrawElement[]
+  }: {
+    withBackground?: boolean;
+    theme?: "light" | "dark";
+    frameRendering?: FrameRenderingOptions;
+    padding?: number;
+    selectedOnly?: boolean;
+    skipInliningFonts?: boolean;
+    embedScene?: boolean;
+    elementsOverride?: ExcalidrawElement[];
   }): Promise<SVGSVGElement> {
-    if(!this.targetView || !this.targetView.file || !this.targetView._loaded) {
+    if (!this.targetView || !this.targetView.file || !this.targetView._loaded) {
       console.log("No view loaded");
       return;
     }
     const view = this.targetView;
     const scene = this.targetView.getScene(selectedOnly);
 
-    if(elementsOverride) {
+    if (elementsOverride) {
       scene.elements = elementsOverride;
     }
 
-    if(!view.getViewExportIncludeInternalLinks()) {
+    if (!view.getViewExportIncludeInternalLinks()) {
       scene.elements = sceneRemoveInternalLinks(scene);
     }
 
@@ -1464,7 +1644,7 @@ export class ExcalidrawAutomate {
   async createSVG(
     templatePath?: string,
     embedFont: boolean = false,
-    exportSettings?: ExportSettings, 
+    exportSettings?: ExportSettings,
     loader?: EmbeddedFilesLoader,
     theme?: string,
     padding?: number,
@@ -1477,8 +1657,8 @@ export class ExcalidrawAutomate {
           ? "dark"
           : "light"
         : !this.plugin.settings.exportWithTheme
-        ? "light"
-        : undefined;
+          ? "light"
+          : undefined;
     }
     if (!exportSettings) {
       exportSettings = {
@@ -1487,7 +1667,7 @@ export class ExcalidrawAutomate {
         isMask: false,
         skipInliningFonts: !embedFont,
       };
-    }  
+    }
     if (!loader) {
       loader = new EmbeddedFilesLoader(
         this.plugin,
@@ -1511,9 +1691,8 @@ export class ExcalidrawAutomate {
       convertMarkdownLinksToObsidianURLs,
       includeInternalLinks,
     );
-  };
+  }
 
-  
   /**
    * Creates a PNG image from the ExcalidrawAutomate elements and the template provided.
    * @param {string} [templatePath] - The template path to use for the PNG.
@@ -1538,8 +1717,8 @@ export class ExcalidrawAutomate {
           ? "dark"
           : "light"
         : !this.plugin.settings.exportWithTheme
-        ? "light"
-        : undefined;
+          ? "light"
+          : undefined;
     }
     if (theme && !exportSettings) {
       exportSettings = {
@@ -1569,7 +1748,7 @@ export class ExcalidrawAutomate {
       padding,
       this.imagesDict,
     );
-  };
+  }
 
   /**
    * Wrapper for createPNG() that returns a base64 encoded string designed to support LLM workflows.
@@ -1589,8 +1768,15 @@ export class ExcalidrawAutomate {
     theme?: string,
     padding?: number,
   ): Promise<string> {
-    const png = await this.createPNG(templatePath,scale,exportSettings,loader,theme,padding);
-    return `data:image/png;base64,${await blobToBase64(png)}`
+    const png = await this.createPNG(
+      templatePath,
+      scale,
+      exportSettings,
+      loader,
+      theme,
+      padding,
+    );
+    return `data:image/png;base64,${await blobToBase64(png)}`;
   }
 
   /**
@@ -1601,7 +1787,7 @@ export class ExcalidrawAutomate {
    */
   wrapText(text: string, lineLen: number): string {
     return wrapTextAtCharLength(text, lineLen, this.plugin.settings.forceWrap);
-  };
+  }
 
   /** ROUNDNESS as defined in the Excalidraw packages/common/src/constants.ts
    * Radius represented as 25% of element's largest side (width/height).
@@ -1671,9 +1857,9 @@ export class ExcalidrawAutomate {
       roughness: this.style.roughness,
       opacity: this.style.opacity,
       roundness: this.style.strokeSharpness
-        ? (this.style.strokeSharpness === "round"
-          ? {type: ROUNDNESS.ADAPTIVE_RADIUS}
-          : null)
+        ? this.style.strokeSharpness === "round"
+          ? { type: ROUNDNESS.ADAPTIVE_RADIUS }
+          : null
         : this.style.roundness,
       seed: Math.floor(Math.random() * 100000),
       version: 1,
@@ -1686,7 +1872,7 @@ export class ExcalidrawAutomate {
       locked: false,
       frameId: null as string,
       hasTextLink: eltype === "text" && link ? true : false,
-      ...scale ? {scale} : {},
+      ...(scale ? { scale } : {}),
     };
   }
 
@@ -1702,8 +1888,16 @@ export class ExcalidrawAutomate {
    * @param {string} [html] - The HTML content for the iframe.
    * @returns {string} The ID of the added iframe element.
    */
-  addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile, html?: string): string {
-    if(html) {
+  addIFrame(
+    topX: number,
+    topY: number,
+    width: number,
+    height: number,
+    url?: string,
+    file?: TFile,
+    html?: string,
+  ): string {
+    if (html) {
       const id = nanoid();
       this.elementsDict[id] = this.boxedElement(
         id,
@@ -1713,7 +1907,7 @@ export class ExcalidrawAutomate {
         width,
         height,
         null,
-        [1,1],
+        [1, 1],
       );
       this.elementsDict[id].customData = {
         generationData: { status: "done", html },
@@ -1753,11 +1947,14 @@ export class ExcalidrawAutomate {
     }
 
     if (!url && !file) {
-      errorMessage("Either the url or the file must be set. If both are provided the URL takes precedence", "addEmbeddable()");
+      errorMessage(
+        "Either the url or the file must be set. If both are provided the URL takes precedence",
+        "addEmbeddable()",
+      );
       return null;
     }
 
-    let scale: [number, number] = [1,1];
+    let scale: [number, number] = [1, 1];
 
     if (url) {
       let { w, h } = getAspectRatio(url);
@@ -1789,29 +1986,34 @@ export class ExcalidrawAutomate {
       topY,
       width,
       height,
-      url ? url : file ? `[[${
-        this.plugin.app.metadataCache.fileToLinktext(
-          file,
-          this.targetView.file.path,
-          false, //file.extension === "md", //changed this to false because embedable link navigation in ExcaliBrain
-        )
-      }]]` : "",
+      url
+        ? url
+        : file
+          ? `[[${this.plugin.app.metadataCache.fileToLinktext(
+              file,
+              this.targetView.file.path,
+              false, //file.extension === "md", //changed this to false because embedable link navigation in ExcaliBrain
+            )}]]`
+          : "",
       scale,
     );
-    this.elementsDict[id].customData = {mdProps: embeddableCustomData ?? this.plugin.settings.embeddableMarkdownDefaults};
+    this.elementsDict[id].customData = {
+      mdProps:
+        embeddableCustomData ?? this.plugin.settings.embeddableMarkdownDefaults,
+    };
     return id;
-  };
+  }
 
   /**
    * Add elements to frame.
    * @param {string} frameId - The ID of the frame element.
    * @param {string[]} elementIDs - Array of element IDs to add to the frame.
    */
-  addElementsToFrame(frameId: string, elementIDs: string[]):void {
-    if(!this.getElement(frameId)) return;
-    elementIDs.forEach(elID => {
+  addElementsToFrame(frameId: string, elementIDs: string[]): void {
+    if (!this.getElement(frameId)) return;
+    elementIDs.forEach((elID) => {
       const el = this.getElement(elID);
-      if(el) {
+      if (el) {
         el.frameId = frameId;
       }
     });
@@ -1826,7 +2028,13 @@ export class ExcalidrawAutomate {
    * @param {string} [name] - The display name of the frame.
    * @returns {string} The ID of the added frame element.
    */
-  addFrame(topX: number, topY: number, width: number, height: number, name?: string): string {
+  addFrame(
+    topX: number,
+    topY: number,
+    width: number,
+    height: number,
+    name?: string,
+  ): string {
     const id = this.addRect(topX, topY, width, height);
     const frame = this.getElement(id) as Mutable<ExcalidrawFrameElement>;
     frame.type = "frame";
@@ -1836,7 +2044,7 @@ export class ExcalidrawAutomate {
     frame.strokeWidth = 2;
     frame.roughness = 0;
     frame.roundness = null;
-    if(name) frame.name = name;
+    if (name) frame.name = name;
     return id;
   }
 
@@ -1849,8 +2057,14 @@ export class ExcalidrawAutomate {
    * @param {string} [id] - The ID of the rectangle element.
    * @returns {string} The ID of the added rectangle element.
    */
-  addRect(topX: number, topY: number, width: number, height: number, id?: string): string {
-    if(!id) id = nanoid();
+  addRect(
+    topX: number,
+    topY: number,
+    width: number,
+    height: number,
+    id?: string,
+  ): string {
+    if (!id) id = nanoid();
     this.elementsDict[id] = this.boxedElement(
       id,
       "rectangle",
@@ -1860,7 +2074,7 @@ export class ExcalidrawAutomate {
       height,
     );
     return id;
-  };
+  }
 
   /**
    * Adds a diamond element to the ExcalidrawAutomate instance.
@@ -1878,7 +2092,7 @@ export class ExcalidrawAutomate {
     height: number,
     id?: string,
   ): string {
-    if(!id) id = nanoid();
+    if (!id) id = nanoid();
     this.elementsDict[id] = this.boxedElement(
       id,
       "diamond",
@@ -1888,7 +2102,7 @@ export class ExcalidrawAutomate {
       height,
     );
     return id;
-  };
+  }
 
   /**
    * Adds an ellipse element to the ExcalidrawAutomate instance.
@@ -1906,7 +2120,7 @@ export class ExcalidrawAutomate {
     height: number,
     id?: string,
   ): string {
-    if(!id) id = nanoid();
+    if (!id) id = nanoid();
     this.elementsDict[id] = this.boxedElement(
       id,
       "ellipse",
@@ -1916,7 +2130,7 @@ export class ExcalidrawAutomate {
       height,
     );
     return id;
-  };
+  }
 
   /**
    * Adds a blob element to the ExcalidrawAutomate instance.
@@ -1927,7 +2141,13 @@ export class ExcalidrawAutomate {
    * @param {string} [id] - The ID of the blob element.
    * @returns {string} The ID of the added blob element.
    */
-  addBlob(topX: number, topY: number, width: number, height: number, id?: string): string {
+  addBlob(
+    topX: number,
+    topY: number,
+    width: number,
+    height: number,
+    id?: string,
+  ): string {
     const b = height * 0.5; //minor axis of the ellipsis
     const a = width * 0.5; //major axis of the ellipsis
     const sx = a / 9;
@@ -1973,7 +2193,7 @@ export class ExcalidrawAutomate {
       false,
     )[0];
     return id;
-  };
+  }
 
   /**
    * Refreshes the size of a text element to fit its contents.
@@ -1988,7 +2208,7 @@ export class ExcalidrawAutomate {
       element.text,
       element.fontSize,
       element.fontFamily,
-      getLineHeight(element.fontFamily)
+      getLineHeight(element.fontFamily),
     );
     element.width = w;
     element.height = h;
@@ -2031,16 +2251,20 @@ export class ExcalidrawAutomate {
   ): string {
     id = id ?? nanoid();
     const originalText = text;
-    const autoresize = ((typeof formatting?.width === "undefined") || formatting?.box)
-      ? true
-      : (formatting?.autoResize ?? true)
-    text = (formatting?.wrapAt && autoresize) ? this.wrapText(text, formatting.wrapAt) : text;
+    const autoresize =
+      typeof formatting?.width === "undefined" || formatting?.box
+        ? true
+        : (formatting?.autoResize ?? true);
+    text =
+      formatting?.wrapAt && autoresize
+        ? this.wrapText(text, formatting.wrapAt)
+        : text;
 
     const { w, h } = _measureText(
       text,
       this.style.fontSize,
       this.style.fontFamily,
-      getLineHeight(this.style.fontFamily)
+      getLineHeight(this.style.fontFamily),
     );
     const width = formatting?.width ? formatting.width : w;
     const height = formatting?.height ? formatting.height : h;
@@ -2092,7 +2316,7 @@ export class ExcalidrawAutomate {
       fontFamily: this.style.fontFamily,
       textAlign: formatting?.textAlign
         ? formatting.textAlign
-        : this.style.textAlign ?? "left",
+        : (this.style.textAlign ?? "left"),
       verticalAlign: formatting?.textVerticalAlign ?? this.style.verticalAlign,
       ...this.boxedElement(id, "text", topX, topY, width, height),
       containerId: isContainerBound ? boxId : null,
@@ -2112,7 +2336,10 @@ export class ExcalidrawAutomate {
       box.boundElements.push({ type: "text", id });
     }
     const textElement = this.getElement(id) as Mutable<ExcalidrawTextElement>;
-    const container = (boxId && formatting.box !== "blob") ? this.getElement(boxId) as Mutable<ExcalidrawTextContainer>: undefined;
+    const container =
+      boxId && formatting.box !== "blob"
+        ? (this.getElement(boxId) as Mutable<ExcalidrawTextContainer>)
+        : undefined;
     const dimensions = refreshTextDimensions(
       textElement,
       container,
@@ -2120,20 +2347,19 @@ export class ExcalidrawAutomate {
       originalText,
     );
 
-    if(dimensions && !formatting?.width) {
-
+    if (dimensions && !formatting?.width) {
       textElement.width = dimensions.width;
       textElement.height = dimensions.height;
       textElement.x = dimensions.x;
       textElement.y = dimensions.y;
       textElement.text = dimensions.text;
-      if(container) {
+      if (container) {
         container.width = dimensions.width + 2 * boxPadding;
         container.height = dimensions.height + 2 * boxPadding;
       }
     }
     return boxId ?? id;
-  };
+  }
 
   /**
    * Adds a line element to the ExcalidrawAutomate instance.
@@ -2151,10 +2377,17 @@ export class ExcalidrawAutomate {
       endBinding: null,
       startArrowhead: null,
       endArrowhead: null,
-      ...this.boxedElement(id, "line", points[0][0], points[0][1], box.w, box.h),
+      ...this.boxedElement(
+        id,
+        "line",
+        points[0][0],
+        points[0][1],
+        box.w,
+        box.h,
+      ),
     };
     return id;
-  };
+  }
 
   /**
    * Adds an arrow element to the ExcalidrawAutomate instance.
@@ -2167,7 +2400,7 @@ export class ExcalidrawAutomate {
    * BindMode Determines whether the arrow remains outside the shape or is allowed to
    * go all the way inside the shape up to the exact fixed point.
    * @param {"inside" | "orbit"} [formatting.startBindMode] - The binding mode for the start object.
-   * @param {"inside" | "orbit"} [formatting.endBindMode] - The binding mode for the end object. 
+   * @param {"inside" | "orbit"} [formatting.endBindMode] - The binding mode for the end object.
    * FixedPoint represents the fixed point binding information in form of a vertical and
    * horizontal ratio (i.e. a percentage value in the 0.0-1.0 range). This ratio
    * gives the user selected fixed point by multiplying the bound element width
@@ -2181,8 +2414,26 @@ export class ExcalidrawAutomate {
   addArrow(
     points: [x: number, y: number][],
     formatting?: {
-      startArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
-      endArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
+      startArrowHead?:
+        | "arrow"
+        | "bar"
+        | "circle"
+        | "circle_outline"
+        | "triangle"
+        | "triangle_outline"
+        | "diamond"
+        | "diamond_outline"
+        | null;
+      endArrowHead?:
+        | "arrow"
+        | "bar"
+        | "circle"
+        | "circle_outline"
+        | "triangle"
+        | "triangle_outline"
+        | "diamond"
+        | "diamond_outline"
+        | null;
       startObjectId?: string;
       endObjectId?: string;
       startBindMode?: "inside" | "orbit";
@@ -2200,10 +2451,14 @@ export class ExcalidrawAutomate {
     const box = getLineBox(points);
     const elbowed = formatting?.elbowed ?? false;
     const startElement = formatting?.startObjectId
-      ? this.getElement(formatting.startObjectId) as Mutable<ExcalidrawBindableElement>
+      ? (this.getElement(
+          formatting.startObjectId,
+        ) as Mutable<ExcalidrawBindableElement>)
       : null;
     const endElement = formatting?.endObjectId
-      ? this.getElement(formatting.endObjectId) as Mutable<ExcalidrawBindableElement>
+      ? (this.getElement(
+          formatting.endObjectId,
+        ) as Mutable<ExcalidrawBindableElement>)
       : null;
     id = id ?? nanoid();
     this.elementsDict[id] = {
@@ -2213,12 +2468,12 @@ export class ExcalidrawAutomate {
       startBinding: {
         elementId: formatting?.startObjectId,
         mode: startMode,
-				fixedPoint: startFixedPoint,
+        fixedPoint: startFixedPoint,
       },
       endBinding: {
         elementId: formatting?.endObjectId,
         mode: endMode,
-				fixedPoint: endFixedPoint,
+        fixedPoint: endFixedPoint,
       },
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/388
       startArrowhead:
@@ -2229,13 +2484,24 @@ export class ExcalidrawAutomate {
         typeof formatting?.endArrowHead !== "undefined"
           ? formatting.endArrowHead
           : this.style.endArrowHead,
-      ...this.boxedElement(id, "arrow", points[0][0], points[0][1], box.w, box.h),
+      ...this.boxedElement(
+        id,
+        "arrow",
+        points[0][0],
+        points[0][1],
+        box.w,
+        box.h,
+      ),
     };
     if (startElement) {
       if (!startElement.boundElements) {
         startElement.boundElements = [];
       }
-      (startElement.boundElements as Mutable<ExcalidrawElement["boundElements"]>).push({
+      (
+        startElement.boundElements as Mutable<
+          ExcalidrawElement["boundElements"]
+        >
+      ).push({
         type: "arrow",
         id,
       });
@@ -2244,13 +2510,15 @@ export class ExcalidrawAutomate {
       if (!endElement.boundElements) {
         endElement.boundElements = [];
       }
-      (endElement.boundElements as Mutable<ExcalidrawElement["boundElements"]>).push({
+      (
+        endElement.boundElements as Mutable<ExcalidrawElement["boundElements"]>
+      ).push({
         type: "arrow",
         id,
       });
     }
     return id;
-  };
+  }
 
   /**
    * Adds a mermaid diagram to ExcalidrawAutomate elements.
@@ -2261,25 +2529,23 @@ export class ExcalidrawAutomate {
   async addMermaid(
     diagram: string,
     groupElements: boolean = true,
-  ): Promise<string[]|string> {
-    const result = await mermaidToExcalidraw(
-      diagram, {
-        themeVariables: {fontSize: `${this.style.fontSize}`},
-        flowchart: {curve: this.style.roundness===null ? "linear" : "basis"},
-      }
-    );
-    const ids:string[] = [];
-    if(!result) return null;
-    if(result?.error) return result.error;
+  ): Promise<string[] | string> {
+    const result = await mermaidToExcalidraw(diagram, {
+      themeVariables: { fontSize: `${this.style.fontSize}` },
+      flowchart: { curve: this.style.roundness === null ? "linear" : "basis" },
+    });
+    const ids: string[] = [];
+    if (!result) return null;
+    if (result?.error) return result.error;
 
-    if(result?.elements) {
-      result.elements.forEach(el=>{
+    if (result?.elements) {
+      result.elements.forEach((el) => {
         ids.push(el.id);
         this.elementsDict[el.id] = el;
-      })
+      });
     }
 
-    if(result?.files) {
+    if (result?.files) {
       for (const key in result.files) {
         this.imagesDict[key as FileId] = {
           ...result.files[key],
@@ -2289,11 +2555,11 @@ export class ExcalidrawAutomate {
           file: null,
           hasSVGwithBitmap: false,
           latex: null,
-        }
-      } 
+        };
+      }
     }
 
-    if(groupElements && result?.elements && ids.length > 1) {
+    if (groupElements && result?.elements && ids.length > 1) {
       this.addToGroup(ids);
     }
     return ids;
@@ -2303,7 +2569,7 @@ export class ExcalidrawAutomate {
    * Adds an image element to the ExcalidrawAutomate instance.
    * @param {number | AddImageOptions} topXOrOpts - The x-coordinate of the top-left corner or an options object.
    * @param {number} topY - The y-coordinate of the top-left corner.
-    * @param {TFile | string} imageFile - The image file, hyperlink, vault path, PDF++ reference, or data URL.
+   * @param {TFile | string} imageFile - The image file, hyperlink, vault path, PDF++ reference, or data URL.
    * @param {boolean} [scale=true] - Whether to scale the image to MAX_IMAGE_SIZE.
    * @param {boolean} [anchor=true] - Whether to anchor the image at 100% size.
    * @returns {Promise<string>} Promise resolving to the ID of the added image element.
@@ -2315,10 +2581,9 @@ export class ExcalidrawAutomate {
     scale: boolean = true, //default is true which will scale the image to MAX_IMAGE_SIZE, false will insert image at 100% of its size
     anchor: boolean = true, //only has effect if scale is false. If anchor is true the image path will include |100%, if false the image will be inserted at 100%, but if resized by the user it won't pop back to 100% the next time Excalidraw is opened.
   ): Promise<string> {
-
     let colorMap: ColorMap;
     let topX: number;
-    if(typeof topXOrOpts === "number") {
+    if (typeof topXOrOpts === "number") {
       topX = topXOrOpts;
     } else {
       topY = topXOrOpts.topY;
@@ -2330,62 +2595,77 @@ export class ExcalidrawAutomate {
     }
 
     const pdfLinkRegex = /^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/;
-    const isDataURL = typeof imageFile === "string" && imageFile.startsWith("data:image/");
+    const isDataURL =
+      typeof imageFile === "string" && imageFile.startsWith("data:image/");
     const originalLink = typeof imageFile === "string" ? imageFile : null;
-    const imageFileForLoader = originalLink && pdfLinkRegex.test(originalLink)
-      ? originalLink.split("&rect=")[0]
-      : imageFile;
+    const imageFileForLoader =
+      originalLink && pdfLinkRegex.test(originalLink)
+        ? originalLink.split("&rect=")[0]
+        : imageFile;
 
     const id = nanoid();
     const dataURL = isDataURL ? originalLink : null;
     const image = isDataURL
       ? {
-        mimeType: dataURL.substring(5, dataURL.indexOf(";")) as MimeType,
-        fileId: fileid() as FileId,
-        dataURL: dataURL as DataURL,
-        created: Date.now(),
-        size: await getImageSize(dataURL),
-        hasSVGwithBitmap: false,
-        pdfPageViewProps: null as any,
-      }
+          mimeType: dataURL.substring(5, dataURL.indexOf(";")) as MimeType,
+          fileId: fileid() as FileId,
+          dataURL: dataURL as DataURL,
+          created: Date.now(),
+          size: await getImageSize(dataURL),
+          hasSVGwithBitmap: false,
+          pdfPageViewProps: null as any,
+        }
       : await (() => {
-        const loader = new EmbeddedFilesLoader(
-          this.plugin,
-          this.canvas.theme === "dark",
-        );
-        return typeof imageFileForLoader === "string"
-          ? loader.getObsidianImage(new EmbeddedFile(this.plugin, "", imageFileForLoader),0)
-          : loader.getObsidianImage(imageFileForLoader,0);
-      })();
-      
+          const loader = new EmbeddedFilesLoader(
+            this.plugin,
+            this.canvas.theme === "dark",
+          );
+          return typeof imageFileForLoader === "string"
+            ? loader.getObsidianImage(
+                new EmbeddedFile(this.plugin, "", imageFileForLoader),
+                0,
+              )
+            : loader.getObsidianImage(imageFileForLoader, 0);
+        })();
+
     if (!image) {
       return null;
     }
-    const fileId = typeof imageFileForLoader === "string"
-      ? image.fileId
-      : imageFileForLoader.extension === "md" || imageFileForLoader.extension.toLowerCase() === "pdf" ? fileid() as FileId : image.fileId;
+    const fileId =
+      typeof imageFileForLoader === "string"
+        ? image.fileId
+        : imageFileForLoader.extension === "md" ||
+            imageFileForLoader.extension.toLowerCase() === "pdf"
+          ? (fileid() as FileId)
+          : image.fileId;
     this.imagesDict[fileId] = {
       mimeType: image.mimeType,
       id: fileId,
       dataURL: image.dataURL,
       created: image.created,
       isHyperLink: typeof imageFileForLoader === "string" && !isDataURL,
-      hyperlink: typeof imageFileForLoader === "string" && !isDataURL
-        ? imageFileForLoader
-        : null,
-      file: typeof imageFileForLoader === "string" || isDataURL
-        ? null
-        : imageFileForLoader.path + (scale || !anchor ? "":"|100%"),
+      hyperlink:
+        typeof imageFileForLoader === "string" && !isDataURL
+          ? imageFileForLoader
+          : null,
+      file:
+        typeof imageFileForLoader === "string" || isDataURL
+          ? null
+          : imageFileForLoader.path + (scale || !anchor ? "" : "|100%"),
       hasSVGwithBitmap: image.hasSVGwithBitmap,
       latex: null,
-      size: { //must have the natural size here (e.g. for PDF cropping)
+      size: {
+        //must have the natural size here (e.g. for PDF cropping)
         height: image.size.height,
         width: image.size.width,
       },
       colorMap,
       pdfPageViewProps: image.pdfPageViewProps,
     };
-    if (scale && (Math.max(image.size.width, image.size.height) > MAX_IMAGE_SIZE)) {
+    if (
+      scale &&
+      Math.max(image.size.width, image.size.height) > MAX_IMAGE_SIZE
+    ) {
       const scale =
         MAX_IMAGE_SIZE / Math.max(image.size.width, image.size.height);
       image.size.width = scale * image.size.width;
@@ -2403,7 +2683,7 @@ export class ExcalidrawAutomate {
     newEl.fileId = fileId;
     newEl.scale = [1, 1];
     newEl.crop = null;
-    if(originalLink && pdfLinkRegex.test(originalLink)) {
+    if (originalLink && pdfLinkRegex.test(originalLink)) {
       const fd = this.imagesDict[fileId];
       newEl.crop = getPDFCropRect({
         scale: this.plugin.settings.pdfScale,
@@ -2412,18 +2692,20 @@ export class ExcalidrawAutomate {
         naturalWidth: fd.size.width,
         pdfPageViewProps: fd.pdfPageViewProps,
       });
-      addAppendUpdateCustomData(newEl, {pdfPageViewProps: fd.pdfPageViewProps});
-      if(newEl.crop) {
-        newEl.width = newEl.crop.width/this.plugin.settings.pdfScale;
-        newEl.height = newEl.crop.height/this.plugin.settings.pdfScale;
+      addAppendUpdateCustomData(newEl, {
+        pdfPageViewProps: fd.pdfPageViewProps,
+      });
+      if (newEl.crop) {
+        newEl.width = newEl.crop.width / this.plugin.settings.pdfScale;
+        newEl.height = newEl.crop.height / this.plugin.settings.pdfScale;
       }
       newEl.link = `[[${originalLink}]]`;
     }
-    if(!scale && anchor) {
-      newEl.customData = {isAnchored: true}
-    };
+    if (!scale && anchor) {
+      newEl.customData = { isAnchored: true };
+    }
     return id;
-  };
+  }
 
   /**
    * Adds a LaTeX equation as an image element to the ExcalidrawAutomate instance.
@@ -2434,8 +2716,14 @@ export class ExcalidrawAutomate {
    * @param {number} [scaleY=1] - The y-scaling factor (post mathjax creation)
    * @returns {Promise<string>} Promise resolving to the ID of the added LaTeX image element.
    */
-  async addLaTex(topX: number, topY: number, tex: string, scaleX: number = 1, scaleY: number = 1): Promise<string> {
-    if (!tex || !scaleX || !scaleY){
+  async addLaTex(
+    topX: number,
+    topY: number,
+    tex: string,
+    scaleX: number = 1,
+    scaleY: number = 1,
+  ): Promise<string> {
+    if (!tex || !scaleX || !scaleY) {
       return null;
     }
     const id = nanoid();
@@ -2461,10 +2749,10 @@ export class ExcalidrawAutomate {
       image.size.height * Math.abs(scaleY),
     );
     this.elementsDict[id].fileId = image.fileId;
-    this.addAppendUpdateCustomData(id, {latex: tex});
+    this.addAppendUpdateCustomData(id, { latex: tex });
     this.elementsDict[id].scale = [Math.sign(scaleX), Math.sign(scaleY)];
     return id;
-  };
+  }
 
   /**
    * Returns the base64 dataURL of the LaTeX equation rendered as an SVG.
@@ -2474,7 +2762,7 @@ export class ExcalidrawAutomate {
    */
   async tex2dataURL(
     tex: string,
-    scale: number = 4 // Default scale value, adjust as needed
+    scale: number = 4, // Default scale value, adjust as needed
   ): Promise<{
     mimeType: MimeType;
     fileId: FileId;
@@ -2482,8 +2770,8 @@ export class ExcalidrawAutomate {
     created: number;
     size: { height: number; width: number };
   }> {
-    return await tex2dataURL(tex,scale, this.plugin);
-  };
+    return await tex2dataURL(tex, scale, this.plugin);
+  }
 
   /**
    * Connects two objects with an arrow.
@@ -2505,8 +2793,26 @@ export class ExcalidrawAutomate {
     connectionB: ConnectionPoint | null,
     formatting?: {
       numberOfPoints?: number;
-      startArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
-      endArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
+      startArrowHead?:
+        | "arrow"
+        | "bar"
+        | "circle"
+        | "circle_outline"
+        | "triangle"
+        | "triangle_outline"
+        | "diamond"
+        | "diamond_outline"
+        | null;
+      endArrowHead?:
+        | "arrow"
+        | "bar"
+        | "circle"
+        | "circle_outline"
+        | "triangle"
+        | "triangle_outline"
+        | "diamond"
+        | "diamond_outline"
+        | null;
       padding?: number;
     },
   ): string {
@@ -2515,9 +2821,7 @@ export class ExcalidrawAutomate {
     }
 
     if (
-      ["line", "arrow", "freedraw"].includes(
-        this.elementsDict[objectA].type,
-      ) ||
+      ["line", "arrow", "freedraw"].includes(this.elementsDict[objectA].type) ||
       ["line", "arrow", "freedraw"].includes(this.elementsDict[objectB].type)
     ) {
       return;
@@ -2586,7 +2890,7 @@ export class ExcalidrawAutomate {
       [bX, bY] = getSidePoints(connectionB, this.elementsDict[objectB]);
     }
     const numAP = numberOfPoints + 2; //number of break points plus the beginning and the end
-    const points:[x:number, y:number][] = [];
+    const points: [x: number, y: number][] = [];
     for (let i = 0; i < numAP; i++) {
       points.push([
         aX + (i * (bX - aX)) / (numAP - 1),
@@ -2599,7 +2903,7 @@ export class ExcalidrawAutomate {
       startObjectId: objectA,
       endObjectId: objectB,
     });
-  };
+  }
 
   /**
    * Adds a text label to a line or arrow. Currently only works with a straight (2 point - start & end - line).
@@ -2609,32 +2913,36 @@ export class ExcalidrawAutomate {
    */
   addLabelToLine(lineId: string, label: string): string {
     const line = this.elementsDict[lineId];
-    if(!line || !["arrow","line"].includes(line.type) || line.points.length !== 2) {
+    if (
+      !line ||
+      !["arrow", "line"].includes(line.type) ||
+      line.points.length !== 2
+    ) {
       return;
     }
 
-    let angle = Math.atan2(line.points[1][1],line.points[1][0]);
+    let angle = Math.atan2(line.points[1][1], line.points[1][0]);
 
     const size = this.measureText(label);
     //let delta = size.height/6;
 
-    if(angle < 0) {
-      if(angle < -Math.PI/2) {
-        angle+= Math.PI;
+    if (angle < 0) {
+      if (angle < -Math.PI / 2) {
+        angle += Math.PI;
       } /*else {
         delta = -delta;
       } */
     } else {
-      if(angle > Math.PI/2) {
-        angle-= Math.PI;
+      if (angle > Math.PI / 2) {
+        angle -= Math.PI;
         //delta = -delta;
       }
     }
     this.style.angle = angle;
     const id = this.addText(
-      line.x+line.points[1][0]/2-size.width/2,//+delta,
-      line.y+line.points[1][1]/2-size.height,//-5*size.height/6,
-      label
+      line.x + line.points[1][0] / 2 - size.width / 2, //+delta,
+      line.y + line.points[1][1] / 2 - size.height, //-5*size.height/6,
+      label,
     );
     this.style.angle = 0;
     return id;
@@ -2643,15 +2951,15 @@ export class ExcalidrawAutomate {
   /**
    * Clears elementsDict and imagesDict only.
    */
-  clear():void {
+  clear(): void {
     this.elementsDict = {};
     this.imagesDict = {};
-  };
+  }
 
   /**
    * Clears elementsDict and imagesDict, and resets all style values to default.
    */
-  reset():void {
+  reset(): void {
     this.sidepanelTab?.close();
     this.clear();
     this.activeScript = null;
@@ -2670,14 +2978,14 @@ export class ExcalidrawAutomate {
       textAlign: "left",
       verticalAlign: "top",
       startArrowHead: null,
-      endArrowHead: "arrow"
+      endArrowHead: "arrow",
     };
     this.canvas = {
       theme: "light",
       viewBackgroundColor: "#FFFFFF",
-      gridSize: 0
+      gridSize: 0,
     };
-  };
+  }
 
   /**
    * Returns true if the provided file is an Excalidraw file.
@@ -2686,7 +2994,7 @@ export class ExcalidrawAutomate {
    */
   isExcalidrawFile(f: TFile): boolean {
     return this.plugin.isExcalidrawFile(f);
-  };
+  }
 
   targetView: ExcalidrawView = null; //the view currently edited
   /**
@@ -2717,11 +3025,14 @@ export class ExcalidrawAutomate {
    * @param {boolean} [show=false] - Whether to reveal/focus the target view.
    * @returns {ExcalidrawView} The ExcalidrawView that was set as `targetView` (or `null` if none found).
    */
-  setView(view?: ExcalidrawView | "auto" | "first" | "active" | null, show: boolean = false): ExcalidrawView {
+  setView(
+    view?: ExcalidrawView | "auto" | "first" | "active" | null,
+    show: boolean = false,
+  ): ExcalidrawView {
     const app = this.plugin.app;
     const workspace = app.workspace;
     const setView = () => {
-      if(!view || view === "auto") {
+      if (!view || view === "auto") {
         view = workspace.getActiveViewOfType(ExcalidrawView);
         if (view instanceof ExcalidrawView) {
           this.targetView = view;
@@ -2747,15 +3058,13 @@ export class ExcalidrawAutomate {
       if (view instanceof ExcalidrawView) {
         this.targetView = view;
       }
-    }
+    };
     setView();
-    if(show && this.targetView) {
-      this.plugin.app.workspace.revealLeaf(
-        this.targetView.leaf,
-      );
+    if (show && this.targetView) {
+      this.plugin.app.workspace.revealLeaf(this.targetView.leaf);
     }
     return this.targetView;
-  };
+  }
 
   /**
    * Returns the Excalidraw API for the current view.
@@ -2767,7 +3076,7 @@ export class ExcalidrawAutomate {
       return null;
     }
     return (this.targetView as ExcalidrawView).excalidrawAPI;
-  };
+  }
 
   /**
    * Gets elements in the current view.
@@ -2779,7 +3088,7 @@ export class ExcalidrawAutomate {
       return [];
     }
     return this.targetView.getViewElements();
-  };
+  }
 
   /**
    * Deletes elements in the view by removing them from the scene (not by setting isDeleted to true).
@@ -2796,7 +3105,8 @@ export class ExcalidrawAutomate {
       return false;
     }
     const ids = elToDelete.map((e: ExcalidrawElement) => e.id);
-    const el: ExcalidrawElement[] = api.getSceneElements() as ExcalidrawElement[];
+    const el: ExcalidrawElement[] =
+      api.getSceneElements() as ExcalidrawElement[];
     const st: AppState = api.getAppState();
     this.targetView.updateScene({
       elements: el.filter((e: ExcalidrawElement) => !ids.includes(e.id)),
@@ -2805,7 +3115,7 @@ export class ExcalidrawAutomate {
     });
     //this.targetView.save();
     return true;
-  };
+  }
 
   /**
    * Adds a back of the note card to the current active view.
@@ -2815,13 +3125,24 @@ export class ExcalidrawAutomate {
    * @param {EmbeddableMDCustomProps} [embeddableCustomData] - Custom properties for the embeddable element.
    * @returns {Promise<string>} Promise resolving to the ID of the embeddable element.
    */
-  async addBackOfTheCardNoteToView(sectionTitle: string, activate: boolean = false, sectionBody?: string, embeddableCustomData?: EmbeddableMDCustomProps): Promise<string> {
+  async addBackOfTheCardNoteToView(
+    sectionTitle: string,
+    activate: boolean = false,
+    sectionBody?: string,
+    embeddableCustomData?: EmbeddableMDCustomProps,
+  ): Promise<string> {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "addBackOfTheCardNoteToView()");
       return null;
     }
     await this.targetView.forceSave(true);
-    return addBackOfTheNoteCard(this.targetView, sectionTitle, activate, sectionBody, embeddableCustomData);
+    return addBackOfTheNoteCard(
+      this.targetView,
+      sectionTitle,
+      activate,
+      sectionBody,
+      embeddableCustomData,
+    );
   }
 
   /**
@@ -2831,20 +3152,20 @@ export class ExcalidrawAutomate {
   getViewSelectedElement(): any {
     const elements = this.getViewSelectedElements();
     return elements ? elements[0] : null;
-  };
+  }
 
   /**
    * Gets the selected elements in the view.
    * @param {boolean} [includeFrameChildren=true] - Whether to include frame children in the selection.
    * @returns {any[]} Array of selected elements.
    */
-  getViewSelectedElements(includeFrameChildren:boolean = true): any[] {
+  getViewSelectedElements(includeFrameChildren: boolean = true): any[] {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "getViewSelectedElements()");
       return [];
     }
     return this.targetView.getViewSelectedElements(includeFrameChildren);
-  };
+  }
 
   /**
    * Gets the file associated with an image element in the view.
@@ -2852,8 +3173,8 @@ export class ExcalidrawAutomate {
    * @returns {TFile | null} The file associated with the image element or null if not found.
    */
   getViewFileForImageElement(el: ExcalidrawElement): TFile | null {
-    return getEmbeddedFileForImageElment(this,el)?.file;
-  };
+    return getEmbeddedFileForImageElment(this, el)?.file;
+  }
 
   /**
    * Gets the color map associated with an image element in the view.
@@ -2861,8 +3182,8 @@ export class ExcalidrawAutomate {
    * @returns {ColorMap} The color map associated with the image element.
    */
   getColorMapForImageElement(el: ExcalidrawElement): ColorMap {
-    const cm = getEmbeddedFileForImageElment(this,el)?.colorMap 
-    if(!cm) {
+    const cm = getEmbeddedFileForImageElment(this, el)?.colorMap;
+    if (!cm) {
       return {};
     }
     return cm;
@@ -2876,34 +3197,44 @@ export class ExcalidrawAutomate {
    */
   async updateViewSVGImageColorMap(
     elements: ExcalidrawImageElement | ExcalidrawImageElement[],
-    colors: ColorMap | SVGColorInfo | ColorMap[] | SVGColorInfo[]
+    colors: ColorMap | SVGColorInfo | ColorMap[] | SVGColorInfo[],
   ): Promise<void> {
     const elementArray = Array.isArray(elements) ? elements : [elements];
     const colorArray = Array.isArray(colors) ? colors : [colors];
     let colorMaps: ColorMap[];
 
-    if(colorArray.length !== elementArray.length) {
-      errorMessage("Elements and colors arrays must have same length", "updateViewSVGImageColorMap()");
+    if (colorArray.length !== elementArray.length) {
+      errorMessage(
+        "Elements and colors arrays must have same length",
+        "updateViewSVGImageColorMap()",
+      );
       return;
     }
-    
+
     if (isSVGColorInfo(colorArray[0])) {
-        colorMaps = (colors as SVGColorInfo[]).map(svgColorInfoToColorMap);
-      } else {
-        colorMaps = colors as ColorMap[];
-      }
+      colorMaps = (colors as SVGColorInfo[]).map(svgColorInfoToColorMap);
+    } else {
+      colorMaps = colors as ColorMap[];
+    }
 
     const fileIDWhiteList = new Set<FileId>();
-    for(let i = 0; i < elementArray.length; i++) {
+    for (let i = 0; i < elementArray.length; i++) {
       const el = elementArray[i];
       const colorMap = filterColorMap(colorMaps[i]);
 
       const ef = getEmbeddedFileForImageElment(this, el);
       if (!ef || !ef.file || !colorMap) {
-        errorMessage("Must provide an image element and a colorMap as input", "updateViewSVGImageColorMap()");
+        errorMessage(
+          "Must provide an image element and a colorMap as input",
+          "updateViewSVGImageColorMap()",
+        );
         continue;
       }
-      if (!colorMap || typeof colorMap !== 'object' || Object.keys(colorMap).length === 0) {
+      if (
+        !colorMap ||
+        typeof colorMap !== "object" ||
+        Object.keys(colorMap).length === 0
+      ) {
         ef.colorMap = null;
       } else {
         ef.colorMap = colorMap;
@@ -2919,25 +3250,23 @@ export class ExcalidrawAutomate {
       fileIDWhiteList.add(el.fileId);
     }
 
-    if(fileIDWhiteList.size > 0) {
+    if (fileIDWhiteList.size > 0) {
       this.targetView.setDirty();
       await new Promise<void>((resolve) => {
-        this.targetView.loadSceneFiles(
-          false,
-          fileIDWhiteList,
-          resolve
-        );
+        this.targetView.loadSceneFiles(false, fileIDWhiteList, resolve);
       });
     }
     return;
-  };
+  }
 
   /**
    * Gets the SVG color information for an image element in the view.
    * @param {ExcalidrawElement} el - The image element.
    * @returns {Promise<SVGColorInfo>} Promise resolving to the SVG color information.
    */
-  async getSVGColorInfoForImgElement(el: ExcalidrawElement): Promise<SVGColorInfo> {
+  async getSVGColorInfoForImgElement(
+    el: ExcalidrawElement,
+  ): Promise<SVGColorInfo> {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "getViewFileForImageElement()");
       return;
@@ -2953,8 +3282,11 @@ export class ExcalidrawAutomate {
     const ef = getEmbeddedFileForImageElment(this, el);
 
     const file = ef?.file;
-    if(!file || !(file.extension === "svg" || this.isExcalidrawFile(file))) {
-      errorMessage("Must provide an SVG or nested Excalidraw image element as input", "getColorMapForImgElement()");
+    if (!file || !(file.extension === "svg" || this.isExcalidrawFile(file))) {
+      errorMessage(
+        "Must provide an SVG or nested Excalidraw image element as input",
+        "getColorMapForImgElement()",
+      );
       return;
     }
 
@@ -2965,7 +3297,7 @@ export class ExcalidrawAutomate {
     }
     const svgColors = await this.getColosFromExcalidrawFile(file, el);
     return mergeColorMapIntoSVGColorInfo(ef.colorMap, svgColors);
-  };
+  }
 
   /**
    * Gets the color information from an Excalidraw file.
@@ -2973,29 +3305,44 @@ export class ExcalidrawAutomate {
    * @param {ExcalidrawImageElement} img? - Optional, if not provided, the function returns colors from all elements.
    * @returns {Promise<SVGColorInfo>} Promise resolving to the SVG color information.
    */
-  async getColosFromExcalidrawFile(file:TFile, img?: ExcalidrawImageElement): Promise<SVGColorInfo> {
-    if(!file || !this.isExcalidrawFile(file)) {
-      errorMessage("Must provide an Excalidraw file as input", "getColosFromExcalidrawFile()");
+  async getColosFromExcalidrawFile(
+    file: TFile,
+    img?: ExcalidrawImageElement,
+  ): Promise<SVGColorInfo> {
+    if (!file || !this.isExcalidrawFile(file)) {
+      errorMessage(
+        "Must provide an Excalidraw file as input",
+        "getColosFromExcalidrawFile()",
+      );
       return;
     }
 
     const ed = new ExcalidrawData(this.plugin);
-    if(file.extension === "excalidraw") {
-      await ed.loadLegacyData(await this.plugin.app.vault.cachedRead(file), file);
-    } else {  
-      await ed.loadData(await this.plugin.app.vault.cachedRead(file), file,TextMode.raw);
+    if (file.extension === "excalidraw") {
+      await ed.loadLegacyData(
+        await this.plugin.app.vault.cachedRead(file),
+        file,
+      );
+    } else {
+      await ed.loadData(
+        await this.plugin.app.vault.cachedRead(file),
+        file,
+        TextMode.raw,
+      );
     }
     const svgColors: SVGColorInfo = new Map();
     if (!ed.loaded) {
       return svgColors;
     }
-    (img ? ed.scene.elements.filter((el: ExcalidrawElement) => el.id === img.id) : ed.scene.elements)
-    .forEach((el:ExcalidrawElement) => {
-      if("strokeColor" in el) {
-        updateOrAddSVGColorInfo(svgColors, el.strokeColor, {stroke: true});
+    (img
+      ? ed.scene.elements.filter((el: ExcalidrawElement) => el.id === img.id)
+      : ed.scene.elements
+    ).forEach((el: ExcalidrawElement) => {
+      if ("strokeColor" in el) {
+        updateOrAddSVGColorInfo(svgColors, el.strokeColor, { stroke: true });
       }
-      if("backgroundColor" in el) {
-        updateOrAddSVGColorInfo(svgColors, el.backgroundColor, {fill: true});
+      if ("backgroundColor" in el) {
+        updateOrAddSVGColorInfo(svgColors, el.backgroundColor, { fill: true });
       }
     });
     return svgColors;
@@ -3007,60 +3354,66 @@ export class ExcalidrawAutomate {
    * @returns {SVGColorInfo} The extracted color information.
    */
   getColorsFromSVGString(svgString: string): SVGColorInfo {
-    const colorMap = new Map<string, {mappedTo: string, fill: boolean, stroke: boolean}>();
+    const colorMap = new Map<
+      string,
+      { mappedTo: string; fill: boolean; stroke: boolean }
+    >();
 
-    if(!svgString) {
+    if (!svgString) {
       return colorMap;
     }
 
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgString, "image/svg+xml");
-    
+
     // Function to process an element and extract its colors
     function processElement(element: Element, isRoot = false) {
       // Check for fill attribute
       const fillColor = element.getAttribute("fill");
       if (fillColor !== "none") {
         if (fillColor) {
-          updateOrAddSVGColorInfo(colorMap, fillColor, {fill: true});
+          updateOrAddSVGColorInfo(colorMap, fillColor, { fill: true });
         } else if (isRoot) {
           // If the root element has no fill, assume it is white
-          updateOrAddSVGColorInfo(colorMap, "fill", {fill: true, mappedTo: "black"});
+          updateOrAddSVGColorInfo(colorMap, "fill", {
+            fill: true,
+            mappedTo: "black",
+          });
         }
       }
-      
+
       // Check for stroke attribute
       const strokeColor = element.getAttribute("stroke");
       if (strokeColor && strokeColor !== "none") {
-        updateOrAddSVGColorInfo(colorMap, strokeColor, {stroke: true});
+        updateOrAddSVGColorInfo(colorMap, strokeColor, { stroke: true });
       }
-      
+
       // Check for style attribute that might contain fill or stroke
       const style = element.getAttribute("style");
       if (style) {
         // Extract fill from style
         const fillMatch = style.match(/fill:\s*([^;}\s]+)/);
         if (fillMatch && fillMatch[1] !== "none") {
-          updateOrAddSVGColorInfo(colorMap, fillMatch[1], {fill: true});
+          updateOrAddSVGColorInfo(colorMap, fillMatch[1], { fill: true });
         }
-        
+
         // Extract stroke from style
         const strokeMatch = style.match(/stroke:\s*([^;}\s]+)/);
         if (strokeMatch && strokeMatch[1] !== "none") {
-          updateOrAddSVGColorInfo(colorMap, strokeMatch[1], {stroke: true});
+          updateOrAddSVGColorInfo(colorMap, strokeMatch[1], { stroke: true });
         }
       }
-      
+
       // Recursively process child elements
       for (const child of Array.from(element.children)) {
         processElement(child);
       }
     }
-    
+
     // Process the root SVG element
     const svgElement = doc.documentElement;
     processElement(svgElement, true);
-    
+
     return colorMap;
   }
 
@@ -3069,8 +3422,11 @@ export class ExcalidrawAutomate {
    * @param {ExcalidrawElement[]} elements - Array of elements to copy.
    * @param {boolean} [copyImages=false] - Whether to copy images as well.
    */
-  copyViewElementsToEAforEditing(elements: ExcalidrawElement[], copyImages: boolean = false): void {
-    if(copyImages && elements.some(el=>el.type === "image")) {
+  copyViewElementsToEAforEditing(
+    elements: ExcalidrawElement[],
+    copyImages: boolean = false,
+  ): void {
+    if (copyImages && elements.some((el) => el.type === "image")) {
       if (!this.targetView || !this.targetView?._loaded) {
         errorMessage("targetView not set", "copyViewElementsToEAforEditing()");
         return;
@@ -3078,10 +3434,13 @@ export class ExcalidrawAutomate {
       const sceneFiles = this.targetView.getScene().files;
       elements.forEach((el) => {
         this.elementsDict[el.id] = cloneElement(el);
-        if(el.type === "image") {
+        if (el.type === "image") {
           const ef = this.targetView.excalidrawData.getFile(el.fileId);
-          const imageWithRef = ef && ef.file && ef.linkParts && ef.linkParts.ref;
-          const equation = this.targetView.excalidrawData.getEquation(el.fileId);
+          const imageWithRef =
+            ef && ef.file && ef.linkParts && ef.linkParts.ref;
+          const equation = this.targetView.excalidrawData.getEquation(
+            el.fileId,
+          );
           const sceneFile = sceneFiles?.[el.fileId];
           this.imagesDict[el.fileId] = {
             mimeType: sceneFile.mimeType,
@@ -3089,19 +3448,25 @@ export class ExcalidrawAutomate {
             dataURL: sceneFile.dataURL,
             created: sceneFile.created,
             hasSVGwithBitmap: ef ? ef.isSVGwithBitmap : false,
-            ...ef ? {
-              isHyperLink: ef.isHyperLink || Boolean(imageWithRef),
-              hyperlink: imageWithRef ? `${ef.file.path}#${ef.linkParts.ref}` : ef.hyperlink,
-              file: imageWithRef ? null : ef.file,
-              latex: null,
-            } : {},
-            ...equation ? {
-              file: null,
-              isHyperLink: false,
-              hyperlink: null,
-              latex: equation.latex,
-            } : {},
-          }
+            ...(ef
+              ? {
+                  isHyperLink: ef.isHyperLink || Boolean(imageWithRef),
+                  hyperlink: imageWithRef
+                    ? `${ef.file.path}#${ef.linkParts.ref}`
+                    : ef.hyperlink,
+                  file: imageWithRef ? null : ef.file,
+                  latex: null,
+                }
+              : {}),
+            ...(equation
+              ? {
+                  file: null,
+                  isHyperLink: false,
+                  hyperlink: null,
+                  latex: equation.latex,
+                }
+              : {}),
+          };
         }
       });
     } else {
@@ -3109,7 +3474,7 @@ export class ExcalidrawAutomate {
         this.elementsDict[el.id] = cloneElement(el);
       });
     }
-  };
+  }
 
   /**
    * Toggles full screen mode for the target view.
@@ -3130,15 +3495,17 @@ export class ExcalidrawAutomate {
         },
         captureUpdate: CaptureUpdateAction.NEVER,
       });
-      this.targetView.toolsPanelRef?.current?.setExcalidrawViewMode(!isFullscreen);
+      this.targetView.toolsPanelRef?.current?.setExcalidrawViewMode(
+        !isFullscreen,
+      );
     }
-    
+
     if (isFullscreen) {
       view.exitFullscreen();
     } else {
       view.gotoFullscreen();
     }
-  };
+  }
 
   /**
    * Sets view mode enabled or disabled for the target view.
@@ -3150,7 +3517,10 @@ export class ExcalidrawAutomate {
       return;
     }
     const view = this.targetView as ExcalidrawView;
-    view.updateScene({appState:{viewModeEnabled: enabled}, captureUpdate: CaptureUpdateAction.NEVER});
+    view.updateScene({
+      appState: { viewModeEnabled: enabled },
+      captureUpdate: CaptureUpdateAction.NEVER,
+    });
     view.toolsPanelRef?.current?.setExcalidrawViewMode(enabled);
   }
 
@@ -3165,32 +3535,35 @@ export class ExcalidrawAutomate {
    * @param {"IMMEDIATELY" | "NEVER" | "EVENTUALLY"} [scene.captureUpdate] - The capture update action for the scene.
    * @param {boolean} [restore=false] - Whether to restore legacy elements in the scene.
    */
-  viewUpdateScene (
+  viewUpdateScene(
     scene: {
-      elements?: ExcalidrawElement[],
-      appState?: AppState | object,
-      files?: BinaryFileData,
-      commitToHistory?: boolean,
-      storeAction?: "capture" | "none" | "update",
-      captureUpdate?: SceneData["captureUpdate"],
+      elements?: ExcalidrawElement[];
+      appState?: AppState | object;
+      files?: BinaryFileData;
+      commitToHistory?: boolean;
+      storeAction?: "capture" | "none" | "update";
+      captureUpdate?: SceneData["captureUpdate"];
     },
     restore: boolean = false,
-  ):void {
+  ): void {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "viewToggleFullScreen()");
       return;
     }
     if (!Boolean(scene.storeAction)) {
-      scene.storeAction = scene.commitToHistory ? "capture" : "update";  
+      scene.storeAction = scene.commitToHistory ? "capture" : "update";
     }
 
-    this.targetView.updateScene({
-      elements: scene.elements,
-      appState: scene.appState,
-      files: scene.files,
-      storeAction: scene.storeAction,
-      captureUpdate: scene.captureUpdate,
-    },restore);
+    this.targetView.updateScene(
+      {
+        elements: scene.elements,
+        appState: scene.appState,
+        files: scene.files,
+        storeAction: scene.storeAction,
+        captureUpdate: scene.captureUpdate,
+      },
+      restore,
+    );
   }
 
   /**
@@ -3211,8 +3584,26 @@ export class ExcalidrawAutomate {
     connectionB: ConnectionPoint | null,
     formatting?: {
       numberOfPoints?: number;
-      startArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
-      endArrowHead?: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null;
+      startArrowHead?:
+        | "arrow"
+        | "bar"
+        | "circle"
+        | "circle_outline"
+        | "triangle"
+        | "triangle_outline"
+        | "diamond"
+        | "diamond_outline"
+        | null;
+      endArrowHead?:
+        | "arrow"
+        | "bar"
+        | "circle"
+        | "circle_outline"
+        | "triangle"
+        | "triangle_outline"
+        | "diamond"
+        | "diamond_outline"
+        | null;
       padding?: number;
     },
   ): boolean {
@@ -3225,7 +3616,7 @@ export class ExcalidrawAutomate {
     this.connectObjects(objectA, connectionA, id, connectionB, formatting);
     delete this.elementsDict[id];
     return true;
-  };
+  }
 
   /**
    * Zooms the target view to fit the specified elements.
@@ -3234,13 +3625,13 @@ export class ExcalidrawAutomate {
    */
   viewZoomToElements(
     selectElements: boolean,
-    elements: ExcalidrawElement[]
-  ):void {
+    elements: ExcalidrawElement[],
+  ): void {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "viewToggleFullScreen()");
       return;
     }
-    this.targetView.zoomToElements(selectElements,elements);
+    this.targetView.zoomToElements(selectElements, elements);
   }
 
   /**
@@ -3263,7 +3654,7 @@ export class ExcalidrawAutomate {
       return false;
     }
     const elements = this.getElements();
-    if(elements.some(el=>el.type === "embeddable")) {
+    if (elements.some((el) => el.type === "embeddable")) {
       patchMobileView(this.targetView);
     }
     const result = await this.targetView.addElements({
@@ -3276,7 +3667,7 @@ export class ExcalidrawAutomate {
       captureUpdate,
     });
     return result;
-  };
+  }
 
   /**
    * Registers this instance of EA to use for hooks with the target view.
@@ -3284,7 +3675,7 @@ export class ExcalidrawAutomate {
    * Using this method, you can set a different instance of Excalidraw Automate for hooks.
    * @returns {boolean} True if successful, false otherwise.
    */
-  registerThisAsViewEA():boolean {
+  registerThisAsViewEA(): boolean {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "addElementsToView()");
       return false;
@@ -3297,7 +3688,7 @@ export class ExcalidrawAutomate {
    * Sets the target view EA to window.ExcalidrawAutomate.
    * @returns {boolean} True if successful, false otherwise.
    */
-  deregisterThisAsViewEA():boolean {
+  deregisterThisAsViewEA(): boolean {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "addElementsToView()");
       return false;
@@ -3315,9 +3706,13 @@ export class ExcalidrawAutomate {
    * If set, this callback is triggered, when the user changes the view mode.
    * You can use this callback in case you want to do something additional when the user switches to view mode and back.
    */
-  onViewModeChangeHook: (isViewModeEnabled:boolean, view: ExcalidrawView, ea: ExcalidrawAutomate) => void = null;
+  onViewModeChangeHook: (
+    isViewModeEnabled: boolean,
+    view: ExcalidrawView,
+    ea: ExcalidrawAutomate,
+  ) => void = null;
 
-   /**
+  /**
    * If set, this callback is triggered, when the user hovers a link in the scene.
    * You can use this callback in case you want to do something additional when the onLinkHover event occurs.
    * This callback must return a boolean value.
@@ -3327,25 +3722,25 @@ export class ExcalidrawAutomate {
     element: NonDeletedExcalidrawElement,
     linkText: string,
     view: ExcalidrawView,
-    ea: ExcalidrawAutomate
+    ea: ExcalidrawAutomate,
   ) => boolean = null;
 
-   /**
+  /**
    * If set, this callback is triggered, when the user clicks a link in the scene.
    * You can use this callback in case you want to do something additional when the onLinkClick event occurs.
    * This callback must return a boolean value.
    * In case you want to prevent the excalidraw onLinkClick action you must return false, it will stop the native excalidraw onLinkClick management flow.
    */
-  onLinkClickHook:(
+  onLinkClickHook: (
     element: ExcalidrawElement,
     linkText: string,
     event: MouseEvent,
     view: ExcalidrawView,
-    ea: ExcalidrawAutomate
+    ea: ExcalidrawAutomate,
   ) => boolean = null;
 
   /**
-   * If set, this callback is triggered, when Excalidraw receives an onDrop event. 
+   * If set, this callback is triggered, when Excalidraw receives an onDrop event.
    * You can use this callback in case you want to do something additional when the onDrop event occurs.
    * This callback must return a boolean value.
    * In case you want to prevent the excalidraw onDrop action you must return false, it will stop the native excalidraw onDrop management flow.
@@ -3363,7 +3758,7 @@ export class ExcalidrawAutomate {
     view: ExcalidrawView; //the excalidraw view receiving the drop
     pointerPosition: { x: number; y: number }; //the pointer position on canvas at the time of drop
   }) => boolean = null;
- 
+
   /**
    * If set, this callback is triggered, when Excalidraw receives an onPaste event.
    * You can use this callback in case you want to do something additional when the
@@ -3372,14 +3767,14 @@ export class ExcalidrawAutomate {
    * In case you want to prevent the excalidraw onPaste action you must return false,
    * it will stop the native excalidraw onPaste management flow.
    */
-   onPasteHook: (data: {
+  onPasteHook: (data: {
     ea: ExcalidrawAutomate;
     payload: ClipboardData;
     event: ClipboardEvent;
     excalidrawFile: TFile; //the file receiving the paste event
     view: ExcalidrawView; //the excalidraw view receiving the paste
     pointerPosition: { x: number; y: number }; //the pointer position on canvas
-   }) => boolean = null;
+  }) => boolean = null;
 
   /**
    * If set, this callback is triggered when a image is being saved in Excalidraw.
@@ -3387,19 +3782,19 @@ export class ExcalidrawAutomate {
    * default names like "Pasted image 123147170.png" being saved in the attachments folder,
    * and instead use more meaningful names based on the Excalidraw file or other criteria,
    * plus save the image in a different folder.
-   * 
+   *
    * If the function returns null or undefined, the normal Excalidraw operation will continue
    * with the excalidraw generated name and default path.
    * If a filepath is returned, that will be used. Include the full Vault filepath and filename
    * with the file extension.
    * The currentImageName is the name of the image generated by excalidraw or provided during paste.
-   * 
+   *
    * @param data - An object containing the following properties:
    *   @property {string} [currentImageName] - Default name for the image.
    *   @property {string} drawingFilePath - The file path of the Excalidraw file where the image is being used.
-   * 
+   *
    * @returns {string} - The new filepath for the image including full vault path and extension.
-   * 
+   *
    * Example usage:
    * ```
    * onImageFilePathHook: (data) => {
@@ -3410,17 +3805,17 @@ export class ExcalidrawAutomate {
    * }
    * ```
    */
-   onImageFilePathHook: (data: {
+  onImageFilePathHook: (data: {
     currentImageName: string; // Excalidraw generated name of the image, or the name received from the file system.
     drawingFilePath: string; // The full filepath of the Excalidraw file where the image is being used.
-  }) => string | null = null;  
+  }) => string | null = null;
 
   /**
-   * If set, this callback is triggered when the Excalidraw image is being exported to 
+   * If set, this callback is triggered when the Excalidraw image is being exported to
    * .svg, .png, or .excalidraw.
    * You can use this callback to customize the naming and path of the images. This allows
    * you to place images into an assets folder.
-   * 
+   *
    * If the function returns null or undefined, the normal Excalidraw operation will continue
    * with the currentImageName and in the same folder as the Excalidraw file
    * If a filepath is returned, that will be used. Include the full Vault filepath and filename
@@ -3436,16 +3831,16 @@ export class ExcalidrawAutomate {
    * - my-drawing.light.svg
    * - my-drawing.dark.png
    * - my-drawing.light.png
-   * 
+   *
    * @param data - An object containing the following properties:
    *   @property {string} exportFilepath - Default export filepath for the image.
    *   @property {string} exportExtension - The file extension of the export (e.g., .dark.svg, .png, .excalidraw).
    *   @property {string} excalidrawFile - TFile: The Excalidraw file being exported.
    *   @property {string} oldExcalidrawPath - If action === "move" The old path of the Excalidraw file, else undefined
    *   @property {string} action - The action being performed: "export", "move", or "delete". move and delete reference the change to the Excalidraw file.
-   * 
+   *
    * @returns {string} - The new filepath for the image including full vault path and extension.
-   * 
+   *
    * Example usage:
    * ```
    * onImageFilePathHook: (data) => {
@@ -3462,21 +3857,21 @@ export class ExcalidrawAutomate {
     exportFilepath: string; // Default export filepath for the image.
     exportExtension: string; // The file extension of the export (e.g., .dark.svg, .png, .excalidraw).
     excalidrawFile: TFile; // The Excalidraw file being exported.
-    oldExcalidrawPath? : string; // The old path of the Excalidraw file, if it was moved/renamed. 
+    oldExcalidrawPath?: string; // The old path of the Excalidraw file, if it was moved/renamed.
     action: "export" | "move" | "delete";
   }) => string | null = null;
 
   /**
    * Excalidraw supports auto-export of Excalidraw files to .png, .svg, and .excalidraw formats.
-   * 
+   *
    * Auto-export of Excalidraw files can be controlled at multiple levels.
    * 1) In plugin settings where you can set up default auto-export applicable to all your Excalidraw files.
    * 2) However, if you do not want to auto-export every file, you can also control auto-export
    *    at the file level using the 'excalidraw-autoexport' frontmatter property.
    * 3) This hook gives you an additional layer of control over the auto-export process.
-   * 
+   *
    * This hook is triggered when an Excalidraw file is being saved.
-   * 
+   *
    * interface AutoexportConfig {
    *   png: boolean; // Whether to auto-export to PNG
    *   svg: boolean; // Whether to auto-export to SVG
@@ -3505,7 +3900,6 @@ export class ExcalidrawAutomate {
     view: ExcalidrawView;
   }) => Promise<void>;
 
-
   /**
    * if set, this callback is triggered, when an Excalidraw file is created
    * see also: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1124
@@ -3515,7 +3909,6 @@ export class ExcalidrawAutomate {
     excalidrawFile: TFile; //the file being created
     view: ExcalidrawView;
   }) => Promise<void>;
-    
 
   /**
    * If set, this callback is triggered whenever the active canvas color changes.
@@ -3525,7 +3918,7 @@ export class ExcalidrawAutomate {
    */
   onCanvasColorChangeHook: (
     ea: ExcalidrawAutomate,
-    view: ExcalidrawView, //the excalidraw view 
+    view: ExcalidrawView, //the excalidraw view
     color: string,
   ) => void = null;
 
@@ -3541,10 +3934,10 @@ export class ExcalidrawAutomate {
    * @returns {string} The updated link for the SVG.
    */
   onUpdateElementLinkForExportHook: (data: {
-    originalLink: string,
-    obsidianLink: string,
-    linkedFile: TFile | null,
-    hostFile: TFile,
+    originalLink: string;
+    obsidianLink: string;
+    linkedFile: TFile | null;
+    hostFile: TFile;
   }) => string = null;
 
   /**
@@ -3554,7 +3947,7 @@ export class ExcalidrawAutomate {
    */
   getEmbeddedFilesLoader(isDark?: boolean): EmbeddedFilesLoader {
     return new EmbeddedFilesLoader(this.plugin, isDark);
-  };
+  }
 
   /**
    * Utility function to generate ExportSettings object.
@@ -3569,8 +3962,7 @@ export class ExcalidrawAutomate {
     isMask: boolean = false,
   ): ExportSettings {
     return { withBackground, withTheme, isMask };
-  };
-
+  }
 
   /**
    * Gets the elements within a specific area.
@@ -3580,22 +3972,26 @@ export class ExcalidrawAutomate {
    */
   getElementsInArea(
     elements: NonDeletedExcalidrawElement[],
-    element: NonDeletedExcalidrawElement,    
-  ):ExcalidrawElement[] {
-    const {x, y, width, height, id} = element;
-    return elements
-      .filter(el => {
-        if((el.type==="frame" && el.frameRole==="marker")) return false;
-        if(el.id === id) return true;
-        const {topX, topY, width:w, height:h} = this.getBoundingBox([el]);
-        const elLeft = topX;
-        const elTop = topY;
-        const elRight = topX + w;
-        const elBottom = topY + h;
-        // overlap exists if rectangles intersect
-        return !(elLeft >= x + width || elRight <= x || elTop >= y + height || elBottom <= y);
-      });
-  };
+    element: NonDeletedExcalidrawElement,
+  ): ExcalidrawElement[] {
+    const { x, y, width, height, id } = element;
+    return elements.filter((el) => {
+      if (el.type === "frame" && el.frameRole === "marker") return false;
+      if (el.id === id) return true;
+      const { topX, topY, width: w, height: h } = this.getBoundingBox([el]);
+      const elLeft = topX;
+      const elTop = topY;
+      const elRight = topX + w;
+      const elBottom = topY + h;
+      // overlap exists if rectangles intersect
+      return !(
+        elLeft >= x + width ||
+        elRight <= x ||
+        elTop >= y + height ||
+        elBottom <= y
+      );
+    });
+  }
 
   /**
    * Gets the bounding box of the specified elements.
@@ -3604,7 +4000,7 @@ export class ExcalidrawAutomate {
    * @returns {{topX: number; topY: number; width: number; height: number}} The bounding box of the elements.
    */
   getBoundingBox(elements: readonly ExcalidrawElement[]): {
-    topX: number; 
+    topX: number;
     topY: number;
     width: number;
     height: number;
@@ -3616,7 +4012,7 @@ export class ExcalidrawAutomate {
       width: bb.maxX - bb.minX,
       height: bb.maxY - bb.minY,
     };
-  };
+  }
 
   /**
    * Gets elements grouped by the highest level groups.
@@ -3625,7 +4021,7 @@ export class ExcalidrawAutomate {
    */
   getMaximumGroups(elements: ExcalidrawElement[]): ExcalidrawElement[][] {
     return getMaximumGroups(elements, arrayToMap(elements));
-  };
+  }
 
   /**
    * Gets the largest element from a group.
@@ -3650,7 +4046,7 @@ export class ExcalidrawAutomate {
       }
     }
     return largestElement;
-  };
+  }
 
   /**
    * Intersects an element with a line.
@@ -3670,9 +4066,9 @@ export class ExcalidrawAutomate {
       element,
       a as GlobalPoint,
       b as GlobalPoint,
-      gap
+      gap,
     );
-  };
+  }
 
   /**
    * Gets the groupId for the group that contains all the elements, or null if such a group does not exist.
@@ -3681,8 +4077,8 @@ export class ExcalidrawAutomate {
    */
   getCommonGroupForElements(elements: ExcalidrawElement[]): string {
     const groupId = elements
-      .map(el=>el.groupIds)
-      .reduce((prev,cur)=>cur.filter(v=>prev.includes(v)));
+      .map((el) => el.groupIds)
+      .reduce((prev, cur) => cur.filter((v) => prev.includes(v)));
     return groupId.length > 0 ? groupId[0] : null;
   }
 
@@ -3698,38 +4094,45 @@ export class ExcalidrawAutomate {
     elements: readonly NonDeletedExcalidrawElement[],
     includeFrameElements: boolean = false,
   ): ExcalidrawElement[] {
-    if(!element || !elements) return [];
-    const container = (element.type === "text" && element.containerId)
-      ? elements.filter(el=>el.id === element.containerId)
-      : [];
-    if(element.groupIds.length === 0) {
-      if(includeFrameElements && element.type === "frame") {
-        return this.getElementsInFrame(element,elements,true);
+    if (!element || !elements) return [];
+    const container =
+      element.type === "text" && element.containerId
+        ? elements.filter((el) => el.id === element.containerId)
+        : [];
+    if (element.groupIds.length === 0) {
+      if (includeFrameElements && element.type === "frame") {
+        return this.getElementsInFrame(element, elements, true);
       }
-      if(container.length === 1) return [element,container[0]];
+      if (container.length === 1) return [element, container[0]];
       return [element];
     }
 
-    const conditionFN = container.length === 1
-      ? (el: ExcalidrawElement) => el.groupIds.some(id=>element.groupIds.includes(id)) || el === container[0]
-      : (el: ExcalidrawElement) => el.groupIds.some(id=>element.groupIds.includes(id));
+    const conditionFN =
+      container.length === 1
+        ? (el: ExcalidrawElement) =>
+            el.groupIds.some((id) => element.groupIds.includes(id)) ||
+            el === container[0]
+        : (el: ExcalidrawElement) =>
+            el.groupIds.some((id) => element.groupIds.includes(id));
 
-    if(!includeFrameElements) {
-      return elements.filter(el=>conditionFN(el));
+    if (!includeFrameElements) {
+      return elements.filter((el) => conditionFN(el));
     } else {
       //I use the set and the filter at the end to preserve scene layer seqeuence
       //adding frames could potentially mess up the sequence otherwise
       const elementIDs = new Set<string>();
       elements
-        .filter(el=>conditionFN(el))
-        .forEach(el=>{
-          if(el.type === "frame") {
-            this.getElementsInFrame(el,elements,true).forEach(el=>elementIDs.add(el.id))
+        .filter((el) => conditionFN(el))
+        .forEach((el) => {
+          if (el.type === "frame") {
+            this.getElementsInFrame(el, elements, true).forEach((el) =>
+              elementIDs.add(el.id),
+            );
           } else {
             elementIDs.add(el.id);
           }
         });
-      return elements.filter(el=>elementIDs.has(el.id));
+      return elements.filter((el) => elementIDs.has(el.id));
     }
   }
 
@@ -3745,15 +4148,19 @@ export class ExcalidrawAutomate {
     elements: readonly NonDeletedExcalidrawElement[],
     shouldIncludeFrame: boolean = false,
   ): ExcalidrawElement[] {
-    if(!frameElement || !elements || frameElement.type !== "frame") return [];
-    return elements.filter(el=>(el.frameId === frameElement.id) || (shouldIncludeFrame && el.id === frameElement.id));
-  } 
+    if (!frameElement || !elements || frameElement.type !== "frame") return [];
+    return elements.filter(
+      (el) =>
+        el.frameId === frameElement.id ||
+        (shouldIncludeFrame && el.id === frameElement.id),
+    );
+  }
 
   /**
    * Sets the active script for the ScriptEngine.
    * @param {string} scriptName - The name of the active script.
    */
-  activeScript: string = null; 
+  activeScript: string = null;
 
   /**
    * Gets the script settings for the active script.
@@ -3765,7 +4172,7 @@ export class ExcalidrawAutomate {
       return null;
     }
     return this.plugin.settings.scriptEngineSettings[this.activeScript] ?? {};
-  };
+  }
 
   /**
    * Sets the script settings for the active script.
@@ -3778,7 +4185,7 @@ export class ExcalidrawAutomate {
     }
     this.plugin.settings.scriptEngineSettings[this.activeScript] = settings;
     await this.plugin.saveSettings();
-  };
+  }
 
   public setScriptSettingValue(key: string, value: ScriptSettingValue): void {
     const settings = ensureActiveScriptSettingsObject(this);
@@ -3786,7 +4193,10 @@ export class ExcalidrawAutomate {
     settings[key] = value;
   }
 
-  public getScriptSettingValue(key: string, defaultValue: ScriptSettingValue): ScriptSettingValue {
+  public getScriptSettingValue(
+    key: string,
+    defaultValue: ScriptSettingValue,
+  ): ScriptSettingValue {
     const settings = ensureActiveScriptSettingsObject(this);
     if (!settings) return defaultValue;
     return settings[key] ?? defaultValue;
@@ -3803,7 +4213,10 @@ export class ExcalidrawAutomate {
    * @param {OpenViewState} [openState] - The open state for the file.
    * @returns {WorkspaceLeaf} The new or adjacent workspace leaf.
    */
-  openFileInNewOrAdjacentLeaf(file: TFile, openState?: OpenViewState): WorkspaceLeaf {
+  openFileInNewOrAdjacentLeaf(
+    file: TFile,
+    openState?: OpenViewState,
+  ): WorkspaceLeaf {
     if (!file || !(file instanceof TFile)) {
       return null;
     }
@@ -3815,10 +4228,10 @@ export class ExcalidrawAutomate {
       plugin: this.plugin,
       fnGetLeaf: () => getNewOrAdjacentLeaf(this.plugin, this.targetView.leaf),
       file,
-      openState: openState ?? {active: true}
+      openState: openState ?? { active: true },
     });
     return leaf;
-  };
+  }
 
   /**
    * Measures the size of the specified text based on current style settings.
@@ -3833,7 +4246,7 @@ export class ExcalidrawAutomate {
       getLineHeight(this.style.fontFamily),
     );
     return { width: size.w ?? 0, height: size.h ?? 0 };
-  };
+  }
 
   /**
    * Returns the size of the image element at 100% (i.e. the original size), or undefined if the data URL is not available.
@@ -3841,31 +4254,40 @@ export class ExcalidrawAutomate {
    * @param {boolean} [shouldWaitForImage=false] - Whether to wait for the image to load before returning the size.
    * @returns {Promise<{width: number; height: number}>} Promise resolving to the original size of the image.
    */
-  async getOriginalImageSize(imageElement: ExcalidrawImageElement, shouldWaitForImage: boolean=false): Promise<{width: number; height: number}> {
+  async getOriginalImageSize(
+    imageElement: ExcalidrawImageElement,
+    shouldWaitForImage: boolean = false,
+  ): Promise<{ width: number; height: number }> {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "getOriginalImageSize()");
       return null;
     }
-    if(!imageElement || imageElement.type !== "image") {
-      errorMessage("Please provide a single image element as input", "getOriginalImageSize()");
+    if (!imageElement || imageElement.type !== "image") {
+      errorMessage(
+        "Please provide a single image element as input",
+        "getOriginalImageSize()",
+      );
       return null;
     }
     const ef = this.targetView.excalidrawData.getFile(imageElement.fileId);
-    if(!ef) {
-      errorMessage("Please provide a single image element as input", "getOriginalImageSize()");
+    if (!ef) {
+      errorMessage(
+        "Please provide a single image element as input",
+        "getOriginalImageSize()",
+      );
       return null;
     }
     const isDark = this.getExcalidrawAPI().getAppState().theme === "dark";
     let dataURL = ef.getImage(isDark);
-    if(!dataURL && !shouldWaitForImage) return;
-    if(!dataURL) {
+    if (!dataURL && !shouldWaitForImage) return;
+    if (!dataURL) {
       let watchdog = 0;
-      while(!dataURL && watchdog < 50) {
+      while (!dataURL && watchdog < 50) {
         await sleep(100);
         dataURL = ef.getImage(isDark);
         watchdog++;
       }
-      if(!dataURL) return;
+      if (!dataURL) return;
     }
     return await getImageSize(dataURL);
   }
@@ -3885,12 +4307,14 @@ export class ExcalidrawAutomate {
     }
 
     let originalArea, originalAspectRatio;
-    if(imgEl.crop) {
+    if (imgEl.crop) {
       originalArea = imgEl.width * imgEl.height;
       originalAspectRatio = imgEl.crop.width / imgEl.crop.height;
     } else {
       const size = await this.getOriginalImageSize(imgEl, true);
-      if (!size) { return false; }
+      if (!size) {
+        return false;
+      }
       originalArea = imgEl.width * imgEl.height;
       originalAspectRatio = size.width / size.height;
     }
@@ -3900,7 +4324,7 @@ export class ExcalidrawAutomate {
     const centerY = imgEl.y + imgEl.height / 2;
 
     if (newWidth !== imgEl.width || newHeight !== imgEl.height) {
-      if(!this.getElement(imgEl.id)) {
+      if (!this.getElement(imgEl.id)) {
         this.copyViewElementsToEAforEditing([imgEl]);
       }
       const eaEl = this.getElement(imgEl.id);
@@ -3921,7 +4345,7 @@ export class ExcalidrawAutomate {
    */
   verifyMinimumPluginVersion(requiredVersion: string): boolean {
     return verifyMinimumPluginVersion(requiredVersion);
-  };
+  }
 
   /**
    * Checks if the provided view is an instance of ExcalidrawView.
@@ -3945,13 +4369,15 @@ export class ExcalidrawAutomate {
       return;
     }
     const API: ExcalidrawImperativeAPI = this.getExcalidrawAPI();
-    if(typeof elements[0] === "string") {
-      const els = this.getViewElements().filter(el=>(elements as string[]).includes(el.id));
+    if (typeof elements[0] === "string") {
+      const els = this.getViewElements().filter((el) =>
+        (elements as string[]).includes(el.id),
+      );
       API.selectElements(els);
     } else {
       API.selectElements(elements as ExcalidrawElement[]);
     }
-  };
+  }
 
   /**
    * Generates a random 8-character long element ID.
@@ -3959,7 +4385,7 @@ export class ExcalidrawAutomate {
    */
   generateElementId(): string {
     return nanoid();
-  };
+  }
 
   /**
    * Clones the specified element with a new ID.
@@ -3970,7 +4396,7 @@ export class ExcalidrawAutomate {
     const newEl = JSON.parse(JSON.stringify(element));
     newEl.id = nanoid();
     return newEl;
-  };
+  }
 
   /**
    * Moves the specified element to a specific position in the z-index.
@@ -4008,7 +4434,7 @@ export class ExcalidrawAutomate {
       elements,
       captureUpdate: CaptureUpdateAction.IMMEDIATELY,
     });
-  };
+  }
 
   /**
    * Converts a hex color string to an RGB array.
@@ -4019,7 +4445,7 @@ export class ExcalidrawAutomate {
   hexStringToRgb(color: string): number[] {
     const res = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
     return [parseInt(res[1], 16), parseInt(res[2], 16), parseInt(res[3], 16)];
-  };
+  }
 
   /**
    * Converts an RGB array to a hex color string.
@@ -4028,9 +4454,9 @@ export class ExcalidrawAutomate {
    * @returns {string} The hex color string.
    */
   rgbToHexString(color: number[]): string {
-    const cm = CM({r:color[0], g:color[1], b:color[2]});
-    return cm.stringHEX({alpha: false});
-  };
+    const cm = CM({ r: color[0], g: color[1], b: color[2] });
+    return cm.stringHEX({ alpha: false });
+  }
 
   /**
    * Converts an HSL array to an RGB array.
@@ -4039,9 +4465,9 @@ export class ExcalidrawAutomate {
    * @returns {number[]} The RGB array.
    */
   hslToRgb(color: number[]): number[] {
-    const cm = CM({h:color[0], s:color[1], l:color[2]});
+    const cm = CM({ h: color[0], s: color[1], l: color[2] });
     return [cm.red, cm.green, cm.blue];
-  };
+  }
 
   /**
    * Converts an RGB array to an HSL array.
@@ -4050,9 +4476,9 @@ export class ExcalidrawAutomate {
    * @returns {number[]} The HSL array.
    */
   rgbToHsl(color: number[]): number[] {
-    const cm = CM({r:color[0], g:color[1], b:color[2]});
+    const cm = CM({ r: color[0], g: color[1], b: color[2] });
     return [cm.hue, cm.saturation, cm.lightness];
-  };
+  }
 
   /**
    * Converts a color name to a hex color string.
@@ -4064,26 +4490,28 @@ export class ExcalidrawAutomate {
       return COLOR_NAMES.get(color.toLowerCase().trim());
     }
     return color.trim();
-  };
+  }
 
   /**
    * Creates a ColorMaster object for manipulating colors.
    * @param {TInput} color - The color input.
    * @returns {ColorMaster} The ColorMaster object.
    */
-  getCM(color:TInput): ColorMaster {
-    if(!color) {
-      log("Creates a CM object. Visit https://github.com/lbragile/ColorMaster for documentation.");
+  getCM(color: TInput): ColorMaster {
+    if (!color) {
+      log(
+        "Creates a CM object. Visit https://github.com/lbragile/ColorMaster for documentation.",
+      );
       return;
     }
-    if(typeof color === "string") {
+    if (typeof color === "string") {
       color = this.colorNameToHex(color);
     }
-    
+
     const cm = CM(color);
     //ColorMaster converts #FFFFFF00 to #FFFFFF, which is not what we want
     //same is true for rgba and hsla transparent colors
-    if(isColorStringTransparent(color as string)) {
+    if (isColorStringTransparent(color as string)) {
       return cm.alphaTo(0);
     }
     return cm;
@@ -4094,7 +4522,9 @@ export class ExcalidrawAutomate {
    * @param {("canvasBackground"|"elementBackground"|"elementStroke")} palette - The palette type.
    * @returns {([string, string, string, string, string][] | string[])} The color palette.
    */
-  getViewColorPalette(palette: "canvasBackground"|"elementBackground"|"elementStroke"): (string[] | string)[] {
+  getViewColorPalette(
+    palette: "canvasBackground" | "elementBackground" | "elementStroke",
+  ): (string[] | string)[] {
     return getViewColorPalette(palette, this.targetView);
   }
 
@@ -4114,10 +4544,15 @@ export class ExcalidrawAutomate {
    */
   public async showColorPicker(
     anchorElement: HTMLElement,
-    palette: "canvasBackground"|"elementBackground"|"elementStroke",
+    palette: "canvasBackground" | "elementBackground" | "elementStroke",
     includeSceneColors: boolean = true,
   ): Promise<string | null> {
-    return showColorPicker(palette, anchorElement, this.targetView, includeSceneColors);
+    return showColorPicker(
+      palette,
+      anchorElement,
+      this.targetView,
+      includeSceneColors,
+    );
   }
 
   /**
@@ -4135,10 +4570,12 @@ export class ExcalidrawAutomate {
    * @param {string} svgString - The SVG string to import.
    * @returns {boolean} True if the import was successful, false otherwise.
    */
-  importSVG(svgString:string):boolean {
-    const res:ConversionResult =  svgToExcalidraw(svgString);
-    if(res.hasErrors) {
-      new Notice (`There were errors while parsing the given SVG:\n${res.errors}`);
+  importSVG(svgString: string): boolean {
+    const res: ConversionResult = svgToExcalidraw(svgString);
+    if (res.hasErrors) {
+      new Notice(
+        `There were errors while parsing the given SVG:\n${res.errors}`,
+      );
       return false;
     }
     this.copyViewElementsToEAforEditing(res.content);
@@ -4159,5 +4596,5 @@ export class ExcalidrawAutomate {
     this.style = {} as typeof this.style;
     this.canvas = {} as typeof this.canvas;
     this.colorPalette = {};
-  }  
-};
+  }
+}

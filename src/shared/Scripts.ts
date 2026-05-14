@@ -1,21 +1,24 @@
 import {
-App,
-Instruction,
-normalizePath,
-TAbstractFile,
-TFile,
+  App,
+  Instruction,
+  normalizePath,
+  TAbstractFile,
+  TFile,
 } from "obsidian";
 import { PLUGIN_ID } from "../constants/constants";
 import ExcalidrawView from "../view/ExcalidrawView";
 import ExcalidrawPlugin from "../core/main";
-import { GenericInputPrompt,GenericSuggester } from "./Dialogs/Prompt";
+import { GenericInputPrompt, GenericSuggester } from "./Dialogs/Prompt";
 import { getIMGFilename } from "../utils/fileUtils";
 import { splitFolderAndFilename } from "../utils/fileUtils";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import { WeakArray } from "./WeakArray";
-import { getExcalidrawViews,stripYamlFrontmatter } from "../utils/obsidianUtils";
-import { ButtonDefinition,InputPromptOptions } from "src/types/promptTypes";
+import {
+  getExcalidrawViews,
+  stripYamlFrontmatter,
+} from "../utils/obsidianUtils";
+import { ButtonDefinition, InputPromptOptions } from "src/types/promptTypes";
 
 export type ScriptIconMap = {
   [key: string]: { name: string; group: string; svgString: string };
@@ -42,7 +45,7 @@ export class ScriptEngine {
     this.eaInstances.forEach((ea) => {
       if (ea.targetView === view) {
         eas.add(ea);
-        if(ea.sidepanelTab) {
+        if (ea.sidepanelTab) {
           ea.targetView = null;
           ea.sidepanelTab.onExcalidrawViewClosed();
         } else {
@@ -62,7 +65,7 @@ export class ScriptEngine {
     this.scriptPath = null;
   }
 
-  private handleSvgFileChange (path: string) {
+  private handleSvgFileChange(path: string) {
     if (!path.endsWith(".svg")) {
       return;
     }
@@ -75,7 +78,7 @@ export class ScriptEngine {
     }
   }
 
-  private async deleteEventHandler (file: TFile) {
+  private async deleteEventHandler(file: TFile) {
     if (!(file instanceof TFile)) {
       return;
     }
@@ -84,9 +87,9 @@ export class ScriptEngine {
     }
     this.unloadScript(this.getScriptName(file), file.path);
     this.handleSvgFileChange(file.path);
-  };
+  }
 
-  private async createEventHandler (file: TFile) {
+  private async createEventHandler(file: TFile) {
     if (!(file instanceof TFile)) {
       return;
     }
@@ -95,9 +98,9 @@ export class ScriptEngine {
     }
     this.loadScript(file);
     this.handleSvgFileChange(file.path);
-  };
+  }
 
-  private async renameEventHandler (file: TAbstractFile, oldPath: string) {
+  private async renameEventHandler(file: TAbstractFile, oldPath: string) {
     if (!(file instanceof TFile)) {
       return;
     }
@@ -115,21 +118,18 @@ export class ScriptEngine {
 
   registerEventHandlers() {
     this.plugin.registerEvent(
-      this.app.vault.on(
-        "delete",
-        (file: TFile)=>this.deleteEventHandler(file)
+      this.app.vault.on("delete", (file: TFile) =>
+        this.deleteEventHandler(file),
       ),
     );
     this.plugin.registerEvent(
-      this.app.vault.on(
-        "create",
-        (file: TFile)=>this.createEventHandler(file)
+      this.app.vault.on("create", (file: TFile) =>
+        this.createEventHandler(file),
       ),
     );
     this.plugin.registerEvent(
-      this.app.vault.on(
-        "rename",
-        (file: TAbstractFile, oldPath: string)=>this.renameEventHandler(file, oldPath)
+      this.app.vault.on("rename", (file: TAbstractFile, oldPath: string) =>
+        this.renameEventHandler(file, oldPath),
       ),
     );
   }
@@ -146,7 +146,7 @@ export class ScriptEngine {
 
   public getListofScripts(): TFile[] {
     this.scriptPath = this.plugin.settings.scriptFolderPath;
-    if(!this.scriptPath) return;
+    if (!this.scriptPath) return;
     this.scriptPath = normalizePath(this.scriptPath);
     if (!this.app.vault.getAbstractFileByPath(this.scriptPath)) {
       return;
@@ -155,7 +155,7 @@ export class ScriptEngine {
       .getFiles()
       .filter(
         (f: TFile) =>
-          f.path.startsWith(this.scriptPath+"/") && f.extension === "md",
+          f.path.startsWith(this.scriptPath + "/") && f.extension === "md",
       );
   }
 
@@ -175,8 +175,10 @@ export class ScriptEngine {
     }
 
     const subpath = path.split(`${this.scriptPath}/`)[1];
-    if(!subpath) {
-      console.warn(`ScriptEngine.getScriptName unexpected basename: ${basename}; path: ${path}`)
+    if (!subpath) {
+      console.warn(
+        `ScriptEngine.getScriptName unexpected basename: ${basename}; path: ${path}`,
+      );
     }
     const lastSlash = subpath?.lastIndexOf("/");
     if (lastSlash > -1) {
@@ -187,8 +189,9 @@ export class ScriptEngine {
 
   public getScriptFileByName(scriptName: string): TFile | null {
     return (
-      this.getListofScripts()?.find((file) => this.getScriptName(file) === scriptName) ??
-      null
+      this.getListofScripts()?.find(
+        (file) => this.getScriptName(file) === scriptName,
+      ) ?? null
     );
   }
 
@@ -196,14 +199,16 @@ export class ScriptEngine {
     const svgFilePath = getIMGFilename(scriptPath, "svg");
     const file = this.app.vault.getAbstractFileByPath(svgFilePath);
     const svgString: string =
-      file && file instanceof TFile
-        ? await this.app.vault.read(file)
-        : null;
+      file && file instanceof TFile ? await this.app.vault.read(file) : null;
     this.scriptIconMap = {
       ...this.scriptIconMap,
     };
-    const splitname = splitFolderAndFilename(name)
-    this.scriptIconMap[scriptPath] = { name:splitname.filename, group: splitname.folderpath, svgString };
+    const splitname = splitFolderAndFilename(name);
+    this.scriptIconMap[scriptPath] = {
+      name: splitname.filename,
+      group: splitname.folderpath,
+      svgString,
+    };
     this.updateToolPannels();
   }
 
@@ -218,16 +223,18 @@ export class ScriptEngine {
       name: `(Script) ${scriptName}`,
       checkCallback: (checking: boolean) => {
         if (checking) {
-          return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView));
+          return Boolean(
+            this.app.workspace.getActiveViewOfType(ExcalidrawView),
+          );
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
-          (async()=>{
+          (async () => {
             const script = stripYamlFrontmatter(await this.app.vault.read(f));
-            if(script) {
-              this.executeScript(view, script, scriptName,f);
+            if (script) {
+              this.executeScript(view, script, scriptName, f);
             }
-          })()
+          })();
           return true;
         }
         return false;
@@ -259,13 +266,25 @@ export class ScriptEngine {
     delete this.app.commands.commands[commandId];
   }
 
-  async executeScript(view: ExcalidrawView = undefined, script: string, title: string, file: TFile) {
+  async executeScript(
+    view: ExcalidrawView = undefined,
+    script: string,
+    title: string,
+    file: TFile,
+  ) {
     if (!script || !title) {
       return;
     }
     //addresses the situation when after paste text element IDs are not updated to 8 characters
     //linked to onPaste save issue with the false parameter
-    if(view && view.getScene().elements.some(el=>!el.isDeleted && el.type === "text" && el.id.length > 8)) {
+    if (
+      view &&
+      view
+        .getScene()
+        .elements.some(
+          (el) => !el.isDeleted && el.type === "text" && el.id.length > 8,
+        )
+    ) {
       await view.save(false, true);
     }
 
@@ -318,7 +337,7 @@ export class ScriptEngine {
           customComponents,
           blockPointerInputOutsideModal,
           controlsOnTop,
-          draggable
+          draggable,
         );
       },
       suggester: (
@@ -334,18 +353,18 @@ export class ScriptEngine {
           hint,
           instructions,
         ),
-      scriptFile: file
+      scriptFile: file,
     });
     /*} catch (e) {
       new Notice(t("SCRIPT_EXECUTION_ERROR"), 4000);
       errorlog({ script: this.plugin.ea.activeScript, error: e });
   }*/
     return result;
-}
+  }
 
   private updateToolPannels() {
     const excalidrawViews = getExcalidrawViews(this.app, true);
-    excalidrawViews.forEach(excalidrawView => {
+    excalidrawViews.forEach((excalidrawView) => {
       excalidrawView.toolsPanelRef?.current?.updateScriptIconMap(
         this.scriptIconMap,
       );
@@ -381,7 +400,7 @@ export class ScriptEngine {
         customComponents,
         blockPointerInputOutsideModal,
         controlsOnTop,
-        draggable
+        draggable,
       );
     } catch {
       return undefined;
