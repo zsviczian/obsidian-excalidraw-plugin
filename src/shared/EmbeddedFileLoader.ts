@@ -461,7 +461,7 @@ export class EmbeddedFilesLoader {
     );
     if (imageList.length > 0) {
       hasSVGwithBitmap = true;
-    }  
+    }
 
     if (hasSVGwithBitmap && isDark && !Boolean(maybeSVG)) { 
       imageList.forEach((i) => {
@@ -491,19 +491,23 @@ export class EmbeddedFilesLoader {
     if (!hasSVGwithBitmap && svg.getAttribute("hasbitmap")) {
       hasSVGwithBitmap = true;
     }
-    if(shouldUseCache && !Boolean(maybeSVG)) {
+    if (shouldUseCache && !Boolean(maybeSVG)) {
       //cache SVG should have the width and height parameters and not the embedded font
       //see svgWithFont below
       imageCache.addImageToCache(cacheKey,"", svg);
     }
 
-    if(!svg.hasAttribute("width") && svg.hasAttribute("viewBox")){
+    if (!svg.hasAttribute("width") && svg.hasAttribute("viewBox")) {
       //2024.06.09
       //this addresses backward compatibility issues where the cache does not have the width and height attributes
       //this should be removed in the future
       const vb = svg.getAttr("viewBox").split(" ");
-      Boolean(vb[2]) && svg.setAttribute("width", vb[2]);
-      Boolean(vb[3]) && svg.setAttribute("height", vb[3]);
+      if (vb[2]) {
+        svg.setAttribute("width", vb[2]);
+      }
+      if (vb[3]) {
+        svg.setAttribute("height", vb[3]);
+      }
     }
     const dURL = svgToBase64(svg.outerHTML) as DataURL;
     return {dataURL: dURL as DataURL, hasSVGwithBitmap, loadedFromCache: Boolean(maybeSVG)};

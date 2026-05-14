@@ -1460,14 +1460,16 @@ export default class ExcalidrawPlugin extends Plugin {
     const saveHandler = overridSaveShortcut
      ? scope.register(["Ctrl"], "s", () => this.forceSaveActiveView(false))
      : undefined;
-    if(saveHandler) {
+    if (saveHandler) {
       scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
     }
     this.popScope = () => {
-      overrideHandlers.forEach(handler => scope.unregister(handler));
+      overrideHandlers.forEach( (handler) => scope.unregister(handler));
       scope.unregister(handler_ctrlF);
-      Boolean(saveHandler) && scope.unregister(saveHandler);
-    }
+      if (saveHandler) {
+        scope.unregister(saveHandler);
+      }
+    };
   }
 
   /**
