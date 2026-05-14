@@ -1,14 +1,16 @@
 import type {
-ExcalidrawElement,
-ExcalidrawImageElement,
+  ExcalidrawElement,
+  ExcalidrawImageElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
-import { getCommonBoundingBox,restoreElements } from "src/constants/constants";
+import { getCommonBoundingBox, restoreElements } from "src/constants/constants";
 import { getEA } from "src/core";
 import { t } from "src/lang/helpers";
 import type { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 
-function estimateBounds(elements: ExcalidrawElement[]): [number, number, number, number] {
+function estimateBounds(
+  elements: ExcalidrawElement[],
+): [number, number, number, number] {
   const bb = getCommonBoundingBox(elements);
   return [bb.minX, bb.minY, bb.maxX, bb.maxY];
 }
@@ -34,7 +36,10 @@ export function repositionElementsToCursor(
     element.y = element.y + offsetY;
   });
 
-  return restoreElements(elements, null, { refreshDimensions: true, repairBindings: true });
+  return restoreElements(elements, null, {
+    refreshDimensions: true,
+    repairBindings: true,
+  });
 }
 
 export const cloneElement = (el: ExcalidrawElement): any => {
@@ -51,16 +56,28 @@ export const getBoundTextElementId = (container: ExcalidrawElement | null) => {
     : null;
 };
 
-export const insertLaTeXToView = (view: ExcalidrawView, center: boolean = false) => {
+export const insertLaTeXToView = (
+  view: ExcalidrawView,
+  center: boolean = false,
+) => {
   const app = view.plugin.app;
   const ea = getEA(view) as ExcalidrawAutomate;
   void import("src/shared/Dialogs/Prompt").then(({ LaTexPrompt }) => {
-    LaTexPrompt.Prompt(app, t("ENTER_LATEX"), view.plugin.settings.latexBoilerplate)
-      .then(async (formula: string) => {
-        const lastLatexEl = ea.getViewElements()
-          .filter((el) => el.type === "image" && view.excalidrawData.hasEquation(el.fileId))
+    LaTexPrompt.Prompt(
+      app,
+      t("ENTER_LATEX"),
+      view.plugin.settings.latexBoilerplate,
+    ).then(
+      async (formula: string) => {
+        const lastLatexEl = ea
+          .getViewElements()
+          .filter(
+            (el) =>
+              el.type === "image" && view.excalidrawData.hasEquation(el.fileId),
+          )
           .reduce(
-            (maxel, curr) => (!maxel || curr.updated > maxel.updated) ? curr : maxel,
+            (maxel, curr) =>
+              !maxel || curr.updated > maxel.updated ? curr : maxel,
             undefined,
           ) as ExcalidrawImageElement;
         let scaleX = 1;
@@ -86,7 +103,9 @@ export const insertLaTeXToView = (view: ExcalidrawView, center: boolean = false)
           ea.selectElementsInView([id]);
         }
         ea.destroy();
-      }, () => {});
+      },
+      () => {},
+    );
   });
 };
 
@@ -94,7 +113,15 @@ export const search = async (view: ExcalidrawView) => {
   const ea = view.plugin.ea;
   ea.reset();
   ea.setView(view);
-  const elements = ea.getViewElements().filter((el) => el.type === "text" || el.type === "frame" || el.link || el.type === "image");
+  const elements = ea
+    .getViewElements()
+    .filter(
+      (el) =>
+        el.type === "text" ||
+        el.type === "frame" ||
+        el.link ||
+        el.type === "image",
+    );
   if (elements.length === 0) {
     return;
   }

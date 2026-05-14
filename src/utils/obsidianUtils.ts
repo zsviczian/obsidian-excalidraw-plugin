@@ -1,17 +1,32 @@
 import {
-App,
-Editor,
-FrontMatterCache,
-MarkdownView,
-OpenViewState,parseFrontMatterEntry,TextFileView,TFile,View,ViewState,Workspace,WorkspaceLeaf,WorkspaceSplit
+  App,
+  Editor,
+  FrontMatterCache,
+  MarkdownView,
+  OpenViewState,
+  parseFrontMatterEntry,
+  TextFileView,
+  TFile,
+  View,
+  ViewState,
+  Workspace,
+  WorkspaceLeaf,
+  WorkspaceSplit,
 } from "obsidian";
 import ExcalidrawPlugin from "../core/main";
-import { linkClickModifierType,ModifierKeys } from "./modifierkeyHelper";
-import { DEVICE,EXCALIDRAW_PLUGIN,VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
+import { linkClickModifierType, ModifierKeys } from "./modifierkeyHelper";
+import {
+  DEVICE,
+  EXCALIDRAW_PLUGIN,
+  VIEW_TYPE_EXCALIDRAW,
+} from "src/constants/constants";
 import yaml from "js-yaml";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 
-export const getParentOfClass = (element: Element, cssClass: string):HTMLElement | null => {
+export const getParentOfClass = (
+  element: Element,
+  cssClass: string,
+): HTMLElement | null => {
   let parent = element.parentElement;
   while (
     parent &&
@@ -23,69 +38,97 @@ export const getParentOfClass = (element: Element, cssClass: string):HTMLElement
   return parent?.classList?.contains(cssClass) ? parent : null;
 };
 
-export function getExcalidrawViews(app: App, initializedOnly: boolean = false): ExcalidrawView[] {
-  const leaves = app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).filter(l => l.view.getViewType?.() === VIEW_TYPE_EXCALIDRAW);
+export function getExcalidrawViews(
+  app: App,
+  initializedOnly: boolean = false,
+): ExcalidrawView[] {
+  const leaves = app.workspace
+    .getLeavesOfType(VIEW_TYPE_EXCALIDRAW)
+    .filter((l) => l.view.getViewType?.() === VIEW_TYPE_EXCALIDRAW);
   return leaves
-    .map(l=>l.view as ExcalidrawView)
-    .filter(view => !initializedOnly || Boolean(view?._loaded && view.excalidrawAPI));
+    .map((l) => l.view as ExcalidrawView)
+    .filter(
+      (view) =>
+        !initializedOnly || Boolean(view?._loaded && view.excalidrawAPI),
+    );
 }
 
-export function getExcalidraAndMarkdowViewsForFile(app: App, file: TFile): TextFileView[] {
+export function getExcalidraAndMarkdowViewsForFile(
+  app: App,
+  file: TFile,
+): TextFileView[] {
   const leaves = [
-    ...app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW).filter(l => l.view.getViewType?.() === VIEW_TYPE_EXCALIDRAW),
-    ...app.workspace.getLeavesOfType("markdown").filter(l=>l.view instanceof MarkdownView)
+    ...app.workspace
+      .getLeavesOfType(VIEW_TYPE_EXCALIDRAW)
+      .filter((l) => l.view.getViewType?.() === VIEW_TYPE_EXCALIDRAW),
+    ...app.workspace
+      .getLeavesOfType("markdown")
+      .filter((l) => l.view instanceof MarkdownView),
   ];
-  return leaves.map(l=>l.view as TextFileView).filter(v=>v.file === file);
+  return leaves
+    .map((l) => l.view as TextFileView)
+    .filter((v) => v.file === file);
 }
 
 export const getLeaf = (
   plugin: ExcalidrawPlugin,
   origo: WorkspaceLeaf,
-  ev: ModifierKeys
+  ev: ModifierKeys,
 ) => {
-  const newTab = ():WorkspaceLeaf => {
-    if(!plugin.settings.openInMainWorkspace) return plugin.app.workspace.getLeaf('tab');
+  const newTab = (): WorkspaceLeaf => {
+    if (!plugin.settings.openInMainWorkspace)
+      return plugin.app.workspace.getLeaf("tab");
     const [leafLoc, _] = getLeafLoc(origo);
-    if(leafLoc === 'main') return plugin.app.workspace.getLeaf('tab');
-    return getNewOrAdjacentLeaf(plugin,origo);
-  }
-  const newTabGroup = ():WorkspaceLeaf => getNewOrAdjacentLeaf(plugin,origo);
-  const newWindow = ():WorkspaceLeaf => plugin.app.workspace.openPopoutLeaf();
+    if (leafLoc === "main") return plugin.app.workspace.getLeaf("tab");
+    return getNewOrAdjacentLeaf(plugin, origo);
+  };
+  const newTabGroup = (): WorkspaceLeaf => getNewOrAdjacentLeaf(plugin, origo);
+  const newWindow = (): WorkspaceLeaf => plugin.app.workspace.openPopoutLeaf();
 
-  switch(linkClickModifierType(ev)) {
-    case "active-pane": return origo;
-    case "new-tab": return newTab();
-    case "new-pane": return newTabGroup();
-    case "popout-window": return newWindow();
-    default: return newTab();
+  switch (linkClickModifierType(ev)) {
+    case "active-pane":
+      return origo;
+    case "new-tab":
+      return newTab();
+    case "new-pane":
+      return newTabGroup();
+    case "popout-window":
+      return newWindow();
+    default:
+      return newTab();
   }
-}
+};
 
-const getLeafLoc = (leaf: WorkspaceLeaf): ["main" | "popout" | "left" | "right" | "hover",any] => {
+const getLeafLoc = (
+  leaf: WorkspaceLeaf,
+): ["main" | "popout" | "left" | "right" | "hover", any] => {
   //@ts-ignore
   const leafId = leaf.id;
   const layout = EXCALIDRAW_PLUGIN.app.workspace.getLayout();
-  const getLeaves = (l:any)=> l.children
-    .filter((c:any)=>c.type!=="leaf")
-    .map((c:any)=>getLeaves(c))
-    .flat()
-    .concat(l.children.filter((c:any)=>c.type==="leaf").map((c:any)=>c.id))
-  
+  const getLeaves = (l: any) =>
+    l.children
+      .filter((c: any) => c.type !== "leaf")
+      .map((c: any) => getLeaves(c))
+      .flat()
+      .concat(
+        l.children.filter((c: any) => c.type === "leaf").map((c: any) => c.id),
+      );
+
   const mainLeavesIds = getLeaves(layout.main);
 
   return [
     layout.main && mainLeavesIds.contains(leafId)
-    ? "main"
-    : layout.floating && getLeaves(layout.floating).contains(leafId)
-      ? "popout"
-      : layout.left && getLeaves(layout.left).contains(leafId)
-        ? "left"
-        : layout.right && getLeaves(layout.right).contains(leafId)
-          ? "right"
-          : "hover",
-     mainLeavesIds
+      ? "main"
+      : layout.floating && getLeaves(layout.floating).contains(leafId)
+        ? "popout"
+        : layout.left && getLeaves(layout.left).contains(leafId)
+          ? "left"
+          : layout.right && getLeaves(layout.right).contains(leafId)
+            ? "right"
+            : "hover",
+    mainLeavesIds,
   ];
-}
+};
 
 /*
 | Setting                 |                                       Originating Leaf                                                       |
@@ -98,42 +141,54 @@ const getLeafLoc = (leaf: WorkspaceLeaf): ["main" | "popout" | "left" | "right" 
 */
 export const getNewOrAdjacentLeaf = (
   plugin: ExcalidrawPlugin,
-  leaf: WorkspaceLeaf
+  leaf: WorkspaceLeaf,
 ): WorkspaceLeaf | null => {
   const [leafLoc, mainLeavesIds] = getLeafLoc(leaf);
 
-  const getMostRecentOrAvailableLeafInMainWorkspace = (inDifferentTabGroup?: boolean):WorkspaceLeaf => {
+  const getMostRecentOrAvailableLeafInMainWorkspace = (
+    inDifferentTabGroup?: boolean,
+  ): WorkspaceLeaf => {
     let mainLeaf = plugin.app.workspace.getMostRecentLeaf();
-    if(mainLeaf && mainLeaf !== leaf && mainLeaf.view?.containerEl.ownerDocument === document) {
+    if (
+      mainLeaf &&
+      mainLeaf !== leaf &&
+      mainLeaf.view?.containerEl.ownerDocument === document
+    ) {
       //Found a leaf in the main workspace that is not the originating leaf
       return mainLeaf;
     }
     //Iterate all leaves in the main workspace and find the first one that is not the originating leaf
     mainLeaf = null;
-    mainLeavesIds
-      .forEach((id:any)=> {
-        const l = plugin.app.workspace.getLeafById(id);
-        if(mainLeaf ||
-          !l.view?.navigation || 
-          leaf === l ||
-          //@ts-ignore
-          (inDifferentTabGroup && (l?.parent === leaf?.parent))
-        ) return;
-        mainLeaf = l;
-    })
+    mainLeavesIds.forEach((id: any) => {
+      const l = plugin.app.workspace.getLeafById(id);
+      if (
+        mainLeaf ||
+        !l.view?.navigation ||
+        leaf === l ||
+        //@ts-ignore
+        (inDifferentTabGroup && l?.parent === leaf?.parent)
+      )
+        return;
+      mainLeaf = l;
+    });
     return mainLeaf;
-  }
+  };
 
   //1 - In Main Workspace
-  if(plugin.settings.openInMainWorkspace || ["main","left","right"].contains(leafLoc)) {
+  if (
+    plugin.settings.openInMainWorkspace ||
+    ["main", "left", "right"].contains(leafLoc)
+  ) {
     //1.1 - Create new leaf in main workspace
-    if(!plugin.settings.openInAdjacentPane) {
-      if(leafLoc === "main") {
+    if (!plugin.settings.openInAdjacentPane) {
+      if (leafLoc === "main") {
         return plugin.app.workspace.createLeafBySplit(leaf);
       }
       const ml = getMostRecentOrAvailableLeafInMainWorkspace();
       return ml
-        ? (ml.view.getViewType() === "empty" ? ml : plugin.app.workspace.createLeafBySplit(ml))
+        ? ml.view.getViewType() === "empty"
+          ? ml
+          : plugin.app.workspace.createLeafBySplit(ml)
         : plugin.app.workspace.getLeaf(true);
     }
 
@@ -143,32 +198,40 @@ export const getNewOrAdjacentLeaf = (
   }
 
   //2
-  if(!plugin.settings.openInAdjacentPane) {
+  if (!plugin.settings.openInAdjacentPane) {
     return plugin.app.workspace.createLeafBySplit(leaf);
   }
 
   //3
-  if(leafLoc === "hover") {
+  if (leafLoc === "hover") {
     const leaves = new Set<WorkspaceLeaf>();
-    plugin.app.workspace.iterateAllLeaves(l=>{
+    plugin.app.workspace.iterateAllLeaves((l) => {
       //@ts-ignore
-      if(l!==leaf && leaf.containerEl.parentElement === l.containerEl.parentElement) leaves.add(l);
-    })
-    if(leaves.size === 0) {
-      return plugin.app.workspace.createLeafBySplit(leaf);      
+      if (
+        l !== leaf &&
+        leaf.containerEl.parentElement === l.containerEl.parentElement
+      )
+        leaves.add(l);
+    });
+    if (leaves.size === 0) {
+      return plugin.app.workspace.createLeafBySplit(leaf);
     }
-    return Array.from(leaves)[0];  
+    return Array.from(leaves)[0];
   }
 
   //4
-  if(leafLoc === "popout") {
-    const popoutLeaves = new Set<WorkspaceLeaf>();  
-    plugin.app.workspace.iterateAllLeaves(l=>{
-      if(l !== leaf && l.view.navigation && l.view.containerEl.ownerDocument === leaf.view.containerEl.ownerDocument) {
+  if (leafLoc === "popout") {
+    const popoutLeaves = new Set<WorkspaceLeaf>();
+    plugin.app.workspace.iterateAllLeaves((l) => {
+      if (
+        l !== leaf &&
+        l.view.navigation &&
+        l.view.containerEl.ownerDocument === leaf.view.containerEl.ownerDocument
+      ) {
         popoutLeaves.add(l);
       }
     });
-    if(popoutLeaves.size === 0) {
+    if (popoutLeaves.size === 0) {
       return plugin.app.workspace.createLeafBySplit(leaf);
     }
     return Array.from(popoutLeaves)[0];
@@ -177,13 +240,18 @@ export const getNewOrAdjacentLeaf = (
   return plugin.app.workspace.createLeafBySplit(leaf);
 };
 
-export const isObsidianThemeDark = () => document.body.classList.contains("theme-dark");
+export const isObsidianThemeDark = () =>
+  document.body.classList.contains("theme-dark");
 
-export type ConstructableWorkspaceSplit = new (ws: Workspace, dir: "horizontal"|"vertical") => WorkspaceSplit;
+export type ConstructableWorkspaceSplit = new (
+  ws: Workspace,
+  dir: "horizontal" | "vertical",
+) => WorkspaceSplit;
 
-export const getContainerForDocument = (doc:Document) => {
+export const getContainerForDocument = (doc: Document) => {
   if (doc !== document && EXCALIDRAW_PLUGIN.app.workspace.floatingSplit) {
-    for (const container of EXCALIDRAW_PLUGIN.app.workspace.floatingSplit.children) {
+    for (const container of EXCALIDRAW_PLUGIN.app.workspace.floatingSplit
+      .children) {
       if (container.doc === doc) return container;
     }
   }
@@ -191,120 +259,138 @@ export const getContainerForDocument = (doc:Document) => {
 };
 
 //needed for backward compatibility
-export const legacyCleanBlockRef = (blockRef:string) => {
-  if(!blockRef) return blockRef;
-  return blockRef.replace(/[!"#$%&()*+,.:;<=>?@^`{|}~/[\]\\]/g, "").replace(/\s+/g, " ").trim();
-}
+export const legacyCleanBlockRef = (blockRef: string) => {
+  if (!blockRef) return blockRef;
+  return blockRef
+    .replace(/[!"#$%&()*+,.:;<=>?@^`{|}~/[\]\\]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+};
 
-export const getAllWindowDocuments = (app:App):Document[] => {
+export const getAllWindowDocuments = (app: App): Document[] => {
   const documents = new Set<Document>();
   documents.add(document);
-  app.workspace.iterateAllLeaves(l=>{
-    if(l.view.containerEl.ownerDocument !== document) {
+  app.workspace.iterateAllLeaves((l) => {
+    if (l.view.containerEl.ownerDocument !== document) {
       documents.add(l.view.containerEl.ownerDocument);
     }
   });
   return Array.from(documents);
-}
+};
 
-export const obsidianPDFQuoteWithRef = (text:string):{quote: string, link: string} => {
+export const obsidianPDFQuoteWithRef = (
+  text: string,
+): { quote: string; link: string } => {
   const reg = /^> (.*)\n\n\[\[([^|\]]*)\|[^\]]*]]$/gm;
   const match = reg.exec(text);
-  if(match) {
-    return {quote: match[1], link: match[2]};
+  if (match) {
+    return { quote: match[1], link: match[2] };
   }
   return null;
-}
+};
 
-export const extractSVGPNGFileName = (text:string) => {
-  const regex = /\[\[([^\]|#^]+\.(?:svg|png))(?:[^\]]+)?\]\]|\[[^\]]+\]\(([^)]+\.(?:svg|png))\)/;
+export const extractSVGPNGFileName = (text: string) => {
+  const regex =
+    /\[\[([^\]|#^]+\.(?:svg|png))(?:[^\]]+)?\]\]|\[[^\]]+\]\(([^)]+\.(?:svg|png))\)/;
   const match = text.match(regex);
-  return match ? (match[1] || match[2]) : null;
-}
+  return match ? match[1] || match[2] : null;
+};
 
-export const getFileCSSClasses = (
-  file: TFile,
-): string[] => {
+export const getFileCSSClasses = (file: TFile): string[] => {
   if (file) {
     const plugin = window?.ExcalidrawAutomate?.plugin;
-    if(!plugin) return [];
+    if (!plugin) return [];
     const fileCache = plugin.app.metadataCache.getFileCache(file);
-    if(!fileCache?.frontmatter) return [];
+    if (!fileCache?.frontmatter) return [];
     const x = parseFrontMatterEntry(fileCache.frontmatter, "cssclasses");
-    if (Array.isArray(x)) return x
-    if (typeof x === "string") return Array.from(new Set(x.split(/[, ]+/).filter(Boolean)));
+    if (Array.isArray(x)) return x;
+    if (typeof x === "string")
+      return Array.from(new Set(x.split(/[, ]+/).filter(Boolean)));
     return [];
   }
   return [];
-}
+};
 
-//@ts-ignore
-export const getActivePDFPageNumberFromPDFView = (view: View): number => view?.viewer?.child?.pdfViewer?.page;
+export const getActivePDFPageNumberFromPDFView = (view: View): number =>
+  //@ts-ignore
+  view?.viewer?.child?.pdfViewer?.page;
 
 export const openLeaf = ({
   plugin,
   fnGetLeaf,
   file,
-  openState
-}:{
-  plugin: ExcalidrawPlugin,
-  fnGetLeaf: ()=>WorkspaceLeaf,
-  file: TFile,
-  openState?: OpenViewState
-}) : {
-  leaf: WorkspaceLeaf
-  promise: Promise<void>
- } => {
-  let leaf:WorkspaceLeaf = null;
+  openState,
+}: {
+  plugin: ExcalidrawPlugin;
+  fnGetLeaf: () => WorkspaceLeaf;
+  file: TFile;
+  openState?: OpenViewState;
+}): {
+  leaf: WorkspaceLeaf;
+  promise: Promise<void>;
+} => {
+  let leaf: WorkspaceLeaf = null;
   if (plugin.settings.focusOnFileTab) {
     plugin.app.workspace.iterateAllLeaves((l) => {
-      if(leaf) return;
+      if (leaf) return;
       //@ts-ignore
       if (l?.view?.file === file) {
-        plugin.app.workspace.setActiveLeaf(l,{focus: true});
+        plugin.app.workspace.setActiveLeaf(l, { focus: true });
         leaf = l;
       }
     });
-    if(leaf) {
-      if(openState) {
+    if (leaf) {
+      if (openState) {
         const promise = leaf.openFile(file, openState);
-        return {leaf, promise};
+        return { leaf, promise };
       }
-      return {leaf, promise: Promise.resolve()};
+      return { leaf, promise: Promise.resolve() };
     }
   }
   leaf = fnGetLeaf();
   const promise = leaf.openFile(file, openState);
-  return {leaf, promise};
-}
+  return { leaf, promise };
+};
 
-export function mergeMarkdownFiles (template: string, target: string): string {
+export function mergeMarkdownFiles(template: string, target: string): string {
   // Template frontmatter
-  const templateFrontmatterEnd = template.indexOf('---', 4);
-  const templateFrontmatterRaw = template.substring(4, templateFrontmatterEnd).trim();
+  const templateFrontmatterEnd = template.indexOf("---", 4);
+  const templateFrontmatterRaw = template
+    .substring(4, templateFrontmatterEnd)
+    .trim();
   const templateContent = template.substring(templateFrontmatterEnd + 3);
-  const templateFrontmatterObj: FrontMatterCache = yaml.load(templateFrontmatterRaw) || {};
+  const templateFrontmatterObj: FrontMatterCache =
+    yaml.load(templateFrontmatterRaw) || {};
 
-  const hasTargetFM = target.startsWith('---\n') && target.indexOf('---\n', 4) > 0;
+  const hasTargetFM =
+    target.startsWith("---\n") && target.indexOf("---\n", 4) > 0;
   if (hasTargetFM) {
-    const targetFrontmatterEnd = target.indexOf('---\n', 4);
-    let targetFrontmatterRaw = target.substring(4, targetFrontmatterEnd).replace(/\s+$/,''); // keep as-is
+    const targetFrontmatterEnd = target.indexOf("---\n", 4);
+    let targetFrontmatterRaw = target
+      .substring(4, targetFrontmatterEnd)
+      .replace(/\s+$/, ""); // keep as-is
     const targetContent = target.substring(targetFrontmatterEnd + 3);
 
-    const targetFrontmatterObj: FrontMatterCache = yaml.load(targetFrontmatterRaw) || {};
+    const targetFrontmatterObj: FrontMatterCache =
+      yaml.load(targetFrontmatterRaw) || {};
 
     // 1. Merge array keys present in both (target has precedence for ordering)
-    const mergeArrayKeys = Object.keys(templateFrontmatterObj)
-      .filter(k => Array.isArray(templateFrontmatterObj[k]) && Array.isArray(targetFrontmatterObj[k]));
+    const mergeArrayKeys = Object.keys(templateFrontmatterObj).filter(
+      (k) =>
+        Array.isArray(templateFrontmatterObj[k]) &&
+        Array.isArray(targetFrontmatterObj[k]),
+    );
 
     if (mergeArrayKeys.length) {
       for (const k of mergeArrayKeys) {
         const tArr = targetFrontmatterObj[k] as any[];
         const tplArr = templateFrontmatterObj[k] as any[];
-        const merged = [...tArr, ...tplArr.filter(v => !tArr.includes(v))];
+        const merged = [...tArr, ...tplArr.filter((v) => !tArr.includes(v))];
         // Produce YAML for just this key
         const mergedYaml = yaml.dump({ [k]: merged }).trimEnd();
-        targetFrontmatterRaw = replaceYamlKeyBlock(targetFrontmatterRaw, k, mergedYaml) ?? targetFrontmatterRaw;
+        targetFrontmatterRaw =
+          replaceYamlKeyBlock(targetFrontmatterRaw, k, mergedYaml) ??
+          targetFrontmatterRaw;
       }
     }
 
@@ -317,7 +403,7 @@ export function mergeMarkdownFiles (template: string, target: string): string {
     }
 
     const appended = Object.keys(newKeys).length
-      ? targetFrontmatterRaw + '\n' + yaml.dump(newKeys).trimEnd()
+      ? targetFrontmatterRaw + "\n" + yaml.dump(newKeys).trimEnd()
       : targetFrontmatterRaw;
 
     return `---\n${appended}\n---\n${targetContent}\n\n${templateContent.trim()}\n`;
@@ -327,10 +413,14 @@ export function mergeMarkdownFiles (template: string, target: string): string {
     const templateFMYaml = yaml.dump(templateFrontmatterObj).trimEnd();
     return `---\n${templateFMYaml}\n---\n${targetContent}\n\n${templateContent.trim()}\n`;
   }
-};
+}
 
 // Helper: replace a top-level YAML key block (line-based, avoids partial matches causing duplicates)
-function replaceYamlKeyBlock(src: string, key: string, newBlock: string): string | null {
+function replaceYamlKeyBlock(
+  src: string,
+  key: string,
+  newBlock: string,
+): string | null {
   const lines = src.split(/\r?\n/);
   let start = -1;
   for (let i = 0; i < lines.length; i++) {
@@ -344,13 +434,16 @@ function replaceYamlKeyBlock(src: string, key: string, newBlock: string): string
   let end = start + 1;
   while (end < lines.length) {
     const line = lines[end];
-    if (line.trim() === "") { // blank line ends block (retain blank after replacement)
+    if (line.trim() === "") {
+      // blank line ends block (retain blank after replacement)
       break;
     }
-    if (/^[^\s].*?:/.test(line)) { // next top-level key
+    if (/^[^\s].*?:/.test(line)) {
+      // next top-level key
       break;
     }
-    if (!/^\s/.test(line)) { // safety: non-indented (shouldn't happen)
+    if (!/^\s/.test(line)) {
+      // safety: non-indented (shouldn't happen)
       break;
     }
     end++;
@@ -358,21 +451,21 @@ function replaceYamlKeyBlock(src: string, key: string, newBlock: string): string
 
   const before = lines.slice(0, start);
   const after = lines.slice(end);
-  const replaced = [...before, newBlock, ...after].join('\n');
+  const replaced = [...before, newBlock, ...after].join("\n");
 
   return replaced;
 }
 
 function escapeRegex(s: string) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-export const editorInsertText = (editor: Editor, text: string)=> {
+export const editorInsertText = (editor: Editor, text: string) => {
   const cursor = editor.getCursor();
   const line = editor.getLine(cursor.line);
   const updatedLine = line.slice(0, cursor.ch) + text + line.slice(cursor.ch);
   editor.setLine(cursor.line, updatedLine);
-}
+};
 
 export const foldExcalidrawSection = (view: MarkdownView) => {
   if (!view || !(view instanceof MarkdownView)) return;
@@ -382,20 +475,30 @@ export const foldExcalidrawSection = (view: MarkdownView) => {
     te: -1, // ## Text Elements
     el: -1, // ## Element Links
     ef: -1, // ## Embedded Files
-    d: -1,  // ## Drawing
+    d: -1, // ## Drawing
   };
 
   const existingFolds = view.currentMode.getFoldInfo()?.folds ?? [];
   const lineCount = view.editor.lineCount();
-  
+
   for (let i = 0; i < lineCount; i++) {
     const line = view.editor.getLine(i);
     switch (line) {
-      case "# Excalidraw Data": foldStart.ed = i; break;
-      case "## Text Elements": foldStart.te = i; break;
-      case "## Element Links": foldStart.el = i; break;
-      case "## Embedded Files": foldStart.ef = i; break;
-      case "## Drawing": foldStart.d = i; break;
+      case "# Excalidraw Data":
+        foldStart.ed = i;
+        break;
+      case "## Text Elements":
+        foldStart.te = i;
+        break;
+      case "## Element Links":
+        foldStart.el = i;
+        break;
+      case "## Embedded Files":
+        foldStart.ef = i;
+        break;
+      case "## Drawing":
+        foldStart.d = i;
+        break;
     }
     if (line === "## Drawing") break;
   }
@@ -403,9 +506,30 @@ export const foldExcalidrawSection = (view: MarkdownView) => {
   if (foldStart.ed > -1 && foldStart.d > -1) {
     const foldPositions = [
       ...existingFolds,
-      ...(foldStart.te > -1 ? [{ from: foldStart.te, to: (foldStart.el > -1 ? foldStart.el : (foldStart.ef > -1 ? foldStart.ef : foldStart.d)) - 1 }] : []),
-      ...(foldStart.el > -1 ? [{ from: foldStart.el, to: (foldStart.ef > -1 ? foldStart.ef : foldStart.d) - 1 }] : []),
-      ...(foldStart.ef > -1 ? [{ from: foldStart.ef, to: foldStart.d - 1 }] : []),
+      ...(foldStart.te > -1
+        ? [
+            {
+              from: foldStart.te,
+              to:
+                (foldStart.el > -1
+                  ? foldStart.el
+                  : foldStart.ef > -1
+                    ? foldStart.ef
+                    : foldStart.d) - 1,
+            },
+          ]
+        : []),
+      ...(foldStart.el > -1
+        ? [
+            {
+              from: foldStart.el,
+              to: (foldStart.ef > -1 ? foldStart.ef : foldStart.d) - 1,
+            },
+          ]
+        : []),
+      ...(foldStart.ef > -1
+        ? [{ from: foldStart.ef, to: foldStart.d - 1 }]
+        : []),
       { from: foldStart.d, to: lineCount - 1 },
       { from: foldStart.ed, to: lineCount - 1 },
     ];
@@ -431,11 +555,17 @@ export async function closeLeafView(leaf: WorkspaceLeaf) {
 
 //In Obsidian 1.8.x the active excalidraw leaf is obscured by an empty leaf without a parent
 //In some ways similar to patchMobileView() - though does something completely different, but both mobile leaf related
-export function isUnwantedLeaf(leaf:WorkspaceLeaf):boolean {
-  return !DEVICE.isDesktop && 
-    leaf.view?.getViewType() === "empty" && leaf.parent && !leaf.parent.parent &&
+export function isUnwantedLeaf(leaf: WorkspaceLeaf): boolean {
+  return (
+    !DEVICE.isDesktop &&
+    leaf.view?.getViewType() === "empty" &&
+    leaf.parent &&
+    !leaf.parent.parent &&
     //@ts-ignore
-    leaf.parent.type === "split" && leaf.parent.children.length === 1
+    leaf.parent.type === "split" &&
+    //@ts-ignore
+    leaf.parent.children.length === 1
+  );
 }
 
 /**
@@ -446,8 +576,9 @@ export function getAudioElementHeight(): number {
   // Create a temporary audio element with controls
   const audioElement = document.createElement("audio");
   audioElement.controls = true;
-  audioElement.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"; // Minimal valid audio
-  
+  audioElement.src =
+    "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"; // Minimal valid audio
+
   // Create a wrapper to avoid affecting page layout
   const wrapper = document.createElement("div");
   wrapper.style.position = "absolute";
@@ -455,25 +586,25 @@ export function getAudioElementHeight(): number {
   wrapper.style.visibility = "hidden";
   wrapper.style.pointerEvents = "none";
   wrapper.appendChild(audioElement);
-  
+
   // Add to document to allow CSS to be applied
   document.body.appendChild(wrapper);
-  
+
   // Get height
   let height = 0;
   try {
     // Force layout calculation
     document.body.offsetHeight;
-    
+
     // Get height from bounding rect
     const rect = audioElement.getBoundingClientRect();
     height = rect.height;
-    
+
     // Fallback to computed style if bounding rect returns 0
     if (height === 0) {
       const computedStyle = window.getComputedStyle(audioElement);
       height = parseFloat(computedStyle.height) || 0;
-      
+
       // If still 0, try measuring the wrapper
       if (height === 0) {
         height = wrapper.getBoundingClientRect().height;
@@ -483,7 +614,7 @@ export function getAudioElementHeight(): number {
     // Clean up
     document.body.removeChild(wrapper);
   }
-  
+
   return Math.round(height);
 }
 

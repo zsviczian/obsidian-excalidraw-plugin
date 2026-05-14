@@ -3,7 +3,11 @@ export const durationTreshold = 0; //0.05; //ms
 export let DEBUGGING = false;
 
 export const log = console.log.bind(window.console);
-export const debug = (fn: (...args: any[]) => any, fnName: string, ...messages: any[]) => {
+export const debug = (
+  fn: (...args: any[]) => any,
+  fnName: string,
+  ...messages: any[]
+) => {
   //console.log(fnName,fn,...messages);
   console.log(fnName, ...messages);
 };
@@ -43,13 +47,19 @@ export class CustomMutationObserver {
   }
 
   observe(target: Node, options: MutationObserverInit) {
-    const wrappedCallback: MutationCallback = async (mutationsList, observer) => {
+    const wrappedCallback: MutationCallback = async (
+      mutationsList,
+      observer,
+    ) => {
       const startTime = performance.now(); // Get start time
       await this.originalCallback(mutationsList, observer); // Invoke the original callback
       const endTime = performance.now(); // Get end time
       const executionTime = endTime - startTime;
       if (executionTime > durationTreshold) {
-        console.log(`Excalidraw ${this.name} MutationObserver callback took ${executionTime}ms to execute`, observer);
+        console.log(
+          `Excalidraw ${this.name} MutationObserver callback took ${executionTime}ms to execute`,
+          observer,
+        );
       }
     };
 

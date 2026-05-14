@@ -1,11 +1,34 @@
-
-import { MAX_IMAGE_SIZE,IMAGE_TYPES,ANIMATED_IMAGE_TYPES,MD_EX_SECTIONS,AUDIO_TYPES,CARD_WIDTH,CARD_HEIGHT,getDefaultColorPalette,DEVICE } from "src/constants/constants";
-import { App,Modal,Notice,TFile } from "obsidian";
+import {
+  MAX_IMAGE_SIZE,
+  IMAGE_TYPES,
+  ANIMATED_IMAGE_TYPES,
+  MD_EX_SECTIONS,
+  AUDIO_TYPES,
+  CARD_WIDTH,
+  CARD_HEIGHT,
+  getDefaultColorPalette,
+  DEVICE,
+} from "src/constants/constants";
+import { App, Modal, Notice, TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { REGEX_LINK,REG_LINKINDEX_HYPERLINK,getExcalidrawMarkdownHeaderSection,REGEX_TAGS } from "../shared/ExcalidrawData";
+import {
+  REGEX_LINK,
+  REG_LINKINDEX_HYPERLINK,
+  getExcalidrawMarkdownHeaderSection,
+  REGEX_TAGS,
+} from "../shared/ExcalidrawData";
 import ExcalidrawView from "src/view/ExcalidrawView";
-import { ExcalidrawElement,ExcalidrawFrameElement,ExcalidrawImageElement, NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
-import { getEmbeddedFilenameParts,getLinkParts,isImagePartRef } from "./utils";
+import {
+  ExcalidrawElement,
+  ExcalidrawFrameElement,
+  ExcalidrawImageElement,
+  NonDeletedExcalidrawElement,
+} from "@zsviczian/excalidraw/types/element/src/types";
+import {
+  getEmbeddedFilenameParts,
+  getLinkParts,
+  isImagePartRef,
+} from "./utils";
 import { getAudioElementHeight } from "./obsidianUtils";
 import { cleanSectionHeading } from "./pathUtils";
 import { getEA } from "src/core";
@@ -20,67 +43,81 @@ import { setSanitizedHtml } from "./htmlUtils";
 
 export async function insertImageToView(
   ea: ExcalidrawAutomate,
-  position: { x: number, y: number },
+  position: { x: number; y: number },
   file: TFile | string,
   scale?: boolean,
   shouldInsertToView: boolean = true,
   repositionToCursor: boolean = false,
-):Promise<string> {
-  if(shouldInsertToView) {ea.clear();}
+): Promise<string> {
+  if (shouldInsertToView) {
+    ea.clear();
+  }
   ea.style.strokeColor = "transparent";
   ea.style.backgroundColor = "transparent";
   const api = ea.getExcalidrawAPI();
   ea.canvas.theme = api.getAppState().theme;
-  const id = await ea.addImage(
-    position.x,
-    position.y,
-    file,
-    scale,
-  );
-  if(shouldInsertToView) {await ea.addElementsToView(repositionToCursor, true, true);}
+  const id = await ea.addImage(position.x, position.y, file, scale);
+  if (shouldInsertToView) {
+    await ea.addElementsToView(repositionToCursor, true, true);
+  }
   return id;
 }
 
-  export function deleteAppStateKeys(
-    st: AppState,
-    [...keys]: (keyof AppState)[],
-  ): Partial<AppState> {
-    keys.forEach((key) => {
-      delete (st as Mutable<AppState>)[key];
-    });
-    return st;
-  };
+export function deleteAppStateKeys(
+  st: AppState,
+  [...keys]: (keyof AppState)[],
+): Partial<AppState> {
+  keys.forEach((key) => {
+    delete (st as Mutable<AppState>)[key];
+  });
+  return st;
+}
 
-export async function insertEmbeddableToView (
+export async function insertEmbeddableToView(
   ea: ExcalidrawAutomate,
-  position: { x: number, y: number },
+  position: { x: number; y: number },
   file?: TFile,
   link?: string,
   shouldInsertToView: boolean = true,
-):Promise<string> {
-  if(shouldInsertToView) {ea.clear();}
+): Promise<string> {
+  if (shouldInsertToView) {
+    ea.clear();
+  }
   const api = ea.getExcalidrawAPI();
   const st = api.getAppState();
-  
-  if(ea.plugin.settings.embeddableMarkdownDefaults.backgroundMatchElement) {
+
+  if (ea.plugin.settings.embeddableMarkdownDefaults.backgroundMatchElement) {
     ea.style.backgroundColor = st.currentItemBackgroundColor;
   } else {
     ea.style.backgroundColor = "transparent";
   }
 
-  if(ea.plugin.settings.embeddableMarkdownDefaults.borderMatchElement) {
+  if (ea.plugin.settings.embeddableMarkdownDefaults.borderMatchElement) {
     ea.style.strokeColor = st.currentItemStrokeColor;
   } else {
     ea.style.strokeColor = "transparent";
   }
-  
-  if(file && (IMAGE_TYPES.contains(file.extension) || ea.isExcalidrawFile(file)) && !ANIMATED_IMAGE_TYPES.contains(file.extension)) {
-    return await insertImageToView(ea, position, link??file, undefined, shouldInsertToView);
+
+  if (
+    file &&
+    (IMAGE_TYPES.contains(file.extension) || ea.isExcalidrawFile(file)) &&
+    !ANIMATED_IMAGE_TYPES.contains(file.extension)
+  ) {
+    return await insertImageToView(
+      ea,
+      position,
+      link ?? file,
+      undefined,
+      shouldInsertToView,
+    );
   } else {
     let height = MAX_IMAGE_SIZE;
     if (
       (file && AUDIO_TYPES.contains(file.extension.toLowerCase())) ||
-      (link && AUDIO_TYPES.contains(link.match(/\[\[[^\]]+?\.([^.\]]+)]]/)?.[1]?.toLocaleLowerCase()))
+      (link &&
+        AUDIO_TYPES.contains(
+          link.match(/\[\[[^\]]+?\.([^.\]]+)]]/)?.[1]?.toLocaleLowerCase(),
+        ))
     ) {
       ea.style.strokeColor = "transparent";
       ea.style.backgroundColor = "transparent";
@@ -94,12 +131,14 @@ export async function insertEmbeddableToView (
       link,
       file,
     );
-    if(shouldInsertToView) {await ea.addElementsToView(false, true, true);}
+    if (shouldInsertToView) {
+      await ea.addElementsToView(false, true, true);
+    }
     return id;
   }
 }
 
-export function getLinkTextFromLink (text: string): string {
+export function getLinkTextFromLink(text: string): string {
   if (!text) return;
   if (text.match(REG_LINKINDEX_HYPERLINK)) return;
 
@@ -138,7 +177,7 @@ function getLinkFromMarkdownLink(link: string): string {
   return result ? result[1] : link;
 }
 
-function isInternalLink(link:string):boolean {
+function isInternalLink(link: string): boolean {
   link = getLinkFromMarkdownLink(link);
   if (link.startsWith("cmd://")) return true;
   if (link.startsWith("obsidian://")) return true;
@@ -146,16 +185,20 @@ function isInternalLink(link:string):boolean {
   return true;
 }
 
-export function sceneRemoveInternalLinks(scene: {elements: readonly ExcalidrawElement[]}): ExcalidrawElement[] {
-  const elements: ExcalidrawElement[] = JSON.parse(JSON.stringify(scene.elements));
-  elements.forEach(el => {
-    if(!el.link) return;
-    if(isInternalLink(el.link)) (el as Mutable<ExcalidrawElement>).link = null;
+export function sceneRemoveInternalLinks(scene: {
+  elements: readonly ExcalidrawElement[];
+}): ExcalidrawElement[] {
+  const elements: ExcalidrawElement[] = JSON.parse(
+    JSON.stringify(scene.elements),
+  );
+  elements.forEach((el) => {
+    if (!el.link) return;
+    if (isInternalLink(el.link)) (el as Mutable<ExcalidrawElement>).link = null;
   });
   return elements;
 }
 
-export function openExternalLink (link:string, app: App):boolean {
+export function openExternalLink(link: string, app: App): boolean {
   link = getLinkFromMarkdownLink(link);
   if (link.match(/^cmd:\/\/.*/)) {
     const cmd = link.replace("cmd://", "");
@@ -172,12 +215,12 @@ export function openExternalLink (link:string, app: App):boolean {
 }
 
 /**
- * 
- * @param link 
- * @param app 
- * @param returnWikiLink 
+ *
+ * @param link
+ * @param app
+ * @param returnWikiLink
  * @param openLink: if set to false, the link will not be opened just true will be returned for an obsidian link.
- * @returns 
+ * @returns
  *   false if the link is not an obsidian link,
  *   true if the link is an obsidian link and it was opened (i.e. it is a link to another Vault or not a file link e.g. plugin link), or
  *   the link to the file path. By default as a wiki link, or as a file path if returnWikiLink is false.
@@ -188,55 +231,61 @@ export function parseObsidianLink(
   returnWikiLink: boolean = true,
   openLink: boolean = true,
 ): boolean | string {
-  if(!link) return false;
+  if (!link) return false;
   link = getLinkFromMarkdownLink(link);
   if (!link?.startsWith("obsidian://")) {
-      return false;
+    return false;
   }
   const url = new URL(link);
   const action = url.pathname.slice(2); // Remove leading '//'
 
-  const props: {[key: string]: string} = {};
+  const props: { [key: string]: string } = {};
   url.searchParams.forEach((value, key) => {
-      props[key] = decodeURIComponent(value);
+    props[key] = decodeURIComponent(value);
   });
 
   if (action === "open" && props.vault === app.vault.getName()) {
-      const file = props.file;
-      const f = app.metadataCache.getFirstLinkpathDest(file, "");
-      if (f && f instanceof TFile) {
-          if (returnWikiLink) {
-            return `[[${f.path}]]`;
-          } else {
-            return f.path;
-          }
+    const file = props.file;
+    const f = app.metadataCache.getFirstLinkpathDest(file, "");
+    if (f && f instanceof TFile) {
+      if (returnWikiLink) {
+        return `[[${f.path}]]`;
+      } else {
+        return f.path;
       }
+    }
   }
 
-  if(openLink) {
+  if (openLink) {
     window.open(link, "_blank");
   }
   return true;
 }
 
-export function getExcalidrawFileForwardLinks (
-  app: App, excalidrawFile: TFile,
+export function getExcalidrawFileForwardLinks(
+  app: App,
+  excalidrawFile: TFile,
   secondOrderLinksSet: Set<string>,
-):string {
+): string {
   let secondOrderLinks = "";
   const forwardLinks = app.metadataCache.getLinks()[excalidrawFile.path];
-  if(forwardLinks && forwardLinks.length > 0) {
+  if (forwardLinks && forwardLinks.length > 0) {
     const linkset = new Set<string>();
-    forwardLinks.forEach(link => {
+    forwardLinks.forEach((link) => {
       const linkparts = getLinkParts(link.link);
-      const f = app.metadataCache.getFirstLinkpathDest(linkparts.path, excalidrawFile.path);
-      if(f && f.path !== excalidrawFile.path) {
-        if(secondOrderLinksSet.has(f.path)) return;
+      const f = app.metadataCache.getFirstLinkpathDest(
+        linkparts.path,
+        excalidrawFile.path,
+      );
+      if (f && f.path !== excalidrawFile.path) {
+        if (secondOrderLinksSet.has(f.path)) return;
         secondOrderLinksSet.add(f.path);
-        linkset.add(`[[${f.path}${linkparts.ref?"#"+linkparts.ref:""}|Second Order Link: ${f.basename}]]`);
+        linkset.add(
+          `[[${f.path}${linkparts.ref ? "#" + linkparts.ref : ""}|Second Order Link: ${f.basename}]]`,
+        );
       }
     });
-    secondOrderLinks = [...linkset].join(" ");             
+    secondOrderLinks = [...linkset].join(" ");
   }
   return secondOrderLinks;
 }
@@ -246,12 +295,12 @@ export function getFrameBasedOnFrameNameOrId(
   elements: readonly NonDeletedExcalidrawElement[],
 ): ExcalidrawFrameElement | null {
   const frames = elements
-    .filter((el: ExcalidrawElement)=>el.type==="frame")
-    .map((el: ExcalidrawFrameElement)=>{
-      return {el: el, id: el.id, name: el.name ?? "Frame"};
+    .filter((el: ExcalidrawElement) => el.type === "frame")
+    .map((el: ExcalidrawFrameElement) => {
+      return { el: el, id: el.id, name: el.name ?? "Frame" };
     })
-    .filter((item:any) => item.id === frameName || item.name === frameName)
-    .map((item:any)=>item.el as ExcalidrawFrameElement);
+    .filter((item: any) => item.id === frameName || item.name === frameName)
+    .map((item: any) => item.el as ExcalidrawFrameElement);
   return frames.length === 1 ? frames[0] : null;
 }
 
@@ -262,8 +311,8 @@ export async function addBackOfTheNoteCard(
   cardBody?: string,
   embeddableCustomData?: EmbeddableMDCustomProps,
   center: boolean = false,
-  position?: {x: number, y: number},
-):Promise<string> {
+  position?: { x: number; y: number },
+): Promise<string> {
   const data = view.data;
   const header = getExcalidrawMarkdownHeaderSection(data);
   const body = data.split(header)[1];
@@ -272,50 +321,66 @@ export async function addBackOfTheNoteCard(
   const shouldRemoveTrailingHashtag = Boolean(hastag);
   view.data = data.replace(
     header,
-    () => (shouldRemoveTrailingHashtag 
-      ? header.substring(0,header.length-hastag[0].length) 
-      : header) +
-        `\n# ${title}\n\n${cardBody ? cardBody+"\n\n" : ""}${
-          shouldAddHashtag || shouldRemoveTrailingHashtag ? "#\n" : ""}`);
+    () =>
+      (shouldRemoveTrailingHashtag
+        ? header.substring(0, header.length - hastag[0].length)
+        : header) +
+      `\n# ${title}\n\n${cardBody ? cardBody + "\n\n" : ""}${
+        shouldAddHashtag || shouldRemoveTrailingHashtag ? "#\n" : ""
+      }`,
+  );
   await view.forceSave(true);
   let watchdog = 0;
   await sleep(200);
-  let found:string;
-  while (watchdog++ < 10 && !(found=(await view.app.metadataCache.blockCache
-    .getForFile({ isCancelled: () => false },view.file))
-    .blocks.filter((b: any) => b.display && b.node?.type === "heading")
-    .filter((b: any) => !MD_EX_SECTIONS.includes(b.display))
-    .map((b: any) => cleanSectionHeading(b.display))
-    .find((b: any) => b === title))) {
-      await sleep(200);
+  let found: string;
+  while (
+    watchdog++ < 10 &&
+    !(found = (
+      await view.app.metadataCache.blockCache.getForFile(
+        { isCancelled: () => false },
+        view.file,
+      )
+    ).blocks
+      .filter((b: any) => b.display && b.node?.type === "heading")
+      .filter((b: any) => !MD_EX_SECTIONS.includes(b.display))
+      .map((b: any) => cleanSectionHeading(b.display))
+      .find((b: any) => b === title))
+  ) {
+    await sleep(200);
   }
 
   const ea = getEA(view) as ExcalidrawAutomate;
-  let {x,y} = position ?? ea.targetView.currentPosition;
-  if(center) {
+  let { x, y } = position ?? ea.targetView.currentPosition;
+  if (center) {
     const centerPos = ea.getViewCenterPosition();
-    if(centerPos) {
-      x = centerPos.x - (CARD_WIDTH / 2);
-      y = centerPos.y - (CARD_HEIGHT / 2);
+    if (centerPos) {
+      x = centerPos.x - CARD_WIDTH / 2;
+      y = centerPos.y - CARD_HEIGHT / 2;
     }
   }
 
   const id = ea.addEmbeddable(
-    x,y,CARD_WIDTH,CARD_HEIGHT,
+    x,
+    y,
+    CARD_WIDTH,
+    CARD_HEIGHT,
     `[[${view.file.path}#${title}]]`,
     undefined,
-    embeddableCustomData
+    embeddableCustomData,
   );
   await ea.addElementsToView(!center, false, true);
 
   const api = view.excalidrawAPI;
-  const el = ea.getViewElements().find(el=>el.id === id);
+  const el = ea.getViewElements().find((el) => el.id === id);
   api.selectElements([el]);
-  if(activate) {
-    window.setTimeout(()=>{
-      api.updateScene({appState: {activeEmbeddable: {element: el, state: "active"}}, captureUpdate: CaptureUpdateAction.NEVER,});
-      if(found) view.getEmbeddableLeafElementById(el.id)?.editNode?.();
-    },200);
+  if (activate) {
+    window.setTimeout(() => {
+      api.updateScene({
+        appState: { activeEmbeddable: { element: el, state: "active" } },
+        captureUpdate: CaptureUpdateAction.NEVER,
+      });
+      if (found) view.getEmbeddableLeafElementById(el.id)?.editNode?.();
+    }, 200);
   }
   ea.destroy();
   return el.id;
@@ -330,15 +395,19 @@ export function renderContextMenuAction(
   checked: boolean = false,
 ) {
   return React.createElement(
-    "li",          
+    "li",
     {
       key: nanoid(),
       onClick: () => onClose(action),
-      "data-testid": actionId
+      "data-testid": actionId,
     },
     React.createElement(
       "button",
-      { className: checked ? "context-menu-item checkmark" : "context-menu-item" },
+      {
+        className: checked
+          ? "context-menu-item checkmark"
+          : "context-menu-item",
+      },
       React.createElement(
         "div",
         { className: "context-menu-item__label" },
@@ -349,13 +418,13 @@ export function renderContextMenuAction(
         { className: "context-menu-item__shortcut" },
         "", //this is where the shortcut may go in the future
       ),
-    )
+    ),
   );
 }
 
-export function tmpBruteForceCleanup (view: ExcalidrawView) {
-  window.setTimeout(()=>{
-    if(!view) return;
+export function tmpBruteForceCleanup(view: ExcalidrawView) {
+  window.setTimeout(() => {
+    if (!view) return;
     // const cleanupHTMLElement = (el: Element) => {
     //   //console.log(el);
     //   while(el.firstElementChild) {
@@ -373,7 +442,7 @@ export function tmpBruteForceCleanup (view: ExcalidrawView) {
     //   l.detach?.();
     //   l.resizeObserver?.disconnect?.();
     //   l.view?.unload?.();
-    //   l.component?.unload?.();      
+    //   l.component?.unload?.();
     //   Object.keys(l).forEach((key) => {
     //     const obj = l[key];
     //     if (obj instanceof Element) {
@@ -398,7 +467,7 @@ export function tmpBruteForceCleanup (view: ExcalidrawView) {
     //   }
     //   const leaves = new Set();
     //   leaves.add(view.leaf);
-    //   while(leaves.has(view.leaf.getContainer())) { 
+    //   while(leaves.has(view.leaf.getContainer())) {
     //     leaves.add(view.leaf.getContainer());
     //   }
     //   const roots = new Set();
@@ -413,50 +482,56 @@ export function tmpBruteForceCleanup (view: ExcalidrawView) {
     // }
 
     Object.keys(view).forEach((key) => {
-      //@ts-ignore    
+      //@ts-ignore
       delete view[key];
     });
   }, 500);
 }
 
 /**
-* Check if the text matches the transclusion pattern and if so,
+ * Check if the text matches the transclusion pattern and if so,
  * check if the link in the transclusion can be resolved to a file in the vault.
  * if yes, call the callback function with the link and the file.
- * @param text 
- * @param callback 
+ * @param text
+ * @param callback
  * @returns true if text is a transclusion and the link can be resolved to a file in the vault, false otherwise.
  */
-export function isTextImageTransclusion (
+export function isTextImageTransclusion(
   text: string,
   view: ExcalidrawView,
-  callback: (link: string, file: TFile)=>void
+  callback: (link: string, file: TFile) => void,
 ): boolean {
   const REG_TRANSCLUSION = /^!\[\[([^|\]]*)?.*?]]$|^!\[[^\]]*?]\((.*?)\)$/g;
   const match = text.trim().matchAll(REG_TRANSCLUSION).next(); //reset the iterator
-  if(match?.value?.[0]) {                
+  if (match?.value?.[0]) {
     const link = match.value[1] ?? match.value[2];
-    const file = view.app.metadataCache.getFirstLinkpathDest(link?.split("#")[0], view.file.path);
-    if(view.file === file) {
-      if(link?.split("#")[1] && !isImagePartRef(getEmbeddedFilenameParts(link))) {
+    const file = view.app.metadataCache.getFirstLinkpathDest(
+      link?.split("#")[0],
+      view.file.path,
+    );
+    if (view.file === file) {
+      if (
+        link?.split("#")[1] &&
+        !isImagePartRef(getEmbeddedFilenameParts(link))
+      ) {
         return false;
       }
       new Notice(t("RECURSIVE_INSERT_ERROR"));
       return false;
     }
-    if(file && file instanceof TFile) {
-      if(
+    if (file && file instanceof TFile) {
+      if (
         view.plugin.isExcalidrawFile(file) &&
         link?.split("#")[1] &&
-        !isImagePartRef(getEmbeddedFilenameParts(link)))
-      {
+        !isImagePartRef(getEmbeddedFilenameParts(link))
+      ) {
         return false;
       }
       if (file.extension !== "md" || view.plugin.isExcalidrawFile(file)) {
         callback(link, file);
         return true;
       } else {
-        new Notice(t("USE_INSERT_FILE_MODAL"),5000);
+        new Notice(t("USE_INSERT_FILE_MODAL"), 5000);
       }
     }
   }
@@ -474,7 +549,7 @@ export function displayFontMessage(app: App) {
 
     const div = contentEl.createDiv({ cls: "release-notes" });
     setSanitizedHtml(div, releaseNotesHTML);
-  }
+  };
 
   modal.open();
 }
@@ -486,33 +561,45 @@ export async function toggleImageAnchoring(
   ef: EmbeddedFile,
 ) {
   const ea = getEA(view) as ExcalidrawAutomate;
-  let imgEl = view.getViewElements().find((x:ExcalidrawElement)=>x.id === el.id) as Mutable<ExcalidrawImageElement>;
-  if(!imgEl) {
+  let imgEl = view
+    .getViewElements()
+    .find(
+      (x: ExcalidrawElement) => x.id === el.id,
+    ) as Mutable<ExcalidrawImageElement>;
+  if (!imgEl) {
     ea.destroy();
     return;
   }
   ea.copyViewElementsToEAforEditing([imgEl]);
   imgEl = ea.getElements()[0] as Mutable<ExcalidrawImageElement>;
-  if(!imgEl.customData) {
+  if (!imgEl.customData) {
     imgEl.customData = {};
   }
   imgEl.customData.isAnchored = shouldAnchor;
-  if(shouldAnchor) {
-    const {height, width} = ef.size;
+  if (shouldAnchor) {
+    const { height, width } = ef.size;
     const dX = width - imgEl.width;
     const dY = height - imgEl.height;
     imgEl.height = height;
     imgEl.width = width;
-    imgEl.x -= dX/2;
-    imgEl.y -= dY/2;
+    imgEl.x -= dX / 2;
+    imgEl.y -= dY / 2;
   }
   await ea.addElementsToView(false, false);
   ea.destroy();
 }
 
-export function onLoadMessages(scene: {elements: ExcalidrawElement[], appState: AppState}) {
+export function onLoadMessages(scene: {
+  elements: ExcalidrawElement[];
+  appState: AppState;
+}) {
   window.setTimeout(() => {
-    if(!(scene.appState.frameRendering?.markerEnabled ?? true) && scene.elements.some(el=>el.type === "frame" && el.frameRole === "marker")) {
+    if (
+      !(scene.appState.frameRendering?.markerEnabled ?? true) &&
+      scene.elements.some(
+        (el) => el.type === "frame" && el.frameRole === "marker",
+      )
+    ) {
       new Notice(t("MARKER_FRAME_RENDERING_DISABLED_NOTICE"));
     }
     /*const backOfTheCardNote = getExcalidrawMarkdownHeader(data)
@@ -527,7 +614,7 @@ export function onLoadMessages(scene: {elements: ExcalidrawElement[], appState: 
 }
 
 export function getViewColorPalette(
-  palette: "canvasBackground"|"elementBackground"|"elementStroke",
+  palette: "canvasBackground" | "elementBackground" | "elementStroke",
   view?: ExcalidrawView,
   includeSceneColors: boolean = false,
 ): (string[] | string)[] {
@@ -536,7 +623,7 @@ export function getViewColorPalette(
   }
 
   const api = view.excalidrawAPI;
-  const {colorPalette} = api.getAppState();
+  const { colorPalette } = api.getAppState();
   if (!colorPalette || !colorPalette.hasOwnProperty(palette)) {
     return getDefaultColorPalette() as (string[] | string)[];
   }
@@ -547,21 +634,27 @@ export function getViewColorPalette(
     return [basePalette];
   }
 
-  const cmFactory = view.hookServer?.getCM?.bind(view.hookServer) ?? view.plugin.ea.getCM.bind(view.plugin.ea);
+  const cmFactory =
+    view.hookServer?.getCM?.bind(view.hookServer) ??
+    view.plugin.ea.getCM.bind(view.plugin.ea);
   const getLightness = (color: string): number => {
     const cm = cmFactory?.(color);
     const value = (cm as any)?.lightness;
     return typeof value === "number" ? value : Number.POSITIVE_INFINITY;
   };
   const normalize = (color: string): string => {
-    if (!color) {return color;}
-    if (color.toLowerCase() === "transparent") {return "transparent";}
+    if (!color) {
+      return color;
+    }
+    if (color.toLowerCase() === "transparent") {
+      return "transparent";
+    }
     const cm = cmFactory?.(color);
     if (cm && typeof (cm as any).stringHEX === "function") {
       try {
         const alpha = (cm as any).alpha;
         const includeAlpha = typeof alpha === "number" ? alpha !== 1 : true;
-        return (cm as any).stringHEX({alpha: includeAlpha}).toLowerCase();
+        return (cm as any).stringHEX({ alpha: includeAlpha }).toLowerCase();
       } catch {
         // fall through to string coercion
       }
@@ -574,8 +667,14 @@ export function getViewColorPalette(
 
   const groups = basePalette
     .filter((entry) => Array.isArray(entry))
-    .map((entry) => (entry as string[]).slice().sort((a, b) => getLightness(b) - getLightness(a)));
-  const singles = basePalette.filter((entry) => typeof entry === "string") as string[];
+    .map((entry) =>
+      (entry as string[])
+        .slice()
+        .sort((a, b) => getLightness(b) - getLightness(a)),
+    );
+  const singles = basePalette.filter(
+    (entry) => typeof entry === "string",
+  ) as string[];
   const groupColors = groups
     .flatMap((entry) => entry as string[])
     .filter(Boolean)
@@ -585,28 +684,49 @@ export function getViewColorPalette(
   const seenSingles = new Set<string>();
   const filteredSingles = singles.filter((entry) => {
     const norm = normalize(entry);
-    if (!norm) {return false;}
-    if (groupColorSet.has(norm)) {return false;}
-    if (seenSingles.has(norm)) {return false;}
+    if (!norm) {
+      return false;
+    }
+    if (groupColorSet.has(norm)) {
+      return false;
+    }
+    if (seenSingles.has(norm)) {
+      return false;
+    }
     seenSingles.add(norm);
     return true;
   });
 
-  if (!includeSceneColors || !["elementBackground", "elementStroke"].includes(palette)) {
+  if (
+    !includeSceneColors ||
+    !["elementBackground", "elementStroke"].includes(palette)
+  ) {
     return [...groups, ...filteredSingles];
   }
 
-  const flattenPalette = (pal: any[]): string[] => pal
-    .flatMap((entry: any) => Array.isArray(entry) ? entry : [entry])
-    .filter((color: any): color is string => typeof color === "string" && Boolean(color));
+  const flattenPalette = (pal: any[]): string[] =>
+    pal
+      .flatMap((entry: any) => (Array.isArray(entry) ? entry : [entry]))
+      .filter(
+        (color: any): color is string =>
+          typeof color === "string" && Boolean(color),
+      );
 
   const paletteColors = flattenPalette(basePalette).map((c) => normalize(c));
-  const extraColors = new Set<string>(filteredSingles.filter((c) => c.toLowerCase() !== "transparent"));
+  const extraColors = new Set<string>(
+    filteredSingles.filter((c) => c.toLowerCase() !== "transparent"),
+  );
 
   view.getViewElements().forEach((el) => {
-    const color = (palette === "elementStroke" ? el.strokeColor : (el as any).backgroundColor) as string;
-    if (!color || normalize(color) === "transparent") {return;}
-    if (paletteColors.includes(normalize(color))) {return;}
+    const color = (
+      palette === "elementStroke" ? el.strokeColor : (el as any).backgroundColor
+    ) as string;
+    if (!color || normalize(color) === "transparent") {
+      return;
+    }
+    if (paletteColors.includes(normalize(color))) {
+      return;
+    }
     extraColors.add(color);
   });
 
@@ -623,10 +743,10 @@ export function getViewColorPalette(
 
 //!Temporary hack
 //https://discord.com/channels/686053708261228577/817515900349448202/1031101635784613968
-export const setMobileNavbarPosition = (dock:boolean) => {
+export const setMobileNavbarPosition = (dock: boolean) => {
   if (DEVICE.isMobile) {
     const navbar = document.querySelector("body>.app-container>.mobile-navbar");
-    if(navbar && navbar instanceof HTMLDivElement) {
+    if (navbar && navbar instanceof HTMLDivElement) {
       if (dock) {
         navbar.addClass("excalidraw-mobile-navbar-docked");
       } else {
@@ -634,4 +754,4 @@ export const setMobileNavbarPosition = (dock:boolean) => {
       }
     }
   }
-}
+};

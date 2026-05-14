@@ -1,5 +1,5 @@
 import ExcalidrawPlugin from "src/core/main";
-import { PromisePool,promiseTry } from "./utils";
+import { PromisePool, promiseTry } from "./utils";
 import { blobToBase64 } from "./fileUtils";
 
 interface ExcalidrawFontFaceDescriptor {
@@ -7,106 +7,106 @@ interface ExcalidrawFontFaceDescriptor {
   descriptors?: FontFaceDescriptors;
 }
 
-const _0   = "Xiaolai-Regular-09850c4077f3fffe707905872e0e2460.woff2";
-const _1   = "Xiaolai-Regular-7eb9fffd1aa890d07d0f88cc82e6cfe4.woff2";
-const _2   = "Xiaolai-Regular-60a3089806700d379f11827ee9843b6b.woff2";
-const _3   = "Xiaolai-Regular-6fe5c5973cc06f74b2387a631ea36b88.woff2";
-const _4   = "Xiaolai-Regular-b96d9226ce77ec94ceca043d712182e6.woff2";
-const _5   = "Xiaolai-Regular-6ae5b42180ad70b971c91e7eefb8eba2.woff2";
-const _6   = "Xiaolai-Regular-a4c34be6d42152e64b0df90bc4607f64.woff2";
-const _7   = "Xiaolai-Regular-c69f61a4ab18d0488c8d1fc12e7028e8.woff2";
-const _8   = "Xiaolai-Regular-e3fcf5180fd466c8915c4e8069491054.woff2";
-const _9   = "Xiaolai-Regular-c1f94158256bb1f3bf665b053d895af9.woff2";
-const _10  = "Xiaolai-Regular-544fc28abe2c5c30e62383fd4dac255f.woff2";
-const _11  = "Xiaolai-Regular-7197d6fda6cba7c3874c53d6381ca239.woff2";
-const _12  = "Xiaolai-Regular-70c2eb8d64e71a42a834eb857ea9df51.woff2";
-const _13  = "Xiaolai-Regular-069e77aac84590e2e991d0a0176d34f2.woff2";
-const _14  = "Xiaolai-Regular-41521fade99856108931b4768b1b2648.woff2";
-const _15  = "Xiaolai-Regular-a004ddfcb26e67bd6e678c8ed19e25ce.woff2";
-const _16  = "Xiaolai-Regular-04b718e5623574919c8b0dea5f301444.woff2";
-const _17  = "Xiaolai-Regular-7e4bde7e9c7f84cd34d8a845e384c746.woff2";
-const _18  = "Xiaolai-Regular-23686f7f29da6e8008c36dd3a80c83d6.woff2";
-const _19  = "Xiaolai-Regular-69c09cc5fa3e55c74fc4821f76909cc3.woff2";
-const _20  = "Xiaolai-Regular-25b7f38e18f035f96cb5e547bd2bd08c.woff2";
-const _21  = "Xiaolai-Regular-ba3de316d63c7e339987b16f41a0b879.woff2";
-const _22  = "Xiaolai-Regular-12b52b58eb3df36804b9a654ec9ee194.woff2";
-const _23  = "Xiaolai-Regular-b1220a3c61f85cc0408deedb4c5f57a2.woff2";
-const _24  = "Xiaolai-Regular-4535823663ad81405188a528d8f2b1a2.woff2";
-const _25  = "Xiaolai-Regular-3eaa538115d76932653c21d8dc28f207.woff2";
-const _26  = "Xiaolai-Regular-7e929f262f30c8ee78bf398150b1a7cd.woff2";
-const _27  = "Xiaolai-Regular-73e309718fd16cea44b4d54a33581811.woff2";
-const _28  = "Xiaolai-Regular-9eb5a99df4e76ac3363453ac9ca288b1.woff2";
-const _29  = "Xiaolai-Regular-3e63ed8162808a9e425ed80a8bc79114.woff2";
-const _30  = "Xiaolai-Regular-cb17fc3db95f6d139afc9d31a8e93293.woff2";
-const _31  = "Xiaolai-Regular-c8b71798409ccc126ee264a00aadcf21.woff2";
-const _32  = "Xiaolai-Regular-11c345711937f0ba4b8f7b6b919c8440.woff2";
-const _33  = "Xiaolai-Regular-e480d9c614742d05f0e78f274f1e69e6.woff2";
-const _34  = "Xiaolai-Regular-95429962233afd82db1c27df1500a28c.woff2";
-const _35  = "Xiaolai-Regular-2cf96d082d35ea3d8106851223ad0d16.woff2";
-const _36  = "Xiaolai-Regular-2d43040e86ff03ba677f6f9c04cd0805.woff2";
-const _37  = "Xiaolai-Regular-2a26d20a23b00898ce82f09d2ee47c3f.woff2";
-const _38  = "Xiaolai-Regular-a365e82ed54697a52f27adcea1315fe8.woff2";
-const _39  = "Xiaolai-Regular-f5d079153c99a25b9be5b8583c4cc8a7.woff2";
-const _40  = "Xiaolai-Regular-10a7ae9a371830a80c3d844acf1c02d7.woff2";
-const _41  = "Xiaolai-Regular-e4bca6cfa53e499cae0a6be4894a90e9.woff2";
-const _42  = "Xiaolai-Regular-60a41c7e1c68f22424e6d22df544bc82.woff2";
-const _43  = "Xiaolai-Regular-7ab2bed91166a9dca83a5ebfbe2a7f38.woff2";
-const _44  = "Xiaolai-Regular-670ba603758d94268e8606f240a42e12.woff2";
-const _45  = "Xiaolai-Regular-e656f091b9dc4709722c9f4b84d3c797.woff2";
-const _46  = "Xiaolai-Regular-15dc6d811c9cd078f9086a740d5a1038.woff2";
-const _47  = "Xiaolai-Regular-f0f13b5c60e0af5553bd359f5513be1b.woff2";
-const _48  = "Xiaolai-Regular-8c2f33cee3993174f7e87c28e4bf42ee.woff2";
-const _49  = "Xiaolai-Regular-761d05e3cd968cf574166867998ef06a.woff2";
-const _50  = "Xiaolai-Regular-642b26e2e5f5fb780b51b593dbc8c851.woff2";
-const _51  = "Xiaolai-Regular-5572b3513ba8df57a3d5d7303ee6b11b.woff2";
-const _52  = "Xiaolai-Regular-3c9de2ae0ea4bc91a510942dfa4be8d2.woff2";
-const _53  = "Xiaolai-Regular-671a2c20b1eb9e4ef8a192833940e319.woff2";
-const _54  = "Xiaolai-Regular-4dc6d5f188d5c96d44815cd1e81aa885.woff2";
-const _55  = "Xiaolai-Regular-ce4884f96f11589608b76b726a755803.woff2";
-const _56  = "Xiaolai-Regular-8f476c4c99813d57cbe6eca4727388ad.woff2";
-const _57  = "Xiaolai-Regular-5935a5775af3d5c6307ac667bd9ae74e.woff2";
-const _58  = "Xiaolai-Regular-79f007c1c6d07557120982951ea67998.woff2";
-const _59  = "Xiaolai-Regular-bafff7a14c27403dcc6cf1432e8ea836.woff2";
-const _60  = "Xiaolai-Regular-543fa46ace099a7099dad69123399400.woff2";
-const _61  = "Xiaolai-Regular-4ddc14ed3eb0c3e46364317dfc0144a3.woff2";
-const _62  = "Xiaolai-Regular-0fa55a080fcd0f9dc2e0b0058b793df8.woff2";
-const _63  = "Xiaolai-Regular-66493ba5a8367f2928812f446f47b56a.woff2";
-const _64  = "Xiaolai-Regular-57862b464a55b18c7bf234ce22907d73.woff2";
-const _65  = "Xiaolai-Regular-8d3bcabb847b56243b16afe62adaaf21.woff2";
-const _66  = "Xiaolai-Regular-2b77e8ebfb2367ab2662396a60e7d320.woff2";
-const _67  = "Xiaolai-Regular-0b5d723fdc4e249c140f0909e87d03b4.woff2";
-const _68  = "Xiaolai-Regular-cdbce89e82cc1ab53a2decbf5819278f.woff2";
-const _69  = "Xiaolai-Regular-739bc1a567439c7cffcd1614644593d2.woff2";
-const _70  = "Xiaolai-Regular-72252d73220fa3cd856677888cee1635.woff2";
-const _71  = "Xiaolai-Regular-08e0dc436ad0ad61ba5558db0674d762.woff2";
-const _72  = "Xiaolai-Regular-cf6ff4e0f491ca0cf3038187a997b9b4.woff2";
-const _73  = "Xiaolai-Regular-9cfb2a77a4e45025105ad29a1748b90d.woff2";
-const _74  = "Xiaolai-Regular-450da755d5bcb70906e1295e559b9602.woff2";
-const _75  = "Xiaolai-Regular-0986d134c05864f5025962eef9f994a0.woff2";
-const _76  = "Xiaolai-Regular-1ee544f0f1dac422545c505baa788992.woff2";
-const _77  = "Xiaolai-Regular-4806e761d750087c2d734fc64596eaff.woff2";
-const _78  = "Xiaolai-Regular-33432927cd87d40cfe393c7482bf221f.woff2";
-const _79  = "Xiaolai-Regular-be549ab72f0719d606a5c01e2c0219b6.woff2";
-const _80  = "Xiaolai-Regular-019d66dcad46dc156b162d267f981c20.woff2";
-const _81  = "Xiaolai-Regular-b5c1596551c256e0e9cf02028595b092.woff2";
-const _82  = "Xiaolai-Regular-e5f453bb04da18eed01675eeebd88bf8.woff2";
-const _83  = "Xiaolai-Regular-cf2cc71752631e579e35b0e423bf2638.woff2";
-const _84  = "Xiaolai-Regular-6f3256af8454371776bc46670d33cc65.woff2";
-const _85  = "Xiaolai-Regular-23f228f3999c01983860012330e4be08.woff2";
-const _86  = "Xiaolai-Regular-21430ee05a1248901da8d0de08744d47.woff2";
-const _87  = "Xiaolai-Regular-5330a2119a716e4e7224ed108b085dac.woff2";
-const _88  = "Xiaolai-Regular-cd145ce4a0ea18469358df53c207bc1b.woff2";
-const _89  = "Xiaolai-Regular-36925dfe329a45086cbb7fc5c20d45ac.woff2";
-const _90  = "Xiaolai-Regular-4bfaa8ffa64c5ee560aa2daba7c9cbd3.woff2";
-const _91  = "Xiaolai-Regular-112c051027b2d766c19a519f6ee1f4f7.woff2";
-const _92  = "Xiaolai-Regular-5b0ed6971aaab9c8ad563230bd5471a7.woff2";
-const _93  = "Xiaolai-Regular-98f2ad84457de7f3740d9920b8fa8667.woff2";
-const _94  = "Xiaolai-Regular-733171b4ffcd17ea1fe1c0ba627173bf.woff2";
-const _95  = "Xiaolai-Regular-684d65f1793cac449dde5d59cb3c47fb.woff2";
-const _96  = "Xiaolai-Regular-cbaaefaaf326668277aa24dfa93c4d28.woff2";
-const _97  = "Xiaolai-Regular-58fd02350d0bc52cf1ca3bb32ce9766e.woff2";
-const _98  = "Xiaolai-Regular-7ccce86603f80a099ddb0cb21d4ae3e3.woff2";
-const _99  = "Xiaolai-Regular-3717077e38f98d89eae729b6c14e56dc.woff2";
+const _0 = "Xiaolai-Regular-09850c4077f3fffe707905872e0e2460.woff2";
+const _1 = "Xiaolai-Regular-7eb9fffd1aa890d07d0f88cc82e6cfe4.woff2";
+const _2 = "Xiaolai-Regular-60a3089806700d379f11827ee9843b6b.woff2";
+const _3 = "Xiaolai-Regular-6fe5c5973cc06f74b2387a631ea36b88.woff2";
+const _4 = "Xiaolai-Regular-b96d9226ce77ec94ceca043d712182e6.woff2";
+const _5 = "Xiaolai-Regular-6ae5b42180ad70b971c91e7eefb8eba2.woff2";
+const _6 = "Xiaolai-Regular-a4c34be6d42152e64b0df90bc4607f64.woff2";
+const _7 = "Xiaolai-Regular-c69f61a4ab18d0488c8d1fc12e7028e8.woff2";
+const _8 = "Xiaolai-Regular-e3fcf5180fd466c8915c4e8069491054.woff2";
+const _9 = "Xiaolai-Regular-c1f94158256bb1f3bf665b053d895af9.woff2";
+const _10 = "Xiaolai-Regular-544fc28abe2c5c30e62383fd4dac255f.woff2";
+const _11 = "Xiaolai-Regular-7197d6fda6cba7c3874c53d6381ca239.woff2";
+const _12 = "Xiaolai-Regular-70c2eb8d64e71a42a834eb857ea9df51.woff2";
+const _13 = "Xiaolai-Regular-069e77aac84590e2e991d0a0176d34f2.woff2";
+const _14 = "Xiaolai-Regular-41521fade99856108931b4768b1b2648.woff2";
+const _15 = "Xiaolai-Regular-a004ddfcb26e67bd6e678c8ed19e25ce.woff2";
+const _16 = "Xiaolai-Regular-04b718e5623574919c8b0dea5f301444.woff2";
+const _17 = "Xiaolai-Regular-7e4bde7e9c7f84cd34d8a845e384c746.woff2";
+const _18 = "Xiaolai-Regular-23686f7f29da6e8008c36dd3a80c83d6.woff2";
+const _19 = "Xiaolai-Regular-69c09cc5fa3e55c74fc4821f76909cc3.woff2";
+const _20 = "Xiaolai-Regular-25b7f38e18f035f96cb5e547bd2bd08c.woff2";
+const _21 = "Xiaolai-Regular-ba3de316d63c7e339987b16f41a0b879.woff2";
+const _22 = "Xiaolai-Regular-12b52b58eb3df36804b9a654ec9ee194.woff2";
+const _23 = "Xiaolai-Regular-b1220a3c61f85cc0408deedb4c5f57a2.woff2";
+const _24 = "Xiaolai-Regular-4535823663ad81405188a528d8f2b1a2.woff2";
+const _25 = "Xiaolai-Regular-3eaa538115d76932653c21d8dc28f207.woff2";
+const _26 = "Xiaolai-Regular-7e929f262f30c8ee78bf398150b1a7cd.woff2";
+const _27 = "Xiaolai-Regular-73e309718fd16cea44b4d54a33581811.woff2";
+const _28 = "Xiaolai-Regular-9eb5a99df4e76ac3363453ac9ca288b1.woff2";
+const _29 = "Xiaolai-Regular-3e63ed8162808a9e425ed80a8bc79114.woff2";
+const _30 = "Xiaolai-Regular-cb17fc3db95f6d139afc9d31a8e93293.woff2";
+const _31 = "Xiaolai-Regular-c8b71798409ccc126ee264a00aadcf21.woff2";
+const _32 = "Xiaolai-Regular-11c345711937f0ba4b8f7b6b919c8440.woff2";
+const _33 = "Xiaolai-Regular-e480d9c614742d05f0e78f274f1e69e6.woff2";
+const _34 = "Xiaolai-Regular-95429962233afd82db1c27df1500a28c.woff2";
+const _35 = "Xiaolai-Regular-2cf96d082d35ea3d8106851223ad0d16.woff2";
+const _36 = "Xiaolai-Regular-2d43040e86ff03ba677f6f9c04cd0805.woff2";
+const _37 = "Xiaolai-Regular-2a26d20a23b00898ce82f09d2ee47c3f.woff2";
+const _38 = "Xiaolai-Regular-a365e82ed54697a52f27adcea1315fe8.woff2";
+const _39 = "Xiaolai-Regular-f5d079153c99a25b9be5b8583c4cc8a7.woff2";
+const _40 = "Xiaolai-Regular-10a7ae9a371830a80c3d844acf1c02d7.woff2";
+const _41 = "Xiaolai-Regular-e4bca6cfa53e499cae0a6be4894a90e9.woff2";
+const _42 = "Xiaolai-Regular-60a41c7e1c68f22424e6d22df544bc82.woff2";
+const _43 = "Xiaolai-Regular-7ab2bed91166a9dca83a5ebfbe2a7f38.woff2";
+const _44 = "Xiaolai-Regular-670ba603758d94268e8606f240a42e12.woff2";
+const _45 = "Xiaolai-Regular-e656f091b9dc4709722c9f4b84d3c797.woff2";
+const _46 = "Xiaolai-Regular-15dc6d811c9cd078f9086a740d5a1038.woff2";
+const _47 = "Xiaolai-Regular-f0f13b5c60e0af5553bd359f5513be1b.woff2";
+const _48 = "Xiaolai-Regular-8c2f33cee3993174f7e87c28e4bf42ee.woff2";
+const _49 = "Xiaolai-Regular-761d05e3cd968cf574166867998ef06a.woff2";
+const _50 = "Xiaolai-Regular-642b26e2e5f5fb780b51b593dbc8c851.woff2";
+const _51 = "Xiaolai-Regular-5572b3513ba8df57a3d5d7303ee6b11b.woff2";
+const _52 = "Xiaolai-Regular-3c9de2ae0ea4bc91a510942dfa4be8d2.woff2";
+const _53 = "Xiaolai-Regular-671a2c20b1eb9e4ef8a192833940e319.woff2";
+const _54 = "Xiaolai-Regular-4dc6d5f188d5c96d44815cd1e81aa885.woff2";
+const _55 = "Xiaolai-Regular-ce4884f96f11589608b76b726a755803.woff2";
+const _56 = "Xiaolai-Regular-8f476c4c99813d57cbe6eca4727388ad.woff2";
+const _57 = "Xiaolai-Regular-5935a5775af3d5c6307ac667bd9ae74e.woff2";
+const _58 = "Xiaolai-Regular-79f007c1c6d07557120982951ea67998.woff2";
+const _59 = "Xiaolai-Regular-bafff7a14c27403dcc6cf1432e8ea836.woff2";
+const _60 = "Xiaolai-Regular-543fa46ace099a7099dad69123399400.woff2";
+const _61 = "Xiaolai-Regular-4ddc14ed3eb0c3e46364317dfc0144a3.woff2";
+const _62 = "Xiaolai-Regular-0fa55a080fcd0f9dc2e0b0058b793df8.woff2";
+const _63 = "Xiaolai-Regular-66493ba5a8367f2928812f446f47b56a.woff2";
+const _64 = "Xiaolai-Regular-57862b464a55b18c7bf234ce22907d73.woff2";
+const _65 = "Xiaolai-Regular-8d3bcabb847b56243b16afe62adaaf21.woff2";
+const _66 = "Xiaolai-Regular-2b77e8ebfb2367ab2662396a60e7d320.woff2";
+const _67 = "Xiaolai-Regular-0b5d723fdc4e249c140f0909e87d03b4.woff2";
+const _68 = "Xiaolai-Regular-cdbce89e82cc1ab53a2decbf5819278f.woff2";
+const _69 = "Xiaolai-Regular-739bc1a567439c7cffcd1614644593d2.woff2";
+const _70 = "Xiaolai-Regular-72252d73220fa3cd856677888cee1635.woff2";
+const _71 = "Xiaolai-Regular-08e0dc436ad0ad61ba5558db0674d762.woff2";
+const _72 = "Xiaolai-Regular-cf6ff4e0f491ca0cf3038187a997b9b4.woff2";
+const _73 = "Xiaolai-Regular-9cfb2a77a4e45025105ad29a1748b90d.woff2";
+const _74 = "Xiaolai-Regular-450da755d5bcb70906e1295e559b9602.woff2";
+const _75 = "Xiaolai-Regular-0986d134c05864f5025962eef9f994a0.woff2";
+const _76 = "Xiaolai-Regular-1ee544f0f1dac422545c505baa788992.woff2";
+const _77 = "Xiaolai-Regular-4806e761d750087c2d734fc64596eaff.woff2";
+const _78 = "Xiaolai-Regular-33432927cd87d40cfe393c7482bf221f.woff2";
+const _79 = "Xiaolai-Regular-be549ab72f0719d606a5c01e2c0219b6.woff2";
+const _80 = "Xiaolai-Regular-019d66dcad46dc156b162d267f981c20.woff2";
+const _81 = "Xiaolai-Regular-b5c1596551c256e0e9cf02028595b092.woff2";
+const _82 = "Xiaolai-Regular-e5f453bb04da18eed01675eeebd88bf8.woff2";
+const _83 = "Xiaolai-Regular-cf2cc71752631e579e35b0e423bf2638.woff2";
+const _84 = "Xiaolai-Regular-6f3256af8454371776bc46670d33cc65.woff2";
+const _85 = "Xiaolai-Regular-23f228f3999c01983860012330e4be08.woff2";
+const _86 = "Xiaolai-Regular-21430ee05a1248901da8d0de08744d47.woff2";
+const _87 = "Xiaolai-Regular-5330a2119a716e4e7224ed108b085dac.woff2";
+const _88 = "Xiaolai-Regular-cd145ce4a0ea18469358df53c207bc1b.woff2";
+const _89 = "Xiaolai-Regular-36925dfe329a45086cbb7fc5c20d45ac.woff2";
+const _90 = "Xiaolai-Regular-4bfaa8ffa64c5ee560aa2daba7c9cbd3.woff2";
+const _91 = "Xiaolai-Regular-112c051027b2d766c19a519f6ee1f4f7.woff2";
+const _92 = "Xiaolai-Regular-5b0ed6971aaab9c8ad563230bd5471a7.woff2";
+const _93 = "Xiaolai-Regular-98f2ad84457de7f3740d9920b8fa8667.woff2";
+const _94 = "Xiaolai-Regular-733171b4ffcd17ea1fe1c0ba627173bf.woff2";
+const _95 = "Xiaolai-Regular-684d65f1793cac449dde5d59cb3c47fb.woff2";
+const _96 = "Xiaolai-Regular-cbaaefaaf326668277aa24dfa93c4d28.woff2";
+const _97 = "Xiaolai-Regular-58fd02350d0bc52cf1ca3bb32ce9766e.woff2";
+const _98 = "Xiaolai-Regular-7ccce86603f80a099ddb0cb21d4ae3e3.woff2";
+const _99 = "Xiaolai-Regular-3717077e38f98d89eae729b6c14e56dc.woff2";
 const _100 = "Xiaolai-Regular-dbea1af6dcd9860be40c3d18254338f5.woff2";
 const _101 = "Xiaolai-Regular-4a0fdb40036e87b40aa08dd30584cb85.woff2";
 const _102 = "Xiaolai-Regular-0f626226ba1272e832aea87bafd9720e.woff2";
@@ -1305,28 +1305,31 @@ type CJKRange = [number, number];
 
 const cjkRanges: Record<"c" | "j" | "k", CJKRange[]> = {
   c: [
-    [0x4E00, 0x9FFF], // Chinese
-    [0x3400, 0x4DBF],
-    [0xF900, 0xFAFF]
+    [0x4e00, 0x9fff], // Chinese
+    [0x3400, 0x4dbf],
+    [0xf900, 0xfaff],
   ],
   j: [
-    [0x3040, 0x309F], // Japanese
-    [0x30A0, 0x30FF],
-    [0x31F0, 0x31FF]
+    [0x3040, 0x309f], // Japanese
+    [0x30a0, 0x30ff],
+    [0x31f0, 0x31ff],
   ],
   k: [
-    [0x1100, 0x11FF], // Korean
-    [0xAC00, 0xD7AF]
-  ]
+    [0x1100, 0x11ff], // Korean
+    [0xac00, 0xd7af],
+  ],
 };
 
 export function matchesCJKRange(
   descriptor: ExcalidrawFontFaceDescriptor,
-  rangesToLoad: { c: boolean; j: boolean; k: boolean }
+  rangesToLoad: { c: boolean; j: boolean; k: boolean },
 ): boolean {
   // Helper to parse unicode range string like "U+f9b8-fa6d"
   const parseRange = (range: string): CJKRange => {
-    const [start, end] = range.replace("U+", "").split("-").map(hex => parseInt(hex, 16));
+    const [start, end] = range
+      .replace("U+", "")
+      .split("-")
+      .map((hex) => parseInt(hex, 16));
     return [start, end || start];
   };
 
@@ -1334,20 +1337,22 @@ export function matchesCJKRange(
   const rangesOverlap = (range1: CJKRange, range2: CJKRange): boolean =>
     range1[0] <= range2[1] && range1[1] >= range2[0];
 
-  if(!descriptor?.descriptors?.unicodeRange) {
+  if (!descriptor?.descriptors?.unicodeRange) {
     return false;
   }
 
   // Parse unicode ranges from descriptor
-  const unicodeRanges = descriptor?.descriptors?.unicodeRange.split(",").map(parseRange);
+  const unicodeRanges = descriptor?.descriptors?.unicodeRange
+    .split(",")
+    .map(parseRange);
 
   // Check for each CJK type specified in rangesToLoad
   return Object.entries(rangesToLoad).some(([key, shouldLoad]) => {
     if (shouldLoad) {
       const targetRanges = cjkRanges[key as keyof typeof cjkRanges];
       // Check if any descriptor range overlaps with target CJK ranges
-      return unicodeRanges.some(range => 
-        targetRanges.some(cjkRange => rangesOverlap(range, cjkRange))
+      return unicodeRanges.some((range) =>
+        targetRanges.some((cjkRange) => rangesOverlap(range, cjkRange)),
       );
     }
     return false;
@@ -1355,22 +1360,24 @@ export function matchesCJKRange(
 }
 
 /**
- * 
- * @param plugin 
- * @returns 
+ *
+ * @param plugin
+ * @returns
  *   - undefined if no CJK ranges are specified
  *   - false if no CJK fonts are found
  *   - array of Data URLs for CJK fonts
  */
-export async function getCJKDataURLs(plugin: ExcalidrawPlugin): Promise<string[] | undefined | boolean> {
+export async function getCJKDataURLs(
+  plugin: ExcalidrawPlugin,
+): Promise<string[] | undefined | boolean> {
   const rangesToLoad = plugin.getCJKFontSettings();
   if (!(rangesToLoad.c || rangesToLoad.j || rangesToLoad.k)) {
     return;
   }
 
-  const fontURIs = XiaolaiFontFaces
-    .filter(ff => matchesCJKRange(ff, rangesToLoad))
-    .map(ff => ff.uri);
+  const fontURIs = XiaolaiFontFaces.filter((ff) =>
+    matchesCJKRange(ff, rangesToLoad),
+  ).map((ff) => ff.uri);
 
   const buffers: ArrayBuffer[] = [];
 
@@ -1394,7 +1401,7 @@ export async function getCJKDataURLs(plugin: ExcalidrawPlugin): Promise<string[]
   const dataUrls: string[] = [];
 
   for (const buffer of buffers) {
-    const blob = new Blob([buffer], { type: 'font/woff2' });
+    const blob = new Blob([buffer], { type: "font/woff2" });
     const dataUrl = await blobToBase64(blob);
     dataUrls.push("data:font/woff2;base64," + dataUrl);
   }

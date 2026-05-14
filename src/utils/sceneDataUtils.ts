@@ -1,9 +1,16 @@
-import type { ExcalidrawElement,ExcalidrawTextElement } from "@zsviczian/excalidraw/types/element/src/types";
+import type {
+  ExcalidrawElement,
+  ExcalidrawTextElement,
+} from "@zsviczian/excalidraw/types/element/src/types";
 import type { TFile } from "obsidian";
-import { FRONTMATTER_KEYS,getContainerElement } from "src/constants/constants";
+import { FRONTMATTER_KEYS, getContainerElement } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
-import { getDataURLFromURL,getMimeType,getURLImageExtension } from "./fileUtils";
-import { cleanBlockRef,cleanSectionHeading } from "./pathUtils";
+import {
+  getDataURLFromURL,
+  getMimeType,
+  getURLImageExtension,
+} from "./fileUtils";
+import { cleanBlockRef, cleanSectionHeading } from "./pathUtils";
 import { runCompressionWorker } from "src/shared/Workers/compression-worker";
 
 declare var LZString: any;
@@ -47,7 +54,9 @@ export function wrapTextAtCharLength(
   return outstring.replace(/\n$/, "");
 }
 
-export async function getBinaryFileFromDataURL(dataURL: string): Promise<ArrayBuffer> {
+export async function getBinaryFileFromDataURL(
+  dataURL: string,
+): Promise<ArrayBuffer> {
   if (!dataURL) {
     return null;
   }
@@ -92,7 +101,9 @@ export function getLinkParts(fname: string, file?: TFile): LinkParts {
     isBlockRef,
     ref: parts[3]?.match(/^page=\d*$/i)
       ? parts[3]
-      : isBlockRef ? cleanBlockRef(parts[3]) : cleanSectionHeading(parts[3]),
+      : isBlockRef
+        ? cleanBlockRef(parts[3])
+        : cleanSectionHeading(parts[3]),
     width: parts[4] ? parseInt(parts[4]) : undefined,
     height: parts[5] ? parseInt(parts[5]) : undefined,
     page,
@@ -134,7 +145,8 @@ export function hasExportTheme(plugin: ExcalidrawPlugin, file: TFile): boolean {
     if (
       fileCache?.frontmatter &&
       fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] !== null &&
-      typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] !== "undefined"
+      typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] !==
+        "undefined"
     ) {
       return true;
     }
@@ -152,7 +164,8 @@ export function getExportTheme(
     if (
       fileCache?.frontmatter &&
       fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] !== null &&
-      typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] !== "undefined"
+      typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] !==
+        "undefined"
     ) {
       return fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name]
         ? "dark"
@@ -162,20 +175,35 @@ export function getExportTheme(
   return plugin.settings.exportWithTheme ? theme : "light";
 }
 
-export function isVersionNewerThanOther(version: string, otherVersion: string): boolean {
+export function isVersionNewerThanOther(
+  version: string,
+  otherVersion: string,
+): boolean {
   if (!version || !otherVersion) return true;
 
   const v = version.match(/(\d*)\.(\d*)\.(\d*)/);
   const o = otherVersion.match(/(\d*)\.(\d*)\.(\d*)/);
 
-  return Boolean(v && v.length === 4 && o && o.length === 4 &&
-    !(isNaN(parseInt(v[1])) || isNaN(parseInt(v[2])) || isNaN(parseInt(v[3]))) &&
-    !(isNaN(parseInt(o[1])) || isNaN(parseInt(o[2])) || isNaN(parseInt(o[3]))) &&
-    (
-      parseInt(v[1]) > parseInt(o[1]) ||
+  return Boolean(
+    v &&
+    v.length === 4 &&
+    o &&
+    o.length === 4 &&
+    !(
+      isNaN(parseInt(v[1])) ||
+      isNaN(parseInt(v[2])) ||
+      isNaN(parseInt(v[3]))
+    ) &&
+    !(
+      isNaN(parseInt(o[1])) ||
+      isNaN(parseInt(o[2])) ||
+      isNaN(parseInt(o[3]))
+    ) &&
+    (parseInt(v[1]) > parseInt(o[1]) ||
       (parseInt(v[1]) >= parseInt(o[1]) && parseInt(v[2]) > parseInt(o[2])) ||
-      (parseInt(v[1]) >= parseInt(o[1]) && parseInt(v[2]) >= parseInt(o[2]) && parseInt(v[3]) > parseInt(o[3]))
-    )
+      (parseInt(v[1]) >= parseInt(o[1]) &&
+        parseInt(v[2]) >= parseInt(o[2]) &&
+        parseInt(v[3]) > parseInt(o[3]))),
   );
 }
 
@@ -191,7 +219,10 @@ export function arrayToMap<T extends { id: string } | string>(
   }, new Map());
 }
 
-export function updateFrontmatterInString(data: string, keyValuePairs?: [string, string][]): string {
+export function updateFrontmatterInString(
+  data: string,
+  keyValuePairs?: [string, string][],
+): string {
   if (!data || !keyValuePairs) return data;
   for (const kvp of keyValuePairs) {
     const r = new RegExp(`${kvp[0]}:\\s.*\\n`, "g");
@@ -212,7 +243,10 @@ export function _getContainerElement(
     return null;
   }
   if (element.containerId) {
-    return getContainerElement(element as ExcalidrawTextElement, arrayToMap(scene.elements));
+    return getContainerElement(
+      element as ExcalidrawTextElement,
+      arrayToMap(scene.elements),
+    );
   }
   return null;
 }
