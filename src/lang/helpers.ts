@@ -6,7 +6,12 @@ import {
   FRONTMATTER_KEYS,
   LOCALE,
 } from "src/constants/constants";
-import { labelALT, labelCTRL, labelMETA, labelSHIFT } from "src/utils/modifierKeyLabels";
+import {
+  labelALT,
+  labelCTRL,
+  labelMETA,
+  labelSHIFT,
+} from "src/utils/modifierKeyLabels";
 import en from "./locale/en";
 
 declare const PLUGIN_LANGUAGES: Record<string, string>;
@@ -39,7 +44,7 @@ function resolveTokenizedString(value: string): string {
   // Evaluate deferred desktop-only fragments generated during build.
   const desktopResolved = value.replace(
     /__EXD_IF_DESKTOP__([\s\S]*?)__EXD_END_IF_DESKTOP__/g,
-    (_, content: string) => DEVICE.isDesktop ? content : "",
+    (_, content: string) => (DEVICE.isDesktop ? content : ""),
   );
 
   // Evaluate deferred Apple vs non-Apple fragments generated during build.
@@ -60,7 +65,8 @@ function resolveTokenizedString(value: string): string {
     [TOKENS.FRONTMATTER_URL_PREFIX]: FRONTMATTER_KEYS["url-prefix"].name,
     [TOKENS.CJK_FONTS]: CJK_FONTS,
     [TOKENS.PLUGIN_VERSION]: PLUGIN_VERSION,
-    [TOKENS.DEVTOOLS_SHORTCUT]: DEVICE.isIOS || DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i",
+    [TOKENS.DEVTOOLS_SHORTCUT]:
+      DEVICE.isIOS || DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i",
   };
 
   let resolved = appleResolved;
@@ -81,14 +87,16 @@ function resolveTokensDeep(value: unknown): unknown {
 
   if (value && typeof value === "object") {
     const entries = Object.entries(value as Record<string, unknown>);
-    return Object.fromEntries(entries.map(([k, v]) => [k, resolveTokensDeep(v)]));
+    return Object.fromEntries(
+      entries.map(([k, v]) => [k, resolveTokensDeep(v)]),
+    );
   }
 
   return value;
 }
 
 function loadLocale(lang: string): Partial<typeof en> {
-  if(lang === "zh") lang = "zh-cn"; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2247
+  if (lang === "zh") lang = "zh-cn"; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2247
   if (!Object.prototype.hasOwnProperty.call(PLUGIN_LANGUAGES, lang)) {
     return en;
   }
