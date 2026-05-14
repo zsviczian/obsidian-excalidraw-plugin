@@ -1,11 +1,11 @@
 import {
-FuzzyMatch,
-TFile,
-BlockCache,
-HeadingCache,
-CachedMetadata,
-TextComponent,
-App,
+  FuzzyMatch,
+  TFile,
+  BlockCache,
+  HeadingCache,
+  CachedMetadata,
+  TextComponent,
+  App,
 } from "obsidian";
 import { SuggestionModal } from "./SuggestionModal";
 
@@ -107,7 +107,7 @@ export class PathSuggestionModal extends SuggestionModal<
 
     if (item instanceof TFile) {
       const pathLength = item.path.length - item.name.length;
-      const matchElements = matches.matches.map((m) => {
+      const matchElements = matches.matches.map(() => {
         return createSpan("suggestion-highlight");
       });
       for (

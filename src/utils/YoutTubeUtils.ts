@@ -1,18 +1,15 @@
-const REG_YOUTUBE = /^(?:http(?:s)?:\/\/)?(?:www\.)?youtu(?:be\.com|\.be)\/(embed\/|watch\?v=|shorts\/|playlist\?list=|embed\/videoseries\?list=)?([a-zA-Z0-9_-]+)(?:\?t=|.*&t=|\?start=|.*&start=)?([a-zA-Z0-9_-]+)?[^\s]*$/;
-const REG_VIMEO = /^(?:http(?:s)?:\/\/)?(?:(?:w){3}\.)?(?:player\.)?vimeo\.com\/(?:video\/)?([^?\s]+)(?:\?.*)?$/;
+const REG_YOUTUBE =
+  /^(?:http(?:s)?:\/\/)?(?:www\.)?youtu(?:be\.com|\.be)\/(embed\/|watch\?v=|shorts\/|playlist\?list=|embed\/videoseries\?list=)?([a-zA-Z0-9_-]+)(?:\?t=|.*&t=|\?start=|.*&start=)?([a-zA-Z0-9_-]+)?[^\s]*$/;
+const REG_VIMEO =
+  /^(?:http(?:s)?:\/\/)?(?:(?:w){3}\.)?(?:player\.)?vimeo\.com\/(?:video\/)?([^?\s]+)(?:\?.*)?$/;
 
 export const isVimeo = (url: string): boolean => {
-  return Boolean(
-    url.match(REG_VIMEO)
-  );
-}
+  return Boolean(url.match(REG_VIMEO));
+};
 
 export const isYouTube = (url: string): boolean => {
-  return Boolean(
-    url.match(REG_YOUTUBE)
-  );
-}
-
+  return Boolean(url.match(REG_YOUTUBE));
+};
 
 export const getAspectRatio = (url: string): { w: number; h: number } => {
   const normalizedUrl = url.toLowerCase();
@@ -27,9 +24,7 @@ export const getAspectRatio = (url: string): { w: number; h: number } => {
   }
 
   return { w: 1, h: 1 };
-}
-
-
+};
 
 export const getYouTubeStartAt = (url: string): string => {
   const ytLink = url.match(REG_YOUTUBE);
@@ -38,34 +33,54 @@ export const getYouTubeStartAt = (url: string): string => {
     const hours = Math.floor(time / 3600);
     const minutes = Math.floor((time - hours * 3600) / 60);
     const seconds = time - hours * 3600 - minutes * 60;
-    if(hours === 0 && minutes === 0 && seconds === 0) return "";
-    if(hours === 0 && minutes === 0) return `${String(seconds).padStart(2, '0')}`;
-    if(hours === 0) return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    if (hours === 0 && minutes === 0 && seconds === 0) {
+      return "";
+    }
+    if (hours === 0 && minutes === 0) {
+      return `${String(seconds).padStart(2, "0")}`;
+    }
+    if (hours === 0) {
+      return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   }
   return "";
 };
 
 export const isValidYouTubeStart = (value: string): boolean => {
-  if(/^[0-9]+$/.test(value)) return true; // Matches only numbers (seconds)
-  if(/^[0-9]+:[0-9]+$/.test(value)) return true; // Matches only numbers (minutes and seconds)
-  if(/^[0-9]+:[0-9]+:[0-9]+$/.test(value)) return true; // Matches only numbers (hours, minutes, and seconds
+  if (/^[0-9]+$/.test(value)) {
+    return true;
+  } // Matches only numbers (seconds)
+  if (/^[0-9]+:[0-9]+$/.test(value)) {
+    return true;
+  } // Matches only numbers (minutes and seconds)
+  if (/^[0-9]+:[0-9]+:[0-9]+$/.test(value)) {
+    return true;
+  } // Matches only numbers (hours, minutes, and seconds
 };
 
-export const updateYouTubeStartTime = (link: string, startTime: string): string => {
+export const updateYouTubeStartTime = (
+  link: string,
+  startTime: string,
+): string => {
   const match = link.match(REG_YOUTUBE);
   if (match?.[2]) {
-    const startTimeParam = startTime === ""
-      ? ``  
-      : `t=${timeStringToSeconds(startTime)}`;
+    const startTimeParam =
+      startTime === "" ? `` : `t=${timeStringToSeconds(startTime)}`;
     let updatedLink = link;
     if (match[3]) {
       // If start time already exists, update it
-      updatedLink = link.replace(/([?&])t=[a-zA-Z0-9_-]+/, `$1${startTimeParam}`);
-      updatedLink = updatedLink.replace(/([?&])start=[a-zA-Z0-9_-]+/, `$1${startTimeParam}`);
+      updatedLink = link.replace(
+        /([?&])t=[a-zA-Z0-9_-]+/,
+        `$1${startTimeParam}`,
+      );
+      updatedLink = updatedLink.replace(
+        /([?&])start=[a-zA-Z0-9_-]+/,
+        `$1${startTimeParam}`,
+      );
     } else {
       // If no start time exists, add it to the link
-      updatedLink += (link.includes('?') ? '&' : '?') + startTimeParam;
+      updatedLink += (link.includes("?") ? "&" : "?") + startTimeParam;
     }
     return updatedLink;
   }
@@ -73,7 +88,7 @@ export const updateYouTubeStartTime = (link: string, startTime: string): string 
 };
 
 const timeStringToSeconds = (time: string): number => {
-  const timeParts = time.split(':').map(Number);
+  const timeParts = time.split(":").map(Number);
   const totalParts = timeParts.length;
 
   if (totalParts === 1) {

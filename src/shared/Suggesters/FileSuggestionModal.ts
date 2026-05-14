@@ -1,16 +1,22 @@
 import {
-FuzzyMatch,
-TFile,
-CachedMetadata,
-TextComponent,
-App,
-setIcon,
+  FuzzyMatch,
+  TFile,
+  CachedMetadata,
+  TextComponent,
+  App,
+  setIcon,
 } from "obsidian";
 import { SuggestionModal } from "./SuggestionModal";
 import { t } from "src/lang/helpers";
 import { LinkSuggestion } from "src/types/types";
 import ExcalidrawPlugin from "src/core/main";
-import { AUDIO_TYPES,CODE_TYPES,ICON_NAME,IMAGE_TYPES,VIDEO_TYPES } from "src/constants/constants";
+import {
+  AUDIO_TYPES,
+  CODE_TYPES,
+  ICON_NAME,
+  IMAGE_TYPES,
+  VIDEO_TYPES,
+} from "src/constants/constants";
 
 export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
   text: TextComponent;
@@ -18,8 +24,13 @@ export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
   filesAndAliases: LinkSuggestion[];
   file: TFile;
   private handleGetFile: () => void;
-  
-  constructor(app: App, input: TextComponent, items: TFile[], private plugin: ExcalidrawPlugin) {
+
+  constructor(
+    app: App,
+    input: TextComponent,
+    items: TFile[],
+    private plugin: ExcalidrawPlugin,
+  ) {
     const filesAndAliases = [];
     for (const file of items) {
       const path = file.path;
@@ -28,7 +39,9 @@ export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
       const aliases = metadata?.frontmatter?.aliases || []; // Check for frontmatter aliases
 
       for (const alias of aliases) {
-        if(!alias) continue; // Skip empty aliases
+        if (!alias) {
+          continue;
+        } // Skip empty aliases
         filesAndAliases.push({ file, path, alias });
       }
     }
@@ -38,11 +51,11 @@ export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
     this.text = input;
     this.suggestEl.style.maxWidth = "100%";
     this.suggestEl.style.width = `${input.inputEl.clientWidth}px`;
-    
+
     // Pre-bind the handler
     this.handleGetFile = this.getFile.bind(this);
     this.inputEl.addEventListener("input", this.handleGetFile);
-    
+
     this.setPlaceholder(t("SELECT_FILE_TO_INSERT"));
     this.emptyStateText = t("NO_MATCH");
   }
@@ -82,7 +95,7 @@ export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
     this.text.onChanged();
     this.close();
   }
-  
+
   renderSuggestion(result: FuzzyMatch<LinkSuggestion>, itemEl: HTMLElement) {
     const { item, match: matches } = result || {};
     itemEl.addClass("mod-complex");
@@ -102,7 +115,7 @@ export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
 
     const path = item.file?.path ?? item.path;
     const pathLength = path.length - item.file.name.length;
-    const matchElements = matches.matches.map((m) => {
+    const matchElements = matches.matches.map(() => {
       return createSpan("suggestion-highlight");
     });
     const itemText = this.getItemText(item);
@@ -121,7 +134,7 @@ export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
     }
     noteEl.setText(path);
 
-    if(this.plugin.isExcalidrawFile(item.file)) {
+    if (this.plugin.isExcalidrawFile(item.file)) {
       setIcon(auxEl, ICON_NAME);
     } else if (item.file.extension === "md") {
       setIcon(auxEl, "square-pen");

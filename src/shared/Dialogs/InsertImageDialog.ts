@@ -1,6 +1,10 @@
-import { FuzzySuggestModal,TFile } from "obsidian";
+import { FuzzySuggestModal, TFile } from "obsidian";
 import { scaleToFullsizeModifier } from "src/utils/modifierkeyHelper";
-import { DEVICE,IMAGE_TYPES,REG_LINKINDEX_INVALIDCHARS } from "../../constants/constants";
+import {
+  DEVICE,
+  IMAGE_TYPES,
+  REG_LINKINDEX_INVALIDCHARS,
+} from "../../constants/constants";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import { t } from "../../lang/helpers";
 import ExcalidrawPlugin from "../../core/main";
@@ -39,20 +43,22 @@ export class InsertImageDialog extends FuzzySuggestModal<TFile> {
     this.setPlaceholder(t("SELECT_DRAWING"));
     this.emptyStateText = t("NO_MATCH");
     this.inputEl.onkeyup = (e) => {
-      //@ts-ignore
-      if (e.key === "Enter" && scaleToFullsizeModifier(e) && this.chooser.values) {
+      if (
+        e.key === "Enter" &&
+        scaleToFullsizeModifier(e) &&
+        this.chooser.values
+      ) {
         this.onChooseItem(
-          //@ts-ignore
           this.chooser.values[this.chooser.selectedItem].item,
-          new KeyboardEvent("keypress",{
+          new KeyboardEvent("keypress", {
             shiftKey: true,
             metaKey: !(DEVICE.isIOS || DEVICE.isMacOS),
-            ctrlKey: (DEVICE.isIOS || DEVICE.isMacOS),
-          })
+            ctrlKey: DEVICE.isIOS || DEVICE.isMacOS,
+          }),
         );
         this.close();
       }
-    }
+    };
   }
 
   getItems(): TFile[] {

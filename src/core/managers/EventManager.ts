@@ -1,33 +1,54 @@
-import { WorkspaceLeaf,TFile,Editor,MarkdownView,MarkdownFileInfo,MetadataCache,App,EventRef,Menu,FileView } from "obsidian";
+import {
+  WorkspaceLeaf,
+  TFile,
+  Editor,
+  MarkdownView,
+  MarkdownFileInfo,
+  MetadataCache,
+  App,
+  EventRef,
+  Menu,
+  FileView,
+} from "obsidian";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { getLink } from "../../utils/fileUtils";
-import { editorInsertText,getExcalidrawViews,getParentOfClass,isUnwantedLeaf,setExcalidrawView } from "../../utils/obsidianUtils";
+import {
+  editorInsertText,
+  getExcalidrawViews,
+  getParentOfClass,
+  isUnwantedLeaf,
+  setExcalidrawView,
+} from "../../utils/obsidianUtils";
 import ExcalidrawPlugin from "src/core/main";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { FRONTMATTER_KEYS,ICON_NAME,VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
+import {
+  FRONTMATTER_KEYS,
+  ICON_NAME,
+  VIEW_TYPE_EXCALIDRAW,
+} from "src/constants/constants";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { t } from "src/lang/helpers";
 import { setMobileNavbarPosition } from "src/utils/excalidrawViewUtils";
 
 /**
  * Registers event listeners for the plugin
- * Must be constructed after the workspace is ready (onLayoutReady) 
+ * Must be constructed after the workspace is ready (onLayoutReady)
  * Intended to be called from onLayoutReady in onload()
  */
 export class EventManager {
   private plugin: ExcalidrawPlugin;
   private app: App;
-  public leafChangeTimeout: number|null = null;
-  private removeEventLisnters:(()=>void)[] = []; //only used if I register an event directly, not via Obsidian's registerEvent
+  public leafChangeTimeout: number | null = null;
+  private removeEventLisnters: (() => void)[] = []; //only used if I register an event directly, not via Obsidian's registerEvent
   private previouslyActiveLeaf: WorkspaceLeaf;
   private splitViewLeafSwitchTimestamp: number = 0;
-  private debunceActiveLeafChangeHandlerTimer: number|null = null;
+  private debunceActiveLeafChangeHandlerTimer: number | null = null;
 
   get settings() {
     return this.plugin.settings;
   }
 
-  get ea():ExcalidrawAutomate {
+  get ea(): ExcalidrawAutomate {
     return this.plugin.ea;
   }
 
@@ -42,18 +63,18 @@ export class EventManager {
   private registerEvent(eventRef: EventRef): void {
     this.plugin.registerEvent(eventRef);
   }
-  
+
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
     this.app = plugin.app;
   }
 
   destroy() {
-    if(this.leafChangeTimeout) {
+    if (this.leafChangeTimeout) {
       window.clearTimeout(this.leafChangeTimeout);
       this.leafChangeTimeout = null;
     }
-    if(this.debunceActiveLeafChangeHandlerTimer) {
+    if (this.debunceActiveLeafChangeHandlerTimer) {
       window.clearTimeout(this.debunceActiveLeafChangeHandlerTimer);
       this.debunceActiveLeafChangeHandlerTimer = null;
     }
@@ -72,30 +93,60 @@ export class EventManager {
     this.plugin.logStartupEvent("Event listeners registered");
   }
 
-  public isRecentSplitViewSwitch():boolean {
-    return (Date.now() - this.splitViewLeafSwitchTimestamp) < 3000;
+  public isRecentSplitViewSwitch(): boolean {
+    return Date.now() - this.splitViewLeafSwitchTimestamp < 3000;
   }
 
   public async registerEvents() {
     await this.plugin.awaitInit();
-    this.registerEvent(this.app.workspace.on("editor-paste", this.onPasteHandler.bind(this)));
-    this.registerEvent(this.app.vault.on("rename", this.onRenameHandler.bind(this)));
-    this.registerEvent(this.app.vault.on("modify", this.onModifyHandler.bind(this)));
-    this.registerEvent(this.app.vault.on("delete", this.onDeleteHandler.bind(this)));
+    this.registerEvent(
+      this.app.workspace.on("editor-paste", this.onPasteHandler.bind(this)),
+    );
+    this.registerEvent(
+      this.app.vault.on("rename", this.onRenameHandler.bind(this)),
+    );
+    this.registerEvent(
+      this.app.vault.on("modify", this.onModifyHandler.bind(this)),
+    );
+    this.registerEvent(
+      this.app.vault.on("delete", this.onDeleteHandler.bind(this)),
+    );
 
     //save Excalidraw leaf and update embeds when switching to another leaf
-    this.registerEvent(this.plugin.app.workspace.on("active-leaf-change", this.onActiveLeafChangeHandler.bind(this)));
+    this.registerEvent(
+      this.plugin.app.workspace.on(
+        "active-leaf-change",
+        this.onActiveLeafChangeHandler.bind(this),
+      ),
+    );
 
-    this.registerEvent(this.app.workspace.on("layout-change", this.onLayoutChangeHandler.bind(this)));
+    this.registerEvent(
+      this.app.workspace.on(
+        "layout-change",
+        this.onLayoutChangeHandler.bind(this),
+      ),
+    );
 
     //File Save Trigger Handlers
     //Save the drawing if the user clicks outside the Excalidraw Canvas
-    const onClickEventSaveActiveDrawing = this.onClickSaveActiveDrawing.bind(this);
-    this.app.workspace.containerEl.addEventListener("click", onClickEventSaveActiveDrawing);
+    const onClickEventSaveActiveDrawing =
+      this.onClickSaveActiveDrawing.bind(this);
+    this.app.workspace.containerEl.addEventListener(
+      "click",
+      onClickEventSaveActiveDrawing,
+    );
     this.removeEventLisnters.push(() => {
-      this.app.workspace.containerEl.removeEventListener("click", onClickEventSaveActiveDrawing)
+      this.app.workspace.containerEl.removeEventListener(
+        "click",
+        onClickEventSaveActiveDrawing,
+      );
     });
-    this.registerEvent(this.app.workspace.on("file-menu", this.onFileMenuSaveActiveDrawing.bind(this)));
+    this.registerEvent(
+      this.app.workspace.on(
+        "file-menu",
+        this.onFileMenuSaveActiveDrawing.bind(this),
+      ),
+    );
 
     const metaCache: MetadataCache = this.app.metadataCache;
     this.registerEvent(
@@ -104,12 +155,19 @@ export class EventManager {
       ),
     );
 
-    this.registerEvent(this.app.workspace.on("file-menu", this.onFileMenuHandler.bind(this)));
-    this.plugin.registerEvent(this.plugin.app.workspace.on("editor-menu", this.onEditorMenuHandler.bind(this)));
+    this.registerEvent(
+      this.app.workspace.on("file-menu", this.onFileMenuHandler.bind(this)),
+    );
+    this.plugin.registerEvent(
+      this.plugin.app.workspace.on(
+        "editor-menu",
+        this.onEditorMenuHandler.bind(this),
+      ),
+    );
   }
 
   public setDebounceActiveLeafChangeHandler() {
-    if(this.debunceActiveLeafChangeHandlerTimer) {
+    if (this.debunceActiveLeafChangeHandlerTimer) {
       window.clearTimeout(this.debunceActiveLeafChangeHandlerTimer);
     }
     this.debunceActiveLeafChangeHandlerTimer = window.setTimeout(() => {
@@ -119,38 +177,56 @@ export class EventManager {
 
   private onLayoutChangeHandler() {
     if (this.app.workspace.layoutReady) {
-      getExcalidrawViews(this.app, true).forEach(excalidrawView=>!!excalidrawView?.refresh && excalidrawView.refresh());
+      getExcalidrawViews(this.app, true).forEach(
+        (excalidrawView) =>
+          !!excalidrawView?.refresh && excalidrawView.refresh(),
+      );
     }
   }
 
-  private onPasteHandler (evt: ClipboardEvent, editor: Editor, info: MarkdownView | MarkdownFileInfo ) {
-    if(evt.defaultPrevented) return
+  private onPasteHandler(
+    evt: ClipboardEvent,
+    editor: Editor,
+    info: MarkdownView | MarkdownFileInfo,
+  ) {
+    if (evt.defaultPrevented) {
+      return;
+    }
     const data = evt.clipboardData.getData("text/plain");
-    if (!data) return;
+    if (!data) {
+      return;
+    }
     if (data.startsWith(`{"type":"excalidraw/clipboard"`)) {
       evt.preventDefault();
       try {
         const drawing = JSON.parse(data);
-        const hasOneTextElement = drawing.elements.filter((el:ExcalidrawElement)=>el.type==="text").length === 1;
+        const hasOneTextElement =
+          drawing.elements.filter((el: ExcalidrawElement) => el.type === "text")
+            .length === 1;
         if (!(hasOneTextElement || drawing.elements?.length === 1)) {
           return;
         }
         const element = hasOneTextElement
-          ? drawing.elements.filter((el:ExcalidrawElement)=>el.type==="text")[0]
+          ? drawing.elements.filter(
+              (el: ExcalidrawElement) => el.type === "text",
+            )[0]
           : drawing.elements[0];
         if (element.type === "image") {
           const fileinfo = this.plugin.filesMaster.get(element.fileId);
-          if(fileinfo && fileinfo.path) {
+          if (fileinfo && fileinfo.path) {
             let path = fileinfo.path.split("|")[0]; // strip size anchoring (e.g. |100%)
             const sourceFile = info.file;
             const imageFile = this.app.vault.getAbstractFileByPath(path);
-            if(sourceFile && imageFile && imageFile instanceof TFile) {
-              path = this.app.metadataCache.fileToLinktext(imageFile,sourceFile.path);
+            if (sourceFile && imageFile && imageFile instanceof TFile) {
+              path = this.app.metadataCache.fileToLinktext(
+                imageFile,
+                sourceFile.path,
+              );
             }
             if (fileinfo.blockrefData) {
               path = `${path}#${fileinfo.blockrefData.split("|")[0]}`; // strip size anchoring (e.g. |100%)
             }
-            editorInsertText(editor, getLink(this.plugin, {path}));
+            editorInsertText(editor, getLink(this.plugin, { path }));
           }
           return;
         }
@@ -162,10 +238,9 @@ export class EventManager {
           editorInsertText(editor, `${element.link}`);
           return;
         }
-      } catch (e) {
-      }
+      } catch (_) {}
     }
-  };
+  }
 
   private onRenameHandler(file: TFile, oldPath: string) {
     this.plugin.renameEventHandler(file, oldPath);
@@ -179,16 +254,16 @@ export class EventManager {
     this.plugin.deleteEventHandler(file);
   }
 
-  public async onActiveLeafChangeHandler (leaf: WorkspaceLeaf) {
+  public async onActiveLeafChangeHandler(leaf: WorkspaceLeaf) {
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/723
 
-     if(this.debunceActiveLeafChangeHandlerTimer) {
-       return;
-     }
+    if (this.debunceActiveLeafChangeHandlerTimer) {
+      return;
+    }
 
     //In Obsidian 1.8.x the active excalidraw leaf is obscured by an empty leaf without a parent
     //This hack resolves it
-    if(this.app.workspace.activeLeaf === leaf && isUnwantedLeaf(leaf)) {
+    if (this.app.workspace.activeLeaf === leaf && isUnwantedLeaf(leaf)) {
       leaf.detach();
       return;
     }
@@ -200,21 +275,25 @@ export class EventManager {
     if (leaf.view && leaf.view.getViewType() === VIEW_TYPE_EXCALIDRAW) {
       this.plugin.lastActiveExcalidrawLeafID = leaf.id;
     } else {
-      const lastLeaf = this.app.workspace.getLeafById(this.plugin.lastActiveExcalidrawLeafID);
-      if(!lastLeaf || !(lastLeaf.view instanceof ExcalidrawView)) {
+      const lastLeaf = this.app.workspace.getLeafById(
+        this.plugin.lastActiveExcalidrawLeafID,
+      );
+      if (!lastLeaf || !(lastLeaf.view instanceof ExcalidrawView)) {
         this.plugin.lastActiveExcalidrawLeafID = null;
       }
     }
 
-    if(this.leafChangeTimeout) {
+    if (this.leafChangeTimeout) {
       window.clearTimeout(this.leafChangeTimeout);
     }
-    this.leafChangeTimeout = window.setTimeout(()=>{this.leafChangeTimeout = null;},1000);
+    this.leafChangeTimeout = window.setTimeout(() => {
+      this.leafChangeTimeout = null;
+    }, 1000);
 
-    if(this.settings.overrideObsidianFontSize) {
-      if(leaf.view && (leaf.view.getViewType() === VIEW_TYPE_EXCALIDRAW)) {
+    if (this.settings.overrideObsidianFontSize) {
+      if (leaf.view && leaf.view.getViewType() === VIEW_TYPE_EXCALIDRAW) {
         document.documentElement.style.fontSize = "";
-      } 
+      }
     }
 
     const previouslyActiveEV = this.activeExcalidrawView;
@@ -224,13 +303,16 @@ export class EventManager {
     const previousFile = (this.previouslyActiveLeaf?.view as FileView)?.file;
     const currentFile = (leaf?.view as FileView).file;
     //editing the same file in a different leaf
-    if(currentFile && (previousFile === currentFile)) {
-      if((this.previouslyActiveLeaf.view instanceof MarkdownView   && leaf.view instanceof ExcalidrawView)) {
+    if (currentFile && previousFile === currentFile) {
+      if (
+        this.previouslyActiveLeaf.view instanceof MarkdownView &&
+        leaf.view instanceof ExcalidrawView
+      ) {
         this.splitViewLeafSwitchTimestamp = Date.now();
       }
     }
     this.previouslyActiveLeaf = leaf;
-    
+
     if (newActiveviewEV) {
       this.plugin.addModalContainerObserver();
       this.plugin.lastActiveExcalidrawFilePath = newActiveviewEV.file?.path;
@@ -246,7 +328,10 @@ export class EventManager {
       if (previouslyActiveEV.leaf !== leaf) {
         //if loading new view to same leaf then don't save. Excalidraw view will take care of saving anyway.
         //avoid double saving
-        if(previouslyActiveEV?.isDirty() && !previouslyActiveEV.semaphores?.viewunload) {
+        if (
+          previouslyActiveEV?.isDirty() &&
+          !previouslyActiveEV.semaphores?.viewunload
+        ) {
           await previouslyActiveEV.save(true); //this will update transclusions in the drawing
         }
       }
@@ -278,16 +363,17 @@ export class EventManager {
       } //refresh embedded files
     }
 
-    
     if (
-      newActiveviewEV && newActiveviewEV._loaded &&
-      newActiveviewEV.isLoaded && newActiveviewEV.excalidrawAPI &&
+      newActiveviewEV &&
+      newActiveviewEV._loaded &&
+      newActiveviewEV.isLoaded &&
+      newActiveviewEV.excalidrawAPI &&
       this.ea.onCanvasColorChangeHook
     ) {
       this.ea.onCanvasColorChangeHook(
         this.ea,
         newActiveviewEV,
-        newActiveviewEV.excalidrawAPI.getAppState().viewBackgroundColor
+        newActiveviewEV.excalidrawAPI.getAppState().viewBackgroundColor,
       );
     }
 
@@ -306,62 +392,89 @@ export class EventManager {
     if (
       !this.activeExcalidrawView ||
       !this.activeExcalidrawView?.isDirty() ||
-      e.target && ((e.target as Element).className === "excalidraw__canvas" ||
-      getParentOfClass((e.target as Element),"excalidraw-wrapper"))
+      (e.target &&
+        ((e.target as Element).className === "excalidraw__canvas" ||
+          getParentOfClass(e.target as Element, "excalidraw-wrapper")))
     ) {
       return;
     }
     this.activeExcalidrawView.save();
   }
 
-  private onFileMenuSaveActiveDrawing () {
-    if (
-      !this.activeExcalidrawView ||
-      !this.activeExcalidrawView?.isDirty()
-    ) {
+  private onFileMenuSaveActiveDrawing() {
+    if (!this.activeExcalidrawView || !this.activeExcalidrawView?.isDirty()) {
       return;
     }
     this.activeExcalidrawView.save();
-  };
+  }
 
-  private onFileMenuHandler(menu: Menu, file: TFile, source: string, leaf: WorkspaceLeaf) {
-    if (!leaf) return;
+  private onFileMenuHandler(
+    menu: Menu,
+    file: TFile,
+    source: string,
+    leaf: WorkspaceLeaf,
+  ) {
+    if (!leaf) {
+      return;
+    }
     const view = leaf.view;
-    if(!view || !(view instanceof MarkdownView)) return;
-    if (!(file instanceof TFile)) return;
+    if (!view || !(view instanceof MarkdownView)) {
+      return;
+    }
+    if (!(file instanceof TFile)) {
+      return;
+    }
     const cache = this.app.metadataCache.getFileCache(file);
-    if (!cache?.frontmatter || !cache.frontmatter[FRONTMATTER_KEYS["plugin"].name]) return;
-    
-    menu.addItem(item => {
+    if (
+      !cache?.frontmatter ||
+      !cache.frontmatter[FRONTMATTER_KEYS.plugin.name]
+    ) {
+      return;
+    }
+
+    menu.addItem((item) => {
       item
-      .setTitle(t("OPEN_AS_EXCALIDRAW"))
-      .setIcon(ICON_NAME)
-      .setSection("pane")
-      .onClick(async () => {
-        await view.save();
-        this.plugin.excalidrawFileModes[leaf.id || file.path] = VIEW_TYPE_EXCALIDRAW;
-        setExcalidrawView(leaf);
-      })});
+        .setTitle(t("OPEN_AS_EXCALIDRAW"))
+        .setIcon(ICON_NAME)
+        .setSection("pane")
+        .onClick(async () => {
+          await view.save();
+          this.plugin.excalidrawFileModes[leaf.id || file.path] =
+            VIEW_TYPE_EXCALIDRAW;
+          setExcalidrawView(leaf);
+        });
+    });
     menu.items.unshift(menu.items.pop());
   }
 
   private onEditorMenuHandler(menu: Menu, editor: Editor, view: MarkdownView) {
-    if(!view || !(view instanceof MarkdownView)) return;
+    if (!view || !(view instanceof MarkdownView)) {
+      return;
+    }
     const file = view.file;
     const leaf = view.leaf;
-    if (!view.file) return;
+    if (!view.file) {
+      return;
+    }
     const cache = this.app.metadataCache.getFileCache(file);
-    if (!cache?.frontmatter || !cache.frontmatter[FRONTMATTER_KEYS["plugin"].name]) return;
-    
-    menu.addItem(item => item
-      .setTitle(t("OPEN_AS_EXCALIDRAW"))
-      .setIcon(ICON_NAME)
-      .setSection("excalidraw")
-      .onClick(async () => {
-        await view.save();
-        this.plugin.excalidrawFileModes[leaf.id || file.path] = VIEW_TYPE_EXCALIDRAW;
-        setExcalidrawView(leaf);
-      })
+    if (
+      !cache?.frontmatter ||
+      !cache.frontmatter[FRONTMATTER_KEYS.plugin.name]
+    ) {
+      return;
+    }
+
+    menu.addItem((item) =>
+      item
+        .setTitle(t("OPEN_AS_EXCALIDRAW"))
+        .setIcon(ICON_NAME)
+        .setSection("excalidraw")
+        .onClick(async () => {
+          await view.save();
+          this.plugin.excalidrawFileModes[leaf.id || file.path] =
+            VIEW_TYPE_EXCALIDRAW;
+          setExcalidrawView(leaf);
+        }),
     );
   }
 }

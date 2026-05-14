@@ -1,9 +1,9 @@
 import {
-FuzzyMatch,
-CachedMetadata,
-TextComponent,
-App,
-TFolder,
+  FuzzyMatch,
+  CachedMetadata,
+  TextComponent,
+  App,
+  TFolder,
 } from "obsidian";
 import { SuggestionModal } from "./SuggestionModal";
 
@@ -67,7 +67,7 @@ export class FolderSuggestionModal extends SuggestionModal<TFolder> {
     }
 
     const pathLength = item.path.length - item.name.length;
-    const matchElements = matches.matches.map((m) => {
+    const matchElements = matches.matches.map(() => {
       return createSpan("suggestion-highlight");
     });
     for (let i = pathLength; i < item.path.length; i++) {

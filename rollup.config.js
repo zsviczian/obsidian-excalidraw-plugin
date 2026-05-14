@@ -124,42 +124,11 @@ function replaceDesktopConditionalBlocks(input, deviceTokens) {
 
 function replaceAppleTernaryBlocks(input, deviceTokens) {
   // Preserve Apple vs non-Apple branch text for runtime decision.
-  const start = "(DEVICE.isIOS || DEVICE.isMacOS ? \"";
-  const separator = "\" : \"";
-  const end = "\")";
-  let output = "";
-  let cursor = 0;
+  const appleTernaryRegex = /\(\s*DEVICE\.isIOS\s*\|\|\s*DEVICE\.isMacOS\s*\?\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*\)/g;
 
-  while (true) {
-    const startIndex = input.indexOf(start, cursor);
-    if (startIndex === -1) {
-      output += input.slice(cursor);
-      break;
-    }
-
-    const trueStart = startIndex + start.length;
-    const separatorIndex = input.indexOf(separator, trueStart);
-    if (separatorIndex === -1) {
-      output += input.slice(cursor);
-      break;
-    }
-
-    const falseStart = separatorIndex + separator.length;
-    const endIndex = input.indexOf(end, falseStart);
-    if (endIndex === -1) {
-      output += input.slice(cursor);
-      break;
-    }
-
-    const trueValue = input.slice(trueStart, separatorIndex);
-    const falseValue = input.slice(falseStart, endIndex);
-
-    output += input.slice(cursor, startIndex);
-    output += `"${deviceTokens.IF_APPLE_START}${trueValue}${deviceTokens.IF_APPLE_ELSE}${falseValue}${deviceTokens.IF_APPLE_END}"`;
-    cursor = endIndex + end.length;
-  }
-
-  return output;
+  return input.replace(appleTernaryRegex, (_, trueValue, falseValue) =>
+    `"${deviceTokens.IF_APPLE_START}${trueValue}${deviceTokens.IF_APPLE_ELSE}${falseValue}${deviceTokens.IF_APPLE_END}"`
+  );
 }
 
 function tokenizeLocaleContent(content, deviceTokens = DEVICE_TOKEN_VALUES) {

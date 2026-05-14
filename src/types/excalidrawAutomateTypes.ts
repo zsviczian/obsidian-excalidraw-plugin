@@ -1,20 +1,28 @@
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { TFile } from "obsidian";
 import { FileId } from "src/core";
-import { ColorMap,PDFPageViewProps,Size,MimeType } from "./embeddedFileLoaderTypes";
+import {
+  ColorMap,
+  PDFPageViewProps,
+  Size,
+  MimeType,
+} from "./embeddedFileLoaderTypes";
 
-export type SVGColorInfo = Map<string, {
-  mappedTo: string;
-  fill: boolean;
-  stroke: boolean;
-}>;
+export type SVGColorInfo = Map<
+  string,
+  {
+    mappedTo: string;
+    fill: boolean;
+    stroke: boolean;
+  }
+>;
 
 export type ScriptSettingValue = {
-  value?:string | number | boolean,
-  hidden?: boolean,
-  description?: string,
-  valueset?: string[],
-  height?: number, //height of textarea in Plugin Settings if type is string
+  value?: string | number | boolean;
+  hidden?: boolean;
+  description?: string;
+  valueset?: string[];
+  height?: number; //height of textarea in Plugin Settings if type is string
 };
 
 /**
@@ -27,26 +35,26 @@ export interface KeyBlocker {
 }
 
 export type ImageInfo = {
-  mimeType: MimeType,
-  id: FileId,
-  dataURL: DataURL,
-  created: number,
-  isHyperLink?: boolean,
-  hyperlink?: string,
-  file?:string | TFile,
-  hasSVGwithBitmap: boolean,
-  latex?: string,
-  size?: Size,
-  colorMap?: ColorMap,
-  pdfPageViewProps?: PDFPageViewProps,
-  renderScale?: number,
-}
+  mimeType: MimeType;
+  id: FileId;
+  dataURL: DataURL;
+  created: number;
+  isHyperLink?: boolean;
+  hyperlink?: string;
+  file?: string | TFile;
+  hasSVGwithBitmap: boolean;
+  latex?: string;
+  size?: Size;
+  colorMap?: ColorMap;
+  pdfPageViewProps?: PDFPageViewProps;
+  renderScale?: number;
+};
 
 export interface AddImageOptions {
   topX: number;
   topY: number;
   imageFile: TFile | string;
-  scale?: boolean; 
+  scale?: boolean;
   anchor?: boolean;
   colorMap?: ColorMap;
 }

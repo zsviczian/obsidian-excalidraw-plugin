@@ -16,7 +16,10 @@ const xorWithSecret = (value: Uint8Array): Uint8Array => {
   const output = new Uint8Array(value.length);
   for (let index = 0; index < value.length; index++) {
     const salt = (index * 131) & 255;
-    output[index] = value[index] ^ obfuscationKeyBytes[index % obfuscationKeyBytes.length] ^ salt;
+    output[index] =
+      value[index] ^
+      obfuscationKeyBytes[index % obfuscationKeyBytes.length] ^
+      salt;
   }
   return output;
 };
@@ -51,7 +54,7 @@ const decodeBase64 = (value: string): Uint8Array | null => {
     if (typeof Buffer !== "undefined") {
       return new Uint8Array(Buffer.from(value, "base64"));
     }
-  } catch (error) {
+  } catch (_) {
     return null;
   }
 
@@ -59,7 +62,9 @@ const decodeBase64 = (value: string): Uint8Array | null => {
 };
 
 export const isObfuscatedAPIKey = (value: unknown): value is string => {
-  return typeof value === "string" && value.startsWith(API_KEY_OBFUSCATION_PREFIX);
+  return (
+    typeof value === "string" && value.startsWith(API_KEY_OBFUSCATION_PREFIX)
+  );
 };
 
 const decodeObfuscatedAPIKeyPayload = (value: string): string | null => {
@@ -82,7 +87,7 @@ const decodeObfuscatedAPIKeyPayload = (value: string): string | null => {
     return payload.startsWith(API_KEY_PAYLOAD_MARKER)
       ? payload.slice(API_KEY_PAYLOAD_MARKER.length)
       : null;
-  } catch (error) {
+  } catch (_) {
     return null;
   }
 };
@@ -100,10 +105,10 @@ export const encryptStoredAPIKey = (value: string): string => {
     return value;
   }
 
-  const encoded = encodeBase64(xorWithSecret(textEncoder.encode(`${API_KEY_PAYLOAD_MARKER}${value}`)));
-  return encoded
-    ? `${API_KEY_OBFUSCATION_PREFIX}${encoded}`
-    : value;
+  const encoded = encodeBase64(
+    xorWithSecret(textEncoder.encode(`${API_KEY_PAYLOAD_MARKER}${value}`)),
+  );
+  return encoded ? `${API_KEY_OBFUSCATION_PREFIX}${encoded}` : value;
 };
 
 export const decryptStoredAPIKey = (value: string): string => {
@@ -114,7 +119,9 @@ export const decryptStoredAPIKey = (value: string): string => {
   return decodeObfuscatedAPIKeyPayload(value) ?? value;
 };
 
-export const decryptProviderProfiles = (profiles: Record<string, AIProviderProfile>): Record<string, AIProviderProfile> => {
+export const decryptProviderProfiles = (
+  profiles: Record<string, AIProviderProfile>,
+): Record<string, AIProviderProfile> => {
   return Object.fromEntries(
     Object.entries(profiles).map(([profileId, profile]) => [
       profileId,
@@ -126,7 +133,9 @@ export const decryptProviderProfiles = (profiles: Record<string, AIProviderProfi
   );
 };
 
-export const encryptProviderProfiles = (profiles: Record<string, AIProviderProfile>): Record<string, AIProviderProfile> => {
+export const encryptProviderProfiles = (
+  profiles: Record<string, AIProviderProfile>,
+): Record<string, AIProviderProfile> => {
   return Object.fromEntries(
     Object.entries(profiles).map(([profileId, profile]) => [
       profileId,
@@ -143,29 +152,41 @@ type PersistedSettingsWithAPIKeys = {
   taskboneAPIkey?: string;
 };
 
-export const decryptPersistedAPIKeys = <T extends PersistedSettingsWithAPIKeys>(settings: T): T => {
+export const decryptPersistedAPIKeys = <T extends PersistedSettingsWithAPIKeys>(
+  settings: T,
+): T => {
   const nextSettings = { ...settings } as T;
 
   if (nextSettings.aiProviderProfiles) {
-    nextSettings.aiProviderProfiles = decryptProviderProfiles(nextSettings.aiProviderProfiles);
+    nextSettings.aiProviderProfiles = decryptProviderProfiles(
+      nextSettings.aiProviderProfiles,
+    );
   }
 
   if (typeof nextSettings.taskboneAPIkey === "string") {
-    nextSettings.taskboneAPIkey = decryptStoredAPIKey(nextSettings.taskboneAPIkey);
+    nextSettings.taskboneAPIkey = decryptStoredAPIKey(
+      nextSettings.taskboneAPIkey,
+    );
   }
 
   return nextSettings;
 };
 
-export const encryptPersistedAPIKeys = <T extends PersistedSettingsWithAPIKeys>(settings: T): T => {
+export const encryptPersistedAPIKeys = <T extends PersistedSettingsWithAPIKeys>(
+  settings: T,
+): T => {
   const nextSettings = { ...settings } as T;
 
   if (nextSettings.aiProviderProfiles) {
-    nextSettings.aiProviderProfiles = encryptProviderProfiles(nextSettings.aiProviderProfiles);
+    nextSettings.aiProviderProfiles = encryptProviderProfiles(
+      nextSettings.aiProviderProfiles,
+    );
   }
 
   if (typeof nextSettings.taskboneAPIkey === "string") {
-    nextSettings.taskboneAPIkey = encryptStoredAPIKey(nextSettings.taskboneAPIkey);
+    nextSettings.taskboneAPIkey = encryptStoredAPIKey(
+      nextSettings.taskboneAPIkey,
+    );
   }
 
   return nextSettings;

@@ -5,9 +5,7 @@ import { Modal } from "obsidian";
 
 export class UIModeSettings extends Modal {
   private isDirty = false;
-  constructor(
-    private plugin: ExcalidrawPlugin,
-  ) {
+  constructor(private plugin: ExcalidrawPlugin) {
     super(plugin.app);
   }
 
@@ -24,18 +22,17 @@ export class UIModeSettings extends Modal {
   }
 
   async createForm() {
-    this.contentEl.createEl("h1",{text: t("MODES_HEAD")});
+    this.contentEl.createEl("h1", { text: t("MODES_HEAD") });
     new UIModeSettingsComponent(
       this.contentEl,
       this.plugin.settings,
       this.app,
-      ()=>this.applySettingsUpdate(),
-      ()=>this.close(),
+      () => this.applySettingsUpdate(),
+      () => this.close(),
     ).render();
   }
 
   private async applySettingsUpdate() {
     this.isDirty = true;
-  };
+  }
 }
-

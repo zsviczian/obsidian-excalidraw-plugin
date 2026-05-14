@@ -5,12 +5,15 @@ import { ScriptEngine } from "../Scripts";
 import ExcalidrawView from "src/view/ExcalidrawView";
 
 /**
-   *
-   * @param view - ExcalidrawView instance
-   * @param prefix - defines the default button.
-   * @returns
-   */
-export async function copyLinkToSelectedElementToClipboard(view: ExcalidrawView, prefix: string) {
+ *
+ * @param view - ExcalidrawView instance
+ * @param prefix - defines the default button.
+ * @returns
+ */
+export async function copyLinkToSelectedElementToClipboard(
+  view: ExcalidrawView,
+  prefix: string,
+) {
   const elements = view.getViewSelectedElements();
   if (elements.length < 1) {
     new Notice(t("INSERT_LINK_TO_ELEMENT_ERROR"));
@@ -21,9 +24,13 @@ export async function copyLinkToSelectedElementToClipboard(view: ExcalidrawView,
 
   if (elements.length === 2) {
     const textEl = elements.filter((el) => el.type === "text");
-    if (textEl.length === 1 && (textEl[0] as ExcalidrawTextElement).containerId) {
+    if (
+      textEl.length === 1 &&
+      (textEl[0] as ExcalidrawTextElement).containerId
+    ) {
       const container = elements.filter(
-        (el) => el.boundElements && el.boundElements.some((be) => be.type === "text"),
+        (el) =>
+          el.boundElements && el.boundElements.some((be) => be.type === "text"),
       );
       if (container.length === 1) {
         elementId = textEl[0].id;
@@ -65,23 +72,21 @@ export async function copyLinkToSelectedElementToClipboard(view: ExcalidrawView,
       action: () => {
         cancelled = false;
         prefix = "area=";
-        return;
-      }
+      },
     },
     link: {
       caption: "Link",
       action: () => {
         cancelled = false;
         prefix = "";
-        return;
-      } },
+      },
+    },
     group: {
       caption: "Group",
       action: () => {
         cancelled = false;
         prefix = "group=";
-        return;
-      }
+      },
     },
     frame: {
       caption: "Frame",
@@ -89,7 +94,6 @@ export async function copyLinkToSelectedElementToClipboard(view: ExcalidrawView,
         cancelled = false;
         prefix = "frame=";
         elementId = getFrameTarget();
-        return;
       },
     },
     clippedframe: {
@@ -98,7 +102,6 @@ export async function copyLinkToSelectedElementToClipboard(view: ExcalidrawView,
         cancelled = false;
         prefix = "clippedframe=";
         elementId = getFrameTarget();
-        return;
       },
     },
   };
@@ -164,7 +167,8 @@ export async function copyLinkToSelectedElementToClipboard(view: ExcalidrawView,
       undefined,
       undefined,
       (container: HTMLElement) => {
-        const wrapper = container.createDiv?.("excalidraw-prompt-checkboxes") ?? container;
+        const wrapper =
+          container.createDiv?.("excalidraw-prompt-checkboxes") ?? container;
         const ownerDoc = wrapper.ownerDocument ?? document;
 
         const anchorRow = ownerDoc.createElement("label");

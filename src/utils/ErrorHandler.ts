@@ -5,12 +5,16 @@ import { Notice } from "obsidian";
  */
 export class ErrorHandler {
   private static instance: ErrorHandler;
-  private errorLog: Array<{error: Error, context: string, timestamp: number}> = [];
+  private errorLog: Array<{
+    error: Error;
+    context: string;
+    timestamp: number;
+  }> = [];
   private errorNoticeTimeout: number = 10000; // 10 seconds
   private maxLogEntries: number = 100;
-  
+
   private constructor() {}
-  
+
   /**
    * Get singleton instance of ErrorHandler
    */
@@ -29,34 +33,35 @@ export class ErrorHandler {
    * @param timeout How long to show the notice (in ms)
    */
   public handleError(
-    error: Error | string, 
-    context: string, 
+    error: Error | string,
+    context: string,
     showNotice = true,
-    timeout?: number
+    timeout?: number,
   ): void {
-    const errorObj = typeof error === 'string' ? new Error(error) : error;
-    
+    const errorObj = typeof error === "string" ? new Error(error) : error;
+
     // Log to console with better formatting
     console.error(`[Excalidraw Error] in ${context}:`, errorObj);
-    
+
     // Add to error log with timestamp
     this.errorLog.push({
       error: errorObj,
       context,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-    
+
     // Trim log if it gets too large
     if (this.errorLog.length > this.maxLogEntries) {
-      this.errorLog = this.errorLog.slice(this.errorLog.length - this.maxLogEntries);
+      this.errorLog = this.errorLog.slice(
+        this.errorLog.length - this.maxLogEntries,
+      );
     }
-    
+
     // Show notice to user if required
     if (showNotice) {
       const formattedError = this.formatErrorForUser(errorObj, context);
       new Notice(formattedError, timeout || this.errorNoticeTimeout);
     }
-
   }
 
   /**
@@ -66,7 +71,12 @@ export class ErrorHandler {
    * @param win The window object for evaluation context
    * @param fallback Optional fallback value if evaluation fails
    */
-  public safeEval<T>(code: string, context: string, win: Window, fallback?: T): T {
+  public safeEval<T>(
+    code: string,
+    context: string,
+    win: Window,
+    fallback?: T,
+  ): T {
     try {
       return win.eval.call(win, code) as T;
     } catch (error) {
@@ -89,7 +99,9 @@ export class ErrorHandler {
       return fn();
     } catch (error) {
       this.handleError(error, context);
-      if (fallback !== undefined) return fallback;
+      if (fallback !== undefined) {
+        return fallback;
+      }
       throw error; // Re-throw if no fallback provided
     }
   }
@@ -100,24 +112,30 @@ export class ErrorHandler {
   private formatErrorForUser(error: Error, context: string): string {
     // Shorten and simplify the message for users
     let message = error.message;
-    
+
     // Special handling for common error types
     if (message.includes("Cannot read properties of undefined")) {
-      message = "A required object was not available. This might be due to a plugin loading issue.";
+      message =
+        "A required object was not available. This might be due to a plugin loading issue.";
     } else if (message.includes("is not a function")) {
-      message = "A required function was not available. This might be due to a plugin version mismatch.";
+      message =
+        "A required function was not available. This might be due to a plugin version mismatch.";
     } else if (message.length > 100) {
       // Truncate very long messages
       message = message.substring(0, 100) + "...";
     }
-    
+
     return `Excalidraw Error: ${message} (in ${context})`;
   }
 
   /**
    * Get recent errors for debugging
    */
-  public getErrorLog(): Array<{error: Error, context: string, timestamp: number}> {
+  public getErrorLog(): Array<{
+    error: Error;
+    context: string;
+    timestamp: number;
+  }> {
     return [...this.errorLog];
   }
 

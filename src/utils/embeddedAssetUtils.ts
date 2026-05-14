@@ -1,4 +1,4 @@
-import type { TFile,App } from "obsidian";
+import type { TFile, App } from "obsidian";
 import { FRONTMATTER_KEYS } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
 import type { FILENAMEPARTS } from "src/types/utilTypes";
@@ -51,15 +51,20 @@ export async function getFontDataURL(
 
 export function svgToBase64(svg: string): string {
   const cleanSvg = svg.replaceAll("&nbsp;", " ");
-  const encodedData = encodeURIComponent(cleanSvg)
-    .replace(/%([0-9A-F]{2})/g, (_match, p1) => String.fromCharCode(parseInt(p1, 16)));
+  const encodedData = encodeURIComponent(cleanSvg).replace(
+    /%([0-9A-F]{2})/g,
+    (_match, p1) => String.fromCharCode(parseInt(p1, 16)),
+  );
   return `data:image/svg+xml;base64,${btoa(encodedData)}`;
 }
 
-export async function getImageSize(src: string): Promise<{ height: number; width: number }> {
+export async function getImageSize(
+  src: string,
+): Promise<{ height: number; width: number }> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => resolve({ height: img.naturalHeight, width: img.naturalWidth });
+    img.onload = () =>
+      resolve({ height: img.naturalHeight, width: img.naturalWidth });
     img.onerror = reject;
     img.src = src;
   });
@@ -70,22 +75,28 @@ export function isMaskFile(plugin: ExcalidrawPlugin, file: TFile): boolean {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["mask"].name] !== null &&
-      typeof fileCache.frontmatter[FRONTMATTER_KEYS["mask"].name] !== "undefined"
+      fileCache.frontmatter[FRONTMATTER_KEYS.mask.name] !== null &&
+      typeof fileCache.frontmatter[FRONTMATTER_KEYS.mask.name] !== "undefined"
     ) {
-      return Boolean(fileCache.frontmatter[FRONTMATTER_KEYS["mask"].name]);
+      return Boolean(fileCache.frontmatter[FRONTMATTER_KEYS.mask.name]);
     }
   }
   return false;
 }
 
-export function hasExportBackground(plugin: ExcalidrawPlugin, file: TFile): boolean {
+export function hasExportBackground(
+  plugin: ExcalidrawPlugin,
+  file: TFile,
+): boolean {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name] !== null &&
-      typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name] !== "undefined"
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name] !==
+        null &&
+      typeof fileCache.frontmatter[
+        FRONTMATTER_KEYS["export-transparent"].name
+      ] !== "undefined"
     ) {
       return true;
     }
@@ -93,40 +104,61 @@ export function hasExportBackground(plugin: ExcalidrawPlugin, file: TFile): bool
   return false;
 }
 
-export function getWithBackground(plugin: ExcalidrawPlugin, file: TFile): boolean {
+export function getWithBackground(
+  plugin: ExcalidrawPlugin,
+  file: TFile,
+): boolean {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name] !== null &&
-      typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name] !== "undefined"
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name] !==
+        null &&
+      typeof fileCache.frontmatter[
+        FRONTMATTER_KEYS["export-transparent"].name
+      ] !== "undefined"
     ) {
-      return !fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name];
+      return !fileCache.frontmatter[
+        FRONTMATTER_KEYS["export-transparent"].name
+      ];
     }
   }
   return plugin.settings.exportWithBackground;
 }
 
-export function getExportPadding(plugin: ExcalidrawPlugin, file: TFile): number {
+export function getExportPadding(
+  plugin: ExcalidrawPlugin,
+  file: TFile,
+): number {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
-    if (!fileCache?.frontmatter) return plugin.settings.exportPaddingSVG;
+    if (!fileCache?.frontmatter) {
+      return plugin.settings.exportPaddingSVG;
+    }
 
     if (
       fileCache.frontmatter[FRONTMATTER_KEYS["export-padding"].name] !== null &&
-      typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-padding"].name] !== "undefined"
+      typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-padding"].name] !==
+        "undefined"
     ) {
-      const val = parseInt(fileCache.frontmatter[FRONTMATTER_KEYS["export-padding"].name]);
+      const val = parseInt(
+        fileCache.frontmatter[FRONTMATTER_KEYS["export-padding"].name],
+      );
       if (!isNaN(val)) {
         return val;
       }
     }
 
     if (
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-svgpadding"].name] !== null &&
-      typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-svgpadding"].name] !== "undefined"
+      fileCache.frontmatter[FRONTMATTER_KEYS["export-svgpadding"].name] !==
+        null &&
+      typeof fileCache.frontmatter[
+        FRONTMATTER_KEYS["export-svgpadding"].name
+      ] !== "undefined"
     ) {
-      const val = parseInt(fileCache.frontmatter[FRONTMATTER_KEYS["export-svgpadding"].name]);
+      const val = parseInt(
+        fileCache.frontmatter[FRONTMATTER_KEYS["export-svgpadding"].name],
+      );
       if (!isNaN(val)) {
         return val;
       }
@@ -136,7 +168,9 @@ export function getExportPadding(plugin: ExcalidrawPlugin, file: TFile): number 
 }
 
 export function getEmbeddedFilenameParts(fname: string): FILENAMEPARTS {
-  const parts = fname?.match(/([^#\^]*)((#\^)(group=|area=|frame=|clippedframe=|taskbone)?([^|]*)|(#)(group=|area=|frame=|clippedframe=|taskbone)?([^\^|]*))(.*)/);
+  const parts = fname?.match(
+    /([^#^]*)((#\^)(group=|area=|frame=|clippedframe=|taskbone)?([^|]*)|(#)(group=|area=|frame=|clippedframe=|taskbone)?([^^|]*))(.*)/,
+  );
   if (!parts) {
     return {
       filepath: fname,
@@ -160,7 +194,8 @@ export function getEmbeddedFilenameParts(fname: string): FILENAMEPARTS {
     hasTaskbone: parts[4] === "taskbone" || parts[7] === "taskbone",
     hasArearef: parts[4] === "area=" || parts[7] === "area=",
     hasFrameref: parts[4] === "frame=" || parts[7] === "frame=",
-    hasClippedFrameref: parts[4] === "clippedframe=" || parts[7] === "clippedframe=",
+    hasClippedFrameref:
+      parts[4] === "clippedframe=" || parts[7] === "clippedframe=",
     blockref: parts[5],
     hasSectionref: Boolean(parts[6]),
     sectionref: parts[8],
@@ -172,16 +207,27 @@ export function getEmbeddedFilenameParts(fname: string): FILENAMEPARTS {
 export function cropCanvas(
   srcCanvas: HTMLCanvasElement,
   crop: { left: number; top: number; width: number; height: number },
-  output: { width: number; height: number } = { width: crop.width, height: crop.height },
+  output: { width: number; height: number } = {
+    width: crop.width,
+    height: crop.height,
+  },
 ) {
   const dstCanvas = createEl("canvas");
   dstCanvas.width = output.width;
   dstCanvas.height = output.height;
-  dstCanvas.getContext("2d")!.drawImage(
-    srcCanvas,
-    crop.left, crop.top, crop.width, crop.height,
-    0, 0, output.width, output.height,
-  );
+  dstCanvas
+    .getContext("2d")!
+    .drawImage(
+      srcCanvas,
+      crop.left,
+      crop.top,
+      crop.width,
+      crop.height,
+      0,
+      0,
+      output.width,
+      output.height,
+    );
   return dstCanvas;
 }
 
@@ -194,7 +240,9 @@ export async function promiseTry<TValue, TArgs extends unknown[]>(
   });
 }
 
-type TPromisePool<T, Index = number> = import("es6-promise-pool").default<[Index, T][]> & {
+type TPromisePool<T, Index = number> = import("es6-promise-pool").default<
+  [Index, T][]
+> & {
   addEventListener: (
     type: "fulfilled",
     listener: (event: { data: { result: [Index, T] } }) => void,

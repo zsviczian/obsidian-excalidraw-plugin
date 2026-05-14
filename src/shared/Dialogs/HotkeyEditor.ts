@@ -1,9 +1,9 @@
-import { BaseComponent,Setting,Modifier } from 'obsidian';
-import { DEVICE } from 'src/constants/constants';
-import { t } from 'src/lang/helpers';
-import { ExcalidrawSettings } from 'src/core/settings';
-import { modifierLabel } from 'src/utils/modifierkeyHelper';
-import { fragWithHTML } from 'src/utils/utils';
+import { BaseComponent, Setting, Modifier } from "obsidian";
+import { DEVICE } from "src/constants/constants";
+import { t } from "src/lang/helpers";
+import { ExcalidrawSettings } from "src/core/settings";
+import { modifierLabel } from "src/utils/modifierkeyHelper";
+import { fragWithHTML } from "src/utils/utils";
 
 export class HotkeyEditor extends BaseComponent {
   private settings: ExcalidrawSettings;
@@ -11,13 +11,17 @@ export class HotkeyEditor extends BaseComponent {
   private capturing: boolean = false;
   private activeModifiers: Modifier[] = [];
   public isDirty: boolean = false;
-  private applySettingsUpdate: Function;
+  private applySettingsUpdate: () => void;
 
   // Store bound event handlers
   private boundKeydownHandler: (event: KeyboardEvent) => void;
   private boundKeyupHandler: (event: KeyboardEvent) => void;
 
-  constructor(containerEl: HTMLElement, settings: ExcalidrawSettings, applySettingsUpdate: Function) {
+  constructor(
+    containerEl: HTMLElement,
+    settings: ExcalidrawSettings,
+    applySettingsUpdate: () => void,
+  ) {
     super();
     this.containerEl = containerEl.createDiv();
     this.settings = settings;
@@ -40,9 +44,13 @@ export class HotkeyEditor extends BaseComponent {
     this.settings.modifierKeyOverrides.forEach((override, index) => {
       const key = override.key.toUpperCase();
       new Setting(this.containerEl)
-        .setDesc(fragWithHTML(`<b>Code:</b> <kbd>${override.modifiers.join("+")} + ${key}</kbd> | ` +
-          `<b>Apple:</b> <kbd>${modifierLabel(override.modifiers, "Mac")} + ${key}</kbd> | ` +
-          `<b>Windows:</b> <kbd>${modifierLabel(override.modifiers, "Other")} + ${key}</kbd>`))
+        .setDesc(
+          fragWithHTML(
+            `<b>Code:</b> <kbd>${override.modifiers.join("+")} + ${key}</kbd> | ` +
+              `<b>Apple:</b> <kbd>${modifierLabel(override.modifiers, "Mac")} + ${key}</kbd> | ` +
+              `<b>Windows:</b> <kbd>${modifierLabel(override.modifiers, "Other")} + ${key}</kbd>`,
+          ),
+        )
         .addButton((button) =>
           button
             .setButtonText(t("HOTKEY_BUTTON_REMOVE"))
@@ -52,7 +60,7 @@ export class HotkeyEditor extends BaseComponent {
               this.isDirty = true;
               this.applySettingsUpdate();
               this.render();
-            })
+            }),
         );
     });
 
@@ -60,16 +68,15 @@ export class HotkeyEditor extends BaseComponent {
     if (this.capturing) {
       new Setting(this.containerEl)
         .setName(t("HOTKEY_PRESS_COMBO_NANE"))
-        .setDesc(t("HOTKEY_PRESS_COMBO_DESC"))
-        .controlEl.style.cursor = 'pointer';
+        .setDesc(t("HOTKEY_PRESS_COMBO_DESC")).controlEl.style.cursor =
+        "pointer";
     } else {
-      new Setting(this.containerEl)
-        .addButton((button) =>
-          button
-            .setButtonText(t("HOTKEY_BUTTON_ADD_OVERRIDE"))
-            .setCta()
-            .onClick(() => this.startCapture())
-        );
+      new Setting(this.containerEl).addButton((button) =>
+        button
+          .setButtonText(t("HOTKEY_BUTTON_ADD_OVERRIDE"))
+          .setCta()
+          .onClick(() => this.startCapture()),
+      );
     }
   }
 
@@ -78,8 +85,8 @@ export class HotkeyEditor extends BaseComponent {
     this.activeModifiers = [];
     this.render();
     // Use the pre-bound handlers
-    window.addEventListener('keydown', this.boundKeydownHandler);
-    window.addEventListener('keyup', this.boundKeyupHandler);
+    window.addEventListener("keydown", this.boundKeydownHandler);
+    window.addEventListener("keyup", this.boundKeyupHandler);
   }
 
   private onKeydown(event: KeyboardEvent): void {
@@ -89,7 +96,7 @@ export class HotkeyEditor extends BaseComponent {
     const modifiers = this.getModifiersFromEvent(event);
 
     // If only modifiers are pressed, update activeModifiers and continue listening
-    if (['Control', 'Shift', 'Alt', 'Meta'].includes(event.key)) {
+    if (["Control", "Shift", "Alt", "Meta"].includes(event.key)) {
       this.activeModifiers = modifiers;
       return;
     }
@@ -101,7 +108,7 @@ export class HotkeyEditor extends BaseComponent {
       (override) =>
         override.key === key &&
         override.modifiers.length === modifiers.length &&
-        override.modifiers.every((mod) => modifiers.includes(mod))
+        override.modifiers.every((mod) => modifiers.includes(mod)),
     );
 
     if (!exists) {
@@ -123,8 +130,8 @@ export class HotkeyEditor extends BaseComponent {
   private stopCapture(): void {
     this.capturing = false;
     // Use the pre-bound handlers for removal
-    window.removeEventListener('keydown', this.boundKeydownHandler);
-    window.removeEventListener('keyup', this.boundKeyupHandler);
+    window.removeEventListener("keydown", this.boundKeydownHandler);
+    window.removeEventListener("keyup", this.boundKeyupHandler);
     this.render();
   }
 
@@ -137,24 +144,24 @@ export class HotkeyEditor extends BaseComponent {
     const modifiers: Modifier[] = [];
 
     if (DEVICE.isMacOS && event.metaKey) {
-      modifiers.push('Mod');
+      modifiers.push("Mod");
     } else if (!DEVICE.isMacOS && event.ctrlKey) {
-      modifiers.push('Mod');
+      modifiers.push("Mod");
     }
 
     if (DEVICE.isMacOS && event.ctrlKey) {
-      modifiers.push('Ctrl');
+      modifiers.push("Ctrl");
     }
 
     if (!DEVICE.isMacOS && event.metaKey) {
-      modifiers.push('Meta');
+      modifiers.push("Meta");
     }
 
     if (event.shiftKey) {
-      modifiers.push('Shift');
+      modifiers.push("Shift");
     }
     if (event.altKey) {
-      modifiers.push('Alt');
+      modifiers.push("Alt");
     }
 
     return modifiers;

@@ -1,4 +1,4 @@
-import { App,FuzzySuggestModal,TFile } from "obsidian";
+import { App, FuzzySuggestModal, TFile } from "obsidian";
 import ExcalidrawPlugin from "../../core/main";
 import { EMPTY_MESSAGE } from "../../constants/constants";
 import { t } from "../../lang/helpers";
@@ -39,7 +39,7 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
         if (this.containerEl.innerText.includes(EMPTY_MESSAGE)) {
           this.plugin.createAndOpenDrawing(
             `${this.plugin.settings.folder}/${this.inputEl.value}.excalidraw.md`,
-            this.onNewPane?"new-pane":"active-pane",
+            this.onNewPane ? "new-pane" : "active-pane",
           );
           this.close();
         }
@@ -61,7 +61,11 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
   onChooseItem(item: TFile): void {
     switch (this.action) {
       case openDialogAction.openFile:
-        this.plugin.openDrawing(item, this.onNewPane?"new-pane":"active-pane",true);
+        this.plugin.openDrawing(
+          item,
+          this.onNewPane ? "new-pane" : "active-pane",
+          true,
+        );
         break;
       case openDialogAction.insertLinkToDrawing:
         this.plugin.embedDrawing(item);

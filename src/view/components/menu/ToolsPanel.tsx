@@ -1,18 +1,24 @@
 import clsx from "clsx";
-import { Notice,TFile } from "obsidian";
+import { Notice, TFile } from "obsidian";
 import * as React from "react";
 import { ActionButton } from "./ActionButton";
-import { ICONS,saveIcon,stringToSVG } from "../../../constants/actionIcons";
-import { DEVICE,SCRIPT_INSTALL_FOLDER } from "../../../constants/constants";
-import { insertLaTeXToView,search } from "../../../utils/excalidrawViewHelpers";
+import { ICONS, saveIcon, stringToSVG } from "../../../constants/actionIcons";
+import { DEVICE, SCRIPT_INSTALL_FOLDER } from "../../../constants/constants";
+import {
+  insertLaTeXToView,
+  search,
+} from "../../../utils/excalidrawViewHelpers";
 import { TextMode } from "../../../shared/TextMode";
 import ExcalidrawView from "../../ExcalidrawView";
 import { t } from "../../../lang/helpers";
 import { ReleaseNotes } from "../../../shared/Dialogs/ReleaseNotes";
 import { ScriptIconMap } from "../../../shared/Scripts";
 import { ScriptInstallPrompt } from "src/shared/Dialogs/ScriptInstallPrompt";
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { isWinALTorMacOPT,isWinCTRLorMacCMD,isSHIFT } from "src/utils/modifierkeyHelper";
+import {
+  isWinALTorMacOPT,
+  isWinCTRLorMacCMD,
+  isSHIFT,
+} from "src/utils/modifierkeyHelper";
 import { InsertPDFModal } from "src/shared/Dialogs/InsertPDFModal";
 import { ExportDialog } from "src/shared/Dialogs/ExportDialog";
 import { openExternalLink } from "src/utils/excalidrawViewUtils";
@@ -21,12 +27,12 @@ import { REM_VALUE } from "src/core/managers/StylesManager";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
 
-declare const PLUGIN_VERSION:string;
+declare const PLUGIN_VERSION: string;
 
 type PanelProps = {
   visible: boolean;
   view: WeakRef<ExcalidrawView>;
-  centerPointer: Function;
+  centerPointer: () => void;
   observer: WeakRef<ResizeObserver>;
 };
 
@@ -110,7 +116,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setDirty(isDirty: boolean) {
-    this.setState(()=> {
+    this.setState(() => {
       return {
         isDirty,
       };
@@ -135,7 +141,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setTheme(theme: "dark" | "light") {
-    this.setState((prevState: PanelState) => {
+    this.setState(() => {
       return {
         theme,
       };
@@ -186,33 +192,39 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
           top < parentOffsetTop
             ? parentOffsetTop
             : this.onBottomEdge
-            ? parentHeight - height + parentOffsetTop
-            : top,
+              ? parentHeight - height + parentOffsetTop
+              : top,
         left:
           left < parentOffsetLeft
             ? parentOffsetLeft
             : this.onRightEdge
-            ? parentWidth - width + parentOffsetLeft
-            : left,
+              ? parentWidth - width + parentOffsetLeft
+              : left,
       };
     });
   }
 
   actionOpenScriptInstallDialog() {
     const view = this.getView();
-    if (!view) return;
-    new ScriptInstallPrompt(view.plugin).open()
+    if (!view) {
+      return;
+    }
+    new ScriptInstallPrompt(view.plugin).open();
   }
 
   actionOpenReleaseNotes() {
     const view = this.getView();
-    if (!view) return
+    if (!view) {
+      return;
+    }
     new ReleaseNotes(view.app, view.plugin, PLUGIN_VERSION).open();
   }
 
   actionOpenAboutExcalidraw() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     new ReleaseNotes(view.app, view.plugin, null, {
       message: t("FIRST_RUN"),
       persistVersion: false,
@@ -226,7 +238,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   actionToggleViewMode() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     if (this.state.isPreviewMode) {
       view.changeTextMode(TextMode.raw);
     } else {
@@ -236,13 +250,17 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   actionToggleTrayMode() {
     const plugin = this.getView()?.plugin;
-    if (!plugin) return;
+    if (!plugin) {
+      return;
+    }
     new UIModeSettings(plugin).open();
   }
 
   actionToggleFullscreen() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     if (this.state.isFullscreen) {
       view.exitFullscreen();
     } else {
@@ -252,27 +270,36 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   actionSearch() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     search(view);
   }
 
-  actionOCR(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+  actionOCR(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
-    if(!plugin.settings.taskboneEnabled) {
-      new Notice("Taskbone OCR is not enabled. Please go to plugins settings to enable it.",4000);
+    if (!view || !plugin) {
       return;
     }
-    plugin.taskbone.getTextForView(view, {forceReScan: isWinCTRLorMacCMD(e)});
+    if (!plugin.settings.taskboneEnabled) {
+      new Notice(
+        "Taskbone OCR is not enabled. Please go to plugins settings to enable it.",
+        4000,
+      );
+      return;
+    }
+    plugin.taskbone.getTextForView(view, { forceReScan: isWinCTRLorMacCMD(e) });
   }
 
-  actionOpenLink(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+  actionOpenLink(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     const event = new MouseEvent("click", {
       ctrlKey: e.ctrlKey || !(DEVICE.isIOS || DEVICE.isMacOS),
-      metaKey: e.metaKey ||  (DEVICE.isIOS || DEVICE.isMacOS),
+      metaKey: e.metaKey || DEVICE.isIOS || DEVICE.isMacOS,
       shiftKey: e.shiftKey,
       altKey: e.altKey,
     });
@@ -281,7 +308,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   actionOpenLinkProperties() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     const event = new MouseEvent("click", {
       ctrlKey: true,
       metaKey: true,
@@ -293,21 +322,27 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   actionForceSave() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     view.forceSave();
   }
 
   actionExportLibrary() {
     const plugin = this.getView()?.plugin;
-    if (!plugin) return;
+    if (!plugin) {
+      return;
+    }
     plugin.exportLibrary();
   }
 
   actionExportImage() {
     const view = this.getView();
-    if (!view) return;
-    if(!view.exportDialog) {
-      view.exportDialog = new ExportDialog(view.plugin, view,view.file);
+    if (!view) {
+      return;
+    }
+    if (!view.exportDialog) {
+      view.exportDialog = new ExportDialog(view.plugin, view, view.file);
       view.exportDialog.createForm();
     }
     view.exportDialog.open();
@@ -315,26 +350,32 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   actionOpenAsMarkdown() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     view.openAsMarkdown();
   }
 
-  actionLinkToElement(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+  actionLinkToElement(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     const view = this.getView();
-    if (!view) return;
-    if(isWinALTorMacOPT(e)) {
+    if (!view) {
+      return;
+    }
+    if (isWinALTorMacOPT(e)) {
       openExternalLink("https://youtu.be/yZQoJg2RCKI", view.app);
       return;
     }
     view.copyLinkToSelectedElementToClipboard(
-      isWinCTRLorMacCMD(e) ? "group=" : (isSHIFT(e) ? "area=" : "")
+      isWinCTRLorMacCMD(e) ? "group=" : isSHIFT(e) ? "area=" : "",
     );
   }
 
   actionAddAnyFile() {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     this.props.centerPointer();
     const insertFileModal = new UniversalInsertFileModal(plugin, view);
     insertFileModal.open();
@@ -343,7 +384,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   actionInsertImage() {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     this.props.centerPointer();
     plugin.insertImageDialog.start(view);
   }
@@ -351,7 +394,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   actionInsertPDF() {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     this.props.centerPointer();
     const insertPDFModal = new InsertPDFModal(plugin, view);
     insertPDFModal.open();
@@ -360,22 +405,28 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   actionInsertMarkdown() {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     this.props.centerPointer();
     plugin.insertMDDialog.start(view);
   }
 
-  actionInsertBackOfNote()  {
+  actionInsertBackOfNote() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     this.props.centerPointer();
     view.insertBackOfTheNoteCard();
   }
 
-  actionInsertLaTeX(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+  actionInsertLaTeX(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     const view = this.getView();
-    if (!view) return;
-    if(isWinALTorMacOPT(e)) {
+    if (!view) {
+      return;
+    }
+    if (isWinALTorMacOPT(e)) {
       openExternalLink("https://youtu.be/r08wk-58DPk", view.app);
       return;
     }
@@ -386,37 +437,43 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   actionInsertLink() {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     this.props.centerPointer();
-    plugin.insertLinkDialog.start(
-      view.file.path,
-      (text: string, fontFamily?: 1 | 2 | 3 | 4, save?: boolean) => view.addText (text, fontFamily, save),
-    );
+    plugin.insertLinkDialog.start(view.file.path, (text: string) => {
+      void view.addText(text);
+    });
   }
 
-  actionImportSVG(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+  actionImportSVG() {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     plugin.importSVGDialog.start(view);
   }
-  
-  actionCropImage(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
-    // @ts-ignore
-    this.view.app.commands.executeCommandById("obsidian-excalidraw-plugin:crop-image");
+
+  actionCropImage() {
+    this.getView()?.app.commands.executeCommandById(
+      "obsidian-excalidraw-plugin:crop-image",
+    );
   }
 
   async actionRunScript(key: string) {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     const f = plugin.app.vault.getAbstractFileByPath(key);
     if (f && f instanceof TFile) {
       plugin.scriptEngine.executeScript(
         view,
         await plugin.app.vault.read(f),
         plugin.scriptEngine.getScriptName(f),
-        f
+        f,
       );
     }
   }
@@ -424,19 +481,31 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   async actionPinScript(key: string, scriptName: string) {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     const api = view.excalidrawAPI;
     await plugin.loadSettings();
-    const index = plugin.settings.pinnedScripts.indexOf(key)
-    if(index > -1) {
-      plugin.settings.pinnedScripts.splice(index,1);
-      api?.setToast({message:`Pin removed: ${scriptName}`, duration: 3000, closable: true});
+    const index = plugin.settings.pinnedScripts.indexOf(key);
+    if (index > -1) {
+      plugin.settings.pinnedScripts.splice(index, 1);
+      api?.setToast({
+        message: `Pin removed: ${scriptName}`,
+        duration: 3000,
+        closable: true,
+      });
     } else {
       plugin.settings.pinnedScripts.push(key);
-      api?.setToast({message:`Pinned: ${scriptName}`, duration: 3000, closable: true})
+      api?.setToast({
+        message: `Pinned: ${scriptName}`,
+        duration: 3000,
+        closable: true,
+      });
     }
     await plugin.saveSettings();
-    getExcalidrawViews(plugin.app, true).forEach(excalidrawView=>excalidrawView.updatePinnedScripts());
+    getExcalidrawViews(plugin.app, true).forEach((excalidrawView) =>
+      excalidrawView.updatePinnedScripts(),
+    );
   }
 
   private islandOnClick(event: React.MouseEvent<HTMLDivElement, MouseEvent>) {
@@ -456,7 +525,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   private islandOnPointerDown(event: React.PointerEvent) {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
 
     const onDrag = (e: PointerEvent) => {
       e.preventDefault();
@@ -477,7 +548,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     this.penDownY = this.pos4 = event.clientY;
     view.ownerDocument.addEventListener("pointerup", onPointerUp);
     view.ownerDocument.addEventListener("pointermove", onDrag);
-  };
+  }
 
   render() {
     return (
@@ -536,8 +607,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
             style={{
               maxHeight: "350px",
               width: "initial",
-              //@ts-ignore
-              "--padding": "0.125rem",
+              ["--padding" as any]: "0.125rem",
               display: this.state.minimized ? "none" : "block",
             }}
           >
@@ -567,20 +637,24 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     <ActionButton
                       key={"convert"}
                       title={t("CONVERT_FILE")}
-                      action={(this.actionConvertExcalidrawToMD.bind(this))}
+                      action={this.actionConvertExcalidrawToMD.bind(this)}
                       icon={ICONS.convertFile}
                     />
-                  ) : !this.state.isPreviewMode && (
-                    <ActionButton
-                      key={"viewmode"}
-                      title={this.state.isPreviewMode ? t("PARSED") : t("RAW")}
-                      action={this.actionToggleViewMode.bind(this)}
-                      icon={
-                        this.state.isPreviewMode
-                          ? ICONS.rawMode
-                          : ICONS.parsedMode
-                      }
-                    />
+                  ) : (
+                    !this.state.isPreviewMode && (
+                      <ActionButton
+                        key={"viewmode"}
+                        title={
+                          this.state.isPreviewMode ? t("PARSED") : t("RAW")
+                        }
+                        action={this.actionToggleViewMode.bind(this)}
+                        icon={
+                          this.state.isPreviewMode
+                            ? ICONS.rawMode
+                            : ICONS.parsedMode
+                        }
+                      />
+                    )
                   )}
                   <ActionButton
                     key={"ui-mode"}
@@ -685,7 +759,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                     title={t("INSERT_PDF")}
                     action={this.actionInsertPDF.bind(this)}
                     icon={ICONS.insertPDF}
-                  />                  
+                  />
                   <ActionButton
                     key={"insertMD"}
                     title={t("INSERT_MD")}
@@ -740,10 +814,11 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return null;
+    if (!view || !plugin) {
+      return null;
+    }
 
-
-    if(!plugin._loaded) {
+    if (!plugin._loaded) {
       return null;
     }
 
@@ -765,37 +840,37 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
     Object.keys(this.state.scriptIconMap)
       .filter((k) => filterCondition(k))
-      .forEach(k => groups.add(this.state.scriptIconMap[k].group))
+      .forEach((k) => groups.add(this.state.scriptIconMap[k].group));
 
-    const scriptlist = Array.from(groups).sort((a,b)=>a>b?1:-1);
+    const scriptlist = Array.from(groups).sort((a, b) => (a > b ? 1 : -1));
     scriptlist.push(scriptlist.shift());
     return (
       <>
-      {scriptlist.map((group, index) => ( 
-        <fieldset key={`${group}-${index}`}>
-          <legend>{isDownloaded ? group : (group === "" ? "User" : "User/"+group)}</legend>
-          <div className="buttonList buttonListIcon">
-            {Object.entries(this.state.scriptIconMap)
-              .filter(([k,v])=>v.group === group)
-              .sort()
-              .map(([key,value])=>(
-                <ActionButton
-                  key={key}
-                  title={value.name}
-                  action={this.actionRunScript.bind(this,key)}
-                  longpress={this.actionPinScript.bind(this,key, value.name)}
-                  icon={
-                    new WeakRef(value.svgString
-                    ? stringToSVG(value.svgString)
-                    : (
-                      ICONS.cog
-                    )).deref()
-                  }
-                />
-              ))}
-          </div>
-        </fieldset>
-      ))}
+        {scriptlist.map((group, index) => (
+          <fieldset key={`${group}-${index}`}>
+            <legend>
+              {isDownloaded ? group : group === "" ? "User" : "User/" + group}
+            </legend>
+            <div className="buttonList buttonListIcon">
+              {Object.entries(this.state.scriptIconMap)
+                .filter(([_, v]) => v.group === group)
+                .sort()
+                .map(([key, value]) => (
+                  <ActionButton
+                    key={key}
+                    title={value.name}
+                    action={this.actionRunScript.bind(this, key)}
+                    longpress={this.actionPinScript.bind(this, key, value.name)}
+                    icon={new WeakRef(
+                      value.svgString
+                        ? stringToSVG(value.svgString)
+                        : ICONS.cog,
+                    ).deref()}
+                  />
+                ))}
+            </div>
+          </fieldset>
+        ))}
       </>
     );
   }

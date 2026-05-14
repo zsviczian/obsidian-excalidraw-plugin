@@ -1,13 +1,18 @@
-import { FuzzyMatch,FuzzySuggestModal } from "obsidian";
+import { FuzzyMatch, FuzzySuggestModal } from "obsidian";
 import { t } from "../../lang/helpers";
 import ExcalidrawPlugin from "src/core/main";
 import { getLink } from "src/utils/fileUtils";
 import { LinkSuggestion } from "src/types/types";
-import { getLinkSuggestionsFiltered,getSortedLinkMatches,renderLinkSuggestion } from "src/shared/Suggesters/LinkSuggesterUtils";
-
+import {
+  getLinkSuggestionsFiltered,
+  getSortedLinkMatches,
+  renderLinkSuggestion,
+} from "src/shared/Suggesters/LinkSuggesterUtils";
 
 export class InsertLinkDialog extends FuzzySuggestModal<LinkSuggestion> {
-  private addText: Function;
+  private addText:
+    | ((markdownlink: string, path?: string, alias?: string) => void)
+    | null;
   private drawingPath: string;
 
   destroy() {
@@ -48,8 +53,11 @@ export class InsertLinkDialog extends FuzzySuggestModal<LinkSuggestion> {
         true,
       );
     }
-    const link = getLink(this.plugin,{embed: false, path: filepath, alias: item.alias});
-    this.addText(getLink(this.plugin,{embed: false, path: filepath, alias: item.alias}), filepath, item.alias);
+    this.addText(
+      getLink(this.plugin, { embed: false, path: filepath, alias: item.alias }),
+      filepath,
+      item.alias,
+    );
   }
 
   renderSuggestion(result: FuzzyMatch<LinkSuggestion>, itemEl: HTMLElement) {
@@ -61,8 +69,8 @@ export class InsertLinkDialog extends FuzzySuggestModal<LinkSuggestion> {
   }
 
   onClose(): void {
-    window.setTimeout(()=>{
-      this.addText = null
+    window.setTimeout(() => {
+      this.addText = null;
     }); //make sure this happens after onChooseItem runs
     super.onClose();
   }
@@ -70,13 +78,17 @@ export class InsertLinkDialog extends FuzzySuggestModal<LinkSuggestion> {
   private inLink: string;
   onOpen(): void {
     super.onOpen();
-    if(this.inLink) {
+    if (this.inLink) {
       this.inputEl.value = this.inLink;
-      this.inputEl.dispatchEvent(new Event('input'));
+      this.inputEl.dispatchEvent(new Event("input"));
     }
   }
 
-  public start(drawingPath: string, addText: Function, link?: string) {
+  public start(
+    drawingPath: string,
+    addText: (markdownlink: string, path?: string, alias?: string) => void,
+    link?: string,
+  ) {
     this.addText = addText;
     this.drawingPath = drawingPath;
     this.inLink = link;

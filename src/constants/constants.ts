@@ -4,7 +4,7 @@ import ExcalidrawPlugin from "src/core/main";
 import { DeviceType } from "src/types/types";
 import { errorHandler } from "../utils/ErrorHandler";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
-declare const PLUGIN_VERSION:string;
+declare const PLUGIN_VERSION: string;
 export let EXCALIDRAW_PLUGIN: ExcalidrawPlugin = null;
 export const setExcalidrawPlugin = (plugin: ExcalidrawPlugin) => {
   EXCALIDRAW_PLUGIN = plugin;
@@ -20,7 +20,13 @@ const MD_ELEMENTLINKS = "## Element Links";
 const MD_EMBEDFILES = "## Embedded Files";
 const MD_DRAWING = "## Drawing";
 
-export const MD_EX_SECTIONS = [MD_EXCALIDRAW, MD_TEXTELEMENTS, MD_ELEMENTLINKS, MD_EMBEDFILES, MD_DRAWING];
+export const MD_EX_SECTIONS = [
+  MD_EXCALIDRAW,
+  MD_TEXTELEMENTS,
+  MD_ELEMENTLINKS,
+  MD_EMBEDFILES,
+  MD_DRAWING,
+];
 
 export const ERROR_IFRAME_CONVERSION_CANCELED = "iframe conversion canceled";
 
@@ -30,58 +36,57 @@ export const LOCALE = localStorage.getItem("language")?.toLowerCase() || "en";
 export const CJK_FONTS = "CJK Fonts";
 
 export const obsidianToExcalidrawMap: { [key: string]: string } = {
-  'en': 'en-US',
-  'af': 'af-ZA', // Assuming South Africa for Afrikaans
-  'am': 'am-ET', // Assuming Ethiopia for Amharic
-  'ar': 'ar-SA',
-  'eu': 'eu-ES',
-  'be': 'be-BY', // Assuming Belarus for Belarusian
-  'bg': 'bg-BG',
-  'bn': 'bn-BD', // Assuming Bangladesh for Bengali
-  'ca': 'ca-ES',
-  'cs': 'cs-CZ',
-  'da': 'da-DK', // Assuming Denmark for Danish
-  'de': 'de-DE',
-  'el': 'el-GR',
-  'eo': 'eo-EO', // Esperanto doesn't have a country
-  'es': 'es-ES',
-  'fa': 'fa-IR',
-  'fi-fi': 'fi-FI',
-  'fr': 'fr-FR',
-  'gl': 'gl-ES',
-  'he': 'he-IL',
-  'hi': 'hi-IN',
-  'hu': 'hu-HU',
-  'id': 'id-ID',
-  'it': 'it-IT',
-  'ja': 'ja-JP',
-  'ko': 'ko-KR',
-  'lv': 'lv-LV',
-  'ml': 'ml-IN', // Assuming India for Malayalam
-  'ms': 'ms-MY', // Assuming Malaysia for Malay
-  'nl': 'nl-NL',
-  'no': 'nb-NO', // Using Norwegian Bokmål for Norwegian
-  'oc': 'oc-FR', // Assuming France for Occitan
-  'pl': 'pl-PL',
-  'pt': 'pt-PT',
-  'pt-BR': 'pt-BR',
-  'ro': 'ro-RO',
-  'ru': 'ru-RU',
-  'sr': 'sr-RS', // Assuming Serbia for Serbian
-  'se': 'sv-SE', // Assuming Swedish for 'se'
-  'sk': 'sk-SK',
-  'sq': 'sq-AL', // Assuming Albania for Albanian
-  'ta': 'ta-IN', // Assuming India for Tamil
-  'te': 'te-IN', // Assuming India for Telugu
-  'th': 'th-TH',
-  'tr': 'tr-TR',
-  'uk': 'uk-UA',
-  'ur': 'ur-PK', // Assuming Pakistan for Urdu
-  'vi': 'vi-VN',
-  'zh': 'zh-CN',
-  'zh-tw': 'zh-TW',
+  en: "en-US",
+  af: "af-ZA", // Assuming South Africa for Afrikaans
+  am: "am-ET", // Assuming Ethiopia for Amharic
+  ar: "ar-SA",
+  eu: "eu-ES",
+  be: "be-BY", // Assuming Belarus for Belarusian
+  bg: "bg-BG",
+  bn: "bn-BD", // Assuming Bangladesh for Bengali
+  ca: "ca-ES",
+  cs: "cs-CZ",
+  da: "da-DK", // Assuming Denmark for Danish
+  de: "de-DE",
+  el: "el-GR",
+  eo: "eo-EO", // Esperanto doesn't have a country
+  es: "es-ES",
+  fa: "fa-IR",
+  "fi-fi": "fi-FI",
+  fr: "fr-FR",
+  gl: "gl-ES",
+  he: "he-IL",
+  hi: "hi-IN",
+  hu: "hu-HU",
+  id: "id-ID",
+  it: "it-IT",
+  ja: "ja-JP",
+  ko: "ko-KR",
+  lv: "lv-LV",
+  ml: "ml-IN", // Assuming India for Malayalam
+  ms: "ms-MY", // Assuming Malaysia for Malay
+  nl: "nl-NL",
+  no: "nb-NO", // Using Norwegian Bokmål for Norwegian
+  oc: "oc-FR", // Assuming France for Occitan
+  pl: "pl-PL",
+  pt: "pt-PT",
+  "pt-BR": "pt-BR",
+  ro: "ro-RO",
+  ru: "ru-RU",
+  sr: "sr-RS", // Assuming Serbia for Serbian
+  se: "sv-SE", // Assuming Swedish for 'se'
+  sk: "sk-SK",
+  sq: "sq-AL", // Assuming Albania for Albanian
+  ta: "ta-IN", // Assuming India for Tamil
+  te: "te-IN", // Assuming India for Telugu
+  th: "th-TH",
+  tr: "tr-TR",
+  uk: "uk-UA",
+  ur: "ur-PK", // Assuming Pakistan for Urdu
+  vi: "vi-VN",
+  zh: "zh-CN",
+  "zh-tw": "zh-TW",
 };
-
 
 export let {
   sceneCoordsToViewportCoords,
@@ -91,9 +96,9 @@ export let {
   getMaximumGroups,
   measureText,
   getLineHeight,
-  wrapText, 
-  getFontString, 
-  getBoundTextMaxWidth, 
+  wrapText,
+  getFontString,
+  getBoundTextMaxWidth,
   exportToSvg,
   exportToBlob,
   mutateElement,
@@ -115,24 +120,30 @@ export function updateExcalidrawLib() {
     if (!excalidrawLib) {
       throw new Error("excalidrawLib is undefined");
     }
-    
+
     // Check that critical functions exist before assigning them
     const requiredFunctions = [
-      'sceneCoordsToViewportCoords',
-      'viewportCoordsToSceneCoords',
-      'intersectElementWithLine',
-      'getCommonBoundingBox',
-      'measureText',
-      'getLineHeight',
-      'restoreElements'
+      "sceneCoordsToViewportCoords",
+      "viewportCoordsToSceneCoords",
+      "intersectElementWithLine",
+      "getCommonBoundingBox",
+      "measureText",
+      "getLineHeight",
+      "restoreElements",
     ];
-    
+
     for (const fnName of requiredFunctions) {
-      if (!(fnName in excalidrawLib) || typeof excalidrawLib[fnName as keyof typeof excalidrawLib] !== 'function') {
-        throw new Error(`Required function ${fnName} is missing from excalidrawLib`);
+      if (
+        !(fnName in excalidrawLib) ||
+        typeof excalidrawLib[fnName as keyof typeof excalidrawLib] !==
+          "function"
+      ) {
+        throw new Error(
+          `Required function ${fnName} is missing from excalidrawLib`,
+        );
       }
     }
-    
+
     // If validation passes, update the exported functions
     ({
       sceneCoordsToViewportCoords,
@@ -142,9 +153,9 @@ export function updateExcalidrawLib() {
       getMaximumGroups,
       measureText,
       getLineHeight,
-      wrapText, 
-      getFontString, 
-      getBoundTextMaxWidth, 
+      wrapText,
+      getFontString,
+      getBoundTextMaxWidth,
       exportToSvg,
       exportToBlob,
       mutateElement,
@@ -175,32 +186,37 @@ export function JSON_parse<T>(x: string): T {
 export const isDarwin = /Mac|iPod|iPhone|iPad/.test(window.navigator.platform);
 
 export const DEVICE: DeviceType = {
-  isDesktop: !document.body.hasClass("is-tablet") && !document.body.hasClass("is-mobile"),
+  isDesktop:
+    !document.body.hasClass("is-tablet") &&
+    !document.body.hasClass("is-mobile"),
   isPhone: document.body.hasClass("is-phone"),
   isTablet: document.body.hasClass("is-tablet"),
   isMobile: document.body.hasClass("is-mobile"), //running Obsidian Mobile, need to also check isTablet
-  isLinux: document.body.hasClass("mod-linux") && ! document.body.hasClass("is-android"),
-  isMacOS: document.body.hasClass("mod-macos") && ! document.body.hasClass("is-ios"),
+  isLinux:
+    document.body.hasClass("mod-linux") &&
+    !document.body.hasClass("is-android"),
+  isMacOS:
+    document.body.hasClass("mod-macos") && !document.body.hasClass("is-ios"),
   isWindows: document.body.hasClass("mod-windows"),
   isIOS: document.body.hasClass("is-ios"),
   isAndroid: document.body.hasClass("is-android"),
 };
 
 export let ROOTELEMENTSIZE: number = 16;
-export function setRootElementSize(size?:number) {
-  if(size) {
+export function setRootElementSize(size?: number) {
+  if (size) {
     ROOTELEMENTSIZE = size;
     return;
   }
-  const tempElement = document.createElement('div');
-  tempElement.style.fontSize = '1rem';
+  const tempElement = document.createElement("div");
+  tempElement.style.fontSize = "1rem";
   tempElement.hidden = true;
   document.body.appendChild(tempElement);
   const computedStyle = getComputedStyle(tempElement);
   const pixelSize = parseFloat(computedStyle.fontSize);
   document.body.removeChild(tempElement);
   return pixelSize;
-};
+}
 
 export const nanoid = customAlphabet(
   "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
@@ -209,13 +225,15 @@ export const nanoid = customAlphabet(
 export const KEYCODE = {
   ESC: 27,
 };
-export const ROUNDNESS = { //should at one point publish @zsviczian/excalidraw/types/constants
+export const ROUNDNESS = {
+  //should at one point publish @zsviczian/excalidraw/types/constants
   LEGACY: 1,
   PROPORTIONAL_RADIUS: 2,
   ADAPTIVE_RADIUS: 3,
 } as const;
 export const THEME_FILTER = "invert(93%) hue-rotate(180deg) saturate(1.25)";
-export const GITHUB_RELEASES = "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/";
+export const GITHUB_RELEASES =
+  "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/";
 export const URLFETCHTIMEOUT = 3000;
 export const PLUGIN_ID = "obsidian-excalidraw-plugin";
 export const SCRIPT_INSTALL_CODEBLOCK = "excalidraw-script-install";
@@ -225,45 +243,110 @@ export const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*#]/g;
 
 //taken from Obsidian source code
 export const REG_SECTION_REF_CLEAN = /([:#|^\\\r\n]|%%|\[\[|]])/g;
-export const REG_BLOCK_REF_CLEAN = /[!"#$%&()*+,.:;<=>?@^`{|}~\/\[\]\\\r\n]/g;
-//                                 /[!"#$%&()*+,.:;<=>?@^`{|}~\/\[\]\\]/g; 
+export const REG_BLOCK_REF_CLEAN = /[!"#$%&()*+,.:;<=>?@^`{|}~/[\]\\\r\n]/g;
+//                                 /[!"#$%&()*+,.:;<=>?@^`{|}~/[\]\\]/g;
 // https://discord.com/channels/686053708261228577/989603365606531104/1000128926619816048
 // /\+|\/|~|=|%|\(|\)|{|}|,|&|\.|\$|!|\?|;|\[|]|\^|#|\*|<|>|&|@|\||\\|"|:|\s/g;
-export const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg", "webp", "bmp", "ico", "jtif", "tif", "jfif", "avif"];
+export const IMAGE_TYPES = [
+  "jpeg",
+  "jpg",
+  "png",
+  "gif",
+  "svg",
+  "webp",
+  "bmp",
+  "ico",
+  "jtif",
+  "tif",
+  "jfif",
+  "avif",
+];
 export const ANIMATED_IMAGE_TYPES = ["gif", "webp", "apng", "svg"];
-export const EXPORT_TYPES = ["svg", "dark.svg", "light.svg", "png", "dark.png", "light.png"];
+export const EXPORT_TYPES = [
+  "svg",
+  "dark.svg",
+  "light.svg",
+  "png",
+  "dark.png",
+  "light.png",
+];
 export const MAX_IMAGE_SIZE = 500;
 export const CARD_WIDTH = 400;
 export const CARD_HEIGHT = 500;
-export const VIDEO_TYPES = ["mp4","webm","ogv","mov","mkv","avi","m4v","wmv"];
-export const AUDIO_TYPES = ["mp3","wav", "m4a", "3gp", "flac", "ogg", "oga", "opus", "aac", "aiff", "aif", "mid", "midi"];
+export const VIDEO_TYPES = [
+  "mp4",
+  "webm",
+  "ogv",
+  "mov",
+  "mkv",
+  "avi",
+  "m4v",
+  "wmv",
+];
+export const AUDIO_TYPES = [
+  "mp3",
+  "wav",
+  "m4a",
+  "3gp",
+  "flac",
+  "ogg",
+  "oga",
+  "opus",
+  "aac",
+  "aiff",
+  "aif",
+  "mid",
+  "midi",
+];
 export const CODE_TYPES = ["json", "css", "js"];
 
-export const FRONTMATTER_KEYS:{[key:string]: {name: string, type: string, depricated?:boolean}} = {
-  "plugin": {name: "excalidraw-plugin", type: "text"},
-  "export-transparent": {name: "excalidraw-export-transparent", type: "checkbox"},
-  "mask": {name: "excalidraw-mask", type: "checkbox"},
-  "export-dark": {name: "excalidraw-export-dark", type: "checkbox"},
-  "export-svgpadding": {name: "excalidraw-export-svgpadding", type: "number", depricated: true},
-  "export-padding": {name: "excalidraw-export-padding", type: "number"},
-  "export-pngscale": {name: "excalidraw-export-pngscale", type: "number"},
-  "export-embed-scene": {name: "excalidraw-export-embed-scene", type: "checkbox"},
-  "export-internal-links": {name: "excalidraw-export-internal-links", type: "checkbox"},
-  "link-prefix": {name: "excalidraw-link-prefix", type: "text"},
-  "url-prefix": {name: "excalidraw-url-prefix", type: "text"},
-  "link-brackets": {name: "excalidraw-link-brackets", type: "checkbox"},
-  "onload-script": {name: "excalidraw-onload-script", type: "text"},
-  "linkbutton-opacity": {name: "excalidraw-linkbutton-opacity", type: "number"},
-  "default-mode": {name: "excalidraw-default-mode", type: "text"},
-  "font": {name: "excalidraw-font", type: "text"},
-  "font-color": {name: "excalidraw-font-color", type: "text"},
-  "border-color": {name: "excalidraw-border-color", type: "text"},
-  "md-css": {name: "excalidraw-css", type: "text"},
-  "autoexport": {name: "excalidraw-autoexport", type: "text"},
-  "iframe-theme": {name: "excalidraw-iframe-theme", type: "text", depricated: true},
-  "embeddable-theme": {name: "excalidraw-embeddable-theme", type: "text"},
-  "open-as-markdown": {name: "excalidraw-open-md", type: "checkbox"},
-  "embed-as-markdown": {name: "excalidraw-embed-md", type: "checkbox"},
+export const FRONTMATTER_KEYS: {
+  [key: string]: { name: string; type: string; depricated?: boolean };
+} = {
+  plugin: { name: "excalidraw-plugin", type: "text" },
+  "export-transparent": {
+    name: "excalidraw-export-transparent",
+    type: "checkbox",
+  },
+  mask: { name: "excalidraw-mask", type: "checkbox" },
+  "export-dark": { name: "excalidraw-export-dark", type: "checkbox" },
+  "export-svgpadding": {
+    name: "excalidraw-export-svgpadding",
+    type: "number",
+    depricated: true,
+  },
+  "export-padding": { name: "excalidraw-export-padding", type: "number" },
+  "export-pngscale": { name: "excalidraw-export-pngscale", type: "number" },
+  "export-embed-scene": {
+    name: "excalidraw-export-embed-scene",
+    type: "checkbox",
+  },
+  "export-internal-links": {
+    name: "excalidraw-export-internal-links",
+    type: "checkbox",
+  },
+  "link-prefix": { name: "excalidraw-link-prefix", type: "text" },
+  "url-prefix": { name: "excalidraw-url-prefix", type: "text" },
+  "link-brackets": { name: "excalidraw-link-brackets", type: "checkbox" },
+  "onload-script": { name: "excalidraw-onload-script", type: "text" },
+  "linkbutton-opacity": {
+    name: "excalidraw-linkbutton-opacity",
+    type: "number",
+  },
+  "default-mode": { name: "excalidraw-default-mode", type: "text" },
+  font: { name: "excalidraw-font", type: "text" },
+  "font-color": { name: "excalidraw-font-color", type: "text" },
+  "border-color": { name: "excalidraw-border-color", type: "text" },
+  "md-css": { name: "excalidraw-css", type: "text" },
+  autoexport: { name: "excalidraw-autoexport", type: "text" },
+  "iframe-theme": {
+    name: "excalidraw-iframe-theme",
+    type: "text",
+    depricated: true,
+  },
+  "embeddable-theme": { name: "excalidraw-embeddable-theme", type: "text" },
+  "open-as-markdown": { name: "excalidraw-open-md", type: "checkbox" },
+  "embed-as-markdown": { name: "excalidraw-embed-md", type: "checkbox" },
 };
 
 export const CaptureUpdateAction = {
@@ -299,7 +382,12 @@ export const CaptureUpdateAction = {
   EVENTUALLY: "EVENTUALLY",
 } as const;
 
-export const EMBEDDABLE_THEME_FRONTMATTER_VALUES = ["light", "dark", "auto", "dafault"];
+export const EMBEDDABLE_THEME_FRONTMATTER_VALUES = [
+  "light",
+  "dark",
+  "auto",
+  "dafault",
+];
 export const VIEW_TYPE_EXCALIDRAW = "excalidraw";
 export const VIEW_TYPE_SIDEPANEL = "excalidraw-sidepanel";
 export const VIEW_TYPE_EXCALIDRAW_LOADING = "excalidraw-loading";
@@ -307,14 +395,12 @@ export const ICON_NAME = "excalidraw-icon";
 export const MAX_COLORS = 5;
 export const COLOR_FREQ = 6;
 export const RERENDER_EVENT = "excalidraw-embed-rerender";
-export const BLANK_DRAWING =
-  `{"type":"excalidraw","version":2,"source":"${GITHUB_RELEASES+PLUGIN_VERSION}","elements":[],"appState":{"gridSize":null,"viewBackgroundColor":"#ffffff"}}`;
-export const DARK_BLANK_DRAWING =
-  `{"type":"excalidraw","version":2,"source":"${GITHUB_RELEASES+PLUGIN_VERSION}","elements":[],"appState":{"theme":"dark","gridSize":null,"viewBackgroundColor":"#ffffff"}}`;
+export const BLANK_DRAWING = `{"type":"excalidraw","version":2,"source":"${GITHUB_RELEASES + PLUGIN_VERSION}","elements":[],"appState":{"gridSize":null,"viewBackgroundColor":"#ffffff"}}`;
+export const DARK_BLANK_DRAWING = `{"type":"excalidraw","version":2,"source":"${GITHUB_RELEASES + PLUGIN_VERSION}","elements":[],"appState":{"theme":"dark","gridSize":null,"viewBackgroundColor":"#ffffff"}}`;
 export const FRONTMATTER = [
   "---",
   "",
-  `${FRONTMATTER_KEYS["plugin"].name}: parsed`,
+  `${FRONTMATTER_KEYS.plugin.name}: parsed`,
   "tags: [excalidraw]",
   "",
   "---",
@@ -329,14 +415,10 @@ export const TEXT_DISPLAY_RAW_ICON_NAME = "presentation";
 export const EXIT_FULLSCREEN_ICON_NAME = "exit-fullscreen";*/
 export const SCRIPTENGINE_ICON_NAME = "ScriptEngine";
 
-export const KEYBOARD_EVENT_TYPES = [
-  "keydown",
-  "keyup",
-  "keypress"
-];
+export const KEYBOARD_EVENT_TYPES = ["keydown", "keyup", "keypress"];
 
 export const EXTENDED_EVENT_TYPES = [
-/*  "pointerdown",
+  /*  "pointerdown",
   "pointerup",
   "pointermove",
   "mousedown",
@@ -365,7 +447,6 @@ export const EXTENDED_EVENT_TYPES = [
 ];
 
 //export const TWITTER_REG = /^(?:http(?:s)?:\/\/)?(?:(?:w){3}.)?twitter.com/;
-
 
 export const COLOR_NAMES = new Map<string, string>();
 COLOR_NAMES.set("aliceblue", "#f0f8ff");

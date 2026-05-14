@@ -1,9 +1,13 @@
-import { App,Modal,Notice,Setting } from "obsidian";
+import { App, Modal, Notice, Setting } from "obsidian";
 import { t } from "src/lang/helpers";
 import { AIImageModelCapability } from "src/types/AIUtilTypes";
 import { isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
 
-type SaveHandler = (modelId: string, capability: AIImageModelCapability, previousModelId?: string) => Promise<void> | void;
+type SaveHandler = (
+  modelId: string,
+  capability: AIImageModelCapability,
+  previousModelId?: string,
+) => Promise<void> | void;
 
 export class AIImageModelCapabilityModal extends Modal {
   private modelId: string;
@@ -25,11 +29,15 @@ export class AIImageModelCapabilityModal extends Modal {
   ) {
     super(app);
     this.modelId = options.initialModelId ?? "";
-    this.supportsPromptImageTransforms = options.initialCapability?.supportsPromptImageTransforms ?? true;
-    this.supportsMaskImageEdits = options.initialCapability?.supportsMaskImageEdits ?? true;
-    this.supportedSizes = [...(options.initialCapability?.supportedSizes?.length
-      ? options.initialCapability.supportedSizes
-      : ["1024x1024"])];
+    this.supportsPromptImageTransforms =
+      options.initialCapability?.supportsPromptImageTransforms ?? true;
+    this.supportsMaskImageEdits =
+      options.initialCapability?.supportsMaskImageEdits ?? true;
+    this.supportedSizes = [
+      ...(options.initialCapability?.supportedSizes?.length
+        ? options.initialCapability.supportedSizes
+        : ["1024x1024"]),
+    ];
   }
 
   onOpen(): void {
@@ -58,7 +66,9 @@ export class AIImageModelCapabilityModal extends Modal {
       .setDesc(t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_MODEL_DESC"))
       .addText((text) =>
         text
-          .setPlaceholder(t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_MODEL_PLACEHOLDER"))
+          .setPlaceholder(
+            t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_MODEL_PLACEHOLDER"),
+          )
           .setValue(this.modelId)
           .onChange((value) => {
             this.modelId = value.trim();
@@ -80,25 +90,31 @@ export class AIImageModelCapabilityModal extends Modal {
       .setName(t("AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_NAME"))
       .setDesc(t("AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_DESC"))
       .addToggle((toggle) =>
-        toggle
-          .setValue(this.supportsMaskImageEdits)
-          .onChange((value) => {
-            this.supportsMaskImageEdits = value;
-          }),
+        toggle.setValue(this.supportsMaskImageEdits).onChange((value) => {
+          this.supportsMaskImageEdits = value;
+        }),
       );
 
-    contentEl.createEl("h3", { text: t("AI_IMAGE_MODEL_CAPABILITIES_SIZES_NAME") });
-    contentEl.createEl("p", { text: t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_SIZES_DESC") });
+    contentEl.createEl("h3", {
+      text: t("AI_IMAGE_MODEL_CAPABILITIES_SIZES_NAME"),
+    });
+    contentEl.createEl("p", {
+      text: t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_SIZES_DESC"),
+    });
 
     const sizesContainer = contentEl.createDiv();
     const renderSizes = () => {
       sizesContainer.empty();
       this.supportedSizes.forEach((size, index) => {
         new Setting(sizesContainer)
-          .setName(`${t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_SIZE_LABEL")} ${index + 1}`)
+          .setName(
+            `${t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_SIZE_LABEL")} ${index + 1}`,
+          )
           .addText((text) =>
             text
-              .setPlaceholder(t("AI_IMAGE_MODEL_CAPABILITIES_SIZES_PLACEHOLDER"))
+              .setPlaceholder(
+                t("AI_IMAGE_MODEL_CAPABILITIES_SIZES_PLACEHOLDER"),
+              )
               .setValue(size)
               .onChange((value) => {
                 this.supportedSizes[index] = value.trim();
@@ -118,15 +134,14 @@ export class AIImageModelCapabilityModal extends Modal {
 
     renderSizes();
 
-    new Setting(contentEl)
-      .addButton((button) =>
-        button
-          .setButtonText(t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_ADD_SIZE"))
-          .onClick(() => {
-            this.supportedSizes.push("1024x1024");
-            renderSizes();
-          }),
-      );
+    new Setting(contentEl).addButton((button) =>
+      button
+        .setButtonText(t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_ADD_SIZE"))
+        .onClick(() => {
+          this.supportedSizes.push("1024x1024");
+          renderSizes();
+        }),
+    );
 
     new Setting(contentEl)
       .addButton((button) =>
@@ -156,7 +171,9 @@ export class AIImageModelCapabilityModal extends Modal {
 
   private async save() {
     const normalizedModelId = this.modelId.trim();
-    const normalizedSizes = Array.from(new Set(this.supportedSizes.map((size) => size.trim()).filter(Boolean)));
+    const normalizedSizes = Array.from(
+      new Set(this.supportedSizes.map((size) => size.trim()).filter(Boolean)),
+    );
 
     if (!normalizedModelId) {
       new Notice(t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_MODEL_REQUIRED"));
@@ -168,8 +185,9 @@ export class AIImageModelCapabilityModal extends Modal {
       return;
     }
 
-    const duplicateExists = this.existingModelIds.includes(normalizedModelId)
-      && normalizedModelId !== this.options.previousModelId;
+    const duplicateExists =
+      this.existingModelIds.includes(normalizedModelId) &&
+      normalizedModelId !== this.options.previousModelId;
     if (duplicateExists) {
       new Notice(t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_DUPLICATE_MODEL"));
       return;

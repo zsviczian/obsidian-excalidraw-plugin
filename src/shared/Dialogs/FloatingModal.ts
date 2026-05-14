@@ -1,16 +1,21 @@
-import { App,Modal } from "obsidian";
+import { App, Modal } from "obsidian";
 import { clamp } from "@radix-ui/number";
 
 function getClientPoint(e: PointerEvent | TouchEvent) {
   if (e.type.startsWith("touch")) {
-    const t = (e as TouchEvent).touches[0] ?? (e as TouchEvent).changedTouches[0];
+    const t =
+      (e as TouchEvent).touches[0] ?? (e as TouchEvent).changedTouches[0];
     return t ? { x: t.clientX, y: t.clientY } : null;
   }
   const p = e as PointerEvent;
   return { x: p.clientX, y: p.clientY };
 }
 
-function pointInRect(pt: { x: number; y: number }, r: DOMRect, padding = 1): boolean {
+function pointInRect(
+  pt: { x: number; y: number },
+  r: DOMRect,
+  padding = 1,
+): boolean {
   return (
     pt.x >= r.left - padding &&
     pt.x <= r.right + padding &&
@@ -21,7 +26,9 @@ function pointInRect(pt: { x: number; y: number }, r: DOMRect, padding = 1): boo
 
 function isPointOnText(e: PointerEvent | TouchEvent, doc: Document): boolean {
   const pt = getClientPoint(e);
-  if (!pt) return false;
+  if (!pt) {
+    return false;
+  }
 
   let offsetNode: Node | null = null;
   let offset: number | null = null;
@@ -36,12 +43,19 @@ function isPointOnText(e: PointerEvent | TouchEvent, doc: Document): boolean {
     const caretRange = doc.caretRangeFromPoint?.(pt.x, pt.y);
     if (caretRange?.startContainer) {
       offsetNode = caretRange.startContainer;
-      offset = typeof caretRange.startOffset === "number" ? caretRange.startOffset : null;
+      offset =
+        typeof caretRange.startOffset === "number"
+          ? caretRange.startOffset
+          : null;
     }
   }
 
-  if (!offsetNode || offsetNode.nodeType !== Node.TEXT_NODE || offset == null) return false;
-  if (!offsetNode.textContent?.trim()) return false;
+  if (!offsetNode || offsetNode.nodeType !== Node.TEXT_NODE || offset == null) {
+    return false;
+  }
+  if (!offsetNode.textContent?.trim()) {
+    return false;
+  }
 
   const textNode = offsetNode as Text;
   const len = textNode.data.length;
@@ -59,7 +73,9 @@ function isPointOnText(e: PointerEvent | TouchEvent, doc: Document): boolean {
   }
 
   const rects = Array.from(range.getClientRects());
-  if (rects.length === 0) return false;
+  if (rects.length === 0) {
+    return false;
+  }
 
   return rects.some((r) => pointInRect(pt, r, 1));
 }
@@ -89,7 +105,10 @@ export class FloatingModal extends Modal {
     this.setDimBackground(false);
   }
 
-  protected shouldNotStartDrag(target: HTMLElement, event: PointerEvent | TouchEvent): boolean {
+  protected shouldNotStartDrag(
+    target: HTMLElement,
+    event: PointerEvent | TouchEvent,
+  ): boolean {
     return Boolean(
       target instanceof HTMLInputElement ||
       target instanceof HTMLTextAreaElement ||
@@ -98,8 +117,8 @@ export class FloatingModal extends Modal {
       isPointOnText(event, this.ownerDocument) ||
       target.closest(".clickable-icon") ||
       // ensure close button never starts drag
-      target.closest(".modal-close-button")
-    )
+      target.closest(".modal-close-button"),
+    );
   }
 
   private handlePointerDown(e: PointerEvent | TouchEvent): void {
@@ -116,7 +135,9 @@ export class FloatingModal extends Modal {
       e.preventDefault();
       e.stopPropagation();
 
-      if ((e as TouchEvent).touches.length !== 1) return;
+      if ((e as TouchEvent).touches.length !== 1) {
+        return;
+      }
 
       const touch = (e as TouchEvent).touches[0];
       this.dragging = true;
@@ -126,9 +147,13 @@ export class FloatingModal extends Modal {
       modalEl.style.height = "fit-content";
 
       // Add touch-specific event listeners
-      this.ownerDocument.addEventListener("touchmove", this.pointerMoveHandler as (e: TouchEvent) => void, {
-        passive: false,
-      });
+      this.ownerDocument.addEventListener(
+        "touchmove",
+        this.pointerMoveHandler as (e: TouchEvent) => void,
+        {
+          passive: false,
+        },
+      );
       this.ownerDocument.addEventListener("touchend", this.pointerUpHandler);
       this.ownerDocument.addEventListener("touchcancel", this.pointerUpHandler);
     } else {
@@ -136,11 +161,15 @@ export class FloatingModal extends Modal {
       this.dragging = true;
       const { modalEl } = this;
       const pointerEvent = e as PointerEvent;
-      this.offsetX = pointerEvent.clientX - modalEl.getBoundingClientRect().left;
+      this.offsetX =
+        pointerEvent.clientX - modalEl.getBoundingClientRect().left;
       this.offsetY = pointerEvent.clientY - modalEl.getBoundingClientRect().top;
 
       // Add pointer-specific event listeners
-      this.ownerDocument.addEventListener("pointermove", this.pointerMoveHandler as (e: PointerEvent) => void);
+      this.ownerDocument.addEventListener(
+        "pointermove",
+        this.pointerMoveHandler as (e: PointerEvent) => void,
+      );
       this.ownerDocument.addEventListener("pointerup", this.pointerUpHandler);
       // Capture the pointer to ensure we get events even when outside the target
       target.setPointerCapture(pointerEvent.pointerId);
@@ -148,21 +177,33 @@ export class FloatingModal extends Modal {
   }
 
   private handlePointerMove(e: PointerEvent | TouchEvent): void {
-    if (!this.dragging) return;
+    if (!this.dragging) {
+      return;
+    }
     const { modalEl } = this;
 
     // Prevent default behavior
     e.preventDefault();
-    if (e.type === "touchmove") e.stopPropagation();
+    if (e.type === "touchmove") {
+      e.stopPropagation();
+    }
 
-    const { clientX, clientY } = (e.type === "touchmove") ?
-        (e as TouchEvent).touches[0] : e as PointerEvent;
+    const { clientX, clientY } =
+      e.type === "touchmove"
+        ? (e as TouchEvent).touches[0]
+        : (e as PointerEvent);
 
     // Prevent moving the modal offscreen
     const { width, height } = modalEl.getBoundingClientRect();
     const margin = 8;
-    const x = clamp(clientX - this.offsetX, [margin, this.ownerWindow.innerWidth - width - margin]);
-    const y = clamp(clientY - this.offsetY, [margin, this.ownerWindow.innerHeight - height - margin]);
+    const x = clamp(clientX - this.offsetX, [
+      margin,
+      this.ownerWindow.innerWidth - width - margin,
+    ]);
+    const y = clamp(clientY - this.offsetY, [
+      margin,
+      this.ownerWindow.innerHeight - height - margin,
+    ]);
 
     // Position the modal element
     modalEl.style.left = `${x}px`;
@@ -172,11 +213,20 @@ export class FloatingModal extends Modal {
   private handlePointerUp(): void {
     this.dragging = false;
     // Remove all event listeners
-    this.ownerDocument.removeEventListener("pointermove", this.pointerMoveHandler as (e: PointerEvent) => void);
+    this.ownerDocument.removeEventListener(
+      "pointermove",
+      this.pointerMoveHandler as (e: PointerEvent) => void,
+    );
     this.ownerDocument.removeEventListener("pointerup", this.pointerUpHandler);
-    this.ownerDocument.removeEventListener("touchmove", this.pointerMoveHandler as (e: TouchEvent) => void);
+    this.ownerDocument.removeEventListener(
+      "touchmove",
+      this.pointerMoveHandler as (e: TouchEvent) => void,
+    );
     this.ownerDocument.removeEventListener("touchend", this.pointerUpHandler);
-    this.ownerDocument.removeEventListener("touchcancel", this.pointerUpHandler);
+    this.ownerDocument.removeEventListener(
+      "touchcancel",
+      this.pointerUpHandler,
+    );
   }
 
   open(): void {
@@ -185,19 +235,18 @@ export class FloatingModal extends Modal {
     this.ownerWindow = this.ownerDocument.defaultView ?? window;
     // NEW: capture previously focused element & release Obsidian modal key trapping
     if (this.disableKeyCapture) {
-      this.previousActive = this.ownerDocument.activeElement as HTMLElement | null;
+      this.previousActive = this.ownerDocument
+        .activeElement as HTMLElement | null;
       try {
         // Release modal scope so focus and key handling can return to the workspace.
-        // @ts-ignore
         this.app.keymap.popScope(this.scope);
       } catch {}
       // prevent automatic selection / focus restoration
       this.shouldRestoreSelection = false;
     }
     window.setTimeout(() => {
-      // @ts-ignore
       const { containerEl, modalEl, bgEl } = this;
-      containerEl.addClass("mod-excalidraw-draggable")
+      containerEl.addClass("mod-excalidraw-draggable");
 
       // Set initial position and make modal draggable
       if (modalEl) {
@@ -215,10 +264,17 @@ export class FloatingModal extends Modal {
         modalEl.style.transform = "none";
 
         // Add event listeners for both pointer and touch events
-        modalEl.addEventListener("pointerdown", this.pointerDownHandler as (e: PointerEvent) => void);
-        modalEl.addEventListener("touchstart", this.pointerDownHandler as (e: TouchEvent) => void, {
-          passive: false,
-        });
+        modalEl.addEventListener(
+          "pointerdown",
+          this.pointerDownHandler as (e: PointerEvent) => void,
+        );
+        modalEl.addEventListener(
+          "touchstart",
+          this.pointerDownHandler as (e: TouchEvent) => void,
+          {
+            passive: false,
+          },
+        );
 
         if (this.disableKeyCapture) {
           // Prevent the modal from stealing focus
@@ -227,14 +283,18 @@ export class FloatingModal extends Modal {
           // In order to propagate keypresses, modal container and backdrop
           // need to ignore (and thus propagate) any pointerEvents.
           containerEl.style.pointerEvents = "none";
-          if (bgEl) bgEl.style.pointerEvents = "none";
+          if (bgEl) {
+            bgEl.style.pointerEvents = "none";
+          }
 
           // Refocus previous element (if still in DOM)
           if (this.previousActive?.isConnected) {
             this.previousActive.focus({ preventScroll: true });
           }
           // Stop key events originating inside the modal from bubbling back
-          modalEl.addEventListener("keydown", this.modalKeydownStopHandler, { capture: true });
+          modalEl.addEventListener("keydown", this.modalKeydownStopHandler, {
+            capture: true,
+          });
         }
 
         // NEW: re-enable pointer events on the close button so it is tappable on mobile
@@ -248,16 +308,30 @@ export class FloatingModal extends Modal {
 
   close(): void {
     // Optional: restore previous focus if body ended up focused
-    if (this.disableKeyCapture && this.previousActive?.isConnected && this.ownerDocument.activeElement === this.ownerDocument.body) {
-      try { this.previousActive.focus({ preventScroll: true }); } catch {}
+    if (
+      this.disableKeyCapture &&
+      this.previousActive?.isConnected &&
+      this.ownerDocument.activeElement === this.ownerDocument.body
+    ) {
+      try {
+        this.previousActive.focus({ preventScroll: true });
+      } catch {}
     }
     const { modalEl } = this;
     // Clean up event listeners
     if (modalEl) {
-      modalEl.removeEventListener("pointerdown", this.pointerDownHandler as (e: PointerEvent) => void);
-      modalEl.removeEventListener("touchstart", this.pointerDownHandler as (e: TouchEvent) => void);
+      modalEl.removeEventListener(
+        "pointerdown",
+        this.pointerDownHandler as (e: PointerEvent) => void,
+      );
+      modalEl.removeEventListener(
+        "touchstart",
+        this.pointerDownHandler as (e: TouchEvent) => void,
+      );
       // Remove the capturing keydown stopper if it was added
-      modalEl.removeEventListener("keydown", this.modalKeydownStopHandler, { capture: true });
+      modalEl.removeEventListener("keydown", this.modalKeydownStopHandler, {
+        capture: true,
+      });
     }
     // Remove any remaining document event listeners
     this.handlePointerUp();
@@ -266,6 +340,10 @@ export class FloatingModal extends Modal {
   }
 
   // (Optional helper if you want to toggle later)
-  enableKeyCapture() { this.disableKeyCapture = false; }
-  disableKeyCaptureFn() { this.disableKeyCapture = true; }
+  enableKeyCapture() {
+    this.disableKeyCapture = false;
+  }
+  disableKeyCaptureFn() {
+    this.disableKeyCapture = true;
+  }
 }

@@ -1,4 +1,12 @@
-import { ExcalidrawElement,ExcalidrawLinearElement,ExcalidrawTextElement,FillStyle,GroupId,RoundnessType,StrokeStyle } from "@zsviczian/excalidraw/types/element/src/types";
+import {
+  ExcalidrawElement,
+  ExcalidrawLinearElement,
+  ExcalidrawTextElement,
+  FillStyle,
+  GroupId,
+  RoundnessType,
+  StrokeStyle,
+} from "@zsviczian/excalidraw/types/element/src/types";
 
 export type PathCommand = {
   type: string;
@@ -115,4 +123,3 @@ export type _ExcalidrawElement =
 export type NonDeleted<TElement extends ExcalidrawElement> = TElement & {
   isDeleted: false;
 };
-

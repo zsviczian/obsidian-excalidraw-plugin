@@ -1,7 +1,31 @@
 import { BoundingBox } from "@zsviczian/excalidraw/types/element/src";
-import { ElementsMap,ElementsMapOrArray,ExcalidrawBindableElement,ExcalidrawElement,ExcalidrawFrameElement,ExcalidrawFrameLikeElement,ExcalidrawTextContainer,ExcalidrawTextElement,FontFamilyValues,FontString,NonDeleted,NonDeletedExcalidrawElement,OrderedExcalidrawElement,Theme } from "@zsviczian/excalidraw/types/element/src/types";
-import { CombineBrandsIfNeeded,FontMetadata } from "@zsviczian/excalidraw/types/common/src";
-import { AppState,BinaryFiles,DataURL,GenerateDiagramToCode,Zoom } from "@zsviczian/excalidraw/types/excalidraw/types";
+import {
+  ElementsMap,
+  ElementsMapOrArray,
+  ExcalidrawBindableElement,
+  ExcalidrawElement,
+  ExcalidrawFrameElement,
+  ExcalidrawFrameLikeElement,
+  ExcalidrawTextContainer,
+  ExcalidrawTextElement,
+  FontFamilyValues,
+  FontString,
+  NonDeleted,
+  NonDeletedExcalidrawElement,
+  OrderedExcalidrawElement,
+  Theme,
+} from "@zsviczian/excalidraw/types/element/src/types";
+import {
+  CombineBrandsIfNeeded,
+  FontMetadata,
+} from "@zsviczian/excalidraw/types/common/src";
+import {
+  AppState,
+  BinaryFiles,
+  DataURL,
+  GenerateDiagramToCode,
+  Zoom,
+} from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
 
@@ -16,14 +40,14 @@ interface MermaidConfig {
    * @default "linear"
    */
   flowchart?: {
-      curve?: "linear" | "basis";
+    curve?: "linear" | "basis";
   };
   /**
    * Theme variables
    * @default { fontSize: "25px" }
    */
   themeVariables?: {
-      fontSize?: string;
+    fontSize?: string;
   };
   /**
    * Maximum number of edges to be rendered.
@@ -65,7 +89,7 @@ declare namespace ExcalidrawLib {
     ) => { width: number; height: number; scale?: number };
   };
 
-  function restoreElements <T extends ExcalidrawElement>(
+  function restoreElements<T extends ExcalidrawElement>(
     targetElements: readonly T[] | undefined | null,
     /** used for additional context (e.g. repairing arrow bindings) */
     existingElements: Readonly<ElementsMapOrArray> | null | undefined,
@@ -76,17 +100,19 @@ declare namespace ExcalidrawLib {
           deleteInvisibleElements?: boolean;
         }
       | undefined,
-  ) : CombineBrandsIfNeeded<T, OrderedExcalidrawElement>;
+  ): CombineBrandsIfNeeded<T, OrderedExcalidrawElement>;
 
-  function exportToSvg(opts: Omit<ExportOpts, "getDimensions"> & {
-    elements: ExcalidrawElement[];
-    appState?: AppState;
-    files?: any;
-    exportPadding?: number;
-    exportingFrame: ExcalidrawFrameElement | null | undefined;
-    renderEmbeddables?: boolean;
-    skipInliningFonts?: boolean;
-  }): Promise<SVGSVGElement>;
+  function exportToSvg(
+    opts: Omit<ExportOpts, "getDimensions"> & {
+      elements: ExcalidrawElement[];
+      appState?: AppState;
+      files?: any;
+      exportPadding?: number;
+      exportingFrame: ExcalidrawFrameElement | null | undefined;
+      renderEmbeddables?: boolean;
+      skipInliningFonts?: boolean;
+    },
+  ): Promise<SVGSVGElement>;
 
   function sceneCoordsToViewportCoords(
     sceneCoords: { sceneX: number; sceneY: number },
@@ -132,11 +158,11 @@ declare namespace ExcalidrawLib {
     elementsMap: ElementsMap,
     text: string,
   ): {
-    text: string,
-    x: number,
-    y: number,
-    width: number,
-    height: number,
+    text: string;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
   };
 
   function getMaximumGroups(
@@ -144,22 +170,25 @@ declare namespace ExcalidrawLib {
     elementsMap: ElementsMap,
   ): ExcalidrawElement[][];
 
-  function getFontMetrics(fontFamily: ExcalidrawTextElement["fontFamily"], fontSize?:number): {
-    unitsPerEm: number,
-    ascender: number,
-    descender: number,
-    lineHeight: number,
-    baseline: number,
-    fontString: string
-  }
+  function getFontMetrics(
+    fontFamily: ExcalidrawTextElement["fontFamily"],
+    fontSize?: number,
+  ): {
+    unitsPerEm: number;
+    ascender: number;
+    descender: number;
+    lineHeight: number;
+    baseline: number;
+    fontString: string;
+  };
 
   function measureText(
     text: string,
     font: FontString,
     lineHeight: number,
-  ): { width: number; height: number; };
+  ): { width: number; height: number };
 
-  function getLineHeight (fontFamily: FontFamilyValues):number;
+  function getLineHeight(fontFamily: FontFamilyValues): number;
   function wrapText(text: string, font: FontString, maxWidth: number): string;
 
   function getFontString({
@@ -170,12 +199,7 @@ declare namespace ExcalidrawLib {
     fontFamily: FontFamilyValues;
   }): FontString;
 
-
-  function getFontFamilyString ({
-    fontFamily,
-  }: {
-    fontFamily: number;
-  }): string;
+  function getFontFamilyString({ fontFamily }: { fontFamily: number }): string;
 
   function getBoundTextMaxWidth(container: ExcalidrawElement): number;
 
@@ -191,9 +215,9 @@ declare namespace ExcalidrawLib {
     element: TElement,
     updates: ElementUpdate<TElement>,
     informMutation?: boolean,
-  ): TElement;  
+  ): TElement;
 
-  function getEmbedLink (link: string | null | undefined): EmbeddedLink;
+  function getEmbedLink(link: string | null | undefined): EmbeddedLink;
 
   const mermaidToExcalidraw: typeof import("@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/MermaidToExcalidrawLib").mermaidToExcalidraw;
 
@@ -206,31 +230,35 @@ declare namespace ExcalidrawLib {
     error?: string;
   } | undefined>;*/
 
-  var getSceneVersion: any;
-  var Excalidraw: any;
-  var MainMenu: any;
-  var WelcomeScreen: any;
-  var TTDDialogTrigger: typeof import("@zsviczian/excalidraw").TTDDialogTrigger;
-  var TTDDialog: typeof import("@zsviczian/excalidraw").TTDDialog;
-  var DiagramToCodePlugin: (props: {
-    generate: GenerateDiagramToCode;
-  }) => any;
-  
+  let getSceneVersion: any;
+  let Excalidraw: any;
+  let MainMenu: any;
+  let WelcomeScreen: any;
+  let TTDDialogTrigger: typeof import("@zsviczian/excalidraw").TTDDialogTrigger;
+  let TTDDialog: typeof import("@zsviczian/excalidraw").TTDDialog;
+  let DiagramToCodePlugin: (props: { generate: GenerateDiagramToCode }) => any;
+
   function getDataURL(file: Blob | File): Promise<DataURL>;
   function destroyObsidianUtils(): void;
   function registerLocalFont(fontMetrics: FontMetadata, uri: string): void;
   function getFontFamilies(): string[];
   function registerFontsInCSS(): Promise<void>;
   function getCSSFontDefinition(fontFamily: number): Promise<string>;
-  function getTextFromElements (
+  function getTextFromElements(
     elements: readonly ExcalidrawElement[],
     separator?: string,
   ): string;
-  function safelyParseJSON (json: string): Record<string, any> | null;
-  function loadSceneFonts(elements: NonDeletedExcalidrawElement[]): Promise<void>;
+  function safelyParseJSON(json: string): Record<string, any> | null;
+  function loadSceneFonts(
+    elements: NonDeletedExcalidrawElement[],
+  ): Promise<void>;
   function loadMermaid(): Promise<any>;
-  function syncInvalidIndices(elements: readonly ExcalidrawElement[]): OrderedExcalidrawElement[];
-  function syncMovedIndices(elements: readonly ExcalidrawElement[], movedElements: ElementsMap): OrderedExcalidrawElement[];
+  function syncInvalidIndices(
+    elements: readonly ExcalidrawElement[],
+  ): OrderedExcalidrawElement[];
+  function syncMovedIndices(
+    elements: readonly ExcalidrawElement[],
+    movedElements: ElementsMap,
+  ): OrderedExcalidrawElement[];
   function getDefaultColorPalette(): [string, string, string, string, string][];
 }
-

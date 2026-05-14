@@ -5,14 +5,14 @@ export interface StrokeOptions {
   easing: string;
   simulatePressure?: boolean;
   start: {
-      cap: boolean;
-      taper: number | boolean;
-      easing: string;
+    cap: boolean;
+    taper: number | boolean;
+    easing: string;
   };
   end: {
-      cap: boolean;
-      taper: number | boolean;
-      easing: string;
+    cap: boolean;
+    taper: number | boolean;
+    easing: string;
   };
 }
 
@@ -24,12 +24,27 @@ export interface PenOptions {
   options: StrokeOptions;
 }
 
-export declare type ExtendedFillStyle = "dots"|"zigzag"|"zigzag-line"|"dashed"|"hachure"|"cross-hatch"|"solid"|"";
-export declare type PenType = "default" | "highlighter" | "finetip" | "fountain" | "marker" | "thick-thin" | "thin-thick-thin";
+export declare type ExtendedFillStyle =
+  | "dots"
+  | "zigzag"
+  | "zigzag-line"
+  | "dashed"
+  | "hachure"
+  | "cross-hatch"
+  | "solid"
+  | "";
+export declare type PenType =
+  | "default"
+  | "highlighter"
+  | "finetip"
+  | "fountain"
+  | "marker"
+  | "thick-thin"
+  | "thin-thick-thin";
 
 export interface PenStyle {
   type: PenType;
-  freedrawOnly: boolean; 
+  freedrawOnly: boolean;
   strokeColor?: string;
   backgroundColor?: string;
   fillStyle: ExtendedFillStyle;

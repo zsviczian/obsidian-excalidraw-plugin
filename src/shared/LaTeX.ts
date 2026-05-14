@@ -1,14 +1,40 @@
 // LaTeX.ts
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { App } from "obsidian";
 import ExcalidrawView from "../view/ExcalidrawView";
-import { FileData,MimeType } from "src/types/embeddedFileLoaderTypes";
+import { FileData, MimeType } from "src/types/embeddedFileLoaderTypes";
 import { FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import ExcalidrawPlugin from "src/core/main";
 
-declare const loadMathjaxToSVG: Function;
+type MathJaxData = {
+  mimeType: MimeType;
+  fileId: FileId;
+  dataURL: DataURL;
+  created: number;
+  size: { height: number; width: number };
+};
+
+type MathJaxContext = App | ExcalidrawPlugin;
+
+type MathJaxModule = {
+  tex2dataURL: (
+    tex: string,
+    scale: number,
+    pluginOrApp: MathJaxContext,
+  ) => Promise<MathJaxData>;
+  clearMathJaxVariables: () => void;
+};
+
+declare const loadMathjaxToSVG: () => Promise<MathJaxModule>;
 let mathjaxLoaded = false;
-let tex2dataURLExternal: Function;
-let clearVariables: Function;
+let tex2dataURLExternal:
+  | ((
+      tex: string,
+      scale: number,
+      pluginOrApp: MathJaxContext,
+    ) => Promise<MathJaxData>)
+  | null = null;
+let clearVariables: (() => void) | null = null;
 
 let loadMathJaxPromise: Promise<void> | null = null;
 
@@ -30,10 +56,10 @@ export const updateEquation = async (
   equation: string,
   fileId: string,
   view: ExcalidrawView,
-  addFiles: Function,
+  addFiles: (files: FileData[], view: ExcalidrawView) => void,
 ) => {
   await loadMathJax();
-  const data = await tex2dataURLExternal(equation, 4, view.app);
+  const data = await tex2dataURLExternal?.(equation, 4, view.app);
   if (data) {
     const files: FileData[] = [];
     files.push({

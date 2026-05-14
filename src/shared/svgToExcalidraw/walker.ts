@@ -1,30 +1,30 @@
 import { mat4 } from "gl-matrix";
 import { dimensionsFromPoints } from "./utils";
 import ExcalidrawScene from "./elements/ExcalidrawScene";
-import Group,{ getGroupAttrs } from "./elements/Group";
+import Group, { getGroupAttrs } from "./elements/Group";
 import {
-ExcalidrawElementBase,
-ExcalidrawRectangle,
-ExcalidrawEllipse,
-ExcalidrawLine,
-ExcalidrawDraw,
-createExRect,
-createExEllipse,
-createExLine,
-createExDraw,
-Point,
+  ExcalidrawElementBase,
+  ExcalidrawRectangle,
+  ExcalidrawEllipse,
+  ExcalidrawLine,
+  ExcalidrawDraw,
+  createExRect,
+  createExEllipse,
+  createExLine,
+  createExDraw,
+  Point,
 } from "./elements/ExcalidrawElement";
 import {
-presAttrsToElementValues,
-filterAttrsToElementValues,
-pointsAttrToPoints,
-has,
-get,
-getNum,
+  presAttrsToElementValues,
+  filterAttrsToElementValues,
+  pointsAttrToPoints,
+  has,
+  get,
+  getNum,
 } from "./attributes";
-import { getTransformMatrix,transformPoints } from "./transform";
+import { getTransformMatrix, transformPoints } from "./transform";
 import { pointsOnPath } from "points-on-path";
-import { randomId,getWindingOrder } from "./utils";
+import { randomId, getWindingOrder } from "./utils";
 import { ROUNDNESS } from "../../constants/constants";
 
 const SUPPORTED_TAGS = [
@@ -181,8 +181,6 @@ const walkers = {
       //throw new Error("Unable to create ex element");
     }
 
-    
-
     walk(args, args.tw.nextNode());
   },
 
@@ -196,8 +194,6 @@ const walkers = {
     const y = getNum(el, "y", 0) + getNum(el, "cy", 0) - r;
 
     const mat = getTransformMatrix(el, groups);
-
-    // @ts-ignore
     const m = mat4.fromValues(d, 0, 0, 0, 0, d, 0, 0, 0, 0, 1, 0, x, y, 0, 1);
 
     const result = mat4.multiply(mat4.create(), mat, m);
@@ -346,8 +342,6 @@ const walkers = {
     const h = getNum(el, "height", 0);
 
     const mat = getTransformMatrix(el, groups);
-
-    // @ts-ignore
     const m = mat4.fromValues(w, 0, 0, 0, 0, h, 0, 0, 0, 0, 1, 0, x, y, 0, 1);
 
     const result = mat4.multiply(mat4.create(), mat, m);
@@ -366,7 +360,7 @@ const walkers = {
       y: result[13],
       width: result[0],
       height: result[5],
-      roundness: isRound ? {type:ROUNDNESS.LEGACY} : null,
+      roundness: isRound ? { type: ROUNDNESS.LEGACY } : null,
     };
 
     scene.elements.push(rect);

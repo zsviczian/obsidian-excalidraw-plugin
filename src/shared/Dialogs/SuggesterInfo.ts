@@ -7,10 +7,9 @@ type SuggesterInfo = {
 
 const hyperlink = (url: string, text: string) => {
   return `<a onclick='window.open("${url}")'>${text}</a>`;
-}
+};
 
 const EMBEDDABLE_MDCUSTOMPROPS = `type EmbeddableMDCustomProps = {<br>useObsidianDefaults: boolean;<br>backgroundMatchCanvas: boolean;<br>backgroundMatchElement: boolean;<br>backgroundColor: string;<br>backgroundOpacity: number;<br>borderMatchElement: boolean;<br>borderColor: string;<br>borderOpacity: number;<br>filenameVisible: boolean;<br>};<br>`;
-
 
 export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
@@ -20,10 +19,10 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
-    field:"isExcalidrawMaskFile",
-    code:"isExcalidrawMaskFile(file?:TFile): boolean;",
-    desc:"Returns true if the file is an Excalidraw Mask file. If file is not provided, the function will use ea.targetView.file",
-    after:"",
+    field: "isExcalidrawMaskFile",
+    code: "isExcalidrawMaskFile(file?:TFile): boolean;",
+    desc: "Returns true if the file is an Excalidraw Mask file. If file is not provided, the function will use ea.targetView.file",
+    after: "",
   },
   {
     field: "plugin",
@@ -58,7 +57,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "style.backgroundColor",
     code: "[string]",
-    desc: `A valid css color. See ${hyperlink("https://www.w3schools.com/colors/default.asp","W3 School Colors")} for more.`,
+    desc: `A valid css color. See ${hyperlink("https://www.w3schools.com/colors/default.asp", "W3 School Colors")} for more.`,
     after: "",
   },
   {
@@ -148,7 +147,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "canvas.viewBackgroundColor",
     code: "[string]",
-    desc: `A valid css color.\nSee ${hyperlink("https://www.w3schools.com/colors/default.asp","W3 School Colors")} for more.`,
+    desc: `A valid css color.\nSee ${hyperlink("https://www.w3schools.com/colors/default.asp", "W3 School Colors")} for more.`,
     after: "",
   },
   {
@@ -166,7 +165,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "addAppendUpdateCustomData",
     code: "addAppendUpdateCustomData(id: string, newData: Partial<Record<string, unknown>>)",
-    desc: "Add, modify keys in element customData and preserve existing keys.\n" +
+    desc:
+      "Add, modify keys in element customData and preserve existing keys.\n" +
       "Creates customData={} if it does not exist.\n" +
       "Takes the element ID for an element in the elementsDict and the new data to add or modify.\n" +
       "To delete keys set key value in newData to undefined. so {keyToBeDeleted:undefined} will be deleted.",
@@ -204,8 +204,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "getBoundTextElement",
-    code:
-      "getBoundTextElement(element: ExcalidrawElement, searchInView?: boolean): { eaElement?: Mutable<ExcalidrawTextElement>; sceneElement?: ExcalidrawTextElement; };",
+    code: "getBoundTextElement(element: ExcalidrawElement, searchInView?: boolean): { eaElement?: Mutable<ExcalidrawTextElement>; sceneElement?: ExcalidrawTextElement; };",
     desc:
       "Returns an object describing the bound text element.\n" +
       "@param element: ExcalidrawElement | ExcalidrawElement[] - The selected container with text (an array of 2 elements) to check.\n" +
@@ -221,25 +220,26 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "create",
-    code: 'async create(params?: {filename?: string, foldername?: string, templatePath?: string, onNewPane?: boolean, silent?: boolean, frontmatterKeys?: {},}): Promise<string>;',
-    desc: "Create a drawing and save it to filename.\nIf filename is null: default filename as defined in Excalidraw settings.\nIf folder is null: default folder as defined in Excalidraw settings\nReturns the path to the created file.\n" +
-    'frontmatterKeys: {\n' +
-    '  "excalidraw-plugin"?: "raw" | "parsed";\n' +
-    '  "excalidraw-link-prefix"?: string;\n' +
-    '  "excalidraw-link-brackets"?: boolean;\n' +
-    '  "excalidraw-url-prefix"?: string;\n' +
-    '  "excalidraw-export-transparent"?: boolean;\n' +
-    '  "excalidraw-export-dark"?: boolean;\n' +
-    '  "excalidraw-export-padding"?: number;\n' +
-    '  "excalidraw-export-pngscale"?: number;\n' +
-    '  "excalidraw-export-embed-scene"?: boolean;\n' +
-    '  "excalidraw-default-mode"?: "view" | "zen";\n' +
-    '  "excalidraw-onload-script"?: string;\n' +
-    '  "excalidraw-linkbutton-opacity"?: number;\n' +
-    '  "excalidraw-autoexport"?: boolean;\n' +
-    '  "excalidraw-mask"?: boolean;\n' +
-    '  "excalidraw-export-internal-links"?: boolean;\n' +
-    '  "cssclasses"?: string;\n}',
+    code: "async create(params?: {filename?: string, foldername?: string, templatePath?: string, onNewPane?: boolean, silent?: boolean, frontmatterKeys?: {},}): Promise<string>;",
+    desc:
+      "Create a drawing and save it to filename.\nIf filename is null: default filename as defined in Excalidraw settings.\nIf folder is null: default folder as defined in Excalidraw settings\nReturns the path to the created file.\n" +
+      "frontmatterKeys: {\n" +
+      '  "excalidraw-plugin"?: "raw" | "parsed";\n' +
+      '  "excalidraw-link-prefix"?: string;\n' +
+      '  "excalidraw-link-brackets"?: boolean;\n' +
+      '  "excalidraw-url-prefix"?: string;\n' +
+      '  "excalidraw-export-transparent"?: boolean;\n' +
+      '  "excalidraw-export-dark"?: boolean;\n' +
+      '  "excalidraw-export-padding"?: number;\n' +
+      '  "excalidraw-export-pngscale"?: number;\n' +
+      '  "excalidraw-export-embed-scene"?: boolean;\n' +
+      '  "excalidraw-default-mode"?: "view" | "zen";\n' +
+      '  "excalidraw-onload-script"?: string;\n' +
+      '  "excalidraw-linkbutton-opacity"?: number;\n' +
+      '  "excalidraw-autoexport"?: boolean;\n' +
+      '  "excalidraw-mask"?: boolean;\n' +
+      '  "excalidraw-export-internal-links"?: boolean;\n' +
+      '  "cssclasses"?: string;\n}',
     after: "",
   },
   {
@@ -251,83 +251,88 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "createPDF",
     code: "async createPDF({SVG: SVGSVGElement[], scale?: PDFExportScale, pageProps?: PDFPageProperties, filename: string}): Promise<void>",
-    desc: "Creates a PDF from the provided SVG elements with specified scaling and page properties.\n" +
-        "\n" +
-        "@param {Object} params - The parameters for creating the PDF.\n" +
-        "@param {SVGSVGElement[]} params.SVG - An array of SVG elements to be included in the PDF. If multiple SVGs are provided, each will be added to a new page.\n" +
-        "@param {PDFExportScale} [params.scale={ fitToPage: true, zoom: 1 }] - The scaling options for the SVG elements.\n" +
-        "@param {PDFPageProperties} [params.pageProps] - The properties for the PDF pages.\n" +
-        "@param {string} params.filename - The name of the PDF file to be created.\n" +
-        "@returns {Promise<ArrayBuffer>} - A promise that resolves to an ArrayBuffer containing the PDF data.\n" +
-        "\n" +
-        "@typedef {Object} PDFExportScale\n" +
-        "@property {boolean} fitToPage - Whether to fit the SVG to the page.\n" +
-        "@property {number} [zoom=1] - The zoom level for the SVG. Used only if fitToPage is false. If the SVG does not fit the page, it will be tiled over multiple pages.\n" +
-        "\n" +
-        "@typedef {Object} PDFPageProperties\n" +
-        "@property {{width: number, height: number}} [dimensions] - The dimensions of the PDF pages in pixels. Use getPageDimensions to get standard page sizes.\n" +
-        "@property {string} [backgroundColor] - The background color of the PDF pages.\n" +
-        "@property {PDFMargin} margin - The margins of the PDF pages in pixels.\n" +
-        "@property {PDFPageAlignment} alignment - The alignment of the SVG on the PDF pages.",
-    after: "({\n" +
-        "  SVG: [svgElement1, svgElement2],\n" +
-        "  scale: { fitToPage: true },\n" +
-        "  pageProps: {\n" +
-        "    dimensions: { width: 595.28, height: 841.89 },\n" +
-        "    backgroundColor: \"#ffffff\",\n" +
-        "    margin: { left: 20, right: 20, top: 20, bottom: 20 },\n" +
-        "    alignment: \"center\"\n" +
-        "    filename: \"myPDF.pdf\"\n" +
-        "  }\n" +
-        "});",
+    desc:
+      "Creates a PDF from the provided SVG elements with specified scaling and page properties.\n" +
+      "\n" +
+      "@param {Object} params - The parameters for creating the PDF.\n" +
+      "@param {SVGSVGElement[]} params.SVG - An array of SVG elements to be included in the PDF. If multiple SVGs are provided, each will be added to a new page.\n" +
+      "@param {PDFExportScale} [params.scale={ fitToPage: true, zoom: 1 }] - The scaling options for the SVG elements.\n" +
+      "@param {PDFPageProperties} [params.pageProps] - The properties for the PDF pages.\n" +
+      "@param {string} params.filename - The name of the PDF file to be created.\n" +
+      "@returns {Promise<ArrayBuffer>} - A promise that resolves to an ArrayBuffer containing the PDF data.\n" +
+      "\n" +
+      "@typedef {Object} PDFExportScale\n" +
+      "@property {boolean} fitToPage - Whether to fit the SVG to the page.\n" +
+      "@property {number} [zoom=1] - The zoom level for the SVG. Used only if fitToPage is false. If the SVG does not fit the page, it will be tiled over multiple pages.\n" +
+      "\n" +
+      "@typedef {Object} PDFPageProperties\n" +
+      "@property {{width: number, height: number}} [dimensions] - The dimensions of the PDF pages in pixels. Use getPageDimensions to get standard page sizes.\n" +
+      "@property {string} [backgroundColor] - The background color of the PDF pages.\n" +
+      "@property {PDFMargin} margin - The margins of the PDF pages in pixels.\n" +
+      "@property {PDFPageAlignment} alignment - The alignment of the SVG on the PDF pages.",
+    after:
+      "({\n" +
+      "  SVG: [svgElement1, svgElement2],\n" +
+      "  scale: { fitToPage: true },\n" +
+      "  pageProps: {\n" +
+      "    dimensions: { width: 595.28, height: 841.89 },\n" +
+      '    backgroundColor: "#ffffff",\n' +
+      "    margin: { left: 20, right: 20, top: 20, bottom: 20 },\n" +
+      '    alignment: "center"\n' +
+      '    filename: "myPDF.pdf"\n' +
+      "  }\n" +
+      "});",
   },
   {
     field: "createViewSVG",
     code: "async createViewSVG({withBackground?: boolean, theme?: 'light' | 'dark', frameRendering?: FrameRenderingOptions, padding?: number, selectedOnly?: boolean, skipInliningFonts?: boolean, embedScene?: boolean}): Promise<SVGSVGElement>",
-    desc: "Creates an SVG representation of the current view with specified options.\n" +
-        "\n" +
-        "@param {Object} options - The options for creating the SVG.\n" +
-        "@param {boolean} [options.withBackground=true] - Whether to include the background in the SVG.\n" +
-        "@param {\"light\" | \"dark\"} [options.theme] - The theme to use for the SVG.\n" +
-        "@param {FrameRenderingOptions} [options.frameRendering={enabled: true, name: true, outline: true, clip: true}] - The frame rendering options.\n" +
-        "@param {number} [options.padding] - The padding to apply around the SVG.\n" +
-        "@param {boolean} [options.selectedOnly=false] - Whether to include only the selected elements in the SVG.\n" +
-        "@param {boolean} [options.skipInliningFonts=false] - Whether to skip inlining fonts in the SVG.\n" +
-        "@param {boolean} [options.embedScene=false] - Whether to embed the scene in the SVG.\n" +
-        "@returns {Promise<SVGSVGElement>} A promise that resolves to the SVG element.\n" +
-        "\n" +
-        "@typedef {Object} FrameRenderingOptions\n" +
-        "@property {boolean} enabled - Whether frame rendering is enabled.\n" +
-        "@property {boolean} name - Whether to include the name in the frame rendering.\n" +
-        "@property {boolean} outline - Whether to include the outline in the frame rendering.\n" +
-        "@property {boolean} clip - Whether to clip the frame rendering.\n",
-    after: "({\n" +
-        "  withBackground: true,\n" +
-        "  theme: 'light',\n" +
-        "  frameRendering: { enabled: true, name: true, outline: true, clip: true },\n" +
-        "  padding: 10,\n" +
-        "  selectedOnly: false,\n" +
-        "  skipInliningFonts: false,\n" +
-        "  embedScene: false,\n" +
-        "});",
-  },  
+    desc:
+      "Creates an SVG representation of the current view with specified options.\n" +
+      "\n" +
+      "@param {Object} options - The options for creating the SVG.\n" +
+      "@param {boolean} [options.withBackground=true] - Whether to include the background in the SVG.\n" +
+      '@param {"light" | "dark"} [options.theme] - The theme to use for the SVG.\n' +
+      "@param {FrameRenderingOptions} [options.frameRendering={enabled: true, name: true, outline: true, clip: true}] - The frame rendering options.\n" +
+      "@param {number} [options.padding] - The padding to apply around the SVG.\n" +
+      "@param {boolean} [options.selectedOnly=false] - Whether to include only the selected elements in the SVG.\n" +
+      "@param {boolean} [options.skipInliningFonts=false] - Whether to skip inlining fonts in the SVG.\n" +
+      "@param {boolean} [options.embedScene=false] - Whether to embed the scene in the SVG.\n" +
+      "@returns {Promise<SVGSVGElement>} A promise that resolves to the SVG element.\n" +
+      "\n" +
+      "@typedef {Object} FrameRenderingOptions\n" +
+      "@property {boolean} enabled - Whether frame rendering is enabled.\n" +
+      "@property {boolean} name - Whether to include the name in the frame rendering.\n" +
+      "@property {boolean} outline - Whether to include the outline in the frame rendering.\n" +
+      "@property {boolean} clip - Whether to clip the frame rendering.\n",
+    after:
+      "({\n" +
+      "  withBackground: true,\n" +
+      "  theme: 'light',\n" +
+      "  frameRendering: { enabled: true, name: true, outline: true, clip: true },\n" +
+      "  padding: 10,\n" +
+      "  selectedOnly: false,\n" +
+      "  skipInliningFonts: false,\n" +
+      "  embedScene: false,\n" +
+      "});",
+  },
   {
     field: "getPagePDFDimensions",
     code: "getPagePDFDimensions(pageSize: PageSize, orientation: PageOrientation): PageDimensions",
-    desc: "Returns the dimensions of a standard page size in pixels.\n" +
-          "\n" +
-          "@param {PageSize} pageSize - The standard page size. Possible values are \"A0\", \"A1\", \"A2\", \"A3\", \"A4\", \"A5\", \"Letter\", \"Legal\", \"Tabloid\".\n" +
-          "@param {PageOrientation} orientation - The orientation of the page. Possible values are \"portrait\" and \"landscape\".\n" +
-          "@returns {PageDimensions} - An object containing the width and height of the page in pixels.\n" +
-          "\n" +
-          "@typedef {Object} PageDimensions\n" +
-          "@property {number} width - The width of the page in pixels.\n" +
-          "@property {number} height - The height of the page in pixels.\n" +
-          "\n" +
-          "@typedef {\"A0\" | \"A1\" | \"A2\" | \"A3\" | \"A4\" | \"A5\" | \"Letter\" | \"Legal\" | \"Tabloid\"} PageSize\n" +
-          "\n" +
-          "@typedef {\"portrait\" | \"landscape\"} PageOrientation",
-    after: "(\"A4\", \"portrait\");",
+    desc:
+      "Returns the dimensions of a standard page size in pixels.\n" +
+      "\n" +
+      '@param {PageSize} pageSize - The standard page size. Possible values are "A0", "A1", "A2", "A3", "A4", "A5", "Letter", "Legal", "Tabloid".\n' +
+      '@param {PageOrientation} orientation - The orientation of the page. Possible values are "portrait" and "landscape".\n' +
+      "@returns {PageDimensions} - An object containing the width and height of the page in pixels.\n" +
+      "\n" +
+      "@typedef {Object} PageDimensions\n" +
+      "@property {number} width - The width of the page in pixels.\n" +
+      "@property {number} height - The height of the page in pixels.\n" +
+      "\n" +
+      '@typedef {"A0" | "A1" | "A2" | "A3" | "A4" | "A5" | "Letter" | "Legal" | "Tabloid"} PageSize\n' +
+      "\n" +
+      '@typedef {"portrait" | "landscape"} PageOrientation',
+    after: '("A4", "portrait");',
   },
   {
     field: "createPNG",
@@ -385,14 +390,15 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "refreshTextElementSize",
-    code: 'refreshTextElementSize(id: string);',
+    code: "refreshTextElementSize(id: string);",
     desc: "Refreshes the size of the text element. Intended to be used when you copyViewElementsToEAforEditing() and then change the text in a text element and want to update the size of the text element to fit the modifid contents.",
     after: "",
   },
   {
     field: "addText",
     code: 'addText(topX: number, topY: number, text: string, formatting?: {autoResize?: boolean; wrapAt?: number; width?: number; height?: number; textAlign?: "left" | "center" | "right"; textVerticalAlign: "top" | "middle" | "bottom"; box?: boolean | "box" | "blob" | "ellipse" | "diamond"; boxPadding?: number; boxStrokeColor?: string;}, id?: string,): string;',
-    desc: "If box is !null, then text will be boxed\nThe function returns the id of the TextElement. If the text element is boxed i.e. it is a sticky note, then the id of the container object.\n"+
+    desc:
+      "If box is !null, then text will be boxed\nThe function returns the id of the TextElement. If the text element is boxed i.e. it is a sticky note, then the id of the container object.\n" +
       "Default value for autoResize is true. Setting autoResize to false will wrap the text in the text element without the need for the container. If set to false, you must provide a width value as well.\n" +
       "wrapAt will be ignored if autoResize is set to false (and a width is also provided)",
     after: "",
@@ -405,8 +411,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "addArrow",
-    code:
-      'addArrow(points: [x: number, y: number][], formatting?: { startArrowHead?: string; endArrowHead?: string; startObjectId?: string; endObjectId?: string; startBindMode?: string; endBindMode?: string; startFixedPoint?: [number, number]; endFixedPoint?: [number, number]; elbowed?: boolean}, id?: string): string;',
+    code: "addArrow(points: [x: number, y: number][], formatting?: { startArrowHead?: string; endArrowHead?: string; startObjectId?: string; endObjectId?: string; startBindMode?: string; endBindMode?: string; startFixedPoint?: [number, number]; endFixedPoint?: [number, number]; elbowed?: boolean}, id?: string): string;",
     desc:
       "Adds an arrow element.\n" +
       'Arrowheads: "arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null.\n' +
@@ -418,7 +423,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "addImage",
     code: "async addImage(opts: {topX: number, topY: number, imageFile: TFile|string, scale?: boolean, anchor?: boolean, colorMap?: ColorMap}): Promise<string>;",
-    desc: "imageFile may be a TFile or a string containing an http(s)/ftp/file hyperlink, a vault path, or a data URL such as 'data:image/png;base64,...'.\n" +
+    desc:
+      "imageFile may be a TFile or a string containing an http(s)/ftp/file hyperlink, a vault path, or a data URL such as 'data:image/png;base64,...'.\n" +
       "imageFile may also be an obsidian filepath including a reference eg.: 'path/my.pdf#page=3'\n" +
       "Set scale to false if you want to embed the image at 100% of its original size. Default is true which will insert a scaled image.\n" +
       "anchor will only be evaluated if scale is false. anchor true will add |100% to the end of the filename, resulting in an image that will always pop back to 100% when the source file is updated or when the Excalidraw file is reopened.\n" +
@@ -429,21 +435,25 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "addEmbeddable",
     code: "addEmbeddable(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile, embeddableCustomData?: EmbeddableMDCustomProps): string;",
-    desc: "Adds an embeddable component (technically an iframe or webview depending on content and platform) to the drawing. If url is not null then the embeddable will be loaded from the url. The url maybe a markdown link to an note in the Vault or a weblink. " +
-      "If url is null then the embeddable will be loaded from the file. Both the url and the file may not be null.<br>" + EMBEDDABLE_MDCUSTOMPROPS,
+    desc:
+      "Adds an embeddable component (technically an iframe or webview depending on content and platform) to the drawing. If url is not null then the embeddable will be loaded from the url. The url maybe a markdown link to an note in the Vault or a weblink. " +
+      "If url is null then the embeddable will be loaded from the file. Both the url and the file may not be null.<br>" +
+      EMBEDDABLE_MDCUSTOMPROPS,
     after: "",
   },
   {
     field: "addIFrame",
     code: "addIFrame(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile, html?: string): string;",
-    desc: "If the url or file attribute is provided then the iframe will insert an embeddable component (technically calling ea.addEmbeddable() in the background with the same parameters). The function is depricated in that case use addEmbeddable instead. \n" +
+    desc:
+      "If the url or file attribute is provided then the iframe will insert an embeddable component (technically calling ea.addEmbeddable() in the background with the same parameters). The function is depricated in that case use addEmbeddable instead. \n" +
       "If the html attribute is provided, then the function will create an 'iframe' element with the provided html content.",
     after: "",
   },
   {
     field: "addMermaid",
     code: "async addMermaid(diagram: string, groupElements: boolean = true,): Promise<string[]|string>;",
-    desc: "Creates a mermaid diagram and returns the ids of the created elements as a string[]. " +
+    desc:
+      "Creates a mermaid diagram and returns the ids of the created elements as a string[]. " +
       "The elements will be added to ea. To add them to the canvas you'll need to use addElementsToView. " +
       "Depending on the diagram type the result will be either a single SVG image, or a number of excalidraw elements.<br>" +
       "If there is an error, the function returns a string with the error message.",
@@ -470,9 +480,9 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "addLabelToLine",
     code: "addLabelToLine(lineId: string, label: string): string;",
-    desc: 'Adds a text label to a line or arrow. Currently only works with a simple straight 2-point (start & end) line',
+    desc: "Adds a text label to a line or arrow. Currently only works with a simple straight 2-point (start & end) line",
     after: "",
-  }, 
+  },
   {
     field: "clear",
     code: "clear(): void;",
@@ -500,7 +510,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "setView",
     code: 'setView(view?: ExcalidrawView | "auto" | "first" | "active" | null, show: boolean = false): ExcalidrawView;',
-    desc: "Sets the target view for EA. All the view operations and the access to Excalidraw API will be performed on this view. " +
+    desc:
+      "Sets the target view for EA. All the view operations and the access to Excalidraw API will be performed on this view. " +
       "Typically you will use setView() (to pick a sensible default) or setView(excalidrawView) (to explicitly target a specific view).\n" +
       '"auto" is equivalent to calling setView() and can read nicer when you want to show the view (e.g. setView("auto", true)).\n' +
       '"active" and "first" are deprecated and are kept for backward compatibility.\n' +
@@ -515,7 +526,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "getExcalidrawAPI",
     code: "getExcalidrawAPI(): any;",
-    desc: `${hyperlink("https://github.com/excalidraw/excalidraw/tree/master/src/packages/excalidraw#ref","Excalidraw API")}`,
+    desc: `${hyperlink("https://github.com/excalidraw/excalidraw/tree/master/src/packages/excalidraw#ref", "Excalidraw API")}`,
     after: "",
   },
   {
@@ -533,9 +544,11 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "addBackOfTheCardNoteToView",
     code: "async addBackOfTheCardNoteToView(sectionTitle: string, activate: boolean = false, sectionBody?: string, embeddableCustomData?: EmbeddableMDCustomProps): Promise<string>",
-    desc: "Adds a back of the note card to the current active view. If <b>body</b> is provided the note will be created with the body text, otherwise the note will be created with the title only.<br>Returns the id of the created element.<br>" +
+    desc:
+      "Adds a back of the note card to the current active view. If <b>body</b> is provided the note will be created with the body text, otherwise the note will be created with the title only.<br>Returns the id of the created element.<br>" +
       "If <b>activate</b> is true, the embedded note will be activated for editing.<br>" +
-      "This is an async function, if you need the element ID of the created element, the function should be awaited.<br>" + EMBEDDABLE_MDCUSTOMPROPS,
+      "This is an async function, if you need the element ID of the created element, the function should be awaited.<br>" +
+      EMBEDDABLE_MDCUSTOMPROPS,
     after: "",
   },
   {
@@ -559,42 +572,47 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "updateViewSVGImageColorMap",
     code: "async updateViewSVGImageColorMap(elements: ExcalidrawImageElement | ExcalidrawImageElement[], colors: ColorMap | SVGColorInfo | ColorMap[] | SVGColorInfo[]): Promise<void>;",
-    desc: 'Updates the color map of an SVG image element in the view. If a ColorMap is provided, it will be used directly. If an SVGColorInfo is provided, it will be converted to a ColorMap. The view will be marked as dirty (i.e. will be saved at next scheduled time) and the image will be reset using the color map.\n'+
-          'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
-          'type SVGColorInfo = Map<string, { mappedTo: string; fill: boolean; stroke: boolean; }>\n' +
-          'type ColorMap = { [color: string]: string; invertInDarkMode?: boolean; }',
+    desc:
+      "Updates the color map of an SVG image element in the view. If a ColorMap is provided, it will be used directly. If an SVGColorInfo is provided, it will be converted to a ColorMap. The view will be marked as dirty (i.e. will be saved at next scheduled time) and the image will be reset using the color map.\n" +
+      'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
+      "type SVGColorInfo = Map<string, { mappedTo: string; fill: boolean; stroke: boolean; }>\n" +
+      "type ColorMap = { [color: string]: string; invertInDarkMode?: boolean; }",
     after: "",
   },
   {
     field: "getColorMapForImageElement",
     code: "getColorMapForImageElement(el: ExcalidrawElement): ColorMap",
-    desc: 'Retrieves the color map for an image element. The color map contains information about the mapping of colors used in the image. If the element already has a color map, it will be returned. The colorMap does not include all colors in the image, only those that have been mapped.\n' +
-          'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
-          'type ColorMap = { [color: string]: string; invertInDarkMode?: boolean; }',
+    desc:
+      "Retrieves the color map for an image element. The color map contains information about the mapping of colors used in the image. If the element already has a color map, it will be returned. The colorMap does not include all colors in the image, only those that have been mapped.\n" +
+      'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
+      "type ColorMap = { [color: string]: string; invertInDarkMode?: boolean; }",
     after: "",
   },
   {
     field: "getSVGColorInfoForImgElement",
     code: "async getColorMapForImgElement(el: ExcalidrawElement): Promise<SVGColorInfo>",
-    desc: 'This function must be awaited. Retrieves the color map for an SVG image element. The color map contains information about the fill and stroke colors used in the SVG. If the element already has a color map, it will be merged with the colors extracted from the SVG.\n' +
-          'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
-          'type SVGColorInfo = Map<string, { mappedTo: string; fill: boolean; stroke: boolean; }>',
+    desc:
+      "This function must be awaited. Retrieves the color map for an SVG image element. The color map contains information about the fill and stroke colors used in the SVG. If the element already has a color map, it will be merged with the colors extracted from the SVG.\n" +
+      'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
+      "type SVGColorInfo = Map<string, { mappedTo: string; fill: boolean; stroke: boolean; }>",
     after: "",
   },
   {
     field: "getColosFromExcalidrawFile",
     code: "async getColosFromExcalidrawFile(file:TFile, img: ExcalidrawImageElement): Promise<SVGColorInfo>",
-    desc: 'Must be awaited. Extracts the fill (background) and stroke colors from an excalidraw file and returns them as an SVGColorInfo. The SVGColorInfo is a map where the keys are the colors used in the SVG and the values contain information about whether the color is used for fill, stroke, or both.\n' +
-          'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
-          'type SVGColorInfo = Map<string, { mappedTo: string; fill: boolean; stroke: boolean; }>',
+    desc:
+      "Must be awaited. Extracts the fill (background) and stroke colors from an excalidraw file and returns them as an SVGColorInfo. The SVGColorInfo is a map where the keys are the colors used in the SVG and the values contain information about whether the color is used for fill, stroke, or both.\n" +
+      'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
+      "type SVGColorInfo = Map<string, { mappedTo: string; fill: boolean; stroke: boolean; }>",
     after: "",
   },
   {
     field: "getColorsFromSVGString",
     code: "getColorsFromSVGString(svgString: string): SVGColorInfo",
-    desc: 'Extracts the fill and stroke colors from an SVG string and returns them as an SVGColorInfo. The SVGColorInfo is a map where the keys are the colors used in the SVG and the values contain information about whether the color is used for fill, stroke, or both.\n' +
-          'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
-          'type SVGColorInfo = Map<string, { mappedTo: string; fill: boolean; stroke: boolean; }>',
+    desc:
+      "Extracts the fill and stroke colors from an SVG string and returns them as an SVGColorInfo. The SVGColorInfo is a map where the keys are the colors used in the SVG and the values contain information about whether the color is used for fill, stroke, or both.\n" +
+      'See "Shade Master" scritp in Script Library for an example of using this function.\n\n' +
+      "type SVGColorInfo = Map<string, { mappedTo: string; fill: boolean; stroke: boolean; }>",
     after: "",
   },
   {
@@ -618,7 +636,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "addElementsToView",
     code: "async addElementsToView(repositionToCursor?: boolean, save?: boolean, newElementsOnTop?: boolean,shouldRestoreElements?: boolean,captureUpdate?: CaptureUpdateActionType): Promise<boolean>;",
-    desc: "Adds elements from elementsDict to the current view\nrepositionToCursor: default is false\n" +
+    desc:
+      "Adds elements from elementsDict to the current view\nrepositionToCursor: default is false\n" +
       "save: default is true\n" +
       "newElementsOnTop: default is false, i.e. the new elements get to the bottom of the stack\n" +
       "newElementsOnTop controls whether elements created with ExcalidrawAutomate are added at the bottom of the stack or the top of the stack of elements already in the view\nNote that elements copied to the view with copyViewElementsToEAforEditing retain their position in the stack of elements in the view even if modified using EA\n" +
@@ -640,7 +659,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "getExportSettings",
     code: "getExportSettings(withBackground: boolean, withTheme: boolean,): ExportSettings;",
-    desc: "Utility function to generate ExportSettings object\n" +
+    desc:
+      "Utility function to generate ExportSettings object\n" +
       "export interface ExportSettings {\n" +
       "  withBackground: boolean;\n" +
       "  withTheme: boolean;\n" +
@@ -694,9 +714,10 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "getElementsInTheSameGroupWithElement",
     code: "getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[], includeFrameElements: boolean = false): ExcalidrawElement[];",
-    desc: "Gets all the elements from elements[] that share one or more groupIds with element.<br>" +
+    desc:
+      "Gets all the elements from elements[] that share one or more groupIds with element.<br>" +
       "If includeFrameElements is true, then if the frame is part of the group all the elements that are in the frame will also be included in the result set",
-    after: ""
+    after: "",
   },
   {
     field: "getElementsInFrame",
@@ -707,19 +728,19 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "activeScript",
     code: "activeScript: string;",
-    desc: `Mandatory to set before calling the get and set ScriptSettings functions. Set automatically by the ScriptEngine\nSee for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html","Script Engine Help")}`,
+    desc: `Mandatory to set before calling the get and set ScriptSettings functions. Set automatically by the ScriptEngine\nSee for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html", "Script Engine Help")}`,
     after: "",
   },
   {
     field: "getScriptSettings",
     code: "getScriptSettings(): {};",
-    desc: `Returns script settings. Saves settings in plugin settings, under the activeScript key. See for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html","Script Engine Help")}`,
+    desc: `Returns script settings. Saves settings in plugin settings, under the activeScript key. See for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html", "Script Engine Help")}`,
     after: "",
   },
   {
     field: "setScriptSettings",
     code: "async setScriptSettings(settings: any): Promise<void>;",
-    desc: `Sets script settings.\nSee for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html","Script Engine Help")}`,
+    desc: `Sets script settings.\nSee for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html", "Script Engine Help")}`,
     after: "",
   },
   {
@@ -729,7 +750,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       `Sets a single Script Engine setting value for the active script (in-memory).\n` +
       `Use saveScriptSettings() to persist changes.\n` +
       `Handles initialization when scriptEngineSettings[activeScript] is undefined/null.\n` +
-      `See for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html","Script Engine Help")}\n\n` +
+      `See for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html", "Script Engine Help")}\n\n` +
       `type ScriptSettingValue = { value?: string; hidden?: boolean; description?: string; valueset?: string[]; height?: number; };`,
     after: `("myKey", { value: "" });`,
   },
@@ -740,7 +761,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       `Gets a single Script Engine setting value for the active script.\n` +
       `Returns defaultValue if the key does not exist (or if activeScript is not set).\n` +
       `Handles initialization when scriptEngineSettings[activeScript] is undefined/null.\n` +
-      `See for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html","Script Engine Help")}\n\n` +
+      `See for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html", "Script Engine Help")}\n\n` +
       `type ScriptSettingValue = { value?: string; hidden?: boolean; description?: string; valueset?: string[]; height?: number; };`,
     after: `("myKey", { value: "" });`,
   },
@@ -750,7 +771,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     desc:
       `Persists Script Engine settings to disk (plugin settings).\n` +
       `Useful after calling setScriptSettingValue().\n` +
-      `See for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html","Script Engine Help")}`,
+      `See for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html", "Script Engine Help")}`,
     after: "()",
   },
   {
@@ -768,18 +789,20 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "getOriginalImageSize",
     code: "async getOriginalImageSize(imageElement: ExcalidrawImageElement, shouldWaitForImage: boolean=false): Promise<{width: number; height: number}>",
-    desc: "Returns the size of the image element at 100% (i.e. the original size) or undefined if the data URL is not available.\n"+
-      "If shouldWaitForImage is true, the function will wait for the view to load the image before returning the size.\n"+
+    desc:
+      "Returns the size of the image element at 100% (i.e. the original size) or undefined if the data URL is not available.\n" +
+      "If shouldWaitForImage is true, the function will wait for the view to load the image before returning the size.\n" +
       "This is an async function, you need to await the result.",
     after: "",
   },
   {
     field: "resetImageAspectRatio",
     code: "async resetImageAspectRatio(imgEl: ExcalidrawImageElement): Promise<boolean>",
-    desc: "Resets the image to its original aspect ratio.\n" +
-     "If the image is resized then the function returns true.\n" +
-     "If the image element is not in EA (only in the view), then if the image is resized, the element is copied to EA for Editing using copyViewElementsToEAforEditing([imgEl]).\n" +
-     "Note you need to run await ea.addElementsToView(false); to add the modified image to the view.",
+    desc:
+      "Resets the image to its original aspect ratio.\n" +
+      "If the image is resized then the function returns true.\n" +
+      "If the image element is not in EA (only in the view), then if the image is resized, the element is copied to EA for Editing using copyViewElementsToEAforEditing([imgEl]).\n" +
+      "Note you need to run await ea.addElementsToView(false); to add the modified image to the view.",
     after: "",
   },
   {
@@ -845,21 +868,23 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "getCM",
     code: "getCM(color:TInput): ColorMaster;",
-    desc: `Returns a ${hyperlink("https://github.com/lbragile/ColorMaster", "ColorMaster")} object. ` +
+    desc:
+      `Returns a ${hyperlink("https://github.com/lbragile/ColorMaster", "ColorMaster")} object. ` +
       "The function also accepts css color names. Under the hood, before calling ColorMaster it uses " +
       "colorNameToHex to convert the color name to a HEX color.",
     after: "",
   },
   {
     field: "getViewColorPalette",
-    code: "getViewColorPalette(palette: \"canvasBackground\"|\"elementBackground\"|\"elementStroke\"): (string[] | string)[];",
+    code: 'getViewColorPalette(palette: "canvasBackground"|"elementBackground"|"elementStroke"): (string[] | string)[];',
     desc: "Returns the current view's palette for canvas background, element background, or element stroke colors. Falls back to the default palette when no view is loaded or the palette is unavailable.",
-    after: "(\"elementStroke\");",
+    after: '("elementStroke");',
   },
   {
     field: "showColorPicker",
-    code: "async showColorPicker(anchorElement: HTMLElement, palette: \"canvasBackground\"|\"elementBackground\"|\"elementStroke\", includeSceneColors: boolean = true): Promise<string | null>;",
-    desc: "Opens a palette popover anchored to the provided element and resolves with the selected color; returns null when dismissed.\n\n" +
+    code: 'async showColorPicker(anchorElement: HTMLElement, palette: "canvasBackground"|"elementBackground"|"elementStroke", includeSceneColors: boolean = true): Promise<string | null>;',
+    desc:
+      "Opens a palette popover anchored to the provided element and resolves with the selected color; returns null when dismissed.\n\n" +
       "Example Usage:\n" +
       'const selected = await ea.showColorPicker(button.buttonEl, "elementStroke");\n' +
       "if(selected) {" +
@@ -867,26 +892,28 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       "} else {" +
       'console.log("User cancelled color selection");' +
       "}",
-    after: "(buttonEl, \"elementStroke\");",
+    after: '(buttonEl, "elementStroke");',
   },
   {
     field: "obsidian",
     code: "obsidian",
-    desc: `Access functions and objects available on the ${hyperlink("https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts","Obsidian Module")}`,
+    desc: `Access functions and objects available on the ${hyperlink("https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts", "Obsidian Module")}`,
     after: "",
   },
   {
     field: "getListOfTemplateFiles",
     code: "getListOfTemplateFiles(): TFile[] | null",
-    desc: "Returns a list of files in the template folder. " +
+    desc:
+      "Returns a list of files in the template folder. " +
       "If the Excalidraw Template is set as a single file, it returns a single element in the list. " +
       "If no template is set, it returns null.",
     after: "",
   },
-  { 
+  {
     field: "getEmbeddedImagesFiletree",
     code: "getEmbeddedImagesFiletree(excalidrawFile?: TFile): TFile[]",
-    desc: "Retruns the embedded images in the scene recursively. If excalidrawFile is not provided, " +
+    desc:
+      "Retruns the embedded images in the scene recursively. If excalidrawFile is not provided, " +
       "the function will use ea.targetView.file",
     after: "",
   },
@@ -899,7 +926,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "getAttachmentFilepath",
     code: "async getAttachmentFilepath(filename: string): Promise<string>",
-    desc: "This asynchronous function should be awaited. It retrieves the filepath to a new file, taking into account the attachments preference settings in Obsidian. If the attachment folder doesn't exist, it creates it. The function returns the complete path to the file. If the provided filename already exists, the function will append '_[number]' before the extension to generate a unique filename." +
+    desc:
+      "This asynchronous function should be awaited. It retrieves the filepath to a new file, taking into account the attachments preference settings in Obsidian. If the attachment folder doesn't exist, it creates it. The function returns the complete path to the file. If the provided filename already exists, the function will append '_[number]' before the extension to generate a unique filename." +
       "Prompts the user with a dialog to select new file action.<br>" +
       " - create markdown file<br>" +
       " - create excalidraw file<br>" +
@@ -907,17 +935,18 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       "The new file will be relative to this.targetView.file.path, unless parentFile is provided. " +
       "If shouldOpenNewFile is true, the new file will be opened in a workspace leaf. " +
       "targetPane controls which leaf will be used for the new file.<br>" +
-      "Returns the TFile for the new file or null if the user cancelled the action.<br>" + 
+      "Returns the TFile for the new file or null if the user cancelled the action.<br>" +
       '<code>type PaneTarget = "active-pane"|"new-pane"|"popout-window"|"new-tab"|"md-properties";</code>',
     after: "",
   },
   {
     field: "getActiveEmbeddableViewOrEditor",
     code: "getActiveEmbeddableViewOrEditor (view?:ExcalidrawView): {view:any}|{file:TFile, editor:Editor}|{node: ObsidianCanvasNode}|null;",
-    desc: "Returns the editor or leaf.view of the currently active embedded obsidian file.<br>" +
-    "If view is not provided, ea.targetView is used.<br>" +
-    "If the embedded file is an eligible Obsidian canvas node document the function will return<br>" +
-    "<code>{file:TFile, editor:Editor}</code> of {node: ObsidianCanvasNode}, otherwise it will return {view:any}. You can check view type with view.getViewType();",
+    desc:
+      "Returns the editor or leaf.view of the currently active embedded obsidian file.<br>" +
+      "If view is not provided, ea.targetView is used.<br>" +
+      "If the embedded file is an eligible Obsidian canvas node document the function will return<br>" +
+      "<code>{file:TFile, editor:Editor}</code> of {node: ObsidianCanvasNode}, otherwise it will return {view:any}. You can check view type with view.getViewType();",
     after: "",
   },
   {
@@ -935,17 +964,19 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "checkForActiveSidepanelTabForScript",
     code: "checkForActiveSidepanelTabForScript(scriptName?: string): ExcalidrawSidepanelTab | null;",
-    desc: "Returns the active sidepanel tab for the given script, or null if none exists. " +
+    desc:
+      "Returns the active sidepanel tab for the given script, or null if none exists. " +
       "If scriptName is omitted the function checks ea.activeScript. " +
       "At most one sidepanel tab may be open per script. " +
       "The returned ExcalidrawSidepanelTab may be hosted by a different ExcalidrawAutomate instance — compare sidepanelTab.getHostEA() === ea to determine ownership. " +
       "Useful to detect or reuse an existing tab instead of creating a new one.",
-    after: '("MyScript");'
+    after: '("MyScript");',
   },
   {
     field: "createSidepanelTab",
     code: "async createSidepanelTab(title: string, persist: boolean = false, reveal: boolean = true,): Promise<ExcalidrawSidepanelTab | null>;",
-    desc: "Creates this EA instance's sidepanel tab; use the returned ExcalidrawSidepanelTab (setContent/setTitle, onOpen/onClose/onFocus, contentEl) to build the UI and lifecycle hooks.\n"+
+    desc:
+      "Creates this EA instance's sidepanel tab; use the returned ExcalidrawSidepanelTab (setContent/setTitle, onOpen/onClose/onFocus, contentEl) to build the UI and lifecycle hooks.\n" +
       "In case the script wants to replace the sidepanel tab it created earlier, call closeSidepanelTab() first, then createSidepanelTab() again.",
     after: "",
   },
@@ -953,22 +984,23 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     field: "getSidepanelLeaf",
     code: "getSidepanelLeaf(): WorkspaceLeaf | null;",
     desc: "Returns the WorkspaceLeaf hosting the Excalidraw sidepanel view, or null if the sidepanel is not present.",
-    after: "();"
+    after: "();",
   },
   {
     field: "skipSidepanelScriptRestore",
     code: "skipSidepanelScriptRestore(scriptName?: string): boolean;",
-    desc: "Queues a one-time skip marker so sidepanel persisted restoration will not re-run the script. " +
+    desc:
+      "Queues a one-time skip marker so sidepanel persisted restoration will not re-run the script. " +
       "Intended for startup race conditions where a script is started from Command Palette/hotkey before the sidepanel has opened. " +
       "If scriptName is omitted the function uses ea.activeScript. " +
       "The marker is queued only when getSidepanelLeaf() is null; returns true when queued, otherwise false.",
-    after: "();"
+    after: "();",
   },
   {
     field: "toggleSidepanelView",
     code: "toggleSidepanelView(): void;",
     desc: "Toggles the Excalidraw sidepanel visibility when the sidepanel is hosted in the left or right workspace split. If the sidepanel is not attached to a left/right sidebar, no action is taken.",
-    after: "();"
+    after: "();",
   },
   {
     field: "persistSidepanelTab",
@@ -991,8 +1023,9 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "getleaf",
     code: "getLeaf(origo: WorkspaceLeaf, targetPane?: PaneTarget): WorkspaceLeaf;",
-    desc: "Generates a new Obsidian Leaf following Excalidraw plugin settings such as open in Main Workspace or not, open in adjacent pane if available, etc.<br>" +
-      "@param origo: the currently active leaf, the origin of the new leaf<br>" + 
+    desc:
+      "Generates a new Obsidian Leaf following Excalidraw plugin settings such as open in Main Workspace or not, open in adjacent pane if available, etc.<br>" +
+      "@param origo: the currently active leaf, the origin of the new leaf<br>" +
       '@param targetPane: <code>type PaneTarget = "active-pane"|"new-pane"|"popout-window"|"new-tab"|"md-properties";',
     after: "",
   },
@@ -1005,7 +1038,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "DEVICE",
     code: "get DEVICE(): DeviceType;",
-    desc: "Returns the current device type. Possible values are: <br>" +
+    desc:
+      "Returns the current device type. Possible values are: <br>" +
       "<code>type DeviceType = {<br>" +
       "  isDesktop: boolean,<br>" +
       "  isPhone: boolean,<br>" +
@@ -1046,7 +1080,17 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       "<b>text</b>: the main user prompt.<br>" +
       "<b>instruction</b>: optional extra user instruction appended after the main prompt.<br>" +
       "<b>systemPrompt</b>: optional system message.<br>" +
-      "<b>messages</b>: optional chat history in the form <code>{role:" + '"system"|"user"|"assistant"' + ", content:string | [{type:" + '"text"' + ", text:string} | {type:" + '"image"' + ", image:string | {url:string}|{dataURL:string}} | {type:" + '"file"' + ", file:string | {url:string}|{dataURL:string}} | {type:" + '"audio"' + ", audio:string | {url:string}|{dataURL:string}}]}</code>.<br>" +
+      "<b>messages</b>: optional chat history in the form <code>{role:" +
+      '"system"|"user"|"assistant"' +
+      ", content:string | [{type:" +
+      '"text"' +
+      ", text:string} | {type:" +
+      '"image"' +
+      ", image:string | {url:string}|{dataURL:string}} | {type:" +
+      '"file"' +
+      ", file:string | {url:string}|{dataURL:string}} | {type:" +
+      '"audio"' +
+      ", audio:string | {url:string}|{dataURL:string}}]}</code>.<br>" +
       "This enables chat-style interfaces by preserving prior turns in <code>messages</code>, similar to Mermaid chat.<br>" +
       "<b>temperature</b>: optional generation control.<br>" +
       "<b>maxOutgoingTokens</b>: optional approximate budget for outgoing text content. Excalidraw trims older text content first while keeping the latest messages and attached files.<br>" +
@@ -1111,7 +1155,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "createAIChatSession",
-    code: "createAIChatSession(initialRequest?: Omit<AIRequest, \"messages\">)",
+    code: 'createAIChatSession(initialRequest?: Omit<AIRequest, "messages">)',
     desc:
       "Creates a lightweight AI chat session helper that preserves prior conversation turns between calls.<br>" +
       "The returned object exposes <code>getMessages()</code>, <code>reset()</code>, and <code>send(message, requestOverrides?)</code>.<br>" +
@@ -1127,8 +1171,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "postOpenAI",
     code: "async postOpenAI(request: AIRequest): Promise<RequestUrlResponse>",
-    desc:
-      "Backwards-compatible alias for <code>postAI()</code>. Existing scripts can keep calling this function without changes. The request object and response object are the same as documented for <code>postAI()</code>, but the function name is preserved for compatibility with older ExcalidrawAutomate scripts.",
+    desc: "Backwards-compatible alias for <code>postAI()</code>. Existing scripts can keep calling this function without changes. The request object and response object are the same as documented for <code>postAI()</code>, but the function name is preserved for compatibility with older ExcalidrawAutomate scripts.",
     after: "",
   },
   {
@@ -1152,7 +1195,8 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "viewUpdateScene",
     code: "viewUpdateScene(scene:{elements?:ExcalidrawElement[],appState?: AppState,files?: BinaryFileData,captureUpdate?: 'IMMEDIATELY' | 'NEVER' | 'EVENTUALLY'},restore:boolean=false):void",
-    desc: "Calls the ExcalidrawAPI updateScene function for the targetView. When restore=true, excalidraw will try to correct errors in the scene such as setting default values to missing element properties. " +
+    desc:
+      "Calls the ExcalidrawAPI updateScene function for the targetView. When restore=true, excalidraw will try to correct errors in the scene such as setting default values to missing element properties. " +
       `Use captureUpdate to control undo/redo behavior: 'IMMEDIATELY' for immediate undoable updates (most local changes), 'NEVER' for updates that should never be undoable, or 'EVENTUALLY' for updates that should be undoable as part of an async multi-step process. See the ExcalidrawAPI documentation for more information.`,
     after: "",
   },
@@ -1185,9 +1229,9 @@ export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggesterInfo[] = [
       "Editor buttons are text editing buttons like delete, enter, allcaps - these are only displayed if lines is greater than 1 \n" +
       "Custom components are components that you can add to the prompt. These will be displayed between the text input area and the buttons.\n" +
       "blockPointerInputOutsideModal will block pointer input outside the modal. This is useful if you want to prevent the user accidently closing the modal or interacting with the excalidraw canvas while the prompt is open.\n" +
-      "controlsOnTop when set to true will move all the buttons to the top of the modal, leaving the text area at the bottom. This feature was developed for Scribble Helper script to avoid your palm pressing buttons while scribbling.\n"+
+      "controlsOnTop when set to true will move all the buttons to the top of the modal, leaving the text area at the bottom. This feature was developed for Scribble Helper script to avoid your palm pressing buttons while scribbling.\n" +
       "buttons.action(input: string) => string\nThe button action function will receive the actual input string. If action returns null, input will be unchanged. If action returns a string, input will receive that value when the promise is resolved. " +
-      "iconId is the lucide.dev icon name. If iconId is provided caption will be ignored, simply submit \"\" as caption in that case. \n" +
+      'iconId is the lucide.dev icon name. If iconId is provided caption will be ignored, simply submit "" as caption in that case. \n' +
       "example:\n<code>let fileType = '';\nconst filename = await utils.inputPrompt (\n  'Filename',\n  '',\n  '',\n,  [\n    {\n      caption: 'Markdown',\n      action: ()=>{fileType='md';return;}\n    },\n    {\n      caption: 'Excalidraw',\n      action: ()=>{fileType='ex';return;}\n    }\n  ]\n);</code>",
     after: `({\n  header: "",\n  placeholder: undefined, //string\n  value: undefined, //string\n  buttons: [{ //optional, may leave undefined\n    caption: "", //string\n    tooltip: undefined, //string\n    action: (input)=>{} //Function\n  }],\n  lines: undefined, //number\n  displayEditorButtons: undefined, //boolean\n  customComponents: undefined, //(container: HTMLElement) => void\n  blockPointerInputOutsideModal: undefined, //boolean\n  controlsOnTop: undefined, //boolean\n  draggable: undefined, //boolean\n});`,
   },
@@ -1239,7 +1283,8 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
   {
     field: "linkbutton-opacity",
     code: null,
-    desc: "The opacity of the blue link button in the top right of the element overriding the respective setting in plugin settings. "+
+    desc:
+      "The opacity of the blue link button in the top right of the element overriding the respective setting in plugin settings. " +
       "Valid values are between 0 and 1, where 0 means the button is transparent.",
     after: ": 0.5",
   },
@@ -1247,7 +1292,8 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
     field: "onload-script",
     code: null,
     desc: "The value of this field will be executed as javascript code using the Script Engine environment. Use this to initiate custom actions or logic when loading your drawing.",
-    after: ': "new Notice(`Hello World!\\n\\nFile: ${ea.targetView.file.basename}`);"',
+    after:
+      ': "new Notice(`Hello World!\\n\\nFile: ${ea.targetView.file.basename}`);"',
   },
   {
     field: "font",
@@ -1318,7 +1364,8 @@ export const FRONTMATTER_KEYS_INFO: SuggesterInfo[] = [
   {
     field: "embed-md",
     code: null,
-    desc: "If this key is present, when embedding the ![[image]] into a markdown document, it will be embedded as markdown, not as an image.\n" +
+    desc:
+      "If this key is present, when embedding the ![[image]] into a markdown document, it will be embedded as markdown, not as an image.\n" +
       "If however you embed ![[image#^as-image]], i.e. you reference the 'as-image' block, then the image will be embedded as an image.",
     after: ": true",
   },

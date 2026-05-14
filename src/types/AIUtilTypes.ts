@@ -1,4 +1,9 @@
-export type AIProvider = "openai" | "anthropic" | "google" | "xai" | "openai-compatible";
+export type AIProvider =
+  | "openai"
+  | "anthropic"
+  | "google"
+  | "xai"
+  | "openai-compatible";
 
 export type AIFileInput =
   | string
@@ -7,8 +12,18 @@ export type AIFileInput =
 
 export type AIImageInput =
   | string
-  | { url: string; detail?: "low" | "high" | "auto"; filename?: string; mimeType?: string }
-  | { dataURL: string; detail?: "low" | "high" | "auto"; filename?: string; mimeType?: string };
+  | {
+      url: string;
+      detail?: "low" | "high" | "auto";
+      filename?: string;
+      mimeType?: string;
+    }
+  | {
+      dataURL: string;
+      detail?: "low" | "high" | "auto";
+      filename?: string;
+      mimeType?: string;
+    };
 
 export type AIImageModelCapability = {
   supportedSizes: string[];
@@ -33,11 +48,14 @@ export type AIImageModelConfig = AIModelConfig & AIImageModelCapability;
 
 export type ExcalidrawAISettings = {
   enabled: boolean;
-  providerProfiles: Record<string, {
-    provider: AIProvider;
-    baseURL: string;
-    hasApiKey: boolean;
-  }>;
+  providerProfiles: Record<
+    string,
+    {
+      provider: AIProvider;
+      baseURL: string;
+      hasApiKey: boolean;
+    }
+  >;
   textModels: Record<string, AIModelConfig>;
   imageModels: Record<string, AIImageModelConfig>;
   defaultTextModel: string;

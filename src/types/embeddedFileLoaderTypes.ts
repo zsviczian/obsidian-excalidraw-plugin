@@ -1,5 +1,8 @@
 import { FileId } from "@zsviczian/excalidraw/types/element/src/types";
-import { BinaryFileData,DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
+import {
+  BinaryFileData,
+  DataURL,
+} from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ValueOf } from "../types/types";
 
 export const IMAGE_MIME_TYPES = {
@@ -27,7 +30,9 @@ export type ImgData = {
   renderScale?: number;
 };
 
-export declare type MimeType = ValueOf<typeof IMAGE_MIME_TYPES> | "application/octet-stream";
+export declare type MimeType =
+  | ValueOf<typeof IMAGE_MIME_TYPES>
+  | "application/octet-stream";
 
 export type FileData = BinaryFileData & {
   size: Size;
@@ -44,7 +49,7 @@ export type PDFPageViewProps = {
   right: number;
   top: number;
   rotate?: number; //may be undefined in legacy files
-}
+};
 
 export type Size = {
   height: number;
@@ -53,4 +58,4 @@ export type Size = {
 
 export interface ColorMap {
   [color: string]: string;
-};
+}

@@ -1,4 +1,4 @@
-import { FuzzySuggestModal,TFile } from "obsidian";
+import { FuzzySuggestModal, TFile } from "obsidian";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import { t } from "../../lang/helpers";
 import ExcalidrawPlugin from "../../core/main";

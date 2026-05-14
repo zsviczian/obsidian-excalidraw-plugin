@@ -1,9 +1,13 @@
-import { App,Modal,Notice,Setting,TextComponent } from "obsidian";
+import { App, Modal, Notice, Setting, TextComponent } from "obsidian";
 import { t } from "src/lang/helpers";
-import { AIProvider,AIProviderProfile } from "src/types/AIUtilTypes";
+import { AIProvider, AIProviderProfile } from "src/types/AIUtilTypes";
 import { isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
 
-type SaveHandler = (profileId: string, profile: AIProviderProfile, previousProfileId?: string) => Promise<void> | void;
+type SaveHandler = (
+  profileId: string,
+  profile: AIProviderProfile,
+  previousProfileId?: string,
+) => Promise<void> | void;
 
 const configurePasswordTextInput = (text: TextComponent) => {
   const { inputEl } = text;
@@ -51,15 +55,31 @@ export class AIProviderProfileModal extends Modal {
         ev.stopImmediatePropagation();
       }
     };
-    this.containerEl.addEventListener("mousedown", this.backdropInteractionHandler, true);
-    this.containerEl.addEventListener("click", this.backdropInteractionHandler, true);
+    this.containerEl.addEventListener(
+      "mousedown",
+      this.backdropInteractionHandler,
+      true,
+    );
+    this.containerEl.addEventListener(
+      "click",
+      this.backdropInteractionHandler,
+      true,
+    );
     this.createForm();
   }
 
   onClose() {
     if (this.backdropInteractionHandler) {
-      this.containerEl.removeEventListener("mousedown", this.backdropInteractionHandler, true);
-      this.containerEl.removeEventListener("click", this.backdropInteractionHandler, true);
+      this.containerEl.removeEventListener(
+        "mousedown",
+        this.backdropInteractionHandler,
+        true,
+      );
+      this.containerEl.removeEventListener(
+        "click",
+        this.backdropInteractionHandler,
+        true,
+      );
       this.backdropInteractionHandler = null;
     }
     if (this.listenerHost && this.onKeyDown) {
@@ -99,7 +119,10 @@ export class AIProviderProfileModal extends Modal {
           .addOption("anthropic", t("AI_PROVIDER_OPTION_ANTHROPIC"))
           .addOption("google", t("AI_PROVIDER_OPTION_GOOGLE"))
           .addOption("xai", t("AI_PROVIDER_OPTION_XAI"))
-          .addOption("openai-compatible", t("AI_PROVIDER_OPTION_OPENAI_COMPATIBLE"))
+          .addOption(
+            "openai-compatible",
+            t("AI_PROVIDER_OPTION_OPENAI_COMPATIBLE"),
+          )
           .setValue(this.profile.provider)
           .onChange((value) => {
             this.profile.provider = value as AIProvider;
@@ -112,7 +135,9 @@ export class AIProviderProfileModal extends Modal {
     });
     const updateProviderTypeHint = () => {
       if (this.profile.provider === "openai-compatible") {
-        providerTypeHintEl.setText(t("AI_PROVIDER_PROFILE_MODAL_OPENAI_COMPATIBLE_HINT"));
+        providerTypeHintEl.setText(
+          t("AI_PROVIDER_PROFILE_MODAL_OPENAI_COMPATIBLE_HINT"),
+        );
         return;
       }
 
@@ -185,18 +210,23 @@ export class AIProviderProfileModal extends Modal {
       return;
     }
 
-    const duplicateExists = this.existingProfileIds.includes(normalizedProfileId)
-      && normalizedProfileId !== this.options.previousProfileId;
+    const duplicateExists =
+      this.existingProfileIds.includes(normalizedProfileId) &&
+      normalizedProfileId !== this.options.previousProfileId;
     if (duplicateExists) {
       new Notice(t("AI_PROVIDER_PROFILE_MODAL_DUPLICATE_NAME"));
       return;
     }
 
-    await this.onSave(normalizedProfileId, {
-      provider: this.profile.provider,
-      apiKey: this.profile.apiKey,
-      baseURL: this.profile.baseURL,
-    }, this.options.previousProfileId);
+    await this.onSave(
+      normalizedProfileId,
+      {
+        provider: this.profile.provider,
+        apiKey: this.profile.apiKey,
+        baseURL: this.profile.baseURL,
+      },
+      this.options.previousProfileId,
+    );
     this.close();
   }
 }

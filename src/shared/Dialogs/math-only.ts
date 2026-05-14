@@ -14,18 +14,19 @@ Formatting_formatting-math_formatting-math-end_keyword_math_math- { "" }
     any { _ }
 }
 */
-import { LRParser } from "@lezer/lr"
+import { LRParser } from "@lezer/lr";
 export const parser = LRParser.deserialize({
   version: 14,
   states: "zOOOO?MrOOQOPOOOOOO'#Ca'#CaOYOPO'#C_OOOO?MtOOOOO-E6_-E6_QOOOOO",
   stateData: "b~OVQOURP~OVQOURX~O",
   goto: "fUPPVY]`RPORSPRUSQRPRTR",
-  nodeNames: "⚠ Document formatting_formatting-math_formatting-math-begin_keyword_math_math-block math formatting_formatting-math_formatting-math-end_keyword_math_math-",
+  nodeNames:
+    "⚠ Document formatting_formatting-math_formatting-math-begin_keyword_math_math-block math formatting_formatting-math_formatting-math-end_keyword_math_math-",
   maxTerm: 7,
   skippedNodes: [0],
   repeatNodeCount: 1,
   tokenData: "i~RRO;'S[;'S;=`a;=`O[~aOV~~fPV~;=`<%l[",
   tokenizers: [0],
-  topRules: {"Document":[0,1]},
-  tokenPrec: 0
-})
+  topRules: { Document: [0, 1] },
+  tokenPrec: 0,
+});

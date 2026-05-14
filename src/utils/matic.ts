@@ -1,7 +1,7 @@
-import { EXCALIDRAW_PLUGIN,THEME } from "../constants/constants";
+import { EXCALIDRAW_PLUGIN, THEME } from "../constants/constants";
 import type { Theme } from "@zsviczian/excalidraw/types/element/src/types";
 import type { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { analyzeAIImage,extractCodeBlocks } from "./AIUtils";
+import { analyzeAIImage, extractCodeBlocks } from "./AIUtils";
 
 const DIAGRAM_TO_HTML_DEBUG_PREFIX = "[Excalidraw diagram-to-code debug]";
 const DIAGRAM_TO_HTML_DEBUG_MAX_LENGTH = 8000;
@@ -9,9 +9,15 @@ const DIAGRAM_TO_HTML_INITIAL_MAX_TOKENS = 4096;
 const DIAGRAM_TO_HTML_RETRY_MAX_TOKENS = 12288;
 
 const stringifyDiagramDebugValue = (value: unknown): string => {
-  if (value === undefined) return "<undefined>";
-  if (value === null) return "<null>";
-  if (typeof value === "string") return value;
+  if (value === undefined) {
+    return "<undefined>";
+  }
+  if (value === null) {
+    return "<null>";
+  }
+  if (typeof value === "string") {
+    return value;
+  }
 
   try {
     return JSON.stringify(value, null, 2);
@@ -20,7 +26,10 @@ const stringifyDiagramDebugValue = (value: unknown): string => {
   }
 };
 
-const trimDiagramDebugText = (value: string, maxLength: number = DIAGRAM_TO_HTML_DEBUG_MAX_LENGTH): string => {
+const trimDiagramDebugText = (
+  value: string,
+  maxLength: number = DIAGRAM_TO_HTML_DEBUG_MAX_LENGTH,
+): string => {
   if (value.length <= maxLength) {
     return value;
   }
@@ -28,9 +37,8 @@ const trimDiagramDebugText = (value: string, maxLength: number = DIAGRAM_TO_HTML
   return `${value.slice(0, maxLength)}\n...[truncated ${value.length - maxLength} chars]`;
 };
 
-const isDiagramToHTMLDebugEnabled = (): boolean => (
-  Boolean(EXCALIDRAW_PLUGIN?.settings?.aiVerboseLogging)
-);
+const isDiagramToHTMLDebugEnabled = (): boolean =>
+  Boolean(EXCALIDRAW_PLUGIN?.settings?.aiVerboseLogging);
 
 const logDiagramToHTMLDebug = (label: string, lines: string[]): void => {
   if (!isDiagramToHTMLDebugEnabled()) {
@@ -47,19 +55,27 @@ const getDiagramToHTMLFinishReason = (json: any): string => {
 
 const isMaxTokenFinishReason = (finishReason: string): boolean => {
   const normalized = finishReason.trim().toLowerCase();
-  return normalized === "max_tokens" || normalized === "max_tokens_exceeded" || normalized === "length";
+  return (
+    normalized === "max_tokens" ||
+    normalized === "max_tokens_exceeded" ||
+    normalized === "length"
+  );
 };
 
 const extractDiagramHTML = (content: string) => {
   const contentText = content?.trim() ?? "";
-  const htmlBlock = extractCodeBlocks(contentText).find(block => (block.type ?? "").toLowerCase() === "html");
+  const htmlBlock = extractCodeBlocks(contentText).find(
+    (block) => (block.type ?? "").toLowerCase() === "html",
+  );
   const doctypeIndex = contentText.indexOf("<!DOCTYPE html>");
   const htmlOpenIndex = contentText.indexOf("<html");
   const startIndex = doctypeIndex >= 0 ? doctypeIndex : htmlOpenIndex;
   const endIndex = contentText.lastIndexOf("</html>");
-  const html = htmlBlock?.data ?? ((startIndex >= 0 && endIndex >= 0)
-    ? contentText.slice(startIndex, endIndex + "</html>".length)
-    : null);
+  const html =
+    htmlBlock?.data ??
+    (startIndex >= 0 && endIndex >= 0
+      ? contentText.slice(startIndex, endIndex + "</html>".length)
+      : null);
 
   return {
     html,
@@ -85,12 +101,12 @@ const shouldRetryDiagramToHTML = (
   }
 
   const finishReason = getDiagramToHTMLFinishReason(json);
-  return isMaxTokenFinishReason(finishReason)
-    && (
-      extraction.doctypeIndex >= 0
-      || extraction.htmlOpenIndex >= 0
-      || extraction.contentText.startsWith("```html")
-    );
+  return (
+    isMaxTokenFinishReason(finishReason) &&
+    (extraction.doctypeIndex >= 0 ||
+      extraction.htmlOpenIndex >= 0 ||
+      extraction.contentText.startsWith("```html"))
+  );
 };
 
 export type MagicCacheData =
@@ -130,25 +146,36 @@ export async function diagramToHTML({
   text: string;
   theme?: Theme;
 }) {
-  const requestDiagramHTML = async (maxTokens: number) => await analyzeAIImage({
-    image: { url: image },
-    text,
-    systemPrompt: SYSTEM_PROMPT,
-    instruction: `Above is the reference wireframe. Please make a new website based on these and return just the HTML file. Also, please make it for the ${theme} theme. What follows are the wireframe's text annotations (if any)...`,
-    maxTokens,
-  }, {
-    plugin: EXCALIDRAW_PLUGIN,
-  });
+  const requestDiagramHTML = async (maxTokens: number) =>
+    await analyzeAIImage(
+      {
+        image: { url: image },
+        text,
+        systemPrompt: SYSTEM_PROMPT,
+        instruction: `Above is the reference wireframe. Please make a new website based on these and return just the HTML file. Also, please make it for the ${theme} theme. What follows are the wireframe's text annotations (if any)...`,
+        maxTokens,
+      },
+      {
+        plugin: EXCALIDRAW_PLUGIN,
+      },
+    );
 
-  const isRequestFailure = (result: Awaited<ReturnType<typeof requestDiagramHTML>>) => (
-    !result.response || result.response.status < 200 || result.response.status >= 300 || result.json?.error
-  );
+  const isRequestFailure = (
+    result: Awaited<ReturnType<typeof requestDiagramHTML>>,
+  ) =>
+    !result.response ||
+    result.response.status < 200 ||
+    result.response.status >= 300 ||
+    result.json?.error;
 
   let attemptedMaxTokens = DIAGRAM_TO_HTML_INITIAL_MAX_TOKENS;
   let result = await requestDiagramHTML(attemptedMaxTokens);
   let extraction = extractDiagramHTML(result.content);
 
-  if (!isRequestFailure(result) && shouldRetryDiagramToHTML(result.json, extraction, attemptedMaxTokens)) {
+  if (
+    !isRequestFailure(result) &&
+    shouldRetryDiagramToHTML(result.json, extraction, attemptedMaxTokens)
+  ) {
     logDiagramToHTMLDebug("html extraction retry", [
       `attemptedMaxTokens: ${String(attemptedMaxTokens)}`,
       `retryMaxTokens: ${String(DIAGRAM_TO_HTML_RETRY_MAX_TOKENS)}`,
@@ -175,12 +202,21 @@ export async function diagramToHTML({
 
     return {
       ok: false,
-      error: result.json?.error?.message ?? `Request failed with status ${result.response?.status ?? 0}`,
+      error:
+        result.json?.error?.message ??
+        `Request failed with status ${result.response?.status ?? 0}`,
       json: result.json,
     };
   }
 
-  const { html, htmlBlock, contentText, doctypeIndex, htmlOpenIndex, endIndex } = extraction;
+  const {
+    html,
+    htmlBlock,
+    contentText,
+    doctypeIndex,
+    htmlOpenIndex,
+    endIndex,
+  } = extraction;
 
   if (!html) {
     logDiagramToHTMLDebug("html extraction failure", [

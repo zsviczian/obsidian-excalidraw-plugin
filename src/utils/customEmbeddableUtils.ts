@@ -1,28 +1,50 @@
 import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
-import { AUDIO_TYPES,DEVICE,REG_LINKINDEX_INVALIDCHARS,VIDEO_TYPES } from "src/constants/constants";
-import { ConstructableWorkspaceSplit,getContainerForDocument,getParentOfClass } from "./obsidianUtils";
-import { App,TFile,WorkspaceLeaf,WorkspaceSplit } from "obsidian";
+import {
+  AUDIO_TYPES,
+  DEVICE,
+  REG_LINKINDEX_INVALIDCHARS,
+  VIDEO_TYPES,
+} from "src/constants/constants";
+import {
+  ConstructableWorkspaceSplit,
+  getContainerForDocument,
+  getParentOfClass,
+} from "./obsidianUtils";
+import { App, TFile, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import { getLinkParts } from "./sceneDataUtils";
 import ExcalidrawView from "src/view/ExcalidrawView";
 
-export const createLeaf = (view: ExcalidrawView): {leaf: WorkspaceLeaf, rootSplit: WorkspaceSplit} => {
+export const createLeaf = (
+  view: ExcalidrawView,
+): { leaf: WorkspaceLeaf; rootSplit: WorkspaceSplit } => {
   const doc = view.ownerDocument;
-  const rootSplit:WorkspaceSplit = new (WorkspaceSplit as ConstructableWorkspaceSplit)(view.app.workspace, "vertical");
-  rootSplit.getRoot = () => view.app.workspace[doc === document ? 'rootSplit' : 'floatingSplit'];
+  const rootSplit: WorkspaceSplit =
+    new (WorkspaceSplit as ConstructableWorkspaceSplit)(
+      view.app.workspace,
+      "vertical",
+    );
+  rootSplit.getRoot = () =>
+    view.app.workspace[doc === document ? "rootSplit" : "floatingSplit"];
   rootSplit.getContainer = () => getContainerForDocument(doc);
-  rootSplit.containerEl.style.width = '100%';
-  rootSplit.containerEl.style.height = '100%';
+  rootSplit.containerEl.style.width = "100%";
+  rootSplit.containerEl.style.height = "100%";
   rootSplit.containerEl.style.borderRadius = "var(--embeddable-radius)";
   view.plugin.setDebounceActiveLeafChangeHandler();
   return {
     leaf: view.app.workspace.createLeafInParent(rootSplit, 0),
     rootSplit,
   };
-}
+};
 
-export const useDefaultExcalidrawFrame = (element: NonDeletedExcalidrawElement) => {
-  return !(element.link.startsWith("[") || element.link.startsWith("file:") || element.link.startsWith("data:")); // && !element.link.match(TWITTER_REG);
-}
+export const useDefaultExcalidrawFrame = (
+  element: NonDeletedExcalidrawElement,
+) => {
+  return !(
+    element.link.startsWith("[") ||
+    element.link.startsWith("file:") ||
+    element.link.startsWith("data:")
+  ); // && !element.link.match(TWITTER_REG);
+};
 
 export const leafMap = new Map<string, WorkspaceLeaf>();
 
@@ -31,9 +53,11 @@ export const leafMap = new Map<string, WorkspaceLeaf>();
 //based on obsidian app.js, obsidian is looking for activeEditor, but active editor is in a leaf that is disconnected from root
 export const patchMobileView = (
   view: ExcalidrawView,
-  opts?: { keepAlive?: boolean; isActive?: () => boolean }
+  opts?: { keepAlive?: boolean; isActive?: () => boolean },
 ): (() => void) | void => {
-  if (!DEVICE.isPhone) return;
+  if (!DEVICE.isPhone) {
+    return;
+  }
   console.log("patching mobile view");
   const parent = getParentOfClass(view.containerEl, "mod-top");
   if (parent) {
@@ -62,10 +86,13 @@ export const patchMobileView = (
     window.setTimeout(cleanup, 500);
     return cleanup;
   }
-}
+};
 
-export const processLinkText = (linkText: string, view:ExcalidrawView): { subpath:string, file:TFile } => {
-  let subpath:string = null;
+export const processLinkText = (
+  linkText: string,
+  view: ExcalidrawView,
+): { subpath: string; file: TFile } => {
+  let subpath: string = null;
 
   if (linkText.search("#") > -1) {
     const linkParts = getLinkParts(linkText, view.file);
@@ -74,7 +101,7 @@ export const processLinkText = (linkText: string, view:ExcalidrawView): { subpat
   }
 
   if (linkText.match(REG_LINKINDEX_INVALIDCHARS)) {
-    return {subpath, file: null};
+    return { subpath, file: null };
   }
 
   const file = view.app.metadataCache.getFirstLinkpathDest(
@@ -83,26 +110,18 @@ export const processLinkText = (linkText: string, view:ExcalidrawView): { subpat
   );
 
   return { subpath, file };
-}
-
-export const generateEmbeddableLink = (src: string, theme: "light" | "dark"):string => {
-/*  const twitterLink = src.match(TWITTER_REG);
-  if (twitterLink) {
-    const tweetID = src.match(/.*\/(\d*)\?/)[1];
-    if (tweetID) {
-      return `https://platform.twitter.com/embed/Tweet.html?frame=false&hideCard=false&hideThread=false&id=${tweetID}&lang=en&theme=${theme}&width=550px`;
-      //src = `https://twitframe.com/show?url=${encodeURIComponent(src)}`;
-    }
-  }*/
-  return src;
-}
+};
 
 export function setFileToLocalGraph(app: App, file: TFile) {
   let lgv: any;
   app.workspace.iterateAllLeaves((l) => {
-    if (l.view?.getViewType() === "localgraph") lgv = l.view;
+    if (l.view?.getViewType() === "localgraph") {
+      lgv = l.view;
+    }
   });
-  if(!lgv) return;
+  if (!lgv) {
+    return;
+  }
   try {
     if (lgv.loadFile && lgv.file !== file) {
       lgv.loadFile(file);
@@ -126,30 +145,41 @@ export function predictViewType(app: App, file: TFile): string {
     if (vr?.[m]) {
       try {
         const vt = vr[m](file);
-        if (typeof vt === "string" && vt) return vt;
+        if (typeof vt === "string" && vt) {
+          return vt;
+        }
       } catch {}
     }
   }
   // 2) Try extension mapping from registry
-  const registryExtMethods = [
-    "getViewTypeByExtension",
-    "getTypeByExtension",
-  ];
+  const registryExtMethods = ["getViewTypeByExtension", "getTypeByExtension"];
   for (const m of registryExtMethods) {
     if (vr?.[m]) {
       try {
         const vt = vr[m](ext);
-        if (typeof vt === "string" && vt) return vt;
+        if (typeof vt === "string" && vt) {
+          return vt;
+        }
       } catch {}
     }
   }
 
   // 3) Fallbacks by extension
-  if (ext === "md") return "markdown";
-  if (ext === "pdf") return "pdf";
-  if (ext === "canvas") return "canvas";
-  if (AUDIO_TYPES.contains(ext)) return "audio";
-  if (VIDEO_TYPES.contains(ext)) return "video";
+  if (ext === "md") {
+    return "markdown";
+  }
+  if (ext === "pdf") {
+    return "pdf";
+  }
+  if (ext === "canvas") {
+    return "canvas";
+  }
+  if (AUDIO_TYPES.contains(ext)) {
+    return "audio";
+  }
+  if (VIDEO_TYPES.contains(ext)) {
+    return "video";
+  }
 
   return "empty";
 }

@@ -1,10 +1,5 @@
-import {
-FuzzyMatch,
-App,
-FuzzySuggestModal,
-Scope,
-} from "obsidian";
-import { createPopper,Instance as PopperInstance } from "@popperjs/core";
+import { FuzzyMatch, App, FuzzySuggestModal, Scope } from "obsidian";
+import { createPopper, Instance as PopperInstance } from "@popperjs/core";
 import { Suggester } from "./Suggester";
 import { t } from "src/lang/helpers";
 
@@ -12,7 +7,6 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
   items: T[] = [];
   suggestions: HTMLDivElement[];
   popper: WeakRef<PopperInstance>;
-  //@ts-ignore
   scope: Scope = new Scope(this.app.scope);
   suggester: Suggester<FuzzyMatch<T>>;
   suggestEl: HTMLDivElement;
@@ -20,20 +14,25 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
   emptyStateText: string = t("SUGGESTION_NOMATCH");
   limit: number = 100;
   shouldNotOpen: boolean;
-  
+
   // Pre-bound event handlers
   private handleInput: () => void;
   private handleFocus: () => void;
   private handleBlur: () => void;
   private handleMouseDown: (event: MouseEvent) => void;
   public readonly collisionBoundary?: HTMLElement;
-  
-  constructor(app: App, inputEl: HTMLInputElement | HTMLTextAreaElement, items: T[], collisionBoundary?: HTMLElement) {
+
+  constructor(
+    app: App,
+    inputEl: HTMLInputElement | HTMLTextAreaElement,
+    items: T[],
+    collisionBoundary?: HTMLElement,
+  ) {
     super(app);
     this.inputEl = inputEl as HTMLInputElement;
     this.items = items;
     this.collisionBoundary = collisionBoundary;
-    
+
     // Pre-bind event handlers
     this.handleInput = this.onInputChanged.bind(this);
     this.handleFocus = this.onFocus.bind(this);
@@ -41,7 +40,7 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
     this.handleMouseDown = (event: MouseEvent) => {
       event.preventDefault();
     };
-    
+
     this.suggestEl = createDiv("suggestion-container");
     this.contentEl = this.suggestEl.createDiv("suggestion");
     this.suggester = new Suggester(this, this.contentEl, this.scope);
@@ -49,7 +48,11 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
     this.inputEl.addEventListener("input", this.handleInput);
     this.inputEl.addEventListener("focus", this.handleFocus);
     this.inputEl.addEventListener("blur", this.handleBlur);
-    this.suggestEl.on("mousedown", ".suggestion-container", this.handleMouseDown);
+    this.suggestEl.on(
+      "mousedown",
+      ".suggestion-container",
+      this.handleMouseDown,
+    );
   }
 
   empty() {
@@ -88,35 +91,37 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
     // TODO: Figure out a better way to do this. Idea from Periodic Notes plugin
     this.app.keymap.pushScope(this.scope);
     //setTimeout(() => {
-      const modal = this.inputEl.closest(".modal");
-      const modalContainer =
-        (this.inputEl.closest(".modal-container") as HTMLElement) ??
-        (modal?.parentElement?.matches(".modal-container")
-          ? (modal.parentElement as HTMLElement)
-          : null);
+    const modal = this.inputEl.closest(".modal");
+    const modalContainer =
+      (this.inputEl.closest(".modal-container") as HTMLElement) ??
+      (modal?.parentElement?.matches(".modal-container")
+        ? (modal.parentElement as HTMLElement)
+        : null);
 
-      const host = modalContainer ?? this.inputEl.ownerDocument.body;
+    const host = modalContainer ?? this.inputEl.ownerDocument.body;
 
-      host.appendChild(this.suggestEl);
+    host.appendChild(this.suggestEl);
 
-      const boundary = this.collisionBoundary ?? host;
+    const boundary = this.collisionBoundary ?? host;
 
-      this.popper = new WeakRef(createPopper(this.inputEl, this.suggestEl, {
+    this.popper = new WeakRef(
+      createPopper(this.inputEl, this.suggestEl, {
         placement: "bottom-start",
         strategy: host.matches(".modal-container") ? "absolute" : "fixed",
         modifiers: [
           { name: "offset", options: { offset: [0, 10] } },
           { name: "flip", options: { fallbackPlacements: ["top"] } },
-          { name: 
-            "preventOverflow",
+          {
+            name: "preventOverflow",
             options: {
               boundary,
               altBoundary: true,
               padding: { left: 8, right: 8 },
-            }
+            },
           },
         ],
-      }));
+      }),
+    );
     //},50);
   }
 
@@ -135,7 +140,7 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
     this.inputEl.removeEventListener("input", this.handleInput);
     this.inputEl.removeEventListener("focus", this.handleFocus);
     this.inputEl.removeEventListener("blur", this.handleBlur);
-    this.suggestEl.detach(); 
+    this.suggestEl.detach();
   }
 
   createPrompt(prompts: HTMLSpanElement[]) {

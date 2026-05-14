@@ -1,10 +1,10 @@
-function createWorkerBlob(jsCode:string) {
+function createWorkerBlob(jsCode: string) {
   // Create a new Blob with the JavaScript code
-  const blob = new Blob([jsCode], { type: 'text/javascript' });
-  
+  const blob = new Blob([jsCode], { type: "text/javascript" });
+
   // Create a URL for the Blob
   const url = URL.createObjectURL(blob);
-  
+
   return url;
 }
 
@@ -46,46 +46,52 @@ self.onmessage = function(e) {
 };
 `;
 
-let worker:Worker | null = null;
+let worker: Worker | null = null;
 
 export function initCompressionWorker() {
-  if(!worker) {
+  if (!worker) {
     worker = new Worker(createWorkerBlob(workerCode));
   }
 }
 
 let messageCounter = 0;
-const pendingOperations = new Map<number, {
-  resolve: (value: string) => void,
-  reject: (reason: Error) => void
-}>();
+const pendingOperations = new Map<
+  number,
+  {
+    resolve: (value: string) => void;
+    reject: (reason: Error) => void;
+  }
+>();
 
-export async function runCompressionWorker(data: string, action: 'compress' | 'decompress'): Promise<string> {
+export async function runCompressionWorker(
+  data: string,
+  action: "compress" | "decompress",
+): Promise<string> {
   const messageId = messageCounter++;
-  
+
   return new Promise((resolve, reject) => {
     // Store the promise handlers
     pendingOperations.set(messageId, { resolve, reject });
 
     // Set up worker message handler if not already set
     if (!worker.onmessage) {
-      worker.onmessage = function(e) {
+      worker.onmessage = function (e) {
         const { messageId, compressed, decompressed, error } = e.data;
         const handlers = pendingOperations.get(messageId);
-        
+
         if (handlers) {
           if (error) {
             handlers.reject(new Error(error));
           } else if (compressed || decompressed) {
             handlers.resolve(compressed || decompressed);
           } else {
-            handlers.reject(new Error('Unexpected response from worker'));
+            handlers.reject(new Error("Unexpected response from worker"));
           }
           pendingOperations.delete(messageId);
         }
       };
 
-      worker.onerror = function(error) {
+      worker.onerror = function (error) {
         // Handle any pending operations in case of worker error
         for (const [id, handlers] of pendingOperations) {
           handlers.reject(new Error(error.message));
@@ -107,13 +113,13 @@ export function terminateCompressionWorker() {
 export let IS_WORKER_SUPPORTED = false;
 function canCreateWorkerFromBlob() {
   try {
-      const blob = new Blob(["self.onmessage = function() {}"]);
-      const url = URL.createObjectURL(blob);
-      const worker = new Worker(url);
-      worker.terminate();
-      URL.revokeObjectURL(url);
-      IS_WORKER_SUPPORTED = true;
-  } catch (e) {
+    const blob = new Blob(["self.onmessage = function() {}"]);
+    const url = URL.createObjectURL(blob);
+    const worker = new Worker(url);
+    worker.terminate();
+    URL.revokeObjectURL(url);
+    IS_WORKER_SUPPORTED = true;
+  } catch (_) {
     IS_WORKER_SUPPORTED = false;
   }
 }

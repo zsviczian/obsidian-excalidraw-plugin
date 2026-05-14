@@ -1,31 +1,51 @@
-import { Notice } from 'obsidian';
-import { DEVICE } from 'src/constants/constants';
-import { t } from 'src/lang/helpers';
-import { download } from './fileUtils';
-import { svgToBase64 } from './utils';
-import { PageDimensions,PageOrientation,PageSize,PDFExportScale,PDFMargin,PDFPageAlignment,PDFPageMarginString,PDFPageProperties,STANDARD_PAGE_SIZES } from 'src/types/exportUtilTypes';
+import { Notice } from "obsidian";
+import { DEVICE } from "src/constants/constants";
+import { t } from "src/lang/helpers";
+import { download } from "./fileUtils";
+import { svgToBase64 } from "./utils";
+import {
+  PageDimensions,
+  PageOrientation,
+  PageSize,
+  PDFExportScale,
+  PDFMargin,
+  PDFPageAlignment,
+  PDFPageMarginString,
+  PDFPageProperties,
+  STANDARD_PAGE_SIZES,
+} from "src/types/exportUtilTypes";
 
 const DPI = 96;
 
 //margins are in pixels
-export function getMarginValue(margin:PDFPageMarginString): PDFMargin {
-  switch(margin) {
-    case "none": return { left: 0, right: 0, top: 0, bottom: 0 };
-    case "tiny": return { left: 10, right: 10, top: 10, bottom: 10 };
-    case "normal": return { left: 60, right: 60, top: 60, bottom: 60 };
-    default: return { left: 60, right: 60, top: 60, bottom: 60 };
+export function getMarginValue(margin: PDFPageMarginString): PDFMargin {
+  switch (margin) {
+    case "none":
+      return { left: 0, right: 0, top: 0, bottom: 0 };
+    case "tiny":
+      return { left: 10, right: 10, top: 10, bottom: 10 };
+    case "normal":
+      return { left: 60, right: 60, top: 60, bottom: 60 };
+    default:
+      return { left: 60, right: 60, top: 60, bottom: 60 };
   }
 }
 
-export function getPageDimensions(pageSize: PageSize, orientation: PageOrientation, dims?: {width: number, height: number}): PageDimensions {
-  let dimensions:{width: number, height: number};
+export function getPageDimensions(
+  pageSize: PageSize,
+  orientation: PageOrientation,
+  dims?: { width: number; height: number },
+): PageDimensions {
+  let dimensions: { width: number; height: number };
   dimensions = STANDARD_PAGE_SIZES[pageSize];
 
   if (dims && dimensions.width === 0 && dimensions.height === 0) {
     dimensions = { width: dims.width, height: dims.height };
   }
 
-  return orientation === "portrait" || pageSize === "MATCH IMAGE" || pageSize === "HD Screen"
+  return orientation === "portrait" ||
+    pageSize === "MATCH IMAGE" ||
+    pageSize === "HD Screen"
     ? { width: dimensions.width, height: dimensions.height }
     : { width: dimensions.height, height: dimensions.width };
 }
@@ -64,7 +84,9 @@ interface ElectronAPI {
   };
   remote: {
     dialog: {
-      showSaveDialog(options: SaveDialogOptions): Promise<SaveDialogReturnValue>;
+      showSaveDialog(
+        options: SaveDialogOptions,
+      ): Promise<SaveDialogReturnValue>;
     };
   };
 }
@@ -75,30 +97,43 @@ declare global {
   }
 }
 
-function getPageSizePixels(pageSize: PageSize | PageDimensions, landscape = false): PageDimensions {
-  if (typeof pageSize === "object") return pageSize;
-  
+function getPageSizePixels(
+  pageSize: PageSize | PageDimensions,
+  landscape = false,
+): PageDimensions {
+  if (typeof pageSize === "object") {
+    return pageSize;
+  }
+
   const pageDimensions = STANDARD_PAGE_SIZES[pageSize];
   if (!pageDimensions) {
     throw new Error(`Unsupported page size: ${pageSize}`);
   }
 
-  return landscape 
+  return landscape
     ? { width: pageDimensions.height, height: pageDimensions.width }
     : { width: pageDimensions.width, height: pageDimensions.height };
 }
 
-function getPageSize(pageSize: PageSize | PageDimensions): string | { width: number; height: number } {
-  if (typeof pageSize === "string") return pageSize;
+function getPageSize(
+  pageSize: PageSize | PageDimensions,
+): string | { width: number; height: number } {
+  if (typeof pageSize === "string") {
+    return pageSize;
+  }
 
-  if (!pageSize || typeof pageSize !== "object" || 
-      typeof pageSize.width !== "number" || typeof pageSize.height !== "number") {
+  if (
+    !pageSize ||
+    typeof pageSize !== "object" ||
+    typeof pageSize.width !== "number" ||
+    typeof pageSize.height !== "number"
+  ) {
     throw new Error("Invalid page dimensions");
   }
 
   return {
-    width: (pageSize.width / DPI),
-    height: (pageSize.height / DPI)
+    width: pageSize.width / DPI,
+    height: pageSize.height / DPI,
   };
 }
 
@@ -107,9 +142,9 @@ async function getSavePath(defaultPath: string): Promise<string | undefined> {
     defaultPath,
     filters: [
       { name: "PDF Files", extensions: ["pdf"] },
-      { name: "All Files", extensions: ["*"] }
+      { name: "All Files", extensions: ["*"] },
     ],
-    properties: ["showOverwriteConfirmation"]
+    properties: ["showOverwriteConfirmation"],
   });
   return result.filePath;
 }
@@ -127,7 +162,7 @@ async function printPdf(
 ): Promise<void> {
   // REVIEW NOTE: Dynamic print CSS is required for Electron print-to-PDF.
   // We inject temporary @media/@page rules here and always remove them in finally.
-  const styleTag = document.createElement('sty'+'le');
+  const styleTag = document.createElement("sty" + "le");
   styleTag.textContent = `
     @media print {
       /* Ensure the print root expands to the widest page and is not constrained by app layout */
@@ -174,7 +209,7 @@ async function printPdf(
   `;
   document.head.appendChild(styleTag);
 
-  const printDiv = document.body.createDiv('print');
+  const printDiv = document.body.createDiv("print");
   printDiv.style.top = "0";
   printDiv.style.left = "0";
   printDiv.style.display = "flex";
@@ -197,8 +232,8 @@ async function printPdf(
 
   try {
     await new Promise<void>((resolve) => {
-      window.electron.ipcRenderer.once('print-to-pdf', resolve);
-      window.electron.ipcRenderer.send('print-to-pdf', options);
+      window.electron.ipcRenderer.once("print-to-pdf", resolve);
+      window.electron.ipcRenderer.send("print-to-pdf", options);
     });
   } finally {
     printDiv.remove();
@@ -213,18 +248,23 @@ function calculateDimensions(
   pageDim: PageDimensions,
   margin: PDFMargin,
   scale: PDFExportScale,
-  alignment: PDFPageAlignment
+  alignment: PDFPageAlignment,
 ): {
   tiles: {
-    viewBox: string,
-    width: number,
-    height: number,
-    x: number,
-    y: number
-  }[],
-  pages: number
+    viewBox: string;
+    width: number;
+    height: number;
+    x: number;
+    y: number;
+  }[];
+  pages: number;
 } {
-  const viewBox = svg.getAttribute('viewBox')?.split(' ').map(Number) || [0, 0, svgWidth, svgHeight];
+  const viewBox = svg.getAttribute("viewBox")?.split(" ").map(Number) || [
+    0,
+    0,
+    svgWidth,
+    svgHeight,
+  ];
   const [viewBoxX, viewBoxY] = viewBox;
 
   const availableWidth = pageDim.width - margin.left - margin.right;
@@ -241,8 +281,9 @@ function calculateDimensions(
       const mid = (low + high) / 2;
       const scaledWidth = svgWidth * mid;
       const scaledHeight = svgHeight * mid;
-      const pages = Math.ceil(scaledWidth / availableWidth) *
-              Math.ceil(scaledHeight / availableHeight);
+      const pages =
+        Math.ceil(scaledWidth / availableWidth) *
+        Math.ceil(scaledHeight / availableHeight);
 
       if (pages > scale.fitToPage) {
         high = mid;
@@ -265,18 +306,20 @@ function calculateDimensions(
       pageDim.width,
       pageDim.height,
       margin,
-      alignment
+      alignment,
     );
 
     return {
-      tiles: [{
-        viewBox: `${viewBoxX} ${viewBoxY} ${svgWidth} ${svgHeight}`,
-        width: finalWidth,
-        height: finalHeight,
-        x: position.x,
-        y: position.y
-      }],
-      pages: 1
+      tiles: [
+        {
+          viewBox: `${viewBoxX} ${viewBoxY} ${svgWidth} ${svgHeight}`,
+          width: finalWidth,
+          height: finalHeight,
+          x: position.x,
+          y: position.y,
+        },
+      ],
+      pages: 1,
     };
   }
 
@@ -298,9 +341,9 @@ function calculateDimensions(
       left: 0,
       right: 0,
       top: 0,
-      bottom: 0
+      bottom: 0,
     },
-    alignment
+    alignment,
   );
 
   const tiles = [];
@@ -309,18 +352,26 @@ function calculateDimensions(
       // Calculate where this tile intersects with the image in global space
       const tileGlobalX = col * availableWidth;
       const tileGlobalY = row * availableHeight;
-      
+
       // Calculate the intersection of the tile with the image
       const intersectX = Math.max(tileGlobalX, globalPosition.x);
       const intersectY = Math.max(tileGlobalY, globalPosition.y);
-      const intersectRight = Math.min(tileGlobalX + availableWidth, globalPosition.x + finalWidth);
-      const intersectBottom = Math.min(tileGlobalY + availableHeight, globalPosition.y + finalHeight);
+      const intersectRight = Math.min(
+        tileGlobalX + availableWidth,
+        globalPosition.x + finalWidth,
+      );
+      const intersectBottom = Math.min(
+        tileGlobalY + availableHeight,
+        globalPosition.y + finalHeight,
+      );
 
       // Calculate actual tile dimensions
       const scaledTileWidth = Math.max(0, intersectRight - intersectX);
       const scaledTileHeight = Math.max(0, intersectBottom - intersectY);
 
-      if (scaledTileWidth <= 0 || scaledTileHeight <= 0) continue;
+      if (scaledTileWidth <= 0 || scaledTileHeight <= 0) {
+        continue;
+      }
 
       // Calculate viewBox coordinates
       const tileX = (intersectX - globalPosition.x) / (scale.zoom || 1);
@@ -336,13 +387,17 @@ function calculateDimensions(
       if (widthRatio >= 0.99 && widthRatio <= 1.01) {
         x = margin.left;
       } else {
-        if (alignment === "center" || alignment === "top-center" || alignment === "bottom-center") {
-          if(col === 0) {
+        if (
+          alignment === "center" ||
+          alignment === "top-center" ||
+          alignment === "bottom-center"
+        ) {
+          if (col === 0) {
             x = margin.left + (availableWidth - scaledTileWidth);
           } else {
             x = margin.left;
           }
-        } else if (alignment.endsWith('right')) {
+        } else if (alignment.endsWith("right")) {
           x = pageDim.width - margin.right - scaledTileWidth;
         } else {
           x = margin.left;
@@ -354,13 +409,17 @@ function calculateDimensions(
       if (heightRatio >= 0.99 && heightRatio <= 1.01) {
         y = margin.top;
       } else {
-        if (alignment === "center" || alignment === "center-left" || alignment === "center-right") {
-          if(row === 0) {
+        if (
+          alignment === "center" ||
+          alignment === "center-left" ||
+          alignment === "center-right"
+        ) {
+          if (row === 0) {
             y = margin.top + (availableHeight - scaledTileHeight);
           } else {
             y = margin.top;
           }
-        } else if (alignment.startsWith('bottom')) {
+        } else if (alignment.startsWith("bottom")) {
           y = pageDim.height - margin.bottom - scaledTileHeight;
         } else {
           y = margin.top;
@@ -372,7 +431,7 @@ function calculateDimensions(
         width: scaledTileWidth,
         height: scaledTileHeight,
         x: x,
-        y: y
+        y: y,
       });
     }
   }
@@ -381,13 +440,13 @@ function calculateDimensions(
 }
 
 function calculatePosition(
-  svgWidth: number, 
+  svgWidth: number,
   svgHeight: number,
   pageWidth: number,
   pageHeight: number,
   margin: PDFMargin,
   alignment: PDFPageAlignment,
-): {x: number, y: number} {
+): { x: number; y: number } {
   const availableWidth = pageWidth - margin.left - margin.right;
   const availableHeight = pageHeight - margin.top - margin.bottom;
 
@@ -395,27 +454,35 @@ function calculatePosition(
   let y = margin.top;
 
   // Handle horizontal alignment
-  if (alignment === "center" || alignment === "top-center" || alignment === "bottom-center") {
+  if (
+    alignment === "center" ||
+    alignment === "top-center" ||
+    alignment === "bottom-center"
+  ) {
     x = margin.left + (availableWidth - svgWidth) / 2;
-  } else if (alignment.endsWith('right')) {
+  } else if (alignment.endsWith("right")) {
     x = margin.left + availableWidth - svgWidth;
   }
 
   // Handle vertical alignment
-  if (alignment === "center" || alignment === "center-left" || alignment === "center-right") {
+  if (
+    alignment === "center" ||
+    alignment === "center-left" ||
+    alignment === "center-right"
+  ) {
     y = margin.top + (availableHeight - svgHeight) / 2;
-  } else if (alignment.startsWith('bottom')) {
+  } else if (alignment.startsWith("bottom")) {
     y = margin.top + availableHeight - svgHeight;
   }
 
-  return {x, y};
+  return { x, y };
 }
 
 export async function exportToPDF({
   SVG,
   scale = { fitToPage: 1, zoom: 1 },
   pageProps,
-  filename
+  filename,
 }: {
   SVG: SVGSVGElement[];
   scale: PDFExportScale;
@@ -428,7 +495,9 @@ export async function exportToPDF({
   }
 
   const savePath = await getSavePath(filename);
-  if (!savePath) return;
+  if (!savePath) {
+    return;
+  }
 
   // Decide if we should run multiple print jobs based on requested dimensions
   const dims = pageProps?.dimensions as any;
@@ -445,10 +514,9 @@ export async function exportToPDF({
     allPagesDiv.style.width = "100%";
     allPagesDiv.style.height = "fit-content";
 
-    let j = 0;
     for (const svg of SVG) {
-      const svgWidth = parseFloat(svg.getAttribute('width') || '0');
-      const svgHeight = parseFloat(svg.getAttribute('height') || '0');
+      const svgWidth = parseFloat(svg.getAttribute("width") || "0");
+      const svgHeight = parseFloat(svg.getAttribute("height") || "0");
 
       const pageDimForSvg: PageDimensions = pageProps.dimensions; // fixed size
       const { tiles } = calculateDimensions(
@@ -458,15 +526,17 @@ export async function exportToPDF({
         pageDimForSvg,
         pageProps.margin,
         scale,
-        pageProps.alignment
+        pageProps.alignment,
       );
 
-      const { width: pageWidth, height: pageHeight } = getPageSizePixels(pageDimForSvg, false);
-      
-      let i = 0;
+      const { width: pageWidth, height: pageHeight } = getPageSizePixels(
+        pageDimForSvg,
+        false,
+      );
+
       for (const tile of tiles) {
         const pageDiv = createDiv();
-        pageDiv.addClass('print-page');
+        pageDiv.addClass("print-page");
 
         // NEW: content box sizing
         pageDiv.style.width = `${pageWidth}px`;
@@ -481,10 +551,10 @@ export async function exportToPDF({
         pageDiv.style.position = "relative";
 
         const clonedSVG = svg.cloneNode(true) as SVGSVGElement;
-        clonedSVG.setAttribute('viewBox', tile.viewBox);
+        clonedSVG.setAttribute("viewBox", tile.viewBox);
         clonedSVG.style.width = `${tile.width}px`;
         clonedSVG.style.height = `${tile.height}px`;
-        clonedSVG.style.position = 'absolute';
+        clonedSVG.style.position = "absolute";
 
         // NEW: position within padding box (subtract margins)
         clonedSVG.style.left = `${tile.x - pageProps.margin.left}px`;
@@ -492,9 +562,7 @@ export async function exportToPDF({
 
         pageDiv.appendChild(clonedSVG);
         allPagesDiv.appendChild(pageDiv);
-        i++;
       }
-      j++;
     }
 
     new Notice(t("EXPORTDIALOG_PDF_PROGRESS_NOTICE"));
@@ -524,23 +592,30 @@ export async function exportToPDF({
     allPagesDiv.style.height = "fit-content";
 
     // Collect unique page sizes -> named @page rules
-    const pageRuleNames = new Map<string, { name: string; w: number; h: number }>();
+    const pageRuleNames = new Map<
+      string,
+      { name: string; w: number; h: number }
+    >();
     const makeKey = (w: number, h: number) => `${w.toFixed(2)}x${h.toFixed(2)}`;
-    const toIn = (px: number) => (px / DPI);
+    const toIn = (px: number) => px / DPI;
     const toCssName = (key: string) => `p_${key.replace(/[^\w-]/g, "_")}`;
 
     for (const svg of SVG) {
-      const svgWidth = parseFloat(svg.getAttribute('width') || '0');
-      const svgHeight = parseFloat(svg.getAttribute('height') || '0');
+      const svgWidth = parseFloat(svg.getAttribute("width") || "0");
+      const svgHeight = parseFloat(svg.getAttribute("height") || "0");
 
       const pageDimForSvg: PageDimensions = {
         width: svgWidth,
-        height: svgHeight
+        height: svgHeight,
       };
 
       const key = makeKey(pageDimForSvg.width, pageDimForSvg.height);
       if (!pageRuleNames.has(key)) {
-        pageRuleNames.set(key, { name: toCssName(key), w: pageDimForSvg.width, h: pageDimForSvg.height });
+        pageRuleNames.set(key, {
+          name: toCssName(key),
+          w: pageDimForSvg.width,
+          h: pageDimForSvg.height,
+        });
       }
 
       const { tiles } = calculateDimensions(
@@ -550,18 +625,21 @@ export async function exportToPDF({
         pageDimForSvg,
         pageProps.margin,
         scale,
-        pageProps.alignment
+        pageProps.alignment,
       );
 
-      const { width: pageWidth, height: pageHeight } = getPageSizePixels(pageDimForSvg, false);
+      const { width: pageWidth, height: pageHeight } = getPageSizePixels(
+        pageDimForSvg,
+        false,
+      );
       const pageClass = pageRuleNames.get(key)!.name;
 
       for (const tile of tiles) {
         const pageDiv = createDiv();
-        pageDiv.addClass('print-page');
+        pageDiv.addClass("print-page");
         // bind to @page rule via page: <name>
         pageDiv.addClass(pageClass);
-        pageDiv.style.setProperty('page', pageClass);
+        pageDiv.style.setProperty("page", pageClass);
 
         pageDiv.style.width = `${pageWidth}px`;
         pageDiv.style.height = `${pageHeight}px`;
@@ -574,10 +652,10 @@ export async function exportToPDF({
         pageDiv.style.position = "relative";
 
         const clonedSVG = svg.cloneNode(true) as SVGSVGElement;
-        clonedSVG.setAttribute('viewBox', tile.viewBox);
+        clonedSVG.setAttribute("viewBox", tile.viewBox);
         clonedSVG.style.width = `${tile.width}px`;
         clonedSVG.style.height = `${tile.height}px`;
-        clonedSVG.style.position = 'absolute';
+        clonedSVG.style.position = "absolute";
 
         // Position within padding box: subtract margins from tile coordinates
         clonedSVG.style.left = `${tile.x - pageProps.margin.left}px`;
@@ -601,7 +679,8 @@ export async function exportToPDF({
     }
 
     // Determine a base numeric page size large enough for all pages
-    let baseW = 0, baseH = 0;
+    let baseW = 0,
+      baseH = 0;
     for (const { w, h } of pageRuleNames.values()) {
       baseW = Math.max(baseW, w);
       baseH = Math.max(baseH, h);
@@ -611,7 +690,11 @@ export async function exportToPDF({
     // Ensure we have a class for the base size
     const baseKey = makeKey(basePageSize.width, basePageSize.height);
     if (!pageRuleNames.has(baseKey)) {
-      pageRuleNames.set(baseKey, { name: toCssName(baseKey), w: basePageSize.width, h: basePageSize.height });
+      pageRuleNames.set(baseKey, {
+        name: toCssName(baseKey),
+        w: basePageSize.width,
+        h: basePageSize.height,
+      });
       extraCss += `
         @page ${pageRuleNames.get(baseKey)!.name} {
           size: ${toIn(basePageSize.width)}in ${toIn(basePageSize.height)}in;
@@ -624,8 +707,8 @@ export async function exportToPDF({
 
     // Insert a dummy first page to prime Chromium with the largest page box
     const dummy = createDiv();
-    dummy.addClass('print-page');
-    dummy.addClass('dummy-first');
+    dummy.addClass("print-page");
+    dummy.addClass("dummy-first");
     dummy.addClass(baseClass);
     allPagesDiv.prepend(dummy);
 
@@ -639,7 +722,7 @@ export async function exportToPDF({
       { top: 0, right: 0, bottom: 0, left: 0 },
       true,
       extraCss,
-      "2-" // EXCLUDE PAGE 1, included to prime the Chromium page box
+      "2-", // EXCLUDE PAGE 1, included to prime the Chromium page box
     );
   } catch (error) {
     console.error("Failed to export to PDF: ", error);
@@ -675,10 +758,5 @@ export function exportPNG(png: Blob, filename: string) {
 }
 
 export function exportSVG(svg: SVGSVGElement, filename: string) {
-  download(
-    null,
-    svgToBase64(svg.outerHTML),
-    `${filename}.svg`,
-  );
+  download(null, svgToBase64(svg.outerHTML), `${filename}.svg`);
 }
-

@@ -1,7 +1,4 @@
-import {
-SuggestModal,
-Scope,
-} from "obsidian";
+import { SuggestModal, Scope } from "obsidian";
 
 export class Suggester<T> {
   owner: SuggestModal<T>;

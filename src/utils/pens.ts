@@ -1,7 +1,7 @@
-import { PenStyle,PenType } from "src/types/penTypes";
+import { PenStyle, PenType } from "src/types/penTypes";
 
-export const PENS:Record<PenType,PenStyle> = {
-  "default": {
+export const PENS: Record<PenType, PenStyle> = {
+  default: {
     type: "default",
     freedrawOnly: false,
     strokeColor: "#000000",
@@ -22,17 +22,17 @@ export const PENS:Record<PenType,PenStyle> = {
         start: {
           cap: true,
           taper: 0,
-          easing: "linear"
+          easing: "linear",
         },
         end: {
           cap: true,
           taper: 0,
-          easing: "linear"
-        }
-      }
-    }
+          easing: "linear",
+        },
+      },
+    },
   },
-  "highlighter": {
+  highlighter: {
     type: "highlighter",
     freedrawOnly: true,
     strokeColor: "#FFC47C",
@@ -53,17 +53,17 @@ export const PENS:Record<PenType,PenStyle> = {
         start: {
           taper: 0,
           cap: true,
-          easing: "linear"
+          easing: "linear",
         },
         end: {
           taper: 0,
           cap: true,
-          easing: "linear"
-        }
-      }
-    }
+          easing: "linear",
+        },
+      },
+    },
   },
-  "finetip": {
+  finetip: {
     type: "finetip",
     freedrawOnly: false,
     strokeColor: "#3E6F8D",
@@ -84,17 +84,17 @@ export const PENS:Record<PenType,PenStyle> = {
         start: {
           taper: 5,
           cap: false,
-          easing: "linear"
+          easing: "linear",
         },
         end: {
           taper: 5,
           cap: false,
-          easing:"linear"
+          easing: "linear",
         },
-      }
-    }
+      },
+    },
   },
-  "fountain": {
+  fountain: {
     type: "fountain",
     freedrawOnly: false,
     strokeColor: "#000000",
@@ -115,17 +115,17 @@ export const PENS:Record<PenType,PenStyle> = {
         start: {
           taper: 150,
           cap: true,
-          easing: "linear"
+          easing: "linear",
         },
         end: {
           taper: 1,
           cap: true,
-          easing: "linear"
+          easing: "linear",
         },
-      }
-    }
+      },
+    },
   },
-  "marker": {
+  marker: {
     type: "marker",
     freedrawOnly: true,
     strokeColor: "#B83E3E",
@@ -146,15 +146,15 @@ export const PENS:Record<PenType,PenStyle> = {
         start: {
           taper: 0,
           cap: true,
-          easing: "linear"
+          easing: "linear",
         },
         end: {
           taper: 0,
           cap: true,
-          easing: "linear"
-        }
-      }
-    }
+          easing: "linear",
+        },
+      },
+    },
   },
   "thick-thin": {
     type: "thick-thin",
@@ -177,15 +177,15 @@ export const PENS:Record<PenType,PenStyle> = {
         start: {
           taper: 0,
           cap: true,
-          easing: "linear"
+          easing: "linear",
         },
         end: {
           cap: true,
           taper: true,
           easing: "linear",
-        }
-      }
-    }
+        },
+      },
+    },
   },
   "thin-thick-thin": {
     type: "thin-thick-thin",
@@ -214,8 +214,8 @@ export const PENS:Record<PenType,PenStyle> = {
           cap: true,
           taper: true,
           easing: "linear",
-        }
-      }
-    }
+        },
+      },
+    },
   },
-}
+};

@@ -1,6 +1,6 @@
 import ExcalidrawScene from "./elements/ExcalidrawScene";
 import Group from "./elements/Group";
-import { createTreeWalker,walk } from "./walker";
+import { createTreeWalker, walk } from "./walker";
 
 export type ConversionResult = {
   hasErrors: boolean;
@@ -30,29 +30,35 @@ export const svgToExcalidraw = (svgString: string): ConversionResult => {
 
       walk({ tw, scene, groups, root: svgDOM }, tw.nextNode());
 
-      const hasVisibleElements = Boolean(scene.elements.find((el)=>el.opacity !== 0));
+      const hasVisibleElements = Boolean(
+        scene.elements.find((el) => el.opacity !== 0),
+      );
       if (!hasVisibleElements) {
         scene.elements.forEach((el) => {
           el.opacity = 100;
         });
       }
       scene.elements.forEach((el) => {
-        if(el.opacity <= 1) el.opacity = 100;
+        if (el.opacity <= 1) {
+          el.opacity = 100;
+        }
       });
       content = scene.elements; //scene.toExJSON();
     }
 
     return {
       hasErrors,
-      errors: hasErrors ? `${[...errorsElements].map((el) => el.innerHTML)}` : "",
+      errors: hasErrors
+        ? `${[...errorsElements].map((el) => el.innerHTML)}`
+        : "",
       content,
     };
   } catch (error) {
     console.log(error);
     return {
       hasErrors: true,
-      errors:  `${error}`,
-      content:[],
+      errors: `${error}`,
+      content: [],
     };
   }
 };

@@ -1,12 +1,12 @@
-import { App,FuzzyMatch,prepareFuzzySearch,setIcon } from "obsidian";
+import { App, FuzzyMatch, prepareFuzzySearch, setIcon } from "obsidian";
 import { LinkSuggestion } from "src/types/types";
 import {
-AUDIO_TYPES,
-CODE_TYPES,
-ICON_NAME,
-IMAGE_TYPES,
-REG_LINKINDEX_INVALIDCHARS,
-VIDEO_TYPES,
+  AUDIO_TYPES,
+  CODE_TYPES,
+  ICON_NAME,
+  IMAGE_TYPES,
+  REG_LINKINDEX_INVALIDCHARS,
+  VIDEO_TYPES,
 } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
 
@@ -15,15 +15,19 @@ import ExcalidrawPlugin from "src/core/main";
  */
 export const getLinkSuggestionsFiltered = (app: App): LinkSuggestion[] => {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore Obsidian internal helper
   const suggestions = app.metadataCache.getLinkSuggestions?.();
-  if (!suggestions) return [];
-  const filtered = suggestions.filter((x: LinkSuggestion) => !x.path.match(REG_LINKINDEX_INVALIDCHARS));
+  if (!suggestions) {
+    return [];
+  }
+  const filtered = suggestions.filter(
+    (x: LinkSuggestion) => !x.path.match(REG_LINKINDEX_INVALIDCHARS),
+  );
 
   const now = Date.now();
   const weekMs = 7 * 24 * 60 * 60 * 1000;
 
-  const isRecent = (s: LinkSuggestion) => !!s.file && now - s.file.stat.mtime <= weekMs;
+  const isRecent = (s: LinkSuggestion) =>
+    !!s.file && now - s.file.stat.mtime <= weekMs;
 
   return filtered.sort((a: LinkSuggestion, b: LinkSuggestion) => {
     const aRecent = isRecent(a);
@@ -33,7 +37,13 @@ export const getLinkSuggestionsFiltered = (app: App): LinkSuggestion[] => {
       return aRecent ? -1 : 1; // recent first
     }
 
-    if (aRecent && bRecent && a.file && b.file && a.file.stat.mtime !== b.file.stat.mtime) {
+    if (
+      aRecent &&
+      bRecent &&
+      a.file &&
+      b.file &&
+      a.file.stat.mtime !== b.file.stat.mtime
+    ) {
       return b.file.stat.mtime - a.file.stat.mtime; // newer recent first
     }
 
@@ -66,8 +76,14 @@ export const getSortedLinkMatches = (
 
       if (matchAliasOnly && (!best || matchAliasOnly.score > best.score)) {
         const aliasOffset = item.path.length + 1; // position where alias starts in "path|alias"
-        const shiftedMatches = matchAliasOnly.matches.map(([from, to]) => [from + aliasOffset, to + aliasOffset]) as [number, number][];
-        best = { ...matchAliasOnly, matches: shiftedMatches } as typeof matchAliasOnly;
+        const shiftedMatches = matchAliasOnly.matches.map(([from, to]) => [
+          from + aliasOffset,
+          to + aliasOffset,
+        ]) as [number, number][];
+        best = {
+          ...matchAliasOnly,
+          matches: shiftedMatches,
+        } as typeof matchAliasOnly;
       }
 
       return best ? { item, match: best } : null;
@@ -76,18 +92,29 @@ export const getSortedLinkMatches = (
 
   const now = Date.now();
   const weekMs = 7 * 24 * 60 * 60 * 1000;
-  const isRecent = (s: LinkSuggestion) => !!s.file && now - s.file.stat.mtime <= weekMs;
+  const isRecent = (s: LinkSuggestion) =>
+    !!s.file && now - s.file.stat.mtime <= weekMs;
 
   return matches.sort((a, b) => {
     const aScore = a?.match?.score ?? 0;
     const bScore = b?.match?.score ?? 0;
-    if (aScore !== bScore) return bScore - aScore;
+    if (aScore !== bScore) {
+      return bScore - aScore;
+    }
 
     const aRecent = isRecent(a.item);
     const bRecent = isRecent(b.item);
-    if (aRecent !== bRecent) return aRecent ? -1 : 1; // recent first
+    if (aRecent !== bRecent) {
+      return aRecent ? -1 : 1;
+    } // recent first
 
-    if (aRecent && bRecent && a.item.file && b.item.file && a.item.file.stat.mtime !== b.item.file.stat.mtime) {
+    if (
+      aRecent &&
+      bRecent &&
+      a.item.file &&
+      b.item.file &&
+      a.item.file.stat.mtime !== b.item.file.stat.mtime
+    ) {
       return b.item.file.stat.mtime - a.item.file.stat.mtime; // newer recent first
     }
 
@@ -97,7 +124,11 @@ export const getSortedLinkMatches = (
   });
 };
 
-const renderTextWithHighlights = (titleEl: HTMLElement, text: string, matches: [number, number][]) => {
+const renderTextWithHighlights = (
+  titleEl: HTMLElement,
+  text: string,
+  matches: [number, number][],
+) => {
   if (!matches?.length) {
     titleEl.setText(text);
     return;
@@ -130,7 +161,9 @@ export const fuzzyMatchTextItems = <T>(
     .filter(Boolean) as FuzzyMatch<T>[];
 };
 
-export const fuzzyMatchParagraphsWithId = <T extends { id?: string; text: string }>(
+export const fuzzyMatchParagraphsWithId = <
+  T extends { id?: string; text: string },
+>(
   term: string,
   items: T[],
 ): FuzzyMatch<T>[] => {
@@ -140,7 +173,9 @@ export const fuzzyMatchParagraphsWithId = <T extends { id?: string; text: string
     .map((item) => {
       const display = `${item.id ? `^${item.id} ` : ""}${item.text}`;
       const match = search(display);
-      if (!match) return null;
+      if (!match) {
+        return null;
+      }
       if (item.id && needle) {
         const idLower = item.id.toLowerCase();
         if (idLower === needle) {
@@ -152,7 +187,9 @@ export const fuzzyMatchParagraphsWithId = <T extends { id?: string; text: string
       return { item, match } as FuzzyMatch<T>;
     })
     .filter(Boolean)
-    .sort((a, b) => (b.match?.score ?? 0) - (a.match?.score ?? 0)) as FuzzyMatch<T>[];
+    .sort(
+      (a, b) => (b.match?.score ?? 0) - (a.match?.score ?? 0),
+    ) as FuzzyMatch<T>[];
 };
 
 export const renderHeadingSuggestionRow = (
@@ -228,8 +265,12 @@ export const renderLinkSuggestion = (
 
   const path = item.file?.path ?? item.path;
   // For unresolved (ghost) files, highlight the full path. For resolved files, skip folder prefixes.
-  const pathLength = item.file ? path.length - (item.file?.name.length ?? 0) : 0;
-  const matchElements = matches.matches.map(() => createSpan("suggestion-highlight"));
+  const pathLength = item.file
+    ? path.length - (item.file?.name.length ?? 0)
+    : 0;
+  const matchElements = matches.matches.map(() =>
+    createSpan("suggestion-highlight"),
+  );
   const itemText = item.path + (item.alias ? `|${item.alias}` : "");
   for (let i = pathLength; i < itemText.length; i++) {
     const match = matches.matches.find((m) => m[0] === i);

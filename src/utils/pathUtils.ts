@@ -1,5 +1,8 @@
-import { normalizePath,type App } from "obsidian";
-import { REG_BLOCK_REF_CLEAN,REG_SECTION_REF_CLEAN } from "src/constants/constants";
+import { normalizePath, type App } from "obsidian";
+import {
+  REG_BLOCK_REF_CLEAN,
+  REG_SECTION_REF_CLEAN,
+} from "src/constants/constants";
 
 export function splitFolderAndFilename(filepath: string | undefined): {
   folderpath: string;
@@ -16,7 +19,8 @@ export function splitFolderAndFilename(filepath: string | undefined): {
     };
   }
   const lastIndex = filepath.lastIndexOf("/");
-  const filename = lastIndex === -1 ? filepath : filepath.substring(lastIndex + 1);
+  const filename =
+    lastIndex === -1 ? filepath : filepath.substring(lastIndex + 1);
   const lastDotIndex = filename.lastIndexOf(".");
   const folderpath = filepath.substring(0, lastIndex);
   return {
@@ -28,12 +32,16 @@ export function splitFolderAndFilename(filepath: string | undefined): {
 }
 
 export const cleanSectionHeading = (heading: string) => {
-  if (!heading) return heading;
+  if (!heading) {
+    return heading;
+  }
   return heading.replace(REG_SECTION_REF_CLEAN, "").replace(/\s+/g, " ").trim();
 };
 
 export const cleanBlockRef = (blockRef: string) => {
-  if (!blockRef) return blockRef;
+  if (!blockRef) {
+    return blockRef;
+  }
   return blockRef.replace(REG_BLOCK_REF_CLEAN, "").replace(/\s+/g, " ").trim();
 };
 
@@ -42,7 +50,11 @@ export const getAttachmentsFolderAndFilePath = async (
   activeViewFilePath: string,
   newFileName: string,
 ): Promise<{ folder: string; filepath: string }> => {
-  const attachmentFilePath = await app.fileManager.getAvailablePathForAttachment(newFileName, activeViewFilePath)
+  const attachmentFilePath =
+    await app.fileManager.getAvailablePathForAttachment(
+      newFileName,
+      activeViewFilePath,
+    );
   const { folderpath } = splitFolderAndFilename(attachmentFilePath);
   return {
     folder: folderpath,
