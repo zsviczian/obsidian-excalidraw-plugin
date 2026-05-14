@@ -67,7 +67,6 @@ import { PublishOutOfDateFilesDialog } from "../../shared/Dialogs/PublishOutOfDa
 import { EmbeddableSettings } from "../../shared/Dialogs/EmbeddableSettings";
 import { processLinkText } from "../../utils/customEmbeddableUtils";
 import { getEA } from "src/core";
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { carveOutImage,carveOutPDF,createImageCropperFile } from "../../utils/carveout";
 import { showFrameSettings } from "../../shared/Dialogs/FrameSettings";

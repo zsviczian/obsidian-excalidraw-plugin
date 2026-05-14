@@ -11,7 +11,6 @@ import { t } from "../../../lang/helpers";
 import { ReleaseNotes } from "../../../shared/Dialogs/ReleaseNotes";
 import { ScriptIconMap } from "../../../shared/Scripts";
 import { ScriptInstallPrompt } from "src/shared/Dialogs/ScriptInstallPrompt";
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { isWinALTorMacOPT,isWinCTRLorMacCMD,isSHIFT } from "src/utils/modifierkeyHelper";
 import { InsertPDFModal } from "src/shared/Dialogs/InsertPDFModal";
 import { ExportDialog } from "src/shared/Dialogs/ExportDialog";

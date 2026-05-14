@@ -11,7 +11,6 @@ import { addAppendUpdateCustomData,fragWithHTML } from "src/utils/utils";
 import { getYouTubeStartAt,isValidYouTubeStart,isYouTube,updateYouTubeStartTime } from "src/utils/YoutTubeUtils";
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "./EmbeddableMDFileCustomDataSettingsComponent";
 import { isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { CaptureUpdateAction } from "src/constants/constants";
 
 export type EmbeddableMDCustomProps = {

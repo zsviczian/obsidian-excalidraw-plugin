@@ -6,7 +6,6 @@ import { Modal,Setting,TextComponent } from "obsidian";
 import { FileSuggestionModal } from "../Suggesters/FileSuggestionModal";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { t } from "src/lang/helpers";
 import { setSanitizedHtml } from "src/utils/htmlUtils";
 

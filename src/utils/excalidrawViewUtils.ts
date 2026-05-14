@@ -9,7 +9,7 @@ import { getEmbeddedFilenameParts,getLinkParts,isImagePartRef } from "./utils";
 import { getAudioElementHeight } from "./obsidianUtils";
 import { cleanSectionHeading } from "./pathUtils";
 import { getEA } from "src/core";
-import { AppState,ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { AppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { nanoid } from "nanoid";
 import { t } from "src/lang/helpers";

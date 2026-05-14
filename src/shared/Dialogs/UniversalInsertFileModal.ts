@@ -7,7 +7,6 @@ import { IMAGE_TYPES,sceneCoordsToViewportCoords,viewportCoordsToSceneCoords,MAX
 import { insertEmbeddableToView,insertImageToView } from "src/utils/excalidrawViewUtils";
 import { getEA } from "src/core";
 import { InsertPDFModal } from "./InsertPDFModal";
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { cleanSectionHeading } from "src/utils/pathUtils";
 import { t } from "src/lang/helpers";

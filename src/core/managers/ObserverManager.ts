@@ -4,7 +4,6 @@ import { CustomMutationObserver } from "src/utils/debugHelper";
 import { DEVICE } from "src/constants/constants";
 import { getExcalidrawViews,isObsidianThemeDark } from "src/utils/obsidianUtils";
 import { App,Notice,TFile } from "obsidian";
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 
 export class ObserverManager {
   private plugin: ExcalidrawPlugin;

@@ -1,4 +1,3 @@
-import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Notice } from "obsidian";
 import { DEVICE } from "src/constants/constants";
 import { getEA } from "src/core";
