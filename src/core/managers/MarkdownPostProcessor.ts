@@ -1,31 +1,35 @@
 import {
-App,
-MarkdownPostProcessorContext,
-MetadataCache,
-PaneType,
-TFile,
-Vault,
+  App,
+  MarkdownPostProcessorContext,
+  MetadataCache,
+  PaneType,
+  TFile,
+  Vault,
 } from "obsidian";
-import { DEVICE,RERENDER_EVENT } from "../../constants/constants";
+import { DEVICE, RERENDER_EVENT } from "../../constants/constants";
 import { EmbeddedFilesLoader } from "../../shared/EmbeddedFileLoader";
-import { createPNG,createSVG } from "../../utils/excalidrawAutomateUtils";
+import { createPNG, createSVG } from "../../utils/excalidrawAutomateUtils";
 import ExcalidrawPlugin from "../main";
-import { getIMGFilename,} from "../../utils/fileUtils";
+import { getIMGFilename } from "../../utils/fileUtils";
 import {
-getEmbeddedFilenameParts,
-getExportTheme,
-getQuickImagePreview,
-getExportPadding,
-getWithBackground,
-hasExportTheme,
-convertSVGStringToElement,
-isMaskFile,
+  getEmbeddedFilenameParts,
+  getExportTheme,
+  getQuickImagePreview,
+  getExportPadding,
+  getWithBackground,
+  hasExportTheme,
+  convertSVGStringToElement,
+  isMaskFile,
 } from "../../utils/utils";
-import { getParentOfClass,isObsidianThemeDark,getFileCSSClasses } from "../../utils/obsidianUtils";
+import {
+  getParentOfClass,
+  isObsidianThemeDark,
+  getFileCSSClasses,
+} from "../../utils/obsidianUtils";
 import { linkClickModifierType } from "../../utils/modifierkeyHelper";
-import { ImageKey,imageCache } from "../../shared/ImageCache";
-import { FILENAMEPARTS,PreviewImageType } from "../../types/utilTypes";
-import { CustomMutationObserver,DEBUGGING } from "../../utils/debugHelper";
+import { ImageKey, imageCache } from "../../shared/ImageCache";
+import { FILENAMEPARTS, PreviewImageType } from "../../types/utilTypes";
+import { CustomMutationObserver, DEBUGGING } from "../../utils/debugHelper";
 import { getExcalidrawFileForwardLinks } from "../../utils/excalidrawViewUtils";
 import { linkPrompt } from "../../shared/Dialogs/Prompt";
 import { isHTMLElement } from "../../utils/typechecks";
@@ -45,11 +49,10 @@ let app: App;
 let vault: Vault;
 let metadataCache: MetadataCache;
 
-
 const getDefaultWidth = (plugin: ExcalidrawPlugin): string => {
   const width = parseInt(plugin.settings.width);
   if (isNaN(width) || width === 0 || width === null) {
-    if(getDefaultHeight(plugin)!=="") return "";
+    if (getDefaultHeight(plugin) !== "") return "";
     return "400";
   }
   return plugin.settings.width;
@@ -70,18 +73,28 @@ export const initializeMarkdownPostProcessor = (p: ExcalidrawPlugin) => {
   metadataCache = app.metadataCache;
 };
 
-const _getPNG = async ({imgAttributes,filenameParts,theme,cacheReady,img,file,exportSettings,loader}:{
-  imgAttributes: imgElementAttributes,
-  filenameParts: FILENAMEPARTS,
-  theme: string,
-  cacheReady: boolean,
-  img: HTMLImageElement,
-  file: TFile,
-  exportSettings: ExportSettings,
-  loader: EmbeddedFilesLoader,
-}):Promise<HTMLImageElement> => {
+const _getPNG = async ({
+  imgAttributes,
+  filenameParts,
+  theme,
+  cacheReady,
+  img,
+  file,
+  exportSettings,
+  loader,
+}: {
+  imgAttributes: imgElementAttributes;
+  filenameParts: FILENAMEPARTS;
+  theme: string;
+  cacheReady: boolean;
+  img: HTMLImageElement;
+  file: TFile;
+  exportSettings: ExportSettings;
+  loader: EmbeddedFilesLoader;
+}): Promise<HTMLImageElement> => {
   const width = parseInt(imgAttributes.fwidth);
-    const scale = width >= 2400
+  const scale =
+    width >= 2400
       ? 5
       : width >= 1800
         ? 4
@@ -90,21 +103,21 @@ const _getPNG = async ({imgAttributes,filenameParts,theme,cacheReady,img,file,ex
           : width >= 600
             ? 2
             : 1;
-  
+
   const cacheKey = {
     ...filenameParts,
-    isDark: theme==="dark",
+    isDark: theme === "dark",
     previewImageType: PreviewImageType.PNG,
     scale,
     isTransparent: !exportSettings.withBackground,
     inlineFonts: true, //though for PNG this makes no difference, but the key requires it
   };
 
-  if(cacheReady) {      
+  if (cacheReady) {
     const src = await imageCache.getImageFromCache(cacheKey);
     //In case of PNG I cannot change the viewBox to select the area of the element
     //being referenced. For PNG only the group reference works
-    if(src && typeof src === "string") {
+    if (src && typeof src === "string") {
       img.src = src;
       return img;
     }
@@ -117,95 +130,117 @@ const _getPNG = async ({imgAttributes,filenameParts,theme,cacheReady,img,file,ex
   const png =
     quickPNG ??
     (await createPNG(
-      (filenameParts.hasGroupref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref)
+      filenameParts.hasGroupref ||
+        filenameParts.hasFrameref ||
+        filenameParts.hasClippedFrameref
         ? filenameParts.filepath + filenameParts.linkpartReference
         : file.path,
       scale,
       filenameParts.hasClippedFrameref
-      ? { ...exportSettings, frameRendering: { enabled: true, name: false, outline: false, clip: true}}
-      : exportSettings,
+        ? {
+            ...exportSettings,
+            frameRendering: {
+              enabled: true,
+              name: false,
+              outline: false,
+              clip: true,
+            },
+          }
+        : exportSettings,
       loader,
       theme,
       null,
       null,
       [],
       plugin,
-      0
+      0,
     ));
   if (!png) {
     return null;
   }
   const blobUrl = URL.createObjectURL(png);
   img.src = blobUrl;
-  
+
   // Revoke the ObjectURL after the image loads or fails to prevent memory leaks
   if (!cacheReady) {
     const cleanup = () => URL.revokeObjectURL(blobUrl);
-    img.addEventListener('load', cleanup, { once: true });
-    img.addEventListener('error', cleanup, { once: true });
+    img.addEventListener("load", cleanup, { once: true });
+    img.addEventListener("error", cleanup, { once: true });
   }
-  
+
   cacheReady && imageCache.addImageToCache(cacheKey, blobUrl, png);
   return img;
-}
+};
 
-const setStyle = ({element,imgAttributes,onCanvas, isNativeSVG}:{
-  element: HTMLElement,
-  imgAttributes: imgElementAttributes,
-  onCanvas: boolean,
-  isNativeSVG: boolean,
-}
-) => {
+const setStyle = ({
+  element,
+  imgAttributes,
+  onCanvas,
+  isNativeSVG,
+}: {
+  element: HTMLElement;
+  imgAttributes: imgElementAttributes;
+  onCanvas: boolean;
+  isNativeSVG: boolean;
+}) => {
   let style = "";
-  if(imgAttributes.fwidth) {
-    style = `${isNativeSVG ? "max-width:" : "max-width:100%; width:"}${imgAttributes.fwidth}${imgAttributes.fwidth.match(/\d$/) ? "px":""}; `; //width:100%;`; //removed !important https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/886
+  if (imgAttributes.fwidth) {
+    style = `${isNativeSVG ? "max-width:" : "max-width:100%; width:"}${imgAttributes.fwidth}${imgAttributes.fwidth.match(/\d$/) ? "px" : ""}; `; //width:100%;`; //removed !important https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/886
   } else {
-    style = "width: fit-content;"
+    style = "width: fit-content;";
   }
   if (imgAttributes.fheight) {
-    style += `${imgAttributes.fwidth?"min-":"max-"}height:${imgAttributes.fheight}px;`;
+    style += `${imgAttributes.fwidth ? "min-" : "max-"}height:${imgAttributes.fheight}px;`;
   }
-  if(!onCanvas) element.setAttribute("style", style);
-  element.classList.add(...Array.from(imgAttributes.style))
-  if(!element.hasClass("excalidraw-embedded-img")) {
+  if (!onCanvas) element.setAttribute("style", style);
+  element.classList.add(...Array.from(imgAttributes.style));
+  if (!element.hasClass("excalidraw-embedded-img")) {
     element.addClass("excalidraw-embedded-img");
   }
-  if(
+  if (
     window?.ExcalidrawAutomate?.plugin?.settings?.canvasImmersiveEmbed &&
     !element.hasClass("excalidraw-canvas-immersive")
   ) {
     element.addClass("excalidraw-canvas-immersive");
   }
-}
+};
 
-const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSettings,loader}:{
-  filenameParts: FILENAMEPARTS,
-  theme: string,
-  cacheReady: boolean,
-  img: HTMLImageElement,
-  file: TFile,
-  exportSettings: ExportSettings,
-  loader: EmbeddedFilesLoader,
-}):Promise<HTMLImageElement> => {
+const _getSVGIMG = async ({
+  filenameParts,
+  theme,
+  cacheReady,
+  img,
+  file,
+  exportSettings,
+  loader,
+}: {
+  filenameParts: FILENAMEPARTS;
+  theme: string;
+  cacheReady: boolean;
+  img: HTMLImageElement;
+  file: TFile;
+  exportSettings: ExportSettings;
+  loader: EmbeddedFilesLoader;
+}): Promise<HTMLImageElement> => {
   exportSettings.skipInliningFonts = false;
   const cacheKey = {
     ...filenameParts,
-    isDark: theme==="dark",
+    isDark: theme === "dark",
     previewImageType: PreviewImageType.SVGIMG,
-    scale:1,
+    scale: 1,
     isTransparent: !exportSettings.withBackground,
     inlineFonts: !exportSettings.skipInliningFonts,
   };
 
-  if(cacheReady) {
+  if (cacheReady) {
     const src = await imageCache.getImageFromCache(cacheKey);
-    if(src && typeof src === "string") {
+    if (src && typeof src === "string") {
       img.setAttribute("src", src);
       return img;
     }
   }
 
-  if(!(filenameParts.hasBlockref || filenameParts.hasSectionref)) {
+  if (!(filenameParts.hasBlockref || filenameParts.hasSectionref)) {
     const quickSVG = await getQuickImagePreview(plugin, file.path, "svg");
     if (quickSVG) {
       const svg = convertSVGStringToElement(quickSVG);
@@ -214,27 +249,41 @@ const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSetting
       }
     }
   }
-  
-  const svg = convertSVGStringToElement((
-    await createSVG(
-      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref
-        ? filenameParts.filepath + filenameParts.linkpartReference
-        : file.path,
-      true,
-      filenameParts?.hasClippedFrameref
-      ? { ...exportSettings, frameRendering: { enabled: true, name: false, outline: false, clip: true}}
-      : exportSettings,
-      loader,
-      theme,
-      null,
-      null,
-      [],
-      plugin,
-      0,
-      getExportPadding(plugin, file),
-    )
-  ).outerHTML);
-  
+
+  const svg = convertSVGStringToElement(
+    (
+      await createSVG(
+        filenameParts.hasGroupref ||
+          filenameParts.hasBlockref ||
+          filenameParts.hasSectionref ||
+          filenameParts.hasFrameref ||
+          filenameParts.hasClippedFrameref
+          ? filenameParts.filepath + filenameParts.linkpartReference
+          : file.path,
+        true,
+        filenameParts?.hasClippedFrameref
+          ? {
+              ...exportSettings,
+              frameRendering: {
+                enabled: true,
+                name: false,
+                outline: false,
+                clip: true,
+              },
+            }
+          : exportSettings,
+        loader,
+        theme,
+        null,
+        null,
+        [],
+        plugin,
+        0,
+        getExportPadding(plugin, file),
+      )
+    ).outerHTML,
+  );
+
   if (!svg) {
     return null;
   }
@@ -244,64 +293,90 @@ const _getSVGIMG = async ({filenameParts,theme,cacheReady,img,file,exportSetting
   svg.setAttribute("width", "6000");
   svg.removeAttribute("height");
   return addSVGToImgSrc(img, svg, cacheReady, cacheKey);
-}
+};
 
-const _getSVGNative = async ({filenameParts,theme,cacheReady,containerElement,file,exportSettings,loader, width}:{
-  filenameParts: FILENAMEPARTS,
-  theme: string,
-  cacheReady: boolean,
-  containerElement: HTMLDivElement,
-  file: TFile,
-  exportSettings: ExportSettings,
-  loader: EmbeddedFilesLoader,
-  width?: number,
-}):Promise<HTMLDivElement> => {
+const _getSVGNative = async ({
+  filenameParts,
+  theme,
+  cacheReady,
+  containerElement,
+  file,
+  exportSettings,
+  loader,
+  width,
+}: {
+  filenameParts: FILENAMEPARTS;
+  theme: string;
+  cacheReady: boolean;
+  containerElement: HTMLDivElement;
+  file: TFile;
+  exportSettings: ExportSettings;
+  loader: EmbeddedFilesLoader;
+  width?: number;
+}): Promise<HTMLDivElement> => {
   exportSettings.skipInliningFonts = false;
   const cacheKey = {
     ...filenameParts,
-    isDark: theme==="dark",
+    isDark: theme === "dark",
     previewImageType: PreviewImageType.SVG,
-    scale:1,
+    scale: 1,
     isTransparent: !exportSettings.withBackground,
-    inlineFonts: !exportSettings.skipInliningFonts,  
+    inlineFonts: !exportSettings.skipInliningFonts,
   };
   let maybeSVG;
-  if(cacheReady) {
+  if (cacheReady) {
     maybeSVG = await imageCache.getImageFromCache(cacheKey);
   }
 
-  const svg = (maybeSVG && (maybeSVG instanceof SVGSVGElement))
-    ? maybeSVG
-    : convertSVGStringToElement((await createSVG(
-      filenameParts.hasGroupref || filenameParts.hasBlockref || filenameParts.hasSectionref || filenameParts.hasFrameref || filenameParts.hasClippedFrameref
-        ? filenameParts.filepath + filenameParts.linkpartReference
-        : file.path,
-      false,
-      filenameParts.hasClippedFrameref
-      ? { ...exportSettings, frameRendering: { enabled: true, name: false, outline: false, clip: true}}
-      : exportSettings,
-      loader,
-      theme,
-      null,
-      null,
-      [],
-      plugin,
-      0,
-      getExportPadding(plugin, file),
-      undefined,
-      true
-    )).outerHTML);
-  
+  const svg =
+    maybeSVG && maybeSVG instanceof SVGSVGElement
+      ? maybeSVG
+      : convertSVGStringToElement(
+          (
+            await createSVG(
+              filenameParts.hasGroupref ||
+                filenameParts.hasBlockref ||
+                filenameParts.hasSectionref ||
+                filenameParts.hasFrameref ||
+                filenameParts.hasClippedFrameref
+                ? filenameParts.filepath + filenameParts.linkpartReference
+                : file.path,
+              false,
+              filenameParts.hasClippedFrameref
+                ? {
+                    ...exportSettings,
+                    frameRendering: {
+                      enabled: true,
+                      name: false,
+                      outline: false,
+                      clip: true,
+                    },
+                  }
+                : exportSettings,
+              loader,
+              theme,
+              null,
+              null,
+              [],
+              plugin,
+              0,
+              getExportPadding(plugin, file),
+              undefined,
+              true,
+            )
+          ).outerHTML,
+        );
+
   if (!svg) {
     return null;
   }
 
   //cache SVG should have the width and height parameters and not the embedded font
-  if(!Boolean(maybeSVG)) {
-    cacheReady && imageCache.addImageToCache(cacheKey,"", svg);
+  if (!Boolean(maybeSVG)) {
+    cacheReady && imageCache.addImageToCache(cacheKey, "", svg);
   }
 
-  if(width && !isNaN(width)) {
+  if (width && !isNaN(width)) {
     svg.setAttribute("width", width.toString());
   } else {
     svg.removeAttribute("width");
@@ -309,7 +384,7 @@ const _getSVGNative = async ({filenameParts,theme,cacheReady,containerElement,fi
   svg.removeAttribute("height");
   containerElement.append(svg);
   return containerElement;
-}
+};
 
 /**
  * Generates an IMG or DIV element
@@ -334,7 +409,7 @@ const getIMG = async (
   const filenameParts = getEmbeddedFilenameParts(imgAttributes.fname);
 
   // https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/387
-  imgAttributes.style = imgAttributes.style.map(s=>s.replaceAll(" ", "-"));
+  imgAttributes.style = imgAttributes.style.map((s) => s.replaceAll(" ", "-"));
 
   const forceTheme = hasExportTheme(plugin, file)
     ? getExportTheme(plugin, file, "light")
@@ -353,8 +428,8 @@ const getIMG = async (
         ? "dark"
         : "light"
       : !plugin.settings.exportWithTheme
-      ? "light"
-      : undefined);
+        ? "light"
+        : undefined);
   if (theme) {
     exportSettings.withTheme = true;
   }
@@ -369,57 +444,82 @@ const getIMG = async (
   switch (plugin.settings.previewImageType) {
     case PreviewImageType.PNG: {
       const img = createEl("img");
-      setStyle({element:img,imgAttributes,onCanvas, isNativeSVG: false});
-      return await _getPNG({imgAttributes,filenameParts,theme,cacheReady,img,file,exportSettings,loader});
+      setStyle({ element: img, imgAttributes, onCanvas, isNativeSVG: false });
+      return await _getPNG({
+        imgAttributes,
+        filenameParts,
+        theme,
+        cacheReady,
+        img,
+        file,
+        exportSettings,
+        loader,
+      });
     }
     case PreviewImageType.SVGIMG: {
       const img = createEl("img");
-      setStyle({element:img,imgAttributes,onCanvas, isNativeSVG: false});
-      return await _getSVGIMG({filenameParts,theme,cacheReady,img,file,exportSettings,loader});
+      setStyle({ element: img, imgAttributes, onCanvas, isNativeSVG: false });
+      return await _getSVGIMG({
+        filenameParts,
+        theme,
+        cacheReady,
+        img,
+        file,
+        exportSettings,
+        loader,
+      });
     }
-    case PreviewImageType.SVG:  {
+    case PreviewImageType.SVG: {
       const img = createEl("div");
-      setStyle({element:img,imgAttributes,onCanvas, isNativeSVG: true});
+      setStyle({ element: img, imgAttributes, onCanvas, isNativeSVG: true });
       return await _getSVGNative({
         filenameParts,
         theme,
         cacheReady,
-        containerElement: img,file,
+        containerElement: img,
+        file,
         exportSettings,
         loader,
         width: imgAttributes.fwidth
-         ? (!imgAttributes.fwidth.endsWith("%") ? parseInt(imgAttributes.fwidth) : 6000)
-         : undefined,
+          ? !imgAttributes.fwidth.endsWith("%")
+            ? parseInt(imgAttributes.fwidth)
+            : 6000
+          : undefined,
       });
     }
   }
 };
 
-const addSVGToImgSrc = (img: HTMLImageElement, svg: SVGSVGElement, cacheReady: boolean, cacheKey: ImageKey):HTMLImageElement => {
+const addSVGToImgSrc = (
+  img: HTMLImageElement,
+  svg: SVGSVGElement,
+  cacheReady: boolean,
+  cacheKey: ImageKey,
+): HTMLImageElement => {
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2026
   //const svgString = new XMLSerializer().serializeToString(svg);
   const svgString = svg.outerHTML;
-  const blob = new Blob([svgString], { type: 'image/svg+xml' });
+  const blob = new Blob([svgString], { type: "image/svg+xml" });
   const blobUrl = URL.createObjectURL(blob);
   img.setAttribute("src", blobUrl);
-  
+
   // Revoke the ObjectURL after the image loads or fails to prevent memory leaks
   if (!cacheReady) {
     const cleanup = () => URL.revokeObjectURL(blobUrl);
-    img.addEventListener('load', cleanup, { once: true });
-    img.addEventListener('error', cleanup, { once: true });
+    img.addEventListener("load", cleanup, { once: true });
+    img.addEventListener("error", cleanup, { once: true });
   }
-  
+
   cacheReady && imageCache.addImageToCache(cacheKey, blobUrl, blob);
   return img;
-}
+};
 
 const createImgElement = async (
   attr: imgElementAttributes,
   onCanvas: boolean = false,
-) :Promise<HTMLElement> => {
-  const imgOrDiv = await getIMG(attr,onCanvas);
-  if(!imgOrDiv) {
+): Promise<HTMLElement> => {
+  const imgOrDiv = await getIMG(attr, onCanvas);
+  if (!imgOrDiv) {
     return null;
   }
   imgOrDiv.setAttribute("fileSource", attr.fname);
@@ -429,11 +529,11 @@ const createImgElement = async (
   if (attr.fheight) {
     imgOrDiv.setAttribute("h", attr.fheight);
   }
-  imgOrDiv.setAttribute("draggable","false");
-  imgOrDiv.setAttribute("onCanvas",onCanvas?"true":"false");
+  imgOrDiv.setAttribute("draggable", "false");
+  imgOrDiv.setAttribute("onCanvas", onCanvas ? "true" : "false");
 
-  let timer:number;
-  const clickEvent = (ev:PointerEvent) => {
+  let timer: number;
+  const clickEvent = (ev: PointerEvent) => {
     if (!isHTMLElement(ev.target)) {
       return;
     }
@@ -447,61 +547,83 @@ const createImgElement = async (
     const src = imgOrDiv.getAttribute("fileSource");
     if (src) {
       const srcParts = src.match(/([^#]*)(.*)/);
-      if(!srcParts) return;
-        const f = vault.getAbstractFileByPath(srcParts[1]) as TFile;
-        const linkModifier = linkClickModifierType(ev);
-        if (plugin.isExcalidrawFile(f) && isMaskFile(plugin, f)) {
-          (async () => {
-              const linkString = `[[${f.path}${srcParts[2]?"#"+srcParts[2]:""}]] ${getExcalidrawFileForwardLinks(plugin.app, f, new Set<string>())}`;
-              const result = await linkPrompt(linkString, plugin.app);
-              if(!result) return;
-              const [file, linkText, subpath] = result;
-              if(plugin.isExcalidrawFile(file)) {
-                plugin.openDrawing(file,linkModifier, true, subpath);
-                return;
-              }
-              let paneType: boolean | PaneType = false;
-              switch(linkModifier) {
-                case "active-pane": paneType = false; break;
-                case "new-pane": paneType = "split"; break;
-                case "popout-window": paneType = "window"; break;
-                case "new-tab": paneType = "tab"; break;
-                case "md-properties": paneType = "tab"; break;
-              }
-              plugin.app.workspace.openLinkText(linkText,"",paneType,subpath ? {eState: {subpath}} : {});
-          })()
-          return;
-        }
-      plugin.openDrawing(f,linkModifier,true,srcParts[2]);
+      if (!srcParts) return;
+      const f = vault.getAbstractFileByPath(srcParts[1]) as TFile;
+      const linkModifier = linkClickModifierType(ev);
+      if (plugin.isExcalidrawFile(f) && isMaskFile(plugin, f)) {
+        (async () => {
+          const linkString = `[[${f.path}${srcParts[2] ? "#" + srcParts[2] : ""}]] ${getExcalidrawFileForwardLinks(plugin.app, f, new Set<string>())}`;
+          const result = await linkPrompt(linkString, plugin.app);
+          if (!result) return;
+          const [file, linkText, subpath] = result;
+          if (plugin.isExcalidrawFile(file)) {
+            plugin.openDrawing(file, linkModifier, true, subpath);
+            return;
+          }
+          let paneType: boolean | PaneType = false;
+          switch (linkModifier) {
+            case "active-pane":
+              paneType = false;
+              break;
+            case "new-pane":
+              paneType = "split";
+              break;
+            case "popout-window":
+              paneType = "window";
+              break;
+            case "new-tab":
+              paneType = "tab";
+              break;
+            case "md-properties":
+              paneType = "tab";
+              break;
+          }
+          plugin.app.workspace.openLinkText(
+            linkText,
+            "",
+            paneType,
+            subpath ? { eState: { subpath } } : {},
+          );
+        })();
+        return;
+      }
+      plugin.openDrawing(f, linkModifier, true, srcParts[2]);
     } //.ctrlKey||ev.metaKey);
   };
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1003
-  let pointerDownEvent:any;
+  let pointerDownEvent: any;
   const eventElement = imgOrDiv as HTMLElement;
-  
+
   /*plugin.settings.previewImageType === PreviewImageType.SVG
     ? imgOrDiv.firstElementChild as HTMLElement
     : imgOrDiv;*/
 
-  eventElement.addEventListener("pointermove",(ev)=>{
-    if(!timer) return;
-    if(Math.abs(ev.screenX-pointerDownEvent.screenX)>10 || Math.abs(ev.screenY-pointerDownEvent.screenY)>10) {
+  eventElement.addEventListener("pointermove", (ev) => {
+    if (!timer) return;
+    if (
+      Math.abs(ev.screenX - pointerDownEvent.screenX) > 10 ||
+      Math.abs(ev.screenY - pointerDownEvent.screenY) > 10
+    ) {
       window.clearTimeout(timer);
       timer = null;
     }
-  });  
-  eventElement.addEventListener("pointerdown",(ev)=>{
-    if(imgOrDiv?.parentElement?.hasClass("canvas-node-content")) return;
-    const PLUGIN = app.plugins.plugins["obsidian-excalidraw-plugin"] as ExcalidrawPlugin;
-    const timeoutValue = DEVICE.isDesktop ? PLUGIN.settings.longPressDesktop : PLUGIN.settings.longPressMobile;
-    timer = window.setTimeout(()=>clickEvent(ev),timeoutValue);
+  });
+  eventElement.addEventListener("pointerdown", (ev) => {
+    if (imgOrDiv?.parentElement?.hasClass("canvas-node-content")) return;
+    const PLUGIN = app.plugins.plugins[
+      "obsidian-excalidraw-plugin"
+    ] as ExcalidrawPlugin;
+    const timeoutValue = DEVICE.isDesktop
+      ? PLUGIN.settings.longPressDesktop
+      : PLUGIN.settings.longPressMobile;
+    timer = window.setTimeout(() => clickEvent(ev), timeoutValue);
     pointerDownEvent = ev;
   });
-  eventElement.addEventListener("pointerup",()=>{
-    if(timer) window.clearTimeout(timer);
+  eventElement.addEventListener("pointerup", () => {
+    if (timer) window.clearTimeout(timer);
     timer = null;
-  })
-  eventElement.addEventListener("dblclick",clickEvent);
+  });
+  eventElement.addEventListener("dblclick", clickEvent);
   eventElement.addEventListener(RERENDER_EVENT, async (e) => {
     e.stopPropagation();
     const parent = imgOrDiv.parentElement;
@@ -509,41 +631,44 @@ const createImgElement = async (
     const imgMaxHeigth = imgOrDiv.style.maxHeight;
     const fileSource = imgOrDiv.getAttribute("fileSource");
     const onCanvas = imgOrDiv.getAttribute("onCanvas") === "true";
-    const newImg = await createImgElement({
-      fname: fileSource,
-      fwidth: imgOrDiv.getAttribute("w"),
-      fheight: imgOrDiv.getAttribute("h"),
-      style: [...Array.from(imgOrDiv.classList)],
-    }, onCanvas);
-    if(!newImg) return;
+    const newImg = await createImgElement(
+      {
+        fname: fileSource,
+        fwidth: imgOrDiv.getAttribute("w"),
+        fheight: imgOrDiv.getAttribute("h"),
+        style: [...Array.from(imgOrDiv.classList)],
+      },
+      onCanvas,
+    );
+    if (!newImg) return;
     parent.empty();
-    if(!onCanvas) {
+    if (!onCanvas) {
       newImg.style.maxHeight = imgMaxHeigth;
       newImg.style.maxWidth = imgMaxWidth;
     }
-    newImg.setAttribute("fileSource",fileSource);
+    newImg.setAttribute("fileSource", fileSource);
     parent.append(newImg);
   });
   const cssClasses = getFileCSSClasses(attr.file);
   cssClasses.forEach((cssClass) => {
-    if(imgOrDiv.hasClass(cssClass)) return;
+    if (imgOrDiv.hasClass(cssClass)) return;
     imgOrDiv.addClass(cssClass);
   });
-  if(window?.ExcalidrawAutomate?.plugin?.settings?.canvasImmersiveEmbed) {
-    if(!imgOrDiv.hasClass("excalidraw-canvas-immersive")) {
+  if (window?.ExcalidrawAutomate?.plugin?.settings?.canvasImmersiveEmbed) {
+    if (!imgOrDiv.hasClass("excalidraw-canvas-immersive")) {
       imgOrDiv.addClass("excalidraw-canvas-immersive");
     }
   } else {
-    if(imgOrDiv.hasClass("excalidraw-canvas-immersive")) {
+    if (imgOrDiv.hasClass("excalidraw-canvas-immersive")) {
       imgOrDiv.removeClass("excalidraw-canvas-immersive");
     }
   }
   return imgOrDiv;
-}
+};
 
 const createImageDiv = async (
   attr: imgElementAttributes,
-  onCanvas: boolean = false
+  onCanvas: boolean = false,
 ): Promise<HTMLDivElement> => {
   const img = await createImgElement(attr, onCanvas);
   return createDiv(attr.style.join(" "), (el) => el.append(img));
@@ -562,28 +687,31 @@ const processReadingMode = async (
   for (const maybeDrawing of embeddedItems) {
     //check to see if the file in the src attribute exists
     const fname = maybeDrawing.getAttribute("src")?.split("#")[0];
-    if(!fname) continue;
+    if (!fname) continue;
 
     const file = metadataCache.getFirstLinkpathDest(fname, ctx.sourcePath);
 
     //if the embeddedFile exits and it is an Excalidraw file
     //then lets replace the .internal-embed with the generated PNG or SVG image
     if (file && file instanceof TFile && plugin.isExcalidrawFile(file)) {
-      if(isTextOnlyEmbed(maybeDrawing)) {
+      if (isTextOnlyEmbed(maybeDrawing)) {
         //legacy reference to a block or section as text
         //should be embedded as legacy text
         continue;
       }
-  
+
       maybeDrawing.parentElement.replaceChild(
-        await processInternalEmbed(maybeDrawing,file),
-        maybeDrawing
+        await processInternalEmbed(maybeDrawing, file),
+        maybeDrawing,
       );
     }
   }
 };
 
-const processInternalEmbed = async (internalEmbedEl: Element, file: TFile ):Promise<HTMLDivElement> => {
+const processInternalEmbed = async (
+  internalEmbedEl: Element,
+  file: TFile,
+): Promise<HTMLDivElement> => {
   const attr: imgElementAttributes = {
     fname: "",
     fheight: "",
@@ -592,7 +720,7 @@ const processInternalEmbed = async (internalEmbedEl: Element, file: TFile ):Prom
   };
 
   const src = internalEmbedEl.getAttribute("src");
-  if(!src) return;
+  if (!src) return;
 
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1059
   internalEmbedEl.removeClass("markdown-embed");
@@ -608,12 +736,16 @@ const processInternalEmbed = async (internalEmbedEl: Element, file: TFile ):Prom
     : getDefaultHeight(plugin);
   let alt = internalEmbedEl.getAttribute("alt");
   attr.style = ["excalidraw-svg"];
-  processAltText(src.split("#")[0],alt,attr);
+  processAltText(src.split("#")[0], alt, attr);
   const fnameParts = getEmbeddedFilenameParts(src);
-  attr.fname = file?.path + (fnameParts.hasBlockref||fnameParts.hasSectionref?fnameParts.linkpartReference:"");
+  attr.fname =
+    file?.path +
+    (fnameParts.hasBlockref || fnameParts.hasSectionref
+      ? fnameParts.linkpartReference
+      : "");
   attr.file = file;
   return await createImageDiv(attr);
-}
+};
 
 function getDimensionsFromAliasString(data: string) {
   const dimensionRegex = /^(?<width>\d+%|\d+)(x(?<height>\d+%|\d+))?$/;
@@ -621,90 +753,97 @@ function getDimensionsFromAliasString(data: string) {
 
   const match = data.match(dimensionRegex) || data.match(heightOnlyRegex);
   if (match) {
-      const { width, height } = match.groups;
+    const { width, height } = match.groups;
 
-      // Ensure width and height do not start with '0'
-      if ((width && width.startsWith('0') && width !== '0') || 
-          (height && height.startsWith('0') && height !== '0')) {
-          return null;
-      }
+    // Ensure width and height do not start with '0'
+    if (
+      (width && width.startsWith("0") && width !== "0") ||
+      (height && height.startsWith("0") && height !== "0")
+    ) {
+      return null;
+    }
 
-      return {
-          width: width || undefined,
-          height: height || undefined,
-      };
+    return {
+      width: width || undefined,
+      height: height || undefined,
+    };
   }
-  
+
   // If the input starts with a 0 or is a decimal, return null
   if (/^0\d|^\d+\.\d+/.test(data)) {
-      return null;
+    return null;
   }
   return null;
 }
 
-type AliasParts = { alias?: string, width?: string, height?: string, style?: string };
-function parseAlias(input: string):AliasParts {
-  const result:AliasParts = {};
-  const parts = input.split('|').map(part => part.trim());
+type AliasParts = {
+  alias?: string;
+  width?: string;
+  height?: string;
+  style?: string;
+};
+function parseAlias(input: string): AliasParts {
+  const result: AliasParts = {};
+  const parts = input.split("|").map((part) => part.trim());
 
   switch (parts.length) {
-      case 1:
-          const singleMatch = getDimensionsFromAliasString(parts[0]);
-          if (singleMatch) {
-              return singleMatch; // Return dimensions if valid
-          }
-          result.style = parts[0]; // Otherwise, return as style
-          break;
+    case 1:
+      const singleMatch = getDimensionsFromAliasString(parts[0]);
+      if (singleMatch) {
+        return singleMatch; // Return dimensions if valid
+      }
+      result.style = parts[0]; // Otherwise, return as style
+      break;
 
-      case 2:
-          const firstDim = getDimensionsFromAliasString(parts[0]);
-          const secondDim = getDimensionsFromAliasString(parts[1]);
+    case 2:
+      const firstDim = getDimensionsFromAliasString(parts[0]);
+      const secondDim = getDimensionsFromAliasString(parts[1]);
 
-          if (secondDim) {
-              result.alias = parts[0];
-              result.width = secondDim.width;
-              result.height = secondDim.height;
-          } else if (firstDim) {
-              result.width = firstDim.width;
-              result.height = firstDim.height;
-              result.style = parts[1]; // Second part is style
-          } else {
-              result.alias = parts[0];
-              result.style = parts[1]; // Assuming second part is style
-          }
-          break;
+      if (secondDim) {
+        result.alias = parts[0];
+        result.width = secondDim.width;
+        result.height = secondDim.height;
+      } else if (firstDim) {
+        result.width = firstDim.width;
+        result.height = firstDim.height;
+        result.style = parts[1]; // Second part is style
+      } else {
+        result.alias = parts[0];
+        result.style = parts[1]; // Assuming second part is style
+      }
+      break;
 
-      case 3:
-          const middleMatch = getDimensionsFromAliasString(parts[1]);
-          if (middleMatch) {
-              result.alias = parts[0];
-              result.width = middleMatch.width;
-              result.height = middleMatch.height;
-              result.style = parts[2];
-          } else {
-              result.alias = parts[0];
-              result.style = parts[2]; // Last part is style
-          }
-          break;
+    case 3:
+      const middleMatch = getDimensionsFromAliasString(parts[1]);
+      if (middleMatch) {
+        result.alias = parts[0];
+        result.width = middleMatch.width;
+        result.height = middleMatch.height;
+        result.style = parts[2];
+      } else {
+        result.alias = parts[0];
+        result.style = parts[2]; // Last part is style
+      }
+      break;
 
-      default:
-          const secondValue = getDimensionsFromAliasString(parts[1]);
-          if (secondValue) {
-              result.alias = parts[0];
-              result.width = secondValue.width;
-              result.height = secondValue.height;
-              result.style = parts[parts.length - 1]; // Last part is style
-          } else {
-              result.alias = parts[0];
-              result.style = parts[parts.length - 1]; // Last part is style
-          }
-          break;
+    default:
+      const secondValue = getDimensionsFromAliasString(parts[1]);
+      if (secondValue) {
+        result.alias = parts[0];
+        result.width = secondValue.width;
+        result.height = secondValue.height;
+        result.style = parts[parts.length - 1]; // Last part is style
+      } else {
+        result.alias = parts[0];
+        result.style = parts[parts.length - 1]; // Last part is style
+      }
+      break;
   }
 
   // Clean up the result to remove undefined properties
   Object.keys(result).forEach((key: keyof AliasParts) => {
     if (result[key] === undefined) {
-        delete result[key];
+      delete result[key];
     }
   });
 
@@ -713,8 +852,8 @@ function parseAlias(input: string):AliasParts {
 
 const processAltText = (
   fname: string,
-  alt:string,
-  attr: imgElementAttributes
+  alt: string,
+  attr: imgElementAttributes,
 ) => {
   if (alt && !alt.startsWith(fname)) {
     const aliasParts = parseAlias(alt);
@@ -724,15 +863,23 @@ const processAltText = (
       attr.style = [`excalidraw-svg${`-${aliasParts.style}`}`];
     }
   }
-}
+};
 
-const isTextOnlyEmbed = (internalEmbedEl: Element):boolean => {
+const isTextOnlyEmbed = (internalEmbedEl: Element): boolean => {
   const src = internalEmbedEl.getAttribute("src");
-  if(!src) return true; //technically this does not mean this is a text only embed, but still should abort further processing
+  if (!src) return true; //technically this does not mean this is a text only embed, but still should abort further processing
   const fnameParts = getEmbeddedFilenameParts(src);
-  return !(fnameParts.hasArearef || fnameParts.hasGroupref || fnameParts.hasFrameref || fnameParts.hasClippedFrameref) &&
-    (fnameParts.hasBlockref || fnameParts.hasSectionref) && fnameParts.blockref !== "as-image"
-}
+  return (
+    !(
+      fnameParts.hasArearef ||
+      fnameParts.hasGroupref ||
+      fnameParts.hasFrameref ||
+      fnameParts.hasClippedFrameref
+    ) &&
+    (fnameParts.hasBlockref || fnameParts.hasSectionref) &&
+    fnameParts.blockref !== "as-image"
+  );
+};
 
 const tmpObsidianWYSIWYG = async (
   el: HTMLElement,
@@ -742,9 +889,9 @@ const tmpObsidianWYSIWYG = async (
   isHoverPopover: boolean,
 ) => {
   const file = app.vault.getAbstractFileByPath(ctx.sourcePath);
-  if(!(file instanceof TFile)) return;
-  if(!plugin.isExcalidrawFile(file)) return;
-  if(ctx.frontmatter?.["excalidraw-embed-md"]) {
+  if (!(file instanceof TFile)) return;
+  if (!plugin.isExcalidrawFile(file)) return;
+  if (ctx.frontmatter?.["excalidraw-embed-md"]) {
     return;
   }
   if (ctx.remainingNestLevel < 4) {
@@ -757,11 +904,16 @@ const tmpObsidianWYSIWYG = async (
   //alt, width, and height attributes of .internal-embed to size and style the image
   const containerEl = ctx.containerEl;
 
-  if(!plugin.settings.renderImageInMarkdownReadingMode && isMarkdownReadingMode) { // containerEl.parentElement?.parentElement?.hasClass("markdown-reading-view")) {
+  if (
+    !plugin.settings.renderImageInMarkdownReadingMode &&
+    isMarkdownReadingMode
+  ) {
+    // containerEl.parentElement?.parentElement?.hasClass("markdown-reading-view")) {
     return;
   }
 
-  if(!plugin.settings.renderImageInMarkdownToPDF && isPrinting) { //containerEl.parentElement?.hasClass("print")) {
+  if (!plugin.settings.renderImageInMarkdownToPDF && isPrinting) {
+    //containerEl.parentElement?.hasClass("print")) {
     return;
   }
 
@@ -779,19 +931,18 @@ const tmpObsidianWYSIWYG = async (
     internalEmbedDiv = internalEmbedDiv.parentElement;
   }
 
-  if(
+  if (
     internalEmbedDiv.hasClass("dataview") ||
     internalEmbedDiv.hasClass("cm-preview-code-block") ||
     internalEmbedDiv.hasClass("cm-embed-block")
-  ) { 
+  ) {
     return; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/835
   }
 
-  
-  if(!plugin.settings.renderImageInHoverPreviewForMDNotes) {
+  if (!plugin.settings.renderImageInHoverPreviewForMDNotes) {
     //const isHoverPopover = internalEmbedDiv.parentElement?.hasClass("hover-popover");
     const shouldOpenMD = Boolean(ctx.frontmatter?.["excalidraw-open-md"]);
-    if(isHoverPopover && shouldOpenMD) {
+    if (isHoverPopover && shouldOpenMD) {
       return;
     }
   }
@@ -804,63 +955,81 @@ const tmpObsidianWYSIWYG = async (
     fwidth: isPrinting ? "100%" : getDefaultWidth(plugin),
     style: ["excalidraw-svg"],
   };
-  
+
   attr.file = file;
 
   const markdownEmbed = internalEmbedDiv.hasClass("markdown-embed");
   const markdownReadingView = isPrinting || isMarkdownReadingMode; //internalEmbedDiv.hasClass("markdown-reading-view")
-  if (!internalEmbedDiv.hasClass("internal-embed") && (markdownEmbed || markdownReadingView)) {
-    if(isPrinting) {
+  if (
+    !internalEmbedDiv.hasClass("internal-embed") &&
+    (markdownEmbed || markdownReadingView)
+  ) {
+    if (isPrinting) {
       internalEmbedDiv = containerEl;
     }
     //We are processing the markdown preview of an actual Excalidraw file
     //the excalidraw file in markdown preview mode
     const isFrontmatterDiv = Boolean(el.querySelector(".frontmatter"));
     let areaPreview = false;
-    if(Boolean(ctx.frontmatter)) {
+    if (Boolean(ctx.frontmatter)) {
       el.empty();
     } else {
       //Obsidian changed this at some point from h3 to h5 and also the text...
       let warningEl = el.querySelector("div>*[data-heading^='Unable to find ");
-      if(!warningEl) {
+      if (!warningEl) {
         //changed in Obsidian 1.8.9
         warningEl = el.querySelector("div > *[data-heading]");
       }
-      if(warningEl) {
+      if (warningEl) {
         const dataHeading = warningEl.getAttr("data-heading");
-        const ref = dataHeading.match(/.+(\^(?:group=|area=|frame=|clippedframe=)[A-Za-z0-9_-]{8,21})/)?.[1]
+        const ref =
+          dataHeading.match(
+            /.+(\^(?:group=|area=|frame=|clippedframe=)[A-Za-z0-9_-]{8,21})/,
+          )?.[1] ??
           // I am unsure if this works with all Obsidian translations,
           // thus I kept the first with the fix ID length and have the frame name as fallback
-          ?? dataHeading.match(/.+(\^(?:group=|area=|frame=|clippedframe=)[\p{L}\p{N}_ -]+)/u)?.[1]; 
-        if(ref) {
-          attr.fname = file.path + "#" +ref;
+          dataHeading.match(
+            /.+(\^(?:group=|area=|frame=|clippedframe=)[\p{L}\p{N}_ -]+)/u,
+          )?.[1];
+        if (ref) {
+          attr.fname = file.path + "#" + ref;
           areaPreview = true;
         }
       }
     }
-    if(!isFrontmatterDiv && !areaPreview) {
-      if(el.parentElement === containerEl) containerEl.removeChild(el);
+    if (!isFrontmatterDiv && !areaPreview) {
+      if (el.parentElement === containerEl) containerEl.removeChild(el);
       return;
     }
     internalEmbedDiv.empty();
     const onCanvas = internalEmbedDiv.hasClass("canvas-node-content");
     const imgDiv = await createImageDiv(attr, onCanvas);
-    if(markdownEmbed) {
+    if (markdownEmbed) {
       //display image on canvas without markdown frame
       internalEmbedDiv.removeClass("markdown-embed");
       internalEmbedDiv.removeClass("inline-embed");
       internalEmbedDiv.addClass("media-embed");
       internalEmbedDiv.addClass("image-embed");
-      if(!onCanvas && imgDiv.firstChild instanceof HTMLElement) {
+      if (!onCanvas && imgDiv.firstChild instanceof HTMLElement) {
         imgDiv.firstChild.style.maxHeight = "100%";
         imgDiv.firstChild.style.maxWidth = null;
       }
       // Resolve the cyclic size dependency by applying a CSS width and/or height
-      if(!onCanvas && isHoverPopover && imgDiv.firstChild instanceof HTMLImageElement) {
-          internalEmbedDiv.style.setProperty("--popover-width", attr.fwidth + "px");
-          internalEmbedDiv.style.setProperty("--popover-height", attr.fheight + "px");
-          internalEmbedDiv.style.width = "var(--popover-width)";
-          internalEmbedDiv.style.height = "var(--popover-height)";
+      if (
+        !onCanvas &&
+        isHoverPopover &&
+        imgDiv.firstChild instanceof HTMLImageElement
+      ) {
+        internalEmbedDiv.style.setProperty(
+          "--popover-width",
+          attr.fwidth + "px",
+        );
+        internalEmbedDiv.style.setProperty(
+          "--popover-height",
+          attr.fheight + "px",
+        );
+        internalEmbedDiv.style.width = "var(--popover-width)";
+        internalEmbedDiv.style.height = "var(--popover-height)";
       }
       internalEmbedDiv.appendChild(imgDiv.firstChild);
       return;
@@ -869,7 +1038,7 @@ const tmpObsidianWYSIWYG = async (
     return;
   }
 
-  if(isTextOnlyEmbed(internalEmbedDiv)) {
+  if (isTextOnlyEmbed(internalEmbedDiv)) {
     //legacy reference to a block or section as text
     //should be embedded as legacy text
     return;
@@ -877,13 +1046,13 @@ const tmpObsidianWYSIWYG = async (
 
   el.empty();
 
-  if(internalEmbedDiv.hasAttribute("ready")) {  
+  if (internalEmbedDiv.hasAttribute("ready")) {
     return;
   }
-  internalEmbedDiv.setAttribute("ready","");
+  internalEmbedDiv.setAttribute("ready", "");
 
   internalEmbedDiv.empty();
-  const imgDiv = await processInternalEmbed(internalEmbedDiv,file);
+  const imgDiv = await processInternalEmbed(internalEmbedDiv, file);
   internalEmbedDiv.appendChild(imgDiv);
 
   //timer to avoid the image flickering when the user is typing
@@ -898,12 +1067,15 @@ const tmpObsidianWYSIWYG = async (
     timer = window.setTimeout(async () => {
       timer = null;
       internalEmbedDiv.empty();
-      const imgDiv = await processInternalEmbed(internalEmbedDiv,file);
-      internalEmbedDiv.appendChild(imgDiv);    
+      const imgDiv = await processInternalEmbed(internalEmbedDiv, file);
+      internalEmbedDiv.appendChild(imgDiv);
     }, 500);
-  }
+  };
   const observer = DEBUGGING
-    ? new CustomMutationObserver(markdownObserverFn, "markdowPostProcessorObserverFn")
+    ? new CustomMutationObserver(
+        markdownObserverFn,
+        "markdowPostProcessorObserverFn",
+      )
     : new MutationObserver(markdownObserverFn);
   observer.observe(internalEmbedDiv, {
     attributes: true, //configure it to listen to attribute changes
@@ -921,47 +1093,70 @@ export const markdownPostProcessor = async (
   ctx: MarkdownPostProcessorContext,
 ) => {
   await plugin.awaitSettings();
-  const isPrinting = Boolean(document.body.querySelectorAll("body > .print").length>0);
+  const isPrinting = Boolean(
+    document.body.querySelectorAll("body > .print").length > 0,
+  );
   //firstElementChild: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1956
-  const isFrontmatter = el.hasClass("mod-frontmatter") ||
+  const isFrontmatter =
+    el.hasClass("mod-frontmatter") ||
     el.firstElementChild?.hasClass("frontmatter") ||
     el.firstElementChild?.hasClass("block-language-yaml");
-  if(isPrinting && isFrontmatter) {
+  if (isPrinting && isFrontmatter) {
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2184
     const file = app.vault.getAbstractFileByPath(ctx.sourcePath);
-    const isDrawing = file && file instanceof TFile && plugin.isExcalidrawFile(file);
-    if(isDrawing) {
+    const isDrawing =
+      file && file instanceof TFile && plugin.isExcalidrawFile(file);
+    if (isDrawing) {
       return;
     }
   }
   const containerEl = ctx.containerEl;
 
-
   //check to see if we are rendering in editing mode or live preview
-  //if yes, then there should be no .internal-embed containers  
-  const isMarkdownReadingMode = Boolean(containerEl && getParentOfClass(containerEl, "markdown-reading-view"));
-  const isHoverPopover = Boolean(containerEl && getParentOfClass(containerEl, "hover-popover"));
-  const isPreview = (isHoverPopover && Boolean(ctx?.frontmatter?.["excalidraw-open-md"]) && !plugin.settings.renderImageInHoverPreviewForMDNotes);
+  //if yes, then there should be no .internal-embed containers
+  const isMarkdownReadingMode = Boolean(
+    containerEl && getParentOfClass(containerEl, "markdown-reading-view"),
+  );
+  const isHoverPopover = Boolean(
+    containerEl && getParentOfClass(containerEl, "hover-popover"),
+  );
+  const isPreview =
+    isHoverPopover &&
+    Boolean(ctx?.frontmatter?.["excalidraw-open-md"]) &&
+    !plugin.settings.renderImageInHoverPreviewForMDNotes;
   const embeddedItems = el.querySelectorAll(".internal-embed");
-  
-  if(isPrinting && plugin.settings.renderImageInMarkdownToPDF) {
-    await tmpObsidianWYSIWYG(el, ctx, isPrinting, isMarkdownReadingMode, isHoverPopover);
+
+  if (isPrinting && plugin.settings.renderImageInMarkdownToPDF) {
+    await tmpObsidianWYSIWYG(
+      el,
+      ctx,
+      isPrinting,
+      isMarkdownReadingMode,
+      isHoverPopover,
+    );
     return;
   }
 
   if (!isPreview && embeddedItems.length === 0) {
-    if(isFrontmatter) {
+    if (isFrontmatter) {
       docIDs.add(ctx.docId);
     } else {
-      if(docIDs.has(ctx.docId) && !el.hasChildNodes()) {
+      if (docIDs.has(ctx.docId) && !el.hasChildNodes()) {
         docIDs.delete(ctx.docId);
       }
-      const isAreaGroupFrameRef = el.querySelectorAll('div > *[data-heading]').length === 1;
-      if(!isAreaGroupFrameRef) {
+      const isAreaGroupFrameRef =
+        el.querySelectorAll("div > *[data-heading]").length === 1;
+      if (!isAreaGroupFrameRef) {
         return;
       }
     }
-    await tmpObsidianWYSIWYG(el, ctx, isPrinting, isMarkdownReadingMode, isHoverPopover);
+    await tmpObsidianWYSIWYG(
+      el,
+      ctx,
+      isPrinting,
+      isMarkdownReadingMode,
+      isHoverPopover,
+    );
     return;
   }
 
@@ -969,7 +1164,9 @@ export const markdownPostProcessor = async (
   //then I want to hide all embedded items as these will be
   //transcluded text element or some other transcluded content inside the Excalidraw file
   //in reading mode these elements should be hidden
-  const excalidrawFile = Boolean(ctx.frontmatter?.hasOwnProperty("excalidraw-plugin"));
+  const excalidrawFile = Boolean(
+    ctx.frontmatter?.hasOwnProperty("excalidraw-plugin"),
+  );
   if (!(isPreview || isMarkdownReadingMode || isPrinting) && excalidrawFile) {
     setElementDisplay(el, "none");
     return;
@@ -1064,7 +1261,7 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = async (m) => {
       if (src) {
         plugin.openDrawing(
           vault.getAbstractFileByPath(src) as TFile,
-          linkClickModifierType(ev)
+          linkClickModifierType(ev),
         );
       } //.ctrlKey||ev.metaKey);
     });
@@ -1073,6 +1270,8 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = async (m) => {
 };
 
 export const legacyExcalidrawPopoverObserver = DEBUGGING
-  ? new CustomMutationObserver(legacyExcalidrawPopoverObserverFn, "legacyExcalidrawPopoverObserverFn")
+  ? new CustomMutationObserver(
+      legacyExcalidrawPopoverObserverFn,
+      "legacyExcalidrawPopoverObserverFn",
+    )
   : new MutationObserver(legacyExcalidrawPopoverObserverFn);
-

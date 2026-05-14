@@ -7,9 +7,9 @@ import { errorHandler } from "../../utils/ErrorHandler";
 import React from "react";
 import ReactDOM from "react-dom";
 
-declare let REACT_PACKAGES:string;
+declare let REACT_PACKAGES: string;
 declare let react: typeof React;
-declare let reactDOM:typeof ReactDOM;
+declare let reactDOM: typeof ReactDOM;
 declare let excalidrawLib: typeof ExcalidrawLib;
 declare const unpackExcalidraw: () => string;
 
@@ -21,27 +21,27 @@ export class PackageManager {
 
   constructor(plugin: ExcalidrawPlugin) {
     this.plugin = plugin;
-    
+
     try {
       this.EXCALIDRAW_PACKAGE = unpackExcalidraw();
-      
+
       // Use safe evaluation for unpacking the Excalidraw package
       excalidrawLib = errorHandler.safeEval(
-        `(function() {${this.EXCALIDRAW_PACKAGE};return ExcalidrawLib;})()`, 
-        "PackageManager constructor - excalidrawLib initialization", 
-        window
+        `(function() {${this.EXCALIDRAW_PACKAGE};return ExcalidrawLib;})()`,
+        "PackageManager constructor - excalidrawLib initialization",
+        window,
       );
-      
+
       if (!excalidrawLib) {
         throw new Error("Failed to initialize excalidrawLib");
       }
-      
+
       // Update the exported functions
       updateExcalidrawLib();
-      
+
       // Create a package with the loaded libraries
-      const initialPackage = {react, reactDOM, excalidrawLib};
-      
+      const initialPackage = { react, reactDOM, excalidrawLib };
+
       // Validate the package before storing
       if (this.validatePackage(initialPackage)) {
         this.setPackage(window, initialPackage);
@@ -51,10 +51,13 @@ export class PackageManager {
       }
     } catch (e) {
       errorHandler.handleError(e, "PackageManager constructor");
-      new Notice("Error loading the Excalidraw package. Some features may not work correctly.", 10000);
+      new Notice(
+        "Error loading the Excalidraw package. Some features may not work correctly.",
+        10000,
+      );
       console.error("Error loading the Excalidraw package", e);
     }
-    
+
     plugin.logStartupEvent("Excalidraw package unpacked");
   }
 
@@ -63,19 +66,19 @@ export class PackageManager {
    */
   private validatePackage(pkg: Packages): boolean {
     if (!pkg) return false;
-    
+
     // Check that all components exist
     if (!pkg.react || !pkg.reactDOM || !pkg.excalidrawLib) {
       return false;
     }
-    
+
     // Verify that excalidrawLib has essential methods
     const lib = pkg.excalidrawLib;
     return (
-      typeof lib === 'object' && 
+      typeof lib === "object" &&
       lib !== null &&
-      typeof lib.restoreElements === 'function' && 
-      typeof lib.exportToSvg === 'function'
+      typeof lib.restoreElements === "function" &&
+      typeof lib.exportToSvg === "function"
     );
   }
 
@@ -85,15 +88,15 @@ export class PackageManager {
   public setPackage(window: Window, pkg: Packages) {
     if (this.validatePackage(pkg)) {
       this.packageMap.set(window, pkg);
-      
+
       // Update fallback if we don't have one
       if (!this.fallbackPackage) {
         this.fallbackPackage = pkg;
       }
     } else {
       errorHandler.handleError(
-        "Attempted to set invalid package", 
-        "PackageManager.setPackage"
+        "Attempted to set invalid package",
+        "PackageManager.setPackage",
       );
     }
   }
@@ -119,38 +122,46 @@ export class PackageManager {
       }
 
       // Create new package
-      return errorHandler.wrapWithTryCatch(() => {
-        // Use safe evaluation to load packages in the window context
-        const evalResult = errorHandler.safeEval<{react: typeof React, reactDOM: typeof ReactDOM, excalidrawLib: typeof ExcalidrawLib}>(
-          `(function() {
+      return errorHandler.wrapWithTryCatch(
+        () => {
+          // Use safe evaluation to load packages in the window context
+          const evalResult = errorHandler.safeEval<{
+            react: typeof React;
+            reactDOM: typeof ReactDOM;
+            excalidrawLib: typeof ExcalidrawLib;
+          }>(
+            `(function() {
             ${REACT_PACKAGES + this.EXCALIDRAW_PACKAGE};
             return {react: React, reactDOM: ReactDOM, excalidrawLib: ExcalidrawLib};
           })()`,
-          "PackageManager.getPackage - package evaluation",
-          win
-        );
-        
-        if (!evalResult || !this.validatePackage(evalResult)) {
-          throw new Error("Failed to create valid package");
-        }
-        
-        const newPackage = {
-          react: evalResult.react,
-          reactDOM: evalResult.reactDOM,
-          excalidrawLib: evalResult.excalidrawLib
-        };
-        
-        this.packageMap.set(win, newPackage);
-        return newPackage;
-      }, "PackageManager.getPackage", this.fallbackPackage);
+            "PackageManager.getPackage - package evaluation",
+            win,
+          );
+
+          if (!evalResult || !this.validatePackage(evalResult)) {
+            throw new Error("Failed to create valid package");
+          }
+
+          const newPackage = {
+            react: evalResult.react,
+            reactDOM: evalResult.reactDOM,
+            excalidrawLib: evalResult.excalidrawLib,
+          };
+
+          this.packageMap.set(win, newPackage);
+          return newPackage;
+        },
+        "PackageManager.getPackage",
+        this.fallbackPackage,
+      );
     } catch (error) {
       errorHandler.handleError(error, "PackageManager.getPackage");
-      
+
       // Return fallback package if available to prevent data loss
       if (this.fallbackPackage) {
         return this.fallbackPackage;
       }
-      
+
       // If no fallback, throw error to prevent undefined behavior
       throw new Error("Failed to get package and no fallback available");
     }
@@ -166,7 +177,10 @@ export class PackageManager {
       if (win.ExcalidrawLib === excalidrawLib) {
         // Safely clean up resources
         errorHandler.wrapWithTryCatch(() => {
-          if (excalidrawLib && typeof excalidrawLib.destroyObsidianUtils === 'function') {
+          if (
+            excalidrawLib &&
+            typeof excalidrawLib.destroyObsidianUtils === "function"
+          ) {
             excalidrawLib.destroyObsidianUtils();
           }
           delete win.ExcalidrawLib;
@@ -204,15 +218,15 @@ export class PackageManager {
   public destroy() {
     try {
       REACT_PACKAGES = "";
-      
+
       Array.from(this.packageMap.entries()).forEach(([win, _]) => {
         this.deletePackage(win);
       });
-      
+
       this.packageMap.clear();
       this.EXCALIDRAW_PACKAGE = "";
       this.fallbackPackage = null;
-      
+
       react = null;
       reactDOM = null;
       excalidrawLib = null;

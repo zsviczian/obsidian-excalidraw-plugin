@@ -1,94 +1,117 @@
 import {
-TFile,
-Plugin,
-WorkspaceLeaf,
-addIcon,
-App,
-PluginManifest,
-MarkdownView,
-normalizePath,
-ViewState,
-Notice,
-request,
-MetadataCache,
-Workspace,
-TAbstractFile,
-FrontMatterCache,
+  TFile,
+  Plugin,
+  WorkspaceLeaf,
+  addIcon,
+  App,
+  PluginManifest,
+  MarkdownView,
+  normalizePath,
+  ViewState,
+  Notice,
+  request,
+  MetadataCache,
+  Workspace,
+  TAbstractFile,
+  FrontMatterCache,
 } from "obsidian";
 import {
-VIEW_TYPE_EXCALIDRAW,
-VIEW_TYPE_SIDEPANEL,
-EXCALIDRAW_ICON,
-ICON_NAME,
-SCRIPTENGINE_ICON,
-SCRIPTENGINE_ICON_NAME,
-RERENDER_EVENT,
-FRONTMATTER_KEYS,
-FRONTMATTER,
-JSON_parse,
-SCRIPT_INSTALL_CODEBLOCK,
-SCRIPT_INSTALL_FOLDER,
-EXPORT_TYPES,
-EXPORT_IMG_ICON_NAME,
-EXPORT_IMG_ICON,
-LOCALE,
-setExcalidrawPlugin,
-DEVICE,
-FONTS_STYLE_ID,
-CJK_STYLE_ID,
-loadMermaid,
-setRootElementSize,
+  VIEW_TYPE_EXCALIDRAW,
+  VIEW_TYPE_SIDEPANEL,
+  EXCALIDRAW_ICON,
+  ICON_NAME,
+  SCRIPTENGINE_ICON,
+  SCRIPTENGINE_ICON_NAME,
+  RERENDER_EVENT,
+  FRONTMATTER_KEYS,
+  FRONTMATTER,
+  JSON_parse,
+  SCRIPT_INSTALL_CODEBLOCK,
+  SCRIPT_INSTALL_FOLDER,
+  EXPORT_TYPES,
+  EXPORT_IMG_ICON_NAME,
+  EXPORT_IMG_ICON,
+  LOCALE,
+  setExcalidrawPlugin,
+  DEVICE,
+  FONTS_STYLE_ID,
+  CJK_STYLE_ID,
+  loadMermaid,
+  setRootElementSize,
 } from "../constants/constants";
 import {
-ExcalidrawSettings,
-DEFAULT_SETTINGS,
-ExcalidrawSettingTab,
-cloneKnownAIProviderProfiles,
-cloneModelConfigs,
-KNOWN_AI_TEXT_MODEL_CONFIGS,
-KNOWN_AI_IMAGE_MODEL_CONFIGS,
+  ExcalidrawSettings,
+  DEFAULT_SETTINGS,
+  ExcalidrawSettingTab,
+  cloneKnownAIProviderProfiles,
+  cloneModelConfigs,
+  KNOWN_AI_TEXT_MODEL_CONFIGS,
+  KNOWN_AI_IMAGE_MODEL_CONFIGS,
 } from "./settings";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
-import { initExcalidrawAutomate,insertLaTeXToView } from "src/utils/excalidrawAutomateUtils";
-import { around,dedupe } from "monkey-around";
+import {
+  initExcalidrawAutomate,
+  insertLaTeXToView,
+} from "src/utils/excalidrawAutomateUtils";
+import { around, dedupe } from "monkey-around";
 import { t } from "../lang/helpers";
 import {
-createOrOverwriteFile,
-fileShouldDefaultAsExcalidraw,
-getDrawingFilename,
-getIMGFilename,
-getNewUniqueFilepath,
+  createOrOverwriteFile,
+  fileShouldDefaultAsExcalidraw,
+  getDrawingFilename,
+  getIMGFilename,
+  getNewUniqueFilepath,
 } from "../utils/fileUtils";
 import {
-getFontDataURL,
-errorlog,sleep,
-isVersionNewerThanOther,
-isCallerFromTemplaterPlugin,
-versionUpdateCheckTimer,
-getFontMetrics,
-calculateUIModeValue
+  getFontDataURL,
+  errorlog,
+  sleep,
+  isVersionNewerThanOther,
+  isCallerFromTemplaterPlugin,
+  versionUpdateCheckTimer,
+  getFontMetrics,
+  calculateUIModeValue,
 } from "../utils/utils";
-import { foldExcalidrawSection,getExcalidrawViews,setExcalidrawView } from "../utils/obsidianUtils";
+import {
+  foldExcalidrawSection,
+  getExcalidrawViews,
+  setExcalidrawView,
+} from "../utils/obsidianUtils";
 import { FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import { ScriptEngine } from "../shared/Scripts";
-import { hoverEvent,initializeMarkdownPostProcessor,markdownPostProcessor,legacyExcalidrawPopoverObserver } from "./managers/MarkdownPostProcessor";
+import {
+  hoverEvent,
+  initializeMarkdownPostProcessor,
+  markdownPostProcessor,
+  legacyExcalidrawPopoverObserver,
+} from "./managers/MarkdownPostProcessor";
 import { FieldSuggester } from "../shared/Suggesters/FieldSuggester";
 import { ReleaseNotes } from "../shared/Dialogs/ReleaseNotes";
-import { DeviceType,Packages } from "../types/types";
+import { DeviceType, Packages } from "../types/types";
 import { PreviewImageType } from "../types/utilTypes";
-import { emulateCTRLClickForLinks,linkClickModifierType,PaneTarget } from "../utils/modifierkeyHelper";
+import {
+  emulateCTRLClickForLinks,
+  linkClickModifierType,
+  PaneTarget,
+} from "../utils/modifierkeyHelper";
 import { imageCache } from "../shared/ImageCache";
 import { StylesManager } from "./managers/StylesManager";
-import { CustomMutationObserver,log } from "../utils/debugHelper";
+import { CustomMutationObserver, log } from "../utils/debugHelper";
 import { ExcalidrawConfig } from "../shared/ExcalidrawConfig";
 import { EditorHandler } from "./editor/EditorHandler";
 import { ExcalidrawLib } from "../types/excalidrawLib";
-import { Rank,SwordColors } from "../constants/actionIcons";
+import { Rank, SwordColors } from "../constants/actionIcons";
 import { RankMessage } from "../shared/Dialogs/RankMessage";
-import { initCompressionWorker,terminateCompressionWorker } from "../shared/Workers/compression-worker";
+import {
+  initCompressionWorker,
+  terminateCompressionWorker,
+} from "../shared/Workers/compression-worker";
 import { WeakArray } from "../shared/WeakArray";
 import { getCJKDataURLs } from "../utils/CJKLoader";
-import { ExcalidrawLoading,switchToExcalidraw } from "../view/ExcalidrawLoading";
+import {
+  ExcalidrawLoading,
+  switchToExcalidraw,
+} from "../view/ExcalidrawLoading";
 import { clearMathJaxVariables } from "../shared/LaTeX";
 import { PluginFileManager } from "./managers/FileManager";
 import { ObserverManager } from "./managers/ObserverManager";
@@ -103,9 +126,12 @@ import { getHighlightColor } from "src/utils/dynamicStyling";
 import { InlineLinkSuggester } from "src/shared/Suggesters/InlineLinkSuggester";
 import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
-import { decryptPersistedAPIKeys,encryptPersistedAPIKeys } from "src/utils/settingsKeyObfuscation";
+import {
+  decryptPersistedAPIKeys,
+  encryptPersistedAPIKeys,
+} from "src/utils/settingsKeyObfuscation";
 
-declare const PLUGIN_VERSION:string;
+declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
 
 type FileMasterInfo = {
@@ -113,9 +139,9 @@ type FileMasterInfo = {
   isLocalLink: boolean;
   path: string;
   hasSVGwithBitmap: boolean;
-  blockrefData: string,
-  colorMapJSON?: string
-}
+  blockrefData: string;
+  colorMapJSON?: string;
+};
 
 const PHONE_FOOTER_SAFE_AREA_STYLE_ID = "excalidraw-phone-footer-safe-area";
 const PHONE_FOOTER_SAFE_AREA_CSS = `
@@ -124,7 +150,8 @@ const PHONE_FOOTER_SAFE_AREA_CSS = `
 }
 `;
 
-type PersistedExcalidrawSettings = Partial<ExcalidrawSettings> & Record<string, unknown>;
+type PersistedExcalidrawSettings = Partial<ExcalidrawSettings> &
+  Record<string, unknown>;
 
 const LEGACY_AI_SETTING_KEYS: (keyof ExcalidrawSettings)[] = [
   "aiDefaultMaxTokens",
@@ -153,9 +180,7 @@ const LEGACY_AI_SETTING_KEYS: (keyof ExcalidrawSettings)[] = [
 const AI_TEXT_SUFFIX = "/chat/completions";
 
 const normalizeAISettingURL = (value: unknown): string => {
-  return typeof value === "string"
-    ? value.trim().replace(/\/+$/, "")
-    : "";
+  return typeof value === "string" ? value.trim().replace(/\/+$/, "") : "";
 };
 
 const joinAISettingURL = (baseURL: string, path: string): string => {
@@ -179,7 +204,9 @@ const LEGACY_PROVIDER_LABELS: Record<string, string> = {
   "openai-compatible": "OpenAI-compatible",
 };
 
-const stripLegacyAISettings = <T extends PersistedExcalidrawSettings>(settings: T): T => {
+const stripLegacyAISettings = <T extends PersistedExcalidrawSettings>(
+  settings: T,
+): T => {
   const sanitized = { ...settings };
   LEGACY_AI_SETTING_KEYS.forEach((key) => {
     delete sanitized[key];
@@ -194,27 +221,51 @@ const migrateLegacyAISettings = (
   const migratedRecord = migrated as Record<string, unknown>;
   let didMigrate = false;
 
-  const assignStringIfMissing = (key: keyof ExcalidrawSettings, value: unknown) => {
+  const assignStringIfMissing = (
+    key: keyof ExcalidrawSettings,
+    value: unknown,
+  ) => {
     if (!hasNonEmptyString(value) || hasNonEmptyString(migrated[key])) return;
     migratedRecord[key] = value.trim();
     didMigrate = true;
   };
 
-  const assignPositiveNumberIfMissing = (key: keyof ExcalidrawSettings, value: unknown) => {
+  const assignPositiveNumberIfMissing = (
+    key: keyof ExcalidrawSettings,
+    value: unknown,
+  ) => {
     if (!hasPositiveNumber(value) || hasPositiveNumber(migrated[key])) return;
     migratedRecord[key] = value;
     didMigrate = true;
   };
 
   assignStringIfMissing("aiAPIKey", settings.openAIAPIToken);
-  assignStringIfMissing("aiDefaultMultimodalModel", settings.aiDefaultVisionModel);
-  assignStringIfMissing("aiDefaultMultimodalModel", settings.openAIDefaultVisionModel);
+  assignStringIfMissing(
+    "aiDefaultMultimodalModel",
+    settings.aiDefaultVisionModel,
+  );
+  assignStringIfMissing(
+    "aiDefaultMultimodalModel",
+    settings.openAIDefaultVisionModel,
+  );
   assignStringIfMissing("aiDefaultTextModel", settings.openAIDefaultTextModel);
   assignStringIfMissing("aiDefaultTextModel", settings.aiDefaultVisionModel);
-  assignStringIfMissing("aiDefaultTextModel", settings.openAIDefaultVisionModel);
-  assignStringIfMissing("aiDefaultImageGenerationModel", settings.openAIDefaultImageGenerationModel);
-  assignPositiveNumberIfMissing("aiDefaultMaxResponseTokens", settings.aiDefaultMaxTokens);
-  assignPositiveNumberIfMissing("aiDefaultMaxResponseTokens", settings.openAIDefaultTextModelMaxTokens);
+  assignStringIfMissing(
+    "aiDefaultTextModel",
+    settings.openAIDefaultVisionModel,
+  );
+  assignStringIfMissing(
+    "aiDefaultImageGenerationModel",
+    settings.openAIDefaultImageGenerationModel,
+  );
+  assignPositiveNumberIfMissing(
+    "aiDefaultMaxResponseTokens",
+    settings.aiDefaultMaxTokens,
+  );
+  assignPositiveNumberIfMissing(
+    "aiDefaultMaxResponseTokens",
+    settings.openAIDefaultTextModelMaxTokens,
+  );
 
   const legacyTextEndpoint = normalizeAISettingURL(settings.openAIURL);
   const inferredLegacyBaseURL = legacyTextEndpoint.endsWith(AI_TEXT_SUFFIX)
@@ -223,13 +274,17 @@ const migrateLegacyAISettings = (
 
   assignStringIfMissing("aiBaseURL", inferredLegacyBaseURL);
 
-  const effectiveBaseURL = normalizeAISettingURL(migrated.aiBaseURL) || inferredLegacyBaseURL;
-  const derivedTextEndpoint = joinAISettingURL(effectiveBaseURL, AI_TEXT_SUFFIX);
+  const effectiveBaseURL =
+    normalizeAISettingURL(migrated.aiBaseURL) || inferredLegacyBaseURL;
+  const derivedTextEndpoint = joinAISettingURL(
+    effectiveBaseURL,
+    AI_TEXT_SUFFIX,
+  );
 
   if (
-    hasNonEmptyString(legacyTextEndpoint)
-    && !hasNonEmptyString(migrated.aiTextEndpoint)
-    && legacyTextEndpoint !== derivedTextEndpoint
+    hasNonEmptyString(legacyTextEndpoint) &&
+    !hasNonEmptyString(migrated.aiTextEndpoint) &&
+    legacyTextEndpoint !== derivedTextEndpoint
   ) {
     migrated.aiTextEndpoint = legacyTextEndpoint;
     didMigrate = true;
@@ -250,17 +305,44 @@ const migrateLegacyAISettings = (
     }
   };
 
-  assignEndpointOverrideIfNeeded("aiImageGenerationEndpoint", settings.openAIImageGenerationURL, "/images/generations");
-  assignEndpointOverrideIfNeeded("aiImageEditsEndpoint", settings.openAIImageEditsURL, "/images/edits");
-  assignEndpointOverrideIfNeeded("aiImageVariationsEndpoint", settings.openAIImageVariationURL, "/images/variations");
+  assignEndpointOverrideIfNeeded(
+    "aiImageGenerationEndpoint",
+    settings.openAIImageGenerationURL,
+    "/images/generations",
+  );
+  assignEndpointOverrideIfNeeded(
+    "aiImageEditsEndpoint",
+    settings.openAIImageEditsURL,
+    "/images/edits",
+  );
+  assignEndpointOverrideIfNeeded(
+    "aiImageVariationsEndpoint",
+    settings.openAIImageVariationURL,
+    "/images/variations",
+  );
 
-  const hadProviderProfiles = Boolean(migrated.aiProviderProfiles && Object.keys(migrated.aiProviderProfiles).length > 0);
-  const hadTextModelConfigs = Boolean(migrated.aiTextModelConfigs && Object.keys(migrated.aiTextModelConfigs).length > 0);
-  const hadVisionModelConfigs = Boolean(migrated.aiVisionModelConfigs && Object.keys(migrated.aiVisionModelConfigs).length > 0);
-  const hadImageModelConfigs = Boolean(migrated.aiImageModelConfigs && Object.keys(migrated.aiImageModelConfigs).length > 0);
+  const hadProviderProfiles = Boolean(
+    migrated.aiProviderProfiles &&
+    Object.keys(migrated.aiProviderProfiles).length > 0,
+  );
+  const hadTextModelConfigs = Boolean(
+    migrated.aiTextModelConfigs &&
+    Object.keys(migrated.aiTextModelConfigs).length > 0,
+  );
+  const hadVisionModelConfigs = Boolean(
+    migrated.aiVisionModelConfigs &&
+    Object.keys(migrated.aiVisionModelConfigs).length > 0,
+  );
+  const hadImageModelConfigs = Boolean(
+    migrated.aiImageModelConfigs &&
+    Object.keys(migrated.aiImageModelConfigs).length > 0,
+  );
 
   const ensureProviderProfiles = () => {
-    if (migrated.aiProviderProfiles && Object.keys(migrated.aiProviderProfiles).length > 0) {
+    if (
+      migrated.aiProviderProfiles &&
+      Object.keys(migrated.aiProviderProfiles).length > 0
+    ) {
       return migrated.aiProviderProfiles;
     }
     migrated.aiProviderProfiles = cloneKnownAIProviderProfiles();
@@ -269,40 +351,78 @@ const migrateLegacyAISettings = (
   };
 
   const ensureModelConfigs = (kind: "text" | "vision" | "image") => {
-    if (kind === "text" && migrated.aiTextModelConfigs && Object.keys(migrated.aiTextModelConfigs).length > 0) return migrated.aiTextModelConfigs;
-    if (kind === "image" && migrated.aiImageModelConfigs && Object.keys(migrated.aiImageModelConfigs).length > 0) return migrated.aiImageModelConfigs;
+    if (
+      kind === "text" &&
+      migrated.aiTextModelConfigs &&
+      Object.keys(migrated.aiTextModelConfigs).length > 0
+    )
+      return migrated.aiTextModelConfigs;
+    if (
+      kind === "image" &&
+      migrated.aiImageModelConfigs &&
+      Object.keys(migrated.aiImageModelConfigs).length > 0
+    )
+      return migrated.aiImageModelConfigs;
 
-    const defaults = kind === "text"
-      ? cloneModelConfigs(KNOWN_AI_TEXT_MODEL_CONFIGS)
-      : cloneModelConfigs(KNOWN_AI_IMAGE_MODEL_CONFIGS);
+    const defaults =
+      kind === "text"
+        ? cloneModelConfigs(KNOWN_AI_TEXT_MODEL_CONFIGS)
+        : cloneModelConfigs(KNOWN_AI_IMAGE_MODEL_CONFIGS);
 
     if (kind === "text") migrated.aiTextModelConfigs = defaults;
-    if (kind === "image") migrated.aiImageModelConfigs = defaults as typeof migrated.aiImageModelConfigs;
+    if (kind === "image")
+      migrated.aiImageModelConfigs =
+        defaults as typeof migrated.aiImageModelConfigs;
     didMigrate = true;
     return defaults;
   };
 
   const providerProfiles = ensureProviderProfiles();
-  const legacyProviderType = (migrated.aiProvider ?? "openai") as ExcalidrawSettings["aiProvider"];
-  const providerProfileId = LEGACY_PROVIDER_LABELS[legacyProviderType] ?? "OpenAI";
+  const legacyProviderType = (migrated.aiProvider ??
+    "openai") as ExcalidrawSettings["aiProvider"];
+  const providerProfileId =
+    LEGACY_PROVIDER_LABELS[legacyProviderType] ?? "OpenAI";
   if (!hadProviderProfiles) {
     providerProfiles[providerProfileId] = {
       provider: legacyProviderType,
       apiKey: migrated.aiAPIKey ?? "",
-      baseURL: normalizeAISettingURL(migrated.aiBaseURL) || providerProfiles[providerProfileId]?.baseURL || "",
+      baseURL:
+        normalizeAISettingURL(migrated.aiBaseURL) ||
+        providerProfiles[providerProfileId]?.baseURL ||
+        "",
     };
     didMigrate = true;
   }
 
-  const textModelId = (migrated.aiDefaultTextModel || settings.aiDefaultVisionModel || settings.openAIDefaultTextModel || settings.openAIDefaultVisionModel || "gpt-5-mini").trim();
-  const multimodalTextModelId = (migrated.aiDefaultMultimodalModel || settings.aiDefaultVisionModel || settings.openAIDefaultVisionModel || textModelId).trim();
-  const imageModelId = (migrated.aiDefaultImageGenerationModel || settings.openAIDefaultImageGenerationModel || "gpt-image-1").trim();
-  const legacyCapabilities = settings.aiImageModelCapabilities as Record<string, {
-    supportedSizes?: string[];
-    supportsPromptImageTransforms?: boolean;
-    supportsMaskImageEdits?: boolean;
-    supportsImageEdits?: boolean;
-  }> | undefined;
+  const textModelId = (
+    migrated.aiDefaultTextModel ||
+    settings.aiDefaultVisionModel ||
+    settings.openAIDefaultTextModel ||
+    settings.openAIDefaultVisionModel ||
+    "gpt-5-mini"
+  ).trim();
+  const multimodalTextModelId = (
+    migrated.aiDefaultMultimodalModel ||
+    settings.aiDefaultVisionModel ||
+    settings.openAIDefaultVisionModel ||
+    textModelId
+  ).trim();
+  const imageModelId = (
+    migrated.aiDefaultImageGenerationModel ||
+    settings.openAIDefaultImageGenerationModel ||
+    "gpt-image-1"
+  ).trim();
+  const legacyCapabilities = settings.aiImageModelCapabilities as
+    | Record<
+        string,
+        {
+          supportedSizes?: string[];
+          supportsPromptImageTransforms?: boolean;
+          supportsMaskImageEdits?: boolean;
+          supportsImageEdits?: boolean;
+        }
+      >
+    | undefined;
 
   const textModels = ensureModelConfigs("text");
   if (!hadTextModelConfigs) {
@@ -315,22 +435,24 @@ const migrateLegacyAISettings = (
   }
 
   if (hadVisionModelConfigs && migrated.aiVisionModelConfigs) {
-    Object.entries(migrated.aiVisionModelConfigs).forEach(([modelId, config]) => {
-      const existingConfig = textModels[modelId];
-      if (!existingConfig) {
-        textModels[modelId] = {
-          ...config,
-          multimodalSupport: config.multimodalSupport ?? true,
-        };
-        didMigrate = true;
-        return;
-      }
+    Object.entries(migrated.aiVisionModelConfigs).forEach(
+      ([modelId, config]) => {
+        const existingConfig = textModels[modelId];
+        if (!existingConfig) {
+          textModels[modelId] = {
+            ...config,
+            multimodalSupport: config.multimodalSupport ?? true,
+          };
+          didMigrate = true;
+          return;
+        }
 
-      if (existingConfig.multimodalSupport === undefined) {
-        existingConfig.multimodalSupport = config.multimodalSupport ?? true;
-        didMigrate = true;
-      }
-    });
+        if (existingConfig.multimodalSupport === undefined) {
+          existingConfig.multimodalSupport = config.multimodalSupport ?? true;
+          didMigrate = true;
+        }
+      },
+    );
   }
 
   Object.values(textModels).forEach((config) => {
@@ -340,43 +462,76 @@ const migrateLegacyAISettings = (
     }
   });
 
-  const imageModels = ensureModelConfigs("image") as Record<string, typeof KNOWN_AI_IMAGE_MODEL_CONFIGS[string]>;
+  const imageModels = ensureModelConfigs("image") as Record<
+    string,
+    (typeof KNOWN_AI_IMAGE_MODEL_CONFIGS)[string]
+  >;
   if (!hadImageModelConfigs) {
-    const legacySupportsImageEdits = legacyCapabilities?.[imageModelId]?.supportsImageEdits;
+    const legacySupportsImageEdits =
+      legacyCapabilities?.[imageModelId]?.supportsImageEdits;
     imageModels[imageModelId] = {
       providerId: providerProfileId,
       model: imageModelId,
-      supportedSizes: [...(legacyCapabilities?.[imageModelId]?.supportedSizes?.length
-        ? legacyCapabilities[imageModelId].supportedSizes
-        : imageModels[imageModelId]?.supportedSizes ?? ["1024x1024"])],
-      supportsPromptImageTransforms: legacyCapabilities?.[imageModelId]?.supportsPromptImageTransforms ?? imageModels[imageModelId]?.supportsPromptImageTransforms ?? legacySupportsImageEdits ?? true,
-      supportsMaskImageEdits: legacyCapabilities?.[imageModelId]?.supportsMaskImageEdits ?? imageModels[imageModelId]?.supportsMaskImageEdits ?? legacySupportsImageEdits ?? true,
+      supportedSizes: [
+        ...(legacyCapabilities?.[imageModelId]?.supportedSizes?.length
+          ? legacyCapabilities[imageModelId].supportedSizes
+          : (imageModels[imageModelId]?.supportedSizes ?? ["1024x1024"])),
+      ],
+      supportsPromptImageTransforms:
+        legacyCapabilities?.[imageModelId]?.supportsPromptImageTransforms ??
+        imageModels[imageModelId]?.supportsPromptImageTransforms ??
+        legacySupportsImageEdits ??
+        true,
+      supportsMaskImageEdits:
+        legacyCapabilities?.[imageModelId]?.supportsMaskImageEdits ??
+        imageModels[imageModelId]?.supportsMaskImageEdits ??
+        legacySupportsImageEdits ??
+        true,
     };
   }
 
   Object.entries(imageModels).forEach(([modelId, config]) => {
-    const legacyConfig = config as typeof config & { supportsImageEdits?: boolean };
-    const legacySupportsImageEdits = legacyCapabilities?.[modelId]?.supportsImageEdits ?? legacyConfig.supportsImageEdits;
+    const legacyConfig = config as typeof config & {
+      supportsImageEdits?: boolean;
+    };
+    const legacySupportsImageEdits =
+      legacyCapabilities?.[modelId]?.supportsImageEdits ??
+      legacyConfig.supportsImageEdits;
     const nextConfig = {
       ...config,
-      supportsPromptImageTransforms: config.supportsPromptImageTransforms ?? legacyCapabilities?.[modelId]?.supportsPromptImageTransforms ?? legacySupportsImageEdits ?? true,
-      supportsMaskImageEdits: config.supportsMaskImageEdits ?? legacyCapabilities?.[modelId]?.supportsMaskImageEdits ?? legacySupportsImageEdits ?? true,
+      supportsPromptImageTransforms:
+        config.supportsPromptImageTransforms ??
+        legacyCapabilities?.[modelId]?.supportsPromptImageTransforms ??
+        legacySupportsImageEdits ??
+        true,
+      supportsMaskImageEdits:
+        config.supportsMaskImageEdits ??
+        legacyCapabilities?.[modelId]?.supportsMaskImageEdits ??
+        legacySupportsImageEdits ??
+        true,
     };
 
     if (
-      nextConfig.supportsPromptImageTransforms !== config.supportsPromptImageTransforms
-      || nextConfig.supportsMaskImageEdits !== config.supportsMaskImageEdits
-      || legacyConfig.supportsImageEdits !== undefined
+      nextConfig.supportsPromptImageTransforms !==
+        config.supportsPromptImageTransforms ||
+      nextConfig.supportsMaskImageEdits !== config.supportsMaskImageEdits ||
+      legacyConfig.supportsImageEdits !== undefined
     ) {
       imageModels[modelId] = nextConfig;
-      delete (imageModels[modelId] as typeof nextConfig & { supportsImageEdits?: boolean }).supportsImageEdits;
+      delete (
+        imageModels[modelId] as typeof nextConfig & {
+          supportsImageEdits?: boolean;
+        }
+      ).supportsImageEdits;
       didMigrate = true;
     }
   });
 
   if (!migrated.aiDefaultTextModel) migrated.aiDefaultTextModel = textModelId;
-  if (!migrated.aiDefaultMultimodalModel) migrated.aiDefaultMultimodalModel = multimodalTextModelId;
-  if (!migrated.aiDefaultImageGenerationModel) migrated.aiDefaultImageGenerationModel = imageModelId;
+  if (!migrated.aiDefaultMultimodalModel)
+    migrated.aiDefaultMultimodalModel = multimodalTextModelId;
+  if (!migrated.aiDefaultImageGenerationModel)
+    migrated.aiDefaultImageGenerationModel = imageModelId;
 
   if (migrated.aiDefaultVisionModel !== undefined) {
     delete migratedRecord.aiDefaultVisionModel;
@@ -409,23 +564,24 @@ export default class ExcalidrawPlugin extends Plugin {
     linkText: null,
     sourcePath: null,
   };
-  private legacyExcalidrawPopoverObserver: MutationObserver | CustomMutationObserver;
+  private legacyExcalidrawPopoverObserver:
+    | MutationObserver
+    | CustomMutationObserver;
   private fileExplorerObserver: MutationObserver | CustomMutationObserver;
   public opencount: number = 0;
   public ea: ExcalidrawAutomate;
   //A master list of fileIds to facilitate copy / paste
-  public filesMaster: Map<FileId, FileMasterInfo> =
-    null; //fileId, path
+  public filesMaster: Map<FileId, FileMasterInfo> = null; //fileId, path
   public equationsMaster: Map<FileId, string> = null; //fileId, formula
   public mermaidsMaster: Map<FileId, string> = null; //fileId, mermaidText
   public scriptEngine: ScriptEngine;
-  private stylesManager:StylesManager;
+  private stylesManager: StylesManager;
   public editorHandler: EditorHandler;
   //if set, the next time this file is opened it will be opened as markdown
   public forceToOpenInMarkdownFilepath: string = null;
   //private slob:string;
-  public loadTimestamp:number;
-  private isLocalCJKFontAvailabe:boolean = undefined
+  public loadTimestamp: number;
+  private isLocalCJKFontAvailabe: boolean = undefined;
   public isReady = false;
   private startupAnalytics: string[] = [];
   private lastLogTimestamp: number;
@@ -441,28 +597,40 @@ export default class ExcalidrawPlugin extends Plugin {
     this.lastLogTimestamp = this.loadTimestamp;
     this.filesMaster = new Map<
       FileId,
-      { isHyperLink: boolean; isLocalLink: boolean; path: string; hasSVGwithBitmap: boolean; blockrefData: string; colorMapJSON?: string }
+      {
+        isHyperLink: boolean;
+        isLocalLink: boolean;
+        path: string;
+        hasSVGwithBitmap: boolean;
+        blockrefData: string;
+        colorMapJSON?: string;
+      }
     >();
     this.equationsMaster = new Map<FileId, string>();
     this.mermaidsMaster = new Map<FileId, string>();
 
     //isExcalidraw function is used already is already used by MarkdownPostProcessor in onLoad before onLayoutReady
     this.fileManager = new PluginFileManager(this);
-    
+
     setExcalidrawPlugin(this);
     /*if((process.env.NODE_ENV === 'development')) {
       this.slob = new Array(200 * 1024 * 1024 + 1).join('A'); // Create a 200MB blob
     }*/
   }
 
-  public logStartupEvent(message:string) {
+  public logStartupEvent(message: string) {
     const timestamp = Date.now();
-    this.startupAnalytics.push(`${message}\nTotal: ${timestamp - this.loadTimestamp}ms Delta: ${timestamp - this.lastLogTimestamp}ms\n`);
+    this.startupAnalytics.push(
+      `${message}\nTotal: ${timestamp - this.loadTimestamp}ms Delta: ${timestamp - this.lastLogTimestamp}ms\n`,
+    );
     this.lastLogTimestamp = timestamp;
   }
 
   public printStarupBreakdown() {
-    console.log(`Excalidraw ${PLUGIN_VERSION} startup breakdown:\n`+this.startupAnalytics.join("\n"));
+    console.log(
+      `Excalidraw ${PLUGIN_VERSION} startup breakdown:\n` +
+        this.startupAnalytics.join("\n"),
+    );
   }
 
   get locale() {
@@ -471,11 +639,11 @@ export default class ExcalidrawPlugin extends Plugin {
 
   get window(): Window {
     return window;
-  };
+  }
 
   get document(): Document {
     return document;
-  };
+  }
 
   // by adding the wrapper like this, likely in debug mode I am leaking memory because my code removes
   // the original event handlers, not the wrapped ones. I will only uncomment this if I need to debug
@@ -524,34 +692,42 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public isPenMode() {
-    return this.wasPenModeActivePreviously ||
-      (this.settings.defaultPenMode === "always") ||
-      (this.settings.defaultPenMode === "mobile" && DEVICE.isMobile);
+    return (
+      this.wasPenModeActivePreviously ||
+      this.settings.defaultPenMode === "always" ||
+      (this.settings.defaultPenMode === "mobile" && DEVICE.isMobile)
+    );
   }
-  
+
   public getCJKFontSettings() {
     const assetsFoler = this.settings.fontAssetsPath;
-    if(typeof this.isLocalCJKFontAvailabe === "undefined") {
-      this.isLocalCJKFontAvailabe = this.app.vault.getFiles().some(f=>f.path.startsWith(assetsFoler));
+    if (typeof this.isLocalCJKFontAvailabe === "undefined") {
+      this.isLocalCJKFontAvailabe = this.app.vault
+        .getFiles()
+        .some((f) => f.path.startsWith(assetsFoler));
     }
-    if(!this.isLocalCJKFontAvailabe) {
+    if (!this.isLocalCJKFontAvailabe) {
       return { c: false, j: false, k: false };
     }
     return {
       c: this.settings.loadChineseFonts,
       j: this.settings.loadJapaneseFonts,
       k: this.settings.loadKoreanFonts,
-    }
+    };
   }
 
-  public async loadFontFromFile(fontName: string): Promise<ArrayBuffer|undefined> {
+  public async loadFontFromFile(
+    fontName: string,
+  ): Promise<ArrayBuffer | undefined> {
     const assetsFoler = this.settings.fontAssetsPath;
 
-    if(!this.isLocalCJKFontAvailabe) {
+    if (!this.isLocalCJKFontAvailabe) {
       return;
     }
-    const file = this.app.vault.getAbstractFileByPath(normalizePath(assetsFoler + "/" + fontName));
-    if(!file || !(file instanceof TFile)) {
+    const file = this.app.vault.getAbstractFileByPath(
+      normalizePath(assetsFoler + "/" + fontName),
+    );
+    if (!file || !(file instanceof TFile)) {
       return;
     }
     return await this.app.vault.readBinary(file);
@@ -559,16 +735,13 @@ export default class ExcalidrawPlugin extends Plugin {
 
   async onload() {
     this.logStartupEvent("Plugin Constructor ready, starting onload()");
-    this.registerView(
-      VIEW_TYPE_EXCALIDRAW,
-      (leaf: WorkspaceLeaf) => {
-        if(this.isReady) {
-          return new ExcalidrawView(leaf, this);
-        } else {
-          return new ExcalidrawLoading(leaf, this);
-        }
-      },
-    );
+    this.registerView(VIEW_TYPE_EXCALIDRAW, (leaf: WorkspaceLeaf) => {
+      if (this.isReady) {
+        return new ExcalidrawView(leaf, this);
+      } else {
+        return new ExcalidrawLoading(leaf, this);
+      }
+    });
     this.registerView(
       VIEW_TYPE_SIDEPANEL,
       (leaf: WorkspaceLeaf) => new ExcalidrawSidepanelView(leaf, this),
@@ -579,11 +752,16 @@ export default class ExcalidrawPlugin extends Plugin {
     addIcon(ICON_NAME, EXCALIDRAW_ICON);
     addIcon(SCRIPTENGINE_ICON_NAME, SCRIPTENGINE_ICON);
     addIcon(EXPORT_IMG_ICON_NAME, EXPORT_IMG_ICON);
-    this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), this.actionRibbonClick.bind(this));
+    this.addRibbonIcon(
+      ICON_NAME,
+      t("CREATE_NEW"),
+      this.actionRibbonClick.bind(this),
+    );
 
     try {
-      this.loadSettings({reEnableAutosave:true})
-        .then(this.onloadCheckForOnceOffSettingsUpdates.bind(this));
+      this.loadSettings({ reEnableAutosave: true }).then(
+        this.onloadCheckForOnceOffSettingsUpdates.bind(this),
+      );
     } catch (e) {
       new Notice("Error loading plugin settings", 6000);
       console.error("Error loading plugin settings", e);
@@ -613,18 +791,20 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private async onloadCheckForOnceOffSettingsUpdates() {
-    const updateSettings = !this.settings.onceOffCompressFlagReset || !this.settings.onceOffGPTVersionReset;
-    if(!this.settings.onceOffCompressFlagReset) {
+    const updateSettings =
+      !this.settings.onceOffCompressFlagReset ||
+      !this.settings.onceOffGPTVersionReset;
+    if (!this.settings.onceOffCompressFlagReset) {
       this.settings.compress = true;
       this.settings.onceOffCompressFlagReset = true;
     }
-    if(!this.settings.onceOffGPTVersionReset) {
+    if (!this.settings.onceOffGPTVersionReset) {
       this.settings.onceOffGPTVersionReset = true;
-      if(this.settings.openAIDefaultVisionModel === "gpt-4-vision-preview") {
+      if (this.settings.openAIDefaultVisionModel === "gpt-4-vision-preview") {
         this.settings.openAIDefaultVisionModel = "gpt-4o";
       }
     }
-    if(updateSettings) {
+    if (updateSettings) {
       await this.saveSettings();
     }
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
@@ -634,10 +814,12 @@ export default class ExcalidrawPlugin extends Plugin {
   private async onloadOnLayoutReady() {
     this.loadTimestamp = Date.now();
     this.lastLogTimestamp = this.loadTimestamp;
-    this.logStartupEvent("\n----------------------------------\nWorkspace onLayoutReady event fired (these actions are outside the plugin initialization)");
+    this.logStartupEvent(
+      "\n----------------------------------\nWorkspace onLayoutReady event fired (these actions are outside the plugin initialization)",
+    );
     await this.awaitSettings();
     this.logStartupEvent("Settings awaited");
-    if(!this.settings.overrideObsidianFontSize) {
+    if (!this.settings.overrideObsidianFontSize) {
       setRootElementSize();
     }
 
@@ -721,9 +903,16 @@ export default class ExcalidrawPlugin extends Plugin {
     try {
       if (this.settings.showReleaseNotes) {
         //I am repurposing imageElementNotice, if the value is true, this means the plugin was just newly installed to Obsidian.
-        const obsidianJustInstalled = (this.settings.previousRelease === "0.0.0") || !this.settings.previousRelease;
+        const obsidianJustInstalled =
+          this.settings.previousRelease === "0.0.0" ||
+          !this.settings.previousRelease;
 
-        if (isVersionNewerThanOther(PLUGIN_VERSION, this.settings.previousRelease ?? "0.0.0")) {
+        if (
+          isVersionNewerThanOther(
+            PLUGIN_VERSION,
+            this.settings.previousRelease ?? "0.0.0",
+          )
+        ) {
           new ReleaseNotes(
             this.app,
             this,
@@ -744,7 +933,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.fileManager.initialize(); //fileManager will preLoad the filecache
     this.eventManager.initialize(); //eventManager also adds event listner to filecache
 
-    try { 
+    try {
       this.runStartupScript();
     } catch (e) {
       new Notice("Error running startup script", 6000);
@@ -790,14 +979,14 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public async awaitSettings() {
     let counter = 0;
-    while(!this.settingsReady && counter < 150) {
+    while (!this.settingsReady && counter < 150) {
       await sleep(20);
     }
   }
 
   public async awaitInit() {
     let counter = 0;
-    while(!this.isReady && counter < 150) {
+    while (!this.isReady && counter < 150) {
       await sleep(50);
     }
   }
@@ -805,31 +994,32 @@ export default class ExcalidrawPlugin extends Plugin {
   /**
    * Loads the Excalidraw frontmatter tags to Obsidian property suggester so people can more easily find relevant front matter switches
    * Must run after the workspace is ready
-   * @returns 
+   * @returns
    */
   private async setPropertyTypes() {
-    if(!this.settings.loadPropertySuggestions) return;
+    if (!this.settings.loadPropertySuggestions) return;
     const app = this.app;
     Object.keys(FRONTMATTER_KEYS).forEach((key) => {
-      if(FRONTMATTER_KEYS[key].depricated === true) return;
-      const {name, type} = FRONTMATTER_KEYS[key];
-      app.metadataTypeManager.setType(name,type);
+      if (FRONTMATTER_KEYS[key].depricated === true) return;
+      const { name, type } = FRONTMATTER_KEYS[key];
+      app.metadataTypeManager.setType(name, type);
     });
   }
 
   public async initializeFonts() {
     const cjkFontDataURLs = await getCJKDataURLs(this);
-    if(typeof cjkFontDataURLs === "boolean" && !cjkFontDataURLs) {
-      new Notice(t("FONTS_LOAD_ERROR") + this.settings.fontAssetsPath,6000);
+    if (typeof cjkFontDataURLs === "boolean" && !cjkFontDataURLs) {
+      new Notice(t("FONTS_LOAD_ERROR") + this.settings.fontAssetsPath, 6000);
     }
 
-    if(typeof cjkFontDataURLs === "object") {
-      const fontDeclarations = cjkFontDataURLs.map(dataURL => 
-        `@font-face { font-family: 'Xiaolai'; src: url("${dataURL}"); font-display: swap; font-weight: 400; }`
+    if (typeof cjkFontDataURLs === "object") {
+      const fontDeclarations = cjkFontDataURLs.map(
+        (dataURL) =>
+          `@font-face { font-family: 'Xiaolai'; src: url("${dataURL}"); font-display: swap; font-weight: 400; }`,
       );
-      for(const ownerDocument of this.getOpenObsidianDocuments()) {
+      for (const ownerDocument of this.getOpenObsidianDocuments()) {
         await this.addFonts(fontDeclarations, ownerDocument, CJK_STYLE_ID);
-      };
+      }
       new Notice(t("FONTS_LOADED"));
     }
 
@@ -839,18 +1029,23 @@ export default class ExcalidrawPlugin extends Plugin {
       "",
       "Local Font",
     );
-    
-    if(font.dataURL === "") {
+
+    if (font.dataURL === "") {
       this.fourthFontLoaded = true;
       return;
     }
-    
+
     const fourthFontDataURL = font.dataURL;
 
-    const f = this.app.metadataCache.getFirstLinkpathDest(this.settings.experimantalFourthFont, "");
+    const f = this.app.metadataCache.getFirstLinkpathDest(
+      this.settings.experimantalFourthFont,
+      "",
+    );
     // Call getFontMetrics with the fourthFontDataURL
-    let fontMetrics = f.extension.startsWith("woff") ? undefined : await getFontMetrics(fourthFontDataURL, "Local Font");
-    
+    let fontMetrics = f.extension.startsWith("woff")
+      ? undefined
+      : await getFontMetrics(fourthFontDataURL, "Local Font");
+
     if (!fontMetrics) {
       //console.log("Font Metrics not found, using default");
       fontMetrics = {
@@ -859,21 +1054,34 @@ export default class ExcalidrawPlugin extends Plugin {
         descender: -250,
         lineHeight: 1.2,
         fontName: "Local Font",
-      }
+      };
     }
-    this.packageManager.getPackageMap().forEach(({excalidrawLib}) => {
-      (excalidrawLib as typeof ExcalidrawLib).registerLocalFont({metrics: fontMetrics as any}, fourthFontDataURL);
+    this.packageManager.getPackageMap().forEach(({ excalidrawLib }) => {
+      (excalidrawLib as typeof ExcalidrawLib).registerLocalFont(
+        { metrics: fontMetrics as any },
+        fourthFontDataURL,
+      );
     });
     // Add fonts to open Obsidian documents
-    for(const ownerDocument of this.getOpenObsidianDocuments()) {
-      await this.addFonts([
-        `@font-face{font-family:'Local Font';src:url("${fourthFontDataURL}");font-display: swap;font-weight: 400;`,
-      ], ownerDocument);
-    };
-    if(!this.fourthFontLoaded) window.setTimeout(()=>{this.fourthFontLoaded = true},100);
+    for (const ownerDocument of this.getOpenObsidianDocuments()) {
+      await this.addFonts(
+        [
+          `@font-face{font-family:'Local Font';src:url("${fourthFontDataURL}");font-display: swap;font-weight: 400;`,
+        ],
+        ownerDocument,
+      );
+    }
+    if (!this.fourthFontLoaded)
+      window.setTimeout(() => {
+        this.fourthFontLoaded = true;
+      }, 100);
   }
 
-  public async addFonts(declarations: string[],ownerDocument:Document = document, styleId:string = FONTS_STYLE_ID) {
+  public async addFonts(
+    declarations: string[],
+    ownerDocument: Document = document,
+    styleId: string = FONTS_STYLE_ID,
+  ) {
     // replace the old local font <style> element with the one we just created
     const newStylesheet = ownerDocument.createElement("style");
     newStylesheet.id = styleId;
@@ -883,12 +1091,13 @@ export default class ExcalidrawPlugin extends Plugin {
     if (oldStylesheet) {
       ownerDocument.head.removeChild(oldStylesheet);
     }
-    await ownerDocument.fonts.load('20px Local Font');
+    await ownerDocument.fonts.load("20px Local Font");
   }
 
   public removeFonts() {
     this.getOpenObsidianDocuments().forEach((ownerDocument) => {
-      const oldCustomFontStylesheet = ownerDocument.getElementById(FONTS_STYLE_ID);
+      const oldCustomFontStylesheet =
+        ownerDocument.getElementById(FONTS_STYLE_ID);
       if (oldCustomFontStylesheet) {
         ownerDocument.head.removeChild(oldCustomFontStylesheet);
       }
@@ -900,11 +1109,17 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public updatePhoneFooterSafeAreaPadding() {
-    const documents = new Set<Document>([document, ...this.getOpenObsidianDocuments()]);
-    const shouldEnable = DEVICE.isPhone && this.settings?.phoneFooterSafeAreaPadding;
+    const documents = new Set<Document>([
+      document,
+      ...this.getOpenObsidianDocuments(),
+    ]);
+    const shouldEnable =
+      DEVICE.isPhone && this.settings?.phoneFooterSafeAreaPadding;
 
     documents.forEach((ownerDocument) => {
-      const existingStylesheet = ownerDocument.getElementById(PHONE_FOOTER_SAFE_AREA_STYLE_ID);
+      const existingStylesheet = ownerDocument.getElementById(
+        PHONE_FOOTER_SAFE_AREA_STYLE_ID,
+      );
       if (!shouldEnable) {
         if (existingStylesheet) {
           ownerDocument.head.removeChild(existingStylesheet);
@@ -925,21 +1140,28 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private removePhoneFooterSafeAreaPadding() {
-    const documents = new Set<Document>([document, ...this.getOpenObsidianDocuments()]);
+    const documents = new Set<Document>([
+      document,
+      ...this.getOpenObsidianDocuments(),
+    ]);
     documents.forEach((ownerDocument) => {
-      const existingStylesheet = ownerDocument.getElementById(PHONE_FOOTER_SAFE_AREA_STYLE_ID);
+      const existingStylesheet = ownerDocument.getElementById(
+        PHONE_FOOTER_SAFE_AREA_STYLE_ID,
+      );
       if (existingStylesheet) {
         ownerDocument.head.removeChild(existingStylesheet);
       }
     });
   }
-  
+
   private getOpenObsidianDocuments(): Document[] {
     const visitedDocs = new Set<Document>();
-    this.app.workspace.iterateAllLeaves((leaf)=>{
-      const ownerDocument = DEVICE.isMobile?document:leaf.view.containerEl.ownerDocument;   
-      if(!ownerDocument) return;        
-      if(visitedDocs.has(ownerDocument)) return;
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      const ownerDocument = DEVICE.isMobile
+        ? document
+        : leaf.view.containerEl.ownerDocument;
+      if (!ownerDocument) return;
+      if (visitedDocs.has(ownerDocument)) return;
       visitedDocs.add(ownerDocument);
     });
     return Array.from(visitedDocs);
@@ -951,7 +1173,10 @@ export default class ExcalidrawPlugin extends Plugin {
   private switchToExcalidrawAfterLoad() {
     let leaf: WorkspaceLeaf;
     for (leaf of this.app.workspace.getLeavesOfType("markdown")) {
-      if ( leaf.view instanceof MarkdownView && this.isExcalidrawFile(leaf.view.file)) {
+      if (
+        leaf.view instanceof MarkdownView &&
+        this.isExcalidrawFile(leaf.view.file)
+      ) {
         if (fileShouldDefaultAsExcalidraw(leaf.view.file?.path, this.app)) {
           this.excalidrawFileModes[(leaf as any).id || leaf.view.file.path] =
             VIEW_TYPE_EXCALIDRAW;
@@ -963,7 +1188,7 @@ export default class ExcalidrawPlugin extends Plugin {
     }
   }
 
-  public forceSaveActiveView(checking:boolean):boolean {
+  public forceSaveActiveView(checking: boolean): boolean {
     if (checking) {
       return Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView));
     }
@@ -1051,8 +1276,11 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         const fname = decodedURI.substring(decodedURI.lastIndexOf("/") + 1);
         const folder = `${this.settings.scriptFolderPath}/${SCRIPT_INSTALL_FOLDER}`;
-        const downloaded = this.app.vault.getFiles().filter(f=>f.path.startsWith(folder) && f.name === fname).sort((a,b)=>a.path>b.path?1:-1);
-        let scriptFile = downloaded[0]; 
+        const downloaded = this.app.vault
+          .getFiles()
+          .filter((f) => f.path.startsWith(folder) && f.name === fname)
+          .sort((a, b) => (a.path > b.path ? 1 : -1));
+        let scriptFile = downloaded[0];
         const scriptPath = scriptFile?.path ?? `${folder}/${fname}`;
         const svgPath = getIMGFilename(scriptPath, "svg");
         let svgFile = this.app.vault.getAbstractFileByPath(svgPath);
@@ -1067,7 +1295,11 @@ export default class ExcalidrawPlugin extends Plugin {
             if (!data || data.startsWith("404: Not Found")) {
               return null;
             }
-            return await createOrOverwriteFile(this.app, file?.path ?? localPath, data);
+            return await createOrOverwriteFile(
+              this.app,
+              file?.path ?? localPath,
+              data,
+            );
           };
 
           try {
@@ -1086,7 +1318,7 @@ export default class ExcalidrawPlugin extends Plugin {
               svgPath,
             );
             setButtonText("UPTODATE");
-            if(Object.keys(this.scriptEngine.scriptIconMap).length === 0) {
+            if (Object.keys(this.scriptEngine.scriptIconMap).length === 0) {
               this.scriptEngine.loadScripts();
             }
             const restartSidepanelTabIfActive = async () => {
@@ -1095,14 +1327,19 @@ export default class ExcalidrawPlugin extends Plugin {
               }
               const scriptName = this.scriptEngine.getScriptName(scriptFile);
               const spView = ExcalidrawSidepanelView.getExisting(false);
-              if (!spView || !scriptName || !spView.getTabByScript(scriptName)) {
+              if (
+                !spView ||
+                !scriptName ||
+                !spView.getTabByScript(scriptName)
+              ) {
                 return;
               }
               try {
                 await spView.restartTabForScript(scriptName);
               } catch (error) {
                 errorlog({
-                  where: "ExcalidrawPlugin.registerInstallCodeblockProcessor.restartSidepanelTab",
+                  where:
+                    "ExcalidrawPlugin.registerInstallCodeblockProcessor.restartSidepanelTab",
                   error,
                   scriptName,
                 });
@@ -1162,12 +1399,12 @@ export default class ExcalidrawPlugin extends Plugin {
           scriptButtonText === "UPTODATE" && svgButtonText === "UPTODATE"
             ? "UPTODATE"
             : scriptButtonText === "UPTODATE" && svgButtonText === "ERROR"
-            ? "UPTODATE"
-            : scriptButtonText === "ERROR"
-            ? "ERROR"
-            : scriptButtonText === "UPDATE" || svgButtonText === "UPDATE"
-            ? "UPDATE"
-            : "UPTODATE",
+              ? "UPTODATE"
+              : scriptButtonText === "ERROR"
+                ? "ERROR"
+                : scriptButtonText === "UPDATE" || svgButtonText === "UPDATE"
+                  ? "UPDATE"
+                  : "UPTODATE",
         );
       });
     };
@@ -1192,32 +1429,35 @@ export default class ExcalidrawPlugin extends Plugin {
     //Licat: Are you registering your post processors in onLayoutReady? You should register them in onload instead
     initializeMarkdownPostProcessor(this);
     this.registerMarkdownPostProcessor(markdownPostProcessor);
-    
+
     this.app.workspace.onLayoutReady(async () => {
       await this.awaitInit();
       // internal-link quick preview
       this.registerEvent(this.app.workspace.on("hover-link", hoverEvent));
 
       //only add the legacy file observer if there are legacy files in the vault
-      if(this.app.vault.getFiles().some(f=>f.extension === "excalidraw")) {
+      if (this.app.vault.getFiles().some((f) => f.extension === "excalidraw")) {
         this.enableLegacyFilePopoverObserver();
       }
     });
   }
 
   public enableLegacyFilePopoverObserver() {
-    if(!this.legacyExcalidrawPopoverObserver) {
+    if (!this.legacyExcalidrawPopoverObserver) {
       //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
       this.legacyExcalidrawPopoverObserver = legacyExcalidrawPopoverObserver;
-      this.legacyExcalidrawPopoverObserver.observe(document.body, { childList: true, subtree: false });
+      this.legacyExcalidrawPopoverObserver.observe(document.body, {
+        childList: true,
+        subtree: false,
+      });
     }
   }
 
-  private async actionRibbonClick(e: MouseEvent)  {
+  private async actionRibbonClick(e: MouseEvent) {
     this.createAndOpenDrawing(
       getDrawingFilename(this.settings),
       linkClickModifierType(emulateCTRLClickForLinks(e)),
-    ); 
+    );
   }
 
   public async convertSingleExcalidrawToMD(
@@ -1273,41 +1513,48 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private registerMonkeyPatches() {
-    const key = "https://github.com/zsviczian/obsidian-excalidraw-plugin/issues";
+    const key =
+      "https://github.com/zsviczian/obsidian-excalidraw-plugin/issues";
 
     this.register(
       around(Workspace.prototype, {
         getActiveViewOfType(old) {
-          return dedupe(key, old, function(...args) {
+          return dedupe(key, old, function (...args) {
             const result = old && old.apply(this, args);
             const maybeEAView = self.app?.workspace?.activeLeaf?.view;
-            if(!maybeEAView || !(maybeEAView instanceof ExcalidrawView)) return result;
+            if (!maybeEAView || !(maybeEAView instanceof ExcalidrawView))
+              return result;
             const error = new Error();
             const stackTrace = error.stack;
-            if(!isCallerFromTemplaterPlugin(stackTrace)) return result;
+            if (!isCallerFromTemplaterPlugin(stackTrace)) return result;
             const leafOrNode = maybeEAView.getActiveEmbeddable();
-            if(leafOrNode) {
-              if(leafOrNode.node && leafOrNode.node.isEditing) {
-                return {file: leafOrNode.node.file, editor: leafOrNode.node.child.editor};
+            if (leafOrNode) {
+              if (leafOrNode.node && leafOrNode.node.isEditing) {
+                return {
+                  file: leafOrNode.node.file,
+                  editor: leafOrNode.node.child.editor,
+                };
               }
             }
             return result;
-        });
-       }
-      })
+          });
+        },
+      }),
     );
-    if(!this.app.plugins.plugins?.["obsidian-hover-editor"]) {
-      this.register( //stolen from hover editor
+    if (!this.app.plugins.plugins?.["obsidian-hover-editor"]) {
+      this.register(
+        //stolen from hover editor
         around(WorkspaceLeaf.prototype, {
           getRoot(old) {
             return function () {
               const top = old.call(this);
               return top.getRoot === this.getRoot ? top : top.getRoot();
             };
-          }
-        }));
+          },
+        }),
+      );
     }
-    
+
     const self = this;
     // Monkey patch WorkspaceLeaf to open Excalidraw drawings with ExcalidrawView by default
     this.register(
@@ -1331,38 +1578,46 @@ export default class ExcalidrawPlugin extends Plugin {
 
         setViewState(next) {
           return function (state: ViewState, ...rest: any[]) {
-            const markdownViewLoaded = 
+            const markdownViewLoaded =
               self._loaded && // Don't force excalidraw mode during shutdown
               state.type === "markdown" && // If we have a markdown file
               state.state?.file;
             if (
               markdownViewLoaded &&
-              self.excalidrawFileModes[this.id || state.state.file] !== "markdown"
+              self.excalidrawFileModes[this.id || state.state.file] !==
+                "markdown"
             ) {
-              const filepath:string = state.state.file as string;
-              if ((self.forceToOpenInMarkdownFilepath !== filepath)  && fileShouldDefaultAsExcalidraw(filepath,this.app)) {
+              const filepath: string = state.state.file as string;
+              if (
+                self.forceToOpenInMarkdownFilepath !== filepath &&
+                fileShouldDefaultAsExcalidraw(filepath, this.app)
+              ) {
                 // If we have it, force the view type to excalidraw
                 const newState = {
                   ...state,
                   type: VIEW_TYPE_EXCALIDRAW,
                 };
 
-                self.excalidrawFileModes[filepath] =
-                  VIEW_TYPE_EXCALIDRAW;
+                self.excalidrawFileModes[filepath] = VIEW_TYPE_EXCALIDRAW;
 
                 return next.apply(this, [newState, ...rest]);
               }
               self.forceToOpenInMarkdownFilepath = null;
             }
 
-            if(markdownViewLoaded) {
+            if (markdownViewLoaded) {
               const leaf = this;
-              window.setTimeout(async ()=> {
-                if(!leaf || !leaf.view || !(leaf.view instanceof MarkdownView) || 
-                  !leaf.view.file || !self.isExcalidrawFile(leaf.view.file)
-                ) return;
-                foldExcalidrawSection(leaf.view)
-              },500);
+              window.setTimeout(async () => {
+                if (
+                  !leaf ||
+                  !leaf.view ||
+                  !(leaf.view instanceof MarkdownView) ||
+                  !leaf.view.file ||
+                  !self.isExcalidrawFile(leaf.view.file)
+                )
+                  return;
+                foldExcalidrawSection(leaf.view);
+              }, 500);
             }
 
             return next.apply(this, [state, ...rest]);
@@ -1375,10 +1630,13 @@ export default class ExcalidrawPlugin extends Plugin {
   /**
    * Loads the startup script that will add event hooks to ExcalidrawAutomate (if provided by the user)
    * Because of file operations, this must be run after the Obsidian Layout is ready
-   * @returns 
+   * @returns
    */
   private async runStartupScript() {
-    if(!this.settings.startupScriptPath || this.settings.startupScriptPath === "") {
+    if (
+      !this.settings.startupScriptPath ||
+      this.settings.startupScriptPath === ""
+    ) {
       return;
     }
     const path = this.settings.startupScriptPath.endsWith(".md")
@@ -1399,21 +1657,20 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public getLastActivePDFPageLink(requestorFile: TFile): string {
-    if(!this.lastPDFLeafID) return;
+    if (!this.lastPDFLeafID) return;
     const leaf = this.app.workspace.getLeafById(this.lastPDFLeafID);
-    if(!leaf || !leaf.view || leaf.view.getViewType() !== "pdf") return;
-    const view:any = leaf.view;
+    if (!leaf || !leaf.view || leaf.view.getViewType() !== "pdf") return;
+    const view: any = leaf.view;
     const file = view.file;
     const page = view.viewer.child.pdfViewer.page;
-    if(!file || !page) return;
-    return this.app.metadataCache.fileToLinktext(
-      file,
-      requestorFile?.path,
-      false,
-    ) + `#page=${page}`;
+    if (!file || !page) return;
+    return (
+      this.app.metadataCache.fileToLinktext(file, requestorFile?.path, false) +
+      `#page=${page}`
+    );
   }
 
-  public async activeLeafChangeEventHandler (leaf: WorkspaceLeaf) {
+  public async activeLeafChangeEventHandler(leaf: WorkspaceLeaf) {
     this.eventManager.onActiveLeafChangeHandler(leaf);
   }
 
@@ -1423,8 +1680,8 @@ export default class ExcalidrawPlugin extends Plugin {
 
   private getPathForFile(file: File) {
     let path = "";
-    const { webUtils } = require('electron');
-    if(webUtils && webUtils.getPathForFile) {
+    const { webUtils } = require("electron");
+    if (webUtils && webUtils.getPathForFile) {
       path = webUtils.getPathForFile(file);
     }
     return path;
@@ -1437,34 +1694,35 @@ export default class ExcalidrawPlugin extends Plugin {
       this.popScope = null;
     }
 
-    if(!this.activeExcalidrawView) {
+    if (!this.activeExcalidrawView) {
       return;
     }
 
     const scope = this.app.keymap.getRootScope();
     // Register overrides from settings
-    const overrideHandlers = this.settings.modifierKeyOverrides.map(override => {
-      return scope.register(override.modifiers, override.key, () => true);
-    });
+    const overrideHandlers = this.settings.modifierKeyOverrides.map(
+      (override) => {
+        return scope.register(override.modifiers, override.key, () => true);
+      },
+    );
     // Force handlers to the front of the list
     overrideHandlers.forEach(() => scope.keys.unshift(scope.keys.pop()));
 
     const handler_ctrlF = scope.register(["Mod"], "f", () => true);
     scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
     const forceSaveCommand = this.commandManager?.forceSaveCommand;
-    const overridSaveShortcut = (
+    const overridSaveShortcut =
       forceSaveCommand &&
       forceSaveCommand.hotkeys[0].key === "s" &&
-      forceSaveCommand.hotkeys[0].modifiers.includes("Ctrl")
-    )
+      forceSaveCommand.hotkeys[0].modifiers.includes("Ctrl");
     const saveHandler = overridSaveShortcut
-     ? scope.register(["Ctrl"], "s", () => this.forceSaveActiveView(false))
-     : undefined;
+      ? scope.register(["Ctrl"], "s", () => this.forceSaveActiveView(false))
+      : undefined;
     if (saveHandler) {
       scope.keys.unshift(scope.keys.pop()); // Force our handler to the front of the list
     }
     this.popScope = () => {
-      overrideHandlers.forEach( (handler) => scope.unregister(handler));
+      overrideHandlers.forEach((handler) => scope.unregister(handler));
       scope.unregister(handler_ctrlF);
       if (saveHandler) {
         scope.unregister(saveHandler);
@@ -1474,7 +1732,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   /**
    * Registers event listeners for the plugin
-   * Must be called after the workspace is read (onLayoutReady) 
+   * Must be called after the workspace is read (onLayoutReady)
    * Intended to be called from onLayoutReady in onload()
    */
   private async registerEventListeners() {
@@ -1498,20 +1756,20 @@ export default class ExcalidrawPlugin extends Plugin {
   onunload() {
     ExcalidrawSidepanelView.onPluginUnload(this);
     const excalidrawViews = getExcalidrawViews(this.app);
-    excalidrawViews.forEach(({leaf}) => {
+    excalidrawViews.forEach(({ leaf }) => {
       this.setMarkdownView(leaf);
     });
-    
-    if(versionUpdateCheckTimer) {
+
+    if (versionUpdateCheckTimer) {
       window.clearTimeout(versionUpdateCheckTimer);
     }
 
-    if(this.scriptEngine) {
+    if (this.scriptEngine) {
       this.scriptEngine.destroy();
       this.scriptEngine = null;
     }
 
-    if(imageCache) {
+    if (imageCache) {
       imageCache.destroy();
     }
 
@@ -1519,7 +1777,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.stylesManager = null;
 
     this.removeFonts();
-  this.removePhoneFooterSafeAreaPadding();
+    this.removePhoneFooterSafeAreaPadding();
 
     this.eaInstances.forEach((ea) => ea?.destroy());
     this.eaInstances.clear();
@@ -1527,15 +1785,15 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.ea.destroy();
     this.ea = null;
-    
+
     window.ExcalidrawAutomate?.destroy();
     delete window.ExcalidrawAutomate;
-  
+
     if (this.popScope) {
       this.popScope();
       this.popScope = null;
     }
-    if(this.legacyExcalidrawPopoverObserver) {
+    if (this.legacyExcalidrawPopoverObserver) {
       this.legacyExcalidrawPopoverObserver.disconnect();
     }
     this.observerManager.destroy();
@@ -1549,7 +1807,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.editorHandler.destroy();
     this.editorHandler = null;
 
-    this.hover = {linkText: null, sourcePath:null};
+    this.hover = { linkText: null, sourcePath: null };
 
     this.fileManager.destroy();
     this.equationsMaster.clear();
@@ -1570,37 +1828,50 @@ export default class ExcalidrawPlugin extends Plugin {
     terminateCompressionWorker();
   }
 
-  public async loadSettings(opts: { reEnableAutosave?: boolean } = { reEnableAutosave: false }
+  public async loadSettings(
+    opts: { reEnableAutosave?: boolean } = { reEnableAutosave: false },
   ) {
-    if(typeof opts.reEnableAutosave === "undefined") opts.reEnableAutosave = false;
-    const rawSettings = ((await this.loadData()) ?? {}) as PersistedExcalidrawSettings;
-    const { settings: migratedSettings, didMigrate } = migrateLegacyAISettings(rawSettings);
+    if (typeof opts.reEnableAutosave === "undefined")
+      opts.reEnableAutosave = false;
+    const rawSettings = ((await this.loadData()) ??
+      {}) as PersistedExcalidrawSettings;
+    const { settings: migratedSettings, didMigrate } =
+      migrateLegacyAISettings(rawSettings);
     const persistedSettings = stripLegacyAISettings(migratedSettings);
     const decryptedSettings = decryptPersistedAPIKeys(persistedSettings);
     this.settings = Object.assign({}, DEFAULT_SETTINGS, decryptedSettings);
-    if(!this.settings.previewImageType) { //migration 1.9.13
-      if(typeof this.settings.displaySVGInPreview === "undefined") {
+    if (!this.settings.previewImageType) {
+      //migration 1.9.13
+      if (typeof this.settings.displaySVGInPreview === "undefined") {
         this.settings.previewImageType = PreviewImageType.SVGIMG;
       } else {
         this.settings.previewImageType = this.settings.displaySVGInPreview
           ? PreviewImageType.SVGIMG
-          : PreviewImageType.PNG; 
+          : PreviewImageType.PNG;
       }
     }
-    const encryptedPersistedSettings = encryptPersistedAPIKeys(stripLegacyAISettings(this.settings as PersistedExcalidrawSettings));
-    const shouldPersistEncryptedSettings = JSON.stringify(encryptedPersistedSettings) !== JSON.stringify(persistedSettings);
+    const encryptedPersistedSettings = encryptPersistedAPIKeys(
+      stripLegacyAISettings(this.settings as PersistedExcalidrawSettings),
+    );
+    const shouldPersistEncryptedSettings =
+      JSON.stringify(encryptedPersistedSettings) !==
+      JSON.stringify(persistedSettings);
     if (didMigrate || shouldPersistEncryptedSettings) {
       await this.saveData(encryptedPersistedSettings);
     }
-    if(opts.reEnableAutosave) this.settings.autosave = true;
+    if (opts.reEnableAutosave) this.settings.autosave = true;
   }
 
   async saveSettings() {
-    const persistedSettings = stripLegacyAISettings(this.settings as PersistedExcalidrawSettings);
+    const persistedSettings = stripLegacyAISettings(
+      this.settings as PersistedExcalidrawSettings,
+    );
     await this.saveData(encryptPersistedAPIKeys(persistedSettings));
   }
 
-  public async openSidepanel(reveal: boolean = true): Promise<ExcalidrawSidepanelView | null> {
+  public async openSidepanel(
+    reveal: boolean = true,
+  ): Promise<ExcalidrawSidepanelView | null> {
     return ExcalidrawSidepanelView.getOrCreate(this, reveal);
   }
 
@@ -1616,7 +1887,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public async setStencilLibrary(library: object) {
     this.settings.library = "deprecated";
-    if(JSON.stringify(this.settings.library2) === JSON.stringify(library)) {
+    if (JSON.stringify(this.settings.library2) === JSON.stringify(library)) {
       return;
     }
     this.settings.library2 = library;
@@ -1626,10 +1897,12 @@ export default class ExcalidrawPlugin extends Plugin {
   public triggerEmbedUpdates(filepath?: string) {
     const visitedDocs = new Set<Document>();
     this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
-//    this.app.workspace.iterateAllLeaves((leaf)=>{
-      const ownerDocument = DEVICE.isMobile?document:leaf.view.containerEl.ownerDocument;
-      if(!ownerDocument) return;
-      if(visitedDocs.has(ownerDocument)) return;
+      //    this.app.workspace.iterateAllLeaves((leaf)=>{
+      const ownerDocument = DEVICE.isMobile
+        ? document
+        : leaf.view.containerEl.ownerDocument;
+      if (!ownerDocument) return;
+      if (visitedDocs.has(ownerDocument)) return;
       visitedDocs.add(ownerDocument);
       const e = ownerDocument.createEvent("Event");
       e.initEvent(RERENDER_EVENT, true, false);
@@ -1639,8 +1912,8 @@ export default class ExcalidrawPlugin extends Plugin {
             filepath ? `[fileSource='${filepath.replaceAll("'", "\\'")}']` : ""
           }`,
         )
-        .forEach((el) => el.dispatchEvent(e));  
-    })
+        .forEach((el) => el.dispatchEvent(e));
+    });
   }
 
   //retained because some scripts make use of it
@@ -1653,19 +1926,41 @@ export default class ExcalidrawPlugin extends Plugin {
     foldername?: string,
     initData?: string,
   ): Promise<TFile> {
-    const file = await this.fileManager.createDrawing(filename, foldername, initData);
+    const file = await this.fileManager.createDrawing(
+      filename,
+      foldername,
+      initData,
+    );
 
-    if(Date.now() - this.loadTimestamp > 1){//2000) {     
-      const filecount = this.app.vault.getFiles().filter(f=>this.isExcalidrawFile(f)).length;
-      const rank:Rank = filecount < 200 ? "Bronze" : filecount < 750 ? "Silver" : filecount < 2000 ? "Gold" : "Platinum";
-      const {grip, decoration, blade} = SwordColors[rank];
-      if(this.settings.rank !== rank) {
+    if (Date.now() - this.loadTimestamp > 1) {
+      //2000) {
+      const filecount = this.app.vault
+        .getFiles()
+        .filter((f) => this.isExcalidrawFile(f)).length;
+      const rank: Rank =
+        filecount < 200
+          ? "Bronze"
+          : filecount < 750
+            ? "Silver"
+            : filecount < 2000
+              ? "Gold"
+              : "Platinum";
+      const { grip, decoration, blade } = SwordColors[rank];
+      if (this.settings.rank !== rank) {
         //in case the message was already displayed on another device and it was synced in the mean time
         await this.loadSettings();
-        if(this.settings.rank !== rank) {
+        if (this.settings.rank !== rank) {
           this.settings.rank = rank;
           await this.saveSettings();
-          new RankMessage(this.app, this, filecount, rank, decoration, blade, grip).open();
+          new RankMessage(
+            this.app,
+            this,
+            filecount,
+            rank,
+            decoration,
+            blade,
+            grip,
+          ).open();
         }
       }
     }
@@ -1704,10 +1999,9 @@ export default class ExcalidrawPlugin extends Plugin {
     );
 
     const mdView = leaf.view;
-    if(mdView instanceof MarkdownView) {
+    if (mdView instanceof MarkdownView) {
       foldExcalidrawSection(mdView);
     }
-
   }
 
   public isExcalidrawFile(f: TFile) {
@@ -1720,9 +2014,21 @@ export default class ExcalidrawPlugin extends Plugin {
     active: boolean = false,
     subpath?: string,
     justCreated: boolean = false,
-    popoutLocation?: {x?: number, y?: number, width?: number, height?: number},
+    popoutLocation?: {
+      x?: number;
+      y?: number;
+      width?: number;
+      height?: number;
+    },
   ) {
-    this.fileManager.openDrawing(drawingFile, location, active, subpath, justCreated, popoutLocation);
+    this.fileManager.openDrawing(
+      drawingFile,
+      location,
+      active,
+      subpath,
+      justCreated,
+      popoutLocation,
+    );
   }
 
   public async embedDrawing(file: TFile) {
@@ -1733,15 +2039,15 @@ export default class ExcalidrawPlugin extends Plugin {
     return await this.fileManager.exportLibrary();
   }
 
-  public async renameEventHandler (file: TAbstractFile, oldPath: string) {
+  public async renameEventHandler(file: TAbstractFile, oldPath: string) {
     this.fileManager.renameEventHandler(file, oldPath);
   }
 
-  public async modifyEventHandler (file: TFile) {
+  public async modifyEventHandler(file: TFile) {
     this.fileManager.modifyEventHandler(file);
   }
 
-  public async deleteEventHandler (file: TFile) {
+  public async deleteEventHandler(file: TFile) {
     this.fileManager.deleteEventHandler(file);
   }
 
@@ -1765,7 +2071,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.observerManager.experimentalFileTypeDisplayToggle(enabled);
   }
 
-  public getPackage(win:Window):Packages {
+  public getPackage(win: Window): Packages {
     return this.packageManager.getPackage(win);
   }
 
@@ -1793,7 +2099,7 @@ export default class ExcalidrawPlugin extends Plugin {
     return this.commandManager?.importSVGDialog;
   }
 
-  public isRecentSplitViewSwitch():boolean {
+  public isRecentSplitViewSwitch(): boolean {
     return this.eventManager.isRecentSplitViewSwitch();
   }
 
@@ -1812,11 +2118,14 @@ export default class ExcalidrawPlugin extends Plugin {
   //used by obsidianUtils in the Excalidraw Pacakge
   //aweful coding, but does the job
   public runAction(action: "anyFile" | "LaTeX" | "card") {
-    if(!this.activeExcalidrawView) return;
+    if (!this.activeExcalidrawView) return;
     switch (action) {
       case "anyFile":
         this.activeExcalidrawView.setCurrentPositionToCenter();
-        const insertFileModal = new UniversalInsertFileModal(this, this.activeExcalidrawView);
+        const insertFileModal = new UniversalInsertFileModal(
+          this,
+          this.activeExcalidrawView,
+        );
         insertFileModal.open();
         break;
       case "LaTeX":
@@ -1831,7 +2140,7 @@ export default class ExcalidrawPlugin extends Plugin {
   //used by obsidianUtils in the Excalidraw Pacakge
   //aweful coding, but does the job
   public getLabel(key: keyof typeof en): string {
-   return t(key);
+    return t(key);
   }
 
   public getObsidianDevice(): DeviceType {
@@ -1854,13 +2163,21 @@ export default class ExcalidrawPlugin extends Plugin {
     inputEl: HTMLInputElement,
     widthWrapper?: HTMLElement,
     containerEl?: HTMLDivElement,
-    surpessPlaceholder: boolean = true
+    surpessPlaceholder: boolean = true,
   ): KeyBlocker {
     const getSourcePath = () => {
       this.ea.setView();
       return this.ea.targetView?.file?.path;
     };
-    return new InlineLinkSuggester(this.app, this, inputEl, getSourcePath, widthWrapper, surpessPlaceholder, containerEl);
+    return new InlineLinkSuggester(
+      this.app,
+      this,
+      inputEl,
+      getSourcePath,
+      widthWrapper,
+      surpessPlaceholder,
+      containerEl,
+    );
   }
 
   public getPreferredUIMode(): UIMode {

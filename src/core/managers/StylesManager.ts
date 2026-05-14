@@ -32,7 +32,10 @@ const STYLE_VARIABLES = [
 const EXCALIDRAW_CONTAINER_CLASS = "excalidraw__embeddable__outer";
 
 export class StylesManager {
-  private stylesMap = new Map<Document,{light: HTMLStyleElement, dark: HTMLStyleElement}>();
+  private stylesMap = new Map<
+    Document,
+    { light: HTMLStyleElement; dark: HTMLStyleElement }
+  >();
   private styleLight: string;
   private styleDark: string;
   private plugin: ExcalidrawPlugin;
@@ -42,50 +45,61 @@ export class StylesManager {
     plugin.app.workspace.onLayoutReady(async () => {
       await plugin.awaitInit();
       await this.harvestStyles();
-      getAllWindowDocuments(plugin.app).forEach(doc => this.copyPropertiesToTheme(doc));
+      getAllWindowDocuments(plugin.app).forEach((doc) =>
+        this.copyPropertiesToTheme(doc),
+      );
 
       //initialize
       plugin.registerEvent(
-        plugin.app.workspace.on("css-change", ()=>this.onCSSChange()),
-      )
+        plugin.app.workspace.on("css-change", () => this.onCSSChange()),
+      );
 
       plugin.registerEvent(
-        plugin.app.workspace.on("window-open", (win)=>this.onWindowOpen(win)),
-      )
+        plugin.app.workspace.on("window-open", (win) => this.onWindowOpen(win)),
+      );
 
       plugin.registerEvent(
-        plugin.app.workspace.on("window-close", (win)=>this.onWindowClose(win)),
-      )
+        plugin.app.workspace.on("window-close", (win) =>
+          this.onWindowClose(win),
+        ),
+      );
     });
   }
 
-  private async onCSSChange () {
+  private async onCSSChange() {
     await this.harvestStyles();
-    getAllWindowDocuments(this.plugin.app).forEach(doc => {
+    getAllWindowDocuments(this.plugin.app).forEach((doc) => {
       this.copyPropertiesToTheme(doc);
-    })    
+    });
   }
 
-  private onWindowOpen (win: WorkspaceWindow) {
+  private onWindowOpen(win: WorkspaceWindow) {
     this.stylesMap.set(win.doc, {
-      light: document.head.querySelector(`style[id="excalidraw-embedded-light"]`),
-      dark: document.head.querySelector(`style[id="excalidraw-embedded-dark"]`)
+      light: document.head.querySelector(
+        `style[id="excalidraw-embedded-light"]`,
+      ),
+      dark: document.head.querySelector(`style[id="excalidraw-embedded-dark"]`),
     });
     //this.copyPropertiesToTheme(win.doc);
   }
 
-  private onWindowClose (win: WorkspaceWindow) {
+  private onWindowClose(win: WorkspaceWindow) {
     this.stylesMap.delete(win.doc);
   }
 
   private async harvestStyles() {
-    REM_VALUE = parseInt(window.getComputedStyle(document.body).getPropertyValue('--font-text-size').trim());
+    REM_VALUE = parseInt(
+      window
+        .getComputedStyle(document.body)
+        .getPropertyValue("--font-text-size")
+        .trim(),
+    );
     if (isNaN(REM_VALUE)) {
       REM_VALUE = 16;
     }
 
     const body = document.body;
-    const iframe:HTMLIFrameElement = document.createElement("iframe");
+    const iframe: HTMLIFrameElement = document.createElement("iframe");
     iframe.hidden = true;
     body.appendChild(iframe);
 
@@ -109,21 +123,23 @@ export class StylesManager {
       iframeBody.classList.remove("theme-light");
       iframeBody.classList.remove("theme-dark");
       iframeBody.classList.add(theme);
-    }
+    };
 
     const getCSSVariables = (): string => {
       const computedStyles = iframeWin.getComputedStyle(iframeBody);
-      const allVariables: {[key:string]:string} = {};
+      const allVariables: { [key: string]: string } = {};
       for (const variable of STYLE_VARIABLES) {
         allVariables[variable] = computedStyles.getPropertyValue(variable);
       }
-      const cm = this.plugin.ea.getCM(computedStyles.getPropertyValue("--background-primary"));
+      const cm = this.plugin.ea.getCM(
+        computedStyles.getPropertyValue("--background-primary"),
+      );
       cm.alphaTo(0.9);
       allVariables["--background-primary"] = cm.stringHEX();
       return Object.entries(allVariables)
         .map(([key, value]) => `${key}: ${value} !important;`)
         .join(" ");
-    }
+    };
 
     setTheme("theme-light");
     this.styleLight = getCSSVariables();
@@ -135,25 +151,37 @@ export class StylesManager {
   private copyPropertiesToTheme(doc: Document) {
     const styleTags = this.stylesMap.get(doc);
     if (styleTags) {
-      setStyleText(styleTags.light, `.${EXCALIDRAW_CONTAINER_CLASS} .theme-light {\n${this.styleLight}\n}`);
-      setStyleText(styleTags.dark, `.${EXCALIDRAW_CONTAINER_CLASS} .theme-dark {\n${this.styleDark}\n}`);
+      setStyleText(
+        styleTags.light,
+        `.${EXCALIDRAW_CONTAINER_CLASS} .theme-light {\n${this.styleLight}\n}`,
+      );
+      setStyleText(
+        styleTags.dark,
+        `.${EXCALIDRAW_CONTAINER_CLASS} .theme-dark {\n${this.styleDark}\n}`,
+      );
     } else {
       const lightStyleTag = doc.createElement("style");
       lightStyleTag.type = "text/css";
       lightStyleTag.setAttribute("id", "excalidraw-embedded-light");
-      setStyleText(lightStyleTag, `.${EXCALIDRAW_CONTAINER_CLASS} .theme-light {\n${this.styleLight}\n}`);
+      setStyleText(
+        lightStyleTag,
+        `.${EXCALIDRAW_CONTAINER_CLASS} .theme-light {\n${this.styleLight}\n}`,
+      );
       doc.head.appendChild(lightStyleTag);
 
       const darkStyleTag = doc.createElement("style");
       darkStyleTag.type = "text/css";
       darkStyleTag.setAttribute("id", "excalidraw-embedded-dark");
-      setStyleText(darkStyleTag, `.${EXCALIDRAW_CONTAINER_CLASS} .theme-dark {\n${this.styleDark}\n}`);
+      setStyleText(
+        darkStyleTag,
+        `.${EXCALIDRAW_CONTAINER_CLASS} .theme-dark {\n${this.styleDark}\n}`,
+      );
       doc.head.appendChild(darkStyleTag);
 
-      this.stylesMap.set(doc, {light: lightStyleTag, dark: darkStyleTag});
+      this.stylesMap.set(doc, { light: lightStyleTag, dark: darkStyleTag });
     }
-  }  	
-  
+  }
+
   public destroy() {
     for (const [doc, styleTags] of this.stylesMap) {
       doc.head.removeChild(styleTags.light);
@@ -161,5 +189,4 @@ export class StylesManager {
     }
     this.plugin = null;
   }
-
 }
