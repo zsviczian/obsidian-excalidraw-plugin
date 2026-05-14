@@ -24,17 +24,25 @@ declare module "obsidian" {
 }
 
 interface ObsidianCanvas {
-  createFileNode: Function;
-  removeNode: Function;
+  createFileNode: (params: {
+    pos: { x: number; y: number };
+    file: TFile;
+    subpath: string;
+    save: boolean;
+  }) => ObsidianCanvasNode;
+  removeNode: (node: ObsidianCanvasNode) => void;
 }
 
 export interface ObsidianCanvasNode {
-  startEditing: Function;
+  startEditing: () => void;
   child: any;
   isEditing: boolean;
   file: TFile;
-  detach: Function;
-  isEditable: Function;
+  detach: () => void;
+  isEditable: () => boolean;
+  setFilePath: (path: string, subpath: string) => void;
+  render: () => void;
+  containerEl: HTMLElement;
 }
 
 export class CanvasNodeFactory {

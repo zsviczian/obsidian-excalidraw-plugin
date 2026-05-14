@@ -19,7 +19,7 @@ export interface SelectedImage {
 export interface EmbeddableLeafRef {
   leaf: WorkspaceLeaf;
   node?: ObsidianCanvasNode;
-  editNode?: Function;
+  editNode?: () => void;
 }
 
 export interface AutoexportConfig {

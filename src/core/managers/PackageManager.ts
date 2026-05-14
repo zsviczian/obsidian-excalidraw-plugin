@@ -11,7 +11,7 @@ declare let REACT_PACKAGES:string;
 declare let react: typeof React;
 declare let reactDOM:typeof ReactDOM;
 declare let excalidrawLib: typeof ExcalidrawLib;
-declare const unpackExcalidraw: Function;
+declare const unpackExcalidraw: () => string;
 
 export class PackageManager {
   private packageMap: Map<Window, Packages> = new Map<Window, Packages>();

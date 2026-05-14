@@ -150,7 +150,7 @@ import { Packages } from "../types/types";
 import React from "react";
 import { diagramToHTML } from "../utils/matic";
 import { IS_WORKER_SUPPORTED } from "../shared/Workers/compression-worker";
-import { AutoexportConfig,Position,ViewSemaphores } from "../types/excalidrawViewTypes";
+import { AutoexportConfig,EmbeddableLeafRef,Position,ViewSemaphores } from "../types/excalidrawViewTypes";
 import { DropManager } from "./managers/DropManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 import { exportPNG,exportPNGToClipboard,exportSVG,exportToPDF,getMarginValue,getPageDimensions } from "src/utils/exportUtils";
@@ -341,7 +341,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
   public compatibilityMode: boolean = false;
   private obsidianMenu: ObsidianMenu | null = null;
   private embeddableMenu: EmbeddableMenu | null = null;
-  private destroyers: Function[] = [];
+  private destroyers: Array<() => void> = [];
   private previousContentElHeight: number = 0;
   private resizeBatchTimer: number | null = null;
   private resizeBatchWindowStart: number = 0;
@@ -1966,7 +1966,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     this.blockTextModeChange = false;
   }
 
-  public autosaveFunction: Function;
+  public autosaveFunction: (() => Promise<void>) | null;
   get autosaveInterval() {
     return DEVICE.isMobile ? this.plugin.settings.autosaveIntervalMobile : this.plugin.settings.autosaveIntervalDesktop;
   }
@@ -2862,7 +2862,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }, 250);
   }
 
-  public async loadSceneFiles(isThemeChange: boolean = false, fileIDWhiteList?: Set<FileId>, callback?: Function) {
+  public async loadSceneFiles(isThemeChange: boolean = false, fileIDWhiteList?: Set<FileId>, callback?: () => void) {
     if (!this.excalidrawAPI) {
       return;
     }
@@ -6601,7 +6601,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
 
   public updateEmbeddableLeafRef(
     elementId: string,
-    ref?: any
+    ref?: EmbeddableLeafRef
   ) {
     if(ref) {
       this.embeddableLeafRefs.set(elementId, ref);
@@ -6610,16 +6610,16 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     }
   }
 
-  public getEmbeddableLeafElementById(id: string): {leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function} | null {
+  public getEmbeddableLeafElementById(id: string): EmbeddableLeafRef | null {
     if(!id) return null;
     const ref = this.embeddableLeafRefs.get(id);
     if(!ref) {
       return null;
     }
-    return ref as {leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function};
+    return ref as EmbeddableLeafRef;
   }
 
-  public getActiveEmbeddable ():{leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function}|null {
+  public getActiveEmbeddable (): EmbeddableLeafRef | null {
     if(!this.excalidrawAPI) return null;
     const api = this.excalidrawAPI;
     const st = api.getAppState();

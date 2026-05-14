@@ -15,6 +15,17 @@ import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { EmbeddableMDCustomProps } from "./Dialogs/EmbeddableSettings";
 import { AIRequest } from "../utils/AIUtils";
 import { AddImageOptions,ImageInfo,SVGColorInfo } from "src/types/excalidrawAutomateTypes";
+
+type ExcalidrawCustomDataValue =
+    | string
+    | number
+    | boolean
+    | null
+    | ExcalidrawCustomDataValue[]
+    | { [key: string]: ExcalidrawCustomDataValue };
+
+type ExcalidrawCustomDataPatch = Partial<Record<string, ExcalidrawCustomDataValue | undefined>>;
+type ExcalidrawAutomateHelpTarget = ((...args: any[]) => any) | string;
 /**
  * ExcalidrawAutomate is a utility class that provides a simplified API to interact with Excalidraw elements and the Excalidraw canvas.
  * Elements in the Excalidraw Scene are immutable. You should never directly change element properties in the scene object.
@@ -93,19 +104,19 @@ export declare class ExcalidrawAutomate {
      * Add or modify keys in an element's customData while preserving existing keys.
      * Creates customData={} if it does not exist.
      * @param {string} id - The element ID in elementsDict to modify.
-     * @param {Partial<Record<string, unknown>>} newData - Object containing key-value pairs to add/update. Set value to undefined to delete a key.
+    * @param {ExcalidrawCustomDataPatch} newData - Object containing key-value pairs to add/update. Set value to undefined to delete a key.
      * @returns {Mutable<ExcalidrawElement> | undefined} The modified element, or undefined if element does not exist.
      */
-    addAppendUpdateCustomData(id: string, newData: Partial<Record<string, unknown>>): ExcalidrawElement;
+    addAppendUpdateCustomData(id: string, newData: ExcalidrawCustomDataPatch): ExcalidrawElement;
     /**
      * Displays help information for EA functions and properties intended to be used in Obsidian developer console.
-     * @param {Function | string} target - Function reference or property name as string.
+    * @param {ExcalidrawAutomateHelpTarget} target - Function reference or property name as string.
      * Usage examples:
      * - ea.help(ea.functionName)
      * - ea.help('propertyName')
      * - ea.help('utils.functionName')
      */
-    help(target: Function | string): void;
+    help(target: ExcalidrawAutomateHelpTarget): void;
     /**
      * Posts an AI request to the OpenAI API and returns the response.
      * @param {AIRequest} request - The AI request configuration.

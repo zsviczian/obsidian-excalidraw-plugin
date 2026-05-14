@@ -114,6 +114,17 @@ import { getAspectRatio } from "src/utils/YoutTubeUtils";
 import { getPDFCropRect } from "src/utils/PDFUtils";
 import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
 
+type ExcalidrawCustomDataValue =
+  | string
+  | number
+  | boolean
+  | null
+  | ExcalidrawCustomDataValue[]
+  | { [key: string]: ExcalidrawCustomDataValue };
+
+type ExcalidrawCustomDataPatch = Partial<Record<string, ExcalidrawCustomDataValue | undefined>>;
+type ExcalidrawAutomateHelpTarget = ((...args: any[]) => any) | string;
+
 extendPlugins([
   HarmonyPlugin,
   MixPlugin,
@@ -232,10 +243,10 @@ export class ExcalidrawAutomate {
    * Add or modify keys in an element's customData while preserving existing keys.
    * Creates customData={} if it does not exist.
    * @param {string} id - The element ID in elementsDict to modify.
-   * @param {Partial<Record<string, unknown>>} newData - Object containing key-value pairs to add/update. Set value to undefined to delete a key.
+  * @param {ExcalidrawCustomDataPatch} newData - Object containing key-value pairs to add/update. Set value to undefined to delete a key.
    * @returns {Mutable<ExcalidrawElement> | undefined} The modified element, or undefined if element does not exist.
    */
-  public addAppendUpdateCustomData(id:string, newData: Partial<Record<string, unknown>>) {
+  public addAppendUpdateCustomData(id:string, newData: ExcalidrawCustomDataPatch) {
     const el = this.elementsDict[id];
     if (!el) {
       return;
@@ -245,13 +256,13 @@ export class ExcalidrawAutomate {
 
   /**
    * Displays help information for EA functions and properties intended to be used in Obsidian developer console.
-   * @param {Function | string} target - Function reference or property name as string.
+  * @param {ExcalidrawAutomateHelpTarget} target - Function reference or property name as string.
    * Usage examples:
    * - ea.help(ea.functionName) 
    * - ea.help('propertyName')
    * - ea.help('utils.functionName')
    */
-  public help(target: Function | string) {
+  public help(target: ExcalidrawAutomateHelpTarget) {
     if (!target) {
       log("Usage: ea.help(ea.functionName) or ea.help('propertyName') or ea.help('utils.functionName') - notice property name and utils function name is in quotes");
       return;

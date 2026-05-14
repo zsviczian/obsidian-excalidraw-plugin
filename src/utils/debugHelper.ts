@@ -9,7 +9,7 @@ export function setDebugging(value: boolean) {
 export let DEBUGGING = false;
 
 export const log = console.log.bind(window.console);
-export const debug = (fn: Function, fnName: string, ...messages: unknown[]) => {
+export const debug = (fn: (...args: any[]) => any, fnName: string, ...messages: any[]) => {
   //console.log(fnName,fn,...messages);
   console.log(fnName, ...messages);
 };

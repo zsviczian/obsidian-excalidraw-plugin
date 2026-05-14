@@ -1370,7 +1370,14 @@ export class CommandManager {
           })();
         }
 
-        const carveout = async (isFile: boolean, sourceFile: TFile, imageFile: TFile, imageURL: string, replacer: Function, ref?: string) => {
+        const carveout = async (
+          isFile: boolean,
+          sourceFile: TFile,
+          imageFile: TFile,
+          imageURL: string,
+          replacer: (link: string, file?: TFile, size?: string | null) => void,
+          ref?: string,
+        ) => {
           const ea = getEA() as ExcalidrawAutomate;
           const imageID = await ea.addImage(
             0, 0,
@@ -1492,7 +1499,14 @@ export class CommandManager {
         const isCanvas = canvasView && canvasView.getViewType() === "canvas";
         if(!markdownView && !isCanvas) return false;
 
-        const carveout = async (isFile: boolean, sourceFile: TFile, imageFile: TFile, imageURL: string, replacer: Function, ref?: string) => {
+        const carveout = async (
+          isFile: boolean,
+          sourceFile: TFile,
+          imageFile: TFile,
+          imageURL: string,
+          replacer: (link: string, file?: TFile, size?: string | null) => void,
+          ref?: string,
+        ) => {
           const ea = getEA() as ExcalidrawAutomate;
           const imageID = await ea.addImage(
             0, 0,

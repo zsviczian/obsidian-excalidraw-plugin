@@ -1,6 +1,6 @@
 import { ExcalidrawEmbeddableElement,} from "@zsviczian/excalidraw/types/element/src/types";
 import ExcalidrawView from "src/view/ExcalidrawView";
-import { Notice,requireApiVersion,WorkspaceLeaf,} from "obsidian";
+import { Notice,requireApiVersion,} from "obsidian";
 import * as React from "react";
 import { isObsidianThemeDark } from "src/utils/obsidianUtils";
 import { DEVICE,EXTENDED_EVENT_TYPES,KEYBOARD_EVENT_TYPES,} from "src/constants/constants";
@@ -8,6 +8,7 @@ import { ExcalidrawImperativeAPI,UIAppState } from "@zsviczian/excalidraw/types/
 import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import { processLinkText,patchMobileView,setFileToLocalGraph,createLeaf,predictViewType } from "src/utils/customEmbeddableUtils";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
+import { EmbeddableLeafRef } from "src/types/excalidrawViewTypes";
 import { t } from "src/lang/helpers";
 
 const CANVAS_VIEWTYPES = new Set(["markdown", "bases", "audio", "video", "pdf"]);
@@ -79,7 +80,7 @@ function setPDFViewTheme(view: ExcalidrawView, pdfView: any) {
 
 function setupPdfViewEnhancements(
   view: ExcalidrawView,
-  leafRef: React.MutableRefObject<{ leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function } | null>,
+  leafRef: React.MutableRefObject<EmbeddableLeafRef | null>,
   pdfObserverRef: React.MutableRefObject<MutationObserver | null> & { currentCleanup?: () => void },
   pdfObserverDisabledRef: React.MutableRefObject<boolean>
 ) {
@@ -248,7 +249,7 @@ function setupPdfViewEnhancements(
                 if (leafRef.current?.node?.child?.containerEl?.isConnected) {
                   setupPdfViewEnhancements(
                     view,
-                    leafRef as React.MutableRefObject<{ leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function } | null>,
+                    leafRef as React.MutableRefObject<EmbeddableLeafRef | null>,
                     pdfObserverRef as any,
                     pdfObserverDisabledRef
                   );
@@ -360,7 +361,7 @@ function RenderObsidianView(
   const React = view.packages.react;
   
   //@ts-ignore
-  const leafRef = React.useRef<{leaf: WorkspaceLeaf; node?: ObsidianCanvasNode, editNode?: Function} | null>(null);
+  const leafRef = React.useRef<EmbeddableLeafRef | null>(null);
   const isEditingRef = React.useRef(false);
   const isActiveRef = React.useRef(false);
   const viewTypeRef = React.useRef("empty");
@@ -490,7 +491,7 @@ function RenderObsidianView(
           // Moved PDF setup logic into a helper for readability
           setupPdfViewEnhancements(
             view,
-            leafRef as React.MutableRefObject<{ leaf: WorkspaceLeaf; node?: ObsidianCanvasNode; editNode?: Function } | null>,
+            leafRef as React.MutableRefObject<EmbeddableLeafRef | null>,
             pdfObserverRef as unknown as React.MutableRefObject<MutationObserver | null> & { currentCleanup?: () => void },
             pdfObserverDisabledRef
           );

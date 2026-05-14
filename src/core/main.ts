@@ -431,7 +431,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private lastLogTimestamp: number;
   private settingsReady: boolean = false;
   public wasPenModeActivePreviously: boolean = false;
-  public popScope: Function = null;
+  public popScope: (() => void) | null = null;
   public lastPDFLeafID: string = null;
   public forceExcalidrawViewMode: boolean = false;
 

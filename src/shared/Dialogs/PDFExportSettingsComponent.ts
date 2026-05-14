@@ -16,7 +16,7 @@ export class PDFExportSettingsComponent {
   constructor(
     private contentEl: HTMLElement,
     private settings: PDFExportSettings,
-    private update?: Function,
+    private update?: () => void,
   ) {
     if (!update) this.update = () => {};
   }

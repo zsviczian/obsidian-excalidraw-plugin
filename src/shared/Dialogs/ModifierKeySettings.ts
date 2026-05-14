@@ -23,7 +23,7 @@ export class ModifierKeySettingsComponent {
       Mac: Record<string, ModifierKeySet>;
       Win: Record<string, ModifierKeySet>;
     },
-    private update?: Function,
+    private update?: () => void,
   ) {
     this.isMacOS = (DEVICE.isMacOS || DEVICE.isIOS);
   }

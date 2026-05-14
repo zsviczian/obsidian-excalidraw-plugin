@@ -1791,7 +1791,7 @@ export class ExcalidrawData {
   public setTextElement(
     elementID: string,
     rawOriginalText: string,
-    updateSceneCallback: Function,
+    updateSceneCallback: (parsedText: string) => void,
 
   ): [parseResultOriginal: string, link: string] {
     //const maxLineLen = estimateMaxLineLen(rawText, rawOriginalText);

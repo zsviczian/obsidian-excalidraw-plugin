@@ -7,7 +7,7 @@ import { getLinkSuggestionsFiltered,getSortedLinkMatches,renderLinkSuggestion } 
 
 
 export class InsertLinkDialog extends FuzzySuggestModal<LinkSuggestion> {
-  private addText: Function;
+  private addText: ((markdownlink: string, path?: string, alias?: string) => void) | null;
   private drawingPath: string;
 
   destroy() {
@@ -76,7 +76,11 @@ export class InsertLinkDialog extends FuzzySuggestModal<LinkSuggestion> {
     }
   }
 
-  public start(drawingPath: string, addText: Function, link?: string) {
+  public start(
+    drawingPath: string,
+    addText: (markdownlink: string, path?: string, alias?: string) => void,
+    link?: string,
+  ) {
     this.addText = addText;
     this.drawingPath = drawingPath;
     this.inLink = link;

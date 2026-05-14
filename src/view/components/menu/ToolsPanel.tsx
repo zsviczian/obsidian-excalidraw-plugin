@@ -26,7 +26,7 @@ declare const PLUGIN_VERSION:string;
 type PanelProps = {
   visible: boolean;
   view: WeakRef<ExcalidrawView>;
-  centerPointer: Function;
+  centerPointer: () => void;
   observer: WeakRef<ResizeObserver>;
 };
 
@@ -390,7 +390,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     this.props.centerPointer();
     plugin.insertLinkDialog.start(
       view.file.path,
-      (text: string, fontFamily?: 1 | 2 | 3 | 4, save?: boolean) => view.addText (text, fontFamily, save),
+      (text: string) => {
+        void view.addText(text);
+      },
     );
   }
 

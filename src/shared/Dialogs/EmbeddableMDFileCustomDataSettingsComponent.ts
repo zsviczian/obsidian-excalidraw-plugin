@@ -7,7 +7,7 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
   constructor (
     private contentEl: HTMLElement,
     private mdCustomData: EmbeddableMDCustomProps,
-    private update?: Function,
+    private update?: () => void,
     private isMDFile: boolean = true,
   ) { 
     if(!update) this.update = () => {};

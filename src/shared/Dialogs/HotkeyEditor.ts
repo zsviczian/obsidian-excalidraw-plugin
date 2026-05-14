@@ -11,13 +11,13 @@ export class HotkeyEditor extends BaseComponent {
   private capturing: boolean = false;
   private activeModifiers: Modifier[] = [];
   public isDirty: boolean = false;
-  private applySettingsUpdate: Function;
+  private applySettingsUpdate: () => void;
 
   // Store bound event handlers
   private boundKeydownHandler: (event: KeyboardEvent) => void;
   private boundKeyupHandler: (event: KeyboardEvent) => void;
 
-  constructor(containerEl: HTMLElement, settings: ExcalidrawSettings, applySettingsUpdate: Function) {
+  constructor(containerEl: HTMLElement, settings: ExcalidrawSettings, applySettingsUpdate: () => void) {
     super();
     this.containerEl = containerEl.createDiv();
     this.settings = settings;
