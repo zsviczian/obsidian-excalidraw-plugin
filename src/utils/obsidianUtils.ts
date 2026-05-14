@@ -193,7 +193,7 @@ export const getContainerForDocument = (doc:Document) => {
 //needed for backward compatibility
 export const legacyCleanBlockRef = (blockRef:string) => {
   if(!blockRef) return blockRef;
-  return blockRef.replace(/[!"#$%&()*+,.:;<=>?@^`{|}~\/\[\]\\]/g, "").replace(/\s+/g, " ").trim();
+  return blockRef.replace(/[!"#$%&()*+,.:;<=>?@^`{|}~/[\]\\]/g, "").replace(/\s+/g, " ").trim();
 }
 
 export const getAllWindowDocuments = (app:App):Document[] => {
@@ -217,7 +217,7 @@ export const obsidianPDFQuoteWithRef = (text:string):{quote: string, link: strin
 }
 
 export const extractSVGPNGFileName = (text:string) => {
-  const regex = /\[\[([^\]|#^]+\.(?:svg|png))(?:[^\]]+)?\]\]|\[[^\]]+\]\(([^\)]+\.(?:svg|png))\)/;
+  const regex = /\[\[([^\]|#^]+\.(?:svg|png))(?:[^\]]+)?\]\]|\[[^\]]+\]\(([^)]+\.(?:svg|png))\)/;
   const match = text.match(regex);
   return match ? (match[1] || match[2]) : null;
 }

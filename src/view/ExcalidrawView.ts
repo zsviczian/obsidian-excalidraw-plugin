@@ -1584,7 +1584,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
         if(drawIO && drawIO._loaded) {
           if(file.extension === "svg") {
             const svg = await this.app.vault.cachedRead(file);
-            if(/(&lt;|\<)(mxfile|mxgraph)/i.test(svg)) {
+            if(/(&lt;|<)(mxfile|mxgraph)/i.test(svg)) {
               const leaf = getLeaf(this.plugin,this.leaf,keys);
               leaf.setViewState({
                 type: "diagram-edit",
@@ -3180,7 +3180,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       });
       //files are loaded when excalidrawAPI is mounted
     }
-    const isCompressed = this.data.match(/```compressed\-json\n/gm) !== null;
+    const isCompressed = this.data.match(/```compressed-json\n/gm) !== null;
 
     if (
       !this.compatibilityMode &&

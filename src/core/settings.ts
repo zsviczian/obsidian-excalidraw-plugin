@@ -1652,7 +1652,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const getApiStatusMarkup = (isConfigured: boolean) => {
       const color = isConfigured ? "var(--text-accent)" : "var(--text-error)";
       const label = isConfigured ? t("AI_PROVIDER_API_KEY_SET") : t("AI_PROVIDER_API_KEY_NOT_SET");
-      return `<span style=\"color: ${color}; font-weight: 600;\">${label}</span>`;
+      return `<span style="color: ${color}; font-weight: 600;">${label}</span>`;
     };
 
     const updateModelProviderReferences = (previousProviderId: string, nextProviderId: string) => {

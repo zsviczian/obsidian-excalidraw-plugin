@@ -77,7 +77,7 @@ export enum AutoexportPreference {
 export const REGEX_TAGS = {
   // #[\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+
   //   1                                     
-  EXPR: /(#[\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+)/gu,
+  EXPR: /(#[\p{Letter}\p{Emoji_Presentation}\p{Number}/_-]+)/gu,
   getResList: (text: string): IteratorResult<RegExpMatchArray, any>[] => {
     const res = text.matchAll(REGEX_TAGS.EXPR);
     let parts: IteratorResult<RegExpMatchArray, any>;
@@ -100,7 +100,7 @@ export const REGEX_LINK = {
   //      1   2    3           4             5         67         8  9
   //EXPR: /(!)?(\[\[([^|\]]+)\|?([^\]]+)?]]|\[([^\]]*)]\(([^)]*)\))(\{(\d+)\})?/g, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
   //      1   2    3           4             5         67                             8  9
-  EXPR: /(!)?(\[\[([^|\]]+)\|?([^\]]+)?]]|\[([^\]]*)]\(((?:[^\(\)]|\([^\(\)]*\))*)\))(\{(\d+)\})?/g,  //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1963
+  EXPR: /(!)?(\[\[([^|\]]+)\|?([^\]]+)?]]|\[([^\]]*)]\(((?:[^()]|\([^()]*\))*)\))(\{(\d+)\})?/g,  //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1963
 
   getResList: (text: string): IteratorResult<RegExpMatchArray, any>[] => {
     const res = text.matchAll(REGEX_LINK.EXPR);

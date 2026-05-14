@@ -741,7 +741,7 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
 
   private findActiveTag(value: string, caret: number): {start: number; end: number; term: string} | null {
     const beforeCaret = value.substring(0, caret);
-    const match = beforeCaret.match(/(?:^|[\s\(\[\{>])#([^\s#\[\]\(\)\{\}\|]*)$/);
+    const match = beforeCaret.match(/(?:^|[\s([{>])#([^\s#[\](){}|]*)$/);
     if (!match) {
       return null;
     }
@@ -754,7 +754,7 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
 
     const start = caret - (matchedText.length - hashOffset);
     let end = caret;
-    while (end < value.length && !/[\s#\[\]\(\)\{\}\|]/.test(value.charAt(end))) {
+    while (end < value.length && !/[\s#[\](){}|]/.test(value.charAt(end))) {
       end++;
     }
 

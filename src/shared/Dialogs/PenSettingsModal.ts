@@ -85,7 +85,7 @@ export class PenSettingsModal extends Modal {
       const style = new Option().style;
       style.color = color;
       if(!!style.color) {
-        const digits = style.color.match(/^[^\d]*(\d*)[^\d]*(\d*)[^\d]*(\d*)[^\d]*([\d\.]*)?/);
+        const digits = style.color.match(/^[^\d]*(\d*)[^\d]*(\d*)[^\d]*(\d*)[^\d]*([\d.]*)?/);
         if(!digits) {
           return [null,opacity]
         }

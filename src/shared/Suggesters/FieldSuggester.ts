@@ -36,12 +36,12 @@ export class FieldSuggester extends EditorSuggest<string> {
       const sub = editor.getLine(cursor.line).substring(0, cursor.ch);
       const match =
         sub.match(/^excalidraw-(.*)$/)?.[1] ??
-        sub.match(/(^ea|\Wea)\.([\w\.]*)$/)?.[2] ??
-        sub.match(/(^utils|\Wutils)\.([\w\.]*)$/)?.[2];
+        sub.match(/(^ea|\Wea)\.([\w.]*)$/)?.[2] ??
+        sub.match(/(^utils|\Wutils)\.([\w.]*)$/)?.[2];
       if (match !== undefined) {
         this.suggestType = sub.match(/^excalidraw-(.*)$/)
           ? "excalidraw"
-          : sub.match(/(^ea|\Wea)\.([\w\.]*)$/)
+          : sub.match(/(^ea|\Wea)\.([\w.]*)$/)
           ? "ea"
           : "utils";
         this.latestTriggerInfo = {

@@ -75,7 +75,7 @@ export class EmbeddableMenu {
   private async actionBaseViewSelection (file: TFile, subpath: string, element: ExcalidrawEmbeddableElement) {
     this.view.updateScene({appState: {activeEmbeddable: null}, captureUpdate: CaptureUpdateAction.NEVER});
     const views = Array.from(
-      (await this.view.app.vault.read(file)).matchAll(/\s*name\: (.*)$/gm)
+      (await this.view.app.vault.read(file)).matchAll(/\s*name: (.*)$/gm),
     ).map(x=>x?.[1]);
     let values, display;
     values = [""].concat(

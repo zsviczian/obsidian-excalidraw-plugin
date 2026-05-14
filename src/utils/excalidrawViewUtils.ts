@@ -80,7 +80,7 @@ export async function insertEmbeddableToView (
     let height = MAX_IMAGE_SIZE;
     if (
       (file && AUDIO_TYPES.contains(file.extension.toLowerCase())) ||
-      (link && AUDIO_TYPES.contains(link.match(/\[\[[^\]]+?\.([^\.\]]+)]]/)?.[1]?.toLocaleLowerCase()))
+      (link && AUDIO_TYPES.contains(link.match(/\[\[[^\]]+?\.([^.\]]+)]]/)?.[1]?.toLocaleLowerCase()))
     ) {
       ea.style.strokeColor = "transparent";
       ea.style.backgroundColor = "transparent";

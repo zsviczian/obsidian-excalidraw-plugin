@@ -136,7 +136,7 @@ export function getExportPadding(plugin: ExcalidrawPlugin, file: TFile): number 
 }
 
 export function getEmbeddedFilenameParts(fname: string): FILENAMEPARTS {
-  const parts = fname?.match(/([^#\^]*)((#\^)(group=|area=|frame=|clippedframe=|taskbone)?([^|]*)|(#)(group=|area=|frame=|clippedframe=|taskbone)?([^\^|]*))(.*)/);
+  const parts = fname?.match(/([^#^]*)((#\^)(group=|area=|frame=|clippedframe=|taskbone)?([^|]*)|(#)(group=|area=|frame=|clippedframe=|taskbone)?([^^|]*))(.*)/);
   if (!parts) {
     return {
       filepath: fname,

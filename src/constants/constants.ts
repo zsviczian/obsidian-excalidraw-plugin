@@ -225,8 +225,8 @@ export const REG_LINKINDEX_INVALIDCHARS = /[<>:"\\|?*#]/g;
 
 //taken from Obsidian source code
 export const REG_SECTION_REF_CLEAN = /([:#|^\\\r\n]|%%|\[\[|]])/g;
-export const REG_BLOCK_REF_CLEAN = /[!"#$%&()*+,.:;<=>?@^`{|}~\/\[\]\\\r\n]/g;
-//                                 /[!"#$%&()*+,.:;<=>?@^`{|}~\/\[\]\\]/g; 
+export const REG_BLOCK_REF_CLEAN = /[!"#$%&()*+,.:;<=>?@^`{|}~/[\]\\\r\n]/g;
+//                                 /[!"#$%&()*+,.:;<=>?@^`{|}~/[\]\\]/g; 
 // https://discord.com/channels/686053708261228577/989603365606531104/1000128926619816048
 // /\+|\/|~|=|%|\(|\)|{|}|,|&|\.|\$|!|\?|;|\[|]|\^|#|\*|<|>|&|@|\||\\|"|:|\s/g;
 export const IMAGE_TYPES = ["jpeg", "jpg", "png", "gif", "svg", "webp", "bmp", "ico", "jtif", "tif", "jfif", "avif"];

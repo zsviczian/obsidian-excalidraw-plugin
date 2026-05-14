@@ -119,7 +119,7 @@ export class ContentSearcher {
       const html = htmlContainer.innerHTML;
 
       function replaceHeading(html:string,level:number):string {
-        const re = new RegExp(`<summary class="excalidraw-setting-h${level}">([^<]+)<\/summary>`,"g");
+        const re = new RegExp(`<summary class="excalidraw-setting-h${level}">([^<]+)</summary>`,"g");
         return html.replaceAll(re,`<summary class="excalidraw-setting-h${level}"><h${level}>$1</h${level}></summary>`);
       }
 

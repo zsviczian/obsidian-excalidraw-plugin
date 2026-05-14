@@ -626,7 +626,7 @@ export type LinkParts = {
 
 export function getLinkParts (fname: string, file?: TFile): LinkParts {
   //            1           2    3           4      5
-  const REG = /(^[^#\|]*)#?(\^)?([^\|]*)?\|?(\d*)x?(\d*)/;
+  const REG = /(^[^#|]*)#?(\^)?([^|]*)?\|?(\d*)x?(\d*)/;
   const parts = fname.match(REG);
   const isBlockRef = parts[2] === "^";
   let page = parseInt(parts[3]?.match(/page=(\d*)/)?.[1]);
@@ -874,7 +874,7 @@ export function isVersionNewerThanOther (version: string, otherVersion: string):
 
 export function getEmbeddedFilenameParts (fname:string): FILENAMEPARTS {
   //                        0 1        23    4                               5         6  7                             8          9
-  const parts = fname?.match(/([^#\^]*)((#\^)(group=|area=|frame=|clippedframe=|taskbone)?([^\|]*)|(#)(group=|area=|frame=|clippedframe=|taskbone)?([^\^\|]*))(.*)/);
+  const parts = fname?.match(/([^#^]*)((#\^)(group=|area=|frame=|clippedframe=|taskbone)?([^|]*)|(#)(group=|area=|frame=|clippedframe=|taskbone)?([^^|]*))(.*)/);
   if(!parts) {
     return {
       filepath: fname,
@@ -1023,14 +1023,14 @@ export function obsidianURLIsImage (data: string):boolean {
 export function hyperlinkIsYouTubeLink (link:string): boolean { 
   return isHyperLink(link) &&
   (link.startsWith("https://youtu.be") || link.startsWith("https://www.youtube.com") || link.startsWith("https://youtube.com") || link.startsWith("https//www.youtu.be")) &&
-  link.match(/(youtu.be\/|v=)([^?\/\&]*)/)!==null
+  link.match(/(youtu.be\/|v=)([^?/&]*)/)!==null
 }
 
 export async function getYouTubeThumbnailLink (youtubelink: string):Promise<string> {
   //https://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
   //https://youtu.be/z8UkHGpykYU?t=60
   //https://www.youtube.com/watch?v=z8UkHGpykYU&ab_channel=VerbaltoVisual
-  const parsed = youtubelink.match(/(youtu.be\/|v=)([^?\/\&]*)/);
+  const parsed = youtubelink.match(/(youtu.be\/|v=)([^?/&]*)/);
   if(!parsed || !parsed[2]) return null;
   const videoId = parsed[2];
   

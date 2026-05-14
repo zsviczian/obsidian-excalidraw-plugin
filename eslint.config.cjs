@@ -36,6 +36,7 @@ module.exports = [
           caughtErrorsIgnorePattern: "^_",
         },
       ],
+      "no-useless-escape": "error",
     },
   },
 ];

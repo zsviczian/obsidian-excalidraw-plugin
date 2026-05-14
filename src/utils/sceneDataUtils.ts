@@ -81,7 +81,7 @@ export type LinkParts = {
 };
 
 export function getLinkParts(fname: string, file?: TFile): LinkParts {
-  const reg = /(^[^#\|]*)#?(\^)?([^\|]*)?\|?(\d*)x?(\d*)/;
+  const reg = /(^[^#|]*)#?(\^)?([^|]*)?\|?(\d*)x?(\d*)/;
   const parts = fname.match(reg);
   const isBlockRef = parts[2] === "^";
   let page = parseInt(parts[3]?.match(/page=(\d*)/)?.[1]);
