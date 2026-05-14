@@ -492,7 +492,6 @@ const createImgElement = async (
   });  
   eventElement.addEventListener("pointerdown",(ev)=>{
     if(imgOrDiv?.parentElement?.hasClass("canvas-node-content")) return;
-    //@ts-ignore
     const PLUGIN = app.plugins.plugins["obsidian-excalidraw-plugin"] as ExcalidrawPlugin;
     const timeoutValue = DEVICE.isDesktop ? PLUGIN.settings.longPressDesktop : PLUGIN.settings.longPressMobile;
     timer = window.setTimeout(()=>clickEvent(ev),timeoutValue);
@@ -748,8 +747,6 @@ const tmpObsidianWYSIWYG = async (
   if(ctx.frontmatter?.["excalidraw-embed-md"]) {
     return;
   }
-
-  //@ts-ignore
   if (ctx.remainingNestLevel < 4) {
     return;
   }
@@ -758,8 +755,6 @@ const tmpObsidianWYSIWYG = async (
   //markdown-reading-view: we are processing the markdown reading view of an actual Excalidraw file
   //markdown-embed: we are processing the hover preview of a markdown file
   //alt, width, and height attributes of .internal-embed to size and style the image
-    
-  //@ts-ignore
   const containerEl = ctx.containerEl;
 
   if(!plugin.settings.renderImageInMarkdownReadingMode && isMarkdownReadingMode) { // containerEl.parentElement?.parentElement?.hasClass("markdown-reading-view")) {
@@ -939,8 +934,6 @@ export const markdownPostProcessor = async (
       return;
     }
   }
-  
-  //@ts-ignore
   const containerEl = ctx.containerEl;
 
 

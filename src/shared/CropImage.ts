@@ -83,8 +83,7 @@ export class CropImage {
     const {topX, topY, width, height} = this.bbox;
     ea.style.backgroundColor = bgColor;
     ea.style.strokeColor = "transparent";
-    //@ts-ignore: Setting this to string "0" will produce a rectangle with zero stroke width
-    ea.style.strokeWidth = "0";
+    ea.style.strokeWidth = 0;
     ea.style.strokeStyle = "solid";
     ea.style.fillStyle = "solid";
     ea.style.roughness = 0;

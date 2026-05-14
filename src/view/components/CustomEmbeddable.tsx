@@ -359,9 +359,7 @@ function RenderObsidianView(
     return null;
   }
   const React = view.packages.react;
-  
-  //@ts-ignore
-  const leafRef = React.useRef<EmbeddableLeafRef | null>(null);
+  const leafRef = React.useRef(null) as React.MutableRefObject<EmbeddableLeafRef | null>;
   const isEditingRef = React.useRef(false);
   const isActiveRef = React.useRef(false);
   const viewTypeRef = React.useRef("empty");
@@ -436,12 +434,9 @@ function RenderObsidianView(
   const setKeepOnTop = () => {
     const keepontop = (view.app.workspace.activeLeaf === view.leaf) && DEVICE.isDesktop;
     if (keepontop) {
-      //@ts-ignore
       if(!view.ownerWindow.electronWindow.isAlwaysOnTop()) {
-        //@ts-ignore
         view.ownerWindow.electronWindow.setAlwaysOnTop(true);
         window.setTimeout(() => {
-          //@ts-ignore
           view.ownerWindow.electronWindow.setAlwaysOnTop(false);
         }, 500);
       }
@@ -514,7 +509,7 @@ function RenderObsidianView(
             createNode("markdown");
             //I haven't found a better way of deciding if an .md file has its own view (e.g., kanban) or not
             //This runs only when the file is added, thus should not be a major performance issue
-            await leafRef.current.leaf.setViewState({state: {file:null}})
+            await leafRef.current.leaf.setViewState({ type: "markdown", state: { file: null } })
             leafRef.current.leaf?.detach();
           } else {
             const workspaceLeaf:HTMLDivElement = rootSplit.containerEl.querySelector("div.workspace-leaf");
@@ -740,7 +735,6 @@ function RenderObsidianView(
         new Notice("Sorry, cannot edit rotated markdown documents");
         return;
       }
-      //@ts-ignore
       const modes = leafRef.current.leaf.view.modes;
       if (!modes) {
         return;
@@ -850,14 +844,12 @@ function RenderObsidianView(
       //I think this no longer happens since markdown is always a canvas node if canvasNodeFactory is initialized
       if(viewTypeRef.current === "markdown") {
         //Handle markdown leaf
-        //@ts-ignore
         const modes = leafRef.current.leaf?.view.modes;
         if(!modes) {
           return;
         }
       
         if(!isActiveRef.current) {
-          //@ts-ignore
           leafRef.current.leaf.view.setMode(modes["preview"]);
           isEditingRef.current = false;
           return;

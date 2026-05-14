@@ -233,7 +233,6 @@ export function initExcalidrawAutomate(
   plugin: ExcalidrawPlugin,
 ): ExcalidrawAutomate {
   const ea = new ExcalidrawAutomate(plugin);
-  //@ts-ignore
   window.ExcalidrawAutomate = ea;
   return ea;
 }

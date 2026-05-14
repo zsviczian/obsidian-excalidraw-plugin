@@ -372,7 +372,6 @@ export class ExcalidrawSidepanelView extends ItemView {
 				updateTitle: (target) => this.updateTabOptionTitle(target),
 				plugin: this.plugin,
 				ea,
-        //@ts-ignore
         isVisible: () => this.leaf.isVisible?.(),
         reveal: () => this.reveal(),
 			},

@@ -202,7 +202,6 @@ export function openExternalLink(link: string, app: App): boolean {
   link = getLinkFromMarkdownLink(link);
   if (link.match(/^cmd:\/\/.*/)) {
     const cmd = link.replace("cmd://", "");
-    //@ts-ignore
     app.commands.executeCommandById(cmd);
     return true;
   }
@@ -425,65 +424,9 @@ export function renderContextMenuAction(
 export function tmpBruteForceCleanup(view: ExcalidrawView) {
   window.setTimeout(() => {
     if (!view) return;
-    // const cleanupHTMLElement = (el: Element) => {
-    //   //console.log(el);
-    //   while(el.firstElementChild) {
-    //     cleanupHTMLElement(el.firstElementChild);
-    //     el.removeChild(el.firstElementChild);
-    //   }
-    //   Object.keys(el).forEach((key) => {
-    //     //@ts-ignore
-    //     delete el[key];
-    //   });
-    //   el.empty();
-    // }
-
-    // const cleanupLeaf = (l:any) => {
-    //   l.detach?.();
-    //   l.resizeObserver?.disconnect?.();
-    //   l.view?.unload?.();
-    //   l.component?.unload?.();
-    //   Object.keys(l).forEach((key) => {
-    //     const obj = l[key];
-    //     if (obj instanceof Element) {
-    //       // Recursively empty the DOM element's children
-    //       while (obj.firstChild) {
-    //         cleanupHTMLElement(obj.firstElementChild);
-    //         obj.removeChild(obj.firstElementChild);
-    //       }
-    //       obj.empty();
-    //       delete l[key];
-    //       return;
-    //     }
-    //     //@ts-ignore
-    //     delete l[key];
-    //   });
-    // }
-
-    // //@ts-ignore
-    // if(view.leaf && !view.leaf.parent) {
-    //   if(view.containerEl) {
-    //     cleanupHTMLElement(view.containerEl);
-    //   }
-    //   const leaves = new Set();
-    //   leaves.add(view.leaf);
-    //   while(leaves.has(view.leaf.getContainer())) {
-    //     leaves.add(view.leaf.getContainer());
-    //   }
-    //   const roots = new Set();
-    //   roots.add(view.leaf.getRoot());
-    //   leaves.forEach((leaf:WorkspaceLeaf) => {
-    //     roots.add(leaf.getRoot());
-    //   });
-    //   leaves.forEach((l:any) => cleanupLeaf(l));
-    //   leaves.clear();
-    //   roots.forEach((root:any) => cleanupLeaf(root));
-    //   roots.clear();
-    // }
-
-    Object.keys(view).forEach((key) => {
-      //@ts-ignore
-      delete view[key];
+    const mutableView = view as unknown as Record<string, unknown>;
+    Object.keys(mutableView).forEach((key) => {
+      delete mutableView[key];
     });
   }, 500);
 }

@@ -15,7 +15,6 @@ import ExcalidrawPlugin from "src/core/main";
  */
 export const getLinkSuggestionsFiltered = (app: App): LinkSuggestion[] => {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore Obsidian internal helper
   const suggestions = app.metadataCache.getLinkSuggestions?.();
   if (!suggestions) return [];
   const filtered = suggestions.filter((x: LinkSuggestion) => !x.path.match(REG_LINKINDEX_INVALIDCHARS));

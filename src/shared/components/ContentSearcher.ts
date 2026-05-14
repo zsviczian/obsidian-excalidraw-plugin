@@ -1,6 +1,5 @@
 import { t } from "src/lang/helpers";
 import { escapeRegExp } from "../../utils/utils";
-// @ts-ignore
 import { htmlToMarkdown,Notice,setIcon } from "obsidian";
 
 export class ContentSearcher {

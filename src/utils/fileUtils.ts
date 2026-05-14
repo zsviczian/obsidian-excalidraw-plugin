@@ -1,6 +1,7 @@
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import {
   App,
+  DataAdapter,
   loadPdfJs,
   MetadataCache,
   normalizePath,
@@ -31,6 +32,20 @@ import { setElementDisplay } from "./htmlUtils";
 export { splitFolderAndFilename } from "./pathUtils";
 
 type ImageExtension = keyof typeof IMAGE_MIME_TYPES;
+
+type NodeFsDataAdapter = DataAdapter & {
+  fs: {
+    readFile(
+      path: string,
+      encoding: BufferEncoding,
+      callback: (err: NodeJS.ErrnoException | null, data: string) => void,
+    ): void;
+    readFile(
+      path: string,
+      callback: (err: NodeJS.ErrnoException | null, data: Buffer) => void,
+    ): void;
+  };
+};
 
 /**
  * Download data as file from Obsidian, to store on local device
@@ -148,10 +163,9 @@ export async function checkAndCreateFolder(
   const vault = EXCALIDRAW_PLUGIN.app.vault;
   folderpath = normalizePath(folderpath);
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/658
-  //@ts-ignore
   const folder = vault.getAbstractFileByPathInsensitive(folderpath);
   if (folder && folder instanceof TFolder) {
-    return;
+    return folder;
   }
   if (folder && folder instanceof TFile) {
     new Notice(
@@ -351,8 +365,8 @@ export const getPDFDoc = async (f: TFile): Promise<any> => {
 export const readLocalFile = async (filePath: string): Promise<string> => {
   if (!DEVICE.isDesktop) return null;
   return new Promise((resolve, reject) => {
-    //@ts-ignore
-    app.vault.adapter.fs.readFile(filePath, "utf8", (err: any, data: any) => {
+    const adapter = app.vault.adapter as NodeFsDataAdapter;
+    adapter.fs.readFile(filePath, "utf8", (err, data) => {
       if (err) {
         reject(err);
       } else {
@@ -368,15 +382,15 @@ export const readLocalFileBinary = async (
   if (!DEVICE.isDesktop) return null;
   return new Promise((resolve, reject) => {
     const path = decodeURI(filePath);
-    //@ts-ignore
-    app.vault.adapter.fs.readFile(path, (err, data) => {
+    const adapter = app.vault.adapter as NodeFsDataAdapter;
+    adapter.fs.readFile(path, (err, data) => {
       if (err) {
         reject(err);
       } else {
         const arrayBuffer = data.buffer.slice(
           data.byteOffset,
           data.byteOffset + data.byteLength,
-        );
+        ) as ArrayBuffer;
         resolve(arrayBuffer);
       }
     });

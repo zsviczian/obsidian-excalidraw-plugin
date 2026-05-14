@@ -1694,15 +1694,17 @@ export class ExcalidrawData {
 
 
     for (const key of Object.keys(scene.files)) {
+      const fileData = scene.files[key] as (typeof scene.files)[string] & {
+        name?: string;
+      };
       const mermaidElements = getMermaidImageElements(scene.elements.filter((el:ExcalidrawImageElement)=>el.fileId === key));
       if (!(this.hasFile(key as FileId) || this.hasEquation(key as FileId) || this.hasMermaid(key as FileId) || mermaidElements.length > 0)) {
         dirty = true;
         await this.saveDataURLtoVault(
-          scene.files[key].dataURL,
-          scene.files[key].mimeType,
+          fileData.dataURL,
+          fileData.mimeType,
           key as FileId,
-          //@ts-ignore
-          scene.files[key].name,
+          fileData.name ?? key,
         );
       }
     }

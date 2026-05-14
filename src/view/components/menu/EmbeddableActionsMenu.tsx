@@ -211,7 +211,6 @@ export class EmbeddableMenu {
 
   private actionCrop (element: ExcalidrawEmbeddableElement) {
     if(!element) return;
-    //@ts-ignore
     this.view.app.commands.executeCommandById("obsidian-excalidraw-plugin:crop-image");
   }
 

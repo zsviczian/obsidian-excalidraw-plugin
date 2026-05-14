@@ -55,8 +55,6 @@ export const setDynamicStyle = (
   const bgLightness = cmBG().lightness;
   const isDark = cmBG().darkerBy(step).isDark();
   const isGray = dynamicStyle === "gray";
-
-  //@ts-ignore
   const accentColorString = view.app.getAccentColor();
   const accent = () =>
     isGray

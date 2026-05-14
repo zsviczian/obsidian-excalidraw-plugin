@@ -188,14 +188,12 @@ export class FloatingModal extends Modal {
       this.previousActive = this.ownerDocument.activeElement as HTMLElement | null;
       try {
         // Release modal scope so focus and key handling can return to the workspace.
-        // @ts-ignore
         this.app.keymap.popScope(this.scope);
       } catch {}
       // prevent automatic selection / focus restoration
       this.shouldRestoreSelection = false;
     }
     window.setTimeout(() => {
-      // @ts-ignore
       const { containerEl, modalEl, bgEl } = this;
       containerEl.addClass("mod-excalidraw-draggable")
 

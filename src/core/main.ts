@@ -1563,7 +1563,6 @@ export default class ExcalidrawPlugin extends Plugin {
     clearMathJaxVariables();
     //pluginPackages = null;
     //PLUGIN_VERSION = null;
-    //@ts-ignore
     delete window.PolyBool;
     this.packageManager.destroy();
     this.commandManager?.destroy();

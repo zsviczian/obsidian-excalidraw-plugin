@@ -59,6 +59,11 @@ declare global {
   interface Window {
     ExcalidrawAutomate: ExcalidrawAutomate;
     pdfjsLib: any;
+    PolyBool?: any;
+    electronWindow?: {
+      isAlwaysOnTop(): boolean;
+      setAlwaysOnTop(flag: boolean): void;
+    };
     eval: (x: string) => any;
     React?: any;
     ReactDOM?: any;
@@ -71,10 +76,12 @@ declare global {
 
 declare module "obsidian" {
   interface App {
+    appId: string;
     internalPlugins: any;
     setting: any;
     commands: ObsidianCommandManager;
     isMobile(): boolean;
+    getAccentColor(): string;
     getObsidianUrl(file: TFile): string;
     metadataTypeManager: {
       setType(name: string, type: string): void;
@@ -88,9 +95,27 @@ declare module "obsidian" {
   interface FileManager {
     promptForFileRename(file: TFile): Promise<void>;
   }
+  interface Vault {
+    getAbstractFileByPathInsensitive(path: string): TAbstractFile | null;
+  }
   interface FileView {
     _loaded: boolean;
     headerEl: HTMLElement;
+  }
+  interface View {
+    file?: TFile;
+    canvas?: {
+      setReadonly(readonly: boolean): void;
+    };
+    modes?: Record<string, unknown>;
+    setMode?(mode: unknown): void;
+    viewer?: {
+      child?: {
+        pdfViewer?: {
+          page?: number;
+        };
+      };
+    };
   }
   interface TextFileView {
     lastSavedData: string;
@@ -98,7 +123,15 @@ declare module "obsidian" {
   interface Menu {
     items: MenuItem[];
   }
+  interface Setting {
+    setVisibility(visible: boolean): Setting;
+  }
   interface Modal {
+    containerEl: HTMLElement;
+    modalEl: HTMLElement;
+    bgEl: HTMLElement;
+    titleEl: HTMLElement;
+    headerEl: HTMLElement;
     /**
      * Whether to *dim* the background behind the modal. If {@link dimmed} is `true`, the
      * opacity-value from [setBackgroundOpacity]{@link Modal#setBackgroundOpacity} or
@@ -120,10 +153,19 @@ declare module "obsidian" {
     containerEl: HTMLDivElement;
     tabHeaderInnerTitleEl: HTMLDivElement;
     tabHeaderInnerIconEl: HTMLDivElement;
+    isVisible?(): boolean;
   }
   interface WorkspaceWindowInitData {
     x?: number;
     y?: number;
+  }
+  interface WorkspaceTabs {
+    type?: string;
+    children?: unknown[];
+  }
+  interface WorkspaceMobileDrawer {
+    type?: string;
+    children?: unknown[];
   }
   interface Workspace {
     on(
@@ -137,6 +179,17 @@ declare module "obsidian" {
       pathToFileURL(path: string): URL;
     };
     basePath: string;
+    fs: {
+      readFile(
+        path: string,
+        encoding: BufferEncoding,
+        callback: (err: NodeJS.ErrnoException | null, data: string) => void,
+      ): void;
+      readFile(
+        path: string,
+        callback: (err: NodeJS.ErrnoException | null, data: Buffer) => void,
+      ): void;
+    };
   }
   interface FoldPosition {
     from: number;
@@ -152,10 +205,19 @@ declare module "obsidian" {
     applyFoldInfo(foldInfo: FoldInfo): void;
     getFoldInfo(): FoldInfo | null;
   }
+  interface MarkdownPostProcessorContext {
+    remainingNestLevel: number;
+    containerEl: HTMLElement;
+  }
   /*interface Editor {
     insertText(data: string): void;
   }*/
   interface MetadataCache {
+    getLinkSuggestions?(): Array<{
+      alias?: string;
+      path: string;
+      file: TFile;
+    }>;
     getBacklinksForFile(file: TFile): any;
     getLinks(): {
       [id: string]: Array<{
@@ -168,8 +230,18 @@ declare module "obsidian" {
     getCachedFiles(): string[];
   }
 
+  interface FuzzySuggestModal<T> {
+    chooser: {
+      values: Array<{ item: T }>;
+      selectedItem: number;
+    };
+  }
+
   interface HoverPopover {
     containerEl: HTMLElement;
+    embed?: {
+      editor?: unknown;
+    };
     hide(): void;
   }
 

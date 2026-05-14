@@ -403,8 +403,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
   
   actionCropImage() {
-    // @ts-ignore
-    this.view.app.commands.executeCommandById("obsidian-excalidraw-plugin:crop-image");
+    this.getView()?.app.commands.executeCommandById("obsidian-excalidraw-plugin:crop-image");
   }
 
   async actionRunScript(key: string) {
@@ -537,8 +536,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
             style={{
               maxHeight: "350px",
               width: "initial",
-              //@ts-ignore
-              "--padding": "0.125rem",
+              ["--padding" as any]: "0.125rem",
               display: this.state.minimized ? "none" : "block",
             }}
           >

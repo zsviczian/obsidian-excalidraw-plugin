@@ -31,6 +31,10 @@ export class ModifierKeySettingsComponent {
   render() {
     const platform = this.isMacOS ? "Mac" : "Win";
     const modifierKeysConfig = this.modifierKeyConfig[platform];
+    const tooltipMessages = modifierKeyTooltipMessages() as Record<
+      string,
+      Record<string, string>
+    >;
 
     Object.entries(CATEGORIES).forEach(([modifierSetType, label]) => {
       const detailsEl = this.contentEl.createEl("details");
@@ -41,8 +45,9 @@ export class ModifierKeySettingsComponent {
       
       const modifierKeys = modifierKeysConfig[modifierSetType];
       detailsEl.createDiv({
-        //@ts-ignore
-        text: t("DEFAULT_ACTION_DESC") + modifierKeyTooltipMessages()[modifierSetType][modifierKeys.defaultAction],
+        text:
+          t("DEFAULT_ACTION_DESC") +
+          (tooltipMessages[modifierSetType]?.[modifierKeys.defaultAction] ?? ""),
         cls: "setting-item-description"
       });
       // Ensure all LinkClickAction rules have ctrl_cmd enabled
@@ -72,8 +77,7 @@ export class ModifierKeySettingsComponent {
 
       Object.entries(modifierKeys.rules).forEach(([_, rule]) => {
         const setting = new Setting(detailsEl)
-        //@ts-ignore
-          .setName(modifierKeyTooltipMessages()[modifierSetType][rule.result]);
+          .setName(tooltipMessages[modifierSetType]?.[rule.result] ?? rule.result);
         
         setting.addToggle((toggle) =>
           toggle

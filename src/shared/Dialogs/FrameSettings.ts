@@ -63,7 +63,6 @@ export const showFrameSettings = (view: ExcalidrawView) => {
         .onClick(() => {
           // Update appState with new settings
           view.updateScene({
-            // @ts-ignore
             appState: {
               frameRendering: settings
             },

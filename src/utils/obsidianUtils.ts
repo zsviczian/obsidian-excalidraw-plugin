@@ -102,7 +102,6 @@ export const getLeaf = (
 const getLeafLoc = (
   leaf: WorkspaceLeaf,
 ): ["main" | "popout" | "left" | "right" | "hover", any] => {
-  //@ts-ignore
   const leafId = leaf.id;
   const layout = EXCALIDRAW_PLUGIN.app.workspace.getLayout();
   const getLeaves = (l: any) =>
@@ -165,7 +164,6 @@ export const getNewOrAdjacentLeaf = (
         mainLeaf ||
         !l.view?.navigation ||
         leaf === l ||
-        //@ts-ignore
         (inDifferentTabGroup && l?.parent === leaf?.parent)
       )
         return;
@@ -206,7 +204,6 @@ export const getNewOrAdjacentLeaf = (
   if (leafLoc === "hover") {
     const leaves = new Set<WorkspaceLeaf>();
     plugin.app.workspace.iterateAllLeaves((l) => {
-      //@ts-ignore
       if (
         l !== leaf &&
         leaf.containerEl.parentElement === l.containerEl.parentElement
@@ -312,7 +309,6 @@ export const getFileCSSClasses = (file: TFile): string[] => {
 };
 
 export const getActivePDFPageNumberFromPDFView = (view: View): number =>
-  //@ts-ignore
   view?.viewer?.child?.pdfViewer?.page;
 
 export const openLeaf = ({
@@ -333,7 +329,6 @@ export const openLeaf = ({
   if (plugin.settings.focusOnFileTab) {
     plugin.app.workspace.iterateAllLeaves((l) => {
       if (leaf) return;
-      //@ts-ignore
       if (l?.view?.file === file) {
         plugin.app.workspace.setActiveLeaf(l, { focus: true });
         leaf = l;
@@ -561,9 +556,7 @@ export function isUnwantedLeaf(leaf: WorkspaceLeaf): boolean {
     leaf.view?.getViewType() === "empty" &&
     leaf.parent &&
     !leaf.parent.parent &&
-    //@ts-ignore
     leaf.parent.type === "split" &&
-    //@ts-ignore
     leaf.parent.children.length === 1
   );
 }

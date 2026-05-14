@@ -39,10 +39,8 @@ export class InsertImageDialog extends FuzzySuggestModal<TFile> {
     this.setPlaceholder(t("SELECT_DRAWING"));
     this.emptyStateText = t("NO_MATCH");
     this.inputEl.onkeyup = (e) => {
-      //@ts-ignore
       if (e.key === "Enter" && scaleToFullsizeModifier(e) && this.chooser.values) {
         this.onChooseItem(
-          //@ts-ignore
           this.chooser.values[this.chooser.selectedItem].item,
           new KeyboardEvent("keypress",{
             shiftKey: true,

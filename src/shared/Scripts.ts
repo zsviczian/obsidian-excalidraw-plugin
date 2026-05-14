@@ -253,11 +253,9 @@ export class ScriptEngine {
     this.updateToolPannels();
 
     const commandId = `${PLUGIN_ID}:${basename}`;
-    // @ts-ignore
     if (!this.app.commands.commands[commandId]) {
       return;
     }
-    // @ts-ignore
     delete this.app.commands.commands[commandId];
   }
 

@@ -137,8 +137,6 @@ export default class Taskbone {
 
     const apiResponse = await fetch(url,{
       method: "post",
-      //@ts-ignore
-      contentType: "application/json",
       body: JSON.stringify(input),
       headers: {
         "Content-Type": "application/json",

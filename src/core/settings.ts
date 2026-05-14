@@ -2897,8 +2897,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         dropdown
           .setValue(this.plugin.settings.embedType)
           .onChange(async (value) => {
-            //@ts-ignore
-            this.plugin.settings.embedType = value;
+            this.plugin.settings.embedType =
+              value as typeof this.plugin.settings.embedType;
             embedComment.settingEl.style.display = value === "excalidraw" ? "none":"";
             this.applySettingsUpdate();
           });
@@ -3967,7 +3967,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     ) {
       const textAreaHeight = (scriptName: string, variableName: string): any => {
         const variable =
-          //@ts-ignore
           this.plugin.settings.scriptEngineSettings[scriptName][variableName];
         switch (typeof variable) {
           case "object":
@@ -3979,7 +3978,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
       const getValue = (scriptName: string, variableName: string): any => {
         const variable =
-          //@ts-ignore
           this.plugin.settings.scriptEngineSettings[scriptName][variableName];
         switch (typeof variable) {
           case "object":
@@ -3995,19 +3993,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         value: any,
       ) => {
         switch (
-          //@ts-ignore
           typeof this.plugin.settings.scriptEngineSettings[scriptName][
             variableName
           ]
         ) {
           case "object":
-            //@ts-ignore
             this.plugin.settings.scriptEngineSettings[scriptName][
               variableName
             ].value = value;
             break;
           default:
-            //@ts-ignore
             this.plugin.settings.scriptEngineSettings[scriptName][
               variableName
             ] = value;
@@ -4127,7 +4122,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .filter((s) => scripts.contains(s))
         .forEach((scriptName: string) => {
           const settings =
-            //@ts-ignore
             this.plugin.settings.scriptEngineSettings[scriptName];
           const values = Object.values(settings);
           if (

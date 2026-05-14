@@ -4038,7 +4038,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     //don't auto hide hover-editor
     if (this.hoverPopover && !hoverContainerEl?.parentElement?.hasClass("hover-editor")) {
       this.hoverPreviewTarget = null;
-      //@ts-ignore
       if(this.hoverPopover.embed?.editor) {
         return;
       }
@@ -4309,9 +4308,8 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
     });
   }
 
-  private onMouseMove(e: MouseEvent) {
-    //@ts-ignore
-    this.lastMouseEvent = e.nativeEvent;
+  private onMouseMove(e: MouseEvent | { nativeEvent: MouseEvent }) {
+    this.lastMouseEvent = "nativeEvent" in e ? e.nativeEvent : e;
   }
 
   private onMouseOver() {
@@ -6521,6 +6519,7 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       appState?: any;
       files?: any;
       storeAction?: "capture" | "none" | "update"; //https://github.com/excalidraw/excalidraw/pull/7898
+      forceFlushSync?: boolean;
       captureUpdate?: SceneData["captureUpdate"];
     },
     shouldRestore: boolean = false,
@@ -6548,7 +6547,6 @@ export default class ExcalidrawView extends TextFileView implements HoverParent{
       scene.elements = restoreElements(scene.elements, null, {refreshDimensions: true, repairBindings: true});
     }
     if(Boolean(scene.appState)) {
-      //@ts-ignore
       scene.forceFlushSync = true;
     }
     if(scene.elements) {

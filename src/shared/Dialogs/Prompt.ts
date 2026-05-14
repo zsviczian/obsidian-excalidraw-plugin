@@ -351,7 +351,6 @@ export class GenericInputPrompt extends Modal {
   private display() {
     this.contentEl.empty();
     if(this.blockPointerInputOutsideModal) {
-      //@ts-ignore
       const bgEl = this.bgEl;
       bgEl.style.pointerEvents = this.blockPointerInputOutsideModal ? "none" : "auto";
     }

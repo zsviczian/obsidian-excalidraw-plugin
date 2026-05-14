@@ -1106,6 +1106,7 @@ export class ExcalidrawAutomate {
     onNewPane?: boolean;
     silent?: boolean;
     frontmatterKeys?: {
+      [key: string]: string | number | boolean | undefined;
       "excalidraw-plugin"?: "raw" | "parsed";
       "excalidraw-link-prefix"?: string;
       "excalidraw-link-brackets"?: boolean;
@@ -1154,11 +1155,9 @@ export class ExcalidrawAutomate {
       frontmatter = "---\n\n";
       for (const key of Object.keys(params.frontmatterKeys)) {
         frontmatter += `${key}: ${
-          //@ts-ignore
           params.frontmatterKeys[key] === ""
             ? '""'
-            : //@ts-ignore
-              params.frontmatterKeys[key]
+            : params.frontmatterKeys[key]
         }\n`;
       }
       frontmatter += "\n---\n";
@@ -4157,10 +4156,8 @@ export class ExcalidrawAutomate {
     this.imagesDict = {};
     this.mostRecentMarkdownSVG = null;
     this.activeScript = null;
-    //@ts-ignore
-    this.style = {};
-    //@ts-ignore
-    this.canvas = {};
+    this.style = {} as typeof this.style;
+    this.canvas = {} as typeof this.canvas;
     this.colorPalette = {};
   }  
 };

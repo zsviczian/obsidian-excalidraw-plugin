@@ -3,12 +3,14 @@ import ExcalidrawPlugin from "src/core/main";
 import { HideTextBetweenCommentsExtension } from "./Fadeout";
 export const EDITOR_FADEOUT = "fadeOutExcalidrawMarkup";
 
+type TaggedExtension = Extension & { exID?: string };
+
 const editorExtensions: {[key:string]:Extension}= {
   [EDITOR_FADEOUT]: HideTextBetweenCommentsExtension, 
 }
 
 export class EditorHandler {
-  private activeEditorExtensions: Extension[] = [];
+  private activeEditorExtensions: TaggedExtension[] = [];
 
   constructor(private plugin: ExcalidrawPlugin) {
   }
@@ -29,13 +31,11 @@ export class EditorHandler {
     const extension = editorExtensions[extensionIdentifier];
     if(!extension) return;
     if (extensionState == true) {
-      this.activeEditorExtensions.push(extension);
-      // @ts-ignore
+      this.activeEditorExtensions.push(extension as TaggedExtension);
       this.activeEditorExtensions[this.activeEditorExtensions.length - 1].exID = extensionIdentifier;
     } else {
       for (let i = 0; i < this.activeEditorExtensions.length; i++) {
         const ext = this.activeEditorExtensions[i];
-        // @ts-ignore
         if (ext.exID === extensionIdentifier) {
           this.activeEditorExtensions.splice(i, 1);
           break;

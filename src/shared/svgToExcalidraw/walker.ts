@@ -196,8 +196,6 @@ const walkers = {
     const y = getNum(el, "y", 0) + getNum(el, "cy", 0) - r;
 
     const mat = getTransformMatrix(el, groups);
-
-    // @ts-ignore
     const m = mat4.fromValues(d, 0, 0, 0, 0, d, 0, 0, 0, 0, 1, 0, x, y, 0, 1);
 
     const result = mat4.multiply(mat4.create(), mat, m);
@@ -346,8 +344,6 @@ const walkers = {
     const h = getNum(el, "height", 0);
 
     const mat = getTransformMatrix(el, groups);
-
-    // @ts-ignore
     const m = mat4.fromValues(w, 0, 0, 0, 0, h, 0, 0, 0, 0, 1, 0, x, y, 0, 1);
 
     const result = mat4.multiply(mat4.create(), mat, m);

@@ -111,7 +111,6 @@ export class ExportDialog extends Modal {
     this.containerEl.classList.add("excalidraw-release");
     this.titleEl.setText(t("EXPORTDIALOG_TITLE"));
     this.hasSelectedElements = this.view.getViewSelectedElements().length > 0;
-    //@ts-ignore
     this.selectedOnlySetting.setVisibility(this.hasSelectedElements);
     this.updateBoundingBox();
   }
@@ -329,7 +328,6 @@ export class ExportDialog extends Modal {
             this.updateBoundingBox();
           })
       );
-    //@ts-ignore
     this.selectedOnlySetting.setVisibility(this.hasSelectedElements);
   }
 
