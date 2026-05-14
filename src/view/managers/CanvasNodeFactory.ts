@@ -8,10 +8,14 @@ node.render();
 container.appendChild(node.contentEl)
 */
 
-import { TFile,WorkspaceLeaf,WorkspaceSplit } from "obsidian";
+import { TFile, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import ExcalidrawView from "src/view/ExcalidrawView";
-import { getContainerForDocument,ConstructableWorkspaceSplit,isObsidianThemeDark } from "../../utils/obsidianUtils";
-import { CustomMutationObserver,DEBUGGING } from "../../utils/debugHelper";
+import {
+  getContainerForDocument,
+  ConstructableWorkspaceSplit,
+  isObsidianThemeDark,
+} from "../../utils/obsidianUtils";
+import { CustomMutationObserver, DEBUGGING } from "../../utils/debugHelper";
 
 declare module "obsidian" {
   interface Workspace {
@@ -53,56 +57,80 @@ export class CanvasNodeFactory {
   public isInitialized = () => this.initialized;
   private observer: CustomMutationObserver | MutationObserver;
 
-  constructor(
-    private view: ExcalidrawView,
-  ) {
-  }
+  constructor(private view: ExcalidrawView) {}
 
   public async initialize() {
     const app = this.view.app;
     const canvasPlugin = app.internalPlugins.plugins["canvas"];
-    
-    if(!canvasPlugin._loaded) {
+
+    if (!canvasPlugin._loaded) {
       await canvasPlugin.load();
     }
     const doc = this.view.ownerDocument;
-    const rootSplit:WorkspaceSplit = new (WorkspaceSplit as ConstructableWorkspaceSplit)(app.workspace, "vertical");
-    rootSplit.getRoot = () => app.workspace[doc === document ? 'rootSplit' : 'floatingSplit'];
+    const rootSplit: WorkspaceSplit =
+      new (WorkspaceSplit as ConstructableWorkspaceSplit)(
+        app.workspace,
+        "vertical",
+      );
+    rootSplit.getRoot = () =>
+      app.workspace[doc === document ? "rootSplit" : "floatingSplit"];
     rootSplit.getContainer = () => getContainerForDocument(doc);
     this.leaf = app.workspace.createLeafInParent(rootSplit, 0);
     this.canvas = canvasPlugin.views.canvas(this.leaf).canvas;
     this.initialized = true;
   }
 
-  public createFileNote(file: TFile, subpath: string, containerEl: HTMLDivElement, elementId: string): ObsidianCanvasNode {
-    if(!this.initialized) return;
+  public createFileNote(
+    file: TFile,
+    subpath: string,
+    containerEl: HTMLDivElement,
+    elementId: string,
+  ): ObsidianCanvasNode {
+    if (!this.initialized) return;
     subpath = subpath ?? "";
-    if(this.nodes.has(elementId)) {
+    if (this.nodes.has(elementId)) {
       this.canvas.removeNode(this.nodes.get(elementId));
       this.nodes.delete(elementId);
     }
-    const node = this.canvas.createFileNode({pos: {x:0,y:0}, file, subpath, save: false});
-    node.setFilePath(file.path,subpath);
+    const node = this.canvas.createFileNode({
+      pos: { x: 0, y: 0 },
+      file,
+      subpath,
+      save: false,
+    });
+    node.setFilePath(file.path, subpath);
     node.render();
     //containerEl.style.background = "var(--background-primary)";
     node.containerEl.querySelector(".canvas-node-content-blocker")?.remove();
-    containerEl.appendChild(node.containerEl)
+    containerEl.appendChild(node.containerEl);
     this.nodes.set(elementId, node);
     return node;
   }
 
-  private async waitForEditor(node: ObsidianCanvasNode): Promise<HTMLElement | null> {
+  private async waitForEditor(
+    node: ObsidianCanvasNode,
+  ): Promise<HTMLElement | null> {
     let counter = 0;
-    while (!node.child.editor?.containerEl?.parentElement?.parentElement && counter++ < 40) {
+    while (
+      !node.child.editor?.containerEl?.parentElement?.parentElement &&
+      counter++ < 40
+    ) {
       await sleep(25);
     }
     return node.child.editor?.containerEl?.parentElement?.parentElement;
   }
 
-  private setupThemeObserver(editorEl: HTMLElement, obsidianTheme: string, theme: string) {
+  private setupThemeObserver(
+    editorEl: HTMLElement,
+    obsidianTheme: string,
+    theme: string,
+  ) {
     const nodeObserverFn: MutationCallback = (mutationsList) => {
       for (const mutation of mutationsList) {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+        if (
+          mutation.type === "attributes" &&
+          mutation.attributeName === "class"
+        ) {
           const targetElement = mutation.target as HTMLElement;
           if (targetElement.classList.contains(obsidianTheme)) {
             targetElement.classList.remove(obsidianTheme);
@@ -122,14 +150,16 @@ export class CanvasNodeFactory {
 
   public async startEditing(node: ObsidianCanvasNode, theme: string) {
     if (!this.initialized || !node || !node.isEditable()) return;
-    
+
     try {
       await this.view.setEmbeddableNodeIsEditing();
-      
+
       node.startEditing();
       node.isEditing = true;
 
-      const obsidianTheme = isObsidianThemeDark() ? "theme-dark" : "theme-light";
+      const obsidianTheme = isObsidianThemeDark()
+        ? "theme-dark"
+        : "theme-light";
       if (obsidianTheme === theme) return;
 
       const editorEl = await this.waitForEditor(node);
@@ -137,50 +167,50 @@ export class CanvasNodeFactory {
 
       editorEl.classList.remove(obsidianTheme);
       editorEl.classList.add(theme);
-      
+
       this.setupThemeObserver(editorEl, obsidianTheme, theme);
     } catch (error) {
-      console.error('Error starting edit:', error);
+      console.error("Error starting edit:", error);
       node.isEditing = false;
     }
   }
 
   public stopEditing(node: ObsidianCanvasNode) {
-    if (!this.initialized || !node || !node.isEditing || !node.isEditable()) return;
-    
+    if (!this.initialized || !node || !node.isEditing || !node.isEditable())
+      return;
+
     try {
       this.view.clearEmbeddableNodeIsEditing();
       node.child.showPreview();
       node.isEditing = false;
       this.observer?.disconnect();
     } catch (error) {
-      console.error('Error stopping edit:', error);
+      console.error("Error stopping edit:", error);
     }
   }
 
   removeNode(node: ObsidianCanvasNode) {
-    if(!this.initialized || !node) return;
+    if (!this.initialized || !node) return;
     this.nodes.delete(node.file.path);
     this.canvas.removeNode(node);
     node.detach();
   }
 
   public purgeNodes() {
-    if(!this.initialized) return;
-    this.nodes.forEach(node => {
+    if (!this.initialized) return;
+    this.nodes.forEach((node) => {
       this.canvas.removeNode(node);
-      node.detach(); 
+      node.detach();
     });
     this.nodes.clear();
   }
 
   destroy() {
     this.purgeNodes();
-    this.initialized = false;  //calling after purgeNodes becaues purge nodes checks for initialized
+    this.initialized = false; //calling after purgeNodes becaues purge nodes checks for initialized
     this.observer?.disconnect();
     this.view = null;
     this.canvas = null;
     this.leaf = null;
   }
 }
-    
