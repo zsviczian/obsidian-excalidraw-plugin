@@ -44,7 +44,6 @@ let plugin: ExcalidrawPlugin;
 let app: App;
 let vault: Vault;
 let metadataCache: MetadataCache;
-const DEBUGGING_MPP = false;
 
 
 const getDefaultWidth = (plugin: ExcalidrawPlugin): string => {

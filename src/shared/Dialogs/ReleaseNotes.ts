@@ -26,7 +26,7 @@ export class ReleaseNotes extends Modal {
 
   onOpen(): void {
     //@ts-ignore
-    const { containerEl, contentEl, titleEl, headerEl } = this;
+    const { containerEl, titleEl, headerEl } = this;
     //this.contentEl.classList.add("excalidraw-release");
     containerEl.classList.add("excalidraw-release");
     titleEl.setText(this.options.title ?? `${t("RN_WELCOME")} ${this.version ?? ""}`.trim());

@@ -107,7 +107,7 @@ export class PathSuggestionModal extends SuggestionModal<
 
     if (item instanceof TFile) {
       const pathLength = item.path.length - item.name.length;
-      const matchElements = matches.matches.map((m) => {
+      const matchElements = matches.matches.map(() => {
         return createSpan("suggestion-highlight");
       });
       for (

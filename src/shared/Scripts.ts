@@ -405,7 +405,7 @@ export class ScriptEngine {
         hint,
         instructions,
       );
-    } catch (e) {
+    } catch (_) {
       return undefined;
     }
   }

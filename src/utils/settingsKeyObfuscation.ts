@@ -51,7 +51,7 @@ const decodeBase64 = (value: string): Uint8Array | null => {
     if (typeof Buffer !== "undefined") {
       return new Uint8Array(Buffer.from(value, "base64"));
     }
-  } catch (error) {
+  } catch (_) {
     return null;
   }
 
@@ -82,7 +82,7 @@ const decodeObfuscatedAPIKeyPayload = (value: string): string | null => {
     return payload.startsWith(API_KEY_PAYLOAD_MARKER)
       ? payload.slice(API_KEY_PAYLOAD_MARKER.length)
       : null;
-  } catch (error) {
+  } catch (_) {
     return null;
   }
 };

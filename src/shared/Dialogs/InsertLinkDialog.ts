@@ -48,7 +48,6 @@ export class InsertLinkDialog extends FuzzySuggestModal<LinkSuggestion> {
         true,
       );
     }
-    const link = getLink(this.plugin,{embed: false, path: filepath, alias: item.alias});
     this.addText(getLink(this.plugin,{embed: false, path: filepath, alias: item.alias}), filepath, item.alias);
   }
 

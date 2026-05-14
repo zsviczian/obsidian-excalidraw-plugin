@@ -35,7 +35,6 @@ import { ModifierKeySet,ModifierSetType } from "src/utils/modifierkeyHelper";
 import { ModifierKeySettingsComponent } from "src/shared/Dialogs/ModifierKeySettings";
 import { ANNOTATED_PREFIX,CROPPED_PREFIX } from "src/utils/carveout";
 import { EDITOR_FADEOUT } from "src/core/editor/EditorHandler";
-import { setDebugging } from "src/utils/debugHelper";
 import { Rank } from "src/constants/actionIcons";
 import { TAG_AUTOEXPORT,TAG_MDREADINGMODE,TAG_PDFEXPORT } from "src/constants/constSettingsTags";
 import { HotkeyEditor } from "src/shared/Dialogs/HotkeyEditor";
@@ -256,7 +255,6 @@ export interface ExcalidrawSettings {
   longPressDesktop: number;
   longPressMobile: number;
   doubleClickLinkOpenViewMode: boolean;
-  isDebugMode: boolean;
   rank: Rank;
   modifierKeyOverrides: {modifiers: Modifier[], key: string}[];
   showSplashscreen: boolean;
@@ -801,7 +799,6 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   longPressDesktop: 500,
   longPressMobile: 500,
   doubleClickLinkOpenViewMode: true,
-  isDebugMode: false,
   rank: "Bronze",
   modifierKeyOverrides: [
     {modifiers: ["Mod"], key:"Enter"},
@@ -1529,7 +1526,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     containerEl.createEl("hr", { cls: "excalidraw-setting-hr" });
     containerEl.createDiv({ text: t("AI_DESC"), cls: "setting-item-description"  });
     detailsEl = this.containerEl.createEl("details");
-    const aiDetailsEl = detailsEl;
     detailsEl.createEl("summary", { 
       text: t("AI_HEAD"),
       cls: "excalidraw-setting-h1",
@@ -3795,7 +3791,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       setSanitizedHtml(el, t("EA_DESC"));
     });
     detailsEl = containerEl.createEl("details");
-    const eaDetailsEl = detailsEl;
     detailsEl.createEl("summary", { 
       text: t("EA_HEAD"),
       cls: "excalidraw-setting-h1",
@@ -3907,22 +3902,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.applySettingsUpdate();
         }),
     );
-
-    if (process.env.NODE_ENV === 'development') {
-      new Setting(detailsEl)
-      .setName(t("DEBUGMODE_NAME"))
-      .setDesc(fragWithHTML(t("DEBUGMODE_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.isDebugMode)
-          .onChange((value) => {
-            this.plugin.settings.isDebugMode = value;
-            setDebugging(value);
-            this.applySettingsUpdate();
-          }),
-      );
-    }
-
 
     new Setting(detailsEl)
       .setName(t("SLIDING_PANES_NAME"))

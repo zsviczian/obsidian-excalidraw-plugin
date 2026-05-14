@@ -94,7 +94,6 @@ import { EXCALIDRAW_AUTOMATE_INFO,EXCALIDRAW_SCRIPTENGINE_INFO } from "./Dialogs
 import { showColorPicker } from "./Dialogs/ColorPicker";
 import { addBackOfTheNoteCard,getViewColorPalette,sceneRemoveInternalLinks } from "../utils/excalidrawViewUtils";
 import { log } from "../utils/debugHelper";
-import { ExcalidrawLib } from "../types/excalidrawLib";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
 import { AddImageOptions,ImageInfo,KeyBlocker,ScriptSettingValue,SVGColorInfo } from "src/types/excalidrawAutomateTypes";
 import { _measureText,cloneElement,createPNG,createSVG,ensureActiveScriptSettingsObject,errorMessage,filterColorMap,getEmbeddedFileForImageElment,getLineBox,getTemplate,isColorStringTransparent,isImageOrPDFTransclusion,isSVGColorInfo,mergeColorMapIntoSVGColorInfo,normalizeBindMode,normalizeFixedPoint,normalizeLinePoints,repositionElementsToCursor,svgColorInfoToColorMap,updateOrAddSVGColorInfo,verifyMinimumPluginVersion } from "src/utils/excalidrawAutomateUtils";
@@ -143,7 +142,6 @@ extendPlugins([
 
 declare const PLUGIN_VERSION:string;
 declare var LZString: any;
-declare const excalidrawLib: typeof ExcalidrawLib;
 
 const GAP = 4;
 
@@ -2973,15 +2971,14 @@ export class ExcalidrawAutomate {
   /**
    * Gets the color information from an Excalidraw file.
    * @param {TFile} file - The Excalidraw file.
-   * @param {ExcalidrawImageElement} img - The image element.
+   * @param {ExcalidrawImageElement} img? - Optional, if not provided, the function returns colors from all elements.
    * @returns {Promise<SVGColorInfo>} Promise resolving to the SVG color information.
    */
-  async getColosFromExcalidrawFile(file:TFile, img: ExcalidrawImageElement): Promise<SVGColorInfo> {
+  async getColosFromExcalidrawFile(file:TFile, img?: ExcalidrawImageElement): Promise<SVGColorInfo> {
     if(!file || !this.isExcalidrawFile(file)) {
       errorMessage("Must provide an Excalidraw file as input", "getColosFromExcalidrawFile()");
       return;
     }
-    const ef = getEmbeddedFileForImageElment(this, img);
 
     const ed = new ExcalidrawData(this.plugin);
     if(file.extension === "excalidraw") {
@@ -2993,7 +2990,8 @@ export class ExcalidrawAutomate {
     if (!ed.loaded) {
       return svgColors;
     }
-    ed.scene.elements.forEach((el:ExcalidrawElement) => {
+    (img ? ed.scene.elements.filter((el: ExcalidrawElement) => el.id === img.id) : ed.scene.elements)
+    .forEach((el:ExcalidrawElement) => {
       if("strokeColor" in el) {
         updateOrAddSVGColorInfo(svgColors, el.strokeColor, {stroke: true});
       }
@@ -3814,7 +3812,7 @@ export class ExcalidrawAutomate {
       return null;
     }
 
-    const {leaf, promise} = openLeaf({
+    const { leaf } = openLeaf({
       plugin: this.plugin,
       fnGetLeaf: () => getNewOrAdjacentLeaf(this.plugin, this.targetView.leaf),
       file,

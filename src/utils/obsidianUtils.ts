@@ -45,7 +45,7 @@ export const getLeaf = (
 ) => {
   const newTab = ():WorkspaceLeaf => {
     if(!plugin.settings.openInMainWorkspace) return plugin.app.workspace.getLeaf('tab');
-    const [leafLoc, mainLeavesIds] = getLeafLoc(origo);
+    const [leafLoc, _] = getLeafLoc(origo);
     if(leafLoc === 'main') return plugin.app.workspace.getLeaf('tab');
     return getNewOrAdjacentLeaf(plugin,origo);
   }

@@ -85,18 +85,6 @@ export const processLinkText = (linkText: string, view:ExcalidrawView): { subpat
   return { subpath, file };
 }
 
-export const generateEmbeddableLink = (src: string, theme: "light" | "dark"):string => {
-/*  const twitterLink = src.match(TWITTER_REG);
-  if (twitterLink) {
-    const tweetID = src.match(/.*\/(\d*)\?/)[1];
-    if (tweetID) {
-      return `https://platform.twitter.com/embed/Tweet.html?frame=false&hideCard=false&hideThread=false&id=${tweetID}&lang=en&theme=${theme}&width=550px`;
-      //src = `https://twitframe.com/show?url=${encodeURIComponent(src)}`;
-    }
-  }*/
-  return src;
-}
-
 export function setFileToLocalGraph(app: App, file: TFile) {
   let lgv: any;
   app.workspace.iterateAllLeaves((l) => {

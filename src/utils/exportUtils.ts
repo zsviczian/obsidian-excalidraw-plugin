@@ -445,7 +445,6 @@ export async function exportToPDF({
     allPagesDiv.style.width = "100%";
     allPagesDiv.style.height = "fit-content";
 
-    let j = 0;
     for (const svg of SVG) {
       const svgWidth = parseFloat(svg.getAttribute('width') || '0');
       const svgHeight = parseFloat(svg.getAttribute('height') || '0');
@@ -463,7 +462,6 @@ export async function exportToPDF({
 
       const { width: pageWidth, height: pageHeight } = getPageSizePixels(pageDimForSvg, false);
       
-      let i = 0;
       for (const tile of tiles) {
         const pageDiv = createDiv();
         pageDiv.addClass('print-page');
@@ -492,9 +490,7 @@ export async function exportToPDF({
 
         pageDiv.appendChild(clonedSVG);
         allPagesDiv.appendChild(pageDiv);
-        i++;
       }
-      j++;
     }
 
     new Notice(t("EXPORTDIALOG_PDF_PROGRESS_NOTICE"));

@@ -134,7 +134,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   setTheme(theme: "dark" | "light") {
-    this.setState((prevState: PanelState) => {
+    this.setState(() => {
       return {
         theme,
       };
@@ -395,14 +395,14 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     );
   }
 
-  actionImportSVG(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+  actionImportSVG() {
     const view = this.getView();
     const plugin = view?.plugin;
     if (!view || !plugin) return;
     plugin.importSVGDialog.start(view);
   }
   
-  actionCropImage(e:React.MouseEvent<HTMLButtonElement, MouseEvent>) {
+  actionCropImage() {
     // @ts-ignore
     this.view.app.commands.executeCommandById("obsidian-excalidraw-plugin:crop-image");
   }
@@ -777,7 +777,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
           <legend>{isDownloaded ? group : (group === "" ? "User" : "User/"+group)}</legend>
           <div className="buttonList buttonListIcon">
             {Object.entries(this.state.scriptIconMap)
-              .filter(([k,v])=>v.group === group)
+              .filter(([_,v])=>v.group === group)
               .sort()
               .map(([key,value])=>(
                 <ActionButton

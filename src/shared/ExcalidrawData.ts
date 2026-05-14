@@ -621,7 +621,7 @@ export class ExcalidrawData {
           container.boundElements = [{ id: textEl.id, type: "text" }].concat(
             boundEl,
           );
-        } catch (e) {}
+        } catch (_) {}
       });
 
       const ellipseAndRhombusContainerWrapping = !isVersionNewerThanOther(saveVersion,"1.8.16");
@@ -838,7 +838,7 @@ export class ExcalidrawData {
       position = data.search(RE_TEXTELEMENTS_FALLBACK_2);
     }
     if (position === -1) {
-      await this.setTextMode(textMode, false);
+      await this.setTextMode(textMode);
       this.loaded = true;
       return true; //Text Elements header does not exist
     }
@@ -992,7 +992,7 @@ export class ExcalidrawData {
     //e.g. if the entire text elements section was deleted.
     this.findNewTextElementsInScene();
     this.findNewElementLinksInScene(); //non-text element links
-    await this.setTextMode(textMode, true);
+    await this.setTextMode(textMode);
     this.loaded = true;
     return true;
   }
@@ -1027,15 +1027,15 @@ export class ExcalidrawData {
     this.mermaids.clear();
     this.findNewTextElementsInScene();
     this.findNewElementLinksInScene();
-    await this.setTextMode(TextMode.raw, true); //legacy files are always displayed in raw mode.
+    await this.setTextMode(TextMode.raw); //legacy files are always displayed in raw mode.
     this.loaded = true;
     return true;
   }
 
-  public async setTextMode(textMode: TextMode, forceupdate: boolean = false) {
+  public async setTextMode(textMode: TextMode) {
     if(!this.scene) return;
     this.textMode = textMode;
-    await this.updateSceneTextElements(forceupdate);
+    await this.updateSceneTextElements();
   }
 
 
@@ -1045,7 +1045,7 @@ export class ExcalidrawData {
    * @param forceupdate : will update text elements even if text contents has not changed, this will
    * correct sizing issues
    */
-  private async updateSceneTextElements(forceupdate: boolean = false) {
+  private async updateSceneTextElements() {
     //update text in scene based on textElements Map
     //first get scene text elements
     const elementsMap = arrayToMap(this.scene.elements);
@@ -1067,7 +1067,7 @@ export class ExcalidrawData {
         te.y = y;
         te.width = width;
         te.height = height;
-      } catch(e) {
+      } catch(_e) {
       }
     }
   }

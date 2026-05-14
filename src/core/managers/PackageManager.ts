@@ -205,7 +205,7 @@ export class PackageManager {
     try {
       REACT_PACKAGES = "";
       
-      Array.from(this.packageMap.entries()).forEach(([win, p]) => {
+      Array.from(this.packageMap.entries()).forEach(([win, _]) => {
         this.deletePackage(win);
       });
       

@@ -1031,7 +1031,6 @@ export class CommandManager {
           }
           return false;
         }
-        const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         (async()=>{
           const isLeftHanded = this.settings.isLeftHanded;
           await this.plugin.loadSettings();
@@ -1159,7 +1158,6 @@ export class CommandManager {
           let ef = view.excalidrawData.getFile(el.fileId);
           if(!ef) {
             await view.forceSave();
-            let ef = view.excalidrawData.getFile(el.fileId);
             new Notice("Select a single image element and try again");
             return false;
           }
@@ -1202,7 +1200,6 @@ export class CommandManager {
           let ef = view.excalidrawData.getFile(el.fileId);
           if (!ef) {
             await view.forceSave();
-            let ef = view.excalidrawData.getFile(el.fileId);
             new Notice("Select a single image element and try again");
             return false;
           }
@@ -1525,14 +1522,9 @@ export class CommandManager {
             ? await getImageSize(ea.imagesDict[el.fileId].dataURL)
             : null;
           let fnBase = "";
-          let imageLink = "";
           if(isFile) {
             fnBase = imageFile.basename;
-            imageLink = ref
-              ? `[[${imageFile.path}#${ref}]]`
-              : `[[${imageFile.path}]]`;
           } else {
-            imageLink = imageURL;
             const imagename = imageURL.match(/^.*\/([^?]*)\??.*$/)?.[1];
             fnBase = imagename.substring(0,imagename.lastIndexOf("."));
           }

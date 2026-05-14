@@ -229,7 +229,7 @@ class ImageCache {
               new Promise<void>((innerResolve, innerReject) => {
                 const deleteRequest = store.delete(cursor.primaryKey);
                 deleteRequest.onsuccess = () => innerResolve();
-                deleteRequest.onerror = (ev: Event) => {
+                deleteRequest.onerror = () => {
                   const error = deleteRequest.error;
                   const errorMsg = `Failed to delete file with key: ${key}. Error: ${error.message}`
                   innerReject(new Error(errorMsg));
@@ -383,7 +383,7 @@ class ImageCache {
       }
       this.touchCacheData(key, cachedData);
       return { cacheData: cachedData, key };
-    } catch (e) {
+    } catch (_) {
       return undefined;
     }
   }

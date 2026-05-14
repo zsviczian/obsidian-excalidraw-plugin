@@ -102,7 +102,7 @@ export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
 
     const path = item.file?.path ?? item.path;
     const pathLength = path.length - item.file.name.length;
-    const matchElements = matches.matches.map((m) => {
+    const matchElements = matches.matches.map(() => {
       return createSpan("suggestion-highlight");
     });
     const itemText = this.getItemText(item);

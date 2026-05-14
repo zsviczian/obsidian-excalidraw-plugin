@@ -79,7 +79,7 @@ import { PreviewImageType } from "../types/utilTypes";
 import { emulateCTRLClickForLinks,linkClickModifierType,PaneTarget } from "../utils/modifierkeyHelper";
 import { imageCache } from "../shared/ImageCache";
 import { StylesManager } from "./managers/StylesManager";
-import { CustomMutationObserver,log,setDebugging } from "../utils/debugHelper";
+import { CustomMutationObserver,log } from "../utils/debugHelper";
 import { ExcalidrawConfig } from "../shared/ExcalidrawConfig";
 import { EditorHandler } from "./editor/EditorHandler";
 import { ExcalidrawLib } from "../types/excalidrawLib";
@@ -1592,7 +1592,6 @@ export default class ExcalidrawPlugin extends Plugin {
       await this.saveData(encryptedPersistedSettings);
     }
     if(opts.reEnableAutosave) this.settings.autosave = true;
-    setDebugging(this.settings.isDebugMode);
   }
 
   async saveSettings() {

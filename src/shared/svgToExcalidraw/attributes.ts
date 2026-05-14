@@ -18,15 +18,6 @@ export function getNum(el: Element, attr: string, backup?: number): number {
   return Number.isNaN(numVal) ? backup || 0 : numVal;
 }
 
-const presAttrs = {
-  stroke: "stroke",
-  "stroke-opacity": "stroke-opacity",
-  "stroke-width": "stroke-width",
-  fill: "fill",
-  "fill-opacity": "fill-opacity",
-  opacity: "opacity",
-} as const;
-
 type ExPartialElement = Partial<ExcalidrawElementBase>;
 
 type AttrHandlerArgs = {
@@ -34,8 +25,16 @@ type AttrHandlerArgs = {
   exVals: ExPartialElement;
 };
 
+type PresAttrName =
+  | "stroke"
+  | "stroke-opacity"
+  | "stroke-width"
+  | "fill"
+  | "fill-opacity"
+  | "opacity";
+
 type PresAttrHandlers = {
-  [key in keyof typeof presAttrs]: (args: AttrHandlerArgs) => void;
+  [key in PresAttrName]: (args: AttrHandlerArgs) => void;
 };
 
 const attrHandlers: PresAttrHandlers = {
@@ -84,8 +83,8 @@ export function presAttrsToElementValues(
   const exVals = [...el.attributes].reduce((exVals, attr) => {
     const name = attr.name;
 
-    if (Object.keys(attrHandlers).includes(name)) {
-      attrHandlers[name as keyof PresAttrHandlers]({ el, exVals });
+    if (name in attrHandlers) {
+      attrHandlers[name as PresAttrName]({ el, exVals });
     }
 
     return exVals;

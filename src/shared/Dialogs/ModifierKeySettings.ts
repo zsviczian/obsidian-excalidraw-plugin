@@ -70,7 +70,7 @@ export class ModifierKeySettingsComponent {
         });
       });
 
-      Object.entries(modifierKeys.rules).forEach(([action, rule]) => {
+      Object.entries(modifierKeys.rules).forEach(([_, rule]) => {
         const setting = new Setting(detailsEl)
         //@ts-ignore
           .setName(modifierKeyTooltipMessages()[modifierSetType][rule.result]);

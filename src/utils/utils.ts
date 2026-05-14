@@ -23,7 +23,6 @@ VIEW_TYPE_EXCALIDRAW,
 import ExcalidrawPlugin from "../core/main";
 import { ExcalidrawElement,ExcalidrawImageElement,ExcalidrawTextElement,ImageCrop } from "@zsviczian/excalidraw/types/element/src/types";
 import { getDataURLFromURL,getIMGFilename,getMimeType,getURLImageExtension } from "./fileUtils";
-import { generateEmbeddableLink } from "./customEmbeddableUtils";
 import { FILENAMEPARTS } from "../types/utilTypes";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { getExcalidrawViews,getFileCSSClasses } from "./obsidianUtils";
@@ -219,24 +218,6 @@ export function wrapTextAtCharLength(
   return outstring.replace(/\n$/, "");
 }
 
-const rotate = (
-  pointX: number,
-  pointY: number,
-  centerX: number,
-  centerY: number,
-  angle: number,
-): [number, number] =>
-  // 𝑎′𝑥=(𝑎𝑥−𝑐𝑥)cos𝜃−(𝑎𝑦−𝑐𝑦)sin𝜃+𝑐𝑥
-  // 𝑎′𝑦=(𝑎𝑥−𝑐𝑥)sin𝜃+(𝑎𝑦−𝑐𝑦)cos𝜃+𝑐𝑦.
-  // https://math.stackexchange.com/questions/2204520/how-do-i-rotate-a-line-segment-in-a-specific-point-on-the-line
-  [
-    (pointX - centerX) * Math.cos(angle) -
-      (pointY - centerY) * Math.sin(angle) +
-      centerX,
-    (pointX - centerX) * Math.sin(angle) +
-      (pointY - centerY) * Math.cos(angle) +
-      centerY,
-  ];
 
 export function rotatedDimensions (
   element: ExcalidrawElement,
@@ -339,9 +320,6 @@ export async function getSVG (
   let elements:ExcalidrawElement[] = scene.elements;
   if(elements.some(el => el.type === "embeddable")) {
     elements = JSON.parse(JSON.stringify(elements));
-    elements.filter(el => el.type === "embeddable").forEach((el:any) => {
-      el.link = generateEmbeddableLink(el.link, scene.appState?.theme ?? "light");
-    });
   }
 
   elements = srcFile
@@ -393,7 +371,7 @@ export async function getSVG (
       }
     }
     return svg;
-  } catch (error) {
+  } catch (_) {
     return null;
   }
 };
@@ -685,7 +663,7 @@ export async function decompressAsync (data: string): Promise<string> {
   return await runCompressionWorker(data, "decompress");
 };
 
-export function decompress (data: string, isAsync:boolean = false): string {
+export function decompress (data: string): string {
   let cleanedData = '';
   const length = data.length;
   

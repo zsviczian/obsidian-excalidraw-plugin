@@ -162,7 +162,7 @@ export class EventManager {
           editorInsertText(editor, `${element.link}`);
           return;
         }
-      } catch (e) {
+      } catch (_) {
       }
     }
   };

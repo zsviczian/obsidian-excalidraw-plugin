@@ -111,7 +111,7 @@ export const scaleToFullsizeModifier = (ev: KeyEvent) => {
   const keySet = ((DEVICE.isMacOS || DEVICE.isIOS) ? settings.modifierKeyConfig.Mac : settings.modifierKeyConfig.Win )["InternalDragAction"];
   const rule:ModifierKey = keySet.rules.find((r:ModifierKey) => r.result === "image-fullsize");
   if(!rule) return false;
-  const { shift, ctrl_cmd, alt_opt, meta_ctrl, result } = rule;
+  const { shift, ctrl_cmd, alt_opt, meta_ctrl } = rule;
   return (
     (isSHIFT(ev) === shift) &&
     (isWinCTRLorMacCMD(ev) === ctrl_cmd) &&

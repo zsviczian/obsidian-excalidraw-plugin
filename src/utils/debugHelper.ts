@@ -1,11 +1,5 @@
 export const durationTreshold = 0; //0.05; //ms
 
-export function setDebugging(value: boolean) {
-  DEBUGGING = (process.env.NODE_ENV === 'development') 
-  ? value
-  : false;
-}
-
 export let DEBUGGING = false;
 
 export const log = console.log.bind(window.console);

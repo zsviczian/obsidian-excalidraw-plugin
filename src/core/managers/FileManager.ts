@@ -455,7 +455,7 @@ export class PluginFileManager {
       imgMap.set(ext, { oldImgPath, newImgPath });
     });
 
-    imgMap.forEach((path, ext) => {
+    imgMap.forEach((path) => {
       const imgFile = this.app.vault.getFileByPath(
         normalizePath(path.oldImgPath),
       );
@@ -613,7 +613,7 @@ export class PluginFileManager {
       });
       
       window.setTimeout(() => {
-        imgMap.forEach((imgPath: string, ext: string) => {        
+        imgMap.forEach((imgPath: string) => {        
           const imgFile = this.app.vault.getFileByPath(
             normalizePath(imgPath),
           );

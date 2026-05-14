@@ -120,7 +120,7 @@ export class ExcalidrawSidepanelView extends ItemView {
 					const parsed = JSON.parse(entry);
 					scriptName = parsed?.script ?? parsed?.name ?? "";
 					title = parsed?.title ?? scriptName;
-				} catch (e) {
+				} catch (_) {
 					if (entry.includes("::")) {
 						const [namePart, ...rest] = entry.split("::");
 						scriptName = namePart;

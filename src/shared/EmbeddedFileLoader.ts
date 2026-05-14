@@ -162,7 +162,7 @@ export class EmbeddedFile {
     if(this.file && (this.plugin.isExcalidrawFile(this.file) || this.file.extension.toLowerCase() === "svg")) {
       try {
         this.colorMap = colorMapJSON ? JSON.parse(colorMapJSON.toLocaleLowerCase()) : null;
-      } catch (error) {
+      } catch (_) {
         this.colorMap = null;
       }
     }
@@ -625,7 +625,7 @@ export class EmbeddedFilesLoader {
       if(!isHyperLink && !dataURL && !isLocalLink) {
         markdownRendererRecursionWatcthdog.add(file);
         try {
-          const result = await this.convertMarkdownToSVG(this.plugin, file, linkParts, depth);
+          const result = await this.convertMarkdownToSVG(this.plugin, file, linkParts);
           dataURL = result.dataURL;
           hasSVGwithBitmap = result.hasSVGwithBitmap;
         } finally {
@@ -1150,7 +1150,6 @@ export class EmbeddedFilesLoader {
     plugin: ExcalidrawPlugin,
     file: TFile,
     linkParts: LinkParts,
-    depth: number,
   ): Promise<{dataURL: DataURL, hasSVGwithBitmap:boolean}> {
     //1.
     //get the markdown text

@@ -16,7 +16,6 @@ import { t } from "src/lang/helpers";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { EmbeddedFile } from "src/shared/EmbeddedFileLoader";
 import { CaptureUpdateAction } from "src/constants/constants";
-import ExcalidrawPlugin from "src/core/main";
 import { setSanitizedHtml } from "./htmlUtils";
 
 export async function insertImageToView(
@@ -156,7 +155,7 @@ export function sceneRemoveInternalLinks(scene: {elements: readonly ExcalidrawEl
   return elements;
 }
 
-export function openExternalLink (link:string, app: App, element?: ExcalidrawElement):boolean {
+export function openExternalLink (link:string, app: App):boolean {
   link = getLinkFromMarkdownLink(link);
   if (link.match(/^cmd:\/\/.*/)) {
     const cmd = link.replace("cmd://", "");
@@ -511,7 +510,7 @@ export async function toggleImageAnchoring(
   ea.destroy();
 }
 
-export function onLoadMessages(plugin: ExcalidrawPlugin, scene: {elements: ExcalidrawElement[], appState: AppState}, data: string) {
+export function onLoadMessages(scene: {elements: ExcalidrawElement[], appState: AppState}) {
   window.setTimeout(() => {
     if(!(scene.appState.frameRendering?.markerEnabled ?? true) && scene.elements.some(el=>el.type === "frame" && el.frameRole === "marker")) {
       new Notice(t("MARKER_FRAME_RENDERING_DISABLED_NOTICE"));

@@ -454,7 +454,7 @@ export class GenericInputPrompt extends Modal {
           ? btn.setIcon(button.iconId)
           : btn.setButtonText(button.caption);
         button.tooltip && btn.setTooltip(button.tooltip);
-        btn.onClick((evt: MouseEvent) => {
+        btn.onClick(() => {
             const res = button.action(this.input);
             if (res) {
               this.input = res;

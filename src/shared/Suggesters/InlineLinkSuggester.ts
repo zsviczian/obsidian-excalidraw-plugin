@@ -268,7 +268,7 @@ export class InlineLinkSuggester extends SuggestionModal<InlineSuggestion> imple
     return tag.startsWith("#") ? tag.substring(1) : tag;
   }
 
-  getSuggestions(query: string): FuzzyMatch<InlineSuggestion>[] {
+  getSuggestions(): FuzzyMatch<InlineSuggestion>[] {
     if (this.mode === "tag") {
       return fuzzyMatchTextItems(this.activeSearchTerm ?? "", this.tagItems, (t) => this.getTagSearchValue(t.tag));
     }
