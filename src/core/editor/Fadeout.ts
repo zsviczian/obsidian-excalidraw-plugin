@@ -47,11 +47,13 @@ export const HideTextBetweenCommentsExtension = ViewPlugin.fromClass(
       if (start == -1) {
         start = text.search(this.reDrawing);
       }
-      if (start == -1) return Decoration.none;
+      if (start == -1) {
+        return Decoration.none;
+      }
 
       const startLine = doc.lineAt(start).number;
       const endLine = doc.lines;
-      let builder = new RangeSetBuilder<Decoration>();
+      const builder = new RangeSetBuilder<Decoration>();
       for (let l = startLine; l <= endLine; l++) {
         const line = doc.line(l);
         const pos = l - startLine;

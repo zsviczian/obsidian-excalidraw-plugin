@@ -206,19 +206,25 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   actionOpenScriptInstallDialog() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     new ScriptInstallPrompt(view.plugin).open();
   }
 
   actionOpenReleaseNotes() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     new ReleaseNotes(view.app, view.plugin, PLUGIN_VERSION).open();
   }
 
   actionOpenAboutExcalidraw() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     new ReleaseNotes(view.app, view.plugin, null, {
       message: t("FIRST_RUN"),
       persistVersion: false,
@@ -232,7 +238,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   actionToggleViewMode() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     if (this.state.isPreviewMode) {
       view.changeTextMode(TextMode.raw);
     } else {
@@ -242,13 +250,17 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   actionToggleTrayMode() {
     const plugin = this.getView()?.plugin;
-    if (!plugin) return;
+    if (!plugin) {
+      return;
+    }
     new UIModeSettings(plugin).open();
   }
 
   actionToggleFullscreen() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     if (this.state.isFullscreen) {
       view.exitFullscreen();
     } else {
@@ -258,14 +270,18 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   actionSearch() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     search(view);
   }
 
   actionOCR(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     if (!plugin.settings.taskboneEnabled) {
       new Notice(
         "Taskbone OCR is not enabled. Please go to plugins settings to enable it.",
@@ -278,7 +294,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   actionOpenLink(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     const event = new MouseEvent("click", {
       ctrlKey: e.ctrlKey || !(DEVICE.isIOS || DEVICE.isMacOS),
       metaKey: e.metaKey || DEVICE.isIOS || DEVICE.isMacOS,
@@ -290,7 +308,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   actionOpenLinkProperties() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     const event = new MouseEvent("click", {
       ctrlKey: true,
       metaKey: true,
@@ -302,19 +322,25 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   actionForceSave() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     view.forceSave();
   }
 
   actionExportLibrary() {
     const plugin = this.getView()?.plugin;
-    if (!plugin) return;
+    if (!plugin) {
+      return;
+    }
     plugin.exportLibrary();
   }
 
   actionExportImage() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     if (!view.exportDialog) {
       view.exportDialog = new ExportDialog(view.plugin, view, view.file);
       view.exportDialog.createForm();
@@ -324,13 +350,17 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   actionOpenAsMarkdown() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     view.openAsMarkdown();
   }
 
   actionLinkToElement(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     if (isWinALTorMacOPT(e)) {
       openExternalLink("https://youtu.be/yZQoJg2RCKI", view.app);
       return;
@@ -343,7 +373,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   actionAddAnyFile() {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     this.props.centerPointer();
     const insertFileModal = new UniversalInsertFileModal(plugin, view);
     insertFileModal.open();
@@ -352,7 +384,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   actionInsertImage() {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     this.props.centerPointer();
     plugin.insertImageDialog.start(view);
   }
@@ -360,7 +394,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   actionInsertPDF() {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     this.props.centerPointer();
     const insertPDFModal = new InsertPDFModal(plugin, view);
     insertPDFModal.open();
@@ -369,21 +405,27 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   actionInsertMarkdown() {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     this.props.centerPointer();
     plugin.insertMDDialog.start(view);
   }
 
   actionInsertBackOfNote() {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     this.props.centerPointer();
     view.insertBackOfTheNoteCard();
   }
 
   actionInsertLaTeX(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     if (isWinALTorMacOPT(e)) {
       openExternalLink("https://youtu.be/r08wk-58DPk", view.app);
       return;
@@ -395,7 +437,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   actionInsertLink() {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     this.props.centerPointer();
     plugin.insertLinkDialog.start(view.file.path, (text: string) => {
       void view.addText(text);
@@ -405,7 +449,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   actionImportSVG() {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     plugin.importSVGDialog.start(view);
   }
 
@@ -418,7 +464,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   async actionRunScript(key: string) {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     const f = plugin.app.vault.getAbstractFileByPath(key);
     if (f && f instanceof TFile) {
       plugin.scriptEngine.executeScript(
@@ -433,7 +481,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   async actionPinScript(key: string, scriptName: string) {
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return;
+    if (!view || !plugin) {
+      return;
+    }
     const api = view.excalidrawAPI;
     await plugin.loadSettings();
     const index = plugin.settings.pinnedScripts.indexOf(key);
@@ -475,7 +525,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
   private islandOnPointerDown(event: React.PointerEvent) {
     const view = this.getView();
-    if (!view) return;
+    if (!view) {
+      return;
+    }
 
     const onDrag = (e: PointerEvent) => {
       e.preventDefault();
@@ -762,7 +814,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
 
     const view = this.getView();
     const plugin = view?.plugin;
-    if (!view || !plugin) return null;
+    if (!view || !plugin) {
+      return null;
+    }
 
     if (!plugin._loaded) {
       return null;

@@ -146,7 +146,9 @@ export class ScriptEngine {
 
   public getListofScripts(): TFile[] {
     this.scriptPath = this.plugin.settings.scriptFolderPath;
-    if (!this.scriptPath) return;
+    if (!this.scriptPath) {
+      return;
+    }
     this.scriptPath = normalizePath(this.scriptPath);
     if (!this.app.vault.getAbstractFileByPath(this.scriptPath)) {
       return;

@@ -96,7 +96,9 @@ function resolveTokensDeep(value: unknown): unknown {
 }
 
 function loadLocale(lang: string): Partial<typeof en> {
-  if (lang === "zh") lang = "zh-cn"; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2247
+  if (lang === "zh") {
+    lang = "zh-cn";
+  } //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2247
   if (!Object.prototype.hasOwnProperty.call(PLUGIN_LANGUAGES, lang)) {
     return en;
   }

@@ -64,7 +64,9 @@ export class ModifierKeySettingsComponent {
             dirty = true;
           }
         });
-        if (dirty) this.update?.();
+        if (dirty) {
+          this.update?.();
+        }
       }
 
       // Column header row

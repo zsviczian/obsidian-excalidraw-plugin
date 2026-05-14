@@ -65,7 +65,9 @@ export class PackageManager {
    * Validates that a package contains all required components
    */
   private validatePackage(pkg: Packages): boolean {
-    if (!pkg) return false;
+    if (!pkg) {
+      return false;
+    }
 
     // Check that all components exist
     if (!pkg.react || !pkg.reactDOM || !pkg.excalidrawLib) {
@@ -170,7 +172,9 @@ export class PackageManager {
   public deletePackage(win: Window) {
     try {
       const pkg = this.packageMap.get(win);
-      if (!pkg) return;
+      if (!pkg) {
+        return;
+      }
 
       const { react, reactDOM, excalidrawLib } = pkg;
 

@@ -9,9 +9,15 @@ const DIAGRAM_TO_HTML_INITIAL_MAX_TOKENS = 4096;
 const DIAGRAM_TO_HTML_RETRY_MAX_TOKENS = 12288;
 
 const stringifyDiagramDebugValue = (value: unknown): string => {
-  if (value === undefined) return "<undefined>";
-  if (value === null) return "<null>";
-  if (typeof value === "string") return value;
+  if (value === undefined) {
+    return "<undefined>";
+  }
+  if (value === null) {
+    return "<null>";
+  }
+  if (typeof value === "string") {
+    return value;
+  }
 
   try {
     return JSON.stringify(value, null, 2);

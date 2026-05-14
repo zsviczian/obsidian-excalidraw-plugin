@@ -184,7 +184,9 @@ const normalizeAISettingURL = (value: unknown): string => {
 };
 
 const joinAISettingURL = (baseURL: string, path: string): string => {
-  if (!baseURL) return "";
+  if (!baseURL) {
+    return "";
+  }
   return `${baseURL.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
 };
 
@@ -225,7 +227,9 @@ const migrateLegacyAISettings = (
     key: keyof ExcalidrawSettings,
     value: unknown,
   ) => {
-    if (!hasNonEmptyString(value) || hasNonEmptyString(migrated[key])) return;
+    if (!hasNonEmptyString(value) || hasNonEmptyString(migrated[key])) {
+      return;
+    }
     migratedRecord[key] = value.trim();
     didMigrate = true;
   };
@@ -234,7 +238,9 @@ const migrateLegacyAISettings = (
     key: keyof ExcalidrawSettings,
     value: unknown,
   ) => {
-    if (!hasPositiveNumber(value) || hasPositiveNumber(migrated[key])) return;
+    if (!hasPositiveNumber(value) || hasPositiveNumber(migrated[key])) {
+      return;
+    }
     migratedRecord[key] = value;
     didMigrate = true;
   };
@@ -296,7 +302,9 @@ const migrateLegacyAISettings = (
     suffix: string,
   ) => {
     const normalizedLegacyValue = normalizeAISettingURL(legacyValue);
-    if (!normalizedLegacyValue || hasNonEmptyString(migrated[key])) return;
+    if (!normalizedLegacyValue || hasNonEmptyString(migrated[key])) {
+      return;
+    }
 
     const derivedEndpoint = joinAISettingURL(effectiveBaseURL, suffix);
     if (!derivedEndpoint || normalizedLegacyValue !== derivedEndpoint) {
@@ -355,24 +363,29 @@ const migrateLegacyAISettings = (
       kind === "text" &&
       migrated.aiTextModelConfigs &&
       Object.keys(migrated.aiTextModelConfigs).length > 0
-    )
+    ) {
       return migrated.aiTextModelConfigs;
+    }
     if (
       kind === "image" &&
       migrated.aiImageModelConfigs &&
       Object.keys(migrated.aiImageModelConfigs).length > 0
-    )
+    ) {
       return migrated.aiImageModelConfigs;
+    }
 
     const defaults =
       kind === "text"
         ? cloneModelConfigs(KNOWN_AI_TEXT_MODEL_CONFIGS)
         : cloneModelConfigs(KNOWN_AI_IMAGE_MODEL_CONFIGS);
 
-    if (kind === "text") migrated.aiTextModelConfigs = defaults;
-    if (kind === "image")
+    if (kind === "text") {
+      migrated.aiTextModelConfigs = defaults;
+    }
+    if (kind === "image") {
       migrated.aiImageModelConfigs =
         defaults as typeof migrated.aiImageModelConfigs;
+    }
     didMigrate = true;
     return defaults;
   };
@@ -527,11 +540,15 @@ const migrateLegacyAISettings = (
     }
   });
 
-  if (!migrated.aiDefaultTextModel) migrated.aiDefaultTextModel = textModelId;
-  if (!migrated.aiDefaultMultimodalModel)
+  if (!migrated.aiDefaultTextModel) {
+    migrated.aiDefaultTextModel = textModelId;
+  }
+  if (!migrated.aiDefaultMultimodalModel) {
     migrated.aiDefaultMultimodalModel = multimodalTextModelId;
-  if (!migrated.aiDefaultImageGenerationModel)
+  }
+  if (!migrated.aiDefaultImageGenerationModel) {
     migrated.aiDefaultImageGenerationModel = imageModelId;
+  }
 
   if (migrated.aiDefaultVisionModel !== undefined) {
     delete migratedRecord.aiDefaultVisionModel;
@@ -981,6 +998,7 @@ export default class ExcalidrawPlugin extends Plugin {
     let counter = 0;
     while (!this.settingsReady && counter < 150) {
       await sleep(20);
+      counter++;
     }
   }
 
@@ -988,6 +1006,7 @@ export default class ExcalidrawPlugin extends Plugin {
     let counter = 0;
     while (!this.isReady && counter < 150) {
       await sleep(50);
+      counter++;
     }
   }
 
@@ -997,10 +1016,14 @@ export default class ExcalidrawPlugin extends Plugin {
    * @returns
    */
   private async setPropertyTypes() {
-    if (!this.settings.loadPropertySuggestions) return;
+    if (!this.settings.loadPropertySuggestions) {
+      return;
+    }
     const app = this.app;
     Object.keys(FRONTMATTER_KEYS).forEach((key) => {
-      if (FRONTMATTER_KEYS[key].depricated === true) return;
+      if (FRONTMATTER_KEYS[key].depricated === true) {
+        return;
+      }
       const { name, type } = FRONTMATTER_KEYS[key];
       app.metadataTypeManager.setType(name, type);
     });
@@ -1071,10 +1094,11 @@ export default class ExcalidrawPlugin extends Plugin {
         ownerDocument,
       );
     }
-    if (!this.fourthFontLoaded)
+    if (!this.fourthFontLoaded) {
       window.setTimeout(() => {
         this.fourthFontLoaded = true;
       }, 100);
+    }
   }
 
   public async addFonts(
@@ -1160,8 +1184,12 @@ export default class ExcalidrawPlugin extends Plugin {
       const ownerDocument = DEVICE.isMobile
         ? document
         : leaf.view.containerEl.ownerDocument;
-      if (!ownerDocument) return;
-      if (visitedDocs.has(ownerDocument)) return;
+      if (!ownerDocument) {
+        return;
+      }
+      if (visitedDocs.has(ownerDocument)) {
+        return;
+      }
       visitedDocs.add(ownerDocument);
     });
     return Array.from(visitedDocs);
@@ -1522,11 +1550,14 @@ export default class ExcalidrawPlugin extends Plugin {
           return dedupe(key, old, function (...args) {
             const result = old && old.apply(this, args);
             const maybeEAView = self.app?.workspace?.activeLeaf?.view;
-            if (!maybeEAView || !(maybeEAView instanceof ExcalidrawView))
+            if (!maybeEAView || !(maybeEAView instanceof ExcalidrawView)) {
               return result;
+            }
             const error = new Error();
             const stackTrace = error.stack;
-            if (!isCallerFromTemplaterPlugin(stackTrace)) return result;
+            if (!isCallerFromTemplaterPlugin(stackTrace)) {
+              return result;
+            }
             const leafOrNode = maybeEAView.getActiveEmbeddable();
             if (leafOrNode) {
               if (leafOrNode.node && leafOrNode.node.isEditing) {
@@ -1614,8 +1645,9 @@ export default class ExcalidrawPlugin extends Plugin {
                   !(leaf.view instanceof MarkdownView) ||
                   !leaf.view.file ||
                   !self.isExcalidrawFile(leaf.view.file)
-                )
+                ) {
                   return;
+                }
                 foldExcalidrawSection(leaf.view);
               }, 500);
             }
@@ -1657,13 +1689,19 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public getLastActivePDFPageLink(requestorFile: TFile): string {
-    if (!this.lastPDFLeafID) return;
+    if (!this.lastPDFLeafID) {
+      return;
+    }
     const leaf = this.app.workspace.getLeafById(this.lastPDFLeafID);
-    if (!leaf || !leaf.view || leaf.view.getViewType() !== "pdf") return;
+    if (!leaf || !leaf.view || leaf.view.getViewType() !== "pdf") {
+      return;
+    }
     const view: any = leaf.view;
     const file = view.file;
     const page = view.viewer.child.pdfViewer.page;
-    if (!file || !page) return;
+    if (!file || !page) {
+      return;
+    }
     return (
       this.app.metadataCache.fileToLinktext(file, requestorFile?.path, false) +
       `#page=${page}`
@@ -1742,7 +1780,7 @@ export default class ExcalidrawPlugin extends Plugin {
     metaCache.getCachedFiles().forEach((filename: string) => {
       const fm = metaCache.getCache(filename)?.frontmatter;
       if (
-        (fm && typeof fm[FRONTMATTER_KEYS["plugin"].name] !== "undefined") ||
+        (fm && typeof fm[FRONTMATTER_KEYS.plugin.name] !== "undefined") ||
         filename.match(/\.excalidraw$/)
       ) {
         this.fileManager.updateFileCache(
@@ -1831,8 +1869,9 @@ export default class ExcalidrawPlugin extends Plugin {
   public async loadSettings(
     opts: { reEnableAutosave?: boolean } = { reEnableAutosave: false },
   ) {
-    if (typeof opts.reEnableAutosave === "undefined")
+    if (typeof opts.reEnableAutosave === "undefined") {
       opts.reEnableAutosave = false;
+    }
     const rawSettings = ((await this.loadData()) ??
       {}) as PersistedExcalidrawSettings;
     const { settings: migratedSettings, didMigrate } =
@@ -1859,7 +1898,9 @@ export default class ExcalidrawPlugin extends Plugin {
     if (didMigrate || shouldPersistEncryptedSettings) {
       await this.saveData(encryptedPersistedSettings);
     }
-    if (opts.reEnableAutosave) this.settings.autosave = true;
+    if (opts.reEnableAutosave) {
+      this.settings.autosave = true;
+    }
   }
 
   async saveSettings() {
@@ -1901,8 +1942,12 @@ export default class ExcalidrawPlugin extends Plugin {
       const ownerDocument = DEVICE.isMobile
         ? document
         : leaf.view.containerEl.ownerDocument;
-      if (!ownerDocument) return;
-      if (visitedDocs.has(ownerDocument)) return;
+      if (!ownerDocument) {
+        return;
+      }
+      if (visitedDocs.has(ownerDocument)) {
+        return;
+      }
       visitedDocs.add(ownerDocument);
       const e = ownerDocument.createEvent("Event");
       e.initEvent(RERENDER_EVENT, true, false);
@@ -2118,7 +2163,9 @@ export default class ExcalidrawPlugin extends Plugin {
   //used by obsidianUtils in the Excalidraw Pacakge
   //aweful coding, but does the job
   public runAction(action: "anyFile" | "LaTeX" | "card") {
-    if (!this.activeExcalidrawView) return;
+    if (!this.activeExcalidrawView) {
+      return;
+    }
     switch (action) {
       case "anyFile":
         this.activeExcalidrawView.setCurrentPositionToCenter();

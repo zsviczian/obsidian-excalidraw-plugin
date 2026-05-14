@@ -385,7 +385,7 @@ export async function getSVG(
 export function filterFiles(
   files: Record<ExcalidrawElement["id"], BinaryFileData>,
 ): Record<ExcalidrawElement["id"], BinaryFileData> {
-  let filteredFiles: Record<ExcalidrawElement["id"], BinaryFileData> = {};
+  const filteredFiles: Record<ExcalidrawElement["id"], BinaryFileData> = {};
 
   Object.entries(files).forEach(([key, value]) => {
     if (!value.dataURL.startsWith("http")) {
@@ -498,13 +498,19 @@ export function scaleLoadedImage(
   }
 
   for (const img of files.filter((f: any) => {
-    if (!Boolean(EXCALIDRAW_PLUGIN)) return true; //this should never happen
+    if (!Boolean(EXCALIDRAW_PLUGIN)) {
+      return true;
+    } //this should never happen
     const ef = EXCALIDRAW_PLUGIN.filesMaster.get(f.id);
-    if (!ef) return true; //mermaid SVG or equation
+    if (!ef) {
+      return true;
+    } //mermaid SVG or equation
     const file = EXCALIDRAW_PLUGIN.app.vault.getAbstractFileByPath(
       ef.path.replace(/#.*$/, "").replace(/\|.*$/, ""),
     );
-    if (!file || file instanceof TFolder) return false;
+    if (!file || file instanceof TFolder) {
+      return false;
+    }
     return (
       (file as TFile).extension === "md" ||
       EXCALIDRAW_PLUGIN.isExcalidrawFile(file as TFile)
@@ -620,7 +626,9 @@ export function scaleLoadedImage(
 }
 
 export function setLeftHandedMode(isLeftHanded: boolean) {
-  if (DEVICE.isPhone) return; // no left-handed mode on phones
+  if (DEVICE.isPhone) {
+    return;
+  } // no left-handed mode on phones
   EXCALIDRAW_PLUGIN.app.workspace
     .getLeavesOfType(VIEW_TYPE_EXCALIDRAW)
     .forEach((leaf) => {
@@ -724,11 +732,10 @@ export function isMaskFile(
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["mask"].name] !== null &&
-      typeof fileCache.frontmatter[FRONTMATTER_KEYS["mask"].name] !==
-        "undefined"
+      fileCache.frontmatter[FRONTMATTER_KEYS.mask.name] !== null &&
+      typeof fileCache.frontmatter[FRONTMATTER_KEYS.mask.name] !== "undefined"
     ) {
-      return Boolean(fileCache.frontmatter[FRONTMATTER_KEYS["mask"].name]);
+      return Boolean(fileCache.frontmatter[FRONTMATTER_KEYS.mask.name]);
     }
   }
   return false;
@@ -863,7 +870,9 @@ export function getExportPadding(
 ): number {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
-    if (!fileCache?.frontmatter) return plugin.settings.exportPaddingSVG;
+    if (!fileCache?.frontmatter) {
+      return plugin.settings.exportPaddingSVG;
+    }
 
     if (
       fileCache.frontmatter[FRONTMATTER_KEYS["export-padding"].name] !== null &&
@@ -925,7 +934,9 @@ export function isVersionNewerThanOther(
   version: string,
   otherVersion: string,
 ): boolean {
-  if (!version || !otherVersion) return true;
+  if (!version || !otherVersion) {
+    return true;
+  }
 
   const v = version.match(/(\d*)\.(\d*)\.(\d*)/);
   const o = otherVersion.match(/(\d*)\.(\d*)\.(\d*)/);
@@ -1055,7 +1066,9 @@ export function updateFrontmatterInString(
   data: string,
   keyValuePairs?: [string, string][],
 ): string {
-  if (!data || !keyValuePairs) return data;
+  if (!data || !keyValuePairs) {
+    return data;
+  }
   for (const kvp of keyValuePairs) {
     const r = new RegExp(`${kvp[0]}:\\s.*\\n`, "g");
     data = data.match(r)
@@ -1081,7 +1094,9 @@ export function isContainer(el: ExcalidrawElement) {
 }
 
 export function hyperlinkIsImage(data: string): boolean {
-  if (!isHyperLink(data)) false;
+  if (!isHyperLink(data)) {
+    false;
+  }
   const corelink = data.split("?")[0];
   return IMAGE_TYPES.contains(
     corelink.substring(corelink.lastIndexOf(".") + 1),
@@ -1089,13 +1104,19 @@ export function hyperlinkIsImage(data: string): boolean {
 }
 
 export function getFilePathFromObsidianURL(data: string): string {
-  if (!data) return null;
-  if (!data.startsWith("obsidian://")) return null;
+  if (!data) {
+    return null;
+  }
+  if (!data.startsWith("obsidian://")) {
+    return null;
+  }
 
   try {
     const url = new URL(data);
     const fileParam = url.searchParams.get("file");
-    if (!fileParam) return null;
+    if (!fileParam) {
+      return null;
+    }
 
     return decodeURIComponent(fileParam);
   } catch {
@@ -1104,17 +1125,25 @@ export function getFilePathFromObsidianURL(data: string): string {
 }
 
 export function obsidianURLIsImage(data: string): boolean {
-  if (!data) return false;
-  if (!data.startsWith("obsidian://")) return false;
+  if (!data) {
+    return false;
+  }
+  if (!data.startsWith("obsidian://")) {
+    return false;
+  }
 
   try {
     const url = new URL(data);
     const fileParam = url.searchParams.get("file");
-    if (!fileParam) return false;
+    if (!fileParam) {
+      return false;
+    }
 
     const decodedFile = decodeURIComponent(fileParam);
     const lastDotIndex = decodedFile.lastIndexOf(".");
-    if (lastDotIndex === -1) return false;
+    if (lastDotIndex === -1) {
+      return false;
+    }
 
     const extension = decodedFile.substring(lastDotIndex + 1);
     return IMAGE_TYPES.contains(extension);
@@ -1141,7 +1170,9 @@ export async function getYouTubeThumbnailLink(
   //https://youtu.be/z8UkHGpykYU?t=60
   //https://www.youtube.com/watch?v=z8UkHGpykYU&ab_channel=VerbaltoVisual
   const parsed = youtubelink.match(/(youtu.be\/|v=)([^?/&]*)/);
-  if (!parsed || !parsed[2]) return null;
+  if (!parsed || !parsed[2]) {
+    return null;
+  }
   const videoId = parsed[2];
 
   let url = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
@@ -1151,7 +1182,9 @@ export async function getYouTubeThumbnailLink(
     contentType: "image/jpeg",
     throw: false,
   });
-  if (response && response.status === 200) return url;
+  if (response && response.status === 200) {
+    return url;
+  }
 
   url = `https://i.ytimg.com/vi/${videoId}/hq720.jpg`;
   response = await requestUrl({
@@ -1160,7 +1193,9 @@ export async function getYouTubeThumbnailLink(
     contentType: "image/jpeg",
     throw: false,
   });
-  if (response && response.status === 200) return url;
+  if (response && response.status === 200) {
+    return url;
+  }
 
   url = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
   response = await requestUrl({
@@ -1169,7 +1204,9 @@ export async function getYouTubeThumbnailLink(
     contentType: "image/jpeg",
     throw: false,
   });
-  if (response && response.status === 200) return url;
+  if (response && response.status === 200) {
+    return url;
+  }
 
   return `https://i.ytimg.com/vi/${videoId}/default.jpg`;
 }

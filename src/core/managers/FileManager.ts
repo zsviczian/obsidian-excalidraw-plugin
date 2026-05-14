@@ -68,7 +68,7 @@ export class PluginFileManager {
     metaCache.getCachedFiles().forEach((filename: string) => {
       const fm = metaCache.getCache(filename)?.frontmatter;
       if (
-        (fm && typeof fm[FRONTMATTER_KEYS["plugin"].name] !== "undefined") ||
+        (fm && typeof fm[FRONTMATTER_KEYS.plugin.name] !== "undefined") ||
         filename.match(/\.excalidraw$/)
       ) {
         this.updateFileCache(
@@ -80,14 +80,16 @@ export class PluginFileManager {
   }
 
   public isExcalidrawFile(f: TFile): boolean {
-    if (!f) return false;
+    if (!f) {
+      return false;
+    }
     if (f.extension === "excalidraw") {
       return true;
     }
     const fileCache = f ? this.plugin.app.metadataCache.getFileCache(f) : null;
     return (
       !!fileCache?.frontmatter &&
-      !!fileCache.frontmatter[FRONTMATTER_KEYS["plugin"].name]
+      !!fileCache.frontmatter[FRONTMATTER_KEYS.plugin.name]
     );
   }
 
@@ -100,7 +102,7 @@ export class PluginFileManager {
   ) {
     if (
       frontmatter &&
-      typeof frontmatter[FRONTMATTER_KEYS["plugin"].name] !== "undefined"
+      typeof frontmatter[FRONTMATTER_KEYS.plugin.name] !== "undefined"
     ) {
       this.excalidrawFiles.add(file);
       return;
@@ -665,7 +667,9 @@ export class PluginFileManager {
           return;
         }
         if (file.extension === "md") {
-          if (excalidrawView.semaphores?.embeddableIsEditingSelf) return;
+          if (excalidrawView.semaphores?.embeddableIsEditingSelf) {
+            return;
+          }
           const inData = new ExcalidrawData(this.plugin);
           const data = await this.app.vault.read(file);
           await inData.loadData(data, file, getTextMode(data));

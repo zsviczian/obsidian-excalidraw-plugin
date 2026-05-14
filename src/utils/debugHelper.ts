@@ -1,6 +1,6 @@
 export const durationTreshold = 0; //0.05; //ms
 
-export let DEBUGGING = false;
+export const DEBUGGING = false;
 
 export const log = console.log.bind(window.console);
 export const debug = (

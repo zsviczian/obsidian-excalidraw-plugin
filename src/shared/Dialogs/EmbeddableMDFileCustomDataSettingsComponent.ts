@@ -10,12 +10,12 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
     private update?: () => void,
     private isMDFile: boolean = true,
   ) {
-    if (!update) this.update = () => {};
+    if (!update) {
+      this.update = () => {};
+    }
   }
 
   render() {
-    let detailsDIV: HTMLDivElement;
-
     new Setting(this.contentEl)
       .setName(t("ES_USE_OBSIDIAN_DEFAULTS"))
       .addToggle((toggle) =>
@@ -30,7 +30,7 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
 
     this.contentEl.createEl("hr", { cls: "excalidraw-setting-hr" });
 
-    detailsDIV = this.contentEl.createDiv();
+    const detailsDIV = this.contentEl.createDiv();
     detailsDIV.style.display = this.mdCustomData.useObsidianDefaults
       ? "none"
       : "block";
@@ -59,7 +59,6 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
       }
     });
 
-    let bgSetting: Setting;
     let bgMatchElementToggle: ToggleComponent;
     let bgMatchCanvasToggle: ToggleComponent;
     new Setting(contentEl)
@@ -113,7 +112,7 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
       bgMatchCanvasToggle.setValue(false);
     }
 
-    bgSetting = new Setting(contentEl)
+    const bgSetting = new Setting(contentEl)
       .setName(t("ES_BACKGROUND_COLOR"))
       .addColorPicker((colorPicker) =>
         colorPicker
@@ -149,7 +148,6 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
 
     if (this.isMDFile) {
       contentEl.createEl("h4", { text: t("ES_BORDER_HEAD") });
-      let borderSetting: Setting;
 
       new Setting(contentEl)
         .setName(t("ES_BORDER_MATCH_ELEMENT"))
@@ -167,7 +165,7 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
             }),
         );
 
-      borderSetting = new Setting(contentEl)
+      const borderSetting = new Setting(contentEl)
         .setName(t("ES_BORDER_COLOR"))
         .addColorPicker((colorPicker) =>
           colorPicker

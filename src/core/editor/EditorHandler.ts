@@ -28,7 +28,9 @@ export class EditorHandler {
 
   updateCMExtensionState(extensionIdentifier: string, extensionState: boolean) {
     const extension = editorExtensions[extensionIdentifier];
-    if (!extension) return;
+    if (!extension) {
+      return;
+    }
     if (extensionState == true) {
       this.activeEditorExtensions.push(extension as TaggedExtension);
       this.activeEditorExtensions[this.activeEditorExtensions.length - 1].exID =

@@ -86,7 +86,9 @@ export class CanvasNodeFactory {
     containerEl: HTMLDivElement,
     elementId: string,
   ): ObsidianCanvasNode {
-    if (!this.initialized) return;
+    if (!this.initialized) {
+      return;
+    }
     subpath = subpath ?? "";
     if (this.nodes.has(elementId)) {
       this.canvas.removeNode(this.nodes.get(elementId));
@@ -149,7 +151,9 @@ export class CanvasNodeFactory {
   }
 
   public async startEditing(node: ObsidianCanvasNode, theme: string) {
-    if (!this.initialized || !node || !node.isEditable()) return;
+    if (!this.initialized || !node || !node.isEditable()) {
+      return;
+    }
 
     try {
       await this.view.setEmbeddableNodeIsEditing();
@@ -160,10 +164,14 @@ export class CanvasNodeFactory {
       const obsidianTheme = isObsidianThemeDark()
         ? "theme-dark"
         : "theme-light";
-      if (obsidianTheme === theme) return;
+      if (obsidianTheme === theme) {
+        return;
+      }
 
       const editorEl = await this.waitForEditor(node);
-      if (!editorEl) return;
+      if (!editorEl) {
+        return;
+      }
 
       editorEl.classList.remove(obsidianTheme);
       editorEl.classList.add(theme);
@@ -176,8 +184,9 @@ export class CanvasNodeFactory {
   }
 
   public stopEditing(node: ObsidianCanvasNode) {
-    if (!this.initialized || !node || !node.isEditing || !node.isEditable())
+    if (!this.initialized || !node || !node.isEditing || !node.isEditable()) {
       return;
+    }
 
     try {
       this.view.clearEmbeddableNodeIsEditing();
@@ -190,14 +199,18 @@ export class CanvasNodeFactory {
   }
 
   removeNode(node: ObsidianCanvasNode) {
-    if (!this.initialized || !node) return;
+    if (!this.initialized || !node) {
+      return;
+    }
     this.nodes.delete(node.file.path);
     this.canvas.removeNode(node);
     node.detach();
   }
 
   public purgeNodes() {
-    if (!this.initialized) return;
+    if (!this.initialized) {
+      return;
+    }
     this.nodes.forEach((node) => {
       this.canvas.removeNode(node);
       node.detach();

@@ -39,7 +39,9 @@ export const svgToExcalidraw = (svgString: string): ConversionResult => {
         });
       }
       scene.elements.forEach((el) => {
-        if (el.opacity <= 1) el.opacity = 100;
+        if (el.opacity <= 1) {
+          el.opacity = 100;
+        }
       });
       content = scene.elements; //scene.toExJSON();
     }

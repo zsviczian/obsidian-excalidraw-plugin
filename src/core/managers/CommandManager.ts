@@ -258,10 +258,16 @@ export class CommandManager {
       name: t("CONVERT_URL_TO_FILE"),
       checkCallback: (checking: boolean) => {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (!view) return false;
+        if (!view) {
+          return false;
+        }
         const img = view.getSingleSelectedImage();
-        if (!img || !img.embeddedFile?.isHyperLink) return false;
-        if (checking) return true;
+        if (!img || !img.embeddedFile?.isHyperLink) {
+          return false;
+        }
+        if (checking) {
+          return true;
+        }
         view.convertImageElWithURLToLocalFile(img);
       },
     });
@@ -292,10 +298,14 @@ export class CommandManager {
         (async () => {
           const data = await this.app.vault.read(activeFile);
           const parts = data.split("\n## Drawing\n```compressed-json\n");
-          if (parts.length !== 2) return;
+          if (parts.length !== 2) {
+            return;
+          }
           const header = parts[0] + "\n## Drawing\n```json\n";
           const compressed = parts[1].split("\n```\n%%");
-          if (compressed.length !== 2) return;
+          if (compressed.length !== 2) {
+            return;
+          }
           const decompressed = decompress(compressed[0]);
           if (!decompressed) {
             new Notice(
@@ -316,7 +326,7 @@ export class CommandManager {
       id: "excalidraw-publish-svg-check",
       name: t("PUBLISH_SVG_CHECK"),
       checkCallback: (checking: boolean) => {
-        const publish = this.app.internalPlugins.plugins["publish"].instance;
+        const publish = this.app.internalPlugins.plugins.publish?.instance;
         if (!publish) {
           return false;
         }
@@ -332,19 +342,27 @@ export class CommandManager {
       name: t("EMBEDDABLE_PROPERTIES"),
       checkCallback: (checking: boolean) => {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (!view) return false;
-        if (!view.excalidrawAPI) return false;
+        if (!view) {
+          return false;
+        }
+        if (!view.excalidrawAPI) {
+          return false;
+        }
         const els = view
           .getViewSelectedElements()
           .filter(
             (el) => el.type === "embeddable",
           ) as ExcalidrawEmbeddableElement[];
         if (els.length !== 1) {
-          if (checking) return false;
+          if (checking) {
+            return false;
+          }
           new Notice("Select a single embeddable element and try again");
           return false;
         }
-        if (checking) return true;
+        if (checking) {
+          return true;
+        }
         const getFile = (el: ExcalidrawEmbeddableElement): TFile => {
           const res = REGEX_LINK.getRes(el.link).next();
           if (!res || (!res.value && res.done)) {
@@ -368,19 +386,27 @@ export class CommandManager {
       name: t("EMBEDDABLE_RELATIVE_ZOOM"),
       checkCallback: (checking: boolean) => {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (!view) return false;
-        if (!view.excalidrawAPI) return false;
+        if (!view) {
+          return false;
+        }
+        if (!view.excalidrawAPI) {
+          return false;
+        }
         const els = view
           .getViewSelectedElements()
           .filter(
             (el) => el.type === "embeddable",
           ) as ExcalidrawEmbeddableElement[];
         if (els.length === 0) {
-          if (checking) return false;
+          if (checking) {
+            return false;
+          }
           new Notice("Select at least one embeddable element and try again");
           return false;
         }
-        if (checking) return true;
+        if (checking) {
+          return true;
+        }
         const ea = getEA(view) as ExcalidrawAutomate;
         const api = ea.getExcalidrawAPI();
         ea.copyViewElementsToEAforEditing(els);
@@ -397,19 +423,29 @@ export class CommandManager {
       name: t("OPEN_IMAGE_SOURCE"),
       checkCallback: (checking: boolean) => {
         const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-        if (!view) return false;
-        if (view.leaf !== this.app.workspace.activeLeaf) return false;
+        if (!view) {
+          return false;
+        }
+        if (view.leaf !== this.app.workspace.activeLeaf) {
+          return false;
+        }
         const editor = view.editor;
-        if (!editor) return false;
+        if (!editor) {
+          return false;
+        }
         const cursor = editor.getCursor();
         const line = editor.getLine(cursor.line);
         const fname = extractSVGPNGFileName(line);
-        if (!fname) return false;
+        if (!fname) {
+          return false;
+        }
         const imgFile = this.app.metadataCache.getFirstLinkpathDest(
           fname,
           view.file.path,
         );
-        if (!imgFile) return false;
+        if (!imgFile) {
+          return false;
+        }
         const excalidrawFname = getIMGFilename(imgFile.path, "md");
         let excalidrawFile = this.app.metadataCache.getFirstLinkpathDest(
           excalidrawFname,
@@ -444,7 +480,9 @@ export class CommandManager {
             }
           }
         }
-        if (checking) return true;
+        if (checking) {
+          return true;
+        }
         this.plugin.openDrawing(excalidrawFile, "new-tab", true);
       },
     });
@@ -453,8 +491,12 @@ export class CommandManager {
       id: "excalidraw-disable-autosave",
       name: t("TEMPORARY_DISABLE_AUTOSAVE"),
       checkCallback: (checking) => {
-        if (!this.settings.autosave) return false; //already disabled
-        if (checking) return true;
+        if (!this.settings.autosave) {
+          return false;
+        } //already disabled
+        if (checking) {
+          return true;
+        }
         this.settings.autosave = false;
         return true;
       },
@@ -464,8 +506,12 @@ export class CommandManager {
       id: "excalidraw-enable-autosave",
       name: t("TEMPORARY_ENABLE_AUTOSAVE"),
       checkCallback: (checking) => {
-        if (this.settings.autosave) return false; //already enabled
-        if (checking) return true;
+        if (this.settings.autosave) {
+          return false;
+        } //already enabled
+        if (checking) {
+          return true;
+        }
         this.settings.autosave = true;
         return true;
       },
@@ -475,7 +521,9 @@ export class CommandManager {
       id: "excalidraw-toggle-session-view-mode",
       name: t("TEMPORARY_TOGGLE_VIEW_MODE_FOR_ALL_DRAWINGS"),
       checkCallback: (checking) => {
-        if (checking) return true;
+        if (checking) {
+          return true;
+        }
         this.plugin.forceExcalidrawViewMode =
           !this.plugin.forceExcalidrawViewMode;
         this.setAllExcalidrawViewsToViewMode(
@@ -980,18 +1028,26 @@ export class CommandManager {
       name: t("CONVERT_TO_MARKDOWN"),
       checkCallback: (checking: boolean) => {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (!view) return false;
+        if (!view) {
+          return false;
+        }
         const selectedTextElements = view
           .getViewSelectedElements()
           .filter((el) => el.type === "text");
-        if (selectedTextElements.length !== 1) return false;
+        if (selectedTextElements.length !== 1) {
+          return false;
+        }
         const selectedTextElement =
           selectedTextElements[0] as ExcalidrawTextElement;
         const containerElement = (
           view.getViewElements() as ExcalidrawElement[]
         ).find((el) => el.id === selectedTextElement.containerId);
-        if (containerElement && containerElement.type === "arrow") return false;
-        if (checking) return true;
+        if (containerElement && containerElement.type === "arrow") {
+          return false;
+        }
+        if (checking) {
+          return true;
+        }
         view.convertTextElementToMarkdown(
           selectedTextElement,
           containerElement,
@@ -1138,11 +1194,15 @@ export class CommandManager {
       name: t("TOGGLE_LEFTHANDED_MODE"),
       checkCallback: (checking: boolean) => {
         if (checking) {
-          if (DEVICE.isMobile) return false;
+          if (DEVICE.isMobile) {
+            return false;
+          }
           if (this.app.workspace.getActiveViewOfType(ExcalidrawView)) {
             const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
             const api = view?.excalidrawAPI;
-            if (!api || !api.isTrayModeEnabled()) return false;
+            if (!api || !api.isTrayModeEnabled()) {
+              return false;
+            }
             return true;
           }
           return false;
@@ -1177,10 +1237,16 @@ export class CommandManager {
       id: "flip-image",
       name: t("FLIP_IMAGE"),
       checkCallback: (checking: boolean) => {
-        if (!DEVICE.isDesktop) return false;
+        if (!DEVICE.isDesktop) {
+          return false;
+        }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (!view) return false;
-        if (!view.excalidrawAPI) return false;
+        if (!view) {
+          return false;
+        }
+        if (!view.excalidrawAPI) {
+          return false;
+        }
         const els = view.getViewSelectedElements().filter((el) => {
           if (el.type === "image") {
             const ef = view.excalidrawData.getFile(el.fileId);
@@ -1194,9 +1260,11 @@ export class CommandManager {
         if (els.length !== 1) {
           return false;
         }
-        if (checking) return true;
+        if (checking) {
+          return true;
+        }
         const el = els[0] as ExcalidrawImageElement;
-        let ef = view.excalidrawData.getFile(el.fileId);
+        const ef = view.excalidrawData.getFile(el.fileId);
         this.plugin.forceToOpenInMarkdownFilepath = ef.file?.path;
         const appState = view.excalidrawAPI.getAppState();
         const { x: centerX, y: centerY } = sceneCoordsToViewportCoords(
@@ -1230,20 +1298,30 @@ export class CommandManager {
       name: t("DUPLICATE_IMAGE"),
       checkCallback: (checking: boolean) => {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (!view) return false;
-        if (!view.excalidrawAPI) return false;
+        if (!view) {
+          return false;
+        }
+        if (!view.excalidrawAPI) {
+          return false;
+        }
         const els = view
           .getViewSelectedElements()
           .filter((el) => el.type === "image");
         if (els.length !== 1) {
-          if (checking) return false;
+          if (checking) {
+            return false;
+          }
           new Notice("Select a single image element and try again");
           return false;
         }
         const el = els[0] as ExcalidrawImageElement;
         const ef = view.excalidrawData.getFile(el.fileId);
-        if (!ef?.file) return false;
-        if (checking) return true;
+        if (!ef?.file) {
+          return false;
+        }
+        if (checking) {
+          return true;
+        }
         (async () => {
           const ea = getEA(view) as ExcalidrawAutomate;
           const isAnchored = Boolean(el.customData?.isAnchored);
@@ -1265,7 +1343,9 @@ export class CommandManager {
           const img = ea.getElement(imgId) as Mutable<ExcalidrawImageElement>;
           img.width = el.width;
           img.height = el.height;
-          if (el.crop) img.crop = { ...el.crop };
+          if (el.crop) {
+            img.crop = { ...el.crop };
+          }
           const newFileId = fileid() as FileId;
           ea.imagesDict[newFileId] = ea.imagesDict[img.fileId];
           ea.imagesDict[newFileId].id = newFileId;
@@ -1283,21 +1363,29 @@ export class CommandManager {
       name: t("RESET_IMG_TO_100"),
       checkCallback: (checking: boolean) => {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (!view) return false;
-        if (!view.excalidrawAPI) return false;
+        if (!view) {
+          return false;
+        }
+        if (!view.excalidrawAPI) {
+          return false;
+        }
         const els = view
           .getViewSelectedElements()
           .filter((el) => el.type === "image");
         if (els.length !== 1) {
-          if (checking) return false;
+          if (checking) {
+            return false;
+          }
           new Notice("Select a single image element and try again");
           return false;
         }
-        if (checking) return true;
+        if (checking) {
+          return true;
+        }
 
         (async () => {
           const el = els[0] as ExcalidrawImageElement;
-          let ef = view.excalidrawData.getFile(el.fileId);
+          const ef = view.excalidrawData.getFile(el.fileId);
           if (!ef) {
             await view.forceSave();
             new Notice("Select a single image element and try again");
@@ -1330,21 +1418,29 @@ export class CommandManager {
       name: t("RESET_IMG_ASPECT_RATIO"),
       checkCallback: (checking: boolean) => {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (!view) return false;
-        if (!view.excalidrawAPI) return false;
+        if (!view) {
+          return false;
+        }
+        if (!view.excalidrawAPI) {
+          return false;
+        }
         const els = view
           .getViewSelectedElements()
           .filter((el) => el.type === "image");
         if (els.length !== 1) {
-          if (checking) return false;
+          if (checking) {
+            return false;
+          }
           new Notice("Select a single image element and try again");
           return false;
         }
-        if (checking) return true;
+        if (checking) {
+          return true;
+        }
 
         (async () => {
           const el = els[0] as ExcalidrawImageElement;
-          let ef = view.excalidrawData.getFile(el.fileId);
+          const ef = view.excalidrawData.getFile(el.fileId);
           if (!ef) {
             await view.forceSave();
             new Notice("Select a single image element and try again");
@@ -1365,21 +1461,29 @@ export class CommandManager {
       name: t("OPEN_LINK_PROPS"),
       checkCallback: (checking: boolean) => {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (!view) return false;
-        if (!view.excalidrawAPI) return false;
+        if (!view) {
+          return false;
+        }
+        if (!view.excalidrawAPI) {
+          return false;
+        }
         const els = view
           .getViewSelectedElements()
           .filter((el) => el.type === "image");
         if (els.length !== 1) {
-          if (checking) return false;
+          if (checking) {
+            return false;
+          }
           new Notice("Select a single image element and try again");
           return false;
         }
-        if (checking) return true;
+        if (checking) {
+          return true;
+        }
 
         const el = els[0] as ExcalidrawImageElement;
-        let ef = view.excalidrawData.getFile(el.fileId);
-        let eq = view.excalidrawData.getEquation(el.fileId);
+        const ef = view.excalidrawData.getFile(el.fileId);
+        const eq = view.excalidrawData.getEquation(el.fileId);
         if (!ef && !eq) {
           view.forceSave();
           new Notice("Please try again.");
@@ -1400,24 +1504,34 @@ export class CommandManager {
       name: t("CONVERT_CARD_TO_FILE"),
       checkCallback: (checking: boolean) => {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (!view) return false;
-        if (!view.excalidrawAPI) return false;
+        if (!view) {
+          return false;
+        }
+        if (!view.excalidrawAPI) {
+          return false;
+        }
         const els = view
           .getViewSelectedElements()
           .filter((el) => el.type === "embeddable");
         if (els.length !== 1) {
-          if (checking) return false;
+          if (checking) {
+            return false;
+          }
           new Notice("Select a single back-of-the-note card and try again");
           return false;
         }
         const embeddableData = view.getEmbeddableLeafElementById(els[0].id);
         const child = embeddableData?.node?.child;
         if (!child || child.file !== view.file) {
-          if (checking) return false;
+          if (checking) {
+            return false;
+          }
           new Notice("The selected embeddable is not a back-of-the-note card.");
           return false;
         }
-        if (checking) return true;
+        if (checking) {
+          return true;
+        }
         view.moveBackOfTheNoteCardToFile();
       },
     });
@@ -1428,12 +1542,16 @@ export class CommandManager {
       checkCallback: (checking: boolean) => {
         const excalidrawView =
           this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (!excalidrawView) return false;
+        if (!excalidrawView) {
+          return false;
+        }
         const embeddables = excalidrawView
           .getViewSelectedElements()
           .filter((el) => el.type === "embeddable");
         if (embeddables.length !== 1) {
-          if (checking) return false;
+          if (checking) {
+            return false;
+          }
           new Notice("Select a single PDF embeddable and try again");
           return false;
         }
@@ -1441,13 +1559,19 @@ export class CommandManager {
           excalidrawView
             .getEmbeddableLeafElementById(embeddables[0].id)
             ?.leaf?.view?.getViewType() === "pdf";
-        if (!isPDF) return false;
+        if (!isPDF) {
+          return false;
+        }
         const page = getActivePDFPageNumberFromPDFView(
           excalidrawView.getEmbeddableLeafElementById(embeddables[0].id)?.leaf
             ?.view,
         );
-        if (!page) return false;
-        if (checking) return true;
+        if (!page) {
+          return false;
+        }
+        if (checking) {
+          return true;
+        }
 
         const embeddableEl = embeddables[0] as ExcalidrawEmbeddableElement;
         const ea = new ExcalidrawAutomate(this.plugin, excalidrawView);
@@ -1488,10 +1612,14 @@ export class CommandManager {
           this.app.workspace.getActiveViewOfType(MarkdownView);
         const canvasView: any = this.app.workspace.activeLeaf?.view;
         const isCanvas = canvasView && canvasView.getViewType() === "canvas";
-        if (!excalidrawView && !markdownView && !isCanvas) return false;
+        if (!excalidrawView && !markdownView && !isCanvas) {
+          return false;
+        }
 
         if (excalidrawView) {
-          if (!excalidrawView.excalidrawAPI) return false;
+          if (!excalidrawView.excalidrawAPI) {
+            return false;
+          }
           const embeddables = excalidrawView
             .getViewSelectedElements()
             .filter((el) => el.type === "embeddable");
@@ -1506,7 +1634,9 @@ export class CommandManager {
           const isImage = imageEls.length === 1 && embeddables.length === 0;
 
           if (!isPDF && !isImage) {
-            if (checking) return false;
+            if (checking) {
+              return false;
+            }
             new Notice(
               "Select a single image element or single PDF embeddable and try again",
             );
@@ -1523,7 +1653,9 @@ export class CommandManager {
             return false;
           }
 
-          if (checking) return true;
+          if (checking) {
+            return true;
+          }
 
           if (isPDF) {
             const embeddableEl = embeddables[0] as ExcalidrawEmbeddableElement;
@@ -1610,7 +1742,9 @@ export class CommandManager {
             filename,
           );
           ea.destroy();
-          if (!newFile) return;
+          if (!newFile) {
+            return;
+          }
           const link = this.app.metadataCache.fileToLinktext(
             newFile,
             sourceFile.path,
@@ -1622,9 +1756,13 @@ export class CommandManager {
         if (isCanvas) {
           const selectedNodes: any = [];
           canvasView.canvas.nodes.forEach((node: any) => {
-            if (node.nodeEl.hasClass("is-focused")) selectedNodes.push(node);
+            if (node.nodeEl.hasClass("is-focused")) {
+              selectedNodes.push(node);
+            }
           });
-          if (selectedNodes.length !== 1) return false;
+          if (selectedNodes.length !== 1) {
+            return false;
+          }
           const node = selectedNodes[0];
           let extension = "";
           let isExcalidraw = false;
@@ -1639,9 +1777,12 @@ export class CommandManager {
             extension === "pdf"
               ? getActivePDFPageNumberFromPDFView(node?.child)
               : undefined;
-          if (!page && !IMAGE_TYPES.contains(extension) && !isExcalidraw)
+          if (!page && !IMAGE_TYPES.contains(extension) && !isExcalidraw) {
             return false;
-          if (checking) return true;
+          }
+          if (checking) {
+            return true;
+          }
 
           const replacer = (link: string, file: TFile) => {
             if (node.file) {
@@ -1674,11 +1815,15 @@ export class CommandManager {
           const cursor = editor.getCursor();
           const line = editor.getLine(cursor.line);
           const parts = REGEX_LINK.getResList(line);
-          if (parts.length === 0) return false;
+          if (parts.length === 0) {
+            return false;
+          }
           let imgpath = REGEX_LINK.getLink(parts[0]);
           const isWikilink = REGEX_LINK.isWikiLink(parts[0]);
           let alias = REGEX_LINK.getAliasOrLink(parts[0]);
-          if (alias === imgpath) alias = null;
+          if (alias === imgpath) {
+            alias = null;
+          }
           imgpath = decodeURI(imgpath);
           const imagePathParts = imgpath.split("#");
           const hasRef = imagePathParts.length === 2;
@@ -1696,14 +1841,19 @@ export class CommandManager {
             imagepath = imgpath;
             extension = getURLImageExtension(imgpath);
           }
-          if (imagepath === "") return false;
+          if (imagepath === "") {
+            return false;
+          }
           if (
             extension !== "pdf" &&
             !IMAGE_TYPES.contains(extension) &&
             !isExcalidraw
-          )
+          ) {
             return false;
-          if (checking) return true;
+          }
+          if (checking) {
+            return true;
+          }
           const ref = imagePathParts[1];
           const replacer = (link: string) => {
             const lineparts = line.split(parts[0].value[0]);
@@ -1754,7 +1904,9 @@ export class CommandManager {
           this.app.workspace.getActiveViewOfType(MarkdownView);
         const canvasView: any = this.app.workspace.activeLeaf?.view;
         const isCanvas = canvasView && canvasView.getViewType() === "canvas";
-        if (!markdownView && !isCanvas) return false;
+        if (!markdownView && !isCanvas) {
+          return false;
+        }
 
         const carveout = async (
           isFile: boolean,
@@ -1840,7 +1992,9 @@ export class CommandManager {
             return;
           }
 
-          if (!newFile) return;
+          if (!newFile) {
+            return;
+          }
           const link = this.app.metadataCache.fileToLinktext(
             newFile,
             sourceFile.path,
@@ -1852,9 +2006,13 @@ export class CommandManager {
         if (isCanvas) {
           const selectedNodes: any = [];
           canvasView.canvas.nodes.forEach((node: any) => {
-            if (node.nodeEl.hasClass("is-focused")) selectedNodes.push(node);
+            if (node.nodeEl.hasClass("is-focused")) {
+              selectedNodes.push(node);
+            }
           });
-          if (selectedNodes.length !== 1) return false;
+          if (selectedNodes.length !== 1) {
+            return false;
+          }
           const node = selectedNodes[0];
           let extension = "";
           let isExcalidraw = false;
@@ -1869,9 +2027,12 @@ export class CommandManager {
             extension === "pdf"
               ? getActivePDFPageNumberFromPDFView(node?.child)
               : undefined;
-          if (!page && !IMAGE_TYPES.contains(extension) && !isExcalidraw)
+          if (!page && !IMAGE_TYPES.contains(extension) && !isExcalidraw) {
             return false;
-          if (checking) return true;
+          }
+          if (checking) {
+            return true;
+          }
 
           const replacer = (link: string, file: TFile) => {
             if (node.file) {
@@ -1904,11 +2065,15 @@ export class CommandManager {
           const cursor = editor.getCursor();
           const line = editor.getLine(cursor.line);
           const parts = REGEX_LINK.getResList(line);
-          if (parts.length === 0) return false;
+          if (parts.length === 0) {
+            return false;
+          }
           let imgpath = REGEX_LINK.getLink(parts[0]);
           const isWikilink = REGEX_LINK.isWikiLink(parts[0]);
           let alias = REGEX_LINK.getAliasOrLink(parts[0]);
-          if (alias === imgpath) alias = null;
+          if (alias === imgpath) {
+            alias = null;
+          }
           imgpath = decodeURI(imgpath);
           const imagePathParts = imgpath.split("#");
           const hasRef = imagePathParts.length === 2;
@@ -1926,14 +2091,19 @@ export class CommandManager {
             imagepath = imgpath;
             extension = getURLImageExtension(imgpath);
           }
-          if (imagepath === "") return false;
+          if (imagepath === "") {
+            return false;
+          }
           if (
             extension !== "pdf" &&
             !IMAGE_TYPES.contains(extension) &&
             !isExcalidraw
-          )
+          ) {
             return false;
-          if (checking) return true;
+          }
+          if (checking) {
+            return true;
+          }
           const ref = imagePathParts[1];
           const replacer = (link: string, _: TFile, size: string) => {
             const lineparts = line.split(parts[0].value[0]);
@@ -2099,10 +2269,16 @@ export class CommandManager {
       name: t("INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE"),
       checkCallback: (checking: boolean) => {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (!Boolean(view)) return false;
+        if (!Boolean(view)) {
+          return false;
+        }
         const PDFLink = this.plugin.getLastActivePDFPageLink(view.file);
-        if (!PDFLink) return false;
-        if (checking) return true;
+        if (!PDFLink) {
+          return false;
+        }
+        if (checking) {
+          return true;
+        }
         (async () => {
           const ea = getEA(view) as ExcalidrawAutomate;
           const id = await insertImageToView(

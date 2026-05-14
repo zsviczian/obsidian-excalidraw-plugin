@@ -61,7 +61,9 @@ export const ttdPersistenceAdapter: TTDPersistenceAdapter = {
   async loadChats(): Promise<SavedChats> {
     try {
       const db = await openTTDDatabase();
-      if (!db) return [];
+      if (!db) {
+        return [];
+      }
       const chats = await readChatsFromStore(db);
       return Array.isArray(chats) ? chats : [];
     } catch (error) {
@@ -72,7 +74,9 @@ export const ttdPersistenceAdapter: TTDPersistenceAdapter = {
   async saveChats(chats: SavedChats): Promise<void> {
     try {
       const db = await openTTDDatabase();
-      if (!db) return;
+      if (!db) {
+        return;
+      }
       await writeChatsToStore(db, chats);
     } catch (error) {
       console.warn("TTD saveChats failed", error);

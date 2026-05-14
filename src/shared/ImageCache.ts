@@ -98,10 +98,12 @@ class ImageCache {
 
   public destroy(): void {
     this.isInitializing = true;
-    if (this.purgeInvalidCacheTimer)
+    if (this.purgeInvalidCacheTimer) {
       window.clearTimeout(this.purgeInvalidCacheTimer);
-    if (this.purgeInvalidBackupTimer)
+    }
+    if (this.purgeInvalidBackupTimer) {
       window.clearTimeout(this.purgeInvalidBackupTimer);
+    }
     this.db = null;
     this.plugin = null;
     this.app = null;
@@ -408,12 +410,16 @@ class ImageCache {
             ),
           ]);
       this.fullyInitialized = true;
-      if (!cachedData) return undefined;
+      if (!cachedData) {
+        return undefined;
+      }
 
       const file = this.app.vault.getAbstractFileByPath(
         key_.filepath.split("#")[0],
       );
-      if (!file || !(file instanceof TFile)) return undefined;
+      if (!file || !(file instanceof TFile)) {
+        return undefined;
+      }
       if (cachedData.mtime < file.stat.mtime) {
         return undefined;
       }
@@ -493,7 +499,9 @@ class ImageCache {
     const file = this.app.vault.getAbstractFileByPath(
       key_.filepath.split("#")[0],
     );
-    if (!file || !(file instanceof TFile)) return;
+    if (!file || !(file instanceof TFile)) {
+      return;
+    }
 
     let svg: string = null;
     let blob: Blob = null;
@@ -617,7 +625,9 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const hasLegacyShape = (value: unknown): value is LegacyKeyShape => {
-  if (!isObject(value)) return false;
+  if (!isObject(value)) {
+    return false;
+  }
   return (
     "filepath" in value &&
     "blockref" in value &&

@@ -441,7 +441,9 @@ export const getExcalidrawMarkdownHeaderSection = (
 ): string => {
   const { header, shouldFixTrailingHashtag, processingOk } =
     getExcalidrawMarkdownHeader(data);
-  if (!processingOk) return header;
+  if (!processingOk) {
+    return header;
+  }
 
   const updatedHeader = updateFrontmatterInString(header, keys);
   //this should be removed at a later time. Left it here to remediate 1.4.9 mistake
@@ -1091,7 +1093,9 @@ export class ExcalidrawData {
   }
 
   public async setTextMode(textMode: TextMode) {
-    if (!this.scene) return;
+    if (!this.scene) {
+      return;
+    }
     this.textMode = textMode;
     await this.updateSceneTextElements();
   }
@@ -1399,7 +1403,9 @@ export class ExcalidrawData {
    * @returns Parsed text string.
    */
   public async parseText(text: string): Promise<string> {
-    if (!text) return;
+    if (!text) {
+      return;
+    }
     const res = await this.parse(text);
     return res.parsed;
   }
@@ -1501,7 +1507,7 @@ export class ExcalidrawData {
     for (const key of this.textElements.keys()) {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566
       const element = this.scene.elements.filter((el: any) => el.id === key);
-      let elementString = this.textElements.get(key).raw;
+      const elementString = this.textElements.get(key).raw;
       if (
         element &&
         element.length === 1 &&
@@ -1629,7 +1635,9 @@ export class ExcalidrawData {
     }
 
     const arrayBuffer = await getBinaryFileFromDataURL(dataURL);
-    if (!arrayBuffer) return null;
+    if (!arrayBuffer) {
+      return null;
+    }
 
     const file = await importFileToVault(
       this.app,
@@ -1663,15 +1671,20 @@ export class ExcalidrawData {
       .filter((el) => el.type === "image" && el.crop && !el.isDeleted)
       .forEach((el: Mutable<ExcalidrawImageElement>) => {
         const ef = this.getFile(el.fileId);
-        if (!ef.file) return;
-        if (ef.file.extension !== "pdf") return;
+        if (!ef.file) {
+          return;
+        }
+        if (ef.file.extension !== "pdf") {
+          return;
+        }
         const pageRef = ef.linkParts.original.split("#")?.[1];
         if (
           !pageRef ||
           !pageRef.startsWith("page=") ||
           pageRef.includes("rect")
-        )
+        ) {
           return;
+        }
         const restOfLink = el.link
           ? el.link.match(/&rect=\d*,\d*,\d*,\d*(.*)/)?.[1]
           : "";
@@ -2053,12 +2066,12 @@ export class ExcalidrawData {
     const fileCache = this.app.metadataCache.getFileCache(this.file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["autoexport"].name] !== null &&
-      typeof fileCache.frontmatter[FRONTMATTER_KEYS["autoexport"].name] !==
+      fileCache.frontmatter[FRONTMATTER_KEYS.autoexport.name] !== null &&
+      typeof fileCache.frontmatter[FRONTMATTER_KEYS.autoexport.name] !==
         "undefined"
     ) {
       switch (
-        fileCache.frontmatter[FRONTMATTER_KEYS["autoexport"].name].toLowerCase()
+        fileCache.frontmatter[FRONTMATTER_KEYS.autoexport.name].toLowerCase()
       ) {
         case "none":
           this.autoexportPreference = AutoexportPreference.none;
@@ -2189,9 +2202,13 @@ export class ExcalidrawData {
 
   public getFile(fileId: FileId): EmbeddedFile {
     let embeddedFile = this.files.get(fileId);
-    if (embeddedFile) return embeddedFile;
+    if (embeddedFile) {
+      return embeddedFile;
+    }
     const masterFile = this.plugin.filesMaster.get(fileId);
-    if (!masterFile) return embeddedFile;
+    if (!masterFile) {
+      return embeddedFile;
+    }
     embeddedFile = new EmbeddedFile(
       this.plugin,
       this.file.path,
@@ -2260,10 +2277,14 @@ export class ExcalidrawData {
   }
 
   public getEquation(fileId: FileId): { latex: string; isLoaded: boolean } {
-    let result = this.equations.get(fileId);
-    if (result) return result;
+    const result = this.equations.get(fileId);
+    if (result) {
+      return result;
+    }
     const latex = this.plugin.equationsMaster.get(fileId);
-    if (!latex) return result;
+    if (!latex) {
+      return result;
+    }
     this.equations.set(fileId, { latex, isLoaded: false });
     return { latex, isLoaded: false };
   }
@@ -2308,10 +2329,14 @@ export class ExcalidrawData {
   }
 
   public getMermaid(fileId: FileId): { mermaid: string; isLoaded: boolean } {
-    let result = this.mermaids.get(fileId);
-    if (result) return result;
+    const result = this.mermaids.get(fileId);
+    if (result) {
+      return result;
+    }
     const mermaid = this.plugin.mermaidsMaster.get(fileId);
-    if (!mermaid) return result;
+    if (!mermaid) {
+      return result;
+    }
     this.mermaids.set(fileId, { mermaid, isLoaded: false });
     return { mermaid, isLoaded: false };
   }

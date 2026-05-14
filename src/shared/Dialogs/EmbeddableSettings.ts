@@ -62,7 +62,9 @@ export class EmbeddableSettings extends Modal {
       this.file && !this.view.plugin.isExcalidrawFile(this.file);
     this.isMDFile = this.file && this.file.extension.toLowerCase() === "md"; // && !this.view.plugin.isExcalidrawFile(this.file);
     this.isLocalURI = this.element.link.startsWith("file://");
-    if (isYouTube) this.youtubeStart = getYouTubeStartAt(this.element.link);
+    if (isYouTube) {
+      this.youtubeStart = getYouTubeStartAt(this.element.link);
+    }
 
     this.mdCustomData =
       element.customData?.mdProps ??

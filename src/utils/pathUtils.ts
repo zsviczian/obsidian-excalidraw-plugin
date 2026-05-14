@@ -32,12 +32,16 @@ export function splitFolderAndFilename(filepath: string | undefined): {
 }
 
 export const cleanSectionHeading = (heading: string) => {
-  if (!heading) return heading;
+  if (!heading) {
+    return heading;
+  }
   return heading.replace(REG_SECTION_REF_CLEAN, "").replace(/\s+/g, " ").trim();
 };
 
 export const cleanBlockRef = (blockRef: string) => {
-  if (!blockRef) return blockRef;
+  if (!blockRef) {
+    return blockRef;
+  }
   return blockRef.replace(REG_BLOCK_REF_CLEAN, "").replace(/\s+/g, " ").trim();
 };
 

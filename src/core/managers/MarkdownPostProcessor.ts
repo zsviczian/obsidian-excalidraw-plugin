@@ -52,7 +52,9 @@ let metadataCache: MetadataCache;
 const getDefaultWidth = (plugin: ExcalidrawPlugin): string => {
   const width = parseInt(plugin.settings.width);
   if (isNaN(width) || width === 0 || width === null) {
-    if (getDefaultHeight(plugin) !== "") return "";
+    if (getDefaultHeight(plugin) !== "") {
+      return "";
+    }
     return "400";
   }
   return plugin.settings.width;
@@ -192,7 +194,9 @@ const setStyle = ({
   if (imgAttributes.fheight) {
     style += `${imgAttributes.fwidth ? "min-" : "max-"}height:${imgAttributes.fheight}px;`;
   }
-  if (!onCanvas) element.setAttribute("style", style);
+  if (!onCanvas) {
+    element.setAttribute("style", style);
+  }
   element.classList.add(...Array.from(imgAttributes.style));
   if (!element.hasClass("excalidraw-embedded-img")) {
     element.addClass("excalidraw-embedded-img");
@@ -547,14 +551,18 @@ const createImgElement = async (
     const src = imgOrDiv.getAttribute("fileSource");
     if (src) {
       const srcParts = src.match(/([^#]*)(.*)/);
-      if (!srcParts) return;
+      if (!srcParts) {
+        return;
+      }
       const f = vault.getAbstractFileByPath(srcParts[1]) as TFile;
       const linkModifier = linkClickModifierType(ev);
       if (plugin.isExcalidrawFile(f) && isMaskFile(plugin, f)) {
         (async () => {
           const linkString = `[[${f.path}${srcParts[2] ? "#" + srcParts[2] : ""}]] ${getExcalidrawFileForwardLinks(plugin.app, f, new Set<string>())}`;
           const result = await linkPrompt(linkString, plugin.app);
-          if (!result) return;
+          if (!result) {
+            return;
+          }
           const [file, linkText, subpath] = result;
           if (plugin.isExcalidrawFile(file)) {
             plugin.openDrawing(file, linkModifier, true, subpath);
@@ -599,7 +607,9 @@ const createImgElement = async (
     : imgOrDiv;*/
 
   eventElement.addEventListener("pointermove", (ev) => {
-    if (!timer) return;
+    if (!timer) {
+      return;
+    }
     if (
       Math.abs(ev.screenX - pointerDownEvent.screenX) > 10 ||
       Math.abs(ev.screenY - pointerDownEvent.screenY) > 10
@@ -609,7 +619,9 @@ const createImgElement = async (
     }
   });
   eventElement.addEventListener("pointerdown", (ev) => {
-    if (imgOrDiv?.parentElement?.hasClass("canvas-node-content")) return;
+    if (imgOrDiv?.parentElement?.hasClass("canvas-node-content")) {
+      return;
+    }
     const PLUGIN = app.plugins.plugins[
       "obsidian-excalidraw-plugin"
     ] as ExcalidrawPlugin;
@@ -620,7 +632,9 @@ const createImgElement = async (
     pointerDownEvent = ev;
   });
   eventElement.addEventListener("pointerup", () => {
-    if (timer) window.clearTimeout(timer);
+    if (timer) {
+      window.clearTimeout(timer);
+    }
     timer = null;
   });
   eventElement.addEventListener("dblclick", clickEvent);
@@ -640,7 +654,9 @@ const createImgElement = async (
       },
       onCanvas,
     );
-    if (!newImg) return;
+    if (!newImg) {
+      return;
+    }
     parent.empty();
     if (!onCanvas) {
       newImg.style.maxHeight = imgMaxHeigth;
@@ -651,7 +667,9 @@ const createImgElement = async (
   });
   const cssClasses = getFileCSSClasses(attr.file);
   cssClasses.forEach((cssClass) => {
-    if (imgOrDiv.hasClass(cssClass)) return;
+    if (imgOrDiv.hasClass(cssClass)) {
+      return;
+    }
     imgOrDiv.addClass(cssClass);
   });
   if (window?.ExcalidrawAutomate?.plugin?.settings?.canvasImmersiveEmbed) {
@@ -687,7 +705,9 @@ const processReadingMode = async (
   for (const maybeDrawing of embeddedItems) {
     //check to see if the file in the src attribute exists
     const fname = maybeDrawing.getAttribute("src")?.split("#")[0];
-    if (!fname) continue;
+    if (!fname) {
+      continue;
+    }
 
     const file = metadataCache.getFirstLinkpathDest(fname, ctx.sourcePath);
 
@@ -720,7 +740,9 @@ const processInternalEmbed = async (
   };
 
   const src = internalEmbedEl.getAttribute("src");
-  if (!src) return;
+  if (!src) {
+    return;
+  }
 
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1059
   internalEmbedEl.removeClass("markdown-embed");
@@ -734,7 +756,7 @@ const processInternalEmbed = async (
   attr.fheight = internalEmbedEl.getAttribute("height")
     ? internalEmbedEl.getAttribute("height")
     : getDefaultHeight(plugin);
-  let alt = internalEmbedEl.getAttribute("alt");
+  const alt = internalEmbedEl.getAttribute("alt");
   attr.style = ["excalidraw-svg"];
   processAltText(src.split("#")[0], alt, attr);
   const fnameParts = getEmbeddedFilenameParts(src);
@@ -867,7 +889,9 @@ const processAltText = (
 
 const isTextOnlyEmbed = (internalEmbedEl: Element): boolean => {
   const src = internalEmbedEl.getAttribute("src");
-  if (!src) return true; //technically this does not mean this is a text only embed, but still should abort further processing
+  if (!src) {
+    return true;
+  } //technically this does not mean this is a text only embed, but still should abort further processing
   const fnameParts = getEmbeddedFilenameParts(src);
   return (
     !(
@@ -889,8 +913,12 @@ const tmpObsidianWYSIWYG = async (
   isHoverPopover: boolean,
 ) => {
   const file = app.vault.getAbstractFileByPath(ctx.sourcePath);
-  if (!(file instanceof TFile)) return;
-  if (!plugin.isExcalidrawFile(file)) return;
+  if (!(file instanceof TFile)) {
+    return;
+  }
+  if (!plugin.isExcalidrawFile(file)) {
+    return;
+  }
   if (ctx.frontmatter?.["excalidraw-embed-md"]) {
     return;
   }
@@ -998,7 +1026,9 @@ const tmpObsidianWYSIWYG = async (
       }
     }
     if (!isFrontmatterDiv && !areaPreview) {
-      if (el.parentElement === containerEl) containerEl.removeChild(el);
+      if (el.parentElement === containerEl) {
+        containerEl.removeChild(el);
+      }
       return;
     }
     internalEmbedDiv.empty();

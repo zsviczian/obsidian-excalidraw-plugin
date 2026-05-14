@@ -17,8 +17,12 @@ export const carveOutImage = async (
   sourceEA: ExcalidrawAutomate,
   viewImageEl: ExcalidrawImageElement,
 ) => {
-  if (!viewImageEl?.fileId) return;
-  if (!sourceEA?.targetView) return;
+  if (!viewImageEl?.fileId) {
+    return;
+  }
+  if (!sourceEA?.targetView) {
+    return;
+  }
 
   const targetEA = getEA(sourceEA.targetView) as ExcalidrawAutomate;
 
@@ -106,11 +110,13 @@ export const carveOutPDF = async (
   pdfPathWithPage: string,
   pdfFile: TFile,
 ) => {
-  if (!embeddableEl || !pdfPathWithPage || !sourceEA?.targetView) return;
+  if (!embeddableEl || !pdfPathWithPage || !sourceEA?.targetView) {
+    return;
+  }
 
   const targetEA = getEA(sourceEA.targetView) as ExcalidrawAutomate;
 
-  let { height, width } = embeddableEl;
+  const { height, width } = embeddableEl;
 
   if (!height || !width || height === 0 || width === 0) {
     targetEA.destroy();

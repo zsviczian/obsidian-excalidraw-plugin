@@ -106,9 +106,15 @@ const AI_DEBUG_PREFIX = "[Excalidraw AI Debug]";
 const AI_DEBUG_MAX_LENGTH = 8000;
 
 const stringifyDebugValue = (value: unknown): string => {
-  if (value === undefined) return "<undefined>";
-  if (value === null) return "<null>";
-  if (typeof value === "string") return value;
+  if (value === undefined) {
+    return "<undefined>";
+  }
+  if (value === null) {
+    return "<null>";
+  }
+  if (typeof value === "string") {
+    return value;
+  }
 
   try {
     return JSON.stringify(value, null, 2);
@@ -205,10 +211,18 @@ const getPlugin = (plugin?: ExcalidrawPlugin): ExcalidrawPlugin | null => {
 };
 
 const getAssetSource = (asset?: AIImageInput | AIFileInput): string => {
-  if (!asset) return null;
-  if (typeof asset === "string") return asset;
-  if ("url" in asset) return asset.url;
-  if ("dataURL" in asset) return asset.dataURL;
+  if (!asset) {
+    return null;
+  }
+  if (typeof asset === "string") {
+    return asset;
+  }
+  if ("url" in asset) {
+    return asset.url;
+  }
+  if ("dataURL" in asset) {
+    return asset.dataURL;
+  }
   return null;
 };
 
@@ -219,21 +233,27 @@ const getImageURL = (image?: AIImageInput | AIFileInput): string => {
 const getAssetMimeType = (
   asset?: AIImageInput | AIFileInput,
 ): string | undefined => {
-  if (!asset || typeof asset === "string") return undefined;
+  if (!asset || typeof asset === "string") {
+    return undefined;
+  }
   return asset.mimeType;
 };
 
 const getAssetFilename = (
   asset?: AIImageInput | AIFileInput,
 ): string | undefined => {
-  if (!asset || typeof asset === "string") return undefined;
+  if (!asset || typeof asset === "string") {
+    return undefined;
+  }
   return asset.filename;
 };
 
 const getImageDetail = (
   image?: AIImageInput,
 ): "low" | "high" | "auto" | undefined => {
-  if (!image || typeof image === "string") return undefined;
+  if (!image || typeof image === "string") {
+    return undefined;
+  }
   return image.detail;
 };
 
@@ -241,7 +261,9 @@ const normalizeBinaryInput = (
   asset: AIImageInput | AIFileInput,
 ): NormalizedBinaryInput | null => {
   const source = getAssetSource(asset);
-  if (!source) return null;
+  if (!source) {
+    return null;
+  }
   return {
     source,
     mimeType: getAssetMimeType(asset),
@@ -270,7 +292,9 @@ const joinURL = (baseURL: string, path: string): string => {
 
 const inferLegacyBaseURL = (url: string, suffix: string): string => {
   const normalized = normalizeBaseURL(url);
-  if (!normalized) return "";
+  if (!normalized) {
+    return "";
+  }
   return normalized.endsWith(suffix)
     ? normalized.slice(0, -suffix.length)
     : normalized;
@@ -278,7 +302,9 @@ const inferLegacyBaseURL = (url: string, suffix: string): string => {
 
 const inferConfiguredBaseURL = (url: string): string => {
   const normalized = normalizeBaseURL(url);
-  if (!normalized) return "";
+  if (!normalized) {
+    return "";
+  }
 
   const matchingSuffix = AI_BASE_URL_SUFFIXES.find((suffix) =>
     normalized.endsWith(suffix),
@@ -469,9 +495,12 @@ const getDerivedTextEndpoint = (
   baseURL: string,
   endpoint?: string,
 ): string => {
-  if (provider === "google") return endpoint || baseURL;
-  if (provider === "anthropic")
+  if (provider === "google") {
+    return endpoint || baseURL;
+  }
+  if (provider === "anthropic") {
     return endpoint || joinURL(baseURL, "/messages");
+  }
   return endpoint || joinURL(baseURL, "/chat/completions");
 };
 
@@ -551,7 +580,9 @@ const resolveAIConfig = (
   plugin?: ExcalidrawPlugin,
 ): ResolvedAIConfig | null => {
   const resolvedPlugin = getPlugin(plugin);
-  if (!resolvedPlugin) return null;
+  if (!resolvedPlugin) {
+    return null;
+  }
 
   return {
     text: getResolvedModelConfig(
@@ -593,7 +624,9 @@ const getHeaderValue = (
   headers: RequestUrlResponse["headers"],
   key: string,
 ): string | null => {
-  if (!headers) return null;
+  if (!headers) {
+    return null;
+  }
   const normalizedKey = key.toLowerCase();
   const headerObject = headers as Record<string, string>;
   return headerObject[key] ?? headerObject[normalizedKey] ?? null;
@@ -635,7 +668,9 @@ const requestUrlWithAbort = async (
 };
 
 const usesMaxCompletionTokens = (model: string): boolean => {
-  if (!model) return false;
+  if (!model) {
+    return false;
+  }
   return ["gpt-4o", "gpt-5", "o1", "o3", "o4"].some((prefix) =>
     model.includes(prefix),
   );
@@ -645,7 +680,9 @@ const getTextLimitPayload = (
   model: string,
   maxTokens: number,
 ): { max_tokens?: number; max_completion_tokens?: number } => {
-  if (!maxTokens || maxTokens <= 0) return {};
+  if (!maxTokens || maxTokens <= 0) {
+    return {};
+  }
   return usesMaxCompletionTokens(model)
     ? { max_completion_tokens: maxTokens }
     : { max_tokens: maxTokens };
@@ -675,7 +712,9 @@ const normalizeMessagePart = (
 const normalizeRequestMessage = (
   message: AIRequestMessage,
 ): NormalizedMessage | null => {
-  if (!message) return null;
+  if (!message) {
+    return null;
+  }
   if (typeof message.content === "string") {
     return message.content.trim() === ""
       ? null
@@ -743,9 +782,13 @@ const estimateTokenCount = (text: string): number => {
 };
 
 const trimTextToTokenBudget = (text: string, budget: number): string => {
-  if (!text || budget <= 0) return "";
+  if (!text || budget <= 0) {
+    return "";
+  }
   const maxChars = Math.max(1, budget * 4);
-  if (text.length <= maxChars) return text;
+  if (text.length <= maxChars) {
+    return text;
+  }
   return `[truncated]\n${text.slice(-maxChars)}`;
 };
 
@@ -754,7 +797,9 @@ const limitContentByOutgoingTokenBudget = (
   budget: number,
 ): { content: string | NormalizedMessagePart[] | null; remaining: number } => {
   if (typeof content === "string") {
-    if (budget <= 0) return { content: null, remaining: 0 };
+    if (budget <= 0) {
+      return { content: null, remaining: 0 };
+    }
     const tokenCount = estimateTokenCount(content);
     if (tokenCount <= budget) {
       return { content, remaining: budget - tokenCount };
@@ -830,7 +875,9 @@ const applyOutgoingTokenBudget = (
 };
 
 const toOpenAIContent = (content: string | NormalizedMessagePart[]) => {
-  if (typeof content === "string") return content;
+  if (typeof content === "string") {
+    return content;
+  }
 
   return content
     .filter((part) => part.type === "text" || part.type === "image")
@@ -860,7 +907,9 @@ const parseDataURL = (
   dataURL: string,
 ): { mediaType: string; data: string } | null => {
   const match = dataURL.match(/^data:([^;]+);base64,(.+)$/);
-  if (!match) return null;
+  if (!match) {
+    return null;
+  }
   return {
     mediaType: match[1],
     data: match[2],
@@ -872,12 +921,21 @@ const getFilenameFromMimeType = (
   fallback: string,
 ): string => {
   const normalized = (mimeType ?? "").toLowerCase();
-  if (normalized.includes("png")) return `${fallback}.png`;
-  if (normalized.includes("jpeg") || normalized.includes("jpg"))
+  if (normalized.includes("png")) {
+    return `${fallback}.png`;
+  }
+  if (normalized.includes("jpeg") || normalized.includes("jpg")) {
     return `${fallback}.jpg`;
-  if (normalized.includes("webp")) return `${fallback}.webp`;
-  if (normalized.includes("gif")) return `${fallback}.gif`;
-  if (normalized.includes("svg")) return `${fallback}.svg`;
+  }
+  if (normalized.includes("webp")) {
+    return `${fallback}.webp`;
+  }
+  if (normalized.includes("gif")) {
+    return `${fallback}.gif`;
+  }
+  if (normalized.includes("svg")) {
+    return `${fallback}.svg`;
+  }
   return `${fallback}.bin`;
 };
 
@@ -896,7 +954,9 @@ const getBinaryAssetData = async (
   const preferredFilename =
     typeof asset === "string" ? undefined : asset?.filename;
 
-  if (!source) return null;
+  if (!source) {
+    return null;
+  }
 
   const parsed = parseDataURL(source);
   if (parsed) {
@@ -943,7 +1003,9 @@ const toInlineBinaryData = async (
   fallback: string = "file",
 ): Promise<{ mediaType: string; data: string; filename: string } | null> => {
   const binary = await getBinaryAssetData(asset, signal, fallback);
-  if (!binary) return null;
+  if (!binary) {
+    return null;
+  }
   return {
     mediaType: binary.mediaType,
     data: arrayBufferToBase64(binary.data),
@@ -968,7 +1030,9 @@ const toAnthropicContent = async (
 
     if (part.type === "image") {
       const inlineImage = await toInlineBinaryData(part.image, signal, "image");
-      if (!inlineImage) continue;
+      if (!inlineImage) {
+        continue;
+      }
       parts.push({
         type: "image",
         source: {
@@ -986,7 +1050,9 @@ const toAnthropicContent = async (
         signal,
         "document",
       );
-      if (!inlineFile) continue;
+      if (!inlineFile) {
+        continue;
+      }
       if (inlineFile.mediaType !== "application/pdf") {
         throw new Error(
           "Anthropic file attachments currently support PDF documents only in ExcalidrawAutomate.",
@@ -1077,7 +1143,9 @@ const toGoogleParts = async (
           ? "image"
           : "document",
     );
-    if (!inlineData) continue;
+    if (!inlineData) {
+      continue;
+    }
     parts.push({
       inlineData: {
         mimeType: inlineData.mediaType,
@@ -1197,7 +1265,9 @@ const normalizeGoogleResponse = (json: any) => {
 };
 
 const normalizeResponseJson = (provider: AIProvider, json: any) => {
-  if (!json || json.error) return json;
+  if (!json || json.error) {
+    return json;
+  }
   switch (provider) {
     case "anthropic":
       return normalizeAnthropicResponse(json);
@@ -1211,7 +1281,9 @@ const normalizeResponseJson = (provider: AIProvider, json: any) => {
 const stripImageDataPrefix = (
   value?: string,
 ): { data: string; mimeType?: string } | null => {
-  if (!value) return null;
+  if (!value) {
+    return null;
+  }
   const parsed = parseDataURL(value);
   if (parsed) {
     return {
@@ -1229,15 +1301,23 @@ const getMimeTypeForOutputFormat = (
   format?: string,
   fallback: string = "image/png",
 ): string => {
-  if (!format) return fallback;
+  if (!format) {
+    return fallback;
+  }
   const normalized = format.toLowerCase();
-  if (normalized === "jpg") return "image/jpeg";
-  if (normalized.startsWith("image/")) return normalized;
+  if (normalized === "jpg") {
+    return "image/jpeg";
+  }
+  if (normalized.startsWith("image/")) {
+    return normalized;
+  }
   return `image/${normalized}`;
 };
 
 const normalizeOpenAIImageResponse = (json: any) => {
-  if (!json || json.error) return json;
+  if (!json || json.error) {
+    return json;
+  }
   const data = Array.isArray(json.data)
     ? json.data.filter((item: any) => item?.url || item?.b64_json)
     : [];
@@ -1249,7 +1329,9 @@ const normalizeOpenAIImageResponse = (json: any) => {
 };
 
 const normalizeGoogleImageResponseForImages = (json: any) => {
-  if (!json || json.error) return json;
+  if (!json || json.error) {
+    return json;
+  }
 
   const parts = json?.candidates?.[0]?.content?.parts ?? [];
   const revisedPrompt = parts
@@ -1286,7 +1368,9 @@ const normalizeGoogleImageResponseForImages = (json: any) => {
 };
 
 const normalizeXAIImageResponse = (json: any) => {
-  if (!json || json.error) return json;
+  if (!json || json.error) {
+    return json;
+  }
 
   const rawItems = Array.isArray(json.data)
     ? json.data
@@ -1295,7 +1379,9 @@ const normalizeXAIImageResponse = (json: any) => {
       : [];
 
   const normalizedData = rawItems.flatMap((item: any) => {
-    if (!item) return [];
+    if (!item) {
+      return [];
+    }
     if (item.url || item.b64_json) {
       return [item];
     }
@@ -1418,9 +1504,12 @@ const getImagePromptText = (
 };
 
 const getErrorMessageFromResponse = (response: RequestUrlResponse): string => {
-  if (response.json?.error?.message) return response.json.error.message;
-  if (typeof response.text === "string" && response.text.trim())
+  if (response.json?.error?.message) {
+    return response.json.error.message;
+  }
+  if (typeof response.text === "string" && response.text.trim()) {
     return response.text.trim();
+  }
   return `Request failed with status ${response.status}`;
 };
 
@@ -2146,7 +2235,9 @@ export const getAISettings = (
   plugin?: ExcalidrawPlugin,
 ): ExcalidrawAISettings | null => {
   const resolvedPlugin = getPlugin(plugin);
-  if (!resolvedPlugin) return null;
+  if (!resolvedPlugin) {
+    return null;
+  }
 
   const providerProfiles = getProviderProfiles(resolvedPlugin);
   const textModels = Object.fromEntries(
@@ -2359,7 +2450,9 @@ export const createAIChatSession = (
 export const extractCodeBlocks = (
   markdown: string,
 ): { data: string; type: string }[] => {
-  if (!markdown) return [];
+  if (!markdown) {
+    return [];
+  }
 
   markdown = markdown.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
   const result: { data: string; type: string }[] = [];

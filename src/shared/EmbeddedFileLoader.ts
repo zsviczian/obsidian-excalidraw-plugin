@@ -113,7 +113,9 @@ const replaceSVGColors = (
       if (oldColor === "stroke" || oldColor === "fill") {
         const [svgTag, prefix, suffix] = (svg.match(/(<svg[^>]*)(>)/i) ||
           []) as string[];
-        if (!svgTag) continue;
+        if (!svgTag) {
+          continue;
+        }
 
         svg = svg.replace(
           svgTag,
@@ -156,8 +158,12 @@ const replaceSVGColors = (
     }
   };
 
-  if ("fill" in colorMap) svg.setAttribute("fill", colorMap.fill);
-  if ("stroke" in colorMap) svg.setAttribute("stroke", colorMap.stroke);
+  if ("fill" in colorMap) {
+    svg.setAttribute("fill", colorMap.fill);
+  }
+  if ("stroke" in colorMap) {
+    svg.setAttribute("stroke", colorMap.stroke);
+  }
   for (const child of svg.childNodes) {
     childNodes(child);
   }
@@ -565,7 +571,9 @@ export class EmbeddedFilesLoader {
     if (hasSVGwithBitmap && isDark && !Boolean(maybeSVG)) {
       imageList.forEach((i) => {
         const id = i.parentElement?.id;
-        if (id.endsWith("-invert-bitmap")) return;
+        if (id.endsWith("-invert-bitmap")) {
+          return;
+        }
         svg.querySelectorAll(`use[href='#${id}']`).forEach((u) => {
           u.setAttribute("filter", THEME_FILTER);
         });
@@ -856,7 +864,9 @@ export class EmbeddedFilesLoader {
       this: EmbeddedFilesLoader,
     ): Generator<Promise<void>> {
       while (!(entry = entries.next()).done) {
-        if (fileIDWhiteList && !fileIDWhiteList.has(entry.value[0])) continue;
+        if (fileIDWhiteList && !fileIDWhiteList.has(entry.value[0])) {
+          continue;
+        }
         const embeddedFile: EmbeddedFile = entry.value[1];
         const id = entry.value[0];
         yield createSafeLoadTask(
@@ -920,8 +930,9 @@ export class EmbeddedFilesLoader {
       let equationItem;
       const equations = excalidrawData.getEquationEntries();
       while (!(equationItem = equations.next()).done) {
-        if (fileIDWhiteList && !fileIDWhiteList.has(equationItem.value[0]))
+        if (fileIDWhiteList && !fileIDWhiteList.has(equationItem.value[0])) {
           continue;
+        }
         const equation = equationItem.value[1];
         const id = equationItem.value[0];
         yield createSafeLoadTask(
@@ -1261,7 +1272,9 @@ export class EmbeddedFilesLoader {
             canvas.width = 0;
             canvas.height = 0;
 
-            if (i === maxRetries - 1) throw e; // Throw on last retry
+            if (i === maxRetries - 1) {
+              throw e;
+            } // Throw on last retry
 
             if (shouldRetryWithFreshDoc(e)) {
               const previousDoc = pdfDoc;
@@ -1339,9 +1352,9 @@ export class EmbeddedFilesLoader {
     let fontName = plugin.settings.mdFont;
     if (
       fileCache?.frontmatter &&
-      Boolean(fileCache.frontmatter[FRONTMATTER_KEYS["font"].name])
+      Boolean(fileCache.frontmatter[FRONTMATTER_KEYS.font.name])
     ) {
-      fontName = fileCache.frontmatter[FRONTMATTER_KEYS["font"].name];
+      fontName = fileCache.frontmatter[FRONTMATTER_KEYS.font.name];
     }
     switch (fontName) {
       case "Virgil":
@@ -1378,7 +1391,10 @@ export class EmbeddedFilesLoader {
         fontName = font.fontName;
     }
 
-    if (fileCache?.frontmatter && fileCache.frontmatter["banner"] !== null) {
+    if (
+      fileCache?.frontmatter &&
+      fileCache.frontmatter[FRONTMATTER_KEYS.banner.name] !== null
+    ) {
       text = text.replace(/banner:\s*.*/, ""); //patch https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/814
     }
 
@@ -1469,16 +1485,24 @@ export class EmbeddedFilesLoader {
     for (let i = 0; i < internalEmbeds.length; i++) {
       const el = internalEmbeds[i];
       const src = el.getAttribute("src");
-      if (!src) continue;
+      if (!src) {
+        continue;
+      }
       const width = el.getAttribute("width");
       const height = el.getAttribute("height");
       const ef = new EmbeddedFile(plugin, file.path, src);
       //const f = app.metadataCache.getFirstLinkpathDest(src.split("#")[0],file.path);
-      if (!ef.file) continue;
+      if (!ef.file) {
+        continue;
+      }
       const embeddedFile = await this._getObsidianImage(ef, 1);
       const img = createEl("img");
-      if (width) img.setAttribute("width", width);
-      if (height) img.setAttribute("height", height);
+      if (width) {
+        img.setAttribute("width", width);
+      }
+      if (height) {
+        img.setAttribute("height", height);
+      }
       img.src = embeddedFile.dataURL;
       el.replaceWith(img);
     }
@@ -1632,7 +1656,7 @@ const replaceBlobWithBase64 = async (
     'img[src^="blob:app://obsidian.md"]',
   );
 
-  for (let img of images) {
+  for (const img of images) {
     const blobUrl = img.src;
     try {
       const response = await fetch(blobUrl);

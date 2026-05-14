@@ -11,23 +11,34 @@ const haveLinkedFilesChanged = (
   sourceList: Set<string>,
   plugin: ExcalidrawPlugin,
 ): boolean => {
-  if (depth++ > 5) return false;
+  if (depth++ > 5) {
+    return false;
+  }
   sourceList.add(path);
   const links = plugin.app.metadataCache.resolvedLinks[path];
-  if (!links) return false;
+  if (!links) {
+    return false;
+  }
   for (const link of Object.keys(links)) {
-    if (sourceList.has(link)) continue;
+    if (sourceList.has(link)) {
+      continue;
+    }
     const file = plugin.app.vault.getAbstractFileByPath(link);
-    if (!file || !(file instanceof TFile)) continue;
+    if (!file || !(file instanceof TFile)) {
+      continue;
+    }
     console.log(path, {
       mtimeLinked: file.stat.mtime,
       mtimeSource: mtime,
       path: file.path,
     });
-    if (file.stat.mtime > mtime) return true;
+    if (file.stat.mtime > mtime) {
+      return true;
+    }
     if (plugin.isExcalidrawFile(file)) {
-      if (haveLinkedFilesChanged(depth, mtime, file.path, sourceList, plugin))
+      if (haveLinkedFilesChanged(depth, mtime, file.path, sourceList, plugin)) {
         return true;
+      }
     }
   }
   return false;
@@ -40,10 +51,14 @@ const listOfOutOfSyncImgExports = async (
 ): Promise<TFile[]> => {
   const app = plugin.app;
 
-  const publish = app.internalPlugins.plugins["publish"].instance;
-  if (!publish) return;
-  const list = await app.internalPlugins.plugins["publish"].instance.apiList();
-  if (!list || !list.files) return;
+  const publish = app.internalPlugins.plugins.publish?.instance;
+  if (!publish) {
+    return;
+  }
+  const list = await publish.apiList();
+  if (!list || !list.files) {
+    return;
+  }
   const outOfSyncFiles = new Set<TFile>();
   const allFiles = list.files.filter(
     (f: any) => f.path.endsWith(".svg") || f.path.endsWith(".png"),
@@ -61,10 +76,13 @@ const listOfOutOfSyncImgExports = async (
       !imgFile ||
       !(excalidrawFile instanceof TFile) ||
       !(imgFile instanceof TFile)
-    )
+    ) {
       return;
+    }
     if (excalidrawFile.stat.mtime <= imgFile.stat.mtime) {
-      if (!recursive) return;
+      if (!recursive) {
+        return;
+      }
       if (
         !haveLinkedFilesChanged(
           0,
@@ -73,8 +91,9 @@ const listOfOutOfSyncImgExports = async (
           new Set<string>(),
           plugin,
         )
-      )
+      ) {
         return;
+      }
     }
     outOfSyncFiles.add(excalidrawFile);
   });

@@ -482,7 +482,9 @@ export class GenericInputPrompt extends Modal {
       for (const button of this.buttons) {
         const btn = new ButtonComponent(actionButtonContainer);
         btn.buttonEl.style.marginLeft = "5px";
-        if (button.tooltip) btn.setTooltip(button.tooltip);
+        if (button.tooltip) {
+          btn.setTooltip(button.tooltip);
+        }
         button.iconId
           ? btn.setIcon(button.iconId)
           : btn.setButtonText(button.caption);
@@ -581,13 +583,15 @@ export class GenericInputPrompt extends Modal {
       if (
         this.selectionStart > 0 &&
         v.slice(this.selectionStart - 1, this.selectionStart) !== " "
-      )
+      ) {
         text = " " + text;
+      }
       if (
         this.selectionStart < v.length &&
         v.slice(this.selectionStart, this.selectionStart + 1) !== " "
-      )
+      ) {
         text = text + " ";
+      }
       const newVal =
         this.inputComponent.inputEl.value.slice(0, this.selectionStart) +
         text +
@@ -624,7 +628,9 @@ export class GenericInputPrompt extends Modal {
 
   private delBtnClickCallback = () => {
     this.view.ownerWindow.clearTimeout(this.selectionUpdateTimer); //timer is implemented because on iPad with pencil the button click generates an event on the textarea
-    if (this.input.length === 0) return;
+    if (this.input.length === 0) {
+      return;
+    }
     const delStart =
       this.selectionEnd > this.selectionStart
         ? this.selectionStart
@@ -645,7 +651,9 @@ export class GenericInputPrompt extends Modal {
 
   private uppercaseBtnClickCallback = () => {
     this.view.ownerWindow.clearTimeout(this.selectionUpdateTimer); //timer is implemented because on iPad with pencil the button click generates an event on the textarea
-    if (this.selectionEnd === this.selectionStart) return;
+    if (this.selectionEnd === this.selectionStart) {
+      return;
+    }
     const newVal =
       this.inputComponent.inputEl.value.slice(0, this.selectionStart) +
       this.inputComponent.inputEl.value
@@ -687,7 +695,9 @@ export class GenericInputPrompt extends Modal {
   }
 
   private removeInputListener() {
-    if (!this.inputComponent?.inputEl) return;
+    if (!this.inputComponent?.inputEl) {
+      return;
+    }
 
     const inputEl = this.inputComponent.inputEl;
     inputEl.removeEventListener("keydown", this.handleKeyDown);
@@ -879,7 +889,9 @@ export class GenericInputPrompt extends Modal {
     };
 
     const onPointerMove = (e: PointerEvent) => {
-      if (!isDragging) return;
+      if (!isDragging) {
+        return;
+      }
 
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
@@ -889,7 +901,9 @@ export class GenericInputPrompt extends Modal {
     };
 
     const onPointerUp = () => {
-      if (!isDragging) return;
+      if (!isDragging) {
+        return;
+      }
       isDragging = false;
 
       // Restore focus and cursor position
@@ -1313,7 +1327,9 @@ export async function linkPrompt(
   const linkMap = new Map<string, number[]>();
   links.forEach((link, i) => {
     const linkBase = link.split("&rect=")[0];
-    if (!linkMap.has(linkBase)) linkMap.set(linkBase, []);
+    if (!linkMap.has(linkBase)) {
+      linkMap.set(linkBase, []);
+    }
     linkMap.get(linkBase).push(i);
   });
 
@@ -1368,7 +1384,9 @@ export async function linkPrompt(
   await sleep(10); //obsidian modal link click immediately refocuses the editor, so we need to wait a bit
   if (items.length > 1) {
     parts = await ScriptEngine.suggester(app, itemsDisplay, items, message);
-    if (!parts) return;
+    if (!parts) {
+      return;
+    }
   }
 
   if (!parts) {
@@ -1381,10 +1399,16 @@ export async function linkPrompt(
   }
 
   linkText = REGEX_LINK.getLink(parts);
-  if (openExternalLink(linkText, app)) return;
+  if (openExternalLink(linkText, app)) {
+    return;
+  }
   const maybeObsidianLink = parseObsidianLink(linkText, app, false);
-  if (typeof maybeObsidianLink === "boolean" && maybeObsidianLink) return;
-  if (typeof maybeObsidianLink === "string") linkText = maybeObsidianLink;
+  if (typeof maybeObsidianLink === "boolean" && maybeObsidianLink) {
+    return;
+  }
+  if (typeof maybeObsidianLink === "string") {
+    linkText = maybeObsidianLink;
+  }
 
   if (linkText.search("#") > -1) {
     const linkParts = getLinkParts(linkText, view ? view.file : undefined);
@@ -1406,7 +1430,9 @@ export const templatePromt = async (
   files: TFile[],
   app: App,
 ): Promise<TFile> => {
-  if (files.length === 1) return files[0];
+  if (files.length === 1) {
+    return files[0];
+  }
   return ((await linkPrompt(
     files.map((f) => `[[${f.path}|${f.name}]]`).join(" "),
     app,

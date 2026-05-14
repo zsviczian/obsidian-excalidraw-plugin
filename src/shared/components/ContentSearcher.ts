@@ -271,7 +271,9 @@ export class ContentSearcher {
 
     this.contentDiv.querySelectorAll("mark.search-highlight").forEach((el) => {
       const parent = el.parentNode;
-      if (!parent) return;
+      if (!parent) {
+        return;
+      }
 
       parentsToNormalize.add(parent);
       el.replaceWith(document.createTextNode(el.textContent ?? ""));
@@ -288,7 +290,9 @@ export class ContentSearcher {
       this.contentDiv.querySelectorAll("mark.search-highlight"),
     );
 
-    if (highlights.length === 0) return;
+    if (highlights.length === 0) {
+      return;
+    }
 
     const currentActiveIndex = highlights.findIndex((highlight) =>
       highlight.classList.contains("active-highlight"),

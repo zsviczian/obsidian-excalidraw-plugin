@@ -89,11 +89,9 @@ export class UniversalInsertFileModal extends Modal {
   async createForm() {
     const ce = this.contentEl;
     let sectionPicker: DropdownComponent;
-    let sectionPickerSetting: Setting;
     let actionIFrame: ButtonComponent;
     let actionImage: ButtonComponent;
     let actionPDF: ButtonComponent;
-    let sizeToggleSetting: Setting;
     let anchorTo100: boolean = false;
     let file = this.file;
 
@@ -132,7 +130,9 @@ export class UniversalInsertFileModal extends Modal {
         while (sectionPicker.selectEl.options.length > 0) {
           sectionPicker.selectEl.remove(0);
         }
-        if (!isExcalidraw) sectionPicker.addOption("", "");
+        if (!isExcalidraw) {
+          sectionPicker.addOption("", "");
+        }
         sections.forEach((b: any) => {
           sectionPicker.addOption(
             `#${cleanSectionHeading(b.display)}`,
@@ -197,14 +197,14 @@ export class UniversalInsertFileModal extends Modal {
       updateForm();
     });
 
-    sectionPickerSetting = new Setting(ce)
+    const sectionPickerSetting = new Setting(ce)
       .setName(t("UIFM_SECTION_HEAD"))
       .addDropdown((dropdown) => {
         sectionPicker = dropdown;
         sectionPicker.selectEl.style.width = "100%";
       });
 
-    sizeToggleSetting = new Setting(ce)
+    const sizeToggleSetting = new Setting(ce)
       .setName(t("UIFM_ANCHOR"))
       .setDesc(t("UIFM_ANCHOR_DESC"))
       .addToggle((toggle) => {
@@ -317,7 +317,6 @@ export class UniversalInsertFileModal extends Modal {
             if (isVisible(actionIFrame)) {
               actionIFrame.buttonEl.click();
             }
-            return;
         }
       }),
     );

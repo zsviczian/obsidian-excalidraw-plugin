@@ -26,7 +26,9 @@ function pointInRect(
 
 function isPointOnText(e: PointerEvent | TouchEvent, doc: Document): boolean {
   const pt = getClientPoint(e);
-  if (!pt) return false;
+  if (!pt) {
+    return false;
+  }
 
   let offsetNode: Node | null = null;
   let offset: number | null = null;
@@ -48,9 +50,12 @@ function isPointOnText(e: PointerEvent | TouchEvent, doc: Document): boolean {
     }
   }
 
-  if (!offsetNode || offsetNode.nodeType !== Node.TEXT_NODE || offset == null)
+  if (!offsetNode || offsetNode.nodeType !== Node.TEXT_NODE || offset == null) {
     return false;
-  if (!offsetNode.textContent?.trim()) return false;
+  }
+  if (!offsetNode.textContent?.trim()) {
+    return false;
+  }
 
   const textNode = offsetNode as Text;
   const len = textNode.data.length;
@@ -68,7 +73,9 @@ function isPointOnText(e: PointerEvent | TouchEvent, doc: Document): boolean {
   }
 
   const rects = Array.from(range.getClientRects());
-  if (rects.length === 0) return false;
+  if (rects.length === 0) {
+    return false;
+  }
 
   return rects.some((r) => pointInRect(pt, r, 1));
 }
@@ -128,7 +135,9 @@ export class FloatingModal extends Modal {
       e.preventDefault();
       e.stopPropagation();
 
-      if ((e as TouchEvent).touches.length !== 1) return;
+      if ((e as TouchEvent).touches.length !== 1) {
+        return;
+      }
 
       const touch = (e as TouchEvent).touches[0];
       this.dragging = true;
@@ -168,12 +177,16 @@ export class FloatingModal extends Modal {
   }
 
   private handlePointerMove(e: PointerEvent | TouchEvent): void {
-    if (!this.dragging) return;
+    if (!this.dragging) {
+      return;
+    }
     const { modalEl } = this;
 
     // Prevent default behavior
     e.preventDefault();
-    if (e.type === "touchmove") e.stopPropagation();
+    if (e.type === "touchmove") {
+      e.stopPropagation();
+    }
 
     const { clientX, clientY } =
       e.type === "touchmove"
@@ -270,7 +283,9 @@ export class FloatingModal extends Modal {
           // In order to propagate keypresses, modal container and backdrop
           // need to ignore (and thus propagate) any pointerEvents.
           containerEl.style.pointerEvents = "none";
-          if (bgEl) bgEl.style.pointerEvents = "none";
+          if (bgEl) {
+            bgEl.style.pointerEvents = "none";
+          }
 
           // Refocus previous element (if still in DOM)
           if (this.previousActive?.isConnected) {

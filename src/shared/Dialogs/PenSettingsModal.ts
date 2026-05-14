@@ -154,9 +154,7 @@ export class PenSettingsModal extends Modal {
         }),
       );
 
-    let scopeSetting: Setting;
-
-    scopeSetting = new Setting(ce)
+    const scopeSetting = new Setting(ce)
       .setName(
         fragWithHTML(
           ps.freedrawOnly
@@ -183,15 +181,13 @@ export class PenSettingsModal extends Modal {
         }),
       );
 
-    let scSetting: Setting;
     let sccpComponent: ColorComponent;
     let sctComponent: TextComponent;
     let strokeUseCurrentToggle: ToggleComponent;
-    let strokeSetting: Setting;
     let [sHex, sOpacity] = hexColor(ps.strokeColor);
     let sChangeBounce: boolean = false;
 
-    strokeSetting = new Setting(ce)
+    const strokeSetting = new Setting(ce)
       .setName(
         fragWithHTML(
           !Boolean(ps.strokeColor)
@@ -229,7 +225,7 @@ export class PenSettingsModal extends Modal {
         });
       });
 
-    scSetting = new Setting(ce)
+    const scSetting = new Setting(ce)
       .setName("Select stroke color")
       .addButton((button) =>
         button.setButtonText("Use Canvas Current").onClick(() => {
@@ -252,7 +248,9 @@ export class PenSettingsModal extends Modal {
           this.dirty = true;
           ps.strokeColor = value;
           [sHex, sOpacity] = hexColor(value);
-          if (sHex) sccpComponent.setValue(sHex);
+          if (sHex) {
+            sccpComponent.setValue(sHex);
+          }
         });
       })
       .addColorPicker((colorpicker) => {
@@ -291,17 +289,13 @@ export class PenSettingsModal extends Modal {
 
     scSetting.settingEl.style.display = !Boolean(ps.strokeColor) ? "none" : "";
 
-    let bgSetting: Setting;
-    let bgcSetting: Setting;
-    let bgctSetting: Setting;
     let bgcpComponent: ColorComponent;
     let bgctComponent: TextComponent;
     let bgtComponent: ToggleComponent;
     let bgUseCurrentToggle: ToggleComponent;
-    let fsSetting: Setting;
     let [bgHex, bgOpacity] = hexColor(ps.backgroundColor);
 
-    bgSetting = new Setting(ce)
+    const bgSetting = new Setting(ce)
       .setName(
         fragWithHTML(
           !Boolean(ps.backgroundColor)
@@ -341,7 +335,7 @@ export class PenSettingsModal extends Modal {
         });
       });
 
-    bgctSetting = new Setting(ce)
+    const bgctSetting = new Setting(ce)
       .setName(
         fragWithHTML(
           ps.backgroundColor === "transparent"
@@ -375,7 +369,7 @@ export class PenSettingsModal extends Modal {
       ? "none"
       : "";
     let bgChangeBounce: boolean = false;
-    bgcSetting = new Setting(ce)
+    const bgcSetting = new Setting(ce)
       .setName("Background color")
       .addButton((button) =>
         button.setButtonText("Use Canvas Current").onClick(() => {
@@ -398,7 +392,9 @@ export class PenSettingsModal extends Modal {
           this.dirty = true;
           ps.backgroundColor = value;
           [bgHex, bgOpacity] = hexColor(value);
-          if (bgHex) bgcpComponent.setValue(bgHex);
+          if (bgHex) {
+            bgcpComponent.setValue(bgHex);
+          }
         });
       })
       .addColorPicker((colorpicker) => {
@@ -441,29 +437,30 @@ export class PenSettingsModal extends Modal {
         ? "none"
         : "";
 
-    fsSetting = new Setting(ce).setName("Fill Style").addDropdown((dropdown) =>
-      dropdown
-        .addOption("", "Unset")
-        .addOption("dots", "Dots (⚠ VERY SLOW performance on large objects!)")
-        .addOption("zigzag", "Zigzag")
-        .addOption("zigzag-line", "Zigzag-line")
-        .addOption("dashed", "Dashed")
-        .addOption("hachure", "Hachure")
-        .addOption("cross-hatch", "Cross-hatch")
-        .addOption("solid", "Solid")
-        .setValue(ps.fillStyle)
-        .onChange((value: ExtendedFillStyle) => {
-          this.dirty = true;
-          ps.fillStyle = value;
-        }),
-    );
+    const fsSetting = new Setting(ce)
+      .setName("Fill Style")
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("", "Unset")
+          .addOption("dots", "Dots (⚠ VERY SLOW performance on large objects!)")
+          .addOption("zigzag", "Zigzag")
+          .addOption("zigzag-line", "Zigzag-line")
+          .addOption("dashed", "Dashed")
+          .addOption("hachure", "Hachure")
+          .addOption("cross-hatch", "Cross-hatch")
+          .addOption("solid", "Solid")
+          .setValue(ps.fillStyle)
+          .onChange((value: ExtendedFillStyle) => {
+            this.dirty = true;
+            ps.fillStyle = value;
+          }),
+      );
     fsSetting.settingEl.style.display =
       !Boolean(ps.backgroundColor) || ps.backgroundColor === "transparent"
         ? "none"
         : "";
 
-    let rSetting: Setting;
-    rSetting = new Setting(ce)
+    const rSetting = new Setting(ce)
       .setName(
         fragWithHTML(
           `Sloppiness: <b>${ps.roughness === null ? "Not Set" : ps.roughness <= 0.5 ? "Architect (" : ps.roughness <= 1.5 ? "Artist (" : "Cartoonist ("}${ps.roughness === null ? "" : `${ps.roughness})`}</b>`,
@@ -485,9 +482,7 @@ export class PenSettingsModal extends Modal {
           }),
       );
 
-    let swSetting: Setting;
-
-    swSetting = new Setting(ce)
+    const swSetting = new Setting(ce)
       .setName(
         fragWithHTML(
           `Stroke Width <b>${ps.strokeWidth === 0 ? "Not Set" : ps.strokeWidth}</b>`,
@@ -514,8 +509,6 @@ export class PenSettingsModal extends Modal {
         ps.penOptions.highlighter = value;
       }),
     );
-
-    let spSetting: Setting;
 
     new Setting(ce)
       .setName("Pressure sensitive pen?")
@@ -544,9 +537,7 @@ export class PenSettingsModal extends Modal {
       this.dirty = true;
     }
 
-    let owSetting: Setting;
-
-    owSetting = new Setting(ce)
+    const owSetting = new Setting(ce)
       .setName(
         fragWithHTML(
           ps.penOptions.outlineWidth === 0
@@ -582,8 +573,7 @@ export class PenSettingsModal extends Modal {
       `Read the Perfect Freehand documentation following <a href="https://github.com/steveruizok/perfect-freehand#documentation" target="_blank">this link</a>.`,
     );
 
-    let tSetting: Setting;
-    tSetting = new Setting(ce)
+    const tSetting = new Setting(ce)
       .setName(
         fragWithHTML(`Thinnning <b>${ps.penOptions.options.thinning}</b>`),
       )
@@ -603,8 +593,7 @@ export class PenSettingsModal extends Modal {
           }),
       );
 
-    let sSetting: Setting;
-    sSetting = new Setting(ce)
+    const sSetting = new Setting(ce)
       .setName(
         fragWithHTML(`Smoothing <b>${ps.penOptions.options.smoothing}</b>`),
       )
@@ -620,8 +609,7 @@ export class PenSettingsModal extends Modal {
           }),
       );
 
-    let slSetting: Setting;
-    slSetting = new Setting(ce)
+    const slSetting = new Setting(ce)
       .setName(
         fragWithHTML(`Streamline <b>${ps.penOptions.options.streamline}</b>`),
       )
@@ -654,7 +642,7 @@ export class PenSettingsModal extends Modal {
           }),
       );
 
-    spSetting = new Setting(ce)
+    const spSetting = new Setting(ce)
       .setName("Simulate Pressure")
       .setDesc("Whether to simulate pressure based on velocity.")
       .addDropdown((dropdown) =>
@@ -700,8 +688,7 @@ export class PenSettingsModal extends Modal {
         }),
       );
 
-    let stSetting: Setting;
-    stSetting = new Setting(ce)
+    const stSetting = new Setting(ce)
       .setName(
         fragWithHTML(
           `Taper: <b>${ps.penOptions.options.start.taper === true ? "true" : ps.penOptions.options.start.taper}</b>`,
@@ -759,8 +746,7 @@ export class PenSettingsModal extends Modal {
         }),
       );
 
-    let etSetting: Setting;
-    etSetting = new Setting(ce)
+    const etSetting = new Setting(ce)
       .setName(
         fragWithHTML(
           `Taper: <b>${ps.penOptions.options.end.taper === true ? "true" : ps.penOptions.options.end.taper}</b>`,

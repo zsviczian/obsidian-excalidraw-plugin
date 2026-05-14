@@ -55,7 +55,9 @@ export const patchMobileView = (
   view: ExcalidrawView,
   opts?: { keepAlive?: boolean; isActive?: () => boolean },
 ): (() => void) | void => {
-  if (!DEVICE.isPhone) return;
+  if (!DEVICE.isPhone) {
+    return;
+  }
   console.log("patching mobile view");
   const parent = getParentOfClass(view.containerEl, "mod-top");
   if (parent) {
@@ -113,9 +115,13 @@ export const processLinkText = (
 export function setFileToLocalGraph(app: App, file: TFile) {
   let lgv: any;
   app.workspace.iterateAllLeaves((l) => {
-    if (l.view?.getViewType() === "localgraph") lgv = l.view;
+    if (l.view?.getViewType() === "localgraph") {
+      lgv = l.view;
+    }
   });
-  if (!lgv) return;
+  if (!lgv) {
+    return;
+  }
   try {
     if (lgv.loadFile && lgv.file !== file) {
       lgv.loadFile(file);
@@ -139,7 +145,9 @@ export function predictViewType(app: App, file: TFile): string {
     if (vr?.[m]) {
       try {
         const vt = vr[m](file);
-        if (typeof vt === "string" && vt) return vt;
+        if (typeof vt === "string" && vt) {
+          return vt;
+        }
       } catch {}
     }
   }
@@ -149,17 +157,29 @@ export function predictViewType(app: App, file: TFile): string {
     if (vr?.[m]) {
       try {
         const vt = vr[m](ext);
-        if (typeof vt === "string" && vt) return vt;
+        if (typeof vt === "string" && vt) {
+          return vt;
+        }
       } catch {}
     }
   }
 
   // 3) Fallbacks by extension
-  if (ext === "md") return "markdown";
-  if (ext === "pdf") return "pdf";
-  if (ext === "canvas") return "canvas";
-  if (AUDIO_TYPES.contains(ext)) return "audio";
-  if (VIDEO_TYPES.contains(ext)) return "video";
+  if (ext === "md") {
+    return "markdown";
+  }
+  if (ext === "pdf") {
+    return "pdf";
+  }
+  if (ext === "canvas") {
+    return "canvas";
+  }
+  if (AUDIO_TYPES.contains(ext)) {
+    return "audio";
+  }
+  if (VIDEO_TYPES.contains(ext)) {
+    return "video";
+  }
 
   return "empty";
 }

@@ -179,7 +179,9 @@ export function isVersionNewerThanOther(
   version: string,
   otherVersion: string,
 ): boolean {
-  if (!version || !otherVersion) return true;
+  if (!version || !otherVersion) {
+    return true;
+  }
 
   const v = version.match(/(\d*)\.(\d*)\.(\d*)/);
   const o = otherVersion.match(/(\d*)\.(\d*)\.(\d*)/);
@@ -223,7 +225,9 @@ export function updateFrontmatterInString(
   data: string,
   keyValuePairs?: [string, string][],
 ): string {
-  if (!data || !keyValuePairs) return data;
+  if (!data || !keyValuePairs) {
+    return data;
+  }
   for (const kvp of keyValuePairs) {
     const r = new RegExp(`${kvp[0]}:\\s.*\\n`, "g");
     data = data.match(r)

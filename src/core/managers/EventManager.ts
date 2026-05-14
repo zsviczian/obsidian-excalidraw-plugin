@@ -189,9 +189,13 @@ export class EventManager {
     editor: Editor,
     info: MarkdownView | MarkdownFileInfo,
   ) {
-    if (evt.defaultPrevented) return;
+    if (evt.defaultPrevented) {
+      return;
+    }
     const data = evt.clipboardData.getData("text/plain");
-    if (!data) return;
+    if (!data) {
+      return;
+    }
     if (data.startsWith(`{"type":"excalidraw/clipboard"`)) {
       evt.preventDefault();
       try {
@@ -410,16 +414,23 @@ export class EventManager {
     source: string,
     leaf: WorkspaceLeaf,
   ) {
-    if (!leaf) return;
+    if (!leaf) {
+      return;
+    }
     const view = leaf.view;
-    if (!view || !(view instanceof MarkdownView)) return;
-    if (!(file instanceof TFile)) return;
+    if (!view || !(view instanceof MarkdownView)) {
+      return;
+    }
+    if (!(file instanceof TFile)) {
+      return;
+    }
     const cache = this.app.metadataCache.getFileCache(file);
     if (
       !cache?.frontmatter ||
-      !cache.frontmatter[FRONTMATTER_KEYS["plugin"].name]
-    )
+      !cache.frontmatter[FRONTMATTER_KEYS.plugin.name]
+    ) {
       return;
+    }
 
     menu.addItem((item) => {
       item
@@ -437,16 +448,21 @@ export class EventManager {
   }
 
   private onEditorMenuHandler(menu: Menu, editor: Editor, view: MarkdownView) {
-    if (!view || !(view instanceof MarkdownView)) return;
+    if (!view || !(view instanceof MarkdownView)) {
+      return;
+    }
     const file = view.file;
     const leaf = view.leaf;
-    if (!view.file) return;
+    if (!view.file) {
+      return;
+    }
     const cache = this.app.metadataCache.getFileCache(file);
     if (
       !cache?.frontmatter ||
-      !cache.frontmatter[FRONTMATTER_KEYS["plugin"].name]
-    )
+      !cache.frontmatter[FRONTMATTER_KEYS.plugin.name]
+    ) {
       return;
+    }
 
     menu.addItem((item) =>
       item

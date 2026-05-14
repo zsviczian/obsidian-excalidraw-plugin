@@ -24,7 +24,9 @@ export class PDFExportSettingsComponent {
     private settings: PDFExportSettings,
     private update?: () => void,
   ) {
-    if (!update) this.update = () => {};
+    if (!update) {
+      this.update = () => {};
+    }
   }
 
   isOrientationAndTilingVisible() {
@@ -45,8 +47,6 @@ export class PDFExportSettingsComponent {
       {},
     );
 
-    let div: HTMLDivElement;
-
     new Setting(this.contentEl)
       .setName(t("EXPORTDIALOG_PAGE_SIZE"))
       .addDropdown((dropdown) =>
@@ -62,7 +62,7 @@ export class PDFExportSettingsComponent {
           }),
       );
 
-    div = this.contentEl.createDiv();
+    const div = this.contentEl.createDiv();
     div.style.display = this.isOrientationAndTilingVisible() ? "block" : "none";
 
     new Setting(div)

@@ -273,7 +273,9 @@ export class ObsidianMenu {
       const icon = scriptProp?.svgString
         ? stringToSVG(scriptProp.svgString)
         : ICONS.cog;
-      if (!this.longpressTimeout[index]) this.longpressTimeout[index] = 0;
+      if (!this.longpressTimeout[index]) {
+        this.longpressTimeout[index] = 0;
+      }
       return (
         <label
           key={index}

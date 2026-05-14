@@ -99,7 +99,9 @@ export class ErrorHandler {
       return fn();
     } catch (error) {
       this.handleError(error, context);
-      if (fallback !== undefined) return fallback;
+      if (fallback !== undefined) {
+        return fallback;
+      }
       throw error; // Re-throw if no fallback provided
     }
   }

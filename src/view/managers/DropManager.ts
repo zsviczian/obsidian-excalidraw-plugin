@@ -710,12 +710,17 @@ export class DropManager {
             ? "\nTry SHIFT, OPT, CTRL combinations for other drop actions"
             : "\nTry SHIFT, CTRL, ALT, Meta combinations for other drop actions";
       }
-      if (this.draginfoDiv.innerText !== msg) this.draginfoDiv.innerText = msg;
+      if (this.draginfoDiv.innerText !== msg) {
+        this.draginfoDiv.innerText = msg;
+      }
       const top = `${e.clientY - parseFloat(getComputedStyle(this.draginfoDiv).fontSize) * 8}px`;
       const left = `${e.clientX - this.draginfoDiv.clientWidth / 2}px`;
-      if (this.draginfoDiv.style.top !== top) this.draginfoDiv.style.top = top;
-      if (this.draginfoDiv.style.left !== left)
+      if (this.draginfoDiv.style.top !== top) {
+        this.draginfoDiv.style.top = top;
+      }
+      if (this.draginfoDiv.style.left !== left) {
         this.draginfoDiv.style.left = left;
+      }
       e.dataTransfer.dropEffect = action;
       e.preventDefault();
       return false;

@@ -33,20 +33,30 @@ export const getYouTubeStartAt = (url: string): string => {
     const hours = Math.floor(time / 3600);
     const minutes = Math.floor((time - hours * 3600) / 60);
     const seconds = time - hours * 3600 - minutes * 60;
-    if (hours === 0 && minutes === 0 && seconds === 0) return "";
-    if (hours === 0 && minutes === 0)
+    if (hours === 0 && minutes === 0 && seconds === 0) {
+      return "";
+    }
+    if (hours === 0 && minutes === 0) {
       return `${String(seconds).padStart(2, "0")}`;
-    if (hours === 0)
+    }
+    if (hours === 0) {
       return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+    }
     return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   }
   return "";
 };
 
 export const isValidYouTubeStart = (value: string): boolean => {
-  if (/^[0-9]+$/.test(value)) return true; // Matches only numbers (seconds)
-  if (/^[0-9]+:[0-9]+$/.test(value)) return true; // Matches only numbers (minutes and seconds)
-  if (/^[0-9]+:[0-9]+:[0-9]+$/.test(value)) return true; // Matches only numbers (hours, minutes, and seconds
+  if (/^[0-9]+$/.test(value)) {
+    return true;
+  } // Matches only numbers (seconds)
+  if (/^[0-9]+:[0-9]+$/.test(value)) {
+    return true;
+  } // Matches only numbers (minutes and seconds)
+  if (/^[0-9]+:[0-9]+:[0-9]+$/.test(value)) {
+    return true;
+  } // Matches only numbers (hours, minutes, and seconds
 };
 
 export const updateYouTubeStartTime = (

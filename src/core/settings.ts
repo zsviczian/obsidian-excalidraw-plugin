@@ -1833,8 +1833,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h1",
     });
 
-    let aiEl: HTMLElement;
-
     new Setting(detailsEl)
       .setName(t("AI_ENABLED_NAME"))
       .setDesc(fragWithHTML(t("AI_ENABLED_DESC")))
@@ -1861,7 +1859,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
 
     detailsEl = detailsEl.createDiv();
-    aiEl = detailsEl;
+    const aiEl = detailsEl;
     if (!(this.plugin.settings.aiEnabled ?? true)) {
       detailsEl.style.display = "none";
     }
@@ -1948,16 +1946,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           left.localeCompare(right),
         ),
       );
-      if (kind === "text")
+      if (kind === "text") {
         this.plugin.settings.aiTextModelConfigs = sorted as Record<
           string,
           AIModelConfig
         >;
-      if (kind === "image")
+      }
+      if (kind === "image") {
         this.plugin.settings.aiImageModelConfigs = sorted as Record<
           string,
           AIImageModelConfig
         >;
+      }
     };
 
     const getValidSelection = (kind: "text" | "image") => {
@@ -1965,7 +1965,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       const optionValues = Object.keys(configs);
       const selectedValue =
         kind === "text" ? selectedTextModelConfig : selectedImageModelConfig;
-      if (selectedValue && configs[selectedValue]) return selectedValue;
+      if (selectedValue && configs[selectedValue]) {
+        return selectedValue;
+      }
       return optionValues[0] ?? "";
     };
 
@@ -2304,16 +2306,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             .setIcon("rotate-ccw")
             .setTooltip(t("AI_MODEL_RESTORE_DEFAULTS"))
             .onClick(async () => {
-              if (kind === "text")
+              if (kind === "text") {
                 setModelConfigs(
                   kind,
                   cloneModelConfigs(KNOWN_AI_TEXT_MODEL_CONFIGS),
                 );
-              if (kind === "image")
+              }
+              if (kind === "image") {
                 setModelConfigs(
                   kind,
                   cloneModelConfigs(KNOWN_AI_IMAGE_MODEL_CONFIGS),
                 );
+              }
               const nextSelection = Object.keys(getModelConfigs(kind))[0] ?? "";
               if (kind === "text") {
                 selectedTextModelConfig = nextSelection;
@@ -2856,7 +2860,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
 
     // Dynamic color toggle
-    let gridColorSection: HTMLDivElement;
     new Setting(detailsEl)
       .setName(t("GRID_DYNAMIC_COLOR_NAME"))
       .setDesc(fragWithHTML(t("GRID_DYNAMIC_COLOR_DESC")))
@@ -2872,7 +2875,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
 
     // Create a div to contain color and opacity settings
-    gridColorSection = detailsEl.createDiv();
+    const gridColorSection = detailsEl.createDiv();
     gridColorSection.style.display = this.plugin.settings.gridSettings
       .DYNAMIC_COLOR
       ? "none"
@@ -3336,7 +3339,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     addYouTubeThumbnail(detailsEl, "opLd1SqaH_I", 8);
 
     let dropdown: DropdownComponent;
-    let embedComment: Setting;
     new Setting(detailsEl)
       .setName(t("EMBED_TYPE_NAME"))
       .setDesc(fragWithHTML(t("EMBED_TYPE_DESC")))
@@ -3366,7 +3368,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           });
       });
 
-    embedComment = new Setting(detailsEl)
+    const embedComment = new Setting(detailsEl)
       .setName(t("EMBED_MARKDOWN_COMMENT_NAME"))
       .setDesc(fragWithHTML(t("EMBED_MARKDOWN_COMMENT_DESC")))
       .addToggle((toggle) =>

@@ -68,7 +68,9 @@ function getTheme(view: ExcalidrawView, theme: string): string {
 }
 
 function setPDFViewTheme(view: ExcalidrawView, pdfView: any) {
-  if (!pdfView) return;
+  if (!pdfView) {
+    return;
+  }
   if (view.excalidrawData.embeddableTheme === "auto") {
     pdfView.viewer?.child?.pdfViewer?.setBackground?.(null, false);
     const pdfContainerEl = pdfView.containerEl?.querySelector(".pdf-container");
@@ -113,7 +115,9 @@ function setupPdfViewEnhancements(
   pdfObserverDisabledRef: React.MutableRefObject<boolean>,
 ) {
   const pdfView = leafRef.current?.node?.child;
-  if (!pdfView) return;
+  if (!pdfView) {
+    return;
+  }
 
   const patchPDF = () => {
     // Disable observer while applying the theme to avoid loops
@@ -159,10 +163,14 @@ function setupPdfViewEnhancements(
       const container = target?.closest(
         ".excalidraw__embeddable-container",
       ) as HTMLElement | null;
-      if (!container) return { sx: 1, sy: 1 };
+      if (!container) {
+        return { sx: 1, sy: 1 };
+      }
       const t = getComputedStyle(container).transform;
       // t can be "none", "matrix(a,b,c,d,tx,ty)" or "matrix3d(...)"
-      if (!t || t === "none") return { sx: 1, sy: 1 };
+      if (!t || t === "none") {
+        return { sx: 1, sy: 1 };
+      }
       if (t.startsWith("matrix3d(")) {
         // matrix3d: m11=a1, m12=b1, m21=a2, m22=b2 in the first 6 entries
         const m = t.slice(9, -1).split(",").map(Number);
@@ -189,8 +197,9 @@ function setupPdfViewEnhancements(
         (DEVICE.isDesktop && e.button !== 1) ||
         (DEVICE.isMobile && e.button !== 0) ||
         !scroller
-      )
+      ) {
         return;
+      }
       // Start custom pan, cancel browser autoscroll and prevent Excalidraw from handling it.
       e.preventDefault();
       e.stopPropagation();
@@ -220,15 +229,18 @@ function setupPdfViewEnhancements(
     };
 
     const onPointerMove = (e: PointerEvent) => {
-      if (!active || !scroller) return;
+      if (!active || !scroller) {
+        return;
+      }
       // Continue only while the pointer button is held:
       // - Desktop: middle mouse button (bit 3 = 4)
       // - Mobile: primary/left button (bit 0 = 1)
       if (
         (DEVICE.isDesktop && (e.buttons & 4) === 0) ||
         (DEVICE.isMobile && (e.buttons & 1) === 0)
-      )
+      ) {
         return;
+      }
 
       const dx = e.clientX - lastX;
       const dy = e.clientY - lastY;
@@ -291,7 +303,9 @@ function setupPdfViewEnhancements(
       if (pdfContainerEl) {
         pdfObserverRef.current?.disconnect();
         pdfObserverRef.current = new MutationObserver(() => {
-          if (pdfObserverDisabledRef.current) return;
+          if (pdfObserverDisabledRef.current) {
+            return;
+          }
           pdfObserverDisabledRef.current = true;
           try {
             setPDFViewTheme(view, pdfView);
@@ -379,7 +393,9 @@ function setupPdfViewEnhancements(
         if (el) {
           patchPDF();
           obs.disconnect();
-          if (timeoutId) window.clearTimeout(timeoutId);
+          if (timeoutId) {
+            window.clearTimeout(timeoutId);
+          }
         }
       });
       mo.observe(root as HTMLElement, { childList: true, subtree: true });
@@ -613,7 +629,7 @@ function RenderObsidianView({
     ) {
       createNode("markdown");
     } else {
-      let viewType = predictViewType(view.app, file);
+      const viewType = predictViewType(view.app, file);
       // markdown could still be a kanban board or other custom view on top of markdown, those need to be displayed in leaves
       if (
         viewType !== "markdown" &&
@@ -661,8 +677,9 @@ function RenderObsidianView({
           } else {
             const workspaceLeaf: HTMLDivElement =
               rootSplit.containerEl.querySelector("div.workspace-leaf");
-            if (workspaceLeaf)
+            if (workspaceLeaf) {
               workspaceLeaf.style.borderRadius = "var(--embeddable-radius)";
+            }
             rootSplit.containerEl.addClass("mod-visible");
             containerRef.current.appendChild(rootSplit.containerEl);
             setColors(
@@ -741,8 +758,12 @@ function RenderObsidianView({
     viewType: string,
   ) {
     setEmbeddableSizeVars(canvasNode, element, sceneZoom);
-    if (!mdProps) return;
-    if (!leafRef.current?.hasOwnProperty("node")) return;
+    if (!mdProps) {
+      return;
+    }
+    if (!leafRef.current?.hasOwnProperty("node")) {
+      return;
+    }
 
     const canvasNodeContainer = containerRef.current
       ?.firstElementChild as HTMLElement;
@@ -906,7 +927,9 @@ function RenderObsidianView({
       return;
     }
     const canvasNode = containerRef.current;
-    if (!canvasNode.hasClass("canvas-node")) return;
+    if (!canvasNode.hasClass("canvas-node")) {
+      return;
+    }
     setColors(canvasNode, element, mdProps, canvasColor, viewTypeRef.current);
   }, [
     mdProps?.useObsidianDefaults,
@@ -999,7 +1022,7 @@ function RenderObsidianView({
           return;
         }
         patchMobileView(view);
-        leafRef.current.leaf.view.setMode(modes["source"]);
+        leafRef.current.leaf.view.setMode(modes.source);
         isEditingRef.current = true;
       }
     },
@@ -1025,7 +1048,9 @@ function RenderObsidianView({
     handleClick();
   }, [isActiveRef.current, isEditingRef.current, handleClick, view]);
 
-  if (leafRef.current) leafRef.current.editNode = startEditing;
+  if (leafRef.current) {
+    leafRef.current.editNode = startEditing;
+  }
   // Event listener for key press
   React.useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
@@ -1138,7 +1163,7 @@ function RenderObsidianView({
         }
 
         if (!isActiveRef.current) {
-          leafRef.current.leaf.view.setMode(modes["preview"]);
+          leafRef.current.leaf.view.setMode(modes.preview);
           isEditingRef.current = false;
           return;
         }

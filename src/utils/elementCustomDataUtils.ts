@@ -5,8 +5,12 @@ export function addAppendUpdateCustomData(
   el: Mutable<ExcalidrawElement>,
   newData: Partial<Record<string, unknown>>,
 ): ExcalidrawElement {
-  if (!newData) return el;
-  if (!el.customData) el.customData = {};
+  if (!newData) {
+    return el;
+  }
+  if (!el.customData) {
+    el.customData = {};
+  }
   for (const key in newData) {
     if (typeof newData[key] === "undefined") {
       delete el.customData[key];

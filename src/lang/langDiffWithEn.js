@@ -83,7 +83,9 @@ function readLocaleFiles(lang = "zh-cn") {
         inExport = true;
         continue;
       }
-      if (!inExport) continue;
+      if (!inExport) {
+        continue;
+      }
       // 匹配 key: "value", 格式的行
       const m = line.match(/^\s*([A-Z0-9_]+)\s*:\s*.*?,?$/);
       if (m) {

@@ -16,7 +16,9 @@ import ExcalidrawPlugin from "src/core/main";
 export const getLinkSuggestionsFiltered = (app: App): LinkSuggestion[] => {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   const suggestions = app.metadataCache.getLinkSuggestions?.();
-  if (!suggestions) return [];
+  if (!suggestions) {
+    return [];
+  }
   const filtered = suggestions.filter(
     (x: LinkSuggestion) => !x.path.match(REG_LINKINDEX_INVALIDCHARS),
   );
@@ -96,11 +98,15 @@ export const getSortedLinkMatches = (
   return matches.sort((a, b) => {
     const aScore = a?.match?.score ?? 0;
     const bScore = b?.match?.score ?? 0;
-    if (aScore !== bScore) return bScore - aScore;
+    if (aScore !== bScore) {
+      return bScore - aScore;
+    }
 
     const aRecent = isRecent(a.item);
     const bRecent = isRecent(b.item);
-    if (aRecent !== bRecent) return aRecent ? -1 : 1; // recent first
+    if (aRecent !== bRecent) {
+      return aRecent ? -1 : 1;
+    } // recent first
 
     if (
       aRecent &&
@@ -167,7 +173,9 @@ export const fuzzyMatchParagraphsWithId = <
     .map((item) => {
       const display = `${item.id ? `^${item.id} ` : ""}${item.text}`;
       const match = search(display);
-      if (!match) return null;
+      if (!match) {
+        return null;
+      }
       if (item.id && needle) {
         const idLower = item.id.toLowerCase();
         if (idLower === needle) {

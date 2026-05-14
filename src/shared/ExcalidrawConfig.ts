@@ -10,7 +10,9 @@ export class ExcalidrawConfig {
   }
 
   updateValues(plugin: ExcalidrawPlugin) {
-    if (DEVICE.isIOS) return;
+    if (DEVICE.isIOS) {
+      return;
+    }
     this.areaLimit = 16777216 * plugin.settings.areaZoomLimit; //this.plugin.settings.areaLimit;
     this.widthHeightLimit = 32767 * plugin.settings.areaZoomLimit; //his.plugin.settings.widthHeightLimit;
   }

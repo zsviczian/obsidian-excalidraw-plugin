@@ -139,14 +139,22 @@ export async function insertEmbeddableToView(
 }
 
 export function getLinkTextFromLink(text: string): string {
-  if (!text) return;
-  if (text.match(REG_LINKINDEX_HYPERLINK)) return;
+  if (!text) {
+    return;
+  }
+  if (text.match(REG_LINKINDEX_HYPERLINK)) {
+    return;
+  }
 
   const parts = REGEX_LINK.getRes(text).next();
-  if (!parts.value) return;
+  if (!parts.value) {
+    return;
+  }
 
   const linktext = REGEX_LINK.getLink(parts); //parts.value[2] ? parts.value[2]:parts.value[6];
-  if (linktext.match(REG_LINKINDEX_HYPERLINK)) return;
+  if (linktext.match(REG_LINKINDEX_HYPERLINK)) {
+    return;
+  }
 
   return linktext;
 }
@@ -179,9 +187,15 @@ function getLinkFromMarkdownLink(link: string): string {
 
 function isInternalLink(link: string): boolean {
   link = getLinkFromMarkdownLink(link);
-  if (link.startsWith("cmd://")) return true;
-  if (link.startsWith("obsidian://")) return true;
-  if (link.match(REG_LINKINDEX_HYPERLINK)) return false;
+  if (link.startsWith("cmd://")) {
+    return true;
+  }
+  if (link.startsWith("obsidian://")) {
+    return true;
+  }
+  if (link.match(REG_LINKINDEX_HYPERLINK)) {
+    return false;
+  }
   return true;
 }
 
@@ -192,8 +206,12 @@ export function sceneRemoveInternalLinks(scene: {
     JSON.stringify(scene.elements),
   );
   elements.forEach((el) => {
-    if (!el.link) return;
-    if (isInternalLink(el.link)) (el as Mutable<ExcalidrawElement>).link = null;
+    if (!el.link) {
+      return;
+    }
+    if (isInternalLink(el.link)) {
+      (el as Mutable<ExcalidrawElement>).link = null;
+    }
   });
   return elements;
 }
@@ -230,7 +248,9 @@ export function parseObsidianLink(
   returnWikiLink: boolean = true,
   openLink: boolean = true,
 ): boolean | string {
-  if (!link) return false;
+  if (!link) {
+    return false;
+  }
   link = getLinkFromMarkdownLink(link);
   if (!link?.startsWith("obsidian://")) {
     return false;
@@ -277,7 +297,9 @@ export function getExcalidrawFileForwardLinks(
         excalidrawFile.path,
       );
       if (f && f.path !== excalidrawFile.path) {
-        if (secondOrderLinksSet.has(f.path)) return;
+        if (secondOrderLinksSet.has(f.path)) {
+          return;
+        }
         secondOrderLinksSet.add(f.path);
         linkset.add(
           `[[${f.path}${linkparts.ref ? "#" + linkparts.ref : ""}|Second Order Link: ${f.basename}]]`,
@@ -378,7 +400,9 @@ export async function addBackOfTheNoteCard(
         appState: { activeEmbeddable: { element: el, state: "active" } },
         captureUpdate: CaptureUpdateAction.NEVER,
       });
-      if (found) view.getEmbeddableLeafElementById(el.id)?.editNode?.();
+      if (found) {
+        view.getEmbeddableLeafElementById(el.id)?.editNode?.();
+      }
     }, 200);
   }
   ea.destroy();
@@ -423,7 +447,9 @@ export function renderContextMenuAction(
 
 export function tmpBruteForceCleanup(view: ExcalidrawView) {
   window.setTimeout(() => {
-    if (!view) return;
+    if (!view) {
+      return;
+    }
     const mutableView = view as unknown as Record<string, unknown>;
     Object.keys(mutableView).forEach((key) => {
       delete mutableView[key];

@@ -61,7 +61,6 @@ const attachOutsideHandlers = (
   resolve: (color: string | null) => void,
 ) => {
   const stopPropagation = (evt: Event) => evt.stopPropagation();
-  let cleanup: (color: string | null) => void;
 
   const onKeyDown = (evt: KeyboardEvent) => {
     if (evt.key === "Escape") {
@@ -72,7 +71,7 @@ const attachOutsideHandlers = (
 
   const onOverlayClick = () => cleanup(null);
 
-  cleanup = (color: string | null) => {
+  const cleanup = (color: string | null) => {
     document.removeEventListener("keydown", onKeyDown, true);
     overlay.removeEventListener("click", onOverlayClick);
     popup.removeEventListener("click", stopPropagation);

@@ -324,7 +324,7 @@ export const blobToBase64 = async (blob: Blob): Promise<string> => {
   const arrayBuffer = await blob.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
   let binary = "";
-  let len = bytes.byteLength;
+  const len = bytes.byteLength;
   for (let i = 0; i < len; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
@@ -343,7 +343,9 @@ export const arrayBufferToBase64 = (arrayBuffer: ArrayBuffer): string => {
 };
 
 export const getPDFDoc = async (f: TFile): Promise<any> => {
-  if (typeof window.pdfjsLib === "undefined") await loadPdfJs();
+  if (typeof window.pdfjsLib === "undefined") {
+    await loadPdfJs();
+  }
 
   const pdfjs = window.pdfjsLib;
   const url = EXCALIDRAW_PLUGIN.app.vault.getResourcePath(f);
@@ -363,7 +365,9 @@ export const getPDFDoc = async (f: TFile): Promise<any> => {
 };
 
 export const readLocalFile = async (filePath: string): Promise<string> => {
-  if (!DEVICE.isDesktop) return null;
+  if (!DEVICE.isDesktop) {
+    return null;
+  }
   return new Promise((resolve, reject) => {
     const adapter = app.vault.adapter as NodeFsDataAdapter;
     adapter.fs.readFile(filePath, "utf8", (err, data) => {
@@ -379,7 +383,9 @@ export const readLocalFile = async (filePath: string): Promise<string> => {
 export const readLocalFileBinary = async (
   filePath: string,
 ): Promise<ArrayBuffer> => {
-  if (!DEVICE.isDesktop) return null;
+  if (!DEVICE.isDesktop) {
+    return null;
+  }
   return new Promise((resolve, reject) => {
     const path = decodeURI(filePath);
     const adapter = app.vault.adapter as NodeFsDataAdapter;
@@ -398,13 +404,17 @@ export const readLocalFileBinary = async (
 };
 
 export const getPathWithoutExtension = (f: TFile): string => {
-  if (!f) return null;
+  if (!f) {
+    return null;
+  }
   return f.path.substring(0, f.path.lastIndexOf("."));
 };
 
 let _VAULT_BASE_URL: string = null;
 const VAULT_BASE_URL = () => {
-  if (_VAULT_BASE_URL) return _VAULT_BASE_URL;
+  if (_VAULT_BASE_URL) {
+    return _VAULT_BASE_URL;
+  }
   _VAULT_BASE_URL = DEVICE.isDesktop
     ? EXCALIDRAW_PLUGIN.app.vault.adapter.url
         .pathToFileURL(EXCALIDRAW_PLUGIN.app.vault.adapter.basePath)
@@ -487,8 +497,8 @@ export const getCropFileNameAndFolder = async (
   hostPath: string,
   baseNewFileName: string,
 ): Promise<{ folderpath: string; filename: string }> => {
-  let prefix = plugin.settings.cropPrefix || "";
-  let suffix = plugin.settings.cropSuffix || "";
+  const prefix = plugin.settings.cropPrefix || "";
+  const suffix = plugin.settings.cropSuffix || "";
   const filename = prefix + baseNewFileName + suffix + ".md";
   if (!plugin.settings.cropFolder || plugin.settings.cropFolder.trim() === "") {
     const folderpath = (
@@ -506,8 +516,8 @@ export const getAnnotationFileNameAndFolder = async (
   hostPath: string,
   baseNewFileName: string,
 ): Promise<{ folderpath: string; filename: string }> => {
-  let prefix = plugin.settings.annotatePrefix || "";
-  let suffix = plugin.settings.annotateSuffix || "";
+  const prefix = plugin.settings.annotatePrefix || "";
+  const suffix = plugin.settings.annotateSuffix || "";
   const filename = prefix + baseNewFileName + suffix + ".md";
   if (
     !plugin.settings.annotateFolder ||
@@ -556,11 +566,13 @@ export const fileShouldDefaultAsExcalidraw = (
   path: string,
   app: App,
 ): boolean => {
-  if (!path) return false;
+  if (!path) {
+    return false;
+  }
   const cache = app.metadataCache.getCache(path);
   return (
     cache?.frontmatter &&
-    cache.frontmatter[FRONTMATTER_KEYS["plugin"].name] &&
+    cache.frontmatter[FRONTMATTER_KEYS.plugin.name] &&
     !Boolean(cache.frontmatter[FRONTMATTER_KEYS["open-as-markdown"].name])
   );
 };
@@ -579,7 +591,9 @@ export const getExcalidrawEmbeddedFilesFiletree = (
   const addAttachedImages = (f: TFile) =>
     Object.keys(app.metadataCache.resolvedLinks[f.path]).forEach((path) => {
       const file = app.vault.getAbstractFileByPath(path);
-      if (!file || !(file instanceof TFile)) return;
+      if (!file || !(file instanceof TFile)) {
+        return;
+      }
       const isExcalidraw = plugin.isExcalidrawFile(file);
       if (
         (file.extension === "md" && !isExcalidraw) ||
@@ -769,7 +783,9 @@ export async function createFileAndAwaitMetacacheUpdate(
     }
 
     let attempts = 0;
-    while (!ready && attempts++ < 15) await sleep(50);
+    while (!ready && attempts++ < 15) {
+      await sleep(50);
+    }
     if (!ready) {
       metaCache.off("changed", handler); //if we timed out, remove the handler
     }

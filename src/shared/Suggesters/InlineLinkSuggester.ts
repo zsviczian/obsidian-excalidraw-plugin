@@ -291,7 +291,9 @@ export class InlineLinkSuggester
     return Object.keys(tags)
       .sort((a, b) => {
         const countDiff = (tags[b] ?? 0) - (tags[a] ?? 0);
-        if (countDiff !== 0) return countDiff;
+        if (countDiff !== 0) {
+          return countDiff;
+        }
         return a.localeCompare(b);
       })
       .map((tag) => ({
@@ -314,7 +316,9 @@ export class InlineLinkSuggester
       );
     }
 
-    if (this.activeOpen === -1) return [];
+    if (this.activeOpen === -1) {
+      return [];
+    }
 
     if (this.mode === "heading") {
       return fuzzyMatchTextItems(
@@ -381,7 +385,9 @@ export class InlineLinkSuggester
   }
 
   async onChooseItem(item: InlineSuggestion | undefined): Promise<void> {
-    if (!item) return;
+    if (!item) {
+      return;
+    }
 
     if (this.isTag(item)) {
       this.insertTag(item.tag);
@@ -402,7 +408,9 @@ export class InlineLinkSuggester
 
     if (this.isParagraph(item)) {
       const id = await this.ensureParagraphHasId(item);
-      if (!id) return;
+      if (!id) {
+        return;
+      }
       const linktext = this.app.metadataCache.fileToLinktext(
         item.file,
         this.getSourcePath() ?? "",
@@ -828,9 +836,13 @@ export class InlineLinkSuggester
   private async ensureParagraphHasId(
     item: ParagraphSuggestion,
   ): Promise<string | null> {
-    if (item.id) return item.id;
+    if (item.id) {
+      return item.id;
+    }
     const offset = item.node?.position?.end?.offset;
-    if (!offset) return null;
+    if (!offset) {
+      return null;
+    }
     const fileContents = await this.plugin.app.vault.cachedRead(item.file);
     const newId = nanoid();
     await this.plugin.app.vault.modify(
@@ -871,7 +883,9 @@ export class InlineLinkSuggester
     let candidate: { open: number; close: number } | null = null;
     while (true) {
       const open = value.indexOf("[[", searchFrom);
-      if (open === -1 || open > pos) break;
+      if (open === -1 || open > pos) {
+        break;
+      }
       const nextOpen = value.indexOf("[[", open + 2);
       const closeCandidate = value.indexOf("]]", open + 2);
       const closeBelongsToLink =

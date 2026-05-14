@@ -39,7 +39,9 @@ export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
       const aliases = metadata?.frontmatter?.aliases || []; // Check for frontmatter aliases
 
       for (const alias of aliases) {
-        if (!alias) continue; // Skip empty aliases
+        if (!alias) {
+          continue;
+        } // Skip empty aliases
         filesAndAliases.push({ file, path, alias });
       }
     }

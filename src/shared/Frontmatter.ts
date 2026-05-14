@@ -10,7 +10,9 @@ export default class FrontmatterEditor {
 
     data = data.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
     const tmp = data.split(/^---(?:.|\n)*(?:^---\n)/gm);
-    if (tmp.length !== 2) return;
+    if (tmp.length !== 2) {
+      return;
+    }
     this.dataWOfrontmatter = tmp[1];
     this.frontmatterStr =
       data
@@ -21,13 +23,17 @@ export default class FrontmatterEditor {
   }
 
   public hasKey(key: string): boolean {
-    if (!this.initialized) return false;
+    if (!this.initialized) {
+      return false;
+    }
     const reg = new RegExp(`^${key}:`, "gm");
     return Boolean(this.frontmatterStr.match(reg));
   }
 
   public setKey(key: string, value: string) {
-    if (!this.initialized) return;
+    if (!this.initialized) {
+      return;
+    }
     value = value
       .replaceAll("\r\n", "\n")
       .replaceAll("\r", "\n")
@@ -45,7 +51,9 @@ export default class FrontmatterEditor {
   }
 
   get data() {
-    if (!this.initialized) return this.dataWOfrontmatter;
+    if (!this.initialized) {
+      return this.dataWOfrontmatter;
+    }
     return ["---", this.frontmatterStr, "---", this.dataWOfrontmatter].join(
       "\n",
     );

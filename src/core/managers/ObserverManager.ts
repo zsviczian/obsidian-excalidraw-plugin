@@ -33,7 +33,9 @@ export class ObserverManager {
 
   public initialize() {
     try {
-      if (this.settings.matchThemeTrigger) this.addThemeObserver();
+      if (this.settings.matchThemeTrigger) {
+        this.addThemeObserver();
+      }
       this.experimentalFileTypeDisplayToggle(
         this.settings.experimentalFileType,
       );
@@ -70,22 +72,32 @@ export class ObserverManager {
   }
 
   public addThemeObserver() {
-    if (this.themeObserver) return;
+    if (this.themeObserver) {
+      return;
+    }
     const { matchThemeTrigger } = this.settings;
-    if (!matchThemeTrigger) return;
+    if (!matchThemeTrigger) {
+      return;
+    }
 
     const themeObserverFn: MutationCallback = async (
       mutations: MutationRecord[],
     ) => {
       const { matchThemeTrigger } = this.settings;
-      if (!matchThemeTrigger) return;
+      if (!matchThemeTrigger) {
+        return;
+      }
 
       const bodyClassList = document.body.classList;
       const mutation = mutations[0];
-      if (mutation?.oldValue === bodyClassList.value) return;
+      if (mutation?.oldValue === bodyClassList.value) {
+        return;
+      }
 
       const darkClass = bodyClassList.contains("theme-dark");
-      if (mutation?.oldValue?.includes("theme-dark") === darkClass) return;
+      if (mutation?.oldValue?.includes("theme-dark") === darkClass) {
+        return;
+      }
 
       window.setTimeout(() => {
         //run async to avoid blocking the UI
@@ -110,7 +122,9 @@ export class ObserverManager {
   }
 
   public removeThemeObserver() {
-    if (!this.themeObserver) return;
+    if (!this.themeObserver) {
+      return;
+    }
     this.themeObserver.disconnect();
     this.themeObserver = null;
   }
@@ -217,7 +231,9 @@ export class ObserverManager {
       const waitForFileExplorer = new MutationObserver(
         (mutations, observer) => {
           for (const mutation of mutations) {
-            if (mutation.type !== "childList") continue;
+            if (mutation.type !== "childList") {
+              continue;
+            }
             const added = Array.from(mutation.addedNodes ?? []);
             const hasContainer = added.some(
               (node) =>
@@ -225,7 +241,9 @@ export class ObserverManager {
                 (node.matches?.(".nav-files-container") ||
                   node.querySelector?.(".nav-files-container")),
             );
-            if (!hasContainer) continue;
+            if (!hasContainer) {
+              continue;
+            }
             if (attachObserversToContainers()) {
               observer.disconnect();
               break;
@@ -246,7 +264,9 @@ export class ObserverManager {
    * @returns
    */
   public addModalContainerObserver() {
-    if (!this.plugin.activeExcalidrawView) return;
+    if (!this.plugin.activeExcalidrawView) {
+      return;
+    }
     if (this.modalContainerObserver) {
       if (
         this.activeViewDoc === this.plugin.activeExcalidrawView.ownerDocument
@@ -272,7 +292,9 @@ export class ObserverManager {
       }
 
       const { errorMessage } = view.excalidrawAPI.getAppState();
-      if (!errorMessage) this.plugin.activeExcalidrawView.save();
+      if (!errorMessage) {
+        this.plugin.activeExcalidrawView.save();
+      }
     };
 
     this.modalContainerObserver = DEBUGGING
@@ -288,7 +310,9 @@ export class ObserverManager {
   }
 
   public removeModalContainerObserver() {
-    if (!this.modalContainerObserver) return;
+    if (!this.modalContainerObserver) {
+      return;
+    }
     this.modalContainerObserver.disconnect();
     this.activeViewDoc = null;
     this.modalContainerObserver = null;
@@ -296,8 +320,9 @@ export class ObserverManager {
 
   private addWorkspaceDrawerObserver() {
     //when the user activates the sliding drawers on Obsidian Mobile
-    if (this.workspaceDrawerLeftObserver || this.workspaceDrawerRightObserver)
+    if (this.workspaceDrawerLeftObserver || this.workspaceDrawerRightObserver) {
       return;
+    }
 
     const leftWorkspaceDrawer = document.querySelector<HTMLElement>(
       ".workspace .workspace-drawer.mod-left",
@@ -305,24 +330,31 @@ export class ObserverManager {
     const rightWorkspaceDrawer = document.querySelector<HTMLElement>(
       ".workspace .workspace-drawer.mod-right",
     );
-    if (!leftWorkspaceDrawer && !rightWorkspaceDrawer) return;
+    if (!leftWorkspaceDrawer && !rightWorkspaceDrawer) {
+      return;
+    }
 
     const parseDisplay = (value?: string | null): string => {
-      if (!value) return "";
+      if (!value) {
+        return "";
+      }
       const match = value.match(/display:\s*([^;]+);?/i);
       return match ? match[1].trim() : "";
     };
 
     const action: MutationCallback = (mutations) => {
       const activeView = this.plugin.activeExcalidrawView;
-      if (!activeView || activeView.semaphores?.viewunload) return;
+      if (!activeView || activeView.semaphores?.viewunload) {
+        return;
+      }
 
       for (const mutation of mutations) {
         if (
           mutation.type !== "attributes" ||
           mutation.attributeName !== "style"
-        )
+        ) {
           continue;
+        }
 
         const target = mutation.target as HTMLElement;
         const newDisplay = target.style.display;

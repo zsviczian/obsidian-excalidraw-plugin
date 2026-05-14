@@ -101,7 +101,9 @@ function getPageSizePixels(
   pageSize: PageSize | PageDimensions,
   landscape = false,
 ): PageDimensions {
-  if (typeof pageSize === "object") return pageSize;
+  if (typeof pageSize === "object") {
+    return pageSize;
+  }
 
   const pageDimensions = STANDARD_PAGE_SIZES[pageSize];
   if (!pageDimensions) {
@@ -116,7 +118,9 @@ function getPageSizePixels(
 function getPageSize(
   pageSize: PageSize | PageDimensions,
 ): string | { width: number; height: number } {
-  if (typeof pageSize === "string") return pageSize;
+  if (typeof pageSize === "string") {
+    return pageSize;
+  }
 
   if (
     !pageSize ||
@@ -365,7 +369,9 @@ function calculateDimensions(
       const scaledTileWidth = Math.max(0, intersectRight - intersectX);
       const scaledTileHeight = Math.max(0, intersectBottom - intersectY);
 
-      if (scaledTileWidth <= 0 || scaledTileHeight <= 0) continue;
+      if (scaledTileWidth <= 0 || scaledTileHeight <= 0) {
+        continue;
+      }
 
       // Calculate viewBox coordinates
       const tileX = (intersectX - globalPosition.x) / (scale.zoom || 1);
@@ -489,7 +495,9 @@ export async function exportToPDF({
   }
 
   const savePath = await getSavePath(filename);
-  if (!savePath) return;
+  if (!savePath) {
+    return;
+  }
 
   // Decide if we should run multiple print jobs based on requested dimensions
   const dims = pageProps?.dimensions as any;

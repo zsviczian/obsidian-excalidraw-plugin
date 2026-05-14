@@ -564,11 +564,17 @@ export const updateElementLinksToObsidianLinks = ({
   return elements.map((el) => {
     if (el.link && el.link.startsWith("[")) {
       const partsArray = REGEX_LINK.getResList(el.link)[0];
-      if (!partsArray?.value) return el;
+      if (!partsArray?.value) {
+        return el;
+      }
       let linkText = REGEX_LINK.getLink(partsArray);
       if (linkText.match(REG_LINKINDEX_HYPERLINK)) {
-        if (linkText.startsWith("obsidian://") || linkText.startsWith("cmd://"))
+        if (
+          linkText.startsWith("obsidian://") ||
+          linkText.startsWith("cmd://")
+        ) {
           return el;
+        }
         const newElement: Mutable<ExcalidrawElement> = cloneElement(el);
         newElement.link = linkText;
         return newElement;
@@ -708,7 +714,9 @@ export async function createSVG(
     overrideFiles,
   );
 
-  if (withTheme && theme === "dark") addFilterToForeignObjects(svg);
+  if (withTheme && theme === "dark") {
+    addFilterToForeignObjects(svg);
+  }
 
   if (
     !(filenameParts.hasGroupref || filenameParts.hasClippedFrameref) &&
@@ -851,8 +859,8 @@ export const insertLaTeXToView = (
         const id = await ea.addLaTex(0, 0, formula, scaleX, scaleY);
         if (center) {
           const el = ea.getElement(id);
-          let { width, height } = el;
-          let { x, y } = ea.getViewCenterPosition();
+          const { width, height } = el;
+          const { x, y } = ea.getViewCenterPosition();
           el.x = x - width / 2;
           el.y = y - height / 2;
         }
@@ -1037,7 +1045,9 @@ export const getImagesMatchingQuery = (
           ?.latex?.toLocaleLowerCase()
           .trim();
         const text = filename ?? equation;
-        if (!text) return false;
+        if (!text) {
+          return false;
+        }
         return exactMatch
           ? text === q.toLowerCase()
           : text.match(q.toLowerCase());

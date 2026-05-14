@@ -72,7 +72,6 @@ export async function copyLinkToSelectedElementToClipboard(
       action: () => {
         cancelled = false;
         prefix = "area=";
-        return;
       },
     },
     link: {
@@ -80,7 +79,6 @@ export async function copyLinkToSelectedElementToClipboard(
       action: () => {
         cancelled = false;
         prefix = "";
-        return;
       },
     },
     group: {
@@ -88,7 +86,6 @@ export async function copyLinkToSelectedElementToClipboard(
       action: () => {
         cancelled = false;
         prefix = "group=";
-        return;
       },
     },
     frame: {
@@ -97,7 +94,6 @@ export async function copyLinkToSelectedElementToClipboard(
         cancelled = false;
         prefix = "frame=";
         elementId = getFrameTarget();
-        return;
       },
     },
     clippedframe: {
@@ -106,7 +102,6 @@ export async function copyLinkToSelectedElementToClipboard(
         cancelled = false;
         prefix = "clippedframe=";
         elementId = getFrameTarget();
-        return;
       },
     },
   };

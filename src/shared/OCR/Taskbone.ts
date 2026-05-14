@@ -25,19 +25,27 @@ export default class Taskbone {
   }
 
   public async initialize(save: boolean = true): Promise<string> {
-    if (this.plugin.settings.taskboneAPIkey !== "") return;
+    if (this.plugin.settings.taskboneAPIkey !== "") {
+      return;
+    }
     const response = await requestUrl({
       url: `${TASKBONE_URL}users/excalidraw-obsidian/identities`,
       method: "post",
       contentType: "application/json",
       throw: false,
     });
-    if (!response) return;
+    if (!response) {
+      return;
+    }
     const apiKey = response.json?.apiKey;
     if (apiKey && typeof apiKey === "string") {
-      if (save) await this.plugin.loadSettings();
+      if (save) {
+        await this.plugin.loadSettings();
+      }
       this.plugin.settings.taskboneAPIkey = apiKey;
-      if (save) await this.plugin.saveSettings();
+      if (save) {
+        await this.plugin.saveSettings();
+      }
     }
     return apiKey;
   }

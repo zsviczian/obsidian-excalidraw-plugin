@@ -609,7 +609,9 @@ export class ExcalidrawAutomate {
    * @returns {string} The decompressed string.
    */
   public decompressFromBase64(data: string): string {
-    if (!data) throw new Error("No input string provided for decompression.");
+    if (!data) {
+      throw new Error("No input string provided for decompression.");
+    }
     let cleanedData = "";
     const length = data.length;
     for (let i = 0; i < length; i++) {
@@ -812,7 +814,9 @@ export class ExcalidrawAutomate {
     }
     const tab = await spView.createTab({ title, scriptName, hostEA: this });
     this.sidepanelTab = tab;
-    if (reveal) tab.reveal();
+    if (reveal) {
+      tab.reveal();
+    }
     if (persist && this.activeScript) {
       this.persistSidepanelTab();
     }
@@ -921,10 +925,18 @@ export class ExcalidrawAutomate {
    * @returns {Promise<string | undefined>} Parsed text, or undefined when input/view is unavailable.
    */
   public async parseText(text: string): Promise<string | undefined> {
-    if (!text) return;
-    if (!this.targetView || !this.targetView?._loaded) return;
-    if (!this.targetView.excalidrawData) return;
-    if (isImageOrPDFTransclusion(this, text)) return text;
+    if (!text) {
+      return;
+    }
+    if (!this.targetView || !this.targetView?._loaded) {
+      return;
+    }
+    if (!this.targetView.excalidrawData) {
+      return;
+    }
+    if (isImageOrPDFTransclusion(this, text)) {
+      return text;
+    }
     return await this.targetView.excalidrawData.parseText(text);
   }
 
@@ -950,7 +962,9 @@ export class ExcalidrawAutomate {
       return null;
     }
     const st = this.getExcalidrawAPI().getAppState();
-    if (!st) return null;
+    if (!st) {
+      return null;
+    }
 
     const zoom = st.zoom?.value ?? 1;
     const x = -st.scrollX + st.width / 2 / zoom;
@@ -1225,7 +1239,7 @@ export class ExcalidrawAutomate {
     if (!boundElement) {
       return {};
     }
-    let textElement = this.elementsDict[
+    const textElement = this.elementsDict[
       boundElement.id
     ] as Mutable<ExcalidrawTextElement>;
     if (textElement) {
@@ -2010,7 +2024,9 @@ export class ExcalidrawAutomate {
    * @param {string[]} elementIDs - Array of element IDs to add to the frame.
    */
   addElementsToFrame(frameId: string, elementIDs: string[]): void {
-    if (!this.getElement(frameId)) return;
+    if (!this.getElement(frameId)) {
+      return;
+    }
     elementIDs.forEach((elID) => {
       const el = this.getElement(elID);
       if (el) {
@@ -2044,7 +2060,9 @@ export class ExcalidrawAutomate {
     frame.strokeWidth = 2;
     frame.roughness = 0;
     frame.roundness = null;
-    if (name) frame.name = name;
+    if (name) {
+      frame.name = name;
+    }
     return id;
   }
 
@@ -2064,7 +2082,9 @@ export class ExcalidrawAutomate {
     height: number,
     id?: string,
   ): string {
-    if (!id) id = nanoid();
+    if (!id) {
+      id = nanoid();
+    }
     this.elementsDict[id] = this.boxedElement(
       id,
       "rectangle",
@@ -2092,7 +2112,9 @@ export class ExcalidrawAutomate {
     height: number,
     id?: string,
   ): string {
-    if (!id) id = nanoid();
+    if (!id) {
+      id = nanoid();
+    }
     this.elementsDict[id] = this.boxedElement(
       id,
       "diamond",
@@ -2120,7 +2142,9 @@ export class ExcalidrawAutomate {
     height: number,
     id?: string,
   ): string {
-    if (!id) id = nanoid();
+    if (!id) {
+      id = nanoid();
+    }
     this.elementsDict[id] = this.boxedElement(
       id,
       "ellipse",
@@ -2535,8 +2559,12 @@ export class ExcalidrawAutomate {
       flowchart: { curve: this.style.roundness === null ? "linear" : "basis" },
     });
     const ids: string[] = [];
-    if (!result) return null;
-    if (result?.error) return result.error;
+    if (!result) {
+      return null;
+    }
+    if (result?.error) {
+      return result.error;
+    }
 
     if (result?.elements) {
       result.elements.forEach((el) => {
@@ -3239,11 +3267,11 @@ export class ExcalidrawAutomate {
       } else {
         ef.colorMap = colorMap;
         //delete special mappings for default/SVG root color values
-        if (ef.colorMap["fill"] === "black") {
-          delete ef.colorMap["fill"];
+        if (ef.colorMap.fill === "black") {
+          delete ef.colorMap.fill;
         }
-        if (ef.colorMap["stroke"] === "none") {
-          delete ef.colorMap["stroke"];
+        if (ef.colorMap.stroke === "none") {
+          delete ef.colorMap.stroke;
         }
       }
       ef.resetImage(this.targetView.file.path, ef.linkParts.original);
@@ -3976,8 +4004,12 @@ export class ExcalidrawAutomate {
   ): ExcalidrawElement[] {
     const { x, y, width, height, id } = element;
     return elements.filter((el) => {
-      if (el.type === "frame" && el.frameRole === "marker") return false;
-      if (el.id === id) return true;
+      if (el.type === "frame" && el.frameRole === "marker") {
+        return false;
+      }
+      if (el.id === id) {
+        return true;
+      }
       const { topX, topY, width: w, height: h } = this.getBoundingBox([el]);
       const elLeft = topX;
       const elTop = topY;
@@ -4094,7 +4126,9 @@ export class ExcalidrawAutomate {
     elements: readonly NonDeletedExcalidrawElement[],
     includeFrameElements: boolean = false,
   ): ExcalidrawElement[] {
-    if (!element || !elements) return [];
+    if (!element || !elements) {
+      return [];
+    }
     const container =
       element.type === "text" && element.containerId
         ? elements.filter((el) => el.id === element.containerId)
@@ -4103,7 +4137,9 @@ export class ExcalidrawAutomate {
       if (includeFrameElements && element.type === "frame") {
         return this.getElementsInFrame(element, elements, true);
       }
-      if (container.length === 1) return [element, container[0]];
+      if (container.length === 1) {
+        return [element, container[0]];
+      }
       return [element];
     }
 
@@ -4148,7 +4184,9 @@ export class ExcalidrawAutomate {
     elements: readonly NonDeletedExcalidrawElement[],
     shouldIncludeFrame: boolean = false,
   ): ExcalidrawElement[] {
-    if (!frameElement || !elements || frameElement.type !== "frame") return [];
+    if (!frameElement || !elements || frameElement.type !== "frame") {
+      return [];
+    }
     return elements.filter(
       (el) =>
         el.frameId === frameElement.id ||
@@ -4189,7 +4227,9 @@ export class ExcalidrawAutomate {
 
   public setScriptSettingValue(key: string, value: ScriptSettingValue): void {
     const settings = ensureActiveScriptSettingsObject(this);
-    if (!settings) return;
+    if (!settings) {
+      return;
+    }
     settings[key] = value;
   }
 
@@ -4198,7 +4238,9 @@ export class ExcalidrawAutomate {
     defaultValue: ScriptSettingValue,
   ): ScriptSettingValue {
     const settings = ensureActiveScriptSettingsObject(this);
-    if (!settings) return defaultValue;
+    if (!settings) {
+      return defaultValue;
+    }
     return settings[key] ?? defaultValue;
   }
 
@@ -4279,7 +4321,9 @@ export class ExcalidrawAutomate {
     }
     const isDark = this.getExcalidrawAPI().getAppState().theme === "dark";
     let dataURL = ef.getImage(isDark);
-    if (!dataURL && !shouldWaitForImage) return;
+    if (!dataURL && !shouldWaitForImage) {
+      return;
+    }
     if (!dataURL) {
       let watchdog = 0;
       while (!dataURL && watchdog < 50) {
@@ -4287,7 +4331,9 @@ export class ExcalidrawAutomate {
         dataURL = ef.getImage(isDark);
         watchdog++;
       }
-      if (!dataURL) return;
+      if (!dataURL) {
+        return;
+      }
     }
     return await getImageSize(dataURL);
   }
@@ -4318,8 +4364,8 @@ export class ExcalidrawAutomate {
       originalArea = imgEl.width * imgEl.height;
       originalAspectRatio = size.width / size.height;
     }
-    let newWidth = Math.sqrt(originalArea * originalAspectRatio);
-    let newHeight = Math.sqrt(originalArea / originalAspectRatio);
+    const newWidth = Math.sqrt(originalArea * originalAspectRatio);
+    const newHeight = Math.sqrt(originalArea / originalAspectRatio);
     const centerX = imgEl.x + imgEl.width / 2;
     const centerY = imgEl.y + imgEl.height / 2;
 

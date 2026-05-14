@@ -75,11 +75,10 @@ export function isMaskFile(plugin: ExcalidrawPlugin, file: TFile): boolean {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["mask"].name] !== null &&
-      typeof fileCache.frontmatter[FRONTMATTER_KEYS["mask"].name] !==
-        "undefined"
+      fileCache.frontmatter[FRONTMATTER_KEYS.mask.name] !== null &&
+      typeof fileCache.frontmatter[FRONTMATTER_KEYS.mask.name] !== "undefined"
     ) {
-      return Boolean(fileCache.frontmatter[FRONTMATTER_KEYS["mask"].name]);
+      return Boolean(fileCache.frontmatter[FRONTMATTER_KEYS.mask.name]);
     }
   }
   return false;
@@ -133,7 +132,9 @@ export function getExportPadding(
 ): number {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
-    if (!fileCache?.frontmatter) return plugin.settings.exportPaddingSVG;
+    if (!fileCache?.frontmatter) {
+      return plugin.settings.exportPaddingSVG;
+    }
 
     if (
       fileCache.frontmatter[FRONTMATTER_KEYS["export-padding"].name] !== null &&

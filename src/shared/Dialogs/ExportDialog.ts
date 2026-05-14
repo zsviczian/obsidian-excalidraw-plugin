@@ -289,8 +289,6 @@ export class ExportDialog extends Modal {
   }
 
   private createImageSettings(isScreenshot: boolean = false) {
-    let paddingSetting: Setting;
-
     this.createSaveSettingsDropdown();
 
     const padding = (): DocumentFragment => {
@@ -299,7 +297,7 @@ export class ExportDialog extends Modal {
       );
     };
 
-    paddingSetting = new Setting(this.contentContainer)
+    const paddingSetting = new Setting(this.contentContainer)
       .setName(t("EXPORTDIALOG_PADDING"))
       .setDesc(padding())
       .addSlider((slider) => {
@@ -390,7 +388,9 @@ export class ExportDialog extends Modal {
   }
 
   private createPDFSettings() {
-    if (!DEVICE.isDesktop) return;
+    if (!DEVICE.isDesktop) {
+      return;
+    }
 
     this.contentContainer.createEl("h1", {
       text: t("EXPORTDIALOG_PDF_SETTINGS"),
@@ -497,7 +497,9 @@ export class ExportDialog extends Modal {
       this.close();
     };
 
-    if (isScreenshot) return;
+    if (isScreenshot) {
+      return;
+    }
 
     if (DEVICE.isDesktop) {
       const bExcalidraw = this.buttonContainerRow2.createEl("button", {
@@ -560,7 +562,9 @@ export class ExportDialog extends Modal {
       new Notice(t("EXPORTDIALOG_SAVE_CONFIRMATION"));
     };
 
-    if (!DEVICE.isDesktop) return;
+    if (!DEVICE.isDesktop) {
+      return;
+    }
     const bPDFExport = this.buttonContainerRow1.createEl("button", {
       text: t("EXPORTDIALOG_PDF"),
       cls: "excalidraw-export-button",

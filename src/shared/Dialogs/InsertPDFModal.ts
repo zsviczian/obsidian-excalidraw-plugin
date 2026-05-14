@@ -77,11 +77,15 @@ export class InsertPDFModal extends Modal {
   }
 
   private async loadPageDimensions(pages?: number[]) {
-    if (!this.pdfDoc) return;
+    if (!this.pdfDoc) {
+      return;
+    }
     const scale = this.plugin.settings.pdfScale;
     const pagesToLoad = pages && pages.length > 0 ? [...new Set(pages)] : [1];
     for (const pageNum of pagesToLoad) {
-      if (this.pageDimensionsByPage.has(pageNum)) continue;
+      if (this.pageDimensionsByPage.has(pageNum)) {
+        continue;
+      }
       try {
         const page = await this.pdfDoc.getPage(pageNum);
         const viewport = page.getViewport({ scale });
@@ -106,7 +110,9 @@ export class InsertPDFModal extends Modal {
         : Array.from(this.pageDimensionsByPage.keys());
     pages.forEach((p) => {
       const dims = this.pageDimensionsByPage.get(p);
-      if (!dims) return;
+      if (!dims) {
+        return;
+      }
       width = Math.max(width, dims.width);
       height = Math.max(height, dims.height);
     });
@@ -138,7 +144,9 @@ export class InsertPDFModal extends Modal {
       } else if (pageRangeArray.length === 2) {
         const start = parseInt(cleanNonDigits(pageRangeArray[0]));
         const end = parseInt(cleanNonDigits(pageRangeArray[1]));
-        if (isNaN(start) || isNaN(end)) return;
+        if (isNaN(start) || isNaN(end)) {
+          return;
+        }
         for (let i = start; i <= end; i++) {
           this.pagesToImport.push(i);
         }
@@ -148,7 +156,9 @@ export class InsertPDFModal extends Modal {
   }
 
   private setImageSizeMessage = () => {
-    if (!this.imageSizeMessage) return;
+    if (!this.imageSizeMessage) {
+      return;
+    }
     const dims = this.getMaxSelectedPageDimensions();
     this.imageSizeMessage.innerText = `${Math.round(dims.width * this.importScale)} x ${Math.round(dims.height * this.importScale)}`;
   };
@@ -167,10 +177,8 @@ export class InsertPDFModal extends Modal {
 
     const ce = this.contentEl;
 
-    let numPagesMessage: HTMLParagraphElement;
     let numPages: number = 0;
     let importButton: ButtonComponent;
-    let importMessage: HTMLElement;
 
     const importButtonMessages = () => {
       if (!this.pdfDoc) {
@@ -186,11 +194,9 @@ export class InsertPDFModal extends Modal {
       if (Math.max(...this.pagesToImport) <= this.pdfDoc.numPages) {
         importButton.buttonEl.style.display = "block";
         importMessage.innerText = "";
-        return;
       } else {
         importButton.buttonEl.style.display = "none";
         importMessage.innerText = `The selected document has ${this.pdfDoc.numPages} pages. Please select pages between 1 and ${this.pdfDoc.numPages}`;
-        return;
       }
     };
 
@@ -206,7 +212,6 @@ export class InsertPDFModal extends Modal {
     };
 
     let pageRangesTextComponent: TextComponent;
-    let importPagesMessage: HTMLParagraphElement;
 
     const rangeOnChange = async (value: string) => {
       const pages = this.createPageListFromString(value);
@@ -232,7 +237,9 @@ export class InsertPDFModal extends Modal {
     };
 
     const setFile = async (file: TFile) => {
-      if (this.pdfDoc) await this.pdfDoc.destroy();
+      if (this.pdfDoc) {
+        await this.pdfDoc.destroy();
+      }
       this.pdfDoc = null;
       this.pageDimensionsByPage.clear();
       this.pageDimensions = { width: 0, height: 0 };
@@ -272,7 +279,7 @@ export class InsertPDFModal extends Modal {
       await setFile(file);
     });
 
-    numPagesMessage = ce.createEl("p", { text: "" });
+    const numPagesMessage = ce.createEl("p", { text: "" });
     numPagesMessages();
     new Setting(ce)
       .setName(t("IPM_PAGES_TO_IMPORT_NAME"))
@@ -284,7 +291,7 @@ export class InsertPDFModal extends Modal {
         });
         text.inputEl.style.width = "100%";
       });
-    importPagesMessage = ce.createEl("p", { text: "" });
+    const importPagesMessage = ce.createEl("p", { text: "" });
 
     let bbToggle: ToggleComponent;
     let fToggle: ToggleComponent;
@@ -345,8 +352,6 @@ export class InsertPDFModal extends Modal {
         });
       });
 
-    let numColumnsSetting: Setting;
-    let numRowsSetting: Setting;
     const colRowVisibility = () => {
       switch (this.direction) {
         case "down":
@@ -375,7 +380,7 @@ export class InsertPDFModal extends Modal {
     );
 
     let columnsText: HTMLDivElement;
-    numColumnsSetting = new Setting(ce);
+    const numColumnsSetting = new Setting(ce);
     numColumnsSetting
       .setName("Number of columns")
       .addSlider((slider) =>
@@ -396,7 +401,7 @@ export class InsertPDFModal extends Modal {
       });
 
     let rowsText: HTMLDivElement;
-    numRowsSetting = new Setting(ce);
+    const numRowsSetting = new Setting(ce);
     numRowsSetting
       .setName("Number of rows")
       .addSlider((slider) =>
@@ -494,7 +499,9 @@ export class InsertPDFModal extends Modal {
               ea.style.strokeColor = this.borderBox ? "#000000" : "transparent";
               const boxID = ea.addRect(topX, topY, imgWidth, imgHeight);
               const boxEl = ea.getElement(boxID) as any;
-              if (this.lockAfterImport) boxEl.locked = true;
+              if (this.lockAfterImport) {
+                boxEl.locked = true;
+              }
 
               const imageID = await ea.addImage(
                 topX,
@@ -506,7 +513,9 @@ export class InsertPDFModal extends Modal {
               const imgEl = ea.getElement(imageID) as any;
               imgEl.width = imgWidth;
               imgEl.height = imgHeight;
-              if (this.lockAfterImport) imgEl.locked = true;
+              if (this.lockAfterImport) {
+                imgEl.locked = true;
+              }
 
               ea.addToGroup([boxID, imageID]);
 
@@ -529,11 +538,15 @@ export class InsertPDFModal extends Modal {
               switch (this.direction) {
                 case "right":
                   column = (column + 1) % this.numColumns;
-                  if (column === 0) row++;
+                  if (column === 0) {
+                    row++;
+                  }
                   break;
                 case "down":
                   row = (row + 1) % this.numRows;
-                  if (row === 0) column++;
+                  if (row === 0) {
+                    column++;
+                  }
                   break;
               }
             }
@@ -558,7 +571,7 @@ export class InsertPDFModal extends Modal {
         importButton = button;
         importButton.buttonEl.style.display = "none";
       });
-    importMessage = actionButton.descEl;
+    const importMessage = actionButton.descEl;
     importMessage.addClass("mod-warning");
     if (this.pdfFile) {
       search.setValue(this.pdfFile.path);

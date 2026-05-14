@@ -147,8 +147,11 @@ export const isWinMETAorMacCTRL = (e: KeyEvent) =>
 export const isSHIFT = (e: KeyEvent) => e.shiftKey;
 
 export const setCTRL = (e: ModifierKeys, value: boolean): ModifierKeys => {
-  if (DEVICE.isIOS || DEVICE.isMacOS) e.metaKey = value;
-  else e.ctrlKey = value;
+  if (DEVICE.isIOS || DEVICE.isMacOS) {
+    e.metaKey = value;
+  } else {
+    e.ctrlKey = value;
+  }
   return e;
 };
 export const setALT = (e: ModifierKeys, value: boolean): ModifierKeys => {
@@ -156,8 +159,11 @@ export const setALT = (e: ModifierKeys, value: boolean): ModifierKeys => {
   return e;
 };
 export const setMETA = (e: ModifierKeys, value: boolean): ModifierKeys => {
-  if (DEVICE.isIOS || DEVICE.isMacOS) e.ctrlKey = value;
-  else e.metaKey = value;
+  if (DEVICE.isIOS || DEVICE.isMacOS) {
+    e.ctrlKey = value;
+  } else {
+    e.metaKey = value;
+  }
   return e;
 };
 export const setSHIFT = (e: ModifierKeys, value: boolean): ModifierKeys => {
@@ -177,11 +183,13 @@ export const scaleToFullsizeModifier = (ev: KeyEvent) => {
     DEVICE.isMacOS || DEVICE.isIOS
       ? settings.modifierKeyConfig.Mac
       : settings.modifierKeyConfig.Win
-  )["InternalDragAction"];
+  ).InternalDragAction;
   const rule: ModifierKey = keySet.rules.find(
     (r: ModifierKey) => r.result === "image-fullsize",
   );
-  if (!rule) return false;
+  if (!rule) {
+    return false;
+  }
   const { shift, ctrl_cmd, alt_opt, meta_ctrl } = rule;
   return (
     isSHIFT(ev) === shift &&
@@ -193,7 +201,9 @@ export const scaleToFullsizeModifier = (ev: KeyEvent) => {
 
 export const linkClickModifierType = (ev: KeyEvent): PaneTarget => {
   const action = processModifiers(ev, "LinkClickAction") as PaneTarget;
-  if (!DEVICE.isDesktop && action === "popout-window") return "active-pane";
+  if (!DEVICE.isDesktop && action === "popout-window") {
+    return "active-pane";
+  }
   return action;
 };
 
@@ -225,7 +235,9 @@ export const emulateCTRLClickForLinks = (e: KeyEvent) => {
 
 export const emulateKeysForLinkClick = (action: PaneTarget): ModifierKeys => {
   const ev = { shiftKey: false, ctrlKey: false, metaKey: false, altKey: false };
-  if (!action) return ev;
+  if (!action) {
+    return ev;
+  }
   const platform = DEVICE.isMacOS || DEVICE.isIOS ? "Mac" : "Win";
   const settings: ExcalidrawSettings =
     window.ExcalidrawAutomate.plugin.settings;

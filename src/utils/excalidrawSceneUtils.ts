@@ -29,7 +29,9 @@ export function updateElementIdsInScene(
       const boundEl = sceneElements.find(
         (el) => el.id === binding.id,
       ) as unknown as Mutable<ExcalidrawElement>;
-      if (!boundEl) return;
+      if (!boundEl) {
+        return;
+      }
       boundEl.boundElements
         ?.filter((x) => x.id === elementToChange.id)
         .forEach((x) => {

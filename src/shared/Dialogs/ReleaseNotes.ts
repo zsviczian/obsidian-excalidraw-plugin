@@ -38,7 +38,9 @@ export class ReleaseNotes extends Modal {
     );
     this.createForm();
 
-    if (headerEl) headerEl.style.pointerEvents = "none"; // Disable pointer events on header to allow clicks through
+    if (headerEl) {
+      headerEl.style.pointerEvents = "none";
+    } // Disable pointer events on header to allow clicks through
   }
 
   async onClose() {

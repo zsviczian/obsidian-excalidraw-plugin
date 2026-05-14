@@ -76,10 +76,13 @@ export const getLeaf = (
   ev: ModifierKeys,
 ) => {
   const newTab = (): WorkspaceLeaf => {
-    if (!plugin.settings.openInMainWorkspace)
+    if (!plugin.settings.openInMainWorkspace) {
       return plugin.app.workspace.getLeaf("tab");
+    }
     const [leafLoc, _] = getLeafLoc(origo);
-    if (leafLoc === "main") return plugin.app.workspace.getLeaf("tab");
+    if (leafLoc === "main") {
+      return plugin.app.workspace.getLeaf("tab");
+    }
     return getNewOrAdjacentLeaf(plugin, origo);
   };
   const newTabGroup = (): WorkspaceLeaf => getNewOrAdjacentLeaf(plugin, origo);
@@ -165,8 +168,9 @@ export const getNewOrAdjacentLeaf = (
         !l.view?.navigation ||
         leaf === l ||
         (inDifferentTabGroup && l?.parent === leaf?.parent)
-      )
+      ) {
         return;
+      }
       mainLeaf = l;
     });
     return mainLeaf;
@@ -207,8 +211,9 @@ export const getNewOrAdjacentLeaf = (
       if (
         l !== leaf &&
         leaf.containerEl.parentElement === l.containerEl.parentElement
-      )
+      ) {
         leaves.add(l);
+      }
     });
     if (leaves.size === 0) {
       return plugin.app.workspace.createLeafBySplit(leaf);
@@ -249,7 +254,9 @@ export const getContainerForDocument = (doc: Document) => {
   if (doc !== document && EXCALIDRAW_PLUGIN.app.workspace.floatingSplit) {
     for (const container of EXCALIDRAW_PLUGIN.app.workspace.floatingSplit
       .children) {
-      if (container.doc === doc) return container;
+      if (container.doc === doc) {
+        return container;
+      }
     }
   }
   return EXCALIDRAW_PLUGIN.app.workspace.rootSplit;
@@ -257,7 +264,9 @@ export const getContainerForDocument = (doc: Document) => {
 
 //needed for backward compatibility
 export const legacyCleanBlockRef = (blockRef: string) => {
-  if (!blockRef) return blockRef;
+  if (!blockRef) {
+    return blockRef;
+  }
   return blockRef
     .replace(/[!"#$%&()*+,.:;<=>?@^`{|}~/[\]\\]/g, "")
     .replace(/\s+/g, " ")
@@ -296,13 +305,20 @@ export const extractSVGPNGFileName = (text: string) => {
 export const getFileCSSClasses = (file: TFile): string[] => {
   if (file) {
     const plugin = window?.ExcalidrawAutomate?.plugin;
-    if (!plugin) return [];
+    if (!plugin) {
+      return [];
+    }
     const fileCache = plugin.app.metadataCache.getFileCache(file);
-    if (!fileCache?.frontmatter) return [];
+    if (!fileCache?.frontmatter) {
+      return [];
+    }
     const x = parseFrontMatterEntry(fileCache.frontmatter, "cssclasses");
-    if (Array.isArray(x)) return x;
-    if (typeof x === "string")
+    if (Array.isArray(x)) {
+      return x;
+    }
+    if (typeof x === "string") {
       return Array.from(new Set(x.split(/[, ]+/).filter(Boolean)));
+    }
     return [];
   }
   return [];
@@ -328,7 +344,9 @@ export const openLeaf = ({
   let leaf: WorkspaceLeaf = null;
   if (plugin.settings.focusOnFileTab) {
     plugin.app.workspace.iterateAllLeaves((l) => {
-      if (leaf) return;
+      if (leaf) {
+        return;
+      }
       if (l?.view?.file === file) {
         plugin.app.workspace.setActiveLeaf(l, { focus: true });
         leaf = l;
@@ -424,7 +442,9 @@ function replaceYamlKeyBlock(
       break;
     }
   }
-  if (start === -1) return null;
+  if (start === -1) {
+    return null;
+  }
 
   let end = start + 1;
   while (end < lines.length) {
@@ -463,7 +483,9 @@ export const editorInsertText = (editor: Editor, text: string) => {
 };
 
 export const foldExcalidrawSection = (view: MarkdownView) => {
-  if (!view || !(view instanceof MarkdownView)) return;
+  if (!view || !(view instanceof MarkdownView)) {
+    return;
+  }
 
   const foldStart = {
     ed: -1, // # Excalidraw Data
@@ -495,7 +517,9 @@ export const foldExcalidrawSection = (view: MarkdownView) => {
         foldStart.d = i;
         break;
     }
-    if (line === "## Drawing") break;
+    if (line === "## Drawing") {
+      break;
+    }
   }
 
   if (foldStart.ed > -1 && foldStart.d > -1) {
@@ -612,6 +636,8 @@ export function getAudioElementHeight(): number {
 }
 
 export function stripYamlFrontmatter(text: string): string {
-  if (!text) return text;
+  if (!text) {
+    return text;
+  }
   return text.replace(/^---\s*\r?\n[\s\S]*?\r?\n---\s*\r?\n?/, "");
 }
