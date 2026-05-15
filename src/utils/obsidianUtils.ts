@@ -20,7 +20,7 @@ import {
   EXCALIDRAW_PLUGIN,
   VIEW_TYPE_EXCALIDRAW,
 } from "src/constants/constants";
-import yaml from "js-yaml";
+import { parse, stringify } from "yaml";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 
 export const getParentOfClass = (
@@ -373,7 +373,7 @@ export function mergeMarkdownFiles(template: string, target: string): string {
     .trim();
   const templateContent = template.substring(templateFrontmatterEnd + 3);
   const templateFrontmatterObj: FrontMatterCache =
-    yaml.load(templateFrontmatterRaw) || {};
+    parse(templateFrontmatterRaw) || {};
 
   const hasTargetFM =
     target.startsWith("---\n") && target.indexOf("---\n", 4) > 0;
@@ -385,7 +385,7 @@ export function mergeMarkdownFiles(template: string, target: string): string {
     const targetContent = target.substring(targetFrontmatterEnd + 3);
 
     const targetFrontmatterObj: FrontMatterCache =
-      yaml.load(targetFrontmatterRaw) || {};
+      parse(targetFrontmatterRaw) || {};
 
     // 1. Merge array keys present in both (target has precedence for ordering)
     const mergeArrayKeys = Object.keys(templateFrontmatterObj).filter(
@@ -400,7 +400,7 @@ export function mergeMarkdownFiles(template: string, target: string): string {
         const tplArr = templateFrontmatterObj[k] as any[];
         const merged = [...tArr, ...tplArr.filter((v) => !tArr.includes(v))];
         // Produce YAML for just this key
-        const mergedYaml = yaml.dump({ [k]: merged }).trimEnd();
+        const mergedYaml = stringify({ [k]: merged }).trimEnd();
         targetFrontmatterRaw =
           replaceYamlKeyBlock(targetFrontmatterRaw, k, mergedYaml) ??
           targetFrontmatterRaw;
@@ -416,14 +416,14 @@ export function mergeMarkdownFiles(template: string, target: string): string {
     }
 
     const appended = Object.keys(newKeys).length
-      ? `${targetFrontmatterRaw}\n${yaml.dump(newKeys).trimEnd()}`
+      ? `${targetFrontmatterRaw}\n${stringify(newKeys).trimEnd()}`
       : targetFrontmatterRaw;
 
     return `---\n${appended}\n---\n${targetContent}\n\n${templateContent.trim()}\n`;
   }
   // No frontmatter in target: use template FM + target content + template content
   const targetContent = target.trim();
-  const templateFMYaml = yaml.dump(templateFrontmatterObj).trimEnd();
+  const templateFMYaml = stringify(templateFrontmatterObj).trimEnd();
   return `---\n${templateFMYaml}\n---\n${targetContent}\n\n${templateContent.trim()}\n`;
 }
 
