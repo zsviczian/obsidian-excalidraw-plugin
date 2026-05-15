@@ -9,8 +9,13 @@ import type ExcalidrawView from "src/view/ExcalidrawView";
 import { rotatedDimensions } from "./utils";
 import { getBoundTextElementId } from "src/utils/excalidrawViewHelpers";
 
+type PointerPoint = {
+  x: number;
+  y: number;
+};
+
 export const getElementsAtPointer = (
-  pointer: any,
+  pointer: PointerPoint,
   elements: readonly ExcalidrawElement[],
   type?: string,
 ): ExcalidrawElement[] => {
@@ -33,7 +38,10 @@ export const getElementsAtPointer = (
     .reverse();
 };
 
-export const getTextElementAtPointer = (pointer: any, view: ExcalidrawView) => {
+export const getTextElementAtPointer = (
+  pointer: PointerPoint,
+  view: ExcalidrawView,
+) => {
   const api = view.excalidrawAPI;
   if (!api) {
     return { id: null, text: null };
@@ -76,7 +84,7 @@ export const getTextElementAtPointer = (pointer: any, view: ExcalidrawView) => {
 };
 
 export const getImageElementAtPointer = (
-  pointer: any,
+  pointer: PointerPoint,
   view: ExcalidrawView,
 ) => {
   const api = view.excalidrawAPI;
@@ -98,7 +106,7 @@ export const getImageElementAtPointer = (
 };
 
 export const getElementWithLinkAtPointer = (
-  pointer: any,
+  pointer: PointerPoint,
   view: ExcalidrawView,
 ) => {
   const api = view.excalidrawAPI;

@@ -67,13 +67,35 @@ import { getPDFRect } from "../utils/PDFUtils";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
-declare module "obsidian" {
-  interface MetadataCache {
-    blockCache: {
-      getForFile(x: any, f: TAbstractFile): any;
+type RegExpMatchIteratorResult = IteratorResult<RegExpMatchArray, undefined>;
+
+type MarkdownBlockNode = {
+  type: string;
+  id?: string;
+  depth?: number;
+  level?: number;
+  value?: string;
+  title?: string;
+  data?: {
+    hProperties?: {
+      dataHeading?: string;
     };
-  }
-}
+  };
+  children?: MarkdownBlockNode[];
+  position: {
+    start: { offset: number; line: number };
+    end: { offset: number };
+  };
+};
+
+type MarkdownBlockCacheEntry = {
+  node: MarkdownBlockNode;
+  display: string;
+};
+
+type MarkdownBlockCacheResult = {
+  blocks: MarkdownBlockCacheEntry[];
+};
 
 export enum AutoexportPreference {
   none,
@@ -87,19 +109,19 @@ export const REGEX_TAGS = {
   // #[\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+
   //   1
   EXPR: /(#[\p{Letter}\p{Emoji_Presentation}\p{Number}/_-]+)/gu,
-  getResList: (text: string): IteratorResult<RegExpMatchArray, any>[] => {
+  getResList: (text: string): RegExpMatchIteratorResult[] => {
     const res = text.matchAll(REGEX_TAGS.EXPR);
-    let parts: IteratorResult<RegExpMatchArray, any>;
+    let parts: RegExpMatchIteratorResult;
     const resultList = [];
     while (!(parts = res.next()).done) {
       resultList.push(parts);
     }
     return resultList;
   },
-  getTag: (parts: IteratorResult<RegExpMatchArray, any>): string => {
+  getTag: (parts: RegExpMatchIteratorResult): string => {
     return parts.value[1];
   },
-  isTag: (parts: IteratorResult<RegExpMatchArray, any>): boolean => {
+  isTag: (parts: RegExpMatchIteratorResult): boolean => {
     return parts.value[1]?.startsWith("#");
   },
 };
@@ -111,9 +133,9 @@ export const REGEX_LINK = {
   //      1   2    3           4             5         67                             8  9
   EXPR: /(!)?(\[\[([^|\]]+)\|?([^\]]+)?]]|\[([^\]]*)]\(((?:[^()]|\([^()]*\))*)\))(\{(\d+)\})?/g, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1963
 
-  getResList: (text: string): IteratorResult<RegExpMatchArray, any>[] => {
+  getResList: (text: string): RegExpMatchIteratorResult[] => {
     const res = text.matchAll(REGEX_LINK.EXPR);
-    let parts: IteratorResult<RegExpMatchArray, any>;
+    let parts: RegExpMatchIteratorResult;
     const resultList = [];
     while (!(parts = res.next()).done) {
       resultList.push(parts);
@@ -123,16 +145,16 @@ export const REGEX_LINK = {
   getRes: (text: string): IterableIterator<RegExpMatchArray> => {
     return text.matchAll(REGEX_LINK.EXPR);
   },
-  isTransclusion: (parts: IteratorResult<RegExpMatchArray, any>): boolean => {
+  isTransclusion: (parts: RegExpMatchIteratorResult): boolean => {
     return !!parts.value[1];
   },
-  getLink: (parts: IteratorResult<RegExpMatchArray, any>): string => {
+  getLink: (parts: RegExpMatchIteratorResult): string => {
     return parts.value[3] ? parts.value[3] : parts.value[6];
   },
-  isWikiLink: (parts: IteratorResult<RegExpMatchArray, any>): boolean => {
+  isWikiLink: (parts: RegExpMatchIteratorResult): boolean => {
     return !!parts.value[3];
   },
-  getAliasOrLink: (parts: IteratorResult<RegExpMatchArray, any>): string => {
+  getAliasOrLink: (parts: RegExpMatchIteratorResult): string => {
     return REGEX_LINK.isWikiLink(parts)
       ? parts.value[4]
         ? parts.value[4]
@@ -142,7 +164,7 @@ export const REGEX_LINK = {
         : parts.value[6];
   },
   getWrapLength: (
-    parts: IteratorResult<RegExpMatchArray, any>,
+    parts: RegExpMatchIteratorResult,
     defaultWrap: number,
   ): number => {
     const len = parseInt(parts.value[8]);
@@ -168,7 +190,7 @@ const isCompressedMD = (data: string): boolean => {
 
 const getDecompressedScene = (
   data: string,
-): [string, IteratorResult<RegExpMatchArray, any>] => {
+): [string | null, RegExpMatchIteratorResult] => {
   let res = data.matchAll(DRAWING_COMPRESSED_REG);
 
   //In case the user adds a text element with the contents "# Drawing\n"

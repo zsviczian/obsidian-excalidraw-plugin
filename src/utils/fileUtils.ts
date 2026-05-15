@@ -53,7 +53,14 @@ type NodeFsDataAdapter = DataAdapter & {
  * @param data
  * @param filename
  */
-export const download = (encoding: string, data: any, filename: string) => {
+export const download = (
+  encoding: string | null,
+  data: string | ArrayBuffer | null,
+  filename: string,
+) => {
+  if (typeof data !== "string") {
+    return;
+  }
   const element = document.createElement("a");
   element.setAttribute("href", (encoding ? `${encoding},` : "") + data);
   element.setAttribute("download", filename);
@@ -342,7 +349,17 @@ export const arrayBufferToBase64 = (arrayBuffer: ArrayBuffer): string => {
   return btoa(binary);
 };
 
-export const getPDFDoc = async (f: TFile): Promise<any> => {
+type PdfJsPage = {
+  getViewport(options: { scale: number }): { width: number; height: number };
+};
+
+type PdfJsDocument = {
+  destroy(): void;
+  getPage(pageNumber: number): Promise<PdfJsPage>;
+  numPages: number;
+};
+
+export const getPDFDoc = async (f: TFile): Promise<PdfJsDocument> => {
   if (typeof window.pdfjsLib === "undefined") {
     await loadPdfJs();
   }

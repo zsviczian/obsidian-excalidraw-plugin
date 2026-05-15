@@ -21,6 +21,7 @@ import {
   RequestUrlResponse,
   TFile,
   TFolder,
+  View,
   WorkspaceLeaf,
 } from "obsidian";
 import * as obsidian_module from "obsidian";
@@ -683,7 +684,7 @@ export class ExcalidrawAutomate {
   public getActiveEmbeddableViewOrEditor(
     view?: ExcalidrawView,
   ):
-    | { view: any }
+    | { view: View }
     | { file: TFile; editor: Editor }
     | { node: ObsidianCanvasNode }
     | null {
@@ -4395,10 +4396,10 @@ export class ExcalidrawAutomate {
 
   /**
    * Checks if the provided view is an instance of ExcalidrawView.
-   * @param {any} view - The view to check.
+   * @param {ExcalidrawView | null | undefined} view - The view to check.
    * @returns {boolean} True if the view is an instance of ExcalidrawView, false otherwise.
    */
-  isExcalidrawView(view: any): boolean {
+  isExcalidrawView(view: ExcalidrawView | null | undefined): boolean {
     return view instanceof ExcalidrawView;
   }
 
@@ -4605,7 +4606,7 @@ export class ExcalidrawAutomate {
    * Gets the PolyBool class from https://github.com/velipso/polybooljs.
    * @returns {PolyBool} The PolyBool class.
    */
-  getPolyBool() {
+  getPolyBool(): typeof PolyBool {
     const defaultEpsilon = 0.0000000001;
     PolyBool.epsilon(defaultEpsilon);
     return PolyBool;

@@ -17,6 +17,7 @@ import {
 import {
   ExcalidrawElement,
   ExcalidrawImageElement,
+  ExcalidrawEmbeddableElement,
   ExcalidrawMagicFrameElement,
   ExcalidrawTextElement,
   FileId,
@@ -32,6 +33,7 @@ import {
   SceneData,
   UIAppState,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
+import type { TTTDDialog } from "@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/types";
 import {
   VIEW_TYPE_EXCALIDRAW,
   ICON_NAME,
@@ -6916,7 +6918,9 @@ export default class ExcalidrawView
       this.packages.excalidrawLib.TTDDialog,
       {
         persistenceAdapter: ttdPersistenceAdapter,
-        onTextSubmit: async (props: any) => {
+        onTextSubmit: async (
+          props: Parameters<TTTDDialog.onTextSubmit>[0],
+        ): Promise<TTTDDialog.OnTextSubmitRetValue> => {
           const {
             messages = [],
             onChunk,
@@ -6994,7 +6998,12 @@ export default class ExcalidrawView
 
             onChunk?.(generatedResponse);
 
-            return { generatedResponse, rateLimit, rateLimitRemaining };
+            return {
+              generatedResponse,
+              error: null,
+              rateLimit,
+              rateLimitRemaining,
+            };
           } catch (err: any) {
             if (err?.name === "AbortError") {
               return { error: new Error("Request aborted") };
@@ -7111,7 +7120,11 @@ export default class ExcalidrawView
         React.createElement(
           WelcomeScreen.Center.Logo,
           {},
-          React.createElement(LogoWrapper, {}, excalidrawSword(rank as Rank)),
+          React.createElement(
+            LogoWrapper as React.FC<{ children?: React.ReactNode }>,
+            {},
+            excalidrawSword(rank as Rank),
+          ),
         ),
         React.createElement(
           WelcomeScreen.Center.Heading,
@@ -7121,19 +7134,22 @@ export default class ExcalidrawView
               nextRankDelta > 0
                 ? `${rank}: ${nextRankDelta} ${t("WELCOME_RANK_NEXT")}`
                 : `${rank}: ${t("WELCOME_RANK_LEGENDARY")}`,
+            children: title,
           },
-          title,
         ),
         React.createElement(
           WelcomeScreen.Center.Heading,
-          {},
-          t("WELCOME_COMMAND_PALETTE"),
-          React.createElement("br"),
-          t("WELCOME_OBSIDIAN_MENU"),
-          React.createElement("br"),
-          t("WELCOME_SCRIPT_LIBRARY"),
-          React.createElement("br"),
-          t("WELCOME_HELP_MENU"),
+          {
+            children: [
+              t("WELCOME_COMMAND_PALETTE"),
+              React.createElement("br"),
+              t("WELCOME_OBSIDIAN_MENU"),
+              React.createElement("br"),
+              t("WELCOME_SCRIPT_LIBRARY"),
+              React.createElement("br"),
+              t("WELCOME_HELP_MENU"),
+            ],
+          },
         ),
         React.createElement(
           WelcomeScreen.Center.Menu,
@@ -7145,8 +7161,8 @@ export default class ExcalidrawView
               href: "https://community.sketch-your-mind.com",
               shortcut: null,
               "aria-label": t("WELCOME_SYM_ARIA"),
+              children: t("WELCOME_SYM_LINK"),
             },
-            t("WELCOME_SYM_LINK"),
           ),
           React.createElement(
             WelcomeScreen.Center.MenuItemLink,
@@ -7155,8 +7171,8 @@ export default class ExcalidrawView
               href: "https://www.youtube.com/@VisualPKM",
               shortcut: null,
               "aria-label": t("WELCOME_YOUTUBE_ARIA"),
+              children: t("WELCOME_YOUTUBE_LINK"),
             },
-            t("WELCOME_YOUTUBE_LINK"),
           ),
           React.createElement(
             WelcomeScreen.Center.MenuItemLink,
@@ -7165,8 +7181,8 @@ export default class ExcalidrawView
               href: "https://twitter.com/zsviczian",
               shortcut: null,
               "aria-label": t("WELCOME_TWITTER_ARIA"),
+              children: t("WELCOME_TWITTER_LINK"),
             },
-            t("WELCOME_TWITTER_LINK"),
           ),
           React.createElement(
             WelcomeScreen.Center.MenuItemLink,
@@ -7175,8 +7191,8 @@ export default class ExcalidrawView
               href: "https://ko-fi.com/zsolt",
               shortcut: null,
               "aria-label": t("WELCOME_DONATE_ARIA"),
+              children: t("WELCOME_DONATE_LINK"),
             },
-            t("WELCOME_DONATE_LINK"),
           ),
         ),
       ),
@@ -7203,8 +7219,8 @@ export default class ExcalidrawView
             const uiModes = new UIModeSettings(this.plugin);
             uiModes.open();
           },
+          children: t("TRAY_TRAY_MODE"),
         },
-        t("TRAY_TRAY_MODE"),
       ),
       React.createElement(
         MainMenu.Item,
@@ -7212,8 +7228,8 @@ export default class ExcalidrawView
           icon: saveIcon(false),
           "aria-label": t("FORCE_SAVE"),
           onSelect: () => this.forceSave(),
+          children: t("TRAY_SAVE"),
         },
-        t("TRAY_SAVE"),
       ),
       React.createElement(
         MainMenu.Item,
@@ -7221,8 +7237,8 @@ export default class ExcalidrawView
           icon: ICONS.scriptEngine,
           "aria-label": t("TRAY_SCRIPT_LIBRARY_ARIA"),
           onSelect: () => this.actionOpenScriptInstallPrompt(),
+          children: t("TRAY_SCRIPT_LIBRARY"),
         },
-        t("TRAY_SCRIPT_LIBRARY"),
       ),
       React.createElement(
         MainMenu.Item,
@@ -7230,8 +7246,8 @@ export default class ExcalidrawView
           icon: ICONS.ExportImage,
           "aria-label": t("TRAY_EXPORT_ARIA"),
           onSelect: () => this.actionOpenExportImageDialog(),
+          children: t("TRAY_EXPORT"),
         },
-        t("TRAY_EXPORT"),
       ),
       React.createElement(
         MainMenu.Item,
@@ -7239,8 +7255,8 @@ export default class ExcalidrawView
           icon: ICONS.switchToMarkdown,
           "aria-label": t("TRAY_SWITCH_TO_MD_ARIA"),
           onSelect: () => this.openAsMarkdown(),
+          children: t("TRAY_SWITCH_TO_MD"),
         },
-        t("TRAY_SWITCH_TO_MD"),
       ),
       React.createElement(MainMenu.Separator),
       React.createElement(
@@ -7253,8 +7269,8 @@ export default class ExcalidrawView
               "https://community.sketch-your-mind.com",
               this.app,
             ),
+          children: t("LINKS_JOIN_SYM"),
         },
-        t("LINKS_JOIN_SYM"),
       ),
       React.createElement(MainMenu.DefaultItems.Help),
       React.createElement(MainMenu.DefaultItems.ClearCanvas),
@@ -7262,7 +7278,7 @@ export default class ExcalidrawView
   }
 
   private renderEmbeddable(
-    element: NonDeletedExcalidrawElement,
+    element: ExcalidrawEmbeddableElement,
     appState: UIAppState,
   ) {
     const React = this.packages.react;
@@ -7571,18 +7587,16 @@ export default class ExcalidrawView
           {
             onExcalidrawAPI: this.setExcalidrawAPI.bind(this),
             onInitialize: this.onExcalidrawInitialize.bind(this),
-            width: "100%", //dimensions.width,
-            height: "100%", //dimensions.height,
+            //width: "100%", //dimensions.width, //2026.05.15
+            //height: "100%", //dimensions.height, //2026.05.15
             UIOptions: {
               canvasActions: {
                 loadScene: false,
-                saveScene: false,
-                saveAsScene: false,
                 export: false,
                 saveAsImage: false,
                 saveToActiveFile: false,
               },
-              desktopUIMode: calculateUIModeValue(this.plugin.settings),
+              //desktopUIMode: calculateUIModeValue(this.plugin.settings), //2026.05.15
               //formFactor: DEVICE.isMobile ? "phone" : DEVICE.isTablet ? "tablet" : "desktop",
             },
             initState: initdata?.appState,
@@ -7609,7 +7623,7 @@ export default class ExcalidrawView
             validateEmbeddable: true,
             renderWebview: DEVICE.isDesktop,
             renderEmbeddable: this.renderEmbeddable.bind(this),
-            renderMermaid: shouldRenderMermaid,
+            renderMermaid: shouldRenderMermaid(),
             showDeprecatedFonts: true,
             insertLinkAction: DEVICE.isDesktop
               ? undefined

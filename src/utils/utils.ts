@@ -45,7 +45,7 @@ import { FileData } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 import ExcalidrawView from "../view/ExcalidrawView";
-import { emptyDrawingElements } from "src/constants/emptydrawing";
+import { getEmptyDrawingElementsRuntime } from "src/constants/emptydrawing";
 import { sanitizedFragment } from "./htmlUtils";
 export { errorlog, getDataURL } from "./coreUtils";
 export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
@@ -348,7 +348,7 @@ export async function getSVG(
       cropObject.destroy();
     } else {
       if (elements.length === 0) {
-        elements = emptyDrawingElements;
+        elements = getEmptyDrawingElementsRuntime();
       }
       svg = await exportToSvg({
         elements,
@@ -422,7 +422,7 @@ export async function getPNG(
     }
 
     if (elements.length === 0) {
-      elements = emptyDrawingElements;
+      elements = getEmptyDrawingElementsRuntime();
     }
 
     return await exportToBlob({
@@ -1279,7 +1279,7 @@ export function addYouTubeThumbnail(
 }
 
 export interface FontMetrics {
-  unitsPerEm: number;
+  unitsPerEm: 1000 | 1024 | 2048;
   ascender: number;
   descender: number;
   lineHeight: number;
@@ -1292,7 +1292,7 @@ export async function getFontMetrics(
 ): Promise<FontMetrics | null> {
   try {
     const font = await opentype.load(fontUrl);
-    const unitsPerEm = font.unitsPerEm;
+    const unitsPerEm = font.unitsPerEm as 1000 | 1024 | 2048;
     const ascender = font.ascender;
     const descender = font.descender;
     const lineHeight = (ascender - descender) / unitsPerEm;

@@ -504,7 +504,7 @@ function RenderObsidianView({
   //block propagation of events to the parent if the embeddable element is active
   //--------------------------------------------------------------------------------
   const stopPropagation = React.useCallback(
-    (event: React.PointerEvent<HTMLElement>) => {
+    (event: Event) => {
       if (isActiveRef.current) {
         event.stopPropagation(); // Stop the event from propagating up the DOM tree
       }
@@ -982,7 +982,7 @@ function RenderObsidianView({
   //Switch to edit mode when markdown view is clicked
   //--------------------------------------------------------------------------------
   const handleClick = React.useCallback(
-    (event?: React.PointerEvent<HTMLElement>) => {
+    (event?: Event) => {
       if (view.file !== initialViewFileRef.current) {
         return;
       }

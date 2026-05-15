@@ -10,11 +10,13 @@
  * @param target - The target to check.
  * @returns True if the target is an HTMLElement, false otherwise.
  */
-export function isHTMLElement(target: any): target is HTMLElement {
+export function isHTMLElement(target: EventTarget | null): target is HTMLElement {
   return (
-    target &&
+    target !== null &&
     typeof target === "object" &&
+    "nodeType" in target &&
     target.nodeType === 1 && // nodeType 1 means it's an element
+    "tagName" in target &&
     typeof target.tagName === "string"
   ); // tagName exists on HTML elements
 }

@@ -415,7 +415,11 @@ export const TEXT_DISPLAY_RAW_ICON_NAME = "presentation";
 export const EXIT_FULLSCREEN_ICON_NAME = "exit-fullscreen";*/
 export const SCRIPTENGINE_ICON_NAME = "ScriptEngine";
 
-export const KEYBOARD_EVENT_TYPES = ["keydown", "keyup", "keypress"];
+export const KEYBOARD_EVENT_TYPES = [
+  "keydown",
+  "keyup",
+  "keypress",
+] as const;
 
 export const EXTENDED_EVENT_TYPES = [
   /*  "pointerdown",
@@ -444,7 +448,7 @@ export const EXTENDED_EVENT_TYPES = [
   "touchstart",
   "touchend",
   "touchmove",*/
-];
+] as const;
 
 //export const TWITTER_REG = /^(?:http(?:s)?:\/\/)?(?:(?:w){3}.)?twitter.com/;
 

@@ -76,7 +76,7 @@ export class CanvasNodeFactory {
       app.workspace[doc === document ? "rootSplit" : "floatingSplit"];
     rootSplit.getContainer = () => getContainerForDocument(doc);
     this.leaf = app.workspace.createLeafInParent(rootSplit, 0);
-    this.canvas = canvasPlugin.views.canvas(this.leaf).canvas;
+    this.canvas = canvasPlugin.views.canvas(this.leaf).canvas as ObsidianCanvas;
     this.initialized = true;
   }
 

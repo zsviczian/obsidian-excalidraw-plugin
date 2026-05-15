@@ -8,6 +8,7 @@ import {
   MarkdownView,
   normalizePath,
   ViewState,
+  ViewStateResult,
   Notice,
   request,
   MetadataCache,
@@ -1080,8 +1081,11 @@ export default class ExcalidrawPlugin extends Plugin {
       };
     }
     this.packageManager.getPackageMap().forEach(({ excalidrawLib }) => {
+      if (!fontMetrics) {
+        return;
+      }
       (excalidrawLib as typeof ExcalidrawLib).registerLocalFont(
-        { metrics: fontMetrics as any },
+        { metrics: fontMetrics },
         fourthFontDataURL,
       );
     });
@@ -1395,11 +1399,15 @@ export default class ExcalidrawPlugin extends Plugin {
         }
 
         const files = new Map<string, number>();
+        type RemoteDirectoryInfo = {
+          fname: string;
+          mtime: number;
+        };
         JSON.parse(
           await request({
             url: "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/directory-info.json",
           }),
-        ).forEach((f: any) => files.set(f.fname, f.mtime));
+        ).forEach((f: RemoteDirectoryInfo) => files.set(f.fname, f.mtime));
 
         const checkModifyDate = (
           gitFilename: string,
@@ -1608,7 +1616,7 @@ export default class ExcalidrawPlugin extends Plugin {
         },
 
         setViewState(next) {
-          return function (state: ViewState, ...rest: any[]) {
+          return function (state: ViewState, ...rest: [ViewStateResult?]) {
             const markdownViewLoaded =
               self._loaded && // Don't force excalidraw mode during shutdown
               state.type === "markdown" && // If we have a markdown file
@@ -1696,7 +1704,16 @@ export default class ExcalidrawPlugin extends Plugin {
     if (!leaf || !leaf.view || leaf.view.getViewType() !== "pdf") {
       return;
     }
-    const view: any = leaf.view;
+    const view = leaf.view as {
+      file?: TFile;
+      viewer?: {
+        child?: {
+          pdfViewer?: {
+            page?: number;
+          };
+        };
+      };
+    };
     const file = view.file;
     const page = view.viewer.child.pdfViewer.page;
     if (!file || !page) {
@@ -2024,7 +2041,7 @@ export default class ExcalidrawPlugin extends Plugin {
     return file.path;
   }
 
-  public async setMarkdownView(leaf: WorkspaceLeaf, eState?: any) {
+  public async setMarkdownView(leaf: WorkspaceLeaf, eState?: ViewStateResult) {
     const state = leaf.view.getState();
 
     //Note v2.0.19: I have absolutely no idea why I thought this is necessary. Removing this.

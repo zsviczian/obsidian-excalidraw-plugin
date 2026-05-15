@@ -1,6 +1,110 @@
-import { TFile } from "obsidian";
+import { Component, TAbstractFile, TFile, WorkspaceLeaf } from "obsidian";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import { ExcalidrawLib } from "./excalidrawLib";
+
+type PdfJsPageViewport = {
+  width: number;
+  height: number;
+};
+
+type PdfJsPageProxy = {
+  getViewport(options: { scale: number }): PdfJsPageViewport;
+};
+
+type PdfJsDocumentProxy = {
+  destroy(): void;
+  getPage(pageNumber: number): Promise<PdfJsPageProxy>;
+  numPages: number;
+};
+
+type PdfJsDocumentLoadResult = {
+  promise: Promise<PdfJsDocumentProxy>;
+};
+
+type PdfJsLibrary = {
+  GlobalWorkerOptions: {
+    workerSrc: string;
+  };
+  getDocument(options: {
+    url: string;
+    wasmUrl?: string;
+    cMapUrl?: string;
+    cMapPacked?: boolean;
+    standardFontDataUrl?: string;
+    iccUrl?: string;
+  }): PdfJsDocumentLoadResult;
+};
+
+type PolyBoolLibrary = {
+  epsilon(value: number): void;
+};
+
+type ObsidianInternalPluginInstance = {
+  openGlobalSearch?(query: string): void;
+  apiList?(): Promise<{
+    files?: Array<{
+      path: string;
+    }>;
+  }>;
+};
+
+type ObsidianInternalPlugin = {
+  _loaded?: boolean;
+  load?(): Promise<void>;
+  views?: {
+    canvas(leaf: WorkspaceLeaf): {
+      canvas: unknown;
+    };
+  };
+  instance?: ObsidianInternalPluginInstance;
+};
+
+type ObsidianInternalPluginsManager = {
+  plugins: Record<string, ObsidianInternalPlugin | undefined>;
+  getPluginById(id: string): ObsidianInternalPlugin | undefined;
+};
+
+type ObsidianSettingsManager = {
+  open(): void;
+  openTabById(tabId: string): void;
+};
+
+type MarkdownBlockNode = {
+  type: string;
+  id?: string;
+  depth?: number;
+  level?: number;
+  value?: string;
+  title?: string;
+  data?: {
+    hProperties?: {
+      dataHeading?: string;
+    };
+  };
+  children?: MarkdownBlockNode[];
+  position: {
+    start: {
+      offset: number;
+      line: number;
+    };
+    end: {
+      offset: number;
+    };
+  };
+};
+
+type MarkdownBlockCacheEntry = {
+  display: string;
+  node: MarkdownBlockNode;
+};
+
+type MarkdownBlockCacheResult = {
+  blocks: MarkdownBlockCacheEntry[];
+};
+
+type BacklinksForFileResult = {
+  data: Record<string, import("obsidian").LinkCache[]>;
+};
 
 export type ObsidianCommand = {
   id: string;
@@ -19,8 +123,8 @@ export type ObsidianCommandManager = {
 export type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
 
 export type Packages = {
-  react: any;
-  reactDOM: any;
+  react: typeof import("react");
+  reactDOM: typeof import("react-dom/client");
   excalidrawLib: typeof ExcalidrawLib | null;
 };
 
@@ -58,16 +162,16 @@ export type LinkSuggestion = {
 declare global {
   interface Window {
     ExcalidrawAutomate: ExcalidrawAutomate;
-    pdfjsLib: any;
-    PolyBool?: any;
+    pdfjsLib: PdfJsLibrary;
+    PolyBool?: PolyBoolLibrary;
     electronWindow?: {
       isAlwaysOnTop(): boolean;
       setAlwaysOnTop(flag: boolean): void;
     };
-    eval: (x: string) => any;
-    React?: any;
-    ReactDOM?: any;
-    ExcalidrawLib?: any;
+    eval: typeof globalThis.eval;
+    React?: typeof import("react");
+    ReactDOM?: typeof import("react-dom/client");
+    ExcalidrawLib?: typeof ExcalidrawLib;
   }
   interface File {
     path?: string;
@@ -77,8 +181,8 @@ declare global {
 declare module "obsidian" {
   interface App {
     appId: string;
-    internalPlugins: any;
-    setting: any;
+    internalPlugins: ObsidianInternalPluginsManager;
+    setting: ObsidianSettingsManager;
     commands: ObsidianCommandManager;
     isMobile(): boolean;
     getAccentColor(): string;
@@ -146,7 +250,10 @@ declare module "obsidian" {
     getRootScope(): Scope;
   }
   interface Scope {
-    keys: any[];
+    keys: Array<{
+      key?: string;
+      modifiers?: Array<"Mod" | "Ctrl" | "Meta" | "Shift" | "Alt">;
+    }>;
   }
   interface WorkspaceLeaf {
     id: string;
@@ -170,8 +277,8 @@ declare module "obsidian" {
   interface Workspace {
     on(
       name: "hover-link",
-      callback: (e: MouseEvent) => any,
-      ctx?: any,
+      callback: (e: MouseEvent) => boolean | void,
+      ctx?: Component,
     ): EventRef;
   }
   interface DataAdapter {
@@ -218,16 +325,15 @@ declare module "obsidian" {
       path: string;
       file: TFile;
     }>;
-    getBacklinksForFile(file: TFile): any;
-    getLinks(): {
-      [id: string]: Array<{
-        link: string;
-        displayText: string;
-        original: string;
-        position: any;
-      }>;
-    };
+    getBacklinksForFile(file: TFile): BacklinksForFileResult | null;
+    getLinks(): Record<string, import("obsidian").LinkCache[]>;
     getCachedFiles(): string[];
+    blockCache: {
+      getForFile(
+        x: { isCancelled(): boolean },
+        f: TAbstractFile,
+      ): Promise<MarkdownBlockCacheResult>;
+    };
   }
 
   interface FuzzySuggestModal<T> {

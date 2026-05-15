@@ -261,7 +261,10 @@ export class EmbeddableMenu {
           b.node.type === "table" ||
           b.node.type === "callout"),
     );
-    const values = ["entire-file"].concat(paragraphs);
+    const values: Array<"entire-file" | (typeof paragraphs)[number]> = [
+      "entire-file",
+      ...paragraphs,
+    ];
     const display = [t("SHOW_ENTIRE_FILE")].concat(
       paragraphs.map(
         (b: any) =>

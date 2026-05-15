@@ -9,6 +9,7 @@ import {
   Command,
   EventRef,
   FileView,
+  View,
 } from "obsidian";
 import {
   VIEW_TYPE_EXCALIDRAW,
@@ -1610,7 +1611,42 @@ export class CommandManager {
           this.app.workspace.getActiveViewOfType(ExcalidrawView);
         const markdownView =
           this.app.workspace.getActiveViewOfType(MarkdownView);
-        const canvasView: any = this.app.workspace.activeLeaf?.view;
+        type CanvasNodeLike = { //2026.05.15
+          nodeEl: {
+            hasClass(className: string): boolean;
+          };
+          file?: TFile;
+          url?: string;
+          child?: View;
+          canvas: {
+            createFileNode(options: {
+              pos: { x: number; y: number };
+              file: TFile;
+            }): void;
+          };
+          setFile(file: TFile): void;
+          x: number;
+          y: number;
+          width: number;
+        };
+        type CanvasViewLike = View & {
+          getViewType(): string;
+          file: TFile;
+          canvas: {
+            nodes: CanvasNodeLike[];
+          };
+        };
+        const activeView = this.app.workspace.activeLeaf?.view;
+        const isCanvasViewLike = (view: typeof activeView): view is CanvasViewLike =>
+          Boolean(
+            view &&
+              view.getViewType() === "canvas" &&
+              "canvas" in view &&
+              Array.isArray((view as { canvas?: { nodes?: CanvasNodeLike[] } }).canvas?.nodes),
+          );
+        const canvasView = isCanvasViewLike(activeView)
+          ? activeView
+          : undefined;
         const isCanvas = canvasView && canvasView.getViewType() === "canvas";
         if (!excalidrawView && !markdownView && !isCanvas) {
           return false;
@@ -1754,8 +1790,8 @@ export class CommandManager {
         };
 
         if (isCanvas) {
-          const selectedNodes: any = [];
-          canvasView.canvas.nodes.forEach((node: any) => {
+          const selectedNodes: CanvasNodeLike[] = [];
+          canvasView.canvas.nodes.forEach((node: CanvasNodeLike) => {
             if (node.nodeEl.hasClass("is-focused")) {
               selectedNodes.push(node);
             }
@@ -1902,7 +1938,42 @@ export class CommandManager {
       checkCallback: (checking: boolean) => {
         const markdownView =
           this.app.workspace.getActiveViewOfType(MarkdownView);
-        const canvasView: any = this.app.workspace.activeLeaf?.view;
+        type CanvasNodeLike = {
+          nodeEl: {
+            hasClass(className: string): boolean;
+          };
+          file?: TFile;
+          url?: string;
+          child?: View;
+          canvas: {
+            createFileNode(options: {
+              pos: { x: number; y: number };
+              file: TFile;
+            }): void;
+          };
+          setFile(file: TFile): void;
+          x: number;
+          y: number;
+          width: number;
+        };
+        type CanvasViewLike = View & {
+          getViewType(): string;
+          file: TFile;
+          canvas: {
+            nodes: CanvasNodeLike[];
+          };
+        };
+        const activeView = this.app.workspace.activeLeaf?.view;
+        const isCanvasViewLike = (view: typeof activeView): view is CanvasViewLike =>
+          Boolean(
+            view &&
+              view.getViewType() === "canvas" &&
+              "canvas" in view &&
+              Array.isArray((view as { canvas?: { nodes?: CanvasNodeLike[] } }).canvas?.nodes),
+          );
+        const canvasView = isCanvasViewLike(activeView)
+          ? activeView
+          : undefined;
         const isCanvas = canvasView && canvasView.getViewType() === "canvas";
         if (!markdownView && !isCanvas) {
           return false;
@@ -2004,8 +2075,8 @@ export class CommandManager {
         };
 
         if (isCanvas) {
-          const selectedNodes: any = [];
-          canvasView.canvas.nodes.forEach((node: any) => {
+          const selectedNodes: CanvasNodeLike[] = [];
+          canvasView.canvas.nodes.forEach((node: CanvasNodeLike) => {
             if (node.nodeEl.hasClass("is-focused")) {
               selectedNodes.push(node);
             }
@@ -2384,9 +2455,8 @@ export class CommandManager {
           (async () => {
             await markdownView.save();
             const activeLeaf = markdownView.leaf;
-            this.plugin.excalidrawFileModes[
-              (activeLeaf as any).id || activeFile.path
-            ] = VIEW_TYPE_EXCALIDRAW;
+            this.plugin.excalidrawFileModes[activeLeaf.id || activeFile.path] =
+              VIEW_TYPE_EXCALIDRAW;
             setExcalidrawView(activeLeaf);
           })();
           return;
