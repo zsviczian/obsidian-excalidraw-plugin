@@ -742,7 +742,7 @@ export default class ExcalidrawPlugin extends Plugin {
     if (!this.isLocalCJKFontAvailabe) {
       return;
     }
-    const file = this.app.vault.getAbstractFileByPath(
+    const file = this.app.vault.getFileByPath(
       normalizePath(assetsFoler + "/" + fontName),
     );
     if (!file || !(file instanceof TFile)) {
@@ -1315,7 +1315,7 @@ export default class ExcalidrawPlugin extends Plugin {
         let scriptFile = downloaded[0];
         const scriptPath = scriptFile?.path ?? `${folder}/${fname}`;
         const svgPath = getIMGFilename(scriptPath, "svg");
-        let svgFile = this.app.vault.getAbstractFileByPath(svgPath);
+        let svgFile = this.app.vault.getFileByPath(svgPath);
         setButtonText(scriptFile ? "CHECKING" : "INSTALL");
         button.onclick = async () => {
           const download = async (
@@ -1522,7 +1522,7 @@ export default class ExcalidrawPlugin extends Plugin {
       EXPORT_TYPES.forEach((ext: string) => {
         const oldIMGpath =
           file.path.substring(0, file.path.lastIndexOf(".excalidraw")) + ext;
-        const imgFile = this.app.vault.getAbstractFileByPath(
+        const imgFile = this.app.vault.getFileByPath(
           normalizePath(oldIMGpath),
         );
         if (imgFile && imgFile instanceof TFile) {
@@ -1684,7 +1684,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const path = this.settings.startupScriptPath.endsWith(".md")
       ? this.settings.startupScriptPath
       : `${this.settings.startupScriptPath}.md`;
-    const f = this.app.vault.getAbstractFileByPath(path);
+    const f = this.app.vault.getFileByPath(path);
     if (!f || !(f instanceof TFile)) {
       new Notice(`Startup script not found: ${path}`);
       return;

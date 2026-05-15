@@ -5,7 +5,7 @@ import { LiteAdaptor,liteAdaptor } from 'mathjax-full/js/adaptors/liteAdaptor.js
 import { RegisterHTMLHandler } from 'mathjax-full/js/handlers/html.js';
 import { AllPackages } from 'mathjax-full/js/input/tex/AllPackages.js';
 import { customAlphabet } from "nanoid";
-import type { TAbstractFile } from "obsidian";
+import type { TAbstractFile, TFile } from "obsidian";
 
 type DataURL = string & { _brand: "DataURL" };
 type FileId = string & { _brand: "FileId" };
@@ -14,6 +14,7 @@ const fileid = customAlphabet("1234567890abcdef", 40);
 type LatexPluginLike = {
   app: {
     vault: {
+      getFileByPath: (path: string) => TFile | null;
       getAbstractFileByPath: (path: string) => TAbstractFile | null;
       read: (file: TAbstractFile) => Promise<string>;
     };
@@ -64,7 +65,7 @@ export async function tex2dataURL(
 
   if(!adaptor) {
     if (plugin) {
-      const file = plugin.app.vault.getAbstractFileByPath(plugin.settings.latexPreambleLocation || "preamble.sty");
+      const file = plugin.app.vault.getFileByPath(plugin.settings.latexPreambleLocation || "preamble.sty");
       preamble = file ? await plugin.app.vault.read(file) : null;
     }
     adaptor = liteAdaptor();

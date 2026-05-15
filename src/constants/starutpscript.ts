@@ -1,5 +1,5 @@
 /*
-f = app.vault.getAbstractFileByPath("startuphooks.md");
+f = app.vault.getFileByPath("startuphooks.md");
 s = await app.vault.read(f);
 ea = ExcalidrawAutomate;
 url = await ea.convertStringToDataURL(s);

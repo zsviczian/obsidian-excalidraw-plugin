@@ -3078,11 +3078,11 @@ const executeDeconstruction = async (folderPath, fileName, shouldAnchor) => {
     silent: true
   });
 
-  let f = app.vault.getAbstractFileByPath(newPath);
+  let f = app.vault.getFileByPath(newPath);
   let counter = 0;
   while((!f || !ea.isExcalidrawFile(f)) && counter++<100) {
     await sleep(50);
-    f = app.vault.getAbstractFileByPath(newPath);
+    f = app.vault.getFileByPath(newPath);
   }
 
   if(!f || !ea.isExcalidrawFile(f)) {

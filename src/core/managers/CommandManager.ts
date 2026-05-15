@@ -586,7 +586,7 @@ export class CommandManager {
             this.plugin.lastActiveExcalidrawFilePath !== null
           );
         }
-        const file = this.app.vault.getAbstractFileByPath(
+        const file = this.app.vault.getFileByPath(
           this.plugin.lastActiveExcalidrawFilePath,
         );
         if (!(file instanceof TFile)) {
@@ -2052,7 +2052,7 @@ export class CommandManager {
             counter < 50
           ) {
             await sleep(100);
-            newFile = this.app.vault.getAbstractFileByPath(newPath);
+            newFile = this.app.vault.getFileByPath(newPath);
             counter++;
           }
           //console.log({counter, file});
