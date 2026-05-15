@@ -254,16 +254,6 @@ const RE_TAIL = /^## Drawing\n.*```\n%%$(.*)/ms;
 
 declare const PLUGIN_VERSION: string;
 
-declare module "obsidian" {
-  interface Workspace {
-    floatingSplit: any;
-  }
-
-  interface WorkspaceSplit {
-    containerEl: HTMLDivElement;
-  }
-}
-
 type SelectedElementWithLink = { id: string; text: string };
 type SelectedImage = { id: string; fileId: FileId };
 

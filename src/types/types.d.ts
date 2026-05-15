@@ -217,6 +217,7 @@ declare module "obsidian" {
       child?: {
         pdfViewer?: {
           page?: number;
+          setBackground?(color: string | null, isInverted: boolean): void;
         };
       };
     };
@@ -275,11 +276,23 @@ declare module "obsidian" {
     children?: unknown[];
   }
   interface Workspace {
+    floatingSplit?: WorkspaceSplit;
+    getAdjacentLeafInDirection(
+      leaf: WorkspaceLeaf,
+      direction: string,
+    ): WorkspaceLeaf;
     on(
       name: "hover-link",
       callback: (e: MouseEvent) => boolean | void,
       ctx?: Component,
     ): EventRef;
+  }
+  interface WorkspaceSplit {
+    containerEl: HTMLDivElement;
+    children?: WorkspaceContainer[];
+  }
+  interface WorkspaceContainer {
+    doc?: Document;
   }
   interface DataAdapter {
     url: {

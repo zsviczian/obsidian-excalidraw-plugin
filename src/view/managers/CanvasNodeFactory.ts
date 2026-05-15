@@ -8,7 +8,7 @@ node.render();
 container.appendChild(node.contentEl)
 */
 
-import { TFile, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
+import { Editor, TFile, View, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import {
   getContainerForDocument,
@@ -16,16 +16,6 @@ import {
   isObsidianThemeDark,
 } from "../../utils/obsidianUtils";
 import { CustomMutationObserver, DEBUGGING } from "../../utils/debugHelper";
-
-declare module "obsidian" {
-  interface Workspace {
-    floatingSplit: any;
-  }
-
-  interface WorkspaceSplit {
-    containerEl: HTMLDivElement;
-  }
-}
 
 interface ObsidianCanvas {
   createFileNode: (params: {
@@ -37,9 +27,21 @@ interface ObsidianCanvas {
   removeNode: (node: ObsidianCanvasNode) => void;
 }
 
+export interface ObsidianCanvasNodeChild extends View {
+  file?: TFile;
+  heading?: string;
+  text?: string;
+  subpath?: string;
+  lastSavedData?: string;
+  editor?: Editor & {
+    containerEl?: HTMLElement;
+  };
+  showPreview?(): void;
+}
+
 export interface ObsidianCanvasNode {
   startEditing: () => void;
-  child: any;
+  child: ObsidianCanvasNodeChild;
   isEditing: boolean;
   file: TFile;
   detach: () => void;

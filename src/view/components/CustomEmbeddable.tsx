@@ -24,6 +24,21 @@ import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { EmbeddableLeafRef } from "src/types/excalidrawViewTypes";
 import { t } from "src/lang/helpers";
 
+type PdfViewLike = {
+  containerEl?: HTMLElement;
+  viewer?: {
+    child?: {
+      pdfViewer?: {
+        setBackground?(color: string | null, isInverted: boolean): void;
+      };
+    };
+  };
+};
+
+type PdfObserverRef = React.MutableRefObject<MutationObserver | null> & {
+  currentCleanup?: () => void;
+};
+
 const CANVAS_VIEWTYPES = new Set([
   "markdown",
   "bases",
@@ -31,16 +46,6 @@ const CANVAS_VIEWTYPES = new Set([
   "video",
   "pdf",
 ]);
-
-declare module "obsidian" {
-  interface Workspace {
-    floatingSplit: any;
-  }
-
-  interface WorkspaceSplit {
-    containerEl: HTMLDivElement;
-  }
-}
 
 let noticeTimer: number;
 function showNoticeOnce(message: string) {
@@ -67,7 +72,7 @@ function getTheme(view: ExcalidrawView, theme: string): string {
           : "theme-light";
 }
 
-function setPDFViewTheme(view: ExcalidrawView, pdfView: any) {
+function setPDFViewTheme(view: ExcalidrawView, pdfView: PdfViewLike | null) {
   if (!pdfView) {
     return;
   }
@@ -79,7 +84,7 @@ function setPDFViewTheme(view: ExcalidrawView, pdfView: any) {
     }
     const thumbnailViewEl = pdfView.containerEl?.querySelector(
       ".pdf-thumbnail-view",
-    );
+    ) as HTMLElement | null;
     if (thumbnailViewEl) {
       thumbnailViewEl.style.filter = "var(--theme-filter)";
     }
@@ -109,9 +114,7 @@ function setPDFViewTheme(view: ExcalidrawView, pdfView: any) {
 function setupPdfViewEnhancements(
   view: ExcalidrawView,
   leafRef: React.MutableRefObject<EmbeddableLeafRef | null>,
-  pdfObserverRef: React.MutableRefObject<MutationObserver | null> & {
-    currentCleanup?: () => void;
-  },
+  pdfObserverRef: PdfObserverRef,
   pdfObserverDisabledRef: React.MutableRefObject<boolean>,
 ) {
   const pdfView = leafRef.current?.node?.child;
@@ -260,15 +263,9 @@ function setupPdfViewEnhancements(
       try {
         (view.contentEl as HTMLElement).style.cursor = "";
       } catch {}
-      window.removeEventListener("pointermove", onPointerMove, {
-        capture: true,
-      } as any);
-      window.removeEventListener("pointerup", onPointerUp, {
-        capture: true,
-      } as any);
-      window.removeEventListener("pointercancel", onPointerUp, {
-        capture: true,
-      } as any);
+      window.removeEventListener("pointermove", onPointerMove, true);
+      window.removeEventListener("pointerup", onPointerUp, true);
+      window.removeEventListener("pointercancel", onPointerUp, true);
     };
 
     const root = pdfView.containerEl as HTMLElement;
@@ -277,22 +274,14 @@ function setupPdfViewEnhancements(
     });
 
     const cleanupPan = () => {
-      root?.removeEventListener("pointerdown", onPointerDownCapture, {
-        capture: true,
-      } as any);
-      window.removeEventListener("pointermove", onPointerMove, {
-        capture: true,
-      } as any);
-      window.removeEventListener("pointerup", onPointerUp, {
-        capture: true,
-      } as any);
-      window.removeEventListener("pointercancel", onPointerUp, {
-        capture: true,
-      } as any);
+      root?.removeEventListener("pointerdown", onPointerDownCapture, true);
+      window.removeEventListener("pointermove", onPointerMove, true);
+      window.removeEventListener("pointerup", onPointerUp, true);
+      window.removeEventListener("pointercancel", onPointerUp, true);
       heightObserver?.disconnect();
       heightObserver = null;
     };
-    (pdfObserverRef as any).currentCleanup = () => {
+    pdfObserverRef.currentCleanup = () => {
       cleanupPan();
     };
 
@@ -339,7 +328,7 @@ function setupPdfViewEnhancements(
 
                 // Cleanup existing handlers/observers
                 try {
-                  (pdfObserverRef as any).currentCleanup?.();
+                  pdfObserverRef.currentCleanup?.();
                 } catch {}
                 try {
                   pdfObserverRef.current?.disconnect();
@@ -350,8 +339,8 @@ function setupPdfViewEnhancements(
                   if (leafRef.current?.node?.child?.containerEl?.isConnected) {
                     setupPdfViewEnhancements(
                       view,
-                      leafRef as React.MutableRefObject<EmbeddableLeafRef | null>,
-                      pdfObserverRef as any,
+                      leafRef,
+                      pdfObserverRef,
                       pdfObserverDisabledRef,
                     );
                   }
@@ -362,8 +351,8 @@ function setupPdfViewEnhancements(
           detachObserver.observe(rootEl, { childList: true, subtree: true });
 
           // Extend cleanup to also stop the detachObserver and the class observer
-          const prevCleanup = (pdfObserverRef as any).currentCleanup;
-          (pdfObserverRef as any).currentCleanup = () => {
+          const prevCleanup = pdfObserverRef.currentCleanup;
+          pdfObserverRef.currentCleanup = () => {
             try {
               prevCleanup?.();
             } catch {}
@@ -387,7 +376,7 @@ function setupPdfViewEnhancements(
     if (existing) {
       patchPDF();
     } else {
-      let timeoutId: number = null as any;
+      let timeoutId: number | null = null;
       const mo = new MutationObserver((_, obs) => {
         const el = root.querySelector(selector);
         if (el) {
@@ -490,7 +479,7 @@ function RenderObsidianView({
   const isActiveRef = React.useRef(false);
   const viewTypeRef = React.useRef("empty");
   const themeRef = React.useRef(theme);
-  const pdfObserverRef = React.useRef(null);
+  const pdfObserverRef = React.useRef<MutationObserver | null>(null) as PdfObserverRef;
   const pdfObserverDisabledRef = React.useRef(false);
   const mobilePatchCleanupRef = React.useRef(null);
   const initialViewFileRef = React.useRef(view.file);
@@ -641,10 +630,8 @@ function RenderObsidianView({
           // Moved PDF setup logic into a helper for readability
           setupPdfViewEnhancements(
             view,
-            leafRef as React.MutableRefObject<EmbeddableLeafRef | null>,
-            pdfObserverRef as unknown as React.MutableRefObject<MutationObserver | null> & {
-              currentCleanup?: () => void;
-            },
+            leafRef,
+            pdfObserverRef,
             pdfObserverDisabledRef,
           );
         }
@@ -697,7 +684,7 @@ function RenderObsidianView({
 
     return () => {
       // disconnect observer if any
-      (pdfObserverRef as any).currentCleanup?.();
+      pdfObserverRef.currentCleanup?.();
       pdfObserverRef.current?.disconnect();
       pdfObserverRef.current = null;
 

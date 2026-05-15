@@ -53,15 +53,6 @@ export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 declare const PLUGIN_VERSION: string;
 declare var LZString: any;
 
-declare module "obsidian" {
-  interface Workspace {
-    getAdjacentLeafInDirection(
-      leaf: WorkspaceLeaf,
-      direction: string,
-    ): WorkspaceLeaf;
-  }
-}
-
 let versionMismatchChecked = false;
 export async function checkVersionMismatch(plugin: ExcalidrawPlugin) {
   if (!versionMismatchChecked && plugin.manifest.version !== PLUGIN_VERSION) {
