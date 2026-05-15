@@ -4,6 +4,7 @@ import { getEA } from "src/core";
 import { t } from "src/lang/helpers";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import ExcalidrawView from "src/view/ExcalidrawView";
+import { NormalizedZoomValue } from "@zsviczian/excalidraw/types/excalidraw/types";
 
 export interface ScreenshotOptions {
   zoom: number;
@@ -161,7 +162,7 @@ export async function captureScreenshot(
     view.updateScene({
       appState: {
         zoom: {
-          value: options.zoom,
+          value: options.zoom as NormalizedZoomValue,
         },
         width: tileWidth,
         height: tileHeight,
@@ -193,7 +194,7 @@ export async function captureScreenshot(
             scrollX: -scrollX,
             scrollY: -scrollY,
             zoom: {
-              value: options.zoom,
+              value: options.zoom as NormalizedZoomValue,
             },
             width: tileWidth,
             height: tileHeight,

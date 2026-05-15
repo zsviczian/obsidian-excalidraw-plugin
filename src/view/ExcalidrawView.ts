@@ -1,4 +1,5 @@
 import {
+  Editor,
   TextFileView,
   WorkspaceLeaf,
   TFile,
@@ -6,6 +7,7 @@ import {
   Notice,
   Menu,
   MarkdownView,
+  ViewStateResult,
   request,
   requireApiVersion,
   HoverParent,
@@ -22,6 +24,7 @@ import {
   ExcalidrawTextElement,
   FileId,
   NonDeletedExcalidrawElement,
+  BoundElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import {
   AppState,
@@ -214,7 +217,15 @@ import { IS_WORKER_SUPPORTED } from "../shared/Workers/compression-worker";
 import {
   AutoexportConfig,
   EmbeddableLeafRef,
+  ExcalidrawEphemeralState,
+  ExcalidrawLinkOpenEvent,
+  ExcalidrawViewInitialData,
+  ExcalidrawViewScene,
+  ExcalidrawViewUpdateScene,
+  MarkdownBlockCacheEntry,
+  MarkdownViewOpenState,
   Position,
+  StencilLibraryData,
   ViewSemaphores,
 } from "../types/excalidrawViewTypes";
 import { DropManager } from "./managers/DropManager";
@@ -373,12 +384,15 @@ export default class ExcalidrawView
   private freedrawLastActiveTimestamp: number = 0;
   public exportDialog: ExportDialog | null = null;
   public excalidrawData: ExcalidrawData;
-  //public excalidrawRef: React.MutableRefObject<any> = null;
-  public excalidrawRoot: any;
+  //public excalidrawRef: React.MutableRefObject<unknown> = null;
+  public excalidrawRoot: ReturnType<Packages["reactDOM"]["createRoot"]> | null =
+    null;
   public excalidrawAPI: ExcalidrawImperativeAPI = null;
-  public excalidrawWrapperRef: React.MutableRefObject<any> | null = null;
-  public toolsPanelRef: React.MutableRefObject<any> | null = null;
-  public embeddableMenuRef: React.MutableRefObject<any> | null = null;
+  public excalidrawWrapperRef: React.MutableRefObject<HTMLDivElement | null> | null =
+    null;
+  public toolsPanelRef: React.MutableRefObject<ToolsPanel | null> | null = null;
+  public embeddableMenuRef: React.MutableRefObject<HTMLDivElement | null> | null =
+    null;
   private parentMoveObserver: MutationObserver | CustomMutationObserver | null =
     null;
   public linksAlwaysOpenInANewPane: boolean = false; //override the need for SHIFT+CTRL+click (used by ExcaliBrain)
@@ -400,7 +414,10 @@ export default class ExcalidrawView
     ExcalidrawElement["id"],
     HTMLIFrameElement | HTMLWebViewElement
   >();
-  private embeddableLeafRefs = new Map<ExcalidrawElement["id"], any>();
+  private embeddableLeafRefs = new Map<
+    ExcalidrawElement["id"],
+    EmbeddableLeafRef
+  >();
 
   public semaphores: ViewSemaphores | null = {
     warnAboutLinearElementLinkClick: true,
@@ -423,7 +440,7 @@ export default class ExcalidrawView
   };
 
   public _plugin: ExcalidrawPlugin;
-  public autosaveTimer: any = null;
+  public autosaveTimer: number | null = null;
   public textMode: TextMode = TextMode.raw;
   private actionButtons: Record<ActionButtons, HTMLElement> = {} as Record<
     ActionButtons,
@@ -458,12 +475,15 @@ export default class ExcalidrawView
   private hoverPoint = { x: 0, y: 0 };
   private hoverPreviewTarget: EventTarget | null = null;
   private viewModeEnabled: boolean = false;
-  private lastMouseEvent: any = null;
+  private lastMouseEvent:
+    | MouseEvent
+    | React.PointerEvent<HTMLCanvasElement>
+    | null = null;
   private editingTextElementId: string | null = null; //storing to handle on-screen keyboard hide events
   /*  private lastSceneSnapshot: any = null;
   private lastViewDataSnapshot: any = null;*/
 
-  id: string = (this.leaf as any).id;
+  id: string = this.leaf.id;
   public packages: Packages = {
     react: null,
     reactDOM: null,
@@ -486,7 +506,9 @@ export default class ExcalidrawView
     return this._plugin;
   }
   get excalidrawContainer(): HTMLDivElement {
-    return this.excalidrawWrapperRef?.current?.firstElementChild;
+    return this.excalidrawWrapperRef?.current?.firstElementChild as
+      | HTMLDivElement
+      | undefined;
   }
   get ownerDocument(): Document {
     return DEVICE.isMobile ? document : this.containerEl.ownerDocument;
@@ -523,7 +545,7 @@ export default class ExcalidrawView
     }, 1500);
   }
 
-  public saveExcalidraw(scene?: any) {
+  public saveExcalidraw(scene?: ExcalidrawViewScene) {
     if (!scene) {
       if (!this.excalidrawAPI) {
         return;
@@ -711,7 +733,7 @@ export default class ExcalidrawView
   }
 
   public async svg(
-    scene: any,
+    scene: ExcalidrawViewScene,
     theme?: string,
     embedScene?: boolean,
     embedFont: boolean = false,
@@ -745,7 +767,7 @@ export default class ExcalidrawView
   }
 
   public async saveSVG(data: {
-    scene?: any;
+    scene?: ExcalidrawViewScene;
     embedScene?: boolean;
     autoexportConfig?: AutoexportConfig;
   }) {
@@ -886,7 +908,7 @@ export default class ExcalidrawView
   }
 
   public async png(
-    scene: any,
+    scene: ExcalidrawViewScene,
     theme?: string,
     embedScene?: boolean,
   ): Promise<Blob> {
@@ -918,7 +940,7 @@ export default class ExcalidrawView
   }
 
   public async savePNG(data: {
-    scene?: any;
+    scene?: ExcalidrawViewScene;
     embedScene?: boolean;
     autoexportConfig?: AutoexportConfig;
   }) {
@@ -1658,7 +1680,7 @@ export default class ExcalidrawView
   handleLinkHookCall(
     element: ExcalidrawElement,
     link: string,
-    event: any,
+    event: MouseEvent | null,
   ): boolean {
     if (this.getHookServer().onLinkClickHook) {
       try {
@@ -2966,7 +2988,7 @@ export default class ExcalidrawView
     this.zoomToElements(!api.getAppState().viewModeEnabled, elements);
   }
 
-  setEphemeralState(state: any): void {
+  setEphemeralState(state: ExcalidrawEphemeralState): void {
     if (!state) {
       return;
     }
@@ -3890,7 +3912,7 @@ export default class ExcalidrawView
         this.excalidrawWrapperRef
       ) {
         //.firstElmentChild solves this issue: https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/346
-        this.excalidrawWrapperRef.current?.firstElementChild?.focus();
+        (this.excalidrawWrapperRef.current?.firstElementChild as HTMLElement | null)?.focus();
       }
       //debug({where:"ExcalidrawView.loadDrawing",file:this.file.name,before:"this.loadSceneFiles"});
       this.onAfterLoadScene(justloaded);
@@ -4070,7 +4092,7 @@ export default class ExcalidrawView
     return ICON_NAME;
   }
 
-  async setMarkdownView(eState?: any) {
+  async setMarkdownView(eState?: MarkdownViewOpenState) {
     //save before switching to markdown view.
     //this would also happen onClose, but it does not hurt to save it here
     //this way isDirty() will return false in onClose, thus
@@ -4081,10 +4103,10 @@ export default class ExcalidrawView
     await this.forceSaveIfRequired();
     await sleep(200); //dirty hack to wait for Obsidian metadata to be updated, note that save may have been triggered elsewhere already
     this.plugin.excalidrawFileModes[this.id || this.file.path] = "markdown";
-    this.plugin.setMarkdownView(this.leaf, eState);
+    this.plugin.setMarkdownView(this.leaf, eState as ViewStateResult | undefined);
   }
 
-  public async openAsMarkdown(eState?: any) {
+  public async openAsMarkdown(eState?: MarkdownViewOpenState) {
     if (
       this.plugin.settings.compress &&
       this.plugin.settings.decompressForMDView
@@ -4303,8 +4325,8 @@ export default class ExcalidrawView
     super.onPaneMenu(menu, source);
   }
 
-  async getLibrary() {
-    const data: any = this.plugin.getStencilLibrary();
+  async getLibrary(): Promise<LibraryItems> {
+    const data = this.plugin.getStencilLibrary() as StencilLibraryData;
     return data?.library ? data.library : (data?.libraryItems ?? []);
   }
 
@@ -4348,7 +4370,7 @@ export default class ExcalidrawView
     }
 
     if (selectedElement[0].type === "text") {
-      return { id: selectedElement[0].id, text: selectedElement[0].text };
+      return { id: selectedElement[0].id, text: (selectedElement[0] as ExcalidrawTextElement).text };
     } //a text element was selected. Return text
 
     if (["image", "arrow"].contains(selectedElement[0].type)) {
@@ -4356,14 +4378,14 @@ export default class ExcalidrawView
     }
 
     const boundTextElements = selectedElement[0].boundElements?.filter(
-      (be: any) => be.type === "text",
+      (be: BoundElement) => be.type === "text",
     );
     if (boundTextElements?.length > 0) {
       const textElement = api
         .getSceneElements()
         .filter((el: ExcalidrawElement) => el.id === boundTextElements[0].id);
       if (textElement.length > 0) {
-        return { id: textElement[0].id, text: textElement[0].text };
+        return { id: textElement[0].id, text: (textElement[0] as ExcalidrawTextElement).text };
       }
     } //is a text container selected?
 
@@ -4374,13 +4396,13 @@ export default class ExcalidrawView
     const group = selectedElement[0].groupIds[0]; //if yes, take the first group it is part of
     const textElement = api
       .getSceneElements()
-      .filter((el: any) => el.groupIds?.includes(group))
-      .filter((el: any) => el.type === "text"); //filter for text elements of the group
+      .filter((el: ExcalidrawElement) => el.groupIds?.includes(group))
+      .filter((el: ExcalidrawElement) => el.type === "text"); //filter for text elements of the group
     if (textElement.length === 0) {
       return { id: null, text: null };
     } //the group had no text element member
 
-    return { id: selectedElement[0].id, text: selectedElement[0].text }; //return text element text
+    return { id: selectedElement[0].id, text: (selectedElement[0] as ExcalidrawTextElement).text }; //return text element text
   }
 
   private getSelectedImageElement(): SelectedImage {
@@ -4399,7 +4421,7 @@ export default class ExcalidrawView
     const selectedElement = api
       .getSceneElements()
       .filter(
-        (el: any) =>
+        (el: ExcalidrawElement) =>
           el.id == Object.keys(api.getAppState().selectedElementIds)[0],
       );
     if (selectedElement.length === 0) {
@@ -4408,7 +4430,7 @@ export default class ExcalidrawView
     if (selectedElement[0].type == "image") {
       return {
         id: selectedElement[0].id,
-        fileId: selectedElement[0].fileId,
+        fileId: (selectedElement[0] as ExcalidrawImageElement).fileId,
       };
     } //an image element was selected. Return fileId
 
@@ -4422,12 +4444,12 @@ export default class ExcalidrawView
     const group = selectedElement[0].groupIds[0]; //if yes, take the first group it is part of
     const imageElement = api
       .getSceneElements()
-      .filter((el: any) => el.groupIds?.includes(group))
-      .filter((el: any) => el.type == "image"); //filter for Image elements of the group
+      .filter((el: ExcalidrawElement) => el.groupIds?.includes(group))
+      .filter((el: ExcalidrawElement) => el.type == "image"); //filter for Image elements of the group
     if (imageElement.length === 0) {
       return { id: null, fileId: null };
     } //the group had no image element member
-    return { id: imageElement[0].id, fileId: imageElement[0].fileId }; //return image element fileId
+    return { id: imageElement[0].id, fileId: (imageElement[0] as ExcalidrawImageElement).fileId }; //return image element fileId
   }
 
   private getSelectedElementWithLink(): { id: string; text: string } {
@@ -4446,7 +4468,7 @@ export default class ExcalidrawView
     const selectedElement = api
       .getSceneElements()
       .filter(
-        (el: any) =>
+        (el: ExcalidrawElement) =>
           el.id == Object.keys(api.getAppState().selectedElementIds)[0],
       );
     if (selectedElement.length === 0) {
@@ -4463,9 +4485,9 @@ export default class ExcalidrawView
     if (textId) {
       const textElement = api
         .getSceneElements()
-        .filter((el: any) => el.id === textId && el.link);
+        .filter((el: ExcalidrawElement) => el.id === textId && el.link);
       if (textElement.length > 0) {
-        return { id: textElement[0].id, text: textElement[0].text };
+        return { id: textElement[0].id, text: (textElement[0] as ExcalidrawTextElement).text };
       }
     }
 
@@ -4475,8 +4497,8 @@ export default class ExcalidrawView
     const group = selectedElement[0].groupIds[0]; //if yes, take the first group it is part of
     const elementsWithLink = api
       .getSceneElements()
-      .filter((el: any) => el.groupIds?.includes(group))
-      .filter((el: any) => el.link); //filter for elements of the group that have a link
+      .filter((el: ExcalidrawElement) => el.groupIds?.includes(group))
+      .filter((el: ExcalidrawElement) => el.link); //filter for elements of the group that have a link
     if (elementsWithLink.length === 0) {
       return { id: null, text: null };
     } //the group had no image element member
@@ -4782,8 +4804,8 @@ export default class ExcalidrawView
     if (files) {
       const imgIds = el
         .filter((e) => e.type === "image")
-        .map((e: any) => e.fileId);
-      const toDelete = Object.keys(files).filter((k) => !imgIds.contains(k));
+        .map((e) => (e as ExcalidrawImageElement).fileId);
+      const toDelete = Object.keys(files).filter((k) => !imgIds.contains(k as FileId));
       toDelete.forEach((k) => delete files[k]);
     }
 
@@ -5286,7 +5308,7 @@ export default class ExcalidrawView
     }
   }
 
-  public updateGridColor(canvasColor?: string, st?: any) {
+  public updateGridColor(canvasColor?: string, st?: AppState) {
     if (!canvasColor) {
       st = this.excalidrawAPI.getAppState();
       canvasColor =
@@ -5808,7 +5830,7 @@ export default class ExcalidrawView
     //debug({where:"ExcalidrawView.onThemeChange",file:this.file.name,before:"this.loadSceneFiles",newTheme});
     this.excalidrawData.scene.appState.theme = newTheme;
     this.loadSceneFiles(true);
-    this.toolsPanelRef?.current?.setTheme(newTheme);
+    this.toolsPanelRef?.current?.setTheme(newTheme as "dark" | "light");
     //Timeout is to allow appState to update
     window.setTimeout(() =>
       setDynamicStyle(
@@ -6086,7 +6108,10 @@ export default class ExcalidrawView
     };
   }
 
-  private async onLinkOpen(element: ExcalidrawElement, e: any): Promise<void> {
+  private async onLinkOpen(
+    element: ExcalidrawElement,
+    e: ExcalidrawLinkOpenEvent,
+  ): Promise<void> {
     e.preventDefault();
     if (!element) {
       return;
@@ -6110,7 +6135,7 @@ export default class ExcalidrawView
     window.setTimeout(() => this.removeLinkTooltip(), 500);
 
     let event = e?.detail?.nativeEvent;
-    if (this.handleLinkHookCall(element, link, event)) {
+    if (this.handleLinkHookCall(element, link, event as MouseEvent)) {
       return;
     }
     //if(openExternalLink(element.link, this.app, !isSHIFT(event) && !isWinCTRLorMacCMD(event) && !isWinMETAorMacCTRL(event) && !isWinALTorMacOPT(event) ? element : undefined)) return;
@@ -6119,15 +6144,23 @@ export default class ExcalidrawView
     }
 
     if (!event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
-      event = emulateKeysForLinkClick("new-tab");
+      this.linkClick(
+        null,
+        null,
+        null,
+        { id: element.id, text: link },
+        emulateKeysForLinkClick("new-tab"),
+        true,
+      );
+      return;
     }
 
     this.linkClick(
-      event,
+      event as MouseEvent,
       null,
       null,
       { id: element.id, text: link },
-      event,
+      undefined,
       true,
     );
     return;
@@ -6196,9 +6229,9 @@ export default class ExcalidrawView
         this.file,
       )
     ).blocks
-      .filter((b: any) => b.display && b.node?.type === "heading")
-      .filter((b: any) => !MD_EX_SECTIONS.includes(b.display))
-      .map((b: any) => cleanSectionHeading(b.display));
+      .filter((b: MarkdownBlockCacheEntry) => b.display && b.node?.type === "heading")
+      .filter((b: MarkdownBlockCacheEntry) => !MD_EX_SECTIONS.includes(b.display))
+      .map((b: MarkdownBlockCacheEntry) => cleanSectionHeading(b.display));
   }
 
   private async getBackOfTheNoteBlocks() {
@@ -6209,13 +6242,13 @@ export default class ExcalidrawView
       )
     ).blocks
       .filter(
-        (b: any) =>
+        (b: MarkdownBlockCacheEntry) =>
           b.display &&
           b.node &&
           b.node.hasOwnProperty("type") &&
           b.node.hasOwnProperty("id"),
       )
-      .map((b: any) => cleanBlockRef(b.node.id));
+      .map((b: MarkdownBlockCacheEntry) => cleanBlockRef(b.node.id as string));
   }
 
   public getSingleSelectedImage(): {
@@ -7326,7 +7359,7 @@ export default class ExcalidrawView
     return this.embeddableMenu?.renderButtons(appState);
   }
 
-  private renderToolsPanel(observer: any) {
+  private renderToolsPanel(observer: React.MutableRefObject<ResizeObserver>) {
     const React = this.packages.react;
 
     return React.createElement(ToolsPanel, {
@@ -7469,18 +7502,13 @@ export default class ExcalidrawView
     }
   }
 
-  private excalidrawRootElement(initdata: {
-    elements: any;
-    appState: any;
-    files: any;
-    libraryItems: any;
-  }) {
+  private excalidrawRootElement(initdata: ExcalidrawViewInitialData) {
     const React = this.packages.react;
     const { Excalidraw } = this.packages.excalidrawLib;
 
-    const excalidrawWrapperRef = React.useRef(null);
-    const toolsPanelRef = React.useRef(null);
-    const embeddableMenuRef = React.useRef(null);
+    const excalidrawWrapperRef = React.useRef<HTMLDivElement>(null);
+    const toolsPanelRef = React.useRef<ToolsPanel>(null);
+    const embeddableMenuRef = React.useRef<HTMLDivElement>(null);
     this.toolsPanelRef = toolsPanelRef;
     // const [dimensions, setDimensions] = React.useState({
     //   width: undefined,
@@ -7630,12 +7658,7 @@ export default class ExcalidrawView
     );
   }
 
-  private async instantiateExcalidraw(initdata: {
-    elements: any;
-    appState: any;
-    files: any;
-    libraryItems: any;
-  }) {
+  private async instantiateExcalidraw(initdata: ExcalidrawViewInitialData) {
     await this.plugin.awaitInit();
     while (!this.semaphores.scriptsReady) {
       await sleep(50);
@@ -7960,14 +7983,7 @@ export default class ExcalidrawView
   }
 
   public updateScene(
-    scene: {
-      elements?: ExcalidrawElement[];
-      appState?: any;
-      files?: any;
-      storeAction?: "capture" | "none" | "update"; //https://github.com/excalidraw/excalidraw/pull/7898
-      forceFlushSync?: boolean;
-      captureUpdate?: SceneData["captureUpdate"];
-    },
+    scene: ExcalidrawViewUpdateScene,
     shouldRestore: boolean = false,
   ) {
     const api = this.excalidrawAPI;
@@ -8002,7 +8018,7 @@ export default class ExcalidrawView
       scene.elements = syncInvalidIndices(scene.elements);
     }
     try {
-      api.updateScene(scene);
+      api.updateScene(scene as Parameters<typeof api.updateScene>[0]);
     } catch (e) {
       errorlog({
         where: "ExcalidrawView.updateScene 1st attempt",
@@ -8018,7 +8034,7 @@ export default class ExcalidrawView
             refreshDimensions: true,
             repairBindings: true,
           });
-          api.updateScene(scene);
+          api.updateScene(scene as Parameters<typeof api.updateScene>[0]);
         } catch (e) {
           errorlog({
             where: "ExcalidrawView.updateScene 2nd attempt",
@@ -8082,7 +8098,7 @@ export default class ExcalidrawView
     return this.getEmbeddableLeafElementById(st.activeEmbeddable?.element?.id);
   }
 
-  get editor(): any {
+  get editor(): Editor | null {
     const embeddable = this.getActiveEmbeddable();
     if (embeddable) {
       if (embeddable.node && embeddable.node.isEditing) {

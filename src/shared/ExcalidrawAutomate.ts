@@ -74,7 +74,7 @@ import {
 import { getAttachmentsFolderAndFilePath } from "src/utils/pathUtils";
 import {
   AppState,
-  BinaryFileData,
+  BinaryFiles,
   DataURL,
   ExcalidrawImperativeAPI,
   SceneData,
@@ -3558,7 +3558,7 @@ export class ExcalidrawAutomate {
    * @param {Object} scene - The scene to load to Excalidraw.
    * @param {ExcalidrawElement[]} [scene.elements] - Array of elements in the scene.
    * @param {AppState} [scene.appState] - The app state of the scene.
-   * @param {BinaryFileData} [scene.files] - The files in the scene.
+   * @param {BinaryFiles} [scene.files] - The files in the scene.
    * @param {boolean} [scene.commitToHistory] - Whether to commit the scene to history. @deprecated Use scene.storageOption instead
    * @param {"capture" | "none" | "update"} [scene.storeAction] - The store action for the scene. @deprecated Use scene.storageOption instead
    * @param {"IMMEDIATELY" | "NEVER" | "EVENTUALLY"} [scene.captureUpdate] - The capture update action for the scene.
@@ -3568,7 +3568,7 @@ export class ExcalidrawAutomate {
     scene: {
       elements?: ExcalidrawElement[];
       appState?: AppState | object;
-      files?: BinaryFileData;
+      files?: BinaryFiles;
       commitToHistory?: boolean;
       storeAction?: "capture" | "none" | "update";
       captureUpdate?: SceneData["captureUpdate"];
