@@ -204,8 +204,9 @@ export class EmbeddableSettings extends Modal {
         );
         if (this.app.vault.getAbstractFileByPath(newPath)) {
           new Notice(
-            "File rename failed. A file with this name already exists.\n" +
-              newPath,
+            `File rename failed. A file with this name already exists.\n${
+              newPath
+            }`,
             10000,
           );
         } else {
@@ -221,7 +222,7 @@ export class EmbeddableSettings extends Modal {
             );
             dirty = true;
           } catch (e) {
-            new Notice("File rename failed. " + e, 10000);
+            new Notice(`File rename failed. ${e}`, 10000);
           }
         }
       }

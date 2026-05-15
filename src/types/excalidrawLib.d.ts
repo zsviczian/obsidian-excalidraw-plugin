@@ -35,7 +35,8 @@ type JsonObject = {
   [key: string]: JsonValue;
 };
 
-type MermaidToExcalidrawLibProps = import("@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/types").MermaidToExcalidrawLibProps;
+type MermaidToExcalidrawLibProps =
+  import("@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/types").MermaidToExcalidrawLibProps;
 
 interface MermaidConfig {
   /**

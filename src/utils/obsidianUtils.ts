@@ -416,16 +416,15 @@ export function mergeMarkdownFiles(template: string, target: string): string {
     }
 
     const appended = Object.keys(newKeys).length
-      ? targetFrontmatterRaw + "\n" + yaml.dump(newKeys).trimEnd()
+      ? `${targetFrontmatterRaw}\n${yaml.dump(newKeys).trimEnd()}`
       : targetFrontmatterRaw;
 
     return `---\n${appended}\n---\n${targetContent}\n\n${templateContent.trim()}\n`;
-  } else {
-    // No frontmatter in target: use template FM + target content + template content
-    const targetContent = target.trim();
-    const templateFMYaml = yaml.dump(templateFrontmatterObj).trimEnd();
-    return `---\n${templateFMYaml}\n---\n${targetContent}\n\n${templateContent.trim()}\n`;
   }
+  // No frontmatter in target: use template FM + target content + template content
+  const targetContent = target.trim();
+  const templateFMYaml = yaml.dump(templateFrontmatterObj).trimEnd();
+  return `---\n${templateFMYaml}\n---\n${targetContent}\n\n${templateContent.trim()}\n`;
 }
 
 // Helper: replace a top-level YAML key block (line-based, avoids partial matches causing duplicates)

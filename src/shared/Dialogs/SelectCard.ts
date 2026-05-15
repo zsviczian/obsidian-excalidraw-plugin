@@ -62,7 +62,7 @@ export class SelectCard extends FuzzySuggestModal<string> {
   }
 
   onChooseItem(item: string): void {
-    const ea = getEA(this.view) ;
+    const ea = getEA(this.view);
     if (this.center) {
       const centerPos = ea.getViewCenterPosition();
       if (centerPos) {

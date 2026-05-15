@@ -36,7 +36,7 @@ export async function captureScreenshot(
     : view.getViewElements();
   const includedElementIDs = new Set(elementsToInclude.map((el) => el.id));
   const savedOpacity: { id: string; opacity: number }[] = [];
-  const ea = getEA(view) ;
+  const ea = getEA(view);
 
   // Save the current browser zoom level
   const webContents = remote.getCurrentWebContents();
@@ -154,8 +154,8 @@ export async function captureScreenshot(
       modalContainer.style.display = "none";
     });
 
-    container.style.width = tileWidth + "px";
-    container.style.height = tileHeight + "px";
+    container.style.width = `${tileWidth}px`;
+    container.style.height = `${tileHeight}px`;
     container.style.overflow = "visible";
 
     // Set canvas size and zoom value for capture
@@ -235,11 +235,11 @@ export async function captureScreenshot(
         });
 
         tiles.push({
-          url: "data:image/png;base64," + image.toPNG().toString("base64"),
+          url: `data:image/png;base64,${image.toPNG().toString("base64")}`,
           width: captureWidth,
           height: captureHeight,
-          col: col,
-          row: row,
+          col,
+          row,
         });
       }
     }

@@ -24,7 +24,7 @@ export const carveOutImage = async (
     return;
   }
 
-  const targetEA = getEA(sourceEA.targetView) ;
+  const targetEA = getEA(sourceEA.targetView);
 
   targetEA.copyViewElementsToEAforEditing([viewImageEl], true);
   const { height, width } = await sourceEA.getOriginalImageSize(viewImageEl);
@@ -114,7 +114,7 @@ export const carveOutPDF = async (
     return;
   }
 
-  const targetEA = getEA(sourceEA.targetView) ;
+  const targetEA = getEA(sourceEA.targetView);
 
   const { height, width } = embeddableEl;
 

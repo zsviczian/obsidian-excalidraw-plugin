@@ -165,7 +165,7 @@ export class LaTexPrompt extends FloatingModal {
       // the language put eveything in a "math" node
       // surrounded by "math-begin" and "math-end"
       // so that latex-suite always thinks we are in mathmode
-      const language = LRLanguage.define({ parser: parser });
+      const language = LRLanguage.define({ parser });
       extensions.push([
         language,
         editorLivePreviewField.init(() => false),
@@ -175,7 +175,7 @@ export class LaTexPrompt extends FloatingModal {
 
     this.editorView = new EditorView({
       doc: value,
-      extensions: extensions,
+      extensions,
       parent: container,
     });
 
@@ -584,13 +584,13 @@ export class GenericInputPrompt extends Modal {
         this.selectionStart > 0 &&
         v.slice(this.selectionStart - 1, this.selectionStart) !== " "
       ) {
-        text = " " + text;
+        text = ` ${text}`;
       }
       if (
         this.selectionStart < v.length &&
         v.slice(this.selectionStart, this.selectionStart + 1) !== " "
       ) {
-        text = text + " ";
+        text = `${text} `;
       }
       const newVal =
         this.inputComponent.inputEl.value.slice(0, this.selectionStart) +
@@ -811,7 +811,10 @@ export class GenericInputPrompt extends Modal {
 
   private makeModalDraggable() {
     let isDragging = false;
-    let startX: number, startY: number, initialX: number, initialY: number;
+    let startX: number;
+    let startY: number;
+    let initialX: number;
+    let initialY: number;
     let activeElement: HTMLElement | null = null;
     let cursorPosition: { start: number; end: number } | null = null;
 

@@ -345,7 +345,7 @@ export async function getTemplate(
       const el = filenameParts.hasSectionref
         ? getTextElementsMatchingQuery(
             scene.elements,
-            ["# " + filenameParts.sectionref],
+            [`# ${filenameParts.sectionref}`],
             true,
           )
         : scene.elements.filter(
@@ -601,7 +601,7 @@ export const updateElementLinksToObsidianLinks = ({
               originalLink: el.link,
               obsidianLink: link,
               linkedFile: file,
-              hostFile: hostFile,
+              hostFile,
             }) ?? link;
         } catch (e) {
           errorlog({
@@ -725,7 +725,7 @@ export async function createSVG(
     let el = filenameParts.hasSectionref
       ? getTextElementsMatchingQuery(
           elements,
-          ["# " + filenameParts.sectionref],
+          [`# ${filenameParts.sectionref}`],
           true,
         )
       : elements.filter(
@@ -827,7 +827,7 @@ export const insertLaTeXToView = (
   center: boolean = false,
 ) => {
   const app = view.plugin.app;
-  const ea = getEA(view) ;
+  const ea = getEA(view);
   LaTexPrompt.Prompt(
     app,
     t("ENTER_LATEX"),

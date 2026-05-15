@@ -436,9 +436,10 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     field: "addEmbeddable",
     code: "addEmbeddable(topX: number, topY: number, width: number, height: number, url?: string, file?: TFile, embeddableCustomData?: EmbeddableMDCustomProps): string;",
     desc:
-      "Adds an embeddable component (technically an iframe or webview depending on content and platform) to the drawing. If url is not null then the embeddable will be loaded from the url. The url maybe a markdown link to an note in the Vault or a weblink. " +
-      "If url is null then the embeddable will be loaded from the file. Both the url and the file may not be null.<br>" +
-      EMBEDDABLE_MDCUSTOMPROPS,
+      `Adds an embeddable component (technically an iframe or webview depending on content and platform) to the drawing. If url is not null then the embeddable will be loaded from the url. The url maybe a markdown link to an note in the Vault or a weblink. ` +
+      `If url is null then the embeddable will be loaded from the file. Both the url and the file may not be null.<br>${
+        EMBEDDABLE_MDCUSTOMPROPS
+      }`,
     after: "",
   },
   {
@@ -545,10 +546,11 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     field: "addBackOfTheCardNoteToView",
     code: "async addBackOfTheCardNoteToView(sectionTitle: string, activate: boolean = false, sectionBody?: string, embeddableCustomData?: EmbeddableMDCustomProps): Promise<string>",
     desc:
-      "Adds a back of the note card to the current active view. If <b>body</b> is provided the note will be created with the body text, otherwise the note will be created with the title only.<br>Returns the id of the created element.<br>" +
-      "If <b>activate</b> is true, the embedded note will be activated for editing.<br>" +
-      "This is an async function, if you need the element ID of the created element, the function should be awaited.<br>" +
-      EMBEDDABLE_MDCUSTOMPROPS,
+      `Adds a back of the note card to the current active view. If <b>body</b> is provided the note will be created with the body text, otherwise the note will be created with the title only.<br>Returns the id of the created element.<br>` +
+      `If <b>activate</b> is true, the embedded note will be activated for editing.<br>` +
+      `This is an async function, if you need the element ID of the created element, the function should be awaited.<br>${
+        EMBEDDABLE_MDCUSTOMPROPS
+      }`,
     after: "",
   },
   {

@@ -903,7 +903,7 @@ export default class ExcalidrawView
         margin,
         alignment: this.exportDialog?.alignment ?? "center",
       },
-      filename: this.file.basename + ".pdf",
+      filename: `${this.file.basename}.pdf`,
     });
   }
 
@@ -1299,7 +1299,7 @@ export default class ExcalidrawView
                 this.exportDialog.transparent ? "true" : "false",
               ],
               [
-                FRONTMATTER_KEYS["plugin"].name,
+                FRONTMATTER_KEYS.plugin.name,
                 this.textMode === TextMode.raw ? "raw" : "parsed",
               ],
               [
@@ -1313,7 +1313,7 @@ export default class ExcalidrawView
             ]
           : [
               [
-                FRONTMATTER_KEYS["plugin"].name,
+                FRONTMATTER_KEYS.plugin.name,
                 this.textMode === TextMode.raw ? "raw" : "parsed",
               ],
             ];
@@ -1358,7 +1358,6 @@ export default class ExcalidrawView
     }
 
     this.viewSaveData = this.data;
-    return;
   }
 
   getViewData() {
@@ -1408,7 +1407,7 @@ export default class ExcalidrawView
           latex: formula,
           isLoaded: false,
         });
-        const ea = getEA(this) ;
+        const ea = getEA(this);
         ea.copyViewElementsToEAforEditing([el]);
         ea.addAppendUpdateCustomData(el.id, { latex: formula });
         const dataurl = await ea.tex2dataURL(equation);
@@ -1457,7 +1456,7 @@ export default class ExcalidrawView
         await this.save(false);
         await sleep(100);
         if (!this.plugin.isExcalidrawFile(ef.file) && !link.endsWith("|100%")) {
-          const ea = getEA(this) ;
+          const ea = getEA(this);
           const imgEl = this.getViewElements().find(
             (x: ExcalidrawElement) => x.id === el.id,
           ) as ExcalidrawImageElement;
@@ -1495,7 +1494,6 @@ export default class ExcalidrawView
           }),
         false,
       ).then(handler.bind(this), () => {});
-      return;
     }
   }
 
@@ -1756,7 +1754,7 @@ export default class ExcalidrawView
       ) {
         return {
           linkText: selectedElement.link,
-          selectedElement: selectedElement,
+          selectedElement,
           isLinearElement: true,
         };
       }
@@ -3032,11 +3030,11 @@ export default class ExcalidrawView
       state.subpath &&
         state.subpath.startsWith("#^group") &&
         !state.subpath.startsWith("#^group=")
-        ? "#^group=" + state.subpath.substring(7)
+        ? `#^group=${state.subpath.substring(7)}`
         : state.subpath &&
             state.subpath.startsWith("#^area") &&
             !state.subpath.startsWith("#^area=")
-          ? "#^area=" + state.subpath.substring(6)
+          ? `#^area=${state.subpath.substring(6)}`
           : state.subpath,
     );
     if (filenameParts.hasBlockref) {
@@ -3155,7 +3153,6 @@ export default class ExcalidrawView
           const sections = await this.getBackOfTheNoteSections();
           if (sections.includes(cleanQuery) || this.data.includes(query[0])) {
             void this.setMarkdownView(state);
-            return;
           }
         }
       });
@@ -3293,15 +3290,18 @@ export default class ExcalidrawView
                 `${
                   counter > 0
                     ? counter % 4 === 0
-                      ? message + "The CACHE is still loading.<br><br>"
+                      ? `${message}The CACHE is still loading.<br><br>`
                       : counter % 4 === 1
-                        ? message +
-                          "Watch the top right corner for the notification.<br><br>"
+                        ? `${
+                            message
+                          }Watch the top right corner for the notification.<br><br>`
                         : counter % 4 === 2
-                          ? message +
-                            "I really, really hope the backup will work for you! <br><br>"
-                          : message +
-                            "I am sorry, it is taking a while, there is not much I can do... <br><br>"
+                          ? `${
+                              message
+                            }I really, really hope the backup will work for you! <br><br>`
+                          : `${
+                              message
+                            }I am sorry, it is taking a while, there is not much I can do... <br><br>`
                     : ""
                 }${t("CACHE_NOT_READY")}`,
               );
@@ -3402,7 +3402,7 @@ export default class ExcalidrawView
 
       const script = this.excalidrawData.getOnLoadScript();
       if (script) {
-        const scriptname = this.file.basename + "-onlaod-script";
+        const scriptname = `${this.file.basename}-onlaod-script`;
         const runScript = async () => {
           if (!this.excalidrawAPI) {
             //need to wait for Excalidraw to initialize
@@ -3758,7 +3758,6 @@ export default class ExcalidrawView
                 sceneElementIds.splice(parentLayer + 1, 0, incomingElement.id);
               }
             }
-            return;
           } else if (!sceneElement) {
             manageMapChanges(incomingElement);
 
@@ -3912,7 +3911,10 @@ export default class ExcalidrawView
         this.excalidrawWrapperRef
       ) {
         //.firstElmentChild solves this issue: https://github.com/zsviczian/obsidian-excalidraw-plugin/pull/346
-        (this.excalidrawWrapperRef.current?.firstElementChild as HTMLElement | null)?.focus();
+        (
+          this.excalidrawWrapperRef.current
+            ?.firstElementChild as HTMLElement | null
+        )?.focus();
       }
       //debug({where:"ExcalidrawView.loadDrawing",file:this.file.name,before:"this.loadSceneFiles"});
       this.onAfterLoadScene(justloaded);
@@ -4103,7 +4105,10 @@ export default class ExcalidrawView
     await this.forceSaveIfRequired();
     await sleep(200); //dirty hack to wait for Obsidian metadata to be updated, note that save may have been triggered elsewhere already
     this.plugin.excalidrawFileModes[this.id || this.file.path] = "markdown";
-    void this.plugin.setMarkdownView(this.leaf, eState as ViewStateResult | undefined);
+    void this.plugin.setMarkdownView(
+      this.leaf,
+      eState as ViewStateResult | undefined,
+    );
   }
 
   public async openAsMarkdown(eState?: MarkdownViewOpenState) {
@@ -4195,7 +4200,7 @@ export default class ExcalidrawView
 
   async addYouTubeThumbnail(link: string) {
     const thumbnailLink = await getYouTubeThumbnailLink(link);
-    const ea = getEA(this) ;
+    const ea = getEA(this);
     const id = await ea.addImage(0, 0, thumbnailLink);
     ea.getElement(id).link = link;
     await ea.addElementsToView(true, true, true);
@@ -4203,14 +4208,14 @@ export default class ExcalidrawView
   }
 
   async addImageWithURL(link: string) {
-    const ea = getEA(this) ;
+    const ea = getEA(this);
     await ea.addImage(0, 0, link);
     await ea.addElementsToView(true, true, true);
     ea.destroy();
   }
 
   async addImageSaveToVault(link: string) {
-    const ea = getEA(this) ;
+    const ea = getEA(this);
     const mimeType = getMimeType(getURLImageExtension(link));
     const dataURL = await getDataURLFromURL(link, mimeType, 3000);
     const fileId = await generateIdFromFile(
@@ -4239,7 +4244,7 @@ export default class ExcalidrawView
       if (!data || data.error || !data.meta?.title) {
         return;
       }
-      const ea = getEA(this) ;
+      const ea = getEA(this);
       const el = ea
         .getViewElements()
         .filter((el) => el.type === "text" && el.id === id);
@@ -4370,7 +4375,10 @@ export default class ExcalidrawView
     }
 
     if (selectedElement[0].type === "text") {
-      return { id: selectedElement[0].id, text: (selectedElement[0] as ExcalidrawTextElement).text };
+      return {
+        id: selectedElement[0].id,
+        text: (selectedElement[0] as ExcalidrawTextElement).text,
+      };
     } //a text element was selected. Return text
 
     if (["image", "arrow"].contains(selectedElement[0].type)) {
@@ -4385,7 +4393,10 @@ export default class ExcalidrawView
         .getSceneElements()
         .filter((el: ExcalidrawElement) => el.id === boundTextElements[0].id);
       if (textElement.length > 0) {
-        return { id: textElement[0].id, text: (textElement[0] as ExcalidrawTextElement).text };
+        return {
+          id: textElement[0].id,
+          text: (textElement[0] as ExcalidrawTextElement).text,
+        };
       }
     } //is a text container selected?
 
@@ -4402,7 +4413,10 @@ export default class ExcalidrawView
       return { id: null, text: null };
     } //the group had no text element member
 
-    return { id: selectedElement[0].id, text: (selectedElement[0] as ExcalidrawTextElement).text }; //return text element text
+    return {
+      id: selectedElement[0].id,
+      text: (selectedElement[0] as ExcalidrawTextElement).text,
+    }; //return text element text
   }
 
   private getSelectedImageElement(): SelectedImage {
@@ -4449,7 +4463,10 @@ export default class ExcalidrawView
     if (imageElement.length === 0) {
       return { id: null, fileId: null };
     } //the group had no image element member
-    return { id: imageElement[0].id, fileId: (imageElement[0] as ExcalidrawImageElement).fileId }; //return image element fileId
+    return {
+      id: imageElement[0].id,
+      fileId: (imageElement[0] as ExcalidrawImageElement).fileId,
+    }; //return image element fileId
   }
 
   private getSelectedElementWithLink(): { id: string; text: string } {
@@ -4487,7 +4504,10 @@ export default class ExcalidrawView
         .getSceneElements()
         .filter((el: ExcalidrawElement) => el.id === textId && el.link);
       if (textElement.length > 0) {
-        return { id: textElement[0].id, text: (textElement[0] as ExcalidrawTextElement).text };
+        return {
+          id: textElement[0].id,
+          text: (textElement[0] as ExcalidrawTextElement).text,
+        };
       }
     }
 
@@ -4540,7 +4560,7 @@ export default class ExcalidrawView
       await this.addText(markdownlink);
       return;
     }
-    const ea = getEA(this) ;
+    const ea = getEA(this);
     ea.copyViewElementsToEAforEditing([selectedElement]);
     if (originalLink?.match(/\[\[(.*?)\]\]/)?.[1]) {
       markdownlink = originalLink.replace(/(\[\[.*?\]\])/, markdownlink);
@@ -4603,7 +4623,7 @@ export default class ExcalidrawView
     await this.addElements({
       newElements: ea.getElements(),
       repositionToCursor: isPointerOutsideVisibleArea,
-      save: save,
+      save,
       newElementsOnTop: true,
     });
     ea.destroy();
@@ -4805,7 +4825,9 @@ export default class ExcalidrawView
       const imgIds = el
         .filter((e) => e.type === "image")
         .map((e) => (e as ExcalidrawImageElement).fileId);
-      const toDelete = Object.keys(files).filter((k) => !imgIds.contains(k as FileId));
+      const toDelete = Object.keys(files).filter(
+        (k) => !imgIds.contains(k as FileId),
+      );
       toDelete.forEach((k) => delete files[k]);
     }
 
@@ -4959,7 +4981,6 @@ export default class ExcalidrawView
       });
       void this.handleLinkClick(event);
       this.selectedElementWithLink = null;
-      return;
     }
   }
 
@@ -5614,7 +5635,7 @@ export default class ExcalidrawView
 
       if (
         isTextImageTransclusion(data.text, this, async (link, file) => {
-          const ea = getEA(this) ;
+          const ea = getEA(this);
           if (IMAGE_TYPES.contains(file.extension)) {
             ea.selectElementsInView([
               await insertImageToView(ea, this.currentPosition, file),
@@ -5630,42 +5651,36 @@ export default class ExcalidrawView
               ),
             ]);
             ea.destroy();
-          } else {
-            if (
-              link.match(
-                /^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/g,
-              )
-            ) {
-              const ea = getEA(this) ;
-              const imgID = await ea.addImage(
-                this.currentPosition.x,
-                this.currentPosition.y,
-                link.split("&rect=")[0],
-              );
-              const el = ea.getElement(
-                imgID,
-              ) as Mutable<ExcalidrawImageElement>;
-              const fd = ea.imagesDict[el.fileId] as FileData;
-              el.crop = getPDFCropRect({
-                scale: this.plugin.settings.pdfScale,
-                link,
-                naturalHeight: fd.size.height,
-                naturalWidth: fd.size.width,
-                pdfPageViewProps: fd.pdfPageViewProps,
-              });
-              addAppendUpdateCustomData(el, {
-                pdfPageViewProps: fd.pdfPageViewProps,
-              });
-              if (el.crop) {
-                el.width = el.crop.width / this.plugin.settings.pdfScale;
-                el.height = el.crop.height / this.plugin.settings.pdfScale;
-              }
-              el.link = `[[${link}]]`;
-              await ea.addElementsToView(false, false).then(() => ea.destroy());
-            } else {
-              const modal = new UniversalInsertFileModal(this.plugin, this);
-              modal.open(file, this.currentPosition);
+          } else if (
+            link.match(/^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/g)
+          ) {
+            const ea = getEA(this);
+            const imgID = await ea.addImage(
+              this.currentPosition.x,
+              this.currentPosition.y,
+              link.split("&rect=")[0],
+            );
+            const el = ea.getElement(imgID) as Mutable<ExcalidrawImageElement>;
+            const fd = ea.imagesDict[el.fileId] as FileData;
+            el.crop = getPDFCropRect({
+              scale: this.plugin.settings.pdfScale,
+              link,
+              naturalHeight: fd.size.height,
+              naturalWidth: fd.size.width,
+              pdfPageViewProps: fd.pdfPageViewProps,
+            });
+            addAppendUpdateCustomData(el, {
+              pdfPageViewProps: fd.pdfPageViewProps,
+            });
+            if (el.crop) {
+              el.width = el.crop.width / this.plugin.settings.pdfScale;
+              el.height = el.crop.height / this.plugin.settings.pdfScale;
             }
+            el.link = `[[${link}]]`;
+            await ea.addElementsToView(false, false).then(() => ea.destroy());
+          } else {
+            const modal = new UniversalInsertFileModal(this.plugin, this);
+            modal.open(file, this.currentPosition);
           }
           this.setDirty();
         })
@@ -5675,7 +5690,7 @@ export default class ExcalidrawView
 
       const quoteWithRef = obsidianPDFQuoteWithRef(data.text);
       if (quoteWithRef) {
-        const ea = getEA(this) ;
+        const ea = getEA(this);
         const st = api.getAppState();
         const strokeC = st.currentItemStrokeColor;
         const viewC = st.viewBackgroundColor;
@@ -5811,11 +5826,9 @@ export default class ExcalidrawView
               const modal = new UniversalInsertFileModal(this.plugin, this);
               modal.open(file, topleft);
             }
-          } else {
-            if (offset !== 0) {
-              ea.copyViewElementsToEAforEditing([el]);
-              ea.getElement(el.id).y = topleft.y;
-            }
+          } else if (offset !== 0) {
+            ea.copyViewElementsToEAforEditing([el]);
+            ea.getElement(el.id).y = topleft.y;
           }
         }
         await ea.addElementsToView(false, true);
@@ -5974,7 +5987,7 @@ export default class ExcalidrawView
             } else {
               const linkParts = getLinkParts(link);
               if (linkParts.page) {
-                const path = file.path + "#" + link.split("#")[1];
+                const path = `${file.path}#${link.split("#")[1]}`;
                 ea.selectElementsInView([
                   await insertImageToView(ea, center, path),
                 ]);
@@ -6127,7 +6140,7 @@ export default class ExcalidrawView
       }
     }
 
-    let link = (element.link ?? "") + " " + textLink;
+    let link = `${element.link ?? ""} ${textLink}`;
     link = link.trim();
     if (!link) {
       return;
@@ -6163,7 +6176,6 @@ export default class ExcalidrawView
       undefined,
       true,
     );
-    return;
   }
 
   private onLinkHover(
@@ -6229,8 +6241,12 @@ export default class ExcalidrawView
         this.file,
       )
     ).blocks
-      .filter((b: MarkdownBlockCacheEntry) => b.display && b.node?.type === "heading")
-      .filter((b: MarkdownBlockCacheEntry) => !MD_EX_SECTIONS.includes(b.display))
+      .filter(
+        (b: MarkdownBlockCacheEntry) => b.display && b.node?.type === "heading",
+      )
+      .filter(
+        (b: MarkdownBlockCacheEntry) => !MD_EX_SECTIONS.includes(b.display),
+      )
       .map((b: MarkdownBlockCacheEntry) => cleanSectionHeading(b.display));
   }
 
@@ -6328,7 +6344,7 @@ export default class ExcalidrawView
         new Notice("Unexpected error");
         return;
       }
-      const ea = getEA(this) ;
+      const ea = getEA(this);
       ea.copyViewElementsToEAforEditing([
         this.getViewElements().find((el) => el.id === id),
       ]);
@@ -6339,7 +6355,6 @@ export default class ExcalidrawView
       await this.forceSave(true);
     } catch (e) {
       new Notice(`Unexpected error: ${e.message}`);
-      return;
     }
   }
 
@@ -6356,7 +6371,7 @@ export default class ExcalidrawView
           "javascript, html, python, etc.",
           "",
         );
-        data = "```" + codeblockType.trim() + "\n" + data + "\n```";
+        data = `\`\`\`${codeblockType.trim()}\n${data}\n\`\`\``;
       }
       let title = (
         await GenericInputPrompt.Prompt(
@@ -6391,7 +6406,7 @@ export default class ExcalidrawView
       new Notice("Image not found");
       return false;
     }
-    const ea = getEA(this) ;
+    const ea = getEA(this);
     ea.copyViewElementsToEAforEditing([imageEl]);
     const eaEl = ea.getElement(imageEl.id) as Mutable<ExcalidrawImageElement>;
     eaEl.fileId = fileid() as FileId;
@@ -6491,7 +6506,7 @@ export default class ExcalidrawView
               React,
               t("REMOVE_LINK"),
               async () => {
-                const ea = getEA(this) ;
+                const ea = getEA(this);
                 ea.copyViewElementsToEAforEditing([selectedTextElement]);
                 const el = ea.getElement(
                   selectedTextElement.id,
@@ -6579,7 +6594,7 @@ export default class ExcalidrawView
               if (!svg || svg === "") {
                 return;
               }
-              const ea = getEA(this) ;
+              const ea = getEA(this);
               ea.importSVG(svg);
               ea.addToGroup(ea.getElements().map((el) => el.id));
               await ea.addElementsToView(true, true, true, true);
@@ -6638,7 +6653,7 @@ export default class ExcalidrawView
         };
 
         const imageMenuState = (() => {
-          const ea = getEA(this) ;
+          const ea = getEA(this);
           try {
             const imagesWithStatus = selectedImages
               .map((el) => {
@@ -6687,7 +6702,7 @@ export default class ExcalidrawView
               React,
               t("INVERT_IMAGES_IN_DARK_MODE"),
               async () => {
-                const ea = getEA(this) ;
+                const ea = getEA(this);
                 ea.copyViewElementsToEAforEditing(
                   imagesWithStatus.map((img) => img.el),
                 );
@@ -6741,7 +6756,9 @@ export default class ExcalidrawView
             t("COPY_DRAWING_LINK"),
             () => {
               const path = this.file.path.match(/(.*)(\.md)$/)?.[1];
-              void navigator.clipboard.writeText(`![[${path ?? this.file.path}]]`);
+              void navigator.clipboard.writeText(
+                `![[${path ?? this.file.path}]]`,
+              );
             },
             onClose,
             "copyDrawingLink",
@@ -7149,74 +7166,56 @@ export default class ExcalidrawView
             excalidrawSword(rank as Rank),
           ),
         ),
-        React.createElement(
-          WelcomeScreen.Center.Heading,
-          {
-            color: "var(--color-gray-40)",
-            message:
-              nextRankDelta > 0
-                ? `${rank}: ${nextRankDelta} ${t("WELCOME_RANK_NEXT")}`
-                : `${rank}: ${t("WELCOME_RANK_LEGENDARY")}`,
-            children: title,
-          },
-        ),
-        React.createElement(
-          WelcomeScreen.Center.Heading,
-          {
-            children: [
-              t("WELCOME_COMMAND_PALETTE"),
-              React.createElement("br"),
-              t("WELCOME_OBSIDIAN_MENU"),
-              React.createElement("br"),
-              t("WELCOME_SCRIPT_LIBRARY"),
-              React.createElement("br"),
-              t("WELCOME_HELP_MENU"),
-            ],
-          },
-        ),
+        React.createElement(WelcomeScreen.Center.Heading, {
+          color: "var(--color-gray-40)",
+          message:
+            nextRankDelta > 0
+              ? `${rank}: ${nextRankDelta} ${t("WELCOME_RANK_NEXT")}`
+              : `${rank}: ${t("WELCOME_RANK_LEGENDARY")}`,
+          children: title,
+        }),
+        React.createElement(WelcomeScreen.Center.Heading, {
+          children: [
+            t("WELCOME_COMMAND_PALETTE"),
+            React.createElement("br"),
+            t("WELCOME_OBSIDIAN_MENU"),
+            React.createElement("br"),
+            t("WELCOME_SCRIPT_LIBRARY"),
+            React.createElement("br"),
+            t("WELCOME_HELP_MENU"),
+          ],
+        }),
         React.createElement(
           WelcomeScreen.Center.Menu,
           {},
-          React.createElement(
-            WelcomeScreen.Center.MenuItemLink,
-            {
-              icon: ICONS.Learn,
-              href: "https://community.sketch-your-mind.com",
-              shortcut: null,
-              "aria-label": t("WELCOME_SYM_ARIA"),
-              children: t("WELCOME_SYM_LINK"),
-            },
-          ),
-          React.createElement(
-            WelcomeScreen.Center.MenuItemLink,
-            {
-              icon: ICONS.YouTube,
-              href: "https://www.youtube.com/@VisualPKM",
-              shortcut: null,
-              "aria-label": t("WELCOME_YOUTUBE_ARIA"),
-              children: t("WELCOME_YOUTUBE_LINK"),
-            },
-          ),
-          React.createElement(
-            WelcomeScreen.Center.MenuItemLink,
-            {
-              icon: ICONS.twitter,
-              href: "https://twitter.com/zsviczian",
-              shortcut: null,
-              "aria-label": t("WELCOME_TWITTER_ARIA"),
-              children: t("WELCOME_TWITTER_LINK"),
-            },
-          ),
-          React.createElement(
-            WelcomeScreen.Center.MenuItemLink,
-            {
-              icon: ICONS.heart,
-              href: "https://ko-fi.com/zsolt",
-              shortcut: null,
-              "aria-label": t("WELCOME_DONATE_ARIA"),
-              children: t("WELCOME_DONATE_LINK"),
-            },
-          ),
+          React.createElement(WelcomeScreen.Center.MenuItemLink, {
+            icon: ICONS.Learn,
+            href: "https://community.sketch-your-mind.com",
+            shortcut: null,
+            "aria-label": t("WELCOME_SYM_ARIA"),
+            children: t("WELCOME_SYM_LINK"),
+          }),
+          React.createElement(WelcomeScreen.Center.MenuItemLink, {
+            icon: ICONS.YouTube,
+            href: "https://www.youtube.com/@VisualPKM",
+            shortcut: null,
+            "aria-label": t("WELCOME_YOUTUBE_ARIA"),
+            children: t("WELCOME_YOUTUBE_LINK"),
+          }),
+          React.createElement(WelcomeScreen.Center.MenuItemLink, {
+            icon: ICONS.twitter,
+            href: "https://twitter.com/zsviczian",
+            shortcut: null,
+            "aria-label": t("WELCOME_TWITTER_ARIA"),
+            children: t("WELCOME_TWITTER_LINK"),
+          }),
+          React.createElement(WelcomeScreen.Center.MenuItemLink, {
+            icon: ICONS.heart,
+            href: "https://ko-fi.com/zsolt",
+            shortcut: null,
+            "aria-label": t("WELCOME_DONATE_ARIA"),
+            children: t("WELCOME_DONATE_LINK"),
+          }),
         ),
       ),
     );
@@ -7233,68 +7232,47 @@ export default class ExcalidrawView
       React.createElement(MainMenu.DefaultItems.Preferences),
       React.createElement(MainMenu.DefaultItems.ToggleTheme),
       React.createElement(MainMenu.Separator),
-      React.createElement(
-        MainMenu.Item,
-        {
-          icon: ICONS.tray,
-          "aria-label": t("ARIA_LABEL_TRAY_MODE"),
-          onSelect: () => {
-            const uiModes = new UIModeSettings(this.plugin);
-            uiModes.open();
-          },
-          children: t("TRAY_TRAY_MODE"),
+      React.createElement(MainMenu.Item, {
+        icon: ICONS.tray,
+        "aria-label": t("ARIA_LABEL_TRAY_MODE"),
+        onSelect: () => {
+          const uiModes = new UIModeSettings(this.plugin);
+          uiModes.open();
         },
-      ),
-      React.createElement(
-        MainMenu.Item,
-        {
-          icon: saveIcon(false),
-          "aria-label": t("FORCE_SAVE"),
-          onSelect: () => this.forceSave(),
-          children: t("TRAY_SAVE"),
-        },
-      ),
-      React.createElement(
-        MainMenu.Item,
-        {
-          icon: ICONS.scriptEngine,
-          "aria-label": t("TRAY_SCRIPT_LIBRARY_ARIA"),
-          onSelect: () => this.actionOpenScriptInstallPrompt(),
-          children: t("TRAY_SCRIPT_LIBRARY"),
-        },
-      ),
-      React.createElement(
-        MainMenu.Item,
-        {
-          icon: ICONS.ExportImage,
-          "aria-label": t("TRAY_EXPORT_ARIA"),
-          onSelect: () => this.actionOpenExportImageDialog(),
-          children: t("TRAY_EXPORT"),
-        },
-      ),
-      React.createElement(
-        MainMenu.Item,
-        {
-          icon: ICONS.switchToMarkdown,
-          "aria-label": t("TRAY_SWITCH_TO_MD_ARIA"),
-          onSelect: () => this.openAsMarkdown(),
-          children: t("TRAY_SWITCH_TO_MD"),
-        },
-      ),
+        children: t("TRAY_TRAY_MODE"),
+      }),
+      React.createElement(MainMenu.Item, {
+        icon: saveIcon(false),
+        "aria-label": t("FORCE_SAVE"),
+        onSelect: () => this.forceSave(),
+        children: t("TRAY_SAVE"),
+      }),
+      React.createElement(MainMenu.Item, {
+        icon: ICONS.scriptEngine,
+        "aria-label": t("TRAY_SCRIPT_LIBRARY_ARIA"),
+        onSelect: () => this.actionOpenScriptInstallPrompt(),
+        children: t("TRAY_SCRIPT_LIBRARY"),
+      }),
+      React.createElement(MainMenu.Item, {
+        icon: ICONS.ExportImage,
+        "aria-label": t("TRAY_EXPORT_ARIA"),
+        onSelect: () => this.actionOpenExportImageDialog(),
+        children: t("TRAY_EXPORT"),
+      }),
+      React.createElement(MainMenu.Item, {
+        icon: ICONS.switchToMarkdown,
+        "aria-label": t("TRAY_SWITCH_TO_MD_ARIA"),
+        onSelect: () => this.openAsMarkdown(),
+        children: t("TRAY_SWITCH_TO_MD"),
+      }),
       React.createElement(MainMenu.Separator),
-      React.createElement(
-        MainMenu.Item,
-        {
-          icon: ICONS.Learn,
-          "aria-label": t("LINKS_JOIN_SYM_ARIA"),
-          onSelect: () =>
-            openExternalLink(
-              "https://community.sketch-your-mind.com",
-              this.app,
-            ),
-          children: t("LINKS_JOIN_SYM"),
-        },
-      ),
+      React.createElement(MainMenu.Item, {
+        icon: ICONS.Learn,
+        "aria-label": t("LINKS_JOIN_SYM_ARIA"),
+        onSelect: () =>
+          openExternalLink("https://community.sketch-your-mind.com", this.app),
+        children: t("LINKS_JOIN_SYM"),
+      }),
       React.createElement(MainMenu.DefaultItems.Help),
       React.createElement(MainMenu.DefaultItems.ClearCanvas),
     );
@@ -7324,9 +7302,8 @@ export default class ExcalidrawView
       ) {
         if (!useExcalidrawFrame) {
           return renderWebView(element.link, this, element.id, appState);
-        } else {
-          return null;
         }
+        return null;
       }
 
       const res = REGEX_LINK.getRes(element.link).next();
@@ -7339,9 +7316,8 @@ export default class ExcalidrawView
       if (linkText.match(REG_LINKINDEX_HYPERLINK)) {
         if (!useExcalidrawFrame) {
           return renderWebView(linkText, this, element.id, appState);
-        } else {
-          return null;
         }
+        return null;
       }
 
       return React.createElement(CustomEmbeddable, {

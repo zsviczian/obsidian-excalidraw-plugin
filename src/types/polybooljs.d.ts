@@ -1,8 +1,8 @@
 declare module "polybooljs" {
-	interface PolyBoolStatic {
-		epsilon(value: number): void;
-	}
+  interface PolyBoolStatic {
+    epsilon(value: number): void;
+  }
 
-	const PolyBool: PolyBoolStatic;
-	export default PolyBool;
+  const PolyBool: PolyBoolStatic;
+  export default PolyBool;
 }

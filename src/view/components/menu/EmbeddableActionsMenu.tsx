@@ -53,7 +53,9 @@ type ParagraphLikeBlockEntry = BlockCacheEntry & {
   };
 };
 
-function isHeadingBlockEntry(entry: BlockCacheEntry): entry is HeadingBlockEntry {
+function isHeadingBlockEntry(
+  entry: BlockCacheEntry,
+): entry is HeadingBlockEntry {
   return Boolean(entry.display && entry.node?.type === "heading");
 }
 
@@ -62,12 +64,12 @@ function isParagraphLikeBlockEntry(
 ): entry is ParagraphLikeBlockEntry {
   return Boolean(
     entry.display &&
-      entry.node &&
-      (entry.node.type === "paragraph" ||
-        entry.node.type === "blockquote" ||
-        entry.node.type === "listItem" ||
-        entry.node.type === "table" ||
-        entry.node.type === "callout"),
+    entry.node &&
+    (entry.node.type === "paragraph" ||
+      entry.node.type === "blockquote" ||
+      entry.node.type === "listItem" ||
+      entry.node.type === "table" ||
+      entry.node.type === "callout"),
   );
 }
 
@@ -116,7 +118,7 @@ export class EmbeddableMenu {
       file.extension === "md",
     );
     const link = `[[${path}${subpath}]]`;
-    const ea = getEA(view) ;
+    const ea = getEA(view);
     ea.copyViewElementsToEAforEditing([element]);
     ea.getElement(element.id).link = link;
     view.excalidrawData.elementLinks.set(element.id, link);
@@ -183,10 +185,9 @@ export class EmbeddableMenu {
       )
     ).blocks
       .filter(isHeadingBlockEntry)
-      .filter(
-        (b) => !isExcalidrawFile || !MD_EX_SECTIONS.includes(b.display),
-      );
-    let values: string[], display: string[];
+      .filter((b) => !isExcalidrawFile || !MD_EX_SECTIONS.includes(b.display));
+    let values: string[];
+    let display: string[];
     if (isExcalidrawFile) {
       values = sections.map((b) => `#${cleanSectionHeading(b.display)}`);
       display = sections.map((b) => b.display);
@@ -247,7 +248,7 @@ export class EmbeddableMenu {
     if (!pdfFile) {
       return;
     }
-    const ea = getEA(this.view) ;
+    const ea = getEA(this.view);
     ea.selectElementsInView([]);
     const x = element.x + element.width + 20;
     const y = element.y;
@@ -330,9 +331,9 @@ export class EmbeddableMenu {
       }
       await this.view.app.vault.modify(
         file,
-        fileContents.slice(0, offset) +
-          ` ^${blockID}` +
-          fileContents.slice(offset),
+        `${fileContents.slice(0, offset)} ^${blockID}${fileContents.slice(
+          offset,
+        )}`,
       );
       await sleep(200); //wait for cache to update
     }

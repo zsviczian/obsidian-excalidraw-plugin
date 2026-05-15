@@ -157,7 +157,7 @@ export class ScriptEngine {
       .getFiles()
       .filter(
         (f: TFile) =>
-          f.path.startsWith(this.scriptPath + "/") && f.extension === "md",
+          f.path.startsWith(`${this.scriptPath}/`) && f.extension === "md",
       );
   }
 

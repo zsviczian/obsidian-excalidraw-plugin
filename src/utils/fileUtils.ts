@@ -219,7 +219,7 @@ const getFileFromURL = async (
       errorlog({
         where: getFileFromURL,
         message: `URL did not load within the timeout period of ${timeout}ms.\n\nTry force-saving again in a few seconds.\n\n${url}`,
-        url: url,
+        url,
       });
       return null;
     }
@@ -229,7 +229,7 @@ const getFileFromURL = async (
     return {
       status: response.status,
       headers: Object.fromEntries(response.headers.entries()),
-      arrayBuffer: arrayBuffer,
+      arrayBuffer,
       json: null,
       text: null,
     };
@@ -253,13 +253,13 @@ const getFileFromURLFallback = async (
 
     return await Promise.race([
       timeoutPromise,
-      requestUrl({ url: url, throw: false }), //if method: "get" is added it won't load images on Android, contentType: mimeType,
+      requestUrl({ url, throw: false }), //if method: "get" is added it won't load images on Android, contentType: mimeType,
     ]);
   } catch (_) {
     errorlog({
       where: getFileFromURLFallback,
       message: `URL did not load within timeout period of ${timeout}ms`,
-      url: url,
+      url,
     });
     return null;
   }
@@ -516,7 +516,7 @@ export const getCropFileNameAndFolder = async (
 ): Promise<{ folderpath: string; filename: string }> => {
   const prefix = plugin.settings.cropPrefix || "";
   const suffix = plugin.settings.cropSuffix || "";
-  const filename = prefix + baseNewFileName + suffix + ".md";
+  const filename = `${prefix + baseNewFileName + suffix}.md`;
   if (!plugin.settings.cropFolder || plugin.settings.cropFolder.trim() === "") {
     const folderpath = (
       await getAttachmentsFolderAndFilePath(plugin.app, hostPath, filename)
@@ -535,7 +535,7 @@ export const getAnnotationFileNameAndFolder = async (
 ): Promise<{ folderpath: string; filename: string }> => {
   const prefix = plugin.settings.annotatePrefix || "";
   const suffix = plugin.settings.annotateSuffix || "";
-  const filename = prefix + baseNewFileName + suffix + ".md";
+  const filename = `${prefix + baseNewFileName + suffix}.md`;
   if (
     !plugin.settings.annotateFolder ||
     plugin.settings.annotateFolder.trim() === ""
@@ -759,17 +759,15 @@ export async function createOrOverwriteFile(
     if (file && file instanceof TFile) {
       await app.vault.modifyBinary(file, content);
       return file;
-    } else {
-      return await app.vault.createBinary(path, content);
     }
+    return await app.vault.createBinary(path, content);
   }
 
   if (file && file instanceof TFile) {
     await app.vault.modify(file, content);
     return file;
-  } else {
-    return await app.vault.create(path, content);
   }
+  return await app.vault.create(path, content);
 }
 
 export async function createFileAndAwaitMetacacheUpdate(

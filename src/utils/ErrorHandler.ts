@@ -122,7 +122,7 @@ export class ErrorHandler {
         "A required function was not available. This might be due to a plugin version mismatch.";
     } else if (message.length > 100) {
       // Truncate very long messages
-      message = message.substring(0, 100) + "...";
+      message = `${message.substring(0, 100)}...`;
     }
 
     return `Excalidraw Error: ${message} (in ${context})`;

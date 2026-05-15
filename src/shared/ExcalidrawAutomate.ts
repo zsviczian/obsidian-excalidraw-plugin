@@ -656,7 +656,7 @@ export class ExcalidrawAutomate {
       keys: modifierKeys,
       view: this.targetView,
       openNewFile: shouldOpenNewFile,
-      parentFile: parentFile,
+      parentFile,
     });
     newFilePrompt.open();
     return await newFilePrompt.waitForClose;
@@ -867,7 +867,6 @@ export class ExcalidrawAutomate {
       }
       if (root === this.plugin.app.workspace.rightSplit) {
         this.plugin.app.workspace.rightSplit.toggle();
-        return;
       }
     }
   }
@@ -1310,7 +1309,7 @@ export class ExcalidrawAutomate {
       : null;
     if (template?.plaintext) {
       if (params.plaintext) {
-        params.plaintext = params.plaintext + "\n\n" + template.plaintext;
+        params.plaintext = `${params.plaintext}\n\n${template.plaintext}`;
       } else {
         params.plaintext = template.plaintext;
       }
@@ -1340,8 +1339,8 @@ export class ExcalidrawAutomate {
       ? params.plaintext.endsWith("\n\n")
         ? params.plaintext
         : params.plaintext.endsWith("\n")
-          ? params.plaintext + "\n"
-          : params.plaintext + "\n\n"
+          ? `${params.plaintext}\n`
+          : `${params.plaintext}\n\n`
       : "";
     if (template?.frontmatter && params?.frontmatterKeys) {
       //the frontmatter tags supplyed to create take priority
@@ -1430,41 +1429,39 @@ export class ExcalidrawAutomate {
         path: string,
         colorMap?: ColorMap,
       ): string => {
-        return `${key}: [[${path}]]${colorMap ? " " + JSON.stringify(colorMap) : ""}\n\n`;
+        return `${key}: [[${path}]]${colorMap ? ` ${JSON.stringify(colorMap)}` : ""}\n\n`;
       };
 
       Object.keys(this.imagesDict).forEach((key: FileId) => {
         const item = this.imagesDict[key];
         if (item.latex) {
           outString += `${key}: $$${item.latex.trim()}$$\n\n`;
-        } else {
-          if (item.file) {
-            if (item.file instanceof TFile) {
-              outString += embeddedFile(key, item.file.path, item.colorMap);
-            } else {
-              outString += embeddedFile(key, item.file, item.colorMap);
-            }
+        } else if (item.file) {
+          if (item.file instanceof TFile) {
+            outString += embeddedFile(key, item.file.path, item.colorMap);
           } else {
-            const hyperlinkSplit = item.hyperlink.split("#");
-            const file = this.plugin.app.vault.getAbstractFileByPath(
-              hyperlinkSplit[0],
-            );
-            if (file && file instanceof TFile) {
-              const hasFileRef = hyperlinkSplit.length === 2;
-              outString += hasFileRef
-                ? embeddedFile(
-                    key,
-                    `${file.path}#${hyperlinkSplit[1]}`,
-                    item.colorMap,
-                  )
-                : embeddedFile(key, file.path, item.colorMap);
-            } else {
-              outString += `${key}: ${item.hyperlink}\n\n`;
-            }
+            outString += embeddedFile(key, item.file, item.colorMap);
+          }
+        } else {
+          const hyperlinkSplit = item.hyperlink.split("#");
+          const file = this.plugin.app.vault.getAbstractFileByPath(
+            hyperlinkSplit[0],
+          );
+          if (file && file instanceof TFile) {
+            const hasFileRef = hyperlinkSplit.length === 2;
+            outString += hasFileRef
+              ? embeddedFile(
+                  key,
+                  `${file.path}#${hyperlinkSplit[1]}`,
+                  item.colorMap,
+                )
+              : embeddedFile(key, file.path, item.colorMap);
+          } else {
+            outString += `${key}: ${item.hyperlink}\n\n`;
           }
         }
       });
-      return outString + "%%\n";
+      return `${outString}%%\n`;
     };
 
     const filename = params?.filename
@@ -1486,16 +1483,15 @@ export class ExcalidrawAutomate {
     if (params.silent) {
       return (await this.plugin.createDrawing(filename, foldername, initData))
         .path;
-    } else {
-      return this.plugin.createAndOpenDrawing(
-        filename,
-        (params?.onNewPane ? params.onNewPane : false)
-          ? "new-pane"
-          : "active-pane",
-        foldername,
-        initData,
-      );
     }
+    return this.plugin.createAndOpenDrawing(
+      filename,
+      (params?.onNewPane ? params.onNewPane : false)
+        ? "new-pane"
+        : "active-pane",
+      foldername,
+      initData,
+    );
   }
 
   /**
@@ -1886,7 +1882,7 @@ export class ExcalidrawAutomate {
       link,
       locked: false,
       frameId: null as string,
-      hasTextLink: eltype === "text" && link ? true : false,
+      hasTextLink: !!(eltype === "text" && link),
       ...(scale ? { scale } : {}),
     };
   }
@@ -2961,11 +2957,9 @@ export class ExcalidrawAutomate {
       } /*else {
         delta = -delta;
       } */
-    } else {
-      if (angle > Math.PI / 2) {
-        angle -= Math.PI;
-        //delta = -delta;
-      }
+    } else if (angle > Math.PI / 2) {
+      angle -= Math.PI;
+      //delta = -delta;
     }
     this.style.angle = angle;
     const id = this.addText(
@@ -3285,7 +3279,6 @@ export class ExcalidrawAutomate {
         void this.targetView.loadSceneFiles(false, fileIDWhiteList, resolve);
       });
     }
-    return;
   }
 
   /**
@@ -4154,23 +4147,22 @@ export class ExcalidrawAutomate {
 
     if (!includeFrameElements) {
       return elements.filter((el) => conditionFN(el));
-    } else {
-      //I use the set and the filter at the end to preserve scene layer seqeuence
-      //adding frames could potentially mess up the sequence otherwise
-      const elementIDs = new Set<string>();
-      elements
-        .filter((el) => conditionFN(el))
-        .forEach((el) => {
-          if (el.type === "frame") {
-            this.getElementsInFrame(el, elements, true).forEach((el) =>
-              elementIDs.add(el.id),
-            );
-          } else {
-            elementIDs.add(el.id);
-          }
-        });
-      return elements.filter((el) => elementIDs.has(el.id));
     }
+    //I use the set and the filter at the end to preserve scene layer seqeuence
+    //adding frames could potentially mess up the sequence otherwise
+    const elementIDs = new Set<string>();
+    elements
+      .filter((el) => conditionFN(el))
+      .forEach((el) => {
+        if (el.type === "frame") {
+          this.getElementsInFrame(el, elements, true).forEach((el) =>
+            elementIDs.add(el.id),
+          );
+        } else {
+          elementIDs.add(el.id);
+        }
+      });
+    return elements.filter((el) => elementIDs.has(el.id));
   }
 
   /**
@@ -4353,7 +4345,8 @@ export class ExcalidrawAutomate {
       return null;
     }
 
-    let originalArea, originalAspectRatio;
+    let originalArea;
+    let originalAspectRatio;
     if (imgEl.crop) {
       originalArea = imgEl.width * imgEl.height;
       originalAspectRatio = imgEl.crop.width / imgEl.crop.height;

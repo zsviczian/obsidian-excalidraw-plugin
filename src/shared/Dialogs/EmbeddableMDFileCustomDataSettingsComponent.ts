@@ -74,10 +74,8 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
               if (this.mdCustomData.backgroundMatchCanvas) {
                 bgMatchCanvasToggle.setValue(false);
               }
-            } else {
-              if (!this.mdCustomData.backgroundMatchCanvas) {
-                bgSetting.settingEl.style.display = "";
-              }
+            } else if (!this.mdCustomData.backgroundMatchCanvas) {
+              bgSetting.settingEl.style.display = "";
             }
             this.update();
           });
@@ -96,10 +94,8 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
               if (this.mdCustomData.backgroundMatchElement) {
                 bgMatchElementToggle.setValue(false);
               }
-            } else {
-              if (!this.mdCustomData.backgroundMatchElement) {
-                bgSetting.settingEl.style.display = "";
-              }
+            } else if (!this.mdCustomData.backgroundMatchElement) {
+              bgSetting.settingEl.style.display = "";
             }
             this.update();
           });

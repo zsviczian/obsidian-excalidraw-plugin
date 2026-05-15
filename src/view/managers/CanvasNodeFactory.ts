@@ -63,7 +63,7 @@ export class CanvasNodeFactory {
 
   public async initialize() {
     const app = this.view.app;
-    const canvasPlugin = app.internalPlugins.plugins["canvas"];
+    const canvasPlugin = app.internalPlugins.plugins.canvas;
 
     if (!canvasPlugin._loaded) {
       await canvasPlugin.load();

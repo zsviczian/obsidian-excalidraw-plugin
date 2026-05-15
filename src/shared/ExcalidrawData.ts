@@ -444,7 +444,7 @@ export function getExcalidrawMarkdownHeader(data: string): {
   }
   if (trimLocation === -1) {
     return {
-      header: data.endsWith("\n") ? data : data + "\n",
+      header: data.endsWith("\n") ? data : `${data}\n`,
       shouldFixTrailingHashtag,
       processingOk: false,
     };
@@ -475,10 +475,10 @@ export const getExcalidrawMarkdownHeaderSection = (
   }*/
   //end of remove
   return shouldFixTrailingHashtag
-    ? updatedHeader + "\n#\n"
+    ? `${updatedHeader}\n#\n`
     : updatedHeader.endsWith("\n")
       ? header
-      : header + "\n";
+      : `${header}\n`;
 };
 
 export class ExcalidrawData {
@@ -1578,7 +1578,7 @@ export class ExcalidrawData {
                 this.app.metadataCache.fileToLinktext(ef.file, this.file.path),
               )
             : ef.linkParts.original;
-          const colorMap = ef.colorMap ? " " + JSON.stringify(ef.colorMap) : "";
+          const colorMap = ef.colorMap ? ` ${JSON.stringify(ef.colorMap)}` : "";
           outString += `${key}: [[${path}]]${colorMap}\n\n`;
         }
       }
@@ -2133,28 +2133,24 @@ export class ExcalidrawData {
       if (!EMBEDDABLE_THEME_FRONTMATTER_VALUES.includes(this.embeddableTheme)) {
         this.embeddableTheme = "default";
       }
-    } else {
-      if (
-        //backwards compatibility
-        fileCache?.frontmatter &&
-        fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name] !== null &&
-        typeof fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name] !==
-          "undefined"
-      ) {
-        this.embeddableTheme =
-          fileCache.frontmatter[
-            FRONTMATTER_KEYS["iframe-theme"].name
-          ].toLowerCase();
-        if (
-          !EMBEDDABLE_THEME_FRONTMATTER_VALUES.includes(this.embeddableTheme)
-        ) {
-          this.embeddableTheme = "default";
-        }
-      } else {
-        this.embeddableTheme = this.plugin.settings.iframeMatchExcalidrawTheme
-          ? "auto"
-          : "default";
+    } else if (
+      //backwards compatibility
+      fileCache?.frontmatter &&
+      fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name] !== null &&
+      typeof fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name] !==
+        "undefined"
+    ) {
+      this.embeddableTheme =
+        fileCache.frontmatter[
+          FRONTMATTER_KEYS["iframe-theme"].name
+        ].toLowerCase();
+      if (!EMBEDDABLE_THEME_FRONTMATTER_VALUES.includes(this.embeddableTheme)) {
+        this.embeddableTheme = "default";
       }
+    } else {
+      this.embeddableTheme = this.plugin.settings.iframeMatchExcalidrawTheme
+        ? "auto"
+        : "default";
     }
     return embeddableTheme !== this.embeddableTheme;
   }
@@ -2235,7 +2231,7 @@ export class ExcalidrawData {
       this.plugin,
       this.file.path,
       masterFile.blockrefData
-        ? masterFile.path + "#" + masterFile.blockrefData
+        ? `${masterFile.path}#${masterFile.blockrefData}`
         : masterFile.path,
       masterFile.colorMapJSON,
     );
@@ -2277,7 +2273,7 @@ export class ExcalidrawData {
         this.plugin,
         this.file.path,
         (masterFile.blockrefData
-          ? path + "#" + masterFile.blockrefData
+          ? `${path}#${masterFile.blockrefData}`
           : path) + (fixScale ? "|100%" : ""),
         masterFile.colorMapJSON,
       );
@@ -2462,14 +2458,14 @@ export const getTransclusion = async (
       }
       if (j === headings.length && headings[j - 1].node.depth > depth) {
         return {
-          leadingHashes: "#".repeat(depth) + " ",
+          leadingHashes: `${"#".repeat(depth)} `,
           contents: contents.substring(startPos).trim(),
           lineNum,
         };
       }
       endPos = headings[j].node.position.start.offset - 1;
       return {
-        leadingHashes: "#".repeat(depth) + " ",
+        leadingHashes: `${"#".repeat(depth)} `,
         contents: contents.substring(startPos, endPos).trim(),
         lineNum,
       };
@@ -2496,7 +2492,7 @@ export const getTransclusion = async (
   }
   if (startPos) {
     return {
-      leadingHashes: "#".repeat(depth) + " ",
+      leadingHashes: `${"#".repeat(depth)} `,
       contents: contents.substring(startPos).trim(),
       lineNum,
     };

@@ -182,10 +182,8 @@ export default {
   LINK_BUTTON_CLICK_NO_TEXT:
     "Select an element that contains an internal or external link.\n",
   LINEAR_ELEMENT_LINK_CLICK_ERROR:
-    "Arrow- and Line-Element links cannot be navigated by " +
-    labelCTRL() +
-    " + CLICKing on the element because that also activates the line editor.\n" +
-    "Use the right-click context menu to open the link, or click the link indicator in the top right corner of the element.\n",
+    `Arrow- and Line-Element links cannot be navigated by ${labelCTRL()} + CLICKing on the element because that also activates the line editor.\n` +
+    `Use the right-click context menu to open the link, or click the link indicator in the top right corner of the element.\n`,
   FILENAME_INVALID_CHARS:
     'File name cannot contain any of the following characters: * " \\ < > : | ? #',
   FORCE_SAVE: "Save (will also update transclusions)",
@@ -636,23 +634,23 @@ export default {
   SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME:
     "Render as image when in markdown reading mode of an Excalidraw file",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC:
-    "When you are in markdown reading mode (aka. reading the back side of the drawing) should the Excalidraw drawing be rendered as an image? " +
-    "This setting will not affect the display of the drawing when you are in Excalidraw mode or when you embed the drawing into a markdown document or when rendering hover preview.<br><ul>" +
-    "<li>See other related setting for <a href='#" +
-    TAG_PDFEXPORT +
-    "'>PDF Export</a> under 'Embedding and Exporting' further below.</li></ul><br>" +
-    "You must close the active excalidraw/markdown file and reopen it for this change to take effect.",
+    `When you are in markdown reading mode (aka. reading the back side of the drawing) should the Excalidraw drawing be rendered as an image? ` +
+    `This setting will not affect the display of the drawing when you are in Excalidraw mode or when you embed the drawing into a markdown document or when rendering hover preview.<br><ul>` +
+    `<li>See other related setting for <a href='#${
+      TAG_PDFEXPORT
+    }'>PDF Export</a> under 'Embedding and Exporting' further below.</li></ul><br>` +
+    `You must close the active excalidraw/markdown file and reopen it for this change to take effect.`,
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME:
     "Render Excalidraw as Image in Obsidian PDF Export",
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC:
-    "This setting controls how Excalidraw files are exported to PDF using Obsidian's built-in <b>Export to PDF</b> feature.<br>" +
-    "<ul><li><b>Enabled:</b> The PDF will include the Excalidraw drawing as an image.</li>" +
-    "<li><b>Disabled:</b> The PDF will include the markdown content as text.</li></ul>" +
-    "Note: This setting does not affect the PDF export feature within Excalidraw itself.<br>" +
-    "See the other related setting for <a href='#" +
-    TAG_MDREADINGMODE +
-    "'>Markdown Reading Mode</a> under 'Appearance and Behavior' further above.<br>" +
-    "⚠️ You must close and reopen the Excalidraw/markdown file for changes to take effect. ⚠️",
+    `This setting controls how Excalidraw files are exported to PDF using Obsidian's built-in <b>Export to PDF</b> feature.<br>` +
+    `<ul><li><b>Enabled:</b> The PDF will include the Excalidraw drawing as an image.</li>` +
+    `<li><b>Disabled:</b> The PDF will include the markdown content as text.</li></ul>` +
+    `Note: This setting does not affect the PDF export feature within Excalidraw itself.<br>` +
+    `See the other related setting for <a href='#${
+      TAG_MDREADINGMODE
+    }'>Markdown Reading Mode</a> under 'Appearance and Behavior' further above.<br>` +
+    `⚠️ You must close and reopen the Excalidraw/markdown file for changes to take effect. ⚠️`,
   MODES_HEAD: "UI Modes",
   DESKTOP_UI_MODE_NAME: "Preferred Desktop Mode",
   DESKTOP_UI_MODE_DESC: "Select the default UI mode for desktop devices.",
@@ -745,13 +743,14 @@ export default {
     "If you don't want text accidentally changing in your drawings use <code>[[links|with aliases]]</code>.",
   DRAG_MODIFIER_NAME: "Link Click and Drag&Drop Modifier Keys",
   DRAG_MODIFIER_DESC:
-    "Modifier key behavior when clicking links and dragging and dropping elements. " +
-    "Excalidraw will not validate your configuration... pay attention to avoid conflicting settings. " +
-    "These settings are different for Apple and non-Apple. If you use Obsidian on multiple platforms, you'll need to make the settings separately. " +
-    "The toggles follow the order of " +
-    (DEVICE.isIOS || DEVICE.isMacOS
-      ? "SHIFT, CMD, OPT, CONTROL."
-      : "SHIFT, CTRL, ALT, META (Windows key)."),
+    `Modifier key behavior when clicking links and dragging and dropping elements. ` +
+    `Excalidraw will not validate your configuration... pay attention to avoid conflicting settings. ` +
+    `These settings are different for Apple and non-Apple. If you use Obsidian on multiple platforms, you'll need to make the settings separately. ` +
+    `The toggles follow the order of ${
+      DEVICE.isIOS || DEVICE.isMacOS
+        ? "SHIFT, CMD, OPT, CONTROL."
+        : "SHIFT, CTRL, ALT, META (Windows key)."
+    }`,
   LONG_PRESS_DESKTOP_NAME: "Long press to open desktop",
   LONG_PRESS_DESKTOP_DESC:
     "Long press delay in milliseconds to open an Excalidraw Drawing embedded in a Markdown file. ",
@@ -933,13 +932,13 @@ export default {
   EMBED_REUSE_EXPORTED_IMAGE_NAME:
     "If found, use the already exported image for preview",
   EMBED_REUSE_EXPORTED_IMAGE_DESC:
-    "This setting works in conjunction with the <a href='#" +
-    TAG_AUTOEXPORT +
-    "'>Auto-export SVG/PNG</a> setting. If an exported image that matches the file name of the drawing " +
-    "is available, use that image instead of generating a preview image on the fly. This will result in faster previews especially when you have many embedded objects in the drawing, however, " +
-    "it may happen that your latest changes are not displayed and that the image will not automatically match your Obsidian theme in case you have changed the " +
-    "Obsidian theme since the export was created. This setting only applies to embedding images into markdown documents. " +
-    "For a number of reasons, the same approach cannot be used to expedite the loading of drawings with many embedded objects. See demonstration <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>here</a>.",
+    `This setting works in conjunction with the <a href='#${
+      TAG_AUTOEXPORT
+    }'>Auto-export SVG/PNG</a> setting. If an exported image that matches the file name of the drawing ` +
+    `is available, use that image instead of generating a preview image on the fly. This will result in faster previews especially when you have many embedded objects in the drawing, however, ` +
+    `it may happen that your latest changes are not displayed and that the image will not automatically match your Obsidian theme in case you have changed the ` +
+    `Obsidian theme since the export was created. This setting only applies to embedding images into markdown documents. ` +
+    `For a number of reasons, the same approach cannot be used to expedite the loading of drawings with many embedded objects. See demonstration <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>here</a>.`,
   /*EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
   EMBED_PREVIEW_SVG_DESC:
     "<b><u>Toggle ON:</u></b> Embed drawing as an <a href='https://en.wikipedia.org/wiki/Scalable_Vector_Graphics' target='_blank'>SVG</a> image into the markdown preview.<br>" +
@@ -965,12 +964,12 @@ export default {
     "<code>[[drawing.excalidraw|100x100]]</code> format.",
   EMBED_TYPE_NAME: "Type of file to insert into the document",
   EMBED_TYPE_DESC:
-    "When you embed an image into a document using the command palette this setting will specify if Excalidraw should embed the original Excalidraw file " +
-    "or a PNG or an SVG copy. You need to enable <a href='#" +
-    TAG_AUTOEXPORT +
-    "'>auto-export PNG / SVG</a> (see below under Export Settings) for those image types to be available in the dropdown. For drawings that do not have a " +
-    "a corresponding PNG or SVG readily available the command palette action will insert a broken link. You need to open the original drawing and initiate export manually. " +
-    "This option will not autogenerate PNG/SVG files, but will simply reference the already existing files.",
+    `When you embed an image into a document using the command palette this setting will specify if Excalidraw should embed the original Excalidraw file ` +
+    `or a PNG or an SVG copy. You need to enable <a href='#${
+      TAG_AUTOEXPORT
+    }'>auto-export PNG / SVG</a> (see below under Export Settings) for those image types to be available in the dropdown. For drawings that do not have a ` +
+    `a corresponding PNG or SVG readily available the command palette action will insert a broken link. You need to open the original drawing and initiate export manually. ` +
+    `This option will not autogenerate PNG/SVG files, but will simply reference the already existing files.`,
   EMBED_MARKDOWN_COMMENT_NAME: "Embed link to drawing as comment",
   EMBED_MARKDOWN_COMMENT_DESC:
     "Embed the link to the original Excalidraw file as a markdown link under the image, e.g.:<code>%%[[drawing.excalidraw]]%%</code>.<br>" +

@@ -289,7 +289,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       );
       return;
     }
-    void plugin.taskbone.getTextForView(view, { forceReScan: isWinCTRLorMacCMD(e) });
+    void plugin.taskbone.getTextForView(view, {
+      forceReScan: isWinCTRLorMacCMD(e),
+    });
   }
 
   actionOpenLink(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
@@ -849,7 +851,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
         {scriptlist.map((group, index) => (
           <fieldset key={`${group}-${index}`}>
             <legend>
-              {isDownloaded ? group : group === "" ? "User" : "User/" + group}
+              {isDownloaded ? group : group === "" ? "User" : `User/${group}`}
             </legend>
             <div className="buttonList buttonListIcon">
               {Object.entries(this.state.scriptIconMap)

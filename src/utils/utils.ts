@@ -96,7 +96,7 @@ export async function checkExcalidrawVersion() {
       .sort((el1: any, el2: any) => el2.published - el1.published)[0].version;
 
     if (isVersionNewerThanOther(latestVersion, PLUGIN_VERSION)) {
-      new Notice(t("UPDATE_AVAILABLE") + ` ${latestVersion}`);
+      new Notice(`${t("UPDATE_AVAILABLE")} ${latestVersion}`);
     }
 
     // Check for script updates
@@ -501,12 +501,10 @@ export function scaleLoadedImage(
     );
     if (file && file instanceof TFile) {
       return (
-        (file).extension === "md" ||
-        EXCALIDRAW_PLUGIN.isExcalidrawFile(file)
-      )
-    } else {
-      return false;
-    };
+        file.extension === "md" || EXCALIDRAW_PLUGIN.isExcalidrawFile(file)
+      );
+    }
+    return false;
   })) {
     const [imgWidth, imgHeight] = [img.size.width, img.size.height];
     const imgAspectRatio = imgWidth / imgHeight;
@@ -692,7 +690,7 @@ export function compress(data: string): string {
   let result = "";
   const chunkSize = 256;
   for (let i = 0; i < compressed.length; i += chunkSize) {
-    result += compressed.slice(i, i + chunkSize) + "\n\n";
+    result += `${compressed.slice(i, i + chunkSize)}\n\n`;
   }
 
   return result.trim();
@@ -1230,8 +1228,6 @@ export function convertSVGStringToElement(svg: string): SVGSVGElement {
   if (nestedSvg instanceof SVGSVGElement) {
     return nestedSvg;
   }
-
-  return;
 }
 
 export function escapeRegExp(str: string) {
@@ -1252,10 +1248,9 @@ export function addYouTubeThumbnail(
 
   const anchor = wrapper.createEl("a", {
     attr: {
-      href:
-        "https://www.youtube.com/watch?v=" +
-        link +
-        (startAt ? "&t=" + startAt : ""),
+      href: `https://www.youtube.com/watch?v=${
+        link
+      }${startAt ? `&t=${startAt}` : ""}`,
       target: "_blank",
       rel: "noopener noreferrer",
     },

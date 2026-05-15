@@ -116,10 +116,8 @@ function diffLang(lang = "zh-cn") {
       diffs.push(`- ${key}: ${l[key]}`);
     } else if (!(key in l)) {
       diffs.push(`+ ${key}: ${en[key]}`);
-    } else {
-      if (en[key] !== l[key]) {
-        diffs.push(`! ${key}: en: ${en[key]} <--> lang: ${l[key]}`);
-      }
+    } else if (en[key] !== l[key]) {
+      diffs.push(`! ${key}: en: ${en[key]} <--> lang: ${l[key]}`);
     }
   }
   return diffs;

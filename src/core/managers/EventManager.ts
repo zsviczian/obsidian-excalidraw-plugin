@@ -236,7 +236,6 @@ export class EventManager {
         }
         if (element.link) {
           editorInsertText(editor, `${element.link}`);
-          return;
         }
       } catch (_) {}
     }

@@ -468,7 +468,9 @@ export class ExportDialog extends Modal {
           }
         });
       } else {
-        void this.view.savePNG({ scene: this.view.getScene(this.isSelectedOnly) });
+        void this.view.savePNG({
+          scene: this.view.getScene(this.isSelectedOnly),
+        });
       }
       this.close();
     };
@@ -492,7 +494,10 @@ export class ExportDialog extends Modal {
           }
         });
       } else {
-        await this.view.exportPNGToClipboard(this.embedScene, this.isSelectedOnly);
+        await this.view.exportPNGToClipboard(
+          this.embedScene,
+          this.isSelectedOnly,
+        );
       }
       this.close();
     };
@@ -526,7 +531,9 @@ export class ExportDialog extends Modal {
       cls: "excalidraw-export-button",
     });
     bSVGVault.onclick = () => {
-      void this.view.saveSVG({ scene: this.view.getScene(this.isSelectedOnly) });
+      void this.view.saveSVG({
+        scene: this.view.getScene(this.isSelectedOnly),
+      });
       this.close();
     };
 

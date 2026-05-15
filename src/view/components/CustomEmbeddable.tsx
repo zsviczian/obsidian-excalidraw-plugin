@@ -156,10 +156,10 @@ function setupPdfViewEnhancements(
     const scroller =
       pdfView.containerEl?.querySelector(".pdf-viewer-container") || null;
     let active = false;
-    let lastX = 0,
-      lastY = 0;
-    let scaleX = 1,
-      scaleY = 1;
+    let lastX = 0;
+    let lastY = 0;
+    let scaleX = 1;
+    let scaleY = 1;
 
     const getScaleFromAncestor = (target: Element | null) => {
       // Read scale from the outer excalidraw embeddable container transform
@@ -177,19 +177,19 @@ function setupPdfViewEnhancements(
       if (t.startsWith("matrix3d(")) {
         // matrix3d: m11=a1, m12=b1, m21=a2, m22=b2 in the first 6 entries
         const m = t.slice(9, -1).split(",").map(Number);
-        const a = m[0],
-          b = m[1],
-          c = m[4],
-          d = m[5];
+        const a = m[0];
+        const b = m[1];
+        const c = m[4];
+        const d = m[5];
         // scaleX = length of first column, scaleY = length of second column
         return { sx: Math.hypot(a, b) || 1, sy: Math.hypot(c, d) || 1 };
       }
       if (t.startsWith("matrix(")) {
         const m = t.slice(7, -1).split(",").map(Number); // [a,b,c,d,tx,ty]
-        const a = m[0],
-          b = m[1],
-          c = m[2],
-          d = m[3];
+        const a = m[0];
+        const b = m[1];
+        const c = m[2];
+        const d = m[3];
         return { sx: Math.hypot(a, b) || 1, sy: Math.hypot(c, d) || 1 };
       }
       return { sx: 1, sy: 1 };
@@ -479,7 +479,9 @@ function RenderObsidianView({
   const isActiveRef = React.useRef(false);
   const viewTypeRef = React.useRef("empty");
   const themeRef = React.useRef(theme);
-  const pdfObserverRef = React.useRef<MutationObserver | null>(null) as PdfObserverRef;
+  const pdfObserverRef = React.useRef<MutationObserver | null>(
+    null,
+  ) as PdfObserverRef;
   const pdfObserverDisabledRef = React.useRef(false);
   const mobilePatchCleanupRef = React.useRef(null);
   const initialViewFileRef = React.useRef(view.file);
@@ -991,7 +993,10 @@ function RenderObsidianView({
         //Handle canvas node
         const newTheme = getTheme(view, themeRef.current);
         containerRef.current?.addClasses(["is-editing", "is-focused"]);
-        void view.canvasNodeFactory.startEditing(leafRef.current.node, newTheme);
+        void view.canvasNodeFactory.startEditing(
+          leafRef.current.node,
+          newTheme,
+        );
         return;
       }
 
@@ -1152,7 +1157,6 @@ function RenderObsidianView({
         if (!isActiveRef.current) {
           leafRef.current.leaf.view.setMode(modes.preview);
           isEditingRef.current = false;
-          return;
         }
       }
     }

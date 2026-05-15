@@ -119,7 +119,7 @@ export function compress(data: string): string {
   let result = "";
   const chunkSize = 256;
   for (let i = 0; i < compressed.length; i += chunkSize) {
-    result += compressed.slice(i, i + chunkSize) + "\n\n";
+    result += `${compressed.slice(i, i + chunkSize)}\n\n`;
   }
 
   return result.trim();

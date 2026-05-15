@@ -302,7 +302,7 @@ export class CommandManager {
           if (parts.length !== 2) {
             return;
           }
-          const header = parts[0] + "\n## Drawing\n```json\n";
+          const header = `${parts[0]}\n## Drawing\n\`\`\`json\n`;
           const compressed = parts[1].split("\n```\n%%");
           if (compressed.length !== 2) {
             return;
@@ -317,7 +317,7 @@ export class CommandManager {
           await createOrOverwriteFile(
             this.app,
             activeFile.path,
-            header + decompressed + "\n```\n%%" + compressed[1],
+            `${header + decompressed}\n\`\`\`\n%%${compressed[1]}`,
           );
         })();
       },
@@ -408,7 +408,7 @@ export class CommandManager {
         if (checking) {
           return true;
         }
-        const ea = getEA(view) ;
+        const ea = getEA(view);
         const api = ea.getExcalidrawAPI();
         ea.copyViewElementsToEAforEditing(els);
         const scale = 1 / api.getAppState().zoom.value;
@@ -1324,7 +1324,7 @@ export class CommandManager {
           return true;
         }
         void (async () => {
-          const ea = getEA(view) ;
+          const ea = getEA(view);
           const isAnchored = Boolean(el.customData?.isAnchored);
           const imgId = ef.pdfPageViewProps
             ? await ea.addImage(
@@ -1611,7 +1611,8 @@ export class CommandManager {
           this.app.workspace.getActiveViewOfType(ExcalidrawView);
         const markdownView =
           this.app.workspace.getActiveViewOfType(MarkdownView);
-        type CanvasNodeLike = { //2026.05.15
+        type CanvasNodeLike = {
+          //2026.05.15
           nodeEl: {
             hasClass(className: string): boolean;
           };
@@ -1637,12 +1638,16 @@ export class CommandManager {
           };
         };
         const activeView = this.app.workspace.activeLeaf?.view;
-        const isCanvasViewLike = (view: typeof activeView): view is CanvasViewLike =>
+        const isCanvasViewLike = (
+          view: typeof activeView,
+        ): view is CanvasViewLike =>
           Boolean(
             view &&
-              view.getViewType() === "canvas" &&
-              "canvas" in view &&
-              Array.isArray((view as { canvas?: { nodes?: CanvasNodeLike[] } }).canvas?.nodes),
+            view.getViewType() === "canvas" &&
+            "canvas" in view &&
+            Array.isArray(
+              (view as { canvas?: { nodes?: CanvasNodeLike[] } }).canvas?.nodes,
+            ),
           );
         const canvasView = isCanvasViewLike(activeView)
           ? activeView
@@ -1735,7 +1740,7 @@ export class CommandManager {
           replacer: (link: string, file?: TFile, size?: string | null) => void,
           ref?: string,
         ) => {
-          const ea = getEA() ;
+          const ea = getEA();
           const imageID = await ea.addImage(
             0,
             0,
@@ -1895,8 +1900,7 @@ export class CommandManager {
             const lineparts = line.split(parts[0].value[0]);
             const pdfLink =
               isFile && ref
-                ? "\n" +
-                  getLink(
+                ? `\n${getLink(
                     this.plugin,
                     {
                       embed: false,
@@ -1906,7 +1910,7 @@ export class CommandManager {
                       path: `${imageFile.path}#${ref}`,
                     },
                     isWikilink,
-                  )
+                  )}`
                 : "";
             editor.setLine(
               cursor.line,
@@ -1964,12 +1968,16 @@ export class CommandManager {
           };
         };
         const activeView = this.app.workspace.activeLeaf?.view;
-        const isCanvasViewLike = (view: typeof activeView): view is CanvasViewLike =>
+        const isCanvasViewLike = (
+          view: typeof activeView,
+        ): view is CanvasViewLike =>
           Boolean(
             view &&
-              view.getViewType() === "canvas" &&
-              "canvas" in view &&
-              Array.isArray((view as { canvas?: { nodes?: CanvasNodeLike[] } }).canvas?.nodes),
+            view.getViewType() === "canvas" &&
+            "canvas" in view &&
+            Array.isArray(
+              (view as { canvas?: { nodes?: CanvasNodeLike[] } }).canvas?.nodes,
+            ),
           );
         const canvasView = isCanvasViewLike(activeView)
           ? activeView
@@ -1987,7 +1995,7 @@ export class CommandManager {
           replacer: (link: string, file?: TFile, size?: string | null) => void,
           ref?: string,
         ) => {
-          const ea = getEA() ;
+          const ea = getEA();
           const imageID = await ea.addImage(
             0,
             0,
@@ -2180,8 +2188,7 @@ export class CommandManager {
             const lineparts = line.split(parts[0].value[0]);
             const pdfLink =
               isFile && ref
-                ? "\n" +
-                  getLink(
+                ? `\n${getLink(
                     this.plugin,
                     {
                       embed: false,
@@ -2193,7 +2200,7 @@ export class CommandManager {
                       path: `${imageFile.path}#${ref}`,
                     },
                     isWikilink,
-                  )
+                  )}`
                 : "";
             editor.setLine(
               cursor.line,
@@ -2351,7 +2358,7 @@ export class CommandManager {
           return true;
         }
         void (async () => {
-          const ea = getEA(view) ;
+          const ea = getEA(view);
           const id = await insertImageToView(
             ea,
             view.currentPosition,
@@ -2459,7 +2466,6 @@ export class CommandManager {
               VIEW_TYPE_EXCALIDRAW;
             await setExcalidrawView(activeLeaf);
           })();
-          return;
         }
       },
     });

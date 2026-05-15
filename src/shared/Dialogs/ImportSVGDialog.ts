@@ -48,7 +48,7 @@ export class ImportSVGDialog extends FuzzySuggestModal<TFile> {
     if (!item) {
       return;
     }
-    const ea = getEA(this.view) ;
+    const ea = getEA(this.view);
     const svg = await this.app.vault.read(item);
     if (!svg || svg === "") {
       return;

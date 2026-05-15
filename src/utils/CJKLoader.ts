@@ -1403,7 +1403,7 @@ export async function getCJKDataURLs(
   for (const buffer of buffers) {
     const blob = new Blob([buffer], { type: "font/woff2" });
     const dataUrl = await blobToBase64(blob);
-    dataUrls.push("data:font/woff2;base64," + dataUrl);
+    dataUrls.push(`data:font/woff2;base64,${dataUrl}`);
   }
 
   return dataUrls.length > 0 ? dataUrls : false; // Return the array of Data URLs

@@ -184,10 +184,8 @@ export default {
   LINK_BUTTON_CLICK_NO_TEXT:
     "Selecciona un elemento que contenga un enlace interno o externo.\n",
   LINEAR_ELEMENT_LINK_CLICK_ERROR:
-    "Los enlaces de elementos de flecha y línea no se pueden navegar haciendo " +
-    labelCTRL() +
-    " + CLICK en el elemento porque eso también activa el editor de línea.\n" +
-    "Usa el menú contextual del click derecho para abrir el enlace, o haz clic en el indicador de enlace en la esquina superior derecha del elemento.\n",
+    `Los enlaces de elementos de flecha y línea no se pueden navegar haciendo ${labelCTRL()} + CLICK en el elemento porque eso también activa el editor de línea.\n` +
+    `Usa el menú contextual del click derecho para abrir el enlace, o haz clic en el indicador de enlace en la esquina superior derecha del elemento.\n`,
   FILENAME_INVALID_CHARS:
     'El nombre de archivo no puede contener ninguno de los siguientes caracteres: * " \\ < > : | ? #',
   FORCE_SAVE: "Guardar (también actualizará las transclusiones)",
@@ -606,23 +604,23 @@ export default {
   SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME:
     "Renderizar como imagen en el modo de lectura Markdown de un archivo de Excalidraw",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC:
-    "Cuando estás en modo de lectura Markdown (es decir, leyendo el reverso del bosquejo), ¿debe renderizarse el bosquejo de Excalidraw como una imagen? " +
-    "Esta configuración no afectará la visualización del bosquejo cuando estés en modo Excalidraw, cuando incrustes el bosquejo en un documento Markdown o cuando se renderice la vista previa al pasar el mouse.<br><ul>" +
-    "<li>Consulta otra configuración relacionada para la <a href='#" +
-    TAG_PDFEXPORT +
-    "'>Exportación a PDF</a> en 'Incrustación y Exportación' más abajo.</li></ul><br>" +
-    "Debes cerrar el archivo activo de Excalidraw/Markdown y volver a abrirlo para que este cambio surta efecto.",
+    `Cuando estás en modo de lectura Markdown (es decir, leyendo el reverso del bosquejo), ¿debe renderizarse el bosquejo de Excalidraw como una imagen? ` +
+    `Esta configuración no afectará la visualización del bosquejo cuando estés en modo Excalidraw, cuando incrustes el bosquejo en un documento Markdown o cuando se renderice la vista previa al pasar el mouse.<br><ul>` +
+    `<li>Consulta otra configuración relacionada para la <a href='#${
+      TAG_PDFEXPORT
+    }'>Exportación a PDF</a> en 'Incrustación y Exportación' más abajo.</li></ul><br>` +
+    `Debes cerrar el archivo activo de Excalidraw/Markdown y volver a abrirlo para que este cambio surta efecto.`,
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME:
     "Renderizar Excalidraw como Imagen en la Exportación a PDF de Obsidian",
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC:
-    "Esta configuración controla cómo se exportan los archivos de Excalidraw a PDF usando la función incorporada de Obsidian <b>Exportar a PDF</b>.<br>" +
-    "<ul><li><b>Habilitado:</b> El PDF incluirá el bosquejo de Excalidraw como una imagen.</li>" +
-    "<li><b>Desactivado:</b> El PDF incluirá el contenido Markdown como texto.</li></ul>" +
-    "Nota: Esta configuración no afecta la función de exportación a PDF dentro del propio Excalidraw.<br>" +
-    "Consulta la otra configuración relacionada para el  <a href='#" +
-    TAG_MDREADINGMODE +
-    "'>Modo de Lectura de Markdown</a> en 'Apariencia y Comportamiento' más arriba.<br>" +
-    "⚠️ Debes cerrar y volver a abrir el archivo de Excalidraw/Markdown para que los cambios surtan efecto. ⚠️",
+    `Esta configuración controla cómo se exportan los archivos de Excalidraw a PDF usando la función incorporada de Obsidian <b>Exportar a PDF</b>.<br>` +
+    `<ul><li><b>Habilitado:</b> El PDF incluirá el bosquejo de Excalidraw como una imagen.</li>` +
+    `<li><b>Desactivado:</b> El PDF incluirá el contenido Markdown como texto.</li></ul>` +
+    `Nota: Esta configuración no afecta la función de exportación a PDF dentro del propio Excalidraw.<br>` +
+    `Consulta la otra configuración relacionada para el  <a href='#${
+      TAG_MDREADINGMODE
+    }'>Modo de Lectura de Markdown</a> en 'Apariencia y Comportamiento' más arriba.<br>` +
+    `⚠️ Debes cerrar y volver a abrir el archivo de Excalidraw/Markdown para que los cambios surtan efecto. ⚠️`,
   MODES_HEAD: "Modos",
   TRAY_MODE_NAME: "Habilitar modo de bandeja (tray-mode)",
   COMPACT_MODE_NAME: "Modo compacto en tablets",
@@ -703,13 +701,14 @@ export default {
   DRAG_MODIFIER_NAME:
     "Teclas modificadoras para click de enlace y Arrastrar y Soltar(Drag&Drop)",
   DRAG_MODIFIER_DESC:
-    "Comportamiento de la tecla modificadora al hacer click en enlaces y arrastrar y soltar elementos. " +
-    "Excalidraw no validará tu configuración... presta atención para evitar configuraciones conflictivas. " +
-    "Estas configuraciones son diferentes para Apple y no Apple. Si usas Obsidian en múltiples plataformas, deberás realizar las configuraciones por separado. " +
-    "Los interruptores siguen el orden de " +
-    (DEVICE.isIOS || DEVICE.isMacOS
-      ? "SHIFT, CMD, OPT, CONTROL."
-      : "SHIFT, CTRL, ALT, META (Tecla de Windows)."),
+    `Comportamiento de la tecla modificadora al hacer click en enlaces y arrastrar y soltar elementos. ` +
+    `Excalidraw no validará tu configuración... presta atención para evitar configuraciones conflictivas. ` +
+    `Estas configuraciones son diferentes para Apple y no Apple. Si usas Obsidian en múltiples plataformas, deberás realizar las configuraciones por separado. ` +
+    `Los interruptores siguen el orden de ${
+      DEVICE.isIOS || DEVICE.isMacOS
+        ? "SHIFT, CMD, OPT, CONTROL."
+        : "SHIFT, CTRL, ALT, META (Tecla de Windows)."
+    }`,
   LONG_PRESS_DESKTOP_NAME: "Mantener presionado para abrir en escritorio",
   LONG_PRESS_DESKTOP_DESC:
     "Retraso en milisegundos para mantener presionado y abrir un bosquejo de Excalidraw incrustado en un archivo Markdown. ",
@@ -883,13 +882,13 @@ export default {
   EMBED_REUSE_EXPORTED_IMAGE_NAME:
     "Si se encuentra, usar la imagen ya exportada para la vista previa",
   EMBED_REUSE_EXPORTED_IMAGE_DESC:
-    "Esta configuración funciona en conjunto con la opción de <a href='#" +
-    TAG_AUTOEXPORT +
-    "'>Auto-exportar SVG/PNG</a>.Si hay una imagen exportada que coincide con el nombre del archivo del bosquejo " +
-    "disponible, se usará esa imagen en lugar de generar una vista previa al momento. Esto resultará en vistas previas más rápidas, especialmente si tienes muchos objetos incrustados en el bosquejo. Sin embargo, " +
-    "puede que tus últimos cambios no se muestren y la imagen no coincida automáticamente con el " +
-    "tema de Obsidian si lo has cambiado desde que se creó la exportación. Esta configuración solo se aplica a la incrustación de imágenes en documentos Markdown.  " +
-    "Por diversas razones, el mismo enfoque no se puede usar para acelerar la carga de bosquejos con muchos objetos incrustados. Puedes ver una demostración <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>aquí</a>.",
+    `Esta configuración funciona en conjunto con la opción de <a href='#${
+      TAG_AUTOEXPORT
+    }'>Auto-exportar SVG/PNG</a>.Si hay una imagen exportada que coincide con el nombre del archivo del bosquejo ` +
+    `disponible, se usará esa imagen en lugar de generar una vista previa al momento. Esto resultará en vistas previas más rápidas, especialmente si tienes muchos objetos incrustados en el bosquejo. Sin embargo, ` +
+    `puede que tus últimos cambios no se muestren y la imagen no coincida automáticamente con el ` +
+    `tema de Obsidian si lo has cambiado desde que se creó la exportación. Esta configuración solo se aplica a la incrustación de imágenes en documentos Markdown.  ` +
+    `Por diversas razones, el mismo enfoque no se puede usar para acelerar la carga de bosquejos con muchos objetos incrustados. Puedes ver una demostración <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>aquí</a>.`,
   /*EMBED_PREVIEW_SVG_NAME: "Mostrar SVG en la vista previa de Markdown",
   EMBED_PREVIEW_SVG_DESC:
     "<b><u>Activado:</u></b> Incrustar el bosquejo como una imagen <a href='https://en.wikipedia.org/wiki/Scalable_Vector_Graphics' target='_blank'>SVG</a> en la vista previa de Markdown.<br>" +
@@ -918,12 +917,12 @@ export default {
     "<code>[[bosquejo.excalidraw|100x100]]</code>.",
   EMBED_TYPE_NAME: "Tipo de archivo a insertar en el documento",
   EMBED_TYPE_DESC:
-    "Cuando incrustas una imagen en un documento usando la paleta de comandos, esta configuración especificará si Excalidraw debe incrustar el archivo original de Excalidraw " +
-    "o una copia PNG o SVG. Debes habilitar <a href='#" +
-    TAG_AUTOEXPORT +
-    "'>auto-exportar PNG / SVG</a> (ver abajo en Configuración de Exportación) para que esos tipos de imagen estén disponibles en el menú desplegable. Para los bosquejos que no tengan " +
-    "PNG o SVG correspondiente disponible, la acción de la paleta de comandos insertará un enlace roto. Tendrás que abrir el bosquejo original e iniciar la exportación manualmente. " +
-    "Esta opción no generará automáticamente archivos PNG/SVG, sino que simplemente hará referencia a los archivos ya existentes.",
+    `Cuando incrustas una imagen en un documento usando la paleta de comandos, esta configuración especificará si Excalidraw debe incrustar el archivo original de Excalidraw ` +
+    `o una copia PNG o SVG. Debes habilitar <a href='#${
+      TAG_AUTOEXPORT
+    }'>auto-exportar PNG / SVG</a> (ver abajo en Configuración de Exportación) para que esos tipos de imagen estén disponibles en el menú desplegable. Para los bosquejos que no tengan ` +
+    `PNG o SVG correspondiente disponible, la acción de la paleta de comandos insertará un enlace roto. Tendrás que abrir el bosquejo original e iniciar la exportación manualmente. ` +
+    `Esta opción no generará automáticamente archivos PNG/SVG, sino que simplemente hará referencia a los archivos ya existentes.`,
   EMBED_MARKDOWN_COMMENT_NAME: "Incrustar enlace al bosquejo como comentario",
   EMBED_MARKDOWN_COMMENT_DESC:
     "Incrusta el enlace al archivo original de Excalidraw como un enlace Markdown debajo de la imagen, ej:<code>%%[[bosquejo.excalidraw]]%%</code>.<br>" +

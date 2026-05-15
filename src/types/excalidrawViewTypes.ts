@@ -41,7 +41,10 @@ export interface AutoexportConfig {
   theme: "light" | "dark" | "both"; // The theme to use for the export
 }
 
-export type ExcalidrawViewScene = Omit<SceneData, "collaborators" | "captureUpdate"> & {
+export type ExcalidrawViewScene = Omit<
+  SceneData,
+  "collaborators" | "captureUpdate"
+> & {
   elements: NonNullable<SceneData["elements"]>;
   appState: NonNullable<SceneData["appState"]>;
   files: BinaryFiles;
@@ -51,15 +54,20 @@ export type ExcalidrawViewInitialData = ExcalidrawInitialDataState & {
   libraryItems?: LibraryItems;
 };
 
-export type ExcalidrawViewAppState = Omit<Partial<AppState>, "showHyperlinkPopup"> & {
+export type ExcalidrawViewAppState = Omit<
+  Partial<AppState>,
+  "showHyperlinkPopup"
+> & {
   currentStrokeOptions?: unknown;
   resetCustomPen?: unknown;
   customPens?: unknown[];
   pinnedScripts?: string[];
-  showHyperlinkPopup?: AppState["showHyperlinkPopup"] | {
-    newValue: string;
-    oldValue: string;
-  };
+  showHyperlinkPopup?:
+    | AppState["showHyperlinkPopup"]
+    | {
+        newValue: string;
+        oldValue: string;
+      };
 };
 
 export type ExcalidrawViewUpdateScene = {

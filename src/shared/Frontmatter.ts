@@ -14,11 +14,10 @@ export default class FrontmatterEditor {
       return;
     }
     this.dataWOfrontmatter = tmp[1];
-    this.frontmatterStr =
-      data
-        .match(/^---((?:.|\n)*)(?:^---\n)/gm)[0]
-        .replaceAll(/(^---\n|^\n)/gm, "")
-        .trim() + "\n";
+    this.frontmatterStr = `${data
+      .match(/^---((?:.|\n)*)(?:^---\n)/gm)[0]
+      .replaceAll(/(^---\n|^\n)/gm, "")
+      .trim()}\n`;
     this.initialized = true;
   }
 
@@ -43,11 +42,10 @@ export default class FrontmatterEditor {
       .join(" ");
     if (this.hasKey(key)) {
       const reg = new RegExp(`^${key}:.*\\n(?:\\s\\s.*\\n)*`, "gm");
-      this.frontmatterStr =
-        this.frontmatterStr.split(reg).join("\n").trim() + `\n${key}: ${value}`;
+      this.frontmatterStr = `${this.frontmatterStr.split(reg).join("\n").trim()}\n${key}: ${value}`;
       return;
     }
-    this.frontmatterStr = this.frontmatterStr.trim() + `\n${key}: ${value}`;
+    this.frontmatterStr = `${this.frontmatterStr.trim()}\n${key}: ${value}`;
   }
 
   get data() {

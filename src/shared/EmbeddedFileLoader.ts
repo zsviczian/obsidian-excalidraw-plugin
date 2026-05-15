@@ -887,7 +887,7 @@ export class EmbeddedFilesLoader {
               if (data) {
                 const fileData: FileData = {
                   mimeType: data.mimeType,
-                  id: id,
+                  id,
                   dataURL: data.dataURL,
                   created: data.created,
                   loadedFromCache: data.loadedFromCache,
@@ -906,7 +906,7 @@ export class EmbeddedFilesLoader {
               //this will reload the image in light/dark mode when switching themes
               const fileData: FileData = {
                 mimeType: embeddedFile.mimeType,
-                id: id,
+                id,
                 dataURL: embeddedFile.getImage(this.isDark) as DataURL,
                 created: embeddedFile.mtime,
                 size: embeddedFile.size,
@@ -946,7 +946,7 @@ export class EmbeddedFilesLoader {
               if (data) {
                 const fileData = {
                   mimeType: data.mimeType,
-                  id: id,
+                  id,
                   dataURL: data.dataURL,
                   created: data.created,
                   size: data.size,
@@ -1022,7 +1022,6 @@ export class EmbeddedFilesLoader {
                   };
                   files[batch].push(fileData);
                 }
-                return;
               }
             },
             {
@@ -1094,8 +1093,8 @@ export class EmbeddedFilesLoader {
     options?: LoadImageOptions,
   ): Promise<[DataURL, Size, PDFPageViewProps, number, boolean]> {
     try {
-      let width = 0,
-        height = 0;
+      let width = 0;
+      let height = 0;
       const pageNum = isNaN(linkParts.page) ? 1 : (linkParts.page ?? 1);
       const requestedScale = this.plugin.settings.pdfScale;
       const shouldUseCache =

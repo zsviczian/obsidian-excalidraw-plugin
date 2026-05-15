@@ -646,8 +646,9 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public printStarupBreakdown() {
     console.log(
-      `Excalidraw ${PLUGIN_VERSION} startup breakdown:\n` +
-        this.startupAnalytics.join("\n"),
+      `Excalidraw ${PLUGIN_VERSION} startup breakdown:\n${this.startupAnalytics.join(
+        "\n",
+      )}`,
     );
   }
 
@@ -743,7 +744,7 @@ export default class ExcalidrawPlugin extends Plugin {
       return;
     }
     const file = this.app.vault.getFileByPath(
-      normalizePath(assetsFoler + "/" + fontName),
+      normalizePath(`${assetsFoler}/${fontName}`),
     );
     if (!file || !(file instanceof TFile)) {
       return;
@@ -756,9 +757,8 @@ export default class ExcalidrawPlugin extends Plugin {
     this.registerView(VIEW_TYPE_EXCALIDRAW, (leaf: WorkspaceLeaf) => {
       if (this.isReady) {
         return new ExcalidrawView(leaf, this);
-      } else {
-        return new ExcalidrawLoading(leaf, this);
       }
+      return new ExcalidrawLoading(leaf, this);
     });
     this.registerView(
       VIEW_TYPE_SIDEPANEL,
@@ -1335,11 +1335,7 @@ export default class ExcalidrawPlugin extends Plugin {
           };
 
           try {
-            scriptFile = await download(
-              source,
-              scriptFile,
-              scriptPath,
-            );
+            scriptFile = await download(source, scriptFile, scriptPath);
             if (!scriptFile) {
               setButtonText("ERROR");
               throw "File not found";
@@ -1380,7 +1376,7 @@ export default class ExcalidrawPlugin extends Plugin {
               }
             };
             await restartSidepanelTabIfActive();
-            new Notice(`Installed: ${(scriptFile).basename}`);
+            new Notice(`Installed: ${scriptFile.basename}`);
           } catch (e) {
             new Notice(`Error installing script: ${fname}`);
             errorlog({
@@ -1522,9 +1518,7 @@ export default class ExcalidrawPlugin extends Plugin {
       EXPORT_TYPES.forEach((ext: string) => {
         const oldIMGpath =
           file.path.substring(0, file.path.lastIndexOf(".excalidraw")) + ext;
-        const imgFile = this.app.vault.getFileByPath(
-          normalizePath(oldIMGpath),
-        );
+        const imgFile = this.app.vault.getFileByPath(normalizePath(oldIMGpath));
         if (imgFile && imgFile instanceof TFile) {
           const newIMGpath = fname.substring(0, fname.lastIndexOf(".md")) + ext;
           void this.app.fileManager.renameFile(imgFile, newIMGpath);
@@ -1545,7 +1539,11 @@ export default class ExcalidrawPlugin extends Plugin {
       .getFiles()
       .filter((f) => f.extension == "excalidraw");
     for (const file of files) {
-      await this.convertSingleExcalidrawToMD(file, replaceExtension, keepOriginal);
+      await this.convertSingleExcalidrawToMD(
+        file,
+        replaceExtension,
+        keepOriginal,
+      );
     }
     new Notice(`Converted ${files.length} files.`);
   }
@@ -1721,10 +1719,11 @@ export default class ExcalidrawPlugin extends Plugin {
     if (!file || !page) {
       return;
     }
-    return (
-      this.app.metadataCache.fileToLinktext(file, requestorFile?.path, false) +
-      `#page=${page}`
-    );
+    return `${this.app.metadataCache.fileToLinktext(
+      file,
+      requestorFile?.path,
+      false,
+    )}#page=${page}`;
   }
 
   public async activeLeafChangeEventHandler(leaf: WorkspaceLeaf) {

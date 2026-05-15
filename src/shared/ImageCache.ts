@@ -4,7 +4,7 @@ import { PDFPageViewProps, Size } from "src/types/embeddedFileLoaderTypes";
 import { convertSVGStringToElement } from "../utils/utils";
 import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
 import { hasExcalidrawEmbeddedImagesTreeChanged } from "../utils/fileUtils";
-const DB_NAME = "Excalidraw " + (app as unknown as { appId: string }).appId;
+const DB_NAME = `Excalidraw ${(app as unknown as { appId: string }).appId}`;
 const CACHE_STORE = "imageCache";
 const BACKUP_STORE = "drawingBAK";
 
@@ -672,12 +672,9 @@ export const purgeLegacyLocalStorageImageCache = (): string | null => {
       return null;
     }
 
-    return (
-      "Purged " +
-      deleted +
-      " legacy localStorage image cache entr" +
-      (deleted === 1 ? "y." : "ies.")
-    );
+    return `Purged ${deleted} legacy localStorage image cache entr${
+      deleted === 1 ? "y." : "ies."
+    }`;
   } catch {
     return null;
   }

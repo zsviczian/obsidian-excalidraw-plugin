@@ -71,10 +71,7 @@ export class PluginFileManager {
         (fm && typeof fm[FRONTMATTER_KEYS.plugin.name] !== "undefined") ||
         filename.match(/\.excalidraw$/)
       ) {
-        this.updateFileCache(
-          this.app.vault.getFileByPath(filename),
-          fm,
-        );
+        this.updateFileCache(this.app.vault.getFileByPath(filename), fm);
       }
     });
   }
@@ -224,7 +221,7 @@ export class PluginFileManager {
           )
         : "";
 
-      theme = theme === "" ? "" : theme + ".";
+      theme = theme === "" ? "" : `${theme}.`;
 
       const exportExtension = theme + this.settings.embedType.toLowerCase();
       let imageFullpath = getIMGFilename(file.path, exportExtension);
@@ -362,24 +359,24 @@ export class PluginFileManager {
 
       editor.replaceSelection(
         this.settings.embedWikiLink
-          ? `![[${imageRelativePath}]]\n` +
-              (inclCom
+          ? `![[${imageRelativePath}]]\n${
+              inclCom
                 ? `%%[[${excalidrawRelativePath}|🖋 Edit in Excalidraw]]${
                     otherImageRelativePath
-                      ? ", and the [[" +
-                        otherImageRelativePath +
-                        "|" +
-                        otherTheme.split(".")[0] +
-                        " exported image]]"
+                      ? `, and the [[${otherImageRelativePath}|${
+                          otherTheme.split(".")[0]
+                        } exported image]]`
                       : ""
                   }%%`
-                : "")
-          : `![](${encodeURI(imageRelativePath)})\n` +
-              (inclCom
+                : ""
+            }`
+          : `![](${encodeURI(imageRelativePath)})\n${
+              inclCom
                 ? `%%[🖋 Edit in Excalidraw](${encodeURI(
                     excalidrawRelativePath,
-                  )})${otherImageRelativePath ? ", and the [" + otherTheme.split(".")[0] + " exported image](" + encodeURI(otherImageRelativePath) + ")" : ""}%%`
-                : ""),
+                  )})${otherImageRelativePath ? `, and the [${otherTheme.split(".")[0]} exported image](${encodeURI(otherImageRelativePath)})` : ""}%%`
+                : ""
+            }`,
       );
       editor.focus();
     }

@@ -469,7 +469,7 @@ export class InsertPDFModal extends Modal {
           .setButtonText("Import PDF")
           .setCta()
           .onClick(async () => {
-            const ea = getEA(this.view) ;
+            const ea = getEA(this.view);
             let column = 0;
             let row = 0;
             await this.loadPageDimensions(this.pagesToImport);
@@ -506,7 +506,7 @@ export class InsertPDFModal extends Modal {
               const imageID = await ea.addImage(
                 topX,
                 topY,
-                this.pdfFile.path + `#page=${page}`,
+                `${this.pdfFile.path}#page=${page}`,
                 false,
                 false,
               );
@@ -532,7 +532,7 @@ export class InsertPDFModal extends Modal {
                 ea.addToGroup([frameID, boxID, imageID]);
                 //ea.addElementsToFrame(frameID, [boxID,imageID]);
                 ea.getElement(frameID).link =
-                  this.pdfFile.path + `#page=${page}`;
+                  `${this.pdfFile.path}#page=${page}`;
               }
 
               switch (this.direction) {
