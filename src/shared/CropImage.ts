@@ -46,9 +46,9 @@ export class CropImage {
     private elements: ExcalidrawElement[],
     files: Map<FileId, BinaryFileData>,
   ) {
-    const imageEA = getEA() as ExcalidrawAutomate;
+    const imageEA = getEA() ;
     this.imageEA = imageEA;
-    const maskEA = getEA() as ExcalidrawAutomate;
+    const maskEA = getEA() ;
     this.maskEA = maskEA;
 
     this.bbox = imageEA.getBoundingBox(elements);

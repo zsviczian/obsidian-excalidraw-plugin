@@ -92,7 +92,7 @@ export default class Taskbone {
     },
   ) {
     await view.forceSave(true);
-    const ea = getEA(view) as ExcalidrawAutomate;
+    const ea = getEA(view) ;
     const viewElements = (
       selectedElementsOnly ? ea.getViewSelectedElements() : ea.getViewElements()
     ).filter(

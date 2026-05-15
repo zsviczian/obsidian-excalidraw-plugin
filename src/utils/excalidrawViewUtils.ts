@@ -370,7 +370,7 @@ export async function addBackOfTheNoteCard(
     await sleep(200);
   }
 
-  const ea = getEA(view) as ExcalidrawAutomate;
+  const ea = getEA(view) ;
   let { x, y } = position ?? ea.targetView.currentPosition;
   if (center) {
     const centerPos = ea.getViewCenterPosition();
@@ -529,7 +529,7 @@ export async function toggleImageAnchoring(
   shouldAnchor: boolean,
   ef: EmbeddedFile,
 ) {
-  const ea = getEA(view) as ExcalidrawAutomate;
+  const ea = getEA(view) ;
   let imgEl = view
     .getViewElements()
     .find(

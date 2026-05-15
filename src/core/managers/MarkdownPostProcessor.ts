@@ -554,7 +554,7 @@ const createImgElement = async (
       if (!srcParts) {
         return;
       }
-      const f = vault.getAbstractFileByPath(srcParts[1]) as TFile;
+      const f = vault.getFileByPath(srcParts[1]);
       const linkModifier = linkClickModifierType(ev);
       if (plugin.isExcalidrawFile(f) && isMaskFile(plugin, f)) {
         (async () => {
@@ -1290,7 +1290,7 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = async (m) => {
       const src = el.getAttribute("src");
       if (src) {
         plugin.openDrawing(
-          vault.getAbstractFileByPath(src) as TFile,
+          vault.getFileByPath(src),
           linkClickModifierType(ev),
         );
       } //.ctrlKey||ev.metaKey);

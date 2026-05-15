@@ -377,9 +377,9 @@ export class InlineLinkSuggester
       return item.label;
     }
     return (
-      (item as LinkSuggestion).path +
-      ((item as LinkSuggestion).alias
-        ? `|${(item as LinkSuggestion).alias}`
+      (item ).path +
+      ((item ).alias
+        ? `|${(item ).alias}`
         : "")
     );
   }
@@ -436,7 +436,7 @@ export class InlineLinkSuggester
       return;
     }
 
-    const linkString = this.buildLink(item as LinkSuggestion);
+    const linkString = this.buildLink(item );
     this.insertLink(linkString);
   }
 

@@ -469,7 +469,7 @@ export class InsertPDFModal extends Modal {
           .setButtonText("Import PDF")
           .setCta()
           .onClick(async () => {
-            const ea = getEA(this.view) as ExcalidrawAutomate;
+            const ea = getEA(this.view) ;
             let column = 0;
             let row = 0;
             await this.loadPageDimensions(this.pagesToImport);

@@ -321,7 +321,7 @@ export class DropManager {
           }
         }
         if (text && externalDragAction === "embeddable") {
-          const ea = getEA(this.view) as ExcalidrawAutomate;
+          const ea = getEA(this.view) ;
           insertEmbeddableToView(
             ea,
             this.currentPosition,
@@ -356,7 +356,7 @@ export class DropManager {
           }
         }
         if (src && externalDragAction === "embeddable") {
-          const ea = getEA(this.view) as ExcalidrawAutomate;
+          const ea = getEA(this.view) ;
           insertEmbeddableToView(
             ea,
             this.currentPosition,
@@ -401,7 +401,7 @@ export class DropManager {
           const pos = { x: x + i * 300, y: y + i * 300 };
           if (link.isInternal) {
             if (localFileDragAction === "embeddable") {
-              const ea = getEA(this.view) as ExcalidrawAutomate;
+              const ea = getEA(this.view) ;
               insertEmbeddableToView(ea, pos, link.file).then(() =>
                 ea.destroy(),
               );
@@ -413,7 +413,7 @@ export class DropManager {
                 );
                 insertPDFModal.open(link.file);
               }
-              const ea = getEA(this.view) as ExcalidrawAutomate;
+              const ea = getEA(this.view) ;
               insertImageToView(ea, pos, link.file).then(() => ea.destroy());
             }
           } else {
@@ -451,7 +451,7 @@ export class DropManager {
                       // there is deliberately no break here
                       case "Use":
                       default:
-                        const ea = getEA(this.view) as ExcalidrawAutomate;
+                        const ea = getEA(this.view) ;
                         await insertImageToView(ea, pos, maybeFile);
                         ea.destroy();
                         return false;
@@ -464,7 +464,7 @@ export class DropManager {
                     this.view.file,
                     this.view,
                   );
-                  const ea = getEA(this.view) as ExcalidrawAutomate;
+                  const ea = getEA(this.view) ;
                   await insertImageToView(ea, pos, file);
                   ea.destroy();
                 })();
@@ -490,7 +490,7 @@ export class DropManager {
               localFileDragAction === "embeddable" ||
               !IMAGE_TYPES.contains(extension)
             ) {
-              const ea = getEA(this.view) as ExcalidrawAutomate;
+              const ea = getEA(this.view) ;
               insertEmbeddableToView(ea, pos, null, link.url).then(() =>
                 ea.destroy(),
               );
@@ -498,7 +498,7 @@ export class DropManager {
                 new Notice("Not imported to Vault. Embedded with local URI");
               }
             } else {
-              const ea = getEA(this.view) as ExcalidrawAutomate;
+              const ea = getEA(this.view) ;
               insertImageToView(ea, pos, link.url).then(() => ea.destroy());
             }
           }
@@ -510,7 +510,7 @@ export class DropManager {
         event.dataTransfer.types.length >= 1 &&
         localFileDragAction === "link"
       ) {
-        const ea = getEA(this.view) as ExcalidrawAutomate;
+        const ea = getEA(this.view) ;
         for (let i = 0; i < event.dataTransfer.files.length; i++) {
           const file = event.dataTransfer.files[i];
           let path = file?.path;

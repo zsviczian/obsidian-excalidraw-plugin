@@ -72,7 +72,7 @@ export class PluginFileManager {
         filename.match(/\.excalidraw$/)
       ) {
         this.updateFileCache(
-          this.app.vault.getAbstractFileByPath(filename) as TFile,
+          this.app.vault.getFileByPath(filename),
           fm,
         );
       }

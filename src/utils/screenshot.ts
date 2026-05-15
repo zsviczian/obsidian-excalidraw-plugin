@@ -36,7 +36,7 @@ export async function captureScreenshot(
     : view.getViewElements();
   const includedElementIDs = new Set(elementsToInclude.map((el) => el.id));
   const savedOpacity: { id: string; opacity: number }[] = [];
-  const ea = getEA(view) as ExcalidrawAutomate;
+  const ea = getEA(view) ;
 
   // Save the current browser zoom level
   const webContents = remote.getCurrentWebContents();

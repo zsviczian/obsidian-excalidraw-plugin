@@ -116,7 +116,7 @@ export class EmbeddableMenu {
       file.extension === "md",
     );
     const link = `[[${path}${subpath}]]`;
-    const ea = getEA(view) as ExcalidrawAutomate;
+    const ea = getEA(view) ;
     ea.copyViewElementsToEAforEditing([element]);
     ea.getElement(element.id).link = link;
     view.excalidrawData.elementLinks.set(element.id, link);
@@ -247,7 +247,7 @@ export class EmbeddableMenu {
     if (!pdfFile) {
       return;
     }
-    const ea = getEA(this.view) as ExcalidrawAutomate;
+    const ea = getEA(this.view) ;
     ea.selectElementsInView([]);
     const x = element.x + element.width + 20;
     const y = element.y;

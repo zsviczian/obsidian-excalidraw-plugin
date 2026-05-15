@@ -61,7 +61,7 @@ export const insertLaTeXToView = (
   center: boolean = false,
 ) => {
   const app = view.plugin.app;
-  const ea = getEA(view) as ExcalidrawAutomate;
+  const ea = getEA(view) ;
   void import("src/shared/Dialogs/Prompt").then(({ LaTexPrompt }) => {
     LaTexPrompt.Prompt(
       app,

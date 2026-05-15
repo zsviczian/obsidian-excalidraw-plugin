@@ -1408,7 +1408,7 @@ export default class ExcalidrawView
           latex: formula,
           isLoaded: false,
         });
-        const ea = getEA(this) as ExcalidrawAutomate;
+        const ea = getEA(this) ;
         ea.copyViewElementsToEAforEditing([el]);
         ea.addAppendUpdateCustomData(el.id, { latex: formula });
         const dataurl = await ea.tex2dataURL(equation);
@@ -1457,7 +1457,7 @@ export default class ExcalidrawView
         await this.save(false);
         await sleep(100);
         if (!this.plugin.isExcalidrawFile(ef.file) && !link.endsWith("|100%")) {
-          const ea = getEA(this) as ExcalidrawAutomate;
+          const ea = getEA(this) ;
           const imgEl = this.getViewElements().find(
             (x: ExcalidrawElement) => x.id === el.id,
           ) as ExcalidrawImageElement;
@@ -4195,7 +4195,7 @@ export default class ExcalidrawView
 
   async addYouTubeThumbnail(link: string) {
     const thumbnailLink = await getYouTubeThumbnailLink(link);
-    const ea = getEA(this) as ExcalidrawAutomate;
+    const ea = getEA(this) ;
     const id = await ea.addImage(0, 0, thumbnailLink);
     ea.getElement(id).link = link;
     await ea.addElementsToView(true, true, true);
@@ -4203,14 +4203,14 @@ export default class ExcalidrawView
   }
 
   async addImageWithURL(link: string) {
-    const ea = getEA(this) as ExcalidrawAutomate;
+    const ea = getEA(this) ;
     await ea.addImage(0, 0, link);
     await ea.addElementsToView(true, true, true);
     ea.destroy();
   }
 
   async addImageSaveToVault(link: string) {
-    const ea = getEA(this) as ExcalidrawAutomate;
+    const ea = getEA(this) ;
     const mimeType = getMimeType(getURLImageExtension(link));
     const dataURL = await getDataURLFromURL(link, mimeType, 3000);
     const fileId = await generateIdFromFile(
@@ -4239,7 +4239,7 @@ export default class ExcalidrawView
       if (!data || data.error || !data.meta?.title) {
         return;
       }
-      const ea = getEA(this) as ExcalidrawAutomate;
+      const ea = getEA(this) ;
       const el = ea
         .getViewElements()
         .filter((el) => el.type === "text" && el.id === id);
@@ -4540,7 +4540,7 @@ export default class ExcalidrawView
       this.addText(markdownlink);
       return;
     }
-    const ea = getEA(this) as ExcalidrawAutomate;
+    const ea = getEA(this) ;
     ea.copyViewElementsToEAforEditing([selectedElement]);
     if (originalLink?.match(/\[\[(.*?)\]\]/)?.[1]) {
       markdownlink = originalLink.replace(/(\[\[.*?\]\])/, markdownlink);
@@ -5614,7 +5614,7 @@ export default class ExcalidrawView
 
       if (
         isTextImageTransclusion(data.text, this, async (link, file) => {
-          const ea = getEA(this) as ExcalidrawAutomate;
+          const ea = getEA(this) ;
           if (IMAGE_TYPES.contains(file.extension)) {
             ea.selectElementsInView([
               await insertImageToView(ea, this.currentPosition, file),
@@ -5636,7 +5636,7 @@ export default class ExcalidrawView
                 /^[^#]*#page=\d*(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*/g,
               )
             ) {
-              const ea = getEA(this) as ExcalidrawAutomate;
+              const ea = getEA(this) ;
               const imgID = await ea.addImage(
                 this.currentPosition.x,
                 this.currentPosition.y,
@@ -5675,7 +5675,7 @@ export default class ExcalidrawView
 
       const quoteWithRef = obsidianPDFQuoteWithRef(data.text);
       if (quoteWithRef) {
-        const ea = getEA(this) as ExcalidrawAutomate;
+        const ea = getEA(this) ;
         const st = api.getAppState();
         const strokeC = st.currentItemStrokeColor;
         const viewC = st.viewBackgroundColor;
@@ -6328,7 +6328,7 @@ export default class ExcalidrawView
         new Notice("Unexpected error");
         return;
       }
-      const ea = getEA(this) as ExcalidrawAutomate;
+      const ea = getEA(this) ;
       ea.copyViewElementsToEAforEditing([
         this.getViewElements().find((el) => el.id === id),
       ]);
@@ -6391,7 +6391,7 @@ export default class ExcalidrawView
       new Notice("Image not found");
       return false;
     }
-    const ea = getEA(this) as ExcalidrawAutomate;
+    const ea = getEA(this) ;
     ea.copyViewElementsToEAforEditing([imageEl]);
     const eaEl = ea.getElement(imageEl.id) as Mutable<ExcalidrawImageElement>;
     eaEl.fileId = fileid() as FileId;
@@ -6491,7 +6491,7 @@ export default class ExcalidrawView
               React,
               t("REMOVE_LINK"),
               async () => {
-                const ea = getEA(this) as ExcalidrawAutomate;
+                const ea = getEA(this) ;
                 ea.copyViewElementsToEAforEditing([selectedTextElement]);
                 const el = ea.getElement(
                   selectedTextElement.id,
@@ -6579,7 +6579,7 @@ export default class ExcalidrawView
               if (!svg || svg === "") {
                 return;
               }
-              const ea = getEA(this) as ExcalidrawAutomate;
+              const ea = getEA(this) ;
               ea.importSVG(svg);
               ea.addToGroup(ea.getElements().map((el) => el.id));
               await ea.addElementsToView(true, true, true, true);
@@ -6638,7 +6638,7 @@ export default class ExcalidrawView
         };
 
         const imageMenuState = (() => {
-          const ea = getEA(this) as ExcalidrawAutomate;
+          const ea = getEA(this) ;
           try {
             const imagesWithStatus = selectedImages
               .map((el) => {
@@ -6687,7 +6687,7 @@ export default class ExcalidrawView
               React,
               t("INVERT_IMAGES_IN_DARK_MODE"),
               async () => {
-                const ea = getEA(this) as ExcalidrawAutomate;
+                const ea = getEA(this) ;
                 ea.copyViewElementsToEAforEditing(
                   imagesWithStatus.map((img) => img.el),
                 );

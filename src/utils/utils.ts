@@ -499,13 +499,14 @@ export function scaleLoadedImage(
     const file = EXCALIDRAW_PLUGIN.app.vault.getAbstractFileByPath(
       ef.path.replace(/#.*$/, "").replace(/\|.*$/, ""),
     );
-    if (!file || file instanceof TFolder) {
+    if (file && file instanceof TFile) {
+      return (
+        (file).extension === "md" ||
+        EXCALIDRAW_PLUGIN.isExcalidrawFile(file)
+      )
+    } else {
       return false;
-    }
-    return (
-      (file as TFile).extension === "md" ||
-      EXCALIDRAW_PLUGIN.isExcalidrawFile(file as TFile)
-    );
+    };
   })) {
     const [imgWidth, imgHeight] = [img.size.width, img.size.height];
     const imgAspectRatio = imgWidth / imgHeight;

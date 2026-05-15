@@ -24,7 +24,7 @@ export const carveOutImage = async (
     return;
   }
 
-  const targetEA = getEA(sourceEA.targetView) as ExcalidrawAutomate;
+  const targetEA = getEA(sourceEA.targetView) ;
 
   targetEA.copyViewElementsToEAforEditing([viewImageEl], true);
   const { height, width } = await sourceEA.getOriginalImageSize(viewImageEl);
@@ -114,7 +114,7 @@ export const carveOutPDF = async (
     return;
   }
 
-  const targetEA = getEA(sourceEA.targetView) as ExcalidrawAutomate;
+  const targetEA = getEA(sourceEA.targetView) ;
 
   const { height, width } = embeddableEl;
 
@@ -242,11 +242,11 @@ export const createImageCropperFile = async (
   //console.log({newPath});
 
   //wait for file to be created/indexed by Obsidian
-  let file = vault.getAbstractFileByPath(newPath);
+  let file = vault.getFileByPath(newPath);
   let counter = 0;
-  while ((!file || !targetEA.isExcalidrawFile(file as TFile)) && counter < 50) {
+  while ((!file || !targetEA.isExcalidrawFile(file)) && counter < 50) {
     await sleep(100);
-    file = vault.getAbstractFileByPath(newPath);
+    file = vault.getFileByPath(newPath);
     counter++;
   }
   //console.log({counter, file});

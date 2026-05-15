@@ -408,7 +408,7 @@ export class CommandManager {
         if (checking) {
           return true;
         }
-        const ea = getEA(view) as ExcalidrawAutomate;
+        const ea = getEA(view) ;
         const api = ea.getExcalidrawAPI();
         ea.copyViewElementsToEAforEditing(els);
         const scale = 1 / api.getAppState().zoom.value;
@@ -1324,7 +1324,7 @@ export class CommandManager {
           return true;
         }
         (async () => {
-          const ea = getEA(view) as ExcalidrawAutomate;
+          const ea = getEA(view) ;
           const isAnchored = Boolean(el.customData?.isAnchored);
           const imgId = ef.pdfPageViewProps
             ? await ea.addImage(
@@ -1735,7 +1735,7 @@ export class CommandManager {
           replacer: (link: string, file?: TFile, size?: string | null) => void,
           ref?: string,
         ) => {
-          const ea = getEA() as ExcalidrawAutomate;
+          const ea = getEA() ;
           const imageID = await ea.addImage(
             0,
             0,
@@ -1987,7 +1987,7 @@ export class CommandManager {
           replacer: (link: string, file?: TFile, size?: string | null) => void,
           ref?: string,
         ) => {
-          const ea = getEA() as ExcalidrawAutomate;
+          const ea = getEA() ;
           const imageID = await ea.addImage(
             0,
             0,
@@ -2045,10 +2045,10 @@ export class CommandManager {
           ea.destroy();
 
           //wait for file to be created/indexed by Obsidian
-          let newFile = this.app.vault.getAbstractFileByPath(newPath);
+          let newFile = this.app.vault.getFileByPath(newPath);
           let counter = 0;
           while (
-            (!newFile || !this.isExcalidrawFile(newFile as TFile)) &&
+            (!newFile || !this.isExcalidrawFile(newFile)) &&
             counter < 50
           ) {
             await sleep(100);
@@ -2351,7 +2351,7 @@ export class CommandManager {
           return true;
         }
         (async () => {
-          const ea = getEA(view) as ExcalidrawAutomate;
+          const ea = getEA(view) ;
           const id = await insertImageToView(
             ea,
             view.currentPosition,

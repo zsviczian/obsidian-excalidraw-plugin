@@ -827,7 +827,7 @@ export const insertLaTeXToView = (
   center: boolean = false,
 ) => {
   const app = view.plugin.app;
-  const ea = getEA(view) as ExcalidrawAutomate;
+  const ea = getEA(view) ;
   LaTexPrompt.Prompt(
     app,
     t("ENTER_LATEX"),

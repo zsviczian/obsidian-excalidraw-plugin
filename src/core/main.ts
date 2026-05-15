@@ -1337,18 +1337,20 @@ export default class ExcalidrawPlugin extends Plugin {
           try {
             scriptFile = await download(
               source,
-              scriptFile as TFile,
+              scriptFile,
               scriptPath,
             );
             if (!scriptFile) {
               setButtonText("ERROR");
               throw "File not found";
             }
-            svgFile = await download(
-              getIMGFilename(source, "svg"),
-              svgFile as TFile,
-              svgPath,
-            );
+            if (svgFile && svgFile instanceof TFile) {
+              svgFile = await download(
+                getIMGFilename(source, "svg"),
+                svgFile,
+                svgPath,
+              );
+            }
             setButtonText("UPTODATE");
             if (Object.keys(this.scriptEngine.scriptIconMap).length === 0) {
               this.scriptEngine.loadScripts();
@@ -1378,7 +1380,7 @@ export default class ExcalidrawPlugin extends Plugin {
               }
             };
             await restartSidepanelTabIfActive();
-            new Notice(`Installed: ${(scriptFile as TFile).basename}`);
+            new Notice(`Installed: ${(scriptFile).basename}`);
           } catch (e) {
             new Notice(`Error installing script: ${fname}`);
             errorlog({
@@ -1801,7 +1803,7 @@ export default class ExcalidrawPlugin extends Plugin {
         filename.match(/\.excalidraw$/)
       ) {
         this.fileManager.updateFileCache(
-          this.app.vault.getAbstractFileByPath(filename) as TFile,
+          this.app.vault.getFileByPath(filename),
           fm,
         );
       }
