@@ -35,6 +35,42 @@ import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { CaptureUpdateAction } from "src/constants/constants";
 
+type BlockCacheEntry = Awaited<
+  ReturnType<ExcalidrawView["app"]["metadataCache"]["blockCache"]["getForFile"]>
+>["blocks"][number];
+
+type HeadingBlockEntry = BlockCacheEntry & {
+  display: string;
+  node: BlockCacheEntry["node"] & {
+    type: "heading";
+  };
+};
+
+type ParagraphLikeBlockEntry = BlockCacheEntry & {
+  display: string;
+  node: BlockCacheEntry["node"] & {
+    type: "paragraph" | "blockquote" | "listItem" | "table" | "callout";
+  };
+};
+
+function isHeadingBlockEntry(entry: BlockCacheEntry): entry is HeadingBlockEntry {
+  return Boolean(entry.display && entry.node?.type === "heading");
+}
+
+function isParagraphLikeBlockEntry(
+  entry: BlockCacheEntry,
+): entry is ParagraphLikeBlockEntry {
+  return Boolean(
+    entry.display &&
+      entry.node &&
+      (entry.node.type === "paragraph" ||
+        entry.node.type === "blockquote" ||
+        entry.node.type === "listItem" ||
+        entry.node.type === "table" ||
+        entry.node.type === "callout"),
+  );
+}
+
 export class EmbeddableMenu {
   private menuFadeTimeout: number = 0;
   private menuElementId: string = null;
@@ -146,21 +182,19 @@ export class EmbeddableMenu {
         file,
       )
     ).blocks
-      .filter((b: any) => b.display && b.node?.type === "heading")
+      .filter(isHeadingBlockEntry)
       .filter(
-        (b: any) => !isExcalidrawFile || !MD_EX_SECTIONS.includes(b.display),
+        (b) => !isExcalidrawFile || !MD_EX_SECTIONS.includes(b.display),
       );
-    let values, display;
+    let values: string[], display: string[];
     if (isExcalidrawFile) {
-      values = sections.map((b: any) => `#${cleanSectionHeading(b.display)}`);
-      display = sections.map((b: any) => b.display);
+      values = sections.map((b) => `#${cleanSectionHeading(b.display)}`);
+      display = sections.map((b) => b.display);
     } else {
       values = [""].concat(
-        sections.map((b: any) => `#${cleanSectionHeading(b.display)}`),
+        sections.map((b) => `#${cleanSectionHeading(b.display)}`),
       );
-      display = [t("SHOW_ENTIRE_FILE")].concat(
-        sections.map((b: any) => b.display),
-      );
+      display = [t("SHOW_ENTIRE_FILE")].concat(sections.map((b) => b.display));
     }
     const newSubpath = await ScriptEngine.suggester(
       this.view.app,
@@ -251,24 +285,14 @@ export class EmbeddableMenu {
         { isCancelled: () => false },
         file,
       )
-    ).blocks.filter(
-      (b: any) =>
-        b.display &&
-        b.node &&
-        (b.node.type === "paragraph" ||
-          b.node.type === "blockquote" ||
-          b.node.type === "listItem" ||
-          b.node.type === "table" ||
-          b.node.type === "callout"),
-    );
+    ).blocks.filter(isParagraphLikeBlockEntry);
     const values: Array<"entire-file" | (typeof paragraphs)[number]> = [
       "entire-file",
       ...paragraphs,
     ];
     const display = [t("SHOW_ENTIRE_FILE")].concat(
       paragraphs.map(
-        (b: any) =>
-          `${b.node?.id ? `#^${b.node.id}: ` : ``}${b.display.trim()}`,
+        (b) => `${b.node.id ? `#^${b.node.id}: ` : ``}${b.display.trim()}`,
       ),
     );
 
