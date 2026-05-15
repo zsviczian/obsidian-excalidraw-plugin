@@ -237,7 +237,7 @@ export async function copyLinkToSelectedElementToClipboard(
     alias = "100%";
   }
 
-  navigator.clipboard.writeText(
+  await navigator.clipboard.writeText(
     `${prefix.length > 0 ? "!" : ""}[[${view.file.path}#^${prefix}${elementId}${alias ? `|${alias}` : ``}]]`,
   );
   new Notice(t("INSERT_LINK_TO_ELEMENT_READY"));

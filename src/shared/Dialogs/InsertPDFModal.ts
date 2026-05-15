@@ -48,7 +48,7 @@ export class InsertPDFModal extends Modal {
   onOpen(): void {
     this.containerEl.classList.add("excalidraw-release");
     this.titleEl.setText(`Import PDF`);
-    this.createForm();
+    void this.createForm();
   }
 
   async onClose() {

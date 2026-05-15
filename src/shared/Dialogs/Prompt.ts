@@ -241,8 +241,8 @@ export class LaTexPrompt extends FloatingModal {
     this.close();
   }
 
-  onOpen(): void {
-    super.onOpen();
+  async onOpen(): Promise<void> {
+    await super.onOpen();
     this.editorView.focus();
   }
 
@@ -797,8 +797,8 @@ export class GenericInputPrompt extends Modal {
     }, 10);
   };
 
-  onOpen() {
-    super.onOpen();
+  async onOpen() {
+    await super.onOpen();
     this.modalEl.classList.add("excalidraw-modal");
     this.containerEl.classList.add("excalidraw-modal");
     this.inputComponent.inputEl.focus();
@@ -1297,8 +1297,8 @@ export class MultiOptionConfirmationPrompt extends Modal {
     return button;
   }
 
-  onOpen() {
-    super.onOpen();
+  async onOpen() {
+    await super.onOpen();
     const defaultButton =
       this.ctaButtonEl ?? this.contentEl.querySelector("button");
     // Obsidian modal open may apply its own autofocus after onOpen; defer to enforce default keyboard action.

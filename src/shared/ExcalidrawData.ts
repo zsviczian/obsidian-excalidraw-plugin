@@ -1247,12 +1247,12 @@ export class ExcalidrawData {
         if (!this.textElements.has(id)) {
           const raw = te.rawText && te.rawText !== "" ? te.rawText : te.text; //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
           this.textElements.set(id, { raw, parsed: null, hasTextLink: false });
-          this.parseasync(id, raw);
+          void this.parseasync(id, raw);
         }
       } else if (!this.textElements.has(te.id)) {
         const raw = te.rawText && te.rawText !== "" ? te.rawText : te.text; //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
         this.textElements.set(id, { raw, parsed: null, hasTextLink: false });
-        this.parseasync(id, raw);
+        void this.parseasync(id, raw);
       }
     }
     return dirty;
@@ -1957,7 +1957,7 @@ export class ExcalidrawData {
       return [parseResult, link];
     }
     //transclusion needs to be resolved asynchornously
-    this.parse(rawOriginalText).then((parseRes) => {
+    void this.parse(rawOriginalText).then((parseRes) => {
       const parsedText = parseRes.parsed;
       this.textElements.set(elementID, {
         raw: rawOriginalText,

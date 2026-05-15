@@ -67,7 +67,7 @@ export class PenSettingsModal extends Modal {
   onOpen(): void {
     this.containerEl.classList.add("excalidraw-release");
     this.titleEl.setText(`Pen Settings`);
-    this.createForm();
+    void this.createForm();
   }
 
   async onClose() {
@@ -150,7 +150,7 @@ export class PenSettingsModal extends Modal {
           ps.roughness = PENS[ps.type].roughness;
           ps.penOptions = { ...PENS[ps.type].penOptions };
           ce.empty();
-          this.createForm();
+          void this.createForm();
         }),
       );
 

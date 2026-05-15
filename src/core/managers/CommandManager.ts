@@ -197,7 +197,7 @@ export class CommandManager {
           file.path.substr(0, file.path.lastIndexOf(file.name)),
         );
       }
-      this.plugin.createAndOpenDrawing(
+      void this.plugin.createAndOpenDrawing(
         getDrawingFilename(this.settings),
         linkClickModifierType(emulateCTRLClickForLinks(e)),
         folderpath,
@@ -224,7 +224,7 @@ export class CommandManager {
       if (file instanceof TFile && file.extension == "excalidraw") {
         menu.addItem((item: MenuItem) => {
           item.setTitle(t("CONVERT_FILE_KEEP_EXT")).onClick(() => {
-            this.plugin.convertSingleExcalidrawToMD(file, false, false);
+            void this.plugin.convertSingleExcalidrawToMD(file, false, false);
           });
         });
       }
@@ -241,7 +241,7 @@ export class CommandManager {
       if (file instanceof TFile && file.extension == "excalidraw") {
         menu.addItem((item: MenuItem) => {
           item.setTitle(t("CONVERT_FILE_REPLACE_EXT")).onClick(() => {
-            this.plugin.convertSingleExcalidrawToMD(file, true, true);
+            void this.plugin.convertSingleExcalidrawToMD(file, true, true);
           });
         });
       }
@@ -269,7 +269,7 @@ export class CommandManager {
         if (checking) {
           return true;
         }
-        view.convertImageElWithURLToLocalFile(img);
+        void view.convertImageElWithURLToLocalFile(img);
       },
     });
 
@@ -296,7 +296,7 @@ export class CommandManager {
           return true;
         }
 
-        (async () => {
+        void (async () => {
           const data = await this.app.vault.read(activeFile);
           const parts = data.split("\n## Drawing\n```compressed-json\n");
           if (parts.length !== 2) {
@@ -415,7 +415,7 @@ export class CommandManager {
         ea.getElements().forEach((el: Mutable<ExcalidrawEmbeddableElement>) => {
           el.scale = [scale, scale];
         });
-        ea.addElementsToView().then(() => ea.destroy());
+        void ea.addElementsToView().then(() => ea.destroy());
       },
     });
 
@@ -592,7 +592,7 @@ export class CommandManager {
         if (!(file instanceof TFile)) {
           return false;
         }
-        this.plugin.embedDrawing(file);
+        void this.plugin.embedDrawing(file);
         return true;
       },
     });
@@ -601,7 +601,7 @@ export class CommandManager {
       id: "excalidraw-autocreate",
       name: t("NEW_IN_NEW_PANE"),
       callback: () => {
-        this.plugin.createAndOpenDrawing(
+        void this.plugin.createAndOpenDrawing(
           getDrawingFilename(this.settings),
           "new-pane",
         );
@@ -612,7 +612,7 @@ export class CommandManager {
       id: "excalidraw-autocreate-newtab",
       name: t("NEW_IN_NEW_TAB"),
       callback: () => {
-        this.plugin.createAndOpenDrawing(
+        void this.plugin.createAndOpenDrawing(
           getDrawingFilename(this.settings),
           "new-tab",
         );
@@ -623,7 +623,7 @@ export class CommandManager {
       id: "excalidraw-autocreate-on-current",
       name: t("NEW_IN_ACTIVE_PANE"),
       callback: () => {
-        this.plugin.createAndOpenDrawing(
+        void this.plugin.createAndOpenDrawing(
           getDrawingFilename(this.settings),
           "active-pane",
         );
@@ -637,7 +637,7 @@ export class CommandManager {
         if (checking) {
           return !DEVICE.isMobile;
         }
-        this.plugin.createAndOpenDrawing(
+        void this.plugin.createAndOpenDrawing(
           getDrawingFilename(this.settings),
           "popout-window",
         );
@@ -674,7 +674,7 @@ export class CommandManager {
         if (checking) {
           return Boolean(this.app.workspace.getActiveViewOfType(MarkdownView));
         }
-        insertDrawingToDoc("new-pane");
+        void insertDrawingToDoc("new-pane");
         return true;
       },
     });
@@ -686,7 +686,7 @@ export class CommandManager {
         if (checking) {
           return Boolean(this.app.workspace.getActiveViewOfType(MarkdownView));
         }
-        insertDrawingToDoc("new-tab");
+        void insertDrawingToDoc("new-tab");
         return true;
       },
     });
@@ -698,7 +698,7 @@ export class CommandManager {
         if (checking) {
           return Boolean(this.app.workspace.getActiveViewOfType(MarkdownView));
         }
-        insertDrawingToDoc("active-pane");
+        void insertDrawingToDoc("active-pane");
         return true;
       },
     });
@@ -713,7 +713,7 @@ export class CommandManager {
             Boolean(this.app.workspace.getActiveViewOfType(MarkdownView))
           );
         }
-        insertDrawingToDoc("popout-window");
+        void insertDrawingToDoc("popout-window");
         return true;
       },
     });
@@ -734,7 +734,7 @@ export class CommandManager {
             );
             return true;
           }
-          this.taskbone.getTextForView(view, { forceReScan: false });
+          void this.taskbone.getTextForView(view, { forceReScan: false });
           return true;
         }
         return false;
@@ -757,7 +757,7 @@ export class CommandManager {
             );
             return true;
           }
-          this.taskbone.getTextForView(view, { forceReScan: true });
+          void this.taskbone.getTextForView(view, { forceReScan: true });
           return true;
         }
         return false;
@@ -780,7 +780,7 @@ export class CommandManager {
             );
             return true;
           }
-          this.taskbone.getTextForView(view, {
+          void this.taskbone.getTextForView(view, {
             forceReScan: false,
             selectedElementsOnly: true,
             addToFrontmatter: false,
@@ -802,7 +802,7 @@ export class CommandManager {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
-          search(view);
+          void search(view);
           return true;
         }
         return false;
@@ -896,7 +896,7 @@ export class CommandManager {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
-          navigator.clipboard.writeText(`![[${view.file.path}]]`);
+          void navigator.clipboard.writeText(`![[${view.file.path}]]`);
           return true;
         }
         return false;
@@ -964,7 +964,7 @@ export class CommandManager {
           return false;
         }
         if (view && !view.compatibilityMode) {
-          view.changeTextMode(
+          void view.changeTextMode(
             view.textMode === TextMode.parsed ? TextMode.raw : TextMode.parsed,
           );
           return true;
@@ -1016,7 +1016,7 @@ export class CommandManager {
             );
             return true;
           }
-          this.app.vault.delete(file);
+          void this.app.vault.delete(file);
           this.ea.deleteViewElements([el]);
           return true;
         }
@@ -1208,11 +1208,11 @@ export class CommandManager {
           }
           return false;
         }
-        (async () => {
+        void (async () => {
           const isLeftHanded = this.settings.isLeftHanded;
           await this.plugin.loadSettings();
           this.settings.isLeftHanded = !isLeftHanded;
-          this.plugin.saveSettings();
+          await this.plugin.saveSettings();
           setLeftHandedMode(!isLeftHanded);
         })();
         return true;
@@ -1323,7 +1323,7 @@ export class CommandManager {
         if (checking) {
           return true;
         }
-        (async () => {
+        void (async () => {
           const ea = getEA(view) ;
           const isAnchored = Boolean(el.customData?.isAnchored);
           const imgId = ef.pdfPageViewProps
@@ -1384,7 +1384,7 @@ export class CommandManager {
           return true;
         }
 
-        (async () => {
+        void (async () => {
           const el = els[0] as ExcalidrawImageElement;
           const ef = view.excalidrawData.getFile(el.fileId);
           if (!ef) {
@@ -1439,7 +1439,7 @@ export class CommandManager {
           return true;
         }
 
-        (async () => {
+        void (async () => {
           const el = els[0] as ExcalidrawImageElement;
           const ef = view.excalidrawData.getFile(el.fileId);
           if (!ef) {
@@ -1486,16 +1486,16 @@ export class CommandManager {
         const ef = view.excalidrawData.getFile(el.fileId);
         const eq = view.excalidrawData.getEquation(el.fileId);
         if (!ef && !eq) {
-          view.forceSave();
+          void view.forceSave();
           new Notice("Please try again.");
           return false;
         }
 
         if (ef) {
-          view.openEmbeddedLinkEditor(el.id);
+          void view.openEmbeddedLinkEditor(el.id);
         }
         if (eq) {
-          view.openLaTeXEditor(el.id);
+          void view.openLaTeXEditor(el.id);
         }
       },
     });
@@ -1533,7 +1533,7 @@ export class CommandManager {
         if (checking) {
           return true;
         }
-        view.moveBackOfTheNoteCardToFile();
+        void view.moveBackOfTheNoteCardToFile();
       },
     });
 
@@ -1581,7 +1581,7 @@ export class CommandManager {
         )?.leaf?.view;
         const pdfFile: TFile =
           view && view instanceof FileView ? view.file : undefined;
-        (async () => {
+        void (async () => {
           const imgID = await ea.addImage(
             embeddableEl.x + embeddableEl.width + 10,
             embeddableEl.y,
@@ -1598,7 +1598,7 @@ export class CommandManager {
             imgEl.height = embeddableEl.height;
             imgEl.width = embeddableEl.height * imageAspectRatio;
           }
-          ea.addElementsToView(false, true, true);
+          await ea.addElementsToView(false, true, true);
         })();
       },
     });
@@ -1700,7 +1700,7 @@ export class CommandManager {
               embeddableEl.id,
             )?.node?.child;
             const pdfFile: TFile = view?.file;
-            carveOutPDF(
+            void carveOutPDF(
               ea,
               embeddableEl,
               `${pdfFile?.path}#page=${page}`,
@@ -1710,7 +1710,7 @@ export class CommandManager {
           }
 
           const imageEl = imageEls[0] as ExcalidrawImageElement;
-          (async () => {
+          void (async () => {
             let ef = excalidrawView.excalidrawData.getFile(imageEl.fileId);
 
             if (!ef) {
@@ -1723,7 +1723,7 @@ export class CommandManager {
               }
             }
             const ea = new ExcalidrawAutomate(this.plugin, excalidrawView);
-            carveOutImage(ea, imageEl);
+            await carveOutImage(ea, imageEl);
           })();
         }
 
@@ -1836,7 +1836,7 @@ export class CommandManager {
               });
             }
           };
-          carveout(
+          void carveout(
             Boolean(node.file),
             canvasView.file,
             node.file,
@@ -1920,7 +1920,7 @@ export class CommandManager {
                 lineparts[1],
             );
           };
-          carveout(
+          void carveout(
             isFile,
             markdownView.file,
             imageFile,
@@ -2121,7 +2121,7 @@ export class CommandManager {
               });
             }
           };
-          carveout(
+          void carveout(
             Boolean(node.file),
             canvasView.file,
             node.file,
@@ -2211,7 +2211,7 @@ export class CommandManager {
                 lineparts[1],
             );
           };
-          carveout(
+          void carveout(
             isFile,
             markdownView.file,
             imageFile,
@@ -2350,7 +2350,7 @@ export class CommandManager {
         if (checking) {
           return true;
         }
-        (async () => {
+        void (async () => {
           const ea = getEA(view) ;
           const id = await insertImageToView(
             ea,
@@ -2399,7 +2399,7 @@ export class CommandManager {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
-          view.insertBackOfTheNoteCard();
+          void view.insertBackOfTheNoteCard();
           return true;
         }
         return false;
@@ -2445,19 +2445,19 @@ export class CommandManager {
         const excalidrawView =
           this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (excalidrawView) {
-          excalidrawView.openAsMarkdown();
+          void excalidrawView.openAsMarkdown();
           return;
         }
 
         const markdownView =
           this.app.workspace.getActiveViewOfType(MarkdownView);
         if (markdownView && fileIsExcalidraw) {
-          (async () => {
+          void (async () => {
             await markdownView.save();
             const activeLeaf = markdownView.leaf;
             this.plugin.excalidrawFileModes[activeLeaf.id || activeFile.path] =
               VIEW_TYPE_EXCALIDRAW;
-            setExcalidrawView(activeLeaf);
+            await setExcalidrawView(activeLeaf);
           })();
           return;
         }
@@ -2483,13 +2483,13 @@ export class CommandManager {
           return true;
         }
 
-        (async () => {
+        void (async () => {
           await activeView.save();
           const template = await this.plugin.getBlankDrawing();
           const target = await this.app.vault.read(activeFile);
           const mergedTarget = mergeMarkdownFiles(template, target);
           await createOrOverwriteFile(this.app, activeFile.path, mergedTarget);
-          setExcalidrawView(activeView.leaf);
+          await setExcalidrawView(activeView.leaf);
         })();
       },
     });
@@ -2504,7 +2504,7 @@ export class CommandManager {
             .filter((f) => f.extension == "excalidraw");
           return files.length > 0;
         }
-        this.plugin.convertExcalidrawToMD();
+        void this.plugin.convertExcalidrawToMD();
         return true;
       },
     });

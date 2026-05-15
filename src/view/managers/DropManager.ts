@@ -176,7 +176,7 @@ export class DropManager {
               const insertPDFModal = new InsertPDFModal(this.plugin, this.view);
               insertPDFModal.open(file);
             } else {
-              (async () => {
+              void (async () => {
                 const ea: ExcalidrawAutomate = getEA(this.view);
                 ea.selectElementsInView([
                   await insertImageToView(
@@ -193,7 +193,7 @@ export class DropManager {
           }
 
           if (internalDragAction === "embeddable") {
-            (async () => {
+            void (async () => {
               const ea: ExcalidrawAutomate = getEA(this.view);
               ea.selectElementsInView([
                 await insertEmbeddableToView(ea, this.currentPosition, file),
@@ -204,7 +204,7 @@ export class DropManager {
           }
 
           //internalDragAction === "link"
-          this.view.addText(
+          void this.view.addText(
             `[[${this.app.metadataCache.fileToLinktext(
               draggable.file,
               this.file.path,
@@ -215,7 +215,7 @@ export class DropManager {
         return false;
       case "files":
         if (!onDropHook("file", draggable.files, null)) {
-          (async () => {
+          void (async () => {
             if (["image", "image-fullsize"].contains(internalDragAction)) {
               const ea: ExcalidrawAutomate = getEA(this.view);
               ea.canvas.theme = api.getAppState().theme;
@@ -285,7 +285,7 @@ export class DropManager {
               );
               this.currentPosition.y += st.currentItemFontSize * 2;
             }
-            this.view.save(false);
+            await this.view.save(false);
           })();
         }
         return false;
@@ -305,7 +305,7 @@ export class DropManager {
           externalDragAction === "image-url" &&
           hyperlinkIsImage(text)
         ) {
-          this.view.addImageWithURL(text);
+          void this.view.addImageWithURL(text);
           return false;
         }
         if (text && externalDragAction === "link") {
@@ -313,16 +313,16 @@ export class DropManager {
             this.plugin.settings.iframelyAllowed &&
             text.match(/^https?:\/\/\S*$/)
           ) {
-            this.view.addTextWithIframely(text);
+            void this.view.addTextWithIframely(text);
             return false;
           } else {
-            this.view.addText(text);
+            void this.view.addText(text);
             return false;
           }
         }
         if (text && externalDragAction === "embeddable") {
           const ea = getEA(this.view) ;
-          insertEmbeddableToView(
+          void insertEmbeddableToView(
             ea,
             this.currentPosition,
             undefined,
@@ -340,7 +340,7 @@ export class DropManager {
           externalDragAction === "image-url" &&
           hyperlinkIsImage(src[1])
         ) {
-          this.view.addImageWithURL(src[1]);
+          void this.view.addImageWithURL(src[1]);
           return false;
         }
         if (src && externalDragAction === "link") {
@@ -348,16 +348,16 @@ export class DropManager {
             this.plugin.settings.iframelyAllowed &&
             src[1].match(/^https?:\/\/\S*$/)
           ) {
-            this.view.addTextWithIframely(src[1]);
+            void this.view.addTextWithIframely(src[1]);
             return false;
           } else {
-            this.view.addText(src[1]);
+            void this.view.addText(src[1]);
             return false;
           }
         }
         if (src && externalDragAction === "embeddable") {
           const ea = getEA(this.view) ;
-          insertEmbeddableToView(
+          void insertEmbeddableToView(
             ea,
             this.currentPosition,
             undefined,
@@ -402,7 +402,7 @@ export class DropManager {
           if (link.isInternal) {
             if (localFileDragAction === "embeddable") {
               const ea = getEA(this.view) ;
-              insertEmbeddableToView(ea, pos, link.file).then(() =>
+              void insertEmbeddableToView(ea, pos, link.file).then(() =>
                 ea.destroy(),
               );
             } else {
@@ -414,13 +414,13 @@ export class DropManager {
                 insertPDFModal.open(link.file);
               }
               const ea = getEA(this.view) ;
-              insertImageToView(ea, pos, link.file).then(() => ea.destroy());
+              void insertImageToView(ea, pos, link.file).then(() => ea.destroy());
             }
           } else {
             const extension = getURLImageExtension(link.url);
             if (localFileDragAction === "image-import") {
               if (IMAGE_TYPES.contains(extension)) {
-                (async () => {
+                void (async () => {
                   const droppedFilename = event.dataTransfer.files[i].name;
                   const fileToImport =
                     await event.dataTransfer.files[i].arrayBuffer();
@@ -471,7 +471,7 @@ export class DropManager {
               } else if (extension === "excalidraw") {
                 return true; //excalidraw to continue processing
               } else {
-                (async () => {
+                void (async () => {
                   const file = await importFileToVault(
                     this.app,
                     event.dataTransfer.files[i].name,
@@ -491,7 +491,7 @@ export class DropManager {
               !IMAGE_TYPES.contains(extension)
             ) {
               const ea = getEA(this.view) ;
-              insertEmbeddableToView(ea, pos, null, link.url).then(() =>
+              void insertEmbeddableToView(ea, pos, null, link.url).then(() =>
                 ea.destroy(),
               );
               if (localFileDragAction !== "embeddable") {
@@ -499,7 +499,7 @@ export class DropManager {
               }
             } else {
               const ea = getEA(this.view) ;
-              insertImageToView(ea, pos, link.url).then(() => ea.destroy());
+              void insertImageToView(ea, pos, link.url).then(() => ea.destroy());
             }
           }
         }
@@ -542,7 +542,7 @@ export class DropManager {
             ea.getElement(id).link = link.link;
           }
         }
-        ea.addElementsToView().then(() => ea.destroy());
+        void ea.addElementsToView().then(() => ea.destroy());
         return false;
       }
 
@@ -580,7 +580,7 @@ export class DropManager {
           externalDragAction === "image-url" &&
           hyperlinkIsYouTubeLink(text)
         ) {
-          this.view.addYouTubeThumbnail(text);
+          void this.view.addYouTubeThumbnail(text);
           return false;
         }
         if (
@@ -588,7 +588,7 @@ export class DropManager {
           externalDragAction === "image-url" &&
           hyperlinkIsYouTubeLink(uriText)
         ) {
-          this.view.addYouTubeThumbnail(uriText);
+          void this.view.addYouTubeThumbnail(uriText);
           return false;
         }
         if (
@@ -596,7 +596,7 @@ export class DropManager {
           externalDragAction === "image-url" &&
           hyperlinkIsImage(text)
         ) {
-          this.view.addImageWithURL(text);
+          void this.view.addImageWithURL(text);
           return false;
         }
         if (
@@ -604,7 +604,7 @@ export class DropManager {
           externalDragAction === "image-url" &&
           hyperlinkIsImage(uriText)
         ) {
-          this.view.addImageWithURL(uriText);
+          void this.view.addImageWithURL(uriText);
           return false;
         }
         if (
@@ -612,7 +612,7 @@ export class DropManager {
           externalDragAction === "image-import" &&
           hyperlinkIsImage(text)
         ) {
-          this.view.addImageSaveToVault(text);
+          void this.view.addImageSaveToVault(text);
           return false;
         }
         if (
@@ -620,14 +620,14 @@ export class DropManager {
           externalDragAction === "image-import" &&
           hyperlinkIsImage(uriText)
         ) {
-          this.view.addImageSaveToVault(uriText);
+          void this.view.addImageSaveToVault(uriText);
           return false;
         }
         if (
           this.plugin.settings.iframelyAllowed &&
           text.match(/^https?:\/\/\S*$/)
         ) {
-          this.view.addTextWithIframely(text);
+          void this.view.addTextWithIframely(text);
           return false;
         }
         //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/599
@@ -643,24 +643,24 @@ export class DropManager {
                   f,
                   this.file.path,
                 );
-                this.view.addText(
+                void this.view.addText(
                   `[[${
                     path + (link.length > 1 ? "#" + link[1] + "|" + path : "")
                   }]]`,
                 );
                 return;
               }
-              this.view.addText(`[[${decodeURIComponent(path[1])}]]`);
+              void this.view.addText(`[[${decodeURIComponent(path[1])}]]`);
               return false;
             }
           }
           const path = text.split("file=");
           if (path.length === 2) {
-            this.view.addText(`[[${decodeURIComponent(path[1])}]]`);
+            void this.view.addText(`[[${decodeURIComponent(path[1])}]]`);
             return false;
           }
         }
-        this.view.addText(text.replace(/(!\[\[.*#[^\]]*\]\])/g, "$1{40}"));
+        void this.view.addText(text.replace(/(!\[\[.*#[^\]]*\]\])/g, "$1{40}"));
       }
       return false;
     }

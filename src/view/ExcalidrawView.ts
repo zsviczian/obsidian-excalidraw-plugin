@@ -556,7 +556,7 @@ export default class ExcalidrawView
       0,
       this.file.path.lastIndexOf(".md"),
     )}.excalidraw`;
-    exportImageToFile(
+    void exportImageToFile(
       this,
       filepath,
       JSON.stringify(scene, null, "\t"),
@@ -575,7 +575,7 @@ export default class ExcalidrawView
         this.file.basename,
         t("EXPORT_FILENAME_PROMPT_PLACEHOLDER"),
       );
-      prompt.openAndGetValue(async (filename: string) => {
+      void prompt.openAndGetValue(async (filename: string) => {
         if (!filename) {
           return;
         }
@@ -706,8 +706,8 @@ export default class ExcalidrawView
     const collected: Record<FileId, BinaryFileData> = {};
     let resolved = false;
 
-    await new Promise<void>((resolve) => {
-      loader.loadSceneFiles({
+    await new Promise<void>(async (resolve) => {
+      await loader.loadSceneFiles({
         excalidrawData: this.excalidrawData,
         addFiles: (
           files: FileData[],
@@ -888,7 +888,7 @@ export default class ExcalidrawView
     const margin = getMarginValue(this.exportDialog?.margin ?? "normal");
     const [width, height] = [boundingBox.width, boundingBox.height];
 
-    exportToPDF({
+    await exportToPDF({
       SVG: [svg],
       scale: {
         zoom: this.exportDialog?.scale ?? 1,
@@ -1230,10 +1230,10 @@ export default class ExcalidrawView
         }
 
         if (autoexportConfig.svg) {
-          this.saveSVG({ autoexportConfig });
+          void this.saveSVG({ autoexportConfig });
         }
         if (autoexportConfig.png) {
-          this.savePNG({ autoexportConfig });
+          void this.savePNG({ autoexportConfig });
         }
         if (autoexportConfig.excalidraw) {
           this.saveExcalidraw();
@@ -1249,7 +1249,7 @@ export default class ExcalidrawView
     }
     this.semaphores.saving = false;
     if (triggerReload) {
-      this.reload(true, this.file);
+      await this.reload(true, this.file);
     }
     this.resetAutosaveTimer(); //next autosave period starts after save
   }
@@ -1980,7 +1980,7 @@ export default class ExcalidrawView
       ) as ExcalidrawImageElement;
       if (this.excalidrawData.hasEquation(selectedImage.fileId)) {
         this.updateScene({ appState: { contextMenu: null } });
-        this.openLaTeXEditor(selectedImage.id);
+        void this.openLaTeXEditor(selectedImage.id);
         return;
       }
       if (
@@ -2008,7 +2008,7 @@ export default class ExcalidrawView
           linkClickType === "md-properties"
         ) {
           this.updateScene({ appState: { contextMenu: null } });
-          this.openEmbeddedLinkEditor(selectedImage.id);
+          void this.openEmbeddedLinkEditor(selectedImage.id);
           return;
         }
         let secondOrderLinks: string = " ";
@@ -2107,7 +2107,7 @@ export default class ExcalidrawView
             const svg = await this.app.vault.cachedRead(file);
             if (/(&lt;|<)(mxfile|mxgraph)/i.test(svg)) {
               const leaf = getLeaf(this.plugin, this.leaf, keys);
-              leaf.setViewState({
+              void leaf.setViewState({
                 type: "diagram-edit",
                 state: {
                   file: file.path,
@@ -2153,7 +2153,7 @@ export default class ExcalidrawView
       selectedImage?.id || selectedText?.id
         ? null
         : this.getSelectedElementWithLink();
-    this.linkClick(
+    void this.linkClick(
       ev instanceof MouseEvent ? ev : null,
       selectedText,
       selectedImage,
@@ -2212,7 +2212,7 @@ export default class ExcalidrawView
     this.semaphores.forceSaving = true;
     await this.save(false, true, true);
     this.plugin.triggerEmbedUpdates();
-    this.loadSceneFiles();
+    await this.loadSceneFiles();
     this.semaphores.forceSaving = false;
     if (!silent) {
       new Notice("Save successful", 1000);
@@ -2231,7 +2231,7 @@ export default class ExcalidrawView
 
     if (DEVICE.isDesktop && !apiMissing) {
       if (this.ownerWindow !== window) {
-        this.plugin.initializeFonts();
+        void this.plugin.initializeFonts();
       }
       this.destroyers.push(
         //this.containerEl.onWindowMigrated(this.leaf.rebuildView.bind(this))
@@ -2240,7 +2240,7 @@ export default class ExcalidrawView
           const l = this.leaf;
           await closeLeafView(l);
           windowMigratedDisableZoomOnce = true;
-          l.setViewState({
+          void l.setViewState({
             type: VIEW_TYPE_EXCALIDRAW,
             state: {
               file: f.path,
@@ -2337,7 +2337,7 @@ export default class ExcalidrawView
         Boolean(this.plugin.activeLeafChangeEventHandler) &&
         this?.app?.workspace?.activeLeaf === this.leaf
       ) {
-        this.plugin.activeLeafChangeEventHandler(this.leaf);
+        await this.plugin.activeLeafChangeEventHandler(this.leaf);
       }
       await this.canvasNodeFactory.initialize();
       this.contentEl.addClass("excalidraw-view");
@@ -2377,7 +2377,7 @@ export default class ExcalidrawView
           st.activeTool.type !== "image" &&
           st.activeEmbeddable?.state !== "active"
         ) {
-          this.forceSave(true);
+          void this.forceSave(true);
         }
       };
 
@@ -2578,7 +2578,7 @@ export default class ExcalidrawView
         if (this.excalidrawAPI) {
           this.semaphores.autosaving = true;
           //changed from await to then to avoid lag during saving of large file
-          this.save().then(() => (this.semaphores.autosaving = false));
+          void this.save().then(() => (this.semaphores.autosaving = false));
         }
         this.autosaveTimer = window.setTimeout(timer, this.autosaveInterval);
       } else {
@@ -2994,7 +2994,7 @@ export default class ExcalidrawView
     }
 
     if (state.rename === "all") {
-      this.app.fileManager.promptForFileRename(this.file);
+      void this.app.fileManager.promptForFileRename(this.file);
       return;
     }
 
@@ -3053,7 +3053,7 @@ export default class ExcalidrawView
             ).replaceAll(" ", "");
             const blocks = await this.getBackOfTheNoteBlocks();
             if (blocks.includes(cleanQuery)) {
-              this.setMarkdownView(state);
+              void this.setMarkdownView(state);
               return;
             }
           }
@@ -3154,7 +3154,7 @@ export default class ExcalidrawView
           const cleanQuery = cleanSectionHeading(query[0]);
           const sections = await this.getBackOfTheNoteSections();
           if (sections.includes(cleanQuery) || this.data.includes(query[0])) {
-            this.setMarkdownView(state);
+            void this.setMarkdownView(state);
             return;
           }
         }
@@ -3201,10 +3201,10 @@ export default class ExcalidrawView
       return;
     }
     if (this.plugin.settings.compareManifestToPluginVersion) {
-      checkVersionMismatch(this.plugin);
+      void checkVersionMismatch(this.plugin);
     }
     if (this.plugin.settings.showNewVersionNotification) {
-      checkExcalidrawVersion();
+      void checkExcalidrawVersion();
     }
     if (isMaskFile(this.plugin, this.file)) {
       const notice = new Notice(t("MASK_FILE_NOTICE"), 5000);
@@ -3261,7 +3261,7 @@ export default class ExcalidrawView
         this.actionButtons.link.show();
         this.excalidrawData.disableCompression = false;
         const textMode = getTextMode(data);
-        this.changeTextMode(textMode, false);
+        await this.changeTextMode(textMode, false);
         try {
           if (
             !(await this.excalidrawData.loadData(
@@ -3275,13 +3275,13 @@ export default class ExcalidrawView
         } catch (e) {
           errorlog({ where: "ExcalidrawView.setViewData", error: e });
           if (e.message === ERROR_IFRAME_CONVERSION_CANCELED) {
-            this.setMarkdownView();
+            await this.setMarkdownView();
             return;
           }
           const file = this.file;
           const plugin = this.plugin;
           const leaf = this.leaf;
-          (async () => {
+          void (async () => {
             let confirmation: boolean = true;
             let counter = 0;
             const timestamp = Date.now();
@@ -3325,16 +3325,16 @@ export default class ExcalidrawView
               plugin,
               t("BACKUP_AVAILABLE"),
             );
-            confirmationPrompt.waitForClose.then(async (confirmed) => {
+            void confirmationPrompt.waitForClose.then(async (confirmed) => {
               if (confirmed) {
                 await this.app.vault.modify(file, drawingBAK);
                 plugin.excalidrawFileModes[leaf.id || file.path] =
                   VIEW_TYPE_EXCALIDRAW;
-                setExcalidrawView(leaf);
+                void setExcalidrawView(leaf);
               }
             });
           })();
-          this.setMarkdownView();
+          void this.setMarkdownView();
           return;
         }
       }
@@ -3411,7 +3411,7 @@ export default class ExcalidrawView
             }, 200);
             return;
           }
-          this.plugin.scriptEngine.executeScript(
+          void this.plugin.scriptEngine.executeScript(
             this,
             script,
             scriptname,
@@ -3529,7 +3529,7 @@ export default class ExcalidrawView
       this.deferredValidationLoader = loader;
       // Second pass is intentionally conservative: revalidate only stale-first
       // candidates, run one at a time, and emit only regenerated images.
-      loader.loadSceneFiles({
+      void loader.loadSceneFiles({
         excalidrawData: this.excalidrawData,
         addFiles: (
           files: FileData[],
@@ -3547,7 +3547,7 @@ export default class ExcalidrawView
             return;
           }
           if (files && files.length > 0) {
-            addFiles(files, this, isDark);
+            void addFiles(files, this, isDark);
           }
           if (!final) {
             return;
@@ -3586,7 +3586,7 @@ export default class ExcalidrawView
     const runLoader = (l: EmbeddedFilesLoader) => {
       this.nextLoader = null;
       this.activeLoader = l;
-      l.loadSceneFiles({
+      void l.loadSceneFiles({
         excalidrawData: this.excalidrawData,
         addFiles: (
           files: FileData[],
@@ -3600,7 +3600,7 @@ export default class ExcalidrawView
             return; //The view was closed in the mean time
           }
           if (files && files.length > 0) {
-            addFiles(files, this, isDark);
+            void addFiles(files, this, isDark);
           }
           if (!final) {
             return;
@@ -3628,7 +3628,7 @@ export default class ExcalidrawView
                     this.excalidrawAPI &&
                     currentFile === this.file.path
                   ) {
-                    this.loadSceneFiles();
+                    void this.loadSceneFiles();
                   }
                 }, 2000);
                 return true;
@@ -3812,7 +3812,7 @@ export default class ExcalidrawView
         captureUpdate: CaptureUpdateAction.IMMEDIATELY,
       });
       if (reloadFiles.size > 0) {
-        this.loadSceneFiles(false, reloadFiles);
+        await this.loadSceneFiles(false, reloadFiles);
       }
     } catch (e) {
       errorlog({
@@ -3917,7 +3917,7 @@ export default class ExcalidrawView
       //debug({where:"ExcalidrawView.loadDrawing",file:this.file.name,before:"this.loadSceneFiles"});
       this.onAfterLoadScene(justloaded);
     } else {
-      this.instantiateExcalidraw({
+      await this.instantiateExcalidraw({
         elements: excalidrawData.elements,
         appState: {
           ...(isReloading && isOpenInMultipleLeaves
@@ -3978,9 +3978,9 @@ export default class ExcalidrawView
   }
 
   private onAfterLoadScene(justloaded: boolean) {
-    this.loadSceneFiles();
+    void this.loadSceneFiles();
     this.updateContainerSize(null, true, justloaded);
-    this.initializeToolsIconPanelAfterLoading();
+    void this.initializeToolsIconPanelAfterLoading();
     const uiMode = calculateUIModeValue(this.plugin.settings);
     this.setUIMode(uiMode);
   }
@@ -4053,7 +4053,7 @@ export default class ExcalidrawView
     //these validations are just to make sure that initialization is complete
     let counter = 0;
     while (!this.plugin.scriptEngine && counter++ < 50) {
-      sleep(50);
+      await sleep(50);
     }
 
     const panel = this.toolsPanelRef?.current;
@@ -4103,7 +4103,7 @@ export default class ExcalidrawView
     await this.forceSaveIfRequired();
     await sleep(200); //dirty hack to wait for Obsidian metadata to be updated, note that save may have been triggered elsewhere already
     this.plugin.excalidrawFileModes[this.id || this.file.path] = "markdown";
-    this.plugin.setMarkdownView(this.leaf, eState as ViewStateResult | undefined);
+    void this.plugin.setMarkdownView(this.leaf, eState as ViewStateResult | undefined);
   }
 
   public async openAsMarkdown(eState?: MarkdownViewOpenState) {
@@ -4116,7 +4116,7 @@ export default class ExcalidrawView
     } else if (this.isDirty()) {
       await this.save(true, true, true);
     }
-    this.setMarkdownView(eState);
+    void this.setMarkdownView(eState);
   }
 
   public async convertExcalidrawToMD() {
@@ -4139,7 +4139,7 @@ export default class ExcalidrawView
       "",
       "Leave blank to cancel this action",
     );
-    prompt.openAndGetValue(async (filename: string) => {
+    void prompt.openAndGetValue(async (filename: string) => {
       if (!filename) {
         return;
       }
@@ -4269,7 +4269,7 @@ export default class ExcalidrawView
           .setIcon("external-link")
           .setSection("pane")
           .onClick((evt) => {
-            this.handleLinkClick(evt as MouseEvent);
+            void this.handleLinkClick(evt as MouseEvent);
           });
       });
     }
@@ -4280,7 +4280,7 @@ export default class ExcalidrawView
           .setTitle(t("OPEN_AS_MD"))
           .setIcon("document")
           .onClick(() => {
-            this.openAsMarkdown();
+            void this.openAsMarkdown();
           })
           .setSection("pane");
       });
@@ -4517,7 +4517,7 @@ export default class ExcalidrawView
       !st.selectedElementIds ||
       (st.selectedElementIds && Object.keys(st.selectedElementIds).length !== 1)
     ) {
-      this.addText(markdownlink);
+      await this.addText(markdownlink);
       return;
     }
     const selectedElementId = Object.keys(
@@ -4537,7 +4537,7 @@ export default class ExcalidrawView
           "Selected element already has a link. Inserting link as text.",
         );
       }
-      this.addText(markdownlink);
+      await this.addText(markdownlink);
       return;
     }
     const ea = getEA(this) ;
@@ -4924,7 +4924,7 @@ export default class ExcalidrawView
         shiftKey: this.modifierKeyDown.shiftKey,
         altKey: this.modifierKeyDown.altKey,
       });
-      this.handleLinkClick(event);
+      void this.handleLinkClick(event);
       this.selectedTextElement = null;
       return;
     }
@@ -4940,7 +4940,7 @@ export default class ExcalidrawView
         shiftKey: this.modifierKeyDown.shiftKey,
         altKey: this.modifierKeyDown.altKey,
       });
-      this.handleLinkClick(event);
+      void this.handleLinkClick(event);
       this.selectedImageElement = null;
       return;
     }
@@ -4957,7 +4957,7 @@ export default class ExcalidrawView
         shiftKey: this.modifierKeyDown.shiftKey,
         altKey: this.modifierKeyDown.altKey,
       });
-      this.handleLinkClick(event);
+      void this.handleLinkClick(event);
       this.selectedElementWithLink = null;
       return;
     }
@@ -5210,7 +5210,7 @@ export default class ExcalidrawView
     //of the link click continues
     window.setTimeout(() => {
       if (this.isLinkSelected()) {
-        this.handleLinkClick(e);
+        void this.handleLinkClick(e);
         return;
       }
       // When CTRL+ALT (or CMD+OPT on Mac) is pressed, Excalidraw switches to lasso select
@@ -5234,7 +5234,7 @@ export default class ExcalidrawView
           selectedElementWithLink?.id
         ) {
           this.removeLinkTooltip();
-          this.linkClick(
+          void this.linkClick(
             e,
             selectedText,
             selectedImage,
@@ -5488,7 +5488,7 @@ export default class ExcalidrawView
   }
 
   private onLibraryChange(items: LibraryItems) {
-    (async () => {
+    void (async () => {
       const lib = {
         type: "excalidrawlib",
         version: 2,
@@ -5590,13 +5590,13 @@ export default class ExcalidrawView
     }
 
     if (data && data.text && hyperlinkIsImage(data.text)) {
-      this.addImageWithURL(data.text);
+      void this.addImageWithURL(data.text);
       return false;
     }
 
     const obsidianURLFilePath = getFilePathFromObsidianURL(data?.text);
     if (obsidianURLFilePath) {
-      this.addImageWithURL(obsidianURLFilePath);
+      void this.addImageWithURL(obsidianURLFilePath);
       return false;
     }
     if (data && data.text && !this.modifierKeyDown.shiftKey) {
@@ -5661,7 +5661,7 @@ export default class ExcalidrawView
                 el.height = el.crop.height / this.plugin.settings.pdfScale;
               }
               el.link = `[[${link}]]`;
-              ea.addElementsToView(false, false).then(() => ea.destroy());
+              await ea.addElementsToView(false, false).then(() => ea.destroy());
             } else {
               const modal = new UniversalInsertFileModal(this.plugin, this);
               modal.open(file, this.currentPosition);
@@ -5702,7 +5702,7 @@ export default class ExcalidrawView
           },
         );
         ea.elementsDict[id].link = `[[${quoteWithRef.link}]]`;
-        ea.addElementsToView(false, false).then(() => ea.destroy());
+        void ea.addElementsToView(false, false).then(() => ea.destroy());
 
         return false;
       }
@@ -5762,7 +5762,7 @@ export default class ExcalidrawView
         //if there are no image elements, save and return
         //Save will ensure links and embeds are parsed
         if (imageElementsMap.size === 0) {
-          this.save(false); //saving because there still may be text transclusions
+          await this.save(false); //saving because there still may be text transclusions
           return;
         }
 
@@ -5829,7 +5829,7 @@ export default class ExcalidrawView
   private async onThemeChange(newTheme: string) {
     //debug({where:"ExcalidrawView.onThemeChange",file:this.file.name,before:"this.loadSceneFiles",newTheme});
     this.excalidrawData.scene.appState.theme = newTheme;
-    this.loadSceneFiles(true);
+    await this.loadSceneFiles(true);
     this.toolsPanelRef?.current?.setTheme(newTheme as "dark" | "light");
     //Timeout is to allow appState to update
     window.setTimeout(() =>
@@ -6144,7 +6144,7 @@ export default class ExcalidrawView
     }
 
     if (!event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
-      this.linkClick(
+      void this.linkClick(
         null,
         null,
         null,
@@ -6155,7 +6155,7 @@ export default class ExcalidrawView
       return;
     }
 
-    this.linkClick(
+    void this.linkClick(
       event as MouseEvent,
       null,
       null,
@@ -6377,7 +6377,7 @@ export default class ExcalidrawView
         while (sections.includes(`${title} ${++i}`)) {}
         title = `${title} ${i}`;
       }
-      addBackOfTheNoteCard(this, title, false, data);
+      await addBackOfTheNoteCard(this, title, false, data);
     } catch (_) {}
   }
 
@@ -6460,7 +6460,7 @@ export default class ExcalidrawView
           isFormula ? t("EDIT_LATEX") : t("OPEN_LINK_CLICK"),
           () => {
             const event = emulateKeysForLinkClick("new-tab");
-            this.handleLinkClick(event, true);
+            void this.handleLinkClick(event, true);
           },
           onClose,
           isFormula ? "editFormula" : "openLink",
@@ -6741,7 +6741,7 @@ export default class ExcalidrawView
             t("COPY_DRAWING_LINK"),
             () => {
               const path = this.file.path.match(/(.*)(\.md)$/)?.[1];
-              navigator.clipboard.writeText(`![[${path ?? this.file.path}]]`);
+              void navigator.clipboard.writeText(`![[${path ?? this.file.path}]]`);
             },
             onClose,
             "copyDrawingLink",
@@ -6821,7 +6821,7 @@ export default class ExcalidrawView
             if (!data || data.trim() === "") {
               return;
             }
-            this.pasteCodeBlock(data);
+            void this.pasteCodeBlock(data);
           },
           onClose,
           "pasteCodeblock",
@@ -7979,7 +7979,7 @@ export default class ExcalidrawView
    * @returns
    */
   public copyLinkToSelectedElementToClipboard(prefix: string) {
-    copyLinkToSelectedElementToClipboard(this, prefix);
+    void copyLinkToSelectedElementToClipboard(this, prefix);
   }
 
   public updateScene(

@@ -219,7 +219,7 @@ export class ScriptEngine {
       return;
     }
     const scriptName = this.getScriptName(f);
-    this.addScriptIconToMap(f.path, scriptName);
+    void this.addScriptIconToMap(f.path, scriptName);
     this.plugin.addCommand({
       id: scriptName,
       name: `(Script) ${scriptName}`,
@@ -231,10 +231,10 @@ export class ScriptEngine {
         }
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
-          (async () => {
+          void (async () => {
             const script = stripYamlFrontmatter(await this.app.vault.read(f));
             if (script) {
-              this.executeScript(view, script, scriptName, f);
+              await this.executeScript(view, script, scriptName, f);
             }
           })();
           return true;

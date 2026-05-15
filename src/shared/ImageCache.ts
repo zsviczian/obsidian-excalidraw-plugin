@@ -205,14 +205,14 @@ class ImageCache {
         });
       }
 
-      this.purgeInvalidCacheTimer = window.setTimeout(async () => {
+      this.purgeInvalidCacheTimer = window.setTimeout(() => {
         this.purgeInvalidCacheTimer = null;
-        this.purgeInvalidCacheFiles();
+        void this.purgeInvalidCacheFiles();
       }, 60000);
 
-      this.purgeInvalidBackupTimer = window.setTimeout(async () => {
+      this.purgeInvalidBackupTimer = window.setTimeout(() => {
         this.purgeInvalidBackupTimer = null;
-        this.purgeInvalidBackupFiles();
+        void this.purgeInvalidBackupFiles();
       }, 120000);
     } finally {
       this.isInitializing = false;

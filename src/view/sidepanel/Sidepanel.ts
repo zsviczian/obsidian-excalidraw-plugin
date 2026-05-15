@@ -27,7 +27,7 @@ export class ExcalidrawSidepanelView extends ItemView {
   ): ExcalidrawSidepanelView | null {
     const spView = ExcalidrawSidepanelView.singleton;
     if (spView && reveal && !ExcalidrawSidepanelView.restoreSilent) {
-      spView.plugin.app.workspace.revealLeaf(spView.leaf);
+      void spView.plugin.app.workspace.revealLeaf(spView.leaf);
     }
     return spView;
   }
@@ -62,7 +62,7 @@ export class ExcalidrawSidepanelView extends ItemView {
       }
     }
     if (effectiveReveal) {
-      plugin.app.workspace.revealLeaf(leaf);
+      await plugin.app.workspace.revealLeaf(leaf);
     }
     await spView.waitUntilReady();
     return spView;
@@ -221,7 +221,7 @@ export class ExcalidrawSidepanelView extends ItemView {
     if (this.app.workspace.layoutReady) {
       await this.restorePersistedTabs();
     } else {
-      this.restorePersistedTabs();
+      await this.restorePersistedTabs();
     }
     this.updateEmptyStateVisibility();
   }
@@ -621,6 +621,6 @@ export class ExcalidrawSidepanelView extends ItemView {
   }
 
   public reveal(): void {
-    this.app.workspace.revealLeaf(this.leaf);
+    void this.app.workspace.revealLeaf(this.leaf);
   }
 }

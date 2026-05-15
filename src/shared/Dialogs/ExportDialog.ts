@@ -438,7 +438,7 @@ export class ExportDialog extends Modal {
             }
           });
         } else {
-          this.view.exportPNG(this.embedScene, this.isSelectedOnly);
+          void this.view.exportPNG(this.embedScene, this.isSelectedOnly);
         }
         this.close();
       };
@@ -459,7 +459,7 @@ export class ExportDialog extends Modal {
             theme: this.theme,
           });
           if (png) {
-            exportImageToFile(
+            void exportImageToFile(
               this.view,
               getIMGFilename(this.view.file.path, "png"),
               png,
@@ -468,7 +468,7 @@ export class ExportDialog extends Modal {
           }
         });
       } else {
-        this.view.savePNG({ scene: this.view.getScene(this.isSelectedOnly) });
+        void this.view.savePNG({ scene: this.view.getScene(this.isSelectedOnly) });
       }
       this.close();
     };
@@ -488,11 +488,11 @@ export class ExportDialog extends Modal {
             theme: this.theme,
           });
           if (png) {
-            exportPNGToClipboard(png);
+            await exportPNGToClipboard(png);
           }
         });
       } else {
-        this.view.exportPNGToClipboard(this.embedScene, this.isSelectedOnly);
+        await this.view.exportPNGToClipboard(this.embedScene, this.isSelectedOnly);
       }
       this.close();
     };
@@ -507,7 +507,7 @@ export class ExportDialog extends Modal {
         cls: "excalidraw-export-button",
       });
       bExcalidraw.onclick = () => {
-        this.view.exportExcalidraw();
+        void this.view.exportExcalidraw();
         this.close();
       };
 
@@ -516,7 +516,7 @@ export class ExportDialog extends Modal {
         cls: "excalidraw-export-button",
       });
       bSVG.onclick = () => {
-        this.view.exportSVG(this.embedScene, this.isSelectedOnly);
+        void this.view.exportSVG(this.embedScene, this.isSelectedOnly);
         this.close();
       };
     }
@@ -526,7 +526,7 @@ export class ExportDialog extends Modal {
       cls: "excalidraw-export-button",
     });
     bSVGVault.onclick = () => {
-      this.view.saveSVG({ scene: this.view.getScene(this.isSelectedOnly) });
+      void this.view.saveSVG({ scene: this.view.getScene(this.isSelectedOnly) });
       this.close();
     };
 
@@ -536,7 +536,7 @@ export class ExportDialog extends Modal {
     });
     bSVGClipboard.onclick = async () => {
       const svg = await this.view.getSVG(this.embedScene, this.isSelectedOnly);
-      exportSVGToClipboard(svg);
+      await exportSVGToClipboard(svg);
       this.close();
     };
   }
@@ -570,7 +570,7 @@ export class ExportDialog extends Modal {
       cls: "excalidraw-export-button",
     });
     bPDFExport.onclick = () => {
-      this.view.exportPDF(
+      void this.view.exportPDF(
         this.isSelectedOnly,
         this.pageSize,
         this.pageOrientation,

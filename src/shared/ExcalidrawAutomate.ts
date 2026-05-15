@@ -1117,7 +1117,7 @@ export class ExcalidrawAutomate {
       };
     });
 
-    navigator.clipboard.writeText(
+    void navigator.clipboard.writeText(
       JSON.stringify({
         type: "excalidraw/clipboard",
         elements,
@@ -3090,7 +3090,7 @@ export class ExcalidrawAutomate {
     };
     setView();
     if (show && this.targetView) {
-      this.plugin.app.workspace.revealLeaf(this.targetView.leaf);
+      void this.plugin.app.workspace.revealLeaf(this.targetView.leaf);
     }
     return this.targetView;
   }
@@ -3282,7 +3282,7 @@ export class ExcalidrawAutomate {
     if (fileIDWhiteList.size > 0) {
       this.targetView.setDirty();
       await new Promise<void>((resolve) => {
-        this.targetView.loadSceneFiles(false, fileIDWhiteList, resolve);
+        void this.targetView.loadSceneFiles(false, fileIDWhiteList, resolve);
       });
     }
     return;

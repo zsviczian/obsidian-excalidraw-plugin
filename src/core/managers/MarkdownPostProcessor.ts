@@ -557,7 +557,7 @@ const createImgElement = async (
       const f = vault.getFileByPath(srcParts[1]);
       const linkModifier = linkClickModifierType(ev);
       if (plugin.isExcalidrawFile(f) && isMaskFile(plugin, f)) {
-        (async () => {
+        void (async () => {
           const linkString = `[[${f.path}${srcParts[2] ? "#" + srcParts[2] : ""}]] ${getExcalidrawFileForwardLinks(plugin.app, f, new Set<string>())}`;
           const result = await linkPrompt(linkString, plugin.app);
           if (!result) {
@@ -586,7 +586,7 @@ const createImgElement = async (
               paneType = "tab";
               break;
           }
-          plugin.app.workspace.openLinkText(
+          await plugin.app.workspace.openLinkText(
             linkText,
             "",
             paneType,

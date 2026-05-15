@@ -37,7 +37,7 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
     this.inputEl.onkeyup = (e) => {
       if (e.key == "Enter" && this.action == openDialogAction.openFile) {
         if (this.containerEl.innerText.includes(EMPTY_MESSAGE)) {
-          this.plugin.createAndOpenDrawing(
+          void this.plugin.createAndOpenDrawing(
             `${this.plugin.settings.folder}/${this.inputEl.value}.excalidraw.md`,
             this.onNewPane ? "new-pane" : "active-pane",
           );
@@ -68,7 +68,7 @@ export class OpenFileDialog extends FuzzySuggestModal<TFile> {
         );
         break;
       case openDialogAction.insertLinkToDrawing:
-        this.plugin.embedDrawing(item);
+        void this.plugin.embedDrawing(item);
         break;
     }
   }

@@ -162,7 +162,7 @@ export class EmbeddableMenu {
       return;
     }
     if (newSubpath !== subpath) {
-      this.updateElement(newSubpath, element, file);
+      await this.updateElement(newSubpath, element, file);
     }
   }
 
@@ -206,7 +206,7 @@ export class EmbeddableMenu {
       return;
     }
     if (newSubpath !== subpath) {
-      this.updateElement(newSubpath, element, file);
+      await this.updateElement(newSubpath, element, file);
     }
   }
 
@@ -227,7 +227,7 @@ export class EmbeddableMenu {
     if (!pdfFile) {
       return;
     }
-    this.updateElement(`#page=${page}`, element, pdfFile, false);
+    void this.updateElement(`#page=${page}`, element, pdfFile, false);
   }
 
   private async actionInsertPageAsImage(element: ExcalidrawEmbeddableElement) {
@@ -310,7 +310,7 @@ export class EmbeddableMenu {
       if (subpath === "") {
         return;
       }
-      this.updateElement("", element, file);
+      await this.updateElement("", element, file);
       return;
     }
 
@@ -336,7 +336,7 @@ export class EmbeddableMenu {
       );
       await sleep(200); //wait for cache to update
     }
-    this.updateElement(`#^${blockID}`, element, file);
+    await this.updateElement(`#^${blockID}`, element, file);
   }
 
   private actionZoomToElement(
@@ -391,7 +391,7 @@ export class EmbeddableMenu {
     if (!element) {
       return;
     }
-    navigator.clipboard.writeText(atob(link.split(",")[1]));
+    void navigator.clipboard.writeText(atob(link.split(",")[1]));
   }
 
   renderButtons(appState: AppState) {

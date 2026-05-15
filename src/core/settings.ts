@@ -3472,7 +3472,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setName(t("EMBED_IMAGE_CACHE_CLEAR"))
       .addButton((button) =>
         button.setButtonText(t("EMBED_IMAGE_CACHE_CLEAR")).onClick(() => {
-          imageCache.clearImageCache();
+          void imageCache.clearImageCache();
         }),
       );
     new Setting(detailsEl)
@@ -3483,9 +3483,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.plugin,
             t("BACKUP_CACHE_CLEAR_CONFIRMATION"),
           );
-          confirmationPrompt.waitForClose.then((confirmed) => {
+          void confirmationPrompt.waitForClose.then((confirmed) => {
             if (confirmed) {
-              imageCache.clearBackupCache();
+              void imageCache.clearBackupCache();
             }
           });
         }),
@@ -4027,7 +4027,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.plugin.settings.experimentalEnableFourthFont = value;
             this.applySettingsUpdate();
             if (value) {
-              this.plugin.initializeFonts();
+              await this.plugin.initializeFonts();
             }
           }),
       );
@@ -4052,7 +4052,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.requestReloadDrawings = true;
             this.plugin.settings.experimantalFourthFont = value;
             this.applySettingsUpdate(true);
-            this.plugin.initializeFonts();
+            void this.plugin.initializeFonts();
           },
         );
       });
@@ -4365,8 +4365,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               );
             }
             startupScriptButton.setButtonText(t("STARTUP_SCRIPT_BUTTON_OPEN"));
-            this.app.workspace.openLinkText(f.path, "", true);
-            this.hide();
+            await this.app.workspace.openLinkText(f.path, "", true);
+            await this.hide();
           });
       });
 

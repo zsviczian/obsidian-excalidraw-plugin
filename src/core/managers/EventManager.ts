@@ -243,15 +243,15 @@ export class EventManager {
   }
 
   private onRenameHandler(file: TFile, oldPath: string) {
-    this.plugin.renameEventHandler(file, oldPath);
+    void this.plugin.renameEventHandler(file, oldPath);
   }
 
   private onModifyHandler(file: TFile) {
-    this.plugin.modifyEventHandler(file);
+    void this.plugin.modifyEventHandler(file);
   }
 
   private onDeleteHandler(file: TFile) {
-    this.plugin.deleteEventHandler(file);
+    void this.plugin.deleteEventHandler(file);
   }
 
   public async onActiveLeafChangeHandler(leaf: WorkspaceLeaf) {
@@ -358,7 +358,7 @@ export class EventManager {
           if (newActiveviewEV.activeLoader) {
             return;
           }
-          newActiveviewEV.loadSceneFiles();
+          void newActiveviewEV.loadSceneFiles();
         }, 2000);
       } //refresh embedded files
     }
@@ -398,14 +398,14 @@ export class EventManager {
     ) {
       return;
     }
-    this.activeExcalidrawView.save();
+    void this.activeExcalidrawView.save();
   }
 
   private onFileMenuSaveActiveDrawing() {
     if (!this.activeExcalidrawView || !this.activeExcalidrawView?.isDirty()) {
       return;
     }
-    this.activeExcalidrawView.save();
+    void this.activeExcalidrawView.save();
   }
 
   private onFileMenuHandler(
@@ -441,7 +441,7 @@ export class EventManager {
           await view.save();
           this.plugin.excalidrawFileModes[leaf.id || file.path] =
             VIEW_TYPE_EXCALIDRAW;
-          setExcalidrawView(leaf);
+          void setExcalidrawView(leaf);
         });
     });
     menu.items.unshift(menu.items.pop());
@@ -473,7 +473,7 @@ export class EventManager {
           await view.save();
           this.plugin.excalidrawFileModes[leaf.id || file.path] =
             VIEW_TYPE_EXCALIDRAW;
-          setExcalidrawView(leaf);
+          void setExcalidrawView(leaf);
         }),
     );
   }

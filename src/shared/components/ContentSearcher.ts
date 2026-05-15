@@ -146,7 +146,7 @@ export class ContentSearcher {
       );
 
       const md = htmlToMarkdown(x);
-      window.navigator.clipboard.writeText(md);
+      void window.navigator.clipboard.writeText(md);
       new Notice(t("SEARCH_COPIED_TO_CLIPBOARD"));
     };
     this.showHideButton.onclick = () => {

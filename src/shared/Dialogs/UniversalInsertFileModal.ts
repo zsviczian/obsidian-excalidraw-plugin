@@ -83,7 +83,7 @@ export class UniversalInsertFileModal extends Modal {
     this.containerEl.classList.add("excalidraw-release");
     this.containerEl.classList.add("excalidraw-modal");
     this.titleEl.setText(t("UIFM_TITLE"));
-    this.createForm();
+    void this.createForm();
   }
 
   async createForm() {
@@ -194,7 +194,7 @@ export class UniversalInsertFileModal extends Modal {
     );
     search.onChange(() => {
       file = suggester.getSelectedItem();
-      updateForm();
+      void updateForm();
     });
 
     const sectionPickerSetting = new Setting(ce)
@@ -326,7 +326,7 @@ export class UniversalInsertFileModal extends Modal {
       search.setValue(file.path);
       suggester.close();
     }
-    updateForm();
+    void updateForm();
   }
 
   onClose(): void {

@@ -20,7 +20,7 @@ export class RankMessage extends Modal {
     //this.contentEl.classList.add("excalidraw-release");
     this.containerEl.classList.add("excalidraw-release");
     this.titleEl.setText("Congratulations, glorious knight!");
-    this.createForm();
+    void this.createForm();
   }
 
   async onClose() {

@@ -636,7 +636,7 @@ function RenderObsidianView({
           );
         }
       } else {
-        (async () => {
+        void (async () => {
           const { rootSplit, leaf } = createLeaf(view);
           leafRef.current.leaf = leaf;
           await leafRef.current.leaf.openFile(file, {
@@ -991,7 +991,7 @@ function RenderObsidianView({
         //Handle canvas node
         const newTheme = getTheme(view, themeRef.current);
         containerRef.current?.addClasses(["is-editing", "is-focused"]);
-        view.canvasNodeFactory.startEditing(leafRef.current.node, newTheme);
+        void view.canvasNodeFactory.startEditing(leafRef.current.node, newTheme);
         return;
       }
 
@@ -1111,7 +1111,7 @@ function RenderObsidianView({
         //!node.isEditing
         const newTheme = getTheme(view, themeRef.current);
         containerRef.current?.addClasses(["is-editing", "is-focused"]);
-        view.canvasNodeFactory.startEditing(node, newTheme);
+        void view.canvasNodeFactory.startEditing(node, newTheme);
       } else {
         containerRef.current?.removeClasses(["is-editing", "is-focused"]);
         view.canvasNodeFactory.stopEditing(node);

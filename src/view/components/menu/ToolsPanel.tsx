@@ -233,7 +233,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   actionConvertExcalidrawToMD() {
-    this.getView()?.convertExcalidrawToMD();
+    void this.getView()?.convertExcalidrawToMD();
   }
 
   actionToggleViewMode() {
@@ -242,9 +242,9 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       return;
     }
     if (this.state.isPreviewMode) {
-      view.changeTextMode(TextMode.raw);
+      void view.changeTextMode(TextMode.raw);
     } else {
-      view.changeTextMode(TextMode.parsed);
+      void view.changeTextMode(TextMode.parsed);
     }
   }
 
@@ -273,7 +273,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     if (!view) {
       return;
     }
-    search(view);
+    void search(view);
   }
 
   actionOCR(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
@@ -289,7 +289,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       );
       return;
     }
-    plugin.taskbone.getTextForView(view, { forceReScan: isWinCTRLorMacCMD(e) });
+    void plugin.taskbone.getTextForView(view, { forceReScan: isWinCTRLorMacCMD(e) });
   }
 
   actionOpenLink(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
@@ -303,7 +303,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       shiftKey: e.shiftKey,
       altKey: e.altKey,
     });
-    view.handleLinkClick(event, true);
+    void view.handleLinkClick(event, true);
   }
 
   actionOpenLinkProperties() {
@@ -317,7 +317,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       shiftKey: false,
       altKey: false,
     });
-    view.handleLinkClick(event);
+    void view.handleLinkClick(event);
   }
 
   actionForceSave() {
@@ -325,7 +325,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     if (!view) {
       return;
     }
-    view.forceSave();
+    void view.forceSave();
   }
 
   actionExportLibrary() {
@@ -333,7 +333,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     if (!plugin) {
       return;
     }
-    plugin.exportLibrary();
+    void plugin.exportLibrary();
   }
 
   actionExportImage() {
@@ -353,7 +353,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     if (!view) {
       return;
     }
-    view.openAsMarkdown();
+    void view.openAsMarkdown();
   }
 
   actionLinkToElement(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
@@ -418,7 +418,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       return;
     }
     this.props.centerPointer();
-    view.insertBackOfTheNoteCard();
+    void view.insertBackOfTheNoteCard();
   }
 
   actionInsertLaTeX(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
@@ -469,7 +469,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     }
     const f = plugin.app.vault.getAbstractFileByPath(key);
     if (f && f instanceof TFile) {
-      plugin.scriptEngine.executeScript(
+      void plugin.scriptEngine.executeScript(
         view,
         await plugin.app.vault.read(f),
         plugin.scriptEngine.getScriptName(f),

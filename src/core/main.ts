@@ -777,7 +777,7 @@ export default class ExcalidrawPlugin extends Plugin {
     );
 
     try {
-      this.loadSettings({ reEnableAutosave: true }).then(
+      void this.loadSettings({ reEnableAutosave: true }).then(
         this.onloadCheckForOnceOffSettingsUpdates.bind(this),
       );
     } catch (e) {
@@ -901,7 +901,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.logStartupEvent("Fonts initialized");
 
     try {
-      imageCache.initializeDB(this);
+      void imageCache.initializeDB(this);
     } catch (e) {
       new Notice("Error initializing image cache", 6000);
       console.error("Error initializing image cache", e);
@@ -948,11 +948,11 @@ export default class ExcalidrawPlugin extends Plugin {
     //initialization that can happen after Excalidraw views are initialized
     //---------------------------------------------------------------------
 
-    this.fileManager.initialize(); //fileManager will preLoad the filecache
-    this.eventManager.initialize(); //eventManager also adds event listner to filecache
+    void this.fileManager.initialize(); //fileManager will preLoad the filecache
+    void this.eventManager.initialize(); //eventManager also adds event listner to filecache
 
     try {
-      this.runStartupScript();
+      void this.runStartupScript();
     } catch (e) {
       new Notice("Error running startup script", 6000);
       console.error("Error running startup script", e);
@@ -987,7 +987,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.logStartupEvent("Editor suggester registered");
 
     try {
-      this.setPropertyTypes();
+      void this.setPropertyTypes();
     } catch (e) {
       new Notice("Error setting up property types", 6000);
       console.error("Error setting up property types", e);
@@ -1212,7 +1212,7 @@ export default class ExcalidrawPlugin extends Plugin {
         if (fileShouldDefaultAsExcalidraw(leaf.view.file?.path, this.app)) {
           this.excalidrawFileModes[(leaf as any).id || leaf.view.file.path] =
             VIEW_TYPE_EXCALIDRAW;
-          setExcalidrawView(leaf);
+          void setExcalidrawView(leaf);
         } else {
           foldExcalidrawSection(leaf.view);
         }
@@ -1226,7 +1226,7 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
     if (view) {
-      view.forceSave();
+      void view.forceSave();
       return true;
     }
     return false;
@@ -1453,9 +1453,9 @@ export default class ExcalidrawPlugin extends Plugin {
         el.addEventListener(RERENDER_EVENT, async (e) => {
           e.stopPropagation();
           el.empty();
-          codeblockProcessor(source, el);
+          await codeblockProcessor(source, el);
         });
-        codeblockProcessor(source, el);
+        await codeblockProcessor(source, el);
       },
     );
   }
@@ -1492,7 +1492,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private async actionRibbonClick(e: MouseEvent) {
-    this.createAndOpenDrawing(
+    await this.createAndOpenDrawing(
       getDrawingFilename(this.settings),
       linkClickModifierType(emulateCTRLClickForLinks(e)),
     );
@@ -1527,12 +1527,12 @@ export default class ExcalidrawPlugin extends Plugin {
         );
         if (imgFile && imgFile instanceof TFile) {
           const newIMGpath = fname.substring(0, fname.lastIndexOf(".md")) + ext;
-          this.app.fileManager.renameFile(imgFile, newIMGpath);
+          void this.app.fileManager.renameFile(imgFile, newIMGpath);
         }
       });
     }
     if (!keepOriginal) {
-      this.app.vault.delete(file);
+      void this.app.vault.delete(file);
     }
     return result;
   }
@@ -1545,7 +1545,7 @@ export default class ExcalidrawPlugin extends Plugin {
       .getFiles()
       .filter((f) => f.extension == "excalidraw");
     for (const file of files) {
-      this.convertSingleExcalidrawToMD(file, replaceExtension, keepOriginal);
+      await this.convertSingleExcalidrawToMD(file, replaceExtension, keepOriginal);
     }
     new Notice(`Converted ${files.length} files.`);
   }
@@ -1728,7 +1728,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public async activeLeafChangeEventHandler(leaf: WorkspaceLeaf) {
-    this.eventManager.onActiveLeafChangeHandler(leaf);
+    await this.eventManager.onActiveLeafChangeHandler(leaf);
   }
 
   public setDebounceActiveLeafChangeHandler() {
@@ -1814,7 +1814,7 @@ export default class ExcalidrawPlugin extends Plugin {
     ExcalidrawSidepanelView.onPluginUnload(this);
     const excalidrawViews = getExcalidrawViews(this.app);
     excalidrawViews.forEach(({ leaf }) => {
-      this.setMarkdownView(leaf);
+      void this.setMarkdownView(leaf);
     });
 
     if (versionUpdateCheckTimer) {
@@ -2104,15 +2104,15 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public async renameEventHandler(file: TAbstractFile, oldPath: string) {
-    this.fileManager.renameEventHandler(file, oldPath);
+    await this.fileManager.renameEventHandler(file, oldPath);
   }
 
   public async modifyEventHandler(file: TFile) {
-    this.fileManager.modifyEventHandler(file);
+    await this.fileManager.modifyEventHandler(file);
   }
 
   public async deleteEventHandler(file: TFile) {
-    this.fileManager.deleteEventHandler(file);
+    await this.fileManager.deleteEventHandler(file);
   }
 
   public addThemeObserver() {
@@ -2198,7 +2198,7 @@ export default class ExcalidrawPlugin extends Plugin {
         insertLaTeXToView(this.activeExcalidrawView, true);
         break;
       case "card":
-        this.activeExcalidrawView.insertBackOfTheNoteCard(true);
+        void this.activeExcalidrawView.insertBackOfTheNoteCard(true);
         break;
     }
   }
