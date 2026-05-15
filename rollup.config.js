@@ -83,110 +83,104 @@ function minifyCode(code) {
 }
 
 // Build-time placeholders that are resolved at runtime in src/lang/helpers.ts.
-// Keep names stable and keep this map in sync with TOKENS in helpers.ts.
+// Kept in sync with TOKENS in helpers.ts.
 const DEVICE_TOKEN_VALUES = {
   IF_DESKTOP_START: "__EXD_IF_DESKTOP__",
   IF_DESKTOP_END: "__EXD_END_IF_DESKTOP__",
   IF_APPLE_START: "__EXD_IF_APPLE__",
   IF_APPLE_ELSE: "__EXD_ELSE_APPLE__",
   IF_APPLE_END: "__EXD_END_IF_APPLE__",
-  DEVTOOLS_SHORTCUT: "__EXD_DEVTOOLS_SHORTCUT__",
+  // We no longer need DEVTOOLS_SHORTCUT here, the Apple ternary regex catches it naturally.
+  
+  // Variables mocked in our sandbox evaluation
+  LABEL_ALT: "__EXD_LABEL_ALT__",
+  LABEL_CTRL: "__EXD_LABEL_CTRL__",
+  LABEL_META: "__EXD_LABEL_META__",
+  LABEL_SHIFT: "__EXD_LABEL_SHIFT__",
+  FRONTMATTER_LINK_BRACKETS: "__EXD_FRONTMATTER_LINK_BRACKETS__",
+  FRONTMATTER_LINK_PREFIX: "__EXD_FRONTMATTER_LINK_PREFIX__",
+  FRONTMATTER_URL_PREFIX: "__EXD_FRONTMATTER_URL_PREFIX__",
+  CJK_FONTS: "__EXD_CJK_FONTS__",
+  PLUGIN_VERSION: "__EXD_PLUGIN_VERSION__",
 };
-
-function replaceDesktopConditionalBlocks(input, deviceTokens) {
-  // Preserve desktop-only message fragments for runtime decision.
-  const start = "${DEVICE.isDesktop ? `";
-  const end = "` : \"\"}";
-  let output = "";
-  let cursor = 0;
-
-  while (true) {
-    const startIndex = input.indexOf(start, cursor);
-    if (startIndex === -1) {
-      output += input.slice(cursor);
-      break;
-    }
-
-    const contentStart = startIndex + start.length;
-    const endIndex = input.indexOf(end, contentStart);
-    if (endIndex === -1) {
-      output += input.slice(cursor);
-      break;
-    }
-
-    output += input.slice(cursor, startIndex);
-    output += `${deviceTokens.IF_DESKTOP_START}${input.slice(contentStart, endIndex)}${deviceTokens.IF_DESKTOP_END}`;
-    cursor = endIndex + end.length;
-  }
-
-  return output;
-}
-
-function replaceAppleTernaryBlocks(input, deviceTokens) {
-  // Preserve Apple vs non-Apple branch text for runtime decision.
-  const appleTernaryRegex = /\(\s*DEVICE\.isIOS\s*\|\|\s*DEVICE\.isMacOS\s*\?\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"\s*\)/g;
-
-  return input.replace(appleTernaryRegex, (_, trueValue, falseValue) =>
-    `"${deviceTokens.IF_APPLE_START}${trueValue}${deviceTokens.IF_APPLE_ELSE}${falseValue}${deviceTokens.IF_APPLE_END}"`
-  );
-}
 
 function tokenizeLocaleContent(content, deviceTokens = DEVICE_TOKEN_VALUES) {
   let tokenized = content;
 
-  tokenized = replaceDesktopConditionalBlocks(tokenized, deviceTokens);
-  tokenized = replaceAppleTernaryBlocks(tokenized, deviceTokens);
+  // 1. Desktop Conditional
+  // Matches: ${ DEVICE.isDesktop ? `...` : "" }
+  // Robust against arbitrary spaces, newlines, and empty string quote types ("", '', or ``).
+  const desktopRegex = /\$\{\s*DEVICE\.isDesktop\s*\?\s*`([\s\S]*?)`\s*:\s*["'`]{2}\s*\}/g;
+  tokenized = tokenized.replace(desktopRegex, (match, trueBranch) => {
+    return `${deviceTokens.IF_DESKTOP_START}${trueBranch}${deviceTokens.IF_DESKTOP_END}`;
+  });
 
-  // Add new replacements here when locale files introduce new dynamic snippets.
-  // Any new token emitted here must be handled in src/lang/helpers.ts.
-  const replacements = [
-    [/\$\{\s*labelALT\(\)\s*\}/g, "__EXD_LABEL_ALT__"],
-    [/\$\{\s*labelCTRL\(\)\s*\}/g, "__EXD_LABEL_CTRL__"],
-    [/\$\{\s*labelMETA\(\)\s*\}/g, "__EXD_LABEL_META__"],
-    [/\$\{\s*labelSHIFT\(\)\s*\}/g, "__EXD_LABEL_SHIFT__"],
-    [/\blabelALT\(\)/g, '"__EXD_LABEL_ALT__"'],
-    [/\blabelCTRL\(\)/g, '"__EXD_LABEL_CTRL__"'],
-    [/\blabelMETA\(\)/g, '"__EXD_LABEL_META__"'],
-    [/\blabelSHIFT\(\)/g, '"__EXD_LABEL_SHIFT__"'],
-    [/\$\{\s*FRONTMATTER_KEYS\["link-brackets"\]\.name\s*\}/g, "__EXD_FRONTMATTER_LINK_BRACKETS__"],
-    [/\$\{\s*FRONTMATTER_KEYS\["link-prefix"\]\.name\s*\}/g, "__EXD_FRONTMATTER_LINK_PREFIX__"],
-    [/\$\{\s*FRONTMATTER_KEYS\["url-prefix"\]\.name\s*\}/g, "__EXD_FRONTMATTER_URL_PREFIX__"],
-    [/\$\{\s*CJK_FONTS\s*\}/g, "__EXD_CJK_FONTS__"],
-    [/\$\{\s*PLUGIN_VERSION\s*\}/g, "__EXD_PLUGIN_VERSION__"],
-    ["${DEVICE.isIOS || DEVICE.isMacOS ? \"CMD+OPT+i\" : \"CTRL+SHIFT+i\"}", deviceTokens.DEVTOOLS_SHORTCUT],
-    ["${DEVICE.isMacOS ? \"CMD+OPT+i\" : \"CTRL+SHIFT+i\"}", deviceTokens.DEVTOOLS_SHORTCUT],
-  ];
-
-  for (const [pattern, replacement] of replacements) {
-    if (typeof pattern === "string") {
-      tokenized = tokenized.split(pattern).join(replacement);
-    } else {
-      tokenized = tokenized.replace(pattern, replacement);
-    }
-  }
+  // 2. Apple / MacOS Ternaries
+  // Matches both: ( DEVICE.isIOS || DEVICE.isMacOS ? "A" : "B" ) AND DEVICE.isMacOS ? "A" : "B"
+  // Robust against optional parentheses, line breaks, and varying quote types.
+  const appleTernaryRegex = /(?:\(\s*)?(?:DEVICE\.isIOS\s*\|\|\s*)?DEVICE\.isMacOS\s*\?\s*(["'`])([\s\S]*?)\1\s*:\s*(["'`])([\s\S]*?)\3(?:\s*\))?/g;
+  tokenized = tokenized.replace(appleTernaryRegex, (match, quote1, trueBranch, quote2, falseBranch) => {
+    // Wrap in double quotes so the resulting JS is a valid string literal
+    return `"${deviceTokens.IF_APPLE_START}${trueBranch}${deviceTokens.IF_APPLE_ELSE}${falseBranch}${deviceTokens.IF_APPLE_END}"`;
+  });
 
   return tokenized;
 }
 
-function serializeLocaleToJson(content) {
-  const assignmentCode = minifyCode(`x = ${content};`);
-  const locale = new Function(`
+function serializeLocaleToJson(content, deviceTokens = DEVICE_TOKEN_VALUES) {
+  // Rather than regex-replacing variables, we inject mock variables into the Node sandbox.
+  // When Node evaluates the file, it will natively resolve ${labelALT()} to the token string, 
+  // perfectly bypassing any linter formatting, ES6 template literal breaks, or comment syntax.
+  const sandboxEnvironment = `
     const TAG_AUTOEXPORT = "Autoexport";
     const TAG_MDREADINGMODE = "MDReadingMode";
     const TAG_PDFEXPORT = "PDFExport";
-    let x = {};
-    ${assignmentCode};
+
+    const PLUGIN_VERSION = "${deviceTokens.PLUGIN_VERSION}";
+    const CJK_FONTS = "${deviceTokens.CJK_FONTS}";
+
+    const labelALT = () => "${deviceTokens.LABEL_ALT}";
+    const labelCTRL = () => "${deviceTokens.LABEL_CTRL}";
+    const labelMETA = () => "${deviceTokens.LABEL_META}";
+    const labelSHIFT = () => "${deviceTokens.LABEL_SHIFT}";
+
+    const FRONTMATTER_KEYS = {
+      "link-brackets": { name: "${deviceTokens.FRONTMATTER_LINK_BRACKETS}" },
+      "link-prefix": { name: "${deviceTokens.FRONTMATTER_LINK_PREFIX}" },
+      "url-prefix": { name: "${deviceTokens.FRONTMATTER_URL_PREFIX}" }
+    };
+
+    // Fallback for DEVICE to prevent ReferenceErrors if a conditional regex misses an edge case
+    const DEVICE = { isDesktop: false, isIOS: false, isMacOS: false };
+
+    let x = ${content};
     return x;
-  `)();
-  return JSON.stringify(locale);
+  `;
+
+  try {
+    const locale = new Function(sandboxEnvironment)();
+    return JSON.stringify(locale);
+  } catch (err) {
+    console.error("Error evaluating locale content.");
+    throw err;
+  }
 }
 
 function compressLanguageFile(lang) {
   const inputDir = "./src/lang/locale";
   const filePath = `${inputDir}/${lang}.ts`;
   let content = fs.readFileSync(filePath, "utf-8");
-  content = trimLastSemicolon(content.split("export default")[1].trim());
-  const tokenizedContent = tokenizeLocaleContent(content);
+  
+  // Safely extract the default export object, ignoring surrounding types/interfaces
+  const exportMatch = content.match(/export\s+default\s+([\s\S]+)/);
+  if (!exportMatch) throw new Error(`Could not find 'export default' in ${filePath}`);
+  
+  let objectContent = exportMatch[1].trim();
+  if (objectContent.endsWith(";")) {
+    objectContent = objectContent.slice(0, -1);
+  }
+
+  const tokenizedContent = tokenizeLocaleContent(objectContent);
   const localeJson = serializeLocaleToJson(tokenizedContent);
   return LZString.compressToBase64(localeJson);
 }

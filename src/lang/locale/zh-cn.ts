@@ -160,10 +160,8 @@ export default {
   EXPORT_EXCALIDRAW: "导出为 .excalidraw 文件（旧版绘图文件格式）",
   LINK_BUTTON_CLICK_NO_TEXT: "请选择一个包含内部或外部链接的元素。\n",
   LINEAR_ELEMENT_LINK_CLICK_ERROR:
-    "箭头和线条元素的链接无法通过 " +
-    labelCTRL() +
-    " + 点击元素来跳转，因为这也会激活线条编辑器。\n" +
-    "请使用右键上下文菜单打开链接，或点击元素右上角的链接指示器。\n",
+    `箭头和线条元素的链接无法通过 ${labelCTRL()} + 点击元素来跳转，因为这也会激活线条编辑器。\n` +
+    `请使用右键上下文菜单打开链接，或点击元素右上角的链接指示器。\n`,
   FILENAME_INVALID_CHARS: '文件名不能包含以下符号： * " \\ < > : | ? #',
   FORCE_SAVE: "保存（同时更新嵌入了该绘图的 Markdown 文档）",
   RAW: "正以 RAW 模式显示链接\n点击切换到 PREVIEW 模式",
@@ -541,23 +539,21 @@ export default {
   SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME:
     "Markdown 模式的 Excalidraw 在阅读模式将渲染为图像",
   SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC:
-    "当您在 Markdown Reading 模式（又名“阅读绘图的背景笔记”）时，Excalidraw 绘图是否渲染为图像。<br>" +
-    "该项不会影响：Excalidraw 模式的、嵌入到 Markdown 文档的、或悬停预览时的绘图显示。<br>" +
-    "请参阅余下部分中与 <a href='#" +
-    TAG_MDREADINGMODE +
-    "'>Markdown Reading 模式</a> 相关的其他设置。<br>" +
-    "⚠️ 关闭并重新打开 Excalidraw/Markdown 文件后生效。",
+    `当您在 Markdown Reading 模式（又名“阅读绘图的背景笔记”）时，Excalidraw 绘图是否渲染为图像。<br>` +
+    `该项不会影响：Excalidraw 模式的、嵌入到 Markdown 文档的、或悬停预览时的绘图显示。<br>` +
+    `请参阅余下部分中与 <a href='#${
+      TAG_MDREADINGMODE
+    }'>Markdown Reading 模式</a> 相关的其他设置。<br>` +
+    `⚠️ 关闭并重新打开 Excalidraw/Markdown 文件后生效。`,
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME:
     "在 Obsidian 中导出为 PDF 时 Excalidraw 将渲染为图片",
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC:
-    "该项控制在使用 Obsidian 内置的 <b>导出为 PDF</b> 功能，如何将 Excalidraw 文件导出为 PDF。<br>" +
-    "<ul><li><b>启用：</b>PDF 将包含 Excalidraw 绘图图片。</li>" +
-    "<li><b>禁用：</b>PDF 将包含 Markdown 模式的绘图。</li></ul>" +
-    "注意：该项不会影响 Excalidraw 本身的 PDF 导出功能。<br>" +
-    "请参阅下方 <a href='#" +
-    TAG_PDFEXPORT +
-    "'>PDF 导出设置</a>。<br>" +
-    "⚠️ 关闭并重新打开 Excalidraw/Markdown 文件后生效。",
+    `该项控制在使用 Obsidian 内置的 <b>导出为 PDF</b> 功能，如何将 Excalidraw 文件导出为 PDF。<br>` +
+    `<ul><li><b>启用：</b>PDF 将包含 Excalidraw 绘图图片。</li>` +
+    `<li><b>禁用：</b>PDF 将包含 Markdown 模式的绘图。</li></ul>` +
+    `注意：该项不会影响 Excalidraw 本身的 PDF 导出功能。<br>` +
+    `请参阅下方 <a href='#${TAG_PDFEXPORT}'>PDF 导出设置</a>。<br>` +
+    `⚠️ 关闭并重新打开 Excalidraw/Markdown 文件后生效。`,
   MODES_HEAD: "UI 模式",
   DESKTOP_UI_MODE_NAME: "桌面端偏好模式",
   DESKTOP_UI_MODE_DESC: "桌面端设备默认 UI 模式。",
@@ -648,13 +644,14 @@ export default {
     "若您不愿绘图中的链接外观因此而变化，可使用 <code>[[内部链接|别名]]</code>。",
   DRAG_MODIFIER_NAME: "修饰键",
   DRAG_MODIFIER_DESC:
-    "在您按住点击链接或拖动元素时，可以触发某些行为。您可以为这些行为添加修饰键。" +
-    "Excalidraw 不会检查您的设置是否合理，因此请谨慎设置，避免冲突。" +
-    "以下选项在苹果和非苹果设备上区别很大，如果您在多个硬件平台上使用 Obsidian，需要分别进行设置。" +
-    "选项里的 4 个开关依次代表 " +
-    (DEVICE.isIOS || DEVICE.isMacOS
-      ? "Shift, CMD, OPT, CONTROL."
-      : "Shift, Ctrl, Alt, Meta (Win 键)。"),
+    `在您按住点击链接或拖动元素时，可以触发某些行为。您可以为这些行为添加修饰键。` +
+    `Excalidraw 不会检查您的设置是否合理，因此请谨慎设置，避免冲突。` +
+    `以下选项在苹果和非苹果设备上区别很大，如果您在多个硬件平台上使用 Obsidian，需要分别进行设置。` +
+    `选项里的 4 个开关依次代表 ${
+      DEVICE.isIOS || DEVICE.isMacOS
+        ? "Shift, CMD, OPT, CONTROL."
+        : "Shift, Ctrl, Alt, Meta (Win 键)。"
+    }`,
   LONG_PRESS_DESKTOP_NAME: "长按打开（电脑端）",
   LONG_PRESS_DESKTOP_DESC:
     "长按打开在 Markdown 文档中嵌入的 Excalidraw 绘图。单位：毫秒。",
@@ -830,13 +827,13 @@ export default {
     "该操作将删除所有绘图文件的备份。备份是绘图文件损坏时的一种补救手段。每次您打开 Obsidian 时，本插件会自动清理无用的备份。您确定要现在删除所有备份吗？",
   EMBED_REUSE_EXPORTED_IMAGE_NAME: "将之前已导出图片作为预览图",
   EMBED_REUSE_EXPORTED_IMAGE_DESC:
-    "该项与下方“导出”部分“导出设置”中的 <a href='#" +
-    TAG_AUTOEXPORT +
-    "'>自动导出 SVG/PNG 副本</a> 选项配合使用。如果嵌入到 Markdown 文档中的绘图文件存在同名的 SVG/PNG 副本，则将其作为预览图，而不再重新生成。<br>" +
-    "该项能够提高 Markdown 文档的打开速度，尤其是当嵌入到 Markdown 文档中的绘图文件中含有大量图片或 MD-Embed 时。" +
-    "但是，该项也可能导致预览图无法立即响应绘图文件或者 Obsidian 主题的修改。<br>" +
-    "该项仅作用于嵌入到 Markdown 文档中的绘图。" +
-    "该项无法提升绘图文件的打开速度。详见 <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>此说明</a>。",
+    `该项与下方“导出”部分“导出设置”中的 <a href='#${
+      TAG_AUTOEXPORT
+    }'>自动导出 SVG/PNG 副本</a> 选项配合使用。如果嵌入到 Markdown 文档中的绘图文件存在同名的 SVG/PNG 副本，则将其作为预览图，而不再重新生成。<br>` +
+    `该项能够提高 Markdown 文档的打开速度，尤其是当嵌入到 Markdown 文档中的绘图文件中含有大量图片或 MD-Embed 时。` +
+    `但是，该项也可能导致预览图无法立即响应绘图文件或者 Obsidian 主题的修改。<br>` +
+    `该项仅作用于嵌入到 Markdown 文档中的绘图。` +
+    `该项无法提升绘图文件的打开速度。详见 <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>此说明</a>。`,
   /*EMBED_PREVIEW_SVG_NAME: "生成 SVG 格式的预览图",
   EMBED_PREVIEW_SVG_DESC:
     "<b>开启：</b>为嵌入到 Markdown 文档中的绘图生成 <a href='https://en.wikipedia.org/wiki/Scalable_Vector_Graphics' target='_blank'>SVG</a> 格式的预览图。<br>" +
@@ -862,12 +859,12 @@ export default {
     "格式在嵌入图像时指定自定义高度。",
   EMBED_TYPE_NAME: "“嵌入绘图到当前 Markdown 文档中”系列命令的源文件类型",
   EMBED_TYPE_DESC:
-    "执行“嵌入绘图到当前 Markdown 文档中”系列命令时，要嵌入绘图文件本身，还是嵌入其 SVG 或 PNG 副本。<br>" +
-    "如果您想选择 SVG/PNG 副本，需要先开启下方“导出”部分“导出设置”中的 <a href='#" +
-    TAG_AUTOEXPORT +
-    "'>自动导出 SVG/PNG 副本</a>。<br>" +
-    "如果您选择了 SVG/PNG 副本，当副本不存在时，该命令将会插入一条损坏的链接，您需要打开绘图文件并手动导出副本才能修复——" +
-    "也就是说，该项不会自动帮您生成 SVG/PNG 副本，而只会引用已有的 SVG/PNG 副本。",
+    `执行“嵌入绘图到当前 Markdown 文档中”系列命令时，要嵌入绘图文件本身，还是嵌入其 SVG 或 PNG 副本。<br>` +
+    `如果您想选择 SVG/PNG 副本，需要先开启下方“导出”部分“导出设置”中的 <a href='#${
+      TAG_AUTOEXPORT
+    }'>自动导出 SVG/PNG 副本</a>。<br>` +
+    `如果您选择了 SVG/PNG 副本，当副本不存在时，该命令将会插入一条损坏的链接，您需要打开绘图文件并手动导出副本才能修复——` +
+    `也就是说，该项不会自动帮您生成 SVG/PNG 副本，而只会引用已有的 SVG/PNG 副本。`,
   EMBED_MARKDOWN_COMMENT_NAME: "将链接作为注释插入",
   EMBED_MARKDOWN_COMMENT_DESC:
     "在图像下方以 Markdown 链接形式插入原始 Excalidraw 文件的链接，如 <code>%%[[drawing.excalidraw]]%%</code>。<br>" +

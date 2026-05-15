@@ -24,6 +24,21 @@ import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { EmbeddableLeafRef } from "src/types/excalidrawViewTypes";
 import { t } from "src/lang/helpers";
 
+type PdfViewLike = {
+  containerEl?: HTMLElement;
+  viewer?: {
+    child?: {
+      pdfViewer?: {
+        setBackground?(color: string | null, isInverted: boolean): void;
+      };
+    };
+  };
+};
+
+type PdfObserverRef = React.MutableRefObject<MutationObserver | null> & {
+  currentCleanup?: () => void;
+};
+
 const CANVAS_VIEWTYPES = new Set([
   "markdown",
   "bases",
@@ -31,16 +46,6 @@ const CANVAS_VIEWTYPES = new Set([
   "video",
   "pdf",
 ]);
-
-declare module "obsidian" {
-  interface Workspace {
-    floatingSplit: any;
-  }
-
-  interface WorkspaceSplit {
-    containerEl: HTMLDivElement;
-  }
-}
 
 let noticeTimer: number;
 function showNoticeOnce(message: string) {
@@ -67,7 +72,7 @@ function getTheme(view: ExcalidrawView, theme: string): string {
           : "theme-light";
 }
 
-function setPDFViewTheme(view: ExcalidrawView, pdfView: any) {
+function setPDFViewTheme(view: ExcalidrawView, pdfView: PdfViewLike | null) {
   if (!pdfView) {
     return;
   }
@@ -79,7 +84,7 @@ function setPDFViewTheme(view: ExcalidrawView, pdfView: any) {
     }
     const thumbnailViewEl = pdfView.containerEl?.querySelector(
       ".pdf-thumbnail-view",
-    );
+    ) as HTMLElement | null;
     if (thumbnailViewEl) {
       thumbnailViewEl.style.filter = "var(--theme-filter)";
     }
@@ -109,9 +114,7 @@ function setPDFViewTheme(view: ExcalidrawView, pdfView: any) {
 function setupPdfViewEnhancements(
   view: ExcalidrawView,
   leafRef: React.MutableRefObject<EmbeddableLeafRef | null>,
-  pdfObserverRef: React.MutableRefObject<MutationObserver | null> & {
-    currentCleanup?: () => void;
-  },
+  pdfObserverRef: PdfObserverRef,
   pdfObserverDisabledRef: React.MutableRefObject<boolean>,
 ) {
   const pdfView = leafRef.current?.node?.child;
@@ -153,10 +156,10 @@ function setupPdfViewEnhancements(
     const scroller =
       pdfView.containerEl?.querySelector(".pdf-viewer-container") || null;
     let active = false;
-    let lastX = 0,
-      lastY = 0;
-    let scaleX = 1,
-      scaleY = 1;
+    let lastX = 0;
+    let lastY = 0;
+    let scaleX = 1;
+    let scaleY = 1;
 
     const getScaleFromAncestor = (target: Element | null) => {
       // Read scale from the outer excalidraw embeddable container transform
@@ -174,19 +177,19 @@ function setupPdfViewEnhancements(
       if (t.startsWith("matrix3d(")) {
         // matrix3d: m11=a1, m12=b1, m21=a2, m22=b2 in the first 6 entries
         const m = t.slice(9, -1).split(",").map(Number);
-        const a = m[0],
-          b = m[1],
-          c = m[4],
-          d = m[5];
+        const a = m[0];
+        const b = m[1];
+        const c = m[4];
+        const d = m[5];
         // scaleX = length of first column, scaleY = length of second column
         return { sx: Math.hypot(a, b) || 1, sy: Math.hypot(c, d) || 1 };
       }
       if (t.startsWith("matrix(")) {
         const m = t.slice(7, -1).split(",").map(Number); // [a,b,c,d,tx,ty]
-        const a = m[0],
-          b = m[1],
-          c = m[2],
-          d = m[3];
+        const a = m[0];
+        const b = m[1];
+        const c = m[2];
+        const d = m[3];
         return { sx: Math.hypot(a, b) || 1, sy: Math.hypot(c, d) || 1 };
       }
       return { sx: 1, sy: 1 };
@@ -260,15 +263,9 @@ function setupPdfViewEnhancements(
       try {
         (view.contentEl as HTMLElement).style.cursor = "";
       } catch {}
-      window.removeEventListener("pointermove", onPointerMove, {
-        capture: true,
-      } as any);
-      window.removeEventListener("pointerup", onPointerUp, {
-        capture: true,
-      } as any);
-      window.removeEventListener("pointercancel", onPointerUp, {
-        capture: true,
-      } as any);
+      window.removeEventListener("pointermove", onPointerMove, true);
+      window.removeEventListener("pointerup", onPointerUp, true);
+      window.removeEventListener("pointercancel", onPointerUp, true);
     };
 
     const root = pdfView.containerEl as HTMLElement;
@@ -277,22 +274,14 @@ function setupPdfViewEnhancements(
     });
 
     const cleanupPan = () => {
-      root?.removeEventListener("pointerdown", onPointerDownCapture, {
-        capture: true,
-      } as any);
-      window.removeEventListener("pointermove", onPointerMove, {
-        capture: true,
-      } as any);
-      window.removeEventListener("pointerup", onPointerUp, {
-        capture: true,
-      } as any);
-      window.removeEventListener("pointercancel", onPointerUp, {
-        capture: true,
-      } as any);
+      root?.removeEventListener("pointerdown", onPointerDownCapture, true);
+      window.removeEventListener("pointermove", onPointerMove, true);
+      window.removeEventListener("pointerup", onPointerUp, true);
+      window.removeEventListener("pointercancel", onPointerUp, true);
       heightObserver?.disconnect();
       heightObserver = null;
     };
-    (pdfObserverRef as any).currentCleanup = () => {
+    pdfObserverRef.currentCleanup = () => {
       cleanupPan();
     };
 
@@ -339,7 +328,7 @@ function setupPdfViewEnhancements(
 
                 // Cleanup existing handlers/observers
                 try {
-                  (pdfObserverRef as any).currentCleanup?.();
+                  pdfObserverRef.currentCleanup?.();
                 } catch {}
                 try {
                   pdfObserverRef.current?.disconnect();
@@ -350,8 +339,8 @@ function setupPdfViewEnhancements(
                   if (leafRef.current?.node?.child?.containerEl?.isConnected) {
                     setupPdfViewEnhancements(
                       view,
-                      leafRef as React.MutableRefObject<EmbeddableLeafRef | null>,
-                      pdfObserverRef as any,
+                      leafRef,
+                      pdfObserverRef,
                       pdfObserverDisabledRef,
                     );
                   }
@@ -362,8 +351,8 @@ function setupPdfViewEnhancements(
           detachObserver.observe(rootEl, { childList: true, subtree: true });
 
           // Extend cleanup to also stop the detachObserver and the class observer
-          const prevCleanup = (pdfObserverRef as any).currentCleanup;
-          (pdfObserverRef as any).currentCleanup = () => {
+          const prevCleanup = pdfObserverRef.currentCleanup;
+          pdfObserverRef.currentCleanup = () => {
             try {
               prevCleanup?.();
             } catch {}
@@ -387,7 +376,7 @@ function setupPdfViewEnhancements(
     if (existing) {
       patchPDF();
     } else {
-      let timeoutId: number = null as any;
+      let timeoutId: number | null = null;
       const mo = new MutationObserver((_, obs) => {
         const el = root.querySelector(selector);
         if (el) {
@@ -490,7 +479,9 @@ function RenderObsidianView({
   const isActiveRef = React.useRef(false);
   const viewTypeRef = React.useRef("empty");
   const themeRef = React.useRef(theme);
-  const pdfObserverRef = React.useRef(null);
+  const pdfObserverRef = React.useRef<MutationObserver | null>(
+    null,
+  ) as PdfObserverRef;
   const pdfObserverDisabledRef = React.useRef(false);
   const mobilePatchCleanupRef = React.useRef(null);
   const initialViewFileRef = React.useRef(view.file);
@@ -504,7 +495,7 @@ function RenderObsidianView({
   //block propagation of events to the parent if the embeddable element is active
   //--------------------------------------------------------------------------------
   const stopPropagation = React.useCallback(
-    (event: React.PointerEvent<HTMLElement>) => {
+    (event: Event) => {
       if (isActiveRef.current) {
         event.stopPropagation(); // Stop the event from propagating up the DOM tree
       }
@@ -641,15 +632,13 @@ function RenderObsidianView({
           // Moved PDF setup logic into a helper for readability
           setupPdfViewEnhancements(
             view,
-            leafRef as React.MutableRefObject<EmbeddableLeafRef | null>,
-            pdfObserverRef as unknown as React.MutableRefObject<MutationObserver | null> & {
-              currentCleanup?: () => void;
-            },
+            leafRef,
+            pdfObserverRef,
             pdfObserverDisabledRef,
           );
         }
       } else {
-        (async () => {
+        void (async () => {
           const { rootSplit, leaf } = createLeaf(view);
           leafRef.current.leaf = leaf;
           await leafRef.current.leaf.openFile(file, {
@@ -697,7 +686,7 @@ function RenderObsidianView({
 
     return () => {
       // disconnect observer if any
-      (pdfObserverRef as any).currentCleanup?.();
+      pdfObserverRef.currentCleanup?.();
       pdfObserverRef.current?.disconnect();
       pdfObserverRef.current = null;
 
@@ -982,7 +971,7 @@ function RenderObsidianView({
   //Switch to edit mode when markdown view is clicked
   //--------------------------------------------------------------------------------
   const handleClick = React.useCallback(
-    (event?: React.PointerEvent<HTMLElement>) => {
+    (event?: Event) => {
       if (view.file !== initialViewFileRef.current) {
         return;
       }
@@ -1004,7 +993,10 @@ function RenderObsidianView({
         //Handle canvas node
         const newTheme = getTheme(view, themeRef.current);
         containerRef.current?.addClasses(["is-editing", "is-focused"]);
-        view.canvasNodeFactory.startEditing(leafRef.current.node, newTheme);
+        void view.canvasNodeFactory.startEditing(
+          leafRef.current.node,
+          newTheme,
+        );
         return;
       }
 
@@ -1124,7 +1116,7 @@ function RenderObsidianView({
         //!node.isEditing
         const newTheme = getTheme(view, themeRef.current);
         containerRef.current?.addClasses(["is-editing", "is-focused"]);
-        view.canvasNodeFactory.startEditing(node, newTheme);
+        void view.canvasNodeFactory.startEditing(node, newTheme);
       } else {
         containerRef.current?.removeClasses(["is-editing", "is-focused"]);
         view.canvasNodeFactory.stopEditing(node);
@@ -1165,7 +1157,6 @@ function RenderObsidianView({
         if (!isActiveRef.current) {
           leafRef.current.leaf.view.setMode(modes.preview);
           isEditingRef.current = false;
-          return;
         }
       }
     }

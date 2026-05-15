@@ -1,7 +1,19 @@
 // src/types/ExcalidrawViewTypes.ts
 
-import { WorkspaceLeaf } from "obsidian";
-import { FileId } from "@zsviczian/excalidraw/types/element/src/types";
+import { ViewStateResult, WorkspaceLeaf } from "obsidian";
+import {
+  AppState,
+  BinaryFiles,
+  ExcalidrawInitialDataState,
+  ExcalidrawProps,
+  LibraryItems,
+  SceneData,
+} from "@zsviczian/excalidraw/types/excalidraw/types";
+import {
+  ExcalidrawElement,
+  FileId,
+} from "@zsviczian/excalidraw/types/element/src/types";
+import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src/store";
 import { ObsidianCanvasNode } from "../view/managers/CanvasNodeFactory";
 
 export type Position = { x: number; y: number };
@@ -28,6 +40,77 @@ export interface AutoexportConfig {
   excalidraw: boolean; // Whether to auto-export to Excalidraw format
   theme: "light" | "dark" | "both"; // The theme to use for the export
 }
+
+export type ExcalidrawViewScene = Omit<
+  SceneData,
+  "collaborators" | "captureUpdate"
+> & {
+  elements: NonNullable<SceneData["elements"]>;
+  appState: NonNullable<SceneData["appState"]>;
+  files: BinaryFiles;
+};
+
+export type ExcalidrawViewInitialData = ExcalidrawInitialDataState & {
+  libraryItems?: LibraryItems;
+};
+
+export type ExcalidrawViewAppState = Omit<
+  Partial<AppState>,
+  "showHyperlinkPopup"
+> & {
+  currentStrokeOptions?: unknown;
+  resetCustomPen?: unknown;
+  customPens?: unknown[];
+  pinnedScripts?: string[];
+  showHyperlinkPopup?:
+    | AppState["showHyperlinkPopup"]
+    | {
+        newValue: string;
+        oldValue: string;
+      };
+};
+
+export type ExcalidrawViewUpdateScene = {
+  elements?: ExcalidrawElement[];
+  appState?: ExcalidrawViewAppState;
+  files?: BinaryFiles;
+  forceFlushSync?: boolean;
+  captureUpdate?: CaptureUpdateActionType;
+  storeAction?: "capture" | "none" | "update"; //https://:github.com/excalidraw/excalidraw/pull/7898
+};
+
+export type ExcalidrawLinkOpenEvent = Parameters<
+  NonNullable<ExcalidrawProps["onLinkOpen"]>
+>[1];
+
+export type StencilLibraryData = {
+  library?: LibraryItems;
+  libraryItems?: LibraryItems;
+};
+
+export interface ExcalidrawEphemeralState {
+  rename?: string;
+  subpath?: string;
+  line?: number;
+  match?: {
+    content?: string;
+    matches?: [number, number][];
+  };
+}
+
+export type MarkdownViewOpenState =
+  | ViewStateResult
+  | { focus: boolean }
+  | ExcalidrawEphemeralState;
+
+export type MarkdownBlockCacheEntry = {
+  display: string;
+  node: {
+    type: string;
+    id?: string;
+    [key: string]: unknown;
+  };
+};
 
 export interface ViewSemaphores {
   warnAboutLinearElementLinkClick: boolean;

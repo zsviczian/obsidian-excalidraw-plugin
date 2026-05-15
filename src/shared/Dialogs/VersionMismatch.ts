@@ -62,9 +62,7 @@ export class VersionMismatchPrompt extends Modal {
       .setDesc(t("VERSION_MISMATCH_DISABLE_DESC"))
       .addToggle((tg) =>
         tg
-          .setValue(
-            !this.plugin.settings.compareManifestToPluginVersion ? true : false,
-          )
+          .setValue(!this.plugin.settings.compareManifestToPluginVersion)
           .onChange(async (value) => {
             this.plugin.settings.compareManifestToPluginVersion = !value; // invert because label is Disable ...
             this.isDirty = true;

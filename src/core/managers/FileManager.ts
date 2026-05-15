@@ -71,10 +71,7 @@ export class PluginFileManager {
         (fm && typeof fm[FRONTMATTER_KEYS.plugin.name] !== "undefined") ||
         filename.match(/\.excalidraw$/)
       ) {
-        this.updateFileCache(
-          this.app.vault.getAbstractFileByPath(filename) as TFile,
-          fm,
-        );
+        this.updateFileCache(this.app.vault.getFileByPath(filename), fm);
       }
     });
   }
@@ -224,7 +221,7 @@ export class PluginFileManager {
           )
         : "";
 
-      theme = theme === "" ? "" : theme + ".";
+      theme = theme === "" ? "" : `${theme}.`;
 
       const exportExtension = theme + this.settings.embedType.toLowerCase();
       let imageFullpath = getIMGFilename(file.path, exportExtension);
@@ -362,24 +359,24 @@ export class PluginFileManager {
 
       editor.replaceSelection(
         this.settings.embedWikiLink
-          ? `![[${imageRelativePath}]]\n` +
-              (inclCom
+          ? `![[${imageRelativePath}]]\n${
+              inclCom
                 ? `%%[[${excalidrawRelativePath}|🖋 Edit in Excalidraw]]${
                     otherImageRelativePath
-                      ? ", and the [[" +
-                        otherImageRelativePath +
-                        "|" +
-                        otherTheme.split(".")[0] +
-                        " exported image]]"
+                      ? `, and the [[${otherImageRelativePath}|${
+                          otherTheme.split(".")[0]
+                        } exported image]]`
                       : ""
                   }%%`
-                : "")
-          : `![](${encodeURI(imageRelativePath)})\n` +
-              (inclCom
+                : ""
+            }`
+          : `![](${encodeURI(imageRelativePath)})\n${
+              inclCom
                 ? `%%[🖋 Edit in Excalidraw](${encodeURI(
                     excalidrawRelativePath,
-                  )})${otherImageRelativePath ? ", and the [" + otherTheme.split(".")[0] + " exported image](" + encodeURI(otherImageRelativePath) + ")" : ""}%%`
-                : ""),
+                  )})${otherImageRelativePath ? `, and the [${otherTheme.split(".")[0]} exported image](${encodeURI(otherImageRelativePath)})` : ""}%%`
+                : ""
+            }`,
       );
       editor.focus();
     }
@@ -393,7 +390,7 @@ export class PluginFileManager {
         "my-library",
         "filename, leave blank to cancel action",
       );
-      prompt.openAndGetValue(async (filename: string) => {
+      void prompt.openAndGetValue(async (filename: string) => {
         if (!filename) {
           return;
         }
@@ -405,7 +402,7 @@ export class PluginFileManager {
           filename,
           folderpath,
         );
-        this.app.vault.create(fname, this.settings.library);
+        await this.app.vault.create(fname, this.settings.library);
         new Notice(`Exported library to ${fname}`, 6000);
       });
       return;
@@ -469,11 +466,11 @@ export class PluginFileManager {
           : { active, eState: { subpath } },
     });
 
-    promise.then(() => {
+    void promise.then(() => {
       const ea = this.plugin.ea;
       if (justCreated && ea.onFileCreateHook) {
         try {
-          ea.onFileCreateHook({
+          void ea.onFileCreateHook({
             ea,
             excalidrawFile: drawingFile,
             view: leaf.view as ExcalidrawView,
@@ -560,7 +557,7 @@ export class PluginFileManager {
       this.plugin.lastActiveExcalidrawFilePath = file.path;
     }
 
-    this.moveBAKFile(oldPath, file.path);
+    await this.moveBAKFile(oldPath, file.path);
 
     if (!this.settings.keepInSync) {
       return;
@@ -605,7 +602,7 @@ export class PluginFileManager {
         normalizePath(path.oldImgPath),
       );
       if (imgFile) {
-        this.app.fileManager.renameFile(
+        void this.app.fileManager.renameFile(
           imgFile,
           normalizePath(path.newImgPath),
         );
@@ -663,7 +660,7 @@ export class PluginFileManager {
           !isEditingMarkdownSideInSplitView &&
           excalidrawView.lastSaveTimestamp + 300000 < Date.now()
         ) {
-          excalidrawView.reload(true, excalidrawView.file);
+          await excalidrawView.reload(true, excalidrawView.file);
           return;
         }
         if (file.extension === "md") {
@@ -673,7 +670,7 @@ export class PluginFileManager {
           const inData = new ExcalidrawData(this.plugin);
           const data = await this.app.vault.read(file);
           await inData.loadData(data, file, getTextMode(data));
-          excalidrawView.synchronizeWithData(inData);
+          await excalidrawView.synchronizeWithData(inData);
           inData.destroy();
           if (excalidrawView?.isDirty()) {
             if (
@@ -683,11 +680,11 @@ export class PluginFileManager {
               clearTimeout(excalidrawView.autosaveTimer);
             }
             if (excalidrawView.autosaveFunction) {
-              excalidrawView.autosaveFunction();
+              await excalidrawView.autosaveFunction();
             }
           }
         } else {
-          excalidrawView.reload(true, excalidrawView.file);
+          await excalidrawView.reload(true, excalidrawView.file);
         }
       }
     });
@@ -748,7 +745,7 @@ export class PluginFileManager {
       }
     }
 
-    this.removeBAKFromCache(file.path);
+    void this.removeBAKFromCache(file.path);
 
     //delete PNG and SVG files as well
     if (this.settings.keepInSync) {
@@ -779,7 +776,7 @@ export class PluginFileManager {
         imgMap.forEach((imgPath: string) => {
           const imgFile = this.app.vault.getFileByPath(normalizePath(imgPath));
           if (imgFile) {
-            this.app.vault.delete(imgFile);
+            void this.app.vault.delete(imgFile);
           }
         });
       }, 500);

@@ -14,7 +14,6 @@ import ExcalidrawPlugin from "src/core/main";
  * Returns Obsidian link suggestions (files, aliases, unresolved) filtered for invalid characters.
  */
 export const getLinkSuggestionsFiltered = (app: App): LinkSuggestion[] => {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   const suggestions = app.metadataCache.getLinkSuggestions?.();
   if (!suggestions) {
     return [];

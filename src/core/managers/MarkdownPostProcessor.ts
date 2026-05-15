@@ -554,11 +554,11 @@ const createImgElement = async (
       if (!srcParts) {
         return;
       }
-      const f = vault.getAbstractFileByPath(srcParts[1]) as TFile;
+      const f = vault.getFileByPath(srcParts[1]);
       const linkModifier = linkClickModifierType(ev);
       if (plugin.isExcalidrawFile(f) && isMaskFile(plugin, f)) {
-        (async () => {
-          const linkString = `[[${f.path}${srcParts[2] ? "#" + srcParts[2] : ""}]] ${getExcalidrawFileForwardLinks(plugin.app, f, new Set<string>())}`;
+        void (async () => {
+          const linkString = `[[${f.path}${srcParts[2] ? `#${srcParts[2]}` : ""}]] ${getExcalidrawFileForwardLinks(plugin.app, f, new Set<string>())}`;
           const result = await linkPrompt(linkString, plugin.app);
           if (!result) {
             return;
@@ -586,7 +586,7 @@ const createImgElement = async (
               paneType = "tab";
               break;
           }
-          plugin.app.workspace.openLinkText(
+          await plugin.app.workspace.openLinkText(
             linkText,
             "",
             paneType,
@@ -676,10 +676,8 @@ const createImgElement = async (
     if (!imgOrDiv.hasClass("excalidraw-canvas-immersive")) {
       imgOrDiv.addClass("excalidraw-canvas-immersive");
     }
-  } else {
-    if (imgOrDiv.hasClass("excalidraw-canvas-immersive")) {
-      imgOrDiv.removeClass("excalidraw-canvas-immersive");
-    }
+  } else if (imgOrDiv.hasClass("excalidraw-canvas-immersive")) {
+    imgOrDiv.removeClass("excalidraw-canvas-immersive");
   }
   return imgOrDiv;
 };
@@ -1020,7 +1018,7 @@ const tmpObsidianWYSIWYG = async (
             /.+(\^(?:group=|area=|frame=|clippedframe=)[\p{L}\p{N}_ -]+)/u,
           )?.[1];
         if (ref) {
-          attr.fname = file.path + "#" + ref;
+          attr.fname = `${file.path}#${ref}`;
           areaPreview = true;
         }
       }
@@ -1052,11 +1050,11 @@ const tmpObsidianWYSIWYG = async (
       ) {
         internalEmbedDiv.style.setProperty(
           "--popover-width",
-          attr.fwidth + "px",
+          `${attr.fwidth}px`,
         );
         internalEmbedDiv.style.setProperty(
           "--popover-height",
-          attr.fheight + "px",
+          `${attr.fheight}px`,
         );
         internalEmbedDiv.style.width = "var(--popover-width)";
         internalEmbedDiv.style.height = "var(--popover-height)";
@@ -1289,10 +1287,7 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = async (m) => {
       ev.stopImmediatePropagation();
       const src = el.getAttribute("src");
       if (src) {
-        plugin.openDrawing(
-          vault.getAbstractFileByPath(src) as TFile,
-          linkClickModifierType(ev),
-        );
+        plugin.openDrawing(vault.getFileByPath(src), linkClickModifierType(ev));
       } //.ctrlKey||ev.metaKey);
     });
   });

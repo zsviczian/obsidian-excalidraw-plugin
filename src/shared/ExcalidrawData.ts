@@ -67,13 +67,35 @@ import { getPDFRect } from "../utils/PDFUtils";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
-declare module "obsidian" {
-  interface MetadataCache {
-    blockCache: {
-      getForFile(x: any, f: TAbstractFile): any;
+type RegExpMatchIteratorResult = IteratorResult<RegExpMatchArray, undefined>;
+
+type MarkdownBlockNode = {
+  type: string;
+  id?: string;
+  depth?: number;
+  level?: number;
+  value?: string;
+  title?: string;
+  data?: {
+    hProperties?: {
+      dataHeading?: string;
     };
-  }
-}
+  };
+  children?: MarkdownBlockNode[];
+  position: {
+    start: { offset: number; line: number };
+    end: { offset: number };
+  };
+};
+
+type MarkdownBlockCacheEntry = {
+  node: MarkdownBlockNode;
+  display: string;
+};
+
+type MarkdownBlockCacheResult = {
+  blocks: MarkdownBlockCacheEntry[];
+};
 
 export enum AutoexportPreference {
   none,
@@ -87,19 +109,19 @@ export const REGEX_TAGS = {
   // #[\p{Letter}\p{Emoji_Presentation}\p{Number}\/_-]+
   //   1
   EXPR: /(#[\p{Letter}\p{Emoji_Presentation}\p{Number}/_-]+)/gu,
-  getResList: (text: string): IteratorResult<RegExpMatchArray, any>[] => {
+  getResList: (text: string): RegExpMatchIteratorResult[] => {
     const res = text.matchAll(REGEX_TAGS.EXPR);
-    let parts: IteratorResult<RegExpMatchArray, any>;
+    let parts: RegExpMatchIteratorResult;
     const resultList = [];
     while (!(parts = res.next()).done) {
       resultList.push(parts);
     }
     return resultList;
   },
-  getTag: (parts: IteratorResult<RegExpMatchArray, any>): string => {
+  getTag: (parts: RegExpMatchIteratorResult): string => {
     return parts.value[1];
   },
-  isTag: (parts: IteratorResult<RegExpMatchArray, any>): boolean => {
+  isTag: (parts: RegExpMatchIteratorResult): boolean => {
     return parts.value[1]?.startsWith("#");
   },
 };
@@ -111,9 +133,9 @@ export const REGEX_LINK = {
   //      1   2    3           4             5         67                             8  9
   EXPR: /(!)?(\[\[([^|\]]+)\|?([^\]]+)?]]|\[([^\]]*)]\(((?:[^()]|\([^()]*\))*)\))(\{(\d+)\})?/g, //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1963
 
-  getResList: (text: string): IteratorResult<RegExpMatchArray, any>[] => {
+  getResList: (text: string): RegExpMatchIteratorResult[] => {
     const res = text.matchAll(REGEX_LINK.EXPR);
-    let parts: IteratorResult<RegExpMatchArray, any>;
+    let parts: RegExpMatchIteratorResult;
     const resultList = [];
     while (!(parts = res.next()).done) {
       resultList.push(parts);
@@ -123,16 +145,16 @@ export const REGEX_LINK = {
   getRes: (text: string): IterableIterator<RegExpMatchArray> => {
     return text.matchAll(REGEX_LINK.EXPR);
   },
-  isTransclusion: (parts: IteratorResult<RegExpMatchArray, any>): boolean => {
+  isTransclusion: (parts: RegExpMatchIteratorResult): boolean => {
     return !!parts.value[1];
   },
-  getLink: (parts: IteratorResult<RegExpMatchArray, any>): string => {
+  getLink: (parts: RegExpMatchIteratorResult): string => {
     return parts.value[3] ? parts.value[3] : parts.value[6];
   },
-  isWikiLink: (parts: IteratorResult<RegExpMatchArray, any>): boolean => {
+  isWikiLink: (parts: RegExpMatchIteratorResult): boolean => {
     return !!parts.value[3];
   },
-  getAliasOrLink: (parts: IteratorResult<RegExpMatchArray, any>): string => {
+  getAliasOrLink: (parts: RegExpMatchIteratorResult): string => {
     return REGEX_LINK.isWikiLink(parts)
       ? parts.value[4]
         ? parts.value[4]
@@ -142,7 +164,7 @@ export const REGEX_LINK = {
         : parts.value[6];
   },
   getWrapLength: (
-    parts: IteratorResult<RegExpMatchArray, any>,
+    parts: RegExpMatchIteratorResult,
     defaultWrap: number,
   ): number => {
     const len = parseInt(parts.value[8]);
@@ -168,7 +190,7 @@ const isCompressedMD = (data: string): boolean => {
 
 const getDecompressedScene = (
   data: string,
-): [string, IteratorResult<RegExpMatchArray, any>] => {
+): [string | null, RegExpMatchIteratorResult] => {
   let res = data.matchAll(DRAWING_COMPRESSED_REG);
 
   //In case the user adds a text element with the contents "# Drawing\n"
@@ -422,7 +444,7 @@ export function getExcalidrawMarkdownHeader(data: string): {
   }
   if (trimLocation === -1) {
     return {
-      header: data.endsWith("\n") ? data : data + "\n",
+      header: data.endsWith("\n") ? data : `${data}\n`,
       shouldFixTrailingHashtag,
       processingOk: false,
     };
@@ -453,10 +475,10 @@ export const getExcalidrawMarkdownHeaderSection = (
   }*/
   //end of remove
   return shouldFixTrailingHashtag
-    ? updatedHeader + "\n#\n"
+    ? `${updatedHeader}\n#\n`
     : updatedHeader.endsWith("\n")
       ? header
-      : header + "\n";
+      : `${header}\n`;
 };
 
 export class ExcalidrawData {
@@ -1225,12 +1247,12 @@ export class ExcalidrawData {
         if (!this.textElements.has(id)) {
           const raw = te.rawText && te.rawText !== "" ? te.rawText : te.text; //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
           this.textElements.set(id, { raw, parsed: null, hasTextLink: false });
-          this.parseasync(id, raw);
+          void this.parseasync(id, raw);
         }
       } else if (!this.textElements.has(te.id)) {
         const raw = te.rawText && te.rawText !== "" ? te.rawText : te.text; //this is for compatibility with drawings created before the rawText change on ExcalidrawTextElement
         this.textElements.set(id, { raw, parsed: null, hasTextLink: false });
-        this.parseasync(id, raw);
+        void this.parseasync(id, raw);
       }
     }
     return dirty;
@@ -1556,7 +1578,7 @@ export class ExcalidrawData {
                 this.app.metadataCache.fileToLinktext(ef.file, this.file.path),
               )
             : ef.linkParts.original;
-          const colorMap = ef.colorMap ? " " + JSON.stringify(ef.colorMap) : "";
+          const colorMap = ef.colorMap ? ` ${JSON.stringify(ef.colorMap)}` : "";
           outString += `${key}: [[${path}]]${colorMap}\n\n`;
         }
       }
@@ -1935,7 +1957,7 @@ export class ExcalidrawData {
       return [parseResult, link];
     }
     //transclusion needs to be resolved asynchornously
-    this.parse(rawOriginalText).then((parseRes) => {
+    void this.parse(rawOriginalText).then((parseRes) => {
       const parsedText = parseRes.parsed;
       this.textElements.set(elementID, {
         raw: rawOriginalText,
@@ -2111,28 +2133,24 @@ export class ExcalidrawData {
       if (!EMBEDDABLE_THEME_FRONTMATTER_VALUES.includes(this.embeddableTheme)) {
         this.embeddableTheme = "default";
       }
-    } else {
-      if (
-        //backwards compatibility
-        fileCache?.frontmatter &&
-        fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name] !== null &&
-        typeof fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name] !==
-          "undefined"
-      ) {
-        this.embeddableTheme =
-          fileCache.frontmatter[
-            FRONTMATTER_KEYS["iframe-theme"].name
-          ].toLowerCase();
-        if (
-          !EMBEDDABLE_THEME_FRONTMATTER_VALUES.includes(this.embeddableTheme)
-        ) {
-          this.embeddableTheme = "default";
-        }
-      } else {
-        this.embeddableTheme = this.plugin.settings.iframeMatchExcalidrawTheme
-          ? "auto"
-          : "default";
+    } else if (
+      //backwards compatibility
+      fileCache?.frontmatter &&
+      fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name] !== null &&
+      typeof fileCache.frontmatter[FRONTMATTER_KEYS["iframe-theme"].name] !==
+        "undefined"
+    ) {
+      this.embeddableTheme =
+        fileCache.frontmatter[
+          FRONTMATTER_KEYS["iframe-theme"].name
+        ].toLowerCase();
+      if (!EMBEDDABLE_THEME_FRONTMATTER_VALUES.includes(this.embeddableTheme)) {
+        this.embeddableTheme = "default";
       }
+    } else {
+      this.embeddableTheme = this.plugin.settings.iframeMatchExcalidrawTheme
+        ? "auto"
+        : "default";
     }
     return embeddableTheme !== this.embeddableTheme;
   }
@@ -2213,7 +2231,7 @@ export class ExcalidrawData {
       this.plugin,
       this.file.path,
       masterFile.blockrefData
-        ? masterFile.path + "#" + masterFile.blockrefData
+        ? `${masterFile.path}#${masterFile.blockrefData}`
         : masterFile.path,
       masterFile.colorMapJSON,
     );
@@ -2255,7 +2273,7 @@ export class ExcalidrawData {
         this.plugin,
         this.file.path,
         (masterFile.blockrefData
-          ? path + "#" + masterFile.blockrefData
+          ? `${path}#${masterFile.blockrefData}`
           : path) + (fixScale ? "|100%" : ""),
         masterFile.colorMapJSON,
       );
@@ -2440,14 +2458,14 @@ export const getTransclusion = async (
       }
       if (j === headings.length && headings[j - 1].node.depth > depth) {
         return {
-          leadingHashes: "#".repeat(depth) + " ",
+          leadingHashes: `${"#".repeat(depth)} `,
           contents: contents.substring(startPos).trim(),
           lineNum,
         };
       }
       endPos = headings[j].node.position.start.offset - 1;
       return {
-        leadingHashes: "#".repeat(depth) + " ",
+        leadingHashes: `${"#".repeat(depth)} `,
         contents: contents.substring(startPos, endPos).trim(),
         lineNum,
       };
@@ -2474,7 +2492,7 @@ export const getTransclusion = async (
   }
   if (startPos) {
     return {
-      leadingHashes: "#".repeat(depth) + " ",
+      leadingHashes: `${"#".repeat(depth)} `,
       contents: contents.substring(startPos).trim(),
       lineNum,
     };

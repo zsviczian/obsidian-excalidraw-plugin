@@ -11,7 +11,7 @@ export class UIModeSettings extends Modal {
 
   onOpen(): void {
     this.containerEl.classList.add("excalidraw-release");
-    this.createForm();
+    void this.createForm();
   }
 
   async onClose() {

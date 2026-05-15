@@ -43,7 +43,7 @@ export class ExcalidrawLoading extends FileView {
   }
 
   getDisplayText() {
-    return "Loading Excalidraw... " + (this.file?.basename ?? "");
+    return `Loading Excalidraw... ${this.file?.basename ?? ""}`;
   }
 
   private displayLoadingText() {

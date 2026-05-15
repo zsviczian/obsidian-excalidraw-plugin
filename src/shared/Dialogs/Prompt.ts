@@ -165,7 +165,7 @@ export class LaTexPrompt extends FloatingModal {
       // the language put eveything in a "math" node
       // surrounded by "math-begin" and "math-end"
       // so that latex-suite always thinks we are in mathmode
-      const language = LRLanguage.define({ parser: parser });
+      const language = LRLanguage.define({ parser });
       extensions.push([
         language,
         editorLivePreviewField.init(() => false),
@@ -175,7 +175,7 @@ export class LaTexPrompt extends FloatingModal {
 
     this.editorView = new EditorView({
       doc: value,
-      extensions: extensions,
+      extensions,
       parent: container,
     });
 
@@ -241,8 +241,8 @@ export class LaTexPrompt extends FloatingModal {
     this.close();
   }
 
-  onOpen(): void {
-    super.onOpen();
+  async onOpen(): Promise<void> {
+    await super.onOpen();
     this.editorView.focus();
   }
 
@@ -584,13 +584,13 @@ export class GenericInputPrompt extends Modal {
         this.selectionStart > 0 &&
         v.slice(this.selectionStart - 1, this.selectionStart) !== " "
       ) {
-        text = " " + text;
+        text = ` ${text}`;
       }
       if (
         this.selectionStart < v.length &&
         v.slice(this.selectionStart, this.selectionStart + 1) !== " "
       ) {
-        text = text + " ";
+        text = `${text} `;
       }
       const newVal =
         this.inputComponent.inputEl.value.slice(0, this.selectionStart) +
@@ -797,8 +797,8 @@ export class GenericInputPrompt extends Modal {
     }, 10);
   };
 
-  onOpen() {
-    super.onOpen();
+  async onOpen() {
+    await super.onOpen();
     this.modalEl.classList.add("excalidraw-modal");
     this.containerEl.classList.add("excalidraw-modal");
     this.inputComponent.inputEl.focus();
@@ -811,7 +811,10 @@ export class GenericInputPrompt extends Modal {
 
   private makeModalDraggable() {
     let isDragging = false;
-    let startX: number, startY: number, initialX: number, initialY: number;
+    let startX: number;
+    let startY: number;
+    let initialX: number;
+    let initialY: number;
     let activeElement: HTMLElement | null = null;
     let cursorPosition: { start: number; end: number } | null = null;
 
@@ -1297,8 +1300,8 @@ export class MultiOptionConfirmationPrompt extends Modal {
     return button;
   }
 
-  onOpen() {
-    super.onOpen();
+  async onOpen() {
+    await super.onOpen();
     const defaultButton =
       this.ctaButtonEl ?? this.contentEl.querySelector("button");
     // Obsidian modal open may apply its own autofocus after onOpen; defer to enforce default keyboard action.

@@ -38,7 +38,7 @@ export class SelectCard extends FuzzySuggestModal<string> {
             this.close();
             return;
           }
-          addBackOfTheNoteCard(
+          void addBackOfTheNoteCard(
             this.view,
             item,
             true,
@@ -62,7 +62,7 @@ export class SelectCard extends FuzzySuggestModal<string> {
   }
 
   onChooseItem(item: string): void {
-    const ea = getEA(this.view) as ExcalidrawAutomate;
+    const ea = getEA(this.view);
     if (this.center) {
       const centerPos = ea.getViewCenterPosition();
       if (centerPos) {
@@ -78,7 +78,7 @@ export class SelectCard extends FuzzySuggestModal<string> {
       CARD_HEIGHT,
       `[[${this.view.file.path}#${item}]]`,
     );
-    (async () => {
+    void (async () => {
       await ea.addElementsToView(!this.center, false, true);
       ea.selectElementsInView([id]);
       ea.destroy();

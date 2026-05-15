@@ -1,4 +1,22 @@
-export const emptyDrawingElements: any = [
+import type { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
+
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: JsonValue }
+  | JsonValue[];
+
+type SerializedExcalidrawElement = {
+  id: string;
+  type: string;
+  isDeleted: boolean;
+  index: string;
+  [key: string]: JsonValue;
+};
+
+export const emptyDrawingElements: SerializedExcalidrawElement[] = [
   {
     id: "Oz2QdWCi",
     type: "rectangle",
@@ -827,3 +845,8 @@ export const emptyDrawingElements: any = [
     hasTextLink: false,
   },
 ];
+
+export const getEmptyDrawingElementsRuntime = (): ExcalidrawElement[] =>
+  emptyDrawingElements.map(
+    (element) => element as SerializedExcalidrawElement & ExcalidrawElement,
+  );

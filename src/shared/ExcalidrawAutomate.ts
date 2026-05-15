@@ -21,6 +21,7 @@ import {
   RequestUrlResponse,
   TFile,
   TFolder,
+  View,
   WorkspaceLeaf,
 } from "obsidian";
 import * as obsidian_module from "obsidian";
@@ -73,7 +74,7 @@ import {
 import { getAttachmentsFolderAndFilePath } from "src/utils/pathUtils";
 import {
   AppState,
-  BinaryFileData,
+  BinaryFiles,
   DataURL,
   ExcalidrawImperativeAPI,
   SceneData,
@@ -655,7 +656,7 @@ export class ExcalidrawAutomate {
       keys: modifierKeys,
       view: this.targetView,
       openNewFile: shouldOpenNewFile,
-      parentFile: parentFile,
+      parentFile,
     });
     newFilePrompt.open();
     return await newFilePrompt.waitForClose;
@@ -683,7 +684,7 @@ export class ExcalidrawAutomate {
   public getActiveEmbeddableViewOrEditor(
     view?: ExcalidrawView,
   ):
-    | { view: any }
+    | { view: View }
     | { file: TFile; editor: Editor }
     | { node: ObsidianCanvasNode }
     | null {
@@ -866,7 +867,6 @@ export class ExcalidrawAutomate {
       }
       if (root === this.plugin.app.workspace.rightSplit) {
         this.plugin.app.workspace.rightSplit.toggle();
-        return;
       }
     }
   }
@@ -1116,7 +1116,7 @@ export class ExcalidrawAutomate {
       };
     });
 
-    navigator.clipboard.writeText(
+    void navigator.clipboard.writeText(
       JSON.stringify({
         type: "excalidraw/clipboard",
         elements,
@@ -1309,7 +1309,7 @@ export class ExcalidrawAutomate {
       : null;
     if (template?.plaintext) {
       if (params.plaintext) {
-        params.plaintext = params.plaintext + "\n\n" + template.plaintext;
+        params.plaintext = `${params.plaintext}\n\n${template.plaintext}`;
       } else {
         params.plaintext = template.plaintext;
       }
@@ -1339,8 +1339,8 @@ export class ExcalidrawAutomate {
       ? params.plaintext.endsWith("\n\n")
         ? params.plaintext
         : params.plaintext.endsWith("\n")
-          ? params.plaintext + "\n"
-          : params.plaintext + "\n\n"
+          ? `${params.plaintext}\n`
+          : `${params.plaintext}\n\n`
       : "";
     if (template?.frontmatter && params?.frontmatterKeys) {
       //the frontmatter tags supplyed to create take priority
@@ -1429,41 +1429,39 @@ export class ExcalidrawAutomate {
         path: string,
         colorMap?: ColorMap,
       ): string => {
-        return `${key}: [[${path}]]${colorMap ? " " + JSON.stringify(colorMap) : ""}\n\n`;
+        return `${key}: [[${path}]]${colorMap ? ` ${JSON.stringify(colorMap)}` : ""}\n\n`;
       };
 
       Object.keys(this.imagesDict).forEach((key: FileId) => {
         const item = this.imagesDict[key];
         if (item.latex) {
           outString += `${key}: $$${item.latex.trim()}$$\n\n`;
-        } else {
-          if (item.file) {
-            if (item.file instanceof TFile) {
-              outString += embeddedFile(key, item.file.path, item.colorMap);
-            } else {
-              outString += embeddedFile(key, item.file, item.colorMap);
-            }
+        } else if (item.file) {
+          if (item.file instanceof TFile) {
+            outString += embeddedFile(key, item.file.path, item.colorMap);
           } else {
-            const hyperlinkSplit = item.hyperlink.split("#");
-            const file = this.plugin.app.vault.getAbstractFileByPath(
-              hyperlinkSplit[0],
-            );
-            if (file && file instanceof TFile) {
-              const hasFileRef = hyperlinkSplit.length === 2;
-              outString += hasFileRef
-                ? embeddedFile(
-                    key,
-                    `${file.path}#${hyperlinkSplit[1]}`,
-                    item.colorMap,
-                  )
-                : embeddedFile(key, file.path, item.colorMap);
-            } else {
-              outString += `${key}: ${item.hyperlink}\n\n`;
-            }
+            outString += embeddedFile(key, item.file, item.colorMap);
+          }
+        } else {
+          const hyperlinkSplit = item.hyperlink.split("#");
+          const file = this.plugin.app.vault.getAbstractFileByPath(
+            hyperlinkSplit[0],
+          );
+          if (file && file instanceof TFile) {
+            const hasFileRef = hyperlinkSplit.length === 2;
+            outString += hasFileRef
+              ? embeddedFile(
+                  key,
+                  `${file.path}#${hyperlinkSplit[1]}`,
+                  item.colorMap,
+                )
+              : embeddedFile(key, file.path, item.colorMap);
+          } else {
+            outString += `${key}: ${item.hyperlink}\n\n`;
           }
         }
       });
-      return outString + "%%\n";
+      return `${outString}%%\n`;
     };
 
     const filename = params?.filename
@@ -1485,16 +1483,15 @@ export class ExcalidrawAutomate {
     if (params.silent) {
       return (await this.plugin.createDrawing(filename, foldername, initData))
         .path;
-    } else {
-      return this.plugin.createAndOpenDrawing(
-        filename,
-        (params?.onNewPane ? params.onNewPane : false)
-          ? "new-pane"
-          : "active-pane",
-        foldername,
-        initData,
-      );
     }
+    return this.plugin.createAndOpenDrawing(
+      filename,
+      (params?.onNewPane ? params.onNewPane : false)
+        ? "new-pane"
+        : "active-pane",
+      foldername,
+      initData,
+    );
   }
 
   /**
@@ -1885,7 +1882,7 @@ export class ExcalidrawAutomate {
       link,
       locked: false,
       frameId: null as string,
-      hasTextLink: eltype === "text" && link ? true : false,
+      hasTextLink: !!(eltype === "text" && link),
       ...(scale ? { scale } : {}),
     };
   }
@@ -2960,11 +2957,9 @@ export class ExcalidrawAutomate {
       } /*else {
         delta = -delta;
       } */
-    } else {
-      if (angle > Math.PI / 2) {
-        angle -= Math.PI;
-        //delta = -delta;
-      }
+    } else if (angle > Math.PI / 2) {
+      angle -= Math.PI;
+      //delta = -delta;
     }
     this.style.angle = angle;
     const id = this.addText(
@@ -3089,7 +3084,7 @@ export class ExcalidrawAutomate {
     };
     setView();
     if (show && this.targetView) {
-      this.plugin.app.workspace.revealLeaf(this.targetView.leaf);
+      void this.plugin.app.workspace.revealLeaf(this.targetView.leaf);
     }
     return this.targetView;
   }
@@ -3281,10 +3276,9 @@ export class ExcalidrawAutomate {
     if (fileIDWhiteList.size > 0) {
       this.targetView.setDirty();
       await new Promise<void>((resolve) => {
-        this.targetView.loadSceneFiles(false, fileIDWhiteList, resolve);
+        void this.targetView.loadSceneFiles(false, fileIDWhiteList, resolve);
       });
     }
-    return;
   }
 
   /**
@@ -3557,7 +3551,7 @@ export class ExcalidrawAutomate {
    * @param {Object} scene - The scene to load to Excalidraw.
    * @param {ExcalidrawElement[]} [scene.elements] - Array of elements in the scene.
    * @param {AppState} [scene.appState] - The app state of the scene.
-   * @param {BinaryFileData} [scene.files] - The files in the scene.
+   * @param {BinaryFiles} [scene.files] - The files in the scene.
    * @param {boolean} [scene.commitToHistory] - Whether to commit the scene to history. @deprecated Use scene.storageOption instead
    * @param {"capture" | "none" | "update"} [scene.storeAction] - The store action for the scene. @deprecated Use scene.storageOption instead
    * @param {"IMMEDIATELY" | "NEVER" | "EVENTUALLY"} [scene.captureUpdate] - The capture update action for the scene.
@@ -3567,7 +3561,7 @@ export class ExcalidrawAutomate {
     scene: {
       elements?: ExcalidrawElement[];
       appState?: AppState | object;
-      files?: BinaryFileData;
+      files?: BinaryFiles;
       commitToHistory?: boolean;
       storeAction?: "capture" | "none" | "update";
       captureUpdate?: SceneData["captureUpdate"];
@@ -4153,23 +4147,22 @@ export class ExcalidrawAutomate {
 
     if (!includeFrameElements) {
       return elements.filter((el) => conditionFN(el));
-    } else {
-      //I use the set and the filter at the end to preserve scene layer seqeuence
-      //adding frames could potentially mess up the sequence otherwise
-      const elementIDs = new Set<string>();
-      elements
-        .filter((el) => conditionFN(el))
-        .forEach((el) => {
-          if (el.type === "frame") {
-            this.getElementsInFrame(el, elements, true).forEach((el) =>
-              elementIDs.add(el.id),
-            );
-          } else {
-            elementIDs.add(el.id);
-          }
-        });
-      return elements.filter((el) => elementIDs.has(el.id));
     }
+    //I use the set and the filter at the end to preserve scene layer seqeuence
+    //adding frames could potentially mess up the sequence otherwise
+    const elementIDs = new Set<string>();
+    elements
+      .filter((el) => conditionFN(el))
+      .forEach((el) => {
+        if (el.type === "frame") {
+          this.getElementsInFrame(el, elements, true).forEach((el) =>
+            elementIDs.add(el.id),
+          );
+        } else {
+          elementIDs.add(el.id);
+        }
+      });
+    return elements.filter((el) => elementIDs.has(el.id));
   }
 
   /**
@@ -4352,7 +4345,8 @@ export class ExcalidrawAutomate {
       return null;
     }
 
-    let originalArea, originalAspectRatio;
+    let originalArea;
+    let originalAspectRatio;
     if (imgEl.crop) {
       originalArea = imgEl.width * imgEl.height;
       originalAspectRatio = imgEl.crop.width / imgEl.crop.height;
@@ -4395,10 +4389,10 @@ export class ExcalidrawAutomate {
 
   /**
    * Checks if the provided view is an instance of ExcalidrawView.
-   * @param {any} view - The view to check.
+   * @param {ExcalidrawView | null | undefined} view - The view to check.
    * @returns {boolean} True if the view is an instance of ExcalidrawView, false otherwise.
    */
-  isExcalidrawView(view: any): boolean {
+  isExcalidrawView(view: ExcalidrawView | null | undefined): boolean {
     return view instanceof ExcalidrawView;
   }
 
@@ -4605,7 +4599,7 @@ export class ExcalidrawAutomate {
    * Gets the PolyBool class from https://github.com/velipso/polybooljs.
    * @returns {PolyBool} The PolyBool class.
    */
-  getPolyBool() {
+  getPolyBool(): typeof PolyBool {
     const defaultEpsilon = 0.0000000001;
     PolyBool.epsilon(defaultEpsilon);
     return PolyBool;

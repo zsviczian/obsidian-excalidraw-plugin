@@ -110,32 +110,31 @@ export async function insertEmbeddableToView(
       undefined,
       shouldInsertToView,
     );
-  } else {
-    let height = MAX_IMAGE_SIZE;
-    if (
-      (file && AUDIO_TYPES.contains(file.extension.toLowerCase())) ||
-      (link &&
-        AUDIO_TYPES.contains(
-          link.match(/\[\[[^\]]+?\.([^.\]]+)]]/)?.[1]?.toLocaleLowerCase(),
-        ))
-    ) {
-      ea.style.strokeColor = "transparent";
-      ea.style.backgroundColor = "transparent";
-      height = getAudioElementHeight();
-    }
-    const id = ea.addEmbeddable(
-      position.x,
-      position.y,
-      MAX_IMAGE_SIZE,
-      height,
-      link,
-      file,
-    );
-    if (shouldInsertToView) {
-      await ea.addElementsToView(false, true, true);
-    }
-    return id;
   }
+  let height = MAX_IMAGE_SIZE;
+  if (
+    (file && AUDIO_TYPES.contains(file.extension.toLowerCase())) ||
+    (link &&
+      AUDIO_TYPES.contains(
+        link.match(/\[\[[^\]]+?\.([^.\]]+)]]/)?.[1]?.toLocaleLowerCase(),
+      ))
+  ) {
+    ea.style.strokeColor = "transparent";
+    ea.style.backgroundColor = "transparent";
+    height = getAudioElementHeight();
+  }
+  const id = ea.addEmbeddable(
+    position.x,
+    position.y,
+    MAX_IMAGE_SIZE,
+    height,
+    link,
+    file,
+  );
+  if (shouldInsertToView) {
+    await ea.addElementsToView(false, true, true);
+  }
+  return id;
 }
 
 export function getLinkTextFromLink(text: string): string {
@@ -269,9 +268,8 @@ export function parseObsidianLink(
     if (f && f instanceof TFile) {
       if (returnWikiLink) {
         return `[[${f.path}]]`;
-      } else {
-        return f.path;
       }
+      return f.path;
     }
   }
 
@@ -302,7 +300,7 @@ export function getExcalidrawFileForwardLinks(
         }
         secondOrderLinksSet.add(f.path);
         linkset.add(
-          `[[${f.path}${linkparts.ref ? "#" + linkparts.ref : ""}|Second Order Link: ${f.basename}]]`,
+          `[[${f.path}${linkparts.ref ? `#${linkparts.ref}` : ""}|Second Order Link: ${f.basename}]]`,
         );
       }
     });
@@ -318,7 +316,7 @@ export function getFrameBasedOnFrameNameOrId(
   const frames = elements
     .filter((el: ExcalidrawElement) => el.type === "frame")
     .map((el: ExcalidrawFrameElement) => {
-      return { el: el, id: el.id, name: el.name ?? "Frame" };
+      return { el, id: el.id, name: el.name ?? "Frame" };
     })
     .filter((item: any) => item.id === frameName || item.name === frameName)
     .map((item: any) => item.el as ExcalidrawFrameElement);
@@ -343,10 +341,11 @@ export async function addBackOfTheNoteCard(
   view.data = data.replace(
     header,
     () =>
-      (shouldRemoveTrailingHashtag
-        ? header.substring(0, header.length - hastag[0].length)
-        : header) +
-      `\n# ${title}\n\n${cardBody ? cardBody + "\n\n" : ""}${
+      `${
+        shouldRemoveTrailingHashtag
+          ? header.substring(0, header.length - hastag[0].length)
+          : header
+      }\n# ${title}\n\n${cardBody ? `${cardBody}\n\n` : ""}${
         shouldAddHashtag || shouldRemoveTrailingHashtag ? "#\n" : ""
       }`,
   );
@@ -370,7 +369,7 @@ export async function addBackOfTheNoteCard(
     await sleep(200);
   }
 
-  const ea = getEA(view) as ExcalidrawAutomate;
+  const ea = getEA(view);
   let { x, y } = position ?? ea.targetView.currentPosition;
   if (center) {
     const centerPos = ea.getViewCenterPosition();
@@ -499,9 +498,8 @@ export function isTextImageTransclusion(
       if (file.extension !== "md" || view.plugin.isExcalidrawFile(file)) {
         callback(link, file);
         return true;
-      } else {
-        new Notice(t("USE_INSERT_FILE_MODAL"), 5000);
       }
+      new Notice(t("USE_INSERT_FILE_MODAL"), 5000);
     }
   }
   return false;
@@ -529,7 +527,7 @@ export async function toggleImageAnchoring(
   shouldAnchor: boolean,
   ef: EmbeddedFile,
 ) {
-  const ea = getEA(view) as ExcalidrawAutomate;
+  const ea = getEA(view);
   let imgEl = view
     .getViewElements()
     .find(

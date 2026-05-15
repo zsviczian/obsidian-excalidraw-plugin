@@ -5,7 +5,7 @@ import { Notice } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { errorHandler } from "../../utils/ErrorHandler";
 import React from "react";
-import ReactDOM from "react-dom";
+import ReactDOM from "react-dom/client";
 
 declare let REACT_PACKAGES: string;
 declare let react: typeof React;
@@ -193,18 +193,12 @@ export class PackageManager {
 
       if (win.React === react) {
         errorHandler.wrapWithTryCatch(() => {
-          Object.keys(win.React || {}).forEach((key) => {
-            delete win.React[key];
-          });
           delete win.React;
         }, "PackageManager.deletePackage - cleanup React");
       }
 
       if (win.ReactDOM === reactDOM) {
         errorHandler.wrapWithTryCatch(() => {
-          Object.keys(win.ReactDOM || {}).forEach((key) => {
-            delete win.ReactDOM[key];
-          });
           delete win.ReactDOM;
         }, "PackageManager.deletePackage - cleanup ReactDOM");
       }

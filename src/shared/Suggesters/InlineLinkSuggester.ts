@@ -376,12 +376,7 @@ export class InlineLinkSuggester
     if (this.isFrame(item)) {
       return item.label;
     }
-    return (
-      (item as LinkSuggestion).path +
-      ((item as LinkSuggestion).alias
-        ? `|${(item as LinkSuggestion).alias}`
-        : "")
-    );
+    return item.path + (item.alias ? `|${item.alias}` : "");
   }
 
   async onChooseItem(item: InlineSuggestion | undefined): Promise<void> {
@@ -436,7 +431,7 @@ export class InlineLinkSuggester
       return;
     }
 
-    const linkString = this.buildLink(item as LinkSuggestion);
+    const linkString = this.buildLink(item);
     this.insertLink(linkString);
   }
 

@@ -29,6 +29,15 @@ import {
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { GlobalPoint } from "@zsviczian/excalidraw/types/math/src/types";
 
+type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
+
+type JsonObject = {
+  [key: string]: JsonValue;
+};
+
+type MermaidToExcalidrawLibProps =
+  import("@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/types").MermaidToExcalidrawLibProps;
+
 interface MermaidConfig {
   /**
    * Whether to start the diagram automatically when the page loads.
@@ -106,7 +115,7 @@ declare namespace ExcalidrawLib {
     opts: Omit<ExportOpts, "getDimensions"> & {
       elements: ExcalidrawElement[];
       appState?: AppState;
-      files?: any;
+      files?: BinaryFiles | null;
       exportPadding?: number;
       exportingFrame: ExcalidrawFrameElement | null | undefined;
       renderEmbeddables?: boolean;
@@ -230,13 +239,13 @@ declare namespace ExcalidrawLib {
     error?: string;
   } | undefined>;*/
 
-  let getSceneVersion: any;
-  let Excalidraw: any;
-  let MainMenu: any;
-  let WelcomeScreen: any;
+  let getSceneVersion: typeof import("@zsviczian/excalidraw/types/excalidraw").getSceneVersion;
+  let Excalidraw: typeof import("@zsviczian/excalidraw").Excalidraw;
+  let MainMenu: typeof import("@zsviczian/excalidraw").MainMenu;
+  let WelcomeScreen: typeof import("@zsviczian/excalidraw").WelcomeScreen;
   let TTDDialogTrigger: typeof import("@zsviczian/excalidraw").TTDDialogTrigger;
   let TTDDialog: typeof import("@zsviczian/excalidraw").TTDDialog;
-  let DiagramToCodePlugin: (props: { generate: GenerateDiagramToCode }) => any;
+  let DiagramToCodePlugin: typeof import("@zsviczian/excalidraw").DiagramToCodePlugin;
 
   function getDataURL(file: Blob | File): Promise<DataURL>;
   function destroyObsidianUtils(): void;
@@ -248,11 +257,11 @@ declare namespace ExcalidrawLib {
     elements: readonly ExcalidrawElement[],
     separator?: string,
   ): string;
-  function safelyParseJSON(json: string): Record<string, any> | null;
+  function safelyParseJSON(json: string): JsonObject | null;
   function loadSceneFonts(
     elements: NonDeletedExcalidrawElement[],
   ): Promise<void>;
-  function loadMermaid(): Promise<any>;
+  function loadMermaid(): Promise<MermaidToExcalidrawLibProps>;
   function syncInvalidIndices(
     elements: readonly ExcalidrawElement[],
   ): OrderedExcalidrawElement[];

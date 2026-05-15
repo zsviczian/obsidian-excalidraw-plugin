@@ -685,16 +685,16 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   pinnedScripts: [],
   sidepanelTabs: [],
   customPens: [
-    { ...PENS["default"] },
-    { ...PENS["highlighter"] },
-    { ...PENS["finetip"] },
-    { ...PENS["fountain"] },
-    { ...PENS["marker"] },
+    { ...PENS.default },
+    { ...PENS.highlighter },
+    { ...PENS.finetip },
+    { ...PENS.fountain },
+    { ...PENS.marker },
     { ...PENS["thick-thin"] },
     { ...PENS["thin-thick-thin"] },
-    { ...PENS["default"] },
-    { ...PENS["default"] },
-    { ...PENS["default"] },
+    { ...PENS.default },
+    { ...PENS.default },
+    { ...PENS.default },
   ],
   numberOfCustomPens: 0,
   pdfScale: 4,
@@ -3126,7 +3126,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    let todoPrefixSetting: TextComponent, donePrefixSetting: TextComponent;
+    let todoPrefixSetting: TextComponent;
+    let donePrefixSetting: TextComponent;
 
     new Setting(detailsEl)
       .setName(t("PARSE_TODO_NAME"))
@@ -3472,7 +3473,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setName(t("EMBED_IMAGE_CACHE_CLEAR"))
       .addButton((button) =>
         button.setButtonText(t("EMBED_IMAGE_CACHE_CLEAR")).onClick(() => {
-          imageCache.clearImageCache();
+          void imageCache.clearImageCache();
         }),
       );
     new Setting(detailsEl)
@@ -3483,9 +3484,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.plugin,
             t("BACKUP_CACHE_CLEAR_CONFIRMATION"),
           );
-          confirmationPrompt.waitForClose.then((confirmed) => {
+          void confirmationPrompt.waitForClose.then((confirmed) => {
             if (confirmed) {
-              imageCache.clearBackupCache();
+              void imageCache.clearBackupCache();
             }
           });
         }),
@@ -4027,7 +4028,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.plugin.settings.experimentalEnableFourthFont = value;
             this.applySettingsUpdate();
             if (value) {
-              this.plugin.initializeFonts();
+              await this.plugin.initializeFonts();
             }
           }),
       );
@@ -4052,7 +4053,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.requestReloadDrawings = true;
             this.plugin.settings.experimantalFourthFont = value;
             this.applySettingsUpdate(true);
-            this.plugin.initializeFonts();
+            void this.plugin.initializeFonts();
           },
         );
       });
@@ -4311,7 +4312,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       const startupPath = normalizePath(
         this.plugin.settings.startupScriptPath.endsWith(".md")
           ? this.plugin.settings.startupScriptPath
-          : this.plugin.settings.startupScriptPath + ".md",
+          : `${this.plugin.settings.startupScriptPath}.md`,
       );
       return Boolean(this.app.vault.getAbstractFileByPath(startupPath));
     };
@@ -4343,8 +4344,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .onClick(async () => {
             if (this.plugin.settings.startupScriptPath === "") {
               this.plugin.settings.startupScriptPath = normalizePath(
-                normalizePath(this.plugin.settings.folder) +
-                  "/ExcalidrawStartup",
+                `${normalizePath(
+                  this.plugin.settings.folder,
+                )}/ExcalidrawStartup`,
               );
               startupScriptPathText.setValue(
                 this.plugin.settings.startupScriptPath,
@@ -4354,7 +4356,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             const startupPath = normalizePath(
               this.plugin.settings.startupScriptPath.endsWith(".md")
                 ? this.plugin.settings.startupScriptPath
-                : this.plugin.settings.startupScriptPath + ".md",
+                : `${this.plugin.settings.startupScriptPath}.md`,
             );
             let f = this.app.vault.getAbstractFileByPath(startupPath);
             if (!f) {
@@ -4365,8 +4367,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               );
             }
             startupScriptButton.setButtonText(t("STARTUP_SCRIPT_BUTTON_OPEN"));
-            this.app.workspace.openLinkText(f.path, "", true);
-            this.hide();
+            await this.app.workspace.openLinkText(f.path, "", true);
+            await this.hide();
           });
       });
 
@@ -4557,38 +4559,36 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
                   this.applySettingsUpdate();
                 });
             });
-        } else {
-          if (textAreaHeight(scriptName, variableName)) {
-            new Setting(detailsEl)
-              .setName(variableName)
-              .setDesc(fragWithHTML(description ?? ""))
-              .addTextArea((text) => {
-                text.inputEl.style.minHeight = textAreaHeight(
-                  scriptName,
-                  variableName,
-                );
-                text.inputEl.style.minWidth = "400px";
-                text.inputEl.style.width = "100%";
-                text
-                  .setValue(getValue(scriptName, variableName))
-                  .onChange(async (value) => {
-                    setValue(scriptName, variableName, value);
-                    this.applySettingsUpdate();
-                  });
-              });
-          } else {
-            new Setting(detailsEl)
-              .setName(variableName)
-              .setDesc(fragWithHTML(description ?? ""))
-              .addText((text) =>
-                text
-                  .setValue(getValue(scriptName, variableName))
-                  .onChange(async (value) => {
-                    setValue(scriptName, variableName, value);
-                    this.applySettingsUpdate();
-                  }),
+        } else if (textAreaHeight(scriptName, variableName)) {
+          new Setting(detailsEl)
+            .setName(variableName)
+            .setDesc(fragWithHTML(description ?? ""))
+            .addTextArea((text) => {
+              text.inputEl.style.minHeight = textAreaHeight(
+                scriptName,
+                variableName,
               );
-          }
+              text.inputEl.style.minWidth = "400px";
+              text.inputEl.style.width = "100%";
+              text
+                .setValue(getValue(scriptName, variableName))
+                .onChange(async (value) => {
+                  setValue(scriptName, variableName, value);
+                  this.applySettingsUpdate();
+                });
+            });
+        } else {
+          new Setting(detailsEl)
+            .setName(variableName)
+            .setDesc(fragWithHTML(description ?? ""))
+            .addText((text) =>
+              text
+                .setValue(getValue(scriptName, variableName))
+                .onChange(async (value) => {
+                  setValue(scriptName, variableName, value);
+                  this.applySettingsUpdate();
+                }),
+            );
         }
       };
 

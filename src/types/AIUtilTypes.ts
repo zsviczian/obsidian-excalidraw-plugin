@@ -81,8 +81,21 @@ export type GPTCompletionRequest = {
     content?: MessageContent;
     name?: string | undefined;
   }[];
-  functions?: any[] | undefined;
-  function_call?: any | undefined;
+  functions?:
+    | {
+        name: string;
+        description?: string;
+        parameters?: Record<
+          string,
+          | string
+          | number
+          | boolean
+          | null
+          | Record<string, string | number | boolean | null>
+        >;
+      }[]
+    | undefined;
+  function_call?: "none" | "auto" | { name: string } | undefined;
   stream?: boolean | undefined;
   temperature?: number | undefined;
   top_p?: number | undefined;

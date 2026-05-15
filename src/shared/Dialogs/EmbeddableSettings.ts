@@ -82,7 +82,7 @@ export class EmbeddableSettings extends Modal {
   onOpen(): void {
     this.containerEl.classList.add("excalidraw-release");
     //this.titleEl.setText(t("ES_TITLE"));
-    this.createForm();
+    void this.createForm();
   }
 
   onClose() {
@@ -176,7 +176,7 @@ export class EmbeddableSettings extends Modal {
 
     const onKeyDown = (ev: KeyboardEvent) => {
       if (isWinCTRLorMacCMD(ev) && ev.key === "Enter") {
-        this.applySettings();
+        void this.applySettings();
       }
     };
 
@@ -204,8 +204,9 @@ export class EmbeddableSettings extends Modal {
         );
         if (this.app.vault.getAbstractFileByPath(newPath)) {
           new Notice(
-            "File rename failed. A file with this name already exists.\n" +
-              newPath,
+            `File rename failed. A file with this name already exists.\n${
+              newPath
+            }`,
             10000,
           );
         } else {
@@ -221,7 +222,7 @@ export class EmbeddableSettings extends Modal {
             );
             dirty = true;
           } catch (e) {
-            new Notice("File rename failed. " + e, 10000);
+            new Notice(`File rename failed. ${e}`, 10000);
           }
         }
       }
@@ -260,7 +261,7 @@ export class EmbeddableSettings extends Modal {
       el.scale = [this.zoomValue, this.zoomValue];
     }
     if (dirty) {
-      (async () => {
+      void (async () => {
         await this.ea.addElementsToView();
         this.ea.viewUpdateScene({
           appState: {},

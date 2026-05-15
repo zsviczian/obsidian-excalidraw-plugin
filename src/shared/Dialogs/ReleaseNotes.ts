@@ -36,7 +36,7 @@ export class ReleaseNotes extends Modal {
     titleEl.setText(
       this.options.title ?? `${t("RN_WELCOME")} ${this.version ?? ""}`.trim(),
     );
-    this.createForm();
+    void this.createForm();
 
     if (headerEl) {
       headerEl.style.pointerEvents = "none";

@@ -41,7 +41,7 @@ export class InsertMDDialog extends FuzzySuggestModal<TFile> {
 
   onChooseItem(item: TFile): void {
     const ea = getEA(this.view);
-    (async () => {
+    void (async () => {
       await ea.addImage(0, 0, item);
       await ea.addElementsToView(true, false, true);
       ea.destroy();

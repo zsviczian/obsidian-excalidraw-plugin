@@ -386,52 +386,48 @@ function calculateDimensions(
       const widthRatio = scaledTileWidth / availableWidth;
       if (widthRatio >= 0.99 && widthRatio <= 1.01) {
         x = margin.left;
-      } else {
-        if (
-          alignment === "center" ||
-          alignment === "top-center" ||
-          alignment === "bottom-center"
-        ) {
-          if (col === 0) {
-            x = margin.left + (availableWidth - scaledTileWidth);
-          } else {
-            x = margin.left;
-          }
-        } else if (alignment.endsWith("right")) {
-          x = pageDim.width - margin.right - scaledTileWidth;
+      } else if (
+        alignment === "center" ||
+        alignment === "top-center" ||
+        alignment === "bottom-center"
+      ) {
+        if (col === 0) {
+          x = margin.left + (availableWidth - scaledTileWidth);
         } else {
           x = margin.left;
         }
+      } else if (alignment.endsWith("right")) {
+        x = pageDim.width - margin.right - scaledTileWidth;
+      } else {
+        x = margin.left;
       }
 
       // Handle vertical positioning
       const heightRatio = scaledTileHeight / availableHeight;
       if (heightRatio >= 0.99 && heightRatio <= 1.01) {
         y = margin.top;
-      } else {
-        if (
-          alignment === "center" ||
-          alignment === "center-left" ||
-          alignment === "center-right"
-        ) {
-          if (row === 0) {
-            y = margin.top + (availableHeight - scaledTileHeight);
-          } else {
-            y = margin.top;
-          }
-        } else if (alignment.startsWith("bottom")) {
-          y = pageDim.height - margin.bottom - scaledTileHeight;
+      } else if (
+        alignment === "center" ||
+        alignment === "center-left" ||
+        alignment === "center-right"
+      ) {
+        if (row === 0) {
+          y = margin.top + (availableHeight - scaledTileHeight);
         } else {
           y = margin.top;
         }
+      } else if (alignment.startsWith("bottom")) {
+        y = pageDim.height - margin.bottom - scaledTileHeight;
+      } else {
+        y = margin.top;
       }
 
       tiles.push({
         viewBox: `${tileX + viewBoxX} ${tileY + viewBoxY} ${tileWidth} ${tileHeight}`,
         width: scaledTileWidth,
         height: scaledTileHeight,
-        x: x,
-        y: y,
+        x,
+        y,
       });
     }
   }
@@ -679,8 +675,8 @@ export async function exportToPDF({
     }
 
     // Determine a base numeric page size large enough for all pages
-    let baseW = 0,
-      baseH = 0;
+    let baseW = 0;
+    let baseH = 0;
     for (const { w, h } of pageRuleNames.values()) {
       baseW = Math.max(baseW, w);
       baseH = Math.max(baseH, h);

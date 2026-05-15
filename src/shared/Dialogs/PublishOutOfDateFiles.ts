@@ -110,7 +110,7 @@ export class PublishOutOfDateFilesDialog extends Modal {
   onOpen() {
     this.containerEl.classList.add("excalidraw-release");
     this.titleEl.setText(`Out of Date SVG Files`);
-    this.createForm(false);
+    void this.createForm(false);
   }
 
   async createForm(recursive: boolean) {
@@ -148,7 +148,7 @@ export class PublishOutOfDateFilesDialog extends Modal {
         });
         bRecursive.onclick = () => {
           this.contentEl.empty();
-          this.createForm(true);
+          void this.createForm(true);
         };
       }
       return;
@@ -182,7 +182,7 @@ export class PublishOutOfDateFilesDialog extends Modal {
       });
       bRecursive.onclick = () => {
         this.contentEl.empty();
-        this.createForm(true);
+        void this.createForm(true);
       };
     }
     const bOpen = div.createEl("button", {

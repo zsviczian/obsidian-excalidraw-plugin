@@ -18,7 +18,7 @@ let tsOrigin: number = 0;
 export function tsInit(msg: string) {
   tsOrigin = Date.now();
   timestamp = [tsOrigin, tsOrigin, tsOrigin, tsOrigin, tsOrigin]; // Initialize timestamps for L0 to L4
-  console.log("0ms: " + msg);
+  console.log(`0ms: ${msg}`);
 }
 
 export function ts(msg: string, level: number) {

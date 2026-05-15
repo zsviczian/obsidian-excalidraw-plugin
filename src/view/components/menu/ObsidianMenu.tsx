@@ -97,7 +97,7 @@ export class ObsidianMenu {
     //open pen settings on double click
     if (dblClick) {
       const penSettings = new PenSettingsModal(this.plugin, this.view, index);
-      (async () => {
+      void (async () => {
         await this.plugin.loadSettings();
         penSettings.open();
       })();
@@ -127,10 +127,10 @@ export class ObsidianMenu {
     if (this.longpressTimeout[index]) {
       this.view.ownerWindow.clearTimeout(this.longpressTimeout[index]);
       this.longpressTimeout[index] = 0;
-      (async () => {
+      void (async () => {
         const f = this.view.app.vault.getAbstractFileByPath(key);
         if (f && f instanceof TFile) {
-          this.plugin.scriptEngine.executeScript(
+          await this.plugin.scriptEngine.executeScript(
             this.view,
             await this.view.app.vault.read(f),
             this.plugin.scriptEngine.getScriptName(f),
@@ -150,7 +150,7 @@ export class ObsidianMenu {
     if (now - this.prevClickTimestamp >= 500) {
       this.longpressTimeout[index] = this.view.ownerWindow.setTimeout(() => {
         this.longpressTimeout[index] = 0;
-        (async () => {
+        void (async () => {
           await this.plugin.loadSettings();
           const index = this.plugin.settings.pinnedScripts.indexOf(key);
           if (index > -1) {

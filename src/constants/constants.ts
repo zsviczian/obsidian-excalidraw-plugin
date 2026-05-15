@@ -3,6 +3,7 @@ import { ExcalidrawLib } from "../types/excalidrawLib";
 import ExcalidrawPlugin from "src/core/main";
 import { DeviceType } from "src/types/types";
 import { errorHandler } from "../utils/ErrorHandler";
+import { getLanguage } from "obsidian";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 declare const PLUGIN_VERSION: string;
 export let EXCALIDRAW_PLUGIN: ExcalidrawPlugin = null;
@@ -32,7 +33,7 @@ export const ERROR_IFRAME_CONVERSION_CANCELED = "iframe conversion canceled";
 
 declare const excalidrawLib: typeof ExcalidrawLib;
 
-export const LOCALE = localStorage.getItem("language")?.toLowerCase() || "en";
+export const LOCALE = getLanguage().toLowerCase();
 export const CJK_FONTS = "CJK Fonts";
 
 export const obsidianToExcalidrawMap: { [key: string]: string } = {
@@ -183,7 +184,6 @@ export const CJK_STYLE_ID = "excalidraw-cjk-fonts";
 export function JSON_parse<T>(x: string): T {
   return JSON.parse(x.replaceAll("&#91;", "[")) as T;
 }
-export const isDarwin = /Mac|iPod|iPhone|iPad/.test(window.navigator.platform);
 
 export const DEVICE: DeviceType = {
   isDesktop:
@@ -415,7 +415,7 @@ export const TEXT_DISPLAY_RAW_ICON_NAME = "presentation";
 export const EXIT_FULLSCREEN_ICON_NAME = "exit-fullscreen";*/
 export const SCRIPTENGINE_ICON_NAME = "ScriptEngine";
 
-export const KEYBOARD_EVENT_TYPES = ["keydown", "keyup", "keypress"];
+export const KEYBOARD_EVENT_TYPES = ["keydown", "keyup", "keypress"] as const;
 
 export const EXTENDED_EVENT_TYPES = [
   /*  "pointerdown",
@@ -444,7 +444,7 @@ export const EXTENDED_EVENT_TYPES = [
   "touchstart",
   "touchend",
   "touchmove",*/
-];
+] as const;
 
 //export const TWITTER_REG = /^(?:http(?:s)?:\/\/)?(?:(?:w){3}.)?twitter.com/;
 

@@ -45,22 +45,13 @@ import { FileData } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 import ExcalidrawView from "../view/ExcalidrawView";
-import { emptyDrawingElements } from "src/constants/emptydrawing";
+import { getEmptyDrawingElementsRuntime } from "src/constants/emptydrawing";
 import { sanitizedFragment } from "./htmlUtils";
 export { errorlog, getDataURL } from "./coreUtils";
 export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 
 declare const PLUGIN_VERSION: string;
 declare var LZString: any;
-
-declare module "obsidian" {
-  interface Workspace {
-    getAdjacentLeafInDirection(
-      leaf: WorkspaceLeaf,
-      direction: string,
-    ): WorkspaceLeaf;
-  }
-}
 
 let versionMismatchChecked = false;
 export async function checkVersionMismatch(plugin: ExcalidrawPlugin) {
@@ -105,7 +96,7 @@ export async function checkExcalidrawVersion() {
       .sort((el1: any, el2: any) => el2.published - el1.published)[0].version;
 
     if (isVersionNewerThanOther(latestVersion, PLUGIN_VERSION)) {
-      new Notice(t("UPDATE_AVAILABLE") + ` ${latestVersion}`);
+      new Notice(`${t("UPDATE_AVAILABLE")} ${latestVersion}`);
     }
 
     // Check for script updates
@@ -348,7 +339,7 @@ export async function getSVG(
       cropObject.destroy();
     } else {
       if (elements.length === 0) {
-        elements = emptyDrawingElements;
+        elements = getEmptyDrawingElementsRuntime();
       }
       svg = await exportToSvg({
         elements,
@@ -422,7 +413,7 @@ export async function getPNG(
     }
 
     if (elements.length === 0) {
-      elements = emptyDrawingElements;
+      elements = getEmptyDrawingElementsRuntime();
     }
 
     return await exportToBlob({
@@ -508,13 +499,12 @@ export function scaleLoadedImage(
     const file = EXCALIDRAW_PLUGIN.app.vault.getAbstractFileByPath(
       ef.path.replace(/#.*$/, "").replace(/\|.*$/, ""),
     );
-    if (!file || file instanceof TFolder) {
-      return false;
+    if (file && file instanceof TFile) {
+      return (
+        file.extension === "md" || EXCALIDRAW_PLUGIN.isExcalidrawFile(file)
+      );
     }
-    return (
-      (file as TFile).extension === "md" ||
-      EXCALIDRAW_PLUGIN.isExcalidrawFile(file as TFile)
-    );
+    return false;
   })) {
     const [imgWidth, imgHeight] = [img.size.width, img.size.height];
     const imgAspectRatio = imgWidth / imgHeight;
@@ -700,7 +690,7 @@ export function compress(data: string): string {
   let result = "";
   const chunkSize = 256;
   for (let i = 0; i < compressed.length; i += chunkSize) {
-    result += compressed.slice(i, i + chunkSize) + "\n\n";
+    result += `${compressed.slice(i, i + chunkSize)}\n\n`;
   }
 
   return result.trim();
@@ -1238,8 +1228,6 @@ export function convertSVGStringToElement(svg: string): SVGSVGElement {
   if (nestedSvg instanceof SVGSVGElement) {
     return nestedSvg;
   }
-
-  return;
 }
 
 export function escapeRegExp(str: string) {
@@ -1260,10 +1248,9 @@ export function addYouTubeThumbnail(
 
   const anchor = wrapper.createEl("a", {
     attr: {
-      href:
-        "https://www.youtube.com/watch?v=" +
-        link +
-        (startAt ? "&t=" + startAt : ""),
+      href: `https://www.youtube.com/watch?v=${
+        link
+      }${startAt ? `&t=${startAt}` : ""}`,
       target: "_blank",
       rel: "noopener noreferrer",
     },
@@ -1279,7 +1266,7 @@ export function addYouTubeThumbnail(
 }
 
 export interface FontMetrics {
-  unitsPerEm: number;
+  unitsPerEm: 1000 | 1024 | 2048;
   ascender: number;
   descender: number;
   lineHeight: number;
@@ -1292,7 +1279,7 @@ export async function getFontMetrics(
 ): Promise<FontMetrics | null> {
   try {
     const font = await opentype.load(fontUrl);
-    const unitsPerEm = font.unitsPerEm;
+    const unitsPerEm = font.unitsPerEm as 1000 | 1024 | 2048;
     const ascender = font.ascender;
     const descender = font.descender;
     const lineHeight = (ascender - descender) / unitsPerEm;

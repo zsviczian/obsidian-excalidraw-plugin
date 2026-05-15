@@ -131,7 +131,7 @@ export class ObserverManager {
 
   public experimentalFileTypeDisplayToggle(enabled: boolean) {
     if (enabled) {
-      this.experimentalFileTypeDisplay();
+      void this.experimentalFileTypeDisplay();
       return;
     }
     if (this.fileExplorerObserver) {
@@ -293,7 +293,7 @@ export class ObserverManager {
 
       const { errorMessage } = view.excalidrawAPI.getAppState();
       if (!errorMessage) {
-        this.plugin.activeExcalidrawView.save();
+        await this.plugin.activeExcalidrawView.save();
       }
     };
 
@@ -372,7 +372,7 @@ export class ObserverManager {
           newDisplay !== "none" &&
           activeView.isDirty()
         ) {
-          activeView.save();
+          void activeView.save();
         }
       }
     };

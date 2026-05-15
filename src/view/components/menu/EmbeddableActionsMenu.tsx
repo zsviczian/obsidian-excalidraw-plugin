@@ -35,6 +35,44 @@ import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { CaptureUpdateAction } from "src/constants/constants";
 
+type BlockCacheEntry = Awaited<
+  ReturnType<ExcalidrawView["app"]["metadataCache"]["blockCache"]["getForFile"]>
+>["blocks"][number];
+
+type HeadingBlockEntry = BlockCacheEntry & {
+  display: string;
+  node: BlockCacheEntry["node"] & {
+    type: "heading";
+  };
+};
+
+type ParagraphLikeBlockEntry = BlockCacheEntry & {
+  display: string;
+  node: BlockCacheEntry["node"] & {
+    type: "paragraph" | "blockquote" | "listItem" | "table" | "callout";
+  };
+};
+
+function isHeadingBlockEntry(
+  entry: BlockCacheEntry,
+): entry is HeadingBlockEntry {
+  return Boolean(entry.display && entry.node?.type === "heading");
+}
+
+function isParagraphLikeBlockEntry(
+  entry: BlockCacheEntry,
+): entry is ParagraphLikeBlockEntry {
+  return Boolean(
+    entry.display &&
+    entry.node &&
+    (entry.node.type === "paragraph" ||
+      entry.node.type === "blockquote" ||
+      entry.node.type === "listItem" ||
+      entry.node.type === "table" ||
+      entry.node.type === "callout"),
+  );
+}
+
 export class EmbeddableMenu {
   private menuFadeTimeout: number = 0;
   private menuElementId: string = null;
@@ -80,7 +118,7 @@ export class EmbeddableMenu {
       file.extension === "md",
     );
     const link = `[[${path}${subpath}]]`;
-    const ea = getEA(view) as ExcalidrawAutomate;
+    const ea = getEA(view);
     ea.copyViewElementsToEAforEditing([element]);
     ea.getElement(element.id).link = link;
     view.excalidrawData.elementLinks.set(element.id, link);
@@ -126,7 +164,7 @@ export class EmbeddableMenu {
       return;
     }
     if (newSubpath !== subpath) {
-      this.updateElement(newSubpath, element, file);
+      await this.updateElement(newSubpath, element, file);
     }
   }
 
@@ -146,21 +184,18 @@ export class EmbeddableMenu {
         file,
       )
     ).blocks
-      .filter((b: any) => b.display && b.node?.type === "heading")
-      .filter(
-        (b: any) => !isExcalidrawFile || !MD_EX_SECTIONS.includes(b.display),
-      );
-    let values, display;
+      .filter(isHeadingBlockEntry)
+      .filter((b) => !isExcalidrawFile || !MD_EX_SECTIONS.includes(b.display));
+    let values: string[];
+    let display: string[];
     if (isExcalidrawFile) {
-      values = sections.map((b: any) => `#${cleanSectionHeading(b.display)}`);
-      display = sections.map((b: any) => b.display);
+      values = sections.map((b) => `#${cleanSectionHeading(b.display)}`);
+      display = sections.map((b) => b.display);
     } else {
       values = [""].concat(
-        sections.map((b: any) => `#${cleanSectionHeading(b.display)}`),
+        sections.map((b) => `#${cleanSectionHeading(b.display)}`),
       );
-      display = [t("SHOW_ENTIRE_FILE")].concat(
-        sections.map((b: any) => b.display),
-      );
+      display = [t("SHOW_ENTIRE_FILE")].concat(sections.map((b) => b.display));
     }
     const newSubpath = await ScriptEngine.suggester(
       this.view.app,
@@ -172,7 +207,7 @@ export class EmbeddableMenu {
       return;
     }
     if (newSubpath !== subpath) {
-      this.updateElement(newSubpath, element, file);
+      await this.updateElement(newSubpath, element, file);
     }
   }
 
@@ -193,7 +228,7 @@ export class EmbeddableMenu {
     if (!pdfFile) {
       return;
     }
-    this.updateElement(`#page=${page}`, element, pdfFile, false);
+    void this.updateElement(`#page=${page}`, element, pdfFile, false);
   }
 
   private async actionInsertPageAsImage(element: ExcalidrawEmbeddableElement) {
@@ -213,7 +248,7 @@ export class EmbeddableMenu {
     if (!pdfFile) {
       return;
     }
-    const ea = getEA(this.view) as ExcalidrawAutomate;
+    const ea = getEA(this.view);
     ea.selectElementsInView([]);
     const x = element.x + element.width + 20;
     const y = element.y;
@@ -251,21 +286,14 @@ export class EmbeddableMenu {
         { isCancelled: () => false },
         file,
       )
-    ).blocks.filter(
-      (b: any) =>
-        b.display &&
-        b.node &&
-        (b.node.type === "paragraph" ||
-          b.node.type === "blockquote" ||
-          b.node.type === "listItem" ||
-          b.node.type === "table" ||
-          b.node.type === "callout"),
-    );
-    const values = ["entire-file"].concat(paragraphs);
+    ).blocks.filter(isParagraphLikeBlockEntry);
+    const values: Array<"entire-file" | (typeof paragraphs)[number]> = [
+      "entire-file",
+      ...paragraphs,
+    ];
     const display = [t("SHOW_ENTIRE_FILE")].concat(
       paragraphs.map(
-        (b: any) =>
-          `${b.node?.id ? `#^${b.node.id}: ` : ``}${b.display.trim()}`,
+        (b) => `${b.node.id ? `#^${b.node.id}: ` : ``}${b.display.trim()}`,
       ),
     );
 
@@ -283,7 +311,7 @@ export class EmbeddableMenu {
       if (subpath === "") {
         return;
       }
-      this.updateElement("", element, file);
+      await this.updateElement("", element, file);
       return;
     }
 
@@ -303,13 +331,13 @@ export class EmbeddableMenu {
       }
       await this.view.app.vault.modify(
         file,
-        fileContents.slice(0, offset) +
-          ` ^${blockID}` +
-          fileContents.slice(offset),
+        `${fileContents.slice(0, offset)} ^${blockID}${fileContents.slice(
+          offset,
+        )}`,
       );
       await sleep(200); //wait for cache to update
     }
-    this.updateElement(`#^${blockID}`, element, file);
+    await this.updateElement(`#^${blockID}`, element, file);
   }
 
   private actionZoomToElement(
@@ -364,7 +392,7 @@ export class EmbeddableMenu {
     if (!element) {
       return;
     }
-    navigator.clipboard.writeText(atob(link.split(",")[1]));
+    void navigator.clipboard.writeText(atob(link.split(",")[1]));
   }
 
   renderButtons(appState: AppState) {

@@ -77,7 +77,7 @@ export class InsertLinkDialog extends FuzzySuggestModal<LinkSuggestion> {
 
   private inLink: string;
   onOpen(): void {
-    super.onOpen();
+    void super.onOpen();
     if (this.inLink) {
       this.inputEl.value = this.inLink;
       this.inputEl.dispatchEvent(new Event("input"));
