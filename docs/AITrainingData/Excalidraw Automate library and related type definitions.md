@@ -5,6 +5,11 @@
 /* ************************************** */
 /* lib/shared/ExcalidrawAutomate.d.ts */
 /* ************************************** */
+type ExcalidrawCustomDataValue = string | number | boolean | null | ExcalidrawCustomDataValue[] | {
+    [key: string]: ExcalidrawCustomDataValue;
+};
+type ExcalidrawCustomDataPatch = Partial<Record<string, ExcalidrawCustomDataValue | undefined>>;
+type ExcalidrawAutomateHelpTarget = ((...args: any[]) => any) | string;
 /**
  * ExcalidrawAutomate is a utility class that provides a simplified API to interact with Excalidraw elements and the Excalidraw canvas.
  * Elements in the Excalidraw Scene are immutable. You should never directly change element properties in the scene object.
@@ -90,25 +95,71 @@ export declare class ExcalidrawAutomate {
      * Add or modify keys in an element's customData while preserving existing keys.
      * Creates customData={} if it does not exist.
      * @param {string} id - The element ID in elementsDict to modify.
-     * @param {Partial<Record<string, unknown>>} newData - Object containing key-value pairs to add/update. Set value to undefined to delete a key.
+     * @param {ExcalidrawCustomDataPatch} newData - Object containing key-value pairs to add/update. Set value to undefined to delete a key.
      * @returns {Mutable<ExcalidrawElement> | undefined} The modified element, or undefined if element does not exist.
      */
-    addAppendUpdateCustomData(id: string, newData: Partial<Record<string, unknown>>): ExcalidrawElement;
+    addAppendUpdateCustomData(id: string, newData: ExcalidrawCustomDataPatch): ExcalidrawElement;
     /**
      * Displays help information for EA functions and properties intended to be used in Obsidian developer console.
-     * @param {Function | string} target - Function reference or property name as string.
+     * @param {ExcalidrawAutomateHelpTarget} target - Function reference or property name as string.
      * Usage examples:
      * - ea.help(ea.functionName)
      * - ea.help('propertyName')
      * - ea.help('utils.functionName')
      */
-    help(target: Function | string): void;
+    help(target: ExcalidrawAutomateHelpTarget): void;
+    /**
+     * Posts an AI request to the currently configured provider and returns the response.
+     * @param {AIRequest} request - The AI request configuration.
+     * @returns {Promise<RequestUrlResponse>} Promise resolving to the provider-normalized API response.
+     */
+    postAI(request: AIRequest): Promise<RequestUrlResponse>;
     /**
      * Posts an AI request to the OpenAI API and returns the response.
      * @param {AIRequest} request - The AI request configuration.
      * @returns {Promise<RequestUrlResponse>} Promise resolving to the API response.
      */
     postOpenAI(request: AIRequest): Promise<RequestUrlResponse>;
+    /**
+     * Returns the sanitized Excalidraw AI configuration currently available to scripts.
+     */
+    getAISettings(): ExcalidrawAISettings | null;
+    /**
+     * Sends a text or multimodal chat request to the configured AI text model.
+     */
+    generateAIText(request: AIRequest): Promise<{
+        response: RequestUrlResponse;
+        json: any;
+        content: string;
+        rateLimit: number | null;
+        rateLimitRemaining: number | null;
+    }>;
+    /**
+     * Sends an image-analysis request to the configured multimodal text model.
+     */
+    analyzeAIImage(request: AIRequest): Promise<{
+        response: RequestUrlResponse;
+        json: any;
+        content: string;
+        rateLimit: number | null;
+        rateLimitRemaining: number | null;
+    }>;
+    /**
+     * Generates a new image using the configured AI image model.
+     */
+    generateAIImage(request: AIRequest): Promise<import("../utils/AIUtils").GenerateAIImageResult>;
+    /**
+     * Applies a prompt-driven edit to an input image using the configured AI image model.
+     */
+    transformAIImage(request: AIRequest): Promise<import("../utils/AIUtils").GenerateAIImageResult>;
+    /**
+     * Applies a mask-based edit to an input image using the configured AI image model.
+     */
+    maskEditAIImage(request: AIRequest): Promise<import("../utils/AIUtils").GenerateAIImageResult>;
+    /**
+     * Creates a lightweight chat session wrapper that preserves prior messages between calls.
+     */
+    createAIChatSession(initialRequest?: Omit<AIRequest, "messages">): import("../utils/AIUtils").AIChatSession;
     /**
      * Extracts code blocks from markdown text.
      * @param {string} markdown - The markdown string to parse.
@@ -209,7 +260,7 @@ export declare class ExcalidrawAutomate {
      * @returns {{view:any}|{file:TFile, editor:Editor}|null} The active embeddable view or editor.
      */
     getActiveEmbeddableViewOrEditor(view?: ExcalidrawView): {
-        view: any;
+        view: View;
     } | {
         file: TFile;
         editor: Editor;
@@ -256,7 +307,7 @@ export declare class ExcalidrawAutomate {
         viewBackgroundColor: string;
         gridSize: number;
     };
-    colorPalette: {};
+    colorPalette: object;
     sidepanelTab: ExcalidrawSidepanelTab | null;
     constructor(plugin: ExcalidrawPlugin, view?: ExcalidrawView);
     /**
@@ -271,7 +322,7 @@ export declare class ExcalidrawAutomate {
      * In this case the script may wish to reuse the existing tab rather than create a new one.
      * @param scriptName - Optional script name to query. Defaults to ea.activeScript.
      * @returns The ExcalidrawSidepanelTab for the script, or undefined if none exists.
-  */
+     */
     checkForActiveSidepanelTabForScript(scriptName?: string): ExcalidrawSidepanelTab | null;
     /**
      * Creates a new sidepanel tab associated with this ExcalidrawAutomate instance.
@@ -459,6 +510,7 @@ export declare class ExcalidrawAutomate {
         onNewPane?: boolean;
         silent?: boolean;
         frontmatterKeys?: {
+            [key: string]: string | number | boolean | undefined;
             "excalidraw-plugin"?: "raw" | "parsed";
             "excalidraw-link-prefix"?: string;
             "excalidraw-link-brackets"?: boolean;
@@ -475,7 +527,7 @@ export declare class ExcalidrawAutomate {
             "excalidraw-mask"?: boolean;
             "excalidraw-open-md"?: boolean;
             "excalidraw-export-internal-links"?: boolean;
-            "cssclasses"?: string;
+            cssclasses?: string;
         };
         plaintext?: string;
     }): Promise<string>;
@@ -493,7 +545,7 @@ export declare class ExcalidrawAutomate {
      * @example
      * const dimensions = getPageDimensions("A4", "portrait");
      * console.log(dimensions); // { width: 794.56, height: 1122.56 }
-    */
+     */
     getPagePDFDimensions(pageSize: PageSize, orientation: PageOrientation): PageDimensions;
     /**
      * Creates a PDF from the provided SVG elements with specified scaling and page properties.
@@ -516,7 +568,7 @@ export declare class ExcalidrawAutomate {
      *   }
      *   filename: "example.pdf",
      * });
-    */
+     */
     createPDF({ SVG, scale, pageProps, filename, }: {
         SVG: SVGSVGElement[];
         scale?: PDFExportScale;
@@ -536,7 +588,7 @@ export declare class ExcalidrawAutomate {
      * @param {boolean} [options.embedScene=false] - Whether to embed the scene in the SVG.
      * @param {ExcalidrawElement[]} [options.elementsOverride] - Optional override for the elements to include in the SVG. Primary to support the Printable Layout Wizard script
      * @returns {Promise<SVGSVGElement>} A promise that resolves to the SVG element.
-    */
+     */
     createViewSVG({ withBackground, theme, frameRendering, padding, selectedOnly, skipInliningFonts, embedScene, elementsOverride, }: {
         withBackground?: boolean;
         theme?: "light" | "dark";
@@ -799,7 +851,7 @@ export declare class ExcalidrawAutomate {
      * Adds an image element to the ExcalidrawAutomate instance.
      * @param {number | AddImageOptions} topXOrOpts - The x-coordinate of the top-left corner or an options object.
      * @param {number} topY - The y-coordinate of the top-left corner.
-     * @param {TFile | string} imageFile - The image file or URL.
+     * @param {TFile | string} imageFile - The image file, hyperlink, vault path, PDF++ reference, or data URL.
      * @param {boolean} [scale=true] - Whether to scale the image to MAX_IMAGE_SIZE.
      * @param {boolean} [anchor=true] - Whether to anchor the image at 100% size.
      * @returns {Promise<string>} Promise resolving to the ID of the added image element.
@@ -905,14 +957,14 @@ export declare class ExcalidrawAutomate {
     setView(view?: ExcalidrawView | "auto" | "first" | "active" | null, show?: boolean): ExcalidrawView;
     /**
      * Returns the Excalidraw API for the current view.
-     * @returns {any} The Excalidraw API.
+     * @returns {ExcalidrawImperativeAPI} The Excalidraw API.
      */
-    getExcalidrawAPI(): any;
+    getExcalidrawAPI(): ExcalidrawImperativeAPI;
     /**
      * Gets elements in the current view.
-     * @returns {ExcalidrawElement[]} Array of elements in the view.
+     * @returns {readonly ExcalidrawElement[]} Array of elements in the view.
      */
-    getViewElements(): ExcalidrawElement[];
+    getViewElements(): readonly ExcalidrawElement[];
     /**
      * Deletes elements in the view by removing them from the scene (not by setting isDeleted to true).
      * @param {ExcalidrawElement[]} elToDelete - Array of elements to delete.
@@ -967,10 +1019,10 @@ export declare class ExcalidrawAutomate {
     /**
      * Gets the color information from an Excalidraw file.
      * @param {TFile} file - The Excalidraw file.
-     * @param {ExcalidrawImageElement} img - The image element.
+     * @param {ExcalidrawImageElement} img? - Optional, if not provided, the function returns colors from all elements.
      * @returns {Promise<SVGColorInfo>} Promise resolving to the SVG color information.
      */
-    getColosFromExcalidrawFile(file: TFile, img: ExcalidrawImageElement): Promise<SVGColorInfo>;
+    getColosFromExcalidrawFile(file: TFile, img?: ExcalidrawImageElement): Promise<SVGColorInfo>;
     /**
      * Extracts color information from an SVG string.
      * @param {string} svgString - The SVG string.
@@ -998,7 +1050,7 @@ export declare class ExcalidrawAutomate {
      * @param {Object} scene - The scene to load to Excalidraw.
      * @param {ExcalidrawElement[]} [scene.elements] - Array of elements in the scene.
      * @param {AppState} [scene.appState] - The app state of the scene.
-     * @param {BinaryFileData} [scene.files] - The files in the scene.
+     * @param {BinaryFiles} [scene.files] - The files in the scene.
      * @param {boolean} [scene.commitToHistory] - Whether to commit the scene to history. @deprecated Use scene.storageOption instead
      * @param {"capture" | "none" | "update"} [scene.storeAction] - The store action for the scene. @deprecated Use scene.storageOption instead
      * @param {"IMMEDIATELY" | "NEVER" | "EVENTUALLY"} [scene.captureUpdate] - The capture update action for the scene.
@@ -1006,8 +1058,8 @@ export declare class ExcalidrawAutomate {
      */
     viewUpdateScene(scene: {
         elements?: ExcalidrawElement[];
-        appState?: AppState | {};
-        files?: BinaryFileData;
+        appState?: AppState | object;
+        files?: BinaryFiles;
         commitToHistory?: boolean;
         storeAction?: "capture" | "none" | "update";
         captureUpdate?: SceneData["captureUpdate"];
@@ -1067,18 +1119,18 @@ export declare class ExcalidrawAutomate {
      */
     onViewModeChangeHook: (isViewModeEnabled: boolean, view: ExcalidrawView, ea: ExcalidrawAutomate) => void;
     /**
-    * If set, this callback is triggered, when the user hovers a link in the scene.
-    * You can use this callback in case you want to do something additional when the onLinkHover event occurs.
-    * This callback must return a boolean value.
-    * In case you want to prevent the excalidraw onLinkHover action you must return false, it will stop the native excalidraw onLinkHover management flow.
-    */
+     * If set, this callback is triggered, when the user hovers a link in the scene.
+     * You can use this callback in case you want to do something additional when the onLinkHover event occurs.
+     * This callback must return a boolean value.
+     * In case you want to prevent the excalidraw onLinkHover action you must return false, it will stop the native excalidraw onLinkHover management flow.
+     */
     onLinkHoverHook: (element: NonDeletedExcalidrawElement, linkText: string, view: ExcalidrawView, ea: ExcalidrawAutomate) => boolean;
     /**
-    * If set, this callback is triggered, when the user clicks a link in the scene.
-    * You can use this callback in case you want to do something additional when the onLinkClick event occurs.
-    * This callback must return a boolean value.
-    * In case you want to prevent the excalidraw onLinkClick action you must return false, it will stop the native excalidraw onLinkClick management flow.
-    */
+     * If set, this callback is triggered, when the user clicks a link in the scene.
+     * You can use this callback in case you want to do something additional when the onLinkClick event occurs.
+     * This callback must return a boolean value.
+     * In case you want to prevent the excalidraw onLinkClick action you must return false, it will stop the native excalidraw onLinkClick management flow.
+     */
     onLinkClickHook: (element: ExcalidrawElement, linkText: string, event: MouseEvent, view: ExcalidrawView, ea: ExcalidrawAutomate) => boolean;
     /**
      * If set, this callback is triggered, when Excalidraw receives an onDrop event.
@@ -1256,7 +1308,7 @@ export declare class ExcalidrawAutomate {
      * @param {ExcalidrawView} view - The Excalidraw view.
      * @param {string} color - The new canvas color.
      */
-    onCanvasColorChangeHook: (ea: ExcalidrawAutomate, view: ExcalidrawView, //the excalidraw view 
+    onCanvasColorChangeHook: (ea: ExcalidrawAutomate, view: ExcalidrawView, //the excalidraw view
     color: string) => void;
     /**
      * If set, this callback is triggered whenever a drawing is exported to SVG.
@@ -1302,7 +1354,7 @@ export declare class ExcalidrawAutomate {
      * @param {ExcalidrawElement[]} elements - Array of elements to get the bounding box for.
      * @returns {{topX: number; topY: number; width: number; height: number}} The bounding box of the elements.
      */
-    getBoundingBox(elements: ExcalidrawElement[]): {
+    getBoundingBox(elements: readonly ExcalidrawElement[]): {
         topX: number;
         topY: number;
         width: number;
@@ -1343,7 +1395,7 @@ export declare class ExcalidrawAutomate {
      * @param {boolean} [includeFrameElements=false] - Whether to include frame elements in the search.
      * @returns {ExcalidrawElement[]} Array of elements in the same group as the specified element.
      */
-    getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: ExcalidrawElement[], includeFrameElements?: boolean): ExcalidrawElement[];
+    getElementsInTheSameGroupWithElement(element: ExcalidrawElement, elements: readonly NonDeletedExcalidrawElement[], includeFrameElements?: boolean): ExcalidrawElement[];
     /**
      * Gets all the elements from elements[] that are contained in the specified frame.
      * @param {ExcalidrawElement} frameElement - The frame element.
@@ -1351,7 +1403,7 @@ export declare class ExcalidrawAutomate {
      * @param {boolean} [shouldIncludeFrame=false] - Whether to include the frame element in the result.
      * @returns {ExcalidrawElement[]} Array of elements contained in the frame.
      */
-    getElementsInFrame(frameElement: ExcalidrawElement, elements: ExcalidrawElement[], shouldIncludeFrame?: boolean): ExcalidrawElement[];
+    getElementsInFrame(frameElement: ExcalidrawElement, elements: readonly NonDeletedExcalidrawElement[], shouldIncludeFrame?: boolean): ExcalidrawElement[];
     /**
      * Sets the active script for the ScriptEngine.
      * @param {string} scriptName - The name of the active script.
@@ -1362,7 +1414,7 @@ export declare class ExcalidrawAutomate {
      * Saves settings in plugin settings, under the activeScript key.
      * @returns {Object} The script settings.
      */
-    getScriptSettings(): {};
+    getScriptSettings(): object;
     /**
      * Sets the script settings for the active script.
      * @param {Object} settings - The script settings to set.
@@ -1416,10 +1468,10 @@ export declare class ExcalidrawAutomate {
     verifyMinimumPluginVersion(requiredVersion: string): boolean;
     /**
      * Checks if the provided view is an instance of ExcalidrawView.
-     * @param {any} view - The view to check.
+     * @param {ExcalidrawView | null | undefined} view - The view to check.
      * @returns {boolean} True if the view is an instance of ExcalidrawView, false otherwise.
      */
-    isExcalidrawView(view: any): boolean;
+    isExcalidrawView(view: ExcalidrawView | null | undefined): boolean;
     /**
      * Sets the selection in the view.
      * @param {ExcalidrawElement[] | string[]} elements - Array of elements or element IDs to select.
@@ -1508,7 +1560,7 @@ export declare class ExcalidrawAutomate {
      * Gets the PolyBool class from https://github.com/velipso/polybooljs.
      * @returns {PolyBool} The PolyBool class.
      */
-    getPolyBool(): any;
+    getPolyBool(): typeof PolyBool;
     /**
      * Imports an SVG string into ExcalidrawAutomate elements.
      * @param {string} svgString - The SVG string to import.
@@ -1557,6 +1609,7 @@ export type ImageInfo = {
     size?: Size;
     colorMap?: ColorMap;
     pdfPageViewProps?: PDFPageViewProps;
+    renderScale?: number;
 };
 export interface AddImageOptions {
     topX: number;
@@ -1603,14 +1656,14 @@ export interface SidepanelTab {
     /** Title element whose text mirrors `title`. */
     readonly titleEl: HTMLDivElement;
     /**
-   * Focus hook fired when the host marks this tab active; set by scripts.
-   * Because sidpanel tabs may outlive their associated Excalidraw views on focus is designed to notify scripts of the most recently active view.
-   * The script can verify if the view has changed by comparing against ea.targetView (ea.targetView === view means no change).
-   * The script is responsible for calling ea.setView(view) if it wishes to bind to the new view.
-   * The script may also wish to call ea.clear() or ea.reset() to discard state associated with the prior view.
-   * In case the script performs view specific actions it should update its UI in onFocus when the received view !== ea.targetView.
-   * @param view The most recently active ExcalidrawView, or null if no ExcalidrawViews are present in the workspace.
-   */
+     * Focus hook fired when the host marks this tab active; set by scripts.
+     * Because sidpanel tabs may outlive their associated Excalidraw views on focus is designed to notify scripts of the most recently active view.
+     * The script can verify if the view has changed by comparing against ea.targetView (ea.targetView === view means no change).
+     * The script is responsible for calling ea.setView(view) if it wishes to bind to the new view.
+     * The script may also wish to call ea.clear() or ea.reset() to discard state associated with the prior view.
+     * In case the script performs view specific actions it should update its UI in onFocus when the received view !== ea.targetView.
+     * @param view The most recently active ExcalidrawView, or null if no ExcalidrawViews are present in the workspace.
+     */
     onFocus: (view: ExcalidrawView | null) => void;
     /** Hook fired when the associated Excalidraw view closes; set by ScriptEngine. */
     onExcalidrawViewClosed: () => void;
@@ -1821,16 +1874,20 @@ export type ImgData = {
     fileId: FileId;
     dataURL: DataURL;
     created: number;
+    loadedFromCache?: boolean;
     hasSVGwithBitmap: boolean;
     size: Size;
     pdfPageViewProps?: PDFPageViewProps;
+    renderScale?: number;
 };
 export declare type MimeType = ValueOf<typeof IMAGE_MIME_TYPES> | "application/octet-stream";
 export type FileData = BinaryFileData & {
     size: Size;
+    loadedFromCache?: boolean;
     hasSVGwithBitmap: boolean;
     shouldScale: boolean;
     pdfPageViewProps?: PDFPageViewProps;
+    renderScale?: number;
 };
 export type PDFPageViewProps = {
     left: number;
@@ -1850,10 +1907,70 @@ export interface ColorMap {
 /* ******************************** */
 /* lib/types/AIUtilTypes.d.ts */
 /* ******************************** */
-type MessageContent = string | (string | {
+export type AIProvider = "openai" | "anthropic" | "google" | "xai" | "openai-compatible";
+export type AIFileInput = string | {
+    url: string;
+    filename?: string;
+    mimeType?: string;
+} | {
+    dataURL: string;
+    filename?: string;
+    mimeType?: string;
+};
+export type AIImageInput = string | {
+    url: string;
+    detail?: "low" | "high" | "auto";
+    filename?: string;
+    mimeType?: string;
+} | {
+    dataURL: string;
+    detail?: "low" | "high" | "auto";
+    filename?: string;
+    mimeType?: string;
+};
+export type AIImageModelCapability = {
+    supportedSizes: string[];
+    supportsPromptImageTransforms: boolean;
+    supportsMaskImageEdits: boolean;
+};
+export type AIProviderProfile = {
+    provider: AIProvider;
+    apiKey: string;
+    baseURL: string;
+};
+export type AIModelConfig = {
+    providerId: string;
+    model: string;
+    endpoint?: string;
+    multimodalSupport?: boolean;
+};
+export type AIImageModelConfig = AIModelConfig & AIImageModelCapability;
+export type ExcalidrawAISettings = {
+    enabled: boolean;
+    providerProfiles: Record<string, {
+        provider: AIProvider;
+        baseURL: string;
+        hasApiKey: boolean;
+    }>;
+    textModels: Record<string, AIModelConfig>;
+    imageModels: Record<string, AIImageModelConfig>;
+    defaultTextModel: string;
+    defaultMultimodalTextModel: string;
+    defaultImageModel: string;
+    defaultMaxOutgoingTokens: number;
+    defaultMaxResponseTokens: number;
+};
+export type OpenAIImageURLPart = {
     type: "image_url";
-    image_url: string;
-})[];
+    image_url: string | {
+        url: string;
+        detail?: "low" | "high" | "auto";
+    };
+};
+type MessageContent = string | ({
+    type: "text";
+    text: string;
+} | OpenAIImageURLPart)[];
 export type GPTCompletionRequest = {
     model: string;
     messages?: {
@@ -1861,12 +1978,19 @@ export type GPTCompletionRequest = {
         content?: MessageContent;
         name?: string | undefined;
     }[];
-    functions?: any[] | undefined;
-    function_call?: any | undefined;
+    functions?: {
+        name: string;
+        description?: string;
+        parameters?: Record<string, string | number | boolean | null | Record<string, string | number | boolean | null>>;
+    }[] | undefined;
+    function_call?: "none" | "auto" | {
+        name: string;
+    } | undefined;
     stream?: boolean | undefined;
     temperature?: number | undefined;
     top_p?: number | undefined;
     max_tokens?: number | undefined;
+    max_completion_tokens?: number | undefined;
     n?: number | undefined;
     best_of?: number | undefined;
     frequency_penalty?: number | undefined;
@@ -1881,16 +2005,43 @@ export type GPTCompletionRequest = {
     image?: string;
     mask?: string;
 };
+export type AIRequestMessagePart = {
+    type: "text";
+    text: string;
+} | {
+    type: "image";
+    image: AIImageInput;
+} | {
+    type: "file";
+    file: AIFileInput;
+} | {
+    type: "audio";
+    audio: AIFileInput;
+};
+export type AIRequestMessage = {
+    role: "system" | "user" | "assistant";
+    content: string | AIRequestMessagePart[];
+};
 export type AIRequest = {
-    image?: string;
+    provider?: AIProvider;
+    baseURL?: string;
+    apiKey?: string;
+    model?: string;
+    textModelId?: string;
+    imageModelId?: string;
+    image?: AIImageInput;
     text?: string;
     instruction?: string;
     systemPrompt?: string;
+    messages?: AIRequestMessage[];
+    temperature?: number;
+    maxOutgoingTokens?: number;
+    maxTokens?: number;
     imageGenerationProperties?: {
         size?: string;
         quality?: "standard" | "hd";
         n?: number;
-        mask?: string;
+        mask?: AIImageInput;
     };
 };
 
@@ -2425,7 +2576,10 @@ export interface AppState {
     bindingPreference: "enabled" | "disabled";
     /** user preference whether arrow snap to midpoints while binding */
     isMidpointSnappingEnabled: boolean;
-    startBoundElement: NonDeleted<ExcalidrawBindableElement> | null;
+    /**
+     * The bindable element the UI highlights for the user when an arrow is
+     * dragged or otherwise its endpoint being close to said element.
+     */
     suggestedBinding: {
         element: NonDeleted<ExcalidrawBindableElement>;
         midPoint?: GlobalPoint;
@@ -2635,7 +2789,7 @@ export type SearchMatch = {
         showOnCanvas: boolean;
     }[];
 };
-export type UIAppState = Omit<AppState, "startBoundElement" | "cursorButton" | "scrollX" | "scrollY">;
+export type UIAppState = Omit<AppState, "cursorButton" | "scrollX" | "scrollY">;
 export type NormalizedZoomValue = number & {
     _brand: "normalizedZoom";
 };
@@ -3513,6 +3667,7 @@ declare class App extends React.Component<AppProps, AppState> {
         } | "cursor" | "center";
         retainSeed?: boolean;
         fitToContent?: boolean;
+        preserveFrameChildrenOrder?: boolean;
     }) => void;
     private addElementsFromMixedContentPaste;
     private addTextFromPaste;
@@ -3665,7 +3820,15 @@ declare class App extends React.Component<AppProps, AppState> {
     private handleCanvasClick;
     private getElementLinkAtPosition;
     private handleElementLinkClick;
+    /**
+     * finds candidate frame under cursor (when dragging frame children/elements
+     * inside frames)
+     */
     private getTopLayerFrameAtSceneCoords;
+    private updateFrameToHighlight;
+    private maybeUpdateFrameToHighlightOnPointerMove;
+    private insertNewElements;
+    private insertNewElement;
     private handleCanvasPointerMove;
     private handleEraser;
     private handleTouchMove;

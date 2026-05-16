@@ -1372,10 +1372,6 @@ const run = async (text) => {
   const bb = ea.getBoundingBox(ea.getViewSelectedElements()); 
   const spinnerID = ea.addEmbeddable(bb.topX+bb.width+100,bb.topY-(720-bb.height)/2,550,720,spinner);
   
-  //this block is in an async call using the isEACompleted flag because otherwise during debug Obsidian
-  //goes black (not freezes, but does not get a new frame for some reason)
-  //palcing this in an async call solves this issue
-  //If you know why this is happening and can offer a better solution, please reach out to @zsviczian
   let isEACompleted = false;
   setTimeout(async()=>{
     await ea.addElementsToView(false,true);
@@ -1435,9 +1431,6 @@ const run = async (text) => {
     result = await requestTextResult();
   }
 
-  //checking that EA has completed. Because the postOpenAI call is an async await
-  //I don't expect EA not to be completed by now. However the devil never sleeps.
-  //This (the insomnia of the Devil) is why I have a watchdog here as well
   let counter = 0
   while(!isEACompleted && counter++<10) sleep(50);
   if(!isEACompleted) {
@@ -1618,15 +1611,14 @@ const addPreviewImage = () => {
   }
 
   previewDiv.createEl("img",{
-    attr: {
-      style: `max-width: 100%;max-height: 30vh;`,
-      src: imageDataURL,
-    }
+    cls: "excali-ai-preview-img",
+    attr: { src: imageDataURL }
   });
 
   if(activeTask && !doesTaskAllowImageInput(activeTask.id)) {
     previewDiv.createEl("p", {
       text: "This task ignores the current canvas selection and uses only the text prompt.",
+      cls: "excali-ai-help-text"
     });
     return;
   }
@@ -1636,16 +1628,15 @@ const addPreviewImage = () => {
       text: activeImageModelSupportsMaskEdits()
         ? "Mask edit is off. Non-image elements are flattened into the preview image and sent as a prompt-based transform."
         : "This model doesn't support mask edits. Non-image elements are flattened into the preview image and sent as a prompt-based transform.",
+      cls: "excali-ai-help-text"
     });
     return;
   }
 
   if(maskDataURL) {
     previewDiv.createEl("img",{
-      attr: {
-        style: `max-width: 100%;max-height: 30vh;`,
-        src: maskDataURL,
-      }
+      cls: "excali-ai-preview-img",
+      attr: { src: maskDataURL }
     });
   }
 }
@@ -1883,7 +1874,10 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
         }
       `,
     });
-    contentEl.createEl("h1", {text: "ExcaliAI Task Editor"});
+    
+    const headerContainer = contentEl.createDiv({ style: "display: flex; align-items: center; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 10px;" });
+    headerContainer.innerHTML = `${ea.obsidian.getIcon("bot").outerHTML} <h2 style="margin: 0;">ExcaliAI Task Editor</h2>`;
+    
     contentEl.createEl("p", {text: "Tasks are stored in ExcaliAI's script settings JSON. Edit the fields below to add, remove, or change how a task runs."});
 
     taskHeaderSetting = new ea.obsidian.Setting(contentEl)
@@ -1900,7 +1894,7 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
           populateTaskEditorFields();
         });
       })
-      .addButton(button => button.setButtonText("Add task").onClick(() => {
+      .addButton(button => button.setButtonText(" Add task").setIcon("plus").onClick(() => {
         const nextTask = createBlankTaskConfig(editableTasks);
         nextTask.id = createUniqueTaskId(nextTask.id, editableTasks);
         editableTasks.push(nextTask);
@@ -1908,7 +1902,7 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
         editorDirty = true;
         populateTaskEditorFields();
       }))
-      .addButton(button => button.setButtonText("Delete task").onClick(() => {
+      .addButton(button => button.setButtonText(" Delete task").setIcon("trash-2").onClick(() => {
         const taskConfig = getEditorTask();
         if(!taskConfig) {
           new Notice("No task is selected.", 5000);
@@ -1922,7 +1916,7 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
         editorDirty = true;
         populateTaskEditorFields();
       }))
-      .addButton(button => button.setButtonText("Reset defaults").onClick(() => {
+      .addButton(button => button.setButtonText(" Reset defaults").setIcon("rotate-ccw").onClick(() => {
         if(!window.confirm("Reset all ExcaliAI tasks to the shipped defaults? This overwrites custom tasks.")) {
           return;
         }
@@ -2144,7 +2138,7 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
     addTaskEditorFieldClass(maskModeSetting);
 
     new ea.obsidian.Setting(contentEl)
-      .addButton(button => button.setButtonText("Done").setCta().onClick(() => taskModal.close()));
+      .addButton(button => button.setButtonText(" Done").setIcon("check").setCta().onClick(() => taskModal.close()));
 
     populateTaskEditorFields();
   };
@@ -2165,16 +2159,159 @@ const openTaskEditorModal = ({reopenMainModal = false} = {}) => {
 
 const openConfigModal = () => {
   dirty = false;
-  const configModal = new ea.obsidian.Modal(app);
-  configModal.modalEl.style.width = "100%";
-  configModal.modalEl.style.maxWidth = "1000px";
+  const configModal = new ea.FloatingModal(app);
+  configModal.modalEl.classList.add("excali-ai-floating-modal");
 
   let openTaskEditorAfterClose = false;
   let refreshingMainFields = false;
+  
+  let lastSelectedElementIds = ea.getViewSelectedElements().map(e=>e.id).sort().join(",");
+  let isUpdatingSelection = false;
 
   configModal.onOpen = async () => {
     const contentEl = configModal.contentEl;
-    contentEl.createEl("h1", {text: "ExcaliAI"});
+    
+    // --- CSS ---
+    contentEl.createEl("style", {
+      text: `
+        .excali-ai-floating-modal {
+          width: min(1000px, 95vw) !important;
+          max-height: 90vh !important;
+          border-radius: 8px;
+        }
+        .excali-ai-header {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 15px;
+          border-bottom: 1px solid var(--background-modifier-border);
+          padding-bottom: 10px;
+        }
+        .excali-ai-header h2 { margin: 0; font-weight: 600; }
+        .excali-ai-header svg { width: 28px; height: 28px; color: var(--interactive-accent); }
+        
+        .excali-ai-main-container {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+        
+        .excali-ai-left-col { flex: 1 1 55%; min-width: 0; display: flex; flex-direction: column; }
+        .excali-ai-right-col { flex: 1 1 45%; min-width: 0; background: var(--background-secondary); padding: 15px; border-radius: 8px; border: 1px solid var(--background-modifier-border); }
+        
+        @media (min-width: 768px) {
+          .excali-ai-main-container { flex-direction: row; }
+        }
+        
+        .excali-ai-warning {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px;
+          background: var(--background-modifier-error);
+          color: var(--text-error);
+          border-radius: 6px;
+          margin-bottom: 15px;
+          font-size: 0.9em;
+        }
+        
+        .excali-ai-preview-img {
+          max-width: 100%;
+          max-height: 250px;
+          object-fit: contain;
+          border: 1px solid var(--background-modifier-border);
+          border-radius: 4px;
+          margin-top: 10px;
+          background: var(--background-primary);
+        }
+        
+        .excali-ai-help-text {
+          font-size: 0.9em;
+          color: var(--text-muted);
+          margin-top: 5px;
+          margin-bottom: 15px;
+        }
+        
+        .excali-ai-validation-text {
+          font-size: 0.9em;
+          color: var(--text-error);
+          margin-top: 5px;
+          margin-bottom: 15px;
+          font-weight: 500;
+        }
+        
+        .excali-ai-advanced-details {
+          margin-top: 20px;
+          border-top: 1px solid var(--background-modifier-border);
+          padding-top: 15px;
+        }
+        
+        .excali-ai-advanced-summary {
+          cursor: pointer;
+          color: var(--text-muted);
+          font-size: 0.95em;
+          font-weight: 500;
+          user-select: none;
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          margin-bottom: 10px;
+        }
+        .excali-ai-advanced-summary:hover { color: var(--text-normal); }
+        
+        .excali-ai-advanced-content {
+          border-left: 2px solid var(--interactive-accent);
+          padding-left: 15px;
+          margin-bottom: 15px;
+          margin-top: 10px;
+        }
+        
+        .excali-ai-run-container {
+          margin-top: auto;
+          padding-top: 20px;
+          display: flex;
+          justify-content: flex-end;
+        }
+        
+        .excali-ai-task-setting {
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+        .excali-ai-task-setting .setting-item-info {
+          min-width: 150px;
+          flex: 1 1 auto;
+        }
+        .excali-ai-task-setting .setting-item-control {
+          flex: 1 1 auto;
+          justify-content: flex-start;
+        }
+        
+        .excali-ai-advanced-summary > svg {
+          transition: transform 0.15s ease-in-out;
+          width: 16px;
+          height: 16px;
+        }
+        .excali-ai-advanced-details[open] > .excali-ai-advanced-summary > svg {
+          transform: rotate(90deg);
+        }
+        .excali-ai-advanced-summary::-webkit-details-marker,
+        .excali-ai-advanced-summary::marker {
+          display: none; /* Hide native marker */
+        }
+      `
+    });
+
+    const headerContainer = contentEl.createDiv({ cls: "excali-ai-header" });
+    headerContainer.innerHTML = `${ea.obsidian.getIcon("bot").outerHTML} <h2>ExcaliAI</h2>`;
+
+    const mainContainer = contentEl.createDiv({ cls: "excali-ai-main-container" });
+    const leftCol = mainContainer.createDiv({ cls: "excali-ai-left-col" });
+    const rightCol = mainContainer.createDiv({ cls: "excali-ai-right-col" });
+
+    // --- WARNINGS ---
+    const mmbWarning = leftCol.createDiv({ cls: "excali-ai-warning" });
+    mmbWarning.innerHTML = `${ea.obsidian.getIcon("alert-triangle").outerHTML} <span><b>MindMap Builder API is not active.</b> The "Create Mindmap" task requires it to be running.</span>`;
+    mmbWarning.style.display = "none";
 
     let taskDropdown;
     let promptHeadingEl;
@@ -2195,7 +2332,25 @@ const openConfigModal = () => {
     let textModelHelpEl;
     let imageModelHelpEl;
     let maxTokensHelpEl;
-    let previewContainerEl;
+    let previewContainerEl = rightCol;
+
+    const checkAndUpdateSelection = async () => {
+      if (isUpdatingSelection) return;
+      const currentSelectedElementIds = ea.getViewSelectedElements().map(e=>e.id).sort().join(",");
+      if (lastSelectedElementIds !== currentSelectedElementIds) {
+        isUpdatingSelection = true;
+        lastSelectedElementIds = currentSelectedElementIds;
+        const taskConfig = getActiveTaskConfig();
+        if (taskConfig && (isImageEditTask(taskConfig.id) || doesTaskAllowImageInput(taskConfig.id))) {
+          ({imageDataURL, maskDataURL} = await generateCanvasDataURL(ea.targetView, shouldGenerateMaskPreview()));
+          updatePreviewSection();
+        }
+        isUpdatingSelection = false;
+      }
+    };
+
+    configModal.modalEl.addEventListener("pointerenter", checkAndUpdateSelection);
+    configModal.modalEl.addEventListener("focusin", checkAndUpdateSelection);
 
     const refreshTaskDropdown = () => {
       if(!taskDropdown) return;
@@ -2351,34 +2506,30 @@ const openConfigModal = () => {
     const updatePreviewSection = () => {
       if(!previewContainerEl) return;
       previewContainerEl.empty();
+      previewContainerEl.createEl("h3", {text: "Preview", attr: { style: "margin-top: 0; margin-bottom: 10px;" } });
       previewDiv = null;
 
       const taskConfig = getActiveTaskConfig();
       if(!taskConfig) {
-        previewContainerEl.createEl("p", {text: "No runnable task is selected."});
+        previewContainerEl.createEl("p", {text: "No runnable task is selected.", cls: "excali-ai-help-text"});
         return;
       }
 
       if(imageDataURL) {
-        previewDiv = previewContainerEl.createDiv({
-          attr: {
-            style: "text-align: center;",
-          }
-        });
+        previewDiv = previewContainerEl.createDiv({ attr: { style: "text-align: center;" } });
         addPreviewImage();
         return;
       }
 
-      previewContainerEl.createEl("h4", {text: "Canvas selection"});
       if(taskRequiresImageInput(taskConfig.id)) {
-        previewContainerEl.createEl("span", {text: "Select content on the canvas. This task requires an image input."});
+        previewContainerEl.createEl("span", {text: "Select content on the canvas. This task requires an image input.", cls: "excali-ai-help-text"});
         return;
       }
       if(doesTaskAllowImageInput(taskConfig.id)) {
-        previewContainerEl.createEl("span", {text: "Nothing is selected, so only the text prompt will be sent to the configured text model."});
+        previewContainerEl.createEl("span", {text: "Nothing is selected, so only the text prompt will be sent to the configured text model.", cls: "excali-ai-help-text"});
         return;
       }
-      previewContainerEl.createEl("span", {text: "This task uses only the text prompt and ignores canvas selection."});
+      previewContainerEl.createEl("span", {text: "This task uses only the text prompt and ignores canvas selection.", cls: "excali-ai-help-text"});
     };
 
     const updateHelpText = () => {
@@ -2392,6 +2543,11 @@ const openConfigModal = () => {
       updateTextModelHelp();
       updateImageModelHelp();
       updateMaxTokensHelp();
+      
+      if(mmbWarning) {
+        const isMmbTask = taskConfig?.execution?.requiresApi === TASK_RUNTIME_APIS.MINDMAP_BUILDER;
+        mmbWarning.style.display = (isMmbTask && !window?.MindMapBuilderAPI) ? "flex" : "none";
+      }
     };
 
     const updateTaskSpecificControls = () => {
@@ -2433,22 +2589,9 @@ const openConfigModal = () => {
       updatePreviewSection();
     };
 
-    new ea.obsidian.Setting(contentEl)
-      .setName("Tasks")
-      .setDesc("Task definitions now live in ExcaliAI's script settings JSON.")
-      .addButton(button => button.setButtonText("Edit tasks").onClick(() => {
-        openTaskEditorAfterClose = true;
-        configModal.close();
-      }));
-
-    const visibleTasks = getVisibleTaskConfigs();
-    if(visibleTasks.length === 0) {
-      contentEl.createEl("p", {text: "No runnable AI tasks are available. Open Task Editor to add a task or reset the shipped presets."});
-      return;
-    }
-
-    new ea.obsidian.Setting(contentEl)
+    const taskSetting = new ea.obsidian.Setting(leftCol)
       .setName("Task")
+      .setDesc("Select the task you want to run.")
       .addDropdown(dropdown => {
         taskDropdown = dropdown;
         refreshTaskDropdown();
@@ -2471,21 +2614,46 @@ const openConfigModal = () => {
           refreshImageSizeDropdown();
           updateTaskSpecificControls();
         });
+      })
+      .addButton(button => button.setButtonText(" Edit tasks").setIcon("settings").onClick(() => {
+        openTaskEditorAfterClose = true;
+        configModal.close();
+      }));
+
+    taskSetting.settingEl.classList.add("excali-ai-task-setting");
+
+    helpEl = leftCol.createEl("p", { cls: "excali-ai-help-text" });
+    taskValidationEl = leftCol.createEl("p", { cls: "excali-ai-validation-text" });
+
+    promptHeadingEl = leftCol.createEl("h4", {text: "Prompt", attr: { style: "margin-bottom: 5px; margin-top: 10px;" } });
+    promptSetting = new ea.obsidian.Setting(leftCol)
+      .addTextArea(text => {
+        text.inputEl.style.minHeight = "8em";
+        text.inputEl.style.width = "100%";
+        text.setValue(userPrompt);
+        text.onChange(value => {
+          userPrompt = value;
+          dirty = true;
+        });
       });
+    promptSetting.nameEl.style.display = "none";
+    promptSetting.descEl.style.display = "none";
+    promptSetting.infoEl.style.display = "none";
+    promptSetting.controlEl.style.width = "100%";
 
-    helpEl = contentEl.createEl("p");
-    taskValidationEl = contentEl.createEl("p");
-    textModelHelpEl = contentEl.createEl("p");
-    imageModelHelpEl = contentEl.createEl("p");
-    maxTokensHelpEl = contentEl.createEl("p");
+    // ADVANCED SETTINGS
+    const advancedDetails = leftCol.createEl("details", { cls: "excali-ai-advanced-details" });
+    const advancedSummary = advancedDetails.createEl("summary", { cls: "excali-ai-advanced-summary" });
+    advancedSummary.innerHTML = `${ea.obsidian.getIcon("chevron-right").outerHTML} <span>Advanced Settings</span>`;
+    const advancedContent = advancedDetails.createDiv({ cls: "excali-ai-advanced-content" });
 
-    systemPromptDiv = contentEl.createDiv();
-    systemPromptDiv.createEl("h4", {text: "System prompt"});
-    systemPromptDiv.createEl("span", {text: "Advanced: change this only if you know why."});
+    systemPromptDiv = advancedContent.createDiv();
+    systemPromptDiv.createEl("h4", {text: "System prompt", attr: {style: "margin-bottom: 5px;"}});
+    systemPromptDiv.createEl("span", {text: "Advanced: change this only if you know why.", cls: "excali-ai-help-text"});
     const systemPromptSetting = new ea.obsidian.Setting(systemPromptDiv)
       .addTextArea(text => {
         systemPromptTextArea = text;
-        text.inputEl.style.minHeight = "10em";
+        text.inputEl.style.minHeight = "6em";
         text.inputEl.style.width = "100%";
         text.setValue(getActiveTaskConfig()?.systemPrompt ?? "");
         text.onChange(value => {
@@ -2501,24 +2669,8 @@ const openConfigModal = () => {
     systemPromptSetting.descEl.style.display = "none";
     systemPromptSetting.infoEl.style.display = "none";
 
-    promptHeadingEl = contentEl.createEl("h4", {text: "Prompt"});
-    promptSetting = new ea.obsidian.Setting(contentEl)
-      .addTextArea(text => {
-        text.inputEl.style.minHeight = "10em";
-        text.inputEl.style.width = "100%";
-        text.setValue(userPrompt);
-        text.onChange(value => {
-          userPrompt = value;
-          dirty = true;
-        });
-      });
-    promptSetting.nameEl.style.display = "none";
-    promptSetting.descEl.style.display = "none";
-    promptSetting.infoEl.style.display = "none";
-
-    textModelSetting = new ea.obsidian.Setting(contentEl)
+    textModelSetting = new ea.obsidian.Setting(advancedContent)
       .setName("Text model")
-      .setDesc("Shows only text or multimodal models whose provider has an API key. A multimodal model is required when the selected canvas image is sent with the prompt.")
       .addDropdown(dropdown => {
         textModelSettingDropdown = dropdown;
         refreshTextModelDropdown();
@@ -2533,13 +2685,14 @@ const openConfigModal = () => {
             updateTextModelHelp();
           });
       });
+    textModelHelpEl = advancedContent.createEl("p", { cls: "excali-ai-help-text" });
 
-    maxTokensSetting = new ea.obsidian.Setting(contentEl)
+    maxTokensSetting = new ea.obsidian.Setting(advancedContent)
       .setName("Text max token override")
-      .setDesc("Optional script-level override for text and multimodal requests. Leave blank to use the Excalidraw AI default response token limit.")
       .addText(text => {
         text.inputEl.type = "number";
         text.inputEl.min = "1";
+        text.inputEl.style.width = "100px";
         const placeholderValue = parsePositiveInteger(aiSettings.defaultMaxResponseTokens);
         if(placeholderValue) {
           text.setPlaceholder(String(placeholderValue));
@@ -2552,10 +2705,10 @@ const openConfigModal = () => {
         });
       });
     maxTokensSetting.settingEl.toggleClass("is-disabled", !hasAvailableTextModels());
+    maxTokensHelpEl = advancedContent.createEl("p", { cls: "excali-ai-help-text" });
 
-    imageModelSetting = new ea.obsidian.Setting(contentEl)
+    imageModelSetting = new ea.obsidian.Setting(advancedContent)
       .setName("Image model")
-      .setDesc("Shows only image models whose provider has an API key.")
       .addDropdown(dropdown => {
         imageModelSettingDropdown = dropdown;
         refreshImageModelDropdown();
@@ -2577,10 +2730,10 @@ const openConfigModal = () => {
             }
           });
       });
+    imageModelHelpEl = advancedContent.createEl("p", { cls: "excali-ai-help-text" });
 
-    maskEditSetting = new ea.obsidian.Setting(contentEl)
+    maskEditSetting = new ea.obsidian.Setting(advancedContent)
       .setName("Use mask edit")
-      .setDesc("On: non-image elements become the mask. Off: non-image elements are flattened into the source image for a prompt-based transform.")
       .addToggle(toggle => {
         maskEditToggleComponent = toggle;
         toggle
@@ -2596,9 +2749,8 @@ const openConfigModal = () => {
           });
       });
 
-    imageSizeSetting = new ea.obsidian.Setting(contentEl)
+    imageSizeSetting = new ea.obsidian.Setting(advancedContent)
       .setName("Image size")
-      .setDesc("Uses the sizes configured for the selected image model in Excalidraw AI settings.")
       .addDropdown(dropdown => {
         imageSizeSettingDropdown = dropdown;
         refreshImageSizeDropdown();
@@ -2621,11 +2773,11 @@ const openConfigModal = () => {
     refreshTextModelDropdown();
     refreshImageModelDropdown();
     refreshImageSizeDropdown();
-    previewContainerEl = contentEl.createDiv();
     updateTaskSpecificControls();
 
-    new ea.obsidian.Setting(contentEl)
-      .addButton(button => button.setButtonText("Run").onClick(() => {
+    const runContainer = leftCol.createDiv({ cls: "excali-ai-run-container" });
+    new ea.obsidian.Setting(runContainer)
+      .addButton(button => button.setButtonText(" Run").setIcon("play").setCta().onClick(() => {
         const taskConfig = getActiveTaskConfig();
         if(!taskConfig) {
           new Notice("No runnable AI task is selected.", 8000);
@@ -2662,3 +2814,4 @@ const openConfigModal = () => {
 };
 
 openConfigModal();
+
