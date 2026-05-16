@@ -8,7 +8,7 @@ The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/),
 
 Excalidraw for Obsidian keeps evolving; it is extremely feature‑rich and can feel intimidating at first. The Video Walkthrough below should ease that initial overwhelm. For a comprehensive, searchable knowledge base covering features, settings, scripting, workflows, and visual thinking methods, explore the public [NotebookLM workbook](https://notebooklm.google.com/notebook/42d76a2f-c11d-4002-9286-1683c43d0ab0) (a must‑have learning resource). 
 
-[![Excalidraw Essentials](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/images/logo-EE.png?raw=true](https://community.sketch-your-mind.com/ee)
+[![Excalidraw Essentials](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/images/logo-EE.png?raw=true)](https://community.sketch-your-mind.com/ee)
 
 [**Excalidraw Essentials**](https://community.sketch-your-mind.com/ee) is a free course to get started with Excalidraw.
 
