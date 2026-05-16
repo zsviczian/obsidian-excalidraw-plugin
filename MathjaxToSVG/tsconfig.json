@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "sourceMap": false,
-    "module": "es2020",
-    "target": "es2022", //min es2017 because script engine requires for async execution and min es2018 for named capture groups
+    "sourceMap": true,
+    "module": "es2022",
+    "target": "es2022",
     "allowJs": false,
     "noImplicitAny": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "importHelpers": true,
     "resolveJsonModule": true,
@@ -16,11 +16,12 @@
       "es2022",
       "DOM.Iterable"
     ],
-    "jsx": "react",
+    "jsx": "react"
   },
   "include": [
     "**/*.ts",
-    "**/*.tsx", "src/shared/Dialogs/OpenDrawing.ts",
-    "src/types/types.d.ts",
+    "**/*.tsx",
+    "src/shared/Dialogs/OpenDrawing.ts",
+    "src/types/types.d.ts"
   ]
 }
