@@ -15,46 +15,64 @@ If you are curious about the Visual PKM philosophy behind the plugin, consider m
 
 ## Disclaimer / Disclosure: Plugin Access and Privileges
 
-I treat privacy as a top priority. Apart from the few technical limitations outlined below, Excalidraw is 100% local and runs without network access. Most of the findings posted on pages like [obsidianpluginaudit.com](https://obsidianpluginaudit.com/), [plugin.observer](https://plugin.observer/), and [community.obsidian.md/plugins](https://community.obsidian.md/plugins) are highly misleading. Because Obsidian is essentially a locally executed web application, code scanners apply the same vulnerability checks as for public websites. While issues like `innerHTML` and `outerHTML` modifications are not elegant, they create no real risk in the Obsidian environment, whereas in a public web environment, the case is different. Excalidraw in Obsidian is a full-featured, complex tool. I list below how each of the key findings you might read on these pages is utilized in Excalidraw.
+I treat privacy as a top priority. Apart from the few technical limitations outlined below, Excalidraw is 100% local and runs without network access. Most of the findings published on sites such as [obsidianpluginaudit.com](https://obsidianpluginaudit.com/), [plugin.observer](https://plugin.observer/), and [community.obsidian.md/plugins](https://community.obsidian.md/plugins) can be misleading without proper context.
 
-When evaluating the situation, consider the following:
-1. Obsidian.md does not provide proper means for plugins to deploy local assets like fonts, necessary packages, or proper access (API) to features like Obsidian Publish, PDF printing, etc. These result in workaround solutions such as IPC calls and `eval` statements.
-2. Excalidraw Obsidian is not supported by a "Team." It is a one-man hobby project. The best way you can support improved quality is by providing financial support through the [Ko-fi link](https://ko-fi.com/zsolt). If you are using Obsidian and Excalidraw for free, then accept that in life nothing is really free. Only you might be paying in a different way, or someone else is paying on your behalf. I will strive to improve on the code quality, but on balance, the noise around code quality is unfair and unacceptable. People seem to expect professional/commercial-grade quality for a tool they are enjoying for free. That is not OK.
-3. The general rule I follow is to use the absolute minimum number of plugins. I personally use between 10-15 plugins, and I turn off plugins when not used. This is not because of concern for plugin safety, but simply because each Obsidian plugin is a hobby project, and I accept the quality consequences of that.
+Obsidian is fundamentally a locally executed web application. Automated code scanners apply the same vulnerability rules used for public-facing websites, even though the risk model inside a local Obsidian vault is very different. For example, patterns such as `innerHTML` or `outerHTML` manipulation are considered problematic on public websites because they can expose visitors to malicious third-party content. In a local-first application such as Obsidian, these risks are significantly different in nature and impact.
 
-<details><summary>Detailed Findings</summary>
+Excalidraw for Obsidian is a large and feature-rich tool with many integrations and performance optimizations. Below, I explain how the most common findings reported by these scanners are actually used within the plugin.
+
+When evaluating these findings, please keep the following in mind:
+
+1. Obsidian.md currently does not provide plugin developers with proper mechanisms for deploying local assets such as fonts, auxiliary packages, or official APIs for certain features like Obsidian Publish or PDF generation. As a result, plugin developers sometimes need to rely on workaround solutions such as IPC calls or dynamic code execution (`eval`) to deliver functionality users expect.
+
+2. Excalidraw for Obsidian is not maintained by a company or engineering team. It is a one-person hobby project and an open-source contribution developed alongside a full-time job. If you would like to support continued development and improved code quality, the best way is through financial support via [Ko-fi](https://ko-fi.com/zsolt). Open-source software is not truly “free.” The cost is usually paid in developer time, personal energy, or by supporters who help sustain the project. I will continue striving to improve the codebase, but expectations around enterprise-grade engineering standards for a free community contribution can easily become unrealistic and unsustainable without corresponding support structures.
+
+3. In general, I recommend using the minimum number of plugins necessary for your workflow. Personally, I use around 10–15 plugins and disable plugins when not actively needed. This is not because I distrust plugin safety, but because most Obsidian plugins are hobby-driven community projects, and I believe users should maintain realistic expectations regarding maintenance, complexity, and long-term support.
+
+<details><summary><h3>Detailed Findings</h3></summary>
 
 - **Plugin might make requests to external domains:**
-  - The plugin works 100% offline and local. If you configure API keys for AI features and use those features, then the respective providers are used. If not configured, these are not used.
-  - Taskbone OCR service (requires separate API and user opt-in in plugin settings).
-  - Iframely is used to resolve reader-friendly webpage titles when dragging website links into Excalidraw. This is disabled by default. You need to enable it if you want this feature.
-  - The Ko-fi support button, when displayed, is downloaded from `cdn.ko-fi.com`.
-  - The CJK font package is large (over 12 MB). Because of its size, these are not included in the `main.js` file but downloaded from GitHub if needed.
+  - The plugin works fully offline and locally by default.
+  - If you configure API keys for AI features and explicitly use those features, the corresponding AI providers are contacted.
+  - The Taskbone OCR service requires a separate API key and explicit user opt-in in plugin settings.
+  - Iframely is optionally used to resolve reader-friendly webpage titles when dragging website links into Excalidraw. This feature is disabled by default.
+  - The Ko-fi support button, when enabled, downloads its image asset from `cdn.ko-fi.com`.
+  - The CJK font package exceeds 12 MB in size. To avoid significantly increasing plugin startup time and bundle size, these fonts are downloaded from GitHub only when required.
+
 - **`requestUrl` and `fetch` calls:**
-  - Used by the AI and Taskbone OCR support features.
-  - Excalidraw supports embedding images from outside the vault (local URI and public URL). These are supported by `requestUrl` calls to download relevant images when accessed.
-  - The Excalidraw script store accesses GitHub to download selected scripts when you click to install them.
+  - Used for AI integrations and Taskbone OCR functionality.
+  - Excalidraw supports embedding images from external sources (local URIs and public URLs). `requestUrl` is used to retrieve those images when needed.
+  - The Excalidraw Script Library accesses GitHub to download scripts only when the user explicitly chooses to install them.
+
 - **Excalidraw accesses files in your vault:**
-  - To determine if there are any `.excalidraw` (legacy, non-excalidraw.md) files, and to convert (or mass convert) depending on user intent.
-  - To search for and load custom fonts in your vault so they can be used as additional fonts in your drawings.
-  - To populate various insert file dialogs, e.g., "Insert any file" lets you select which file you want to insert into your scene.
+  - To detect legacy `.excalidraw` files and support conversion workflows.
+  - To search for and load custom fonts stored inside the vault.
+  - To populate file picker dialogs such as “Insert any file.”
+
 - **Clipboard access:**
-  - You can place Excalidraw on your clipboard and paste it to excalidraw.com or other Excalidraw files.
-  - You can copy links to elements in the scene and paste them to your markdown documents as embeds.
+  - Allows users to copy and paste Excalidraw scenes between Obsidian and excalidraw.com.
+  - Allows users to copy links to scene elements and paste them into markdown documents as embeds.
+
 - **Local Storage:**
-  - Excalidraw stores its image cache in local storage. Image cache drastically improves the load time of complex/large scenes with many nested drawings.
-  - Excalidraw also stores Mermaid text-to-diagram chat history in local storage.
-  - Excalidraw stores backups of your drawings in local storage so if Excalidraw would crash for any reason you can revert to a last known good version.
+  - Excalidraw stores image caches locally to improve loading performance for large and complex scenes.
+  - Mermaid text-to-diagram chat history is stored locally.
+  - Backup versions of drawings are stored locally to support crash recovery.
+
 - **Dynamic Code Execution:**
-  - Excalidraw loads Excalidraw scripts installed from the script library, or created by you, using dynamic code execution.
-  - Excalidraw loads the Excalidraw component and supporting React packages dynamically. This is required to improve Vault startup time and to support Excalidraw working with Obsidian desktop popout windows.
+  - Excalidraw dynamically loads user-created scripts and scripts installed from the Script Library.
+  - Excalidraw also dynamically loads parts of the Excalidraw React component and supporting packages. This improves startup performance and supports functionality such as desktop popout windows.
+
 - **Electron remote module privilege IPC bridge calls:**
-  - This allows Excalidraw to use the built-in PDF generation functionality of the Electron browser. Allows users to print their Excalidraw drawings to PDF. Using this saves the user from having to include another 2-3 MB large PDF util, that not only increases size but would eat at your Obsidian performance.
-  - The PDF print process also includes the Electron system file dialog to choose the location where you want to save your drawing.
+  - Used to access Electron’s built-in PDF generation capabilities so users can export drawings as PDFs.
+  - This avoids bundling additional large PDF libraries, reducing plugin size and improving performance.
+  - The process also enables Electron’s native file-save dialog when exporting PDFs.
+
 - **Document-level keyboard listener:**
-  - This comes from the excalidraw.com component used to support keyboard shortcuts in Excalidraw.
-- **Direct node.js file system access giving the plugin access to files outside your vault:**
-  - This is to support embedding of images in Excalidraw scenes from outside your Obsidian vault.
+  - Comes from the core excalidraw.com component to support keyboard shortcuts and interactions.
+
+- **Direct Node.js file system access allowing access outside the vault:**
+  - Used exclusively to support embedding images located outside the Obsidian vault into Excalidraw scenes.
+
 </details>
 
 ## Video Walkthrough
