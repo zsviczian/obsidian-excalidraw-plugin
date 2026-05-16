@@ -140,7 +140,7 @@ When evaluating these findings, please keep the following in mind:
 </details>
 
 ### Beta testing
-The plugin follows a monthly release schedule. If you want to receive more frequent updates with new features (e.g. shiny new stuff available on excalidraw.com, but not yet in Obsidian) and minor bug fixes, then join the beta community.
+The plugin follows a monthly release schedule. If you want to receive more frequent updates with new features (e.g. shiny new stuff available on excalidraw.com, but not yet in Obsidian) and minor bug fixes, then [join the beta community](https://community.sketch-your-mind.com/t/about-the-beta-releases-category/329).
 
 [![Thumbnail - 20240803 Excalidraw Release Approach (Custom)](https://github.com/user-attachments/assets/ab40648c-f73f-4bda-a416-52839f918f2a)](https://youtu.be/2poSS-Z91lY)
 
