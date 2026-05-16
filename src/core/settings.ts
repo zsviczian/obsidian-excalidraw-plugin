@@ -625,7 +625,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   pageTransclusionCharLimit: 200,
   wordWrappingDefault: 0,
   removeTransclusionQuoteSigns: true,
-  iframelyAllowed: true,
+  iframelyAllowed: false,
   pngExportScale: 1,
   exportWithTheme: true,
   exportWithBackground: true,

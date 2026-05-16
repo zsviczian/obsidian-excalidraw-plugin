@@ -2,11 +2,60 @@
 
 【English | [简体中文](./docs/zh-cn/README.md)】
 
-👉👉👉 Check out and contribute to the new [Obsidian-Excalidraw Community Wiki](https://excalidraw-obsidian.online/WIKI/Welcome+to+the+WIKI)
+👉👉👉 Check out and contribute to the new [Obsidian-Excalidraw Community Wiki](https://community.sketch-your-mind.com/Wiki)
 
 The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/), a feature rich sketching tool, into Obsidian. You can store and edit Excalidraw files in your vault, you can embed drawings into your documents, and you can link to documents and other drawings to/and from Excalidraw. For a showcase of Excalidraw features, please read my blog post [here](https://www.zsolt.blog/2021/03/showcasing-excalidraw.html) and/or watch the videos below.
 
-Excalidraw for Obsidian keeps evolving; it is extremely feature‑rich and can feel intimidating at first. The Video Walkthrough below should ease that initial overwhelm. For a comprehensive, searchable knowledge base covering features, settings, scripting, workflows, and visual thinking methods, explore the public [NotebookLM workbook](https://notebooklm.google.com/notebook/42d76a2f-c11d-4002-9286-1683c43d0ab0) (a must‑have learning resource). If you are curious about the Visual PKM philosophy behind the plugin, consider my book [Sketch Your Mind](https://sketch-your-mind.com/) and the [Visual Thinking Workshops](https://visual-thinking-workshop.com/). Finally, keep the [Excalidraw Plugin Wiki](https://excalidraw-obsidian.online/) at hand—it is an essential companion.
+Excalidraw for Obsidian keeps evolving; it is extremely feature‑rich and can feel intimidating at first. The Video Walkthrough below should ease that initial overwhelm. For a comprehensive, searchable knowledge base covering features, settings, scripting, workflows, and visual thinking methods, explore the public [NotebookLM workbook](https://notebooklm.google.com/notebook/42d76a2f-c11d-4002-9286-1683c43d0ab0) (a must‑have learning resource). 
+
+[![Excalidraw Essentials](https://img.shields.io/badge/Free_Course-Excalidraw_Essentials-blue?style=for-the-badge)](https://community.sketch-your-mind.com/ee)  
+[**Excalidraw Essentials**](https://community.sketch-your-mind.com/ee) is a free course to get started with Excalidraw.
+
+If you are curious about the Visual PKM philosophy behind the plugin, consider my book [Sketch Your Mind](https://community.sketch-your-mind.com/sym) and the [Visual Thinking Workshops](https://community.sketch-your-mind.com/vtw). To learn about all the different options available and how they fit together, check out the [Welcome to the Sketch Your Mind Ecosystem](https://community.sketch-your-mind.com/t/welcome-to-the-sketch-your-mind-ecosystem/375) introduction page. Finally, keep the [Excalidraw Plugin Wiki](https://community.sketch-your-mind.com/Wiki) at hand—it is an essential companion.
+
+## Disclaimer / Disclosure: Plugin Access and Privileges
+
+I treat privacy as a top priority. Apart from the few technical limitations outlined below, Excalidraw is 100% local and runs without network access. Most of the findings posted on pages like [obsidianpluginaudit.com](https://obsidianpluginaudit.com/), [plugin.observer](https://plugin.observer/), and [community.obsidian.md/plugins](https://community.obsidian.md/plugins) are highly misleading. Because Obsidian is essentially a locally executed web application, code scanners apply the same vulnerability checks as for public websites. While issues like `innerHTML` and `outerHTML` modifications are not elegant, they create no real risk in the Obsidian environment, whereas in a public web environment, the case is different. Excalidraw in Obsidian is a full-featured, complex tool. I list below how each of the key findings you might read on these pages is utilized in Excalidraw.
+
+When evaluating the situation, consider the following:
+1. Obsidian.md does not provide proper means for plugins to deploy local assets like fonts, necessary packages, or proper access (API) to features like Obsidian Publish, PDF printing, etc. These result in workaround solutions such as IPC calls and `eval` statements.
+2. Excalidraw Obsidian is not supported by a "Team." It is a one-man hobby project. The best way you can support improved quality is by providing financial support through the [Ko-fi link](https://ko-fi.com/zsolt). If you are using Obsidian and Excalidraw for free, then accept that in life nothing is really free. Only you might be paying in a different way, or someone else is paying on your behalf. I will strive to improve on the code quality, but on balance, the noise around code quality is unfair and unacceptable. People seem to expect professional/commercial-grade quality for a tool they are enjoying for free. That is not OK.
+3. The general rule I follow is to use the absolute minimum number of plugins. I personally use between 10-15 plugins, and I turn off plugins when not used. This is not because of concern for plugin safety, but simply because each Obsidian plugin is a hobby project, and I accept the quality consequences of that.
+
+<details><summary>Detailed Findings</summary>
+
+- **Plugin might make requests to external domains:**
+  - The plugin works 100% offline and local. If you configure API keys for AI features and use those features, then the respective providers are used. If not configured, these are not used.
+  - Taskbone OCR service (requires separate API and user opt-in in plugin settings).
+  - Iframely is used to resolve reader-friendly webpage titles when dragging website links into Excalidraw. This is disabled by default. You need to enable it if you want this feature.
+  - The Ko-fi support button, when displayed, is downloaded from `cdn.ko-fi.com`.
+  - The CJK font package is large (over 12 MB). Because of its size, these are not included in the `main.js` file but downloaded from GitHub if needed.
+- **`requestUrl` and `fetch` calls:**
+  - Used by the AI and Taskbone OCR support features.
+  - Excalidraw supports embedding images from outside the vault (local URI and public URL). These are supported by `requestUrl` calls to download relevant images when accessed.
+  - The Excalidraw script store accesses GitHub to download selected scripts when you click to install them.
+- **Excalidraw accesses files in your vault:**
+  - To determine if there are any `.excalidraw` (legacy, non-excalidraw.md) files, and to convert (or mass convert) depending on user intent.
+  - To search for and load custom fonts in your vault so they can be used as additional fonts in your drawings.
+  - To populate various insert file dialogs, e.g., "Insert any file" lets you select which file you want to insert into your scene.
+- **Clipboard access:**
+  - You can place Excalidraw on your clipboard and paste it to excalidraw.com or other Excalidraw files.
+  - You can copy links to elements in the scene and paste them to your markdown documents as embeds.
+- **Local Storage:**
+  - Excalidraw stores its image cache in local storage. Image cache drastically improves the load time of complex/large scenes with many nested drawings.
+  - Excalidraw also stores Mermaid text-to-diagram chat history in local storage.
+  - Excalidraw stores backups of your drawings in local storage so if Excalidraw would crash for any reason you can revert to a last known good version.
+- **Dynamic Code Execution:**
+  - Excalidraw loads Excalidraw scripts installed from the script library, or created by you, using dynamic code execution.
+  - Excalidraw loads the Excalidraw component and supporting React packages dynamically. This is required to improve Vault startup time and to support Excalidraw working with Obsidian desktop popout windows.
+- **Electron remote module privilege IPC bridge calls:**
+  - This allows Excalidraw to use the built-in PDF generation functionality of the Electron browser. Allows users to print their Excalidraw drawings to PDF. Using this saves the user from having to include another 2-3 MB large PDF util, that not only increases size but would eat at your Obsidian performance.
+  - The PDF print process also includes the Electron system file dialog to choose the location where you want to save your drawing.
+- **Document-level keyboard listener:**
+  - This comes from the excalidraw.com component used to support keyboard shortcuts in Excalidraw.
+- **Direct node.js file system access giving the plugin access to files outside your vault:**
+  - This is to support embedding of images in Excalidraw scenes from outside your Obsidian vault.
+</details>
 
 ## Video Walkthrough
 <a href="https://youtu.be/P_Q6avJGoWI" target="_blank"><img src="https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/da34bb33-7610-45e6-b36f-cb7a02a9141b" width="300"/></a>
@@ -14,7 +63,7 @@ Excalidraw for Obsidian keeps evolving; it is extremely feature‑rich and can f
 <a href="https://youtu.be/QKnQgSjJVuc" target="_blank"><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/thumbnail-getting-started.jpg" width="300"/></a>
 
 ### Here's my complete catalog of videos:
-<a href="https://excalidraw-obsidian.online/wiki/catalogue"><img width="380" alt="image" src="https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/2577e5ad-7a21-4c62-acd5-4fe80c8a8a95"></a>
+<a href="https://community.sketch-your-mind.com/t/a-visual-catalogue-of-all-my-youtube-videos/701"><img width="380" alt="image" src="https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/2577e5ad-7a21-4c62-acd5-4fe80c8a8a95"></a>
 <br>
 
 <details><summary>10 Part (slightly outdated) Video Walkthrough</summary>
@@ -33,7 +82,7 @@ Excalidraw for Obsidian keeps evolving; it is extremely feature‑rich and can f
 <a href="https://www.youtube.com/watch?v=_c_0zpBJ4Xc&" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/138607067-ccb62f92-48a4-4880-ac6e-68c1bf86ac2c.png" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Image Elements</a><br>
 <a href="https://youtu.be/r08wk-58DPk" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/143732412-1c65227e-4381-406d-847a-b001ab3506ca.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;LaTex Demo</a><br>
 <a href="https://youtu.be/tsecSfnTMow" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/143732440-90bfa029-8615-462e-ada3-c903d71a82c9.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Markdown embeds</a><br>
-<a href="https://youtu.be/K6qZkTz8GHs" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/143783906-15cee494-c6d5-4495-a2ca-74634e4e7355.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Markdown embeds advanced features</a><br>
+<a href="https://youtu.be/K6qZkTz8GHs" target="_blank"><img src="https://user-images.githubusercontent.com/143783906-15cee494-c6d5-4495-a2ca-74634e4e7355.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Markdown embeds advanced features</a><br>
 <a href="https://youtu.be/Etskjw7a5zo" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/156931461-0979b821-315a-41dd-86f1-31d169b7c127.jpg" width="100" style="vertical-align: middle;"/>&nbsp;&nbsp;Link to Elements, Vertical text alignment, Markdown Styling</a><br>
 </details>
 <details><summary>The Script Engine Store - Excalidraw Automation</summary>
@@ -308,4 +357,3 @@ You can find me on Twitter [@zsviczian](https://twitter.com/zsviczian), and on m
 If you enjoy Excalidraw, consider giving [ExcaliBrain](https://github.com/zsviczian/excalibrain) a try (also available via Obsidian Community Plugins).
 
 <a href="https://youtu.be/gOkniMkDPyM" target="_blank"><img src="https://user-images.githubusercontent.com/14358394/169708346-9e41289d-9536-43ec-8f70-2d2ad2d369d6.png" width="300"/></a>
-
