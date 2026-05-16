@@ -6,24 +6,29 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="https://ko-fi.com/zsolt"><img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
   "2.23.0": `
+<div class="excalidraw-videoWrapper">
+<a href="https://www.youtube.com/watch?v=EiT56z3KPjI" target="_blank"><img src ="https://i.ytimg.com/vi/EiT56z3KPjI/maxresdefault.jpg" style="width:100%;"></a>
+</div>
+
 ## New
 - Added a new setting under *Excalidraw Automate* to opt-in to \`excalidraw-onload-scripts\`.
 - Added image cache for nested images, including nested Excalidraw drawings and PDF page renders.
-  - When a scene is opened again on the same device, cached images are shown immediately while validation of nested changes continues in the background. This should noticeably improve loading times for scenes you access regularly.
+  - When a scene is opened again on the same device, cached images are shown immediately while validation of nested changes continues in the background. This should **noticeably improve loading times** for scenes you access regularly.
   - A new setting under plugin settings in **Image caching and rendering optimization** lets you control cache retention in days, so you can balance disk usage against how long these cached images are kept available.
-  - The cache is local to each device. It is not synced through Obsidian Sync or your vault, so each device builds and maintains its own cache independently.
+  - The cache is local to each device. It is **not synced** through Obsidian Sync or your vault, so each device builds and maintains its own cache independently.
 - Placeholder image for empty drawings.
-- AI support is now provider-aware across the plugin. You can choose between OpenAI, Anthropic/Claude, Google/Gemini, xAI/Grok, or an OpenAI-compatible/local endpoint.
+- AI support is now **provider-aware across the plugin**. You can choose between OpenAI, Anthropic/Claude, Google/Gemini, xAI/Grok, or an OpenAI-compatible/local endpoint.
   - AI settings now use shared provider profiles plus text/multimodal model lists, image model lists, default model selection, token budgets, and an optional verbose developer-console logging toggle for troubleshooting.
   - The shared AI configuration is now used by ExcalidrawAutomate, Mermaid chat, diagram-to-code, ExcaliAI, and related AI features.
   - Older OpenAI-specific AI settings are migrated automatically into the new shared AI settings on first run.
-- API key obfuscuation for plugin settings. This prevents your API keys to leak via Excalidraw plugin settings in case you open up your Vault to LLMs.
+  - New and updated ExcaliAI script.
+- API key obfuscation for plugin settings. This helps prevent your API keys from leaking via Excalidraw plugin settings in case you open your vault to LLMs.
 
 ## Fixed
-- Findings listed on [Obsidian Community Plugin Info](https://community.obsidian.md/plugins/obsidian-excalidraw-plugin)
-- Error when saving pasted images from Excalidraw.com
+- **Findings listed on [Obsidian Community Plugin Info](https://community.obsidian.md/plugins/obsidian-excalidraw-plugin)**
+- Error when saving pasted images from Excalidraw.com.
 - Fixed Mermaid chat / text-to-diagram and diagram-to-code to use the shared AI layer and honor the configured provider, model, API key, and endpoint settings.
-- Fixed the ExcaliAI script to work with the new shared AI settings, including provider-aware text and image model selection, prompt transforms vs mask edits, and OpenAI image responses that return \`b64_json\` instead of a hosted URL.
+- Fixed the ExcaliAI script to work with the new shared AI settings, including provider-aware text and image model selection, prompt transforms vs. mask edits, and OpenAI image responses that return \`b64_json\` instead of a hosted URL.
 
 ## New in ExcalidrawAutomate
 - Added new provider-aware AI helper functions for scripts while retaining backward compatibility for existing \`postOpenAI()\` integrations.

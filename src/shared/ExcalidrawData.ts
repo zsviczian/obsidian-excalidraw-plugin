@@ -1851,7 +1851,7 @@ export class ExcalidrawData {
           fileData.dataURL,
           fileData.mimeType,
           key as FileId,
-          fileData.name ?? key,
+          fileData.name,
         );
       }
     }

@@ -87,7 +87,7 @@ export class ModifierKeySettingsComponent {
 
       Object.entries(modifierKeys.rules).forEach(([_, rule]) => {
         const setting = new Setting(detailsEl).setName(
-          tooltipMessages[modifierSetType]?.[rule.result] ?? rule.result,
+          tooltipMessages[modifierSetType]?.[rule.result],
         );
 
         setting.addToggle((toggle) =>

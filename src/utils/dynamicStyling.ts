@@ -62,23 +62,40 @@ export const setDynamicStyle = (
       : ea.getCM(accentColorString).mix({ color: cmBG(), ratio: 0.2 });
 
   const cmBlack = () => ea.getCM("#000000").lightnessTo(bgLightness);
+  const cmDarkRed = () => ea.getCM("#8B0000").lightnessTo(bgLightness);
 
   const gray1 = () =>
     isGray
       ? isDark
-        ? cmBlack().lighterBy(10)
-        : cmBlack().darkerBy(10)
+        ? cmBlack().lighterBy(12)
+        : cmBlack().darkerBy(12)
       : isDark
         ? cmBG().lighterBy(10).mix({ color: cmBlack(), ratio: 0.5 })
         : cmBG().darkerBy(10).mix({ color: cmBlack(), ratio: 0.5 });
   const gray2 = () =>
     isGray
       ? isDark
-        ? cmBlack().lighterBy(4)
-        : cmBlack().darkerBy(4)
+        ? cmBlack().lighterBy(8)
+        : cmBlack().darkerBy(8)
       : isDark
         ? cmBG().lighterBy(4).mix({ color: cmBlack(), ratio: 0.5 })
         : cmBG().darkerBy(4).mix({ color: cmBlack(), ratio: 0.5 });
+  const gray3 = () =>
+    isGray
+      ? isDark
+        ? cmBlack().lighterBy(4)
+        : cmBlack().darkerBy(4)
+      : isDark
+        ? cmBG().mix({ color: cmBlack(), ratio: 0.5 })
+        : cmBG().mix({ color: cmBlack(), ratio: 0.5 });
+  const warning = () =>
+    isGray
+      ? isDark
+        ? cmBlack().lighterBy(2)
+        : cmBlack().darkerBy(2)
+      : isDark
+        ? cmBG().lighterBy(2).mix({ color: cmDarkRed(), ratio: 0.5 })
+        : cmBG().darkerBy(2).mix({ color: cmDarkRed(), ratio: 0.5 });
 
   const text = () =>
     cmBG().mix({ color: isDark ? lighter : darker, ratio: mixRatio });
@@ -90,6 +107,7 @@ export const setDynamicStyle = (
     [`--color-surface-low`]: str(gray1()),
     [`--color-surface-mid`]: str(gray1()),
     [`--color-surface-lowest`]: str(gray2()),
+    [`--color-warning`]: str(warning()),
     [`--color-surface-high`]: str(gray1().lighterBy(step)),
     [`--color-on-primary-container`]: str(
       !isDark ? accent().darkerBy(15) : accent().lighterBy(15),
@@ -109,7 +127,7 @@ export const setDynamicStyle = (
     [`--input-border-color`]: str(gray1()),
     [`--input-bg-color`]: str(gray2()),
     [`--input-label-color`]: str(text()),
-    [`--island-bg-color`]: gray2().alphaTo(0.93).stringHEX(),
+    [`--island-bg-color`]: gray3().alphaTo(0.93).stringHEX(),
     [`--popup-secondary-bg-color`]: gray2().alphaTo(0.93).stringHEX(),
     [`--icon-fill-color`]: str(text()),
     [`--text-primary-color`]: str(text()),
@@ -148,16 +166,16 @@ export const setDynamicStyle = (
     [`--select-highlight-color`]: str(gray1()),
     [`--color-gray-90`]: str(isDark ? text().darkerBy(5) : text().lighterBy(5)), //search background
     [`--color-gray-80`]: str(
-      isDark ? text().darkerBy(10) : text().lighterBy(10),
+      isDark ? text().darkerBy(9) : text().lighterBy(10),
     ), //frame
     [`--color-gray-70`]: str(
-      isDark ? text().darkerBy(15) : text().lighterBy(15),
+      isDark ? text().darkerBy(13) : text().lighterBy(15),
     ), //frame
     [`--default-bg-color`]: str(
       isDark ? text().darkerBy(20) : text().lighterBy(20),
     ), //search background,
     [`--color-gray-50`]: str(
-      isDark ? text().darkerBy(25) : text().lighterBy(25),
+      isDark ? text().darkerBy(20) : text().lighterBy(25),
     ),
   };
 
