@@ -1,6 +1,6 @@
 ---
 author: Shravya Katapally (https://github.com/shravya-katapally)
-description: When creating presentations using frames with Slideshow Script in Excalidraw, frames need to be numbered (or named) in order manually. Run this script from the Command Palette (or bind a hotkey) to automate that process instead, and will number frames in chronological order. Therefore, draw the frames in the order in which you want the slides to appear.
+description: When creating presentations using frames with Slideshow Script in Excalidraw, frames need to be numbered (or named) in order manually. Download this script, add it to the "Scripts" folder, run it from the Command Palette (or bind a hotkey) to automate that process instead, and it will number frames in chronological order. Therefore, draw the frames in the order in which you want the slides to appear.
 ---
 
 ```js
