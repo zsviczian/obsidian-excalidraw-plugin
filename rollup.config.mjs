@@ -218,7 +218,7 @@ if (!isLib) {
     });
 }
 
-const manifestStr = isLib ? "" : fs.readFileSync("manifest.json", "utf-8");
+const manifestStr = isLib ? "" : fs.readFileSync("manifest-beta.json", "utf-8");
 const manifest = isLib ? {} : JSON.parse(manifestStr);
 if (!isLib) {
   console.log(manifest.version);

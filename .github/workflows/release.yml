@@ -1,0 +1,74 @@
+name: Build, Release, and Attest Assets
+
+on:
+  push:
+    tags:
+      - '*.*.*'   # Triggers if you tag exactly like: 2.23.0 or 2.23.0-beta-1
+      - 'v*.*.*'  # Triggers if you tag like: v2.23.0 or v2.23.0-beta-1
+
+jobs:
+  release:
+    name: Create Release and Attest Assets
+    runs-on: ubuntu-latest
+
+    # CRITICAL: Give GitHub the required permissions to sign your files
+    permissions:
+      id-token: write
+      contents: write
+      attestations: write
+
+    steps:
+      # 1. Pull down your repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Tell the server to install Node 22
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # 3. Install dependencies and build assets
+      # This naturally generates dist/manifest.json from the stable one
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run build 
+
+      # 4. Check if the tag has a hyphen (e.g. v2.2.5-beta). If yes, mark as pre-release.
+      - name: Determine if Pre-release
+        id: check-prerelease
+        run: |
+          if [[ "${{ github.ref_name }}" == *"-"* ]]; then
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          fi
+
+      # 5. Swap to the Beta Manifest if it's a pre-release
+      - name: Prepare Beta Manifest
+        if: steps.check-prerelease.outputs.is_prerelease == 'true'
+        run: |
+          echo "Pre-release detected! Swapping dist/manifest.json with manifest-beta.json..."
+          cp manifest-beta.json dist/manifest.json
+
+      # 6. Generate the cryptographic attestations for your built files
+      # (Because this runs AFTER step 5, it will correctly sign the beta manifest!)
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'dist/*'
+
+      # 7. Automatically create a GitHub Release and attach the files
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            dist/main.js
+            dist/styles.css
+            dist/manifest.json
+          # Dynamically set pre-release based on step 4
+          prerelease: ${{ steps.check-prerelease.outputs.is_prerelease == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
