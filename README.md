@@ -7,11 +7,14 @@
 The Obsidian-Excalidraw plugin integrates [Excalidraw](https://excalidraw.com/), a feature rich sketching tool, into Obsidian. You can store and edit Excalidraw files in your vault, you can embed drawings into your documents, and you can link to documents and other drawings to/and from Excalidraw. For a showcase of Excalidraw features watch the videos below.
 
 Excalidraw for Obsidian keeps evolving; it is extremely feature‑rich and can feel intimidating at first. The Video Walkthrough below should ease that initial overwhelm. For a comprehensive, searchable knowledge base covering features, settings, scripting, workflows, and visual thinking methods, explore the public [NotebookLM workbook](https://notebooklm.google.com/notebook/42d76a2f-c11d-4002-9286-1683c43d0ab0) (a must‑have learning resource). 
+
 <a href="https://community.sketch-your-mind.com/ee"><img src="https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/images/logo-EE.png?raw=true" width="150"></a>
 
 [**Excalidraw Essentials**](https://community.sketch-your-mind.com/ee) is a free course to get started with Excalidraw.
 
-If you are curious about the Visual PKM philosophy behind the plugin, consider my book [Sketch Your Mind](https://community.sketch-your-mind.com/sym) and the [Visual Thinking Workshops](https://community.sketch-your-mind.com/vtw). To learn about all the different options available and how they fit together, check out the [Welcome to the Sketch Your Mind Ecosystem](https://community.sketch-your-mind.com/t/welcome-to-the-sketch-your-mind-ecosystem/375) introduction page. Finally, keep the [Excalidraw Plugin Wiki](https://community.sketch-your-mind.com/Wiki) at hand—it is an essential companion.
+<a href="https://community.sketch-your-mind.com/sym"><img src="https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/images/sym-cover.jpg?raw=true" width="150"></a>
+
+If you are curious about the Visual PKM philosophy behind the plugin, consider my book [Sketch Your Mind](https://community.sketch-your-mind.com/sym) and the [Visual Thinking Workshops](https://community.sketch-your-mind.com/vtw). To learn about all the different options available and how they fit together, check out the [Welcome to the Sketch Your Mind Ecosystem](https://community.sketch-your-mind.com/t/welcome-to-the-sketch-your-mind-ecosystem/375) introduction page. Finally, keep the [Excalidraw Plugin Wiki](https://community.sketch-your-mind.com/Wiki) and the [NotebookLM workbook](https://notebooklm.google.com/notebook/42d76a2f-c11d-4002-9286-1683c43d0ab0) at hand, those are essential companions.
 
 ## Disclaimer / Disclosure: Plugin Access and Privileges
 
@@ -81,7 +84,7 @@ When evaluating these findings, please keep the following in mind:
 <a href="https://youtu.be/QKnQgSjJVuc" target="_blank"><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/thumbnail-getting-started.jpg" width="300"/></a>
 
 ### Here's my complete catalog of videos:
-<a href="https://community.sketch-your-mind.com/t/a-visual-catalogue-of-all-my-youtube-videos/701"><img width="380" alt="image" src="https://github.com/zsviczian/obsidian-excalidraw-plugin/assets/14358394/2577e5ad-7a21-4c62-acd5-4fe80c8a8a95"></a>
+<a href="https://community.sketch-your-mind.com/t/a-visual-catalogue-of-all-my-youtube-videos/701"><img width="380" alt="image" src="https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/images/catalogue.jpg?raw=true"></a>
 <br>
 
 <details><summary>10 Part (slightly outdated) Video Walkthrough</summary>
