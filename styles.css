@@ -1,25 +1,12 @@
-.App {
-    font-family: sans-serif;
-    text-align: center;
-  }
-    
-  .excalidraw-wrapper {
-    height: 100%;
-    margin: 0px;
-    background-color: var(--background-primary);
-    position:relative;
-  }
-  
-  .context-menu-option__shortcut {
-      background-color: transparent !important;
-  }
+.excalidraw-wrapper {
+  height: 100%;
+  margin: 0px;
+  background-color: var(--background-primary);
+  position:relative;
+}
 
 .block-language-excalidraw {
   text-align:center;
-}
-
-.excalidraw .github-corner {
-  display: none;
 }
 
 svg.excalidraw-svg {
@@ -113,34 +100,6 @@ button.ToolIcon_type_button[title="Export"] {
   flex-direction: row;
   flex-wrap: nowrap;
   justify-content: right;
-}
-
-li[data-testid] {
-  border: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  width: 100% !important;
-}
-
-.excalidraw .context-menu-option-separator {
-  margin: 4px !important;
-}
-
-.excalidraw .popover {
-  padding: 0 !important;
-  border-color: transparent !important;
-  border: 0 !important;
-  background-color: transparent !important;
-  overflow-y: auto !important;
-  position: fixed !important;
-} 
-
-.disable-zen-mode--visible {
-  color: var(--text-primary-color);
-}
-
-.disable-zen-mode {
-  width: 9em !important;
 }
 
 .ex-coffee-div {
@@ -272,7 +231,7 @@ li[data-testid] {
 }
 
 .excalidraw-prompt-center {
-  text-align: center !important;
+  text-align: center;
 }
 
 .excalidraw-prompt-center button {
@@ -332,14 +291,6 @@ li[data-testid] {
   max-width: 42em;
 }
 
-.excalidraw .Island .scrollbar {
-  --scrollbar-thumb-bg: silver;
-}
-
-.excalidraw .ToolIcon__icon img{
-  height: 1rem;
-}
-
 .excalidraw-scriptengine-install tbody>tr>td>div>img {
   height:20px;
   background-color: silver;
@@ -353,10 +304,6 @@ li[data-testid] {
 
 .excalidraw-release p>a>img {
   width: 100%
-}
-
-.excalidraw .context-menu-option {
-  box-shadow: none;
 }
 
 .excalidraw-colorpicker-overlay {
@@ -408,104 +355,13 @@ textarea.excalidraw-wysiwyg {
   height: 1.8rem;
 }
 
-.excalidraw button,
-.ToolIcon button {
-  box-shadow: none;
-  justify-content: initial;
-}
-
-.excalidraw {
-  --default-button-size: 2rem !important;
-  --default-icon-size: 1rem !important;
-  --lg-button-size: 1.8rem !important;
-  --lg-icon-size: 1rem !important;
-  --editor-container-padding: var(--size-4-2);
-}
-
-.excalidraw .tray-zoom {
-  height: var(--default-button-size);
-  pointer-events: initial;
-  padding-bottom: 0.05rem;
-  padding-top: 0.05rem;
-}
-
-.excalidraw-container.theme--dark {  /* unused */
-  background-color: #121212;
-  color: #ffffff;
-}
-
-/* https://discordapp.com/channels/686053708261228577/989603365606531104/1041266507256184863 */
-/*.workspace-leaf {
-	contain: none !important;
-}*/
-
-.color-picker-content {
-  overflow-y: auto;
-  max-height: 10rem;
-}
-
-.excalidraw .ToolIcon__keybinding {
-  font-size: 0.45rem !important;
-}
-
-/*
-.Island > .Stack > .Stack {
-  padding:0.2rem;
-}
-*/
-
-label.color-input-container > input {
-  max-width: 5rem;
-}
-
-.excalidraw-hidden {
-  display: none !important;
-}
-
+.excalidraw-hidden,
 .excalidraw-display-none {
   display: none !important;
 }
 
-.excalidraw-display-block {
-  display: block !important;
-}
-
 .excalidraw-display-flex {
-  display: flex !important;
-}
-
-.excalidraw .App-toolbar-content .dropdown-menu {
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-.excalidraw .selected-shape-actions .panelColumn,
-.excalidraw .App-mobile-menu .panelColumn
- {
-  max-height: 70vh;
-  overflow-y: auto;
-}
-
-.excalidraw .App-mobile-menu {
-  width: 12.5rem !important;
-}
-
-.excalidraw .panelColumn .buttonList {
-  max-width: 13rem;
-}
-
-.excalidraw input[type="color"] {
-  width: 1.65rem;
-  height: 1.65rem;
-}
-
-.excalidraw input[type="color"]::-webkit-color-swatch {
-    height: 1.65rem;
-}
-
-
-.excalidraw input[type="color"]::-webkit-color-swatch-wrapper {
-  padding: 0;
+  display: flex;
 }
 
 .excalidraw-settings input[type="text"] {
@@ -584,32 +440,6 @@ div.excalidraw-draginfo {
   background: var(--color-base-40);
   display: block;
   border-radius: 5px;
-}
-
-/*
-.excalidraw [data-radix-popper-content-wrapper] {
-  Overrides position:fixed in popover
-  position: absolute !important;
-}*/
-
-/* In Obsidian-Excalidraw, the Sidebar-Trigger is sometimes in a Container/
-   Island, so it shall be styled like any other of its .ToolIcon siblings */
-.excalidraw :where(.mobile-misc-tools-container, .tray-misc-tools-container) .sidebar-trigger {
-  background-color: unset;
-  border-radius: 0;
-  box-shadow: none;
-  /* this appears to me as the least impactful way of undoing the upstream mess */
-  --lg-button-size: var(--button-height, var(--default-button-size));
-
-  &:hover {
-    background-color: var(--button-hover-bg);
-  }
-
-  &:active {
-    background-color: var(--button-hover-bg);
-    box-shadow: none;
-    border: 1px solid var(--button-active-border);
-  }
 }
 
 .excalidraw-sidepanel-container {
@@ -721,22 +551,6 @@ div.excalidraw-draginfo {
 .excalidraw-sidepanel-tab__close.is-hidden {
   display: none;
 }
-/*Arrow Picker Popover Overflow*/
-/*
-.excalidraw .selected-shape-actions .Island.App-menu__left,
-.excalidraw .selected-shape-actions .Island.App-menu__left .panelColumn,
-.excalidraw .Island .App-mobile-menu,
-.excalidraw .Island .App-mobile-menu .panelColumn {
-	overflow: visible;
-}*/
-
-.excalidraw__embeddable-container .view-header {
-  display: none !important;
-}
-
-.excalidraw__embeddable-container input {
-  background: initial;
-}
 
 .excalidraw .embeddable-menu {
   width: fit-content;
@@ -752,10 +566,6 @@ div.excalidraw-draginfo {
   }
 }
 
-.excalidraw .welcome-screen-center__logo svg {
-  width: 5rem !important;
-}
-
 .excalidraw-image-wrapper {
   text-align: center;
 }
@@ -763,7 +573,6 @@ div.excalidraw-draginfo {
 .excalidraw-image-wrapper img {
   margin: auto;
 }
-
 
 .modal-content.excalidraw-scriptengine-install .hit-count {
   margin-left: 0.5em;
@@ -778,15 +587,6 @@ div.excalidraw-draginfo {
 
 .excalidraw-svg svg a {
   text-decoration: none;
-}
-
-.excalidraw .Modal {
-  background-color: initial;
-  border: initial;
-  max-width: initial;
-  max-height: initial;
-  width: initial;
-  height: initial;
 }
 
 summary.excalidraw-setting-h1 {
@@ -849,83 +649,6 @@ hr.excalidraw-setting-hr {
   margin: 1rem 0rem 0rem 0rem;
 }
 
-.excalidraw-mdEmbed-hideFilename .mod-header {
-  display: none;
-}
-
-.excalidraw__embeddable-container .canvas-node:not(.is-editing).transparent {
-  ::-webkit-scrollbar,
-  ::-webkit-scrollbar-horizontal {
-    display: none;
-  }
-}
-
-/* 
-//https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1456
-.canvas-node:not(.is-editing):has(.excalidraw-canvas-immersive) {
-  ::-webkit-scrollbar,
-  ::-webkit-scrollbar-horizontal {
-    display: none;
-  }
-  background-color: transparent !important;
-}
-
-.canvas-node:not(.is-editing) .canvas-node-container:has(.excalidraw-canvas-immersive) {
-  border:       unset;
-  box-shadow:   unset;
-}
-*/
-
-.excalidraw .canvas-node .ex-md-font-hand-drawn {
-  --font-text: "Virgil";
-}
-
-.excalidraw .canvas-node .ex-md-font-code {
-  --font-text: "Cascadia";
-}
-
-.excalidraw__embeddable-container .workspace-leaf,
-.excalidraw__embeddable-container .workspace-leaf .view-content {
-  ::-webkit-scrollbar,
-  ::-webkit-scrollbar-horizontal {
-    display: none;
-  }
-  background-color: transparent !important;
-}
-
-.excalidraw__embeddable-container .workspace-leaf-content .view-content {
-  padding-left: 2px;
-  padding-right: 2px;
-  padding-top: 0px;
-  padding-bottom: 0px;
-}
-
-.excalidraw__embeddable-container .workspace-leaf .view-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.excalidraw__embeddable-container  .workspace-leaf-content .image-container,
-.excalidraw__embeddable-container .workspace-leaf-content .audio-container,
-.excalidraw__embeddable-container .workspace-leaf-content .video-container {
-  display: flex;
-}
-
-.excalidraw__embeddable-container .canvas-node-container {
-  border: 2px solid var(--canvas-color);
-}
-
-.excalidraw__embeddable-container .canvas-node {
-  --shadow-border-themed-inset: inset 0 0 0 1px rgb(var(--canvas-color));;
-  --shadow-border-themed: 0 0 0 2px rgb(var(--canvas-color));
-}
-
-.excalidraw__embeddable-container .canvas-node.is-selected.is-themed .canvas-node-container,
-.excalidraw__embeddable-container .canvas-node.is-focused.is-themed .canvas-node-container {
-  border-color: var(--canvas-color);
-}
-
 img.excalidraw-cropped-pdfpage,
 .excalidraw-cropped-pdfpage svg {
   background-color: white;
@@ -967,17 +690,6 @@ root {
  --excalidraw-caret-color: initial;
 }
 
-/*
-textarea.excalidraw-wysiwyg,*/
-.excalidraw input,
-.excalidraw .ttd-dialog-content textarea {
-  caret-color: var(--excalidraw-caret-color) !important;
-}
-
-.excalidraw textarea.ttd-dialog-input {
-  caret-color: var(--excalidraw-caret-color) !important;
-}
-
 .excalidraw-settings-links-container {
     align-items: center;
     color: inherit;
@@ -1014,22 +726,6 @@ textarea.excalidraw-wysiwyg,*/
 .excalidraw-rank svg {
   height: 8rem;
   width: 8rem;
-}
-
-.excalidraw .color-picker-content input[type="color"] {
-  filter: var(--theme-filter);
-}
-
-.ExcTextField__input input::placeholder {
-  color: var(--select-highlight-color);
-}
-
-.excalidraw textarea::placeholder {
-  color: var(--color-gray-50);
-}
-
-.excalidraw .ToolIcon_type_button {
-  color: var(--text-primary-color);
 }
 
 .excalidraw-setting-desc {
@@ -1069,23 +765,6 @@ textarea.excalidraw-wysiwyg,*/
   transform: none !important;
   margin-top: calc(var(--safe-area-inset-top) + var(--header-height) + var(--size-4-2));
   width: 100%;
-}
-
-.excalidraw .picker-content {
-  grid-gap: 0.2rem !important;
-}
-
-.excalidraw .picker-content button.picker-option{
-  width: 1.85rem !important;
-  height: 1.85rem !important;
-}
-
-.excalidraw .picker {
-  padding: 0.2rem !important;
-}
-
-.excalidraw .context-menu {
-  height: fit-content;
 }
 
 .excalidraw-prompt-buttonbar-top,
@@ -1218,88 +897,6 @@ textarea.excalidraw-wysiwyg,*/
   pointer-events: none;
 }
 
-/*remove blur from PDF embed*/
-.excalidraw__embeddable-container canvas {
-  image-rendering: auto;
-}
-
-.excalidraw__embeddable-container .mod-nofilter canvas {
-  filter: none !important;
-}
-
-.excalidraw__embeddable-container .canvas-node.is-selected .canvas-node-container,
-.excalidraw__embeddable-container .canvas-node.is-focused .canvas-node-container {
-  border-color: inherit;
-  box-shadow: inherit;
-}
-
-.excalidraw__embeddable-container .pdf-toolbar-right {
-  display: none;
-}
-
-.excalidraw-scriptengine-install .modal-close-button {
-  z-index: 9999;
-}
-
-.excalidraw .App-bottom-bar .App-toolbar {
-  justify-content: start;
-}
-
-.excalidraw-left-handed .excalidraw .App-bottom-bar {
-  justify-content: flex-end !important;
-  left: auto !important;
-  right: 0 !important;
-  transform: none !important;
-
-  .App-toolbar {
-    justify-content: end;
-  }
-}
-
-.excalidraw--tray .App-bottom-bar > .Island > .App-toolbar > .App-toolbar-content {
-  /* Flatten layout boundaries without breaking the box model tree */
-  > :not([class]) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* Allows items to behave like part of the parent row */
-    flex: 1 1 auto; 
-  }
-
-  > .ToolIcon__icon:empty {
-    display: none;
-  }
-}
-
-.excalidraw .excalidraw-ui-top-right.library-and-pen,
-.excalidraw.excalidraw--mobile .excalidraw-ui-top-right {
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: var(--size-4-1);
-  justify-content: center;
-  align-items: center;
-}
-
-.excalidraw .excalidraw-ui-top-right.library-and-pen .ToolIcon__penMode {
-  margin: auto;
-}
-
-.excalidraw :is(.mobile-misc-tools-container, .tray-misc-tools-container) {
-  margin-right: unset;
-
-  &.layer-ui__wrapper__top-right--compact {
-    gap: 0; /* there shouldn't be a larger gap in a "compact" mode */
-  }
-}
-
-.excalidraw .FixedSideContainer_side_top {
-    padding-top: 0 !important;
-}
-
-.excalidraw .ToolIcon.ToolIcon__penMode {
-	height:fit-content
-}
-
 .excalidraw-LatexPrompt {
   .cm-editor {
     margin-top: var(--size-4-2);
@@ -1369,11 +966,6 @@ textarea.excalidraw-wysiwyg,*/
   position: relative;
 }
 
-.excalidraw svg.svg-icon {
-  color: var(--icon-fill-color);
-}
-
-
 .is-mobile .excalidraw.excalidraw--mobile .FixedSideContainer.FixedSideContainer_side_top.App-top-bar {
   margin-top: 1rem
 }
@@ -1397,25 +989,3 @@ Obsidian Sheets Plus support
 /*
 End Obsidian Sheets Plus support
 */
-
-/*Revert greedy Obsidian style settings*/
-
-.excalidraw input[type="radio"]:active,
-.excalidraw input[type="radio"]:focus,
-.excalidraw input[type="radio"]:focus-visible,
-.excalidraw input[type="radio"]:checked {
-  background-color: revert;
-  border-color: revert;
-  box-shadow: none;
-  outline: revert;
-}
-
-.excalidraw input[type="radio"]::after,
-.excalidraw input[type="radio"]:checked::after {
-  content: none !important;
-  display: none !important;
-  background-color: transparent !important;
-  -webkit-mask-image: none !important;
-  -webkit-mask-size: initial !important;
-  -webkit-mask-position: initial !important;
-}

@@ -31,16 +31,12 @@ export const setElementHidden = (el: HTMLElement, hidden: boolean): void => {
 
 export const setElementDisplay = (
   el: HTMLElement,
-  display: "none" | "block" | "flex" | "",
+  display: "none" | "flex" | "",
 ): void => {
   clearDisplayClasses(el);
   switch (display) {
     case "none":
       setElementHidden(el, true);
-      break;
-    case "block":
-      setElementHidden(el, false);
-      el.classList.add("excalidraw-display-block");
       break;
     case "flex":
       setElementHidden(el, false);
