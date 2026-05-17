@@ -324,7 +324,11 @@ export class ExcalidrawAutomate {
    * @returns {void}
    */
   public printURLsInCodebase() {
-    log(Object.values(URLs).sort((a,b)=>a.localeCompare(b)).join("\n"));
+    log(
+      Object.values(URLs)
+        .sort((a, b) => a.localeCompare(b))
+        .join("\n"),
+    );
   }
 
   /**

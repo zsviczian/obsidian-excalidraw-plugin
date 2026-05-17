@@ -378,8 +378,7 @@ export default {
   AI_MODEL_REMOVE: "删除模型",
   AI_MODEL_RESTORE_DEFAULTS: "恢复默认模型",
   AI_IMAGE_MODEL_CAPABILITIES_NAME: "图像模型能力",
-  AI_IMAGE_MODEL_CAPABILITIES_DESC:
-    `在这里管理图像模型元数据，例如支持的分辨率、是否支持提示词图像变换以及是否支持蒙版编辑。例如，你可以在 <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">OpenAI 图像生成文档</a> 中查询支持的尺寸。`,
+  AI_IMAGE_MODEL_CAPABILITIES_DESC: `在这里管理图像模型元数据，例如支持的分辨率、是否支持提示词图像变换以及是否支持蒙版编辑。例如，你可以在 <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">OpenAI 图像生成文档</a> 中查询支持的尺寸。`,
   AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "恢复已知默认值",
   AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "添加",
   AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "编辑",
@@ -458,8 +457,7 @@ export default {
     "直接退出 Obsidian 应用（在应用切换器中划掉）不会触发自动保存。" +
     "此外，当您切换到其他应用时，有时系统会自动清理 Obsidian 后台以释放资源。这种情况下，自动保存会失效。",
   FILENAME_HEAD: "文件名",
-  FILENAME_DESC:
-    `<p>点击阅读 <a href="${URLs.MOMENTJS_COM_DOCS}">日期和时间格式参考</a>。</p>`,
+  FILENAME_DESC: `<p>点击阅读 <a href="${URLs.MOMENTJS_COM_DOCS}">日期和时间格式参考</a>。</p>`,
   FILENAME_SAMPLE: "“新建绘图”系列命令创建的文件名如：",
   FILENAME_EMBED_SAMPLE:
     "“新建绘图并嵌入到当前 Markdown 文档中”系列命令创建的文件名如：",

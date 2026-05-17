@@ -378,8 +378,7 @@ export default {
   AI_MODEL_REMOVE: "刪除模型",
   AI_MODEL_RESTORE_DEFAULTS: "還原預設模型",
   AI_IMAGE_MODEL_CAPABILITIES_NAME: "圖像模型能力",
-  AI_IMAGE_MODEL_CAPABILITIES_DESC:
-    `在這裡管理圖像模型中繼資料，例如支援的解析度、是否支援提示詞圖像轉換，以及是否支援遮罩編輯。舉例來說，你可以在 <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">OpenAI 圖像生成文件</a> 中查詢支援的尺寸。`,
+  AI_IMAGE_MODEL_CAPABILITIES_DESC: `在這裡管理圖像模型中繼資料，例如支援的解析度、是否支援提示詞圖像轉換，以及是否支援遮罩編輯。舉例來說，你可以在 <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">OpenAI 圖像生成文件</a> 中查詢支援的尺寸。`,
   AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "還原已知預設值",
   AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "新增",
   AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "編輯",
@@ -458,8 +457,7 @@ export default {
     "直接退出 Obsidian 應用（在應用切換器中劃掉）不會觸發自動儲存。" +
     "此外，當您切換到其他應用時，有時系統會自動清理 Obsidian 後臺以釋放資源。這種情況下，自動儲存會失效。",
   FILENAME_HEAD: "檔名",
-  FILENAME_DESC:
-    `<p>點選閱讀 <a href="${URLs.MOMENTJS_COM_DOCS}">日期和時間格式參考</a>。</p>`,
+  FILENAME_DESC: `<p>點選閱讀 <a href="${URLs.MOMENTJS_COM_DOCS}">日期和時間格式參考</a>。</p>`,
   FILENAME_SAMPLE: "“新建繪圖”系列命令建立的檔名如：",
   FILENAME_EMBED_SAMPLE:
     "“新建繪圖並嵌入到當前 Markdown 文件中”系列命令建立的檔名如：",

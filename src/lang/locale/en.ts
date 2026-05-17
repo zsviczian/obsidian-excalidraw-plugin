@@ -417,8 +417,7 @@ export default {
   AI_MODEL_REMOVE: "Remove model",
   AI_MODEL_RESTORE_DEFAULTS: "Restore model defaults",
   AI_IMAGE_MODEL_CAPABILITIES_NAME: "Image model capabilities",
-  AI_IMAGE_MODEL_CAPABILITIES_DESC:
-    `Manage stored image model metadata such as supported resolutions, prompt-transform support, and mask-edit support. Example: see the <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">OpenAI image generation docs</a> to look up supported sizes.`,
+  AI_IMAGE_MODEL_CAPABILITIES_DESC: `Manage stored image model metadata such as supported resolutions, prompt-transform support, and mask-edit support. Example: see the <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">OpenAI image generation docs</a> to look up supported sizes.`,
   AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "Restore known defaults",
   AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "Add",
   AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "Edit",

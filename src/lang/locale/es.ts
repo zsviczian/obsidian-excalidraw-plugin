@@ -423,8 +423,7 @@ export default {
   AI_MODEL_REMOVE: "Eliminar modelo",
   AI_MODEL_RESTORE_DEFAULTS: "Restaurar modelos predeterminados",
   AI_IMAGE_MODEL_CAPABILITIES_NAME: "Capacidades del modelo de imagen",
-  AI_IMAGE_MODEL_CAPABILITIES_DESC:
-    `Administra aquí los metadatos de los modelos de imagen, como resoluciones compatibles, soporte para transformaciones por prompt y soporte para ediciones con máscara. Por ejemplo, puedes consultar los tamaños compatibles en la <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">documentación de generación de imágenes de OpenAI</a>.`,
+  AI_IMAGE_MODEL_CAPABILITIES_DESC: `Administra aquí los metadatos de los modelos de imagen, como resoluciones compatibles, soporte para transformaciones por prompt y soporte para ediciones con máscara. Por ejemplo, puedes consultar los tamaños compatibles en la <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">documentación de generación de imágenes de OpenAI</a>.`,
   AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "Restaurar valores conocidos",
   AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "Agregar",
   AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "Editar",

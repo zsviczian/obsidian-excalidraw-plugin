@@ -233,7 +233,8 @@ export const ROUNDNESS = {
   ADAPTIVE_RADIUS: 3,
 } as const;
 export const THEME_FILTER = "invert(93%) hue-rotate(180deg) saturate(1.25)";
-export const GITHUB_RELEASES = URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG;
+export const GITHUB_RELEASES =
+  URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG;
 export const URLFETCHTIMEOUT = 3000;
 export const PLUGIN_ID = "obsidian-excalidraw-plugin";
 export const SCRIPT_INSTALL_CODEBLOCK = "excalidraw-script-install";

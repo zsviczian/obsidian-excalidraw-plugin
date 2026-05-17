@@ -1,5 +1,9 @@
 import { DEVICE, FRONTMATTER_KEYS } from "src/constants/constants";
-import { TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT } from "src/constants/constSettingsTags";
+import {
+  TAG_AUTOEXPORT,
+  TAG_MDREADINGMODE,
+  TAG_PDFEXPORT,
+} from "src/constants/constSettingsTags";
 import { URLs } from "src/constants/safeUrls";
 import {
   labelALT,
@@ -368,8 +372,7 @@ export default {
   AI_MODEL_REMOVE: "Удалить модель",
   AI_MODEL_RESTORE_DEFAULTS: "Восстановить модели по умолчанию",
   AI_IMAGE_MODEL_CAPABILITIES_NAME: "Возможности моделей изображений",
-  AI_IMAGE_MODEL_CAPABILITIES_DESC:
-    `Здесь настраиваются метаданные моделей изображений: поддерживаемые разрешения, поддержка prompt-редактирования и поддержка масок. Например, поддерживаемые размеры можно посмотреть в <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">документации OpenAI по генерации изображений</a>.`,
+  AI_IMAGE_MODEL_CAPABILITIES_DESC: `Здесь настраиваются метаданные моделей изображений: поддерживаемые разрешения, поддержка prompt-редактирования и поддержка масок. Например, поддерживаемые размеры можно посмотреть в <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">документации OpenAI по генерации изображений</a>.`,
   AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "Восстановить известные значения",
   AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "Добавить",
   AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "Изменить",

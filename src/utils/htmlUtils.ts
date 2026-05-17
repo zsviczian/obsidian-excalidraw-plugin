@@ -60,4 +60,3 @@ export const setElementIconAndText = (
   setIcon(el, iconId);
   el.append(text ?? "");
 };
-

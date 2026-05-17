@@ -1550,8 +1550,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private registerMonkeyPatches() {
-    const key =
-      URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES;
+    const key = URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES;
 
     this.register(
       around(Workspace.prototype, {
