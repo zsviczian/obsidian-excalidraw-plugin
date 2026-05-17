@@ -7,7 +7,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
-  "2.23.1": `
+  "2.23.2": `
   ## Fixed
   - Further code scanner and transparency improvements, including a new \`ExcalidrawAutomate.printURLsInCodebase()\` function to list all URLs used in the codebase. All URL calls require explicit user action, either through enabled settings or clearly indicated links. Run the function in the Obsidian Developer Console (\`CTRL+SHIFT+I\` / \`CMD+OPT+I\`).
   `,

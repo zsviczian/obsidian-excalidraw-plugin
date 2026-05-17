@@ -8,3 +8,12 @@ Uses .github/workflows/release.yml
 3) Tag and trigger release
   git tag 2.23.0-beta-x
   git push origin 2.23.0-beta-x
+
+---
+
+When I need to rerun the release:
+# 1. Delete the tag from your local repository
+git tag -d 2.23.0
+
+# 2. Delete the tag from GitHub
+git push origin --delete 2.23.0
