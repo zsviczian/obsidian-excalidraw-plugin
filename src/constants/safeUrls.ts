@@ -63,6 +63,13 @@ export const URL_REGISTRY = {
       ),
       UrlPurpose.APP_LOGIC,
     ),
+  API_GITHUB_COM_REPOS_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES: defineUrl(
+    buildSafeUrl(
+      ["api", "github", "com"],
+      ["repos", "zsviczian", "obsidian-excalidraw-plugin", "releases?per_page=15&page=1"],
+    ),
+    UrlPurpose.APP_LOGIC,
+  ),
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES: defineUrl(
     buildSafeUrl(
       ["github", "com"],
@@ -177,6 +184,10 @@ export const URL_REGISTRY = {
   WWW_YOUTUBE_COM_WATCH: defineUrl(
     buildSafeUrl(["www", "youtube", "com"], ["watch?v=P_Q6avJGoWI"]),
     UrlPurpose.VIDEO,
+  ),
+  I_YTIMG_COM: defineUrl(
+    buildSafeUrl(["i", "ytimg", "com"]),
+    UrlPurpose.APP_LOGIC,
   ),
   I_YTIMG_COM_VI_P_Q6AVJGOWI_MAXRESDEFAULT_JPG: defineUrl(
     buildSafeUrl(

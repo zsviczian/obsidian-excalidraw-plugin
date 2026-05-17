@@ -80,7 +80,7 @@ export async function checkExcalidrawVersion() {
     const gitAPIrequest = async () => {
       return JSON.parse(
         await request({
-          url: `https://api.github.com/repos/zsviczian/obsidian-excalidraw-plugin/releases?per_page=15&page=1`,
+          url: URLs.API_GITHUB_COM_REPOS_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES,
         }),
       );
     };
@@ -1166,7 +1166,7 @@ export async function getYouTubeThumbnailLink(
   }
   const videoId = parsed[2];
 
-  let url = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+  let url = `${URLs.I_YTIMG_COM}/${videoId}/maxresdefault.jpg`;
   let response = await requestUrl({
     url,
     method: "get",
@@ -1177,7 +1177,7 @@ export async function getYouTubeThumbnailLink(
     return url;
   }
 
-  url = `https://i.ytimg.com/vi/${videoId}/hq720.jpg`;
+  url = `${URLs.I_YTIMG_COM}/${videoId}/hq720.jpg`;
   response = await requestUrl({
     url,
     method: "get",
@@ -1188,7 +1188,7 @@ export async function getYouTubeThumbnailLink(
     return url;
   }
 
-  url = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
+  url = `${URLs.I_YTIMG_COM}/${videoId}/mqdefault.jpg`;
   response = await requestUrl({
     url,
     method: "get",
@@ -1199,7 +1199,7 @@ export async function getYouTubeThumbnailLink(
     return url;
   }
 
-  return `https://i.ytimg.com/vi/${videoId}/default.jpg`;
+  return `${URLs.I_YTIMG_COM}/${videoId}/default.jpg`;
 }
 
 export function isCallerFromTemplaterPlugin(stackTrace: string) {
