@@ -7594,6 +7594,10 @@ export default class ExcalidrawView
               //desktopUIMode: calculateUIModeValue(this.plugin.settings), //2026.05.15
               //formFactor: DEVICE.isMobile ? "phone" : DEVICE.isTablet ? "tablet" : "desktop",
             },
+            imageOptions: {
+              maxWidthOrHeight: 3440,
+              maxFileSizeBytes: 20 * 1024 * 1024,
+            },
             initState: initdata?.appState,
             initialData: initdata,
             detectScroll: true,
