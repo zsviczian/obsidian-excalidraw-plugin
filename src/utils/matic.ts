@@ -2,6 +2,7 @@ import { EXCALIDRAW_PLUGIN, THEME } from "../constants/constants";
 import type { Theme } from "@zsviczian/excalidraw/types/element/src/types";
 import type { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { analyzeAIImage, extractCodeBlocks } from "./AIUtils";
+import { URLs } from "src/constants/safeUrls";
 
 const DIAGRAM_TO_HTML_DEBUG_PREFIX = "[Excalidraw diagram-to-code debug]";
 const DIAGRAM_TO_HTML_DEBUG_MAX_LENGTH = 8000;
@@ -124,7 +125,7 @@ const SYSTEM_PROMPT = `You are a skilled front-end developer who builds interact
 Your role is to transform low-fidelity wireframes into working front-end HTML code.
 YOU MUST FOLLOW FOLLOWING RULES:
 - Use HTML, CSS, JavaScript to build a responsive, accessible, polished prototype
-- Leverage Tailwind for styling and layout (import as script <script src="https://cdn.tailwindcss.com"></script>)
+- Leverage Tailwind for styling and layout (import as script <script src="${URLs.CDN_TAILWINDCSS_COM}"></script>)
 - Inline JavaScript when needed
 - Fetch dependencies from CDNs when needed (using unpkg or skypack)
 - Source images from Unsplash or create applicable placeholders

@@ -4,6 +4,7 @@ import {
   TAG_MDREADINGMODE,
   TAG_PDFEXPORT,
 } from "src/constants/constSettingsTags";
+import { URLs } from "src/constants/safeUrls";
 import {
   labelALT,
   labelCTRL,
@@ -253,7 +254,7 @@ export default {
   NOTEBOOKLM_LINK_TEXT:
     "Learn the Plugin. Access the NotebookLM knowledgebase.",
   EXCALIDRAW_MASTERY_PROMO_ARIA: "Open Excalidraw Mastery",
-  EXCALIDRAW_MASTERY_PROMO_HTML: `<p><b>Feeling lost in the toggles and menus?</b></p><p>Excalidraw is a Visual PKM powerhouse built for heavy-duty workflows like <b>Visual-First Daily Notes</b>, deep <b>PDF research</b>, <b>automation</b>, <b>AI integration</b>, and <b>Visual Zettelkasten</b>. But all this power comes with complexity.</p><p>Skip the trial and error. <a href="https://community.sketch-your-mind.com/em" target="_blank">👉 Join Excalidraw Mastery</a> to learn these exact setups step-by-step. Overcome tool friction and master your knowledge alongside a supportive community of visual thinkers!</p>`,
+  EXCALIDRAW_MASTERY_PROMO_HTML: `<p><b>Feeling lost in the toggles and menus?</b></p><p>Excalidraw is a Visual PKM powerhouse built for heavy-duty workflows like <b>Visual-First Daily Notes</b>, deep <b>PDF research</b>, <b>automation</b>, <b>AI integration</b>, and <b>Visual Zettelkasten</b>. But all this power comes with complexity.</p><p>Skip the trial and error. <a href="${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM}" target="_blank">👉 Join Excalidraw Mastery</a> to learn these exact setups step-by-step. Overcome tool friction and master your knowledge alongside a supportive community of visual thinkers!</p>`,
   EXCALIDRAW_MASTERY_PROMO_SHOW: "Show",
   EXCALIDRAW_MASTERY_PROMO_HIDE: "Hide",
   LINKS_BUGS_ARIA:
@@ -277,7 +278,7 @@ export default {
   RELEASE_NOTES_NAME: "Display Release Notes after update",
   RELEASE_NOTES_DESC:
     "<b><u>Toggle ON:</u></b> Display release notes each time you update Excalidraw to a newer version.<br>" +
-    "<b><u>Toggle OFF:</u></b> Silent mode. You can still read release notes on <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a>.",
+    `<b><u>Toggle OFF:</u></b> Silent mode. You can still read release notes on <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES}">GitHub</a>.`,
   WARN_ON_MANIFEST_MISMATCH_NAME: "Warn about incomplete plugin updates",
   WARN_ON_MANIFEST_MISMATCH_DESC:
     "Checks that the installed Excalidraw executable matches the version shown in Obsidian's plugin list. If they don't match (often after partial sync), you'll see a warning and can update. Disable to stop checking.",
@@ -417,7 +418,7 @@ export default {
   AI_MODEL_RESTORE_DEFAULTS: "Restore model defaults",
   AI_IMAGE_MODEL_CAPABILITIES_NAME: "Image model capabilities",
   AI_IMAGE_MODEL_CAPABILITIES_DESC:
-    'Manage stored image model metadata such as supported resolutions, prompt-transform support, and mask-edit support. Example: see the <a href="https://platform.openai.com/docs/guides/image-generation" target="_blank" rel="noopener noreferrer">OpenAI image generation docs</a> to look up supported sizes.',
+    `Manage stored image model metadata such as supported resolutions, prompt-transform support, and mask-edit support. Example: see the <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">OpenAI image generation docs</a> to look up supported sizes.`,
   AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "Restore known defaults",
   AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "Add",
   AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "Edit",
@@ -521,7 +522,7 @@ export default {
   COMPRESS_NAME: "Compress Excalidraw JSON in Markdown",
   COMPRESS_DESC:
     "By enabling this feature Excalidraw will store the drawing JSON in a Base64 compressed " +
-    "format using the <a href='https://pieroxy.net/blog/pages/lz-string/index.html'>LZ-String</a> algorithm. " +
+    `format using the <a href="${URLs.PIEROXY_NET_BLOG_PAGES_LZ_STRING_INDEX_HTML}">LZ-String</a> algorithm. ` +
     "This will reduce the chance of Excalidraw JSON cluttering your search results in Obsidian. " +
     "As a side effect, this will also reduce the filesize of Excalidraw drawings. " +
     "When you switch an Excalidraw drawing to Markdown view, using the options menu in Excalidraw, the file will " +
@@ -550,7 +551,7 @@ export default {
     "Obsidian in the background to save system resources. In such a case Excalidraw will not be able to save the latest changes.",
   FILENAME_HEAD: "Filename",
   FILENAME_DESC:
-    "<p>Click this link for the <a href='https://momentjs.com/docs/#/displaying/format/'>" +
+    `<p>Click this link for the <a href="${URLs.MOMENTJS_COM_DOCS}">` +
     "date and time format reference</a>.</p>",
   FILENAME_SAMPLE: "Filename for a new drawing is: ",
   FILENAME_EMBED_SAMPLE: "Filename for a new embedded drawing is: ",
@@ -770,7 +771,7 @@ export default {
   SECOND_ORDER_LINKS_DESC:
     "Show links when clicking on a link in Excalidraw. Second-order link are backlinks pointing to the link being clicked. " +
     "When using image icons to connect similar notes, second order links allow you to get to related notes in one click instead of two. " +
-    "See <a href='https://youtube.com/shorts/O_1ls9c6wBY?feature=share'>YT Short</a> to understand.",
+    `See <a href="${URLs.YOUTUBE_COM_SHORTS_O_1LS9C6WBY}">YT Short</a> to understand.`,
   ADJACENT_PANE_NAME: "Reuse adjacent pane",
   ADJACENT_PANE_DESC:
     `When ${labelCTRL()}+${labelALT()} clicking a link in Excalidraw, by default the plugin will open the link in a new pane. ` +
@@ -876,13 +877,13 @@ export default {
   MD_DEFAULT_COLOR_NAME:
     "The default font color to use for embedded markdown files.",
   MD_DEFAULT_COLOR_DESC:
-    'Set this to any valid css color name e.g. "steelblue" (<a href="https://www.w3schools.com/colors/colors_names.asp">color names</a>), or a valid hexadecimal color e.g. "#e67700", ' +
-    "or any other valid css color string. You can override this setting by adding the following frontmatter-key to the embedded markdown file: <code>excalidraw-font-color: steelblue</code>",
+    `Set this to any valid css color name e.g. "steelblue" (<a href="${URLs.WWW_W3SCHOOLS_COM_COLORS_COLORS_NAMES_ASP}">color names</a>), or a valid hexadecimal color e.g. "#e67700", ` +
+    `or any other valid css color string. You can override this setting by adding the following frontmatter-key to the embedded markdown file: <code>excalidraw-font-color: steelblue</code>`,
   MD_DEFAULT_BORDER_COLOR_NAME:
     "The default border color to use for embedded markdown files.",
   MD_DEFAULT_BORDER_COLOR_DESC:
-    'Set this to any valid css color name e.g. "steelblue" (<a href="https://www.w3schools.com/colors/colors_names.asp">color names</a>), or a valid hexadecimal color e.g. "#e67700", ' +
-    "or any other valid css color string. You can override this setting by adding the following frontmatter-key to the embedded markdown file: <code>excalidraw-border-color: gray</code>. " +
+    `Set this to any valid css color name e.g. "steelblue" (<a href="${URLs.WWW_W3SCHOOLS_COM_COLORS_COLORS_NAMES_ASP}">color names</a>), or a valid hexadecimal color e.g. "#e67700", ` +
+    `or any other valid css color string. You can override this setting by adding the following frontmatter-key to the embedded markdown file: <code>excalidraw-border-color: gray</code>. ` +
     "Leave empty if you don't want a border. ",
   MD_CSS_NAME: "CSS file",
   MD_CSS_DESC:
@@ -938,16 +939,12 @@ export default {
     `is available, use that image instead of generating a preview image on the fly. This will result in faster previews especially when you have many embedded objects in the drawing, however, ` +
     `it may happen that your latest changes are not displayed and that the image will not automatically match your Obsidian theme in case you have changed the ` +
     `Obsidian theme since the export was created. This setting only applies to embedding images into markdown documents. ` +
-    `For a number of reasons, the same approach cannot be used to expedite the loading of drawings with many embedded objects. See demonstration <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>here</a>.`,
-  /*EMBED_PREVIEW_SVG_NAME: "Display SVG in markdown preview",
-  EMBED_PREVIEW_SVG_DESC:
-    "<b><u>Toggle ON:</u></b> Embed drawing as an <a href='https://en.wikipedia.org/wiki/Scalable_Vector_Graphics' target='_blank'>SVG</a> image into the markdown preview.<br>" +
-    "<b><u>Toggle OFF:</u></b> Embed drawing as a <a href='' target='_blank'>PNG</a> image. Note, that some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.",*/
+    `For a number of reasons, the same approach cannot be used to expedite the loading of drawings with many embedded objects. See demonstration <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG_1_6_23}" target='_blank'>here</a>.`,
   EMBED_PREVIEW_IMAGETYPE_NAME: "Image type in markdown preview",
   EMBED_PREVIEW_IMAGETYPE_DESC:
     "<b><u>Native SVG</u></b>: High Image Quality. Embedded Websites, YouTube videos, Obsidian Links, and external images embedded via a URL will all work. Embedded Obsidian pages will not<br>" +
     "<b><u>SVG Image</u></b>: High Image Quality. Embedded elements and images embedded via URL only have placeholders, links don't work<br>" +
-    "<b><u>PNG Image</u></b>: Lower Image Quality, but in some cases better performance with large drawings. Embedded elements and images embedded via URL only have placeholders, links don't work. Also some of the <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>image block referencing features</a> do not work with PNG embeds.",
+    `<b><u>PNG Image</u></b>: Lower Image Quality, but in some cases better performance with large drawings. Embedded elements and images embedded via URL only have placeholders, links don't work. Also some of the <a href="${URLs.WWW_YOUTUBE_COM_WATCH_1}" target='_blank'>image block referencing features</a> do not work with PNG embeds.`,
   PREVIEW_MATCH_OBSIDIAN_NAME: "Excalidraw preview to match Obsidian theme",
   PREVIEW_MATCH_OBSIDIAN_DESC:
     "Image preview in documents should match the Obsidian theme. If enabled, when Obsidian is in dark mode, Excalidraw images will render in dark mode. " +
@@ -1034,11 +1031,11 @@ export default {
   DEBUGMODE_NAME: "Enable debug messages",
   DEBUGMODE_DESC:
     "I recommend restarting Obsidian after enabling/disabling this setting. This enable debug messages in the console. This is useful for troubleshooting issues. " +
-    "If you are experiencing problems with the plugin, please enable this setting, reproduce the issue, and include the console log in the issue you raise on <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/issues'>GitHub</a>",
+    `If you are experiencing problems with the plugin, please enable this setting, reproduce the issue, and include the console log in the issue you raise on <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}">GitHub</a>`,
   SLIDING_PANES_NAME: "Sliding panes plugin support",
   SLIDING_PANES_DESC:
     "Need to restart Obsidian for this change to take effect.<br>" +
-    "If you use the <a href='https://github.com/deathau/sliding-panes-obsidian' target='_blank'>Sliding Panes plugin</a> " +
+    `If you use the <a href="${URLs.GITHUB_COM_DEATHAU_SLIDING_PANES_OBSIDIAN}" target='_blank'>Sliding Panes plugin</a> ` +
     "you can enable this setting to make Excalidraw drawings work with the Sliding Panes plugin.<br>" +
     "Note, that Excalidraw Sliding Panes support causes compatibility issues with Obsidian Workspaces.<br>" +
     "Note also, that the 'Stack Tabs' feature is now available in Obsidian, providing native support for most of the Sliding Panes functionality.",
@@ -1084,10 +1081,10 @@ export default {
   EA_HEAD: "Excalidraw Automate",
   EA_DESC:
     "ExcalidrawAutomate is a scripting and automation API for Excalidraw. Unfortunately, the documentation of the API is sparse. " +
-    "I recommend reading the <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/API/ExcalidrawAutomate.d.ts'>ExcalidrawAutomate.d.ts</a> file, " +
-    "visiting the <a href='https://zsviczian.github.io/obsidian-excalidraw-plugin/'>ExcalidrawAutomate How-to</a> page - though the information " +
-    "here has not been updated for a long while -, and finally to enable the field suggester below. The field suggester will show you the available " +
-    "functions, their parameters and short description as you type. The field suggester is the most up-to-date documentation of the API.",
+    `I recommend reading the <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_API_EXCALIDRAWAUTOMATE_D_TS}">ExcalidrawAutomate.d.ts</a> file, ` +
+    `visiting the <a href="${URLs.ZSVICZIAN_GITHUB_IO_OBSIDIAN_EXCALIDRAW_PLUGIN}">ExcalidrawAutomate How-to</a> page - though the information ` +
+    `here has not been updated for a long while -, and finally to enable the field suggester below. The field suggester will show you the available ` +
+    `functions, their parameters and short description as you type. The field suggester is the most up-to-date documentation of the API.`,
   FIELD_SUGGESTER_NAME: "Enable Field Suggester",
   FIELD_SUGGESTER_DESC:
     "Field Suggester borrowed from Breadcrumbs and Templater plugins. The Field Suggester will show an autocomplete menu " +
@@ -1151,7 +1148,7 @@ export default {
   OFFLINE_CJK_NAME: "Offline CJK font support",
   OFFLINE_CJK_DESC: `<strong>Changes you make here will only take effect after restarting Obsidian.</strong><br>
      Excalidraw.com offers handwritten CJK fonts. By default these fonts are not included in the plugin locally, but are served from the Internet. 
-     If you prefer to keep Excalidraw fully local, allowing it to work without Internet access you can download the necessary <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip" target="_blank">font files from GitHub</a>.
+     If you prefer to keep Excalidraw fully local, allowing it to work without Internet access you can download the necessary <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RAW_REFS_HEADS_MASTER_ASSETS_EXCALIDRAW_FONTS_ZIP}" target="_blank">font files from GitHub</a>.
      After downloading, unzip the contents into a folder within your Vault.<br>
      Pre-loading fonts will impact startup performance. For this reason you can select which fonts to load.`,
   CJK_ASSETS_FOLDER_NAME: "CJK Font Folder (cAsE sENsiTIvE!)",
@@ -1172,13 +1169,13 @@ export default {
     "Note, that the process of extracting the text from the image is not done locally, but via an online API. The taskbone service stores the image on its servers only as long as necessary for the text extraction. However, if this is a dealbreaker, then please don't use this feature.",
   TASKBONE_ENABLE_NAME: "Enable Taskbone",
   TASKBONE_ENABLE_DESC:
-    "By enabling this service your agree to the Taskbone <a href='https://www.taskbone.com/legal/terms/' target='_blank'>Terms and Conditions</a> and the " +
-    "<a href='https://www.taskbone.com/legal/privacy/' target='_blank'>Privacy Policy</a>.",
+    `By enabling this service your agree to the Taskbone <a href="${URLs.WWW_TASKBONE_COM_LEGAL_TERMS}" target='_blank'>Terms and Conditions</a> and the ` +
+    `<a href="${URLs.WWW_TASKBONE_COM_LEGAL_PRIVACY}" target='_blank'>Privacy Policy</a>.`,
   TASKBONE_APIKEY_NAME: "Taskbone API Key",
   TASKBONE_APIKEY_DESC:
-    "Taskbone offers a free service with a reasonable number of scans per month. If you want to use this feature more frequently, or you want to support " +
-    "the developer of Taskbone (as you can imagine, there is no such thing as 'free', providing this awesome OCR service costs some money to the developer of Taskbone), you can " +
-    "purchase a paid API key from <a href='https://www.taskbone.com/' target='_blank'>taskbone.com</a>. In case you have purchased a key, simply overwrite this auto generated free-tier API-key with your paid key.",
+    `Taskbone offers a free service with a reasonable number of scans per month. If you want to use this feature more frequently, or you want to support ` +
+    `the developer of Taskbone (as you can imagine, there is no such thing as 'free', providing this awesome OCR service costs some money to the developer of Taskbone), you can ` +
+    `purchase a paid API key from <a href="${URLs.WWW_TASKBONE_COM}" target='_blank'>taskbone.com</a>. In case you have purchased a key, simply overwrite this auto generated free-tier API-key with your paid key.`,
 
   //HotkeyEditor
   HOTKEY_PRESS_COMBO_NANE: "Press your hotkey combination",
@@ -1243,7 +1240,7 @@ export default {
       </p>
       <h3>Instructions:</h3>
       <ol>
-        <li>Download the fonts from <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip">GitHub</a>.</li>
+        <li>Download the fonts from <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RAW_REFS_HEADS_MASTER_ASSETS_EXCALIDRAW_FONTS_ZIP}">GitHub</a>.</li>
         <li>Unzip and copy files into a Vault folder (default: <code>Excalidraw/${CJK_FONTS}</code>; folder names are cAse-senSITive).</li>
         <li><mark>DO NOT</mark> set this folder to the Vault root or mix with other local fonts.</li>
       </ol>
@@ -1518,19 +1515,19 @@ export default {
 The Excalidraw Obsidian plugin is much more than "just" a drawing tool. Because it integrates deeply with Obsidian, it opens up a whole new paradigm for Visual Personal Knowledge Management.
 
 <div style="text-align:center;margin-top:10px;">
-<a href="https://community.sketch-your-mind.com/ee" target="_blank"><img src="https://sketch-your-mind.com/images/logo-EE.png" style="width:50%;"></a>
+<a href="${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE}" target="_blank"><img "src="${URLs.SKETCH_YOUR_MIND_COM_IMAGES_LOGO_EE_PNG}" style="width:50%;"></a>
 </div>
 
-To help you get started without the overwhelm, I highly recommend taking the free **[Excalidraw Essentials](https://community.sketch-your-mind.com/ee)** mini-course. It cuts through the noise and teaches you the fundamentals in a fast, structured way.
+To help you get started without the overwhelm, I highly recommend taking the free **[Excalidraw Essentials](" + URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE + ")** mini-course. It cuts through the noise and teaches you the fundamentals in a fast, structured way.
 
-You also don't have to figure it all out alone! Come join the **[Sketch Your Mind Community](https://community.sketch-your-mind.com)** to connect with fellow visual thinkers, share your workflows, and build a frictionless PKM system together.
+You also don't have to figure it all out alone! Come join the **[Sketch Your Mind Community](" + URLs.COMMUNITY_SKETCH_YOUR_MIND_COM + ")** to connect with fellow visual thinkers, share your workflows, and build a frictionless PKM system together.
 
-If you'd like to see what's possible right now, here is a showcase of the key features. To keep abreast of the latest updates and to explore visual PKM, please subscribe to my YouTube channel: [Visual PKM](https://www.youtube.com/@visualPKM).
+If you'd like to see what's possible right now, here is a showcase of the key features. To keep abreast of the latest updates and to explore visual PKM, please subscribe to my YouTube channel: [Visual PKM](" + URLs.WWW_YOUTUBE_COM_VISUALPKM_1 + ").
 
 Thank you & Enjoy!
 
 <div class="excalidraw-videoWrapper">
-<a href="https://www.youtube.com/watch?v=P_Q6avJGoWI" target="_blank"><img src ="https://i.ytimg.com/vi/P_Q6avJGoWI/maxresdefault.jpg" style="width:100%;"></a>
+<a href="${URLs.WWW_YOUTUBE_COM_WATCH}" target="_blank"><img src="${URLs.I_YTIMG_COM_VI_P_Q6AVJGOWI_MAXRESDEFAULT_JPG}" style="width:100%;"></a>
 </div>
 `,
 

@@ -47,6 +47,7 @@ import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 import ExcalidrawView from "../view/ExcalidrawView";
 import { getEmptyDrawingElementsRuntime } from "src/constants/emptydrawing";
 import { sanitizedFragment } from "./htmlUtils";
+import { URLs } from "src/constants/safeUrls";
 export { errorlog, getDataURL } from "./coreUtils";
 export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 
@@ -129,7 +130,7 @@ async function checkScriptUpdates() {
     const files = new Map<string, number>();
     const directoryInfo = JSON.parse(
       await request({
-        url: "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/directory-info.json",
+        url: URLs.RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_DIRECTORY_INFO_JSON,
       }),
     );
     directoryInfo.forEach((f: any) => files.set(f.fname, f.mtime));
@@ -1145,9 +1146,9 @@ export function obsidianURLIsImage(data: string): boolean {
 export function hyperlinkIsYouTubeLink(link: string): boolean {
   return (
     isHyperLink(link) &&
-    (link.startsWith("https://youtu.be") ||
-      link.startsWith("https://www.youtube.com") ||
-      link.startsWith("https://youtube.com") ||
+    (link.startsWith(URLs.YOUTU_BE) ||
+      link.startsWith(URLs.WWW_YOUTUBE_COM) ||
+      link.startsWith(URLs.YOUTUBE_COM) ||
       link.startsWith("https//www.youtu.be")) &&
     link.match(/(youtu.be\/|v=)([^?/&]*)/) !== null
   );

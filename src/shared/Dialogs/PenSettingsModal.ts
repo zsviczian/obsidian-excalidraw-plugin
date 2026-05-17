@@ -16,6 +16,7 @@ import { PENS } from "src/utils/pens";
 import { fragWithHTML } from "src/utils/utils";
 import { setSanitizedHtml } from "src/utils/htmlUtils";
 import { showColorPicker } from "./ColorPicker";
+import { URLs } from "src/constants/safeUrls";
 
 const EASINGFUNCTIONS: Record<string, string> = {
   linear: "linear",
@@ -570,7 +571,7 @@ export class PenSettingsModal extends Modal {
     const p = ce.createEl("p");
     setSanitizedHtml(
       p,
-      `Read the Perfect Freehand documentation following <a href="https://github.com/steveruizok/perfect-freehand#documentation" target="_blank">this link</a>.`,
+      `Read the Perfect Freehand documentation following <a href="${URLs.GITHUB_COM_STEVERUIZOK_PERFECT_FREEHAND}" target="_blank">this link</a>.`,
     );
 
     const tSetting = new Setting(ce)
@@ -629,7 +630,7 @@ export class PenSettingsModal extends Modal {
       .setName("Easing function")
       .setDesc(
         fragWithHTML(
-          `An easing function for the tapering effect. For more info <a href="https://easings.net/#" target="_blank">click here</a>`,
+          `An easing function for the tapering effect. For more info <a href="${URLs.EASINGS_NET}" target="_blank">click here</a>`,
         ),
       )
       .addDropdown((dropdown) =>
@@ -720,7 +721,7 @@ export class PenSettingsModal extends Modal {
       .setName("Easing function")
       .setDesc(
         fragWithHTML(
-          `An easing function for the tapering effect. For more info <a href="https://easings.net/#" target="_blank">click here</a>`,
+          `An easing function for the tapering effect. For more info <a href="${URLs.EASINGS_NET}" target="_blank">click here</a>`,
         ),
       )
       .addDropdown((dropdown) =>
@@ -778,7 +779,7 @@ export class PenSettingsModal extends Modal {
       .setName("Easing function")
       .setDesc(
         fragWithHTML(
-          `An easing function for the tapering effect. For more info <a href="https://easings.net/#" target="_blank">click here</a>`,
+          `An easing function for the tapering effect. For more info <a href="${URLs.EASINGS_NET}" target="_blank">click here</a>`,
         ),
       )
       .addDropdown((dropdown) =>

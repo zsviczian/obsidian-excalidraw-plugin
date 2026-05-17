@@ -34,6 +34,7 @@ import {
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { CaptureUpdateAction } from "src/constants/constants";
+import { URLs } from "src/constants/safeUrls";
 
 type BlockCacheEntry = Awaited<
   ReturnType<ExcalidrawView["app"]["metadataCache"]["blockCache"]["getForFile"]>
@@ -380,8 +381,8 @@ export class EmbeddableMenu {
     element: ExcalidrawEmbeddableElement,
   ) {
     openExternalLink(
-      !iframe.src.startsWith("https://www.youtube.com") &&
-        !iframe.src.startsWith("https://player.vimeo.com")
+      !iframe.src.startsWith(URLs.WWW_YOUTUBE_COM) &&
+        !iframe.src.startsWith(URLs.PLAYER_VIMEO_COM)
         ? iframe.src
         : element.link,
       this.view.app,
@@ -592,8 +593,8 @@ export class EmbeddableMenu {
             }}
           >
             {iframe.src !== link &&
-              !iframe.src.startsWith("https://www.youtube.com") &&
-              !iframe.src.startsWith("https://player.vimeo.com") && (
+              !iframe.src.startsWith(URLs.WWW_YOUTUBE_COM) &&
+              !iframe.src.startsWith(URLs.PLAYER_VIMEO_COM) && (
                 <ActionButton
                   key={"Reload"}
                   title={t("RELOAD")}

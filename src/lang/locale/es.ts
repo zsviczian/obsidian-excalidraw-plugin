@@ -4,6 +4,7 @@ import {
   TAG_MDREADINGMODE,
   TAG_PDFEXPORT,
 } from "src/constants/constSettingsTags";
+import { URLs } from "src/constants/safeUrls";
 import {
   labelALT,
   labelCTRL,
@@ -275,7 +276,7 @@ export default {
   RELEASE_NOTES_NAME: "Mostrar Notas de la Versión después de actualizar",
   RELEASE_NOTES_DESC:
     "<b><u>Activado:</u></b> Muestra las notas de la versión cada vez que actualices Excalidraw a una versión más reciente.<br>" +
-    "<b><u>Desactivado:</u></b> Modo silencioso. Aún puedes leer las notas de la versión en <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a>.",
+    `<b><u>Desactivado:</u></b> Modo silencioso. Aún puedes leer las notas de la versión en <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES}">GitHub</a>.`,
   WARN_ON_MANIFEST_MISMATCH_NAME:
     "Advertir sobre actualizaciones de complementos incompletos",
   WARN_ON_MANIFEST_MISMATCH_DESC:
@@ -423,7 +424,7 @@ export default {
   AI_MODEL_RESTORE_DEFAULTS: "Restaurar modelos predeterminados",
   AI_IMAGE_MODEL_CAPABILITIES_NAME: "Capacidades del modelo de imagen",
   AI_IMAGE_MODEL_CAPABILITIES_DESC:
-    'Administra aquí los metadatos de los modelos de imagen, como resoluciones compatibles, soporte para transformaciones por prompt y soporte para ediciones con máscara. Por ejemplo, puedes consultar los tamaños compatibles en la <a href="https://platform.openai.com/docs/guides/image-generation" target="_blank" rel="noopener noreferrer">documentación de generación de imágenes de OpenAI</a>.',
+    `Administra aquí los metadatos de los modelos de imagen, como resoluciones compatibles, soporte para transformaciones por prompt y soporte para ediciones con máscara. Por ejemplo, puedes consultar los tamaños compatibles en la <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">documentación de generación de imágenes de OpenAI</a>.`,
   AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "Restaurar valores conocidos",
   AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "Agregar",
   AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "Editar",
@@ -486,7 +487,7 @@ export default {
   COMPRESS_NAME: "Comprimir JSON de Excalidraw en Markdown",
   COMPRESS_DESC:
     "Al habilitar esta función, Excalidraw almacenará el JSON del bosquejo en un formato comprimido Base64 " +
-    "utilizando el algoritmo <a href='https://pieroxy.net/blog/pages/lz-string/index.html'>LZ-String</a>. " +
+    `utilizando el algoritmo <a href="${URLs.PIEROXY_NET_BLOG_PAGES_LZ_STRING_INDEX_HTML}">LZ-String</a>. ` +
     "Esto reducirá la probabilidad de que el JSON de Excalidraw sature tus resultados de búsqueda en Obsidian. " +
     "Como efecto secundario, también reducirá el tamaño de los archivos de los bosquejos de Excalidraw. " +
     "Cuando cambias un bosquejo de Excalidraw a la vista de Markdown, usando el menú de opciones en Excalidraw, el archivo " +
@@ -516,8 +517,8 @@ export default {
     "Obsidian en segundo plano para ahorrar recursos del sistema. En tal caso, Excalidraw no podrá guardar los últimos cambios.",
   FILENAME_HEAD: "Nombre de archivo",
   FILENAME_DESC:
-    "<p>Haz click en este enlace para la <a href='https://momentjs.com/docs/#/displaying/format/'>" +
-    "referencia de formato de fecha y hora</a>.</p>",
+    `<p>Haz click en este enlace para la <a href="${URLs.MOMENTJS_COM_DOCS}">` +
+    `referencia de formato de fecha y hora</a>.</p>`,
   FILENAME_SAMPLE: "El nombre de archivo para un nuevo bosquejo es: ",
   FILENAME_EMBED_SAMPLE:
     "El nombre de archivo para un nuevo bosquejo incrustado es: ",
@@ -726,7 +727,7 @@ export default {
   SECOND_ORDER_LINKS_DESC:
     "Muestra enlaces al hacer clic en un enlace en Excalidraw. Los enlaces de segundo orden son enlaces inversos que apuntan al enlace en el que se hizo click. " +
     "Al usar iconos de imagen para conectar notas similares, los enlaces de segundo orden te permiten acceder a notas relacionadas en un solo clic en lugar de dos. " +
-    "Consulta el siguiente <a href='https://youtube.com/shorts/O_1ls9c6wBY?feature=share'>Short de Youtube</a> para entender.",
+    `Consulta el siguiente <a href="${URLs.YOUTUBE_COM_SHORTS_O_1LS9C6WBY}">Short de Youtube</a> para entender.`,
   ADJACENT_PANE_NAME: "Reutilizar panel adyacente",
   ADJACENT_PANE_DESC:
     `Cuando usas ${labelCTRL()}+${labelALT()} y haces click en un enlace en Excalidraw, por defecto el complemento lo abrirá en un panel nuevo. ` +
@@ -831,14 +832,14 @@ export default {
   MD_DEFAULT_COLOR_NAME:
     "El color de fuente predeterminado a usar para los archivos Markdown incrustados.",
   MD_DEFAULT_COLOR_DESC:
-    'Establece esto en cualquier nombre de color CSS válido, por ejemplo "steelblue" (<a href="https://www.w3schools.com/colors/colors_names.asp">nombres de colores</a>), o un color hexadecimal válido, por ejemplo "#e67700", ' +
-    "o cualquier otra cadena de color CSS válida. Puedes anular esta configuración añadiendo la siguiente clave de frontmatter al archivo Markdown incrustado: <code>excalidraw-font-color: steelblue</code>",
+    `Establece esto en cualquier nombre de color CSS válido, por ejemplo "steelblue" (<a href="${URLs.WWW_W3SCHOOLS_COM_COLORS_COLORS_NAMES_ASP}">nombres de colores</a>), o un color hexadecimal válido, por ejemplo "#e67700", ` +
+    `o cualquier otra cadena de color CSS válida. Puedes anular esta configuración añadiendo la siguiente clave de frontmatter al archivo Markdown incrustado: <code>excalidraw-font-color: steelblue</code>`,
   MD_DEFAULT_BORDER_COLOR_NAME:
     "El color de borde predeterminado a usar para los archivos Markdown incrustados.",
   MD_DEFAULT_BORDER_COLOR_DESC:
-    'Establece esto en cualquier nombre de color CSS válido, por ejemplo "steelblue" (<a href="https://www.w3schools.com/colors/colors_names.asp">nombres de colores</a>), o un color hexadecimal válido, por ejemplo "#e67700", ' +
-    "o cualquier otra cadena de color CSS válida. Puedes anular esta configuración añadiendo la siguiente clave de frontmatter al archivo Markdown incrustado: <code>excalidraw-border-color: gray</code>. " +
-    "Deja el campo vacío si no quieres un borde. ",
+    `Establece esto en cualquier nombre de color CSS válido, por ejemplo "steelblue" (<a href="${URLs.WWW_W3SCHOOLS_COM_COLORS_COLORS_NAMES_ASP}">nombres de colores</a>), o un color hexadecimal válido, por ejemplo "#e67700", ` +
+    `o cualquier otra cadena de color CSS válida. Puedes anular esta configuración añadiendo la siguiente clave de frontmatter al archivo Markdown incrustado: <code>excalidraw-border-color: gray</code>. ` +
+    `Deja el campo vacío si no quieres un borde. `,
   MD_CSS_NAME: "Archivo CSS",
   MD_CSS_DESC:
     "El nombre de archivo del CSS a aplicar a las incrustaciones de Markdown. Proporciona el nombre de archivo con la extensión (ej. 'md-embed.css'). El archivo CSS también puede ser un " +
@@ -888,16 +889,12 @@ export default {
     `disponible, se usará esa imagen en lugar de generar una vista previa al momento. Esto resultará en vistas previas más rápidas, especialmente si tienes muchos objetos incrustados en el bosquejo. Sin embargo, ` +
     `puede que tus últimos cambios no se muestren y la imagen no coincida automáticamente con el ` +
     `tema de Obsidian si lo has cambiado desde que se creó la exportación. Esta configuración solo se aplica a la incrustación de imágenes en documentos Markdown.  ` +
-    `Por diversas razones, el mismo enfoque no se puede usar para acelerar la carga de bosquejos con muchos objetos incrustados. Puedes ver una demostración <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>aquí</a>.`,
-  /*EMBED_PREVIEW_SVG_NAME: "Mostrar SVG en la vista previa de Markdown",
-  EMBED_PREVIEW_SVG_DESC:
-    "<b><u>Activado:</u></b> Incrustar el bosquejo como una imagen <a href='https://en.wikipedia.org/wiki/Scalable_Vector_Graphics' target='_blank'>SVG</a> en la vista previa de Markdown.<br>" +
-    "<b><u>Desactivado:</u></b> Incrustar el bosquejo como una imagen <a href='' target='_blank'>PNG</a>. Ten en cuenta que algunas de las <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>funciones de referencia de bloque de imagen</a> no funcionan con las incrustaciones PNG.",*/
+    `Por diversas razones, el mismo enfoque no se puede usar para acelerar la carga de bosquejos con muchos objetos incrustados. Puedes ver una demostración <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG_1_6_23}" target='_blank'>aquí</a>.`,
   EMBED_PREVIEW_IMAGETYPE_NAME: "Tipo de imagen en la vista previa de Markdown",
   EMBED_PREVIEW_IMAGETYPE_DESC:
     "<b><u>SVG Nativo</u></b>: Alta calidad de imagen. Los sitios web incrustados, videos de YouTube, enlaces de Obsidian e imágenes externas incrustadas a través de una URL funcionarán. Las páginas de Obsidian incrustadas no<br>" +
     "<b><u>Imagen SVG</u></b>: Alta calidad de imagen. Los elementos incrustados e imágenes incrustadas a través de una URL solo tienen marcadores de posición; los enlaces no funcionan.<br>" +
-    "<b><u>Imagen PNG</u></b>: Menor calidad de imagen, pero en algunos casos mejor rendimiento con bosquejos grandes. Los elementos incrustados e imágenes incrustadas a través de una URL solo tienen marcadores de posición; los enlaces no funcionan. Además, algunas de las <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>funciones de referencia de bloque de imagen</a> no funcionan con las incrustaciones PNG.",
+    `<b><u>Imagen PNG</u></b>: Menor calidad de imagen, pero en algunos casos mejor rendimiento con bosquejos grandes. Los elementos incrustados e imágenes incrustadas a través de una URL solo tienen marcadores de posición; los enlaces no funcionan. Además, algunas de las <a href="${URLs.WWW_YOUTUBE_COM_WATCH_1}" target='_blank'>funciones de referencia de bloque de imagen</a> no funcionan con las incrustaciones PNG.`,
   PREVIEW_MATCH_OBSIDIAN_NAME:
     "Vista previa de Excalidraw para que coincida con el tema de Obsidian",
   PREVIEW_MATCH_OBSIDIAN_DESC:
@@ -987,11 +984,11 @@ export default {
   DEBUGMODE_NAME: "Habilitar mensajes de depuración",
   DEBUGMODE_DESC:
     "Recomiendo reiniciar Obsidian después de habilitar o deshabilitar esta configuración. Esto habilita los mensajes de depuración en la consola. Esto es útil para solucionar problemas. " +
-    "Si estás experimentando problemas con el complemento, por favor, habilita esta configuración, reproduce el problema e incluye el registro de la consola en el problema que reportes en <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/issues'>GitHub</a>",
+    `Si estás experimentando problemas con el complemento, por favor, habilita esta configuración, reproduce el problema e incluye el registro de la consola en el problema que reportes en <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}">GitHub</a>`,
   SLIDING_PANES_NAME: "Soporte para el complemento Sliding Panes",
   SLIDING_PANES_DESC:
     "Necesitas reiniciar Obsidian para que este cambio surta efecto.<br>" +
-    "Si usas el <a href='https://github.com/deathau/sliding-panes-obsidian' target='_blank'>complemento Sliding Panes</a> " +
+    `Si usas el <a href="${URLs.GITHUB_COM_DEATHAU_SLIDING_PANES_OBSIDIAN}" target='_blank'>complemento Sliding Panes</a> ` +
     ", puedes habilitar esta configuración para que los bosquejos de Excalidraw funcionen con él.<br>" +
     "Ten en cuenta que el soporte de Excalidraw para Sliding Panes causa problemas de compatibilidad con los Workspaces(Espacios de Trabajo) de Obsidian.<br>" +
     "Ten en cuenta también que la función 'Stack Tabs' ya está disponible en Obsidian, lo que proporciona soporte nativo para la mayoría de las funcionalidades de Sliding Panes.",
@@ -1039,10 +1036,10 @@ export default {
   EA_HEAD: "Excalidraw Automate",
   EA_DESC:
     "ExcalidrawAutomate es una API de scripting y automatización para Excalidraw. Desafortunadamente, la documentación de la API es escasa. " +
-    "Te recomiendo leer el archivo <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/API/ExcalidrawAutomate.d.ts'>ExcalidrawAutomate.d.ts</a>, " +
-    "visitar la página <a href='https://zsviczian.github.io/obsidian-excalidraw-plugin/'>Cómo usar ExcalidrawAutomate</a> (aunque la información " +
-    "aquí no se ha actualizado en mucho tiempo), y finalmente, habilitar el sugeridor de campos que se encuentra abajo. El sugeridor de campos te mostrará las funciones disponibles,  " +
-    "sus parámetros y una breve descripción mientras escribes. El sugeridor de campos es la documentación más actualizada de la API.",
+    `Te recomiendo leer el archivo <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_API_EXCALIDRAWAUTOMATE_D_TS}">ExcalidrawAutomate.d.ts</a>, ` +
+    `visitar la página <a href="${URLs.ZSVICZIAN_GITHUB_IO_OBSIDIAN_EXCALIDRAW_PLUGIN}">Cómo usar ExcalidrawAutomate</a> (aunque la información ` +
+    `aquí no se ha actualizado en mucho tiempo), y finalmente, habilitar el sugeridor de campos que se encuentra abajo. El sugeridor de campos te mostrará las funciones disponibles,  ` +
+    `sus parámetros y una breve descripción mientras escribes. El sugeridor de campos es la documentación más actualizada de la API.`,
   FIELD_SUGGESTER_NAME: "Habilitar Sugeridor de Campos",
   FIELD_SUGGESTER_DESC:
     "El sugeridor de campos, tomado de los complementos Breadcrumbs y Templater, mostrará un menú de autocompletar " +
@@ -1109,7 +1106,7 @@ export default {
     "Soporte de fuentes CJK (chino, japonés y coreano) sin conexión",
   OFFLINE_CJK_DESC: `<strong>Los cambios que hagas aquí solo se aplicarán después de reiniciar Obsidian.</strong><br>
      Excalidraw.com ofrece fuentes CJK (chino, japonés, coreano) escritas a mano. Por defecto, estas fuentes no se incluyen en el complemento de forma local, sino que se obtienen de internet. 
-     Si prefieres que Excalidraw funcione completamente sin conexión a internet, puedes descargar los <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip" target="_blank">archivos de fuentes necesarios desde GitHub</a>.
+     Si prefieres que Excalidraw funcione completamente sin conexión a internet, puedes descargar los <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RAW_REFS_HEADS_MASTER_ASSETS_EXCALIDRAW_FONTS_ZIP}" target="_blank">archivos de fuentes necesarios desde GitHub</a>.
      Después de descargarlos, descomprime el contenido en una carpeta dentro de tu Bóveda.<br>
      La precarga de fuentes afectará el rendimiento al iniciar. Por esta razón, puedes seleccionar qué fuentes cargar.`,
   CJK_ASSETS_FOLDER_NAME:
@@ -1132,13 +1129,13 @@ export default {
     "Ten en cuenta que el proceso de extracción de texto de la imagen no se realiza de forma local, sino a través de una API en línea. El servicio de Taskbone almacena la imagen en sus servidores solo durante el tiempo necesario para la extracción de texto. Sin embargo, si esto es un inconveniente para ti, por favor no uses esta función.",
   TASKBONE_ENABLE_NAME: "Habilitar Taskbone",
   TASKBONE_ENABLE_DESC:
-    "Al habilitar este servicio, aceptas los <a href='https://www.taskbone.com/legal/terms/' target='_blank'>Términos y Condiciones</a> y la " +
-    "<a href='https://www.taskbone.com/legal/privacy/' target='_blank'>Política de Privacidad</a> de Taskbone.",
+    `Al habilitar este servicio, aceptas los <a href="${URLs.WWW_TASKBONE_COM_LEGAL_TERMS}" target='_blank'>Términos y Condiciones</a> y la ` +
+    `<a href="${URLs.WWW_TASKBONE_COM_LEGAL_PRIVACY}" target='_blank'>Política de Privacidad</a> de Taskbone.`,
   TASKBONE_APIKEY_NAME: "Clave API(API Key) de Taskbone",
   TASKBONE_APIKEY_DESC:
-    "Taskbone ofrece un servicio gratuito con un número razonable de escaneos al mes. Si quieres usar esta función con más frecuencia, o si quieres apoyar " +
-    "al desarrollador de Taskbone (como puedes imaginar, no existe el 'gratis', proporcionar este increíble servicio de OCR le cuesta dinero al desarrollador de Taskbone), " +
-    "puedes comprar una clave API(API Key) de pago en <a href='https://www.taskbone.com/' target='_blank'>taskbone.com</a>. En caso de que hayas comprado una clave, simplemente sobrescribe esta clave API(API Key) gratuita generada automáticamente con tu clave de pago.",
+    `Taskbone ofrece un servicio gratuito con un número razonable de escaneos al mes. Si quieres usar esta función con más frecuencia, o si quieres apoyar ` +
+    `al desarrollador de Taskbone (como puedes imaginar, no existe el 'gratis', proporcionar este increíble servicio de OCR le cuesta dinero al desarrollador de Taskbone), ` +
+    `puedes comprar una clave API(API Key) de pago en <a href="${URLs.WWW_TASKBONE_COM}" target='_blank'>taskbone.com</a>. En caso de que hayas comprado una clave, simplemente sobrescribe esta clave API(API Key) gratuita generada automáticamente con tu clave de pago.`,
 
   //HotkeyEditor
   HOTKEY_PRESS_COMBO_NANE: "Presiona tu combinación de atajos",
@@ -1208,7 +1205,7 @@ export default {
       </p>
       <h3>Instrucciones:</h3>
       <ol>
-        <li>Descarga las fuentes desde <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip">GitHub</a>.</li>
+        <li>Descarga las fuentes desde <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RAW_REFS_HEADS_MASTER_ASSETS_EXCALIDRAW_FONTS_ZIP}">GitHub</a>.</li>
         <li>Descomprime y copia los archivos en una carpeta de tu Bóveda (por defecto: <code>Excalidraw/${CJK_FONTS}</code>; los nombres de las carpetas son sensibles a MAYÚSCULAS y minúsculas).</li>
         <li><mark>NO</mark> configures esta carpeta como la raíz de la Bóveda ni la combines con otras fuentes locales.</li>
       </ol>

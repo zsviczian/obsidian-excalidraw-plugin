@@ -12,6 +12,7 @@ import {
   labelMETA,
   labelSHIFT,
 } from "src/utils/modifierKeyLabels";
+import { URLs } from "src/constants/safeUrls";
 import en from "./locale/en";
 
 declare const PLUGIN_LANGUAGES: Record<string, string>;
@@ -54,6 +55,13 @@ function resolveTokenizedString(value: string): string {
       DEVICE.isIOS || DEVICE.isMacOS ? appleValue : nonAppleValue,
   );
 
+  // Resolve URL placeholders emitted during build from safeUrls constants.
+  const withResolvedUrls = appleResolved.replace(
+    /__EXD_URL_([A-Z0-9_]+)__/g,
+    (match: string, key: string) =>
+      (URLs as Record<string, string>)[key] ?? match,
+  );
+
   // Token replacements for runtime-dependent values.
   const replacements: Record<string, string> = {
     [TOKENS.LABEL_ALT]: labelALT(),
@@ -69,7 +77,7 @@ function resolveTokenizedString(value: string): string {
       DEVICE.isIOS || DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i",
   };
 
-  let resolved = appleResolved;
+  let resolved = withResolvedUrls;
   for (const [token, replacement] of Object.entries(replacements)) {
     resolved = resolved.split(token).join(replacement);
   }

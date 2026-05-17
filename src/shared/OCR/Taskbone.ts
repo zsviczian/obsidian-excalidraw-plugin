@@ -9,8 +9,9 @@ import { getEA } from "src/core";
 import { log } from "src/utils/debugHelper";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import ExcalidrawView from "src/view/ExcalidrawView";
+import { URLs } from "src/constants/safeUrls";
 
-const TASKBONE_URL = "https://api.taskbone.com/"; //"https://excalidraw-preview.onrender.com/";
+const TASKBONE_URL = URLs.API_TASKBONE_COM; //URLs.EXCALIDRAW_PREVIEW_ONRENDER_COM;
 const TASKBONE_OCR_FN = "execute?id=60f394af-85f6-40bc-9613-5d26dc283cbb";
 
 export default class Taskbone {

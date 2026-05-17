@@ -65,6 +65,7 @@ import {
 import { AIProviderProfileModal } from "src/shared/Dialogs/AIProviderProfileModal";
 import { AIModelConfigModal } from "src/shared/Dialogs/AIModelConfigModal";
 import { decryptProviderProfiles } from "src/utils/settingsKeyObfuscation";
+import { URLs } from "src/constants/safeUrls";
 
 export interface ExcalidrawSettings {
   copyLinkToElemenetAnchorTo100: boolean;
@@ -374,27 +375,27 @@ export const KNOWN_AI_PROVIDER_PROFILES: Record<string, AIProviderProfile> = {
   OpenAI: {
     provider: "openai",
     apiKey: "",
-    baseURL: "https://api.openai.com/v1",
+    baseURL: URLs.API_OPENAI_COM_V1,
   },
   Anthropic: {
     provider: "anthropic",
     apiKey: "",
-    baseURL: "https://api.anthropic.com/v1",
+    baseURL: URLs.API_ANTHROPIC_COM_V1,
   },
   "Google Gemini": {
     provider: "google",
     apiKey: "",
-    baseURL: "https://generativelanguage.googleapis.com/v1beta",
+    baseURL: URLs.GENERATIVELANGUAGE_GOOGLEAPIS_COM_V1BETA,
   },
   xAI: {
     provider: "xai",
     apiKey: "",
-    baseURL: "https://api.x.ai/v1",
+    baseURL: URLs.API_X_AI_V1,
   },
   "OpenAI-compatible": {
     provider: "openai-compatible",
     apiKey: "",
-    baseURL: "https://api.openai.com/v1",
+    baseURL: URLs.API_OPENAI_COM_V1,
   },
 };
 
@@ -677,7 +678,6 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   excalidrawMasteryPromoCollapsed: false,
   compareManifestToPluginVersion: true,
   showNewVersionNotification: true,
-  //mathjaxSourceURL: "https://cdn.jsdelivr.net/npm/mathjax@3.2.1/es5/tex-svg.js",
   latexBoilerplate: "\\color{blue}",
   latexPreambleLocation: "preamble.sty",
   taskboneEnabled: false,
@@ -758,10 +758,10 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   openAIDefaultTextModelMaxTokens: 4096,
   openAIDefaultVisionModel: "gpt-5-mini",
   openAIDefaultImageGenerationModel: "gpt-image-1",
-  openAIURL: "https://api.openai.com/v1/chat/completions",
-  openAIImageGenerationURL: "https://api.openai.com/v1/images/generations",
-  openAIImageEditsURL: "https://api.openai.com/v1/images/edits",
-  openAIImageVariationURL: "https://api.openai.com/v1/images/variations",
+  openAIURL: URLs.API_OPENAI_COM_V1_CHAT_COMPLETIONS,
+  openAIImageGenerationURL: URLs.API_OPENAI_COM_V1_IMAGES_GENERATIONS,
+  openAIImageEditsURL: URLs.API_OPENAI_COM_V1_IMAGES_EDITS,
+  openAIImageVariationURL: URLs.API_OPENAI_COM_V1_IMAGES_VARIATIONS,
   modifierKeyConfig: {
     Mac: {
       LocalFileDragAction: {
@@ -1260,7 +1260,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     notebookLMLinkContainer.createEl(
       "a",
       {
-        href: "https://notebooklm.google.com/notebook/42d76a2f-c11d-4002-9286-1683c43d0ab0",
+        href: URLs.NOTEBOOKLM_GOOGLE_COM_NOTEBOOK_42D76A2F_C11D_4002_9286_1683C43D0AB0,
         attr: {
           "aria-label": t("NOTEBOOKLM_LINK_ARIA"),
           style: "margin: auto;",
@@ -1305,7 +1305,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       },
     );
 
-    const excalidrawMasteryLink = "https://community.sketch-your-mind.com/em";
+    const excalidrawMasteryLink = URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM;
     const updateExcalidrawMasteryPromoState = (persist: boolean) => {
       const isCollapsed = !excalidrawMasteryPromo.open;
       this.plugin.settings.excalidrawMasteryPromoCollapsed = isCollapsed;
@@ -1365,11 +1365,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const coffeeDiv = containerEl.createDiv("coffee");
     coffeeDiv.addClass("ex-coffee-div");
     const coffeeLink = coffeeDiv.createEl("a", {
-      href: "https://ko-fi.com/zsolt",
+      href: URLs.KO_FI_COM_ZSOLT,
     });
     const coffeeImg = coffeeLink.createEl("img", {
       attr: {
-        src: "https://cdn.ko-fi.com/cdn/kofi3.png?v=3",
+        src: URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG,
       },
     });
     coffeeImg.height = 45;
@@ -1377,37 +1377,37 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const iconLinks = [
       {
         icon: "bug",
-        href: "https://github.com/zsviczian/obsidian-excalidraw-plugin/issues",
+        href: URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES,
         aria: t("LINKS_BUGS_ARIA"),
         text: t("LINKS_BUGS"),
       },
       {
         icon: "globe",
-        href: "https://community.sketch-your-mind.com/wiki",
+        href: URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_WIKI,
         aria: t("LINKS_WIKI_ARIA"),
         text: t("LINKS_WIKI"),
       },
       {
         icon: "youtube",
-        href: "https://www.youtube.com/@VisualPKM",
+        href: URLs.WWW_YOUTUBE_COM_VISUALPKM,
         aria: t("LINKS_YT_ARIA"),
         text: t("LINKS_YT"),
       },
       {
         icon: "graduation-cap",
-        href: "https://community.sketch-your-mind.com/ee",
+        href: URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE,
         aria: t("LINKS_JOIN_SYM_ARIA"),
         text: t("LINKS_JOIN_SYM"),
       },
       {
         icon: "twitter",
-        href: "https://twitter.com/zsviczian",
+        href: URLs.TWITTER_COM_ZSVICZIAN,
         aria: t("LINKS_TWITTER"),
         text: t("LINKS_TWITTER"),
       },
       {
         icon: "book",
-        href: "https://sketch-your-mind.com",
+        href: URLs.SKETCH_YOUR_MIND_COM_SYM,
         aria: t("LINKS_BOOK_ARIA"),
         text: t("LINKS_BOOK"),
       },
@@ -1646,11 +1646,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const getFilenameSample = () => {
       return `${t(
         "FILENAME_SAMPLE",
-      )}<a href='https://www.youtube.com/channel/UCC0gns4a9fhVkGkngvSumAQ' target='_blank'>${getDrawingFilename(
+      )}<a href=${URLs.WWW_YOUTUBE_COM_CHANNEL_UCC0GNS4A9FHVKGKNGVSUMAQ} target='_blank'>${getDrawingFilename(
         this.plugin.settings,
       )}</a></b><br>${t(
         "FILENAME_EMBED_SAMPLE",
-      )}<a href='https://www.youtube.com/channel/UCC0gns4a9fhVkGkngvSumAQ' target='_blank'>${getEmbedFilename(
+      )}<a href=${URLs.WWW_YOUTUBE_COM_CHANNEL_UCC0GNS4A9FHVKGKNGVSUMAQ} target='_blank'>${getEmbedFilename(
         "{NOTE_NAME}",
         this.plugin.settings,
       )}</a></b>`;

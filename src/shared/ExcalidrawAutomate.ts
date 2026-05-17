@@ -191,6 +191,7 @@ import { AIRequest, ExcalidrawAISettings } from "src/types/AIUtilTypes";
 import { getAspectRatio } from "src/utils/YoutTubeUtils";
 import { getPDFCropRect } from "src/utils/PDFUtils";
 import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
+import { URLs } from "src/constants/safeUrls";
 
 type ExcalidrawCustomDataValue =
   | string
@@ -316,6 +317,14 @@ export class ExcalidrawAutomate {
    */
   public printStartupBreakdown() {
     this.plugin.printStarupBreakdown();
+  }
+
+  /**
+   * Prints all URLs in the codebase.
+   * @returns {void}
+   */
+  public printURLsInCodebase() {
+    log(Object.values(URLs).sort((a,b)=>a.localeCompare(b)).join("\n"));
   }
 
   /**
