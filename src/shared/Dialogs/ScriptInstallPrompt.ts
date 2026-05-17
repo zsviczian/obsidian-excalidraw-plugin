@@ -3,9 +3,10 @@ import ExcalidrawPlugin from "../../core/main";
 import { errorlog } from "../../utils/utils";
 import { log } from "src/utils/debugHelper";
 import { ContentSearcher } from "../components/ContentSearcher";
+import { URLs } from "src/constants/safeUrls";
 
 const URL =
-  "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/index-new.md";
+  URLs.RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_INDEX_NEW_MD;
 
 export class ScriptInstallPrompt extends Modal {
   private contentDiv: HTMLDivElement;

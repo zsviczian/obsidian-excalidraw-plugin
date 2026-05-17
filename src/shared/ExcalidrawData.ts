@@ -64,6 +64,7 @@ import { importFileToVault } from "../utils/fileUtils";
 import { t } from "../lang/helpers";
 import { displayFontMessage } from "../utils/excalidrawViewUtils";
 import { getPDFRect } from "../utils/PDFUtils";
+import { URLs } from "src/constants/safeUrls";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -548,7 +549,7 @@ export class ExcalidrawData {
 
     const saveVersion =
       this.scene.source?.split(
-        "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/",
+        URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG,
       )[1] ?? "1.8.16";
 
     const elements = this.scene.elements;
@@ -807,11 +808,11 @@ export class ExcalidrawData {
         this.plugin,
         "This file contains embedded frames " +
           "which will be migrated to a newer version for compatibility with " +
-          "<a href='https://excalidraw.com'>excalidraw.com</a>.<br>🔄 If you're using Obsidian on " +
+          `excalidraw.com.<br>🔄 If you're using Obsidian on ` +
           "multiple devices, you may proceed now, but please, before opening this " +
           "file on your other devices, update Excalidraw on those as well.<br>🔍 More info is available " +
-          "<a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.9.9'>here</a>.<br>🌐 " +
-          "<a href='https://translate.google.com/?sl=en&tl=zh-CN&text=This%20file%20contains%20embedded%20frames%20which%20will%20be%20migrated%20to%20a%20newer%20version%20for%20compatibility%20with%20excalidraw.com.%0A%0AIf%20you%27re%20using%20Obsidian%20on%20multiple%20devices%2C%20you%20may%20proceed%20now%2C%20but%20please%2C%20before%20opening%20this%20file%20on%20your%20other%20devices%2C%20update%20Excalidraw%20on%20those%20as%20well.%0A%0AMore%20info%20is%20available%20here%3A%20https%3A%2F%2Fgithub.com%2Fzsviczian%2Fobsidian-excalidraw-plugin%2Freleases%2Ftag%2F1.9.9%27%3Ehere%3C%2Fa%3E.&op=translate'>" +
+          `<a href=${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG_1_9_9}>here</a>.<br>🌐 ` +
+          `<a href=${URLs.TRANSLATE_GOOGLE_COM}>` +
           "Translate</a>.",
       );
       prompt.contentEl.focus();

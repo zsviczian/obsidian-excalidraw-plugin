@@ -59,6 +59,35 @@ const mathjaxtosvg_pkg = isLib ? "" : fs.readFileSync("./MathjaxToSVG/dist/index
 // the new token in src/lang/helpers.ts token resolution.
 const LANGUAGES = ['ru', 'zh-cn', 'zh-tw', 'es']; // english is loaded by default
 
+const SAFE_URLS_FILE = "./src/constants/safeUrls.ts";
+const URL_TOKEN_PREFIX = "__EXD_URL_";
+
+function getSafeUrlKeys() {
+  try {
+    const safeUrlsContent = fs.readFileSync(SAFE_URLS_FILE, "utf8");
+    const urlsObjectMatch = safeUrlsContent.match(/export\s+const\s+URLs\s*=\s*\{([\s\S]*?)\}\s*as\s+const/);
+    if (!urlsObjectMatch) {
+      return [];
+    }
+
+    const keys = [];
+    const keyRegex = /^\s*([A-Z0-9_]+)\s*:/gm;
+    let match;
+    while ((match = keyRegex.exec(urlsObjectMatch[1])) !== null) {
+      keys.push(match[1]);
+    }
+
+    return keys;
+  } catch {
+    return [];
+  }
+}
+
+const SAFE_URL_KEYS = getSafeUrlKeys();
+const URL_TOKEN_VALUES = Object.fromEntries(
+  SAFE_URL_KEYS.map((key) => [key, `${URL_TOKEN_PREFIX}${key}__`]),
+);
+
 function trimLastSemicolon(input) {
   if (input.endsWith(";")) {
     return input.slice(0, -1);
@@ -121,10 +150,18 @@ function tokenizeLocaleContent(content, deviceTokens = DEVICE_TOKEN_VALUES) {
   // 2. Apple / MacOS Ternaries
   // Matches both: ( DEVICE.isIOS || DEVICE.isMacOS ? "A" : "B" ) AND DEVICE.isMacOS ? "A" : "B"
   // Robust against optional parentheses, line breaks, and varying quote types.
-  const appleTernaryRegex = /(?:\(\s*)?(?:DEVICE\.isIOS\s*\|\|\s*)?DEVICE\.isMacOS\s*\?\s*(["'`])([\s\S]*?)\1\s*:\s*(["'`])([\s\S]*?)\3(?:\s*\))?/g;
+  const appleTernaryRegex = /(?:\(\s*)?(?:DEVICE\.isIOS\s*\|\|\s*)?DEVICE\.isMacOS\s*\?\s*(["'`])([\s\S]*?)\1\s*:\s*(["'`])([\s\S]*?)\3(?:\sbuildSafeUrl)?/g;
   tokenized = tokenized.replace(appleTernaryRegex, (match, quote1, trueBranch, quote2, falseBranch) => {
     // Wrap in double quotes so the resulting JS is a valid string literal
     return `"${deviceTokens.IF_APPLE_START}${trueBranch}${deviceTokens.IF_APPLE_ELSE}${falseBranch}${deviceTokens.IF_APPLE_END}"`;
+  });
+
+  // 3. URLs constants from safeUrls.ts
+  // Matches: URLs.SOME_KEY and replaces with a stable token string literal.
+  const urlConstantRegex = /\bURLs\.([A-Z0-9_]+)\b/g;
+  tokenized = tokenized.replace(urlConstantRegex, (match, key) => {
+    const token = URL_TOKEN_VALUES[key];
+    return token ? `"${token}"` : match;
   });
 
   return tokenized;
@@ -134,6 +171,10 @@ function serializeLocaleToJson(content, deviceTokens = DEVICE_TOKEN_VALUES) {
   // Rather than regex-replacing variables, we inject mock variables into the Node sandbox.
   // When Node evaluates the file, it will natively resolve ${labelALT()} to the token string, 
   // perfectly bypassing any linter formatting, ES6 template literal breaks, or comment syntax.
+  const urlsSandboxObject = Object.entries(URL_TOKEN_VALUES)
+    .map(([key, token]) => `"${key}": "${token}"`)
+    .join(",\n      ");
+
   const sandboxEnvironment = `
     const TAG_AUTOEXPORT = "Autoexport";
     const TAG_MDREADINGMODE = "MDReadingMode";
@@ -151,6 +192,10 @@ function serializeLocaleToJson(content, deviceTokens = DEVICE_TOKEN_VALUES) {
       "link-brackets": { name: "${deviceTokens.FRONTMATTER_LINK_BRACKETS}" },
       "link-prefix": { name: "${deviceTokens.FRONTMATTER_LINK_PREFIX}" },
       "url-prefix": { name: "${deviceTokens.FRONTMATTER_URL_PREFIX}" }
+    };
+
+    const URLs = {
+      ${urlsSandboxObject}
     };
 
     // Fallback for DEVICE to prevent ReferenceErrors if a conditional regex misses an edge case

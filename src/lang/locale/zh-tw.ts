@@ -4,6 +4,7 @@ import {
   TAG_MDREADINGMODE,
   TAG_PDFEXPORT,
 } from "src/constants/constSettingsTags";
+import { URLs } from "src/constants/safeUrls";
 import { labelCTRL, labelMETA, labelSHIFT } from "src/utils/modifierKeyLabels";
 
 declare const PLUGIN_VERSION: string;
@@ -226,7 +227,7 @@ export default {
     "向 NotebookLM 諮詢有關外掛的幫助。此模型已預載入了我所有的影片轉錄稿、釋出說明和其他幫助內容。與 NotebookLM 聊天，瀏覽我的 250+ 影片和 Excalidraw 檔案。",
   NOTEBOOKLM_LINK_TEXT: "學習外掛。訪問 NotebookLM 知識庫。",
   EXCALIDRAW_MASTERY_PROMO_ARIA: "開啟 Excalidraw Mastery",
-  EXCALIDRAW_MASTERY_PROMO_HTML: `<p><b>在各種切換與選單中感到迷失嗎？</b></p><p>Excalidraw 是為高強度工作流程打造的 Visual PKM 強大工具，適合 <b>Visual-First Daily Notes</b>、深入的 <b>PDF 研究</b>、<b>自動化</b>、<b>AI 整合</b> 與 <b>Visual Zettelkasten</b>。但這些強大功能也伴隨著複雜度。</p><p>跳過反覆試錯。<a href="https://community.sketch-your-mind.com/em" target="_blank">👉 加入 Excalidraw Mastery</a>，一步一步學會這些具體設定。降低工具摩擦，並與一群擅長視覺思考的支持型社群一起掌握你的知識系統。</p>`,
+  EXCALIDRAW_MASTERY_PROMO_HTML: `<p><b>在各種切換與選單中感到迷失嗎？</b></p><p>Excalidraw 是為高強度工作流程打造的 Visual PKM 強大工具，適合 <b>Visual-First Daily Notes</b>、深入的 <b>PDF 研究</b>、<b>自動化</b>、<b>AI 整合</b> 與 <b>Visual Zettelkasten</b>。但這些強大功能也伴隨著複雜度。</p><p>跳過反覆試錯。<a href="${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM}" target="_blank">👉 加入 Excalidraw Mastery</a>，一步一步學會這些具體設定。降低工具摩擦，並與一群擅長視覺思考的支持型社群一起掌握你的知識系統。</p>`,
   EXCALIDRAW_MASTERY_PROMO_SHOW: "顯示",
   EXCALIDRAW_MASTERY_PROMO_HIDE: "隱藏",
   LINKS_BUGS_ARIA: "在外掛的 GitHub 頁面報告錯誤和提交功能請求",
@@ -245,8 +246,8 @@ export default {
 
   RELEASE_NOTES_NAME: "顯示更新說明",
   RELEASE_NOTES_DESC:
-    "<b>開啟：</b>每次更新本外掛後，顯示最新發行版本的說明。<br>" +
-    "<b>關閉：</b>您仍可以在 <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a> 上閱讀更新說明。",
+    `<b>開啟：</b>每次更新本外掛後，顯示最新發行版本的說明。<br>` +
+    `<b>關閉：</b>您仍可以在 <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES}">GitHub</a> 上閱讀更新說明。`,
   WARN_ON_MANIFEST_MISMATCH_NAME: "警告外掛更新不完整",
   WARN_ON_MANIFEST_MISMATCH_DESC:
     "檢查已安裝的 Excalidraw 可執行檔案是否與 Obsidian 外掛列表中顯示的版本一致。如果不一致（通常源於同步不完整），你會看到警告並可以選擇更新。關閉該項可停用檢查。",
@@ -377,8 +378,7 @@ export default {
   AI_MODEL_REMOVE: "刪除模型",
   AI_MODEL_RESTORE_DEFAULTS: "還原預設模型",
   AI_IMAGE_MODEL_CAPABILITIES_NAME: "圖像模型能力",
-  AI_IMAGE_MODEL_CAPABILITIES_DESC:
-    '在這裡管理圖像模型中繼資料，例如支援的解析度、是否支援提示詞圖像轉換，以及是否支援遮罩編輯。舉例來說，你可以在 <a href="https://platform.openai.com/docs/guides/image-generation" target="_blank" rel="noopener noreferrer">OpenAI 圖像生成文件</a> 中查詢支援的尺寸。',
+  AI_IMAGE_MODEL_CAPABILITIES_DESC: `在這裡管理圖像模型中繼資料，例如支援的解析度、是否支援提示詞圖像轉換，以及是否支援遮罩編輯。舉例來說，你可以在 <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">OpenAI 圖像生成文件</a> 中查詢支援的尺寸。`,
   AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "還原已知預設值",
   AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "新增",
   AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "編輯",
@@ -428,15 +428,15 @@ export default {
   SAVING_DESC: "包括：壓縮，自動儲存的時間間隔，檔案的命名格式和副檔名等。",
   COMPRESS_NAME: "壓縮 Excalidraw JSON",
   COMPRESS_DESC:
-    "Excalidraw 預設將元素記錄為 JSON 格式。開啟該項，可將元素的 JSON 資料以 Base64 編碼" +
-    "（使用 <a href='https://pieroxy.net/blog/pages/lz-string/index.html'>LZ-String</a> 演算法）。" +
-    "這樣一方面可以避免原來的明文 JSON 資料干擾 Obsidian 的文字搜尋結果，" +
-    "另一方面減小了繪圖檔案的體積。<br>" +
-    "當您透過選單按鈕或命令將繪圖切換至 Markdown 檢視模式時，" +
-    "資料將被解碼回 JSON 格式以便閱讀和編輯；" +
-    "而當您切換回 Excalidraw 模式時，資料就會被再次編碼。<br>" +
-    "開啟該項後，對於之前已存在但未壓縮的繪圖檔案，" +
-    "需要重新開啟並儲存才能生效。",
+    `Excalidraw 預設將元素記錄為 JSON 格式。開啟該項，可將元素的 JSON 資料以 Base64 編碼` +
+    `(使用 <a href="${URLs.PIEROXY_NET_BLOG_PAGES_LZ_STRING_INDEX_HTML}">LZ-String</a> 演算法)。` +
+    `這樣一方面可以避免原來的明文 JSON 資料干擾 Obsidian 的文字搜尋結果，` +
+    `另一方面減小了繪圖檔案的體積。<br>` +
+    `當您透過選單按鈕或命令將繪圖切換至 Markdown 檢視模式時，` +
+    `資料將被解碼回 JSON 格式以便閱讀和編輯；` +
+    `而當您切換回 Excalidraw 模式時，資料就會被再次編碼。<br>` +
+    `開啟該項後，對於之前已存在但未壓縮的繪圖檔案，` +
+    `需要重新開啟並儲存才能生效。`,
   DECOMPRESS_FOR_MD_NAME: "在 Markdown 檢視中解壓縮 Excalidraw JSON",
   DECOMPRESS_FOR_MD_DESC:
     "透過啟用此功能，Excalidraw 將在切換到 Markdown 檢視時自動解壓縮繪圖 JSON。" +
@@ -457,9 +457,7 @@ export default {
     "直接退出 Obsidian 應用（在應用切換器中劃掉）不會觸發自動儲存。" +
     "此外，當您切換到其他應用時，有時系統會自動清理 Obsidian 後臺以釋放資源。這種情況下，自動儲存會失效。",
   FILENAME_HEAD: "檔名",
-  FILENAME_DESC:
-    "<p>點選閱讀 " +
-    "<a href='https://momentjs.com/docs/#/displaying/format/'>日期和時間格式參考</a>。</p>",
+  FILENAME_DESC: `<p>點選閱讀 <a href="${URLs.MOMENTJS_COM_DOCS}">日期和時間格式參考</a>。</p>`,
   FILENAME_SAMPLE: "“新建繪圖”系列命令建立的檔名如：",
   FILENAME_EMBED_SAMPLE:
     "“新建繪圖並嵌入到當前 Markdown 文件中”系列命令建立的檔名如：",
@@ -670,7 +668,7 @@ export default {
   SECOND_ORDER_LINKS_DESC:
     "在 Excalidraw 中開啟連結時顯示連結及二級連結。二級連結是指向被點選連結的反向連結。" +
     "當使用例如圖示的嵌入連結時，二級連結可以直達組成它的相關筆記，無需點選兩次。" +
-    "觀看 <a href='https://youtube.com/shorts/O_1ls9c6wBY?feature=share'>這個 YouTube Shorts 影片</a> 以瞭解更多資訊。",
+    `觀看 <a href="${URLs.YOUTUBE_COM_SHORTS_O_1LS9C6WBY}">這個 YouTube Shorts 影片</a> 以瞭解更多資訊。`,
   ADJACENT_PANE_NAME: "在相鄰面板中開啟",
   ADJACENT_PANE_DESC:
     `按住 ${labelCTRL()}+${labelSHIFT()} 並點選繪圖裡的內部連結時，外掛預設會在新面板中開啟該連結。<br>` +
@@ -773,13 +771,13 @@ export default {
     "可為某個 MD-Embed 單獨設定，方法是在其 frontmatter 中新增如 <code>excalidraw-font: 字型名或檔名</code> 的鍵值對。",
   MD_DEFAULT_COLOR_NAME: "MD-Embed 的預設文字顏色",
   MD_DEFAULT_COLOR_DESC:
-    "可以填寫 HTML 顏色名，如 steelblue（參考 <a href='https://www.w3schools.com/colors/colors_names.asp'>HTML Color Names</a>），或者有效的 16 進位制顏色值，如 #e67700，或者任何其他有效的 CSS 顏色。<br>" +
-    "可為某個 MD-Embed 單獨設定，方法是在其 frontmatter 中新增如 <code>excalidraw-font-color: steelblue</code> 的鍵值對。",
+    `可以填寫 HTML 顏色名，如 steelblue（參考 <a href="${URLs.WWW_W3SCHOOLS_COM_COLORS_COLORS_NAMES_ASP}">HTML Color Names</a>），或者有效的 16 進位制顏色值，如 #e67700，或者任何其他有效的 CSS 顏色。<br>` +
+    `可為某個 MD-Embed 單獨設定，方法是在其 frontmatter 中新增如 <code>excalidraw-font-color: steelblue</code> 的鍵值對。`,
   MD_DEFAULT_BORDER_COLOR_NAME: "MD-Embed 的預設邊框顏色",
   MD_DEFAULT_BORDER_COLOR_DESC:
-    "可以填寫 HTML 顏色名，如 steelblue（參考 <a href='https://www.w3schools.com/colors/colors_names.asp'>HTML Color Names</a>），或者有效的 16 進位制顏色值，如 #e67700，或者任何其他有效的 CSS 顏色。<br>" +
-    "可為某個 MD-Embed 單獨設定，方法是在其 frontmatter 中新增如 <code>excalidraw-border-color: gray</code> 的鍵值對。<br>" +
-    "如果您不想要邊框，請留空。",
+    `可以填寫 HTML 顏色名，如 steelblue（參考 <a href="${URLs.WWW_W3SCHOOLS_COM_COLORS_COLORS_NAMES_ASP}">HTML Color Names</a>），或者有效的 16 進位制顏色值，如 #e67700，或者任何其他有效的 CSS 顏色。<br>` +
+    `可為某個 MD-Embed 單獨設定，方法是在其 frontmatter 中新增如 <code>excalidraw-border-color: gray</code> 的鍵值對。<br>` +
+    `如果您不想要邊框，請留空。`,
   MD_CSS_NAME: "MD-Embed 的預設 CSS 樣式表",
   MD_CSS_DESC:
     "MD-Embed 影像所採用的 CSS 樣式表文件名。需包含副檔名，如 md-embed.css。" +
@@ -833,16 +831,12 @@ export default {
     `該項能夠提高 Markdown 文件的開啟速度，尤其是當嵌入到 Markdown 文件中的繪圖檔案中含有大量圖片或 MD-Embed 時。` +
     `但是，該項也可能導致預覽圖無法立即響應繪圖檔案或者 Obsidian 主題的修改。<br>` +
     `該項僅作用於嵌入到 Markdown 文件中的繪圖。` +
-    `該項無法提升繪圖檔案的開啟速度。詳見 <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>此說明</a>。`,
-  /*EMBED_PREVIEW_SVG_NAME: "生成 SVG 格式的預覽圖",
-  EMBED_PREVIEW_SVG_DESC:
-    "<b>開啟：</b>為嵌入到 Markdown 文件中的繪圖生成 <a href='https://en.wikipedia.org/wiki/Scalable_Vector_Graphics' target='_blank'>SVG</a> 格式的預覽圖。<br>" +
-    "<b>關閉：</b>為嵌入到 Markdown 文件中的繪圖生成 <a href='' target='_blank'>PNG</a> 格式的預覽圖。注意：PNG 格式預覽圖不支援某些 <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>繪圖元素的塊引用特性</a>。",*/
+    `該項無法提升繪圖檔案的開啟速度。詳見 <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG_1_6_23}" target='_blank'>此說明</a>。`,
   EMBED_PREVIEW_IMAGETYPE_NAME: "預覽圖的格式",
   EMBED_PREVIEW_IMAGETYPE_DESC:
-    "<b>Native SVG：</b>高品質、可互動。<br>" +
-    "<b>SVG：</b>高品質、不可互動。<br>" +
-    "<b>PNG：</b>高效能、<a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>不可互動</a>。",
+    `<b>Native SVG：</b>高品質、可互動。<br>` +
+    `<b>SVG：</b>高品質、不可互動。<br>` +
+    `<b>PNG：</b>高效能、<a href="${URLs.WWW_YOUTUBE_COM_WATCH_1}" target='_blank'>不可互動</a>。`,
   PREVIEW_MATCH_OBSIDIAN_NAME: "預覽圖匹配 Obsidian 主題",
   PREVIEW_MATCH_OBSIDIAN_DESC:
     "開啟該項，則當 Obsidian 處於深色主題時，嵌入到 Markdown 文件中的繪圖的預覽圖也會以深色主題渲染；當 Obsidian 處於淺色主題時，預覽圖也會以淺色主題渲染。<br>" +
@@ -928,11 +922,11 @@ export default {
   DEBUGMODE_NAME: "開啟 debug 資訊",
   DEBUGMODE_DESC:
     "我建議在啟用/停用該項後重新啟動 Obsidian。這將在控制檯中啟用除錯訊息，有助於排查問題。" +
-    "如果您在使用外掛時遇到問題，請啟用該項，重現問題，並在 <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/issues'>GitHub</a> 上提出的問題中包含控制檯日誌。",
+    `如果您在使用外掛時遇到問題，請啟用該項，重現問題，並在 <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}">GitHub</a> 上提出的問題中包含控制檯日誌。`,
   SLIDING_PANES_NAME: "支援 Sliding Panes 外掛",
   SLIDING_PANES_DESC:
     "該項需要重啟 Obsidian 才能生效。<br>" +
-    "如果您使用 <a href='https://github.com/deathau/sliding-panes-obsidian' target='_blank'>Sliding Panes 外掛</a>，" +
+    `如果您使用 <a href="${URLs.GITHUB_COM_DEATHAU_SLIDING_PANES_OBSIDIAN}" target='_blank'>Sliding Panes 外掛</a>，` +
     "您可以開啟該項來使 Excalidraw 繪圖相容此外掛。<br>" +
     "注意，開啟後會產生一些與 Obsidian 工作空間的相容性問題。<br>" +
     "另外，Obsidian 現在已經原生支援 Stack Tabs（堆疊標籤），基本實現了 Sliding Panes 外掛的功能。",
@@ -977,11 +971,11 @@ export default {
   EXPERIMENTAL_DESC: `包括：預設的 LaTeX 公式，欄位建議，繪圖檔案的型別識別符號，OCR 等。`,
   EA_HEAD: "Excalidraw 自動化",
   EA_DESC:
-    "ExcalidrawAutomate 是用於 Excalidraw 自動化指令碼的 API，但是目前說明文件還不夠完善，" +
-    "建議閱讀 <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/API/ExcalidrawAutomate.d.ts'>ExcalidrawAutomate.d.ts</a> 檔案原始碼，" +
-    "參考 <a href='https://zsviczian.github.io/obsidian-excalidraw-plugin/'>ExcalidrawAutomate How-to</a> 網頁（不過該網頁" +
-    "有一段時間未更新了），並開啟下方的欄位建議。欄位建議功能能夠在您鍵入時提示可用的" +
-    "函式及相應的引數，而且附帶描述，相當於最新的“文件”。",
+    `ExcalidrawAutomate 是用於 Excalidraw 自動化指令碼的 API，但是目前說明文件還不夠完善，` +
+    `建議閱讀 <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_API_EXCALIDRAWAUTOMATE_D_TS}">ExcalidrawAutomate.d.ts</a> 檔案原始碼，` +
+    `參考 <a href="${URLs.ZSVICZIAN_GITHUB_IO_OBSIDIAN_EXCALIDRAW_PLUGIN}">ExcalidrawAutomate How-to</a> 網頁（不過該網頁` +
+    `有一段時間未更新了），並開啟下方的欄位建議。欄位建議功能能夠在您鍵入時提示可用的` +
+    `函式及相應的引數，而且附帶描述，相當於最新的“文件”。`,
   FIELD_SUGGESTER_NAME: "開啟欄位建議",
   FIELD_SUGGESTER_DESC:
     "開啟後，當您在編輯器中輸入 <code>excalidraw-</code> 或者 <code>ea.</code> 時，會彈出一個帶有函式說明的自動補全提示選單。<br>" +
@@ -1036,13 +1030,13 @@ export default {
   FOURTH_FONT_NAME: "本地字型檔案",
   FOURTH_FONT_DESC:
     "從倉庫中選擇一個 .otf/.ttf/.woff/.woff2 字型檔案作為本地字型使用。" +
-    "Excalidraw 預設使用 Virgil 字型。" +
-    "為了獲得最佳效能，建議使用 .woff2 檔案，因為當匯出 SVG 格式的圖片時，Excalidraw 只會編碼必要的字形。" +
-    "其他字型格式將在匯出檔案中嵌入整個字型，可能會導致檔案大小顯著增加。<b>譯者注：</b>可在 <a href='https://wangchujiang.com/free-font/' target='_blank'>Free Font</a> 獲取免費商用中文手寫字型。",
+    `Excalidraw 預設使用 Virgil 字型。` +
+    `為了獲得最佳效能，建議使用 .woff2 檔案，因為當匯出 SVG 格式的圖片時，Excalidraw 只會編碼必要的字形。` +
+    `其他字型格式將在匯出檔案中嵌入整個字型，可能會導致檔案大小顯著增加。<b>譯者注：</b>可在 <a href="${URLs.WANGCHUJIANG_COM_FREE_FONT}" target='_blank'>Free Font</a> 獲取免費商用中文手寫字型。`,
   OFFLINE_CJK_NAME: "離線 CJK 字型支援",
   OFFLINE_CJK_DESC: `<strong>該項需要重啟 Obsidian 才能生效。</strong><br>
     Excalidraw.com 提供手寫風格的 CJK 字型。預設情況下，這些字型不會包含在外掛本地，而是從網際網路獲取。
-    如果您希望 Excalidraw 完全本地化，以便在沒有網際網路連線的情況下使用，可以從 <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip" target="_blank">GitHub 下載所需的字型檔案</a>。
+    如果您希望 Excalidraw 完全本地化，以便在沒有網際網路連線的情況下使用，可以從 <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RAW_REFS_HEADS_MASTER_ASSETS_EXCALIDRAW_FONTS_ZIP}" target="_blank">GitHub 下載所需的字型檔案</a>。
     下載後，將內容解壓到您的倉庫中的一個資料夾內。<br>
     預載入字型會影響啟動效能。因此，您可以選擇載入哪些字型。`,
   CJK_ASSETS_FOLDER_NAME: "CJK 字型資料夾（區分大小寫！）",
@@ -1063,13 +1057,13 @@ export default {
     "注意，識別的過程不是在本地進行的，而是透過線上 API，影像會被上傳到 taskbone 的伺服器（僅用於識別目的）。如果您介意，請不要使用這個功能。",
   TASKBONE_ENABLE_NAME: "啟用 Taskbone",
   TASKBONE_ENABLE_DESC:
-    "啟用意味著您同意 Taskbone <a href='https://www.taskbone.com/legal/terms/' target='_blank'>條款及細則</a> 以及 " +
-    "<a href='https://www.taskbone.com/legal/privacy/' target='_blank'>隱私政策</a>。",
+    `啟用意味著您同意 Taskbone <a href="${URLs.WWW_TASKBONE_COM_LEGAL_TERMS}" target='_blank'>條款及細則</a> 以及 ` +
+    `<a href="${URLs.WWW_TASKBONE_COM_LEGAL_PRIVACY}" target='_blank'>隱私政策</a>。`,
   TASKBONE_APIKEY_NAME: "Taskbone API Key",
   TASKBONE_APIKEY_DESC:
-    "Taskbone 的免費 API key 提供了一定數量的每月識別次數。如果您非常頻繁地使用此功能，或者想要支援 " +
-    "Taskbone 的開發者（您懂的，沒有人能用愛發電，Taskbone 開發者也需要投入資金來維持這項 OCR 服務），您可以" +
-    "到 <a href='https://www.taskbone.com/' target='_blank'>taskbone.com</a> 購買一個商用 API key。購買後請將它填寫到旁邊這個文字框裡，替換掉原本自動生成的免費 API key。",
+    `Taskbone 的免費 API key 提供了一定數量的每月識別次數。如果您非常頻繁地使用此功能，或者想要支援 ` +
+    `Taskbone 的開發者（您懂的，沒有人能用愛發電，Taskbone 開發者也需要投入資金來維持這項 OCR 服務），您可以` +
+    `到 <a href="${URLs.WWW_TASKBONE_COM}" target='_blank'>taskbone.com</a> 購買一個商用 API key。購買後請將它填寫到旁邊這個文字框裡，替換掉原本自動生成的免費 API key。`,
 
   //HotkeyEditor
   HOTKEY_PRESS_COMBO_NANE: "按下您的組合鍵",
@@ -1130,7 +1124,7 @@ export default {
       </p>
       <h3>說明：</h3>
       <ol>
-        <li>從 <a href="https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip">GitHub</a> 下載字型。</li>
+        <li>從 <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RAW_REFS_HEADS_MASTER_ASSETS_EXCALIDRAW_FONTS_ZIP}">GitHub</a> 下載字型。</li>
         <li>解壓並將檔案複製到倉庫資料夾中（預設：<code>Excalidraw/${CJK_FONTS}</code>; 資料夾名稱區分大小寫！）。</li>
         <li><mark>請勿</mark>將此資料夾設定為倉庫根目錄或與其他本地字型混合。</li>
       </ol>
@@ -1217,6 +1211,8 @@ export default {
   PROMPT_BUTTON_UPPERCASE: "大寫",
   PROMPT_BUTTON_SPECIAL_CHARS: "特殊字元",
   PROMPT_SELECT_TEMPLATE: "選擇一個模板",
+  LATEX_SUITE_PLUGIN_SUGGESTION:
+    "Install the 'Latex Suite' plugin from Obsidian Community Plugins to enable live preview as you type your equation.",
 
   //ModifierKeySettings
   WEB_BROWSER_DRAG_ACTION: "從瀏覽器拖入時",
@@ -1396,19 +1392,19 @@ export default {
 Obsidian 的 Excalidraw 外掛遠不只是「畫圖工具」。由於它與 Obsidian 深度整合，它為視覺化個人知識管理帶來了全新的工作方式。
 
 <div style="text-align:center;margin-top:10px;">
-<a href="https://community.sketch-your-mind.com/ee" target="_blank"><img src="https://sketch-your-mind.com/images/logo-EE.png" style="width:50%;"></a>
+<a href="${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE}" target="_blank"><img src="${URLs.SKETCH_YOUR_MIND_COM_IMAGES_LOGO_EE_PNG}" style="width:50%;"></a>
 </div>
 
-如果你想順利上手、避免一開始就被大量功能淹沒，我非常推薦免費的 **[Excalidraw Essentials](https://community.sketch-your-mind.com/ee)** 微課程。它能幫你快速抓住重點，用清楚的結構掌握核心基礎。
+如果你想順利上手、避免一開始就被大量功能淹沒，我非常推薦免費的 **[Excalidraw Essentials](" + URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE + ")** 微課程。它能幫你快速抓住重點，用清楚的結構掌握核心基礎。
 
-你也不必自己摸索。歡迎加入 **[Sketch Your Mind 社群](https://community.sketch-your-mind.com)**，與其他視覺思考者交流、分享工作流程，一起打造更順暢的 PKM 系統。
+你也不必自己摸索。歡迎加入 **[Sketch Your Mind 社群](" + URLs.COMMUNITY_SKETCH_YOUR_MIND_COM + ")**，與其他視覺思考者交流、分享工作流程，一起打造更順暢的 PKM 系統。
 
-如果你想先看看它現在能做到什麼，下面有一段核心功能展示。若想持續了解最新更新，並進一步探索 Visual PKM，也歡迎訂閱我的 YouTube 頻道：[Visual PKM](https://www.youtube.com/@visualPKM)。
+如果你想先看看它現在能做到什麼，下面有一段核心功能展示。若想持續了解最新更新，並進一步探索 Visual PKM，也歡迎訂閱我的 YouTube 頻道：[Visual PKM](" + URLs.WWW_YOUTUBE_COM_VISUALPKM + ")。
 
 感謝使用，祝你玩得愉快！
 
 <div class="excalidraw-videoWrapper">
-<a href="https://www.youtube.com/watch?v=P_Q6avJGoWI" target="_blank"><img src ="https://i.ytimg.com/vi/P_Q6avJGoWI/maxresdefault.jpg" style="width:100%;"></a>
+<a href="${URLs.WWW_YOUTUBE_COM_WATCH}" target="_blank"><img src="${URLs.I_YTIMG_COM_VI_P_Q6AVJGOWI_MAXRESDEFAULT_JPG}" style="width:100%;"></a>
 </div>
 `,
 

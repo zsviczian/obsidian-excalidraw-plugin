@@ -1,3 +1,5 @@
+import { URLs } from "src/constants/safeUrls";
+
 type SuggesterInfo = {
   field: string;
   code: string;
@@ -51,13 +53,13 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "style.strokeColor",
     code: "[string]",
-    desc: `A valid css color. See ${hyperlink("https://www.w3schools.com/colors/default.asp", "W3 School Colors")} for more.`,
+    desc: `A valid css color. See ${hyperlink(URLs.WWW_W3SCHOOLS_COM_COLORS_DEFAULT_ASP, "W3 School Colors")} for more.`,
     after: "",
   },
   {
     field: "style.backgroundColor",
     code: "[string]",
-    desc: `A valid css color. See ${hyperlink("https://www.w3schools.com/colors/default.asp", "W3 School Colors")} for more.`,
+    desc: `A valid css color. See ${hyperlink(URLs.WWW_W3SCHOOLS_COM_COLORS_DEFAULT_ASP, "W3 School Colors")} for more.`,
     after: "",
   },
   {
@@ -147,7 +149,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "canvas.viewBackgroundColor",
     code: "[string]",
-    desc: `A valid css color.\nSee ${hyperlink("https://www.w3schools.com/colors/default.asp", "W3 School Colors")} for more.`,
+    desc: `A valid css color.\nSee ${hyperlink(URLs.WWW_W3SCHOOLS_COM_COLORS_DEFAULT_ASP, "W3 School Colors")} for more.`,
     after: "",
   },
   {
@@ -527,7 +529,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "getExcalidrawAPI",
     code: "getExcalidrawAPI(): any;",
-    desc: `${hyperlink("https://github.com/excalidraw/excalidraw/tree/master/src/packages/excalidraw#ref", "Excalidraw API")}`,
+    desc: `${hyperlink(URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_TREE_MASTER_SRC_PACKAGES_EXCALIDRAW, "Excalidraw API")}`,
     after: "",
   },
   {
@@ -730,19 +732,19 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "activeScript",
     code: "activeScript: string;",
-    desc: `Mandatory to set before calling the get and set ScriptSettings functions. Set automatically by the ScriptEngine\nSee for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html", "Script Engine Help")}`,
+    desc: `Mandatory to set before calling the get and set ScriptSettings functions. Set automatically by the ScriptEngine\nSee for more details: ${hyperlink(URLs.ZSVICZIAN_GITHUB_IO_OBSIDIAN_EXCALIDRAW_PLUGIN_EXCALIDRAWSCRIPTSENGINE_HTML, "Script Engine Help")}`,
     after: "",
   },
   {
     field: "getScriptSettings",
     code: "getScriptSettings(): {};",
-    desc: `Returns script settings. Saves settings in plugin settings, under the activeScript key. See for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html", "Script Engine Help")}`,
+    desc: `Returns script settings. Saves settings in plugin settings, under the activeScript key. See for more details: ${hyperlink(URLs.ZSVICZIAN_GITHUB_IO_OBSIDIAN_EXCALIDRAW_PLUGIN_EXCALIDRAWSCRIPTSENGINE_HTML, "Script Engine Help")}`,
     after: "",
   },
   {
     field: "setScriptSettings",
     code: "async setScriptSettings(settings: any): Promise<void>;",
-    desc: `Sets script settings.\nSee for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html", "Script Engine Help")}`,
+    desc: `Sets script settings.\nSee for more details: ${hyperlink(URLs.ZSVICZIAN_GITHUB_IO_OBSIDIAN_EXCALIDRAW_PLUGIN_EXCALIDRAWSCRIPTSENGINE_HTML, "Script Engine Help")}`,
     after: "",
   },
   {
@@ -752,7 +754,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       `Sets a single Script Engine setting value for the active script (in-memory).\n` +
       `Use saveScriptSettings() to persist changes.\n` +
       `Handles initialization when scriptEngineSettings[activeScript] is undefined/null.\n` +
-      `See for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html", "Script Engine Help")}\n\n` +
+      `See for more details: ${hyperlink(URLs.ZSVICZIAN_GITHUB_IO_OBSIDIAN_EXCALIDRAW_PLUGIN_EXCALIDRAWSCRIPTSENGINE_HTML, "Script Engine Help")}\n\n` +
       `type ScriptSettingValue = { value?: string; hidden?: boolean; description?: string; valueset?: string[]; height?: number; };`,
     after: `("myKey", { value: "" });`,
   },
@@ -763,7 +765,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       `Gets a single Script Engine setting value for the active script.\n` +
       `Returns defaultValue if the key does not exist (or if activeScript is not set).\n` +
       `Handles initialization when scriptEngineSettings[activeScript] is undefined/null.\n` +
-      `See for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html", "Script Engine Help")}\n\n` +
+      `See for more details: ${hyperlink(URLs.ZSVICZIAN_GITHUB_IO_OBSIDIAN_EXCALIDRAW_PLUGIN_EXCALIDRAWSCRIPTSENGINE_HTML, "Script Engine Help")}\n\n` +
       `type ScriptSettingValue = { value?: string; hidden?: boolean; description?: string; valueset?: string[]; height?: number; };`,
     after: `("myKey", { value: "" });`,
   },
@@ -773,7 +775,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     desc:
       `Persists Script Engine settings to disk (plugin settings).\n` +
       `Useful after calling setScriptSettingValue().\n` +
-      `See for more details: ${hyperlink("https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html", "Script Engine Help")}`,
+      `See for more details: ${hyperlink(URLs.ZSVICZIAN_GITHUB_IO_OBSIDIAN_EXCALIDRAW_PLUGIN_EXCALIDRAWSCRIPTSENGINE_HTML, "Script Engine Help")}`,
     after: "()",
   },
   {
@@ -871,7 +873,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     field: "getCM",
     code: "getCM(color:TInput): ColorMaster;",
     desc:
-      `Returns a ${hyperlink("https://github.com/lbragile/ColorMaster", "ColorMaster")} object. ` +
+      `Returns a ${hyperlink(URLs.GITHUB_COM_LBRAGILE_COLORMASTER, "ColorMaster")} object. ` +
       "The function also accepts css color names. Under the hood, before calling ColorMaster it uses " +
       "colorNameToHex to convert the color name to a HEX color.",
     after: "",
@@ -899,7 +901,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   {
     field: "obsidian",
     code: "obsidian",
-    desc: `Access functions and objects available on the ${hyperlink("https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts", "Obsidian Module")}`,
+    desc: `Access functions and objects available on the ${hyperlink(URLs.GITHUB_COM_OBSIDIANMD_OBSIDIAN_API_BLOB_MASTER_OBSIDIAN_D_TS, "Obsidian Module")}`,
     after: "",
   },
   {

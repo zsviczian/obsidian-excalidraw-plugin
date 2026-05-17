@@ -1,5 +1,10 @@
 import { DEVICE, FRONTMATTER_KEYS } from "src/constants/constants";
-import { TAG_AUTOEXPORT } from "src/constants/constSettingsTags";
+import {
+  TAG_AUTOEXPORT,
+  TAG_MDREADINGMODE,
+  TAG_PDFEXPORT,
+} from "src/constants/constSettingsTags";
+import { URLs } from "src/constants/safeUrls";
 import {
   labelALT,
   labelCTRL,
@@ -119,19 +124,19 @@ export default {
 Плагин Excalidraw для Obsidian - это гораздо больше, чем «просто» инструмент для рисования. Благодаря глубокой интеграции с Obsidian он открывает совершенно новый подход к визуальному управлению личными знаниями.
 
 <div style="text-align:center;margin-top:10px;">
-<a href="https://community.sketch-your-mind.com/ee" target="_blank"><img src="https://sketch-your-mind.com/images/logo-EE.png" style="width:50%;"></a>
+<a href="${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE}" target="_blank"><img src="${URLs.SKETCH_YOUR_MIND_COM_IMAGES_LOGO_EE_PNG}" style="width:50%;"></a>
 </div>
 
-Чтобы начать без перегруза, очень рекомендую бесплатный мини-курс **[Excalidraw Essentials](https://community.sketch-your-mind.com/ee)**. Он помогает быстро разобраться в главном и освоить базовые принципы в структурированном формате.
+Чтобы начать без перегруза, очень рекомендую бесплатный мини-курс **[Excalidraw Essentials](" + URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE + ")**. Он помогает быстро разобраться в главном и освоить базовые принципы в структурированном формате.
 
-Вам не обязательно разбираться во всем в одиночку. Присоединяйтесь к **[сообществу Sketch Your Mind](https://community.sketch-your-mind.com)**, чтобы общаться с другими визуально мыслящими людьми, делиться своими рабочими процессами и выстраивать более плавную систему PKM.
+Вам не обязательно разбираться во всем в одиночку. Присоединяйтесь к **[сообществу Sketch Your Mind](" + URLs.COMMUNITY_SKETCH_YOUR_MIND_COM + ")**, чтобы общаться с другими визуально мыслящими людьми, делиться своими рабочими процессами и выстраивать более плавную систему PKM.
 
-Если хотите увидеть, что уже возможно прямо сейчас, ниже есть обзор ключевых возможностей. А чтобы следить за новыми обновлениями и идеями по Visual PKM, подписывайтесь на мой YouTube-канал: [Visual PKM](https://www.youtube.com/@visualPKM).
+Если хотите увидеть, что уже возможно прямо сейчас, ниже есть обзор ключевых возможностей. А чтобы следить за новыми обновлениями и идеями по Visual PKM, подписывайтесь на мой YouTube-канал: [Visual PKM](" + URLs.WWW_YOUTUBE_COM_VISUALPKM + ").
 
 Спасибо и приятной работы!
 
 <div class="excalidraw-videoWrapper">
-<a href="https://www.youtube.com/watch?v=P_Q6avJGoWI" target="_blank"><img src ="https://i.ytimg.com/vi/P_Q6avJGoWI/maxresdefault.jpg" style="width:100%;"></a>
+<a href="${URLs.WWW_YOUTUBE_COM_WATCH}" target="_blank"><img src="${URLs.I_YTIMG_COM_VI_P_Q6AVJGOWI_MAXRESDEFAULT_JPG}" style="width:100%;"></a>
 </div>
 `,
 
@@ -230,10 +235,10 @@ export default {
   //settings.ts
   RELEASE_NOTES_NAME: "Отображение информации о выпуске после обновления",
   RELEASE_NOTES_DESC:
-    "<b><u>Переключатель ВКЛ:</u></b> Отображение информации о выпуске при каждом обновлении Excalidraw до новой версии.<br>" +
-    "<b><u>Переключатель ВЫКЛ:</u></b> Тихий режим. Вы все еще можете прочитать заметки о выпуске на <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases'>GitHub</a>.",
+    `<b><u>Переключатель ВКЛ:</u></b> Отображение информации о выпуске при каждом обновлении Excalidraw до новой версии.<br>` +
+    `<b><u>Переключатель ВЫКЛ:</u></b> Тихий режим. Вы все еще можете прочитать заметки о выпуске на <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES}">GitHub</a>.`,
   EXCALIDRAW_MASTERY_PROMO_ARIA: "Открыть Excalidraw Mastery",
-  EXCALIDRAW_MASTERY_PROMO_HTML: `<p><b>Потерялись в переключателях и меню?</b></p><p>Excalidraw - мощный инструмент Visual PKM, созданный для сложных рабочих процессов: <b>Visual-First Daily Notes</b>, глубокое <b>PDF-исследование</b>, <b>автоматизация</b>, <b>интеграция ИИ</b> и <b>визуальный Zettelkasten</b>. Но такая мощность неизбежно приносит и сложность.</p><p>Пропустите этап проб и ошибок. <a href="https://community.sketch-your-mind.com/em" target="_blank">👉 Присоединяйтесь к Excalidraw Mastery</a>, чтобы шаг за шагом освоить именно эти настройки. Уберите трение инструмента и развивайте свои знания вместе с поддерживающим сообществом визуально мыслящих людей!</p>`,
+  EXCALIDRAW_MASTERY_PROMO_HTML: `<p><b>Потерялись в переключателях и меню?</b></p><p>Excalidraw - мощный инструмент Visual PKM, созданный для сложных рабочих процессов: <b>Visual-First Daily Notes</b>, глубокое <b>PDF-исследование</b>, <b>автоматизация</b>, <b>интеграция ИИ</b> и <b>визуальный Zettelkasten</b>. Но такая мощность неизбежно приносит и сложность.</p><p>Пропустите этап проб и ошибок. <a href="${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM}" target="_blank">👉 Присоединяйтесь к Excalidraw Mastery</a>, чтобы шаг за шагом освоить именно эти настройки. Уберите трение инструмента и развивайте свои знания вместе с поддерживающим сообществом визуально мыслящих людей!</p>`,
   EXCALIDRAW_MASTERY_PROMO_SHOW: "Показать",
   EXCALIDRAW_MASTERY_PROMO_HIDE: "Скрыть",
   NEWVERSION_NOTIFICATION_NAME: "Уведомление об обновлении плагина",
@@ -367,8 +372,7 @@ export default {
   AI_MODEL_REMOVE: "Удалить модель",
   AI_MODEL_RESTORE_DEFAULTS: "Восстановить модели по умолчанию",
   AI_IMAGE_MODEL_CAPABILITIES_NAME: "Возможности моделей изображений",
-  AI_IMAGE_MODEL_CAPABILITIES_DESC:
-    'Здесь настраиваются метаданные моделей изображений: поддерживаемые разрешения, поддержка prompt-редактирования и поддержка масок. Например, поддерживаемые размеры можно посмотреть в <a href="https://platform.openai.com/docs/guides/image-generation" target="_blank" rel="noopener noreferrer">документации OpenAI по генерации изображений</a>.',
+  AI_IMAGE_MODEL_CAPABILITIES_DESC: `Здесь настраиваются метаданные моделей изображений: поддерживаемые разрешения, поддержка prompt-редактирования и поддержка масок. Например, поддерживаемые размеры можно посмотреть в <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">документации OpenAI по генерации изображений</a>.`,
   AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "Восстановить известные значения",
   AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "Добавить",
   AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "Изменить",
@@ -429,13 +433,13 @@ export default {
     "В разделе 'Сохранение' раздела Настройки Excalidraw вы можете настроить способ сохранения ваших чертежей. Сюда входят опции сжатия Excalidraw JSON в Markdown, установки интервалов автосохранения для настольных и мобильных компьютеров, определения форматов имен файлов, а также выбора расширения файла .excalidraw.md или .md. ",
   COMPRESS_NAME: "Сжатие Excalidraw JSON в формате Markdown",
   COMPRESS_DESC:
-    "При включении этой функции Excalidraw будет хранить JSON рисунка в формате Base64. " +
-    "формат с использованием алгоритма <a href='https://pieroxy.net/blog/pages/lz-string/index.html'>LZ-String</a>. " +
-    "Это уменьшит вероятность того, что Excalidraw JSON загромоздит результаты поиска в Obsidian. " +
-    "Как побочный эффект, это также уменьшит размер файлов чертежей Excalidraw. " +
-    "При переключении чертежа Excalidraw в режим Markdown с помощью меню опций Excalidraw файл будет " +
-    "сохранен без сжатия, чтобы вы могли читать и редактировать строку JSON. Чертеж будет снова сжат " +
-    "как только вы переключитесь обратно в вид Excalidraw. " +
+    `При включении этой функции Excalidraw будет хранить JSON рисунка в формате Base64. ` +
+    `формат с использованием алгоритма <a href="${URLs.PIEROXY_NET_BLOG_PAGES_LZ_STRING_INDEX_HTML}">LZ-String</a>. ` +
+    `Это уменьшит вероятность того, что Excalidraw JSON загромоздит результаты поиска в Obsidian. ` +
+    `Как побочный эффект, это также уменьшит размер файлов чертежей Excalidraw. ` +
+    `При переключении чертежа Excalidraw в режим Markdown с помощью меню опций Excalidraw файл будет ` +
+    `сохранен без сжатия, чтобы вы могли читать и редактировать строку JSON. Чертеж будет снова сжат ` +
+    `как только вы переключитесь обратно в вид Excalidraw. ` +
     "Настройка имеет силу только 'на перспективу', то есть существующие чертежи не будут затронуты настройкой " +
     "пока вы не откроете и не сохраните их.<br><b><u>Переключатель ВКЛ:</u></b> Сжать чертеж JSON<br><b><u>Переключатель ВЫКЛ:</u></b> Оставьте JSON для рисования без сжатия",
   DECOMPRESS_FOR_MD_NAME: "Декомпрессия Excalidraw JSON в Markdown Режим",
@@ -461,8 +465,8 @@ export default {
     "Obsidian в фоновом режиме для экономии системных ресурсов. В этом случае Excalidraw не сможет сохранить последние изменения.",
   FILENAME_HEAD: "Имя файла",
   FILENAME_DESC:
-    "<p>Нажмите на эту ссылку, чтобы получить <a href='https://momentjs.com/docs/#/displaying/format/'>" +
-    "справочник по формату даты и времени</a>.</p>",
+    `<p>Нажмите на эту ссылку, чтобы получить <a href="${URLs.MOMENTJS_COM_DOCS}">` +
+    `справочник по формату даты и времени</a>.</p>`,
   FILENAME_SAMPLE: "Filename for a new drawing is: ",
   FILENAME_EMBED_SAMPLE: "Имя файла для нового встроенного чертежа: ",
   FILENAME_PREFIX_NAME: "Префикс имени файла",
@@ -539,7 +543,7 @@ export default {
   SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC:
     "Когда вы находитесь в режиме чтения разметки (а именно, читаете обратную сторону рисунка), должен ли рисунок Excalidraw отображаться как изображение? " +
     "Этот параметр не влияет на отображение чертежа в режиме Excalidraw, а также при встраивании чертежа в документ с пометками или при предварительном просмотре при наведении.<br><ul>" +
-    "<li>Смотрите другие связанные настройки для <a href='#«+TAG_PDFEXPORT+»'>экспорта PDF</a> в разделе 'Встраивание и экспорт' ниже.</li></ul><br>" +
+    `<li>Смотрите другие связанные настройки для <a href='#${TAG_PDFEXPORT}'>экспорта PDF</a> в разделе 'Встраивание и экспорт' ниже.</li></ul><br>` +
     "Вы должны закрыть активный файл excalidraw/markdown и снова открыть его, чтобы это изменение вступило в силу.",
   SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME:
     "При экспорте файла Excalidraw в PDF файл отображается как изображение.",
@@ -547,7 +551,7 @@ export default {
     "Этот параметр управляет поведением Excalidraw при экспорте файла Excalidraw в PDF в режиме просмотра разметки с помощью функции Obsidian <b>Экспорт в PDF</b> <br>" +
     "<ul><li>Если <b>разрешить</b>, в PDF будет отображаться только чертеж Excalidraw;</li>" +
     "<li>Если <b>заблокировать</b>, то в PDF будет отображаться разметка документа.</li></ul>" +
-    "См. другие связанные настройки для <a href='#«+TAG_MDREADINGMODE+»'>режима чтения разметки</a> в разделе 'Внешний вид и поведение' выше.<br>" +
+    `См. другие связанные настройки для <a href='#${TAG_MDREADINGMODE}'>режима чтения разметки</a> в разделе 'Внешний вид и поведение' выше.<br>` +
     "⚠️ Обратите внимание, что необходимо закрыть активный файл excalidraw/markdown и открыть его снова, чтобы изменения вступили в силу. ⚠️",
   HOTKEY_OVERRIDE_HEAD: "Переопределение горячих клавиш",
   HOTKEY_OVERRIDE_DESC:
@@ -632,7 +636,7 @@ export default {
   SECOND_ORDER_LINKS_DESC:
     "Показывать ссылки при нажатии на ссылку в Excalidraw. Ссылки второго порядка - это обратные ссылки, указывающие на ссылку, по которой переходят. " +
     "При использовании значков изображений для соединения похожих заметок ссылки второго порядка позволяют перейти к связанным заметкам одним щелчком мыши, а не двумя. " +
-    "Для понимания смотрите <a href='https://youtube.com/shorts/O_1ls9c6wBY?feature=share'>YT Short</a>.",
+    `Для понимания смотрите <a href="${URLs.YOUTUBE_COM_SHORTS_O_1LS9C6WBY}">YT Short</a>.`,
   ADJACENT_PANE_NAME: "Повторное использование соседней панели",
   ADJACENT_PANE_DESC:
     `Когда ${labelCTRL()}+${labelALT()} нажимает на ссылку в Excalidraw, по умолчанию плагин открывает ссылку в новой панели. ` +
@@ -737,14 +741,14 @@ export default {
   MD_DEFAULT_COLOR_NAME:
     "Цвет шрифта по умолчанию, используемый для встроенных файлов разметки (markdown).",
   MD_DEFAULT_COLOR_DESC:
-    'Установите это значение в любое допустимое имя цвета css, например, "steelblue" (<a href="https://www.w3schools.com/colors/colors_names.asp">имена цветов</a>), или допустимый шестнадцатеричный цвет, например "#e67700", ' +
-    "или на любую другую допустимую строку цвета css. Вы можете отменить эту настройку, добавив следующий frontmatter-ключ во встроенный файл разметки (markdown): <code>excalidraw-font-color: steelblue</code>",
+    `Установите это значение в любое допустимое имя цвета css, например, "steelblue" (<a href="${URLs.WWW_W3SCHOOLS_COM_COLORS_COLORS_NAMES_ASP}">имена цветов</a>), или допустимый шестнадцатеричный цвет, например "#e67700", ` +
+    `или на любую другую допустимую строку цвета css. Вы можете отменить эту настройку, добавив следующий frontmatter-ключ во встроенный файл разметки (markdown): <code>excalidraw-font-color: steelblue</code>`,
   MD_DEFAULT_BORDER_COLOR_NAME:
     "Цвет границы, используемый по умолчанию для встроенных файлов разметки (markdown).",
   MD_DEFAULT_BORDER_COLOR_DESC:
-    'Установите это значение на любое допустимое имя цвета css, например "steelblue" (<a href="https://www.w3schools.com/colors/colors_names.asp">имена цветов</a>),  или на допустимый шестнадцатеричный цвет, например "#e67700", ' +
-    "или на любую другую допустимую строку цвета css. Вы можете отменить эту настройку, добавив следующий frontmatter-key во встроенный файл разметки (markdown): <code>excalidraw-border-color: gray</code>. " +
-    "Оставьте пустым, если вам не нужна граница. ",
+    `Установите это значение на любое допустимое имя цвета css, например "steelblue" (<a href="${URLs.WWW_W3SCHOOLS_COM_COLORS_COLORS_NAMES_ASP}">имена цветов</a>),  или на допустимый шестнадцатеричный цвет, например "#e67700", ` +
+    `или на любую другую допустимую строку цвета css. Вы можете отменить эту настройку, добавив следующий frontmatter-key во встроенный файл разметки (markdown): <code>excalidraw-border-color: gray</code>. ` +
+    `Оставьте пустым, если вам не нужна граница. `,
   MD_CSS_NAME: "CSS файл",
   MD_CSS_DESC:
     "Имя файла CSS для применения к вставкам markdown. Укажите имя файла с расширением (например, 'md-embed.css'). Файл css также может быть обычным файлом " +
@@ -789,21 +793,17 @@ export default {
   EMBED_REUSE_EXPORTED_IMAGE_NAME:
     "Если найдено, используйте уже экспортированное изображение для предварительного просмотра",
   EMBED_REUSE_EXPORTED_IMAGE_DESC:
-    "Эта настройка работает в сочетании с настройкой <a href='#«+TAG_AUTOEXPORT+»'>Автоэкспорт SVG/PNG</a>. Если имеется экспортированное изображение, соответствующее имени файла чертежа, используйте это изображение вместо того, " +
+    `Эта настройка работает в сочетании с настройкой <a href='#${TAG_AUTOEXPORT}'>Автоэкспорт SVG/PNG</a>. Если имеется экспортированное изображение, соответствующее имени файла чертежа, используйте это изображение вместо того, ` +
     "чтобы генерировать изображение предварительного просмотра на лету. Однако это позволит ускорить предварительный просмотр, особенно если в чертеже много встроенных объектов, " +
     "может случиться так, что последние изменения не будут отображаться, а изображение не будет автоматически соответствовать вашей теме Obsidian, " +
     "если вы изменили тему Obsidian с момента создания экспорта. Эта настройка применяется только для вставки изображений в документы markdown. " +
-    "По ряду причин этот же подход не может быть использован для ускорения загрузки чертежей с большим количеством встроенных объектов. Смотрите демонстрацию <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23' target='_blank'>здесь</a>.",
-  /*EMBED_PREVIEW_SVG_NAME: "Отображение SVG в предварительном просмотре разметки (markdown)",
-  EMBED_PREVIEW_SVG_DESC:
-    "<b><u>Переключатель ВКЛ:</u></b> Вставьте рисунок как изображение <a href='https://en.wikipedia.org/wiki/Scalable_Vector_Graphics' target='_blank'>SVG</a> в предварительный просмотр разметки (markdown).<br>" +
-    "<b><u>Переключатель ВЫКЛ:</u></b> Встроить рисунок как изображение <a href='' target='_blank'>PNG</a>. Обратите внимание, что некоторые из <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>функций ссылок на блоки изображений</a> не работают с встраиванием PNG.",*/
+    `По ряду причин этот же подход не может быть использован для ускорения загрузки чертежей с большим количеством встроенных объектов. Смотрите демонстрацию <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG_1_6_23}" target='_blank'>здесь</a>.`,
   EMBED_PREVIEW_IMAGETYPE_NAME:
     "Тип изображения в предварительном просмотре разметки (markdown)",
   EMBED_PREVIEW_IMAGETYPE_DESC:
-    "<b><u>Родной SVG</u></b>: Высокое качество изображения. Встраиваемые веб-сайты, видео с YouTube, ссылки на Obsidian и внешние изображения, вставленные через URL-адрес, будут работать. Встроенные страницы Obsidian не будут<br>" +
-    "<b><u>SVG-изображение</u></b>: Высокое качество изображений. Встроенные элементы и изображения, вставленные по URL, имеют только заполнители, ссылки не работают<br>" +
-    "<b><u>PNG-изображение</u></b>: Более низкое качество изображения, но в некоторых случаях лучшая производительность при работе с большими рисунками. Встроенные элементы и изображения, вставленные по URL, имеют только заполнители, ссылки не работают. Также некоторые функции <a href='https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s' target='_blank'>ссылки на блок изображений</a> не работают с PNG-вставками.",
+    `<b><u>Родной SVG</u></b>: Высокое качество изображения. Встраиваемые веб-сайты, видео с YouTube, ссылки на Obsidian и внешние изображения, вставленные через URL-адрес, будут работать. Встроенные страницы Obsidian не будут<br>` +
+    `<b><u>SVG-изображение</u></b>: Высокое качество изображений. Встроенные элементы и изображения, вставленные по URL, имеют только заполнители, ссылки не работают<br>` +
+    `<b><u>PNG-изображение</u></b>: Более низкое качество изображения, но в некоторых случаях лучшая производительность при работе с большими рисунками. Встроенные элементы и изображения, вставленные по URL, имеют только заполнители, ссылки не работают. Также некоторые функции <a href="${URLs.WWW_YOUTUBE_COM_WATCH_1}" target='_blank'>ссылки на блок изображений</a> не работают с PNG-вставками.`,
   PREVIEW_MATCH_OBSIDIAN_NAME:
     "Предварительный просмотр Excalidraw в соответствии с темой Obsidian",
   PREVIEW_MATCH_OBSIDIAN_DESC:
@@ -893,12 +893,12 @@ export default {
   DEBUGMODE_NAME: "Включить отладочные сообщения",
   DEBUGMODE_DESC:
     "Я рекомендую перезапустить Obsidian после включения/выключения этой настройки. Это позволяет выводить отладочные сообщения в консоль. Это полезно для устранения неполадок. " +
-    "Если у вас возникли проблемы с плагином, пожалуйста, включите эту настройку, воспроизведите проблему и включите журнал консоли в проблему, которую вы поднимаете на <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/issues'>GitHub</a>",
+    `Если у вас возникли проблемы с плагином, пожалуйста, включите эту настройку, воспроизведите проблему и включите журнал консоли в проблему, которую вы поднимаете на <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}">GitHub</a>`,
   SLIDING_PANES_NAME:
     "Поддержка плагина раздвижных областей окна (Sliding Panes plugin)",
   SLIDING_PANES_DESC:
     "Чтобы это изменение вступило в силу, необходимо перезапустить Obsidian.<br>" +
-    "Если вы используете <a href='https://github.com/deathau/sliding-panes-obsidian' target='_blank'>Sliding Panes plugin</a> " +
+    `Если вы используете <a href="${URLs.GITHUB_COM_DEATHAU_SLIDING_PANES_OBSIDIAN}" target='_blank'>Sliding Panes plugin</a> ` +
     "Вы можете включить эту настройку, чтобы чертежи Excalidraw работали с плагином Sliding Panes.<br>" +
     "Обратите внимание, что поддержка раздвижных областей окна (Sliding Panes plugin) Excalidraw вызывает проблемы совместимости с рабочими пространствами Obsidian.<br>" +
     "Обратите внимание, что функция 'Stack Tabs' теперь доступна в Obsidian, обеспечивая встроенную поддержку большинства функций  раздвижных областей окна (Sliding Panes plugin)",
@@ -941,10 +941,10 @@ export default {
   EA_HEAD: "Автоматизация Excalidraw",
   EA_DESC:
     "Excalidraw Автоматизация - это скриптовый и автоматизированный API для Excalidraw. К сожалению, документация по API скудна. " +
-    "Рекомендую прочитать <a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/API/ExcalidrawAutomate.d.ts'>ExcalidrawAutomate.d.ts</a> файл, " +
-    "посетить <a href='https://zsviczian.github.io/obsidian-excalidraw-plugin/'>ExcalidrawAutomate How-to</a> страницу - хотя информация " +
-    "здесь давно не обновлялся, - и, наконец, включите расположенный ниже Предложитель полей. Предложитель полей покажет вам доступные " +
-    "функции, их параметры и краткое описание по мере ввода. Предложитель полей - это самая актуальная документация по API.",
+    `Рекомендую прочитать <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_API_EXCALIDRAWAUTOMATE_D_TS}">ExcalidrawAutomate.d.ts</a> файл, ` +
+    `посетить <a href="${URLs.ZSVICZIAN_GITHUB_IO_OBSIDIAN_EXCALIDRAW_PLUGIN}">ExcalidrawAutomate How-to</a> страницу - хотя информация ` +
+    `здесь давно не обновлялся, - и, наконец, включите расположенный ниже Предложитель полей. Предложитель полей покажет вам доступные ` +
+    `функции, их параметры и краткое описание по мере ввода. Предложитель полей - это самая актуальная документация по API.`,
   FIELD_SUGGESTER_NAME: "Включить Предложение полей (Suggester)",
   FIELD_SUGGESTER_DESC:
     "Предложение полей (Suggester) позаимствован у плагинов Breadcrumbs и Templater. Предложение полей (Suggester) полей будет показывать " +
@@ -1015,13 +1015,13 @@ export default {
     "Обратите внимание, что процесс извлечения текста из изображения происходит не локально, а через онлайн API. Сервис taskbone хранит изображение на своих серверах только до тех пор, пока это необходимо для извлечения текста. Однако если вас это не устраивает, не используйте эту функцию.",
   TASKBONE_ENABLE_NAME: "Включить Taskbone",
   TASKBONE_ENABLE_DESC:
-    "Включая эту услугу, вы соглашаетесь с <a href='https://www.taskbone.com/legal/terms/' target='_blank'>Условиями использования Taskbone </a> и " +
-    "<a href='https://www.taskbone.com/legal/privacy/' target='_blank'>политикой конфиденциальности</a>.",
+    `Включая эту услугу, вы соглашаетесь с <a href="${URLs.WWW_TASKBONE_COM_LEGAL_TERMS}" target='_blank'>Условиями использования Taskbone </a> и ` +
+    `<a href="${URLs.WWW_TASKBONE_COM_LEGAL_PRIVACY}" target='_blank'>политикой конфиденциальности</a>.`,
   TASKBONE_APIKEY_NAME: "Taskbone API Ключ",
   TASKBONE_APIKEY_DESC:
-    "Taskbone предлагает бесплатную услугу с разумным количеством сканирований в месяц. Если вы хотите использовать эту функцию чаще, или вам необходимо повысить " +
-    "разработчика Taskbone (как вы можете себе представить, не существует такого понятия, как «бесплатно», предоставление этого потрясающего сервиса OCR стоит разработчику Taskbone определенных денег), вы можете " +
-    "приобрести платный API-ключ на сайте <a href='https://www.taskbone.com/' target='_blank'>taskbone.com</a>. Если вы уже приобрели ключ, просто перезапишите этот автоматически сгенерированный бесплатный API-ключ своим платным ключом.",
+    `Taskbone предлагает бесплатную услугу с разумным количеством сканирований в месяц. Если вы хотите использовать эту функцию чаще, или вам необходимо повысить ` +
+    `разработчика Taskbone (как вы можете себе представить, не существует такого понятия, как «бесплатно», предоставление этого потрясающего сервиса OCR стоит разработчику Taskbone определенных денег), вы можете ` +
+    `приобрести платный API-ключ на сайте <a href="${URLs.WWW_TASKBONE_COM}" target='_blank'>taskbone.com</a>. Если вы уже приобрели ключ, просто перезапишите этот автоматически сгенерированный бесплатный API-ключ своим платным ключом.`,
 
   //HotkeyEditor
   HOTKEY_PRESS_COMBO_NANE: "Нажмите комбинацию горячих клавиш",
@@ -1138,6 +1138,8 @@ export default {
   PROMPT_BUTTON_INSERT_LINK: "Вставить ссылку на файл в формате markdown",
   PROMPT_BUTTON_UPPERCASE: "Прописные буквы",
   PROMPT_SELECT_TEMPLATE: "Выберите шаблон",
+  LATEX_SUITE_PLUGIN_SUGGESTION:
+    "Install the 'Latex Suite' plugin from Obsidian Community Plugins to enable live preview as you type your equation.",
 
   //ModifierKeySettings
   WEB_BROWSER_DRAG_ACTION: "Действие перетаскивания веб-браузера",

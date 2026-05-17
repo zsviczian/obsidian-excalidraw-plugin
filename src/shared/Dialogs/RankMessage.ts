@@ -2,6 +2,7 @@ import { App, MarkdownRenderer, Modal } from "obsidian";
 import ExcalidrawPlugin from "../../core/main";
 import { Rank, SwordColors } from "src/constants/actionIcons";
 import { convertSVGStringToElement } from "src/utils/utils";
+import { URLs } from "src/constants/safeUrls";
 
 export class RankMessage extends Modal {
   constructor(
@@ -40,7 +41,7 @@ export class RankMessage extends Modal {
 
     await MarkdownRenderer.render(
       this.app,
-      `You have ${this.filecount} Excalidraw drawings in your Vault earning you a new rank: **${this.rank}**! You've ascended to **${title}**!\n\nI've spent the past 3+ years building this plugin. If you appreciate my work, consider supporting me on [Ko-Fi](https://ko-fi.com/zsolt) or join the next [Visual Thinking Workshop](https://visual-thinking-workshop.com) cohort.`,
+      `You have ${this.filecount} Excalidraw drawings in your Vault earning you a new rank: **${this.rank}**! You've ascended to **${title}**!\n\nI've spent the past 3+ years building this plugin. If you appreciate my work, consider supporting me on [Ko-Fi](${URLs.KO_FI_COM_ZSOLT}) or join the next [Visual Thinking Workshop](${URLs.VISUAL_THINKING_WORKSHOP_COM}) cohort.`,
       this.contentEl,
       "",
       this.plugin,

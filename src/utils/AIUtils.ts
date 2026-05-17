@@ -5,6 +5,7 @@ import {
   RequestUrlResponse,
   requestUrl,
 } from "obsidian";
+import { URLs } from "src/constants/safeUrls";
 import ExcalidrawPlugin from "src/core/main";
 import {
   AIImageModelConfig,
@@ -197,11 +198,11 @@ const getEmptyMultimodalRetryMaxTokens = (request: AIRequest): number => {
 };
 
 const DEFAULT_PROVIDER_BASE_URLS: Record<AIProvider, string> = {
-  openai: "https://api.openai.com/v1",
-  anthropic: "https://api.anthropic.com/v1",
-  google: "https://generativelanguage.googleapis.com/v1beta",
-  xai: "https://api.x.ai/v1",
-  "openai-compatible": "https://api.openai.com/v1",
+  openai: URLs.API_OPENAI_COM_V1,
+  anthropic: URLs.API_ANTHROPIC_COM_V1,
+  google: URLs.GENERATIVELANGUAGE_GOOGLEAPIS_COM_V1BETA,
+  xai: URLs.API_X_AI_V1,
+  "openai-compatible": URLs.API_OPENAI_COM_V1,
 };
 
 const ANTHROPIC_VERSION = "2023-06-01";

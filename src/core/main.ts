@@ -131,6 +131,7 @@ import {
   decryptPersistedAPIKeys,
   encryptPersistedAPIKeys,
 } from "src/utils/settingsKeyObfuscation";
+import { URLs } from "src/constants/safeUrls";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
@@ -1403,7 +1404,7 @@ export default class ExcalidrawPlugin extends Plugin {
         };
         JSON.parse(
           await request({
-            url: "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/directory-info.json",
+            url: URLs.RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_DIRECTORY_INFO_JSON,
           }),
         ).forEach((f: RemoteDirectoryInfo) => files.set(f.fname, f.mtime));
 
@@ -1549,8 +1550,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private registerMonkeyPatches() {
-    const key =
-      "https://github.com/zsviczian/obsidian-excalidraw-plugin/issues";
+    const key = URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES;
 
     this.register(
       around(Workspace.prototype, {

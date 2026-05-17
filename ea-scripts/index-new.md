@@ -4,7 +4,7 @@
 
 **It looks like you want to get more out of Excalidraw!** 
 
-Scripts are a true superpower in Excalidraw. If you are ready to eliminate tool friction and build heavy-duty workflows, join[Excalidraw Mastery](https://community.sketch-your-mind.com/em). Master Excalidraw and Visual PKM alongside a supportive community of fellow visual thinkers in the [Sketch Your Mind Community](https://community.sketch-your-mind.com)!
+Scripts are a true superpower in Excalidraw. If you are ready to eliminate tool friction and build heavy-duty workflows, join [Excalidraw Mastery](https://community.sketch-your-mind.com/em). Master Excalidraw and Visual PKM alongside a supportive community of fellow visual thinkers in the [Sketch Your Mind Community](https://community.sketch-your-mind.com)!
 
 ---
 
@@ -38,7 +38,7 @@ If you want to modify scripts, I recommend moving them to the `Excalidraw Automa
 I would love to include your contribution in the script library. If you have a script of your own that you would like to share with the community, please open a [PR](https://github.com/zsviczian/obsidian-excalidraw-plugin/pulls) on GitHub. Be sure to include the following in your pull request
 - The [script file](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/ea-scripts) with a self explanetory name. The name of the file will be the name of the script in the Command Palette.
 - An [image](https://github.com/zsviczian/obsidian-excalidraw-plugin/tree/master/images) explaining the scripts purpose. Remember a picture speaks thousand words!
-- An update to this file[ea-scripts/index-new.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/index-new.md)
+- An update to this file [ea-scripts/index-new.md](https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/index-new.md)
 ---
 
 # List of available scripts

@@ -35,6 +35,7 @@ When evaluating these findings, please keep the following in mind:
 <details><summary><h3>Detailed Findings</h3></summary>
 
 - **Plugin might make requests to external domains:**
+  - To see the complete list of URLs referenced in the code, either used as links, images, or in API calls, open the Obsidian Developer Console (CTRL+SHIFT+i or CMD+OPT+i) and run `ExcalidrawAutomate.printURLsInCodebase()`
   - The plugin works fully offline and locally by default.
   - If you configure API keys for AI features and explicitly use those features, the corresponding AI providers are contacted.
   - The Taskbone OCR service requires a separate API key and explicit user opt-in in plugin settings.

@@ -258,6 +258,7 @@ import {
   getElementsWithLinkMatchingQuery,
   getImagesMatchingQuery,
 } from "src/utils/excalidrawAutomateUtils";
+import { URLs } from "src/constants/safeUrls";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -3209,7 +3210,7 @@ export default class ExcalidrawView
       let noticeTimeout: number;
       this.registerDomEvent(notice.noticeEl, "pointerdown", () => {
         noticeTimeout = window.setTimeout(() => {
-          window.open("https://youtu.be/uHFd0XoHRxE");
+          window.open(URLs.YOUTU_BE_UHFD0XOHRXE);
         }, 1000);
       });
       this.registerDomEvent(notice.noticeEl, "pointerup", () => {
@@ -7190,28 +7191,28 @@ export default class ExcalidrawView
           {},
           React.createElement(WelcomeScreen.Center.MenuItemLink, {
             icon: ICONS.Learn,
-            href: "https://community.sketch-your-mind.com",
+            href: URLs.COMMUNITY_SKETCH_YOUR_MIND_COM,
             shortcut: null,
             "aria-label": t("WELCOME_SYM_ARIA"),
             children: t("WELCOME_SYM_LINK"),
           }),
           React.createElement(WelcomeScreen.Center.MenuItemLink, {
             icon: ICONS.YouTube,
-            href: "https://www.youtube.com/@VisualPKM",
+            href: URLs.WWW_YOUTUBE_COM_VISUALPKM,
             shortcut: null,
             "aria-label": t("WELCOME_YOUTUBE_ARIA"),
             children: t("WELCOME_YOUTUBE_LINK"),
           }),
           React.createElement(WelcomeScreen.Center.MenuItemLink, {
             icon: ICONS.twitter,
-            href: "https://twitter.com/zsviczian",
+            href: URLs.TWITTER_COM_ZSVICZIAN,
             shortcut: null,
             "aria-label": t("WELCOME_TWITTER_ARIA"),
             children: t("WELCOME_TWITTER_LINK"),
           }),
           React.createElement(WelcomeScreen.Center.MenuItemLink, {
             icon: ICONS.heart,
-            href: "https://ko-fi.com/zsolt",
+            href: URLs.KO_FI_COM_ZSOLT,
             shortcut: null,
             "aria-label": t("WELCOME_DONATE_ARIA"),
             children: t("WELCOME_DONATE_LINK"),
@@ -7270,7 +7271,7 @@ export default class ExcalidrawView
         icon: ICONS.Learn,
         "aria-label": t("LINKS_JOIN_SYM_ARIA"),
         onSelect: () =>
-          openExternalLink("https://community.sketch-your-mind.com", this.app),
+          openExternalLink(URLs.COMMUNITY_SKETCH_YOUR_MIND_COM, this.app),
         children: t("LINKS_JOIN_SYM"),
       }),
       React.createElement(MainMenu.DefaultItems.Help),
@@ -7592,6 +7593,10 @@ export default class ExcalidrawView
               },
               //desktopUIMode: calculateUIModeValue(this.plugin.settings), //2026.05.15
               //formFactor: DEVICE.isMobile ? "phone" : DEVICE.isTablet ? "tablet" : "desktop",
+            },
+            imageOptions: {
+              maxWidthOrHeight: 3440,
+              maxFileSizeBytes: 20 * 1024 * 1024,
             },
             initState: initdata?.appState,
             initialData: initdata,

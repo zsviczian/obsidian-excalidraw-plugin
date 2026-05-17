@@ -171,6 +171,15 @@ export class LaTexPrompt extends FloatingModal {
         editorLivePreviewField.init(() => false),
         this.latexsSuitePlugin.editorExtensions,
       ]);
+    } else {
+      // Show a suggestion note if Latex Suite plugin is not installed
+      const suggestionDiv = container.createDiv();
+      suggestionDiv.addClass("excalidraw-latex-suite-suggestion");
+      const suggestionText = suggestionDiv.createEl("p");
+      setSanitizedHtml(
+        suggestionText,
+        t("LATEX_SUITE_PLUGIN_SUGGESTION") ?? "",
+      );
     }
 
     this.editorView = new EditorView({
