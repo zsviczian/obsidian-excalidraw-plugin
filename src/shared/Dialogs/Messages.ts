@@ -5,8 +5,14 @@ export const RELEASE_NOTES: { [k: string]: string } = {
 
 I build this plugin as a labor of love. Curious about the philosophy behind it? Check out [📕 Sketch Your Mind](${URLs.SKETCH_YOUR_MIND_COM_SYM}). Want to master Excalidraw? Join [Excalidraw Mastery](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM}). If you find it valuable, say THANK YOU or…
 
-<div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.STORAGE_KO_FI_COM_CDN_KOFI6_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
+<div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+  "2.23.1": `
+  ## Fixed
+  - Futher code scanner and transparency fixes
+    - Added new ExcalidrawAutomate function to display all the urls used within the code. Every URL call is opt-in, either by way of enabling a setting, or by clicking a clearly indicated link. If you are interested in seeing all the URLs run 
+  
+  `,
   "2.23.0": `
 <div class="excalidraw-videoWrapper">
 <a href="${URLs.WWW_YOUTUBE_COM_WATCH_2}" target="_blank"><img src="${URLs.I_YTIMG_COM_VI_EIT56Z3KPJI_MAXRESDEFAULT_JPG}" style="width:100%;"></a>

@@ -1398,7 +1398,7 @@ Obsidian 的 Excalidraw 外掛遠不只是「畫圖工具」。由於它與 Obsi
 
 你也不必自己摸索。歡迎加入 **[Sketch Your Mind 社群](" + URLs.COMMUNITY_SKETCH_YOUR_MIND_COM + ")**，與其他視覺思考者交流、分享工作流程，一起打造更順暢的 PKM 系統。
 
-如果你想先看看它現在能做到什麼，下面有一段核心功能展示。若想持續了解最新更新，並進一步探索 Visual PKM，也歡迎訂閱我的 YouTube 頻道：[Visual PKM](" + URLs.WWW_YOUTUBE_COM_VISUALPKM_1 + ")。
+如果你想先看看它現在能做到什麼，下面有一段核心功能展示。若想持續了解最新更新，並進一步探索 Visual PKM，也歡迎訂閱我的 YouTube 頻道：[Visual PKM](" + URLs.WWW_YOUTUBE_COM_VISUALPKM + ")。
 
 感謝使用，祝你玩得愉快！
 

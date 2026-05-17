@@ -121,10 +121,10 @@ export const URLs = {
     ["wiki"],
   ),
 
-  // https://www.youtube.com/@VisualPKM
+  // https://www.youtube.com/@visualPKM
   WWW_YOUTUBE_COM_VISUALPKM: buildSafeUrl(
     ["www", "youtube", "com"],
-    ["@VisualPKM"],
+    ["@visualPKM"],
   ),
 
   // https://community.sketch-your-mind.com/ee
@@ -138,12 +138,6 @@ export const URLs = {
 
   // https://community.sketch-your-mind.com/sym
   SKETCH_YOUR_MIND_COM_SYM: buildSafeUrl(["sketch-your-mind", "com"], ["sym"]),
-
-  // https://www.youtube.com/channel/UCC0gns4a9fhVkGkngvSumAQ
-  WWW_YOUTUBE_COM_CHANNEL_UCC0GNS4A9FHVKGKNGVSUMAQ: buildSafeUrl(
-    ["www", "youtube", "com"],
-    ["channel", "UCC0gns4a9fhVkGkngvSumAQ"],
-  ),
 
   // https://platform.openai.com/docs/guides/image-generation
   PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION: buildSafeUrl(
@@ -283,22 +277,10 @@ export const URLs = {
     "com",
   ]),
 
-  // https://www.youtube.com/@visualPKM
-  WWW_YOUTUBE_COM_VISUALPKM_1: buildSafeUrl(
-    ["www", "youtube", "com"],
-    ["@visualPKM"],
-  ),
-
   // https://wangchujiang.com/free-font/
   WANGCHUJIANG_COM_FREE_FONT: buildSafeUrl(
     ["wangchujiang", "com"],
     ["free-font"],
-  ),
-
-  // https://storage.ko-fi.com/cdn/kofi6.png?v=6
-  STORAGE_KO_FI_COM_CDN_KOFI6_PNG: buildSafeUrl(
-    ["storage", "ko-fi", "com"],
-    ["cdn", "kofi6.png?v=6"],
   ),
 
   // https://www.youtube.com/watch?v=EiT56z3KPjI
@@ -583,9 +565,9 @@ export const URLs = {
     ["zsviczian", "obsidian-excalidraw-plugin", "pull", "2668"],
   ),
 
-  // https://visual-thinking-workshop.com/mindmap
+  // https://community.sketch-your-mind.com/mindmap
   VISUAL_THINKING_WORKSHOP_COM_MINDMAP: buildSafeUrl(
-    ["visual-thinking-workshop", "com"],
+    ["community", "sketch-your-mind", "com"],
     ["mindmap"],
   ),
 
@@ -697,11 +679,12 @@ export const URLs = {
   // https://easings.net/#
   EASINGS_NET: buildSafeUrl(["easings", "net"]),
 
-  // https://visual-thinking-workshop.com
+  // https://community.sketch-your-mind.com/vtw
   VISUAL_THINKING_WORKSHOP_COM: buildSafeUrl([
-    "visual-thinking-workshop",
+    "community",
+    "sketch-your-mind",
     "com",
-  ]),
+  ], ["vtw"]),
 
   // https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/index-new.md
   RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_INDEX_NEW_MD:
@@ -762,9 +745,6 @@ export const URLs = {
     ["zsviczian", "obsidian-excalidraw-plugin", "releases", "tag"],
   ),
 
-  // https://excalidraw.com
-  EXCALIDRAW_COM: buildSafeUrl(["excalidraw", "com"]),
-
   // https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.9.9
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG_1_9_9:
     buildSafeUrl(
@@ -782,13 +762,6 @@ export const URLs = {
 
   // https://api.taskbone.com/
   API_TASKBONE_COM: buildSafeUrl(["api", "taskbone", "com"]),
-
-  // https://excalidraw-preview.onrender.com/
-  EXCALIDRAW_PREVIEW_ONRENDER_COM: buildSafeUrl([
-    "excalidraw-preview",
-    "onrender",
-    "com",
-  ]),
 
   // https://cdn.tailwindcss.com
   CDN_TAILWINDCSS_COM: buildSafeUrl(["cdn", "tailwindcss", "com"]),

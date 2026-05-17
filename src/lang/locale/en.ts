@@ -1522,7 +1522,7 @@ To help you get started without the overwhelm, I highly recommend taking the fre
 
 You also don't have to figure it all out alone! Come join the **[Sketch Your Mind Community](" + URLs.COMMUNITY_SKETCH_YOUR_MIND_COM + ")** to connect with fellow visual thinkers, share your workflows, and build a frictionless PKM system together.
 
-If you'd like to see what's possible right now, here is a showcase of the key features. To keep abreast of the latest updates and to explore visual PKM, please subscribe to my YouTube channel: [Visual PKM](" + URLs.WWW_YOUTUBE_COM_VISUALPKM_1 + ").
+If you'd like to see what's possible right now, here is a showcase of the key features. To keep abreast of the latest updates and to explore visual PKM, please subscribe to my YouTube channel: [Visual PKM](" + URLs.WWW_YOUTUBE_COM_VISUALPKM + ").
 
 Thank you & Enjoy!
 

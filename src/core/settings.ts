@@ -1646,11 +1646,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const getFilenameSample = () => {
       return `${t(
         "FILENAME_SAMPLE",
-      )}<a href=${URLs.WWW_YOUTUBE_COM_CHANNEL_UCC0GNS4A9FHVKGKNGVSUMAQ} target='_blank'>${getDrawingFilename(
+      )}<a href=${URLs.WWW_YOUTUBE_COM_VISUALPKM} target='_blank'>${getDrawingFilename(
         this.plugin.settings,
       )}</a></b><br>${t(
         "FILENAME_EMBED_SAMPLE",
-      )}<a href=${URLs.WWW_YOUTUBE_COM_CHANNEL_UCC0GNS4A9FHVKGKNGVSUMAQ} target='_blank'>${getEmbedFilename(
+      )}<a href=${URLs.WWW_YOUTUBE_COM_VISUALPKM} target='_blank'>${getEmbedFilename(
         "{NOTE_NAME}",
         this.plugin.settings,
       )}</a></b>`;

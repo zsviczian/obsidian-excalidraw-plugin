@@ -808,7 +808,7 @@ export class ExcalidrawData {
         this.plugin,
         "This file contains embedded frames " +
           "which will be migrated to a newer version for compatibility with " +
-          `<a href=${URLs.EXCALIDRAW_COM}>excalidraw.com</a>.<br>🔄 If you're using Obsidian on ` +
+          `excalidraw.com.<br>🔄 If you're using Obsidian on ` +
           "multiple devices, you may proceed now, but please, before opening this " +
           "file on your other devices, update Excalidraw on those as well.<br>🔍 More info is available " +
           `<a href=${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG_1_9_9}>here</a>.<br>🌐 ` +
