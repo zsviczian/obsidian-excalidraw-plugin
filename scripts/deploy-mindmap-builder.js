@@ -7,7 +7,7 @@ const CHUNK_SIZE = 256;
 const NEEDLE = "const removeKeydownHandlers";
 
 const root = path.resolve(__dirname, "..");
-const sourcePath = path.join(root, "ea-scripts", "Mindmap Builder.js");
+const sourcePath = path.join(root, "ea-scripts", "Mindmap Builder.js.md");
 const outputPath = path.join(root, "ea-scripts", "Mindmap Builder.md");
 
 const HEADER = `/*
