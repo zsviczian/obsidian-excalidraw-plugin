@@ -431,7 +431,7 @@ textarea.excalidraw-wysiwyg {
 
 .excalidraw-container.theme--dark {  /* unused */
   background-color: #121212;
-  color: #fff;
+  color: #ffffff;
 }
 
 /* https://discordapp.com/channels/686053708261228577/989603365606531104/1041266507256184863 */
@@ -1257,10 +1257,13 @@ textarea.excalidraw-wysiwyg,*/
 }
 
 .excalidraw--tray .App-bottom-bar > .Island > .App-toolbar > .App-toolbar-content {
-  /* This will render the undo/redo buttons as if they weren't
-  in a separate container, but simply part of the row */
+  /* Flatten layout boundaries without breaking the box model tree */
   > :not([class]) {
-    display: contents;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Allows items to behave like part of the parent row */
+    flex: 1 1 auto; 
   }
 
   > .ToolIcon__icon:empty {
