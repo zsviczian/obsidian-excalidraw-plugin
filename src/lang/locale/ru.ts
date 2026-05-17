@@ -1138,6 +1138,7 @@ export default {
   PROMPT_BUTTON_INSERT_LINK: "Вставить ссылку на файл в формате markdown",
   PROMPT_BUTTON_UPPERCASE: "Прописные буквы",
   PROMPT_SELECT_TEMPLATE: "Выберите шаблон",
+  LATEX_SUITE_PLUGIN_SUGGESTION: "Install the 'Latex Suite' plugin from Obsidian Community Plugins to enable live preview as you type your equation.",
 
   //ModifierKeySettings
   WEB_BROWSER_DRAG_ACTION: "Действие перетаскивания веб-браузера",

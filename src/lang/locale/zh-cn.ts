@@ -1211,6 +1211,7 @@ export default {
   PROMPT_BUTTON_UPPERCASE: "大写",
   PROMPT_BUTTON_SPECIAL_CHARS: "特殊字符",
   PROMPT_SELECT_TEMPLATE: "选择一个模板",
+  LATEX_SUITE_PLUGIN_SUGGESTION: "Install the 'Latex Suite' plugin from Obsidian Community Plugins to enable live preview as you type your equation.",
 
   //ModifierKeySettings
   WEB_BROWSER_DRAG_ACTION: "从浏览器拖入时",

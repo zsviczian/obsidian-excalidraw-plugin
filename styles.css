@@ -80,6 +80,18 @@ button.ToolIcon_type_button[title="Export"] {
   flex-grow: 1;
 }
 
+.excalidraw-latex-suite-suggestion {
+  padding: 0.8em;
+  margin-bottom: 1em;
+  background-color: var(--background-secondary-alt);
+  border-left: 4px solid var(--text-accent);
+  border-radius: 4px;
+}
+
+.excalidraw-latex-suite-suggestion p {
+  margin: 0;
+}
+
 .excalidraw-prompt-button {
   width: 9em;
 }
@@ -1317,7 +1329,7 @@ textarea.excalidraw-wysiwyg,*/
       }
     }
 
-    mjx-container[jax="CHTML"][display="true"] {
+    [jax="CHTML"][display="true"] {
       margin: 0;
     }
   }

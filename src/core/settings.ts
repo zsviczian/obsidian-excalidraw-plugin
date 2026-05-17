@@ -678,7 +678,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   excalidrawMasteryPromoCollapsed: false,
   compareManifestToPluginVersion: true,
   showNewVersionNotification: true,
-  latexBoilerplate: "\\color{blue}",
+  latexBoilerplate: "\\color{green}e=mc^2",
   latexPreambleLocation: "preamble.sty",
   taskboneEnabled: false,
   taskboneAPIkey: "",
