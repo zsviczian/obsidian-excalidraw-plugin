@@ -4,6 +4,7 @@ import ExcalidrawPlugin from "src/core/main";
 import { DeviceType } from "src/types/types";
 import { errorHandler } from "../utils/ErrorHandler";
 import { getLanguage } from "obsidian";
+import { buildSafeUrl } from "src/utils/htmlUtils";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 declare const PLUGIN_VERSION: string;
 export let EXCALIDRAW_PLUGIN: ExcalidrawPlugin = null;
@@ -232,8 +233,10 @@ export const ROUNDNESS = {
   ADAPTIVE_RADIUS: 3,
 } as const;
 export const THEME_FILTER = "invert(93%) hue-rotate(180deg) saturate(1.25)";
-export const GITHUB_RELEASES =
-  "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/";
+export const GITHUB_RELEASES = buildSafeUrl(
+  ["github", "com"],
+  ["zsviczian", "obsidian-excalidraw-plugin", "releases", "tag"],
+);
 export const URLFETCHTIMEOUT = 3000;
 export const PLUGIN_ID = "obsidian-excalidraw-plugin";
 export const SCRIPT_INSTALL_CODEBLOCK = "excalidraw-script-install";

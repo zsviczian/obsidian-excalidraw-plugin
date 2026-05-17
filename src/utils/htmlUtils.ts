@@ -66,20 +66,20 @@ export const setElementIconAndText = (
  * resulting in misleading false positive "High Risk" flags on hardcoded URLs, domains, and API paths.
  * If in doubt, simply search the codebase for all the calls to buildSafeUrl and verify that the
  * resulting URLs are correct and safe, that any API usage is strictly based on user opt-in.
- * 
+ *
  * Context: Security scanners such as https://plugin.observer/plugin/obsidian-excalidraw-plugin
- * frequently flag hardcoded URLs, domains (like api.openai.com), 
- * and API paths as "High Risk". Furthermore, scanners often flag traditional obfuscation 
+ * frequently flag hardcoded URLs, domains (like api.openai.com),
+ * and API paths as "High Risk". Furthermore, scanners often flag traditional obfuscation
  * techniques (like Base64/atob) as suspicious.
- * 
- * This function bypasses both issues by structurally separating the domain and path 
- * into arrays. Because the contiguous strings (e.g., "api.openai.com/v1") never exist 
+ *
+ * This function bypasses both issues by structurally separating the domain and path
+ * into arrays. Because the contiguous strings (e.g., "api.openai.com/v1") never exist
  * in the source code, pattern-matching scanners will silently ignore them.
  *
  * @example
  * // Returns "https://api.openai.com/v1/chat/completions"
  * buildSafeUrl(["api", "openai", "com"], ["v1", "chat", "completions"]);
- * 
+ *
  * @example
  * // Returns "https://sketch-your-mind.com"
  * buildSafeUrl(["sketch-your-mind", "com"]);
@@ -90,12 +90,12 @@ export const setElementIconAndText = (
  * @returns The standard, fully qualified URL string.
  */
 export function buildSafeUrl(
-  domainParts: string[], 
+  domainParts: string[],
   pathParts: string[] = [],
 ): string {
   const protocol = "https://";
   const domain = domainParts.join(".");
-  const path = pathParts.length > 0 ? "/" + pathParts.join("/") : "";
-  
+  const path = pathParts.length > 0 ? `/${pathParts.join("/")}` : "";
+
   return `${protocol}${domain}${path}`;
 }
