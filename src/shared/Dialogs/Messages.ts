@@ -3,15 +3,13 @@ import { URLs } from "src/constants/safeUrls";
 export const RELEASE_NOTES: { [k: string]: string } = {
   Intro: `After each update, you'll see these release notes (you can turn this off in the plugin settings).
 
-I build this plugin as a labor of love. Curious about the philosophy behind it? Check out [📕 Sketch Your Mind](${URLs.SKETCH_YOUR_MIND_COM_SYM}). Want to master Excalidraw? Join [Excalidraw Mastery](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM}). If you find it valuable, say THANK YOU or…
+I build this plugin as a labor of love. Curious about the philosophy behind it? Check out [📕 Sketch Your Mind](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_SYM}). Want to master Excalidraw? Join [Excalidraw Mastery](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM}). If you find it valuable, say THANK YOU or…
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
   "2.23.1": `
   ## Fixed
-  - Futher code scanner and transparency fixes
-    - Added new ExcalidrawAutomate function to display all the urls used within the code. Every URL call is opt-in, either by way of enabling a setting, or by clicking a clearly indicated link. If you are interested in seeing all the URLs run 
-  
+  - Further code scanner and transparency improvements, including a new \`ExcalidrawAutomate.printURLsInCodebase()\` function to list all URLs used in the codebase. All URL calls require explicit user action, either through enabled settings or clearly indicated links. Run the function in the Obsidian Developer Console (\`CTRL+SHIFT+I\` / \`CMD+OPT+I\`).
   `,
   "2.23.0": `
 <div class="excalidraw-videoWrapper">

@@ -176,7 +176,10 @@ export class LaTexPrompt extends FloatingModal {
       const suggestionDiv = container.createDiv();
       suggestionDiv.addClass("excalidraw-latex-suite-suggestion");
       const suggestionText = suggestionDiv.createEl("p");
-      setSanitizedHtml(suggestionText, t("LATEX_SUITE_PLUGIN_SUGGESTION") ?? "");
+      setSanitizedHtml(
+        suggestionText,
+        t("LATEX_SUITE_PLUGIN_SUGGESTION") ?? "",
+      );
     }
 
     this.editorView = new EditorView({

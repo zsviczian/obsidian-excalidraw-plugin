@@ -1407,7 +1407,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       },
       {
         icon: "book",
-        href: URLs.SKETCH_YOUR_MIND_COM_SYM,
+        href: URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_SYM,
         aria: t("LINKS_BOOK_ARIA"),
         text: t("LINKS_BOOK"),
       },

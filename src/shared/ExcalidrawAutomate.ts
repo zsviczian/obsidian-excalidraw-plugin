@@ -191,7 +191,7 @@ import { AIRequest, ExcalidrawAISettings } from "src/types/AIUtilTypes";
 import { getAspectRatio } from "src/utils/YoutTubeUtils";
 import { getPDFCropRect } from "src/utils/PDFUtils";
 import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
-import { URLs } from "src/constants/safeUrls";
+import { URL_REGISTRY, URLs } from "src/constants/safeUrls";
 
 type ExcalidrawCustomDataValue =
   | string
@@ -320,16 +320,38 @@ export class ExcalidrawAutomate {
   }
 
   /**
-   * Prints all URLs in the codebase.
+   * Prints all URLs grouped by their respective justifications.
+   * Useful for auditing and generating scanner exception reports.
    * @returns {void}
    */
-  public printURLsInCodebase() {
-    log(
-      Object.values(URLs)
-        .sort((a, b) => a.localeCompare(b))
-        .join("\n"),
-    );
+  public printURLsInCodebase(): void {
+    const grouped: Record<string, string[]> = {};
+
+    Object.keys(URL_REGISTRY).forEach((key) => {
+      const entry = URL_REGISTRY[key as keyof typeof URL_REGISTRY];
+      const purpose = entry.purpose || "Uncategorized";
+
+      if (!grouped[purpose]) {
+        grouped[purpose] = [];
+      }
+      grouped[purpose].push(entry.url);
+    });
+
+    Object.keys(grouped)
+      .sort((a, b) => a.localeCompare(b))
+      .forEach((purpose) => {
+        // Correct: %c turns on styling for the header
+        console.log(`\n%c${purpose.toUpperCase()}`, "font-weight: bold; font-size: 16px;");
+        
+        grouped[purpose]
+          .sort((a, b) => a.localeCompare(b))
+          .forEach((url) => {
+            // FIXED: Added %c to apply styles, and restored the bullet point hyphen
+            console.log(`%c${url}`, "font-weight: normal; font-size: 11px;");
+          });
+      });
   }
+
 
   /**
    * Add or modify keys in an element's customData while preserving existing keys.
