@@ -341,8 +341,11 @@ export class ExcalidrawAutomate {
       .sort((a, b) => a.localeCompare(b))
       .forEach((purpose) => {
         // Correct: %c turns on styling for the header
-        console.log(`\n%c${purpose.toUpperCase()}`, "font-weight: bold; font-size: 16px;");
-        
+        console.log(
+          `\n%c${purpose.toUpperCase()}`,
+          "font-weight: bold; font-size: 16px;",
+        );
+
         grouped[purpose]
           .sort((a, b) => a.localeCompare(b))
           .forEach((url) => {
@@ -351,7 +354,6 @@ export class ExcalidrawAutomate {
           });
       });
   }
-
 
   /**
    * Add or modify keys in an element's customData while preserving existing keys.

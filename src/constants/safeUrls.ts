@@ -66,7 +66,12 @@ export const URL_REGISTRY = {
   API_GITHUB_COM_REPOS_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES: defineUrl(
     buildSafeUrl(
       ["api", "github", "com"],
-      ["repos", "zsviczian", "obsidian-excalidraw-plugin", "releases?per_page=15&page=1"],
+      [
+        "repos",
+        "zsviczian",
+        "obsidian-excalidraw-plugin",
+        "releases?per_page=15&page=1",
+      ],
     ),
     UrlPurpose.APP_LOGIC,
   ),
