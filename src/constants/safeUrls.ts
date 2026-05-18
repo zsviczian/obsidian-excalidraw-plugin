@@ -347,84 +347,22 @@ export const URL_REGISTRY = {
     ),
     UrlPurpose.RELEASE_LOG,
   ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_2688: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "2688"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_2652: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "2652"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_798: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "798"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_2739: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "2739"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_2718: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "2718"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
   GITHUB_COM_HEINRICH26: defineUrl(
     buildSafeUrl(["github", "com"], ["heinrich26"]),
     UrlPurpose.RELEASE_LOG,
   ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_ISSUES_11018: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "issues", "11018"],
-    ),
+  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_ISSUES: defineUrl(
+    buildSafeUrl(["github", "com"], ["excalidraw", "excalidraw", "issues"]),
     UrlPurpose.RELEASE_LOG,
   ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_10979: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "10979"],
-    ),
+  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL: defineUrl(
+    buildSafeUrl(["github", "com"], ["excalidraw", "excalidraw", "pull"]),
     UrlPurpose.RELEASE_LOG,
   ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_11031: defineUrl(
+  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL: defineUrl(
     buildSafeUrl(
       ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "11031"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_10760: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "10760"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_11053: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "11053"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL_2715: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "pull", "2715"],
+      ["zsviczian", "obsidian-excalidraw-plugin", "pull"],
     ),
     UrlPurpose.RELEASE_LOG,
   ),
@@ -432,85 +370,8 @@ export const URL_REGISTRY = {
     buildSafeUrl(["github", "com"], ["sreedharsreeram"]),
     UrlPurpose.RELEASE_LOG,
   ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_2713: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "2713"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_10970: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "10970"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL_2684: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "pull", "2684"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
   GITHUB_COM_TRAVISLEBLANC1: defineUrl(
     buildSafeUrl(["github", "com"], ["TravisLEBLANC1"]),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL_2698: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "pull", "2698"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_10940: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "10940"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_10906: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "10906"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL_2703: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "pull", "2703"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL_2687: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "pull", "2687"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL_2697: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "pull", "2697"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_2685: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "2685"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_2704: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "2704"],
-    ),
     UrlPurpose.RELEASE_LOG,
   ),
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_EA_SCRIPT_DOCS_MINDMAPBUILDERAPI_MD:
@@ -529,76 +390,6 @@ export const URL_REGISTRY = {
       ),
       UrlPurpose.DOCS,
     ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_10797: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "10797"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_10824: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "10824"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_10832: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "10832"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_10831: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "10831"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_10816: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "10816"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_2673: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "2673"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_2670: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "2670"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_2665: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "2665"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_ISSUES_10772: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "issues", "10772"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL_2668: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "pull", "2668"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
   VISUAL_THINKING_WORKSHOP_COM_MINDMAP: defineUrl(
     buildSafeUrl(["visual-thinking-workshop", "com"], ["mindmap"]),
     UrlPurpose.SUPPORT,
@@ -607,64 +398,8 @@ export const URL_REGISTRY = {
     buildSafeUrl(["youtu", "be"], ["HRtaaD34Zzg"]),
     UrlPurpose.VIDEO,
   ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_10611: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "10611"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_2660: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "2660"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL_2655: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "pull", "2655"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
   GITHUB_COM_SUPERLE3: defineUrl(
     buildSafeUrl(["github", "com"], ["superle3"]),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_10613: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "10613"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_2589: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "2589"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_10726: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "10726"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_2647: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "2647"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_2636: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "2636"],
-    ),
     UrlPurpose.RELEASE_LOG,
   ),
   WWW_TIMEANDDATE_COM_WORLDCLOCK_FIXEDTIME_HTML: defineUrl(
@@ -690,34 +425,6 @@ export const URL_REGISTRY = {
   YOUTU_BE_ISUORBVKYHQ: defineUrl(
     buildSafeUrl(["youtu", "be"], ["ISuORbVKyhQ"]),
     UrlPurpose.VIDEO,
-  ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_10578: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "10578"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL_10530: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["excalidraw", "excalidraw", "pull", "10530"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_2625: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "2625"],
-    ),
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES_2578: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues", "2578"],
-    ),
-    UrlPurpose.RELEASE_LOG,
   ),
   GITHUB_COM_STEVERUIZOK_PERFECT_FREEHAND: defineUrl(
     buildSafeUrl(

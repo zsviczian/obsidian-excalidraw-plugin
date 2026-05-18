@@ -1210,9 +1210,8 @@ export default class ExcalidrawPlugin extends Plugin {
         this.isExcalidrawFile(leaf.view.file)
       ) {
         if (fileShouldDefaultAsExcalidraw(leaf.view.file?.path, this.app)) {
-          this.excalidrawFileModes[
-            leaf.id || leaf.view.file.path
-          ] = VIEW_TYPE_EXCALIDRAW;
+          this.excalidrawFileModes[leaf.id || leaf.view.file.path] =
+            VIEW_TYPE_EXCALIDRAW;
           void setExcalidrawView(leaf);
         } else {
           foldExcalidrawSection(leaf.view);
