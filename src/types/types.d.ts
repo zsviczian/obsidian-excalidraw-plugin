@@ -291,9 +291,6 @@ declare module "obsidian" {
     containerEl: HTMLDivElement;
     children?: WorkspaceContainer[];
   }
-  interface WorkspaceContainer {
-    doc?: Document;
-  }
   interface DataAdapter {
     url: {
       pathToFileURL(path: string): URL;

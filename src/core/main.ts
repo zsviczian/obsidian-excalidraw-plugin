@@ -393,8 +393,7 @@ const migrateLegacyAISettings = (
   };
 
   const providerProfiles = ensureProviderProfiles();
-  const legacyProviderType = (migrated.aiProvider ??
-    "openai") as ExcalidrawSettings["aiProvider"];
+  const legacyProviderType = migrated.aiProvider ?? "openai";
   const providerProfileId =
     LEGACY_PROVIDER_LABELS[legacyProviderType] ?? "OpenAI";
   if (!hadProviderProfiles) {
@@ -1085,7 +1084,7 @@ export default class ExcalidrawPlugin extends Plugin {
       if (!fontMetrics) {
         return;
       }
-      (excalidrawLib as typeof ExcalidrawLib).registerLocalFont(
+      excalidrawLib.registerLocalFont(
         { metrics: fontMetrics },
         fourthFontDataURL,
       );
@@ -1156,7 +1155,7 @@ export default class ExcalidrawPlugin extends Plugin {
         return;
       }
 
-      if (existingStylesheet instanceof HTMLStyleElement) {
+      if (existingStylesheet.instanceOf(HTMLStyleElement)) {
         existingStylesheet.textContent = PHONE_FOOTER_SAFE_AREA_CSS;
         return;
       }
@@ -1211,8 +1210,9 @@ export default class ExcalidrawPlugin extends Plugin {
         this.isExcalidrawFile(leaf.view.file)
       ) {
         if (fileShouldDefaultAsExcalidraw(leaf.view.file?.path, this.app)) {
-          this.excalidrawFileModes[(leaf as any).id || leaf.view.file.path] =
-            VIEW_TYPE_EXCALIDRAW;
+          this.excalidrawFileModes[
+            leaf.id || leaf.view.file.path
+          ] = VIEW_TYPE_EXCALIDRAW;
           void setExcalidrawView(leaf);
         } else {
           foldExcalidrawSection(leaf.view);

@@ -29,7 +29,7 @@ export const getIconAsJSX = (iconId: string) => {
 
   return (
     <svg
-      {...getIconAttributes(icon as SVGSVGElement)}
+      {...getIconAttributes(icon)}
       dangerouslySetInnerHTML={{ __html: icon.innerHTML }}
     />
   );
