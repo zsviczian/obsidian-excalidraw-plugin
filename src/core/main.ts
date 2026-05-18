@@ -1341,13 +1341,11 @@ export default class ExcalidrawPlugin extends Plugin {
               setButtonText("ERROR");
               throw "File not found";
             }
-            if (svgFile && svgFile instanceof TFile) {
-              svgFile = await download(
-                getIMGFilename(source, "svg"),
-                svgFile,
-                svgPath,
-              );
-            }
+            svgFile = await download(
+              getIMGFilename(source, "svg"),
+              svgFile,
+              svgPath,
+            );
             setButtonText("UPTODATE");
             if (Object.keys(this.scriptEngine.scriptIconMap).length === 0) {
               this.scriptEngine.loadScripts();
