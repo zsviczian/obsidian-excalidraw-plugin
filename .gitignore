@@ -15,6 +15,7 @@ lib
 dist
 tmp
 deploy.ps1
+eslint_results.json
 
 #VSCode
 yarn.lock

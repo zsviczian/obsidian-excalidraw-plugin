@@ -197,7 +197,7 @@ export interface ExcalidrawSettings {
   mdCSS: string;
   scriptEngineSettings: {
     [key: string]: {
-      [key: string]: ScriptSettingValue;
+      [key: string]: ScriptSettingValue | string | number | boolean;
     };
   };
   previousRelease: string;
@@ -4472,23 +4472,23 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       const textAreaHeight = (
         scriptName: string,
         variableName: string,
-      ): any => {
+      ): number | undefined | null => {
         const variable =
           this.plugin.settings.scriptEngineSettings[scriptName][variableName];
         switch (typeof variable) {
           case "object":
-            return variable.height;
+             return (variable as ScriptSettingValue).height;
           default:
             return null;
         }
       };
 
-      const getValue = (scriptName: string, variableName: string): any => {
+      const getValue = (scriptName: string, variableName: string): string | number | boolean | undefined => {
         const variable =
           this.plugin.settings.scriptEngineSettings[scriptName][variableName];
         switch (typeof variable) {
           case "object":
-            return variable.value;
+             return (variable as ScriptSettingValue).value;
           default:
             return variable;
         }
@@ -4497,7 +4497,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       const setValue = (
         scriptName: string,
         variableName: string,
-        value: any,
+        value: string | number | boolean | undefined,
       ) => {
         switch (
           typeof this.plugin.settings.scriptEngineSettings[scriptName][
@@ -4526,7 +4526,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setDesc(fragWithHTML(description ?? ""))
           .addToggle((toggle) =>
             toggle
-              .setValue(getValue(scriptName, variableName))
+               .setValue(getValue(scriptName, variableName) as boolean)
               .onChange(async (value) => {
                 setValue(scriptName, variableName, value);
                 this.applySettingsUpdate();
@@ -4538,7 +4538,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         scriptName: string,
         variableName: string,
         description?: string,
-        valueset?: any,
+        valueset?: string[],
       ) => {
         if (
           valueset &&
@@ -4549,11 +4549,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             .setName(variableName)
             .setDesc(fragWithHTML(description ?? ""))
             .addDropdown((dropdown) => {
-              valueset.forEach((val: any) =>
+              valueset.forEach((val: string) =>
                 dropdown.addOption(val.toString(), val.toString()),
               );
               dropdown
-                .setValue(getValue(scriptName, variableName))
+                 .setValue(getValue(scriptName, variableName) as string)
                 .onChange(async (value) => {
                   setValue(scriptName, variableName, value);
                   this.applySettingsUpdate();
@@ -4567,11 +4567,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               text.inputEl.style.minHeight = textAreaHeight(
                 scriptName,
                 variableName,
-              );
+               )
+                 ? `${textAreaHeight(scriptName, variableName)}px`
+                 : "";
               text.inputEl.style.minWidth = "400px";
               text.inputEl.style.width = "100%";
               text
-                .setValue(getValue(scriptName, variableName))
+                 .setValue(getValue(scriptName, variableName) as string)
                 .onChange(async (value) => {
                   setValue(scriptName, variableName, value);
                   this.applySettingsUpdate();
@@ -4583,7 +4585,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             .setDesc(fragWithHTML(description ?? ""))
             .addText((text) =>
               text
-                .setValue(getValue(scriptName, variableName))
+                 .setValue(getValue(scriptName, variableName) as string)
                 .onChange(async (value) => {
                   setValue(scriptName, variableName, value);
                   this.applySettingsUpdate();
@@ -4639,7 +4641,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             values.length === 0 ||
             (values.length > 0 &&
               values
-                .map((val: any): number => (val.hidden ? 0 : 1))
+                .map((val: ScriptSettingValue): number => (val.hidden ? 0 : 1))
                 .reduce((prev, cur) => prev + cur) === 0)
           ) {
             return;
@@ -4652,33 +4654,34 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
           Object.keys(settings).forEach((variableName) => {
             const variable = settings[variableName];
-            const item = variable.value ?? variable;
+             const scriptSetting = typeof variable === "object" && variable !== null ? (variable as ScriptSettingValue) : null;
+             const item = scriptSetting?.value ?? variable;
             switch (typeof item) {
               case "boolean":
-                if (!variable.hidden) {
+                 if (!scriptSetting?.hidden) {
                   addBooleanSetting(
                     scriptName,
                     variableName,
-                    variable.description,
+                     scriptSetting?.description,
                   );
                 }
                 break;
               case "string":
-                if (!variable.hidden) {
+                 if (!scriptSetting?.hidden) {
                   addStringSetting(
                     scriptName,
                     variableName,
-                    variable.description,
-                    variable.valueset,
+                     scriptSetting?.description,
+                     scriptSetting?.valueset,
                   );
                 }
                 break;
               case "number":
-                if (!variable.hidden) {
+                 if (!scriptSetting?.hidden) {
                   addNumberSetting(
                     scriptName,
                     variableName,
-                    variable.description,
+                     scriptSetting?.description,
                   );
                 }
                 break;
