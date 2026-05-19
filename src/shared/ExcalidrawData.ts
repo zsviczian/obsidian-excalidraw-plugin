@@ -68,6 +68,25 @@ import { URLs } from "src/constants/safeUrls";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
+type LegacyGridColor = NonNullable<
+  NonNullable<SceneData["appState"]>["gridColor"]
+> & {
+  MajorGridFrequency?: number;
+};
+
+type ExcalidrawDataScene = SceneDataWithFiles & {
+  type?: string;
+  version?: number;
+  source?: string;
+  prevTextMode?: TextMode;
+  gridStep?: number;
+  elements: Mutable<ExcalidrawElement>[];
+  appState: Mutable<NonNullable<SceneData["appState"]>> & {
+    previousGridSize?: number | null;
+    gridColor?: LegacyGridColor;
+  };
+};
+
 type RegExpMatchIteratorResult = IteratorResult<RegExpMatchArray, undefined>;
 
 type MarkdownBlockNode = {
@@ -487,7 +506,7 @@ export class ExcalidrawData {
     string,
     { raw: string; parsed: string; hasTextLink: boolean }
   > = null;
-  public scene: any = null;
+  public scene: ExcalidrawDataScene = null;
   public deletedElements: ExcalidrawElement[] = [];
   public file: TFile = null;
   private app: App;
@@ -644,15 +663,17 @@ export class ExcalidrawData {
     try {
       //Fix text elements that point to a container, but the container does not point back
       const textElWithOneWayLinkToContainer = elements.filter(
-        (textEl: any) =>
+        (
+          textEl: Mutable<ExcalidrawElement>,
+        ): textEl is Mutable<ExcalidrawTextElement> =>
           textEl.type === "text" &&
           textEl.containerId &&
           elements.some(
-            (container: any) =>
+            (container: Mutable<ExcalidrawElement>) =>
               container.id === textEl.containerId &&
               container.boundElements.length > 0 &&
               container.boundElements.some(
-                (boundEl: any) =>
+                (boundEl: { id: string; type: string }) =>
                   boundEl.type === "text" &&
                   boundEl.id !== textEl.id &&
                   boundEl.id.length > 8,
@@ -660,16 +681,20 @@ export class ExcalidrawData {
           ),
       );
       //if(textElWithOneWayLinkToContainer.length>0) log({message: "cleanup", textElWithOneWayLinkToContainer});
-      textElWithOneWayLinkToContainer.forEach((textEl: any) => {
+      textElWithOneWayLinkToContainer.forEach(
+        (textEl: Mutable<ExcalidrawTextElement>) => {
         try {
           const container = elements.filter(
-            (container: any) => container.id === textEl.containerId,
+            (container: Mutable<ExcalidrawElement>) =>
+              container.id === textEl.containerId,
           )[0];
           const boundEl = container.boundElements.filter(
-            (boundEl: any) =>
+            (boundEl: { id: string; type: string }) =>
               !(
                 boundEl.type === "text" &&
-                !elements.some((el: any) => el.id === boundEl.id)
+                !elements.some(
+                  (el: Mutable<ExcalidrawElement>) => el.id === boundEl.id,
+                )
               ),
           );
           container.boundElements = [{ id: textEl.id, type: "text" }].concat(
@@ -685,10 +710,10 @@ export class ExcalidrawData {
 
       //Remove from bound elements references that do not exist in the scene
       const containers = elements.filter(
-        (container: any) =>
+        (container: Mutable<ExcalidrawElement>) =>
           container.boundElements && container.boundElements.length > 0,
       );
-      containers.forEach((container: any) => {
+      containers.forEach((container: Mutable<ExcalidrawElement>) => {
         if (
           ellipseAndRhombusContainerWrapping &&
           !container.customData?.legacyTextWrap
@@ -696,7 +721,10 @@ export class ExcalidrawData {
           addAppendUpdateCustomData(container, { legacyTextWrap: true });
         }
         const filteredBoundElements = container.boundElements.filter(
-          (boundEl: any) => elements.some((el: any) => el.id === boundEl.id),
+          (boundEl: { id: string; type: string }) =>
+            elements.some(
+              (el: Mutable<ExcalidrawElement>) => el.id === boundEl.id,
+            ),
         );
         if (filteredBoundElements.length !== container.boundElements.length) {
           //log({message: "cleanup",oldBound: container.boundElements, newBound: filteredBoundElements});
@@ -707,14 +735,17 @@ export class ExcalidrawData {
       //Clear the containerId for textElements if the referenced container does not exist in the scene
       elements
         .filter(
-          (textEl: any) =>
+          (
+            textEl: Mutable<ExcalidrawElement>,
+          ): textEl is Mutable<ExcalidrawTextElement> =>
             textEl.type === "text" &&
             textEl.containerId &&
             !elements.some(
-              (container: any) => container.id === textEl.containerId,
+              (container: Mutable<ExcalidrawElement>) =>
+                container.id === textEl.containerId,
             ),
         )
-        .forEach((textEl: any) => {
+        .forEach((textEl: Mutable<ExcalidrawTextElement>) => {
           textEl.containerId = null;
         }); // log({message:"cleanup",textEl})});
     } catch {}
@@ -801,7 +832,7 @@ export class ExcalidrawData {
     //once off migration of legacy scenes
     if (
       this.scene?.elements?.some(
-        (el: any) => el.type === "iframe" && !el.customData,
+        (el: ExcalidrawElement) => el.type === "iframe" && !el.customData,
       )
     ) {
       const prompt = new MultiOptionConfirmationPrompt(
@@ -953,7 +984,9 @@ export class ExcalidrawData {
     while (!(parts = res.next()).done) {
       let text = data.substring(position, parts.value.index);
       const id: string = parts.value[1];
-      const textEl = this.scene.elements.filter((el: any) => el.id === id)[0];
+      const textEl = this.scene.elements.filter(
+        (el: ExcalidrawElement) => el.id === id,
+      )[0];
       if (textEl) {
         if (textEl.type !== "text") {
           //markdown link attached to elements
@@ -999,7 +1032,9 @@ export class ExcalidrawData {
     //In theory only non-text elements should be left in the elementLinkMap
     //new file format from 2.0.26
     for (const [id, link] of elementLinkMap) {
-      const textEl = this.scene.elements.filter((el: any) => el.id === id)[0];
+      const textEl = this.scene.elements.filter(
+        (el: ExcalidrawElement) => el.id === id,
+      )[0];
       if (textEl) {
         textEl.link = link;
         textEl.version++;
@@ -1134,7 +1169,7 @@ export class ExcalidrawData {
     //first get scene text elements
     const elementsMap = arrayToMap(this.scene.elements);
     const texts = this.scene.elements?.filter(
-      (el: any) => el.type === "text" && !el.isDeleted,
+      (el: ExcalidrawElement) => el.type === "text" && !el.isDeleted,
     ) as Mutable<ExcalidrawTextElement>[];
     for (const te of texts) {
       const container = getContainerElement(te, elementsMap);
@@ -1181,7 +1216,7 @@ export class ExcalidrawData {
 
   private findNewElementLinksInScene(): boolean {
     let result = false;
-    const elements = this.scene.elements?.filter((el: any) => {
+    const elements = this.scene.elements?.filter((el: ExcalidrawElement) => {
       return el.type !== "text" && el.link && !this.elementLinks.has(el.id);
     });
     if (elements.length === 0) {
@@ -1216,7 +1251,7 @@ export class ExcalidrawData {
     //get scene text elements
     this.selectedElementIds = selectedElementIds;
     const texts = this.scene.elements?.filter(
-      (el: any) => el.type === "text",
+      (el: ExcalidrawElement) => el.type === "text",
     ) as ExcalidrawTextElement[];
 
     let dirty: boolean = false; //to keep track if the json has changed
@@ -1263,7 +1298,7 @@ export class ExcalidrawData {
     for (const key of this.elementLinks.keys()) {
       //find element in the scene
       const el = this.scene.elements?.filter(
-        (el: any) => el.type !== "text" && el.id === key && el.link, //&&
+        (el: ExcalidrawElement) => el.type !== "text" && el.id === key && el.link, //&&
       );
       if (el.length === 0) {
         this.elementLinks.delete(key); //if no longer in the scene, delete the text element
@@ -1281,7 +1316,7 @@ export class ExcalidrawData {
     for (const key of this.textElements.keys()) {
       //find text element in the scene
       const el = this.scene.elements?.filter(
-        (el: any) => el.type === "text" && el.id === key,
+        (el: ExcalidrawElement) => el.type === "text" && el.id === key,
       );
       if (el.length === 0) {
         this.textElements.delete(key); //if no longer in the scene, delete the text element
@@ -1312,7 +1347,11 @@ export class ExcalidrawData {
     });
   }
 
-  private parseLinks(text: string, position: number, parts: any): string {
+  private parseLinks(
+    text: string,
+    position: number,
+    parts: RegExpMatchIteratorResult,
+  ): string {
     return (
       text.substring(position, parts.value.index) +
       (this.showLinkBrackets ? "[[" : "") +
@@ -1529,7 +1568,9 @@ export class ExcalidrawData {
     const textElementLinks = new Map<string, string>();
     for (const key of this.textElements.keys()) {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/566
-      const element = this.scene.elements.filter((el: any) => el.id === key);
+      const element = this.scene.elements.filter(
+        (el: ExcalidrawElement) => el.id === key,
+      );
       const elementString = this.textElements.get(key).raw;
       if (
         element &&
@@ -1806,8 +1847,8 @@ export class ExcalidrawData {
         (
           scene.elements
             .filter((el: ExcalidrawImageElement) => el.fileId === fileId)
-            .sort((a, b) => (a.updated < b.updated ? 1 : -1))[0] as any
-        ).fileId = newId;
+            .sort((a, b) => (a.updated < b.updated ? 1 : -1))[0] as Mutable<ExcalidrawImageElement>
+        ).fileId = newId as FileId;
         dirty = true;
         processedIds.add(newId);
         if (embeddedFile) {
@@ -1861,7 +1902,7 @@ export class ExcalidrawData {
   }
 
   public async syncElements(
-    newScene: any,
+    newScene: ExcalidrawDataScene,
     selectedElementIds?: { [key: string]: boolean },
   ): Promise<boolean> {
     this.scene = newScene;
@@ -1882,7 +1923,7 @@ export class ExcalidrawData {
     return result || this.findNewTextElementsInScene(selectedElementIds);
   }
 
-  public async updateScene(newScene: any) {
+  public async updateScene(newScene: string) {
     //console.log("Excalidraw.Data.updateScene()");
     this.scene = JSON_parse(newScene);
     this.updateElementLinksFromScene();
@@ -2417,13 +2458,18 @@ export const getTransclusion = async (
       { isCancelled: () => false },
       file,
     )
-  ).blocks.filter((block: any) => block.node.type !== "comment");
+  )
+    .blocks.filter(
+      (block: MarkdownBlockCacheEntry) => block.node.type !== "comment",
+    );
   if (!blocks) {
     return { contents: linkParts.original.trim(), lineNum: 0 };
   }
 
   if (linkParts.isBlockRef) {
-    let para = blocks.filter((block: any) => block.node.id == linkParts.ref)[0]
+    let para = blocks.filter(
+      (block: MarkdownBlockCacheEntry) => block.node.id === linkParts.ref,
+    )[0]
       ?.node;
     if (!para) {
       return { contents: linkParts.original.trim(), lineNum: 0 };
@@ -2445,7 +2491,7 @@ export const getTransclusion = async (
   }
 
   const headings = blocks.filter(
-    (block: any) => block.display.search(/^#+\s/) === 0,
+    (block: MarkdownBlockCacheEntry) => block.display.search(/^#+\s/) === 0,
   ); // startsWith("#"));
   let startPos: number = null;
   let lineNum: number = 0;
