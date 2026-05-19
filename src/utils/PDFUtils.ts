@@ -2,6 +2,7 @@
 
 import { ImageCrop } from "@zsviczian/excalidraw/types/element/src/types";
 import { PDFPageViewProps } from "src/types/embeddedFileLoaderTypes";
+import type { ExcalidrawPDFCustomData } from "./elementCustomDataUtils";
 
 export function getPDFCropRect(props: {
   scale: number;
@@ -97,13 +98,13 @@ export function getPDFRect({
 }: {
   elCrop: ImageCrop;
   scale: number;
-  customData: Record<string, unknown>;
+  customData: ExcalidrawPDFCustomData;
 }): string {
-  const rotate = (customData.pdfPageViewProps as PDFPageViewProps)?.rotate ?? 0;
-  const { left, bottom } =
-    customData && customData.pdfPageViewProps
-      ? (customData.pdfPageViewProps as PDFPageViewProps)
-      : { left: 0, bottom: 0 };
+  const rotate = customData?.pdfPageViewProps?.rotate ?? 0;
+  const { left, bottom } = customData?.pdfPageViewProps ?? {
+    left: 0,
+    bottom: 0,
+  };
 
   if (rotate === 90) {
     const _top = elCrop.y / scale;

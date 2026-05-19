@@ -117,6 +117,10 @@ import {
   calculateUIModeValue,
   getExportInternalLinks,
 } from "../utils/utils";
+import type {
+  ExcalidrawImageWithCustomData,
+  ExcalidrawLatexCustomData,
+} from "../utils/elementCustomDataUtils";
 import {
   closeLeafView,
   getExcalidraAndMarkdowViewsForFile,
@@ -481,8 +485,6 @@ export default class ExcalidrawView
     | React.PointerEvent<HTMLCanvasElement>
     | null = null;
   private editingTextElementId: string | null = null; //storing to handle on-screen keyboard hide events
-  /*  private lastSceneSnapshot: any = null;
-  private lastViewDataSnapshot: any = null;*/
 
   id: string = this.leaf.id;
   public packages: Packages = {
@@ -4188,7 +4190,31 @@ export default class ExcalidrawView
           props.forEach((prop) => {
             const element = ea.getElement(id);
             if (prop in element) {
-              (element as any)[prop] = containerElement[prop];
+              const mutableElement = element as Mutable<ExcalidrawElement>;
+              switch (prop) {
+                case "backgroundColor":
+                  mutableElement.backgroundColor =
+                    containerElement.backgroundColor;
+                  break;
+                case "fillStyle":
+                  mutableElement.fillStyle = containerElement.fillStyle;
+                  break;
+                case "roughness":
+                  mutableElement.roughness = containerElement.roughness;
+                  break;
+                case "roundness":
+                  mutableElement.roundness = containerElement.roundness;
+                  break;
+                case "strokeColor":
+                  mutableElement.strokeColor = containerElement.strokeColor;
+                  break;
+                case "strokeStyle":
+                  mutableElement.strokeStyle = containerElement.strokeStyle;
+                  break;
+                case "strokeWidth":
+                  mutableElement.strokeWidth = containerElement.strokeWidth;
+                  break;
+              }
             }
           });
         }
@@ -4724,9 +4750,9 @@ export default class ExcalidrawView
           ["arrow", "line", "freedraw", "elbow-arrow", "iframe"].includes(
             e.type,
           ) ||
-          Boolean((e as any).boundElements?.length) ||
-          Boolean((e as any).startBinding) ||
-          Boolean((e as any).endBinding),
+          Boolean("boundElements" in e && e.boundElements?.length) ||
+          Boolean("startBinding" in e && e.startBinding) ||
+          Boolean("endBinding" in e && e.endBinding),
       );
     }
 
@@ -5563,7 +5589,11 @@ export default class ExcalidrawView
       data.elements
         .filter(
           (el): el is Mutable<ExcalidrawImageElement> =>
-            el.type === "image" && Boolean((el as any).customData?.latex),
+            el.type === "image" &&
+            Boolean(
+              (el as ExcalidrawImageWithCustomData<ExcalidrawLatexCustomData>)
+                .customData?.latex,
+            ),
         )
         .forEach((image) => {
           const fileId = image.fileId;
@@ -5573,7 +5603,9 @@ export default class ExcalidrawView
 
           if (!embeddedFile && !equation && !mermaid) {
             this.excalidrawData.setEquation(image.fileId, {
-              latex: (image as any).customData.latex,
+              latex: (
+                image as ExcalidrawImageWithCustomData<ExcalidrawLatexCustomData>
+              ).customData?.latex,
               isLoaded: true,
             });
           }
@@ -7045,7 +7077,7 @@ export default class ExcalidrawView
               rateLimit,
               rateLimitRemaining,
             };
-          } catch (err: any) {
+          } catch (err) {
             if (err?.name === "AbortError") {
               return { error: new Error("Request aborted") };
             }
@@ -7109,7 +7141,7 @@ export default class ExcalidrawView
             }
 
             return { html: response.html };
-          } catch (err: any) {
+          } catch (err) {
             return {
               html: errorHTML(err?.message ?? "Request failed"),
             };
@@ -7416,9 +7448,9 @@ export default class ExcalidrawView
       //the issue is that when the user hides the keyboard with the keyboard hide button and not tapping on the screen, then editingTextElement is not null
       const isEventOnSameElement =
         this.editingTextElementId === st.editingTextElement?.id;
-      const isKeyboardOutEvent: Boolean =
-        st.editingTextElement && !isEventOnSameElement;
-      const isKeyboardBackEvent: Boolean =
+      const isKeyboardOutEvent =
+        !!st.editingTextElement && !isEventOnSameElement;
+      const isKeyboardBackEvent =
         (this.semaphores.isEditingText || isEventOnSameElement) &&
         !isKeyboardOutEvent;
       this.editingTextElementId = isKeyboardOutEvent
@@ -7427,7 +7459,7 @@ export default class ExcalidrawView
 
       if (isKeyboardOutEvent) {
         const elTop = st.editingTextElement.y;
-        const elHeight = (st.editingTextElement as any).height ?? 0;
+        const elHeight = st.editingTextElement.height ?? 0;
         const elCenterY = elTop + elHeight / 2;
 
         const visibleHeight = st.height / st.zoom.value;
@@ -7918,7 +7950,7 @@ export default class ExcalidrawView
 
     const elements: ExcalidrawElement[] = api
       .getSceneElements()
-      .filter((e: any) => selectedElementsKeys.includes(e.id));
+      .filter((e) => selectedElementsKeys.includes(e.id));
 
     const containerBoundTextElmenetsReferencedInElements = elements
       .filter(

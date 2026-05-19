@@ -666,7 +666,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   // by adding the wrapper like this, likely in debug mode I am leaking memory because my code removes
   // the original event handlers, not the wrapped ones. I will only uncomment this if I need to debug
-  /*public registerEvent(event: any) {
+  /*public registerEvent(event: EventRef) {
     if (process.env.NODE_ENV !== 'development') {
       super.registerEvent(event);
       return;
@@ -675,10 +675,12 @@ export default class ExcalidrawPlugin extends Plugin {
         super.registerEvent(event);
         return;
       }
-      const originalHandler = event.fn;
+      const originalHandler = event.fn as (
+        ...handlerArgs: unknown[]
+      ) => Promise<unknown> | unknown;
 
       // Wrap the original event handler
-      const wrappedHandler = async (...args: any[]) => {
+      const wrappedHandler = async (...args: Parameters<typeof originalHandler>) => {
         const startTime = performance.now(); // Get start time
     
         // Invoke the original event handler

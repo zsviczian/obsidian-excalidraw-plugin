@@ -330,6 +330,79 @@ Validation guidance:
 - When a change looks odd, search for the constraint that explains it before removing it.
 - When in doubt, preserve startup performance, popout support, and existing vault compatibility.
 
+## Type System And Type Refactoring
+
+Replacing `any` types is a precision task requiring understanding of the codebase's type architecture and constraints.
+
+### Core Principles
+
+When replacing `any` types:
+
+- **Functional equivalence is non-negotiable**: Code must remain 100% functionally identical. Type changes are *only* for TypeScript type checking, never for runtime behavior changes.
+- **Never invent local types**: If a type can be inferred from existing usage, Excalidraw types, or Obsidian APIs, use it. Do not create ad-hoc interface definitions.
+- **Do not replace with `unknown`**: `unknown` is stricter than `any` and will require guards/assertions elsewhere, breaking functional equivalence. The goal is precision, not strictness.
+- **Use existing infrastructure**: Extend `src/types/types.d.ts` for Obsidian unpublished APIs, create new files in `src/types/` that build on existing conventions, and reference Excalidraw types directly.
+
+### Type Files And Responsibilities
+
+- **`src/types/types.d.ts`**: Ambient module declarations and Obsidian unpublished API types. This is the standard location for extending Obsidian's type system and for global type declarations. Use the existing patterns (interfaces extending `obsidian` module interfaces) consistently.
+- **`src/types/excalidrawLib.ts`** (or similar): When creating new type files for project-specific types, place them in `src/types/` and use PascalCase for files that export types or interfaces.
+- **Type files in subsystem directories**: Files like `src/shared/ExcalidrawAutomate.ts` may carry substantial type definitions and exports alongside implementation. Do not move these without evaluating the impact on the public API surface.
+- **Leverage existing type files**: Consult `src/types/excalidrawLib.ts` for the current Excalidraw type model before adding new Excalidraw-derived types.
+
+### Excalidraw Type Integration
+
+- Do not invent wrapper types for Excalidraw entities. Reference the customized `@zsviczian/excalidraw` types directly.
+- Build on existing type extensions in the codebase (e.g., `src/types/types.d.ts` may already extend Excalidraw types).
+- When a type depends on Excalidraw internals, document the dependency clearly so future changes to the fork are visible.
+- Obsidian unpublished API types often interact with Excalidraw components; model these intersections carefully in `src/types/types.d.ts`.
+
+### Inference And Scanning Workflow
+
+To identify the correct type for an `any` reference:
+
+1. **Scan usage**: Identify all sites where the value is used. Determine what properties, methods, or operations are performed on it.
+2. **Check existing types**: Search `src/types/`, the Excalidraw type definitions (via node_modules), and Obsidian API typings for matching types.
+3. **Check upstream patterns**: Look at similar usage patterns elsewhere in the codebase. How are comparable values typed?
+4. **Intersect constraints**: The correct type must support all observed operations. If multiple possible types exist, choose the one that is most specific without inventing new constraints.
+5. **Test narrowing**: If the type was `any`, code may not have type guards. Ensure that replacing `any` with a more specific type does not require adding guards or assertions that change behavior.
+
+### Common Patterns
+
+- **DOM elements and jQuery-like objects**: Often `any` when they should be `HTMLElement`, `HTMLDivElement`, `Element`, etc. Check `src/utils/` and view components for examples.
+- **Obsidian unpublished APIs**: Frequently `any` because the official typings are incomplete. Add to `src/types/types.d.ts` to model the actual shape based on Obsidian source or runtime inspection.
+- **Excalidraw component state and config objects**: Usually `any` but should reference `ExcalidrawProps`, `AppState`, or similar exported by `@zsviczian/excalidraw`.
+- **Event handler parameters and callbacks**: Often `any` but should be typed based on what the callback receives. Check invocation sites.
+- **Imported worker or third-party runtime objects**: May be `any` if the package lacks types. Create a minimal type stub in `src/types/` if needed, or use `as const` to infer from a known shape.
+
+### Adding Obsidian Unpublished API Types
+
+When documenting an unpublished Obsidian API in `src/types/types.d.ts`:
+
+- Use module declaration patterns already in the file (`declare module "obsidian" { interface App { ... } }`).
+- Include a brief comment explaining the API or linking to the Obsidian source, if known.
+- Only add properties and methods that are actually used in the codebase. Avoid speculative extensions.
+- Be conservative: unpublished APIs can change; document the version or observation date if possible.
+- Do not duplicate types; if Obsidian's types already define something, extend or refine, not redefine.
+
+### Validation Approach
+
+When replacing `any`:
+
+1. **No new runtime errors**: Run the plugin in Obsidian after the change. Verify that all observed functionality works identically.
+2. **TypeScript checking**: The change should reduce or eliminate TypeScript errors, not introduce new ones.
+3. **No new guards or assertions**: If code previously worked with `any`, replacing it with a specific type should not require new `if` checks, `as` casts, or optional chaining that wasn't there before. If it does, the type choice is too strict.
+4. **Build passes**: `npm run build` must succeed. Type changes can affect bundle outcome if they affect build-time inference.
+5. **Lint cleanliness**: The changed file should not gain new lint violations. Use `npm run code -- src/path/to/file.ts` to check the specific file.
+
+### When To Create A New Type File
+
+- If a set of related types will be used across multiple modules and are not Obsidian or Excalidraw types, create a new file in `src/types/`.
+- Name it to reflect its domain (e.g., `canvasTypes.ts`, `aiProviderTypes.ts`).
+- Document the file's purpose and scope at the top with a brief module-level comment.
+- Export types, not implementation. Do not put logic in type files.
+- If the file re-exports types from Excalidraw or elsewhere, document the origin.
+
 ## Default Stance For Future Prompts
 
 When you are asked to modify this repository:
@@ -343,3 +416,9 @@ When you are asked to modify this repository:
 - document user-visible changes in `src/shared/Dialogs/Messages.ts`
 - add new language keys in `src/lang/locale/en.ts` and update `ru.ts`, `es.ts`, `zh-cn.ts`, and `zh-tw.ts` in the same change
 - be especially careful around startup, build plumbing, localization tokenization, settings migration, and popout-window behavior
+
+#### Custom Element Metadata (`customData`)
+
+- All types and helpers for Excalidraw element `customData` (extensible metadata on elements, e.g., for LaTeX, PDF, image, or plugin-specific keys) are centralized in `src/utils/elementCustomDataUtils.ts`.
+- If you need to add a new `customData` key, type, or helper, always add it to this file and import from here in all consumers. This avoids type duplication and ensures discoverability for future maintainers and agents.
+- See `ExcalidrawCustomData`, `ExcalidrawCustomDataPatch`, `ExcalidrawPDFCustomData`, `ExcalidrawLatexCustomData`, and `addAppendUpdateCustomData` in that file for canonical patterns.

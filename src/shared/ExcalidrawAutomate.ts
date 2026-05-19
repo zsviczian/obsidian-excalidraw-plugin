@@ -62,6 +62,7 @@ import {
   addAppendUpdateCustomData,
   getSVG,
 } from "src/utils/utils";
+import type { ExcalidrawCustomDataPatch } from "src/utils/elementCustomDataUtils";
 import { InlineLinkSuggester } from "./Suggesters/InlineLinkSuggester";
 import {
   getExcalidrawViews,
@@ -193,17 +194,6 @@ import { getPDFCropRect } from "src/utils/PDFUtils";
 import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
 import { URL_REGISTRY, URLs } from "src/constants/safeUrls";
 
-type ExcalidrawCustomDataValue =
-  | string
-  | number
-  | boolean
-  | null
-  | ExcalidrawCustomDataValue[]
-  | { [key: string]: ExcalidrawCustomDataValue };
-
-type ExcalidrawCustomDataPatch = Partial<
-  Record<string, ExcalidrawCustomDataValue | undefined>
->;
 type ExcalidrawAutomateHelpTarget = ((...args: any[]) => any) | string;
 
 extendPlugins([
