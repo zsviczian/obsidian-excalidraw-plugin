@@ -317,6 +317,7 @@ Validation guidance:
 - Run `npm run build:mathjax` or `npm run build:all` if you edit `MathjaxToSVG/`.
 - Run `npm run madge` after structural import changes or when touching shared architecture.
 - Prefer targeted diagnostics for the files you touched when repo-wide lint noise obscures signal.
+- Prefer `npm run build` plus targeted file diagnostics over raw `tsc --noEmit` as the primary gate. Standalone `tsc` can surface large volumes of dependency-typing noise unrelated to touched files.
 - Do not treat `dist/` output edits as source fixes.
 
 ## Practical Agent Guidance
@@ -340,7 +341,8 @@ When replacing `any` types:
 
 - **Functional equivalence is non-negotiable**: Code must remain 100% functionally identical. Type changes are *only* for TypeScript type checking, never for runtime behavior changes.
 - **Never invent local types**: If a type can be inferred from existing usage, Excalidraw types, or Obsidian APIs, use it. Do not create ad-hoc interface definitions.
-- **Do not replace with `unknown`**: `unknown` is stricter than `any` and will require guards/assertions elsewhere, breaking functional equivalence. The goal is precision, not strictness.
+- **Do not replace with `unknown` by default**: `unknown` is stricter than `any` and often requires guards/assertions elsewhere, which can break functional equivalence.
+- **Exception for bridge casts**: In rare generic conditional return scenarios where TypeScript cannot express a provably equivalent return value, a narrow `as unknown as ...` bridge cast is acceptable. Keep it local, document why, and do not use it to bypass real type mismatches.
 - **Use existing infrastructure**: Extend `src/types/types.d.ts` for Obsidian unpublished APIs, create new files in `src/types/` that build on existing conventions, and reference Excalidraw types directly.
 
 ### Type Files And Responsibilities
@@ -374,6 +376,9 @@ To identify the correct type for an `any` reference:
 - **Excalidraw component state and config objects**: Usually `any` but should reference `ExcalidrawProps`, `AppState`, or similar exported by `@zsviczian/excalidraw`.
 - **Event handler parameters and callbacks**: Often `any` but should be typed based on what the callback receives. Check invocation sites.
 - **Imported worker or third-party runtime objects**: May be `any` if the package lacks types. Create a minimal type stub in `src/types/` if needed, or use `as const` to infer from a known shape.
+- **Scene boundary typing (`getScene()` vs persistence sync)**: Scene producers may return readonly/non-deleted element arrays while persistence code mutates scene internals. Prefer broader input types at boundary methods (e.g., sync/update entry points), then narrow/cast internally where mutation is required.
+- **AppState strict vs partial contracts**: Many helpers accept `AppState` while repository data paths often carry `Partial<AppState>`. Prefer widening helper signatures only when behavior is unchanged and call sites are truly partial; otherwise use narrow local assertions at call sites instead of reshaping runtime objects.
+- **Legacy appState compatibility keys**: Preserve compatibility for legacy keys used during migrations or cross-version loads (e.g., `currentItemLinearStrokeSharpness`, `currentItemStrokeSharpness`) when tightening types.
 
 ### Adding Obsidian Unpublished API Types
 
@@ -392,8 +397,9 @@ When replacing `any`:
 1. **No new runtime errors**: Run the plugin in Obsidian after the change. Verify that all observed functionality works identically.
 2. **TypeScript checking**: The change should reduce or eliminate TypeScript errors, not introduce new ones.
 3. **No new guards or assertions**: If code previously worked with `any`, replacing it with a specific type should not require new `if` checks, `as` casts, or optional chaining that wasn't there before. If it does, the type choice is too strict.
-4. **Build passes**: `npm run build` must succeed. Type changes can affect bundle outcome if they affect build-time inference.
-5. **Lint cleanliness**: The changed file should not gain new lint violations. Use `npm run code -- src/path/to/file.ts` to check the specific file.
+4. **Side-effect parity check**: When replacing index-based mutation code with object transforms (e.g., sanitize/copy patterns), explicitly verify whether the original code intentionally mutated shared objects. Preserve side effects unless a behavior change is explicitly approved.
+5. **Build passes**: `npm run build` must succeed. Type changes can affect bundle outcome if they affect build-time inference.
+6. **Lint cleanliness**: The changed file should not gain new lint violations. Use `npm run code -- src/path/to/file.ts` to check the specific file.
 
 ### When To Create A New Type File
 

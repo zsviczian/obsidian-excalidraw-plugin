@@ -3383,7 +3383,12 @@ export default class ExcalidrawView
       }
       await this.loadDrawing(true);
 
-      onLoadMessages(this.excalidrawData.scene);
+      onLoadMessages(
+        this.excalidrawData.scene as {
+          elements: ExcalidrawElement[];
+          appState: AppState;
+        },
+      );
 
       if (this.plugin.ea.onFileOpenHook) {
         const tempEA = getEA(this);
@@ -3870,7 +3875,7 @@ export default class ExcalidrawView
         //elements: excalidrawData.elements.concat(deletedElements??[]), //need to preserve deleted elements during autosave if images, links, etc. are updated
         appState: {
           ...(isReloading && isOpenInMultipleLeaves
-            ? deleteAppStateKeys(excalidrawData.appState, [
+            ? deleteAppStateKeys(excalidrawData.appState as AppState, [
                 "scrollX",
                 "scrollY",
                 "zoom",
@@ -3926,7 +3931,7 @@ export default class ExcalidrawView
         elements: excalidrawData.elements,
         appState: {
           ...(isReloading && isOpenInMultipleLeaves
-            ? deleteAppStateKeys(excalidrawData.appState, [
+            ? deleteAppStateKeys(excalidrawData.appState as AppState, [
                 "scrollX",
                 "scrollY",
                 "zoom",

@@ -2,6 +2,8 @@ import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import {
   BinaryFileData,
   DataURL,
+  AppState,
+  BinaryFiles,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import ExcalidrawPlugin from "src/core/main";
 import { getTextMode } from "src/shared/TextMode";
@@ -10,6 +12,7 @@ import {
   ExcalidrawImageElement,
   FileId,
   FixedPoint,
+  FontString,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { normalizePath, TFile } from "obsidian";
 
@@ -280,7 +283,7 @@ export function _measureText(
   }
   const metrics = measureText(
     newText,
-    `${fontSize.toString()}px ${getFontFamilyString({ fontFamily })}` as any,
+    `${fontSize.toString()}px ${getFontFamilyString({ fontFamily })}` as FontString,
     lineHeight,
   );
   return { w: metrics.width, h: metrics.height };
@@ -294,10 +297,10 @@ export async function getTemplate(
   depth: number,
   convertMarkdownLinksToObsidianURLs: boolean = false,
 ): Promise<{
-  elements: any;
-  appState: any;
+  elements: ExcalidrawElement[];
+  appState: Partial<AppState>;
   frontmatter: string;
-  files: any;
+  files: BinaryFiles;
   hasSVGwithBitmap: boolean;
   plaintext: string; //markdown data above Excalidraw data and below YAML frontmatter
 }> {
@@ -443,13 +446,13 @@ export async function getTemplate(
 
     excalidrawData.destroy();
     const filehead = getExcalidrawMarkdownHeaderSection(data); // data.substring(0, trimLocation);
-    let files: any = {};
+    let files: BinaryFiles = {};
     const sceneFilesSize = Object.values(scene.files).length;
     if (sceneFilesSize > 0) {
       if (fileIDWhiteList && sceneFilesSize > fileIDWhiteList.size) {
         Object.values(scene.files)
-          .filter((f: any) => fileIDWhiteList.has(f.id))
-          .forEach((f: any) => {
+          .filter((f: BinaryFileData) => fileIDWhiteList.has(f.id))
+          .forEach((f: BinaryFileData) => {
             files[f.id] = f;
           });
       } else {
@@ -478,8 +481,8 @@ export async function getTemplate(
   return {
     elements: [],
     appState: {},
-    frontmatter: null,
-    files: [],
+    frontmatter: "",
+    files: {},
     hasSVGwithBitmap,
     plaintext: "",
   };
@@ -505,7 +508,7 @@ export async function createPNG(
   plugin: ExcalidrawPlugin,
   depth: number,
   padding?: number,
-  imagesDict?: any,
+  imagesDict?: Record<ExcalidrawElement["id"], BinaryFileData>,
   overrideFiles?: Record<ExcalidrawElement["id"], BinaryFileData>,
 ): Promise<Blob> {
   if (!loader) {
@@ -519,7 +522,7 @@ export async function createPNG(
   elements = elements.concat(automateElements);
   const files = imagesDict ?? {};
   if (template?.files) {
-    Object.values(template.files).forEach((f: any) => {
+    Object.values(template.files).forEach((f: BinaryFileData) => {
       if (!f.dataURL.startsWith("http")) {
         files[f.id] = f;
       }
@@ -638,7 +641,7 @@ export async function createSVG(
   plugin: ExcalidrawPlugin,
   depth: number,
   padding?: number,
-  imagesDict?: any,
+  imagesDict?: Record<ExcalidrawElement["id"], BinaryFileData>,
   convertMarkdownLinksToObsidianURLs: boolean = false,
   includeInternalLinks: boolean = true,
   overrideFiles?: Record<ExcalidrawElement["id"], BinaryFileData>,
@@ -664,7 +667,7 @@ export async function createSVG(
   padding = padding ?? plugin.settings.exportPaddingSVG;
   const files = imagesDict ?? {};
   if (template?.files) {
-    Object.values(template.files).forEach((f: any) => {
+    Object.values(template.files).forEach((f: BinaryFileData) => {
       files[f.id] = f;
     });
   }
@@ -747,7 +750,9 @@ export async function createSVG(
       el[0].frameRole !== "marker";
 
     if (el.length > 0 && !isNonMarkerFrameRef) {
-      const containerId = el[0].containerId;
+      const containerId = (
+        el[0] as Mutable<ExcalidrawElement> & { containerId?: string | null }
+      ).containerId;
       if (containerId) {
         el = el.concat(
           elements.filter((el: ExcalidrawElement) => el.id === containerId),
@@ -771,7 +776,9 @@ export async function createSVG(
   return svg;
 }
 
-function estimateLineBound(points: any): [number, number, number, number] {
+function estimateLineBound(
+  points: [x: number, y: number][],
+): [number, number, number, number] {
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -810,8 +817,7 @@ export function repositionElementsToCursor(
     [offsetX, offsetY] = [newPosition.x - x1, newPosition.y - y1];
   }
 
-  elements.forEach((element: any) => {
-    //using any so I can write read-only propery x & y
+  elements.forEach((element: Mutable<ExcalidrawElement>) => {
     element.x = element.x + offsetX;
     element.y = element.y + offsetY;
   });
@@ -929,7 +935,7 @@ export const getTextElementsMatchingQuery = (
   }
 
   return elements.filter(
-    (el: any) =>
+    (el: ExcalidrawElement) =>
       el.type === "text" &&
       query.some((q) => {
         if (exactMatch) {
@@ -967,7 +973,7 @@ export const getFrameElementsMatchingQuery = (
   }
 
   return elements.filter(
-    (el: any) =>
+    (el: ExcalidrawElement) =>
       el.type === "frame" &&
       query.some((q) => {
         if (exactMatch) {
@@ -1004,7 +1010,7 @@ export const getElementsWithLinkMatchingQuery = (
   }
 
   return elements.filter(
-    (el: any) =>
+    (el: ExcalidrawElement) =>
       el.link &&
       query.some((q) => {
         const text = el.link.toLowerCase().trim();
@@ -1055,8 +1061,10 @@ export const getImagesMatchingQuery = (
   );
 };
 
-export const cloneElement = (el: ExcalidrawElement): any => {
-  const newEl = JSON.parse(JSON.stringify(el));
+export const cloneElement = (
+  el: ExcalidrawElement,
+): Mutable<ExcalidrawElement> => {
+  const newEl = JSON.parse(JSON.stringify(el)) as Mutable<ExcalidrawElement>;
   newEl.version = el.version + 1;
   newEl.updated = Date.now();
   newEl.versionNonce = Math.floor(Math.random() * 1000000000);
@@ -1090,7 +1098,7 @@ export const normalizeFixedPoint = <T extends FixedPoint | null | undefined>(
   fixedPoint: T,
 ): T extends null ? null : FixedPoint => {
   if (!fixedPoint) {
-    return [0.50001, 0.5001] as any as T extends null ? null : FixedPoint;
+    return [0.50001, 0.5001] as unknown as T extends null ? null : FixedPoint;
   }
   if (fixedPoint[0] < 0 || fixedPoint[0] > 1) {
     fixedPoint[0] = 0.5001;
@@ -1109,7 +1117,7 @@ export const normalizeFixedPoint = <T extends FixedPoint | null | undefined>(
       Math.abs(ratio - 0.5) < 0.0001 ? 0.5001 : ratio,
     ) as T extends null ? null : FixedPoint;
   }
-  return fixedPoint as any as T extends null ? null : FixedPoint;
+  return fixedPoint as unknown as T extends null ? null : FixedPoint;
 };
 
 export const normalizeBindMode = (bindMode?: string): "orbit" | "inside" => {

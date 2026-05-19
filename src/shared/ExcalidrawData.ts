@@ -78,6 +78,7 @@ type ExcalidrawDataScene = SceneDataWithFiles & {
   type?: string;
   version?: number;
   source?: string;
+  theme?: NonNullable<SceneData["appState"]>["theme"];
   prevTextMode?: TextMode;
   gridStep?: number;
   elements: Mutable<ExcalidrawElement>[];
@@ -683,25 +684,26 @@ export class ExcalidrawData {
       //if(textElWithOneWayLinkToContainer.length>0) log({message: "cleanup", textElWithOneWayLinkToContainer});
       textElWithOneWayLinkToContainer.forEach(
         (textEl: Mutable<ExcalidrawTextElement>) => {
-        try {
-          const container = elements.filter(
-            (container: Mutable<ExcalidrawElement>) =>
-              container.id === textEl.containerId,
-          )[0];
-          const boundEl = container.boundElements.filter(
-            (boundEl: { id: string; type: string }) =>
-              !(
-                boundEl.type === "text" &&
-                !elements.some(
-                  (el: Mutable<ExcalidrawElement>) => el.id === boundEl.id,
-                )
-              ),
-          );
-          container.boundElements = [{ id: textEl.id, type: "text" }].concat(
-            boundEl,
-          );
-        } catch (_) {}
-      });
+          try {
+            const container = elements.filter(
+              (container: Mutable<ExcalidrawElement>) =>
+                container.id === textEl.containerId,
+            )[0];
+            const boundEl = container.boundElements.filter(
+              (boundEl: { id: string; type: string }) =>
+                !(
+                  boundEl.type === "text" &&
+                  !elements.some(
+                    (el: Mutable<ExcalidrawElement>) => el.id === boundEl.id,
+                  )
+                ),
+            );
+            container.boundElements = [{ id: textEl.id, type: "text" }].concat(
+              boundEl,
+            );
+          } catch (_) {}
+        },
+      );
 
       const ellipseAndRhombusContainerWrapping = !isVersionNewerThanOther(
         saveVersion,
@@ -1298,7 +1300,8 @@ export class ExcalidrawData {
     for (const key of this.elementLinks.keys()) {
       //find element in the scene
       const el = this.scene.elements?.filter(
-        (el: ExcalidrawElement) => el.type !== "text" && el.id === key && el.link, //&&
+        (el: ExcalidrawElement) =>
+          el.type !== "text" && el.id === key && el.link, //&&
       );
       if (el.length === 0) {
         this.elementLinks.delete(key); //if no longer in the scene, delete the text element
@@ -1847,7 +1850,9 @@ export class ExcalidrawData {
         (
           scene.elements
             .filter((el: ExcalidrawImageElement) => el.fileId === fileId)
-            .sort((a, b) => (a.updated < b.updated ? 1 : -1))[0] as Mutable<ExcalidrawImageElement>
+            .sort((a, b) =>
+              a.updated < b.updated ? 1 : -1,
+            )[0] as Mutable<ExcalidrawImageElement>
         ).fileId = newId as FileId;
         dirty = true;
         processedIds.add(newId);
@@ -1902,10 +1907,10 @@ export class ExcalidrawData {
   }
 
   public async syncElements(
-    newScene: ExcalidrawDataScene,
+    newScene: SceneDataWithFiles,
     selectedElementIds?: { [key: string]: boolean },
   ): Promise<boolean> {
-    this.scene = newScene;
+    this.scene = newScene as ExcalidrawDataScene;
     let result = false;
     if (!this.compatibilityMode) {
       result = await this.syncFiles();
@@ -2458,10 +2463,9 @@ export const getTransclusion = async (
       { isCancelled: () => false },
       file,
     )
-  )
-    .blocks.filter(
-      (block: MarkdownBlockCacheEntry) => block.node.type !== "comment",
-    );
+  ).blocks.filter(
+    (block: MarkdownBlockCacheEntry) => block.node.type !== "comment",
+  );
   if (!blocks) {
     return { contents: linkParts.original.trim(), lineNum: 0 };
   }
@@ -2469,8 +2473,7 @@ export const getTransclusion = async (
   if (linkParts.isBlockRef) {
     let para = blocks.filter(
       (block: MarkdownBlockCacheEntry) => block.node.id === linkParts.ref,
-    )[0]
-      ?.node;
+    )[0]?.node;
     if (!para) {
       return { contents: linkParts.original.trim(), lineNum: 0 };
     }

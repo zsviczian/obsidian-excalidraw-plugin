@@ -1155,11 +1155,11 @@ export class ExcalidrawAutomate {
   /**
    * Extracts the Excalidraw Scene from an Excalidraw File.
    * @param {TFile} file - The Excalidraw file to extract the scene from.
-   * @returns {Promise<{elements: ExcalidrawElement[]; appState: AppState;}>} Promise resolving to the Excalidraw scene.
+   * @returns {Promise<{elements: ExcalidrawElement[]; appState: Partial<AppState>;}>} Promise resolving to the Excalidraw scene.
    */
   async getSceneFromFile(
     file: TFile,
-  ): Promise<{ elements: ExcalidrawElement[]; appState: AppState }> {
+  ): Promise<{ elements: ExcalidrawElement[]; appState: Partial<AppState> }> {
     if (!file) {
       errorMessage("file not found", "getScene()");
       return null;
@@ -1374,12 +1374,14 @@ export class ExcalidrawAutomate {
       frontmatter = mergeMarkdownFiles(template.frontmatter, frontmatter);
     }
 
-    const templateAppstate = template?.appState ?? {};
-    Object.keys(templateAppstate).forEach((key) => {
-      if (templateAppstate[key] === undefined) {
-        delete templateAppstate[key];
-      }
-    });
+    const templateAppstate = Object.fromEntries(
+      Object.entries(template?.appState ?? {}).filter(
+        ([, value]) => value !== undefined,
+      ),
+    ) as Partial<AppState> & {
+      currentItemLinearStrokeSharpness?: boolean;
+      currentItemStrokeSharpness?: boolean;
+    };
     const scene = {
       type: "excalidraw",
       version: 2,
