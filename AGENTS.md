@@ -320,16 +320,36 @@ Validation guidance:
 - Prefer `npm run build` plus targeted file diagnostics over raw `tsc --noEmit` as the primary gate. Standalone `tsc` can surface large volumes of dependency-typing noise unrelated to touched files.
 - Do not treat `dist/` output edits as source fixes.
 
+
 ## Practical Agent Guidance
 
-- Start from the narrowest owning abstraction, not from broad repo-wide searches.
-- Prefer minimal, local changes.
+**All changes must consider the full codebase, not just the immediate file or local context.**
+
+- Before making or validating any change, agents must proactively search for all dependencies, references, and affected code across the repository. This includes:
+	- Searching for all usages, imports, and related patterns (e.g., property access, type assertions, function calls, etc.)
+	- Considering both direct and indirect consumers of the changed code or types
+	- Reviewing all files that may be impacted by a type, interface, or API change
+- Never assume a change is local unless you have verified, by search or analysis, that no other code is affected.
+- After making a change, always validate that the build passes and that no new errors or warnings are introduced anywhere in the codebase.
+- Prefer minimal, local changes when possible, but never at the expense of breaking global correctness or introducing subtle bugs elsewhere.
 - Avoid reformatting large files unless necessary.
 - Do not edit generated `dist/` or `lib/` outputs by hand.
 - Assume undocumented behavior may still be intentional.
 - For new code, follow the target naming conventions even if nearby legacy files do not yet.
 - When a change looks odd, search for the constraint that explains it before removing it.
 - When in doubt, preserve startup performance, popout support, and existing vault compatibility.
+
+### Additional Guidance for Global Impact
+
+- When changing types, interfaces, or exported APIs, always search for all references and usages across the codebase and update them as needed.
+- When tightening types (e.g., replacing `any`), ensure all code that accesses the affected values is type-safe and will continue to work as before.
+- If a change introduces new type errors elsewhere, you must fix those errors or revert the change.
+- Always run `npm run build` after changes, and do not consider a change complete until the build passes with no new errors.
+- If a change could affect runtime behavior, validate by running the plugin in Obsidian if possible.
+
+**Summary:**
+
+> Agents must always consider the full codebase impact of any change, proactively search for dependencies and affected code, and validate correctness globally—not just locally—before considering a task complete.
 
 ## Type System And Type Refactoring
 

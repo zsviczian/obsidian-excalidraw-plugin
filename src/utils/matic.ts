@@ -196,7 +196,9 @@ export async function diagramToHTML({
     logDiagramToHTMLDebug("request failure", [
       `status: ${String(result.response?.status ?? 0)}`,
       `attemptedMaxTokens: ${String(attemptedMaxTokens)}`,
-      `error: ${result.json?.error?.message ?? "<none>"}`,
+      `error: ${typeof result.json === "object" && result.json !== null && "error" in result.json && typeof (result.json as any).error === "object" && (result.json as any).error !== null && "message" in (result.json as any).error
+        ? (result.json as any).error.message as string
+        : "<none>"}`,
       `content: ${trimDiagramDebugText(result.content || "<empty>")}`,
       `responseJson: ${trimDiagramDebugText(stringifyDiagramDebugValue(result.json))}`,
     ]);
@@ -204,7 +206,9 @@ export async function diagramToHTML({
     return {
       ok: false,
       error:
-        result.json?.error?.message ??
+        (typeof result.json === "object" && result.json !== null && "error" in result.json && typeof (result.json as any).error === "object" && (result.json as any).error !== null && "message" in (result.json as any).error
+          ? (result.json as any).error.message as string
+          : undefined) ??
         `Request failed with status ${result.response?.status ?? 0}`,
       json: result.json,
     };

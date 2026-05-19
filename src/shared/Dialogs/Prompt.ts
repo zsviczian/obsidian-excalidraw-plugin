@@ -39,6 +39,14 @@ import { Extension } from "@codemirror/state";
 import { FloatingModal } from "./FloatingModal";
 import { setSanitizedHtml } from "src/utils/htmlUtils";
 
+/**
+ * Minimal type for obsidian-latex-suite plugin.
+ * Only types the properties actually used by this codebase.
+ */
+interface LatexSuitePlugin {
+  editorExtensions?: Extension | Extension[];
+}
+
 export class Prompt extends Modal {
   private promptEl: HTMLInputElement;
   private resolve: (value: string) => void;
@@ -98,9 +106,9 @@ export class LaTexPrompt extends FloatingModal {
   public waitForClose: Promise<string>;
   private promptEl: HTMLInputElement;
   private resolvePromise: (input: string) => void;
-  private rejectPromise: (reason?: any) => void;
+  private rejectPromise: (reason?: string) => void;
   private editorView: EditorView;
-  private readonly latexsSuitePlugin: any;
+  private readonly latexsSuitePlugin: LatexSuitePlugin | undefined;
 
   protected constructor(
     app: App,
@@ -110,7 +118,9 @@ export class LaTexPrompt extends FloatingModal {
     super(app);
     this.titleEl.setText(this.prompt_text);
     this.contentEl.addClass("excalidraw-LatexPrompt");
-    this.latexsSuitePlugin = app.plugins.plugins["obsidian-latex-suite"];
+    this.latexsSuitePlugin = app.plugins.plugins[
+      "obsidian-latex-suite"
+    ] as LatexSuitePlugin | undefined;
     super.enableKeyCapture(); // otherwise latex-suite (or Ctrl-Enter) do not get the key event
     const mainContentContainer: HTMLDivElement = this.contentEl.createDiv();
     this.display(default_value, mainContentContainer);
@@ -169,7 +179,7 @@ export class LaTexPrompt extends FloatingModal {
       extensions.push([
         language,
         editorLivePreviewField.init(() => false),
-        this.latexsSuitePlugin.editorExtensions,
+        this.latexsSuitePlugin?.editorExtensions,
       ]);
     } else {
       // Show a suggestion note if Latex Suite plugin is not installed
@@ -215,7 +225,7 @@ export class LaTexPrompt extends FloatingModal {
   private createButton(
     container: HTMLElement,
     text: string,
-    callback: (evt: MouseEvent) => any,
+    callback: (evt: MouseEvent) => void,
     tooltip: string = "",
     margin: string = "5px",
     iconId?: string,
@@ -266,7 +276,7 @@ export class GenericInputPrompt extends Modal {
   private view: ExcalidrawView;
   private plugin: ExcalidrawPlugin;
   private resolvePromise: (input: string) => void;
-  private rejectPromise: (reason?: any) => void;
+  private rejectPromise: (reason?: string) => void;
   private didSubmit: boolean = false;
   private inputComponent: TextAreaComponent;
   private input: string;
@@ -456,7 +466,7 @@ export class GenericInputPrompt extends Modal {
   private createButton(
     container: HTMLElement,
     text: string,
-    callback: (evt: MouseEvent) => any,
+    callback: (evt: MouseEvent) => void,
     tooltip: string = "",
     margin: string = "5px",
     iconId?: string,
@@ -977,7 +987,7 @@ export class GenericInputPrompt extends Modal {
 
 export class GenericSuggester extends FuzzySuggestModal<any> {
   private resolvePromise: (value: any) => void;
-  private rejectPromise: (reason?: any) => void;
+  private rejectPromise: (reason?: string) => void;
   public promise: Promise<any>;
   private resolved: boolean;
 
@@ -1048,7 +1058,7 @@ export class GenericSuggester extends FuzzySuggestModal<any> {
 export class NewFileActions extends Modal {
   public waitForClose: Promise<TFile | null>;
   private resolvePromise: (file: TFile | null) => void;
-  private rejectPromise: (reason?: any) => void;
+  private rejectPromise: (reason?: string) => void;
   private newFile: TFile = null;
   private plugin: ExcalidrawPlugin;
   private path: string;
@@ -1224,7 +1234,7 @@ export class NewFileActions extends Modal {
 export class MultiOptionConfirmationPrompt extends Modal {
   public waitForClose: Promise<any>;
   private resolvePromise: (value: any) => void;
-  private rejectPromise: (reason?: any) => void;
+  private rejectPromise: (reason?: string) => void;
   private selectedValue: any = null;
   private readonly message: string;
   private readonly buttons: Map<string, any>;

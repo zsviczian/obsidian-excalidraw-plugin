@@ -72,7 +72,7 @@ type GenerateAITextOptions = {
 
 type GenerateAITextResult = {
   response: RequestUrlResponse;
-  json: any;
+  json: Record<string, unknown>;
   content: string;
   rateLimit: number | null;
   rateLimitRemaining: number | null;
@@ -88,7 +88,7 @@ export type AIGeneratedImage = {
 
 export type GenerateAIImageResult = {
   response: RequestUrlResponse;
-  json: any;
+  json: Record<string, unknown>;
   images: AIGeneratedImage[];
   firstImage: AIGeneratedImage | null;
   revisedPrompt: string;
@@ -155,19 +155,19 @@ const logAIDebug = (
   console.log(`${AI_DEBUG_PREFIX} ${label}\n${lines.join("\n")}`);
 };
 
-const getFirstChoice = (json: any) => json?.choices?.[0] ?? null;
+const getFirstChoice = (json: Record<string, any>) => json?.choices?.[0] ?? null;
 
-const getFirstChoiceContent = (json: any): string => {
+const getFirstChoiceContent = (json: Record<string, any>): string => {
   const content = getFirstChoice(json)?.message?.content;
   return typeof content === "string" ? content : "";
 };
 
-const getFirstChoiceFinishReason = (json: any): string => {
+const getFirstChoiceFinishReason = (json: Record<string, any>): string => {
   const finishReason = getFirstChoice(json)?.finish_reason;
   return typeof finishReason === "string" ? finishReason : "";
 };
 
-const getReasoningTokenCount = (json: any): number => {
+const getReasoningTokenCount = (json: Record<string, any>): number => {
   const value = json?.usage?.completion_tokens_details?.reasoning_tokens;
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 };
@@ -1204,7 +1204,7 @@ const getGoogleEndpoint = (config: ResolvedModelConfig): string => {
   return `${baseEndpoint}/models/${config.model}:generateContent${separator}key=${encodeURIComponent(config.apiKey)}`;
 };
 
-const normalizeAnthropicResponse = (json: any) => {
+const normalizeAnthropicResponse = (json: Record<string, any>) => {
   const text =
     json?.content
       ?.filter((item: { type?: string }) => item?.type === "text")
@@ -1235,7 +1235,7 @@ const normalizeAnthropicResponse = (json: any) => {
   };
 };
 
-const normalizeGoogleResponse = (json: any) => {
+const normalizeGoogleResponse = (json: Record<string, any>) => {
   const text =
     json?.candidates?.[0]?.content?.parts
       ?.map((part: { text?: string }) => part?.text)
@@ -1265,7 +1265,7 @@ const normalizeGoogleResponse = (json: any) => {
   };
 };
 
-const normalizeResponseJson = (provider: AIProvider, json: any) => {
+const normalizeResponseJson = (provider: AIProvider, json: Record<string, any>) => {
   if (!json || json.error) {
     return json;
   }
@@ -1315,12 +1315,12 @@ const getMimeTypeForOutputFormat = (
   return `image/${normalized}`;
 };
 
-const normalizeOpenAIImageResponse = (json: any) => {
+const normalizeOpenAIImageResponse = (json: Record<string, any>) => {
   if (!json || json.error) {
     return json;
   }
   const data = Array.isArray(json.data)
-    ? json.data.filter((item: any) => item?.url || item?.b64_json)
+    ? json.data.filter((item: Record<string, any>) => item?.url || item?.b64_json)
     : [];
 
   return {
@@ -1329,7 +1329,7 @@ const normalizeOpenAIImageResponse = (json: any) => {
   };
 };
 
-const normalizeGoogleImageResponseForImages = (json: any) => {
+const normalizeGoogleImageResponseForImages = (json: Record<string, any>) => {
   if (!json || json.error) {
     return json;
   }
@@ -1368,7 +1368,7 @@ const normalizeGoogleImageResponseForImages = (json: any) => {
   };
 };
 
-const normalizeXAIImageResponse = (json: any) => {
+const normalizeXAIImageResponse = (json: Record<string, any>) => {
   if (!json || json.error) {
     return json;
   }
@@ -1379,7 +1379,7 @@ const normalizeXAIImageResponse = (json: any) => {
       ? json.images
       : [];
 
-  const normalizedData = rawItems.flatMap((item: any) => {
+  const normalizedData = rawItems.flatMap((item: Record<string, any>) => {
     if (!item) {
       return [];
     }
@@ -1458,7 +1458,7 @@ const normalizeXAIImageResponse = (json: any) => {
   };
 };
 
-const normalizeImageResponseJson = (provider: AIProvider, json: any) => {
+const normalizeImageResponseJson = (provider: AIProvider, json: Record<string, any>) => {
   switch (provider) {
     case "google":
       return normalizeGoogleImageResponseForImages(json);
@@ -1524,7 +1524,7 @@ const postJSON = async (
   },
   provider: AIProvider,
   signal?: AbortSignal,
-  normalizeJson: (json: any) => any = (json) =>
+  normalizeJson: (json: Record<string, any>) => Record<string, any> = (json) =>
     normalizeResponseJson(provider, json),
 ): Promise<RequestUrlResponse> => {
   const result = await requestUrlWithAbort(
