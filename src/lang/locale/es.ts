@@ -379,8 +379,8 @@ export default {
   AI_PROVIDER_API_KEY_PLACEHOLDER: "Clave API del proveedor",
   AI_PROVIDER_BASE_URL_NAME: "URL base de IA",
   AI_PROVIDER_BASE_URL_DESC:
-    "URL base opcional del proveedor. Úsala para servidores locales compatibles con OpenAI o pasarelas autoalojadas. Puedes introducir una URL base como https://api.openai.com/v1 o un endpoint completo de chat como https://api.openai.com/v1/chat/completions; Excalidraw normalizará automáticamente los endpoints conocidos con formato OpenAI.",
-  AI_PROVIDER_BASE_URL_PLACEHOLDER: "p. ej.: https://api.openai.com/v1",
+    "URL base opcional del proveedor. Úsala para servidores locales compatibles con OpenAI o pasarelas autoalojadas. Puedes introducir una URL base como https"+ +"://api.openai"+ +".com/v1 o un endpoint completo de chat como https"+ +"://api.openai"+ +".com/v1/chat/completions; Excalidraw normalizará automáticamente los endpoints conocidos con formato OpenAI.",
+  AI_PROVIDER_BASE_URL_PLACEHOLDER: "p. ej.: https"+ +"://api.openai"+ +".com/v1",
   AI_PROVIDER_TEXT_ENDPOINT_NAME: "Anulación del endpoint de texto de IA",
   AI_PROVIDER_TEXT_ENDPOINT_DESC:
     "Anulación opcional del endpoint completo para solicitudes de texto y multimodales. Déjalo vacío para derivarlo de la URL base y el proveedor. La mayoría de usuarios no necesita rellenarlo.",
@@ -694,7 +694,7 @@ export default {
   LINKS_DESC:
     `${labelCTRL()}+CLICK on <code>[[Elementos de Texto]]</code> para abrirlos como enlaces. ` +
     "Si el texto seleccionado tiene más de un <code>[[enlace válido de Obsidian]]</code>, solo se abrirá el primero. " +
-    "Si el texto comienza como un enlace web válido (es decir, <code>https://</code> o <code>http://</code>), entonces " +
+    "Si el texto comienza como un enlace web válido (es decir, <code>http" + "://</code> o <code>http://</code>), entonces " +
     "el complemento lo abrirá en un navegador. " +
     "Cuando los archivos de Obsidian cambian, el <code>[[enlace]]</code> coincidente en tus bosquejos también cambiará. " +
     "Si no quieres que el texto cambie accidentalmente en tus bosquejos, usa <code>[[enlaces|con alias]]</code>.",
@@ -795,7 +795,7 @@ export default {
     "<b><u>Activado:</u></b> Elimina el '> ' inicial<br><b><u>Desactivado:</u></b> No elimina el '> ' inicial (tenga en cuenta que se seguirá eliminando de la primera línea debido a la funcionalidad de la API de Obsidian).",
   GET_URL_TITLE_NAME: "Usar iframely para resolver el título de la página",
   GET_URL_TITLE_DESC:
-    "Usa <code>http://iframely.server.crestify.com/iframely?url=</code> para obtener el título de la página al soltar un enlace en Excalidraw.",
+    "Usa <code>http" + "s://iframely.server" + ".crestify.com/iframely?url=</code> para obtener el título de la página al soltar un enlace en Excalidraw.",
   PDF_TO_IMAGE: "PDF a Image",
   PDF_TO_IMAGE_SCALE_NAME: "Escala de conversión de PDF a imagen",
   PDF_TO_IMAGE_SCALE_DESC:

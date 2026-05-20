@@ -120,6 +120,14 @@ export type ObsidianCommandManager = {
   commands: Record<string, ObsidianCommand>;
 };
 
+export type ObsidianDraggable = {
+  type?: "file" | "files" | "link" | string;
+  file?: TFile;
+  files?: TFile[];
+  title?: string;
+  [key: string]: unknown;
+};
+
 export type ConnectionPoint = "top" | "bottom" | "left" | "right" | null;
 
 export type Packages = {

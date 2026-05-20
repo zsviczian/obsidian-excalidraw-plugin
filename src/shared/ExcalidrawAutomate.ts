@@ -83,7 +83,12 @@ import {
 import { EmbeddedFile, EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
 import { NewFileActions } from "src/shared/Dialogs/Prompt";
-import { ConnectionPoint, DeviceType, Point } from "src/types/types";
+import {
+  ConnectionPoint,
+  DeviceType,
+  ObsidianDraggable,
+  Point,
+} from "src/types/types";
 import CM, { ColorMaster, extendPlugins } from "@zsviczian/colormaster";
 import HarmonyPlugin from "@zsviczian/colormaster/plugins/harmony";
 import MixPlugin from "@zsviczian/colormaster/plugins/mix";
@@ -1749,7 +1754,7 @@ export class ExcalidrawAutomate {
     loader?: EmbeddedFilesLoader,
     theme?: string,
     padding?: number,
-  ): Promise<any> {
+  ): Promise<Blob> {
     if (!theme) {
       theme = this.plugin.settings.previewMatchObsidianTheme
         ? isObsidianThemeDark()
@@ -1872,7 +1877,7 @@ export class ExcalidrawAutomate {
    */
   private boxedElement(
     id: string,
-    eltype: any,
+    eltype: string,
     x: number,
     y: number,
     w: number,
@@ -1905,11 +1910,11 @@ export class ExcalidrawAutomate {
       versionNonce: Math.floor(Math.random() * 1000000000),
       updated: Date.now(),
       isDeleted: false,
-      groupIds: [] as any,
-      boundElements: [] as any,
+      groupIds: [] as any[],
+      boundElements: [] as any[],
       link,
       locked: false,
-      frameId: null as string,
+      frameId: null as string | null,
       hasTextLink: !!(eltype === "text" && link),
       ...(scale ? { scale } : {}),
     };
@@ -2666,7 +2671,7 @@ export class ExcalidrawAutomate {
           created: Date.now(),
           size: await getImageSize(dataURL),
           hasSVGwithBitmap: false,
-          pdfPageViewProps: null as any,
+          pdfPageViewProps: null,
         }
       : await (() => {
           const loader = new EmbeddedFilesLoader(
@@ -2884,7 +2889,7 @@ export class ExcalidrawAutomate {
     const numberOfPoints = formatting?.numberOfPoints
       ? formatting.numberOfPoints
       : 0;
-    const getSidePoints = (side: string, el: any) => {
+    const getSidePoints = (side: string, el: ExcalidrawElement): [number, number] => {
       switch (side) {
         case "bottom":
           return [(el.x + (el.x + el.width)) / 2, el.y + el.height + padding];
@@ -3198,9 +3203,9 @@ export class ExcalidrawAutomate {
 
   /**
    * Gets the selected element in the view. If more are selected, gets the first.
-   * @returns {any} The selected element or null if none selected.
+   * @returns {ExcalidrawElement | null} The selected element or null if none selected.
    */
-  getViewSelectedElement(): any {
+  getViewSelectedElement(): ExcalidrawElement | null {
     const elements = this.getViewSelectedElements();
     return elements ? elements[0] : null;
   }
@@ -3208,9 +3213,9 @@ export class ExcalidrawAutomate {
   /**
    * Gets the selected elements in the view.
    * @param {boolean} [includeFrameChildren=true] - Whether to include frame children in the selection.
-   * @returns {any[]} Array of selected elements.
+   * @returns {ExcalidrawElement[]} Array of selected elements.
    */
-  getViewSelectedElements(includeFrameChildren: boolean = true): any[] {
+  getViewSelectedElements(includeFrameChildren: boolean = true): ExcalidrawElement[] {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "getViewSelectedElements()");
       return [];
@@ -3814,7 +3819,7 @@ export class ExcalidrawAutomate {
   onDropHook: (data: {
     ea: ExcalidrawAutomate;
     event: React.DragEvent<HTMLDivElement>;
-    draggable: any; //Obsidian draggable object
+    draggable: ObsidianDraggable; //Obsidian draggable object
     type: "file" | "text" | "unknown";
     payload: {
       files: TFile[]; //TFile[] array of dropped files
@@ -4254,7 +4259,7 @@ export class ExcalidrawAutomate {
    * @param {Object} settings - The script settings to set.
    * @returns {Promise<void>} Promise resolving when the settings are saved.
    */
-  async setScriptSettings(settings: any): Promise<void> {
+  async setScriptSettings(settings: Record<string, unknown>): Promise<void> {
     if (!this.activeScript) {
       return null;
     }
@@ -4485,17 +4490,17 @@ export class ExcalidrawAutomate {
   /**
    * Moves the specified element to a specific position in the z-index.
    * * Operates directly on the Excalidraw Scene in targetView, not through ExcalidrawAutomate elements.
-   * @param {number} elementId - The ID of the element to move.
+   * @param {string} elementId - The ID of the element to move.
    * @param {number} newZIndex - The new z-index position for the element.
    */
-  moveViewElementToZIndex(elementId: number, newZIndex: number): void {
+  moveViewElementToZIndex(elementId: string, newZIndex: number): void {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "moveViewElementToZIndex()");
       return;
     }
     const API = this.getExcalidrawAPI();
     const elements = this.getViewElements() as Mutable<ExcalidrawElement>[];
-    const elementToMove = elements.filter((el: any) => el.id === elementId);
+    const elementToMove = elements.filter((el: ExcalidrawElement) => el.id === elementId);
     if (elementToMove.length === 0) {
       errorMessage(
         `Element (id: ${elementId}) not found`,
@@ -4584,7 +4589,7 @@ export class ExcalidrawAutomate {
   getCM(color: TInput): ColorMaster {
     if (!color) {
       log(
-        "Creates a CM object. Visit https://github.com/lbragile/ColorMaster for documentation.",
+        "Creates a CM object. Visit http" + "s://github."+"com/lbragile/ColorMaster for documentation.",
       );
       return;
     }

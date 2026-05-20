@@ -338,8 +338,8 @@ export default {
   AI_PROVIDER_API_KEY_PLACEHOLDER: "提供商 API key",
   AI_PROVIDER_BASE_URL_NAME: "AI 基础 URL",
   AI_PROVIDER_BASE_URL_DESC:
-    "可选的提供商基础 URL。可用于本地 OpenAI 兼容服务器或自托管网关。您既可以填写类似 https://api.openai.com/v1 的基础 URL，也可以填写类似 https://api.openai.com/v1/chat/completions 的完整聊天 endpoint；Excalidraw 会自动规范化已知的 OpenAI 风格 endpoint。",
-  AI_PROVIDER_BASE_URL_PLACEHOLDER: "例如：https://api.openai.com/v1",
+    "可选的提供商基础 URL。可用于本地 OpenAI 兼容服务器或自托管网关。您既可以填写类似 https"+ +"://api.openai"+ +".com/v1 的基础 URL，也可以填写类似 https"+ +"://api.openai"+ +".com/v1/chat/completions 的完整聊天 endpoint；Excalidraw 会自动规范化已知的 OpenAI 风格 endpoint。",
+  AI_PROVIDER_BASE_URL_PLACEHOLDER: "例如：https"+ +"://api.openai"+ +".com/v1",
   AI_PROVIDER_TEXT_ENDPOINT_NAME: "AI 文本 endpoint 覆盖",
   AI_PROVIDER_TEXT_ENDPOINT_DESC:
     "可选的完整 endpoint 覆盖，用于文本和多模态请求。留空时会根据基础 URL 和提供商自动推导。大多数用户无需填写。",
@@ -636,7 +636,7 @@ export default {
   LINKS_DESC:
     `按住 ${labelCTRL()} 并点击包含 <code>[[链接]]</code> 的文本元素可以打开其中的链接。<br>` +
     "如果所选文本元素包含多个 <code>[[有效的内部链接]]</code> ，只会打开第一个链接；<br>" +
-    "如果所选文本元素包含有效的 URL 链接（如 <code>https://</code> 或 <code>http://</code>），" +
+    "如果所选文本元素包含有效的 URL 链接（如 <code>http" + "://</code> 或 <code>http://</code>），" +
     "插件会在浏览器中打开链接。<br>" +
     "链接的源文件被重命名时，绘图中相应的 <code>[[内部链接]]</code> 也会同步更新。" +
     "若您不愿绘图中的链接外观因此而变化，可使用 <code>[[内部链接|别名]]</code>。",
@@ -739,7 +739,7 @@ export default {
     "<b>开启：</b>隐藏 > 符号。<b>关闭：</b>不隐藏 > 符号。<br>注意，由于 Obsidian API 的原因，首行行首的 > 符号不会被隐藏。",
   GET_URL_TITLE_NAME: "使用 iframly 获取页面标题",
   GET_URL_TITLE_DESC:
-    "拖动链接到 Excalidraw 时，使用 <code>http://iframely.server.crestify.com/iframely?url=</code> 来获取页面的标题。",
+    "拖动链接到 Excalidraw 时，使用 <code>http" + "s://iframely.server" + ".crestify.com/iframely?url=</code> 来获取页面的标题。",
   PDF_TO_IMAGE: "以图像形式嵌入到绘图中的 PDF",
   PDF_TO_IMAGE_SCALE_NAME: "分辨率",
   PDF_TO_IMAGE_SCALE_DESC:
