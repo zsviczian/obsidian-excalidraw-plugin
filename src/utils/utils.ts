@@ -567,7 +567,9 @@ export function scaleLoadedImage<T extends SceneWithElements>(
     const imgAspectRatio = imgWidth / imgHeight;
 
     sceneElements
-      .filter((e: ExcalidrawElement) => e.type === "image" && e.fileId === img.id)
+      .filter(
+        (e: ExcalidrawElement) => e.type === "image" && e.fileId === img.id,
+      )
       .forEach((el: Mutable<ExcalidrawImageElement>) => {
         const [elWidth, elHeight] = [el.width, el.height];
         const maintainArea = img.shouldScale; //true if image should maintain its area, false if image should display at 100% its size

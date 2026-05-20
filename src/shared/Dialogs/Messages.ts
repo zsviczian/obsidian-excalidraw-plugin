@@ -7,6 +7,20 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+  "2.23.4": `
+## New in ExcalidrawAutomate
+- Added \`getPathForImageFileId(fileId: FileId): string | null\` — returns the vault path for an image element identified by its Excalidraw fileId. Note: Excalidraw does not maintain a persistent index of fileIds to paths; the path is only available for images that have appeared in an open drawing during the current Obsidian session.
+
+\`\`\`ts
+/**
+ * Returns the vault path for an image file identified by its Excalidraw fileId.
+ * Only available for images seen in an open drawing during the current session.
+ * @param {FileId} fileId - The Excalidraw fileId of the image.
+ * @returns {string | null} The vault path, or null if not cached in this session.
+ */
+getPathForImageFileId(fileId: FileId): string | null;
+\`\`\`
+  `,
   "2.23.3": `
 I apologize in advance — there will likely be a few more micro-releases over the coming weeks.
 

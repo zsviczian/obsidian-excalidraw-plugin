@@ -3228,6 +3228,22 @@ export class ExcalidrawAutomate {
   }
 
   /**
+   * Returns the vault or external URI path for an image file identified by its Excalidraw fileId.
+   *
+   * Note: Excalidraw does not maintain a persistent index of fileIds to paths.
+   * The `filesMaster` cache is populated at runtime as images appear in open drawings,
+   * and is used to support copy/paste of image references between drawings without
+   * duplicating files. This function will only return a path for images that have
+   * been seen in a drawing during the current Obsidian session.
+   *
+   * @param {FileId} fileId - The Excalidraw fileId of the image.
+   * @returns {string | null} The vault path of the image file, or null if not cached.
+   */
+  getPathForImageFileId(fileId: FileId): string | null {
+    return this.plugin.filesMaster?.get(fileId)?.path ?? null;
+  }
+
+  /**
    * Gets the color map associated with an image element in the view.
    * @param {ExcalidrawElement} el - The image element.
    * @returns {ColorMap} The color map associated with the image element.

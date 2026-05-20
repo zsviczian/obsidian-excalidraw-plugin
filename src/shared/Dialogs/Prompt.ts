@@ -118,9 +118,9 @@ export class LaTexPrompt extends FloatingModal {
     super(app);
     this.titleEl.setText(this.prompt_text);
     this.contentEl.addClass("excalidraw-LatexPrompt");
-    this.latexsSuitePlugin = app.plugins.plugins[
-      "obsidian-latex-suite"
-    ] as LatexSuitePlugin | undefined;
+    this.latexsSuitePlugin = app.plugins.plugins["obsidian-latex-suite"] as
+      | LatexSuitePlugin
+      | undefined;
     super.enableKeyCapture(); // otherwise latex-suite (or Ctrl-Enter) do not get the key event
     const mainContentContainer: HTMLDivElement = this.contentEl.createDiv();
     this.display(default_value, mainContentContainer);

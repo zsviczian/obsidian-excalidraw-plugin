@@ -7030,7 +7030,12 @@ export default class ExcalidrawView
               log(json);
               return {
                 error: new Error(
-                  (typeof json === "object" && json !== null && "error" in json && typeof (json as any).error === "object" && (json as any).error !== null && "message" in (json as any).error)
+                  typeof json === "object" &&
+                    json !== null &&
+                    "error" in json &&
+                    typeof (json as any).error === "object" &&
+                    (json as any).error !== null &&
+                    "message" in (json as any).error
                     ? ((json as any).error.message as string)
                     : `Request failed with status ${response?.status ?? 0}`,
                 ),
@@ -7132,8 +7137,13 @@ export default class ExcalidrawView
             if (!response.ok) {
               const text =
                 response.error ||
-                (typeof response.json === "object" && response.json !== null && "error" in response.json && typeof (response.json as any).error === "object" && (response.json as any).error !== null && "message" in (response.json as any).error
-                  ? (response.json as any).error.message as string
+                (typeof response.json === "object" &&
+                response.json !== null &&
+                "error" in response.json &&
+                typeof (response.json as any).error === "object" &&
+                (response.json as any).error !== null &&
+                "message" in (response.json as any).error
+                  ? ((response.json as any).error.message as string)
                   : undefined) ||
                 "Unknown error during generation";
               return {

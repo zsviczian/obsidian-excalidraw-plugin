@@ -574,6 +574,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "getPathForImageFileId",
+    code: "getPathForImageFileId(fileId: FileId): string | null;",
+    desc: "Returns the vault or external URI path for an image identified by its Excalidraw fileId. Note: this will only return a path for images that have appeared in an open drawing during the current Obsidian session. Excalidraw does not maintain a persistent index of fileIds to paths — it only caches them at runtime to support copy/paste of image references between drawings without duplicating files.",
+    after: "",
+  },
+  {
     field: "updateViewSVGImageColorMap",
     code: "async updateViewSVGImageColorMap(elements: ExcalidrawImageElement | ExcalidrawImageElement[], colors: ColorMap | SVGColorInfo | ColorMap[] | SVGColorInfo[]): Promise<void>;",
     desc:

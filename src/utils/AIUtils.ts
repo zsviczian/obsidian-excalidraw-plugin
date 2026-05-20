@@ -155,7 +155,8 @@ const logAIDebug = (
   console.log(`${AI_DEBUG_PREFIX} ${label}\n${lines.join("\n")}`);
 };
 
-const getFirstChoice = (json: Record<string, any>) => json?.choices?.[0] ?? null;
+const getFirstChoice = (json: Record<string, any>) =>
+  json?.choices?.[0] ?? null;
 
 const getFirstChoiceContent = (json: Record<string, any>): string => {
   const content = getFirstChoice(json)?.message?.content;
@@ -1265,7 +1266,10 @@ const normalizeGoogleResponse = (json: Record<string, any>) => {
   };
 };
 
-const normalizeResponseJson = (provider: AIProvider, json: Record<string, any>) => {
+const normalizeResponseJson = (
+  provider: AIProvider,
+  json: Record<string, any>,
+) => {
   if (!json || json.error) {
     return json;
   }
@@ -1320,7 +1324,9 @@ const normalizeOpenAIImageResponse = (json: Record<string, any>) => {
     return json;
   }
   const data = Array.isArray(json.data)
-    ? json.data.filter((item: Record<string, any>) => item?.url || item?.b64_json)
+    ? json.data.filter(
+        (item: Record<string, any>) => item?.url || item?.b64_json,
+      )
     : [];
 
   return {
@@ -1458,7 +1464,10 @@ const normalizeXAIImageResponse = (json: Record<string, any>) => {
   };
 };
 
-const normalizeImageResponseJson = (provider: AIProvider, json: Record<string, any>) => {
+const normalizeImageResponseJson = (
+  provider: AIProvider,
+  json: Record<string, any>,
+) => {
   switch (provider) {
     case "google":
       return normalizeGoogleImageResponseForImages(json);

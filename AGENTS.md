@@ -270,6 +270,14 @@ Settings changes are often incomplete if only one of these surfaces is updated.
 - Example and user-facing docs live in `AutomateHowTo.md`, `docs/ExcalidrawScriptsEngine.md`, `docs/API/`, and `ea-scripts/`.
 - If you change public automation behavior, consider whether docs or the library build need updates.
 
+### ExcalidrawAutomate Change Checklist
+
+Whenever a function is added to or changed in `src/shared/ExcalidrawAutomate.ts`, three additional files must be updated in the same change:
+
+1. **`src/shared/Dialogs/SuggesterInfo.ts`** — Add or update the corresponding entry in `EXCALIDRAW_AUTOMATE_INFO`. The `field` must match the function or property name exactly. The `desc` should explain behavior clearly, including any important limitations or session-scoped constraints. The `code` should reflect the actual TypeScript signature.
+2. **`src/shared/Dialogs/Messages.ts`** — Document the new or changed function under the upcoming release version key. Include a brief user-facing description and the TypeScript signature in a fenced code block.
+3. **`src/lang/locale/en.ts`** (and maintained locales) — Only required if the change introduces new user-visible strings. Follow the existing locale workflow described in the User-Facing Change Workflow section.
+
 ## High-Risk Areas
 
 These areas require extra care:
