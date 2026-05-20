@@ -1330,6 +1330,10 @@ const parseEmbeddableInput = (input, imageInfo) => {
     if (imageInfo && imageInfo.isExternalImage) return null;
     return match[2];
   }
+  const dataURL = trimmed.match(/^!\[\[(data:text\/html;base64.*)]]$/i);
+  if (dataURL) {
+    return dataURL[1];
+  }
   const pathSplit = imageInfo?.path?.split("#");
   if (imageInfo && imageInfo.file && imageInfo.file.extension === "md" &&
     // Not an Excalidraw File or maybe an Excalidraw file with a back-of-the-card note reference 
@@ -6284,7 +6288,6 @@ const pasteElementToMap = async () => {
     rawText = await navigator.clipboard.readText();
   } catch (e) {}
 
-  let isSingleImageJSON = false;
   const excalidrawClipboardPayload = rawText && rawText.includes('"type":"excalidraw/clipboard"');
 
   // Scenario 1: Excalidraw Element JSON (Single Element or Container+Text)
@@ -6302,9 +6305,21 @@ const pasteElementToMap = async () => {
       const containerEl = els.find(e =>["rectangle", "ellipse", "diamond"].includes(e.type));
       const isContainerText = els.length === 2 && textEl && containerEl && textEl.containerId === containerEl.id;
       
-      isSingleImageJSON = els.length === 1 && els[0].type === "image";
+      const isSingleImageJSON = els.length === 1 && els[0].type === "image";
 
-      if (isSingleElement || isContainerText) {
+      if (isSingleImageJSON) {
+        const fileId = els[0].fileId;
+        const imagePathResolved = ea.getPathForImageFileId(fileId);
+        
+        if (imagePathResolved) {
+          if(app.vault.getFileByPath(imagePathResolved)) {
+            await pasteListToMap(`![[${imagePathResolved}]]`);
+          } else {
+            await pasteListToMap(`![pasted image](${imagePathResolved})`);
+          }
+          return;
+        }
+      } else if (isSingleElement || isContainerText) {
         let textToPaste = "";
         let shapeToPaste = null;
 
@@ -6350,7 +6365,7 @@ const pasteElementToMap = async () => {
     }
   }
 
-  // Scenario 2: Native image payload intercepted from system clipboard or Single Image JSON
+  // Scenario 2: Native image payload intercepted from system clipboard (Blobs)
   let hasImageBlob = false;
   let blob = null;
   let mimeType = null;
@@ -6367,7 +6382,7 @@ const pasteElementToMap = async () => {
     }
   } catch (e) {}
 
-  if (hasImageBlob || isSingleImageJSON) {
+  if (hasImageBlob) {
     const beforeIds = new Set(ea.getViewElements().map(e => e.id));
     
     // Trigger native paste via synthetic event so Excalidraw saves the file natively
@@ -6375,8 +6390,6 @@ const pasteElementToMap = async () => {
     if (hasImageBlob && blob) {
       const file = new File([blob], `Pasted image.${mimeType.split("/")[1] || "png"}`, { type: mimeType });
       dt.items.add(file);
-    } else if (isSingleImageJSON) {
-      dt.setData("text/plain", rawText);
     }
     
     const pasteEvent = new ClipboardEvent("paste", {
@@ -6390,49 +6403,45 @@ const pasteElementToMap = async () => {
     targetEl.dispatchEvent(pasteEvent);
     
     let newImageEl = null;
-    let file = null;
-    let savedOnce = false;
+
     // Poll to wait for Excalidraw to assign a fileId to the new image
     for (let i = 0; i < 40; i++) {
       await sleep(50);
       const currentElements = ea.getViewElements();
       const added = currentElements.filter(e => !beforeIds.has(e.id) && e.type === "image");
       
-      // Wait until Excalidraw has assigned a fileId to the new image
       if (added.length > 0) {
          const tmpNewImageEl = added[added.length - 1];
-         if (!tmpNewImageEl.fileId) {
-           continue; // Still waiting for fileId assignment
-         }
-         const sceneFiles = api().getFiles();
-         if (!sceneFiles[tmpNewImageEl.fileId]) {
-          continue; // fileId not yet recognized in scene
-         }
-         file = ea.getViewFileForImageElement(tmpNewImageEl);
-         if (!file) {
-           if (!savedOnce && ea.targetView.isDirty()) {
-             savedOnce = true;
-             await ea.targetView.save();
-           }
-           continue; // Excalidraw file retrieval not yet working
-         }
+         if (!tmpNewImageEl.fileId) continue;
+         
+         // Verify the image file path is resolved in the EA cache
+         const path = ea.getPathForImageFileId(tmpNewImageEl.fileId);
+         if (!path) continue;
+         
          newImageEl = tmpNewImageEl;
          break;
       }
     }
     
-    if (newImageEl && file) {
+    if (newImageEl) {
       // Silently delete the temporary pasted image
-      await sleep(200); //likely unnecessary contingencey to ensure Excalidraw has finished processing the new image before we delete it
+      await sleep(200); // contingency to ensure Excalidraw has finished processing the new image
       const imageID = newImageEl.id;
+      
+      const imagePathResolved = ea.getPathForImageFileId(newImageEl.fileId);
+
       ea.clear();
       ea.copyViewElementsToEAforEditing([newImageEl]);
       ea.getElement(imageID).isDeleted = true;
       await addElementsToView({ captureUpdate: "EVENTUALLY", shouldRestoreElements: false });
       
-      ea.selectElementsInView([originallySelectedElement.id]); // Reselect original node because paste image steals selection
-      const imagePath = `![[${file.path}]]`;
-      await pasteListToMap(imagePath);
+      if (originallySelectedElement) {
+        ea.selectElementsInView([originallySelectedElement.id]); // Reselect original node because paste image steals selection
+      }
+      
+      if (imagePathResolved) {
+        await pasteListToMap(`![pasted image](${imagePathResolved})`);
+      }
     }
     return;
   }
@@ -6444,6 +6453,7 @@ const pasteElementToMap = async () => {
     new Notice(t("NOTICE_PASTE_ABORTED"));
   }
 };
+
 // ---------------------------------------------------------------------------
 // 6. Map Actions
 // ---------------------------------------------------------------------------
@@ -9143,6 +9153,10 @@ const renderInput = (container, isFloating = false) => {
 
   // Initialize Link Suggester on Main Input
   linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow.settingEl);
+  // Override modifyInput to replace dots with spaces, allowing fuzzy matcher to locate files correctly.
+  if (linkSuggester) {
+    linkSuggester.modifyInput = (input) => input.replace(/\./g, " ");
+  }
 
   // Accessibility / ARIA labels
   const ariaHelp = [
@@ -9153,7 +9167,6 @@ const renderInput = (container, isFloating = false) => {
   ].join("\n");
   
   inputEl.ariaLabel = ariaHelp;
-
 
   let dockedButtonContainer;
   if (!isFloating) {
