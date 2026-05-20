@@ -1,3 +1,4 @@
+import { ExcalidrawGenericElement } from "./elements/ExcalidrawElement";
 import ExcalidrawScene from "./elements/ExcalidrawScene";
 import Group from "./elements/Group";
 import { createTreeWalker, walk } from "./walker";
@@ -5,7 +6,7 @@ import { createTreeWalker, walk } from "./walker";
 export type ConversionResult = {
   hasErrors: boolean;
   errors: string;
-  content: any; // Serialized Excalidraw JSON
+  content: ExcalidrawGenericElement[];
 };
 
 export const svgToExcalidraw = (svgString: string): ConversionResult => {
@@ -16,7 +17,7 @@ export const svgToExcalidraw = (svgString: string): ConversionResult => {
     // was there a parsing error?
     const errorsElements = svgDOM.querySelectorAll("parsererror");
     const hasErrors = errorsElements.length > 0;
-    let content = null;
+    let content: ExcalidrawGenericElement[] = [];
 
     if (hasErrors) {
       console.error(

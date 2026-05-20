@@ -4,9 +4,9 @@ export const DEBUGGING = false;
 
 export const log = console.log.bind(window.console);
 export const debug = (
-  fn: (...args: any[]) => any,
+  fn: (...args: unknown[]) => unknown,
   fnName: string,
-  ...messages: any[]
+  ...messages: unknown[]
 ) => {
   //console.log(fnName,fn,...messages);
   console.log(fnName, ...messages);

@@ -326,9 +326,8 @@ export default {
     "Основной API-ключ, используемый общим слоем ИИ. Значение скрыто, пока поле не находится в фокусе.",
   AI_PROVIDER_API_KEY_PLACEHOLDER: "API-ключ провайдера",
   AI_PROVIDER_BASE_URL_NAME: "Базовый URL ИИ",
-  AI_PROVIDER_BASE_URL_DESC:
-    "Необязательный базовый URL провайдера. Используйте его для локальных OpenAI-совместимых серверов или собственных шлюзов. Можно указать как базовый URL, например https"+ +"://api.openai"+ +".com/v1, так и полный endpoint чата, например https"+ +"://api.openai"+ +".com/v1/chat/completions; Excalidraw автоматически нормализует известные OpenAI-подобные endpoints.",
-  AI_PROVIDER_BASE_URL_PLACEHOLDER: "например: https"+ +"://api.openai"+ +".com/v1",
+  AI_PROVIDER_BASE_URL_DESC: `Необязательный базовый URL провайдера. Используйте его для локальных OpenAI-совместимых серверов или собственных шлюзов. Можно указать как базовый URL, например https${+"://api.openai"}${+".com/v1, так и полный endpoint чата, например https"}${+"://api.openai"}${+".com/v1/chat/completions; Excalidraw автоматически нормализует известные OpenAI-подобные endpoints."}`,
+  AI_PROVIDER_BASE_URL_PLACEHOLDER: `например: https${+"://api.openai"}${+".com/v1"}`,
   AI_PROVIDER_TEXT_ENDPOINT_NAME: "Переопределение endpoint текста ИИ",
   AI_PROVIDER_TEXT_ENDPOINT_DESC:
     "Необязательное полное переопределение endpoint для текстовых и мультимодальных запросов. Оставьте пустым, чтобы он вычислялся из базового URL и провайдера. Большинству пользователей это поле не нужно.",
@@ -607,7 +606,8 @@ export default {
   LINKS_DESC:
     `${labelCTRL()}+КЛИКНИТЕ на <code>[[Text Elements]]</code> чтобы открыть их как ссылки. ` +
     "Если выделенный текст имеет более одного <code>[[valid Obsidian links]]</code>, только первый будет открыт. " +
-    "Если текст начинается как правильная веб-ссылка (то есть <code>http" + "://</code> или <code>http://</code>), потом " +
+    "Если текст начинается как правильная веб-ссылка (то есть <code>http" +
+    "://</code> или <code>http://</code>), потом " +
     "плагин откроет его в браузере. " +
     "Когда файлы Obsidian изменяются, соответствующие <code>[[link]]</code> в ваших чертежах также изменится. " +
     "Если вы не хотите, чтобы текст случайно менялся в ваших чертежах, используйте <code>[[links|with aliases]]</code>.",
@@ -705,7 +705,9 @@ export default {
   GET_URL_TITLE_NAME:
     "Используйте iframely для преобразования заголовка страницы",
   GET_URL_TITLE_DESC:
-    "Используйте <code>http" + "s://iframely.server" + ".crestify.com/iframely?url=</code> для получения заголовка страницы при переходе по ссылке в Excalidraw",
+    "Используйте <code>http" +
+    "s://iframely.server" +
+    ".crestify.com/iframely?url=</code> для получения заголовка страницы при переходе по ссылке в Excalidraw",
   PDF_TO_IMAGE: "PDF в изображение",
   PDF_TO_IMAGE_SCALE_NAME: "Шкала преобразования PDF в изображения",
   PDF_TO_IMAGE_SCALE_DESC:

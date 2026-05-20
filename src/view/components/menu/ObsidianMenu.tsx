@@ -17,7 +17,7 @@ import { t } from "src/lang/helpers";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { CaptureUpdateAction } from "src/constants/constants";
 
-export function setPen(pen: PenStyle, api: any) {
+export function setPen(pen: PenStyle, api: ExcalidrawImperativeAPI) {
   const st = api.getAppState();
   api.updateScene({
     appState: {
@@ -52,7 +52,7 @@ export function setPen(pen: PenStyle, api: any) {
 }
 
 export function resetStrokeOptions(
-  resetCustomPen: any,
+  resetCustomPen: Partial<AppState> | null,
   api: ExcalidrawImperativeAPI,
   clearCurrentStrokeOptions: boolean,
 ) {

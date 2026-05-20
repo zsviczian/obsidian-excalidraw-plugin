@@ -344,7 +344,7 @@ export class ScriptEngine {
       },
       suggester: (
         displayItems: string[],
-        items: any[],
+        items: unknown[],
         hint?: string,
         instructions?: Instruction[],
       ) =>
@@ -409,13 +409,13 @@ export class ScriptEngine {
     }
   }
 
-  public static async suggester(
+  public static async suggester<T>(
     app: App,
     displayItems: string[],
-    items: any[],
+    items: T[],
     hint?: string,
     instructions?: Instruction[],
-  ) {
+  ): Promise<T | undefined> {
     try {
       return await GenericSuggester.Suggest(
         app,

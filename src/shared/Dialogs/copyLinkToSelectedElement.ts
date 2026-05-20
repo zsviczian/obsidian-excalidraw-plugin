@@ -1,6 +1,7 @@
 import { ExcalidrawTextElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { Notice } from "obsidian";
 import { t } from "src/lang/helpers";
+import { NamedExcalidrawFrameElement } from "src/types/excalidrawElementTypes";
 import { ScriptEngine } from "../Scripts";
 import ExcalidrawView from "src/view/ExcalidrawView";
 
@@ -45,9 +46,11 @@ export async function copyLinkToSelectedElementToClipboard(
         : view.plugin.ea.getLargestElement(elements).id;
   }
 
-  const frames = elements.filter((el) => el.type === "frame");
+  const frames = elements.filter(
+    (el): el is NamedExcalidrawFrameElement => el.type === "frame",
+  );
   const hasFrame = frames.length === 1;
-  const hasMarkerFrame = hasFrame && (frames[0] as any).frameRole === "marker";
+  const hasMarkerFrame = hasFrame && frames[0].frameRole === "marker";
   const hasGroup = elements.some((el) => el.groupIds && el.groupIds.length > 0);
 
   // Feature 1: UIFM_ANCHOR checkbox (persisted)
@@ -56,7 +59,7 @@ export async function copyLinkToSelectedElementToClipboard(
   // Feature 2: frame link by name (persisted)
   let copyFrameLinkByName = Boolean(view.plugin.settings.copyFrameLinkByName);
 
-  const frameNameRaw = hasFrame ? (frames[0] as any)?.name : undefined;
+  const frameNameRaw = hasFrame ? frames[0]?.name : undefined;
   const frameName = typeof frameNameRaw === "string" ? frameNameRaw.trim() : "";
   const frameNameIsValid =
     hasFrame && frameName.length > 0 && /[\p{L}\p{N}_ -]+/u.test(frameName);

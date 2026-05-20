@@ -2,6 +2,7 @@ import type {
   ExcalidrawElement,
   ExcalidrawTextElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
+import type { AppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import type { TFile } from "obsidian";
 import { FRONTMATTER_KEYS, getContainerElement } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
@@ -239,7 +240,7 @@ export function _getContainerElement(
   element:
     | (ExcalidrawElement & { containerId: ExcalidrawElement["id"] | null })
     | null,
-  scene: any,
+  scene: { elements?: ExcalidrawElement[]; appState?: AppState },
 ) {
   if (!element || !scene?.elements || element.type !== "text") {
     return null;

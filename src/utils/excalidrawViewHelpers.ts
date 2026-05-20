@@ -2,10 +2,10 @@ import type {
   ExcalidrawElement,
   ExcalidrawImageElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
+import type { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { getCommonBoundingBox, restoreElements } from "src/constants/constants";
 import { getEA } from "src/core";
 import { t } from "src/lang/helpers";
-import type { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 
 function estimateBounds(
@@ -31,7 +31,7 @@ export function repositionElementsToCursor(
     [offsetX, offsetY] = [newPosition.x - x1, newPosition.y - y1];
   }
 
-  elements.forEach((element: any) => {
+  elements.forEach((element: Mutable<ExcalidrawElement>) => {
     element.x = element.x + offsetX;
     element.y = element.y + offsetY;
   });
@@ -42,8 +42,10 @@ export function repositionElementsToCursor(
   });
 }
 
-export const cloneElement = (el: ExcalidrawElement): any => {
-  const newEl = JSON.parse(JSON.stringify(el));
+export const cloneElement = (
+  el: ExcalidrawElement,
+): Mutable<ExcalidrawElement> => {
+  const newEl = JSON.parse(JSON.stringify(el)) as Mutable<ExcalidrawElement>;
   newEl.version = el.version + 1;
   newEl.updated = Date.now();
   newEl.versionNonce = Math.floor(Math.random() * 1000000000);

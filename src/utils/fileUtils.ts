@@ -28,6 +28,7 @@ import {
 } from "./pathUtils";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import { IMAGE_MIME_TYPES, MimeType } from "src/types/embeddedFileLoaderTypes";
+import type { PdfJsDocumentProxy } from "src/types/pdfJsTypes";
 import { setElementDisplay } from "./htmlUtils";
 export { splitFolderAndFilename } from "./pathUtils";
 
@@ -349,17 +350,7 @@ export const arrayBufferToBase64 = (arrayBuffer: ArrayBuffer): string => {
   return btoa(binary);
 };
 
-type PdfJsPage = {
-  getViewport(options: { scale: number }): { width: number; height: number };
-};
-
-type PdfJsDocument = {
-  destroy(): void;
-  getPage(pageNumber: number): Promise<PdfJsPage>;
-  numPages: number;
-};
-
-export const getPDFDoc = async (f: TFile): Promise<PdfJsDocument> => {
+export const getPDFDoc = async (f: TFile): Promise<PdfJsDocumentProxy> => {
   if (typeof window.pdfjsLib === "undefined") {
     await loadPdfJs();
   }

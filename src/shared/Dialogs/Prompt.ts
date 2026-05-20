@@ -985,20 +985,20 @@ export class GenericInputPrompt extends Modal {
   }
 }
 
-export class GenericSuggester extends FuzzySuggestModal<any> {
-  private resolvePromise: (value: any) => void;
+export class GenericSuggester<T> extends FuzzySuggestModal<T> {
+  private resolvePromise: (value: T) => void;
   private rejectPromise: (reason?: string) => void;
-  public promise: Promise<any>;
+  public promise: Promise<T>;
   private resolved: boolean;
 
-  public static Suggest(
+  public static Suggest<T>(
     app: App,
     displayItems: string[],
-    items: string[],
+    items: T[],
     hint?: string,
     instructions?: Instruction[],
   ) {
-    const newSuggester = new GenericSuggester(
+    const newSuggester = new GenericSuggester<T>(
       app,
       displayItems,
       items,
@@ -1011,7 +1011,7 @@ export class GenericSuggester extends FuzzySuggestModal<any> {
   public constructor(
     app: App,
     private displayItems: string[],
-    private items: any[],
+    private items: T[],
     private hint?: string,
     private instructions?: Instruction[],
   ) {
@@ -1021,7 +1021,7 @@ export class GenericSuggester extends FuzzySuggestModal<any> {
     if (instructions) {
       this.setInstructions(this.instructions);
     }
-    this.promise = new Promise<any>((resolve, reject) => {
+    this.promise = new Promise<T>((resolve, reject) => {
       this.resolvePromise = resolve;
       this.rejectPromise = reject;
     });
@@ -1029,20 +1029,20 @@ export class GenericSuggester extends FuzzySuggestModal<any> {
     this.open();
   }
 
-  getItemText(item: string): string {
+  getItemText(item: T): string {
     return this.displayItems[this.items.indexOf(item)];
   }
 
-  getItems(): any[] {
+  getItems(): T[] {
     return this.items;
   }
 
-  selectSuggestion(value: FuzzyMatch<string>, evt: MouseEvent | KeyboardEvent) {
+  selectSuggestion(value: FuzzyMatch<T>, evt: MouseEvent | KeyboardEvent) {
     this.resolved = true;
     super.selectSuggestion(value, evt);
   }
 
-  onChooseItem(item: any): void {
+  onChooseItem(item: T): void {
     this.resolved = true;
     this.resolvePromise(item);
   }
@@ -1231,36 +1231,36 @@ export class NewFileActions extends Modal {
   }
 }
 
-export class MultiOptionConfirmationPrompt extends Modal {
-  public waitForClose: Promise<any>;
-  private resolvePromise: (value: any) => void;
+export class MultiOptionConfirmationPrompt<T = boolean | null> extends Modal {
+  public waitForClose: Promise<T>;
+  private resolvePromise: (value: T) => void;
   private rejectPromise: (reason?: string) => void;
-  private selectedValue: any = null;
+  private selectedValue: T = null as T;
   private readonly message: string;
-  private readonly buttons: Map<string, any>;
+  private readonly buttons: Map<string, T>;
   private ctaButtonLabel: string = null;
   private ctaButtonEl: HTMLButtonElement | null = null;
 
   constructor(
     private plugin: ExcalidrawPlugin,
     message: string,
-    buttons?: Map<string, any>,
+    buttons?: Map<string, T>,
     ctaButtonLabel?: string,
   ) {
     super(plugin.app);
     this.message = message;
     if (!buttons || buttons.size === 0) {
-      buttons = new Map<string, any>([
+      buttons = new Map<string, boolean | null>([
         [t("PROMPT_BUTTON_CANCEL"), null],
         [t("PROMPT_BUTTON_OK"), true],
-      ]);
+      ]) as unknown as Map<string, T>;
       if (!ctaButtonLabel) {
         ctaButtonLabel = t("PROMPT_BUTTON_CANCEL");
       }
     }
     this.ctaButtonLabel = ctaButtonLabel;
     this.buttons = buttons;
-    this.waitForClose = new Promise<any>((resolve, reject) => {
+    this.waitForClose = new Promise<T>((resolve, reject) => {
       this.resolvePromise = resolve;
       this.rejectPromise = reject;
     });

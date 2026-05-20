@@ -373,9 +373,8 @@ export default {
     "Primary API key used by the shared AI layer. The value is masked unless the field is focused.",
   AI_PROVIDER_API_KEY_PLACEHOLDER: "Provider API key",
   AI_PROVIDER_BASE_URL_NAME: "AI base URL",
-  AI_PROVIDER_BASE_URL_DESC:
-    "Optional provider base URL. Use this for local OpenAI-compatible servers or self-hosted gateways. You can enter either a base URL such as https"+ +"://api.openai"+ +".com/v1 or a full chat endpoint such as https"+ +"://api.openai"+ +".com/v1/chat/completions; Excalidraw will normalize known OpenAI-style endpoints automatically.",
-  AI_PROVIDER_BASE_URL_PLACEHOLDER: "e.g.: https"+ +"://api.openai"+ +".com/v1",
+  AI_PROVIDER_BASE_URL_DESC: `Optional provider base URL. Use this for local OpenAI-compatible servers or self-hosted gateways. You can enter either a base URL such as https${+"://api.openai"}${+".com/v1 or a full chat endpoint such as https"}${+"://api.openai"}${+".com/v1/chat/completions; Excalidraw will normalize known OpenAI-style endpoints automatically."}`,
+  AI_PROVIDER_BASE_URL_PLACEHOLDER: `e.g.: https${+"://api.openai"}${+".com/v1"}`,
   AI_PROVIDER_TEXT_ENDPOINT_NAME: "AI text endpoint override",
   AI_PROVIDER_TEXT_ENDPOINT_DESC:
     "Optional full endpoint override for text and multimodal requests. Leave blank to derive it from the base URL and provider. Most users should keep this empty.",
@@ -471,8 +470,7 @@ export default {
   AI_PROVIDER_PROFILE_MODAL_BASE_URL_NAME: "Base URL",
   AI_PROVIDER_PROFILE_MODAL_BASE_URL_DESC:
     "Base URL used to derive the provider endpoints.",
-  AI_PROVIDER_PROFILE_MODAL_BASE_URL_PLACEHOLDER:
-    "e.g.: https"+ +"://api.openai"+ +".com/v1",
+  AI_PROVIDER_PROFILE_MODAL_BASE_URL_PLACEHOLDER: `e.g.: https${+"://api.openai"}${+".com/v1"}`,
   AI_PROVIDER_PROFILE_MODAL_OPENAI_COMPATIBLE_HINT:
     "For local OpenAI-compatible LLMs, enter a dummy API key if no real key is required so Excalidraw recognizes the profile as configured.",
   AI_PROVIDER_PROFILE_MODAL_NAME_REQUIRED: "Provider profile name is required.",
@@ -737,7 +735,8 @@ export default {
   LINKS_DESC:
     `${labelCTRL()}+CLICK on <code>[[Text Elements]]</code> to open them as links. ` +
     "If the selected text has more than one <code>[[valid Obsidian links]]</code>, only the first will be opened. " +
-    "If the text starts as a valid web link (i.e. <code>http"+"://</code> or <code>http://</code>), then " +
+    "If the text starts as a valid web link (i.e. <code>http" +
+    "://</code> or <code>http://</code>), then " +
     "the plugin will open it in a browser. " +
     "When Obsidian files change, the matching <code>[[link]]</code> in your drawings will also change. " +
     "If you don't want text accidentally changing in your drawings use <code>[[links|with aliases]]</code>.",
@@ -842,7 +841,9 @@ export default {
     "<b><u>Toggle ON:</u></b> Remove leading '> '<br><b><u>Toggle OFF:</u></b> Do not remove leading '> ' (note it will still be removed from the first row due to Obsidian API functionality)",
   GET_URL_TITLE_NAME: "Use iframely to resolve page title",
   GET_URL_TITLE_DESC:
-    "Use the <code>http" + "s://iframely.server" + ".crestify.com/iframely?url=</code> to get title of page when dropping a link into Excalidraw",
+    "Use the <code>http" +
+    "s://iframely.server" +
+    ".crestify.com/iframely?url=</code> to get title of page when dropping a link into Excalidraw",
   PDF_TO_IMAGE: "PDF to Image",
   PDF_TO_IMAGE_SCALE_NAME: "PDF to Image conversion scale",
   PDF_TO_IMAGE_SCALE_DESC:

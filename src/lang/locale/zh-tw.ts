@@ -337,9 +337,8 @@ export default {
     "共享 AI 層使用的主要 API key。除非輸入欄位取得焦點，否則該值會被隱藏。",
   AI_PROVIDER_API_KEY_PLACEHOLDER: "供應商 API key",
   AI_PROVIDER_BASE_URL_NAME: "AI 基礎 URL",
-  AI_PROVIDER_BASE_URL_DESC:
-    "可選的供應商基礎 URL。可用於本地 OpenAI 相容伺服器或自架閘道。您可以填入像 https"+ +"://api.openai"+ +".com/v1 這樣的基礎 URL，也可以填入像 https"+ +"://api.openai"+ +".com/v1/chat/completions 這樣的完整聊天 endpoint；Excalidraw 會自動正規化已知的 OpenAI 風格 endpoint。",
-  AI_PROVIDER_BASE_URL_PLACEHOLDER: "例如：https"+ +"://api.openai"+ +".com/v1",
+  AI_PROVIDER_BASE_URL_DESC: `可選的供應商基礎 URL。可用於本地 OpenAI 相容伺服器或自架閘道。您可以填入像 https${+"://api.openai"}${+".com/v1 這樣的基礎 URL，也可以填入像 https"}${+"://api.openai"}${+".com/v1/chat/completions 這樣的完整聊天 endpoint；Excalidraw 會自動正規化已知的 OpenAI 風格 endpoint。"}`,
+  AI_PROVIDER_BASE_URL_PLACEHOLDER: `例如：https${+"://api.openai"}${+".com/v1"}`,
   AI_PROVIDER_TEXT_ENDPOINT_NAME: "AI 文字 endpoint 覆寫",
   AI_PROVIDER_TEXT_ENDPOINT_DESC:
     "可選的完整 endpoint 覆寫，用於文字與多模態請求。留空時會根據基礎 URL 和供應商自動推導。大多數使用者不需要填寫。",
@@ -636,7 +635,8 @@ export default {
   LINKS_DESC:
     `按住 ${labelCTRL()} 並點選包含 <code>[[連結]]</code> 的文字元素可以開啟其中的連結。<br>` +
     "如果所選文字元素包含多個 <code>[[有效的內部連結]]</code> ，只會開啟第一個連結；<br>" +
-    "如果所選文字元素包含有效的 URL 連結（如 <code>http" + "://</code> 或 <code>http://</code>），" +
+    "如果所選文字元素包含有效的 URL 連結（如 <code>http" +
+    "://</code> 或 <code>http://</code>），" +
     "外掛會在瀏覽器中開啟連結。<br>" +
     "連結的原始檔被重新命名時，繪圖中相應的 <code>[[內部連結]]</code> 也會同步更新。" +
     "若您不願繪圖中的連結外觀因此而變化，可使用 <code>[[內部連結|別名]]</code>。",
@@ -739,7 +739,9 @@ export default {
     "<b>開啟：</b>隱藏 > 符號。<b>關閉：</b>不隱藏 > 符號。<br>注意，由於 Obsidian API 的原因，首行行首的 > 符號不會被隱藏。",
   GET_URL_TITLE_NAME: "使用 iframly 獲取頁面標題",
   GET_URL_TITLE_DESC:
-    "拖動連結到 Excalidraw 時，使用 <code>http" + "s://iframely.server" + ".crestify.com/iframely?url=</code> 來獲取頁面的標題。",
+    "拖動連結到 Excalidraw 時，使用 <code>http" +
+    "s://iframely.server" +
+    ".crestify.com/iframely?url=</code> 來獲取頁面的標題。",
   PDF_TO_IMAGE: "以影像形式嵌入到繪圖中的 PDF",
   PDF_TO_IMAGE_SCALE_NAME: "解析度",
   PDF_TO_IMAGE_SCALE_DESC:

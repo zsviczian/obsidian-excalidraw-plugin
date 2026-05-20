@@ -2,7 +2,7 @@ import { randomId } from "../utils";
 import { presAttrsToElementValues } from "../attributes";
 import { ExcalidrawElementBase } from "../elements/ExcalidrawElement";
 
-export function getGroupAttrs(groups: Group[]): any {
+export function getGroupAttrs(groups: Group[]): Record<string, unknown> {
   return groups.reduce((acc, { element }) => {
     const elVals = presAttrsToElementValues(element);
 

@@ -316,7 +316,9 @@ export function getFrameBasedOnFrameNameOrId(
   const frames = elements
     .filter((el: ExcalidrawElement) => el.type === "frame")
     .map(
-      (el: ExcalidrawFrameElement): {
+      (
+        el: ExcalidrawFrameElement,
+      ): {
         el: ExcalidrawFrameElement;
         id: string;
         name: string;

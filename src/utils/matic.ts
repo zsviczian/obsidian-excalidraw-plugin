@@ -1,7 +1,11 @@
 import { EXCALIDRAW_PLUGIN, THEME } from "../constants/constants";
 import type { Theme } from "@zsviczian/excalidraw/types/element/src/types";
 import type { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { analyzeAIImage, extractCodeBlocks } from "./AIUtils";
+import {
+  analyzeAIImage,
+  extractCodeBlocks,
+  getJsonErrorMessage,
+} from "./AIUtils";
 import { URLs } from "src/constants/safeUrls";
 
 const DIAGRAM_TO_HTML_DEBUG_PREFIX = "[Excalidraw diagram-to-code debug]";
@@ -49,8 +53,13 @@ const logDiagramToHTMLDebug = (label: string, lines: string[]): void => {
   console.log(`${DIAGRAM_TO_HTML_DEBUG_PREFIX} ${label}\n${lines.join("\n")}`);
 };
 
-const getDiagramToHTMLFinishReason = (json: any): string => {
-  const finishReason = json?.choices?.[0]?.finish_reason;
+const getDiagramToHTMLFinishReason = (
+  json: Record<string, unknown>,
+): string => {
+  const choices = json.choices;
+  const finishReason = Array.isArray(choices)
+    ? (choices[0] as { finish_reason?: unknown } | undefined)?.finish_reason
+    : undefined;
   return typeof finishReason === "string" ? finishReason : "";
 };
 
@@ -89,7 +98,7 @@ const extractDiagramHTML = (content: string) => {
 };
 
 const shouldRetryDiagramToHTML = (
-  json: any,
+  json: Record<string, unknown>,
   extraction: ReturnType<typeof extractDiagramHTML>,
   attemptedMaxTokens: number,
 ): boolean => {
@@ -196,16 +205,7 @@ export async function diagramToHTML({
     logDiagramToHTMLDebug("request failure", [
       `status: ${String(result.response?.status ?? 0)}`,
       `attemptedMaxTokens: ${String(attemptedMaxTokens)}`,
-      `error: ${
-        typeof result.json === "object" &&
-        result.json !== null &&
-        "error" in result.json &&
-        typeof (result.json as any).error === "object" &&
-        (result.json as any).error !== null &&
-        "message" in (result.json as any).error
-          ? ((result.json as any).error.message as string)
-          : "<none>"
-      }`,
+      `error: ${getJsonErrorMessage(result.json) ?? "<none>"}`,
       `content: ${trimDiagramDebugText(result.content || "<empty>")}`,
       `responseJson: ${trimDiagramDebugText(stringifyDiagramDebugValue(result.json))}`,
     ]);
@@ -213,14 +213,7 @@ export async function diagramToHTML({
     return {
       ok: false,
       error:
-        (typeof result.json === "object" &&
-        result.json !== null &&
-        "error" in result.json &&
-        typeof (result.json as any).error === "object" &&
-        (result.json as any).error !== null &&
-        "message" in (result.json as any).error
-          ? ((result.json as any).error.message as string)
-          : undefined) ??
+        getJsonErrorMessage(result.json) ??
         `Request failed with status ${result.response?.status ?? 0}`,
       json: result.json,
     };

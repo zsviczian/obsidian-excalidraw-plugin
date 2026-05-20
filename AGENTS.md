@@ -355,6 +355,18 @@ Validation guidance:
 - Always run `npm run build` after changes, and do not consider a change complete until the build passes with no new errors.
 - If a change could affect runtime behavior, validate by running the plugin in Obsidian if possible.
 
+### MANDATORY: Build Validation After Every Change
+
+**Build validation is not optional and must be run immediately after every code change.**
+
+- After you complete any code modification, you **must** immediately run `npm run build` before proceeding to the next task.
+- Do not consider a change complete, correct, or ready to return to the user until `npm run build` passes with no new errors or warnings.
+- If the build fails, fix all errors in your code and run `npm run build` again.
+- Report all build output (including warnings and circular dependency notices) to the user if relevant to your changes.
+- Build validation is not a final polish step—it is part of the core work.
+- Treat any new build errors as blockers that must be resolved before considering the task done.
+- If a type change or code edit introduces new build failures anywhere in the codebase, those are your responsibility to fix.
+
 ### Type Consolidation Follow-through
 
 - Treat user requests like "tiny follow-up" or "do this consolidation" as end-to-end tasks: complete extraction, replace all known duplicates, and remove local leftovers in the same pass.
@@ -380,6 +392,65 @@ When replacing `any` types:
 - **Do not replace with `unknown` by default**: `unknown` is stricter than `any` and often requires guards/assertions elsewhere, which can break functional equivalence.
 - **Exception for bridge casts**: In rare generic conditional return scenarios where TypeScript cannot express a provably equivalent return value, a narrow `as unknown as ...` bridge cast is acceptable. Keep it local, document why, and do not use it to bypass real type mismatches.
 - **Use existing infrastructure**: Extend `src/types/types.d.ts` for Obsidian unpublished APIs, create new files in `src/types/` that build on existing conventions, and reference Excalidraw types directly.
+
+### CRITICAL: Behavioral Change Detection When Replacing `any`
+
+**Type replacements that appear to be "type-only" can introduce subtle runtime behavior changes. You must proactively detect and flag these before finalizing any change.**
+
+#### Behavior-Altering Patterns
+
+When scanning code that uses a value currently typed as `any`, watch for these patterns that can be affected by a type change:
+
+1. **Falsy/Truthy checks**: `if (!value)`, `if (value)`, `value ? ... : ...`
+   - **Risk**: If the original code treats `0`, `""`, `false`, `null`, `undefined`, or `[]` as falsy, and you infer a type that allows these values, behavior changes.
+   - **Example**: Old code `if (!offset)` rejects `offset === 0`. New type `offset: number` allows `0`, fundamentally changing behavior for edge cases.
+   - **Action**: If the code has falsy checks, document that behavior explicitly in your change notes to the user.
+
+2. **Existence checks**: `if (value === undefined)`, `if (value === null)`, `if (value)`
+   - **Risk**: Changing from accepting `any` (including undefined) to a narrower type may exclude valid edge cases.
+   - **Action**: Verify all call sites provide values matching the new type constraint.
+
+3. **Optional chaining with falsy fallbacks**: `value?.prop ?? default`, `value?.prop ?? fallback`
+   - **Risk**: The fallback behavior may change if the inferred type rules out falsy intermediate values.
+   - **Action**: Test that fallback behavior is identical.
+
+4. **Conditional logic on properties**: `if (obj.prop)`, `switch (obj.type)`, loops over `obj`
+   - **Risk**: Narrowing from `any` to a specific object shape might exclude properties the runtime code depends on.
+   - **Action**: Verify the inferred type shape includes all properties actually accessed.
+
+#### Mandatory Pre-Change Verification
+
+Before replacing an `any` type:
+
+1. **Scan all usages** of the value (especially the entire function or component containing it).
+2. **Identify falsy/truthy checks** or conditional logic that depends on the value.
+3. **Compare semantics**: Does the old behavior permit `0`, `""`, `false`, `null`, or `undefined` in a way the new type might not?
+4. **If a behavior change is introduced**: Explicitly document it in a comment in the code AND flag it to the user BEFORE considering the task complete.
+5. **Document edge cases** that the type change affects.
+
+#### Examples of Correct vs. Incorrect Replacements
+
+**INCORRECT** (behavioral change, not flagged):
+```typescript
+// Old: const value: any = ...; if (!value) return null;
+// New: const value: number = ...; if (typeof value !== "number") return null;
+// Problem: Old code rejects 0, new code accepts 0. Behavior changed silently.
+```
+
+**CORRECT** (behavioral change, explicitly flagged):
+```typescript
+// Old: const offset: any = ...; if (!offset) return null;
+// New: const offset: number = ...; if (typeof offset !== "number") return null;
+// Flagged: "Note: This change now allows offset=0 (previously rejected as falsy).
+//           This is intentional and fixes a bug where block IDs could not be inserted at file start."
+```
+
+**CORRECT** (no behavioral change):
+```typescript
+// Old: const frame: any = ...; if (frame.type === "frame" && !frame.isDeleted) ...
+// New: const frame: { type: string; isDeleted?: boolean } = ...; if (frame.type === "frame" && !frame.isDeleted) ...
+// OK: Inferred type supports all operations, no falsy checks introduced, behavior identical.
+```
 
 ### Type Files And Responsibilities
 

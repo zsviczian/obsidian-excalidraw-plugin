@@ -267,10 +267,9 @@ const walkers = {
     const x = transformedPoints[0][0];
     const y = transformedPoints[0][1];
 
-    const relativePoints = transformedPoints.map(([_x, _y]) => [
-      _x - x,
-      _y - y,
-    ]);
+    const relativePoints = transformedPoints.map(
+      ([_x, _y]): Point => [_x - x, _y - y],
+    );
 
     const [width, height] = dimensionsFromPoints(relativePoints);
 
@@ -304,10 +303,9 @@ const walkers = {
     const x = transformedPoints[0][0];
     const y = transformedPoints[0][1];
 
-    const relativePoints = transformedPoints.map(([_x, _y]) => [
-      _x - x,
-      _y - y,
-    ]);
+    const relativePoints = transformedPoints.map(
+      ([_x, _y]): Point => [_x - x, _y - y],
+    );
 
     const [width, height] = dimensionsFromPoints(relativePoints);
 

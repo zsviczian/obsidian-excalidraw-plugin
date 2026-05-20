@@ -159,6 +159,20 @@ const logAIDebug = (
   console.log(`${AI_DEBUG_PREFIX} ${label}\n${lines.join("\n")}`);
 };
 
+export const getJsonErrorMessage = (json: unknown): string | undefined => {
+  if (typeof json !== "object" || json === null || !("error" in json)) {
+    return undefined;
+  }
+
+  const error = (json as { error?: unknown }).error;
+  if (typeof error !== "object" || error === null || !("message" in error)) {
+    return undefined;
+  }
+
+  const message = (error as { message?: unknown }).message;
+  return message == null ? undefined : String(message);
+};
+
 const getFirstChoice = (json: Record<string, any>) =>
   json?.choices?.[0] ?? null;
 
@@ -2115,12 +2129,20 @@ const requestAI = async (
     return isImageGeneration
       ? await handleImageRequest(request, config, options.signal)
       : await handleTextRequest(request, config, options.signal);
-  } catch (error: any) {
-    if (error?.name === "AbortError") {
+  } catch (error: unknown) {
+    const errorName =
+      typeof error === "object" && error !== null && "name" in error
+        ? String((error as { name?: unknown }).name ?? "")
+        : "";
+    if (errorName === "AbortError") {
       return createSyntheticResponse("Request aborted", 499);
     }
     console.log(error);
-    return createSyntheticResponse(error?.message ?? "Request failed", 500);
+    const errorMessage =
+      typeof error === "object" && error !== null && "message" in error
+        ? String((error as { message?: unknown }).message ?? "Request failed")
+        : "Request failed";
+    return createSyntheticResponse(errorMessage, 500);
   }
 };
 

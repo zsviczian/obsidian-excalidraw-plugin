@@ -14,8 +14,8 @@ declare const PLUGIN_VERSION: string;
  * The user can click ignore to dismiss the dialog.
  */
 export class VersionMismatchPrompt extends Modal {
-  private resolvePromise: (value: any) => void;
-  public promise: Promise<any>;
+  private resolvePromise: (value: boolean) => void;
+  public promise: Promise<boolean>;
   private resolved: boolean;
   private isDirty: boolean = false;
 
@@ -23,7 +23,7 @@ export class VersionMismatchPrompt extends Modal {
     super(plugin.app);
   }
 
-  async start(): Promise<any> {
+  async start(): Promise<boolean> {
     this.promise = new Promise((resolve) => {
       this.resolvePromise = resolve;
     });

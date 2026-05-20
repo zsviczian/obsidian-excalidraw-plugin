@@ -1,3 +1,8 @@
+import {
+  ExcalidrawElement,
+  ExcalidrawImageElement,
+} from "@zsviczian/excalidraw/types/element/src/types";
+import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { ButtonComponent, TFile, ToggleComponent } from "obsidian";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import ExcalidrawPlugin from "../../core/main";
@@ -7,6 +12,8 @@ import { FileSuggestionModal } from "../Suggesters/FileSuggestionModal";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { t } from "src/lang/helpers";
+import { NamedExcalidrawFrameElement } from "src/types/excalidrawElementTypes";
+import type { PdfJsDocumentProxy } from "src/types/pdfJsTypes";
 import { setSanitizedHtml } from "src/utils/htmlUtils";
 
 export class InsertPDFModal extends Modal {
@@ -27,7 +34,7 @@ export class InsertPDFModal extends Modal {
     new Map();
   private importScale = 0.3;
   private imageSizeMessage: HTMLElement;
-  private pdfDoc: any;
+  private pdfDoc: PdfJsDocumentProxy | null = null;
   private pdfFile: TFile;
   private dirty: boolean = false;
 
@@ -498,7 +505,7 @@ export class InsertPDFModal extends Modal {
 
               ea.style.strokeColor = this.borderBox ? "#000000" : "transparent";
               const boxID = ea.addRect(topX, topY, imgWidth, imgHeight);
-              const boxEl = ea.getElement(boxID) as any;
+              const boxEl = ea.getElement(boxID) as Mutable<ExcalidrawElement>;
               if (this.lockAfterImport) {
                 boxEl.locked = true;
               }
@@ -510,7 +517,9 @@ export class InsertPDFModal extends Modal {
                 false,
                 false,
               );
-              const imgEl = ea.getElement(imageID) as any;
+              const imgEl = ea.getElement(
+                imageID,
+              ) as Mutable<ExcalidrawImageElement>;
               imgEl.width = imgWidth;
               imgEl.height = imgHeight;
               if (this.lockAfterImport) {
@@ -527,12 +536,13 @@ export class InsertPDFModal extends Modal {
                   imgHeight,
                   `${page}`,
                 );
-                const frameEl = ea.getElement(frameID) as any;
+                const frameEl = ea.getElement(
+                  frameID,
+                ) as Mutable<NamedExcalidrawFrameElement>;
                 frameEl.frameRole = "marker";
+                frameEl.link = `${this.pdfFile.path}#page=${page}`;
                 ea.addToGroup([frameID, boxID, imageID]);
                 //ea.addElementsToFrame(frameID, [boxID,imageID]);
-                ea.getElement(frameID).link =
-                  `${this.pdfFile.path}#page=${page}`;
               }
 
               switch (this.direction) {

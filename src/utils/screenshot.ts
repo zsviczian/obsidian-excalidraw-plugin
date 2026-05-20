@@ -105,7 +105,7 @@ export async function captureScreenshot(
     };
   };
 
-  const restoreState = (st: any) => {
+  const restoreState = (st: ReturnType<typeof saveState>) => {
     view.updateScene({
       appState: {
         ...st,

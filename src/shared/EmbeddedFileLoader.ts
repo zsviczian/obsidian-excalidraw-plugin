@@ -21,6 +21,7 @@ import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
 import { t } from "../lang/helpers";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "../core/main";
+import type { PdfJsDocumentProxy } from "src/types/pdfJsTypes";
 import {
   blobToBase64,
   getDataURLFromURL,
@@ -390,8 +391,8 @@ export class EmbeddedFile {
 }
 
 export class EmbeddedFilesLoader {
-  private pdfDocsMap: Map<string, any> = new Map();
-  private pdfDocs: Set<any> = new Set();
+  private pdfDocsMap: Map<string, PdfJsDocumentProxy> = new Map();
+  private pdfDocs: Set<PdfJsDocumentProxy> = new Set();
   private plugin: ExcalidrawPlugin;
   private isDark: boolean;
   public terminate = false;
@@ -1172,8 +1173,12 @@ export class EmbeddedFilesLoader {
         cropRect && cropRect.length === 4 && cropRect.every((x) => !isNaN(x));
       let viewProps: PDFPageViewProps;
 
-      const shouldRetryWithFreshDoc = (e: any): boolean => {
-        const message = `${e?.message ?? e ?? ""}`;
+      const shouldRetryWithFreshDoc = (e: unknown): boolean => {
+        const message = `${
+          typeof e === "object" && e !== null && "message" in e
+            ? String((e as { message?: unknown }).message ?? "")
+            : String(e ?? "")
+        }`;
         return (
           message.includes("sendWithPromise") ||
           message.includes("WorkerTransport") ||

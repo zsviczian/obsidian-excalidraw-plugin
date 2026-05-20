@@ -210,7 +210,12 @@ import { UniversalInsertFileModal } from "../shared/Dialogs/UniversalInsertFileM
 import { getMermaidText, shouldRenderMermaid } from "../utils/mermaidUtils";
 import { nanoid } from "nanoid";
 import { CustomMutationObserver, DEBUGGING, log } from "../utils/debugHelper";
-import { errorHTML, extractCodeBlocks, generateAIText } from "../utils/AIUtils";
+import {
+  errorHTML,
+  extractCodeBlocks,
+  generateAIText,
+  getJsonErrorMessage,
+} from "../utils/AIUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { SelectCard } from "../shared/Dialogs/SelectCard";
 import { Packages } from "../types/types";
@@ -3281,7 +3286,7 @@ export default class ExcalidrawView
           const plugin = this.plugin;
           const leaf = this.leaf;
           void (async () => {
-            let confirmation: boolean = true;
+            let confirmation: boolean | null = true;
             let counter = 0;
             const timestamp = Date.now();
             while (!imageCache.isReady() && confirmation) {
@@ -3425,9 +3430,10 @@ export default class ExcalidrawView
             this.file,
           );
         };
-        let allowOnloadScript = this.plugin.settings.enableOnloadScripts;
+        let allowOnloadScript: boolean | null =
+          this.plugin.settings.enableOnloadScripts;
         if (!allowOnloadScript) {
-          const onloadScriptPromptButtons = new Map<string, boolean>([
+          const onloadScriptPromptButtons = new Map<string, boolean | null>([
             [t("ENABLE_ONLOAD_SCRIPTS_CONFIRM_DENY"), null],
             [t("ENABLE_ONLOAD_SCRIPTS_CONFIRM_ENABLE"), true],
           ]);
@@ -5971,7 +5977,7 @@ export default class ExcalidrawView
           (el: ExcalidrawElement) => el.id === textElement.id,
         );
         if (el.length === 1) {
-          const clone = cloneElement(el[0]);
+          const clone = cloneElement(el[0]) as Mutable<ExcalidrawTextElement>;
           clone.rawText = WARNING;
           elements[elements.indexOf(el[0])] = clone;
           this.excalidrawData.setTextElement(clone.id, WARNING, () => {});
@@ -6067,7 +6073,7 @@ export default class ExcalidrawView
         );
         if (el.length === 1 && el[0].type === "text") {
           const container = getContainerElement(el[0], elementsMap);
-          const clone = cloneElement(el[0]);
+          const clone = cloneElement(el[0]) as Mutable<ExcalidrawTextElement>;
           if (!el[0]?.isDeleted) {
             const { text, x, y, width, height } = refreshTextDimensions(
               el[0],
@@ -7030,14 +7036,8 @@ export default class ExcalidrawView
               log(json);
               return {
                 error: new Error(
-                  typeof json === "object" &&
-                    json !== null &&
-                    "error" in json &&
-                    typeof (json as any).error === "object" &&
-                    (json as any).error !== null &&
-                    "message" in (json as any).error
-                    ? ((json as any).error.message as string)
-                    : `Request failed with status ${response?.status ?? 0}`,
+                  getJsonErrorMessage(json) ??
+                    `Request failed with status ${response?.status ?? 0}`,
                 ),
                 rateLimit,
                 rateLimitRemaining,
@@ -7137,14 +7137,7 @@ export default class ExcalidrawView
             if (!response.ok) {
               const text =
                 response.error ||
-                (typeof response.json === "object" &&
-                response.json !== null &&
-                "error" in response.json &&
-                typeof (response.json as any).error === "object" &&
-                (response.json as any).error !== null &&
-                "message" in (response.json as any).error
-                  ? ((response.json as any).error.message as string)
-                  : undefined) ||
+                getJsonErrorMessage(response.json) ||
                 "Unknown error during generation";
               return {
                 html: errorHTML(text),

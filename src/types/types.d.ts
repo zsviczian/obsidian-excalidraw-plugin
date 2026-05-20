@@ -1,39 +1,7 @@
 import { Component, TAbstractFile, TFile, WorkspaceLeaf } from "obsidian";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import { ExcalidrawLib } from "./excalidrawLib";
-
-type PdfJsPageViewport = {
-  width: number;
-  height: number;
-};
-
-type PdfJsPageProxy = {
-  getViewport(options: { scale: number }): PdfJsPageViewport;
-};
-
-type PdfJsDocumentProxy = {
-  destroy(): void;
-  getPage(pageNumber: number): Promise<PdfJsPageProxy>;
-  numPages: number;
-};
-
-type PdfJsDocumentLoadResult = {
-  promise: Promise<PdfJsDocumentProxy>;
-};
-
-type PdfJsLibrary = {
-  GlobalWorkerOptions: {
-    workerSrc: string;
-  };
-  getDocument(options: {
-    url: string;
-    wasmUrl?: string;
-    cMapUrl?: string;
-    cMapPacked?: boolean;
-    standardFontDataUrl?: string;
-    iccUrl?: string;
-  }): PdfJsDocumentLoadResult;
-};
+import type { PdfJsLibrary } from "./pdfJsTypes";
 
 type PolyBoolLibrary = {
   epsilon(value: number): void;
@@ -69,6 +37,14 @@ type ObsidianSettingsManager = {
   openTabById(tabId: string): void;
 };
 
+type ObsidianViewRegistry = {
+  getViewTypeForFile?(file: TFile): string | null | undefined;
+  getViewTypeByFile?(file: TFile): string | null | undefined;
+  getTypeByFile?(file: TFile): string | null | undefined;
+  getViewTypeByExtension?(ext: string): string | null | undefined;
+  getTypeByExtension?(ext: string): string | null | undefined;
+};
+
 type MarkdownBlockNode = {
   type: string;
   id?: string;
@@ -90,6 +66,15 @@ type MarkdownBlockNode = {
     end: {
       offset: number;
     };
+  };
+};
+
+type ObsidianDragManager = {
+  draggable?: {
+    file?: TFile;
+    files?: TFile[];
+    title?: string;
+    type?: string;
   };
 };
 
@@ -194,6 +179,8 @@ declare global {
 declare module "obsidian" {
   interface App {
     appId: string;
+    dragManager: ObsidianDragManager;
+    viewRegistry?: ObsidianViewRegistry;
     internalPlugins: ObsidianInternalPluginsManager;
     setting: ObsidianSettingsManager;
     commands: ObsidianCommandManager;

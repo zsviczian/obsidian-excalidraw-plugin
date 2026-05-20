@@ -3,10 +3,12 @@ import {
   FillStyle,
   StrokeStyle,
   ExcalidrawElement,
+  ExcalidrawArrowElement,
   ExcalidrawBindableElement,
   FileId,
   NonDeletedExcalidrawElement,
   ExcalidrawImageElement,
+  ExcalidrawLinearElement,
   ExcalidrawTextElement,
   StrokeRoundness,
   RoundnessType,
@@ -171,6 +173,9 @@ import {
   updateOrAddSVGColorInfo,
   verifyMinimumPluginVersion,
 } from "src/utils/excalidrawAutomateUtils";
+
+type MutableElementMapEntry = Mutable<ExcalidrawElement> &
+  Record<string, unknown>;
 import { getLastActiveExcalidrawView } from "src/utils/excalidrawViewLookup";
 import {
   exportToPDF,
@@ -199,7 +204,7 @@ import { getPDFCropRect } from "src/utils/PDFUtils";
 import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
 import { URL_REGISTRY, URLs } from "src/constants/safeUrls";
 
-type ExcalidrawAutomateHelpTarget = ((...args: any[]) => any) | string;
+type ExcalidrawAutomateHelpTarget = ((...args: unknown[]) => unknown) | string;
 
 extendPlugins([
   HarmonyPlugin,
@@ -758,7 +763,7 @@ export class ExcalidrawAutomate {
   }
 
   plugin: ExcalidrawPlugin;
-  elementsDict: { [key: string]: any }; //contains the ExcalidrawElements currently edited in Automate indexed by el.id
+  elementsDict: { [key: string]: MutableElementMapEntry }; //contains the ExcalidrawElements currently edited in Automate indexed by el.id
   imagesDict: { [key: FileId]: ImageInfo }; //the images files including DataURL, indexed by fileId
   mostRecentMarkdownSVG: SVGSVGElement = null; //Markdown renderer will drop a copy of the most recent SVG here for debugging purposes
   style: {
@@ -1105,7 +1110,10 @@ export class ExcalidrawAutomate {
   addToGroup(objectIds: string[]): string {
     const id = nanoid();
     objectIds.forEach((objectId) => {
-      this.elementsDict[objectId]?.groupIds?.push(id);
+      const groupIds = this.elementsDict[objectId]?.groupIds as
+        | string[]
+        | undefined;
+      groupIds?.push(id);
     });
     return id;
   }
@@ -1189,7 +1197,7 @@ export class ExcalidrawAutomate {
    * Gets all elements from ExcalidrawAutomate elementsDict.
    * @returns {Mutable<ExcalidrawElement>[]} Array of elements from elementsDict.
    */
-  getElements(): Mutable<ExcalidrawElement>[] {
+  getElements(): MutableElementMapEntry[] {
     const elements = [];
     const elementIds = Object.keys(this.elementsDict);
     for (let i = 0; i < elementIds.length; i++) {
@@ -1203,7 +1211,7 @@ export class ExcalidrawAutomate {
    * @param {string} id - The element ID to retrieve.
    * @returns {Mutable<ExcalidrawElement>} The element with the specified ID.
    */
-  getElement(id: string): Mutable<ExcalidrawElement> {
+  getElement(id: string): MutableElementMapEntry {
     return this.elementsDict[id];
   }
 
@@ -1270,34 +1278,30 @@ export class ExcalidrawAutomate {
     if (!boundElement) {
       return {};
     }
+
     const textElement = this.elementsDict[
       boundElement.id
     ] as Mutable<ExcalidrawTextElement>;
     if (textElement) {
       return { eaElement: textElement };
     }
-    if (
-      !textElement &&
-      searchInView &&
-      this.targetView &&
-      this.targetView._loaded
-    ) {
+
+    if (searchInView && this.targetView && this.targetView._loaded) {
       const viewElements = this.getViewElements();
       const ve = viewElements.find((e) => e.id === boundElement.id);
-      return { sceneElement: ve as ExcalidrawTextElement };
+      if (ve) {
+        return {
+          sceneElement: ve as ExcalidrawTextElement,
+        };
+      }
     }
+
     return {};
   }
 
   /**
-   * Creates a drawing and saves it to the specified filename.
-   * @param {Object} [params] - Parameters for creating the drawing.
-   * @param {string} [params.filename] - The filename for the drawing. If null, default filename as defined in Excalidraw settings.
-   * @param {string} [params.foldername] - The folder name for the drawing. If null, default folder as defined in Excalidraw settings.
-   * @param {string} [params.templatePath] - The template path to use for the drawing.
-   * @param {boolean} [params.onNewPane] - Whether to open the drawing in a new pane.
-   * @param {boolean} [params.silent] - Whether to create the drawing silently.
-   * @param {Object} [params.frontmatterKeys] - Frontmatter keys to include in the drawing.
+   * Creates a new Excalidraw drawing file from current EA state and optional template.
+   * @param params - Optional creation parameters.
    * @param {string} [params.plaintext] - Text to insert above the `# Text Elements` section.
    * @returns {Promise<string>} Promise resolving to the path of the created drawing.
    */
@@ -1910,14 +1914,14 @@ export class ExcalidrawAutomate {
       versionNonce: Math.floor(Math.random() * 1000000000),
       updated: Date.now(),
       isDeleted: false,
-      groupIds: [] as any[],
-      boundElements: [] as any[],
+      groupIds: [] as string[],
+      boundElements: [] as { id: string; type: "arrow" | "text" }[],
       link,
       locked: false,
       frameId: null as string | null,
       hasTextLink: !!(eltype === "text" && link),
       ...(scale ? { scale } : {}),
-    };
+    } as unknown as Mutable<ExcalidrawElement>;
   }
 
   /**
@@ -2207,7 +2211,7 @@ export class ExcalidrawAutomate {
     const sx = a / 9;
     const sy = b * 0.8;
     const step = 6;
-    const p: any = [];
+    const p: [number, number][] = [];
     const pushPoint = (i: number, dir: number) => {
       const x = i + Math.random() * sx - sx / 2;
       p.push([
@@ -2227,7 +2231,7 @@ export class ExcalidrawAutomate {
       pushPoint(i, -1);
     }
     p.push(p[0]);
-    const scale = (p: [[x: number, y: number]]): [[x: number, y: number]] => {
+    const scale = (p: [x: number, y: number][]): [x: number, y: number][] => {
       const box = getLineBox(p);
       const scaleX = width / box.w;
       const scaleY = height / box.h;
@@ -2364,7 +2368,7 @@ export class ExcalidrawAutomate {
     }
     this.style.strokeColor = strokeColor;
     const isContainerBound = boxId && formatting.box !== "blob";
-    this.elementsDict[id] = {
+    const newTextElement = {
       text,
       fontSize: this.style.fontSize,
       fontFamily: this.style.fontFamily,
@@ -2376,9 +2380,12 @@ export class ExcalidrawAutomate {
       containerId: isContainerBound ? boxId : null,
       originalText: isContainerBound ? originalText : text,
       rawText: isContainerBound ? originalText : text,
-      lineHeight: getLineHeight(this.style.fontFamily),
+      lineHeight: getLineHeight(
+        this.style.fontFamily,
+      ) as Mutable<ExcalidrawTextElement>["lineHeight"],
       autoResize: formatting?.box ? true : (formatting?.autoResize ?? true),
-    };
+    } as unknown as Mutable<ExcalidrawTextElement>;
+    this.elementsDict[id] = newTextElement;
     if (boxId && formatting?.box === "blob") {
       this.addToGroup([id, boxId]);
     }
@@ -2387,7 +2394,10 @@ export class ExcalidrawAutomate {
       if (!box.boundElements) {
         box.boundElements = [];
       }
-      box.boundElements.push({ type: "text", id });
+      (box.boundElements as { type: "text" | "arrow"; id: string }[]).push({
+        type: "text",
+        id,
+      });
     }
     const textElement = this.getElement(id) as Mutable<ExcalidrawTextElement>;
     const container =
@@ -2421,10 +2431,10 @@ export class ExcalidrawAutomate {
    * @param {string} [id] - The ID of the line element.
    * @returns {string} The ID of the added line element.
    */
-  addLine(points: [[x: number, y: number]], id?: string): string {
+  addLine(points: [x: number, y: number][], id?: string): string {
     const box = getLineBox(points);
     id = id ?? nanoid();
-    this.elementsDict[id] = {
+    const lineElement = {
       points: normalizeLinePoints(points),
       lastCommittedPoint: null,
       startBinding: null,
@@ -2439,7 +2449,8 @@ export class ExcalidrawAutomate {
         box.w,
         box.h,
       ),
-    };
+    } as unknown as Mutable<ExcalidrawLinearElement>;
+    this.elementsDict[id] = lineElement;
     return id;
   }
 
@@ -2515,7 +2526,7 @@ export class ExcalidrawAutomate {
         ) as Mutable<ExcalidrawBindableElement>)
       : null;
     id = id ?? nanoid();
-    this.elementsDict[id] = {
+    const arrowElement = {
       points: normalizeLinePoints(points),
       elbowed,
       lastCommittedPoint: null,
@@ -2533,11 +2544,13 @@ export class ExcalidrawAutomate {
       startArrowhead:
         typeof formatting?.startArrowHead !== "undefined"
           ? formatting.startArrowHead
-          : this.style.startArrowHead,
+          : (this.style
+              .startArrowHead as Mutable<ExcalidrawArrowElement>["startArrowhead"]),
       endArrowhead:
         typeof formatting?.endArrowHead !== "undefined"
           ? formatting.endArrowHead
-          : this.style.endArrowHead,
+          : (this.style
+              .endArrowHead as Mutable<ExcalidrawArrowElement>["endArrowhead"]),
       ...this.boxedElement(
         id,
         "arrow",
@@ -2546,7 +2559,8 @@ export class ExcalidrawAutomate {
         box.w,
         box.h,
       ),
-    };
+    } as unknown as Mutable<ExcalidrawArrowElement>;
+    this.elementsDict[id] = arrowElement;
     if (startElement) {
       if (!startElement.boundElements) {
         startElement.boundElements = [];
@@ -2806,9 +2820,12 @@ export class ExcalidrawAutomate {
       image.size.width * Math.abs(scaleX),
       image.size.height * Math.abs(scaleY),
     );
-    this.elementsDict[id].fileId = image.fileId;
+    const imageElement = this.elementsDict[
+      id
+    ] as Mutable<ExcalidrawImageElement>;
+    imageElement.fileId = image.fileId;
     this.addAppendUpdateCustomData(id, { latex: tex });
-    this.elementsDict[id].scale = [Math.sign(scaleX), Math.sign(scaleY)];
+    imageElement.scale = [Math.sign(scaleX), Math.sign(scaleY)];
     return id;
   }
 
@@ -2889,7 +2906,10 @@ export class ExcalidrawAutomate {
     const numberOfPoints = formatting?.numberOfPoints
       ? formatting.numberOfPoints
       : 0;
-    const getSidePoints = (side: string, el: ExcalidrawElement): [number, number] => {
+    const getSidePoints = (
+      side: string,
+      el: ExcalidrawElement,
+    ): [number, number] => {
       switch (side) {
         case "bottom":
           return [(el.x + (el.x + el.width)) / 2, el.y + el.height + padding];
@@ -2906,8 +2926,12 @@ export class ExcalidrawAutomate {
     let aY;
     let bX;
     let bY;
-    const elA = this.elementsDict[objectA];
-    const elB = this.elementsDict[objectB];
+    const elA = this.elementsDict[
+      objectA
+    ] as Mutable<ExcalidrawBindableElement>;
+    const elB = this.elementsDict[
+      objectB
+    ] as Mutable<ExcalidrawBindableElement>;
     if (!connectionA || !connectionB) {
       const aCenterX = elA.x + elA.width / 2;
       const bCenterX = elB.x + elB.width / 2;
@@ -2970,7 +2994,9 @@ export class ExcalidrawAutomate {
    * @returns {string} The ID of the added text element.
    */
   addLabelToLine(lineId: string, label: string): string {
-    const line = this.elementsDict[lineId];
+    const line = this.elementsDict[lineId] as
+      | Mutable<ExcalidrawLinearElement>
+      | undefined;
     if (
       !line ||
       !["arrow", "line"].includes(line.type) ||
@@ -3215,7 +3241,9 @@ export class ExcalidrawAutomate {
    * @param {boolean} [includeFrameChildren=true] - Whether to include frame children in the selection.
    * @returns {ExcalidrawElement[]} Array of selected elements.
    */
-  getViewSelectedElements(includeFrameChildren: boolean = true): ExcalidrawElement[] {
+  getViewSelectedElements(
+    includeFrameChildren: boolean = true,
+  ): ExcalidrawElement[] {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "getViewSelectedElements()");
       return [];
@@ -4500,7 +4528,9 @@ export class ExcalidrawAutomate {
     }
     const API = this.getExcalidrawAPI();
     const elements = this.getViewElements() as Mutable<ExcalidrawElement>[];
-    const elementToMove = elements.filter((el: ExcalidrawElement) => el.id === elementId);
+    const elementToMove = elements.filter(
+      (el: ExcalidrawElement) => el.id === elementId,
+    );
     if (elementToMove.length === 0) {
       errorMessage(
         `Element (id: ${elementId}) not found`,
@@ -4589,7 +4619,9 @@ export class ExcalidrawAutomate {
   getCM(color: TInput): ColorMaster {
     if (!color) {
       log(
-        "Creates a CM object. Visit http" + "s://github."+"com/lbragile/ColorMaster for documentation.",
+        "Creates a CM object. Visit http" +
+          "s://github." +
+          "com/lbragile/ColorMaster for documentation.",
       );
       return;
     }
@@ -4667,7 +4699,9 @@ export class ExcalidrawAutomate {
       );
       return false;
     }
-    this.copyViewElementsToEAforEditing(res.content);
+    this.copyViewElementsToEAforEditing(
+      res.content as unknown as ExcalidrawElement[],
+    );
     return true;
   }
 

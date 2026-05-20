@@ -104,28 +104,34 @@ export const getLeaf = (
 
 const getLeafLoc = (
   leaf: WorkspaceLeaf,
-): ["main" | "popout" | "left" | "right" | "hover", any] => {
+): ["main" | "popout" | "left" | "right" | "hover", string[]] => {
   const leafId = leaf.id;
   const layout = EXCALIDRAW_PLUGIN.app.workspace.getLayout();
-  const getLeaves = (l: any) =>
-    l.children
-      .filter((c: any) => c.type !== "leaf")
-      .map((c: any) => getLeaves(c))
-      .flat()
-      .concat(
-        l.children.filter((c: any) => c.type === "leaf").map((c: any) => c.id),
-      );
 
-  const mainLeavesIds = getLeaves(layout.main);
+  type WorkspaceLayoutNode = {
+    type: string;
+    id?: string;
+    children?: WorkspaceLayoutNode[];
+  };
+
+  const getLeaves = (node: WorkspaceLayoutNode): string[] =>
+    (node.children ?? []).flatMap((child) =>
+      child.type === "leaf" ? (child.id ? [child.id] : []) : getLeaves(child),
+    );
+
+  const mainLeavesIds = getLeaves(layout.main as WorkspaceLayoutNode);
 
   return [
     layout.main && mainLeavesIds.contains(leafId)
       ? "main"
-      : layout.floating && getLeaves(layout.floating).contains(leafId)
+      : layout.floating &&
+          getLeaves(layout.floating as WorkspaceLayoutNode).contains(leafId)
         ? "popout"
-        : layout.left && getLeaves(layout.left).contains(leafId)
+        : layout.left &&
+            getLeaves(layout.left as WorkspaceLayoutNode).contains(leafId)
           ? "left"
-          : layout.right && getLeaves(layout.right).contains(leafId)
+          : layout.right &&
+              getLeaves(layout.right as WorkspaceLayoutNode).contains(leafId)
             ? "right"
             : "hover",
     mainLeavesIds,
@@ -161,7 +167,7 @@ export const getNewOrAdjacentLeaf = (
     }
     //Iterate all leaves in the main workspace and find the first one that is not the originating leaf
     mainLeaf = null;
-    mainLeavesIds.forEach((id: any) => {
+    mainLeavesIds.forEach((id: string) => {
       const l = plugin.app.workspace.getLeafById(id);
       if (
         mainLeaf ||

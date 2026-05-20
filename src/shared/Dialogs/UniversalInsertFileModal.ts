@@ -117,9 +117,12 @@ export class UniversalInsertFileModal extends Modal {
                 file,
               )
             ).blocks
-              .filter((b: any) => b.display && b.node?.type === "heading")
               .filter(
-                (b: any) =>
+                (b: { display: string; node?: { type: string } }) =>
+                  b.display && b.node?.type === "heading",
+              )
+              .filter(
+                (b: { display: string; node?: { type: string } }) =>
                   !isExcalidraw || !MD_EX_SECTIONS.includes(b.display),
               )
           : null;
@@ -133,7 +136,7 @@ export class UniversalInsertFileModal extends Modal {
         if (!isExcalidraw) {
           sectionPicker.addOption("", "");
         }
-        sections.forEach((b: any) => {
+        sections.forEach((b: { display: string; node?: { type: string } }) => {
           sectionPicker.addOption(
             `#${cleanSectionHeading(b.display)}`,
             b.display,
@@ -179,8 +182,14 @@ export class UniversalInsertFileModal extends Modal {
         this.view.file,
       )
     ).blocks
-      .filter((b: any) => b.display && b.node?.type === "heading")
-      .filter((b: any) => !MD_EX_SECTIONS.includes(b.display));
+      .filter(
+        (b: { display: string; node?: { type: string } }) =>
+          b.display && b.node?.type === "heading",
+      )
+      .filter(
+        (b: { display: string; node?: { type: string } }) =>
+          !MD_EX_SECTIONS.includes(b.display),
+      );
 
     const search = new TextComponent(ce);
     search.inputEl.style.width = "100%";

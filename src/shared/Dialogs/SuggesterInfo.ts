@@ -528,7 +528,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "getExcalidrawAPI",
-    code: "getExcalidrawAPI(): any;",
+    code: "getExcalidrawAPI(): ExcalidrawImperativeAPI;",
     desc: `${hyperlink(URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_TREE_MASTER_SRC_PACKAGES_EXCALIDRAW, "Excalidraw API")}`,
     after: "",
   },
@@ -749,7 +749,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "setScriptSettings",
-    code: "async setScriptSettings(settings: any): Promise<void>;",
+    code: "async setScriptSettings(settings: Record<string, unknown>): Promise<void>;",
     desc: `Sets script settings.\nSee for more details: ${hyperlink(URLs.ZSVICZIAN_GITHUB_IO_OBSIDIAN_EXCALIDRAW_PLUGIN_EXCALIDRAWSCRIPTSENGINE_HTML, "Script Engine Help")}`,
     after: "",
   },
@@ -951,7 +951,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "getActiveEmbeddableViewOrEditor",
-    code: "getActiveEmbeddableViewOrEditor (view?:ExcalidrawView): {view:any}|{file:TFile, editor:Editor}|{node: ObsidianCanvasNode}|null;",
+    code: "getActiveEmbeddableViewOrEditor (view?:ExcalidrawView): {view:View}|{file:TFile, editor:Editor}|{node: ObsidianCanvasNode}|null;",
     desc:
       "Returns the editor or leaf.view of the currently active embedded obsidian file.<br>" +
       "If view is not provided, ea.targetView is used.<br>" +
@@ -1108,7 +1108,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
       "<b>imageGenerationProperties</b>: <code>{ size?, quality?, n?, mask? }</code>. If present, Excalidraw uses the image generation/edit pipeline. <code>mask</code> accepts the same format as <code>image</code>.<br>" +
       "<b>File support by provider</b>: Google accepts inline file/audio parts such as PDFs and voice clips. Anthropic currently accepts PDF document parts. OpenAI/OpenAI-compatible/xAI remain limited to text plus images in the current chat-completions pipeline.<br>" +
       "<b>RequestUrlResponse</b> returns:<br>" +
-      "<code>{ status:number, headers:Record<string,string>, text:string, json:any, arrayBuffer:ArrayBuffer }</code><br>" +
+      "<code>{ status:number, headers:Record<string,string>, text:string, json:Record<string,unknown>, arrayBuffer:ArrayBuffer }</code><br>" +
       "For text models, <code>json</code> is normalized to an OpenAI-style chat completion object, so existing scripts can continue reading <code>json.choices[0].message.content</code>. For image models, <code>json</code> preserves the image endpoint response such as <code>json.data[0].url</code>.",
     after: "",
   },
@@ -1247,7 +1247,7 @@ export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggesterInfo[] = [
   },
   {
     field: "suggester",
-    code: "suggester: (displayItems: string[], items: any[], hint?: string, instructions?:Instruction[]);",
+    code: "suggester: (displayItems: string[], items: unknown[], hint?: string, instructions?:Instruction[]);",
     desc: "Opens a suggester. Displays the displayItems and returns the corresponding item from items[]\nYou need to await the result of suggester.\nIf the user cancels (ESC), suggester will return undefined\nHint and instructions are optional\n\n<code>interface Instruction {command: string;purpose: string;}</code>",
     after: "",
   },

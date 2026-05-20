@@ -1,4 +1,4 @@
-import { Modal, Setting, TFile } from "obsidian";
+import { Modal, Setting, TFile, TAbstractFile } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { getIMGFilename } from "src/utils/fileUtils";
 import { setElementDisplay } from "src/utils/htmlUtils";
@@ -61,10 +61,10 @@ const listOfOutOfSyncImgExports = async (
   }
   const outOfSyncFiles = new Set<TFile>();
   const allFiles = list.files.filter(
-    (f: any) => f.path.endsWith(".svg") || f.path.endsWith(".png"),
+    (f: TAbstractFile) => f.path.endsWith(".svg") || f.path.endsWith(".png"),
   );
   const totalCount = allFiles.length;
-  allFiles.forEach((f: any, idx: number) => {
+  allFiles.forEach((f: TAbstractFile, idx: number) => {
     const maybeExcalidraFilePath = getIMGFilename(f.path, "md");
     const imgFile = app.vault.getAbstractFileByPath(f.path);
     const excalidrawFile = app.vault.getAbstractFileByPath(

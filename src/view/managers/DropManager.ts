@@ -116,7 +116,7 @@ export class DropManager {
       { clientX: event.clientX, clientY: event.clientY },
       st,
     );
-    const draggable = (this.app as any).dragManager.draggable;
+    const draggable = this.app.dragManager.draggable;
     const internalDragAction = internalDragModifierType(event);
     const externalDragAction = webbrowserDragModifierType(event);
     const localFileDragAction = localFileDragModifierType(event);
@@ -673,7 +673,7 @@ export class DropManager {
     return true;
   }
 
-  public onDragOver(e: any) {
+  public onDragOver(e: DragEvent) {
     const action = this.dropAction(e.dataTransfer);
     if (action) {
       if (!this.draginfoDiv) {
@@ -681,7 +681,7 @@ export class DropManager {
         this.ownerDocument.body.appendChild(this.draginfoDiv);
       }
       let msg: string = "";
-      if ((this.app as any).dragManager.draggable) {
+      if (this.app.dragManager.draggable) {
         //drag from Obsidian file manager
         msg =
           modifierKeyTooltipMessages().InternalDragAction[
@@ -739,16 +739,16 @@ export class DropManager {
 
   private dropAction(transfer: DataTransfer) {
     // Return a 'copy' or 'link' action according to the content types, or undefined if no recognized type
-    const files = (this.app as any).dragManager.draggable?.files;
+    const files = this.app.dragManager.draggable?.files;
     if (files) {
       if (files[0] == this.file) {
         files.shift();
-        (this.app as any).dragManager.draggable.title = `${files.length} files`;
+        if (this.app.dragManager.draggable) {
+          this.app.dragManager.draggable.title = `${files.length} files`;
+        }
       }
     }
-    if (
-      ["file", "files"].includes((this.app as any).dragManager.draggable?.type)
-    ) {
+    if (["file", "files"].includes(this.app.dragManager.draggable?.type)) {
       return "link";
     }
     if (

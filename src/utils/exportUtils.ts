@@ -79,8 +79,8 @@ interface SaveDialogReturnValue {
 
 interface ElectronAPI {
   ipcRenderer: {
-    send(channel: string, ...args: any[]): void;
-    once(channel: string, func: (...args: any[]) => void): void;
+    send(channel: string, ...args: unknown[]): void;
+    once(channel: string, func: (...args: unknown[]) => void): void;
   };
   remote: {
     dialog: {
@@ -496,7 +496,7 @@ export async function exportToPDF({
   }
 
   // Decide if we should run multiple print jobs based on requested dimensions
-  const dims = pageProps?.dimensions as any;
+  const dims = pageProps?.dimensions;
   const useMultiJob =
     !dims ||
     typeof dims.width !== "number" ||

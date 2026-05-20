@@ -599,7 +599,7 @@ const createImgElement = async (
     } //.ctrlKey||ev.metaKey);
   };
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1003
-  let pointerDownEvent: any;
+  let pointerDownEvent: PointerEvent | null = null;
   const eventElement = imgOrDiv as HTMLElement;
 
   /*plugin.settings.previewImageType === PreviewImageType.SVG
@@ -1208,7 +1208,9 @@ export const markdownPostProcessor = async (
  * @param e
  * @returns
  */
-export const hoverEvent = (e: any) => {
+export const hoverEvent = (
+  e: MouseEvent & { linktext?: string; sourcePath?: string },
+) => {
   if (!e.linktext) {
     plugin.hover.linkText = null;
     return;

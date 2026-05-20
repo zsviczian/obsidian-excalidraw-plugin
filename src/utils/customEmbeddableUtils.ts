@@ -10,7 +10,7 @@ import {
   getContainerForDocument,
   getParentOfClass,
 } from "./obsidianUtils";
-import { App, TFile, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
+import { App, TFile, View, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import { getLinkParts } from "./sceneDataUtils";
 import ExcalidrawView from "src/view/ExcalidrawView";
 
@@ -113,10 +113,15 @@ export const processLinkText = (
 };
 
 export function setFileToLocalGraph(app: App, file: TFile) {
-  let lgv: any;
+  type LocalGraphView = View & {
+    file?: TFile;
+    loadFile?: (file: TFile) => void;
+  };
+
+  let lgv: LocalGraphView | null = null;
   app.workspace.iterateAllLeaves((l) => {
     if (l.view?.getViewType() === "localgraph") {
-      lgv = l.view;
+      lgv = l.view as LocalGraphView;
     }
   });
   if (!lgv) {
@@ -135,12 +140,10 @@ export function predictViewType(app: App, file: TFile): string {
   const ext = file.extension?.toLowerCase?.() ?? "";
 
   // 1) Try private registry APIs when available (covers .md files with custom views like Kanban)
-  const vr = (app as any)?.viewRegistry;
-  const registryFileMethods = [
-    "getViewTypeForFile",
-    "getViewTypeByFile",
-    "getTypeByFile",
-  ];
+  const vr = app.viewRegistry;
+  const registryFileMethods: Array<
+    "getViewTypeForFile" | "getViewTypeByFile" | "getTypeByFile"
+  > = ["getViewTypeForFile", "getViewTypeByFile", "getTypeByFile"];
   for (const m of registryFileMethods) {
     if (vr?.[m]) {
       try {
@@ -152,7 +155,9 @@ export function predictViewType(app: App, file: TFile): string {
     }
   }
   // 2) Try extension mapping from registry
-  const registryExtMethods = ["getViewTypeByExtension", "getTypeByExtension"];
+  const registryExtMethods: Array<
+    "getViewTypeByExtension" | "getTypeByExtension"
+  > = ["getViewTypeByExtension", "getTypeByExtension"];
   for (const m of registryExtMethods) {
     if (vr?.[m]) {
       try {

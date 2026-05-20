@@ -30,7 +30,7 @@ type ParagraphSuggestion = {
   text: string;
   id?: string;
   file: TFile;
-  node: any;
+  node: { type: string; position?: { start: number; end: { offset: number } } }; // Include 'offset' in 'end'
 };
 
 type TagSuggestion = {
@@ -287,7 +287,10 @@ export class InlineLinkSuggester
   }
 
   private getTagSuggestions(): TagSuggestion[] {
-    const tags = (this.app.metadataCache as any).getTags?.() ?? {};
+    const tags =
+      (
+        this.app.metadataCache as { getTags?: () => Record<string, number> }
+      ).getTags?.() ?? {};
     return Object.keys(tags)
       .sort((a, b) => {
         const countDiff = (tags[b] ?? 0) - (tags[a] ?? 0);
@@ -682,14 +685,15 @@ export class InlineLinkSuggester
     const ea = getEA();
     const scene = await ea?.getSceneFromFile?.(file);
     const frames = (scene?.elements ?? []).filter(
-      (el: any) => el?.type === "frame" && !el?.isDeleted,
+      (el: { type: string; isDeleted?: boolean }) =>
+        el?.type === "frame" && !el?.isDeleted,
     );
     if (!frames.length) {
       return;
     }
 
     const nameCounts = new Map<string, number>();
-    frames.forEach((frame: any) => {
+    frames.forEach((frame: { id?: string; name?: string }) => {
       const rawName = typeof frame?.name === "string" ? frame.name.trim() : "";
       if (!rawName) {
         return;
@@ -697,7 +701,7 @@ export class InlineLinkSuggester
       nameCounts.set(rawName, (nameCounts.get(rawName) ?? 0) + 1);
     });
 
-    this.frameItems = frames.map((frame: any) => {
+    this.frameItems = frames.map((frame: { id?: string; name?: string }) => {
       const id = frame?.id ?? "";
       const rawName = typeof frame?.name === "string" ? frame.name.trim() : "";
       const hasName = rawName.length > 0;
@@ -732,14 +736,24 @@ export class InlineLinkSuggester
     );
     const blocks = cache?.blocks ?? [];
     this.headingItems = blocks
-      .filter((b: any) => b.display && b.node?.type === "heading")
-      .map((b: any) => ({
-        kind: "heading",
-        heading: this.cleanHeading(b.display),
-        anchor: this.cleanHeading(b.display),
-        level: b.node?.depth ?? b.node?.level ?? 1,
-        file,
-      }));
+      .filter(
+        (b: {
+          display: string;
+          node?: { type: string; depth?: number; level?: number };
+        }) => b.display && b.node?.type === "heading",
+      )
+      .map(
+        (b: {
+          display: string;
+          node?: { type: string; depth?: number; level?: number };
+        }) => ({
+          kind: "heading",
+          heading: this.cleanHeading(b.display),
+          anchor: this.cleanHeading(b.display),
+          level: b.node?.depth ?? b.node?.level ?? 1,
+          file,
+        }),
+      );
   }
 
   private async loadParagraphs(file: TFile | null) {
@@ -755,7 +769,7 @@ export class InlineLinkSuggester
     const blocks = cache?.blocks ?? [];
     this.paragraphItems = blocks
       .filter(
-        (b: any) =>
+        (b: { display: string; node?: { type: string } }) =>
           b.display &&
           b.node &&
           (b.node.type === "paragraph" ||
@@ -764,7 +778,7 @@ export class InlineLinkSuggester
             b.node.type === "table" ||
             b.node.type === "callout"),
       )
-      .map((b: any) => ({
+      .map((b: { display: string; node?: { type: string; id?: string } }) => ({
         kind: "paragraph",
         text: b.display.trim(),
         id: b.node?.id,
@@ -835,7 +849,8 @@ export class InlineLinkSuggester
       return item.id;
     }
     const offset = item.node?.position?.end?.offset;
-    if (!offset) {
+    if (typeof offset !== "number") {
+      // Ensure 'offset' is a number
       return null;
     }
     const fileContents = await this.plugin.app.vault.cachedRead(item.file);

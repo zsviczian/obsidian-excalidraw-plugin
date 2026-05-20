@@ -9,11 +9,11 @@ class ExcalidrawScene {
   source = GITHUB_RELEASES + PLUGIN_VERSION;
   elements: ExcalidrawGenericElement[] = [];
 
-  constructor(elements: any = []) {
+  constructor(elements: ExcalidrawGenericElement[] = []) {
     this.elements = elements;
   }
 
-  toExJSON(): any {
+  toExJSON() {
     return {
       ...this,
       elements: this.elements.map((el) => ({ ...el })),
