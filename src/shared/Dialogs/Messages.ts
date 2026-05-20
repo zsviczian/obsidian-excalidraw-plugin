@@ -10,6 +10,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
   "2.23.4": `
 ## New in ExcalidrawAutomate
 - Added \`getPathForImageFileId(fileId: FileId): string | null\` — returns the vault path for an image element identified by its Excalidraw fileId. Note: Excalidraw does not maintain a persistent index of fileIds to paths; the path is only available for images that have appeared in an open drawing during the current Obsidian session.
+- Gemini image models now expose provider-correct size presets in AI settings and ExcaliAI, and Google image requests translate those presets into Gemini aspect ratio and image size parameters automatically.
 
 \`\`\`ts
 /**

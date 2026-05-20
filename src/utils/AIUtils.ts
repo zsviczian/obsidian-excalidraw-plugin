@@ -24,6 +24,10 @@ import {
   decryptProviderProfiles,
   decryptStoredAPIKey,
 } from "src/utils/settingsKeyObfuscation";
+import {
+  getGeminiImageRequestConfig,
+  getGeminiSupportedSizes,
+} from "src/utils/geminiImageModelUtils";
 
 type NormalizedBinaryInput = {
   source: string;
@@ -565,9 +569,14 @@ const getResolvedModelConfig = (
   const legacySupportsImageEdits = (
     imageConfig as AIImageModelConfig & { supportsImageEdits?: boolean }
   ).supportsImageEdits;
+  const resolvedModel = request.model?.trim() || selectedConfig?.model || "";
+  const geminiSupportedSizes = getGeminiSupportedSizes(provider, resolvedModel);
   return {
     ...result,
-    supportedSizes: [...(imageConfig.supportedSizes ?? ["1024x1024"])],
+    supportedSizes:
+      geminiSupportedSizes.length > 0
+        ? geminiSupportedSizes
+        : [...(imageConfig.supportedSizes ?? ["1024x1024"])],
     supportsPromptImageTransforms:
       imageConfig.supportsPromptImageTransforms ??
       legacySupportsImageEdits ??
@@ -1652,6 +1661,7 @@ const handleImageRequest = async (
     request,
     request.maxOutgoingTokens ?? config.maxOutgoingTokens,
   );
+  const selectedImageModel = request.model || imageConfig.model;
 
   if (mask && !imageConfig.supportsMaskImageEdits) {
     return createSyntheticResponse(
@@ -1674,6 +1684,29 @@ const handleImageRequest = async (
       if (mask) {
         return createSyntheticResponse(
           `${imageConfig.model} does not currently support mask-based image edits through the Google image API in Excalidraw.`,
+          400,
+        );
+      }
+
+      const geminiImageConfig = request.imageGenerationProperties?.size
+        ? getGeminiImageRequestConfig(
+            imageConfig.provider,
+            selectedImageModel,
+            request.imageGenerationProperties.size,
+          )
+        : null;
+      const geminiSupportedSizes = getGeminiSupportedSizes(
+        imageConfig.provider,
+        selectedImageModel,
+      );
+
+      if (
+        request.imageGenerationProperties?.size &&
+        geminiSupportedSizes.length > 0 &&
+        !geminiImageConfig
+      ) {
+        return createSyntheticResponse(
+          `${request.imageGenerationProperties.size} is not a supported Gemini image size for ${selectedImageModel}.`,
           400,
         );
       }
@@ -1716,6 +1749,16 @@ const handleImageRequest = async (
             contents: [{ role: "user", parts }],
             generationConfig: {
               responseModalities: ["TEXT", "IMAGE"],
+              ...(geminiImageConfig
+                ? {
+                    imageConfig: {
+                      aspectRatio: geminiImageConfig.aspectRatio,
+                      ...(geminiImageConfig.imageSize
+                        ? { imageSize: geminiImageConfig.imageSize }
+                        : {}),
+                    },
+                  }
+                : {}),
               ...(request.temperature !== undefined
                 ? { temperature: request.temperature }
                 : {}),
@@ -2271,11 +2314,18 @@ export const getAISettings = (
       const legacySupportsImageEdits = (
         config as AIImageModelConfig & { supportsImageEdits?: boolean }
       ).supportsImageEdits;
+      const geminiSupportedSizes = getGeminiSupportedSizes(
+        providerProfiles[config.providerId]?.provider,
+        config.model,
+      );
       return [
         modelId,
         {
           ...config,
-          supportedSizes: [...(config.supportedSizes ?? ["1024x1024"])],
+          supportedSizes:
+            geminiSupportedSizes.length > 0
+              ? geminiSupportedSizes
+              : [...(config.supportedSizes ?? ["1024x1024"])],
           supportsPromptImageTransforms:
             config.supportsPromptImageTransforms ??
             legacySupportsImageEdits ??

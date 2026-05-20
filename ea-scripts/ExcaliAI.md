@@ -786,6 +786,122 @@ const getValidSizesForModel = (model) => {
   return ["1024x1024"];
 };
 
+const parseImageSizeDimensions = (size) => {
+  const match = String(size ?? "").trim().match(/^(\d+)x(\d+)$/i);
+  if(!match) {
+    return null;
+  }
+  const width = parseInt(match[1], 10);
+  const height = parseInt(match[2], 10);
+  if(Number.isNaN(width) || Number.isNaN(height) || width <= 0 || height <= 0) {
+    return null;
+  }
+  return {width, height};
+};
+
+const greatestCommonDivisor = (a, b) => {
+  let x = Math.abs(a);
+  let y = Math.abs(b);
+  while(y !== 0) {
+    const remainder = x % y;
+    x = y;
+    y = remainder;
+  }
+  return x || 1;
+};
+
+const CANONICAL_ASPECT_RATIOS = [
+  "1:8",
+  "1:4",
+  "2:3",
+  "3:4",
+  "4:5",
+  "9:16",
+  "1:1",
+  "16:9",
+  "5:4",
+  "4:3",
+  "3:2",
+  "4:1",
+  "8:1",
+  "21:9",
+].map((label) => {
+  const [width, height] = label.split(":").map((value) => parseInt(value, 10));
+  return {
+    label,
+    ratio: width/height,
+  };
+});
+
+const ASPECT_RATIO_LABEL_RELATIVE_EPSILON = 0.02;
+
+const getCanonicalAspectRatioLabel = (width, height) => {
+  const ratio = width/height;
+  const nearest = CANONICAL_ASPECT_RATIOS
+    .map((candidate) => ({
+      ...candidate,
+      delta: Math.abs(candidate.ratio - ratio),
+    }))
+    .sort((left, right) => left.delta - right.delta)[0];
+
+  if(
+    nearest &&
+    nearest.delta/Math.max(nearest.ratio, Number.EPSILON)
+      <= ASPECT_RATIO_LABEL_RELATIVE_EPSILON
+  ) {
+    return nearest.label;
+  }
+
+  const divisor = greatestCommonDivisor(width, height);
+  return `${Math.round(width/divisor)}:${Math.round(height/divisor)}`;
+};
+
+const getAspectRatioLabelFromDimensions = (width, height) => {
+  return getCanonicalAspectRatioLabel(width, height);
+};
+
+const getImageSizeDropdownOptions = (sizes = []) => {
+  return sizes
+    .map((size) => {
+      const dimensions = parseImageSizeDimensions(size);
+      if(!dimensions) {
+        return {
+          value: size,
+          label: String(size ?? ""),
+          ratioOrder: Number.POSITIVE_INFINITY,
+          pixels: Number.POSITIVE_INFINITY,
+          width: Number.POSITIVE_INFINITY,
+          height: Number.POSITIVE_INFINITY,
+        };
+      }
+
+      const ratioLabel = getAspectRatioLabelFromDimensions(dimensions.width, dimensions.height);
+      return {
+        value: size,
+        label: `(${ratioLabel}) ${dimensions.width}x${dimensions.height}`,
+        ratioOrder: dimensions.width/dimensions.height,
+        pixels: dimensions.width * dimensions.height,
+        width: dimensions.width,
+        height: dimensions.height,
+      };
+    })
+    .sort((left, right) => {
+      if(left.ratioOrder !== right.ratioOrder) {
+        return left.ratioOrder - right.ratioOrder;
+      }
+      if(left.pixels !== right.pixels) {
+        return left.pixels - right.pixels;
+      }
+      if(left.width !== right.width) {
+        return left.width - right.width;
+      }
+      if(left.height !== right.height) {
+        return left.height - right.height;
+      }
+      return String(left.value).localeCompare(String(right.value));
+    });
+};
+
 const getResolvedTextModelSelection = (requestedModelId = selectedTextModel) => {
   const availableModels = getAvailableTextModels();
   const requestedConfigId = getTextModelConfigId(requestedModelId);
@@ -2484,7 +2600,9 @@ const openConfigModal = () => {
       while(imageSizeSettingDropdown.selectEl.options.length > 0) {
         imageSizeSettingDropdown.selectEl.remove(0);
       }
-      validSizes.forEach(size => imageSizeSettingDropdown.addOption(size, size));
+      getImageSizeDropdownOptions(validSizes).forEach(({value, label}) =>
+        imageSizeSettingDropdown.addOption(value, label),
+      );
       imageSizeSettingDropdown.setDisabled(!hasAvailableImageModels());
       if(hasAvailableImageModels() && validSizes.length > 0) {
         imageSizeSettingDropdown.setValue(imageSize);

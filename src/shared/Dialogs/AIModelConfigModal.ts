@@ -1,6 +1,14 @@
 import { App, Modal, Notice, Setting } from "obsidian";
 import { t } from "src/lang/helpers";
-import { AIImageModelConfig, AIModelConfig } from "src/types/AIUtilTypes";
+import {
+  AIImageModelConfig,
+  AIModelConfig,
+  AIProviderProfile,
+} from "src/types/AIUtilTypes";
+import {
+  getGeminiSupportedSizes,
+  isGeminiImageModel,
+} from "src/utils/geminiImageModelUtils";
 import { isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
 
 type SaveHandler<TConfig extends AIModelConfig> = (
@@ -12,6 +20,7 @@ type SaveHandler<TConfig extends AIModelConfig> = (
 type AIModelConfigModalOptions<TConfig extends AIModelConfig> = {
   kind: "text" | "vision" | "image";
   providerIds: string[];
+  providerProfiles: Record<string, AIProviderProfile>;
   previousModelId?: string;
   initialModelId?: string;
   initialConfig?: TConfig;
@@ -61,6 +70,8 @@ export class AIModelConfigModal<
           }
         : {}),
     } as TConfig;
+
+    this.syncDerivedGeminiImageSizes();
   }
 
   onOpen(): void {
@@ -122,10 +133,36 @@ export class AIModelConfigModal<
     }
   }
 
+  private getCurrentProviderType() {
+    return this.options.providerProfiles[this.config.providerId]?.provider;
+  }
+
+  private isCurrentGeminiImageModel() {
+    return (
+      this.options.kind === "image" &&
+      isGeminiImageModel(this.getCurrentProviderType(), this.config.model)
+    );
+  }
+
+  private syncDerivedGeminiImageSizes() {
+    if (this.options.kind !== "image") {
+      return;
+    }
+
+    const supportedSizes = getGeminiSupportedSizes(
+      this.getCurrentProviderType(),
+      this.config.model,
+    );
+    if (supportedSizes.length > 0) {
+      (this.config as AIImageModelConfig).supportedSizes = [...supportedSizes];
+    }
+  }
+
   private createForm() {
     const contentEl = this.contentEl;
     contentEl.empty();
     contentEl.createEl("h1", { text: this.getTitle() });
+    let updateImageSizeControls = () => {};
 
     new Setting(contentEl)
       .setName(t("AI_MODEL_CONFIG_MODAL_NAME_NAME"))
@@ -148,6 +185,10 @@ export class AIModelConfigModal<
         );
         return dropdown.setValue(this.config.providerId).onChange((value) => {
           this.config.providerId = value;
+          if (this.options.kind === "image") {
+            this.syncDerivedGeminiImageSizes();
+            updateImageSizeControls();
+          }
         });
       });
 
@@ -160,6 +201,10 @@ export class AIModelConfigModal<
           .setValue(this.config.model)
           .onChange((value) => {
             this.config.model = value.trim();
+            if (this.options.kind === "image") {
+              this.syncDerivedGeminiImageSizes();
+              updateImageSizeControls();
+            }
           }),
       );
 
@@ -192,13 +237,14 @@ export class AIModelConfigModal<
 
     if (this.options.kind === "image") {
       const imageConfig = this.config as AIImageModelConfig;
-      contentEl.createEl("h3", {
+      const sizesSection = contentEl.createDiv();
+      sizesSection.createEl("h3", {
         text: t("AI_IMAGE_MODEL_CAPABILITIES_SIZES_NAME"),
       });
-      contentEl.createEl("p", {
+      sizesSection.createEl("p", {
         text: t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_SIZES_DESC"),
       });
-      const sizesContainer = contentEl.createDiv();
+      const sizesContainer = sizesSection.createDiv();
       const renderSizes = () => {
         sizesContainer.empty();
         imageConfig.supportedSizes.forEach((size, index) => {
@@ -229,9 +275,14 @@ export class AIModelConfigModal<
             );
         });
       };
-      renderSizes();
+      updateImageSizeControls = () => {
+        sizesSection.style.display = this.isCurrentGeminiImageModel()
+          ? "none"
+          : "";
+        renderSizes();
+      };
 
-      new Setting(contentEl).addButton((button) =>
+      new Setting(sizesSection).addButton((button) =>
         button
           .setButtonText(t("AI_IMAGE_MODEL_CAPABILITIES_MODAL_ADD_SIZE"))
           .onClick(() => {
@@ -239,6 +290,7 @@ export class AIModelConfigModal<
             renderSizes();
           }),
       );
+      updateImageSizeControls();
 
       new Setting(contentEl)
         .setName(t("AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_NAME"))
@@ -313,6 +365,9 @@ export class AIModelConfigModal<
 
     if (this.options.kind === "image") {
       const imageConfig = this.config as AIImageModelConfig;
+      if (this.isCurrentGeminiImageModel()) {
+        this.syncDerivedGeminiImageSizes();
+      }
       imageConfig.supportedSizes = Array.from(
         new Set(
           imageConfig.supportedSizes.map((size) => size.trim()).filter(Boolean),

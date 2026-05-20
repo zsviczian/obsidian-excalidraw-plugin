@@ -65,6 +65,7 @@ import {
 import { AIProviderProfileModal } from "src/shared/Dialogs/AIProviderProfileModal";
 import { AIModelConfigModal } from "src/shared/Dialogs/AIModelConfigModal";
 import { decryptProviderProfiles } from "src/utils/settingsKeyObfuscation";
+import { getGeminiSupportedSizes } from "src/utils/geminiImageModelUtils";
 import { URLs } from "src/constants/safeUrls";
 
 export interface ExcalidrawSettings {
@@ -330,17 +331,23 @@ const KNOWN_AI_IMAGE_MODEL_CAPABILITIES: Record<
     supportsMaskImageEdits: true,
   },
   "gemini-2.5-flash-image": {
-    supportedSizes: ["1024x1024"],
+    supportedSizes: getGeminiSupportedSizes("google", "gemini-2.5-flash-image"),
     supportsPromptImageTransforms: true,
     supportsMaskImageEdits: false,
   },
   "gemini-3.1-flash-image-preview": {
-    supportedSizes: ["1024x1024"],
+    supportedSizes: getGeminiSupportedSizes(
+      "google",
+      "gemini-3.1-flash-image-preview",
+    ),
     supportsPromptImageTransforms: true,
     supportsMaskImageEdits: false,
   },
   "gemini-3-pro-image-preview": {
-    supportedSizes: ["1024x1024"],
+    supportedSizes: getGeminiSupportedSizes(
+      "google",
+      "gemini-3-pro-image-preview",
+    ),
     supportsPromptImageTransforms: true,
     supportsMaskImageEdits: false,
   },
@@ -2076,6 +2083,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         {
           kind,
           providerIds: Object.keys(getProviderProfiles()),
+          providerProfiles: getProviderProfiles(),
           previousModelId: modelId,
           initialModelId: modelId,
           initialConfig: modelId ? configs[modelId] : undefined,
@@ -2193,6 +2201,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         value
           ? t("AI_IMAGE_MODEL_CAPABILITIES_EDITS_YES")
           : t("AI_IMAGE_MODEL_CAPABILITIES_EDITS_NO");
+      const supportedSizes =
+        kind === "image"
+          ? getGeminiSupportedSizes(providerProfile?.provider, config.model)
+          : [];
 
       const description =
         kind === "image"
@@ -2208,7 +2220,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               .replace("{{model}}", config.model)
               .replace(
                 "{{sizes}}",
-                (config as AIImageModelConfig).supportedSizes.join(", "),
+                (supportedSizes.length > 0
+                  ? supportedSizes
+                  : (config as AIImageModelConfig).supportedSizes
+                ).join(", "),
               )
               .replace(
                 "{{supportsPromptImageTransforms}}",
