@@ -315,11 +315,15 @@ export function getFrameBasedOnFrameNameOrId(
 ): ExcalidrawFrameElement | null {
   const frames = elements
     .filter((el: ExcalidrawElement) => el.type === "frame")
-    .map((el: ExcalidrawFrameElement) => {
-      return { el, id: el.id, name: el.name ?? "Frame" };
-    })
-    .filter((item: any) => item.id === frameName || item.name === frameName)
-    .map((item: any) => item.el as ExcalidrawFrameElement);
+    .map(
+      (el: ExcalidrawFrameElement): {
+        el: ExcalidrawFrameElement;
+        id: string;
+        name: string;
+      } => ({ el, id: el.id, name: el.name ?? "Frame" }),
+    )
+    .filter((item) => item.id === frameName || item.name === frameName)
+    .map((item) => item.el);
   return frames.length === 1 ? frames[0] : null;
 }
 
@@ -353,6 +357,12 @@ export async function addBackOfTheNoteCard(
   let watchdog = 0;
   await sleep(200);
   let found: string;
+  type BlockCacheHeadingEntry = {
+    display?: string;
+    node?: {
+      type?: string;
+    };
+  };
   while (
     watchdog++ < 10 &&
     !(found = (
@@ -361,10 +371,13 @@ export async function addBackOfTheNoteCard(
         view.file,
       )
     ).blocks
-      .filter((b: any) => b.display && b.node?.type === "heading")
-      .filter((b: any) => !MD_EX_SECTIONS.includes(b.display))
-      .map((b: any) => cleanSectionHeading(b.display))
-      .find((b: any) => b === title))
+      .filter(
+        (b: BlockCacheHeadingEntry): b is { display: string } =>
+          Boolean(b.display) && b.node?.type === "heading",
+      )
+      .filter((b) => !MD_EX_SECTIONS.includes(b.display))
+      .map((b) => cleanSectionHeading(b.display))
+      .find((b) => b === title))
   ) {
     await sleep(200);
   }
@@ -409,7 +422,7 @@ export async function addBackOfTheNoteCard(
 }
 
 export function renderContextMenuAction(
-  React: any,
+  React: Pick<typeof import("react"), "createElement">,
   label: string,
   action: () => void,
   onClose: (callback?: () => void) => void,
@@ -604,9 +617,22 @@ export function getViewColorPalette(
   const cmFactory =
     view.hookServer?.getCM?.bind(view.hookServer) ??
     view.plugin.ea.getCM.bind(view.plugin.ea);
+  type ColorMasterLike = {
+    lightness?: number;
+    alpha?: number;
+    stringHEX?: (opts?: { alpha?: boolean }) => string;
+    toString(): string;
+  };
+  const isColorMasterLike = (value: unknown): value is ColorMasterLike => {
+    return (
+      typeof value === "object" &&
+      value !== null &&
+      typeof (value as { toString?: unknown }).toString === "function"
+    );
+  };
   const getLightness = (color: string): number => {
-    const cm = cmFactory?.(color);
-    const value = (cm as any)?.lightness;
+    const cm = cmFactory?.(color) as unknown;
+    const value = isColorMasterLike(cm) ? cm.lightness : undefined;
     return typeof value === "number" ? value : Number.POSITIVE_INFINITY;
   };
   const normalize = (color: string): string => {
@@ -616,18 +642,18 @@ export function getViewColorPalette(
     if (color.toLowerCase() === "transparent") {
       return "transparent";
     }
-    const cm = cmFactory?.(color);
-    if (cm && typeof (cm as any).stringHEX === "function") {
+    const cm = cmFactory?.(color) as unknown;
+    if (isColorMasterLike(cm) && typeof cm.stringHEX === "function") {
       try {
-        const alpha = (cm as any).alpha;
+        const alpha = cm.alpha;
         const includeAlpha = typeof alpha === "number" ? alpha !== 1 : true;
-        return (cm as any).stringHEX({ alpha: includeAlpha }).toLowerCase();
+        return cm.stringHEX({ alpha: includeAlpha }).toLowerCase();
       } catch {
         // fall through to string coercion
       }
     }
-    if (cm && typeof (cm as any).toString === "function") {
-      return (cm as any).toString().toLowerCase();
+    if (isColorMasterLike(cm)) {
+      return cm.toString().toLowerCase();
     }
     return color.toLowerCase();
   };
@@ -671,12 +697,11 @@ export function getViewColorPalette(
     return [...groups, ...filteredSingles];
   }
 
-  const flattenPalette = (pal: any[]): string[] =>
+  const flattenPalette = (pal: readonly (string | string[])[]): string[] =>
     pal
-      .flatMap((entry: any) => (Array.isArray(entry) ? entry : [entry]))
+      .flatMap((entry) => (Array.isArray(entry) ? entry : [entry]))
       .filter(
-        (color: any): color is string =>
-          typeof color === "string" && Boolean(color),
+        (color): color is string => typeof color === "string" && Boolean(color),
       );
 
   const paletteColors = flattenPalette(basePalette).map((c) => normalize(c));
@@ -685,9 +710,12 @@ export function getViewColorPalette(
   );
 
   view.getViewElements().forEach((el) => {
-    const color = (
-      palette === "elementStroke" ? el.strokeColor : (el as any).backgroundColor
-    ) as string;
+    const color =
+      palette === "elementStroke"
+        ? el.strokeColor
+        : "backgroundColor" in el
+          ? el.backgroundColor
+          : undefined;
     if (!color || normalize(color) === "transparent") {
       return;
     }
