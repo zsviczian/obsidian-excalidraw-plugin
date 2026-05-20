@@ -13,8 +13,6 @@ import {
 import { cleanBlockRef, cleanSectionHeading } from "./pathUtils";
 import { runCompressionWorker } from "src/shared/Workers/compression-worker";
 
-declare var LZString: any;
-
 export function wrapTextAtCharLength(
   text: string,
   lineLen: number,

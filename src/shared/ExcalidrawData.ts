@@ -114,10 +114,6 @@ type MarkdownBlockCacheEntry = {
   display: string;
 };
 
-type MarkdownBlockCacheResult = {
-  blocks: MarkdownBlockCacheEntry[];
-};
-
 export enum AutoexportPreference {
   none,
   both,

@@ -1,6 +1,10 @@
 import { App, Notice, request, requestUrl, TFile, TFolder } from "obsidian";
 import { Random } from "roughjs/bin/math";
-import { BinaryFileData } from "@zsviczian/excalidraw/types/excalidraw/types";
+import {
+  AppState,
+  BinaryFileData,
+  BinaryFiles,
+} from "@zsviczian/excalidraw/types/excalidraw/types";
 import { errorlog, getDataURL } from "./coreUtils";
 import {
   exportToSvg,
@@ -43,6 +47,7 @@ import { VersionMismatchPrompt } from "src/shared/Dialogs/VersionMismatch";
 import { ExcalidrawSettings } from "src/core/settings";
 import { FileData } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
+import { RemoteDirectoryInfo } from "src/types/githubTypes";
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 import ExcalidrawView from "../view/ExcalidrawView";
 import { getEmptyDrawingElementsRuntime } from "src/constants/emptydrawing";
@@ -52,7 +57,26 @@ export { errorlog, getDataURL } from "./coreUtils";
 export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 
 declare const PLUGIN_VERSION: string;
-declare var LZString: any;
+
+type GitHubReleaseInfo = {
+  draft: boolean;
+  prerelease: boolean;
+  tag_name: string;
+  published_at: string;
+};
+
+type PublishedReleaseInfo = {
+  version: string;
+  published: Date;
+};
+
+type SceneForExport = {
+  elements: readonly ExcalidrawElement[];
+  appState: Partial<AppState>;
+  files?: BinaryFiles;
+};
+
+type SceneWithElements = Pick<SceneForExport, "elements">;
 
 let versionMismatchChecked = false;
 export async function checkVersionMismatch(plugin: ExcalidrawPlugin) {
@@ -82,19 +106,22 @@ export async function checkExcalidrawVersion() {
         await request({
           url: URLs.API_GITHUB_COM_REPOS_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES,
         }),
-      );
+      ) as GitHubReleaseInfo[];
     };
 
     const latestVersion = (await gitAPIrequest())
-      .filter((el: any) => !el.draft && !el.prerelease)
-      .map((el: any) => {
+      .filter((el: GitHubReleaseInfo) => !el.draft && !el.prerelease)
+      .map((el: GitHubReleaseInfo): PublishedReleaseInfo => {
         return {
           version: el.tag_name,
           published: new Date(el.published_at),
         };
       })
-      .filter((el: any) => el.version.match(/^\d+\.\d+\.\d+$/))
-      .sort((el1: any, el2: any) => el2.published - el1.published)[0].version;
+      .filter((el: PublishedReleaseInfo) => el.version.match(/^\d+\.\d+\.\d+$/))
+      .sort(
+        (el1: PublishedReleaseInfo, el2: PublishedReleaseInfo) =>
+          el2.published.getTime() - el1.published.getTime(),
+      )[0].version;
 
     if (isVersionNewerThanOther(latestVersion, PLUGIN_VERSION)) {
       new Notice(`${t("UPDATE_AVAILABLE")} ${latestVersion}`);
@@ -132,8 +159,10 @@ async function checkScriptUpdates() {
       await request({
         url: URLs.RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_DIRECTORY_INFO_JSON,
       }),
+    ) as RemoteDirectoryInfo[];
+    directoryInfo.forEach((f: RemoteDirectoryInfo) =>
+      files.set(f.fname, f.mtime),
     );
-    directoryInfo.forEach((f: any) => files.set(f.fname, f.mtime));
 
     if (files.size === 0) {
       return;
@@ -308,14 +337,14 @@ export async function getBinaryFileFromDataURL(
   return bytes.buffer;
 }
 
-export async function getSVG(
-  scene: any,
+export async function getSVG<TScene extends SceneForExport>(
+  scene: TScene,
   exportSettings: ExportSettings,
   padding: number,
   srcFile: TFile | null, //if set, will replace markdown links with obsidian links
   overrideFiles?: Record<ExcalidrawElement["id"], BinaryFileData>,
 ): Promise<SVGSVGElement> {
-  let elements: ExcalidrawElement[] = scene.elements;
+  let elements: ExcalidrawElement[] = [...scene.elements];
   if (elements.some((el) => el.type === "embeddable")) {
     elements = JSON.parse(JSON.stringify(elements));
   }
@@ -335,7 +364,10 @@ export async function getSVG(
   try {
     let svg: SVGSVGElement;
     if (exportSettings.isMask) {
-      const cropObject = new CropImage(elements, files);
+      const cropObject = new CropImage(
+        elements,
+        files as unknown as ConstructorParameters<typeof CropImage>[1],
+      );
       svg = await cropObject.getCroppedSVG();
       cropObject.destroy();
     } else {
@@ -353,7 +385,7 @@ export async function getSVG(
           ...(exportSettings.frameRendering
             ? { frameRendering: exportSettings.frameRendering }
             : {}),
-        },
+        } as AppState,
         files,
         exportPadding: exportSettings.frameRendering?.enabled ? 0 : padding,
         exportingFrame: null,
@@ -388,8 +420,8 @@ export function filterFiles(
   return filteredFiles;
 }
 
-export async function getPNG(
-  scene: any,
+export async function getPNG<TScene extends SceneForExport>(
+  scene: TScene,
   exportSettings: ExportSettings,
   padding: number,
   scale: number = 1,
@@ -401,13 +433,15 @@ export async function getPNG(
       ? { ...baseFiles, ...overrideFiles }
       : baseFiles;
 
-    let elements = scene.elements;
-    elements = elements.filter(
+    let elements = scene.elements.filter(
       (el: ExcalidrawElement) => el.isDeleted !== true,
     );
 
     if (exportSettings.isMask) {
-      const cropObject = new CropImage(elements, files);
+      const cropObject = new CropImage(
+        elements,
+        files as unknown as ConstructorParameters<typeof CropImage>[1],
+      );
       const blob = await cropObject.getCroppedPNG();
       cropObject.destroy();
       return blob;
@@ -428,7 +462,7 @@ export async function getPNG(
         ...(exportSettings.frameRendering
           ? { frameRendering: exportSettings.frameRendering }
           : {}),
-      },
+      } as AppState,
       files: filterFiles(files),
       exportPadding: exportSettings.frameRendering?.enabled ? 0 : padding,
       mimeType: "image/png",
@@ -448,8 +482,18 @@ export async function getPNG(
 export async function getQuickImagePreview(
   plugin: ExcalidrawPlugin,
   path: string,
+  extension: "png",
+): Promise<Blob | null>;
+export async function getQuickImagePreview(
+  plugin: ExcalidrawPlugin,
+  path: string,
+  extension: "svg",
+): Promise<string | null>;
+export async function getQuickImagePreview(
+  plugin: ExcalidrawPlugin,
+  path: string,
   extension: "png" | "svg",
-): Promise<any> {
+): Promise<Blob | string | null> {
   if (!plugin.settings.displayExportedImageIfAvailable) {
     return null;
   }
@@ -460,7 +504,9 @@ export async function getQuickImagePreview(
   }
   switch (extension) {
     case "png":
-      return await plugin.app.vault.readBinary(file);
+      return new Blob([await plugin.app.vault.readBinary(file)], {
+        type: "image/png",
+      });
     default:
       return await plugin.app.vault.read(file);
   }
@@ -480,16 +526,26 @@ export async function getImageSize(
   });
 }
 
-export function scaleLoadedImage(
-  scene: any,
+export function scaleLoadedImage<T extends SceneWithElements>(
+  scene: T,
   files: FileData[],
-): { dirty: boolean; scene: any } {
+): {
+  dirty: boolean;
+  scene: Omit<T, "elements"> & { elements: Mutable<ExcalidrawElement>[] };
+} {
   let dirty = false;
   if (!files || !scene) {
-    return { dirty, scene };
+    return {
+      dirty,
+      scene: scene as unknown as Omit<T, "elements"> & {
+        elements: Mutable<ExcalidrawElement>[];
+      },
+    };
   }
 
-  for (const img of files.filter((f: any) => {
+  const sceneElements = scene.elements as Mutable<ExcalidrawElement>[];
+
+  for (const img of files.filter((f: FileData) => {
     if (!Boolean(EXCALIDRAW_PLUGIN)) {
       return true;
     } //this should never happen
@@ -510,8 +566,8 @@ export function scaleLoadedImage(
     const [imgWidth, imgHeight] = [img.size.width, img.size.height];
     const imgAspectRatio = imgWidth / imgHeight;
 
-    scene.elements
-      .filter((e: any) => e.type === "image" && e.fileId === img.id)
+    sceneElements
+      .filter((e: ExcalidrawElement) => e.type === "image" && e.fileId === img.id)
       .forEach((el: Mutable<ExcalidrawImageElement>) => {
         const [elWidth, elHeight] = [el.width, el.height];
         const maintainArea = img.shouldScale; //true if image should maintain its area, false if image should display at 100% its size
@@ -613,7 +669,12 @@ export function scaleLoadedImage(
         }
       });
   }
-  return { dirty, scene };
+  return {
+    dirty,
+    scene: scene as unknown as Omit<T, "elements"> & {
+      elements: Mutable<ExcalidrawElement>[];
+    },
+  };
 }
 
 export function setLeftHandedMode(isLeftHanded: boolean) {
@@ -1022,7 +1083,7 @@ export function _getContainerElement(
   element:
     | (ExcalidrawElement & { containerId: ExcalidrawElement["id"] | null })
     | null,
-  scene: any,
+  scene: SceneWithElements | null,
 ) {
   if (!element || !scene?.elements || element.type !== "text") {
     return null;

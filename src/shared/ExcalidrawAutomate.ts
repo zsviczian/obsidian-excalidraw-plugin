@@ -213,7 +213,6 @@ extendPlugins([
 ]);
 
 declare const PLUGIN_VERSION: string;
-declare var LZString: any;
 
 const GAP = 4;
 

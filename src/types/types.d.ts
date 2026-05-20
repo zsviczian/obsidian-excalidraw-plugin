@@ -160,6 +160,11 @@ export type LinkSuggestion = {
 };
 
 declare global {
+  const LZString: {
+    compressToBase64: (value: string) => string;
+    decompressFromBase64: (value: string) => string | null;
+  };
+
   interface Window {
     ExcalidrawAutomate: ExcalidrawAutomate;
     pdfjsLib: PdfJsLibrary;

@@ -33,7 +33,6 @@ import {
   ExcalidrawImperativeAPI,
   Gesture,
   LibraryItems,
-  SceneData,
   UIAppState,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import type { TTTDDialog } from "@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/types";

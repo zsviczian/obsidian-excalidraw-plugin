@@ -347,6 +347,14 @@ Validation guidance:
 - Always run `npm run build` after changes, and do not consider a change complete until the build passes with no new errors.
 - If a change could affect runtime behavior, validate by running the plugin in Obsidian if possible.
 
+### Type Consolidation Follow-through
+
+- Treat user requests like "tiny follow-up" or "do this consolidation" as end-to-end tasks: complete extraction, replace all known duplicates, and remove local leftovers in the same pass.
+- When a type is used in more than one module, prefer a shared definition in `src/types/` and import it everywhere instead of repeating local aliases.
+- For scope-local inline types (for example inside a processor or callback), quickly verify whether the shape already exists elsewhere before keeping or adding a local declaration.
+- Example: if `RemoteDirectoryInfo` is used in both `src/utils/utils.ts` and `src/core/main.ts`, define it once in `src/types/githubTypes.ts`, update both imports, and delete both local aliases in the same change.
+- After type-only consolidations, run targeted diagnostics on touched files plus `npm run build`, and confirm no runtime behavior was intentionally changed.
+
 **Summary:**
 
 > Agents must always consider the full codebase impact of any change, proactively search for dependencies and affected code, and validate correctness globally—not just locally—before considering a task complete.

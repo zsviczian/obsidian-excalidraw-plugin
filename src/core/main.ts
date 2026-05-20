@@ -89,6 +89,7 @@ import {
 import { FieldSuggester } from "../shared/Suggesters/FieldSuggester";
 import { ReleaseNotes } from "../shared/Dialogs/ReleaseNotes";
 import { DeviceType, Packages } from "../types/types";
+import { RemoteDirectoryInfo } from "../types/githubTypes";
 import { PreviewImageType } from "../types/utilTypes";
 import {
   emulateCTRLClickForLinks,
@@ -1397,10 +1398,6 @@ export default class ExcalidrawPlugin extends Plugin {
         }
 
         const files = new Map<string, number>();
-        type RemoteDirectoryInfo = {
-          fname: string;
-          mtime: number;
-        };
         JSON.parse(
           await request({
             url: URLs.RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_DIRECTORY_INFO_JSON,
