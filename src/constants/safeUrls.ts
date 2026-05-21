@@ -547,6 +547,10 @@ export const URL_REGISTRY = {
     buildSafeUrl(["youtu", "be"], ["uHFd0XoHRxE"]),
     UrlPurpose.VIDEO,
   ),
+  IFRAMELY_SERVER_CRESTIFY_COM_IFRAMELY: defineUrl(
+    buildSafeUrl(["iframely", "server", "crestify", "com"], ["iframely?url="]),
+    UrlPurpose.APP_LOGIC,
+  ),
 } as const;
 
 /**

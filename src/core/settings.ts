@@ -185,6 +185,7 @@ export interface ExcalidrawSettings {
   zoteroCompatibility: boolean;
   fieldSuggester: boolean;
   enableOnloadScripts: boolean;
+  enableCommandLinks: boolean;
   //loadCount: number; //version 1.2 migration counter
   drawingOpenCount: number;
   library: string;
@@ -662,6 +663,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   zoteroCompatibility: false,
   fieldSuggester: true,
   enableOnloadScripts: false,
+  enableCommandLinks: false,
   compatibilityMode: false,
   //loadCount: 0,
   drawingOpenCount: 0,
@@ -4324,6 +4326,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.enableOnloadScripts)
           .onChange(async (value) => {
             this.plugin.settings.enableOnloadScripts = value;
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("ENABLE_COMMAND_LINKS_NAME"))
+      .setDesc(fragWithHTML(t("ENABLE_COMMAND_LINKS_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.enableCommandLinks)
+          .onChange(async (value) => {
+            this.plugin.settings.enableCommandLinks = value;
             this.applySettingsUpdate();
           }),
       );

@@ -79,7 +79,18 @@ export default {
   INSERT_PDF: "以影像形式嵌入 PDF 到當前繪圖中",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE: "以影像形式嵌入最後啟用的 PDF 頁面",
   UNIVERSAL_ADD_FILE: "嵌入檔案 (Insert ANY file)",
+  // 相容性鍵：由 Excalidraw 上游透過 ExcalidrawPlugin.getLabel() 請求。
+  // 請在所有維護中的語言檔保持這一組鍵同步。
+  ABOUT_LIBRARIES: "如何載入素材庫",
   INSERT_CARD: "插入“背景筆記”卡片",
+  COMP_IMG: "圖片 & 檔案",
+  COMP_IMG_FROM_SYSTEM: "從系統匯入",
+  COMP_IMG_ANY_FILE: "倉庫中任意檔案",
+  COMP_IMG_LaTeX: "LaTeX 公式",
+  COMP_FRAME: "畫框操作",
+  COMP_FRAME_HINT:
+    "切換標記畫框。標記畫框僅用於引導，用於定義幻燈片/列印區域/[[file#^frame=id]]，" +
+    "匯出時會隱藏；也不會包含元素。透過上下文選單顯示/隱藏標記畫框。",
   CONVERT_CARD_TO_FILE: "將“背景筆記”卡片儲存到檔案",
   ERROR_TRY_AGAIN: "請重試。",
   PASTE_CODEBLOCK: "貼上程式碼塊",
@@ -935,6 +946,15 @@ export default {
     "啟用後，Excalidraw 會在你之後開啟的所有繪圖中執行檔案層級的 <code>excalidraw-onload-script</code>，直到你關閉此設定。 " +
     "如果你從未知來源下載 Markdown 檔案，這會帶來風險：惡意人士可以使用 <code>excalidraw-onload-script</code> " +
     "在 Obsidian 中執行任何命令，並且有可能將資料傳送到網際網路。只有在你信任該檔案及其來源時才啟用此功能。",
+  ENABLE_COMMAND_LINKS_NAME: "啟用命令連結（cmd://）",
+  ENABLE_COMMAND_LINKS_CONFIRMATION:
+    "此連結會透過 <code>cmd://</code> 觸發 Obsidian 命令。是否啟用命令連結？",
+  ENABLE_COMMAND_LINKS_CONFIRM_ENABLE: "啟用命令連結",
+  ENABLE_COMMAND_LINKS_CONFIRM_DENY: "不允許",
+  ENABLE_COMMAND_LINKS_DESC:
+    "啟用後，Excalidraw 將允許以 <code>cmd://</code> 開頭的連結在你之後開啟的繪圖中執行 Obsidian 命令面板動作，直到你關閉此設定。 " +
+    "如果你開啟來自未知來源的繪圖，這會帶來風險：惡意繪圖可以讓一次普通點擊觸發高權限命令。 " +
+    "只有在你信任該檔案及其來源時才啟用此功能。",
   STARTUP_SCRIPT_NAME: "起動指令碼",
   STARTUP_SCRIPT_DESC:
     "外掛啟動時將自動執行該指令碼。可用於為您的 Excalidraw 自動化指令碼設定鉤子。" +

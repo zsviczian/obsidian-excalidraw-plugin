@@ -4275,7 +4275,7 @@ export default class ExcalidrawView
 
   async addTextWithIframely(text: string) {
     const id = await this.addText(text);
-    const url = `http://iframely.server.crestify.com/iframely?url=${text}`;
+    const url = `${URLs.IFRAMELY_SERVER_CRESTIFY_COM_IFRAMELY}${text}`;
     try {
       const data = JSON.parse(await request({ url }));
       if (!data || data.error || !data.meta?.title) {

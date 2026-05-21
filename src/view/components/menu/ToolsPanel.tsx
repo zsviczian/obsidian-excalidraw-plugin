@@ -165,16 +165,14 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
   }
 
   updatePosition(deltaY: number = 0, deltaX: number = 0) {
-    this.setState(() => {
+    this.setState((prevState: PanelState) => {
       const {
-        offsetTop,
-        offsetLeft,
         clientWidth: width,
         clientHeight: height,
       } = this.containerRef.current.firstElementChild as HTMLElement;
 
-      const top = offsetTop - deltaY;
-      const left = offsetLeft - deltaX;
+      const top = prevState.top - deltaY;
+      const left = prevState.left - deltaX;
 
       const {
         clientWidth: parentWidth,

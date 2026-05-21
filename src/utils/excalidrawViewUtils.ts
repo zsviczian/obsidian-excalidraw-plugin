@@ -9,6 +9,8 @@ import {
   getDefaultColorPalette,
   DEVICE,
   mainDocument,
+  EXCALIDRAW_PLUGIN,
+  PLUGIN_ID,
 } from "src/constants/constants";
 import { App, Modal, Notice, TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
@@ -41,6 +43,108 @@ import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { EmbeddedFile } from "src/shared/EmbeddedFileLoader";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { setSanitizedHtml } from "./htmlUtils";
+
+type CommandLinkOptInPlugin = {
+  settings: {
+    enableCommandLinks?: boolean;
+  };
+  saveSettings: () => Promise<void>;
+};
+
+class CommandLinkOptInPrompt extends Modal {
+  public waitForClose: Promise<boolean | null>;
+  private resolvePromise: (value: boolean | null) => void;
+  private selectedValue: boolean | null = null;
+  private readonly message: string;
+
+  constructor(app: App, message: string) {
+    super(app);
+    this.message = message;
+    this.waitForClose = new Promise<boolean | null>((resolve) => {
+      this.resolvePromise = resolve;
+    });
+    this.open();
+  }
+
+  onOpen() {
+    this.titleEl.setText(t("PROMPT_TITLE_CONFIRMATION"));
+    const messageEl = this.contentEl.createDiv();
+    setSanitizedHtml(messageEl, this.message);
+
+    const buttonContainer = this.contentEl.createDiv();
+    buttonContainer.style.display = "flex";
+    buttonContainer.style.justifyContent = "flex-end";
+    buttonContainer.style.marginTop = "1rem";
+
+    const denyButton = buttonContainer.createEl("button", {
+      text: t("ENABLE_COMMAND_LINKS_CONFIRM_DENY"),
+    });
+    denyButton.style.marginRight = "0.5rem";
+    denyButton.onclick = () => {
+      this.selectedValue = null;
+      this.close();
+    };
+
+    const enableButton = buttonContainer.createEl("button", {
+      text: t("ENABLE_COMMAND_LINKS_CONFIRM_ENABLE"),
+      cls: "mod-cta",
+    });
+    enableButton.onclick = () => {
+      this.selectedValue = true;
+      this.close();
+    };
+
+    window.setTimeout(() => denyButton.focus(), 0);
+  }
+
+  onClose() {
+    super.onClose();
+    this.resolvePromise(this.selectedValue);
+  }
+}
+
+const getCommandLinkOptInPlugin = (app: App): CommandLinkOptInPlugin | null => {
+  const candidate = app.plugins?.plugins?.[PLUGIN_ID];
+  if (
+    candidate &&
+    typeof (candidate as { saveSettings?: unknown }).saveSettings ===
+      "function" &&
+    typeof (candidate as { settings?: unknown }).settings === "object"
+  ) {
+    return candidate as unknown as CommandLinkOptInPlugin;
+  }
+  if (EXCALIDRAW_PLUGIN && EXCALIDRAW_PLUGIN.app === app) {
+    return EXCALIDRAW_PLUGIN as unknown as CommandLinkOptInPlugin;
+  }
+  return null;
+};
+
+const executeCommandLinkWithConfirmation = async (cmd: string, app: App) => {
+  const plugin = getCommandLinkOptInPlugin(app);
+  if (!plugin) {
+    return;
+  }
+
+  let allowCommandLinks: boolean | null =
+    plugin.settings.enableCommandLinks ?? false;
+
+  if (!allowCommandLinks) {
+    const confirmationPrompt = new CommandLinkOptInPrompt(
+      app,
+      `<strong>${t("ENABLE_COMMAND_LINKS_NAME")}</strong><br>${t("ENABLE_COMMAND_LINKS_CONFIRMATION")}` +
+        `<br><br>${t("ENABLE_COMMAND_LINKS_DESC")}`,
+    );
+    allowCommandLinks = await confirmationPrompt.waitForClose;
+    if (allowCommandLinks) {
+      plugin.settings.enableCommandLinks = true;
+      await plugin.saveSettings();
+    }
+  }
+
+  if (allowCommandLinks) {
+    app.commands.executeCommandById(cmd);
+  }
+};
 
 export async function insertImageToView(
   ea: ExcalidrawAutomate,
@@ -220,7 +324,7 @@ export function openExternalLink(link: string, app: App): boolean {
   link = getLinkFromMarkdownLink(link);
   if (link.match(/^cmd:\/\/.*/)) {
     const cmd = link.replace("cmd://", "");
-    app.commands.executeCommandById(cmd);
+    void executeCommandLinkWithConfirmation(cmd, app);
     return true;
   }
   if (!link.startsWith("obsidian://") && link.match(REG_LINKINDEX_HYPERLINK)) {

@@ -210,6 +210,25 @@ const LEGACY_PROVIDER_LABELS: Record<string, string> = {
   "openai-compatible": "OpenAI-compatible",
 };
 
+/**
+ * Compatibility labels consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().
+ * Keep these keys present in `en.ts`, and keep maintained locales in sync.
+ */
+const EXCALIDRAW_EXTERNAL_GET_LABEL_KEYS = [
+  "COMP_FRAME_HINT",
+  "COMP_FRAME",
+  "COMP_IMG",
+  "COMP_IMG_FROM_SYSTEM",
+  "COMP_IMG_ANY_FILE",
+  "INSERT_CARD",
+  "COMP_IMG_LaTeX",
+  "ABOUT_LIBRARIES",
+] as const satisfies readonly (keyof typeof en)[];
+
+const EXCALIDRAW_EXTERNAL_GET_LABEL_KEY_SET = new Set<keyof typeof en>(
+  EXCALIDRAW_EXTERNAL_GET_LABEL_KEYS,
+);
+
 const stripLegacyAISettings = <T extends PersistedExcalidrawSettings>(
   settings: T,
 ): T => {
@@ -2198,7 +2217,17 @@ export default class ExcalidrawPlugin extends Plugin {
   //used by obsidianUtils in the Excalidraw Pacakge
   //aweful coding, but does the job
   public getLabel(key: keyof typeof en): string {
-    return t(key);
+    const localizedLabel = t(key);
+    if (
+      EXCALIDRAW_EXTERNAL_GET_LABEL_KEY_SET.has(key) &&
+      localizedLabel === key
+    ) {
+      console.warn(
+        `Excalidraw localization key '${key}' is missing. Falling back to English compatibility label.`,
+      );
+      return en[key];
+    }
+    return localizedLabel;
   }
 
   public getObsidianDevice(): DeviceType {

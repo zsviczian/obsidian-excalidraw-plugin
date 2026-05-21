@@ -93,7 +93,18 @@ export default {
   INSERT_PDF: "Insert PDF file from vault",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE: "Insert last active PDF page as image",
   UNIVERSAL_ADD_FILE: "Insert ANY file",
+  // Compatibility keys consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().
+  // Keep this group in sync across maintained locales.
+  ABOUT_LIBRARIES: "How to load libraries",
   INSERT_CARD: "Add back-of-note card",
+  COMP_IMG: "Image & Files",
+  COMP_IMG_FROM_SYSTEM: "Import from system",
+  COMP_IMG_ANY_FILE: "ANY file from Vault",
+  COMP_IMG_LaTeX: "LaTeX formula",
+  COMP_FRAME: "Frame Actions",
+  COMP_FRAME_HINT:
+    "Toggle Marker Frame. Guide-only frames to define slides/print areas/image references. " +
+    "Hidden in image exports; doesn't contain elements. Hide/show frames via canvas context menu.",
   CONVERT_CARD_TO_FILE: "Move back-of-note card to File",
   ERROR_TRY_AGAIN: "Please try again.",
   PASTE_CODEBLOCK: "Paste code block",
@@ -1038,6 +1049,15 @@ export default {
     "If enabled, Excalidraw will execute file-level <code>excalidraw-onload-script</code> code in all drawings you open from now on, until you disable this setting. " +
     "This creates a risk if you download markdown files from unknown sources: a malicious actor can use <code>excalidraw-onload-script</code> " +
     "to run any command in Obsidian and potentially transfer data to the internet. Only enable this if you trust the file and its source.",
+  ENABLE_COMMAND_LINKS_NAME: "Enable command links (cmd://)",
+  ENABLE_COMMAND_LINKS_CONFIRMATION:
+    "This link triggers an Obsidian command via <code>cmd://</code>. Do you want to enable command links?",
+  ENABLE_COMMAND_LINKS_CONFIRM_ENABLE: "Enable command links",
+  ENABLE_COMMAND_LINKS_CONFIRM_DENY: "Do not allow",
+  ENABLE_COMMAND_LINKS_DESC:
+    "If enabled, Excalidraw will allow links starting with <code>cmd://</code> to execute Obsidian command palette actions in drawings you open from now on, until you disable this setting. " +
+    "This creates a risk if you open drawings from unknown sources: a malicious drawing can make a normal click trigger privileged commands. " +
+    "Only enable this if you trust the file and its source.",
   STARTUP_SCRIPT_NAME: "Startup script",
   STARTUP_SCRIPT_DESC:
     "If set, excalidraw will execute the script at plugin startup. This is useful if you want to set any of the Excalidraw Automate hooks. The startup script is a markdown file " +

@@ -99,7 +99,17 @@ export default {
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE:
     "Insertar última página PDF activa como imagen",
   UNIVERSAL_ADD_FILE: "Insertar CUALQUIER archivo",
+  // Claves de compatibilidad consumidas por Excalidraw upstream vía ExcalidrawPlugin.getLabel().
+  // Mantén este grupo sincronizado en los idiomas mantenidos.
   INSERT_CARD: "Agregar tarjeta al reverso-de-la-nota",
+  COMP_IMG: "Imágenes y archivos",
+  COMP_IMG_FROM_SYSTEM: "Importar desde el sistema",
+  COMP_IMG_ANY_FILE: "Cualquier archivo de la bóveda",
+  COMP_IMG_LaTeX: "Fórmula de LaTeX",
+  COMP_FRAME: "Acciones de Frame(marco)",
+  COMP_FRAME_HINT:
+    "Activar/desactivar Marker-Frame (marco de marcador). Marcos de guía para definir diapositivas/áreas de impresión/referencias de imagen. " +
+    "Se ocultan en las exportaciones de imágenes y no contienen elementos. Oculta/muestra los marcos desde el menú contextual del lienzo.",
   CONVERT_CARD_TO_FILE: "Mover tarjeta del reverso-de-la-nota a un Archivo",
   ERROR_TRY_AGAIN: "Por favor, inténtalo de nuevo.",
   PASTE_CODEBLOCK: "Pegar un Bloque de Código",
@@ -1004,6 +1014,15 @@ export default {
     "Si está habilitado, Excalidraw ejecutará el <code>excalidraw-onload-script</code> a nivel de archivo en todos los dibujos que abras a partir de ahora, hasta que desactives esta opción. " +
     "Esto crea un riesgo si descargas archivos Markdown de fuentes desconocidas: un actor malicioso puede usar <code>excalidraw-onload-script</code> " +
     "para ejecutar cualquier comando en Obsidian y potencialmente transferir datos a internet. Actívalo solo si confías en el archivo y en su origen.",
+  ENABLE_COMMAND_LINKS_NAME: "Habilitar enlaces de comandos (cmd://)",
+  ENABLE_COMMAND_LINKS_CONFIRMATION:
+    "Este enlace ejecuta un comando de Obsidian mediante <code>cmd://</code>. ¿Quieres habilitar los enlaces de comandos?",
+  ENABLE_COMMAND_LINKS_CONFIRM_ENABLE: "Habilitar enlaces de comandos",
+  ENABLE_COMMAND_LINKS_CONFIRM_DENY: "No permitir",
+  ENABLE_COMMAND_LINKS_DESC:
+    "Si está habilitado, Excalidraw permitirá que los enlaces que comienzan con <code>cmd://</code> ejecuten acciones del Command Palette de Obsidian en los dibujos que abras a partir de ahora, hasta que desactives esta opción. " +
+    "Esto crea un riesgo si abres dibujos de fuentes desconocidas: un dibujo malicioso puede hacer que un clic normal ejecute comandos privilegiados. " +
+    "Actívalo solo si confías en el archivo y en su origen.",
   STARTUP_SCRIPT_NAME: "Script de inicio",
   STARTUP_SCRIPT_DESC:
     "Si está configurado, Excalidraw ejecutará el script al iniciar el complemento. Esto es útil si quieres establecer cualquiera de los hooks de Excalidraw Automate. El script de inicio es un archivo Markdown " +

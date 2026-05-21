@@ -1,6 +1,165 @@
-import { getIcon } from "obsidian";
+import { getIcon, sanitizeHTMLToDom } from "obsidian";
 import { PenStyle } from "src/types/penTypes";
 import React from "react";
+
+const BLOCKED_SVG_TAGS = new Set([
+  "script",
+  "foreignobject",
+  "iframe",
+  "object",
+  "embed",
+  "link",
+  "meta",
+]);
+
+const UNSAFE_PROTOCOL = /^\s*(?:javascript|vbscript):/i;
+const UNSAFE_STYLE_URL = /url\(\s*['"]?\s*(?:javascript|vbscript|data:text\/html)/i;
+
+const isUnsafeAttribute = (name: string, value: string): boolean => {
+  const loweredName = name.toLowerCase();
+  const loweredValue = value.toLowerCase();
+
+  if (loweredName.startsWith("on")) {
+    return true;
+  }
+
+  if (loweredName === "src" || loweredName === "srcdoc") {
+    return true;
+  }
+
+  if (loweredName === "href" || loweredName === "xlink:href") {
+    return !value.trim().startsWith("#") && value.trim() !== "";
+  }
+
+  if (UNSAFE_PROTOCOL.test(loweredValue)) {
+    return true;
+  }
+
+  if (loweredName === "style" && UNSAFE_STYLE_URL.test(loweredValue)) {
+    return true;
+  }
+
+  return false;
+};
+
+const sanitizeSvgTree = (svg: SVGSVGElement) => {
+  const nodesToRemove: Element[] = [];
+  const walker = document.createTreeWalker(svg, NodeFilter.SHOW_ELEMENT);
+
+  let current = walker.currentNode as Element;
+  while (current) {
+    if (BLOCKED_SVG_TAGS.has(current.tagName.toLowerCase())) {
+      nodesToRemove.push(current);
+    } else {
+      [...current.attributes].forEach((attr) => {
+        if (isUnsafeAttribute(attr.name, attr.value)) {
+          current.removeAttribute(attr.name);
+        }
+      });
+    }
+    current = walker.nextNode() as Element;
+  }
+
+  nodesToRemove.forEach((node) => node.remove());
+};
+
+const sanitizeSvgFromString = (svgMarkup: string): SVGSVGElement | null => {
+  const fragment = sanitizeHTMLToDom(svgMarkup ?? "");
+  const svg = fragment.querySelector("svg");
+  if (!(svg instanceof SVGSVGElement)) {
+    return null;
+  }
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+  sanitizeSvgTree(clone);
+  return clone;
+};
+
+const sanitizeSvgElement = (svg: SVGSVGElement): SVGSVGElement => {
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+  sanitizeSvgTree(clone);
+  return clone;
+};
+
+const applyDefaultSvgTheme = (svg: SVGSVGElement) => {
+  const walker = document.createTreeWalker(svg, NodeFilter.SHOW_ELEMENT);
+  let current = walker.currentNode as Element;
+  while (current) {
+    current.removeAttribute("stroke");
+    current.removeAttribute("width");
+    current.removeAttribute("height");
+    current = walker.nextNode() as Element;
+  }
+
+  svg.setAttribute("stroke", "var(--icon-fill-color)");
+  svg.setAttribute("color", "var(--icon-fill-color)");
+  svg.setAttribute("fill", "var(--icon-fill-color)");
+  svg.setAttribute("stroke-width", "6");
+};
+
+const cssTextToReactStyle = (
+  cssText: string,
+): React.CSSProperties | undefined => {
+  const style: Record<string, string> = {};
+  cssText
+    .split(";")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .forEach((entry) => {
+      const splitIndex = entry.indexOf(":");
+      if (splitIndex === -1) {
+        return;
+      }
+      const key = entry.slice(0, splitIndex).trim();
+      const value = entry.slice(splitIndex + 1).trim();
+      if (!key || !value) {
+        return;
+      }
+      style[toReactAttributeName(key)] = value;
+    });
+
+  return Object.keys(style).length
+    ? (style as React.CSSProperties)
+    : undefined;
+};
+
+const domNodeToReact = (
+  node: ChildNode,
+  key: string,
+): React.ReactNode | null => {
+  if (node.nodeType === Node.TEXT_NODE) {
+    const text = node.textContent ?? "";
+    return text.length > 0 ? text : null;
+  }
+
+  if (node.nodeType !== Node.ELEMENT_NODE) {
+    return null;
+  }
+
+  const element = node as Element;
+  const props: Record<string, unknown> = { key };
+
+  [...element.attributes].forEach((attr) => {
+    const reactAttribute = toReactAttributeName(attr.name);
+    if (reactAttribute === "style") {
+      const style = cssTextToReactStyle(attr.value);
+      if (style) {
+        props.style = style;
+      }
+      return;
+    }
+    props[reactAttribute] = attr.value;
+  });
+
+  const children = [...element.childNodes]
+    .map((child, index) => domNodeToReact(child, `${key}-${index}`))
+    .filter((child): child is React.ReactNode => child !== null);
+
+  return React.createElement(element.tagName.toLowerCase(), props, ...children);
+};
+
+const svgElementToReact = (svg: SVGSVGElement): React.ReactElement => {
+  return domNodeToReact(svg, "svg") as React.ReactElement;
+};
 
 const toReactAttributeName = (attributeName: string) => {
   if (attributeName === "class") {
@@ -15,24 +174,14 @@ const toReactAttributeName = (attributeName: string) => {
   );
 };
 
-const getIconAttributes = (icon: SVGSVGElement) =>
-  [...icon.attributes].reduce<Record<string, string>>((attributes, attr) => {
-    attributes[toReactAttributeName(attr.nodeName)] = attr.nodeValue;
-    return attributes;
-  }, {});
-
 export const getIconAsJSX = (iconId: string) => {
   const icon = getIcon(iconId);
   if (!icon) {
     return <svg className="svg-icon excalidraw-icon-missing" />;
   }
 
-  return (
-    <svg
-      {...getIconAttributes(icon)}
-      dangerouslySetInnerHTML={{ __html: icon.innerHTML }}
-    />
-  );
+  const sanitizedIcon = sanitizeSvgElement(icon);
+  return svgElementToReact(sanitizedIcon);
 };
 
 export const ICONS = {
@@ -912,19 +1061,17 @@ export const penIcon = (pen: PenStyle) => {
 };
 
 export const stringToSVG = (svg: string) => {
-  if (svg.match(/class=["'][^"']*(lucide|skip)[^"']*["']/)) {
-    return <div dangerouslySetInnerHTML={{ __html: svg }}></div>;
+  const sanitizedSvg = sanitizeSvgFromString(svg);
+  if (!sanitizedSvg) {
+    return <svg className="svg-icon excalidraw-icon-missing" />;
   }
-  svg = svg
-    .replace(/stroke\s*=\s*['"][^"']*['"]/g, "")
-    .replace(/[^-]width\s*=\s*['"][^"']*['"]/g, "")
-    .replace(/[^-]height\s*=\s*['"][^"']*['"]/g, "")
-    .replace(
-      "<svg ",
-      `<svg style="stroke:var(--icon-fill-color);color:var(--icon-fill-color);fill:var(--icon-fill-color);stroke-width:6;" `,
-    );
 
-  return <div dangerouslySetInnerHTML={{ __html: svg }}></div>;
+  const className = sanitizedSvg.getAttribute("class") ?? "";
+  if (!/(?:^|\s)(?:lucide|skip)(?:\s|$)/.test(className)) {
+    applyDefaultSvgTheme(sanitizedSvg);
+  }
+
+  return <div>{svgElementToReact(sanitizedSvg)}</div>;
 };
 
 export const LogoWrapper = ({ children }: { children: React.ReactNode }) => {
