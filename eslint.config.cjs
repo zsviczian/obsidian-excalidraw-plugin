@@ -96,6 +96,9 @@ module.exports = (async () => {
           tsconfigRootDir: __dirname,
         },
       },
+      rules: {
+        "obsidianmd/prefer-instanceof": "off",
+      },
     },
     {
       files: ["**/*.{ts,tsx,js,jsx}"],

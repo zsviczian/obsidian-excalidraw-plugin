@@ -1158,7 +1158,7 @@ export default class ExcalidrawPlugin extends Plugin {
         return;
       }
 
-      if (existingStylesheet.instanceOf(HTMLStyleElement)) {
+      if (existingStylesheet instanceof HTMLStyleElement) {
         existingStylesheet.textContent = PHONE_FOOTER_SAFE_AREA_CSS;
         return;
       }
