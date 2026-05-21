@@ -517,14 +517,14 @@ export class PluginFileManager {
       //also Excalidraw IDs are inconveniently long
       if (te.id.length > 8) {
         id = nanoid();
-        data = data.replaceAll(te.id, id); //brute force approach to replace all occurrences.
+        te.id = id; // Update the element's own ID in the parsed object
       }
       outString += `${te.originalText ?? te.text} ^${id}\n\n`;
     }
     return (
       outString +
       getMarkdownDrawingSection(
-        JSON.stringify(JSON_parse(data), null, "\t"),
+        JSON.stringify(excalidrawData, null, "\t"),
         typeof compressOverride === "undefined"
           ? this.settings.compress
           : compressOverride,
