@@ -17,7 +17,6 @@ export default {
   // main.ts
   CONVERT_URL_TO_FILE: "Сохранить изображение из URL в локальный файл",
   UNZIP_CURRENT_FILE: "Распаковать текущий файл Excalidraw",
-  ZIP_CURRENT_FILE: "Сжать текущий файл Excalidraw",
   PUBLISH_SVG_CHECK:
     "Obsidian Publish: Поиск устаревших экспортированных SVG и PNG-файлов",
   EMBEDDABLE_PROPERTIES: "Свойства встраиваемых элементов",
@@ -178,7 +177,6 @@ export default {
   EXPORT_IMAGE: `Экспорт изображения`,
   OPEN_LINK:
     "Открыть выделенный текст как ссылку\n(SHIFT+CLICK для открытия в новой панели)",
-  EXPORT_EXCALIDRAW: "Экспорт в файл .Excalidraw",
   LINK_BUTTON_CLICK_NO_TEXT:
     "Выберите элемент, содержащий внутреннюю или внешнюю ссылку.\n",
   LINEAR_ELEMENT_LINK_CLICK_ERROR:
@@ -196,7 +194,6 @@ export default {
   CONVERT_FILE: "Преобразование в новый формат",
   BACKUP_AVAILABLE:
     "Мы столкнулись с ошибкой при загрузке вашего рисунка. Это могло произойти, если Obsidian неожиданно закрылся во время операции сохранения. Например, если вы случайно закрыли Obsidian на своем мобильном устройстве во время сохранения.<br><br><b>ХОРОШАЯ НОВОСТЬ:</b> К счастью, доступна локальная резервная копия. Однако учтите, что если вы последний раз изменяли этот рисунок на другом устройстве (например, на планшете), а сейчас находитесь на рабочем столе, то на другом устройстве, скорее всего, имеется более свежая резервная копия.<br><br>Я рекомендую сначала попробовать открыть рисунок на другом устройстве и восстановить резервную копию из его локального хранилища.<br><br>Хотите загрузить резервную копию?",
-  BACKUP_RESTORED: "Резервная копия восстановлена",
   CACHE_NOT_READY:
     "Приношу извинения за неудобства, но при загрузке вашего файла произошла ошибка.<br><br><mark>Немного терпения может сэкономить вам массу времени...</mark><br><br>Плагин имеет резервный кэш, но похоже, что вы только что запустили Obsidian. Инициализация резервного кэша может занять некоторое время, обычно до минуты или больше, в зависимости от производительности вашего устройства. Вы получите уведомление в правом верхнем углу, когда инициализация кэша будет завершена.<br><br>Нажмите OK, чтобы попытаться загрузить файл снова и проверить, завершилась ли инициализация кэша. Если за этим сообщением вы видите абсолютно пустой файл, я рекомендую подождать, пока кэш резервного копирования будет готов, прежде чем продолжать. Кроме того, вы можете выбрать «Отмена», чтобы вручную исправить файл.<br>",
   OBSIDIAN_TOOLS_PANEL: "Панель инструментов Obsidian",
@@ -223,8 +220,6 @@ export default {
   WELCOME_DISCORD_LINK: "Присоединяйтесь к серверу Discord",
   WELCOME_TWITTER_ARIA: "Следите за мной в Twitter",
   WELCOME_TWITTER_LINK: "Следите за мной в Twitter",
-  WELCOME_LEARN_ARIA: "Изучение Visual PKM",
-  WELCOME_LEARN_LINK: "Запишитесь на семинар по визуальному мышлению",
   WELCOME_DONATE_ARIA: "Пожертвовать на поддержку Excalidraw-Obsidian",
   WELCOME_DONATE_LINK: "Скажите «Спасибо» и поддержите плагин.",
   SAVE_IS_TAKING_LONG:
@@ -314,78 +309,26 @@ export default {
   AI_PROVIDER_OPTION_OPENAI_COMPATIBLE: "Совместимый с OpenAI / локальный",
   AI_PROVIDER_PROFILE_MODAL_OPENAI_COMPATIBLE_HINT:
     "Для локальных LLM, совместимых с OpenAI, укажите фиктивный API key, если реальный не нужен, чтобы Excalidraw считал профиль настроенным.",
-  AI_PROVIDER_BASE_URL_EMPTY: "Определяется типом провайдера",
   AI_PROVIDER_API_KEY_SET: "Настроено",
   AI_PROVIDER_API_KEY_NOT_SET: "Не настроено",
   AI_PROVIDER_EDIT: "Изменить провайдера",
   AI_PROVIDER_ADD: "Добавить провайдера",
   AI_PROVIDER_REMOVE: "Удалить провайдера",
   AI_PROVIDER_RESTORE_DEFAULTS: "Восстановить провайдеров по умолчанию",
-  AI_PROVIDER_API_KEY_NAME: "API-ключ ИИ",
-  AI_PROVIDER_API_KEY_DESC:
-    "Основной API-ключ, используемый общим слоем ИИ. Значение скрыто, пока поле не находится в фокусе.",
-  AI_PROVIDER_API_KEY_PLACEHOLDER: "API-ключ провайдера",
-  AI_PROVIDER_BASE_URL_NAME: "Базовый URL ИИ",
-  AI_PROVIDER_BASE_URL_DESC: `Необязательный базовый URL провайдера. Используйте его для локальных OpenAI-совместимых серверов или собственных шлюзов. Можно указать как базовый URL, например https${+"://api.openai"}${+".com/v1, так и полный endpoint чата, например https"}${+"://api.openai"}${+".com/v1/chat/completions; Excalidraw автоматически нормализует известные OpenAI-подобные endpoints."}`,
-  AI_PROVIDER_BASE_URL_PLACEHOLDER: `например: https${+"://api.openai"}${+".com/v1"}`,
-  AI_PROVIDER_TEXT_ENDPOINT_NAME: "Переопределение endpoint текста ИИ",
-  AI_PROVIDER_TEXT_ENDPOINT_DESC:
-    "Необязательное полное переопределение endpoint для текстовых и мультимодальных запросов. Оставьте пустым, чтобы он вычислялся из базового URL и провайдера. Большинству пользователей это поле не нужно.",
-  AI_PROVIDER_TEXT_ENDPOINT_PLACEHOLDER:
-    "Необязательный полный endpoint текста",
-  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_NAME:
-    "Переопределение endpoint генерации изображений ИИ",
-  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_DESC:
-    "Необязательное полное переопределение endpoint для запросов генерации изображений. Оставьте пустым, если только ваш провайдер не использует нестандартный путь.",
-  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_PLACEHOLDER:
-    "Необязательный полный endpoint генерации изображений",
-  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_NAME:
-    "Переопределение endpoint редактирования изображений ИИ",
-  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_DESC:
-    "Необязательное полное переопределение endpoint для запросов редактирования изображений. Оставьте пустым, если только ваш провайдер не использует нестандартный путь.",
-  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_PLACEHOLDER:
-    "Необязательный полный endpoint редактирования изображений",
-  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_NAME:
-    "Переопределение endpoint вариаций изображений ИИ",
-  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_DESC:
-    "Необязательное полное переопределение endpoint для запросов вариаций изображений. Оставьте пустым, если только ваш провайдер не использует нестандартный путь.",
-  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_PLACEHOLDER:
-    "Необязательный полный endpoint вариаций изображений",
   AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME: "Текстовая и мультимодальная модель",
   AI_PROVIDER_DEFAULT_TEXT_MODEL_DESC:
     "Модель для текстового чата и запросов с изображениями, например Mermaid chat, diagram-to-code и анализа вайрфреймов.<br>Провайдер: {{provider}} ({{providerType}})<br>API key: {{apiKey}}<br>Имя модели: {{model}}<br>Endpoint: {{endpoint}}<br>Мультимодальная поддержка: {{multimodalSupport}}",
-  AI_PROVIDER_DEFAULT_TEXT_MODEL_PLACEHOLDER:
-    "например: gpt-5-mini, claude-sonnet, gemini-2.5-pro",
-  AI_PROVIDER_DEFAULT_VISION_MODEL_NAME: "Vision-модель",
-  AI_PROVIDER_DEFAULT_VISION_MODEL_DESC:
-    "Модель для понимания изображений, например diagram-to-code или запросов с изображением и текстом.<br>Провайдер: {{provider}} ({{providerType}})<br>API key: {{apiKey}}<br>Имя модели: {{model}}<br>Endpoint: {{endpoint}}",
-  AI_PROVIDER_DEFAULT_VISION_MODEL_PLACEHOLDER:
-    "например: gpt-5-mini, claude-sonnet, gemini-2.5-flash",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME: "Модель изображений",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_DESC:
     "Модель для генерации изображений, prompt-редактирования и редактирования с маской. Используйте кнопки редактирования, добавления и удаления, чтобы менять список.<br>Провайдер: {{provider}} ({{providerType}})<br>API key: {{apiKey}}<br>Имя модели: {{model}}<br>Поддерживаемые разрешения: {{sizes}}<br>Prompt-редактирование: {{supportsPromptImageTransforms}}<br>Редактирование с маской: {{supportsMaskImageEdits}}",
-  AI_PROVIDER_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "например: gpt-image-1",
   AI_MODEL_CONFIG_DERIVED_ENDPOINT: "Определяется выбранным провайдером",
   AI_MODEL_EDIT: "Изменить модель",
   AI_MODEL_ADD: "Добавить модель",
   AI_MODEL_REMOVE: "Удалить модель",
   AI_MODEL_RESTORE_DEFAULTS: "Восстановить модели по умолчанию",
-  AI_IMAGE_MODEL_CAPABILITIES_NAME: "Возможности моделей изображений",
-  AI_IMAGE_MODEL_CAPABILITIES_DESC: `Здесь настраиваются метаданные моделей изображений: поддерживаемые разрешения, поддержка prompt-редактирования и поддержка масок. Например, поддерживаемые размеры можно посмотреть в <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">документации OpenAI по генерации изображений</a>.`,
-  AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "Восстановить известные значения",
-  AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "Добавить",
-  AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "Изменить",
-  AI_IMAGE_MODEL_CAPABILITIES_REMOVE_MODEL: "Удалить запись",
-  AI_IMAGE_MODEL_CAPABILITIES_CURRENT_ENTRY_NAME: "Выбранная запись модели",
-  AI_IMAGE_MODEL_CAPABILITIES_CURRENT_ENTRY_DESC:
-    "<b>{{model}}</b><br>Поддерживаемые разрешения: {{sizes}}<br>Prompt-редактирование: {{supportsPromptImageTransforms}}<br>Редактирование с маской: {{supportsMaskImageEdits}}",
   AI_IMAGE_MODEL_CAPABILITIES_SIZES_NAME: "Поддерживаемые разрешения",
   AI_IMAGE_MODEL_CAPABILITIES_SIZES_PLACEHOLDER:
     "1024x1024, 1536x1024, 1024x1536",
-  AI_IMAGE_MODEL_CAPABILITIES_EDITS_NAME:
-    "Поддерживает редактирование изображений",
-  AI_IMAGE_MODEL_CAPABILITIES_EDITS_DESC:
-    "Отключите, если модель умеет только генерировать изображения, но не поддерживает редактирование или маски.",
   AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_NAME:
     "Prompt-редактирование изображений",
   AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_DESC:
@@ -892,10 +835,6 @@ export default {
   PRESERVE_TEXT_AFTER_DRAWING_NAME: "Совместимость Zotero и Footnotes",
   PRESERVE_TEXT_AFTER_DRAWING_DESC:
     "Сохраните текст после раздела ## Чертеж в файле Markdown. Это может незначительно повлиять на производительность при сохранении очень больших рисунков.",
-  DEBUGMODE_NAME: "Включить отладочные сообщения",
-  DEBUGMODE_DESC:
-    "Я рекомендую перезапустить Obsidian после включения/выключения этой настройки. Это позволяет выводить отладочные сообщения в консоль. Это полезно для устранения неполадок. " +
-    `Если у вас возникли проблемы с плагином, пожалуйста, включите эту настройку, воспроизведите проблему и включите журнал консоли в проблему, которую вы поднимаете на <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}">GitHub</a>`,
   SLIDING_PANES_NAME:
     "Поддержка плагина раздвижных областей окна (Sliding Panes plugin)",
   SLIDING_PANES_DESC:
@@ -917,11 +856,6 @@ export default {
     "При включении этой функции рисунки, которые вы создаете с помощью значка ленты, действий палитры команд, " +
     "и в файловом проводнике, будут все старые файлы *.excalidraw. Эта настройка также отключит напоминание" +
     "при открытии устаревшего файла для редактирования.",
-  MATHJAX_NAME: "Хост библиотеки javascript MathJax (LaTeX)",
-  MATHJAX_DESC:
-    "Если вы используете уравнения LaTeX в Excalidraw, то плагину необходимо загрузить библиотеку javascript для этого. " +
-    "Некоторые пользователи не могут получить доступ к определенным хост-серверам. Если у вас возникли проблемы, попробуйте сменить хост здесь. " +
-    "Возможно, вам придется перезапустить Obsidian после закрытия настроек, чтобы это изменение вступило в силу.",
   LATEX_DEFAULT_NAME: "Формула LaTeX по умолчанию для новых уравнений",
   LATEX_DEFAULT_DESC:
     "Оставьте пустым, если вам не нужна формула по умолчанию. Здесь можно добавить форматирование по умолчанию, например <code>\\color{white}</code>.",
@@ -966,7 +900,6 @@ export default {
     "Скрипт запуска - это файл в формате markdown, который должен содержать код javascript, который вы хотите выполнять при запуске Excalidraw.",
   STARTUP_SCRIPT_BUTTON_CREATE: "Создание сценария запуска",
   STARTUP_SCRIPT_BUTTON_OPEN: "Открыть сценарий запуска",
-  STARTUP_SCRIPT_EXISTS: "Файл сценария запуска уже существует",
   FILETYPE_NAME:
     "Тип отображения (✏️) для файлов excalidraw.md в Файловом Проводнике",
   FILETYPE_DESC:
@@ -1047,11 +980,6 @@ export default {
     "Выберите существующий чертеж или введите имя нового чертежа, затем нажмите Enter.",
   SELECT_TO_EMBED: "Выберите чертеж для вставки в активный документ.",
   SELECT_MD: "Выберите документ в формате markdown для вставки.",
-  SELECT_PDF: "Выберите документ PDF для вставки.",
-  PDF_PAGES_HEADER: "Страницы для загрузки?",
-  PDF_PAGES_DESC: "Формат: 1, 3-5, 7, 9-11",
-
-  //SelectCard.ts
   TYPE_SECTION: "Введите название раздела для выбора.",
   SELECT_SECTION_OR_TYPE_NEW:
     "Выберите существующий раздел или введите название нового раздела, затем нажмите Enter.",
@@ -1068,10 +996,6 @@ export default {
     "Ошибка выполнения сценария. Пожалуйста, найдите сообщение об ошибке в консоли разработчика.",
 
   //ExcalidrawData.ts
-  LOAD_FROM_BACKUP:
-    "Файл Excalidraw был поврежден. Загрузка из резервного файла.",
-
-  //ObsidianMenu.tsx
   GOTO_FULLSCREEN: "Переход в полноэкранный режим",
   EXIT_FULLSCREEN: "Выход из полноэкранного режима",
   TOGGLE_FULLSCREEN: "Переключить полноэкранный режим",

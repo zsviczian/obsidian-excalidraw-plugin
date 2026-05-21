@@ -21,7 +21,6 @@ export default {
   // main.ts
   CONVERT_URL_TO_FILE: "Guardar imagen desde el URL en un archivo local",
   UNZIP_CURRENT_FILE: "Descomprimir el archivo Excalidraw actual",
-  ZIP_CURRENT_FILE: "Comprimir el archivo Excalidraw actual",
   PUBLISH_SVG_CHECK:
     "Obsidian Publish: Buscar exportaciones SVG y PNG desactualizadas",
   EMBEDDABLE_PROPERTIES: "Propiedades de Elementos Incrustados",
@@ -181,7 +180,6 @@ export default {
   EXPORT_IMAGE: `Exportar imagen`,
   OPEN_LINK:
     "Abrir texto seleccionado como enlace\n(SHIFT+CLICK para abrir en un nuevo panel)",
-  EXPORT_EXCALIDRAW: "Exportar a un archivo .Excalidraw",
   LINK_BUTTON_CLICK_NO_TEXT:
     "Selecciona un elemento que contenga un enlace interno o externo.\n",
   LINEAR_ELEMENT_LINK_CLICK_ERROR:
@@ -199,7 +197,6 @@ export default {
   CONVERT_FILE: "Convertir a nuevo formato",
   BACKUP_AVAILABLE:
     "Encontramos un error al cargar tu bosquejo. Esto pudo haber ocurrido si Obsidian se cerró inesperadamente durante una operación de guardado. Por ejemplo, si cerraste accidentalmente Obsidian en tu dispositivo móvil mientras guardabas.<br><br><b>BUENAS NOTICIAS:</b> Afortunadamente, hay una copia de seguridad local disponible. Sin embargo, ten en cuenta que si modificaste este bosquejo por última vez en un dispositivo diferente (ej. tablet) y ahora estás en tu computadora de escritorio, es probable que ese otro dispositivo tenga una copia de seguridad más reciente.<br><br>Recomiendo intentar abrir el bosquejo en tu otro dispositivo primero y restaurar la copia de seguridad desde su almacenamiento local.<br><br>¿Te gustaría cargar la copia de seguridad?",
-  BACKUP_RESTORED: "Copia de seguridad restaurada",
   BACKUP_SAVE_AS_FILE:
     "Este bosquejo está vacío. Hay una copia de seguridad no vacía disponible. ¿Te gustaría restaurarla como un nuevo archivo y abrirla en una nueva pestaña?",
   BACKUP_SAVE: "Restaurar",
@@ -233,8 +230,6 @@ export default {
   WELCOME_DISCORD_LINK: "Únete al servidor de Discord",
   WELCOME_TWITTER_ARIA: "Sígueme en Twitter",
   WELCOME_TWITTER_LINK: "Sígueme en Twitter",
-  WELCOME_LEARN_ARIA: "Aprende PKM Visual",
-  WELCOME_LEARN_LINK: "Inscríbete en el Taller de Pensamiento Visual",
   WELCOME_DONATE_ARIA: "Dona para apoyar Excalidraw-Obsidian",
   WELCOME_DONATE_LINK: 'Di "Gracias" y apoya el complemento.',
   SAVE_IS_TAKING_LONG:
@@ -265,9 +260,6 @@ export default {
     "Únete al servidor de Discord del Taller de Pensamiento Visual",
   LINKS_DISCORD: "Únete a la Comunidad",
   LINKS_TWITTER: "Sígueme",
-  LINKS_VTW_ARIA:
-    "Aprende sobre PKM Visual, Excalidraw, Obsidian, ExcaliBrain y más",
-  LINKS_VTW: "Únete a un Taller",
   LINKS_BOOK_ARIA: "Lee Sketch Your Mind, mi libro sobre Pensamiento Visual",
   LINKS_BOOK: "Lee el Libro",
   LINKS_WIKI: "Wiki del Complemento",
@@ -366,77 +358,26 @@ export default {
   AI_PROVIDER_OPTION_OPENAI_COMPATIBLE: "Compatible con OpenAI / local",
   AI_PROVIDER_PROFILE_MODAL_OPENAI_COMPATIBLE_HINT:
     "Para LLM locales compatibles con OpenAI, usa una API key ficticia si no hace falta una real, para que Excalidraw marque el perfil como configurado.",
-  AI_PROVIDER_BASE_URL_EMPTY: "Derivada del tipo de proveedor",
   AI_PROVIDER_API_KEY_SET: "Configurada",
   AI_PROVIDER_API_KEY_NOT_SET: "Sin configurar",
   AI_PROVIDER_EDIT: "Editar proveedor",
   AI_PROVIDER_ADD: "Agregar proveedor",
   AI_PROVIDER_REMOVE: "Eliminar proveedor",
   AI_PROVIDER_RESTORE_DEFAULTS: "Restaurar proveedores predeterminados",
-  AI_PROVIDER_API_KEY_NAME: "Clave API de IA",
-  AI_PROVIDER_API_KEY_DESC:
-    "Clave API principal usada por la capa compartida de IA. El valor permanece oculto salvo cuando el campo tiene el foco.",
-  AI_PROVIDER_API_KEY_PLACEHOLDER: "Clave API del proveedor",
-  AI_PROVIDER_BASE_URL_NAME: "URL base de IA",
-  AI_PROVIDER_BASE_URL_DESC: `URL base opcional del proveedor. Úsala para servidores locales compatibles con OpenAI o pasarelas autoalojadas. Puedes introducir una URL base como https${+"://api.openai"}${+".com/v1 o un endpoint completo de chat como https"}${+"://api.openai"}${+".com/v1/chat/completions; Excalidraw normalizará automáticamente los endpoints conocidos con formato OpenAI."}`,
-  AI_PROVIDER_BASE_URL_PLACEHOLDER: `p. ej.: https${+"://api.openai"}${+".com/v1"}`,
-  AI_PROVIDER_TEXT_ENDPOINT_NAME: "Anulación del endpoint de texto de IA",
-  AI_PROVIDER_TEXT_ENDPOINT_DESC:
-    "Anulación opcional del endpoint completo para solicitudes de texto y multimodales. Déjalo vacío para derivarlo de la URL base y el proveedor. La mayoría de usuarios no necesita rellenarlo.",
-  AI_PROVIDER_TEXT_ENDPOINT_PLACEHOLDER: "Endpoint completo opcional de texto",
-  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_NAME:
-    "Anulación del endpoint de generación de imágenes de IA",
-  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_DESC:
-    "Anulación opcional del endpoint completo para solicitudes de generación de imágenes. Déjalo vacío salvo que tu proveedor exponga esta función en una ruta no estándar.",
-  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_PLACEHOLDER:
-    "Endpoint completo opcional de generación de imágenes",
-  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_NAME:
-    "Anulación del endpoint de edición de imágenes de IA",
-  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_DESC:
-    "Anulación opcional del endpoint completo para solicitudes de edición de imágenes. Déjalo vacío salvo que tu proveedor exponga esta función en una ruta no estándar.",
-  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_PLACEHOLDER:
-    "Endpoint completo opcional de edición de imágenes",
-  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_NAME:
-    "Anulación del endpoint de variaciones de imágenes de IA",
-  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_DESC:
-    "Anulación opcional del endpoint completo para solicitudes de variaciones de imágenes. Déjalo vacío salvo que tu proveedor exponga esta función en una ruta no estándar.",
-  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_PLACEHOLDER:
-    "Endpoint completo opcional de variaciones de imágenes",
   AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME: "Modelo de texto y multimodal",
   AI_PROVIDER_DEFAULT_TEXT_MODEL_DESC:
     "Modelo usado para chat de texto y solicitudes con imágenes, como Mermaid chat, diagram-to-code y análisis de wireframes.<br>Proveedor: {{provider}} ({{providerType}})<br>Clave API: {{apiKey}}<br>Nombre del modelo: {{model}}<br>Endpoint: {{endpoint}}<br>Compatibilidad multimodal: {{multimodalSupport}}",
-  AI_PROVIDER_DEFAULT_TEXT_MODEL_PLACEHOLDER:
-    "p. ej.: gpt-5-mini, claude-sonnet, gemini-2.5-pro",
-  AI_PROVIDER_DEFAULT_VISION_MODEL_NAME: "Modelo de visión",
-  AI_PROVIDER_DEFAULT_VISION_MODEL_DESC:
-    "Modelo usado para tareas de comprensión de imágenes, como diagram-to-code o solicitudes con imagen y texto.<br>Proveedor: {{provider}} ({{providerType}})<br>Clave API: {{apiKey}}<br>Nombre del modelo: {{model}}<br>Endpoint: {{endpoint}}",
-  AI_PROVIDER_DEFAULT_VISION_MODEL_PLACEHOLDER:
-    "p. ej.: gpt-5-mini, claude-sonnet, gemini-2.5-flash",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME: "Modelo de imagen",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_DESC:
     "Modelo usado para generación de imágenes, transformaciones guiadas por prompt y ediciones con máscara. Usa los botones Editar, Agregar y Eliminar para modificar la lista.<br>Proveedor: {{provider}} ({{providerType}})<br>Clave API: {{apiKey}}<br>Nombre del modelo: {{model}}<br>Resoluciones compatibles: {{sizes}}<br>Transformaciones por prompt: {{supportsPromptImageTransforms}}<br>Ediciones con máscara: {{supportsMaskImageEdits}}",
-  AI_PROVIDER_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "p. ej.: gpt-image-1",
   AI_MODEL_CONFIG_DERIVED_ENDPOINT: "Derivado del proveedor seleccionado",
   AI_MODEL_EDIT: "Editar modelo",
   AI_MODEL_ADD: "Agregar modelo",
   AI_MODEL_REMOVE: "Eliminar modelo",
   AI_MODEL_RESTORE_DEFAULTS: "Restaurar modelos predeterminados",
-  AI_IMAGE_MODEL_CAPABILITIES_NAME: "Capacidades del modelo de imagen",
-  AI_IMAGE_MODEL_CAPABILITIES_DESC: `Administra aquí los metadatos de los modelos de imagen, como resoluciones compatibles, soporte para transformaciones por prompt y soporte para ediciones con máscara. Por ejemplo, puedes consultar los tamaños compatibles en la <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">documentación de generación de imágenes de OpenAI</a>.`,
-  AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "Restaurar valores conocidos",
-  AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "Agregar",
-  AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "Editar",
-  AI_IMAGE_MODEL_CAPABILITIES_REMOVE_MODEL: "Eliminar entrada",
-  AI_IMAGE_MODEL_CAPABILITIES_CURRENT_ENTRY_NAME:
-    "Entrada de modelo seleccionada",
-  AI_IMAGE_MODEL_CAPABILITIES_CURRENT_ENTRY_DESC:
-    "<b>{{model}}</b><br>Resoluciones compatibles: {{sizes}}<br>Transformaciones por prompt: {{supportsPromptImageTransforms}}<br>Ediciones con máscara: {{supportsMaskImageEdits}}",
   AI_IMAGE_MODEL_CAPABILITIES_SIZES_NAME: "Resoluciones compatibles",
   AI_IMAGE_MODEL_CAPABILITIES_SIZES_PLACEHOLDER:
     "1024x1024, 1536x1024, 1024x1536",
-  AI_IMAGE_MODEL_CAPABILITIES_EDITS_NAME: "Admite edición de imágenes",
-  AI_IMAGE_MODEL_CAPABILITIES_EDITS_DESC:
-    "Desactiva esta opción si el modelo puede generar imágenes pero no admite edición de imágenes ni máscaras.",
   AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_NAME:
     "Transformaciones de imagen por prompt",
   AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_DESC:
@@ -621,10 +562,6 @@ export default {
     }'>Modo de Lectura de Markdown</a> en 'Apariencia y Comportamiento' más arriba.<br>` +
     `⚠️ Debes cerrar y volver a abrir el archivo de Excalidraw/Markdown para que los cambios surtan efecto. ⚠️`,
   MODES_HEAD: "Modos",
-  TRAY_MODE_NAME: "Habilitar modo de bandeja (tray-mode)",
-  COMPACT_MODE_NAME: "Modo compacto en tablets",
-  COMPACT_MODE_DESC:
-    "Anula el modo de bandeja en tablets, permitiendo que se use en su lugar el modo compacto nativo de Excalidraw.",
   HOTKEY_OVERRIDE_HEAD: "Anulaciones de atajos de teclado",
   HOTKEY_OVERRIDE_DESC:
     `Algunos de los atajos de teclado de Excalidraw, como <code>${labelCTRL()}+Enter</code> para editar texto o <code>${labelCTRL()}+K</code> para crear un enlace de elemento ` +
@@ -982,10 +919,6 @@ export default {
   PRESERVE_TEXT_AFTER_DRAWING_NAME: "Compatibilidad con Zotero y notas al pie",
   PRESERVE_TEXT_AFTER_DRAWING_DESC:
     "Preserva el texto después de la sección ## Bosquejo del archivo Markdown. Esto puede tener un impacto muy leve en el rendimiento al guardar bosquejos muy grandes.",
-  DEBUGMODE_NAME: "Habilitar mensajes de depuración",
-  DEBUGMODE_DESC:
-    "Recomiendo reiniciar Obsidian después de habilitar o deshabilitar esta configuración. Esto habilita los mensajes de depuración en la consola. Esto es útil para solucionar problemas. " +
-    `Si estás experimentando problemas con el complemento, por favor, habilita esta configuración, reproduce el problema e incluye el registro de la consola en el problema que reportes en <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}">GitHub</a>`,
   SLIDING_PANES_NAME: "Soporte para el complemento Sliding Panes",
   SLIDING_PANES_DESC:
     "Necesitas reiniciar Obsidian para que este cambio surta efecto.<br>" +
@@ -1007,11 +940,6 @@ export default {
     "Al habilitar esta función, los bosquejos que crees con el icono de la barra, las acciones de la paleta de comandos " +
     "y el explorador de archivos serán todos archivos heredados *.excalidraw . Esta configuración también desactivará el mensaje de recordatorio " +
     "cuando abras un archivo heredado para editar.",
-  MATHJAX_NAME: "Host(Servidor) de la librería Javascript MathJax(LaTeX)",
-  MATHJAX_DESC:
-    "Si estás usando ecuaciones LaTeX en Excalidraw, el complemento necesita cargar una librería de Javascript para ello. " +
-    "Algunos usuarios no pueden acceder a ciertos servidores. Si tienes problemas, intenta cambiar el servidor aquí. Es posible que necesites" +
-    "reiniciar Obsidian después de cerrar la configuración para que este cambio surta efecto.",
   LATEX_DEFAULT_NAME: "Fórmula LaTeX predeterminada para nuevas ecuaciones",
   LATEX_DEFAULT_DESC:
     "Deja vacío si no quieres una fórmula predeterminada. Puedes añadir formato predeterminado aquí, como <code>\\color{white}</code>.",
@@ -1060,7 +988,6 @@ export default {
     "que debe contener el código Javascript que quieres ejecutar cuando Excalidraw se inicie",
   STARTUP_SCRIPT_BUTTON_CREATE: "Crear script de inicio",
   STARTUP_SCRIPT_BUTTON_OPEN: "Abrir script de inicio",
-  STARTUP_SCRIPT_EXISTS: "El archivo del script de inicio ya existe",
   FILETYPE_NAME:
     "Muestra el indicador de tipo (✏️) para archivos excalidraw.md en el Explorador de archivos",
   FILETYPE_DESC:
@@ -1162,11 +1089,6 @@ export default {
   SELECT_TO_EMBED:
     "Selecciona el bosquejo para insertar en el documento activo.",
   SELECT_MD: "Selecciona el documento Markdown que quieres insertar",
-  SELECT_PDF: "Selecciona el documento PDF que quieres insertar.",
-  PDF_PAGES_HEADER: "¿Páginas a cargar?",
-  PDF_PAGES_DESC: "Formato: 1, 3-5, 7, 9-11",
-
-  //SelectCard.ts
   TYPE_SECTION: "Escribe el nombre de la sección para seleccionar.",
   SELECT_SECTION_OR_TYPE_NEW:
     "Selecciona una sección existente o escribe el nombre de una nueva y luego presiona Enter.",
@@ -1188,8 +1110,6 @@ export default {
   //DRAWING_HAS_BACK_OF_THE_CARD: "Hay notas en el reverso de este dibujo.",
 
   //ExcalidrawData.ts
-  LOAD_FROM_BACKUP:
-    "El archivo de Excalidraw estaba dañado. Cargando desde el archivo de backup(copia de seguridad).",
   FONT_LOAD_SLOW:
     "Cargando fuentes...\n\n Esto está tomando más tiempo de lo esperado. Si este retraso ocurre regularmente, puedes descargar las fuentes de forma local en tu Bóveda. \n\n" +
     "(Click_izquierdo=para-descartar,Click_derecho=para-más-información).",
@@ -1466,10 +1386,6 @@ export default {
     "Las capturas de pantalla incluirán elementos incrustables como páginas de Markdown, YouTube, sitios web, etc. Solo están disponibles en la versión de escritorio, no se pueden exportar automáticamente y solo admiten el formato PNG.",
   SCREENSHOT_DESKTOP_ONLY:
     "La función de captura de pantalla solo está disponible en escritorio.",
-  SCREENSHOT_FILE_SUCCESS: "Captura de pantalla guardada en la bóveda",
-  SCREENSHOT_CLIPBOARD_SUCCESS: "Captura de pantalla copiada al portapapeles",
-  SCREENSHOT_CLIPBOARD_ERROR:
-    "Error al copiar la captura de pantalla al portapapeles: ",
   SCREENSHOT_ERROR:
     "Error al capturar la pantalla - consulta el console log(registro de la consola)",
 
@@ -1491,16 +1407,6 @@ export default {
   RN_WELCOME: "Bienvenido a Excalidraw",
 
   //Excalidraw component
-  COMP_IMG: "Imágenes y archivos",
-  COMP_IMG_FROM_SYSTEM: "Importar desde el sistema",
-  COMP_IMG_ANY_FILE: "Cualquier archivo de la bóveda",
-  COMP_IMG_LaTeX: "Fórmula de LaTeX",
-  COMP_FRAME: "Acciones de Frame(marco)",
-  COMP_FRAME_HINT:
-    "Activar/desactivar Marker-Frame (marco de marcador). Marcos de guía para definir diapositivas/áreas de impresión/referencias de imagen. " +
-    "Se ocultan en las exportaciones de imágenes y no contienen elementos. Oculta/muestra los marcos desde el menú contextual del lienzo.",
-
-  //CustomEmbeddable.tsx
   NOTICE_PDF_THEME:
     "Sobreescritura de Tema de PDF .\n" +
     "Controla esto a través de la propiedad de documento 'excalidraw-embeddable-theme' de este archivo (anula la configuración del complemento).\n\n" +

@@ -21,7 +21,6 @@ export default {
   // main.ts
   CONVERT_URL_TO_FILE: "Save image from URL to local file",
   UNZIP_CURRENT_FILE: "Decompress current Excalidraw file",
-  ZIP_CURRENT_FILE: "Compress current Excalidraw file",
   PUBLISH_SVG_CHECK:
     "Obsidian Publish: Find SVG and PNG exports that are out of date",
   EMBEDDABLE_PROPERTIES: "Embeddable Properties",
@@ -133,7 +132,6 @@ export default {
   SELECT_LINK_TO_OPEN: "Select a link to open",
 
   //ExcalidrawView.ts
-  ABOUT_LIBRARIES: "How to load libraries",
   ERROR_CANT_READ_FILEPATH:
     "Error, can't read file path. Importing file instead",
   NO_SEARCH_RESULT: "Didn't find a matching element in the drawing",
@@ -179,7 +177,6 @@ export default {
   EXPORT_IMAGE: `Export Image`,
   OPEN_LINK: "Open selected text as link\n(SHIFT+CLICK to open in a new pane)",
   EXCALIDRAW_SIDEPANEL: "Excalidraw Sidepanel",
-  EXPORT_EXCALIDRAW: "Export to an .Excalidraw file",
   LINK_BUTTON_CLICK_NO_TEXT:
     "Select an element that contains an internal or external link.\n",
   LINEAR_ELEMENT_LINK_CLICK_ERROR:
@@ -197,7 +194,6 @@ export default {
   CONVERT_FILE: "Convert to new format",
   BACKUP_AVAILABLE:
     "We encountered an error while loading your drawing. This might have occurred if Obsidian unexpectedly closed during a save operation. For example, if you accidentally closed Obsidian on your mobile device while saving.<br><br><b>GOOD NEWS:</b> Fortunately, a local backup is available. However, please note that if you last modified this drawing on a different device (e.g., tablet) and you are now on your desktop, that other device likely has a more recent backup.<br><br>I recommend trying to open the drawing on your other device first and restore the backup from its local storage.<br><br>Would you like to load the backup?",
-  BACKUP_RESTORED: "Backup restored",
   BACKUP_SAVE_AS_FILE:
     "This drawing is empty. A non-empty backup is available. Would you like to restore it as a new file and open it in a new tab?",
   BACKUP_SAVE: "Restore",
@@ -228,8 +224,6 @@ export default {
   WELCOME_SYM_LINK: "Learn Excalidraw, Master PKM, Join the Community",
   WELCOME_TWITTER_ARIA: "Follow me on Twitter",
   WELCOME_TWITTER_LINK: "Follow me on Twitter",
-  WELCOME_LEARN_ARIA: "Learn Visual PKM",
-  WELCOME_LEARN_LINK: "Sign up for the Visual Thinking Workshop",
   WELCOME_DONATE_ARIA: "Donate to support Excalidraw-Obsidian",
   WELCOME_DONATE_LINK: 'Say "Thank You" & support the plugin.',
   SAVE_IS_TAKING_LONG:
@@ -267,9 +261,6 @@ export default {
     "Learn Excalidraw, Master Visual Thinking, Join the Community",
   LINKS_JOIN_SYM: "Learn Excalidraw",
   LINKS_TWITTER: "Follow me",
-  LINKS_VTW_ARIA:
-    "Learn about Visual PKM, Excalidraw, Obsidian, ExcaliBrain and more",
-  LINKS_VTW: "Join a Workshop",
   LINKS_BOOK_ARIA: "Read Sketch Your Mind, my book on Visual Thinking",
   LINKS_BOOK: "Read the Book",
   LINKS_WIKI: "Plugin Wiki",
@@ -361,75 +352,26 @@ export default {
   AI_PROVIDER_OPTION_GOOGLE: "Google / Gemini",
   AI_PROVIDER_OPTION_XAI: "xAI / Grok",
   AI_PROVIDER_OPTION_OPENAI_COMPATIBLE: "OpenAI-compatible / local",
-  AI_PROVIDER_BASE_URL_EMPTY: "Derived from the provider type",
   AI_PROVIDER_API_KEY_SET: "Configured",
   AI_PROVIDER_API_KEY_NOT_SET: "Not set",
   AI_PROVIDER_EDIT: "Edit provider",
   AI_PROVIDER_ADD: "Add provider",
   AI_PROVIDER_REMOVE: "Remove provider",
   AI_PROVIDER_RESTORE_DEFAULTS: "Restore provider defaults",
-  AI_PROVIDER_API_KEY_NAME: "AI API key",
-  AI_PROVIDER_API_KEY_DESC:
-    "Primary API key used by the shared AI layer. The value is masked unless the field is focused.",
-  AI_PROVIDER_API_KEY_PLACEHOLDER: "Provider API key",
-  AI_PROVIDER_BASE_URL_NAME: "AI base URL",
-  AI_PROVIDER_BASE_URL_DESC: `Optional provider base URL. Use this for local OpenAI-compatible servers or self-hosted gateways. You can enter either a base URL such as https${+"://api.openai"}${+".com/v1 or a full chat endpoint such as https"}${+"://api.openai"}${+".com/v1/chat/completions; Excalidraw will normalize known OpenAI-style endpoints automatically."}`,
-  AI_PROVIDER_BASE_URL_PLACEHOLDER: `e.g.: https${+"://api.openai"}${+".com/v1"}`,
-  AI_PROVIDER_TEXT_ENDPOINT_NAME: "AI text endpoint override",
-  AI_PROVIDER_TEXT_ENDPOINT_DESC:
-    "Optional full endpoint override for text and multimodal requests. Leave blank to derive it from the base URL and provider. Most users should keep this empty.",
-  AI_PROVIDER_TEXT_ENDPOINT_PLACEHOLDER: "Optional full text endpoint",
-  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_NAME:
-    "AI image generation endpoint override",
-  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_DESC:
-    "Optional full endpoint override for image generation requests. Leave blank unless your provider exposes image generation on a non-standard path.",
-  AI_PROVIDER_IMAGE_GENERATION_ENDPOINT_PLACEHOLDER:
-    "Optional full image generation endpoint",
-  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_NAME: "AI image edits endpoint override",
-  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_DESC:
-    "Optional full endpoint override for image edit requests. Leave blank unless your provider exposes image edits on a non-standard path.",
-  AI_PROVIDER_IMAGE_EDITS_ENDPOINT_PLACEHOLDER:
-    "Optional full image edits endpoint",
-  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_NAME:
-    "AI image variations endpoint override",
-  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_DESC:
-    "Optional full endpoint override for image variation requests. Leave blank unless your provider exposes image variations on a non-standard path.",
-  AI_PROVIDER_IMAGE_VARIATIONS_ENDPOINT_PLACEHOLDER:
-    "Optional full image variations endpoint",
   AI_PROVIDER_DEFAULT_TEXT_MODEL_NAME: "Text and multimodal model",
   AI_PROVIDER_DEFAULT_TEXT_MODEL_DESC:
     "Model used for text chat and image-aware requests such as Mermaid chat, diagram-to-code, and wireframe analysis.<br>Provider: {{provider}} ({{providerType}})<br>API key: {{apiKey}}<br>Model name: {{model}}<br>Endpoint: {{endpoint}}<br>Multimodal support: {{multimodalSupport}}",
-  AI_PROVIDER_DEFAULT_TEXT_MODEL_PLACEHOLDER:
-    "e.g.: gpt-5-mini, claude-sonnet, gemini-2.5-pro",
-  AI_PROVIDER_DEFAULT_VISION_MODEL_NAME: "Vision model",
-  AI_PROVIDER_DEFAULT_VISION_MODEL_DESC:
-    "Model used for image understanding tasks such as diagram-to-code or image-plus-text prompts.<br>Provider: {{provider}} ({{providerType}})<br>API key: {{apiKey}}<br>Model name: {{model}}<br>Endpoint: {{endpoint}}",
-  AI_PROVIDER_DEFAULT_VISION_MODEL_PLACEHOLDER:
-    "e.g.: gpt-5-mini, claude-sonnet, gemini-2.5-flash",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_NAME: "Image model",
   AI_PROVIDER_DEFAULT_IMAGE_MODEL_DESC:
     "Model used for image generation, prompt-based transforms, and mask edits. Use the Edit, Add, and Remove buttons to modify the list.<br>Provider: {{provider}} ({{providerType}})<br>API key: {{apiKey}}<br>Model name: {{model}}<br>Supported resolutions: {{sizes}}<br>Prompt transforms: {{supportsPromptImageTransforms}}<br>Mask edits: {{supportsMaskImageEdits}}",
-  AI_PROVIDER_DEFAULT_IMAGE_MODEL_PLACEHOLDER: "e.g.: gpt-image-1",
   AI_MODEL_CONFIG_DERIVED_ENDPOINT: "Derived from the selected provider",
   AI_MODEL_EDIT: "Edit model",
   AI_MODEL_ADD: "Add model",
   AI_MODEL_REMOVE: "Remove model",
   AI_MODEL_RESTORE_DEFAULTS: "Restore model defaults",
-  AI_IMAGE_MODEL_CAPABILITIES_NAME: "Image model capabilities",
-  AI_IMAGE_MODEL_CAPABILITIES_DESC: `Manage stored image model metadata such as supported resolutions, prompt-transform support, and mask-edit support. Example: see the <a href="${URLs.PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION}" target="_blank" rel="noopener noreferrer">OpenAI image generation docs</a> to look up supported sizes.`,
-  AI_IMAGE_MODEL_CAPABILITIES_LOAD_DEFAULTS: "Restore known defaults",
-  AI_IMAGE_MODEL_CAPABILITIES_ADD_MODEL: "Add",
-  AI_IMAGE_MODEL_CAPABILITIES_EDIT_MODEL: "Edit",
-  AI_IMAGE_MODEL_CAPABILITIES_REMOVE_MODEL: "Remove entry",
-  AI_IMAGE_MODEL_CAPABILITIES_CURRENT_ENTRY_NAME: "Selected model entry",
-  AI_IMAGE_MODEL_CAPABILITIES_CURRENT_ENTRY_DESC:
-    "<b>{{model}}</b><br>Supported resolutions: {{sizes}}<br>Prompt transforms: {{supportsPromptImageTransforms}}<br>Mask edits: {{supportsMaskImageEdits}}",
   AI_IMAGE_MODEL_CAPABILITIES_SIZES_NAME: "Supported resolutions",
   AI_IMAGE_MODEL_CAPABILITIES_SIZES_PLACEHOLDER:
     "1024x1024, 1536x1024, 1024x1536",
-  AI_IMAGE_MODEL_CAPABILITIES_EDITS_NAME: "Supports image edits",
-  AI_IMAGE_MODEL_CAPABILITIES_EDITS_DESC:
-    "Disable this when the model can generate images but does not support image edits or masks.",
   AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_NAME: "Prompt image transforms",
   AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_DESC:
     "Enable this when the model accepts an input image plus a text prompt for non-masked edits.",
@@ -661,14 +603,6 @@ export default {
   MODE_TRAY: "Tray-mode",
   MODE_PHONE: "Phone-mode",
   REAPPLY_UI_MODE_BUTTON: "Reapply UI mode now",
-  TRAY_MODE_NAME: "Enable tray-mode",
-  PREFER_COMPACT_MODE_DESKTOP_NAME: "Prefer compact-mode on Desktop",
-  PREFER_COMPACT_MODE_DESKTOP_DESC:
-    "When toggling tray-mode on a desktop, if this option is enabled, Excalidraw will toggle between compact-mode and tray-mode. " +
-    "If this setting is off, it will toggle betweeen full-mode and tray-mode.",
-  COMPACT_MODE_NAME: "Prefer compact-mode on Tablets",
-  COMPACT_MODE_DESC:
-    "This setting allows you to have a different default mode on tablets, then on desktops. You can default to compact mode on tablets, and to tray-mode on desktops with the help of this setting.",
   HOTKEY_OVERRIDE_HEAD: "Hotkey overrides",
   HOTKEY_OVERRIDE_DESC:
     `Some of the Excalidraw hotkeys such as <code>${labelCTRL()}+Enter</code> to edit text or <code>${labelCTRL()}+K</code> to create an element link ` +
@@ -785,12 +719,6 @@ export default {
     "In PREVIEW mode, when parsing Text Elements, place brackets around links. " +
     "You can override this setting for a specific drawing by adding <code>"
   }${FRONTMATTER_KEYS["link-brackets"].name}: true/false</code> to the file's frontmatter.`,
-  /*LINK_DETECTION_NAME: "Do not auto-create element link from text",
-  LINK_DETECTION_DESC: "By default, Excalidraw will automatically create an element link when you type or paste a valid " +
-    "[[Obsidian link]] or a (web link) into a Text Element. This link overrides whatever element link you may have set previously. " +
-    "Even if you delete the element link, if the text element contains a valid link, Excalidraw will recreate the element link. " +
-    "If you turn this setting on, Excalidraw will not auto-create element links from text. You can still manually set element links " +
-    `Links in the text will still be navigable when you ${labelCTRL()} + CLICK the element.`,*/
   LINK_PREFIX_NAME: "Link prefix",
   LINK_PREFIX_DESC: `${
     "In PREVIEW mode, if the Text Element contains a link, precede the text with these characters. " +
@@ -1028,10 +956,6 @@ export default {
   PRESERVE_TEXT_AFTER_DRAWING_NAME: "Zotero and Footnotes compatibility",
   PRESERVE_TEXT_AFTER_DRAWING_DESC:
     "Preserve text after the ## Drawing section of the markdown file. This may have a very slight performance impact when saving very large drawings.",
-  DEBUGMODE_NAME: "Enable debug messages",
-  DEBUGMODE_DESC:
-    "I recommend restarting Obsidian after enabling/disabling this setting. This enable debug messages in the console. This is useful for troubleshooting issues. " +
-    `If you are experiencing problems with the plugin, please enable this setting, reproduce the issue, and include the console log in the issue you raise on <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}">GitHub</a>`,
   SLIDING_PANES_NAME: "Sliding panes plugin support",
   SLIDING_PANES_DESC:
     "Need to restart Obsidian for this change to take effect.<br>" +
@@ -1052,11 +976,6 @@ export default {
     "By enabling this feature drawings you create with the ribbon icon, the command palette actions, " +
     "and the file explorer are going to be all legacy *.excalidraw files. This setting will also turn off the reminder message " +
     "when you open a legacy file for editing.",
-  MATHJAX_NAME: "MathJax (LaTeX) javascript library host",
-  MATHJAX_DESC:
-    "If you are using LaTeX equations in Excalidraw, then the plugin needs to load a javascript library for that. " +
-    "Some users are unable to access certain host servers. If you are experiencing issues, try changing the host here. You may need to " +
-    "restart Obsidian after closing settings, for this change to take effect.",
   LATEX_DEFAULT_NAME: "Default LaTeX formula for new equations",
   LATEX_DEFAULT_DESC:
     "Leave empty if you don't want a default formula. You can add default formatting here such as <code>\\color{white}</code>.",
@@ -1104,7 +1023,6 @@ export default {
     "that should contain the javascript code you want to execute when Excalidraw starts.",
   STARTUP_SCRIPT_BUTTON_CREATE: "Create startup script",
   STARTUP_SCRIPT_BUTTON_OPEN: "Open startup script",
-  STARTUP_SCRIPT_EXISTS: "Startup script file already exists",
   FILETYPE_NAME: "Display type (✏️) for excalidraw.md files in File Explorer",
   FILETYPE_DESC:
     "Excalidraw files will receive an indicator using the emoji or text defined in the next setting.",
@@ -1198,11 +1116,6 @@ export default {
     "Select existing drawing or type name of a new drawing then press Enter.",
   SELECT_TO_EMBED: "Select the drawing to insert into active document.",
   SELECT_MD: "Select the markdown document you want to insert",
-  SELECT_PDF: "Select the PDF document you want to insert",
-  PDF_PAGES_HEADER: "Pages to load?",
-  PDF_PAGES_DESC: "Format: 1, 3-5, 7, 9-11",
-
-  //SelectCard.ts
   TYPE_SECTION: "Type section name to select.",
   SELECT_SECTION_OR_TYPE_NEW:
     "Select existing section or type name of a new section then press Enter.",
@@ -1224,7 +1137,6 @@ export default {
   //DRAWING_HAS_BACK_OF_THE_CARD: "There are notes on the back of this drawing.",
 
   //ExcalidrawData.ts
-  LOAD_FROM_BACKUP: "Excalidraw file was corrupted. Loading from backup file.",
   FONT_LOAD_SLOW:
     "Loading Fonts...\n\n This is taking longer than expected. If this delay occurs regularly then you may download the fonts locally to your Vault. \n\n" +
     "(click=dismiss, right-click=Info)",
@@ -1493,9 +1405,6 @@ export default {
   EXPORTDIALOG_SCREENSHOT_DESC:
     "Screenshots will include embeddables such as markdown pages, YouTube, websites, etc. They are only available on desktop, cannot be automatically exported, and only support PNG format.",
   SCREENSHOT_DESKTOP_ONLY: "Screenshot feature is only available on desktop",
-  SCREENSHOT_FILE_SUCCESS: "Screenshot saved to vault",
-  SCREENSHOT_CLIPBOARD_SUCCESS: "Screenshot copied to clipboard",
-  SCREENSHOT_CLIPBOARD_ERROR: "Failed to copy screenshot to clipboard: ",
   SCREENSHOT_ERROR: "Error capturing screenshot - see console log",
 
   //exportUtils.ts
@@ -1534,16 +1443,6 @@ Thank you & Enjoy!
 `,
 
   //Excalidraw component
-  COMP_IMG: "Image & Files",
-  COMP_IMG_FROM_SYSTEM: "Import from system",
-  COMP_IMG_ANY_FILE: "ANY file from Vault",
-  COMP_IMG_LaTeX: "LaTeX formula",
-  COMP_FRAME: "Frame Actions",
-  COMP_FRAME_HINT:
-    "Toggle Marker Frame. Guide-only frames to define slides/print areas/image references. " +
-    "Hidden in image exports; doesn't contain elements. Hide/show frames via canvas context menu.",
-
-  //CustomEmbeddable.tsx
   NOTICE_PDF_THEME:
     "PDF theme overridden.\n" +
     "Control via this file's 'excalidraw-embeddable-theme' document property (overrides plugin).\n\n" +
