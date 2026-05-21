@@ -152,7 +152,7 @@ export class InlineLinkSuggester
   }
 
   getItems(): InlineSuggestion[] {
-    return getLinkSuggestionsFiltered(this.app) as InlineSuggestion[];
+    return getLinkSuggestionsFiltered(this.app);
   }
 
   /**
@@ -202,7 +202,7 @@ export class InlineLinkSuggester
    * Refreshes the suggestion data (e.g. when vault changes) without recreating the instance.
    */
   public refreshItems() {
-    this.items = getLinkSuggestionsFiltered(this.app) as InlineSuggestion[];
+    this.items = getLinkSuggestionsFiltered(this.app);
   }
 
   modifyInput(input: string): string {
@@ -457,17 +457,17 @@ export class InlineLinkSuggester
   renderSuggestion(result: FuzzyMatch<InlineSuggestion>, itemEl: HTMLElement) {
     const { item } = result || {};
 
-    if (this.isTag(item as InlineSuggestion)) {
-      const tagItem = item as TagSuggestion;
+    if (this.isTag(item)) {
+      const tagItem = item;
       itemEl.createDiv({ text: tagItem.tag });
       itemEl.createEl("small", { text: `${tagItem.count}` });
       return;
     }
 
-    if (this.isHeading(item as InlineSuggestion)) {
+    if (this.isHeading(item)) {
       const note = item
         ? this.app.metadataCache.fileToLinktext(
-            (item as HeadingSuggestion).file,
+            item.file,
             this.getSourcePath() ?? "",
             true,
           )
@@ -480,10 +480,10 @@ export class InlineLinkSuggester
       return;
     }
 
-    if (this.isParagraph(item as InlineSuggestion)) {
+    if (this.isParagraph(item)) {
       const note = item
         ? this.app.metadataCache.fileToLinktext(
-            (item as ParagraphSuggestion).file,
+            item.file,
             this.getSourcePath() ?? "",
             true,
           )
@@ -496,8 +496,8 @@ export class InlineLinkSuggester
       return;
     }
 
-    if (this.isFrame(item as InlineSuggestion)) {
-      const frameItem = item as FrameSuggestion;
+    if (this.isFrame(item)) {
+      const frameItem = item;
       const note = this.app.metadataCache.fileToLinktext(
         frameItem.file,
         this.getSourcePath() ?? "",
@@ -976,7 +976,7 @@ export class InlineLinkSuggester
     const eventInit = { bubbles: true, composed: true, cancelable: true };
     const inputEvt =
       typeof InputEvent !== "undefined"
-        ? new InputEvent("input", eventInit as InputEventInit)
+        ? new InputEvent("input", eventInit)
         : new Event("input", eventInit);
     this.inputEl.dispatchEvent(inputEvt);
     const changeEvt = new Event("change", eventInit);

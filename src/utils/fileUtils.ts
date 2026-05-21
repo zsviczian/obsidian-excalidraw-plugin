@@ -358,7 +358,7 @@ export const getPDFDoc = async (f: TFile): Promise<PdfJsDocumentProxy> => {
   const pdfjs = window.pdfjsLib;
   const url = EXCALIDRAW_PLUGIN.app.vault.getResourcePath(f);
 
-  const workerSrc = pdfjs.GlobalWorkerOptions.workerSrc as string;
+  const workerSrc = pdfjs.GlobalWorkerOptions.workerSrc;
   const workerDir = workerSrc?.replace(/pdf\.worker(\.min)?\.m?js$/, "");
   const wasmUrl = workerDir ? `${workerDir}wasm/` : undefined;
 
@@ -581,7 +581,7 @@ export const fileShouldDefaultAsExcalidraw = (
   return (
     cache?.frontmatter &&
     cache.frontmatter[FRONTMATTER_KEYS.plugin.name] &&
-    !Boolean(cache.frontmatter[FRONTMATTER_KEYS["open-as-markdown"].name])
+    !cache.frontmatter[FRONTMATTER_KEYS["open-as-markdown"].name]
   );
 };
 

@@ -402,8 +402,8 @@ export function mergeMarkdownFiles(template: string, target: string): string {
 
     if (mergeArrayKeys.length) {
       for (const k of mergeArrayKeys) {
-        const tArr = targetFrontmatterObj[k] as any[];
-        const tplArr = templateFrontmatterObj[k] as any[];
+        const tArr = targetFrontmatterObj[k] as unknown[];
+        const tplArr = templateFrontmatterObj[k] as unknown[];
         const merged = [...tArr, ...tplArr.filter((v) => !tArr.includes(v))];
         // Produce YAML for just this key
         const mergedYaml = stringify({ [k]: merged }).trimEnd();
@@ -414,7 +414,7 @@ export function mergeMarkdownFiles(template: string, target: string): string {
     }
 
     // 2. Append only missing keys (not present in target)
-    const newKeys: Record<string, any> = {};
+    const newKeys: Record<string, unknown> = {};
     for (const k of Object.keys(templateFrontmatterObj)) {
       if (!(k in targetFrontmatterObj)) {
         newKeys[k] = templateFrontmatterObj[k];

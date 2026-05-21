@@ -117,7 +117,7 @@ export function setFileToLocalGraph(app: App, file: TFile) {
   let lgv: LocalGraphView | null = null;
   app.workspace.iterateAllLeaves((l) => {
     if (l.view?.getViewType() === "localgraph") {
-      lgv = l.view as LocalGraphView;
+      lgv = l.view;
     }
   });
   if (!lgv) {

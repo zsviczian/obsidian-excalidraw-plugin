@@ -92,7 +92,7 @@ export class PenSettingsModal extends Modal {
       }
       const style = new Option().style;
       style.color = color;
-      if (!!style.color) {
+      if (style.color) {
         const digits = style.color.match(
           /^[^\d]*(\d*)[^\d]*(\d*)[^\d]*(\d*)[^\d]*([\d.]*)?/,
         );
@@ -191,7 +191,7 @@ export class PenSettingsModal extends Modal {
     const strokeSetting = new Setting(ce)
       .setName(
         fragWithHTML(
-          !Boolean(ps.strokeColor)
+          !ps.strokeColor
             ? "Stroke color: <b>Current</b>"
             : "Stroke color: <b>Preset color</b>",
         ),
@@ -203,7 +203,7 @@ export class PenSettingsModal extends Modal {
       )
       .addToggle((toggle) => {
         strokeUseCurrentToggle = toggle;
-        toggle.setValue(!Boolean(ps.strokeColor)).onChange((value) => {
+        toggle.setValue(!ps.strokeColor).onChange((value) => {
           this.dirty = true;
           scSetting.settingEl.style.display = value ? "none" : "";
           strokeSetting.setName(
@@ -288,7 +288,7 @@ export class PenSettingsModal extends Modal {
         });
       });
 
-    scSetting.settingEl.style.display = !Boolean(ps.strokeColor) ? "none" : "";
+    scSetting.settingEl.style.display = !ps.strokeColor ? "none" : "";
 
     let bgcpComponent: ColorComponent;
     let bgctComponent: TextComponent;
@@ -299,7 +299,7 @@ export class PenSettingsModal extends Modal {
     const bgSetting = new Setting(ce)
       .setName(
         fragWithHTML(
-          !Boolean(ps.backgroundColor)
+          !ps.backgroundColor
             ? "Background color: <b>Current</b>"
             : "Background color: <b>Preset color</b>",
         ),
@@ -311,7 +311,7 @@ export class PenSettingsModal extends Modal {
       )
       .addToggle((toggle) => {
         bgUseCurrentToggle = toggle;
-        toggle.setValue(!Boolean(ps.backgroundColor)).onChange((value) => {
+        toggle.setValue(!ps.backgroundColor).onChange((value) => {
           this.dirty = true;
           bgSetting.setName(
             fragWithHTML(
@@ -366,9 +366,7 @@ export class PenSettingsModal extends Modal {
           });
       });
 
-    bgctSetting.settingEl.style.display = !Boolean(ps.backgroundColor)
-      ? "none"
-      : "";
+    bgctSetting.settingEl.style.display = !ps.backgroundColor ? "none" : "";
     let bgChangeBounce: boolean = false;
     const bgcSetting = new Setting(ce)
       .setName("Background color")
@@ -434,9 +432,7 @@ export class PenSettingsModal extends Modal {
       });
 
     bgcSetting.settingEl.style.display =
-      !Boolean(ps.backgroundColor) || ps.backgroundColor === "transparent"
-        ? "none"
-        : "";
+      !ps.backgroundColor || ps.backgroundColor === "transparent" ? "none" : "";
 
     const fsSetting = new Setting(ce)
       .setName("Fill Style")
@@ -457,9 +453,7 @@ export class PenSettingsModal extends Modal {
           }),
       );
     fsSetting.settingEl.style.display =
-      !Boolean(ps.backgroundColor) || ps.backgroundColor === "transparent"
-        ? "none"
-        : "";
+      !ps.backgroundColor || ps.backgroundColor === "transparent" ? "none" : "";
 
     const rSetting = new Setting(ce)
       .setName(

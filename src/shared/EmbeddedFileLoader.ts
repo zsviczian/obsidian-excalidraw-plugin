@@ -381,10 +381,10 @@ export class EmbeddedFile {
     return (
       this.isHyperLink ||
       this.isLocalLink ||
-      !Boolean(
+      !(
         this.linkParts &&
         this.linkParts.original &&
-        this.linkParts.original.endsWith("|100%"),
+        this.linkParts.original.endsWith("|100%")
       )
     );
   }
@@ -569,7 +569,7 @@ export class EmbeddedFilesLoader {
       hasSVGwithBitmap = true;
     }
 
-    if (hasSVGwithBitmap && isDark && !Boolean(maybeSVG)) {
+    if (hasSVGwithBitmap && isDark && !maybeSVG) {
       imageList.forEach((i) => {
         const id = i.parentElement?.id;
         if (id.endsWith("-invert-bitmap")) {
@@ -587,7 +587,7 @@ export class EmbeddedFilesLoader {
       hasSVGwithBitmap = true;
     }
 
-    if (svgsToInvert.length > 0 && isDark && !Boolean(maybeSVG)) {
+    if (svgsToInvert.length > 0 && isDark && !maybeSVG) {
       svgsToInvert.forEach((i) => {
         const id = i.id;
         svg.querySelectorAll(`use[href='#${id}']`).forEach((u) => {
@@ -599,7 +599,7 @@ export class EmbeddedFilesLoader {
     if (!hasSVGwithBitmap && svg.getAttribute("hasbitmap")) {
       hasSVGwithBitmap = true;
     }
-    if (shouldUseCache && !Boolean(maybeSVG)) {
+    if (shouldUseCache && !maybeSVG) {
       //cache SVG should have the width and height parameters and not the embedded font
       //see svgWithFont below
       imageCache.addImageToCache(cacheKey, "", svg);
@@ -619,7 +619,7 @@ export class EmbeddedFilesLoader {
     }
     const dURL = svgToBase64(svg.outerHTML) as DataURL;
     return {
-      dataURL: dURL as DataURL,
+      dataURL: dURL,
       hasSVGwithBitmap,
       loadedFromCache: Boolean(maybeSVG),
     };
@@ -775,7 +775,7 @@ export class EmbeddedFilesLoader {
         mimeType,
         fileId: await generateIdFromFile(
           isHyperLink || isPDF || isExcalidrawFile
-            ? new TextEncoder().encode(dataURL as string).buffer
+            ? new TextEncoder().encode(dataURL).buffer
             : ab,
           inFile instanceof EmbeddedFile
             ? inFile.filenameparts?.linkpartReference
@@ -1083,7 +1083,7 @@ export class EmbeddedFilesLoader {
         errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
       }
     } finally {
-      clearInterval(addFilesTimer);
+      window.clearInterval(addFilesTimer);
       this.emptyPDFDocsMap();
     }
   }

@@ -541,7 +541,7 @@ export default class ExcalidrawView
   }
 
   preventAutozoom() {
-    if (!!this.semaphores) {
+    if (this.semaphores) {
       this.semaphores.preventAutozoom = true;
     }
     window.setTimeout(() => {
@@ -723,7 +723,7 @@ export default class ExcalidrawView
         ) => {
           if (files && files.length > 0) {
             files.forEach((f) => {
-              collected[f.id] = { ...f } as BinaryFileData;
+              collected[f.id] = { ...f };
             });
           }
           if (final && !resolved) {
@@ -1740,7 +1740,7 @@ export default class ExcalidrawView
       //text element, as the assumption is, if the user wants to invoke the linear element editor for an arrow that has
       //a label with a link, then he/she should rather CTRL+click on the arrow line, not the label. CTRL+Click on
       //the label is an indication of wanting to navigate.
-      if (!Boolean(selectedTextElement) && selectedElement?.type === "text") {
+      if (!selectedTextElement && selectedElement?.type === "text") {
         const container = getContainerElement(
           selectedElement,
           arrayToMap(this.excalidrawAPI.getSceneElements()),
@@ -2326,8 +2326,7 @@ export default class ExcalidrawView
       let counter = 0;
       while (
         counter++ < 50 &&
-        (!Boolean(this?.plugin?.activeLeafChangeEventHandler) ||
-          !Boolean(this.canvasNodeFactory))
+        (!this?.plugin?.activeLeafChangeEventHandler || !this.canvasNodeFactory)
       ) {
         await sleep(50);
         if (!this?.plugin) {
@@ -2335,7 +2334,7 @@ export default class ExcalidrawView
         }
       }
       setMobileNavbarPosition(true);
-      if (!Boolean(this?.plugin?.activeLeafChangeEventHandler)) {
+      if (!this?.plugin?.activeLeafChangeEventHandler) {
         return;
       }
       if (
@@ -4256,7 +4255,7 @@ export default class ExcalidrawView
     const mimeType = getMimeType(getURLImageExtension(link));
     const dataURL = await getDataURLFromURL(link, mimeType, 3000);
     const fileId = await generateIdFromFile(
-      new TextEncoder().encode(dataURL as string).buffer,
+      new TextEncoder().encode(dataURL).buffer,
     );
     const file = await this.excalidrawData.saveDataURLtoVault(
       dataURL,
@@ -4311,7 +4310,7 @@ export default class ExcalidrawView
           .setIcon("external-link")
           .setSection("pane")
           .onClick((evt) => {
-            void this.handleLinkClick(evt as MouseEvent);
+            void this.handleLinkClick(evt);
           });
       });
     }
@@ -4502,7 +4501,7 @@ export default class ExcalidrawView
     } //the group had no image element member
     return {
       id: imageElement[0].id,
-      fileId: (imageElement[0] as ExcalidrawImageElement).fileId,
+      fileId: imageElement[0].fileId,
     }; //return image element fileId
   }
 
@@ -4585,9 +4584,7 @@ export default class ExcalidrawView
       .find((el) => el.id === selectedElementId);
     if (
       !selectedElement ||
-      (!Boolean(originalLink) &&
-        selectedElement &&
-        selectedElement.link !== null)
+      (!originalLink && selectedElement && selectedElement.link !== null)
     ) {
       if (selectedElement) {
         new Notice(
@@ -4605,7 +4602,7 @@ export default class ExcalidrawView
     ea.getElement(selectedElementId).link = markdownlink;
     await ea.addElementsToView(false, true);
     ea.destroy();
-    if (Boolean(originalLink)) {
+    if (originalLink) {
       this.updateScene({
         appState: {
           showHyperlinkPopup: {
@@ -4859,9 +4856,7 @@ export default class ExcalidrawView
     const files = { ...api.getFiles() };
 
     if (files) {
-      const imgIds = el
-        .filter((e) => e.type === "image")
-        .map((e) => (e as ExcalidrawImageElement).fileId);
+      const imgIds = el.filter((e) => e.type === "image").map((e) => e.fileId);
       const toDelete = Object.keys(files).filter(
         (k) => !imgIds.contains(k as FileId),
       );
@@ -5187,8 +5182,7 @@ export default class ExcalidrawView
       : null;
     this.plugin.hover.linkText = linktext;
     this.plugin.hover.sourcePath = this.file.path;
-    this.hoverPreviewTarget =
-      (this.lastMouseEvent?.target as HTMLElement) ?? this.contentEl; //e.target;
+    this.hoverPreviewTarget = this.lastMouseEvent?.target ?? this.contentEl; //e.target;
     this.hoverPoint = this.currentPosition;
     this.app.workspace.trigger("hover-link", {
       event: normalizedMouseEvent ?? this.lastMouseEvent,
@@ -5260,7 +5254,7 @@ export default class ExcalidrawView
     if (!this.plugin.settings.allowCtrlClick && !isWinMETAorMacCTRL(e)) {
       return;
     }
-    if (Boolean(this.excalidrawAPI?.getAppState().contextMenu)) {
+    if (this.excalidrawAPI?.getAppState().contextMenu) {
       return;
     }
     //added setTimeout when I changed onClick(e: MouseEvent) to onPointerDown() in 1.7.9.
@@ -6307,7 +6301,7 @@ export default class ExcalidrawView
           b.node.hasOwnProperty("type") &&
           b.node.hasOwnProperty("id"),
       )
-      .map((b: MarkdownBlockCacheEntry) => cleanBlockRef(b.node.id as string));
+      .map((b: MarkdownBlockCacheEntry) => cleanBlockRef(b.node.id));
   }
 
   public getSingleSelectedImage(): {
@@ -6323,7 +6317,7 @@ export default class ExcalidrawView
     if (els.length !== 1) {
       return null;
     }
-    const el = els[0] as ExcalidrawImageElement;
+    const el = els[0];
     const imageFile = this.excalidrawData.getFile(el.fileId);
     return { imageEl: el, embeddedFile: imageFile };
   }
@@ -6531,8 +6525,7 @@ export default class ExcalidrawView
         (el) => el.type === "text",
       );
       if (selectedTextElements.length === 1) {
-        const selectedTextElement =
-          selectedTextElements[0] as ExcalidrawTextElement;
+        const selectedTextElement = selectedTextElements[0];
         const containerElement = (
           this.getViewElements() as ExcalidrawElement[]
         ).find((el) => el.id === selectedTextElement.containerId);
@@ -6651,7 +6644,7 @@ export default class ExcalidrawView
 
       const selectedImages = this.getViewSelectedElements().filter(
         (el) => el.type === "image",
-      ) as ExcalidrawImageElement[];
+      );
       if (selectedImages.length > 0) {
         type ImageType = "svg" | "pdf" | "bitmap" | "excalidraw";
 
@@ -7193,7 +7186,7 @@ export default class ExcalidrawView
           : filecount < 2000
             ? 2000 - filecount
             : 0;
-    const { title } = SwordColors[rank as Rank];
+    const { title } = SwordColors[rank];
     return React.createElement(
       WelcomeScreen,
       {},
@@ -7206,7 +7199,7 @@ export default class ExcalidrawView
           React.createElement(
             LogoWrapper as React.FC<{ children?: React.ReactNode }>,
             {},
-            excalidrawSword(rank as Rank),
+            excalidrawSword(rank),
           ),
         ),
         React.createElement(WelcomeScreen.Center.Heading, {
@@ -8034,7 +8027,7 @@ export default class ExcalidrawView
         repairBindings: true,
       });
     }
-    if (Boolean(scene.appState)) {
+    if (scene.appState) {
       scene.forceFlushSync = true;
     }
     if (scene.elements) {
@@ -8106,7 +8099,7 @@ export default class ExcalidrawView
     if (!ref) {
       return null;
     }
-    return ref as EmbeddableLeafRef;
+    return ref;
   }
 
   public getActiveEmbeddable(): EmbeddableLeafRef | null {

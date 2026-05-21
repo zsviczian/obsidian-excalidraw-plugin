@@ -171,7 +171,7 @@ declare global {
       isAlwaysOnTop(): boolean;
       setAlwaysOnTop(flag: boolean): void;
     };
-    eval: typeof globalThis.eval;
+    eval: typeof window.eval;
     React?: typeof import("react");
     ReactDOM?: typeof import("react-dom/client");
     ExcalidrawLib?: typeof ExcalidrawLib;

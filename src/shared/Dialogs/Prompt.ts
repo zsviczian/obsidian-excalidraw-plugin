@@ -1235,7 +1235,7 @@ export class MultiOptionConfirmationPrompt<T = boolean | null> extends Modal {
   public waitForClose: Promise<T>;
   private resolvePromise: (value: T) => void;
   private rejectPromise: (reason?: string) => void;
-  private selectedValue: T = null as T;
+  private selectedValue: T = null;
   private readonly message: string;
   private readonly buttons: Map<string, T>;
   private ctaButtonLabel: string = null;

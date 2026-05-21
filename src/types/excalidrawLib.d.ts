@@ -102,13 +102,11 @@ declare namespace ExcalidrawLib {
     targetElements: readonly T[] | undefined | null,
     /** used for additional context (e.g. repairing arrow bindings) */
     existingElements: Readonly<ElementsMapOrArray> | null | undefined,
-    opts?:
-      | {
-          refreshDimensions?: boolean;
-          repairBindings?: boolean;
-          deleteInvisibleElements?: boolean;
-        }
-      | undefined,
+    opts?: {
+      refreshDimensions?: boolean;
+      repairBindings?: boolean;
+      deleteInvisibleElements?: boolean;
+    },
   ): CombineBrandsIfNeeded<T, OrderedExcalidrawElement>;
 
   function exportToSvg(

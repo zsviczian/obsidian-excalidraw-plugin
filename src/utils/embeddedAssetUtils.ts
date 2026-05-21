@@ -216,7 +216,7 @@ export function cropCanvas(
   dstCanvas.width = output.width;
   dstCanvas.height = output.height;
   dstCanvas
-    .getContext("2d")!
+    .getContext("2d")
     .drawImage(
       srcCanvas,
       crop.left,

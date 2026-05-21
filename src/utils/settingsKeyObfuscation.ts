@@ -155,7 +155,7 @@ type PersistedSettingsWithAPIKeys = {
 export const decryptPersistedAPIKeys = <T extends PersistedSettingsWithAPIKeys>(
   settings: T,
 ): T => {
-  const nextSettings = { ...settings } as T;
+  const nextSettings = { ...settings };
 
   if (nextSettings.aiProviderProfiles) {
     nextSettings.aiProviderProfiles = decryptProviderProfiles(
@@ -175,7 +175,7 @@ export const decryptPersistedAPIKeys = <T extends PersistedSettingsWithAPIKeys>(
 export const encryptPersistedAPIKeys = <T extends PersistedSettingsWithAPIKeys>(
   settings: T,
 ): T => {
-  const nextSettings = { ...settings } as T;
+  const nextSettings = { ...settings };
 
   if (nextSettings.aiProviderProfiles) {
     nextSettings.aiProviderProfiles = encryptProviderProfiles(

@@ -25,10 +25,7 @@ export async function copyLinkToSelectedElementToClipboard(
 
   if (elements.length === 2) {
     const textEl = elements.filter((el) => el.type === "text");
-    if (
-      textEl.length === 1 &&
-      (textEl[0] as ExcalidrawTextElement).containerId
-    ) {
+    if (textEl.length === 1 && textEl[0].containerId) {
       const container = elements.filter(
         (el) =>
           el.boundElements && el.boundElements.some((be) => be.type === "text"),

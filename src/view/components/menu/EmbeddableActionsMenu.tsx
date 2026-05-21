@@ -85,7 +85,7 @@ export class EmbeddableMenu {
 
   public destroy() {
     if (this.menuFadeTimeout) {
-      clearTimeout(this.menuFadeTimeout);
+      window.clearTimeout(this.menuFadeTimeout);
       this.menuFadeTimeout = null;
     }
     this.view = null;
@@ -128,7 +128,7 @@ export class EmbeddableMenu {
   };
 
   private handleMouseEnter() {
-    clearTimeout(this.menuFadeTimeout);
+    window.clearTimeout(this.menuFadeTimeout);
     this.containerRef.current?.style.setProperty("opacity", "1");
   }
 
@@ -414,7 +414,7 @@ export class EmbeddableMenu {
     ) {
       this.menuElementId = null;
       if (this.menuFadeTimeout) {
-        clearTimeout(this.menuFadeTimeout);
+        window.clearTimeout(this.menuFadeTimeout);
         this.menuFadeTimeout = 0;
       }
       return null;

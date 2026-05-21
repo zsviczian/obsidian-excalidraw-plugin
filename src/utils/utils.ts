@@ -546,7 +546,7 @@ export function scaleLoadedImage<T extends SceneWithElements>(
   const sceneElements = scene.elements as Mutable<ExcalidrawElement>[];
 
   for (const img of files.filter((f: FileData) => {
-    if (!Boolean(EXCALIDRAW_PLUGIN)) {
+    if (!EXCALIDRAW_PLUGIN) {
       return true;
     } //this should never happen
     const ef = EXCALIDRAW_PLUGIN.filesMaster.get(f.id);
@@ -1091,10 +1091,7 @@ export function _getContainerElement(
     return null;
   }
   if (element.containerId) {
-    return getContainerElement(
-      element as ExcalidrawTextElement,
-      arrayToMap(scene.elements),
-    );
+    return getContainerElement(element, arrayToMap(scene.elements));
     //return scene.elements.find((el:ExcalidrawElement)=>el.id === element.containerId) ?? null;
   }
   return null;
@@ -1375,7 +1372,7 @@ export function cropCanvas(
   dstCanvas.width = output.width;
   dstCanvas.height = output.height;
   dstCanvas
-    .getContext("2d")!
+    .getContext("2d")
     .drawImage(
       srcCanvas,
       crop.left,

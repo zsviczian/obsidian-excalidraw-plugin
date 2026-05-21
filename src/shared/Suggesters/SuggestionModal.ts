@@ -93,9 +93,9 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
     //setTimeout(() => {
     const modal = this.inputEl.closest(".modal");
     const modalContainer =
-      (this.inputEl.closest(".modal-container") as HTMLElement) ??
+      this.inputEl.closest(".modal-container") ??
       (modal?.parentElement?.matches(".modal-container")
-        ? (modal.parentElement as HTMLElement)
+        ? modal.parentElement
         : null);
 
     const host = modalContainer ?? this.inputEl.ownerDocument.body;

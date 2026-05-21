@@ -246,10 +246,7 @@ export function _getContainerElement(
     return null;
   }
   if (element.containerId) {
-    return getContainerElement(
-      element as ExcalidrawTextElement,
-      arrayToMap(scene.elements),
-    );
+    return getContainerElement(element, arrayToMap(scene.elements));
   }
   return null;
 }

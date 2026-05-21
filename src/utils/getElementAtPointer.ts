@@ -113,9 +113,9 @@ export const getElementWithLinkAtPointer = (
   if (!api) {
     return;
   }
-  let elements = (
-    getElementsAtPointer(pointer, api.getSceneElements()) as ExcalidrawElement[]
-  ).filter((el) => el.link);
+  let elements = getElementsAtPointer(pointer, api.getSceneElements()).filter(
+    (el) => el.link,
+  );
 
   //as a fallback let's check if any of the elements at pointer are containers with a text element that has a link.
   if (elements.length === 0) {

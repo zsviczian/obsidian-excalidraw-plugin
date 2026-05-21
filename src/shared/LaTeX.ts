@@ -63,9 +63,9 @@ export const updateEquation = async (
   if (data) {
     const files: FileData[] = [];
     files.push({
-      mimeType: data.mimeType as MimeType,
-      id: fileId as FileId,
-      dataURL: data.dataURL as DataURL,
+      mimeType: data.mimeType,
+      id: fileId,
+      dataURL: data.dataURL,
       created: data.created,
       size: data.size,
       hasSVGwithBitmap: false,

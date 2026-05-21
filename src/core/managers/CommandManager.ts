@@ -351,9 +351,7 @@ export class CommandManager {
         }
         const els = view
           .getViewSelectedElements()
-          .filter(
-            (el) => el.type === "embeddable",
-          ) as ExcalidrawEmbeddableElement[];
+          .filter((el) => el.type === "embeddable");
         if (els.length !== 1) {
           if (checking) {
             return false;
@@ -395,9 +393,7 @@ export class CommandManager {
         }
         const els = view
           .getViewSelectedElements()
-          .filter(
-            (el) => el.type === "embeddable",
-          ) as ExcalidrawEmbeddableElement[];
+          .filter((el) => el.type === "embeddable");
         if (els.length === 0) {
           if (checking) {
             return false;
@@ -1038,8 +1034,7 @@ export class CommandManager {
         if (selectedTextElements.length !== 1) {
           return false;
         }
-        const selectedTextElement =
-          selectedTextElements[0] as ExcalidrawTextElement;
+        const selectedTextElement = selectedTextElements[0];
         const containerElement = (
           view.getViewElements() as ExcalidrawElement[]
         ).find((el) => el.id === selectedTextElement.containerId);
@@ -1315,7 +1310,7 @@ export class CommandManager {
           new Notice("Select a single image element and try again");
           return false;
         }
-        const el = els[0] as ExcalidrawImageElement;
+        const el = els[0];
         const ef = view.excalidrawData.getFile(el.fileId);
         if (!ef?.file) {
           return false;
@@ -1385,7 +1380,7 @@ export class CommandManager {
         }
 
         void (async () => {
-          const el = els[0] as ExcalidrawImageElement;
+          const el = els[0];
           const ef = view.excalidrawData.getFile(el.fileId);
           if (!ef) {
             await view.forceSave();
@@ -1440,7 +1435,7 @@ export class CommandManager {
         }
 
         void (async () => {
-          const el = els[0] as ExcalidrawImageElement;
+          const el = els[0];
           const ef = view.excalidrawData.getFile(el.fileId);
           if (!ef) {
             await view.forceSave();
@@ -1482,7 +1477,7 @@ export class CommandManager {
           return true;
         }
 
-        const el = els[0] as ExcalidrawImageElement;
+        const el = els[0];
         const ef = view.excalidrawData.getFile(el.fileId);
         const eq = view.excalidrawData.getEquation(el.fileId);
         if (!ef && !eq) {
@@ -1574,7 +1569,7 @@ export class CommandManager {
           return true;
         }
 
-        const embeddableEl = embeddables[0] as ExcalidrawEmbeddableElement;
+        const embeddableEl = embeddables[0];
         const ea = new ExcalidrawAutomate(this.plugin, excalidrawView);
         const view = excalidrawView.getEmbeddableLeafElementById(
           embeddableEl.id,
@@ -1699,7 +1694,7 @@ export class CommandManager {
           }
 
           if (isPDF) {
-            const embeddableEl = embeddables[0] as ExcalidrawEmbeddableElement;
+            const embeddableEl = embeddables[0];
             const ea = new ExcalidrawAutomate(this.plugin, excalidrawView);
             const view = excalidrawView.getEmbeddableLeafElementById(
               embeddableEl.id,
@@ -1714,7 +1709,7 @@ export class CommandManager {
             return;
           }
 
-          const imageEl = imageEls[0] as ExcalidrawImageElement;
+          const imageEl = imageEls[0];
           void (async () => {
             let ef = excalidrawView.excalidrawData.getFile(imageEl.fileId);
 
@@ -2347,7 +2342,7 @@ export class CommandManager {
       name: t("INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE"),
       checkCallback: (checking: boolean) => {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
-        if (!Boolean(view)) {
+        if (!view) {
           return false;
         }
         const PDFLink = this.plugin.getLastActivePDFPageLink(view.file);
@@ -2442,7 +2437,7 @@ export class CommandManager {
         const fileIsExcalidraw = this.isExcalidrawFile(activeFile);
 
         if (checking) {
-          if (Boolean(this.app.workspace.getActiveViewOfType(ExcalidrawView))) {
+          if (this.app.workspace.getActiveViewOfType(ExcalidrawView)) {
             return !this.app.workspace.getActiveViewOfType(ExcalidrawView)
               .compatibilityMode;
           }

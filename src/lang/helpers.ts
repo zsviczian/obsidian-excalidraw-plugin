@@ -116,7 +116,7 @@ function loadLocale(lang: string): Partial<typeof en> {
     }
 
     const parsed = JSON.parse(decompressed) as Partial<typeof en>;
-    return resolveTokensDeep(parsed) as Partial<typeof en>;
+    return resolveTokensDeep(parsed);
   } catch {
     return en;
   }

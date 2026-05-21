@@ -58,7 +58,7 @@ export class CropImage {
     this.setBoundingEl(maskEA, "white"); //the bbox should not mask the image. White lets everything through.
 
     elements.forEach((el) => {
-      const newEl = cloneElement(el) as Mutable<ExcalidrawElement>;
+      const newEl = cloneElement(el);
       if (el.type !== "image" && el.type !== "frame") {
         newEl.opacity = 100;
         maskEA.elementsDict[el.id] = newEl;

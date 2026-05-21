@@ -1258,7 +1258,7 @@ export class ExcalidrawAutomate {
     }
     if (element.type === "text") {
       if (element.id in this.elementsDict) {
-        return { eaElement: element as Mutable<ExcalidrawTextElement> };
+        return { eaElement: element };
       }
 
       if (searchInView && this.targetView && this.targetView._loaded) {
@@ -3157,7 +3157,7 @@ export class ExcalidrawAutomate {
       errorMessage("targetView not set", "getExcalidrawAPI()");
       return null;
     }
-    return (this.targetView as ExcalidrawView).excalidrawAPI;
+    return this.targetView.excalidrawAPI;
   }
 
   /**
@@ -3584,7 +3584,7 @@ export class ExcalidrawAutomate {
       errorMessage("targetView not set", "viewToggleFullScreen()");
       return;
     }
-    const view = this.targetView as ExcalidrawView;
+    const view = this.targetView;
     const isFullscreen = view.isFullscreen();
     if (forceViewMode) {
       view.updateScene({
@@ -3615,7 +3615,7 @@ export class ExcalidrawAutomate {
       errorMessage("targetView not set", "viewToggleFullScreen()");
       return;
     }
-    const view = this.targetView as ExcalidrawView;
+    const view = this.targetView;
     view.updateScene({
       appState: { viewModeEnabled: enabled },
       captureUpdate: CaptureUpdateAction.NEVER,
@@ -3649,7 +3649,7 @@ export class ExcalidrawAutomate {
       errorMessage("targetView not set", "viewToggleFullScreen()");
       return;
     }
-    if (!Boolean(scene.storeAction)) {
+    if (!scene.storeAction) {
       scene.storeAction = scene.commitToHistory ? "capture" : "update";
     }
 
@@ -4137,7 +4137,7 @@ export class ExcalidrawAutomate {
       return null;
     }
     let largestElement = elements[0];
-    const getSize = (el: ExcalidrawElement): Number => {
+    const getSize = (el: ExcalidrawElement): number => {
       return el.height * el.width;
     };
     let largetstSize = getSize(elements[0]);

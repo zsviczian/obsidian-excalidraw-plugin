@@ -376,7 +376,7 @@ const _getSVGNative = async ({
   }
 
   //cache SVG should have the width and height parameters and not the embedded font
-  if (!Boolean(maybeSVG)) {
+  if (!maybeSVG) {
     cacheReady && imageCache.addImageToCache(cacheKey, "", svg);
   }
 
@@ -541,7 +541,7 @@ const createImgElement = async (
     if (!isHTMLElement(ev.target)) {
       return;
     }
-    const targetElement = ev.target as HTMLElement;
+    const targetElement = ev.target;
     const containerElement = targetElement.hasClass("excalidraw-embedded-img")
       ? ev.target
       : getParentOfClass(targetElement, "excalidraw-embedded-img");
@@ -997,7 +997,7 @@ const tmpObsidianWYSIWYG = async (
     //the excalidraw file in markdown preview mode
     const isFrontmatterDiv = Boolean(el.querySelector(".frontmatter"));
     let areaPreview = false;
-    if (Boolean(ctx.frontmatter)) {
+    if (ctx.frontmatter) {
       el.empty();
     } else {
       //Obsidian changed this at some point from h3 to h5 and also the text...

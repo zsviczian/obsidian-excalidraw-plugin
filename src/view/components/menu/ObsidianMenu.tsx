@@ -82,6 +82,7 @@ export class ObsidianMenu {
   private prevClickTimestamp: number = 0;
   constructor(
     private plugin: ExcalidrawPlugin,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- ref instance is injected from ToolsPanel and carries imperative methods.
     private toolsRef: React.MutableRefObject<any>,
     private view: ExcalidrawView,
   ) {

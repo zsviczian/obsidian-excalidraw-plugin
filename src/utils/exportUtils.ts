@@ -628,7 +628,7 @@ export async function exportToPDF({
         pageDimForSvg,
         false,
       );
-      const pageClass = pageRuleNames.get(key)!.name;
+      const pageClass = pageRuleNames.get(key).name;
 
       for (const tile of tiles) {
         const pageDiv = createDiv();
@@ -692,14 +692,14 @@ export async function exportToPDF({
         h: basePageSize.height,
       });
       extraCss += `
-        @page ${pageRuleNames.get(baseKey)!.name} {
+        @page ${pageRuleNames.get(baseKey).name} {
           size: ${toIn(basePageSize.width)}in ${toIn(basePageSize.height)}in;
           margin: 0;
         }
-        .print-page.${pageRuleNames.get(baseKey)!.name} { page: ${pageRuleNames.get(baseKey)!.name}; }
+        .print-page.${pageRuleNames.get(baseKey).name} { page: ${pageRuleNames.get(baseKey).name}; }
       `;
     }
-    const baseClass = pageRuleNames.get(baseKey)!.name;
+    const baseClass = pageRuleNames.get(baseKey).name;
 
     // Insert a dummy first page to prime Chromium with the largest page box
     const dummy = createDiv();

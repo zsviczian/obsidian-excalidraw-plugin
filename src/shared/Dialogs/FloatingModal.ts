@@ -149,7 +149,7 @@ export class FloatingModal extends Modal {
       // Add touch-specific event listeners
       this.ownerDocument.addEventListener(
         "touchmove",
-        this.pointerMoveHandler as (e: TouchEvent) => void,
+        this.pointerMoveHandler,
         {
           passive: false,
         },
@@ -168,7 +168,7 @@ export class FloatingModal extends Modal {
       // Add pointer-specific event listeners
       this.ownerDocument.addEventListener(
         "pointermove",
-        this.pointerMoveHandler as (e: PointerEvent) => void,
+        this.pointerMoveHandler,
       );
       this.ownerDocument.addEventListener("pointerup", this.pointerUpHandler);
       // Capture the pointer to ensure we get events even when outside the target
@@ -215,12 +215,12 @@ export class FloatingModal extends Modal {
     // Remove all event listeners
     this.ownerDocument.removeEventListener(
       "pointermove",
-      this.pointerMoveHandler as (e: PointerEvent) => void,
+      this.pointerMoveHandler,
     );
     this.ownerDocument.removeEventListener("pointerup", this.pointerUpHandler);
     this.ownerDocument.removeEventListener(
       "touchmove",
-      this.pointerMoveHandler as (e: TouchEvent) => void,
+      this.pointerMoveHandler,
     );
     this.ownerDocument.removeEventListener("touchend", this.pointerUpHandler);
     this.ownerDocument.removeEventListener(
@@ -264,17 +264,10 @@ export class FloatingModal extends Modal {
         modalEl.style.transform = "none";
 
         // Add event listeners for both pointer and touch events
-        modalEl.addEventListener(
-          "pointerdown",
-          this.pointerDownHandler as (e: PointerEvent) => void,
-        );
-        modalEl.addEventListener(
-          "touchstart",
-          this.pointerDownHandler as (e: TouchEvent) => void,
-          {
-            passive: false,
-          },
-        );
+        modalEl.addEventListener("pointerdown", this.pointerDownHandler);
+        modalEl.addEventListener("touchstart", this.pointerDownHandler, {
+          passive: false,
+        });
 
         if (this.disableKeyCapture) {
           // Prevent the modal from stealing focus
@@ -320,14 +313,8 @@ export class FloatingModal extends Modal {
     const { modalEl } = this;
     // Clean up event listeners
     if (modalEl) {
-      modalEl.removeEventListener(
-        "pointerdown",
-        this.pointerDownHandler as (e: PointerEvent) => void,
-      );
-      modalEl.removeEventListener(
-        "touchstart",
-        this.pointerDownHandler as (e: TouchEvent) => void,
-      );
+      modalEl.removeEventListener("pointerdown", this.pointerDownHandler);
+      modalEl.removeEventListener("touchstart", this.pointerDownHandler);
       // Remove the capturing keydown stopper if it was added
       modalEl.removeEventListener("keydown", this.modalKeydownStopHandler, {
         capture: true,

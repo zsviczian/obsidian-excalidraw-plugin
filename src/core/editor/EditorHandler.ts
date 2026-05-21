@@ -32,7 +32,7 @@ export class EditorHandler {
       return;
     }
     if (extensionState == true) {
-      this.activeEditorExtensions.push(extension as TaggedExtension);
+      this.activeEditorExtensions.push(extension);
       this.activeEditorExtensions[this.activeEditorExtensions.length - 1].exID =
         extensionIdentifier;
     } else {

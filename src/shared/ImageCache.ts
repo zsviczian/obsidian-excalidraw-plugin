@@ -179,7 +179,7 @@ class ImageCache {
 
         await new Promise<void>((resolve, reject) => {
           upgradeRequest.onsuccess = () => {
-            const db = upgradeRequest.result as IDBDatabase;
+            const db = upgradeRequest.result;
             db.close();
             resolve();
           };
@@ -194,7 +194,7 @@ class ImageCache {
         this.db = await new Promise<IDBDatabase>((resolve, reject) => {
           const openRequest = indexedDB.open(this.dbName);
           openRequest.onsuccess = () => {
-            const db = openRequest.result as IDBDatabase;
+            const db = openRequest.result;
             resolve(db);
           };
           openRequest.onerror = () => {
@@ -228,10 +228,7 @@ class ImageCache {
 
   private async purgeInvalidCacheFiles(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      const transaction = this.db!.transaction(
-        this.cacheStoreName,
-        "readwrite",
-      );
+      const transaction = this.db.transaction(this.cacheStoreName, "readwrite");
       const store = transaction.objectStore(this.cacheStoreName);
       const files = this.app.vault.getFiles();
       const deletePromises: Promise<void>[] = [];
@@ -293,7 +290,7 @@ class ImageCache {
   }
 
   private async purgeInvalidBackupFiles(): Promise<void> {
-    const transaction = this.db!.transaction(this.backupStoreName, "readwrite");
+    const transaction = this.db.transaction(this.backupStoreName, "readwrite");
     const store = transaction.objectStore(this.backupStoreName);
     const files = this.app.vault.getFiles();
     const deletePromises: Promise<void>[] = [];
@@ -341,7 +338,7 @@ class ImageCache {
     mode: IDBTransactionMode,
     storeName: string,
   ): IDBObjectStore {
-    const transaction = this.db!.transaction(storeName, mode);
+    const transaction = this.db.transaction(storeName, mode);
     return transaction.objectStore(storeName);
   }
 
@@ -508,7 +505,7 @@ class ImageCache {
     if (image instanceof SVGSVGElement) {
       svg = image.outerHTML;
     } else {
-      blob = image as Blob;
+      blob = image;
     }
     const now = Date.now();
     const data: FileCacheData = {
@@ -522,7 +519,7 @@ class ImageCache {
     const store = transaction.objectStore(this.cacheStoreName);
     const key = getKey(key_);
     store.put(data, key);
-    if (!Boolean(svg) && obsidianURL) {
+    if (!svg && obsidianURL) {
       if (
         this.obsidanURLCache.has(key) &&
         this.obsidanURLCache.get(key) !== obsidianURL

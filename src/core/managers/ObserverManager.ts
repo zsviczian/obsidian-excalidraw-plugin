@@ -358,7 +358,7 @@ export class ObserverManager {
 
         const target = mutation.target as HTMLElement;
         const newDisplay = target.style.display;
-        const oldDisplay = parseDisplay(mutation.oldValue as string);
+        const oldDisplay = parseDisplay(mutation.oldValue);
 
         // Drawer finished closing: refresh to fix pointer offset after CSS transitions
         if (newDisplay === "none" && oldDisplay !== "none") {

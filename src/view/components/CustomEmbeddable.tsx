@@ -84,8 +84,8 @@ function setPDFViewTheme(view: ExcalidrawView, pdfView: PdfViewLike | null) {
     }
     const thumbnailViewEl = pdfView.containerEl?.querySelector(
       ".pdf-thumbnail-view",
-    ) as HTMLElement | null;
-    if (thumbnailViewEl) {
+    );
+    if (thumbnailViewEl instanceof HTMLElement) {
       thumbnailViewEl.style.filter = "var(--theme-filter)";
     }
   } else {
@@ -126,13 +126,13 @@ function setupPdfViewEnhancements(
     // Disable observer while applying the theme to avoid loops
     pdfObserverDisabledRef.current = true;
     setPDFViewTheme(view, pdfView);
-    requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => {
       pdfObserverDisabledRef.current = false;
     });
 
     // Observe inline height changes on the PDF root container and reset them
     // this could be an obsidian bug, should be revisted later 2025-08-23
-    const containerEl = pdfView.containerEl as HTMLElement | null;
+    const containerEl = pdfView.containerEl;
     let prevHeight = containerEl?.style?.height || "";
     let heightObserver: MutationObserver | null = null;
     if (containerEl) {
@@ -163,9 +163,7 @@ function setupPdfViewEnhancements(
 
     const getScaleFromAncestor = (target: Element | null) => {
       // Read scale from the outer excalidraw embeddable container transform
-      const container = target?.closest(
-        ".excalidraw__embeddable-container",
-      ) as HTMLElement | null;
+      const container = target?.closest(".excalidraw__embeddable-container");
       if (!container) {
         return { sx: 1, sy: 1 };
       }
@@ -227,7 +225,7 @@ function setupPdfViewEnhancements(
       });
 
       try {
-        (view.contentEl as HTMLElement).style.cursor = "grabbing";
+        view.contentEl.style.cursor = "grabbing";
       } catch {}
     };
 
@@ -261,14 +259,14 @@ function setupPdfViewEnhancements(
     const onPointerUp = (_e: PointerEvent) => {
       active = false;
       try {
-        (view.contentEl as HTMLElement).style.cursor = "";
+        view.contentEl.style.cursor = "";
       } catch {}
       window.removeEventListener("pointermove", onPointerMove, true);
       window.removeEventListener("pointerup", onPointerUp, true);
       window.removeEventListener("pointercancel", onPointerUp, true);
     };
 
-    const root = pdfView.containerEl as HTMLElement;
+    const root = pdfView.containerEl;
     root?.addEventListener("pointerdown", onPointerDownCapture, {
       capture: true,
     });
@@ -286,9 +284,8 @@ function setupPdfViewEnhancements(
     };
 
     if (view.excalidrawData.embeddableTheme !== "default") {
-      const pdfContainerEl = pdfView.containerEl?.querySelector(
-        ".pdf-container",
-      ) as HTMLElement | null;
+      const pdfContainerEl =
+        pdfView.containerEl?.querySelector(".pdf-container");
       if (pdfContainerEl) {
         pdfObserverRef.current?.disconnect();
         pdfObserverRef.current = new MutationObserver(() => {
@@ -302,7 +299,7 @@ function setupPdfViewEnhancements(
               showNoticeOnce(t("NOTICE_PDF_THEME"));
             }
           } finally {
-            requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
               pdfObserverDisabledRef.current = false;
             });
           }
@@ -314,7 +311,7 @@ function setupPdfViewEnhancements(
 
         // https://github.com/RyotaUshio/obsidian-pdf-plus/issues/477
         // Watch for the PDF container being removed from DOM (e.g. by PDF+)
-        const rootEl = pdfView.containerEl as HTMLElement | null;
+        const rootEl = pdfView.containerEl;
         if (rootEl) {
           let detachObserver: MutationObserver | null = new MutationObserver(
             (_muts, obs) => {
@@ -387,7 +384,7 @@ function setupPdfViewEnhancements(
           }
         }
       });
-      mo.observe(root as HTMLElement, { childList: true, subtree: true });
+      mo.observe(root, { childList: true, subtree: true });
       timeoutId = window.setTimeout(() => {
         mo.disconnect();
       }, 10000);
@@ -1105,7 +1102,7 @@ function RenderObsidianView({
       setFileToLocalGraph(view.app, file);
     }
 
-    const node = leafRef.current?.node as ObsidianCanvasNode;
+    const node = leafRef.current?.node;
     if (node) {
       //Handle canvas node
       if (

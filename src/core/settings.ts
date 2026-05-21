@@ -1954,10 +1954,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         ),
       );
       if (kind === "text") {
-        this.plugin.settings.aiTextModelConfigs = sorted as Record<
-          string,
-          AIModelConfig
-        >;
+        this.plugin.settings.aiTextModelConfigs = sorted;
       }
       if (kind === "image") {
         this.plugin.settings.aiImageModelConfigs = sorted as Record<
@@ -2070,10 +2067,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.plugin.settings.aiDefaultMultimodalModel = nextModelId;
           }
           if (kind === "image") {
-            setModelConfigs(
-              kind,
-              updatedConfigs as Record<string, AIImageModelConfig>,
-            );
+            setModelConfigs(kind, updatedConfigs);
             selectedImageModelConfig = nextModelId;
             this.plugin.settings.aiDefaultImageGenerationModel = nextModelId;
           }
@@ -2190,9 +2184,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         left.localeCompare(right),
       );
       const selectedValue = getValidSelection(kind);
-      const config = configs[selectedValue] as
-        | AIModelConfig
-        | AIImageModelConfig;
+      const config = configs[selectedValue];
       const providerProfile = getProviderProfiles()[config.providerId];
       const apiStatus = getApiStatusMarkup(
         Boolean(providerProfile?.apiKey?.trim()),
@@ -3691,7 +3683,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const removeDropdownOption = (opt: string) => {
       let i = 0;
       for (i = 0; i < dropdown.selectEl.options.length; i++) {
-        if ((dropdown.selectEl.item(i) as HTMLOptionElement).label === opt) {
+        if (dropdown.selectEl.item(i).label === opt) {
           dropdown.selectEl.item(i).remove();
         }
       }
@@ -4492,7 +4484,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.plugin.settings.scriptEngineSettings[scriptName][variableName];
         switch (typeof variable) {
           case "object":
-            return (variable as ScriptSettingValue).height;
+            return variable.height;
           default:
             return null;
         }
@@ -4506,7 +4498,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.plugin.settings.scriptEngineSettings[scriptName][variableName];
         switch (typeof variable) {
           case "object":
-            return (variable as ScriptSettingValue).value;
+            return variable.value;
           default:
             return variable;
         }
@@ -4674,7 +4666,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             const variable = settings[variableName];
             const scriptSetting =
               typeof variable === "object" && variable !== null
-                ? (variable as ScriptSettingValue)
+                ? variable
                 : null;
             const item = scriptSetting?.value ?? variable;
             switch (typeof item) {

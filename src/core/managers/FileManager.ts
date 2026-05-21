@@ -677,7 +677,7 @@ export class PluginFileManager {
               excalidrawView.autosaveTimer &&
               excalidrawView.autosaveFunction
             ) {
-              clearTimeout(excalidrawView.autosaveTimer);
+              window.clearTimeout(excalidrawView.autosaveTimer);
             }
             if (excalidrawView.autosaveFunction) {
               await excalidrawView.autosaveFunction();

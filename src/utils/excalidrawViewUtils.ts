@@ -601,13 +601,13 @@ export function getViewColorPalette(
   includeSceneColors: boolean = false,
 ): (string[] | string)[] {
   if (!view) {
-    return getDefaultColorPalette() as (string[] | string)[];
+    return getDefaultColorPalette();
   }
 
   const api = view.excalidrawAPI;
   const { colorPalette } = api.getAppState();
   if (!colorPalette || !colorPalette.hasOwnProperty(palette)) {
-    return getDefaultColorPalette() as (string[] | string)[];
+    return getDefaultColorPalette();
   }
 
   const basePalette = colorPalette[palette];
@@ -667,11 +667,9 @@ export function getViewColorPalette(
         .slice()
         .sort((a, b) => getLightness(b) - getLightness(a)),
     );
-  const singles = basePalette.filter(
-    (entry) => typeof entry === "string",
-  ) as string[];
+  const singles = basePalette.filter((entry) => typeof entry === "string");
   const groupColors = groups
-    .flatMap((entry) => entry as string[])
+    .flatMap((entry) => entry)
     .filter(Boolean)
     .map((c) => normalize(c));
   const groupColorSet = new Set(groupColors);

@@ -314,7 +314,7 @@ export class ScriptEngine {
         draggable?: boolean,
       ) => {
         if (typeof header === "object") {
-          const options = header as InputPromptOptions;
+          const options = header;
           header = options.header;
           placeholder = options.placeholder;
           value = options.value;

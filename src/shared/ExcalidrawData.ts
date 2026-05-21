@@ -859,7 +859,7 @@ export class ExcalidrawData {
       };
     }, 5000);
     await loadSceneFonts(this.scene.elements);
-    clearTimeout(timer);
+    window.clearTimeout(timer);
 
     if (!this.scene.files) {
       this.scene.files = {}; //loading legacy scenes that do not yet have the files attribute.
@@ -1250,7 +1250,7 @@ export class ExcalidrawData {
     this.selectedElementIds = selectedElementIds;
     const texts = this.scene.elements?.filter(
       (el: ExcalidrawElement) => el.type === "text",
-    ) as ExcalidrawTextElement[];
+    );
 
     let dirty: boolean = false; //to keep track if the json has changed
     let id: string; //will be used to hold the new 8 char long ID for textelements that don't yet appear under # Text Elements
@@ -1723,7 +1723,7 @@ export class ExcalidrawData {
       isDark: scene.appState?.theme === "dark",
       isSVGwithBitmap: mimeType === "image/svg+xml", //this treat all SVGs as if they had embedded images REF:addIMAGE
     });
-    this.setFile(key as FileId, embeddedFile);
+    this.setFile(key, embeddedFile);
     return file;
   }
 

@@ -393,7 +393,7 @@ export class AIModelConfigModal<
         ...this.config,
         model: this.config.model.trim(),
         endpoint: this.config.endpoint?.trim() || "",
-      } as TConfig,
+      },
       this.options.previousModelId,
     );
     this.close();

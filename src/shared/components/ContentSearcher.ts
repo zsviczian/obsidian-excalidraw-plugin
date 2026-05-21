@@ -219,9 +219,7 @@ export class ContentSearcher {
       NodeFilter.SHOW_TEXT,
       {
         acceptNode: (node: Text) => {
-          return node
-            .nodeValue!.toLowerCase()
-            .includes(searchTerm.toLowerCase())
+          return node.nodeValue.toLowerCase().includes(searchTerm.toLowerCase())
             ? NodeFilter.FILTER_ACCEPT
             : NodeFilter.FILTER_REJECT;
         },
@@ -234,7 +232,7 @@ export class ContentSearcher {
     }
 
     nodesToReplace.forEach((node) => {
-      const nodeContent = node.nodeValue!;
+      const nodeContent = node.nodeValue;
       const newNode = document.createDocumentFragment();
 
       let lastIndex = 0;

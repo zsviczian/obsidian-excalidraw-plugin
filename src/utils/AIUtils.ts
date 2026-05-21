@@ -173,19 +173,23 @@ export const getJsonErrorMessage = (json: unknown): string | undefined => {
   return message == null ? undefined : String(message);
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- provider payloads are intentionally dynamic at this normalization boundary.
 const getFirstChoice = (json: Record<string, any>) =>
   json?.choices?.[0] ?? null;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- provider payloads are intentionally dynamic at this normalization boundary.
 const getFirstChoiceContent = (json: Record<string, any>): string => {
   const content = getFirstChoice(json)?.message?.content;
   return typeof content === "string" ? content : "";
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- provider payloads are intentionally dynamic at this normalization boundary.
 const getFirstChoiceFinishReason = (json: Record<string, any>): string => {
   const finishReason = getFirstChoice(json)?.finish_reason;
   return typeof finishReason === "string" ? finishReason : "";
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- provider payloads are intentionally dynamic at this normalization boundary.
 const getReasoningTokenCount = (json: Record<string, any>): number => {
   const value = json?.usage?.completion_tokens_details?.reasoning_tokens;
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
@@ -288,9 +292,7 @@ const normalizeBinaryInput = (
     source,
     mimeType: getAssetMimeType(asset),
     filename: getAssetFilename(asset),
-    ...(getImageDetail(asset as AIImageInput)
-      ? { detail: getImageDetail(asset as AIImageInput) }
-      : {}),
+    ...(getImageDetail(asset) ? { detail: getImageDetail(asset) } : {}),
   };
 };
 
@@ -484,7 +486,7 @@ const getSelectedModelConfigId = (
     const normalizedConfiguredIds = configuredIds.filter(Boolean);
 
     const configuredId = normalizedConfiguredIds.find((modelId) => {
-      const config = configs[modelId] as AIModelConfig | undefined;
+      const config = configs[modelId];
       return (
         config && (!requireMultimodal || config.multimodalSupport !== false)
       );
@@ -536,8 +538,7 @@ const getResolvedModelConfig = (
     request,
     kind === "text" && requestHasImageInput(request),
   );
-  const selectedConfig = (configs[selectedConfigId] ||
-    Object.values(configs)[0]) as AIModelConfig | AIImageModelConfig;
+  const selectedConfig = configs[selectedConfigId] || Object.values(configs)[0];
   const profile =
     getProviderProfiles(plugin)[selectedConfig?.providerId] ||
     Object.values(getProviderProfiles(plugin))[0];
@@ -610,11 +611,7 @@ const resolveAIConfig = (
   }
 
   return {
-    text: getResolvedModelConfig(
-      resolvedPlugin,
-      "text",
-      request,
-    ) as ResolvedModelConfig,
+    text: getResolvedModelConfig(resolvedPlugin, "text", request),
     image: getResolvedModelConfig(
       resolvedPlugin,
       "image",
@@ -631,10 +628,10 @@ const resolveAIConfig = (
 const createSyntheticResponse = (
   message: string,
   status: number = 400,
-  extraJson: Record<string, any> = {},
+  extraJson: Record<string, unknown> = {},
 ): RequestUrlResponse => ({
   status,
-  headers: {} as any,
+  headers: {},
   text: null,
   json: {
     error: {
@@ -653,7 +650,7 @@ const getHeaderValue = (
     return null;
   }
   const normalizedKey = key.toLowerCase();
-  const headerObject = headers as Record<string, string>;
+  const headerObject = headers;
   return headerObject[key] ?? headerObject[normalizedKey] ?? null;
 };
 
@@ -1228,6 +1225,7 @@ const getGoogleEndpoint = (config: ResolvedModelConfig): string => {
   return `${baseEndpoint}/models/${config.model}:generateContent${separator}key=${encodeURIComponent(config.apiKey)}`;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- third-party provider payload schemas vary and are normalized in this function.
 const normalizeAnthropicResponse = (json: Record<string, any>) => {
   const text =
     json?.content
@@ -1259,6 +1257,7 @@ const normalizeAnthropicResponse = (json: Record<string, any>) => {
   };
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- third-party provider payload schemas vary and are normalized in this function.
 const normalizeGoogleResponse = (json: Record<string, any>) => {
   const text =
     json?.candidates?.[0]?.content?.parts
@@ -1291,6 +1290,7 @@ const normalizeGoogleResponse = (json: Record<string, any>) => {
 
 const normalizeResponseJson = (
   provider: AIProvider,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic provider payload passed through provider-specific normalizers.
   json: Record<string, any>,
 ) => {
   if (!json || json.error) {
@@ -1342,6 +1342,7 @@ const getMimeTypeForOutputFormat = (
   return `image/${normalized}`;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- image provider payload schemas vary and are normalized in this function.
 const normalizeOpenAIImageResponse = (json: Record<string, any>) => {
   if (!json || json.error) {
     return json;
@@ -1358,6 +1359,7 @@ const normalizeOpenAIImageResponse = (json: Record<string, any>) => {
   };
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- image provider payload schemas vary and are normalized in this function.
 const normalizeGoogleImageResponseForImages = (json: Record<string, any>) => {
   if (!json || json.error) {
     return json;
@@ -1397,6 +1399,7 @@ const normalizeGoogleImageResponseForImages = (json: Record<string, any>) => {
   };
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- image provider payload schemas vary and are normalized in this function.
 const normalizeXAIImageResponse = (json: Record<string, any>) => {
   if (!json || json.error) {
     return json;
@@ -1489,6 +1492,7 @@ const normalizeXAIImageResponse = (json: Record<string, any>) => {
 
 const normalizeImageResponseJson = (
   provider: AIProvider,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic provider payload passed through provider-specific normalizers.
   json: Record<string, any>,
 ) => {
   switch (provider) {
@@ -1556,6 +1560,7 @@ const postJSON = async (
   },
   provider: AIProvider,
   signal?: AbortSignal,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- postJSON accepts provider-specific dynamic JSON and delegates normalization.
   normalizeJson: (json: Record<string, any>) => Record<string, any> = (json) =>
     normalizeResponseJson(provider, json),
 ): Promise<RequestUrlResponse> => {
@@ -2316,15 +2321,15 @@ export const getAISettings = (
 
   const providerProfiles = getProviderProfiles(resolvedPlugin);
   const textModels = Object.fromEntries(
-    Object.entries(
-      getModelConfigs(resolvedPlugin, "text") as Record<string, AIModelConfig>,
-    ).map(([modelId, config]) => [
-      modelId,
-      {
-        ...config,
-        multimodalSupport: config.multimodalSupport !== false,
-      },
-    ]),
+    Object.entries(getModelConfigs(resolvedPlugin, "text")).map(
+      ([modelId, config]) => [
+        modelId,
+        {
+          ...config,
+          multimodalSupport: config.multimodalSupport !== false,
+        },
+      ],
+    ),
   );
   const imageModels = Object.fromEntries(
     Object.entries(
