@@ -95,13 +95,14 @@ const mode = await utils.suggester(
 if(!mode) return;
 
 // Function to permanently delete related files and images
+// Function to permanently delete related files and images
 const deleteRelatedFilesAndImages = async (sourcePath) => {
   // Add delay function for async operations
   const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
   
   // Initialize collections and counters
   const cardFiles = new Set();
-  const batchMarkers = new Set();
+  const batchMarkers = new Map(); // Map<folderPath, Set<markerFile>>
   const sourceFile = app.vault.getAbstractFileByPath(sourcePath);
   let deletedCardsCount = 0;
   let deletedFoldersCount = 0;
@@ -120,21 +121,25 @@ const deleteRelatedFilesAndImages = async (sourcePath) => {
       if (filePath.endsWith('batch-marker.md')) {
         const markerFile = app.vault.getAbstractFileByPath(filePath);
         if (markerFile) {
-          batchMarkers.add(markerFile);
-          //  console.log(`Found batch marker: ${filePath}`);
+          const folderPath = markerFile.path.substring(0, markerFile.path.lastIndexOf('/'));
+          if (!batchMarkers.has(folderPath)) {
+            batchMarkers.set(folderPath, new Set());
+          }
+          batchMarkers.get(folderPath).add(markerFile);
         }
       }
     }
   }
   
   if (batchMarkers.size === 0) {
-    //  console.log('No batch markers found. Please check if the source file path is correct:', sourcePath);
+    console.log('No batch markers found. Please check if the source file path is correct:', sourcePath);
+    new Notice("No batch markers found. Please check if the source file path is correct.");
     return;
   }
   
   // Process each batch marker file to find cards
   for (const marker of batchMarkers) {
-    // console.log(`Processing batch marker: ${marker.path}`);
+    console.log(`Processing batch marker: ${marker.path}`);
     const content = await app.vault.read(marker);
     // console.log("Batch marker content:", content);
     const lines = content.split('\n');
@@ -156,14 +161,52 @@ const deleteRelatedFilesAndImages = async (sourcePath) => {
             cardFiles.add(cardFile);
             // console.log(`Found card file through wiki link: ${cardFile.path}`);
           } else {
-            // console.log(`Card file not found for wiki link: ${cardPath}`);
+            console.log(`Card file not found for wiki link: ${cardPath}`);
           }
         }
       }
     }
   }
   
-  // First delete all card files
+  if (cardFiles.size === 0) {
+    new Notice("No cards found for deletion.");
+    return;
+  }
+
+  // --- Confirmation Dialog ---
+  const confirmDeletion = await new Promise(resolve => {
+    const modal = new ea.Modal(app);
+    modal.onOpen = () => {
+      const contentEl = modal.contentEl;
+      contentEl.createEl('h2', { text: 'Confirm Deletion' });
+      contentEl.createEl('p', { text: `You are about to permanently delete ${cardFiles.size} card file(s).` });
+      
+      if (batchMarkers.size > 0) {
+        contentEl.createEl('p', { text: `This action will also attempt to delete ${batchMarkers.size} related folder(s).` });
+      }
+
+      const confirmContainer = contentEl.createDiv({ cls: "excalidraw-dialog-buttons", style: "margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;" });
+      
+      // Cancel Button
+      const cancelButton = new ea.obsidian.ButtonComponent(confirmContainer);
+      cancelButton.setButtonText("Cancel");
+      cancelButton.onClick(() => resolve(false));
+
+      // Confirm Button
+      const confirmButton = new ea.obsidian.ButtonComponent(confirmContainer);
+      confirmButton.setButtonText("Delete Permanently");
+      confirmButton.setCta();
+      confirmButton.onClick(() => resolve(true));
+    };
+    modal.open();
+  });
+
+  if (!confirmDeletion) {
+    new Notice("Deletion cancelled.");
+    return;
+  }
+
+  // Proceed with deletion if confirmed
   for (const file of cardFiles) {
     try {
       if (await app.vault.adapter.exists(file.path)) {
@@ -173,7 +216,7 @@ const deleteRelatedFilesAndImages = async (sourcePath) => {
         // Add short delay to allow plugins to respond
         await delay(50);
         deletedCardsCount++;
-        //  console.log(`Deleted card file: ${file.path}`);
+        console.log(`Deleted card file: ${file.path}`);
       }
     } catch (error) {
       console.error(`Failed to delete card file: ${file.path}`, error);
@@ -195,14 +238,14 @@ const deleteRelatedFilesAndImages = async (sourcePath) => {
         await app.vault.delete(parentFolder, true);
         await delay(50);
         deletedFoldersCount++;
-        //  console.log(`Deleted folder: ${parentFolder.path}`);
+        console.log(`Deleted folder: ${parentFolder.path}`);
       } catch (error) {
         console.error(`Failed to delete folder: ${parentFolder.path}`, error);
       }
     }
   }
   
-  new Notice(`Summary:
+  new Notice(`Deletion Summary:
   - Card files deleted: ${deletedCardsCount}
   - Image folders deleted: ${deletedFoldersCount}`);
 };
