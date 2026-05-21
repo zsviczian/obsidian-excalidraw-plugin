@@ -1,4 +1,4 @@
-import { Component, TAbstractFile, TFile, WorkspaceLeaf } from "obsidian";
+import { Component, TAbstractFile, TFile, View, WorkspaceLeaf } from "obsidian";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import { ExcalidrawLib } from "./excalidrawLib";
 import type { PdfJsLibrary } from "./pdfJsTypes";
@@ -150,6 +150,11 @@ export type LinkSuggestion = {
   file: TFile;
   path: string;
   alias?: string;
+};
+
+export type LocalGraphView = View & {
+  file?: TFile;
+  loadFile?: (file: TFile) => void;
 };
 
 declare global {

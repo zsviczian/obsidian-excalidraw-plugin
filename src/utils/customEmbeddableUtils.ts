@@ -10,7 +10,8 @@ import {
   getContainerForDocument,
   getParentOfClass,
 } from "./obsidianUtils";
-import { App, TFile, View, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
+import { App, TFile, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
+import type { LocalGraphView } from "src/types/types";
 import { getLinkParts } from "./sceneDataUtils";
 import ExcalidrawView from "src/view/ExcalidrawView";
 
@@ -113,11 +114,6 @@ export const processLinkText = (
 };
 
 export function setFileToLocalGraph(app: App, file: TFile) {
-  type LocalGraphView = View & {
-    file?: TFile;
-    loadFile?: (file: TFile) => void;
-  };
-
   let lgv: LocalGraphView | null = null;
   app.workspace.iterateAllLeaves((l) => {
     if (l.view?.getViewType() === "localgraph") {
