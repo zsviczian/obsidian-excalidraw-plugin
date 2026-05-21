@@ -8,11 +8,35 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
   "2.23.4": `
+## New
+- Added session-scoped AI token usage metering. The plugin now tracks input and output tokens per model for text/multimodal requests, and image generation counts for image requests.
+- A new **"Session token usage"** button appears at the top of the AI section in plugin settings. Click it to view a per-model breakdown table and copy it as a Markdown table.
+- ExcaliAI now shows an **"AI Usage: input/output"** button next to the Run button. Clicking it opens the same usage modal.
+
 ## New in ExcalidrawAutomate
 - Added \`getPathForImageFileId(fileId: FileId): string | null\` — returns the vault path for an image element identified by its Excalidraw fileId. Note: Excalidraw does not maintain a persistent index of fileIds to paths; the path is only available for images that have appeared in an open drawing during the current Obsidian session.
 - Gemini image models now expose provider-correct size presets in AI settings and ExcaliAI, and Google image requests translate those presets into Gemini aspect ratio and image size parameters automatically.
+- Added Three new ExcalidrawAutomate methods for AI token usage.
 
 \`\`\`ts
+/**
+ * Returns accumulated AI token usage for the current Obsidian session.
+ * Usage is keyed by model identifier. Data is not persisted and resets on restart.
+ */
+public getAIUsage(): AIUsageData;
+
+/**
+ * Opens a modal showing per-model AI token usage for the current session.
+ * Includes a "Copy as Markdown" button.
+ */
+public showAIUsageModal(): void;
+
+/**
+ * Returns a compact label string: "AI Usage: 355k/23k" (input/output tokens).
+ * Appends image generation count when present, e.g. "+ 3 imgs".
+ */
+public formatAIUsageLabel(): string;
+
 /**
  * Returns the vault path for an image file identified by its Excalidraw fileId.
  * Only available for images seen in an open drawing during the current session.

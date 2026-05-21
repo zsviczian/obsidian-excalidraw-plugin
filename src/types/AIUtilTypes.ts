@@ -129,6 +129,23 @@ export type AIRequestMessage = {
   content: string | AIRequestMessagePart[];
 };
 
+export type AITextUsageEntry = {
+  inputTokens: number;
+  outputTokens: number;
+};
+
+export type AIImageUsageEntry = {
+  generations: number;
+};
+
+export type AIUsageData = {
+  textModels: Record<string, AITextUsageEntry>;
+  imageModels: Record<string, AIImageUsageEntry>;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalImageGenerations: number;
+};
+
 export type AIRequest = {
   provider?: AIProvider;
   baseURL?: string;

@@ -9,6 +9,9 @@ import { URLs } from "src/constants/safeUrls";
 import ExcalidrawPlugin from "src/core/main";
 import {
   AIImageModelConfig,
+  AIImageUsageEntry,
+  AITextUsageEntry,
+  AIUsageData,
   ExcalidrawAISettings,
   AIFileInput,
   AIImageInput,
@@ -109,6 +112,114 @@ export type AIChatSession = {
 
 const AI_DEBUG_PREFIX = "[Excalidraw AI Debug]";
 const AI_DEBUG_MAX_LENGTH = 8000;
+
+// ---------------------------------------------------------------------------
+// Session-scoped AI usage metering (not persisted across Obsidian restarts)
+// ---------------------------------------------------------------------------
+
+const _textUsageStore: Record<string, AITextUsageEntry> = {};
+const _imageUsageStore: Record<string, AIImageUsageEntry> = {};
+
+const recordAITextUsage = (
+  modelId: string,
+  inputTokens: number,
+  outputTokens: number,
+): void => {
+  if (!modelId || (inputTokens === 0 && outputTokens === 0)) {
+    return;
+  }
+  const existing = _textUsageStore[modelId];
+  if (existing) {
+    existing.inputTokens += inputTokens;
+    existing.outputTokens += outputTokens;
+  } else {
+    _textUsageStore[modelId] = { inputTokens, outputTokens };
+  }
+};
+
+const recordAIImageGenerationUsage = (
+  modelId: string,
+  count: number = 1,
+): void => {
+  if (!modelId || count <= 0) {
+    return;
+  }
+  const existing = _imageUsageStore[modelId];
+  if (existing) {
+    existing.generations += count;
+  } else {
+    _imageUsageStore[modelId] = { generations: count };
+  }
+};
+
+/**
+ * Returns accumulated AI token usage for the current Obsidian session.
+ * Usage is not persisted and resets when Obsidian is restarted.
+ */
+export const getAIUsage = (): AIUsageData => {
+  const textModels = { ..._textUsageStore };
+  const imageModels = { ..._imageUsageStore };
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+  let totalImageGenerations = 0;
+
+  for (const entry of Object.values(textModels)) {
+    totalInputTokens += entry.inputTokens;
+    totalOutputTokens += entry.outputTokens;
+  }
+  for (const entry of Object.values(imageModels)) {
+    totalImageGenerations += entry.generations;
+  }
+
+  return {
+    textModels,
+    imageModels,
+    totalInputTokens,
+    totalOutputTokens,
+    totalImageGenerations,
+  };
+};
+
+/**
+ * Resets the session-scoped AI usage meter. Primarily for testing and tooling.
+ */
+export const resetAIUsage = (): void => {
+  for (const key of Object.keys(_textUsageStore)) {
+    delete _textUsageStore[key];
+  }
+  for (const key of Object.keys(_imageUsageStore)) {
+    delete _imageUsageStore[key];
+  }
+};
+
+/**
+ * Formats total session token usage as a compact label suitable for buttons.
+ * Format: "AI Usage: 355k/23k" (input tokens / output tokens).
+ * Image generations are appended when present, e.g. "+ 3 imgs".
+ */
+export const formatAIUsageLabel = (usage?: AIUsageData): string => {
+  const data = usage ?? getAIUsage();
+  const fmt = (n: number): string => {
+    if (n === 0) {
+      return "0";
+    }
+    if (n >= 1_000_000) {
+      return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+    }
+    if (n >= 1_000) {
+      return `${Math.round(n / 1000)}k`;
+    }
+    return String(n);
+  };
+  const tokenPart = `${fmt(data.totalInputTokens)}/${fmt(data.totalOutputTokens)}`;
+  const imgPart =
+    data.totalImageGenerations > 0
+      ? ` + ${data.totalImageGenerations} img${data.totalImageGenerations !== 1 ? "s" : ""}`
+      : "";
+  return `AI Usage: ${tokenPart}${imgPart}`;
+};
+
+// ---------------------------------------------------------------------------
 
 const stringifyDebugValue = (value: unknown): string => {
   if (value === undefined) {
@@ -2296,6 +2407,18 @@ export const generateAIText = async (
     ]);
   }
 
+  // Record session-scoped token usage for metering.
+  if (response?.status < 400) {
+    const meteredModel =
+      (json?.model as string | undefined) || request.model || "unknown";
+    const inputTokens =
+      (json?.usage as Record<string, number> | undefined)?.prompt_tokens ?? 0;
+    const outputTokens =
+      (json?.usage as Record<string, number> | undefined)?.completion_tokens ??
+      0;
+    recordAITextUsage(meteredModel, inputTokens, outputTokens);
+  }
+
   return {
     response,
     json,
@@ -2423,6 +2546,9 @@ export const generateAIImage = async (
   request: AIRequest,
   options: GenerateAITextOptions = {},
 ): Promise<GenerateAIImageResult> => {
+  const plugin = getPlugin(options.plugin);
+  const config = resolveAIConfig(request, plugin);
+  const imageModelId = config?.image.model ?? request.model ?? "unknown";
   const response = await requestAI(
     {
       ...request,
@@ -2433,7 +2559,11 @@ export const generateAIImage = async (
     },
     options,
   );
-  return buildGenerateAIImageResult(response);
+  const result = buildGenerateAIImageResult(response);
+  if (result.images.length > 0) {
+    recordAIImageGenerationUsage(imageModelId, result.images.length);
+  }
+  return result;
 };
 
 export const transformAIImage = async (
@@ -2446,6 +2576,9 @@ export const transformAIImage = async (
     );
   }
 
+  const plugin = getPlugin(options.plugin);
+  const config = resolveAIConfig(request, plugin);
+  const imageModelId = config?.image.model ?? request.model ?? "unknown";
   const response = await requestAI(
     {
       ...request,
@@ -2457,7 +2590,11 @@ export const transformAIImage = async (
     },
     options,
   );
-  return buildGenerateAIImageResult(response);
+  const result = buildGenerateAIImageResult(response);
+  if (result.images.length > 0) {
+    recordAIImageGenerationUsage(imageModelId, result.images.length);
+  }
+  return result;
 };
 
 export const maskEditAIImage = async (
@@ -2475,6 +2612,9 @@ export const maskEditAIImage = async (
     );
   }
 
+  const plugin = getPlugin(options.plugin);
+  const config = resolveAIConfig(request, plugin);
+  const imageModelId = config?.image.model ?? request.model ?? "unknown";
   const response = await requestAI(
     {
       ...request,
@@ -2485,7 +2625,11 @@ export const maskEditAIImage = async (
     },
     options,
   );
-  return buildGenerateAIImageResult(response);
+  const result = buildGenerateAIImageResult(response);
+  if (result.images.length > 0) {
+    recordAIImageGenerationUsage(imageModelId, result.images.length);
+  }
+  return result;
 };
 
 export const createAIChatSession = (

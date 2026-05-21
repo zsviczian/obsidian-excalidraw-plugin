@@ -369,6 +369,27 @@ export default {
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_DESC:
     "AIRequest.maxTokens 的默认值。它限制模型返回的文本或多模态响应，不影响直接图像生成或图像编辑 endpoint。",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_PLACEHOLDER: "例如：4096",
+  // AI Usage Metering - AIUsageModal
+  AI_USAGE_MODAL_TITLE: "AI 用量（本次会话）",
+  AI_USAGE_MODAL_TEXT_MODELS_HEADING: "文本 / 多模态模型",
+  AI_USAGE_MODAL_IMAGE_MODELS_HEADING: "图像生成模型",
+  AI_USAGE_MODAL_TABLE_COL_MODEL: "模型",
+  AI_USAGE_MODAL_TABLE_COL_INPUT: "输入 Token",
+  AI_USAGE_MODAL_TABLE_COL_OUTPUT: "输出 Token",
+  AI_USAGE_MODAL_TABLE_COL_IMAGE_MODEL: "模型",
+  AI_USAGE_MODAL_TABLE_COL_GENERATIONS: "已生成图像数",
+  AI_USAGE_MODAL_TABLE_TOTAL: "合计",
+  AI_USAGE_MODAL_NO_USAGE: "本次会话尚未发起任何 AI 请求。",
+  AI_USAGE_MODAL_SESSION_NOTE:
+    "用量仅在当前 Obsidian 会话内累积，重启后将重置。",
+  AI_USAGE_MODAL_COPY_MARKDOWN: "复制为 Markdown",
+  AI_USAGE_MODAL_COPY_SUCCESS: "用量表已复制到剪贴板。",
+  AI_USAGE_MODAL_COPY_FAILURE: "复制到剪贴板失败。",
+  AI_USAGE_MODAL_TABLE_MARKDOWN_TITLE: "## AI 用量（本次会话）",
+  // AI Usage button - Settings
+  AI_USAGE_SETTINGS_BUTTON_NAME: "会话 Token 用量",
+  AI_USAGE_SETTINGS_BUTTON_DESC:
+    "按模型查看当前 Obsidian 会话的 AI Token 消耗情况。重启后用量将重置。",
   SAVING_HEAD: "保存",
   SAVING_DESC: "包括：压缩，自动保存的时间间隔，文件的命名格式和扩展名等。",
   COMPRESS_NAME: "压缩 Excalidraw JSON",

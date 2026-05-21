@@ -420,6 +420,28 @@ export default {
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_DESC:
     "Valor predeterminado para AIRequest.maxTokens. Limita las respuestas de texto o multimodales devueltas por el modelo. No afecta a los endpoints directos de generación o edición de imágenes.",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_PLACEHOLDER: "p. ej.: 4096",
+  // AI Usage Metering - AIUsageModal
+  AI_USAGE_MODAL_TITLE: "Uso de IA (esta sesión)",
+  AI_USAGE_MODAL_TEXT_MODELS_HEADING: "Modelos de texto / multimodal",
+  AI_USAGE_MODAL_IMAGE_MODELS_HEADING: "Modelos de generación de imágenes",
+  AI_USAGE_MODAL_TABLE_COL_MODEL: "Modelo",
+  AI_USAGE_MODAL_TABLE_COL_INPUT: "Tokens de entrada",
+  AI_USAGE_MODAL_TABLE_COL_OUTPUT: "Tokens de salida",
+  AI_USAGE_MODAL_TABLE_COL_IMAGE_MODEL: "Modelo",
+  AI_USAGE_MODAL_TABLE_COL_GENERATIONS: "Imágenes generadas",
+  AI_USAGE_MODAL_TABLE_TOTAL: "Total",
+  AI_USAGE_MODAL_NO_USAGE:
+    "No se han realizado solicitudes de IA en esta sesión.",
+  AI_USAGE_MODAL_SESSION_NOTE:
+    "El uso se acumula solo para la sesión actual de Obsidian y no se conserva entre reinicios.",
+  AI_USAGE_MODAL_COPY_MARKDOWN: "Copiar como Markdown",
+  AI_USAGE_MODAL_COPY_SUCCESS: "Tabla de uso copiada al portapapeles.",
+  AI_USAGE_MODAL_COPY_FAILURE: "Error al copiar al portapapeles.",
+  AI_USAGE_MODAL_TABLE_MARKDOWN_TITLE: "## Uso de IA (esta sesión)",
+  // AI Usage button - Settings
+  AI_USAGE_SETTINGS_BUTTON_NAME: "Uso de tokens en la sesión",
+  AI_USAGE_SETTINGS_BUTTON_DESC:
+    "Ver el consumo de tokens de IA en la sesión actual de Obsidian desglosado por modelo. El uso se reinicia al reiniciar.",
   SAVING_HEAD: "Guardar",
   SAVING_DESC:
     "En la sección 'Guardar' de la Configuración de Excalidraw, puedes configurar cómo se guardan tus bosquejos. Esto incluye opciones para comprimir el JSON de Excalidraw en Markdown, establecer intervalos de autoguardado para escritorio y móvil, definir formatos de nombre de archivo y elegir si usar la extensión de archivo .excalidraw.md o .md. ",

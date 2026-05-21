@@ -2894,8 +2894,19 @@ const openConfigModal = () => {
     updateTaskSpecificControls();
 
     const runContainer = leftCol.createDiv({ cls: "excali-ai-run-container" });
-    new ea.obsidian.Setting(runContainer)
-      .addButton(button => button.setButtonText(" Run").setIcon("play").setCta().onClick(() => {
+    const runSetting = new ea.obsidian.Setting(runContainer);
+    if(ea.verifyMinimumPluginVersion && ea.verifyMinimumPluginVersion("2.23.4")) {
+      runSetting.addButton(button => {
+        button
+          .setButtonText(ea.formatAIUsageLabel())
+          .setIcon("bar-chart-2")
+          .setTooltip("View AI token usage for this session")
+          .onClick(() => {
+            ea.showAIUsageModal();
+          });
+      });
+    }
+    runSetting.addButton(button => button.setButtonText(" Run").setIcon("play").setCta().onClick(() => {
         const taskConfig = getActiveTaskConfig();
         if(!taskConfig) {
           new Notice("No runnable AI task is selected.", 8000);

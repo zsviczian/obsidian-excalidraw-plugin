@@ -455,6 +455,27 @@ export default {
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_DESC:
     "Default value for AIRequest.maxTokens. This limits text or multimodal responses returned by the model. It does not affect direct image generation or image edit endpoints.",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_PLACEHOLDER: "e.g.: 4096",
+  // AI Usage Metering - AIUsageModal
+  AI_USAGE_MODAL_TITLE: "AI Usage (this session)",
+  AI_USAGE_MODAL_TEXT_MODELS_HEADING: "Text / multimodal models",
+  AI_USAGE_MODAL_IMAGE_MODELS_HEADING: "Image generation models",
+  AI_USAGE_MODAL_TABLE_COL_MODEL: "Model",
+  AI_USAGE_MODAL_TABLE_COL_INPUT: "Input tokens",
+  AI_USAGE_MODAL_TABLE_COL_OUTPUT: "Output tokens",
+  AI_USAGE_MODAL_TABLE_COL_IMAGE_MODEL: "Model",
+  AI_USAGE_MODAL_TABLE_COL_GENERATIONS: "Images generated",
+  AI_USAGE_MODAL_TABLE_TOTAL: "Total",
+  AI_USAGE_MODAL_NO_USAGE: "No AI requests have been made this session.",
+  AI_USAGE_MODAL_SESSION_NOTE:
+    "Usage is accumulated for the current Obsidian session only and is not persisted between restarts.",
+  AI_USAGE_MODAL_COPY_MARKDOWN: "Copy as Markdown",
+  AI_USAGE_MODAL_COPY_SUCCESS: "Usage table copied to clipboard.",
+  AI_USAGE_MODAL_COPY_FAILURE: "Failed to copy to clipboard.",
+  AI_USAGE_MODAL_TABLE_MARKDOWN_TITLE: "## AI Usage (this session)",
+  // AI Usage button - Settings
+  AI_USAGE_SETTINGS_BUTTON_NAME: "Session token usage",
+  AI_USAGE_SETTINGS_BUTTON_DESC:
+    "View AI token consumption for the current Obsidian session broken down by model. Usage resets on restart.",
   SAVING_HEAD: "Saving",
   SAVING_DESC:
     "In the 'Saving' section of Excalidraw Settings, you can configure how your drawings are saved. This includes options for compressing Excalidraw JSON in Markdown, setting autosave intervals for both desktop and mobile, defining filename formats, and choosing whether to use the .excalidraw.md or .md file extension. ",

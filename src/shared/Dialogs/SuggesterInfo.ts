@@ -1173,6 +1173,33 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "getAIUsage",
+    code: "getAIUsage(): AIUsageData",
+    desc:
+      "Returns accumulated AI token usage for the current Obsidian session, keyed by model identifier.<br>" +
+      "<code>AIUsageData</code> contains <code>textModels</code> (inputTokens, outputTokens per model), " +
+      "<code>imageModels</code> (generations per model), and session totals.<br>" +
+      "Usage is not persisted and resets when Obsidian is restarted.",
+    after: "",
+  },
+  {
+    field: "showAIUsageModal",
+    code: "showAIUsageModal(): void",
+    desc:
+      "Opens a modal dialog showing per-model AI token usage for the current session.<br>" +
+      "The dialog includes a 'Copy as Markdown' button so the table can be pasted elsewhere.",
+    after: "",
+  },
+  {
+    field: "formatAIUsageLabel",
+    code: "formatAIUsageLabel(): string",
+    desc:
+      "Returns a compact label string summarising total session token usage.<br>" +
+      'Format: <code>"AI Usage: 355k/23k"</code> (input tokens / output tokens).<br>' +
+      'Appends image generation count when present, e.g. <code>"AI Usage: 355k/23k + 3 imgs"</code>.',
+    after: "",
+  },
+  {
     field: "extractCodeBlocks",
     code: "extractCodeBlocks(markdown: string): { data: string, type: string }[]",
     desc: "Grabs the codeblock content from the supplied markdown string. Returns an array of dictionaries with the codeblock content and type",

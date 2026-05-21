@@ -65,6 +65,8 @@ import {
 } from "src/types/AIUtilTypes";
 import { AIProviderProfileModal } from "src/shared/Dialogs/AIProviderProfileModal";
 import { AIModelConfigModal } from "src/shared/Dialogs/AIModelConfigModal";
+import { AIUsageModal } from "src/shared/Dialogs/AIUsageModal";
+import { getAIUsage, formatAIUsageLabel } from "src/utils/AIUtils";
 import { decryptProviderProfiles } from "src/utils/settingsKeyObfuscation";
 import { getGeminiSupportedSizes } from "src/utils/geminiImageModelUtils";
 import { URLs } from "src/constants/safeUrls";
@@ -1853,6 +1855,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
+
+    new Setting(detailsEl)
+      .setName(t("AI_USAGE_SETTINGS_BUTTON_NAME"))
+      .setDesc(t("AI_USAGE_SETTINGS_BUTTON_DESC"))
+      .addButton((button) => {
+        const updateLabel = () => {
+          button.setButtonText(formatAIUsageLabel());
+        };
+        updateLabel();
+        button.onClick(() => {
+          updateLabel();
+          new AIUsageModal(this.app, getAIUsage()).open();
+        });
+      });
 
     new Setting(detailsEl)
       .setName(t("AI_VERBOSE_LOGGING_NAME"))

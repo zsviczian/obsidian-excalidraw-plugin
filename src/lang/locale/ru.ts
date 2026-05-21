@@ -370,6 +370,28 @@ export default {
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_DESC:
     "Значение по умолчанию для AIRequest.maxTokens. Ограничивает текстовые и мультимодальные ответы модели. Не влияет на прямые endpoint'ы генерации и редактирования изображений.",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_PLACEHOLDER: "например: 4096",
+  // AI Usage Metering - AIUsageModal
+  AI_USAGE_MODAL_TITLE: "Использование ИИ (текущая сессия)",
+  AI_USAGE_MODAL_TEXT_MODELS_HEADING: "Текстовые / мультимодальные модели",
+  AI_USAGE_MODAL_IMAGE_MODELS_HEADING: "Модели генерации изображений",
+  AI_USAGE_MODAL_TABLE_COL_MODEL: "Модель",
+  AI_USAGE_MODAL_TABLE_COL_INPUT: "Входящие токены",
+  AI_USAGE_MODAL_TABLE_COL_OUTPUT: "Исходящие токены",
+  AI_USAGE_MODAL_TABLE_COL_IMAGE_MODEL: "Модель",
+  AI_USAGE_MODAL_TABLE_COL_GENERATIONS: "Сгенерировано изображений",
+  AI_USAGE_MODAL_TABLE_TOTAL: "Итого",
+  AI_USAGE_MODAL_NO_USAGE: "В этой сессии запросы к ИИ не выполнялись.",
+  AI_USAGE_MODAL_SESSION_NOTE:
+    "Статистика накапливается только для текущей сессии Obsidian и не сохраняется между перезапусками.",
+  AI_USAGE_MODAL_COPY_MARKDOWN: "Копировать как Markdown",
+  AI_USAGE_MODAL_COPY_SUCCESS:
+    "Таблица использования скопирована в буфер обмена.",
+  AI_USAGE_MODAL_COPY_FAILURE: "Не удалось скопировать в буфер обмена.",
+  AI_USAGE_MODAL_TABLE_MARKDOWN_TITLE: "## Использование ИИ (текущая сессия)",
+  // AI Usage button - Settings
+  AI_USAGE_SETTINGS_BUTTON_NAME: "Использование токенов в сессии",
+  AI_USAGE_SETTINGS_BUTTON_DESC:
+    "Просмотр потребления токенов ИИ в текущей сессии Obsidian с разбивкой по моделям. Данные сбрасываются при перезапуске.",
   SAVING_HEAD: "Сохранение",
   SAVING_DESC:
     "В разделе 'Сохранение' раздела Настройки Excalidraw вы можете настроить способ сохранения ваших чертежей. Сюда входят опции сжатия Excalidraw JSON в Markdown, установки интервалов автосохранения для настольных и мобильных компьютеров, определения форматов имен файлов, а также выбора расширения файла .excalidraw.md или .md. ",

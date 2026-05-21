@@ -130,7 +130,10 @@ import {
   maskEditAIImage as _maskEditAIImage,
   createAIChatSession as _createAIChatSession,
   extractCodeBlocks as _extractCodeBlocks,
+  getAIUsage as _getAIUsage,
+  formatAIUsageLabel as _formatAIUsageLabel,
 } from "../utils/AIUtils";
+import { AIUsageModal } from "./Dialogs/AIUsageModal";
 import {
   EXCALIDRAW_AUTOMATE_INFO,
   EXCALIDRAW_SCRIPTENGINE_INFO,
@@ -511,6 +514,37 @@ export class ExcalidrawAutomate {
    */
   public createAIChatSession(initialRequest: Omit<AIRequest, "messages"> = {}) {
     return _createAIChatSession(initialRequest, { plugin: this.plugin });
+  }
+
+  /**
+   * Returns the accumulated AI token usage for the current Obsidian session.
+   * Usage is keyed by model identifier and tracks input/output tokens for text
+   * models and generation counts for image models.
+   * Data is not persisted and resets when Obsidian is restarted.
+   */
+  public getAIUsage() {
+    return _getAIUsage();
+  }
+
+  /**
+   * Opens a modal dialog showing per-model AI token usage for the current session.
+   * The dialog includes a "Copy as Markdown" button so the table can be pasted elsewhere.
+   */
+  public showAIUsageModal() {
+    if (!this.plugin?.app) {
+      return;
+    }
+    const usage = _getAIUsage();
+    new AIUsageModal(this.plugin.app, usage).open();
+  }
+
+  /**
+   * Returns a compact label string summarising total session token usage.
+   * Format: "AI Usage: 355k/23k" (input tokens / output tokens).
+   * Appends image generation count when present, e.g. "+ 3 imgs".
+   */
+  public formatAIUsageLabel() {
+    return _formatAIUsageLabel();
   }
 
   /**
