@@ -158,7 +158,7 @@ export interface ExcalidrawSettings {
   pageTransclusionCharLimit: number;
   wordWrappingDefault: number;
   removeTransclusionQuoteSigns: boolean;
-  iframelyAllowed: boolean;
+  oEmbedAllowed: boolean;
   pngExportScale: number;
   exportWithTheme: boolean;
   exportWithBackground: boolean;
@@ -637,7 +637,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   pageTransclusionCharLimit: 200,
   wordWrappingDefault: 0,
   removeTransclusionQuoteSigns: true,
-  iframelyAllowed: false,
+  oEmbedAllowed: false,
   pngExportScale: 1,
   exportWithTheme: true,
   exportWithBackground: true,
@@ -3325,9 +3325,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("GET_URL_TITLE_DESC")))
       .addToggle((toggle) =>
         toggle
-          .setValue(this.plugin.settings.iframelyAllowed)
+          .setValue(this.plugin.settings.oEmbedAllowed)
           .onChange(async (value) => {
-            this.plugin.settings.iframelyAllowed = value;
+            this.plugin.settings.oEmbedAllowed = value;
             this.applySettingsUpdate();
           }),
       );

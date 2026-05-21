@@ -701,11 +701,11 @@ export default {
   QUOTE_TRANSCLUSION_REMOVE_DESC:
     "不顯示 MD-Transclusion 中每一行行首的 > 符號，以提高純文字 MD-Transclusion 的可讀性。<br>" +
     "<b>開啟：</b>隱藏 > 符號。<b>關閉：</b>不隱藏 > 符號。<br>注意，由於 Obsidian API 的原因，首行行首的 > 符號不會被隱藏。",
-  GET_URL_TITLE_NAME: "使用 iframly 獲取頁面標題",
+  GET_URL_TITLE_NAME: "使用 oEmbed 獲取頁面標題",
   GET_URL_TITLE_DESC:
     "拖動連結到 Excalidraw 時，使用 <code>http" +
-    "s://iframely.server" +
-    ".crestify.com/iframely?url=</code> 來獲取頁面的標題。",
+    "s://noembed" +
+    ".com/embed?url=</code> 來獲取 HTTPS 頁面標題。",
   PDF_TO_IMAGE: "以影像形式嵌入到繪圖中的 PDF",
   PDF_TO_IMAGE_SCALE_NAME: "解析度",
   PDF_TO_IMAGE_SCALE_DESC:

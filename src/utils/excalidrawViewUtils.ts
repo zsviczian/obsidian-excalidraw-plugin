@@ -12,7 +12,7 @@ import {
   EXCALIDRAW_PLUGIN,
   PLUGIN_ID,
 } from "src/constants/constants";
-import { App, Modal, Notice, TFile } from "obsidian";
+import { App, Modal, Notice, TFile, request, requestUrl } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import {
   REGEX_LINK,
@@ -25,6 +25,7 @@ import {
   ExcalidrawElement,
   ExcalidrawFrameElement,
   ExcalidrawImageElement,
+  ExcalidrawTextElement,
   NonDeletedExcalidrawElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import {
@@ -43,6 +44,7 @@ import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { EmbeddedFile } from "src/shared/EmbeddedFileLoader";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { setSanitizedHtml } from "./htmlUtils";
+import { URLs } from "src/constants/safeUrls";
 
 type CommandLinkOptInPlugin = {
   settings: {
@@ -240,6 +242,85 @@ export async function insertEmbeddableToView(
     await ea.addElementsToView(false, true, true);
   }
   return id;
+}
+
+export async function addTextWithOEmbed(
+  view: ExcalidrawView,
+  text: string,
+): Promise<void> {
+  const id = await view.addText(text);
+  const oEmbedURL = `${URLs.NOEMBED_COM_EMBED_URL}${encodeURIComponent(text)}`;
+
+  const resolveTitleFromOEmbed = async (): Promise<string | null> => {
+    try {
+      const data = JSON.parse(await request({ url: oEmbedURL })) as {
+        title?: string;
+        error?: string;
+      };
+      const title = data?.title?.trim();
+      return title && !data.error ? title : null;
+    } catch (_) {
+      return null;
+    }
+  };
+
+  const resolveTitleFromPage = async (): Promise<string | null> => {
+    try {
+      const response = await requestUrl({
+        url: text,
+        method: "GET",
+        throw: false,
+      });
+      const html = response?.text;
+      if (!html) {
+        return null;
+      }
+
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const titleCandidates = [
+        doc.querySelector('meta[property="og:title"]')?.getAttribute("content"),
+        doc
+          .querySelector('meta[name="twitter:title"]')
+          ?.getAttribute("content"),
+        doc.querySelector("title")?.textContent,
+      ];
+
+      const title = titleCandidates.find(
+        (candidate) => candidate && candidate.trim().length > 0,
+      );
+      return title?.trim() ?? null;
+    } catch (_) {
+      return null;
+    }
+  };
+
+  try {
+    const title =
+      (await resolveTitleFromOEmbed()) ?? (await resolveTitleFromPage());
+    if (!title) {
+      return;
+    }
+
+    const ea = getEA(view);
+    try {
+      const el = ea
+        .getViewElements()
+        .filter((el) => el.type === "text" && el.id === id);
+      if (el.length === 1) {
+        ea.copyViewElementsToEAforEditing(el);
+        const textElement = ea.getElement(
+          el[0].id,
+        ) as Mutable<ExcalidrawTextElement>;
+        textElement.text =
+          textElement.originalText =
+          textElement.rawText =
+            `[${title}](${text})`;
+        await ea.addElementsToView(false, false, false);
+      }
+    } finally {
+      ea.destroy();
+    }
+  } catch (_) {}
 }
 
 export function getLinkTextFromLink(text: string): string {

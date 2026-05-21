@@ -310,10 +310,10 @@ export class DropManager {
         }
         if (text && externalDragAction === "link") {
           if (
-            this.plugin.settings.iframelyAllowed &&
-            text.match(/^https?:\/\/\S*$/)
+            this.plugin.settings.oEmbedAllowed &&
+            text.match(/^https:\/\/\S*$/)
           ) {
-            void this.view.addTextWithIframely(text);
+            void this.view.addTextWithOEmbed(text);
             return false;
           }
           void this.view.addText(text);
@@ -344,10 +344,10 @@ export class DropManager {
         }
         if (src && externalDragAction === "link") {
           if (
-            this.plugin.settings.iframelyAllowed &&
-            src[1].match(/^https?:\/\/\S*$/)
+            this.plugin.settings.oEmbedAllowed &&
+            src[1].match(/^https:\/\/\S*$/)
           ) {
-            void this.view.addTextWithIframely(src[1]);
+            void this.view.addTextWithOEmbed(src[1]);
             return false;
           }
           void this.view.addText(src[1]);
@@ -627,10 +627,10 @@ export class DropManager {
           return false;
         }
         if (
-          this.plugin.settings.iframelyAllowed &&
-          text.match(/^https?:\/\/\S*$/)
+          this.plugin.settings.oEmbedAllowed &&
+          text.match(/^https:\/\/\S*$/)
         ) {
-          void this.view.addTextWithIframely(text);
+          void this.view.addTextWithOEmbed(text);
           return false;
         }
         //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/599

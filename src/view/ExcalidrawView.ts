@@ -8,7 +8,6 @@ import {
   Menu,
   MarkdownView,
   ViewStateResult,
-  request,
   requireApiVersion,
   HoverParent,
   HoverPopover,
@@ -187,6 +186,7 @@ import { setDynamicStyle } from "../utils/dynamicStyling";
 import { CustomEmbeddable, renderWebView } from "./components/CustomEmbeddable";
 import {
   addBackOfTheNoteCard,
+  addTextWithOEmbed,
   deleteAppStateKeys,
   getExcalidrawFileForwardLinks,
   getFrameBasedOnFrameNameOrId,
@@ -4273,31 +4273,8 @@ export default class ExcalidrawView
     ea.destroy();
   }
 
-  async addTextWithIframely(text: string) {
-    const id = await this.addText(text);
-    const url = `${URLs.IFRAMELY_SERVER_CRESTIFY_COM_IFRAMELY}${text}`;
-    try {
-      const data = JSON.parse(await request({ url }));
-      if (!data || data.error || !data.meta?.title) {
-        return;
-      }
-      const ea = getEA(this);
-      const el = ea
-        .getViewElements()
-        .filter((el) => el.type === "text" && el.id === id);
-      if (el.length === 1) {
-        ea.copyViewElementsToEAforEditing(el);
-        const textElement = ea.getElement(
-          el[0].id,
-        ) as Mutable<ExcalidrawTextElement>;
-        textElement.text =
-          textElement.originalText =
-          textElement.rawText =
-            `[${data.meta.title}](${text})`;
-        await ea.addElementsToView(false, false, false);
-        ea.destroy();
-      }
-    } catch (_) {}
+  async addTextWithOEmbed(text: string) {
+    await addTextWithOEmbed(this, text);
   }
 
   onPaneMenu(menu: Menu, source: string): void {

@@ -1909,6 +1909,19 @@ export default class ExcalidrawPlugin extends Plugin {
     const persistedSettings = stripLegacyAISettings(migratedSettings);
     const decryptedSettings = decryptPersistedAPIKeys(persistedSettings);
     this.settings = Object.assign({}, DEFAULT_SETTINGS, decryptedSettings);
+    let didSettingsMigration = false;
+    const settingsRecord = this.settings as unknown as Record<string, unknown>;
+    if (
+      typeof settingsRecord.iframelyAllowed === "boolean" &&
+      typeof this.settings.oEmbedAllowed !== "boolean"
+    ) {
+      this.settings.oEmbedAllowed = settingsRecord.iframelyAllowed;
+      didSettingsMigration = true;
+    }
+    if ("iframelyAllowed" in settingsRecord) {
+      delete settingsRecord.iframelyAllowed;
+      didSettingsMigration = true;
+    }
     if (!this.settings.previewImageType) {
       //migration 1.9.13
       if (typeof this.settings.displaySVGInPreview === "undefined") {
@@ -1925,7 +1938,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const shouldPersistEncryptedSettings =
       JSON.stringify(encryptedPersistedSettings) !==
       JSON.stringify(persistedSettings);
-    if (didMigrate || shouldPersistEncryptedSettings) {
+    if (didMigrate || didSettingsMigration || shouldPersistEncryptedSettings) {
       await this.saveData(encryptedPersistedSettings);
     }
     if (opts.reEnableAutosave) {

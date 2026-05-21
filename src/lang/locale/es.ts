@@ -762,11 +762,11 @@ export default {
   QUOTE_TRANSCLUSION_REMOVE_DESC:
     "Elimina el '> ' inicial de cada línea de la transclusión. Esto mejorará la legibilidad de las citas en transclusiones de solo texto.<br>" +
     "<b><u>Activado:</u></b> Elimina el '> ' inicial<br><b><u>Desactivado:</u></b> No elimina el '> ' inicial (tenga en cuenta que se seguirá eliminando de la primera línea debido a la funcionalidad de la API de Obsidian).",
-  GET_URL_TITLE_NAME: "Usar iframely para resolver el título de la página",
+  GET_URL_TITLE_NAME: "Usar oEmbed para resolver el título de la página",
   GET_URL_TITLE_DESC:
     "Usa <code>http" +
-    "s://iframely.server" +
-    ".crestify.com/iframely?url=</code> para obtener el título de la página al soltar un enlace en Excalidraw.",
+    "s://noembed" +
+    ".com/embed?url=</code> para obtener el título de la página al soltar un enlace HTTPS en Excalidraw.",
   PDF_TO_IMAGE: "PDF a Image",
   PDF_TO_IMAGE_SCALE_NAME: "Escala de conversión de PDF a imagen",
   PDF_TO_IMAGE_SCALE_DESC:

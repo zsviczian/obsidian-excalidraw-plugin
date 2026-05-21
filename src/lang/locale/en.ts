@@ -799,11 +799,11 @@ export default {
   QUOTE_TRANSCLUSION_REMOVE_DESC:
     "Remove the leading '> ' from each line of the transclusion. This will improve readability of quotes in text only transclusions<br>" +
     "<b><u>Toggle ON:</u></b> Remove leading '> '<br><b><u>Toggle OFF:</u></b> Do not remove leading '> ' (note it will still be removed from the first row due to Obsidian API functionality)",
-  GET_URL_TITLE_NAME: "Use iframely to resolve page title",
+  GET_URL_TITLE_NAME: "Use oEmbed to resolve page title",
   GET_URL_TITLE_DESC:
     "Use the <code>http" +
-    "s://iframely.server" +
-    ".crestify.com/iframely?url=</code> to get title of page when dropping a link into Excalidraw",
+    "s://noembed" +
+    ".com/embed?url=</code> to get title of page when dropping an HTTPS link into Excalidraw",
   PDF_TO_IMAGE: "PDF to Image",
   PDF_TO_IMAGE_SCALE_NAME: "PDF to Image conversion scale",
   PDF_TO_IMAGE_SCALE_DESC:

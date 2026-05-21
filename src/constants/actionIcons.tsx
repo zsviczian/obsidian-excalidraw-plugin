@@ -13,7 +13,8 @@ const BLOCKED_SVG_TAGS = new Set([
 ]);
 
 const UNSAFE_PROTOCOL = /^\s*(?:javascript|vbscript):/i;
-const UNSAFE_STYLE_URL = /url\(\s*['"]?\s*(?:javascript|vbscript|data:text\/html)/i;
+const UNSAFE_STYLE_URL =
+  /url\(\s*['"]?\s*(?:javascript|vbscript|data:text\/html)/i;
 
 const isUnsafeAttribute = (name: string, value: string): boolean => {
   const loweredName = name.toLowerCase();
@@ -117,9 +118,7 @@ const cssTextToReactStyle = (
       style[toReactAttributeName(key)] = value;
     });
 
-  return Object.keys(style).length
-    ? (style as React.CSSProperties)
-    : undefined;
+  return Object.keys(style).length ? (style as React.CSSProperties) : undefined;
 };
 
 const domNodeToReact = (
