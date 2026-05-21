@@ -1349,6 +1349,7 @@ const normalizeOpenAIImageResponse = (json: Record<string, any>) => {
   }
   const data = Array.isArray(json.data)
     ? json.data.filter(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- image provider payload schemas vary and are normalized in this function.
         (item: Record<string, any>) => item?.url || item?.b64_json,
       )
     : [];
@@ -1410,7 +1411,7 @@ const normalizeXAIImageResponse = (json: Record<string, any>) => {
     : Array.isArray(json.images)
       ? json.images
       : [];
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- image provider payload schemas vary and are normalized in this function.
   const normalizedData = rawItems.flatMap((item: Record<string, any>) => {
     if (!item) {
       return [];
@@ -1590,7 +1591,7 @@ const postJSON = async (
           message: getErrorMessageFromResponse({
             ...result,
             json: normalizedJson,
-          } as RequestUrlResponse),
+          }),
           provider,
           endpoint: url,
           status: result.status,

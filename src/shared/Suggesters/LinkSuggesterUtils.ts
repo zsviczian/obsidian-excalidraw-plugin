@@ -10,6 +10,9 @@ import {
 } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
 
+const isNonNull = <T>(value: T | null | undefined): value is T =>
+  value != null;
+
 /**
  * Returns Obsidian link suggestions (files, aliases, unresolved) filtered for invalid characters.
  */
@@ -75,20 +78,21 @@ export const getSortedLinkMatches = (
 
       if (matchAliasOnly && (!best || matchAliasOnly.score > best.score)) {
         const aliasOffset = item.path.length + 1; // position where alias starts in "path|alias"
-        const shiftedMatches = matchAliasOnly.matches.map(([from, to]) => [
-          from + aliasOffset,
-          to + aliasOffset,
-        ]) as [number, number][];
+        const shiftedMatches = matchAliasOnly.matches.map(
+          ([from, to]): [number, number] => [
+            from + aliasOffset,
+            to + aliasOffset,
+          ],
+        );
         best = {
           ...matchAliasOnly,
           matches: shiftedMatches,
-        } as typeof matchAliasOnly;
+        };
       }
 
       return best ? { item, match: best } : null;
     })
-    .filter(Boolean) as FuzzyMatch<LinkSuggestion>[];
-
+    .filter(isNonNull);
   const now = Date.now();
   const weekMs = 7 * 24 * 60 * 60 * 1000;
   const isRecent = (s: LinkSuggestion) =>
@@ -157,7 +161,7 @@ export const fuzzyMatchTextItems = <T>(
       const match = search(getText(item));
       return match ? { item, match } : null;
     })
-    .filter(Boolean) as FuzzyMatch<T>[];
+    .filter(isNonNull);
 };
 
 export const fuzzyMatchParagraphsWithId = <
@@ -183,12 +187,10 @@ export const fuzzyMatchParagraphsWithId = <
           match.score = match.score + 1000; // strong priority if id contains term
         }
       }
-      return { item, match } as FuzzyMatch<T>;
+      return { item, match };
     })
-    .filter(Boolean)
-    .sort(
-      (a, b) => (b.match?.score ?? 0) - (a.match?.score ?? 0),
-    ) as FuzzyMatch<T>[];
+    .filter(isNonNull)
+    .sort((a, b) => (b.match?.score ?? 0) - (a.match?.score ?? 0));
 };
 
 export const renderHeadingSuggestionRow = (

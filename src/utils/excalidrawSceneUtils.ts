@@ -11,14 +11,17 @@ export function updateElementIdsInScene(
   newID: string,
 ) {
   if (elementToChange.type === "text") {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- text branch needs mutable text-specific fields.
     const textElement = elementToChange as Mutable<ExcalidrawTextElement>;
     if (textElement.containerId) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- scene lookup returns union; mutation path requires mutable element.
       const containerEl = sceneElements.find(
         (el) => el.id === textElement.containerId,
       ) as unknown as Mutable<ExcalidrawElement>;
       containerEl.boundElements
         ?.filter((x) => x.id === textElement.id)
         .forEach((x) => {
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- bound element ids are writable in this migration update path.
           (x.id as Mutable<string>) = newID;
         });
     }
@@ -26,6 +29,7 @@ export function updateElementIdsInScene(
 
   if (elementToChange.boundElements?.length > 0) {
     elementToChange.boundElements.forEach((binding) => {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- scene lookup returns union; mutation path requires mutable element.
       const boundEl = sceneElements.find(
         (el) => el.id === binding.id,
       ) as unknown as Mutable<ExcalidrawElement>;
@@ -35,6 +39,7 @@ export function updateElementIdsInScene(
       boundEl.boundElements
         ?.filter((x) => x.id === elementToChange.id)
         .forEach((x) => {
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- bound element ids are writable in this migration update path.
           (x.id as Mutable<string>) = newID;
         });
       if (boundEl.type === "text") {
@@ -56,6 +61,7 @@ export function updateElementIdsInScene(
     sceneElements
       .filter((el) => el.frameId === elementToChange.id)
       .forEach((x) => {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- frame links must be rewritten during id update.
         (x.frameId as Mutable<string>) = newID;
       });
   }

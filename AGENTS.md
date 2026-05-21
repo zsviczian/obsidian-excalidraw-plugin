@@ -508,6 +508,55 @@ When replacing `any`:
 5. **Build passes**: `npm run build` must succeed. Type changes can affect bundle outcome if they affect build-time inference.
 6. **Lint cleanliness**: The changed file should not gain new lint violations. Use `npm run code -- src/path/to/file.ts` to check the specific file.
 
+### Justified ESLint Suppressions
+
+In some cases, `@typescript-eslint/no-explicit-any` or `@typescript-eslint/no-unnecessary-type-assertion` warnings are justified and reflect legitimate constraints rather than type-safety failures. When suppressing these rules, follow strict guidelines:
+
+#### When Suppressions Are Justified
+
+- **Provider-specific dynamic payloads**: AI providers, image APIs, and other external services return schemas that vary by provider. Normalizing these requires accepting `any` properties or using type assertions on the `item` parameter to access provider-specific fields.
+  - Example: `(item: Record<string, any>) => item.image?.url || item.image?.b64_json` normalizes images from different providers into a common schema.
+  
+- **Mutation-path type casts**: When updating scene elements or bound references, Excalidraw type definitions may return readonly or union types, but the mutation path requires the mutable variant. The assertion is necessary and doesn't bypass a real type mismatch.
+  - Example: `sceneElements.find(...) as unknown as Mutable<ExcalidrawElement>` during ID migration where the lookup guarantees the mutable variant exists.
+
+- **Legacy or compatibility code**: When bridging serialized data, migrations, or undocumented Obsidian APIs where the runtime shape is known but the type system cannot express it without inventing local stubs.
+
+#### How To Document Suppressions
+
+Always use `eslint-disable-next-line` (not file-wide disables) and include a comment explaining:
+
+1. **Which rule** is being suppressed and why
+2. **What constraint** makes the suppression necessary (provider variability, mutation path, etc.)
+3. **Why a stricter type is not feasible** without breaking functional equivalence
+
+**Format**:
+```typescript
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- <rule name>: <1-2 sentence explanation of the constraint>
+```
+
+**Examples**:
+
+```typescript
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- image provider payload schemas vary and are normalized in this function.
+const normalizedData = rawItems.flatMap((item: Record<string, any>) => {
+  // ... normalize item.url, item.b64_json, item.image.url, etc.
+});
+```
+
+```typescript
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- scene lookup returns union; mutation path requires mutable element.
+const containerEl = sceneElements.find(
+  (el) => el.id === textElement.containerId,
+) as unknown as Mutable<ExcalidrawElement>;
+```
+
+#### Suppressions To Avoid
+
+- **Lazy typing**: Do not suppress `no-explicit-any` to avoid refactoring a complex function. Fix the type instead.
+- **Overly broad assertions**: Do not use `as any` or `as unknown as any` to bypass unrelated type mismatches.
+- **Undocumented suppressions**: Every suppression must include a clear comment. Suppressions without explanation are a code review red flag.
+
 ### When To Create A New Type File
 
 - If a set of related types will be used across multiple modules and are not Obsidian or Excalidraw types, create a new file in `src/types/`.
