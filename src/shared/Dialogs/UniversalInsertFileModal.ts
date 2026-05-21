@@ -33,9 +33,9 @@ export class UniversalInsertFileModal extends Modal {
     const appState = view.excalidrawAPI.getAppState();
     const containerRect = view.containerEl.getBoundingClientRect();
     const viewportWidth =
-      window.innerWidth || document.documentElement.clientWidth;
+      window.innerWidth || activeDocument.documentElement.clientWidth;
     const viewportHeight =
-      window.innerHeight || document.documentElement.clientHeight;
+      window.innerHeight || activeDocument.documentElement.clientHeight;
 
     const curViewport = sceneCoordsToViewportCoords(
       {

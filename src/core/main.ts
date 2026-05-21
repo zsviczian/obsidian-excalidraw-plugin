@@ -39,6 +39,7 @@ import {
   CJK_STYLE_ID,
   loadMermaid,
   setRootElementSize,
+  mainDocument,
 } from "../constants/constants";
 import {
   ExcalidrawSettings,
@@ -661,10 +662,6 @@ export default class ExcalidrawPlugin extends Plugin {
     return window;
   }
 
-  get document(): Document {
-    return document;
-  }
-
   // by adding the wrapper like this, likely in debug mode I am leaking memory because my code removes
   // the original event handlers, not the wrapped ones. I will only uncomment this if I need to debug
   /*public registerEvent(event: EventRef) {
@@ -1110,7 +1107,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public async addFonts(
     declarations: string[],
-    ownerDocument: Document = document,
+    ownerDocument: Document = mainDocument,
     styleId: string = FONTS_STYLE_ID,
   ) {
     // replace the old local font <style> element with the one we just created
@@ -1141,7 +1138,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public updatePhoneFooterSafeAreaPadding() {
     const documents = new Set<Document>([
-      document,
+      mainDocument,
       ...this.getOpenObsidianDocuments(),
     ]);
     const shouldEnable =
@@ -1172,7 +1169,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   private removePhoneFooterSafeAreaPadding() {
     const documents = new Set<Document>([
-      document,
+      mainDocument,
       ...this.getOpenObsidianDocuments(),
     ]);
     documents.forEach((ownerDocument) => {
@@ -1189,7 +1186,7 @@ export default class ExcalidrawPlugin extends Plugin {
     const visitedDocs = new Set<Document>();
     this.app.workspace.iterateAllLeaves((leaf) => {
       const ownerDocument = DEVICE.isMobile
-        ? document
+        ? mainDocument
         : leaf.view.containerEl.ownerDocument;
       if (!ownerDocument) {
         return;
@@ -1477,7 +1474,7 @@ export default class ExcalidrawPlugin extends Plugin {
     if (!this.legacyExcalidrawPopoverObserver) {
       //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
       this.legacyExcalidrawPopoverObserver = legacyExcalidrawPopoverObserver;
-      this.legacyExcalidrawPopoverObserver.observe(document.body, {
+      this.legacyExcalidrawPopoverObserver.observe(mainDocument.body, {
         childList: true,
         subtree: false,
       });
@@ -1954,7 +1951,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.app.workspace.getLeavesOfType("markdown").forEach((leaf) => {
       //    this.app.workspace.iterateAllLeaves((leaf)=>{
       const ownerDocument = DEVICE.isMobile
-        ? document
+        ? mainDocument
         : leaf.view.containerEl.ownerDocument;
       if (!ownerDocument) {
         return;

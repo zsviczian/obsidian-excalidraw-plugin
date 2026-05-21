@@ -12,6 +12,7 @@ import {
 import {
   GITHUB_RELEASES,
   LOGO_EXCALIDRAW_MASTERY,
+  mainDocument,
   setRootElementSize,
 } from "src/constants/constants";
 import { t } from "src/lang/helpers";
@@ -1223,11 +1224,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   async hide() {
     this.detachSettingsFocusoutHandler();
     if (this.plugin.settings.overrideObsidianFontSize) {
-      document.documentElement.style.fontSize = "";
+      mainDocument.documentElement.style.fontSize = "";
       setRootElementSize(16);
-    } else if (!document.documentElement.style.fontSize) {
-      document.documentElement.style.fontSize = getComputedStyle(
-        document.body,
+    } else if (!mainDocument.documentElement.style.fontSize) {
+      mainDocument.documentElement.style.fontSize = getComputedStyle(
+        mainDocument.body,
       ).getPropertyValue("--font-text-size");
       setRootElementSize();
     }

@@ -15,6 +15,7 @@ import {
   THEME_FILTER,
   FRONTMATTER_KEYS,
   getCSSFontDefinition,
+  mainDocument,
 } from "../constants/constants";
 import { createSVG } from "src/utils/excalidrawAutomateUtils";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
@@ -1515,7 +1516,7 @@ export class EmbeddedFilesLoader {
     //get SVG size.
     //First I need to create a fully self contained copy of the document to convert
     //blank styles into inline styles using computedStyle
-    const iframeHost = document.body.createDiv();
+    const iframeHost = mainDocument.body.createDiv();
     iframeHost.style.display = "none";
     const iframe = iframeHost.createEl("iframe");
     const iframeDoc = iframe.contentWindow.document;
@@ -1545,7 +1546,7 @@ export class EmbeddedFilesLoader {
 
     const xmlINiframe = new XMLSerializer().serializeToString(stylingDIV);
     const xmlFooter = new XMLSerializer().serializeToString(footerDIV);
-    document.body.removeChild(iframeHost);
+    mainDocument.body.removeChild(iframeHost);
 
     //5.2
     //get SVG size
@@ -1557,14 +1558,14 @@ export class EmbeddedFilesLoader {
     const svgEl = doc.firstElementChild;
     const host = createDiv();
     host.appendChild(svgEl);
-    document.body.appendChild(host);
+    mainDocument.body.appendChild(host);
     const footerHeight = svgEl.querySelector(
       ".excalidraw-md-footer",
     ).scrollHeight;
     const height =
       svgEl.querySelector(".excalidraw-md-host").scrollHeight + footerHeight;
     const svgHeight = height <= linkParts.height ? height : linkParts.height;
-    document.body.removeChild(host);
+    mainDocument.body.removeChild(host);
 
     //finalize SVG
     svgStyle = ` width="${linkParts.width}px" height="${svgHeight}px"`;

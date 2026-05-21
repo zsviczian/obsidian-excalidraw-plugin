@@ -60,6 +60,7 @@ import {
   syncInvalidIndices,
   VIEW_TYPE_SIDEPANEL,
   sceneCoordsToViewportCoords,
+  mainDocument,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
@@ -518,14 +519,14 @@ export default class ExcalidrawView
       | undefined;
   }
   get ownerDocument(): Document {
-    return DEVICE.isMobile ? document : this.containerEl.ownerDocument;
+    return DEVICE.isMobile ? mainDocument : this.containerEl.ownerDocument;
   }
   get ownerWindow(): Window | null {
     return this.ownerDocument.defaultView;
   }
 
   get isInMainObsidianWorkspace(): boolean {
-    return document === this.ownerDocument;
+    return mainDocument === this.ownerDocument;
   }
 
   setHookServer(ea?: ExcalidrawAutomate) {
@@ -2226,7 +2227,7 @@ export default class ExcalidrawView
 
   onload() {
     if (this.plugin.settings.overrideObsidianFontSize) {
-      document.documentElement.style.fontSize = "";
+      mainDocument.documentElement.style.fontSize = "";
     }
 
     const apiMissing = Boolean(
@@ -2815,7 +2816,7 @@ export default class ExcalidrawView
     setMobileNavbarPosition(false);
     this.semaphores.viewunload = true;
     this.semaphores.popoutUnload =
-      this.ownerDocument !== document &&
+      this.ownerDocument !== mainDocument &&
       this.ownerDocument.body.querySelectorAll(".workspace-tab-header")
         .length === 0;
 
@@ -7503,7 +7504,7 @@ export default class ExcalidrawView
       if (this.toolsPanelRef && this.toolsPanelRef.current) {
         this.toolsPanelRef.current.updatePosition();
       }
-      if (this.ownerDocument !== document) {
+      if (this.ownerDocument !== mainDocument) {
         this.refreshCanvasOffset(); //because resizeobserver in Excalidraw does not seem to work when in Obsidian Window
       }
     } catch (err) {
@@ -7732,7 +7733,9 @@ export default class ExcalidrawView
     if (this.semaphores?.viewunload) {
       return;
     }
-    const modalContainer = document.body.querySelector("div.modal-container");
+    const modalContainer = mainDocument.body.querySelector(
+      "div.modal-container",
+    );
     if (modalContainer) {
       return;
     } //do not autozoom when the command palette or other modal container is envoked on iPad

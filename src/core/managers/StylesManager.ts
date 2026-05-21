@@ -2,6 +2,7 @@ import { WorkspaceWindow } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { getAllWindowDocuments } from "../../utils/obsidianUtils";
 import { setStyleText } from "src/utils/htmlUtils";
+import { mainDocument } from "src/constants/constants";
 
 export let REM_VALUE = 16;
 
@@ -75,10 +76,12 @@ export class StylesManager {
 
   private onWindowOpen(win: WorkspaceWindow) {
     this.stylesMap.set(win.doc, {
-      light: document.head.querySelector(
+      light: mainDocument.head.querySelector(
         `style[id="excalidraw-embedded-light"]`,
       ),
-      dark: document.head.querySelector(`style[id="excalidraw-embedded-dark"]`),
+      dark: mainDocument.head.querySelector(
+        `style[id="excalidraw-embedded-dark"]`,
+      ),
     });
     //this.copyPropertiesToTheme(win.doc);
   }
@@ -90,7 +93,7 @@ export class StylesManager {
   private async harvestStyles() {
     REM_VALUE = parseInt(
       window
-        .getComputedStyle(document.body)
+        .getComputedStyle(mainDocument.body)
         .getPropertyValue("--font-text-size")
         .trim(),
     );
@@ -98,8 +101,8 @@ export class StylesManager {
       REM_VALUE = 16;
     }
 
-    const body = document.body;
-    const iframe: HTMLIFrameElement = document.createElement("iframe");
+    const body = mainDocument.body;
+    const iframe: HTMLIFrameElement = mainDocument.createElement("iframe");
     iframe.hidden = true;
     body.appendChild(iframe);
 
@@ -110,7 +113,7 @@ export class StylesManager {
     const iframeDoc = iframe.contentWindow.document;
     const iframeWin = iframe.contentWindow;
     iframeDoc.open();
-    iframeDoc.write(`<head>${document.head.innerHTML}</head>`);
+    iframeDoc.write(`<head>${mainDocument.head.innerHTML}</head>`);
     iframeDoc.close();
 
     await iframeLoadedPromise;

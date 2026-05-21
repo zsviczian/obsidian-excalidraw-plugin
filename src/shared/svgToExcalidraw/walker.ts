@@ -25,7 +25,7 @@ import {
 import { getTransformMatrix, transformPoints } from "./transform";
 import { pointsOnPath } from "points-on-path";
 import { randomId, getWindingOrder } from "./utils";
-import { ROUNDNESS } from "../../constants/constants";
+import { mainDocument, ROUNDNESS } from "../../constants/constants";
 
 const SUPPORTED_TAGS = [
   "svg",
@@ -49,7 +49,7 @@ const nodeValidator = (node: Element): number => {
 };
 
 export function createTreeWalker(dom: Node): TreeWalker {
-  return document.createTreeWalker(dom, NodeFilter.SHOW_ALL, {
+  return mainDocument.createTreeWalker(dom, NodeFilter.SHOW_ALL, {
     acceptNode: nodeValidator,
   });
 }

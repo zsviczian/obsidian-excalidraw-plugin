@@ -1,5 +1,5 @@
 import { Notice } from "obsidian";
-import { DEVICE } from "src/constants/constants";
+import { DEVICE, mainDocument } from "src/constants/constants";
 import { getEA } from "src/core";
 import { t } from "src/lang/helpers";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
@@ -145,7 +145,7 @@ export async function captureScreenshot(
 
   try {
     const modalContainers =
-      document.querySelectorAll<HTMLElement>(".modal-container");
+      mainDocument.querySelectorAll<HTMLElement>(".modal-container");
     modalContainers.forEach((modalContainer) => {
       modalContainerOriginalDisplays.set(
         modalContainer,
@@ -248,7 +248,7 @@ export async function captureScreenshot(
     Object.assign(container.style, originalStyle);
 
     // Stitch tiles together using a browser canvas
-    const canvas = document.createElement("canvas");
+    const canvas = mainDocument.createElement("canvas");
     canvas.width = adjustedTotalWidth * devicePixelRatio;
     canvas.height = adjustedTotalHeight * devicePixelRatio;
     canvas.style.width = `${adjustedTotalWidth}px`;

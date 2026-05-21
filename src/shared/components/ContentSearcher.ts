@@ -1,6 +1,7 @@
 import { t } from "src/lang/helpers";
 import { escapeRegExp } from "../../utils/utils";
 import { htmlToMarkdown, Notice, setIcon } from "obsidian";
+import { mainDocument } from "src/constants/constants";
 
 export class ContentSearcher {
   private contentDiv: HTMLElement;
@@ -117,7 +118,7 @@ export class ContentSearcher {
       );
       const nodesToExport =
         startIndex > -1 ? childNodes.slice(startIndex) : childNodes;
-      const htmlContainer = document.createElement("div");
+      const htmlContainer = mainDocument.createElement("div");
 
       nodesToExport.forEach((node) => {
         htmlContainer.appendChild(node.cloneNode(true));
@@ -214,7 +215,7 @@ export class ContentSearcher {
    */
   public highlightSearchTerm(searchTerm: string): void {
     // Create a walker to traverse text nodes
-    const walker = document.createTreeWalker(
+    const walker = mainDocument.createTreeWalker(
       this.contentDiv,
       NodeFilter.SHOW_TEXT,
       {
@@ -233,7 +234,7 @@ export class ContentSearcher {
 
     nodesToReplace.forEach((node) => {
       const nodeContent = node.nodeValue;
-      const newNode = document.createDocumentFragment();
+      const newNode = mainDocument.createDocumentFragment();
 
       let lastIndex = 0;
       let match;
@@ -241,10 +242,10 @@ export class ContentSearcher {
 
       // Iterate over all matches in the text node
       while ((match = regex.exec(nodeContent)) !== null) {
-        const before = document.createTextNode(
+        const before = mainDocument.createTextNode(
           nodeContent.slice(lastIndex, match.index),
         );
-        const highlighted = document.createElement("mark");
+        const highlighted = mainDocument.createElement("mark");
         highlighted.className = "search-highlight";
         highlighted.textContent = match[0];
         highlighted.classList.add("search-result");
@@ -255,7 +256,7 @@ export class ContentSearcher {
         lastIndex = regex.lastIndex;
       }
       newNode.appendChild(
-        document.createTextNode(nodeContent.slice(lastIndex)),
+        mainDocument.createTextNode(nodeContent.slice(lastIndex)),
       );
       node.replaceWith(newNode);
     });
@@ -274,7 +275,7 @@ export class ContentSearcher {
       }
 
       parentsToNormalize.add(parent);
-      el.replaceWith(document.createTextNode(el.textContent ?? ""));
+      el.replaceWith(mainDocument.createTextNode(el.textContent ?? ""));
     });
 
     parentsToNormalize.forEach((parent) => parent.normalize());
@@ -378,7 +379,7 @@ export class ContentSearcher {
   private getScrollContainer(element: HTMLElement): HTMLElement | null {
     let parent = element.parentElement;
 
-    while (parent && parent !== document.body) {
+    while (parent && parent !== mainDocument.body) {
       const style = window.getComputedStyle(parent);
       const overflowY = style.overflowY;
       const isScrollable = ["auto", "scroll", "overlay"].includes(overflowY);
@@ -388,8 +389,8 @@ export class ContentSearcher {
       parent = parent.parentElement;
     }
 
-    return document.scrollingElement instanceof HTMLElement
-      ? document.scrollingElement
+    return mainDocument.scrollingElement instanceof HTMLElement
+      ? mainDocument.scrollingElement
       : null;
   }
 }

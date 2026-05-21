@@ -6,7 +6,11 @@ import {
   TFile,
   Vault,
 } from "obsidian";
-import { DEVICE, RERENDER_EVENT } from "../../constants/constants";
+import {
+  DEVICE,
+  mainDocument,
+  RERENDER_EVENT,
+} from "../../constants/constants";
 import { EmbeddedFilesLoader } from "../../shared/EmbeddedFileLoader";
 import { createPNG, createSVG } from "../../utils/excalidrawAutomateUtils";
 import ExcalidrawPlugin from "../main";
@@ -1122,7 +1126,7 @@ export const markdownPostProcessor = async (
 ) => {
   await plugin.awaitSettings();
   const isPrinting = Boolean(
-    document.body.querySelectorAll("body > .print").length > 0,
+    mainDocument.body.querySelectorAll("body > .print").length > 0,
   );
   //firstElementChild: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1956
   const isFrontmatter =

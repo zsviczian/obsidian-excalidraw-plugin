@@ -1,5 +1,5 @@
 import { Notice } from "obsidian";
-import { DEVICE } from "src/constants/constants";
+import { DEVICE, mainDocument } from "src/constants/constants";
 import { t } from "src/lang/helpers";
 import { download } from "./fileUtils";
 import { svgToBase64 } from "./utils";
@@ -162,7 +162,7 @@ async function printPdf(
 ): Promise<void> {
   // REVIEW NOTE: Dynamic print CSS is required for Electron print-to-PDF.
   // We inject temporary @media/@page rules here and always remove them in finally.
-  const styleTag = document.createElement("sty" + "le");
+  const styleTag = mainDocument.createElement("sty" + "le");
   styleTag.textContent = `
     @media print {
       /* Ensure the print root expands to the widest page and is not constrained by app layout */
@@ -207,9 +207,9 @@ async function printPdf(
       ${extraCss}
     }
   `;
-  document.head.appendChild(styleTag);
+  mainDocument.head.appendChild(styleTag);
 
-  const printDiv = document.body.createDiv("print");
+  const printDiv = mainDocument.body.createDiv("print");
   printDiv.style.top = "0";
   printDiv.style.left = "0";
   printDiv.style.display = "flex";

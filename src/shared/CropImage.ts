@@ -9,7 +9,7 @@ import { Notice } from "obsidian";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { cloneElement } from "src/utils/excalidrawViewHelpers";
-import { nanoid } from "src/constants/constants";
+import { mainDocument, nanoid } from "src/constants/constants";
 import { svgToBase64 } from "../utils/utils";
 import { ExportSettings } from "src/types/exportUtilTypes";
 
@@ -206,7 +206,7 @@ export class CropImage {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2026
       const svgData = svg.outerHTML;
       //const svgData = new XMLSerializer().serializeToString(svg);
-      const canvas = document.createElement("canvas");
+      const canvas = mainDocument.createElement("canvas");
       const context = canvas.getContext("2d");
 
       if (!context) {

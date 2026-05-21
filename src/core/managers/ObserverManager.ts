@@ -1,7 +1,7 @@
 import { DEBUGGING } from "src/utils/debugHelper";
 import ExcalidrawPlugin from "src/core/main";
 import { CustomMutationObserver } from "src/utils/debugHelper";
-import { DEVICE } from "src/constants/constants";
+import { DEVICE, mainDocument } from "src/constants/constants";
 import {
   getExcalidrawViews,
   isObsidianThemeDark,
@@ -88,7 +88,7 @@ export class ObserverManager {
         return;
       }
 
-      const bodyClassList = document.body.classList;
+      const bodyClassList = mainDocument.body.classList;
       const mutation = mutations[0];
       if (mutation?.oldValue === bodyClassList.value) {
         return;
@@ -115,7 +115,7 @@ export class ObserverManager {
       ? new CustomMutationObserver(themeObserverFn, "themeObserver")
       : new MutationObserver(themeObserverFn);
 
-    this.themeObserver.observe(document.body, {
+    this.themeObserver.observe(mainDocument.body, {
       attributeOldValue: true,
       attributeFilter: ["class"],
     });
@@ -207,7 +207,7 @@ export class ObserverManager {
 
     const attachObserversToContainers = (): boolean => {
       const containers = Array.from(
-        document.querySelectorAll(".nav-files-container"),
+        mainDocument.querySelectorAll(".nav-files-container"),
       );
       if (!containers.length) {
         return false;
@@ -252,7 +252,7 @@ export class ObserverManager {
         },
       );
 
-      waitForFileExplorer.observe(document.body, {
+      waitForFileExplorer.observe(mainDocument.body, {
         childList: true,
         subtree: true,
       });
@@ -324,10 +324,10 @@ export class ObserverManager {
       return;
     }
 
-    const leftWorkspaceDrawer = document.querySelector<HTMLElement>(
+    const leftWorkspaceDrawer = mainDocument.querySelector<HTMLElement>(
       ".workspace .workspace-drawer.mod-left",
     );
-    const rightWorkspaceDrawer = document.querySelector<HTMLElement>(
+    const rightWorkspaceDrawer = mainDocument.querySelector<HTMLElement>(
       ".workspace .workspace-drawer.mod-right",
     );
     if (!leftWorkspaceDrawer && !rightWorkspaceDrawer) {

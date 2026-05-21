@@ -10,8 +10,7 @@ import {
 } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
 
-const isNonNull = <T>(value: T | null | undefined): value is T =>
-  value != null;
+const isNonNull = <T>(value: T | null | undefined): value is T => value != null;
 
 /**
  * Returns Obsidian link suggestions (files, aliases, unresolved) filtered for invalid characters.

@@ -8,6 +8,7 @@ import { URLs } from "./safeUrls";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 declare const PLUGIN_VERSION: string;
 export let EXCALIDRAW_PLUGIN: ExcalidrawPlugin = null;
+export const mainDocument = document; //signals deliberate use of main document instead of activeDocument
 export const setExcalidrawPlugin = (plugin: ExcalidrawPlugin) => {
   EXCALIDRAW_PLUGIN = plugin;
 };
@@ -188,19 +189,20 @@ export function JSON_parse<T>(x: string): T {
 
 export const DEVICE: DeviceType = {
   isDesktop:
-    !document.body.hasClass("is-tablet") &&
-    !document.body.hasClass("is-mobile"),
-  isPhone: document.body.hasClass("is-phone"),
-  isTablet: document.body.hasClass("is-tablet"),
-  isMobile: document.body.hasClass("is-mobile"), //running Obsidian Mobile, need to also check isTablet
+    !mainDocument.body.hasClass("is-tablet") &&
+    !mainDocument.body.hasClass("is-mobile"),
+  isPhone: mainDocument.body.hasClass("is-phone"),
+  isTablet: mainDocument.body.hasClass("is-tablet"),
+  isMobile: mainDocument.body.hasClass("is-mobile"), //running Obsidian Mobile, need to also check isTablet
   isLinux:
-    document.body.hasClass("mod-linux") &&
-    !document.body.hasClass("is-android"),
+    mainDocument.body.hasClass("mod-linux") &&
+    !mainDocument.body.hasClass("is-android"),
   isMacOS:
-    document.body.hasClass("mod-macos") && !document.body.hasClass("is-ios"),
-  isWindows: document.body.hasClass("mod-windows"),
-  isIOS: document.body.hasClass("is-ios"),
-  isAndroid: document.body.hasClass("is-android"),
+    mainDocument.body.hasClass("mod-macos") &&
+    !mainDocument.body.hasClass("is-ios"),
+  isWindows: mainDocument.body.hasClass("mod-windows"),
+  isIOS: mainDocument.body.hasClass("is-ios"),
+  isAndroid: mainDocument.body.hasClass("is-android"),
 };
 
 export let ROOTELEMENTSIZE: number = 16;
@@ -209,13 +211,13 @@ export function setRootElementSize(size?: number) {
     ROOTELEMENTSIZE = size;
     return;
   }
-  const tempElement = document.createElement("div");
+  const tempElement = mainDocument.createElement("div");
   tempElement.style.fontSize = "1rem";
   tempElement.hidden = true;
-  document.body.appendChild(tempElement);
+  mainDocument.body.appendChild(tempElement);
   const computedStyle = getComputedStyle(tempElement);
   const pixelSize = parseFloat(computedStyle.fontSize);
-  document.body.removeChild(tempElement);
+  mainDocument.body.removeChild(tempElement);
   return pixelSize;
 }
 

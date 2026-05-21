@@ -4,6 +4,7 @@ import { errorlog } from "../../utils/utils";
 import { log } from "src/utils/debugHelper";
 import { ContentSearcher } from "../components/ContentSearcher";
 import { URLs } from "src/constants/safeUrls";
+import { mainDocument } from "src/constants/constants";
 
 const URL =
   URLs.RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_INDEX_NEW_MD;
@@ -18,7 +19,7 @@ export class ScriptInstallPrompt extends Modal {
 
   async onOpen(): Promise<void> {
     this.contentEl.classList.add("excalidraw-scriptengine-install");
-    this.contentDiv = document.createElement("div");
+    this.contentDiv = mainDocument.createElement("div");
     this.contentEl.appendChild(this.contentDiv);
 
     new ContentSearcher(this.contentDiv);

@@ -4,6 +4,7 @@ import { t } from "src/lang/helpers";
 import { NamedExcalidrawFrameElement } from "src/types/excalidrawElementTypes";
 import { ScriptEngine } from "../Scripts";
 import ExcalidrawView from "src/view/ExcalidrawView";
+import { mainDocument } from "src/constants/constants";
 
 /**
  *
@@ -169,7 +170,7 @@ export async function copyLinkToSelectedElementToClipboard(
       (container: HTMLElement) => {
         const wrapper =
           container.createDiv?.("excalidraw-prompt-checkboxes") ?? container;
-        const ownerDoc = wrapper.ownerDocument ?? document;
+        const ownerDoc = wrapper.ownerDocument ?? mainDocument;
 
         const anchorRow = ownerDoc.createElement("label");
         anchorRow.style.display = "flex";

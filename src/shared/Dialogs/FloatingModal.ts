@@ -1,5 +1,6 @@
 import { App, Modal } from "obsidian";
 import { clamp } from "@radix-ui/number";
+import { mainDocument } from "src/constants/constants";
 
 function getClientPoint(e: PointerEvent | TouchEvent) {
   if (e.type.startsWith("touch")) {
@@ -92,7 +93,7 @@ export class FloatingModal extends Modal {
   private previousActive?: HTMLElement = null; // stores element focused before opening
   private readonly modalKeydownStopHandler: (e: KeyboardEvent) => void; // store handler so we can remove it
   private ownerWindow: Window = window;
-  private ownerDocument: Document = document;
+  private ownerDocument: Document = mainDocument;
 
   constructor(app: App) {
     super(app);
@@ -231,7 +232,7 @@ export class FloatingModal extends Modal {
 
   open(): void {
     super.open();
-    this.ownerDocument = this.modalEl.ownerDocument ?? document;
+    this.ownerDocument = this.modalEl.ownerDocument ?? mainDocument;
     this.ownerWindow = this.ownerDocument.defaultView ?? window;
     // NEW: capture previously focused element & release Obsidian modal key trapping
     if (this.disableKeyCapture) {

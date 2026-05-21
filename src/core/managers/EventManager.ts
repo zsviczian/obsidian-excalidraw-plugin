@@ -24,6 +24,7 @@ import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import {
   FRONTMATTER_KEYS,
   ICON_NAME,
+  mainDocument,
   VIEW_TYPE_EXCALIDRAW,
 } from "src/constants/constants";
 import ExcalidrawView from "src/view/ExcalidrawView";
@@ -291,7 +292,7 @@ export class EventManager {
 
     if (this.settings.overrideObsidianFontSize) {
       if (leaf.view && leaf.view.getViewType() === VIEW_TYPE_EXCALIDRAW) {
-        document.documentElement.style.fontSize = "";
+        mainDocument.documentElement.style.fontSize = "";
       }
     }
 

@@ -17,6 +17,7 @@ import {
   DEVICE,
   EXCALIDRAW_PLUGIN,
   FRONTMATTER_KEYS,
+  mainDocument,
   URLFETCHTIMEOUT,
 } from "src/constants/constants";
 import { ExcalidrawSettings } from "src/core/settings";
@@ -62,13 +63,13 @@ export const download = (
   if (typeof data !== "string") {
     return;
   }
-  const element = document.createElement("a");
+  const element = mainDocument.createElement("a");
   element.setAttribute("href", (encoding ? `${encoding},` : "") + data);
   element.setAttribute("download", filename);
   setElementDisplay(element, "none");
-  document.body.appendChild(element);
+  mainDocument.body.appendChild(element);
   element.click();
-  document.body.removeChild(element);
+  mainDocument.body.removeChild(element);
 };
 
 /**

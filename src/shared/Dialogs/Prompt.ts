@@ -734,7 +734,7 @@ export class GenericInputPrompt extends Modal {
     this.view.ownerWindow.clearTimeout(this.selectionUpdateTimer);
 
     // Remove any existing popup
-    const existingPopup = document.querySelector(
+    const existingPopup = activeDocument.querySelector(
       ".excalidraw-special-chars-popup",
     );
     if (existingPopup) {
@@ -743,7 +743,7 @@ export class GenericInputPrompt extends Modal {
     }
 
     // Create popup element
-    const popup = document.createElement("div");
+    const popup = activeDocument.createElement("div");
     popup.className = "excalidraw-special-chars-popup";
     popup.style.position = "absolute";
     popup.style.zIndex = "1000";
@@ -780,7 +780,7 @@ export class GenericInputPrompt extends Modal {
 
     // Add character buttons
     specialChars.forEach((char) => {
-      const charButton = document.createElement("button");
+      const charButton = activeDocument.createElement("button");
       charButton.textContent = char;
       charButton.style.margin = "2px";
       charButton.style.width = "28px";
@@ -805,19 +805,19 @@ export class GenericInputPrompt extends Modal {
         (evt.target as HTMLElement) !== e.target
       ) {
         popup.remove();
-        document.removeEventListener("click", closePopupListener);
+        activeDocument.removeEventListener("click", closePopupListener);
       }
     };
 
     // Add to document and set up listeners
-    document.body.appendChild(popup);
+    activeDocument.body.appendChild(popup);
     window.setTimeout(() => {
-      document.addEventListener("click", closePopupListener);
+      activeDocument.addEventListener("click", closePopupListener);
     }, 10);
   };
 
   async onOpen() {
-    await super.onOpen();
+    super.onOpen();
     this.modalEl.classList.add("excalidraw-modal");
     this.containerEl.classList.add("excalidraw-modal");
     this.inputComponent.inputEl.focus();
@@ -960,15 +960,15 @@ export class GenericInputPrompt extends Modal {
     // Set up event listeners
     modalEl.addEventListener("focusin", onFocusIn);
     modalEl.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("pointermove", onPointerMove);
-    document.addEventListener("pointerup", onPointerUp);
+    activeDocument.addEventListener("pointermove", onPointerMove);
+    activeDocument.addEventListener("pointerup", onPointerUp);
 
     // Store cleanup function for use in onClose
     this.cleanupDragListeners = () => {
       modalEl.removeEventListener("focusin", onFocusIn);
       modalEl.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("pointermove", onPointerMove);
-      document.removeEventListener("pointerup", onPointerUp);
+      activeDocument.removeEventListener("pointermove", onPointerMove);
+      activeDocument.removeEventListener("pointerup", onPointerUp);
     };
   }
 

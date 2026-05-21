@@ -7,6 +7,7 @@ import {
   DEVICE,
   EXTENDED_EVENT_TYPES,
   KEYBOARD_EVENT_TYPES,
+  mainDocument,
 } from "src/constants/constants";
 import {
   ExcalidrawImperativeAPI,
@@ -105,7 +106,7 @@ function setPDFViewTheme(view: ExcalidrawView, pdfView: PdfViewLike | null) {
   }
   if (view.excalidrawData.embeddableTheme === "dark") {
     pdfView.viewer?.child?.pdfViewer?.setBackground?.(
-      document.body.getCssPropertyValue("--color-base-00"),
+      mainDocument.body.getCssPropertyValue("--color-base-00"),
       true,
     );
   }
@@ -1063,10 +1064,10 @@ function RenderObsidianView({
     };
 
     // Use capture so this runs even if container stops bubbling
-    document.addEventListener("keydown", handleKeyPress, true);
+    view.ownerDocument.addEventListener("keydown", handleKeyPress, true);
 
     return () => {
-      document.removeEventListener("keydown", handleKeyPress, true);
+      view.ownerDocument.removeEventListener("keydown", handleKeyPress, true);
     };
   }, [
     handleClick,

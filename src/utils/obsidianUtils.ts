@@ -18,6 +18,7 @@ import { linkClickModifierType, ModifierKeys } from "./modifierkeyHelper";
 import {
   DEVICE,
   EXCALIDRAW_PLUGIN,
+  mainDocument,
   VIEW_TYPE_EXCALIDRAW,
 } from "src/constants/constants";
 import { parse, stringify } from "yaml";
@@ -160,7 +161,7 @@ export const getNewOrAdjacentLeaf = (
     if (
       mainLeaf &&
       mainLeaf !== leaf &&
-      mainLeaf.view?.containerEl.ownerDocument === document
+      mainLeaf.view?.containerEl.ownerDocument === mainDocument
     ) {
       //Found a leaf in the main workspace that is not the originating leaf
       return mainLeaf;
@@ -249,7 +250,7 @@ export const getNewOrAdjacentLeaf = (
 };
 
 export const isObsidianThemeDark = () =>
-  document.body.classList.contains("theme-dark");
+  mainDocument.body.classList.contains("theme-dark");
 
 export type ConstructableWorkspaceSplit = new (
   ws: Workspace,
@@ -257,7 +258,7 @@ export type ConstructableWorkspaceSplit = new (
 ) => WorkspaceSplit;
 
 export const getContainerForDocument = (doc: Document) => {
-  if (doc !== document && EXCALIDRAW_PLUGIN.app.workspace.floatingSplit) {
+  if (doc !== mainDocument && EXCALIDRAW_PLUGIN.app.workspace.floatingSplit) {
     for (const container of EXCALIDRAW_PLUGIN.app.workspace.floatingSplit
       .children) {
       if (container.doc === doc) {
@@ -281,9 +282,9 @@ export const legacyCleanBlockRef = (blockRef: string) => {
 
 export const getAllWindowDocuments = (app: App): Document[] => {
   const documents = new Set<Document>();
-  documents.add(document);
+  documents.add(mainDocument);
   app.workspace.iterateAllLeaves((l) => {
-    if (l.view.containerEl.ownerDocument !== document) {
+    if (l.view.containerEl.ownerDocument !== mainDocument) {
       documents.add(l.view.containerEl.ownerDocument);
     }
   });
@@ -596,13 +597,13 @@ export function isUnwantedLeaf(leaf: WorkspaceLeaf): boolean {
  */
 export function getAudioElementHeight(): number {
   // Create a temporary audio element with controls
-  const audioElement = document.createElement("audio");
+  const audioElement = mainDocument.createElement("audio");
   audioElement.controls = true;
   audioElement.src =
     "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA"; // Minimal valid audio
 
   // Create a wrapper to avoid affecting page layout
-  const wrapper = document.createElement("div");
+  const wrapper = mainDocument.createElement("div");
   wrapper.style.position = "absolute";
   wrapper.style.left = "-9999px";
   wrapper.style.visibility = "hidden";
@@ -610,13 +611,13 @@ export function getAudioElementHeight(): number {
   wrapper.appendChild(audioElement);
 
   // Add to document to allow CSS to be applied
-  document.body.appendChild(wrapper);
+  mainDocument.body.appendChild(wrapper);
 
   // Get height
   let height = 0;
   try {
     // Force layout calculation
-    document.body.offsetHeight;
+    mainDocument.body.offsetHeight;
 
     // Get height from bounding rect
     const rect = audioElement.getBoundingClientRect();
@@ -634,7 +635,7 @@ export function getAudioElementHeight(): number {
     }
   } finally {
     // Clean up
-    document.body.removeChild(wrapper);
+    mainDocument.body.removeChild(wrapper);
   }
 
   return Math.round(height);

@@ -72,14 +72,14 @@ const attachOutsideHandlers = (
   const onOverlayClick = () => cleanup(null);
 
   const cleanup = (color: string | null) => {
-    document.removeEventListener("keydown", onKeyDown, true);
+    activeDocument.removeEventListener("keydown", onKeyDown, true);
     overlay.removeEventListener("click", onOverlayClick);
     popup.removeEventListener("click", stopPropagation);
     overlay.remove();
     resolve(color);
   };
 
-  document.addEventListener("keydown", onKeyDown, true);
+  activeDocument.addEventListener("keydown", onKeyDown, true);
   overlay.addEventListener("click", onOverlayClick);
   popup.addEventListener("click", stopPropagation);
 
@@ -99,20 +99,20 @@ export const showColorPicker = async (
   }
 
   return new Promise((resolve) => {
-    const overlay = document.createElement("div");
+    const overlay = activeDocument.createElement("div");
     overlay.classList.add("excalidraw-colorpicker-overlay");
 
-    const popup = document.createElement("div");
+    const popup = activeDocument.createElement("div");
     popup.classList.add("excalidraw-colorpicker-popup");
 
-    const grid = document.createElement("div");
+    const grid = activeDocument.createElement("div");
     grid.classList.add("excalidraw-colorpicker-grid");
     grid.style.gridTemplateColumns = `repeat(${GRID_COLUMNS}, ${CELL_SIZE}px)`;
     grid.style.gap = `${CELL_GAP}px`;
     grid.style.maxHeight = `${MAX_HEIGHT}px`;
 
     colors.forEach((color) => {
-      const swatch = document.createElement("button");
+      const swatch = activeDocument.createElement("button");
       swatch.type = "button";
       swatch.ariaLabel = color;
       swatch.classList.add("excalidraw-colorpicker-swatch");
@@ -123,7 +123,7 @@ export const showColorPicker = async (
 
     popup.appendChild(grid);
     overlay.appendChild(popup);
-    document.body.appendChild(overlay);
+    activeDocument.body.appendChild(overlay);
 
     positionPopup(popup, anchorElement);
 

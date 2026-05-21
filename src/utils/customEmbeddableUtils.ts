@@ -2,6 +2,7 @@ import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element
 import {
   AUDIO_TYPES,
   DEVICE,
+  mainDocument,
   REG_LINKINDEX_INVALIDCHARS,
   VIDEO_TYPES,
 } from "src/constants/constants";
@@ -25,7 +26,7 @@ export const createLeaf = (
       "vertical",
     );
   rootSplit.getRoot = () =>
-    view.app.workspace[doc === document ? "rootSplit" : "floatingSplit"];
+    view.app.workspace[doc === mainDocument ? "rootSplit" : "floatingSplit"];
   rootSplit.getContainer = () => getContainerForDocument(doc);
   rootSplit.containerEl.style.width = "100%";
   rootSplit.containerEl.style.height = "100%";

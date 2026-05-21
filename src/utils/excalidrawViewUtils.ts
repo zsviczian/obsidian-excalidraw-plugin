@@ -8,6 +8,7 @@ import {
   CARD_HEIGHT,
   getDefaultColorPalette,
   DEVICE,
+  mainDocument,
 } from "src/constants/constants";
 import { App, Modal, Notice, TFile } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
@@ -740,7 +741,9 @@ export function getViewColorPalette(
 //https://discord.com/channels/686053708261228577/817515900349448202/1031101635784613968
 export const setMobileNavbarPosition = (dock: boolean) => {
   if (DEVICE.isMobile) {
-    const navbar = document.querySelector("body>.app-container>.mobile-navbar");
+    const navbar = mainDocument.querySelector(
+      "body>.app-container>.mobile-navbar",
+    );
     if (navbar && navbar instanceof HTMLDivElement) {
       if (dock) {
         navbar.addClass("excalidraw-mobile-navbar-docked");

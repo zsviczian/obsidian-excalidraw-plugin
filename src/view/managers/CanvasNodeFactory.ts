@@ -16,6 +16,7 @@ import {
   isObsidianThemeDark,
 } from "../../utils/obsidianUtils";
 import { CustomMutationObserver, DEBUGGING } from "../../utils/debugHelper";
+import { mainDocument } from "src/constants/constants";
 
 interface ObsidianCanvas {
   createFileNode: (params: {
@@ -75,7 +76,7 @@ export class CanvasNodeFactory {
         "vertical",
       );
     rootSplit.getRoot = () =>
-      app.workspace[doc === document ? "rootSplit" : "floatingSplit"];
+      app.workspace[doc === mainDocument ? "rootSplit" : "floatingSplit"];
     rootSplit.getContainer = () => getContainerForDocument(doc);
     this.leaf = app.workspace.createLeafInParent(rootSplit, 0);
     this.canvas = canvasPlugin.views.canvas(this.leaf).canvas as ObsidianCanvas;
