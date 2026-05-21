@@ -14,6 +14,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - ExcaliAI now shows an **"AI Usage: input/output"** button next to the Run button. Clicking it opens the same usage modal.
 - Added an explicit opt-in for executing <code>cmd://</code> links from drawings. Command links are now blocked by default, with a security warning prompt on first use and a dedicated setting under Excalidraw Automate.
 - Replaced the dropped-link title resolver from Iframely with an HTTPS oEmbed endpoint, and restricted auto title resolution to HTTPS links.
+- Hardened data URL embeddables: HTML loaded through <code>data:text/html</code> now renders in a sandboxed iframe with a defensive CSP to keep interactive content contained inside the embeddable.
 
 ## New in ExcalidrawAutomate
 - Added \`getPathForImageFileId(fileId: FileId): string | null\` — returns the vault path for an image element identified by its Excalidraw fileId. Note: Excalidraw does not maintain a persistent index of fileIds to paths; the path is only available for images that have appeared in an open drawing during the current Obsidian session.

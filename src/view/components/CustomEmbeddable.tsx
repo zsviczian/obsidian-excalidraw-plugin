@@ -48,6 +48,57 @@ const CANVAS_VIEWTYPES = new Set([
   "pdf",
 ]);
 
+const DATA_URL_IFRAME_SANDBOX = "allow-scripts allow-forms allow-popups";
+const DATA_URL_IFRAME_CSP =
+  "default-src 'none'; script-src https: data: 'unsafe-inline'; style-src https: 'unsafe-inline'; img-src https: data: blob:; font-src https: data:; connect-src https:; media-src https: data: blob:; frame-src https: data:; form-action https:; base-uri 'none'";
+
+function decodeDataUrlToHtml(dataUrl: string): string | null {
+  const commaIndex = dataUrl.indexOf(",");
+  if (commaIndex === -1) {
+    return null;
+  }
+
+  const header = dataUrl.slice(0, commaIndex).toLowerCase();
+  const payload = dataUrl.slice(commaIndex + 1);
+
+  try {
+    return header.includes(";base64")
+      ? atob(payload)
+      : decodeURIComponent(payload);
+  } catch {
+    return null;
+  }
+}
+
+function injectDefensiveCsp(html: string): string {
+  if (!html || /http-equiv\s*=\s*["']content-security-policy["']/i.test(html)) {
+    return html;
+  }
+
+  const cspTag = `<meta http-equiv="Content-Security-Policy" content="${DATA_URL_IFRAME_CSP}">`;
+
+  if (/<head[^>]*>/i.test(html)) {
+    return html.replace(/<head[^>]*>/i, (head) => `${head}${cspTag}`);
+  }
+
+  if (/<html[^>]*>/i.test(html)) {
+    return html.replace(
+      /<html[^>]*>/i,
+      (htmlOpen) => `${htmlOpen}<head>${cspTag}</head>`,
+    );
+  }
+
+  return `<!doctype html><html><head>${cspTag}</head><body>${html}</body></html>`;
+}
+
+function getSandboxedDataUrlSrcDoc(src: string): string | null {
+  const decodedHtml = decodeDataUrlToHtml(src);
+  if (!decodedHtml) {
+    return null;
+  }
+  return injectDefensiveCsp(decodedHtml);
+}
+
 let noticeTimer: number;
 function showNoticeOnce(message: string) {
   if (noticeTimer) {
@@ -405,6 +456,7 @@ export function renderWebView(
   _: UIAppState,
 ): JSX.Element {
   const isDataURL = src.startsWith("data:");
+  const srcDoc = isDataURL ? getSandboxedDataUrlSrcDoc(src) : null;
   if (DEVICE.isDesktop && !isDataURL) {
     return (
       <webview
@@ -428,12 +480,13 @@ export function renderWebView(
       title="Excalidraw Embedded Content"
       allowFullScreen={true}
       allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      sandbox={isDataURL ? DATA_URL_IFRAME_SANDBOX : undefined}
       src={isDataURL ? null : src}
       style={{
         overflow: "hidden",
         borderRadius: "var(--embeddable-radius)",
       }}
-      srcDoc={isDataURL ? atob(src.split(",")[1]) : null}
+      srcDoc={srcDoc}
     />
   );
 }
