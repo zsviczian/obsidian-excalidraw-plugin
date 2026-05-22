@@ -455,8 +455,21 @@ export function renderWebView(
   id: string,
   _: UIAppState,
 ): JSX.Element {
-  const isDataURL = src.startsWith("data:");
-  const srcDoc = isDataURL ? getSandboxedDataUrlSrcDoc(src) : null;
+  let isAllowed = false;
+  try {
+    const url = new URL(src);
+    // Explicitly allow safe protocols to prevent execution of 
+    // javascript:, vbscript:, file:, etc.
+    isAllowed = ["http:", "https:", "data:"].includes(url.protocol);
+  } catch (e) {
+    // If URL parsing fails, consider it unsafe
+    isAllowed = false;
+  }
+
+  const safeSrc = isAllowed ? src : "about:blank";
+
+  const isDataURL = safeSrc.startsWith("data:");
+  const srcDoc = isDataURL ? getSandboxedDataUrlSrcDoc(safeSrc) : null;
   if (DEVICE.isDesktop && !isDataURL) {
     return (
       <webview
@@ -464,7 +477,7 @@ export function renderWebView(
         className="excalidraw__embeddable"
         title="Excalidraw Embedded Content"
         allowFullScreen={true}
-        src={src}
+        src={safeSrc}
         webpreferences="autoplayPolicy=document-user-activation-required"
         style={{
           overflow: "hidden",
@@ -481,7 +494,7 @@ export function renderWebView(
       allowFullScreen={true}
       allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
       sandbox={isDataURL ? DATA_URL_IFRAME_SANDBOX : undefined}
-      src={isDataURL ? null : src}
+      src={isDataURL ? null : safeSrc}
       style={{
         overflow: "hidden",
         borderRadius: "var(--embeddable-radius)",
