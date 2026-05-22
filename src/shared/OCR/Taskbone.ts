@@ -11,7 +11,7 @@ import { ExportSettings } from "src/types/exportUtilTypes";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { URLs } from "src/constants/safeUrls";
 
-const TASKBONE_URL = URLs.API_TASKBONE_COM;
+const TASKBONE_URL = `${URLs.API_TASKBONE_COM}/`;
 const TASKBONE_OCR_FN = "execute?id=60f394af-85f6-40bc-9613-5d26dc283cbb";
 
 export default class Taskbone {
@@ -151,8 +151,6 @@ export default class Taskbone {
       ],
     };
 
-    // TESTING: requestUrl is the preferred Obsidian API, but has failed in the past for some endpoints (see below).
-    // If requestUrl fails, consider restoring the fetch-based solution below.
     const apiResponse = await requestUrl({
       url,
       method: "post",
@@ -164,21 +162,6 @@ export default class Taskbone {
       throw: false,
     });
     const content = apiResponse?.json;
-
-    /*
-    // fetch-based solution (commented out for now, see above)
-    // fetch is used here as a fallback if requestUrl fails for this endpoint.
-    // If you see failures with requestUrl, uncomment this block and comment out the requestUrl block above.
-    const apiResponse = await fetch(url, {
-      method: "post",
-      body: JSON.stringify(input),
-      headers: {
-        "Content-Type": "application/json",
-        authorization: `Bearer ${this.apiKey}`,
-      },
-    });
-    const content = await apiResponse?.json();
-    */
 
     if (!content || apiResponse.status !== 200) {
       new Notice(
