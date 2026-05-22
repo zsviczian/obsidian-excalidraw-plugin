@@ -201,7 +201,9 @@ export const getMimeType = (extension: string): MimeType => {
   }
 };
 
-// using fetch API
+// Using fetch as primary for maximum compatibility with CORS/image endpoints.
+// fetch is used here because requestUrl sometimes fails for certain endpoints (e.g. Firebase Storage, see comment below).
+// This is a network request, not a vault or blob:app:// read.
 const getFileFromURL = async (
   url: string,
   mimeType: MimeType,
@@ -212,8 +214,9 @@ const getFileFromURL = async (
       window.setTimeout(() => resolve(null), timeout),
     );
 
+    // fetch is used here for broad compatibility with image endpoints, including those that fail with requestUrl.
     const response = await Promise.race([
-      fetch(url, { mode: "no-cors" }), //cors error cannot be caught
+      fetch(url, { mode: "no-cors" }), // CORS error cannot be caught
       timeoutPromise,
     ]);
 
@@ -241,8 +244,10 @@ const getFileFromURL = async (
   }
 };
 
-// using Obsidian requestUrl (this failed on a firebase link)
-// https://firebasestorage.googleapis.com/v0/b/firescript-577a2.appspot.com/o/imgs%2Fapp%2FJSG%2FfTMP6WGQRC.png?alt=media&token=6d2993b4-e629-46b6-98d1-133af7448c49
+// Using requestUrl as a fallback for endpoints where fetch fails (e.g. CORS/network restrictions).
+// This is a network request, not a vault or blob:app:// read.
+// Note: requestUrl sometimes fails for Firebase Storage and similar endpoints (see above), so fetch is preferred as primary.
+// example: https://firebasestorage.googleapis.com/v0/b/firescript-577a2.appspot.com/o/imgs%2Fapp%2FJSG%2FfTMP6WGQRC.png?alt=media&token=6d2993b4-e629-46b6-98d1-133af7448c49
 const getFileFromURLFallback = async (
   url: string,
   mimeType: MimeType,
@@ -255,7 +260,7 @@ const getFileFromURLFallback = async (
 
     return await Promise.race([
       timeoutPromise,
-      requestUrl({ url, throw: false }), //if method: "get" is added it won't load images on Android, contentType: mimeType,
+      requestUrl({ url, throw: false }), // if method: "get" is added it won't load images on Android, contentType: mimeType
     ]);
   } catch (_) {
     errorlog({

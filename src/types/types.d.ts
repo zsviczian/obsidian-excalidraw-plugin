@@ -1,4 +1,4 @@
-import { Component, TAbstractFile, TFile, View, WorkspaceLeaf } from "obsidian";
+import { TFile, View, WorkspaceLeaf } from "obsidian";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import { ExcalidrawLib } from "./excalidrawLib";
 import type { PdfJsLibrary } from "./pdfJsTypes";

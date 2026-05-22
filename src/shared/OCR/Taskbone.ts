@@ -151,6 +151,24 @@ export default class Taskbone {
       ],
     };
 
+    // TESTING: requestUrl is the preferred Obsidian API, but has failed in the past for some endpoints (see below).
+    // If requestUrl fails, consider restoring the fetch-based solution below.
+    const apiResponse = await requestUrl({
+      url,
+      method: "post",
+      contentType: "application/json",
+      body: JSON.stringify(input),
+      headers: {
+        authorization: `Bearer ${this.apiKey}`,
+      },
+      throw: false,
+    });
+    const content = apiResponse?.json;
+
+    /*
+    // fetch-based solution (commented out for now, see above)
+    // fetch is used here as a fallback if requestUrl fails for this endpoint.
+    // If you see failures with requestUrl, uncomment this block and comment out the requestUrl block above.
     const apiResponse = await fetch(url, {
       method: "post",
       body: JSON.stringify(input),
@@ -160,18 +178,7 @@ export default class Taskbone {
       },
     });
     const content = await apiResponse?.json();
-
-    /*const apiResponse = await requestUrl ({
-      url: url,
-      method: "post",
-      contentType: "application/json",
-      body: JSON.stringify(input),
-      headers: {
-        authorization: `Bearer ${this.apiKey}`
-      },
-      throw: false 
-    });
-    const content = apiResponse?.json;*/
+    */
 
     if (!content || apiResponse.status !== 200) {
       new Notice(

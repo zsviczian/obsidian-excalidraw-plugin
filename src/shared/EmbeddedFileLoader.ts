@@ -1654,6 +1654,9 @@ export const generateIdFromFile = async (
   return id;
 };
 
+// This function is for converting blob:app://obsidian.md image URLs (from Obsidian's image cache) to base64 data URLs.
+// fetch is used here because requestUrl does not support blob: URLs, and fetch is the only browser API that can read them directly.
+// The canvas fallback is less efficient and should only be used if fetch fails (e.g. in rare browser contexts).
 const replaceBlobWithBase64 = async (
   divElement: HTMLDivElement,
 ): Promise<void> => {
@@ -1664,11 +1667,27 @@ const replaceBlobWithBase64 = async (
   for (const img of images) {
     const blobUrl = img.src;
     try {
+      // fetch is the only way to read blob: URLs in browser/Obsidian context.
       const response = await fetch(blobUrl);
       const blob = await response.blob();
       const base64 = await blobToBase64(blob);
       img.src = `data:${blob.type};base64,${base64}`;
     } catch (error) {
+      // fallback: use canvas if fetch fails (should be rare)
+      const canvas = createEl("canvas");
+      const width = img.naturalWidth || img.width || 0;
+      const height = img.naturalHeight || img.height || 0;
+      if (width > 0 && height > 0) {
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          img.src = canvas.toDataURL();
+        }
+        canvas.width = 0;
+        canvas.height = 0;
+      }
       console.error(`Failed to fetch or convert blob: ${blobUrl}`, error);
     }
   }
