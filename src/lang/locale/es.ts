@@ -663,7 +663,7 @@ export default {
     `${labelCTRL()}+CLICK on <code>[[Elementos de Texto]]</code> para abrirlos como enlaces. ` +
     "Si el texto seleccionado tiene más de un <code>[[enlace válido de Obsidian]]</code>, solo se abrirá el primero. " +
     "Si el texto comienza como un enlace web válido (es decir, <code>http" +
-    "://</code> o <code>http://</code>), entonces " +
+    "s://</code> o <code>http://</code>), entonces " +
     "el complemento lo abrirá en un navegador. " +
     "Cuando los archivos de Obsidian cambian, el <code>[[enlace]]</code> coincidente en tus bosquejos también cambiará. " +
     "Si no quieres que el texto cambie accidentalmente en tus bosquejos, usa <code>[[enlaces|con alias]]</code>.",
@@ -1130,6 +1130,8 @@ export default {
   SELECT_TO_EMBED:
     "Selecciona el bosquejo para insertar en el documento activo.",
   SELECT_MD: "Selecciona el documento Markdown que quieres insertar",
+
+  //SelectCard.ts
   TYPE_SECTION: "Escribe el nombre de la sección para seleccionar.",
   SELECT_SECTION_OR_TYPE_NEW:
     "Selecciona una sección existente o escribe el nombre de una nueva y luego presiona Enter.",
@@ -1447,7 +1449,7 @@ export default {
   //ReleaseNotes.ts
   RN_WELCOME: "Bienvenido a Excalidraw",
 
-  //Excalidraw component
+  //CustomEmbeddable.tsx
   NOTICE_PDF_THEME:
     "Sobreescritura de Tema de PDF .\n" +
     "Controla esto a través de la propiedad de documento 'excalidraw-embeddable-theme' de este archivo (anula la configuración del complemento).\n\n" +

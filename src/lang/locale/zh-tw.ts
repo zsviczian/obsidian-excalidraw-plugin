@@ -606,7 +606,7 @@ export default {
     `按住 ${labelCTRL()} 並點選包含 <code>[[連結]]</code> 的文字元素可以開啟其中的連結。<br>` +
     "如果所選文字元素包含多個 <code>[[有效的內部連結]]</code> ，只會開啟第一個連結；<br>" +
     "如果所選文字元素包含有效的 URL 連結（如 <code>http" +
-    "://</code> 或 <code>http://</code>），" +
+    "s://</code> 或 <code>http://</code>），" +
     "外掛會在瀏覽器中開啟連結。<br>" +
     "連結的原始檔被重新命名時，繪圖中相應的 <code>[[內部連結]]</code> 也會同步更新。" +
     "若您不願繪圖中的連結外觀因此而變化，可使用 <code>[[內部連結|別名]]</code>。",
@@ -1050,6 +1050,8 @@ export default {
     "選擇已有繪圖，或者輸入新繪圖檔案的名稱，然後按回車。",
   SELECT_TO_EMBED: "選擇要嵌入到當前 Markdown 文件中的繪圖",
   SELECT_MD: "選擇要以影像形式嵌入到當前繪圖中的 Markdown 文件",
+
+  //SelectCard.ts
   TYPE_SECTION: "輸入章節標題進行選擇",
   SELECT_SECTION_OR_TYPE_NEW:
     "選擇現有章節標題或輸入新的章節標題，然後按 Enter。",
@@ -1364,7 +1366,7 @@ Obsidian 的 Excalidraw 外掛遠不只是「畫圖工具」。由於它與 Obsi
 </div>
 `,
 
-  //Excalidraw component
+  //CustomEmbeddable.tsx
   NOTICE_PDF_THEME:
     "已覆蓋 PDF 主題。\n" +
     "透過檔案的 'excalidraw-embeddable-theme' 筆記屬性設定（將覆蓋外掛設定）。\n\n" +
