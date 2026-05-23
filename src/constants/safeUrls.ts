@@ -505,5 +505,7 @@ export const URLs = Object.fromEntries(
   Object.entries(URL_REGISTRY).map(([key, data]) => [key, data.url]),
 ) as { [K in keyof typeof URL_REGISTRY]: string };
 
-export const getYouTubeThumbnailUrl = (id: string) => `${URLs.I_YTIMG_COM}/vi/${id}/maxresdefault.jpg`;
-export const getYouTubeUrl = (id: string) => `${URLs.YOUTUBE_COM}/watch?v=${id}`;
+export const getYouTubeThumbnailUrl = (id: string) =>
+  `${URLs.I_YTIMG_COM}/vi/${id}/maxresdefault.jpg`;
+export const getYouTubeUrl = (id: string) =>
+  `${URLs.YOUTUBE_COM}/watch?v=${id}`;

@@ -834,6 +834,9 @@ export default {
     "“嵌入绘图到当前 Markdown 文档中”系列命令产生的内部链接类型",
   EMBED_WIKILINK_DESC:
     "<b>开启：</b>将产生 <code>![[Wiki 链接]]</code>。<b>关闭：</b>将产生 <code>![](Markdown 链接)</code>。",
+  EMBED_PLACEHOLDER_NAME: "嵌入占位图像",
+  EMBED_PLACEHOLDER_DESC:
+    "如果启用，当没有绘图时，将嵌入占位图像。如果禁用，则不嵌入任何图像。",
   EXPORT_PNG_SCALE_NAME: "导出 PNG 图片的比例",
   EXPORT_PNG_SCALE_DESC: "导出 PNG 图片的大小比例",
   EXPORT_BACKGROUND_NAME: "导出图片包含背景",

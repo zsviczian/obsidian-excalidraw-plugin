@@ -1,4 +1,8 @@
-import { getYouTubeThumbnailUrl, getYouTubeUrl, URLs } from "src/constants/safeUrls";
+import {
+  getYouTubeThumbnailUrl,
+  getYouTubeUrl,
+  URLs,
+} from "src/constants/safeUrls";
 
 const getYouTubeDiv = (videoId: string) => `
 <div class="excalidraw-videoWrapper">
@@ -13,7 +17,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
-  "2.23.4": `
+  "2.23.5": `
 ${getYouTubeDiv("otIHXat8Roo")}
 
 ## New
@@ -21,6 +25,7 @@ ${getYouTubeDiv("otIHXat8Roo")}
 - Added an explicit opt-in for executing <code>cmd://</code> links from drawings. Command links are now blocked by default, with a security warning prompt on first use and a dedicated setting under Excalidraw Automate.
 - Replaced the dropped-link title resolver from Iframely with an HTTPS oEmbed endpoint.
 - Hardened **data URL embeddables**: HTML loaded through <code>data:text/html</code> now renders in a sandboxed iframe with a defensive CSP to keep interactive content contained inside the embeddable.
+- New option in settings to disable placeholder image.
 
 ## Fixed
 - Fixed Taskbone OCR, which broke in 2.23.0.

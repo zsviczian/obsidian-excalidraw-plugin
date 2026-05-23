@@ -172,6 +172,10 @@ export interface ExcalidrawSettings {
   embedType: "excalidraw" | "PNG" | "SVG";
   embedMarkdownCommentLinks: boolean;
   embedWikiLink: boolean;
+  /**
+   * If true, embed a placeholder image when no drawing is present. If false, do not embed any image.
+   */
+  embedPlaceholderImage: boolean;
   syncExcalidraw: boolean;
   compatibilityMode: boolean;
   experimentalFileType: boolean;
@@ -651,6 +655,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   embedType: "excalidraw",
   embedMarkdownCommentLinks: true,
   embedWikiLink: true,
+  embedPlaceholderImage: true,
   syncExcalidraw: false,
   experimentalFileType: false,
   experimentalFileTag: "✏️",
@@ -3422,6 +3427,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
+    // Embed placeholder image setting
+    new Setting(detailsEl)
+      .setName(t("EMBED_PLACEHOLDER_NAME"))
+      .setDesc(fragWithHTML(t("EMBED_PLACEHOLDER_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.embedPlaceholderImage)
+          .onChange(async (value) => {
+            this.plugin.settings.embedPlaceholderImage = value;
+            this.applySettingsUpdate();
+          }),
+      );
     detailsEl = embedDetailsEl.createEl("details");
     detailsEl.createEl("summary", {
       text: t("EMBED_CANVAS"),

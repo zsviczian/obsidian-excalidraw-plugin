@@ -1,4 +1,5 @@
 import type { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
+import { EXCALIDRAW_PLUGIN } from "./constants";
 
 type JsonValue =
   | string
@@ -846,7 +847,12 @@ export const emptyDrawingElements: SerializedExcalidrawElement[] = [
   },
 ];
 
-export const getEmptyDrawingElementsRuntime = (): ExcalidrawElement[] =>
-  emptyDrawingElements.map(
+export const getEmptyDrawingElementsRuntime = (): ExcalidrawElement[] => {
+  const plugin = EXCALIDRAW_PLUGIN;
+  if (plugin?.settings?.embedPlaceholderImage === false) {
+    return [];
+  }
+  return emptyDrawingElements.map(
     (element) => element as SerializedExcalidrawElement & ExcalidrawElement,
   );
+};

@@ -805,6 +805,9 @@ export default {
   EMBED_WIKILINK_NAME: "Встраивание рисунка с помощью ссылки Wiki",
   EMBED_WIKILINK_DESC:
     "<b><u>Переключатель ВКЛ:</u></b> Excalidraw будет встраивать [[wiki link]].<br><b><u>Переключатель ВЫКЛ:</u></b> Excalidraw будет встраивать [markdown](link).",
+  EMBED_PLACEHOLDER_NAME: "Встраивать изображение-заглушку",
+  EMBED_PLACEHOLDER_DESC:
+    "Если включено, встраивает изображение-заглушку при отсутствии рисунка. Если отключено, изображение не встраивается.",
   EXPORT_PNG_SCALE_NAME: "Масштаб экспортируемого изображения PNG",
   EXPORT_PNG_SCALE_DESC: "Масштаб экспортируемого PNG-изображения",
   EXPORT_BACKGROUND_NAME: "Экспорт изображения с фоном",

@@ -423,7 +423,8 @@ export default {
   AI_PROVIDER_PROFILE_MODAL_BASE_URL_NAME: "Base URL",
   AI_PROVIDER_PROFILE_MODAL_BASE_URL_DESC:
     "Base URL used to derive the provider endpoints.",
-  AI_PROVIDER_PROFILE_MODAL_BASE_URL_PLACEHOLDER: "e.g.: http"+"s://api.openai"+".com/v1",
+  AI_PROVIDER_PROFILE_MODAL_BASE_URL_PLACEHOLDER:
+    "e.g.: http" + "s://api.openai" + ".com/v1",
   AI_PROVIDER_PROFILE_MODAL_OPENAI_COMPATIBLE_HINT:
     "For local OpenAI-compatible LLMs, enter a dummy API key if no real key is required so Excalidraw recognizes the profile as configured.",
   AI_PROVIDER_PROFILE_MODAL_NAME_REQUIRED: "Provider profile name is required.",
@@ -935,6 +936,9 @@ export default {
   EMBED_WIKILINK_NAME: "Embed Drawing using Wiki link",
   EMBED_WIKILINK_DESC:
     "<b><u>Toggle ON:</u></b> Excalidraw will embed a [[wiki link]].<br><b><u>Toggle OFF:</u></b> Excalidraw will embed a [markdown](link).",
+  EMBED_PLACEHOLDER_NAME: "Embed placeholder image",
+  EMBED_PLACEHOLDER_DESC:
+    "If enabled, embeds a placeholder image when no drawing is present. If disabled, no image is embedded.",
   EXPORT_PNG_SCALE_NAME: "PNG export image scale",
   EXPORT_PNG_SCALE_DESC: "The size-scale of the exported PNG image",
   EXPORT_BACKGROUND_NAME: "Export image with background",

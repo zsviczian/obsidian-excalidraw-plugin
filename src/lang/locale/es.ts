@@ -898,6 +898,9 @@ export default {
   EMBED_WIKILINK_NAME: "Incrustar bosquejo usando un enlace Wiki",
   EMBED_WIKILINK_DESC:
     "<b><u>Activado:</u></b> Excalidraw incrustará un [[enlace wiki]].<br><b><u>Desactivado:</u></b> Excalidraw incrustará un [markdown](enlace).",
+  EMBED_PLACEHOLDER_NAME: "Incrustar imagen de marcador de posición",
+  EMBED_PLACEHOLDER_DESC:
+    "Si está activado, incrusta una imagen de marcador de posición cuando no hay ningún dibujo. Si está desactivado, no se incrusta ninguna imagen.",
   EXPORT_PNG_SCALE_NAME: "Escala de la imagen exportada en PNG",
   EXPORT_PNG_SCALE_DESC: "La escala de tamaño de la imagen PNG exportada.",
   EXPORT_BACKGROUND_NAME: "Exportar imagen con fondo",

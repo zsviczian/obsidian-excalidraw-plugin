@@ -458,7 +458,7 @@ export function renderWebView(
   let isAllowed = false;
   try {
     const url = new URL(src);
-    // Explicitly allow safe protocols to prevent execution of 
+    // Explicitly allow safe protocols to prevent execution of
     // javascript:, vbscript:, file:, etc.
     isAllowed = ["http:", "https:", "data:"].includes(url.protocol);
   } catch (e) {
