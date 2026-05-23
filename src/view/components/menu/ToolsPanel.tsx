@@ -26,7 +26,7 @@ import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFile
 import { REM_VALUE } from "src/core/managers/StylesManager";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
-import { URLs } from "src/constants/safeUrls";
+import { getYouTubeUrl, URLs } from "src/constants/safeUrls";
 
 declare const PLUGIN_VERSION: string;
 
@@ -361,7 +361,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       return;
     }
     if (isWinALTorMacOPT(e)) {
-      openExternalLink(URLs.YOUTU_BE_YZQOJG2RCKI, view.app);
+      openExternalLink(getYouTubeUrl("yZQoJg2RCKI"), view.app);
       return;
     }
     view.copyLinkToSelectedElementToClipboard(
@@ -426,7 +426,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       return;
     }
     if (isWinALTorMacOPT(e)) {
-      openExternalLink(URLs.YOUTU_BE_R08WK_58DPK, view.app);
+      openExternalLink(getYouTubeUrl("r08wk-58DPk"), view.app);
       return;
     }
     this.props.centerPointer();

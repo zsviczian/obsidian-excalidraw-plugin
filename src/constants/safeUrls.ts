@@ -292,24 +292,9 @@ export const URL_REGISTRY = {
     buildSafeUrl(["wangchujiang", "com"], ["free-font"]),
     UrlPurpose.DOCS,
   ),
-  WWW_YOUTUBE_COM_WATCH_2: defineUrl(
-    buildSafeUrl(["www", "youtube", "com"], ["watch?v=EiT56z3KPjI"]),
-    UrlPurpose.VIDEO,
-  ),
-  I_YTIMG_COM_VI_EIT56Z3KPJI_MAXRESDEFAULT_JPG: defineUrl(
-    buildSafeUrl(
-      ["i", "ytimg", "com"],
-      ["vi", "EiT56z3KPjI", "maxresdefault.jpg"],
-    ),
-    UrlPurpose.VIDEO,
-  ),
   SKETCH_YOUR_MIND_COM_IMAGES_LOGO_EM_PNG: defineUrl(
     buildSafeUrl(["sketch-your-mind", "com"], ["images", "logo-EM.png"]),
     UrlPurpose.APP_LOGIC,
-  ),
-  WWW_YOUTUBE_COM_WATCH_3: defineUrl(
-    buildSafeUrl(["www", "youtube", "com"], ["watch?v=TnwRlaIdhSU"]),
-    UrlPurpose.VIDEO,
   ),
   SKETCH_YOUR_MIND_COM_IMAGES_THUMBNAIL_PODCAST_JPG: defineUrl(
     buildSafeUrl(
@@ -317,28 +302,6 @@ export const URL_REGISTRY = {
       ["images", "Thumbnail-podcast.jpg"],
     ),
     UrlPurpose.RELEASE_LOG,
-  ),
-  WWW_YOUTUBE_COM_WATCH_4: defineUrl(
-    buildSafeUrl(["www", "youtube", "com"], ["watch?v=g-BiyQ7TJTM"]),
-    UrlPurpose.VIDEO,
-  ),
-  I_YTIMG_COM_VI_G_BIYQ7TJTM_MAXRESDEFAULT_JPG: defineUrl(
-    buildSafeUrl(
-      ["i", "ytimg", "com"],
-      ["vi", "g-BiyQ7TJTM", "maxresdefault.jpg"],
-    ),
-    UrlPurpose.VIDEO,
-  ),
-  WWW_YOUTUBE_COM_WATCH_5: defineUrl(
-    buildSafeUrl(["www", "youtube", "com"], ["watch?v=5G9QF-u9w0Q"]),
-    UrlPurpose.VIDEO,
-  ),
-  I_YTIMG_COM_VI_5G9QF_U9W0Q_MAXRESDEFAULT_JPG: defineUrl(
-    buildSafeUrl(
-      ["i", "ytimg", "com"],
-      ["vi", "5G9QF-u9w0Q", "maxresdefault.jpg"],
-    ),
-    UrlPurpose.VIDEO,
   ),
   COMMUNITY_OBSIDIAN_MD_PLUGINS_OBSIDIAN_EXCALIDRAW_PLUGIN: defineUrl(
     buildSafeUrl(
@@ -394,10 +357,6 @@ export const URL_REGISTRY = {
     buildSafeUrl(["visual-thinking-workshop", "com"], ["mindmap"]),
     UrlPurpose.SUPPORT,
   ),
-  YOUTU_BE_HRTAAD34ZZG: defineUrl(
-    buildSafeUrl(["youtu", "be"], ["HRtaaD34Zzg"]),
-    UrlPurpose.VIDEO,
-  ),
   GITHUB_COM_SUPERLE3: defineUrl(
     buildSafeUrl(["github", "com"], ["superle3"]),
     UrlPurpose.RELEASE_LOG,
@@ -421,10 +380,6 @@ export const URL_REGISTRY = {
       ],
     ),
     UrlPurpose.RELEASE_LOG,
-  ),
-  YOUTU_BE_ISUORBVKYHQ: defineUrl(
-    buildSafeUrl(["youtu", "be"], ["ISuORbVKyhQ"]),
-    UrlPurpose.VIDEO,
   ),
   GITHUB_COM_STEVERUIZOK_PERFECT_FREEHAND: defineUrl(
     buildSafeUrl(
@@ -535,18 +490,6 @@ export const URL_REGISTRY = {
     buildSafeUrl(["player", "vimeo", "com"]),
     UrlPurpose.APP_LOGIC,
   ),
-  YOUTU_BE_YZQOJG2RCKI: defineUrl(
-    buildSafeUrl(["youtu", "be"], ["yZQoJg2RCKI"]),
-    UrlPurpose.VIDEO,
-  ),
-  YOUTU_BE_R08WK_58DPK: defineUrl(
-    buildSafeUrl(["youtu", "be"], ["r08wk-58DPk"]),
-    UrlPurpose.VIDEO,
-  ),
-  YOUTU_BE_UHFD0XOHRXE: defineUrl(
-    buildSafeUrl(["youtu", "be"], ["uHFd0XoHRxE"]),
-    UrlPurpose.VIDEO,
-  ),
   NOEMBED_COM_EMBED_URL: defineUrl(
     buildSafeUrl(["noembed", "com"], ["embed?url="]),
     UrlPurpose.APP_LOGIC,
@@ -561,3 +504,6 @@ export const URL_REGISTRY = {
 export const URLs = Object.fromEntries(
   Object.entries(URL_REGISTRY).map(([key, data]) => [key, data.url]),
 ) as { [K in keyof typeof URL_REGISTRY]: string };
+
+export const getYouTubeThumbnailUrl = (id: string) => `${URLs.I_YTIMG_COM}/vi/${id}/maxresdefault.jpg`;
+export const getYouTubeUrl = (id: string) => `${URLs.YOUTUBE_COM}/watch?v=${id}`;

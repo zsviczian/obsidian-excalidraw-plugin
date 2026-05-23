@@ -267,7 +267,7 @@ import {
   getElementsWithLinkMatchingQuery,
   getImagesMatchingQuery,
 } from "src/utils/excalidrawAutomateUtils";
-import { URLs } from "src/constants/safeUrls";
+import { getYouTubeUrl, URLs } from "src/constants/safeUrls";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -3216,7 +3216,7 @@ export default class ExcalidrawView
       let noticeTimeout: number;
       this.registerDomEvent(notice.noticeEl, "pointerdown", () => {
         noticeTimeout = window.setTimeout(() => {
-          window.open(URLs.YOUTU_BE_UHFD0XOHRXE);
+          window.open(getYouTubeUrl("uHFd0XoHRxE"));
         }, 1000);
       });
       this.registerDomEvent(notice.noticeEl, "pointerup", () => {

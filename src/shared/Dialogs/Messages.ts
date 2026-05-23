@@ -1,4 +1,10 @@
-import { URLs } from "src/constants/safeUrls";
+import { getYouTubeThumbnailUrl, getYouTubeUrl, URLs } from "src/constants/safeUrls";
+
+const getYouTubeDiv = (videoId: string) => `
+<div class="excalidraw-videoWrapper">
+<a href="${getYouTubeUrl(videoId)}" target="_blank"><img src="${getYouTubeThumbnailUrl(videoId)}" style="width:100%;"></a>
+</div>
+`;
 
 export const RELEASE_NOTES: { [k: string]: string } = {
   Intro: `After each update, you'll see these release notes (you can turn this off in the plugin settings).
@@ -8,18 +14,22 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
   "2.23.4": `
+${getYouTubeDiv("otIHXat8Roo")}
+
 ## New
-- Added session-scoped AI token usage metering. The plugin now tracks input and output tokens per model for text/multimodal requests, and image generation counts for image requests.
-- A new **"Session token usage"** button appears at the top of the AI section in plugin settings. Click it to view a per-model breakdown table and copy it as a Markdown table.
-- ExcaliAI now shows an **"AI Usage: input/output"** button next to the Run button. Clicking it opens the same usage modal.
+- Added **session-scoped AI usage metering** with per-model token/image tracking, a new **"Session token usage"** settings button with Markdown export, and an **"AI Usage: input/output"** button in ExcaliAI next to Run for quick access to the same breakdown.
 - Added an explicit opt-in for executing <code>cmd://</code> links from drawings. Command links are now blocked by default, with a security warning prompt on first use and a dedicated setting under Excalidraw Automate.
-- Replaced the dropped-link title resolver from Iframely with an HTTPS oEmbed endpoint, and restricted auto title resolution to HTTPS links.
-- Hardened data URL embeddables: HTML loaded through <code>data:text/html</code> now renders in a sandboxed iframe with a defensive CSP to keep interactive content contained inside the embeddable.
+- Replaced the dropped-link title resolver from Iframely with an HTTPS oEmbed endpoint.
+- Hardened **data URL embeddables**: HTML loaded through <code>data:text/html</code> now renders in a sandboxed iframe with a defensive CSP to keep interactive content contained inside the embeddable.
+
+## Fixed
+- Fixed Taskbone OCR, which broke in 2.23.0.
+- Fixed inline link suggester in MindMap Builder failing when filenames included the "." (dot) character. [#2772](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2772)
 
 ## New in ExcalidrawAutomate
 - Added \`getPathForImageFileId(fileId: FileId): string | null\` — returns the vault path for an image element identified by its Excalidraw fileId. Note: Excalidraw does not maintain a persistent index of fileIds to paths; the path is only available for images that have appeared in an open drawing during the current Obsidian session.
-- Gemini image models now expose provider-correct size presets in AI settings and ExcaliAI, and Google image requests translate those presets into Gemini aspect ratio and image size parameters automatically.
-- Added Three new ExcalidrawAutomate methods for AI token usage.
+- Gemini image models now expose **provider-correct size presets** in AI settings and ExcaliAI, with Google image requests automatically translating presets into Gemini aspect ratio and image size parameters.
+- Added three new ExcalidrawAutomate methods for **AI token usage**.
 
 \`\`\`ts
 /**
@@ -64,9 +74,7 @@ If you notice anything broken or behaving unexpectedly, please let me know. I'll
   - Further code scanner and transparency improvements, including a new \`ExcalidrawAutomate.printURLsInCodebase()\` function to list all URLs used in the codebase. All URL calls require explicit user action, either through enabled settings or clearly indicated links. Run the function in the Obsidian Developer Console (\`CTRL+SHIFT+I\` / \`CMD+OPT+I\`).
   `,
   "2.23.0": `
-<div class="excalidraw-videoWrapper">
-<a href="${URLs.WWW_YOUTUBE_COM_WATCH_2}" target="_blank"><img src="${URLs.I_YTIMG_COM_VI_EIT56Z3KPJI_MAXRESDEFAULT_JPG}" style="width:100%;"></a>
-</div>
+${getYouTubeDiv("EiT56z3KPjI")}
 
 ## New
 - Added a new setting under *Excalidraw Automate* to opt-in to \`excalidraw-onload-scripts\`.
@@ -197,9 +205,7 @@ Share your work. Ask questions. Learn from others.  👉 https://community.sketc
 
 Curious about the philosophy behind it?
 
-<div class="excalidraw-videoWrapper">
-<a href="${URLs.WWW_YOUTUBE_COM_WATCH_3}" target="_blank"><img src="${URLs.SKETCH_YOUR_MIND_COM_IMAGES_THUMBNAIL_PODCAST_JPG}" style="width:100%;"></a>
-</div>
+${getYouTubeDiv("TnwRlaIdhSU")}
 
 `,
   "2.22.1": `
@@ -289,9 +295,7 @@ public async parseText (text: string): Promise<string | undefined>;
 \`\`\`
 `,
   "2.20.6": `
-<div class="excalidraw-videoWrapper">
-<a href="${URLs.WWW_YOUTUBE_COM_WATCH}/4" target="_blank"><img src="${URLs.I_YTIMG_COM_VI_G_BIYQ7TJTM_MAXRESDEFAULT_JPG}" style="width:100%;"></a>
-</div>
+${getYouTubeDiv("g-BiyQ7TJTM")}
 
 ## New
 - Inline suggester now supports searching for tags in addition to files. Trigger with "#".
@@ -338,7 +342,7 @@ stakeholder_mgmt, 1, 6, 10
 - Improved performance of the [MindMap Builder script](${URLs.VISUAL_THINKING_WORKSHOP_COM_MINDMAP}).
 
 ## New
-- [Deconstruct Selected Elements script](${URLs.YOUTU_BE_HRTAAD34ZZG}) now includes a folder selection option, allowing you to choose the destination folder for the generated image.
+- [Deconstruct Selected Elements script](${getYouTubeUrl("HRtaaD34Zzg")}) now includes a folder selection option, allowing you to choose the destination folder for the generated image.
 - Arrow binding midpoints. When the projected point is close to center, snap it to the exact center. This way it's easier to create neat(er) simple arrow connections. [#10611](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/10611)
 
 `,
@@ -405,9 +409,7 @@ stakeholder_mgmt, 1, 6, 10
 
 `,
   "2.20.0": `
-<div class="excalidraw-videoWrapper">
-<a href="${URLs.WWW_YOUTUBE_COM_WATCH_5}" target="_blank"><img src="${URLs.I_YTIMG_COM_VI_5G9QF_U9W0Q_MAXRESDEFAULT_JPG}" style="width:100%;"></a>
-</div>
+${getYouTubeDiv("5G9QF-u9w0Q")}
 
 > [!Tip]- Learn MindMap Builder
 > Learn it fast with the low-cost [MindMap Builder course](${URLs.VISUAL_THINKING_WORKSHOP_COM_MINDMAP}). Register before **31 Jan** to join a live Q&A:
@@ -415,7 +417,7 @@ stakeholder_mgmt, 1, 6, 10
 > - Sun Feb 1 @ 09:00 CET ([local time](${URLs.WWW_TIMEANDDATE_COM_WORLDCLOCK_FIXEDTIME_HTML_1}))
 
 ## Scripts
-- Moved [Shade Master](${URLs.YOUTU_BE_ISUORBVKYHQ}) to use the new Excalidraw Sidepanel API (just like MindMap Builder).
+- Moved [Shade Master](${getYouTubeUrl("ISuORbVKyhQ")}) to use the new Excalidraw Sidepanel API (just like MindMap Builder).
 
 ## New
 - Dark theme from Excalidraw.com [#10578](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/10578) (including correct emoji rendering in dark mode 😍).

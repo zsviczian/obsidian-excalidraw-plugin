@@ -56,7 +56,7 @@ When nodes resize (e.g. text edit), the script intelligently re-positions groupe
 /* --- Initialization Logic --- */
 const VERSION = "test";
 
-if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.21.0")) {
+if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.23.4")) {
   new Notice("Please update the Excalidraw Plugin to version 2.21.0 or higher.");
   return;
 }
