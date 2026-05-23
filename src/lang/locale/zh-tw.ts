@@ -1050,6 +1050,8 @@ export default {
     "選擇已有繪圖，或者輸入新繪圖檔案的名稱，然後按回車。",
   SELECT_TO_EMBED: "選擇要嵌入到當前 Markdown 文件中的繪圖",
   SELECT_MD: "選擇要以影像形式嵌入到當前繪圖中的 Markdown 文件",
+
+  //SelectCard.ts
   TYPE_SECTION: "輸入章節標題進行選擇",
   SELECT_SECTION_OR_TYPE_NEW:
     "選擇現有章節標題或輸入新的章節標題，然後按 Enter。",
@@ -1364,7 +1366,7 @@ Obsidian 的 Excalidraw 外掛遠不只是「畫圖工具」。由於它與 Obsi
 </div>
 `,
 
-  //Excalidraw component
+  //CustomEmbeddable.tsx
   NOTICE_PDF_THEME:
     "已覆蓋 PDF 主題。\n" +
     "透過檔案的 'excalidraw-embeddable-theme' 筆記屬性設定（將覆蓋外掛設定）。\n\n" +

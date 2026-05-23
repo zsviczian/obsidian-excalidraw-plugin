@@ -1130,6 +1130,8 @@ export default {
   SELECT_TO_EMBED:
     "Selecciona el bosquejo para insertar en el documento activo.",
   SELECT_MD: "Selecciona el documento Markdown que quieres insertar",
+
+  //SelectCard.ts
   TYPE_SECTION: "Escribe el nombre de la sección para seleccionar.",
   SELECT_SECTION_OR_TYPE_NEW:
     "Selecciona una sección existente o escribe el nombre de una nueva y luego presiona Enter.",
@@ -1447,7 +1449,7 @@ export default {
   //ReleaseNotes.ts
   RN_WELCOME: "Bienvenido a Excalidraw",
 
-  //Excalidraw component
+  //CustomEmbeddable.tsx
   NOTICE_PDF_THEME:
     "Sobreescritura de Tema de PDF .\n" +
     "Controla esto a través de la propiedad de documento 'excalidraw-embeddable-theme' de este archivo (anula la configuración del complemento).\n\n" +

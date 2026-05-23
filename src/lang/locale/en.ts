@@ -1157,6 +1157,8 @@ export default {
     "Select existing drawing or type name of a new drawing then press Enter.",
   SELECT_TO_EMBED: "Select the drawing to insert into active document.",
   SELECT_MD: "Select the markdown document you want to insert",
+
+  //SelectCard.ts
   TYPE_SECTION: "Type section name to select.",
   SELECT_SECTION_OR_TYPE_NEW:
     "Select existing section or type name of a new section then press Enter.",
@@ -1483,7 +1485,7 @@ Thank you & Enjoy!
 </div>
 `,
 
-  //Excalidraw component
+  //CustomEmbeddable.tsx
   NOTICE_PDF_THEME:
     "PDF theme overridden.\n" +
     "Control via this file's 'excalidraw-embeddable-theme' document property (overrides plugin).\n\n" +
