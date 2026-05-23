@@ -663,7 +663,7 @@ export default {
     `${labelCTRL()}+CLICK on <code>[[Elementos de Texto]]</code> para abrirlos como enlaces. ` +
     "Si el texto seleccionado tiene más de un <code>[[enlace válido de Obsidian]]</code>, solo se abrirá el primero. " +
     "Si el texto comienza como un enlace web válido (es decir, <code>http" +
-    "://</code> o <code>http://</code>), entonces " +
+    "s://</code> o <code>http://</code>), entonces " +
     "el complemento lo abrirá en un navegador. " +
     "Cuando los archivos de Obsidian cambian, el <code>[[enlace]]</code> coincidente en tus bosquejos también cambiará. " +
     "Si no quieres que el texto cambie accidentalmente en tus bosquejos, usa <code>[[enlaces|con alias]]</code>.",

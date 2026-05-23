@@ -423,7 +423,7 @@ export default {
   AI_PROVIDER_PROFILE_MODAL_BASE_URL_NAME: "Base URL",
   AI_PROVIDER_PROFILE_MODAL_BASE_URL_DESC:
     "Base URL used to derive the provider endpoints.",
-  AI_PROVIDER_PROFILE_MODAL_BASE_URL_PLACEHOLDER: `e.g.: https${+"://api.openai"}${+".com/v1"}`,
+  AI_PROVIDER_PROFILE_MODAL_BASE_URL_PLACEHOLDER: "e.g.: http"+"s://api.openai"+".com/v1",
   AI_PROVIDER_PROFILE_MODAL_OPENAI_COMPATIBLE_HINT:
     "For local OpenAI-compatible LLMs, enter a dummy API key if no real key is required so Excalidraw recognizes the profile as configured.",
   AI_PROVIDER_PROFILE_MODAL_NAME_REQUIRED: "Provider profile name is required.",
@@ -702,7 +702,7 @@ export default {
     `${labelCTRL()}+CLICK on <code>[[Text Elements]]</code> to open them as links. ` +
     "If the selected text has more than one <code>[[valid Obsidian links]]</code>, only the first will be opened. " +
     "If the text starts as a valid web link (i.e. <code>http" +
-    "://</code> or <code>http://</code>), then " +
+    "s://</code> or <code>http://</code>), then " +
     "the plugin will open it in a browser. " +
     "When Obsidian files change, the matching <code>[[link]]</code> in your drawings will also change. " +
     "If you don't want text accidentally changing in your drawings use <code>[[links|with aliases]]</code>.",
