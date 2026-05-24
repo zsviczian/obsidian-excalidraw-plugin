@@ -5,11 +5,16 @@
 /* ************************************** */
 /* lib/shared/ExcalidrawAutomate.d.ts */
 /* ************************************** */
-type ExcalidrawCustomDataValue = string | number | boolean | null | ExcalidrawCustomDataValue[] | {
-    [key: string]: ExcalidrawCustomDataValue;
-};
-type ExcalidrawCustomDataPatch = Partial<Record<string, ExcalidrawCustomDataValue | undefined>>;
-type ExcalidrawAutomateHelpTarget = ((...args: any[]) => any) | string;
+type MutableElementMapEntry = Mutable<ExcalidrawElement> & Record<string, unknown>;
+import { PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties, ExportSettings } from "src/types/exportUtilTypes";
+import { FrameRenderingOptions } from "src/types/utilTypes";
+import { AutoexportConfig } from "src/types/excalidrawViewTypes";
+import { FloatingModal } from "./Dialogs/FloatingModal";
+import { ExcalidrawSidepanelTab } from "src/view/sidepanel/SidepanelTab";
+import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
+import { AIRequest, ExcalidrawAISettings } from "src/types/AIUtilTypes";
+import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
+type ExcalidrawAutomateHelpTarget = ((...args: unknown[]) => unknown) | string;
 /**
  * ExcalidrawAutomate is a utility class that provides a simplified API to interact with Excalidraw elements and the Excalidraw canvas.
  * Elements in the Excalidraw Scene are immutable. You should never directly change element properties in the scene object.
@@ -92,6 +97,12 @@ export declare class ExcalidrawAutomate {
      */
     printStartupBreakdown(): void;
     /**
+     * Prints all URLs grouped by their respective justifications.
+     * Useful for auditing and generating scanner exception reports.
+     * @returns {void}
+     */
+    printURLsInCodebase(): void;
+    /**
      * Add or modify keys in an element's customData while preserving existing keys.
      * Creates customData={} if it does not exist.
      * @param {string} id - The element ID in elementsDict to modify.
@@ -129,7 +140,7 @@ export declare class ExcalidrawAutomate {
      */
     generateAIText(request: AIRequest): Promise<{
         response: RequestUrlResponse;
-        json: any;
+        json: Record<string, unknown>;
         content: string;
         rateLimit: number | null;
         rateLimitRemaining: number | null;
@@ -139,7 +150,7 @@ export declare class ExcalidrawAutomate {
      */
     analyzeAIImage(request: AIRequest): Promise<{
         response: RequestUrlResponse;
-        json: any;
+        json: Record<string, unknown>;
         content: string;
         rateLimit: number | null;
         rateLimitRemaining: number | null;
@@ -160,6 +171,24 @@ export declare class ExcalidrawAutomate {
      * Creates a lightweight chat session wrapper that preserves prior messages between calls.
      */
     createAIChatSession(initialRequest?: Omit<AIRequest, "messages">): import("../utils/AIUtils").AIChatSession;
+    /**
+     * Returns the accumulated AI token usage for the current Obsidian session.
+     * Usage is keyed by model identifier and tracks input/output tokens for text
+     * models and generation counts for image models.
+     * Data is not persisted and resets when Obsidian is restarted.
+     */
+    getAIUsage(): import("src/types/AIUtilTypes").AIUsageData;
+    /**
+     * Opens a modal dialog showing per-model AI token usage for the current session.
+     * The dialog includes a "Copy as Markdown" button so the table can be pasted elsewhere.
+     */
+    showAIUsageModal(): void;
+    /**
+     * Returns a compact label string summarising total session token usage.
+     * Format: "AI Usage: 355k/23k" (input tokens / output tokens).
+     * Appends image generation count when present, e.g. "+ 3 imgs".
+     */
+    formatAIUsageLabel(): string;
     /**
      * Extracts code blocks from markdown text.
      * @param {string} markdown - The markdown string to parse.
@@ -275,7 +304,7 @@ export declare class ExcalidrawAutomate {
     isExcalidrawMaskFile(file?: TFile): boolean;
     plugin: ExcalidrawPlugin;
     elementsDict: {
-        [key: string]: any;
+        [key: string]: MutableElementMapEntry;
     };
     imagesDict: {
         [key: FileId]: ImageInfo;
@@ -444,23 +473,23 @@ export declare class ExcalidrawAutomate {
     /**
      * Extracts the Excalidraw Scene from an Excalidraw File.
      * @param {TFile} file - The Excalidraw file to extract the scene from.
-     * @returns {Promise<{elements: ExcalidrawElement[]; appState: AppState;}>} Promise resolving to the Excalidraw scene.
+     * @returns {Promise<{elements: ExcalidrawElement[]; appState: Partial<AppState>;}>} Promise resolving to the Excalidraw scene.
      */
     getSceneFromFile(file: TFile): Promise<{
         elements: ExcalidrawElement[];
-        appState: AppState;
+        appState: Partial<AppState>;
     }>;
     /**
      * Gets all elements from ExcalidrawAutomate elementsDict.
      * @returns {Mutable<ExcalidrawElement>[]} Array of elements from elementsDict.
      */
-    getElements(): Mutable<ExcalidrawElement>[];
+    getElements(): MutableElementMapEntry[];
     /**
      * Gets a single element from ExcalidrawAutomate elementsDict.
      * @param {string} id - The element ID to retrieve.
      * @returns {Mutable<ExcalidrawElement>} The element with the specified ID.
      */
-    getElement(id: string): Mutable<ExcalidrawElement>;
+    getElement(id: string): MutableElementMapEntry;
     /**
      * Returns an object describing the bound text element.
      *
@@ -492,14 +521,8 @@ export declare class ExcalidrawAutomate {
         sceneElement?: ExcalidrawTextElement;
     };
     /**
-     * Creates a drawing and saves it to the specified filename.
-     * @param {Object} [params] - Parameters for creating the drawing.
-     * @param {string} [params.filename] - The filename for the drawing. If null, default filename as defined in Excalidraw settings.
-     * @param {string} [params.foldername] - The folder name for the drawing. If null, default folder as defined in Excalidraw settings.
-     * @param {string} [params.templatePath] - The template path to use for the drawing.
-     * @param {boolean} [params.onNewPane] - Whether to open the drawing in a new pane.
-     * @param {boolean} [params.silent] - Whether to create the drawing silently.
-     * @param {Object} [params.frontmatterKeys] - Frontmatter keys to include in the drawing.
+     * Creates a new Excalidraw drawing file from current EA state and optional template.
+     * @param params - Optional creation parameters.
      * @param {string} [params.plaintext] - Text to insert above the `# Text Elements` section.
      * @returns {Promise<string>} Promise resolving to the path of the created drawing.
      */
@@ -620,7 +643,7 @@ export declare class ExcalidrawAutomate {
      * @param {number} [padding] - The padding to use for the PNG.
      * @returns {Promise<any>} Promise resolving to the created PNG image.
      */
-    createPNG(templatePath?: string, scale?: number, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string, padding?: number): Promise<any>;
+    createPNG(templatePath?: string, scale?: number, exportSettings?: ExportSettings, loader?: EmbeddedFilesLoader, theme?: string, padding?: number): Promise<Blob>;
     /**
      * Wrapper for createPNG() that returns a base64 encoded string designed to support LLM workflows.
      * @param {string} [templatePath] - The template path to use for the PNG.
@@ -806,7 +829,7 @@ export declare class ExcalidrawAutomate {
      * @param {string} [id] - The ID of the line element.
      * @returns {string} The ID of the added line element.
      */
-    addLine(points: [[x: number, y: number]], id?: string): string;
+    addLine(points: [x: number, y: number][], id?: string): string;
     /**
      * Adds an arrow element to the ExcalidrawAutomate instance.
      * @param {[x: number, y: number][]} points - Array of points defining the arrow.
@@ -982,21 +1005,34 @@ export declare class ExcalidrawAutomate {
     addBackOfTheCardNoteToView(sectionTitle: string, activate?: boolean, sectionBody?: string, embeddableCustomData?: EmbeddableMDCustomProps): Promise<string>;
     /**
      * Gets the selected element in the view. If more are selected, gets the first.
-     * @returns {any} The selected element or null if none selected.
+     * @returns {ExcalidrawElement | null} The selected element or null if none selected.
      */
-    getViewSelectedElement(): any;
+    getViewSelectedElement(): ExcalidrawElement | null;
     /**
      * Gets the selected elements in the view.
      * @param {boolean} [includeFrameChildren=true] - Whether to include frame children in the selection.
-     * @returns {any[]} Array of selected elements.
+     * @returns {ExcalidrawElement[]} Array of selected elements.
      */
-    getViewSelectedElements(includeFrameChildren?: boolean): any[];
+    getViewSelectedElements(includeFrameChildren?: boolean): ExcalidrawElement[];
     /**
      * Gets the file associated with an image element in the view.
      * @param {ExcalidrawElement} el - The image element.
      * @returns {TFile | null} The file associated with the image element or null if not found.
      */
     getViewFileForImageElement(el: ExcalidrawElement): TFile | null;
+    /**
+     * Returns the vault or external URI path for an image file identified by its Excalidraw fileId.
+     *
+     * Note: Excalidraw does not maintain a persistent index of fileIds to paths.
+     * The `filesMaster` cache is populated at runtime as images appear in open drawings,
+     * and is used to support copy/paste of image references between drawings without
+     * duplicating files. This function will only return a path for images that have
+     * been seen in a drawing during the current Obsidian session.
+     *
+     * @param {FileId} fileId - The Excalidraw fileId of the image.
+     * @returns {string | null} The vault path of the image file, or null if not cached.
+     */
+    getPathForImageFileId(fileId: FileId): string | null;
     /**
      * Gets the color map associated with an image element in the view.
      * @param {ExcalidrawElement} el - The image element.
@@ -1141,7 +1177,7 @@ export declare class ExcalidrawAutomate {
     onDropHook: (data: {
         ea: ExcalidrawAutomate;
         event: React.DragEvent<HTMLDivElement>;
-        draggable: any;
+        draggable: ObsidianDraggable;
         type: "file" | "text" | "unknown";
         payload: {
             files: TFile[];
@@ -1420,7 +1456,7 @@ export declare class ExcalidrawAutomate {
      * @param {Object} settings - The script settings to set.
      * @returns {Promise<void>} Promise resolving when the settings are saved.
      */
-    setScriptSettings(settings: any): Promise<void>;
+    setScriptSettings(settings: Record<string, unknown>): Promise<void>;
     setScriptSettingValue(key: string, value: ScriptSettingValue): void;
     getScriptSettingValue(key: string, defaultValue: ScriptSettingValue): ScriptSettingValue;
     saveScriptSettings(): Promise<void>;
@@ -1491,10 +1527,10 @@ export declare class ExcalidrawAutomate {
     /**
      * Moves the specified element to a specific position in the z-index.
      * * Operates directly on the Excalidraw Scene in targetView, not through ExcalidrawAutomate elements.
-     * @param {number} elementId - The ID of the element to move.
+     * @param {string} elementId - The ID of the element to move.
      * @param {number} newZIndex - The new z-index position for the element.
      */
-    moveViewElementToZIndex(elementId: number, newZIndex: number): void;
+    moveViewElementToZIndex(elementId: string, newZIndex: number): void;
     /**
      * Converts a hex color string to an RGB array.
      * @deprecated Use getCM / ColorMaster instead.
@@ -2021,6 +2057,20 @@ export type AIRequestMessagePart = {
 export type AIRequestMessage = {
     role: "system" | "user" | "assistant";
     content: string | AIRequestMessagePart[];
+};
+export type AITextUsageEntry = {
+    inputTokens: number;
+    outputTokens: number;
+};
+export type AIImageUsageEntry = {
+    generations: number;
+};
+export type AIUsageData = {
+    textModels: Record<string, AITextUsageEntry>;
+    imageModels: Record<string, AIImageUsageEntry>;
+    totalInputTokens: number;
+    totalOutputTokens: number;
+    totalImageGenerations: number;
 };
 export type AIRequest = {
     provider?: AIProvider;
@@ -2906,6 +2956,10 @@ export interface ExcalidrawProps {
     name?: string;
     renderCustomStats?: (elements: readonly NonDeletedExcalidrawElement[], appState: UIAppState) => JSX.Element;
     UIOptions?: Partial<UIOptions>;
+    /**
+     * dimensions and size constraints for inserted images
+     */
+    imageOptions?: ImageOptions;
     detectScroll?: boolean;
     handleKeyboardGlobally?: boolean;
     onLibraryChange?: (libraryItems: LibraryItems) => void | Promise<any>;
@@ -2974,6 +3028,10 @@ export type ExportOpts = {
     onExportToBackend?: (exportedElements: readonly NonDeletedExcalidrawElement[], appState: UIAppState, files: BinaryFiles) => void;
     renderCustomUI?: (exportedElements: readonly NonDeletedExcalidrawElement[], appState: UIAppState, files: BinaryFiles, canvas: HTMLCanvasElement) => JSX.Element;
 };
+export type ImageOptions = Partial<{
+    maxWidthOrHeight: number;
+    maxFileSizeBytes: number;
+}>;
 export type CanvasActions = Partial<{
     changeViewBackgroundColor: boolean;
     clearCanvas: boolean;
@@ -3003,6 +3061,7 @@ export type AppProps = Merge<ExcalidrawProps, {
             export: ExportOpts;
         };
     }>;
+    imageOptions: Required<ImageOptions>;
     detectScroll: boolean;
     handleKeyboardGlobally: boolean;
     isCollaborating: boolean;
