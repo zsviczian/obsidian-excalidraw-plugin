@@ -330,6 +330,7 @@ function slider(contentEl, action, min, max, step, invert) {
 }
 
 let debounceColorPicker = true;
+let dirty = false;
 
 function renderSidepanel(contentEl) {
   contentEl.empty();
@@ -354,7 +355,7 @@ function renderSidepanel(contentEl) {
   }
 
   const { width, height } = ea.getExcalidrawAPI().getAppState();
-
+  
   if(allElements.length === 0) {
     contentEl.createEl("p", { 
       text: "Select at least one rectangle, ellipse, diamond, line, arrow, freedraw, text or SVG image element",
