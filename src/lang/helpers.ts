@@ -1,109 +1,35 @@
-//Solution copied from obsidian-kanban: https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/lang/helpers.ts
-
 import {
-  CJK_FONTS,
+  LOCALE,
   DEVICE,
   FRONTMATTER_KEYS,
-  LOCALE,
+  CJK_FONTS,
 } from "src/constants/constants";
+import {
+  TAG_AUTOEXPORT,
+  TAG_MDREADINGMODE,
+  TAG_PDFEXPORT,
+} from "src/constants/constSettingsTags";
+import { URLs } from "src/constants/safeUrls";
 import {
   labelALT,
   labelCTRL,
   labelMETA,
   labelSHIFT,
 } from "src/utils/modifierKeyLabels";
-import { URLs } from "src/constants/safeUrls";
 import en from "./locale/en";
+import { errorHandler } from "src/utils/ErrorHandler";
 
 declare const PLUGIN_LANGUAGES: Record<string, string>;
 declare const PLUGIN_VERSION: string;
+declare var LZString: any;
 
 let locale: Partial<typeof en> | null = null;
-
-// Runtime token map for compressed locales.
-// Keep this in sync with token emission in rollup.config.js tokenizeLocaleContent.
-// If you add a locale and it needs a new dynamic placeholder, add it in both places.
-const TOKENS = {
-  IF_DESKTOP_START: "__EXD_IF_DESKTOP__",
-  IF_DESKTOP_END: "__EXD_END_IF_DESKTOP__",
-  LABEL_ALT: "__EXD_LABEL_ALT__",
-  LABEL_CTRL: "__EXD_LABEL_CTRL__",
-  LABEL_META: "__EXD_LABEL_META__",
-  LABEL_SHIFT: "__EXD_LABEL_SHIFT__",
-  FRONTMATTER_LINK_BRACKETS: "__EXD_FRONTMATTER_LINK_BRACKETS__",
-  FRONTMATTER_LINK_PREFIX: "__EXD_FRONTMATTER_LINK_PREFIX__",
-  FRONTMATTER_URL_PREFIX: "__EXD_FRONTMATTER_URL_PREFIX__",
-  CJK_FONTS: "__EXD_CJK_FONTS__",
-  PLUGIN_VERSION: "__EXD_PLUGIN_VERSION__",
-  DEVTOOLS_SHORTCUT: "__EXD_DEVTOOLS_SHORTCUT__",
-} as const;
-
-function resolveTokenizedString(value: string): string {
-  // Evaluate deferred desktop-only fragments generated during build.
-  const desktopResolved = value.replace(
-    /__EXD_IF_DESKTOP__([\s\S]*?)__EXD_END_IF_DESKTOP__/g,
-    (_, content: string) => (DEVICE.isDesktop ? content : ""),
-  );
-
-  // Evaluate deferred Apple vs non-Apple fragments generated during build.
-  const appleResolved = desktopResolved.replace(
-    /__EXD_IF_APPLE__([\s\S]*?)__EXD_ELSE_APPLE__([\s\S]*?)__EXD_END_IF_APPLE__/g,
-    (_, appleValue: string, nonAppleValue: string) =>
-      DEVICE.isIOS || DEVICE.isMacOS ? appleValue : nonAppleValue,
-  );
-
-  // Resolve URL placeholders emitted during build from safeUrls constants.
-  const withResolvedUrls = appleResolved.replace(
-    /__EXD_URL_([A-Z0-9_]+)__/g,
-    (match: string, key: string) =>
-      (URLs as Record<string, string>)[key] ?? match,
-  );
-
-  // Token replacements for runtime-dependent values.
-  const replacements: Record<string, string> = {
-    [TOKENS.LABEL_ALT]: labelALT(),
-    [TOKENS.LABEL_CTRL]: labelCTRL(),
-    [TOKENS.LABEL_META]: labelMETA(),
-    [TOKENS.LABEL_SHIFT]: labelSHIFT(),
-    [TOKENS.FRONTMATTER_LINK_BRACKETS]: FRONTMATTER_KEYS["link-brackets"].name,
-    [TOKENS.FRONTMATTER_LINK_PREFIX]: FRONTMATTER_KEYS["link-prefix"].name,
-    [TOKENS.FRONTMATTER_URL_PREFIX]: FRONTMATTER_KEYS["url-prefix"].name,
-    [TOKENS.CJK_FONTS]: CJK_FONTS,
-    [TOKENS.PLUGIN_VERSION]: PLUGIN_VERSION,
-    [TOKENS.DEVTOOLS_SHORTCUT]:
-      DEVICE.isIOS || DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i",
-  };
-
-  let resolved = withResolvedUrls;
-  for (const [token, replacement] of Object.entries(replacements)) {
-    resolved = resolved.split(token).join(replacement);
-  }
-  return resolved;
-}
-
-function resolveTokensDeep(value: unknown): unknown {
-  if (typeof value === "string") {
-    return resolveTokenizedString(value);
-  }
-
-  if (Array.isArray(value)) {
-    return value.map(resolveTokensDeep);
-  }
-
-  if (value && typeof value === "object") {
-    const entries = Object.entries(value as Record<string, unknown>);
-    return Object.fromEntries(
-      entries.map(([k, v]) => [k, resolveTokensDeep(v)]),
-    );
-  }
-
-  return value;
-}
 
 function loadLocale(lang: string): Partial<typeof en> {
   if (lang === "zh") {
     lang = "zh-cn";
   } //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2247
+
   if (!Object.prototype.hasOwnProperty.call(PLUGIN_LANGUAGES, lang)) {
     return en;
   }
@@ -111,13 +37,51 @@ function loadLocale(lang: string): Partial<typeof en> {
   try {
     const compressed = PLUGIN_LANGUAGES[lang];
     const decompressed = LZString.decompressFromBase64(compressed);
-    if (!decompressed) {
+
+    // Construct a factory function string.
+    // This allows safeEval (which runs in the global scope) to access our imported variables
+    // because we pass them explicitly as arguments to this function.
+    const factoryCode = `(function(
+      DEVICE, FRONTMATTER_KEYS, CJK_FONTS,
+      TAG_AUTOEXPORT, TAG_MDREADINGMODE, TAG_PDFEXPORT,
+      URLs,
+      labelALT, labelCTRL, labelMETA, labelSHIFT,
+      PLUGIN_VERSION
+    ) {
+      let x = {};
+      ${decompressed}
+      return x;
+    })`;
+
+    // Evaluate the function declaration using your ErrorHandler
+    const factory = errorHandler.safeEval<Function>(
+      factoryCode,
+      "loadLocale - parsing language pack",
+      window,
+    );
+
+    if (typeof factory !== "function") {
       return en;
     }
 
-    const parsed = JSON.parse(decompressed) as Partial<typeof en>;
-    return resolveTokensDeep(parsed);
-  } catch {
+    // Execute the evaluated function, injecting the actual imported dependencies
+    const x = factory(
+      DEVICE,
+      FRONTMATTER_KEYS,
+      CJK_FONTS,
+      TAG_AUTOEXPORT,
+      TAG_MDREADINGMODE,
+      TAG_PDFEXPORT,
+      URLs,
+      labelALT,
+      labelCTRL,
+      labelMETA,
+      labelSHIFT,
+      PLUGIN_VERSION,
+    );
+
+    return x || en;
+  } catch (_) {
     return en;
   }
 }

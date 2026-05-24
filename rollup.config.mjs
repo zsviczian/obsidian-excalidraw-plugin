@@ -48,45 +48,12 @@ const jsxRuntimeShim = `
   window['react/jsx-dev-runtime'] = { jsx, jsxs, Fragment, jsxDEV: jsx };
 `;
 
-
-
 const mathjaxtosvg_pkg = isLib ? "" : fs.readFileSync("./MathjaxToSVG/dist/index.js", "utf8");
 
 // Add non-English locales here to embed them as compressed payloads in main.js.
 // When adding a locale file:
 // 1) add its code to this list, 2) build once, 3) if build fails because the locale
-// contains a new dynamic expression, extend tokenizeLocaleContent below and mirror
-// the new token in src/lang/helpers.ts token resolution.
-const LANGUAGES = ['ru', 'zh-cn', 'zh-tw', 'es']; // english is loaded by default
-
-const SAFE_URLS_FILE = "./src/constants/safeUrls.ts";
-const URL_TOKEN_PREFIX = "__EXD_URL_";
-
-function getSafeUrlKeys() {
-  try {
-    const safeUrlsContent = fs.readFileSync(SAFE_URLS_FILE, "utf8");
-    const urlsObjectMatch = safeUrlsContent.match(/export\s+const\s+URLs\s*=\s*\{([\s\S]*?)\}\s*as\s+const/);
-    if (!urlsObjectMatch) {
-      return [];
-    }
-
-    const keys = [];
-    const keyRegex = /^\s*([A-Z0-9_]+)\s*:/gm;
-    let match;
-    while ((match = keyRegex.exec(urlsObjectMatch[1])) !== null) {
-      keys.push(match[1]);
-    }
-
-    return keys;
-  } catch {
-    return [];
-  }
-}
-
-const SAFE_URL_KEYS = getSafeUrlKeys();
-const URL_TOKEN_VALUES = Object.fromEntries(
-  SAFE_URL_KEYS.map((key) => [key, `${URL_TOKEN_PREFIX}${key}__`]),
-);
+const LANGUAGES = ['ru', 'zh-cn', 'zh-tw', 'es']; //english is not compressed as it is always loaded by default
 
 function trimLastSemicolon(input) {
   if (input.endsWith(";")) {
@@ -114,123 +81,12 @@ function minifyCode(code) {
   return minified.code;
 }
 
-// Build-time placeholders that are resolved at runtime in src/lang/helpers.ts.
-// Kept in sync with TOKENS in helpers.ts.
-const DEVICE_TOKEN_VALUES = {
-  IF_DESKTOP_START: "__EXD_IF_DESKTOP__",
-  IF_DESKTOP_END: "__EXD_END_IF_DESKTOP__",
-  IF_APPLE_START: "__EXD_IF_APPLE__",
-  IF_APPLE_ELSE: "__EXD_ELSE_APPLE__",
-  IF_APPLE_END: "__EXD_END_IF_APPLE__",
-  // We no longer need DEVTOOLS_SHORTCUT here, the Apple ternary regex catches it naturally.
-  
-  // Variables mocked in our sandbox evaluation
-  LABEL_ALT: "__EXD_LABEL_ALT__",
-  LABEL_CTRL: "__EXD_LABEL_CTRL__",
-  LABEL_META: "__EXD_LABEL_META__",
-  LABEL_SHIFT: "__EXD_LABEL_SHIFT__",
-  FRONTMATTER_LINK_BRACKETS: "__EXD_FRONTMATTER_LINK_BRACKETS__",
-  FRONTMATTER_LINK_PREFIX: "__EXD_FRONTMATTER_LINK_PREFIX__",
-  FRONTMATTER_URL_PREFIX: "__EXD_FRONTMATTER_URL_PREFIX__",
-  CJK_FONTS: "__EXD_CJK_FONTS__",
-  PLUGIN_VERSION: "__EXD_PLUGIN_VERSION__",
-};
-
-function tokenizeLocaleContent(content, deviceTokens = DEVICE_TOKEN_VALUES) {
-  let tokenized = content;
-
-  // 1. Desktop Conditional
-  // Matches: ${ DEVICE.isDesktop ? `...` : "" }
-  // Robust against arbitrary spaces, newlines, and empty string quote types ("", '', or ``).
-  const desktopRegex = /\$\{\s*DEVICE\.isDesktop\s*\?\s*`([\s\S]*?)`\s*:\s*["'`]{2}\s*\}/g;
-  tokenized = tokenized.replace(desktopRegex, (match, trueBranch) => {
-    return `${deviceTokens.IF_DESKTOP_START}${trueBranch}${deviceTokens.IF_DESKTOP_END}`;
-  });
-
-  // 2. Apple / MacOS Ternaries
-  // Matches both: ( DEVICE.isIOS || DEVICE.isMacOS ? "A" : "B" ) AND DEVICE.isMacOS ? "A" : "B"
-  // Robust against optional parentheses, line breaks, and varying quote types.
-  const appleTernaryRegex = /(?:\(\s*)?(?:DEVICE\.isIOS\s*\|\|\s*)?DEVICE\.isMacOS\s*\?\s*(["'`])([\s\S]*?)\1\s*:\s*(["'`])([\s\S]*?)\3(?:\sbuildSafeUrl)?/g;
-  tokenized = tokenized.replace(appleTernaryRegex, (match, quote1, trueBranch, quote2, falseBranch) => {
-    // Wrap in double quotes so the resulting JS is a valid string literal
-    return `"${deviceTokens.IF_APPLE_START}${trueBranch}${deviceTokens.IF_APPLE_ELSE}${falseBranch}${deviceTokens.IF_APPLE_END}"`;
-  });
-
-  // 3. URLs constants from safeUrls.ts
-  // Matches: URLs.SOME_KEY and replaces with a stable token string literal.
-  const urlConstantRegex = /\bURLs\.([A-Z0-9_]+)\b/g;
-  tokenized = tokenized.replace(urlConstantRegex, (match, key) => {
-    const token = URL_TOKEN_VALUES[key];
-    return token ? `"${token}"` : match;
-  });
-
-  return tokenized;
-}
-
-function serializeLocaleToJson(content, deviceTokens = DEVICE_TOKEN_VALUES) {
-  // Rather than regex-replacing variables, we inject mock variables into the Node sandbox.
-  // When Node evaluates the file, it will natively resolve ${labelALT()} to the token string, 
-  // perfectly bypassing any linter formatting, ES6 template literal breaks, or comment syntax.
-  const urlsSandboxObject = Object.entries(URL_TOKEN_VALUES)
-    .map(([key, token]) => `"${key}": "${token}"`)
-    .join(",\n      ");
-
-  const sandboxEnvironment = `
-    const TAG_AUTOEXPORT = "Autoexport";
-    const TAG_MDREADINGMODE = "MDReadingMode";
-    const TAG_PDFEXPORT = "PDFExport";
-
-    const PLUGIN_VERSION = "${deviceTokens.PLUGIN_VERSION}";
-    const CJK_FONTS = "${deviceTokens.CJK_FONTS}";
-
-    const labelALT = () => "${deviceTokens.LABEL_ALT}";
-    const labelCTRL = () => "${deviceTokens.LABEL_CTRL}";
-    const labelMETA = () => "${deviceTokens.LABEL_META}";
-    const labelSHIFT = () => "${deviceTokens.LABEL_SHIFT}";
-
-    const FRONTMATTER_KEYS = {
-      "link-brackets": { name: "${deviceTokens.FRONTMATTER_LINK_BRACKETS}" },
-      "link-prefix": { name: "${deviceTokens.FRONTMATTER_LINK_PREFIX}" },
-      "url-prefix": { name: "${deviceTokens.FRONTMATTER_URL_PREFIX}" }
-    };
-
-    const URLs = {
-      ${urlsSandboxObject}
-    };
-
-    // Fallback for DEVICE to prevent ReferenceErrors if a conditional regex misses an edge case
-    const DEVICE = { isDesktop: false, isIOS: false, isMacOS: false };
-
-    let x = ${content};
-    return x;
-  `;
-
-  try {
-    const locale = new Function(sandboxEnvironment)();
-    return JSON.stringify(locale);
-  } catch (err) {
-    console.error("Error evaluating locale content.");
-    throw err;
-  }
-}
-
 function compressLanguageFile(lang) {
   const inputDir = "./src/lang/locale";
   const filePath = `${inputDir}/${lang}.ts`;
   let content = fs.readFileSync(filePath, "utf-8");
-  
-  // Safely extract the default export object, ignoring surrounding types/interfaces
-  const exportMatch = content.match(/export\s+default\s+([\s\S]+)/);
-  if (!exportMatch) throw new Error(`Could not find 'export default' in ${filePath}`);
-  
-  let objectContent = exportMatch[1].trim();
-  if (objectContent.endsWith(";")) {
-    objectContent = objectContent.slice(0, -1);
-  }
-
-  const tokenizedContent = tokenizeLocaleContent(objectContent);
-  const localeJson = serializeLocaleToJson(tokenizedContent);
-  return LZString.compressToBase64(localeJson);
+  content = trimLastSemicolon(content.split("export default")[1].trim());
+  return LZString.compressToBase64(minifyCode(`x = ${content};`));
 }
 
 const excalidraw_pkg = isLib ? "" : minifyCode(isProd

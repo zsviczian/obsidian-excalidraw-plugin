@@ -1473,14 +1473,14 @@ export default {
 The Excalidraw Obsidian plugin is much more than "just" a drawing tool. Because it integrates deeply with Obsidian, it opens up a whole new paradigm for Visual Personal Knowledge Management.
 
 <div style="text-align:center;margin-top:10px;">
-<a href="${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE}" target="_blank"><img "src="${URLs.SKETCH_YOUR_MIND_COM_IMAGES_LOGO_EE_PNG}" style="width:50%;"></a>
+<a href="${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE}" target="_blank"><img src="${URLs.SKETCH_YOUR_MIND_COM_IMAGES_LOGO_EE_PNG}" style="width:50%;"></a>
 </div>
 
-To help you get started without the overwhelm, I highly recommend taking the free **[Excalidraw Essentials](" + URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE + ")** mini-course. It cuts through the noise and teaches you the fundamentals in a fast, structured way.
+To help you get started without the overwhelm, I highly recommend taking the free **[Excalidraw Essentials](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE})** mini-course. It cuts through the noise and teaches you the fundamentals in a fast, structured way.
 
-You also don't have to figure it all out alone! Come join the **[Sketch Your Mind Community](" + URLs.COMMUNITY_SKETCH_YOUR_MIND_COM + ")** to connect with fellow visual thinkers, share your workflows, and build a frictionless PKM system together.
+You also don't have to figure it all out alone! Come join the **[Sketch Your Mind Community](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM})** to connect with fellow visual thinkers, share your workflows, and build a frictionless PKM system together.
 
-If you'd like to see what's possible right now, here is a showcase of the key features. To keep abreast of the latest updates and to explore visual PKM, please subscribe to my YouTube channel: [Visual PKM](" + URLs.WWW_YOUTUBE_COM_VISUALPKM + ").
+If you'd like to see what's possible right now, here is a showcase of the key features. To keep abreast of the latest updates and to explore visual PKM, please subscribe to my YouTube channel: [Visual PKM](${URLs.WWW_YOUTUBE_COM_VISUALPKM}).
 
 Thank you & Enjoy!
 

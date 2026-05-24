@@ -51,447 +51,278 @@ const defineUrl = (url: string, purpose: string) => ({ url, purpose });
 export const URL_REGISTRY = {
   RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_DIRECTORY_INFO_JSON:
     defineUrl(
-      buildSafeUrl(
-        ["raw", "githubusercontent", "com"],
-        [
-          "zsviczian",
-          "obsidian-excalidraw-plugin",
-          "master",
-          "ea-scripts",
-          "directory-info.json",
-        ],
-      ),
+      "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/directory-info.json",
       UrlPurpose.APP_LOGIC,
     ),
   API_GITHUB_COM_REPOS_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES: defineUrl(
-    buildSafeUrl(
-      ["api", "github", "com"],
-      [
-        "repos",
-        "zsviczian",
-        "obsidian-excalidraw-plugin",
-        "releases?per_page=15&page=1",
-      ],
-    ),
+    "https://api.github.com/repos/zsviczian/obsidian-excalidraw-plugin/releases?per_page=15&page=1",
     UrlPurpose.APP_LOGIC,
   ),
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "issues"],
-    ),
+    "https://github.com/zsviczian/obsidian-excalidraw-plugin/issues",
     UrlPurpose.DOCS,
   ),
-  API_OPENAI_COM_V1: defineUrl(
-    buildSafeUrl(["api", "openai", "com"], ["v1"]),
-    UrlPurpose.AI_API,
-  ),
+  API_OPENAI_COM_V1: defineUrl("https://api.openai.com/v1", UrlPurpose.AI_API),
   API_ANTHROPIC_COM_V1: defineUrl(
-    buildSafeUrl(["api", "anthropic", "com"], ["v1"]),
+    "https://api.anthropic.com/v1",
     UrlPurpose.AI_API,
   ),
   GENERATIVELANGUAGE_GOOGLEAPIS_COM_V1BETA: defineUrl(
-    buildSafeUrl(["generativelanguage", "googleapis", "com"], ["v1beta"]),
+    "https://generativelanguage.googleapis.com/v1beta",
     UrlPurpose.AI_API,
   ),
-  API_X_AI_V1: defineUrl(
-    buildSafeUrl(["api", "x", "ai"], ["v1"]),
-    UrlPurpose.AI_API,
-  ),
+  API_X_AI_V1: defineUrl("https://api.x.ai/v1", UrlPurpose.AI_API),
   API_OPENAI_COM_V1_CHAT_COMPLETIONS: defineUrl(
-    buildSafeUrl(["api", "openai", "com"], ["v1", "chat", "completions"]),
+    "https://api.openai.com/v1/chat/completions",
     UrlPurpose.AI_API,
   ),
   API_OPENAI_COM_V1_IMAGES_GENERATIONS: defineUrl(
-    buildSafeUrl(["api", "openai", "com"], ["v1", "images", "generations"]),
+    "https://api.openai.com/v1/images/generations",
     UrlPurpose.AI_API,
   ),
   API_OPENAI_COM_V1_IMAGES_EDITS: defineUrl(
-    buildSafeUrl(["api", "openai", "com"], ["v1", "images", "edits"]),
+    "https://api.openai.com/v1/images/edits",
     UrlPurpose.AI_API,
   ),
   API_OPENAI_COM_V1_IMAGES_VARIATIONS: defineUrl(
-    buildSafeUrl(["api", "openai", "com"], ["v1", "images", "variations"]),
+    "https://api.openai.com/v1/images/variations",
     UrlPurpose.AI_API,
   ),
   NOTEBOOKLM_GOOGLE_COM_NOTEBOOK_42D76A2F_C11D_4002_9286_1683C43D0AB0:
     defineUrl(
-      buildSafeUrl(
-        ["notebooklm", "google", "com"],
-        ["notebook", "42d76a2f-c11d-4002-9286-1683c43d0ab0"],
-      ),
+      "https://notebooklm.google.com/notebook/42d76a2f-c11d-4002-9286-1683c43d0ab0",
       UrlPurpose.DOCS,
     ),
   COMMUNITY_SKETCH_YOUR_MIND_COM_EM: defineUrl(
-    buildSafeUrl(["community", "sketch-your-mind", "com"], ["em"]),
+    "https://community.sketch-your-mind.com/em",
     UrlPurpose.SUPPORT,
   ),
-  KO_FI_COM_ZSOLT: defineUrl(
-    buildSafeUrl(["ko-fi", "com"], ["zsolt"]),
-    UrlPurpose.SUPPORT,
-  ),
+  KO_FI_COM_ZSOLT: defineUrl("https://ko-fi.com/zsolt", UrlPurpose.SUPPORT),
   CDN_KO_FI_COM_CDN_KOFI3_PNG: defineUrl(
-    buildSafeUrl(["cdn", "ko-fi", "com"], ["cdn", "kofi3.png?v=3"]),
+    "https://cdn.ko-fi.com/cdn/kofi3.png?v=3",
     UrlPurpose.SUPPORT,
   ),
   COMMUNITY_SKETCH_YOUR_MIND_COM_WIKI: defineUrl(
-    buildSafeUrl(["community", "sketch-your-mind", "com"], ["wiki"]),
+    "https://community.sketch-your-mind.com/wiki",
     UrlPurpose.SUPPORT,
   ),
   WWW_YOUTUBE_COM_VISUALPKM: defineUrl(
-    buildSafeUrl(["www", "youtube", "com"], ["@visualPKM"]),
+    "https://www.youtube.com/@visualPKM",
     UrlPurpose.SUPPORT,
   ),
   COMMUNITY_SKETCH_YOUR_MIND_COM_EE: defineUrl(
-    buildSafeUrl(["community", "sketch-your-mind", "com"], ["ee"]),
+    "https://community.sketch-your-mind.com/ee",
     UrlPurpose.SUPPORT,
   ),
   TWITTER_COM_ZSVICZIAN: defineUrl(
-    buildSafeUrl(["twitter", "com"], ["zsviczian"]),
+    "https://twitter.com/zsviczian",
     UrlPurpose.SUPPORT,
   ),
   COMMUNITY_SKETCH_YOUR_MIND_COM_SYM: defineUrl(
-    buildSafeUrl(["community", "sketch-your-mind", "com"], ["sym"]),
+    "https://community.sketch-your-mind.com/sym",
     UrlPurpose.SUPPORT,
   ),
   PLATFORM_OPENAI_COM_DOCS_GUIDES_IMAGE_GENERATION: defineUrl(
-    buildSafeUrl(
-      ["platform", "openai", "com"],
-      ["docs", "guides", "image-generation"],
-    ),
+    "https://platform.openai.com/docs/guides/image-generation",
     UrlPurpose.DOCS,
   ),
   WWW_W3SCHOOLS_COM_COLORS_COLORS_NAMES_ASP: defineUrl(
-    buildSafeUrl(["www", "w3schools", "com"], ["colors", "colors_names.asp"]),
+    "https://www.w3schools.com/colors/colors_names.asp",
     UrlPurpose.DOCS,
   ),
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RAW_REFS_HEADS_MASTER_ASSETS_EXCALIDRAW_FONTS_ZIP:
     defineUrl(
-      buildSafeUrl(
-        ["github", "com"],
-        [
-          "zsviczian",
-          "obsidian-excalidraw-plugin",
-          "raw",
-          "refs",
-          "heads",
-          "master",
-          "assets",
-          "excalidraw-fonts.zip",
-        ],
-      ),
+      "https://github.com/zsviczian/obsidian-excalidraw-plugin/raw/refs/heads/master/assets/excalidraw-fonts.zip",
       UrlPurpose.DOCS,
     ),
   SKETCH_YOUR_MIND_COM_IMAGES_LOGO_EE_PNG: defineUrl(
-    buildSafeUrl(["sketch-your-mind", "com"], ["images", "logo-EE.png"]),
+    "https://sketch-your-mind.com/images/logo-EE.png",
     UrlPurpose.APP_LOGIC,
   ),
   WWW_YOUTUBE_COM_WATCH: defineUrl(
-    buildSafeUrl(["www", "youtube", "com"], ["watch?v=P_Q6avJGoWI"]),
+    "https://www.youtube.com/watch?v=P_Q6avJGoWI",
     UrlPurpose.VIDEO,
   ),
-  I_YTIMG_COM: defineUrl(
-    buildSafeUrl(["i", "ytimg", "com"]),
-    UrlPurpose.APP_LOGIC,
-  ),
+  I_YTIMG_COM: defineUrl("https://i.ytimg.com", UrlPurpose.APP_LOGIC),
   I_YTIMG_COM_VI_P_Q6AVJGOWI_MAXRESDEFAULT_JPG: defineUrl(
-    buildSafeUrl(
-      ["i", "ytimg", "com"],
-      ["vi", "P_Q6avJGoWI", "maxresdefault.jpg"],
-    ),
+    "https://i.ytimg.com/vi/P_Q6avJGoWI/maxresdefault.jpg",
     UrlPurpose.VIDEO,
   ),
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "releases"],
-    ),
+    "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases",
     UrlPurpose.RELEASE_LOG,
   ),
   PIEROXY_NET_BLOG_PAGES_LZ_STRING_INDEX_HTML: defineUrl(
-    buildSafeUrl(
-      ["pieroxy", "net"],
-      ["blog", "pages", "lz-string", "index.html"],
-    ),
+    "https://pieroxy.net/blog/pages/lz-string/index.html",
     UrlPurpose.DOCS,
   ),
   MOMENTJS_COM_DOCS: defineUrl(
-    buildSafeUrl(["momentjs", "com"], ["docs", "#", "displaying", "format"]),
+    "https://momentjs.com/docs/#/displaying/format",
     UrlPurpose.DOCS,
   ),
   YOUTUBE_COM_SHORTS_O_1LS9C6WBY: defineUrl(
-    buildSafeUrl(["youtube", "com"], ["shorts", "O_1ls9c6wBY?feature=share"]),
+    "https://youtube.com/shorts/O_1ls9c6wBY?feature=share",
     UrlPurpose.VIDEO,
   ),
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG_1_6_23:
     defineUrl(
-      buildSafeUrl(
-        ["github", "com"],
-        [
-          "zsviczian",
-          "obsidian-excalidraw-plugin",
-          "releases",
-          "tag",
-          "1.6.23",
-        ],
-      ),
+      "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23",
       UrlPurpose.RELEASE_LOG,
     ),
   EN_WIKIPEDIA_ORG_WIKI_SCALABLE_VECTOR_GRAPHICS: defineUrl(
-    buildSafeUrl(
-      ["en", "wikipedia", "org"],
-      ["wiki", "Scalable_Vector_Graphics"],
-    ),
+    "https://en.wikipedia.org/wiki/Scalable_Vector_Graphics",
     UrlPurpose.DOCS,
   ),
   WWW_YOUTUBE_COM_WATCH_1: defineUrl(
-    buildSafeUrl(["www", "youtube", "com"], ["watch?v=yZQoJg2RCKI&t=633s"]),
+    "https://www.youtube.com/watch?v=yZQoJg2RCKI&t=633s",
     UrlPurpose.VIDEO,
   ),
   GITHUB_COM_DEATHAU_SLIDING_PANES_OBSIDIAN: defineUrl(
-    buildSafeUrl(["github", "com"], ["deathau", "sliding-panes-obsidian"]),
+    "https://github.com/deathau/sliding-panes-obsidian",
     UrlPurpose.DOCS,
   ),
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_API_EXCALIDRAWAUTOMATE_D_TS:
     defineUrl(
-      buildSafeUrl(
-        ["github", "com"],
-        [
-          "zsviczian",
-          "obsidian-excalidraw-plugin",
-          "blob",
-          "master",
-          "docs",
-          "API",
-          "ExcalidrawAutomate.d.ts",
-        ],
-      ),
+      "https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/API/ExcalidrawAutomate.d.ts",
       UrlPurpose.DOCS,
     ),
   ZSVICZIAN_GITHUB_IO_OBSIDIAN_EXCALIDRAW_PLUGIN: defineUrl(
-    buildSafeUrl(["zsviczian", "github", "io"], ["obsidian-excalidraw-plugin"]),
+    "https://zsviczian.github.io/obsidian-excalidraw-plugin",
     UrlPurpose.DOCS,
   ),
   WWW_TASKBONE_COM_LEGAL_TERMS: defineUrl(
-    buildSafeUrl(["www", "taskbone", "com"], ["legal", "terms"]),
+    "https://www.taskbone.com/legal/terms",
     UrlPurpose.TASKBONE,
   ),
   WWW_TASKBONE_COM_LEGAL_PRIVACY: defineUrl(
-    buildSafeUrl(["www", "taskbone", "com"], ["legal", "privacy"]),
+    "https://www.taskbone.com/legal/privacy",
     UrlPurpose.TASKBONE,
   ),
-  WWW_TASKBONE_COM: defineUrl(
-    buildSafeUrl(["www", "taskbone", "com"]),
-    UrlPurpose.TASKBONE,
-  ),
+  WWW_TASKBONE_COM: defineUrl("https://www.taskbone.com", UrlPurpose.TASKBONE),
   COMMUNITY_SKETCH_YOUR_MIND_COM: defineUrl(
-    buildSafeUrl(["community", "sketch-your-mind", "com"]),
+    "https://community.sketch-your-mind.com",
     UrlPurpose.SUPPORT,
   ),
   WANGCHUJIANG_COM_FREE_FONT: defineUrl(
-    buildSafeUrl(["wangchujiang", "com"], ["free-font"]),
+    "https://wangchujiang.com/free-font",
     UrlPurpose.DOCS,
   ),
   SKETCH_YOUR_MIND_COM_IMAGES_LOGO_EM_PNG: defineUrl(
-    buildSafeUrl(["sketch-your-mind", "com"], ["images", "logo-EM.png"]),
+    "https://sketch-your-mind.com/images/logo-EM.png",
     UrlPurpose.APP_LOGIC,
   ),
   SKETCH_YOUR_MIND_COM_IMAGES_THUMBNAIL_PODCAST_JPG: defineUrl(
-    buildSafeUrl(
-      ["sketch-your-mind", "com"],
-      ["images", "Thumbnail-podcast.jpg"],
-    ),
+    "https://sketch-your-mind.com/images/Thumbnail-podcast.jpg",
     UrlPurpose.RELEASE_LOG,
   ),
   COMMUNITY_OBSIDIAN_MD_PLUGINS_OBSIDIAN_EXCALIDRAW_PLUGIN: defineUrl(
-    buildSafeUrl(
-      ["community", "obsidian", "md"],
-      ["plugins", "obsidian-excalidraw-plugin"],
-    ),
+    "https://community.obsidian.md/plugins/obsidian-excalidraw-plugin",
     UrlPurpose.RELEASE_LOG,
   ),
   GITHUB_COM_HEINRICH26: defineUrl(
-    buildSafeUrl(["github", "com"], ["heinrich26"]),
+    "https://github.com/heinrich26",
     UrlPurpose.RELEASE_LOG,
   ),
   GITHUB_COM_EXCALIDRAW_EXCALIDRAW_ISSUES: defineUrl(
-    buildSafeUrl(["github", "com"], ["excalidraw", "excalidraw", "issues"]),
+    "https://github.com/excalidraw/excalidraw/issues",
     UrlPurpose.RELEASE_LOG,
   ),
   GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL: defineUrl(
-    buildSafeUrl(["github", "com"], ["excalidraw", "excalidraw", "pull"]),
+    "https://github.com/excalidraw/excalidraw/pull",
     UrlPurpose.RELEASE_LOG,
   ),
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "pull"],
-    ),
+    "https://github.com/zsviczian/obsidian-excalidraw-plugin/pull",
     UrlPurpose.RELEASE_LOG,
   ),
   GITHUB_COM_SREEDHARSREERAM: defineUrl(
-    buildSafeUrl(["github", "com"], ["sreedharsreeram"]),
+    "https://github.com/sreedharsreeram",
     UrlPurpose.RELEASE_LOG,
   ),
   GITHUB_COM_TRAVISLEBLANC1: defineUrl(
-    buildSafeUrl(["github", "com"], ["TravisLEBLANC1"]),
+    "https://github.com/TravisLEBLANC1",
     UrlPurpose.RELEASE_LOG,
   ),
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_EA_SCRIPT_DOCS_MINDMAPBUILDERAPI_MD:
     defineUrl(
-      buildSafeUrl(
-        ["github", "com"],
-        [
-          "zsviczian",
-          "obsidian-excalidraw-plugin",
-          "blob",
-          "master",
-          "docs",
-          "ea-script-docs",
-          "MindMapBuilderAPI.md",
-        ],
-      ),
+      "https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/docs/ea-script-docs/MindMapBuilderAPI.md",
       UrlPurpose.DOCS,
     ),
   VISUAL_THINKING_WORKSHOP_COM_MINDMAP: defineUrl(
-    buildSafeUrl(["visual-thinking-workshop", "com"], ["mindmap"]),
+    "https://visual-thinking-workshop.com/mindmap",
     UrlPurpose.SUPPORT,
   ),
   GITHUB_COM_SUPERLE3: defineUrl(
-    buildSafeUrl(["github", "com"], ["superle3"]),
+    "https://github.com/superle3",
     UrlPurpose.RELEASE_LOG,
   ),
   WWW_TIMEANDDATE_COM_WORLDCLOCK_FIXEDTIME_HTML: defineUrl(
-    buildSafeUrl(
-      ["www", "timeanddate", "com"],
-      [
-        "worldclock",
-        "fixedtime.html?msg=MindMap+Builder+Launch+Party&iso=20260131T17&p1=%3A&ah=1",
-      ],
-    ),
+    "https://www.timeanddate.com/worldclock/fixedtime.html?msg=MindMap+Builder+Launch+Party&iso=20260131T17&p1=%3A&ah=1",
     UrlPurpose.RELEASE_LOG,
   ),
   WWW_TIMEANDDATE_COM_WORLDCLOCK_FIXEDTIME_HTML_1: defineUrl(
-    buildSafeUrl(
-      ["www", "timeanddate", "com"],
-      [
-        "worldclock",
-        "fixedtime.html?msg=MindMap+Builder+Launch+Party&iso=20260201T08&p1=%3A&ah=1",
-      ],
-    ),
+    "https://www.timeanddate.com/worldclock/fixedtime.html?msg=MindMap+Builder+Launch+Party&iso=20260201T08&p1=%3A&ah=1",
     UrlPurpose.RELEASE_LOG,
   ),
   GITHUB_COM_STEVERUIZOK_PERFECT_FREEHAND: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["steveruizok", "perfect-freehand#documentation"],
-    ),
+    "https://github.com/steveruizok/perfect-freehand#documentation",
     UrlPurpose.DOCS,
   ),
-  EASINGS_NET: defineUrl(buildSafeUrl(["easings", "net"]), UrlPurpose.DOCS),
+  EASINGS_NET: defineUrl("https://easings.net", UrlPurpose.DOCS),
   VISUAL_THINKING_WORKSHOP_COM: defineUrl(
-    buildSafeUrl(["community", "sketch-your-mind", "com"], ["vtw"]),
+    "https://community.sketch-your-mind.com/vtw",
     UrlPurpose.SUPPORT,
   ),
   RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_INDEX_NEW_MD:
     defineUrl(
-      buildSafeUrl(
-        ["raw", "githubusercontent", "com"],
-        [
-          "zsviczian",
-          "obsidian-excalidraw-plugin",
-          "master",
-          "ea-scripts",
-          "index-new.md",
-        ],
-      ),
+      "https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/index-new.md",
       UrlPurpose.APP_LOGIC,
     ),
   WWW_W3SCHOOLS_COM_COLORS_DEFAULT_ASP: defineUrl(
-    buildSafeUrl(["www", "w3schools", "com"], ["colors", "default.asp"]),
+    "https://www.w3schools.com/colors/default.asp",
     UrlPurpose.DOCS,
   ),
   GITHUB_COM_EXCALIDRAW_EXCALIDRAW_TREE_MASTER_SRC_PACKAGES_EXCALIDRAW:
     defineUrl(
-      buildSafeUrl(
-        ["github", "com"],
-        [
-          "excalidraw",
-          "excalidraw",
-          "tree",
-          "master",
-          "src",
-          "packages",
-          "excalidraw#ref",
-        ],
-      ),
+      "https://github.com/excalidraw/excalidraw/tree/master/src/packages/excalidraw#ref",
       UrlPurpose.DOCS,
     ),
   ZSVICZIAN_GITHUB_IO_OBSIDIAN_EXCALIDRAW_PLUGIN_EXCALIDRAWSCRIPTSENGINE_HTML:
     defineUrl(
-      buildSafeUrl(
-        ["zsviczian", "github", "io"],
-        ["obsidian-excalidraw-plugin", "ExcalidrawScriptsEngine.html"],
-      ),
+      "https://zsviczian.github.io/obsidian-excalidraw-plugin/ExcalidrawScriptsEngine.html",
       UrlPurpose.DOCS,
     ),
   GITHUB_COM_LBRAGILE_COLORMASTER: defineUrl(
-    buildSafeUrl(["github", "com"], ["lbragile", "ColorMaster"]),
+    "https://github.com/lbragile/ColorMaster",
     UrlPurpose.DOCS,
   ),
   GITHUB_COM_OBSIDIANMD_OBSIDIAN_API_BLOB_MASTER_OBSIDIAN_D_TS: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["obsidianmd", "obsidian-api", "blob", "master", "obsidian.d.ts"],
-    ),
+    "https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts",
     UrlPurpose.DOCS,
   ),
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "releases", "tag"],
-    ),
+    "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag",
     UrlPurpose.RELEASE_LOG,
   ),
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG_1_9_9: defineUrl(
-    buildSafeUrl(
-      ["github", "com"],
-      ["zsviczian", "obsidian-excalidraw-plugin", "releases", "tag", "1.9.9"],
-    ),
+    "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.9.9",
     UrlPurpose.RELEASE_LOG,
   ),
   TRANSLATE_GOOGLE_COM: defineUrl(
-    buildSafeUrl(
-      ["translate", "google", "com"],
-      [
-        "?sl=en&tl=zh-CN&text=This%20file%20contains%20embedded%20frames%20which%20will%20be%20migrated%20to%20a%20newer%20version%20for%20compatibility%20with%20excalidraw.com.%0A%0AIf%20you%27re%20using%20Obsidian%20on%20multiple%20devices%2C%20you%20may%20proceed%20now%2C%20but%20please%2C%20before%20opening%20this%20file%20on%20your%20other%20devices%2C%20update%20Excalidraw%20on%20those%20as%20well.%0A%0AMore%20info%20is%20available%20here%3A%20https%3A%2F%2Fgithub.com%2Fzsviczian%2Fobsidian-excalidraw-plugin%2Freleases%2Ftag%2F1.9.9%27%3Ehere%3C%2Fa%3E.&op=translate",
-      ],
-    ),
+    "https://translate.google.com/?sl=en&tl=zh-CN&text=This%20file%20contains%20embedded%20frames%20which%20will%20be%20migrated%20to%20a%20newer%20version%20for%20compatibility%20with%20excalidraw.com.%0A%0AIf%20you%27re%20using%20Obsidian%20on%20multiple%20devices%2C%20you%20may%20proceed%20now%2C%20but%20please%2C%20before%20opening%20this%20file%20on%20your%20other%20devices%2C%20update%20Excalidraw%20on%20those%20as%20well.%0A%0AMore%20info%20is%20available%20here%3A%20https%3A%2F%2Fgithub.com%2Fzsviczian%2Fobsidian-excalidraw-plugin%2Freleases%2Ftag%2F1.9.9%27%3Ehere%3C%2Fa%3E.&op=translate",
     UrlPurpose.TRANSLATION,
   ),
-  API_TASKBONE_COM: defineUrl(
-    buildSafeUrl(["api", "taskbone", "com"]),
-    UrlPurpose.TASKBONE,
-  ),
+  API_TASKBONE_COM: defineUrl("https://api.taskbone.com", UrlPurpose.TASKBONE),
   CDN_TAILWINDCSS_COM: defineUrl(
-    buildSafeUrl(["cdn", "tailwindcss", "com"]),
+    "https://cdn.tailwindcss.com",
     UrlPurpose.APP_LOGIC,
   ),
-  YOUTU_BE: defineUrl(buildSafeUrl(["youtu", "be"]), UrlPurpose.APP_LOGIC),
-  WWW_YOUTUBE_COM: defineUrl(
-    buildSafeUrl(["www", "youtube", "com"]),
-    UrlPurpose.APP_LOGIC,
-  ),
-  YOUTUBE_COM: defineUrl(
-    buildSafeUrl(["youtube", "com"]),
-    UrlPurpose.APP_LOGIC,
-  ),
-  PLAYER_VIMEO_COM: defineUrl(
-    buildSafeUrl(["player", "vimeo", "com"]),
-    UrlPurpose.APP_LOGIC,
-  ),
+  YOUTU_BE: defineUrl("https://youtu.be", UrlPurpose.APP_LOGIC),
+  WWW_YOUTUBE_COM: defineUrl("https://www.youtube.com", UrlPurpose.APP_LOGIC),
+  YOUTUBE_COM: defineUrl("https://youtube.com", UrlPurpose.APP_LOGIC),
+  PLAYER_VIMEO_COM: defineUrl("https://player.vimeo.com", UrlPurpose.APP_LOGIC),
   NOEMBED_COM_EMBED_URL: defineUrl(
-    buildSafeUrl(["noembed", "com"], ["embed?url="]),
+    "https://noembed.com/embed?url=",
     UrlPurpose.APP_LOGIC,
   ),
 } as const;

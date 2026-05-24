@@ -1451,6 +1451,24 @@ export default {
 
   //ReleaseNotes.ts
   RN_WELCOME: "Bienvenido a Excalidraw",
+  FIRST_RUN: `
+El plugin Excalidraw para Obsidian es mucho más que “solo” una herramienta de dibujo. Gracias a su profunda integración con Obsidian, abre un paradigma completamente nuevo para la Gestión Visual del Conocimiento Personal (PKM).
+
+<div style="text-align:center;margin-top:10px;">
+<a href="${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE}" target="_blank"><img src="${URLs.SKETCH_YOUR_MIND_COM_IMAGES_LOGO_EE_PNG}" style="width:50%;"></a>
+</div>
+
+Para ayudarte a comenzar sin sentirte abrumado, te recomiendo mucho tomar el mini curso gratuito **[Excalidraw Essentials](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE})**. Va directo al grano y te enseña los fundamentos de forma rápida y estructurada.
+
+¡Tampoco tienes que resolverlo todo por tu cuenta! Únete a la **[Comunidad Sketch Your Mind](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM})** para conectar con otros pensadores visuales, compartir tus flujos de trabajo y construir juntos un sistema PKM sin fricción.
+
+Si quieres ver lo que ya es posible hoy, aquí tienes una presentación de las funciones principales. Para mantenerte al día con las últimas novedades y explorar el PKM visual, suscríbete a mi canal de YouTube: [Visual PKM](${URLs.WWW_YOUTUBE_COM_VISUALPKM}).
+
+¡Gracias y disfrútalo!
+
+<div class="excalidraw-videoWrapper">
+<a href="${URLs.WWW_YOUTUBE_COM_WATCH}" target="_blank"><img src="${URLs.I_YTIMG_COM_VI_P_Q6AVJGOWI_MAXRESDEFAULT_JPG}" style="width:100%;"></a>
+</div>`,
 
   //CustomEmbeddable.tsx
   NOTICE_PDF_THEME:
