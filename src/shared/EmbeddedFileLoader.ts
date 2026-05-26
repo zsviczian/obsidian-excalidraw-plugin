@@ -1656,7 +1656,6 @@ export const generateIdFromFile = async (
 
 // This function is for converting blob:app://obsidian.md image URLs (from Obsidian's image cache) to base64 data URLs.
 // fetch is used here because requestUrl does not support blob: URLs, and fetch is the only browser API that can read them directly.
-// The canvas fallback is less efficient and should only be used if fetch fails (e.g. in rare browser contexts).
 const replaceBlobWithBase64 = async (
   divElement: HTMLDivElement,
 ): Promise<void> => {

@@ -1066,7 +1066,7 @@ export const stringToSVG = (svg: string) => {
   }
 
   const className = sanitizedSvg.getAttribute("class") ?? "";
-  if (!/(?:^|\s)(?:lucide|skip)(?:\s|$)/.test(className)) {
+  if (!/(?:^|\s)(?:lucide|skip)(?:\s|-|$)/.test(className)) {
     applyDefaultSvgTheme(sanitizedSvg);
   }
 
