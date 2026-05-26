@@ -3467,10 +3467,7 @@ export class ExcalidrawAutomate {
     if (!ed.loaded) {
       return svgColors;
     }
-    (img
-      ? ed.scene.elements.filter((el: ExcalidrawElement) => el.id === img.id)
-      : ed.scene.elements
-    ).forEach((el: ExcalidrawElement) => {
+    ed.scene.elements.forEach((el: ExcalidrawElement) => {
       if ("strokeColor" in el) {
         updateOrAddSVGColorInfo(svgColors, el.strokeColor, { stroke: true });
       }

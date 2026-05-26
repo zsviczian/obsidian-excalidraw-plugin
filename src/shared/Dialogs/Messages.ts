@@ -17,6 +17,11 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+  "2.23.7": `
+## Fixed
+- Some Excalidraw Script Icons load with extra bold line weight.
+- BUG: Color remapping UI for Shade Master script does not appear when editing the colors of a nested Excalidraw drawing. [#2779](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2779)
+  `,
   "2.23.6": `
 I apologize in advance — there will likely be a few more micro-releases over the coming weeks.
 
@@ -25,8 +30,7 @@ I'm addressing the Obsidian code scanner findings gradually, and every code chan
 If you notice anything broken or behaving unexpectedly, please let me know. I'll do my best to investigate and fix it quickly.
 
 ## Fixed
-- Links in language files
-
+- Links in language files 
 `,
   "2.23.5": `
 ${getYouTubeDiv("otIHXat8Roo")}
