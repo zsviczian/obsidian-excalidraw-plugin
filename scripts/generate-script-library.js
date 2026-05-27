@@ -59,6 +59,15 @@ For a reference, follow the implementation pattern used in the "Printable Layout
     // ea.createSidepanelTab("My Script", false, true);\`
 - A dedicated section "sidepanelTabTypes.d.ts" in this document lists the \`ExcalidrawSidepanelTab\` function signatures.
 
+#### **0. External Documentation & Resources**
+
+To keep this training file concise, large external type definitions are not included. If you need to look up Obsidian APIs or Excalidraw internals, refer to the following resources:
+- **Obsidian API Type Definitions:** https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts
+- **Obsidian Developer Docs:** https://docs.obsidian.md/Home (Community site with API and CSS documentation/examples)
+- **Obsidian Developer Forum:** https://forum.obsidian.md/c/developers-api/14
+- **ExcalidrawAutomate Implementation:** If the provided API documentation is unclear, consult the source directly: https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/src/shared/ExcalidrawAutomate.ts
+- **Excalidraw Core Fork:** For doubts regarding core Excalidraw functionality, consult the fork used by the plugin: https://github.com/zsviczian/excalidraw
+
 #### **1. The Core Workflow: Handling Element Immutability**
 
 *   **Central Rule:** Elements in the Excalidraw scene are immutable and should never be modified directly. Always use the ExcalidrawAutomate (EA) "workbench" pattern for modifications.
@@ -246,9 +255,9 @@ Two files follow. First the template startup script with documenation comments, 
 const EXCALIDRAW_STARTUP_TEMPLATE = "src/constants/assets/startupScript.md";
 const EXCALIDRAW_STARTUP_EXAMPLE = "docs/AITrainingData/ExcalidrawStartupExample.md";
 
-const ADDITIONAL_TYPE_DEFS_FOR_AI_TRAINING = [
+/*const ADDITIONAL_TYPE_DEFS_FOR_AI_TRAINING = [
   "node_modules/obsidian/obsidian.d.ts",
-];
+];*/
 
 const TYPE_DEF_WHITELIST = [
   "lib/shared/ExcalidrawAutomate.d.ts",
@@ -359,30 +368,6 @@ function buildTypeDefMarkdown() {
     let content = fs.readFileSync(abs, 'utf8');
     content = stripTopImports(content);
 
-    body += makeSectionHeader(rel);
-    body += content.trimEnd() + '\n\n';
-  }
-  body += '```\n';
-  return body;
-}
-
-/**
- * Build additional type defs used only in AI_TRAINING_OUT (e.g. obsidian.d.ts).
- */
-function buildAdditionalTypeDefsMarkdown() {
-  const entries = ADDITIONAL_TYPE_DEFS_FOR_AI_TRAINING.map((rel) => ({
-    rel,
-    abs: path.join(ROOT, ...rel.split('/')),
-  }));
-
-  let body = '```js\n';
-  for (const { rel, abs } of entries) {
-    if (!fs.existsSync(abs)) {
-      console.warn('[script-library] Additional type def missing:', rel);
-      continue;
-    }
-    let content = fs.readFileSync(abs, 'utf8');
-    content = stripTopImports(content);
     body += makeSectionHeader(rel);
     body += content.trimEnd() + '\n\n';
   }
@@ -600,7 +585,6 @@ function main() {
     const typeDefContent = fs.existsSync(TYPE_DEF_OUT)
       ? fs.readFileSync(TYPE_DEF_OUT, 'utf8')
       : (TYPE_DEF_INTRO + '\n' + buildTypeDefMarkdown());
-    const additionalTypeDefs = buildAdditionalTypeDefsMarkdown();
     const scriptLibContent = fs.existsSync(SCRIPT_LIBRARY_OUT)
       ? fs.readFileSync(SCRIPT_LIBRARY_OUT, 'utf8')
       : '';
@@ -633,8 +617,6 @@ function main() {
       (AI_TRAINING_INTRO +
       '\n---\n\n' +
       typeDefContent.trim() +
-      '\n\n---\n\n' +
-      additionalTypeDefs +
       '\n\n---\n\n' +
       excalidrawLibFunctionsSection +
       '\n---\n\n' +

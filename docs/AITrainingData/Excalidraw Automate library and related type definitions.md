@@ -3491,7 +3491,6 @@ declare class App extends React.Component<AppProps, AppState> {
         y: number;
     };
     allowMobileMode: boolean;
-    animationFrameHandler: AnimationFrameHandler;
     laserTrails: LaserTrails;
     eraserTrail: EraserTrail;
     lassoTrail: LassoTrail;
