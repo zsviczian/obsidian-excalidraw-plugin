@@ -1040,13 +1040,15 @@ export default class ExcalidrawPlugin extends Plugin {
       return;
     }
     const app = this.app;
-    Object.keys(FRONTMATTER_KEYS).forEach((key) => {
-      if (FRONTMATTER_KEYS[key].depricated === true) {
-        return;
-      }
-      const { name, type } = FRONTMATTER_KEYS[key];
-      app.metadataTypeManager.setType(name, type);
-    });
+    Object.keys(FRONTMATTER_KEYS).forEach(
+      (key: keyof typeof FRONTMATTER_KEYS) => {
+        if (FRONTMATTER_KEYS[key].depricated === true) {
+          return;
+        }
+        const { name, type } = FRONTMATTER_KEYS[key];
+        app.metadataTypeManager.setType(name, type);
+      },
+    );
   }
 
   public async initializeFonts() {

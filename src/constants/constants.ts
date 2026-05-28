@@ -303,53 +303,111 @@ export const AUDIO_TYPES = [
 ];
 export const CODE_TYPES = ["json", "css", "js"];
 
-export const FRONTMATTER_KEYS: {
-  [key: string]: { name: string; type: string; depricated?: boolean };
-} = {
-  plugin: { name: "excalidraw-plugin", type: "text" },
+export const FRONTMATTER_KEYS = {
+  plugin: { name: "excalidraw-plugin", type: "text", depricated: false },
   "export-transparent": {
     name: "excalidraw-export-transparent",
     type: "checkbox",
+    depricated: false,
   },
-  mask: { name: "excalidraw-mask", type: "checkbox" },
-  "export-dark": { name: "excalidraw-export-dark", type: "checkbox" },
+  mask: { name: "excalidraw-mask", type: "checkbox", depricated: false },
+  "export-dark": {
+    name: "excalidraw-export-dark",
+    type: "checkbox",
+    depricated: false,
+  },
   "export-svgpadding": {
     name: "excalidraw-export-svgpadding",
     type: "number",
     depricated: true,
   },
-  "export-padding": { name: "excalidraw-export-padding", type: "number" },
-  "export-pngscale": { name: "excalidraw-export-pngscale", type: "number" },
+  "export-padding": {
+    name: "excalidraw-export-padding",
+    type: "number",
+    depricated: false,
+  },
+  "export-pngscale": {
+    name: "excalidraw-export-pngscale",
+    type: "number",
+    depricated: false,
+  },
   "export-embed-scene": {
     name: "excalidraw-export-embed-scene",
     type: "checkbox",
+    depricated: false,
   },
   "export-internal-links": {
     name: "excalidraw-export-internal-links",
     type: "checkbox",
+    depricated: false,
   },
-  "link-prefix": { name: "excalidraw-link-prefix", type: "text" },
-  "url-prefix": { name: "excalidraw-url-prefix", type: "text" },
-  "link-brackets": { name: "excalidraw-link-brackets", type: "checkbox" },
-  "onload-script": { name: "excalidraw-onload-script", type: "text" },
+  "link-prefix": {
+    name: "excalidraw-link-prefix",
+    type: "text",
+    depricated: false,
+  },
+  "url-prefix": {
+    name: "excalidraw-url-prefix",
+    type: "text",
+    depricated: false,
+  },
+  "link-brackets": {
+    name: "excalidraw-link-brackets",
+    type: "checkbox",
+    depricated: false,
+  },
+  "onload-script": {
+    name: "excalidraw-onload-script",
+    type: "text",
+    depricated: false,
+  },
   "linkbutton-opacity": {
     name: "excalidraw-linkbutton-opacity",
     type: "number",
+    depricated: false,
   },
-  "default-mode": { name: "excalidraw-default-mode", type: "text" },
-  font: { name: "excalidraw-font", type: "text" },
-  "font-color": { name: "excalidraw-font-color", type: "text" },
-  "border-color": { name: "excalidraw-border-color", type: "text" },
-  "md-css": { name: "excalidraw-css", type: "text" },
-  autoexport: { name: "excalidraw-autoexport", type: "text" },
+  "default-mode": {
+    name: "excalidraw-default-mode",
+    type: "text",
+    depricated: false,
+  },
+  font: { name: "excalidraw-font", type: "text", depricated: false },
+  "font-color": {
+    name: "excalidraw-font-color",
+    type: "text",
+    depricated: false,
+  },
+  "border-color": {
+    name: "excalidraw-border-color",
+    type: "text",
+    depricated: false,
+  },
+  "md-css": { name: "excalidraw-css", type: "text", depricated: false },
+  autoexport: {
+    name: "excalidraw-autoexport",
+    type: "text",
+    depricated: false,
+  },
   "iframe-theme": {
     name: "excalidraw-iframe-theme",
     type: "text",
     depricated: true,
   },
-  "embeddable-theme": { name: "excalidraw-embeddable-theme", type: "text" },
-  "open-as-markdown": { name: "excalidraw-open-md", type: "checkbox" },
-  "embed-as-markdown": { name: "excalidraw-embed-md", type: "checkbox" },
+  "embeddable-theme": {
+    name: "excalidraw-embeddable-theme",
+    type: "text",
+    depricated: false,
+  },
+  "open-as-markdown": {
+    name: "excalidraw-open-md",
+    type: "checkbox",
+    depricated: false,
+  },
+  "embed-as-markdown": {
+    name: "excalidraw-embed-md",
+    type: "checkbox",
+    depricated: false,
+  },
 };
 
 export const CaptureUpdateAction = {

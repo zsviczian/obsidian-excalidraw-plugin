@@ -685,7 +685,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   //fixInfinitePreviewLoop: true,
   mdSVGwidth: 500,
   mdSVGmaxHeight: 800,
-  mdFont: "Virgil",
+  mdFont: "Nunito",
   mdFontColor: "Black",
   mdBorderColor: "Black",
   mdCSS: "",

@@ -1396,10 +1396,7 @@ export class EmbeddedFilesLoader {
         fontName = font.fontName;
     }
 
-    if (
-      fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS.banner.name] !== null
-    ) {
+    if (fileCache?.frontmatter && fileCache.frontmatter.banner !== null) {
       text = text.replace(/banner:\s*.*/, ""); //patch https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/814
     }
 
