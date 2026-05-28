@@ -3915,6 +3915,12 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         d.addOption("Virgil", "Virgil");
         d.addOption("Cascadia", "Cascadia");
         d.addOption("Assistant", "Assistant");
+        d.addOption("Helvetica", "Helvetica");
+        d.addOption("Excalifont", "Excalifont");
+        d.addOption("Nunito", "Nunito");
+        d.addOption("Lilita One", "Lilita One");
+        d.addOption("Comic Shanns", "Comic Shanns");
+        d.addOption("Liberation Sans", "Liberation Sans");
         this.app.vault
           .getFiles()
           .filter(

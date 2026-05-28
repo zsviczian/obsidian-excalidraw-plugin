@@ -20,6 +20,13 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
   "2.23.8": `
 ## New
 - Embeddable links now support adding ontology to links, e.g. \`(ontology:: [[file#section]])\` and \`(ontology:: [Video Title](link-to-youtube-video))\`. This allows you to add custom metadata to links that will be picked up as dataview tags and rendered with tools such as ExcaliBrain.
+
+## Fixed
+- Regression from security fixes: embed markdown as image failed in some cases
+- Plugin settings now includes all available fonts when setting the default font when embedding markdown as image.
+
+## Fixed in ExcalidrawAutomate
+- \`ea.addImage()\` now supports adding the markdown section of an Excalidraw file as an image.
 `,
   "2.23.7": `
 ## Fixed

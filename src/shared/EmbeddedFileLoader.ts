@@ -188,6 +188,7 @@ export class EmbeddedFile {
   public attemptCounter: number = 0;
   public isHyperLink: boolean = false;
   public isLocalLink: boolean = false;
+  public isMarkdownSection: boolean = false;
   public hyperlink: DataURL;
   public colorMap: ColorMap | null = null;
   public pdfPageViewProps: PDFPageViewProps;
@@ -269,6 +270,14 @@ export class EmbeddedFile {
       }
     } else {
       this.filenameparts = getEmbeddedFilenameParts(imgPath);
+      this.isMarkdownSection =
+        (this.filenameparts.hasBlockref || this.filenameparts.hasSectionref) &&
+        !(
+          this.filenameparts.hasGroupref ||
+          this.filenameparts.hasArearef ||
+          this.filenameparts.hasFrameref ||
+          this.filenameparts.hasClippedFrameref
+        );
       this.filenameparts.filepath = this.file.path;
     }
   }
@@ -651,6 +660,8 @@ export class EmbeddedFilesLoader {
         inFile instanceof EmbeddedFile ? inFile.isHyperLink : false;
       const isLocalLink =
         inFile instanceof EmbeddedFile ? inFile.isLocalLink : false;
+      const isMarkdownSection =
+        inFile instanceof EmbeddedFile ? inFile.isMarkdownSection : false;
       const hyperlink = inFile instanceof EmbeddedFile ? inFile.hyperlink : "";
       const file: TFile = inFile instanceof EmbeddedFile ? inFile.file : inFile;
       if (file && markdownRendererRecursionWatcthdog.has(file)) {
@@ -676,7 +687,10 @@ export class EmbeddedFilesLoader {
 
       let hasSVGwithBitmap = false;
       const isExcalidrawFile =
-        !isHyperLink && !isLocalLink && this.plugin.isExcalidrawFile(file);
+        !isMarkdownSection &&
+        !isHyperLink &&
+        !isLocalLink &&
+        this.plugin.isExcalidrawFile(file);
       const isPDF =
         !isHyperLink && !isLocalLink && file.extension.toLowerCase() === "pdf";
 
