@@ -25,6 +25,19 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Regression from security fixes: embed markdown as image failed in some cases
 - Plugin settings now includes all available fonts when setting the default font when embedding markdown as image.
 
+## New in ExcalidrawAutomate
+- \`ea.zoomToElements()\` now accepts an optional margin parameter to control the amount of whitespace around the zoomed elements. The default margin is 0.05 (5% of the view size), but you can adjust it as needed for your specific use case.
+
+\`\`\`ts
+/**
+   * Zooms the target view to fit the specified elements.
+   * @param {boolean} selectElements - Whether to select the elements after zooming.
+   * @param {ExcalidrawElement[]} elements - Array of elements to zoom to.
+   * @param {number} [margin=0.05] - The margin around the elements when zooming.
+   */
+  viewZoomToElements(selectElements: boolean, elements: ExcalidrawElement[], margin: number = 0.05): void;
+\`\`\`
+
 ## Fixed in ExcalidrawAutomate
 - \`ea.addImage()\` now supports adding the markdown section of an Excalidraw file as an image.
 `,

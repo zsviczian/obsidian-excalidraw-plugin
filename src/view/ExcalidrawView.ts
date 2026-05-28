@@ -7887,7 +7887,11 @@ export default class ExcalidrawView
     return true;
   }
 
-  public zoomToElements(selectResult: boolean, elements: ExcalidrawElement[]) {
+  public zoomToElements(
+    selectResult: boolean,
+    elements: ExcalidrawElement[],
+    margin: number = 0.05,
+  ) {
     const api = this.excalidrawAPI;
     if (!api) {
       return;
@@ -7897,7 +7901,7 @@ export default class ExcalidrawView
     if (selectResult) {
       api.selectElements(elements, true);
     }
-    api.zoomToFit(elements, zoomLevel, 0.05);
+    api.zoomToFit(elements, zoomLevel, margin);
   }
 
   public getViewElements(): readonly ExcalidrawElement[] {

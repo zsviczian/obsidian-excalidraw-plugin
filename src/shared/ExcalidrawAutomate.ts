@@ -3749,16 +3749,18 @@ export class ExcalidrawAutomate {
    * Zooms the target view to fit the specified elements.
    * @param {boolean} selectElements - Whether to select the elements after zooming.
    * @param {ExcalidrawElement[]} elements - Array of elements to zoom to.
+   * @param {number} [margin=0.05] - The margin around the elements when zooming.
    */
   viewZoomToElements(
     selectElements: boolean,
     elements: ExcalidrawElement[],
+    margin: number = 0.05,
   ): void {
     if (!this.targetView || !this.targetView?._loaded) {
       errorMessage("targetView not set", "viewToggleFullScreen()");
       return;
     }
-    this.targetView.zoomToElements(selectElements, elements);
+    this.targetView.zoomToElements(selectElements, elements, margin);
   }
 
   /**

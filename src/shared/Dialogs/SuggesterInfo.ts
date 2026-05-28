@@ -1239,7 +1239,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "viewZoomToElements",
-    code: "viewZoomToElements(selectElements: boolean,elements: ExcalidrawElement[]):void",
+    code: "viewZoomToElements(selectElements: boolean,elements: ExcalidrawElement[], margin: number = 0.05):void",
     desc: "Zoom tarteView to fit elements provided as input. elements === [] will zoom to fit the entire scene. SelectElements toggles whether the elements should be in a selected state at the end of the operation.",
     after: "",
   },
