@@ -7,7 +7,7 @@
 /* ************************************** */
 type MutableElementMapEntry = Mutable<ExcalidrawElement> & Record<string, unknown>;
 import { PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties, ExportSettings } from "src/types/exportUtilTypes";
-import { FrameRenderingOptions } from "src/types/utilTypes";
+import { FrameRenderingOptions, PaneTarget } from "src/types/utilTypes";
 import { AutoexportConfig } from "src/types/excalidrawViewTypes";
 import { FloatingModal } from "./Dialogs/FloatingModal";
 import { ExcalidrawSidepanelTab } from "src/view/sidepanel/SidepanelTab";
@@ -1797,6 +1797,7 @@ export interface FrameRenderingOptions {
     outline: boolean;
     clip: boolean;
 }
+export type PaneTarget = "active-pane" | "new-pane" | "popout-window" | "new-tab" | "md-properties";
 
 /* ************************************ */
 /* lib/types/exportUtilTypes.d.ts */

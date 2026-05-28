@@ -112,10 +112,7 @@ import {
 } from "src/shared/svgToExcalidraw/parser";
 import { ROUNDNESS } from "src/constants/constants";
 import { ClipboardData } from "@zsviczian/excalidraw/types/excalidraw/clipboard";
-import {
-  emulateKeysForLinkClick,
-  PaneTarget,
-} from "src/utils/modifierkeyHelper";
+import { emulateKeysForLinkClick } from "src/utils/modifierkeyHelper";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import PolyBool from "polybooljs";
 import { EmbeddableMDCustomProps } from "./Dialogs/EmbeddableSettings";
@@ -193,7 +190,7 @@ import {
   PDFPageProperties,
   ExportSettings,
 } from "src/types/exportUtilTypes";
-import { FrameRenderingOptions } from "src/types/utilTypes";
+import { FrameRenderingOptions, PaneTarget } from "src/types/utilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { AutoexportConfig } from "src/types/excalidrawViewTypes";
 import { FloatingModal } from "./Dialogs/FloatingModal";

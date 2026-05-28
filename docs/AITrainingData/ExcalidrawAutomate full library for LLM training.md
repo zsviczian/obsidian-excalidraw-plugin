@@ -219,7 +219,7 @@ Example freedraw element carrying `customData.strokeOptions`:
 /* ************************************** */
 type MutableElementMapEntry = Mutable<ExcalidrawElement> & Record<string, unknown>;
 import { PageDimensions, PageOrientation, PageSize, PDFExportScale, PDFPageProperties, ExportSettings } from "src/types/exportUtilTypes";
-import { FrameRenderingOptions } from "src/types/utilTypes";
+import { FrameRenderingOptions, PaneTarget } from "src/types/utilTypes";
 import { AutoexportConfig } from "src/types/excalidrawViewTypes";
 import { FloatingModal } from "./Dialogs/FloatingModal";
 import { ExcalidrawSidepanelTab } from "src/view/sidepanel/SidepanelTab";
@@ -2009,6 +2009,7 @@ export interface FrameRenderingOptions {
     outline: boolean;
     clip: boolean;
 }
+export type PaneTarget = "active-pane" | "new-pane" | "popout-window" | "new-tab" | "md-properties";
 
 /* ************************************ */
 /* lib/types/exportUtilTypes.d.ts */
@@ -4488,7 +4489,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-05-27T03:38:45.127Z
+Generated on: 2026-05-28T18:10:29.258Z
 
 ---
 

@@ -38,7 +38,6 @@ import {
   getListOfTemplateFiles,
   getNewUniqueFilepath,
 } from "src/utils/fileUtils";
-import { PaneTarget } from "src/utils/modifierkeyHelper";
 import {
   getExcalidrawViews,
   getNewOrAdjacentLeaf,
@@ -47,6 +46,7 @@ import {
 } from "src/utils/obsidianUtils";
 import { errorlog, getExportTheme } from "src/utils/utils";
 import { imageCache } from "src/shared/ImageCache";
+import { PaneTarget } from "src/types/utilTypes";
 
 export class PluginFileManager {
   private plugin: ExcalidrawPlugin;

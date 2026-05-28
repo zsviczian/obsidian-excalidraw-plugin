@@ -25,3 +25,10 @@ export interface FrameRenderingOptions {
   outline: boolean;
   clip: boolean;
 }
+
+export type PaneTarget =
+  | "active-pane"
+  | "new-pane"
+  | "popout-window"
+  | "new-tab"
+  | "md-properties";

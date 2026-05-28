@@ -77,7 +77,6 @@ import Taskbone from "../../shared/OCR/Taskbone";
 import {
   emulateCTRLClickForLinks,
   linkClickModifierType,
-  PaneTarget,
 } from "../../utils/modifierkeyHelper";
 import { InsertPDFModal } from "../../shared/Dialogs/InsertPDFModal";
 import { ExportDialog } from "../../shared/Dialogs/ExportDialog";
@@ -96,6 +95,7 @@ import { showFrameSettings } from "../../shared/Dialogs/FrameSettings";
 import { insertImageToView } from "../../utils/excalidrawViewUtils";
 import ExcalidrawPlugin from "src/core/main";
 import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
+import { PaneTarget } from "src/types/utilTypes";
 
 declare const PLUGIN_VERSION: string;
 

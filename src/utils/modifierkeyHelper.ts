@@ -2,6 +2,7 @@ import { Modifier } from "obsidian";
 import { DEVICE } from "src/constants/constants";
 import { t } from "src/lang/helpers";
 import { ExcalidrawSettings } from "src/core/settings";
+import { PaneTarget } from "src/types/utilTypes";
 export {
   labelALT,
   labelCTRL,
@@ -22,12 +23,6 @@ export type KeyEvent =
   | React.PointerEvent
   | React.MouseEvent
   | ModifierKeys;
-export type PaneTarget =
-  | "active-pane"
-  | "new-pane"
-  | "popout-window"
-  | "new-tab"
-  | "md-properties";
 export type WebBrowserDragAction =
   | "link"
   | "image-url"

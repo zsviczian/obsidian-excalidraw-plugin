@@ -91,11 +91,10 @@ import { FieldSuggester } from "../shared/Suggesters/FieldSuggester";
 import { ReleaseNotes } from "../shared/Dialogs/ReleaseNotes";
 import { DeviceType, Packages } from "../types/types";
 import { RemoteDirectoryInfo } from "../types/githubTypes";
-import { PreviewImageType } from "../types/utilTypes";
+import { PaneTarget, PreviewImageType } from "../types/utilTypes";
 import {
   emulateCTRLClickForLinks,
   linkClickModifierType,
-  PaneTarget,
 } from "../utils/modifierkeyHelper";
 import { imageCache } from "../shared/ImageCache";
 import { StylesManager } from "./managers/StylesManager";
