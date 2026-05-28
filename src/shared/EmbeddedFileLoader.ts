@@ -1384,7 +1384,7 @@ export class EmbeddedFilesLoader {
         break;
       case "Assistant":
       case "Helvetica":
-        fontDef = await getCSSFontDefinition(2);
+        fontDef = await getCSSFontDefinition(2); //retruns empty string
         break;
       case "Excalifont":
         fontDef = await getCSSFontDefinition(5);

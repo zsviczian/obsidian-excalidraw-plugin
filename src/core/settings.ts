@@ -685,7 +685,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   //fixInfinitePreviewLoop: true,
   mdSVGwidth: 500,
   mdSVGmaxHeight: 800,
-  mdFont: "Nunito",
+  mdFont: "Cascadia",
   mdFontColor: "Black",
   mdBorderColor: "Black",
   mdCSS: "",
@@ -3912,13 +3912,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setName(t("MD_DEFAULT_FONT_NAME"))
       .setDesc(fragWithHTML(t("MD_DEFAULT_FONT_DESC")))
       .addDropdown(async (d: DropdownComponent) => {
+        //I do not know why Lilita One and Nunito do not work. The font string is there, but it is not rendered
         d.addOption("Virgil", "Virgil");
         d.addOption("Cascadia", "Cascadia");
-        d.addOption("Assistant", "Assistant");
-        d.addOption("Helvetica", "Helvetica");
         d.addOption("Excalifont", "Excalifont");
-        d.addOption("Nunito", "Nunito");
-        d.addOption("Lilita One", "Lilita One");
         d.addOption("Comic Shanns", "Comic Shanns");
         d.addOption("Liberation Sans", "Liberation Sans");
         this.app.vault
