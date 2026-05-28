@@ -41,11 +41,15 @@ export const createLeaf = (
 export const useDefaultExcalidrawFrame = (
   element: NonDeletedExcalidrawElement,
 ) => {
+  const link = (element.link ?? "").replace(
+    /^.*?(?=\[\[|https?:\/\/|data:)/,
+    "",
+  );
   return !(
-    element.link.startsWith("[") ||
-    element.link.startsWith("file:") ||
-    element.link.startsWith("data:")
-  ); // && !element.link.match(TWITTER_REG);
+    link.startsWith("[") ||
+    link.startsWith("file:") ||
+    link.startsWith("data:")
+  ); // && !link.match(TWITTER_REG);
 };
 
 export const leafMap = new Map<string, WorkspaceLeaf>();

@@ -17,6 +17,10 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.23.8": `
+## New
+- Embeddable links now support adding ontology to links, e.g. \`(ontology:: [[file#section]])\` and \`(ontology:: [Video Title](link-to-youtube-video))\`. This allows you to add custom metadata to links that will be picked up as dataview tags and rendered with tools such as ExcaliBrain.
+`,
   "2.23.7": `
 ## Fixed
 - Some Excalidraw Script Icons are loaded with extra bold line weight.
