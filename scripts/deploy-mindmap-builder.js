@@ -1,6 +1,6 @@
 const path = require("path");
 const fs = require("fs/promises");
-const { minify } = require("uglify-js");
+const { minify } = require("terser");
 const LZString = require("lz-string");
 
 const CHUNK_SIZE = 256;
@@ -62,7 +62,7 @@ const mmbSource = \`
 `;
 
 const FOOTER_TAIL = `\`;
-const script = ea.decompressFromBase64(mmbSource.replaceAll("\\n", "").trim())
+const script = ea.decompressFromBase64(mmbSource.replace(/[\\s\\r\\n]+/g, ""));
 const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
 await new AsyncFunction("ea", "utils", "VERSION", script)(ea, utils, VERSION);
 `;
@@ -87,8 +87,8 @@ function wrapAsyncIIFE(body) {
 	return `(async()=>{\n${body}\n})()`;
 }
 
-function minifyCode(source) {
-	const result = minify(source, {
+async function minifyCode(source) {
+	const result = await minify(source, {
 		compress: { passes: 3 },
 		mangle: true,
 		output: { ascii_only: true }
@@ -102,9 +102,9 @@ function minifyCode(source) {
 }
 
 function unwrapAsyncIIFE(minified) {
-	const match = minified.match(/^\(async\(\)=>\{([\s\S]*)\}\)\(\);?$/);
+	const match = minified.match(/^\(async\s*\(\)\s*=>\s*\{([\s\S]*)\}\)\(\);?$/);
 	if (!match) {
-		throw new Error("Unable to strip async IIFE wrapper from minified output");
+		throw new Error("Unable to strip async IIFE wrapper from minified output:\n" + minified.substring(0, 100) + "...");
 	}
 	return match[1];
 }
@@ -121,7 +121,7 @@ async function generate() {
 	const raw = await fs.readFile(sourcePath, "utf8");
 	const body = stripHeader(raw).trim();
 	const wrapped = wrapAsyncIIFE(body);
-	const minified = minifyCode(wrapped);
+	const minified = await minifyCode(wrapped);
 	const unwrapped = unwrapAsyncIIFE(minified);
 	const compressed = compressBase64(unwrapped);
 	const formatted = formatCompressed(compressed);
