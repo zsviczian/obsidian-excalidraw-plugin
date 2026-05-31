@@ -1317,7 +1317,7 @@ async function openCaptureModal(initialSearchValue) {
           : String(cache.frontmatter.aliases).split(",").map(a => a.trim());
         aliases.forEach(a => {
           // Filter out aliases that contain templater code
-          if (a && !a.includes("<%")) {
+          if (a && typeof a === "string" && !a.includes("<%")) {
             searchItems.push({ type: "alias", basename: f.basename, alias: a, file: f });
           }
         });
