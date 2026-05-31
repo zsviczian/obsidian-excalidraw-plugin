@@ -840,6 +840,12 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     after: "",
   },
   {
+    field: "cloneElements",
+    code: "cloneElements(elementsOrClipboard: ExcalidrawElement[] | string): ExcalidrawElement[];",
+    desc: "Clones an array of Excalidraw elements or a clipboard string, ensuring that relationships (containers, bound elements, groups, bindings) are correctly remapped to the newly generated IDs.",
+    after: "",
+  },
+  {
     field: "moveViewElementToZIndex",
     code: "moveViewElementToZIndex(elementId:number, newZIndex:number): void;",
     desc: "Moves the element to a specific position in the z-index",

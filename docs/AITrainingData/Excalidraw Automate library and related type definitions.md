@@ -1122,8 +1122,9 @@ export declare class ExcalidrawAutomate {
      * Zooms the target view to fit the specified elements.
      * @param {boolean} selectElements - Whether to select the elements after zooming.
      * @param {ExcalidrawElement[]} elements - Array of elements to zoom to.
+     * @param {number} [margin=0.05] - The margin around the elements when zooming.
      */
-    viewZoomToElements(selectElements: boolean, elements: ExcalidrawElement[]): void;
+    viewZoomToElements(selectElements: boolean, elements: ExcalidrawElement[], margin?: number): void;
     /**
      * Adds elements from elementsDict to the current view.
      * @param {boolean} [repositionToCursor=false] - Whether to reposition the elements to the cursor.
@@ -1524,6 +1525,15 @@ export declare class ExcalidrawAutomate {
      * @returns {ExcalidrawElement} The cloned element with a new ID.
      */
     cloneElement(element: ExcalidrawElement): ExcalidrawElement;
+    /**
+     * Clones an array of Excalidraw elements or a clipboard string.
+     * Ensures that relationships (containers, bound elements, groups, bindings)
+     * are correctly remapped to the newly generated IDs.
+     *
+     * @param {ExcalidrawElement[] | string} elementsOrClipboard - The elements array or Excalidraw clipboard string.
+     * @returns {ExcalidrawElement[]} An array of cloned elements with new IDs and updated relationships.
+     */
+    cloneElements(elementsOrClipboard: ExcalidrawElement[] | string): ExcalidrawElement[];
     /**
      * Moves the specified element to a specific position in the z-index.
      * * Operates directly on the Excalidraw Scene in targetView, not through ExcalidrawAutomate elements.

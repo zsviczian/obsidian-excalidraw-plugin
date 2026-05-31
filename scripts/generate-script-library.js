@@ -123,6 +123,8 @@ To keep this training file concise, large external type definitions are not incl
     *   To temporarily hide an element, set \`element.opacity = 0\`. It's good practice to store the original opacity in \`customData\` so it can be restored. It is also recommended to lock hidden elements so they do not get accidentally selected or moved around.
     *   To permanently remove an element from the scene, set \`element.isDeleted = true\`.
 *   **Image Handling:** When dealing with image elements, use \`ea.getViewFileForImageElement(imageElement)\` to get the corresponding \`TFile\` from the Obsidian vault. This is necessary for any logic that needs to read or manipulate the source image file.
+*   **Break the code into helper functions:** Avoid creating large monolithic blocks of code in your scripts. Instead, break your code into smaller, reusable helper functions. This improves readability and maintainability. For example, if you have a block of code that creates a specific type of element with certain styles, consider creating a helper function like \`createStyledRect(x, y, width, height)\` that encapsulates that logic.
+*   **Separate out constants and language strings to the top of the file:** Avoid hard coded values and strings embedded in the code. Instead the script file should start with a set of constants and language strings. Consistently collect these at the top of the file to make it easier to find and modify them later. This also makes it easier for translators to localize the script by providing a clear section for all user-facing text.
 
 #### **9. Text Element**
 *   There are three text properties.

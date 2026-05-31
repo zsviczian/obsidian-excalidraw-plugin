@@ -18,6 +18,8 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
   "2.23.8": `
+${getYouTubeDiv("y3sDfH30ApU")}
+
 ## New
 - Embeddable links now support adding ontology to links, e.g. \`(ontology:: [[file#section]])\` and \`(ontology:: [Video Title](link-to-youtube-video))\`. This allows you to add custom metadata to links that will be picked up as dataview tags and rendered with tools such as ExcaliBrain.
 
@@ -27,6 +29,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 ## New in ExcalidrawAutomate
 - \`ea.zoomToElements()\` now accepts an optional margin parameter to control the amount of whitespace around the zoomed elements. The default margin is 0.05 (5% of the view size), but you can adjust it as needed for your specific use case.
+- \`ea.cloneElements()\` function to clone elements with new IDs and updated relationships, useful for duplicating or moving elements without affecting the originals.
 
 \`\`\`ts
 /**
@@ -36,6 +39,16 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
    * @param {number} [margin=0.05] - The margin around the elements when zooming.
    */
   viewZoomToElements(selectElements: boolean, elements: ExcalidrawElement[], margin: number = 0.05): void;
+
+/**
+   * Clones an array of Excalidraw elements or a clipboard string.
+   * Ensures that relationships (containers, bound elements, groups, bindings) 
+   * are correctly remapped to the newly generated IDs.
+   * 
+   * @param {ExcalidrawElement[] | string} elementsOrClipboard - The elements array or Excalidraw clipboard string.
+   * @returns {ExcalidrawElement[]} An array of cloned elements with new IDs and updated relationships.
+   */
+  cloneElements(elementsOrClipboard: ExcalidrawElement[] | string): ExcalidrawElement[];
 \`\`\`
 
 ## Fixed in ExcalidrawAutomate

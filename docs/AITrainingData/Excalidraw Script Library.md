@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-05-28T18:10:29.258Z
+Generated on: 2026-05-30T17:47:35.890Z
 
 ---
 
@@ -10431,10 +10431,10 @@ if (existingTab) {
  */
 const removeKeydownHandlers = () => {
   if (!window.MindmapBuilder) return;
-  window.MindmapBuilder.keydownHandlers.forEach((f)=>{
+  window.MindmapBuilder.keydownHandlers.forEach((f) => {
     try {
       f();
-    } catch(e) {
+    } catch (e) {
       console.error("Mindmap Builder: Error removing keydown handler:", e);
     }
   });
@@ -10463,7 +10463,7 @@ const removeEventListeners = () => {
   }
 };
 
-if(!window.MindmapBuilder) {
+if (!window.MindmapBuilder) {
   window.MindmapBuilder = {
     keydownHandlers: [],
   }
@@ -10543,6 +10543,7 @@ const STRINGS = {
     ACTION_LABEL_REARRANGE: "Rearrange Map",
     ACTION_LABEL_TOGGLE_SUBMAP_ROOT: "Start/End Submap Root",
     ACTION_LABEL_TOGGLE_CHECKBOX: "Toggle Checkbox Status",
+    ACTION_LABEL_CALENDAR: "Task Calendar & Priority",
     ACTION_LABEL_TOGGLE_EMBED: "Toggle Embed/Link",
 
     // Tooltips (shared)
@@ -10575,6 +10576,7 @@ const STRINGS = {
     TOOLTIP_SUBMAP_ROOT_ADD: "Start submap from selected node",
     TOOLTIP_SUBMAP_ROOT_REMOVE: "Convert submap root back to a normal node",
     TOOLTIP_TOGGLE_CHECKBOX: "Toggle task checkbox status",
+    TOOLTIP_CALENDAR: "Configure Task Date & Priority",
     TOOLTIP_TOGGLE_EMBED: "Toggle node between Embed and Link",
 
     // Buttons and labels
@@ -10790,6 +10792,7 @@ addLocale("zh", {
   ACTION_LABEL_REARRANGE: "重排导图",
   ACTION_LABEL_TOGGLE_SUBMAP_ROOT: "开始/结束子图根节点",
   ACTION_LABEL_TOGGLE_CHECKBOX: "切换复选框状态",
+  ACTION_LABEL_CALENDAR: "任务日历与优先级",
   ACTION_LABEL_TOGGLE_EMBED: "切换嵌入/链接",
 
   // Tooltips (shared)
@@ -10822,6 +10825,7 @@ addLocale("zh", {
   TOOLTIP_SUBMAP_ROOT_ADD: "从所选节点开始子图",
   TOOLTIP_SUBMAP_ROOT_REMOVE: "将子图根节点恢复为普通节点",
   TOOLTIP_TOGGLE_CHECKBOX: "切换任务复选框状态",
+  TOOLTIP_CALENDAR: "配置任务日期与优先级",
   TOOLTIP_TOGGLE_EMBED: "在嵌入和链接之间切换节点",
 
   // Buttons and labels
@@ -11028,6 +11032,7 @@ addLocale("zh-tw", {
   ACTION_LABEL_REARRANGE: "重排導圖",
   ACTION_LABEL_TOGGLE_SUBMAP_ROOT: "開始/結束子圖根節點",
   ACTION_LABEL_TOGGLE_CHECKBOX: "切換複選框狀態",
+  ACTION_LABEL_CALENDAR: "任務日曆與優先級",
   ACTION_LABEL_TOGGLE_EMBED: "切換嵌入/連結",
 
   // Tooltips (shared)
@@ -11060,6 +11065,7 @@ addLocale("zh-tw", {
   TOOLTIP_SUBMAP_ROOT_ADD: "從所選節點開始子圖",
   TOOLTIP_SUBMAP_ROOT_REMOVE: "將子圖根節點恢復為普通節點",
   TOOLTIP_TOGGLE_CHECKBOX: "切換任務複選框狀態",
+  TOOLTIP_CALENDAR: "配置任務日期與優先級",
   TOOLTIP_TOGGLE_EMBED: "在嵌入和連結之間切換節點",
 
   // Buttons and labels
@@ -11265,7 +11271,7 @@ const saveSettings = async () => {
 const setVal = (key, value, hidden = false) => {
   const def = ea.getScriptSettingValue(key, {value, hidden});
   def.value = value;
-  if(hidden) def.hidden = true;
+  if (hidden) def.hidden = true;
   ea.setScriptSettingValue(key, def);
 }
 
@@ -11295,19 +11301,28 @@ const LAYOUT_METADATA = {
   // --- General ---
   GAP_X: {
     section: "SECTION_GENERAL",
-    def: 120, min: 10, max: 400, step: 10,
+    def: 120,
+    min: 10,
+    max: 400,
+    step: 10,
     desc: t("DESC_LAYOUT_GAP_X"),
     name: t("GAP_X"),
   },
   GAP_Y: {
     section: "SECTION_GENERAL",
-    def: 25, min: 5, max: 150, step: 5,
+    def: 25,
+    min: 5,
+    max: 150,
+    step: 5,
     desc: t("DESC_LAYOUT_GAP_Y"),
     name: t("GAP_Y"),
   },
   GAP_MULTIPLIER: {
     section: "SECTION_GENERAL",
-    def: 0.6, min: 0.1, max: 3.0, step: 0.1,
+    def: 0.6,
+    min: 0.1,
+    max: 3.0,
+    step: 0.1,
     desc: t("DESC_LAYOUT_GAP_MULTIPLIER"),
     name: t("GAP_MULTIPLIER"),
   },
@@ -11315,37 +11330,55 @@ const LAYOUT_METADATA = {
   // --- Radial (New & Updated) ---
   ROOT_RADIUS_FACTOR: {
     section: "SECTION_GENERAL",
-    def: 0.8, min: 0.5, max: 2.0, step: 0.1,
+    def: 0.8,
+    min: 0.5,
+    max: 2.0,
+    step: 0.1,
     desc: t("DESC_LAYOUT_ROOT_RADIUS"),
     name: t("ROOT_RADIUS_FACTOR"),
   },
   MIN_RADIUS: {
     section: "SECTION_GENERAL",
-    def: 350, min: 30, max: 800, step: 10,
+    def: 350,
+    min: 30,
+    max: 800,
+    step: 10,
     desc: t("DESC_LAYOUT_MIN_RADIUS"),
     name: t("MIN_RADIUS"),
   },
   RADIAL_ASPECT_RATIO: {
     section: "SECTION_RADIAL",
-    def: 0.7, min: 0.5, max: 2.0, step: 0.1,
+    def: 0.7,
+    min: 0.5,
+    max: 2.0,
+    step: 0.1,
     desc: t("DESC_RADIAL_ASPECT_RATIO"),
     name: t("RADIAL_ASPECT_RATIO"),
   },
   RADIAL_POLE_GAP_BONUS: {
     section: "SECTION_RADIAL",
-    def: 2.0, min: 0.0, max: 5.0, step: 0.1,
+    def: 2.0,
+    min: 0.0,
+    max: 5.0,
+    step: 0.1,
     desc: t("DESC_RADIAL_POLE_GAP_BONUS"),
     name: t("RADIAL_POLE_GAP_BONUS"),
   },
   RADIAL_START_ANGLE: {
     section: "SECTION_RADIAL",
-    def: 280, min: 0, max: 360, step: 10,
+    def: 280,
+    min: 0,
+    max: 360,
+    step: 10,
     desc: t("DESC_RADIAL_START_ANGLE"),
     name: t("RADIAL_START_ANGLE"),
   },
   RADIAL_MAX_SWEEP: {
     section: "SECTION_RADIAL",
-    def: 340, min: 90, max: 360, step: 10,
+    def: 340,
+    min: 90,
+    max: 360,
+    step: 10,
     desc: t("DESC_RADIAL_MAX_SWEEP"),
     name: t("RADIAL_MAX_SWEEP"),
   },
@@ -11353,19 +11386,28 @@ const LAYOUT_METADATA = {
   // --- Directional ---
   DIRECTIONAL_ARC_SPAN_RADIANS: {
     section: "SECTION_DIRECTIONAL",
-    def: 1.0, min: 0.1, max: 3.14, step: 0.1,
+    def: 1.0,
+    min: 0.1,
+    max: 3.14,
+    step: 0.1,
     desc: t("DESC_LAYOUT_ARC_SPAN"),
     name: t("DIRECTIONAL_ARC_SPAN_RADIANS"),
   },
   GAP_MULTIPLIER_DIRECTIONAL: {
     section: "SECTION_DIRECTIONAL",
-    def: 1.5, min: 1.0, max: 3.0, step: 0.1,
+    def: 1.5,
+    min: 1.0,
+    max: 3.0,
+    step: 0.1,
     desc: t("DESC_LAYOUT_GAP_DIRECTIONAL"),
     name: t("GAP_MULTIPLIER_DIRECTIONAL"),
   },
   RADIUS_PADDING_PER_NODE: {
     section: "SECTION_DIRECTIONAL",
-    def: 7, min: 0, max: 20, step: 1,
+    def: 7,
+    min: 0,
+    max: 20,
+    step: 1,
     desc: t("DESC_LAYOUT_RADIUS_PADDING"),
     name: t("RADIUS_PADDING_PER_NODE"),
   },
@@ -11373,49 +11415,73 @@ const LAYOUT_METADATA = {
   // --- Vertical Maps (Up/Down) ---
   VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE: {
     section: "SECTION_VERTICAL",
-    def: 0.35, min: 0.05, max: 1.2, step: 0.05,
+    def: 0.35,
+    min: 0.05,
+    max: 1.2,
+    step: 0.05,
     desc: t("DESC_VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE"),
     name: t("VERTICAL_SUBTREE_WIDTH_BLEND_SINGLE"),
   },
   VERTICAL_SUBTREE_WIDTH_BLEND_DUAL: {
     section: "SECTION_VERTICAL",
-    def: 0.6, min: 0.1, max: 1.4, step: 0.05,
+    def: 0.6,
+    min: 0.1,
+    max: 1.4,
+    step: 0.05,
     desc: t("DESC_VERTICAL_SUBTREE_WIDTH_BLEND_DUAL"),
     name: t("VERTICAL_SUBTREE_WIDTH_BLEND_DUAL"),
   },
   VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER: {
     section: "SECTION_VERTICAL",
-    def: 6.0, min: 0.5, max: 20.0, step: 0.5,
+    def: 6.0,
+    min: 0.5,
+    max: 20.0,
+    step: 0.5,
     desc: t("DESC_VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER"),
     name: t("VERTICAL_SUBTREE_SMOOTH_THRESHOLD_MULTIPLIER"),
   },
   VERTICAL_SUBTREE_SMOOTH_MIN_SCALE: {
     section: "SECTION_VERTICAL",
-    def: 240, min: 10, max: 1600, step: 10,
+    def: 240,
+    min: 10,
+    max: 1600,
+    step: 10,
     desc: t("DESC_VERTICAL_SUBTREE_SMOOTH_MIN_SCALE"),
     name: t("VERTICAL_SUBTREE_SMOOTH_MIN_SCALE"),
   },
   HORIZONTAL_L1_SOFTCAP_THRESHOLD: {
     section: "SECTION_VERTICAL",
-    def: 560, min: 20, max: 3000, step: 20,
+    def: 560,
+    min: 20,
+    max: 3000,
+    step: 20,
     desc: t("DESC_HORIZONTAL_L1_SOFTCAP_THRESHOLD"),
     name: t("HORIZONTAL_L1_SOFTCAP_THRESHOLD"),
   },
   HORIZONTAL_L1_COMPRESSION_MIN_SCALE: {
     section: "SECTION_VERTICAL",
-    def: 240, min: 10, max: 1600, step: 10,
+    def: 240,
+    min: 10,
+    max: 1600,
+    step: 10,
     desc: t("DESC_HORIZONTAL_L1_COMPRESSION_MIN_SCALE"),
     name: t("HORIZONTAL_L1_COMPRESSION_MIN_SCALE"),
   },
   VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO: {
     section: "SECTION_VERTICAL",
-    def: 0.55, min: 0.05, max: 1.3, step: 0.05,
+    def: 0.55,
+    min: 0.05,
+    max: 1.3,
+    step: 0.05,
     desc: t("DESC_VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO"),
     name: t("VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO"),
   },
   DIRECTIONAL_CROSS_AXIS_RATIO: {
     section: "SECTION_VERTICAL",
-    def: 0.2, min: 0.05, max: 1.2, step: 0.05,
+    def: 0.2,
+    min: 0.05,
+    max: 1.2,
+    step: 0.05,
     desc: t("DESC_DIRECTIONAL_CROSS_AXIS_RATIO"),
     name: t("DIRECTIONAL_CROSS_AXIS_RATIO"),
   },
@@ -11423,25 +11489,37 @@ const LAYOUT_METADATA = {
   // --- Visuals ---
   INDICATOR_OFFSET: {
     section: "SECTION_VISUALS",
-    def: 10, min: 5, max: 50, step: 5,
+    def: 10,
+    min: 5,
+    max: 50,
+    step: 5,
     desc: t("DESC_LAYOUT_INDICATOR_OFFSET"),
     name: t("INDICATOR_OFFSET"),
   },
   INDICATOR_OPACITY: {
     section: "SECTION_VISUALS",
-    def: 40, min: 10, max: 100, step: 10,
+    def: 40,
+    min: 10,
+    max: 100,
+    step: 10,
     desc: t("DESC_LAYOUT_INDICATOR_OPACITY"),
     name: t("INDICATOR_OPACITY"),
   },
   CONTAINER_PADDING: {
     section: "SECTION_VISUALS",
-    def: 10, min: 0, max: 50, step: 2,
+    def: 10,
+    min: 0,
+    max: 50,
+    step: 2,
     desc: t("DESC_LAYOUT_CONTAINER_PADDING"),
     name: t("CONTAINER_PADDING"),
   },
   MAX_SEGMENT_LENGTH: {
     section: "SECTION_VISUALS",
-    def: 80, min: 30, max: 200, step: 10,
+    def: 80,
+    min: 30,
+    max: 200,
+    step: 10,
     desc: t("DESC_LAYOUT_BOUNDARY_LINE_PRECISION"),
     name: t("MAX_SEGMENT_LENGTH"),
   },
@@ -11449,19 +11527,28 @@ const LAYOUT_METADATA = {
   // --- Manual Mode ---
   MANUAL_GAP_MULTIPLIER: {
     section: "SECTION_MANUAL",
-    def: 1.3, min: 1.0, max: 2.0, step: 0.1,
+    def: 1.3,
+    min: 1.0,
+    max: 2.0,
+    step: 0.1,
     desc: t("DESC_LAYOUT_MANUAL_GAP"),
     name: t("MANUAL_GAP_MULTIPLIER"),
   },
   MANUAL_JITTER_RANGE: {
     section: "SECTION_MANUAL",
-    def: 300, min: 0, max: 400, step: 10,
+    def: 300,
+    min: 0,
+    max: 400,
+    step: 10,
     desc: t("DESC_LAYOUT_MANUAL_JITTER"),
     name: t("MANUAL_JITTER_RANGE"),
   }
 };
 
-let layoutSettings = getVal(K_LAYOUT, {value: {}, hidden: true});
+let layoutSettings = getVal(K_LAYOUT, {
+  value: {},
+  hidden: true
+});
 let layoutSettingsDirty = false;
 
 Object.keys(LAYOUT_METADATA).forEach(k => {
@@ -11504,21 +11591,40 @@ const FLOAT_MODAL_MAX_HEIGHT = "calc(2 * var(--size-4-4) + 12px + var(--input-he
 const NOTICE_DURATION_CONFLICT = 6000;
 const NOTICE_DURATION_GLOBAL_CONFLICT = 10000;
 
-let arrowType = getVal(K_ARROW_TYPE, {value: "curved", valueset: ARROW_TYPES});
+let arrowType = getVal(K_ARROW_TYPE, {
+  value: "curved",
+  valueset: ARROW_TYPES
+});
 let maxWidth = parseInt(getVal(K_WIDTH, 450));
-if(isNaN(maxWidth)) maxWidth = 450;
-let fontsizeScale = getVal(K_FONTSIZE, {value: "Normal Scale", valueset: FONT_SCALE_TYPES});
+if (isNaN(maxWidth)) maxWidth = 450;
+let fontsizeScale = getVal(K_FONTSIZE, {
+  value: "Normal Scale",
+  valueset: FONT_SCALE_TYPES
+});
 let boxChildren = getVal(K_BOX, false);
 let roundedCorners = getVal(K_ROUND, false);
 let multicolor = getVal(K_MULTICOLOR, true);
 let groupBranches = getVal(K_GROUP, false);
-let currentModalGrowthMode = getVal(K_GROWTH, {value: "Right-Left", valueset: GROWTH_TYPES});
+let currentModalGrowthMode = getVal(K_GROWTH, {
+  value: "Right-Left",
+  valueset: GROWTH_TYPES
+});
 let isUndocked = getVal(K_UNDOCKED, false);
 let isSolidArrow = getVal(K_ARROWSTROKE, true);
 let centerText = getVal(K_CENTERTEXT, true);
 let autoLayoutDisabled = false;
-let zoomLevel = getVal(K_ZOOM, {value: "Medium", valueset: ZOOM_TYPES});
-let customPalette = getVal(K_PALETTE, {value : {enabled: false, random: false, colors: []}, hidden: true});
+let zoomLevel = getVal(K_ZOOM, {
+  value: "Medium",
+  valueset: ZOOM_TYPES
+});
+let customPalette = getVal(K_PALETTE, {
+  value: {
+    enabled: false,
+    random: false,
+    colors: []
+  },
+  hidden: true
+});
 let fillSweep = getVal(K_FILL_SWEEP, false);
 let editingNodeId = null;
 let mostRecentlySelectedNodeID = null;
@@ -11531,26 +11637,43 @@ let redoAvailable = null; // { steps: number, version: number } - state after a 
 // -----------------------------------------------------------
 // Cleanup an migration of old settings values
 // -----------------------------------------------------------
-if (!ea.getScriptSettingValue(K_FONTSIZE, {value: "Normal Scale", valueset: FONT_SCALE_TYPES}).hasOwnProperty("valueset")) {
-  ea.setScriptSettingValue (K_FONTSIZE, {value: fontsizeScale, valueset: FONT_SCALE_TYPES});
+if (!ea.getScriptSettingValue(K_FONTSIZE, {
+    value: "Normal Scale",
+    valueset: FONT_SCALE_TYPES
+  }).hasOwnProperty("valueset")) {
+  ea.setScriptSettingValue(K_FONTSIZE, {
+    value: fontsizeScale,
+    valueset: FONT_SCALE_TYPES
+  });
   dirty = true;
 }
 
-if (!ea.getScriptSettingValue(K_GROWTH, {value: "Right-Left", valueset: GROWTH_TYPES}).hasOwnProperty("valueset")) {
-  ea.setScriptSettingValue (K_GROWTH, {value: currentModalGrowthMode, valueset: GROWTH_TYPES});
+if (!ea.getScriptSettingValue(K_GROWTH, {
+    value: "Right-Left",
+    valueset: GROWTH_TYPES
+  }).hasOwnProperty("valueset")) {
+  ea.setScriptSettingValue(K_GROWTH, {
+    value: currentModalGrowthMode,
+    valueset: GROWTH_TYPES
+  });
   dirty = true;
 }
 
 const settingsTemp = ea.getScriptSettings();
-if(settingsTemp && settingsTemp.hasOwnProperty("Is Minimized")) {
+if (settingsTemp && settingsTemp.hasOwnProperty("Is Minimized")) {
   delete settingsTemp["Is Minimized"];
   dirty = true;
 }
 
 
-let branchScale = getVal(K_BRANCH_SCALE, {value: "Hierarchical", valueset: BRANCH_SCALE_TYPES});
-let baseStrokeWidth = parseFloat(getVal(K_BASE_WIDTH, {value: 6}));
-if(isNaN(baseStrokeWidth)) baseStrokeWidth = 6;
+let branchScale = getVal(K_BRANCH_SCALE, {
+  value: "Hierarchical",
+  valueset: BRANCH_SCALE_TYPES
+});
+let baseStrokeWidth = parseFloat(getVal(K_BASE_WIDTH, {
+  value: 6
+}));
+if (isNaN(baseStrokeWidth)) baseStrokeWidth = 6;
 
 /**
  * Pure calculation logic for stroke width.
@@ -11583,7 +11706,7 @@ const EMBEDED_OBJECT_WIDTH_CHILD = 180;
 
 //special trim function that returns trimmed text, including trimming a bullet point of the bullet
 const trimText = (text) => {
-  if(!text) return text;
+  if (!text) return text;
   return text.match(/^(?:[ \t]*[-\*][ \t])?(?:[ \t]*)(.*?)[ \t]*$/)[1];
 }
 
@@ -11603,7 +11726,7 @@ const parseImageInput = (input) => {
   if (externalMatch) {
     const altText = externalMatch[1];
     const url = externalMatch[2];
-    
+
     let width = null;
     if (altText) {
       const parts = altText.split("|");
@@ -11612,13 +11735,13 @@ const parseImageInput = (input) => {
         width = parseInt(last);
       }
     }
-    
+
     try {
       const urlObj = new URL(url);
       const pathname = urlObj.pathname.toLowerCase();
       // Heuristic: check if the URL points to a standard image file extension
       const isImageUrl = IMAGE_TYPES.some(ext => pathname.endsWith("." + ext));
-      
+
       if (isImageUrl) {
         return {
           path: url,
@@ -11630,7 +11753,7 @@ const parseImageInput = (input) => {
         };
       }
     } catch (e) {}
-    
+
     // If not matching an image extension, return null so parseEmbeddableInput takes over
     return null;
   }
@@ -11670,7 +11793,13 @@ const parseImageInput = (input) => {
     }
   }
 
-  return { path, width, imageFile, isImagePath, file};
+  return {
+    path,
+    width,
+    imageFile,
+    isImagePath,
+    file
+  };
 };
 
 const parseEmbeddableInput = (input, imageInfo) => {
@@ -11709,6 +11838,7 @@ const ACTION_ADD_FOLLOW_ZOOM = "Add + follow + zoom";
 const ACTION_SORT_ORDER = "Change Order/Promote Node";
 const ACTION_EDIT = "Edit node";
 const ACTION_TOGGLE_CHECKBOX = "Toggle Checkbox";
+const ACTION_CALENDAR = "Calendar";
 const ACTION_PIN = "Pin/Unpin";
 const ACTION_BOX = "Box/Unbox";
 const ACTION_TOGGLE_GROUP = "Group/Ungroup Single Branch";
@@ -11749,6 +11879,7 @@ const ACTION_LABEL_KEYS = {
   [ACTION_SORT_ORDER]: "ACTION_LABEL_SORT_ORDER",
   [ACTION_EDIT]: "ACTION_LABEL_EDIT",
   [ACTION_TOGGLE_CHECKBOX]: "ACTION_LABEL_TOGGLE_CHECKBOX",
+  [ACTION_CALENDAR]: "ACTION_LABEL_CALENDAR",
   [ACTION_PIN]: "ACTION_LABEL_PIN",
   [ACTION_BOX]: "ACTION_LABEL_BOX",
   [ACTION_TOGGLE_GROUP]: "ACTION_LABEL_TOGGLE_GROUP",
@@ -11784,7 +11915,7 @@ const getActionLabel = (action) => t(ACTION_LABEL_KEYS[action] ?? action);
 // - excalidraw: the hotkey works when either the inputEl has focus or the sidepanelView leaf or the Excalidraw leaf is active
 // - global: the hotkey works across obsidian, when ever the Excalidraw view in ea.targetView is visible, i.e. the hotkey works even if the user is active in a leaf like pdf viewer, markdown note, open next to Excalidraw.
 // - none: ea.targetView not set or Excalidraw leaf not visible
-const DEFAULT_HOTKEYS =[
+const DEFAULT_HOTKEYS = [
   // Creation - Enter based
   { action: ACTION_ADD, key: "Enter", modifiers: [], scope: SCOPE.input, isInputOnly: true, requiresNode: false },
   { action: ACTION_ADD_SIBLING_AFTER, key: "Enter", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: true, requiresNode: false },
@@ -11802,6 +11933,7 @@ const DEFAULT_HOTKEYS =[
 
   // Structure Modifiers
   { action: ACTION_TOGGLE_CHECKBOX, code: "KeyL", modifiers: ["Mod"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
+  { action: ACTION_CALENDAR, code: "KeyD", modifiers: ["Alt", "Mod"], scope: SCOPE.input, isInputOnly: false, requiresNode: false },
   { action: ACTION_PIN, code: "KeyP", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
   { action: ACTION_BOX, code: "KeyB", modifiers: ["Alt"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
   { action: ACTION_TOGGLE_BOUNDARY, code: "KeyB", modifiers: ["Alt", "Shift"], scope: SCOPE.input, isInputOnly: false, requiresNode: true },
@@ -11838,7 +11970,10 @@ const DEFAULT_HOTKEYS =[
 // Load hotkeys from settings or use default
 // IMPORTANT: Use JSON.parse/stringify to create a deep copy of defaults.
 // Otherwise, modifying userHotkeys modifies DEFAULT_HOTKEYS in memory, breaking the isModified check until restart.
-let userHotkeys = getVal(K_HOTKEYS, {value: JSON.parse(JSON.stringify(DEFAULT_HOTKEYS)), hidden: true});
+let userHotkeys = getVal(K_HOTKEYS, {
+  value: JSON.parse(JSON.stringify(DEFAULT_HOTKEYS)),
+  hidden: true
+});
 let isRecordingHotkey = false;
 let cancelHotkeyRecording = null;
 
@@ -11848,9 +11983,9 @@ const getObsidianConflict = (h) => {
   const normalize = (s) => s.toLowerCase().replace("key", "").replace("digit", "");
   const sortMods = (m) => [...m].sort().join(",");
 
-  const keysToCheck = h.isNavigation
-    ? ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]
-    : [h.code ? h.code : h.key];
+  const keysToCheck = h.isNavigation ?
+    ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"] :
+    [h.code ? h.code : h.key];
 
   const targetMods = sortMods(h.modifiers);
 
@@ -11883,13 +12018,13 @@ const getObsidianConflict = (h) => {
  *    - keeps user values for configurable keys (modifiers, key, code, scope)
  *    - adds missing keys from DEFAULT
  *    - removes keys not in DEFAULT
-**/
+ **/
 function updateUserHotkeys() {
   let dirty = false;
 
   const defaultByAction = new Map(DEFAULT_HOTKEYS.map(d => [d.action, d]));
   // These properties dictate script logic and should never be overridden by user settings
-  const structuralKeys =["isInputOnly", "requiresNode", "isNavigation", "hidden"];
+  const structuralKeys = ["isInputOnly", "requiresNode", "isNavigation", "hidden"];
 
   const userByAction = new Map();
   for (const u of userHotkeys) {
@@ -11901,7 +12036,7 @@ function updateUserHotkeys() {
     }
   }
 
-  const next =[];
+  const next = [];
 
   for (const d of DEFAULT_HOTKEYS) {
     const u = userByAction.get(d.action);
@@ -11912,7 +12047,9 @@ function updateUserHotkeys() {
       continue;
     }
 
-    const cleaned = { action: d.action };
+    const cleaned = {
+      action: d.action
+    };
 
     for (const key of Object.keys(d)) {
       if (key === "action") continue;
@@ -11952,7 +12089,7 @@ function updateUserHotkeys() {
 
 dirty = updateUserHotkeys();
 
-const getHotkeyDefByAction = (action) => userHotkeys.find((h)=>h.action === action);
+const getHotkeyDefByAction = (action) => userHotkeys.find((h) => h.action === action);
 
 const getHotkeyDisplayString = (h) => {
   const parts = [];
@@ -11973,10 +12110,10 @@ const getHotkeyDisplayString = (h) => {
 const getActionHotkeyString = (action) => `(${getHotkeyDisplayString(getHotkeyDefByAction(action))})`;
 
 // Merge defaults in case new actions were added in an update
-if(userHotkeys.length !== DEFAULT_HOTKEYS.length) {
+if (userHotkeys.length !== DEFAULT_HOTKEYS.length) {
   const merged = [...userHotkeys];
   DEFAULT_HOTKEYS.forEach(d => {
-    if(!merged.find(u => u.action === d.action)) merged.push(JSON.parse(JSON.stringify(d)));
+    if (!merged.find(u => u.action === d.action)) merged.push(JSON.parse(JSON.stringify(d)));
   });
   userHotkeys = merged;
 }
@@ -11987,7 +12124,14 @@ const generateRuntimeHotkeys = () => {
   userHotkeys.forEach(h => {
     if (h.isNavigation) {
       ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].forEach(key => {
-        runtimeKeys.push({ action: h.action, key, modifiers: h.modifiers, scope: h.scope, requiresNode: h.requiresNode, isInputOnly: h.isInputOnly });
+        runtimeKeys.push({
+          action: h.action,
+          key,
+          modifiers: h.modifiers,
+          scope: h.scope,
+          requiresNode: h.requiresNode,
+          isInputOnly: h.isInputOnly
+        });
       });
     } else {
       runtimeKeys.push(h);
@@ -12000,13 +12144,13 @@ let RUNTIME_HOTKEYS = generateRuntimeHotkeys();
 
 /**
  * Returns the current scope context for the hotkey
-**/
+ **/
 const getHotkeyContext = () => {
   if (!isViewSet()) return SCOPE.none;
 
-  const currentWindow = isUndocked && floatingInputModal
-    ? ea.targetView?.ownerWindow
-    : sidepanelWindow;
+  const currentWindow = isUndocked && floatingInputModal ?
+    ea.targetView?.ownerWindow :
+    sidepanelWindow;
 
   if (currentWindow.document?.activeElement === inputEl || currentWindow.document?.activeElement === ontologyEl) {
     return SCOPE.input;
@@ -12039,15 +12183,13 @@ ${t("INSTRUCTIONS")}
 `;
 
 // addElementsToView with different defaults compared to EA
-const addElementsToView = async (
-  {
-    repositionToCursor = false,
-    save = false,
-    newElementsOnTop = true,
-    shouldRestoreElements = true,
-    captureUpdate = "IMMEDIATELY",
-  } = {}
-) => {
+const addElementsToView = async ({
+  repositionToCursor = false,
+  save = false,
+  newElementsOnTop = true,
+  shouldRestoreElements = true,
+  captureUpdate = "IMMEDIATELY",
+} = {}) => {
   if (!isViewSet()) return;
 
   // Track transaction steps for Undo/Redo
@@ -12072,7 +12214,7 @@ const addElementsToView = async (
     redoAvailable = null;
   }
 
-  if(fileIds.size === 0) return;
+  if (fileIds.size === 0) return;
   const checker = () => {
     const loadedFiles = api().getFiles();
     const loadedKeys = Object.keys(loadedFiles).filter(f => loadedFiles[f].dataURL);
@@ -12081,7 +12223,7 @@ const addElementsToView = async (
     }
     return true;
   }
-  
+
   let watchdog = 0;
   while (!checker() && watchdog++ < 20) {
     await sleep(15);
@@ -12106,11 +12248,11 @@ const buildParentMap = (allElements, elementById) => {
     if (el.type === "arrow" && el.customData?.isBranch && el.startBinding?.elementId && el.endBinding?.elementId) {
       const parent = byId.get(el.startBinding.elementId);
       const childId = el.endBinding.elementId;
-      
+
       if (parent && childId) {
         // Handle container nodes if applicable
         const actualParent = parent.containerId ? byId.get(parent.containerId) : parent;
-        if(actualParent) parentMap.set(childId, actualParent);
+        if (actualParent) parentMap.set(childId, actualParent);
       }
     }
   });
@@ -12150,10 +12292,10 @@ const getMindmapNodeFromSelection = () => {
   }
 
   if (
-      selectedElements.length === 1 && (
+    selectedElements.length === 1 && (
       selectedElements[0].customData.hasOwnProperty("mindmapOrder") ||
       selectedElements[0].customData.hasOwnProperty("growthMode")
-  )) {
+    )) {
     if (selectedElements[0].type === "text" && selectedElements[0].boundElements.length === 0 && !!selectedElements[0].containerId) {
       const node = ea.getViewElements().find((el) => el.id === selectedElements[0].containerId);
       mostRecentlySelectedNodeID = node?.id;
@@ -12242,9 +12384,9 @@ const getParentNode = (id, allElements, parentMap = null) => {
   );
   if (!arrow) return null;
   const parent = allElements.find((el) => el.id === arrow.startBinding?.elementId);
-  return parent?.containerId
-    ? allElements.find((el) => el.id === parent.containerId)
-    : parent;
+  return parent?.containerId ?
+    allElements.find((el) => el.id === parent.containerId) :
+    parent;
 };
 
 const buildElementMap = (allElements) => {
@@ -12322,7 +12464,7 @@ const getMasterRoots = () => {
  */
 const getHierarchy = (el, allElements, elementById = null, parentMap = null) => {
   // Optimization: If we have an ID lookup, use it, otherwise perform search
-  if(elementById) {
+  if (elementById) {
     el = getBoundaryHost([el]) ?? el;
   } else {
     // Legacy behavior for ad-hoc calls
@@ -12337,7 +12479,7 @@ const getHierarchy = (el, allElements, elementById = null, parentMap = null) => 
 
   while (true) {
     let p = getParentNode(curr.id, allElements, parentMap);
-    
+
     if (!p || visited.has(p.id)) {
       rootId = curr.id;
       break;
@@ -12347,7 +12489,11 @@ const getHierarchy = (el, allElements, elementById = null, parentMap = null) => 
     curr = p;
     depth++;
   }
-  return { depth, l1AncestorId: l1Id, rootId };
+  return {
+    depth,
+    l1AncestorId: l1Id,
+    rootId
+  };
 };
 
 /**
@@ -12424,11 +12570,20 @@ const inferDirectionalGrowthMode = (node, parent, sourceRoot = null, sourceMode 
   if (!node || !parent) return "Right-facing";
 
   const mode = sourceMode || sourceRoot?.customData?.growthMode || currentModalGrowthMode;
-  const nodeCenter = { x: node.x + node.width / 2, y: node.y + node.height / 2 };
+  const nodeCenter = {
+    x: node.x + node.width / 2,
+    y: node.y + node.height / 2
+  };
 
-  const ref = sourceRoot
-    ? { x: sourceRoot.x + sourceRoot.width / 2, y: sourceRoot.y + sourceRoot.height / 2 }
-    : { x: parent.x + parent.width / 2, y: parent.y + parent.height / 2 };
+  const ref = sourceRoot ?
+    {
+      x: sourceRoot.x + sourceRoot.width / 2,
+      y: sourceRoot.y + sourceRoot.height / 2
+    } :
+    {
+      x: parent.x + parent.width / 2,
+      y: parent.y + parent.height / 2
+    };
 
   // Single-direction maps inherit their direction directly.
   if (mode === "Up-facing") return "Up-facing";
@@ -12514,7 +12669,7 @@ const getAngleFromCenter = (center, point) => {
   return angle < 0 ? angle + 360 : angle;
 };
 
-const randInt = (range) => Math.round(Math.random()*range);
+const randInt = (range) => Math.round(Math.random() * range);
 
 const getDynamicColor = (existingColors) => {
   if (multicolor && customPalette.enabled && customPalette.colors.length > 0) {
@@ -12542,19 +12697,25 @@ const getDynamicColor = (existingColors) => {
   const candidates = [];
 
   new Set(palette).forEach(hex => {
-    if (hex && hex !== "transparent") candidates.push({ hex, isPalette: true });
+    if (hex && hex !== "transparent") candidates.push({
+      hex,
+      isPalette: true
+    });
   });
 
   for (let h = 0; h < 360; h += HUE_STEP_BASE + randInt(HUE_STEP_JITTER)) {
     const c = ea.getCM({
       h,
       s: SAT_BASE + randInt(SAT_JITTER),
-      l: isDarkBg
-        ? LIGHT_BASE_DARK + randInt(LIGHT_JITTER_DARK)
-        : LIGHT_BASE_LIGHT + randInt(LIGHT_JITTER_LIGHT),
+      l: isDarkBg ?
+        LIGHT_BASE_DARK + randInt(LIGHT_JITTER_DARK) :
+        LIGHT_BASE_LIGHT + randInt(LIGHT_JITTER_LIGHT),
       a: 1
     });
-    candidates.push({ hex: c.stringHEX(), isPalette: false });
+    candidates.push({
+      hex: c.stringHEX(),
+      isPalette: false
+    });
   }
 
   // Process Candidates
@@ -12564,14 +12725,20 @@ const getDynamicColor = (existingColors) => {
 
     // Auto-adjust for contrast if necessary
     // If yellow/orange is too light for white bg, darken it.
-    let contrast = cm.contrast({ bgColor: bg });
+    let contrast = cm.contrast({
+      bgColor: bg
+    });
     if (contrast < 3) {
       const originalL = cm.lightness;
       // Try darkening/lightening to meet WCAG AA (3.0 for graphics)
       const targetL = isDarkBg ? Math.min(originalL + 40, 90) : Math.max(originalL - 40, 20);
       cm = cm.lightnessTo(targetL);
-      contrast = cm.contrast({ bgColor: bg });
-      c.hex = cm.stringHEX({alpha: false}); // Update the hex to the readable version
+      contrast = cm.contrast({
+        bgColor: bg
+      });
+      c.hex = cm.stringHEX({
+        alpha: false
+      }); // Update the hex to the readable version
     }
 
     // Calculate minimum distance to ANY existing color on canvas
@@ -12591,7 +12758,11 @@ const getDynamicColor = (existingColors) => {
       });
     }
 
-    return { ...c, contrast, minDiff };
+    return {
+      ...c,
+      contrast,
+      minDiff
+    };
   }).filter(c => c && c.contrast >= COLOR_CONTRAST_MIN); // Filter out absolute invisible colors
 
   // Sort Logic
@@ -12670,15 +12841,17 @@ const manageFoldIndicator = (node, show, allElements) => {
       } else {
         ea.addToGroup([node.id, id]);
       }
-      ea.addAppendUpdateCustomData(node.id, { foldIndicatorId: id });
+      ea.addAppendUpdateCustomData(node.id, {
+        foldIndicatorId: id
+      });
     }
 
     if (side === 1) {
-        ind.x = node.x + node.width + layoutSettings.INDICATOR_OFFSET;
-        ind.textAlign = "left";
+      ind.x = node.x + node.width + layoutSettings.INDICATOR_OFFSET;
+      ind.textAlign = "left";
     } else {
-        ind.x = node.x - layoutSettings.INDICATOR_OFFSET - ind.width;
-        ind.textAlign = "right";
+      ind.x = node.x - layoutSettings.INDICATOR_OFFSET - ind.width;
+      ind.textAlign = "right";
     }
     ind.y = node.y + node.height - ind.fontSize;
   } else {
@@ -12686,7 +12859,9 @@ const manageFoldIndicator = (node, show, allElements) => {
     if (existingId) {
       const ind = allElements.find(el => el.id === existingId);
       if (ind) ind.isDeleted = true;
-      ea.addAppendUpdateCustomData(node.id, { foldIndicatorId: undefined });
+      ea.addAppendUpdateCustomData(node.id, {
+        foldIndicatorId: undefined
+      });
     }
   }
 };
@@ -12705,7 +12880,10 @@ const setElementVisibility = (el, hide) => {
       // Safety: If for some reason opacity is already 0, assume 100 to avoid locking it invisible forever
       const safeOpacity = el.opacity === 0 ? 100 : el.opacity;
       ea.addAppendUpdateCustomData(el.id, {
-        foldState: { opacity: safeOpacity, locked: el.locked }
+        foldState: {
+          opacity: safeOpacity,
+          locked: el.locked
+        }
       });
     }
     el.opacity = 0;
@@ -12715,7 +12893,9 @@ const setElementVisibility = (el, hide) => {
     if (el.customData?.foldState) {
       el.opacity = el.customData.foldState.opacity;
       el.locked = el.customData.foldState.locked;
-      ea.addAppendUpdateCustomData(el.id, { foldState: undefined });
+      ea.addAppendUpdateCustomData(el.id, {
+        foldState: undefined
+      });
     } else {
       // Default fallback if no state was saved but we need to show
       if (el.opacity === 0) el.opacity = 100;
@@ -12756,9 +12936,9 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold,
   if (node.groupIds && node.groupIds.length > 0) {
 
     const groupElements = ea.getElementsInTheSameGroupWithElement(node, allElements);
-    
+
     const childrenIds = getChildrenNodes(nodeId, allElements).map(c => c.id);
-    
+
     groupElements.forEach(el => {
       if (el.id === node.id) return;
       if (el.customData?.isBranch) return;
@@ -12777,11 +12957,11 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold,
   }
 
   // Handle Crosslinks (Non-structural arrows connected to this node OR its decorations)
-  const crossLinks = allElements.filter(el => 
-    el.type === "arrow" && 
-    !el.customData?.isBranch && 
+  const crossLinks = allElements.filter(el =>
+    el.type === "arrow" &&
+    !el.customData?.isBranch &&
     (
-      (el.startBinding && localNodeIds.has(el.startBinding.elementId)) || 
+      (el.startBinding && localNodeIds.has(el.startBinding.elementId)) ||
       (el.endBinding && localNodeIds.has(el.endBinding.elementId))
     )
   );
@@ -12792,15 +12972,15 @@ const updateBranchVisibility = (nodeId, parentHidden, allElements, isRootOfFold,
     } else {
       // Determine which end is the "other" node
       const isStartLocal = arrow.startBinding && localNodeIds.has(arrow.startBinding.elementId);
-      
-      const otherId = isStartLocal
-        ? arrow.endBinding?.elementId 
-        : arrow.startBinding?.elementId;
-      
+
+      const otherId = isStartLocal ?
+        arrow.endBinding?.elementId :
+        arrow.startBinding?.elementId;
+
       const otherNode = allElements.find(e => e.id === otherId);
-      
+
       if (otherNode && !otherNode.isDeleted && otherNode.opacity > 0) {
-         setElementVisibility(arrow, false);
+        setElementVisibility(arrow, false);
       }
     }
   });
@@ -12859,7 +13039,7 @@ const toggleFold = async (mode = "L0") => {
 
   const allViewElements = ea.getViewElements();
   const info = getHierarchy(sel, allViewElements);
-  
+
   // Only target elements in the specific mindmap tree to avoid massive array loops 
   const projectElements = getMindmapProjectElements(info.rootId, allViewElements);
   ea.copyViewElementsToEAforEditing(projectElements);
@@ -12881,24 +13061,32 @@ const toggleFold = async (mode = "L0") => {
   if (mode === "L0") {
     const isCurrentlyFolded = targetNode.customData?.isFolded === true;
     isFoldAction = !isCurrentlyFolded;
-    ea.addAppendUpdateCustomData(targetNode.id, { isFolded: isFoldAction });
+    ea.addAppendUpdateCustomData(targetNode.id, {
+      isFolded: isFoldAction
+    });
   } else if (mode === "L1") {
-    ea.addAppendUpdateCustomData(targetNode.id, { isFolded: false });
+    ea.addAppendUpdateCustomData(targetNode.id, {
+      isFolded: false
+    });
     const anyChildFolded = children.some(child => child.customData?.isFolded === true);
     isFoldAction = !anyChildFolded;
 
     children.forEach(child => {
-      ea.addAppendUpdateCustomData(child.id, { isFolded: isFoldAction });
+      ea.addAppendUpdateCustomData(child.id, {
+        isFolded: isFoldAction
+      });
     });
   } else if (mode === "ALL") {
-    ea.addAppendUpdateCustomData(targetNode.id, { isFolded: false });
+    ea.addAppendUpdateCustomData(targetNode.id, {
+      isFolded: false
+    });
     const nonLeafDescendants = [];
     const stack = [...children];
-    
+
     while (stack.length) {
       const node = stack.pop();
       const nodeChildren = getChildrenNodes(node.id, wbElements);
-      
+
       if (nodeChildren.length > 0) {
         nonLeafDescendants.push(node);
         nodeChildren.forEach(child => stack.push(child));
@@ -12909,19 +13097,27 @@ const toggleFold = async (mode = "L0") => {
     isFoldAction = !anyDescendantFolded;
 
     nonLeafDescendants.forEach(node => {
-      ea.addAppendUpdateCustomData(node.id, { isFolded: isFoldAction });
+      ea.addAppendUpdateCustomData(node.id, {
+        isFolded: isFoldAction
+      });
     });
   }
 
   updateBranchVisibility(targetNode.id, false, wbElements, true, info.rootId);
 
-  await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
+  await addElementsToView({
+    captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
+  });
 
   if (!autoLayoutDisabled) {
     await triggerGlobalLayout(info.rootId);
   }
 
-  ea.viewUpdateScene({appState: {selectedGroupIds: {}}});
+  ea.viewUpdateScene({
+    appState: {
+      selectedGroupIds: {}
+    }
+  });
   focusSelected();
 };
 
@@ -12956,7 +13152,7 @@ const moveCrossLinks = (allElements, originalPositions) => {
 
       const eaArrow = ea.getElement(arrow.id);
       if (!eaArrow) return;
-      
+
       eaArrow.x += dsX;
       eaArrow.y += dsY;
 
@@ -12992,9 +13188,9 @@ const moveDecorations = (allElements, originalPositions, groupToNodes, rootId, e
 
   allElements.forEach(el => {
     // Optimization: O(1) lookup instead of function call
-    const isStructural = structuralIds.has(el.id); 
+    const isStructural = structuralIds.has(el.id);
     const isCrossLink = el.type === "arrow" && !el.customData?.isBranch && el.startBinding?.elementId && el.endBinding?.elementId;
-    
+
     const isDecoration = !isStructural && !isCrossLink && el.groupIds && el.groupIds.length > 0;
 
     if (isDecoration) {
@@ -13008,28 +13204,34 @@ const moveDecorations = (allElements, originalPositions, groupToNodes, rootId, e
 
       if (hostNodes.size > 0) {
         const nodesArray = Array.from(hostNodes);
-        
-        let minXOld = Infinity, minYOld = Infinity, maxXOld = -Infinity, maxYOld = -Infinity;
-        let minXNew = Infinity, minYNew = Infinity, maxXNew = -Infinity, maxYNew = -Infinity;
-        
+
+        let minXOld = Infinity,
+          minYOld = Infinity,
+          maxXOld = -Infinity,
+          maxYOld = -Infinity;
+        let minXNew = Infinity,
+          minYNew = Infinity,
+          maxXNew = -Infinity,
+          maxYNew = -Infinity;
+
         let validHost = false;
 
         nodesArray.forEach(n => {
-           const oldPos = originalPositions.get(n.id);
-           const newEl = ea.getElement(n.id);
-           
-           if (oldPos && newEl) {
-             validHost = true;
-             minXOld = Math.min(minXOld, oldPos.x);
-             minYOld = Math.min(minYOld, oldPos.y);
-             maxXOld = Math.max(maxXOld, oldPos.x + n.width);
-             maxYOld = Math.max(maxYOld, oldPos.y + n.height);
+          const oldPos = originalPositions.get(n.id);
+          const newEl = ea.getElement(n.id);
 
-             minXNew = Math.min(minXNew, newEl.x);
-             minYNew = Math.min(minYNew, newEl.y);
-             maxXNew = Math.max(maxXNew, newEl.x + newEl.width);
-             maxYNew = Math.max(maxYNew, newEl.y + newEl.height);
-           }
+          if (oldPos && newEl) {
+            validHost = true;
+            minXOld = Math.min(minXOld, oldPos.x);
+            minYOld = Math.min(minYOld, oldPos.y);
+            maxXOld = Math.max(maxXOld, oldPos.x + n.width);
+            maxYOld = Math.max(maxYOld, oldPos.y + n.height);
+
+            minXNew = Math.min(minXNew, newEl.x);
+            minYNew = Math.min(minYNew, newEl.y);
+            maxXNew = Math.max(maxXNew, newEl.x + newEl.width);
+            maxYNew = Math.max(maxYNew, newEl.y + newEl.height);
+          }
         });
 
         if (validHost) {
@@ -13072,8 +13274,8 @@ const scaleDecorations = (oldNode, newNode, allElements, rootId) => {
 
   const groupElements = ea.getElementsInTheSameGroupWithElement(oldNode, allElements);
   // Filter out the node itself and structural elements
-  const decorations = groupElements.filter(el => 
-    el.id !== oldNode.id && 
+  const decorations = groupElements.filter(el =>
+    el.id !== oldNode.id &&
     !isStructuralElement(el, allElements, rootId)
   );
 
@@ -13121,7 +13323,7 @@ const scaleDecorations = (oldNode, newNode, allElements, rootId) => {
         const gapX = decCx - oldEdgeX; // Preserve this gap
         const newEdgeX = newCx + (sign * newNode.width / 2);
         const newDecCx = newEdgeX + gapX;
-        
+
         el.x = newDecCx - el.width / 2;
         // For the minor axis (Y), scale relative to center to keep alignment
         el.y = (newCy + (decCy - oldCy) * ratioY) - el.height / 2;
@@ -13141,7 +13343,10 @@ const scaleDecorations = (oldNode, newNode, allElements, rootId) => {
   });
 };
 
-let storedZoom = {elementID: undefined, level: undefined}
+let storedZoom = {
+  elementID: undefined,
+  level: undefined
+}
 const nextZoomLevel = (current) => {
   const idx = ZOOM_TYPES.indexOf(current);
   return idx === -1 ? ZOOM_TYPES[0] : ZOOM_TYPES[(idx + 1) % ZOOM_TYPES.length];
@@ -13150,7 +13355,7 @@ const nextZoomLevel = (current) => {
 const zoomToFit = (mode) => {
   if (!isViewSet()) return;
   let sel = getMindmapNodeFromSelection();
-  
+
   // Fallback to most recently selected if nothing is currently selected
   if (!sel && mostRecentlySelectedNodeID) {
     const fallback = ea.getViewElements().find(el => el.id === mostRecentlySelectedNodeID);
@@ -13162,7 +13367,7 @@ const zoomToFit = (mode) => {
       mostRecentlySelectedNodeID = null;
     }
   }
-  
+
   if (sel) {
     let nextLevel = zoomLevel;
     if (typeof mode === "string") {
@@ -13170,7 +13375,10 @@ const zoomToFit = (mode) => {
     } else if (!!mode && storedZoom.elementID === sel.id) {
       nextLevel = nextZoomLevel(storedZoom.level ?? zoomLevel);
     }
-    storedZoom = {elementID: sel.id, level: nextLevel}
+    storedZoom = {
+      elementID: sel.id,
+      level: nextLevel
+    }
     api().scrollToContent([sel], {
       fitToViewport: true,
       viewportZoomFactor: getZoom(nextLevel),
@@ -13182,7 +13390,7 @@ const zoomToFit = (mode) => {
 const focusSelected = () => {
   if (!isViewSet()) return;
   let sel = getMindmapNodeFromSelection();
-  
+
   // Fallback to most recently selected if nothing is currently selected
   if (!sel) {
     if (!mostRecentlySelectedNodeID) {
@@ -13204,7 +13412,7 @@ const focusSelected = () => {
 
   if (!sel) return;
 
-  api().scrollToContent(sel,{
+  api().scrollToContent(sel, {
     fitToContent: false,
     animate: true,
   });
@@ -13218,12 +13426,23 @@ const getMindmapOrder = (node) => {
 const getNodeBox = (node, allElements) => {
   if (node.groupIds && node.groupIds.length > 0) {
     const groupElements = ea.getElementsInTheSameGroupWithElement(node, allElements);
-    if(groupElements.length > 1) {
-       const box = ExcalidrawLib.getCommonBoundingBox(groupElements);
-       return { ...box, elements: groupElements, isGroup: true };
+    if (groupElements.length > 1) {
+      const box = ExcalidrawLib.getCommonBoundingBox(groupElements);
+      return {
+        ...box,
+        elements: groupElements,
+        isGroup: true
+      };
     }
   }
-  return { minX: node.x, minY: node.y, width: node.width, height: node.height, elements: [node], isGroup: false };
+  return {
+    minX: node.x,
+    minY: node.y,
+    width: node.width,
+    height: node.height,
+    elements: [node],
+    isGroup: false
+  };
 };
 
 const sortChildrenStable = (children, allElements) => {
@@ -13451,23 +13670,23 @@ const getVerticalPlacementWidth = (nodeId, allElements, childrenByParent, widthC
  */
 const isStructuralElement = (el, allElements, rootId = null, elementById = null, parentMap = null) => {
   const isStructuralType = el.customData?.isBranch || el.customData?.growthMode || el.customData?.isBoundary || typeof el.customData?.mindmapOrder !== "undefined";
-  
+
   if (rootId && isStructuralType) {
     let targetEl = el;
-    
+
     if (el.type === "arrow" && el.customData?.isBranch) {
       const targetId = el.endBinding?.elementId || el.startBinding?.elementId;
       if (targetId) {
         targetEl = elementById?.get(targetId) || allElements.find(e => e.id === targetId);
       }
     }
-    
+
     if (!targetEl) return false;
 
     // Pass maps to getHierarchy to prevent O(N) lookups
     const info = getHierarchy(targetEl, allElements, elementById, parentMap);
     if (info?.rootId === rootId) return true;
-    if (info?.rootId) return false; 
+    if (info?.rootId) return false;
   }
 
   if (!rootId && isStructuralType) return true;
@@ -13481,13 +13700,13 @@ const isStructuralElement = (el, allElements, rootId = null, elementById = null,
 };
 
 const getViewGroupElements = (groupID) => {
-  return ea.getViewElements().filter( el => el.groupIds.includes(groupID) );
+  return ea.getViewElements().filter(el => el.groupIds.includes(groupID));
 }
 
 const getCommonGroupForElements = (elements) => {
   const groupIds = elements
-    .map(el=>el.groupIds)
-    .reduce((prev,cur)=>cur.filter(v=>prev.includes(v)));
+    .map(el => el.groupIds)
+    .reduce((prev, cur) => cur.filter(v => prev.includes(v)));
   return groupIds;
 };
 
@@ -13503,14 +13722,14 @@ const isMindmapGroup = (groupId, allElements) => {
 
 const collectCrosslinkIds = (allElements) => new Set(
   allElements
-    .filter(el => el.type === "arrow" && !el.customData?.isBranch && el.startBinding?.elementId && el.endBinding?.elementId)
-    .map(el => el.id)
+  .filter(el => el.type === "arrow" && !el.customData?.isBranch && el.startBinding?.elementId && el.endBinding?.elementId)
+  .map(el => el.id)
 );
 
 const collectDecorationIds = (allElements, rootId) => new Set(
   allElements
-    .filter(el => el.groupIds && el.groupIds.length > 0 && !isStructuralElement(el, allElements, rootId))
-    .map(el => el.id)
+  .filter(el => el.groupIds && el.groupIds.length > 0 && !isStructuralElement(el, allElements, rootId))
+  .map(el => el.id)
 );
 
 /**
@@ -13537,10 +13756,10 @@ const applyRecursiveGrouping = (nodeId, allElements) => {
     // Find the arrow connecting nodeId to child
     const arrow = allElements.find(
       (a) =>
-        a.type === "arrow" &&
-        a.customData?.isBranch &&
-        a.startBinding?.elementId === nodeId &&
-        a.endBinding?.elementId === child.id,
+      a.type === "arrow" &&
+      a.customData?.isBranch &&
+      a.startBinding?.elementId === nodeId &&
+      a.endBinding?.elementId === child.id,
     );
     if (arrow) {
       nodeIdsInSubtree.push(arrow.id);
@@ -13610,7 +13829,7 @@ const updateNodeBoundary = (node, allElements, rootId) => {
   const isVerticalBoundaryMode = growthMode === "Up-facing" || growthMode === "Down-facing" || growthMode === "Up-Down";
 
   const padding = 15;
-  let allPoints =[];
+  let allPoints = [];
 
   branchElements.forEach(el => {
     if (isVerticalBoundaryMode && el.type === "arrow" && Array.isArray(el.points) && el.points.length > 0) {
@@ -13641,13 +13860,13 @@ const updateNodeBoundary = (node, allElements, rootId) => {
   if (hullPoints.length < 3) return;
 
   // Subdivide long segments to tame the bezier curve over-extension
-  const subdividedPoints =[];
+  const subdividedPoints = [];
   const MAX_SEGMENT_LENGTH = layoutSettings.MAX_SEGMENT_LENGTH ?? LAYOUT_METADATA.MAX_SEGMENT_LENGTH.def;
   for (let i = 0; i < hullPoints.length; i++) {
     const p1 = hullPoints[i];
     const p2 = hullPoints[(i + 1) % hullPoints.length];
     subdividedPoints.push(p1);
-    
+
     const dist = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
     if (dist > MAX_SEGMENT_LENGTH) {
       const steps = Math.ceil(dist / MAX_SEGMENT_LENGTH);
@@ -13660,7 +13879,10 @@ const updateNodeBoundary = (node, allElements, rootId) => {
     }
   }
 
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let minX = Infinity,
+    minY = Infinity,
+    maxX = -Infinity,
+    maxY = -Infinity;
   // Calculate bounding box using the original hull points
   hullPoints.forEach(p => {
     if (p[0] < minX) minX = p[0];
@@ -13686,27 +13908,34 @@ const updateNodeBoundary = (node, allElements, rootId) => {
   normalizedPoints.push([normalizedPoints[0][0], normalizedPoints[0][1]]); // Close loop
   boundaryEl.points = normalizedPoints;
 
-  boundaryEl.roundness = arrowType === "curved" ? {type: 2} : null;
+  boundaryEl.roundness = arrowType === "curved" ? {
+    type: 2
+  } : null;
   boundaryEl.polygon = true;
   boundaryEl.locked = false;
 
   if (node.groupIds.length > 0 && isMindmapGroup(node.groupIds[0], allElements)) {
-     if (!boundaryEl.groupIds || boundaryEl.groupIds.length === 0 || boundaryEl.groupIds[0] !== node.groupIds[0]) {
-         boundaryEl.groupIds = [node.groupIds[0]];
-     }
+    if (!boundaryEl.groupIds || boundaryEl.groupIds.length === 0 || boundaryEl.groupIds[0] !== node.groupIds[0]) {
+      boundaryEl.groupIds = [node.groupIds[0]];
+    }
   } else {
-     boundaryEl.groupIds =[];
+    boundaryEl.groupIds = [];
   }
 };
 
-const addEmbeddableNode = ({px = 0, py = 0, url, depth}) => {
+const addEmbeddableNode = ({
+  px = 0,
+  py = 0,
+  url,
+  depth
+}) => {
   isWikiLink = url.startsWith("[[");
-  const width = isWikiLink
-    ? (depth === 0 ? EMBEDED_OBJECT_WIDTH_ROOT : EMBEDED_OBJECT_WIDTH_CHILD)
-    : EMBEDED_OBJECT_WIDTH_CHILD;
-  const height = isWikiLink
-    ? width / 2
-    : 0; // Height 0 triggers auto-calculation based on aspect ratio
+  const width = isWikiLink ?
+    (depth === 0 ? EMBEDED_OBJECT_WIDTH_ROOT : EMBEDED_OBJECT_WIDTH_CHILD) :
+    EMBEDED_OBJECT_WIDTH_CHILD;
+  const height = isWikiLink ?
+    width / 2 :
+    0; // Height 0 triggers auto-calculation based on aspect ratio
   const embeddableId = ea.addEmbeddable(px, py, width, height, url);
   if (isWikiLink) {
     ea.getElement(embeddableId).scale = depth === 0 ? [0.5, 0.5] : [0.3, 0.3];
@@ -13722,8 +13951,12 @@ const updateRootNodeCustomData = async (data, sel) => {
     if (!settingsRoot) return null;
 
     ea.copyViewElementsToEAforEditing(allElements.filter((e) => e.id === settingsRoot.id));
-    ea.addAppendUpdateCustomData(settingsRoot.id, { ...data });
-    await addElementsToView({ captureUpdate: "NEVER" });
+    ea.addAppendUpdateCustomData(settingsRoot.id, {
+      ...data
+    });
+    await addElementsToView({
+      captureUpdate: "NEVER"
+    });
     updateUI();
     const info = getHierarchy(settingsRoot, ea.getViewElements());
     return {
@@ -13751,7 +13984,7 @@ const updateBranchStrokes = async (rootId, oldBaseWidth, oldScaleMode, newBaseWi
 
   const traverse = (nodeId, depth) => {
     const children = getChildrenNodes(nodeId, allElements);
-    
+
     children.forEach(child => {
       // Find the arrow connecting parent (nodeId) to child
       const arrow = allElements.find(
@@ -13771,20 +14004,23 @@ const updateBranchStrokes = async (rootId, oldBaseWidth, oldScaleMode, newBaseWi
         // So the arrow leading TO the node at 'depth' uses 'depth' for calculation.
         // Here, 'child' is at depth + 1 relative to 'nodeId' (which is at 'depth').
         const childDepth = depth + 1;
-        
+
         const expectedOldWidth = calculateStrokeWidth(childDepth, oldBaseWidth, oldScaleMode);
-        
+
         // Allow a small floating point tolerance
         if (Math.abs(arrow.strokeWidth - expectedOldWidth) < 0.05) {
           const newWidth = calculateStrokeWidth(childDepth, newBaseWidth, newScaleMode);
           if (Math.abs(arrow.strokeWidth - newWidth) > 0.001) {
-            elementsToUpdate.push({id: arrow.id, strokeWidth: newWidth});
+            elementsToUpdate.push({
+              id: arrow.id,
+              strokeWidth: newWidth
+            });
           }
         } else {
           // If it doesn't match old width, check if it matches new width (already updated?)
           const expectedNewWidth = calculateStrokeWidth(childDepth, newBaseWidth, newScaleMode);
           if (Math.abs(arrow.strokeWidth - expectedNewWidth) >= 0.05) {
-             manualOverrideFound = true;
+            manualOverrideFound = true;
           }
         }
       }
@@ -13801,7 +14037,9 @@ const updateBranchStrokes = async (rootId, oldBaseWidth, oldScaleMode, newBaseWi
       const el = ea.getElement(item.id);
       if (el) el.strokeWidth = item.strokeWidth;
     });
-    await addElementsToView({ captureUpdate: "IMMEDIATELY" });
+    await addElementsToView({
+      captureUpdate: "IMMEDIATELY"
+    });
   }
 
   if (manualOverrideFound) {
@@ -13832,23 +14070,40 @@ const addUpdateArrowLabel = (arrow, text) => {
   if (!text) {
     return;
   }
-  const x = arrow.x + arrow.width/2;
-  const y = arrow.y + arrow.height/2;
+  const x = arrow.x + arrow.width / 2;
+  const y = arrow.y + arrow.height / 2;
   const textId = ea.addText(x, y, text);
   const textEl = ea.getElement(textId);
-  
+
   textEl.strokeColor = arrow.strokeColor;
   textEl.containerId = arrow.id;
   textEl.textAlign = "center";
   textEl.textVerticalAlign = "middle";
   textEl.fontSize = Math.floor(textEl.fontSize / 2);
 
-  arrow.boundElements = [{ type: "text", id: textId }];
+  arrow.boundElements = [{
+    type: "text",
+    id: textId
+  }];
 }
 
 const configureArrow = (context) => {
-  const {arrowId, isChildRight, isChildBelow, startId, endId, coordinates, isRadial, layoutDirection} = context;
-  const {sX, sY, eX, eY} = coordinates;
+  const {
+    arrowId,
+    isChildRight,
+    isChildBelow,
+    startId,
+    endId,
+    coordinates,
+    isRadial,
+    layoutDirection
+  } = context;
+  const {
+    sX,
+    sY,
+    eX,
+    eY
+  } = coordinates;
 
   const eaArrow = ea.getElement(arrowId);
   const isVertical = layoutDirection === "vertical";
@@ -13887,18 +14142,23 @@ const configureArrow = (context) => {
         [dx, dy]
       ];
     } else {
-      eaArrow.roundness = { type: 2 };
+      eaArrow.roundness = {
+        type: 2
+      };
       if (isRadial) {
         // Swapped coefficients for vertical curve: Y progresses faster than X initially
         eaArrow.points = [
-          [0, 0],[dx * 0.75, dy * 2 / 3],
+          [0, 0],
+          [dx * 0.75, dy * 2 / 3],
           [dx, dy]
         ];
       } else {
         // Swapped coefficients for vertical curve: Y progresses faster than X initially
         // This ensures lines shoot out vertically first before fanning out horizontally
         eaArrow.points = [
-          [0, 0],[dx * 0.25, dy / 3],[dx * 0.75, dy * 2 / 3],
+          [0, 0],
+          [dx * 0.25, dy / 3],
+          [dx * 0.75, dy * 2 / 3],
           [dx, dy]
         ];
       }
@@ -13934,20 +14194,26 @@ const configureArrow = (context) => {
     if (arrowType === "straight") {
       eaArrow.roundness = null;
       eaArrow.points = [
-        [0, 0],[dx, dy]
+        [0, 0],
+        [dx, dy]
       ];
     } else {
-      eaArrow.roundness = { type: 2 };
+      eaArrow.roundness = {
+        type: 2
+      };
       if (isRadial) {
         eaArrow.points = [
           [0, 0],
-          [dx * 2 / 3, dy * 0.75],[dx, dy]
+          [dx * 2 / 3, dy * 0.75],
+          [dx, dy]
         ];
       } else {
         // Standard horizontal curve: X progresses faster than Y initially
         eaArrow.points = [
-          [0, 0],[dx / 3, dy * 0.25],
-          [dx * 2 / 3, dy * 0.75],[dx, dy]
+          [0, 0],
+          [dx / 3, dy * 0.25],
+          [dx * 2 / 3, dy * 0.75],
+          [dx, dy]
         ];
       }
     }
@@ -14037,10 +14303,18 @@ const layoutChildrenAsAdditionalRoot = (nodeId, allElements, hasGlobalFolds, chi
       }
 
       if (rightNodes.length > 0) {
-        layoutL1Nodes(rightNodes, { sortMethod: "vertical", centerAngle: 90, gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL }, layoutContext, mustHonorMindmapOrder);
+        layoutL1Nodes(rightNodes, {
+          sortMethod: "vertical",
+          centerAngle: 90,
+          gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL
+        }, layoutContext, mustHonorMindmapOrder);
       }
       if (leftNodes.length > 0) {
-        layoutL1Nodes(leftNodes, { sortMethod: "vertical", centerAngle: 270, gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL }, layoutContext, mustHonorMindmapOrder);
+        layoutL1Nodes(leftNodes, {
+          sortMethod: "vertical",
+          centerAngle: 270,
+          gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL
+        }, layoutContext, mustHonorMindmapOrder);
       }
       return;
     }
@@ -14073,10 +14347,18 @@ const layoutChildrenAsAdditionalRoot = (nodeId, allElements, hasGlobalFolds, chi
     layoutContext.widthCache = new Map();
 
     if (downNodes.length > 0) {
-      layoutL1Nodes(downNodes, { sortMethod: "horizontal", centerAngle: 90, gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL }, layoutContext, mustHonorMindmapOrder);
+      layoutL1Nodes(downNodes, {
+        sortMethod: "horizontal",
+        centerAngle: 90,
+        gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL
+      }, layoutContext, mustHonorMindmapOrder);
     }
     if (upNodes.length > 0) {
-      layoutL1Nodes(upNodes, { sortMethod: "horizontal", centerAngle: 270, gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL }, layoutContext, mustHonorMindmapOrder);
+      layoutL1Nodes(upNodes, {
+        sortMethod: "horizontal",
+        centerAngle: 270,
+        gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL
+      }, layoutContext, mustHonorMindmapOrder);
     }
   });
 
@@ -14088,7 +14370,8 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   const eaNode = ea.getElement(nodeId);
 
   const isPinned = node.customData?.isPinned === true;
-  let dx = 0, dy = 0;
+  let dx = 0,
+    dy = 0;
 
   if (!isPinned) {
     const newX = side === 1 ? targetX : targetX - node.width;
@@ -14116,15 +14399,15 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   // Handle Fold Indicator
   if (node.customData?.foldIndicatorId) {
     const ind = ea.getElement(node.customData.foldIndicatorId);
-    if(ind) {
+    if (ind) {
       if (effectiveSide === 1) {
-          ind.x = eaNode.x + eaNode.width + layoutSettings.INDICATOR_OFFSET;
-          ind.textAlign = "left";
+        ind.x = eaNode.x + eaNode.width + layoutSettings.INDICATOR_OFFSET;
+        ind.textAlign = "left";
       } else {
-          ind.x = eaNode.x - layoutSettings.INDICATOR_OFFSET - ind.width;
-          ind.textAlign = "right";
+        ind.x = eaNode.x - layoutSettings.INDICATOR_OFFSET - ind.width;
+        ind.textAlign = "right";
       }
-      ind.y = eaNode.y + eaNode.height/2 - ind.height/2;
+      ind.y = eaNode.y + eaNode.height / 2 - ind.height / 2;
     }
   }
 
@@ -14149,21 +14432,21 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
           if (descNode?.customData?.isPinned) return;
           // Do not shift non-branch arrows because moveCrossLinks automatically handles them
           if (descNode && descNode.type === "arrow" && !descNode.customData?.isBranch) return;
-          
+
           if (!ea.getElement(descId)) {
-             if (descNode) ea.copyViewElementsToEAforEditing([descNode]);
+            if (descNode) ea.copyViewElementsToEAforEditing([descNode]);
           }
           const descEl = ea.getElement(descId);
           if (descEl) {
-             descEl.x += dx;
-             descEl.y += dy;
+            descEl.x += dx;
+            descEl.y += dy;
           }
         });
       }
     } else {
       layoutChildrenAsAdditionalRoot(nodeId, allElements, hasGlobalFolds, childrenByParent, heightCache, null, elementById, mustHonorMindmapOrder, parentMap);
     }
-    
+
     if (node.customData?.boundaryId) {
       updateNodeBoundary(node, ea.getElements(), rootId);
     }
@@ -14190,7 +14473,9 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
     if (!mustHonorMindmapOrder) {
       unpinnedChildren.forEach((child, i) => {
         if (getMindmapOrder(child) !== i) {
-          ea.addAppendUpdateCustomData(child.id, { mindmapOrder: i });
+          ea.addAppendUpdateCustomData(child.id, {
+            mindmapOrder: i
+          });
         }
       });
     }
@@ -14232,7 +14517,7 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   pinnedChildren.forEach(child => layoutSubtree(
     child.id,
     child.x,
-    child.y + child.height/2,
+    child.y + child.height / 2,
     effectiveSide,
     allElements,
     hasGlobalFolds,
@@ -14248,10 +14533,10 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
   children.forEach(child => {
     const arrow = allElements.find(
       (a) =>
-        a.type === "arrow" &&
-        a.customData?.isBranch &&
-        a.startBinding?.elementId === nodeId &&
-        a.endBinding?.elementId === child.id,
+      a.type === "arrow" &&
+      a.customData?.isBranch &&
+      a.startBinding?.elementId === nodeId &&
+      a.endBinding?.elementId === child.id,
     );
 
     if (arrow) {
@@ -14262,36 +14547,48 @@ const layoutSubtree = (nodeId, targetX, targetCenterY, side, allElements, hasGlo
 
       const sX = isChildRight ? currentX + node.width : currentX;
       const sY = currentYCenter;
-      
+
       const eX = isChildRight ? eaChild.x : eaChild.x + eaChild.width;
       const eY = eaChild.y + eaChild.height / 2;
 
       configureArrow({
-        arrowId: arrow.id, isChildRight, startId:node.id, endId: child.id,
-        coordinates: {sX, sY, eX, eY},
+        arrowId: arrow.id,
+        isChildRight,
+        startId: node.id,
+        endId: child.id,
+        coordinates: {
+          sX,
+          sY,
+          eX,
+          eY
+        },
       });
     }
   });
 
   if (node.customData?.boundaryId) {
-     updateNodeBoundary(node, ea.getElements(), rootId);
+    updateNodeBoundary(node, ea.getElements(), rootId);
   }
 };
 
 const updateL1Arrow = (node, context, layoutDirection = "horizontal") => {
-  const { rootId, rootCenter, mode } = context;
+  const {
+    rootId,
+    rootCenter,
+    mode
+  } = context;
 
   const arrow = ea.getElements().find(
     (a) =>
-      a.type === "arrow" &&
-      a.customData?.isBranch &&
-      a.startBinding?.elementId === rootId &&
-      a.endBinding?.elementId === node.id,
+    a.type === "arrow" &&
+    a.customData?.isBranch &&
+    a.startBinding?.elementId === rootId &&
+    a.endBinding?.elementId === node.id,
   );
   if (arrow) {
     const childNode = ea.getElement(node.id);
     const rootNode = ea.getElement(rootId);
-    
+
     if (!childNode || !rootNode) return;
 
     const isRadial = mode === "Radial";
@@ -14303,14 +14600,23 @@ const updateL1Arrow = (node, context, layoutDirection = "horizontal") => {
       // In Radial mode, start arrow from the center of the root node
       const sX = rootCenter.x;
       const sY = isRadial ? rootCenter.y : (isChildBelow ? rootNode.y + rootNode.height : rootNode.y);
-      
+
       const eX = childNode.x + childNode.width / 2;
       const eY = isChildBelow ? childNode.y : childNode.y + childNode.height;
 
       configureArrow({
-        arrowId: arrow.id, isChildBelow, startId: rootId, endId: node.id,
-        coordinates: {sX, sY, eX, eY},
-        isRadial, layoutDirection
+        arrowId: arrow.id,
+        isChildBelow,
+        startId: rootId,
+        endId: node.id,
+        coordinates: {
+          sX,
+          sY,
+          eX,
+          eY
+        },
+        isRadial,
+        layoutDirection
       });
     } else {
       const childCenterX = childNode.x + childNode.width / 2;
@@ -14319,14 +14625,23 @@ const updateL1Arrow = (node, context, layoutDirection = "horizontal") => {
       // In Radial mode, start arrow from the center of the root node
       const sX = isRadial ? rootCenter.x : (isChildRight ? rootNode.x + rootNode.width : rootNode.x);
       const sY = rootCenter.y;
-      
+
       const eX = isChildRight ? childNode.x : childNode.x + childNode.width;
       const eY = childNode.y + childNode.height / 2;
 
       configureArrow({
-        arrowId: arrow.id, isChildRight, startId: rootId, endId: node.id,
-        coordinates: {sX, sY, eX, eY},
-        isRadial, layoutDirection
+        arrowId: arrow.id,
+        isChildRight,
+        startId: rootId,
+        endId: node.id,
+        coordinates: {
+          sX,
+          sY,
+          eX,
+          eY
+        },
+        isRadial,
+        layoutDirection
       });
     }
   }
@@ -14337,7 +14652,8 @@ const layoutSubtreeVertical = (nodeId, targetCenterX, targetY, side, allElements
   const eaNode = ea.getElement(nodeId);
 
   const isPinned = node.customData?.isPinned === true;
-  let dx = 0, dy = 0;
+  let dx = 0,
+    dy = 0;
 
   if (!isPinned) {
     const newX = targetCenterX - node.width / 2;
@@ -14365,14 +14681,14 @@ const layoutSubtreeVertical = (nodeId, targetCenterX, targetY, side, allElements
   // Handle Fold Indicator
   if (node.customData?.foldIndicatorId) {
     const ind = ea.getElement(node.customData.foldIndicatorId);
-    if(ind) {
+    if (ind) {
       ind.x = eaNode.x + eaNode.width / 2 - ind.width / 2;
       if (effectiveSide === 1) {
-          ind.y = eaNode.y + eaNode.height + layoutSettings.INDICATOR_OFFSET;
-          ind.textAlign = "center";
+        ind.y = eaNode.y + eaNode.height + layoutSettings.INDICATOR_OFFSET;
+        ind.textAlign = "center";
       } else {
-          ind.y = eaNode.y - layoutSettings.INDICATOR_OFFSET - ind.height;
-          ind.textAlign = "center";
+        ind.y = eaNode.y - layoutSettings.INDICATOR_OFFSET - ind.height;
+        ind.textAlign = "center";
       }
     }
   }
@@ -14399,21 +14715,21 @@ const layoutSubtreeVertical = (nodeId, targetCenterX, targetY, side, allElements
           if (descNode?.customData?.isPinned) return;
           // Do not shift non-branch arrows because moveCrossLinks automatically handles them
           if (descNode && descNode.type === "arrow" && !descNode.customData?.isBranch) return;
-          
+
           if (!ea.getElement(descId)) {
-             if (descNode) ea.copyViewElementsToEAforEditing([descNode]);
+            if (descNode) ea.copyViewElementsToEAforEditing([descNode]);
           }
           const descEl = ea.getElement(descId);
           if (descEl) {
-             descEl.x += dx;
-             descEl.y += dy;
+            descEl.x += dx;
+            descEl.y += dy;
           }
         });
       }
     } else {
       layoutChildrenAsAdditionalRoot(nodeId, allElements, hasGlobalFolds, childrenByParent, null, widthCache, elementById, mustHonorMindmapOrder, parentMap);
     }
-    
+
     if (node.customData?.boundaryId) {
       updateNodeBoundary(node, ea.getElements(), rootId);
     }
@@ -14440,7 +14756,9 @@ const layoutSubtreeVertical = (nodeId, targetCenterX, targetY, side, allElements
     if (!mustHonorMindmapOrder) {
       unpinnedChildren.forEach((child, i) => {
         if (getMindmapOrder(child) !== i) {
-          ea.addAppendUpdateCustomData(child.id, { mindmapOrder: i });
+          ea.addAppendUpdateCustomData(child.id, {
+            mindmapOrder: i
+          });
         }
       });
     }
@@ -14454,9 +14772,9 @@ const layoutSubtreeVertical = (nodeId, targetCenterX, targetY, side, allElements
       const grandChildren = childrenByParent?.get(unpinnedChildren[index].id) ?? getChildrenNodes(unpinnedChildren[index].id, allElements);
       const hasUnpinnedGrandChildren = grandChildren.some(gc => !gc.customData?.isPinned);
       const fontSize = childNode?.fontSize ?? 20;
-      const gap = index < unpinnedChildren.length - 1
-        ? (!hasUnpinnedGrandChildren ? Math.round(fontSize * layoutSettings.GAP_MULTIPLIER) : layoutSettings.GAP_Y)
-        : 0;
+      const gap = index < unpinnedChildren.length - 1 ?
+        (!hasUnpinnedGrandChildren ? Math.round(fontSize * layoutSettings.GAP_MULTIPLIER) : layoutSettings.GAP_Y) :
+        0;
       return sum + width + gap;
     }, 0);
 
@@ -14471,9 +14789,9 @@ const layoutSubtreeVertical = (nodeId, targetCenterX, targetY, side, allElements
       layoutSettings.GAP_Y,
       Math.round(layoutSettings.GAP_X * (layoutSettings.VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO ?? LAYOUT_METADATA.VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO.def)),
     );
-    const dynamicGapPrimary = (unpinnedChildren.length <= 2 && allChildrenCompact)
-      ? compactGap
-      : layoutSettings.GAP_X;
+    const dynamicGapPrimary = (unpinnedChildren.length <= 2 && allChildrenCompact) ?
+      compactGap :
+      layoutSettings.GAP_X;
 
     unpinnedChildren.forEach((child, index) => {
       const childW = childWidths[index];
@@ -14525,10 +14843,10 @@ const layoutSubtreeVertical = (nodeId, targetCenterX, targetY, side, allElements
   children.forEach(child => {
     const arrow = allElements.find(
       (a) =>
-        a.type === "arrow" &&
-        a.customData?.isBranch &&
-        a.startBinding?.elementId === nodeId &&
-        a.endBinding?.elementId === child.id,
+      a.type === "arrow" &&
+      a.customData?.isBranch &&
+      a.startBinding?.elementId === nodeId &&
+      a.endBinding?.elementId === child.id,
     );
 
     if (arrow) {
@@ -14539,38 +14857,57 @@ const layoutSubtreeVertical = (nodeId, targetCenterX, targetY, side, allElements
 
       const sX = currentXCenter;
       const sY = isChildBelow ? currentY + node.height : currentY;
-      
+
       const eX = eaChild.x + eaChild.width / 2;
       const eY = isChildBelow ? eaChild.y : eaChild.y + eaChild.height;
 
       configureArrow({
-        arrowId: arrow.id, isChildBelow, startId:node.id, endId: child.id,
-        coordinates: {sX, sY, eX, eY}, layoutDirection: "vertical"
+        arrowId: arrow.id,
+        isChildBelow,
+        startId: node.id,
+        endId: child.id,
+        coordinates: {
+          sX,
+          sY,
+          eX,
+          eY
+        },
+        layoutDirection: "vertical"
       });
     }
   });
 
   if (node.customData?.boundaryId) {
-     updateNodeBoundary(node, ea.getElements(), rootId);
+    updateNodeBoundary(node, ea.getElements(), rootId);
   }
 };
 
 const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, options, mustHonorMindmapOrder = false) => {
-  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById, rootId, parentMap } = context;
+  const {
+    allElements,
+    rootBox,
+    rootCenter,
+    hasGlobalFolds,
+    childrenByParent,
+    heightCache,
+    elementById,
+    rootId,
+    parentMap
+  } = context;
   const count = nodes.length;
 
   // --- CONFIGURATION FROM SETTINGS ---
-  const START_ANGLE = layoutSettings.RADIAL_START_ANGLE; 
-  
+  const START_ANGLE = layoutSettings.RADIAL_START_ANGLE;
+
   // MODIFIED: Use options.fillSweep to force full sweep usage
-  const MAX_SWEEP_DEG = options.fillSweep 
-    ? layoutSettings.RADIAL_MAX_SWEEP 
-    : Math.min(layoutSettings.RADIAL_MAX_SWEEP/8*count, layoutSettings.RADIAL_MAX_SWEEP); 
+  const MAX_SWEEP_DEG = options.fillSweep ?
+    layoutSettings.RADIAL_MAX_SWEEP :
+    Math.min(layoutSettings.RADIAL_MAX_SWEEP / 8 * count, layoutSettings.RADIAL_MAX_SWEEP);
   const ASPECT_RATIO = layoutSettings.RADIAL_ASPECT_RATIO;
   const POLE_GAP_BONUS = layoutSettings.RADIAL_POLE_GAP_BONUS;
-  
-  const BASE_GAP = layoutSettings.GAP_Y * 2; 
-  
+
+  const BASE_GAP = layoutSettings.GAP_Y * 2;
+
   // 1. Determine Minimum Radius Baseline based on root node size
   // This avoids the previous hardcoded 1000px test radius which forced nodes too far out
   const minRadiusY = Math.max(
@@ -14588,30 +14925,34 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, opt
     const rad = simAngle * (Math.PI / 180);
     // Local Radius at this angle for ellipse
     const localR = (minRadiusX * minRadiusY) / Math.sqrt(
-      Math.pow(minRadiusY * Math.cos(rad), 2) + 
+      Math.pow(minRadiusY * Math.cos(rad), 2) +
       Math.pow(minRadiusX * Math.sin(rad), 2)
     );
-    
+
     const sinComp = Math.abs(Math.sin(rad));
     const cosComp = Math.abs(Math.cos(rad));
     // Projected size of node at this angle
     const effSize = node.width * sinComp + l1Metrics[i] * cosComp;
-    
+
     // Angular span of the node (degrees)
     const nodeSpan = (effSize / localR) * (180 / Math.PI);
-    
+
     // Dynamic Gap: Increases at Poles
     const isLast = i === count - 1;
     const dynamicGapPx = isLast ? 0 : BASE_GAP * (1 + sinComp * POLE_GAP_BONUS);
     const gapSpan = (dynamicGapPx / localR) * (180 / Math.PI);
 
     const totalSpan = nodeSpan + gapSpan;
-    
+
     // Advance simulation angle for next node
     simAngle += totalSpan;
     totalRequiredSpan += totalSpan;
 
-    return { node, nodeSpan, gapSpan };
+    return {
+      node,
+      nodeSpan,
+      gapSpan
+    };
   });
 
   // 3. Determine Layout Strategy: Expand Radius OR Expand Angles
@@ -14624,7 +14965,7 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, opt
     // Logic: ArcLength = R * Theta. To reduce Theta sum to MAX_SWEEP, increase R proportionally.
     const radiusScale = totalRequiredSpan / MAX_SWEEP_DEG;
     finalRadiusY = minRadiusY * radiusScale;
-    
+
     // Angles shrink proportionally to radius increase to maintain non-overlapping geometry
     angleExpansionFactor = 1 / radiusScale;
   } else {
@@ -14654,17 +14995,17 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, opt
 
     // Determine side for subtree layout direction
     const dynamicSide = (normAngle > 90 && normAngle < 270) ? -1 : 1;
-    
+
     // Recalculate exact Cartesian coordinates at final radius
     const rad = placementAngle * (Math.PI / 180);
-    
+
     const finalLocalR = (finalRadiusX * finalRadiusY) / Math.sqrt(
-      Math.pow(finalRadiusY * Math.cos(rad), 2) + 
+      Math.pow(finalRadiusY * Math.cos(rad), 2) +
       Math.pow(finalRadiusX * Math.sin(rad), 2)
     );
 
-    const placeR = hasBoundary ? finalLocalR * 1.0 : finalLocalR; 
-    
+    const placeR = hasBoundary ? finalLocalR * 1.0 : finalLocalR;
+
     const tCX = rootCenter.x + placeR * Math.cos(rad);
     const tCY = rootCenter.y + placeR * Math.sin(rad);
 
@@ -14678,7 +15019,9 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, opt
     currentAngle += realNodeSpan + realGapSpan;
 
     if (node.customData?.mindmapNew) {
-      ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
+      ea.addAppendUpdateCustomData(node.id, {
+        mindmapNew: undefined
+      });
     }
     updateL1Arrow(node, context);
     if (groupBranches) applyRecursiveGrouping(node.id, allElements);
@@ -14686,7 +15029,17 @@ const radialL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, opt
 };
 
 const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, isLeftSide, centerAngle, gapMultiplier, mustHonorMindmapOrder = false) => {
-  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, heightCache, elementById, rootId, parentMap } = context;
+  const {
+    allElements,
+    rootBox,
+    rootCenter,
+    hasGlobalFolds,
+    childrenByParent,
+    heightCache,
+    elementById,
+    rootId,
+    parentMap
+  } = context;
   const count = nodes.length;
 
   // --- VERTICAL DIRECTIONAL LAYOUT (RIGHT/LEFT) ---
@@ -14709,7 +15062,12 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
       const angleDeg = (angleRad * (180 / Math.PI)) + 90;
       const normAngle = angleDeg < 0 ? angleDeg + 360 : angleDeg;
       const spanDeg = (height / radiusY) * (180 / Math.PI);
-      return { center: normAngle, span: spanDeg, start: normAngle - spanDeg / 2, end: normAngle + spanDeg / 2 };
+      return {
+        center: normAngle,
+        span: spanDeg,
+        start: normAngle - spanDeg / 2,
+        end: normAngle + spanDeg / 2
+      };
     };
 
     const effectiveGap = layoutSettings.GAP_Y * gapMultiplier;
@@ -14745,7 +15103,9 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
     }
 
     if (node.customData?.mindmapNew) {
-      ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
+      ea.addAppendUpdateCustomData(node.id, {
+        mindmapNew: undefined
+      });
     }
     updateL1Arrow(node, context);
     if (groupBranches) applyRecursiveGrouping(node.id, allElements);
@@ -14753,7 +15113,17 @@ const verticalL1Distribution = (nodes, context, l1Metrics, totalSubtreeHeight, i
 };
 
 const horizontalL1Distribution = (nodes, context, l1Metrics, totalSubtreeWidth, isTopSide, centerAngle, gapMultiplier, mustHonorMindmapOrder = false) => {
-  const { allElements, rootBox, rootCenter, hasGlobalFolds, childrenByParent, widthCache, elementById, rootId, parentMap } = context;
+  const {
+    allElements,
+    rootBox,
+    rootCenter,
+    hasGlobalFolds,
+    childrenByParent,
+    widthCache,
+    elementById,
+    rootId,
+    parentMap
+  } = context;
   const count = nodes.length;
 
   // --- HORIZONTAL DIRECTIONAL LAYOUT (UP/DOWN) ---
@@ -14789,7 +15159,7 @@ const horizontalL1Distribution = (nodes, context, l1Metrics, totalSubtreeWidth, 
   const pressure = totalContentWidth / Math.max(1, baselineRadius * baseArcSpan);
   const adaptiveArcSpan = Math.min(Math.PI, Math.max(baseArcSpan, baseArcSpan * Math.sqrt(Math.max(1, pressure))));
   const radiusFromWidth = totalContentWidth / adaptiveArcSpan;
-  
+
   // Notice axis swaps: Radius Y calculates based on Width
   const radiusX = Math.max(Math.round(rootBox.width * layoutSettings.ROOT_RADIUS_FACTOR), layoutSettings.MIN_RADIUS, radiusFromWidth) + count * layoutSettings.RADIUS_PADDING_PER_NODE;
   const crossAxisRatio = layoutSettings.DIRECTIONAL_CROSS_AXIS_RATIO ?? LAYOUT_METADATA.DIRECTIONAL_CROSS_AXIS_RATIO.def;
@@ -14809,7 +15179,12 @@ const horizontalL1Distribution = (nodes, context, l1Metrics, totalSubtreeWidth, 
       const angleDeg = angleRad * (180 / Math.PI);
       const normAngle = angleDeg < 0 ? angleDeg + 360 : angleDeg;
       const spanDeg = (width / radiusX) * (180 / Math.PI);
-      return { center: normAngle, span: spanDeg, start: normAngle - spanDeg / 2, end: normAngle + spanDeg / 2 };
+      return {
+        center: normAngle,
+        span: spanDeg,
+        start: normAngle - spanDeg / 2,
+        end: normAngle + spanDeg / 2
+      };
     };
 
     const gapSpanDeg = (effectiveGap / radiusX) * (180 / Math.PI);
@@ -14829,9 +15204,9 @@ const horizontalL1Distribution = (nodes, context, l1Metrics, totalSubtreeWidth, 
         const nextPinnedWidth = effectiveWidthById.get(nextPinned.id) ?? compressDirectionalWidth(nextPinned, getSubtreeWidth(nextPinned.id, allElements, childrenByParent, widthCache, elementById));
         const nextInfo = getAngularInfo(nextPinned, nextPinnedWidth);
         if (isTopSide) {
-           if (currentAngle + nodeSpanDeg > nextInfo.start - gapSpanDeg) currentAngle = nextInfo.start - gapSpanDeg - nodeSpanDeg;
+          if (currentAngle + nodeSpanDeg > nextInfo.start - gapSpanDeg) currentAngle = nextInfo.start - gapSpanDeg - nodeSpanDeg;
         } else {
-           if (currentAngle - nodeSpanDeg < nextInfo.end + gapSpanDeg) currentAngle = nextInfo.end + gapSpanDeg + nodeSpanDeg;
+          if (currentAngle - nodeSpanDeg < nextInfo.end + gapSpanDeg) currentAngle = nextInfo.end + gapSpanDeg + nodeSpanDeg;
         }
       }
 
@@ -14845,7 +15220,9 @@ const horizontalL1Distribution = (nodes, context, l1Metrics, totalSubtreeWidth, 
     }
 
     if (node.customData?.mindmapNew) {
-      ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
+      ea.addAppendUpdateCustomData(node.id, {
+        mindmapNew: undefined
+      });
     }
     updateL1Arrow(node, context, "vertical");
     if (groupBranches) applyRecursiveGrouping(node.id, allElements);
@@ -14860,8 +15237,18 @@ const horizontalL1Distribution = (nodes, context, l1Metrics, totalSubtreeWidth, 
  */
 const layoutL1Nodes = (nodes, options, context, mustHonorMindmapOrder = false) => {
   if (nodes.length === 0) return false;
-  const { allElements, childrenByParent, heightCache, widthCache, elementById } = context;
-  const { sortMethod, centerAngle, gapMultiplier } = options;
+  const {
+    allElements,
+    childrenByParent,
+    heightCache,
+    widthCache,
+    elementById
+  } = context;
+  const {
+    sortMethod,
+    centerAngle,
+    gapMultiplier
+  } = options;
 
   // SORTING: Respect the established mindmapOrder (0..N)
   nodes.sort((a, b) => getMindmapOrder(a) - getMindmapOrder(b));
@@ -14882,7 +15269,7 @@ const layoutL1Nodes = (nodes, options, context, mustHonorMindmapOrder = false) =
     const isLeftSide = sortMethod === "vertical" && Math.abs((centerAngle ?? 0) - 270) < 1;
     verticalL1Distribution(nodes, context, l1Metrics, totalSubtreeHeight, isLeftSide, centerAngle, gapMultiplier, mustHonorMindmapOrder);
   }
-  
+
   return true;
 };
 
@@ -14891,7 +15278,7 @@ const layoutL1Nodes = (nodes, options, context, mustHonorMindmapOrder = false) =
  * For Radial maps, sorting is done by angle. For others, by Y-coordinate.
  * Newly added nodes (mindmapNew) are always appended to the end of the visual sequence.
  * Returns true if any order was actually updated.
-**/
+ **/
 const sortL1NodesBasedOnVisualSequence = (l1Nodes, mode, rootCenter) => {
   if (l1Nodes.length === 0) return false;
 
@@ -14909,26 +15296,32 @@ const sortL1NodesBasedOnVisualSequence = (l1Nodes, mode, rootCenter) => {
     const bCY = b.y + b.height / 2;
 
     if (isVerticalMode) {
-       // Vertical modes: Sort bottom-side (Left->Right) then top-side (Left->Right)
-       const aIsBottom = aCY > rootCenter.y;
-       const bIsBottom = bCY > rootCenter.y;
-       if (aIsBottom !== bIsBottom) return aIsBottom ? -1 : 1; 
-       return aCX - bCX; 
+      // Vertical modes: Sort bottom-side (Left->Right) then top-side (Left->Right)
+      const aIsBottom = aCY > rootCenter.y;
+      const bIsBottom = bCY > rootCenter.y;
+      if (aIsBottom !== bIsBottom) return aIsBottom ? -1 : 1;
+      return aCX - bCX;
     } else {
-       // Horizontal modes: Sort right-side (Top->Bottom) then left-side (Top->Bottom)
-       const aIsR = aCX > rootCenter.x;
-       const bIsR = bCX > rootCenter.x;
-       if (aIsR !== bIsR) return aIsR ? -1 : 1; 
-       return a.y - b.y; 
+      // Horizontal modes: Sort right-side (Top->Bottom) then left-side (Top->Bottom)
+      const aIsR = aCX > rootCenter.x;
+      const bIsR = bCX > rootCenter.x;
+      if (aIsR !== bIsR) return aIsR ? -1 : 1;
+      return a.y - b.y;
     }
   };
 
   /** Helper to sort by Angle: Clockwise around the root center. */
   const sortByAngle = (a, b) => {
-    return getAngleFromCenter(rootCenter, { x: a.x + a.width / 2, y: a.y + a.height / 2 }) -
-      getAngleFromCenter(rootCenter, { x: b.x + b.width / 2, y: b.y + b.height / 2 });
+    return getAngleFromCenter(rootCenter, {
+        x: a.x + a.width / 2,
+        y: a.y + a.height / 2
+      }) -
+      getAngleFromCenter(rootCenter, {
+        x: b.x + b.width / 2,
+        y: b.y + b.height / 2
+      });
   };
-     
+
   const sortFn = mode === "Radial" ? sortByAngle : sortByReadingOrder;
   const existingNodes = l1Nodes.filter(n => !n.customData?.mindmapNew);
   const newNodes = l1Nodes.filter(n => n.customData?.mindmapNew);
@@ -14937,7 +15330,9 @@ const sortL1NodesBasedOnVisualSequence = (l1Nodes, mode, rootCenter) => {
   // Freeze logic mindmapOrder based on final sort
   existingNodes.forEach((node, i) => {
     if (node.customData?.mindmapOrder !== i) {
-      ea.addAppendUpdateCustomData(node.id, { mindmapOrder: i });
+      ea.addAppendUpdateCustomData(node.id, {
+        mindmapOrder: i
+      });
       orderChanged = true;
     }
   });
@@ -14945,7 +15340,9 @@ const sortL1NodesBasedOnVisualSequence = (l1Nodes, mode, rootCenter) => {
   // New nodes always need an update since they lack established order or have a temp one
   newNodes.forEach((node, i) => {
     const newOrder = existingNodes.length + i;
-    ea.addAppendUpdateCustomData(node.id, { mindmapOrder: newOrder });
+    ea.addAppendUpdateCustomData(node.id, {
+      mindmapOrder: newOrder
+    });
     orderChanged = true;
   });
 
@@ -14969,16 +15366,19 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
     return withRootLayoutContext(root, () => {
       const oldMode = root.customData?.growthMode;
       const newMode = root.customData?.growthMode || currentModalGrowthMode;
-      
+
       // Track if any meaningful changes occur
       let orderChanged = false;
       let modeChanged = false;
       let visualChange = false;
-      
+
       // Snapshot positions
       const originalPositions = new Map();
       allElements.forEach(el => {
-        originalPositions.set(el.id, { x: el.x, y: el.y });
+        originalPositions.set(el.id, {
+          x: el.x,
+          y: el.y
+        });
       });
 
       const elementById = buildElementMap(allElements);
@@ -14993,7 +15393,10 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
 
       const hasGlobalFolds = allElements.some(el => el.customData?.isFolded === true);
       const l1Nodes = getChildrenNodes(rootId, allElements);
-      if (l1Nodes.length === 0) return { structuralChange: false, visualChange: false };
+      if (l1Nodes.length === 0) return {
+        structuralChange: false,
+        visualChange: false
+      };
 
       if (groupBranches || forceUngroup) {
         mindmapIds.forEach((id) => {
@@ -15005,7 +15408,10 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
       }
 
       const rootBox = getNodeBox(root, allElements);
-      const rootCenter = { x: rootBox.minX + rootBox.width / 2, y: rootBox.minY + rootBox.height / 2 };
+      const rootCenter = {
+        x: rootBox.minX + rootBox.width / 2,
+        y: rootBox.minY + rootBox.height / 2
+      };
 
       const layoutContext = {
         allElements,
@@ -15027,7 +15433,9 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
         orderChanged = sortL1NodesBasedOnVisualSequence(l1Nodes, newMode, rootCenter);
       } else if (!mustHonorMindmapOrder) {
         if (oldMode !== newMode) {
-          ea.addAppendUpdateCustomData(rootId, { growthMode: newMode });
+          ea.addAppendUpdateCustomData(rootId, {
+            growthMode: newMode
+          });
           modeChanged = true;
         }
       }
@@ -15041,7 +15449,7 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
         }, layoutContext, mustHonorMindmapOrder);
       } else if (["Right-facing", "Left-facing", "Right-Left"].includes(newMode)) {
         const leftNodes = [];
-        const rightNodes =[];
+        const rightNodes = [];
 
         if (newMode === "Right-Left") {
           if (isModeSwitch && !mustHonorMindmapOrder) {
@@ -15064,14 +15472,22 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
         }
 
         if (rightNodes.length > 0) {
-          layoutL1Nodes(rightNodes, { sortMethod: "vertical", centerAngle: 90, gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL }, layoutContext, mustHonorMindmapOrder);
+          layoutL1Nodes(rightNodes, {
+            sortMethod: "vertical",
+            centerAngle: 90,
+            gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL
+          }, layoutContext, mustHonorMindmapOrder);
         }
         if (leftNodes.length > 0) {
-          layoutL1Nodes(leftNodes, { sortMethod: "vertical", centerAngle: 270, gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL }, layoutContext, mustHonorMindmapOrder);
+          layoutL1Nodes(leftNodes, {
+            sortMethod: "vertical",
+            centerAngle: 270,
+            gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL
+          }, layoutContext, mustHonorMindmapOrder);
         }
       } else if (["Up-facing", "Down-facing", "Up-Down"].includes(newMode)) {
-        const upNodes =[];
-        const downNodes =[];
+        const upNodes = [];
+        const downNodes = [];
 
         if (newMode === "Up-Down") {
           if (isModeSwitch && !mustHonorMindmapOrder) {
@@ -15095,16 +15511,28 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
 
         // Initialize cache required for vertical mode width tracking
         layoutContext.widthCache = new Map();
-        
+
         if (downNodes.length > 0) {
-          layoutL1Nodes(downNodes, { sortMethod: "horizontal", centerAngle: 90, gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL }, layoutContext, mustHonorMindmapOrder);
+          layoutL1Nodes(downNodes, {
+            sortMethod: "horizontal",
+            centerAngle: 90,
+            gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL
+          }, layoutContext, mustHonorMindmapOrder);
         }
         if (upNodes.length > 0) {
-          layoutL1Nodes(upNodes, { sortMethod: "horizontal", centerAngle: 270, gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL }, layoutContext, mustHonorMindmapOrder);
+          layoutL1Nodes(upNodes, {
+            sortMethod: "horizontal",
+            centerAngle: 270,
+            gapMultiplier: layoutSettings.GAP_MULTIPLIER_DIRECTIONAL
+          }, layoutContext, mustHonorMindmapOrder);
         }
       }
 
-      const { mindmapIdsSet, crosslinkIdSet, decorationIdSet } = sharedSets;
+      const {
+        mindmapIdsSet,
+        crosslinkIdSet,
+        decorationIdSet
+      } = sharedSets;
 
       moveCrossLinks(ea.getElements(), originalPositions);
       moveDecorations(ea.getElements(), originalPositions, groupToNodes, rootId, elementById, parentMap);
@@ -15140,32 +15568,44 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
   if (!root) return;
 
   if (root.customData?.autoLayoutDisabled) return;
-  
+
   const mindmapIds = getBranchElementIds(rootId, allElements);
-  const {structuralGroupId, groupedElementIds} = getStructuralGroupForNode(mindmapIds, allElements, rootId);
+  const {
+    structuralGroupId,
+    groupedElementIds
+  } = getStructuralGroupForNode(mindmapIds, allElements, rootId);
   if (structuralGroupId) {
     removeGroupFromElements(structuralGroupId, allElements);
   }
 
   const expandedMindmapIds = [...mindmapIds];
   mindmapIds.forEach(id => {
-      const el = allElements.find(e => e.id === id);
-      if (el && el.boundElements) {
-          el.boundElements.forEach(be => expandedMindmapIds.push(be.id));
-      }
+    const el = allElements.find(e => e.id === id);
+    if (el && el.boundElements) {
+      el.boundElements.forEach(be => expandedMindmapIds.push(be.id));
+    }
   });
 
   const mindmapIdsSet = new Set(expandedMindmapIds);
   const crosslinkIdSet = collectCrosslinkIds(allElements);
   const decorationIdSet = collectDecorationIds(allElements, rootId);
-  const sharedSets = { mindmapIdsSet, crosslinkIdSet, decorationIdSet };
+  const sharedSets = {
+    mindmapIdsSet,
+    crosslinkIdSet,
+    decorationIdSet
+  };
 
   // --- Snapshot boundary nodes before Run 1 ---
   // We check for nodes that have a boundaryId defined
   const boundaryNodeSnapshot = new Map();
   allElements.forEach(el => {
     if (typeof el.customData?.mindmapOrder !== "undefined" && el.customData?.boundaryId) {
-      boundaryNodeSnapshot.set(el.id, { x: el.x, y: el.y, width: el.width, height: el.height });
+      boundaryNodeSnapshot.set(el.id, {
+        x: el.x,
+        y: el.y,
+        width: el.width,
+        height: el.height
+      });
     }
   });
 
@@ -15177,19 +15617,21 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
     for (const [id, oldSnapshot] of boundaryNodeSnapshot) {
       const newEl = ea.getElement(id);
       if (newEl) {
-         if (Math.abs(newEl.x - oldSnapshot.x) > 0.01 ||
-             Math.abs(newEl.y - oldSnapshot.y) > 0.01 ||
-             Math.abs(newEl.width - oldSnapshot.width) > 0.01 ||
-             Math.abs(newEl.height - oldSnapshot.height) > 0.01) {
-           boundaryMoved = true;
-           break;
-         }
+        if (Math.abs(newEl.x - oldSnapshot.x) > 0.01 ||
+          Math.abs(newEl.y - oldSnapshot.y) > 0.01 ||
+          Math.abs(newEl.width - oldSnapshot.width) > 0.01 ||
+          Math.abs(newEl.height - oldSnapshot.height) > 0.01) {
+          boundaryMoved = true;
+          break;
+        }
       }
     }
   }
 
   if (result1.structuralChange || forceUngroup || boundaryMoved) {
-    await addElementsToView({ captureUpdate: "EVENTUALLY" });
+    await addElementsToView({
+      captureUpdate: "EVENTUALLY"
+    });
 
     // Isolate subset again for the second pass
     const viewElementsRun2 = ea.getViewElements();
@@ -15198,9 +15640,9 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
     ea.copyViewElementsToEAforEditing(projectElementsRun2);
     allElements = ea.getElements();
     root = allElements.find((el) => el.id === rootId);
-    
+
     await run(allElements, mindmapIds, root, false, sharedSets, mustHonorMindmapOrder);
-    
+
     if (structuralGroupId && !forceUngroup) {
       // Restore the exact same group ID instead of creating a new one
       // This prevents Excalidraw's editingGroupId from pointing to a deleted group,
@@ -15212,7 +15654,9 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
         }
       });
     }
-    await addElementsToView({ captureUpdate: "IMMEDIATELY" });
+    await addElementsToView({
+      captureUpdate: "IMMEDIATELY"
+    });
 
   } else {
     // If only visual change (no struct change, no boundary move), commit Run 1
@@ -15226,7 +15670,9 @@ const triggerGlobalLayout = async (rootId, forceUngroup = false, mustHonorMindma
           }
         });
       }
-      await addElementsToView({ captureUpdate: "IMMEDIATELY" });
+      await addElementsToView({
+        captureUpdate: "IMMEDIATELY"
+      });
     } else {
       ea.clear();
     }
@@ -15249,18 +15695,25 @@ const getAdjustedMaxWidth = async (text, max) => {
     ExcalidrawLib.getFontFamilyString({fontFamily: ea.style.fontFamily})}`;
 
   const parsedText = (await parseText(text)) ?? text;
-  
+
   const wrappedText = ExcalidrawLib.wrapText(parsedText, fontString, max);
   const metrics = ea.measureText(wrappedText);
   const optimalWidth = Math.ceil(metrics.width);
   return {
-    width: Math.min(max, optimalWidth), 
-    height: metrics.height, 
+    width: Math.min(max, optimalWidth),
+    height: metrics.height,
     wrappedText
   };
 }
 
-const addImage = async ({pathOrFile, width, leftFacing = false, x=0, y=0, depth = 0} = {}) => {
+const addImage = async ({
+  pathOrFile,
+  width,
+  leftFacing = false,
+  x = 0,
+  y = 0,
+  depth = 0
+} = {}) => {
   const newNodeId = await ea.addImage(x, y, pathOrFile);
   const el = ea.getElement(newNodeId);
   const targetWidth = width || (depth === 0 ? EMBEDED_OBJECT_WIDTH_ROOT : EMBEDED_OBJECT_WIDTH_CHILD);
@@ -15331,9 +15784,13 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
   const imageInfo = parseImageInput(text);
   const embeddableUrl = parseEmbeddableInput(text, imageInfo);
 
-  const defaultNodeColor = ea.getCM(st.viewBackgroundColor).invert().stringHEX({alpha: false});
+  const defaultNodeColor = ea.getCM(st.viewBackgroundColor).invert().stringHEX({
+    alpha: false
+  });
 
-  let depth = 0, nodeColor = defaultNodeColor, rootId, nextSiblingOrder = 0;
+  let depth = 0,
+    nodeColor = defaultNodeColor,
+    rootId, nextSiblingOrder = 0;
   let settingsRoot = null;
   let rootCfgForAdd = null;
   if (parent) {
@@ -15358,9 +15815,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         const incomingArrow = allElements.find(
           (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === parent.id,
         );
-        nodeColor = incomingArrow
-          ? incomingArrow.strokeColor
-          : (parent.strokeColor && parent.strokeColor.toLowerCase() !== "transparent" ? parent.strokeColor : defaultNodeColor);
+        nodeColor = incomingArrow ?
+          incomingArrow.strokeColor :
+          (parent.strokeColor && parent.strokeColor.toLowerCase() !== "transparent" ? parent.strokeColor : defaultNodeColor);
       } else {
         nodeColor = parent.strokeColor;
       }
@@ -15371,16 +15828,21 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
   if (!isBatchMode) ea.clear();
   ea.style.fontFamily = st.currentItemFontFamily;
   ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)];
-  ea.style.roundness = (rootCfgForAdd?.roundedCorners ?? roundedCorners) ? { type: 3 } : null;
+  ea.style.roundness = (rootCfgForAdd?.roundedCorners ?? roundedCorners) ? {
+    type: 3
+  } : null;
 
   const effectiveMaxWrap = rootCfgForAdd?.maxWrapWidth ?? maxWidth;
   let curMaxW = depth === 0 ? Math.max(400, effectiveMaxWrap) : effectiveMaxWrap;
-  
-  let renderedText=text;
-  let metrics = { w: 0, h: 0 };
+
+  let renderedText = text;
+  let metrics = {
+    w: 0,
+    h: 0
+  };
   let shouldWrap = false;
   let curMaxH = 0;
-  
+
   if (!imageInfo?.isImagePath && !imageInfo?.imageFile && !embeddableUrl) {
     renderedText = (await parseText(text)) ?? text;
     metrics = ea.measureText(renderedText);
@@ -15392,7 +15854,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       curMaxW = res.width;
       curMaxH = res.height;
     }
-  } 
+  }
 
   if (!parent) {
     ea.style.strokeColor = multicolor ? defaultNodeColor : st.currentItemStrokeColor;
@@ -15415,7 +15877,10 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         depth
       });
     } else if (embeddableUrl) {
-      newNodeId = addEmbeddableNode({ url:embeddableUrl, depth:0 });
+      newNodeId = addEmbeddableNode({
+        url: embeddableUrl,
+        depth: 0
+      });
     } else {
       ea.style.fillStyle = "solid";
       ea.style.backgroundColor = st.viewBackgroundColor;
@@ -15447,20 +15912,20 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     };
 
     const parentBox = getNodeBox(parent, allElements);
-    
+
     // Determine direction for initial offset to prevent visual jumping
-    const isVerticalMode =["Up-facing", "Down-facing", "Up-Down"].includes(mode);
+    const isVerticalMode = ["Up-facing", "Down-facing", "Up-Down"].includes(mode);
 
     let targetSide = 1; // 1 = Right/Down, -1 = Left/Up
     if (depth === 1) {
       if (mode === "Left-facing" || mode === "Up-facing") targetSide = -1;
       else if (mode === "Right-facing" || mode === "Down-facing") targetSide = 1;
       else if (mode === "Right-Left" || mode === "Up-Down") {
-         const siblings = getChildrenNodes(parent.id, allElements);
-         const idx = siblings.length; // Index of the new node being added
-         if (idx < 2) targetSide = 1;
-         else if (idx < 4) targetSide = -1;
-         else targetSide = idx % 2 === 0 ? 1 : -1;
+        const siblings = getChildrenNodes(parent.id, allElements);
+        const idx = siblings.length; // Index of the new node being added
+        if (idx < 2) targetSide = 1;
+        else if (idx < 4) targetSide = -1;
+        else targetSide = idx % 2 === 0 ? 1 : -1;
       } else {
         // Default to parent side or Right for Radial/Fallback layouts
         if (isVerticalMode) {
@@ -15472,18 +15937,19 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         }
       }
     } else {
-       // Deep nodes follow parent's side
-       if (isVerticalMode) {
-          const parentCenterY = parentBox.minY + parentBox.height / 2;
-          targetSide = parentCenterY > rootCenter.y ? 1 : -1;
-       } else {
-          const parentCenterX = parentBox.minX + parentBox.width / 2;
-          targetSide = parentCenterX > rootCenter.x ? 1 : -1;
-       }
+      // Deep nodes follow parent's side
+      if (isVerticalMode) {
+        const parentCenterY = parentBox.minY + parentBox.height / 2;
+        targetSide = parentCenterY > rootCenter.y ? 1 : -1;
+      } else {
+        const parentCenterX = parentBox.minX + parentBox.width / 2;
+        targetSide = parentCenterX > rootCenter.x ? 1 : -1;
+      }
     }
 
     let side = targetSide;
-    let px = parentBox.minX, py = parentBox.minY;
+    let px = parentBox.minX,
+      py = parentBox.minY;
 
     if (isVerticalMode) {
       const offset = side === 1 ? rootBox.height * 2 : -rootBox.height;
@@ -15493,7 +15959,8 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       // If pos is provided (e.g. from Add Sibling), override placement.
       // This maintains the "same side" logic because the originator's X is used.
       if (!autoLayoutDisabled && pos) {
-        px = pos.x; py = pos.y;
+        px = pos.x;
+        py = pos.y;
         side = (py + metrics.height / 2 > rootCenter.y) ? 1 : -1;
       } else if (!autoLayoutDisabled) {
         // Ensure new node is placed below existing siblings to preserve visual order
@@ -15502,7 +15969,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
           const sortedSiblings = siblings.sort((a, b) => a.x - b.x);
           const lastSibling = sortedSiblings[sortedSiblings.length - 1];
           const lastSiblingBox = getNodeBox(lastSibling, allElements);
-          px = lastSiblingBox.minX + lastSiblingBox.width + layoutSettings.GAP_Y; 
+          px = lastSiblingBox.minX + lastSiblingBox.width + layoutSettings.GAP_Y;
           py = parentBox.minY + (side === 1 ? parentBox.height + layoutSettings.GAP_X : -layoutSettings.GAP_X - metrics.height);
         }
       } else if (autoLayoutDisabled) {
@@ -15510,9 +15977,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         const jitterX = (Math.random() - 0.5) * layoutSettings.MANUAL_JITTER_RANGE;
         const jitterY = (Math.random() - 0.5) * layoutSettings.MANUAL_JITTER_RANGE;
         px = parentBox.minX + parentBox.width / 2 - metrics.width / 2 + jitterX;
-        py = side === 1 
-          ? parentBox.minY + parentBox.height + manualGapY + jitterY
-          : parentBox.minY - manualGapY - metrics.height + jitterY;
+        py = side === 1 ?
+          parentBox.minY + parentBox.height + manualGapY + jitterY :
+          parentBox.minY - manualGapY - metrics.height + jitterY;
       }
     } else {
       const offset = (mode === "Radial" || side === 1) ? rootBox.width * 2 : -rootBox.width;
@@ -15521,7 +15988,8 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
 
       // If pos is provided (e.g. from Add Sibling), override placement.
       if (!autoLayoutDisabled && pos) {
-        px = pos.x; py = pos.y;
+        px = pos.x;
+        py = pos.y;
         side = (px + (shouldWrap ? curMaxW : metrics.width) / 2 > rootCenter.x) ? 1 : -1;
       } else if (!autoLayoutDisabled) {
         // Ensure new node is placed below existing siblings to preserve visual order
@@ -15537,9 +16005,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         const jitterX = (Math.random() - 0.5) * layoutSettings.MANUAL_JITTER_RANGE;
         const jitterY = (Math.random() - 0.5) * layoutSettings.MANUAL_JITTER_RANGE;
         const nodeW = shouldWrap ? curMaxW : metrics.width;
-        px = side === 1
-          ? parentBox.minX + parentBox.width + manualGapX + jitterX
-          : parentBox.minX - manualGapX - nodeW + jitterX;
+        px = side === 1 ?
+          parentBox.minX + parentBox.width + manualGapX + jitterX :
+          parentBox.minX - manualGapX - nodeW + jitterX;
         py = parentBox.minY + parentBox.height / 2 - metrics.height / 2 + jitterY;
       }
     }
@@ -15577,7 +16045,12 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         depth
       });
     } else if (embeddableUrl) {
-      newNodeId = addEmbeddableNode({ px, py, url:embeddableUrl, depth });
+      newNodeId = addEmbeddableNode({
+        px,
+        py,
+        url: embeddableUrl,
+        depth
+      });
       const el = ea.getElement(newNodeId);
       if (side === -1 && !autoLayoutDisabled) el.x = px - el.width;
     } else {
@@ -15599,7 +16072,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         mindmapOrder: nextSiblingOrder,
       });
     } else {
-      ea.addAppendUpdateCustomData(newNodeId, { mindmapOrder: nextSiblingOrder });
+      ea.addAppendUpdateCustomData(newNodeId, {
+        mindmapOrder: nextSiblingOrder
+      });
     }
 
     if (!ea.getElement(parent.id)) {
@@ -15609,7 +16084,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
 
     // if the custom parent is already in a hierarchy, then formally make it the next sibling
     if (depth > 1 && usingCustomParent && !parent.customData?.mindmapOrder) {
-      ea.addAppendUpdateCustomData(parent.id, { mindmapOrder: nextSiblingOrder });
+      ea.addAppendUpdateCustomData(parent.id, {
+        mindmapOrder: nextSiblingOrder
+      });
     }
 
     // else make the customParent the root of the new mindmap
@@ -15618,15 +16095,17 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
     }
 
     if ((parent.type === "image" || parent.type === "embeddable") && typeof parent.customData?.mindmapOrder === "undefined") {
-      ea.addAppendUpdateCustomData(parent.id, { mindmapOrder: 0 });
+      ea.addAppendUpdateCustomData(parent.id, {
+        mindmapOrder: 0
+      });
     }
 
     ea.style.strokeWidth = calculateStrokeWidth(depth, effectiveBaseStrokeWidth, effectiveBranchScale);
     ea.style.roughness = getAppState().currentItemRoughness;
     ea.style.strokeStyle = effectiveIsSolidArrow ? "solid" : getAppState().currentItemStrokeStyle;
-    
+
     // Initial arrow creation (placeholder points)
-    const startPoint =[parentBox.minX + parentBox.width / 2, parentBox.minY + parentBox.height / 2];
+    const startPoint = [parentBox.minX + parentBox.width / 2, parentBox.minY + parentBox.height / 2];
     arrowId = ea.addArrow([startPoint, startPoint], {
       startObjectId: parent.id,
       endObjectId: newNodeId,
@@ -15634,15 +16113,19 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       endArrowHead: null,
     });
     const eaArrow = ea.getElement(arrowId);
-    
+
     // Initialize Roundness based on arrow type
-     if(effectiveArrowType === "curved") {
-       eaArrow.roundness = { type: 2 };
+    if (effectiveArrowType === "curved") {
+      eaArrow.roundness = {
+        type: 2
+      };
     } else {
-       eaArrow.roundness = null;
+      eaArrow.roundness = null;
     }
-    
-    ea.addAppendUpdateCustomData(arrowId, { isBranch: true });
+
+    ea.addAppendUpdateCustomData(arrowId, {
+      isBranch: true
+    });
 
     if (ontology) {
       addUpdateArrowLabel(eaArrow, ontology);
@@ -15650,12 +16133,14 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
 
     if (!groupBranches && parent.groupIds?.length > 0) {
       const mindmapIds = getBranchElementIds(parent.id, ea.getViewElements());
-      const { structuralGroupId } = getStructuralGroupForNode(mindmapIds, allElements, rootId);
+      const {
+        structuralGroupId
+      } = getStructuralGroupForNode(mindmapIds, allElements, rootId);
       if (structuralGroupId) {
         const newNode = ea.getElement(newNodeId);
         const newArrow = ea.getElement(arrowId);
-        if(newNode) newNode.groupIds = [structuralGroupId];
-        if(newArrow) newArrow.groupIds = [structuralGroupId];
+        if (newNode) newNode.groupIds = [structuralGroupId];
+        if (newArrow) newArrow.groupIds = [structuralGroupId];
       }
     }
   }
@@ -15679,7 +16164,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === newNodeId,
     );
 
-    ea.copyViewElementsToEAforEditing(groupBranches ? allEls : arrow ? [arrow] :[]);
+    ea.copyViewElementsToEAforEditing(groupBranches ? allEls : arrow ? [arrow] : []);
 
     if (arrow) {
       const parentCenterX = parent.x + parent.width / 2;
@@ -15688,13 +16173,21 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
 
       const sX = isChildRight ? parent.x + parent.width : parent.x;
       const sY = parent.y + parent.height / 2;
-      
+
       const eX = isChildRight ? node.x : node.x + node.width;
       const eY = node.y + node.height / 2;
 
       configureArrow({
-        arrowId: arrow.id, isChildRight, startId:parent.id, endId: node.id,
-        coordinates: {sX, sY, eX, eY},
+        arrowId: arrow.id,
+        isChildRight,
+        startId: parent.id,
+        endId: node.id,
+        coordinates: {
+          sX,
+          sY,
+          eX,
+          eY
+        },
       });
     }
 
@@ -15707,7 +16200,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       const l1Nodes = getChildrenNodes(rootId, allEls);
       l1Nodes.forEach((l1) => applyRecursiveGrouping(l1.id, allEls));
     } else {
-      const { l1AncestorId } = getHierarchy(parent, allEls);
+      const {
+        l1AncestorId
+      } = getHierarchy(parent, allEls);
       const bIds = getBranchElementIds(l1AncestorId, allEls);
 
       const existingGroupedEl = allEls.find(el =>
@@ -15728,7 +16223,9 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
       }
     }
 
-    await addElementsToView({ captureUpdate: "EVENTUALLY" });
+    await addElementsToView({
+      captureUpdate: "EVENTUALLY"
+    });
   }
   const finalNode = ea.getViewElements().find((el) => el.id === newNodeId);
   if (follow || !parent) {
@@ -15754,7 +16251,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
  * Checks if a node text contains exactly one wiki link to a markdown file and returns that TFile.
  */
 const getNodeMarkdownFile = (nodeText) => {
-  if(!nodeText || !ea.targetView || !ea.targetView.file) return null;
+  if (!nodeText || !ea.targetView || !ea.targetView.file) return null;
   // Match [[filename]] or [[filename|alias]] that takes up the whole string
   const parts = nodeText.trim().match(/^\[\[([^#\|\]]+)[^\]]*]]$/);
   if (!!parts?.[1]) {
@@ -15769,7 +16266,7 @@ const getNodeMarkdownFile = (nodeText) => {
  */
 const importOutline = async () => {
   if (!isViewSet()) return;
-  
+
   const sel = getMindmapNodeFromSelection();
   if (!sel) {
     new Notice(t("NOTICE_SELECT_NODE_CONTAINING_LINK"));
@@ -15785,7 +16282,9 @@ const importOutline = async () => {
     return;
   }
 
-  const cache = await app.metadataCache.blockCache.getForFile({isCancelled: () => false}, markdownFile);
+  const cache = await app.metadataCache.blockCache.getForFile({
+    isCancelled: () => false
+  }, markdownFile);
   if (!cache || !cache.blocks) {
     new Notice(t("NOTICE_NO_HEADINGS"));
     return;
@@ -15797,20 +16296,20 @@ const importOutline = async () => {
   for (const block of cache.blocks) {
     if (block.node.type === "heading") {
       const depth = block.node.depth;
-      
+
       // Strip markdown heading markers (# ) from display text
       const rawHeadingText = block.display.replace(/^#+\s+/, "");
 
       if (rawHeadingText === "Excalidraw Data") break;
-      
+
       // Format Alias: Replace pipe with space to prevent broken links
       const alias = rawHeadingText.replace(/\|/g, " ");
-      
+
       // Format Anchor: replace specific chars (#|\:) with space for the link target
       const anchor = rawHeadingText.replace(/[|#\\:]/g, " ");
-      
+
       const indent = "  ".repeat(Math.max(0, depth - 1));
-      
+
       outlines.push(`${indent}- [[${shortFilePath}#${anchor}|${alias}]]`);
     }
   }
@@ -15831,11 +16330,11 @@ const getTextFromNode = (all, node, getRaw = false, shortPath = false) => {
     return node.link.startsWith("[[") ? `!${node.link}` : `![](${node.link})`;
   }
   if (node.type === "image") {
-    const embeddedFile = ea.targetView?.excalidrawData?.getFile(node.fileId);    
+    const embeddedFile = ea.targetView?.excalidrawData?.getFile(node.fileId);
     if (!embeddedFile) return "";
-    
+
     const file = ea.getViewFileForImageElement(node);
-    
+
     // Handle external image URLs or local file URIs saved in node.link
     if (!file && node.link && node.link.match(/^(https?|file):\/\//i)) {
       return `![image|${Math.round(node.width)}](${node.link})`;
@@ -15845,12 +16344,12 @@ const getTextFromNode = (all, node, getRaw = false, shortPath = false) => {
       const originalPath = embeddedFile.linkParts?.original;
       return `![[${originalPath}|${Math.round(node.width)}]]`;
     }
-    
+
     if (file) {
       if (file.extension === "pdf" && node.link?.startsWith("[[")) {
         return `!${node.link.match(/^(.*?)\]\]/)[1]}|${Math.round(node.width)}]]`;
       }
-      return  `![[${file.path}${embeddedFile.filenameparts?.linkpartReference || ""}|${Math.round(node.width)}]]`;
+      return `![[${file.path}${embeddedFile.filenameparts?.linkpartReference || ""}|${Math.round(node.width)}]]`;
     }
     return "";
   }
@@ -15885,7 +16384,7 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
   const root = all.find(el => el.id === info.rootId);
   const defaultMode = root?.customData?.growthMode || currentModalGrowthMode;
 
-  const elementsToDelete =[];
+  const elementsToDelete = [];
 
   const useTab = app.vault.getConfig("useTab");
   const tabSize = app.vault.getConfig("tabSize");
@@ -15893,15 +16392,15 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
 
   // --- Crosslink & Block Reference Logic ---
   const branchIds = new Set(getBranchElementIds(sel.id, all));
-  
+
   const nodeBlockRefs = new Map(); // NodeID -> "^blockId"
   const nodeOutgoingLinks = new Map(); // NodeID -> ["text representation", ...]
 
   // Find arrows within this branch that are NOT structural branch arrows
-  const crossLinkArrows = all.filter(el => 
-    el.type === "arrow" && 
-    !el.customData?.isBranch && 
-    branchIds.has(el.startBinding?.elementId) && 
+  const crossLinkArrows = all.filter(el =>
+    el.type === "arrow" &&
+    !el.customData?.isBranch &&
+    branchIds.has(el.startBinding?.elementId) &&
     branchIds.has(el.endBinding?.elementId)
   );
 
@@ -15921,14 +16420,14 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
 
       // Record outgoing link for source
       if (!nodeOutgoingLinks.has(startId)) {
-        nodeOutgoingLinks.set(startId,[]);
+        nodeOutgoingLinks.set(startId, []);
       }
-      
+
       // Check for label on the arrow
       const boundTextId = arrow.boundElements?.find(be => be.type === "text")?.id;
       const labelTextElement = boundTextId ? all.find(el => el.id === boundTextId) : null;
       const refString = nodeBlockRefs.get(endId);
-      
+
       let linkText;
       if (labelTextElement && labelTextElement.rawText) {
         // Replace newlines with spaces for inline dataview field compatibility
@@ -15939,12 +16438,12 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
       }
 
       nodeOutgoingLinks.get(startId).push(linkText);
-      
+
       if (cut) elementsToDelete.push(arrow);
     });
   }
 
-  const submapsQueue =[];
+  const submapsQueue = [];
 
   const buildList = (nodeId, depth = 0, isSubmapChild = false, isPrintRoot = false) => {
     const node = all.find((e) => e.id === nodeId);
@@ -15961,7 +16460,7 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
         const ind = all.find(e => e.id === node.customData.foldIndicatorId);
         if (ind) elementsToDelete.push(ind);
       }
-      
+
       // Remove boundary if cutting
       if (node.customData?.boundaryId) {
         const boundary = all.find(e => e.id === node.customData.boundaryId);
@@ -15979,7 +16478,7 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
         (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === nodeId
       );
       if (incomingArrow) {
-        const boundTextEl = ea.getBoundTextElement(incomingArrow,true).sceneElement;
+        const boundTextEl = ea.getBoundTextElement(incomingArrow, true).sceneElement;
         if (boundTextEl && boundTextEl.rawText) {
           // Replace newlines with spaces so it stays on one line
           ontologyStr = boundTextEl.rawText.replace(/\n/g, " ") + ":: ";
@@ -15999,9 +16498,9 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
     let taskPrefix = "";
     const taskMatch = text.match(/^- \[[ xX]\] /);
     if (taskMatch) {
-       isTask = true;
-       taskPrefix = taskMatch[0]; // Retain "- [ ] " or "- [x] "
-       text = text.substring(taskPrefix.length); // Strip it temporarily for clean assembly
+      isTask = true;
+      taskPrefix = taskMatch[0]; // Retain "- [ ] " or "- [x] "
+      text = text.substring(taskPrefix.length); // Strip it temporarily for clean assembly
     }
 
     // --- Submap Extraction Logic ---
@@ -16010,11 +16509,11 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
       let submapTitle = text;
       // Clean up Image strings to use as clean anchor links
       if (submapTitle.startsWith("![[") && submapTitle.endsWith("]]")) {
-          submapTitle = submapTitle.slice(3, -2).split("|")[0];
+        submapTitle = submapTitle.slice(3, -2).split("|")[0];
       } else if (submapTitle.startsWith("![") && submapTitle.endsWith(")")) {
-          submapTitle = "Submap " + nodeId.substring(0, 4);
+        submapTitle = "Submap " + nodeId.substring(0, 4);
       }
-      
+
       const linkText = `![[#${submapTitle}]]`;
       const repeatCount = Math.max(0, depth - (isRootSelected ? 1 : 0));
       let currentIndent = isSubmapChild ? indentVal.repeat(depth) : indentVal.repeat(repeatCount);
@@ -16025,8 +16524,11 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
       } else {
         str += `${currentIndent}- ${ontologyStr}${linkText}${refSuffixes}${lineSeparator}`;
       }
-      submapsQueue.push({ id: nodeId, title: submapTitle });
-      
+      submapsQueue.push({
+        id: nodeId,
+        title: submapTitle
+      });
+
       return str; // Do not recurse into children here; they belong in the ## section
     }
 
@@ -16044,24 +16546,33 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
 
     // --- Visual Sorting Logic ---
     let children = getChildrenNodes(nodeId, all);
-    const parentCenter = { x: node.x + node.width / 2, y: node.y + node.height / 2 };
-    
+    const parentCenter = {
+      x: node.x + node.width / 2,
+      y: node.y + node.height / 2
+    };
+
     // Honor local submap modes
     const mode = node.customData?.isAdditionalRoot ? node.customData.growthMode : defaultMode;
 
     if (mode === "Radial") {
       children.sort((a, b) => {
-          const centerA = { x: a.x + a.width / 2, y: a.y + a.height / 2 };
-          const centerB = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
-          return getAngleFromCenter(parentCenter, centerA) - getAngleFromCenter(parentCenter, centerB);
+        const centerA = {
+          x: a.x + a.width / 2,
+          y: a.y + a.height / 2
+        };
+        const centerB = {
+          x: b.x + b.width / 2,
+          y: b.y + b.height / 2
+        };
+        return getAngleFromCenter(parentCenter, centerA) - getAngleFromCenter(parentCenter, centerB);
       });
     } else if (mode === "Right-Left" && nodeId === info.rootId) {
       const right = [];
-      const left =[];
+      const left = [];
       children.forEach(child => {
-          const childCx = child.x + child.width / 2;
-          if (childCx > parentCenter.x) right.push(child);
-          else left.push(child);
+        const childCx = child.x + child.width / 2;
+        if (childCx > parentCenter.x) right.push(child);
+        else left.push(child);
       });
       right.sort((a, b) => a.y - b.y);
       left.sort((a, b) => a.y - b.y);
@@ -16074,15 +16585,15 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
       if (cut) {
         const arrow = all.find(
           (a) =>
-            a.type === "arrow" &&
-            a.customData?.isBranch &&
-            a.startBinding?.elementId === nodeId &&
-            a.endBinding?.elementId === c.id,
+          a.type === "arrow" &&
+          a.customData?.isBranch &&
+          a.startBinding?.elementId === nodeId &&
+          a.endBinding?.elementId === c.id,
         );
         if (arrow) elementsToDelete.push(arrow);
       }
       // Children of a printRoot are not the printRoot
-      str += buildList(c.id, depth + 1, isSubmapChild, false); 
+      str += buildList(c.id, depth + 1, isSubmapChild, false);
     });
     return str;
   };
@@ -16106,23 +16617,32 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
 
     const submapNode = all.find(e => e.id === submapObj.id);
     let children = getChildrenNodes(submapObj.id, all);
-    
-    const parentCenter = { x: submapNode.x + submapNode.width / 2, y: submapNode.y + submapNode.height / 2 };
+
+    const parentCenter = {
+      x: submapNode.x + submapNode.width / 2,
+      y: submapNode.y + submapNode.height / 2
+    };
     const mode = submapNode.customData?.growthMode || defaultMode;
 
     if (mode === "Radial") {
       children.sort((a, b) => {
-          const centerA = { x: a.x + a.width / 2, y: a.y + a.height / 2 };
-          const centerB = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
-          return getAngleFromCenter(parentCenter, centerA) - getAngleFromCenter(parentCenter, centerB);
+        const centerA = {
+          x: a.x + a.width / 2,
+          y: a.y + a.height / 2
+        };
+        const centerB = {
+          x: b.x + b.width / 2,
+          y: b.y + b.height / 2
+        };
+        return getAngleFromCenter(parentCenter, centerA) - getAngleFromCenter(parentCenter, centerB);
       });
     } else if (mode === "Right-Left") {
       const right = [];
       const left = [];
       children.forEach(child => {
-          const childCx = child.x + child.width / 2;
-          if (childCx > parentCenter.x) right.push(child);
-          else left.push(child);
+        const childCx = child.x + child.width / 2;
+        if (childCx > parentCenter.x) right.push(child);
+        else left.push(child);
       });
       right.sort((a, b) => a.y - b.y);
       left.sort((a, b) => a.y - b.y);
@@ -16135,10 +16655,10 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
       if (cut) {
         const arrow = all.find(
           (a) =>
-            a.type === "arrow" &&
-            a.customData?.isBranch &&
-            a.startBinding?.elementId === submapObj.id &&
-            a.endBinding?.elementId === c.id,
+          a.type === "arrow" &&
+          a.customData?.isBranch &&
+          a.startBinding?.elementId === submapObj.id &&
+          a.endBinding?.elementId === c.id,
         );
         if (arrow) elementsToDelete.push(arrow);
       }
@@ -16146,7 +16666,7 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
     });
   }
 
-  if(toClipboard) await navigator.clipboard.writeText(md);
+  if (toClipboard) await navigator.clipboard.writeText(md);
 
   if (cut) {
     const incomingArrow = all.find(
@@ -16171,7 +16691,9 @@ const copyMapAsText = async (cut = false, toClipboard = true) => {
           if (indicator) ea.deleteViewElements([indicator]);
         }
 
-        await addElementsToView({ captureUpdate: "EVENTUALLY" });
+        await addElementsToView({
+          captureUpdate: "EVENTUALLY"
+        });
       }
       selectNodeInView(parentNode);
     }
@@ -16222,7 +16744,7 @@ const importTextToMap = async (rawText) => {
     } else {
       text = text.trim();
     }
-    
+
     text = text.replace(boundaryRegex, "");
     text = text.replace(blockRefRegex, "");
 
@@ -16236,14 +16758,16 @@ const importTextToMap = async (rawText) => {
     let isSubmapRef = false;
     const submapRefMatch = text.match(submapRefRegex);
     if (submapRefMatch) {
-        isSubmapRef = true;
-        text = submapRefMatch[1].trim();
+      isSubmapRef = true;
+      text = submapRefMatch[1].trim();
     }
 
     if (text) {
       currentParent = await addNode(text.trim(), true, false, null, null, null, ontology);
       if (isSubmapRef) {
-          ea.addAppendUpdateCustomData(currentParent.id, { isAdditionalRoot: true });
+        ea.addAppendUpdateCustomData(currentParent.id, {
+          isAdditionalRoot: true
+        });
       }
       if (sel) {
         selectNodeInView(sel);
@@ -16252,7 +16776,7 @@ const importTextToMap = async (rawText) => {
     }
   }
 
-  let parsed =[];
+  let parsed = [];
   let rootTextFromHeader = null;
 
   const isHeader = (l) => l.match(/^#+\s/);
@@ -16264,19 +16788,19 @@ const importTextToMap = async (rawText) => {
   }
 
   const delta = isHeader(lines[0]) ? 1 : 0;
-  
+
   const notice = new Notice(t("NOTICE_PASTE_START"), 0);
   await sleep(10);
 
   // Maps for crosslink & submap reconstruction
   const blockRefToNodeId = new Map(); // ^12345678 -> newNodeId
   const nodeToOutgoingRefs = new Map(); // newNodeId -> [{ref: string, label: string}, ...]
-  
+
   lines.forEach((line, index) => {
     let text = "";
     let indent = 0;
     let isSubmapDef = false;
-    
+
     if (isHeader(line)) {
       if (index === 0) {
         indent = 0;
@@ -16294,13 +16818,13 @@ const importTextToMap = async (rawText) => {
         let extractedText = match[2].trim();
         // Check if list item has task bracket syntax
         if (/^\[[ xX]\] /.test(extractedText)) {
-            extractedText = "- " + extractedText;
+          extractedText = "- " + extractedText;
         }
         text = extractedText;
       } else if (parsed.length > 0) {
         // multiline handling
         parsed[parsed.length - 1].text += "\n" + line.trim();
-        return; 
+        return;
       }
     }
 
@@ -16315,10 +16839,13 @@ const importTextToMap = async (rawText) => {
         text = text.replace(blockRefRegex, "");
       }
 
-      const outgoingRefs =[];
+      const outgoingRefs = [];
       crossLinkRegex.lastIndex = 0;
       text = text.replace(crossLinkRegex, (_match, label, ref) => {
-        outgoingRefs.push({ ref: ref, label: label ? label.trim() : null });
+        outgoingRefs.push({
+          ref: ref,
+          label: label ? label.trim() : null
+        });
         return "";
       });
 
@@ -16328,17 +16855,17 @@ const importTextToMap = async (rawText) => {
         ontology = ontologyMatch[1].trim();
         text = ontologyMatch[2].trim();
       }
-      
+
       let isSubmapRef = false;
       text = text.trim();
       const submapRefMatch = text.match(submapRefRegex);
       if (submapRefMatch) {
-          isSubmapRef = true;
-          text = submapRefMatch[1].trim();
+        isSubmapRef = true;
+        text = submapRefMatch[1].trim();
       }
 
-      parsed.push({ 
-        indent, 
+      parsed.push({
+        indent,
         text,
         hasBoundary,
         blockRef,
@@ -16358,18 +16885,21 @@ const importTextToMap = async (rawText) => {
   ea.clear();
 
   const rootSelected = !!sel;
-  const createdBoundaries =[];
+  const createdBoundaries = [];
 
   const createImportBoundary = (nodeId) => {
     const node = ea.getElement(nodeId);
     if (!node) return;
-    
+
     const id = ea.generateElementId();
     const st = getAppState();
     const boundaryEl = {
       id: id,
       type: "line",
-      x: node.x, y: node.y, width: 1, height: 1,
+      x: node.x,
+      y: node.y,
+      width: 1,
+      height: 1,
       angle: 0,
       roughness: st.currentItemRoughness,
       strokeColor: node.strokeColor,
@@ -16378,17 +16908,30 @@ const importTextToMap = async (rawText) => {
       strokeWidth: 2,
       strokeStyle: "solid",
       opacity: 30,
-      points: [[0,0], [1,1], [0,0]],
+      points: [
+        [0, 0],
+        [1, 1],
+        [0, 0]
+      ],
       polygon: true,
       locked: false,
-      groupIds: node.groupIds ||[],
-      customData: {isBoundary: true},
-      roundness: arrowType === "curved" ? {type: 2} : null,
+      groupIds: node.groupIds || [],
+      customData: {
+        isBoundary: true
+      },
+      roundness: arrowType === "curved" ? {
+        type: 2
+      } : null,
     };
-    
+
     ea.elementsDict[id] = boundaryEl;
-    ea.addAppendUpdateCustomData(nodeId, { boundaryId: id });
-    createdBoundaries.push({ nodeId, boundaryId: id });
+    ea.addAppendUpdateCustomData(nodeId, {
+      boundaryId: id
+    });
+    createdBoundaries.push({
+      nodeId,
+      boundaryId: id
+    });
   };
 
   const submapNodesByName = new Map();
@@ -16398,31 +16941,33 @@ const importTextToMap = async (rawText) => {
     const nonSubmapItems = parsed.filter((p) => !p.isSubmapDef);
     const minIndent = Math.min(...nonSubmapItems.map((p) => p.indent));
     const topLevelItems = nonSubmapItems.filter((p) => p.indent === minIndent);
-    
+
     const processRootMeta = (item, id) => {
-        if(item.blockRef) blockRefToNodeId.set(item.blockRef, id);
-        if(item.outgoingRefs.length > 0) nodeToOutgoingRefs.set(id, item.outgoingRefs);
-        if(item.hasBoundary) createImportBoundary(id);
-        if(item.isSubmapRef) {
-            ea.addAppendUpdateCustomData(id, { isAdditionalRoot: true });
-            submapNodesByName.set(item.text, ea.getElement(id));
-        }
+      if (item.blockRef) blockRefToNodeId.set(item.blockRef, id);
+      if (item.outgoingRefs.length > 0) nodeToOutgoingRefs.set(id, item.outgoingRefs);
+      if (item.hasBoundary) createImportBoundary(id);
+      if (item.isSubmapRef) {
+        ea.addAppendUpdateCustomData(id, {
+          isAdditionalRoot: true
+        });
+        submapNodesByName.set(item.text, ea.getElement(id));
+      }
     };
 
     // If there is exactly one top-level item, it becomes the new master root
     if (topLevelItems.length === 1) {
       const rootItem = topLevelItems[0];
       const rootIndex = parsed.indexOf(rootItem);
-      
-      sel = currentParent = await addNode(rootItem.text, true, true,[], null, null, rootItem.ontology);
+
+      sel = currentParent = await addNode(rootItem.text, true, true, [], null, null, rootItem.ontology);
       processRootMeta(rootItem, currentParent.id);
-      
+
       // Safely extract the root item from the array so it isn't rendered twice
       if (rootIndex !== -1) {
-          parsed.splice(rootIndex, 1);
+        parsed.splice(rootIndex, 1);
       }
     } else {
-      sel = currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true,[], null);
+      sel = currentParent = await addNode(t("INPUT_TITLE_PASTE_ROOT"), true, true, [], null);
     }
   } else {
     currentParent = sel;
@@ -16430,32 +16975,43 @@ const importTextToMap = async (rawText) => {
     currentParent = ea.getElement(sel.id);
   }
 
-  const stack = [{ indent: -1, node: currentParent }];
+  const stack = [{
+    indent: -1,
+    node: currentParent
+  }];
 
   if (rootSelected) {
     const allViewElements = ea.getViewElements();
     const info = getHierarchy(sel, allViewElements);
     const projectElements = getMindmapProjectElements(info.rootId, allViewElements);
-    ea.copyViewElementsToEAforEditing(projectElements.filter(el => !ea.getElement(el.id))); 
+    ea.copyViewElementsToEAforEditing(projectElements.filter(el => !ea.getElement(el.id)));
   }
-  
+
   for (const item of parsed) {
     // Relocate stack parser root when encountering a ## Submap Header
     if (item.isSubmapDef) {
-        const targetNode = submapNodesByName.get(item.text);
-        if (targetNode) {
-            stack.length = 0;
-            stack.push({ indent: -1, node: targetNode });
-        } else {
-            // Edge case: Submap def without embed. Create at root to salvage data.
-            const currentAllElements = ea.getElements();
-            const newNode = await addNode(item.text, false, true, currentAllElements, currentParent, null, null);
-            ea.addAppendUpdateCustomData(newNode.id, { isAdditionalRoot: true });
-            submapNodesByName.set(item.text, newNode);
-            stack.length = 0;
-            stack.push({ indent: -1, node: newNode });
-        }
-        continue;
+      const targetNode = submapNodesByName.get(item.text);
+      if (targetNode) {
+        stack.length = 0;
+        stack.push({
+          indent: -1,
+          node: targetNode
+        });
+      } else {
+        // Edge case: Submap def without embed. Create at root to salvage data.
+        const currentAllElements = ea.getElements();
+        const newNode = await addNode(item.text, false, true, currentAllElements, currentParent, null, null);
+        ea.addAppendUpdateCustomData(newNode.id, {
+          isAdditionalRoot: true
+        });
+        submapNodesByName.set(item.text, newNode);
+        stack.length = 0;
+        stack.push({
+          indent: -1,
+          node: newNode
+        });
+      }
+      continue;
     }
 
     while (stack.length > 1 && item.indent <= stack[stack.length - 1].indent) {
@@ -16464,17 +17020,22 @@ const importTextToMap = async (rawText) => {
     const parentNode = stack[stack.length - 1].node;
     const currentAllElements = ea.getElements();
     const newNode = await addNode(item.text, false, true, currentAllElements, parentNode, null, item.ontology);
-    
+
     // Process Metadata
     if (item.blockRef) blockRefToNodeId.set(item.blockRef, newNode.id);
     if (item.outgoingRefs.length > 0) nodeToOutgoingRefs.set(newNode.id, item.outgoingRefs);
     if (item.hasBoundary) createImportBoundary(newNode.id);
     if (item.isSubmapRef) {
-        ea.addAppendUpdateCustomData(newNode.id, { isAdditionalRoot: true });
-        submapNodesByName.set(item.text, newNode);
+      ea.addAppendUpdateCustomData(newNode.id, {
+        isAdditionalRoot: true
+      });
+      submapNodesByName.set(item.text, newNode);
     }
-    
-    stack.push({ indent: item.indent, node: newNode });
+
+    stack.push({
+      indent: item.indent,
+      node: newNode
+    });
   }
 
   // -------------------------------------------------------------------------
@@ -16482,14 +17043,16 @@ const importTextToMap = async (rawText) => {
   // -------------------------------------------------------------------------
   nodeToOutgoingRefs.forEach((targetRefs, sourceId) => {
     targetRefs.forEach(targetObj => {
-      const { ref, label } = targetObj;
+      const {
+        ref,
+        label
+      } = targetObj;
       const targetId = blockRefToNodeId.get(ref);
 
       if (targetId) {
         const arrowId = ea.connectObjects(
-          sourceId, null, 
-          targetId, null, 
-          {
+          sourceId, null,
+          targetId, null, {
             startArrowHead: null,
             endArrowHead: "triangle"
           }
@@ -16507,26 +17070,26 @@ const importTextToMap = async (rawText) => {
   // -------------------------------------------------------------------------
   // "Right-Left" Balanced Layout Adjustment for Imported L1 Nodes
   // -------------------------------------------------------------------------
-  const rootIdForImport = sel
-    ? getHierarchy(sel, ea.getElements()).rootId 
-    : currentParent.id;
+  const rootIdForImport = sel ?
+    getHierarchy(sel, ea.getElements()).rootId :
+    currentParent.id;
 
-  const rootElForImport = sel 
-    ? ea.getElement(rootIdForImport) 
-    : currentParent;
-    
+  const rootElForImport = sel ?
+    ea.getElement(rootIdForImport) :
+    currentParent;
+
   if (rootElForImport) {
     const mode = rootElForImport.customData?.growthMode || currentModalGrowthMode;
     if (mode === "Right-Left" && currentParent.id === rootIdForImport) {
-      
+
       const eaElements = ea.getElements();
-      const importedL1Nodes = eaElements.filter(el => 
+      const importedL1Nodes = eaElements.filter(el =>
         el.customData?.mindmapNew &&
-        eaElements.some(arrow => 
-           arrow.type === "arrow" && 
-           arrow.customData?.isBranch && 
-           arrow.startBinding?.elementId === currentParent.id && 
-           arrow.endBinding?.elementId === el.id
+        eaElements.some(arrow =>
+          arrow.type === "arrow" &&
+          arrow.customData?.isBranch &&
+          arrow.startBinding?.elementId === currentParent.id &&
+          arrow.endBinding?.elementId === el.id
         )
       );
 
@@ -16536,12 +17099,14 @@ const importTextToMap = async (rawText) => {
         const splitIndex = Math.ceil(importedL1Nodes.length / 2);
 
         importedL1Nodes.forEach((node, i) => {
-          ea.addAppendUpdateCustomData(node.id, { mindmapNew: undefined });
-          
+          ea.addAppendUpdateCustomData(node.id, {
+            mindmapNew: undefined
+          });
+
           if (i < splitIndex) {
-             node.x = rootElForImport.x + rootElForImport.width + 100;
+            node.x = rootElForImport.x + rootElForImport.width + 100;
           } else {
-             node.x = rootElForImport.x - node.width - 100;
+            node.x = rootElForImport.x - node.width - 100;
           }
         });
       }
@@ -16558,18 +17123,21 @@ const importTextToMap = async (rawText) => {
   // -------------------------------------------------------------------------
   if (createdBoundaries.length > 0) {
     const allEls = ea.getViewElements();
-    
+
     const boundariesWithDepth = createdBoundaries.map(b => {
       const node = allEls.find(e => e.id === b.nodeId);
       const depth = node ? getHierarchy(node, allEls).depth : 0;
-      return { ...b, depth };
+      return {
+        ...b,
+        depth
+      };
     });
 
     boundariesWithDepth.sort((a, b) => a.depth - b.depth);
 
     for (const b of boundariesWithDepth) {
       const currentEls = ea.getViewElements();
-      
+
       let parentBoundaryIndex = -1;
       let curr = currentEls.find(e => e.id === b.nodeId);
 
@@ -16585,24 +17153,24 @@ const importTextToMap = async (rawText) => {
         }
         curr = parent;
       }
-      
+
       const targetIndex = parentBoundaryIndex !== -1 ? parentBoundaryIndex + 1 : 0;
       ea.moveViewElementToZIndex(b.boundaryId, targetIndex);
     }
   }
 
   const allInView = ea.getViewElements();
-  const targetToSelect = sel
-    ? allInView.find((e) => e.id === sel.id)
-    : allInView.find((e) => e.id === currentParent?.id);
+  const targetToSelect = sel ?
+    allInView.find((e) => e.id === sel.id) :
+    allInView.find((e) => e.id === currentParent?.id);
 
   if (targetToSelect) {
     selectNodeInView(targetToSelect);
   }
 
-  const rootId = sel
-    ? getHierarchy(sel, allInView).rootId
-    : currentParent.id;
+  const rootId = sel ?
+    getHierarchy(sel, allInView).rootId :
+    currentParent.id;
   await triggerGlobalLayout(rootId);
 
   notice.setMessage(t("NOTICE_PASTE_COMPLETE"));
@@ -16628,7 +17196,7 @@ const pasteListToMap = async (contentToPaste = null) => {
 const pasteElementToMap = async () => {
   if (!isViewSet()) return;
   const sel = getMindmapNodeFromSelection();
-  
+
   // Standard text-list paste handles root-level initialization better
   if (!sel) {
     await pasteListToMap();
@@ -16646,25 +17214,25 @@ const pasteElementToMap = async () => {
   if (excalidrawClipboardPayload) {
     let clipboardData;
     try {
-       clipboardData = JSON.parse(rawText);
+      clipboardData = JSON.parse(rawText);
     } catch (e) {}
 
     if (clipboardData && clipboardData.elements) {
       const els = clipboardData.elements.filter(e => !e.isDeleted);
       const isSingleElement = els.length === 1 && ["embeddable", "text"].includes(els[0].type);
-      
+
       const textEl = els.find(e => e.type === "text");
-      const containerEl = els.find(e =>["rectangle", "ellipse", "diamond"].includes(e.type));
+      const containerEl = els.find(e => ["rectangle", "ellipse", "diamond"].includes(e.type));
       const isContainerText = els.length === 2 && textEl && containerEl && textEl.containerId === containerEl.id;
-      
+
       const isSingleImageJSON = els.length === 1 && els[0].type === "image";
 
       if (isSingleImageJSON) {
         const fileId = els[0].fileId;
         const imagePathResolved = ea.getPathForImageFileId(fileId);
-        
+
         if (imagePathResolved) {
-          if(app.vault.getFileByPath(imagePathResolved)) {
+          if (app.vault.getFileByPath(imagePathResolved)) {
             await pasteListToMap(`![[${imagePathResolved}]]`);
           } else {
             await pasteListToMap(`![pasted image](${imagePathResolved})`);
@@ -16696,20 +17264,32 @@ const pasteElementToMap = async () => {
         if (textToPaste) {
           // Add as a normal node using central logic
           const newNode = await addNode(textToPaste, false, false, null, null, null, null);
-          
+
+          // Copy link from clipboard text element if present to preserve references
+          if (newNode && textEl && textEl.link) {
+            const freshNode = ea.getViewElements().find(el => el.id === newNode.id);
+            if (freshNode) {
+              ea.copyViewElementsToEAforEditing([freshNode]);
+              ea.getElement(freshNode.id).link = textEl.link;
+              await addElementsToView({
+                captureUpdate: "EVENTUALLY"
+              });
+            }
+          }
+
           // Recreate the shape if it was inside a container
           if (shapeToPaste) {
-             const isContainer = ["rectangle", "ellipse", "diamond"].includes(newNode.type);
-             if (isContainer) {
-                if (newNode.type !== shapeToPaste) {
-                  selectNodeInView(newNode);
-                  await toggleBox(); // Removes auto-added box of the wrong shape
-                  await toggleBox(shapeToPaste); // Re-adds correct shape box
-                }
-             } else {
+            const isContainer = ["rectangle", "ellipse", "diamond"].includes(newNode.type);
+            if (isContainer) {
+              if (newNode.type !== shapeToPaste) {
                 selectNodeInView(newNode);
-                await toggleBox(shapeToPaste);
-             }
+                await toggleBox(); // Removes auto-added box of the wrong shape
+                await toggleBox(shapeToPaste); // Re-adds correct shape box
+              }
+            } else {
+              selectNodeInView(newNode);
+              await toggleBox(shapeToPaste);
+            }
           }
           return;
         }
@@ -16736,24 +17316,26 @@ const pasteElementToMap = async () => {
 
   if (hasImageBlob) {
     const beforeIds = new Set(ea.getViewElements().map(e => e.id));
-    
+
     // Trigger native paste via synthetic event so Excalidraw saves the file natively
     const dt = new DataTransfer();
     if (hasImageBlob && blob) {
-      const file = new File([blob], `Pasted image.${mimeType.split("/")[1] || "png"}`, { type: mimeType });
+      const file = new File([blob], `Pasted image.${mimeType.split("/")[1] || "png"}`, {
+        type: mimeType
+      });
       dt.items.add(file);
     }
-    
+
     const pasteEvent = new ClipboardEvent("paste", {
       clipboardData: dt,
       bubbles: true,
       cancelable: true
     });
-    
+
     const targetEl = ea.targetView.contentEl.querySelector(".excalidraw") || ea.targetView.contentEl;
     const originallySelectedElement = ea.getViewSelectedElement();
     targetEl.dispatchEvent(pasteEvent);
-    
+
     let newImageEl = null;
 
     // Poll to wait for Excalidraw to assign a fileId to the new image
@@ -16761,36 +17343,39 @@ const pasteElementToMap = async () => {
       await sleep(50);
       const currentElements = ea.getViewElements();
       const added = currentElements.filter(e => !beforeIds.has(e.id) && e.type === "image");
-      
+
       if (added.length > 0) {
-         const tmpNewImageEl = added[added.length - 1];
-         if (!tmpNewImageEl.fileId) continue;
-         
-         // Verify the image file path is resolved in the EA cache
-         const path = ea.getPathForImageFileId(tmpNewImageEl.fileId);
-         if (!path) continue;
-         
-         newImageEl = tmpNewImageEl;
-         break;
+        const tmpNewImageEl = added[added.length - 1];
+        if (!tmpNewImageEl.fileId) continue;
+
+        // Verify the image file path is resolved in the EA cache
+        const path = ea.getPathForImageFileId(tmpNewImageEl.fileId);
+        if (!path) continue;
+
+        newImageEl = tmpNewImageEl;
+        break;
       }
     }
-    
+
     if (newImageEl) {
       // Silently delete the temporary pasted image
       await sleep(200); // contingency to ensure Excalidraw has finished processing the new image
       const imageID = newImageEl.id;
-      
+
       const imagePathResolved = ea.getPathForImageFileId(newImageEl.fileId);
 
       ea.clear();
       ea.copyViewElementsToEAforEditing([newImageEl]);
       ea.getElement(imageID).isDeleted = true;
-      await addElementsToView({ captureUpdate: "EVENTUALLY", shouldRestoreElements: false });
-      
+      await addElementsToView({
+        captureUpdate: "EVENTUALLY",
+        shouldRestoreElements: false
+      });
+
       if (originallySelectedElement) {
         ea.selectElementsInView([originallySelectedElement.id]); // Reselect original node because paste image steals selection
       }
-      
+
       if (imagePathResolved) {
         await pasteListToMap(`![pasted image](${imagePathResolved})`);
       }
@@ -16824,7 +17409,7 @@ const reconnectArrow = (currentBindingElement, newBindingElement, arrow, side = 
   // 1. Ensure all involved elements are in the EA workbench
   const elementsToCheck = [currentBindingElement, newBindingElement, arrow];
   const elementsToCopy = elementsToCheck.filter(el => !ea.getElement(el.id));
-  
+
   if (elementsToCopy.length > 0) {
     ea.copyViewElementsToEAforEditing(elementsToCopy);
   }
@@ -16850,7 +17435,10 @@ const reconnectArrow = (currentBindingElement, newBindingElement, arrow, side = 
   if (!newNode.boundElements) newNode.boundElements = [];
   // Prevent duplicates
   if (!newNode.boundElements.some(be => be.id === targetArrow.id)) {
-    newNode.boundElements.push({ type: "arrow", id: targetArrow.id });
+    newNode.boundElements.push({
+      type: "arrow",
+      id: targetArrow.id
+    });
   }
 };
 
@@ -16863,7 +17451,7 @@ const reconnectArrow = (currentBindingElement, newBindingElement, arrow, side = 
 const updateSubtreeFontSize = (nodeId, newDepth, oldDepth, allElements, newFontScaleType, oldFontScaleType) => {
   const newFontScale = getFontScale(newFontScaleType);
   const oldFontScale = getFontScale(oldFontScaleType);
-  
+
   const node = allElements.find(el => el.id === nodeId);
   if (!node) return;
   if (!ea.getElement(nodeId)) {
@@ -16878,7 +17466,7 @@ const updateSubtreeFontSize = (nodeId, newDepth, oldDepth, allElements, newFontS
   if (node.fontSize === oldStandardSize) {
     const eaNode = ea.getElement(nodeId);
     eaNode.fontSize = newStandardSize;
-    
+
     // Refresh dimensions to fit new font size
     if (eaNode.type === "text" || (eaNode.boundElements && eaNode.boundElements.some(b => b.type === "text"))) {
       ea.refreshTextElementSize(eaNode.id);
@@ -16897,7 +17485,7 @@ const updateSubtreeFontSize = (nodeId, newDepth, oldDepth, allElements, newFontS
     // Get the bound text element (ontology)
     const maybeTextElement = ea.getBoundTextElement(incomingArrow, true);
     let eaOntologyEl = maybeTextElement.eaElement;
-    
+
     // If it exists in the scene but not yet in EA workbench, copy it
     if (!eaOntologyEl && maybeTextElement.sceneElement) {
       ea.copyViewElementsToEAforEditing([maybeTextElement.sceneElement]);
@@ -16914,7 +17502,7 @@ const updateSubtreeFontSize = (nodeId, newDepth, oldDepth, allElements, newFontS
   // Stop recursion if this node is an additional root (submap). 
   // Its own node size updates to match the parent, but its children scale relative to IT.
   if (node.customData?.isAdditionalRoot === true) {
-     return;
+    return;
   }
 
   // Recurse to children
@@ -16931,7 +17519,7 @@ const updateSubtreeFontSize = (nodeId, newDepth, oldDepth, allElements, newFontS
 const updateSubtreeStrokeWidth = (nodeId, newDepth, oldDepth, allElements, newBaseWidth, newBranchScale, oldBaseWidth, oldBranchScale) => {
   const node = allElements.find(el => el.id === nodeId);
   if (!node) return;
-  
+
   // Ensure mutable element exists
   if (!ea.getElement(nodeId)) {
     ea.copyViewElementsToEAforEditing([node]);
@@ -16951,7 +17539,7 @@ const updateSubtreeStrokeWidth = (nodeId, newDepth, oldDepth, allElements, newBa
   if (incomingArrow) {
     if (!ea.getElement(incomingArrow.id)) ea.copyViewElementsToEAforEditing([incomingArrow]);
     const eaArrow = ea.getElement(incomingArrow.id);
-    
+
     // Update if it matches old standard
     if (Math.abs(eaArrow.strokeWidth - oldStandardWidth) < tolerance) {
       eaArrow.strokeWidth = newStandardWidth;
@@ -16967,7 +17555,7 @@ const updateSubtreeStrokeWidth = (nodeId, newDepth, oldDepth, allElements, newBa
 
   // Stop recursion if this node is an additional root (submap).
   if (node.customData?.isAdditionalRoot === true) {
-     return;
+    return;
   }
 
   // Recurse to children
@@ -17103,7 +17691,9 @@ const toggleSubmapRoot = async () => {
     });
   }
 
-  await addElementsToView({ captureUpdate: "EVENTUALLY" });
+  await addElementsToView({
+    captureUpdate: "EVENTUALLY"
+  });
   const info = getHierarchy(sel, ea.getViewElements());
   await triggerGlobalLayout(info.rootId);
 
@@ -17122,12 +17712,12 @@ const changeNodeOrder = async (key) => {
     new Notice(t("NOTICE_CANNOT_MOVE_ROOT"));
     return;
   }
-  
+
   const info = getHierarchy(current, allElements);
   const currentSettingsRoot = getSettingsRootNode(current, allElements);
-  const root = (current.customData?.isAdditionalRoot === true)
-    ? (getSettingsRootNode(parent, allElements) || currentSettingsRoot || allElements.find((e) => e.id === info.rootId))
-    : (currentSettingsRoot || allElements.find((e) => e.id === info.rootId));
+  const root = (current.customData?.isAdditionalRoot === true) ?
+    (getSettingsRootNode(parent, allElements) || currentSettingsRoot || allElements.find((e) => e.id === info.rootId)) :
+    (currentSettingsRoot || allElements.find((e) => e.id === info.rootId));
   if (!root) return;
 
   if (current.id === root.id) {
@@ -17147,9 +17737,9 @@ const changeNodeOrder = async (key) => {
   const curCenter = current.x + current.width / 2;
   const rootCenterY = root.y + root.height / 2;
   const curCenterY = current.y + current.height / 2;
-  
+
   const mapMode = root.customData?.growthMode || currentModalGrowthMode;
-  const isVerticalMode =["Up-facing", "Down-facing", "Up-Down"].includes(mapMode);
+  const isVerticalMode = ["Up-facing", "Down-facing", "Up-Down"].includes(mapMode);
   const isRadial = (mapMode === "Radial");
 
   const isInPositive = isVerticalMode ? (curCenterY > rootCenterY) : (curCenter > rootCenter);
@@ -17163,68 +17753,70 @@ const changeNodeOrder = async (key) => {
   // Feature: L1 Node Side Swap 
   // ---------------------------------------------------------
   if (parent.id === root.id && ((!isVerticalMode && mapMode === "Right-Left") || (isVerticalMode && mapMode === "Up-Down"))) {
-     const movePos = isVerticalMode ? (!isInPositive && key === "ArrowDown") : (!isInPositive && key === "ArrowRight"); // Negative Side -> Positive Side
-     const moveNeg = isVerticalMode ? (isInPositive && key === "ArrowUp")   : (isInPositive && key === "ArrowLeft");    // Positive Side -> Negative Side
+    const movePos = isVerticalMode ? (!isInPositive && key === "ArrowDown") : (!isInPositive && key === "ArrowRight"); // Negative Side -> Positive Side
+    const moveNeg = isVerticalMode ? (isInPositive && key === "ArrowUp") : (isInPositive && key === "ArrowLeft"); // Positive Side -> Negative Side
 
-     if (movePos || moveNeg) {
-        // Calculate Delta to mirror across root center
-        const delta = isVerticalMode ? 2 * (rootCenterY - curCenterY) : 2 * (rootCenter - curCenter);
-        
-        // Gather all elements in branch + decorations
-        const branchIds = getBranchElementIds(current.id, allElements);
-        
-        // Use the specialized function to get decorations and crosslinks 
-        // to safely ignore structural groups that might encompass the entire map
-        const decorationAndCrossLinkIds = getDecorationAndCrossLinkIdsForBranches(branchIds, allElements, info.rootId);
-        
-        const elementsToMove = new Set();
-        
-        branchIds.forEach(id => {
-           const el = allElements.find(x => x.id === id);
-           if (el) elementsToMove.add(el);
-        });
-        
-        decorationAndCrossLinkIds.forEach(id => {
-           const el = allElements.find(x => x.id === id);
-           if (el) elementsToMove.add(el);
-        });
-        
-        const arr = Array.from(elementsToMove);
-        ea.copyViewElementsToEAforEditing(arr);
-        arr.forEach(el => {
-            const eaEl = ea.getElement(el.id);
-            if (isVerticalMode) eaEl.y += delta;
-            else eaEl.x += delta;
-        });
-        
-        await addElementsToView({ captureUpdate: "EVENTUALLY" });
-        
-        // Trigger layout. mustHonorMindmapOrder=false ensures the engine sorts based on the NEW visual position
-        triggerGlobalLayout(root.id, false, false);
-        return;
-     }
+    if (movePos || moveNeg) {
+      // Calculate Delta to mirror across root center
+      const delta = isVerticalMode ? 2 * (rootCenterY - curCenterY) : 2 * (rootCenter - curCenter);
+
+      // Gather all elements in branch + decorations
+      const branchIds = getBranchElementIds(current.id, allElements);
+
+      // Use the specialized function to get decorations and crosslinks 
+      // to safely ignore structural groups that might encompass the entire map
+      const decorationAndCrossLinkIds = getDecorationAndCrossLinkIdsForBranches(branchIds, allElements, info.rootId);
+
+      const elementsToMove = new Set();
+
+      branchIds.forEach(id => {
+        const el = allElements.find(x => x.id === id);
+        if (el) elementsToMove.add(el);
+      });
+
+      decorationAndCrossLinkIds.forEach(id => {
+        const el = allElements.find(x => x.id === id);
+        if (el) elementsToMove.add(el);
+      });
+
+      const arr = Array.from(elementsToMove);
+      ea.copyViewElementsToEAforEditing(arr);
+      arr.forEach(el => {
+        const eaEl = ea.getElement(el.id);
+        if (isVerticalMode) eaEl.y += delta;
+        else eaEl.x += delta;
+      });
+
+      await addElementsToView({
+        captureUpdate: "EVENTUALLY"
+      });
+
+      // Trigger layout. mustHonorMindmapOrder=false ensures the engine sorts based on the NEW visual position
+      triggerGlobalLayout(root.id, false, false);
+      return;
+    }
   }
 
   // 1. Structural Promotion / Demotion
-  const isPromote = isVerticalMode
-      ? ((isInPositive && key === "ArrowUp") || (!isInPositive && key === "ArrowDown"))
-      : ((isInPositive && key === "ArrowLeft") || (!isInPositive && key === "ArrowRight"));
-      
-  const isDemote = isVerticalMode
-      ? ((isInPositive && key === "ArrowDown") || (!isInPositive && key === "ArrowUp"))
-      : ((isInPositive && key === "ArrowRight") || (!isInPositive && key === "ArrowLeft"));
-  
+  const isPromote = isVerticalMode ?
+    ((isInPositive && key === "ArrowUp") || (!isInPositive && key === "ArrowDown")) :
+    ((isInPositive && key === "ArrowLeft") || (!isInPositive && key === "ArrowRight"));
+
+  const isDemote = isVerticalMode ?
+    ((isInPositive && key === "ArrowDown") || (!isInPositive && key === "ArrowUp")) :
+    ((isInPositive && key === "ArrowRight") || (!isInPositive && key === "ArrowLeft"));
+
   if (isPromote) {
     if (parent.id === root.id && root.customData?.isAdditionalRoot !== true) return; // Cannot promote L1 nodes under master map root
-    
+
     const grandParent = getParentNode(parent.id, allElements);
     if (!grandParent) return;
 
     // Find the arrow connecting Parent -> Current
     const arrow = allElements.find(
-      (a) => a.type === "arrow" && 
-      a.customData?.isBranch && 
-      a.startBinding?.elementId === parent.id && 
+      (a) => a.type === "arrow" &&
+      a.customData?.isBranch &&
+      a.startBinding?.elementId === parent.id &&
       a.endBinding?.elementId === current.id
     );
 
@@ -17236,39 +17828,41 @@ const changeNodeOrder = async (key) => {
 
       reconnectArrow(parent, grandParent, arrow, "start");
       const parentOrder = getMindmapOrder(parent);
-      const promoteTargetRoot = parent.customData?.isAdditionalRoot === true
-        ? newSettingsRoot
-        : root;
-      
+      const promoteTargetRoot = parent.customData?.isAdditionalRoot === true ?
+        newSettingsRoot :
+        root;
+
       ea.copyViewElementsToEAforEditing([current]);
       ea.addAppendUpdateCustomData(current.id, {
         mindmapOrder: isRadial && !isInPositive ? parentOrder - 0.5 : parentOrder + 0.5
       });
-      
+
       updateSubtreeFontSize(current.id, newDepth, oldDepth, allElements, newRootCfg.fontsizeScale, oldRootCfg.fontsizeScale);
       updateSubtreeStrokeWidth(current.id, newDepth, oldDepth, allElements, newRootCfg.baseStrokeWidth, newRootCfg.branchScale, oldRootCfg.baseStrokeWidth, oldRootCfg.branchScale);
 
       // --- Update Colors (Promotion) ---
       const isTargetL1 = (grandParent.id === promoteTargetRoot.id);
       let targetColor;
-      
+
       if (isTargetL1) {
-          if (newRootCfg.multicolor) {
-              targetColor = current.customData?.previousL1Color;
-              if (!targetColor) {
-                  const existingL1Colors = getChildrenNodes(promoteTargetRoot.id, allElements).map(n => n.strokeColor);
-                  targetColor = getDynamicColor(existingL1Colors);
-              }
-          } else {
-              targetColor = promoteTargetRoot.strokeColor;
+        if (newRootCfg.multicolor) {
+          targetColor = current.customData?.previousL1Color;
+          if (!targetColor) {
+            const existingL1Colors = getChildrenNodes(promoteTargetRoot.id, allElements).map(n => n.strokeColor);
+            targetColor = getDynamicColor(existingL1Colors);
           }
+        } else {
+          targetColor = promoteTargetRoot.strokeColor;
+        }
       } else {
-          targetColor = grandParent.strokeColor;
+        targetColor = grandParent.strokeColor;
       }
-      
+
       updateSubtreeColor(current.id, current.strokeColor, targetColor, allElements);
 
-      await addElementsToView({ captureUpdate: "EVENTUALLY" });
+      await addElementsToView({
+        captureUpdate: "EVENTUALLY"
+      });
       triggerGlobalLayout(promoteTargetRoot.id, false, true);
       return;
     }
@@ -17277,42 +17871,42 @@ const changeNodeOrder = async (key) => {
   if (isDemote) {
     // Demotion: Selected node becomes child of sibling of current parent
     const siblings = getChildrenNodes(parent.id, allElements);
-    
+
     // Sort siblings to ensure we pick the correct visual neighbor based on mindmapOrder
     siblings.sort((a, b) => getMindmapOrder(a) - getMindmapOrder(b));
-    
+
     if (siblings.length < 2) {
       new Notice(t("NOTICE_CANNOT_DEMOTE_NO_SIBLING_TO_ACCEPT"));
       return;
     }
-    
+
     const currentIndex = siblings.findIndex(s => s.id === current.id);
     const mirrorBehavior = (isRadial && !isInPositive);
-    
+
     let targetIndex = mirrorBehavior ? currentIndex + 1 : currentIndex - 1;
-    
+
     // Prevent out-of-bounds demotion
     if (targetIndex < 0 || targetIndex >= siblings.length) {
       new Notice(t("NOTICE_CANNOT_DEMOTE_NO_VALID_SIBLING"));
       return;
     }
-    
+
     const newParent = siblings[targetIndex];
-    
+
     // Prevent cross-side demotion for L1 nodes
     if (parent.id === root.id) {
-       const targetIsPos = isVerticalMode ? (newParent.y + newParent.height/2 > rootCenterY) : (newParent.x + newParent.width/2 > rootCenter);
-       if (targetIsPos !== isInPositive) {
-         new Notice(t("NOTICE_CANNOT_DEMOTE_CROSS_SIDE_NOT_ALLOWED"));
-          return;
-       }
+      const targetIsPos = isVerticalMode ? (newParent.y + newParent.height / 2 > rootCenterY) : (newParent.x + newParent.width / 2 > rootCenter);
+      if (targetIsPos !== isInPositive) {
+        new Notice(t("NOTICE_CANNOT_DEMOTE_CROSS_SIDE_NOT_ALLOWED"));
+        return;
+      }
     }
-    
+
     // Find the arrow to update structural binding
     const arrow = allElements.find(
-      (a) => a.type === "arrow" && 
-      a.customData?.isBranch && 
-      a.startBinding?.elementId === parent.id && 
+      (a) => a.type === "arrow" &&
+      a.customData?.isBranch &&
+      a.startBinding?.elementId === parent.id &&
       a.endBinding?.elementId === current.id
     );
 
@@ -17326,19 +17920,21 @@ const changeNodeOrder = async (key) => {
       // Determine new order: Append as last child of new parent
       const newParentChildren = getChildrenNodes(newParent.id, allElements);
       const nextOrder = newParentChildren.length > 0 ? Math.max(...newParentChildren.map(getMindmapOrder)) + 1 : 0;
-      
+
       ea.copyViewElementsToEAforEditing([current]);
-      
+
       // Store previous L1 color if we are demoting from an L1 position
       if (parent.id === oldSettingsRoot.id) {
-          ea.addAppendUpdateCustomData(current.id, { 
-              mindmapOrder: nextOrder,
-              previousL1Color: current.strokeColor
-          });
+        ea.addAppendUpdateCustomData(current.id, {
+          mindmapOrder: nextOrder,
+          previousL1Color: current.strokeColor
+        });
       } else {
-          ea.addAppendUpdateCustomData(current.id, { mindmapOrder: nextOrder });
+        ea.addAppendUpdateCustomData(current.id, {
+          mindmapOrder: nextOrder
+        });
       }
-      
+
       updateSubtreeFontSize(current.id, newDepth, oldDepth, allElements, newRootCfg.fontsizeScale, oldRootCfg.fontsizeScale);
       updateSubtreeStrokeWidth(current.id, newDepth, oldDepth, allElements, newRootCfg.baseStrokeWidth, newRootCfg.branchScale, oldRootCfg.baseStrokeWidth, oldRootCfg.branchScale);
 
@@ -17346,21 +17942,23 @@ const changeNodeOrder = async (key) => {
       // If the node we are attaching to IS a settings root, we are becoming an L1 of a submap.
       const isTargetL1 = (newParent.id === newSettingsRoot.id);
       let targetColor;
-      
+
       if (isTargetL1) {
-          if (newRootCfg.multicolor) {
-              const existingL1Colors = getChildrenNodes(newSettingsRoot.id, allElements).map(n => n.strokeColor);
-              targetColor = getDynamicColor(existingL1Colors);
-          } else {
-              targetColor = newSettingsRoot.strokeColor;
-          }
+        if (newRootCfg.multicolor) {
+          const existingL1Colors = getChildrenNodes(newSettingsRoot.id, allElements).map(n => n.strokeColor);
+          targetColor = getDynamicColor(existingL1Colors);
+        } else {
+          targetColor = newSettingsRoot.strokeColor;
+        }
       } else {
-          targetColor = newParent.strokeColor;
+        targetColor = newParent.strokeColor;
       }
 
       updateSubtreeColor(current.id, current.strokeColor, targetColor, allElements);
 
-      await addElementsToView({ captureUpdate: "EVENTUALLY" });
+      await addElementsToView({
+        captureUpdate: "EVENTUALLY"
+      });
       triggerGlobalLayout(root.id, false, true);
     }
     return;
@@ -17376,56 +17974,60 @@ const changeNodeOrder = async (key) => {
 
     // Ensure siblings are sorted by current order before swapping
     siblings.sort((a, b) => getMindmapOrder(a) - getMindmapOrder(b));
-    
+
     const currentIndex = siblings.findIndex(s => s.id === current.id);
     if (currentIndex === -1) return;
 
     let swapIndex = -1;
-    
+
     if (isVerticalMode) {
-       // Up/Down facing uses Left/Right keys for siblings
-       if (key === "ArrowRight") swapIndex = currentIndex + 1;
-       if (key === "ArrowLeft") swapIndex = currentIndex - 1;
+      // Up/Down facing uses Left/Right keys for siblings
+      if (key === "ArrowRight") swapIndex = currentIndex + 1;
+      if (key === "ArrowLeft") swapIndex = currentIndex - 1;
     } else {
-       // Radial Left flips the interpretation of Up/Down since it generates from Bottom to Top
-       if (isRadial && !isInPositive) {
-         if (key === "ArrowUp") swapIndex = currentIndex + 1;
-         if (key === "ArrowDown") swapIndex = currentIndex - 1;
-       } else {
-         if (key === "ArrowDown") swapIndex = currentIndex + 1;
-         if (key === "ArrowUp") swapIndex = currentIndex - 1;
-       }
+      // Radial Left flips the interpretation of Up/Down since it generates from Bottom to Top
+      if (isRadial && !isInPositive) {
+        if (key === "ArrowUp") swapIndex = currentIndex + 1;
+        if (key === "ArrowDown") swapIndex = currentIndex - 1;
+      } else {
+        if (key === "ArrowDown") swapIndex = currentIndex + 1;
+        if (key === "ArrowUp") swapIndex = currentIndex - 1;
+      }
     }
 
     // Apply circular wrapping for Radial mode (Level 1 nodes only)
     if (isRadial && parent.id === root.id) {
-       swapIndex = (swapIndex + siblings.length) % siblings.length;
+      swapIndex = (swapIndex + siblings.length) % siblings.length;
     }
 
     // Boundary checks
     if (swapIndex >= 0 && swapIndex < siblings.length) {
       const swapNode = siblings[swapIndex];
-      
+
       // Prevent cross-side swapping for L1 nodes (Except for Radial maps, where we just wrapped)
       if (parent.id === root.id && !isRadial) {
-         const swapIsPos = isVerticalMode ? (swapNode.y + swapNode.height/2 > rootCenterY) : (swapNode.x + swapNode.width/2 > rootCenter);
-         if (swapIsPos !== isInPositive) {
-            return; // Silently block cross-side reordering
-         }
+        const swapIsPos = isVerticalMode ? (swapNode.y + swapNode.height / 2 > rootCenterY) : (swapNode.x + swapNode.width / 2 > rootCenter);
+        if (swapIsPos !== isInPositive) {
+          return; // Silently block cross-side reordering
+        }
       }
 
       // Re-normalize all orders to clean integers to prevent drift
       ea.copyViewElementsToEAforEditing(siblings);
-      
+
       siblings.forEach((sib, idx) => {
         let newOrder = idx;
         if (idx === currentIndex) newOrder = swapIndex;
         if (idx === swapIndex) newOrder = currentIndex;
-        
-        ea.addAppendUpdateCustomData(sib.id, { mindmapOrder: newOrder });
+
+        ea.addAppendUpdateCustomData(sib.id, {
+          mindmapOrder: newOrder
+        });
       });
 
-      await addElementsToView({ captureUpdate: "EVENTUALLY" });
+      await addElementsToView({
+        captureUpdate: "EVENTUALLY"
+      });
       // Trigger layout specifically honoring the new sort order
       triggerGlobalLayout(root.id, false, true);
     }
@@ -17441,8 +18043,12 @@ const changeNodeOrder = async (key) => {
  * @param {boolean} params.zoom - whether to zoom to the new node
  * @param {boolean} params.focus - whether to focus the new node
  */
-const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
-  if(!key) return;
+const navigateMap = async ({
+  key,
+  zoom = false,
+  focus = false
+} = {}) => {
+  if (!key) return;
   if (!isViewSet()) return;
   let allElements = ea.getViewElements();
   const current = getMindmapNodeFromSelection();
@@ -17451,11 +18057,14 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
   const info = getHierarchy(current, allElements);
   const parent = getParentNode(current.id, allElements);
   const currentSettingsRoot = getSettingsRootNode(current, allElements);
-  const root = (current.customData?.isAdditionalRoot === true && parent)
-    ? (getSettingsRootNode(parent, allElements) || currentSettingsRoot || allElements.find((e) => e.id === info.rootId))
-    : (currentSettingsRoot || allElements.find((e) => e.id === info.rootId));
+  const root = (current.customData?.isAdditionalRoot === true && parent) ?
+    (getSettingsRootNode(parent, allElements) || currentSettingsRoot || allElements.find((e) => e.id === info.rootId)) :
+    (currentSettingsRoot || allElements.find((e) => e.id === info.rootId));
   if (!root) return;
-  const rootCenter = { x: root.x + root.width / 2, y: root.y + root.height / 2 };
+  const rootCenter = {
+    x: root.x + root.width / 2,
+    y: root.y + root.height / 2
+  };
 
   const mapMode = root.customData?.growthMode || currentModalGrowthMode;
   const isVerticalLayout = ["Up-facing", "Down-facing", "Up-Down"].includes(mapMode);
@@ -17480,17 +18089,17 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
           // Calculate relative positions
           const childrenWithPos = children.map(c => ({
             node: c,
-            dx: Math.abs((c.x + c.width/2) - rootCenter.x), // distance from vertical centerline
-            dy: (c.y + c.height/2) - rootCenter.y 
+            dx: Math.abs((c.x + c.width / 2) - rootCenter.x), // distance from vertical centerline
+            dy: (c.y + c.height / 2) - rootCenter.y
           }));
 
           if (key === "ArrowDown") {
             // Find nodes below (dy > 0)
-            const downNodes = childrenWithPos.filter(c => c.dy > 0).sort((a,b)=>a.dx - b.dx);
+            const downNodes = childrenWithPos.filter(c => c.dy > 0).sort((a, b) => a.dx - b.dx);
             targetChild = downNodes.length > 0 ? downNodes[0].node : children[0];
           } else if (key === "ArrowUp") {
-             // Find nodes above (dy < 0)
-            const upNodes = childrenWithPos.filter(c => c.dy < 0).sort((a,b)=>a.dx - b.dx);
+            // Find nodes above (dy < 0)
+            const upNodes = childrenWithPos.filter(c => c.dy < 0).sort((a, b) => a.dx - b.dx);
             targetChild = upNodes.length > 0 ? upNodes[0].node : children[children.length - 1];
           }
         }
@@ -17502,17 +18111,17 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
           // Calculate relative positions
           const childrenWithPos = children.map(c => ({
             node: c,
-            dx: (c.x + c.width/2) - rootCenter.x,
-            dy: Math.abs((c.y + c.height/2) - rootCenter.y) // distance from horizontal centerline
+            dx: (c.x + c.width / 2) - rootCenter.x,
+            dy: Math.abs((c.y + c.height / 2) - rootCenter.y) // distance from horizontal centerline
           }));
 
           if (key === "ArrowRight") {
             // Find nodes to the right (dx > 0)
-            const rightNodes = childrenWithPos.filter(c => c.dx > 0).sort((a,b)=>a.dy - b.dy);
+            const rightNodes = childrenWithPos.filter(c => c.dx > 0).sort((a, b) => a.dy - b.dy);
             targetChild = rightNodes.length > 0 ? rightNodes[0].node : children[0];
           } else if (key === "ArrowLeft") {
             // Find nodes to the left (dx < 0)
-            const leftNodes = childrenWithPos.filter(c => c.dx < 0).sort((a,b)=>a.dy - b.dy);
+            const leftNodes = childrenWithPos.filter(c => c.dx < 0).sort((a, b) => a.dy - b.dy);
             targetChild = leftNodes.length > 0 ? leftNodes[0].node : children[children.length - 1];
           }
         }
@@ -17531,14 +18140,17 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
   const isSiblingNav = isVerticalLayout ? (key === "ArrowLeft" || key === "ArrowRight") : (key === "ArrowUp" || key === "ArrowDown");
 
   if (isHierarchyNav) {
-    const curCenter = { x: current.x + current.width / 2, y: current.y + current.height / 2 };
+    const curCenter = {
+      x: current.x + current.width / 2,
+      y: current.y + current.height / 2
+    };
     const isInPositive = isVerticalLayout ? (curCenter.y > rootCenter.y) : (curCenter.x > rootCenter.x);
-    
+
     let goIn = false;
     if (isVerticalLayout) {
-        goIn = (key === "ArrowUp" && isInPositive) || (key === "ArrowDown" && !isInPositive);
+      goIn = (key === "ArrowUp" && isInPositive) || (key === "ArrowDown" && !isInPositive);
     } else {
-        goIn = (key === "ArrowLeft" && isInPositive) || (key === "ArrowRight" && !isInPositive);
+      goIn = (key === "ArrowLeft" && isInPositive) || (key === "ArrowRight" && !isInPositive);
     }
 
     if (goIn) {
@@ -17558,7 +18170,10 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
     const siblings = getChildrenNodes(parent.id, allElements);
 
     // Calculate the immediate parent's center to sort siblings clockwise around it
-    const parentCenter = { x: parent.x + parent.width / 2, y: parent.y + parent.height / 2 };
+    const parentCenter = {
+      x: parent.x + parent.width / 2,
+      y: parent.y + parent.height / 2
+    };
 
     // Always sort by angle from 12 o'clock (0 degrees) to ensure clockwise navigation
     // regardless of layout mode or hierarchy level.
@@ -17569,8 +18184,14 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
       const bCX = b.x + b.width / 2;
       const bCY = b.y + b.height / 2;
 
-      let aPoint = { x: aCX, y: aCY };
-      let bPoint = { x: bCX, y: bCY };
+      let aPoint = {
+        x: aCX,
+        y: aCY
+      };
+      let bPoint = {
+        x: bCX,
+        y: bCY
+      };
 
       if (mapMode === "Radial") {
         // Use the edge closest to the parent to neutralize text width/height skew in Radial
@@ -17594,9 +18215,9 @@ const navigateMap = async ({key, zoom = false, focus = false} = {}) => {
     const idx = siblings.findIndex((s) => s.id === current.id);
     const startIndex = (idx === -1 ? 0 : idx); // Start at 0 if current isn't found
 
-    const currentIsNegativeBranch = isVerticalLayout 
-         ? (current.y + current.height/2) < (parent.y + parent.height/2)
-         : (current.x + current.width/2) < (parent.x + parent.width/2);
+    const currentIsNegativeBranch = isVerticalLayout ?
+      (current.y + current.height / 2) < (parent.y + parent.height / 2) :
+      (current.x + current.width / 2) < (parent.x + parent.width / 2);
 
     // Reverse up/down for left-facing branches in directional modes
     let navigateForward; // true for next sibling (clockwise), false for previous (counter-clockwise)
@@ -17632,7 +18253,7 @@ const refreshMapLayout = async (sel) => {
 /**
  * Collects all node IDs and arrow IDs belonging to a branch.
  * Includes "isBranch" arrows and internal non-mindmap arrows.
-**/
+ **/
 const getBranchElementIds = (nodeId, allElements) => {
 
   const childMap = new Map();
@@ -17662,7 +18283,7 @@ const getBranchElementIds = (nodeId, allElements) => {
 
     const currentNode = allElements.find(el => el.id === currentId);
     if (currentNode?.customData?.boundaryId) {
-        branchNodes.add(currentNode.customData.boundaryId);
+      branchNodes.add(currentNode.customData.boundaryId);
     }
 
     const children = childMap.get(currentId);
@@ -17706,7 +18327,10 @@ const getStructuralGroupForNode = (branchIds, workbenchEls, rootId) => {
   const elements = workbenchEls.filter(el => branchIds.includes(el.id) || decorationAndCrossLinkIds.includes(el.id));
   const commonGroupId = getCommonGroupForElements(elements)[0];
   const structuralGroupId = (commonGroupId && isMindmapGroup(commonGroupId, workbenchEls)) ? commonGroupId : null;
-  return {structuralGroupId, groupedElementIds: structuralGroupId ? elements.map(e => e.id) : []};
+  return {
+    structuralGroupId,
+    groupedElementIds: structuralGroupId ? elements.map(e => e.id) : []
+  };
 };
 
 /**
@@ -17720,7 +18344,10 @@ const getStructuralGroupsForNode = (branchIds, workbenchEls, rootId) => {
   const elements = workbenchEls.filter(el => branchIds.includes(el.id) || decorationAndCrossLinkIds.includes(el.id));
   const commonGroupIds = getCommonGroupForElements(elements);
   const structuralGroupIds = commonGroupIds.filter(commonGroupId => isMindmapGroup(commonGroupId, workbenchEls));
-  return {structuralGroupIds, groupedElementIds: elements.map(e => e.id)};
+  return {
+    structuralGroupIds,
+    groupedElementIds: elements.map(e => e.id)
+  };
 };
 
 /**
@@ -17730,7 +18357,7 @@ const getStructuralGroupsForNode = (branchIds, workbenchEls, rootId) => {
  */
 const removeGroupFromElements = (groupId, workbenchEls) => {
   workbenchEls.forEach(el => {
-    if (el.groupIds) { 
+    if (el.groupIds) {
       el.groupIds = el.groupIds.filter(g => g !== groupId);
     }
   });
@@ -17763,19 +18390,19 @@ const getDecorationAndCrossLinkIdsForBranches = (branchIds, allElements, rootId)
   // UNLESS that group also contains structural elements outside our branch (which would mean it's a parent group).
   for (const id of branchIds) {
     const el = elementMap.get(id);
-    
+
     if (el && el.groupIds && el.groupIds.length > 0) {
       for (const gid of el.groupIds) {
         if (processedGroups.has(gid)) continue;
         processedGroups.add(gid);
-        
+
         const groupMembers = groupMap.get(gid) || [];
-        
+
         // Check if this group belongs *exclusively* to the branch (or is a local decoration group)
         // We do this by checking if any 'structural' member of the group is OUTSIDE our branch.
         let hasOutsider = false;
         const structuralMembers = [];
-        
+
         for (const member of groupMembers) {
           if (idsInBranch.has(member.id) || isStructuralElement(member, allElements, rootId)) {
             structuralMembers.push(member);
@@ -17785,7 +18412,7 @@ const getDecorationAndCrossLinkIdsForBranches = (branchIds, allElements, rootId)
             }
           }
         }
-        
+
         if (!hasOutsider) {
           const structuralMemberIds = new Set(structuralMembers.map(e => e.id));
           for (const member of groupMembers) {
@@ -17808,11 +18435,11 @@ const getDecorationAndCrossLinkIdsForBranches = (branchIds, allElements, rootId)
       if (el.startBinding?.elementId && el.endBinding?.elementId) {
         if (idsInBranch.has(el.startBinding.elementId) && idsInBranch.has(el.endBinding.elementId)) {
           decorationsAndCrossLInks.add(el.id);
-          
+
           // Optimization: Check bound elements directly via elementMap instead of ea.getBoundTextElement (which might scan scene)
           if (el.boundElements && el.boundElements.length > 0) {
             for (const bound of el.boundElements) {
-               if (bound.type === "text") decorationsAndCrossLInks.add(bound.id);
+              if (bound.type === "text") decorationsAndCrossLInks.add(bound.id);
             }
           }
         }
@@ -17830,22 +18457,22 @@ const getDecorationAndCrossLinkIdsForBranches = (branchIds, allElements, rootId)
 const getMindmapProjectElements = (rootId, allViewElements) => {
   // 1. Get core structural IDs
   const branchIds = getBranchElementIds(rootId, allViewElements);
-  
+
   // 2. Get decorations and cross-links (requires scanning allViewElements for groups/arrows)
   const decorationAndCrossLinkIds = getDecorationAndCrossLinkIdsForBranches(branchIds, allViewElements, rootId);
-  
+
   const projectElementIds = new Set([...branchIds, ...decorationAndCrossLinkIds]);
   const projectElements = [];
   const addedIds = new Set();
-  
+
   const addWithDependencies = (id) => {
     if (addedIds.has(id)) return;
     const el = allViewElements.find(e => e.id === id);
     if (!el) return;
-    
+
     projectElements.push(el);
     addedIds.add(id);
-    
+
     // Include text inside containers or arrows
     if (el.boundElements) {
       el.boundElements.forEach(be => addWithDependencies(be.id));
@@ -17863,15 +18490,15 @@ const getMindmapProjectElements = (rootId, allViewElements) => {
       addWithDependencies(el.customData.boundaryId);
     }
   };
-  
+
   projectElementIds.forEach(id => addWithDependencies(id));
-  
+
   return projectElements;
 };
 
 /**
  * Toggles a single flat group for the selected branch.
-**/
+ **/
 const toggleBranchGroup = async () => {
   if (!isViewSet()) return;
   const sel = getMindmapNodeFromSelection();
@@ -17890,12 +18517,15 @@ const toggleBranchGroup = async () => {
   const workbenchEls = ea.getElements();
 
   let newGroupId;
-  let {structuralGroupIds, groupedElementIds} = getStructuralGroupsForNode(branchIds, workbenchEls, info.rootId);
+  let {
+    structuralGroupIds,
+    groupedElementIds
+  } = getStructuralGroupsForNode(branchIds, workbenchEls, info.rootId);
   if (structuralGroupIds.length > 0) {
     //normally there should only be one structural group, however do to a bug in earlier MinMap Builder versions,
     //some branches may have multiple structural groups for the exact same set of nodes.
     structuralGroupIds.forEach(structuralGroupId => {
-      if(getViewGroupElements(structuralGroupId).length === groupedElementIds.length) {
+      if (getViewGroupElements(structuralGroupId).length === groupedElementIds.length) {
         removeGroupFromElements(structuralGroupId, workbenchEls);
       }
     });
@@ -17903,14 +18533,28 @@ const toggleBranchGroup = async () => {
     newGroupId = ea.addToGroup([...branchIds, ...decorationAndCrossLinkIds]);
   }
 
-  await addElementsToView({ captureUpdate: "IMMEDIATELY" });
+  await addElementsToView({
+    captureUpdate: "IMMEDIATELY"
+  });
 
   if (newGroupId) {
     let selectedGroupIds = {};
     selectedGroupIds[newGroupId] = true;
-    ea.viewUpdateScene({appState: {selectedGroupIds, selectedElementIds: {}}});
+    ea.viewUpdateScene({
+      appState: {
+        selectedGroupIds,
+        selectedElementIds: {}
+      }
+    });
   } else {
-    ea.viewUpdateScene({appState: {selectedGroupIds: {}, selectedElementIds: {[sel.id]: true}}});
+    ea.viewUpdateScene({
+      appState: {
+        selectedGroupIds: {},
+        selectedElementIds: {
+          [sel.id]: true
+        }
+      }
+    });
   }
 
   updateUI();
@@ -17927,12 +18571,18 @@ const togglePin = async () => {
     const boundTextElement = ea.getBoundTextElement(sel, true)?.sceneElement;
     const newPinnedState = !(sel.customData?.isPinned === true);
     ea.copyViewElementsToEAforEditing(boundTextElement ? [sel, boundTextElement] : [sel]);
-    ea.addAppendUpdateCustomData(sel.id, { isPinned: newPinnedState });
+    ea.addAppendUpdateCustomData(sel.id, {
+      isPinned: newPinnedState
+    });
     if (boundTextElement && !newPinnedState && boundTextElement.customData?.hasOwnProperty("isPinned")) {
-      ea.addAppendUpdateCustomData(boundTextElement.id, { isPinned: undefined });
+      ea.addAppendUpdateCustomData(boundTextElement.id, {
+        isPinned: undefined
+      });
     }
-    await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
-    if(!autoLayoutDisabled) await refreshMapLayout();
+    await addElementsToView({
+      captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
+    });
+    if (!autoLayoutDisabled) await refreshMapLayout();
     selectNodeInView(sel);
     updateUI();
   }
@@ -17940,24 +18590,37 @@ const togglePin = async () => {
 
 const toggleCheckboxStatus = async () => {
   if (!isViewSet()) return;
-  const sel = getMindmapNodeFromSelection();
-  if (!sel) return;
 
-  const all = ea.getViewElements();
-  // Find the text element specifically (if it's a container, grab its bound text)
-  let textElId = sel.type === "text" ? sel.id : null;
-  if (!textElId && sel.boundElements) {
-    const boundText = sel.boundElements.find(be => be.type === "text");
-    if (boundText) textElId = boundText.id;
+  let targetText = "";
+  let isInputEl = false;
+  let textElId = null;
+  let sel = null;
+
+  if (inputEl && inputEl.value.trim() !== "") {
+    targetText = inputEl.value;
+    isInputEl = true;
+  } else {
+    sel = getMindmapNodeFromSelection();
+    if (!sel) return;
+    const all = ea.getViewElements();
+    const info = getHierarchy(sel, all);
+
+    if (info.rootId === sel.id) return; // General rule: no effect on root node
+
+    textElId = sel.type === "text" ? sel.id : null;
+    if (!textElId && sel.boundElements) {
+      const boundText = sel.boundElements.find(be => be.type === "text");
+      if (boundText) textElId = boundText.id;
+    }
+    if (!textElId) return;
+
+    const textEl = all.find(el => el.id === textElId);
+    if (!textEl) return;
+    targetText = textEl.rawText;
   }
-  if (!textElId) return;
 
-  const textEl = all.find(el => el.id === textElId);
-  if (!textEl) return;
-
-  let rawText = textEl.rawText;
   const taskRegex = /^- \[([ xX])\] (.*)/s; // Regex to catch '- [ ] ' or '- [x] ' including newlines
-  const match = rawText.match(taskRegex);
+  const match = targetText.match(taskRegex);
 
   let newText = "";
   if (match) {
@@ -17969,31 +18632,37 @@ const toggleCheckboxStatus = async () => {
       newText = `${content}`; // Remove task
     }
   } else {
-    newText = `- [ ] ${rawText}`; // Not a task -> make it a task
+    newText = `- [ ] ${targetText}`; // Not a task -> make it a task
   }
 
-  ea.copyViewElementsToEAforEditing([textEl]);
-  const eaEl = ea.getElement(textEl.id);
-  eaEl.rawText = newText;
-  eaEl.text = newText;
-  eaEl.originalText = newText;
-  ea.refreshTextElementSize(eaEl.id);
+  if (isInputEl) {
+    inputEl.value = newText;
+    updateUI();
+  } else {
+    const all = ea.getViewElements();
+    const textEl = all.find(el => el.id === textElId);
+    ea.copyViewElementsToEAforEditing([textEl]);
+    const eaEl = ea.getElement(textEl.id);
+    eaEl.rawText = newText;
+    eaEl.text = newText;
+    eaEl.originalText = newText;
+    ea.refreshTextElementSize(eaEl.id);
 
-  await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
+    await addElementsToView({
+      captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
+    });
 
-  // Excalidraw dynamically updates the container size when text changes
-  if (eaEl.containerId) {
-     const updatedContainer = ea.getViewElements().find(el => el.id === eaEl.containerId);
-     if(updatedContainer) api().updateContainerSize([updatedContainer]);
-  }
+    if (eaEl.containerId) {
+      const updatedContainer = ea.getViewElements().find(el => el.id === eaEl.containerId);
+      if (updatedContainer) api().updateContainerSize([updatedContainer]);
+    }
 
-  // Refresh Map layout in case the new checkbox padding alters the box width
-  if (!autoLayoutDisabled) {
-     const info = getHierarchy(sel, ea.getViewElements());
-     await triggerGlobalLayout(info.rootId);
+    if (!autoLayoutDisabled) {
+      const info = getHierarchy(sel, ea.getViewElements());
+      await triggerGlobalLayout(info.rootId);
+    }
   }
 };
-
 /**
  * Toggles the selected node between an embed (![[...]]) and a link ([[...|alias]]).
  * Cleans the markdown '# ' characters when mapping the section name to the alias.
@@ -18014,7 +18683,7 @@ const toggleEmbedStatus = async () => {
   if (!match) return;
 
   const isEmbed = match[1] === "!";
-  const linkCore = match[2]; 
+  const linkCore = match[2];
   const sectionRef = match[3];
 
   let newText = "";
@@ -18029,7 +18698,7 @@ const toggleEmbedStatus = async () => {
   // Hack into the established edit flow
   editingNodeId = sel.id;
   inputEl.value = newText;
-  
+
   // Preserve ontology 
   const incomingArrow = all.find(a => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === sel.id);
   ontologyEl.value = incomingArrow ? (ea.getBoundTextElement(incomingArrow, true)?.sceneElement?.rawText || "") : "";
@@ -18057,8 +18726,8 @@ const toggleBox = async (shape = "rectangle") => {
   const allElements = ea.getViewElements();
   const arrowsToUpdate = allElements.filter(
     (el) =>
-      el.type === "arrow" &&
-      (ids.includes(el.startBinding?.elementId) || ids.includes(el.endBinding?.elementId)),
+    el.type === "arrow" &&
+    (ids.includes(el.startBinding?.elementId) || ids.includes(el.endBinding?.elementId)),
   );
 
   if (hasContainer) {
@@ -18067,20 +18736,22 @@ const toggleBox = async (shape = "rectangle") => {
     const container = allElements.find((el) => el.id === containerId);
     ea.copyViewElementsToEAforEditing(arrowsToUpdate.concat(sel, container));
     const textEl = ea.getElement(sel.id);
-    
+
     // Transfer all custom data from the container back to the text element
-    const dataToCopy = { ...(container.customData || {}) };
+    const dataToCopy = {
+      ...(container.customData || {})
+    };
     ea.addAppendUpdateCustomData(textEl.id, dataToCopy);
-    
+
     textEl.containerId = null;
-    textEl.boundElements =[]; //not null because I will add bound arrows a bit further down
+    textEl.boundElements = []; //not null because I will add bound arrows a bit further down
     ea.getElement(containerId).isDeleted = true;
   } else {
     ea.copyViewElementsToEAforEditing(arrowsToUpdate.concat(sel));
     const depth = getHierarchy(sel, allElements)?.depth || 0;
 
     oldBindId = sel.id;
-    
+
     let rectId;
     if (shape === "ellipse") {
       rectId = ea.addEllipse(sel.x - padding, sel.y - padding, sel.width + padding * 2, sel.height + padding * 2);
@@ -18089,43 +18760,58 @@ const toggleBox = async (shape = "rectangle") => {
     } else {
       rectId = ea.addRect(sel.x - padding, sel.y - padding, sel.width + padding * 2, sel.height + padding * 2);
     }
-    
+
     finalElId = newBindId = rectId;
     const rect = ea.getElement(rectId);
-    
+
     // Transfer all custom data from the text element to the new container
-    const dataToCopy = { ...(sel.customData || {}) };
+    const dataToCopy = {
+      ...(sel.customData || {})
+    };
     ea.addAppendUpdateCustomData(rectId, dataToCopy);
-    
+
     rect.strokeColor = ea.getCM(sel.strokeColor).stringRGB();
     rect.strokeWidth = getStrokeWidthForDepth(depth);
     rect.roughness = getAppState().currentItemRoughness;
-    rect.roundness = (roundedCorners) ? { type: 3 } : null;
+    rect.roundness = (roundedCorners) ? {
+      type: 3
+    } : null;
     rect.backgroundColor = "transparent";
 
     const textEl = ea.getElement(sel.id);
     textEl.containerId = rectId;
     textEl.boundElements = null;
-    rect.boundElements =[{ type: "text", id: sel.id }];
-    rect.groupIds = sel.groupIds ? [...sel.groupIds] :[];
+    rect.boundElements = [{
+      type: "text",
+      id: sel.id
+    }];
+    rect.groupIds = sel.groupIds ? [...sel.groupIds] : [];
   }
   ea.getElements()
     .filter((el) => el.type === "arrow")
     .forEach((a) => {
       if (a.startBinding?.elementId === oldBindId) {
         a.startBinding.elementId = newBindId;
-        ea.getElement(newBindId).boundElements.push({ type: "arrow", id: a.id });
+        ea.getElement(newBindId).boundElements.push({
+          type: "arrow",
+          id: a.id
+        });
       }
       if (a.endBinding?.elementId === oldBindId) {
         a.endBinding.elementId = newBindId;
-        ea.getElement(newBindId).boundElements.push({ type: "arrow", id: a.id });
+        ea.getElement(newBindId).boundElements.push({
+          type: "arrow",
+          id: a.id
+        });
       }
     });
 
-  ea.getElement(oldBindId).boundElements =[];
+  ea.getElement(oldBindId).boundElements = [];
   delete ea.getElement(oldBindId).customData;
 
-  await addElementsToView({ captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY" });
+  await addElementsToView({
+    captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
+  });
 
   if (!hasContainer) {
     const textElement = ea.getViewElements().find((el) => el.id === sel.id);
@@ -18137,7 +18823,7 @@ const toggleBox = async (shape = "rectangle") => {
     api().updateContainerSize([ea.getViewElements().find((el) => el.id === newBindId)]);
   }
   selectNodeInView(finalElId);
-  if(!autoLayoutDisabled) await refreshMapLayout();
+  if (!autoLayoutDisabled) await refreshMapLayout();
   updateUI();
 };
 
@@ -18155,11 +18841,13 @@ const toggleBoundary = async () => {
 
     if (eaSel.customData?.boundaryId) {
       const b = ea.getViewElements().find(el => el.id === eaSel.customData.boundaryId);
-      if(b) {
+      if (b) {
         ea.copyViewElementsToEAforEditing([b]);
         ea.getElement(b.id).isDeleted = true;
       }
-      ea.addAppendUpdateCustomData(sel.id, { boundaryId: undefined });
+      ea.addAppendUpdateCustomData(sel.id, {
+        boundaryId: undefined
+      });
     } else {
       const id = ea.generateElementId();
       newBoundaryId = id;
@@ -18167,7 +18855,10 @@ const toggleBoundary = async () => {
       const boundaryEl = {
         id: id,
         type: "line",
-        x: sel.x, y: sel.y, width: 1, height: 1,
+        x: sel.x,
+        y: sel.y,
+        width: 1,
+        height: 1,
         angle: 0,
         roughness: st.currentItemRoughness,
         strokeColor: sel.strokeColor,
@@ -18176,12 +18867,20 @@ const toggleBoundary = async () => {
         strokeWidth: 2,
         strokeStyle: "solid",
         opacity: 30,
-        points: [[0,0], [1,1], [0,0]],
+        points: [
+          [0, 0],
+          [1, 1],
+          [0, 0]
+        ],
         polygon: true,
         locked: false,
         groupIds: sel.groupIds || [],
-        customData: {isBoundary: true},
-        roundness: arrowType === "curved" ? {type: 2} : null,
+        customData: {
+          isBoundary: true
+        },
+        roundness: arrowType === "curved" ? {
+          type: 2
+        } : null,
       };
 
       if (sel.groupIds.length > 0 && isMindmapGroup(sel.groupIds[0], ea.getViewElements())) {
@@ -18191,10 +18890,15 @@ const toggleBoundary = async () => {
       }
 
       ea.elementsDict[id] = boundaryEl;
-      ea.addAppendUpdateCustomData(sel.id, { boundaryId: id });
+      ea.addAppendUpdateCustomData(sel.id, {
+        boundaryId: id
+      });
     }
 
-    await addElementsToView({ newElementsOnTop: false, captureUpdate: "EVENTUALLY" });
+    await addElementsToView({
+      newElementsOnTop: false,
+      captureUpdate: "EVENTUALLY"
+    });
 
     if (newBoundaryId) {
       const els = ea.getViewElements();
@@ -18236,7 +18940,7 @@ let branchScaleDropdown, baseWidthSlider;
 let colorToggle, widthSlider, centerToggle;
 let fillSweepToggleSetting, fillSweepToggle;
 let pinBtn, refreshBtn, cutBtn, copyBtn, boxBtn, dockBtn, editBtn;
-let toggleGroupBtn, zoomBtn, focusBtn, boundaryBtn;
+let toggleGroupBtn, zoomBtn, focusBtn, boundaryBtn, calendarBtn;
 let submapRootBtn;
 let foldBtnL0, foldBtnL1, foldBtnAll;
 let floatingGroupBtn, floatingBoxBtn, floatingZoomBtn;
@@ -18259,7 +18963,7 @@ const registerKeydownHandler = (host, handler) => {
     window.MindmapBuilder.keydownHandlers = [];
   }
   host.addEventListener("keydown", handler, true);
-  window.MindmapBuilder.keydownHandlers.push(()=>host.removeEventListener("keydown", handler, true))
+  window.MindmapBuilder.keydownHandlers.push(() => host.removeEventListener("keydown", handler, true))
 };
 
 const registerObsidianHotkeyOverrides = () => {
@@ -18284,7 +18988,7 @@ const registerObsidianHotkeyOverrides = () => {
     }
   });
 
-  if(handlers.length === 0) return;
+  if (handlers.length === 0) return;
 
   window.MindmapBuilder.popObsidianHotkeyScope = () => {
     handlers.forEach(h => keymapScope.unregister(h));
@@ -18295,7 +18999,9 @@ const registerObsidianHotkeyOverrides = () => {
 const revealInputEl = () => {
   const undockPreference = getVal(K_UNDOCKED, false);
   if (undockPreference && !isUndocked) {
-    toggleDock({saveSetting: false});
+    toggleDock({
+      saveSetting: false
+    });
     return true;
   } else if (!undockPreference && !isUndocked && ea.sidepanelTab && !ea.sidepanelTab.isVisible()) {
     ea.sidepanelTab.reveal();
@@ -18306,11 +19012,11 @@ const revealInputEl = () => {
 const focusInputEl = () => {
   revealInputEl();
   setTimeout(() => {
-    if(isRecordingHotkey) return;
-    const target = isOntologyFocused
-      ? (ontologyEl.style.display === "none" ? inputEl : ontologyEl)
-      : inputEl;
-    if(!target || target.disabled) {
+    if (isRecordingHotkey) return;
+    const target = isOntologyFocused ?
+      (ontologyEl.style.display === "none" ? inputEl : ontologyEl) :
+      inputEl;
+    if (!target || target.disabled) {
       return;
     }
     target.focus();
@@ -18350,26 +19056,27 @@ const disableUI = () => {
   setButtonDisabled(boundaryBtn, true);
   setButtonDisabled(submapRootBtn, true);
   setButtonDisabled(toggleCheckboxBtn, true);
+  setButtonDisabled(calendarBtn, true); // Added calendarBtn to default disabled state
   setButtonDisabled(toggleEmbedBtn, true);
   setButtonDisabled(floatingGroupBtn, true);
   setButtonDisabled(floatingBoxBtn, true);
   setButtonDisabled(floatingZoomBtn, true);
   setButtonDisabled(autoLayoutToggle, true);
   editingNodeId = null;
-  if(editBtn) editBtn.extraSettingsEl.style.color = "";
+  if (editBtn) editBtn.extraSettingsEl.style.color = "";
 };
 
 const updateUI = (sel) => {
   if (!isViewSet()) {
-    if(inputEl) inputEl.disabled = true;
-    if(ontologyEl) ontologyEl.style.display = "none";
+    if (inputEl) inputEl.disabled = true;
+    if (ontologyEl) ontologyEl.style.display = "none";
     disableUI();
     return;
   }
-  if(inputEl) inputEl.disabled = false;
+  if (inputEl) inputEl.disabled = false;
   const all = ea.getViewElements();
   sel = sel ?? getMindmapNodeFromSelection();
-  if(ontologyEl) ontologyEl.style.display = sel ? "" : "none";
+  if (ontologyEl) ontologyEl.style.display = sel ? "" : "none";
 
   if (sel) {
     disableTabEvents = true;
@@ -18390,7 +19097,14 @@ const updateUI = (sel) => {
 
     if (toggleCheckboxBtn) {
       const isTextNode = sel.type === "text" || (sel.boundElements && sel.boundElements.some(be => be.type === "text"));
-      setButtonDisabled(toggleCheckboxBtn, !isTextNode);
+      const canEditTask = (isTextNode && !isMasterRootSelected) || (inputEl && inputEl.value.trim() !== "");
+      setButtonDisabled(toggleCheckboxBtn, !canEditTask);
+    }
+
+    if (calendarBtn) {
+      const isTextNode = sel.type === "text" || (sel.boundElements && sel.boundElements.some(be => be.type === "text"));
+      const canEditTask = (isTextNode && !isMasterRootSelected) || (inputEl && inputEl.value.trim() !== "");
+      setButtonDisabled(calendarBtn, !canEditTask);
     }
 
     if (toggleEmbedBtn) {
@@ -18454,9 +19168,8 @@ const updateUI = (sel) => {
     setButtonDisabled(importOutlineBtn, !isLinkedFile);
     setButtonDisabled(autoLayoutToggle, false);
 
-    // NEW: Load settings from root customData if they exist, otherwise keep current global
     const cd = root?.customData ?? {};
-    
+
     const mapStrategy = cd?.growthMode;
     if (typeof mapStrategy === "string" && mapStrategy !== currentModalGrowthMode && GROWTH_TYPES.includes(mapStrategy)) {
       currentModalGrowthMode = mapStrategy;
@@ -18482,45 +19195,45 @@ const updateUI = (sel) => {
 
     const mapFontScale = cd?.fontsizeScale ?? getVal(K_FONTSIZE, "Normal Scale");
     if (mapFontScale !== fontsizeScale) {
-        fontsizeScale = mapFontScale;
-        if (fontSizeDropdown) fontSizeDropdown.setValue(fontsizeScale);
+      fontsizeScale = mapFontScale;
+      if (fontSizeDropdown) fontSizeDropdown.setValue(fontsizeScale);
     }
 
     const mapMulticolor = typeof cd?.multicolor === "boolean" ? cd.multicolor : getVal(K_MULTICOLOR, true);
     if (mapMulticolor !== multicolor) {
-        multicolor = mapMulticolor;
-        if (colorToggle) colorToggle.setValue(multicolor);
+      multicolor = mapMulticolor;
+      if (colorToggle) colorToggle.setValue(multicolor);
     }
 
     const mapBoxChildren = typeof cd?.boxChildren === "boolean" ? cd.boxChildren : getVal(K_BOX, false);
     if (mapBoxChildren !== boxChildren) {
-        boxChildren = mapBoxChildren;
-        if (boxToggle) boxToggle.setValue(boxChildren);
+      boxChildren = mapBoxChildren;
+      if (boxToggle) boxToggle.setValue(boxChildren);
     }
 
     const mapRounded = typeof cd?.roundedCorners === "boolean" ? cd.roundedCorners : getVal(K_ROUND, false);
     if (mapRounded !== roundedCorners) {
-        roundedCorners = mapRounded;
-        if (roundToggle) roundToggle.setValue(roundedCorners);
+      roundedCorners = mapRounded;
+      if (roundToggle) roundToggle.setValue(roundedCorners);
     }
 
     let defaultWidth = parseInt(getVal(K_WIDTH, 450));
     if (isNaN(defaultWidth)) defaultWidth = 450;
 
     const mapWidth = typeof cd?.maxWrapWidth === "number" ? cd.maxWrapWidth : defaultWidth;
-    
+
     if (mapWidth !== maxWidth) {
-        maxWidth = mapWidth;
-        if (widthSlider) {
-          widthSlider.setValue(maxWidth);
-          if (widthSlider.valLabelEl) widthSlider.valLabelEl.setText(`${maxWidth}px`);
-        }
+      maxWidth = mapWidth;
+      if (widthSlider) {
+        widthSlider.setValue(maxWidth);
+        if (widthSlider.valLabelEl) widthSlider.valLabelEl.setText(`${maxWidth}px`);
+      }
     }
 
     const mapSolid = typeof cd?.isSolidArrow === "boolean" ? cd.isSolidArrow : getVal(K_ARROWSTROKE, true);
     if (mapSolid !== isSolidArrow) {
-        isSolidArrow = mapSolid;
-        if (strokeToggle) strokeToggle.setValue(!isSolidArrow);
+      isSolidArrow = mapSolid;
+      if (strokeToggle) strokeToggle.setValue(!isSolidArrow);
     }
 
     const mapBranchScale = (cd?.branchScale && BRANCH_SCALE_TYPES.includes(cd.branchScale)) ? cd.branchScale : getVal(K_BRANCH_SCALE, "Hierarchical");
@@ -18531,7 +19244,7 @@ const updateUI = (sel) => {
 
     let defaultBaseStroke = parseFloat(getVal(K_BASE_WIDTH, 6));
     if (isNaN(defaultBaseStroke)) defaultBaseStroke = 6;
-    
+
     const mapBaseStroke = typeof cd?.baseStrokeWidth === "number" ? cd.baseStrokeWidth : defaultBaseStroke;
 
     if (mapBaseStroke !== baseStrokeWidth) {
@@ -18544,8 +19257,8 @@ const updateUI = (sel) => {
 
     const mapCenter = typeof cd?.centerText === "boolean" ? cd.centerText : getVal(K_CENTERTEXT, true);
     if (mapCenter !== centerText) {
-        centerText = mapCenter;
-        if (centerToggle) centerToggle.setValue(centerText);
+      centerText = mapCenter;
+      if (centerToggle) centerToggle.setValue(centerText);
     }
 
     const mapFillSweep = typeof cd?.fillSweep === "boolean" ? cd.fillSweep : getVal(K_FILL_SWEEP, false);
@@ -18556,11 +19269,14 @@ const updateUI = (sel) => {
 
     const mapLayoutSettings = cd?.layoutSettings;
     if (mapLayoutSettings && typeof mapLayoutSettings === "object") {
-      layoutSettings = { ...layoutSettings, ...mapLayoutSettings };
+      layoutSettings = {
+        ...layoutSettings,
+        ...mapLayoutSettings
+      };
     } else {
       const globalDefaults = getVal(K_LAYOUT, {});
       Object.keys(LAYOUT_METADATA).forEach(k => {
-          layoutSettings[k] = globalDefaults[k] !== undefined ? globalDefaults[k] : LAYOUT_METADATA[k].def;
+        layoutSettings[k] = globalDefaults[k] !== undefined ? globalDefaults[k] : LAYOUT_METADATA[k].def;
       });
     }
 
@@ -18593,16 +19309,16 @@ const startEditing = () => {
 
   setTimeout(() => {
     inputEl.value = text;
-    
+
     // Populate Ontology (Arrow Label)
     // Find incoming arrow
     const incomingArrow = all.find(
-      (a) => a.type === "arrow" && 
-      a.customData?.isBranch && 
+      (a) => a.type === "arrow" &&
+      a.customData?.isBranch &&
       a.endBinding?.elementId === sel.id
     );
-    
-    ontologyEl.value  = ea.getBoundTextElement(incomingArrow, true)?.sceneElement?.rawText || "";
+
+    ontologyEl.value = ea.getBoundTextElement(incomingArrow, true)?.sceneElement?.rawText || "";
 
     editingNodeId = sel.id;
     updateUI();
@@ -18618,9 +19334,9 @@ const commitEdit = async () => {
   if (!targetNode) return;
 
   // Identify visual node (container or element) for positioning
-  const visualNode = targetNode.containerId 
-    ? all.find(el => el.id === targetNode.containerId) 
-    : targetNode;
+  const visualNode = targetNode.containerId ?
+    all.find(el => el.id === targetNode.containerId) :
+    targetNode;
 
   // Identify text element within container
   let textElId = targetNode.id;
@@ -18629,25 +19345,25 @@ const commitEdit = async () => {
     if (boundText) textElId = boundText.id;
   }
   const textEl = all.find(el => el.id === textElId && el.type === "text");
-  
+
   // Get values from BOTH inputs
   const textInput = inputEl.value;
   const ontologyInput = ontologyEl.value;
-  
+
   // Retrieve current text representation (raw, short path for images) to compare against input
   const currentText = getTextFromNode(all, visualNode, true, true);
-  
+
   // Find arrow pointing TO this node to check current ontology
   // We need this for diffing, and potentially for updating later
   const incomingArrow = all.find(
-    (a) => a.type === "arrow" && 
-    a.customData?.isBranch && 
+    (a) => a.type === "arrow" &&
+    a.customData?.isBranch &&
     a.endBinding?.elementId === targetNode.id // Target node might be container
   );
-  
-  const currentOntology = incomingArrow 
-    ? (ea.getBoundTextElement(incomingArrow, true)?.sceneElement?.rawText || "")
-    : "";
+
+  const currentOntology = incomingArrow ?
+    (ea.getBoundTextElement(incomingArrow, true)?.sceneElement?.rawText || "") :
+    "";
 
   const textChanged = textInput !== currentText;
   const ontologyChanged = ontologyInput !== currentOntology;
@@ -18670,7 +19386,7 @@ const commitEdit = async () => {
 
   // Check for type conversion (e.g. Text -> Image) or non-text update
   const isTypeChange = (textEl && newType !== "text") || (!textEl && newType !== targetNode.type);
-  
+
   // Only consider it a non-text update (which requires recreation) if the text/path actually changed.
   // If only ontology changed on an image node, we treat it as a standard update (else block).
   const isNonTextUpdate = !textEl && newType === targetNode.type && textChanged;
@@ -18679,14 +19395,14 @@ const commitEdit = async () => {
     // ---------------------------------------------------------
     // Path A: Recreate Element (Type change or Image path change)
     // ---------------------------------------------------------
-    
+
     // 1. Calculate center position
     const cx = visualNode.x + visualNode.width / 2;
     const cy = visualNode.y + visualNode.height / 2;
 
     const info = getHierarchy(visualNode, all);
     const depth = info.depth;
-    
+
     let newNodeId;
 
     // 2. Create new element based on type
@@ -18716,7 +19432,10 @@ const commitEdit = async () => {
       el.x = cx - el.width / 2;
       el.y = cy - el.height / 2;
     } else if (newType === "embeddable") {
-      newNodeId = addEmbeddableNode({ url:embeddableUrl, depth });
+      newNodeId = addEmbeddableNode({
+        url: embeddableUrl,
+        depth
+      });
       const el = ea.getElement(newNodeId);
       el.x = cx - el.width / 2;
       el.y = cy - el.height / 2;
@@ -18725,7 +19444,7 @@ const commitEdit = async () => {
       if (ea.style.strokeColor === "transparent") ea.style.strokeColor = "black";
       ea.style.fontFamily = st.currentItemFontFamily;
       const fontScale = getFontScale(fontsizeScale);
-      ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)]; 
+      ea.style.fontSize = fontScale[Math.min(depth, fontScale.length - 1)];
       ea.style.backgroundColor = "transparent";
       ea.style.strokeWidth = getStrokeWidthForDepth(depth);
       if (incomingArrow) {
@@ -18736,11 +19455,11 @@ const commitEdit = async () => {
       const renderedText = await parseText(textInput);
       const metrics = ea.measureText(renderedText);
       const shouldWrap = metrics.width > maxWidth;
-      
+
       let finalWidth = Math.ceil(metrics.width);
       let finalHeight = metrics.height;
       let finalWrappedText = renderedText;
-      
+
       if (shouldWrap) {
         const res = await getAdjustedMaxWidth(textInput, maxWidth);
         finalWidth = res.width;
@@ -18749,12 +19468,12 @@ const commitEdit = async () => {
       }
 
       newNodeId = ea.addText(cx, cy, renderedText, {
-          textAlign: "center",
-          textVerticalAlign: "middle",
-          box: boxChildren ? "rectangle" : false,
-          width: shouldWrap ? finalWidth : undefined,
-          height: shouldWrap ? finalHeight : undefined,
-          autoResize: boxChildren ? false : !shouldWrap
+        textAlign: "center",
+        textVerticalAlign: "middle",
+        box: boxChildren ? "rectangle" : false,
+        width: shouldWrap ? finalWidth : undefined,
+        height: shouldWrap ? finalHeight : undefined,
+        autoResize: boxChildren ? false : !shouldWrap
       });
 
       const newElement = ea.getElement(newNodeId);
@@ -18777,10 +19496,10 @@ const commitEdit = async () => {
     scaleDecorations(visualNode, newNode, all, info.rootId);
 
     // 3. Migrate custom data fields
-    const keysToCopy =[
-      "mindmapOrder", "isPinned", "growthMode", "autoLayoutDisabled", 
+    const keysToCopy = [
+      "mindmapOrder", "isPinned", "growthMode", "autoLayoutDisabled",
       "isFolded", "foldIndicatorId", "foldState", "boundaryId",
-      "fontsizeScale", "multicolor", "boxChildren", "roundedCorners", 
+      "fontsizeScale", "multicolor", "boxChildren", "roundedCorners",
       "maxWrapWidth", "isSolidArrow", "centerText", "arrowType",
       "fillSweep", "branchScale", "baseStrokeWidth", "layoutSettings"
     ];
@@ -18794,32 +19513,35 @@ const commitEdit = async () => {
 
     // 4. Migrate Decorations
     if (visualNode.groupIds && visualNode.groupIds.length > 0) {
-      newNode.groupIds =[...visualNode.groupIds];
+      newNode.groupIds = [...visualNode.groupIds];
     }
 
     // 5. Rewire arrows and adjust cross-links
     const idsToReplace = [visualNode.id];
     if (textEl) idsToReplace.push(textEl.id);
 
-    const connectedArrows = all.filter(el => 
-      el.type === "arrow" && 
+    const connectedArrows = all.filter(el =>
+      el.type === "arrow" &&
       (idsToReplace.includes(el.startBinding?.elementId) || idsToReplace.includes(el.endBinding?.elementId))
     );
 
     if (connectedArrows.length > 0) {
       ea.copyViewElementsToEAforEditing(connectedArrows);
-      const newBoundElements =[];
-      
+      const newBoundElements = [];
+
       connectedArrows.forEach(arrow => {
         const eaArrow = ea.getElement(arrow.id);
         let isConnected = false;
-        
+
         // Calculate scale ratios for updating manual arrow points
         const ratioX = visualNode.width > 1 ? newNode.width / visualNode.width : 1;
         const ratioY = visualNode.height > 1 ? newNode.height / visualNode.height : 1;
 
         if (idsToReplace.includes(eaArrow.startBinding?.elementId)) {
-          eaArrow.startBinding = { ...eaArrow.startBinding, elementId: newNodeId };
+          eaArrow.startBinding = {
+            ...eaArrow.startBinding,
+            elementId: newNodeId
+          };
           isConnected = true;
           // Scale start point relative to center
           if (eaArrow.points.length > 0) {
@@ -18832,11 +19554,14 @@ const commitEdit = async () => {
             eaArrow.points[0] = [eaArrow.points[0][0] + (newAbsX - absX), eaArrow.points[0][1] + (newAbsY - absY)];
           }
         }
-        
+
         if (idsToReplace.includes(eaArrow.endBinding?.elementId)) {
-          eaArrow.endBinding = { ...eaArrow.endBinding, elementId: newNodeId };
+          eaArrow.endBinding = {
+            ...eaArrow.endBinding,
+            elementId: newNodeId
+          };
           isConnected = true;
-          
+
           // --- Update Ontology for incoming arrow ---
           // Since we are rewiring, this is the arrow pointing TO the new node
           addUpdateArrowLabel(eaArrow, ontologyInput);
@@ -18853,12 +19578,15 @@ const commitEdit = async () => {
             eaArrow.points[lastIdx] = [eaArrow.points[lastIdx][0] + (newAbsX - absX), eaArrow.points[lastIdx][1] + (newAbsY - absY)];
           }
         }
-        
+
         if (isConnected) {
-            newBoundElements.push({ type: "arrow", id: arrow.id });
+          newBoundElements.push({
+            type: "arrow",
+            id: arrow.id
+          });
         }
       });
-      
+
       if (newBoundElements.length > 0) {
         newNode.boundElements = [...(newNode.boundElements || []), ...newBoundElements];
       }
@@ -18868,19 +19596,19 @@ const commitEdit = async () => {
     ea.copyViewElementsToEAforEditing([visualNode]);
     ea.getElement(visualNode.id).isDeleted = true;
     if (textEl && textEl.id !== visualNode.id) {
-       ea.copyViewElementsToEAforEditing([textEl]);
-       ea.getElement(textEl.id).isDeleted = true;
+      ea.copyViewElementsToEAforEditing([textEl]);
+      ea.getElement(textEl.id).isDeleted = true;
     }
 
     await addElementsToView({
       captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
     });
-    
+
     // Trigger global layout if enabled
     if (!autoLayoutDisabled) {
       const newViewElements = ea.getViewElements();
       const newViewNode = newViewElements.find(el => el.id === newNodeId);
-      if(newViewNode) {
+      if (newViewNode) {
         selectNodeInView(newViewNode);
         const newInfo = getHierarchy(newViewNode, newViewElements);
         await triggerGlobalLayout(newInfo.rootId, false, true);
@@ -18898,25 +19626,25 @@ const commitEdit = async () => {
       ea.copyViewElementsToEAforEditing([incomingArrow]);
       addUpdateArrowLabel(ea.getElement(incomingArrow.id), ontologyInput);
     }
-    
+
     // 2. Update Text Element Properties
     // Only perform if text has changed and it is a Text element (images/embeddables handled in Path A if content changes)
     if (textChanged && textEl) {
       ea.copyViewElementsToEAforEditing([textEl]);
       const eaEl = ea.getElement(textEl.id);
-      
+
       const renderedText = await parseText(textInput);
-      
+
       eaEl.rawText = textInput;
       eaEl.originalText = renderedText;
-      
+
       // Refresh family/size in case global settings changed, though this is optional
       ea.style.fontFamily = eaEl.fontFamily;
       ea.style.fontSize = eaEl.fontSize;
 
       const metrics = ea.measureText(renderedText);
       const shouldWrap = metrics.width > maxWidth;
-      
+
       if (!shouldWrap) {
         eaEl.autoResize = true;
         eaEl.width = Math.ceil(metrics.width);
@@ -18935,7 +19663,7 @@ const commitEdit = async () => {
 
     // 3. Save Changes
     const hierarchyNode = targetNode.containerId ? all.find(el => el.id === targetNode.containerId) : textEl;
-    
+
     await addElementsToView({
       captureUpdate: !hierarchyNode || autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
     }); //in case text was changed to image
@@ -18967,22 +19695,28 @@ const commitEdit = async () => {
 const renderHelp = (container) => {
   helpContainer = container.createDiv();
   detailsEl = helpContainer.createEl("details");
-  const summary = detailsEl.createEl("summary", { 
-    attr: { style: "cursor: pointer;" }
+  const summary = detailsEl.createEl("summary", {
+    attr: {
+      style: "cursor: pointer;"
+    }
   });
-  
+
   // Title
-  summary.createSpan({ 
-    text: t("HELP_SUMMARY"), 
-    attr: { style: "font-weight: bold;" } 
+  summary.createSpan({
+    text: t("HELP_SUMMARY"),
+    attr: {
+      style: "font-weight: bold;"
+    }
   });
-  
+
   // Version Number
-  summary.createSpan({ 
-    text: VERSION, 
-    attr: { style: "float: right; color: var(--text-muted); font-size: 0.8em;" } 
+  summary.createSpan({
+    text: VERSION,
+    attr: {
+      style: "float: right; color: var(--text-muted); font-size: 0.8em;"
+    }
   });
-  
+
   ea.obsidian.MarkdownRenderer.render(app, getInstructions(), detailsEl.createDiv(), "", ea.plugin);
 };
 
@@ -19003,9 +19737,13 @@ class PaletteManagerModal extends ea.FloatingModal {
   }
 
   display() {
-    const { contentEl } = this;
+    const {
+      contentEl
+    } = this;
     contentEl.empty();
-    contentEl.createEl("h2", { text: t("MODAL_PALETTE_TITLE") });
+    contentEl.createEl("h2", {
+      text: t("MODAL_PALETTE_TITLE")
+    });
 
     /* --- Global Toggles --- */
     new ea.obsidian.Setting(contentEl)
@@ -19050,7 +19788,9 @@ class PaletteManagerModal extends ea.FloatingModal {
         preview.style.border = "1px solid var(--background-modifier-border)";
         preview.style.borderRadius = "4px";
 
-        nameEl.createSpan({ text: color });
+        nameEl.createSpan({
+          text: color
+        });
 
         // Actions
         row
@@ -19060,8 +19800,7 @@ class PaletteManagerModal extends ea.FloatingModal {
             .setDisabled(index === 0)
             .onClick(() => {
               if (index === 0) return;
-              [this.settings.colors[index - 1], this.settings.colors[index]] =
-              [this.settings.colors[index], this.settings.colors[index - 1]];
+              [this.settings.colors[index - 1], this.settings.colors[index]] = [this.settings.colors[index], this.settings.colors[index - 1]];
               this.save();
               this.display();
             }))
@@ -19071,8 +19810,7 @@ class PaletteManagerModal extends ea.FloatingModal {
             .setDisabled(index === this.settings.colors.length - 1)
             .onClick(() => {
               if (index === this.settings.colors.length - 1) return;
-              [this.settings.colors[index + 1], this.settings.colors[index]] =
-              [this.settings.colors[index], this.settings.colors[index + 1]];
+              [this.settings.colors[index + 1], this.settings.colors[index]] = [this.settings.colors[index], this.settings.colors[index + 1]];
               this.save();
               this.display();
             }))
@@ -19089,7 +19827,7 @@ class PaletteManagerModal extends ea.FloatingModal {
             .setTooltip(t("TOOLTIP_DELETE_COLOR"))
             .onClick(() => {
               this.settings.colors.splice(index, 1);
-              if(this.editIndex === index) this.editIndex = -1;
+              if (this.editIndex === index) this.editIndex = -1;
               this.save();
               this.display();
             }));
@@ -19098,17 +19836,21 @@ class PaletteManagerModal extends ea.FloatingModal {
       contentEl.createEl("hr");
 
       // --- Add/Edit Area ---
-      contentEl.createEl("h4", { text: this.editIndex === -1 ? t("HEADING_ADD_NEW_COLOR") : t("HEADING_EDIT_COLOR") });
+      contentEl.createEl("h4", {
+        text: this.editIndex === -1 ? t("HEADING_ADD_NEW_COLOR") : t("HEADING_EDIT_COLOR")
+      });
 
       const getHex = (val) => {
         const cm = ea.getCM(val);
-        return cm ? cm.stringHEX({alpha: false}) : "#000000";
+        return cm ? cm.stringHEX({
+          alpha: false
+        }) : "#000000";
       };
 
       const updateEditorState = (val, textComp, pickerComp) => {
         this.tempColor = val;
-        if(textComp) textComp.inputEl.value = val;
-        if(pickerComp) pickerComp.setValue(getHex(val));
+        if (textComp) textComp.inputEl.value = val;
+        if (pickerComp) pickerComp.setValue(getHex(val));
       };
 
       let textComponent, pickerComponent;
@@ -19150,7 +19892,9 @@ class PaletteManagerModal extends ea.FloatingModal {
       actionContainer.style.marginTop = "10px";
 
       if (this.editIndex !== -1) {
-        const cancelBtn = actionContainer.createEl("button", { text: t("BUTTON_CANCEL_EDIT") });
+        const cancelBtn = actionContainer.createEl("button", {
+          text: t("BUTTON_CANCEL_EDIT")
+        });
         cancelBtn.onclick = () => {
           this.editIndex = -1;
           this.tempColor = "#000000";
@@ -19204,7 +19948,9 @@ class LayoutConfigModal extends ea.FloatingModal {
   }
 
   onOpen() {
-    this.display({ preserveSectionState: false });
+    this.display({
+      preserveSectionState: false
+    });
     this.focusDoc = this.contentEl?.ownerDocument ?? document;
     this.focusDoc.addEventListener("focusin", this.focusRefreshHandler, true);
   }
@@ -19240,7 +19986,9 @@ class LayoutConfigModal extends ea.FloatingModal {
     if (currentSig === nextSig) return;
 
     this.settings = nextSettings;
-    this.display({ preserveSectionState: true });
+    this.display({
+      preserveSectionState: true
+    });
   }
 
   triggerUpdate() {
@@ -19252,8 +20000,12 @@ class LayoutConfigModal extends ea.FloatingModal {
     }, 500);
   }
 
-  display({ preserveSectionState = true } = {}) {
-    const { contentEl } = this;
+  display({
+    preserveSectionState = true
+  } = {}) {
+    const {
+      contentEl
+    } = this;
 
     let lastScrollPosition = 0;
     const previousSectionState = {};
@@ -19269,7 +20021,9 @@ class LayoutConfigModal extends ea.FloatingModal {
     }
 
     contentEl.empty();
-    contentEl.createEl("h2", { text: t("MODAL_LAYOUT_TITLE") });
+    contentEl.createEl("h2", {
+      text: t("MODAL_LAYOUT_TITLE")
+    });
 
     const container = contentEl.createDiv();
     container.addClass("layout-settings-container");
@@ -19287,12 +20041,16 @@ class LayoutConfigModal extends ea.FloatingModal {
     const renderSection = (sectionKey, title) => {
       if (!groupedKeys[sectionKey]) return;
 
-      const details = container.createEl("details", { attr: { "data-layout-section": sectionKey } });
+      const details = container.createEl("details", {
+        attr: {
+          "data-layout-section": sectionKey
+        }
+      });
       details.open = preserveSectionState ? (previousSectionState[sectionKey] ?? false) : false;
       details.style.marginBottom = "10px";
       details.style.border = "1px solid var(--background-modifier-border)";
       details.style.borderRadius = "5px";
-      
+
       const summary = details.createEl("summary");
       summary.style.padding = "10px";
       summary.style.fontWeight = "bold";
@@ -19316,7 +20074,7 @@ class LayoutConfigModal extends ea.FloatingModal {
           if (!resetButtonComp) return;
           const isModified = Math.abs(val - meta.def) > 0.0001;
           const el = resetButtonComp.extraSettingsEl;
-          
+
           el.style.opacity = isModified ? "1" : "0";
           el.style.pointerEvents = isModified ? "auto" : "none";
           el.style.cursor = isModified ? "pointer" : "default";
@@ -19400,7 +20158,7 @@ class LayoutConfigModal extends ea.FloatingModal {
 // ---------------------------------------------------------------------------
 const renderInput = (container, isFloating = false) => {
   ignoreFocusChanges = true;
-  setTimeout(() => { 
+  setTimeout(() => {
     ignoreFocusChanges = false;
     lastFocusedInput.focus();
   }, 200);
@@ -19411,6 +20169,7 @@ const renderInput = (container, isFloating = false) => {
   boundaryBtn = panelExpandBtn = null;
   floatingGroupBtn = floatingBoxBtn = floatingZoomBtn = null;
   importOutlineBtn = toggleCheckboxBtn = null;
+  calendarBtn = null;
 
   inputRow = new ea.obsidian.Setting(container);
   let secondaryButtonContainer = null;
@@ -19422,7 +20181,8 @@ const renderInput = (container, isFloating = false) => {
     inputRow.controlEl.style.marginTop = "8px";
   } else {
     container.style.width = "85vw";
-    container.style.maxWidth = "calc((var(--icon-size) + 2 * var(--size-2-3)) * 17)";
+    // Updated max width limit to fit up to 18 icons long as requested
+    container.style.maxWidth = "calc((var(--icon-size) + 2 * var(--size-2-3)) * 18)";
     inputRow.settingEl.style.border = "none";
     inputRow.settingEl.style.padding = "0";
     inputRow.infoEl.style.display = "none";
@@ -19439,16 +20199,16 @@ const renderInput = (container, isFloating = false) => {
 
   // Clear default control element to build custom two-input layout
   inputRow.controlEl.empty();
-  
+
   const wrapper = inputRow.controlEl.createDiv("mindmap-input-wrapper");
-  
+
   // --- Ontology Input ---
   ontologyEl = wrapper.createEl("input", {
     type: "text",
     cls: "mindmap-input-ontology",
     placeholder: t("ONTOLOGY_PLACEHOLDER")
   });
-  
+
   // --- Main Input ---
   inputEl = wrapper.createEl("input", {
     type: "text",
@@ -19517,7 +20277,7 @@ const renderInput = (container, isFloating = false) => {
     `${getActionLabel(ACTION_ADD_FOLLOW_FOCUS)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_FOCUS)}`,
     `${getActionLabel(ACTION_ADD_FOLLOW_ZOOM)} ${getActionHotkeyString(ACTION_ADD_FOLLOW_ZOOM)}`,
   ].join("\n");
-  
+
   inputEl.ariaLabel = ariaHelp;
 
   let dockedButtonContainer;
@@ -19551,14 +20311,14 @@ const renderInput = (container, isFloating = false) => {
     editBtn = btn;
     btn.setIcon("pencil");
     btn.setTooltip(`${t("TOOLTIP_EDIT_NODE")} ${getActionHotkeyString(ACTION_EDIT)}`);
-    btn.extraSettingsEl.setAttr("action",ACTION_EDIT);
+    btn.extraSettingsEl.setAttr("action", ACTION_EDIT);
     btn.onClick(() => performAction(ACTION_EDIT));
   }, false);
 
   addButton((btn) => {
     pinBtn = btn;
     btn.setTooltip(`${t("TOOLTIP_PIN_INIT")} ${getActionHotkeyString(ACTION_PIN)}`)
-    btn.extraSettingsEl.setAttr("action",ACTION_PIN);
+    btn.extraSettingsEl.setAttr("action", ACTION_PIN);
     btn.onClick(() => performAction(ACTION_PIN));
   }, false);
 
@@ -19570,13 +20330,22 @@ const renderInput = (container, isFloating = false) => {
     btn.onClick(() => performAction(ACTION_TOGGLE_CHECKBOX));
   }, true);
 
+  // Added calendar task date ontologies button
+  addButton((btn) => {
+    calendarBtn = btn;
+    btn.setIcon("calendar");
+    btn.setTooltip(`${t("TOOLTIP_CALENDAR")} ${getActionHotkeyString(ACTION_CALENDAR)}`);
+    btn.extraSettingsEl.setAttr("action", ACTION_CALENDAR);
+    btn.onClick(() => performAction(ACTION_CALENDAR));
+  }, true);
+
   addButton((btn) => {
     toggleEmbedBtn = btn;
     btn.setIcon("file-sliders");
     btn.setTooltip(`${t("TOOLTIP_TOGGLE_EMBED")} ${getActionHotkeyString(ACTION_TOGGLE_EMBED)}`);
     btn.extraSettingsEl.setAttr("action", ACTION_TOGGLE_EMBED);
     btn.onClick(() => performAction(ACTION_TOGGLE_EMBED));
-  }, true); 
+  }, true);
 
   toggleFloatingExtras = null;
 
@@ -19588,7 +20357,7 @@ const renderInput = (container, isFloating = false) => {
       if (secondaryButtonContainer) {
         secondaryButtonContainer.style.display = isFloatingPanelExpanded ? "flex" : "none";
         if (floatingInputModal && floatingInputModal.modalEl) {
-            floatingInputModal.modalEl.style.maxHeight = isFloatingPanelExpanded ? "unset" : FLOAT_MODAL_MAX_HEIGHT;
+          floatingInputModal.modalEl.style.maxHeight = isFloatingPanelExpanded ? "unset" : FLOAT_MODAL_MAX_HEIGHT;
         }
       }
     };
@@ -19676,7 +20445,7 @@ const renderInput = (container, isFloating = false) => {
     refreshBtn = btn;
     btn.setIcon("refresh-ccw");
     btn.setTooltip(`${t("TOOLTIP_REFRESH")} ${getActionHotkeyString(ACTION_REARRANGE)}`);
-    btn.extraSettingsEl.setAttr("action",ACTION_REARRANGE);
+    btn.extraSettingsEl.setAttr("action", ACTION_REARRANGE);
     btn.onClick(() => performAction(ACTION_REARRANGE));
   }, true);
 
@@ -19714,7 +20483,7 @@ const renderInput = (container, isFloating = false) => {
   addButton((btn) => {
     dockBtn = btn;
     btn.setIcon(isFloating ? "dock" : "external-link");
-    btn.extraSettingsEl.setAttr("action",ACTION_DOCK_UNDOCK);
+    btn.extraSettingsEl.setAttr("action", ACTION_DOCK_UNDOCK);
     btn.setTooltip(
       `${isFloating ? t("TOOLTIP_DOCK") : t("TOOLTIP_UNDOCK")} ${getActionHotkeyString(ACTION_DOCK_UNDOCK)}`
     );
@@ -19735,15 +20504,15 @@ const renderBody = (contentEl) => {
     ZOOM_TYPES.forEach((key) => d.addOption(key, key));
     d.setValue(zoomLevel);
     d.onChange((v) => {
-        zoomLevel = v;
-        if (disableTabEvents) return;
+      zoomLevel = v;
+      if (disableTabEvents) return;
 
-        setVal(K_ZOOM, v);
-        dirty = true;
-        zoomToFit();
-      });
+      setVal(K_ZOOM, v);
+      dirty = true;
+      zoomToFit();
+    });
   });
-  zoomSetting.addExtraButton(btn=>{
+  zoomSetting.addExtraButton(btn => {
     zoomBtn = btn;
     btn.setIcon("scan-search")
       .setTooltip(`${t("TOOLTIP_ZOOM_CYCLE")} ${getActionHotkeyString(ACTION_ZOOM)}`)
@@ -19766,7 +20535,9 @@ const renderBody = (contentEl) => {
       if (!isViewSet()) return;
       const sel = getMindmapNodeFromSelection();
       if (!sel) return;
-      await updateRootNodeCustomData({ growthMode: v }, sel);
+      await updateRootNodeCustomData({
+        growthMode: v
+      }, sel);
       await refreshMapLayout(sel);
     });
   });
@@ -19777,18 +20548,20 @@ const renderBody = (contentEl) => {
     .addToggle((t) => {
       fillSweepToggle = t;
       t.setValue(fillSweep)
-       .onChange(async (v) => {
-        fillSweep = v;
-        if (disableTabEvents) return;
+        .onChange(async (v) => {
+          fillSweep = v;
+          if (disableTabEvents) return;
 
-        setVal(K_FILL_SWEEP, v);
-        dirty = true;
-        if (!isViewSet()) return;
-        const sel = getMindmapNodeFromSelection();
-        if (!sel) return;
-        await updateRootNodeCustomData({ fillSweep: v }, sel);
-        await refreshMapLayout(sel);
-      })
+          setVal(K_FILL_SWEEP, v);
+          dirty = true;
+          if (!isViewSet()) return;
+          const sel = getMindmapNodeFromSelection();
+          if (!sel) return;
+          await updateRootNodeCustomData({
+            fillSweep: v
+          }, sel);
+          await refreshMapLayout(sel);
+        })
     });
   if (currentModalGrowthMode !== "Radial") {
     fillSweepToggleSetting.settingEl.style.display = "none";
@@ -19799,16 +20572,18 @@ const renderBody = (contentEl) => {
     .addToggle((t) => {
       autoLayoutToggle = t;
       t.setValue(!autoLayoutDisabled)
-      .onChange(async (v) => {
-        const sel = getMindmapNodeFromSelection();
-        if (!sel) return;
-        autoLayoutDisabled = !v;
-        if (disableTabEvents) return;
-        await updateRootNodeCustomData({ autoLayoutDisabled }, sel);
-        await refreshMapLayout(sel);
-      });
+        .onChange(async (v) => {
+          const sel = getMindmapNodeFromSelection();
+          if (!sel) return;
+          autoLayoutDisabled = !v;
+          if (disableTabEvents) return;
+          await updateRootNodeCustomData({
+            autoLayoutDisabled
+          }, sel);
+          await refreshMapLayout(sel);
+        });
     })
-    .addExtraButton(btn=> btn
+    .addExtraButton(btn => btn
       .setIcon("pencil-ruler")
       .setTooltip(t("TOOLTIP_CONFIGURE_LAYOUT"))
       .onClick(() => {
@@ -19818,7 +20593,9 @@ const renderBody = (contentEl) => {
           dirty = true;
           const sel = getMindmapNodeFromSelection();
           if (!sel) return;
-          await updateRootNodeCustomData({ layoutSettings: newSettings }, sel);
+          await updateRootNodeCustomData({
+            layoutSettings: newSettings
+          }, sel);
           const allElements = ea.getViewElements();
           const hierarchy = getHierarchy(sel, allElements);
           const masterRoot = allElements.find((el) => el.id === hierarchy.rootId) ?? sel;
@@ -19831,17 +20608,17 @@ const renderBody = (contentEl) => {
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_GROUP_BRANCHES"))
     .addToggle((t) => t
-    .setValue(groupBranches)
-    .onChange(async (v) => {
-      if (!isViewSet()) return;
-      groupBranches = v;
-      if (disableTabEvents) return;
-      setVal(K_GROUP, v);
-      dirty = true;
-      await refreshMapLayout();
-      updateUI();
-    }))
-    .addExtraButton((btn)=>{
+      .setValue(groupBranches)
+      .onChange(async (v) => {
+        if (!isViewSet()) return;
+        groupBranches = v;
+        if (disableTabEvents) return;
+        setVal(K_GROUP, v);
+        dirty = true;
+        await refreshMapLayout();
+        updateUI();
+      }))
+    .addExtraButton((btn) => {
       toggleGroupBtn = btn;
       btn.setIcon("group");
       btn.setTooltip(`${t("TOOLTIP_TOGGLE_GROUP_BTN")} ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
@@ -19855,13 +20632,15 @@ const renderBody = (contentEl) => {
     .addToggle((t) => {
       boxToggle = t;
       t.setValue(boxChildren)
-      .onChange(async (v) => {
-        boxChildren = v;
-        if (disableTabEvents) return;
-        setVal(K_BOX, v);
-        dirty = true;
-        await updateRootNodeCustomData({ boxChildren: v });
-      })
+        .onChange(async (v) => {
+          boxChildren = v;
+          if (disableTabEvents) return;
+          setVal(K_BOX, v);
+          dirty = true;
+          await updateRootNodeCustomData({
+            boxChildren: v
+          });
+        })
     })
     .addExtraButton((btn) => {
       boxBtn = btn;
@@ -19873,13 +20652,15 @@ const renderBody = (contentEl) => {
   new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_ROUNDED_CORNERS")).addToggle((t) => {
     roundToggle = t;
     t.setValue(roundedCorners)
-    .onChange(async (v) => {
-      roundedCorners = v;
-      if (disableTabEvents) return;
-      setVal(K_ROUND,  v);
-      dirty = true;
-      await updateRootNodeCustomData({ roundedCorners: v });
-    })
+      .onChange(async (v) => {
+        roundedCorners = v;
+        if (disableTabEvents) return;
+        setVal(K_ROUND, v);
+        dirty = true;
+        await updateRootNodeCustomData({
+          roundedCorners: v
+        });
+      })
   });
 
   bodyContainer.createEl("hr");
@@ -19889,18 +20670,20 @@ const renderBody = (contentEl) => {
     .addToggle((t) => {
       arrowTypeToggle = t;
       t.setValue(arrowType === "curved")
-       .onChange(async (v) => {
-        arrowType = v ? "curved" : "straight";
-        if (disableTabEvents) return;
+        .onChange(async (v) => {
+          arrowType = v ? "curved" : "straight";
+          if (disableTabEvents) return;
 
-        setVal(K_ARROW_TYPE, arrowType);
-        dirty = true;
-        if (!isViewSet()) return;
-        const sel = getMindmapNodeFromSelection();
-        if (!sel) return;
-        await updateRootNodeCustomData({ arrowType }, sel);
-        await refreshMapLayout(sel);
-      })
+          setVal(K_ARROW_TYPE, arrowType);
+          dirty = true;
+          if (!isViewSet()) return;
+          const sel = getMindmapNodeFromSelection();
+          if (!sel) return;
+          await updateRootNodeCustomData({
+            arrowType
+          }, sel);
+          await refreshMapLayout(sel);
+        })
     })
 
   new ea.obsidian.Setting(bodyContainer)
@@ -19914,9 +20697,11 @@ const renderBody = (contentEl) => {
         isSolidArrow = !v;
         if (disableTabEvents) return;
 
-        setVal(K_ARROWSTROKE,  !v);
+        setVal(K_ARROWSTROKE, !v);
         dirty = true;
-        await updateRootNodeCustomData({ isSolidArrow: !v });
+        await updateRootNodeCustomData({
+          isSolidArrow: !v
+        });
       })
     });
 
@@ -19933,8 +20718,10 @@ const renderBody = (contentEl) => {
 
         setVal(K_BRANCH_SCALE, v);
         dirty = true;
-        const info = await updateRootNodeCustomData({ branchScale: v });
-        if(info) {
+        const info = await updateRootNodeCustomData({
+          branchScale: v
+        });
+        if (info) {
           await updateBranchStrokes(info.rootId, baseStrokeWidth, oldScale, baseStrokeWidth, branchScale);
         }
       });
@@ -19949,29 +20736,33 @@ const renderBody = (contentEl) => {
     .addSlider((s) => {
       baseWidthSlider = s;
       s.setLimits(0.2, 16, 0.1)
-       .setValue(baseStrokeWidth)
-       .onChange((v) => {
-         if (baseWidthUpdateTimer) clearTimeout(baseWidthUpdateTimer);
-         if (!disableTabEvents &&baseWidthSnapshot === null) baseWidthSnapshot = baseStrokeWidth;
-         baseStrokeWidth = v;
-         baseWidthDisplay.setText(`${v}`);
-        if (disableTabEvents) return;
+        .setValue(baseStrokeWidth)
+        .onChange((v) => {
+          if (baseWidthUpdateTimer) clearTimeout(baseWidthUpdateTimer);
+          if (!disableTabEvents && baseWidthSnapshot === null) baseWidthSnapshot = baseStrokeWidth;
+          baseStrokeWidth = v;
+          baseWidthDisplay.setText(`${v}`);
+          if (disableTabEvents) return;
 
-         setVal(K_BASE_WIDTH, v);
-         dirty = true;
-         baseWidthUpdateTimer = setTimeout(async () => {
-           const info = await updateRootNodeCustomData({ baseStrokeWidth: v });
-           if(info) {
-             await updateBranchStrokes(info.rootId, baseWidthSnapshot, branchScale, baseStrokeWidth, branchScale);
-           }
-           baseWidthSnapshot = null;
-           baseWidthUpdateTimer = null;
-         }, 500);
-       });
+          setVal(K_BASE_WIDTH, v);
+          dirty = true;
+          baseWidthUpdateTimer = setTimeout(async () => {
+            const info = await updateRootNodeCustomData({
+              baseStrokeWidth: v
+            });
+            if (info) {
+              await updateBranchStrokes(info.rootId, baseWidthSnapshot, branchScale, baseStrokeWidth, branchScale);
+            }
+            baseWidthSnapshot = null;
+            baseWidthUpdateTimer = null;
+          }, 500);
+        });
     });
   baseWidthDisplay = baseWidthSetting.descEl.createSpan({
     text: `${baseStrokeWidth}`,
-    attr: { style: "margin-left:10px; font-weight:bold;" },
+    attr: {
+      style: "margin-left:10px; font-weight:bold;"
+    },
   });
   if (baseWidthSlider) baseWidthSlider.valLabelEl = baseWidthDisplay;
 
@@ -19986,7 +20777,9 @@ const renderBody = (contentEl) => {
 
           setVal(K_MULTICOLOR, v);
           dirty = true;
-          await updateRootNodeCustomData({ multicolor: v });
+          await updateRootNodeCustomData({
+            multicolor: v
+          });
         })
     })
     .addExtraButton((btn) => btn
@@ -20008,23 +20801,27 @@ const renderBody = (contentEl) => {
   const sliderSetting = new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_MAX_WRAP_WIDTH")).addSlider((s) => {
     widthSlider = s;
     s.setLimits(WRAP_WIDTH_MIN, WRAP_WIDTH_MAX, WRAP_WIDTH_STEP)
-    .setValue(maxWidth)
-    .onChange(async (v) => {
-      maxWidth = v;
-      sliderValDisplay.setText(`${v}px`);
-      if (disableTabEvents) return;
+      .setValue(maxWidth)
+      .onChange(async (v) => {
+        maxWidth = v;
+        sliderValDisplay.setText(`${v}px`);
+        if (disableTabEvents) return;
 
-      setVal(K_WIDTH, v);
-      dirty = true;
-      await updateRootNodeCustomData({ maxWrapWidth: v });
-    })
+        setVal(K_WIDTH, v);
+        dirty = true;
+        await updateRootNodeCustomData({
+          maxWrapWidth: v
+        });
+      })
   });
   sliderValDisplay = sliderSetting.descEl.createSpan({
     text: `${maxWidth}px`,
-    attr: { style: "margin-left:10px; font-weight:bold;" },
+    attr: {
+      style: "margin-left:10px; font-weight:bold;"
+    },
   });
 
-  if(widthSlider) widthSlider.valLabelEl = sliderValDisplay;
+  if (widthSlider) widthSlider.valLabelEl = sliderValDisplay;
 
   new ea.obsidian.Setting(bodyContainer)
     .setName(t("LABEL_CENTER_TEXT"))
@@ -20032,14 +20829,16 @@ const renderBody = (contentEl) => {
     .addToggle((t) => {
       centerToggle = t;
       t.setValue(centerText)
-      .onChange(async (v) => {
-        centerText = v;
-        if (disableTabEvents) return;
+        .onChange(async (v) => {
+          centerText = v;
+          if (disableTabEvents) return;
 
-        setVal(K_CENTERTEXT, v);
-        dirty = true;
-        await updateRootNodeCustomData({ centerText: v });
-      })
+          setVal(K_CENTERTEXT, v);
+          dirty = true;
+          await updateRootNodeCustomData({
+            centerText: v
+          });
+        })
     });
 
   new ea.obsidian.Setting(bodyContainer).setName(t("LABEL_FONT_SIZES")).addDropdown((d) => {
@@ -20052,7 +20851,9 @@ const renderBody = (contentEl) => {
 
       setVal(K_FONTSIZE, v);
       dirty = true;
-      await updateRootNodeCustomData({ fontsizeScale: v });
+      await updateRootNodeCustomData({
+        fontsizeScale: v
+      });
     });
   });
 
@@ -20062,14 +20863,23 @@ const renderBody = (contentEl) => {
   bodyContainer.createEl("hr");
 
   const hkDetails = bodyContainer.createEl("details", {
-    attr: { style: "margin-right: 5px; margin-left: 5px;" }
+    attr: {
+      style: "margin-right: 5px; margin-left: 5px;"
+    }
   });
-  hkDetails.createEl("summary", { text: t("HOTKEY_SECTION_TITLE"), attr: { style: "cursor: pointer; font-weight: bold;" } });
+  hkDetails.createEl("summary", {
+    text: t("HOTKEY_SECTION_TITLE"),
+    attr: {
+      style: "cursor: pointer; font-weight: bold;"
+    }
+  });
 
   const hkContainer = hkDetails.createDiv();
   const hint = hkContainer.createEl("p", {
     text: t("HOTKEY_HINT"),
-    attr: { style: "color: var(--text-muted); font-size: 0.85em; margin-bottom: 10px;" }
+    attr: {
+      style: "color: var(--text-muted); font-size: 0.85em; margin-bottom: 10px;"
+    }
   });
 
   const refreshHotkeys = () => {
@@ -20080,10 +20890,16 @@ const renderBody = (contentEl) => {
     updateKeyHandlerLocation();
   };
 
-const saveHotkeys = () => {
+  const saveHotkeys = () => {
     // Strip out structural keys before saving to settings to maintain a single source of truth
     const hotkeysToSave = userHotkeys.map(h => {
-      const { isInputOnly, requiresNode, isNavigation, hidden, ...configurableProps } = h;
+      const {
+        isInputOnly,
+        requiresNode,
+        isNavigation,
+        hidden,
+        ...configurableProps
+      } = h;
       return configurableProps;
     });
 
@@ -20171,14 +20987,16 @@ const saveHotkeys = () => {
         if (h.isNavigation && isNav) return true;
         if (h.isNavigation && key.startsWith("Arrow")) return true;
 
-        const hKey = h.code ? h.code.replace("Key","").replace("Digit","") : h.key;
-        const eKey = code ? code.replace("Key","").replace("Digit","") : key;
+        const hKey = h.code ? h.code.replace("Key", "").replace("Digit", "") : h.key;
+        const eKey = code ? code.replace("Key", "").replace("Digit", "") : key;
         return hKey.toLowerCase() === eKey.toLowerCase();
       });
 
       if (conflict) {
         label.style.color = "var(--text-error)";
-        new Notice(t("NOTICE_CONFLICT_WITH_ACTION", { action: getActionLabel(conflict.action) }), NOTICE_DURATION_CONFLICT);
+        new Notice(t("NOTICE_CONFLICT_WITH_ACTION", {
+          action: getActionLabel(conflict.action)
+        }), NOTICE_DURATION_CONFLICT);
         setTimeout(() => label.style.color = "", 4000);
       } else {
         if (isNav) {
@@ -20198,11 +21016,13 @@ const saveHotkeys = () => {
         if (targetConfig.scope === SCOPE.global) {
           const obsConflict = getObsidianConflict(targetConfig);
           if (obsConflict) {
-            new Notice(t("NOTICE_OBSIDIAN_HOTKEY_CONFLICT", { command: obsConflict }), NOTICE_DURATION_GLOBAL_CONFLICT);
+            new Notice(t("NOTICE_OBSIDIAN_HOTKEY_CONFLICT", {
+              command: obsConflict
+            }), NOTICE_DURATION_GLOBAL_CONFLICT);
           }
         }
 
-        if(onUpdate) onUpdate();
+        if (onUpdate) onUpdate();
       }
 
       cleanup();
@@ -20236,7 +21056,7 @@ const saveHotkeys = () => {
       if (updateScopeUI) updateScopeUI();
 
       const existingAlert = hotkeyDisplay.querySelector(".hotkey-conflict-icon");
-      if(existingAlert) existingAlert.remove();
+      if (existingAlert) existingAlert.remove();
       span.removeClass("has-conflict");
       span.style.color = "";
 
@@ -20251,11 +21071,15 @@ const saveHotkeys = () => {
           alert.style.marginRight = "calc(-1 * var(--size-2-2))";
           alert.style.display = "inline-flex"; // Ensure it sits nicely next to text
           alert.style.cursor = "pointer";
-          alert.ariaLabel = t("ARIA_OVERRIDE_COMMAND", { command: conflict });
+          alert.ariaLabel = t("ARIA_OVERRIDE_COMMAND", {
+            command: conflict
+          });
           alert.onclick = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            new Notice(t("NOTICE_GLOBAL_HOTKEY_CONFLICT", { command: conflict }), NOTICE_DURATION_GLOBAL_CONFLICT);
+            new Notice(t("NOTICE_GLOBAL_HOTKEY_CONFLICT", {
+              command: conflict
+            }), NOTICE_DURATION_GLOBAL_CONFLICT);
           };
         }
       }
@@ -20299,7 +21123,9 @@ const saveHotkeys = () => {
         if (next === SCOPE.global) {
           const conflict = getObsidianConflict(userHotkeys[index]);
           if (conflict) {
-            new Notice(t("NOTICE_GLOBAL_HOTKEY_CONFLICT", { command: conflict }), NOTICE_DURATION_GLOBAL_CONFLICT);
+            new Notice(t("NOTICE_GLOBAL_HOTKEY_CONFLICT", {
+              command: conflict
+            }), NOTICE_DURATION_GLOBAL_CONFLICT);
           }
         }
         updateRowUI();
@@ -20331,7 +21157,11 @@ const saveHotkeys = () => {
   });
 
   // Spacer to avoid overlap with Obsidian's status bar
-  bodyContainer.createDiv({ attr: { style: "height: 40px;" } });
+  bodyContainer.createDiv({
+    attr: {
+      style: "height: 40px;"
+    }
+  });
 };
 
 const MINDMAP_FOCUS_STYLE_ID = "excalidraw-mindmap-focus-style";
@@ -20361,9 +21191,9 @@ const registerStyles = () => {
     "  background-color: var(--interactive-accent);",
     "  color: var(--background-primary);",
     "}",
-    ...ea.DEVICE.isDesktop
-      ? [".excalidraw-mindmap-ui hr {margin: 5px;}"]
-      : [".excalidraw-mindmap-ui hr {margin: 15px 5px;}"],
+    ...ea.DEVICE.isDesktop ?
+    [".excalidraw-mindmap-ui hr {margin: 5px;}"] :
+    [".excalidraw-mindmap-ui hr {margin: 15px 5px;}"],
     ".excalidraw-mindmap-ui .clickable-icon:focus svg,",
     ".excalidraw-mindmap-ui .clickable-icon:focus-visible svg {",
     "  color: inherit;",
@@ -20408,8 +21238,12 @@ const updateKeyHandlerLocation = () => {
  *   the ExcalidrawView was closed or when the user presses ESC to finish mindmapping, next time
  *   Mindmap Builder is started it should remember the user preference
  *
-**/
-const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {}) => {
+ **/
+const toggleDock = async ({
+  silent = false,
+  forceDock = false,
+  saveSetting = false
+} = {}) => {
   editingNodeId = null;
   if (!ea.targetView && !(forceDock && isUndocked)) return;
 
@@ -20426,15 +21260,19 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
 
     if (isUndocked) {
       // If we were undocked (now docking), focus the sidepanel
-      app.workspace.setActiveLeaf(ea.getSidepanelLeaf(), {focus: true});
+      app.workspace.setActiveLeaf(ea.getSidepanelLeaf(), {
+        focus: true
+      });
     } else {
       // If we were docked (now undocking), focus the main view
-      app.workspace.setActiveLeaf(ea.targetView.leaf, {focus: true});
+      app.workspace.setActiveLeaf(ea.targetView.leaf, {
+        focus: true
+      });
     }
   }
 
   isUndocked = !isUndocked;
-  if(saveSetting) {
+  if (saveSetting) {
     setVal(K_UNDOCKED, isUndocked);
     dirty = true;
   }
@@ -20445,10 +21283,16 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
   if (isUndocked) {
     // UNDOCK: Initialize floating modal
     floatingInputModal = new ea.FloatingModal(ea.plugin.app);
-    const { contentEl, titleEl, modalEl, headerEl, bgEl } = floatingInputModal;
+    const {
+      contentEl,
+      titleEl,
+      modalEl,
+      headerEl,
+      bgEl
+    } = floatingInputModal;
     modalEl.classList.add("excalidraw-mindmap-ui");
     if (bgEl) {
-      bgEl.style.display="none";
+      bgEl.style.display = "none";
     }
     floatingInputModal.onOpen = () => {
       // Reparent modal to target view window
@@ -20456,7 +21300,10 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
         ea.targetView.ownerDocument.body.appendChild(modalEl);
       }
 
-      const {x, y} = ea.targetView.contentEl.getBoundingClientRect();
+      const {
+        x,
+        y
+      } = ea.targetView.contentEl.getBoundingClientRect();
       contentEl.empty();
 
       const closeEl = modalEl.querySelector(".modal-close-button");
@@ -20476,13 +21323,16 @@ const toggleDock = async ({silent=false, forceDock=false, saveSetting=false} = {
         //otherwise the event handlers in FloatingModal would override the move
         //leaving modalEl in the center of the view
         //modalEl.style.top and left must stay in the timeout call
-        const {x, y} = ea.targetView.contentEl.getBoundingClientRect();
-        const desktopShift = !!ea.targetView.contentEl.querySelector(".App-bottom-bar .App-toolbar")
-          ? 0
-          : (ea.targetView.contentEl.clientWidth < 1200 ? 36 : 0);
+        const {
+          x,
+          y
+        } = ea.targetView.contentEl.getBoundingClientRect();
+        const desktopShift = !!ea.targetView.contentEl.querySelector(".App-bottom-bar .App-toolbar") ?
+          0 :
+          (ea.targetView.contentEl.clientWidth < 1200 ? 36 : 0);
         modalEl.style.top = `${ y + FLOAT_MODAL_OFFSET + desktopShift}px`;
         modalEl.style.left = `${ x + FLOAT_MODAL_OFFSET }px`;
-      }, ea.DEVICE.isMobile ? 400:150);
+      }, ea.DEVICE.isMobile ? 400 : 150);
     };
 
     floatingInputModal.onClose = () => {
@@ -20534,11 +21384,15 @@ const getActionFromEvent = (e) => {
     const hasAlt = h.modifiers.includes("Alt");
 
     return (isMod === hasMod) &&
-          (e.shiftKey === hasShift) &&
-          (e.altKey === hasAlt);
+      (e.shiftKey === hasShift) &&
+      (e.altKey === hasAlt);
   });
 
-  return match ? { action: match.action, scope: match.scope ?? SCOPE.none, requiresNode: match.requiresNode } :  { };
+  return match ? {
+    action: match.action,
+    scope: match.scope ?? SCOPE.none,
+    requiresNode: match.requiresNode
+  } : {};
 };
 
 /**
@@ -20555,9 +21409,9 @@ const handleKeydown = (e) => {
   if (isRecordingHotkey) return;
   if (!ea.targetView || !ea.targetView.leaf.isVisible()) return;
 
-  const currentWindow = isUndocked && floatingInputModal
-    ? ea.targetView?.ownerWindow
-    : sidepanelWindow;
+  const currentWindow = isUndocked && floatingInputModal ?
+    ea.targetView?.ownerWindow :
+    sidepanelWindow;
 
   if (!currentWindow) return;
 
@@ -20579,7 +21433,11 @@ const handleKeydown = (e) => {
     return;
   }
 
-  let {action, scope, requiresNode} = getActionFromEvent(e);
+  let {
+    action,
+    scope,
+    requiresNode
+  } = getActionFromEvent(e);
   if (!action && !["Tab", "Enter"].includes(e.key)) return;
 
   let context = getHotkeyContext();
@@ -20590,7 +21448,7 @@ const handleKeydown = (e) => {
     if (!modalEl) return;
     const activeEl = modalEl.ownerDocument.activeElement;
     if (!modalEl.contains(activeEl)) return;
-    const selector =[
+    const selector = [
       "input:not([disabled])",
       "div:not([style*='not-allowed'])",
     ].join(",");
@@ -20606,9 +21464,9 @@ const handleKeydown = (e) => {
       const active = modalEl.ownerDocument.activeElement;
       let idx = focusables.indexOf(active);
       if (idx === -1) idx = 0;
-      idx = e.shiftKey
-        ? (idx === 0 ? focusables.length - 1 : idx - 1)
-        : (idx === focusables.length - 1 ? 0 : idx + 1);
+      idx = e.shiftKey ?
+        (idx === 0 ? focusables.length - 1 : idx - 1) :
+        (idx === focusables.length - 1 ? 0 : idx + 1);
       focusables[idx].focus();
     }
     return;
@@ -20617,8 +21475,8 @@ const handleKeydown = (e) => {
   if (
     e.key === "Enter" && context === SCOPE.excalidraw &&
     ((isUndocked && floatingInputModal) || !isUndocked)
-   ) {
-    const modalEl = isUndocked ?floatingInputModal.modalEl : ea.sidepanelTab.containerEl;
+  ) {
+    const modalEl = isUndocked ? floatingInputModal.modalEl : ea.sidepanelTab.containerEl;
     const activeEl = modalEl?.ownerDocument.activeElement;
     action = activeEl?.getAttribute("action");
     if (!action) return;
@@ -20648,12 +21506,12 @@ const handleKeydown = (e) => {
   performAction(action, e);
 }
 
-const addSibling = async (event, insertAfter=true) => {
+const addSibling = async (event, insertAfter = true) => {
   if (!inputEl.value) return;
   const dir = insertAfter ? 1 : -1;
   const allElementsForSibling = ea.getViewElements();
   const selectedForSibling = getMindmapNodeFromSelection();
-  
+
   if (!selectedForSibling) {
     await addNode(inputEl.value, true, false, null, null, null, ontologyEl.value);
   } else {
@@ -20661,12 +21519,12 @@ const addSibling = async (event, insertAfter=true) => {
     const root = allElementsForSibling.find(el => el.id === info.rootId);
     const parentOfSelected = getParentNode(selectedForSibling.id, allElementsForSibling);
     const rootMode = root.customData?.growthMode || currentModalGrowthMode;
-    const isVertical =["Up-facing", "Down-facing", "Up-Down"].includes(rootMode);
-    
+    const isVertical = ["Up-facing", "Down-facing", "Up-Down"].includes(rootMode);
+
     // If parent exists, add to that parent (Sibling). 
     // If no parent (Root was selected), add to selected (Child).
     const targetParent = parentOfSelected ?? selectedForSibling;
-    
+
     // Default position: slightly lower to ensure correct Y-sort order in directional maps
     let pos = {
       x: selectedForSibling.x + (isVertical && insertAfter ? selectedForSibling.width : 0) + (isVertical ? dir : 0),
@@ -20678,13 +21536,19 @@ const addSibling = async (event, insertAfter=true) => {
     // L1 nodes in Radial maps clockwise by angle, not by Y-coordinate.
     if (parentOfSelected && parentOfSelected.id === root.id && root.customData?.growthMode === "Radial") {
       const rb = getNodeBox(root, allElementsForSibling);
-      const rc = { x: rb.minX + rb.width / 2, y: rb.minY + rb.height / 2 };
-      const sc = { x: selectedForSibling.x + selectedForSibling.width / 2, y: selectedForSibling.y + selectedForSibling.height / 2 };
-      
+      const rc = {
+        x: rb.minX + rb.width / 2,
+        y: rb.minY + rb.height / 2
+      };
+      const sc = {
+        x: selectedForSibling.x + selectedForSibling.width / 2,
+        y: selectedForSibling.y + selectedForSibling.height / 2
+      };
+
       // Calculate the current angle and distance, then increment angle slightly (~5.7 degrees)
-      const angle = Math.atan2(sc.y - rc.y, sc.x - rc.x) + dir*0.2;
+      const angle = Math.atan2(sc.y - rc.y, sc.x - rc.x) + dir * 0.2;
       const dist = Math.hypot(sc.x - rc.x, sc.y - rc.y);
-      
+
       pos = {
         x: rc.x + Math.cos(angle) * dist - selectedForSibling.width / 2,
         y: rc.y + Math.sin(angle) * dist - selectedForSibling.height / 2
@@ -20700,9 +21564,465 @@ const addSibling = async (event, insertAfter=true) => {
   await performAction(ACTION_ADD, event); // Move selection to new node
 }
 
+// Helper for retrieving Tasks plugin configuration and formats
+const getTasksUiOptions = () => {
+  const tasksPlugin = app.plugins.getPlugin('obsidian-tasks-plugin');
+  const mode = tasksPlugin?.configuration?.taskFormat || 'emoji';
+  let dateFields = [];
+  if (mode === 'dataview') {
+    dateFields = [
+      "📅 [due:: ]",
+      "🛫 [start:: ]",
+      "⏳ [scheduled:: ]",
+      "➕ [created:: ]",
+      "✅ [done:: ]",
+      "❌ [cancelled:: ]"
+    ];
+  } else {
+    dateFields = [
+      "📅 Due",
+      "🛫 Start",
+      "⏳ Scheduled",
+      "➕ Created",
+      "✅ Done",
+      "❌ Cancelled"
+    ];
+  }
+  const priorities = [
+    "🔺 Highest",
+    "⏫ High",
+    "🔼 Medium",
+    " Normal",
+    "🔽 Low",
+    "⏬ Lowest"
+  ];
+  return {
+    mode,
+    dateFields,
+    priorities
+  };
+};
+
+// Parses an existing task string into dates, priority, and recurrence
+const parseTasksData = (text, mode) => {
+  const priorityMap = {
+    '🔺': 'highest',
+    '⏫': 'high',
+    '🔼': 'medium',
+    '🔽': 'low',
+    '⏬': 'lowest'
+  };
+  let priority = 'normal';
+  for (const [emoji, val] of Object.entries(priorityMap)) {
+    if (text.includes(emoji)) {
+      priority = val;
+      break;
+    }
+  }
+
+  let recurrence = "";
+  let dates = [];
+
+  if (mode === 'dataview') {
+    const recMatch = text.match(/\[recurrence:: ([^\]]+)\]/i);
+    if (recMatch) recurrence = recMatch[1];
+
+    const dateFields = ['due', 'start', 'scheduled', 'created', 'done', 'cancelled'];
+    for (const field of dateFields) {
+      const regex = new RegExp(`\\[${field}:: (\\d{4}-\\d{2}-\\d{2})\\]`, 'gi');
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        dates.push({
+          type: field,
+          date: match[1]
+        });
+      }
+    }
+  } else {
+    const recMatch = text.match(/🔁\s*([a-zA-Z0-9 ,]+)/i);
+    if (recMatch) recurrence = recMatch[1].trim();
+
+    const emojiFields = {
+      '📅': 'due',
+      '🛫': 'start',
+      '⏳': 'scheduled',
+      '➕': 'created',
+      '✅': 'done',
+      '❌': 'cancelled'
+    };
+    for (const [emoji, field] of Object.entries(emojiFields)) {
+      const regex = new RegExp(`${emoji}\\s*(\\d{4}-\\d{2}-\\d{2})`, 'g');
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        dates.push({
+          type: field,
+          date: match[1]
+        });
+      }
+    }
+  }
+
+  return {
+    priority,
+    recurrence,
+    dates
+  };
+};
+
+// Helper to remove any existing Tasks/Dataview fields and priority/date emojis
+const cleanTasksString = (text) => {
+  let cleaned = text;
+  // Strip Dataview-styled bracket dates/fields
+  cleaned = cleaned.replace(/\[(due|start|scheduled|created|done|cancelled|recurrence)::\s*[^\]]+\]/gi, "");
+  // Strip Emoji-styled dates
+  cleaned = cleaned.replace(/[📅🛫⏳➕✅❌]\s*\d{4}-\d{2}-\d{2}/g, "");
+  // Strip Recurrence emoji and standard text rules (stops at next emoji or bracket)
+  cleaned = cleaned.replace(/🔁\s*[a-zA-Z0-9 ,]+/g, "");
+  // Strip Priorities
+  cleaned = cleaned.replace(/[🔺⏫🔼🔽⏬]/g, "");
+  // Normalize spacing
+  cleaned = cleaned.replace(/  +/g, " ").trim();
+  return cleaned;
+};
+
+// Open standard Obsidian modal configuration interface for calendar mapping
+const openCalendarModal = async () => {
+  let targetText = "";
+  let isInputEl = false;
+  let textElId = null;
+  let sel = null;
+
+  // Mode 1: Edit from Input Box
+  if (inputEl && inputEl.value.trim() !== "") {
+    targetText = inputEl.value;
+    isInputEl = true;
+  } else {
+    // Mode 2: Edit from selected Node
+    sel = getMindmapNodeFromSelection();
+    if (!sel) return;
+    const all = ea.getViewElements();
+    const info = getHierarchy(sel, all);
+
+    if (info.rootId === sel.id) return; // General rule: no effect on root node
+
+    textElId = sel.type === "text" ? sel.id : null;
+    if (!textElId && sel.boundElements) {
+      const boundText = sel.boundElements.find(be => be.type === "text");
+      if (boundText) textElId = boundText.id;
+    }
+    if (!textElId) return;
+
+    const textEl = all.find(el => el.id === textElId);
+    if (!textEl) return;
+    targetText = textEl.rawText;
+  }
+
+  const uiOpts = getTasksUiOptions();
+  const parsed = parseTasksData(targetText, uiOpts.mode);
+
+  let dates = parsed.dates.length > 0 ? parsed.dates : [{
+    type: 'due',
+    date: window.moment().format('YYYY-MM-DD')
+  }];
+  let activeDateIndex = 0;
+  let priority = parsed.priority;
+  let recurrence = parsed.recurrence;
+
+  const modal = new ea.obsidian.Modal(app);
+  modal.titleEl.setText(t("ACTION_LABEL_CALENDAR"));
+
+  let dateInputComp, typeDropdownComp;
+
+  const renderContent = () => {
+    const {
+      contentEl
+    } = modal;
+    contentEl.empty();
+
+    // Navigation Row for multi-date handling
+    const navRow = contentEl.createDiv({
+      attr: {
+        style: "display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"
+      }
+    });
+
+    const leftNav = navRow.createDiv({
+      attr: {
+        style: "display: flex; align-items: center; gap: 10px;"
+      }
+    });
+
+    const prevBtn = leftNav.createEl("button");
+    prevBtn.innerHTML = ea.obsidian.getIcon("chevron-left").outerHTML;
+    prevBtn.disabled = activeDateIndex === 0;
+    prevBtn.onclick = () => {
+      activeDateIndex--;
+      renderContent();
+    };
+
+    leftNav.createSpan({
+      text: `Date ${activeDateIndex + 1} of ${dates.length}`
+    });
+
+    const nextBtn = leftNav.createEl("button");
+    nextBtn.innerHTML = ea.obsidian.getIcon("chevron-right").outerHTML;
+    nextBtn.onclick = () => {
+      if (activeDateIndex === dates.length - 1) {
+        dates.push({
+          type: 'due',
+          date: window.moment().format('YYYY-MM-DD')
+        });
+      }
+      activeDateIndex++;
+      renderContent();
+    };
+
+    const delBtn = navRow.createEl("button");
+    delBtn.innerHTML = ea.obsidian.getIcon("trash-2").outerHTML;
+    delBtn.disabled = dates.length === 1 && !dates[0].date; // Can't delete if it's just the empty default
+    delBtn.onclick = () => {
+      dates.splice(activeDateIndex, 1);
+      if (dates.length === 0) {
+        dates.push({
+          type: 'due',
+          date: window.moment().format('YYYY-MM-DD')
+        });
+      }
+      if (activeDateIndex >= dates.length) activeDateIndex = dates.length - 1;
+      renderContent();
+    };
+
+    // Active Date Object
+    const activeDateObj = dates[activeDateIndex];
+
+    // 1) Date picker input (Focus First)
+    new ea.obsidian.Setting(contentEl)
+      .setName("Date")
+      .addText(text => {
+        dateInputComp = text;
+        text.inputEl.type = "date";
+        text.setValue(activeDateObj.date);
+        text.onChange(val => {
+          activeDateObj.date = val;
+        });
+
+        text.inputEl.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (typeDropdownComp && typeDropdownComp.selectEl) {
+              typeDropdownComp.selectEl.focus();
+            }
+          }
+        });
+
+        text.inputEl.addEventListener("change", (e) => {
+          if (document.activeElement === text.inputEl && typeDropdownComp && typeDropdownComp.selectEl) {
+            typeDropdownComp.selectEl.focus();
+          }
+        });
+      });
+
+    // 2) Field type configuration selector matching active schema ontology
+    new ea.obsidian.Setting(contentEl)
+      .setName("Date Type")
+      .addDropdown(dropdown => {
+        typeDropdownComp = dropdown;
+        if (uiOpts.mode === 'dataview') {
+          dropdown.addOption("due", "📅 [due:: ]");
+          dropdown.addOption("start", "🛫 [start:: ]");
+          dropdown.addOption("scheduled", "⏳ [scheduled:: ]");
+          dropdown.addOption("created", "➕ [created:: ]");
+          dropdown.addOption("done", "✅ [done:: ]");
+          dropdown.addOption("cancelled", "❌ [cancelled:: ]");
+        } else {
+          dropdown.addOption("due", "📅 Due");
+          dropdown.addOption("start", "🛫 Start");
+          dropdown.addOption("scheduled", "⏳ Scheduled");
+          dropdown.addOption("created", "➕ Created");
+          dropdown.addOption("done", "✅ Done");
+          dropdown.addOption("cancelled", "❌ Cancelled");
+        }
+        dropdown.setValue(activeDateObj.type);
+        dropdown.onChange(val => {
+          activeDateObj.type = val;
+        });
+      });
+
+    // 3) Priority selector mapped to native Tasks emojis
+    new ea.obsidian.Setting(contentEl)
+      .setName("Priority")
+      .addDropdown(dropdown => {
+        dropdown.addOption("highest", "🔺 Highest");
+        dropdown.addOption("high", "⏫ High");
+        dropdown.addOption("medium", "🔼 Medium");
+        dropdown.addOption("normal", " Normal");
+        dropdown.addOption("low", "🔽 Low");
+        dropdown.addOption("lowest", "⏬ Lowest");
+        dropdown.setValue(priority);
+        dropdown.onChange(val => {
+          priority = val;
+        });
+      });
+
+    // 4) Recurrence free text input
+    const recSetting = new ea.obsidian.Setting(contentEl)
+      .setName("Recurrence")
+      .addText(text => {
+        text.setPlaceholder("every day")
+          .setValue(recurrence)
+          .onChange(val => {
+            recurrence = val;
+          });
+      });
+    recSetting.descEl.innerHTML = `e.g., 'every day', 'every 2 weeks' <br><a href="https://publish.obsidian.md/tasks/Getting+Started/Recurring+Tasks" target="_blank" tabindex="-1">Tasks recurrence docs</a>`;
+
+    // Controls button block
+    const btnContainer = contentEl.createDiv({
+      attr: {
+        style: "display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;"
+      }
+    });
+
+    const cancelBtn = btnContainer.createEl("button", {
+      text: "Cancel"
+    });
+    cancelBtn.onclick = () => modal.close();
+
+    const saveBtn = btnContainer.createEl("button", {
+      text: "Apply",
+      cls: "mod-cta"
+    });
+    saveBtn.onclick = handleSave;
+
+    // Date picker auto-open / focus
+    setTimeout(() => {
+      if (dateInputComp && dateInputComp.inputEl) {
+        dateInputComp.inputEl.focus();
+        if (typeof dateInputComp.inputEl.showPicker === 'function') {
+          try {
+            dateInputComp.inputEl.showPicker();
+          } catch (e) {}
+        }
+      }
+    }, 50);
+  };
+
+  const handleSave = async () => {
+    modal.close();
+
+    let tasksString = "";
+    const validDates = dates.filter(d => d.date);
+
+    if (uiOpts.mode === 'dataview') {
+      let priorityStr = "";
+      const priorityMap = {
+        'highest': '🔺',
+        'high': '⏫',
+        'medium': '🔼',
+        'normal': '',
+        'low': '🔽',
+        'lowest': '⏬'
+      };
+      if (priority !== 'normal') priorityStr = priorityMap[priority];
+
+      let dateStrs = validDates.map(d => `[${d.type}:: ${d.date}]`);
+      let recStr = recurrence ? `[recurrence:: ${recurrence}]` : "";
+
+      const parts = [priorityStr, ...dateStrs, recStr].filter(Boolean);
+      if (parts.length > 0) tasksString = " " + parts.join("  ");
+    } else {
+      let priorityStr = "";
+      const priorityMap = {
+        'highest': ' 🔺',
+        'high': ' ⏫',
+        'medium': ' 🔼',
+        'normal': '',
+        'low': ' 🔽',
+        'lowest': ' ⏬'
+      };
+      priorityStr = priorityMap[priority] || "";
+
+      const emojiMap = {
+        'due': '📅',
+        'start': '🛫',
+        'scheduled': '⏳',
+        'created': '➕',
+        'done': '✅',
+        'cancelled': '❌'
+      };
+      let dateStrs = validDates.map(d => ` ${emojiMap[d.type]} ${d.date}`);
+      let recStr = recurrence ? ` 🔁 ${recurrence}` : "";
+
+      tasksString = `${priorityStr}${dateStrs.join("")}${recStr}`;
+    }
+
+    const taskRegex = /^- \[([ xX])\] (.*)/s;
+    const match = targetText.match(taskRegex);
+
+    let cleanText = cleanTasksString(match ? match[2] : targetText);
+    let finalPrefix = match ? `- [${match[1]}] ` : "- [ ] ";
+
+    let newText = `${finalPrefix}${cleanText}${tasksString}`;
+
+    if (isInputEl) {
+      inputEl.value = newText;
+      debugger;
+      updateUI();
+    } else {
+      const all = ea.getViewElements();
+      const textEl = all.find(el => el.id === textElId);
+      ea.copyViewElementsToEAforEditing([textEl]);
+      const eaEl = ea.getElement(textEl.id);
+      eaEl.rawText = newText;
+      eaEl.text = newText;
+      eaEl.originalText = newText;
+      ea.refreshTextElementSize(eaEl.id);
+
+      await addElementsToView({
+        captureUpdate: autoLayoutDisabled ? "IMMEDIATELY" : "EVENTUALLY"
+      });
+
+      if (eaEl.containerId) {
+        const updatedContainer = ea.getViewElements().find(el => el.id === eaEl.containerId);
+        if (updatedContainer) api().updateContainerSize([updatedContainer]);
+      }
+
+      if (!autoLayoutDisabled) {
+        const info = getHierarchy(sel, ea.getViewElements());
+        await triggerGlobalLayout(info.rootId);
+      }
+      updateUI();
+    }
+  };
+
+  modal.onOpen = () => {
+    renderContent();
+
+    // Add Ctrl+Enter / Meta+Enter listener
+    modal.modalEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleSave();
+      }
+      // Prevent Escape from propagating to the underlying floating modal or canvas
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        modal.close();
+      }
+    });
+  };
+
+  modal.open();
+};
+
 const performAction = async (action, event) => {
   if (!action || !ea.targetView) return;
   switch (action) {
+    case ACTION_CALENDAR:
+      await openCalendarModal();
+      break;
     case ACTION_TOGGLE_FLOATING_EXTRAS:
       toggleFloatingExtras?.();
       break;
@@ -20717,7 +22037,11 @@ const performAction = async (action, event) => {
         editingNodeId = null;
         updateUI();
       } else if (isUndocked) {
-        toggleDock({silent: true, forceDock: true, saveSetting: false});
+        toggleDock({
+          silent: true,
+          forceDock: true,
+          saveSetting: false
+        });
       }
       break;
 
@@ -20733,7 +22057,7 @@ const performAction = async (action, event) => {
     case ACTION_TOGGLE_EMBED:
       await toggleEmbedStatus();
       updateUI();
-    break;
+      break;
 
     case ACTION_TOGGLE_SUBMAP_ROOT:
       await toggleSubmapRoot();
@@ -20795,22 +22119,36 @@ const performAction = async (action, event) => {
       break;
 
     case ACTION_NAVIGATE:
-      await navigateMap({key: event?.key, zoom: false, focus: false});
+      await navigateMap({
+        key: event?.key,
+        zoom: false,
+        focus: false
+      });
       updateUI();
       break;
 
     case ACTION_NAVIGATE_ZOOM:
-      await navigateMap({key: event?.key, zoom: true, focus: false});
+      await navigateMap({
+        key: event?.key,
+        zoom: true,
+        focus: false
+      });
       updateUI();
       break;
 
     case ACTION_NAVIGATE_FOCUS:
-      await navigateMap({key: event?.key, zoom: false, focus: true});
+      await navigateMap({
+        key: event?.key,
+        zoom: false,
+        focus: true
+      });
       updateUI();
       break;
 
     case ACTION_DOCK_UNDOCK:
-      toggleDock({saveSetting: true});
+      toggleDock({
+        saveSetting: true
+      });
       break;
 
     case ACTION_EDIT:
@@ -20856,14 +22194,14 @@ const performAction = async (action, event) => {
           const allElements = ea.getViewElements();
 
           let handledRecent = false;
-          if(mostRecentlyAddedNodeID) {
+          if (mostRecentlyAddedNodeID) {
             const mostRecentNode = getMostRecentlyAddedNode();
             if (mostRecentNode && sel) {
               const selParent = getParentNode(sel.id, allElements);
               const recentParent = getParentNode(mostRecentNode.id, allElements);
               const isSameOrSibling = (sel.id === mostRecentNode.id) ||
                 (selParent && recentParent && selParent.id === recentParent.id);
-              if(!isSameOrSibling) {
+              if (!isSameOrSibling) {
                 selectNodeInView(mostRecentNode);
                 handledRecent = true;
               }
@@ -20873,23 +22211,19 @@ const performAction = async (action, event) => {
           }
           if (!handledRecent && sel) {
             const parent = getParentNode(sel.id, allElements);
-            const siblings = parent ? getChildrenNodes(parent.id, allElements) :[];
+            const siblings = parent ? getChildrenNodes(parent.id, allElements) : [];
 
             if (siblings.length > 1) {
-              // Iterates forward continuously in logical index order, 
-              // ignoring spatial/directional orientation bindings like ArrowDown
               siblings.sort((a, b) => getMindmapOrder(a) - getMindmapOrder(b));
               const idx = siblings.findIndex(s => s.id === sel.id);
               const nextIdx = (idx + 1) % siblings.length;
               selectNodeInView(siblings[nextIdx]);
-            }
-            else {
+            } else {
               const children = getChildrenNodes(sel.id, allElements);
               if (children.length > 0) {
                 children.sort((a, b) => getMindmapOrder(a) - getMindmapOrder(b));
                 selectNodeInView(children[0]);
-              }
-              else if (parent) {
+              } else if (parent) {
                 selectNodeInView(parent);
               }
             }
@@ -20903,7 +22237,7 @@ const performAction = async (action, event) => {
       if (ea.targetView) {
         const currentVer = ExcalidrawLib.getSceneVersion(api().getSceneElements());
         if (lastCommittedTransaction && currentVer === lastCommittedTransaction.version && lastCommittedTransaction.steps > 0) {
-          for(let i=0; i<=lastCommittedTransaction.steps; i++) { // <= to include the final select step
+          for (let i = 0; i <= lastCommittedTransaction.steps; i++) {
             api().history.undo();
           }
           const afterUndoVer = ExcalidrawLib.getSceneVersion(api().getSceneElements());
@@ -20925,8 +22259,8 @@ const performAction = async (action, event) => {
       if (ea.targetView) {
         const currentVer = ExcalidrawLib.getSceneVersion(api().getSceneElements());
         if (redoAvailable && currentVer === redoAvailable.version && redoAvailable.steps > 0) {
-          for(let i=0; i<=redoAvailable.steps; i++) {
-             api().history.redo();
+          for (let i = 0; i <= redoAvailable.steps; i++) {
+            api().history.redo();
           }
           const afterRedoVer = ExcalidrawLib.getSceneVersion(api().getSceneElements());
           lastCommittedTransaction = {
@@ -20948,6 +22282,10 @@ const performAction = async (action, event) => {
 // 11. Public Puppeteering API (minimal-impact wrappers)
 // ---------------------------------------------------------------------------
 (() => {
+  // Note: ACTION_CALENDAR is deliberately not published in the MindMap Builder API.
+  // It is a UI-driven feature meant for quick manual input. Programmatic scripts 
+  // can simply author or modify the text element's rawText directly rather than 
+  // invoking the Calendar UI dialog.
   const MMError = {
     NOT_READY: "NOT_READY",
     NO_VIEW: "NO_VIEW",
@@ -20961,10 +22299,20 @@ const performAction = async (action, event) => {
     OPERATION_FAILED: "OPERATION_FAILED",
   };
 
-  const mmOk = (data) => ({ ok: true, data });
+  const mmOk = (data) => ({
+    ok: true,
+    data
+  });
   const mmErr = (code, message, details) => ({
     ok: false,
-    error: details === undefined ? { code, message } : { code, message, details },
+    error: details === undefined ? {
+      code,
+      message
+    } : {
+      code,
+      message,
+      details
+    },
   });
 
   const requireView = () => {
@@ -20996,9 +22344,9 @@ const performAction = async (action, event) => {
     const incomingArrow = allElements.find(
       (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === node.id,
     );
-    return incomingArrow
-      ? (ea.getBoundTextElement(incomingArrow, true)?.sceneElement?.rawText || "")
-      : "";
+    return incomingArrow ?
+      (ea.getBoundTextElement(incomingArrow, true)?.sceneElement?.rawText || "") :
+      "";
   };
 
   const extractMapConfig = (rootNode) => ({
@@ -21014,8 +22362,7 @@ const performAction = async (action, event) => {
     centerText: typeof rootNode.customData?.centerText === "boolean" ? rootNode.customData.centerText : centerText,
     fillSweep: typeof rootNode.customData?.fillSweep === "boolean" ? rootNode.customData.fillSweep : fillSweep,
     branchScale: rootNode.customData?.branchScale ?? branchScale,
-    baseStrokeWidth:
-      typeof rootNode.customData?.baseStrokeWidth === "number" ? rootNode.customData.baseStrokeWidth : baseStrokeWidth,
+    baseStrokeWidth: typeof rootNode.customData?.baseStrokeWidth === "number" ? rootNode.customData.baseStrokeWidth : baseStrokeWidth,
     layoutSettings: JSON.parse(JSON.stringify(rootNode.customData?.layoutSettings ?? layoutSettings)),
   });
 
@@ -21090,17 +22437,32 @@ const performAction = async (action, event) => {
     },
     help: {
       summary: "Returns method docs for one method or the full API",
-      params: [
-        { name: "method", type: "string", required: false },
-        { name: "format", type: "string", required: false, enum: ["object", "text"] },
+      params: [{
+          name: "method",
+          type: "string",
+          required: false
+        },
+        {
+          name: "format",
+          type: "string",
+          required: false,
+          enum: ["object", "text"]
+        },
       ],
       returns: "MMResult<object|string>",
     },
     validate: {
       summary: "Validates arguments against the API method contract",
-      params: [
-        { name: "method", type: "string", required: true },
-        { name: "args", type: "any", required: false },
+      params: [{
+          name: "method",
+          type: "string",
+          required: true
+        },
+        {
+          name: "args",
+          type: "any",
+          required: false
+        },
       ],
       returns: "MMResult<{valid:boolean,errors:string[],normalizedArgs:object}>",
     },
@@ -21111,7 +22473,11 @@ const performAction = async (action, event) => {
     },
     setView: {
       summary: "Sets the active ExcalidrawView context",
-      params: [{ name: "view", type: "object", required: true }],
+      params: [{
+        name: "view",
+        type: "object",
+        required: true
+      }],
       returns: "MMResult<{view:ExcalidrawView|null,filePath:string|null}>",
     },
     getView: {
@@ -21126,12 +22492,20 @@ const performAction = async (action, event) => {
     },
     selectNode: {
       summary: "Selects a node by id or current selected node when omitted",
-      params: [{ name: "nodeId", type: "string", required: false }],
+      params: [{
+        name: "nodeId",
+        type: "string",
+        required: false
+      }],
       returns: "MMResult<{nodeId:string}>",
     },
     setInputFieldDockStatus: {
       summary: "Forces docked/undocked input mode and applies matching sidepanel visibility",
-      params: [{ name: "isDocked", type: "boolean", required: true }],
+      params: [{
+        name: "isDocked",
+        type: "boolean",
+        required: true
+      }],
       returns: "Promise<MMResult<{isDocked:boolean,isUndocked:boolean,sidepanelVisible:boolean}>>",
     },
     getMindMapRoots: {
@@ -21141,93 +22515,187 @@ const performAction = async (action, event) => {
     },
     getMapInfo: {
       summary: "Returns hierarchy info for a node or current selection",
-      params: [{ name: "nodeId", type: "string", required: false }],
+      params: [{
+        name: "nodeId",
+        type: "string",
+        required: false
+      }],
       returns: "MMResult<{nodeId:string,rootId:string,settingsRootId:string,depth:number}>",
     },
     getNodeText: {
       summary: "Returns node text and ontology",
-      params: [{ name: "nodeId", type: "string", required: false }],
+      params: [{
+        name: "nodeId",
+        type: "string",
+        required: false
+      }],
       returns: "MMResult<{nodeId:string,text:string,ontology:string}>",
     },
     performAction: {
       summary: "Runs one built-in mindmap action",
-      params: [
-        { name: "action", type: "string", required: true, enum: Object.values(API_ACTIONS) },
-        { name: "event", type: "object", required: false },
+      params: [{
+          name: "action",
+          type: "string",
+          required: true,
+          enum: Object.values(API_ACTIONS)
+        },
+        {
+          name: "event",
+          type: "object",
+          required: false
+        },
       ],
       returns: "Promise<MMResult<void>>",
     },
     refreshMapLayout: {
       summary: "Refreshes map layout from the selected node or provided node id",
-      params: [{ name: "nodeId", type: "string", required: false }],
+      params: [{
+        name: "nodeId",
+        type: "string",
+        required: false
+      }],
       returns: "Promise<MMResult<{rootId:string}>>",
     },
     addNode: {
       summary: "Adds a node under selected node or a provided parent",
-      params: [
-        { name: "text", type: "string", required: true },
-        { name: "parentId", type: "string", required: false },
-        { name: "ontology", type: "string", required: false },
-        { name: "follow", type: "boolean", required: false },
-        { name: "position", type: "string", required: false },
+      params: [{
+          name: "text",
+          type: "string",
+          required: true
+        },
+        {
+          name: "parentId",
+          type: "string",
+          required: false
+        },
+        {
+          name: "ontology",
+          type: "string",
+          required: false
+        },
+        {
+          name: "follow",
+          type: "boolean",
+          required: false
+        },
+        {
+          name: "position",
+          type: "string",
+          required: false
+        },
       ],
       returns: "Promise<MMResult<{nodeId:string,arrowId:string|undefined,rootId:string}>>",
     },
     importMarkdown: {
       summary: "Imports markdown bullet hierarchy into map",
-      params: [
-        { name: "markdown", type: "string", required: true },
-        { name: "parentId", type: "string", required: false },
+      params: [{
+          name: "markdown",
+          type: "string",
+          required: true
+        },
+        {
+          name: "parentId",
+          type: "string",
+          required: false
+        },
       ],
       returns: "Promise<MMResult<{addedNodeIds:string[],rootId:string|null}>>",
     },
     exportMarkdown: {
       summary: "Exports selected branch to markdown through clipboard",
-      params: [
-        { name: "nodeId", type: "string", required: false },
-        { name: "cut", type: "boolean", required: false },
+      params: [{
+          name: "nodeId",
+          type: "string",
+          required: false
+        },
+        {
+          name: "cut",
+          type: "boolean",
+          required: false
+        },
       ],
       returns: "Promise<MMResult<{markdown:string}>>",
     },
     toggleSubmapRoot: {
       summary: "Toggles or forces additional-root state on node",
-      params: [
-        { name: "nodeId", type: "string", required: false },
-        { name: "enabled", type: "boolean", required: false },
+      params: [{
+          name: "nodeId",
+          type: "string",
+          required: false
+        },
+        {
+          name: "enabled",
+          type: "boolean",
+          required: false
+        },
       ],
       returns: "Promise<MMResult<{nodeId:string,enabled:boolean}>>",
     },
     getMapConfig: {
       summary: "Returns effective map config for node/root",
-      params: [{ name: "nodeId", type: "string", required: false }],
+      params: [{
+        name: "nodeId",
+        type: "string",
+        required: false
+      }],
       returns: "MMResult<{rootId:string,settingsRootId:string,config:object}>",
     },
     setMapConfig: {
       summary: "Patches map config and optionally relayouts",
-      params: [
-        { name: "patch", type: "object", required: true },
-        { name: "nodeId", type: "string", required: false },
-        { name: "relayout", type: "boolean", required: false },
+      params: [{
+          name: "patch",
+          type: "object",
+          required: true
+        },
+        {
+          name: "nodeId",
+          type: "string",
+          required: false
+        },
+        {
+          name: "relayout",
+          type: "boolean",
+          required: false
+        },
       ],
       returns: "Promise<MMResult<{rootId:string,settingsRootId:string}>>",
     },
     getBranchElementIds: {
       summary: "Returns branch element ids with optional decorations/crosslinks",
-      params: [
-        { name: "nodeId", type: "string", required: true },
-        { name: "includeDecorations", type: "boolean", required: false },
-        { name: "includeCrosslinks", type: "boolean", required: false },
+      params: [{
+          name: "nodeId",
+          type: "string",
+          required: true
+        },
+        {
+          name: "includeDecorations",
+          type: "boolean",
+          required: false
+        },
+        {
+          name: "includeCrosslinks",
+          type: "boolean",
+          required: false
+        },
       ],
       returns: "MMResult<{ids:string[]}>",
     },
     getProjectElementIds: {
       summary: "Returns all project element ids for a root",
-      params: [{ name: "rootId", type: "string", required: true }],
+      params: [{
+        name: "rootId",
+        type: "string",
+        required: true
+      }],
       returns: "MMResult<{ids:string[]}>",
     },
     getElementIdsByRole: {
       summary: "Returns role-based element id groups for a root",
-      params: [{ name: "rootId", type: "string", required: true }],
+      params: [{
+        name: "rootId",
+        type: "string",
+        required: true
+      }],
       returns: "MMResult<{nodes:string[],branchArrows:string[],crossLinks:string[],boundaries:string[],decorations:string[],boundTexts:string[]}>",
     },
   };
@@ -21245,8 +22713,12 @@ const performAction = async (action, event) => {
       });
       return out;
     }
-    if (typeof args === "object") return { ...args };
-    if (spec.params.length === 1) return { [spec.params[0].name]: args };
+    if (typeof args === "object") return {
+      ...args
+    };
+    if (spec.params.length === 1) return {
+      [spec.params[0].name]: args
+    };
     return null;
   };
 
@@ -21260,7 +22732,11 @@ const performAction = async (action, event) => {
   const validateMethodArgs = (method, args) => {
     const spec = API_METHOD_SPEC[method];
     if (!spec) {
-      return { valid: false, errors: [`Unknown method: ${method}`], normalizedArgs: {} };
+      return {
+        valid: false,
+        errors: [`Unknown method: ${method}`],
+        normalizedArgs: {}
+      };
     }
 
     const normalizedArgs = normalizeValidationArgs(method, args);
@@ -21287,7 +22763,11 @@ const performAction = async (action, event) => {
       }
     });
 
-    return { valid: errors.length === 0, errors, normalizedArgs };
+    return {
+      valid: errors.length === 0,
+      errors,
+      normalizedArgs
+    };
   };
 
   const buildHelpText = (methodName, doc) => {
@@ -21313,9 +22793,13 @@ const performAction = async (action, event) => {
 
     ready: () => !!ea,
 
-    listMethods: () => mmOk({ methods: Object.keys(API_METHOD_SPEC) }),
+    listMethods: () => mmOk({
+      methods: Object.keys(API_METHOD_SPEC)
+    }),
 
-    getErrorCodes: () => mmOk({ errors: cloneJSON(API_ERROR_DOC) }),
+    getErrorCodes: () => mmOk({
+      errors: cloneJSON(API_ERROR_DOC)
+    }),
 
     spec: () =>
       mmOk({
@@ -21352,7 +22836,10 @@ const performAction = async (action, event) => {
       }
 
       if (format === "text") return mmOk(buildHelpText(method, doc));
-      return mmOk({ method, ...cloneJSON(doc) });
+      return mmOk({
+        method,
+        ...cloneJSON(doc)
+      });
     },
 
     validate: (method, args) => {
@@ -21380,13 +22867,19 @@ const performAction = async (action, event) => {
         ea.clear();
         ensureNodeSelected();
         updateUI();
-        return mmOk({ view: ea.targetView, filePath: ea.targetView?.file?.path || null });
+        return mmOk({
+          view: ea.targetView,
+          filePath: ea.targetView?.file?.path || null
+        });
       } catch (e) {
         return mmErr(MMError.OPERATION_FAILED, "Failed to set view", e);
       }
     },
 
-    getView: () => mmOk({ view: ea.targetView || null, filePath: ea.targetView?.file?.path || null }),
+    getView: () => mmOk({
+      view: ea.targetView || null,
+      filePath: ea.targetView?.file?.path || null
+    }),
 
     getSelection: () => {
       const viewErr = requireView();
@@ -21403,10 +22896,14 @@ const performAction = async (action, event) => {
       selectNodeInView(nodeRes.data);
       performAction(ACTION_FOCUS);
       updateUI(nodeRes.data);
-      return mmOk({ nodeId: nodeRes.data.id });
+      return mmOk({
+        nodeId: nodeRes.data.id
+      });
     },
 
-    setInputFieldDockStatus: async ({ isDocked } = {}) => {
+    setInputFieldDockStatus: async ({
+      isDocked
+    } = {}) => {
       const viewErr = requireView();
       if (viewErr) return viewErr;
       if (typeof isDocked !== "boolean") {
@@ -21433,7 +22930,11 @@ const performAction = async (action, event) => {
 
         const finalSidepanelLeaf = ea.getSidepanelLeaf?.();
         const sidepanelVisible = !!finalSidepanelLeaf?.isVisible?.();
-        return mmOk({ isDocked: !isUndocked, isUndocked, sidepanelVisible });
+        return mmOk({
+          isDocked: !isUndocked,
+          isUndocked,
+          sidepanelVisible
+        });
       } catch (e) {
         return mmErr(MMError.OPERATION_FAILED, "setInputFieldDockStatus failed", e);
       }
@@ -21442,7 +22943,9 @@ const performAction = async (action, event) => {
     getMindMapRoots: () => {
       const viewErr = requireView();
       if (viewErr) return viewErr;
-      return mmOk({ rootIds: getMasterRoots() });
+      return mmOk({
+        rootIds: getMasterRoots()
+      });
     },
 
     getMapInfo: (nodeId) => {
@@ -21502,13 +23005,21 @@ const performAction = async (action, event) => {
         const target = sel || getMindmapNodeFromSelection();
         if (!target) return mmErr(MMError.NO_SELECTION, "No selected node for layout refresh");
         const info = getHierarchy(target, ea.getViewElements());
-        return mmOk({ rootId: info.rootId });
+        return mmOk({
+          rootId: info.rootId
+        });
       } catch (e) {
         return mmErr(MMError.OPERATION_FAILED, "refreshMapLayout failed", e);
       }
     },
 
-    addNode: async ({ text, parentId, ontology, follow = false, position } = {}) => {
+    addNode: async ({
+      text,
+      parentId,
+      ontology,
+      follow = false,
+      position
+    } = {}) => {
       const viewErr = requireView();
       if (viewErr) return viewErr;
       if (!text || typeof text !== "string") {
@@ -21530,13 +23041,20 @@ const performAction = async (action, event) => {
         const arrow = all.find(
           (a) => a.type === "arrow" && a.customData?.isBranch && a.endBinding?.elementId === node.id,
         );
-        return mmOk({ nodeId: node.id, arrowId: arrow?.id, rootId: info.rootId });
+        return mmOk({
+          nodeId: node.id,
+          arrowId: arrow?.id,
+          rootId: info.rootId
+        });
       } catch (e) {
         return mmErr(MMError.OPERATION_FAILED, "addNode failed", e);
       }
     },
 
-    importMarkdown: async ({ markdown, parentId } = {}) => {
+    importMarkdown: async ({
+      markdown,
+      parentId
+    } = {}) => {
       const viewErr = requireView();
       if (viewErr) return viewErr;
       if (typeof markdown !== "string" || markdown.trim() === "") {
@@ -21566,13 +23084,19 @@ const performAction = async (action, event) => {
           rootId = n ? getHierarchy(n, after).rootId : null;
         }
 
-        return mmOk({ addedNodeIds, rootId });
+        return mmOk({
+          addedNodeIds,
+          rootId
+        });
       } catch (e) {
         return mmErr(MMError.OPERATION_FAILED, "importMarkdown failed", e);
       }
     },
 
-    exportMarkdown: async ({ nodeId, cut = false } = {}) => {
+    exportMarkdown: async ({
+      nodeId,
+      cut = false
+    } = {}) => {
       const viewErr = requireView();
       if (viewErr) return viewErr;
 
@@ -21584,27 +23108,38 @@ const performAction = async (action, event) => {
 
       try {
         const markdown = await copyMapAsText(!!cut, false);
-        return mmOk({ markdown });
+        return mmOk({
+          markdown
+        });
       } catch (e) {
         return mmErr(MMError.OPERATION_FAILED, "exportMarkdown failed", e);
       }
     },
 
-    toggleSubmapRoot: async ({ nodeId, enabled } = {}) => {
+    toggleSubmapRoot: async ({
+      nodeId,
+      enabled
+    } = {}) => {
       const nodeRes = resolveNode(nodeId);
       if (!nodeRes.ok) return nodeRes;
       const node = nodeRes.data;
 
       const current = node.customData?.isAdditionalRoot === true;
       if (typeof enabled === "boolean" && enabled === current) {
-        return mmOk({ nodeId: node.id, enabled: current });
+        return mmOk({
+          nodeId: node.id,
+          enabled: current
+        });
       }
 
       selectNodeInView(node);
       try {
         await toggleSubmapRoot();
         const updated = findNodeById(node.id);
-        return mmOk({ nodeId: node.id, enabled: updated?.customData?.isAdditionalRoot === true });
+        return mmOk({
+          nodeId: node.id,
+          enabled: updated?.customData?.isAdditionalRoot === true
+        });
       } catch (e) {
         return mmErr(MMError.OPERATION_FAILED, "toggleSubmapRoot failed", e);
       }
@@ -21626,7 +23161,11 @@ const performAction = async (action, event) => {
       });
     },
 
-    setMapConfig: async ({ patch, nodeId, relayout = true } = {}) => {
+    setMapConfig: async ({
+      patch,
+      nodeId,
+      relayout = true
+    } = {}) => {
       const nodeRes = resolveNode(nodeId);
       if (!nodeRes.ok) return nodeRes;
       const node = nodeRes.data;
@@ -21636,16 +23175,25 @@ const performAction = async (action, event) => {
 
       try {
         selectNodeInView(node);
-        const info = await updateRootNodeCustomData({ ...patch }, node);
+        const info = await updateRootNodeCustomData({
+          ...patch
+        }, node);
         if (!info) return mmErr(MMError.OPERATION_FAILED, "Failed to update map config");
         if (relayout) await refreshMapLayout(node);
-        return mmOk({ rootId: info.rootId, settingsRootId: info.settingsRootId });
+        return mmOk({
+          rootId: info.rootId,
+          settingsRootId: info.settingsRootId
+        });
       } catch (e) {
         return mmErr(MMError.OPERATION_FAILED, "setMapConfig failed", e);
       }
     },
 
-    getBranchElementIds: ({ nodeId, includeDecorations = true, includeCrosslinks = true } = {}) => {
+    getBranchElementIds: ({
+      nodeId,
+      includeDecorations = true,
+      includeCrosslinks = true
+    } = {}) => {
       const viewErr = requireView();
       if (viewErr) return viewErr;
       if (!nodeId) return mmErr(MMError.INVALID_ARGUMENT, "getBranchElementIds requires nodeId");
@@ -21669,7 +23217,9 @@ const performAction = async (action, event) => {
           ids = ids.concat(extras);
         }
       }
-      return mmOk({ ids: Array.from(new Set(ids)) });
+      return mmOk({
+        ids: Array.from(new Set(ids))
+      });
     },
 
     getProjectElementIds: (rootId) => {
@@ -21682,7 +23232,9 @@ const performAction = async (action, event) => {
       if (!root) return mmErr(MMError.INVALID_NODE, `Root not found: ${rootId}`);
 
       const project = getMindmapProjectElements(rootId, all);
-      return mmOk({ ids: project.map((e) => e.id) });
+      return mmOk({
+        ids: project.map((e) => e.id)
+      });
     },
 
     getElementIdsByRole: (rootId) => {
@@ -21777,7 +23329,11 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
   // When the view closes, ensure we dock the input back so it's not lost in floating limbo
   tab.onExcalidrawViewClosed = () => {
     if (isUndocked) {
-      toggleDock({silent: true, forceDock: true, saveSetting: false});
+      toggleDock({
+        silent: true,
+        forceDock: true,
+        saveSetting: false
+      });
     }
   };
 
@@ -21792,7 +23348,11 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
       sidepanelWindow = contentEl.ownerDocument.defaultView;
 
       if (isUndocked) {
-        toggleDock({silent: true, forceDock: true, saveSetting: false});
+        toggleDock({
+          silent: true,
+          forceDock: true,
+          saveSetting: false
+        });
       } else {
         renderInput(inputContainer, false);
       }
@@ -21806,9 +23366,13 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
       ea.activateMindmap = false;
       const undockPreference = getVal(K_UNDOCKED, false);
       if (undockPreference && !isUndocked) {
-        setTimeout(()=>toggleDock({saveSetting: false}));
+        setTimeout(() => toggleDock({
+          saveSetting: false
+        }));
       } else if (!undockPreference && isUndocked) {
-        setTimeout(()=>toggleDock({saveSetting: false}));
+        setTimeout(() => toggleDock({
+          saveSetting: false
+        }));
         tab.reveal();
       } else if (!undockPreference) {
         tab.reveal();
@@ -21830,7 +23394,7 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
       delete window.MindmapBuilder.removePointerDownHandler;
     }
     updateKeyHandlerLocation();
-    
+
     if (!window.MindmapBuilder?.removeActiveLeafListener) {
       const leafChangeRef = app.workspace.on("active-leaf-change", onActiveLeafChange);
       window.MindmapBuilder.removeActiveLeafListener = () => {
@@ -21870,14 +23434,16 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
     }
     registerObsidianHotkeyOverrides();
 
-    if(!isUndocked || !floatingInputModal || !leaf) {
+    if (!isUndocked || !floatingInputModal || !leaf) {
       return;
     }
 
     if (ea.isExcalidrawView(leaf.view)) {
       ensureNodeSelected();
       updateUI();
-      const { modalEl } = floatingInputModal
+      const {
+        modalEl
+      } = floatingInputModal
       if (modalEl.style.display === "none") {
         modalEl.style.display = "";
       }
@@ -21886,12 +23452,17 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
         linkSuggester?.close();
         linkSuggester = ea.attachInlineLinkSuggester(inputEl, inputRow?.settingEl);
       }
-      const {x, y} = ea.targetView.contentEl.getBoundingClientRect();
+      const {
+        x,
+        y
+      } = ea.targetView.contentEl.getBoundingClientRect();
       modalEl.style.top = `${ y + 5 }px`;
       modalEl.style.left = `${ x + 5 }px`;
     } else {
       if (leaf.view?.getViewType() === "excalidraw-sidepanel") return;
-      const { modalEl } = floatingInputModal;
+      const {
+        modalEl
+      } = floatingInputModal;
       if (modalEl.style.display !== "none") {
         modalEl.style.display = "none";
       }

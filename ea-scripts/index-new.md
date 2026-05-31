@@ -73,6 +73,7 @@ These are the scripts I use most often. I tried to order them by importance, but
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Convert%20freedraw%20to%20line.svg"/></div>|[[#Convert freedraw to line]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Crop%20Vintage%20Mask.svg"/></div>|[[#Crop Vintage Mask]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Mindmap%20Builder.svg"/></div>|[[#Mindmap Builder]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Capture%20Note.svg"/></div>|[[#Capture Note]]|
 
 ## Layout and Organization
 **Keywords**: Design, Placement, Arrangement, Structure, Formatting, Alignment
@@ -153,6 +154,7 @@ These are the scripts I use most often. I tried to order them by importance, but
 
 |    |     |
 |----|-----|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Capture%20Note.svg"/></div>|[[#Capture Note]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Add%20Link%20to%20Existing%20File%20and%20Open.svg"/></div>|[[#Add Link to Existing File and Open]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Add%20Link%20to%20New%20Page%20and%20Open.svg"/></div>|[[#Add Link to New Page and Open]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Convert%20text%20to%20link%20with%20folder%20and%20alias.svg"/></div>|[[#Convert text to link with folder and alias]]|
@@ -261,6 +263,13 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Box%20Selected%20Elements.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Box%20Selected%20Elements.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script will add an encapsulating box around the currently selected elements in Excalidraw.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-box-elements.jpg'></td></tr></table>
+
+## Capture Note
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Capture%20Note.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Capture%20Note.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script implements the unified "Capture Note" workflow, allowing users to select or search for note titles, automatically resolve their template and folder rules, and contextually back-embed visual frames or markdown sections.<br><a href="https://www.youtube.com/watch?v=y3sDfH30ApU" target="_blank"><img src ="https://i.ytimg.com/vi/y3sDfH30ApU/maxresdefault.jpg" style="width:560px;"></a></td></tr></table>
+
 
 ## Change shape of selected elements
 ```excalidraw-script-install
