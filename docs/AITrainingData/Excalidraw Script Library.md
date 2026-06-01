@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-06-01T06:16:32.542Z
+Generated on: 2026-06-01T17:57:32.010Z
 
 ---
 
@@ -2715,7 +2715,9 @@ async function injectVisualFormat(target_ea, targetX, targetY, sectionRawText, t
         for (const el of clonedElements) {
           el.x += offsetX;
           el.y += offsetY;
-          el.frameId = frameID;
+          if (!settings.useMarkerFrames) {
+            el.frameId = frameID;
+          }
           target_ea.elementsDict[el.id] = el;
           clonedTemplateElementIds.push(el.id);
         }
@@ -2725,8 +2727,14 @@ async function injectVisualFormat(target_ea, targetX, targetY, sectionRawText, t
     }
   }
 
-  await target_ea.addElementsToView(false, true, true);
+  await target_ea.addElementsToView(false, false, true);
   target_ea.clear();
+
+  // Force Excalidraw to save state to disk before we proceed
+  if (target_ea.targetView && typeof target_ea.targetView.forceSave === "function") {
+    await target_ea.targetView.forceSave(true);
+  }
+  await sleep(200);
 
   return { frameID, clonedTemplateElementIds };
 }
@@ -2768,7 +2776,8 @@ async function injectMarkdownFormat(file, target_ea, targetX, targetY, sectionRa
     }
   }
 
-  await sleep(500);
+  // Increased sleep to 1000ms to allow Excalidraw to fully process the file change event
+  await sleep(1000);
 
   const embedWidth = parseInt(settings.embedWidth) || 400;
   const embedHeight = parseInt(settings.embedHeight) || 500;
@@ -2788,18 +2797,25 @@ async function injectMarkdownFormat(file, target_ea, targetX, targetY, sectionRa
   await target_ea.addElementsToView(false, true, true);
   target_ea.clear();
 
+  // Force Excalidraw to save state to disk before we proceed
+  if (target_ea.targetView && typeof target_ea.targetView.forceSave === "function") {
+    await target_ea.targetView.forceSave(true);
+  }
+  await sleep(200);
+
   return frameID;
 }
 
 // Injects the cross-link reference and embed onto the Origin Note A
-async function injectIntoOriginView(originView, activeElement, format, actionType, file, frameID, sectionRawText, ontologyAction, isMindmapNode, mindmapNodeText, mmAPI, mmNodeId, linkAlias) {
+async function injectIntoOriginView(originView, activeElement, format, actionType, file, frameID, sectionRawText, ontologyAction, isMindmapNode, mindmapNodeText, mmAPI, mmNodeId, linkAlias, initialLinkText) {
   const timeStr = settings.DNPConfig.recordTime ? moment().format(settings.DNPConfig.timeFormat) + " " : "";
   const refPath = format === "Visual" ? `^frame=${frameID}` : sanitizeLinkSection(sectionRawText);
   
   const displayAlias = linkAlias ? linkAlias : file.basename;
   const linkStr = `[[${file.path}#${refPath}|${displayAlias}]]`;
   
-  const nodeTextString = `${timeStr}(${ontologyAction}:: ${linkStr})`;
+  const ontologyStr = `(${ontologyAction}:: ${linkStr})`;
+  const nodeTextString = `${timeStr}${ontologyStr}`;
 
   const imgWidth = parseInt(settings.originImageWidth || settings.imageWidth) || 400;
 
@@ -2822,26 +2838,53 @@ async function injectIntoOriginView(originView, activeElement, format, actionTyp
     const nodeLinksToTarget = mindmapNodeText.includes(file.path) || mindmapNodeText.includes(file.basename);
 
     if (nodeLinksToTarget) {
-      if (settings.DNPConfig.recordTime) {
-        const mmNode = originView.getViewElements().find(el => el.id === mmNodeId);
-        const boundTextEl = ea.getBoundTextElement(mmNode, true)?.sceneElement;
-        if (boundTextEl) {
-          ea.copyViewElementsToEAforEditing([boundTextEl]);
-          const el = ea.getElement(boundTextEl.id);
-          el.rawText = nodeTextString;
-          el.text = nodeTextString;
-          el.originalText = nodeTextString;
-          await ea.addElementsToView(false, false, false);
-          ea.clear();
+      // Update existing MindMap node text contextually instead of overwriting it
+      const mmNode = originView.getViewElements().find(el => el.id === mmNodeId);
+      const boundTextEl = ea.getBoundTextElement(mmNode, true)?.sceneElement;
+      if (boundTextEl) {
+        ea.copyViewElementsToEAforEditing([boundTextEl]);
+        const el = ea.getElement(boundTextEl.id);
+        
+        let newText = el.rawText;
+        let linkReplaced = false;
+
+        // Try replacing the specific link captured by the modal
+        if (initialLinkText) {
+            const escapedLink = initialLinkText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const linkRegex = new RegExp(`\\[\\[${escapedLink}(?:\\|.*?)?\\]\\]`);
+            if (linkRegex.test(newText)) {
+                newText = newText.replace(linkRegex, ontologyStr);
+                linkReplaced = true;
+            }
+        } 
+        
+        // Fallback to first link found, or append
+        if (!linkReplaced) {
+            const firstLinkRegex = /\[\[([^\]]+)\]\]/;
+            if (firstLinkRegex.test(newText)) {
+                newText = newText.replace(firstLinkRegex, ontologyStr);
+            }
         }
+
+        // Insert timestamp if enabled
+        if (settings.DNPConfig.recordTime && !newText.startsWith(timeStr)) {
+            newText = timeStr + newText;
+        }
+
+        el.rawText = newText;
+        el.text = newText;
+        el.originalText = newText;
+        await ea.addElementsToView(false, false, false);
+        ea.clear();
       }
+      
       const res = await mmAPI.addNode({ text: embedText, parentId: mmNodeId });
       if (res.ok) embeddedElementId = res.data.nodeId;
       if (format !== "Visual" && actionType !== "CAPTURE_HERE") {
         await mmAPI.performAction("Dock & hide");
       }
     } else {
-      const linkTextToUse = settings.DNPConfig.recordTime ? nodeTextString : `(${ontologyAction}:: ${linkStr})`;
+      const linkTextToUse = settings.DNPConfig.recordTime ? nodeTextString : ontologyStr;
       const res = await mmAPI.addNode({ text: linkTextToUse, parentId: mmNodeId });
       if (res.ok) {
         const res2 = await mmAPI.addNode({ text: embedText, parentId: res.data.nodeId });
@@ -2855,10 +2898,59 @@ async function injectIntoOriginView(originView, activeElement, format, actionTyp
     const xPos = activeElement ? activeElement.x : 0;
     let yPos = activeElement ? activeElement.y + activeElement.height * 1.3 : 0;
 
-    if (settings.DNPConfig.recordTime) {
-      ea.addText(xPos, yPos, nodeTextString);
-      const textMetrics = ea.measureText(nodeTextString);
-      yPos += textMetrics.height + 10;
+    if (activeElement) {
+      // Intelligently replace text/links without deleting the active element or container
+      const boundTextResult = ea.getBoundTextElement(activeElement, true);
+      let textEl = boundTextResult?.eaElement || boundTextResult?.sceneElement;
+      
+      if (textEl) {
+          let newText = textEl.rawText;
+          let linkReplaced = false;
+
+          // Try replacing the specific link captured by the modal
+          if (initialLinkText) {
+              const escapedLink = initialLinkText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const linkRegex = new RegExp(`\\[\\[${escapedLink}(?:\\|.*?)?\\]\\]`);
+              if (linkRegex.test(newText)) {
+                  newText = newText.replace(linkRegex, ontologyStr);
+                  linkReplaced = true;
+              }
+          } 
+          
+          // Fallback to first link found, or append
+          if (!linkReplaced) {
+              const firstLinkRegex = /\[\[([^\]]+)\]\]/;
+              if (firstLinkRegex.test(newText)) {
+                  newText = newText.replace(firstLinkRegex, ontologyStr);
+              } else {
+                  newText = newText + " " + ontologyStr;
+              }
+          }
+
+          // Insert timestamp if enabled
+          if (settings.DNPConfig.recordTime) {
+              newText = timeStr + newText;
+          }
+
+          let elsToCopy = [textEl];
+          if (textEl.id !== activeElement.id) {
+              elsToCopy.push(activeElement);
+          }
+          ea.copyViewElementsToEAforEditing(elsToCopy);
+          
+          const eaTextEl = ea.getElement(textEl.id);
+          eaTextEl.rawText = newText;
+          eaTextEl.text = newText;
+          eaTextEl.originalText = newText;
+          ea.refreshTextElementSize(eaTextEl.id);
+      }
+    } else {
+      // If there was no active element to begin with
+      if (settings.DNPConfig.recordTime) {
+        ea.addText(xPos, yPos, nodeTextString);
+        const textMetrics = ea.measureText(nodeTextString);
+        yPos += textMetrics.height + 10;
+      }
     }
 
     if (actionType === "CAPTURE_HERE" || (format !== "Visual" && !isMarkdownImage)) {
@@ -2896,12 +2988,13 @@ async function injectIntoOriginView(originView, activeElement, format, actionTyp
       embeddedElement.link = `(${ontologyAction}:: [[${file.path}#${refPath}]])`;
     }
 
-    if (activeElement) {
-      ea.copyViewElementsToEAforEditing([activeElement]);
-      ea.getElement(activeElement.id).isDeleted = true;
-    }
-
     await ea.addElementsToView(!activeElement, true);
+    
+    // Auto-resize the container if the text expanded
+    if (activeElement && activeElement.type !== "text") {
+       ea.getExcalidrawAPI().updateContainerSize([activeElement]);
+    }
+    
     ea.clear();
   }
 
@@ -2912,6 +3005,11 @@ async function injectIntoOriginView(originView, activeElement, format, actionTyp
 async function handleFinalActionFocus(actionType, originView, noteBWorkspaceLeaf, embeddedElementId, target_ea, format, frameID, clonedTemplateElementIds, mmAPI) {
   if (actionType === "CAPTURE_HERE") {
     if (noteBWorkspaceLeaf && noteBWorkspaceLeaf !== originView.leaf) {
+      // Force Excalidraw to save its state to disk before we close the leaf
+      if (target_ea && target_ea.targetView && typeof target_ea.targetView.forceSave === "function") {
+        await target_ea.targetView.forceSave(true);
+      }
+      await sleep(1000); // Give file I/O ample time before destroying the view
       noteBWorkspaceLeaf.detach();
     }
 
@@ -3102,10 +3200,10 @@ async function start() {
   app.workspace.setActiveLeaf(originView.leaf, { focus: true });
   await sleep(200);
 
-  // 11. Inject Origin Embed/Link (passing the linkAlias)
+  // 11. Inject Origin Embed/Link (passing the linkAlias AND the initialLinkText)
   const embeddedElementId = await injectIntoOriginView(
     originView, activeElement, format, actionType, file, frameID, sectionRawText,
-    ontologyAction, isMindmapNode, mindmapNodeText, mmAPI, mmNodeId, linkAlias
+    ontologyAction, isMindmapNode, mindmapNodeText, mmAPI, mmNodeId, linkAlias, initialLinkText
   );
 
   // 12. Final Focus / Zoom
@@ -3934,10 +4032,15 @@ function openEditNoteTypeModal(noteTypeKey, saveCallback) {
 
   // Fetch ExcaliBrain ontology actions
   let brainOntologies = [];
-  if (app.plugins.plugins["excalibrain"]) {
-    let x = [];
-    Object.keys(app.plugins.plugins["excalibrain"].settings.hierarchy)
-      .forEach(k => x.push(app.plugins.plugins["excalibrain"].settings.hierarchy[k]));
+  const excalibrain = app.plugins.plugins["excalibrain"];
+  if (excalibrain) {
+    const x = [];
+    const excalibrainHierarchy = app.plugins.plugins["excalibrain"].settings.hierarchy;
+    Object.keys(excalibrainHierarchy)
+      .forEach(k => {
+        if (k === "exclusions") return;
+        x.push(excalibrainHierarchy[k]);
+      });
     brainOntologies = Array.from(new Set(x.flat()));
   }
 
