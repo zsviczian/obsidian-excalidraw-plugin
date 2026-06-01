@@ -1798,10 +1798,15 @@ function openEditNoteTypeModal(noteTypeKey, saveCallback) {
 
   // Fetch ExcaliBrain ontology actions
   let brainOntologies = [];
-  if (app.plugins.plugins["excalibrain"]) {
-    let x = [];
-    Object.keys(app.plugins.plugins["excalibrain"].settings.hierarchy)
-      .forEach(k => x.push(app.plugins.plugins["excalibrain"].settings.hierarchy[k]));
+  const excalibrain = app.plugins.plugins["excalibrain"];
+  if (excalibrain) {
+    const x = [];
+    const excalibrainHierarchy = app.plugins.plugins["excalibrain"].settings.hierarchy;
+    Object.keys(excalibrainHierarchy)
+      .forEach(k => {
+        if (k === "exclusions") return;
+        x.push(excalibrainHierarchy[k]);
+      });
     brainOntologies = Array.from(new Set(x.flat()));
   }
 
