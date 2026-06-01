@@ -11,7 +11,7 @@ import {
 } from "obsidian";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import ExcalidrawPlugin from "../../core/main";
-import { escapeRegExp, getLinkParts, sleep } from "../../utils/utils";
+import { escapeRegExp, sleep } from "../../utils/utils";
 import { getLeaf, openLeaf } from "../../utils/obsidianUtils";
 import { createOrOverwriteFile } from "src/utils/fileUtils";
 import { KeyEvent, isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
@@ -1433,9 +1433,9 @@ export async function linkPrompt(
   }
 
   if (linkText.search("#") > -1) {
-    const linkParts = getLinkParts(linkText, view ? view.file : undefined);
-    subpath = `#${linkParts.isBlockRef ? "^" : ""}${linkParts.ref}`;
-    linkText = linkParts.path;
+    const hashIndex = linkText.indexOf("#");
+    subpath = linkText.slice(hashIndex);
+    linkText = linkText.slice(0, hashIndex);
   }
   if (linkText.match(REG_LINKINDEX_INVALIDCHARS)) {
     new Notice(t("FILENAME_INVALID_CHARS"), 4000);
