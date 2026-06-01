@@ -440,7 +440,7 @@ async function ensureTargetFileExists(folder, filename, fname, opt, noteType) {
     if (!templaterDidTrigger) {
       const checkFileContent = await app.vault.read(file);
       // Manual fallback for Templater just in case
-      if (checkFileContent.includes("<%")) {
+      if (checkFileContent.includes("<"+"%")) { //split to avoid Templater throwing an error on synchronization
         try {
           const tempCmd = app.commands.commands["templater-obsidian:replace-in-file-templater"];
           if (tempCmd) {
@@ -1317,7 +1317,7 @@ async function openCaptureModal(initialSearchValue) {
           : String(cache.frontmatter.aliases).split(",").map(a => a.trim());
         aliases.forEach(a => {
           // Filter out aliases that contain templater code
-          if (a && typeof a === "string" && !a.includes("<%")) {
+          if (a && typeof a === "string" && !a.includes("<"+"%")) { //split to avoid Templater throwing an error on synchronization
             searchItems.push({ type: "alias", basename: f.basename, alias: a, file: f });
           }
         });
@@ -1333,7 +1333,7 @@ async function openCaptureModal(initialSearchValue) {
     
     uniqueUnresolved.forEach(u => {
       // Filter out unresolved links that are just unrendered templater variables
-      if (!u.includes("<%") && !fileBasenames.has(u)) {
+      if (!u.includes("<"+"%") && !fileBasenames.has(u)) { //split to avoid Templater throwing an error on synchronization
         searchItems.push({ type: "unresolved", basename: u });
         fileBasenames.add(u);
       }
@@ -1451,7 +1451,7 @@ function buildVisualSizingSection(contentEl) {
 
   new ea.obsidian.Setting(genSection)
     .setName("Markdown Embed Display Format")
-    .setDesc("The display format applied to references inside the originating note (static image currently not supported with MindMap Builder)")
+    .setDesc("The display format applied to references inside the originating note")
     .addDropdown(dropdown => dropdown
       .addOption("embeddable", "Interactive Embeddable")
       .addOption("image", "Static Markdown Image")

@@ -1420,7 +1420,7 @@ const parseImageInput = (input) => {
     }
   }
 
-  let imageFile = file = null;
+  let imageFile = null, file = null;
   let isImagePath = false;
 
   const PDF_RECT_LINK_REGEX = /^[^#]*#page=\d*/; //(&\w*=[^&]+){0,}&rect=\d*,\d*,\d*,\d*
@@ -1432,6 +1432,10 @@ const parseImageInput = (input) => {
     if (imageFile) {
       const isEx = imageFile.extension === "md" && ea.isExcalidrawFile(imageFile);
       if (!IMAGE_TYPES.includes(imageFile.extension.toLowerCase()) && !isEx) {
+        // Treat standard markdown files with an explicit width as an image path
+        if (file.extension === "md" && width !== null) {
+          isImagePath = true;
+        }
         imageFile = null;
       }
       if (isEx && pathParts.length === 2) {
@@ -1463,6 +1467,12 @@ const parseEmbeddableInput = (input, imageInfo) => {
   if (dataURL) {
     return dataURL[1];
   }
+  
+  // If parseImageInput already claimed this as an image path (e.g. markdown with width), don't convert to embeddable
+  if (imageInfo && imageInfo.isImagePath && imageInfo.width !== null) {
+    return null;
+  }
+
   const pathSplit = imageInfo?.path?.split("#");
   if (imageInfo && imageInfo.file && imageInfo.file.extension === "md" &&
     // Not an Excalidraw File or maybe an Excalidraw file with a back-of-the-card note reference 
