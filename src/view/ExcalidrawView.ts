@@ -519,10 +519,10 @@ export default class ExcalidrawView
       | undefined;
   }
   get ownerDocument(): Document {
-    return DEVICE.isMobile ? mainDocument : this.containerEl.ownerDocument;
+    return DEVICE.isMobile ? mainDocument : this.containerEl?.ownerDocument || mainDocument;
   }
   get ownerWindow(): Window | null {
-    return this.ownerDocument.defaultView;
+    return this.ownerDocument?.defaultView || window;
   }
 
   get isInMainObsidianWorkspace(): boolean {

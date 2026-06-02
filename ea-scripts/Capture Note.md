@@ -501,10 +501,16 @@ function buildCaptureHeaders(originView) {
 
   return { sectionRawText, sectionWithBrackets, todayDNPBasename, isCurrentDNP };
 }
+
 // Forces Excalidraw view mode and returns the target note's API instance
 async function prepareTargetExcalidrawView(noteBWorkspaceLeaf) {
   if (noteBWorkspaceLeaf.view.getViewType() !== 'excalidraw') {
-    app.workspace.setActiveLeaf(noteBWorkspaceLeaf);
+    app.workspace.setActiveLeaf(noteBWorkspaceLeaf, { focus: true });
+    
+    // Give Obsidian's layout engine time to register the leaf as fully active.
+    // This prevents the toggle command from silently failing on a cold boot.
+    await sleep(200);
+
     const cmd = app.commands.commands["obsidian-excalidraw-plugin:toggle-excalidraw-view"];
     if (cmd) {
       if (cmd.callback) cmd.callback();
@@ -512,7 +518,12 @@ async function prepareTargetExcalidrawView(noteBWorkspaceLeaf) {
     } else {
       await app.commands.executeCommandById("obsidian-excalidraw-plugin:toggle-excalidraw-view");
     }
-    await sleep(1000);
+    
+    // Explicitly wait until the view type registers the change, rather than a fixed sleep
+    let toggleWatchdog = 0;
+    while (noteBWorkspaceLeaf.view.getViewType() !== 'excalidraw' && toggleWatchdog++ < 40) {
+      await sleep(50);
+    }
   }
 
   if (noteBWorkspaceLeaf.view.getViewType() !== 'excalidraw') {
