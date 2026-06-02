@@ -12356,6 +12356,25 @@ const performAction = async (action, event) => {
       }],
       returns: "MMResult<{nodes:string[],branchArrows:string[],crossLinks:string[],boundaries:string[],decorations:string[],boundTexts:string[]}>",
     },
+    getGlobalConfig: {
+      summary: "Returns the global map and layout configurations, including custom color palette",
+      params: [],
+      returns: "MMResult<{config:object}>",
+    },
+    setGlobalConfig: {
+      summary: "Updates the global map and layout configurations and persists them",
+      params: [{
+        name: "patch",
+        type: "object",
+        required: true
+      }],
+      returns: "Promise<MMResult<{success:boolean}>>",
+    },
+    getConfigSchema: {
+      summary: "Returns the schema, allowed values, and definitions for map configurations",
+      params: [],
+      returns: "MMResult<{schema:object}>",
+    },
   };
 
   const cloneJSON = (value) => JSON.parse(JSON.stringify(value));
@@ -12940,6 +12959,164 @@ const performAction = async (action, event) => {
         decorations: Array.from(new Set(decorations)),
         boundTexts: Array.from(new Set(boundTexts)),
       });
+    },
+
+    getGlobalConfig: () => {
+      return mmOk({
+        config: {
+          growthMode: currentModalGrowthMode,
+          autoLayoutDisabled: autoLayoutDisabled,
+          arrowType: arrowType,
+          fontsizeScale: fontsizeScale,
+          multicolor: multicolor,
+          boxChildren: boxChildren,
+          roundedCorners: roundedCorners,
+          maxWrapWidth: maxWidth,
+          isSolidArrow: isSolidArrow,
+          centerText: centerText,
+          fillSweep: fillSweep,
+          branchScale: branchScale,
+          baseStrokeWidth: baseStrokeWidth,
+          customPalette: cloneJSON(customPalette),
+          layoutSettings: cloneJSON(layoutSettings)
+        }
+      });
+    },
+
+    setGlobalConfig: async ({ patch } = {}) => {
+      if (!patch || typeof patch !== "object") {
+        return mmErr(MMError.INVALID_ARGUMENT, "setGlobalConfig requires a patch object");
+      }
+      try {
+        let requiresSave = false;
+
+        if (patch.growthMode && GROWTH_TYPES.includes(patch.growthMode)) {
+          currentModalGrowthMode = patch.growthMode;
+          setVal(K_GROWTH, patch.growthMode);
+          requiresSave = true;
+        }
+        if (typeof patch.autoLayoutDisabled === "boolean") {
+          // This is a session-level global setting, it does not persist across restarts
+          autoLayoutDisabled = patch.autoLayoutDisabled;
+        }
+        if (patch.arrowType && ARROW_TYPES.includes(patch.arrowType)) {
+          arrowType = patch.arrowType;
+          setVal(K_ARROW_TYPE, patch.arrowType);
+          requiresSave = true;
+        }
+        if (patch.fontsizeScale && FONT_SCALE_TYPES.includes(patch.fontsizeScale)) {
+          fontsizeScale = patch.fontsizeScale;
+          setVal(K_FONTSIZE, patch.fontsizeScale);
+          requiresSave = true;
+        }
+        if (patch.branchScale && BRANCH_SCALE_TYPES.includes(patch.branchScale)) {
+          branchScale = patch.branchScale;
+          setVal(K_BRANCH_SCALE, patch.branchScale);
+          requiresSave = true;
+        }
+        if (typeof patch.multicolor === "boolean") {
+          multicolor = patch.multicolor;
+          setVal(K_MULTICOLOR, patch.multicolor);
+          requiresSave = true;
+        }
+        if (typeof patch.boxChildren === "boolean") {
+          boxChildren = patch.boxChildren;
+          setVal(K_BOX, patch.boxChildren);
+          requiresSave = true;
+        }
+        if (typeof patch.roundedCorners === "boolean") {
+          roundedCorners = patch.roundedCorners;
+          setVal(K_ROUND, patch.roundedCorners);
+          requiresSave = true;
+        }
+        if (typeof patch.maxWrapWidth === "number") {
+          maxWidth = patch.maxWrapWidth;
+          setVal(K_WIDTH, patch.maxWrapWidth);
+          requiresSave = true;
+        }
+        if (typeof patch.isSolidArrow === "boolean") {
+          isSolidArrow = patch.isSolidArrow;
+          setVal(K_ARROWSTROKE, patch.isSolidArrow);
+          requiresSave = true;
+        }
+        if (typeof patch.centerText === "boolean") {
+          centerText = patch.centerText;
+          setVal(K_CENTERTEXT, patch.centerText);
+          requiresSave = true;
+        }
+        if (typeof patch.fillSweep === "boolean") {
+          fillSweep = patch.fillSweep;
+          setVal(K_FILL_SWEEP, patch.fillSweep);
+          requiresSave = true;
+        }
+        if (typeof patch.baseStrokeWidth === "number") {
+          baseStrokeWidth = patch.baseStrokeWidth;
+          setVal(K_BASE_WIDTH, patch.baseStrokeWidth);
+          requiresSave = true;
+        }
+        if (patch.customPalette && typeof patch.customPalette === "object") {
+          customPalette = { ...customPalette, ...patch.customPalette };
+          setVal(K_PALETTE, customPalette, true);
+          requiresSave = true;
+        }
+        if (patch.layoutSettings && typeof patch.layoutSettings === "object") {
+          // Additional layer of merging to ensure we don't accidentally erase other layout keys
+          layoutSettings = { ...layoutSettings, ...patch.layoutSettings };
+          setVal(K_LAYOUT, layoutSettings, true);
+          requiresSave = true;
+        }
+
+        if (requiresSave) {
+          dirty = true;
+          await saveSettings();
+          updateUI(); // Reflect changes in the sidepanel
+        }
+        return mmOk({ success: true });
+      } catch (e) {
+        return mmErr(MMError.OPERATION_FAILED, "setGlobalConfig failed", e);
+      }
+    },
+
+    getConfigSchema: () => {
+      const schema = {
+        growthMode: { type: "string", valueset: GROWTH_TYPES },
+        autoLayoutDisabled: { type: "boolean" },
+        arrowType: { type: "string", valueset: ARROW_TYPES },
+        fontsizeScale: { type: "string", valueset: FONT_SCALE_TYPES },
+        branchScale: { type: "string", valueset: BRANCH_SCALE_TYPES },
+        multicolor: { type: "boolean" },
+        boxChildren: { type: "boolean" },
+        roundedCorners: { type: "boolean" },
+        maxWrapWidth: { type: "number" },
+        isSolidArrow: { type: "boolean" },
+        centerText: { type: "boolean" },
+        fillSweep: { type: "boolean" },
+        baseStrokeWidth: { type: "number" },
+        customPalette: {
+          type: "object",
+          properties: {
+            enabled: { type: "boolean" },
+            random: { type: "boolean" },
+            colors: { type: "array", items: "string (hex color)" }
+          }
+        },
+        layoutSettings: {}
+      };
+      
+      // Auto-extract boundaries and descriptions from internal layout metadata
+      Object.keys(LAYOUT_METADATA).forEach(key => {
+        const meta = LAYOUT_METADATA[key];
+        schema.layoutSettings[key] = {
+          type: "number",
+          default: meta.def,
+          min: meta.min,
+          max: meta.max,
+          step: meta.step,
+          description: meta.desc
+        };
+      });
+
+      return mmOk({ schema });
     },
   };
 

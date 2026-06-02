@@ -139,7 +139,7 @@ Imports markdown bullet hierarchy into the map.
 #### `exportMarkdown({ nodeId?, cut? }): Promise<MMResult<{ markdown: string }>>`
 Copies selected branch as markdown to clipboard and returns the markdown text.
 
-### Submaps and config
+### Map and Global config
 
 #### `toggleSubmapRoot({ nodeId?, enabled? }): Promise<MMResult<{ nodeId; enabled }>>`
 Toggles additional-root status (or forces it when `enabled` is provided).
@@ -160,6 +160,15 @@ Returns all project element IDs under a root.
 
 #### `getElementIdsByRole(rootId: string): MMResult<{ nodes; branchArrows; crossLinks; boundaries; decorations; boundTexts }>`
 Returns categorized element IDs for selective styling or export workflows.
+
+#### `getConfigSchema(): MMResult<{ schema: object }>`
+Returns the schema, allowed values, data types, and definitions for all map configurations. Useful for external agents to validate payloads before passing them to `setGlobalConfig` or `setMapConfig`.
+
+#### `getGlobalConfig(): MMResult<{ config: object }>`
+Returns the current active global settings, including layout configurations, growth strategy, and the custom color palette.
+
+#### `setGlobalConfig({ patch }): Promise<MMResult<{ success: boolean }>>`
+Updates the global map and layout configurations using a partial JSON patch. It automatically validates against allowed parameters, updates the in-memory state so the Sidepanel UI refreshes immediately, and persists the settings.
 
 ---
 
@@ -462,6 +471,62 @@ if (!roles.ok) return;
 
   console.log("Map created", { rootInfo, rootText, branchNodeIds });
 })();
+```
+
+### 11) Update global configuration and custom color palette
+
+```js
+const mmb = window.MindMapBuilderAPI;
+if (!mmb?.ready()) throw new Error("MindMapBuilderAPI not ready");
+
+// 1. (Optional) Check the schema to understand allowed values
+const schemaRes = mmb.getConfigSchema();
+if (schemaRes.ok) {
+  // e.g., ["Radial", "Right-facing", "Left-facing", "Right-Left", "Up-facing", "Down-facing", "Up-Down"]
+  console.log("Allowed Growth Modes:", schemaRes.data.schema.growthMode.valueset);
+}
+
+// 2. Fetch the current global configuration
+const configRes = mmb.getGlobalConfig();
+if (configRes.ok) {
+  console.log("Current Base Stroke Width:", configRes.data.config.baseStrokeWidth);
+}
+
+// 3. Apply a patch to the global configuration
+// This example sets the growth mode, adjusts stroke width, modifies layout spacing,
+// and configures a custom sequential color palette.
+const patch = {
+  growthMode: "Right-facing",
+  multicolor: true,
+  baseStrokeWidth: 8,
+  customPalette: {
+    enabled: true,
+    random: false, // Set to true to pick random colors from the array instead of sequentially
+    colors: [
+      "#ff595e", // red
+      "#ff922b", // orange
+      "#fcc419", // yellow
+      "#51cf66", // green
+      "#339af0", // blue
+      "#845ef7"  // purple
+    ]
+  },
+  layoutSettings: {
+    GAP_X: 150,
+    GAP_Y: 35
+  }
+};
+
+const updateRes = await mmb.setGlobalConfig({ patch });
+
+if (updateRes.ok) {
+  console.log("Global settings and custom color palette updated successfully!");
+  
+  // Subsequent calls to mmb.addNode() or mmb.refreshMapLayout() 
+  // will now utilize these newly established global settings.
+} else {
+  console.error("Failed to update global config:", updateRes.error.message);
+}
 ```
 
 ---
