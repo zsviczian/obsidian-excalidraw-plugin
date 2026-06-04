@@ -346,12 +346,122 @@ async function injectNoteTypeProperty(file, noteTypeKey, cleanFilename, opt) {
 }
 
 // -------------------------------------------------------------
+// 3b. Async Event & Synchronization Helpers
+// -------------------------------------------------------------
+
+/**
+ * Waits for a workspace leaf to fully load the specified file object.
+ */
+const waitForLeafToLoadFile = async (leaf, file, timeout = 10000) => {
+  return new Promise((resolve) => {
+    if (leaf.view?.file?.path === file.path) return resolve(true);
+    let elapsed = 0;
+    const interval = 50;
+    const check = () => {
+      if (leaf.view?.file?.path === file.path) resolve(true);
+      else if (elapsed > timeout) resolve(false);
+      else { elapsed += interval; setTimeout(check, interval); }
+    };
+    check();
+  });
+};
+
+/**
+ * Waits for the Excalidraw View to be fully mounted, initialized, and ready.
+ * Verifies the API, targetView, and semaphore flags.
+ */
+const waitForExcalidrawViewReady = async (target_ea, timeout = 10000) => {
+  return new Promise((resolve) => {
+    let elapsed = 0;
+    const interval = 50;
+    const check = () => {
+      if (
+        target_ea.targetView &&
+        target_ea.getExcalidrawAPI() &&
+        target_ea.targetView.semaphores?.viewloaded === true &&
+        !target_ea.targetView.semaphores?.viewunload
+      ) {
+        resolve(true);
+      } else if (elapsed > timeout) {
+        resolve(false);
+      } else {
+        elapsed += interval;
+        setTimeout(check, interval);
+      }
+    };
+    check();
+  });
+};
+
+/**
+ * Waits for a file to trigger a "modify" event on the vault, indicating 
+ * that disk I/O (like forceSave) has completed successfully.
+ */
+const waitForFileModification = async (file, timeout = 5000) => {
+  if (!file) return false;
+  return new Promise((resolve) => {
+    let timeoutId;
+    const handler = (changedFile) => {
+      if (changedFile.path === file.path) {
+        app.vault.off("modify", handler);
+        clearTimeout(timeoutId);
+        resolve(true);
+      }
+    };
+    app.vault.on("modify", handler);
+    timeoutId = setTimeout(() => {
+      app.vault.off("modify", handler);
+      resolve(false);
+    }, timeout);
+  });
+};
+
+// -------------------------------------------------------------
 // 4. Core Execution Flow (Refactored)
 // -------------------------------------------------------------
 
 // Extracts the initial text from either standard elements or mindmap nodes
 async function extractInitialTextAndMindmapState(originView, activeElement, textEl) {
-  const mmAPI = window.MindMapBuilderAPI;
+  let mmAPI = window.MindMapBuilderAPI;
+  
+  // Auto-start MindMap Builder if it's not running but a mindmap node is selected
+  if (
+    !mmAPI && activeElement && (
+      activeElement.customData?.hasOwnProperty("mindmapOrder") ||
+      activeElement.customData?.hasOwnProperty("growthMode")
+  )) {
+    const mmbCommandPaletteAction = Object.keys(app.commands.commands).find(k=>k.startsWith("obsidian-excalidraw-plugin") && k.toLowerCase().includes("mindmap builder"));
+    if(mmbCommandPaletteAction) {
+      const cmd = app.commands.commands[mmbCommandPaletteAction];
+      if (cmd) {
+        // Check if sidepanel is currently visible before starting MMB
+        let sidepanelWasVisible = false;
+        const sidepanelLeaf = ea.getSidepanelLeaf();
+        if (sidepanelLeaf && sidepanelLeaf.view.containerEl.offsetParent !== null) {
+          sidepanelWasVisible = true;
+        }
+
+        if(cmd.callback) cmd.callback();
+        else if(cmd.checkCallback) cmd.checkCallback(false);
+        
+        // Wait for the API to become available
+        let retries = 0;
+        while(!window.MindMapBuilderAPI && retries++ < 20) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        mmAPI = window.MindMapBuilderAPI;
+
+        // If MMB opened the sidepanel but it was previously closed, hide it
+        if (!sidepanelWasVisible) {
+           const newSidepanelLeaf = ea.getSidepanelLeaf();
+           if (newSidepanelLeaf && newSidepanelLeaf.view.containerEl.offsetParent !== null) {
+             ea.toggleSidepanelView();
+           }
+        }
+      }
+    }
+  }
+
   let isMindmapNode = false;
   let mindmapNodeText = "";
   let mmNodeId = null;
@@ -444,9 +554,10 @@ async function ensureTargetFileExists(folder, filename, fname, opt, noteType) {
         try {
           const tempCmd = app.commands.commands["templater-obsidian:replace-in-file-templater"];
           if (tempCmd) {
+            const modifyPromise = waitForFileModification(file, 5000);
             if (tempCmd.callback) tempCmd.callback();
             else if (tempCmd.checkCallback) tempCmd.checkCallback(false);
-            await sleep(1000);
+            await modifyPromise;
           }
         } catch (e) { }
       }
@@ -472,10 +583,8 @@ async function openAndResolveTargetLeaf(file, originView, openNoteBBehavior) {
   }
 
   // Explicitly wait until the target leaf has fully instantiated its File representation 
-  let leafWatchdog = 0;
-  while (noteBWorkspaceLeaf.view?.file?.path !== file.path && leafWatchdog++ < 40) {
-    await sleep(50);
-  }
+  await waitForLeafToLoadFile(noteBWorkspaceLeaf, file);
+  
   return noteBWorkspaceLeaf;
 }
 
@@ -504,26 +613,58 @@ function buildCaptureHeaders(originView) {
 
 // Forces Excalidraw view mode and returns the target note's API instance
 async function prepareTargetExcalidrawView(noteBWorkspaceLeaf) {
+  const file = noteBWorkspaceLeaf.view?.file;
+
   if (noteBWorkspaceLeaf.view.getViewType() !== 'excalidraw') {
     app.workspace.setActiveLeaf(noteBWorkspaceLeaf, { focus: true });
-    
-    // Give Obsidian's layout engine time to register the leaf as fully active.
-    // This prevents the toggle command from silently failing on a cold boot.
-    await sleep(200);
 
-    const cmd = app.commands.commands["obsidian-excalidraw-plugin:toggle-excalidraw-view"];
-    if (cmd) {
-      if (cmd.callback) cmd.callback();
-      else if (cmd.checkCallback) cmd.checkCallback(false);
+    const toggleCmd = async () => {
+      const cmd = app.commands.commands["obsidian-excalidraw-plugin:toggle-excalidraw-view"];
+      if (cmd) {
+        if (cmd.callback) cmd.callback();
+        else if (cmd.checkCallback) cmd.checkCallback(false);
+      } else {
+        await app.commands.executeCommandById("obsidian-excalidraw-plugin:toggle-excalidraw-view");
+      }
+    };
+
+    // A newly created file is ready to be opened as Excalidraw when the frontmatter for the file 
+    // returns a valid value for the excalidraw-plugin yaml key from metadata cache.
+    const cache = app.metadataCache.getFileCache(file);
+    if (cache?.frontmatter && cache.frontmatter["excalidraw-plugin"]) {
+      await toggleCmd();
     } else {
-      await app.commands.executeCommandById("obsidian-excalidraw-plugin:toggle-excalidraw-view");
+      await new Promise((resolve) => {
+        let timeoutId;
+        const handler = (changedFile) => {
+          if (changedFile.path === file.path) {
+            const currentCache = app.metadataCache.getFileCache(changedFile);
+            if (currentCache?.frontmatter && currentCache.frontmatter["excalidraw-plugin"]) {
+              app.metadataCache.off("changed", handler);
+              clearTimeout(timeoutId);
+              toggleCmd().then(resolve);
+            }
+          }
+        };
+        app.metadataCache.on("changed", handler);
+        timeoutId = setTimeout(() => {
+          app.metadataCache.off("changed", handler);
+          toggleCmd().then(resolve); // Fallback execution
+        }, 5000);
+      });
     }
     
-    // Explicitly wait until the view type registers the change, rather than a fixed sleep
-    let toggleWatchdog = 0;
-    while (noteBWorkspaceLeaf.view.getViewType() !== 'excalidraw' && toggleWatchdog++ < 40) {
-      await sleep(50);
-    }
+    // Explicitly wait until the view type registers the change
+    await new Promise((resolve) => {
+      let elapsed = 0;
+      const interval = 50;
+      const check = () => {
+        if (noteBWorkspaceLeaf.view.getViewType() === 'excalidraw') resolve();
+        else if (elapsed > 5000) resolve(); // timeout fallback
+        else { elapsed += interval; setTimeout(check, interval); }
+      };
+      check();
+    });
   }
 
   if (noteBWorkspaceLeaf.view.getViewType() !== 'excalidraw') {
@@ -532,30 +673,45 @@ async function prepareTargetExcalidrawView(noteBWorkspaceLeaf) {
   }
 
   const target_ea = ea.getAPI(noteBWorkspaceLeaf.view);
-  let targetWatchdog = 0;
-  while ((!target_ea.targetView || !target_ea.getExcalidrawAPI()) && targetWatchdog++ < 40) {
-    await sleep(50);
-    target_ea.setView(noteBWorkspaceLeaf.view);
-  }
+  target_ea.setView(noteBWorkspaceLeaf.view);
+
+  // Wait for Excalidraw view to be fully loaded and semaphores clear
+  await waitForExcalidrawViewReady(target_ea);
+  
   return target_ea;
 }
 
 // Injects the visual frame marker and template onto the target Note B
-async function injectVisualFormat(target_ea, targetX, targetY, sectionRawText, todayDNPBasename, isCurrentDNP) {
+async function injectVisualFormat(target_ea, targetX, targetY, sectionRawText, todayDNPBasename, isCurrentDNP, preGeneratedFrameID, embeddedElementId, ontologyAction, originFilePath) {
   const fWidth = parseInt(settings.frameWidth) || 1920;
   const fHeight = parseInt(settings.frameHeight) || 1080;
 
   target_ea.clear();
-  const frameID = target_ea.addFrame(targetX, targetY, fWidth, fHeight, sectionRawText);
-  const frameEl = target_ea.getElement(frameID);
+  
+  // Create frame and remap its ID to the pre-generated ID expected by Note A
+  const tmpid = target_ea.addFrame(targetX, targetY, fWidth, fHeight, sectionRawText);
+  const frameEl = target_ea.getElement(tmpid);
+  frameEl.id = preGeneratedFrameID;
+  target_ea.elementsDict[preGeneratedFrameID] = frameEl;
+  delete target_ea.elementsDict[tmpid];
+  
+  const frameID = preGeneratedFrameID;
+
   if (settings.useMarkerFrames !== false) {
     frameEl.frameRole = "marker";
   }
   
-  // Only add the DNP link to the frame if the origin note isn't already the DNP
+  // Conditionally add dynamic links back to the originating element and (if applicable) the DNP
+  let linkStr = "";
+  if (embeddedElementId && ontologyAction && originFilePath) {
+    linkStr += `(${ontologyAction}::[[${originFilePath}#^${embeddedElementId}]])`;
+  }
   if (!isCurrentDNP) {
     const frameOntology = settings.frameOntology || "note";
-    frameEl.link = `(${frameOntology}::[[${todayDNPBasename}]])`;
+    linkStr += (linkStr ? " " : "") + `(${frameOntology}::[[${todayDNPBasename}]])`;
+  }
+  if (linkStr) {
+    frameEl.link = linkStr;
   }
 
   let clonedTemplateElementIds = [];
@@ -563,7 +719,15 @@ async function injectVisualFormat(target_ea, targetX, targetY, sectionRawText, t
     try {
       const parsed = JSON.parse(settings.visualTemplateJSON);
       if (parsed.elements && parsed.elements.length > 0) {
-        const clonedElements = target_ea.cloneElements(parsed.elements);
+        const clonedElements = ExcalidrawLib.restoreElements(
+          target_ea.cloneElements(parsed.elements,
+            null,
+            {
+              refreshDimensions: true,
+              repairBindings: true
+            }
+          )
+        );
         const bounds = window.ExcalidrawLib.getCommonBounds(clonedElements);
         const boundsWidth = bounds[2] - bounds[0];
         const boundsHeight = bounds[3] - bounds[1];
@@ -607,15 +771,16 @@ async function injectVisualFormat(target_ea, targetX, targetY, sectionRawText, t
 
   // Force Excalidraw to save state to disk before we proceed
   if (target_ea.targetView && typeof target_ea.targetView.forceSave === "function") {
+    const modifyPromise = waitForFileModification(target_ea.targetView.file, 2000);
     await target_ea.targetView.forceSave(true);
+    await modifyPromise;
   }
-  await sleep(200);
 
   return { frameID, clonedTemplateElementIds };
 }
 
 // Modifies Note B's markdown structure to embed the target container safely
-async function injectMarkdownFormat(file, target_ea, targetX, targetY, sectionRawText, sectionWithBrackets, todayDNPBasename, isCurrentDNP) {
+async function injectMarkdownFormat(file, target_ea, targetX, targetY, sectionRawText, sectionWithBrackets, todayDNPBasename, isCurrentDNP, preGeneratedFrameID, embeddedElementId, ontologyAction, originFilePath) {
   const data = await app.vault.read(file);
   const sanitizedSection = sanitizeLinkSection(sectionRawText);
   const newLineText = `## ${sectionWithBrackets}\n\n`;
@@ -651,32 +816,52 @@ async function injectMarkdownFormat(file, target_ea, targetX, targetY, sectionRa
     }
   }
 
-  // Increased sleep to 1000ms to allow Excalidraw to fully process the file change event
-  await sleep(1000);
+  // Wait to allow Excalidraw to fully process the file change event
+  if (modified) {
+    await waitForFileModification(file, 2000);
+  }
 
   const embedWidth = parseInt(settings.embedWidth) || 400;
   const embedHeight = parseInt(settings.embedHeight) || 500;
-  const containerLink = `[[${file.basename}#${sanitizedSection}]]`;
+  
+  const selfLinkpath = getObsidianLinkpath(file, file.path);
+  const containerLink = `[[${selfLinkpath}#${sanitizedSection}]]`;
 
   target_ea.clear();
-  const frameID = target_ea.addEmbeddable(targetX, targetY, embedWidth, embedHeight, containerLink);
   
-  // Conditionally add the link to the embeddable target as well
-  if (!isCurrentDNP) {
-    const embedEl = target_ea.getElement(frameID);
-    const frameOntology = settings.frameOntology || "note";
-    // Prepend the containerLink so Excalidraw still recognizes the target of the embeddable
-    embedEl.link = `${containerLink} (${frameOntology}::[[${todayDNPBasename}]])`;
+  // Create embeddable and remap its ID to the pre-generated ID expected by Note A
+  const tmpid = target_ea.addEmbeddable(targetX, targetY, embedWidth, embedHeight, containerLink);
+  const embedEl = target_ea.getElement(tmpid);
+  embedEl.id = preGeneratedFrameID;
+  target_ea.elementsDict[preGeneratedFrameID] = embedEl;
+  delete target_ea.elementsDict[tmpid];
+  
+  const frameID = preGeneratedFrameID;
+  
+  // Conditionally add dynamic links back to the originating element and (if applicable) the DNP
+  let linkStr = containerLink;
+  if (embeddedElementId && ontologyAction && originFilePath) {
+    const originFile = app.vault.getAbstractFileByPath(originFilePath);
+    const originLinkpath = originFile ? getObsidianLinkpath(originFile, file.path) : originFilePath.replace(/\.md$/i, "");
+    linkStr += ` (${ontologyAction}::[[${originLinkpath}#^${embeddedElementId}]])`;
   }
+  if (!isCurrentDNP) {
+    const frameOntology = settings.frameOntology || "note";
+    const dnpFile = app.metadataCache.getFirstLinkpathDest(todayDNPBasename, file.path);
+    const dnpLinkpath = dnpFile ? getObsidianLinkpath(dnpFile, file.path) : todayDNPBasename;
+    linkStr += ` (${frameOntology}::[[${dnpLinkpath}]])`;
+  }
+  embedEl.link = linkStr;
 
   await target_ea.addElementsToView(false, true, true);
   target_ea.clear();
 
   // Force Excalidraw to save state to disk before we proceed
   if (target_ea.targetView && typeof target_ea.targetView.forceSave === "function") {
+    const modifyPromise = waitForFileModification(target_ea.targetView.file, 2000);
     await target_ea.targetView.forceSave(true);
+    await modifyPromise;
   }
-  await sleep(200);
 
   return frameID;
 }
@@ -687,7 +872,9 @@ async function injectIntoOriginView(originView, activeElement, format, actionTyp
   const refPath = format === "Visual" ? `^frame=${frameID}` : sanitizeLinkSection(sectionRawText);
   
   const displayAlias = linkAlias ? linkAlias : file.basename;
-  const linkStr = `[[${file.path}#${refPath}|${displayAlias}]]`;
+  
+  const linkpath = getObsidianLinkpath(file, originView.file.path);
+  const linkStr = `[[${linkpath}#${refPath}|${displayAlias}]]`;
   
   const ontologyStr = `(${ontologyAction}:: ${linkStr})`;
   const nodeTextString = `${timeStr}${ontologyStr}`;
@@ -698,12 +885,12 @@ async function injectIntoOriginView(originView, activeElement, format, actionTyp
 
   let embedText = "";
   if (actionType === "CAPTURE_HERE") {
-    embedText = `![[${file.path}#${refPath}]]`;
+    embedText = `![[${linkpath}#${refPath}]]`;
   } else if (format === "Visual" || isMarkdownImage) {
     // Keep the markdown string for MM Node text, which parses |w properly
-    embedText = `![[${file.path}#${refPath}|${imgWidth}]]`;
+    embedText = `![[${linkpath}#${refPath}|${imgWidth}]]`;
   } else {
-    embedText = `![[${file.path}#${refPath}]]`;
+    embedText = `![[${linkpath}#${refPath}]]`;
   }
 
   let embeddedElementId;
@@ -834,14 +1021,14 @@ async function injectIntoOriginView(originView, activeElement, format, actionTyp
       embeddedElementId = ea.addEmbeddable(
         xPos, yPos,
         eWidth, eHeight,
-        `[[${file.basename}#${refPath}]]`
+        `[[${linkpath}#${refPath}]]`
       );
     } else {
       // Add the image. Note: `addImage` doesn't natively parse the |400 suffix to resize the element 
       // when `scale` is false in ExcalidrawAutomate. We pass the clean path.
       embeddedElementId = await ea.addImage(
         xPos, yPos,
-        `${file.path}#${refPath}` 
+        `${file.path}#${refPath}` // ea.addImage uses raw paths reliably 
       );
       
       // Fix Dimensions: Read natural size and scale proportionally
@@ -852,17 +1039,14 @@ async function injectIntoOriginView(originView, activeElement, format, actionTyp
           embeddedElement.width = imgWidth;
           embeddedElement.height = imgWidth / ratio;
         } else {
-          // Fallback if dimensions aren't immediately resolved
+          // Fallback if dimensions aren't immediately resolved because target isn't fully drawn yet
           embeddedElement.width = imgWidth;
+          embeddedElement.height = imgWidth; // Fallback to square 1:1 format
         }
       }
     }
 
-    const embeddedElement = ea.getElement(embeddedElementId);
-    if(embeddedElement) {
-      embeddedElement.link = `(${ontologyAction}:: [[${file.path}#${refPath}]])`;
-    }
-
+    // Commit changes so the element exists in the active scene before the unified link update
     await ea.addElementsToView(!activeElement, true);
     
     // Auto-resize the container if the text expanded
@@ -871,6 +1055,34 @@ async function injectIntoOriginView(originView, activeElement, format, actionTyp
     }
     
     ea.clear();
+  }
+
+  if (embeddedElementId) {
+    const elToUpdate = ea.getViewElements().find(el => el.id === embeddedElementId);
+    if (elToUpdate) {
+      ea.clear();
+      ea.copyViewElementsToEAforEditing([elToUpdate]);
+      const eaEl = ea.getElement(embeddedElementId);
+      
+      if (eaEl) {
+        if (format === "Visual") {
+          // Visual Format: Frame
+          eaEl.link = `(${ontologyAction}:: [[${linkpath}#${refPath}]])`;
+        } else {
+          const isEmbeddable = actionType === "CAPTURE_HERE" || !isMarkdownImage;
+          if (isEmbeddable) {
+            // Markdown Format + Embeddable: Multiple links
+            eaEl.link = `(${ontologyAction}:: [[${linkpath}#${refPath}]] [[${linkpath}#^${frameID}]])`;
+          } else {
+            // Markdown Format + Static Image: Element ID link only
+            eaEl.link = `(${ontologyAction}:: [[${linkpath}#^${frameID}]])`;
+          }
+        }
+      }
+      
+      await ea.addElementsToView(false, true, true);
+      ea.clear();
+    }
   }
 
   return embeddedElementId;
@@ -882,17 +1094,24 @@ async function handleFinalActionFocus(actionType, originView, noteBWorkspaceLeaf
     if (noteBWorkspaceLeaf && noteBWorkspaceLeaf !== originView.leaf) {
       // Force Excalidraw to save its state to disk before we close the leaf
       if (target_ea && target_ea.targetView && typeof target_ea.targetView.forceSave === "function") {
+        const modifyPromise = waitForFileModification(target_ea.targetView.file, 3000);
         await target_ea.targetView.forceSave(true);
+        await modifyPromise;
       }
-      await sleep(1000); // Give file I/O ample time before destroying the view
       noteBWorkspaceLeaf.detach();
     }
 
-    const targetElements = ea.getViewElements().filter(el => el.id === embeddedElementId);
+    // Reactivate Origin Note (Note A) since we left it briefly to draw into Note B
+    app.workspace.setActiveLeaf(originView.leaf, { focus: true });
+
+    // Grab elements using origin_ea
+    const origin_ea = ea.getAPI(originView.leaf.view);
+    const targetElements = origin_ea.getViewElements().filter(el => el.id === embeddedElementId);
+    
     if (targetElements.length > 0) {
       await mmAPI?.performAction("Dock & hide");
-      await sleep(50);
-      ea.viewZoomToElements(true, targetElements, 0.1);
+      await new Promise(r => setTimeout(r, 50)); 
+      origin_ea.viewZoomToElements(true, targetElements, 0.1);
     }
   } else {
     app.workspace.setActiveLeaf(noteBWorkspaceLeaf, { focus: true });
@@ -902,7 +1121,7 @@ async function handleFinalActionFocus(actionType, originView, noteBWorkspaceLeaf
       const templateElements = target_ea.getViewElements().filter(el => clonedTemplateElementIds.includes(el.id));
       if (targetElements.length > 0) {
         target_ea.viewZoomToElements(false, targetElements, 0.1);
-        await sleep(50);
+        await new Promise(r => setTimeout(r, 50)); 
       }
       if (templateElements.length > 0) {
         target_ea.selectElementsInView(templateElements);
@@ -947,6 +1166,108 @@ async function handleFrameResizingIfEligible() {
   return false;
 }
 
+// Resolves conflicts when an existing file is selected that lacks the note-type or correct prefix
+async function resolveExistingFileConflict(file, hasNoteType, hasPrefix, prefix) {
+  return new Promise(resolve => {
+    const modal = new ea.obsidian.Modal(app);
+    modal.titleEl.setText("Existing File Selected");
+
+    let addNoteType = !hasNoteType;
+    let renameFile = !hasPrefix;
+    let action = "USE_EXISTING"; 
+    let isResolved = false;
+
+    modal.onOpen = () => {
+      const { contentEl } = modal;
+      contentEl.empty();
+      
+      contentEl.createEl("p", { text: `The file "${file.basename}" already exists but doesn't match the selected Note Type's standard structure.` });
+
+      const optionsDiv = contentEl.createDiv();
+      optionsDiv.style.border = "1px solid var(--background-modifier-border)";
+      optionsDiv.style.padding = "10px";
+      optionsDiv.style.borderRadius = "8px";
+      optionsDiv.style.marginBottom = "15px";
+
+      if (!hasNoteType) {
+        new ea.obsidian.Setting(optionsDiv)
+          .setName("Add Note Type Property")
+          .setDesc("Inject the missing note type into the document's properties.")
+          .addToggle(toggle => toggle.setValue(addNoteType).onChange(val => addNoteType = val));
+      }
+
+      if (!hasPrefix && prefix) {
+        new ea.obsidian.Setting(optionsDiv)
+          .setName("Modify File Name")
+          .setDesc(`Rename file to match pattern: "${prefix}${file.basename}"`)
+          .addToggle(toggle => toggle.setValue(renameFile).onChange(val => renameFile = val));
+      }
+
+      contentEl.createEl("hr");
+
+      new ea.obsidian.Setting(contentEl)
+        .setName("Create New Note Instead")
+        .setDesc("Ignore the existing file and create a new one following the standard folder and naming structure.")
+        .addToggle(toggle => toggle.setValue(false).onChange(val => {
+          if(val) {
+            action = "CREATE_NEW";
+            optionsDiv.style.opacity = "0.5";
+            optionsDiv.style.pointerEvents = "none";
+          } else {
+            action = "USE_EXISTING";
+            optionsDiv.style.opacity = "1";
+            optionsDiv.style.pointerEvents = "auto";
+          }
+        }));
+
+      const btnContainer = contentEl.createDiv({ attr: { style: "display: flex; justify-content: flex-end; margin-top: 20px;" }});
+      const btn = btnContainer.createEl("button", { text: "Proceed", cls: "mod-cta" });
+      btn.addEventListener("click", () => {
+        isResolved = true;
+        resolve({ action, addNoteType, renameFile });
+        modal.close();
+      });
+    };
+    
+    modal.onClose = () => {
+        if (!isResolved) resolve(null); // Return null if user cancels (hits escape)
+    };
+
+    modal.open();
+  });
+}
+
+// Safely retrieves the Obsidian linkpath, respecting user settings and stripping .md extensions 
+// even during metadata cache misses for newly created files.
+function getObsidianLinkpath(file, sourcePath) {
+  let linkpath = app.metadataCache.fileToLinktext(file, sourcePath, true);
+  
+  // Obsidian fallback when cache is missing returns full path WITH .md.
+  // Force remove .md
+  if (linkpath.toLowerCase().endsWith(".md")) {
+    linkpath = linkpath.slice(0, -3);
+    
+    // Try to respect user's newLinkFormat manually since the cache failed to do so
+    const format = app.vault.getConfig("newLinkFormat");
+    if (format === "shortest") {
+      // Verify if basename is unique in the vault
+      const matches = app.vault.getFiles().filter(f => f.basename === file.basename);
+      if (matches.length <= 1) { 
+        linkpath = file.basename;
+      }
+    } else if (format === "relative") {
+      // Compute relative path manually if Obsidian failed
+      const targetDir = file.parent?.path || "";
+      const sourceFile = app.vault.getAbstractFileByPath(sourcePath);
+      const sourceDir = sourceFile?.parent?.path || "";
+      if (targetDir === sourceDir && targetDir !== "/") {
+        linkpath = file.basename;
+      }
+    }
+  }
+  return linkpath;
+}
+
 // The core orchestrator function
 async function start() {
   const originView = ea.targetView;
@@ -956,7 +1277,6 @@ async function start() {
   }
 
   // Feature: Quick Frame Resizing
-  // If a single frame and other elements are selected, resize the frame to wrap the elements and exit early.
   if (await handleFrameResizingIfEligible()) {
     return;
   }
@@ -971,7 +1291,7 @@ async function start() {
   const captureData = await openCaptureModal(initialLinkText);
   if (!captureData) return;
 
-  const { filename, noteType, format, ontologyAction, actionType, openNoteBBehavior } = captureData;
+  const { filename, noteType, format, ontologyAction, actionType, openNoteBBehavior, folder: customFolder } = captureData;
   const opt = settings.noteTypes[noteType];
 
   if (!opt) {
@@ -979,10 +1299,11 @@ async function start() {
     return;
   }
 
-  const folder = ea.obsidian.normalizePath(opt.folder);
+  // Set the folder from the modal box
+  const targetFolder = (customFolder !== undefined && customFolder !== "") ? customFolder : opt.folder;
+  const folder = ea.obsidian.normalizePath(targetFolder);
 
   // 3. Assemble WikiLink and File Path
-  // Parse potential manual aliases (e.g. "Full note title|alias")
   let rawFilename = filename;
   let linkAlias = filename;
   if (filename.includes("|")) {
@@ -991,29 +1312,73 @@ async function start() {
     linkAlias = parts.slice(1).join("|").trim();
   }
 
-  // Fix: Prevent duplicating the prefix if the user selected an existing file 
-  // or manually typed the prefix, and isolate the clean title for folder creation
-  let cleanFilename = rawFilename;
+  let cleanFilename = rawFilename.split("#")[0].trim();
+  if (cleanFilename.toLowerCase().endsWith(".md")) {
+      cleanFilename = cleanFilename.slice(0, -3);
+  }
+  
   if (opt.prefix && cleanFilename.startsWith(opt.prefix)) {
     cleanFilename = cleanFilename.substring(opt.prefix.length);
   }
   let targetBasename = `${opt.prefix ?? ""}${cleanFilename}`;
 
-  // Check if the file already exists anywhere in the vault
-  let fileTarget = app.metadataCache.getFirstLinkpathDest(targetBasename, "");
+  let expectedPath = (opt.type === "folder") ? `${folder}/${cleanFilename}/${targetBasename}.md` : `${folder}/${targetBasename}.md`;
+  let fileTarget = app.vault.getAbstractFileByPath(ea.obsidian.normalizePath(expectedPath));
+  
+  if (!fileTarget) {
+    fileTarget = app.metadataCache.getFirstLinkpathDest(rawFilename, "");
+    if (!fileTarget && rawFilename !== targetBasename) {
+      fileTarget = app.metadataCache.getFirstLinkpathDest(targetBasename, "");
+    }
+  }
+
+  // Handle Existing File Conflict Workflow
+  if (fileTarget) {
+    const existingType = await detectNoteType(fileTarget);
+    const hasNoteType = existingType === noteType;
+    const hasPrefix = opt.prefix ? fileTarget.basename.startsWith(opt.prefix) : true;
+
+    if (!hasNoteType || !hasPrefix) {
+      const conflictDecision = await resolveExistingFileConflict(fileTarget, hasNoteType, hasPrefix, opt.prefix);
+      if (!conflictDecision) return; 
+
+      if (conflictDecision.action === "CREATE_NEW") {
+        fileTarget = null; 
+      } else {
+        if (conflictDecision.renameFile && !hasPrefix && opt.prefix) {
+          const newName = `${opt.prefix}${fileTarget.basename}`;
+          const newPath = ea.obsidian.normalizePath(`${fileTarget.parent.path}/${newName}.${fileTarget.extension}`);
+          await app.fileManager.renameFile(fileTarget, newPath);
+        }
+        if (conflictDecision.addNoteType && !hasNoteType) {
+          await injectNoteTypeProperty(fileTarget, noteType, cleanFilename, opt);
+        }
+      }
+    }
+  }
 
   let targetWikiLink;
   let fname;
 
   if (fileTarget) {
-    // Existing file found, use its actual path instead of forcing it into opt.folder
     fname = fileTarget.path;
-    targetWikiLink = `[[${fileTarget.path.replace(/\.md$/, "")}|${linkAlias}]]`;
+    const linkpath = getObsidianLinkpath(fileTarget, originView.file.path);
+    targetWikiLink = `[[${linkpath}|${linkAlias}]]`;
   } else {
-    // New file, construct the path using the configured folder and folder-nesting settings
     let folderPath = (opt.type === "folder") ? `${folder}/${cleanFilename}` : folder;
-    targetWikiLink = `[[${folderPath}/${targetBasename}|${linkAlias}]]`;
-    fname = `${folderPath}/${targetBasename}.md`;
+    const formattedFolderPath = folderPath ? folderPath.replace(/^\/+/, "") + "/" : "";
+    
+    const format = app.vault.getConfig("newLinkFormat");
+    let linkpath = `${formattedFolderPath}${targetBasename}`;
+    if (format === "shortest") {
+      const matches = app.vault.getFiles().filter(f => f.basename === targetBasename);
+      if (matches.length === 0) {
+        linkpath = targetBasename;
+      }
+    }
+    
+    targetWikiLink = `[[${linkpath}|${linkAlias}]]`;
+    fname = `${formattedFolderPath}${targetBasename}.md`;
   }
 
   if (actionType === "ADD_LINK_ONLY") {
@@ -1023,12 +1388,8 @@ async function start() {
     return;
   }
 
-  // 4. Create File if new
-  // Pass the cleanFilename so nested folders are created without the prefix (e.g. Title instead of IIB - Title)
+  // 4. Create File if new (File exists in memory for linking)
   const file = await ensureTargetFileExists(folder, cleanFilename, fname, opt, noteType);
-
-  // 5. Open Target Leaf
-  const noteBWorkspaceLeaf = await openAndResolveTargetLeaf(file, originView, openNoteBBehavior);
 
   if (actionType === "ADD_LINK_CREATE") {
     if (!textEl && !isMindmapNode) {
@@ -1041,14 +1402,26 @@ async function start() {
     return;
   }
 
-  // 6. Setup Capture variables (destructure isCurrentDNP flag)
+  // 5. Setup Capture variables
   const { sectionRawText, sectionWithBrackets, todayDNPBasename, isCurrentDNP } = buildCaptureHeaders(originView);
 
-  // 7. Ensure Target View is Excalidraw and get API
+  // 6. Pre-generate ID for the Target Note B element
+  const preGeneratedFrameID = ea.generateElementId();
+
+  // 7. Inject Origin Embed/Link FIRST (modifies Note A without leaf switching)
+  const embeddedElementId = await injectIntoOriginView(
+    originView, activeElement, format, actionType, file, preGeneratedFrameID, sectionRawText,
+    ontologyAction, isMindmapNode, mindmapNodeText, mmAPI, mmNodeId, linkAlias, initialLinkText
+  );
+
+  // 8. Open Target Leaf (Context shifts to Note B)
+  const noteBWorkspaceLeaf = await openAndResolveTargetLeaf(file, originView, openNoteBBehavior);
+
+  // 9. Ensure Target View is Excalidraw and get API
   const target_ea = await prepareTargetExcalidrawView(noteBWorkspaceLeaf);
   if (!target_ea) return;
 
-  // 8. Calculate insertion bounds on Target Note
+  // 10. Calculate insertion bounds on Target Note
   const bElements = target_ea.getViewElements();
   let targetX = 0;
   let targetY = 0;
@@ -1058,31 +1431,17 @@ async function start() {
     targetY = bbox.topY + bbox.height + 100;
   }
 
-  // 9. Inject onto Target Note
-  let frameID = null;
+  // 11. Inject onto Target Note using preGeneratedFrameID
   let clonedTemplateElementIds = [];
   if (format === "Visual") {
-    // Pass isCurrentDNP downstream
-    const visualRes = await injectVisualFormat(target_ea, targetX, targetY, sectionRawText, todayDNPBasename, isCurrentDNP);
-    frameID = visualRes.frameID;
+    const visualRes = await injectVisualFormat(target_ea, targetX, targetY, sectionRawText, todayDNPBasename, isCurrentDNP, preGeneratedFrameID, embeddedElementId, ontologyAction, originView.file.path);
     clonedTemplateElementIds = visualRes.clonedTemplateElementIds;
   } else {
-    // Pass todayDNPBasename and isCurrentDNP to correctly map properties on the embeddable target
-    frameID = await injectMarkdownFormat(file, target_ea, targetX, targetY, sectionRawText, sectionWithBrackets, todayDNPBasename, isCurrentDNP);
+    await injectMarkdownFormat(file, target_ea, targetX, targetY, sectionRawText, sectionWithBrackets, todayDNPBasename, isCurrentDNP, preGeneratedFrameID, embeddedElementId, ontologyAction, originView.file.path);
   }
 
-  // 10. Focus back to Origin Note A
-  app.workspace.setActiveLeaf(originView.leaf, { focus: true });
-  await sleep(200);
-
-  // 11. Inject Origin Embed/Link (passing the linkAlias AND the initialLinkText)
-  const embeddedElementId = await injectIntoOriginView(
-    originView, activeElement, format, actionType, file, frameID, sectionRawText,
-    ontologyAction, isMindmapNode, mindmapNodeText, mmAPI, mmNodeId, linkAlias, initialLinkText
-  );
-
   // 12. Final Focus / Zoom
-  await handleFinalActionFocus(actionType, originView, noteBWorkspaceLeaf, embeddedElementId, target_ea, format, frameID, clonedTemplateElementIds, mmAPI);
+  await handleFinalActionFocus(actionType, originView, noteBWorkspaceLeaf, embeddedElementId, target_ea, format, preGeneratedFrameID, clonedTemplateElementIds, mmAPI);
 }
 
 // -------------------------------------------------------------
@@ -1128,8 +1487,70 @@ function injectCaptureModalStyles(contentEl) {
       .mindmap-search-item { padding: 6px 12px; cursor: pointer; border-bottom: 1px solid var(--background-modifier-border); }
       .mindmap-search-item:hover { background-color: var(--background-modifier-hover); }
       .mindmap-search-item.is-selected { background-color: var(--background-modifier-hover); }
-      .link-type-row-control { display: flex; align-items: center; gap: 8px; width: 100%; }
+      .link-type-row-control { display: flex; align-items: center; gap: 8px; width: 100%; justify-content: flex-end; }
+      
+      /* Modal Restyling for single-row / responsive layouts */
+      .excalidraw-capture-note-modal .setting-item {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .excalidraw-capture-note-modal .setting-item-info {
+        flex: 0 1 auto;
+        white-space: nowrap;
+        min-width: max-content;
+      }
+      .excalidraw-capture-note-modal .setting-item-control {
+        flex: 1 1 200px;
+        justify-content: flex-end;
+        min-width: 200px;
+      }
+      .excalidraw-capture-note-modal .setting-item-control input[type="text"],
+      .excalidraw-capture-note-modal .setting-item-control select {
+        width: 100%;
+      }
+      @media (max-width: 450px) {
+        .excalidraw-capture-note-modal .setting-item {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
+        }
+        .excalidraw-capture-note-modal .setting-item-control {
+          width: 100%;
+          justify-content: stretch;
+        }
+        .excalidraw-capture-note-modal .setting-item-info {
+          white-space: normal;
+        }
+      }
     `
+  });
+}
+
+function buildCaptureFolderBox(contentEl, state) {
+  const folderContainer = contentEl.createDiv({ cls: "mindmap-folder-container" });
+  const folderSetting = new ea.obsidian.Setting(folderContainer)
+    .setName("Folder")
+    .setDesc("Target directory for the note");
+  
+  folderSetting.addText(text => {
+    state.ui.folderInput = text;
+    text.inputEl.style.width = "100%";
+    
+    state.isProgrammaticUpdate = true;
+    text.setValue(state.initialFolder);
+    state.isProgrammaticUpdate = false;
+    
+    new FolderSuggest(app, text.inputEl);
+
+    // Track manual edits by the user (ignoring programmatic setValue)
+    text.inputEl.addEventListener("input", () => {
+      if (!state.isProgrammaticUpdate) {
+        state.folderManuallyEdited = true;
+      }
+    });
   });
 }
 
@@ -1155,7 +1576,7 @@ function buildCaptureSearchBox(contentEl, state, callbacks) {
       }
       searchInput.setValue(inputValue);
       resultsDropdown.style.display = "none";
-      callbacks.onFileSelected(inputValue);
+      callbacks.onFileSelected(inputValue, selectedItem.file);
     }
   };
 
@@ -1179,14 +1600,23 @@ function buildCaptureSearchBox(contentEl, state, callbacks) {
       matchedItems = [];
       return;
     }
-    const q = query.toLowerCase();
     
-    // Deduplicate items based on their structural payload
+    // Tokenize the query into individual words for partial matching
+    const q = query.toLowerCase().trim();
+    const searchTerms = q.split(/\s+/);
+    
     const uniqueItems = new Map();
     state.searchItems.forEach(item => {
       const searchableText = item.type === "alias" ? `${item.basename} ${item.alias}` : item.basename;
-      if (searchableText.toLowerCase().includes(q)) {
-        const key = item.type === "alias" ? `alias:${item.basename}:${item.alias}` : `${item.type}:${item.basename}`;
+      const searchableTextLower = searchableText.toLowerCase();
+      
+      // Ensure all partial words are found
+      const matches = searchTerms.every(term => searchableTextLower.includes(term));
+      
+      if (matches) {
+        // Include file path to differentiate identical basenames
+        const pathSuffix = item.file ? `:${item.file.path}` : "";
+        const key = item.type === "alias" ? `alias:${item.basename}:${item.alias}${pathSuffix}` : `${item.type}:${item.basename}${pathSuffix}`;
         if (!uniqueItems.has(key)) {
           uniqueItems.set(key, item);
         }
@@ -1204,7 +1634,16 @@ function buildCaptureSearchBox(contentEl, state, callbacks) {
           displayText = `${item.basename} (Placeholder)`;
         }
         
-        const divItem = resultsDropdown.createDiv({ cls: "mindmap-search-item", text: displayText });
+        const divItem = resultsDropdown.createDiv({ cls: "mindmap-search-item" });
+        
+        // Render duplicate disambiguation if needed
+        if (item.isDuplicate && item.file) {
+            divItem.createDiv({ text: displayText });
+            divItem.createDiv({ text: item.file.parent.path, attr: { style: "font-size: 0.8em; color: var(--text-muted);" } });
+        } else {
+            divItem.setText(displayText);
+        }
+
         divItem.addEventListener("click", () => {
           let inputValue = item.basename;
           if (item.type === "alias") {
@@ -1212,7 +1651,7 @@ function buildCaptureSearchBox(contentEl, state, callbacks) {
           }
           searchInput.setValue(inputValue);
           resultsDropdown.style.display = "none";
-          callbacks.onFileSelected(inputValue);
+          callbacks.onFileSelected(inputValue, item.file);
         });
       });
     } else {
@@ -1230,7 +1669,13 @@ function buildCaptureSearchBox(contentEl, state, callbacks) {
       updateSearchDropdown(e.target.value);
       callbacks.onFileSelected(e.target.value);
     });
-    setTimeout(() => text.inputEl.focus(), 150);
+    
+    // Focus the file name field on open
+    // Using a slightly longer timeout (250ms) to ensure it overrides Obsidian's native 
+    // modal auto-focus behavior which naturally targets the first input (Folder box)
+    setTimeout(() => {
+      text.inputEl.focus();
+    }, 250);
   });
 
   // Custom Navigation Handler
@@ -1285,7 +1730,37 @@ function buildCaptureLinkTypeSelector(contentEl, state, callbacks) {
       ea.setScriptSettings(settings);
       callbacks.updateIconPreview();
       callbacks.updateOntologyDropdown();
+
+      // Automatically fill the folder if the Note Type changes (and user hasn't typed a custom folder)
+      if (!state.folderManuallyEdited) {
+        const actualVal = state.ui.searchInput.getValue().split("|")[0].trim();
+        const fileTarget = state.allFiles.find(f => f.basename.toLowerCase() === actualVal.toLowerCase());
+        if (!fileTarget) {
+            const opt = settings.noteTypes[val];
+            if (opt && opt.folder !== undefined && state.ui.folderInput) {
+               state.isProgrammaticUpdate = true;
+               state.ui.folderInput.setValue(opt.folder);
+               state.isProgrammaticUpdate = false;
+            }
+        }
+      }
     });
+  });
+
+  // Add a button to manually pull the target directory from the active Note Type
+  linkTypeRow.addExtraButton(btn => {
+    state.ui.resetFolderBtn = btn;
+    btn.setIcon("folder-sync")
+       .setTooltip("Apply folder from selected Note Type")
+       .onClick(() => {
+         const opt = settings.noteTypes[state.selectedNoteType];
+         if (opt && opt.folder !== undefined && state.ui.folderInput) {
+           state.isProgrammaticUpdate = true;
+           state.ui.folderInput.setValue(opt.folder);
+           state.isProgrammaticUpdate = false;
+           state.folderManuallyEdited = false;
+         }
+       });
   });
 
   callbacks.updateIconPreview();
@@ -1340,7 +1815,6 @@ function buildCaptureOntologySelector(contentEl, state, callbacks) {
 }
 
 function buildCaptureFooter(contentEl, state, modal) {
-  // Enforced structurally via flex-direction: row-reverse for tab indexing
   const footer = contentEl.createDiv({
     attr: { style: "display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-direction: row-reverse;" }
   });
@@ -1349,9 +1823,13 @@ function buildCaptureFooter(contentEl, state, modal) {
 
   const handleAction = (actionType) => {
     const val = state.ui.searchInput.getValue().trim();
+    const folderVal = state.ui.folderInput ? state.ui.folderInput.getValue().trim() : "";
+    
     if (!val) { new Notice("Please write a valid note title"); return; }
+    
     state.finalData = {
       filename: val,
+      folder: folderVal,
       noteType: state.selectedNoteType,
       format: state.selectedFormat,
       ontologyAction: state.selectedOntology,
@@ -1393,30 +1871,42 @@ async function openCaptureModal(initialSearchValue) {
 
     modal.modalEl.style.width = "480px";
     modal.modalEl.style.maxWidth = "100%";
+    modal.modalEl.classList.add("excalidraw-capture-note-modal");
     modal.titleEl.setText("Capture Contextual Note");
 
-    // Gather regular files
+    let initialFolder = "";
+    let initialFilename = initialSearchValue || "";
+
+    // Parse the path into folder and filename if a full link was passed
+    if (initialFilename.includes("/")) {
+      const parts = initialFilename.split("/");
+      initialFilename = parts.pop();
+      initialFolder = parts.join("/");
+    }
+
     let allFiles = app.vault.getMarkdownFiles().concat(app.vault.getFiles().filter(f => ea.isExcalidrawFile(f)));
     
-    // Determine template paths to exclude
     const templaterFolder = app.plugins.plugins["templater-obsidian"]?.settings?.templates_folder;
     const excalidrawTemplatePath = ea.plugin.settings.templateFilePath;
 
-    // Filter out template files to keep them out of the search
     allFiles = allFiles.filter(f => {
-      // Ensure the path string is valid and not just an empty root folder rule
       if (templaterFolder && templaterFolder.trim() !== "" && f.path.startsWith(templaterFolder)) return false;
       if (excalidrawTemplatePath && excalidrawTemplatePath.trim() !== "" && f.path.startsWith(excalidrawTemplatePath)) return false;
       return true;
     });
 
-    // Construct expanded search items array
+    // Detect duplicate basenames for disambiguation in the suggester
+    const basenameCounts = new Map();
+    allFiles.forEach(f => {
+      basenameCounts.set(f.basename, (basenameCounts.get(f.basename) || 0) + 1);
+    });
+
     const searchItems = [];
     const fileBasenames = new Set();
     
-    // 1. Add real files and their aliases
     allFiles.forEach(f => {
-      searchItems.push({ type: "file", basename: f.basename, file: f });
+      const isDuplicate = basenameCounts.get(f.basename) > 1;
+      searchItems.push({ type: "file", basename: f.basename, file: f, isDuplicate });
       fileBasenames.add(f.basename);
       
       const cache = app.metadataCache.getFileCache(f);
@@ -1425,15 +1915,13 @@ async function openCaptureModal(initialSearchValue) {
           ? cache.frontmatter.aliases 
           : String(cache.frontmatter.aliases).split(",").map(a => a.trim());
         aliases.forEach(a => {
-          // Filter out aliases that contain templater code
-          if (a && typeof a === "string" && !a.includes("<"+"%")) { //split to avoid Templater throwing an error on synchronization
-            searchItems.push({ type: "alias", basename: f.basename, alias: a, file: f });
+          if (a && typeof a === "string" && !a.includes("<"+"%")) { 
+            searchItems.push({ type: "alias", basename: f.basename, alias: a, file: f, isDuplicate });
           }
         });
       }
     });
 
-    // 2. Add unresolved links (placeholders)
     const unresolvedLinks = Object.values(app.metadataCache.unresolvedLinks).flatMap(links => Object.keys(links));
     const uniqueUnresolved = [...new Set(unresolvedLinks)].map(link => {
       const parts = link.split("/");
@@ -1441,27 +1929,28 @@ async function openCaptureModal(initialSearchValue) {
     });
     
     uniqueUnresolved.forEach(u => {
-      // Filter out unresolved links that are just unrendered templater variables
-      if (!u.includes("<"+"%") && !fileBasenames.has(u)) { //split to avoid Templater throwing an error on synchronization
+      if (!u.includes("<"+"%") && !fileBasenames.has(u)) { 
         searchItems.push({ type: "unresolved", basename: u });
         fileBasenames.add(u);
       }
     });
 
-    // Unified UI state across the components
     const state = {
       finalData: null,
-      initialSearchValue,
+      initialFolder,
+      initialSearchValue: initialFilename,
+      folderManuallyEdited: false, // Start false so we can auto-update if they change to a new file
+      isProgrammaticUpdate: false,
+      isInitializing: true,
       selectedNoteType: settings.lastSelectedNoteType || "",
       selectedFormat: settings.lastSelectedFormat || "Visual",
       openNoteBBehavior: settings.openNoteBBehavior || "adjacent pane",
       selectedOntology: "",
       allFiles: allFiles,
       searchItems: searchItems,
-      ui: {} // Stores DOM references dynamically added by builders
+      ui: {} 
     };
 
-    // Shared reactiveness logic
     const callbacks = {
       updateIconPreview: () => {
         const opt = settings.noteTypes[state.selectedNoteType];
@@ -1485,11 +1974,24 @@ async function openCaptureModal(initialSearchValue) {
         state.selectedOntology = opt.ontology.default || opt.ontology.actions[0];
         state.ui.ontologyDropdownComponent.setValue(state.selectedOntology);
       },
-      onFileSelected: async (val) => {
-        // Strip alias if present to resolve the physical file target
-        const actualVal = val.split("|")[0].trim();
-        const fileTarget = state.allFiles.find(f => f.basename.toLowerCase() === actualVal.toLowerCase());
+      onFileSelected: async (val, explicitFile = null) => {
+        let actualVal = val.split("|")[0].trim();
+        actualVal = actualVal.split("#")[0].trim(); // Remove hash anchors and block refs
+        if (actualVal.toLowerCase().endsWith(".md")) {
+            actualVal = actualVal.slice(0, -3); // Remove .md extension
+        }
+        
+        // Use explicitFile passed down from suggester if available to handle duplicates correctly
+        const fileTarget = explicitFile || state.allFiles.find(f => f.basename.toLowerCase() === actualVal.toLowerCase() || f.path.toLowerCase() === actualVal.toLowerCase() + ".md");
+        
         if (fileTarget) {
+          if (state.ui.folderInput) {
+            state.isProgrammaticUpdate = true;
+            state.ui.folderInput.setValue(fileTarget.parent.path);
+            state.isProgrammaticUpdate = false;
+            state.folderManuallyEdited = false; // Sync to existing target file
+          }
+
           const detectedType = await detectNoteType(fileTarget);
           if (detectedType) {
             state.selectedNoteType = detectedType;
@@ -1497,10 +1999,22 @@ async function openCaptureModal(initialSearchValue) {
             state.ui.dropdownComponent.setDisabled(true);
             callbacks.updateIconPreview();
             callbacks.updateOntologyDropdown();
-            return;
           }
+          if (state.ui.resetFolderBtn) state.ui.resetFolderBtn.setDisabled(true);
+        } else {
+          // If a new file is being written and folder was not manually edited, inherit the Note Type's folder
+          // We block the overwrite during initialization if they provided an initial folder
+          if (!state.folderManuallyEdited && state.ui.folderInput && !state.isInitializing) {
+            const opt = settings.noteTypes[state.selectedNoteType];
+            if (opt && opt.folder !== undefined) {
+              state.isProgrammaticUpdate = true;
+              state.ui.folderInput.setValue(opt.folder);
+              state.isProgrammaticUpdate = false;
+            }
+          }
+          if (state.ui.dropdownComponent) state.ui.dropdownComponent.setDisabled(false);
+          if (state.ui.resetFolderBtn) state.ui.resetFolderBtn.setDisabled(false);
         }
-        if (state.ui.dropdownComponent) state.ui.dropdownComponent.setDisabled(false);
       }
     };
 
@@ -1509,12 +2023,16 @@ async function openCaptureModal(initialSearchValue) {
       contentEl.empty();
 
       injectCaptureModalStyles(contentEl);
+      buildCaptureFolderBox(contentEl, state);
       buildCaptureSearchBox(contentEl, state, callbacks);
       buildCaptureLinkTypeSelector(contentEl, state, callbacks);
       buildCaptureFormatSelector(contentEl, state);
       buildCaptureOpenBehaviorSelector(contentEl, state);
       buildCaptureOntologySelector(contentEl, state, callbacks);
       buildCaptureFooter(contentEl, state, modal);
+      
+      // Allow normal folder resets to happen on subsequent typing
+      state.isInitializing = false;
     };
 
     modal.onClose = () => resolve(state.finalData);
