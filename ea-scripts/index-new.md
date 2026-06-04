@@ -134,6 +134,7 @@ These are the scripts I use most often. I tried to order them by importance, but
 |    |     |
 |----|-----|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Change%20shape%20of%20selected%20elements.svg"/></div>|[[#Change shape of selected elements]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Color%20Scheme%20Manager.svg"/></div>|[[#Color Scheme Manager]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Darken%20background%20color.svg"/></div>|[[#Darken background color]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Invert%20colors.svg"/></div>|[[#Invert colors]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Lighten%20background%20color.svg"/></div>|[[#Lighten background color]]|
@@ -276,6 +277,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Change%20shape%20of%20selected%20elements.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Change%20shape%20of%20selected%20elements.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">The script allows you to change the shape and fill style of selected Rectangles, Diamonds, Ellipses, Lines, Arrows and Freedraw.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-change-shape.jpg'></td></tr></table>
+
+## Color Scheme Manager
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Color%20Scheme%20Manager.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/iwanhoogendoorn'>@iwanhoogendoorn</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Color%20Scheme%20Manager.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Swap the entire Stroke and Background/Fill colour palettes between named, categorized themes (Cloud Providers, Code Editors, Tech Brands, Design Systems, Nature, and more) from a docked side panel. Applying a theme recolours your selection (or sets the active colour) and repaints the native picker — both the quick-pick rows and the extended 3×5 grid with shades. Create your own schemes, import from a flat hex list, a labelled STROKE/FILL text format, or a raw appState colorPalette JSON (paste or .txt/.json file), hand-pick a custom picker, and export the current palette. When the MindMap Builder script is installed, an optional toggle recolours mind maps branch-by-branch. The canvas background is always left white.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/color-scheme-manager.gif' style="width:560px;"></td></tr></table>
 
 ## Concatenate lines
 ```excalidraw-script-install
