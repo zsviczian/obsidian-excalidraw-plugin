@@ -422,7 +422,46 @@ const waitForFileModification = async (file, timeout = 5000) => {
 
 // Extracts the initial text from either standard elements or mindmap nodes
 async function extractInitialTextAndMindmapState(originView, activeElement, textEl) {
-  const mmAPI = window.MindMapBuilderAPI;
+  let mmAPI = window.MindMapBuilderAPI;
+  
+  // Auto-start MindMap Builder if it's not running but a mindmap node is selected
+  if (
+    !mmAPI && activeElement && (
+      activeElement.customData?.hasOwnProperty("mindmapOrder") ||
+      activeElement.customData?.hasOwnProperty("growthMode")
+  )) {
+    const mmbCommandPaletteAction = Object.keys(app.commands.commands).find(k=>k.startsWith("obsidian-excalidraw-plugin") && k.toLowerCase().includes("mindmap builder"));
+    if(mmbCommandPaletteAction) {
+      const cmd = app.commands.commands[mmbCommandPaletteAction];
+      if (cmd) {
+        // Check if sidepanel is currently visible before starting MMB
+        let sidepanelWasVisible = false;
+        const sidepanelLeaf = ea.getSidepanelLeaf();
+        if (sidepanelLeaf && sidepanelLeaf.view.containerEl.offsetParent !== null) {
+          sidepanelWasVisible = true;
+        }
+
+        if(cmd.callback) cmd.callback();
+        else if(cmd.checkCallback) cmd.checkCallback(false);
+        
+        // Wait for the API to become available
+        let retries = 0;
+        while(!window.MindMapBuilderAPI && retries++ < 20) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        mmAPI = window.MindMapBuilderAPI;
+
+        // If MMB opened the sidepanel but it was previously closed, hide it
+        if (!sidepanelWasVisible) {
+           const newSidepanelLeaf = ea.getSidepanelLeaf();
+           if (newSidepanelLeaf && newSidepanelLeaf.view.containerEl.offsetParent !== null) {
+             ea.toggleSidepanelView();
+           }
+        }
+      }
+    }
+  }
+
   let isMindmapNode = false;
   let mindmapNodeText = "";
   let mmNodeId = null;
@@ -643,7 +682,7 @@ async function prepareTargetExcalidrawView(noteBWorkspaceLeaf) {
 }
 
 // Injects the visual frame marker and template onto the target Note B
-async function injectVisualFormat(target_ea, targetX, targetY, sectionRawText, todayDNPBasename, isCurrentDNP, preGeneratedFrameID) {
+async function injectVisualFormat(target_ea, targetX, targetY, sectionRawText, todayDNPBasename, isCurrentDNP, preGeneratedFrameID, embeddedElementId, ontologyAction, originFilePath) {
   const fWidth = parseInt(settings.frameWidth) || 1920;
   const fHeight = parseInt(settings.frameHeight) || 1080;
 
@@ -662,10 +701,17 @@ async function injectVisualFormat(target_ea, targetX, targetY, sectionRawText, t
     frameEl.frameRole = "marker";
   }
   
-  // Only add the DNP link to the frame if the origin note isn't already the DNP
+  // Conditionally add dynamic links back to the originating element and (if applicable) the DNP
+  let linkStr = "";
+  if (embeddedElementId && ontologyAction && originFilePath) {
+    linkStr += `(${ontologyAction}::[[${originFilePath}#^${embeddedElementId}]])`;
+  }
   if (!isCurrentDNP) {
     const frameOntology = settings.frameOntology || "note";
-    frameEl.link = `(${frameOntology}::[[${todayDNPBasename}]])`;
+    linkStr += (linkStr ? " " : "") + `(${frameOntology}::[[${todayDNPBasename}]])`;
+  }
+  if (linkStr) {
+    frameEl.link = linkStr;
   }
 
   let clonedTemplateElementIds = [];
@@ -734,7 +780,7 @@ async function injectVisualFormat(target_ea, targetX, targetY, sectionRawText, t
 }
 
 // Modifies Note B's markdown structure to embed the target container safely
-async function injectMarkdownFormat(file, target_ea, targetX, targetY, sectionRawText, sectionWithBrackets, todayDNPBasename, isCurrentDNP, preGeneratedFrameID) {
+async function injectMarkdownFormat(file, target_ea, targetX, targetY, sectionRawText, sectionWithBrackets, todayDNPBasename, isCurrentDNP, preGeneratedFrameID, embeddedElementId, ontologyAction, originFilePath) {
   const data = await app.vault.read(file);
   const sanitizedSection = sanitizeLinkSection(sectionRawText);
   const newLineText = `## ${sectionWithBrackets}\n\n`;
@@ -777,7 +823,9 @@ async function injectMarkdownFormat(file, target_ea, targetX, targetY, sectionRa
 
   const embedWidth = parseInt(settings.embedWidth) || 400;
   const embedHeight = parseInt(settings.embedHeight) || 500;
-  const containerLink = `[[${file.basename}#${sanitizedSection}]]`;
+  
+  const selfLinkpath = getObsidianLinkpath(file, file.path);
+  const containerLink = `[[${selfLinkpath}#${sanitizedSection}]]`;
 
   target_ea.clear();
   
@@ -790,12 +838,20 @@ async function injectMarkdownFormat(file, target_ea, targetX, targetY, sectionRa
   
   const frameID = preGeneratedFrameID;
   
-  // Conditionally add the link to the embeddable target as well
+  // Conditionally add dynamic links back to the originating element and (if applicable) the DNP
+  let linkStr = containerLink;
+  if (embeddedElementId && ontologyAction && originFilePath) {
+    const originFile = app.vault.getAbstractFileByPath(originFilePath);
+    const originLinkpath = originFile ? getObsidianLinkpath(originFile, file.path) : originFilePath.replace(/\.md$/i, "");
+    linkStr += ` (${ontologyAction}::[[${originLinkpath}#^${embeddedElementId}]])`;
+  }
   if (!isCurrentDNP) {
     const frameOntology = settings.frameOntology || "note";
-    // Prepend the containerLink so Excalidraw still recognizes the target of the embeddable
-    embedEl.link = `${containerLink} (${frameOntology}::[[${todayDNPBasename}]])`;
+    const dnpFile = app.metadataCache.getFirstLinkpathDest(todayDNPBasename, file.path);
+    const dnpLinkpath = dnpFile ? getObsidianLinkpath(dnpFile, file.path) : todayDNPBasename;
+    linkStr += ` (${frameOntology}::[[${dnpLinkpath}]])`;
   }
+  embedEl.link = linkStr;
 
   await target_ea.addElementsToView(false, true, true);
   target_ea.clear();
@@ -816,7 +872,9 @@ async function injectIntoOriginView(originView, activeElement, format, actionTyp
   const refPath = format === "Visual" ? `^frame=${frameID}` : sanitizeLinkSection(sectionRawText);
   
   const displayAlias = linkAlias ? linkAlias : file.basename;
-  const linkStr = `[[${file.path}#${refPath}|${displayAlias}]]`;
+  
+  const linkpath = getObsidianLinkpath(file, originView.file.path);
+  const linkStr = `[[${linkpath}#${refPath}|${displayAlias}]]`;
   
   const ontologyStr = `(${ontologyAction}:: ${linkStr})`;
   const nodeTextString = `${timeStr}${ontologyStr}`;
@@ -827,12 +885,12 @@ async function injectIntoOriginView(originView, activeElement, format, actionTyp
 
   let embedText = "";
   if (actionType === "CAPTURE_HERE") {
-    embedText = `![[${file.path}#${refPath}]]`;
+    embedText = `![[${linkpath}#${refPath}]]`;
   } else if (format === "Visual" || isMarkdownImage) {
     // Keep the markdown string for MM Node text, which parses |w properly
-    embedText = `![[${file.path}#${refPath}|${imgWidth}]]`;
+    embedText = `![[${linkpath}#${refPath}|${imgWidth}]]`;
   } else {
-    embedText = `![[${file.path}#${refPath}]]`;
+    embedText = `![[${linkpath}#${refPath}]]`;
   }
 
   let embeddedElementId;
@@ -963,14 +1021,14 @@ async function injectIntoOriginView(originView, activeElement, format, actionTyp
       embeddedElementId = ea.addEmbeddable(
         xPos, yPos,
         eWidth, eHeight,
-        `[[${file.basename}#${refPath}]]`
+        `[[${linkpath}#${refPath}]]`
       );
     } else {
       // Add the image. Note: `addImage` doesn't natively parse the |400 suffix to resize the element 
       // when `scale` is false in ExcalidrawAutomate. We pass the clean path.
       embeddedElementId = await ea.addImage(
         xPos, yPos,
-        `${file.path}#${refPath}` 
+        `${file.path}#${refPath}` // ea.addImage uses raw paths reliably 
       );
       
       // Fix Dimensions: Read natural size and scale proportionally
@@ -988,11 +1046,7 @@ async function injectIntoOriginView(originView, activeElement, format, actionTyp
       }
     }
 
-    const embeddedElement = ea.getElement(embeddedElementId);
-    if(embeddedElement) {
-      embeddedElement.link = `(${ontologyAction}:: [[${file.path}#${refPath}]])`;
-    }
-
+    // Commit changes so the element exists in the active scene before the unified link update
     await ea.addElementsToView(!activeElement, true);
     
     // Auto-resize the container if the text expanded
@@ -1001,6 +1055,34 @@ async function injectIntoOriginView(originView, activeElement, format, actionTyp
     }
     
     ea.clear();
+  }
+
+  if (embeddedElementId) {
+    const elToUpdate = ea.getViewElements().find(el => el.id === embeddedElementId);
+    if (elToUpdate) {
+      ea.clear();
+      ea.copyViewElementsToEAforEditing([elToUpdate]);
+      const eaEl = ea.getElement(embeddedElementId);
+      
+      if (eaEl) {
+        if (format === "Visual") {
+          // Visual Format: Frame
+          eaEl.link = `(${ontologyAction}:: [[${linkpath}#${refPath}]])`;
+        } else {
+          const isEmbeddable = actionType === "CAPTURE_HERE" || !isMarkdownImage;
+          if (isEmbeddable) {
+            // Markdown Format + Embeddable: Multiple links
+            eaEl.link = `(${ontologyAction}:: [[${linkpath}#${refPath}]] [[${linkpath}#^${frameID}]])`;
+          } else {
+            // Markdown Format + Static Image: Element ID link only
+            eaEl.link = `(${ontologyAction}:: [[${linkpath}#^${frameID}]])`;
+          }
+        }
+      }
+      
+      await ea.addElementsToView(false, true, true);
+      ea.clear();
+    }
   }
 
   return embeddedElementId;
@@ -1155,6 +1237,37 @@ async function resolveExistingFileConflict(file, hasNoteType, hasPrefix, prefix)
   });
 }
 
+// Safely retrieves the Obsidian linkpath, respecting user settings and stripping .md extensions 
+// even during metadata cache misses for newly created files.
+function getObsidianLinkpath(file, sourcePath) {
+  let linkpath = app.metadataCache.fileToLinktext(file, sourcePath, true);
+  
+  // Obsidian fallback when cache is missing returns full path WITH .md.
+  // Force remove .md
+  if (linkpath.toLowerCase().endsWith(".md")) {
+    linkpath = linkpath.slice(0, -3);
+    
+    // Try to respect user's newLinkFormat manually since the cache failed to do so
+    const format = app.vault.getConfig("newLinkFormat");
+    if (format === "shortest") {
+      // Verify if basename is unique in the vault
+      const matches = app.vault.getFiles().filter(f => f.basename === file.basename);
+      if (matches.length <= 1) { 
+        linkpath = file.basename;
+      }
+    } else if (format === "relative") {
+      // Compute relative path manually if Obsidian failed
+      const targetDir = file.parent?.path || "";
+      const sourceFile = app.vault.getAbstractFileByPath(sourcePath);
+      const sourceDir = sourceFile?.parent?.path || "";
+      if (targetDir === sourceDir && targetDir !== "/") {
+        linkpath = file.basename;
+      }
+    }
+  }
+  return linkpath;
+}
+
 // The core orchestrator function
 async function start() {
   const originView = ea.targetView;
@@ -1199,7 +1312,11 @@ async function start() {
     linkAlias = parts.slice(1).join("|").trim();
   }
 
-  let cleanFilename = rawFilename;
+  let cleanFilename = rawFilename.split("#")[0].trim();
+  if (cleanFilename.toLowerCase().endsWith(".md")) {
+      cleanFilename = cleanFilename.slice(0, -3);
+  }
+  
   if (opt.prefix && cleanFilename.startsWith(opt.prefix)) {
     cleanFilename = cleanFilename.substring(opt.prefix.length);
   }
@@ -1245,11 +1362,23 @@ async function start() {
 
   if (fileTarget) {
     fname = fileTarget.path;
-    targetWikiLink = `[[${fileTarget.path.replace(/\.md$/, "")}|${linkAlias}]]`;
+    const linkpath = getObsidianLinkpath(fileTarget, originView.file.path);
+    targetWikiLink = `[[${linkpath}|${linkAlias}]]`;
   } else {
     let folderPath = (opt.type === "folder") ? `${folder}/${cleanFilename}` : folder;
-    targetWikiLink = `[[${folderPath}/${targetBasename}|${linkAlias}]]`;
-    fname = `${folderPath}/${targetBasename}.md`;
+    const formattedFolderPath = folderPath ? folderPath.replace(/^\/+/, "") + "/" : "";
+    
+    const format = app.vault.getConfig("newLinkFormat");
+    let linkpath = `${formattedFolderPath}${targetBasename}`;
+    if (format === "shortest") {
+      const matches = app.vault.getFiles().filter(f => f.basename === targetBasename);
+      if (matches.length === 0) {
+        linkpath = targetBasename;
+      }
+    }
+    
+    targetWikiLink = `[[${linkpath}|${linkAlias}]]`;
+    fname = `${formattedFolderPath}${targetBasename}.md`;
   }
 
   if (actionType === "ADD_LINK_ONLY") {
@@ -1305,10 +1434,10 @@ async function start() {
   // 11. Inject onto Target Note using preGeneratedFrameID
   let clonedTemplateElementIds = [];
   if (format === "Visual") {
-    const visualRes = await injectVisualFormat(target_ea, targetX, targetY, sectionRawText, todayDNPBasename, isCurrentDNP, preGeneratedFrameID);
+    const visualRes = await injectVisualFormat(target_ea, targetX, targetY, sectionRawText, todayDNPBasename, isCurrentDNP, preGeneratedFrameID, embeddedElementId, ontologyAction, originView.file.path);
     clonedTemplateElementIds = visualRes.clonedTemplateElementIds;
   } else {
-    await injectMarkdownFormat(file, target_ea, targetX, targetY, sectionRawText, sectionWithBrackets, todayDNPBasename, isCurrentDNP, preGeneratedFrameID);
+    await injectMarkdownFormat(file, target_ea, targetX, targetY, sectionRawText, sectionWithBrackets, todayDNPBasename, isCurrentDNP, preGeneratedFrameID, embeddedElementId, ontologyAction, originView.file.path);
   }
 
   // 12. Final Focus / Zoom
@@ -1358,7 +1487,44 @@ function injectCaptureModalStyles(contentEl) {
       .mindmap-search-item { padding: 6px 12px; cursor: pointer; border-bottom: 1px solid var(--background-modifier-border); }
       .mindmap-search-item:hover { background-color: var(--background-modifier-hover); }
       .mindmap-search-item.is-selected { background-color: var(--background-modifier-hover); }
-      .link-type-row-control { display: flex; align-items: center; gap: 8px; width: 100%; }
+      .link-type-row-control { display: flex; align-items: center; gap: 8px; width: 100%; justify-content: flex-end; }
+      
+      /* Modal Restyling for single-row / responsive layouts */
+      .excalidraw-capture-note-modal .setting-item {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .excalidraw-capture-note-modal .setting-item-info {
+        flex: 0 1 auto;
+        white-space: nowrap;
+        min-width: max-content;
+      }
+      .excalidraw-capture-note-modal .setting-item-control {
+        flex: 1 1 200px;
+        justify-content: flex-end;
+        min-width: 200px;
+      }
+      .excalidraw-capture-note-modal .setting-item-control input[type="text"],
+      .excalidraw-capture-note-modal .setting-item-control select {
+        width: 100%;
+      }
+      @media (max-width: 450px) {
+        .excalidraw-capture-note-modal .setting-item {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
+        }
+        .excalidraw-capture-note-modal .setting-item-control {
+          width: 100%;
+          justify-content: stretch;
+        }
+        .excalidraw-capture-note-modal .setting-item-info {
+          white-space: normal;
+        }
+      }
     `
   });
 }
@@ -1505,7 +1671,11 @@ function buildCaptureSearchBox(contentEl, state, callbacks) {
     });
     
     // Focus the file name field on open
-    setTimeout(() => text.inputEl.focus(), 150);
+    // Using a slightly longer timeout (250ms) to ensure it overrides Obsidian's native 
+    // modal auto-focus behavior which naturally targets the first input (Folder box)
+    setTimeout(() => {
+      text.inputEl.focus();
+    }, 250);
   });
 
   // Custom Navigation Handler
@@ -1575,6 +1745,22 @@ function buildCaptureLinkTypeSelector(contentEl, state, callbacks) {
         }
       }
     });
+  });
+
+  // Add a button to manually pull the target directory from the active Note Type
+  linkTypeRow.addExtraButton(btn => {
+    state.ui.resetFolderBtn = btn;
+    btn.setIcon("folder-sync")
+       .setTooltip("Apply folder from selected Note Type")
+       .onClick(() => {
+         const opt = settings.noteTypes[state.selectedNoteType];
+         if (opt && opt.folder !== undefined && state.ui.folderInput) {
+           state.isProgrammaticUpdate = true;
+           state.ui.folderInput.setValue(opt.folder);
+           state.isProgrammaticUpdate = false;
+           state.folderManuallyEdited = false;
+         }
+       });
   });
 
   callbacks.updateIconPreview();
@@ -1685,6 +1871,7 @@ async function openCaptureModal(initialSearchValue) {
 
     modal.modalEl.style.width = "480px";
     modal.modalEl.style.maxWidth = "100%";
+    modal.modalEl.classList.add("excalidraw-capture-note-modal");
     modal.titleEl.setText("Capture Contextual Note");
 
     let initialFolder = "";
@@ -1788,9 +1975,14 @@ async function openCaptureModal(initialSearchValue) {
         state.ui.ontologyDropdownComponent.setValue(state.selectedOntology);
       },
       onFileSelected: async (val, explicitFile = null) => {
-        const actualVal = val.split("|")[0].trim();
+        let actualVal = val.split("|")[0].trim();
+        actualVal = actualVal.split("#")[0].trim(); // Remove hash anchors and block refs
+        if (actualVal.toLowerCase().endsWith(".md")) {
+            actualVal = actualVal.slice(0, -3); // Remove .md extension
+        }
+        
         // Use explicitFile passed down from suggester if available to handle duplicates correctly
-        const fileTarget = explicitFile || state.allFiles.find(f => f.basename.toLowerCase() === actualVal.toLowerCase());
+        const fileTarget = explicitFile || state.allFiles.find(f => f.basename.toLowerCase() === actualVal.toLowerCase() || f.path.toLowerCase() === actualVal.toLowerCase() + ".md");
         
         if (fileTarget) {
           if (state.ui.folderInput) {
@@ -1807,8 +1999,8 @@ async function openCaptureModal(initialSearchValue) {
             state.ui.dropdownComponent.setDisabled(true);
             callbacks.updateIconPreview();
             callbacks.updateOntologyDropdown();
-            return;
           }
+          if (state.ui.resetFolderBtn) state.ui.resetFolderBtn.setDisabled(true);
         } else {
           // If a new file is being written and folder was not manually edited, inherit the Note Type's folder
           // We block the overwrite during initialization if they provided an initial folder
@@ -1820,8 +2012,9 @@ async function openCaptureModal(initialSearchValue) {
               state.isProgrammaticUpdate = false;
             }
           }
+          if (state.ui.dropdownComponent) state.ui.dropdownComponent.setDisabled(false);
+          if (state.ui.resetFolderBtn) state.ui.resetFolderBtn.setDisabled(false);
         }
-        if (state.ui.dropdownComponent) state.ui.dropdownComponent.setDisabled(false);
       }
     };
 
