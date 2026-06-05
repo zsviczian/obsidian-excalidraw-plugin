@@ -684,6 +684,51 @@ function schemeMindmapColors(scheme) {
   return out;
 }
 
+// Generate `n` MAXIMALLY DISTINCT branch colours for a scheme. Colours are
+// spaced evenly around the hue wheel (so no two branches look alike), using the
+// theme's most-saturated accent for the saturation/lightness "feel" and as the
+// starting hue. For (near-)greyscale themes there is no hue to spread, so we
+// fall back to evenly spaced light→dark steps instead.
+function distinctBranchColors(scheme, n) {
+  if (n <= 0) return [];
+  const accents = schemeMindmapColors(scheme);
+  // pick the most saturated accent as the generator base
+  let base = accents[0] || scheme.stroke || "#1e1e1e";
+  let bestSat = -1;
+  for (const c of accents) {
+    try {
+      const s = ea.getCM(c).saturation;
+      if (typeof s === "number" && s > bestSat) { bestSat = s; base = c; }
+    } catch (e) { /* skip */ }
+  }
+
+  const out = [];
+  let baseHue = 0;
+  let baseCM = null;
+  try { baseCM = ea.getCM(base); baseHue = baseCM.hue || 0; } catch (e) { /* */ }
+
+  // (near-)greyscale -> spread by lightness instead of hue
+  if (bestSat < 12 || !baseCM) {
+    for (let i = 0; i < n; i++) {
+      const L = n === 1 ? 50 : 14 + (i * (88 - 14)) / (n - 1);
+      try { out.push(ea.getCM(base).lightnessTo(L).stringHEX({ alpha: false })); }
+      catch (e) { out.push(base); }
+    }
+    return out;
+  }
+
+  for (let i = 0; i < n; i++) {
+    const targetHue = (baseHue + (i * 360) / n) % 360;
+    try {
+      const cm = ea.getCM(base);
+      out.push(cm.hueBy(targetHue - cm.hue).stringHEX({ alpha: false }));
+    } catch (e) {
+      out.push(base);
+    }
+  }
+  return out;
+}
+
 // Push a scheme's colours into the MindMap Builder's custom branch palette.
 async function applyToMindMap(scheme) {
   // Silent on apply — the only user-facing message is the toggle on/off notice.
@@ -728,19 +773,22 @@ async function applyToMindMap(scheme) {
       const nodeIds = roles && roles.ok ? roles.data.nodes || [] : [];
       const branchArrows = roles && roles.ok ? roles.data.branchArrows || [] : [];
 
-      // First-level branches (depth 1): assign each a palette colour and paint
-      // its whole subtree (nodes + inner arrows + texts) that colour.
-      let i = 0;
+      // First-level branches (depth 1). Gather them first, then expand the
+      // palette to the branch count so EACH branch gets a UNIQUE colour (no
+      // cycling/reuse when a map has more branches than the theme has colours).
+      const firstLevel = [];
       for (const nid of nodeIds) {
         const info = mmb.getMapInfo(nid);
-        if (!info || !info.ok || info.data.depth !== 1) continue;
-        const color = colors[i % colors.length];
-        i++;
+        if (info && info.ok && info.data.depth === 1) firstLevel.push(nid);
+      }
+      const palette = distinctBranchColors(scheme, firstLevel.length);
+      firstLevel.forEach((nid, idx) => {
+        const color = palette[idx % palette.length];
         branchCount++;
         const br = mmb.getBranchElementIds({ nodeId: nid, includeDecorations: true, includeCrosslinks: false });
         const ids = br && br.ok ? br.data.ids || [] : [];
         for (const id of ids) idColor.set(id, color);
-      }
+      });
 
       // Connector lines: colour each arrow by the branch it connects to. Use the
       // arrow's bindings; prefer the non-root (child) endpoint so the line INTO a
