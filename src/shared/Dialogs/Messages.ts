@@ -17,9 +17,11 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
-"2.23.9": `
+  "2.23.9": `
 ## Fixed
 - Clicking Excalidraw links now correctly jumps to the targeted element, group, or frame when the destination is another Excalidraw drawing, including links chosen through the multi-link picker and links triggered from nested embeds.
+- In some cases the image cache did not update when nested drawings were modified
+- 
 `,
   "2.23.8": `
 ${getYouTubeDiv("y3sDfH30ApU")}

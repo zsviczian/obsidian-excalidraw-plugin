@@ -829,7 +829,7 @@ export class EmbeddedFilesLoader {
     // the fileIDWhitelist is designed to support partial loading of Excalidraw drawings.
     // See getTemplate in excalidrawAutomateUtils. By providing the whitelist loading the scene will skip images
     // not on the list (e.g. when rendering an image fragment based on a groupID or frame reference)
-    fileIDWhiteList, 
+    fileIDWhiteList,
     forceReloadFileIDs,
     cacheValidation = "validated",
     validationConcurrency,

@@ -519,7 +519,9 @@ export default class ExcalidrawView
       | undefined;
   }
   get ownerDocument(): Document {
-    return DEVICE.isMobile ? mainDocument : this.containerEl?.ownerDocument || mainDocument;
+    return DEVICE.isMobile
+      ? mainDocument
+      : this.containerEl?.ownerDocument || mainDocument;
   }
   get ownerWindow(): Window | null {
     return this.ownerDocument?.defaultView || window;
@@ -3613,7 +3615,8 @@ export default class ExcalidrawView
     const deferredValidationForSameFile =
       !!requestFilePath &&
       this.deferredValidationFilePath === requestFilePath &&
-      (this.deferredValidationTimer !== null || !!this.deferredValidationLoader);
+      (this.deferredValidationTimer !== null ||
+        !!this.deferredValidationLoader);
 
     if (deferredValidationForSameFile) {
       // Keep deferred validation running for the current file and enqueue this request.
@@ -7413,7 +7416,7 @@ export default class ExcalidrawView
   private renderTopRightUI(isMobile: boolean, appState: AppState) {
     if (!this.excalidrawAPI || !this.semaphores.viewloaded || !this.isLoaded) {
       return null;
-    };
+    }
     if (this.excalidrawAPI.getAppState().isLoading) {
       return null;
     }

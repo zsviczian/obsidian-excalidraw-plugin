@@ -4547,20 +4547,25 @@ export class ExcalidrawAutomate {
 
   /**
    * Clones an array of Excalidraw elements or a clipboard string.
-   * Ensures that relationships (containers, bound elements, groups, bindings) 
+   * Ensures that relationships (containers, bound elements, groups, bindings)
    * are correctly remapped to the newly generated IDs.
-   * 
+   *
    * @param {ExcalidrawElement[] | string} elementsOrClipboard - The elements array or Excalidraw clipboard string.
    * @returns {ExcalidrawElement[]} An array of cloned elements with new IDs and updated relationships.
    */
-  cloneElements(elementsOrClipboard: ExcalidrawElement[] | string): ExcalidrawElement[] {
+  cloneElements(
+    elementsOrClipboard: ExcalidrawElement[] | string,
+  ): ExcalidrawElement[] {
     let elements: ExcalidrawElement[] = [];
 
     // 1. Parse the input
     if (typeof elementsOrClipboard === "string") {
       try {
         const parsed = JSON.parse(elementsOrClipboard);
-        if (parsed.type === "excalidraw/clipboard" && Array.isArray(parsed.elements)) {
+        if (
+          parsed.type === "excalidraw/clipboard" &&
+          Array.isArray(parsed.elements)
+        ) {
           elements = parsed.elements;
         } else if (Array.isArray(parsed)) {
           elements = parsed;
@@ -4574,11 +4579,15 @@ export class ExcalidrawAutomate {
     } else if (Array.isArray(elementsOrClipboard)) {
       elements = elementsOrClipboard;
     } else {
-      console.error("Invalid input. Expected array of elements or clipboard string.");
+      console.error(
+        "Invalid input. Expected array of elements or clipboard string.",
+      );
       return [];
     }
 
-    if (!elements || elements.length === 0) return [];
+    if (!elements || elements.length === 0) {
+      return [];
+    }
 
     // 2. Create ID mappings
     const idMap = new Map<string, string>();
@@ -4587,7 +4596,7 @@ export class ExcalidrawAutomate {
     // Pre-generate new IDs for elements and groups
     elements.forEach((el) => {
       idMap.set(el.id, nanoid());
-      
+
       if (el.groupIds && Array.isArray(el.groupIds)) {
         el.groupIds.forEach((groupId: string) => {
           if (!groupMap.has(groupId)) {
@@ -4601,13 +4610,15 @@ export class ExcalidrawAutomate {
     const clonedElements: any[] = elements.map((el) => {
       // Deep clone the element
       const newEl = JSON.parse(JSON.stringify(el));
-      
+
       // Update element ID
       newEl.id = idMap.get(el.id)!;
 
       // Remap Group IDs
       if (newEl.groupIds && Array.isArray(newEl.groupIds)) {
-        newEl.groupIds = newEl.groupIds.map((groupId: string) => groupMap.get(groupId) || groupId);
+        newEl.groupIds = newEl.groupIds.map(
+          (groupId: string) => groupMap.get(groupId) || groupId,
+        );
       }
 
       // Remap Container ID (e.g., text inside a rectangle)
@@ -4617,17 +4628,19 @@ export class ExcalidrawAutomate {
 
       // Remap Bound Elements (e.g., the rectangle holding the text, or arrows attached to a shape)
       if (newEl.boundElements && Array.isArray(newEl.boundElements)) {
-        newEl.boundElements = newEl.boundElements.map((bound: { id: string, type: string }) => ({
-          ...bound,
-          id: idMap.get(bound.id) || bound.id // Fallback to original ID if bound element wasn't cloned
-        }));
+        newEl.boundElements = newEl.boundElements.map(
+          (bound: { id: string; type: string }) => ({
+            ...bound,
+            id: idMap.get(bound.id) || bound.id, // Fallback to original ID if bound element wasn't cloned
+          }),
+        );
       }
 
       // Remap Arrow Start Binding
       if (newEl.startBinding && idMap.has(newEl.startBinding.elementId)) {
         newEl.startBinding = {
           ...newEl.startBinding,
-          elementId: idMap.get(newEl.startBinding.elementId)
+          elementId: idMap.get(newEl.startBinding.elementId),
         };
       }
 
@@ -4635,7 +4648,7 @@ export class ExcalidrawAutomate {
       if (newEl.endBinding && idMap.has(newEl.endBinding.elementId)) {
         newEl.endBinding = {
           ...newEl.endBinding,
-          elementId: idMap.get(newEl.endBinding.elementId)
+          elementId: idMap.get(newEl.endBinding.elementId),
         };
       }
 
