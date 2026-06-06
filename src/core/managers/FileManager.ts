@@ -148,7 +148,7 @@ export class PluginFileManager {
       errorlog({
         file,
         error: "new drawing not recognized as an excalidraw file",
-        fn: this.createDrawing,
+        fn: "createDrawing",
       });
     }
 
@@ -238,7 +238,7 @@ export class PluginFileManager {
         } catch (e) {
           errorlog({
             where: "FileManager.embedDrawing",
-            fn: this.plugin.ea.onImageExportPathHook,
+            fn: "plugin.ea.onImageExportPathHook",
             error: e,
           });
         }
@@ -589,7 +589,7 @@ export class PluginFileManager {
         } catch (e) {
           errorlog({
             where: "FileManager.renameEventHandler",
-            fn: this.plugin.ea.onImageExportPathHook,
+            fn: "plugin.ea.onImageExportPathHook",
             error: e,
           });
         }
@@ -764,7 +764,7 @@ export class PluginFileManager {
           } catch (e) {
             errorlog({
               where: "FileManager.deleteEventHandler",
-              fn: this.plugin.ea.onImageExportPathHook,
+              fn: "plugin.ea.onImageExportPathHook",
               error: e,
             });
           }

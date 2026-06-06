@@ -1747,15 +1747,6 @@ export default class ExcalidrawPlugin extends Plugin {
     this.eventManager.setDebounceActiveLeafChangeHandler();
   }
 
-  private getPathForFile(file: File) {
-    let path = "";
-    const { webUtils } = require("electron");
-    if (webUtils && webUtils.getPathForFile) {
-      path = webUtils.getPathForFile(file);
-    }
-    return path;
-  }
-
   public registerHotkeyOverrides() {
     //this is repeated here because the same function is called when settings is closed after hotkeys have changed
     if (this.popScope) {
@@ -2213,11 +2204,7 @@ export default class ExcalidrawPlugin extends Plugin {
     switch (action) {
       case "anyFile":
         this.activeExcalidrawView.setCurrentPositionToCenter();
-        const insertFileModal = new UniversalInsertFileModal(
-          this,
-          this.activeExcalidrawView,
-        );
-        insertFileModal.open();
+        new UniversalInsertFileModal(this, this.activeExcalidrawView).open();
         break;
       case "LaTeX":
         insertLaTeXToView(this.activeExcalidrawView, true);

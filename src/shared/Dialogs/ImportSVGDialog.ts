@@ -4,7 +4,6 @@ import ExcalidrawView from "../../view/ExcalidrawView";
 import { t } from "../../lang/helpers";
 import ExcalidrawPlugin from "../../core/main";
 import { getEA } from "src/core";
-import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 
 export class ImportSVGDialog extends FuzzySuggestModal<TFile> {
   public plugin: ExcalidrawPlugin;

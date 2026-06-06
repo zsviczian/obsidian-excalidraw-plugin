@@ -2,7 +2,6 @@ import { App, FuzzySuggestModal, Notice } from "obsidian";
 import { t } from "../../lang/helpers";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { getEA } from "src/core";
-import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import {
   CARD_HEIGHT,
   CARD_WIDTH,

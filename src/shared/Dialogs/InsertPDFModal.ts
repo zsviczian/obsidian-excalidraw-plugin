@@ -10,7 +10,6 @@ import { getPDFDoc } from "src/utils/fileUtils";
 import { Modal, Setting, TextComponent } from "obsidian";
 import { FileSuggestionModal } from "../Suggesters/FileSuggestionModal";
 import { getEA } from "src/core";
-import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { t } from "src/lang/helpers";
 import { NamedExcalidrawFrameElement } from "src/types/excalidrawElementTypes";
 import type { PdfJsDocumentProxy } from "src/types/pdfJsTypes";

@@ -1,4 +1,4 @@
-import { App, Notice, request, requestUrl, TFile, TFolder } from "obsidian";
+import { App, Notice, request, requestUrl, TFile } from "obsidian";
 import { Random } from "roughjs/bin/math";
 import {
   AppState,
@@ -22,7 +22,6 @@ import ExcalidrawPlugin from "../core/main";
 import {
   ExcalidrawElement,
   ExcalidrawImageElement,
-  ExcalidrawTextElement,
   ImageCrop,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import {

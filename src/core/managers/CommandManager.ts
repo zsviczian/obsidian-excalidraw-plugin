@@ -68,7 +68,6 @@ import {
   ExcalidrawElement,
   ExcalidrawEmbeddableElement,
   ExcalidrawImageElement,
-  ExcalidrawTextElement,
   FileId,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { ReleaseNotes } from "../../shared/Dialogs/ReleaseNotes";

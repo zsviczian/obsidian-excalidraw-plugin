@@ -1,7 +1,4 @@
-import type {
-  ExcalidrawElement,
-  ExcalidrawTextElement,
-} from "@zsviczian/excalidraw/types/element/src/types";
+import type { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import type { AppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import type { TFile } from "obsidian";
 import { FRONTMATTER_KEYS, getContainerElement } from "src/constants/constants";

@@ -2,7 +2,6 @@ import { Notice } from "obsidian";
 import { DEVICE, mainDocument } from "src/constants/constants";
 import { getEA } from "src/core";
 import { t } from "src/lang/helpers";
-import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { NormalizedZoomValue } from "@zsviczian/excalidraw/types/excalidraw/types";
 

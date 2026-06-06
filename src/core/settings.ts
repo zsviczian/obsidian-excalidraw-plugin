@@ -2540,7 +2540,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.hotkeyEditor = new HotkeyEditor(
       detailsEl,
       this.plugin.settings,
-      this.applySettingsUpdate,
+      (x: boolean = false) => this.applySettingsUpdate(x),
     );
     this.hotkeyEditor.onload();
 

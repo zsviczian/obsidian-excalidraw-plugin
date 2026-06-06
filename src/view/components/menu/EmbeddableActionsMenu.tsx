@@ -32,7 +32,6 @@ import {
   openExternalLink,
 } from "src/utils/excalidrawViewUtils";
 import { getEA } from "src/core";
-import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { URLs } from "src/constants/safeUrls";
 

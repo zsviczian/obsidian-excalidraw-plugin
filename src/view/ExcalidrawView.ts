@@ -1234,7 +1234,7 @@ export default class ExcalidrawView
           } catch (e) {
             errorlog({
               where: "ExcalidrawView.save",
-              fn: this.getHookServer().onTriggerAutoexportHook,
+              fn: "getHookServer().onTriggerAutoexportHook",
               error: e,
             });
           }
@@ -1253,7 +1253,7 @@ export default class ExcalidrawView
     } catch (e) {
       errorlog({
         where: "ExcalidrawView.save",
-        fn: this.save,
+        fn: "save",
         error: e,
       });
       warningUnknowSeriousError();
@@ -1707,7 +1707,7 @@ export default class ExcalidrawView
       } catch (e) {
         errorlog({
           where: "ExcalidrawView.onLinkOpen",
-          fn: this.getHookServer().onLinkClickHook,
+          fn: "getHookServer().onLinkClickHook",
           error: e,
         });
       }
@@ -2839,7 +2839,7 @@ export default class ExcalidrawView
       } catch (e) {
         errorlog({
           where: "ExcalidrawView.onunload",
-          fn: this.getHookServer().onViewUnloadHook,
+          fn: "getHookServer().onViewUnloadHook",
           error: e,
         });
       }
@@ -3768,7 +3768,7 @@ export default class ExcalidrawView
       errorlog({
         where: "ExcalidrawView.synchronizeWithData",
         message: `Aborting sync with received file (${this.file.path}) because semaphores.saving remained true for ower 3 seconds`,
-        fn: this.synchronizeWithData,
+        fn: "synchronizeWithData",
       });
       return;
     }
@@ -3918,7 +3918,7 @@ export default class ExcalidrawView
       errorlog({
         where: "ExcalidrawView.synchronizeWithData",
         message: `Error during sync with received file (${this.file.path})`,
-        fn: this.synchronizeWithData,
+        fn: "synchronizeWithData",
         error: e,
       });
     }
@@ -5197,7 +5197,7 @@ export default class ExcalidrawView
       } catch (e) {
         errorlog({
           where: "ExcalidrawView.showHoverPreview",
-          fn: this.getHookServer().onLinkHoverHook,
+          fn: "getHookServer().onLinkHoverHook",
           error: e,
         });
       }
@@ -6330,7 +6330,7 @@ export default class ExcalidrawView
       } catch (e) {
         errorlog({
           where: "ExcalidrawView.onViewModeChange",
-          fn: this.getHookServer().onViewModeChangeHook,
+          fn: "getHookServer().onViewModeChangeHook",
           error: e,
         });
       }
@@ -8127,7 +8127,7 @@ export default class ExcalidrawView
     } catch (e) {
       errorlog({
         where: "ExcalidrawView.updateScene 1st attempt",
-        fn: this.updateScene,
+        fn: "updateScene",
         error: e,
         scene,
         willDoSecondAttempt: !shouldRestoreElements,
@@ -8143,7 +8143,7 @@ export default class ExcalidrawView
         } catch (e) {
           errorlog({
             where: "ExcalidrawView.updateScene 2nd attempt",
-            fn: this.updateScene,
+            fn: "updateScene",
             error: e,
             scene,
           });

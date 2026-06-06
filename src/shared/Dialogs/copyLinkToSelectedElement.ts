@@ -1,4 +1,3 @@
-import { ExcalidrawTextElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { Notice } from "obsidian";
 import { t } from "src/lang/helpers";
 import { NamedExcalidrawFrameElement } from "src/types/excalidrawElementTypes";
