@@ -21,7 +21,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 ## Fixed
 - Clicking Excalidraw links now correctly jumps to the targeted element, group, or frame when the destination is another Excalidraw drawing, including links chosen through the multi-link picker and links triggered from nested embeds.
 - In some cases the image cache did not update when nested drawings were modified
-- 
+- Horizontal and Vertical arrow lines are not always displayed correctly when exporting to SVG or embedding SVG to a markdown note [#1454](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_ISSUES}/1454)
 `,
   "2.23.8": `
 ${getYouTubeDiv("y3sDfH30ApU")}

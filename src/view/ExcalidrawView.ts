@@ -409,6 +409,7 @@ export default class ExcalidrawView
   public allowFrameButtonsInViewMode: boolean = false; //override for ExcaliBrain
   private _hookServer: ExcalidrawAutomate | null = null;
   public lastSaveTimestamp: number = 0; //used to validate if incoming file should sync with open file
+  public lastSceneLoadTime: number = 0; //set when loadSceneFiles completes; used by leaf-switch change detection
   private lastLoadedFile: TFile | null = null;
   //store key state for view mode link resolution
   private modifierKeyDown: ModifierKeys = {
@@ -3195,6 +3196,7 @@ export default class ExcalidrawView
       this.activeLoader = null;
     }
     this.nextLoader = null;
+    this.lastSceneLoadTime = 0;
     api.resetScene();
     this.previousSceneVersion = 0;
   }
@@ -3509,6 +3511,7 @@ export default class ExcalidrawView
   private queuedLoadSceneFilesRequest: {
     isThemeChange: boolean;
     fileIDWhiteList?: Set<FileId>;
+    forceReloadFileIDs?: Set<FileId>;
     callback?: () => void;
   } | null = null;
   // File IDs collected during the stale-first pass. These are the only files that
@@ -3584,6 +3587,7 @@ export default class ExcalidrawView
           if (!final) {
             return;
           }
+          this.lastSceneLoadTime = Date.now();
           if (this.deferredValidationLoader === loader) {
             this.deferredValidationLoader = null;
           }
@@ -3595,6 +3599,7 @@ export default class ExcalidrawView
               queuedLoad.isThemeChange,
               queuedLoad.fileIDWhiteList,
               queuedLoad.callback,
+              queuedLoad.forceReloadFileIDs,
             );
           }
         },
@@ -3608,10 +3613,25 @@ export default class ExcalidrawView
     }, 250);
   }
 
+  public scheduleSceneFileDeferredValidation(
+    fileIDs: Set<FileId>,
+    isThemeChange: boolean = false,
+  ) {
+    if (!this.excalidrawAPI || !fileIDs || fileIDs.size === 0) {
+      return;
+    }
+    if (this.activeLoader) {
+      this.addDeferredValidationCandidates(fileIDs);
+      return;
+    }
+    this.scheduleDeferredSceneFileValidation(new Set(fileIDs), isThemeChange);
+  }
+
   public async loadSceneFiles(
     isThemeChange: boolean = false,
     fileIDWhiteList?: Set<FileId>,
     callback?: () => void,
+    forceReloadFileIDs?: Set<FileId>,
   ) {
     if (!this.excalidrawAPI) {
       return;
@@ -3630,6 +3650,7 @@ export default class ExcalidrawView
         isThemeChange,
         fileIDWhiteList,
         callback,
+        forceReloadFileIDs,
       };
       return;
     }
@@ -3663,6 +3684,7 @@ export default class ExcalidrawView
           if (!final) {
             return;
           }
+          this.lastSceneLoadTime = Date.now();
           this.activeLoader = null;
           if (this.nextLoader) {
             runLoader(this.nextLoader);
@@ -3711,6 +3733,7 @@ export default class ExcalidrawView
         depth: 0,
         isThemeChange,
         fileIDWhiteList,
+        forceReloadFileIDs,
         cacheValidation: "stale-first",
         onDeferredValidationCandidates: (fileIds: Set<FileId>) => {
           this.addDeferredValidationCandidates(fileIds);

@@ -1,3 +1,5 @@
+import { TFile } from "obsidian";
+
 export type FILENAMEPARTS = {
   filepath: string;
   hasBlockref: boolean;
@@ -32,3 +34,25 @@ export type PaneTarget =
   | "popout-window"
   | "new-tab"
   | "md-properties";
+
+export interface NestedFileNode {
+  file: TFile;
+  /**
+   * All distinct dependency paths from the root file down to this embedded file.
+   * Each path is an ordered array of TFile objects starting with the `rootFile` at index 0.
+   * 
+   * @example
+   * If Root -> A -> B2.2 and Root -> B -> B2 -> B2.2
+   * The paths for B2.2 will be:
+   * [
+   *   [Root, A, B2.2],
+   *   [Root, B, B2, B2.2]
+   * ]
+   * 
+   * Usage: To find which top-level embeds to reload if this file changes, 
+   * you can map over `paths` and collect `path[1]`.
+   */
+  paths: TFile[][];
+}
+
+export type NestedFileMap = Map<TFile, NestedFileNode>;

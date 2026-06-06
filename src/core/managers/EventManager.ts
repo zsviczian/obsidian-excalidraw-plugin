@@ -29,7 +29,10 @@ import {
 } from "src/constants/constants";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { t } from "src/lang/helpers";
-import { setMobileNavbarPosition } from "src/utils/excalidrawViewUtils";
+import {
+  getChangedTopLevelDependencyFileIDs,
+  setMobileNavbarPosition,
+} from "src/utils/excalidrawViewUtils";
 
 /**
  * Registers event listeners for the plugin
@@ -358,7 +361,16 @@ export class EventManager {
           if (newActiveviewEV.activeLoader) {
             return;
           }
-          void newActiveviewEV.loadSceneFiles();
+          const changedDependencyFileIDs =
+            getChangedTopLevelDependencyFileIDs(newActiveviewEV);
+          if (changedDependencyFileIDs.size > 0) {
+            // Reload only top-level embeds whose own file changed or whose
+            // dependency tree contains a newer nested Excalidraw file.
+            newActiveviewEV.scheduleSceneFileDeferredValidation(
+              changedDependencyFileIDs,
+              false,
+            );
+          }
         }, 2000);
       } //refresh embedded files
     }

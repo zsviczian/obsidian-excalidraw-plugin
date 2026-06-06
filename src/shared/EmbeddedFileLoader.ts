@@ -25,6 +25,7 @@ import ExcalidrawPlugin from "../core/main";
 import type { PdfJsDocumentProxy } from "src/types/pdfJsTypes";
 import {
   blobToBase64,
+  getAllNestedExcalidrawFiles,
   getDataURLFromURL,
   getMimeType,
   getPDFDoc,
@@ -851,7 +852,7 @@ export class EmbeddedFilesLoader {
       new Notice(t("INFINITE_LOOP_WARNING") + depth.toString(), 6000);
       return;
     }
-    const entries = excalidrawData.getFileEntries();
+    const entries = Array.from(excalidrawData.getFileEntries());
     //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,isDark:this.isDark,sceneTheme:excalidrawData.scene.appState.theme});
     if (this.isDark === undefined) {
       this.isDark = excalidrawData?.scene?.appState?.theme === "dark";
@@ -872,7 +873,6 @@ export class EmbeddedFilesLoader {
           });
         }
       });
-    let entry: IteratorResult<[FileId, EmbeddedFile]>;
     const files: FileData[][] = [];
     files.push([]);
     let batch = 0;
@@ -882,12 +882,12 @@ export class EmbeddedFilesLoader {
     function* loadIterator(
       this: EmbeddedFilesLoader,
     ): Generator<Promise<void>> {
-      while (!(entry = entries.next()).done) {
-        if (fileIDWhiteList && !fileIDWhiteList.has(entry.value[0])) {
+      for (const entry of entries) {
+        if (fileIDWhiteList && !fileIDWhiteList.has(entry[0])) {
           continue;
         }
-        const embeddedFile: EmbeddedFile = entry.value[1];
-        const id = entry.value[0];
+        const embeddedFile: EmbeddedFile = entry[1];
+        const id = entry[0];
         yield createSafeLoadTask(
           async () => {
             if (this.terminate) {
@@ -1616,6 +1616,7 @@ export class EmbeddedFilesLoader {
       hasSVGwithBitmap,
     };
   }
+
 }
 
 const getSVGData = async (

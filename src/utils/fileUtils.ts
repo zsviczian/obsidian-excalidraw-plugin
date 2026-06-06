@@ -31,6 +31,7 @@ import type ExcalidrawView from "src/view/ExcalidrawView";
 import { IMAGE_MIME_TYPES, MimeType } from "src/types/embeddedFileLoaderTypes";
 import type { PdfJsDocumentProxy } from "src/types/pdfJsTypes";
 import { setElementDisplay } from "./htmlUtils";
+import { NestedFileMap } from "src/types/utilTypes";
 export { splitFolderAndFilename } from "./pathUtils";
 
 type ImageExtension = keyof typeof IMAGE_MIME_TYPES;
@@ -591,6 +592,153 @@ export const fileShouldDefaultAsExcalidraw = (
   );
 };
 
+/**
+ * Synchronously retrieves all nested Excalidraw files using the metadata cache.
+ * Returns an optimized Map containing the full dependency paths for every embedded file.
+ * 
+ * @param {ExcalidrawPlugin} plugin - The Excalidraw plugin instance.
+ * @param {TFile} rootFile - The entry-point Excalidraw file.
+ * @param {boolean} includeImages - Whether to include ANY non-Excalidraw markdown links found in the embedded section.
+ * @returns {NestedFileMap} A map linking each embedded TFile to its paths from the root.
+ */
+export function getAllNestedExcalidrawFiles(
+  plugin: ExcalidrawPlugin, // Replace `any` with `ExcalidrawPlugin` type in your actual code
+  rootFile: TFile,
+  includeImages = false,
+): NestedFileMap {
+  const app = plugin.app;
+  
+  // Phase 1: Build the Adjacency List (Directed Acyclic Graph)
+  // This ensures we only parse the metadata cache for each file exactly once.
+  const adjacencyList = new Map<TFile, TFile[]>();
+  const parsedFiles = new Set<string>();
+
+  function parseFile(file: TFile) {
+    if (parsedFiles.has(file.path)) return;
+    parsedFiles.add(file.path);
+
+    const uniqueChildren = new Map<string, TFile>();
+
+    const cache = app.metadataCache.getFileCache(file);
+    if (!cache || !cache.links) {
+      adjacencyList.set(file, []);
+      return;
+    }
+
+    let startLine = -1;
+    let endLine = Infinity;
+    let usingCommentFallback = false;
+
+    // 1. Standard approach: Look for "Embedded Files" heading
+    if (cache.headings) {
+      const embedHeadingIdx = cache.headings.findIndex(
+        (h) => h.heading.toLowerCase() === "embedded files"
+      );
+
+      if (embedHeadingIdx !== -1) {
+        const embedHeading = cache.headings[embedHeadingIdx];
+        startLine = embedHeading.position.start.line;
+
+        for (let i = embedHeadingIdx + 1; i < cache.headings.length; i++) {
+          if (cache.headings[i].level <= embedHeading.level) {
+            endLine = cache.headings[i].position.start.line;
+            break;
+          }
+        }
+      }
+    }
+
+    // 2. Fallback approach: The entire Excalidraw Data block is inside a %% comment %%
+    if (startLine === -1 && cache.sections) {
+      const commentSections = cache.sections.filter(
+        (s) => s.type === "comment"
+      );
+      if (commentSections.length > 0) {
+        const lastComment = commentSections[commentSections.length - 1];
+        startLine = lastComment.position.start.line;
+        endLine = lastComment.position.end.line;
+        usingCommentFallback = true;
+      }
+    }
+
+    if (startLine === -1) {
+      adjacencyList.set(file, []);
+      return;
+    }
+
+    // 3. Filter the links within the bounds
+    const embeddedLinks = cache.links.filter(
+      (link) =>
+        link.position.start.line > startLine &&
+        link.position.start.line < endLine
+    );
+
+    for (const link of embeddedLinks) {
+      // Skip text elements and element links in commented blocks (heuristic)
+      if (usingCommentFallback && link.position.start.col <= 12) {
+        continue;
+      }
+
+      // Strip any alias (|) or block/header reference (#) to get the raw file path
+      const linkpath = link.link.split("|")[0].split("#")[0];
+      const linkedFile = app.metadataCache.getFirstLinkpathDest(
+        linkpath,
+        file.path
+      );
+
+      if (linkedFile) {
+        if (plugin.isExcalidrawFile(linkedFile)) {
+          uniqueChildren.set(linkedFile.path, linkedFile);
+          parseFile(linkedFile); // Recurse to build the DAG
+        } else if (includeImages) {
+          uniqueChildren.set(linkedFile.path, linkedFile);
+          // We do not recurse into non-Excalidraw files
+        }
+      }
+    }
+
+    adjacencyList.set(file, Array.from(uniqueChildren.values()));
+  }
+
+  // Populate the adjacency list
+  parseFile(rootFile);
+
+  // Phase 2: Generate the paths from the in-memory Adjacency List
+  const result: NestedFileMap = new Map();
+  
+  // Use a stack to perform a depth-first traversal of the DAG
+  const stack: { file: TFile; path: TFile[] }[] = [
+    { file: rootFile, path: [rootFile] },
+  ];
+
+  while (stack.length > 0) {
+    const { file, path } = stack.pop()!;
+    const children = adjacencyList.get(file) || [];
+
+    for (const child of children) {
+      // Cycle detection: If the child is already in the current path, skip it.
+      if (path.includes(child)) {
+        continue;
+      }
+
+      const childPath = [...path, child];
+
+      let node = result.get(child);
+      if (!node) {
+        node = { file: child, paths: [] };
+        result.set(child, node);
+      }
+      
+      node.paths.push(childPath);
+
+      // Push to stack to continue generating paths for its children
+      stack.push({ file: child, path: childPath });
+    }
+  }
+
+  return result;
+}
+
 export const getExcalidrawEmbeddedFilesFiletree = (
   sourceFile: TFile,
   plugin: ExcalidrawPlugin,
@@ -599,30 +747,8 @@ export const getExcalidrawEmbeddedFilesFiletree = (
     return [];
   }
 
-  const fileList = new Set<TFile>();
-  const app = plugin.app;
-
-  const addAttachedImages = (f: TFile) =>
-    Object.keys(app.metadataCache.resolvedLinks[f.path]).forEach((path) => {
-      const file = app.vault.getAbstractFileByPath(path);
-      if (!file || !(file instanceof TFile)) {
-        return;
-      }
-      const isExcalidraw = plugin.isExcalidrawFile(file);
-      if (
-        (file.extension === "md" && !isExcalidraw) ||
-        fileList.has(file) //avoid infinite loops
-      ) {
-        return;
-      }
-      fileList.add(file);
-      if (isExcalidraw) {
-        addAttachedImages(file);
-      }
-    });
-
-  addAttachedImages(sourceFile);
-  return Array.from(fileList);
+  const result = getAllNestedExcalidrawFiles(plugin, sourceFile, true);
+  return Array.from(result.keys());
 };
 
 export const hasExcalidrawEmbeddedImagesTreeChanged = (
@@ -634,37 +760,10 @@ export const hasExcalidrawEmbeddedImagesTreeChanged = (
     return false;
   }
 
-  const visited = new Set<TFile>();
-  const stack: TFile[] = [sourceFile];
-  const app = plugin.app;
-
-  while (stack.length > 0) {
-    const currentFile = stack.pop();
-    const resolvedLinks = app.metadataCache.resolvedLinks[currentFile.path];
-    if (!resolvedLinks) {
-      continue;
-    }
-
-    const paths = Object.keys(resolvedLinks);
-    for (let i = paths.length - 1; i >= 0; i--) {
-      const file = app.vault.getAbstractFileByPath(paths[i]);
-      if (!file || !(file instanceof TFile)) {
-        continue;
-      }
-
-      const isExcalidraw = plugin.isExcalidrawFile(file);
-      if ((file.extension === "md" && !isExcalidraw) || visited.has(file)) {
-        continue;
-      }
-
-      visited.add(file);
-      if (file.stat.mtime > mtime) {
-        return true;
-      }
-
-      if (isExcalidraw) {
-        stack.push(file);
-      }
+  const nestedTree = getAllNestedExcalidrawFiles(plugin, sourceFile, false);
+  for (const file of nestedTree.keys()) {
+    if (file.stat.mtime > mtime) {
+      return true;
     }
   }
 
