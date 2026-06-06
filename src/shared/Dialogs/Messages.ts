@@ -13,15 +13,21 @@ const getYouTubeDiv = (videoId: string) => `
 export const RELEASE_NOTES: { [k: string]: string } = {
   Intro: `After each update, you'll see these release notes (you can turn this off in the plugin settings).
 
-I build this plugin as a labor of love. Curious about the philosophy behind it? Check out [📕 Sketch Your Mind](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_SYM}). Want to master Excalidraw? Join [Excalidraw Mastery](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM}). If you find it valuable, say THANK YOU or…
+I build this plugin as a labor of love. Curious about the philosophy behind it? Check out [📕 Sketch Your Mind](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_SYM}). Want to master Excalidraw? Join [Excalidraw Mastery](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM}). If you find it valuable, say "Thank you", and
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
   "2.23.9": `
+## New
+- Excalidraw now updates nested image embeds in the scene triggered by Obsidian window/tab changes even if those changes affect deep nested images (i.e. excalidraw images nested inside the nested drawings)
+- Added the Color Scheme Manager script. 🙏[@iwanhoogendoorn](${URLs.GITHUB_COM}/iwanhoogendoorn)
+  - Iwan will demonstrate the script and host a Q&A session for [Sketch Your Mind Community Members](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_SYM}) on Friday, 12 June.
+
 ## Fixed
 - Clicking Excalidraw links now correctly jumps to the targeted element, group, or frame when the destination is another Excalidraw drawing, including links chosen through the multi-link picker and links triggered from nested embeds.
 - In some cases the image cache did not update when nested drawings were modified
 - Horizontal and Vertical arrow lines are not always displayed correctly when exporting to SVG or embedding SVG to a markdown note [#1454](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_ISSUES}/1454)
+- Updated vulnerable package dependency lodash-es and nanoid based on Obsidian code scanner findings.
 `,
   "2.23.8": `
 ${getYouTubeDiv("y3sDfH30ApU")}
@@ -287,7 +293,7 @@ ${getYouTubeDiv("TnwRlaIdhSU")}
 `,
   "2.22.0": `
 ## Fixed
-- Fixed misaligned panel buttons in tray mode [#2718](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2718) 🙏[@heinrich26](${URLs.GITHUB_COM_HEINRICH26})
+- Fixed misaligned panel buttons in tray mode [#2718](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2718) 🙏[@heinrich26](${URLs.GITHUB_COM}/heinrich26)
 - Improved loading of nested Excalidraw files within a scene, with some additional performance gains.
 - Fixed an issue where the caret color did not match the text color [#11018](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_ISSUES}/11018)
 
@@ -327,11 +333,11 @@ ${getYouTubeDiv("TnwRlaIdhSU")}
 `,
   "2.21.0": `
 ## New
-- LaTeX editor is now floating [#2684](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2684) 🙏[@TravisLEBLANC1](${URLs.GITHUB_COM_TRAVISLEBLANC1}), [#2698](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2698) 🙏[@heinrich26](${URLs.GITHUB_COM_HEINRICH26})
+- LaTeX editor is now floating [#2684](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2684) 🙏[@TravisLEBLANC1](${URLs.GITHUB_COM_TRAVISLEBLANC1}), [#2698](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2698) 🙏[@heinrich26](${URLs.GITHUB_COM}/heinrich26)
 - Inline link suggester supports new triggers \`![[drawing#^frame=\` and \`![[drawing#^clippedframe=\`, thus it is easy to reference frames like pdf pages, slides or other parts of your scene marked using marker frames.
 - Support for mermaid Entity Relationship Diagrams, and new ERD/cardinality arrowheads [#10940](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/10940)
 - New Context Menu options to disable arrow binding and midpoint snapping [#10906](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/10906)
-- Improved UI styling and icons are better aligned with Obsidian [#2703](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2703), [#2687](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2687), [#2697](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2697) 🙏[@heinrich26](${URLs.GITHUB_COM_HEINRICH26})
+- Improved UI styling and icons are better aligned with Obsidian [#2703](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2703), [#2687](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2687), [#2697](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2697) 🙏[@heinrich26](${URLs.GITHUB_COM}/heinrich26)
 
 ## Fixed
 - Sizing of embedded images in Markdown when image type is set to SVG [#2685](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2685)

@@ -183,7 +183,8 @@ export function getChangedTopLevelDependencyFileIDs(
 
     // Track Excalidraw embeds so we can walk their nested deps below.
     if (plugin.isExcalidrawFile(embeddedTarget)) {
-      const set = excalidrawFileIdsByPath.get(embeddedTarget.path) ?? new Set<FileId>();
+      const set =
+        excalidrawFileIdsByPath.get(embeddedTarget.path) ?? new Set<FileId>();
       set.add(fileId);
       excalidrawFileIdsByPath.set(embeddedTarget.path, set);
     }

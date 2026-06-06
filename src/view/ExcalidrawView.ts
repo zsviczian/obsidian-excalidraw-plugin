@@ -3544,6 +3544,7 @@ export default class ExcalidrawView
   private scheduleDeferredSceneFileValidation(
     fileIDs: Set<FileId>,
     isThemeChange: boolean,
+    emitPolicy: "changed-only" | "all" = "changed-only",
   ) {
     this.cancelDeferredSceneFileValidation();
     if (!fileIDs || fileIDs.size === 0 || !this.file || !this.excalidrawAPI) {
@@ -3605,10 +3606,11 @@ export default class ExcalidrawView
         },
         depth: 0,
         isThemeChange,
+        fileIDWhiteList: fileIDs,
         forceReloadFileIDs: fileIDs,
         cacheValidation: "validated",
         validationConcurrency: 1,
-        emitPolicy: "changed-only",
+        emitPolicy,
       });
     }, 250);
   }
@@ -3616,6 +3618,7 @@ export default class ExcalidrawView
   public scheduleSceneFileDeferredValidation(
     fileIDs: Set<FileId>,
     isThemeChange: boolean = false,
+    forceEmitFromCache: boolean = false,
   ) {
     if (!this.excalidrawAPI || !fileIDs || fileIDs.size === 0) {
       return;
@@ -3624,7 +3627,11 @@ export default class ExcalidrawView
       this.addDeferredValidationCandidates(fileIDs);
       return;
     }
-    this.scheduleDeferredSceneFileValidation(new Set(fileIDs), isThemeChange);
+    this.scheduleDeferredSceneFileValidation(
+      new Set(fileIDs),
+      isThemeChange,
+      forceEmitFromCache ? "all" : "changed-only",
+    );
   }
 
   public async loadSceneFiles(

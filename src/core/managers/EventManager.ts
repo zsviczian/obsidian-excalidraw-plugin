@@ -369,6 +369,7 @@ export class EventManager {
             newActiveviewEV.scheduleSceneFileDeferredValidation(
               changedDependencyFileIDs,
               false,
+              true,
             );
           }
         }, 2000);

@@ -1616,7 +1616,6 @@ export class EmbeddedFilesLoader {
       hasSVGwithBitmap,
     };
   }
-
 }
 
 const getSVGData = async (

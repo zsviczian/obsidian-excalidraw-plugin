@@ -40,7 +40,7 @@ export interface NestedFileNode {
   /**
    * All distinct dependency paths from the root file down to this embedded file.
    * Each path is an ordered array of TFile objects starting with the `rootFile` at index 0.
-   * 
+   *
    * @example
    * If Root -> A -> B2.2 and Root -> B -> B2 -> B2.2
    * The paths for B2.2 will be:
@@ -48,8 +48,8 @@ export interface NestedFileNode {
    *   [Root, A, B2.2],
    *   [Root, B, B2, B2.2]
    * ]
-   * 
-   * Usage: To find which top-level embeds to reload if this file changes, 
+   *
+   * Usage: To find which top-level embeds to reload if this file changes,
    * you can map over `paths` and collect `path[1]`.
    */
   paths: TFile[][];

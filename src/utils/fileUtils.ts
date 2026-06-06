@@ -595,7 +595,7 @@ export const fileShouldDefaultAsExcalidraw = (
 /**
  * Synchronously retrieves all nested Excalidraw files using the metadata cache.
  * Returns an optimized Map containing the full dependency paths for every embedded file.
- * 
+ *
  * @param {ExcalidrawPlugin} plugin - The Excalidraw plugin instance.
  * @param {TFile} rootFile - The entry-point Excalidraw file.
  * @param {boolean} includeImages - Whether to include ANY non-Excalidraw markdown links found in the embedded section.
@@ -607,14 +607,16 @@ export function getAllNestedExcalidrawFiles(
   includeImages = false,
 ): NestedFileMap {
   const app = plugin.app;
-  
+
   // Phase 1: Build the Adjacency List (Directed Acyclic Graph)
   // This ensures we only parse the metadata cache for each file exactly once.
   const adjacencyList = new Map<TFile, TFile[]>();
   const parsedFiles = new Set<string>();
 
   function parseFile(file: TFile) {
-    if (parsedFiles.has(file.path)) return;
+    if (parsedFiles.has(file.path)) {
+      return;
+    }
     parsedFiles.add(file.path);
 
     const uniqueChildren = new Map<string, TFile>();
@@ -632,7 +634,7 @@ export function getAllNestedExcalidrawFiles(
     // 1. Standard approach: Look for "Embedded Files" heading
     if (cache.headings) {
       const embedHeadingIdx = cache.headings.findIndex(
-        (h) => h.heading.toLowerCase() === "embedded files"
+        (h) => h.heading.toLowerCase() === "embedded files",
       );
 
       if (embedHeadingIdx !== -1) {
@@ -651,7 +653,7 @@ export function getAllNestedExcalidrawFiles(
     // 2. Fallback approach: The entire Excalidraw Data block is inside a %% comment %%
     if (startLine === -1 && cache.sections) {
       const commentSections = cache.sections.filter(
-        (s) => s.type === "comment"
+        (s) => s.type === "comment",
       );
       if (commentSections.length > 0) {
         const lastComment = commentSections[commentSections.length - 1];
@@ -670,7 +672,7 @@ export function getAllNestedExcalidrawFiles(
     const embeddedLinks = cache.links.filter(
       (link) =>
         link.position.start.line > startLine &&
-        link.position.start.line < endLine
+        link.position.start.line < endLine,
     );
 
     for (const link of embeddedLinks) {
@@ -683,7 +685,7 @@ export function getAllNestedExcalidrawFiles(
       const linkpath = link.link.split("|")[0].split("#")[0];
       const linkedFile = app.metadataCache.getFirstLinkpathDest(
         linkpath,
-        file.path
+        file.path,
       );
 
       if (linkedFile) {
@@ -705,7 +707,7 @@ export function getAllNestedExcalidrawFiles(
 
   // Phase 2: Generate the paths from the in-memory Adjacency List
   const result: NestedFileMap = new Map();
-  
+
   // Use a stack to perform a depth-first traversal of the DAG
   const stack: { file: TFile; path: TFile[] }[] = [
     { file: rootFile, path: [rootFile] },
@@ -728,7 +730,7 @@ export function getAllNestedExcalidrawFiles(
         node = { file: child, paths: [] };
         result.set(child, node);
       }
-      
+
       node.paths.push(childPath);
 
       // Push to stack to continue generating paths for its children
