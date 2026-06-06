@@ -989,3 +989,8 @@ Obsidian Sheets Plus support
 /*
 End Obsidian Sheets Plus support
 */
+
+/* fixes: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2789 */
+.excalidraw:not(.excalidraw--tray) .HintViewer {
+  position: absolute;
+}
