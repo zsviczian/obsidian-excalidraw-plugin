@@ -697,7 +697,13 @@ export class ExcalidrawData {
             container.boundElements = [{ id: textEl.id, type: "text" }].concat(
               boundEl,
             );
-          } catch (_) {}
+          } catch (error) {
+            console.log(
+              "unexpected error in initializeNonInitializedFields",
+              this.initializeNonInitializedFields,
+              error,
+            );
+          }
         },
       );
 

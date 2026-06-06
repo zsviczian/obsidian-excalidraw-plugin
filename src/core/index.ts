@@ -16,8 +16,8 @@ export type { Point } from "src/types/types";
 export const getEA = (view?: ExcalidrawView): ExcalidrawAutomate | null => {
   try {
     return window.ExcalidrawAutomate.getAPI(view);
-  } catch (_) {
-    console.log({ message: "Excalidraw not available", fn: getEA });
+  } catch (error) {
+    console.log({ message: "Excalidraw not available", fn: getEA, error });
     return null;
   }
 };

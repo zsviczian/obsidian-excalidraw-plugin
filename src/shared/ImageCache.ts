@@ -441,7 +441,12 @@ class ImageCache {
       }
       this.touchCacheData(key, cachedData);
       return { cacheData: cachedData, key };
-    } catch (_) {
+    } catch (error) {
+      console.error(
+        "unexpected error in getResolvedCacheData",
+        this.getResolvedCacheData,
+        error,
+      );
       return undefined;
     }
   }

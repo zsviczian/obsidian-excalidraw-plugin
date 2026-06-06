@@ -330,7 +330,12 @@ export async function addTextWithOEmbed(
       };
       const title = data?.title?.trim();
       return title && !data.error ? title : null;
-    } catch (_) {
+    } catch (error) {
+      console.error(
+        "unexpected error in resolveTitleFromOEmbed",
+        resolveTitleFromOEmbed,
+        error,
+      );
       return null;
     }
   };
@@ -360,7 +365,12 @@ export async function addTextWithOEmbed(
         (candidate) => candidate && candidate.trim().length > 0,
       );
       return title?.trim() ?? null;
-    } catch (_) {
+    } catch (error) {
+      console.error(
+        "unexpected error in resolveTitleFromPage",
+        resolveTitleFromPage,
+        error,
+      );
       return null;
     }
   };
@@ -391,7 +401,13 @@ export async function addTextWithOEmbed(
     } finally {
       ea.destroy();
     }
-  } catch (_) {}
+  } catch (error) {
+    console.error(
+      "unexpected error in addTextWithOEmbed",
+      addTextWithOEmbed,
+      error,
+    );
+  }
 }
 
 export function getLinkTextFromLink(text: string): string {

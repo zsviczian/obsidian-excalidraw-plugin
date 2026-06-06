@@ -6496,7 +6496,13 @@ export default class ExcalidrawView
         title = `${title} ${i}`;
       }
       await addBackOfTheNoteCard(this, title, false, data);
-    } catch (_) {}
+    } catch (error) {
+      console.error(
+        "unexpected error in pasteCodeBlock",
+        this.pasteCodeBlock,
+        error,
+      );
+    }
   }
 
   public async convertImageElWithURLToLocalFile(data: {
@@ -7428,7 +7434,12 @@ export default class ExcalidrawView
         appState,
         linkText,
       });
-    } catch (_) {
+    } catch (error) {
+      console.error(
+        "unexpected error in renderEmbeddable",
+        this.renderEmbeddable,
+        error,
+      );
       return null;
     }
   }

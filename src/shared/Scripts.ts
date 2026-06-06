@@ -424,7 +424,8 @@ export class ScriptEngine {
         hint,
         instructions,
       );
-    } catch (_) {
+    } catch (error) {
+      console.error("unexpected error in suggester", this.suggester, error);
       return undefined;
     }
   }

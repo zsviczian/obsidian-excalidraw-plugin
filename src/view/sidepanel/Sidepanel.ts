@@ -131,7 +131,12 @@ export class ExcalidrawSidepanelView extends ItemView {
           const parsed = JSON.parse(entry);
           scriptName = parsed?.script ?? parsed?.name ?? "";
           title = parsed?.title ?? scriptName;
-        } catch (_) {
+        } catch (error) {
+          console.error(
+            "unexpected error in parsing sidepanel tab entry",
+            entry,
+            error,
+          );
           if (entry.includes("::")) {
             const [namePart, ...rest] = entry.split("::");
             scriptName = namePart;

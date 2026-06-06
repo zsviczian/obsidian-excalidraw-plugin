@@ -119,7 +119,12 @@ function canCreateWorkerFromBlob() {
     worker.terminate();
     URL.revokeObjectURL(url);
     IS_WORKER_SUPPORTED = true;
-  } catch (_) {
+  } catch (error) {
+    console.error(
+      "unexpected error in canCreateWorkerFromBlob",
+      canCreateWorkerFromBlob,
+      error,
+    );
     IS_WORKER_SUPPORTED = false;
   }
 }

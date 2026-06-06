@@ -401,7 +401,8 @@ export async function getSVG<TScene extends SceneForExport>(
       }
     }
     return svg;
-  } catch (_) {
+  } catch (error) {
+    console.error("unexpected error in getSVG", getSVG, error);
     return null;
   }
 }

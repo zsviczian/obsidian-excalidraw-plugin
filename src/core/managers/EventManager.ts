@@ -241,7 +241,13 @@ export class EventManager {
         if (element.link) {
           editorInsertText(editor, `${element.link}`);
         }
-      } catch (_) {}
+      } catch (error) {
+        console.error(
+          "Error parsing pasted Excalidraw element",
+          this.onPasteHandler,
+          error,
+        );
+      }
     }
   }
 

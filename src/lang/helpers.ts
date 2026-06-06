@@ -81,7 +81,8 @@ function loadLocale(lang: string): Partial<typeof en> {
     );
 
     return x || en;
-  } catch (_) {
+  } catch (error) {
+    console.error("Error loading locale", loadLocale, error);
     return en;
   }
 }

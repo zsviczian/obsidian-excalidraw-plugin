@@ -212,7 +212,12 @@ export class EmbeddedFile {
         this.colorMap = colorMapJSON
           ? JSON.parse(colorMapJSON.toLocaleLowerCase())
           : null;
-      } catch (_) {
+      } catch (error) {
+        console.log(
+          `Error parsing colorMap for file ${imgPath}`,
+          this.constructor,
+          error,
+        );
         this.colorMap = null;
       }
     }

@@ -239,8 +239,8 @@ const getFileFromURL = async (
       json: null,
       text: null,
     };
-  } catch (_) {
-    //errorlog({ where: getFileFromURL, message: e.message, url: url });
+  } catch (error) {
+    console.log("unexpected error in getFileFromURL", getFileFromURL, error);
     return null;
   }
 };
@@ -263,7 +263,12 @@ const getFileFromURLFallback = async (
       timeoutPromise,
       requestUrl({ url, throw: false }), // if method: "get" is added it won't load images on Android, contentType: mimeType
     ]);
-  } catch (_) {
+  } catch (error) {
+    console.error(
+      "unexpected error in getFileFromURLFallback",
+      getFileFromURLFallback,
+      error,
+    );
     errorlog({
       where: getFileFromURLFallback,
       message: `URL did not load within timeout period of ${timeout}ms`,
