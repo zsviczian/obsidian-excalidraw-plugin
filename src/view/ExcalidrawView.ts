@@ -2227,6 +2227,42 @@ export default class ExcalidrawView
     }
   }
 
+  addTabTitlebarButtons() {
+    this.actionButtons = this.plugin.settings.showTabTitlebarButtons
+      ? {
+          scriptInstall: this.addAction(
+            SCRIPTENGINE_ICON_NAME,
+            !DEVICE.isMobile ? t("INSTALL_SCRIPT_BUTTON") : "",
+            () => {
+              new ScriptInstallPrompt(this.plugin).open();
+            },
+          ),
+          save: this.addAction(
+            DISK_ICON_NAME,
+            !DEVICE.isMobile ? t("FORCE_SAVE") : "",
+            async () => this.forceSave(),
+          ),
+          isRaw: this.addAction(
+            TEXT_DISPLAY_RAW_ICON_NAME,
+            !DEVICE.isMobile ? t("RAW") : "",
+            () => this.changeTextMode(TextMode.parsed),
+          ),
+          link: this.addAction(
+            "link",
+            !DEVICE.isMobile ? t("OPEN_LINK") : "",
+            (ev) => this.handleLinkClick(ev),
+          ),
+        }
+      : ({} as Record<ActionButtons, HTMLElement>);
+  }
+
+  removeTabTitlebarButtons() {
+    if (this.actionButtons) {
+      Object.values(this.actionButtons).forEach((el) => el.remove());
+    }
+    this.actionButtons = {} as Record<ActionButtons, HTMLElement>;
+  }
+
   onload() {
     if (this.plugin.settings.overrideObsidianFontSize) {
       mainDocument.documentElement.style.fontSize = "";
@@ -2277,35 +2313,7 @@ export default class ExcalidrawView
       passive: false,
     });
 
-    this.actionButtons = {
-      scriptInstall: this.addAction(
-        SCRIPTENGINE_ICON_NAME,
-        !DEVICE.isMobile ? t("INSTALL_SCRIPT_BUTTON") : "",
-        () => {
-          new ScriptInstallPrompt(this.plugin).open();
-        },
-      ),
-      save: this.addAction(
-        DISK_ICON_NAME,
-        !DEVICE.isMobile ? t("FORCE_SAVE") : "",
-        async () => this.forceSave(),
-      ),
-      isRaw: this.addAction(
-        TEXT_DISPLAY_RAW_ICON_NAME,
-        !DEVICE.isMobile ? t("RAW") : "",
-        () => this.changeTextMode(TextMode.parsed),
-      ),
-      link: this.addAction(
-        "link",
-        !DEVICE.isMobile ? t("OPEN_LINK") : "",
-        (ev) => this.handleLinkClick(ev),
-      ),
-    };
-    /*this.actionButtons['isParsed'] = this.addAction(
-      TEXT_DISPLAY_PARSED_ICON_NAME,
-      t("PARSED"),
-      () => this.changeTextMode(TextMode.raw),
-    );*/
+    this.addTabTitlebarButtons();
 
     const ro = new ResizeObserver(() => {
       const height = this.contentEl.clientHeight;
@@ -2520,11 +2528,9 @@ export default class ExcalidrawView
     this.blockTextModeChange = true;
     this.textMode = textMode;
     if (textMode === TextMode.parsed) {
-      this.actionButtons.isRaw.hide();
-      //this.actionButtons.isParsed.hide();
+      this.actionButtons?.isRaw?.hide();
     } else {
-      this.actionButtons.isRaw.show();
-      //this.actionButtons.isParsed.hide();
+      this.actionButtons?.isRaw?.show();
     }
     if (this.toolsPanelRef && this.toolsPanelRef.current) {
       this.toolsPanelRef.current.setPreviewMode(textMode === TextMode.parsed);
@@ -2933,8 +2939,8 @@ export default class ExcalidrawView
       return;
     }
     this.lastLoadedFile = null;
-    this.actionButtons.save
-      .querySelector("svg")
+    this.actionButtons?.save
+      ?.querySelector("svg")
       .removeClass("excalidraw-dirty");
     if (this.compatibilityMode) {
       this.clearDirty();
@@ -3254,9 +3260,9 @@ export default class ExcalidrawView
       await this.plugin.loadSettings();
       if (this.compatibilityMode) {
         this.plugin.enableLegacyFilePopoverObserver();
-        this.actionButtons.isRaw.hide();
+        this.actionButtons?.isRaw?.hide();
         // this.actionButtons.isParsed.hide();
-        this.actionButtons.link.hide();
+        this.actionButtons?.link?.hide();
         this.textMode = TextMode.raw;
         await this.excalidrawData.loadLegacyData(data, this.file);
         if (!this.plugin.settings.compatibilityMode) {
@@ -3264,7 +3270,7 @@ export default class ExcalidrawView
         }
         this.excalidrawData.disableCompression = true;
       } else {
-        this.actionButtons.link.show();
+        this.actionButtons?.link?.show();
         this.excalidrawData.disableCompression = false;
         const textMode = getTextMode(data);
         await this.changeTextMode(textMode, false);
@@ -4061,7 +4067,7 @@ export default class ExcalidrawView
       this.resetAutosaveTimer();
     }
     this.semaphores.dirty = this.file?.path;
-    this.actionButtons.save.querySelector("svg").addClass("excalidraw-dirty");
+    this.actionButtons?.save?.querySelector("svg").addClass("excalidraw-dirty");
     if (!this.semaphores.viewunload && this.toolsPanelRef?.current) {
       this.toolsPanelRef.current.setDirty(true);
     }
@@ -4096,8 +4102,8 @@ export default class ExcalidrawView
     if (el) {
       this.previousSceneVersion = this.getSceneVersion(el);
     }
-    this.actionButtons.save
-      .querySelector("svg")
+    this.actionButtons?.save
+      ?.querySelector("svg")
       .removeClass("excalidraw-dirty");
     if (!DEVICE.isMobile) {
       if (requireApiVersion("0.16.0")) {

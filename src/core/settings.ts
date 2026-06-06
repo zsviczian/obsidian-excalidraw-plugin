@@ -72,6 +72,7 @@ import { getGeminiSupportedSizes } from "src/utils/geminiImageModelUtils";
 import { URLs } from "src/constants/safeUrls";
 
 export interface ExcalidrawSettings {
+  showTabTitlebarButtons: boolean;
   copyLinkToElemenetAnchorTo100: boolean;
   copyFrameLinkByName: boolean;
   disableDoubleClickTextEditing: boolean;
@@ -555,6 +556,7 @@ export const cloneModelConfigs = <TConfig extends AIModelConfig>(
   ) as Record<string, TConfig>;
 
 export const DEFAULT_SETTINGS: ExcalidrawSettings = {
+  showTabTitlebarButtons: true,
   copyLinkToElemenetAnchorTo100: false,
   copyFrameLinkByName: false,
   disableDoubleClickTextEditing: false,
@@ -2502,6 +2504,24 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       text: t("MODES_HEAD"),
       cls: "excalidraw-setting-h3",
     });
+
+    new Setting(detailsEl)
+      .setName(t("SHOW_TAB_TITLEBAR_BUTTONS"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.showTabTitlebarButtons)
+          .onChange(async (value) => {
+            this.plugin.settings.showTabTitlebarButtons = value;
+            this.applySettingsUpdate();
+            getExcalidrawViews(this.app, true).forEach((excalidrawView) => {
+              if (value) {
+                excalidrawView.addTabTitlebarButtons();
+              } else {
+                excalidrawView.removeTabTitlebarButtons();
+              }
+            });
+          }),
+      );
 
     new UIModeSettingsComponent(detailsEl, this.plugin.settings, this.app, () =>
       this.applySettingsUpdate(),

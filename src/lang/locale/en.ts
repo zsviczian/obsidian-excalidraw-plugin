@@ -186,6 +186,7 @@ export default {
   INSTALL_SCRIPT_BUTTON: "Install or update Excalidraw Scripts",
   OPEN_AS_MD: "Open as Markdown",
   EXPORT_IMAGE: `Export Image`,
+  SHOW_TAB_TITLEBAR_BUTTONS: "Show tab titlebar buttons",
   OPEN_LINK: "Open selected text as link\n(SHIFT+CLICK to open in a new pane)",
   EXCALIDRAW_SIDEPANEL: "Excalidraw Sidepanel",
   LINK_BUTTON_CLICK_NO_TEXT:
