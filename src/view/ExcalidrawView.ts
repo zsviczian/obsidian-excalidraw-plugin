@@ -717,8 +717,8 @@ export default class ExcalidrawView
     const collected: Record<FileId, BinaryFileData> = {};
     let resolved = false;
 
-    await new Promise<void>(async (resolve) => {
-      await loader.loadSceneFiles({
+    void (await new Promise<void>(async (resolve) => {
+      void (await loader.loadSceneFiles({
         excalidrawData: this.excalidrawData,
         addFiles: (
           files: FileData[],
@@ -737,8 +737,8 @@ export default class ExcalidrawView
         },
         depth: 0,
         isThemeChange: true,
-      });
-    });
+      }));
+    }));
 
     return Object.keys(collected).length ? collected : null;
   }
@@ -1181,10 +1181,9 @@ export default class ExcalidrawView
         const data = this.lastSavedData;
         //if the scene is empty, do not save to BAK (this could be due to a crash when the BAK should not be updated)
         if (scene && scene.elements && scene.elements.length > 0) {
-          window.setTimeout(
-            () => getImageCache().addBAKToCache(path, data),
-            50,
-          );
+          window.setTimeout(() => {
+            void getImageCache().addBAKToCache(path, data);
+          }, 50);
         }
         triggerReload =
           this.lastSaveTimestamp === this.file.stat.mtime &&
@@ -4256,81 +4255,87 @@ export default class ExcalidrawView
       "",
       "Leave blank to cancel this action",
     );
-    void prompt.openAndGetValue(async (filename: string) => {
-      if (!filename) {
-        return;
-      }
-      filename = `${filename}.md`;
-      const folderpath = splitFolderAndFilename(this.file.path).folderpath;
-      await checkAndCreateFolder(folderpath); //create folder if it does not exist
-      const fname = getNewUniqueFilepath(this.app.vault, filename, folderpath);
-      const text: string[] = [];
-      if (containerElement && containerElement.link) {
-        text.push(containerElement.link);
-      }
-      text.push(textElement.rawText);
-      const f = await createOrOverwriteFile(this.app, fname, text.join("\n"));
-      if (f) {
-        const ea: ExcalidrawAutomate = getEA(this);
-        const elements = containerElement
-          ? [textElement, containerElement]
-          : [textElement];
-        ea.copyViewElementsToEAforEditing(elements);
-        ea.getElements().forEach((el) => (el.isDeleted = true));
-        const [x, y, w, h] = containerElement
-          ? [
-              containerElement.x,
-              containerElement.y,
-              containerElement.width,
-              containerElement.height,
-            ]
-          : [textElement.x, textElement.y, MAX_IMAGE_SIZE, MAX_IMAGE_SIZE];
-        const id = ea.addEmbeddable(x, y, w, h, undefined, f);
-        if (containerElement) {
-          const props: (keyof ExcalidrawElement)[] = [
-            "backgroundColor",
-            "fillStyle",
-            "roughness",
-            "roundness",
-            "strokeColor",
-            "strokeStyle",
-            "strokeWidth",
-          ];
-          props.forEach((prop) => {
-            const element = ea.getElement(id);
-            if (prop in element) {
-              const mutableElement = element as Mutable<ExcalidrawElement>;
-              switch (prop) {
-                case "backgroundColor":
-                  mutableElement.backgroundColor =
-                    containerElement.backgroundColor;
-                  break;
-                case "fillStyle":
-                  mutableElement.fillStyle = containerElement.fillStyle;
-                  break;
-                case "roughness":
-                  mutableElement.roughness = containerElement.roughness;
-                  break;
-                case "roundness":
-                  mutableElement.roundness = containerElement.roundness;
-                  break;
-                case "strokeColor":
-                  mutableElement.strokeColor = containerElement.strokeColor;
-                  break;
-                case "strokeStyle":
-                  mutableElement.strokeStyle = containerElement.strokeStyle;
-                  break;
-                case "strokeWidth":
-                  mutableElement.strokeWidth = containerElement.strokeWidth;
-                  break;
-              }
-            }
-          });
+    void prompt.openAndGetValue((filename: string) => {
+      void (async () => {
+        if (!filename) {
+          return;
         }
-        ea.getElement(id);
-        await ea.addElementsToView();
-        ea.destroy();
-      }
+        filename = `${filename}.md`;
+        const folderpath = splitFolderAndFilename(this.file.path).folderpath;
+        await checkAndCreateFolder(folderpath); //create folder if it does not exist
+        const fname = getNewUniqueFilepath(
+          this.app.vault,
+          filename,
+          folderpath,
+        );
+        const text: string[] = [];
+        if (containerElement && containerElement.link) {
+          text.push(containerElement.link);
+        }
+        text.push(textElement.rawText);
+        const f = await createOrOverwriteFile(this.app, fname, text.join("\n"));
+        if (f) {
+          const ea: ExcalidrawAutomate = getEA(this);
+          const elements = containerElement
+            ? [textElement, containerElement]
+            : [textElement];
+          ea.copyViewElementsToEAforEditing(elements);
+          ea.getElements().forEach((el) => (el.isDeleted = true));
+          const [x, y, w, h] = containerElement
+            ? [
+                containerElement.x,
+                containerElement.y,
+                containerElement.width,
+                containerElement.height,
+              ]
+            : [textElement.x, textElement.y, MAX_IMAGE_SIZE, MAX_IMAGE_SIZE];
+          const id = ea.addEmbeddable(x, y, w, h, undefined, f);
+          if (containerElement) {
+            const props: (keyof ExcalidrawElement)[] = [
+              "backgroundColor",
+              "fillStyle",
+              "roughness",
+              "roundness",
+              "strokeColor",
+              "strokeStyle",
+              "strokeWidth",
+            ];
+            props.forEach((prop) => {
+              const element = ea.getElement(id);
+              if (prop in element) {
+                const mutableElement = element as Mutable<ExcalidrawElement>;
+                switch (prop) {
+                  case "backgroundColor":
+                    mutableElement.backgroundColor =
+                      containerElement.backgroundColor;
+                    break;
+                  case "fillStyle":
+                    mutableElement.fillStyle = containerElement.fillStyle;
+                    break;
+                  case "roughness":
+                    mutableElement.roughness = containerElement.roughness;
+                    break;
+                  case "roundness":
+                    mutableElement.roundness = containerElement.roundness;
+                    break;
+                  case "strokeColor":
+                    mutableElement.strokeColor = containerElement.strokeColor;
+                    break;
+                  case "strokeStyle":
+                    mutableElement.strokeStyle = containerElement.strokeStyle;
+                    break;
+                  case "strokeWidth":
+                    mutableElement.strokeWidth = containerElement.strokeWidth;
+                    break;
+                }
+              }
+            });
+          }
+          ea.getElement(id);
+          await ea.addElementsToView();
+          ea.destroy();
+        }
+      })();
     });
   }
 

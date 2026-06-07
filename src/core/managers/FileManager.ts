@@ -390,20 +390,22 @@ export class PluginFileManager {
         "my-library",
         "filename, leave blank to cancel action",
       );
-      void prompt.openAndGetValue(async (filename: string) => {
-        if (!filename) {
-          return;
-        }
-        filename = `${filename}.excalidrawlib`;
-        const folderpath = normalizePath(this.settings.folder);
-        await checkAndCreateFolder(folderpath); //create folder if it does not exist
-        const fname = getNewUniqueFilepath(
-          this.app.vault,
-          filename,
-          folderpath,
-        );
-        await this.app.vault.create(fname, this.settings.library);
-        new Notice(`Exported library to ${fname}`, 6000);
+      void prompt.openAndGetValue((filename: string) => {
+        void (async () => {
+          if (!filename) {
+            return;
+          }
+          filename = `${filename}.excalidrawlib`;
+          const folderpath = normalizePath(this.settings.folder);
+          await checkAndCreateFolder(folderpath); //create folder if it does not exist
+          const fname = getNewUniqueFilepath(
+            this.app.vault,
+            filename,
+            folderpath,
+          );
+          await this.app.vault.create(fname, this.settings.library);
+          new Notice(`Exported library to ${fname}`, 6000);
+        })();
       });
       return;
     }
@@ -612,81 +614,83 @@ export class PluginFileManager {
 
   public async modifyEventHandler(file: TFile) {
     const excalidrawViews = getExcalidrawViews(this.app);
-    excalidrawViews.forEach(async (excalidrawView) => {
-      if (excalidrawView.semaphores?.viewunload) {
-        return;
-      }
-      if (
-        excalidrawView.file &&
-        (excalidrawView.file.path === file.path ||
-          (file.extension === "excalidraw" &&
-            `${file.path.substring(
-              0,
-              file.path.lastIndexOf(".excalidraw"),
-            )}.md` === excalidrawView.file.path))
-      ) {
-        if (excalidrawView.semaphores?.preventReload) {
-          excalidrawView.semaphores.preventReload = false;
+    excalidrawViews.forEach((excalidrawView) => {
+      void (async () => {
+        if (excalidrawView.semaphores?.viewunload) {
           return;
         }
-
-        // Avoid synchronizing or reloading if the user hasn't interacted with the file for 5 minutes.
-        // This prevents complex sync issues when multiple remote changes occur outside an active collaboration session.
-
-        // The following logic handles a rare edge case where:
-        // 1. The user opens an Excalidraw file.
-        // 2. Immediately splits the view without saving Excalidraw (since no changes were made).
-        // 3. Switches the new split view to Markdown, edits the file, and quickly returns to Excalidraw.
-        // 4. The "modify" event may fire while Excalidraw is active, triggering an unwanted reload and zoom reset.
-
-        // To address this:
-        // - We check if the user is currently editing the Markdown version of the Excalidraw file in a split view.
-        // - As a heuristic, we also check for recent leaf switches.
-        //   This is not perfectly accurate (e.g., rapid switching between views within a few seconds),
-        //   but it is sufficient to avoid most edge cases without introducing complexity.
-
-        // Edge case impact:
-        // - In extremely rare situations, an update arriving within the "recent switch" timeframe (e.g., from Obsidian Sync)
-        //   might not trigger a reload. This is unlikely and an acceptable trade-off for better user experience.
-        const activeView = this.app.workspace.activeLeaf.view;
-        const isEditingMarkdownSideInSplitView =
-          (activeView !== excalidrawView &&
-            activeView instanceof MarkdownView &&
-            activeView.file === excalidrawView.file) ||
-          (activeView === excalidrawView &&
-            this.plugin.isRecentSplitViewSwitch());
-
         if (
-          !isEditingMarkdownSideInSplitView &&
-          excalidrawView.lastSaveTimestamp + 300000 < Date.now()
+          excalidrawView.file &&
+          (excalidrawView.file.path === file.path ||
+            (file.extension === "excalidraw" &&
+              `${file.path.substring(
+                0,
+                file.path.lastIndexOf(".excalidraw"),
+              )}.md` === excalidrawView.file.path))
         ) {
-          await excalidrawView.reload(true, excalidrawView.file);
-          return;
-        }
-        if (file.extension === "md") {
-          if (excalidrawView.semaphores?.embeddableIsEditingSelf) {
+          if (excalidrawView.semaphores?.preventReload) {
+            excalidrawView.semaphores.preventReload = false;
             return;
           }
-          const inData = new ExcalidrawData(this.plugin);
-          const data = await this.app.vault.read(file);
-          await inData.loadData(data, file, getTextMode(data));
-          await excalidrawView.synchronizeWithData(inData);
-          inData.destroy();
-          if (excalidrawView?.isDirty()) {
-            if (
-              excalidrawView.autosaveTimer &&
-              excalidrawView.autosaveFunction
-            ) {
-              window.clearTimeout(excalidrawView.autosaveTimer);
-            }
-            if (excalidrawView.autosaveFunction) {
-              await excalidrawView.autosaveFunction();
-            }
+
+          // Avoid synchronizing or reloading if the user hasn't interacted with the file for 5 minutes.
+          // This prevents complex sync issues when multiple remote changes occur outside an active collaboration session.
+
+          // The following logic handles a rare edge case where:
+          // 1. The user opens an Excalidraw file.
+          // 2. Immediately splits the view without saving Excalidraw (since no changes were made).
+          // 3. Switches the new split view to Markdown, edits the file, and quickly returns to Excalidraw.
+          // 4. The "modify" event may fire while Excalidraw is active, triggering an unwanted reload and zoom reset.
+
+          // To address this:
+          // - We check if the user is currently editing the Markdown version of the Excalidraw file in a split view.
+          // - As a heuristic, we also check for recent leaf switches.
+          //   This is not perfectly accurate (e.g., rapid switching between views within a few seconds),
+          //   but it is sufficient to avoid most edge cases without introducing complexity.
+
+          // Edge case impact:
+          // - In extremely rare situations, an update arriving within the "recent switch" timeframe (e.g., from Obsidian Sync)
+          //   might not trigger a reload. This is unlikely and an acceptable trade-off for better user experience.
+          const activeView = this.app.workspace.activeLeaf.view;
+          const isEditingMarkdownSideInSplitView =
+            (activeView !== excalidrawView &&
+              activeView instanceof MarkdownView &&
+              activeView.file === excalidrawView.file) ||
+            (activeView === excalidrawView &&
+              this.plugin.isRecentSplitViewSwitch());
+
+          if (
+            !isEditingMarkdownSideInSplitView &&
+            excalidrawView.lastSaveTimestamp + 300000 < Date.now()
+          ) {
+            await excalidrawView.reload(true, excalidrawView.file);
+            return;
           }
-        } else {
-          await excalidrawView.reload(true, excalidrawView.file);
+          if (file.extension === "md") {
+            if (excalidrawView.semaphores?.embeddableIsEditingSelf) {
+              return;
+            }
+            const inData = new ExcalidrawData(this.plugin);
+            const data = await this.app.vault.read(file);
+            await inData.loadData(data, file, getTextMode(data));
+            await excalidrawView.synchronizeWithData(inData);
+            inData.destroy();
+            if (excalidrawView?.isDirty()) {
+              if (
+                excalidrawView.autosaveTimer &&
+                excalidrawView.autosaveFunction
+              ) {
+                window.clearTimeout(excalidrawView.autosaveTimer);
+              }
+              if (excalidrawView.autosaveFunction) {
+                await excalidrawView.autosaveFunction();
+              }
+            }
+          } else {
+            await excalidrawView.reload(true, excalidrawView.file);
+          }
         }
-      }
+      })();
     });
   }
 

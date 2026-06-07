@@ -2291,7 +2291,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         .setDesc(fragWithHTML(description))
         .addDropdown((dropdown) => {
           optionValues.forEach((value) => dropdown.addOption(value, value));
-          return dropdown.setValue(selectedValue).onChange(async (value) => {
+          return dropdown.setValue(selectedValue).onChange((value) => {
             if (kind === "text") {
               selectedTextModelConfig = value;
               this.plugin.settings.aiDefaultTextModel = value;
@@ -2396,7 +2396,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           text
             .setPlaceholder(placeholder)
             .setValue(getter().toString())
-            .onChange(async (value) => {
+            .onChange((value) => {
               const intVal = parseInt(value, 10);
               if (isNaN(intVal) && value !== "") {
                 text.setValue(getter().toString());

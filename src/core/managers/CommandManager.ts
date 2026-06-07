@@ -1064,8 +1064,9 @@ export class CommandManager {
         if (view) {
           this.insertLinkDialog.start(
             view.file.path,
-            (markdownlink: string, path: string, alias: string) =>
-              view.addLink(markdownlink, path, alias),
+            (markdownlink: string, path: string, alias: string) => {
+              void view.addLink(markdownlink, path, alias);
+            },
           );
           return true;
         }
@@ -1085,8 +1086,9 @@ export class CommandManager {
         const view = this.app.workspace.getActiveViewOfType(ExcalidrawView);
         if (view) {
           this.insertCommandDialog.start(
-            (text: string, fontFamily?: 1 | 2 | 3 | 4, save?: boolean) =>
-              view.addText(text, fontFamily, save),
+            (text: string, fontFamily?: 1 | 2 | 3 | 4, save?: boolean) => {
+              void view.addText(text, fontFamily, save);
+            },
           );
           return true;
         }

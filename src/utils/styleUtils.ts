@@ -63,7 +63,7 @@ export const removeStyle = (
   }
 
   for (const prop of properties) {
-    const propStr = prop as string;
+    const propStr = prop;
 
     if (propStr.startsWith("--")) {
       element.style.removeProperty(propStr);

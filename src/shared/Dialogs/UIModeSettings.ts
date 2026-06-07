@@ -27,7 +27,9 @@ export class UIModeSettings extends Modal {
       this.contentEl,
       this.plugin.settings,
       this.app,
-      () => this.applySettingsUpdate(),
+      () => {
+        void this.applySettingsUpdate();
+      },
       () => this.close(),
     ).render();
   }

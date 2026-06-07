@@ -246,7 +246,9 @@ export class FloatingModal extends Modal {
       try {
         // Release modal scope so focus and key handling can return to the workspace.
         this.app.keymap.popScope(this.scope);
-      } catch {}
+      } catch (error) {
+        console.log(error);
+      }
       // prevent automatic selection / focus restoration
       this.shouldRestoreSelection = false;
     }
@@ -324,7 +326,9 @@ export class FloatingModal extends Modal {
     ) {
       try {
         this.previousActive.focus({ preventScroll: true });
-      } catch {}
+      } catch (error) {
+        console.log(error);
+      }
     }
     const { modalEl } = this;
     // Clean up event listeners

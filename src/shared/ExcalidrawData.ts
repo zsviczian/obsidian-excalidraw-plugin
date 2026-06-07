@@ -752,7 +752,9 @@ export class ExcalidrawData {
         .forEach((textEl: Mutable<ExcalidrawTextElement>) => {
           textEl.containerId = null;
         }); // log({message:"cleanup",textEl})});
-    } catch {}
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   /**

@@ -672,34 +672,36 @@ const createImgElement = async (
     timer = null;
   });
   eventElement.addEventListener("dblclick", clickEvent);
-  eventElement.addEventListener(RERENDER_EVENT, async (e) => {
+  eventElement.addEventListener(RERENDER_EVENT, (e) => {
     e.stopPropagation();
-    const parent = imgOrDiv.parentElement;
-    const imgMaxWidth = imgOrDiv.style.maxWidth;
-    const imgMaxHeigth = imgOrDiv.style.maxHeight;
-    const fileSource = imgOrDiv.getAttribute("fileSource");
-    const onCanvas = imgOrDiv.getAttribute("onCanvas") === "true";
-    const newImg = await createImgElement(
-      {
-        fname: fileSource,
-        fwidth: imgOrDiv.getAttribute("w"),
-        fheight: imgOrDiv.getAttribute("h"),
-        imgstyle: [...Array.from(imgOrDiv.classList)],
-      },
-      onCanvas,
-    );
-    if (!newImg) {
-      return;
-    }
-    parent.empty();
-    if (!onCanvas) {
-      setStyle(newImg, {
-        maxHeight: imgMaxHeigth,
-        maxWidth: imgMaxWidth,
-      });
-    }
-    newImg.setAttribute("fileSource", fileSource);
-    parent.append(newImg);
+    void (async () => {
+      const parent = imgOrDiv.parentElement;
+      const imgMaxWidth = imgOrDiv.style.maxWidth;
+      const imgMaxHeigth = imgOrDiv.style.maxHeight;
+      const fileSource = imgOrDiv.getAttribute("fileSource");
+      const onCanvas = imgOrDiv.getAttribute("onCanvas") === "true";
+      const newImg = await createImgElement(
+        {
+          fname: fileSource,
+          fwidth: imgOrDiv.getAttribute("w"),
+          fheight: imgOrDiv.getAttribute("h"),
+          imgstyle: [...Array.from(imgOrDiv.classList)],
+        },
+        onCanvas,
+      );
+      if (!newImg) {
+        return;
+      }
+      parent.empty();
+      if (!onCanvas) {
+        setStyle(newImg, {
+          maxHeight: imgMaxHeigth,
+          maxWidth: imgMaxWidth,
+        });
+      }
+      newImg.setAttribute("fileSource", fileSource);
+      parent.append(newImg);
+    })();
   });
   const cssClasses = getFileCSSClasses(attr.file);
   cssClasses.forEach((cssClass) => {
@@ -1132,11 +1134,13 @@ const tmpObsidianWYSIWYG = async (
     if (timer) {
       window.clearTimeout(timer);
     }
-    timer = window.setTimeout(async () => {
+    timer = window.setTimeout(() => {
       timer = null;
       internalEmbedDiv.empty();
-      const imgDiv = await processInternalEmbed(internalEmbedDiv, file);
-      internalEmbedDiv.appendChild(imgDiv);
+      void (async () => {
+        const imgDiv = await processInternalEmbed(internalEmbedDiv, file);
+        internalEmbedDiv.appendChild(imgDiv);
+      })();
     }, 500);
   };
   const observer = DEBUGGING
@@ -1322,7 +1326,7 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = async (m) => {
     fheight: null,
     imgstyle: ["excalidraw-svg"],
   });
-  const div = createDiv("", async (el) => {
+  const div = createDiv("", (el) => {
     el.appendChild(img);
     el.setAttribute("src", file.path);
     el.onClickEvent((ev) => {

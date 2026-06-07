@@ -284,7 +284,9 @@ function setupPdfViewEnhancements(
         setStyle(view.contentEl, {
           cursor: "grabbing",
         });
-      } catch {}
+      } catch (error) {
+        console.log(error);
+      }
     };
 
     const onPointerMove = (e: PointerEvent) => {
@@ -320,7 +322,9 @@ function setupPdfViewEnhancements(
         setStyle(view.contentEl, {
           cursor: "",
         });
-      } catch {}
+      } catch (error) {
+        console.log(error);
+      }
       window.removeEventListener("pointermove", onPointerMove, true);
       window.removeEventListener("pointerup", onPointerUp, true);
       window.removeEventListener("pointercancel", onPointerUp, true);
@@ -386,10 +390,14 @@ function setupPdfViewEnhancements(
                 // Cleanup existing handlers/observers
                 try {
                   pdfObserverRef.currentCleanup?.();
-                } catch {}
+                } catch (error) {
+                  console.log(error);
+                }
                 try {
                   pdfObserverRef.current?.disconnect();
-                } catch {}
+                } catch (error) {
+                  console.log(error);
+                }
 
                 // Re-setup on next tick to allow DOM to settle
                 window.setTimeout(() => {
@@ -412,13 +420,19 @@ function setupPdfViewEnhancements(
           pdfObserverRef.currentCleanup = () => {
             try {
               prevCleanup?.();
-            } catch {}
+            } catch (error) {
+              console.log(error);
+            }
             try {
               pdfObserverRef.current?.disconnect();
-            } catch {}
+            } catch (error) {
+              console.log(error);
+            }
             try {
               detachObserver?.disconnect();
-            } catch {}
+            } catch (error) {
+              console.log(error);
+            }
             detachObserver = null;
           };
         }
@@ -769,7 +783,9 @@ function RenderObsidianView({
       // cleanup persistent mobile patch if active
       try {
         mobilePatchCleanupRef.current?.();
-      } catch {}
+      } catch (error) {
+        console.log(error);
+      }
       mobilePatchCleanupRef.current = null;
 
       view.updateEmbeddableLeafRef(element.id);
@@ -1195,7 +1211,9 @@ function RenderObsidianView({
           // stop persistent observer when deactivated
           try {
             mobilePatchCleanupRef.current?.();
-          } catch {}
+          } catch (error) {
+            console.log(error);
+          }
           mobilePatchCleanupRef.current = null;
         }
       }

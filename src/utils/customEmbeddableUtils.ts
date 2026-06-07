@@ -155,7 +155,9 @@ export function predictViewType(app: App, file: TFile): string {
         if (typeof vt === "string" && vt) {
           return vt;
         }
-      } catch {}
+      } catch (error) {
+        console.log(error);
+      }
     }
   }
   // 2) Try extension mapping from registry
@@ -169,7 +171,9 @@ export function predictViewType(app: App, file: TFile): string {
         if (typeof vt === "string" && vt) {
           return vt;
         }
-      } catch {}
+      } catch (error) {
+        console.log(error);
+      }
     }
   }
 

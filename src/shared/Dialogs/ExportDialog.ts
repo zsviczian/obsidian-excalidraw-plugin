@@ -427,16 +427,18 @@ export class ExportDialog extends Modal {
       bPNG.onclick = () => {
         if (isScreenshot) {
           //allow dialog to close before taking screenshot
-          window.setTimeout(async () => {
-            const png = await captureScreenshot(this.view, {
-              zoom: this.scale,
-              margin: this.padding,
-              selectedOnly: this.isSelectedOnly,
-              theme: this.theme,
-            });
-            if (png) {
-              exportPNG(png, this.view.file.basename);
-            }
+          window.setTimeout(() => {
+            void (async () => {
+              const png = await captureScreenshot(this.view, {
+                zoom: this.scale,
+                margin: this.padding,
+                selectedOnly: this.isSelectedOnly,
+                theme: this.theme,
+              });
+              if (png) {
+                exportPNG(png, this.view.file.basename);
+              }
+            })();
           });
         } else {
           void this.view.exportPNG(this.embedScene, this.isSelectedOnly);
@@ -452,22 +454,24 @@ export class ExportDialog extends Modal {
     bPNGVault.onclick = () => {
       if (isScreenshot) {
         //allow dialog to close before taking screenshot
-        window.setTimeout(async () => {
-          const png = await captureScreenshot(this.view, {
-            zoom: this.scale,
-            margin: this.padding,
-            selectedOnly: this.isSelectedOnly,
-            theme: this.theme,
-          });
-          if (png) {
-            void exportImageToFile(
-              this.view,
-              getIMGFilename(this.view.file.path, "png"),
-              png,
-              ".png",
-            );
-          }
-        });
+        window.setTimeout(() => {
+          void (async () => {
+            const png = await captureScreenshot(this.view, {
+              zoom: this.scale,
+              margin: this.padding,
+              selectedOnly: this.isSelectedOnly,
+              theme: this.theme,
+            });
+            if (png) {
+              void exportImageToFile(
+                this.view,
+                getIMGFilename(this.view.file.path, "png"),
+                png,
+                ".png",
+              );
+            }
+          })();
+        }, 0);
       } else {
         void this.view.savePNG({
           scene: this.view.getScene(this.isSelectedOnly),
@@ -483,16 +487,18 @@ export class ExportDialog extends Modal {
     bPNGClipboard.onclick = async () => {
       if (isScreenshot) {
         //allow dialog to close before taking screenshot
-        window.setTimeout(async () => {
-          const png = await captureScreenshot(this.view, {
-            zoom: this.scale,
-            margin: this.padding,
-            selectedOnly: this.isSelectedOnly,
-            theme: this.theme,
-          });
-          if (png) {
-            await exportPNGToClipboard(png);
-          }
+        window.setTimeout(() => {
+          void (async () => {
+            const png = await captureScreenshot(this.view, {
+              zoom: this.scale,
+              margin: this.padding,
+              selectedOnly: this.isSelectedOnly,
+              theme: this.theme,
+            });
+            if (png) {
+              await exportPNGToClipboard(png);
+            }
+          })();
         });
       } else {
         await this.view.exportPNGToClipboard(
