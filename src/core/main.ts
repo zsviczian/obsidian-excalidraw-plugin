@@ -96,7 +96,7 @@ import {
   emulateCTRLClickForLinks,
   linkClickModifierType,
 } from "../utils/modifierkeyHelper";
-import { imageCache } from "../shared/ImageCache";
+import { getImageCache } from "../shared/ImageCache";
 import { StylesManager } from "./managers/StylesManager";
 import { CustomMutationObserver, log } from "../utils/debugHelper";
 import { ExcalidrawConfig } from "../shared/ExcalidrawConfig";
@@ -133,6 +133,7 @@ import {
   encryptPersistedAPIKeys,
 } from "src/utils/settingsKeyObfuscation";
 import { URLs } from "src/constants/safeUrls";
+import { hideElement, setButtonBgColor, showElement } from "src/utils/styleUtils";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
@@ -919,7 +920,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.logStartupEvent("Fonts initialized");
 
     try {
-      void imageCache.initializeDB(this);
+      void getImageCache().initializeDB(this);
     } catch (e) {
       new Notice("Error initializing image cache", 6000);
       console.error("Error initializing image cache", e);
@@ -1269,8 +1270,8 @@ export default class ExcalidrawPlugin extends Plugin {
         button2 = link.parentElement.createEl("button", null, (b) => {
           b.setText(t("UPDATE_SCRIPT"));
           b.addClass("mod-muted");
-          b.style.backgroundColor = "var(--interactive-success)";
-          b.style.display = "none";
+          setButtonBgColor(b, "success");
+          hideElement(b);
         });
       } catch (e) {
         errorlog({
@@ -1286,31 +1287,31 @@ export default class ExcalidrawPlugin extends Plugin {
           text: "CHECKING" | "INSTALL" | "UPTODATE" | "UPDATE" | "ERROR",
         ) => {
           if (button2) {
-            button2.style.display = "none";
+            hideElement(button2);
           }
           switch (text) {
             case "CHECKING":
               button.setText(t("CHECKING_SCRIPT"));
-              button.style.backgroundColor = "var(--interactive-normal)";
+              setButtonBgColor(button, "normal");
               break;
             case "INSTALL":
               button.setText(t("INSTALL_SCRIPT"));
-              button.style.backgroundColor = "var(--interactive-accent)";
+              setButtonBgColor(button, "accent");
               break;
             case "UPTODATE":
               button.setText(t("UPTODATE_SCRIPT"));
-              button.style.backgroundColor = "var(--interactive-normal)";
+              setButtonBgColor(button, "normal");
               break;
             case "UPDATE":
               button.setText(t("UPDATE_SCRIPT"));
-              button.style.backgroundColor = "var(--interactive-success)";
+              setButtonBgColor(button, "success");
               if (button2) {
-                button2.style.display = null;
+                showElement(button2);
               }
               break;
             case "ERROR":
               button.setText(t("UNABLETOCHECK_SCRIPT"));
-              button.style.backgroundColor = "var(--interactive-normal)";
+              setButtonBgColor(button, "normal");
               break;
           }
         };
@@ -1829,8 +1830,8 @@ export default class ExcalidrawPlugin extends Plugin {
       this.scriptEngine = null;
     }
 
-    if (imageCache) {
-      imageCache.destroy();
+    if (getImageCache()) {
+      getImageCache().destroy();
     }
 
     this.stylesManager.destroy();

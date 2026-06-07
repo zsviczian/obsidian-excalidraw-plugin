@@ -31,7 +31,7 @@ import {
   getFileCSSClasses,
 } from "../../utils/obsidianUtils";
 import { linkClickModifierType } from "../../utils/modifierkeyHelper";
-import { ImageKey, imageCache } from "../../shared/ImageCache";
+import { ImageKey, getImageCache } from "../../shared/ImageCache";
 import { FILENAMEPARTS, PreviewImageType } from "../../types/utilTypes";
 import { CustomMutationObserver, DEBUGGING } from "../../utils/debugHelper";
 import { getExcalidrawFileForwardLinks } from "../../utils/excalidrawViewUtils";
@@ -120,7 +120,7 @@ const _getPNG = async ({
   };
 
   if (cacheReady) {
-    const src = await imageCache.getImageFromCache(cacheKey);
+    const src = await getImageCache().getImageFromCache(cacheKey);
     //In case of PNG I cannot change the viewBox to select the area of the element
     //being referenced. For PNG only the group reference works
     if (src && typeof src === "string") {
@@ -174,7 +174,7 @@ const _getPNG = async ({
     img.addEventListener("error", cleanup, { once: true });
   }
 
-  cacheReady && imageCache.addImageToCache(cacheKey, blobUrl, png);
+  cacheReady && getImageCache().addImageToCache(cacheKey, blobUrl, png);
   return img;
 };
 
@@ -241,7 +241,7 @@ const _getSVGIMG = async ({
   };
 
   if (cacheReady) {
-    const src = await imageCache.getImageFromCache(cacheKey);
+    const src = await getImageCache().getImageFromCache(cacheKey);
     if (src && typeof src === "string") {
       img.setAttribute("src", src);
       return img;
@@ -333,7 +333,7 @@ const _getSVGNative = async ({
   };
   let maybeSVG;
   if (cacheReady) {
-    maybeSVG = await imageCache.getImageFromCache(cacheKey);
+    maybeSVG = await getImageCache().getImageFromCache(cacheKey);
   }
 
   const svg =
@@ -381,7 +381,7 @@ const _getSVGNative = async ({
 
   //cache SVG should have the width and height parameters and not the embedded font
   if (!maybeSVG) {
-    cacheReady && imageCache.addImageToCache(cacheKey, "", svg);
+    cacheReady && getImageCache().addImageToCache(cacheKey, "", svg);
   }
 
   if (width && !isNaN(width)) {
@@ -446,7 +446,7 @@ const getIMG = async (
     theme ? theme === "dark" : undefined,
   );
 
-  const cacheReady = imageCache.isReady();
+  const cacheReady = getImageCache().isReady();
 
   await plugin.awaitInit();
   switch (plugin.settings.previewImageType) {
@@ -518,7 +518,7 @@ const addSVGToImgSrc = (
     img.addEventListener("error", cleanup, { once: true });
   }
 
-  cacheReady && imageCache.addImageToCache(cacheKey, blobUrl, blob);
+  cacheReady && getImageCache().addImageToCache(cacheKey, blobUrl, blob);
   return img;
 };
 

@@ -202,7 +202,7 @@ import {
   tmpBruteForceCleanup,
   toggleImageAnchoring,
 } from "../utils/excalidrawViewUtils";
-import { imageCache } from "../shared/ImageCache";
+import { getImageCache } from "../shared/ImageCache";
 import { CanvasNodeFactory } from "./managers/CanvasNodeFactory";
 import { EmbeddableMenu } from "./components/menu/EmbeddableActionsMenu";
 import { useDefaultExcalidrawFrame } from "../utils/customEmbeddableUtils";
@@ -1167,7 +1167,7 @@ export default class ExcalidrawView
             }
             await plugin.app.vault.modify(file, d);
             //this is a shady edge case, don't scrifice the BAK file in case the drawing is empty
-            //await imageCache.addBAKToCache(file.path,d);
+            //await getImageCache().addBAKToCache(file.path,d);
           }, 200);
           this.semaphores.saving = false;
           return;
@@ -1180,7 +1180,7 @@ export default class ExcalidrawView
         const data = this.lastSavedData;
         //if the scene is empty, do not save to BAK (this could be due to a crash when the BAK should not be updated)
         if (scene && scene.elements && scene.elements.length > 0) {
-          window.setTimeout(() => imageCache.addBAKToCache(path, data), 50);
+          window.setTimeout(() => getImageCache().addBAKToCache(path, data), 50);
         }
         triggerReload =
           this.lastSaveTimestamp === this.file.stat.mtime &&
@@ -3298,9 +3298,9 @@ export default class ExcalidrawView
             let confirmation: boolean | null = true;
             let counter = 0;
             const timestamp = Date.now();
-            while (!imageCache.isReady() && confirmation) {
+            while (!getImageCache().isReady() && confirmation) {
               const message = `You've been now waiting for <b>${Math.round((Date.now() - timestamp) / 1000)}</b> seconds. `;
-              imageCache.initializationNotice = true;
+              getImageCache().initializationNotice = true;
               const confirmationPrompt = new MultiOptionConfirmationPrompt(
                 plugin,
                 `${
@@ -3325,7 +3325,7 @@ export default class ExcalidrawView
               counter++;
             }
 
-            const drawingBAK = await imageCache.getBAKFromCache(file.path);
+            const drawingBAK = await getImageCache().getBAKFromCache(file.path);
             if (!drawingBAK) {
               new Notice(
                 `Error loading drawing:\n${e.message}${
@@ -3356,12 +3356,12 @@ export default class ExcalidrawView
       }
 
       if (
-        imageCache.isReady() &&
+        getImageCache().isReady() &&
         this.excalidrawData.scene &&
         this.excalidrawData.scene.elements &&
         this.excalidrawData.scene.elements.length === 0
       ) {
-        const backup = await imageCache.getBAKFromCache(this.file.path);
+        const backup = await getImageCache().getBAKFromCache(this.file.path);
         if (backup && backup.length > data.length) {
           window.setTimeout(async () => {
             const confirmationPrompt = new MultiOptionConfirmationPrompt(
@@ -3386,10 +3386,10 @@ export default class ExcalidrawView
                 path,
                 backup,
               );
-              await imageCache.removeBAKFromCache(this.file.path);
+              await getImageCache().removeBAKFromCache(this.file.path);
               this.plugin.openDrawing(backupFile, "new-tab");
             } else if (result === 2) {
-              await imageCache.removeBAKFromCache(this.file.path);
+              await getImageCache().removeBAKFromCache(this.file.path);
             }
           });
         }

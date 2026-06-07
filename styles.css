@@ -994,3 +994,9 @@ End Obsidian Sheets Plus support
 .excalidraw:not(.excalidraw--tray) .HintViewer {
   position: absolute;
 }
+
+.excalidraw-button-bgcolor {
+  &-normal { background-color: var(--interactive-normal); }
+  &-accent { background-color: var(--interactive-accent); }
+  &-success { background-color: var(--interactive-success); }
+}

@@ -29,7 +29,7 @@ import {
 import { PENS } from "src/utils/pens";
 import { addYouTubeThumbnail, fragWithHTML } from "src/utils/utils";
 import { setElementIconAndText, setSanitizedHtml } from "src/utils/htmlUtils";
-import { imageCache } from "src/shared/ImageCache";
+import { getImageCache } from "src/shared/ImageCache";
 import { MultiOptionConfirmationPrompt } from "src/shared/Dialogs/Prompt";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "src/shared/Dialogs/EmbeddableMDFileCustomDataSettingsComponent";
@@ -70,6 +70,7 @@ import { getAIUsage, formatAIUsageLabel } from "src/utils/AIUtils";
 import { decryptProviderProfiles } from "src/utils/settingsKeyObfuscation";
 import { getGeminiSupportedSizes } from "src/utils/geminiImageModelUtils";
 import { URLs } from "src/constants/safeUrls";
+import { hideElement, showElement } from "src/utils/styleUtils";
 
 export interface ExcalidrawSettings {
   showTabTitlebarButtons: boolean;
@@ -1859,11 +1860,21 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         toggle
           .setValue(this.plugin.settings.aiEnabled ?? true)
           .onChange(async (value) => {
-            aiEl.style.display = value ? "block" : "none";
+            if (value) {
+              showElement(aiEl);
+            } else {
+              hideElement(aiEl);
+            }
             this.plugin.settings.aiEnabled = value;
             this.applySettingsUpdate();
           }),
       );
+
+    detailsEl = detailsEl.createDiv();
+    const aiEl = detailsEl;
+    if (!(this.plugin.settings.aiEnabled ?? true)) {
+      hideElement(detailsEl);
+    }
 
     new Setting(detailsEl)
       .setName(t("AI_USAGE_SETTINGS_BUTTON_NAME"))
@@ -1890,12 +1901,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             this.applySettingsUpdate();
           }),
       );
-
-    detailsEl = detailsEl.createDiv();
-    const aiEl = detailsEl;
-    if (!(this.plugin.settings.aiEnabled ?? true)) {
-      detailsEl.style.display = "none";
-    }
 
     let selectedProviderProfile =
       Object.keys(this.plugin.settings.aiProviderProfiles ?? {})[0] || "OpenAI";
@@ -2919,7 +2924,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.gridSettings.DYNAMIC_COLOR)
           .onChange(async (value) => {
             this.plugin.settings.gridSettings.DYNAMIC_COLOR = value;
-            gridColorSection.style.display = value ? "none" : "block";
+            if (value) {
+              hideElement(gridColorSection);
+            } else {
+              showElement(gridColorSection);
+            }
             this.applySettingsUpdate();
             updateGridColor();
           }),
@@ -2927,10 +2936,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
     // Create a div to contain color and opacity settings
     const gridColorSection = detailsEl.createDiv();
-    gridColorSection.style.display = this.plugin.settings.gridSettings
-      .DYNAMIC_COLOR
-      ? "none"
-      : "block";
+    if (this.plugin.settings.gridSettings.DYNAMIC_COLOR) {
+      hideElement(gridColorSection);
+    } else {
+      showElement(gridColorSection);
+    }
 
     // Grid color picker
     new Setting(gridColorSection)
@@ -3536,7 +3546,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setName(t("EMBED_IMAGE_CACHE_CLEAR"))
       .addButton((button) =>
         button.setButtonText(t("EMBED_IMAGE_CACHE_CLEAR")).onClick(() => {
-          void imageCache.clearImageCache();
+          void getImageCache().clearImageCache();
         }),
       );
     new Setting(detailsEl)
@@ -3549,7 +3559,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           );
           void confirmationPrompt.waitForClose.then((confirmed) => {
             if (confirmed) {
-              void imageCache.clearBackupCache();
+              void getImageCache().clearBackupCache();
             }
           });
         }),

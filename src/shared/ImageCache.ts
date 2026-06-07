@@ -5,9 +5,6 @@ import { convertSVGStringToElement } from "../utils/utils";
 import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
 import { hasExcalidrawEmbeddedImagesTreeChanged } from "../utils/fileUtils";
 import { EXCALIDRAW_PLUGIN } from "src/constants/constants";
-const DB_NAME = `Excalidraw ${EXCALIDRAW_PLUGIN.app.appId}`;
-const CACHE_STORE = "imageCache";
-const BACKUP_STORE = "drawingBAK";
 
 type FileCacheData = {
   mtime: number;
@@ -607,4 +604,14 @@ class ImageCache {
   }
 }
 
-export const imageCache = new ImageCache(DB_NAME, CACHE_STORE, BACKUP_STORE);
+let imageCache: ImageCache = null;
+
+export const getImageCache = (): ImageCache => {
+  if (!imageCache) {
+    const DB_NAME = `Excalidraw ${EXCALIDRAW_PLUGIN.app.appId}`;
+    const CACHE_STORE = "imageCache";
+    const BACKUP_STORE = "drawingBAK";
+    imageCache = new ImageCache(DB_NAME, CACHE_STORE, BACKUP_STORE);
+  }
+  return imageCache;
+};

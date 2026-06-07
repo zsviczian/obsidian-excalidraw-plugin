@@ -58,7 +58,7 @@ import {
   shouldRenderMermaid,
 } from "../utils/mermaidUtils";
 import { mermaidToExcalidraw } from "src/constants/constants";
-import { ImageKey, imageCache } from "./ImageCache";
+import { ImageKey, getImageCache } from "./ImageCache";
 import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
 import {
   ColorMap,
@@ -495,7 +495,7 @@ export class EmbeddedFilesLoader {
       !hasColorMap &&
       this.plugin.settings.allowImageCacheInScene &&
       file &&
-      imageCache.isReady();
+      getImageCache().isReady();
     const hasFilenameParts = Boolean(
       inFile instanceof EmbeddedFile && inFile.filenameparts,
     );
@@ -530,7 +530,7 @@ export class EmbeddedFilesLoader {
     };
 
     const maybeSVG = shouldUseCache
-      ? await imageCache.getImageFromCache(cacheKey, {
+      ? await getImageCache().getImageFromCache(cacheKey, {
           skipDependencyCheck: cacheValidation === "stale-first",
         })
       : undefined;
@@ -618,7 +618,7 @@ export class EmbeddedFilesLoader {
     if (shouldUseCache && !maybeSVG) {
       //cache SVG should have the width and height parameters and not the embedded font
       //see svgWithFont below
-      imageCache.addImageToCache(cacheKey, "", svg);
+      getImageCache().addImageToCache(cacheKey, "", svg);
     }
 
     if (!svg.hasAttribute("width") && svg.hasAttribute("viewBox")) {
@@ -1122,7 +1122,7 @@ export class EmbeddedFilesLoader {
       const pageNum = isNaN(linkParts.page) ? 1 : (linkParts.page ?? 1);
       const requestedScale = this.plugin.settings.pdfScale;
       const shouldUseCache =
-        imageCache.isReady() &&
+        getImageCache().isReady() &&
         (!options || this.plugin.settings.allowImageCacheInScene);
       const cacheKey: ImageKey = {
         filepath: file.path,
@@ -1145,7 +1145,7 @@ export class EmbeddedFilesLoader {
         inlineFonts: false,
       };
       const cachedData = shouldUseCache
-        ? await imageCache.getImageCacheData(cacheKey, {
+        ? await getImageCache().getImageCacheData(cacheKey, {
             skipDependencyCheck: options?.cacheValidation === "stale-first",
             minRenderScale:
               options?.cacheValidation === "stale-first"
@@ -1335,7 +1335,7 @@ export class EmbeddedFilesLoader {
         });
         const base64 = await blobToBase64(blob);
         shouldUseCache &&
-          imageCache.addImageToCache(cacheKey, "", blob, {
+          getImageCache().addImageToCache(cacheKey, "", blob, {
             renderScale: requestedScale,
             size: { width, height },
             pdfPageViewProps: viewProps,

@@ -45,7 +45,7 @@ import {
   openLeaf,
 } from "src/utils/obsidianUtils";
 import { errorlog, getExportTheme } from "src/utils/utils";
-import { imageCache } from "src/shared/ImageCache";
+import { getImageCache } from "src/shared/ImageCache";
 import { PaneTarget } from "src/types/utilTypes";
 
 export class PluginFileManager {
@@ -694,10 +694,10 @@ export class PluginFileManager {
     //this will not work in a short period when Obsidian is starting up, however
     //because there is housekeeping in ImageCache at each startup to delete
     //BAK files, this is not a major issue.
-    if (!imageCache.isReady() || !path) {
+    if (!getImageCache().isReady() || !path) {
       return;
     }
-    await imageCache.removeBAKFromCache(path);
+    await getImageCache().removeBAKFromCache(path);
   }
 
   private async moveBAKFile(oldPath: string, newPath: string) {
@@ -708,12 +708,12 @@ export class PluginFileManager {
     //this will only effect a very few files, statistically unlikely to cause
     //much/any real user impact.
     //a proper queuing feels overkill for this.
-    if (!imageCache.isReady()) {
+    if (!getImageCache().isReady()) {
       return;
     }
-    const backup = await imageCache.getBAKFromCache(oldPath);
+    const backup = await getImageCache().getBAKFromCache(oldPath);
     if (backup) {
-      await imageCache.addBAKToCache(newPath, `${backup}`);
+      await getImageCache().addBAKToCache(newPath, `${backup}`);
       await this.removeBAKFromCache(oldPath);
     }
   }
