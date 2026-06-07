@@ -33,6 +33,7 @@ import {
   getChangedTopLevelDependencyFileIDs,
   setMobileNavbarPosition,
 } from "src/utils/excalidrawViewUtils";
+import { setStyle } from "src/utils/styleUtils";
 
 /**
  * Registers event listeners for the plugin
@@ -301,7 +302,9 @@ export class EventManager {
 
     if (this.settings.overrideObsidianFontSize) {
       if (leaf.view && leaf.view.getViewType() === VIEW_TYPE_EXCALIDRAW) {
-        mainDocument.documentElement.style.fontSize = "";
+        setStyle(mainDocument.documentElement, {
+          fontSize: "",
+        });
       }
     }
 

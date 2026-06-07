@@ -91,10 +91,8 @@ export class VersionMismatchPrompt extends Modal {
     });
 
     setElementDisplay(buttonBar, "flex");
-    buttonBar.style.gap = "0.5rem";
-    buttonBar.style.marginTop = "1rem";
-    redownloadBtn.style.backgroundColor = "var(--interactive-accent)";
-    redownloadBtn.style.color = "var(--text-on-accent)";
+    buttonBar.addClass("excalidraw-versionmismatch-buttonbar");
+    redownloadBtn.addClass("mod-cta");
   }
 
   async onClose() {

@@ -267,6 +267,7 @@ import {
   getImagesMatchingQuery,
 } from "src/utils/excalidrawAutomateUtils";
 import { getYouTubeUrl, URLs } from "src/constants/safeUrls";
+import { setStyle } from "src/utils/styleUtils";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -1382,7 +1383,7 @@ export default class ExcalidrawView
   restoreMobileLeaves() {
     if (this.hiddenMobileLeaves.length > 0) {
       this.hiddenMobileLeaves.forEach((x: [WorkspaceLeaf, string]) => {
-        x[0].containerEl.style.display = x[1];
+        setStyle(x[0].containerEl, { display: x[1] });
       });
       this.hiddenMobileLeaves = [];
     }
@@ -1572,7 +1573,7 @@ export default class ExcalidrawView
     }
 
     const hide = (el: HTMLElement) => {
-      el.style.marginTop = "0px";
+      setStyle(el, { marginTop: "0px" });
       let tmpEl = el;
       while (tmpEl && !tmpEl.hasClass("workspace-split")) {
         el.addClass(SHOW);
@@ -1645,7 +1646,7 @@ export default class ExcalidrawView
         ".is-mobile .workspace > .mod-root",
       );
       if (topPadding && topPadding instanceof HTMLElement) {
-        topPadding.style.paddingTop = "0px";
+        setStyle(topPadding, { paddingTop: "0px" });
       }
     };
 
@@ -1672,9 +1673,9 @@ export default class ExcalidrawView
       ".is-mobile .workspace > .mod-root",
     );
     if (topPadding && topPadding instanceof HTMLElement) {
-      topPadding.style.paddingTop = "";
+      setStyle(topPadding, { paddingTop: "" });
     }
-    this.contentEl.style.marginTop = "";
+    setStyle(this.contentEl, { marginTop: "" });
   }
 
   removeLinkTooltip() {
@@ -2268,7 +2269,9 @@ export default class ExcalidrawView
 
   onload() {
     if (this.plugin.settings.overrideObsidianFontSize) {
-      mainDocument.documentElement.style.fontSize = "";
+      setStyle(mainDocument.documentElement, {
+        fontSize: "",
+      });
     }
 
     const apiMissing = Boolean(
@@ -2807,7 +2810,9 @@ export default class ExcalidrawView
 
     this.lastMouseEvent = null;
     this.requestSave = null;
-    this.leaf.tabHeaderInnerTitleEl.style.color = "";
+    setStyle(this.leaf.tabHeaderInnerTitleEl, {
+      color: "",
+    });
 
     //super.onClose will unmount Excalidraw, need to save before that
     await super.onClose();
@@ -4105,8 +4110,12 @@ export default class ExcalidrawView
     }
     if (!DEVICE.isMobile) {
       if (requireApiVersion("0.16.0")) {
-        this.leaf.tabHeaderInnerIconEl.style.color = "var(--color-accent)";
-        this.leaf.tabHeaderInnerTitleEl.style.color = "var(--color-accent)";
+        setStyle(this.leaf.tabHeaderInnerIconEl, {
+          color: "var(--color-accent)",
+        });
+        setStyle(this.leaf.tabHeaderInnerTitleEl, {
+          color: "var(--color-accent)",
+        });
       }
     }
   }
@@ -4139,8 +4148,8 @@ export default class ExcalidrawView
       .removeClass("excalidraw-dirty");
     if (!DEVICE.isMobile) {
       if (requireApiVersion("0.16.0")) {
-        this.leaf.tabHeaderInnerIconEl.style.color = "";
-        this.leaf.tabHeaderInnerTitleEl.style.color = "";
+        setStyle(this.leaf.tabHeaderInnerIconEl, { color: "" });
+        setStyle(this.leaf.tabHeaderInnerTitleEl, { color: "" });
       }
     }
   }
@@ -4693,11 +4702,13 @@ export default class ExcalidrawView
     }
     const st: AppState = api.getAppState();
     const ea = getEA(this);
-    ea.style.strokeColor = st.currentItemStrokeColor ?? "black";
-    ea.style.opacity = st.currentItemOpacity ?? 1;
-    ea.style.fontFamily = fontFamily ?? st.currentItemFontFamily ?? 1;
-    ea.style.fontSize = st.currentItemFontSize ?? 20;
-    ea.style.textAlign = st.currentItemTextAlign ?? "left";
+    ea.setStyle({
+      strokeColor: st.currentItemStrokeColor ?? "black",
+      opacity: st.currentItemOpacity ?? 1,
+      fontFamily: fontFamily ?? st.currentItemFontFamily ?? 1,
+      fontSize: st.currentItemFontSize ?? 20,
+      textAlign: st.currentItemTextAlign ?? "left",
+    });
 
     const { width, height } = st;
 
@@ -5799,15 +5810,17 @@ export default class ExcalidrawView
         const st = api.getAppState();
         const strokeC = st.currentItemStrokeColor;
         const viewC = st.viewBackgroundColor;
-        ea.style.strokeColor =
-          strokeC === "transparent"
-            ? ea
-                .getCM(viewC === "transparent" ? "white" : viewC)
-                .invert()
-                .stringHEX({ alpha: false })
-            : strokeC;
-        ea.style.fontFamily = st.currentItemFontFamily;
-        ea.style.fontSize = st.currentItemFontSize;
+        ea.setStyle({
+          strokeColor:
+            strokeC === "transparent"
+              ? ea
+                  .getCM(viewC === "transparent" ? "white" : viewC)
+                  .invert()
+                  .stringHEX({ alpha: false })
+              : strokeC,
+          fontFamily: st.currentItemFontFamily,
+          fontSize: st.currentItemFontSize,
+        });
         const textDims = ea.measureText(quoteWithRef.quote);
         const textWidth = textDims.width + 2 * 30; //default padding
         const id = ea.addText(

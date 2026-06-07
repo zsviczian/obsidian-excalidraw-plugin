@@ -15,6 +15,7 @@ import { App, TFile, WorkspaceLeaf, WorkspaceSplit } from "obsidian";
 import type { LocalGraphView } from "src/types/types";
 import { getLinkParts } from "./sceneDataUtils";
 import ExcalidrawView from "src/view/ExcalidrawView";
+import { setStyle } from "./styleUtils";
 
 export const createLeaf = (
   view: ExcalidrawView,
@@ -28,9 +29,11 @@ export const createLeaf = (
   rootSplit.getRoot = () =>
     view.app.workspace[doc === mainDocument ? "rootSplit" : "floatingSplit"];
   rootSplit.getContainer = () => getContainerForDocument(doc);
-  rootSplit.containerEl.style.width = "100%";
-  rootSplit.containerEl.style.height = "100%";
-  rootSplit.containerEl.style.borderRadius = "var(--embeddable-radius)";
+  setStyle(rootSplit.containerEl, {
+    width: "100%",
+    height: "100%",
+    borderRadius: "var(--embeddable-radius)",
+  });
   view.plugin.setDebounceActiveLeafChangeHandler();
   return {
     leaf: view.app.workspace.createLeafInParent(rootSplit, 0),

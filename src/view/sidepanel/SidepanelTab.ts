@@ -4,6 +4,7 @@ import { getLastActiveExcalidrawView } from "src/utils/excalidrawViewLookup";
 import type { SidepanelTab as SidepanelTabType } from "src/types/sidepanelTabTypes";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
+import { setStyle } from "src/utils/styleUtils";
 
 type HostCallbacks = {
   activate: (tab: ExcalidrawSidepanelTab, reveal: boolean) => void;
@@ -205,8 +206,10 @@ export class ExcalidrawSidepanelTab
    * Toggles pointer interactivity and visual opacity for the tab content.
    */
   public setDisabled(disabled: boolean) {
-    this.contentEl.style.pointerEvents = disabled ? "none" : "";
-    this.contentEl.style.opacity = disabled ? "0.5" : "";
+    setStyle(this.contentEl, {
+      pointerEvents: disabled ? "none" : "",
+      opacity: disabled ? "0.5" : "",
+    });
     return this;
   }
 

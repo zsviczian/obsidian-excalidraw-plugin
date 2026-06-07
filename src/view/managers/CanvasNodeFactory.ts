@@ -105,7 +105,6 @@ export class CanvasNodeFactory {
     });
     node.setFilePath(file.path, subpath);
     node.render();
-    //containerEl.style.background = "var(--background-primary)";
     node.containerEl.querySelector(".canvas-node-content-blocker")?.remove();
     containerEl.appendChild(node.containerEl);
     this.nodes.set(elementId, node);

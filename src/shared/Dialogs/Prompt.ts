@@ -38,6 +38,7 @@ import { editorLivePreviewField } from "obsidian";
 import { Extension } from "@codemirror/state";
 import { FloatingModal } from "./FloatingModal";
 import { setSanitizedHtml } from "src/utils/htmlUtils";
+import { setStyle } from "src/utils/styleUtils";
 
 /**
  * Minimal type for obsidian-latex-suite plugin.
@@ -75,7 +76,9 @@ export class Prompt extends Modal {
     div.addClass("excalidraw-prompt-div");
     if (this.prompt_desc) {
       div = div.createDiv();
-      div.style.width = "100%";
+      setStyle(div, {
+        width: "100%",
+      });
       const p = div.createEl("p");
       setSanitizedHtml(p, this.prompt_desc);
     }
@@ -203,14 +206,17 @@ export class LaTexPrompt extends FloatingModal {
     const actionButtonContainer: HTMLDivElement =
       buttonBarContainer.createDiv();
 
-    this.createButton(
-      actionButtonContainer,
-      "",
-      this.submitCallback.bind(this),
-      t("PROMPT_BUTTON_OK") ?? "",
-      undefined,
-      "check",
-    ).setCta().buttonEl.style.marginRight = "0";
+    setStyle(
+      this.createButton(
+        actionButtonContainer,
+        "",
+        this.submitCallback.bind(this),
+        t("PROMPT_BUTTON_OK") ?? "",
+        undefined,
+        "check",
+      ).setCta().buttonEl,
+      { marginRight: "0" },
+    );
     this.createButton(
       actionButtonContainer,
       "",
@@ -231,8 +237,10 @@ export class LaTexPrompt extends FloatingModal {
     iconId?: string,
   ) {
     const btn = new ButtonComponent(container);
-    btn.buttonEl.style.padding = "0.5em";
-    btn.buttonEl.style.marginLeft = margin;
+    setStyle(btn.buttonEl, {
+      padding: "0.5em",
+      marginLeft: margin,
+    });
     btn.setTooltip(tooltip);
 
     if (iconId) {
@@ -396,9 +404,9 @@ export class GenericInputPrompt extends Modal {
     this.contentEl.empty();
     if (this.blockPointerInputOutsideModal) {
       const bgEl = this.bgEl;
-      bgEl.style.pointerEvents = this.blockPointerInputOutsideModal
-        ? "none"
-        : "auto";
+      setStyle(bgEl, {
+        pointerEvents: this.blockPointerInputOutsideModal ? "none" : "auto",
+      });
     }
 
     this.titleEl.textContent = this.header;
@@ -436,11 +444,15 @@ export class GenericInputPrompt extends Modal {
   ) {
     const textComponent = new TextAreaComponent(container);
 
-    textComponent.inputEl.style.width = "100%";
-    textComponent.inputEl.style.height = `${this.lines * 2}em`;
+    setStyle(textComponent.inputEl, {
+      width: "100%",
+      height: `${this.lines * 2}em`,
+    });
     if (this.lines === 1) {
-      textComponent.inputEl.style.resize = "none";
-      textComponent.inputEl.style.overflow = "hidden";
+      setStyle(textComponent.inputEl, {
+        resize: "none",
+        overflow: "hidden",
+      });
     }
     textComponent
       .setPlaceholder(placeholder ?? "")
@@ -472,8 +484,10 @@ export class GenericInputPrompt extends Modal {
     iconId?: string,
   ) {
     const btn = new ButtonComponent(container);
-    btn.buttonEl.style.padding = "0.5em";
-    btn.buttonEl.style.marginLeft = margin;
+    setStyle(btn.buttonEl, {
+      padding: "0.5em",
+      marginLeft: margin,
+    });
     btn.setTooltip(tooltip);
 
     if (iconId) {
@@ -500,7 +514,9 @@ export class GenericInputPrompt extends Modal {
       let b = null;
       for (const button of this.buttons) {
         const btn = new ButtonComponent(actionButtonContainer);
-        btn.buttonEl.style.marginLeft = "5px";
+        setStyle(btn.buttonEl, {
+          marginLeft: "5px",
+        });
         if (button.tooltip) {
           btn.setTooltip(button.tooltip);
         }
@@ -519,17 +535,24 @@ export class GenericInputPrompt extends Modal {
       }
       if (b) {
         b.setCta();
-        b.buttonEl.style.marginRight = "0";
+        setStyle(b.buttonEl, {
+          marginRight: "0",
+        });
       }
     } else {
-      this.createButton(
-        actionButtonContainer,
-        "",
-        this.submitClickCallback.bind(this),
-        t("PROMPT_BUTTON_OK") ?? "",
-        "5px",
-        "check",
-      ).setCta().buttonEl.style.marginRight = "0";
+      setStyle(
+        this.createButton(
+          actionButtonContainer,
+          "",
+          this.submitClickCallback.bind(this),
+          t("PROMPT_BUTTON_OK") ?? "",
+          "5px",
+          "check",
+        ).setCta().buttonEl,
+        {
+          marginRight: "0",
+        },
+      );
     }
 
     this.createButton(
@@ -748,9 +771,10 @@ export class GenericInputPrompt extends Modal {
 
     // Position near the button
     const rect = (evt.target as HTMLElement).getBoundingClientRect();
-    popup.style.top = `${rect.bottom + 5}px`;
-    popup.style.left = `${rect.left}px`;
-
+    setStyle(popup, {
+      top: `${rect.bottom + 5}px`,
+      left: `${rect.left}px`,
+    });
     // Special characters to include
     const specialChars = [
       ",",
@@ -826,7 +850,9 @@ export class GenericInputPrompt extends Modal {
       modalEl.querySelector(".modal-titlebar") ||
       modalEl.querySelector(".modal-title") ||
       modalEl;
-    (header as HTMLElement).style.cursor = "move";
+    setStyle(header as HTMLElement, {
+      cursor: "move",
+    });
 
     // Track focus changes to store the last focused interactive element
     const onFocusIn = (e: FocusEvent) => {
@@ -888,10 +914,12 @@ export class GenericInputPrompt extends Modal {
       initialX = rect.left;
       initialY = rect.top;
 
-      modalEl.style.position = "absolute";
-      modalEl.style.margin = "0";
-      modalEl.style.left = `${initialX}px`;
-      modalEl.style.top = `${initialY}px`;
+      setStyle(modalEl, {
+        position: "absolute",
+        margin: "0",
+        left: `${initialX}px`,
+        top: `${initialY}px`,
+      });
     };
 
     const onPointerMove = (e: PointerEvent) => {
@@ -902,8 +930,10 @@ export class GenericInputPrompt extends Modal {
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
 
-      modalEl.style.left = `${initialX + dx}px`;
-      modalEl.style.top = `${initialY + dy}px`;
+      setStyle(modalEl, {
+        left: `${initialX + dx}px`,
+        top: `${initialY + dy}px`,
+      });
     };
 
     const onPointerUp = () => {
@@ -1124,7 +1154,7 @@ export class NewFileActions extends Modal {
 
     this.contentEl.createDiv({ cls: "excalidraw-prompt-center" }, (el) => {
       //files manually follow one of two options:
-      el.style.textAlign = "right";
+      setStyle(el, { textAlign: "right" });
 
       const checks = (): boolean => {
         if (!this.path || this.path === "") {
@@ -1259,7 +1289,6 @@ export class MultiOptionConfirmationPrompt<T = boolean | null> extends Modal {
 
     const messageEl = this.contentEl.createDiv();
     messageEl.addClass("excalidraw-multiOptionConfirmationPrompt-message");
-    messageEl.style.marginBottom = "1rem";
     setSanitizedHtml(messageEl, this.message);
 
     const buttonContainer = this.contentEl.createDiv();
@@ -1284,7 +1313,9 @@ export class MultiOptionConfirmationPrompt<T = boolean | null> extends Modal {
       }
 
       if (index < buttonEntries.length - 1) {
-        button.buttonEl.style.marginRight = "0.5rem";
+        setStyle(button.buttonEl, {
+          marginRight: "0.5rem",
+        });
       }
     });
 

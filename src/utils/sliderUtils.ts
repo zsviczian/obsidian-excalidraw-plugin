@@ -1,4 +1,5 @@
 import { Setting } from "obsidian";
+import { setStyle } from "./styleUtils";
 
 export type SliderSetting = {
   name: string;
@@ -31,8 +32,10 @@ export const createSliderWithText = (
     )
     .settingEl.createDiv("", (el) => {
       valueText = el;
-      el.style.minWidth = settings.minWidth || "2.3em";
-      el.style.textAlign = "right";
+      setStyle(el, {
+        minWidth: settings.minWidth || "2.3em",
+        textAlign: "right",
+      });
       el.innerText = ` ${settings.value.toString()}`;
     });
 };

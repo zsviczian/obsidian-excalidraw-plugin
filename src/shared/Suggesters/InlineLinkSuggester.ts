@@ -16,6 +16,7 @@ import { t } from "src/lang/helpers";
 import { nanoid } from "src/constants/constants";
 import { sleep } from "src/utils/utils";
 import { getEA } from "src/core";
+import { setStyle } from "src/utils/styleUtils";
 
 type HeadingSuggestion = {
   kind: "heading";
@@ -163,9 +164,11 @@ export class InlineLinkSuggester
     const width = hostRect?.width ?? this.widthHost?.clientWidth;
 
     if (width && this.hasCustomWidthHost) {
-      this.suggestEl.style.width = `${width}px`;
-      this.suggestEl.style.maxWidth = `${width}px`;
-      this.suggestEl.style.minWidth = `${width}px`;
+      setStyle(this.suggestEl, {
+        width: `${width}px`,
+        maxWidth: `${width}px`,
+        minWidth: `${width}px`,
+      });
       return;
     }
 
@@ -192,10 +195,11 @@ export class InlineLinkSuggester
     }
 
     const clampedMinWidth = Math.min(minWidth, availableWidth);
-
-    this.suggestEl.style.width = "";
-    this.suggestEl.style.minWidth = `${clampedMinWidth}px`;
-    this.suggestEl.style.maxWidth = `${availableWidth}px`;
+    setStyle(this.suggestEl, {
+      width: "",
+      minWidth: `${clampedMinWidth}px`,
+      maxWidth: `${availableWidth}px`,
+    });
   }
 
   /**
@@ -450,7 +454,7 @@ export class InlineLinkSuggester
   open(): void {
     this.block = true;
     this.syncWidth();
-    this.suggestEl.style.pointerEvents = "all";
+    setStyle(this.suggestEl, { pointerEvents: "all" });
     super.open();
   }
 

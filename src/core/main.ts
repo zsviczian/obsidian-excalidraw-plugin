@@ -1270,7 +1270,7 @@ export default class ExcalidrawPlugin extends Plugin {
             "data-heading",
           )}"]`,
         );
-        link.style.paddingRight = "10px";
+        link.addClass("excalidraw-installCodeBlock-link");
         button2 = link.parentElement.createEl("button", null, (b) => {
           b.setText(t("UPDATE_SCRIPT"));
           b.addClass("mod-muted");

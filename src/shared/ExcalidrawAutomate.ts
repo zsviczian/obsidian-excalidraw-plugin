@@ -815,6 +815,9 @@ export class ExcalidrawAutomate {
     startArrowHead: string; //"arrow"|"bar"|"circle"|"circle_outline"|"triangle"|"triangle_outline"|"diamond"|"diamond_outline"|null
     endArrowHead: string;
   };
+  setStyle(style: Partial<ExcalidrawAutomate["style"]>) {
+    Object.assign(this.style, style);
+  }
   canvas: {
     theme: string; //"dark"|"light"
     viewBackgroundColor: string;
@@ -1059,13 +1062,13 @@ export class ExcalidrawAutomate {
   setFillStyle(val: number): "hachure" | "cross-hatch" | "solid" {
     switch (val) {
       case 0:
-        this.style.fillStyle = "hachure";
+        this.setStyle({ fillStyle: "hachure" });
         return "hachure";
       case 1:
-        this.style.fillStyle = "cross-hatch";
+        this.setStyle({ fillStyle: "cross-hatch" });
         return "cross-hatch";
       default:
-        this.style.fillStyle = "solid";
+        this.setStyle({ fillStyle: "solid" });
         return "solid";
     }
   }
@@ -1078,13 +1081,13 @@ export class ExcalidrawAutomate {
   setStrokeStyle(val: number): "solid" | "dashed" | "dotted" {
     switch (val) {
       case 0:
-        this.style.strokeStyle = "solid";
+        this.setStyle({ strokeStyle: "solid" });
         return "solid";
       case 1:
-        this.style.strokeStyle = "dashed";
+        this.setStyle({ strokeStyle: "dashed" });
         return "dashed";
       default:
-        this.style.strokeStyle = "dotted";
+        this.setStyle({ strokeStyle: "dotted" });
         return "dotted";
     }
   }
@@ -1097,12 +1100,14 @@ export class ExcalidrawAutomate {
   setStrokeSharpness(val: number): "round" | "sharp" {
     switch (val) {
       case 0:
-        this.style.roundness = {
-          type: ROUNDNESS.LEGACY,
-        };
+        this.setStyle({
+          roundness: {
+            type: ROUNDNESS.LEGACY,
+          },
+        });
         return "round";
       default:
-        this.style.roundness = null; //sharp
+        this.setStyle({ roundness: null }); //sharp
         return "sharp";
     }
   }
@@ -1113,7 +1118,7 @@ export class ExcalidrawAutomate {
    * @returns {string} The font family string.
    */
   setFontFamily(val: number): string {
-    this.style.fontFamily = val;
+    this.setStyle({ fontFamily: val });
     return getFontFamilyString({ fontFamily: val });
   }
 
@@ -2360,7 +2365,7 @@ export class ExcalidrawAutomate {
 
     let boxId: string = null;
     const strokeColor = this.style.strokeColor;
-    this.style.strokeColor = formatting?.boxStrokeColor ?? strokeColor;
+    this.setStyle({ strokeColor: formatting?.boxStrokeColor ?? strokeColor });
     const boxPadding = formatting?.boxPadding ?? 30;
     if (formatting?.box) {
       switch (formatting.box) {
@@ -2397,7 +2402,7 @@ export class ExcalidrawAutomate {
           );
       }
     }
-    this.style.strokeColor = strokeColor;
+    this.setStyle({ strokeColor });
     const isContainerBound = boxId && formatting.box !== "blob";
     const newTextElement = {
       text,
@@ -3051,13 +3056,13 @@ export class ExcalidrawAutomate {
       angle -= Math.PI;
       //delta = -delta;
     }
-    this.style.angle = angle;
+    this.setStyle({ angle });
     const id = this.addText(
       line.x + line.points[1][0] / 2 - size.width / 2, //+delta,
       line.y + line.points[1][1] / 2 - size.height, //-5*size.height/6,
       label,
     );
-    this.style.angle = 0;
+    this.setStyle({ angle: 0 });
     return id;
   }
 

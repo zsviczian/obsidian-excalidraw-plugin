@@ -17,6 +17,7 @@ import {
   IMAGE_TYPES,
   VIDEO_TYPES,
 } from "src/constants/constants";
+import { setStyle } from "src/utils/styleUtils";
 
 export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
   text: TextComponent;
@@ -49,8 +50,10 @@ export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
     this.limit = 20;
     this.filesAndAliases = filesAndAliases;
     this.text = input;
-    this.suggestEl.style.maxWidth = "100%";
-    this.suggestEl.style.width = `${input.inputEl.clientWidth}px`;
+    setStyle(this.suggestEl, {
+      maxWidth: "100%",
+      width: `${input.inputEl.clientWidth}px`,
+    });
 
     // Pre-bind the handler
     this.handleGetFile = this.getFile.bind(this);
@@ -103,9 +106,6 @@ export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
     const auxEl = itemEl.createDiv("suggestion-aux");
     const titleEl = contentEl.createDiv("suggestion-title");
     const noteEl = contentEl.createDiv("suggestion-note");
-
-    //el.style.flexDirection = "column";
-    //content.style.flexDirection = "initial";
 
     if (!item) {
       titleEl.setText(this.emptyStateText);

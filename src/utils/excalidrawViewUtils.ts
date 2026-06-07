@@ -230,8 +230,10 @@ export async function insertImageToView(
   if (shouldInsertToView) {
     ea.clear();
   }
-  ea.style.strokeColor = "transparent";
-  ea.style.backgroundColor = "transparent";
+  ea.setStyle({
+    backgroundColor: "transparent",
+    strokeColor: "transparent",
+  });
   const api = ea.getExcalidrawAPI();
   ea.canvas.theme = api.getAppState().theme;
   const id = await ea.addImage(position.x, position.y, file, scale);
@@ -265,15 +267,23 @@ export async function insertEmbeddableToView(
   const st = api.getAppState();
 
   if (ea.plugin.settings.embeddableMarkdownDefaults.backgroundMatchElement) {
-    ea.style.backgroundColor = st.currentItemBackgroundColor;
+    ea.setStyle({
+      backgroundColor: st.currentItemBackgroundColor,
+    });
   } else {
-    ea.style.backgroundColor = "transparent";
+    ea.setStyle({
+      backgroundColor: "transparent",
+    });
   }
 
   if (ea.plugin.settings.embeddableMarkdownDefaults.borderMatchElement) {
-    ea.style.strokeColor = st.currentItemStrokeColor;
+    ea.setStyle({
+      strokeColor: st.currentItemStrokeColor,
+    });
   } else {
-    ea.style.strokeColor = "transparent";
+    ea.setStyle({
+      strokeColor: "transparent",
+    });
   }
 
   if (
@@ -297,8 +307,10 @@ export async function insertEmbeddableToView(
         link.match(/\[\[[^\]]+?\.([^.\]]+)]]/)?.[1]?.toLocaleLowerCase(),
       ))
   ) {
-    ea.style.strokeColor = "transparent";
-    ea.style.backgroundColor = "transparent";
+    ea.setStyle({
+      strokeColor: "transparent",
+      backgroundColor: "transparent",
+    });
     height = getAudioElementHeight();
   }
   const id = ea.addEmbeddable(

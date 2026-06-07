@@ -91,10 +91,10 @@ export class PenSettingsModal extends Modal {
       if (COLOR_NAMES.has(color)) {
         return [COLOR_NAMES.get(color), opacity];
       }
-      const style = new Option().style;
-      style.color = color;
-      if (style.color) {
-        const digits = style.color.match(
+      const optionStyle = new Option().style;
+      optionStyle.color = color;
+      if (optionStyle.color) {
+        const digits = optionStyle.color.match(
           /^[^\d]*(\d*)[^\d]*(\d*)[^\d]*(\d*)[^\d]*([\d.]*)?/,
         );
         if (!digits) {
@@ -458,8 +458,11 @@ export class PenSettingsModal extends Modal {
         });
       });
 
-    bgcSetting.settingEl.style.display =
-      !ps.backgroundColor || ps.backgroundColor === "transparent" ? "none" : "";
+    if (!ps.backgroundColor || ps.backgroundColor === "transparent") {
+      hideElement(bgcSetting.settingEl);
+    } else {
+      showElement(bgcSetting.settingEl);
+    }
 
     const fsSetting = new Setting(ce)
       .setName("Fill Style")
@@ -479,8 +482,11 @@ export class PenSettingsModal extends Modal {
             ps.fillStyle = value;
           }),
       );
-    fsSetting.settingEl.style.display =
-      !ps.backgroundColor || ps.backgroundColor === "transparent" ? "none" : "";
+    if (!ps.backgroundColor || ps.backgroundColor === "transparent") {
+      hideElement(fsSetting.settingEl);
+    } else {
+      showElement(fsSetting.settingEl);
+    }
 
     const rSetting = new Setting(ce)
       .setName(

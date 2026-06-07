@@ -4,7 +4,7 @@ import { getEA } from "src/core";
 import { t } from "src/lang/helpers";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { NormalizedZoomValue } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { hideElement, showElement } from "./styleUtils";
+import { hideElement, setStyle, showElement } from "./styleUtils";
 
 export interface ScreenshotOptions {
   zoom: number;
@@ -147,9 +147,11 @@ export async function captureScreenshot(
       hideElement(modalContainer);
     });
 
-    container.style.width = `${tileWidth}px`;
-    container.style.height = `${tileHeight}px`;
-    container.style.overflow = "visible";
+    setStyle(container, {
+      width: `${tileWidth}px`,
+      height: `${tileHeight}px`,
+      overflow: "visible",
+    });
 
     // Set canvas size and zoom value for capture
     view.updateScene({
@@ -236,14 +238,16 @@ export async function captureScreenshot(
     }
 
     // Restore original styles
-    Object.assign(container.style, originalStyle);
+    setStyle(container, originalStyle);
 
     // Stitch tiles together using a browser canvas
     const canvas = mainDocument.createElement("canvas");
     canvas.width = adjustedTotalWidth * devicePixelRatio;
     canvas.height = adjustedTotalHeight * devicePixelRatio;
-    canvas.style.width = `${adjustedTotalWidth}px`;
-    canvas.style.height = `${adjustedTotalHeight}px`;
+    setStyle(canvas, {
+      width: `${adjustedTotalWidth}px`,
+      height: `${adjustedTotalHeight}px`,
+    });
 
     const ctx = canvas.getContext("2d");
     ctx.scale(1, 1);

@@ -3,9 +3,7 @@ import { CaptureUpdateAction } from "src/constants/constants";
 import { FloatingModal } from "./FloatingModal";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { Setting } from "obsidian";
-import {
-  setComponentVisibility,
-} from "src/utils/styleUtils";
+import { setComponentVisibility } from "src/utils/styleUtils";
 
 export const showFrameSettings = (view: ExcalidrawView) => {
   const { enabled, clip, name, outline, markerName, markerEnabled } =

@@ -5,6 +5,7 @@ import { DeviceType } from "src/types/types";
 import { errorHandler } from "../utils/ErrorHandler";
 import { getLanguage } from "obsidian";
 import { URLs } from "./safeUrls";
+import { setStyle } from "src/utils/styleUtils";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 declare const PLUGIN_VERSION: string;
 export let EXCALIDRAW_PLUGIN: ExcalidrawPlugin = null;
@@ -212,7 +213,7 @@ export function setRootElementSize(size?: number) {
     return;
   }
   const tempElement = mainDocument.createElement("div");
-  tempElement.style.fontSize = "1rem";
+  setStyle(tempElement, { fontSize: "1rem" });
   tempElement.hidden = true;
   mainDocument.body.appendChild(tempElement);
   const computedStyle = getComputedStyle(tempElement);

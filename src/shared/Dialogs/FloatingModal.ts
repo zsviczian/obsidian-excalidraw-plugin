@@ -1,6 +1,7 @@
 import { App, Modal } from "obsidian";
 import { clamp } from "@radix-ui/number";
 import { mainDocument } from "src/constants/constants";
+import { setStyle } from "src/utils/styleUtils";
 
 function getClientPoint(e: PointerEvent | TouchEvent) {
   if (e.type.startsWith("touch")) {
@@ -145,7 +146,9 @@ export class FloatingModal extends Modal {
       const { modalEl } = this;
       this.offsetX = touch.clientX - modalEl.getBoundingClientRect().left;
       this.offsetY = touch.clientY - modalEl.getBoundingClientRect().top;
-      modalEl.style.height = "fit-content";
+      setStyle(modalEl, {
+        height: "fit-content",
+      });
 
       // Add touch-specific event listeners
       this.ownerDocument.addEventListener(
@@ -207,8 +210,10 @@ export class FloatingModal extends Modal {
     ]);
 
     // Position the modal element
-    modalEl.style.left = `${x}px`;
-    modalEl.style.top = `${y}px`;
+    setStyle(modalEl, {
+      left: `${x}px`,
+      top: `${y}px`,
+    });
   }
 
   private handlePointerUp(): void {
@@ -251,18 +256,22 @@ export class FloatingModal extends Modal {
 
       // Set initial position and make modal draggable
       if (modalEl) {
-        modalEl.style.pointerEvents = "auto";
-        // Position absolute is needed for custom positioning
-        modalEl.style.position = "absolute";
+        setStyle(modalEl, {
+          pointerEvents: "auto",
+          // Position absolute is needed for custom positioning
+          position: "absolute",
+        });
 
         // Center the modal initially
         const rect = modalEl.getBoundingClientRect();
         const centerX = this.ownerWindow.innerWidth / 2 - rect.width / 2;
         const centerY = this.ownerWindow.innerHeight / 2 - rect.height / 2;
 
-        modalEl.style.left = `${centerX}px`;
-        modalEl.style.top = `${centerY}px`;
-        modalEl.style.transform = "none";
+        setStyle(modalEl, {
+          left: `${centerX}px`,
+          top: `${centerY}px`,
+          transform: "none",
+        });
 
         // Add event listeners for both pointer and touch events
         modalEl.addEventListener("pointerdown", this.pointerDownHandler);
@@ -276,9 +285,13 @@ export class FloatingModal extends Modal {
 
           // In order to propagate keypresses, modal container and backdrop
           // need to ignore (and thus propagate) any pointerEvents.
-          containerEl.style.pointerEvents = "none";
+          setStyle(containerEl, {
+            pointerEvents: "none",
+          });
           if (bgEl) {
-            bgEl.style.pointerEvents = "none";
+            setStyle(bgEl, {
+              pointerEvents: "none",
+            });
           }
 
           // Refocus previous element (if still in DOM)
@@ -294,7 +307,9 @@ export class FloatingModal extends Modal {
         // NEW: re-enable pointer events on the close button so it is tappable on mobile
         const closeBtn = containerEl.querySelector(".modal-close-button");
         if (closeBtn) {
-          (closeBtn as HTMLElement).style.pointerEvents = "auto";
+          setStyle(closeBtn as HTMLElement, {
+            pointerEvents: "auto",
+          });
         }
       }
     });

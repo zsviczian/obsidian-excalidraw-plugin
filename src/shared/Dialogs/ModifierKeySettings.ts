@@ -6,6 +6,7 @@ import {
   ModifierSetType,
   modifierKeyTooltipMessages,
 } from "src/utils/modifierkeyHelper";
+import { setStyle } from "src/utils/styleUtils";
 
 type ModifierKeyCategories = Partial<{
   [modifierSetType in ModifierSetType]: string;
@@ -113,7 +114,7 @@ export class ModifierKeySettingsComponent {
             // the click via CMD being held). On macOS, CMD is also reserved for
             // non-link-click actions.
             toggle.setDisabled(true);
-            toggle.toggleEl.style.opacity = "0.5";
+            setStyle(toggle.toggleEl, { opacity: "0.5" });
           }
         });
 

@@ -4,6 +4,7 @@ import { t } from "src/lang/helpers";
 import { ExcalidrawSettings } from "src/core/settings";
 import { modifierLabel } from "src/utils/modifierkeyHelper";
 import { fragWithHTML } from "src/utils/utils";
+import { setStyle } from "src/utils/styleUtils";
 
 export class HotkeyEditor extends BaseComponent {
   private settings: ExcalidrawSettings;
@@ -66,10 +67,14 @@ export class HotkeyEditor extends BaseComponent {
 
     // Render Add New Override or Capture Instruction
     if (this.capturing) {
-      new Setting(this.containerEl)
-        .setName(t("HOTKEY_PRESS_COMBO_NANE"))
-        .setDesc(t("HOTKEY_PRESS_COMBO_DESC")).controlEl.style.cursor =
-        "pointer";
+      setStyle(
+        new Setting(this.containerEl)
+          .setName(t("HOTKEY_PRESS_COMBO_NANE"))
+          .setDesc(t("HOTKEY_PRESS_COMBO_DESC")).controlEl,
+        {
+          cursor: "pointer",
+        },
+      );
     } else {
       new Setting(this.containerEl).addButton((button) =>
         button

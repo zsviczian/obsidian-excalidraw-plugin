@@ -32,6 +32,7 @@ import {
 } from "./PDFExportSettingsComponent";
 import { captureScreenshot } from "src/utils/screenshot";
 import { exportImageToFile, getIMGFilename } from "src/utils/fileUtils";
+import { setStyle } from "src/utils/styleUtils";
 
 export class ExportDialog extends Modal {
   private ea: ExcalidrawAutomate;
@@ -196,7 +197,7 @@ export class ExportDialog extends Modal {
     this.buttonContainerRow2 = this.contentEl.createDiv({
       cls: "excalidraw-export-buttons-div",
     });
-    this.buttonContainerRow2.style.marginTop = "10px";
+    setStyle(this.buttonContainerRow2, { marginTop: "10px" });
 
     this.renderContent();
   }

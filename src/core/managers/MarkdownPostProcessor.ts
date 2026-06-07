@@ -39,13 +39,14 @@ import { linkPrompt } from "../../shared/Dialogs/Prompt";
 import { isHTMLElement } from "../../utils/typechecks";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { setElementDisplay } from "src/utils/htmlUtils";
+import { setStyle } from "src/utils/styleUtils";
 
 interface imgElementAttributes {
   file?: TFile;
   fname: string; //Excalidraw filename
   fwidth: string; //Display width of image
   fheight: string; //Display height of image
-  style: string[]; //css style to apply to IMG element
+  imgstyle: string[]; //css style to apply to IMG element
 }
 
 let plugin: ExcalidrawPlugin;
@@ -178,7 +179,7 @@ const _getPNG = async ({
   return img;
 };
 
-const setStyle = ({
+const setImgStyle = ({
   element,
   imgAttributes,
   onCanvas,
@@ -189,19 +190,36 @@ const setStyle = ({
   onCanvas: boolean;
   isNativeSVG: boolean;
 }) => {
-  let style = "";
-  if (imgAttributes.fwidth) {
-    style = `${isNativeSVG ? "max-width:" : "max-width:100%; width:"}${imgAttributes.fwidth}${imgAttributes.fwidth.match(/\d$/) ? "px" : ""}; `; //width:100%;`; //removed !important https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/886
-  } else {
-    style = "width: fit-content;";
-  }
-  if (imgAttributes.fheight) {
-    style += `${imgAttributes.fwidth ? "min-" : "max-"}height:${imgAttributes.fheight}px;`;
-  }
   if (!onCanvas) {
-    element.setAttribute("style", style);
+    const styles: Partial<CSSStyleDeclaration> = {};
+
+    // 1. Resolve Width & Max-Width
+    if (imgAttributes.fwidth) {
+      const unit = imgAttributes.fwidth.match(/\d$/) ? "px" : "";
+      const finalWidth = `${imgAttributes.fwidth}${unit}`;
+
+      if (isNativeSVG) {
+        styles.maxWidth = finalWidth;
+      } else {
+        styles.maxWidth = "100%";
+        styles.width = finalWidth;
+      }
+    } else {
+      styles.width = "fit-content";
+    }
+
+    // 2. Resolve Height (Min vs Max)
+    if (imgAttributes.fheight) {
+      const targetHeightProperty = imgAttributes.fwidth
+        ? "minHeight"
+        : "maxHeight";
+      styles[targetHeightProperty] = `${imgAttributes.fheight}px`;
+    }
+
+    // Apply styles uniformly using the generic function
+    setStyle(element, styles);
   }
-  element.classList.add(...Array.from(imgAttributes.style));
+  element.classList.add(...Array.from(imgAttributes.imgstyle));
   if (!element.hasClass("excalidraw-embedded-img")) {
     element.addClass("excalidraw-embedded-img");
   }
@@ -417,7 +435,9 @@ const getIMG = async (
   const filenameParts = getEmbeddedFilenameParts(imgAttributes.fname);
 
   // https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/387
-  imgAttributes.style = imgAttributes.style.map((s) => s.replaceAll(" ", "-"));
+  imgAttributes.imgstyle = imgAttributes.imgstyle.map((s) =>
+    s.replaceAll(" ", "-"),
+  );
 
   const forceTheme = hasExportTheme(plugin, file)
     ? getExportTheme(plugin, file, "light")
@@ -452,7 +472,12 @@ const getIMG = async (
   switch (plugin.settings.previewImageType) {
     case PreviewImageType.PNG: {
       const img = createEl("img");
-      setStyle({ element: img, imgAttributes, onCanvas, isNativeSVG: false });
+      setImgStyle({
+        element: img,
+        imgAttributes,
+        onCanvas,
+        isNativeSVG: false,
+      });
       return await _getPNG({
         imgAttributes,
         filenameParts,
@@ -466,7 +491,12 @@ const getIMG = async (
     }
     case PreviewImageType.SVGIMG: {
       const img = createEl("img");
-      setStyle({ element: img, imgAttributes, onCanvas, isNativeSVG: false });
+      setImgStyle({
+        element: img,
+        imgAttributes,
+        onCanvas,
+        isNativeSVG: false,
+      });
       return await _getSVGIMG({
         filenameParts,
         theme,
@@ -479,7 +509,7 @@ const getIMG = async (
     }
     case PreviewImageType.SVG: {
       const img = createEl("div");
-      setStyle({ element: img, imgAttributes, onCanvas, isNativeSVG: true });
+      setImgStyle({ element: img, imgAttributes, onCanvas, isNativeSVG: true });
       return await _getSVGNative({
         filenameParts,
         theme,
@@ -654,7 +684,7 @@ const createImgElement = async (
         fname: fileSource,
         fwidth: imgOrDiv.getAttribute("w"),
         fheight: imgOrDiv.getAttribute("h"),
-        style: [...Array.from(imgOrDiv.classList)],
+        imgstyle: [...Array.from(imgOrDiv.classList)],
       },
       onCanvas,
     );
@@ -663,8 +693,10 @@ const createImgElement = async (
     }
     parent.empty();
     if (!onCanvas) {
-      newImg.style.maxHeight = imgMaxHeigth;
-      newImg.style.maxWidth = imgMaxWidth;
+      setStyle(newImg, {
+        maxHeight: imgMaxHeigth,
+        maxWidth: imgMaxWidth,
+      });
     }
     newImg.setAttribute("fileSource", fileSource);
     parent.append(newImg);
@@ -691,7 +723,7 @@ const createImageDiv = async (
   onCanvas: boolean = false,
 ): Promise<HTMLDivElement> => {
   const img = await createImgElement(attr, onCanvas);
-  return createDiv(attr.style.join(" "), (el) => el.append(img));
+  return createDiv(attr.imgstyle.join(" "), (el) => el.append(img));
 };
 
 const processReadingMode = async (
@@ -738,7 +770,7 @@ const processInternalEmbed = async (
     fname: "",
     fheight: "",
     fwidth: "",
-    style: [],
+    imgstyle: [],
   };
 
   const src = internalEmbedEl.getAttribute("src");
@@ -759,7 +791,7 @@ const processInternalEmbed = async (
     ? internalEmbedEl.getAttribute("height")
     : getDefaultHeight(plugin);
   const alt = internalEmbedEl.getAttribute("alt");
-  attr.style = ["excalidraw-svg"];
+  attr.imgstyle = ["excalidraw-svg"];
   processAltText(src.split("#")[0], alt, attr);
   const fnameParts = getEmbeddedFilenameParts(src);
   attr.fname =
@@ -884,7 +916,7 @@ const processAltText = (
     attr.fwidth = aliasParts.width ?? attr.fwidth;
     attr.fheight = aliasParts.height ?? attr.fheight;
     if (aliasParts.style && !aliasParts.style.startsWith(fname)) {
-      attr.style = [`excalidraw-svg${`-${aliasParts.style}`}`];
+      attr.imgstyle = [`excalidraw-svg${`-${aliasParts.style}`}`];
     }
   }
 };
@@ -983,7 +1015,7 @@ const tmpObsidianWYSIWYG = async (
     fname: ctx.sourcePath,
     fheight: isPrinting ? "100%" : getDefaultHeight(plugin),
     fwidth: isPrinting ? "100%" : getDefaultWidth(plugin),
-    style: ["excalidraw-svg"],
+    imgstyle: ["excalidraw-svg"],
   };
 
   attr.file = file;
@@ -1043,8 +1075,10 @@ const tmpObsidianWYSIWYG = async (
       internalEmbedDiv.addClass("media-embed");
       internalEmbedDiv.addClass("image-embed");
       if (!onCanvas && imgDiv.firstChild instanceof HTMLElement) {
-        imgDiv.firstChild.style.maxHeight = "100%";
-        imgDiv.firstChild.style.maxWidth = null;
+        setStyle(imgDiv.firstChild, {
+          maxHeight: "100%",
+          maxWidth: null,
+        });
       }
       // Resolve the cyclic size dependency by applying a CSS width and/or height
       if (
@@ -1060,8 +1094,10 @@ const tmpObsidianWYSIWYG = async (
           "--popover-height",
           `${attr.fheight}px`,
         );
-        internalEmbedDiv.style.width = "var(--popover-width)";
-        internalEmbedDiv.style.height = "var(--popover-height)";
+        setStyle(internalEmbedDiv, {
+          width: "var(--popover-width)",
+          height: "var(--popover-height)",
+        });
       }
       internalEmbedDiv.appendChild(imgDiv.firstChild);
       return;
@@ -1284,7 +1320,7 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = async (m) => {
     fname: file.path,
     fwidth: "300",
     fheight: null,
-    style: ["excalidraw-svg"],
+    imgstyle: ["excalidraw-svg"],
   });
   const div = createDiv("", async (el) => {
     el.appendChild(img);

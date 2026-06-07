@@ -54,9 +54,6 @@ export class ExcalidrawLoading extends FileView {
 
     // Apply styling to center the text
     setElementDisplay(loadingTextEl, "flex");
-    loadingTextEl.style.alignItems = "center";
-    loadingTextEl.style.justifyContent = "center";
-    loadingTextEl.style.height = "100%";
-    loadingTextEl.style.fontSize = "1.5em"; // Adjust size as needed
+    loadingTextEl.classList.add("excalidraw-loading");
   }
 }

@@ -83,12 +83,14 @@ export class CropImage {
 
   private setBoundingEl(ea: ExcalidrawAutomate, bgColor: string) {
     const { topX, topY, width, height } = this.bbox;
-    ea.style.backgroundColor = bgColor;
-    ea.style.strokeColor = "transparent";
-    ea.style.strokeWidth = 0;
-    ea.style.strokeStyle = "solid";
-    ea.style.fillStyle = "solid";
-    ea.style.roughness = 0;
+    ea.setStyle({
+      backgroundColor: bgColor,
+      strokeColor: "transparent",
+      strokeWidth: 0,
+      strokeStyle: "solid",
+      fillStyle: "solid",
+      roughness: 0,
+    });
     ea.addRect(topX, topY, width, height);
   }
 

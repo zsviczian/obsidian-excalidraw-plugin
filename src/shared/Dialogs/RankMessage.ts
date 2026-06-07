@@ -3,6 +3,7 @@ import ExcalidrawPlugin from "../../core/main";
 import { Rank, SwordColors } from "src/constants/actionIcons";
 import { convertSVGStringToElement } from "src/utils/utils";
 import { URLs } from "src/constants/safeUrls";
+import { setStyle } from "src/utils/styleUtils";
 
 export class RankMessage extends Modal {
   constructor(
@@ -49,7 +50,8 @@ export class RankMessage extends Modal {
 
     this.contentEl.createEl("p", { text: "" }, (el) => {
       //files manually follow one of two options:
-      el.style.textAlign = "right";
+
+      setStyle(el, { textAlign: "right" });
       const bOk = el.createEl("button", { text: "Close" });
       bOk.onclick = () => this.close();
     });

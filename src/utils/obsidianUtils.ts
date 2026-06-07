@@ -23,6 +23,7 @@ import {
 } from "src/constants/constants";
 import { parse, stringify } from "yaml";
 import type ExcalidrawView from "src/view/ExcalidrawView";
+import { setStyle } from "./styleUtils";
 
 export const getParentOfClass = (
   element: Element,
@@ -604,10 +605,12 @@ export function getAudioElementHeight(): number {
 
   // Create a wrapper to avoid affecting page layout
   const wrapper = mainDocument.createElement("div");
-  wrapper.style.position = "absolute";
-  wrapper.style.left = "-9999px";
-  wrapper.style.visibility = "hidden";
-  wrapper.style.pointerEvents = "none";
+  setStyle(wrapper, {
+    position: "absolute",
+    left: "-9999px",
+    visibility: "hidden",
+    pointerEvents: "none",
+  });
   wrapper.appendChild(audioElement);
 
   // Add to document to allow CSS to be applied

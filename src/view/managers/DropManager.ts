@@ -39,6 +39,7 @@ import {
 import { ScriptEngine } from "src/shared/Scripts";
 import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
 import { Position } from "src/types/excalidrawViewTypes";
+import { setStyle } from "src/utils/styleUtils";
 
 /*
 static getDropAction(event: DragEvent): string {
@@ -719,10 +720,10 @@ export class DropManager {
       const top = `${e.clientY - parseFloat(getComputedStyle(this.draginfoDiv).fontSize) * 8}px`;
       const left = `${e.clientX - this.draginfoDiv.clientWidth / 2}px`;
       if (this.draginfoDiv.style.top !== top) {
-        this.draginfoDiv.style.top = top;
+        setStyle(this.draginfoDiv, { top });
       }
       if (this.draginfoDiv.style.left !== left) {
-        this.draginfoDiv.style.left = left;
+        setStyle(this.draginfoDiv, { left });
       }
       e.dataTransfer.dropEffect = action;
       e.preventDefault();

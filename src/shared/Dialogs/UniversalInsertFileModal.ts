@@ -20,7 +20,7 @@ import { InsertPDFModal } from "./InsertPDFModal";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { cleanSectionHeading } from "src/utils/pathUtils";
 import { t } from "src/lang/helpers";
-import { hideElement, showElement } from "src/utils/styleUtils";
+import { hideElement, setStyle, showElement } from "src/utils/styleUtils";
 
 export class UniversalInsertFileModal extends Modal {
   private center: { x: number; y: number } = { x: 0, y: 0 };
@@ -193,7 +193,7 @@ export class UniversalInsertFileModal extends Modal {
       );
 
     const search = new TextComponent(ce);
-    search.inputEl.style.width = "100%";
+    setStyle(search.inputEl, { width: "100%" });
     const suggester = new FileSuggestionModal(
       this.app,
       search,
@@ -211,7 +211,7 @@ export class UniversalInsertFileModal extends Modal {
       .setName(t("UIFM_SECTION_HEAD"))
       .addDropdown((dropdown) => {
         sectionPicker = dropdown;
-        sectionPicker.selectEl.style.width = "100%";
+        setStyle(sectionPicker.selectEl, { width: "100%" });
       });
 
     const sizeToggleSetting = new Setting(ce)

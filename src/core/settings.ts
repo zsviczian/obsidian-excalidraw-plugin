@@ -70,7 +70,7 @@ import { getAIUsage, formatAIUsageLabel } from "src/utils/AIUtils";
 import { decryptProviderProfiles } from "src/utils/settingsKeyObfuscation";
 import { getGeminiSupportedSizes } from "src/utils/geminiImageModelUtils";
 import { URLs } from "src/constants/safeUrls";
-import { hideElement, showElement } from "src/utils/styleUtils";
+import { hideElement, setStyle, showElement } from "src/utils/styleUtils";
 
 export interface ExcalidrawSettings {
   showTabTitlebarButtons: boolean;
@@ -1236,12 +1236,14 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   async hide() {
     this.detachSettingsFocusoutHandler();
     if (this.plugin.settings.overrideObsidianFontSize) {
-      mainDocument.documentElement.style.fontSize = "";
+      setStyle(mainDocument.documentElement, { fontSize: "" });
       setRootElementSize(16);
     } else if (!mainDocument.documentElement.style.fontSize) {
-      mainDocument.documentElement.style.fontSize = getComputedStyle(
-        mainDocument.body,
-      ).getPropertyValue("--font-text-size");
+      setStyle(mainDocument.documentElement, {
+        fontSize: getComputedStyle(mainDocument.body).getPropertyValue(
+          "--font-text-size",
+        ),
+      });
       setRootElementSize();
     }
 
@@ -3424,8 +3426,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .onChange(async (value) => {
             this.plugin.settings.embedType =
               value as typeof this.plugin.settings.embedType;
-            embedComment.settingEl.style.display =
-              value === "excalidraw" ? "none" : "";
+            if (value === "excalidraw") {
+              hideElement(embedComment.settingEl);
+            } else {
+              showElement(embedComment.settingEl);
+            }
             this.applySettingsUpdate();
           });
       });
@@ -3442,8 +3447,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    embedComment.settingEl.style.display =
-      this.plugin.settings.embedType === "excalidraw" ? "none" : "";
+    if (this.plugin.settings.embedType === "excalidraw") {
+      hideElement(embedComment.settingEl);
+    } else {
+      showElement(embedComment.settingEl);
+    }
 
     new Setting(detailsEl)
       .setName(t("EMBED_WIKILINK_NAME"))
@@ -4655,14 +4663,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             .setName(variableName)
             .setDesc(fragWithHTML(description ?? ""))
             .addTextArea((text) => {
-              text.inputEl.style.minHeight = textAreaHeight(
-                scriptName,
-                variableName,
-              )
-                ? `${textAreaHeight(scriptName, variableName)}px`
-                : "";
-              text.inputEl.style.minWidth = "400px";
-              text.inputEl.style.width = "100%";
+              setStyle(text.inputEl, {
+                minHeight: textAreaHeight(scriptName, variableName)
+                  ? `${textAreaHeight(scriptName, variableName)}px`
+                  : "",
+                minWidth: "400px",
+                width: "100%",
+              });
               text
                 .setValue(getValue(scriptName, variableName) as string)
                 .onChange(async (value) => {

@@ -3,6 +3,7 @@ import { isVersionNewerThanOther } from "src/utils/utils";
 import ExcalidrawPlugin from "../../core/main";
 import { RELEASE_NOTES } from "./Messages";
 import { t } from "src/lang/helpers";
+import { setStyle } from "src/utils/styleUtils";
 
 declare const PLUGIN_VERSION: string;
 
@@ -39,7 +40,7 @@ export class ReleaseNotes extends Modal {
     void this.createForm();
 
     if (headerEl) {
-      headerEl.style.pointerEvents = "none";
+      setStyle(headerEl, { pointerEvents: "none" });
     } // Disable pointer events on header to allow clicks through
   }
 
@@ -83,7 +84,7 @@ export class ReleaseNotes extends Modal {
 
     this.contentEl.createEl("p", { text: "" }, (el) => {
       //files manually follow one of two options:
-      el.style.textAlign = "right";
+      setStyle(el, { textAlign: "right" });
       const bOk = el.createEl("button", { text: "Close" });
       bOk.onclick = () => this.close();
     });

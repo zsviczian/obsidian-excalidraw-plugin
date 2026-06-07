@@ -206,13 +206,15 @@ export const createImageCropperFile = async (
 
   newImage.frameId = frameID;
 
-  targetEA.style.opacity = 50;
-  targetEA.style.fillStyle = "solid";
-  targetEA.style.strokeStyle = "solid";
-  targetEA.style.strokeColor = "black";
-  targetEA.style.backgroundColor = "black";
-  targetEA.style.roughness = 0;
-  targetEA.style.roundness = null;
+  targetEA.setStyle({
+    opacity: 50,
+    fillStyle: "solid",
+    strokeStyle: "solid",
+    strokeColor: "black",
+    backgroundColor: "black",
+    roughness: 0,
+    roundness: null,
+  });
   targetEA.canvas.theme = "light";
   targetEA.canvas.viewBackgroundColor = isPDF ? "#5d5d5d" : "#3d3d3d";
 
@@ -221,8 +223,10 @@ export const createImageCropperFile = async (
   if (templateFile && templateFile instanceof TFile) {
     const { appState } = await targetEA.getSceneFromFile(templateFile);
     if (appState) {
-      targetEA.style.fontFamily = appState.currentItemFontFamily;
-      targetEA.style.fontSize = appState.currentItemFontSize;
+      targetEA.setStyle({
+        fontFamily: appState.currentItemFontFamily,
+        fontSize: appState.currentItemFontSize,
+      });
     }
   }
 

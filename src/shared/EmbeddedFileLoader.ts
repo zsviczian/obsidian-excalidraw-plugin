@@ -70,7 +70,7 @@ import {
 } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { setStyleText } from "src/utils/htmlUtils";
-import { hideElement } from "src/utils/styleUtils";
+import { hideElement, setStyle } from "src/utils/styleUtils";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -1482,13 +1482,14 @@ export class EmbeddedFilesLoader {
     const mdDIV = createDiv();
     mdDIV.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
     mdDIV.setAttribute("class", "excalidraw-md-host");
-    //  mdDIV.setAttribute("style",style);
     if (fontName !== "") {
-      mdDIV.style.fontFamily = fontName;
+      setStyle(mdDIV, { fontFamily: fontName });
     }
-    mdDIV.style.overflow = "auto";
-    mdDIV.style.display = "block";
-    mdDIV.style.color = fontColor && fontColor !== "" ? fontColor : "initial";
+    setStyle(mdDIV, {
+      overflow: "auto",
+      display: "block",
+      color: fontColor && fontColor !== "" ? fontColor : "initial",
+    });
 
     //await MarkdownRenderer.renderMarkdown(text, mdDIV, file.path, plugin);
     await MarkdownRenderer.render(
@@ -1590,8 +1591,10 @@ export class EmbeddedFilesLoader {
     //finalize SVG
     svgStyle = ` width="${linkParts.width}px" height="${svgHeight}px"`;
     foreignObjectStyle = ` width="${linkParts.width}px" height="${svgHeight}px"`;
-    mdDIV.style.height = `${svgHeight - footerHeight}px`;
-    mdDIV.style.overflow = "hidden";
+    setStyle(mdDIV, {
+      height: `${svgHeight - footerHeight}px`,
+      overflow: "hidden",
+    });
 
     const imageList = mdDIV.querySelectorAll(
       "img:not([src^='data:image/svg+xml'])",
@@ -1602,7 +1605,7 @@ export class EmbeddedFilesLoader {
     if (hasSVGwithBitmap && this.isDark) {
       imageList.forEach((img) => {
         if (img instanceof HTMLImageElement) {
-          img.style.filter = THEME_FILTER;
+          setStyle(img, { filter: THEME_FILTER });
         }
       });
     }

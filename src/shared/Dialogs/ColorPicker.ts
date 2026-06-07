@@ -1,5 +1,6 @@
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { getViewColorPalette } from "src/utils/excalidrawViewUtils";
+import { setStyle } from "src/utils/styleUtils";
 
 type PaletteName = "canvasBackground" | "elementBackground" | "elementStroke";
 
@@ -51,8 +52,7 @@ const positionPopup = (popup: HTMLElement, anchor: HTMLElement) => {
     top = Math.max(8, rect.top - popupHeight - 8);
   }
 
-  popup.style.left = `${left}px`;
-  popup.style.top = `${top}px`;
+  setStyle(popup, { left: `${left}px`, top: `${top}px` });
 };
 
 const attachOutsideHandlers = (
@@ -107,16 +107,18 @@ export const showColorPicker = async (
 
     const grid = activeDocument.createElement("div");
     grid.classList.add("excalidraw-colorpicker-grid");
-    grid.style.gridTemplateColumns = `repeat(${GRID_COLUMNS}, ${CELL_SIZE}px)`;
-    grid.style.gap = `${CELL_GAP}px`;
-    grid.style.maxHeight = `${MAX_HEIGHT}px`;
+    setStyle(grid, {
+      gridTemplateColumns: `repeat(${GRID_COLUMNS}, ${CELL_SIZE}px)`,
+      gap: `${CELL_GAP}px`,
+      maxHeight: `${MAX_HEIGHT}px`,
+    });
 
     colors.forEach((color) => {
       const swatch = activeDocument.createElement("button");
       swatch.type = "button";
       swatch.ariaLabel = color;
       swatch.classList.add("excalidraw-colorpicker-swatch");
-      swatch.style.backgroundColor = color;
+      setStyle(swatch, { backgroundColor: color });
       swatch.addEventListener("click", () => cleanup(color));
       grid.appendChild(swatch);
     });

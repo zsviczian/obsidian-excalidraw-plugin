@@ -2,6 +2,7 @@ import { t } from "src/lang/helpers";
 import { escapeRegExp } from "../../utils/utils";
 import { htmlToMarkdown, Notice, setIcon } from "obsidian";
 import { mainDocument } from "src/constants/constants";
+import { setStyle } from "src/utils/styleUtils";
 
 export class ContentSearcher {
   private contentDiv: HTMLElement;
@@ -152,22 +153,22 @@ export class ContentSearcher {
     };
     this.showHideButton.onclick = () => {
       const setOpacity = (value: string | null) => {
-        this.inputContainer.style.opacity = value;
-        this.prevButton.style.opacity = value;
-        this.nextButton.style.opacity = value;
-        this.exportMarkdown.style.opacity = value;
-        this.customElemenentContainer.style.opacity = value;
+        setStyle(this.inputContainer, { opacity: value });
+        setStyle(this.prevButton, { opacity: value });
+        setStyle(this.nextButton, { opacity: value });
+        setStyle(this.exportMarkdown, { opacity: value });
+        setStyle(this.customElemenentContainer, { opacity: value });
       };
       if (this.showHideButton.hasClass("search-visible")) {
         this.showHideButton.removeClass("search-visible");
         this.showHideButton.addClass("search-hidden");
-        this.searchBarWrapper.style.backgroundColor = "transparent";
+        setStyle(this.searchBarWrapper, { backgroundColor: "transparent" });
         setOpacity("0");
         setIcon(this.showHideButton, "maximize-2");
       } else {
         this.showHideButton.removeClass("search-hidden");
         this.showHideButton.addClass("search-visible");
-        this.searchBarWrapper.style.backgroundColor = null;
+        setStyle(this.searchBarWrapper, { backgroundColor: null });
         setOpacity(null);
         setIcon(this.showHideButton, "minimize-2");
       }
@@ -299,7 +300,7 @@ export class ContentSearcher {
 
     if (currentActiveIndex !== -1) {
       highlights[currentActiveIndex].classList.remove("active-highlight");
-      highlights[currentActiveIndex].style.border = "none";
+      setStyle(highlights[currentActiveIndex], { border: "none" });
     }
 
     let nextActiveIndex = 0;

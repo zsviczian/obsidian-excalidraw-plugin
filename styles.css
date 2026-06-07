@@ -997,9 +997,18 @@ End Obsidian Sheets Plus support
 }
 
 .excalidraw-button-bgcolor {
-  &-normal { background-color: var(--interactive-normal); }
-  &-accent { background-color: var(--interactive-accent); }
-  &-success { background-color: var(--interactive-success); }
+  &-normal { 
+    background-color: var(--interactive-normal); 
+    color: var(--text-normal);
+  }
+  &-accent { 
+    background-color: var(--interactive-accent); 
+    color: var(--text-on-accent);
+  }
+  &-success { 
+    background-color: var(--interactive-success); 
+    color: var(--text-on-success);
+  }
 }
 
 .excalidraw-copylinkprompt-label {
@@ -1055,4 +1064,25 @@ End Obsidian Sheets Plus support
 
 .excalidraw-commandLinkOptInPrompt-denyButton {
   margin-right: 0.5em;
+}
+
+.excalidraw-installCodeBlock-link {
+  padding-right: 10px;
+}
+
+.excalidraw-insertpdf-infolabel {
+  min-width: 2.3em;
+  text-align: right;
+}
+
+.excalidraw-loading {
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 1.5em;
+}
+
+.excalidraw-versionmismatch-buttonbar {
+  gap: 0.5em;
+  margin-top: 1em;
 }

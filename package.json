@@ -32,7 +32,7 @@
   "dependencies": {
     "@popperjs/core": "^2.11.8",
     "@zsviczian/colormaster": "^1.2.2",
-    "@zsviczian/excalidraw": "0.18.98",
+    "@zsviczian/excalidraw": "0.18.99",
     "chroma-js": "^3.1.2",
     "clsx": "^2.0.0",
     "es6-promise-pool": "2.5.0",
@@ -94,7 +94,15 @@
   "overrides": {
     "lodash": "^4.18.1",
     "lodash-es": "^4.18.1",
-    "serialize-javascript": "^7.0.5"
+    "serialize-javascript": "^7.0.5",
+    "nanoid": "^5.1.11"
+  },
+  "resolutions": {
+    "strip-ansi": "^7.0.1",
+    "//lodash": "Addresses https://github.com/advisories/GHSA-f23m-r3pf-42rh based on Obsidian scanner results",
+    "lodash": "^4.18.1",
+    "lodash-es": "^4.18.1",
+    "nanoid": "^5.1.11"
   },
   "prettier": "@excalidraw/prettier-config",
   "engines": {

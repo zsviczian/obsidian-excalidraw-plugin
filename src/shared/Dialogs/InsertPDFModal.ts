@@ -14,7 +14,7 @@ import { t } from "src/lang/helpers";
 import { NamedExcalidrawFrameElement } from "src/types/excalidrawElementTypes";
 import type { PdfJsDocumentProxy } from "src/types/pdfJsTypes";
 import { setSanitizedHtml } from "src/utils/htmlUtils";
-import { hideElement, showElement } from "src/utils/styleUtils";
+import { hideElement, setStyle, showElement } from "src/utils/styleUtils";
 
 export class InsertPDFModal extends Modal {
   private borderBox: boolean = true;
@@ -100,7 +100,6 @@ export class InsertPDFModal extends Modal {
         console.log(e);
       }
     }
-    this.pageDimensions = this.getMaxSelectedPageDimensions();
     this.setImageSizeMessage();
   }
 
@@ -222,7 +221,6 @@ export class InsertPDFModal extends Modal {
         await this.loadPageDimensions(pages);
       } else {
         this.pageDimensionsByPage.clear();
-        this.pageDimensions = { width: 0, height: 0 };
         this.setImageSizeMessage();
       }
       if (pages.length > 15) {
@@ -245,7 +243,6 @@ export class InsertPDFModal extends Modal {
       }
       this.pdfDoc = null;
       this.pageDimensionsByPage.clear();
-      this.pageDimensions = { width: 0, height: 0 };
       numPages = 0;
       this.setImageSizeMessage();
 
@@ -268,7 +265,9 @@ export class InsertPDFModal extends Modal {
     };
 
     const search = new TextComponent(ce);
-    search.inputEl.style.width = "100%";
+    setStyle(search.inputEl, {
+      width: "100%",
+    });
     const suggester = new FileSuggestionModal(
       this.app,
       search,
@@ -292,7 +291,9 @@ export class InsertPDFModal extends Modal {
         text.setValue("").onChange(async (value) => {
           await rangeOnChange(value);
         });
-        text.inputEl.style.width = "100%";
+        setStyle(text.inputEl, {
+          width: "100%",
+        });
       });
     const importPagesMessage = ce.createEl("p", { text: "" });
 
@@ -398,8 +399,7 @@ export class InsertPDFModal extends Modal {
       )
       .settingEl.createDiv("", (el) => {
         columnsText = el;
-        el.style.minWidth = "2.3em";
-        el.style.textAlign = "right";
+        el.addClass("excalidraw-insertpdf-infolabel");
         el.innerText = ` ${this.numColumns.toString()}`;
       });
 
@@ -419,8 +419,7 @@ export class InsertPDFModal extends Modal {
       )
       .settingEl.createDiv("", (el) => {
         rowsText = el;
-        el.style.minWidth = "2.3em";
-        el.style.textAlign = "right";
+        el.addClass("excalidraw-insertpdf-infolabel");
         el.innerText = ` ${this.numRows.toString()}`;
       });
     colRowVisibility();
@@ -440,8 +439,7 @@ export class InsertPDFModal extends Modal {
       )
       .settingEl.createDiv("", (el) => {
         gapSizeText = el;
-        el.style.minWidth = "2.3em";
-        el.style.textAlign = "right";
+        el.addClass("excalidraw-insertpdf-infolabel");
         el.innerText = ` ${this.gapSize.toString()}`;
       });
 
@@ -499,7 +497,9 @@ export class InsertPDFModal extends Modal {
               );
               const topY = Math.round(cellHeight * row + this.gapSize * row);
 
-              ea.style.strokeColor = this.borderBox ? "#000000" : "transparent";
+              ea.setStyle({
+                strokeColor: this.borderBox ? "#000000" : "transparent",
+              });
               const boxID = ea.addRect(topX, topY, imgWidth, imgHeight);
               const boxEl = ea.getElement(boxID) as Mutable<ExcalidrawElement>;
               if (this.lockAfterImport) {
