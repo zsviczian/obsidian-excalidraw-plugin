@@ -9,6 +9,7 @@ import {
   PageSize,
   PDFExportScale,
   PDFMargin,
+  PrintToPDFOptions,
   PDFPageAlignment,
   PDFPageMarginString,
   PDFPageProperties,
@@ -50,52 +51,6 @@ export function getPageDimensions(
     : { width: dimensions.height, height: dimensions.width };
 }
 
-// Electron IPC interfaces
-interface PrintToPDFOptions {
-  includeName: boolean;
-  pageSize: string | { width: number; height: number };
-  landscape: boolean;
-  margins: { top: number; left: number; right: number; bottom: number };
-  scaleFactor: number;
-  scale: number;
-  open: boolean;
-  filepath: string;
-  // Prefer CSS @page size over the numeric pageSize for mixed-size documents
-  preferCSSPageSize?: boolean;
-  // Exclude page ranges from output (Chromium/Electron supports either string "2-" or array)
-  pageRanges?: string | { from: number; to: number }[];
-}
-
-interface SaveDialogOptions {
-  defaultPath: string;
-  filters: { name: string; extensions: string[] }[];
-  properties: string[];
-}
-
-interface SaveDialogReturnValue {
-  canceled: boolean;
-  filePath?: string;
-}
-
-interface ElectronAPI {
-  ipcRenderer: {
-    send(channel: string, ...args: unknown[]): void;
-    once(channel: string, func: (...args: unknown[]) => void): void;
-  };
-  remote: {
-    dialog: {
-      showSaveDialog(
-        options: SaveDialogOptions,
-      ): Promise<SaveDialogReturnValue>;
-    };
-  };
-}
-
-declare global {
-  interface Window {
-    electron: ElectronAPI;
-  }
-}
 
 function getPageSizePixels(
   pageSize: PageSize | PageDimensions,

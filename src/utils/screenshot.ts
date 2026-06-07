@@ -29,7 +29,7 @@ export async function captureScreenshot(
   api.setForceRenderAllEmbeddables(true);
   options.selectedOnly =
     options.selectedOnly && view.getViewSelectedElements().length > 0;
-  const remote = window.require("electron").remote;
+  const remote = window.electron.remote;
   const elementsToInclude = options.selectedOnly
     ? view.getViewSelectedElements()
     : view.getViewElements();

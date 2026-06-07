@@ -64,3 +64,73 @@ export interface ExportSettings {
   frameRendering?: FrameRenderingOptions; //optional, overrides relevant appState settings for rendering the frame
   skipInliningFonts?: boolean;
 }
+
+// Electron IPC interfaces
+export interface PrintToPDFOptions {
+  includeName: boolean;
+  pageSize: string | { width: number; height: number };
+  landscape: boolean;
+  margins: { top: number; left: number; right: number; bottom: number };
+  scaleFactor: number;
+  scale: number;
+  open: boolean;
+  filepath: string;
+  // Prefer CSS @page size over the numeric pageSize for mixed-size documents
+  preferCSSPageSize?: boolean;
+  // Exclude page ranges from output (Chromium/Electron supports either string "2-" or array)
+  pageRanges?: string | { from: number; to: number }[];
+}
+
+export interface SaveDialogOptions {
+  defaultPath: string;
+  filters: { name: string; extensions: string[] }[];
+  properties: string[];
+}
+
+export interface SaveDialogReturnValue {
+  canceled: boolean;
+  filePath?: string;
+}
+
+type CaptureRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+type NativeImageLike = {
+  toPNG(): Uint8Array | Buffer;
+};
+
+interface ElectronWebContentsLike {
+  capturePage(rect: CaptureRect): Promise<NativeImageLike>;
+  getZoomFactor(): number;
+  setZoomFactor(factor: number): void;
+}
+
+interface ElectronWebUtilsLike {
+  getPathForFile(file: File): string;
+}
+
+export interface ElectronAPI {
+  ipcRenderer: {
+    send(channel: string, ...args: unknown[]): void;
+    once(channel: string, func: (...args: unknown[]) => void): void;
+  };
+  remote: {
+    dialog: {
+      showSaveDialog(
+        options: SaveDialogOptions,
+      ): Promise<SaveDialogReturnValue>;
+    };
+    getCurrentWebContents(): ElectronWebContentsLike;
+  };
+  webUtils: ElectronWebUtilsLike;
+}
+
+declare global {
+  interface Window {
+    electron: ElectronAPI;
+  }
+}

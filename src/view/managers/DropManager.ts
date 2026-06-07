@@ -380,7 +380,7 @@ export class DropManager {
 
           if (!path && file && DEVICE.isDesktop) {
             //https://www.electronjs.org/docs/latest/breaking-changes#removed-filepath
-            const { webUtils } = require("electron");
+            const webUtils = window.electron.webUtils;
             if (webUtils && webUtils.getPathForFile) {
               path = webUtils.getPathForFile(file);
             }
@@ -520,7 +520,7 @@ export class DropManager {
           const name = file?.name;
           if (!path && file && DEVICE.isDesktop) {
             //https://www.electronjs.org/docs/latest/breaking-changes#removed-filepath
-            const { webUtils } = require("electron");
+            const webUtils = window.electron.webUtils;
             if (webUtils && webUtils.getPathForFile) {
               path = webUtils.getPathForFile(file);
             }
