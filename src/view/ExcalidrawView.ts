@@ -5885,7 +5885,7 @@ export default class ExcalidrawView
 
         //if there are image elements
         //first delete corresponding "old" text elements
-        for (const [ el ] of imageElementsMap) {
+        for (const [el] of imageElementsMap) {
           const clone = cloneElement(el);
           clone.isDeleted = true;
           this.excalidrawData.deleteTextElement(clone.id);

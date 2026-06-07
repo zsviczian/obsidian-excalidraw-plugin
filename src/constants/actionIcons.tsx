@@ -119,7 +119,7 @@ const cssTextToReactStyle = (
       style[toReactAttributeName(key)] = value;
     });
 
-  return Object.keys(style).length ? (style as React.CSSProperties) : undefined;
+  return Object.keys(style).length ? style : undefined;
 };
 
 const domNodeToReact = (

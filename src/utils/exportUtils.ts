@@ -51,7 +51,6 @@ export function getPageDimensions(
     : { width: dimensions.height, height: dimensions.width };
 }
 
-
 function getPageSizePixels(
   pageSize: PageSize | PageDimensions,
   landscape = false,

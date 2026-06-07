@@ -4607,7 +4607,7 @@ export class ExcalidrawAutomate {
     });
 
     // 3. Clone and remap relationships
-    const clonedElements: any[] = elements.map((el) => {
+    const clonedElements: ExcalidrawElement[] = elements.map((el) => {
       // Deep clone the element
       const newEl = JSON.parse(JSON.stringify(el));
 

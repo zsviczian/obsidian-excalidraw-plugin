@@ -719,7 +719,7 @@ export function getAllNestedExcalidrawFiles(
   ];
 
   while (stack.length > 0) {
-    const { file, path } = stack.pop()!;
+    const { file, path } = stack.pop();
     const children = adjacencyList.get(file) || [];
 
     for (const child of children) {

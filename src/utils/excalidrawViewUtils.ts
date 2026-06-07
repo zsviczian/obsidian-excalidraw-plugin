@@ -118,7 +118,7 @@ const getCommandLinkOptInPlugin = (app: App): CommandLinkOptInPlugin | null => {
     return candidate as unknown as CommandLinkOptInPlugin;
   }
   if (EXCALIDRAW_PLUGIN && EXCALIDRAW_PLUGIN.app === app) {
-    return EXCALIDRAW_PLUGIN as unknown as CommandLinkOptInPlugin;
+    return EXCALIDRAW_PLUGIN;
   }
   return null;
 };
