@@ -50,7 +50,7 @@ import { RemoteDirectoryInfo } from "src/types/githubTypes";
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 import ExcalidrawView from "../view/ExcalidrawView";
 import { getEmptyDrawingElementsRuntime } from "src/constants/emptydrawing";
-import { sanitizedFragment } from "./htmlUtils";
+import { makeEntitiesXmlSafe, sanitizedFragment } from "./htmlUtils";
 import { URLs } from "src/constants/safeUrls";
 export { errorlog, getDataURL } from "./coreUtils";
 export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
@@ -1274,7 +1274,7 @@ export function isCallerFromTemplaterPlugin(stackTrace: string) {
 
 export function convertSVGStringToElement(svg: string): SVGSVGElement {
   const parser = new DOMParser();
-  const doc = parser.parseFromString(svg, "image/svg+xml");
+  const doc = parser.parseFromString(makeEntitiesXmlSafe(svg), "image/svg+xml");
 
   if (doc.querySelector("parsererror")) {
     return;

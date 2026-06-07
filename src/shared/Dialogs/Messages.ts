@@ -20,6 +20,8 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
   "2.23.11": `
   ## Fixed
   - Print to PDF sometimes displayed a scrollbar on prinouts on MacOS.
+  - Scenes that contain \`![[text#^block]] transclusions\` did not render in markdown nor in image previews.
+  - Addressed further Obsidian code scanner findings
 `,
   "2.23.10": `
 ## Fixed

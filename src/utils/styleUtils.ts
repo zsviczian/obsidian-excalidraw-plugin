@@ -27,9 +27,50 @@ export const setComponentVisibility = (comp: Setting, visible: boolean) => {
   }
 };
 
+type StyleObject = Partial<CSSStyleDeclaration> & {
+  [key: `--${string}`]: string | undefined;
+};
+
 export const setStyle = (
-  element: HTMLElement | SVGSVGElement,
-  styles: Partial<CSSStyleDeclaration>,
+  element: HTMLElement | SVGSVGElement | null | undefined,
+  styles: StyleObject,
 ): void => {
-  Object.assign(element.style, styles);
+  if (!element) {
+    return;
+  }
+
+  for (const [key, value] of Object.entries(styles)) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+
+    if (key.startsWith("--")) {
+      // Explicitly casting value as string fixes the type error safely
+      element.style.setProperty(key, value as string);
+    } else {
+      // @ts-ignore: safe fallback for dynamic string keys matching standard CSS properties
+      element.style[key] = value;
+    }
+  }
+};
+
+export const removeStyle = (
+  element: HTMLElement | SVGSVGElement | null | undefined,
+  properties: (keyof CSSStyleDeclaration | `--${string}` | string)[],
+): void => {
+  if (!element) {
+    return;
+  }
+
+  for (const prop of properties) {
+    const propStr = prop as string;
+
+    if (propStr.startsWith("--")) {
+      element.style.removeProperty(propStr);
+    } else {
+      // Handle camelCase (e.g., backgroundColor -> background-color)
+      const kebabCase = propStr.replace(/([A-Z])/g, "-$1").toLowerCase();
+      element.style.removeProperty(kebabCase);
+    }
+  }
 };

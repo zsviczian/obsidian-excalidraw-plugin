@@ -101,7 +101,6 @@ import { StylesManager } from "./managers/StylesManager";
 import { CustomMutationObserver, log } from "../utils/debugHelper";
 import { ExcalidrawConfig } from "../shared/ExcalidrawConfig";
 import { EditorHandler } from "./editor/EditorHandler";
-import { ExcalidrawLib } from "../types/excalidrawLib";
 import { Rank, SwordColors } from "../constants/actionIcons";
 import { RankMessage } from "../shared/Dialogs/RankMessage";
 import {

@@ -15,7 +15,6 @@ import {
   ExcalidrawAISettings,
   AIFileInput,
   AIImageInput,
-  AIModelConfig,
   AIProvider,
   AIProviderProfile,
   AIRequest,

@@ -34,6 +34,7 @@ import {
 import { getEA } from "src/core";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { URLs } from "src/constants/safeUrls";
+import { setStyle } from "src/utils/styleUtils";
 
 type BlockCacheEntry = Awaited<
   ReturnType<ExcalidrawView["app"]["metadataCache"]["blockCache"]["getForFile"]>
@@ -128,12 +129,20 @@ export class EmbeddableMenu {
 
   private handleMouseEnter() {
     window.clearTimeout(this.menuFadeTimeout);
-    this.containerRef.current?.style.setProperty("opacity", "1");
+    if (this.containerRef.current) {
+      setStyle(this.containerRef.current, {
+        opacity: "1",
+      });
+    }
   }
 
   private handleMouseLeave() {
     this.menuFadeTimeout = window.setTimeout(() => {
-      this.containerRef.current?.style.setProperty("opacity", "0.2");
+      if (this.containerRef.current) {
+        setStyle(this.containerRef.current, {
+          opacity: "0.2",
+        });
+      }
     }, 5000);
   }
 

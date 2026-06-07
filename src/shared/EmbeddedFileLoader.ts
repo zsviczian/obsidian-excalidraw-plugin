@@ -25,7 +25,6 @@ import ExcalidrawPlugin from "../core/main";
 import type { PdfJsDocumentProxy } from "src/types/pdfJsTypes";
 import {
   blobToBase64,
-  getAllNestedExcalidrawFiles,
   getDataURLFromURL,
   getMimeType,
   getPDFDoc,

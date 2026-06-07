@@ -13,7 +13,6 @@ import {
   ExcalidrawImperativeAPI,
   UIAppState,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { ObsidianCanvasNode } from "src/view/managers/CanvasNodeFactory";
 import {
   processLinkText,
   patchMobileView,
@@ -24,6 +23,7 @@ import {
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { EmbeddableLeafRef } from "src/types/excalidrawViewTypes";
 import { t } from "src/lang/helpers";
+import { removeStyle, setStyle } from "src/utils/styleUtils";
 
 type PdfViewLike = {
   containerEl?: HTMLElement;
@@ -138,7 +138,9 @@ function setPDFViewTheme(view: ExcalidrawView, pdfView: PdfViewLike | null) {
       ".pdf-thumbnail-view",
     );
     if (thumbnailViewEl instanceof HTMLElement) {
-      thumbnailViewEl.style.filter = "var(--theme-filter)";
+      setStyle(thumbnailViewEl, {
+        filter: "var(--theme-filter)",
+      });
     }
   } else {
     const pdfViewerEl = pdfView.containerEl?.querySelector("div.pdfViewer");
@@ -193,7 +195,9 @@ function setupPdfViewEnhancements(
         if (h !== prevHeight) {
           prevHeight = h;
           if (h) {
-            containerEl.style.height = "";
+            setStyle(containerEl, {
+              height: "",
+            });
             prevHeight = "";
           }
         }
@@ -277,7 +281,9 @@ function setupPdfViewEnhancements(
       });
 
       try {
-        view.contentEl.style.cursor = "grabbing";
+        setStyle(view.contentEl, {
+          cursor: "grabbing",
+        });
       } catch {}
     };
 
@@ -311,7 +317,9 @@ function setupPdfViewEnhancements(
     const onPointerUp = (_e: PointerEvent) => {
       active = false;
       try {
-        view.contentEl.style.cursor = "";
+        setStyle(view.contentEl, {
+          cursor: "",
+        });
       } catch {}
       window.removeEventListener("pointermove", onPointerMove, true);
       window.removeEventListener("pointerup", onPointerUp, true);
@@ -461,7 +469,7 @@ export function renderWebView(
     // Explicitly allow safe protocols to prevent execution of
     // javascript:, vbscript:, file:, etc.
     isAllowed = ["http:", "https:", "data:"].includes(url.protocol);
-  } catch (e) {
+  } catch {
     // If URL parsing fails, consider it unsafe
     isAllowed = false;
   }
@@ -652,7 +660,9 @@ function RenderObsidianView({
       containerRef.current.removeChild(containerRef.current.lastChild);
     }
 
-    containerRef.current.parentElement.style.padding = "";
+    setStyle(containerRef.current.parentElement, {
+      padding: "",
+    });
 
     leafRef.current = {
       leaf: null,
@@ -731,7 +741,9 @@ function RenderObsidianView({
             const workspaceLeaf: HTMLDivElement =
               rootSplit.containerEl.querySelector("div.workspace-leaf");
             if (workspaceLeaf) {
-              workspaceLeaf.style.borderRadius = "var(--embeddable-radius)";
+              setStyle(workspaceLeaf, {
+                borderRadius: "var(--embeddable-radius)",
+              });
             }
             rootSplit.containerEl.addClass("mod-visible");
             containerRef.current.appendChild(rootSplit.containerEl);
@@ -787,20 +799,16 @@ function RenderObsidianView({
     const scaleY = Math.abs(element.scale?.[1] ?? 1);
     const width = roundEmbeddableSize(element.width / scaleX);
     const height = roundEmbeddableSize(element.height / scaleY);
-    canvasNode?.style.setProperty("--embeddable-width", `${width}px`);
-    canvasNode?.style.setProperty("--embeddable-height", `${height}px`);
-    canvasNode?.style.setProperty(
-      "--embeddable-scaleX",
-      `${roundEmbeddableSize(scaleX)}`,
-    );
-    canvasNode?.style.setProperty(
-      "--embeddable-scaleY",
-      `${roundEmbeddableSize(scaleY)}`,
-    );
-    canvasNode?.style.setProperty(
-      "--scene-zoom",
-      `${roundEmbeddableSize(sceneZoom ?? 1)}`,
-    );
+
+    if (canvasNode) {
+      setStyle(canvasNode, {
+        "--embeddable-width": `${width}px`,
+        "--embeddable-height": `${height}px`,
+        "--embeddable-scaleX": `${roundEmbeddableSize(scaleX)}`,
+        "--embeddable-scaleY": `${roundEmbeddableSize(scaleY)}`,
+        "--scene-zoom": `${roundEmbeddableSize(sceneZoom ?? 1)}`,
+      });
+    }
   }
 
   function setColors(
@@ -822,10 +830,12 @@ function RenderObsidianView({
       ?.firstElementChild as HTMLElement;
 
     if (mdProps.useObsidianDefaults) {
-      canvasNode?.style.removeProperty("--canvas-background");
-      canvasNodeContainer?.style.removeProperty("background-color");
-      canvasNode?.style.removeProperty("--canvas-border");
-      canvasNodeContainer?.style.removeProperty("border-color");
+      if (canvasNode) {
+        removeStyle(canvasNode, ["--canvas-background", "--canvas-border"]);
+      }
+      if (canvasNodeContainer) {
+        removeStyle(canvasNodeContainer, ["background-color", "border-color"]);
+      }
       return;
     }
 
@@ -844,9 +854,17 @@ function RenderObsidianView({
       color === "transparent"
         ? canvasNode?.addClass("transparent")
         : canvasNode?.removeClass("transparent");
-      canvasNode?.style.setProperty("--canvas-background", color);
-      canvasNode?.style.setProperty("--background-primary", color);
-      canvasNodeContainer?.style.setProperty("background-color", color);
+      if (canvasNode) {
+        setStyle(canvasNode, {
+          "--canvas-background": color,
+          "--background-primary": color,
+        });
+      }
+      if (canvasNodeContainer) {
+        setStyle(canvasNodeContainer, {
+          backgroundColor: color,
+        });
+      }
     } else if (!(mdProps.backgroundMatchElement ?? true)) {
       const opacity = (mdProps.backgroundOpacity ?? 100) / 100;
       const color = mdProps.backgroundMatchCanvas
@@ -861,90 +879,54 @@ function RenderObsidianView({
       color === "transparent"
         ? canvasNode?.addClass("transparent")
         : canvasNode?.removeClass("transparent");
-      canvasNode?.style.setProperty("--canvas-background", color);
-      canvasNode?.style.setProperty("--background-primary", color);
-      canvasNodeContainer?.style.setProperty("background-color", color);
+      if (canvasNode) {
+        setStyle(canvasNode, {
+          "--canvas-background": color,
+          "--background-primary": color,
+        });
+      }
+      if (canvasNodeContainer) {
+        setStyle(canvasNodeContainer, {
+          backgroundColor: color,
+        });
+      }
     }
     switch (viewType) {
       case "bases":
-        canvasNode?.style.setProperty(
-          "--bases-cards-container-background",
-          "var(--background-primary)",
-        );
-        canvasNode?.style.setProperty(
-          "--bases-embed-border-color",
-          "var(--background-modifier-border)",
-        );
-        canvasNode?.style.setProperty(
-          "--bases-table-header-color",
-          "var(--text-muted)",
-        );
-        canvasNode?.style.setProperty(
-          "--bases-table-header-background",
-          "var(--background-primary)",
-        );
-        canvasNode?.style.setProperty(
-          "--bases-table-header-background-hover",
-          "var(--background-modifier-hover)",
-        );
-        canvasNode?.style.setProperty(
-          "--bases-table-header-sort-mask",
-          "linear-gradient(to left, transparent var(--size-4-6), black var(--size-4-6))",
-        );
-        canvasNode?.style.setProperty(
-          "--bases-table-border-color",
-          "var(--table-border-color)",
-        );
-        canvasNode?.style.setProperty(
-          "--bases-table-row-background-hover",
-          "var(--table-row-background-hover)",
-        );
-        canvasNode?.style.setProperty(
-          "--bases-table-cell-shadow-active",
-          "0 0 0 2px var(--interactive-accent)",
-        );
-        canvasNode?.style.setProperty(
-          "--bases-table-cell-background-active",
-          "var(--background-primary)",
-        );
-        canvasNode?.style.setProperty(
-          "--bases-table-cell-background-disabled",
-          "var(--background-primary-alt)",
-        );
-        canvasNode?.style.setProperty(
-          "--bases-cards-container-background",
-          "var(--background-primary)",
-        );
-        canvasNode?.style.setProperty(
-          "--bases-cards-background",
-          "var(--background-primary)",
-        );
-        canvasNode?.style.setProperty(
-          "--bases-cards-cover-background",
-          "var(--background-primary-alt)",
-        );
-        canvasNode?.style.setProperty(
-          "--bases-cards-shadow",
-          "0 0 0 1px var(--background-modifier-border)",
-        );
-        canvasNode?.style.setProperty(
-          "--bases-cards-shadow-hover",
-          "0 0 0 1px var(--background-modifier-border-hover)",
-        );
+        if (canvasNode) {
+          setStyle(canvasNode, {
+            "--bases-cards-container-background": "var(--background-primary)",
+            "--bases-embed-border-color": "var(--background-modifier-border)",
+            "--bases-table-header-color": "var(--text-muted)",
+            "--bases-table-header-background": "var(--background-primary)",
+            "--bases-table-header-background-hover":
+              "var(--background-modifier-hover)",
+            "--bases-table-header-sort-mask":
+              "linear-gradient(to left, transparent var(--size-4-6), black var(--size-4-6))",
+            "--bases-table-border-color": "var(--table-border-color)",
+            "--bases-table-row-background-hover":
+              "var(--table-row-background-hover)",
+            "--bases-table-cell-shadow-active":
+              "0 0 0 2px var(--interactive-accent)",
+            "--bases-table-cell-background-active": "var(--background-primary)",
+            "--bases-table-cell-background-disabled":
+              "var(--background-primary-alt)",
+            "--bases-cards-background": "var(--background-primary)",
+            "--bases-cards-cover-background": "var(--background-primary-alt)",
+            "--bases-cards-shadow":
+              "0 0 0 1px var(--background-modifier-border)",
+            "--bases-cards-shadow-hover":
+              "0 0 0 1px var(--background-modifier-border-hover)",
+          });
+        }
         break;
       case "pdf":
-        canvasNode?.style.setProperty(
-          "--pdf-sidebar-background",
-          "var(--background-primary)",
-        );
-        canvasNode?.style.setProperty(
-          "--pdf-background",
-          "var(--background-primary)",
-        );
-        canvasNode?.style.setProperty(
-          "--pdf-sidebar-background",
-          "var(--background-primary)",
-        );
+        if (canvasNode) {
+          setStyle(canvasNode, {
+            "--pdf-sidebar-background": "var(--background-primary)",
+            "--pdf-background": "var(--background-primary)",
+          });
+        }
         break;
     }
 
@@ -958,17 +940,25 @@ function RenderObsidianView({
               .alphaTo(opacity)
               .stringHEX({ alpha: true })
         : "transparent";
-      canvasNode?.style.setProperty("--canvas-border", color);
-      canvasNode?.style.setProperty("--canvas-color", color);
-      //canvasNodeContainer?.style.setProperty("border-color", color);
+      if (canvasNode) {
+        setStyle(canvasNode, {
+          "--canvas-border": color,
+          "--canvas-color": color,
+          //"border-color": color,
+        });
+      }
     } else if (!(mdProps?.borderMatchElement ?? true)) {
       const color = ea
         .getCM(mdProps.borderColor)
         .alphaTo((mdProps.borderOpacity ?? 100) / 100)
         .stringHEX({ alpha: true });
-      canvasNode?.style.setProperty("--canvas-border", color);
-      canvasNode?.style.setProperty("--canvas-color", color);
-      //canvasNodeContainer?.style.setProperty("border-color", color);
+      if (canvasNode) {
+        setStyle(canvasNode, {
+          "--canvas-border": color,
+          "--canvas-color": color,
+          //"border-color": color,
+        });
+      }
     }
   }
 
