@@ -56,7 +56,7 @@ export const setStyle = (
 
 export const removeStyle = (
   element: HTMLElement | SVGSVGElement | null | undefined,
-  properties: (keyof CSSStyleDeclaration | `--${string}` | string)[],
+  properties: string[],
 ): void => {
   if (!element) {
     return;

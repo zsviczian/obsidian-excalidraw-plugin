@@ -59,8 +59,8 @@ export const setElementIconAndText = (
 };
 
 export const makeEntitiesXmlSafe = (svgString: string): string => {
-  // Create an in-memory textarea element to act as our native decoder
-  const textarea = mainDocument.createElement("textarea");
+  // Use DOMParser to safely parse HTML without using innerHTML
+  const parser = new DOMParser();
 
   // Regex to find all named entities (e.g., &nbsp;, &copy;, &mdash;)
   return svgString.replace(/&[a-zA-Z0-9]+;/g, (match) => {
@@ -70,19 +70,22 @@ export const makeEntitiesXmlSafe = (svgString: string): string => {
       return match;
     }
 
-    // 2. Let the browser decode the HTML entity
-    textarea.innerHTML = match;
-    const decodedStr = textarea.value;
+    // 2. Let the browser safely decode the HTML entity in an inert document
+    const doc = parser.parseFromString(match, "text/html");
+    const decodedStr = doc.documentElement.textContent || "";
 
     // 3. If the browser didn't recognize it, return it as-is
-    if (decodedStr === match) {
+    if (decodedStr === match || decodedStr === "") {
       return match;
     }
 
     // 4. Convert the decoded character(s) into XML-safe numeric entities
     // We use Array.from and codePointAt to safely handle potential emojis/special chars
     return Array.from(decodedStr)
-      .map((char) => `&#${char.codePointAt(0)};`)
+      .map((char) => {
+        const codePoint = char.codePointAt(0);
+        return codePoint ? `&#${codePoint};` : "";
+      })
       .join("");
   });
 };
