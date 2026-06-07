@@ -1180,7 +1180,10 @@ export default class ExcalidrawView
         const data = this.lastSavedData;
         //if the scene is empty, do not save to BAK (this could be due to a crash when the BAK should not be updated)
         if (scene && scene.elements && scene.elements.length > 0) {
-          window.setTimeout(() => getImageCache().addBAKToCache(path, data), 50);
+          window.setTimeout(
+            () => getImageCache().addBAKToCache(path, data),
+            50,
+          );
         }
         triggerReload =
           this.lastSaveTimestamp === this.file.stat.mtime &&

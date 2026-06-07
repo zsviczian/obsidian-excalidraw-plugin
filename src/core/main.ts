@@ -133,7 +133,11 @@ import {
   encryptPersistedAPIKeys,
 } from "src/utils/settingsKeyObfuscation";
 import { URLs } from "src/constants/safeUrls";
-import { hideElement, setButtonBgColor, showElement } from "src/utils/styleUtils";
+import {
+  hideElement,
+  setButtonBgColor,
+  showElement,
+} from "src/utils/styleUtils";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
