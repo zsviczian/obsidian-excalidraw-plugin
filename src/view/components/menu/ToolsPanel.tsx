@@ -26,7 +26,7 @@ import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFile
 import { REM_VALUE } from "src/core/managers/StylesManager";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
-import { getYouTubeUrl, URLs } from "src/constants/safeUrls";
+import { getYouTubeUrl } from "src/constants/safeUrls";
 
 declare const PLUGIN_VERSION: string;
 

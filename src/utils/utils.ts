@@ -1454,7 +1454,8 @@ export class PromisePool<T> {
           return Object.values(this.entries);
         },
       );
-    } catch (_error) {
+    } catch (error) {
+      console.log("Error in PromisePool.all:", error);
       return Promise.resolve(Object.values(this.entries));
     }
   }

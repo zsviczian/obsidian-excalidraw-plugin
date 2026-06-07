@@ -1,6 +1,7 @@
 import { getIcon, sanitizeHTMLToDom } from "obsidian";
 import { PenStyle } from "src/types/penTypes";
 import React from "react";
+import { mainDocument } from "./constants";
 
 const BLOCKED_SVG_TAGS = new Set([
   "script",
@@ -45,7 +46,7 @@ const isUnsafeAttribute = (name: string, value: string): boolean => {
 
 const sanitizeSvgTree = (svg: SVGSVGElement) => {
   const nodesToRemove: Element[] = [];
-  const walker = document.createTreeWalker(svg, NodeFilter.SHOW_ELEMENT);
+  const walker = mainDocument.createTreeWalker(svg, NodeFilter.SHOW_ELEMENT);
 
   let current = walker.currentNode as Element;
   while (current) {
@@ -82,7 +83,7 @@ const sanitizeSvgElement = (svg: SVGSVGElement): SVGSVGElement => {
 };
 
 const applyDefaultSvgTheme = (svg: SVGSVGElement) => {
-  const walker = document.createTreeWalker(svg, NodeFilter.SHOW_ELEMENT);
+  const walker = mainDocument.createTreeWalker(svg, NodeFilter.SHOW_ELEMENT);
   let current = walker.currentNode as Element;
   while (current) {
     current.removeAttribute("stroke");

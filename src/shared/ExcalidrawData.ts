@@ -860,7 +860,7 @@ export class ExcalidrawData {
 
     const timer = window.setTimeout(() => {
       const notice = new Notice(t("FONT_LOAD_SLOW"), 15000);
-      notice.noticeEl.oncontextmenu = () => {
+      notice.messageEl.oncontextmenu = () => {
         displayFontMessage(this.app);
       };
     }, 5000);
@@ -1193,7 +1193,13 @@ export class ExcalidrawData {
         te.y = y;
         te.width = width;
         te.height = height;
-      } catch (_e) {}
+      } catch (error) {
+        console.log(
+          "error updating text element dimensions, likely due to element being deleted meanwhile",
+          "updateSceneTextElements",
+          error,
+        );
+      }
     }
   }
 

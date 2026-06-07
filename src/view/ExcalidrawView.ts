@@ -166,7 +166,6 @@ import {
   excalidrawSword,
   ICONS,
   LogoWrapper,
-  Rank,
   saveIcon,
   SwordColors,
 } from "../constants/actionIcons";
@@ -3224,12 +3223,12 @@ export default class ExcalidrawView
       const notice = new Notice(t("MASK_FILE_NOTICE"), 5000);
       //add click and hold event listner to the notice
       let noticeTimeout: number;
-      this.registerDomEvent(notice.noticeEl, "pointerdown", () => {
+      this.registerDomEvent(notice.messageEl, "pointerdown", () => {
         noticeTimeout = window.setTimeout(() => {
           window.open(getYouTubeUrl("uHFd0XoHRxE"));
         }, 1000);
       });
-      this.registerDomEvent(notice.noticeEl, "pointerup", () => {
+      this.registerDomEvent(notice.messageEl, "pointerup", () => {
         window.clearTimeout(noticeTimeout);
       });
     }
@@ -5886,7 +5885,7 @@ export default class ExcalidrawView
 
         //if there are image elements
         //first delete corresponding "old" text elements
-        for (const [el, _] of imageElementsMap) {
+        for (const [ el ] of imageElementsMap) {
           const clone = cloneElement(el);
           clone.isDeleted = true;
           this.excalidrawData.deleteTextElement(clone.id);
@@ -6413,7 +6412,7 @@ export default class ExcalidrawView
         return;
       }
     }
-    const { folder, filepath: _ } = await getAttachmentsFolderAndFilePath(
+    const { folder } = await getAttachmentsFolderAndFilePath(
       this.app,
       this.file.path,
       "dummy",

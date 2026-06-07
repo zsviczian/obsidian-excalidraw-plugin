@@ -202,7 +202,7 @@ import { AIRequest, ExcalidrawAISettings } from "src/types/AIUtilTypes";
 import { getAspectRatio } from "src/utils/YoutTubeUtils";
 import { getPDFCropRect } from "src/utils/PDFUtils";
 import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
-import { URL_REGISTRY, URLs } from "src/constants/safeUrls";
+import { URL_REGISTRY } from "src/constants/safeUrls";
 
 type ExcalidrawAutomateHelpTarget = ((...args: unknown[]) => unknown) | string;
 

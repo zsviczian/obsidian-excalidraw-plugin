@@ -21,7 +21,7 @@ import { errorHandler } from "src/utils/ErrorHandler";
 
 declare const PLUGIN_LANGUAGES: Record<string, string>;
 declare const PLUGIN_VERSION: string;
-declare var LZString: any;
+declare const LZString: any;
 
 let locale: Partial<typeof en> | null = null;
 

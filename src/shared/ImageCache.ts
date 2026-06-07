@@ -4,7 +4,8 @@ import { PDFPageViewProps, Size } from "src/types/embeddedFileLoaderTypes";
 import { convertSVGStringToElement } from "../utils/utils";
 import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
 import { hasExcalidrawEmbeddedImagesTreeChanged } from "../utils/fileUtils";
-const DB_NAME = `Excalidraw ${(app as unknown as { appId: string }).appId}`;
+import { EXCALIDRAW_PLUGIN } from "src/constants/constants";
+const DB_NAME = `Excalidraw ${EXCALIDRAW_PLUGIN.app.appId}`;
 const CACHE_STORE = "imageCache";
 const BACKUP_STORE = "drawingBAK";
 

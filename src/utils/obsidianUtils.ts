@@ -80,7 +80,7 @@ export const getLeaf = (
     if (!plugin.settings.openInMainWorkspace) {
       return plugin.app.workspace.getLeaf("tab");
     }
-    const [leafLoc, _] = getLeafLoc(origo);
+    const leafLoc = getLeafLoc(origo)[0];
     if (leafLoc === "main") {
       return plugin.app.workspace.getLeaf("tab");
     }

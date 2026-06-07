@@ -3,7 +3,6 @@ import {
   FileId,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { BinaryFileData } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { Notice } from "obsidian";
 
 import { getEA } from "src/core";
