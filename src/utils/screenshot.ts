@@ -4,6 +4,7 @@ import { getEA } from "src/core";
 import { t } from "src/lang/helpers";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { NormalizedZoomValue } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { hideElement, showElement } from "./styleUtils";
 
 export interface ScreenshotOptions {
   zoom: number;
@@ -127,11 +128,8 @@ export async function captureScreenshot(
 
   // Hide UI elements (must be after changing to view mode)
   const container = view.excalidrawWrapperRef.current;
-  let layerUIWrapperOriginalDisplay = "block";
-  let appBottonBarOriginalDisplay = "block";
   let layerUIWrapper: HTMLElement | null = null;
   let appBottomBar: HTMLElement | null = null;
-  const modalContainerOriginalDisplays = new Map<HTMLElement, string>();
 
   const originalStyle = {
     width: container.style.width,
@@ -146,11 +144,7 @@ export async function captureScreenshot(
     const modalContainers =
       mainDocument.querySelectorAll<HTMLElement>(".modal-container");
     modalContainers.forEach((modalContainer) => {
-      modalContainerOriginalDisplays.set(
-        modalContainer,
-        modalContainer.style.display,
-      );
-      modalContainer.style.display = "none";
+      hideElement(modalContainer);
     });
 
     container.style.width = `${tileWidth}px`;
@@ -206,12 +200,10 @@ export async function captureScreenshot(
         layerUIWrapper = container.querySelector(".layer-ui__wrapper");
         appBottomBar = container.querySelector(".App-bottom-bar");
         if (layerUIWrapper) {
-          layerUIWrapperOriginalDisplay = layerUIWrapper.style.display;
-          layerUIWrapper.style.display = "none";
+          hideElement(layerUIWrapper);
         }
         if (appBottomBar) {
-          appBottonBarOriginalDisplay = appBottomBar.style.display;
-          appBottomBar.style.display = "none";
+          hideElement(appBottomBar);
         }
 
         await sleep(50);
@@ -302,15 +294,17 @@ export async function captureScreenshot(
 
     // Restore UI elements
     if (layerUIWrapper) {
-      layerUIWrapper.style.display = layerUIWrapperOriginalDisplay;
+      showElement(layerUIWrapper);
     }
 
     if (appBottomBar) {
-      appBottomBar.style.display = appBottonBarOriginalDisplay;
+      showElement(appBottomBar);
     }
 
-    modalContainerOriginalDisplays.forEach((display, modalContainer) => {
-      modalContainer.style.display = display;
+    const modalContainers =
+      mainDocument.querySelectorAll<HTMLElement>(".modal-container");
+    modalContainers.forEach((modalContainer) => {
+      showElement(modalContainer);
     });
 
     // Restore original state

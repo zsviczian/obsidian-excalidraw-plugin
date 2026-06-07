@@ -3,6 +3,9 @@ import { CaptureUpdateAction } from "src/constants/constants";
 import { FloatingModal } from "./FloatingModal";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { Setting } from "obsidian";
+import {
+  setComponentVisibility,
+} from "src/utils/styleUtils";
 
 export const showFrameSettings = (view: ExcalidrawView) => {
   const { enabled, clip, name, outline, markerName, markerEnabled } =
@@ -31,9 +34,9 @@ export const showFrameSettings = (view: ExcalidrawView) => {
       .addToggle((toggle) =>
         toggle.setValue(settings.enabled).onChange((value) => {
           settings.enabled = value;
-          hideComponent(displayFrameNameSetting, !value);
-          hideComponent(displayFrameOutlineSetting, !value);
-          hideComponent(enableFrameClippingSetting, !value);
+          setComponentVisibility(displayFrameNameSetting, value);
+          setComponentVisibility(displayFrameOutlineSetting, value);
+          setComponentVisibility(enableFrameClippingSetting, value);
         }),
       );
 
@@ -62,9 +65,9 @@ export const showFrameSettings = (view: ExcalidrawView) => {
       );
 
     // Hide or show components based on initial state
-    hideComponent(displayFrameNameSetting, !settings.enabled);
-    hideComponent(displayFrameOutlineSetting, !settings.enabled);
-    hideComponent(enableFrameClippingSetting, !settings.enabled);
+    setComponentVisibility(displayFrameNameSetting, settings.enabled);
+    setComponentVisibility(displayFrameOutlineSetting, settings.enabled);
+    setComponentVisibility(enableFrameClippingSetting, settings.enabled);
 
     // Add OK button
     new Setting(contentEl).addButton((button) =>
@@ -83,8 +86,3 @@ export const showFrameSettings = (view: ExcalidrawView) => {
 
   frameSettingsModal.open();
 };
-
-// Function to hide or show a component
-function hideComponent(comp: Setting, value: boolean) {
-  comp.settingEl.style.display = value ? "none" : "";
-}

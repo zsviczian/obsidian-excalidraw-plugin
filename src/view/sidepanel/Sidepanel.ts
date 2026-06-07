@@ -6,6 +6,7 @@ import type { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { getLastActiveExcalidrawView } from "src/utils/excalidrawViewLookup";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import { ExcalidrawSidepanelTab } from "./SidepanelTab";
+import { hideElement, showElement } from "src/utils/styleUtils";
 
 type TabCreationConfig = {
   title: string;
@@ -612,7 +613,11 @@ export class ExcalidrawSidepanelView extends ItemView {
   private updateEmptyStateVisibility() {
     const hasTabs = this.tabs.size > 0;
     if (this.emptyStateEl) {
-      this.emptyStateEl.style.display = hasTabs ? "none" : "";
+      if (hasTabs) {
+        hideElement(this.emptyStateEl);
+      } else {
+        showElement(this.emptyStateEl);
+      }
     }
     if (this.closeButtonEl) {
       this.closeButtonEl.disabled = !hasTabs;

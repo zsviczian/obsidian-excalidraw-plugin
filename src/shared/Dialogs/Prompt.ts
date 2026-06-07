@@ -735,7 +735,7 @@ export class GenericInputPrompt extends Modal {
 
     // Remove any existing popup
     const existingPopup = activeDocument.querySelector(
-      ".excalidraw-special-chars-popup",
+      ".excalidraw-genericInputPrompt-specialCharPopup",
     );
     if (existingPopup) {
       existingPopup.remove();
@@ -744,17 +744,7 @@ export class GenericInputPrompt extends Modal {
 
     // Create popup element
     const popup = activeDocument.createElement("div");
-    popup.className = "excalidraw-special-chars-popup";
-    popup.style.position = "absolute";
-    popup.style.zIndex = "1000";
-    popup.style.background = "var(--background-primary)";
-    popup.style.border = "1px solid var(--background-modifier-border)";
-    popup.style.borderRadius = "4px";
-    popup.style.padding = "4px";
-    popup.style.boxShadow = "0 2px 8px var(--background-modifier-box-shadow)";
-    popup.style.display = "flex";
-    popup.style.flexWrap = "wrap";
-    popup.style.maxWidth = "200px";
+    popup.addClass("excalidraw-genericInputPrompt-specialCharPopup");
 
     // Position near the button
     const rect = (evt.target as HTMLElement).getBoundingClientRect();
@@ -782,13 +772,7 @@ export class GenericInputPrompt extends Modal {
     specialChars.forEach((char) => {
       const charButton = activeDocument.createElement("button");
       charButton.textContent = char;
-      charButton.style.margin = "2px";
-      charButton.style.width = "28px";
-      charButton.style.height = "28px";
-      charButton.style.cursor = "pointer";
-      charButton.style.background = "var(--interactive-normal)";
-      charButton.style.border = "none";
-      charButton.style.borderRadius = "4px";
+      charButton.addClass("excalidraw-genericInputPrompt-specialCharButton");
 
       charButton.addEventListener("click", () => {
         this.insertStringBtnClickCallback(char);
@@ -1274,13 +1258,14 @@ export class MultiOptionConfirmationPrompt<T = boolean | null> extends Modal {
     this.titleEl.textContent = t("PROMPT_TITLE_CONFIRMATION");
 
     const messageEl = this.contentEl.createDiv();
+    messageEl.addClass("excalidraw-multiOptionConfirmationPrompt-message");
     messageEl.style.marginBottom = "1rem";
     setSanitizedHtml(messageEl, this.message);
 
     const buttonContainer = this.contentEl.createDiv();
-    buttonContainer.style.display = "flex";
-    buttonContainer.style.justifyContent = "flex-end";
-    buttonContainer.style.flexWrap = "wrap";
+    buttonContainer.addClass(
+      "excalidraw-multiOptionConfirmationPrompt-buttonContainer",
+    );
 
     // Convert Map to Array for easier iteration
     const buttonEntries = Array.from(this.buttons.entries());

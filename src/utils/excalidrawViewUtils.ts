@@ -76,14 +76,14 @@ class CommandLinkOptInPrompt extends Modal {
     setSanitizedHtml(messageEl, this.message);
 
     const buttonContainer = this.contentEl.createDiv();
-    buttonContainer.style.display = "flex";
-    buttonContainer.style.justifyContent = "flex-end";
-    buttonContainer.style.marginTop = "1rem";
+    buttonContainer.addClass(
+      "excalidraw-commandLinkOptInPrompt-buttonContainer",
+    );
 
     const denyButton = buttonContainer.createEl("button", {
       text: t("ENABLE_COMMAND_LINKS_CONFIRM_DENY"),
     });
-    denyButton.style.marginRight = "0.5rem";
+    denyButton.addClass("excalidraw-commandLinkOptInPrompt-denyButton");
     denyButton.onclick = () => {
       this.selectedValue = null;
       this.close();

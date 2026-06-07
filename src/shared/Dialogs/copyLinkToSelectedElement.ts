@@ -172,10 +172,7 @@ export async function copyLinkToSelectedElementToClipboard(
         const ownerDoc = wrapper.ownerDocument ?? mainDocument;
 
         const anchorRow = ownerDoc.createElement("label");
-        anchorRow.style.display = "flex";
-        anchorRow.style.alignItems = "center";
-        anchorRow.style.gap = "8px";
-        anchorRow.style.marginTop = "8px";
+        anchorRow.addClass("excalidraw-copylinkprompt-label");
 
         const anchorCb = ownerDoc.createElement("input");
         anchorCb.type = "checkbox";
@@ -194,10 +191,7 @@ export async function copyLinkToSelectedElementToClipboard(
 
         if (frameNameIsValid) {
           const frameRow = ownerDoc.createElement("label");
-          frameRow.style.display = "flex";
-          frameRow.style.alignItems = "center";
-          frameRow.style.gap = "8px";
-          frameRow.style.marginTop = "8px";
+          frameRow.addClass("excalidraw-copylinkprompt-label");
 
           const frameCb = ownerDoc.createElement("input");
           frameCb.type = "checkbox";

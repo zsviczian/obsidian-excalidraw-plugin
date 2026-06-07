@@ -10,6 +10,8 @@ import {
   isGeminiImageModel,
 } from "src/utils/geminiImageModelUtils";
 import { isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
+import { showElement } from "src/utils/styleUtils";
+import { hideElement } from "src/utils/styleUtils";
 
 type SaveHandler<TConfig extends AIModelConfig> = (
   modelId: string,
@@ -276,9 +278,11 @@ export class AIModelConfigModal<
         });
       };
       updateImageSizeControls = () => {
-        sizesSection.style.display = this.isCurrentGeminiImageModel()
-          ? "none"
-          : "";
+        if (this.isCurrentGeminiImageModel()) {
+          hideElement(sizesSection);
+        } else {
+          showElement(sizesSection);
+        }
         renderSizes();
       };
 

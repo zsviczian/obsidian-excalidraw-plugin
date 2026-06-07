@@ -1,3 +1,5 @@
+import { Setting } from "obsidian";
+
 export const setButtonBgColor = (
   button: HTMLButtonElement,
   state: "normal" | "accent" | "success",
@@ -14,4 +16,20 @@ export const hideElement = (el: HTMLElement) => {
 
 export const showElement = (el: HTMLElement) => {
   el.removeClass("excalidraw-display-none");
+};
+
+// Function to hide or show a component
+export const setComponentVisibility = (comp: Setting, visible: boolean) => {
+  if (visible) {
+    showElement(comp.settingEl);
+  } else {
+    hideElement(comp.settingEl);
+  }
+};
+
+export const setStyle = (
+  element: HTMLElement | SVGSVGElement,
+  styles: Partial<CSSStyleDeclaration>,
+): void => {
+  Object.assign(element.style, styles);
 };

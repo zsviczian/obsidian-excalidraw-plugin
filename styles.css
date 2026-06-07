@@ -100,6 +100,7 @@ button.ToolIcon_type_button[title="Export"] {
   flex-direction: row;
   flex-wrap: nowrap;
   justify-content: right;
+  margin-top: 1em;
 }
 
 .ex-coffee-div {
@@ -999,4 +1000,59 @@ End Obsidian Sheets Plus support
   &-normal { background-color: var(--interactive-normal); }
   &-accent { background-color: var(--interactive-accent); }
   &-success { background-color: var(--interactive-success); }
+}
+
+.excalidraw-copylinkprompt-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-top: 0.5em;
+}
+
+.excalidraw-pdfexportsettings-colorinput {
+  width: 50px;
+  margin-left: 10px;
+}
+
+.excalidraw-genericInputPrompt-specialCharPopup {
+  position: absolute;
+  z-index: 1000;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 4px;
+  box-shadow: 0 2px 8px var(--background-modifier-box-shadow);
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 200px;
+}
+
+.excalidraw-genericInputPrompt-specialCharButton {
+  margin: 2px;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  background: var(--interactive-normal);
+  border: none;
+  border-radius: 4px;
+}
+
+.excalidraw-multiOptionConfirmationPrompt-message {
+  margin-bottom: 1em;
+}
+
+.excalidraw-multiOptionConfirmationPrompt-buttonContainer {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.excalidraw-commandLinkOptInPrompt-buttonContainer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1em;
+}
+
+.excalidraw-commandLinkOptInPrompt-denyButton {
+  margin-right: 0.5em;
 }

@@ -7,6 +7,7 @@ import {
   STANDARD_PAGE_SIZES,
 } from "src/types/exportUtilTypes";
 import { t } from "src/lang/helpers";
+import { hideElement, showElement } from "src/utils/styleUtils";
 
 export interface PDFExportSettings {
   pageSize: PageSize;
@@ -55,15 +56,21 @@ export class PDFExportSettingsComponent {
           .setValue(this.settings.pageSize)
           .onChange((value) => {
             this.settings.pageSize = value as PageSize;
-            div.style.display = this.isOrientationAndTilingVisible()
-              ? "block"
-              : "none";
+            if (this.isOrientationAndTilingVisible()) {
+              showElement(div);
+            } else {
+              hideElement(div);
+            }
             this.update();
           }),
       );
 
     const div = this.contentEl.createDiv();
-    div.style.display = this.isOrientationAndTilingVisible() ? "block" : "none";
+    if (this.isOrientationAndTilingVisible()) {
+      showElement(div);
+    } else {
+      hideElement(div);
+    }
 
     new Setting(div)
       .setName(t("EXPORTDIALOG_PAGE_ORIENTATION"))
@@ -140,7 +147,11 @@ export class PDFExportSettingsComponent {
           .setValue(this.settings.paperColor)
           .onChange((value) => {
             this.settings.paperColor = value as typeof this.settings.paperColor;
-            colorInput.style.display = value === "custom" ? "block" : "none";
+            if (value === "custom") {
+              showElement(colorInput);
+            } else {
+              hideElement(colorInput);
+            }
             this.update();
           }),
       );
@@ -149,10 +160,12 @@ export class PDFExportSettingsComponent {
       type: "color",
       value: this.settings.customPaperColor,
     });
-    colorInput.style.width = "50px";
-    colorInput.style.marginLeft = "10px";
-    colorInput.style.display =
-      this.settings.paperColor === "custom" ? "block" : "none";
+    colorInput.addClass("excalidraw-pdfexportsettings-colorinput");
+    if (this.settings.paperColor === "custom") {
+      showElement(colorInput);
+    } else {
+      hideElement(colorInput);
+    }
     colorInput.addEventListener("change", (e) => {
       this.settings.customPaperColor = (e.target as HTMLInputElement).value;
       this.update();

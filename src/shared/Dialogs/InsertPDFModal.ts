@@ -14,6 +14,7 @@ import { t } from "src/lang/helpers";
 import { NamedExcalidrawFrameElement } from "src/types/excalidrawElementTypes";
 import type { PdfJsDocumentProxy } from "src/types/pdfJsTypes";
 import { setSanitizedHtml } from "src/utils/htmlUtils";
+import { hideElement, showElement } from "src/utils/styleUtils";
 
 export class InsertPDFModal extends Modal {
   private borderBox: boolean = true;
@@ -25,10 +26,6 @@ export class InsertPDFModal extends Modal {
   private numRows: number = 1;
   private lockAfterImport: boolean = true;
   private pagesToImport: number[] = [];
-  private pageDimensions: { width: number; height: number } = {
-    width: 0,
-    height: 0,
-  };
   private pageDimensionsByPage: Map<number, { width: number; height: number }> =
     new Map();
   private importScale = 0.3;
@@ -189,19 +186,19 @@ export class InsertPDFModal extends Modal {
     const importButtonMessages = () => {
       if (!this.pdfDoc) {
         importMessage.innerText = t("IPM_SELECT_PDF");
-        importButton.buttonEl.style.display = "none";
+        hideElement(importButton.buttonEl);
         return;
       }
       if (this.pagesToImport.length === 0) {
-        importButton.buttonEl.style.display = "none";
+        hideElement(importButton.buttonEl);
         importMessage.innerText = t("IPM_SELECT_PAGES_TO_IMPORT");
         return;
       }
       if (Math.max(...this.pagesToImport) <= this.pdfDoc.numPages) {
-        importButton.buttonEl.style.display = "block";
+        showElement(importButton.buttonEl);
         importMessage.innerText = "";
       } else {
-        importButton.buttonEl.style.display = "none";
+        hideElement(importButton.buttonEl);
         importMessage.innerText = `The selected document has ${this.pdfDoc.numPages} pages. Please select pages between 1 and ${this.pdfDoc.numPages}`;
       }
     };
@@ -361,12 +358,12 @@ export class InsertPDFModal extends Modal {
     const colRowVisibility = () => {
       switch (this.direction) {
         case "down":
-          numColumnsSetting.settingEl.style.display = "none";
-          numRowsSetting.settingEl.style.display = "";
+          hideElement(numColumnsSetting.settingEl);
+          showElement(numRowsSetting.settingEl);
           break;
         case "right":
-          numColumnsSetting.settingEl.style.display = "";
-          numRowsSetting.settingEl.style.display = "none";
+          showElement(numColumnsSetting.settingEl);
+          hideElement(numRowsSetting.settingEl);
           break;
       }
     };
@@ -578,7 +575,7 @@ export class InsertPDFModal extends Modal {
             this.close();
           });
         importButton = button;
-        importButton.buttonEl.style.display = "none";
+        hideElement(importButton.buttonEl);
       });
     const importMessage = actionButton.descEl;
     importMessage.addClass("mod-warning");

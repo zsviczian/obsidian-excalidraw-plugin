@@ -17,6 +17,7 @@ import { fragWithHTML } from "src/utils/utils";
 import { setSanitizedHtml } from "src/utils/htmlUtils";
 import { showColorPicker } from "./ColorPicker";
 import { URLs } from "src/constants/safeUrls";
+import { hideElement, showElement } from "src/utils/styleUtils";
 
 const EASINGFUNCTIONS: Record<string, string> = {
   linear: "linear",
@@ -205,7 +206,11 @@ export class PenSettingsModal extends Modal {
         strokeUseCurrentToggle = toggle;
         toggle.setValue(!ps.strokeColor).onChange((value) => {
           this.dirty = true;
-          scSetting.settingEl.style.display = value ? "none" : "";
+          if (value) {
+            hideElement(scSetting.settingEl);
+          } else {
+            showElement(scSetting.settingEl);
+          }
           strokeSetting.setName(
             fragWithHTML(
               value
@@ -288,7 +293,11 @@ export class PenSettingsModal extends Modal {
         });
       });
 
-    scSetting.settingEl.style.display = !ps.strokeColor ? "none" : "";
+    if (ps.strokeColor) {
+      showElement(scSetting.settingEl);
+    } else {
+      hideElement(scSetting.settingEl);
+    }
 
     let bgcpComponent: ColorComponent;
     let bgctComponent: TextComponent;
@@ -320,9 +329,18 @@ export class PenSettingsModal extends Modal {
                 : "Background color: <b>Preset color</b>",
             ),
           );
-          bgctSetting.settingEl.style.display = value ? "none" : "";
-          bgcSetting.settingEl.style.display =
-            value || ps.backgroundColor === "transparent" ? "none" : "";
+
+          if (value) {
+            hideElement(bgctSetting.settingEl);
+          } else {
+            showElement(bgctSetting.settingEl);
+          }
+
+          if (value || ps.backgroundColor === "transparent") {
+            hideElement(bgcSetting.settingEl);
+          } else {
+            showElement(bgcSetting.settingEl);
+          }
           if (value) {
             delete ps.backgroundColor;
           } else {
@@ -351,8 +369,13 @@ export class PenSettingsModal extends Modal {
           .setValue(ps.backgroundColor === "transparent")
           .onChange((value) => {
             this.dirty = true;
-            bgcSetting.settingEl.style.display = value ? "none" : "";
-            fsSetting.settingEl.style.display = value ? "none" : "";
+            if (value) {
+              hideElement(bgcSetting.settingEl);
+              hideElement(fsSetting.settingEl);
+            } else {
+              showElement(bgcSetting.settingEl);
+              showElement(fsSetting.settingEl);
+            }
             bgctSetting.setName(
               fragWithHTML(
                 value
@@ -366,7 +389,11 @@ export class PenSettingsModal extends Modal {
           });
       });
 
-    bgctSetting.settingEl.style.display = !ps.backgroundColor ? "none" : "";
+    if (ps.backgroundColor) {
+      showElement(bgctSetting.settingEl);
+    } else {
+      hideElement(bgctSetting.settingEl);
+    }
     let bgChangeBounce: boolean = false;
     const bgcSetting = new Setting(ce)
       .setName("Background color")
@@ -516,9 +543,11 @@ export class PenSettingsModal extends Modal {
         toggle.setValue(!ps.penOptions.constantPressure).onChange((value) => {
           this.dirty = true;
           ps.penOptions.constantPressure = !value;
-          spSetting.settingEl.style.display = ps.penOptions.constantPressure
-            ? "none"
-            : "";
+          if (ps.penOptions.constantPressure) {
+            hideElement(spSetting.settingEl);
+          } else {
+            showElement(spSetting.settingEl);
+          }
         }),
       );
 
@@ -666,9 +695,12 @@ export class PenSettingsModal extends Modal {
             }
           }),
       );
-    spSetting.settingEl.style.display = ps.penOptions.constantPressure
-      ? "none"
-      : "";
+
+    if (ps.penOptions.constantPressure) {
+      hideElement(spSetting.settingEl);
+    } else {
+      showElement(spSetting.settingEl);
+    }
 
     ce.createEl("h3", { text: "Start" });
     ce.createEl("p", { text: "Tapering options for the start of the line." });

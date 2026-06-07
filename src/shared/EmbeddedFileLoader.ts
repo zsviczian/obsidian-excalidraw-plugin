@@ -70,6 +70,7 @@ import {
 } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { setStyleText } from "src/utils/htmlUtils";
+import { hideElement } from "src/utils/styleUtils";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -1536,7 +1537,7 @@ export class EmbeddedFilesLoader {
     //First I need to create a fully self contained copy of the document to convert
     //blank styles into inline styles using computedStyle
     const iframeHost = mainDocument.body.createDiv();
-    iframeHost.style.display = "none";
+    hideElement(iframeHost);
     const iframe = iframeHost.createEl("iframe");
     const iframeDoc = iframe.contentWindow.document;
     if (style) {

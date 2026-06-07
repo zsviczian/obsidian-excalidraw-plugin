@@ -2,6 +2,7 @@ import { Setting, ToggleComponent } from "obsidian";
 import { EmbeddableMDCustomProps } from "./EmbeddableSettings";
 import { fragWithHTML } from "src/utils/utils";
 import { t } from "src/lang/helpers";
+import { hideElement, showElement } from "src/utils/styleUtils";
 
 export class EmbeddalbeMDFileCustomDataSettingsComponent {
   constructor(
@@ -23,7 +24,11 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
           .setValue(this.mdCustomData.useObsidianDefaults)
           .onChange((value) => {
             this.mdCustomData.useObsidianDefaults = value;
-            detailsDIV.style.display = value ? "none" : "block";
+            if (value) {
+              hideElement(detailsDIV);
+            } else {
+              showElement(detailsDIV);
+            }
             this.update();
           }),
       );
@@ -31,9 +36,11 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
     this.contentEl.createEl("hr", { cls: "excalidraw-setting-hr" });
 
     const detailsDIV = this.contentEl.createDiv();
-    detailsDIV.style.display = this.mdCustomData.useObsidianDefaults
-      ? "none"
-      : "block";
+    if (this.mdCustomData.useObsidianDefaults) {
+      hideElement(detailsDIV);
+    } else {
+      showElement(detailsDIV);
+    }
 
     const contentEl = detailsDIV;
     if (this.isMDFile) {
@@ -70,12 +77,12 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
           .onChange((value) => {
             this.mdCustomData.backgroundMatchElement = value;
             if (value) {
-              bgSetting.settingEl.style.display = "none";
+              hideElement(bgSetting.settingEl);
               if (this.mdCustomData.backgroundMatchCanvas) {
                 bgMatchCanvasToggle.setValue(false);
               }
             } else if (!this.mdCustomData.backgroundMatchCanvas) {
-              bgSetting.settingEl.style.display = "";
+              showElement(bgSetting.settingEl);
             }
             this.update();
           });
@@ -90,12 +97,12 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
           .onChange((value) => {
             this.mdCustomData.backgroundMatchCanvas = value;
             if (value) {
-              bgSetting.settingEl.style.display = "none";
+              hideElement(bgSetting.settingEl);
               if (this.mdCustomData.backgroundMatchElement) {
                 bgMatchElementToggle.setValue(false);
               }
             } else if (!this.mdCustomData.backgroundMatchElement) {
-              bgSetting.settingEl.style.display = "";
+              showElement(bgSetting.settingEl);
             }
             this.update();
           });
@@ -119,11 +126,14 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
           }),
       );
 
-    bgSetting.settingEl.style.display =
+    if (
       this.mdCustomData.backgroundMatchElement ||
       this.mdCustomData.backgroundMatchCanvas
-        ? "none"
-        : "";
+    ) {
+      hideElement(bgSetting.settingEl);
+    } else {
+      showElement(bgSetting.settingEl);
+    }
     const opacity = (value: number): DocumentFragment => {
       return fragWithHTML(`Current opacity is <b>${value}%</b>`);
     };
@@ -153,9 +163,9 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
             .onChange((value) => {
               this.mdCustomData.borderMatchElement = value;
               if (value) {
-                borderSetting.settingEl.style.display = "none";
+                hideElement(borderSetting.settingEl);
               } else {
-                borderSetting.settingEl.style.display = "";
+                showElement(borderSetting.settingEl);
               }
               this.update();
             }),
@@ -172,10 +182,11 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
             }),
         );
 
-      borderSetting.settingEl.style.display = this.mdCustomData
-        .borderMatchElement
-        ? "none"
-        : "";
+      if (this.mdCustomData?.borderMatchElement) {
+        hideElement(borderSetting.settingEl);
+      } else {
+        showElement(borderSetting.settingEl);
+      }
 
       const borderOpacitySetting = new Setting(contentEl)
         .setName(t("ES_BORDER_OPACITY"))

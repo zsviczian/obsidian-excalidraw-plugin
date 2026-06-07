@@ -20,6 +20,7 @@ import { InsertPDFModal } from "./InsertPDFModal";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { cleanSectionHeading } from "src/utils/pathUtils";
 import { t } from "src/lang/helpers";
+import { hideElement, showElement } from "src/utils/styleUtils";
 
 export class UniversalInsertFileModal extends Modal {
   private center: { x: number; y: number } = { x: 0, y: 0 };
@@ -128,8 +129,8 @@ export class UniversalInsertFileModal extends Modal {
           : null;
 
       if (isMarkdown || (isExcalidraw && sections?.length > 0)) {
-        sectionPickerSetting.settingEl.style.display = "";
-        sectionPicker.selectEl.style.display = "block";
+        showElement(sectionPickerSetting.settingEl);
+        showElement(sectionPicker.selectEl);
         while (sectionPicker.selectEl.options.length > 0) {
           sectionPicker.selectEl.remove(0);
         }
@@ -143,20 +144,20 @@ export class UniversalInsertFileModal extends Modal {
           );
         });
       } else {
-        sectionPickerSetting.settingEl.style.display = "none";
-        sectionPicker.selectEl.style.display = "none";
+        hideElement(sectionPickerSetting.settingEl);
+        hideElement(sectionPicker.selectEl);
       }
 
       if (isExcalidraw && !isSelf) {
-        sizeToggleSetting.settingEl.style.display = "";
+        showElement(sizeToggleSetting.settingEl);
       } else {
-        sizeToggleSetting.settingEl.style.display = "none";
+        hideElement(sizeToggleSetting.settingEl);
       }
 
       if (!isSelf && (isImage || file?.extension === "md")) {
-        actionImage.buttonEl.style.display = "block";
+        showElement(actionImage.buttonEl);
       } else {
-        actionImage.buttonEl.style.display = "none";
+        hideElement(actionImage.buttonEl);
       }
 
       if (
@@ -164,15 +165,15 @@ export class UniversalInsertFileModal extends Modal {
         isAnimatedImage ||
         (isExcalidraw && sections?.length > 0)
       ) {
-        actionIFrame.buttonEl.style.display = "block";
+        showElement(actionIFrame.buttonEl);
       } else {
-        actionIFrame.buttonEl.style.display = "none";
+        hideElement(actionIFrame.buttonEl);
       }
 
       if (isPDF) {
-        actionPDF.buttonEl.style.display = "block";
+        showElement(actionPDF.buttonEl);
       } else {
-        actionPDF.buttonEl.style.display = "none";
+        hideElement(actionPDF.buttonEl);
       }
     };
 

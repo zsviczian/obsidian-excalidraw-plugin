@@ -15,6 +15,7 @@ import {
   PDFPageProperties,
   STANDARD_PAGE_SIZES,
 } from "src/types/exportUtilTypes";
+import { setStyle } from "./styleUtils";
 
 const DPI = 96;
 
@@ -119,6 +120,16 @@ async function printPdf(
   const styleTag = mainDocument.createElement("sty" + "le");
   styleTag.textContent = `
     @media print {
+      /* HIDE SCROLLBARS DURING PDF EXPORT */
+      ::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
+      * {
+        scrollbar-width: none !important;
+      }
+
       /* Ensure the print root expands to the widest page and is not constrained by app layout */
       .print {
         background-color: ${bgColor} !important;
@@ -164,9 +175,12 @@ async function printPdf(
   mainDocument.head.appendChild(styleTag);
 
   const printDiv = mainDocument.body.createDiv("print");
-  printDiv.style.top = "0";
-  printDiv.style.left = "0";
-  printDiv.style.display = "flex";
+  setStyle(printDiv, {
+    top: "0",
+    left: "0",
+    display: "flex",
+  });
+
   //printDiv.appendChild(elementToPrint); // if I append directly, rounded images and clip paths get messed up
   // see https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2544
   printDiv.appendChild(elementToPrint.cloneNode(true));
@@ -461,8 +475,10 @@ export async function exportToPDF({
   // Single fixed-size job (existing behavior)
   if (!useMultiJob) {
     const allPagesDiv = createDiv();
-    allPagesDiv.style.width = "100%";
-    allPagesDiv.style.height = "fit-content";
+    setStyle(allPagesDiv, {
+      width: "100%",
+      height: "fit-content",
+    });
 
     for (const svg of SVG) {
       const svgWidth = parseFloat(svg.getAttribute("width") || "0");
@@ -488,27 +504,27 @@ export async function exportToPDF({
         const pageDiv = createDiv();
         pageDiv.addClass("print-page");
 
-        // NEW: content box sizing
-        pageDiv.style.width = `${pageWidth}px`;
-        pageDiv.style.height = `${pageHeight}px`;
-
-        pageDiv.style.display = "flex";
-        pageDiv.style.justifyContent = "start";
-        pageDiv.style.alignItems = "left";
-        //pageDiv.style.padding = `${pageProps.margin.top}px ${pageProps.margin.right}px ${pageProps.margin.bottom}px ${pageProps.margin.left}px`;
-        pageDiv.style.left = `${pageProps.margin.left}px`;
-        pageDiv.style.top = `${pageProps.margin.top}px`;
-        pageDiv.style.position = "relative";
+        setStyle(pageDiv, {
+          width: `${pageWidth}px`,
+          height: `${pageHeight}px`,
+          display: "flex",
+          justifyContent: "start",
+          alignItems: "left",
+          left: `${pageProps.margin.left}px`,
+          top: `${pageProps.margin.top}px`,
+          position: "relative",
+          //padding: `${pageProps.margin.top}px ${pageProps.margin.right}px ${pageProps.margin.bottom}px ${pageProps.margin.left}px`,
+        });
 
         const clonedSVG = svg.cloneNode(true) as SVGSVGElement;
         clonedSVG.setAttribute("viewBox", tile.viewBox);
-        clonedSVG.style.width = `${tile.width}px`;
-        clonedSVG.style.height = `${tile.height}px`;
-        clonedSVG.style.position = "absolute";
-
-        // NEW: position within padding box (subtract margins)
-        clonedSVG.style.left = `${tile.x - pageProps.margin.left}px`;
-        clonedSVG.style.top = `${tile.y - pageProps.margin.top}px`;
+        setStyle(clonedSVG, {
+          width: `${tile.width}px`,
+          height: `${tile.height}px`,
+          position: "absolute",
+          left: `${tile.x - pageProps.margin.left}px`,
+          top: `${tile.y - pageProps.margin.top}px`,
+        });
 
         pageDiv.appendChild(clonedSVG);
         allPagesDiv.appendChild(pageDiv);
@@ -538,8 +554,10 @@ export async function exportToPDF({
   new Notice(t("EXPORTDIALOG_PDF_PROGRESS_NOTICE"));
   try {
     const allPagesDiv = createDiv();
-    allPagesDiv.style.width = "100%";
-    allPagesDiv.style.height = "fit-content";
+    setStyle(allPagesDiv, {
+      width: "100%",
+      height: "fit-content",
+    });
 
     // Collect unique page sizes -> named @page rules
     const pageRuleNames = new Map<
@@ -589,27 +607,28 @@ export async function exportToPDF({
         pageDiv.addClass("print-page");
         // bind to @page rule via page: <name>
         pageDiv.addClass(pageClass);
-        pageDiv.style.setProperty("page", pageClass);
 
-        pageDiv.style.width = `${pageWidth}px`;
-        pageDiv.style.height = `${pageHeight}px`;
-
-        pageDiv.style.display = "flex";
-        pageDiv.style.justifyContent = "start";
-        pageDiv.style.alignItems = "left";
-        pageDiv.style.left = `${pageProps.margin.left}px`;
-        pageDiv.style.top = `${pageProps.margin.top}px`;
-        pageDiv.style.position = "relative";
+        setStyle(pageDiv, {
+          page: pageClass,
+          width: `${pageWidth}px`,
+          height: `${pageHeight}px`,
+          display: "flex",
+          justifyContent: "start",
+          alignItems: "left",
+          left: `${pageProps.margin.left}px`,
+          top: `${pageProps.margin.top}px`,
+          position: "relative",
+        });
 
         const clonedSVG = svg.cloneNode(true) as SVGSVGElement;
         clonedSVG.setAttribute("viewBox", tile.viewBox);
-        clonedSVG.style.width = `${tile.width}px`;
-        clonedSVG.style.height = `${tile.height}px`;
-        clonedSVG.style.position = "absolute";
-
-        // Position within padding box: subtract margins from tile coordinates
-        clonedSVG.style.left = `${tile.x - pageProps.margin.left}px`;
-        clonedSVG.style.top = `${tile.y - pageProps.margin.top}px`;
+        setStyle(clonedSVG, {
+          width: `${tile.width}px`,
+          height: `${tile.height}px`,
+          position: "absolute",
+          left: `${tile.x - pageProps.margin.left}px`,
+          top: `${tile.y - pageProps.margin.top}px`,
+        });
 
         pageDiv.appendChild(clonedSVG);
         allPagesDiv.appendChild(pageDiv);
