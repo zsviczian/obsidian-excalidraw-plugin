@@ -14,6 +14,8 @@ const REQUIRED_EXTRAS_VERSIONS: Record<string, { min?: string; exact?: string }>
 
 export class ExcalidrawExtrasGateway {
   private disableTimer: NodeJS.Timeout | null = null;
+  // This promise tracks an ongoing activation to prevent duplicate modals
+  private activationTask: Promise<boolean> | null = null;
 
   constructor(private app: App, private plugin: ExcalidrawPlugin) {}
 
@@ -35,29 +37,20 @@ export class ExcalidrawExtrasGateway {
     const isInstalled = !!pluginsManager.manifests[EXTRAS_PLUGIN_ID];
     let isEnabled = !!pluginsManager.plugins[EXTRAS_PLUGIN_ID];
 
-    // 1. If not installed or disabled, prompt user via Modal
+    // 1. If not installed or disabled, handle activation
     if (!isInstalled || !isEnabled) {
-      const userAction = await this.promptActivationModal(isInstalled, component);
-      if (!userAction) return null; // User cancelled
-
-      if (userAction === "install") {
-        window.open(`obsidian://show-plugin?id=${EXTRAS_PLUGIN_ID}`);
-        return null; // They need to install it first
+      // If an activation prompt is not already running, start one
+      if (!this.activationTask) {
+        this.activationTask = this.handleActivation(component).finally(() => {
+          // Clean up the task once it's done so future calls can trigger a new prompt if needed
+          this.activationTask = null;
+        });
       }
 
-      if (userAction.startsWith("enable_")) {
-        await pluginsManager.enablePlugin(EXTRAS_PLUGIN_ID);
-        isEnabled = true;
-        
-        // Handle timer logic
-        if (this.disableTimer) clearTimeout(this.disableTimer);
-        if (userAction !== "enable_permanent") {
-          const minutes = parseInt(userAction.split("_")[1]);
-          this.disableTimer = setTimeout(async () => {
-            await pluginsManager.disablePlugin(EXTRAS_PLUGIN_ID);
-            new Notice(t("EXTRAS_GATEWAY_TIMER_EXPIRED"));
-          }, minutes * 60 * 1000);
-        }
+      // Wait for the shared activation task to complete
+      const activated = await this.activationTask;
+      if (!activated) {
+        return null; // User cancelled or chose "install"
       }
     }
 
@@ -86,6 +79,39 @@ export class ExcalidrawExtrasGateway {
     }
 
     return api;
+  }
+
+  /**
+   * Extracted the activation logic into its own method so it can be wrapped in a shared Promise
+   */
+  private async handleActivation(component: string): Promise<boolean> {
+    const pluginsManager = (this.app as any).plugins;
+    const isInstalled = !!pluginsManager.manifests[EXTRAS_PLUGIN_ID];
+
+    const userAction = await this.promptActivationModal(isInstalled, component);
+    if (!userAction) return false; // User cancelled
+
+    if (userAction === "install") {
+      window.open(`obsidian://show-plugin?id=${EXTRAS_PLUGIN_ID}`);
+      return false; 
+    }
+
+    if (userAction.startsWith("enable_")) {
+      await pluginsManager.enablePlugin(EXTRAS_PLUGIN_ID);
+      
+      // Handle timer logic
+      if (this.disableTimer) clearTimeout(this.disableTimer);
+      if (userAction !== "enable_permanent") {
+        const minutes = parseInt(userAction.split("_")[1]);
+        this.disableTimer = setTimeout(async () => {
+          await pluginsManager.disablePlugin(EXTRAS_PLUGIN_ID);
+          new Notice(t("EXTRAS_GATEWAY_TIMER_EXPIRED"));
+        }, minutes * 60 * 1000);
+      }
+      return true;
+    }
+
+    return false;
   }
 
   private compareVersions(v1: string, v2: string): number {
