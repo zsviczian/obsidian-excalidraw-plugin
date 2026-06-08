@@ -48,8 +48,6 @@ const jsxRuntimeShim = `
   window['react/jsx-dev-runtime'] = { jsx, jsxs, Fragment, jsxDEV: jsx };
 `;
 
-const mathjaxtosvg_pkg = isLib ? "" : fs.readFileSync("./MathjaxToSVG/dist/index.js", "utf8");
-
 // Add non-English locales here to embed them as compressed payloads in main.js.
 // When adding a locale file:
 // 1) add its code to this list, 2) build once, 3) if build fails because the locale
@@ -134,7 +132,6 @@ const packageString = isLib
   'const unpackExcalidraw = () => LZString.decompressFromBase64("' + LZString.compressToBase64(excalidraw_pkg) + '");\n' +
   'let {react, reactDOM } = new Function(`${REACT_PACKAGES}; return {react: React, reactDOM: ReactDOM};`)();\n' +
   'let excalidrawLib = {};\n' +
-  'const loadMathjaxToSVG = () => new Function(`${LZString.decompressFromBase64("' + LZString.compressToBase64(mathjaxtosvg_pkg) + '")}; return MathjaxToSVG;`)();\n' +
   `const PLUGIN_LANGUAGES = {${LANGUAGES.map(lang => `"${lang}": "${compressLanguageFile(lang)}"`).join(",")}};\n` +
   'const PLUGIN_VERSION="' + manifest.version + '";';
 

@@ -1522,4 +1522,14 @@ Thank you & Enjoy!
 
   //SuggestionModal.ts
   SUGGESTION_NOMATCH: "No matches found",
+
+  // Excalidraw Extras Gateway
+  EXTRAS_GATEWAY_TITLE: "Excalidraw Extras Required",
+  EXTRAS_GATEWAY_DESC: "To keep Excalidraw lightweight and secure, the '{component}' feature has been moved to the Excalidraw Extras companion plugin.",
+  EXTRAS_GATEWAY_INSTALL_BTN: "Install from Community Plugins",
+  EXTRAS_GATEWAY_ENABLE_PERM_BTN: "Enable Plugin Permanently",
+  EXTRAS_GATEWAY_TEMP_ENABLE_TITLE: "Enable Temporarily",
+  EXTRAS_GATEWAY_TEMP_ENABLE_DESC: "Turn on the Extras plugin temporarily. It will automatically turn off when the timer expires.",
+  EXTRAS_GATEWAY_TIMER_EXPIRED: "Excalidraw Extras temporary timer expired. Plugin disabled.",
+  EXTRAS_GATEWAY_API_MISSING: "Excalidraw Extras is enabled, but the API failed to load. Please update the plugin.",
 };

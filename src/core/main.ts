@@ -1,3 +1,4 @@
+import { ExcalidrawExtrasGateway } from "../utils/ExcalidrawExtrasGateway";
 import {
   TFile,
   Plugin,
@@ -582,6 +583,7 @@ const migrateLegacyAISettings = (
 };
 
 export default class ExcalidrawPlugin extends Plugin {
+  public extrasGateway: ExcalidrawExtrasGateway;
   private fileManager: PluginFileManager;
   private observerManager: ObserverManager;
   private packageManager: PackageManager;
@@ -852,6 +854,7 @@ export default class ExcalidrawPlugin extends Plugin {
     );
     await this.awaitSettings();
     this.logStartupEvent("Settings awaited");
+    this.extrasGateway = new ExcalidrawExtrasGateway(this.app, this);
     if (!this.settings.overrideObsidianFontSize) {
       setRootElementSize();
     }
@@ -1706,7 +1709,6 @@ export default class ExcalidrawPlugin extends Plugin {
     this.lastActiveExcalidrawFilePath = null;
 
     this.settings = null;
-    clearMathJaxVariables();
     //pluginPackages = null;
     //PLUGIN_VERSION = null;
     delete window.PolyBool;
