@@ -27,6 +27,11 @@ export class ExcalidrawExtrasGateway {
     return api ? api.mathjax : null;
   }
 
+  public async getExportToPDF(): Promise<ExcalidrawExtrasAPI["pdf"] | null> {
+    const api = await this.ensureActiveAndGetAPI("pdf");
+    return api ? api.pdf : null;
+  }
+
   private async ensureActiveAndGetAPI(component: ExtrasComponent): Promise<ExcalidrawExtrasAPI | null> {
     if (this.ignoredComponents.has(component)) return null;
 

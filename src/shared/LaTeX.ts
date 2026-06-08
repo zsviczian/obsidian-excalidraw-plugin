@@ -1,5 +1,5 @@
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { App, TFile } from "obsidian";
+import { TFile } from "obsidian";
 import ExcalidrawView from "../view/ExcalidrawView";
 import { FileData, MimeType } from "src/types/embeddedFileLoaderTypes";
 import { FileId } from "@zsviczian/excalidraw/types/element/src/types";
