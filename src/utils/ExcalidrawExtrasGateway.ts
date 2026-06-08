@@ -1,117 +1,126 @@
 import { App, Modal, Notice, Setting } from "obsidian";
 import type ExcalidrawPlugin from "../core/main";
-import type { ExcalidrawExtrasAPI } from "@zsviczian/excalidraw-extras-api";
+import type { ExcalidrawExtrasAPI, ExtrasComponent } from "@zsviczian/excalidraw-extras-api";
 import { t } from "../lang/helpers";
 
 const EXTRAS_PLUGIN_ID = "excalidraw-extras";
 
-// Configure your required versions here for easy updates
 const REQUIRED_EXTRAS_VERSIONS: Record<string, { min?: string; exact?: string }> = {
   mathjax: { min: "1.0.0" },
   mermaid: { exact: "1.0.0" },
   pdf: { min: "1.0.0" }
 };
 
+type ActionResolution = "success" | "ignore" | "cancel";
+
 export class ExcalidrawExtrasGateway {
-  private disableTimer: NodeJS.Timeout | null = null;
-  // This promise tracks an ongoing activation to prevent duplicate modals
-  private activationTask: Promise<boolean> | null = null;
+  private pluginDisableTimer: NodeJS.Timeout | null = null;
+  private featureDisableTimers: Record<string, NodeJS.Timeout> = {};
+  
+  private ignoredComponents: Set<string> = new Set();
+  private activationTask: Promise<ActionResolution> | null = null;
 
-  constructor(private app: App, private plugin: ExcalidrawPlugin) {}
+  constructor(public app: App, public plugin: ExcalidrawPlugin) {}
 
-  /**
-   * Retrieves the MathJax module. If the plugin is missing/disabled/outdated,
-   * it prompts the user automatically.
-   */
   public async getMathJax(): Promise<ExcalidrawExtrasAPI["mathjax"] | null> {
     const api = await this.ensureActiveAndGetAPI("mathjax");
     return api ? api.mathjax : null;
   }
 
-  // Future expansion is easy:
-  // public async getMermaid() { const api = await this.ensureActiveAndGetAPI("mermaid"); return api?.mermaid; }
+  private async ensureActiveAndGetAPI(component: ExtrasComponent): Promise<ExcalidrawExtrasAPI | null> {
+    if (this.ignoredComponents.has(component)) return null;
 
-  private async ensureActiveAndGetAPI(component: string): Promise<ExcalidrawExtrasAPI | null> {
-    // Access internal Obsidian plugin manager
-    const pluginsManager = (this.app as any).plugins;
-    const isInstalled = !!pluginsManager.manifests[EXTRAS_PLUGIN_ID];
-    let isEnabled = !!pluginsManager.plugins[EXTRAS_PLUGIN_ID];
-
-    // 1. If not installed or disabled, handle activation
-    if (!isInstalled || !isEnabled) {
-      // If an activation prompt is not already running, start one
-      if (!this.activationTask) {
-        this.activationTask = this.handleActivation(component).finally(() => {
-          // Clean up the task once it's done so future calls can trigger a new prompt if needed
-          this.activationTask = null;
-        });
-      }
-
-      // Wait for the shared activation task to complete
-      const activated = await this.activationTask;
-      if (!activated) {
-        return null; // User cancelled or chose "install"
-      }
+    if (!this.activationTask) {
+      this.activationTask = this.handleActivation(component).finally(() => {
+        this.activationTask = null; // Clear shared task for future triggers
+      });
     }
 
-    // 2. Plugin is active, retrieve API
-    const api = pluginsManager.plugins[EXTRAS_PLUGIN_ID]?.api as ExcalidrawExtrasAPI;
-    if (!api) {
-      new Notice(t("EXTRAS_GATEWAY_API_MISSING"));
+    const resolution = await this.activationTask;
+    
+    if (resolution === "ignore") {
+      this.ignoredComponents.add(component);
       return null;
     }
+    if (resolution === "cancel") return null;
 
-    // 3. Verify Version Match
-    const currentVersion = api.versions[component as keyof typeof api.versions];
-    const req = REQUIRED_EXTRAS_VERSIONS[component];
-    
-    if (req) {
-      if (req.exact && currentVersion !== req.exact) {
-        new Notice(`Excalidraw Extras Update Required. ${component} requires EXACTLY v${req.exact} (Found v${currentVersion})`);
-        window.open(`obsidian://show-plugin?id=${EXTRAS_PLUGIN_ID}`);
-        return null;
-      }
-      if (req.min && this.compareVersions(currentVersion, req.min) < 0) {
-        new Notice(`Excalidraw Extras Update Required. ${component} requires >= v${req.min} (Found v${currentVersion})`);
-        window.open(`obsidian://show-plugin?id=${EXTRAS_PLUGIN_ID}`);
-        return null;
-      }
-    }
+    // At this point, we assume "success", retrieve API and verify versions
+    const api = this.getAPI();
+    if (!api) return null;
+
+    if (!this.isVersionValid(component, api)) return null;
 
     return api;
   }
 
-  /**
-   * Extracted the activation logic into its own method so it can be wrapped in a shared Promise
-   */
-  private async handleActivation(component: string): Promise<boolean> {
-    const pluginsManager = (this.app as any).plugins;
-    const isInstalled = !!pluginsManager.manifests[EXTRAS_PLUGIN_ID];
+  private async handleActivation(component: ExtrasComponent): Promise<ActionResolution> {
+    // If everything is already perfect, return success immediately
+    if (this.isInstalled() && this.isPluginEnabled()) {
+      const api = this.getAPI();
+      if (api && api.features.isActive(component)) return "success";
+    }
 
-    const userAction = await this.promptActivationModal(isInstalled, component);
-    if (!userAction) return false; // User cancelled
+    // Otherwise, open the progressive modal
+    return new Promise((resolve) => {
+      const modal = new ExtrasActivationModal(this.app, component, this, resolve);
+      modal.open();
+    });
+  }
 
-    if (userAction === "install") {
+  public isInstalled(): boolean {
+    return !!(this.app as any).plugins.manifests[EXTRAS_PLUGIN_ID];
+  }
+
+  public isPluginEnabled(): boolean {
+    return !!(this.app as any).plugins.plugins[EXTRAS_PLUGIN_ID];
+  }
+
+  public getAPI(): ExcalidrawExtrasAPI | null {
+    return (this.app as any).plugins.plugins[EXTRAS_PLUGIN_ID]?.api || null;
+  }
+
+  public isVersionValid(component: string, api: ExcalidrawExtrasAPI): boolean {
+    const currentVersion = api.versions[component as keyof typeof api.versions];
+    const req = REQUIRED_EXTRAS_VERSIONS[component];
+    if (!req) return true;
+
+    if (req.exact && currentVersion !== req.exact) {
+      new Notice(`Excalidraw Extras Update Required. ${component} requires EXACTLY v${req.exact} (Found v${currentVersion})`);
       window.open(`obsidian://show-plugin?id=${EXTRAS_PLUGIN_ID}`);
-      return false; 
+      return false;
     }
-
-    if (userAction.startsWith("enable_")) {
-      await pluginsManager.enablePlugin(EXTRAS_PLUGIN_ID);
-      
-      // Handle timer logic
-      if (this.disableTimer) clearTimeout(this.disableTimer);
-      if (userAction !== "enable_permanent") {
-        const minutes = parseInt(userAction.split("_")[1]);
-        this.disableTimer = setTimeout(async () => {
-          await pluginsManager.disablePlugin(EXTRAS_PLUGIN_ID);
-          new Notice(t("EXTRAS_GATEWAY_TIMER_EXPIRED"));
-        }, minutes * 60 * 1000);
-      }
-      return true;
+    if (req.min && this.compareVersions(currentVersion, req.min) < 0) {
+      new Notice(`Excalidraw Extras Update Required. ${component} requires >= v${req.min} (Found v${currentVersion})`);
+      window.open(`obsidian://show-plugin?id=${EXTRAS_PLUGIN_ID}`);
+      return false;
     }
+    return true;
+  }
 
-    return false;
+  public async enablePlugin(minutes: number = 0) {
+    const pluginsManager = (this.app as any).plugins;
+    await pluginsManager.enablePlugin(EXTRAS_PLUGIN_ID);
+    
+    if (this.pluginDisableTimer) clearTimeout(this.pluginDisableTimer);
+    if (minutes > 0) {
+      this.pluginDisableTimer = setTimeout(async () => {
+        await pluginsManager.disablePlugin(EXTRAS_PLUGIN_ID);
+        new Notice(t("EXTRAS_GATEWAY_TIMER_EXPIRED"));
+      }, minutes * 60 * 1000);
+    }
+  }
+
+  public async enableFeature(component: ExtrasComponent, api: ExcalidrawExtrasAPI, minutes: number = 0) {
+    const isTemp = minutes > 0;
+    await api.features.enable(component, isTemp);
+    
+    if (this.featureDisableTimers[component]) clearTimeout(this.featureDisableTimers[component]);
+    if (isTemp) {
+      this.featureDisableTimers[component] = setTimeout(async () => {
+        await api.features.disable(component);
+        new Notice(t("EXTRAS_GATEWAY_FEATURE_TIMER_EXPIRED").replace("{component}", component));
+      }, minutes * 60 * 1000);
+    }
   }
 
   private compareVersions(v1: string, v2: string): number {
@@ -123,60 +132,113 @@ export class ExcalidrawExtrasGateway {
     }
     return 0;
   }
-
-  private promptActivationModal(isInstalled: boolean, component: string): Promise<string | null> {
-    return new Promise((resolve) => {
-      const modal = new ExtrasActivationModal(this.app, isInstalled, component, resolve);
-      modal.open();
-    });
-  }
 }
 
+/**
+ * A progressive state-machine Modal. It checks the environment every time it renders.
+ * If you enable the plugin, it re-renders and moves seamlessly to the "Enable Feature" step if needed.
+ */
 class ExtrasActivationModal extends Modal {
+  private hasResolved = false;
+
   constructor(
     app: App,
-    private isInstalled: boolean,
-    private component: string,
-    private resolvePromise: (value: string | null) => void
+    private component: ExtrasComponent,
+    private gateway: ExcalidrawExtrasGateway,
+    private resolvePromise: (value: ActionResolution) => void
   ) {
     super(app);
   }
 
   onOpen() {
+    this.renderStep();
+  }
+
+  async renderStep() {
     const { contentEl } = this;
     contentEl.empty();
     
-    contentEl.createEl("h2", { text: t("EXTRAS_GATEWAY_TITLE") });
-    contentEl.createEl("p", { text: t("EXTRAS_GATEWAY_DESC").replace("{component}", this.component) });
-
-    if (!this.isInstalled) {
-      new Setting(contentEl)
-        .addButton((btn) => btn.setButtonText(t("EXTRAS_GATEWAY_INSTALL_BTN")).setCta().onClick(() => {
-          this.resolvePromise("install");
-          this.close();
-        }))
-        .addButton((btn) => btn.setButtonText(t("BACKUP_CANCEL")).onClick(() => this.close()));
-    } else {
-      new Setting(contentEl)
-        .addButton((btn) => btn.setButtonText(t("EXTRAS_GATEWAY_ENABLE_PERM_BTN")).setCta().onClick(() => {
-          this.resolvePromise("enable_permanent");
-          this.close();
-        }));
-
-      new Setting(contentEl)
-        .setName(t("EXTRAS_GATEWAY_TEMP_ENABLE_TITLE"))
-        .setDesc(t("EXTRAS_GATEWAY_TEMP_ENABLE_DESC"))
-        .addButton((btn) => btn.setButtonText("5 min").onClick(() => { this.resolvePromise("enable_5"); this.close(); }))
-        .addButton((btn) => btn.setButtonText("30 min").onClick(() => { this.resolvePromise("enable_30"); this.close(); }))
-        .addButton((btn) => btn.setButtonText("1 hour").onClick(() => { this.resolvePromise("enable_60"); this.close(); }));
-        
-      new Setting(contentEl).addButton((btn) => btn.setButtonText(t("BACKUP_CANCEL")).onClick(() => this.close()));
+    // Step 1: Install Plugin
+    if (!this.gateway.isInstalled()) {
+      contentEl.createEl("h2", { text: t("EXTRAS_GATEWAY_TITLE") });
+      contentEl.createEl("p", { text: t("EXTRAS_GATEWAY_DESC").replace("{component}", this.component) });
+      
+      this.addControls(contentEl, () => {
+        window.open(`obsidian://show-plugin?id=${EXTRAS_PLUGIN_ID}`);
+        this.resolveAndClose("cancel");
+      }, t("EXTRAS_GATEWAY_INSTALL_BTN"));
+      return;
     }
+
+    // Step 2: Enable Plugin
+    if (!this.gateway.isPluginEnabled()) {
+      contentEl.createEl("h2", { text: t("EXTRAS_GATEWAY_TITLE") });
+      contentEl.createEl("p", { text: t("EXTRAS_GATEWAY_DESC").replace("{component}", this.component) });
+      
+      this.addControls(contentEl, async (minutes) => {
+        await this.gateway.enablePlugin(minutes);
+        this.renderStep(); // Re-evaluate state!
+      }, t("EXTRAS_GATEWAY_ENABLE_PERM_BTN"));
+      return;
+    }
+
+    // Step 3: API & Version Checks
+    const api = this.gateway.getAPI();
+    if (!api) {
+      new Notice(t("EXTRAS_GATEWAY_API_MISSING"));
+      this.resolveAndClose("cancel");
+      return;
+    }
+
+    if (!this.gateway.isVersionValid(this.component, api)) {
+      this.resolveAndClose("cancel");
+      return;
+    }
+
+    // Step 4: Enable Specific Feature Setting
+    if (!api.features.isActive(this.component)) {
+      contentEl.createEl("h2", { text: t("EXTRAS_GATEWAY_FEATURE_TITLE").replace("{component}", this.component) });
+      contentEl.createEl("p", { text: t("EXTRAS_GATEWAY_FEATURE_DESC").replace("{component}", this.component) });
+      
+      this.addControls(contentEl, async (minutes) => {
+        await this.gateway.enableFeature(this.component, api, minutes);
+        this.renderStep(); // Re-evaluate state!
+      }, t("EXTRAS_GATEWAY_ENABLE_PERM_BTN"));
+      return;
+    }
+
+    // Final Step: Everything is active!
+    this.resolveAndClose("success");
+  }
+
+  private addControls(container: HTMLElement, onEnable: (minutes: number) => void, permBtnText: string) {
+    new Setting(container)
+      .addButton((btn) => btn.setButtonText(permBtnText).setCta().onClick(() => onEnable(0)));
+
+    new Setting(container)
+      .setName(t("EXTRAS_GATEWAY_TEMP_ENABLE_TITLE"))
+      .setDesc(t("EXTRAS_GATEWAY_TEMP_ENABLE_DESC"))
+      .addButton((btn) => btn.setButtonText("5 min").onClick(() => onEnable(5)))
+      .addButton((btn) => btn.setButtonText("30 min").onClick(() => onEnable(30)))
+      .addButton((btn) => btn.setButtonText("1 hour").onClick(() => onEnable(60)));
+      
+    new Setting(container)
+      .addButton((btn) => btn.setButtonText(t("BACKUP_CANCEL")).onClick(() => this.resolveAndClose("cancel")))
+      .addButton((btn) => btn.setButtonText(t("EXTRAS_GATEWAY_IGNORE_SESSION")).setWarning().onClick(() => this.resolveAndClose("ignore")));
+  }
+
+  private resolveAndClose(result: ActionResolution) {
+    if (this.hasResolved) return;
+    this.hasResolved = true;
+    this.resolvePromise(result);
+    this.close();
   }
 
   onClose() {
     this.contentEl.empty();
-    // Resolve null if user clicked out or pressed escape without making a selection
-    this.resolvePromise(null);
+    // Catch-all if they dismiss the modal by clicking outside or hitting Escape
+    if (!this.hasResolved) {
+      this.resolveAndClose("cancel");
+    }
   }
 }

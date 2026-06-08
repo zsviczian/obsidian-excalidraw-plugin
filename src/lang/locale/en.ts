@@ -1532,4 +1532,8 @@ Thank you & Enjoy!
   EXTRAS_GATEWAY_TEMP_ENABLE_DESC: "Turn on the Extras plugin temporarily. It will automatically turn off when the timer expires.",
   EXTRAS_GATEWAY_TIMER_EXPIRED: "Excalidraw Extras temporary timer expired. Plugin disabled.",
   EXTRAS_GATEWAY_API_MISSING: "Excalidraw Extras is enabled, but the API failed to load. Please update the plugin.",
+  EXTRAS_GATEWAY_IGNORE_SESSION: "Cancel (Don't ask again this session)",
+  EXTRAS_GATEWAY_FEATURE_TITLE: "Enable {component} Feature",
+  EXTRAS_GATEWAY_FEATURE_DESC: "The {component} feature is currently turned off in Excalidraw Extras settings. Do you want to enable it?",
+  EXTRAS_GATEWAY_FEATURE_TIMER_EXPIRED: "Excalidraw Extras: {component} feature temporary timer expired.",
 };

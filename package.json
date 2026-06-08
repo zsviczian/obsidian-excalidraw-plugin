@@ -66,7 +66,7 @@
     "@types/opentype.js": "^1.3.8",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
-    "@zsviczian/excalidraw-extras-api": "^0.0.7",
+    "@zsviczian/excalidraw-extras-api": "^0.0.9",
     "@zsviczian/rollup-plugin-postprocess": "^1.0.3",
     "cross-env": "^7.0.3",
     "cssnano": "^6.0.2",
