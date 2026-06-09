@@ -331,6 +331,7 @@ export declare class ExcalidrawAutomate {
         startArrowHead: string;
         endArrowHead: string;
     };
+    setStyle(style: Partial<ExcalidrawAutomate["style"]>): void;
     canvas: {
         theme: string;
         viewBackgroundColor: string;
@@ -1808,6 +1809,26 @@ export interface FrameRenderingOptions {
     clip: boolean;
 }
 export type PaneTarget = "active-pane" | "new-pane" | "popout-window" | "new-tab" | "md-properties";
+export interface NestedFileNode {
+    file: TFile;
+    /**
+     * All distinct dependency paths from the root file down to this embedded file.
+     * Each path is an ordered array of TFile objects starting with the `rootFile` at index 0.
+     *
+     * @example
+     * If Root -> A -> B2.2 and Root -> B -> B2 -> B2.2
+     * The paths for B2.2 will be:
+     * [
+     *   [Root, A, B2.2],
+     *   [Root, B, B2, B2.2]
+     * ]
+     *
+     * Usage: To find which top-level embeds to reload if this file changes,
+     * you can map over `paths` and collect `path[1]`.
+     */
+    paths: TFile[][];
+}
+export type NestedFileMap = Map<TFile, NestedFileNode>;
 
 /* ************************************ */
 /* lib/types/exportUtilTypes.d.ts */
@@ -1899,6 +1920,76 @@ export interface ExportSettings {
     isMask: boolean;
     frameRendering?: FrameRenderingOptions;
     skipInliningFonts?: boolean;
+}
+export interface PrintToPDFOptions {
+    includeName: boolean;
+    pageSize: string | {
+        width: number;
+        height: number;
+    };
+    landscape: boolean;
+    margins: {
+        top: number;
+        left: number;
+        right: number;
+        bottom: number;
+    };
+    scaleFactor: number;
+    scale: number;
+    open: boolean;
+    filepath: string;
+    preferCSSPageSize?: boolean;
+    pageRanges?: string | {
+        from: number;
+        to: number;
+    }[];
+}
+export interface SaveDialogOptions {
+    defaultPath: string;
+    filters: {
+        name: string;
+        extensions: string[];
+    }[];
+    properties: string[];
+}
+export interface SaveDialogReturnValue {
+    canceled: boolean;
+    filePath?: string;
+}
+type CaptureRect = {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+};
+type NativeImageLike = {
+    toPNG(): Uint8Array | Buffer;
+};
+interface ElectronWebContentsLike {
+    capturePage(rect: CaptureRect): Promise<NativeImageLike>;
+    getZoomFactor(): number;
+    setZoomFactor(factor: number): void;
+}
+interface ElectronWebUtilsLike {
+    getPathForFile(file: File): string;
+}
+export interface ElectronAPI {
+    ipcRenderer: {
+        send(channel: string, ...args: unknown[]): void;
+        once(channel: string, func: (...args: unknown[]) => void): void;
+    };
+    remote: {
+        dialog: {
+            showSaveDialog(options: SaveDialogOptions): Promise<SaveDialogReturnValue>;
+        };
+        getCurrentWebContents(): ElectronWebContentsLike;
+    };
+    webUtils: ElectronWebUtilsLike;
+}
+declare global {
+    interface Window {
+        electron: ElectronAPI;
+    }
 }
 
 /* ************************************** */
@@ -3383,6 +3474,23 @@ export declare const pointInsideBounds: <P extends GlobalPoint | LocalPoint>(p: 
 export declare const pointInsideBoundsInclusive: <P extends GlobalPoint | LocalPoint>(p: P, bounds: Bounds) => boolean;
 export declare const doBoundsIntersect: (bounds1: Bounds | null, bounds2: Bounds | null) => boolean;
 export declare const boundsContainBounds: (outerBounds: Bounds, innerBounds: Bounds) => boolean;
+/**
+ * High level helper to get elements overlapping a bounding box.
+ * It can be used to get elements overlapping a selection box, for example.
+ *
+ */
+export declare const elementsOverlappingBBox: ({ elements, elementsMap, bounds, type, excludeElementsInFrames, shouldIgnoreElementFromSelection, }: {
+    elements: readonly NonDeletedExcalidrawElement[];
+    elementsMap?: ElementsMap;
+    bounds: Bounds | ExcalidrawElement;
+    /**
+     * - overlap: elements overlapping or inside bounds
+     * - contain: elements inside bounds
+     **/
+    type: "contain" | "overlap";
+    excludeElementsInFrames?: boolean;
+    shouldIgnoreElementFromSelection?: (element: NonDeletedExcalidrawElement) => boolean;
+}) => NonDeletedExcalidrawElement[];
 export declare const elementCenterPoint: (element: ExcalidrawElement, elementsMap: ElementsMap, xOffset?: number, yOffset?: number) => GlobalPoint;
 
 /* ************************************** */

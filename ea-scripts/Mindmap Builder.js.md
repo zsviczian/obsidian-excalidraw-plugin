@@ -349,6 +349,34 @@ const STRINGS = {
     MANUAL_JITTER_RANGE: "Manual-layout Jitter Range",
     DESC_LAYOUT_MANUAL_JITTER: "Random position offset when adding nodes while Auto-Layout is disabled.",
 
+    CALENDAR_DATE_INDEX: "Date {index} of {total}",
+    CALENDAR_DATE_LABEL: "Date",
+    CALENDAR_DATE_TYPE: "Date Type",
+    CALENDAR_PRIORITY: "Priority",
+    CALENDAR_RECURRENCE: "Recurrence",
+    CALENDAR_RECURRENCE_PLACEHOLDER: "every day",
+    CALENDAR_RECURRENCE_DESC: "e.g., 'every day', 'every 2 weeks' <br><a href=\"https://publish.obsidian.md/tasks/Getting+Started/Recurring+Tasks\" target=\"_blank\" tabindex=\"-1\">Tasks recurrence docs</a>",
+    CALENDAR_INJECT_LINK: "Inject node link",
+    CALENDAR_INJECT_LINK_DESC: "Adds a link to the node at the end of the task.",
+    CALENDAR_ALIAS_PLACEHOLDER: "Alias",
+    CALENDAR_BTN_CANCEL: "Cancel",
+    CALENDAR_BTN_TASK_ONLY: "Task Only",
+    CALENDAR_BTN_ADD_DATE_TASK: "Add Date & Task",
+    
+    CALENDAR_PRIORITY_HIGHEST: "Highest",
+    CALENDAR_PRIORITY_HIGH: "High",
+    CALENDAR_PRIORITY_MEDIUM: "Medium",
+    CALENDAR_PRIORITY_NORMAL: "Normal",
+    CALENDAR_PRIORITY_LOW: "Low",
+    CALENDAR_PRIORITY_LOWEST: "Lowest",
+    
+    CALENDAR_DATETYPE_DUE: "Due",
+    CALENDAR_DATETYPE_START: "Start",
+    CALENDAR_DATETYPE_SCHEDULED: "Scheduled",
+    CALENDAR_DATETYPE_CREATED: "Created",
+    CALENDAR_DATETYPE_DONE: "Done",
+    CALENDAR_DATETYPE_CANCELLED: "Cancelled",
+
     // Misc
     INPUT_TITLE_PASTE_ROOT: "Mindmap Builder Paste",
     INSTRUCTIONS: "> [!Tip]\n" +
@@ -598,6 +626,34 @@ addLocale("zh", {
   MANUAL_JITTER_RANGE: "手动布局抖动范围",
   DESC_LAYOUT_MANUAL_JITTER: "禁用自动布局时添加节点的随机位置偏移。",
 
+  CALENDAR_DATE_INDEX: "第 {index} 个日期，共 {total} 个",
+  CALENDAR_DATE_LABEL: "日期",
+  CALENDAR_DATE_TYPE: "日期类型",
+  CALENDAR_PRIORITY: "优先级",
+  CALENDAR_RECURRENCE: "重复",
+  CALENDAR_RECURRENCE_PLACEHOLDER: "每天",
+  CALENDAR_RECURRENCE_DESC: "例如，'every day'（每天），'every 2 weeks'（每两周）<br><a href=\"https://publish.obsidian.md/tasks/Getting+Started/Recurring+Tasks\" target=\"_blank\" tabindex=\"-1\">Tasks 插件重复任务文档</a>",
+  CALENDAR_INJECT_LINK: "插入节点链接",
+  CALENDAR_INJECT_LINK_DESC: "在任务末尾添加指向该节点的链接。",
+  CALENDAR_ALIAS_PLACEHOLDER: "别名",
+  CALENDAR_BTN_CANCEL: "取消",
+  CALENDAR_BTN_TASK_ONLY: "仅任务",
+  CALENDAR_BTN_ADD_DATE_TASK: "添加日期和任务",
+  
+  CALENDAR_PRIORITY_HIGHEST: "最高",
+  CALENDAR_PRIORITY_HIGH: "高",
+  CALENDAR_PRIORITY_MEDIUM: "中",
+  CALENDAR_PRIORITY_NORMAL: "普通",
+  CALENDAR_PRIORITY_LOW: "低",
+  CALENDAR_PRIORITY_LOWEST: "最低",
+  
+  CALENDAR_DATETYPE_DUE: "截止",
+  CALENDAR_DATETYPE_START: "开始",
+  CALENDAR_DATETYPE_SCHEDULED: "计划",
+  CALENDAR_DATETYPE_CREATED: "创建",
+  CALENDAR_DATETYPE_DONE: "完成",
+  CALENDAR_DATETYPE_CANCELLED: "取消",
+
   // Misc
   INPUT_TITLE_PASTE_ROOT: "MindMap Builder 粘贴",
   INSTRUCTIONS: "> [!Tip]\n" +
@@ -838,6 +894,34 @@ addLocale("zh-tw", {
   MANUAL_JITTER_RANGE: "手動佈局抖動範圍",
   DESC_LAYOUT_MANUAL_JITTER: "停用自動佈局時新增節點的隨機位置偏移。",
 
+  CALENDAR_DATE_INDEX: "第 {index} 個日期，共 {total} 個",
+  CALENDAR_DATE_LABEL: "日期",
+  CALENDAR_DATE_TYPE: "日期類型",
+  CALENDAR_PRIORITY: "優先級",
+  CALENDAR_RECURRENCE: "重複",
+  CALENDAR_RECURRENCE_PLACEHOLDER: "每天",
+  CALENDAR_RECURRENCE_DESC: "例如，'every day'（每天），'every 2 weeks'（每兩週）<br><a href=\"https://publish.obsidian.md/tasks/Getting+Started/Recurring+Tasks\" target=\"_blank\" tabindex=\"-1\">Tasks 外掛重複任務文件</a>",
+  CALENDAR_INJECT_LINK: "插入節點連結",
+  CALENDAR_INJECT_LINK_DESC: "在任務末尾新增指向該節點的連結。",
+  CALENDAR_ALIAS_PLACEHOLDER: "別名",
+  CALENDAR_BTN_CANCEL: "取消",
+  CALENDAR_BTN_TASK_ONLY: "僅任務",
+  CALENDAR_BTN_ADD_DATE_TASK: "新增日期和任務",
+  
+  CALENDAR_PRIORITY_HIGHEST: "最高",
+  CALENDAR_PRIORITY_HIGH: "高",
+  CALENDAR_PRIORITY_MEDIUM: "中",
+  CALENDAR_PRIORITY_NORMAL: "普通",
+  CALENDAR_PRIORITY_LOW: "低",
+  CALENDAR_PRIORITY_LOWEST: "最低",
+  
+  CALENDAR_DATETYPE_DUE: "截止",
+  CALENDAR_DATETYPE_START: "開始",
+  CALENDAR_DATETYPE_SCHEDULED: "計畫",
+  CALENDAR_DATETYPE_CREATED: "建立",
+  CALENDAR_DATETYPE_DONE: "完成",
+  CALENDAR_DATETYPE_CANCELLED: "取消",
+
   // Misc
   INPUT_TITLE_PASTE_ROOT: "MindMap Builder 貼上",
   INSTRUCTIONS: "> [!Tip]\n" +
@@ -941,6 +1025,17 @@ const K_PALETTE = "Custom Palette";
 const K_LAYOUT = "Layout Config";
 const K_ARROW_TYPE = "Arrow Type";
 const K_FILL_SWEEP = "Fill Sweep";
+const K_INJECT_LINK = "Inject Node Link";
+const K_LINK_ALIAS = "Node Link Alias";
+
+let injectNodeLink = getVal(K_INJECT_LINK, true);
+let nodeLinkAlias = getVal(K_LINK_ALIAS, "(link)");
+
+const isExcaliBrainView = () => {
+  if (!ea.targetView || !ea.targetView.file) return false;
+  const eb = app.plugins.plugins["excalibrain"];
+  return eb && eb.settings?.excalibrainFilepath === ea.targetView.file.path;
+};
 
 // ---------------------------------------------------------------------------
 // Layout & Geometry Settings
@@ -5408,6 +5503,14 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
   if (!isViewSet()) return;
   if (!text || text.trim() === "") return;
 
+  const preGenTextId = ea.generateElementId();
+  if (text.includes("__NODE_LINK_PLACEHOLDER__")) {
+    const file = app.workspace.getActiveFile();
+    const fileName = file ? file.basename : "";
+    const linkStr = `[[${fileName}#^group=${preGenTextId}|${nodeLinkAlias}]]`;
+    text = text.replace("__NODE_LINK_PLACEHOLDER__", linkStr);
+  }
+
   const st = getAppState();
   const isBatchMode = batchModeAllElements !== null;
 
@@ -5553,7 +5656,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         width: shouldWrap ? curMaxW : undefined,
         height: shouldWrap ? curMaxH : undefined,
         autoResize: !shouldWrap,
-      });
+      }, preGenTextId);
       ea.style.backgroundColor = "transparent";
     }
 
@@ -5721,7 +5824,7 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         width: shouldWrap ? curMaxW : undefined,
         height: shouldWrap ? curMaxH : undefined,
         autoResize: !shouldWrap,
-      });
+      }, preGenTextId);
     }
 
     if (depth === 1) {
@@ -8951,6 +9054,11 @@ const updateUI = (sel) => {
       setButtonDisabled(focusBtn, false);
       setButtonDisabled(floatingZoomBtn, false);
     }
+    // Enable task buttons if there's text input
+    if (inputEl && inputEl.value.trim() !== "") {
+      if (toggleCheckboxBtn) setButtonDisabled(toggleCheckboxBtn, false);
+      if (calendarBtn) setButtonDisabled(calendarBtn, false);
+    }
   }
 };
 
@@ -9818,7 +9926,7 @@ const renderInput = (container, isFloating = false) => {
   ignoreFocusChanges = true;
   setTimeout(() => {
     ignoreFocusChanges = false;
-    lastFocusedInput.focus();
+    if (lastFocusedInput) lastFocusedInput.focus();
   }, 200);
   container.empty();
 
@@ -9839,7 +9947,6 @@ const renderInput = (container, isFloating = false) => {
     inputRow.controlEl.style.marginTop = "8px";
   } else {
     container.style.width = "85vw";
-    // Updated max width limit to fit up to 18 icons long as requested
     container.style.maxWidth = "calc((var(--icon-size) + 2 * var(--size-2-3)) * 18)";
     inputRow.settingEl.style.border = "none";
     inputRow.settingEl.style.padding = "0";
@@ -9852,27 +9959,26 @@ const renderInput = (container, isFloating = false) => {
     secondaryButtonContainer.style.flexWrap = "wrap";
     secondaryButtonContainer.style.gap = "0px";
     secondaryButtonContainer.style.marginTop = "6px";
-    secondaryButtonContainer.style.flexWrap = "wrap";
   }
 
   // Clear default control element to build custom two-input layout
   inputRow.controlEl.empty();
-
   const wrapper = inputRow.controlEl.createDiv("mindmap-input-wrapper");
 
-  // --- Ontology Input ---
   ontologyEl = wrapper.createEl("input", {
     type: "text",
     cls: "mindmap-input-ontology",
     placeholder: t("ONTOLOGY_PLACEHOLDER")
   });
 
-  // --- Main Input ---
   inputEl = wrapper.createEl("input", {
     type: "text",
     cls: "mindmap-input-main",
     placeholder: t("INPUT_PLACEHOLDER")
   });
+
+  inputEl.addEventListener("input", () => updateUI());
+  ontologyEl.addEventListener("input", () => updateUI());
 
   const updateFocusState = (focusedElement) => {
     if (ignoreFocusChanges) return;
@@ -9928,7 +10034,6 @@ const renderInput = (container, isFloating = false) => {
     linkSuggester.modifyInput = (input) => input.replace(/\./g, " ");
   }
 
-  // Accessibility / ARIA labels
   const ariaHelp = [
     `${getActionLabel(ACTION_ADD)} (Enter)`,
     `${getActionLabel(ACTION_ADD_FOLLOW)} ${getActionHotkeyString(ACTION_ADD_FOLLOW)}`,
@@ -9988,7 +10093,6 @@ const renderInput = (container, isFloating = false) => {
     btn.onClick(() => performAction(ACTION_TOGGLE_CHECKBOX));
   }, true);
 
-  // Added calendar task date ontologies button
   addButton((btn) => {
     calendarBtn = btn;
     btn.setIcon("calendar");
@@ -10862,6 +10966,34 @@ const registerStyles = () => {
     ".mindmap-input-main { flex: 17; transition: flex-grow 0.3s ease; min-width: 0; }",
     ".mindmap-input-ontology.is-focused { flex: 17; }",
     ".mindmap-input-main.is-shrunk { flex: 1; }",
+    // Drag Handle Styles
+    ".excalidraw-mindmap-ui .mindmap-drag-handle {",
+    "  position: absolute;",
+    "  right: 0;",
+    "  top: 0;",
+    "  bottom: 0;",
+    "  width: 20px;",
+    "  cursor: grab;",
+    "  display: flex;",
+    "  align-items: center;",
+    "  justify-content: center;",
+    "  opacity: 0.4;",
+    "  color: var(--text-muted);",
+    "  transition: opacity 0.2s ease, color 0.2s ease;",
+    "  background: var(--background-secondary);",
+    "  border-left: 1px solid var(--background-modifier-border);",
+    "  border-top-right-radius: 6px;",
+    "  border-bottom-right-radius: 6px;",
+    "}",
+    ".excalidraw-mindmap-ui:focus-within .mindmap-drag-handle,",
+    ".excalidraw-mindmap-ui .mindmap-drag-handle:hover,",
+    ".excalidraw-mindmap-ui .mindmap-drag-handle:active {",
+    "  opacity: 1;",
+    "  color: var(--text-normal);",
+    "}",
+    ".excalidraw-mindmap-ui.is-dragging .mindmap-drag-handle {",
+    "  cursor: grabbing;",
+    "}"
   ].join("\n");
   document.head.appendChild(styleEl);
 };
@@ -10970,12 +11102,61 @@ const toggleDock = async ({
       headerEl.style.display = "none";
       modalEl.style.opacity = `${FLOAT_MODAL_OPACITY}`;
       modalEl.style.padding = "6px";
+      modalEl.style.paddingRight = "26px"; // Make room for the drag handle
       modalEl.style.minHeight = "0px";
       modalEl.style.width = "fit-content";
       modalEl.style.height = "auto";
       modalEl.style.maxHeight = FLOAT_MODAL_MAX_HEIGHT;
+
+      if (isExcaliBrainView()) {
+        modalEl.style.display = "none";
+      }
+
       const container = floatingInputModal.contentEl.createDiv();
       renderInput(container, true);
+      
+      // Setup Drag Handle
+      const dragHandle = modalEl.createDiv("mindmap-drag-handle");
+      dragHandle.innerHTML = ea.obsidian.getIcon("grip-vertical").outerHTML;
+      
+      let isDragging = false;
+      let startX, startY, initialLeft, initialTop;
+      
+      dragHandle.addEventListener("pointerdown", (e) => {
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = modalEl.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+        dragHandle.setPointerCapture(e.pointerId);
+        modalEl.classList.add("is-dragging");
+        e.preventDefault();
+      });
+      
+      dragHandle.addEventListener("pointermove", (e) => {
+        if(!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        modalEl.style.left = `${initialLeft + dx}px`;
+        modalEl.style.top = `${initialTop + dy}px`;
+      });
+      
+      dragHandle.addEventListener("pointerup", (e) => {
+        isDragging = false;
+        dragHandle.releasePointerCapture(e.pointerId);
+        modalEl.classList.remove("is-dragging");
+      });
+      
+      dragHandle.addEventListener("dblclick", (e) => {
+        const { x, y } = ea.targetView.contentEl.getBoundingClientRect();
+        const desktopShift = !!ea.targetView.contentEl.querySelector(".App-bottom-bar .App-toolbar") ?
+          0 :
+          (ea.targetView.contentEl.clientWidth < 1200 ? 36 : 0);
+        modalEl.style.top = `${y + FLOAT_MODAL_OFFSET + desktopShift}px`;
+        modalEl.style.left = `${x + FLOAT_MODAL_OFFSET}px`;
+      });
+
       setTimeout(() => {
         //the modalEl is repositioned after a delay
         //otherwise the event handlers in FloatingModal would override the move
@@ -11419,7 +11600,7 @@ const openCalendarModal = async () => {
     };
 
     leftNav.createSpan({
-      text: `Date ${activeDateIndex + 1} of ${dates.length}`
+      text: t("CALENDAR_DATE_INDEX", { index: activeDateIndex + 1, total: dates.length })
     });
 
     const nextBtn = leftNav.createEl("button");
@@ -11455,7 +11636,7 @@ const openCalendarModal = async () => {
 
     // 1) Date picker input (Focus First)
     new ea.obsidian.Setting(contentEl)
-      .setName("Date")
+      .setName(t("CALENDAR_DATE_LABEL"))
       .addText(text => {
         dateInputComp = text;
         text.inputEl.type = "date";
@@ -11482,7 +11663,7 @@ const openCalendarModal = async () => {
 
     // 2) Field type configuration selector matching active schema ontology
     new ea.obsidian.Setting(contentEl)
-      .setName("Date Type")
+      .setName(t("CALENDAR_DATE_TYPE"))
       .addDropdown(dropdown => {
         typeDropdownComp = dropdown;
         if (uiOpts.mode === 'dataview') {
@@ -11493,12 +11674,12 @@ const openCalendarModal = async () => {
           dropdown.addOption("done", "✅ [done:: ]");
           dropdown.addOption("cancelled", "❌ [cancelled:: ]");
         } else {
-          dropdown.addOption("due", "📅 Due");
-          dropdown.addOption("start", "🛫 Start");
-          dropdown.addOption("scheduled", "⏳ Scheduled");
-          dropdown.addOption("created", "➕ Created");
-          dropdown.addOption("done", "✅ Done");
-          dropdown.addOption("cancelled", "❌ Cancelled");
+          dropdown.addOption("due", `📅 ${t("CALENDAR_DATETYPE_DUE")}`);
+          dropdown.addOption("start", `🛫 ${t("CALENDAR_DATETYPE_START")}`);
+          dropdown.addOption("scheduled", `⏳ ${t("CALENDAR_DATETYPE_SCHEDULED")}`);
+          dropdown.addOption("created", `➕ ${t("CALENDAR_DATETYPE_CREATED")}`);
+          dropdown.addOption("done", `✅ ${t("CALENDAR_DATETYPE_DONE")}`);
+          dropdown.addOption("cancelled", `❌ ${t("CALENDAR_DATETYPE_CANCELLED")}`);
         }
         dropdown.setValue(activeDateObj.type);
         dropdown.onChange(val => {
@@ -11508,14 +11689,14 @@ const openCalendarModal = async () => {
 
     // 3) Priority selector mapped to native Tasks emojis
     new ea.obsidian.Setting(contentEl)
-      .setName("Priority")
+      .setName(t("CALENDAR_PRIORITY"))
       .addDropdown(dropdown => {
-        dropdown.addOption("highest", "🔺 Highest");
-        dropdown.addOption("high", "⏫ High");
-        dropdown.addOption("medium", "🔼 Medium");
-        dropdown.addOption("normal", " Normal");
-        dropdown.addOption("low", "🔽 Low");
-        dropdown.addOption("lowest", "⏬ Lowest");
+        dropdown.addOption("highest", `🔺 ${t("CALENDAR_PRIORITY_HIGHEST")}`);
+        dropdown.addOption("high", `⏫ ${t("CALENDAR_PRIORITY_HIGH")}`);
+        dropdown.addOption("medium", `🔼 ${t("CALENDAR_PRIORITY_MEDIUM")}`);
+        dropdown.addOption("normal", `  ${t("CALENDAR_PRIORITY_NORMAL")}`);
+        dropdown.addOption("low", `🔽 ${t("CALENDAR_PRIORITY_LOW")}`);
+        dropdown.addOption("lowest", `⏬ ${t("CALENDAR_PRIORITY_LOWEST")}`);
         dropdown.setValue(priority);
         dropdown.onChange(val => {
           priority = val;
@@ -11524,15 +11705,44 @@ const openCalendarModal = async () => {
 
     // 4) Recurrence free text input
     const recSetting = new ea.obsidian.Setting(contentEl)
-      .setName("Recurrence")
+      .setName(t("CALENDAR_RECURRENCE"))
       .addText(text => {
-        text.setPlaceholder("every day")
+        text.setPlaceholder(t("CALENDAR_RECURRENCE_PLACEHOLDER"))
           .setValue(recurrence)
           .onChange(val => {
             recurrence = val;
           });
       });
-    recSetting.descEl.innerHTML = `e.g., 'every day', 'every 2 weeks' <br><a href="https://publish.obsidian.md/tasks/Getting+Started/Recurring+Tasks" target="_blank" tabindex="-1">Tasks recurrence docs</a>`;
+    recSetting.descEl.innerHTML = t("CALENDAR_RECURRENCE_DESC");
+
+    // 5) Inject Node Link toggle
+    const linkSettingsRow = new ea.obsidian.Setting(contentEl)
+      .setName(t("CALENDAR_INJECT_LINK"))
+      .setDesc(t("CALENDAR_INJECT_LINK_DESC"));
+
+    let aliasTextComp;
+    linkSettingsRow.addToggle(toggle => {
+      toggle.setValue(injectNodeLink)
+            .onChange(val => {
+              injectNodeLink = val;
+              setVal(K_INJECT_LINK, val);
+              dirty = true;
+              aliasTextComp.inputEl.style.display = val ? "" : "none";
+            });
+    });
+    linkSettingsRow.addText(text => {
+      aliasTextComp = text;
+      text.setPlaceholder(t("CALENDAR_ALIAS_PLACEHOLDER"))
+          .setValue(nodeLinkAlias)
+          .onChange(val => {
+            nodeLinkAlias = val || "link";
+            setVal(K_LINK_ALIAS, nodeLinkAlias);
+            dirty = true;
+          });
+      text.inputEl.style.display = injectNodeLink ? "" : "none";
+      text.inputEl.style.width = "100px";
+      text.inputEl.style.marginLeft = "10px";
+    });
 
     // Controls button block
     const btnContainer = contentEl.createDiv({
@@ -11542,15 +11752,20 @@ const openCalendarModal = async () => {
     });
 
     const cancelBtn = btnContainer.createEl("button", {
-      text: "Cancel"
+      text: t("CALENDAR_BTN_CANCEL")
     });
     cancelBtn.onclick = () => modal.close();
 
+    const taskOnlyBtn = btnContainer.createEl("button", {
+      text: t("CALENDAR_BTN_TASK_ONLY")
+    });
+    taskOnlyBtn.onclick = () => handleSave(false);
+
     const saveBtn = btnContainer.createEl("button", {
-      text: "Apply",
+      text: t("CALENDAR_BTN_ADD_DATE_TASK"),
       cls: "mod-cta"
     });
-    saveBtn.onclick = handleSave;
+    saveBtn.onclick = () => handleSave(true);
 
     // Date picker auto-open / focus
     setTimeout(() => {
@@ -11565,66 +11780,83 @@ const openCalendarModal = async () => {
     }, 50);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (includeDate = true) => {
     modal.close();
 
     let tasksString = "";
-    const validDates = dates.filter(d => d.date);
 
-    if (uiOpts.mode === 'dataview') {
-      let priorityStr = "";
-      const priorityMap = {
-        'highest': '🔺',
-        'high': '⏫',
-        'medium': '🔼',
-        'normal': '',
-        'low': '🔽',
-        'lowest': '⏬'
-      };
-      if (priority !== 'normal') priorityStr = priorityMap[priority];
+    if (includeDate) {
+      const validDates = dates.filter(d => d.date);
+      if (uiOpts.mode === 'dataview') {
+        let priorityStr = "";
+        const priorityMap = {
+          'highest': '🔺',
+          'high': '⏫',
+          'medium': '🔼',
+          'normal': '',
+          'low': '🔽',
+          'lowest': '⏬'
+        };
+        if (priority !== 'normal') priorityStr = priorityMap[priority];
 
-      let dateStrs = validDates.map(d => `[${d.type}:: ${d.date}]`);
-      let recStr = recurrence ? `[recurrence:: ${recurrence}]` : "";
+        let dateStrs = validDates.map(d => `[${d.type}:: ${d.date}]`);
+        let recStr = recurrence ? `[recurrence:: ${recurrence}]` : "";
 
-      const parts = [priorityStr, ...dateStrs, recStr].filter(Boolean);
-      if (parts.length > 0) tasksString = " " + parts.join("  ");
-    } else {
-      let priorityStr = "";
-      const priorityMap = {
-        'highest': ' 🔺',
-        'high': ' ⏫',
-        'medium': ' 🔼',
-        'normal': '',
-        'low': ' 🔽',
-        'lowest': ' ⏬'
-      };
-      priorityStr = priorityMap[priority] || "";
+        const parts = [priorityStr, ...dateStrs, recStr].filter(Boolean);
+        if (parts.length > 0) tasksString = " " + parts.join("  ");
+      } else {
+        let priorityStr = "";
+        const priorityMap = {
+          'highest': ' 🔺',
+          'high': ' ⏫',
+          'medium': ' 🔼',
+          'normal': '',
+          'low': ' 🔽',
+          'lowest': ' ⏬'
+        };
+        priorityStr = priorityMap[priority] || "";
 
-      const emojiMap = {
-        'due': '📅',
-        'start': '🛫',
-        'scheduled': '⏳',
-        'created': '➕',
-        'done': '✅',
-        'cancelled': '❌'
-      };
-      let dateStrs = validDates.map(d => ` ${emojiMap[d.type]} ${d.date}`);
-      let recStr = recurrence ? ` 🔁 ${recurrence}` : "";
+        const emojiMap = {
+          'due': '📅',
+          'start': '🛫',
+          'scheduled': '⏳',
+          'created': '➕',
+          'done': '✅',
+          'cancelled': '❌'
+        };
+        let dateStrs = validDates.map(d => ` ${emojiMap[d.type]} ${d.date}`);
+        let recStr = recurrence ? ` 🔁 ${recurrence}` : "";
 
-      tasksString = `${priorityStr}${dateStrs.join("")}${recStr}`;
+        tasksString = `${priorityStr}${dateStrs.join("")}${recStr}`;
+      }
     }
 
     const taskRegex = /^- \[([ xX])\] (.*)/s;
     const match = targetText.match(taskRegex);
 
     let cleanText = cleanTasksString(match ? match[2] : targetText);
+    
+    // Ensure we don't duplicate an existing auto-generated link at the end
+    const linkRegex = /\s*\(\[\[[^\]]+#\^group=[a-zA-Z0-9_-]+\|[^\]]+\]\]\)$/;
+    if (linkRegex.test(cleanText)) {
+      cleanText = cleanText.replace(linkRegex, "");
+    }
+    
     let finalPrefix = match ? `- [${match[1]}] ` : "- [ ] ";
-
     let newText = `${finalPrefix}${cleanText}${tasksString}`;
+
+    if (injectNodeLink) {
+      if (isInputEl) {
+        newText += ` __NODE_LINK_PLACEHOLDER__`;
+      } else {
+        const file = app.workspace.getActiveFile();
+        const fileName = file ? file.basename : "";
+        newText += ` ([[${fileName}#^group=${textElId}|${nodeLinkAlias}]])`;
+      }
+    }
 
     if (isInputEl) {
       inputEl.value = newText;
-      debugger;
       updateUI();
     } else {
       const all = ea.getViewElements();
@@ -11661,7 +11893,7 @@ const openCalendarModal = async () => {
       if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         e.stopPropagation();
-        handleSave();
+        handleSave(true);
       }
       // Prevent Escape from propagating to the underlying floating modal or canvas
       if (e.key === "Escape") {
@@ -13149,6 +13381,7 @@ const handleCanvasPointerDown = (e) => {
 };
 
 /* --- Initialization Logic --- */
+/* --- Initialization Logic --- */
 ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
 
   if (!tab) return;
@@ -13279,9 +13512,15 @@ ea.createSidepanelTab(t("DOCK_TITLE"), true, true).then((tab) => {
       const {
         modalEl
       } = floatingInputModal
-      if (modalEl.style.display === "none") {
-        modalEl.style.display = "";
+      
+      if (isExcaliBrainView()) {
+        modalEl.style.display = "none";
+      } else {
+        if (modalEl.style.display === "none") {
+          modalEl.style.display = "";
+        }
       }
+      
       if (ea.targetView && modalEl.ownerDocument !== ea.targetView.ownerDocument) {
         ea.targetView.ownerDocument.body.appendChild(modalEl);
         linkSuggester?.close();
