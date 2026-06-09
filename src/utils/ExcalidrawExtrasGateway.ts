@@ -7,7 +7,7 @@ const EXTRAS_PLUGIN_ID = "excalidraw-extras";
 
 const REQUIRED_EXTRAS_VERSIONS: Record<string, { min?: string; exact?: string }> = {
   mathjax: { min: "1.0.0" },
-  mermaid: { exact: "1.0.0" },
+  mermaid: { exact: "2.2.2" },
   pdf: { min: "1.0.0" }
 };
 
@@ -30,6 +30,11 @@ export class ExcalidrawExtrasGateway {
   public async getExportToPDF(): Promise<ExcalidrawExtrasAPI["pdf"] | null> {
     const api = await this.ensureActiveAndGetAPI("pdf");
     return api ? api.pdf : null;
+  }
+
+  public async getMermaid(): Promise<ExcalidrawExtrasAPI["mermaid"] | null> {
+    const api = await this.ensureActiveAndGetAPI("mermaid" as ExtrasComponent);
+    return api ? api.mermaid : null;
   }
 
   private async ensureActiveAndGetAPI(component: ExtrasComponent): Promise<ExcalidrawExtrasAPI | null> {
