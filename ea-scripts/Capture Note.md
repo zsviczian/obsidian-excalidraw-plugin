@@ -682,7 +682,7 @@ async function prepareTargetExcalidrawView(noteBWorkspaceLeaf) {
 }
 
 // Injects the visual frame marker and template onto the target Note B
-async function injectVisualFormat(target_ea, targetX, targetY, sectionRawText, todayDNPBasename, isCurrentDNP, preGeneratedFrameID, embeddedElementId, ontologyAction, originFilePath) {
+async function injectVisualFormat(target_ea, targetX, targetY, sectionRawText, todayDNPBasename, isCurrentDNP, preGeneratedFrameID, embeddedElementId, ontologyAction, originFilePath, opt) {
   const fWidth = parseInt(settings.frameWidth) || 1920;
   const fHeight = parseInt(settings.frameHeight) || 1080;
 
@@ -715,9 +715,15 @@ async function injectVisualFormat(target_ea, targetX, targetY, sectionRawText, t
   }
 
   let clonedTemplateElementIds = [];
-  if (settings.visualTemplateJSON) {
+  
+  // Resolve Visual Template details with fallback to global settings
+  const visualTemplateJSON = opt?.visualTemplateJSON || settings.visualTemplateJSON;
+  const visualTemplateHAlign = opt?.visualTemplateHAlign || settings.visualTemplateHAlign || "center";
+  const visualTemplateVAlign = opt?.visualTemplateVAlign || settings.visualTemplateVAlign || "middle";
+
+  if (visualTemplateJSON) {
     try {
-      const parsed = JSON.parse(settings.visualTemplateJSON);
+      const parsed = JSON.parse(visualTemplateJSON);
       if (parsed.elements && parsed.elements.length > 0) {
         const clonedElements = ExcalidrawLib.restoreElements(
           target_ea.cloneElements(parsed.elements,
@@ -735,17 +741,17 @@ async function injectVisualFormat(target_ea, targetX, targetY, sectionRawText, t
         let offsetX = 0;
         let offsetY = 0;
 
-        if (settings.visualTemplateHAlign === "left") {
+        if (visualTemplateHAlign === "left") {
           offsetX = targetX - bounds[0] + FRAME_MARGIN;
-        } else if (settings.visualTemplateHAlign === "right") {
+        } else if (visualTemplateHAlign === "right") {
           offsetX = targetX + fWidth - bounds[2] - FRAME_MARGIN;
         } else {
           offsetX = targetX + (fWidth - boundsWidth) / 2 - bounds[0];
         }
 
-        if (settings.visualTemplateVAlign === "top") {
+        if (visualTemplateVAlign === "top") {
           offsetY = targetY - bounds[1] + FRAME_MARGIN;
-        } else if (settings.visualTemplateVAlign === "bottom") {
+        } else if (visualTemplateVAlign === "bottom") {
           offsetY = targetY + fHeight - bounds[3] - FRAME_MARGIN;
         } else {
           offsetY = targetY + (fHeight - boundsHeight) / 2 - bounds[1];
@@ -1131,6 +1137,11 @@ async function handleFinalActionFocus(actionType, originView, noteBWorkspaceLeaf
         target_ea.viewZoomToElements(format !== "Visual", targetElements, 0.1);
       }
     }
+    
+    // Set MMB view if Visual and mmAPI is available
+    if (format === "Visual" && window.MindMapBuilderAPI && target_ea.targetView) {
+      window.MindMapBuilderAPI.setView(target_ea.targetView);
+    }
   }
 }
 
@@ -1434,7 +1445,7 @@ async function start() {
   // 11. Inject onto Target Note using preGeneratedFrameID
   let clonedTemplateElementIds = [];
   if (format === "Visual") {
-    const visualRes = await injectVisualFormat(target_ea, targetX, targetY, sectionRawText, todayDNPBasename, isCurrentDNP, preGeneratedFrameID, embeddedElementId, ontologyAction, originView.file.path);
+    const visualRes = await injectVisualFormat(target_ea, targetX, targetY, sectionRawText, todayDNPBasename, isCurrentDNP, preGeneratedFrameID, embeddedElementId, ontologyAction, originView.file.path, opt);
     clonedTemplateElementIds = visualRes.clonedTemplateElementIds;
   } else {
     await injectMarkdownFormat(file, target_ea, targetX, targetY, sectionRawText, sectionWithBrackets, todayDNPBasename, isCurrentDNP, preGeneratedFrameID, embeddedElementId, ontologyAction, originView.file.path);
@@ -1601,28 +1612,49 @@ function buildCaptureSearchBox(contentEl, state, callbacks) {
       return;
     }
     
-    // Tokenize the query into individual words for partial matching
     const q = query.toLowerCase().trim();
-    const searchTerms = q.split(/\s+/);
+    // Helper to escape regex special characters
+    const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const tokens = q.split(/\s+/);
+    // Create an ordered regex pattern (e.g. "my.*search.*term")
+    const fuzzyRegex = new RegExp(tokens.map(escapeRegex).join('.*'), 'i');
     
-    const uniqueItems = new Map();
+    const scoredItems = new Map();
+
     state.searchItems.forEach(item => {
-      const searchableText = item.type === "alias" ? `${item.basename} ${item.alias}` : item.basename;
-      const searchableTextLower = searchableText.toLowerCase();
+      // Search against the full file path if available, otherwise fallback to basename
+      const searchableText = item.file 
+        ? item.file.path + (item.type === "alias" && item.alias ? " " + item.alias : "") 
+        : item.basename;
       
-      // Ensure all partial words are found
-      const matches = searchTerms.every(term => searchableTextLower.includes(term));
-      
-      if (matches) {
+      if (fuzzyRegex.test(searchableText)) {
+        // Evaluate if it's an exact match on either the basename or alias
+        const isExactBasename = item.basename.toLowerCase() === q;
+        const isExactAlias = item.type === "alias" && item.alias.toLowerCase() === q;
+        const isExact = isExactBasename || isExactAlias;
+        
+        const mtime = item.file?.stat?.mtime || 0;
+
         // Include file path to differentiate identical basenames
         const pathSuffix = item.file ? `:${item.file.path}` : "";
         const key = item.type === "alias" ? `alias:${item.basename}:${item.alias}${pathSuffix}` : `${item.type}:${item.basename}${pathSuffix}`;
-        if (!uniqueItems.has(key)) {
-          uniqueItems.set(key, item);
+        
+        const current = scoredItems.get(key);
+        // Add to map if unique, or if it represents a higher scoring match instance
+        if (!current || isExact > current.isExact || (isExact === current.isExact && mtime > current.mtime)) {
+          scoredItems.set(key, { item, isExact, mtime });
         }
       }
     });
-    matchedItems = Array.from(uniqueItems.values()).slice(0, 8);
+
+    // Sort exact matches to the top, then sort by most recently modified
+    matchedItems = Array.from(scoredItems.values())
+      .sort((a, b) => {
+        if (a.isExact !== b.isExact) return a.isExact ? -1 : 1;
+        return b.mtime - a.mtime;
+      })
+      .map(s => s.item)
+      .slice(0, 8);
     
     if (matchedItems.length > 0) {
       resultsDropdown.style.display = "block";
@@ -2108,11 +2140,11 @@ function buildVisualSizingSection(contentEl) {
       .onChange(val => { settings.openNoteBBehavior = val; }));
 }
 
-async function refreshTemplatePreview(previewDiv, alignSettingsDiv, refreshCallback) {
+async function refreshTemplatePreview(previewDiv, alignSettingsDiv, configObj, saveCallback, refreshCallback) {
   previewDiv.empty();
   alignSettingsDiv.empty();
   
-  if (!settings.visualTemplateJSON) {
+  if (!configObj.visualTemplateJSON) {
     const pasteBtn = previewDiv.createEl("button", { text: "Paste Excalidraw Elements from Clipboard" });
     pasteBtn.addEventListener("click", async () => {
       try {
@@ -2123,8 +2155,16 @@ async function refreshTemplatePreview(previewDiv, alignSettingsDiv, refreshCallb
             new Notice("Image elements are not supported in visual templates.");
             return;
           }
-          settings.visualTemplateJSON = text;
-          ea.setScriptSettings(settings);
+          
+          // Run pasted elements through restoreElements
+          parsed.elements = window.ExcalidrawLib.restoreElements(
+            parsed.elements,
+            null,
+            { refreshDimensions: true, repairBindings: true }
+          );
+          
+          configObj.visualTemplateJSON = JSON.stringify(parsed);
+          saveCallback();
           refreshCallback();
         } else {
           new Notice("Clipboard does not contain valid Excalidraw elements.");
@@ -2135,7 +2175,7 @@ async function refreshTemplatePreview(previewDiv, alignSettingsDiv, refreshCallb
     });
   } else {
     try {
-      const parsed = JSON.parse(settings.visualTemplateJSON);
+      const parsed = JSON.parse(configObj.visualTemplateJSON);
       const svg = await ea.createViewSVG({
         elementsOverride: parsed.elements,
         withBackground: false,
@@ -2152,8 +2192,8 @@ async function refreshTemplatePreview(previewDiv, alignSettingsDiv, refreshCallb
       const delBtn = headerRow.createEl("button", { cls: "clickable-icon" });
       delBtn.innerHTML = ea.obsidian.getIcon("trash-2").outerHTML;
       delBtn.addEventListener("click", () => {
-        settings.visualTemplateJSON = "";
-        ea.setScriptSettings(settings);
+        configObj.visualTemplateJSON = "";
+        saveCallback();
         refreshCallback();
       });
       
@@ -2163,8 +2203,8 @@ async function refreshTemplatePreview(previewDiv, alignSettingsDiv, refreshCallb
           .addOption("top", "Top")
           .addOption("middle", "Middle")
           .addOption("bottom", "Bottom")
-          .setValue(settings.visualTemplateVAlign || "middle")
-          .onChange(v => { settings.visualTemplateVAlign = v; ea.setScriptSettings(settings); })
+          .setValue(configObj.visualTemplateVAlign || "middle")
+          .onChange(v => { configObj.visualTemplateVAlign = v; saveCallback(); })
         );
         
       new ea.obsidian.Setting(alignSettingsDiv)
@@ -2173,12 +2213,12 @@ async function refreshTemplatePreview(previewDiv, alignSettingsDiv, refreshCallb
           .addOption("left", "Left")
           .addOption("center", "Center")
           .addOption("right", "Right")
-          .setValue(settings.visualTemplateHAlign || "center")
-          .onChange(v => { settings.visualTemplateHAlign = v; ea.setScriptSettings(settings); })
+          .setValue(configObj.visualTemplateHAlign || "center")
+          .onChange(v => { configObj.visualTemplateHAlign = v; saveCallback(); })
         );
     } catch (e) {
-      settings.visualTemplateJSON = "";
-      ea.setScriptSettings(settings);
+      configObj.visualTemplateJSON = "";
+      saveCallback();
       refreshCallback();
       new Notice("Failed to load visual template preview.");
     }
@@ -2192,7 +2232,13 @@ function buildVisualTemplateSection(contentEl) {
   const previewDiv = templateSection.createDiv();
   const alignSettingsDiv = templateSection.createDiv();
 
-  const refreshCallback = () => refreshTemplatePreview(previewDiv, alignSettingsDiv, refreshCallback);
+  const refreshCallback = () => refreshTemplatePreview(
+    previewDiv, 
+    alignSettingsDiv, 
+    settings, 
+    () => ea.setScriptSettings(settings), 
+    refreshCallback
+  );
   refreshCallback();
 }
 
@@ -2604,6 +2650,26 @@ function openEditNoteTypeModal(noteTypeKey, saveCallback) {
     });
 
     renderChips();
+
+    // Note Type Specific Visual Template Elements
+    const templateSection = contentEl.createEl("details", { cls: "setting-sub-section", attr: { style: "margin-top: 15px;" } });
+    templateSection.createEl("summary", { text: "Note Type Specific Visual Template Elements" });
+    templateSection.createEl("p", {
+      text: "If defined, these elements will override the global visual template.",
+      attr: { style: "color: var(--text-muted); font-size: 0.9em; margin-bottom: 10px;" }
+    });
+    
+    const previewDiv = templateSection.createDiv();
+    const alignSettingsDiv = templateSection.createDiv();
+
+    const refreshVisualTemplateCallback = () => refreshTemplatePreview(
+        previewDiv, 
+        alignSettingsDiv, 
+        typeConfig, 
+        () => {}, // Changes will be formally persisted when the modal "Save" button is clicked
+        refreshVisualTemplateCallback
+    );
+    refreshVisualTemplateCallback();
   };
 
   modal.onClose = () => {
