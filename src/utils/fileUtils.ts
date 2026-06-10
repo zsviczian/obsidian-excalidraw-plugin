@@ -388,16 +388,12 @@ export const readLocalFile = async (filePath: string): Promise<string> => {
   if (!DEVICE.isDesktop) {
     return null;
   }
-  return new Promise((resolve, reject) => {
-    const adapter = EXCALIDRAW_PLUGIN.app.vault.adapter as NodeFsDataAdapter;
-    adapter.fs.readFile(filePath, "utf8", (err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(data);
-      }
-    });
-  });
+  const fsApi = await EXCALIDRAW_PLUGIN.extrasGateway.getFileSystem();
+  if (!fsApi) {
+    return null; // Gateway handles user prompting
+  }
+
+  return fsApi.readLocalFile(filePath, EXCALIDRAW_PLUGIN.app);
 };
 
 export const readLocalFileBinary = async (
@@ -406,21 +402,12 @@ export const readLocalFileBinary = async (
   if (!DEVICE.isDesktop) {
     return null;
   }
-  return new Promise((resolve, reject) => {
-    const path = decodeURI(filePath);
-    const adapter = EXCALIDRAW_PLUGIN.app.vault.adapter as NodeFsDataAdapter;
-    adapter.fs.readFile(path, (err, data) => {
-      if (err) {
-        reject(err);
-      } else {
-        const arrayBuffer = data.buffer.slice(
-          data.byteOffset,
-          data.byteOffset + data.byteLength,
-        ) as ArrayBuffer;
-        resolve(arrayBuffer);
-      }
-    });
-  });
+  const fsApi = await EXCALIDRAW_PLUGIN.extrasGateway.getFileSystem();
+  if (!fsApi) {
+    return null;
+  }
+
+  return fsApi.readLocalFileBinary(filePath, EXCALIDRAW_PLUGIN.app);
 };
 
 export const getPathWithoutExtension = (f: TFile): string => {

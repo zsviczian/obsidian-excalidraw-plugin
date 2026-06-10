@@ -553,37 +553,23 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
     return (
       <div
         ref={this.containerRef}
-        className={clsx("excalidraw", {
+        className={clsx("excalidraw", "excalidraw-toolsPanel-wrapper", {
           "theme--dark": this.state.theme === "dark",
         })}
-        style={{
-          width: "100%",
-          height: "100%",
-          position: "absolute",
-          touchAction: "none",
-        }}
       >
         <div
-          className="Island"
+          className="Island excalidraw-toolsPanel-island"
           style={{
             top: `${this.state.top}px`,
             left: `${this.state.left}px`,
-            width: `16em`,
             display:
               this.state.visible && !this.state.excalidrawViewMode
                 ? "block"
                 : "none",
-            height: "fit-content",
-            maxHeight: "400px",
-            zIndex: 5,
           }}
         >
           <div
-            style={{
-              height: "26px",
-              width: "100%",
-              cursor: "move",
-            }}
+            className="excalidraw-toolsPanel-dragHandle"
             onClick={this.islandOnClick.bind(this)}
             onPointerDown={this.islandOnPointerDown.bind(this)}
           >
