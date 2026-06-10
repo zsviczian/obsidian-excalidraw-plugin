@@ -1,4 +1,5 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
+import visualizer from 'rollup-plugin-visualizer';
 import commonjs from '@rollup/plugin-commonjs';
 import replace from "@rollup/plugin-replace";
 import terser from "@rollup/plugin-terser";
@@ -195,6 +196,12 @@ const BUILD_CONFIG = {
           (_, g1, g2) => `${g1}${g2}${packageString}`
         ],
       ]),
+      /*visualizer({
+			  filename: 'bundle-analysis.html',
+			  open: true, // Automatically opens in your browser when the build finishes
+			  gzipSize: true,
+			  brotliSize: true,
+		  }),*/
     ] : [
       postprocess([ [/var React = require\('react'\);/, packageString] ]),
     ]),

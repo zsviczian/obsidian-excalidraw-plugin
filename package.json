@@ -81,6 +81,7 @@
     "prettier": "^3.0.1",
     "rollup": "^4.14.0",
     "rollup-plugin-copy": "^3.5.0",
+    "rollup-plugin-visualizer": "^7.0.1",
     "tslib": "^2.8.1",
     "typescript": "5.9.3",
     "uglify-js": "^3.19.3"
