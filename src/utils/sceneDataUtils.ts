@@ -3,6 +3,7 @@ import type { AppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import type { TFile } from "obsidian";
 import { FRONTMATTER_KEYS, getContainerElement } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
+import LZString from "lz-string";
 import {
   getDataURLFromURL,
   getMimeType,
@@ -119,6 +120,10 @@ export function compress(data: string): string {
   }
 
   return result.trim();
+}
+
+export async function decompressAsync(data: string): Promise<string> {
+  return await runCompressionWorker(data, "decompress");
 }
 
 export function decompress(data: string): string {

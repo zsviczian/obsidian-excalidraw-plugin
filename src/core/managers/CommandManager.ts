@@ -49,12 +49,7 @@ import {
   getListOfTemplateFiles,
   getURLImageExtension,
 } from "../../utils/fileUtils";
-import {
-  setLeftHandedMode,
-  sleep,
-  decompress,
-  getImageSize,
-} from "../../utils/utils";
+import { setLeftHandedMode, sleep, getImageSize } from "../../utils/utils";
 import {
   extractSVGPNGFileName,
   getActivePDFPageNumberFromPDFView,
@@ -95,6 +90,7 @@ import { insertImageToView } from "../../utils/excalidrawViewUtils";
 import ExcalidrawPlugin from "src/core/main";
 import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
 import { PaneTarget } from "src/types/utilTypes";
+import { decompress } from "src/utils/sceneDataUtils";
 
 declare const PLUGIN_VERSION: string;
 

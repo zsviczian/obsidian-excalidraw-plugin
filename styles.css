@@ -1086,3 +1086,23 @@ End Obsidian Sheets Plus support
   gap: 0.5em;
   margin-top: 1em;
 }
+
+.excalidraw-toolsPanel-wrapper {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  touch-action: none;
+}
+
+.excalidraw-toolsPanel-island {
+  width: 16em;
+  height: fit-content;
+  max-height: 400px;
+  z-index: 5;
+}
+
+.excalidraw-toolsPanel-dragHandle {
+  height: 26px;
+  width: 100%;
+  cursor: move;
+}

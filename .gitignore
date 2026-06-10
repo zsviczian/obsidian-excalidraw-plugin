@@ -16,6 +16,7 @@ dist
 tmp
 deploy.ps1
 eslint_results.json
+bundle-analysis.html
 
 #VSCode
 yarn.lock

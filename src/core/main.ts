@@ -1,3 +1,4 @@
+import { ExcalidrawExtrasGateway } from "../utils/ExcalidrawExtrasGateway";
 import {
   TFile,
   Plugin,
@@ -582,6 +583,7 @@ const migrateLegacyAISettings = (
 };
 
 export default class ExcalidrawPlugin extends Plugin {
+  public extrasGateway: ExcalidrawExtrasGateway;
   private fileManager: PluginFileManager;
   private observerManager: ObserverManager;
   private packageManager: PackageManager;
@@ -722,7 +724,25 @@ export default class ExcalidrawPlugin extends Plugin {
    * @returns shared mermaid instance
    */
   public async getMermaid() {
-    return await loadMermaid();
+    const mermaidApi = await this.extrasGateway.getMermaid();
+
+    if (mermaidApi) {
+      return {
+        loaded: true,
+        // Forwarding the raw module dynamically fetched by the Extras plugin.
+        // This makes your setup completely immune to upstream Mermaid signature changes.
+        api: mermaidApi.getModule(),
+      };
+    }
+
+    return {
+      loaded: false,
+      api: Promise.reject(
+        new Error(
+          "Mermaid to Excalidraw requires the Excalidraw Extras companion plugin.",
+        ),
+      ),
+    };
   }
 
   public isPenMode() {
@@ -852,6 +872,7 @@ export default class ExcalidrawPlugin extends Plugin {
     );
     await this.awaitSettings();
     this.logStartupEvent("Settings awaited");
+    this.extrasGateway = new ExcalidrawExtrasGateway(this.app, this);
     if (!this.settings.overrideObsidianFontSize) {
       setRootElementSize();
     }
@@ -1706,7 +1727,6 @@ export default class ExcalidrawPlugin extends Plugin {
     this.lastActiveExcalidrawFilePath = null;
 
     this.settings = null;
-    clearMathJaxVariables();
     //pluginPackages = null;
     //PLUGIN_VERSION = null;
     delete window.PolyBool;

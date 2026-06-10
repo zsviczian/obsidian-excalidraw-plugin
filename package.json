@@ -8,21 +8,14 @@
     "lib/**/*"
   ],
   "scripts": {
-    "predev": "node scripts/build-mathjax.mjs",
     "dev": "cross-env NODE_ENV=development rollup --config rollup.config.mjs",
-    "prebuild": "node scripts/build-mathjax.mjs",
     "build": "cross-env NODE_ENV=production rollup --config rollup.config.mjs",
-    "prelib": "node scripts/build-mathjax.mjs",
     "lib": "cross-env NODE_ENV=lib rollup --config rollup.config.mjs",
     "code": "eslint --max-warnings=0 --ext .ts,.tsx ./src",
     "code:fix": "eslint --max-warnings=0 --ext .ts,.tsx ./src --fix",
     "code:unused": "eslint --max-warnings=0 --ext .ts,.tsx ./src --quiet --format json | node -e \"let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const r=JSON.parse(d);for(const f of r){for(const m of f.messages||[]){if(m.ruleId==='@typescript-eslint/no-unused-vars'||m.ruleId==='no-unused-vars'){console.log(f.filePath+':'+m.line+':'+m.column+' '+m.ruleId+' '+m.message);}}}})\"",
     "code:escape": "eslint --max-warnings=0 --ext .ts,.tsx ./src --quiet --format json | node -e \"let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const r=JSON.parse(d);for(const f of r){for(const m of f.messages||[]){if(m.ruleId==='no-useless-escape'){console.log(f.filePath+':'+m.line+':'+m.column+' '+m.ruleId+' '+m.message);}}}})\"",
     "madge": "madge --circular .",
-    "build:mathjax": "cd MathjaxToSVG && npm run build",
-    "build:all": "npm run build:mathjax && npm run build",
-    "dev:mathjax": "cd MathjaxToSVG && npm run dev",
-    "dev:all": "npm run dev:mathjax && npm run dev",
     "doc": "npm run lib && node scripts/generate-script-library.js",
     "mindmap": "node scripts/deploy-mindmap-builder.js"
   },
@@ -30,9 +23,10 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "lz-string": "^1.5.0",
     "@popperjs/core": "^2.11.8",
     "@zsviczian/colormaster": "^1.2.2",
-    "@zsviczian/excalidraw": "0.18.100",
+    "@zsviczian/excalidraw": "0.18.101-beta.1",
     "chroma-js": "^3.1.2",
     "clsx": "^2.0.0",
     "es6-promise-pool": "2.5.0",
@@ -41,6 +35,7 @@
     "monkey-around": "^2.3.0",
     "nanoid": "^5.1.11",
     "opentype.js": "^1.3.4",
+    "pako": "^2.1.0",
     "polybooljs": "^1.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -73,6 +68,7 @@
     "@types/opentype.js": "^1.3.8",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
+    "@zsviczian/excalidraw-extras-api": "^0.0.13",
     "@zsviczian/rollup-plugin-postprocess": "^1.0.3",
     "cross-env": "^7.0.3",
     "cssnano": "^6.0.2",
@@ -81,12 +77,12 @@
     "eslint-plugin-obsidianmd": "^0.3.0",
     "eslint-plugin-prettier": "^5.0.0",
     "jsesc": "^3.0.2",
-    "lz-string": "^1.5.0",
     "obsidian": "1.8.7",
     "postcss": "^8.4.31",
     "prettier": "^3.0.1",
     "rollup": "^4.14.0",
     "rollup-plugin-copy": "^3.5.0",
+    "rollup-plugin-visualizer": "^7.0.1",
     "tslib": "^2.8.1",
     "typescript": "5.9.3",
     "uglify-js": "^3.19.3"
@@ -98,11 +94,7 @@
     "nanoid": "^5.1.11"
   },
   "resolutions": {
-    "strip-ansi": "^7.0.1",
-    "//lodash": "Addresses https://github.com/advisories/GHSA-f23m-r3pf-42rh based on Obsidian scanner results",
-    "lodash": "^4.18.1",
-    "lodash-es": "^4.18.1",
-    "nanoid": "^5.1.11"
+    "strip-ansi": "^7.0.1"
   },
   "prettier": "@excalidraw/prettier-config",
   "engines": {

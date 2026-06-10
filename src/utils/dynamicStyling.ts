@@ -190,7 +190,7 @@ export const setDynamicStyle = (
 
   const toolspanel = view.toolsPanelRef?.current?.containerRef?.current;
   if (toolspanel) {
-    let toolsStyle = toolspanel.getAttribute("style");
+    let toolsStyle = toolspanel.getAttribute("style") ?? "";
     toolsStyle = toolsStyle.replace(/--color-primary.*/, "");
     toolspanel.setAttribute("style", toolsStyle + styleString);
   }

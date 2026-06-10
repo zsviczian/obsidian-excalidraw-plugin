@@ -1,4 +1,5 @@
 import ExcalidrawPlugin from "src/core/main";
+import LZString from "lz-string";
 import {
   FillStyle,
   StrokeStyle,

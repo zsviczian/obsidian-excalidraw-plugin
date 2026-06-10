@@ -38,7 +38,6 @@ import { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 import { updateElementLinksToObsidianLinks } from "./excalidrawAutomateUtils";
 import { CropImage } from "../shared/CropImage";
 import opentype from "opentype.js";
-import { runCompressionWorker } from "src/shared/Workers/compression-worker";
 import Pool from "es6-promise-pool";
 import { t } from "src/lang/helpers";
 import { log } from "./debugHelper";
@@ -743,39 +742,6 @@ export function getLinkParts(fname: string, file?: TFile): LinkParts {
     height: parts[5] ? parseInt(parts[5]) : undefined,
     page,
   };
-}
-
-export async function compressAsync(data: string): Promise<string> {
-  return await runCompressionWorker(data, "compress");
-}
-
-export function compress(data: string): string {
-  const compressed = LZString.compressToBase64(data);
-  let result = "";
-  const chunkSize = 256;
-  for (let i = 0; i < compressed.length; i += chunkSize) {
-    result += `${compressed.slice(i, i + chunkSize)}\n\n`;
-  }
-
-  return result.trim();
-}
-
-export async function decompressAsync(data: string): Promise<string> {
-  return await runCompressionWorker(data, "decompress");
-}
-
-export function decompress(data: string): string {
-  let cleanedData = "";
-  const length = data.length;
-
-  for (let i = 0; i < length; i++) {
-    const char = data[i];
-    if (char !== "\n" && char !== "\r") {
-      cleanedData += char;
-    }
-  }
-
-  return LZString.decompressFromBase64(cleanedData);
 }
 
 export function isMaskFile(

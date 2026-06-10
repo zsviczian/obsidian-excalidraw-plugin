@@ -1522,4 +1522,34 @@ Thank you & Enjoy!
 
   //SuggestionModal.ts
   SUGGESTION_NOMATCH: "No matches found",
+
+  // Excalidraw Extras Gateway Components
+  EXTRAS_GATEWAY_COMP_MATHJAX: "MathJax (LaTeX)",
+  EXTRAS_GATEWAY_COMP_MERMAID: "Mermaid to Excalidraw",
+  EXTRAS_GATEWAY_COMP_PDF: "PDF Export",
+  EXTRAS_GATEWAY_COMP_FILESYSTEM: "Local File System Access",
+
+  // Gateway Modals & Texts
+  EXTRAS_GATEWAY_TITLE: "Excalidraw Extras Required",
+  EXTRAS_GATEWAY_DESC:
+    "To keep Excalidraw lightweight and secure, the '{component}' feature has been moved to the Excalidraw Extras companion plugin.",
+  EXTRAS_GATEWAY_INSTALL_BTN: "Install from Community Plugins",
+  EXTRAS_GATEWAY_ENABLE_PERM_BTN: "Enable Plugin Permanently",
+  EXTRAS_GATEWAY_ENABLE_FEATURE_PERM_BTN: "Enable {component} Permanently",
+  EXTRAS_GATEWAY_TEMP_ENABLE_TITLE: "Enable Temporarily",
+  EXTRAS_GATEWAY_TEMP_ENABLE_DESC:
+    "Turn on the feature temporarily. It will automatically turn off when the timer expires.",
+  EXTRAS_GATEWAY_SESSION_ENABLE_DESC:
+    "Enable this feature for the current Obsidian session only.",
+  EXTRAS_GATEWAY_ENABLE_CURRENT_SESSION: "Enable for this session",
+  EXTRAS_GATEWAY_TIMER_EXPIRED:
+    "Excalidraw Extras temporary timer expired. Plugin disabled.",
+  EXTRAS_GATEWAY_FEATURE_TIMER_EXPIRED:
+    "Excalidraw Extras: {component} timer expired. Feature disabled.",
+  EXTRAS_GATEWAY_API_MISSING:
+    "Excalidraw Extras is enabled, but the API failed to load. Please update the plugin.",
+  EXTRAS_GATEWAY_FEATURE_TITLE: "Feature Disabled",
+  EXTRAS_GATEWAY_FEATURE_DESC:
+    "The '{component}' feature is currently disabled in your Excalidraw Extras settings.",
+  EXTRAS_GATEWAY_IGNORE_SESSION: "Ignore for this session",
 };

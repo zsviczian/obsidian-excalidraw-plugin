@@ -1,5 +1,4 @@
 import { sanitizeHTMLToDom, setIcon } from "obsidian";
-import { mainDocument } from "src/constants/constants";
 
 const DISPLAY_CLASSES = [
   "excalidraw-display-none",
