@@ -35,7 +35,7 @@ function loadLocale(lang: string): Partial<typeof en> {
 
   try {
     const compressed = PLUGIN_LANGUAGES[lang];
-    const decompressed = LZString.decompressFromBase64(compressed);
+    const decompressed = unpackBase64Deflate(compressed);
 
     // Construct a factory function string.
     // This allows safeEval (which runs in the global scope) to access our imported variables

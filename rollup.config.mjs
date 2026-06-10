@@ -8,7 +8,6 @@ import copy from "rollup-plugin-copy";
 import typescript from "@rollup/plugin-typescript";
 import fs from 'fs';
 import path from 'path';
-import LZString from 'lz-string';
 import postprocess from '@zsviczian/rollup-plugin-postprocess';
 import cssnano from 'cssnano';
 import jsesc from 'jsesc';
@@ -105,7 +104,6 @@ const reactdom_pkg = isLib ? "" : minifyCode(isProd
   ? fs.readFileSync("./node_modules/react-dom/umd/react-dom.production.min.js", "utf8")
   : fs.readFileSync("./node_modules/react-dom/umd/react-dom.development.js", "utf8"));
 
-const lzstring_pkg = isLib ? "" : fs.readFileSync("./node_modules/lz-string/libs/lz-string.min.js", "utf8");
 const pako_pkg = isLib ? "" : fs.readFileSync("./node_modules/pako/dist/pako.min.js", "utf8");
 
 if (!isLib) {
@@ -135,7 +133,7 @@ if (!isLib) {
 
 const packageString = isLib
 ? ""
-: `;const INITIAL_TIMESTAMP=Date.now();\n${lzstring_pkg}\n` +
+: ';const INITIAL_TIMESTAMP=Date.now();\n' +
   'const pako = (function() {\n' +
   '  const module = { exports: {} };\n' +
   '  const exports = module.exports;\n' +

@@ -23,6 +23,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "lz-string": "^1.5.0",
     "@popperjs/core": "^2.11.8",
     "@zsviczian/colormaster": "^1.2.2",
     "@zsviczian/excalidraw": "0.18.101-beta.0",
@@ -76,7 +77,6 @@
     "eslint-plugin-obsidianmd": "^0.3.0",
     "eslint-plugin-prettier": "^5.0.0",
     "jsesc": "^3.0.2",
-    "lz-string": "^1.5.0",
     "obsidian": "1.8.7",
     "postcss": "^8.4.31",
     "prettier": "^3.0.1",

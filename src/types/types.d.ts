@@ -158,10 +158,7 @@ export type LocalGraphView = View & {
 };
 
 declare global {
-  const LZString: {
-    compressToBase64: (value: string) => string;
-    decompressFromBase64: (value: string) => string | null;
-  };
+  const unpackBase64Deflate: (value: string) => string;
 
   interface Window {
     ExcalidrawAutomate: ExcalidrawAutomate;

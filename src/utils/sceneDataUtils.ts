@@ -3,6 +3,7 @@ import type { AppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import type { TFile } from "obsidian";
 import { FRONTMATTER_KEYS, getContainerElement } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
+import LZString from "lz-string";
 import {
   getDataURLFromURL,
   getMimeType,
