@@ -179,30 +179,7 @@ export class ExcalidrawExtrasGateway {
     api: ExcalidrawExtrasAPI,
     minutes: number = 0,
   ) {
-    const isTemp = minutes !== 0; // -1 or > 0 means temporary
-    await api.features.enable(component, isTemp);
-
-    if (this.featureDisableTimers[component]) {
-      clearTimeout(this.featureDisableTimers[component]);
-    }
-    if (minutes > 0) {
-      // Only set a timeout if it's explicitly > 0 (not session)
-      this.featureDisableTimers[component] = setTimeout(
-        async () => {
-          await api.features.disable(component);
-          const compName = t(
-            `EXTRAS_GATEWAY_COMP_${component.toUpperCase()}` as any,
-          );
-          new Notice(
-            t("EXTRAS_GATEWAY_FEATURE_TIMER_EXPIRED").replace(
-              "{component}",
-              compName,
-            ),
-          );
-        },
-        minutes * 60 * 1000,
-      );
-    }
+    await api.features.enable(component, minutes);
   }
 
   private compareVersions(v1: string, v2: string): number {

@@ -227,8 +227,13 @@ export async function captureScreenshot(
           height: captureHeight * devicePixelRatio,
         });
 
+        const pngBytes = image.toPNG();
+        const pngBuffer =
+          pngBytes instanceof ArrayBuffer
+            ? Buffer.from(new Uint8Array(pngBytes))
+            : Buffer.from(pngBytes);
         tiles.push({
-          url: `data:image/png;base64,${image.toPNG().toString("base64")}`,
+          url: `data:image/png;base64,${pngBuffer.toString("base64")}`,
           width: captureWidth,
           height: captureHeight,
           col,

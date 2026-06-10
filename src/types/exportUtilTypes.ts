@@ -128,9 +128,3 @@ export interface ElectronAPI {
   };
   webUtils: ElectronWebUtilsLike;
 }
-
-declare global {
-  interface Window {
-    electron: ElectronAPI;
-  }
-}
