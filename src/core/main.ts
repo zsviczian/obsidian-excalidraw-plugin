@@ -725,19 +725,23 @@ export default class ExcalidrawPlugin extends Plugin {
    */
   public async getMermaid() {
     const mermaidApi = await this.extrasGateway.getMermaid();
-    
+
     if (mermaidApi) {
       return {
         loaded: true,
         // Forwarding the raw module dynamically fetched by the Extras plugin.
         // This makes your setup completely immune to upstream Mermaid signature changes.
-        api: mermaidApi.getModule()
+        api: mermaidApi.getModule(),
       };
     }
 
     return {
       loaded: false,
-      api: Promise.reject(new Error("Mermaid to Excalidraw requires the Excalidraw Extras companion plugin."))
+      api: Promise.reject(
+        new Error(
+          "Mermaid to Excalidraw requires the Excalidraw Extras companion plugin.",
+        ),
+      ),
     };
   }
 

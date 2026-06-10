@@ -41,9 +41,9 @@ export async function tex2dataURL(
 } | null> {
   // 1. Ask the gateway to verify the Extras plugin and return the MathJax API
   const mathjaxAPI = await plugin.extrasGateway.getMathJax();
-  
+
   if (!mathjaxAPI) {
-    // The Gateway handles the user prompts. If it returns null, the user cancelled, 
+    // The Gateway handles the user prompts. If it returns null, the user cancelled,
     // or they don't have the plugin/proper version. We abort cleanly.
     return null;
   }
@@ -52,17 +52,17 @@ export async function tex2dataURL(
   let preambleStr: string | null = null;
   const preamblePath = plugin.settings.latexPreambleLocation || "preamble.sty";
   const preambleFile = plugin.app.vault.getAbstractFileByPath(preamblePath);
-  
+
   if (preambleFile instanceof TFile) {
     preambleStr = await plugin.app.vault.cachedRead(preambleFile);
   }
 
   // 3. Hand the request off to the cleanly isolated Extras plugin
-  return await mathjaxAPI.tex2dataURL(tex, scale, preambleStr) as any;
+  return (await mathjaxAPI.tex2dataURL(tex, scale, preambleStr)) as any;
 }
 
 export const clearMathJaxVariables = (plugin: ExcalidrawPlugin) => {
-  // Try to access without prompting the user. 
+  // Try to access without prompting the user.
   // If the plugin is disabled, we don't need to clear variables anyway.
   const api = (plugin.app as any).plugins.plugins["excalidraw-extras"]?.api;
   if (api?.mathjax) {

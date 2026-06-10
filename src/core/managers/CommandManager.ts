@@ -49,11 +49,7 @@ import {
   getListOfTemplateFiles,
   getURLImageExtension,
 } from "../../utils/fileUtils";
-import {
-  setLeftHandedMode,
-  sleep,
-  getImageSize,
-} from "../../utils/utils";
+import { setLeftHandedMode, sleep, getImageSize } from "../../utils/utils";
 import {
   extractSVGPNGFileName,
   getActivePDFPageNumberFromPDFView,

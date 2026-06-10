@@ -1,5 +1,8 @@
 import { Notice } from "obsidian";
-import { DEVICE, EXCALIDRAW_PLUGIN, mainDocument } from "src/constants/constants";
+import {
+  DEVICE,
+  EXCALIDRAW_PLUGIN,
+} from "src/constants/constants";
 import { t } from "src/lang/helpers";
 import { download } from "./fileUtils";
 import { svgToBase64 } from "./utils";
@@ -9,7 +12,6 @@ import {
   PageSize,
   PDFExportScale,
   PDFMargin,
-  PrintToPDFOptions,
   PDFPageAlignment,
   PDFPageMarginString,
   PDFPageProperties,
@@ -68,28 +70,6 @@ function getPageSizePixels(
   return landscape
     ? { width: pageDimensions.height, height: pageDimensions.width }
     : { width: pageDimensions.width, height: pageDimensions.height };
-}
-
-function getPageSize(
-  pageSize: PageSize | PageDimensions,
-): string | { width: number; height: number } {
-  if (typeof pageSize === "string") {
-    return pageSize;
-  }
-
-  if (
-    !pageSize ||
-    typeof pageSize !== "object" ||
-    typeof pageSize.width !== "number" ||
-    typeof pageSize.height !== "number"
-  ) {
-    throw new Error("Invalid page dimensions");
-  }
-
-  return {
-    width: pageSize.width / DPI,
-    height: pageSize.height / DPI,
-  };
 }
 
 async function getSavePath(defaultPath: string): Promise<string | undefined> {

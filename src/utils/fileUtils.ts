@@ -36,20 +36,6 @@ export { splitFolderAndFilename } from "./pathUtils";
 
 type ImageExtension = keyof typeof IMAGE_MIME_TYPES;
 
-type NodeFsDataAdapter = DataAdapter & {
-  fs: {
-    readFile(
-      path: string,
-      encoding: BufferEncoding,
-      callback: (err: NodeJS.ErrnoException | null, data: string) => void,
-    ): void;
-    readFile(
-      path: string,
-      callback: (err: NodeJS.ErrnoException | null, data: Buffer) => void,
-    ): void;
-  };
-};
-
 /**
  * Download data as file from Obsidian, to store on local device
  * @param encoding

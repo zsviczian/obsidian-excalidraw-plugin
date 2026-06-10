@@ -23,7 +23,6 @@ import {
   AppState,
   BinaryFiles,
   DataURL,
-  GenerateDiagramToCode,
   Zoom,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
