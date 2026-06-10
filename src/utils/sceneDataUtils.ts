@@ -121,6 +121,10 @@ export function compress(data: string): string {
   return result.trim();
 }
 
+export async function decompressAsync(data: string): Promise<string> {
+  return await runCompressionWorker(data, "decompress");
+}
+
 export function decompress(data: string): string {
   let cleanedData = "";
   const length = data.length;

@@ -1,4 +1,5 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
+import zlib from 'node:zlib';
 import visualizer from 'rollup-plugin-visualizer';
 import commonjs from '@rollup/plugin-commonjs';
 import replace from "@rollup/plugin-replace";
@@ -14,6 +15,12 @@ import jsesc from 'jsesc';
 import { minify } from 'uglify-js';
 import json from '@rollup/plugin-json';
 import { parseEnv } from 'node:util';
+
+function compressDeflateBase64(code) {
+  // Compress using Node's native zlib at maximum compression
+  const compressed = zlib.deflateSync(Buffer.from(code, "utf-8"), { level: 9 });
+  return compressed.toString("base64");
+}
 
 try {
   const envContent = fs.readFileSync(path.resolve('.env'), 'utf8');
@@ -85,7 +92,7 @@ function compressLanguageFile(lang) {
   const filePath = `${inputDir}/${lang}.ts`;
   let content = fs.readFileSync(filePath, "utf-8");
   content = trimLastSemicolon(content.split("export default")[1].trim());
-  return LZString.compressToBase64(minifyCode(`x = ${content};`));
+  return compressDeflateBase64(minifyCode(`x = ${content};`));
 }
 
 const excalidraw_pkg = isLib ? "" : minifyCode(isProd
@@ -99,6 +106,8 @@ const reactdom_pkg = isLib ? "" : minifyCode(isProd
   : fs.readFileSync("./node_modules/react-dom/umd/react-dom.development.js", "utf8"));
 
 const lzstring_pkg = isLib ? "" : fs.readFileSync("./node_modules/lz-string/libs/lz-string.min.js", "utf8");
+const pako_pkg = isLib ? "" : fs.readFileSync("./node_modules/pako/dist/pako.min.js", "utf8");
+
 if (!isLib) {
   const excalidraw_styles = isProd
     ? fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/styles.production.css", "utf8")
@@ -125,12 +134,26 @@ if (!isLib) {
 }
 
 const packageString = isLib
-  ? ""
-  : ';const INITIAL_TIMESTAMP=Date.now();' + lzstring_pkg +
+? ""
+: `;const INITIAL_TIMESTAMP=Date.now();\n${lzstring_pkg}\n` +
+  'const pako = (function() {\n' +
+  '  const module = { exports: {} };\n' +
+  '  const exports = module.exports;\n' +
+  '  ' + pako_pkg + '\n' +
+  '  return module.exports;\n' +
+  '})();\n' +
   '\nlet REACT_PACKAGES = `' +
   jsesc(react_pkg + reactdom_pkg + jsxRuntimeShim, { quotes: 'backtick' }) +
   '`;\n' +
-  'const unpackExcalidraw = () => LZString.decompressFromBase64("' + LZString.compressToBase64(excalidraw_pkg) + '");\n' +
+  // NEW: Fast, mobile-compatible runtime decompression 
+  'const unpackBase64Deflate = (b64) => {\n' +
+  '  const binStr = atob(b64);\n' +
+  '  const len = binStr.length;\n' +
+  '  const bytes = new Uint8Array(len);\n' +
+  '  for (let i = 0; i < len; i++) bytes[i] = binStr.charCodeAt(i);\n' +
+  '  return new TextDecoder().decode(pako.inflate(bytes));\n' +
+  '};\n' +
+  'const unpackExcalidraw = () => unpackBase64Deflate("' + compressDeflateBase64(excalidraw_pkg) + '");\n' +
   'let {react, reactDOM } = new Function(`${REACT_PACKAGES}; return {react: React, reactDOM: ReactDOM};`)();\n' +
   'let excalidrawLib = {};\n' +
   `const PLUGIN_LANGUAGES = {${LANGUAGES.map(lang => `"${lang}": "${compressLanguageFile(lang)}"`).join(",")}};\n` +
