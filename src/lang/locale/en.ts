@@ -1532,7 +1532,7 @@ Thank you & Enjoy!
   // Gateway Modals & Texts
   EXTRAS_GATEWAY_TITLE: "Excalidraw Extras Required",
   EXTRAS_GATEWAY_DESC:
-    "To keep Excalidraw lightweight and secure, the '{component}' feature has been moved to the Excalidraw Extras companion plugin.",
+    "The '{component}' feature has been moved to the Excalidraw Extras companion plugin to keep Excalidraw lightweight, stay within Obsidian Sync Basic size restrictions, and give you explicit control over the additional libraries and elevated-permission functionality it requires.",
   EXTRAS_GATEWAY_INSTALL_BTN: "Install from Community Plugins",
   EXTRAS_GATEWAY_ENABLE_PERM_BTN: "Enable Plugin Permanently",
   EXTRAS_GATEWAY_ENABLE_FEATURE_PERM_BTN: "Enable {component} Permanently",
@@ -1552,4 +1552,12 @@ Thank you & Enjoy!
   EXTRAS_GATEWAY_FEATURE_DESC:
     "The '{component}' feature is currently disabled in your Excalidraw Extras settings.",
   EXTRAS_GATEWAY_IGNORE_SESSION: "Ignore for this session",
+  EXTRAS_GATEWAY_UPDATE_EXACT:
+    "Excalidraw Extras Update Required. {component} requires EXACTLY v{reqVersion} (Found v{currentVersion})",
+  EXTRAS_GATEWAY_UPDATE_MIN:
+    "Excalidraw Extras Update Required. {component} requires >= v{reqVersion} (Found v{currentVersion})",
+  EXTRAS_GATEWAY_COMP_PLUGIN: "Excalidraw Extras Plugin",
+  EXTRAS_GATEWAY_UPDATE_TITLE:
+    "Excalidraw requires a new version of the Extras plugin",
+  EXTRAS_GATEWAY_UPDATE_BTN: "Open Community Plugins",
 };

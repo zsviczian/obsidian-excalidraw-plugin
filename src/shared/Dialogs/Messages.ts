@@ -17,6 +17,18 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+  "2.24.0": `
+To keep Excalidraw lightweight, improve startup performance, reduce plugin size, and address Obsidian's high-risk code scanner findings, several advanced features have been moved to the new **Excalidraw Extras** companion plugin.
+
+The first time you use one of these features, Excalidraw will automatically prompt you to install Excalidraw Extras:
+
+- LaTeX formulas (MathJax)
+- Mermaid diagrams
+- PDF printing
+- Direct file system access (files outside your vault)
+
+This change reduces Excalidraw's size to under 5 MB, allowing even Obsidian Sync Basic users to sync the plugin across all devices while keeping the core plugin lighter.
+  `,
   "2.23.12": `
   ## Fixed
   - Code scanner error

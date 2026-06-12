@@ -12,6 +12,7 @@ const REQUIRED_EXTRAS_VERSIONS: Record<
   string,
   { min?: string; exact?: string }
 > = {
+  plugin: { min: "0.0.13" },
   mathjax: { min: "1.0.0" },
   mermaid: { exact: "2.2.2" },
   pdf: { min: "1.0.0" },
@@ -19,6 +20,14 @@ const REQUIRED_EXTRAS_VERSIONS: Record<
 };
 
 type ActionResolution = "success" | "ignore" | "cancel";
+
+export type VersionCheckResult = {
+  valid: boolean;
+  isExact?: boolean;
+  compName?: string;
+  reqVersion?: string;
+  currentVersion?: string;
+};
 
 export class ExcalidrawExtrasGateway {
   private pluginDisableTimer: NodeJS.Timeout | null = null;
@@ -62,9 +71,13 @@ export class ExcalidrawExtrasGateway {
     }
 
     if (!this.activationTask) {
-      this.activationTask = this.handleActivation(component).finally(() => {
-        this.activationTask = null; // Clear shared task for future triggers
-      });
+      this.activationTask = (async () => {
+        try {
+          return await this.handleActivation(component);
+        } finally {
+          this.activationTask = null;
+        }
+      })();
     }
 
     const resolution = await this.activationTask;
@@ -83,7 +96,7 @@ export class ExcalidrawExtrasGateway {
       return null;
     }
 
-    if (!this.isVersionValid(component, api)) {
+    if (!this.checkVersion(component, api).valid) {
       return null;
     }
 
@@ -96,7 +109,12 @@ export class ExcalidrawExtrasGateway {
     // If everything is already perfect, return success immediately
     if (this.isInstalled() && this.isPluginEnabled()) {
       const api = this.getAPI();
-      if (api && api.features.isActive(component)) {
+      // Added version check to the success path so it opens the modal if an update is needed
+      if (
+        api &&
+        api.features.isActive(component) &&
+        this.checkVersion(component, api).valid
+      ) {
         return "success";
       }
     }
@@ -114,59 +132,95 @@ export class ExcalidrawExtrasGateway {
   }
 
   public isInstalled(): boolean {
-    return !!(this.app as any).plugins.manifests[EXTRAS_PLUGIN_ID];
+    return !!this.app.plugins.manifests[EXTRAS_PLUGIN_ID];
   }
 
   public isPluginEnabled(): boolean {
-    return !!(this.app as any).plugins.plugins[EXTRAS_PLUGIN_ID];
+    return !!this.app.plugins.plugins[EXTRAS_PLUGIN_ID];
   }
 
   public getAPI(): ExcalidrawExtrasAPI | null {
-    return (this.app as any).plugins.plugins[EXTRAS_PLUGIN_ID]?.api || null;
+    return (
+      (this.app.plugins.plugins[EXTRAS_PLUGIN_ID]
+        ?.api as ExcalidrawExtrasAPI) || null
+    );
   }
 
-  public isVersionValid(component: string, api: ExcalidrawExtrasAPI): boolean {
+  public checkVersion(
+    component: string,
+    api: ExcalidrawExtrasAPI,
+  ): VersionCheckResult {
+    // 1. Check overall plugin version first
+    const pluginReq = REQUIRED_EXTRAS_VERSIONS.plugin;
+    if (pluginReq) {
+      const manifest = this.app.plugins.manifests[EXTRAS_PLUGIN_ID];
+      const pluginVersion = manifest?.version || "0.0.0";
+      const pluginCompName = t("EXTRAS_GATEWAY_COMP_PLUGIN");
+
+      if (pluginReq.exact && pluginVersion !== pluginReq.exact) {
+        return {
+          valid: false,
+          isExact: true,
+          compName: pluginCompName,
+          reqVersion: pluginReq.exact,
+          currentVersion: pluginVersion,
+        };
+      }
+      if (
+        pluginReq.min &&
+        this.compareVersions(pluginVersion, pluginReq.min) < 0
+      ) {
+        return {
+          valid: false,
+          isExact: false,
+          compName: pluginCompName,
+          reqVersion: pluginReq.min,
+          currentVersion: pluginVersion,
+        };
+      }
+    }
+
+    // 2. Check specific component version
     const currentVersion = api.versions[component as keyof typeof api.versions];
     const req = REQUIRED_EXTRAS_VERSIONS[component];
     if (!req) {
-      return true;
+      return { valid: true };
     }
 
+    const compName = t(`EXTRAS_GATEWAY_COMP_${component.toUpperCase()}` as any);
+
     if (req.exact && currentVersion !== req.exact) {
-      const compName = t(
-        `EXTRAS_GATEWAY_COMP_${component.toUpperCase()}` as any,
-      );
-      new Notice(
-        `Excalidraw Extras Update Required. ${compName} requires EXACTLY v${req.exact} (Found v${currentVersion})`,
-      );
-      window.open(`obsidian://show-plugin?id=${EXTRAS_PLUGIN_ID}`);
-      return false;
+      return {
+        valid: false,
+        isExact: true,
+        compName,
+        reqVersion: req.exact,
+        currentVersion,
+      };
     }
     if (req.min && this.compareVersions(currentVersion, req.min) < 0) {
-      const compName = t(
-        `EXTRAS_GATEWAY_COMP_${component.toUpperCase()}` as any,
-      );
-      new Notice(
-        `Excalidraw Extras Update Required. ${compName} requires >= v${req.min} (Found v${currentVersion})`,
-      );
-      window.open(`obsidian://show-plugin?id=${EXTRAS_PLUGIN_ID}`);
-      return false;
+      return {
+        valid: false,
+        isExact: false,
+        compName,
+        reqVersion: req.min,
+        currentVersion,
+      };
     }
-    return true;
+
+    return { valid: true };
   }
 
   public async enablePlugin(minutes: number = 0) {
-    const pluginsManager = (this.app as any).plugins;
-    await pluginsManager.enablePlugin(EXTRAS_PLUGIN_ID);
+    await this.app.plugins.enablePlugin(EXTRAS_PLUGIN_ID);
 
     if (this.pluginDisableTimer) {
       clearTimeout(this.pluginDisableTimer);
     }
     if (minutes > 0) {
-      // Note: -1 bypasses this, leaving it on for the session
       this.pluginDisableTimer = setTimeout(
         async () => {
-          await pluginsManager.disablePlugin(EXTRAS_PLUGIN_ID);
+          await this.app.plugins.disablePlugin(EXTRAS_PLUGIN_ID);
           new Notice(t("EXTRAS_GATEWAY_TIMER_EXPIRED"));
         },
         minutes * 60 * 1000,
@@ -244,7 +298,7 @@ class ExtrasActivationModal extends Modal {
     }
 
     // Step 2: Enable Plugin
-    if (!this.gateway.isPluginEnabled()) {
+    if (this.gateway.isInstalled() && !this.gateway.isPluginEnabled()) {
       contentEl.createEl("h2", { text: t("EXTRAS_GATEWAY_TITLE") });
       contentEl.createEl("p", {
         text: t("EXTRAS_GATEWAY_DESC").replace("{component}", compName),
@@ -269,8 +323,38 @@ class ExtrasActivationModal extends Modal {
       return;
     }
 
-    if (!this.gateway.isVersionValid(this.component, api)) {
-      this.resolveAndClose("cancel");
+    const versionCheck = this.gateway.checkVersion(this.component, api);
+    if (!versionCheck.valid) {
+      contentEl.createEl("h2", { text: t("EXTRAS_GATEWAY_UPDATE_TITLE") });
+
+      const msg = t(
+        versionCheck.isExact
+          ? "EXTRAS_GATEWAY_UPDATE_EXACT"
+          : "EXTRAS_GATEWAY_UPDATE_MIN",
+      )
+        .replace("{component}", versionCheck.compName)
+        .replace("{reqVersion}", versionCheck.reqVersion)
+        .replace("{currentVersion}", versionCheck.currentVersion);
+
+      contentEl.createEl("p", { text: msg });
+
+      new Setting(contentEl)
+        .addButton((btn) =>
+          btn
+            .setButtonText(t("EXTRAS_GATEWAY_UPDATE_BTN"))
+            .setCta()
+            .onClick(() => {
+              this.resolveAndClose("cancel");
+              setTimeout(() => {
+                window.open(`obsidian://show-plugin?id=${EXTRAS_PLUGIN_ID}`);
+              }, 50);
+            }),
+        )
+        .addButton((btn) =>
+          btn
+            .setButtonText(t("BACKUP_CANCEL"))
+            .onClick(() => this.resolveAndClose("cancel")),
+        );
       return;
     }
 
@@ -314,29 +398,30 @@ class ExtrasActivationModal extends Modal {
 
     const isSessionOnly =
       this.component === "mathjax" || this.component === "mermaid";
-
-    if (isSessionOnly) {
-      new Setting(container)
-        .setName(t("EXTRAS_GATEWAY_TEMP_ENABLE_TITLE"))
-        .setDesc(t("EXTRAS_GATEWAY_SESSION_ENABLE_DESC"))
-        .addButton((btn) =>
-          btn
-            .setButtonText(t("EXTRAS_GATEWAY_ENABLE_CURRENT_SESSION"))
-            .onClick(() => onEnable(-1)),
-        );
-    } else {
-      new Setting(container)
-        .setName(t("EXTRAS_GATEWAY_TEMP_ENABLE_TITLE"))
-        .setDesc(t("EXTRAS_GATEWAY_TEMP_ENABLE_DESC"))
-        .addButton((btn) =>
-          btn.setButtonText("5 min").onClick(() => onEnable(5)),
-        )
-        .addButton((btn) =>
-          btn.setButtonText("30 min").onClick(() => onEnable(30)),
-        )
-        .addButton((btn) =>
-          btn.setButtonText("1 hour").onClick(() => onEnable(60)),
-        );
+    if (this.gateway.isInstalled() && this.gateway.isPluginEnabled()) {
+      if (isSessionOnly) {
+        new Setting(container)
+          .setName(t("EXTRAS_GATEWAY_TEMP_ENABLE_TITLE"))
+          .setDesc(t("EXTRAS_GATEWAY_SESSION_ENABLE_DESC"))
+          .addButton((btn) =>
+            btn
+              .setButtonText(t("EXTRAS_GATEWAY_ENABLE_CURRENT_SESSION"))
+              .onClick(() => onEnable(-1)),
+          );
+      } else {
+        new Setting(container)
+          .setName(t("EXTRAS_GATEWAY_TEMP_ENABLE_TITLE"))
+          .setDesc(t("EXTRAS_GATEWAY_TEMP_ENABLE_DESC"))
+          .addButton((btn) =>
+            btn.setButtonText("5 min").onClick(() => onEnable(5)),
+          )
+          .addButton((btn) =>
+            btn.setButtonText("30 min").onClick(() => onEnable(30)),
+          )
+          .addButton((btn) =>
+            btn.setButtonText("1 hour").onClick(() => onEnable(60)),
+          );
+      }
     }
 
     new Setting(container)
@@ -353,19 +438,24 @@ class ExtrasActivationModal extends Modal {
       );
   }
 
-  private resolveAndClose(result: ActionResolution) {
+  private resolveAndClose(
+    result: ActionResolution,
+    shouldClose: boolean = true,
+  ) {
     if (this.hasResolved) {
       return;
     }
     this.hasResolved = true;
     this.resolvePromise(result);
-    this.close();
+    if (shouldClose) {
+      this.close();
+    }
   }
 
   onClose() {
     this.contentEl.empty();
     if (!this.hasResolved) {
-      this.resolveAndClose("cancel");
+      this.resolveAndClose("cancel", false);
     }
   }
 }
