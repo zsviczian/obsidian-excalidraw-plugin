@@ -168,7 +168,7 @@ declare global {
       isAlwaysOnTop(): boolean;
       setAlwaysOnTop(flag: boolean): void;
     };
-    eval: typeof window.eval;
+    eval: (x: string) => any;
     React?: typeof import("react");
     ReactDOM?: typeof import("react-dom/client");
     ExcalidrawLib?: typeof ExcalidrawLib;
@@ -193,9 +193,10 @@ declare module "obsidian" {
       setType(name: string, type: string): void;
     };
     plugins: {
-      plugins: {
-        [key: string]: Plugin | undefined;
-      };
+      manifests: Record<string, PluginManifest>;
+      plugins: Record<string, (Plugin & { api?: any }) | undefined>;
+      enablePlugin(id: string): Promise<void>;
+      disablePlugin(id: string): Promise<void>;
     };
   }
   interface FileManager {

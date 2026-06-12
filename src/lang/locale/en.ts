@@ -1552,7 +1552,12 @@ Thank you & Enjoy!
   EXTRAS_GATEWAY_FEATURE_DESC:
     "The '{component}' feature is currently disabled in your Excalidraw Extras settings.",
   EXTRAS_GATEWAY_IGNORE_SESSION: "Ignore for this session",
-  EXTRAS_GATEWAY_UPDATE_EXACT: "Excalidraw Extras Update Required. {component} requires EXACTLY v{reqVersion} (Found v{currentVersion})",
-  EXTRAS_GATEWAY_UPDATE_MIN: "Excalidraw Extras Update Required. {component} requires >= v{reqVersion} (Found v{currentVersion})",
+  EXTRAS_GATEWAY_UPDATE_EXACT:
+    "Excalidraw Extras Update Required. {component} requires EXACTLY v{reqVersion} (Found v{currentVersion})",
+  EXTRAS_GATEWAY_UPDATE_MIN:
+    "Excalidraw Extras Update Required. {component} requires >= v{reqVersion} (Found v{currentVersion})",
   EXTRAS_GATEWAY_COMP_PLUGIN: "Excalidraw Extras Plugin",
+  EXTRAS_GATEWAY_UPDATE_TITLE:
+    "Excalidraw requires a new version of the Extras plugin",
+  EXTRAS_GATEWAY_UPDATE_BTN: "Open Community Plugins",
 };

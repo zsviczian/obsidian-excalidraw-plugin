@@ -1,8 +1,5 @@
 import { Notice } from "obsidian";
-import {
-  DEVICE,
-  EXCALIDRAW_PLUGIN,
-} from "src/constants/constants";
+import { DEVICE, EXCALIDRAW_PLUGIN } from "src/constants/constants";
 import { t } from "src/lang/helpers";
 import { download } from "./fileUtils";
 import { svgToBase64 } from "./utils";
