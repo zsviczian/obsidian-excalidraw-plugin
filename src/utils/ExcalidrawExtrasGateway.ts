@@ -12,6 +12,7 @@ const REQUIRED_EXTRAS_VERSIONS: Record<
   string,
   { min?: string; exact?: string }
 > = {
+  plugin : { min: "0.0.13" },
   mathjax: { min: "1.0.0" },
   mermaid: { exact: "2.2.2" },
   pdf: { min: "1.0.0" },
@@ -62,9 +63,13 @@ export class ExcalidrawExtrasGateway {
     }
 
     if (!this.activationTask) {
-      this.activationTask = this.handleActivation(component).finally(() => {
-        this.activationTask = null; // Clear shared task for future triggers
-      });
+      this.activationTask = (async () => {
+        try {
+          return await this.handleActivation(component);
+        } finally {
+          this.activationTask = null; 
+        }
+      })();
     }
 
     const resolution = await this.activationTask;
@@ -244,7 +249,7 @@ class ExtrasActivationModal extends Modal {
     }
 
     // Step 2: Enable Plugin
-    if (!this.gateway.isPluginEnabled()) {
+    if (this.gateway.isInstalled() && !this.gateway.isPluginEnabled()) {
       contentEl.createEl("h2", { text: t("EXTRAS_GATEWAY_TITLE") });
       contentEl.createEl("p", {
         text: t("EXTRAS_GATEWAY_DESC").replace("{component}", compName),
@@ -314,29 +319,30 @@ class ExtrasActivationModal extends Modal {
 
     const isSessionOnly =
       this.component === "mathjax" || this.component === "mermaid";
-
-    if (isSessionOnly) {
-      new Setting(container)
-        .setName(t("EXTRAS_GATEWAY_TEMP_ENABLE_TITLE"))
-        .setDesc(t("EXTRAS_GATEWAY_SESSION_ENABLE_DESC"))
-        .addButton((btn) =>
-          btn
-            .setButtonText(t("EXTRAS_GATEWAY_ENABLE_CURRENT_SESSION"))
-            .onClick(() => onEnable(-1)),
-        );
-    } else {
-      new Setting(container)
-        .setName(t("EXTRAS_GATEWAY_TEMP_ENABLE_TITLE"))
-        .setDesc(t("EXTRAS_GATEWAY_TEMP_ENABLE_DESC"))
-        .addButton((btn) =>
-          btn.setButtonText("5 min").onClick(() => onEnable(5)),
-        )
-        .addButton((btn) =>
-          btn.setButtonText("30 min").onClick(() => onEnable(30)),
-        )
-        .addButton((btn) =>
-          btn.setButtonText("1 hour").onClick(() => onEnable(60)),
-        );
+    if (this.gateway.isInstalled() && this.gateway.isPluginEnabled()) {
+      if (isSessionOnly) {
+        new Setting(container)
+          .setName(t("EXTRAS_GATEWAY_TEMP_ENABLE_TITLE"))
+          .setDesc(t("EXTRAS_GATEWAY_SESSION_ENABLE_DESC"))
+          .addButton((btn) =>
+            btn
+              .setButtonText(t("EXTRAS_GATEWAY_ENABLE_CURRENT_SESSION"))
+              .onClick(() => onEnable(-1)),
+          );
+      } else {
+        new Setting(container)
+          .setName(t("EXTRAS_GATEWAY_TEMP_ENABLE_TITLE"))
+          .setDesc(t("EXTRAS_GATEWAY_TEMP_ENABLE_DESC"))
+          .addButton((btn) =>
+            btn.setButtonText("5 min").onClick(() => onEnable(5)),
+          )
+          .addButton((btn) =>
+            btn.setButtonText("30 min").onClick(() => onEnable(30)),
+          )
+          .addButton((btn) =>
+            btn.setButtonText("1 hour").onClick(() => onEnable(60)),
+          );
+      }
     }
 
     new Setting(container)
@@ -353,19 +359,21 @@ class ExtrasActivationModal extends Modal {
       );
   }
 
-  private resolveAndClose(result: ActionResolution) {
+  private resolveAndClose(result: ActionResolution, shouldClose: boolean = true) {
     if (this.hasResolved) {
       return;
     }
     this.hasResolved = true;
     this.resolvePromise(result);
-    this.close();
+    if (shouldClose) {
+      this.close();
+    }
   }
 
   onClose() {
     this.contentEl.empty();
     if (!this.hasResolved) {
-      this.resolveAndClose("cancel");
+      this.resolveAndClose("cancel", false);
     }
   }
 }
