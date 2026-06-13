@@ -65,7 +65,7 @@ export const insertLaTeXToView = (
 ) => {
   const app = view.plugin.app;
   const ea = getEA(view);
-  
+
   void import("src/shared/Dialogs/Prompt").then(({ LaTexPrompt }) => {
     LaTexPrompt.Prompt(
       view.plugin,
@@ -85,10 +85,10 @@ export const insertLaTeXToView = (
               !maxel || curr.updated > maxel.updated ? curr : maxel,
             undefined,
           ) as ExcalidrawImageElement;
-          
+
         let scaleX = 1;
         let scaleY = 1;
-        
+
         if (lastLatexEl) {
           const equation = view.excalidrawData.getEquation(lastLatexEl.fileId);
           const dataurl = await ea.tex2dataURL(equation.latex);
@@ -97,7 +97,7 @@ export const insertLaTeXToView = (
             scaleY = lastLatexEl.height / dataurl.size.height;
           }
         }
-        
+
         if (formula) {
           const id = await ea.addLaTex(0, 0, formula, scaleX, scaleY);
           if (center) {
@@ -117,7 +117,7 @@ export const insertLaTeXToView = (
       (e) => {
         // Promise rejection handler (e.g. user cancelled prompt or Extras plugin is missing)
         if (e && e instanceof Error) {
-          errorlog({message: "LaTeX Insertion aborted", error: e});
+          errorlog({ message: "LaTeX Insertion aborted", error: e as unknown});
         }
       },
     );

@@ -1059,7 +1059,10 @@ export function _getContainerElement(
     return null;
   }
   if (element.containerId) {
-    return getContainerElement(element, arrayToMap(scene.elements) as ElementsMap) ?? null;
+    return (
+      getContainerElement(element, arrayToMap(scene.elements) as ElementsMap) ??
+      null
+    );
     //return scene.elements.find((el:ExcalidrawElement)=>el.id === element.containerId) ?? null;
   }
   return null;

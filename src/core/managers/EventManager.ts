@@ -106,40 +106,39 @@ export class EventManager {
   public async registerEvents() {
     await this.plugin.awaitInit();
     this.registerEvent(
-      this.app.workspace.on("editor-paste", 
-        (evt, editor, info) => this.onPasteHandler(evt, editor, info),
-    ));
-    this.registerEvent(
-      this.app.vault.on("rename",
-        (file, oldPath) => this.onRenameHandler(file, oldPath)),
+      this.app.workspace.on("editor-paste", (evt, editor, info) =>
+        this.onPasteHandler(evt, editor, info),
+      ),
     );
     this.registerEvent(
-      this.app.vault.on("modify", 
-        (file) => this.onModifyHandler(file)),
+      this.app.vault.on("rename", (file, oldPath) =>
+        this.onRenameHandler(file, oldPath),
+      ),
     );
     this.registerEvent(
-      this.app.vault.on("delete",
-        (file) => this.onDeleteHandler(file)),
+      this.app.vault.on("modify", (file) => this.onModifyHandler(file)),
+    );
+    this.registerEvent(
+      this.app.vault.on("delete", (file) => this.onDeleteHandler(file)),
     );
 
     //save Excalidraw leaf and update embeds when switching to another leaf
     this.registerEvent(
-      this.plugin.app.workspace.on(
-        "active-leaf-change",
-        (leaf) => this.onActiveLeafChangeHandler(leaf),
+      this.plugin.app.workspace.on("active-leaf-change", (leaf) =>
+        this.onActiveLeafChangeHandler(leaf),
       ),
     );
 
     this.registerEvent(
-      this.app.workspace.on(
-        "layout-change",
-        () =>  this.onLayoutChangeHandler(),
+      this.app.workspace.on("layout-change", () =>
+        this.onLayoutChangeHandler(),
       ),
     );
 
     //File Save Trigger Handlers
     //Save the drawing if the user clicks outside the Excalidraw Canvas
-    const onClickEventSaveActiveDrawing = (e: PointerEvent) => this.onClickSaveActiveDrawing(e);
+    const onClickEventSaveActiveDrawing = (e: PointerEvent) =>
+      this.onClickSaveActiveDrawing(e);
     this.app.workspace.containerEl.addEventListener(
       "click",
       onClickEventSaveActiveDrawing,
@@ -151,9 +150,8 @@ export class EventManager {
       );
     });
     this.registerEvent(
-      this.app.workspace.on(
-        "file-menu",
-        () => this.onFileMenuSaveActiveDrawing(),
+      this.app.workspace.on("file-menu", () =>
+        this.onFileMenuSaveActiveDrawing(),
       ),
     );
 
@@ -173,15 +171,12 @@ export class EventManager {
       }),
     );
     this.plugin.registerEvent(
-      this.plugin.app.workspace.on(
-        "editor-menu",
-        (menu, editor, view) =>{
-          if (!(view instanceof MarkdownView)) {
-            return;
-          }
-          this.onEditorMenuHandler(menu, editor, view);
-        },
-      ),
+      this.plugin.app.workspace.on("editor-menu", (menu, editor, view) => {
+        if (!(view instanceof MarkdownView)) {
+          return;
+        }
+        this.onEditorMenuHandler(menu, editor, view);
+      }),
     );
   }
 
@@ -291,7 +286,10 @@ export class EventManager {
 
     //In Obsidian 1.8.x the active excalidraw leaf is obscured by an empty leaf without a parent
     //This hack resolves it
-    if (this.app.workspace.getMostRecentLeaf() === leaf && isUnwantedLeaf(leaf)) {
+    if (
+      this.app.workspace.getMostRecentLeaf() === leaf &&
+      isUnwantedLeaf(leaf)
+    ) {
       leaf.detach();
       return;
     }

@@ -57,7 +57,7 @@ export const installButton = async (
       where:
         "ExcalidrawPlugin.registerInstallCodeblockProcessor.codeblockProcessor.onClick",
       source,
-      error: e,
+      error: e as unknown,
     });
   }
   const fname = decodedURI.substring(decodedURI.lastIndexOf("/") + 1);
@@ -92,7 +92,7 @@ export const installButton = async (
       scriptFile = await download(source, scriptFile, scriptPath);
       if (!scriptFile) {
         setButtonText("ERROR");
-        throw "File not found";
+        throw new Error("File not found");
       }
       svgFile = await download(getIMGFilename(source, "svg"), svgFile, svgPath);
       setButtonText("UPTODATE");

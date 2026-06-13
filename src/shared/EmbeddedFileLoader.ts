@@ -70,7 +70,10 @@ import {
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { setStyleText } from "src/utils/htmlUtils";
 import { hideElement, setStyle } from "src/utils/styleUtils";
-import { isInstanceOfHTMLImageElement, isInstanceOfSVGElement } from "src/utils/typechecks";
+import {
+  isInstanceOfHTMLImageElement,
+  isInstanceOfSVGElement,
+} from "src/utils/typechecks";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B

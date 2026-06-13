@@ -655,7 +655,7 @@ export class PluginFileManager {
           // - In extremely rare situations, an update arriving within the "recent switch" timeframe (e.g., from Obsidian Sync)
           //   might not trigger a reload. This is unlikely and an acceptable trade-off for better user experience.
           const activeView = this.app.workspace.getMostRecentLeaf()?.view;
-          if(!activeView){
+          if (!activeView) {
             return;
           }
           const isEditingMarkdownSideInSplitView =

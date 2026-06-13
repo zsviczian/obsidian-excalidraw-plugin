@@ -1248,8 +1248,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     }
 
     void (async () => {
-      void await this.persistDirtySettings();
-      void await this.applyPendingActions();
+      void (await this.persistDirtySettings());
+      void (await this.applyPendingActions());
       this.hotkeyEditor.unload();
       if (this.hotkeyEditor.isDirty) {
         this.plugin.registerHotkeyOverrides();
@@ -3393,9 +3393,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("EMBED_PREVIEW_IMAGETYPE_DESC")))
       .addDropdown((dropdown) =>
         dropdown
-          .addOption(PreviewImageType.PNG, t("EMBED_PREVIEW_IMAGETYPE_OPTION_PNG"))
-          .addOption(PreviewImageType.SVG, t("EMBED_PREVIEW_IMAGETYPE_OPTION_SVG"))
-          .addOption(PreviewImageType.SVGIMG, t("EMBED_PREVIEW_IMAGETYPE_OPTION_SVGIMG"))
+          .addOption(
+            PreviewImageType.PNG,
+            t("EMBED_PREVIEW_IMAGETYPE_OPTION_PNG"),
+          )
+          .addOption(
+            PreviewImageType.SVG,
+            t("EMBED_PREVIEW_IMAGETYPE_OPTION_SVG"),
+          )
+          .addOption(
+            PreviewImageType.SVGIMG,
+            t("EMBED_PREVIEW_IMAGETYPE_OPTION_SVGIMG"),
+          )
           .setValue(this.plugin.settings.previewImageType)
           .onChange((value) => {
             this.plugin.settings.previewImageType = value as PreviewImageType;
@@ -4653,7 +4662,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             .setDesc(fragWithHTML(description ?? ""))
             .addDropdown((dropdown) => {
               valueset.forEach((val: string) => {
-                void dropdown.addOption(val.toString(), val.toString())
+                void dropdown.addOption(val.toString(), val.toString());
               });
               dropdown
                 .setValue(getValue(scriptName, variableName) as string)

@@ -25,6 +25,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@lezer/lr": "^1.4.10",
     "@popperjs/core": "^2.11.8",
     "@radix-ui/number": "^1.1.2",
     "@zsviczian/colormaster": "^1.2.2",

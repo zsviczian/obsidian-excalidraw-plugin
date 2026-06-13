@@ -36,7 +36,10 @@ import { FILENAMEPARTS, PreviewImageType } from "../../types/utilTypes";
 import { CustomMutationObserver, DEBUGGING } from "../../utils/debugHelper";
 import { getExcalidrawFileForwardLinks } from "../../utils/excalidrawViewUtils";
 import { linkPrompt } from "../../shared/Dialogs/Prompt";
-import { isInstanceOfHTMLElement, isInstanceOfHTMLImageElement } from "../../utils/typechecks";
+import {
+  isInstanceOfHTMLElement,
+  isInstanceOfHTMLImageElement,
+} from "../../utils/typechecks";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { setElementDisplay } from "src/utils/htmlUtils";
 import { setStyle } from "src/utils/styleUtils";
@@ -849,7 +852,6 @@ function parseAlias(input: string): AliasParts {
   const result: AliasParts = {};
   const parts = input.split("|").map((part) => part.trim());
 
-
   switch (parts.length) {
     case 1: {
       const singleMatch = getDimensionsFromAliasString(parts[0]);
@@ -1344,7 +1346,10 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = (m) => {
         ev.stopImmediatePropagation();
         const src = el.getAttribute("src");
         if (src) {
-          plugin.openDrawing(vault.getFileByPath(src), linkClickModifierType(ev));
+          plugin.openDrawing(
+            vault.getFileByPath(src),
+            linkClickModifierType(ev),
+          );
         } //.ctrlKey||ev.metaKey);
       });
     });

@@ -169,7 +169,7 @@ export class EmbeddableSettings extends Modal {
       .addButton((button) =>
         button
           .setButtonText(t("PROMPT_BUTTON_OK"))
-          .setTooltip(labelCTRL()+"Enter")
+          .setTooltip(labelCTRL() + "Enter")
           .setCta()
           .onClick(() => this.applySettings()),
       );

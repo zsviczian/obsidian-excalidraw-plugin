@@ -570,7 +570,9 @@ export class ExcalidrawData {
         URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG,
       )[1] ?? "1.8.16";
 
-    const elements = this.scene.elements as Mutable<ExcalidrawElement & { boundElementIds?: string[] }>[];
+    const elements = this.scene.elements as Mutable<
+      ExcalidrawElement & { boundElementIds?: string[] }
+    >[];
     for (const el of elements) {
       if (el.type === "iframe" && !el.customData) {
         //@ts-ignore -- retyping in ExcalidrawData is possible, this is not the live inmutable object
@@ -605,7 +607,7 @@ export class ExcalidrawData {
         });
         const boundElements = Array.from(map, ([id, type]) => ({ id, type }));
         if (boundElements.length !== el.boundElements.length) {
-          el.boundElements  = boundElements;
+          el.boundElements = boundElements;
         }
       }
 
@@ -658,7 +660,9 @@ export class ExcalidrawData {
       }
 
       if (el.type === "text" && !Object.hasOwn(el, "lineHeight")) {
-        el.lineHeight = getLineHeight(el.fontFamily) as number & { _brand: "unitlessLineHeight"; };
+        el.lineHeight = getLineHeight(el.fontFamily) as number & {
+          _brand: "unitlessLineHeight";
+        };
       }
 
       if (el.type === "image" && !Object.hasOwn(el, "roundness")) {
@@ -704,15 +708,17 @@ export class ExcalidrawData {
                   )
                 ),
             );
-            container.boundElements = [{ id: textEl.id, type: "text" as "text" | "arrow" }].concat(
-              boundEl,
-            );
+            container.boundElements = [
+              { id: textEl.id, type: "text" as "text" | "arrow" },
+            ].concat(boundEl);
           } catch (e) {
-            errorlog( {
+            errorlog({
               message: "unexpected error in initializeNonInitializedFields",
-              context: this.initializeNonInitializedFields.bind(this) as unknown,
+              context: this.initializeNonInitializedFields.bind(
+                this,
+              ) as unknown,
               error: e as unknown,
-          });
+            });
           }
         },
       );

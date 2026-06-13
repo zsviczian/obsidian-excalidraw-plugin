@@ -36,7 +36,6 @@ import {
   DEVICE,
   FONTS_STYLE_ID,
   CJK_STYLE_ID,
-  loadMermaid,
   setRootElementSize,
   mainDocument,
 } from "../constants/constants";
@@ -50,9 +49,7 @@ import {
   KNOWN_AI_IMAGE_MODEL_CONFIGS,
 } from "./settings";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
-import {
-  initExcalidrawAutomate,
-} from "src/utils/excalidrawAutomateUtils";
+import { initExcalidrawAutomate } from "src/utils/excalidrawAutomateUtils";
 import { around, dedupe } from "monkey-around";
 import { t } from "../lang/helpers";
 import {
@@ -109,7 +106,6 @@ import {
   ExcalidrawLoading,
   switchToExcalidraw,
 } from "../view/ExcalidrawLoading";
-import { clearMathJaxVariables } from "../shared/LaTeX";
 import { PluginFileManager } from "./managers/FileManager";
 import { ObserverManager } from "./managers/ObserverManager";
 import { PackageManager } from "./managers/PackageManager";
@@ -665,7 +661,7 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public printStarupBreakdown() {
-    console.log(
+    log(
       `Excalidraw ${PLUGIN_VERSION} startup breakdown:\n${this.startupAnalytics.join(
         "\n",
       )}`,
@@ -806,16 +802,13 @@ export default class ExcalidrawPlugin extends Plugin {
     addIcon(ICON_NAME, EXCALIDRAW_ICON);
     addIcon(SCRIPTENGINE_ICON_NAME, SCRIPTENGINE_ICON);
     addIcon(EXPORT_IMG_ICON_NAME, EXPORT_IMG_ICON);
-    this.addRibbonIcon(
-      ICON_NAME,
-      t("CREATE_NEW"),
-      (e) => this.actionRibbonClick(e),
+    this.addRibbonIcon(ICON_NAME, t("CREATE_NEW"), (e) =>
+      this.actionRibbonClick(e),
     );
 
     try {
       void this.loadSettings({ reEnableAutosave: true }).then(() =>
         this.onloadCheckForOnceOffSettingsUpdates(),
-
       );
     } catch (e) {
       new Notice("Error loading plugin settings", 6000);
@@ -827,7 +820,7 @@ export default class ExcalidrawPlugin extends Plugin {
       // need it her for ExcaliBrain
       this.ea = initExcalidrawAutomate(this);
     } catch (e) {
-      new Notice("Error initializing Excalidraw Automate", 6000);
+      new Notice(t("ERROR_INITIALIZING_EA"), 6000);
       console.error("Error initializing Excalidraw Automate", e);
     }
     this.logStartupEvent("Excalidraw Automate initialized");
@@ -1295,7 +1288,7 @@ export default class ExcalidrawPlugin extends Plugin {
         errorlog({
           where: "this.registerInstallCodeblockProcessor",
           source,
-          error: e,
+          error: e as unknown,
         });
       }
 

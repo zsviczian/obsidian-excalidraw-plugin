@@ -720,10 +720,7 @@ export class CommandManager {
         }
         if (view) {
           if (!this.settings.taskboneEnabled) {
-            new Notice(
-              t("TASKBONE_NOT_ENABLED"),
-              4000,
-            );
+            new Notice(t("TASKBONE_NOT_ENABLED"), 4000);
             return true;
           }
           void this.taskbone.getTextForView(view, { forceReScan: false });
@@ -743,10 +740,7 @@ export class CommandManager {
         }
         if (view) {
           if (!this.settings.taskboneEnabled) {
-            new Notice(
-              t("TASKBONE_NOT_ENABLED"),
-              4000,
-            );
+            new Notice(t("TASKBONE_NOT_ENABLED"), 4000);
             return true;
           }
           void this.taskbone.getTextForView(view, { forceReScan: true });
@@ -766,10 +760,7 @@ export class CommandManager {
         }
         if (view) {
           if (!this.settings.taskboneEnabled) {
-            new Notice(
-              t("TASKBONE_NOT_ENABLED"),
-              4000,
-            );
+            new Notice(t("TASKBONE_NOT_ENABLED"), 4000);
             return true;
           }
           void this.taskbone.getTextForView(view, {
@@ -995,18 +986,12 @@ export class CommandManager {
           this.ea.setView(view);
           const el = this.ea.getViewSelectedElement();
           if (el.type !== "image") {
-            new Notice(
-              t("DELETE_IMAGE_NOTICE"),
-              4000,
-            );
+            new Notice(t("DELETE_IMAGE_NOTICE"), 4000);
             return true;
           }
           const file = this.ea.getViewFileForImageElement(el);
           if (!file) {
-            new Notice(
-              t("DELETE_IMAGE_NOTICE"),
-              4000,
-            );
+            new Notice(t("DELETE_IMAGE_NOTICE"), 4000);
             return true;
           }
           void this.app.fileManager.trashFile(file);
@@ -1824,7 +1809,7 @@ export class CommandManager {
                 node.canvas.createFileNode({
                   pos: { x: node.x + node.width + 10, y: node.y },
                   file,
-                })
+                });
               } else {
                 node.setFile(file);
               }
@@ -2110,9 +2095,9 @@ export class CommandManager {
             if (node.file) {
               if (node.file.extension === "pdf") {
                 node.canvas.createFileNode({
-                      pos: { x: node.x + node.width + 10, y: node.y },
-                      file,
-                    });
+                  pos: { x: node.x + node.width + 10, y: node.y },
+                  file,
+                });
               } else {
                 node.setFile(file);
               }

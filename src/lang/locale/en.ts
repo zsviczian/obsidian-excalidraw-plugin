@@ -19,6 +19,7 @@ export default {
   // Sugester
   SELECT_FILE_TO_INSERT: "Select a file to insert",
   // main.ts
+  ERROR_INITIALIZING_EA: "Error initializing Excalidraw Automate",
   CONVERT_URL_TO_FILE: "Save image from URL to local file",
   UNZIP_CURRENT_FILE: "Decompress current Excalidraw file",
   PUBLISH_SVG_CHECK:
@@ -117,7 +118,8 @@ export default {
   ABOUT_EXCALIDRAW: "About Excalidraw",
   RUN_OCR:
     "OCR full drawing: Grab text from freedraw + images to clipboard and doc.props",
-  TASKBONE_NOT_ENABLED: "Taskbone OCR is not enabled. Please go to plugins settings to enable it.",
+  TASKBONE_NOT_ENABLED:
+    "Taskbone OCR is not enabled. Please go to plugins settings to enable it.",
   RERUN_OCR:
     "OCR full drawing re-run: Grab text from freedraw + images to clipboard and doc.props",
   RUN_OCR_ELEMENTS:
@@ -127,7 +129,8 @@ export default {
   CROP_PAGE: "Crop and mask selected page",
   CROP_IMAGE: "Crop and mask image",
   ANNOTATE_IMAGE: "Annotate image in Excalidraw",
-  ANNOTATE_IMAGE_ERROR: "File not found. New Excalidraw drawing is taking too long to create. Please try again.",
+  ANNOTATE_IMAGE_ERROR:
+    "File not found. New Excalidraw drawing is taking too long to create. Please try again.",
   INSERT_ACTIVE_PDF_PAGE_AS_IMAGE: "Insert active PDF page as image",
   RESET_IMG_TO_100: "Set selected image element size to 100% of original",
   RESET_IMG_ASPECT_RATIO: "Reset selected image element aspect ratio",
@@ -271,7 +274,8 @@ export default {
   DEFAULT_OPEN_MODE_OPTION_NORMAL: "Always in normal-mode",
   DEFAULT_OPEN_MODE_OPTION_ZEN: "Always in zen-mode",
   DEFAULT_OPEN_MODE_OPTION_VIEW: "Always in view-mode",
-  DEFAULT_OPEN_MODE_OPTION_VIEW_MOBILE: "Usually normal, but view-mode on Phone",
+  DEFAULT_OPEN_MODE_OPTION_VIEW_MOBILE:
+    "Usually normal, but view-mode on Phone",
   DEFAULT_PEN_MODE_OPTION_NEVER: "Never",
   DEFAULT_PEN_MODE_OPTION_MOBILE: "On Obsidian Mobile",
   DEFAULT_PEN_MODE_OPTION_ALWAYS: "Always",
@@ -1208,6 +1212,13 @@ export default {
   //Scripts.ts
   SCRIPT_EXECUTION_ERROR:
     "Script execution error. Please find error message on the developer console.",
+
+  //ScriptInstallPrompt.ts
+  SCRIPT_INSTALL_PROMPT_FETCH_ERROR:
+    "Error opening the Excalidraw Script Store page. " +
+    "Please double check that you can access the website. " +
+    "I've logged the link in developer console (press CTRL+SHIFT+i)",
+  SCRIPT_INSTALL_PROMPT_OPEN_ERROR: "Could not open ScriptEngine repository",
 
   //ExcalidrawViewUtils.ts
   MARKER_FRAME_RENDERING_DISABLED_NOTICE:

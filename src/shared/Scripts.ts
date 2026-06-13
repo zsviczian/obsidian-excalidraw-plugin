@@ -425,7 +425,11 @@ export class ScriptEngine {
         instructions,
       );
     } catch (error) {
-      console.error("unexpected error in suggester", this.suggester.bind(this), error);
+      console.error(
+        "unexpected error in suggester",
+        this.suggester.bind(this),
+        error,
+      );
       return undefined;
     }
   }

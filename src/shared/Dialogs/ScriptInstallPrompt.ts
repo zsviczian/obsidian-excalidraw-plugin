@@ -5,6 +5,7 @@ import { log } from "src/utils/debugHelper";
 import { ContentSearcher } from "../components/ContentSearcher";
 import { URLs } from "src/constants/safeUrls";
 import { mainDocument } from "src/constants/constants";
+import { t } from "src/lang/helpers";
 
 const URL =
   URLs.RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_INDEX_NEW_MD;
@@ -29,12 +30,7 @@ export class ScriptInstallPrompt extends Modal {
       try {
         const source = await request({ url: URL });
         if (!source) {
-          new Notice(
-            "Error opening the Excalidraw Script Store page. " +
-              "Please double check that you can access the website. " +
-              "I've logged the link in developer console (press CTRL+SHIFT+i)",
-            5000,
-          );
+          new Notice(t("SCRIPT_INSTALL_PROMPT_FETCH_ERROR"), 5000);
           log(URL);
           this.close();
           return;
@@ -47,7 +43,9 @@ export class ScriptInstallPrompt extends Modal {
           this.plugin,
         );
         this.contentDiv
-          .querySelectorAll("h1[data-heading],h2[data-heading],h3[data-heading]")
+          .querySelectorAll(
+            "h1[data-heading],h2[data-heading],h3[data-heading]",
+          )
           .forEach((el) => {
             el.setAttribute("id", el.getAttribute("data-heading"));
           });
@@ -55,8 +53,8 @@ export class ScriptInstallPrompt extends Modal {
           el.removeAttribute("target");
         });
       } catch (e) {
-        errorlog({ where: "ScriptInstallPrompt.onOpen", error: e });
-        new Notice("Could not open ScriptEngine repository");
+        errorlog({ where: "ScriptInstallPrompt.onOpen", error: e as unknown });
+        new Notice(t("SCRIPT_INSTALL_PROMPT_OPEN_ERROR"));
         this.close();
       }
     })();

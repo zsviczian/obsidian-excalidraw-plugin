@@ -40,8 +40,6 @@ import {
   isVersionNewerThanOther,
   scaleLoadedImage,
 } from "src/utils/utils";
-import { LaTexPrompt } from "src/shared/Dialogs/Prompt";
-import { t } from "src/lang/helpers";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import { EmbeddedFilesLoader } from "src/shared/EmbeddedFileLoader";
 import {
@@ -59,7 +57,6 @@ import {
   sceneRemoveInternalLinks,
 } from "./excalidrawViewUtils";
 import { ScriptEngine } from "src/shared/Scripts";
-import { getEA } from "src/core";
 import { ColorMap, FileData } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
 

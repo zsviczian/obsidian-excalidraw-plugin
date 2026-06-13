@@ -3,16 +3,13 @@
  * Uses the element's own window (defaultView) to get the correct HTMLElement constructor.
  */
 
-export function isInstanceOfHTMLElement(
-  value: unknown,
-): value is HTMLElement {
+export function isInstanceOfHTMLElement(value: unknown): value is HTMLElement {
   if (value == null || typeof value !== "object") {
     return false;
   }
 
-  const win = (
-    value as { ownerDocument?: Document }
-  ).ownerDocument?.defaultView;
+  const win = (value as { ownerDocument?: Document }).ownerDocument
+    ?.defaultView;
 
   return win?.HTMLElement
     ? value instanceof win.HTMLElement
@@ -26,9 +23,8 @@ export function isInstanceOfHTMLDivElement(
     return false;
   }
 
-  const win = (
-    value as { ownerDocument?: Document }
-  ).ownerDocument?.defaultView;
+  const win = (value as { ownerDocument?: Document }).ownerDocument
+    ?.defaultView;
 
   return win?.HTMLDivElement
     ? value instanceof win.HTMLDivElement
@@ -42,9 +38,8 @@ export function isInstanceOfHTMLBodyElement(
     return false;
   }
 
-  const win = (
-    value as { ownerDocument?: Document }
-  ).ownerDocument?.defaultView;
+  const win = (value as { ownerDocument?: Document }).ownerDocument
+    ?.defaultView;
 
   return win?.HTMLBodyElement
     ? value instanceof win.HTMLBodyElement
@@ -58,29 +53,23 @@ export function isInstanceOfHTMLImageElement(
     return false;
   }
 
-  const win = (
-    value as { ownerDocument?: Document }
-  ).ownerDocument?.defaultView;
+  const win = (value as { ownerDocument?: Document }).ownerDocument
+    ?.defaultView;
 
   return win?.HTMLImageElement
     ? value instanceof win.HTMLImageElement
     : value instanceof HTMLImageElement;
 }
 
-export function isInstanceOfElement(
-  value: unknown,
-): value is Element {
+export function isInstanceOfElement(value: unknown): value is Element {
   if (value == null || typeof value !== "object") {
     return false;
   }
 
-  const win = (
-    value as { ownerDocument?: Document }
-  ).ownerDocument?.defaultView;
+  const win = (value as { ownerDocument?: Document }).ownerDocument
+    ?.defaultView;
 
-  return win?.Element
-    ? value instanceof win.Element
-    : value instanceof Element;
+  return win?.Element ? value instanceof win.Element : value instanceof Element;
 }
 
 export function isInstanceOfDocumentFragment(
@@ -90,9 +79,8 @@ export function isInstanceOfDocumentFragment(
     return false;
   }
 
-  const win = (
-    value as { ownerDocument?: Document }
-  ).ownerDocument?.defaultView;
+  const win = (value as { ownerDocument?: Document }).ownerDocument
+    ?.defaultView;
 
   return win?.DocumentFragment
     ? value instanceof win.DocumentFragment
@@ -106,25 +94,21 @@ export function isInstanceOfSVGSVGElement(
     return false;
   }
 
-  const win = (
-    value as { ownerDocument?: Document }
-  ).ownerDocument?.defaultView;
+  const win = (value as { ownerDocument?: Document }).ownerDocument
+    ?.defaultView;
 
   return win?.SVGSVGElement
     ? value instanceof win.SVGSVGElement
     : value instanceof SVGSVGElement;
 }
 
-export function isInstanceOfSVGElement(
-  value: unknown,
-): value is SVGElement {
+export function isInstanceOfSVGElement(value: unknown): value is SVGElement {
   if (value == null || typeof value !== "object") {
     return false;
   }
 
-  const win = (
-    value as { ownerDocument?: Document }
-  ).ownerDocument?.defaultView;
+  const win = (value as { ownerDocument?: Document }).ownerDocument
+    ?.defaultView;
 
   return win?.SVGElement
     ? value instanceof win.SVGElement
@@ -138,9 +122,8 @@ export function isInstanceOfHTMLStyleElement(
     return false;
   }
 
-  const win = (
-    value as { ownerDocument?: Document }
-  ).ownerDocument?.defaultView;
+  const win = (value as { ownerDocument?: Document }).ownerDocument
+    ?.defaultView;
 
   return win?.HTMLStyleElement
     ? value instanceof win.HTMLStyleElement
@@ -154,9 +137,8 @@ export function isInstanceOfHTMLInputElement(
     return false;
   }
 
-  const win = (
-    value as { ownerDocument?: Document }
-  ).ownerDocument?.defaultView;
+  const win = (value as { ownerDocument?: Document }).ownerDocument
+    ?.defaultView;
 
   return win?.HTMLInputElement
     ? value instanceof win.HTMLInputElement
@@ -170,9 +152,8 @@ export function isInstanceOfHTMLTextAreaElement(
     return false;
   }
 
-  const win = (
-    value as { ownerDocument?: Document }
-  ).ownerDocument?.defaultView;
+  const win = (value as { ownerDocument?: Document }).ownerDocument
+    ?.defaultView;
 
   return win?.HTMLTextAreaElement
     ? value instanceof win.HTMLTextAreaElement
@@ -186,9 +167,8 @@ export function isInstanceOfHTMLSelectElement(
     return false;
   }
 
-  const win = (
-    value as { ownerDocument?: Document }
-  ).ownerDocument?.defaultView;
+  const win = (value as { ownerDocument?: Document }).ownerDocument
+    ?.defaultView;
 
   return win?.HTMLSelectElement
     ? value instanceof win.HTMLSelectElement
@@ -202,9 +182,8 @@ export function isInstanceOfHTMLButtonElement(
     return false;
   }
 
-  const win = (
-    value as { ownerDocument?: Document }
-  ).ownerDocument?.defaultView;
+  const win = (value as { ownerDocument?: Document }).ownerDocument
+    ?.defaultView;
 
   return win?.HTMLButtonElement
     ? value instanceof win.HTMLButtonElement

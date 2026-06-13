@@ -5,6 +5,7 @@ import type {
   ExtrasComponent,
 } from "@zsviczian/excalidraw-extras-api";
 import { t } from "../lang/helpers";
+import en from "src/lang/locale/en";
 
 const EXTRAS_PLUGIN_ID = "excalidraw-extras";
 
@@ -30,8 +31,7 @@ export type VersionCheckResult = {
 };
 
 export class ExcalidrawExtrasGateway {
-  private pluginDisableTimer: NodeJS.Timeout | null = null;
-  private featureDisableTimers: Record<string, NodeJS.Timeout> = {};
+  private pluginDisableTimer: number | null = null;
 
   private ignoredComponents: Set<string> = new Set();
   private activationTask: Promise<ActionResolution> | null = null;
@@ -52,7 +52,7 @@ export class ExcalidrawExtrasGateway {
   }
 
   public async getMermaid(): Promise<ExcalidrawExtrasAPI["mermaid"] | null> {
-    const api = await this.ensureActiveAndGetAPI("mermaid" as ExtrasComponent);
+    const api = await this.ensureActiveAndGetAPI("mermaid");
     return api ? api.mermaid : null;
   }
 
@@ -187,7 +187,9 @@ export class ExcalidrawExtrasGateway {
       return { valid: true };
     }
 
-    const compName = t(`EXTRAS_GATEWAY_COMP_${component.toUpperCase()}` as any);
+    const compName = t(
+      `EXTRAS_GATEWAY_COMP_${component.toUpperCase()}` as keyof typeof en,
+    );
 
     if (req.exact && currentVersion !== req.exact) {
       return {
@@ -215,13 +217,15 @@ export class ExcalidrawExtrasGateway {
     await this.app.plugins.enablePlugin(EXTRAS_PLUGIN_ID);
 
     if (this.pluginDisableTimer) {
-      clearTimeout(this.pluginDisableTimer);
+      window.clearTimeout(this.pluginDisableTimer);
     }
     if (minutes > 0) {
-      this.pluginDisableTimer = setTimeout(
-        async () => {
-          await this.app.plugins.disablePlugin(EXTRAS_PLUGIN_ID);
-          new Notice(t("EXTRAS_GATEWAY_TIMER_EXPIRED"));
+      this.pluginDisableTimer = window.setTimeout(
+        () => {
+          void (async () => {
+            await this.app.plugins.disablePlugin(EXTRAS_PLUGIN_ID);
+            new Notice(t("EXTRAS_GATEWAY_TIMER_EXPIRED"));
+          })();
         },
         minutes * 60 * 1000,
       );
@@ -268,7 +272,7 @@ class ExtrasActivationModal extends Modal {
   }
 
   onOpen() {
-    this.renderStep();
+    void this.renderStep();
   }
 
   async renderStep() {
@@ -276,7 +280,7 @@ class ExtrasActivationModal extends Modal {
     contentEl.empty();
 
     const compName = t(
-      `EXTRAS_GATEWAY_COMP_${this.component.toUpperCase()}` as any,
+      `EXTRAS_GATEWAY_COMP_${this.component.toUpperCase()}` as keyof typeof en,
     );
 
     // Step 1: Install Plugin
@@ -306,9 +310,11 @@ class ExtrasActivationModal extends Modal {
 
       this.addControls(
         contentEl,
-        async (minutes) => {
-          await this.gateway.enablePlugin(minutes);
-          this.renderStep(); // Re-evaluate state!
+        (minutes) => {
+          void (async () => {
+            await this.gateway.enablePlugin(minutes);
+            await this.renderStep(); // Re-evaluate state!
+          })();
         },
         t("EXTRAS_GATEWAY_ENABLE_PERM_BTN"),
       );
@@ -345,7 +351,7 @@ class ExtrasActivationModal extends Modal {
             .setCta()
             .onClick(() => {
               this.resolveAndClose("cancel");
-              setTimeout(() => {
+              window.setTimeout(() => {
                 window.open(`obsidian://show-plugin?id=${EXTRAS_PLUGIN_ID}`);
               }, 50);
             }),
@@ -371,9 +377,11 @@ class ExtrasActivationModal extends Modal {
 
       this.addControls(
         contentEl,
-        async (minutes) => {
-          await this.gateway.enableFeature(this.component, api, minutes);
-          this.renderStep(); // Re-evaluate state!
+        (minutes) => {
+          void (async () => {
+            await this.gateway.enableFeature(this.component, api, minutes);
+            await this.renderStep(); // Re-evaluate state!
+          })();
         },
         featureBtnText,
       );
@@ -413,13 +421,13 @@ class ExtrasActivationModal extends Modal {
           .setName(t("EXTRAS_GATEWAY_TEMP_ENABLE_TITLE"))
           .setDesc(t("EXTRAS_GATEWAY_TEMP_ENABLE_DESC"))
           .addButton((btn) =>
-            btn.setButtonText("5 min").onClick(() => onEnable(5)),
+            btn.setButtonText("5 Min").onClick(() => onEnable(5)),
           )
           .addButton((btn) =>
-            btn.setButtonText("30 min").onClick(() => onEnable(30)),
+            btn.setButtonText("30 Min").onClick(() => onEnable(30)),
           )
           .addButton((btn) =>
-            btn.setButtonText("1 hour").onClick(() => onEnable(60)),
+            btn.setButtonText("1 Hour").onClick(() => onEnable(60)),
           );
       }
     }

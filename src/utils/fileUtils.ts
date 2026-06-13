@@ -1,7 +1,6 @@
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import {
   App,
-  DataAdapter,
   loadPdfJs,
   MetadataCache,
   normalizePath,

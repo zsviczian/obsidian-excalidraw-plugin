@@ -596,7 +596,11 @@ export default class ExcalidrawView
           filename = `${filename}.excalidraw`;
           const folderpath = splitFolderAndFilename(this.file?.path).folderpath;
           await checkAndCreateFolder(folderpath); //create folder if it does not exist
-          const path = getNewUniqueFilepath(this.app.vault, filename, folderpath);
+          const path = getNewUniqueFilepath(
+            this.app.vault,
+            filename,
+            folderpath,
+          );
           const file = await exportImageToFile(
             this,
             path,
@@ -721,7 +725,7 @@ export default class ExcalidrawView
     const collected: Record<FileId, BinaryFileData> = {};
     let resolved = false;
 
-    void await new Promise<void>((resolve) => {
+    void (await new Promise<void>((resolve) => {
       void loader.loadSceneFiles({
         excalidrawData: this.excalidrawData,
         addFiles: (
@@ -742,7 +746,7 @@ export default class ExcalidrawView
         depth: 0,
         isThemeChange: true,
       });
-    });
+    }));
 
     return Object.keys(collected).length ? collected : null;
   }
@@ -1417,7 +1421,7 @@ export default class ExcalidrawView
       }
     }
 
-    LaTexPrompt.Prompt(this.plugin,this.app, t("ENTER_LATEX"), equation).then(
+    LaTexPrompt.Prompt(this.plugin, this.app, t("ENTER_LATEX"), equation).then(
       (formula: string) => {
         void (async () => {
           if (!formula || formula === equation) {
@@ -1738,17 +1742,19 @@ export default class ExcalidrawView
   } {
     if (selectedText?.id || selectedElementWithLink?.id) {
       let selectedTextElement: ExcalidrawTextElement = selectedText.id
-        ? this.excalidrawAPI
+        ? (this.excalidrawAPI
             .getSceneElements()
-            .find((el: ExcalidrawElement) => el.id === selectedText.id) as ExcalidrawTextElement
+            .find(
+              (el: ExcalidrawElement) => el.id === selectedText.id,
+            ) as ExcalidrawTextElement)
         : null;
 
       let selectedElement = selectedElementWithLink.id
-        ? this.excalidrawAPI
+        ? (this.excalidrawAPI
             .getSceneElements()
             .find(
               (el: ExcalidrawElement) => el.id === selectedElementWithLink.id,
-            ) as ExcalidrawElement
+            ) as ExcalidrawElement)
         : null;
 
       //if the user clicked on the label of an arrow then the label will be captured in selectedElement, because
@@ -3116,66 +3122,66 @@ export default class ExcalidrawView
         void (async () => {
           await waitForExcalidraw();
 
-        const api = this.excalidrawAPI;
-        if (!api) {
-          return;
-        }
-        if (api.getAppState().isLoading) {
-          return;
-        }
-
-        const elements = api.getSceneElements() as ExcalidrawElement[];
-        if (query.length === 1) {
-          const elementId =
-            query[0].match(/ \^([^ ]+)$/)?.[1] ??
-            query[0].match(/^([^ :]+): \[\[[^\]]+]]$/)?.[1];
-          if (elementId && elements.find((el) => el.id === elementId)) {
-            this.preventAutozoom();
-            window.setTimeout(() =>
-              this.zoomToElements(!api.getAppState().viewModeEnabled, [
-                elements.find((el) => el.id === elementId),
-              ]),
-            );
+          const api = this.excalidrawAPI;
+          if (!api) {
             return;
           }
-        }
+          if (api.getAppState().isLoading) {
+            return;
+          }
 
-        if (query.length === 1 && query[0].startsWith("[")) {
-          const partsArray = REGEX_LINK.getResList(query[0]);
-          const parts = partsArray[0];
-          if (parts) {
-            const linkText = REGEX_LINK.getLink(parts);
-            if (linkText) {
-              const file = this.plugin.app.metadataCache.getFirstLinkpathDest(
-                linkText,
-                this.file.path,
+          const elements = api.getSceneElements() as ExcalidrawElement[];
+          if (query.length === 1) {
+            const elementId =
+              query[0].match(/ \^([^ ]+)$/)?.[1] ??
+              query[0].match(/^([^ :]+): \[\[[^\]]+]]$/)?.[1];
+            if (elementId && elements.find((el) => el.id === elementId)) {
+              this.preventAutozoom();
+              window.setTimeout(() =>
+                this.zoomToElements(!api.getAppState().viewModeEnabled, [
+                  elements.find((el) => el.id === elementId),
+                ]),
               );
-              if (file) {
-                const fileId: FileId[] = [];
-                this.excalidrawData.files.forEach((ef, fileID) => {
-                  if (ef.file?.path === file.path) {
-                    fileId.push(fileID);
-                  }
-                });
-                if (fileId.length > 0) {
-                  const images = elements.filter(
-                    (el) => el.type === "image" && fileId.includes(el.fileId),
-                  );
-                  if (images.length > 0) {
-                    this.preventAutozoom();
-                    window.setTimeout(() =>
-                      this.zoomToElements(
-                        !api.getAppState().viewModeEnabled,
-                        images,
-                      ),
+              return;
+            }
+          }
+
+          if (query.length === 1 && query[0].startsWith("[")) {
+            const partsArray = REGEX_LINK.getResList(query[0]);
+            const parts = partsArray[0];
+            if (parts) {
+              const linkText = REGEX_LINK.getLink(parts);
+              if (linkText) {
+                const file = this.plugin.app.metadataCache.getFirstLinkpathDest(
+                  linkText,
+                  this.file.path,
+                );
+                if (file) {
+                  const fileId: FileId[] = [];
+                  this.excalidrawData.files.forEach((ef, fileID) => {
+                    if (ef.file?.path === file.path) {
+                      fileId.push(fileID);
+                    }
+                  });
+                  if (fileId.length > 0) {
+                    const images = elements.filter(
+                      (el) => el.type === "image" && fileId.includes(el.fileId),
                     );
-                    return;
+                    if (images.length > 0) {
+                      this.preventAutozoom();
+                      window.setTimeout(() =>
+                        this.zoomToElements(
+                          !api.getAppState().viewModeEnabled,
+                          images,
+                        ),
+                      );
+                      return;
+                    }
                   }
                 }
               }
             }
           }
-        }
 
           if (
             !this.selectElementsMatchingQuery(
@@ -3188,10 +3194,7 @@ export default class ExcalidrawView
           ) {
             const cleanQuery = cleanSectionHeading(query[0]);
             const sections = await this.getBackOfTheNoteSections();
-            if (
-              sections.includes(cleanQuery) ||
-              this.data.includes(query[0])
-            ) {
+            if (sections.includes(cleanQuery) || this.data.includes(query[0])) {
               void this.setMarkdownView(state);
             }
           }
@@ -3313,8 +3316,14 @@ export default class ExcalidrawView
               return;
             }
           } catch (e) {
-            errorlog({ where: "ExcalidrawView.setViewData", error: e as unknown});
-            if (e instanceof Error && e.message === ERROR_IFRAME_CONVERSION_CANCELED) {
+            errorlog({
+              where: "ExcalidrawView.setViewData",
+              error: e as unknown,
+            });
+            if (
+              e instanceof Error &&
+              e.message === ERROR_IFRAME_CONVERSION_CANCELED
+            ) {
               await this.setMarkdownView();
               return;
             }
@@ -3352,7 +3361,9 @@ export default class ExcalidrawView
                 counter++;
               }
 
-              const drawingBAK = await getImageCache().getBAKFromCache(file.path);
+              const drawingBAK = await getImageCache().getBAKFromCache(
+                file.path,
+              );
               if (!drawingBAK) {
                 new Notice(
                   `Error loading drawing:\n${e.message}${
@@ -5777,9 +5788,9 @@ export default class ExcalidrawView
       );
       if (isCodeblock) {
         const clipboardText = data.text;
-            window.setTimeout(() => {
-              void this.pasteCodeBlock(clipboardText);
-            });
+        window.setTimeout(() => {
+          void this.pasteCodeBlock(clipboardText);
+        });
         return false;
       }
 
@@ -5813,7 +5824,9 @@ export default class ExcalidrawView
                 this.currentPosition.y,
                 link.split("&rect=")[0],
               );
-              const el = ea.getElement(imgID) as Mutable<ExcalidrawImageElement>;
+              const el = ea.getElement(
+                imgID,
+              ) as Mutable<ExcalidrawImageElement>;
               const fd = ea.imagesDict[el.fileId] as FileData;
               el.crop = getPDFCropRect({
                 scale: this.plugin.settings.pdfScale,
@@ -5919,19 +5932,19 @@ export default class ExcalidrawView
               !prevElements.includes(el.id),
           ) as ExcalidrawTextElement[];
 
-        //collect would-be image elements and their corresponding files and links
-        const imageElementsMap = new Map<
-          ExcalidrawTextElement,
-          [string, TFile]
-        >();
-        let element: ExcalidrawTextElement;
-        const callback = (link: string, file: TFile) => {
-          imageElementsMap.set(element, [link, file]);
-        };
-        newElements.forEach((el: ExcalidrawTextElement) => {
-          element = el;
-          isTextImageTransclusion(el.originalText, this, callback);
-        });
+          //collect would-be image elements and their corresponding files and links
+          const imageElementsMap = new Map<
+            ExcalidrawTextElement,
+            [string, TFile]
+          >();
+          let element: ExcalidrawTextElement;
+          const callback = (link: string, file: TFile) => {
+            imageElementsMap.set(element, [link, file]);
+          };
+          newElements.forEach((el: ExcalidrawTextElement) => {
+            element = el;
+            isTextImageTransclusion(el.originalText, this, callback);
+          });
 
           //if there are no image elements, save and return
           //Save will ensure links and embeds are parsed
@@ -6551,7 +6564,9 @@ export default class ExcalidrawView
       const sections = await this.getBackOfTheNoteSections();
       if (sections.includes(title)) {
         let i = 0;
-        while (sections.includes(`${title} ${++i}`)) {}
+        while (sections.includes(`${title} ${++i}`)) {
+          // no-op
+        }
         title = `${title} ${i}`;
       }
       await addBackOfTheNoteCard(this, title, false, data);
@@ -6614,9 +6629,9 @@ export default class ExcalidrawView
     }
     this.plugin.insertLinkDialog.start(
       this.file.path,
-        (markdownlink: string, path: string, alias: string) => {
-          void this.addLink(markdownlink, path, alias, linkVal);
-        },
+      (markdownlink: string, path: string, alias: string) => {
+        void this.addLink(markdownlink, path, alias, linkVal);
+      },
       link,
     );
   }
@@ -6734,11 +6749,11 @@ export default class ExcalidrawView
           renderContextMenuAction(
             React,
             t("CONVERT_URL_TO_FILE"),
-                () => {
-                  window.setTimeout(() => {
-                    void this.convertImageElWithURLToLocalFile(img);
-                  });
-                },
+            () => {
+              window.setTimeout(() => {
+                void this.convertImageElWithURLToLocalFile(img);
+              });
+            },
             onClose,
             "convertImgUrlToFile",
           ),
@@ -6755,23 +6770,23 @@ export default class ExcalidrawView
           renderContextMenuAction(
             React,
             t("IMPORT_SVG_CONTEXTMENU"),
-              () => {
-                void (async () => {
-                  const base64Content = img.embeddedFile
-                    .getImage(false)
-                    .split(",")[1];
-                  // Decoding the base64 content
-                  const svg = atob(base64Content);
-                  if (!svg || svg === "") {
-                    return;
-                  }
-                  const ea = getEA(this);
-                  ea.importSVG(svg);
-                  ea.addToGroup(ea.getElements().map((el) => el.id));
-                  await ea.addElementsToView(true, true, true, true);
-                  ea.destroy();
-                })();
-              },
+            () => {
+              void (async () => {
+                const base64Content = img.embeddedFile
+                  .getImage(false)
+                  .split(",")[1];
+                // Decoding the base64 content
+                const svg = atob(base64Content);
+                if (!svg || svg === "") {
+                  return;
+                }
+                const ea = getEA(this);
+                ea.importSVG(svg);
+                ea.addToGroup(ea.getElements().map((el) => el.id));
+                await ea.addElementsToView(true, true, true, true);
+                ea.destroy();
+              })();
+            },
             onClose,
             "convertSvgToStrokes",
           ),
@@ -6886,7 +6901,8 @@ export default class ExcalidrawView
                     const embeddedFile = this.excalidrawData.getFile(
                       editableEl.fileId,
                     );
-                    const imageType = getImageType(embeddedFile) ?? img.imageType;
+                    const imageType =
+                      getImageType(embeddedFile) ?? img.imageType;
                     if (imageType === "svg" || imageType === "excalidraw") {
                       addAppendUpdateCustomData(editableEl, {
                         doNotInvertSVGInDarkMode: newInvertState
@@ -6997,9 +7013,9 @@ export default class ExcalidrawView
             () => {
               this.plugin.insertLinkDialog.start(
                 this.file.path,
-                  (markdownlink: string, path: string, alias: string) => {
-                    void this.addLink(markdownlink, path, alias);
-                  },
+                (markdownlink: string, path: string, alias: string) => {
+                  void this.addLink(markdownlink, path, alias);
+                },
               );
             },
             onClose,

@@ -1,4 +1,7 @@
-import type { ElementsMap, ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
+import type {
+  ElementsMap,
+  ExcalidrawElement,
+} from "@zsviczian/excalidraw/types/element/src/types";
 import type { AppState } from "@zsviczian/excalidraw/types/excalidraw/types";
 import type { TFile } from "obsidian";
 import { FRONTMATTER_KEYS, getContainerElement } from "src/constants/constants";
@@ -248,7 +251,10 @@ export function _getContainerElement(
     return null;
   }
   if (element.containerId) {
-    return getContainerElement(element, arrayToMap(scene.elements) as ElementsMap);
+    return getContainerElement(
+      element,
+      arrayToMap(scene.elements) as ElementsMap,
+    );
   }
   return null;
 }

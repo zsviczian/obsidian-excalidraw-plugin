@@ -7,7 +7,10 @@ import {
   isObsidianThemeDark,
 } from "src/utils/obsidianUtils";
 import { App, Notice, TFile } from "obsidian";
-import { isInstanceOfDocumentFragment, isInstanceOfElement } from "src/utils/typechecks";
+import {
+  isInstanceOfDocumentFragment,
+  isInstanceOfElement,
+} from "src/utils/typechecks";
 
 export class ObserverManager {
   private plugin: ExcalidrawPlugin;
@@ -81,9 +84,7 @@ export class ObserverManager {
       return;
     }
 
-    const themeObserverFn: MutationCallback = (
-      mutations: MutationRecord[],
-    ) => {
+    const themeObserverFn: MutationCallback = (mutations: MutationRecord[]) => {
       const { matchThemeTrigger } = this.settings;
       if (!matchThemeTrigger) {
         return;
@@ -179,7 +180,10 @@ export class ObserverManager {
       mutationsList.forEach((mutation) => {
         if (mutation.type === "childList") {
           mutation.addedNodes.forEach((node) => {
-            if (isInstanceOfElement(node) || isInstanceOfDocumentFragment(node)) {
+            if (
+              isInstanceOfElement(node) ||
+              isInstanceOfDocumentFragment(node)
+            ) {
               ensureFiletypes(node);
             }
           });

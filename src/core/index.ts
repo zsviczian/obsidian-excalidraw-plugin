@@ -1,5 +1,6 @@
 import "obsidian";
 import type { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
+import { errorlog } from "src/utils/coreUtils";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 //import { ExcalidrawAutomate } from "./ExcalidrawAutomate";
 //export ExcalidrawAutomate from "./ExcalidrawAutomate";
@@ -17,7 +18,7 @@ export const getEA = (view?: ExcalidrawView): ExcalidrawAutomate | null => {
   try {
     return window.ExcalidrawAutomate.getAPI(view);
   } catch (error) {
-    console.log({ message: "Excalidraw not available", fn: getEA, error });
+    errorlog({ message: "Excalidraw not available", fn: getEA, error: error as unknown });
     return null;
   }
 };
