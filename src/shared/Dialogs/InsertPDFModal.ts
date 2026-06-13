@@ -54,7 +54,7 @@ export class InsertPDFModal extends Modal {
     void this.createForm();
   }
 
-  async onClose() {
+  onClose() {
     if (this.dirty) {
       this.plugin.settings.pdfImportScale = this.importScale;
       this.plugin.settings.pdfBorderBox = this.borderBox;
@@ -65,7 +65,7 @@ export class InsertPDFModal extends Modal {
       this.plugin.settings.pdfNumRows = this.numRows;
       this.plugin.settings.pdfDirection = this.direction;
       this.plugin.settings.pdfLockAfterImport = this.lockAfterImport;
-      await this.plugin.saveSettings();
+      void this.plugin.saveSettings();
     }
     if (this.pdfDoc) {
       this.pdfDoc.destroy();

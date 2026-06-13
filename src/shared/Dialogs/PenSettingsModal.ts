@@ -72,9 +72,9 @@ export class PenSettingsModal extends Modal {
     void this.createForm();
   }
 
-  async onClose() {
+  onClose() {
     if (this.dirty) {
-      await this.plugin.saveSettings();
+      void this.plugin.saveSettings();
       getExcalidrawViews(this.app, true).forEach((excalidrawView) =>
         excalidrawView.updatePinnedCustomPens(),
       );

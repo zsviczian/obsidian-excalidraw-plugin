@@ -52,7 +52,6 @@ import {
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import {
   initExcalidrawAutomate,
-  insertLaTeXToView,
 } from "src/utils/excalidrawAutomateUtils";
 import { around, dedupe } from "monkey-around";
 import { t } from "../lang/helpers";
@@ -132,6 +131,7 @@ import { URLs } from "src/constants/safeUrls";
 import { hideElement, setButtonBgColor } from "src/utils/styleUtils";
 import { installButton } from "src/utils/scriptLibraryUtils";
 import { isInstanceOfHTMLStyleElement } from "src/utils/typechecks";
+import { insertLaTeXToView } from "src/utils/excalidrawViewHelpers";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
@@ -809,12 +809,13 @@ export default class ExcalidrawPlugin extends Plugin {
     this.addRibbonIcon(
       ICON_NAME,
       t("CREATE_NEW"),
-      this.actionRibbonClick.bind(this),
+      (e) => this.actionRibbonClick(e),
     );
 
     try {
-      void this.loadSettings({ reEnableAutosave: true }).then(
-        this.onloadCheckForOnceOffSettingsUpdates.bind(this),
+      void this.loadSettings({ reEnableAutosave: true }).then(() =>
+        this.onloadCheckForOnceOffSettingsUpdates(),
+
       );
     } catch (e) {
       new Notice("Error loading plugin settings", 6000);
@@ -835,12 +836,12 @@ export default class ExcalidrawPlugin extends Plugin {
       //Licat: Are you registering your post processors in onLayoutReady? You should register them in onload instead
       this.addMarkdownPostProcessor();
     } catch (e) {
-      new Notice("Error adding markdown post processor", 6000);
-      console.error("Error adding markdown post processor", e);
+      new Notice("Error adding Markdown post processor", 6000);
+      console.error("Error adding Markdown post processor", e);
     }
     this.logStartupEvent("Markdown post processor added");
 
-    this.app.workspace.onLayoutReady(this.onloadOnLayoutReady.bind(this));
+    this.app.workspace.onLayoutReady(() => this.onloadOnLayoutReady());
     this.logStartupEvent("Workspace ready event handler added");
   }
 
@@ -1791,6 +1792,10 @@ export default class ExcalidrawPlugin extends Plugin {
       this.settings as PersistedExcalidrawSettings,
     );
     await this.saveData(encryptPersistedAPIKeys(persistedSettings));
+  }
+
+  async onExternalSettingsChange() {
+    await this.loadSettings();
   }
 
   public async openSidepanel(

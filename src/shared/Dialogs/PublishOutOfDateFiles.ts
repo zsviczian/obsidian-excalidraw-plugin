@@ -105,7 +105,7 @@ export class PublishOutOfDateFilesDialog extends Modal {
     super(plugin.app);
   }
 
-  async onClose() {}
+  onClose() {}
 
   onOpen() {
     this.containerEl.classList.add("excalidraw-release");

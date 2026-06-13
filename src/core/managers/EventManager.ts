@@ -126,21 +126,20 @@ export class EventManager {
     this.registerEvent(
       this.plugin.app.workspace.on(
         "active-leaf-change",
-        this.onActiveLeafChangeHandler.bind(this),
+        (leaf) => this.onActiveLeafChangeHandler(leaf),
       ),
     );
 
     this.registerEvent(
       this.app.workspace.on(
         "layout-change",
-        this.onLayoutChangeHandler.bind(this),
+        () =>  this.onLayoutChangeHandler(),
       ),
     );
 
     //File Save Trigger Handlers
     //Save the drawing if the user clicks outside the Excalidraw Canvas
-    const onClickEventSaveActiveDrawing =
-      this.onClickSaveActiveDrawing.bind(this);
+    const onClickEventSaveActiveDrawing = (e: PointerEvent) => this.onClickSaveActiveDrawing(e);
     this.app.workspace.containerEl.addEventListener(
       "click",
       onClickEventSaveActiveDrawing,
@@ -154,7 +153,7 @@ export class EventManager {
     this.registerEvent(
       this.app.workspace.on(
         "file-menu",
-        this.onFileMenuSaveActiveDrawing.bind(this),
+        () => this.onFileMenuSaveActiveDrawing(),
       ),
     );
 
@@ -166,12 +165,22 @@ export class EventManager {
     );
 
     this.registerEvent(
-      this.app.workspace.on("file-menu", this.onFileMenuHandler.bind(this)),
+      this.app.workspace.on("file-menu", (menu, file, source, leaf) => {
+        if (!(file instanceof TFile)) {
+          return;
+        }
+        this.onFileMenuHandler(menu, file, source, leaf);
+      }),
     );
     this.plugin.registerEvent(
       this.plugin.app.workspace.on(
         "editor-menu",
-        this.onEditorMenuHandler.bind(this),
+        (menu, editor, view) =>{
+          if (!(view instanceof MarkdownView)) {
+            return;
+          }
+          this.onEditorMenuHandler(menu, editor, view);
+        },
       ),
     );
   }
@@ -209,7 +218,11 @@ export class EventManager {
     if (data.startsWith(`{"type":"excalidraw/clipboard"`)) {
       evt.preventDefault();
       try {
-        const drawing = JSON.parse(data);
+        const drawing = JSON.parse(data) as {
+          type: string;
+          elements: ExcalidrawElement[];
+        };
+
         const hasOneTextElement =
           drawing.elements.filter((el: ExcalidrawElement) => el.type === "text")
             .length === 1;

@@ -20,6 +20,7 @@ import {
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
 import {
+  ElementsMap,
   ExcalidrawElement,
   ExcalidrawImageElement,
   ImageCrop,
@@ -1058,7 +1059,7 @@ export function _getContainerElement(
     return null;
   }
   if (element.containerId) {
-    return getContainerElement(element, arrayToMap(scene.elements));
+    return getContainerElement(element, arrayToMap(scene.elements) as ElementsMap) ?? null;
     //return scene.elements.find((el:ExcalidrawElement)=>el.id === element.containerId) ?? null;
   }
   return null;

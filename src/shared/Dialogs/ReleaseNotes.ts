@@ -44,16 +44,18 @@ export class ReleaseNotes extends Modal {
     } // Disable pointer events on header to allow clicks through
   }
 
-  async onClose() {
+  onClose() {
     this.contentEl.empty();
     if (this.options.persistVersion === false) {
       return;
     }
-    await this.plugin.loadSettings();
-    if (this.plugin.settings.previousRelease !== PLUGIN_VERSION) {
-      this.plugin.settings.previousRelease = PLUGIN_VERSION;
-      await this.plugin.saveSettings();
-    }
+    void (async () => {
+      await this.plugin.loadSettings();
+      if (this.plugin.settings.previousRelease !== PLUGIN_VERSION) {
+        this.plugin.settings.previousRelease = PLUGIN_VERSION;
+        await this.plugin.saveSettings();
+      }
+    })();
   }
 
   async createForm() {

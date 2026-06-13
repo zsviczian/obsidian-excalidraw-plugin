@@ -213,7 +213,7 @@ export class InlineLinkSuggester
     return input;
   }
 
-  async onInputChanged(): Promise<void> {
+  onInputChanged(): void {
     const inputStr = this.modifyInput(this.inputEl.value);
     this.caretPos = this.inputEl.selectionStart ?? inputStr.length;
 
@@ -249,21 +249,23 @@ export class InlineLinkSuggester
         return;
       }
 
-      if (this.mode === "heading") {
-        await this.loadHeadings(this.activeFile);
-      } else if (this.mode === "block") {
-        await this.loadParagraphs(this.activeFile);
-      } else if (this.mode === "frame" || this.mode === "clippedframe") {
-        await this.loadFrames(this.activeFile, this.mode);
-      } else {
-        this.headingItems = [];
-        this.paragraphItems = [];
-        this.frameItems = [];
-      }
+      void (async () => {
+        if (this.mode === "heading") {
+          await this.loadHeadings(this.activeFile);
+        } else if (this.mode === "block") {
+          await this.loadParagraphs(this.activeFile);
+        } else if (this.mode === "frame" || this.mode === "clippedframe") {
+          await this.loadFrames(this.activeFile, this.mode);
+        } else {
+          this.headingItems = [];
+          this.paragraphItems = [];
+          this.frameItems = [];
+        }
 
-      this.tagItems = [];
-      this.block = true;
-      super.onInputChanged();
+        this.tagItems = [];
+        this.block = true;
+        super.onInputChanged();
+      })();
       return;
     }
 
@@ -287,7 +289,7 @@ export class InlineLinkSuggester
     this.tagItems = this.getTagSuggestions();
 
     this.block = true;
-    await super.onInputChanged();
+    super.onInputChanged();
   }
 
   private getTagSuggestions(): TagSuggestion[] {
@@ -386,7 +388,7 @@ export class InlineLinkSuggester
     return item.path + (item.alias ? `|${item.alias}` : "");
   }
 
-  async onChooseItem(item: InlineSuggestion | undefined): Promise<void> {
+  onChooseItem(item: InlineSuggestion | undefined): void {
     if (!item) {
       return;
     }
@@ -409,18 +411,20 @@ export class InlineLinkSuggester
     }
 
     if (this.isParagraph(item)) {
-      const id = await this.ensureParagraphHasId(item);
-      if (!id) {
-        return;
-      }
-      const linktext = this.app.metadataCache.fileToLinktext(
-        item.file,
-        this.getSourcePath() ?? "",
-        true,
-      );
-      const aliasSuffix =
-        this.activeAlias !== null ? `|${this.activeAlias}` : "";
-      this.insertLink(`[[${linktext}#^${id}${aliasSuffix}]]`);
+      void (async () => {
+        const id = await this.ensureParagraphHasId(item);
+        if (!id) {
+          return;
+        }
+        const linktext = this.app.metadataCache.fileToLinktext(
+          item.file,
+          this.getSourcePath() ?? "",
+          true,
+        );
+        const aliasSuffix =
+          this.activeAlias !== null ? `|${this.activeAlias}` : "";
+        this.insertLink(`[[${linktext}#^${id}${aliasSuffix}]]`);
+      })();
       return;
     }
 
@@ -442,13 +446,13 @@ export class InlineLinkSuggester
     this.insertLink(linkString);
   }
 
-  async selectSuggestion(
+  selectSuggestion(
     value: FuzzyMatch<InlineSuggestion>,
     evt: MouseEvent | KeyboardEvent,
   ) {
     evt?.preventDefault?.();
     evt?.stopPropagation?.();
-    await this.onChooseItem(value?.item);
+    void this.onChooseItem(value?.item);
   }
 
   open(): void {

@@ -25,7 +25,7 @@ export class RankMessage extends Modal {
     void this.createForm();
   }
 
-  async onClose() {
+  onClose() {
     this.contentEl.empty();
     this.plugin = null;
   }

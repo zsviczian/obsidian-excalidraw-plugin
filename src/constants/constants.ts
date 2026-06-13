@@ -9,6 +9,7 @@ import { setStyle } from "src/utils/styleUtils";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 declare const PLUGIN_VERSION: string;
 export let EXCALIDRAW_PLUGIN: ExcalidrawPlugin = null;
+// eslint-disable-next-line obsidianmd/prefer-active-doc
 export const mainDocument = document; //signals deliberate use of main document instead of activeDocument
 export const setExcalidrawPlugin = (plugin: ExcalidrawPlugin) => {
   EXCALIDRAW_PLUGIN = plugin;
@@ -175,7 +176,9 @@ export function updateExcalidrawLib() {
       getDefaultColorPalette,
     } = excalidrawLib);
   } catch (error) {
-    errorHandler.handleError(error, "updateExcalidrawLib", true);
+    if (error instanceof Error || typeof error === "string") {
+      errorHandler.handleError(error, "updateExcalidrawLib", true);
+    }
     // Don't throw here - we'll try to continue with potentially stale functions
     // but at least we won't crash
   }

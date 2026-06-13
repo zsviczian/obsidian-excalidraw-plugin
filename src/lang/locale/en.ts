@@ -117,6 +117,7 @@ export default {
   ABOUT_EXCALIDRAW: "About Excalidraw",
   RUN_OCR:
     "OCR full drawing: Grab text from freedraw + images to clipboard and doc.props",
+  TASKBONE_NOT_ENABLED: "Taskbone OCR is not enabled. Please go to plugins settings to enable it.",
   RERUN_OCR:
     "OCR full drawing re-run: Grab text from freedraw + images to clipboard and doc.props",
   RUN_OCR_ELEMENTS:
@@ -126,6 +127,7 @@ export default {
   CROP_PAGE: "Crop and mask selected page",
   CROP_IMAGE: "Crop and mask image",
   ANNOTATE_IMAGE: "Annotate image in Excalidraw",
+  ANNOTATE_IMAGE_ERROR: "File not found. New Excalidraw drawing is taking too long to create. Please try again.",
   INSERT_ACTIVE_PDF_PAGE_AS_IMAGE: "Insert active PDF page as image",
   RESET_IMG_TO_100: "Set selected image element size to 100% of original",
   RESET_IMG_ASPECT_RATIO: "Reset selected image element aspect ratio",
@@ -253,6 +255,32 @@ export default {
   SEARCH_PREVIOUS: "Previous",
 
   //settings.ts
+  FOLDER_PLACEHOLDER: "e.g.: Excalidraw",
+  CROP_FOLDER_PLACEHOLDER: "e.g.: Excalidraw/Cropped",
+  ANNOTATE_FOLDER_PLACEHOLDER: "e.g.: Excalidraw/Annotations",
+  TEMPLATE_PLACEHOLDER: "e.g.: Excalidraw/Template",
+  SCRIPT_FOLDER_PLACEHOLDER: "e.g.: Excalidraw/Scripts",
+  FILENAME_PREFIX_PLACEHOLDER: "e.g.: Drawing ",
+  CROP_PREFIX_PLACEHOLDER: "e.g.: cropped_",
+  CROP_SUFFIX_PLACEHOLDER: "e.g.: _cropped",
+  ANNOTATE_PREFIX_PLACEHOLDER: "e.g.: annotated_",
+  ANNOTATE_SUFFIX_PLACEHOLDER: "e.g.: _annotated",
+  DYNAMICSTYLE_OPTION_NONE: "Dynamic Styling OFF",
+  DYNAMICSTYLE_OPTION_COLORFUL: "Match color",
+  DYNAMICSTYLE_OPTION_GRAY: "Gray, match tone",
+  DEFAULT_OPEN_MODE_OPTION_NORMAL: "Always in normal-mode",
+  DEFAULT_OPEN_MODE_OPTION_ZEN: "Always in zen-mode",
+  DEFAULT_OPEN_MODE_OPTION_VIEW: "Always in view-mode",
+  DEFAULT_OPEN_MODE_OPTION_VIEW_MOBILE: "Usually normal, but view-mode on Phone",
+  DEFAULT_PEN_MODE_OPTION_NEVER: "Never",
+  DEFAULT_PEN_MODE_OPTION_MOBILE: "On Obsidian Mobile",
+  DEFAULT_PEN_MODE_OPTION_ALWAYS: "Always",
+  EMBED_PREVIEW_IMAGETYPE_OPTION_PNG: "PNG Image",
+  EMBED_PREVIEW_IMAGETYPE_OPTION_SVG: "Native SVG",
+  EMBED_PREVIEW_IMAGETYPE_OPTION_SVGIMG: "SVG Image",
+  DEFAULT_COLOR_MD_DESC: "CSS Color-name|RGB-HEX",
+  MD_CSS_PLACEHOLDER: "Filename of CSS file in Vault",
+  CJK_ASSETS_FOLDER_PLACEHOLDER: "e.g.: Excalidraw/FontAssets",
   DISABLE_CONTEXT_MENU_NAME: "Disable Excalidraw context menu",
   DISABLE_CONTEXT_MENU_DESC:
     "Disables the Excalidraw context menu. This can be useful on Mobile devices where the context menu pops up in unwanted moments.",
@@ -260,6 +288,7 @@ export default {
     "Ask NotebookLM for help about the plugin. This model is pre-loaded with all my video transcripts, release notes and other helpful content. Chat with NotebookLM to explore my 250+ videos and the Excalidraw documentation.",
   NOTEBOOKLM_LINK_TEXT:
     "Learn the Plugin. Access the NotebookLM knowledgebase.",
+  EXCALIDRAW_MASTERY: "Excalidraw Mastery",
   EXCALIDRAW_MASTERY_PROMO_ARIA: "Open Excalidraw Mastery",
   EXCALIDRAW_MASTERY_PROMO_HTML: `<p><b>Feeling lost in the toggles and menus?</b></p><p>Excalidraw is a Visual PKM powerhouse built for heavy-duty workflows like <b>Visual-First Daily Notes</b>, deep <b>PDF research</b>, <b>automation</b>, <b>AI integration</b>, and <b>Visual Zettelkasten</b>. But all this power comes with complexity.</p><p>Skip the trial and error. <a href="${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM}" target="_blank">👉 Join Excalidraw Mastery</a> to learn these exact setups step-by-step. Overcome tool friction and master your knowledge alongside a supportive community of visual thinkers!</p>`,
   EXCALIDRAW_MASTERY_PROMO_SHOW: "Show",
