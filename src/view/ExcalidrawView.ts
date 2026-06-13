@@ -287,6 +287,15 @@ interface WorkspaceItemExt extends WorkspaceItem {
 const HIDE = "excalidraw-hidden";
 const SHOW = "excalidraw-visible";
 
+type InteractiveMarkdownPreviewPair = {
+  embeddable: Mutable<ExcalidrawEmbeddableElement>;
+  preview: Mutable<ExcalidrawImageElement>;
+  renderWidth: number;
+  renderHeight: number;
+  needsImageReload: boolean;
+  needsGeometrySync: boolean;
+};
+
 export const addFiles = async (
   files: FileData[],
   view: ExcalidrawView,
@@ -468,6 +477,10 @@ export default class ExcalidrawView
   private resizeBatchWindowStart: number = 0;
   private lastAggregatedDh = 0;
   private oldKeyboardScroll: { scrollY: number; scrollX: number } | null = null;
+  private interactiveMarkdownPreviewSyncTimer: number | null = null;
+  private interactiveMarkdownPreviewSyncPromise: Promise<void> | null = null;
+  private interactiveMarkdownPreviewSyncInProgress = false;
+  private interactiveMarkdownPreviewSyncQueued = false;
 
   //https://stackoverflow.com/questions/27132796/is-there-any-javascript-event-fired-when-the-on-screen-keyboard-on-mobile-safari
   private isEditingTextResetTimer: number | null = null;
@@ -1132,8 +1145,10 @@ export default class ExcalidrawView
       return;
     }
 
-    const allowSave = this.isDirty() || forcesave; //removed this.semaphores.autosaving
     try {
+      await this.flushInteractiveMarkdownPreviewSync();
+
+      const allowSave = this.isDirty() || forcesave; //removed this.semaphores.autosaving
       if (allowSave) {
         const scene = this.getScene();
 
@@ -2908,6 +2923,11 @@ export default class ExcalidrawView
       window.clearTimeout(this.colorChangeTimer);
       this.colorChangeTimer = null;
     }
+    if (this.interactiveMarkdownPreviewSyncTimer) {
+      window.clearTimeout(this.interactiveMarkdownPreviewSyncTimer);
+      this.interactiveMarkdownPreviewSyncTimer = null;
+    }
+    this.interactiveMarkdownPreviewSyncQueued = false;
     if (this.semaphores?.wheelTimeout) {
       window.clearTimeout(this.semaphores.wheelTimeout);
       this.semaphores.wheelTimeout = null;
@@ -5560,11 +5580,240 @@ export default class ExcalidrawView
     }
   }
 
+  private getInteractiveMarkdownPreviewPairs(
+    elements: readonly ExcalidrawElement[],
+  ): InteractiveMarkdownPreviewPair[] {
+    const byId = new Map(elements.map((el) => [el.id, el]));
+    const pairs: InteractiveMarkdownPreviewPair[] = [];
+    const threshold = 0.5;
+
+    for (const element of elements) {
+      if (
+        element.type !== "embeddable" ||
+        !element.customData?.interactiveMarkdownPreviewBacked
+      ) {
+        continue;
+      }
+
+      const previewId =
+        typeof element.customData.interactiveMarkdownPreviewId === "string"
+          ? element.customData.interactiveMarkdownPreviewId
+          : null;
+      const preview = previewId ? byId.get(previewId) : null;
+      if (
+        !preview ||
+        preview.type !== "image" ||
+        !preview.customData?.interactiveMarkdownEmbeddablePreview
+      ) {
+        continue;
+      }
+
+      const embeddable = element as Mutable<ExcalidrawEmbeddableElement>;
+      const previewImage = preview as Mutable<ExcalidrawImageElement>;
+      const scaleX = Math.abs(embeddable.scale?.[0] ?? 1) || 1;
+      const scaleY = Math.abs(embeddable.scale?.[1] ?? 1) || 1;
+      const renderWidth = Math.max(1, Math.round(embeddable.width / scaleX));
+      const renderHeight = Math.max(1, Math.round(embeddable.height / scaleY));
+      const syncedWidth = Number(
+        previewImage.customData?.interactiveMarkdownPreviewSyncedWidth,
+      );
+      const syncedHeight = Number(
+        previewImage.customData?.interactiveMarkdownPreviewSyncedHeight,
+      );
+      const previewScaleX = Math.abs(previewImage.scale?.[0] ?? 1);
+      const previewScaleY = Math.abs(previewImage.scale?.[1] ?? 1);
+
+      pairs.push({
+        embeddable,
+        preview: previewImage,
+        renderWidth,
+        renderHeight,
+        needsImageReload:
+          syncedWidth !== renderWidth || syncedHeight !== renderHeight,
+        needsGeometrySync:
+          Math.abs(previewImage.x - embeddable.x) > threshold ||
+          Math.abs(previewImage.y - embeddable.y) > threshold ||
+          Math.abs(previewImage.width - embeddable.width) > threshold ||
+          Math.abs(previewImage.height - embeddable.height) > threshold ||
+          Math.abs(previewImage.angle - embeddable.angle) > 0.001 ||
+          Math.abs(previewScaleX - 1) > 0.001 ||
+          Math.abs(previewScaleY - 1) > 0.001,
+      });
+    }
+
+    return pairs;
+  }
+
+  private scheduleInteractiveMarkdownPreviewSync(delay = 250) {
+    if (
+      !this.excalidrawAPI ||
+      !this.excalidrawData ||
+      this.semaphores?.viewunload
+    ) {
+      return;
+    }
+
+    this.interactiveMarkdownPreviewSyncQueued = true;
+
+    if (this.interactiveMarkdownPreviewSyncInProgress) {
+      return;
+    }
+
+    if (this.interactiveMarkdownPreviewSyncTimer) {
+      window.clearTimeout(this.interactiveMarkdownPreviewSyncTimer);
+    }
+
+    this.interactiveMarkdownPreviewSyncTimer = window.setTimeout(() => {
+      this.interactiveMarkdownPreviewSyncTimer = null;
+      void this.syncInteractiveMarkdownPreviewBackings();
+    }, delay);
+  }
+
+  private async flushInteractiveMarkdownPreviewSync() {
+    if (this.interactiveMarkdownPreviewSyncTimer) {
+      window.clearTimeout(this.interactiveMarkdownPreviewSyncTimer);
+      this.interactiveMarkdownPreviewSyncTimer = null;
+    }
+
+    if (this.interactiveMarkdownPreviewSyncInProgress) {
+      this.interactiveMarkdownPreviewSyncQueued = true;
+      await this.interactiveMarkdownPreviewSyncPromise;
+      return;
+    }
+
+    await this.syncInteractiveMarkdownPreviewBackings();
+  }
+
+  private async syncInteractiveMarkdownPreviewBackings() {
+    if (
+      !this.excalidrawAPI ||
+      !this.excalidrawData ||
+      this.semaphores?.viewunload
+    ) {
+      return;
+    }
+
+    if (this.interactiveMarkdownPreviewSyncInProgress) {
+      this.interactiveMarkdownPreviewSyncQueued = true;
+      await this.interactiveMarkdownPreviewSyncPromise;
+      return;
+    }
+
+    this.interactiveMarkdownPreviewSyncPromise = (async () => {
+      this.interactiveMarkdownPreviewSyncInProgress = true;
+      try {
+        do {
+          this.interactiveMarkdownPreviewSyncQueued = false;
+          await this.syncInteractiveMarkdownPreviewBackingsOnce();
+        } while (
+          this.interactiveMarkdownPreviewSyncQueued &&
+          !this.semaphores?.viewunload
+        );
+      } finally {
+        this.interactiveMarkdownPreviewSyncInProgress = false;
+        this.interactiveMarkdownPreviewSyncPromise = null;
+      }
+    })();
+
+    await this.interactiveMarkdownPreviewSyncPromise;
+  }
+
+  private async syncInteractiveMarkdownPreviewBackingsOnce() {
+    if (!this.excalidrawAPI || !this.excalidrawData) {
+      return;
+    }
+
+    const elements =
+      this.excalidrawAPI.getSceneElementsIncludingDeleted() as Mutable<
+        ExcalidrawElement
+      >[];
+    const pairs = this.getInteractiveMarkdownPreviewPairs(elements);
+    const pairsToUpdate = pairs.filter(
+      (pair) => pair.needsGeometrySync || pair.needsImageReload,
+    );
+    if (pairsToUpdate.length === 0) {
+      return;
+    }
+
+    let geometryDirty = false;
+    for (const pair of pairsToUpdate) {
+      const { embeddable, preview, renderWidth, renderHeight } = pair;
+      if (pair.needsGeometrySync) {
+        preview.x = embeddable.x;
+        preview.y = embeddable.y;
+        preview.width = embeddable.width;
+        preview.height = embeddable.height;
+        preview.angle = embeddable.angle;
+        preview.scale = [1, 1];
+        geometryDirty = true;
+      }
+      addAppendUpdateCustomData(preview, {
+        interactiveMarkdownEmbeddableId: embeddable.id,
+        interactiveMarkdownPreviewSyncedWidth: renderWidth,
+        interactiveMarkdownPreviewSyncedHeight: renderHeight,
+      });
+      addAppendUpdateCustomData(embeddable, {
+        interactiveMarkdownPreviewId: preview.id,
+      });
+      geometryDirty = true;
+    }
+
+    if (geometryDirty) {
+      this.updateScene({
+        elements,
+        captureUpdate: CaptureUpdateAction.NEVER,
+      });
+    }
+
+    const filesToUpdate: FileData[] = [];
+    const isDark = this.excalidrawAPI.getAppState()?.theme === "dark";
+    for (const pair of pairsToUpdate.filter((item) => item.needsImageReload)) {
+      const embeddedFile = this.excalidrawData.getFile(pair.preview.fileId);
+      if (!embeddedFile) {
+        continue;
+      }
+      const loader = new EmbeddedFilesLoader(this.plugin, isDark);
+      const data = await loader.getObsidianImage(embeddedFile, 0, {
+        markdownRenderSize: {
+          width: pair.renderWidth,
+          height: pair.renderHeight,
+        },
+      });
+      if (!data?.dataURL) {
+        continue;
+      }
+      embeddedFile.setImage({
+        imgBase64: data.dataURL,
+        mimeType: data.mimeType,
+        size: data.size,
+        isDark,
+        isSVGwithBitmap: data.hasSVGwithBitmap,
+        pdfPageViewProps: data.pdfPageViewProps,
+      });
+      filesToUpdate.push({
+        mimeType: data.mimeType,
+        id: pair.preview.fileId,
+        dataURL: data.dataURL,
+        created: data.created,
+        size: data.size,
+        hasSVGwithBitmap: data.hasSVGwithBitmap,
+        shouldScale: false,
+        pdfPageViewProps: data.pdfPageViewProps,
+      });
+    }
+
+    if (filesToUpdate.length > 0) {
+      this.excalidrawAPI.addFiles(filesToUpdate);
+    }
+    this.setDirty();
+  }
+
   private onChange(
     et: ExcalidrawElement[],
     st: AppState,
     files: BinaryFileData[],
   ) {
+    this.scheduleInteractiveMarkdownPreviewSync();
     if (st.activeTool?.type) {
       if (st.activeTool.type === "image") {
         if (

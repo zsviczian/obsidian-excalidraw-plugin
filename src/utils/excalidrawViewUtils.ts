@@ -48,6 +48,7 @@ import { CaptureUpdateAction } from "src/constants/constants";
 import { setSanitizedHtml } from "./htmlUtils";
 import { URLs } from "src/constants/safeUrls";
 import { isInstanceOfHTMLDivElement } from "./typechecks";
+import { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 
 type CommandLinkOptInPlugin = {
   settings: {
@@ -254,6 +255,58 @@ export function deleteAppStateKeys(
   return st;
 }
 
+type MarkdownInteractiveEmbedPreviewSpec = {
+  imageSource: TFile | string;
+};
+
+function getMarkdownInteractiveEmbedPreviewSpec(
+  ea: ExcalidrawAutomate,
+  file?: TFile,
+  link?: string,
+): MarkdownInteractiveEmbedPreviewSpec | null {
+  if (file?.extension?.toLowerCase() === "md") {
+    return {
+      imageSource: file,
+    };
+  }
+
+  if (!link || link.match(REG_LINKINDEX_HYPERLINK)) {
+    return null;
+  }
+
+  const parts = REGEX_LINK.getRes(link).next();
+  const linkText = parts.value
+    ? REGEX_LINK.getLink(parts)
+    : getLinkFromMarkdownLink(link);
+  if (!linkText || linkText.match(REG_LINKINDEX_HYPERLINK)) {
+    return null;
+  }
+
+  const sourceFile = ea.targetView?.file;
+  const linkParts = getLinkParts(linkText, sourceFile);
+  if (!linkParts.path) {
+    return null;
+  }
+
+  const resolvedFile = ea.plugin.app.metadataCache.getFirstLinkpathDest(
+    linkParts.path,
+    sourceFile?.path ?? "",
+  );
+  if (resolvedFile?.extension?.toLowerCase() !== "md") {
+    return null;
+  }
+
+  const imageSource = linkParts.ref
+    ? `${resolvedFile.path}#${linkParts.isBlockRef ? "^" : ""}${
+        linkParts.ref
+      }`
+    : resolvedFile;
+
+  return {
+    imageSource,
+  };
+}
+
 export async function insertEmbeddableToView(
   ea: ExcalidrawAutomate,
   position: { x: number; y: number },
@@ -300,7 +353,47 @@ export async function insertEmbeddableToView(
       shouldInsertToView,
     );
   }
+  let width = MAX_IMAGE_SIZE;
   let height = MAX_IMAGE_SIZE;
+  let previewImageId: string | null = null;
+  const markdownPreviewSpec = getMarkdownInteractiveEmbedPreviewSpec(
+    ea,
+    file,
+    link,
+  );
+  if (markdownPreviewSpec) {
+    const currentStyle = {
+      backgroundColor: ea.style.backgroundColor,
+      strokeColor: ea.style.strokeColor,
+    };
+    ea.setStyle({
+      backgroundColor: "transparent",
+      strokeColor: "transparent",
+    });
+    try {
+      previewImageId = await ea.addImage(
+        position.x,
+        position.y,
+        markdownPreviewSpec.imageSource,
+      );
+    } finally {
+      ea.setStyle(currentStyle);
+    }
+    if (previewImageId) {
+      const previewImage = ea.getElement(
+        previewImageId,
+      ) as Mutable<ExcalidrawImageElement>;
+      if (previewImage) {
+        previewImage.x = position.x;
+        previewImage.y = position.y;
+        width = previewImage.width;
+        height = previewImage.height;
+        addAppendUpdateCustomData(previewImage, {
+          interactiveMarkdownEmbeddablePreview: true,
+        });
+      }
+    }
+  }
   if (
     (file && AUDIO_TYPES.contains(file.extension.toLowerCase())) ||
     (link &&
@@ -314,14 +407,41 @@ export async function insertEmbeddableToView(
     });
     height = getAudioElementHeight();
   }
+  if (previewImageId) {
+    ea.setStyle({
+      backgroundColor: "transparent",
+    });
+  }
   const id = ea.addEmbeddable(
     position.x,
     position.y,
-    MAX_IMAGE_SIZE,
+    width,
     height,
     link,
     file,
   );
+  if (previewImageId) {
+    const groupId = nanoid();
+    const embeddable = ea.getElement(id) as Mutable<ExcalidrawElement>;
+    const previewImage = ea.getElement(
+      previewImageId,
+    ) as Mutable<ExcalidrawImageElement>;
+    if (embeddable && previewImage) {
+      previewImage.x = embeddable.x = position.x;
+      previewImage.y = embeddable.y = position.y;
+      previewImage.width = embeddable.width;
+      previewImage.height = embeddable.height;
+      embeddable.groupIds = [...embeddable.groupIds, groupId];
+      previewImage.groupIds = [...previewImage.groupIds, groupId];
+      addAppendUpdateCustomData(embeddable, {
+        interactiveMarkdownPreviewBacked: true,
+        interactiveMarkdownPreviewId: previewImageId,
+      });
+      addAppendUpdateCustomData(previewImage, {
+        interactiveMarkdownEmbeddableId: id,
+      });
+    }
+  }
   if (shouldInsertToView) {
     await ea.addElementsToView(false, true, true);
   }
