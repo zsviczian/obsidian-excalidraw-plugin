@@ -72,9 +72,9 @@ export class PenSettingsModal extends Modal {
     void this.createForm();
   }
 
-  async onClose() {
+  onClose() {
     if (this.dirty) {
-      await this.plugin.saveSettings();
+      void this.plugin.saveSettings();
       getExcalidrawViews(this.app, true).forEach((excalidrawView) =>
         excalidrawView.updatePinnedCustomPens(),
       );
@@ -617,7 +617,7 @@ export class PenSettingsModal extends Modal {
           .setLimits(-1, 1, 0.05)
           .setValue(ps.penOptions.options.thinning)
           .onChange((value) => {
-            this.dirty;
+            this.dirty = true;
             tSetting.setName(fragWithHTML(`Thinnning <b>${value}</b>`));
             ps.penOptions.options.thinning = value;
           }),
@@ -633,7 +633,7 @@ export class PenSettingsModal extends Modal {
           .setLimits(0, 1, 0.05)
           .setValue(ps.penOptions.options.smoothing)
           .onChange((value) => {
-            this.dirty;
+            this.dirty = true;
             sSetting.setName(fragWithHTML(`Smoothing <b>${value}</b>`));
             ps.penOptions.options.smoothing = value;
           }),
@@ -649,7 +649,7 @@ export class PenSettingsModal extends Modal {
           .setLimits(0, 1, 0.05)
           .setValue(ps.penOptions.options.streamline)
           .onChange((value) => {
-            this.dirty;
+            this.dirty = true;
             slSetting.setName(fragWithHTML(`Streamline <b>${value}</b>`));
             ps.penOptions.options.streamline = value;
           }),
@@ -739,7 +739,7 @@ export class PenSettingsModal extends Modal {
               : ps.penOptions.options.start.taper,
           )
           .onChange((value) => {
-            this.dirty;
+            this.dirty = true;
             ps.penOptions.options.start.taper = value === 151 ? true : value;
             stSetting.setName(
               fragWithHTML(
@@ -797,7 +797,7 @@ export class PenSettingsModal extends Modal {
               : ps.penOptions.options.end.taper,
           )
           .onChange((value) => {
-            this.dirty;
+            this.dirty = true;
             ps.penOptions.options.end.taper = value === 151 ? true : value;
             etSetting.setName(
               fragWithHTML(

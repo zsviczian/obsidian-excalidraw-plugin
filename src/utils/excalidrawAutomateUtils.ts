@@ -828,57 +828,6 @@ export function repositionElementsToCursor(
   });
 }
 
-export const insertLaTeXToView = (
-  view: ExcalidrawView,
-  center: boolean = false,
-) => {
-  const app = view.plugin.app;
-  const ea = getEA(view);
-  LaTexPrompt.Prompt(
-    app,
-    t("ENTER_LATEX"),
-    view.plugin.settings.latexBoilerplate,
-  ).then(
-    async (formula: string) => {
-      const lastLatexEl = ea
-        .getViewElements()
-        .filter(
-          (el) =>
-            el.type === "image" && view.excalidrawData.hasEquation(el.fileId),
-        )
-        .reduce(
-          (maxel, curr) =>
-            !maxel || curr.updated > maxel.updated ? curr : maxel,
-          undefined,
-        ) as ExcalidrawImageElement;
-      let scaleX = 1;
-      let scaleY = 1;
-      if (lastLatexEl) {
-        const equation = view.excalidrawData.getEquation(lastLatexEl.fileId);
-        const dataurl = await ea.tex2dataURL(equation.latex);
-        if (dataurl.size.width > 0 && dataurl.size.height > 0) {
-          scaleX = lastLatexEl.width / dataurl.size.width;
-          scaleY = lastLatexEl.height / dataurl.size.height;
-        }
-      }
-      if (formula) {
-        const id = await ea.addLaTex(0, 0, formula, scaleX, scaleY);
-        if (center) {
-          const el = ea.getElement(id);
-          const { width, height } = el;
-          const { x, y } = ea.getViewCenterPosition();
-          el.x = x - width / 2;
-          el.y = y - height / 2;
-        }
-        await ea.addElementsToView(!center, false, true);
-        ea.selectElementsInView([id]);
-      }
-      ea.destroy();
-    },
-    () => {},
-  );
-};
-
 export const search = async (view: ExcalidrawView) => {
   const ea = view.plugin.ea;
   ea.reset();

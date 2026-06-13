@@ -24,6 +24,7 @@ import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { EmbeddableLeafRef } from "src/types/excalidrawViewTypes";
 import { t } from "src/lang/helpers";
 import { removeStyle, setStyle } from "src/utils/styleUtils";
+import { isInstanceOfHTMLElement } from "src/utils/typechecks";
 
 type PdfViewLike = {
   containerEl?: HTMLElement;
@@ -137,7 +138,7 @@ function setPDFViewTheme(view: ExcalidrawView, pdfView: PdfViewLike | null) {
     const thumbnailViewEl = pdfView.containerEl?.querySelector(
       ".pdf-thumbnail-view",
     );
-    if (thumbnailViewEl instanceof HTMLElement) {
+    if (isInstanceOfHTMLElement(thumbnailViewEl)) {
       setStyle(thumbnailViewEl, {
         filter: "var(--theme-filter)",
       });
@@ -651,7 +652,7 @@ function RenderObsidianView({
 
   const setKeepOnTop = () => {
     const keepontop =
-      view.app.workspace.activeLeaf === view.leaf && DEVICE.isDesktop;
+      view.app.workspace.getMostRecentLeaf() === view.leaf && DEVICE.isDesktop;
     if (keepontop) {
       if (!view.ownerWindow.electronWindow.isAlwaysOnTop()) {
         view.ownerWindow.electronWindow.setAlwaysOnTop(true);
@@ -838,7 +839,7 @@ function RenderObsidianView({
     if (!mdProps) {
       return;
     }
-    if (!leafRef.current?.hasOwnProperty("node")) {
+    if (!Object.hasOwn(leafRef.current, "node")) {
       return;
     }
 
@@ -867,9 +868,12 @@ function RenderObsidianView({
               .stringHEX({ alpha: true })
         : "transparent";
 
-      color === "transparent"
-        ? canvasNode?.addClass("transparent")
-        : canvasNode?.removeClass("transparent");
+      if (color === "transparent") {
+        canvasNode?.addClass("transparent");
+      } else {
+        canvasNode?.removeClass("transparent");
+      }
+
       if (canvasNode) {
         setStyle(canvasNode, {
           "--canvas-background": color,
@@ -892,9 +896,12 @@ function RenderObsidianView({
             .alphaTo((mdProps.backgroundOpacity ?? 100) / 100)
             .stringHEX({ alpha: true });
 
-      color === "transparent"
-        ? canvasNode?.addClass("transparent")
-        : canvasNode?.removeClass("transparent");
+      if (color === "transparent") {
+        canvasNode?.addClass("transparent");
+      } else {
+        canvasNode?.removeClass("transparent");
+      }
+
       if (canvasNode) {
         setStyle(canvasNode, {
           "--canvas-background": color,

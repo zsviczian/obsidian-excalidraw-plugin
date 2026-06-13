@@ -40,6 +40,7 @@ import {
 import { isObsidianThemeDark } from "../utils/obsidianUtils";
 import { cleanBlockRef, cleanSectionHeading } from "../utils/pathUtils";
 import {
+  ElementsMap,
   ExcalidrawElement,
   ExcalidrawImageElement,
   ExcalidrawTextElement,
@@ -65,6 +66,7 @@ import { t } from "../lang/helpers";
 import { displayFontMessage } from "../utils/excalidrawViewUtils";
 import { getPDFRect } from "../utils/PDFUtils";
 import { URLs } from "src/constants/safeUrls";
+import { errorlog } from "src/utils/coreUtils";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -268,7 +270,7 @@ export function getJSON(data: string): { scene: string; pos: number } {
   if (parts.value && parts.value.length > 1) {
     const result = parts.value[2];
     return {
-      scene: result.substr(0, result.lastIndexOf("}") + 1),
+      scene: result.substring(0, result.lastIndexOf("}") + 1),
       pos: parts.value.index,
     }; //this is a workaround in case sync merges two files together and one version is still an old version without the ```codeblock
   }
@@ -568,16 +570,20 @@ export class ExcalidrawData {
         URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG,
       )[1] ?? "1.8.16";
 
-    const elements = this.scene.elements;
+    const elements = this.scene.elements as Mutable<ExcalidrawElement & { boundElementIds?: string[] }>[];
     for (const el of elements) {
       if (el.type === "iframe" && !el.customData) {
+        //@ts-ignore -- retyping in ExcalidrawData is possible, this is not the live inmutable object
         el.type = "embeddable";
       }
 
       if (el.boundElements) {
-        const map = new Map<string, string>();
+        const map = new Map<string, "text" | "arrow">();
         let alreadyHasText: boolean = false;
         el.boundElements.forEach((item: { id: string; type: string }) => {
+          if (item.type !== "text" && item.type !== "arrow") {
+            return;
+          }
           if (item.type === "text") {
             if (!alreadyHasText) {
               map.set(item.id, item.type);
@@ -588,7 +594,9 @@ export class ExcalidrawData {
               );
               if (elementToClean) {
                 //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1600
-                elementToClean.containerId = null;
+                if (elementToClean.type === "text") {
+                  elementToClean.containerId = null;
+                }
               }
             }
           } else {
@@ -597,7 +605,7 @@ export class ExcalidrawData {
         });
         const boundElements = Array.from(map, ([id, type]) => ({ id, type }));
         if (boundElements.length !== el.boundElements.length) {
-          el.boundElements = boundElements;
+          el.boundElements  = boundElements;
         }
       }
 
@@ -631,27 +639,29 @@ export class ExcalidrawData {
       if (el.y === null) {
         el.y = 0;
       }
+      /* FixedPointBinding type no longer has focus property. restoreElemenets should take care of this
       if (el.startBinding?.focus === null) {
         el.startBinding.focus = 0;
       }
       if (el.endBinding?.focus === null) {
         el.endBinding.focus = 0;
       }
+      */
 
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/497
-      if (el.fontSize === null) {
+      if (el.type === "text" && el.fontSize === null) {
         el.fontSize = 20;
       }
 
-      if (el.type === "text" && !el.hasOwnProperty("autoResize")) {
+      if (el.type === "text" && !Object.hasOwn(el, "autoResize")) {
         el.autoResize = true;
       }
 
-      if (el.type === "text" && !el.hasOwnProperty("lineHeight")) {
-        el.lineHeight = getLineHeight(el.fontFamily);
+      if (el.type === "text" && !Object.hasOwn(el, "lineHeight")) {
+        el.lineHeight = getLineHeight(el.fontFamily) as number & { _brand: "unitlessLineHeight"; };
       }
 
-      if (el.type === "image" && !el.hasOwnProperty("roundness")) {
+      if (el.type === "image" && !Object.hasOwn(el, "roundness")) {
         el.roundness = null;
       }
     }
@@ -686,7 +696,7 @@ export class ExcalidrawData {
                 container.id === textEl.containerId,
             )[0];
             const boundEl = container.boundElements.filter(
-              (boundEl: { id: string; type: string }) =>
+              (boundEl: { id: string; type: "text" | "arrow" }) =>
                 !(
                   boundEl.type === "text" &&
                   !elements.some(
@@ -694,15 +704,15 @@ export class ExcalidrawData {
                   )
                 ),
             );
-            container.boundElements = [{ id: textEl.id, type: "text" }].concat(
+            container.boundElements = [{ id: textEl.id, type: "text" as "text" | "arrow" }].concat(
               boundEl,
             );
-          } catch (error) {
-            console.log(
-              "unexpected error in initializeNonInitializedFields",
-              this.initializeNonInitializedFields,
-              error,
-            );
+          } catch (e) {
+            errorlog( {
+              message: "unexpected error in initializeNonInitializedFields",
+              context: this.initializeNonInitializedFields.bind(this) as unknown,
+              error: e as unknown,
+          });
           }
         },
       );
@@ -884,7 +894,7 @@ export class ExcalidrawData {
     }
 
     //girdSize, gridStep, previousGridSize, gridModeEnabled migration
-    if (this.scene.appState.hasOwnProperty("previousGridSize")) {
+    if (Object.hasOwn(this.scene.appState, "previousGridSize")) {
       //if previousGridSize was present this is legacy data
       if (this.scene.appState.gridSize === null) {
         this.scene.appState.gridSize = this.scene.appState.previousGridSize;
@@ -895,7 +905,7 @@ export class ExcalidrawData {
       delete this.scene.appState.previousGridSize;
     }
 
-    if (this.scene.appState?.gridColor?.hasOwnProperty("MajorGridFrequency")) {
+    if (Object.hasOwn(this.scene.appState?.gridColor, "MajorGridFrequency")) {
       //if this is present, this is legacy data
       if (this.scene.appState.gridColor.MajorGridFrequency > 1) {
         this.scene.gridStep = this.scene.appState.gridColor.MajorGridFrequency;
@@ -1173,7 +1183,7 @@ export class ExcalidrawData {
   private async updateSceneTextElements() {
     //update text in scene based on textElements Map
     //first get scene text elements
-    const elementsMap = arrayToMap(this.scene.elements);
+    const elementsMap = arrayToMap(this.scene.elements) as ElementsMap;
     const texts = this.scene.elements?.filter(
       (el: ExcalidrawElement) => el.type === "text" && !el.isDeleted,
     ) as Mutable<ExcalidrawTextElement>[];

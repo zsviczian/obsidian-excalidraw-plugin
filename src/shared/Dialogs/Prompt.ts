@@ -107,7 +107,6 @@ export class Prompt extends Modal {
 
 export class LaTexPrompt extends FloatingModal {
   public waitForClose: Promise<string>;
-  private promptEl: HTMLInputElement;
   private resolvePromise: (input: string) => void;
   private rejectPromise: (reason?: string) => void;
   private editorView: EditorView;
@@ -144,11 +143,18 @@ export class LaTexPrompt extends FloatingModal {
     );
   }
 
-  public static Prompt(
+  public static async Prompt(
+    plugin: ExcalidrawPlugin,
     app: App,
     prompt_text?: string,
     default_value?: string,
   ): Promise<string> {
+    const mathjaxAPI = await plugin.extrasGateway.getMathJax();
+    
+    if (!mathjaxAPI) {
+      return Promise.reject((new Error("MathJax is not available or activation was cancelled")));
+    }
+
     const latexprompt = new this(app, prompt_text, default_value);
 
     return latexprompt.waitForClose;
@@ -210,7 +216,7 @@ export class LaTexPrompt extends FloatingModal {
       this.createButton(
         actionButtonContainer,
         "",
-        this.submitCallback.bind(this),
+        () => this.submitCallback(),
         t("PROMPT_BUTTON_OK") ?? "",
         undefined,
         "check",
@@ -220,7 +226,7 @@ export class LaTexPrompt extends FloatingModal {
     this.createButton(
       actionButtonContainer,
       "",
-      this.cancelCallback.bind(this),
+      () => this.cancelCallback(),
       t("PROMPT_BUTTON_CANCEL"),
       undefined,
       "x",
@@ -268,8 +274,8 @@ export class LaTexPrompt extends FloatingModal {
     this.close();
   }
 
-  async onOpen(): Promise<void> {
-    await super.onOpen();
+  onOpen(): void {
+    super.onOpen();
     this.editorView.focus();
   }
 
@@ -520,10 +526,17 @@ export class GenericInputPrompt extends Modal {
         if (button.tooltip) {
           btn.setTooltip(button.tooltip);
         }
-        button.iconId
-          ? btn.setIcon(button.iconId)
-          : btn.setButtonText(button.caption);
-        button.tooltip && btn.setTooltip(button.tooltip);
+
+        if (button.iconId) {
+          btn.setIcon(button.iconId);
+        } else {
+          btn.setButtonText(button.caption);
+        }
+
+        if (button.tooltip) {
+          btn.setTooltip(button.tooltip);
+        }
+
         btn.onClick(() => {
           const res = button.action(this.input);
           if (res) {
@@ -824,7 +837,7 @@ export class GenericInputPrompt extends Modal {
     }, 10);
   };
 
-  async onOpen() {
+  onOpen() {
     super.onOpen();
     this.modalEl.classList.add("excalidraw-modal");
     this.containerEl.classList.add("excalidraw-modal");
@@ -1335,8 +1348,8 @@ export class MultiOptionConfirmationPrompt<T = boolean | null> extends Modal {
     return button;
   }
 
-  async onOpen() {
-    await super.onOpen();
+  onOpen() {
+    super.onOpen();
     const defaultButton =
       this.ctaButtonEl ?? this.contentEl.querySelector("button");
     // Obsidian modal open may apply its own autofocus after onOpen; defer to enforce default keyboard action.

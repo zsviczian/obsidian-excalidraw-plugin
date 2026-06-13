@@ -43,19 +43,21 @@ export class ImportSVGDialog extends FuzzySuggestModal<TFile> {
     return item.path;
   }
 
-  async onChooseItem(item: TFile, _: KeyboardEvent): Promise<void> {
+  onChooseItem(item: TFile, _: KeyboardEvent): void {
     if (!item) {
       return;
     }
-    const ea = getEA(this.view);
-    const svg = await this.app.vault.read(item);
-    if (!svg || svg === "") {
-      return;
-    }
-    ea.importSVG(svg);
-    ea.addToGroup(ea.getElements().map((el) => el.id));
-    await ea.addElementsToView(true, true, true, true);
-    ea.destroy();
+    void (async () => {
+      const ea = getEA(this.view);
+      const svg = await this.app.vault.read(item);
+      if (!svg || svg === "") {
+        return;
+      }
+      ea.importSVG(svg);
+      ea.addToGroup(ea.getElements().map((el) => el.id));
+      await ea.addElementsToView(true, true, true, true);
+      ea.destroy();
+    })();
   }
 
   onClose(): void {

@@ -553,8 +553,8 @@ export class PluginFileManager {
     }
 
     if (
-      this.app.workspace.activeLeaf?.view instanceof ExcalidrawView &&
-      this.app.workspace.activeLeaf.view.file === file
+      this.app.workspace.getMostRecentLeaf()?.view instanceof ExcalidrawView &&
+      this.app.workspace.getMostRecentLeaf()?.view.file === file
     ) {
       this.plugin.lastActiveExcalidrawFilePath = file.path;
     }
@@ -588,7 +588,7 @@ export class PluginFileManager {
               excalidrawFile: file,
               action: "export",
             }) ?? newImgPath;
-        } catch (e) {
+        } catch (e: unknown) {
           errorlog({
             where: "FileManager.renameEventHandler",
             fn: "plugin.ea.onImageExportPathHook",
@@ -612,7 +612,10 @@ export class PluginFileManager {
     });
   }
 
-  public async modifyEventHandler(file: TFile) {
+  public async modifyEventHandler(file: TAbstractFile) {
+    if (!(file instanceof TFile)) {
+      return;
+    }
     const excalidrawViews = getExcalidrawViews(this.app);
     excalidrawViews.forEach((excalidrawView) => {
       void (async () => {
@@ -651,7 +654,10 @@ export class PluginFileManager {
           // Edge case impact:
           // - In extremely rare situations, an update arriving within the "recent switch" timeframe (e.g., from Obsidian Sync)
           //   might not trigger a reload. This is unlikely and an acceptable trade-off for better user experience.
-          const activeView = this.app.workspace.activeLeaf.view;
+          const activeView = this.app.workspace.getMostRecentLeaf()?.view;
+          if(!activeView){
+            return;
+          }
           const isEditingMarkdownSideInSplitView =
             (activeView !== excalidrawView &&
               activeView instanceof MarkdownView &&
@@ -727,7 +733,7 @@ export class PluginFileManager {
    * @param file
    * @returns
    */
-  public async deleteEventHandler(file: TFile) {
+  public async deleteEventHandler(file: TAbstractFile) {
     if (!(file instanceof TFile)) {
       return;
     }
@@ -780,7 +786,7 @@ export class PluginFileManager {
         imgMap.forEach((imgPath: string) => {
           const imgFile = this.app.vault.getFileByPath(normalizePath(imgPath));
           if (imgFile) {
-            void this.app.vault.delete(imgFile);
+            void this.app.fileManager.trashFile(imgFile);
           }
         });
       }, 500);

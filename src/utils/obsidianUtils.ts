@@ -24,6 +24,7 @@ import {
 import { parse, stringify } from "yaml";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import { setStyle } from "./styleUtils";
+import { isInstanceOfHTMLBodyElement } from "./typechecks";
 
 export const getParentOfClass = (
   element: Element,
@@ -33,7 +34,7 @@ export const getParentOfClass = (
   while (
     parent &&
     !parent.classList.contains(cssClass) &&
-    !(parent instanceof window.HTMLBodyElement)
+    !isInstanceOfHTMLBodyElement(parent)
   ) {
     parent = parent.parentElement;
   }
@@ -620,7 +621,7 @@ export function getAudioElementHeight(): number {
   let height = 0;
   try {
     // Force layout calculation
-    mainDocument.body.offsetHeight;
+    height = mainDocument.body.offsetHeight;
 
     // Get height from bounding rect
     const rect = audioElement.getBoundingClientRect();

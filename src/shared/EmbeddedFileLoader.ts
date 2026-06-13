@@ -70,6 +70,7 @@ import {
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { setStyleText } from "src/utils/htmlUtils";
 import { hideElement, setStyle } from "src/utils/styleUtils";
+import { isInstanceOfHTMLImageElement, isInstanceOfSVGElement } from "src/utils/typechecks";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -145,7 +146,7 @@ const replaceSVGColors = (
 
   // Modify the fill and stroke attributes of child nodes
   const childNodes = (node: ChildNode) => {
-    if (node instanceof SVGElement) {
+    if (isInstanceOfSVGElement(node)) {
       const oldFill = node.getAttribute("fill")?.toLocaleLowerCase();
       const oldStroke = node.getAttribute("stroke")?.toLocaleLowerCase();
 
@@ -1334,12 +1335,13 @@ export class EmbeddedFilesLoader {
           });
         });
         const base64 = await blobToBase64(blob);
-        shouldUseCache &&
+        if (shouldUseCache) {
           getImageCache().addImageToCache(cacheKey, "", blob, {
             renderScale: requestedScale,
             size: { width, height },
             pdfPageViewProps: viewProps,
           });
+        }
         const result: [DataURL, Size, PDFPageViewProps, number, boolean] = [
           `data:image/png;base64,${base64}` as DataURL,
           { width, height },
@@ -1412,10 +1414,11 @@ export class EmbeddedFilesLoader {
       case "":
         fontDef = "";
         break;
-      default:
+      default: {
         const font = await getFontDataURL(plugin.app, fontName, file.path);
         fontDef = font.fontDef;
         fontName = font.fontName;
+      }
     }
 
     if (fileCache?.frontmatter && fileCache.frontmatter.banner !== null) {
@@ -1556,9 +1559,10 @@ export class EmbeddedFilesLoader {
       const elementStyle = el.style;
       const computedStyle = window.getComputedStyle(el);
       let style = "";
-      for (const prop in elementStyle) {
-        if (elementStyle.hasOwnProperty(prop)) {
-          style += `${prop}: ${computedStyle[prop]};`;
+      for (const [prop] of Object.entries(elementStyle)) {
+        if (Object.hasOwn(elementStyle, prop)) {
+          const value = computedStyle.getPropertyValue(prop);
+          style += `${prop}: ${value};`;
         }
       }
       el.setAttribute("style", style);
@@ -1603,7 +1607,7 @@ export class EmbeddedFilesLoader {
     }
     if (hasSVGwithBitmap && this.isDark) {
       imageList.forEach((img) => {
-        if (img instanceof HTMLImageElement) {
+        if (isInstanceOfHTMLImageElement(img)) {
           setStyle(img, { filter: THEME_FILTER });
         }
       });

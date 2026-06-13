@@ -15,6 +15,7 @@ import {
   RoundnessType,
   ExcalidrawFrameElement,
   ExcalidrawTextContainer,
+  ElementsMap,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { ColorMap, MimeType } from "../types/embeddedFileLoaderTypes";
 import {
@@ -2444,7 +2445,7 @@ export class ExcalidrawAutomate {
     const dimensions = refreshTextDimensions(
       textElement,
       container,
-      arrayToMap(this.getElements()),
+      arrayToMap(this.getElements()) as ElementsMap,
       originalText,
     );
 
@@ -3663,8 +3664,8 @@ export class ExcalidrawAutomate {
    * @param {ExcalidrawElement[]} [scene.elements] - Array of elements in the scene.
    * @param {AppState} [scene.appState] - The app state of the scene.
    * @param {BinaryFiles} [scene.files] - The files in the scene.
-   * @param {boolean} [scene.commitToHistory] - Whether to commit the scene to history. @deprecated Use scene.storageOption instead
-   * @param {"capture" | "none" | "update"} [scene.storeAction] - The store action for the scene. @deprecated Use scene.storageOption instead
+   * @param {boolean} [scene.commitToHistory] - Deprecated: Use scene.storageOption instead.
+   * @param {"capture" | "none" | "update"} [scene.storeAction] - Deprecated: Use scene.storageOption instead
    * @param {"IMMEDIATELY" | "NEVER" | "EVENTUALLY"} [scene.captureUpdate] - The capture update action for the scene.
    * @param {boolean} [restore=false] - Whether to restore legacy elements in the scene.
    */
@@ -4159,7 +4160,7 @@ export class ExcalidrawAutomate {
    * @returns {ExcalidrawElement[][]} Array of arrays of grouped elements.
    */
   getMaximumGroups(elements: ExcalidrawElement[]): ExcalidrawElement[][] {
-    return getMaximumGroups(elements, arrayToMap(elements));
+    return getMaximumGroups(elements, arrayToMap(elements) as ElementsMap);
   }
 
   /**

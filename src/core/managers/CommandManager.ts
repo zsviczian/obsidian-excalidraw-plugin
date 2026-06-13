@@ -34,7 +34,7 @@ import { InsertImageDialog } from "../../shared/Dialogs/InsertImageDialog";
 import { ImportSVGDialog } from "../../shared/Dialogs/ImportSVGDialog";
 import { InsertMDDialog } from "../../shared/Dialogs/InsertMDDialog";
 import { ExcalidrawAutomate } from "../../shared/ExcalidrawAutomate";
-import { insertLaTeXToView, search } from "src/utils/excalidrawAutomateUtils";
+import { search } from "src/utils/excalidrawAutomateUtils";
 import { templatePromt } from "../../shared/Dialogs/Prompt";
 import { t } from "../../lang/helpers";
 import {
@@ -91,6 +91,7 @@ import ExcalidrawPlugin from "src/core/main";
 import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
 import { PaneTarget } from "src/types/utilTypes";
 import { decompress } from "src/utils/sceneDataUtils";
+import { insertLaTeXToView } from "src/utils/excalidrawViewHelpers";
 
 declare const PLUGIN_VERSION: string;
 
@@ -189,7 +190,7 @@ export class CommandManager {
       let folderpath = file.path;
       if (file instanceof TFile) {
         folderpath = normalizePath(
-          file.path.substr(0, file.path.lastIndexOf(file.name)),
+          file.path.substring(0, file.path.lastIndexOf(file.name)),
         );
       }
       void this.plugin.createAndOpenDrawing(
@@ -418,7 +419,7 @@ export class CommandManager {
         if (!view) {
           return false;
         }
-        if (view.leaf !== this.app.workspace.activeLeaf) {
+        if (view.leaf !== this.app.workspace.getMostRecentLeaf()) {
           return false;
         }
         const editor = view.editor;
@@ -720,7 +721,7 @@ export class CommandManager {
         if (view) {
           if (!this.settings.taskboneEnabled) {
             new Notice(
-              "Taskbone OCR is not enabled. Please go to plugins settings to enable it.",
+              t("TASKBONE_NOT_ENABLED"),
               4000,
             );
             return true;
@@ -743,7 +744,7 @@ export class CommandManager {
         if (view) {
           if (!this.settings.taskboneEnabled) {
             new Notice(
-              "Taskbone OCR is not enabled. Please go to plugins settings to enable it.",
+              t("TASKBONE_NOT_ENABLED"),
               4000,
             );
             return true;
@@ -766,7 +767,7 @@ export class CommandManager {
         if (view) {
           if (!this.settings.taskboneEnabled) {
             new Notice(
-              "Taskbone OCR is not enabled. Please go to plugins settings to enable it.",
+              t("TASKBONE_NOT_ENABLED"),
               4000,
             );
             return true;
@@ -935,6 +936,7 @@ export class CommandManager {
 
     this.forceSaveCommand = this.addCommand({
       id: "save",
+      //eslint-disable-next-line obsidianmd/commands/no-default-hotkeys
       hotkeys: [{ modifiers: ["Ctrl"], key: "s" }], //See also Poposcope
       name: t("FORCE_SAVE"),
       checkCallback: (checking: boolean) =>
@@ -994,7 +996,7 @@ export class CommandManager {
           const el = this.ea.getViewSelectedElement();
           if (el.type !== "image") {
             new Notice(
-              "Please select an image or embedded markdown document",
+              t("DELETE_IMAGE_NOTICE"),
               4000,
             );
             return true;
@@ -1002,12 +1004,12 @@ export class CommandManager {
           const file = this.ea.getViewFileForImageElement(el);
           if (!file) {
             new Notice(
-              "Please select an image or embedded markdown document",
+              t("DELETE_IMAGE_NOTICE"),
               4000,
             );
             return true;
           }
-          void this.app.vault.delete(file);
+          void this.app.fileManager.trashFile(file);
           this.ea.deleteViewElements([el]);
           return true;
         }
@@ -1048,7 +1050,6 @@ export class CommandManager {
 
     this.addCommand({
       id: "insert-link",
-      hotkeys: [{ modifiers: ["Mod", "Shift"], key: "k" }],
       name: t("INSERT_LINK"),
       checkCallback: (checking: boolean) => {
         if (checking) {
@@ -1629,7 +1630,7 @@ export class CommandManager {
             nodes: CanvasNodeLike[];
           };
         };
-        const activeView = this.app.workspace.activeLeaf?.view;
+        const activeView = this.app.workspace.getMostRecentLeaf()?.view;
         const isCanvasViewLike = (
           view: typeof activeView,
         ): view is CanvasViewLike =>
@@ -1819,12 +1820,14 @@ export class CommandManager {
 
           const replacer = (link: string, file: TFile) => {
             if (node.file) {
-              node.file.extension === "pdf"
-                ? node.canvas.createFileNode({
-                    pos: { x: node.x + node.width + 10, y: node.y },
-                    file,
-                  })
-                : node.setFile(file);
+              if (node.file.extension === "pdf") {
+                node.canvas.createFileNode({
+                  pos: { x: node.x + node.width + 10, y: node.y },
+                  file,
+                })
+              } else {
+                node.setFile(file);
+              }
             }
             if (node.url) {
               node.canvas.createFileNode({
@@ -1959,7 +1962,7 @@ export class CommandManager {
             nodes: CanvasNodeLike[];
           };
         };
-        const activeView = this.app.workspace.activeLeaf?.view;
+        const activeView = this.app.workspace.getMostRecentLeaf()?.view;
         const isCanvasViewLike = (
           view: typeof activeView,
         ): view is CanvasViewLike =>
@@ -2057,9 +2060,7 @@ export class CommandManager {
           }
           //console.log({counter, file});
           if (!newFile || !(newFile instanceof TFile)) {
-            new Notice(
-              "File not found. NewExcalidraw Drawing is taking too long to create. Please try again.",
-            );
+            new Notice(t("ANNOTATE_IMAGE_ERROR"));
             return;
           }
 
@@ -2107,12 +2108,14 @@ export class CommandManager {
 
           const replacer = (link: string, file: TFile) => {
             if (node.file) {
-              node.file.extension === "pdf"
-                ? node.canvas.createFileNode({
-                    pos: { x: node.x + node.width + 10, y: node.y },
-                    file,
-                  })
-                : node.setFile(file);
+              if (node.file.extension === "pdf") {
+                node.canvas.createFileNode({
+                      pos: { x: node.x + node.width + 10, y: node.y },
+                      file,
+                    });
+              } else {
+                node.setFile(file);
+              }
             }
             if (node.url) {
               node.canvas.createFileNode({

@@ -1,15 +1,14 @@
 export const durationTreshold = 0; //0.05; //ms
 
 export const DEBUGGING = false;
-
-export const log = console.log.bind(window.console);
+//eslint-disable-next-line obsidianmd/rule-custom-message
+export const log = (...args: unknown[]) => console.log(...args);
 export const debug = (
   fn: (...args: unknown[]) => unknown,
   fnName: string,
   ...messages: unknown[]
 ) => {
-  //console.log(fnName,fn,...messages);
-  console.log(fnName, ...messages);
+  log(fnName, ...messages);
 };
 
 let timestamp: number[] = [];
@@ -47,19 +46,18 @@ export class CustomMutationObserver {
   }
 
   observe(target: Node, options: MutationObserverInit) {
-    const wrappedCallback: MutationCallback = async (
+    const wrappedCallback: MutationCallback = (
       mutationsList,
       observer,
     ) => {
       const startTime = performance.now(); // Get start time
-      await this.originalCallback(mutationsList, observer); // Invoke the original callback
+      this.originalCallback(mutationsList, observer); // Invoke the original callback
       const endTime = performance.now(); // Get end time
       const executionTime = endTime - startTime;
       if (executionTime > durationTreshold) {
-        console.log(
-          `Excalidraw ${this.name} MutationObserver callback took ${executionTime}ms to execute`,
-          observer,
-        );
+        const message = `Excalidraw ${this.name} MutationObserver callback took ${executionTime}ms to execute`;
+        // eslint-disable-next-line obsidianmd/rule-custom-message -- needed for production debugging
+        console.log( message, observer);
       }
     };
 

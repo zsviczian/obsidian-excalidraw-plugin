@@ -1233,7 +1233,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     }
   }
 
-  async hide() {
+  hide() {
     this.detachSettingsFocusoutHandler();
     if (this.plugin.settings.overrideObsidianFontSize) {
       setStyle(mainDocument.documentElement, { fontSize: "" });
@@ -1247,22 +1247,24 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       setRootElementSize();
     }
 
-    await this.persistDirtySettings();
-    await this.applyPendingActions();
-    this.hotkeyEditor.unload();
-    if (this.hotkeyEditor.isDirty) {
-      this.plugin.registerHotkeyOverrides();
-    }
-    this.plugin.scriptEngine.updateScriptPath();
+    void (async () => {
+      void await this.persistDirtySettings();
+      void await this.applyPendingActions();
+      this.hotkeyEditor.unload();
+      if (this.hotkeyEditor.isDirty) {
+        this.plugin.registerHotkeyOverrides();
+      }
+      this.plugin.scriptEngine.updateScriptPath();
+    })();
     /*    if(this.reloadMathJax) {
       this.plugin.loadMathJax();
     }*/
   }
 
-  async display() {
+  display() {
     let detailsEl: HTMLElement;
 
-    await this.plugin.loadSettings(); //in case sync loaded changed settings in the background
+    //await this.plugin.loadSettings(); //in case sync loaded changed settings in the background
     this.settingsDirty = false;
     this.requestEmbedUpdate = false;
     this.requestReloadDrawings = false;
@@ -1317,7 +1319,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       "span",
       {
         cls: "excalidraw-mastery-promo__summary-title",
-        text: "Excalidraw Mastery",
+        text: t("EXCALIDRAW_MASTERY"),
       },
     );
     const excalidrawMasterySummaryState = excalidrawMasterySummary.createEl(
@@ -1509,7 +1511,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("FOLDER_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("e.g.: Excalidraw")
+          .setPlaceholder(t("FOLDER_PLACEHOLDER"))
           .setValue(this.plugin.settings.folder)
           .onChange(async (value) => {
             this.plugin.settings.folder = value;
@@ -1534,7 +1536,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("CROP_FOLDER_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("e.g.: Excalidraw/Cropped")
+          .setPlaceholder(t("CROP_FOLDER_PLACEHOLDER"))
           .setValue(this.plugin.settings.cropFolder)
           .onChange(async (value) => {
             this.plugin.settings.cropFolder = value;
@@ -1547,7 +1549,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("ANNOTATE_FOLDER_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("e.g.: Excalidraw/Annotations")
+          .setPlaceholder(t("ANNOTATE_FOLDER_PLACEHOLDER"))
           .setValue(this.plugin.settings.annotateFolder)
           .onChange(async (value) => {
             this.plugin.settings.annotateFolder = value;
@@ -1560,7 +1562,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("TEMPLATE_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("e.g.: Excalidraw/Template")
+          .setPlaceholder(t("TEMPLATE_PLACEHOLDER"))
           .setValue(this.plugin.settings.templateFilePath)
           .onChange(async (value) => {
             this.plugin.settings.templateFilePath = value;
@@ -1574,7 +1576,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("SCRIPT_FOLDER_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("e.g.: Excalidraw/Scripts")
+          .setPlaceholder(t("SCRIPT_FOLDER_PLACEHOLDER"))
           .setValue(this.plugin.settings.scriptFolderPath)
           .onChange(async (value) => {
             this.plugin.settings.scriptFolderPath = value;
@@ -1686,7 +1688,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("FILENAME_PREFIX_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("e.g.: Drawing ")
+          .setPlaceholder(t("FILENAME_PREFIX_PLACEHOLDER"))
           .setValue(this.plugin.settings.drawingFilenamePrefix)
           .onChange(async (value) => {
             this.plugin.settings.drawingFilenamePrefix = value.replaceAll(
@@ -1766,7 +1768,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("CROP_PREFIX_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("e.g.: cropped_")
+          .setPlaceholder(t("CROP_PREFIX_PLACEHOLDER"))
           .setValue(this.plugin.settings.cropPrefix)
           .onChange(async (value) => {
             this.plugin.settings.cropPrefix = value.replaceAll(
@@ -1783,7 +1785,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("CROP_SUFFIX_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("e.g.: _cropped")
+          .setPlaceholder(t("CROP_SUFFIX_PLACEHOLDER"))
           .setValue(this.plugin.settings.cropSuffix)
           .onChange(async (value) => {
             this.plugin.settings.cropSuffix = value.replaceAll(
@@ -1800,7 +1802,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("ANNOTATE_PREFIX_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("e.g.: annotated_")
+          .setPlaceholder(t("ANNOTATE_PREFIX_PLACEHOLDER"))
           .setValue(this.plugin.settings.annotatePrefix)
           .onChange(async (value) => {
             this.plugin.settings.annotatePrefix = value.replaceAll(
@@ -1817,7 +1819,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("ANNOTATE_SUFFIX_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("e.g.: _annotated")
+          .setPlaceholder(t("ANNOTATE_SUFFIX_PLACEHOLDER"))
           .setValue(this.plugin.settings.annotateSuffix)
           .onChange(async (value) => {
             this.plugin.settings.annotateSuffix = value.replaceAll(
@@ -2290,7 +2292,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         )
         .setDesc(fragWithHTML(description))
         .addDropdown((dropdown) => {
-          optionValues.forEach((value) => dropdown.addOption(value, value));
+          optionValues.forEach((value) => {
+            void dropdown.addOption(value, value);
+          });
           return dropdown.setValue(selectedValue).onChange((value) => {
             if (kind === "text") {
               selectedTextModelConfig = value;
@@ -2574,9 +2578,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("DYNAMICSTYLE_DESC")))
       .addDropdown((dropdown) =>
         dropdown
-          .addOption("none", "Dynamic Styling OFF")
-          .addOption("colorful", "Match color")
-          .addOption("gray", "Gray, match tone")
+          .addOption("none", t("DYNAMICSTYLE_OPTION_NONE"))
+          .addOption("colorful", t("DYNAMICSTYLE_OPTION_COLORFUL"))
+          .addOption("gray", t("DYNAMICSTYLE_OPTION_GRAY"))
           .setValue(this.plugin.settings.dynamicStyling)
           .onChange(async (value) => {
             this.requestUpdateDynamicStyling = true;
@@ -2645,10 +2649,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("DEFAULT_OPEN_MODE_DESC")))
       .addDropdown((dropdown) =>
         dropdown
-          .addOption("normal", "Always in normal-mode")
-          .addOption("zen", "Always in zen-mode")
-          .addOption("view", "Always in view-mode")
-          .addOption("view-mobile", "Usually normal, but view-mode on Phone")
+          .addOption("normal", t("DEFAULT_OPEN_MODE_OPTION_NORMAL"))
+          .addOption("zen", t("DEFAULT_OPEN_MODE_OPTION_ZEN"))
+          .addOption("view", t("DEFAULT_OPEN_MODE_OPTION_VIEW"))
+          .addOption("view-mobile", t("DEFAULT_OPEN_MODE_OPTION_VIEW_MOBILE"))
           .setValue(this.plugin.settings.defaultMode)
           .onChange(async (value) => {
             this.plugin.settings.defaultMode = value;
@@ -2809,9 +2813,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("DEFAULT_PEN_MODE_DESC")))
       .addDropdown((dropdown) =>
         dropdown
-          .addOption("never", "Never")
-          .addOption("mobile", "On Obsidian Mobile")
-          .addOption("always", "Always")
+          .addOption("never", t("DEFAULT_PEN_MODE_OPTION_NEVER"))
+          .addOption("mobile", t("DEFAULT_PEN_MODE_OPTION_MOBILE"))
+          .addOption("always", t("DEFAULT_PEN_MODE_OPTION_ALWAYS"))
           .setValue(this.plugin.settings.defaultPenMode)
           .onChange(async (value: "never" | "always" | "mobile") => {
             this.plugin.settings.defaultPenMode = value;
@@ -3070,7 +3074,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     new ModifierKeySettingsComponent(
       detailsEl,
       this.plugin.settings.modifierKeyConfig,
-      this.applySettingsUpdate.bind(this),
+      () => this.applySettingsUpdate(),
     ).render();
 
     // ------------------------------------------------
@@ -3389,9 +3393,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("EMBED_PREVIEW_IMAGETYPE_DESC")))
       .addDropdown((dropdown) =>
         dropdown
-          .addOption(PreviewImageType.PNG, "PNG Image")
-          .addOption(PreviewImageType.SVG, "Native SVG")
-          .addOption(PreviewImageType.SVGIMG, "SVG Image")
+          .addOption(PreviewImageType.PNG, t("EMBED_PREVIEW_IMAGETYPE_OPTION_PNG"))
+          .addOption(PreviewImageType.SVG, t("EMBED_PREVIEW_IMAGETYPE_OPTION_SVG"))
+          .addOption(PreviewImageType.SVGIMG, t("EMBED_PREVIEW_IMAGETYPE_OPTION_SVGIMG"))
           .setValue(this.plugin.settings.previewImageType)
           .onChange((value) => {
             this.plugin.settings.previewImageType = value as PreviewImageType;
@@ -3408,7 +3412,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("EMBED_TYPE_DESC")))
       .addDropdown(async (d: DropdownComponent) => {
         dropdown = d;
-        dropdown.addOption("excalidraw", "excalidraw");
+        dropdown.addOption("excalidraw", "Excalidraw");
         if (this.plugin.settings.autoexportPNG) {
           dropdown.addOption("PNG", "PNG");
         } else if (this.plugin.settings.embedType === "PNG") {
@@ -3628,7 +3632,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("EMBED_WIDTH_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("e.g.: 400")
+          .setPlaceholder("400")
           .setValue(this.plugin.settings.width)
           .onChange(async (value) => {
             this.plugin.settings.width = value;
@@ -3642,7 +3646,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("EMBED_HEIGHT_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("e.g.: 400")
+          .setPlaceholder("400")
           .setValue(this.plugin.settings.height)
           .onChange(async (value) => {
             this.plugin.settings.height = value;
@@ -3978,7 +3982,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("MD_DEFAULT_COLOR_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("CSS Color-name|RGB-HEX")
+          .setPlaceholder(t("DEFAULT_COLOR_MD_DESC"))
           .setValue(this.plugin.settings.mdFontColor)
           .onChange((value) => {
             this.requestReloadDrawings = true;
@@ -3992,7 +3996,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("MD_DEFAULT_BORDER_COLOR_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("CSS Color-name|RGB-HEX")
+          .setPlaceholder(t("DEFAULT_COLOR_MD_DESC"))
           .setValue(this.plugin.settings.mdBorderColor)
           .onChange((value) => {
             this.requestReloadDrawings = true;
@@ -4006,7 +4010,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("MD_CSS_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("filename of css file in vault")
+          .setPlaceholder(t("MD_CSS_PLACEHOLDER"))
           .setValue(this.plugin.settings.mdCSS)
           .onChange((value) => {
             this.requestReloadDrawings = true;
@@ -4156,7 +4160,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       .setDesc(fragWithHTML(t("CJK_ASSETS_FOLDER_DESC")))
       .addText((text) =>
         text
-          .setPlaceholder("e.g.: Excalidraw/FontAssets")
+          .setPlaceholder(t("CJK_ASSETS_FOLDER_PLACEHOLDER"))
           .setValue(this.plugin.settings.fontAssetsPath)
           .onChange(async (value) => {
             this.plugin.settings.fontAssetsPath = value;
@@ -4464,7 +4468,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             }
             startupScriptButton.setButtonText(t("STARTUP_SCRIPT_BUTTON_OPEN"));
             await this.app.workspace.openLinkText(f.path, "", true);
-            await this.hide();
+            this.hide();
           });
       });
 
@@ -4648,9 +4652,9 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             .setName(variableName)
             .setDesc(fragWithHTML(description ?? ""))
             .addDropdown((dropdown) => {
-              valueset.forEach((val: string) =>
-                dropdown.addOption(val.toString(), val.toString()),
-              );
+              valueset.forEach((val: string) => {
+                void dropdown.addOption(val.toString(), val.toString())
+              });
               dropdown
                 .setValue(getValue(scriptName, variableName) as string)
                 .onChange(async (value) => {

@@ -1,6 +1,6 @@
 {
     "typescript.tsdk": "node_modules/typescript/lib",
-        "typescript.enablePromptUseWorkspaceTsdk": true,
+    "typescript.enablePromptUseWorkspaceTsdk": true,
     "typescript.tsserver.log": "off",
     "[typescript]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -13,6 +13,9 @@
     "editor.codeActionsOnSave": {
         "source.fixAll.eslint": "explicit"
     },
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": true,
     "eslint.validate": [
         "javascript",
         "javascriptreact",

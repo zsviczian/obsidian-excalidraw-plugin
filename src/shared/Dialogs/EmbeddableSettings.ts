@@ -19,7 +19,7 @@ import {
   updateYouTubeStartTime,
 } from "src/utils/YoutTubeUtils";
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "./EmbeddableMDFileCustomDataSettingsComponent";
-import { isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
+import { isWinCTRLorMacCMD, labelCTRL } from "src/utils/modifierkeyHelper";
 import { CaptureUpdateAction } from "src/constants/constants";
 
 export type EmbeddableMDCustomProps = {
@@ -164,14 +164,14 @@ export class EmbeddableSettings extends Modal {
         button
           .setButtonText(t("PROMPT_BUTTON_CANCEL"))
           .setTooltip("ESC")
-          .onClick(this.close.bind(this)),
+          .onClick(() => this.close()),
       )
       .addButton((button) =>
         button
           .setButtonText(t("PROMPT_BUTTON_OK"))
-          .setTooltip("CTRL/Opt+Enter")
+          .setTooltip(labelCTRL()+"Enter")
           .setCta()
-          .onClick(this.applySettings.bind(this)),
+          .onClick(() => this.applySettings()),
       );
 
     const onKeyDown = (ev: KeyboardEvent) => {

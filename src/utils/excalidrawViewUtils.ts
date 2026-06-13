@@ -47,6 +47,7 @@ import { EmbeddedFile } from "src/shared/EmbeddedFileLoader";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { setSanitizedHtml } from "./htmlUtils";
 import { URLs } from "src/constants/safeUrls";
+import { isInstanceOfHTMLDivElement } from "./typechecks";
 
 type CommandLinkOptInPlugin = {
   settings: {
@@ -891,7 +892,7 @@ export function getViewColorPalette(
 
   const api = view.excalidrawAPI;
   const { colorPalette } = api.getAppState();
-  if (!colorPalette || !colorPalette.hasOwnProperty(palette)) {
+  if (!colorPalette || !Object.hasOwn(colorPalette, palette)) {
     return getDefaultColorPalette();
   }
 
@@ -1028,7 +1029,7 @@ export const setMobileNavbarPosition = (dock: boolean) => {
     const navbar = mainDocument.querySelector(
       "body>.app-container>.mobile-navbar",
     );
-    if (navbar && navbar instanceof HTMLDivElement) {
+    if (navbar && isInstanceOfHTMLDivElement(navbar)) {
       if (dock) {
         navbar.addClass("excalidraw-mobile-navbar-docked");
       } else {

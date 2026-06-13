@@ -54,7 +54,7 @@ export class InsertPDFModal extends Modal {
     void this.createForm();
   }
 
-  async onClose() {
+  onClose() {
     if (this.dirty) {
       this.plugin.settings.pdfImportScale = this.importScale;
       this.plugin.settings.pdfBorderBox = this.borderBox;
@@ -65,7 +65,7 @@ export class InsertPDFModal extends Modal {
       this.plugin.settings.pdfNumRows = this.numRows;
       this.plugin.settings.pdfDirection = this.direction;
       this.plugin.settings.pdfLockAfterImport = this.lockAfterImport;
-      await this.plugin.saveSettings();
+      void this.plugin.saveSettings();
     }
     if (this.pdfDoc) {
       this.pdfDoc.destroy();
@@ -142,7 +142,9 @@ export class InsertPDFModal extends Modal {
       const pageRangeArray = pageRange.split("-");
       if (pageRangeArray.length === 1) {
         const page = parseInt(cleanNonDigits(pageRangeArray[0]));
-        !isNaN(page) && this.pagesToImport.push(page);
+        if (!isNaN(page)) {
+          this.pagesToImport.push(page);
+        }
       } else if (pageRangeArray.length === 2) {
         const start = parseInt(cleanNonDigits(pageRangeArray[0]));
         const end = parseInt(cleanNonDigits(pageRangeArray[1]));

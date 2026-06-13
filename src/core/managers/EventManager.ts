@@ -9,6 +9,7 @@ import {
   EventRef,
   Menu,
   FileView,
+  TAbstractFile,
 } from "obsidian";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { getLink } from "../../utils/fileUtils";
@@ -105,37 +106,40 @@ export class EventManager {
   public async registerEvents() {
     await this.plugin.awaitInit();
     this.registerEvent(
-      this.app.workspace.on("editor-paste", this.onPasteHandler.bind(this)),
+      this.app.workspace.on("editor-paste", 
+        (evt, editor, info) => this.onPasteHandler(evt, editor, info),
+    ));
+    this.registerEvent(
+      this.app.vault.on("rename",
+        (file, oldPath) => this.onRenameHandler(file, oldPath)),
     );
     this.registerEvent(
-      this.app.vault.on("rename", this.onRenameHandler.bind(this)),
+      this.app.vault.on("modify", 
+        (file) => this.onModifyHandler(file)),
     );
     this.registerEvent(
-      this.app.vault.on("modify", this.onModifyHandler.bind(this)),
-    );
-    this.registerEvent(
-      this.app.vault.on("delete", this.onDeleteHandler.bind(this)),
+      this.app.vault.on("delete",
+        (file) => this.onDeleteHandler(file)),
     );
 
     //save Excalidraw leaf and update embeds when switching to another leaf
     this.registerEvent(
       this.plugin.app.workspace.on(
         "active-leaf-change",
-        this.onActiveLeafChangeHandler.bind(this),
+        (leaf) => this.onActiveLeafChangeHandler(leaf),
       ),
     );
 
     this.registerEvent(
       this.app.workspace.on(
         "layout-change",
-        this.onLayoutChangeHandler.bind(this),
+        () =>  this.onLayoutChangeHandler(),
       ),
     );
 
     //File Save Trigger Handlers
     //Save the drawing if the user clicks outside the Excalidraw Canvas
-    const onClickEventSaveActiveDrawing =
-      this.onClickSaveActiveDrawing.bind(this);
+    const onClickEventSaveActiveDrawing = (e: PointerEvent) => this.onClickSaveActiveDrawing(e);
     this.app.workspace.containerEl.addEventListener(
       "click",
       onClickEventSaveActiveDrawing,
@@ -149,7 +153,7 @@ export class EventManager {
     this.registerEvent(
       this.app.workspace.on(
         "file-menu",
-        this.onFileMenuSaveActiveDrawing.bind(this),
+        () => this.onFileMenuSaveActiveDrawing(),
       ),
     );
 
@@ -161,12 +165,22 @@ export class EventManager {
     );
 
     this.registerEvent(
-      this.app.workspace.on("file-menu", this.onFileMenuHandler.bind(this)),
+      this.app.workspace.on("file-menu", (menu, file, source, leaf) => {
+        if (!(file instanceof TFile)) {
+          return;
+        }
+        this.onFileMenuHandler(menu, file, source, leaf);
+      }),
     );
     this.plugin.registerEvent(
       this.plugin.app.workspace.on(
         "editor-menu",
-        this.onEditorMenuHandler.bind(this),
+        (menu, editor, view) =>{
+          if (!(view instanceof MarkdownView)) {
+            return;
+          }
+          this.onEditorMenuHandler(menu, editor, view);
+        },
       ),
     );
   }
@@ -204,7 +218,11 @@ export class EventManager {
     if (data.startsWith(`{"type":"excalidraw/clipboard"`)) {
       evt.preventDefault();
       try {
-        const drawing = JSON.parse(data);
+        const drawing = JSON.parse(data) as {
+          type: string;
+          elements: ExcalidrawElement[];
+        };
+
         const hasOneTextElement =
           drawing.elements.filter((el: ExcalidrawElement) => el.type === "text")
             .length === 1;
@@ -245,22 +263,22 @@ export class EventManager {
       } catch (error) {
         console.error(
           "Error parsing pasted Excalidraw element",
-          this.onPasteHandler,
+          this.onPasteHandler.bind(this),
           error,
         );
       }
     }
   }
 
-  private onRenameHandler(file: TFile, oldPath: string) {
+  private onRenameHandler(file: TAbstractFile, oldPath: string) {
     void this.plugin.renameEventHandler(file, oldPath);
   }
 
-  private onModifyHandler(file: TFile) {
+  private onModifyHandler(file: TAbstractFile) {
     void this.plugin.modifyEventHandler(file);
   }
 
-  private onDeleteHandler(file: TFile) {
+  private onDeleteHandler(file: TAbstractFile) {
     void this.plugin.deleteEventHandler(file);
   }
 
@@ -273,7 +291,7 @@ export class EventManager {
 
     //In Obsidian 1.8.x the active excalidraw leaf is obscured by an empty leaf without a parent
     //This hack resolves it
-    if (this.app.workspace.activeLeaf === leaf && isUnwantedLeaf(leaf)) {
+    if (this.app.workspace.getMostRecentLeaf() === leaf && isUnwantedLeaf(leaf)) {
       leaf.detach();
       return;
     }

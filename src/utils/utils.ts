@@ -20,6 +20,7 @@ import {
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
 import {
+  ElementsMap,
   ExcalidrawElement,
   ExcalidrawImageElement,
   ImageCrop,
@@ -51,6 +52,7 @@ import ExcalidrawView from "../view/ExcalidrawView";
 import { getEmptyDrawingElementsRuntime } from "src/constants/emptydrawing";
 import { makeEntitiesXmlSafe, sanitizedFragment } from "./htmlUtils";
 import { URLs } from "src/constants/safeUrls";
+import { isInstanceOfSVGSVGElement } from "./typechecks";
 export { errorlog, getDataURL } from "./coreUtils";
 export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 
@@ -1057,7 +1059,7 @@ export function _getContainerElement(
     return null;
   }
   if (element.containerId) {
-    return getContainerElement(element, arrayToMap(scene.elements));
+    return getContainerElement(element, arrayToMap(scene.elements) as ElementsMap) ?? null;
     //return scene.elements.find((el:ExcalidrawElement)=>el.id === element.containerId) ?? null;
   }
   return null;
@@ -1112,7 +1114,7 @@ export function isContainer(el: ExcalidrawElement) {
 
 export function hyperlinkIsImage(data: string): boolean {
   if (!isHyperLink(data)) {
-    false;
+    return false;
   }
   const corelink = data.split("?")[0];
   return IMAGE_TYPES.contains(
@@ -1247,12 +1249,12 @@ export function convertSVGStringToElement(svg: string): SVGSVGElement {
   }
 
   const root = doc.documentElement;
-  if (root instanceof SVGSVGElement) {
+  if (isInstanceOfSVGSVGElement(root)) {
     return root;
   }
 
   const nestedSvg = doc.querySelector("svg");
-  if (nestedSvg instanceof SVGSVGElement) {
+  if (isInstanceOfSVGSVGElement(nestedSvg)) {
     return nestedSvg;
   }
 }

@@ -7,6 +7,7 @@ import { getCommonBoundingBox, restoreElements } from "src/constants/constants";
 import { getEA } from "src/core";
 import { t } from "src/lang/helpers";
 import type ExcalidrawView from "src/view/ExcalidrawView";
+import { errorlog } from "./utils";
 
 function estimateBounds(
   elements: ExcalidrawElement[],
@@ -64,8 +65,10 @@ export const insertLaTeXToView = (
 ) => {
   const app = view.plugin.app;
   const ea = getEA(view);
+  
   void import("src/shared/Dialogs/Prompt").then(({ LaTexPrompt }) => {
     LaTexPrompt.Prompt(
+      view.plugin,
       app,
       t("ENTER_LATEX"),
       view.plugin.settings.latexBoilerplate,
@@ -82,31 +85,41 @@ export const insertLaTeXToView = (
               !maxel || curr.updated > maxel.updated ? curr : maxel,
             undefined,
           ) as ExcalidrawImageElement;
+          
         let scaleX = 1;
         let scaleY = 1;
+        
         if (lastLatexEl) {
           const equation = view.excalidrawData.getEquation(lastLatexEl.fileId);
           const dataurl = await ea.tex2dataURL(equation.latex);
-          if (dataurl.size.width > 0 && dataurl.size.height > 0) {
+          if (dataurl && dataurl.size.width > 0 && dataurl.size.height > 0) {
             scaleX = lastLatexEl.width / dataurl.size.width;
             scaleY = lastLatexEl.height / dataurl.size.height;
           }
         }
+        
         if (formula) {
           const id = await ea.addLaTex(0, 0, formula, scaleX, scaleY);
           if (center) {
             const el = ea.getElement(id);
-            const { width, height } = el;
-            const { x, y } = ea.getViewCenterPosition();
-            el.x = x - width / 2;
-            el.y = y - height / 2;
+            if (el) {
+              const { width, height } = el;
+              const { x, y } = ea.getViewCenterPosition();
+              el.x = x - width / 2;
+              el.y = y - height / 2;
+            }
           }
           await ea.addElementsToView(!center, false, true);
           ea.selectElementsInView([id]);
         }
         ea.destroy();
       },
-      () => {},
+      (e) => {
+        // Promise rejection handler (e.g. user cancelled prompt or Extras plugin is missing)
+        if (e && e instanceof Error) {
+          errorlog({message: "LaTeX Insertion aborted", error: e});
+        }
+      },
     );
   });
 };

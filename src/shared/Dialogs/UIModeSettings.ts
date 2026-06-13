@@ -14,9 +14,9 @@ export class UIModeSettings extends Modal {
     void this.createForm();
   }
 
-  async onClose() {
+  onClose() {
     if (this.isDirty) {
-      await this.plugin.saveSettings();
+      void this.plugin.saveSettings();
     }
     this.plugin = null;
   }
