@@ -39,9 +39,5 @@ export default tseslint.config(
 		},
 	},
 	...obsidianmd.configs.recommended,
-	{
-    rules: {
-      "obsidianmd/prefer-instanceof": "off",
-    },
-  },
+
 );

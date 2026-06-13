@@ -36,7 +36,7 @@ import { FILENAMEPARTS, PreviewImageType } from "../../types/utilTypes";
 import { CustomMutationObserver, DEBUGGING } from "../../utils/debugHelper";
 import { getExcalidrawFileForwardLinks } from "../../utils/excalidrawViewUtils";
 import { linkPrompt } from "../../shared/Dialogs/Prompt";
-import { isHTMLElement } from "../../utils/typechecks";
+import { isInstanceOfHTMLElement, isInstanceOfHTMLImageElement } from "../../utils/typechecks";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { setElementDisplay } from "src/utils/htmlUtils";
 import { setStyle } from "src/utils/styleUtils";
@@ -577,7 +577,7 @@ const createImgElement = async (
 
   let timer: number;
   const clickEvent = (ev: PointerEvent) => {
-    if (!isHTMLElement(ev.target)) {
+    if (!isInstanceOfHTMLElement(ev.target)) {
       return;
     }
     const targetElement = ev.target;
@@ -849,16 +849,18 @@ function parseAlias(input: string): AliasParts {
   const result: AliasParts = {};
   const parts = input.split("|").map((part) => part.trim());
 
+
   switch (parts.length) {
-    case 1:
+    case 1: {
       const singleMatch = getDimensionsFromAliasString(parts[0]);
       if (singleMatch) {
         return singleMatch; // Return dimensions if valid
       }
       result.style = parts[0]; // Otherwise, return as style
       break;
+    }
 
-    case 2:
+    case 2: {
       const firstDim = getDimensionsFromAliasString(parts[0]);
       const secondDim = getDimensionsFromAliasString(parts[1]);
 
@@ -875,8 +877,9 @@ function parseAlias(input: string): AliasParts {
         result.style = parts[1]; // Assuming second part is style
       }
       break;
+    }
 
-    case 3:
+    case 3: {
       const middleMatch = getDimensionsFromAliasString(parts[1]);
       if (middleMatch) {
         result.alias = parts[0];
@@ -888,8 +891,9 @@ function parseAlias(input: string): AliasParts {
         result.style = parts[2]; // Last part is style
       }
       break;
+    }
 
-    default:
+    default: {
       const secondValue = getDimensionsFromAliasString(parts[1]);
       if (secondValue) {
         result.alias = parts[0];
@@ -901,6 +905,7 @@ function parseAlias(input: string): AliasParts {
         result.style = parts[parts.length - 1]; // Last part is style
       }
       break;
+    }
   }
 
   // Clean up the result to remove undefined properties
@@ -1081,7 +1086,7 @@ const tmpObsidianWYSIWYG = async (
       internalEmbedDiv.removeClass("inline-embed");
       internalEmbedDiv.addClass("media-embed");
       internalEmbedDiv.addClass("image-embed");
-      if (!onCanvas && imgDiv.firstChild instanceof HTMLElement) {
+      if (!onCanvas && isInstanceOfHTMLElement(imgDiv.firstChild)) {
         setStyle(imgDiv.firstChild, {
           maxHeight: "100%",
           maxWidth: null,
@@ -1091,7 +1096,7 @@ const tmpObsidianWYSIWYG = async (
       if (
         !onCanvas &&
         isHoverPopover &&
-        imgDiv.firstChild instanceof HTMLImageElement
+        isInstanceOfHTMLImageElement(imgDiv.firstChild)
       ) {
         internalEmbedDiv.style.setProperty(
           "--popover-width",
@@ -1269,7 +1274,7 @@ export const hoverEvent = (
 };
 
 //monitoring for div.popover.hover-popover.file-embed.is-loaded to be added to the DOM tree
-const legacyExcalidrawPopoverObserverFn: MutationCallback = async (m) => {
+const legacyExcalidrawPopoverObserverFn: MutationCallback = (m) => {
   if (m.length === 0) {
     return;
   }
@@ -1324,25 +1329,27 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = async (m) => {
 
   //this div will be on top of original DIV. By stopping the propagation of the click
   //I prevent the default Obsidian feature of opening the link in the native app
-  const img = await getIMG({
-    file,
-    fname: file.path,
-    fwidth: "300",
-    fheight: null,
-    imgstyle: ["excalidraw-svg"],
-  });
-  const div = createDiv("", (el) => {
-    el.appendChild(img);
-    el.setAttribute("src", file.path);
-    el.onClickEvent((ev) => {
-      ev.stopImmediatePropagation();
-      const src = el.getAttribute("src");
-      if (src) {
-        plugin.openDrawing(vault.getFileByPath(src), linkClickModifierType(ev));
-      } //.ctrlKey||ev.metaKey);
+  void (async () => {
+    const img = await getIMG({
+      file,
+      fname: file.path,
+      fwidth: "300",
+      fheight: null,
+      imgstyle: ["excalidraw-svg"],
     });
-  });
-  node.appendChild(div);
+    const div = createDiv("", (el) => {
+      el.appendChild(img);
+      el.setAttribute("src", file.path);
+      el.onClickEvent((ev) => {
+        ev.stopImmediatePropagation();
+        const src = el.getAttribute("src");
+        if (src) {
+          plugin.openDrawing(vault.getFileByPath(src), linkClickModifierType(ev));
+        } //.ctrlKey||ev.metaKey);
+      });
+    });
+    node.appendChild(div);
+  })();
 };
 
 export const legacyExcalidrawPopoverObserver = DEBUGGING

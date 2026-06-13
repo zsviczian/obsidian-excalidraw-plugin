@@ -47,19 +47,18 @@ export class CustomMutationObserver {
   }
 
   observe(target: Node, options: MutationObserverInit) {
-    const wrappedCallback: MutationCallback = async (
+    const wrappedCallback: MutationCallback = (
       mutationsList,
       observer,
     ) => {
       const startTime = performance.now(); // Get start time
-      await this.originalCallback(mutationsList, observer); // Invoke the original callback
+      this.originalCallback(mutationsList, observer); // Invoke the original callback
       const endTime = performance.now(); // Get end time
       const executionTime = endTime - startTime;
       if (executionTime > durationTreshold) {
-        console.log(
-          `Excalidraw ${this.name} MutationObserver callback took ${executionTime}ms to execute`,
-          observer,
-        );
+        const message = `Excalidraw ${this.name} MutationObserver callback took ${executionTime}ms to execute`;
+        // eslint-disable-next-line obsidianmd/rule-custom-message -- needed for production debugging
+        console.log( message, observer);
       }
     };
 

@@ -994,7 +994,7 @@ export class CommandManager {
           const el = this.ea.getViewSelectedElement();
           if (el.type !== "image") {
             new Notice(
-              "Please select an image or embedded markdown document",
+              t("DELETE_IMAGE_NOTICE"),
               4000,
             );
             return true;
@@ -1002,12 +1002,12 @@ export class CommandManager {
           const file = this.ea.getViewFileForImageElement(el);
           if (!file) {
             new Notice(
-              "Please select an image or embedded markdown document",
+              t("DELETE_IMAGE_NOTICE"),
               4000,
             );
             return true;
           }
-          void this.app.vault.delete(file);
+          void this.app.fileManager.trashFile(file);
           this.ea.deleteViewElements([el]);
           return true;
         }

@@ -131,6 +131,7 @@ import {
 import { URLs } from "src/constants/safeUrls";
 import { hideElement, setButtonBgColor } from "src/utils/styleUtils";
 import { installButton } from "src/utils/scriptLibraryUtils";
+import { isInstanceOfHTMLStyleElement } from "src/utils/typechecks";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
@@ -1192,8 +1193,7 @@ export default class ExcalidrawPlugin extends Plugin {
         }
         return;
       }
-
-      if (existingStylesheet instanceof HTMLStyleElement) {
+      if (isInstanceOfHTMLStyleElement(existingStylesheet)) {
         existingStylesheet.textContent = PHONE_FOOTER_SAFE_AREA_CSS;
         return;
       }
@@ -1389,7 +1389,7 @@ export default class ExcalidrawPlugin extends Plugin {
       });
     }
     if (!keepOriginal) {
-      void this.app.vault.delete(file);
+      void this.app.fileManager.trashFile(file);
     }
     return result;
   }

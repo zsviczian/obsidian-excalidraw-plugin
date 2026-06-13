@@ -51,6 +51,7 @@ import ExcalidrawView from "../view/ExcalidrawView";
 import { getEmptyDrawingElementsRuntime } from "src/constants/emptydrawing";
 import { makeEntitiesXmlSafe, sanitizedFragment } from "./htmlUtils";
 import { URLs } from "src/constants/safeUrls";
+import { isInstanceOfSVGSVGElement } from "./typechecks";
 export { errorlog, getDataURL } from "./coreUtils";
 export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 
@@ -1247,12 +1248,12 @@ export function convertSVGStringToElement(svg: string): SVGSVGElement {
   }
 
   const root = doc.documentElement;
-  if (root instanceof SVGSVGElement) {
+  if (isInstanceOfSVGSVGElement(root)) {
     return root;
   }
 
   const nestedSvg = doc.querySelector("svg");
-  if (nestedSvg instanceof SVGSVGElement) {
+  if (isInstanceOfSVGSVGElement(nestedSvg)) {
     return nestedSvg;
   }
 }

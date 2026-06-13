@@ -2,6 +2,7 @@ import { getIcon, sanitizeHTMLToDom } from "obsidian";
 import { PenStyle } from "src/types/penTypes";
 import React from "react";
 import { mainDocument } from "./constants";
+import { isInstanceOfSVGSVGElement } from "src/utils/typechecks";
 
 const BLOCKED_SVG_TAGS = new Set([
   "script",
@@ -68,7 +69,7 @@ const sanitizeSvgTree = (svg: SVGSVGElement) => {
 const sanitizeSvgFromString = (svgMarkup: string): SVGSVGElement | null => {
   const fragment = sanitizeHTMLToDom(svgMarkup ?? "");
   const svg = fragment.querySelector("svg");
-  if (!(svg instanceof SVGSVGElement)) {
+  if (!isInstanceOfSVGSVGElement(svg)) {
     return null;
   }
   const clone = svg.cloneNode(true) as SVGSVGElement;

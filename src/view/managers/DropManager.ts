@@ -361,7 +361,7 @@ export class DropManager {
             this.currentPosition,
             undefined,
             src[1],
-          ).then(ea.destroy);
+          ).then(() => ea.destroy());
           return false;
         }
       }
@@ -442,21 +442,17 @@ export class DropManager {
                         maybeFile.path
                       }`,
                     );
-                    switch (action) {
-                      case "Import":
-                        break;
-                      case "Overwrite":
+                    if (action !== "Import") {
+                      if (action === "Overwrite") {
                         await this.app.vault.modifyBinary(
                           maybeFile,
                           fileToImport,
                         );
-                      // there is deliberately no break here
-                      case "Use":
-                      default:
-                        const ea = getEA(this.view);
-                        await insertImageToView(ea, pos, maybeFile);
-                        ea.destroy();
-                        return false;
+                      }
+                      const ea = getEA(this.view);
+                      await insertImageToView(ea, pos, maybeFile);
+                      ea.destroy();
+                      return false;
                     }
                   }
                   const file = await importFileToVault(

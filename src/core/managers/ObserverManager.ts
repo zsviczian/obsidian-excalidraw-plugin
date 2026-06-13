@@ -7,6 +7,7 @@ import {
   isObsidianThemeDark,
 } from "src/utils/obsidianUtils";
 import { App, Notice, TFile } from "obsidian";
+import { isInstanceOfDocumentFragment, isInstanceOfElement } from "src/utils/typechecks";
 
 export class ObserverManager {
   private plugin: ExcalidrawPlugin;
@@ -80,7 +81,7 @@ export class ObserverManager {
       return;
     }
 
-    const themeObserverFn: MutationCallback = async (
+    const themeObserverFn: MutationCallback = (
       mutations: MutationRecord[],
     ) => {
       const { matchThemeTrigger } = this.settings;
@@ -178,11 +179,11 @@ export class ObserverManager {
       mutationsList.forEach((mutation) => {
         if (mutation.type === "childList") {
           mutation.addedNodes.forEach((node) => {
-            if (node instanceof Element || node instanceof DocumentFragment) {
+            if (isInstanceOfElement(node) || isInstanceOfDocumentFragment(node)) {
               ensureFiletypes(node);
             }
           });
-          if (mutation.target instanceof Element) {
+          if (isInstanceOfElement(mutation.target)) {
             // Handles folders that were collapsed/expanded without adding nodes
             ensureFiletypes(mutation.target);
           }
@@ -191,7 +192,7 @@ export class ObserverManager {
 
         if (
           mutation.type === "attributes" &&
-          mutation.target instanceof Element
+          isInstanceOfElement(mutation.target)
         ) {
           ensureFiletypes(mutation.target);
         }
@@ -237,7 +238,7 @@ export class ObserverManager {
             const added = Array.from(mutation.addedNodes ?? []);
             const hasContainer = added.some(
               (node) =>
-                node instanceof Element &&
+                isInstanceOfElement(node) &&
                 (node.matches?.(".nav-files-container") ||
                   node.querySelector?.(".nav-files-container")),
             );
@@ -276,7 +277,7 @@ export class ObserverManager {
       this.removeModalContainerObserver();
     }
     //The user clicks settings, or "open another vault", or the command palette
-    const modalContainerObserverFn: MutationCallback = async (
+    const modalContainerObserverFn: MutationCallback = (
       m: MutationRecord[],
     ) => {
       const view = this.plugin.activeExcalidrawView;
@@ -293,7 +294,7 @@ export class ObserverManager {
 
       const { errorMessage } = view.excalidrawAPI.getAppState();
       if (!errorMessage) {
-        await this.plugin.activeExcalidrawView.save();
+        void this.plugin.activeExcalidrawView.save();
       }
     };
 

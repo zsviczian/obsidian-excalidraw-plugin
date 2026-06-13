@@ -786,7 +786,7 @@ export class PluginFileManager {
         imgMap.forEach((imgPath: string) => {
           const imgFile = this.app.vault.getFileByPath(normalizePath(imgPath));
           if (imgFile) {
-            void this.app.vault.delete(imgFile);
+            void this.app.fileManager.trashFile(imgFile);
           }
         });
       }, 500);

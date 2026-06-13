@@ -24,6 +24,7 @@ import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import { EmbeddableLeafRef } from "src/types/excalidrawViewTypes";
 import { t } from "src/lang/helpers";
 import { removeStyle, setStyle } from "src/utils/styleUtils";
+import { isInstanceOfHTMLElement } from "src/utils/typechecks";
 
 type PdfViewLike = {
   containerEl?: HTMLElement;
@@ -137,7 +138,7 @@ function setPDFViewTheme(view: ExcalidrawView, pdfView: PdfViewLike | null) {
     const thumbnailViewEl = pdfView.containerEl?.querySelector(
       ".pdf-thumbnail-view",
     );
-    if (thumbnailViewEl instanceof HTMLElement) {
+    if (isInstanceOfHTMLElement(thumbnailViewEl)) {
       setStyle(thumbnailViewEl, {
         filter: "var(--theme-filter)",
       });

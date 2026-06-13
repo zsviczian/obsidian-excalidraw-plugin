@@ -268,6 +268,7 @@ import {
 } from "src/utils/excalidrawAutomateUtils";
 import { getYouTubeUrl, URLs } from "src/constants/safeUrls";
 import { setStyle } from "src/utils/styleUtils";
+import { isInstanceOfHTMLElement } from "src/utils/typechecks";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -1644,7 +1645,7 @@ export default class ExcalidrawView
       const topPadding = doc.body.querySelector(
         ".is-mobile .workspace > .mod-root",
       );
-      if (topPadding && topPadding instanceof HTMLElement) {
+      if (topPadding && isInstanceOfHTMLElement(topPadding)) {
         setStyle(topPadding, { paddingTop: "0px" });
       }
     };
@@ -1671,7 +1672,7 @@ export default class ExcalidrawView
     const topPadding = doc.body.querySelector(
       ".is-mobile .workspace > .mod-root",
     );
-    if (topPadding && topPadding instanceof HTMLElement) {
+    if (topPadding && isInstanceOfHTMLElement(topPadding)) {
       setStyle(topPadding, { paddingTop: "" });
     }
     setStyle(this.contentEl, { marginTop: "" });
@@ -2467,7 +2468,7 @@ export default class ExcalidrawView
     //triggers when the leaf is moved in the workspace
     const observerFn = async (m: MutationRecord[]) => {
       const target = m[0].target;
-      if (!(target instanceof HTMLElement)) {
+      if (!isInstanceOfHTMLElement(target)) {
         return;
       }
       const { offsetLeft, offsetTop } = target;
@@ -5502,9 +5503,9 @@ export default class ExcalidrawView
           this,
           st.viewBackgroundColor,
         );
-      } catch (e) {
+      } catch (e: unknown) {
         errorlog({
-          where: this.canvasColorChangeHook,
+          where: this.canvasColorChangeHook.bind(this) as unknown,
           source: this.plugin.ea.onCanvasColorChangeHook,
           error: e,
           message: "ea.onCanvasColorChangeHook exception",
@@ -6519,7 +6520,7 @@ export default class ExcalidrawView
     } catch (error) {
       console.error(
         "unexpected error in pasteCodeBlock",
-        this.pasteCodeBlock,
+        this.pasteCodeBlock.bind(this),
         error,
       );
     }
@@ -7457,7 +7458,7 @@ export default class ExcalidrawView
     } catch (error) {
       console.error(
         "unexpected error in renderEmbeddable",
-        this.renderEmbeddable,
+        this.renderEmbeddable.bind(this),
         error,
       );
       return null;

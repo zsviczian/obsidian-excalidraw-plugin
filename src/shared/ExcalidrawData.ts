@@ -700,7 +700,7 @@ export class ExcalidrawData {
           } catch (error) {
             console.log(
               "unexpected error in initializeNonInitializedFields",
-              this.initializeNonInitializedFields,
+              this.initializeNonInitializedFields.bind(this),
               error,
             );
           }

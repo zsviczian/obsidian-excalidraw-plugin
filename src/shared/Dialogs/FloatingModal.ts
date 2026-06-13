@@ -2,6 +2,7 @@ import { App, Modal } from "obsidian";
 import { clamp } from "@radix-ui/number";
 import { mainDocument } from "src/constants/constants";
 import { setStyle } from "src/utils/styleUtils";
+import { isInstanceOfHTMLButtonElement, isInstanceOfHTMLInputElement, isInstanceOfHTMLSelectElement, isInstanceOfHTMLTextAreaElement } from "src/utils/typechecks";
 
 function getClientPoint(e: PointerEvent | TouchEvent) {
   if (e.type.startsWith("touch")) {
@@ -99,9 +100,9 @@ export class FloatingModal extends Modal {
   constructor(app: App) {
     super(app);
     // Initialize event handlers with proper binding
-    this.pointerDownHandler = this.handlePointerDown.bind(this);
-    this.pointerMoveHandler = this.handlePointerMove.bind(this);
-    this.pointerUpHandler = this.handlePointerUp.bind(this);
+    this.pointerDownHandler = (e) => this.handlePointerDown(e);
+    this.pointerMoveHandler = (e) => this.handlePointerMove(e);
+    this.pointerUpHandler = () => this.handlePointerUp();
     this.modalKeydownStopHandler = (ev: KeyboardEvent) => ev.stopPropagation();
 
     this.setDimBackground(false);
@@ -112,10 +113,10 @@ export class FloatingModal extends Modal {
     event: PointerEvent | TouchEvent,
   ): boolean {
     return Boolean(
-      target instanceof HTMLInputElement ||
-      target instanceof HTMLTextAreaElement ||
-      target instanceof HTMLSelectElement ||
-      target instanceof HTMLButtonElement ||
+      isInstanceOfHTMLInputElement(target) ||
+      isInstanceOfHTMLTextAreaElement(target) ||
+      isInstanceOfHTMLSelectElement(target) ||
+      isInstanceOfHTMLButtonElement(target) ||
       isPointOnText(event, this.ownerDocument) ||
       target.closest(".clickable-icon") ||
       // ensure close button never starts drag

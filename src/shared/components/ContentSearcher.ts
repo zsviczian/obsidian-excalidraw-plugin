@@ -3,6 +3,7 @@ import { escapeRegExp } from "../../utils/utils";
 import { htmlToMarkdown, Notice, setIcon } from "obsidian";
 import { mainDocument } from "src/constants/constants";
 import { setStyle } from "src/utils/styleUtils";
+import { isInstanceOfHTMLElement } from "src/utils/typechecks";
 
 export class ContentSearcher {
   private contentDiv: HTMLElement;
@@ -115,7 +116,7 @@ export class ContentSearcher {
 
       const childNodes = Array.from(exportContent.childNodes);
       const startIndex = childNodes.findIndex(
-        (node) => node instanceof HTMLElement && node.tagName === "HR",
+        (node) => isInstanceOfHTMLElement(node) && node.tagName === "HR",
       );
       const nodesToExport =
         startIndex > -1 ? childNodes.slice(startIndex) : childNodes;
@@ -390,8 +391,9 @@ export class ContentSearcher {
       parent = parent.parentElement;
     }
 
-    return mainDocument.scrollingElement instanceof HTMLElement
-      ? mainDocument.scrollingElement
-      : null;
+    if (isInstanceOfHTMLElement(mainDocument.scrollingElement)) {
+      return mainDocument.scrollingElement;
+    }
+    return null;
   }
 }

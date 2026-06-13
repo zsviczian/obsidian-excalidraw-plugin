@@ -70,6 +70,7 @@ import {
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { setStyleText } from "src/utils/htmlUtils";
 import { hideElement, setStyle } from "src/utils/styleUtils";
+import { isInstanceOfHTMLImageElement, isInstanceOfSVGElement } from "src/utils/typechecks";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -145,7 +146,7 @@ const replaceSVGColors = (
 
   // Modify the fill and stroke attributes of child nodes
   const childNodes = (node: ChildNode) => {
-    if (node instanceof SVGElement) {
+    if (isInstanceOfSVGElement(node)) {
       const oldFill = node.getAttribute("fill")?.toLocaleLowerCase();
       const oldStroke = node.getAttribute("stroke")?.toLocaleLowerCase();
 
@@ -1413,10 +1414,11 @@ export class EmbeddedFilesLoader {
       case "":
         fontDef = "";
         break;
-      default:
+      default: {
         const font = await getFontDataURL(plugin.app, fontName, file.path);
         fontDef = font.fontDef;
         fontName = font.fontName;
+      }
     }
 
     if (fileCache?.frontmatter && fileCache.frontmatter.banner !== null) {
@@ -1604,7 +1606,7 @@ export class EmbeddedFilesLoader {
     }
     if (hasSVGwithBitmap && this.isDark) {
       imageList.forEach((img) => {
-        if (img instanceof HTMLImageElement) {
+        if (isInstanceOfHTMLImageElement(img)) {
           setStyle(img, { filter: THEME_FILTER });
         }
       });
