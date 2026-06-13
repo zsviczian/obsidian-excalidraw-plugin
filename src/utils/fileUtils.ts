@@ -177,7 +177,7 @@ export const getURLImageExtension = (url: string): string => {
 };
 
 export const getMimeType = (extension: string): MimeType => {
-  if (IMAGE_MIME_TYPES.hasOwnProperty(extension)) {
+  if (Object.hasOwn(IMAGE_MIME_TYPES, extension)) {
     return IMAGE_MIME_TYPES[extension as ImageExtension];
   }
   switch (extension) {

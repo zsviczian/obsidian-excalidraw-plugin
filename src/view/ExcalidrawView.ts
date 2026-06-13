@@ -5548,10 +5548,12 @@ export default class ExcalidrawView
     if (
       this.semaphores.shouldSaveImportedImage &&
       Object.values(files).some(
-        (file) => !file.hasOwnProperty("hasSVGwithBitmap"),
+        (file) => !Object.hasOwn(file, "hasSVGwithBitmap"),
       )
     ) {
-      window.setTimeout(() => this.forceSave(true)); //image is being added to the scene
+      window.setTimeout(() => {
+        void this.forceSave(true); //image is being added to the scene
+      });
     }
 
     if (st.newElement?.type === "freedraw") {
@@ -5667,7 +5669,7 @@ export default class ExcalidrawView
 
     if (data?.elements) {
       data.elements
-        .filter((el) => el.type === "text" && !el.hasOwnProperty("rawText"))
+        .filter((el) => el.type === "text" && !Object.hasOwn(el, "rawText"))
         .forEach(
           (el) =>
             ((el as Mutable<ExcalidrawTextElement>).rawText = (
@@ -6385,8 +6387,8 @@ export default class ExcalidrawView
         (b: MarkdownBlockCacheEntry) =>
           b.display &&
           b.node &&
-          b.node.hasOwnProperty("type") &&
-          b.node.hasOwnProperty("id"),
+          Object.hasOwn(b.node, "type") &&
+          Object.hasOwn(b.node, "id"),
       )
       .map((b: MarkdownBlockCacheEntry) => cleanBlockRef(b.node.id));
   }

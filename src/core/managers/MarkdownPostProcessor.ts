@@ -1247,7 +1247,7 @@ export const markdownPostProcessor = async (
   //transcluded text element or some other transcluded content inside the Excalidraw file
   //in reading mode these elements should be hidden
   const excalidrawFile = Boolean(
-    ctx.frontmatter?.hasOwnProperty("excalidraw-plugin"),
+    ctx.frontmatter && "excalidraw-plugin" in ctx.frontmatter,
   );
   if (!(isPreview || isMarkdownReadingMode || isPrinting) && excalidrawFile) {
     setElementDisplay(el, "none");

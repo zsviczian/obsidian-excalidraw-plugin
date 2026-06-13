@@ -568,7 +568,7 @@ export class ExcalidrawData {
         URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG,
       )[1] ?? "1.8.16";
 
-    const elements = this.scene.elements;
+    const elements = this.scene.elements as Mutable<ExcalidrawElement>[];
     for (const el of elements) {
       if (el.type === "iframe" && !el.customData) {
         el.type = "embeddable";
@@ -588,7 +588,9 @@ export class ExcalidrawData {
               );
               if (elementToClean) {
                 //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1600
-                elementToClean.containerId = null;
+                if (elementToClean.type === "text") {
+                  elementToClean.containerId = null;
+                }
               }
             }
           } else {
@@ -597,7 +599,7 @@ export class ExcalidrawData {
         });
         const boundElements = Array.from(map, ([id, type]) => ({ id, type }));
         if (boundElements.length !== el.boundElements.length) {
-          el.boundElements = boundElements;
+          el.boundElements  = boundElements;
         }
       }
 
@@ -643,15 +645,15 @@ export class ExcalidrawData {
         el.fontSize = 20;
       }
 
-      if (el.type === "text" && !el.hasOwnProperty("autoResize")) {
+      if (el.type === "text" && !Object.hasOwn(el, "autoResize")) {
         el.autoResize = true;
       }
 
-      if (el.type === "text" && !el.hasOwnProperty("lineHeight")) {
-        el.lineHeight = getLineHeight(el.fontFamily);
+      if (el.type === "text" && !Object.hasOwn(el, "lineHeight")) {
+        el.lineHeight = getLineHeight(el.fontFamily) as number & { _brand: "unitlessLineHeight"; };
       }
 
-      if (el.type === "image" && !el.hasOwnProperty("roundness")) {
+      if (el.type === "image" && !Object.hasOwn(el, "roundness")) {
         el.roundness = null;
       }
     }
@@ -884,7 +886,7 @@ export class ExcalidrawData {
     }
 
     //girdSize, gridStep, previousGridSize, gridModeEnabled migration
-    if (this.scene.appState.hasOwnProperty("previousGridSize")) {
+    if (Object.hasOwn(this.scene.appState, "previousGridSize")) {
       //if previousGridSize was present this is legacy data
       if (this.scene.appState.gridSize === null) {
         this.scene.appState.gridSize = this.scene.appState.previousGridSize;
@@ -895,7 +897,7 @@ export class ExcalidrawData {
       delete this.scene.appState.previousGridSize;
     }
 
-    if (this.scene.appState?.gridColor?.hasOwnProperty("MajorGridFrequency")) {
+    if (Object.hasOwn(this.scene.appState?.gridColor, "MajorGridFrequency")) {
       //if this is present, this is legacy data
       if (this.scene.appState.gridColor.MajorGridFrequency > 1) {
         this.scene.gridStep = this.scene.appState.gridColor.MajorGridFrequency;

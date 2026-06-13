@@ -1559,9 +1559,10 @@ export class EmbeddedFilesLoader {
       const elementStyle = el.style;
       const computedStyle = window.getComputedStyle(el);
       let style = "";
-      for (const prop in elementStyle) {
-        if (elementStyle.hasOwnProperty(prop)) {
-          style += `${prop}: ${computedStyle[prop]};`;
+      for (const [prop] of Object.entries(elementStyle)) {
+        if (Object.hasOwn(elementStyle, prop)) {
+          const value = computedStyle.getPropertyValue(prop);
+          style += `${prop}: ${value};`;
         }
       }
       el.setAttribute("style", style);

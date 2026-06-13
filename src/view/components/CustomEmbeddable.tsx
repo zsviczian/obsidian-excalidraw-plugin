@@ -839,7 +839,7 @@ function RenderObsidianView({
     if (!mdProps) {
       return;
     }
-    if (!leafRef.current?.hasOwnProperty("node")) {
+    if (!Object.hasOwn(leafRef.current, "node")) {
       return;
     }
 
