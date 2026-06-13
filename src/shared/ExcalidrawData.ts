@@ -655,17 +655,17 @@ export class ExcalidrawData {
         el.fontSize = 20;
       }
 
-      if (el.type === "text" && !Object.hasOwn(el, "autoResize")) {
+      if (el.type === "text" && !Object.hasOwn(el ?? {}, "autoResize")) {
         el.autoResize = true;
       }
 
-      if (el.type === "text" && !Object.hasOwn(el, "lineHeight")) {
+      if (el.type === "text" && !Object.hasOwn(el ?? {}, "lineHeight")) {
         el.lineHeight = getLineHeight(el.fontFamily) as number & {
           _brand: "unitlessLineHeight";
         };
       }
 
-      if (el.type === "image" && !Object.hasOwn(el, "roundness")) {
+      if (el.type === "image" && !Object.hasOwn(el ?? {}, "roundness")) {
         el.roundness = null;
       }
     }
@@ -900,7 +900,7 @@ export class ExcalidrawData {
     }
 
     //girdSize, gridStep, previousGridSize, gridModeEnabled migration
-    if (Object.hasOwn(this.scene.appState, "previousGridSize")) {
+    if (Object.hasOwn(this.scene.appState ?? {}, "previousGridSize")) {
       //if previousGridSize was present this is legacy data
       if (this.scene.appState.gridSize === null) {
         this.scene.appState.gridSize = this.scene.appState.previousGridSize;
@@ -911,7 +911,7 @@ export class ExcalidrawData {
       delete this.scene.appState.previousGridSize;
     }
 
-    if (Object.hasOwn(this.scene.appState?.gridColor, "MajorGridFrequency")) {
+    if (Object.hasOwn(this.scene.appState?.gridColor ?? {}, "MajorGridFrequency")) {
       //if this is present, this is legacy data
       if (this.scene.appState.gridColor.MajorGridFrequency > 1) {
         this.scene.gridStep = this.scene.appState.gridColor.MajorGridFrequency;

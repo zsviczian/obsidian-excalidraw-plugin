@@ -892,7 +892,7 @@ export function getViewColorPalette(
 
   const api = view.excalidrawAPI;
   const { colorPalette } = api.getAppState();
-  if (!colorPalette || !Object.hasOwn(colorPalette, palette)) {
+  if (!colorPalette || !Object.hasOwn(colorPalette ?? {}, palette)) {
     return getDefaultColorPalette();
   }
 
