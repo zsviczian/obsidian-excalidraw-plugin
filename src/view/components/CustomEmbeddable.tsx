@@ -651,7 +651,7 @@ function RenderObsidianView({
 
   const setKeepOnTop = () => {
     const keepontop =
-      view.app.workspace.activeLeaf === view.leaf && DEVICE.isDesktop;
+      view.app.workspace.getMostRecentLeaf() === view.leaf && DEVICE.isDesktop;
     if (keepontop) {
       if (!view.ownerWindow.electronWindow.isAlwaysOnTop()) {
         view.ownerWindow.electronWindow.setAlwaysOnTop(true);
@@ -867,9 +867,12 @@ function RenderObsidianView({
               .stringHEX({ alpha: true })
         : "transparent";
 
-      color === "transparent"
-        ? canvasNode?.addClass("transparent")
-        : canvasNode?.removeClass("transparent");
+      if (color === "transparent") {
+        canvasNode?.addClass("transparent");
+      } else {
+        canvasNode?.removeClass("transparent");
+      }
+
       if (canvasNode) {
         setStyle(canvasNode, {
           "--canvas-background": color,
@@ -892,9 +895,12 @@ function RenderObsidianView({
             .alphaTo((mdProps.backgroundOpacity ?? 100) / 100)
             .stringHEX({ alpha: true });
 
-      color === "transparent"
-        ? canvasNode?.addClass("transparent")
-        : canvasNode?.removeClass("transparent");
+      if (color === "transparent") {
+        canvasNode?.addClass("transparent");
+      } else {
+        canvasNode?.removeClass("transparent");
+      }
+
       if (canvasNode) {
         setStyle(canvasNode, {
           "--canvas-background": color,

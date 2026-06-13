@@ -1334,12 +1334,13 @@ export class EmbeddedFilesLoader {
           });
         });
         const base64 = await blobToBase64(blob);
-        shouldUseCache &&
+        if (shouldUseCache) {
           getImageCache().addImageToCache(cacheKey, "", blob, {
             renderScale: requestedScale,
             size: { width, height },
             pdfPageViewProps: viewProps,
           });
+        }
         const result: [DataURL, Size, PDFPageViewProps, number, boolean] = [
           `data:image/png;base64,${base64}` as DataURL,
           { width, height },

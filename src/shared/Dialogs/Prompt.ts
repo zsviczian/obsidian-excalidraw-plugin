@@ -520,10 +520,17 @@ export class GenericInputPrompt extends Modal {
         if (button.tooltip) {
           btn.setTooltip(button.tooltip);
         }
-        button.iconId
-          ? btn.setIcon(button.iconId)
-          : btn.setButtonText(button.caption);
-        button.tooltip && btn.setTooltip(button.tooltip);
+
+        if (button.iconId) {
+          btn.setIcon(button.iconId);
+        } else {
+          btn.setButtonText(button.caption);
+        }
+
+        if (button.tooltip) {
+          btn.setTooltip(button.tooltip);
+        }
+
         btn.onClick(() => {
           const res = button.action(this.input);
           if (res) {

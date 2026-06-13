@@ -2354,8 +2354,8 @@ export default class ExcalidrawView
         return;
       }
       if (
-        Boolean(this.plugin.activeLeafChangeEventHandler) &&
-        this?.app?.workspace?.activeLeaf === this.leaf
+        Boolean(this.plugin.activeLeafChangeEventHandler.bind(this)) &&
+        this?.app?.workspace?.getMostRecentLeaf() === this.leaf
       ) {
         await this.plugin.activeLeafChangeEventHandler(this.leaf);
       }

@@ -9,6 +9,7 @@ import {
   EventRef,
   Menu,
   FileView,
+  TAbstractFile,
 } from "obsidian";
 import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import { getLink } from "../../utils/fileUtils";
@@ -105,16 +106,20 @@ export class EventManager {
   public async registerEvents() {
     await this.plugin.awaitInit();
     this.registerEvent(
-      this.app.workspace.on("editor-paste", this.onPasteHandler.bind(this)),
+      this.app.workspace.on("editor-paste", 
+        (evt, editor, info) => this.onPasteHandler(evt, editor, info),
+    ));
+    this.registerEvent(
+      this.app.vault.on("rename",
+        (file, oldPath) => this.onRenameHandler(file, oldPath)),
     );
     this.registerEvent(
-      this.app.vault.on("rename", this.onRenameHandler.bind(this)),
+      this.app.vault.on("modify", 
+        (file) => this.onModifyHandler(file)),
     );
     this.registerEvent(
-      this.app.vault.on("modify", this.onModifyHandler.bind(this)),
-    );
-    this.registerEvent(
-      this.app.vault.on("delete", this.onDeleteHandler.bind(this)),
+      this.app.vault.on("delete",
+        (file) => this.onDeleteHandler(file)),
     );
 
     //save Excalidraw leaf and update embeds when switching to another leaf
@@ -252,15 +257,15 @@ export class EventManager {
     }
   }
 
-  private onRenameHandler(file: TFile, oldPath: string) {
+  private onRenameHandler(file: TAbstractFile, oldPath: string) {
     void this.plugin.renameEventHandler(file, oldPath);
   }
 
-  private onModifyHandler(file: TFile) {
+  private onModifyHandler(file: TAbstractFile) {
     void this.plugin.modifyEventHandler(file);
   }
 
-  private onDeleteHandler(file: TFile) {
+  private onDeleteHandler(file: TAbstractFile) {
     void this.plugin.deleteEventHandler(file);
   }
 
@@ -273,7 +278,7 @@ export class EventManager {
 
     //In Obsidian 1.8.x the active excalidraw leaf is obscured by an empty leaf without a parent
     //This hack resolves it
-    if (this.app.workspace.activeLeaf === leaf && isUnwantedLeaf(leaf)) {
+    if (this.app.workspace.getMostRecentLeaf() === leaf && isUnwantedLeaf(leaf)) {
       leaf.detach();
       return;
     }

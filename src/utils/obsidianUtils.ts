@@ -620,7 +620,7 @@ export function getAudioElementHeight(): number {
   let height = 0;
   try {
     // Force layout calculation
-    mainDocument.body.offsetHeight;
+    height = mainDocument.body.offsetHeight;
 
     // Get height from bounding rect
     const rect = audioElement.getBoundingClientRect();

@@ -175,7 +175,10 @@ const _getPNG = async ({
     img.addEventListener("error", cleanup, { once: true });
   }
 
-  cacheReady && getImageCache().addImageToCache(cacheKey, blobUrl, png);
+  if (cacheReady) {
+    getImageCache().addImageToCache(cacheKey, blobUrl, png);
+  }
+
   return img;
 };
 
@@ -398,8 +401,8 @@ const _getSVGNative = async ({
   }
 
   //cache SVG should have the width and height parameters and not the embedded font
-  if (!maybeSVG) {
-    cacheReady && getImageCache().addImageToCache(cacheKey, "", svg);
+  if (!maybeSVG && cacheReady) {
+    getImageCache().addImageToCache(cacheKey, "", svg);
   }
 
   if (width && !isNaN(width)) {
@@ -548,7 +551,9 @@ const addSVGToImgSrc = (
     img.addEventListener("error", cleanup, { once: true });
   }
 
-  cacheReady && getImageCache().addImageToCache(cacheKey, blobUrl, blob);
+  if (cacheReady) {
+    getImageCache().addImageToCache(cacheKey, blobUrl, blob);
+  }
   return img;
 };
 

@@ -1112,7 +1112,7 @@ export function isContainer(el: ExcalidrawElement) {
 
 export function hyperlinkIsImage(data: string): boolean {
   if (!isHyperLink(data)) {
-    false;
+    return false;
   }
   const corelink = data.split("?")[0];
   return IMAGE_TYPES.contains(

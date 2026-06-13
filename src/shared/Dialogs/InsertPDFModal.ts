@@ -142,7 +142,9 @@ export class InsertPDFModal extends Modal {
       const pageRangeArray = pageRange.split("-");
       if (pageRangeArray.length === 1) {
         const page = parseInt(cleanNonDigits(pageRangeArray[0]));
-        !isNaN(page) && this.pagesToImport.push(page);
+        if (!isNaN(page)) {
+          this.pagesToImport.push(page);
+        }
       } else if (pageRangeArray.length === 2) {
         const start = parseInt(cleanNonDigits(pageRangeArray[0]));
         const end = parseInt(cleanNonDigits(pageRangeArray[1]));

@@ -418,7 +418,7 @@ export class CommandManager {
         if (!view) {
           return false;
         }
-        if (view.leaf !== this.app.workspace.activeLeaf) {
+        if (view.leaf !== this.app.workspace.getMostRecentLeaf()) {
           return false;
         }
         const editor = view.editor;
@@ -1629,7 +1629,7 @@ export class CommandManager {
             nodes: CanvasNodeLike[];
           };
         };
-        const activeView = this.app.workspace.activeLeaf?.view;
+        const activeView = this.app.workspace.getMostRecentLeaf()?.view;
         const isCanvasViewLike = (
           view: typeof activeView,
         ): view is CanvasViewLike =>
@@ -1819,12 +1819,14 @@ export class CommandManager {
 
           const replacer = (link: string, file: TFile) => {
             if (node.file) {
-              node.file.extension === "pdf"
-                ? node.canvas.createFileNode({
-                    pos: { x: node.x + node.width + 10, y: node.y },
-                    file,
-                  })
-                : node.setFile(file);
+              if (node.file.extension === "pdf") {
+                node.canvas.createFileNode({
+                  pos: { x: node.x + node.width + 10, y: node.y },
+                  file,
+                })
+              } else {
+                node.setFile(file);
+              }
             }
             if (node.url) {
               node.canvas.createFileNode({
@@ -1959,7 +1961,7 @@ export class CommandManager {
             nodes: CanvasNodeLike[];
           };
         };
-        const activeView = this.app.workspace.activeLeaf?.view;
+        const activeView = this.app.workspace.getMostRecentLeaf()?.view;
         const isCanvasViewLike = (
           view: typeof activeView,
         ): view is CanvasViewLike =>
@@ -2107,12 +2109,14 @@ export class CommandManager {
 
           const replacer = (link: string, file: TFile) => {
             if (node.file) {
-              node.file.extension === "pdf"
-                ? node.canvas.createFileNode({
-                    pos: { x: node.x + node.width + 10, y: node.y },
-                    file,
-                  })
-                : node.setFile(file);
+              if (node.file.extension === "pdf") {
+                node.canvas.createFileNode({
+                      pos: { x: node.x + node.width + 10, y: node.y },
+                      file,
+                    });
+              } else {
+                node.setFile(file);
+              }
             }
             if (node.url) {
               node.canvas.createFileNode({

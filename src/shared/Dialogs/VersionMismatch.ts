@@ -95,15 +95,18 @@ export class VersionMismatchPrompt extends Modal {
     redownloadBtn.addClass("mod-cta");
   }
 
-  async onClose() {
+  onClose() {
     super.onClose();
     if (this.isDirty) {
-      await this.plugin.saveSettings();
+      void this.plugin.saveSettings();
+    }
+    if (!this.resolvePromise) {
+      return;
     }
     if (!this.resolved) {
-      this.resolvePromise && this.resolvePromise(false);
+      this.resolvePromise(false);
     } else {
-      this.resolvePromise && this.resolvePromise(true);
+      this.resolvePromise(true);
     }
   }
 }

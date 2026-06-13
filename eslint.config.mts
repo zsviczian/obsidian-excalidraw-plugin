@@ -19,6 +19,10 @@ export default tseslint.config(
 		'api',
         "scripts",
         "ea-scripts",
+        "docs",
+        "lib",
+        "images",
+        "assets",
 	]),
 	{
 		languageOptions: {
@@ -35,4 +39,9 @@ export default tseslint.config(
 		},
 	},
 	...obsidianmd.configs.recommended,
+	{
+    rules: {
+      "obsidianmd/prefer-instanceof": "off",
+    },
+  },
 );

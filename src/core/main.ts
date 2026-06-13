@@ -1971,11 +1971,11 @@ export default class ExcalidrawPlugin extends Plugin {
     await this.fileManager.renameEventHandler(file, oldPath);
   }
 
-  public async modifyEventHandler(file: TFile) {
+  public async modifyEventHandler(file: TAbstractFile) {
     await this.fileManager.modifyEventHandler(file);
   }
 
-  public async deleteEventHandler(file: TFile) {
+  public async deleteEventHandler(file: TAbstractFile) {
     await this.fileManager.deleteEventHandler(file);
   }
 
