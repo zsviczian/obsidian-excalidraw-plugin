@@ -1233,16 +1233,6 @@ export async function getYouTubeThumbnailLink(
   return `${URLs.I_YTIMG_COM}/${videoId}/default.jpg`;
 }
 
-export function isCallerFromTemplaterPlugin(stackTrace: string) {
-  const lines = stackTrace.split("\n");
-  for (const line of lines) {
-    if (line.trim().startsWith("at Templater.")) {
-      return true;
-    }
-  }
-  return false;
-}
-
 export function convertSVGStringToElement(svg: string): SVGSVGElement {
   const parser = new DOMParser();
   const doc = parser.parseFromString(makeEntitiesXmlSafe(svg), "image/svg+xml");

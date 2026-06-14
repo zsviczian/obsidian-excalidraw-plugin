@@ -12,7 +12,6 @@ import {
   ViewStateResult,
   Notice,
   MetadataCache,
-  Workspace,
   TAbstractFile,
   FrontMatterCache,
 } from "obsidian";
@@ -50,7 +49,6 @@ import {
 } from "./settings";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import { initExcalidrawAutomate } from "src/utils/excalidrawAutomateUtils";
-import { around, dedupe } from "monkey-around";
 import { t } from "../lang/helpers";
 import {
   createOrOverwriteFile,
@@ -63,7 +61,6 @@ import {
   errorlog,
   sleep,
   isVersionNewerThanOther,
-  isCallerFromTemplaterPlugin,
   versionUpdateCheckTimer,
   getFontMetrics,
   calculateUIModeValue,
@@ -109,6 +106,7 @@ import {
 import { PluginFileManager } from "./managers/FileManager";
 import { ObserverManager } from "./managers/ObserverManager";
 import { PackageManager } from "./managers/PackageManager";
+import { MonkeyPatchManager } from "./managers/MonkeyPatchManager";
 import ExcalidrawView from "../view/ExcalidrawView";
 import { ExcalidrawSidepanelView } from "../view/sidepanel/Sidepanel";
 import { CommandManager } from "./managers/CommandManager";
@@ -123,7 +121,6 @@ import {
   decryptPersistedAPIKeys,
   encryptPersistedAPIKeys,
 } from "src/utils/settingsKeyObfuscation";
-import { URLs } from "src/constants/safeUrls";
 import { hideElement, setButtonBgColor } from "src/utils/styleUtils";
 import { installButton } from "src/utils/scriptLibraryUtils";
 import { isInstanceOfHTMLStyleElement } from "src/utils/typechecks";
@@ -584,6 +581,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private fileManager: PluginFileManager;
   private observerManager: ObserverManager;
   private packageManager: PackageManager;
+  private monkeyPatchManager: MonkeyPatchManager;
   private commandManager: CommandManager;
   private eventManager: EventManager;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
@@ -875,6 +873,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.packageManager = new PackageManager(this);
     this.eventManager = new EventManager(this);
     this.observerManager = new ObserverManager(this);
+    this.monkeyPatchManager = new MonkeyPatchManager(this);
     this.commandManager = new CommandManager(this);
 
     try {
@@ -898,7 +897,7 @@ export default class ExcalidrawPlugin extends Plugin {
     try {
       //inspiration taken from kanban:
       //https://github.com/mgmeyers/obsidian-kanban/blob/44118e25661bff9ebfe54f71ae33805dc88ffa53/src/main.ts#L267
-      this.registerMonkeyPatches();
+      this.monkeyPatchManager.initialize();
     } catch (e) {
       new Notice("Error registering monkey patches", 6000);
       console.error("Error registering monkey patches", e);
@@ -1403,124 +1402,6 @@ export default class ExcalidrawPlugin extends Plugin {
       );
     }
     new Notice(`Converted ${files.length} files.`);
-  }
-
-  private registerMonkeyPatches() {
-    const key = URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES;
-
-    this.register(
-      around(Workspace.prototype, {
-        getActiveViewOfType(old) {
-          return dedupe(key, old, function (...args) {
-            const result = old && old.apply(this, args);
-            const maybeEAView = self.app?.workspace?.activeLeaf?.view;
-            if (!maybeEAView || !(maybeEAView instanceof ExcalidrawView)) {
-              return result;
-            }
-            const error = new Error();
-            const stackTrace = error.stack;
-            if (!isCallerFromTemplaterPlugin(stackTrace)) {
-              return result;
-            }
-            const leafOrNode = maybeEAView.getActiveEmbeddable();
-            if (leafOrNode) {
-              if (leafOrNode.node && leafOrNode.node.isEditing) {
-                return {
-                  file: leafOrNode.node.file,
-                  editor: leafOrNode.node.child.editor,
-                };
-              }
-            }
-            return result;
-          });
-        },
-      }),
-    );
-    if (!this.app.plugins.plugins?.["obsidian-hover-editor"]) {
-      this.register(
-        //stolen from hover editor
-        around(WorkspaceLeaf.prototype, {
-          getRoot(old) {
-            return function () {
-              const top = old.call(this);
-              return top.getRoot === this.getRoot ? top : top.getRoot();
-            };
-          },
-        }),
-      );
-    }
-
-    const self = this;
-    // Monkey patch WorkspaceLeaf to open Excalidraw drawings with ExcalidrawView by default
-    this.register(
-      around(WorkspaceLeaf.prototype, {
-        // Drawings can be viewed as markdown or Excalidraw, and we keep track of the mode
-        // while the file is open. When the file closes, we no longer need to keep track of it.
-        detach(next) {
-          return function () {
-            const state = this.view?.getState();
-
-            if (
-              state?.file &&
-              self.excalidrawFileModes[this.id || state.file]
-            ) {
-              delete self.excalidrawFileModes[this.id || state.file];
-            }
-
-            return next.apply(this);
-          };
-        },
-
-        setViewState(next) {
-          return function (state: ViewState, ...rest: [ViewStateResult?]) {
-            const markdownViewLoaded =
-              self._loaded && // Don't force excalidraw mode during shutdown
-              state.type === "markdown" && // If we have a markdown file
-              state.state?.file;
-            if (
-              markdownViewLoaded &&
-              self.excalidrawFileModes[this.id || state.state.file] !==
-                "markdown"
-            ) {
-              const filepath: string = state.state.file as string;
-              if (
-                self.forceToOpenInMarkdownFilepath !== filepath &&
-                fileShouldDefaultAsExcalidraw(filepath, this.app)
-              ) {
-                // If we have it, force the view type to excalidraw
-                const newState = {
-                  ...state,
-                  type: VIEW_TYPE_EXCALIDRAW,
-                };
-
-                self.excalidrawFileModes[filepath] = VIEW_TYPE_EXCALIDRAW;
-
-                return next.apply(this, [newState, ...rest]);
-              }
-              self.forceToOpenInMarkdownFilepath = null;
-            }
-
-            if (markdownViewLoaded) {
-              const leaf = this;
-              window.setTimeout(() => {
-                if (
-                  !leaf ||
-                  !leaf.view ||
-                  !(leaf.view instanceof MarkdownView) ||
-                  !leaf.view.file ||
-                  !self.isExcalidrawFile(leaf.view.file)
-                ) {
-                  return;
-                }
-                foldExcalidrawSection(leaf.view);
-              }, 500);
-            }
-
-            return next.apply(this, [state, ...rest]);
-          };
-        },
-      }),
-    );
   }
 
   /**
