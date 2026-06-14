@@ -24,6 +24,25 @@ declare const PLUGIN_VERSION: string;
 
 let locale: Partial<typeof en> | null = null;
 
+type LocaleFactory = (
+  device: typeof DEVICE,
+  frontmatterKeys: typeof FRONTMATTER_KEYS,
+  cjkFonts: typeof CJK_FONTS,
+  tagAutoexport: typeof TAG_AUTOEXPORT,
+  tagMdReadingMode: typeof TAG_MDREADINGMODE,
+  tagPdfExport: typeof TAG_PDFEXPORT,
+  safeUrls: typeof URLs,
+  altLabel: typeof labelALT,
+  ctrlLabel: typeof labelCTRL,
+  metaLabel: typeof labelMETA,
+  shiftLabel: typeof labelSHIFT,
+  pluginVersion: string,
+) => Partial<typeof en>;
+
+type LocaleRuntimeGlobals = {
+  unpackBase64Deflate?: (value: string) => string;
+};
+
 function loadLocale(lang: string): Partial<typeof en> {
   if (lang === "zh") {
     lang = "zh-cn";
@@ -35,7 +54,12 @@ function loadLocale(lang: string): Partial<typeof en> {
 
   try {
     const compressed = PLUGIN_LANGUAGES[lang];
-    const decompressed = unpackBase64Deflate(compressed);
+    const runtimeGlobals = window as Window & LocaleRuntimeGlobals;
+    const unpack = runtimeGlobals.unpackBase64Deflate;
+    if (typeof unpack !== "function") {
+      return en;
+    }
+    const decompressed = unpack(compressed);
 
     // Construct a factory function string.
     // This allows safeEval (which runs in the global scope) to access our imported variables
@@ -53,15 +77,15 @@ function loadLocale(lang: string): Partial<typeof en> {
     })`;
 
     // Evaluate the function declaration using your ErrorHandler
-    const factory = errorHandler.safeEval<Function>(
+    const factoryResult = errorHandler.safeEval<unknown>(
       factoryCode,
       "loadLocale - parsing language pack",
       window,
     );
-
-    if (typeof factory !== "function") {
+    if (typeof factoryResult !== "function") {
       return en;
     }
+    const factory = factoryResult as LocaleFactory;
 
     // Execute the evaluated function, injecting the actual imported dependencies
     const x = factory(

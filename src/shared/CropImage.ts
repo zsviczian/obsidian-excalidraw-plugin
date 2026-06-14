@@ -211,7 +211,7 @@ export class CropImage {
       const context = canvas.getContext("2d");
 
       if (!context) {
-        reject("Unable to get 2D context");
+        reject(new Error("Unable to get 2D context"));
         return;
       }
 

@@ -86,7 +86,7 @@ export async function checkVersionMismatch(plugin: ExcalidrawPlugin) {
     const result = await versionMismatchPrompt.start();
     if (result) {
       plugin.manifest.version = PLUGIN_VERSION;
-      await plugin.app.setting.open();
+      plugin.app.setting.open();
       plugin.app.setting.openTabById("community-plugins");
     }
   }

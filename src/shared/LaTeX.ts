@@ -58,7 +58,13 @@ export async function tex2dataURL(
   }
 
   // 3. Hand the request off to the cleanly isolated Extras plugin
-  return (await mathjaxAPI.tex2dataURL(tex, scale, preambleStr)) as any;
+  return (await mathjaxAPI.tex2dataURL(tex, scale, preambleStr)) as {
+    mimeType: MimeType;
+    fileId: FileId;
+    dataURL: DataURL;
+    created: number;
+    size: { height: number; width: number };
+  };
 }
 
 export const clearMathJaxVariables = (plugin: ExcalidrawPlugin) => {

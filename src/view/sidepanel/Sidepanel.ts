@@ -423,7 +423,7 @@ export class ExcalidrawSidepanelView extends ItemView {
    * Restores persisted tabs on startup without revealing the panel, executing scripts to rebuild content.
    */
   private async restorePersistedTabs(): Promise<void> {
-    if (this.restorePromise) {
+    if (this.restorePromise !== null) {
       return this.restorePromise;
     }
     this.restorePromise = (async () => {

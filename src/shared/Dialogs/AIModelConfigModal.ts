@@ -183,7 +183,7 @@ export class AIModelConfigModal<
       .setDesc(t("AI_MODEL_CONFIG_MODAL_PROVIDER_DESC"))
       .addDropdown((dropdown) => {
         this.options.providerIds.forEach((providerId) =>
-          dropdown.addOption(providerId, providerId),
+          void dropdown.addOption(providerId, providerId),
         );
         return dropdown.setValue(this.config.providerId).onChange((value) => {
           this.config.providerId = value;

@@ -1088,8 +1088,8 @@ export declare class ExcalidrawAutomate {
      * @param {ExcalidrawElement[]} [scene.elements] - Array of elements in the scene.
      * @param {AppState} [scene.appState] - The app state of the scene.
      * @param {BinaryFiles} [scene.files] - The files in the scene.
-     * @param {boolean} [scene.commitToHistory] - Whether to commit the scene to history. @deprecated Use scene.storageOption instead
-     * @param {"capture" | "none" | "update"} [scene.storeAction] - The store action for the scene. @deprecated Use scene.storageOption instead
+     * @param {boolean} [scene.commitToHistory] - Deprecated: Use scene.storageOption instead.
+     * @param {"capture" | "none" | "update"} [scene.storeAction] - Deprecated: Use scene.storageOption instead
      * @param {"IMMEDIATELY" | "NEVER" | "EVENTUALLY"} [scene.captureUpdate] - The capture update action for the scene.
      * @param {boolean} [restore=false] - Whether to restore legacy elements in the scene.
      */
@@ -1985,11 +1985,6 @@ export interface ElectronAPI {
         getCurrentWebContents(): ElectronWebContentsLike;
     };
     webUtils: ElectronWebUtilsLike;
-}
-declare global {
-    interface Window {
-        electron: ElectronAPI;
-    }
 }
 
 /* ************************************** */
@@ -2997,6 +2992,7 @@ export type OnExportProgress = {
 };
 export interface ExcalidrawProps {
     onChange?: (elements: readonly OrderedExcalidrawElement[], appState: AppState, files: BinaryFiles) => void;
+    onThemeChange?: (theme: Theme | "system") => void;
     /**
      * note: only subscribes if the props.onIncrement is defined on initial render
      */
@@ -3073,7 +3069,6 @@ export interface ExcalidrawProps {
         nextLink: string;
     };
     generateIdForFile?: (file: File) => string | Promise<string>;
-    onThemeChange?: (newTheme: string) => void;
     onViewModeChange?: (isViewModeEnabled: boolean) => void;
     generateLinkForSelection?: (id: string, type: "element" | "group") => string;
     onLinkOpen?: (element: NonDeletedExcalidrawElement, event: CustomEvent<{
@@ -3140,6 +3135,11 @@ export type CanvasActions = Partial<{
     export: false | ExportOpts;
     loadScene: boolean;
     saveToActiveFile: boolean;
+    /**
+     * defaults to true if `props.theme` is omitted or `props.onThemeChange`
+     * is supplied (at which point the theme is considered as host-app controlled),
+     * else default to false
+     * */
     toggleTheme: boolean | null;
     saveAsImage: boolean;
 }>;
