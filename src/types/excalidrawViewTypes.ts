@@ -4,7 +4,6 @@ import { ViewStateResult, WorkspaceLeaf } from "obsidian";
 import {
   AppState,
   BinaryFiles,
-  ExcalidrawInitialDataState,
   ExcalidrawProps,
   LibraryItems,
   SceneData,
@@ -48,10 +47,6 @@ export type ExcalidrawViewScene = Omit<
   elements: NonNullable<SceneData["elements"]>;
   appState: NonNullable<SceneData["appState"]>;
   files: BinaryFiles;
-};
-
-export type ExcalidrawViewInitialData = ExcalidrawInitialDataState & {
-  libraryItems?: LibraryItems;
 };
 
 export type ExcalidrawViewAppState = Omit<

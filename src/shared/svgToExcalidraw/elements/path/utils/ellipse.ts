@@ -115,17 +115,24 @@ export const findArc = (
   const arc = [];
   const step = sweep ? -1 : 1;
 
-  for (let i = indexDest; true; i += step) {
-    arc.push(points[i]);
+  let i = indexDest;
+  
+  // Checking if indices exist prevents runtime crashes
+  if (indexCur !== -1 && indexDest !== -1) {
+    while (i >= -1 && i <= points.length) { 
+      arc.push(points[i]);
 
-    if (i === indexCur) {
-      break;
-    }
+      if (i === indexCur) {
+        break;
+      }
 
-    if (sweep && i === 0) {
-      i = points.length;
-    } else if (!sweep && i === points.length - 1) {
-      i = -1;
+      if (sweep && i === 0) {
+        i = points.length;
+      } else if (!sweep && i === points.length - 1) {
+        i = -1;
+      } else {
+        i += step;
+      }
     }
   }
 

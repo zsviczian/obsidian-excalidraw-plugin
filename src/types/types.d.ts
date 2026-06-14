@@ -106,7 +106,7 @@ export type ObsidianCommandManager = {
 };
 
 export type ObsidianDraggable = {
-  type?: "file" | "files" | "link" | string;
+  type?: "file" | "files" | "link" | "text" | "unknown";
   file?: TFile;
   files?: TFile[];
   title?: string;

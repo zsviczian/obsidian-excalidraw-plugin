@@ -127,7 +127,7 @@ export type MagicCacheData =
   | {
       status: "error";
       message?: string;
-      code: "ERR_GENERATION_INTERRUPTED" | string;
+      code: "ERR_GENERATION_INTERRUPTED";
     };
 
 const SYSTEM_PROMPT = `You are a skilled front-end developer who builds interactive prototypes from wireframes, and is an expert at CSS Grid and Flex design.
