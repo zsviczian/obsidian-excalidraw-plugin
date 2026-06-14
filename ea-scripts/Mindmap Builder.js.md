@@ -5583,6 +5583,30 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
         nodeColor = parent.strokeColor;
       }
     }
+
+    const effectiveMulticolor = rootCfgForAdd?.multicolor ?? multicolor;
+    const effectiveIsSolidArrow = rootCfgForAdd?.isSolidArrow ?? isSolidArrow;
+    
+    // If multicolor is disabled AND "Use scene stroke style" is enabled (!effectiveIsSolidArrow)
+    if (!effectiveMulticolor && !effectiveIsSolidArrow) {
+      const parentStrokeColor = (parent.strokeColor || "transparent").toLowerCase();
+      const isTransparent = parentStrokeColor === "transparent";
+      
+      let isSameAsBg = false;
+      if (!isTransparent) {
+        const parentColorCM = ea.getCM(parent.strokeColor);
+        const bgColorCM = ea.getCM(st.viewBackgroundColor);
+        if (parentColorCM && bgColorCM && parentColorCM.stringHEX() === bgColorCM.stringHEX()) {
+          isSameAsBg = true;
+        }
+      }
+      
+      // If the parent's stroke is transparent or matches the view background,
+      // invert the scene color for the new node and branch
+      if (isTransparent || isSameAsBg) {
+        nodeColor = ea.getCM(st.viewBackgroundColor).invert().stringHEX({ alpha: false });
+      }
+    }
   }
 
   const fontScale = getFontScale(rootCfgForAdd?.fontsizeScale ?? fontsizeScale);

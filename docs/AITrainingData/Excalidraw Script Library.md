@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-06-09T16:23:54.395Z
+Generated on: 2026-06-14T16:29:27.218Z
 
 ---
 
@@ -4898,17 +4898,26 @@ Color Scheme Manager — create, save and apply full color schemes on the fly.
 Opens a docked side panel listing your saved schemes. Each scheme holds three
 colors: stroke, fill and canvas background. Click a scheme's name to apply it:
 
-- If elements are selected, their stroke and fill are recolored.
+- If ONE element (or one group) is selected, its stroke and fill are recolored.
+- If MULTIPLE objects are selected, each object gets its OWN stroke+fill pair
+  from the theme's accents (a group counts as one object, bound text follows
+  its container) — the whole selection transforms to the new theme at once.
+- CLICK THE SAME THEME AGAIN (same selection) to CYCLE: each click rotates
+  which accent lands on which object, so you can flip through the pairings
+  until you like the result. Works for a single object too.
 - If nothing is selected, the active stroke/fill is set so the NEXT elements you
   draw use the scheme.
 - Either way, the canvas background is repainted to the scheme's background.
-- Applying (or the "Load all → picker" button) loads the colors of ALL your
-  saved schemes into Excalidraw's NATIVE color picker — so every scheme's
-  stroke / fill / background shows up as an option in the picker grid, each with
-  its own lightness shades. "Reset picker" restores Excalidraw's defaults.
+- Applying loads that scheme's palette into Excalidraw's NATIVE color picker.
+  "Expand theme → picker" goes deeper: every theme accent becomes a row of five
+  lightness levels plus a neutrals row (55 swatches per picker) — the Stroke
+  picker gets the dark-leaning levels (deepest → soft), the Fill picker the
+  light-leaning ones (base → paper), overlapping at the base colours so every
+  accent works as either. "Reset picker" restores Excalidraw's defaults.
 
-Click an individual swatch to change just that color (opens Excalidraw's native
-palette). Use "+ New scheme" to define one from scratch, or "Save selection" to
+Click an individual swatch to change just that color — a colour editor opens
+with a spectrum/sliders/eyedropper picker, HEX and RGB fields, or the native
+palette grid. Use "+ New scheme" to define one from scratch, or "Save selection" to
 capture the colors of the currently selected element. Schemes persist across
 sessions via the plugin's script settings.
 
@@ -4938,17 +4947,28 @@ const ABOUT = `
 **Color Scheme Manager** swaps the Excalidraw **Stroke** and **Background/Fill**
 colour palettes between named, categorized themes — on the fly.
 
-- **Click a scheme's name** to apply it. With elements selected it recolours their
-  stroke & fill; with nothing selected it sets the active colour for the next
-  elements you draw. Either way the native picker (quick-pick rows + the extended
-  3×5 grid, each swatch with shades) is refreshed with that scheme's family.
-- The **canvas background is never changed** — it stays white.
+- **Click a scheme's name** to apply it. With ONE object selected it recolours
+  its stroke & fill; with SEVERAL objects selected each one gets its own
+  stroke+fill pair from the theme's accents (a group = one object) — the whole
+  selection re-themes in one click. **Click the same theme again to cycle** the
+  colour assignment — every click rotates which accent lands on which object
+  (single objects cycle through the accent pairs too). With nothing selected it
+  sets the active colour for the next elements you draw. Either way the native picker
+  (quick-pick rows + the extended grid, each swatch with shades) is refreshed
+  with that scheme's family.
+- The **canvas background defaults to white**. Each scheme has a third (canvas)
+  swatch — set it to any colour from the theme's palette and applying the scheme
+  repaints the canvas too.
 - Use the **Category** dropdown to filter the library.
 - **+ New scheme** builds a full palette from two colours; **Import** turns pasted
   hex codes (e.g. a Paletton export) into a scheme/theme.
 - **Save selection** captures the colours of a selected element.
-- **Load all → picker** loads every scheme's colours at once; **Reset picker** /
-  the **↺ Default** row restore Excalidraw's defaults.
+- **Expand theme → picker** loads the ACTIVE theme's expanded palette: each of
+  its 10 accents as a row of 5 lightness levels + a neutrals row (55 swatches
+  per picker). Stroke gets the dark-leaning levels (deepest → soft), Fill the
+  light-leaning ones (base → paper) — overlapping at the base colours so every
+  accent works as either. **Reset picker** / the **↺ Default** row restore
+  Excalidraw's defaults.
 - Reopen the colour picker to see a refreshed palette (Excalidraw caches it).
 `;
 
@@ -4972,7 +4992,7 @@ const CATEGORY_ORDER = [
 
 // The catalog. Every entry has a category and 10 `accents` (the source for the
 // full 15-swatch palette). stroke/fill are just the row's preview swatches; the
-// canvas background is always white.
+// canvas background defaults to white (user-editable per scheme).
 const DEFAULT_SCHEMES = [
   // --- Cloud Providers ---
   { name: "Oracle Redwood", category: "Cloud Providers", stroke: "#C74634", fill: "#1B8271", bg: "#ffffff", accents: ["#C74634","#A8392B","#E07A6E","#F1B13F","#7A2E20","#1B8271","#3FA98E","#0F5E50","#2E7D5B","#3C4545"] },
@@ -5107,14 +5127,15 @@ function ensurePresets() {
 }
 ensurePresets();
 
-// Normalise saved schemes: canvas background is always pure white, and every
-// scheme gets a full 10-accent set so its extended palette offers 15 swatches
-// (older simple presets only had a stroke/fill pair).
+// Normalise saved schemes: canvas background defaults to pure white (but is
+// user-editable per scheme), and every scheme gets a full 10-accent set so its
+// extended palette offers 15 swatches (older simple presets only had a
+// stroke/fill pair).
 {
   const catByName = new Map(DEFAULT_SCHEMES.map((s) => [s.name.toLowerCase(), s.category]));
   let changed = false;
   for (const s of schemes) {
-    if (s.bg !== "#ffffff") {
+    if (!s.bg) {
       s.bg = "#ffffff";
       changed = true;
     }
@@ -5156,6 +5177,11 @@ let mmbSync = false;
 function setMmbSync(on) {
   mmbSync = !!on;
 }
+// Colour cycling: re-applying the SAME theme to the SAME selection rotates
+// the accent assignment one step per click, so you can flip through the
+// palette pairings until you like the result. Session-only.
+let lastApplySig = "";
+let cycleOffset = 0;
 // Ordered list of categories present in the current schemes, plus "All".
 function categoryList() {
   const present = new Set(schemes.map((s) => s.category || "Custom"));
@@ -5188,13 +5214,202 @@ function setActive(name) {
 }
 
 // ------------------------------------------------------------------
-// Color picking helper (uses Excalidraw's native palette)
+// Color picking — a full editor modal: spectrum / sliders / eyedropper
+// (the system colour control), HEX and RGB fields, or the native
+// Excalidraw palette grid via "From palette…".
 // palette: "elementStroke" | "elementBackground" | "canvasBackground"
 // ------------------------------------------------------------------
+
+// Normalise any colour the user can type to "#rrggbb" / "transparent",
+// or null if it can't be parsed. Accepts #RGB, #RRGGBB, rgb(r,g,b),
+// colour names (via ColorMaster) and the black/white/transparent keywords.
+function normHex(c) {
+  if (c === undefined || c === null) return null;
+  const k = String(c).trim().toLowerCase();
+  if (!k) return null;
+  if (k === "transparent") return "transparent";
+  if (k === "black") return "#000000";
+  if (k === "white") return "#ffffff";
+  let m = k.match(/^#?([0-9a-f]{6})$/);
+  if (m) return "#" + m[1];
+  m = k.match(/^#?([0-9a-f]{3})$/);
+  if (m) return "#" + m[1][0] + m[1][0] + m[1][1] + m[1][1] + m[1][2] + m[1][2];
+  try {
+    const cm = ea.getCM(k);
+    if (cm) return cm.stringHEX({ alpha: false }).toLowerCase();
+  } catch (e) {
+    /* fall through */
+  }
+  return null;
+}
+
+class ColorEditModal extends ea.obsidian.Modal {
+  // resolve(picked) — a colour string, or undefined on cancel.
+  constructor(initial, palette, anchorEl, resolve) {
+    super(ea.plugin.app);
+    this.palette = palette;
+    this.anchorEl = anchorEl;
+    this.resolveFn = resolve;
+    this.allowTransparent = palette !== "canvasBackground";
+    this.current = normHex(initial) || (palette === "canvasBackground" ? "#ffffff" : "#1e1e1e");
+    this.lastHex = this.current === "transparent" ? "#ffffff" : this.current; // for the spectrum input
+    this.done = false;
+  }
+
+  finish(val) {
+    if (this.done) return;
+    this.done = true;
+    this.resolveFn(val);
+    this.close();
+  }
+
+  onClose() {
+    if (!this.done) {
+      this.done = true;
+      this.resolveFn(undefined);
+    }
+  }
+
+  // Update every control to reflect `c`; `source` skips the field being typed in.
+  setCurrent(c, source) {
+    const n = normHex(c);
+    if (!n) return false;
+    this.current = n;
+    const isT = n === "transparent";
+    if (!isT) this.lastHex = n;
+    // Preview swatch.
+    if (isT) {
+      this.previewEl.style.backgroundColor = "";
+      this.previewEl.style.backgroundImage =
+        "linear-gradient(45deg,#808080 25%,transparent 25%),linear-gradient(-45deg,#808080 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#808080 75%),linear-gradient(-45deg,transparent 75%,#808080 75%)";
+      this.previewEl.style.backgroundSize = "10px 10px";
+      this.previewEl.style.backgroundPosition = "0 0,0 5px,5px -5px,-5px 0px";
+    } else {
+      this.previewEl.style.backgroundImage = "";
+      this.previewEl.style.backgroundColor = n;
+    }
+    if (source !== "hex") this.hexInput.value = isT ? "transparent" : n;
+    this.hexInput.style.borderColor = "";
+    if (source !== "spectrum") this.colorInput.value = this.lastHex;
+    if (source !== "rgb") {
+      const vals = isT
+        ? ["", "", ""]
+        : [n.slice(1, 3), n.slice(3, 5), n.slice(5, 7)].map((h) => String(parseInt(h, 16)));
+      this.rgbInputs.forEach((inp, i) => (inp.value = vals[i]));
+    }
+    return true;
+  }
+
+  onOpen() {
+    this.modalEl.style.width = "min(380px, 92vw)";
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.createEl("h3", { text: "Pick a colour", attr: { style: "margin:0 0 10px;" } });
+
+    const mkRow = () => {
+      const r = contentEl.createDiv();
+      r.style.display = "flex";
+      r.style.alignItems = "center";
+      r.style.gap = "8px";
+      r.style.margin = "0 0 10px";
+      return r;
+    };
+    const mkLabel = (row, text) => {
+      const l = row.createEl("span", { text });
+      l.style.width = "70px";
+      l.style.flex = "0 0 auto";
+      l.style.fontSize = "0.85em";
+      l.style.color = "var(--text-muted)";
+    };
+
+    // Preview + spectrum/sliders/eyedropper (system colour control).
+    const top = mkRow();
+    this.previewEl = top.createDiv();
+    this.previewEl.style.width = "44px";
+    this.previewEl.style.height = "44px";
+    this.previewEl.style.borderRadius = "6px";
+    this.previewEl.style.border = "1px solid var(--background-modifier-border)";
+    this.previewEl.style.flex = "0 0 auto";
+    this.colorInput = top.createEl("input", { type: "color" });
+    this.colorInput.style.width = "60px";
+    this.colorInput.style.height = "44px";
+    this.colorInput.style.cursor = "pointer";
+    this.colorInput.setAttribute("aria-label", "Open the spectrum / sliders / eyedropper picker");
+    this.colorInput.addEventListener("input", () => this.setCurrent(this.colorInput.value, "spectrum"));
+    const hint = top.createEl("span", { text: "← spectrum, sliders & eyedropper" });
+    hint.style.fontSize = "0.8em";
+    hint.style.color = "var(--text-muted)";
+
+    // HEX field.
+    const hexRow = mkRow();
+    mkLabel(hexRow, "HEX");
+    this.hexInput = hexRow.createEl("input", { type: "text", placeholder: "#RRGGBB" });
+    this.hexInput.style.flex = "1 1 auto";
+    this.hexInput.addEventListener("input", () => {
+      const ok = this.setCurrent(this.hexInput.value, "hex");
+      this.hexInput.style.borderColor = ok ? "" : "var(--text-error)";
+    });
+
+    // RGB fields.
+    const rgbRow = mkRow();
+    mkLabel(rgbRow, "RGB");
+    this.rgbInputs = ["R", "G", "B"].map((ch) => {
+      const inp = rgbRow.createEl("input", { type: "number", placeholder: ch });
+      inp.min = "0";
+      inp.max = "255";
+      inp.style.width = "70px";
+      inp.addEventListener("input", () => {
+        const [r, g, b] = this.rgbInputs.map((x) => Math.max(0, Math.min(255, parseInt(x.value, 10) || 0)));
+        const hex = "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
+        this.setCurrent(hex, "rgb");
+      });
+      return inp;
+    });
+
+    // Footer buttons.
+    const footer = mkRow();
+    footer.style.marginTop = "4px";
+    footer.style.flexWrap = "wrap";
+    new ea.obsidian.ButtonComponent(footer)
+      .setButtonText("From palette…")
+      .setTooltip("Choose from the native Excalidraw palette grid")
+      .onClick(async () => {
+        // Hide the modal so the palette popup is fully visible/clickable.
+        this.modalEl.style.display = "none";
+        let picked;
+        try {
+          picked = await ea.showColorPicker(this.anchorEl || this.modalEl, this.palette);
+        } catch (e) {
+          console.error("Color Scheme Manager: palette picker failed", e);
+        }
+        if (picked) this.finish(picked);
+        else this.modalEl.style.display = "";
+      });
+    if (this.allowTransparent) {
+      new ea.obsidian.ButtonComponent(footer)
+        .setButtonText("Transparent")
+        .onClick(() => this.finish("transparent"));
+    }
+    new ea.obsidian.ButtonComponent(footer)
+      .setButtonText("OK")
+      .setCta()
+      .onClick(() => this.finish(this.current));
+    new ea.obsidian.ButtonComponent(footer).setButtonText("Cancel").onClick(() => this.finish(undefined));
+
+    this.setCurrent(this.current);
+    this.hexInput.focus();
+    this.hexInput.select();
+  }
+}
+
+// One colour pick. Returns the chosen colour, or `fallback` on cancel.
 async function pickColor(anchorEl, palette, fallback) {
   try {
-    const selected = await ea.showColorPicker(anchorEl, palette);
-    return selected || fallback;
+    return await new Promise((resolve) => {
+      new ColorEditModal(fallback, palette, anchorEl, (picked) =>
+        resolve(picked === undefined ? fallback : picked)
+      ).open();
+    });
   } catch (e) {
     console.error("Color Scheme Manager: color picker failed", e);
     return fallback;
@@ -5277,6 +5492,18 @@ function pick5(colors, lead) {
   return out.slice(0, 5);
 }
 
+// Top-pick rule: slot 1 is a FIXED anchor (black for stroke, transparent for
+// fill), slots 2-5 are the user's/theme's colours. The anchor is removed from
+// wherever else it appears in the list, then pinned to the front — so a list
+// the editor produced (anchor + 4 picks) passes through completely intact.
+function forceLead(list, lead) {
+  const isLead = (c) => {
+    const k = String(c || "").toLowerCase();
+    return k === lead || (lead === "black" && k === "#000000") || (lead === "transparent" && k === "transparent");
+  };
+  return pick5((list || []).filter((c) => c && !isLead(c)), lead);
+}
+
 // Assemble a colorPalette object from per-category base-color lists. Each base
 // becomes a grid swatch with its shade row; the leads seed the top-pick rows.
 function paletteFromBases(strokeBases, fillBases, canvasBases) {
@@ -5285,8 +5512,8 @@ function paletteFromBases(strokeBases, fillBases, canvasBases) {
     elementStroke:     strokeBases.map((c) => getShades(c, "stroke")),
     elementBackground: fillBases.map((c) => getShades(c, "background")),
     topPicks: {
-      elementStroke:     pick5(strokeBases, "#1e1e1e"),
-      elementBackground: pick5(fillBases, "transparent"),
+      elementStroke:     forceLead(strokeBases, "black"),
+      elementBackground: forceLead(fillBases, "transparent"),
       canvasBackground:  pick5(canvasBases, "#ffffff"),
     },
   };
@@ -5297,8 +5524,11 @@ function paletteFromBases(strokeBases, fillBases, canvasBases) {
 function paletteForScheme(scheme) {
   return paletteFromBases(
     dedupe(["#1e1e1e", ...analogous(scheme.stroke)]),
-    dedupe(["transparent", ...analogous(scheme.fill)]),
-    ["#ffffff"] // canvas background is always pure white, never themed
+    // Fill grid = pastel tints (default-palette rule: light fills vs strong strokes).
+    dedupe(["transparent", ...analogous(scheme.fill).map(fillTint)]),
+    // Canvas: white first (the default), the scheme's own bg verbatim, then
+    // near-white paper tints of the scheme's family (default-palette rule).
+    dedupe(["#ffffff", scheme.bg, ...analogous(scheme.fill).map(canvasTint), ...analogous(scheme.stroke).map(canvasTint)]).slice(0, 15)
   );
 }
 
@@ -5307,8 +5537,84 @@ function paletteForAll() {
   return paletteFromBases(
     dedupe(["#1e1e1e", ...schemes.map((s) => s.stroke)]),
     dedupe(["transparent", ...schemes.map((s) => s.fill)]),
-    ["#ffffff"] // canvas background is always pure white, never themed
+    dedupe(["#ffffff", ...schemes.map((s) => s.bg)]).slice(0, 15)
   );
+}
+
+// EXPANDED palette for ONE scheme: every theme accent as a full row of five
+// lightness levels, one row per accent, plus a neutrals row — 10 x 5 + 5 = 55
+// swatches per picker. Both pickers cover the SAME 10 accent families, but
+// each grid is shifted to its job (the default-palette stratification):
+//   Stroke row: deepest → deep → dark → BASE → soft        (dark-leaning)
+//   Fill row:   BASE → soft → light → pastel → paper       (light-leaning)
+// They overlap at base/soft, so every accent is usable as either.
+// Entries are plain strings (no shade sub-rows): the grid itself IS the ramp,
+// and each accent stays aligned on its own row of the 5-wide picker grid.
+function deepPaletteForScheme(scheme) {
+  const accents =
+    Array.isArray(scheme.accents) && scheme.accents.length >= 10
+      ? scheme.accents.slice(0, 10)
+      : synthAccents(scheme.stroke, scheme.fill);
+  const toL = (c, t) => {
+    try {
+      return ea.getCM(c).lightnessTo(t).stringHEX({ alpha: false });
+    } catch (e) {
+      return c;
+    }
+  };
+  const lOf = (c) => {
+    try { return ea.getCM(c).lightness; } catch (e) { return 50; }
+  };
+  const deepest = (c) => toL(c, Math.max(8, lOf(c) * 0.35));
+  const deep = (c) => toL(c, Math.max(10, lOf(c) * 0.55));
+  const pastelLow = (c) => toL(c, Math.min(80, Math.max(70, (100 - lOf(c)) * 0.6 + lOf(c))));
+  // Guarantee a FULL grid: duplicates (repeated accents, greys or clamped
+  // tints converging on the same value) are not dropped but NUDGED — their
+  // lightness is shifted in widening ±1.5 steps until the colour is unique.
+  // `reserved` colours are claimed up front and never altered, so a theme
+  // swatch colliding with one gets nudged — never the other way round.
+  const uniquify = (list, reserved) => {
+    const keyOf = (c) => normHex(c) || String(c).toLowerCase();
+    const seen = new Set((reserved || []).map(keyOf));
+    return list.map((c) => {
+      let k = keyOf(c);
+      if (!seen.has(k)) {
+        seen.add(k);
+        return c;
+      }
+      if (k === "transparent") return c;
+      let cur = c;
+      const base = lOf(c);
+      for (let step = 1; step <= 40 && seen.has(k); step++) {
+        const delta = (step % 2 ? 1 : -1) * Math.ceil(step / 2) * 1.5;
+        cur = toL(c, Math.min(99, Math.max(2, base + delta)));
+        k = keyOf(cur);
+      }
+      seen.add(k);
+      return cur;
+    });
+  };
+  // Neutral rows: IDENTICAL in every theme (evenly-spaced grey steps).
+  // They are reserved before the theme swatches are uniquified, so the last
+  // row of the picker is always exactly these five, theme after theme.
+  const NEUTRAL_STROKE = ["black", "#495057", "#868e96", "#ced4da", "white"]; // dark -> light
+  const NEUTRAL_FILL = ["transparent", "white", "#e9ecef", "#adb5bd", "#495057"]; // none -> light -> mid -> dark
+  const strokeGrid = [];
+  const fillGrid = [];
+  for (const a of accents) {
+    strokeGrid.push(deepest(a), deep(a), darken(a), a, lightTint(a));
+    fillGrid.push(a, lightTint(a), pastelLow(a), fillTint(a), canvasTint(a));
+  }
+  return {
+    elementStroke: [...uniquify(strokeGrid, NEUTRAL_STROKE), ...NEUTRAL_STROKE],
+    elementBackground: [...uniquify(fillGrid, NEUTRAL_FILL), ...NEUTRAL_FILL],
+    canvasBackground: ["#ffffff", ...uniquify(accents.map(canvasTint), ["#ffffff"])],
+    topPicks: {
+      elementStroke: forceLead(accents.slice(0, 4), "black"),
+      elementBackground: forceLead(accents.slice(0, 4).map(fillTint), "transparent"),
+      canvasBackground: pick5(accents.slice(0, 4).map(canvasTint), "#ffffff"),
+    },
+  };
 }
 
 // Synthesize 10 harmonious accents from a couple of picked colours, so a
@@ -5352,11 +5658,41 @@ const lightTint = (c) => {
   const l = ea.getCM(c).lightness;
   return ea.getCM(c).lightnessTo((100 - l) * 0.55 + l).stringHEX({ alpha: false });
 };
+// Fill-grade tint: the light pastel version of an accent, mirroring how
+// Excalidraw's DEFAULT palette pairs strokes with backgrounds (open-color
+// shade ~8 for stroke vs shade ~2 for fill, e.g. #e03131 -> #ffc9c9, L≈85-90).
+// Anchors (transparent/black/white) pass through unchanged.
+const fillTint = (c) => {
+  const k = String(c || "").toLowerCase();
+  if (!c || k === "transparent" || k === "black" || k === "white") return c;
+  try {
+    const l = ea.getCM(c).lightness;
+    // Land in the L 82-92 pastel band whatever the accent's own lightness.
+    const target = Math.min(92, Math.max(82, (100 - l) * 0.7 + l));
+    return ea.getCM(c).lightnessTo(target).stringHEX({ alpha: false });
+  } catch (e) {
+    return c;
+  }
+};
+// Canvas-grade tint: the near-white "paper" version of an accent, mirroring
+// Excalidraw's default canvas palette (#f5faff, #fffce8, #fdf8f6… — open-color
+// shade ~0, L≈94-98). White passes through.
+const canvasTint = (c) => {
+  const k = String(c || "").toLowerCase();
+  if (!c || k === "transparent" || k === "white" || k === "#ffffff") return c;
+  try {
+    const l = ea.getCM(c).lightness;
+    const target = Math.min(98, Math.max(94, (100 - l) * 0.9 + l));
+    return ea.getCM(c).lightnessTo(target).stringHEX({ alpha: false });
+  } catch (e) {
+    return c;
+  }
+};
 
 // Build a full 15-swatch stroke + fill palette from 10 theme accents.
 // Only three cells are fixed anchors (transparent, black, white) — every other
-// swatch is theme-derived, so the bulk of the grid changes per theme. Canvas
-// background stays pure white.
+// swatch is theme-derived, so the bulk of the grid changes per theme. The
+// canvas grid offers white (the default) plus the theme's colours.
 // The 15 base swatches a theme produces (transparent + 10 accents + a light
 // tint & dark shade of the primary + black + white). Used by both the palette
 // builder and the picker editor (to pre-fill).
@@ -5380,35 +5716,87 @@ function themeFlat(accents) {
   ];
 }
 
+// The fill grid mirrors the stroke grid hue-for-hue, but every swatch is the
+// pastel fillTint of its stroke counterpart — same rule as Excalidraw's
+// default palette (stroke #e03131 pairs with background #ffc9c9, etc.).
+function themeFillFlat(accents) {
+  return themeFlat(accents).map(fillTint);
+}
+
+// Heal pickers auto-saved by an OLDER version of this script: back then the
+// Customize editor pre-filled BOTH grids with the same themeFlat list, so a
+// plain "Save" froze identical stroke/fill pickers onto the scheme — which
+// then shadow the new stroke/fill/canvas tint stratification forever. If a
+// stored picker is exactly that old auto output (stroke == fill ==
+// themeFlat(accents)), it holds no hand-picked information: drop it.
+// Runs here (not in the earlier normaliser) because themeFlat needs the
+// lightTint/darken consts defined above.
+{
+  const sameList = (a, b) =>
+    Array.isArray(a) && Array.isArray(b) && a.length === b.length &&
+    a.every((c, i) => String(c).toLowerCase() === String(b[i]).toLowerCase());
+  let healed = 0;
+  for (const s of schemes) {
+    if (!s.picker || !Array.isArray(s.accents) || s.accents.length < 10) continue;
+    if (!sameList(s.picker.stroke, s.picker.fill)) continue; // a real custom picker differs
+    try {
+      if (sameList(s.picker.stroke, themeFlat(s.accents))) {
+        delete s.picker;
+        healed++;
+      }
+    } catch (e) {
+      /* leave the picker alone if accents can't be expanded */
+    }
+  }
+  if (healed) saveSchemes();
+}
+
 function buildThemePalette(accents) {
   const flat = themeFlat(accents);
+  const fillFlat = themeFillFlat(accents);
   const WHITE = "#ffffff";
+  // Canvas grid: white first (the default), then near-white "paper" tints of
+  // the theme swatches — same rule as the default canvas palette. The shade
+  // rows still offer progressively stronger versions of each tint.
+  const canvasFlat = dedupe([
+    WHITE,
+    ...flat.filter((c) => c !== "transparent" && c !== "white").map(canvasTint),
+  ]).slice(0, 15);
   return {
     elementStroke:     flat.map((c) => getShades(c, "stroke")),
-    elementBackground: flat.map((c) => getShades(c, "background")),
-    canvasBackground:  [WHITE],
+    elementBackground: fillFlat.map((c) => getShades(c, "background")),
+    canvasBackground:  canvasFlat.map((c) => getShades(c, "canvas")),
     topPicks: {
       elementStroke: ["black", darken(accents[0]), darken(accents[5]), darken(accents[1]), darken(accents[6])],
-      elementBackground: ["transparent", lightTint(accents[0]), lightTint(accents[5]), lightTint(accents[1]), lightTint(accents[6])],
-      canvasBackground: [WHITE, WHITE, WHITE, WHITE, WHITE],
+      elementBackground: ["transparent", fillTint(accents[0]), fillTint(accents[5]), fillTint(accents[1]), fillTint(accents[6])],
+      canvasBackground: [WHITE, canvasTint(accents[0]), canvasTint(accents[5]), canvasTint(accents[1]), canvasTint(accents[6])],
     },
   };
 }
 
 // Build a palette from an EXPLICIT picker spec: separate stroke + fill grids
-// (each up to 15 swatches) and optional 5-colour top-pick rows. Canvas = white.
+// (each up to 15 swatches) and optional 5-colour top-pick rows. The canvas grid
+// is the optional picker.canvas list, else white + the stroke/fill colours.
 function buildExplicitPalette(picker) {
   const WHITE = "#ffffff";
   const stroke = (picker.stroke && picker.stroke.length ? picker.stroke : ["#1e1e1e"]).slice(0, 15);
   const fill = (picker.fill && picker.fill.length ? picker.fill : ["transparent"]).slice(0, 15);
+  // An explicit CANVAS: list is used verbatim; the auto fallback derives
+  // near-white paper tints from the fill/stroke colours (default-palette rule).
+  const canvas = dedupe([
+    WHITE,
+    ...(picker.canvas && picker.canvas.length ? picker.canvas : [...fill, ...stroke].map(canvasTint)),
+  ]).filter((c) => c !== "transparent").slice(0, 15);
   return {
     elementStroke: stroke.map((c) => getShades(c, "stroke")),
     elementBackground: fill.map((c) => getShades(c, "background")),
-    canvasBackground: [WHITE],
+    canvasBackground: canvas.map((c) => getShades(c, "canvas")),
     topPicks: {
-      elementStroke: pick5(picker.topStroke && picker.topStroke.length ? picker.topStroke : stroke, "black"),
-      elementBackground: pick5(picker.topFill && picker.topFill.length ? picker.topFill : fill, "transparent"),
-      canvasBackground: [WHITE, WHITE, WHITE, WHITE, WHITE],
+      // forceLead pins the anchor WITHOUT dropping any user colour (the old
+      // pick5 here prepended the anchor and silently lost the 5th pick).
+      elementStroke: forceLead(picker.topStroke && picker.topStroke.length ? picker.topStroke : stroke, "black"),
+      elementBackground: forceLead(picker.topFill && picker.topFill.length ? picker.topFill : fill, "transparent"),
+      canvasBackground: pick5(canvas, WHITE),
     },
   };
 }
@@ -5457,8 +5845,13 @@ function effectiveBases(scheme) {
     };
   }
   if (scheme.accents) {
-    const flat = themeFlat(scheme.accents);
-    return { stroke: flat.slice(), fill: flat.slice(), topStroke: [], topFill: [] };
+    const pal = buildThemePalette(scheme.accents);
+    return {
+      stroke: themeFlat(scheme.accents),
+      fill: themeFillFlat(scheme.accents),
+      topStroke: pal.topPicks.elementStroke.slice(),
+      topFill: pal.topPicks.elementBackground.slice(),
+    };
   }
   return {
     stroke: dedupe(["#1e1e1e", ...analogous(scheme.stroke)]),
@@ -5484,12 +5877,19 @@ function firstRealColor(list) {
 // by the editor's "Defaults…" action to revert to a theme's original colours.
 function autoBases(scheme) {
   if (scheme.accents) {
-    const flat = themeFlat(scheme.accents);
-    return { stroke: flat.slice(), fill: flat.slice() };
+    const pal = buildThemePalette(scheme.accents);
+    return {
+      stroke: themeFlat(scheme.accents),
+      fill: themeFillFlat(scheme.accents),
+      topStroke: pal.topPicks.elementStroke.slice(),
+      topFill: pal.topPicks.elementBackground.slice(),
+    };
   }
   return {
     stroke: dedupe(["#1e1e1e", ...analogous(scheme.stroke)]),
-    fill: dedupe(["transparent", ...analogous(scheme.fill)]),
+    fill: dedupe(["transparent", ...analogous(scheme.fill).map(fillTint)]),
+    topStroke: [],
+    topFill: [],
   };
 }
 
@@ -5738,7 +6138,7 @@ function parseStructuredImport(raw) {
   // NAME/CATEGORY are single-line (value is only what's on their own line);
   // STROKE/FILL/TOPPICKS_* are multi-line (following colour rows belong to them).
   const SINGLE = ["NAME", "CATEGORY"];
-  const MULTI = ["STROKE", "FILL", "TOPPICKS_STROKE", "TOPPICKS_FILL"];
+  const MULTI = ["STROKE", "FILL", "CANVAS", "TOPPICKS_STROKE", "TOPPICKS_FILL"];
   const KEYS = [...SINGLE, ...MULTI];
   const data = {};
   let cur = null; // only ever a MULTI key
@@ -5866,15 +6266,19 @@ async function importColors(raw) {
     }
     let category = (structured.CATEGORY || "").trim();
     if (!category) category = await pickCategory("Custom");
+    // Optional CANVAS: list — 1st colour becomes the scheme's canvas background,
+    // the full list becomes the canvas picker grid.
+    const canvas = extractColors(structured.CANVAS).filter((c) => c !== "transparent");
     scheme = {
       name: name.trim(),
       category,
       stroke: stroke[0] || "#1e1e1e",
       fill: fill[0] || "transparent",
-      bg: "#ffffff",
+      bg: canvas[0] || "#ffffff",
       picker: {
         stroke,
         fill,
+        canvas,
         topStroke: extractColors(structured.TOPPICKS_STROKE),
         topFill: extractColors(structured.TOPPICKS_FILL),
       },
@@ -5985,8 +6389,9 @@ const SAMPLE_IMPORT = `# =======================================================
 # Excalidraw has THREE colour pickers. This script treats them as:
 #   STROKE  -> the element "Stroke" picker
 #   FILL    -> the element "Background/Fill" picker
-#   CANVAS  -> the page background. ALWAYS white in this script (not editable),
-#              so you never specify it.
+#   CANVAS  -> the page background. White by default; optionally give it
+#              colours (1st = the scheme's canvas colour, the list = the
+#              canvas picker grid).
 #
 # Each picker shows a grid of up to 15 swatches = 3 ROWS x 5 COLUMNS, and each
 # swatch automatically gets a light->dark shade ramp. The first 5 you list are
@@ -6024,6 +6429,9 @@ FILL:
 transparent D8DEE9 E5E9F0 ECEFF4 C0D0E0
 CFE8CF E8D6E8 F4C7C3 F5D9C8 F7ECC9
 EBEEF3 C2C9D6 CDD3DE D6DBE5 B9C2D0
+
+# --- CANVAS picker (optional): 1st colour = the scheme's page background ---
+# CANVAS: white ECEFF4 E5E9F0 D8DEE9
 
 # --- Top-pick rows: 5 colours each (optional) ---
 TOPPICKS_STROKE: black 5E81AC BF616A A3BE8C EBCB8B
@@ -6096,6 +6504,34 @@ async function exportCurrentPalette() {
 // ------------------------------------------------------------------
 const FILLABLE = ["rectangle", "ellipse", "diamond"];
 
+// Distinct stroke+fill PAIRS for a multi-object selection: unit i gets the
+// theme's accent i (cycling with darker/lighter variants past 10 units).
+// Stroke = the strong accent, fill = its pastel tint — the same pairing rule
+// as the palettes, so a varied selection still reads as ONE theme.
+function selectionPairs(scheme, n) {
+  const accents =
+    Array.isArray(scheme.accents) && scheme.accents.length >= 10
+      ? scheme.accents.slice(0, 10)
+      : synthAccents(scheme.stroke, scheme.fill);
+  const pairs = [];
+  for (let i = 0; i < n; i++) {
+    const a = accents[i % accents.length];
+    const round = Math.floor(i / accents.length);
+    let strokeC = a;
+    if (round > 0) {
+      try {
+        const l = ea.getCM(a).lightness;
+        const t = round % 2 ? Math.max(12, l * 0.6) : Math.min(85, (100 - l) * 0.45 + l);
+        strokeC = ea.getCM(a).lightnessTo(t).stringHEX({ alpha: false });
+      } catch (e) {
+        /* keep the plain accent */
+      }
+    }
+    pairs.push({ stroke: strokeC, fill: fillTint(strokeC) });
+  }
+  return pairs;
+}
+
 async function applyScheme(scheme) {
   if (!ea.targetView) {
     new Notice("No active Excalidraw view.");
@@ -6121,14 +6557,62 @@ async function applyScheme(scheme) {
     const mmIds = mindmapElementIds();
     const selected = ea.getViewSelectedElements().filter((el) => !mmIds.has(el.id));
     if (selected.length > 0) {
-      // Recolor the selected elements (uniform stroke/fill).
       ea.copyViewElementsToEAforEditing(selected);
-      for (const el of ea.getElements()) {
-        el.strokeColor = scheme.stroke;
-        if (FILLABLE.includes(el.type)) el.backgroundColor = scheme.fill;
+      const els = ea.getElements();
+      // Visual units: a group counts as ONE unit (same colours throughout),
+      // text bound to a container follows that container, everything else
+      // stands alone. groupIds is innermost-first, so the LAST id is the
+      // outermost group.
+      const inSel = new Set(els.map((e) => e.id));
+      const unitOf = (el) => {
+        if (el.containerId && inSel.has(el.containerId)) return "c:" + el.containerId;
+        if (el.groupIds && el.groupIds.length) return "g:" + el.groupIds[el.groupIds.length - 1];
+        return "e:" + el.id;
+      };
+      const units = new Map();
+      for (const el of els) {
+        const k = unitOf(el);
+        if (!units.has(k)) units.set(k, []);
+        units.get(k).push(el);
+      }
+      // Same theme + same selection as last click -> advance the cycle, so
+      // repeated clicks rotate the colours; anything else starts at 0.
+      const sig = scheme.name + "::" + [...units.keys()].sort().join("|");
+      cycleOffset = sig === lastApplySig ? cycleOffset + 1 : 0;
+      lastApplySig = sig;
+      if (units.size > 1) {
+        // MULTI-object selection: every unit gets its own stroke+fill pair
+        // from the theme — the whole selection re-themes with variety.
+        // Units are coloured top-to-bottom / left-to-right so the result is
+        // deterministic and reads naturally.
+        const posOf = (k) => {
+          const list = units.get(k);
+          return [Math.min(...list.map((e) => e.y)), Math.min(...list.map((e) => e.x))];
+        };
+        const keys = [...units.keys()].sort((a, b) => {
+          const [ay, ax] = posOf(a);
+          const [by, bx] = posOf(b);
+          return ay - by || ax - bx;
+        });
+        const pairs = selectionPairs(scheme, keys.length);
+        keys.forEach((k, i) => {
+          const p = pairs[(i + cycleOffset) % pairs.length];
+          for (const el of units.get(k)) {
+            el.strokeColor = p.stroke;
+            if (FILLABLE.includes(el.type)) el.backgroundColor = p.fill;
+          }
+        });
+      } else {
+        // Single object/group — the scheme's main colours on the first click,
+        // then repeated clicks cycle through the theme's accent pairs.
+        const cycle = [{ stroke: scheme.stroke, fill: scheme.fill }, ...selectionPairs(scheme, 10)];
+        const p = cycle[cycleOffset % cycle.length];
+        for (const el of els) {
+          el.strokeColor = p.stroke;
+          if (FILLABLE.includes(el.type)) el.backgroundColor = p.fill;
+        }
       }
       await ea.addElementsToView(false, false);
-      // Canvas background is left untouched (always white, never themed).
     } else {
       // Nothing selected — set the active color for the next drawn elements.
       api.updateScene({
@@ -6139,6 +6623,13 @@ async function applyScheme(scheme) {
       });
     }
   }
+
+  // Canvas background: the scheme's bg swatch (white unless the user themed it).
+  // Applied AFTER addElementsToView so a re-serialize can't clobber it.
+  ea.viewUpdateScene({
+    appState: { viewBackgroundColor: scheme.bg || "#ffffff" },
+    captureUpdate: "IMMEDIATELY",
+  });
 
   // Refresh the native picker: explicit picker spec > theme accents > analogous.
   loadPaletteToPicker(buildSchemePalette(scheme));
@@ -6188,13 +6679,25 @@ class PickerEditor extends ea.obsidian.Modal {
     const b = effectiveBases(scheme);
     this.stroke = b.stroke.slice(0, 15);
     this.fill = b.fill.slice(0, 15);
-    this.topStroke = (b.topStroke.length ? b.topStroke : this.stroke).slice(0, 5);
-    this.topFill = (b.topFill.length ? b.topFill : this.fill).slice(0, 5);
+    // Top-pick rule: slot 1 is fixed (black / transparent), slots 2-5 editable.
+    this.topStroke = forceLead(b.topStroke.length ? b.topStroke : this.stroke, "black");
+    this.topFill = forceLead(b.topFill.length ? b.topFill : this.fill, "transparent");
   }
 
   onOpen() {
     this.modalEl.style.width = "min(560px, 92vw)";
+    // Load this scheme's palette into the native picker so "From palette…"
+    // inside the colour editor offers THIS theme's colours.
+    if (ea.targetView) loadPaletteToPicker(buildSchemePalette(this.scheme));
     this.render();
+  }
+
+  onClose() {
+    // Don't leave a non-active scheme's palette behind in the picker.
+    if (ea.targetView && activeScheme && activeScheme !== this.scheme.name) {
+      const act = schemes.find((s) => s.name === activeScheme);
+      if (act) loadPaletteToPicker(buildSchemePalette(act));
+    }
   }
 
   // A horizontal preview strip of the colours in `arr`.
@@ -6214,7 +6717,9 @@ class PickerEditor extends ea.obsidian.Modal {
   }
 
   // Render one editable list (grid up to `max`, or a top-pick row of 5).
-  list(parent, arr, paletteType, max, label) {
+  // lockFirst: slot 1 is a fixed anchor (black / transparent) — it can't be
+  // changed, removed or reordered; only slots 2-5 are editable.
+  list(parent, arr, paletteType, max, label, lockFirst) {
     const sec = parent.createDiv();
     sec.style.margin = "10px 0";
     const head = sec.createDiv();
@@ -6229,7 +6734,7 @@ class PickerEditor extends ea.obsidian.Modal {
           new Notice(`That list is full (max ${max}).`);
           return;
         }
-        const picked = await ea.showColorPicker(head, paletteType);
+        const picked = await pickColor(head, paletteType, undefined);
         if (picked) {
           arr.push(picked === "transparent" ? "transparent" : picked);
           this.render();
@@ -6239,6 +6744,7 @@ class PickerEditor extends ea.obsidian.Modal {
     this.preview(sec, arr);
 
     const move = (from, to) => {
+      if (lockFirst && (from === 0 || to === 0)) return; // anchor stays put
       if (from === to || from < 0 || to < 0 || from >= arr.length || to >= arr.length) return;
       const [m] = arr.splice(from, 1);
       arr.splice(to, 0, m);
@@ -6246,13 +6752,14 @@ class PickerEditor extends ea.obsidian.Modal {
     };
 
     arr.forEach((color, i) => {
+      const fixed = lockFirst && i === 0;
       const row = sec.createDiv();
       row.style.display = "flex";
       row.style.alignItems = "center";
       row.style.gap = "6px";
       row.style.padding = "3px 4px";
       row.style.borderRadius = "4px";
-      row.draggable = true;
+      row.draggable = !fixed;
 
       // Drag to reorder.
       row.addEventListener("dragstart", (e) => {
@@ -6274,27 +6781,35 @@ class PickerEditor extends ea.obsidian.Modal {
         if (!Number.isNaN(from)) move(from, i);
       });
 
-      const grip = row.createEl("span", { text: "⠿" });
-      grip.setAttribute("aria-label", "Drag to reorder");
-      grip.style.cursor = "grab";
+      const grip = row.createEl("span", { text: fixed ? "🔒" : "⠿" });
+      grip.setAttribute("aria-label", fixed ? "Fixed anchor — always first" : "Drag to reorder");
+      grip.style.cursor = fixed ? "default" : "grab";
       grip.style.color = "var(--text-muted)";
-      grip.style.fontSize = "1.05em";
+      grip.style.fontSize = fixed ? "0.85em" : "1.05em";
 
-      const sw = swatch(row, color, "Click to change this colour");
-      sw.addEventListener("click", async () => {
-        const picked = await ea.showColorPicker(sw, paletteType);
-        if (picked) {
-          arr[i] = picked === "transparent" ? "transparent" : picked;
-          this.render();
-        }
+      const sw = swatch(row, color, fixed ? "Fixed anchor" : "Click to change this colour");
+      if (fixed) {
+        sw.style.cursor = "default";
+      } else {
+        sw.addEventListener("click", async () => {
+          const picked = await pickColor(sw, paletteType, color);
+          if (picked && picked !== color) {
+            arr[i] = picked === "transparent" ? "transparent" : picked;
+            this.render();
+          }
+        });
+      }
+
+      const lbl = row.createEl("span", {
+        text: String(i + 1).padStart(2, "0") + "  " + color + (fixed ? "  (fixed)" : ""),
       });
-
-      const lbl = row.createEl("span", { text: String(i + 1).padStart(2, "0") + "  " + color });
       lbl.style.flex = "1 1 auto";
       lbl.style.fontSize = "0.8em";
       lbl.style.color = "var(--text-muted)";
 
-      new ea.obsidian.ButtonComponent(row).setIcon("x").setTooltip("Remove").onClick(() => { arr.splice(i, 1); this.render(); });
+      if (!fixed) {
+        new ea.obsidian.ButtonComponent(row).setIcon("x").setTooltip("Remove").onClick(() => { arr.splice(i, 1); this.render(); });
+      }
     });
   }
 
@@ -6303,14 +6818,14 @@ class PickerEditor extends ea.obsidian.Modal {
     contentEl.empty();
     contentEl.createEl("h2", { text: `Customize picker — ${this.scheme.name}` });
     contentEl.createEl("p", {
-      text: "Hand-pick the swatches for the Stroke and Fill pickers (grids up to 15 = 3×5) plus the 5 quick-pick top rows. Drag the ⠿ handle to reorder, click a swatch to change it, ✕ to remove. '↺ Revert to default' restores this scheme's built-in colours; 'Load from theme…' copies another theme's colours in. Canvas stays white.",
+      text: "Hand-pick the swatches for the Stroke and Fill pickers (grids up to 15 = 3×5) plus the 5 quick-pick top rows. The first top-pick is fixed (black for stroke, transparent for fill) — the other 4 are yours. Drag the ⠿ handle to reorder, click a swatch to change it, ✕ to remove. '↺ Revert to default' restores this scheme's built-in colours; 'Load from theme…' copies another theme's colours in. Canvas colour is set via the scheme's third swatch in the panel (white by default).",
       attr: { style: "color:var(--text-muted);font-size:0.82em;margin-top:0;" },
     });
 
     this.list(contentEl, this.stroke, "elementStroke", 15, "Stroke grid");
     this.list(contentEl, this.fill, "elementBackground", 15, "Fill grid");
-    this.list(contentEl, this.topStroke, "elementStroke", 5, "Stroke top-picks");
-    this.list(contentEl, this.topFill, "elementBackground", 5, "Fill top-picks");
+    this.list(contentEl, this.topStroke, "elementStroke", 5, "Stroke top-picks", true);
+    this.list(contentEl, this.topFill, "elementBackground", 5, "Fill top-picks", true);
 
     const footer = contentEl.createDiv();
     footer.style.display = "flex";
@@ -6329,6 +6844,8 @@ class PickerEditor extends ea.obsidian.Modal {
         this.scheme.picker = {
           stroke: this.stroke.slice(),
           fill: this.fill.slice(),
+          // Keep an imported/explicit canvas grid — the editor doesn't manage it.
+          canvas: (this.scheme.picker && this.scheme.picker.canvas) || [],
           topStroke: this.topStroke.slice(),
           topFill: this.topFill.slice(),
         };
@@ -6354,15 +6871,15 @@ class PickerEditor extends ea.obsidian.Modal {
         if (cat) {
           this.scheme.stroke = cat.stroke;
           this.scheme.fill = cat.fill;
-          this.scheme.bg = "#ffffff";
+          this.scheme.bg = cat.bg || "#ffffff";
           if (cat.accents) this.scheme.accents = cat.accents.slice();
         }
         saveSchemes();
         const ab = autoBases(this.scheme);
         this.stroke = ab.stroke.slice(0, 15);
         this.fill = ab.fill.slice(0, 15);
-        this.topStroke = this.stroke.slice(0, 5);
-        this.topFill = this.fill.slice(0, 5);
+        this.topStroke = forceLead(ab.topStroke && ab.topStroke.length ? ab.topStroke : this.stroke, "black");
+        this.topFill = forceLead(ab.topFill && ab.topFill.length ? ab.topFill : this.fill, "transparent");
         if (activeScheme === this.scheme.name) loadPaletteToPicker(buildSchemePalette(this.scheme));
         renderPanel();
         this.render();
@@ -6383,8 +6900,8 @@ class PickerEditor extends ea.obsidian.Modal {
         const ab = autoBases(choice);
         this.stroke = ab.stroke.slice(0, 15);
         this.fill = ab.fill.slice(0, 15);
-        this.topStroke = this.stroke.slice(0, 5);
-        this.topFill = this.fill.slice(0, 5);
+        this.topStroke = forceLead(ab.topStroke && ab.topStroke.length ? ab.topStroke : this.stroke, "black");
+        this.topFill = forceLead(ab.topFill && ab.topFill.length ? ab.topFill : this.fill, "transparent");
         this.render();
       });
 
@@ -6428,11 +6945,26 @@ function renderRow(contentEl, scheme, index) {
   for (const slot of slots) {
     const sw = swatch(row, scheme[slot.key], `${slot.label} — click to change`);
     sw.addEventListener("click", async () => {
+      // Make the native picker offer THIS scheme's palette (so the canvas can
+      // be themed from the scheme's own colours, white = default).
+      if (ea.targetView) loadPaletteToPicker(buildSchemePalette(scheme));
       const picked = await pickColor(sw, slot.palette, scheme[slot.key]);
       if (picked && picked !== scheme[slot.key]) {
         scheme[slot.key] = picked;
         saveSchemes();
+        // Canvas change on the ACTIVE scheme repaints the canvas right away.
+        if (slot.key === "bg" && activeScheme === scheme.name && ea.targetView) {
+          ea.viewUpdateScene({
+            appState: { viewBackgroundColor: scheme.bg || "#ffffff" },
+            captureUpdate: "IMMEDIATELY",
+          });
+        }
         renderPanel();
+      }
+      // Don't leave a non-active scheme's palette in the picker.
+      if (ea.targetView && activeScheme && activeScheme !== scheme.name) {
+        const act = schemes.find((s) => s.name === activeScheme);
+        if (act) loadPaletteToPicker(buildSchemePalette(act));
       }
     });
   }
@@ -6566,6 +7098,13 @@ ea.createSidepanelTab("Color Schemes", false, true).then((tab) => {
     resetName.setAttribute("aria-label", "Reset the colour picker to Excalidraw defaults");
     resetName.addEventListener("click", () => {
       resetPicker();
+      // Back to the default white canvas as well.
+      if (ea.targetView) {
+        ea.viewUpdateScene({
+          appState: { viewBackgroundColor: "#ffffff" },
+          captureUpdate: "IMMEDIATELY",
+        });
+      }
       setActive("");
       renderPanel();
     });
@@ -6593,7 +7132,8 @@ ea.createSidepanelTab("Color Schemes", false, true).then((tab) => {
         const stroke = await pickColor(anchor, "elementStroke", "#1e1e1e");
         const fill = await pickColor(anchor, "elementBackground", "transparent");
         // Auto-build a full 10-accent palette so the new scheme offers the same
-        // rich 15-swatch extended picker as the built-in themes. Canvas = white.
+        // rich 15-swatch extended picker as the built-in themes. Canvas starts
+        // white — change it later via the scheme's canvas swatch.
         const accents = synthAccents(stroke, fill);
         const category = await pickCategory("Custom");
         schemes.push({ name: name.trim(), category, stroke, fill, bg: "#ffffff", accents });
@@ -6678,18 +7218,25 @@ ea.createSidepanelTab("Color Schemes", false, true).then((tab) => {
           name: name.trim(),
           stroke: src.strokeColor || "#1e1e1e",
           fill: src.backgroundColor || "transparent",
-          bg: "#ffffff", // canvas background is always pure white
+          bg: appState.viewBackgroundColor || "#ffffff", // capture the current canvas colour
         });
         saveSchemes();
         renderPanel();
       });
 
     new ea.obsidian.ButtonComponent(actions)
-      .setButtonText("Load all → picker")
-      .setTooltip("Load the colors of ALL saved schemes into the native color picker")
+      .setButtonText("Expand theme → picker")
+      .setTooltip(
+        "Load the ACTIVE theme's expanded palette: every accent as a row of 5 lightness levels + a neutrals row (55 swatches per picker) — Stroke gets the dark-leaning levels, Fill the light-leaning ones, overlapping at the base colours"
+      )
       .onClick(() => {
-        loadPaletteToPicker(paletteForAll());
-        new Notice(`Loaded ${schemes.length} scheme(s) into the color picker.`);
+        const s = schemes.find((x) => x.name === activeScheme);
+        if (!s) {
+          new Notice("Apply a scheme first, then expand it.");
+          return;
+        }
+        loadPaletteToPicker(deepPaletteForScheme(s));
+        new Notice(`Loaded the expanded "${s.name}" palette (55 swatches) into the picker.`);
       });
 
     new ea.obsidian.ButtonComponent(actions)
@@ -15923,7 +16470,7 @@ const K_INJECT_LINK = "Inject Node Link";
 const K_LINK_ALIAS = "Node Link Alias";
 
 let injectNodeLink = getVal(K_INJECT_LINK, true);
-let nodeLinkAlias = getVal(K_LINK_ALIAS, "(🔗)");
+let nodeLinkAlias = getVal(K_LINK_ALIAS, "(link)");
 
 const isExcaliBrainView = () => {
   if (!ea.targetView || !ea.targetView.file) return false;

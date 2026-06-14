@@ -70,7 +70,7 @@ export class ExcalidrawExtrasGateway {
       return null;
     }
 
-    if (!this.activationTask) {
+    if (this.activationTask === null) {
       this.activationTask = (async () => {
         try {
           return await this.handleActivation(component);

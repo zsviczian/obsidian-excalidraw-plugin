@@ -519,7 +519,7 @@ export class GenericInputPrompt extends Modal {
       buttonBarContainer.createDiv();
 
     if (this.buttons && this.buttons.length > 0) {
-      let b = null;
+      let b: ButtonComponent = null;
       for (const button of this.buttons) {
         const btn = new ButtonComponent(actionButtonContainer);
         setStyle(btn.buttonEl, {
@@ -548,7 +548,7 @@ export class GenericInputPrompt extends Modal {
         });
         b = b ?? btn;
       }
-      if (b) {
+      if (b !== null) {
         b.setCta();
         setStyle(b.buttonEl, {
           marginRight: "0",

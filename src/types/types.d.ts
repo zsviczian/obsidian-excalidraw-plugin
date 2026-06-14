@@ -106,7 +106,7 @@ export type ObsidianCommandManager = {
 };
 
 export type ObsidianDraggable = {
-  type?: "file" | "files" | "link" | string;
+  type?: "file" | "files" | "link" | "text" | "unknown";
   file?: TFile;
   files?: TFile[];
   title?: string;
@@ -158,17 +158,16 @@ export type LocalGraphView = View & {
 };
 
 declare global {
-  const unpackBase64Deflate: (value: string) => string;
-
   interface Window {
     ExcalidrawAutomate: ExcalidrawAutomate;
     pdfjsLib: PdfJsLibrary;
+    unpackBase64Deflate?: (value: string) => string;
     PolyBool?: PolyBoolLibrary;
     electronWindow?: {
       isAlwaysOnTop(): boolean;
       setAlwaysOnTop(flag: boolean): void;
     };
-    eval: (x: string) => any;
+    eval: (x: string) => unknown;
     React?: typeof import("react");
     ReactDOM?: typeof import("react-dom/client");
     ExcalidrawLib?: typeof ExcalidrawLib;
@@ -194,7 +193,7 @@ declare module "obsidian" {
     };
     plugins: {
       manifests: Record<string, PluginManifest>;
-      plugins: Record<string, (Plugin & { api?: any }) | undefined>;
+      plugins: Record<string, (Plugin & { api?: unknown }) | undefined>;
       enablePlugin(id: string): Promise<void>;
       disablePlugin(id: string): Promise<void>;
     };

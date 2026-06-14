@@ -112,13 +112,18 @@ export class StylesManager {
 
     const iframeDoc = iframe.contentWindow.document;
     const iframeWin = iframe.contentWindow;
+
     iframeDoc.open();
-    iframeDoc.write(`<head>${mainDocument.head.innerHTML}</head>`);
-    iframeDoc.close();
+    iframeDoc.close(); // Closes the stream to clear out the default page skeleton
+    const newHead = iframeDoc.createElement("head");
+    Array.from(mainDocument.head.children).forEach((child) => {
+      newHead.appendChild(child.cloneNode(true));
+    });
+    iframeDoc.documentElement.replaceChild(newHead, iframeDoc.head);
 
     await iframeLoadedPromise;
 
-    const iframeBody = iframe.contentWindow.document.body;
+    const iframeBody = iframeDoc.body;
     iframeBody.setAttribute("style", body.getAttribute("style"));
     iframeBody.setAttribute("class", body.getAttribute("class"));
 
@@ -164,7 +169,6 @@ export class StylesManager {
       );
     } else {
       const lightStyleTag = doc.createElement("style");
-      lightStyleTag.type = "text/css";
       lightStyleTag.setAttribute("id", "excalidraw-embedded-light");
       setStyleText(
         lightStyleTag,
@@ -173,7 +177,6 @@ export class StylesManager {
       doc.head.appendChild(lightStyleTag);
 
       const darkStyleTag = doc.createElement("style");
-      darkStyleTag.type = "text/css";
       darkStyleTag.setAttribute("id", "excalidraw-embedded-dark");
       setStyleText(
         darkStyleTag,

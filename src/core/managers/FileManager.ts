@@ -689,7 +689,7 @@ export class PluginFileManager {
                 window.clearTimeout(excalidrawView.autosaveTimer);
               }
               if (excalidrawView.autosaveFunction) {
-                await excalidrawView.autosaveFunction();
+                excalidrawView.autosaveFunction();
               }
             }
           } else {

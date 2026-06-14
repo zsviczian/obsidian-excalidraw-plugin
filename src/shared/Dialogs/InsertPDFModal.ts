@@ -241,7 +241,7 @@ export class InsertPDFModal extends Modal {
 
     const setFile = async (file: TFile) => {
       if (this.pdfDoc) {
-        await this.pdfDoc.destroy();
+        this.pdfDoc.destroy();
       }
       this.pdfDoc = null;
       this.pageDimensionsByPage.clear();

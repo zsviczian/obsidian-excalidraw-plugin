@@ -1,7 +1,7 @@
 import { App, Notice, TFile } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { PDFPageViewProps, Size } from "src/types/embeddedFileLoaderTypes";
-import { convertSVGStringToElement } from "../utils/utils";
+import { convertSVGStringToElement, errorlog } from "../utils/utils";
 import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
 import { hasExcalidrawEmbeddedImagesTreeChanged } from "../utils/fileUtils";
 import { EXCALIDRAW_PLUGIN } from "src/constants/constants";
@@ -274,14 +274,18 @@ class ImageCache {
               transaction.commit();
               resolve();
             })
-            .catch((error) => reject(error));
+            .catch((error) => reject(error as Error));
         }
       };
 
       request.onerror = () => {
         const error = request.error;
-        console.log(error);
         const errorMsg = `Failed to purge invalid files from IndexedDB. Error: ${error.message}`;
+        errorlog({
+          where: "purgeInvalideCacheFiles",
+          error: error,
+          message: errorMsg,
+        });
         reject(new Error(errorMsg));
       };
     });
@@ -319,14 +323,18 @@ class ImageCache {
               transaction.commit();
               resolve();
             })
-            .catch((error) => reject(error));
+            .catch((error) => reject(error as Error));
         }
       };
 
       request.onerror = () => {
         const error = request.error;
         const errorMsg = `Failed to purge invalid backup files from IndexedDB. Error: ${error.message}`;
-        console.log(error);
+        errorlog({
+          where: "purgeInvalidBackupFiles",
+          error: error,
+          message: errorMsg,
+        });
         reject(new Error(errorMsg));
       };
     });
@@ -400,7 +408,7 @@ class ImageCache {
             this.getCacheData(key),
             new Promise<undefined>((_, reject) =>
               window.setTimeout(() => {
-                reject(undefined);
+                reject(new Error("Timeout while retrieving cache data"));
               }, 100),
             ),
           ]);

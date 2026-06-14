@@ -381,7 +381,7 @@ const walkers = {
     let localGroup = randomId();
 
     switch (fillRule) {
-      case "nonzero":
+      case "nonzero": {
         let initialWindingOrder = "clockwise";
 
         elements = points.map((pointArr, idx): ExcalidrawDraw => {
@@ -421,6 +421,7 @@ const walkers = {
           };
         });
         break;
+      }
       case "evenodd":
         elements = points.map((pointArr, idx): ExcalidrawDraw => {
           const tPoints: Point[] = transformPoints(pointArr, mat4.clone(mat));

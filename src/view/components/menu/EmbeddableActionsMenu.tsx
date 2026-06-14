@@ -497,8 +497,8 @@ export class EmbeddableMenu {
                 <ActionButton
                   key={"MarkdownSection"}
                   title={t("PIN_VIEW")}
-                  action={async () =>
-                    this.actionBaseViewSelection(file, subpath, element)
+                  action={() =>
+                    void this.actionBaseViewSelection(file, subpath, element)
                   }
                   icon={ICONS.ZoomToSection}
                 />
@@ -507,8 +507,8 @@ export class EmbeddableMenu {
                 <ActionButton
                   key={"MarkdownSection"}
                   title={t("NARROW_TO_HEADING")}
-                  action={async () =>
-                    this.actionMarkdownSelection(
+                  action={() =>
+                    void this.actionMarkdownSelection(
                       file,
                       isExcalidrawFile,
                       subpath,
@@ -522,8 +522,8 @@ export class EmbeddableMenu {
                 <ActionButton
                   key={"MarkdownBlock"}
                   title={t("NARROW_TO_BLOCK")}
-                  action={async () =>
-                    this.actionMarkdownBlock(file, subpath, element)
+                  action={() =>
+                    void this.actionMarkdownBlock(file, subpath, element)
                   }
                   icon={ICONS.ZoomToBlock}
                 />
@@ -557,7 +557,9 @@ export class EmbeddableMenu {
                   <ActionButton
                     key={"Camera"}
                     title={t("CAPTURE_PAGE")}
-                    action={() => this.actionInsertPageAsImage(element)}
+                    action={() => {
+                      void this.actionInsertPageAsImage(element);
+                    }}
                     icon={ICONS.Camera}
                   />
                 </>

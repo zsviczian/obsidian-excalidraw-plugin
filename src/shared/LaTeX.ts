@@ -4,6 +4,7 @@ import ExcalidrawView from "../view/ExcalidrawView";
 import { FileData, MimeType } from "src/types/embeddedFileLoaderTypes";
 import { FileId } from "@zsviczian/excalidraw/types/element/src/types";
 import ExcalidrawPlugin from "src/core/main";
+import type { ExcalidrawExtrasAPI } from "@zsviczian/excalidraw-extras-api";
 
 export const updateEquation = async (
   equation: string,
@@ -58,13 +59,20 @@ export async function tex2dataURL(
   }
 
   // 3. Hand the request off to the cleanly isolated Extras plugin
-  return (await mathjaxAPI.tex2dataURL(tex, scale, preambleStr)) as any;
+  return (await mathjaxAPI.tex2dataURL(tex, scale, preambleStr)) as {
+    mimeType: MimeType;
+    fileId: FileId;
+    dataURL: DataURL;
+    created: number;
+    size: { height: number; width: number };
+  };
 }
 
 export const clearMathJaxVariables = (plugin: ExcalidrawPlugin) => {
   // Try to access without prompting the user.
   // If the plugin is disabled, we don't need to clear variables anyway.
-  const api = (plugin.app as any).plugins.plugins["excalidraw-extras"]?.api;
+  const api = plugin.app.plugins.plugins["excalidraw-extras"]
+    ?.api as ExcalidrawExtrasAPI;
   if (api?.mathjax) {
     api.mathjax.clearMathJaxVariables();
   }

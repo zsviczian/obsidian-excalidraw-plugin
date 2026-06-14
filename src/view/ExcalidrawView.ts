@@ -31,6 +31,7 @@ import {
   BinaryFileData,
   DataURL,
   ExcalidrawImperativeAPI,
+  ExcalidrawInitialDataState,
   Gesture,
   LibraryItems,
   UIAppState,
@@ -228,7 +229,6 @@ import {
   EmbeddableLeafRef,
   ExcalidrawEphemeralState,
   ExcalidrawLinkOpenEvent,
-  ExcalidrawViewInitialData,
   ExcalidrawViewScene,
   ExcalidrawViewUpdateScene,
   MarkdownBlockCacheEntry,
@@ -5704,7 +5704,9 @@ export default class ExcalidrawView
 
     if (data?.elements) {
       data.elements
-        .filter((el) => el.type === "text" && !Object.hasOwn(el ?? {}, "rawText"))
+        .filter(
+          (el) => el.type === "text" && !Object.hasOwn(el ?? {}, "rawText"),
+        )
         .forEach(
           (el) =>
             ((el as Mutable<ExcalidrawTextElement>).rawText = (
@@ -7441,7 +7443,9 @@ export default class ExcalidrawView
       React.createElement(MainMenu.Item, {
         icon: saveIcon(false),
         "aria-label": t("FORCE_SAVE"),
-        onSelect: () => this.forceSave(),
+        onSelect: () => {
+          void this.forceSave();
+        },
         children: t("TRAY_SAVE"),
       }),
       React.createElement(MainMenu.Item, {
@@ -7459,7 +7463,9 @@ export default class ExcalidrawView
       React.createElement(MainMenu.Item, {
         icon: ICONS.switchToMarkdown,
         "aria-label": t("TRAY_SWITCH_TO_MD_ARIA"),
-        onSelect: () => this.openAsMarkdown(),
+        onSelect: () => {
+          void this.openAsMarkdown();
+        },
         children: t("TRAY_SWITCH_TO_MD"),
       }),
       React.createElement(MainMenu.Separator),
@@ -7686,7 +7692,7 @@ export default class ExcalidrawView
     }
   }
 
-  private excalidrawRootElement(initdata: ExcalidrawViewInitialData) {
+  private excalidrawRootElement(initdata: ExcalidrawInitialDataState) {
     const React = this.packages.react;
     const { Excalidraw } = this.packages.excalidrawLib;
 
@@ -7846,7 +7852,7 @@ export default class ExcalidrawView
     );
   }
 
-  private async instantiateExcalidraw(initdata: ExcalidrawViewInitialData) {
+  private async instantiateExcalidraw(initdata: ExcalidrawInitialDataState) {
     await this.plugin.awaitInit();
     while (!this.semaphores.scriptsReady) {
       await sleep(50);

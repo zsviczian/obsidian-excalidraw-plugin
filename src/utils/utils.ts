@@ -86,7 +86,7 @@ export async function checkVersionMismatch(plugin: ExcalidrawPlugin) {
     const result = await versionMismatchPrompt.start();
     if (result) {
       plugin.manifest.version = PLUGIN_VERSION;
-      await plugin.app.setting.open();
+      plugin.app.setting.open();
       plugin.app.setting.openTabById("community-plugins");
     }
   }
@@ -1231,16 +1231,6 @@ export async function getYouTubeThumbnailLink(
   }
 
   return `${URLs.I_YTIMG_COM}/${videoId}/default.jpg`;
-}
-
-export function isCallerFromTemplaterPlugin(stackTrace: string) {
-  const lines = stackTrace.split("\n");
-  for (const line of lines) {
-    if (line.trim().startsWith("at Templater.")) {
-      return true;
-    }
-  }
-  return false;
 }
 
 export function convertSVGStringToElement(svg: string): SVGSVGElement {

@@ -313,20 +313,6 @@ export class UniversalInsertFileModal extends Modal {
               return;
             }
             return;
-          case "i":
-            if (isVisible(actionImage)) {
-              actionImage.buttonEl.click();
-            }
-            return;
-          case "p":
-            if (isVisible(actionPDF)) {
-              actionPDF.buttonEl.click();
-            }
-            return;
-          case "f":
-            if (isVisible(actionIFrame)) {
-              actionIFrame.buttonEl.click();
-            }
         }
       }),
     );

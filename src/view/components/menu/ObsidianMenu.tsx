@@ -223,10 +223,7 @@ export class ObsidianMenu {
         pen.freedrawOnly
       ) {
         window.setTimeout(() =>
-          setPen(
-            this.activePens[index] ?? pen,
-            this.view.excalidrawAPI,
-          ),
+          setPen(this.activePens[index] ?? pen, this.view.excalidrawAPI),
         );
       }
 

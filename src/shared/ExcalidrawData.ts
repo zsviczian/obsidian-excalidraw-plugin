@@ -911,7 +911,9 @@ export class ExcalidrawData {
       delete this.scene.appState.previousGridSize;
     }
 
-    if (Object.hasOwn(this.scene.appState?.gridColor ?? {}, "MajorGridFrequency")) {
+    if (
+      Object.hasOwn(this.scene.appState?.gridColor ?? {}, "MajorGridFrequency")
+    ) {
       //if this is present, this is legacy data
       if (this.scene.appState.gridColor.MajorGridFrequency > 1) {
         this.scene.gridStep = this.scene.appState.gridColor.MajorGridFrequency;
