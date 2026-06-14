@@ -39,28 +39,32 @@ export class MonkeyPatchManager {
     this.plugin.register(
       around(Workspace.prototype, {
         getActiveViewOfType(old: Workspace["getActiveViewOfType"]) {
-          return dedupe(key, old, function <T extends View>(
-            this: Workspace,
-            type: ViewConstructor<T>,
-          ): T | null {
-              const result = old.call(this, type) as T | null;
-              const maybeEAView = this.getMostRecentLeaf()?.view;
-              if (!maybeEAView || maybeEAView.getViewType() !== VIEW_TYPE_EXCALIDRAW) {
-                return result;
-              }
-              const stackTrace = new Error().stack ?? "";
-              if (!MonkeyPatchManager.isCallerFromTemplaterPlugin(stackTrace)) {
-                return result;
-              }
-              const leafOrNode = (maybeEAView as ExcalidrawView).getActiveEmbeddable();
-              if (leafOrNode?.node?.isEditing) {
-                return {
-                  file: leafOrNode.node.file,
-                  editor: leafOrNode.node.child.editor,
-                } as unknown as T;
-              }
+          return dedupe(key, old, function <
+            T extends View,
+          >(this: Workspace, type: ViewConstructor<T>): T | null {
+            const result = old.call(this, type) as T | null;
+            const maybeEAView = this.getMostRecentLeaf()?.view;
+            if (
+              !maybeEAView ||
+              maybeEAView.getViewType() !== VIEW_TYPE_EXCALIDRAW
+            ) {
               return result;
-            });
+            }
+            const stackTrace = new Error().stack ?? "";
+            if (!MonkeyPatchManager.isCallerFromTemplaterPlugin(stackTrace)) {
+              return result;
+            }
+            const leafOrNode = (
+              maybeEAView as ExcalidrawView
+            ).getActiveEmbeddable();
+            if (leafOrNode?.node?.isEditing) {
+              return {
+                file: leafOrNode.node.file,
+                editor: leafOrNode.node.child.editor,
+              } as unknown as T;
+            }
+            return result;
+          });
         },
       }),
     );
@@ -98,7 +102,8 @@ export class MonkeyPatchManager {
             this: WorkspaceLeaf,
           ): ReturnType<WorkspaceLeaf["detach"]> {
             const state = this.view?.getState();
-            const stateFile = typeof state?.file === "string" ? state.file : null;
+            const stateFile =
+              typeof state?.file === "string" ? state.file : null;
             const leafKey = this.id || stateFile;
 
             if (leafKey && plugin.excalidrawFileModes[leafKey]) {

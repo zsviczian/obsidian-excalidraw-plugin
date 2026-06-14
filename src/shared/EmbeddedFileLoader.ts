@@ -1677,7 +1677,10 @@ export const generateIdFromFile = async (
       .map((byte) => byte.toString(16).padStart(2, "0"))
       .join("") as FileId;
   } catch (error) {
-    errorlog({ where: "EmbeddedFileLoader.generateIdFromFile", error: error as unknown });
+    errorlog({
+      where: "EmbeddedFileLoader.generateIdFromFile",
+      error: error as unknown,
+    });
     id = fileid() as FileId;
   }
   return id;

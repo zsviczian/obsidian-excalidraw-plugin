@@ -5704,7 +5704,9 @@ export default class ExcalidrawView
 
     if (data?.elements) {
       data.elements
-        .filter((el) => el.type === "text" && !Object.hasOwn(el ?? {}, "rawText"))
+        .filter(
+          (el) => el.type === "text" && !Object.hasOwn(el ?? {}, "rawText"),
+        )
         .forEach(
           (el) =>
             ((el as Mutable<ExcalidrawTextElement>).rawText = (

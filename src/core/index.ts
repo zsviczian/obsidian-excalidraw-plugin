@@ -18,7 +18,11 @@ export const getEA = (view?: ExcalidrawView): ExcalidrawAutomate | null => {
   try {
     return window.ExcalidrawAutomate.getAPI(view);
   } catch (error) {
-    errorlog({ message: "Excalidraw not available", fn: getEA, error: error as unknown });
+    errorlog({
+      message: "Excalidraw not available",
+      fn: getEA,
+      error: error as unknown,
+    });
     return null;
   }
 };

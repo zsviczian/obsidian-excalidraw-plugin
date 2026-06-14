@@ -10,7 +10,8 @@ export async function getDataURL(
       const dataURL = reader.result as DataURL;
       resolve(dataURL);
     };
-    reader.onerror = (error: ProgressEvent<FileReader>) => reject(new Error(`Failed to read file as DataURL.}`));
+    reader.onerror = (error: ProgressEvent<FileReader>) =>
+      reject(new Error(`Failed to read file as DataURL.}`));
     reader.readAsDataURL(new Blob([new Uint8Array(file)], { type: mimeType }));
   });
 }

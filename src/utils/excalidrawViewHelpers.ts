@@ -117,7 +117,7 @@ export const insertLaTeXToView = (
       (e) => {
         // Promise rejection handler (e.g. user cancelled prompt or Extras plugin is missing)
         if (e && e instanceof Error) {
-          errorlog({ message: "LaTeX Insertion aborted", error: e as unknown});
+          errorlog({ message: "LaTeX Insertion aborted", error: e as unknown });
         }
       },
     );

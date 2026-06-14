@@ -281,7 +281,11 @@ class ImageCache {
       request.onerror = () => {
         const error = request.error;
         const errorMsg = `Failed to purge invalid files from IndexedDB. Error: ${error.message}`;
-        errorlog({where: "purgeInvalideCacheFiles", error:error, message: errorMsg});
+        errorlog({
+          where: "purgeInvalideCacheFiles",
+          error: error,
+          message: errorMsg,
+        });
         reject(new Error(errorMsg));
       };
     });
@@ -326,7 +330,11 @@ class ImageCache {
       request.onerror = () => {
         const error = request.error;
         const errorMsg = `Failed to purge invalid backup files from IndexedDB. Error: ${error.message}`;
-        errorlog({where: "purgeInvalidBackupFiles", error:error, message: errorMsg});
+        errorlog({
+          where: "purgeInvalidBackupFiles",
+          error: error,
+          message: errorMsg,
+        });
         reject(new Error(errorMsg));
       };
     });
