@@ -7,12 +7,12 @@ import {
   WorkspaceLeaf,
 } from "obsidian";
 import { around, dedupe } from "monkey-around";
-import ExcalidrawPlugin from "src/core/main";
+import type ExcalidrawPlugin from "src/core/main";
 import { VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import { URLs } from "src/constants/safeUrls";
 import { fileShouldDefaultAsExcalidraw } from "src/utils/fileUtils";
 import { foldExcalidrawSection } from "src/utils/obsidianUtils";
-import ExcalidrawView from "src/view/ExcalidrawView";
+import type ExcalidrawView from "src/view/ExcalidrawView";
 
 type ViewConstructor<T extends View = View> = new (...args: unknown[]) => T;
 
@@ -45,14 +45,14 @@ export class MonkeyPatchManager {
           ): T | null {
               const result = old.call(this, type) as T | null;
               const maybeEAView = this.getMostRecentLeaf()?.view;
-              if (!maybeEAView || !(maybeEAView instanceof ExcalidrawView)) {
+              if (!maybeEAView || maybeEAView.getViewType() !== VIEW_TYPE_EXCALIDRAW) {
                 return result;
               }
               const stackTrace = new Error().stack ?? "";
               if (!MonkeyPatchManager.isCallerFromTemplaterPlugin(stackTrace)) {
                 return result;
               }
-              const leafOrNode = maybeEAView.getActiveEmbeddable();
+              const leafOrNode = (maybeEAView as ExcalidrawView).getActiveEmbeddable();
               if (leafOrNode?.node?.isEditing) {
                 return {
                   file: leafOrNode.node.file,
