@@ -116,10 +116,10 @@ export const findArc = (
   const step = sweep ? -1 : 1;
 
   let i = indexDest;
-  
+
   // Checking if indices exist prevents runtime crashes
   if (indexCur !== -1 && indexDest !== -1) {
-    while (i >= -1 && i <= points.length) { 
+    while (i >= -1 && i <= points.length) {
       arc.push(points[i]);
 
       if (i === indexCur) {

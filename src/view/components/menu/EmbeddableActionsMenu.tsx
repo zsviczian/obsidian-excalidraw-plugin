@@ -557,7 +557,9 @@ export class EmbeddableMenu {
                   <ActionButton
                     key={"Camera"}
                     title={t("CAPTURE_PAGE")}
-                    action={() => { void this.actionInsertPageAsImage(element); }}
+                    action={() => {
+                      void this.actionInsertPageAsImage(element);
+                    }}
                     icon={ICONS.Camera}
                   />
                 </>

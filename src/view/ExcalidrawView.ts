@@ -7443,7 +7443,9 @@ export default class ExcalidrawView
       React.createElement(MainMenu.Item, {
         icon: saveIcon(false),
         "aria-label": t("FORCE_SAVE"),
-        onSelect: () => { void this.forceSave(); },
+        onSelect: () => {
+          void this.forceSave();
+        },
         children: t("TRAY_SAVE"),
       }),
       React.createElement(MainMenu.Item, {
@@ -7461,7 +7463,9 @@ export default class ExcalidrawView
       React.createElement(MainMenu.Item, {
         icon: ICONS.switchToMarkdown,
         "aria-label": t("TRAY_SWITCH_TO_MD_ARIA"),
-        onSelect: () => { void this.openAsMarkdown(); },
+        onSelect: () => {
+          void this.openAsMarkdown();
+        },
         children: t("TRAY_SWITCH_TO_MD"),
       }),
       React.createElement(MainMenu.Separator),

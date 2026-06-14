@@ -118,7 +118,8 @@ export class DropManager {
       { clientX: event.clientX, clientY: event.clientY },
       st,
     );
-    const draggable = this.app.dragManager.draggable as unknown as ObsidianDraggable;
+    const draggable = this.app.dragManager
+      .draggable as unknown as ObsidianDraggable;
     const internalDragAction = internalDragModifierType(event);
     const externalDragAction = webbrowserDragModifierType(event);
     const localFileDragAction = localFileDragModifierType(event);
