@@ -28,6 +28,9 @@ The first time you use one of these features, Excalidraw will automatically prom
 - Direct file system access (files outside your vault)
 
 This change reduces Excalidraw's size to under 5 MB, allowing even Obsidian Sync Basic users to sync the plugin across all devices while keeping the core plugin lighter.
+
+## Fixed
+- Keep runtime custom pen settings per custom pen index instead of sharing one active pen object. Switching between custom pens restores each pen's last adjusted stroke width, colors, fill style, and roughness. 🙏[@arias007](${URLs.GITHUB_COM}/arias007) [#2801](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2801)
   `,
   "2.23.12": `
   ## Fixed
@@ -41,7 +44,7 @@ This change reduces Excalidraw's size to under 5 MB, allowing even Obsidian Sync
 `,
   "2.23.10": `
 ## Fixed
-- 2.23.9 regression: Toolbar sizing issue in desktop and compact UI modes [#2789](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_ISSUES}/2789)
+- 2.23.9 regression: Toolbar sizing issue in desktop and compact UI modes [#2789](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2789)
 `,
   "2.23.9": `
 ## New
@@ -52,7 +55,7 @@ This change reduces Excalidraw's size to under 5 MB, allowing even Obsidian Sync
 ## Fixed
 - Clicking Excalidraw links now correctly jumps to the targeted element, group, or frame when the destination is another Excalidraw drawing, including links chosen through the multi-link picker and links triggered from nested embeds.
 - In some cases the image cache did not update when nested drawings were modified
-- Horizontal and Vertical arrow lines are not always displayed correctly when exporting to SVG or embedding SVG to a markdown note [#1454](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_ISSUES}/1454)
+- Horizontal and Vertical arrow lines are not always displayed correctly when exporting to SVG or embedding SVG to a markdown note [#1454](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/1454)
 - Updated vulnerable package dependency lodash-es and nanoid based on Obsidian code scanner findings.
 `,
   "2.23.8": `
