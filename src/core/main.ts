@@ -615,6 +615,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public loadTimestamp: number;
   private isLocalCJKFontAvailabe: boolean = undefined;
   public isReady = false;
+  private fontsReady = false;
   private startupAnalytics: string[] = [];
   private lastLogTimestamp: number;
   private settingsReady: boolean = false;
@@ -922,13 +923,7 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     this.logStartupEvent("Script engine initialized");
 
-    try {
-      await this.initializeFonts();
-    } catch (e) {
-      new Notice("Error initializing fonts", 6000);
-      console.error("Error initializing fonts", e);
-    }
-    this.logStartupEvent("Fonts initialized");
+    void this.initializeFonts();
 
     try {
       void getImageCache().initializeDB(this);
@@ -1035,7 +1030,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public async awaitInit() {
     let counter = 0;
-    while (!this.isReady && counter < 150) {
+    while (!this.isReady && !this.fontsReady && counter < 200) {
       await sleep(50);
       counter++;
     }
@@ -1135,6 +1130,7 @@ export default class ExcalidrawPlugin extends Plugin {
         this.fourthFontLoaded = true;
       }, 100);
     }
+    this.fontsReady = true;
   }
 
   public async addFonts(

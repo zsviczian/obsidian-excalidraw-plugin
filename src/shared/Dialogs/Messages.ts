@@ -31,6 +31,8 @@ This change reduces Excalidraw's size to under 5 MB, allowing even Obsidian Sync
 
 ## Fixed
 - Keep runtime custom pen settings per custom pen index instead of sharing one active pen object. Switching between custom pens restores each pen's last adjusted stroke width, colors, fill style, and roughness. 🙏[@arias007](${URLs.GITHUB_COM}/arias007) [#2801](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2801)
+- Insert ANY file: Typing “p” in the search field opens the PDF selection [#2791](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2791)
+- Blurry arrows in PNG export when arrows have a text label [#2793](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2793), [#11492](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11492)
   `,
   "2.23.12": `
   ## Fixed
