@@ -77,7 +77,7 @@ export function resetStrokeOptions(
 
 export class ObsidianMenu {
   private clickTimestamp: number[];
-  private activePen: PenStyle;
+  private activePens: Record<number, PenStyle> = {};
   private longpressTimeout: { [key: number]: number } = {};
   private prevClickTimestamp: number = 0;
   constructor(
@@ -119,8 +119,8 @@ export class ObsidianMenu {
     }
 
     //apply pen settings to canvas
-    this.activePen = { ...pen };
-    setPen(pen, api);
+    this.activePens[index] = this.activePens[index] ?? { ...pen };
+    setPen(this.activePens[index], api);
     api.setActiveTool({ type: "freedraw" });
   }
 
@@ -223,22 +223,26 @@ export class ObsidianMenu {
         pen.freedrawOnly
       ) {
         window.setTimeout(() =>
-          setPen(this.activePen, this.view.excalidrawAPI),
+          setPen(
+            this.activePens[index] ?? pen,
+            this.view.excalidrawAPI,
+          ),
         );
       }
 
       if (
-        this.activePen &&
         appState.resetCustomPen &&
         appState.activeTool.type === "freedraw" &&
         appState.currentStrokeOptions === pen.penOptions &&
         pen.freedrawOnly
       ) {
-        this.activePen.strokeWidth = appState.currentItemStrokeWidth;
-        this.activePen.backgroundColor = appState.currentItemBackgroundColor;
-        this.activePen.strokeColor = appState.currentItemStrokeColor;
-        this.activePen.fillStyle = appState.currentItemFillStyle;
-        this.activePen.roughness = appState.currentItemRoughness;
+        const activePen = this.activePens[index] ?? { ...pen };
+        activePen.strokeWidth = appState.currentItemStrokeWidth;
+        activePen.backgroundColor = appState.currentItemBackgroundColor;
+        activePen.strokeColor = appState.currentItemStrokeColor;
+        activePen.fillStyle = appState.currentItemFillStyle;
+        activePen.roughness = appState.currentItemRoughness;
+        this.activePens[index] = activePen;
       }
 
       return (
@@ -354,7 +358,7 @@ export class ObsidianMenu {
       this.view.ownerWindow.clearTimeout(t),
     );
     this.longpressTimeout = {};
-    this.activePen = null;
+    this.activePens = {};
     this.plugin = null;
     this.toolsRef = null;
     this.view = null;
