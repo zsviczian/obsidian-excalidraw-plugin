@@ -41,6 +41,7 @@ import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFile
 import { Position } from "src/types/excalidrawViewTypes";
 import { setStyle } from "src/utils/styleUtils";
 import { ObsidianDraggable } from "src/types/types";
+import type React from "react";
 
 /*
 static getDropAction(event: DragEvent): string {
@@ -147,8 +148,8 @@ export class DropManager {
             pointerPosition: this.currentPosition, //the pointer position on canvas at the time of drop
           });
         } catch (e) {
-          new Notice("on drop hook error. See console log for details");
-          errorlog({ where: "ExcalidrawView.onDrop", error: e });
+          new Notice("On drop hook error. See console log for details");
+          errorlog({ where: "ExcalidrawView.onDrop", error: e as unknown });
           return false;
         }
       } else {
@@ -221,7 +222,7 @@ export class DropManager {
           void (async () => {
             if (["image", "image-fullsize"].contains(internalDragAction)) {
               const ea: ExcalidrawAutomate = getEA(this.view);
-              ea.canvas.theme = api.getAppState().theme;
+              ea.canvas.theme = api.getAppState().theme as string;
               let counter: number = 0;
               const ids: string[] = [];
               for (const f of draggable.files) {
@@ -495,7 +496,7 @@ export class DropManager {
                 ea.destroy(),
               );
               if (localFileDragAction !== "embeddable") {
-                new Notice("Not imported to Vault. Embedded with local URI");
+                new Notice("Not imported to vault. Embedded with local uri.");
               }
             } else {
               const ea = getEA(this.view);

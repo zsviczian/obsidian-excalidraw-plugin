@@ -29,6 +29,7 @@ import {
 import {
   AppState,
   BinaryFileData,
+  BinaryFiles,
   DataURL,
   ExcalidrawImperativeAPI,
   ExcalidrawInitialDataState,
@@ -270,6 +271,7 @@ import {
 import { getYouTubeUrl, URLs } from "src/constants/safeUrls";
 import { setStyle } from "src/utils/styleUtils";
 import { isInstanceOfHTMLElement } from "src/utils/typechecks";
+import { setElementDisplay } from "src/utils/htmlUtils";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
@@ -2282,7 +2284,21 @@ export default class ExcalidrawView
     this.actionButtons = {} as Record<ActionButtons, HTMLElement>;
   }
 
+  private displayLoadingText() {
+    // Create a div element for displaying the text
+    const loadingTextEl = this.contentEl.createEl("div", {
+      text: `Loading Excalidraw... ${this.file?.basename ?? ""}`,
+    });
+
+    // Apply styling to center the text
+    setElementDisplay(loadingTextEl, "flex");
+    loadingTextEl.classList.add("excalidraw-loading");
+  }
+  
+
   onload() {
+    super.onload();
+    this.displayLoadingText();
     if (this.plugin.settings.overrideObsidianFontSize) {
       setStyle(mainDocument.documentElement, {
         fontSize: "",
@@ -2425,7 +2441,6 @@ export default class ExcalidrawView
     });
 
     this.setupAutosaveTimer();
-    super.onload();
   }
 
   //this is to solve sliding panes bug
@@ -3288,7 +3303,7 @@ export default class ExcalidrawView
           return;
         }
         this.compatibilityMode = this.file.extension === "excalidraw";
-        await this.plugin.loadSettings();
+        //await this.plugin.loadSettings();
         if (this.compatibilityMode) {
           this.plugin.enableLegacyFilePopoverObserver();
           this.actionButtons?.isRaw?.hide();
@@ -5563,7 +5578,7 @@ export default class ExcalidrawView
   private onChange(
     et: ExcalidrawElement[],
     st: AppState,
-    files: BinaryFileData[],
+    files: BinaryFiles,
   ) {
     if (st.activeTool?.type) {
       if (st.activeTool.type === "image") {
@@ -7793,8 +7808,8 @@ export default class ExcalidrawView
         React.createElement(
           Excalidraw,
           {
-            onExcalidrawAPI: this.setExcalidrawAPI.bind(this),
-            onInitialize: this.onExcalidrawInitialize.bind(this),
+            onExcalidrawAPI: (api) => this.setExcalidrawAPI(api),
+            onInitialize: (api) => this.onExcalidrawInitialize(api),
             //width: "100%", //dimensions.width, //2026.05.15
             //height: "100%", //dimensions.height, //2026.05.15
             UIOptions: {
@@ -7814,32 +7829,32 @@ export default class ExcalidrawView
             initState: initdata?.appState,
             initialData: initdata,
             detectScroll: true,
-            onPointerUpdate: this.onPointerUpdate.bind(this),
+            onPointerUpdate: (p) => this.onPointerUpdate(p),
             libraryReturnUrl: "app://obsidian.md",
             autoFocus: true,
             langCode: obsidianToExcalidrawMap[this.plugin.locale] ?? "en-EN",
             aiEnabled: this.plugin.settings.aiEnabled ?? true,
-            onChange: this.onChange.bind(this),
-            onLibraryChange: this.onLibraryChange.bind(this),
-            renderTopRightUI: this.renderTopRightUI.bind(this), //(isMobile: boolean, appState: AppState) => this.obsidianMenu.renderButton (isMobile, appState),
-            renderEmbeddableMenu: this.renderEmbeddableMenu.bind(this),
-            onPaste: this.onPaste.bind(this),
-            onThemeChange: this.onThemeChange.bind(this),
-            onDrop: this.dropManager?.onDrop.bind(this.dropManager),
-            onBeforeTextEdit: this.onBeforeTextEdit.bind(this),
-            onBeforeTextSubmit: this.onBeforeTextSubmit.bind(this),
-            onLinkOpen: this.onLinkOpen.bind(this),
-            onLinkHover: this.onLinkHover.bind(this),
-            onContextMenu: this.onContextMenu.bind(this),
-            onViewModeChange: this.onViewModeChange.bind(this),
+            onChange: (et,st,files) => this.onChange(et as ExcalidrawElement[], st, files),
+            onLibraryChange: (libraryItems) => this.onLibraryChange(libraryItems),
+            renderTopRightUI: (isMobile: boolean, appState: AppState) => this.renderTopRightUI(isMobile, appState),
+            renderEmbeddableMenu: (appState) => this.renderEmbeddableMenu(appState),
+            onPaste: (data, event, files) => this.onPaste(data, event, files),
+            onThemeChange: (theme: string) => {void this.onThemeChange(theme);},
+            onDrop: (event) => this.dropManager?.onDrop(event),
+            onBeforeTextEdit: (element, isExisting) => this.onBeforeTextEdit(element, isExisting),
+            onBeforeTextSubmit: (element, nextText, nextOriginalText, isDeleted) => this.onBeforeTextSubmit(element, nextText, nextOriginalText, isDeleted),
+            onLinkOpen: (element, e) => {void this.onLinkOpen(element, e);},
+            onLinkHover: (element, event) => this.onLinkHover(element, event),
+            onContextMenu: (elements, st, onClose) => this.onContextMenu(elements, st, onClose),
+            onViewModeChange: (isViewModeEnabled) => this.onViewModeChange(isViewModeEnabled),
             validateEmbeddable: true,
             renderWebview: DEVICE.isDesktop,
-            renderEmbeddable: this.renderEmbeddable.bind(this),
+            renderEmbeddable: (el, st) => this.renderEmbeddable(el, st),
             renderMermaid: shouldRenderMermaid(),
             showDeprecatedFonts: true,
             insertLinkAction: DEVICE.isDesktop
               ? undefined
-              : this.insertLinkAction.bind(this),
+              : (linkval) => this.insertLinkAction(linkval),
           },
           this.renderCustomActionsMenu(),
           this.renderWelcomeScreen(),
@@ -7854,9 +7869,11 @@ export default class ExcalidrawView
 
   private async instantiateExcalidraw(initdata: ExcalidrawInitialDataState) {
     await this.plugin.awaitInit();
-    while (!this.semaphores.scriptsReady) {
+    let counter = 0;
+    while (!this.semaphores.scriptsReady && counter++ < 20) {
       await sleep(50);
     }
+    this.contentEl.empty();
     const React = this.packages.react;
     const ReactDOM = this.packages.reactDOM;
     //console.log("ExcalidrawView.instantiateExcalidraw()");

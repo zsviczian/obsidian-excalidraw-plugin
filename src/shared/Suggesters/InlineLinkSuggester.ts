@@ -14,7 +14,6 @@ import {
 import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
 import { t } from "src/lang/helpers";
 import { nanoid } from "src/constants/constants";
-import { sleep } from "src/utils/utils";
 import { getEA } from "src/core";
 import { setStyle } from "src/utils/styleUtils";
 

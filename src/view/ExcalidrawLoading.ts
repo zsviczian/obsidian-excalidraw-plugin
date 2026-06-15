@@ -25,10 +25,10 @@ export class ExcalidrawLoading extends FileView {
   }
 
   public async switchToExcalidraw() {
-    const prevLeaf = this.app.workspace.activeLeaf;
+    const prevLeaf = this.app.workspace.getLeaf();
     await setExcalidrawView(this.leaf);
     await sleep(100); // added this 2026.04.19 after instances where the hack did not seem to work, but wasn't able to reliably reproduce. This timeout does not seem to cause any issues and may help in cases where the hack was not working due to some sort of race condition
-    const activeLeaf = this.app.workspace.activeLeaf;
+    const activeLeaf = this.app.workspace.getLeaf();
     if (!activeLeaf) {
       return;
     }
