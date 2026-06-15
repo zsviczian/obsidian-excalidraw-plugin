@@ -1575,7 +1575,8 @@ Thank you & Enjoy!
   EXTRAS_GATEWAY_DESC:
     "The '{component}' feature has been moved to the Excalidraw Extras companion plugin to keep Excalidraw lightweight, stay within Obsidian Sync Basic size restrictions, and give you explicit control over the additional libraries and elevated-permission functionality it requires.",
   EXTRAS_GATEWAY_INSTALL_BTN: "Install from Community Plugins",
-  EXTRAS_GATEWAY_ENABLE_PERM_BTN: "Enable Plugin Permanently",
+  EXTRAS_GATEWAY_MANUAL_ENABLE_NOTICE:
+    "I had implemented a smoother workflow that allowed Excalidraw Extras to be enabled and disabled automatically when needed. Unfortunately, I was forced to remove that feature after it was flagged by the Obsidian code scanner as a high-risk issue, accompanied by an automated explanation that I believe does not accurately reflect what the code does. Please enable Excalidraw Extras manually in Community Plugins. If you'd like to see a more convenient experience in the future, please consider contacting Obsidian and asking for plugin-developer-friendly support for safe automation workflows, including companion plugin management.",
   EXTRAS_GATEWAY_ENABLE_FEATURE_PERM_BTN: "Enable {component} Permanently",
   EXTRAS_GATEWAY_TEMP_ENABLE_TITLE: "Enable Temporarily",
   EXTRAS_GATEWAY_TEMP_ENABLE_DESC:
@@ -1583,8 +1584,6 @@ Thank you & Enjoy!
   EXTRAS_GATEWAY_SESSION_ENABLE_DESC:
     "Enable this feature for the current Obsidian session only.",
   EXTRAS_GATEWAY_ENABLE_CURRENT_SESSION: "Enable for this session",
-  EXTRAS_GATEWAY_TIMER_EXPIRED:
-    "Excalidraw Extras temporary timer expired. Plugin disabled.",
   EXTRAS_GATEWAY_FEATURE_TIMER_EXPIRED:
     "Excalidraw Extras: {component} timer expired. Feature disabled.",
   EXTRAS_GATEWAY_API_MISSING:

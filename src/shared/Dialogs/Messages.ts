@@ -17,6 +17,41 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+  "2.24.1": `
+To keep Excalidraw lightweight, improve startup performance, reduce plugin size, and address Obsidian's high-risk code scanner findings, several advanced features have been moved to the new **Excalidraw Extras** companion plugin in 2.24.0.
+
+The first time you use one of these features, Excalidraw will automatically prompt you to install Excalidraw Extras:
+
+- LaTeX formulas (MathJax)
+- Mermaid diagrams
+- PDF printing
+- Direct file system access (files outside your vault)
+
+This change reduces Excalidraw's size to under 5 MB, allowing even Obsidian Sync Basic users to sync the plugin across all devices while keeping the core plugin lighter.
+
+---
+
+This (2.24.1) is an emergency follow-up release.
+
+I had to remove a very helpful convenience feature from Excalidraw Extras management: automatic plugin enable/disable.
+
+The feature was removed because of an unexpected Obsidian code scanner review that VERY negatively impacted Excalidraw's scanner score. The same code passed validation without any issues before the release, then failed when released, with no clear warning or guidance. I cannot continue shipping user-friendly automation when the validation target keeps changing.
+
+I support security and quality checks. However, the current scanner process is difficult to work with due to inconsistent results, limited transparency, and the lack of a clear review or appeal process.
+
+If Excalidraw matters to you, please consider contacting Obsidian and advocating for a more transparent, developer-friendly process:
+
+* Stable and consistent scanner results before release
+* Clear, actionable error reporting
+* A real and timely review and appeal path for questionable findings
+* Support for safe plugin workflows, such as companion-plugin management and asset deployment
+
+## Changed
+
+* Removed automatic enable/disable of Excalidraw Extras from the onboarding flow.
+* Excalidraw Extras must now be enabled manually in Community Plugins after installation.
+
+`,
   "2.24.0": `
 To keep Excalidraw lightweight, improve startup performance, reduce plugin size, and address Obsidian's high-risk code scanner findings, several advanced features have been moved to the new **Excalidraw Extras** companion plugin.
 

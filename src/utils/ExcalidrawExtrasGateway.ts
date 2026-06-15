@@ -31,8 +31,6 @@ export type VersionCheckResult = {
 };
 
 export class ExcalidrawExtrasGateway {
-  private pluginDisableTimer: number | null = null;
-
   private ignoredComponents: Set<string> = new Set();
   private activationTask: Promise<ActionResolution> | null = null;
 
@@ -213,25 +211,6 @@ export class ExcalidrawExtrasGateway {
     return { valid: true };
   }
 
-  public async enablePlugin(minutes: number = 0) {
-    await this.app.plugins.enablePlugin(EXTRAS_PLUGIN_ID);
-
-    if (this.pluginDisableTimer) {
-      window.clearTimeout(this.pluginDisableTimer);
-    }
-    if (minutes > 0) {
-      this.pluginDisableTimer = window.setTimeout(
-        () => {
-          void (async () => {
-            await this.app.plugins.disablePlugin(EXTRAS_PLUGIN_ID);
-            new Notice(t("EXTRAS_GATEWAY_TIMER_EXPIRED"));
-          })();
-        },
-        minutes * 60 * 1000,
-      );
-    }
-  }
-
   public async enableFeature(
     component: ExtrasComponent,
     api: ExcalidrawExtrasAPI,
@@ -256,8 +235,8 @@ export class ExcalidrawExtrasGateway {
 }
 
 /**
- * A progressive state-machine Modal. It checks the environment every time it renders.
- * If you enable the plugin, it re-renders and moves seamlessly to the "Enable Feature" step if needed.
+ * A progressive state-machine modal that evaluates the environment at each render
+ * and advances when prerequisites are satisfied.
  */
 class ExtrasActivationModal extends Modal {
   private hasResolved = false;
@@ -301,23 +280,39 @@ class ExtrasActivationModal extends Modal {
       return;
     }
 
-    // Step 2: Enable Plugin
+    // Step 2: Plugin installed but disabled
     if (this.gateway.isInstalled() && !this.gateway.isPluginEnabled()) {
       contentEl.createEl("h2", { text: t("EXTRAS_GATEWAY_TITLE") });
       contentEl.createEl("p", {
         text: t("EXTRAS_GATEWAY_DESC").replace("{component}", compName),
       });
+      contentEl.createEl("p", {
+        text: t("EXTRAS_GATEWAY_MANUAL_ENABLE_NOTICE"),
+      });
 
-      this.addControls(
-        contentEl,
-        (minutes) => {
-          void (async () => {
-            await this.gateway.enablePlugin(minutes);
-            await this.renderStep(); // Re-evaluate state!
-          })();
-        },
-        t("EXTRAS_GATEWAY_ENABLE_PERM_BTN"),
-      );
+      new Setting(contentEl)
+        .addButton((btn) =>
+          btn
+            .setButtonText(t("EXTRAS_GATEWAY_UPDATE_BTN"))
+            .setCta()
+            .onClick(() => {
+              this.resolveAndClose("cancel");
+              window.setTimeout(() => {
+                window.open(`obsidian://show-plugin?id=${EXTRAS_PLUGIN_ID}`);
+              }, 50);
+            }),
+        )
+        .addButton((btn) =>
+          btn
+            .setButtonText(t("BACKUP_CANCEL"))
+            .onClick(() => this.resolveAndClose("cancel")),
+        )
+        .addButton((btn) =>
+          btn
+            .setButtonText(t("EXTRAS_GATEWAY_IGNORE_SESSION"))
+            .setWarning()
+            .onClick(() => this.resolveAndClose("ignore")),
+        );
       return;
     }
 
