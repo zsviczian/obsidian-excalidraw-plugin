@@ -2294,7 +2294,6 @@ export default class ExcalidrawView
     setElementDisplay(loadingTextEl, "flex");
     loadingTextEl.classList.add("excalidraw-loading");
   }
-  
 
   onload() {
     super.onload();
@@ -5575,11 +5574,7 @@ export default class ExcalidrawView
     }
   }
 
-  private onChange(
-    et: ExcalidrawElement[],
-    st: AppState,
-    files: BinaryFiles,
-  ) {
+  private onChange(et: ExcalidrawElement[], st: AppState, files: BinaryFiles) {
     if (st.activeTool?.type) {
       if (st.activeTool.type === "image") {
         if (
@@ -7834,19 +7829,41 @@ export default class ExcalidrawView
             autoFocus: true,
             langCode: obsidianToExcalidrawMap[this.plugin.locale] ?? "en-EN",
             aiEnabled: this.plugin.settings.aiEnabled ?? true,
-            onChange: (et,st,files) => this.onChange(et as ExcalidrawElement[], st, files),
-            onLibraryChange: (libraryItems) => this.onLibraryChange(libraryItems),
-            renderTopRightUI: (isMobile: boolean, appState: AppState) => this.renderTopRightUI(isMobile, appState),
-            renderEmbeddableMenu: (appState) => this.renderEmbeddableMenu(appState),
+            onChange: (et, st, files) =>
+              this.onChange(et as ExcalidrawElement[], st, files),
+            onLibraryChange: (libraryItems) =>
+              this.onLibraryChange(libraryItems),
+            renderTopRightUI: (isMobile: boolean, appState: AppState) =>
+              this.renderTopRightUI(isMobile, appState),
+            renderEmbeddableMenu: (appState) =>
+              this.renderEmbeddableMenu(appState),
             onPaste: (data, event, files) => this.onPaste(data, event, files),
-            onThemeChange: (theme: string) => {void this.onThemeChange(theme);},
+            onThemeChange: (theme: string) => {
+              void this.onThemeChange(theme);
+            },
             onDrop: (event) => this.dropManager?.onDrop(event),
-            onBeforeTextEdit: (element, isExisting) => this.onBeforeTextEdit(element, isExisting),
-            onBeforeTextSubmit: (element, nextText, nextOriginalText, isDeleted) => this.onBeforeTextSubmit(element, nextText, nextOriginalText, isDeleted),
-            onLinkOpen: (element, e) => {void this.onLinkOpen(element, e);},
+            onBeforeTextEdit: (element, isExisting) =>
+              this.onBeforeTextEdit(element, isExisting),
+            onBeforeTextSubmit: (
+              element,
+              nextText,
+              nextOriginalText,
+              isDeleted,
+            ) =>
+              this.onBeforeTextSubmit(
+                element,
+                nextText,
+                nextOriginalText,
+                isDeleted,
+              ),
+            onLinkOpen: (element, e) => {
+              void this.onLinkOpen(element, e);
+            },
             onLinkHover: (element, event) => this.onLinkHover(element, event),
-            onContextMenu: (elements, st, onClose) => this.onContextMenu(elements, st, onClose),
-            onViewModeChange: (isViewModeEnabled) => this.onViewModeChange(isViewModeEnabled),
+            onContextMenu: (elements, st, onClose) =>
+              this.onContextMenu(elements, st, onClose),
+            onViewModeChange: (isViewModeEnabled) =>
+              this.onViewModeChange(isViewModeEnabled),
             validateEmbeddable: true,
             renderWebview: DEVICE.isDesktop,
             renderEmbeddable: (el, st) => this.renderEmbeddable(el, st),

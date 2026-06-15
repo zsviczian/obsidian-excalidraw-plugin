@@ -1506,7 +1506,7 @@ export class EmbeddedFilesLoader {
       mdDIV,
       file.path,
       renderComponent,
-    ); 
+    );
     renderComponent.unload();
 
     mdDIV
