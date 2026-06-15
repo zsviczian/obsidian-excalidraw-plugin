@@ -1768,12 +1768,25 @@ const buildMultipartFormBody = (
 
   chunks.push(encoder.encode(`--${boundary}--\r\n`));
   const combined = concatUint8Arrays(chunks);
+
+  const sliced = combined.buffer.slice(
+    combined.byteOffset,
+    combined.byteOffset + combined.byteLength,
+  );
+
+  if (sliced instanceof SharedArrayBuffer) {
+    const strictBuffer = new ArrayBuffer(sliced.byteLength);
+    new Uint8Array(strictBuffer).set(new Uint8Array(sliced));
+    
+    return {
+      contentType: `multipart/form-data; boundary=${boundary}`,
+      body: strictBuffer,
+    };
+  }
+
   return {
     contentType: `multipart/form-data; boundary=${boundary}`,
-    body: combined.buffer.slice(
-      combined.byteOffset,
-      combined.byteOffset + combined.byteLength,
-    ) as ArrayBuffer,
+    body: sliced,
   };
 };
 

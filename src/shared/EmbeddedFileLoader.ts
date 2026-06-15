@@ -1668,7 +1668,7 @@ export const generateIdFromFile = async (
 
     // Hash the combined data (file and key, if provided)
     // Ensure we pass an ArrayBuffer (not ArrayBufferLike) to subtle.digest
-    const buffer: ArrayBuffer = dataToHash.buffer.slice(
+    const buffer = dataToHash.buffer.slice(
       dataToHash.byteOffset,
       dataToHash.byteOffset + dataToHash.byteLength,
     ) as ArrayBuffer;

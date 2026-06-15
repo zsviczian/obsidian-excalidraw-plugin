@@ -615,7 +615,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public loadTimestamp: number;
   private isLocalCJKFontAvailabe: boolean = undefined;
   public isReady = false;
-  private fontsReady = false;
+  private fontsReady = true; //setting this to true allows for a race condition during startup loading fonts and rendering Excalidraw
   private startupAnalytics: string[] = [];
   private lastLogTimestamp: number;
   private settingsReady: boolean = false;
@@ -1030,7 +1030,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public async awaitInit() {
     let counter = 0;
-    while (!this.isReady && !this.fontsReady && counter < 200) {
+    while ((!this.isReady || !this.fontsReady) && counter < 200) {
       await sleep(50);
       counter++;
     }
@@ -1707,8 +1707,10 @@ export default class ExcalidrawPlugin extends Plugin {
         return;
       }
       visitedDocs.add(ownerDocument);
-      const e = ownerDocument.createEvent("Event");
-      e.initEvent(RERENDER_EVENT, true, false);
+      const e = new CustomEvent(RERENDER_EVENT, {
+        bubbles: true,
+        cancelable: false,
+      });
       ownerDocument
         .querySelectorAll(
           `.excalidraw-embedded-img${
