@@ -1,7 +1,10 @@
-import { ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/element/src/types";
+import {
+  ExcalidrawEmbeddableElement,
+} from "@zsviczian/excalidraw/types/element/src/types";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { Notice, requireApiVersion } from "obsidian";
 import * as React from "react";
+import clsx from "clsx";
 import { isObsidianThemeDark } from "src/utils/obsidianUtils";
 import {
   DEVICE,
@@ -1267,6 +1270,16 @@ export const CustomEmbeddable: React.FC<{
   const theme = getTheme(view, appState.theme);
   const mdProps: EmbeddableMDCustomProps = element.customData?.mdProps || null;
   const selectedElementIds = Object.keys(appState.selectedElementIds);
+  const hasPreviewBackedMarkdown = Boolean(
+    element.customData?.interactiveMarkdownPreviewBacked,
+  );
+  const isActive =
+    appState.activeEmbeddable?.element?.id === element.id &&
+    appState.activeEmbeddable?.state === "active";
+  const shouldPassThroughPreviewBackedMarkdown =
+    hasPreviewBackedMarkdown &&
+    !isActive &&
+    appState.activeTool?.type !== "selection";
   return (
     <div
       ref={containerRef}
@@ -1277,11 +1290,18 @@ export const CustomEmbeddable: React.FC<{
         color: `var(--text-normal)`,
         touchAction: "auto",
       }}
-      className={`${theme} canvas-node ${
-        mdProps?.filenameVisible && !mdProps.useObsidianDefaults
-          ? ""
-          : "excalidraw-mdEmbed-hideFilename"
-      }`}
+      className={clsx(
+        theme,
+        "canvas-node",
+        !(mdProps?.filenameVisible && !mdProps.useObsidianDefaults) &&
+          "excalidraw-mdEmbed-hideFilename",
+        hasPreviewBackedMarkdown && "excalidraw-md-embed-preview-backed",
+        hasPreviewBackedMarkdown &&
+          isActive &&
+          "excalidraw-md-embed-preview-active",
+        shouldPassThroughPreviewBackedMarkdown &&
+          "excalidraw-md-embed-preview-passthrough",
+      )}
     >
       <RenderObsidianView
         mdProps={mdProps}

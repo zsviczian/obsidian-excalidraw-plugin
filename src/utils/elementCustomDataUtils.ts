@@ -29,6 +29,16 @@ export type ExcalidrawLatexCustomData = ExcalidrawCustomData & {
   latexscale?: number;
 };
 
+export type ExcalidrawInteractiveMarkdownPreviewCustomData =
+  ExcalidrawCustomData & {
+    interactiveMarkdownEmbeddableId?: string;
+    interactiveMarkdownEmbeddablePreview?: boolean;
+    interactiveMarkdownPreviewBacked?: boolean;
+    interactiveMarkdownPreviewId?: string;
+    interactiveMarkdownPreviewSyncedWidth?: number;
+    interactiveMarkdownPreviewSyncedHeight?: number;
+  };
+
 export type ExcalidrawImageWithCustomData<
   TCustomData extends ExcalidrawCustomData = ExcalidrawCustomData,
 > = ExcalidrawImageElement & {

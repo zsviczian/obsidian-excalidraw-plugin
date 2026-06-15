@@ -3,6 +3,8 @@
 
 import {
   ExcalidrawElement,
+  ExcalidrawEmbeddableElement,
+  ExcalidrawImageElement,
   FileId,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
@@ -89,6 +91,7 @@ type CacheValidationMode = "validated" | "stale-first";
 type LoadImageOptions = {
   cacheValidation?: CacheValidationMode;
   onStaleCacheHit?: () => void;
+  markdownRenderSize?: Size;
 };
 
 type LoadSceneEmitPolicy = "all" | "changed-only";
@@ -439,6 +442,7 @@ export class EmbeddedFilesLoader {
   public async getObsidianImage(
     inFile: TFile | EmbeddedFile,
     depth: number,
+    options?: LoadImageOptions,
   ): Promise<{
     mimeType: MimeType;
     fileId: FileId;
@@ -449,10 +453,50 @@ export class EmbeddedFilesLoader {
     pdfPageViewProps?: PDFPageViewProps;
   }> {
     try {
-      return await this._getObsidianImage(inFile, depth);
+      return await this._getObsidianImage(inFile, depth, options);
     } finally {
       this.emptyPDFDocsMap();
     }
+  }
+
+  private getInteractiveMarkdownPreviewRenderSize(
+    elements: readonly ExcalidrawElement[],
+    fileId: FileId,
+  ): Size | undefined {
+    const preview = elements.find(
+      (el): el is ExcalidrawImageElement =>
+        el.type === "image" &&
+        el.fileId === fileId &&
+        Boolean(el.customData?.interactiveMarkdownEmbeddablePreview),
+    );
+    if (!preview) {
+      return;
+    }
+
+    const embeddableId =
+      typeof preview.customData?.interactiveMarkdownEmbeddableId === "string"
+        ? preview.customData.interactiveMarkdownEmbeddableId
+        : null;
+    const embeddable = embeddableId
+      ? elements.find(
+          (el): el is ExcalidrawEmbeddableElement =>
+            el.type === "embeddable" && el.id === embeddableId,
+        )
+      : null;
+    const source = embeddable ?? preview;
+    const scaleX = Math.abs(source.scale?.[0] ?? 1) || 1;
+    const scaleY = Math.abs(source.scale?.[1] ?? 1) || 1;
+    const width =
+      Number(preview.customData?.interactiveMarkdownPreviewSyncedWidth) ||
+      source.width / scaleX;
+    const height =
+      Number(preview.customData?.interactiveMarkdownPreviewSyncedHeight) ||
+      source.height / scaleY;
+
+    return {
+      width: Math.max(1, Math.round(width)),
+      height: Math.max(1, Math.round(height)),
+    };
   }
 
   private async getExcalidrawSVG({
@@ -690,8 +734,12 @@ export class EmbeddedFilesLoader {
               path: file.path,
               isBlockRef: false,
               ref: null,
-              width: this.plugin.settings.mdSVGwidth,
-              height: this.plugin.settings.mdSVGmaxHeight,
+              width:
+                options?.markdownRenderSize?.width ??
+                this.plugin.settings.mdSVGwidth,
+              height:
+                options?.markdownRenderSize?.height ??
+                this.plugin.settings.mdSVGmaxHeight,
               page: null,
             };
 
@@ -786,7 +834,13 @@ export class EmbeddedFilesLoader {
           const result = await this.convertMarkdownToSVG(
             this.plugin,
             file,
-            linkParts,
+            options?.markdownRenderSize
+              ? {
+                  ...linkParts,
+                  width: options.markdownRenderSize.width,
+                  height: options.markdownRenderSize.height,
+                }
+              : linkParts,
           );
           dataURL = result.dataURL;
           hasSVGwithBitmap = result.hasSVGwithBitmap;
@@ -902,11 +956,24 @@ export class EmbeddedFilesLoader {
             if (this.terminate) {
               return;
             }
-            const shouldForceReload = forceReloadFileIDs?.has(id);
+            const markdownRenderSize =
+              this.getInteractiveMarkdownPreviewRenderSize(
+                excalidrawData.scene.elements,
+                id,
+              );
+            const markdownRenderSizeChanged =
+              markdownRenderSize &&
+              (Math.round(embeddedFile.size.width) !==
+                markdownRenderSize.width ||
+                Math.round(embeddedFile.size.height) !==
+                  markdownRenderSize.height);
+            const shouldForceReload =
+              forceReloadFileIDs?.has(id) || markdownRenderSizeChanged;
             if (shouldForceReload || !embeddedFile.isLoaded(this.isDark)) {
               //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,status:"embedded Files are not loaded"});
               const data = await this._getObsidianImage(embeddedFile, depth, {
                 cacheValidation,
+                markdownRenderSize,
                 onStaleCacheHit:
                   cacheValidation === "stale-first"
                     ? () => deferredValidationFileIds.add(id)

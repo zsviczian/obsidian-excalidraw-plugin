@@ -991,6 +991,19 @@ Obsidian Sheets Plus support
 End Obsidian Sheets Plus support
 */
 
+.excalidraw .excalidraw__embeddable-container .excalidraw-md-embed-preview-backed:not(.excalidraw-md-embed-preview-active) {
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.excalidraw .excalidraw__embeddable-container:has(.excalidraw-md-embed-preview-passthrough) {
+  pointer-events: none;
+}
+
+.excalidraw .excalidraw__embeddable-container:has(.excalidraw-md-embed-preview-backed:not(.excalidraw-md-embed-preview-active)) .excalidraw__embeddable-hint {
+  display: none;
+}
+
 /* fixes: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2789 */
 .excalidraw:not(.excalidraw--tray) .HintViewer {
   position: absolute;

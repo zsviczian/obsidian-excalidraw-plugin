@@ -569,7 +569,10 @@ export function scaleLoadedImage<T extends SceneWithElements>(
 
     sceneElements
       .filter(
-        (e: ExcalidrawElement) => e.type === "image" && e.fileId === img.id,
+        (e: ExcalidrawElement) =>
+          e.type === "image" &&
+          e.fileId === img.id &&
+          !e.customData?.interactiveMarkdownEmbeddablePreview,
       )
       .forEach((el: Mutable<ExcalidrawImageElement>) => {
         const [elWidth, elHeight] = [el.width, el.height];
