@@ -1,14 +1,13 @@
-import { App, MarkdownRenderer, Modal } from "obsidian";
-import ExcalidrawPlugin from "../../core/main";
+import { App, Component, MarkdownRenderer, Modal } from "obsidian";
 import { Rank, SwordColors } from "src/constants/actionIcons";
 import { convertSVGStringToElement } from "src/utils/utils";
 import { URLs } from "src/constants/safeUrls";
 import { setStyle } from "src/utils/styleUtils";
 
 export class RankMessage extends Modal {
+  private renderComponent: Component;
   constructor(
     app: App,
-    private plugin: ExcalidrawPlugin,
     private filecount: number,
     private rank: Rank,
     private color: string,
@@ -19,6 +18,8 @@ export class RankMessage extends Modal {
   }
 
   onOpen(): void {
+    this.renderComponent = new Component();
+    this.renderComponent.load();
     //this.contentEl.classList.add("excalidraw-release");
     this.containerEl.classList.add("excalidraw-release");
     this.titleEl.setText("Congratulations, glorious knight!");
@@ -27,7 +28,7 @@ export class RankMessage extends Modal {
 
   onClose() {
     this.contentEl.empty();
-    this.plugin = null;
+    this.renderComponent.unload();
   }
 
   async createForm() {
@@ -45,7 +46,7 @@ export class RankMessage extends Modal {
       `You have ${this.filecount} Excalidraw drawings in your Vault earning you a new rank: **${this.rank}**! You've ascended to **${title}**!\n\nI've spent the past 3+ years building this plugin. If you appreciate my work, consider supporting me on [Ko-Fi](${URLs.KO_FI_COM_ZSOLT}) or join the next [Visual Thinking Workshop](${URLs.VISUAL_THINKING_WORKSHOP_COM}) cohort.`,
       this.contentEl,
       "",
-      this.plugin,
+      this.renderComponent,
     );
 
     this.contentEl.createEl("p", { text: "" }, (el) => {

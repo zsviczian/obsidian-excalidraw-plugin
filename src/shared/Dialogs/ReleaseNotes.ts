@@ -1,4 +1,4 @@
-import { App, MarkdownRenderer, Modal } from "obsidian";
+import { App, Component, MarkdownRenderer, Modal } from "obsidian";
 import { isVersionNewerThanOther } from "src/utils/utils";
 import ExcalidrawPlugin from "../../core/main";
 import { RELEASE_NOTES } from "./Messages";
@@ -17,6 +17,7 @@ export class ReleaseNotes extends Modal {
   private plugin: ExcalidrawPlugin;
   private options: ReleaseNotesOptions;
   private version: string;
+  private renderComponent: Component;
 
   constructor(
     app: App,
@@ -31,6 +32,8 @@ export class ReleaseNotes extends Modal {
   }
 
   onOpen(): void {
+    this.renderComponent = new Component();
+    this.renderComponent.load();
     const { containerEl, titleEl, headerEl } = this;
     //this.contentEl.classList.add("excalidraw-release");
     containerEl.classList.add("excalidraw-release");
@@ -46,6 +49,7 @@ export class ReleaseNotes extends Modal {
 
   onClose() {
     this.contentEl.empty();
+    this.renderComponent.unload();
     if (this.options.persistVersion === false) {
       return;
     }
@@ -81,7 +85,7 @@ export class ReleaseNotes extends Modal {
       message,
       this.contentEl,
       "",
-      this.plugin,
+      this.renderComponent,
     );
 
     this.contentEl.createEl("p", { text: "" }, (el) => {

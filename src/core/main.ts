@@ -1758,7 +1758,6 @@ export default class ExcalidrawPlugin extends Plugin {
           await this.saveSettings();
           new RankMessage(
             this.app,
-            this,
             filecount,
             rank,
             decoration,
