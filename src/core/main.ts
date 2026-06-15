@@ -59,7 +59,6 @@ import {
 import {
   getFontDataURL,
   errorlog,
-  sleep,
   isVersionNewerThanOther,
   versionUpdateCheckTimer,
   getFontMetrics,
