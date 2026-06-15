@@ -6,7 +6,7 @@ import {
   FileId,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { App, MarkdownRenderer, Notice, TFile } from "obsidian";
+import { App, Component, MarkdownRenderer, Notice, TFile } from "obsidian";
 import {
   DEFAULT_MD_EMBED_CSS,
   fileid,
@@ -74,6 +74,7 @@ import {
   isInstanceOfHTMLImageElement,
   isInstanceOfSVGElement,
 } from "src/utils/typechecks";
+import { strictArrayBuffer } from "src/utils/obsidianUtils";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -1496,14 +1497,17 @@ export class EmbeddedFilesLoader {
       color: fontColor && fontColor !== "" ? fontColor : "initial",
     });
 
+    const renderComponent = new Component();
+    renderComponent.load();
     //await MarkdownRenderer.renderMarkdown(text, mdDIV, file.path, plugin);
     await MarkdownRenderer.render(
       this.plugin.app,
       text,
       mdDIV,
       file.path,
-      this.plugin,
+      renderComponent,
     );
+    renderComponent.unload();
 
     mdDIV
       .querySelectorAll(":scope > *[class^='frontmatter']")
@@ -1668,10 +1672,12 @@ export const generateIdFromFile = async (
 
     // Hash the combined data (file and key, if provided)
     // Ensure we pass an ArrayBuffer (not ArrayBufferLike) to subtle.digest
-    const buffer: ArrayBuffer = dataToHash.buffer.slice(
-      dataToHash.byteOffset,
-      dataToHash.byteOffset + dataToHash.byteLength,
-    ) as ArrayBuffer;
+    const buffer = strictArrayBuffer(
+      dataToHash.buffer.slice(
+        dataToHash.byteOffset,
+        dataToHash.byteOffset + dataToHash.byteLength,
+      ),
+    );
     const hashBuffer = await window.crypto.subtle.digest("SHA-1", buffer);
     id = Array.from(new Uint8Array(hashBuffer))
       .map((byte) => byte.toString(16).padStart(2, "0"))

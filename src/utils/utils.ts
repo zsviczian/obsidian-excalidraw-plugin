@@ -1037,10 +1037,6 @@ export function fragWithHTML(html: string) {
   return createFragment((frag) => frag.appendChild(sanitizedFragment(html)));
 }
 
-export async function sleep(ms: number) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
-}
-
 /**REACT 18 
   //see also: https://github.com/zsviczian/obsidian-excalidraw-plugin/commit/b67d70c5196f30e2968f9da919d106ee66f2a5eb
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/commit/cc9d7828c7ee7755c1ef942519c43df32eae249f

@@ -287,7 +287,7 @@ export class EventManager {
     //In Obsidian 1.8.x the active excalidraw leaf is obscured by an empty leaf without a parent
     //This hack resolves it
     if (
-      this.app.workspace.getMostRecentLeaf() === leaf &&
+      //this.app.workspace.getMostRecentLeaf() === leaf &&
       isUnwantedLeaf(leaf)
     ) {
       leaf.detach();

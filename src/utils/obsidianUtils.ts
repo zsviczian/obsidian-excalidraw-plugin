@@ -651,3 +651,14 @@ export function stripYamlFrontmatter(text: string): string {
   }
   return text.replace(/^---\s*\r?\n[\s\S]*?\r?\n---\s*\r?\n?/, "");
 }
+
+export function strictArrayBuffer(
+  buffer: ArrayBuffer | SharedArrayBuffer,
+): ArrayBuffer {
+  if (buffer instanceof SharedArrayBuffer) {
+    const strictBuffer = new ArrayBuffer(buffer.byteLength);
+    new Uint8Array(strictBuffer).set(new Uint8Array(buffer));
+    return strictBuffer;
+  }
+  return buffer;
+}

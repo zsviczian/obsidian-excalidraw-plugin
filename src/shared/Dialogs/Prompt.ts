@@ -11,7 +11,7 @@ import {
 } from "obsidian";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import ExcalidrawPlugin from "../../core/main";
-import { escapeRegExp, sleep } from "../../utils/utils";
+import { escapeRegExp } from "../../utils/utils";
 import { getLeaf, openLeaf } from "../../utils/obsidianUtils";
 import { createOrOverwriteFile } from "src/utils/fileUtils";
 import { KeyEvent, isWinCTRLorMacCMD } from "src/utils/modifierkeyHelper";
@@ -559,7 +559,7 @@ export class GenericInputPrompt extends Modal {
         this.createButton(
           actionButtonContainer,
           "",
-          this.submitClickCallback.bind(this),
+          () => this.submitClickCallback(),
           t("PROMPT_BUTTON_OK") ?? "",
           "5px",
           "check",
@@ -573,7 +573,7 @@ export class GenericInputPrompt extends Modal {
     this.createButton(
       actionButtonContainer,
       "",
-      this.cancelClickCallback.bind(this),
+      () => this.cancelClickCallback(),
       t("PROMPT_BUTTON_CANCEL"),
       "5px",
       "x",
@@ -591,7 +591,7 @@ export class GenericInputPrompt extends Modal {
       this.createButton(
         editorButtonContainer,
         "",
-        this.delBtnClickCallback.bind(this),
+        () => this.delBtnClickCallback(),
         "Delete",
         "5px",
         "delete",
@@ -607,7 +607,7 @@ export class GenericInputPrompt extends Modal {
       this.createButton(
         editorButtonContainer,
         "",
-        this.specialCharsBtnClickCallback.bind(this),
+        (evt) => this.specialCharsBtnClickCallback(evt),
         t("PROMPT_BUTTON_SPECIAL_CHARS"),
         "5px",
         "at-sign",
@@ -616,7 +616,7 @@ export class GenericInputPrompt extends Modal {
         this.createButton(
           editorButtonContainer,
           "",
-          this.linkBtnClickCallback.bind(this),
+          () => this.linkBtnClickCallback(),
           t("PROMPT_BUTTON_INSERT_LINK"),
           "5px",
           "link",
@@ -625,7 +625,7 @@ export class GenericInputPrompt extends Modal {
       this.createButton(
         editorButtonContainer,
         "",
-        this.uppercaseBtnClickCallback.bind(this),
+        () => this.uppercaseBtnClickCallback(),
         t("PROMPT_BUTTON_UPPERCASE"),
         "5px",
         "arrow-big-up",

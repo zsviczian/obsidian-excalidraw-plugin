@@ -1,4 +1,4 @@
-import { MarkdownRenderer, Modal, Notice, request } from "obsidian";
+import { Component, MarkdownRenderer, Modal, Notice, request } from "obsidian";
 import ExcalidrawPlugin from "../../core/main";
 import { errorlog } from "../../utils/utils";
 import { log } from "src/utils/debugHelper";
@@ -12,6 +12,7 @@ const URL =
 
 export class ScriptInstallPrompt extends Modal {
   private contentDiv: HTMLDivElement;
+  private renderComponent: Component;
 
   constructor(private plugin: ExcalidrawPlugin) {
     super(plugin.app);
@@ -19,6 +20,8 @@ export class ScriptInstallPrompt extends Modal {
   }
 
   onOpen(): void {
+    this.renderComponent = new Component();
+    this.renderComponent.load();
     this.contentEl.classList.add("excalidraw-scriptengine-install");
     this.contentDiv = mainDocument.createElement("div");
     this.contentEl.appendChild(this.contentDiv);
@@ -40,7 +43,7 @@ export class ScriptInstallPrompt extends Modal {
           source,
           this.contentDiv,
           "",
-          this.plugin,
+          this.renderComponent,
         );
         this.contentDiv
           .querySelectorAll(
@@ -62,5 +65,6 @@ export class ScriptInstallPrompt extends Modal {
 
   onClose(): void {
     this.contentEl.empty();
+    this.renderComponent.unload();
   }
 }

@@ -49,7 +49,7 @@ import {
   getListOfTemplateFiles,
   getURLImageExtension,
 } from "../../utils/fileUtils";
-import { setLeftHandedMode, sleep, getImageSize } from "../../utils/utils";
+import { setLeftHandedMode, getImageSize } from "../../utils/utils";
 import {
   extractSVGPNGFileName,
   getActivePDFPageNumberFromPDFView,
@@ -1057,6 +1057,7 @@ export class CommandManager {
     });
 
     this.addCommand({
+      // eslint-disable-next-line obsidianmd/commands/no-command-in-command-id -- this is actually the command to insert a "command" into the drawing.
       id: "insert-command",
       name: t("INSERT_COMMAND"),
       checkCallback: (checking: boolean) => {

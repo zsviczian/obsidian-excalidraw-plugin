@@ -30,6 +30,7 @@ import {
   getGeminiImageRequestConfig,
   getGeminiSupportedSizes,
 } from "src/utils/geminiImageModelUtils";
+import { strictArrayBuffer } from "./obsidianUtils";
 
 type NormalizedBinaryInput = {
   source: string;
@@ -1768,12 +1769,15 @@ const buildMultipartFormBody = (
 
   chunks.push(encoder.encode(`--${boundary}--\r\n`));
   const combined = concatUint8Arrays(chunks);
+
   return {
     contentType: `multipart/form-data; boundary=${boundary}`,
-    body: combined.buffer.slice(
-      combined.byteOffset,
-      combined.byteOffset + combined.byteLength,
-    ) as ArrayBuffer,
+    body: strictArrayBuffer(
+      combined.buffer.slice(
+        combined.byteOffset,
+        combined.byteOffset + combined.byteLength,
+      ),
+    ),
   };
 };
 
