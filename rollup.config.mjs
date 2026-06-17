@@ -151,6 +151,7 @@ const packageString = isLib
   '  for (let i = 0; i < len; i++) bytes[i] = binStr.charCodeAt(i);\n' +
   '  return new TextDecoder().decode(pako.inflate(bytes));\n' +
   '};\n' +
+  'window.unpackBase64Deflate = unpackBase64Deflate;\n' +
   'const unpackExcalidraw = () => unpackBase64Deflate("' + compressDeflateBase64(excalidraw_pkg) + '");\n' +
   'let {react, reactDOM } = new Function(`${REACT_PACKAGES}; return {react: React, reactDOM: ReactDOM};`)();\n' +
   'let excalidrawLib = {};\n' +
