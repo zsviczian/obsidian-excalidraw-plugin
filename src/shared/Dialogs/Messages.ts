@@ -17,7 +17,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
-  ".24.2": `
+  "2.24.2": `
   ## Fixed
   - High impact regression in 2.24.0: Translations were not loading correctly. 🙏[@Lumintian](${URLs.GITHUB_COM}/Lumintian) [#2809](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2809)
 
