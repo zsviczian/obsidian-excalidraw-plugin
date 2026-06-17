@@ -748,6 +748,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
     borderColor: "#fff",
     borderOpacity: 0,
     filenameVisible: false,
+    lockedReadingMode: false,
   },
   markdownNodeOneClickEditing: false,
   canvasImmersiveEmbed: true,
