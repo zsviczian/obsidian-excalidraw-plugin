@@ -59,13 +59,13 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
         .setDesc(t("ES_LOCKED_READING_MODE_DESC"))
         .addToggle((toggle) =>
           toggle
-            .setValue(this.mdCustomData.lockedReadingMode ?? false)
+            .setValue(!!this.mdCustomData.lockedReadingMode)
             .onChange((value) => {
               this.mdCustomData.lockedReadingMode = value;
             }),
-      );
+        );
     }
-    
+
     contentEl.createEl("h4", { text: t("ES_BACKGROUND_HEAD") });
     const descDiv = contentEl.createDiv({ cls: "excalidraw-setting-desc" });
     descDiv.textContent = t("ES_BACKGROUND_DESC_INFO");

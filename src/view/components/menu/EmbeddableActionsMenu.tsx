@@ -26,7 +26,10 @@ import {
 } from "src/utils/customEmbeddableUtils";
 import { getActivePDFPageNumberFromPDFView } from "src/utils/obsidianUtils";
 import { cleanSectionHeading } from "src/utils/pathUtils";
-import { EmbeddableSettings, EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
+import {
+  EmbeddableSettings,
+  EmbeddableMDCustomProps,
+} from "src/shared/Dialogs/EmbeddableSettings";
 import {
   insertImageToView,
   openExternalLink,
@@ -110,7 +113,9 @@ export class EmbeddableMenu {
     const app = view.app;
     element = view.excalidrawAPI
       .getSceneElements()
-      .find((e: ExcalidrawElement) => e.id === element.id) as ExcalidrawEmbeddableElement;
+      .find(
+        (e: ExcalidrawElement) => e.id === element.id,
+      ) as ExcalidrawEmbeddableElement;
     if (!element) {
       return;
     }
@@ -371,10 +376,12 @@ export class EmbeddableMenu {
     if (!element) {
       return;
     }
-    const mdProps = (element.customData?.mdProps as EmbeddableMDCustomProps) ?? this.view.plugin.settings.embeddableMarkdownDefaults;
+    const mdProps =
+      (element.customData?.mdProps as EmbeddableMDCustomProps) ??
+      this.view.plugin.settings.embeddableMarkdownDefaults;
     const isLocked = !!mdProps.lockedReadingMode;
     mdProps.lockedReadingMode = !isLocked;
-    
+
     const ea = getEA(this.view);
     ea.copyViewElementsToEAforEditing([element]);
     const eaEl = ea.getElement(element.id);
@@ -384,7 +391,11 @@ export class EmbeddableMenu {
 
     // Fetch the updated element reference from the scene
     const api = this.view.excalidrawAPI;
-    const updatedElement = api.getSceneElements().find((e: ExcalidrawElement) => e.id === element.id) as ExcalidrawEmbeddableElement;
+    const updatedElement = api
+      .getSceneElements()
+      .find(
+        (e: ExcalidrawElement) => e.id === element.id,
+      ) as ExcalidrawEmbeddableElement;
 
     // Force an appState update so the React menu component re-renders
     if (updatedElement) {
@@ -392,9 +403,9 @@ export class EmbeddableMenu {
         appState: {
           activeEmbeddable: {
             element: updatedElement,
-            state: "active"
-          }
-        }
+            state: "active",
+          },
+        },
       });
     }
   }
@@ -507,7 +518,9 @@ export class EmbeddableMenu {
         );
         const top = `${y - 2.5 * ROOTELEMENTSIZE - appState.offsetTop}px`;
         const left = `${x - appState.offsetLeft}px`;
-        const mdProps = (element.customData?.mdProps as EmbeddableMDCustomProps) ?? view.plugin.settings.embeddableMarkdownDefaults;
+        const mdProps =
+          (element.customData?.mdProps as EmbeddableMDCustomProps) ??
+          view.plugin.settings.embeddableMarkdownDefaults;
         const isLockedReadingMode = !!mdProps.lockedReadingMode;
 
         return (
@@ -568,10 +581,12 @@ export class EmbeddableMenu {
               {isMD && (
                 <ActionButton
                   key="LockReadingMode"
-                  title={isLockedReadingMode ? t("UNLOCK_READING_MODE") : t("LOCK_READING_MODE")}
-                  action={() =>
-                    void this.actionToggleLockReadingMode(element)
+                  title={
+                    isLockedReadingMode
+                      ? t("UNLOCK_READING_MODE")
+                      : t("LOCK_READING_MODE")
                   }
+                  action={() => void this.actionToggleLockReadingMode(element)}
                   icon={isLockedReadingMode ? ICONS.Edit : ICONS.Read}
                 />
               )}
@@ -617,9 +632,11 @@ export class EmbeddableMenu {
       }
     }
     if (isObsidianiFrame || isExcalidrawiFrame) {
-      const iframe = (isExcalidrawiFrame
-        ? api.getHTMLIFrameElement(element.id)
-        : view.getEmbeddableElementById(element.id)) as HTMLIFrameElement;
+      const iframe = (
+        isExcalidrawiFrame
+          ? api.getHTMLIFrameElement(element.id)
+          : view.getEmbeddableElementById(element.id)
+      ) as HTMLIFrameElement;
       if (!iframe || !iframe.contentWindow) {
         return null;
       }

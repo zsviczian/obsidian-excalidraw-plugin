@@ -19,7 +19,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
   ".24.2": `
   ## Fixed
-  - Regression in 2.24.0: Translations were not loading correctly. 🙏[@Lumintian](${URLs.GITHUB_COM}/Lumintian) [#2809](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2809)
+  - High impact regression in 2.24.0: Translations were not loading correctly. 🙏[@Lumintian](${URLs.GITHUB_COM}/Lumintian) [#2809](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2809)
 
   ## New
   - Added lock reading mode to markdown embeddables. If reading mode is locked, clicking the embeddable will not switch to the editor. This is useful for interacting with todo lists, links, and other interactive elements in the embeddables. Based on feedback from the Sketch Your Mind Community. 🙏[@robb3r](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM}/u/robb3r)

@@ -67,9 +67,9 @@ export class EmbeddableSettings extends Modal {
       this.youtubeStart = getYouTubeStartAt(this.element.link);
     }
 
-    this.mdCustomData =
-      (element.customData?.mdProps ??
-      view.plugin.settings.embeddableMarkdownDefaults) as EmbeddableMDCustomProps;
+    this.mdCustomData = (element.customData?.mdProps ??
+      view.plugin.settings
+        .embeddableMarkdownDefaults) as EmbeddableMDCustomProps;
     if (!element.customData?.mdProps) {
       const bgCM = this.plugin.ea.getCM(element.backgroundColor);
       this.mdCustomData.backgroundColor = bgCM.stringHEX({ alpha: false });

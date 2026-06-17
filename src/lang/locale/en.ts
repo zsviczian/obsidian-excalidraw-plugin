@@ -1291,7 +1291,8 @@ export default {
     "The YouTube Start Time is invalid. Please check the format and try again",
   ES_FILENAME_VISIBLE: "Filename Visible",
   ES_LOCKED_READING_MODE_HEAD: "Locked Reading Mode",
-  ES_LOCKED_READING_MODE_DESC: "When enabled, interacting with the markdown embeddable will not switch it to edit mode. This is useful for checklists and habit trackers.",
+  ES_LOCKED_READING_MODE_DESC:
+    "When enabled, interacting with the markdown embeddable will not switch it to edit mode. This is useful for checklists and habit trackers.",
   LOCK_READING_MODE: "Lock Reading Mode",
   UNLOCK_READING_MODE: "Unlock Reading Mode",
   ES_BACKGROUND_HEAD: "Embedded note background color",

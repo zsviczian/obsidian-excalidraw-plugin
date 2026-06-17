@@ -580,7 +580,7 @@ function RenderObsidianView({
   React.useEffect(() => {
     themeRef.current = theme;
   }, [theme]);
-  
+
   React.useEffect(() => {
     mdPropsRef.current = mdProps;
     fileRef.current = file;
@@ -1089,7 +1089,7 @@ function RenderObsidianView({
       const currentFile = fileRef.current;
 
       if (currentMdProps?.lockedReadingMode) {
-        // Special case: if the card is a back-of-the-note card, ticking a checkbox in 
+        // Special case: if the card is a back-of-the-note card, ticking a checkbox in
         // reading mode triggers a change to the open file which would result in a view update.
         if (currentFile?.path === view.file.path) {
           view.setPreventReload();
