@@ -574,6 +574,7 @@ function RenderObsidianView({
   const initialViewFileRef = React.useRef(view.file);
   const mdPropsRef = React.useRef(mdProps);
   const fileRef = React.useRef(file);
+  const prevLockRef = React.useRef(mdProps?.lockedReadingMode);
 
   // Update themeRef when theme changes
   React.useEffect(() => {
@@ -1210,7 +1211,10 @@ function RenderObsidianView({
       activeEmbeddable?.element.id === element.id &&
       activeEmbeddable?.state === "active";
 
-    if (previousIsActive === isActiveRef.current) {
+    const lockChanged = prevLockRef.current !== mdProps?.lockedReadingMode;
+    prevLockRef.current = !!mdProps?.lockedReadingMode;
+
+    if (previousIsActive === isActiveRef.current && !lockChanged) {
       return;
     }
 
@@ -1240,6 +1244,7 @@ function RenderObsidianView({
       } else {
         containerRef.current?.removeClasses(["is-editing", "is-focused"]);
         view.canvasNodeFactory.stopEditing(node);
+        view.clearEmbeddableNodeIsEditing();
       }
       return;
     }

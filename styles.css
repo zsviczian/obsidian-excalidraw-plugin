@@ -2,15 +2,15 @@
   height: 100%;
   margin: 0px;
   background-color: var(--background-primary);
-  position:relative;
+  position: relative;
 }
 
 .block-language-excalidraw {
-  text-align:center;
+  text-align: center;
 }
 
 svg.excalidraw-svg {
-	width: 100%;
+  width: 100%;
 }
 
 .excalidraw-embedded-img {
@@ -50,7 +50,7 @@ div.excalidraw-svg-left {
 }
 
 button.ToolIcon_type_button[title="Export"] {
-  display:none;
+  display: none;
 }
 
 .excalidraw-prompt-div {
@@ -104,8 +104,8 @@ button.ToolIcon_type_button[title="Export"] {
 }
 
 .ex-coffee-div {
-	text-align: center;
-	margin-bottom: 10px;
+  text-align: center;
+  margin-bottom: 10px;
 }
 
 .excalidraw-mastery-promo {
@@ -196,7 +196,7 @@ button.ToolIcon_type_button[title="Export"] {
 
 .excalidraw-scriptengine-install td>img {
   width: 100%;
-  max-width:800px;
+  max-width: 800px;
 }
 
 .excalidraw-scriptengine-install img.coffee {
@@ -227,7 +227,7 @@ button.ToolIcon_type_button[title="Export"] {
 }
 
 .excalidraw-scriptengine-install .modal {
-  max-height:90%;
+  max-height: 90%;
   width: auto;
 }
 
@@ -250,18 +250,20 @@ button.ToolIcon_type_button[title="Export"] {
 }
 
 .workspace-leaf-content .excalidraw-view {
-  padding: 0px 1px; /*1px so on ipad swipe in from left and right still works*/
+  padding: 0px 1px;
+  /*1px so on ipad swipe in from left and right still works*/
   overflow: hidden;
 }
 
 .excalidraw-videoWrapper {
-  max-width:600px;
-}
-.excalidraw-videoWrapper.settings {
-  max-width:340px;
+  max-width: 600px;
 }
 
-.excalidraw-videoWrapper div{
+.excalidraw-videoWrapper.settings {
+  max-width: 340px;
+}
+
+.excalidraw-videoWrapper div {
   position: relative;
   padding-bottom: 56.25%;
   height: 0;
@@ -281,7 +283,7 @@ button.ToolIcon_type_button[title="Export"] {
   height: 100%;
 }
 
-.excalidraw-release .modal-content{
+.excalidraw-release .modal-content {
   padding-right: 5px;
   margin-right: -5px;
   user-select: text;
@@ -293,7 +295,7 @@ button.ToolIcon_type_button[title="Export"] {
 }
 
 .excalidraw-scriptengine-install tbody>tr>td>div>img {
-  height:20px;
+  height: 20px;
   background-color: silver;
   padding: 2px;
 }
@@ -318,7 +320,7 @@ button.ToolIcon_type_button[title="Export"] {
   position: absolute;
   padding: 12px;
   border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   background-color: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
   z-index: 9999;
@@ -347,18 +349,13 @@ textarea.excalidraw-wysiwyg {
   -webkit-box-shadow: none;
   -moz-box-shadow: none;
   box-shadow: none;
-  border-radius: 0;  
+  border-radius: 0;
 }
 
 .is-tablet .excalidraw button,
 .is-mobile .excalidraw button {
   padding: initial;
   height: 1.8rem;
-}
-
-.excalidraw-hidden,
-.excalidraw-display-none {
-  display: none !important;
 }
 
 .excalidraw-display-flex {
@@ -378,7 +375,7 @@ textarea.excalidraw-wysiwyg {
   background: var(--background-primary-alt);
 }
 
-.excalidraw-ai-provider-table > .setting-item {
+.excalidraw-ai-provider-table>.setting-item {
   margin-top: 0;
   margin-bottom: 0;
   padding-bottom: 0.5rem;
@@ -396,7 +393,7 @@ textarea.excalidraw-wysiwyg {
   min-height: 0;
 }
 
-.excalidraw-ai-provider-table__row + .excalidraw-ai-provider-table__row {
+.excalidraw-ai-provider-table__row+.excalidraw-ai-provider-table__row {
   border-top: 1px solid var(--background-modifier-border);
 }
 
@@ -506,7 +503,8 @@ div.excalidraw-draginfo {
   padding: 0.5rem;
 }
 
-.excalidraw-sidepanel-tab__button { /* probably unused */
+.excalidraw-sidepanel-tab__button {
+  /* probably unused */
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
@@ -680,7 +678,7 @@ img.excalidraw-cropped-pdfpage,
   opacity: 0;
 }
 
-.popover .excalidraw-svg {  
+.popover .excalidraw-svg {
   width: 100%;
   max-width: inherit;
   height: 100%;
@@ -688,24 +686,26 @@ img.excalidraw-cropped-pdfpage,
 }
 
 root {
- --excalidraw-caret-color: initial;
+  --excalidraw-caret-color: initial;
 }
 
 .excalidraw-settings-links-container {
-    align-items: center;
-    color: inherit;
-    display: flex;
-    gap: .3em;
-    text-align: center;
-    text-decoration: none;
-    flex-wrap: wrap;
-    justify-content: center;
-    flex-direction: row;
+  align-items: center;
+  color: inherit;
+  display: flex;
+  gap: .3em;
+  text-align: center;
+  text-decoration: none;
+  flex-wrap: wrap;
+  justify-content: center;
+  flex-direction: row;
 }
 
 .excalidraw-settings-links-container a {
-  display: flex; /* Align children horizontally */
-  align-items: center; /* Center items vertically */
+  display: flex;
+  /* Align children horizontally */
+  align-items: center;
+  /* Center items vertically */
   text-align: left;
   margin-right: 4px;
   margin-left: 4px;
@@ -761,19 +761,14 @@ root {
   margin-bottom: -2px;
 }
 
-.is-mobile .modal-container.excalidraw-modal .modal.excalidraw-modal {
-  align-self: flex-start;
-  transform: none !important;
-  margin-top: calc(var(--safe-area-inset-top) + var(--header-height) + var(--size-4-2));
-  width: 100%;
-}
-
 .excalidraw-prompt-buttonbar-top,
 .excalidraw-prompt-buttonbar-bottom {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;  /* keep both rows top‐aligned */
-  row-gap: 0.5em;           /* vertical space when wrapped */
+  align-items: flex-start;
+  /* keep both rows top‐aligned */
+  row-gap: 0.5em;
+  /* vertical space when wrapped */
 }
 
 /* top bar specifics */
@@ -788,20 +783,20 @@ root {
 }
 
 /* make each child a flex row */
-.excalidraw-prompt-buttonbar-top  > div,
-.excalidraw-prompt-buttonbar-bottom > div {
+.excalidraw-prompt-buttonbar-top>div,
+.excalidraw-prompt-buttonbar-bottom>div {
   display: flex;
 }
 
 /* push the first group to the left */
-.excalidraw-prompt-buttonbar-top  > div:first-child,
-.excalidraw-prompt-buttonbar-bottom > div:first-child {
+.excalidraw-prompt-buttonbar-top>div:first-child,
+.excalidraw-prompt-buttonbar-bottom>div:first-child {
   margin-right: auto;
 }
 
 /* push the second group to the right */
-.excalidraw-prompt-buttonbar-top  > div:last-child,
-.excalidraw-prompt-buttonbar-bottom > div:last-child {
+.excalidraw-prompt-buttonbar-top>div:last-child,
+.excalidraw-prompt-buttonbar-bottom>div:last-child {
   margin-left: auto;
 }
 
@@ -810,7 +805,7 @@ root {
   flex-direction: column;
   background: var(--background-secondary);
   border-radius: 8px;
-  box-shadow: 0 1px 4px 0 rgba(0,0,0,0.10);
+  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.10);
   padding: 0.5em 0.8em;
   margin-bottom: 0.5em;
   max-width: calc(100% - 1.6em);
@@ -885,7 +880,8 @@ root {
   justify-content: center;
 }
 
-.excalidraw-search .document-search-button:hover, .excalidraw-search .document-search-button:focus {
+.excalidraw-search .document-search-button:hover,
+.excalidraw-search .document-search-button:focus {
   background: var(--background-modifier-hover);
   color: var(--text-accent);
 }
@@ -898,69 +894,8 @@ root {
   pointer-events: none;
 }
 
-.excalidraw-LatexPrompt {
-  .cm-editor {
-    margin-top: var(--size-4-2);
-    justify-content: center;
-    align-items: center;
-
-    /* this is safe, if unsupported, will be ignored */
-    anchor-name: --latex-editor;
-
-    & > .cm-scroller, & > .cm-announcment {
-      align-self: start;
-      width: 100%
-    }
-
-    /* taken from Obsidian, doesn't apply automatically,
-       because the rule does not have :focus-within */
-    &.cm-focused {
-      border-color: var(--background-modifier-border-focus);
-      transition: box-shadow 0.15s ease-in-out, border 0.15s ease-in-out;
-      box-shadow: 0 0 0 var(--input-border-width-focus) var(--background-modifier-border-focus);
-    }
-
-    /* centering the popup */
-    & .cm-tooltip-cursor.cm-tooltip {
-      left: unset !important;
-
-      & .cm-tooltip-arrow {
-        left: 50% !important;
-        transform: translateX(-50%);
-      }
-    }
-
-    [jax="CHTML"][display="true"] {
-      margin: 0;
-    }
-  }
-
-  .cm-content {
-    caret-color: var(--caret-color);
-  }
-}
-
-@supports (anchor-name: --test) {
-  .excalidraw-LatexPrompt .cm-editor .cm-tooltip-cursor.cm-tooltip {
-    position: fixed !important;
-    position-anchor: --latex-editor;
-    top: unset !important;
-    max-width: calc(100vw - var(--size-4-4));
-    margin: var(--size-4-2) 0;
-    overflow-x: clip;
-
-    &.cm-tooltip-above {
-      bottom: anchor(top);
-    }
-
-    &.cm-tooltip-below {
-      top: anchor(bottom) !important;
-    }
-  }
-}
-
 .excalidraw-filetype-tag {
-    order: 99;
+  order: 99;
 }
 
 .excalidraw-mobile-navbar-docked {
@@ -975,16 +910,16 @@ root {
 Obsidian Sheets Plus support
 */
 .excalidraw__embeddable__outer .lj-content-view {
-	width: var(--embeddable-width);
-	height: var(--embeddable-height);
+  width: var(--embeddable-width);
+  height: var(--embeddable-height);
 }
 
 .excalidraw__embeddable__outer #sheet-box {
-	height: calc(var(--embeddable-height) - var(--lj-toolbar-height) + 40px);
+  height: calc(var(--embeddable-height) - var(--lj-toolbar-height) + 40px);
 }
 
 .excalidraw__embeddable__outer .lj-univer .univer-relative.univer-grid {
-    width: var(--embeddable-width);
+  width: var(--embeddable-width);
 }
 
 /*
@@ -997,16 +932,18 @@ End Obsidian Sheets Plus support
 }
 
 .excalidraw-button-bgcolor {
-  &-normal { 
-    background-color: var(--interactive-normal); 
+  &-normal {
+    background-color: var(--interactive-normal);
     color: var(--text-normal);
   }
-  &-accent { 
-    background-color: var(--interactive-accent); 
+
+  &-accent {
+    background-color: var(--interactive-accent);
     color: var(--text-on-accent);
   }
-  &-success { 
-    background-color: var(--interactive-success); 
+
+  &-success {
+    background-color: var(--interactive-success);
     color: var(--text-on-success);
   }
 }
