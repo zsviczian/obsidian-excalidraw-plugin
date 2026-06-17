@@ -35,6 +35,7 @@ import { getEA } from "src/core";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { URLs } from "src/constants/safeUrls";
 import { setStyle } from "src/utils/styleUtils";
+import { addAppendUpdateCustomData } from "src/utils/elementCustomDataUtils";
 
 type BlockCacheEntry = Awaited<
   ReturnType<ExcalidrawView["app"]["metadataCache"]["blockCache"]["getForFile"]>
@@ -371,20 +372,31 @@ export class EmbeddableMenu {
       return;
     }
     const mdProps = (element.customData?.mdProps as EmbeddableMDCustomProps) ?? this.view.plugin.settings.embeddableMarkdownDefaults;
-    const isLocked = mdProps.lockedReadingMode ?? false;
+    const isLocked = !!mdProps.lockedReadingMode;
+    mdProps.lockedReadingMode = !isLocked;
     
     const ea = getEA(this.view);
     ea.copyViewElementsToEAforEditing([element]);
     const eaEl = ea.getElement(element.id);
-    eaEl.customData = { 
-      ...(eaEl.customData || {}), 
-      mdProps: {
-        ...mdProps,
-        lockedReadingMode: !isLocked
-      } 
-    };
-    await ea.addElementsToView(false, true, true);
+    addAppendUpdateCustomData(eaEl, mdProps);
+    await ea.addElementsToView();
     ea.destroy();
+
+    // Fetch the updated element reference from the scene
+    const api = this.view.excalidrawAPI;
+    const updatedElement = api.getSceneElements().find((e: ExcalidrawElement) => e.id === element.id) as ExcalidrawEmbeddableElement;
+
+    // Force an appState update so the React menu component re-renders
+    if (updatedElement) {
+      this.view.updateScene({
+        appState: {
+          activeEmbeddable: {
+            element: updatedElement,
+            state: "active"
+          }
+        }
+      });
+    }
   }
 
   private actionProperties(element: ExcalidrawEmbeddableElement, file: TFile) {
@@ -496,7 +508,7 @@ export class EmbeddableMenu {
         const top = `${y - 2.5 * ROOTELEMENTSIZE - appState.offsetTop}px`;
         const left = `${x - appState.offsetLeft}px`;
         const mdProps = (element.customData?.mdProps as EmbeddableMDCustomProps) ?? view.plugin.settings.embeddableMarkdownDefaults;
-        const isLockedReadingMode = mdProps.lockedReadingMode ?? false;
+        const isLockedReadingMode = !!mdProps.lockedReadingMode;
 
         return (
           <div
@@ -553,8 +565,7 @@ export class EmbeddableMenu {
                   icon={ICONS.ZoomToBlock}
                 />
               )}
-
-              {isMD && !isExcalidrawFile && (
+              {isMD && (
                 <ActionButton
                   key="LockReadingMode"
                   title={isLockedReadingMode ? t("UNLOCK_READING_MODE") : t("LOCK_READING_MODE")}

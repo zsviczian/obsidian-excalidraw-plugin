@@ -572,11 +572,18 @@ function RenderObsidianView({
   const pdfObserverDisabledRef = React.useRef(false);
   const mobilePatchCleanupRef = React.useRef(null);
   const initialViewFileRef = React.useRef(view.file);
+  const mdPropsRef = React.useRef(mdProps);
+  const fileRef = React.useRef(file);
 
   // Update themeRef when theme changes
   React.useEffect(() => {
     themeRef.current = theme;
   }, [theme]);
+  
+  React.useEffect(() => {
+    mdPropsRef.current = mdProps;
+    fileRef.current = file;
+  }, [mdProps, file]);
 
   //--------------------------------------------------------------------------------
   //block propagation of events to the parent if the embeddable element is active
@@ -695,6 +702,22 @@ function RenderObsidianView({
         containerRef.current,
         element.id,
       );
+
+      // --- PATCH NATIVE OBSIDIAN CANVAS NODE ---
+      // Obsidian's native canvas event listeners will force the node into edit mode
+      // on certain clicks/double-clicks. This intercepts Obsidian's core method.
+      const node = leafRef.current.node;
+      if (node && typeof node.startEditing === "function") {
+        const originalStartEditing = node.startEditing;
+        node.startEditing = function (...args: unknown[]) {
+          // Read directly from the ref to ensure dynamic lock toggling works
+          if (mdPropsRef.current?.lockedReadingMode) {
+            return;
+          }
+          return originalStartEditing.apply(this, args) as unknown;
+        };
+      }
+
       setColors(containerRef.current, element, mdProps, canvasColor, viewType);
       view.updateEmbeddableLeafRef(element.id, leafRef.current);
       viewTypeRef.current = "markdown";
@@ -1047,7 +1070,7 @@ function RenderObsidianView({
   //--------------------------------------------------------------------------------
   //Switch to edit mode when markdown view is clicked
   //--------------------------------------------------------------------------------
-    const handleClick = React.useCallback(
+  const handleClick = React.useCallback(
     (event?: Event) => {
       if (view.file !== initialViewFileRef.current) {
         return;
@@ -1061,10 +1084,13 @@ function RenderObsidianView({
         return;
       }
 
-      if (mdProps?.lockedReadingMode) {
+      const currentMdProps = mdPropsRef.current;
+      const currentFile = fileRef.current;
+
+      if (currentMdProps?.lockedReadingMode) {
         // Special case: if the card is a back-of-the-note card, ticking a checkbox in 
         // reading mode triggers a change to the open file which would result in a view update.
-        if (file.path === view.file.path) {
+        if (currentFile?.path === view.file.path) {
           view.setPreventReload();
           void view.setEmbeddableNodeIsEditing();
         }
@@ -1113,8 +1139,6 @@ function RenderObsidianView({
       isActiveRef.current,
       isEditingRef.current,
       viewTypeRef.current,
-      mdProps?.lockedReadingMode,
-      file.path,
     ],
   );
 
@@ -1172,7 +1196,7 @@ function RenderObsidianView({
   //--------------------------------------------------------------------------------
   // Set isActiveRef and switch to preview mode when the embeddable is not active
   //--------------------------------------------------------------------------------
-    React.useEffect(() => {
+  React.useEffect(() => {
     if (view.file !== initialViewFileRef.current) {
       return;
     }
@@ -1202,8 +1226,8 @@ function RenderObsidianView({
         view.plugin.settings.markdownNodeOneClickEditing &&
         !containerRef.current?.hasClass("is-editing")
       ) {
-        if (mdProps?.lockedReadingMode) {
-          if (file.path === view.file.path) {
+        if (mdPropsRef.current?.lockedReadingMode) {
+          if (fileRef.current?.path === view.file.path) {
             view.setPreventReload();
             void view.setEmbeddableNodeIsEditing();
           }
@@ -1264,7 +1288,6 @@ function RenderObsidianView({
     activeEmbeddable?.state,
     isActiveRef,
     activeEmbeddable?.element,
-    activeEmbeddable?.state,
     element,
     view,
     isEditingRef,
