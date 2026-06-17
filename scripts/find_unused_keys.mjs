@@ -1,5 +1,5 @@
-﻿const fs = require('fs');
-const { execSync } = require('child_process');
+﻿import fs from 'fs';
+import { execSync } from 'child_process';
 
 const content = fs.readFileSync('src/lang/locale/en.ts', 'utf8');
 const lines = content.split('\n');

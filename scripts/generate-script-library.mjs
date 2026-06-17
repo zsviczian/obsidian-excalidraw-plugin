@@ -1,7 +1,12 @@
 /* eslint-disable no-console */
-// to run: npm run doc
-const fs = require('fs');
-const path = require('path');
+// to run: node generate-script-library.mjs
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Reconstruct __dirname for ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const ROOT = path.resolve(__dirname, '..');
 const EA_SCRIPTS_DIR = path.join(ROOT, 'ea-scripts');
@@ -617,17 +622,17 @@ function main() {
 
     const combined =
       (AI_TRAINING_INTRO +
-      '\n---\n\n' +
-      typeDefContent.trim() +
-      '\n\n---\n\n' +
-      excalidrawLibFunctionsSection +
-      '\n---\n\n' +
-      scriptLibContent.trim() +
-      startupSection +
-      '\n')
-      .replaceAll("https://youtu.be/", "YouTube: ")
-      .replaceAll("https://www.youtube.com/watch?v=", "YouTube: ")
-      .replaceAll("https://www.youtube.com/", "YouTube: "); // prevent accidental link triggering
+        '\n---\n\n' +
+        typeDefContent.trim() +
+        '\n\n---\n\n' +
+        excalidrawLibFunctionsSection +
+        '\n---\n\n' +
+        scriptLibContent.trim() +
+        startupSection +
+        '\n')
+        .replaceAll("https://youtu.be/", "YouTube: ")
+        .replaceAll("https://www.youtube.com/watch?v=", "YouTube: ")
+        .replaceAll("https://www.youtube.com/", "YouTube: "); // prevent accidental link triggering
 
     fs.writeFileSync(AI_TRAINING_OUT, combined, 'utf8');
     console.log('[script-library] Wrote:', AI_TRAINING_OUT);
@@ -638,7 +643,8 @@ function main() {
   console.log('[script-library] Done.');
 }
 
-if (require.main === module) {
+// ESM equivalent of `if (require.main === module)`
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
     main();
   } catch (e) {

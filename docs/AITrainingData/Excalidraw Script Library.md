@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-06-14T16:29:27.218Z
+Generated on: 2026-06-17T19:44:41.983Z
 
 ---
 
@@ -21022,6 +21022,30 @@ const addNode = async (text, follow = false, skipFinalLayout = false, batchModeA
           (parent.strokeColor && parent.strokeColor.toLowerCase() !== "transparent" ? parent.strokeColor : defaultNodeColor);
       } else {
         nodeColor = parent.strokeColor;
+      }
+    }
+
+    const effectiveMulticolor = rootCfgForAdd?.multicolor ?? multicolor;
+    const effectiveIsSolidArrow = rootCfgForAdd?.isSolidArrow ?? isSolidArrow;
+    
+    // If multicolor is disabled AND "Use scene stroke style" is enabled (!effectiveIsSolidArrow)
+    if (!effectiveMulticolor && !effectiveIsSolidArrow) {
+      const parentStrokeColor = (parent.strokeColor || "transparent").toLowerCase();
+      const isTransparent = parentStrokeColor === "transparent";
+      
+      let isSameAsBg = false;
+      if (!isTransparent) {
+        const parentColorCM = ea.getCM(parent.strokeColor);
+        const bgColorCM = ea.getCM(st.viewBackgroundColor);
+        if (parentColorCM && bgColorCM && parentColorCM.stringHEX() === bgColorCM.stringHEX()) {
+          isSameAsBg = true;
+        }
+      }
+      
+      // If the parent's stroke is transparent or matches the view background,
+      // invert the scene color for the new node and branch
+      if (isTransparent || isSameAsBg) {
+        nodeColor = ea.getCM(st.viewBackgroundColor).invert().stringHEX({ alpha: false });
       }
     }
   }

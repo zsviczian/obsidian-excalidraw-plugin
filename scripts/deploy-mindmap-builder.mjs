@@ -1,7 +1,12 @@
-const path = require("path");
-const fs = require("fs/promises");
-const { minify } = require("terser");
-const LZString = require("lz-string");
+import path from "path";
+import fs from "fs/promises";
+import { minify } from "terser";
+import LZString from "lz-string";
+import { fileURLToPath } from "url";
+
+// Construct __dirname for ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const CHUNK_SIZE = 256;
 const NEEDLE = "const removeKeydownHandlers";
