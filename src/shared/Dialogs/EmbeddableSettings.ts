@@ -32,6 +32,7 @@ export type EmbeddableMDCustomProps = {
   borderColor: string;
   borderOpacity: number;
   filenameVisible: boolean;
+  lockedReadingMode?: boolean;
 };
 
 export class EmbeddableSettings extends Modal {
@@ -67,8 +68,8 @@ export class EmbeddableSettings extends Modal {
     }
 
     this.mdCustomData =
-      element.customData?.mdProps ??
-      view.plugin.settings.embeddableMarkdownDefaults;
+      (element.customData?.mdProps ??
+      view.plugin.settings.embeddableMarkdownDefaults) as EmbeddableMDCustomProps;
     if (!element.customData?.mdProps) {
       const bgCM = this.plugin.ea.getCM(element.backgroundColor);
       this.mdCustomData.backgroundColor = bgCM.stringHEX({ alpha: false });

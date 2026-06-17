@@ -17,6 +17,13 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+  ".24.2": `
+  ## Fixed
+  - Regression in 2.24.0: Translations were not loading correctly. 🙏[@Lumintian](${URLs.GITHUB_COM}/Lumintian) [#2809](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2809)
+
+  ## New
+  - Added lock reading mode to markdown embeddables. If reading mode is locked, clicking the embeddable will not switch to the editor. This is useful for interacting with todo lists, links, and other interactive elements in the embeddables. Based on feedback from the Sketch Your Mind Community. 🙏[@robb3r](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM}/u/robb3r)
+`,
   "2.24.1": `
 To keep Excalidraw lightweight, improve startup performance, reduce plugin size, and address Obsidian's high-risk code scanner findings, several advanced features have been moved to the new **Excalidraw Extras** companion plugin in 2.24.0.
 

@@ -13,7 +13,7 @@ const REQUIRED_EXTRAS_VERSIONS: Record<
   string,
   { min?: string; exact?: string }
 > = {
-  plugin: { min: "0.0.13" },
+  plugin: { min: "0.0.14" },
   mathjax: { min: "1.0.0" },
   mermaid: { exact: "2.2.2" },
   pdf: { min: "1.0.0" },

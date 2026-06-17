@@ -552,7 +552,7 @@ function RenderObsidianView({
   canvasColor: string;
   selectedElementId: string;
   sceneZoom: number;
-}): JSX.Element {
+}): React.JSX.Element {
   const { subpath, file } = processLinkText(linkText, view);
 
   if (!file) {
@@ -572,11 +572,19 @@ function RenderObsidianView({
   const pdfObserverDisabledRef = React.useRef(false);
   const mobilePatchCleanupRef = React.useRef(null);
   const initialViewFileRef = React.useRef(view.file);
+  const mdPropsRef = React.useRef(mdProps);
+  const fileRef = React.useRef(file);
+  const prevLockRef = React.useRef(mdProps?.lockedReadingMode);
 
   // Update themeRef when theme changes
   React.useEffect(() => {
     themeRef.current = theme;
   }, [theme]);
+  
+  React.useEffect(() => {
+    mdPropsRef.current = mdProps;
+    fileRef.current = file;
+  }, [mdProps, file]);
 
   //--------------------------------------------------------------------------------
   //block propagation of events to the parent if the embeddable element is active
@@ -695,6 +703,22 @@ function RenderObsidianView({
         containerRef.current,
         element.id,
       );
+
+      // --- PATCH NATIVE OBSIDIAN CANVAS NODE ---
+      // Obsidian's native canvas event listeners will force the node into edit mode
+      // on certain clicks/double-clicks. This intercepts Obsidian's core method.
+      const node = leafRef.current.node;
+      if (node && typeof node.startEditing === "function") {
+        const originalStartEditing = node.startEditing;
+        node.startEditing = function (...args: unknown[]) {
+          // Read directly from the ref to ensure dynamic lock toggling works
+          if (mdPropsRef.current?.lockedReadingMode) {
+            return;
+          }
+          return originalStartEditing.apply(this, args) as unknown;
+        };
+      }
+
       setColors(containerRef.current, element, mdProps, canvasColor, viewType);
       view.updateEmbeddableLeafRef(element.id, leafRef.current);
       viewTypeRef.current = "markdown";
@@ -1061,6 +1085,19 @@ function RenderObsidianView({
         return;
       }
 
+      const currentMdProps = mdPropsRef.current;
+      const currentFile = fileRef.current;
+
+      if (currentMdProps?.lockedReadingMode) {
+        // Special case: if the card is a back-of-the-note card, ticking a checkbox in 
+        // reading mode triggers a change to the open file which would result in a view update.
+        if (currentFile?.path === view.file.path) {
+          view.setPreventReload();
+          void view.setEmbeddableNodeIsEditing();
+        }
+        return;
+      }
+
       /*if(isActiveRef.current && leafRef.current?.leaf) {
       setKeepOnTop();
       view.app.workspace.setActiveLeaf(leafRef.current.leaf, { focus: true });
@@ -1174,7 +1211,10 @@ function RenderObsidianView({
       activeEmbeddable?.element.id === element.id &&
       activeEmbeddable?.state === "active";
 
-    if (previousIsActive === isActiveRef.current) {
+    const lockChanged = prevLockRef.current !== mdProps?.lockedReadingMode;
+    prevLockRef.current = !!mdProps?.lockedReadingMode;
+
+    if (previousIsActive === isActiveRef.current && !lockChanged) {
       return;
     }
 
@@ -1190,13 +1230,21 @@ function RenderObsidianView({
         view.plugin.settings.markdownNodeOneClickEditing &&
         !containerRef.current?.hasClass("is-editing")
       ) {
-        //!node.isEditing
-        const newTheme = getTheme(view, themeRef.current);
-        containerRef.current?.addClasses(["is-editing", "is-focused"]);
-        void view.canvasNodeFactory.startEditing(node, newTheme);
+        if (mdPropsRef.current?.lockedReadingMode) {
+          if (fileRef.current?.path === view.file.path) {
+            view.setPreventReload();
+            void view.setEmbeddableNodeIsEditing();
+          }
+        } else {
+          //!node.isEditing
+          const newTheme = getTheme(view, themeRef.current);
+          containerRef.current?.addClasses(["is-editing", "is-focused"]);
+          void view.canvasNodeFactory.startEditing(node, newTheme);
+        }
       } else {
         containerRef.current?.removeClasses(["is-editing", "is-focused"]);
         view.canvasNodeFactory.stopEditing(node);
+        view.clearEmbeddableNodeIsEditing();
       }
       return;
     }
@@ -1245,12 +1293,13 @@ function RenderObsidianView({
     activeEmbeddable?.state,
     isActiveRef,
     activeEmbeddable?.element,
-    activeEmbeddable?.state,
     element,
     view,
     isEditingRef,
     view.canvasNodeFactory,
     themeRef.current,
+    mdProps?.lockedReadingMode,
+    file.path,
   ]);
 
   return null;

@@ -26,7 +26,7 @@ import {
 } from "src/utils/customEmbeddableUtils";
 import { getActivePDFPageNumberFromPDFView } from "src/utils/obsidianUtils";
 import { cleanSectionHeading } from "src/utils/pathUtils";
-import { EmbeddableSettings } from "src/shared/Dialogs/EmbeddableSettings";
+import { EmbeddableSettings, EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
 import {
   insertImageToView,
   openExternalLink,
@@ -35,6 +35,7 @@ import { getEA } from "src/core";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { URLs } from "src/constants/safeUrls";
 import { setStyle } from "src/utils/styleUtils";
+import { addAppendUpdateCustomData } from "src/utils/elementCustomDataUtils";
 
 type BlockCacheEntry = Awaited<
   ReturnType<ExcalidrawView["app"]["metadataCache"]["blockCache"]["getForFile"]>
@@ -109,7 +110,7 @@ export class EmbeddableMenu {
     const app = view.app;
     element = view.excalidrawAPI
       .getSceneElements()
-      .find((e: ExcalidrawElement) => e.id === element.id);
+      .find((e: ExcalidrawElement) => e.id === element.id) as ExcalidrawEmbeddableElement;
     if (!element) {
       return;
     }
@@ -364,6 +365,40 @@ export class EmbeddableMenu {
     );
   }
 
+  private async actionToggleLockReadingMode(
+    element: ExcalidrawEmbeddableElement,
+  ) {
+    if (!element) {
+      return;
+    }
+    const mdProps = (element.customData?.mdProps as EmbeddableMDCustomProps) ?? this.view.plugin.settings.embeddableMarkdownDefaults;
+    const isLocked = !!mdProps.lockedReadingMode;
+    mdProps.lockedReadingMode = !isLocked;
+    
+    const ea = getEA(this.view);
+    ea.copyViewElementsToEAforEditing([element]);
+    const eaEl = ea.getElement(element.id);
+    addAppendUpdateCustomData(eaEl, mdProps);
+    await ea.addElementsToView();
+    ea.destroy();
+
+    // Fetch the updated element reference from the scene
+    const api = this.view.excalidrawAPI;
+    const updatedElement = api.getSceneElements().find((e: ExcalidrawElement) => e.id === element.id) as ExcalidrawEmbeddableElement;
+
+    // Force an appState update so the React menu component re-renders
+    if (updatedElement) {
+      this.view.updateScene({
+        appState: {
+          activeEmbeddable: {
+            element: updatedElement,
+            state: "active"
+          }
+        }
+      });
+    }
+  }
+
   private actionProperties(element: ExcalidrawEmbeddableElement, file: TFile) {
     if (!element) {
       return;
@@ -472,6 +507,8 @@ export class EmbeddableMenu {
         );
         const top = `${y - 2.5 * ROOTELEMENTSIZE - appState.offsetTop}px`;
         const left = `${x - appState.offsetLeft}px`;
+        const mdProps = (element.customData?.mdProps as EmbeddableMDCustomProps) ?? view.plugin.settings.embeddableMarkdownDefaults;
+        const isLockedReadingMode = !!mdProps.lockedReadingMode;
 
         return (
           <div
@@ -528,6 +565,16 @@ export class EmbeddableMenu {
                   icon={ICONS.ZoomToBlock}
                 />
               )}
+              {isMD && (
+                <ActionButton
+                  key="LockReadingMode"
+                  title={isLockedReadingMode ? t("UNLOCK_READING_MODE") : t("LOCK_READING_MODE")}
+                  action={() =>
+                    void this.actionToggleLockReadingMode(element)
+                  }
+                  icon={isLockedReadingMode ? ICONS.Edit : ICONS.Read}
+                />
+              )}
               <ActionButton
                 key={"ZoomToElement"}
                 title={t("ZOOM_TO_FIT")}
@@ -570,9 +617,9 @@ export class EmbeddableMenu {
       }
     }
     if (isObsidianiFrame || isExcalidrawiFrame) {
-      const iframe = isExcalidrawiFrame
+      const iframe = (isExcalidrawiFrame
         ? api.getHTMLIFrameElement(element.id)
-        : view.getEmbeddableElementById(element.id);
+        : view.getEmbeddableElementById(element.id)) as HTMLIFrameElement;
       if (!iframe || !iframe.contentWindow) {
         return null;
       }

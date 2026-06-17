@@ -213,6 +213,8 @@ export const ICONS = {
       </text>
     </svg>
   ),
+  Edit: getIconAsJSX("pen-line"),
+  Read: getIconAsJSX("book-open"),
   Learn: getIconAsJSX("graduation-cap"),
   Github: getIconAsJSX("github"),
   YouTube: getIconAsJSX("youtube"),

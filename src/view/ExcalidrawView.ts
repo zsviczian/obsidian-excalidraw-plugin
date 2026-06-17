@@ -1674,6 +1674,9 @@ export default class ExcalidrawView
   }
 
   exitFullscreen() {
+    if (!this.isFullscreen()) {
+      return;
+    }
     if (this.toolsPanelRef && this.toolsPanelRef.current) {
       this.toolsPanelRef.current.setFullscreen(false);
     }
@@ -2731,6 +2734,8 @@ export default class ExcalidrawView
     //I noticed Obsidian calls this function twice when disabling the plugin
     //once from "unregisterView"
     //the from "detachLeavesOfType"
+    this.clearPreventReloadTimer();
+    this.clearEmbeddableNodeIsEditingTimer();
     if (!this.dropManager && !this.excalidrawRoot) {
       return;
     } //the view is already closed
@@ -2750,8 +2755,6 @@ export default class ExcalidrawView
       this.excalidrawRoot = null;
     }
 
-    this.clearPreventReloadTimer();
-    this.clearEmbeddableNodeIsEditingTimer();
     this.cancelDeferredSceneFileValidation();
     if (this.activeLoader) {
       this.activeLoader.terminate = true;

@@ -4838,6 +4838,10 @@ export class ExcalidrawAutomate {
   getPolyBool(): typeof PolyBool {
     const defaultEpsilon = 0.0000000001;
     PolyBool.epsilon(defaultEpsilon);
+
+    if ("buildLog" in PolyBool) {
+      PolyBool.buildLog(false);
+    }
     return PolyBool;
   }
 
