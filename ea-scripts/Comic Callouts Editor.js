@@ -1,0 +1,962 @@
+/*
+# Comic Book Callouts & Speech Bubbles Generator
+A highly modular, versatile script for creating comic-book style speech bubbles, thought clouds, screams, and narrative boxes within Excalidraw. 
+
+Features:
+- Live SVG Preview with correct padding and scale
+- Preset saving and loading (manage your own callout styles)
+- Edit & Replace existing callouts seamlessly
+- High-density polygon generation for perfect shapes, or low-density for dashed/dotted lines
+- Customizable base shapes (Oval, Box, Cloud, Spiky, Heart, Polygon, Ribbon)
+- Polygon rotation and Box corner roundness sliders
+- Base shape random explosion spikes with Randomize toggle for "Scream" bubbles
+- Various stem types (V-Shape, Curvy V, Lightning, Bubbles, Line) with adjustable position and bend
+- Sharp vs Rounded edge controls to fix crossing artifacts
+- Thought bubble size and spacing profiles
+- Granular color and appearance controls (Text, Stroke, Fill, Roughness)
+
+### Architecture Notes for Future Extensibility:
+1. **State Management**: The `state` object holds all parameters. Adding a new parameter means adding it to `DEFAULT_STATE`, creating a UI control for it, and using it in `buildElements()`.
+2. **Shape Generation Pipeline**:
+   - `generateBaseShape(rx, ry)`: Creates the closed perimeter of the main bubble.
+   - `injectStem(basePts, rx, ry)`: Splices the tail/stem into the base perimeter array.
+   - `buildElements(isFinal)`: Constructs the Excalidraw elements (Polygon + Text + Extras) into the EA workbench.
+   - `renderPreview()`: Generates an SVG snapshot for the live preview pane.
+*/
+
+// ---------------------------------------------------------
+// 1. Constants & State Initialization
+// ---------------------------------------------------------
+const st = ea.getExcalidrawAPI().getAppState();
+const SCRIPT_SETTINGS_KEY = "ComicBubbles_Settings_V5";
+
+// The default parameters requested for the script
+const DEFAULT_STATE = {
+  "text": "What a beautiful day\nto draw comics!",
+  "shapeType": "cloud",
+  "stemType": "curvy_v",
+  "strokeSharpness": "sharp",
+  "pathResolution": 50,
+  "cornerRoundness": 0.2,
+  "bumpCount": 15,
+  "bumpDepth": 0.15,
+  "bumpVariance": 0,
+  "randomVariance": false,
+  "polySides": 6,
+  "polyRotation": 0,
+  "heightRatio": 1,
+  "stemPosition": 35,
+  "stemBend": -65,
+  "stemLength": 110,
+  "stemWidth": 8,
+  "ribbonEnds": "both",
+  "addSpikes": false,
+  "spikeCount": 3,
+  "spikeWidth": 5,
+  "spikeHeight": 30,
+  "spikeDist": "Even",
+  "bubbleCount": 3,
+  "bubbleShrink": 30,
+  "wrapWidth": 250,
+  "textMargin": 35,
+  "strokeStyle": "solid",
+  "strokeWidth": 1,
+  "roughness": 0,
+  "fontFamily": 5,
+  "fontSize": 28,
+  "textColor": "black",
+  "bgColor": "#ffffff",
+  "strokeColor": "black",
+  "bgOpacity": 100
+};
+
+let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+let editTarget = null; // Stores IDs if we are replacing an existing callout
+
+// Load saved preferences & presets
+let scriptSettings = ea.getScriptSettings() || {};
+if (!scriptSettings[SCRIPT_SETTINGS_KEY]) {
+  scriptSettings[SCRIPT_SETTINGS_KEY] = {
+    presets: { "Default": JSON.parse(JSON.stringify(DEFAULT_STATE)) },
+    lastUsedPreset: "Default"
+  };
+}
+let presets = scriptSettings[SCRIPT_SETTINGS_KEY].presets || { "Default": JSON.parse(JSON.stringify(DEFAULT_STATE)) };
+let activePresetName = scriptSettings[SCRIPT_SETTINGS_KEY].lastUsedPreset || "Default";
+
+// Apply the last used preset if it exists
+if (presets[activePresetName]) {
+  Object.assign(state, presets[activePresetName]);
+}
+
+// Check for selected existing callout to edit
+const selectedEls = ea.getViewSelectedElements();
+for (let el of selectedEls) {
+  if (el.customData && el.customData.comicCallout) {
+    Object.assign(state, el.customData.comicCallout);
+    editTarget = {
+      polyId: el.id,
+      allIds: el.customData.comicCalloutIds || []
+    };
+    break; // Load the first one found and stop
+  }
+}
+
+// Helper to save preferences back to Obsidian
+async function savePrefs() {
+  let s = ea.getScriptSettings() || {};
+  if (!s[SCRIPT_SETTINGS_KEY]) s[SCRIPT_SETTINGS_KEY] = {};
+  s[SCRIPT_SETTINGS_KEY].presets = presets;
+  s[SCRIPT_SETTINGS_KEY].lastUsedPreset = activePresetName;
+  await ea.setScriptSettings(s);
+}
+
+// SVG Icons for the Shape Selector Buttons
+const SHAPES = [
+  { id: "oval", name: "Oval", svg: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="40" ry="25" fill="none" stroke="currentColor" stroke-width="6"/></svg>` },
+  { id: "box", name: "Rectangle / Box", svg: `<svg viewBox="0 0 100 100"><rect x="15" y="25" width="70" height="50" rx="10" fill="none" stroke="currentColor" stroke-width="6"/></svg>` },
+  { id: "cloud", name: "Cloud", svg: `<svg viewBox="0 0 100 100"><path d="M 25 50 a 15 15 0 0 1 15 -15 a 20 20 0 0 1 35 5 a 15 15 0 0 1 10 20 a 15 15 0 0 1 -15 15 l -30 0 a 15 15 0 0 1 -15 -25 z" fill="none" stroke="currentColor" stroke-width="6"/></svg>` },
+  { id: "spiky", name: "Spiky / Scream", svg: `<svg viewBox="0 0 100 100"><path d="M 50 15 L 60 35 L 85 30 L 70 50 L 85 70 L 60 65 L 50 85 L 40 65 L 15 70 L 30 50 L 15 30 L 40 35 Z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/></svg>` },
+  { id: "heart", name: "Heart", svg: `<svg viewBox="0 0 100 100"><path d="M 50 85 C 50 85 15 55 15 35 C 15 20 30 15 40 25 C 50 35 50 35 50 35 C 50 35 50 35 60 25 C 70 15 85 20 85 35 C 85 55 50 85 50 85 Z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/></svg>` },
+  { id: "polygon", name: "Polygon", svg: `<svg viewBox="0 0 100 100"><polygon points="25,20 75,20 95,50 75,80 25,80 5,50" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/></svg>` },
+  { id: "ribbon", name: "Ribbon", svg: `<svg viewBox="0 0 100 100"><polygon points="10,25 90,25 75,50 90,75 10,75 25,50" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/></svg>` },
+];
+
+// ---------------------------------------------------------
+// 2. Geometry & Math Generators
+// ---------------------------------------------------------
+
+/**
+ * Pseudo-random generator for reproducible jitter in explosion spikes and bumpy shapes
+ */
+function pseudoRandom(seed) {
+  let x = Math.sin(seed * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+/**
+ * Determines the target point count for the perimeter.
+ * Lower density is required for dashed/dotted strokes so the gaps render properly.
+ * Higher density is needed for complex curves.
+ */
+function getPointCount() {
+  if (state.strokeStyle !== "solid") {
+    return Math.max(10, Math.floor(state.pathResolution / 2));
+  }
+  if (state.shapeType === "cloud" || state.shapeType === "spiky") {
+    return Math.max(state.pathResolution * 4, state.bumpCount * 20);
+  }
+  return Math.max(20, Math.floor(state.pathResolution * 3));
+}
+
+/**
+ * Normalizes an arbitrary set of points to be centered at 0,0 
+ * and scaled to the specified X and Y radii.
+ */
+function normalizeAndScale(pts, rx, ry) {
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  pts.forEach(p => {
+    if (p[0] < minX) minX = p[0];
+    if (p[0] > maxX) maxX = p[0];
+    if (p[1] < minY) minY = p[1];
+    if (p[1] > maxY) maxY = p[1];
+  });
+
+  const scaleX = (rx * 2) / (maxX - minX || 1);
+  const scaleY = (ry * 2) / (maxY - minY || 1);
+  const cx = (maxX + minX) / 2;
+  const cy = (maxY + minY) / 2;
+
+  return pts.map(p => [
+    (p[0] - cx) * scaleX,
+    (p[1] - cy) * scaleY
+  ]);
+}
+
+/**
+ * Takes a low-density polygon (like a box or ribbon) and inserts 
+ * evenly spaced points along its perimeter.
+ */
+function interpolatePolygon(vertices, N) {
+  if (vertices.length === 0) return [];
+  let totalLen = 0;
+  const segments = [];
+  for (let i = 0; i < vertices.length; i++) {
+    const p1 = vertices[i];
+    const p2 = vertices[(i + 1) % vertices.length];
+    const len = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+    segments.push({ p1, p2, len });
+    totalLen += len;
+  }
+
+  const pts = [];
+  for (let i = 0; i < N; i++) {
+    const targetDist = (i / N) * totalLen;
+    let curDist = 0;
+    for (let seg of segments) {
+      if (curDist + seg.len >= targetDist || seg === segments[segments.length - 1]) {
+        const t = seg.len > 0 ? (targetDist - curDist) / seg.len : 0;
+        pts.push([
+          seg.p1[0] + t * (seg.p2[0] - seg.p1[0]),
+          seg.p1[1] + t * (seg.p2[1] - seg.p1[1])
+        ]);
+        break;
+      }
+      curDist += seg.len;
+    }
+  }
+  return pts;
+}
+
+/**
+ * Creates an array of points forming a circular arc.
+ * Used for rounded corners on boxes.
+ */
+function createArc(cx, cy, r, startAng, endAng, numPts) {
+  if (r <= 0) return [[cx, cy]];
+  const pts = [];
+  for (let i = 0; i <= numPts; i++) {
+    const a = startAng + (i / numPts) * (endAng - startAng);
+    pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]);
+  }
+  return pts;
+}
+
+/**
+ * Overlays explosion "Action" spikes onto a generated base shape.
+ */
+function injectSpikes(pts) {
+  const validShapeTypes = ['box', 'oval', 'ribbon', 'polygon'];
+  if (!state.addSpikes || state.spikeCount <= 0 || !validShapeTypes.includes(state.shapeType)) return pts;
+
+  const newPts = [...pts];
+  const N = newPts.length;
+  const step = N / state.spikeCount;
+
+  for (let i = 0; i < state.spikeCount; i++) {
+    let jitter = (state.spikeDist === "Random") ? (pseudoRandom(i + 100) - 0.5) * (step * 0.6) : 0;
+    let centerIdx = Math.floor(i * step + jitter + N) % N;
+
+    let spikeWidthPts = Math.floor(N * (state.spikeWidth / 100));
+    if (spikeWidthPts < 2) spikeWidthPts = 2;
+    let half = Math.floor(spikeWidthPts / 2);
+
+    const p1 = newPts[(centerIdx - half + N) % N];
+    const p2 = newPts[(centerIdx + half) % N];
+
+    const cx = (p1[0] + p2[0]) / 2;
+    const cy = (p1[1] + p2[1]) / 2;
+    const dirAng = Math.atan2(cy, cx);
+    const tip = [cx + Math.cos(dirAng) * state.spikeHeight, cy + Math.sin(dirAng) * state.spikeHeight];
+
+    // Replace the section of points with a V-shape extending to the tip
+    for (let j = -half + 1; j < half; j++) {
+      let idx = (centerIdx + j + N) % N;
+      let t = (j + half) / spikeWidthPts;
+      if (t < 0.5) {
+        let t2 = t * 2;
+        newPts[idx] = [p1[0] + t2 * (tip[0] - p1[0]), p1[1] + t2 * (tip[1] - p1[1])];
+      } else {
+        let t2 = (t - 0.5) * 2;
+        newPts[idx] = [tip[0] + t2 * (p2[0] - tip[0]), tip[1] + t2 * (p2[1] - tip[1])];
+      }
+    }
+  }
+  return newPts;
+}
+
+/**
+ * Calculates the full perimeter of the callout (excluding the stem).
+ */
+function generateBaseShape(rx, ry) {
+  let pts = [];
+  const N = getPointCount();
+
+  if (state.shapeType === 'spiky') {
+    // Precise generation for screams/stars without interpolation smoothing
+    const numPoints = state.bumpCount * 2;
+    for (let i = 0; i < numPoints; i++) {
+      const a = (i / numPoints) * 2 * Math.PI;
+      const rawV = state.randomVariance ? pseudoRandom(i + 42) : (Math.sin(i * 13.579) * 0.5 + 0.5);
+      let r;
+      if (i % 2 === 0) {
+        // Peak (outer point)
+        const peakVariance = state.bumpVariance > 0 ? (rawV * (state.bumpVariance / 100) * 0.5) : 0;
+        r = 1.0 + peakVariance;
+      } else {
+        // Valley (inner point)
+        const valleyVariance = state.bumpVariance > 0 ? (rawV * (state.bumpVariance / 100)) : 0;
+        r = 1.0 - state.bumpDepth - (state.bumpDepth * valleyVariance);
+      }
+      pts.push([r * Math.cos(a) * rx, r * Math.sin(a) * ry]);
+    }
+    return state.strokeSharpness === "sharp" ? pts : interpolatePolygon(pts, N);
+  }
+
+  if (state.shapeType === 'polygon') {
+    const polyVerts = [];
+    const phase = (state.polyRotation * Math.PI / 180) + ((state.polySides % 2 === 0) ? (Math.PI / state.polySides) : (Math.PI / 2));
+    for (let i = 0; i < state.polySides; i++) {
+      const a = phase + (i / state.polySides) * 2 * Math.PI;
+      polyVerts.push([Math.cos(a) * rx, Math.sin(a) * ry]);
+    }
+    pts = state.strokeSharpness === "sharp" ? polyVerts : interpolatePolygon(polyVerts, N);
+  }
+  else if (state.shapeType === 'box') {
+    const r = Math.min(rx, ry) * state.cornerRoundness;
+    if (r <= 0.1) {
+      pts = [[-rx, -ry], [rx, -ry], [rx, ry], [-rx, ry]];
+    } else {
+      const arcPts = Math.max(3, Math.floor(N / 8));
+      pts.push(...createArc(-rx + r, -ry + r, r, Math.PI, Math.PI * 1.5, arcPts));
+      pts.push(...createArc(rx - r, -ry + r, r, Math.PI * 1.5, Math.PI * 2, arcPts));
+      pts.push(...createArc(rx - r, ry - r, r, 0, Math.PI * 0.5, arcPts));
+      pts.push(...createArc(-rx + r, ry - r, r, Math.PI * 0.5, Math.PI, arcPts));
+    }
+    pts = state.strokeSharpness === "sharp" && r <= 0.1 ? pts : interpolatePolygon(pts, N);
+  }
+  else if (state.shapeType === 'ribbon') {
+    const ribVerts = [[-rx, -ry], [rx, -ry], [rx * 0.8, 0], [rx, ry], [-rx, ry], [-rx * 0.8, 0]];
+    if (state.ribbonEnds === "left") {
+      ribVerts[1] = [rx, -ry]; ribVerts[2] = [rx, 0]; ribVerts[3] = [rx, ry];
+    } else if (state.ribbonEnds === "right") {
+      ribVerts[0] = [-rx, -ry]; ribVerts[5] = [-rx, 0]; ribVerts[4] = [-rx, ry];
+    } else if (state.ribbonEnds === "none") {
+      ribVerts[1] = [rx, -ry]; ribVerts[2] = [rx, 0]; ribVerts[3] = [rx, ry];
+      ribVerts[0] = [-rx, -ry]; ribVerts[5] = [-rx, 0]; ribVerts[4] = [-rx, ry];
+    }
+    pts = state.strokeSharpness === "sharp" ? ribVerts : interpolatePolygon(ribVerts, N);
+  }
+  else {
+    // Parametric Shapes (Oval, Heart, Cloud)
+    for (let i = 0; i < N; i++) {
+      const t = (i / N) * 2 * Math.PI;
+      let x, y;
+
+      if (state.shapeType === 'heart') {
+        x = 16 * Math.pow(Math.sin(t), 3);
+        y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+        y -= 2; // center shift
+        x *= rx / 16;
+        y *= ry / 16;
+      } else {
+        const cosT = Math.cos(t);
+        const sinT = Math.sin(t);
+        let r = 1;
+
+        if (state.shapeType === 'cloud') {
+          const rawV = state.randomVariance ? pseudoRandom(i + 123) : (Math.sin(t * state.bumpCount * 12.345) * 0.5 + 0.5);
+          const v = state.bumpVariance > 0 ? rawV * (state.bumpVariance / 100) : 0;
+          r *= (1 + (state.bumpDepth * (1 - v)) * Math.abs(Math.sin(state.bumpCount * t / 2)));
+        }
+        x = r * cosT * rx;
+        y = r * sinT * ry;
+      }
+      pts.push([x, y]);
+    }
+  }
+
+  // Cloud and Heart don't strictly need normalizeAndScale if math is right, but it ensures fitting
+  if (state.shapeType === 'cloud' || state.shapeType === 'heart') {
+    pts = normalizeAndScale(pts, rx, ry);
+  }
+
+  return injectSpikes(pts);
+}
+
+// Generate quadratic bezier points
+function getQuadraticBezier(p0, p1, p2, steps) {
+  const pts = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const mt = 1 - t;
+    pts.push([
+      mt * mt * p0[0] + 2 * mt * t * p1[0] + t * t * p2[0],
+      mt * mt * p0[1] + 2 * mt * t * p1[1] + t * t * p2[1]
+    ]);
+  }
+  return pts;
+}
+
+// Shift array indices, useful for putting the "splice" point in the middle
+function rotateArray(arr, offset) {
+  if (!arr || arr.length === 0) return arr;
+  const k = ((offset % arr.length) + arr.length) % arr.length;
+  return [...arr.slice(k), ...arr.slice(0, k)];
+}
+
+/**
+ * Modifies the base perimeter to include the tail/stem.
+ */
+function injectStem(basePts, rx, ry) {
+  if (state.stemType === "none" || basePts.length < 3) return { polyPts: basePts, extraElements: [] };
+
+  const N = basePts.length;
+
+  // Map 0-100 to Perimeter Index
+  let centerIdx = Math.floor((state.stemPosition / 100) * N) % N;
+  const startPt = basePts[centerIdx];
+
+  // Base direction normal approximation (from center to point)
+  const dirAng = Math.atan2(startPt[1], startPt[0]);
+  // Apply bend for tip calculation
+  const tipAng = dirAng + (state.stemBend / 100) * (Math.PI / 2);
+
+  const tipX = startPt[0] + Math.cos(tipAng) * state.stemLength;
+  const tipY = startPt[1] + Math.sin(tipAng) * state.stemLength;
+  const tip = [tipX, tipY];
+
+  const gapSize = Math.max(2, Math.floor(N * (state.stemWidth / 100)));
+
+  // Non-splicing stems
+  if (state.stemType === "bubbles" || state.stemType === "line") {
+    const extraElements = [];
+
+    // Push the start outwards to the mathematical bounding perimeter to avoid spikes/valleys
+    let safeStartX = startPt[0];
+    let safeStartY = startPt[1];
+    if (state.shapeType === 'cloud' || state.shapeType === 'spiky' || state.addSpikes) {
+      safeStartX = Math.cos(dirAng) * rx * 1.1;
+      safeStartY = Math.sin(dirAng) * ry * 1.1;
+    }
+
+    if (state.stemType === "line") {
+      // Line stem gets a midpoint bend
+      const dx = tipX - startPt[0];
+      const dy = tipY - startPt[1];
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = -dy / len;
+      const ny = dx / len;
+      const bendRatio = state.stemBend / 100;
+      const bow = Math.max(15, state.stemLength * 0.4);
+      const midX = startPt[0] + dx * 0.5 + nx * bow * bendRatio;
+      const midY = startPt[1] + dy * 0.5 + ny * bow * bendRatio;
+
+      extraElements.push({ type: "line", pts: [[startPt[0], startPt[1]], [midX, midY], [tipX, tipY]] });
+    } else if (state.stemType === "bubbles") {
+      // Distribute bubbles proportionally along the distance vector
+      const radii = [];
+      let r = Math.max(5, state.stemWidth * 1.5);
+      for (let i = 0; i < state.bubbleCount; i++) {
+        radii.push(r);
+        r *= (1 - state.bubbleShrink / 100);
+      }
+
+      const relCenters = [0];
+      for (let i = 1; i < state.bubbleCount; i++) {
+        const dist = radii[i - 1] + radii[i];
+        relCenters.push(relCenters[i - 1] + dist);
+      }
+      const maxRelCenter = relCenters[relCenters.length - 1] || 1;
+
+      for (let i = 0; i < state.bubbleCount; i++) {
+        const t = maxRelCenter === 0 ? 0 : relCenters[i] / maxRelCenter;
+        const actualDist = (state.stemLength * 0.2) + (state.stemLength * 0.8) * t;
+        const bx = safeStartX + Math.cos(tipAng) * actualDist;
+        const by = safeStartY + Math.sin(tipAng) * actualDist;
+        extraElements.push({ type: "ellipse", x: bx, y: by, w: radii[i] * 2, h: radii[i] * 2 });
+      }
+    }
+
+    return { polyPts: basePts, extraElements };
+  }
+
+  // Splicing stems (v_shape, curvy_v, lightning)
+  const rotated = rotateArray(basePts, centerIdx - Math.floor(N / 2));
+  const spliceStart = Math.floor(N / 2) - Math.floor(gapSize / 2);
+
+  const p1 = rotated[spliceStart];
+  const p2 = rotated[spliceStart + gapSize - 1] || rotated[rotated.length - 1];
+  const mid = [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
+
+  let stemPts = [];
+  if (state.stemType === "v_shape") {
+    stemPts = [p1, tip, p2];
+  }
+  else if (state.stemType === "curvy_v") {
+    const bendRatio = state.stemBend / 100; // -1 to 1
+    const bow = Math.max(15, state.stemLength * 0.4);
+
+    const dx = tip[0] - mid[0];
+    const dy = tip[1] - mid[1];
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len;
+    const ny = dx / len;
+
+    // Asymmetric bending to make the curve more pronounced on the active side
+    const bow1 = bow * (1 + bendRatio * 0.6);
+    const bow2 = bow * (1 - bendRatio * 0.6);
+
+    const cx1 = p1[0] + (tip[0] - p1[0]) * 0.5 + nx * bow1 * bendRatio;
+    const cy1 = p1[1] + (tip[1] - p1[1]) * 0.5 + ny * bow1 * bendRatio;
+
+    const cx2 = tip[0] * 0.5 + p2[0] * 0.5 + nx * bow2 * bendRatio;
+    const cy2 = tip[1] * 0.5 + p2[1] * 0.5 + ny * bow2 * bendRatio;
+
+    const curveSteps = state.strokeSharpness === "sharp" ? 25 : 10;
+    stemPts.push(...getQuadraticBezier(p1, [cx1, cy1], tip, curveSteps));
+    stemPts.push(...getQuadraticBezier(tip, [cx2, cy2], p2, curveSteps));
+  }
+  else if (state.stemType === "lightning") {
+    // Classic Lightning double zig-zag math
+    const dx = tip[0] - mid[0];
+    const dy = tip[1] - mid[1];
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len;
+    const ny = dx / len;
+
+    const w = Math.max(10, state.stemWidth * 1.5);
+
+    // Outward zig
+    const z1 = [p1[0] + dx * 0.55 + nx * w, p1[1] + dy * 0.55 + ny * w];
+    // Inward zag
+    const z2 = [p1[0] + dx * 0.40 - nx * w * 0.5, p1[1] + dy * 0.40 - ny * w * 0.5];
+
+    // Return outward zig
+    const y1 = [p2[0] + dx * 0.55 - nx * w, p2[1] + dy * 0.55 - ny * w];
+    // Return inward zag
+    const y2 = [p2[0] + dx * 0.40 + nx * w * 0.5, p2[1] + dy * 0.40 + ny * w * 0.5];
+
+    stemPts = [p1, z1, z2, tip, y1, y2, p2];
+  }
+
+  rotated.splice(spliceStart, gapSize, ...stemPts);
+  const finalPts = rotateArray(rotated, -(centerIdx - Math.floor(N / 2)));
+
+  return { polyPts: finalPts, extraElements: [] };
+}
+
+
+// ---------------------------------------------------------
+// 3. EA Builder & Preview Loop
+// ---------------------------------------------------------
+
+let previewTimeout;
+
+async function buildElements(isFinal = false) {
+  ea.clear();
+
+  if (isFinal && editTarget) {
+    const viewEls = ea.getViewElements();
+    const elsToDelete = viewEls.filter(el => editTarget.allIds.includes(el.id) || el.id === editTarget.polyId);
+    if (elsToDelete.length > 0) {
+      ea.copyViewElementsToEAforEditing(elsToDelete);
+      ea.getElements().forEach(e => e.isDeleted = true);
+    }
+  }
+
+  // 1. Text Metrics
+  const fontStr = window.ExcalidrawLib.getFontString({ fontFamily: state.fontFamily, fontSize: state.fontSize });
+  const wrappedText = window.ExcalidrawLib.wrapText(state.text, fontStr, state.wrapWidth);
+  const metrics = ea.measureText(wrappedText);
+
+  // 2. Calculate Dimensions
+  let paddingMultiplier = 1;
+  if (state.shapeType === 'cloud' || state.shapeType === 'spiky') {
+    paddingMultiplier = 1 / (1 - Math.max(state.bumpDepth, 0.2));
+  }
+
+  const rx = (metrics.width / 2 + state.textMargin) * paddingMultiplier;
+  const ry = (metrics.height / 2 + state.textMargin) * paddingMultiplier * state.heightRatio;
+
+  // 3. Setup Global Styles
+  ea.canvas.viewBackgroundColor = st.viewBackgroundColor;
+  ea.style.strokeColor = state.strokeColor;
+  ea.style.strokeWidth = state.strokeWidth;
+  ea.style.roughness = parseInt(state.roughness);
+  ea.style.strokeStyle = state.strokeStyle;
+
+  const bgRGB = ea.getCM(state.bgColor).alphaTo(state.bgOpacity / 100).stringRGB({ alpha: true });
+  ea.style.backgroundColor = bgRGB;
+  ea.style.fillStyle = st.currentItemFillStyle || "solid";
+
+  // 4. Generate Perimeter & Inject Stem
+  const basePts = generateBaseShape(rx, ry);
+  const { polyPts, extraElements } = injectStem(basePts, rx, ry);
+
+  // EXPLICIT CLOSURE to prevent missing segments in Excalidraw polygon rendering
+  if (polyPts.length > 0) {
+    polyPts.push([polyPts[0][0], polyPts[0][1]]);
+  }
+
+  // 5. Draw Polygon
+  const polyId = ea.addLine(polyPts);
+  const polyEl = ea.getElement(polyId);
+  polyEl.polygon = true;
+
+  // Only apply Excalidraw's native roundness if requested AND if it's an appropriate shape
+  const blockNativeRoundness = ['ribbon', 'polygon', 'spiky', 'box'].includes(state.shapeType);
+  polyEl.roundness = state.strokeSharpness === "round" && !blockNativeRoundness ? { type: 2 } : null;
+
+  // 6. Add extra elements (bubbles, lines)
+  const allIds = [polyId];
+  for (let extra of extraElements) {
+    if (extra.type === "ellipse") {
+      const eId = ea.addEllipse(extra.x - extra.w / 2, extra.y - extra.h / 2, extra.w, extra.h);
+      ea.getElement(eId).roundness = state.strokeSharpness === "round" ? { type: 2 } : null;
+      allIds.push(eId);
+    } else if (extra.type === "line") {
+      const oldBg = ea.style.backgroundColor;
+      ea.style.backgroundColor = "transparent";
+      const lId = ea.addLine(extra.pts);
+      ea.getElement(lId).roundness = state.strokeSharpness === "round" ? { type: 2 } : null;
+      ea.style.backgroundColor = oldBg;
+      allIds.push(lId);
+    }
+  }
+
+  // 7. Add Text LAST (so it renders on top in z-index)
+  ea.style.strokeColor = state.textColor;
+  ea.style.backgroundColor = "transparent";
+
+  const textId = ea.addText(0, 0, wrappedText, {
+    textAlign: "center",
+    textVerticalAlign: "middle",
+    autoResize: true,
+    box: false
+  });
+
+  const textEl = ea.getElement(textId);
+  textEl.x = -textEl.width / 2;
+  textEl.y = -textEl.height / 2;
+  allIds.push(textId);
+
+  // 8. Fix Z-index order inside EA's elements array
+  const viewEls = ea.getElements();
+  const tIdx = viewEls.findIndex(e => e.id === textId);
+  if (tIdx > -1) {
+    const t = viewEls.splice(tIdx, 1)[0];
+    viewEls.push(t);
+  }
+  const pIdx = viewEls.findIndex(e => e.id === polyId);
+  if (pIdx > 0) {
+    const p = viewEls.splice(pIdx, 1)[0];
+    viewEls.unshift(p);
+  }
+
+  // 9. Add Metadata & Group
+  if (isFinal) {
+    ea.addAppendUpdateCustomData(polyId, {
+      comicCallout: state,
+      comicCalloutIds: allIds
+    });
+  }
+  ea.addToGroup(allIds);
+}
+
+async function renderPreview(previewContainer) {
+  await buildElements(false);
+  // Leverage Excalidraw's SVG export padding rather than injecting invisible blocks
+  const svg = await ea.createSVG(undefined, undefined, undefined, undefined, undefined, 10);
+  previewContainer.innerHTML = svg.outerHTML;
+}
+
+function scheduleUpdate(previewContainer) {
+  clearTimeout(previewTimeout);
+  previewTimeout = setTimeout(() => {
+    renderPreview(previewContainer);
+  }, 150);
+}
+
+
+// ---------------------------------------------------------
+// 4. User Interface (Floating Modal)
+// ---------------------------------------------------------
+
+const modal = new ea.FloatingModal(ea.plugin.app);
+modal.titleEl.setText("Comic Book Callouts & Bubbles");
+modal.modalEl.style.width = "760px";
+modal.modalEl.style.maxWidth = "85vw";
+modal.modalEl.style.maxHeight = "85vh";
+
+const container = modal.contentEl.createDiv({
+  attr: { style: "display: grid; grid-template-columns: 380px 1fr; gap: 20px; height: 75vh;" }
+});
+
+// CSS Injection
+container.createEl("style", {
+  text: `
+    .comic-textarea-setting { display: block !important; border-top: none !important; padding-top: 0 !important; }
+    .comic-textarea-setting .setting-item-info { display: none !important; }
+    .comic-textarea-setting .setting-item-control { display: block !important; width: 100% !important; justify-content: stretch !important; }
+    .comic-textarea-setting textarea { width: 100% !important; box-sizing: border-box !important; min-height: 80px; resize: vertical; }
+    .comic-section-header { margin-top: 15px; display: block; color: var(--text-accent); border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 5px; margin-bottom: 10px; font-weight: bold; font-size: 1.1em;}
+    .comic-preset-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--background-modifier-border); }
+    .comic-preset-bar .dropdown { flex-grow: 1; margin-left: 4px; }
+    .comic-btn-icon { padding: 4px 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: var(--interactive-normal); border-radius: 4px; }
+    .comic-btn-icon:hover { background: var(--interactive-hover); }
+`});
+
+const leftCol = container.createDiv({
+  attr: { style: "overflow-y: auto; padding-right: 15px; display: flex; flex-direction: column; gap: 10px;" }
+});
+
+const rightCol = container.createDiv({
+  attr: { style: "display: flex; flex-direction: column; gap: 15px; flex: 1 1 auto; min-height: 0;" }
+});
+
+const previewContainer = rightCol.createDiv({
+  attr: { style: `flex: 1 1 auto; min-height: 0; border: 1px solid var(--background-modifier-border); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; background-color: ${st.viewBackgroundColor};` }
+});
+
+// --- Settings Render Function ---
+function renderSettings() {
+  leftCol.empty();
+
+  // -- Presets UI --
+  leftCol.createEl("div", { text: "Presets", cls: "comic-section-header", attr: { style: "margin-top: 0;" } });
+  const presetBar = leftCol.createDiv({ cls: "comic-preset-bar" });
+  const pSelect = presetBar.createEl("select", { cls: "dropdown" });
+  Object.keys(presets).forEach(p => pSelect.createEl("option", { text: p, value: p }));
+  pSelect.value = activePresetName;
+  pSelect.onchange = () => {
+    activePresetName = pSelect.value;
+    Object.assign(state, presets[activePresetName]);
+    scheduleUpdate(previewContainer);
+    renderSettings();
+  };
+
+  const btnSave = presetBar.createEl("div", { cls: "comic-btn-icon", attr: { title: "Save Preset" } });
+  btnSave.innerHTML = ea.obsidian.getIcon("save").outerHTML;
+  btnSave.onclick = async () => {
+    presets[activePresetName] = JSON.parse(JSON.stringify(state));
+    await savePrefs();
+    new Notice(`Preset "${activePresetName}" saved.`);
+  };
+
+  const btnSaveAs = presetBar.createEl("div", { cls: "comic-btn-icon", attr: { title: "Save As New Preset" } });
+  btnSaveAs.innerHTML = ea.obsidian.getIcon("plus").outerHTML;
+  btnSaveAs.onclick = async () => {
+    const name = await utils.inputPrompt("New Preset Name:", "Name", "Custom Callout");
+    if (name && name.trim()) {
+      activePresetName = name.trim();
+      presets[activePresetName] = JSON.parse(JSON.stringify(state));
+      await savePrefs();
+      renderSettings();
+      new Notice(`Preset "${activePresetName}" created.`);
+    }
+  };
+
+  const btnDel = presetBar.createEl("div", { cls: "comic-btn-icon", attr: { title: "Delete Preset", style: "color: var(--text-error);" } });
+  btnDel.innerHTML = ea.obsidian.getIcon("trash").outerHTML;
+  btnDel.onclick = async () => {
+    if (activePresetName === "Default") {
+      new Notice("Cannot delete the Default preset.");
+      return;
+    }
+    delete presets[activePresetName];
+    activePresetName = "Default";
+    Object.assign(state, presets["Default"]);
+    await savePrefs();
+    renderSettings();
+    scheduleUpdate(previewContainer);
+    new Notice(`Preset deleted.`);
+  };
+
+  // -- Text Input --
+  leftCol.createEl("div", { text: "Dialogue Text", cls: "comic-section-header" });
+  const textSetting = new ea.obsidian.Setting(leftCol).addTextArea(text => {
+    text.setValue(state.text).onChange(val => { state.text = val; scheduleUpdate(previewContainer); });
+  });
+  textSetting.settingEl.classList.add("comic-textarea-setting");
+
+  // -- Base Shape Selector --
+  leftCol.createEl("div", { text: "Base Shape", cls: "comic-section-header" });
+  const shapeGrid = leftCol.createDiv({
+    attr: { style: "display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px 8px; margin-bottom: 15px;" }
+  });
+
+  SHAPES.forEach((shape) => {
+    const isActive = state.shapeType === shape.id;
+    const btn = shapeGrid.createEl("button", {
+      attr: {
+        title: shape.name,
+        "aria-label": shape.name,
+        style: "height: 40px; padding: 4px; cursor: pointer;" + (isActive ? "background-color: var(--background-modifier-hover); color: var(--interactive-accent); border-color: var(--interactive-accent);" : "")
+      }
+    });
+    btn.innerHTML = shape.svg;
+    btn.onclick = () => {
+      state.shapeType = shape.id;
+      scheduleUpdate(previewContainer);
+      renderSettings();
+    };
+  });
+
+  // -- Shape Modifiers --
+  if (state.shapeType === "polygon") {
+    new ea.obsidian.Setting(leftCol).setName("Polygon Vertices")
+      .addSlider(slider => slider.setLimits(3, 12, 1).setValue(state.polySides).onChange(val => { state.polySides = val; scheduleUpdate(previewContainer); }));
+    new ea.obsidian.Setting(leftCol).setName("Polygon Rotation")
+      .addSlider(slider => slider.setLimits(0, 360, 5).setValue(state.polyRotation).onChange(val => { state.polyRotation = val; scheduleUpdate(previewContainer); }));
+  }
+  if (state.shapeType === "cloud" || state.shapeType === "spiky") {
+    new ea.obsidian.Setting(leftCol).setName("Spike / Bump Count")
+      .addSlider(slider => slider.setLimits(4, 30, 1).setValue(state.bumpCount).onChange(val => { state.bumpCount = val; scheduleUpdate(previewContainer); }));
+    new ea.obsidian.Setting(leftCol).setName("Spike / Bump Depth")
+      .addSlider(slider => slider.setLimits(0.05, 0.4, 0.01).setValue(state.bumpDepth).onChange(val => { state.bumpDepth = val; scheduleUpdate(previewContainer); }));
+    new ea.obsidian.Setting(leftCol).setName("Bump Variance")
+      .addSlider(slider => slider.setLimits(0, 100, 5).setValue(state.bumpVariance).onChange(val => { state.bumpVariance = val; scheduleUpdate(previewContainer); }));
+    new ea.obsidian.Setting(leftCol).setName("Randomize Variance")
+      .addToggle(t => t.setValue(state.randomVariance).onChange(val => { state.randomVariance = val; scheduleUpdate(previewContainer); }));
+  }
+  if (state.shapeType === "box") {
+    new ea.obsidian.Setting(leftCol).setName("Corner Roundness")
+      .addSlider(slider => slider.setLimits(0, 1, 0.05).setValue(state.cornerRoundness).onChange(val => { state.cornerRoundness = val; scheduleUpdate(previewContainer); }));
+  }
+  if (state.shapeType === "ribbon") {
+    new ea.obsidian.Setting(leftCol).setName("Ribbon Tails")
+      .addDropdown(d => d.addOption("both", "Both").addOption("left", "Left").addOption("right", "Right").addOption("none", "None")
+        .setValue(state.ribbonEnds).onChange(val => { state.ribbonEnds = val; scheduleUpdate(previewContainer); }));
+  }
+
+  new ea.obsidian.Setting(leftCol).setName("Relative Height")
+    .addSlider(slider => slider.setLimits(0.5, 2.0, 0.1).setValue(state.heightRatio).onChange(val => { state.heightRatio = val; scheduleUpdate(previewContainer); }));
+
+  // -- Random Spikes --
+  if (['box', 'oval', 'ribbon', 'polygon'].includes(state.shapeType)) {
+    const spikeGroup = leftCol.createDiv();
+    spikeGroup.createEl("div", { text: "Explosion Spikes", cls: "comic-section-header" });
+    new ea.obsidian.Setting(spikeGroup).setName("Add Spikes")
+      .addToggle(t => t.setValue(state.addSpikes).onChange(val => { state.addSpikes = val; renderSettings(); scheduleUpdate(previewContainer); }));
+
+    if (state.addSpikes) {
+      new ea.obsidian.Setting(spikeGroup).setName("Spike Count")
+        .addSlider(s => s.setLimits(1, 20, 1).setValue(state.spikeCount).onChange(val => { state.spikeCount = val; scheduleUpdate(previewContainer); }));
+      new ea.obsidian.Setting(spikeGroup).setName("Base Width (%)")
+        .addSlider(s => s.setLimits(2, 20, 1).setValue(state.spikeWidth).onChange(val => { state.spikeWidth = val; scheduleUpdate(previewContainer); }));
+      new ea.obsidian.Setting(spikeGroup).setName("Spike Height")
+        .addSlider(s => s.setLimits(10, 100, 5).setValue(state.spikeHeight).onChange(val => { state.spikeHeight = val; scheduleUpdate(previewContainer); }));
+      new ea.obsidian.Setting(spikeGroup).setName("Distribution")
+        .addDropdown(d => d.addOption("Even", "Even").addOption("Random", "Random").setValue(state.spikeDist).onChange(val => { state.spikeDist = val; scheduleUpdate(previewContainer); }));
+    }
+  }
+
+  // -- Stem Settings --
+  leftCol.createEl("div", { text: "Tail / Stem", cls: "comic-section-header" });
+  new ea.obsidian.Setting(leftCol).setName("Type")
+    .addDropdown(d => d.addOption("v_shape", "V-Shape").addOption("curvy_v", "Curvy Swoop").addOption("lightning", "Lightning").addOption("bubbles", "Thought Bubbles").addOption("line", "Line").addOption("none", "None")
+      .setValue(state.stemType).onChange(val => { state.stemType = val; renderSettings(); scheduleUpdate(previewContainer); }));
+
+  new ea.obsidian.Setting(leftCol).setName("Perimeter Position (%)")
+    .addSlider(slider => slider.setLimits(0, 100, 1).setValue(state.stemPosition).onChange(val => { state.stemPosition = val; scheduleUpdate(previewContainer); }));
+
+  if (state.stemType === "curvy_v" || state.stemType === "line") {
+    new ea.obsidian.Setting(leftCol).setName("Bend / Angle Deflection")
+      .setDesc("-100 (Left/Up) to 100 (Right/Down)")
+      .addSlider(slider => slider.setLimits(-100, 100, 5).setValue(state.stemBend).onChange(val => { state.stemBend = val; scheduleUpdate(previewContainer); }));
+  }
+
+  new ea.obsidian.Setting(leftCol).setName("Stem Length")
+    .addSlider(slider => slider.setLimits(20, 150, 5).setValue(state.stemLength).onChange(val => { state.stemLength = val; scheduleUpdate(previewContainer); }));
+
+  if (state.stemType !== "bubbles" && state.stemType !== "line" && state.stemType !== "none") {
+    new ea.obsidian.Setting(leftCol).setName("Stem Base Width (%)")
+      .addSlider(slider => slider.setLimits(2, 40, 1).setValue(state.stemWidth).onChange(val => { state.stemWidth = val; scheduleUpdate(previewContainer); }));
+  }
+
+  if (state.stemType === "bubbles") {
+    new ea.obsidian.Setting(leftCol).setName("Bubble Count")
+      .addSlider(slider => slider.setLimits(2, 10, 1).setValue(state.bubbleCount).onChange(val => { state.bubbleCount = val; scheduleUpdate(previewContainer); }));
+    new ea.obsidian.Setting(leftCol).setName("Bubble Shrink (%)")
+      .setDesc("How fast bubbles diminish.")
+      .addSlider(slider => slider.setLimits(0, 90, 5).setValue(state.bubbleShrink).onChange(val => { state.bubbleShrink = val; scheduleUpdate(previewContainer); }));
+  }
+
+  // -- Appearance --
+  leftCol.createEl("div", { text: "Appearance", cls: "comic-section-header" });
+
+  new ea.obsidian.Setting(leftCol).setName("Path Resolution")
+    .setDesc("Lower for dashed styles, higher for smoothness.")
+    .addSlider(slider => slider.setLimits(10, 200, 10).setValue(state.pathResolution).onChange(val => { state.pathResolution = val; scheduleUpdate(previewContainer); }));
+
+  new ea.obsidian.Setting(leftCol).setName("Text Wrap Width")
+    .addSlider(slider => slider.setLimits(100, 600, 10).setValue(state.wrapWidth).onChange(val => { state.wrapWidth = val; scheduleUpdate(previewContainer); }));
+
+  new ea.obsidian.Setting(leftCol).setName("Padding")
+    .addSlider(slider => slider.setLimits(10, 100, 5).setValue(state.textMargin).onChange(val => { state.textMargin = val; scheduleUpdate(previewContainer); }));
+
+  new ea.obsidian.Setting(leftCol).setName("Stroke Style")
+    .addDropdown(d => d.addOption("solid", "Solid").addOption("dashed", "Dashed").addOption("dotted", "Dotted")
+      .setValue(state.strokeStyle).onChange(val => { state.strokeStyle = val; scheduleUpdate(previewContainer); }));
+
+  new ea.obsidian.Setting(leftCol).setName("Edges (Sharp/Round)")
+    .addDropdown(d => d.addOption("round", "Rounded").addOption("sharp", "Sharp")
+      .setValue(state.strokeSharpness).onChange(val => { state.strokeSharpness = val; scheduleUpdate(previewContainer); }));
+
+  new ea.obsidian.Setting(leftCol).setName("Sloppiness")
+    .addDropdown(d => d.addOption("0", "Architect").addOption("1", "Artist").addOption("2", "Cartoonist")
+      .setValue(String(state.roughness)).onChange(val => { state.roughness = parseInt(val); scheduleUpdate(previewContainer); }));
+
+  new ea.obsidian.Setting(leftCol).setName("Stroke Width")
+    .addSlider(slider => slider.setLimits(1, 10, 0.5).setValue(state.strokeWidth).onChange(val => { state.strokeWidth = val; scheduleUpdate(previewContainer); }));
+
+  new ea.obsidian.Setting(leftCol).setName("Background Opacity")
+    .addSlider(slider => slider.setLimits(0, 100, 5).setValue(state.bgOpacity).onChange(val => { state.bgOpacity = val; scheduleUpdate(previewContainer); }));
+
+  // Colors
+  leftCol.createEl("div", { text: "Colors", cls: "comic-section-header" });
+  const mkColorPicker = (container, name, stateKey) => {
+    new ea.obsidian.Setting(container).setName(name).addButton(btn => {
+      const updateBtnColor = (color) => {
+        btn.buttonEl.style.backgroundColor = color;
+        btn.buttonEl.style.color = ea.getCM(color).isDark() ? "white" : "black";
+        btn.setButtonText(color);
+      };
+      updateBtnColor(state[stateKey]);
+      btn.onClick(async () => {
+        const newColor = await ea.showColorPicker(btn.buttonEl, "elementStroke");
+        if (newColor) {
+          state[stateKey] = newColor;
+          updateBtnColor(newColor);
+          scheduleUpdate(previewContainer);
+        }
+      });
+    });
+  };
+  mkColorPicker(leftCol, "Text Color", "textColor");
+  mkColorPicker(leftCol, "Stroke Color", "strokeColor");
+  mkColorPicker(leftCol, "Fill Color", "bgColor");
+}
+
+renderSettings();
+
+
+// Actions
+const actionsContainer = rightCol.createDiv({
+  attr: { style: "display: flex; justify-content: flex-end; gap: 15px; flex: 0 0 auto;" }
+});
+
+const cancelBtn = actionsContainer.createEl("button", { text: "Cancel" });
+cancelBtn.onclick = () => {
+  modal.close();
+};
+
+if (editTarget) {
+  const replaceBtn = actionsContainer.createEl("button", { text: "Replace Selected", cls: "mod-warning" });
+  replaceBtn.onclick = async () => {
+    await savePrefs();
+    modal.close();
+    await buildElements(true);
+    await ea.addElementsToView(false, false, true);
+  };
+}
+
+const insertBtn = actionsContainer.createEl("button", { text: editTarget ? "Insert as New" : "Insert Bubble", cls: "mod-cta" });
+insertBtn.onclick = async () => {
+  await savePrefs();
+  editTarget = null; // Clear target so we don't delete anything
+  modal.close();
+  await buildElements(true);
+  await ea.addElementsToView(true, false, true);
+};
+
+// Initial Render
+scheduleUpdate(previewContainer);
+
+modal.onClose = () => {
+  savePrefs();
+  clearTimeout(previewTimeout);
+};
+
+modal.open();
