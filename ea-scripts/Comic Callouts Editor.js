@@ -140,13 +140,12 @@ function pseudoRandom(seed) {
  * Higher density is needed for complex curves.
  */
 function getPointCount() {
-  if (state.strokeStyle !== "solid") {
-    return Math.max(10, Math.floor(state.pathResolution / 2));
-  }
   if (state.shapeType === "cloud" || state.shapeType === "spiky") {
-    return Math.max(state.pathResolution * 4, state.bumpCount * 20);
+    // Balance pathResolution with a minimum required for bumps so it doesn't collapse,
+    // without inflating the point count to the point of ruining dashed lines.
+    return Math.max(Math.floor(state.pathResolution * 3), state.bumpCount * 3);
   }
-  return Math.max(20, Math.floor(state.pathResolution * 3));
+  return Math.max(10, Math.floor(state.pathResolution * 3));
 }
 
 /**
@@ -190,19 +189,15 @@ function interpolatePolygon(vertices, N) {
   }
 
   const pts = [];
-  for (let i = 0; i < N; i++) {
-    const targetDist = (i / N) * totalLen;
-    let curDist = 0;
-    for (let seg of segments) {
-      if (curDist + seg.len >= targetDist || seg === segments[segments.length - 1]) {
-        const t = seg.len > 0 ? (targetDist - curDist) / seg.len : 0;
-        pts.push([
-          seg.p1[0] + t * (seg.p2[0] - seg.p1[0]),
-          seg.p1[1] + t * (seg.p2[1] - seg.p1[1])
-        ]);
-        break;
-      }
-      curDist += seg.len;
+  for (let seg of segments) {
+    // Preserve vertices and interpolate proportional lengths cleanly
+    const segPts = Math.max(1, Math.round((seg.len / totalLen) * N));
+    for (let i = 0; i < segPts; i++) {
+      const t = i / segPts;
+      pts.push([
+        seg.p1[0] + t * (seg.p2[0] - seg.p1[0]),
+        seg.p1[1] + t * (seg.p2[1] - seg.p1[1])
+      ]);
     }
   }
   return pts;
@@ -300,20 +295,21 @@ function generateBaseShape(rx, ry) {
       const a = phase + (i / state.polySides) * 2 * Math.PI;
       polyVerts.push([Math.cos(a) * rx, Math.sin(a) * ry]);
     }
-    pts = state.strokeSharpness === "sharp" ? polyVerts : interpolatePolygon(polyVerts, N);
+    pts = interpolatePolygon(polyVerts, N); // Always interpolate to allow responsive stems
   }
   else if (state.shapeType === 'box') {
     const r = Math.min(rx, ry) * state.cornerRoundness;
     if (r <= 0.1) {
       pts = [[-rx, -ry], [rx, -ry], [rx, ry], [-rx, ry]];
+      pts = interpolatePolygon(pts, N); // Always interpolate
     } else {
       const arcPts = Math.max(3, Math.floor(N / 8));
       pts.push(...createArc(-rx + r, -ry + r, r, Math.PI, Math.PI * 1.5, arcPts));
       pts.push(...createArc(rx - r, -ry + r, r, Math.PI * 1.5, Math.PI * 2, arcPts));
       pts.push(...createArc(rx - r, ry - r, r, 0, Math.PI * 0.5, arcPts));
       pts.push(...createArc(-rx + r, ry - r, r, Math.PI * 0.5, Math.PI, arcPts));
+      pts = interpolatePolygon(pts, N); // Always interpolate
     }
-    pts = state.strokeSharpness === "sharp" && r <= 0.1 ? pts : interpolatePolygon(pts, N);
   }
   else if (state.shapeType === 'ribbon') {
     const ribVerts = [[-rx, -ry], [rx, -ry], [rx * 0.8, 0], [rx, ry], [-rx, ry], [-rx * 0.8, 0]];
@@ -325,7 +321,7 @@ function generateBaseShape(rx, ry) {
       ribVerts[1] = [rx, -ry]; ribVerts[2] = [rx, 0]; ribVerts[3] = [rx, ry];
       ribVerts[0] = [-rx, -ry]; ribVerts[5] = [-rx, 0]; ribVerts[4] = [-rx, ry];
     }
-    pts = state.strokeSharpness === "sharp" ? ribVerts : interpolatePolygon(ribVerts, N);
+    pts = interpolatePolygon(ribVerts, N); // Always interpolate
   }
   else {
     // Parametric Shapes (Oval, Heart, Cloud)
@@ -362,6 +358,37 @@ function generateBaseShape(rx, ry) {
   }
 
   return injectSpikes(pts);
+}
+
+/**
+ * Takes a low-density polygon (like a box or ribbon) and inserts 
+ * evenly spaced points along its perimeter.
+ */
+function interpolatePolygon(vertices, N) {
+  if (vertices.length === 0) return [];
+  let totalLen = 0;
+  const segments = [];
+  for (let i = 0; i < vertices.length; i++) {
+    const p1 = vertices[i];
+    const p2 = vertices[(i + 1) % vertices.length];
+    const len = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+    segments.push({ p1, p2, len });
+    totalLen += len;
+  }
+
+  const pts = [];
+  for (let seg of segments) {
+    // Preserve vertices and interpolate proportional lengths cleanly
+    const segPts = Math.max(1, Math.round((seg.len / totalLen) * N));
+    for (let i = 0; i < segPts; i++) {
+      const t = i / segPts;
+      pts.push([
+        seg.p1[0] + t * (seg.p2[0] - seg.p1[0]),
+        seg.p1[1] + t * (seg.p2[1] - seg.p1[1])
+      ]);
+    }
+  }
+  return pts;
 }
 
 // Generate quadratic bezier points
@@ -432,11 +459,19 @@ function injectStem(basePts, rx, ry) {
       const midX = startPt[0] + dx * 0.5 + nx * bow * bendRatio;
       const midY = startPt[1] + dy * 0.5 + ny * bow * bendRatio;
 
-      extraElements.push({ type: "line", pts: [[startPt[0], startPt[1]], [midX, midY], [tipX, tipY]] });
+      // Apply second section bend
+      const seg2Length = Math.hypot(tipX - midX, tipY - midY);
+      const origSeg2Angle = Math.atan2(tipY - midY, tipX - midX);
+      const finalSeg2Angle = origSeg2Angle + (state.lineSecondBend || 0) * Math.PI / 180;
+
+      const finalTipX = midX + Math.cos(finalSeg2Angle) * seg2Length;
+      const finalTipY = midY + Math.sin(finalSeg2Angle) * seg2Length;
+
+      extraElements.push({ type: "line", pts: [[startPt[0], startPt[1]], [midX, midY], [finalTipX, finalTipY]] });
     } else if (state.stemType === "bubbles") {
       // Distribute bubbles proportionally along the distance vector
       const radii = [];
-      let r = Math.max(5, state.stemWidth * 1.5);
+      let r = state.bubbleBaseRadius || Math.max(5, state.stemWidth * 1.5);
       for (let i = 0; i < state.bubbleCount; i++) {
         radii.push(r);
         r *= (1 - state.bubbleShrink / 100);
@@ -480,8 +515,13 @@ function injectStem(basePts, rx, ry) {
     const dx = tip[0] - mid[0];
     const dy = tip[1] - mid[1];
     const len = Math.hypot(dx, dy) || 1;
-    const nx = -dy / len;
-    const ny = dx / len;
+    let nx = -dy / len;
+    let ny = dx / len;
+
+    if (state.invertBend) {
+      nx = -nx;
+      ny = -ny;
+    }
 
     // Asymmetric bending to make the curve more pronounced on the active side
     const bow1 = bow * (1 + bendRatio * 0.6);
@@ -498,26 +538,52 @@ function injectStem(basePts, rx, ry) {
     stemPts.push(...getQuadraticBezier(tip, [cx2, cy2], p2, curveSteps));
   }
   else if (state.stemType === "lightning") {
-    // Classic Lightning double zig-zag math
+    // Dynamic Lightning zig-zag math
     const dx = tip[0] - mid[0];
     const dy = tip[1] - mid[1];
+
+    const w = Math.max(10, state.stemWidth * 1.5);
+    const sections = state.lightningSections || 1;
+    const outPts = [];
+    const inPts = [];
+
+    // Base half-width vectors (keeps the stem thick and parallel)
+    const bwX = p1[0] - mid[0];
+    const bwY = p1[1] - mid[1];
+
+    // Normal vector for shifting left/right
     const len = Math.hypot(dx, dy) || 1;
     const nx = -dy / len;
     const ny = dx / len;
 
-    const w = Math.max(10, state.stemWidth * 1.5);
+    const step = 1 / (sections + 1);
 
-    // Outward zig
-    const z1 = [p1[0] + dx * 0.55 + nx * w, p1[1] + dy * 0.55 + ny * w];
-    // Inward zag
-    const z2 = [p1[0] + dx * 0.40 - nx * w * 0.5, p1[1] + dy * 0.40 - ny * w * 0.5];
+    for (let i = 1; i <= sections; i++) {
+      // Zig advances forward, Zag cuts horizontally backwards
+      const t_zig = i * step;
+      const t_zag = i * step - (step * 0.3);
 
-    // Return outward zig
-    const y1 = [p2[0] + dx * 0.55 - nx * w, p2[1] + dy * 0.55 - ny * w];
-    // Return inward zag
-    const y2 = [p2[0] + dx * 0.40 + nx * w * 0.5, p2[1] + dy * 0.40 + ny * w * 0.5];
+      // Shift the entire stem centerline left and right
+      const shift_zig = w;
+      const shift_zag = -w * 0.5;
 
-    stemPts = [p1, z1, z2, tip, y1, y2, p2];
+      const cx_zig = mid[0] + dx * t_zig + nx * shift_zig;
+      const cy_zig = mid[1] + dy * t_zig + ny * shift_zig;
+
+      const cx_zag = mid[0] + dx * t_zag + nx * shift_zag;
+      const cy_zag = mid[1] + dy * t_zag + ny * shift_zag;
+
+      // Outward edge travels: p1 -> zig1 -> zag1 -> zig2 -> zag2 -> tip
+      outPts.push([cx_zig + bwX, cy_zig + bwY]);
+      outPts.push([cx_zag + bwX, cy_zag + bwY]);
+
+      // Inward edge travels: p2 -> in_zig1 -> in_zag1 -> in_zig2 -> in_zag2 -> tip
+      // To build from the tip backwards, unshift zag, then unshift zig
+      inPts.unshift([cx_zag - bwX, cy_zag - bwY]);
+      inPts.unshift([cx_zig - bwX, cy_zig - bwY]);
+    }
+
+    stemPts = [p1, ...outPts, tip, ...inPts, p2];
   }
 
   rotated.splice(spliceStart, gapSize, ...stemPts);
@@ -536,8 +602,11 @@ let previewTimeout;
 async function buildElements(isFinal = false) {
   ea.clear();
 
+  // Grab old position data if we are doing a replacement
+  let oldPoly = null;
   if (isFinal && editTarget) {
     const viewEls = ea.getViewElements();
+    oldPoly = viewEls.find(el => el.id === editTarget.polyId);
     const elsToDelete = viewEls.filter(el => editTarget.allIds.includes(el.id) || el.id === editTarget.polyId);
     if (elsToDelete.length > 0) {
       ea.copyViewElementsToEAforEditing(elsToDelete);
@@ -634,7 +703,27 @@ async function buildElements(isFinal = false) {
     viewEls.unshift(p);
   }
 
-  // 9. Add Metadata & Group
+  // 9. Re-position to original location if replacing
+  if (isFinal && editTarget && oldPoly) {
+    const newPoly = ea.getElement(polyId);
+    const oldCx = oldPoly.x + oldPoly.width / 2;
+    const oldCy = oldPoly.y + oldPoly.height / 2;
+    const newCx = newPoly.x + newPoly.width / 2;
+    const newCy = newPoly.y + newPoly.height / 2;
+
+    const dx = oldCx - newCx;
+    const dy = oldCy - newCy;
+
+    allIds.forEach(id => {
+      const e = ea.getElement(id);
+      if (e) {
+        e.x += dx;
+        e.y += dy;
+      }
+    });
+  }
+
+  // 10. Add Metadata & Group
   if (isFinal) {
     ea.addAppendUpdateCustomData(polyId, {
       comicCallout: state,
@@ -701,7 +790,45 @@ const previewContainer = rightCol.createDiv({
 
 // --- Settings Render Function ---
 function renderSettings() {
+  const scrollPos = leftCol.scrollTop;
   leftCol.empty();
+
+  let pathResSliderComp;
+
+  function getOptimalPathResolution() {
+    let res = 10;
+    if (['box', 'polygon', 'ribbon'].includes(state.shapeType)) {
+      if (state.addSpikes) {
+        let neededRes = Math.ceil(100 / Math.max(2, state.spikeWidth));
+        res = Math.max(10, neededRes, state.spikeCount * 4);
+      } else if (state.shapeType === 'box' && state.cornerRoundness > 0.05) {
+        res = 30;
+      } else {
+        res = 10;
+      }
+    } else if (state.shapeType === 'cloud' || state.shapeType === 'spiky') {
+      res = Math.ceil(state.bumpCount * 2.5);
+    } else if (state.shapeType === 'oval' || state.shapeType === 'heart') {
+      if (state.addSpikes) {
+        let neededRes = Math.ceil(100 / Math.max(2, state.spikeWidth));
+        res = Math.max(30, neededRes, state.spikeCount * 4);
+      } else {
+        res = 30;
+      }
+    }
+    return Math.max(10, Math.min(200, Math.ceil(res / 10) * 10));
+  }
+
+  function updatePathRes() {
+    state.pathResolution = getOptimalPathResolution();
+    if (pathResSliderComp) pathResSliderComp.setValue(state.pathResolution);
+  }
+
+  // Establish state fallbacks safely for presets created before these options existed
+  if (state.bubbleBaseRadius === undefined) state.bubbleBaseRadius = 20;
+  if (state.invertBend === undefined) state.invertBend = false;
+  if (state.lineSecondBend === undefined) state.lineSecondBend = 0;
+  if (state.lightningSections === undefined) state.lightningSections = 1;
 
   // -- Presets UI --
   leftCol.createEl("div", { text: "Presets", cls: "comic-section-header", attr: { style: "margin-top: 0;" } });
@@ -778,6 +905,7 @@ function renderSettings() {
     btn.innerHTML = shape.svg;
     btn.onclick = () => {
       state.shapeType = shape.id;
+      state.pathResolution = getOptimalPathResolution();
       scheduleUpdate(previewContainer);
       renderSettings();
     };
@@ -792,7 +920,11 @@ function renderSettings() {
   }
   if (state.shapeType === "cloud" || state.shapeType === "spiky") {
     new ea.obsidian.Setting(leftCol).setName("Spike / Bump Count")
-      .addSlider(slider => slider.setLimits(4, 30, 1).setValue(state.bumpCount).onChange(val => { state.bumpCount = val; scheduleUpdate(previewContainer); }));
+      .addSlider(slider => slider.setLimits(4, 30, 1).setValue(state.bumpCount).onChange(val => {
+        state.bumpCount = val;
+        updatePathRes();
+        scheduleUpdate(previewContainer);
+      }));
     new ea.obsidian.Setting(leftCol).setName("Spike / Bump Depth")
       .addSlider(slider => slider.setLimits(0.05, 0.4, 0.01).setValue(state.bumpDepth).onChange(val => { state.bumpDepth = val; scheduleUpdate(previewContainer); }));
     new ea.obsidian.Setting(leftCol).setName("Bump Variance")
@@ -802,7 +934,11 @@ function renderSettings() {
   }
   if (state.shapeType === "box") {
     new ea.obsidian.Setting(leftCol).setName("Corner Roundness")
-      .addSlider(slider => slider.setLimits(0, 1, 0.05).setValue(state.cornerRoundness).onChange(val => { state.cornerRoundness = val; scheduleUpdate(previewContainer); }));
+      .addSlider(slider => slider.setLimits(0, 1, 0.05).setValue(state.cornerRoundness).onChange(val => {
+        state.cornerRoundness = val;
+        updatePathRes();
+        scheduleUpdate(previewContainer);
+      }));
   }
   if (state.shapeType === "ribbon") {
     new ea.obsidian.Setting(leftCol).setName("Ribbon Tails")
@@ -818,13 +954,26 @@ function renderSettings() {
     const spikeGroup = leftCol.createDiv();
     spikeGroup.createEl("div", { text: "Explosion Spikes", cls: "comic-section-header" });
     new ea.obsidian.Setting(spikeGroup).setName("Add Spikes")
-      .addToggle(t => t.setValue(state.addSpikes).onChange(val => { state.addSpikes = val; renderSettings(); scheduleUpdate(previewContainer); }));
+      .addToggle(t => t.setValue(state.addSpikes).onChange(val => {
+        state.addSpikes = val;
+        state.pathResolution = getOptimalPathResolution();
+        renderSettings();
+        scheduleUpdate(previewContainer);
+      }));
 
     if (state.addSpikes) {
       new ea.obsidian.Setting(spikeGroup).setName("Spike Count")
-        .addSlider(s => s.setLimits(1, 20, 1).setValue(state.spikeCount).onChange(val => { state.spikeCount = val; scheduleUpdate(previewContainer); }));
+        .addSlider(s => s.setLimits(1, 20, 1).setValue(state.spikeCount).onChange(val => {
+          state.spikeCount = val;
+          updatePathRes();
+          scheduleUpdate(previewContainer);
+        }));
       new ea.obsidian.Setting(spikeGroup).setName("Base Width (%)")
-        .addSlider(s => s.setLimits(2, 20, 1).setValue(state.spikeWidth).onChange(val => { state.spikeWidth = val; scheduleUpdate(previewContainer); }));
+        .addSlider(s => s.setLimits(2, 20, 1).setValue(state.spikeWidth).onChange(val => {
+          state.spikeWidth = val;
+          updatePathRes();
+          scheduleUpdate(previewContainer);
+        }));
       new ea.obsidian.Setting(spikeGroup).setName("Spike Height")
         .addSlider(s => s.setLimits(10, 100, 5).setValue(state.spikeHeight).onChange(val => { state.spikeHeight = val; scheduleUpdate(previewContainer); }));
       new ea.obsidian.Setting(spikeGroup).setName("Distribution")
@@ -841,10 +990,27 @@ function renderSettings() {
   new ea.obsidian.Setting(leftCol).setName("Perimeter Position (%)")
     .addSlider(slider => slider.setLimits(0, 100, 1).setValue(state.stemPosition).onChange(val => { state.stemPosition = val; scheduleUpdate(previewContainer); }));
 
-  if (state.stemType === "curvy_v" || state.stemType === "line") {
+  if (state.stemType !== "none") {
     new ea.obsidian.Setting(leftCol).setName("Bend / Angle Deflection")
       .setDesc("-100 (Left/Up) to 100 (Right/Down)")
       .addSlider(slider => slider.setLimits(-100, 100, 5).setValue(state.stemBend).onChange(val => { state.stemBend = val; scheduleUpdate(previewContainer); }));
+  }
+
+  if (state.stemType === "curvy_v") {
+    new ea.obsidian.Setting(leftCol).setName("Invert Curve Bend")
+      .addToggle(t => t.setValue(state.invertBend).onChange(val => { state.invertBend = val; scheduleUpdate(previewContainer); }));
+  }
+
+  if (state.stemType === "line") {
+    new ea.obsidian.Setting(leftCol).setName("Second Segment Angle")
+      .setDesc("Relative bend angle for the tip segment")
+      .addSlider(slider => slider.setLimits(-180, 180, 5).setValue(state.lineSecondBend).onChange(val => { state.lineSecondBend = val; scheduleUpdate(previewContainer); }));
+  }
+
+  if (state.stemType === "lightning") {
+    new ea.obsidian.Setting(leftCol).setName("Lightning Sections")
+      .setDesc("Number of zig-zags in the lightning stem")
+      .addSlider(slider => slider.setLimits(1, 5, 1).setValue(state.lightningSections).onChange(val => { state.lightningSections = val; scheduleUpdate(previewContainer); }));
   }
 
   new ea.obsidian.Setting(leftCol).setName("Stem Length")
@@ -858,6 +1024,8 @@ function renderSettings() {
   if (state.stemType === "bubbles") {
     new ea.obsidian.Setting(leftCol).setName("Bubble Count")
       .addSlider(slider => slider.setLimits(2, 10, 1).setValue(state.bubbleCount).onChange(val => { state.bubbleCount = val; scheduleUpdate(previewContainer); }));
+    new ea.obsidian.Setting(leftCol).setName("Base Bubble Radius")
+      .addSlider(slider => slider.setLimits(5, 50, 1).setValue(state.bubbleBaseRadius).onChange(val => { state.bubbleBaseRadius = val; scheduleUpdate(previewContainer); }));
     new ea.obsidian.Setting(leftCol).setName("Bubble Shrink (%)")
       .setDesc("How fast bubbles diminish.")
       .addSlider(slider => slider.setLimits(0, 90, 5).setValue(state.bubbleShrink).onChange(val => { state.bubbleShrink = val; scheduleUpdate(previewContainer); }));
@@ -868,7 +1036,13 @@ function renderSettings() {
 
   new ea.obsidian.Setting(leftCol).setName("Path Resolution")
     .setDesc("Lower for dashed styles, higher for smoothness.")
-    .addSlider(slider => slider.setLimits(10, 200, 10).setValue(state.pathResolution).onChange(val => { state.pathResolution = val; scheduleUpdate(previewContainer); }));
+    .addSlider(slider => {
+      pathResSliderComp = slider;
+      slider.setLimits(10, 200, 10).setValue(state.pathResolution).onChange(val => {
+        state.pathResolution = val;
+        scheduleUpdate(previewContainer);
+      })
+    });
 
   new ea.obsidian.Setting(leftCol).setName("Text Wrap Width")
     .addSlider(slider => slider.setLimits(100, 600, 10).setValue(state.wrapWidth).onChange(val => { state.wrapWidth = val; scheduleUpdate(previewContainer); }));
@@ -917,6 +1091,8 @@ function renderSettings() {
   mkColorPicker(leftCol, "Text Color", "textColor");
   mkColorPicker(leftCol, "Stroke Color", "strokeColor");
   mkColorPicker(leftCol, "Fill Color", "bgColor");
+
+  leftCol.scrollTop = scrollPos;
 }
 
 renderSettings();
