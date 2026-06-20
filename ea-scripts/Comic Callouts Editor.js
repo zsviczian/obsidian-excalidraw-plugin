@@ -63,7 +63,7 @@ const DEFAULT_STATE = {
   "strokeWidth": 1,
   "roughness": 0,
   "fontFamily": 5,
-  "fontSize": 28,
+  "fontSize": 16,
   "textColor": "black",
   "bgColor": "#ffffff",
   "strokeColor": "black",
@@ -634,10 +634,13 @@ async function buildElements(isFinal = false) {
   ea.style.strokeWidth = state.strokeWidth;
   ea.style.roughness = parseInt(state.roughness);
   ea.style.strokeStyle = state.strokeStyle;
+  ea.style.fontFamily = state.fontFamily;
+  ea.style.fontSize = parseInt(state.fontSize);
 
   const bgRGB = ea.getCM(state.bgColor).alphaTo(state.bgOpacity / 100).stringRGB({ alpha: true });
   ea.style.backgroundColor = bgRGB;
-  ea.style.fillStyle = st.currentItemFillStyle || "solid";
+  // Apply specific Fill Style explicitly from settings state
+  ea.style.fillStyle = state.fillStyle || "solid";
 
   // 4. Generate Perimeter & Inject Stem
   const basePts = generateBaseShape(rx, ry);
@@ -788,51 +791,41 @@ const previewContainer = rightCol.createDiv({
   attr: { style: `flex: 1 1 auto; min-height: 0; border: 1px solid var(--background-modifier-border); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; background-color: ${st.viewBackgroundColor};` }
 });
 
-// --- Settings Render Function ---
-function renderSettings() {
-  const scrollPos = leftCol.scrollTop;
-  leftCol.empty();
-
-  let pathResSliderComp;
-
-  function getOptimalPathResolution() {
-    let res = 10;
-    if (['box', 'polygon', 'ribbon'].includes(state.shapeType)) {
-      if (state.addSpikes) {
-        let neededRes = Math.ceil(100 / Math.max(2, state.spikeWidth));
-        res = Math.max(10, neededRes, state.spikeCount * 4);
-      } else if (state.shapeType === 'box' && state.cornerRoundness > 0.05) {
-        res = 30;
-      } else {
-        res = 10;
-      }
-    } else if (state.shapeType === 'cloud' || state.shapeType === 'spiky') {
-      res = Math.ceil(state.bumpCount * 2.5);
-    } else if (state.shapeType === 'oval' || state.shapeType === 'heart') {
-      if (state.addSpikes) {
-        let neededRes = Math.ceil(100 / Math.max(2, state.spikeWidth));
-        res = Math.max(30, neededRes, state.spikeCount * 4);
-      } else {
-        res = 30;
-      }
+// ---------------------------------------------------------
+// Settings UI
+// ---------------------------------------------------------
+function getOptimalPathResolution() {
+  let res = 10;
+  if (['box', 'polygon', 'ribbon'].includes(state.shapeType)) {
+    if (state.addSpikes) {
+      let neededRes = Math.ceil(100 / Math.max(2, state.spikeWidth));
+      res = Math.max(10, neededRes, state.spikeCount * 4);
+    } else if (state.shapeType === 'box' && state.cornerRoundness > 0.05) {
+      res = 30;
+    } else {
+      res = 10;
     }
-    return Math.max(10, Math.min(200, Math.ceil(res / 10) * 10));
+  } else if (state.shapeType === 'cloud' || state.shapeType === 'spiky') {
+    res = Math.ceil(state.bumpCount * 2.5);
+  } else if (state.shapeType === 'oval' || state.shapeType === 'heart') {
+    if (state.addSpikes) {
+      let neededRes = Math.ceil(100 / Math.max(2, state.spikeWidth));
+      res = Math.max(30, neededRes, state.spikeCount * 4);
+    } else {
+      res = 30;
+    }
   }
+  return Math.max(10, Math.min(200, Math.ceil(res / 10) * 10));
+}
 
-  function updatePathRes() {
-    state.pathResolution = getOptimalPathResolution();
-    if (pathResSliderComp) pathResSliderComp.setValue(state.pathResolution);
-  }
+function updatePathRes() {
+  state.pathResolution = getOptimalPathResolution();
+  if (modal.pathResSliderComp) modal.pathResSliderComp.setValue(state.pathResolution);
+}
 
-  // Establish state fallbacks safely for presets created before these options existed
-  if (state.bubbleBaseRadius === undefined) state.bubbleBaseRadius = 20;
-  if (state.invertBend === undefined) state.invertBend = false;
-  if (state.lineSecondBend === undefined) state.lineSecondBend = 0;
-  if (state.lightningSections === undefined) state.lightningSections = 1;
-
-  // -- Presets UI --
-  leftCol.createEl("div", { text: "Presets", cls: "comic-section-header", attr: { style: "margin-top: 0;" } });
-  const presetBar = leftCol.createDiv({ cls: "comic-preset-bar" });
+function renderPresetsUI(container) {
+  container.createEl("div", { text: "Presets", cls: "comic-section-header", attr: { style: "margin-top: 0;" } });
+  const presetBar = container.createDiv({ cls: "comic-preset-bar" });
   const pSelect = presetBar.createEl("select", { cls: "dropdown" });
   Object.keys(presets).forEach(p => pSelect.createEl("option", { text: p, value: p }));
   pSelect.value = activePresetName;
@@ -879,17 +872,19 @@ function renderSettings() {
     scheduleUpdate(previewContainer);
     new Notice(`Preset deleted.`);
   };
+}
 
-  // -- Text Input --
-  leftCol.createEl("div", { text: "Dialogue Text", cls: "comic-section-header" });
-  const textSetting = new ea.obsidian.Setting(leftCol).addTextArea(text => {
+function renderTextUI(container) {
+  container.createEl("div", { text: "Dialogue Text", cls: "comic-section-header" });
+  const textSetting = new ea.obsidian.Setting(container).addTextArea(text => {
     text.setValue(state.text).onChange(val => { state.text = val; scheduleUpdate(previewContainer); });
   });
   textSetting.settingEl.classList.add("comic-textarea-setting");
+}
 
-  // -- Base Shape Selector --
-  leftCol.createEl("div", { text: "Base Shape", cls: "comic-section-header" });
-  const shapeGrid = leftCol.createDiv({
+function renderBaseShapeUI(container) {
+  container.createEl("div", { text: "Base Shape", cls: "comic-section-header" });
+  const shapeGrid = container.createDiv({
     attr: { style: "display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px 8px; margin-bottom: 15px;" }
   });
 
@@ -910,30 +905,31 @@ function renderSettings() {
       renderSettings();
     };
   });
+}
 
-  // -- Shape Modifiers --
+function renderShapeModifiersUI(container) {
   if (state.shapeType === "polygon") {
-    new ea.obsidian.Setting(leftCol).setName("Polygon Vertices")
+    new ea.obsidian.Setting(container).setName("Polygon Vertices")
       .addSlider(slider => slider.setLimits(3, 12, 1).setValue(state.polySides).onChange(val => { state.polySides = val; scheduleUpdate(previewContainer); }));
-    new ea.obsidian.Setting(leftCol).setName("Polygon Rotation")
+    new ea.obsidian.Setting(container).setName("Polygon Rotation")
       .addSlider(slider => slider.setLimits(0, 360, 5).setValue(state.polyRotation).onChange(val => { state.polyRotation = val; scheduleUpdate(previewContainer); }));
   }
   if (state.shapeType === "cloud" || state.shapeType === "spiky") {
-    new ea.obsidian.Setting(leftCol).setName("Spike / Bump Count")
+    new ea.obsidian.Setting(container).setName("Spike / Bump Count")
       .addSlider(slider => slider.setLimits(4, 30, 1).setValue(state.bumpCount).onChange(val => {
         state.bumpCount = val;
         updatePathRes();
         scheduleUpdate(previewContainer);
       }));
-    new ea.obsidian.Setting(leftCol).setName("Spike / Bump Depth")
+    new ea.obsidian.Setting(container).setName("Spike / Bump Depth")
       .addSlider(slider => slider.setLimits(0.05, 0.4, 0.01).setValue(state.bumpDepth).onChange(val => { state.bumpDepth = val; scheduleUpdate(previewContainer); }));
-    new ea.obsidian.Setting(leftCol).setName("Bump Variance")
+    new ea.obsidian.Setting(container).setName("Bump Variance")
       .addSlider(slider => slider.setLimits(0, 100, 5).setValue(state.bumpVariance).onChange(val => { state.bumpVariance = val; scheduleUpdate(previewContainer); }));
-    new ea.obsidian.Setting(leftCol).setName("Randomize Variance")
+    new ea.obsidian.Setting(container).setName("Randomize Variance")
       .addToggle(t => t.setValue(state.randomVariance).onChange(val => { state.randomVariance = val; scheduleUpdate(previewContainer); }));
   }
   if (state.shapeType === "box") {
-    new ea.obsidian.Setting(leftCol).setName("Corner Roundness")
+    new ea.obsidian.Setting(container).setName("Corner Roundness")
       .addSlider(slider => slider.setLimits(0, 1, 0.05).setValue(state.cornerRoundness).onChange(val => {
         state.cornerRoundness = val;
         updatePathRes();
@@ -941,17 +937,18 @@ function renderSettings() {
       }));
   }
   if (state.shapeType === "ribbon") {
-    new ea.obsidian.Setting(leftCol).setName("Ribbon Tails")
+    new ea.obsidian.Setting(container).setName("Ribbon Tails")
       .addDropdown(d => d.addOption("both", "Both").addOption("left", "Left").addOption("right", "Right").addOption("none", "None")
         .setValue(state.ribbonEnds).onChange(val => { state.ribbonEnds = val; scheduleUpdate(previewContainer); }));
   }
 
-  new ea.obsidian.Setting(leftCol).setName("Relative Height")
+  new ea.obsidian.Setting(container).setName("Relative Height")
     .addSlider(slider => slider.setLimits(0.5, 2.0, 0.1).setValue(state.heightRatio).onChange(val => { state.heightRatio = val; scheduleUpdate(previewContainer); }));
+}
 
-  // -- Random Spikes --
+function renderExplosionSpikesUI(container) {
   if (['box', 'oval', 'ribbon', 'polygon'].includes(state.shapeType)) {
-    const spikeGroup = leftCol.createDiv();
+    const spikeGroup = container.createDiv();
     spikeGroup.createEl("div", { text: "Explosion Spikes", cls: "comic-section-header" });
     new ea.obsidian.Setting(spikeGroup).setName("Add Spikes")
       .addToggle(t => t.setValue(state.addSpikes).onChange(val => {
@@ -980,98 +977,139 @@ function renderSettings() {
         .addDropdown(d => d.addOption("Even", "Even").addOption("Random", "Random").setValue(state.spikeDist).onChange(val => { state.spikeDist = val; scheduleUpdate(previewContainer); }));
     }
   }
+}
 
-  // -- Stem Settings --
-  leftCol.createEl("div", { text: "Tail / Stem", cls: "comic-section-header" });
-  new ea.obsidian.Setting(leftCol).setName("Type")
+function renderStemUI(container) {
+  container.createEl("div", { text: "Tail / Stem", cls: "comic-section-header" });
+  new ea.obsidian.Setting(container).setName("Type")
     .addDropdown(d => d.addOption("v_shape", "V-Shape").addOption("curvy_v", "Curvy Swoop").addOption("lightning", "Lightning").addOption("bubbles", "Thought Bubbles").addOption("line", "Line").addOption("none", "None")
       .setValue(state.stemType).onChange(val => { state.stemType = val; renderSettings(); scheduleUpdate(previewContainer); }));
 
-  new ea.obsidian.Setting(leftCol).setName("Perimeter Position (%)")
+  new ea.obsidian.Setting(container).setName("Perimeter Position (%)")
     .addSlider(slider => slider.setLimits(0, 100, 1).setValue(state.stemPosition).onChange(val => { state.stemPosition = val; scheduleUpdate(previewContainer); }));
 
   if (state.stemType !== "none") {
-    new ea.obsidian.Setting(leftCol).setName("Bend / Angle Deflection")
+    new ea.obsidian.Setting(container).setName("Bend / Angle Deflection")
       .setDesc("-100 (Left/Up) to 100 (Right/Down)")
       .addSlider(slider => slider.setLimits(-100, 100, 5).setValue(state.stemBend).onChange(val => { state.stemBend = val; scheduleUpdate(previewContainer); }));
   }
 
   if (state.stemType === "curvy_v") {
-    new ea.obsidian.Setting(leftCol).setName("Invert Curve Bend")
+    new ea.obsidian.Setting(container).setName("Invert Curve Bend")
       .addToggle(t => t.setValue(state.invertBend).onChange(val => { state.invertBend = val; scheduleUpdate(previewContainer); }));
   }
 
   if (state.stemType === "line") {
-    new ea.obsidian.Setting(leftCol).setName("Second Segment Angle")
+    new ea.obsidian.Setting(container).setName("Second Segment Angle")
       .setDesc("Relative bend angle for the tip segment")
       .addSlider(slider => slider.setLimits(-180, 180, 5).setValue(state.lineSecondBend).onChange(val => { state.lineSecondBend = val; scheduleUpdate(previewContainer); }));
   }
 
   if (state.stemType === "lightning") {
-    new ea.obsidian.Setting(leftCol).setName("Lightning Sections")
+    new ea.obsidian.Setting(container).setName("Lightning Sections")
       .setDesc("Number of zig-zags in the lightning stem")
       .addSlider(slider => slider.setLimits(1, 5, 1).setValue(state.lightningSections).onChange(val => { state.lightningSections = val; scheduleUpdate(previewContainer); }));
   }
 
-  new ea.obsidian.Setting(leftCol).setName("Stem Length")
+  new ea.obsidian.Setting(container).setName("Stem Length")
     .addSlider(slider => slider.setLimits(20, 150, 5).setValue(state.stemLength).onChange(val => { state.stemLength = val; scheduleUpdate(previewContainer); }));
 
   if (state.stemType !== "bubbles" && state.stemType !== "line" && state.stemType !== "none") {
-    new ea.obsidian.Setting(leftCol).setName("Stem Base Width (%)")
+    new ea.obsidian.Setting(container).setName("Stem Base Width (%)")
       .addSlider(slider => slider.setLimits(2, 40, 1).setValue(state.stemWidth).onChange(val => { state.stemWidth = val; scheduleUpdate(previewContainer); }));
   }
 
   if (state.stemType === "bubbles") {
-    new ea.obsidian.Setting(leftCol).setName("Bubble Count")
+    new ea.obsidian.Setting(container).setName("Bubble Count")
       .addSlider(slider => slider.setLimits(2, 10, 1).setValue(state.bubbleCount).onChange(val => { state.bubbleCount = val; scheduleUpdate(previewContainer); }));
-    new ea.obsidian.Setting(leftCol).setName("Base Bubble Radius")
+    new ea.obsidian.Setting(container).setName("Base Bubble Radius")
       .addSlider(slider => slider.setLimits(5, 50, 1).setValue(state.bubbleBaseRadius).onChange(val => { state.bubbleBaseRadius = val; scheduleUpdate(previewContainer); }));
-    new ea.obsidian.Setting(leftCol).setName("Bubble Shrink (%)")
+    new ea.obsidian.Setting(container).setName("Bubble Shrink (%)")
       .setDesc("How fast bubbles diminish.")
       .addSlider(slider => slider.setLimits(0, 90, 5).setValue(state.bubbleShrink).onChange(val => { state.bubbleShrink = val; scheduleUpdate(previewContainer); }));
   }
+}
 
-  // -- Appearance --
-  leftCol.createEl("div", { text: "Appearance", cls: "comic-section-header" });
+function renderAppearanceUI(container) {
+  container.createEl("div", { text: "Appearance", cls: "comic-section-header" });
 
-  new ea.obsidian.Setting(leftCol).setName("Path Resolution")
+  new ea.obsidian.Setting(container).setName("Path Resolution")
     .setDesc("Lower for dashed styles, higher for smoothness.")
     .addSlider(slider => {
-      pathResSliderComp = slider;
+      modal.pathResSliderComp = slider;
       slider.setLimits(10, 200, 10).setValue(state.pathResolution).onChange(val => {
         state.pathResolution = val;
         scheduleUpdate(previewContainer);
       })
     });
 
-  new ea.obsidian.Setting(leftCol).setName("Text Wrap Width")
+  new ea.obsidian.Setting(container).setName("Text Wrap Width")
     .addSlider(slider => slider.setLimits(100, 600, 10).setValue(state.wrapWidth).onChange(val => { state.wrapWidth = val; scheduleUpdate(previewContainer); }));
 
-  new ea.obsidian.Setting(leftCol).setName("Padding")
+  new ea.obsidian.Setting(container).setName("Padding")
     .addSlider(slider => slider.setLimits(10, 100, 5).setValue(state.textMargin).onChange(val => { state.textMargin = val; scheduleUpdate(previewContainer); }));
 
-  new ea.obsidian.Setting(leftCol).setName("Stroke Style")
+  // Dropdown for Font Family matching Excalidraw options
+  new ea.obsidian.Setting(container).setName("Font Family")
+    .addDropdown(d => d
+      .addOption("1", "Virgil")
+      .addOption("2", "Helvetica")
+      .addOption("3", "Cascadia")
+      .addOption("4", "Local Font")
+      .addOption("5", "Excalifont")
+      .addOption("6", "Nunito")
+      .addOption("7", "Lilita One")
+      .addOption("8", "Comic Shanns")
+      .addOption("9", "Liberation Sans")
+      .addOption("10", "Assistant")
+      .setValue(String(state.fontFamily))
+      .onChange(val => { state.fontFamily = parseInt(val); scheduleUpdate(previewContainer); })
+    );
+
+  // Dropdown for Font Size matching standard S, M, L, XL outputs
+  new ea.obsidian.Setting(container).setName("Font Size")
+    .addDropdown(d => d
+      .addOption("16", "Small (16)")
+      .addOption("20", "Medium (20)")
+      .addOption("28", "Large (28)")
+      .addOption("36", "Extra Large (36)")
+      .setValue(String(state.fontSize))
+      .onChange(val => { state.fontSize = parseInt(val); scheduleUpdate(previewContainer); })
+    );
+
+  // Dropdown for selecting background Fill Style
+  new ea.obsidian.Setting(container).setName("Fill Style")
+    .addDropdown(d => d
+      .addOption("hachure", "Hachure")
+      .addOption("zigzag", "Zigzag")
+      .addOption("cross-hatch", "Cross-hatch")
+      .addOption("solid", "Solid")
+      .setValue(state.fillStyle)
+      .onChange(val => { state.fillStyle = val; scheduleUpdate(previewContainer); })
+    );
+
+  new ea.obsidian.Setting(container).setName("Stroke Style")
     .addDropdown(d => d.addOption("solid", "Solid").addOption("dashed", "Dashed").addOption("dotted", "Dotted")
       .setValue(state.strokeStyle).onChange(val => { state.strokeStyle = val; scheduleUpdate(previewContainer); }));
 
-  new ea.obsidian.Setting(leftCol).setName("Edges (Sharp/Round)")
+  new ea.obsidian.Setting(container).setName("Edges (Sharp/Round)")
     .addDropdown(d => d.addOption("round", "Rounded").addOption("sharp", "Sharp")
       .setValue(state.strokeSharpness).onChange(val => { state.strokeSharpness = val; scheduleUpdate(previewContainer); }));
 
-  new ea.obsidian.Setting(leftCol).setName("Sloppiness")
+  new ea.obsidian.Setting(container).setName("Sloppiness")
     .addDropdown(d => d.addOption("0", "Architect").addOption("1", "Artist").addOption("2", "Cartoonist")
       .setValue(String(state.roughness)).onChange(val => { state.roughness = parseInt(val); scheduleUpdate(previewContainer); }));
 
-  new ea.obsidian.Setting(leftCol).setName("Stroke Width")
+  new ea.obsidian.Setting(container).setName("Stroke Width")
     .addSlider(slider => slider.setLimits(1, 10, 0.5).setValue(state.strokeWidth).onChange(val => { state.strokeWidth = val; scheduleUpdate(previewContainer); }));
 
-  new ea.obsidian.Setting(leftCol).setName("Background Opacity")
+  new ea.obsidian.Setting(container).setName("Background Opacity")
     .addSlider(slider => slider.setLimits(0, 100, 5).setValue(state.bgOpacity).onChange(val => { state.bgOpacity = val; scheduleUpdate(previewContainer); }));
 
   // Colors
-  leftCol.createEl("div", { text: "Colors", cls: "comic-section-header" });
-  const mkColorPicker = (container, name, stateKey) => {
-    new ea.obsidian.Setting(container).setName(name).addButton(btn => {
+  container.createEl("div", { text: "Colors", cls: "comic-section-header" });
+  const mkColorPicker = (parent, name, stateKey) => {
+    new ea.obsidian.Setting(parent).setName(name).addButton(btn => {
       const updateBtnColor = (color) => {
         btn.buttonEl.style.backgroundColor = color;
         btn.buttonEl.style.color = ea.getCM(color).isDark() ? "white" : "black";
@@ -1088,9 +1126,34 @@ function renderSettings() {
       });
     });
   };
-  mkColorPicker(leftCol, "Text Color", "textColor");
-  mkColorPicker(leftCol, "Stroke Color", "strokeColor");
-  mkColorPicker(leftCol, "Fill Color", "bgColor");
+  mkColorPicker(container, "Text Color", "textColor");
+  mkColorPicker(container, "Stroke Color", "strokeColor");
+  mkColorPicker(container, "Fill Color", "bgColor");
+}
+
+// --- Settings Render Function ---
+function renderSettings() {
+  const scrollPos = leftCol.scrollTop;
+  leftCol.empty();
+
+  // Establish state fallbacks safely for presets created before these options existed
+  if (state.bubbleBaseRadius === undefined) state.bubbleBaseRadius = 20;
+  if (state.invertBend === undefined) state.invertBend = false;
+  if (state.lineSecondBend === undefined) state.lineSecondBend = 0;
+  if (state.lightningSections === undefined) state.lightningSections = 1;
+
+  // Safe fallbacks for the new font configurations and fill style
+  if (state.fontFamily === undefined) state.fontFamily = 5;
+  if (state.fontSize === undefined) state.fontSize = 16;
+  if (state.fillStyle === undefined) state.fillStyle = "solid";
+
+  renderPresetsUI(leftCol);
+  renderTextUI(leftCol);
+  renderBaseShapeUI(leftCol);
+  renderShapeModifiersUI(leftCol);
+  renderExplosionSpikesUI(leftCol);
+  renderStemUI(leftCol);
+  renderAppearanceUI(leftCol);
 
   leftCol.scrollTop = scrollPos;
 }
