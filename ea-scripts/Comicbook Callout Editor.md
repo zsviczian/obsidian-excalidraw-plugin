@@ -1,4 +1,8 @@
 /*
+
+![](https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-comicbook-callout-editor.jpg)
+
+```js
 # Comic Book Callouts & Speech Bubbles Generator
 A highly modular, versatile script for creating comic-book style speech bubbles, thought clouds, screams, and narrative boxes within Excalidraw. 
 

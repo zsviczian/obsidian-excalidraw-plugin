@@ -74,6 +74,7 @@ These are the scripts I use most often. I tried to order them by importance, but
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Crop%20Vintage%20Mask.svg"/></div>|[[#Crop Vintage Mask]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Mindmap%20Builder.svg"/></div>|[[#Mindmap Builder]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Capture%20Note.svg"/></div>|[[#Capture Note]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Comicbook%20Callout%20Editor.svg"/></div>|[[#Comicbook Callout Editor]]|
 
 ## Layout and Organization
 **Keywords**: Design, Placement, Arrangement, Structure, Formatting, Alignment
@@ -118,6 +119,7 @@ These are the scripts I use most often. I tried to order them by importance, but
 
 |    |     |
 |----|-----|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Comicbook%20Callout%20Editor.svg"/></div>|[[#Comicbook Callout Editor]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Convert%20selected%20text%20elements%20to%20sticky%20notes.svg"/></div>|[[#Convert selected text elements to sticky notes]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Relative%20Font%20Size%20Cycle.svg"/></div>|[[#Relative Font Size Cycle]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Scribble%20Helper.svg"/></div>|[[#Scribble Helper]]|
@@ -283,6 +285,13 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Color%20Scheme%20Manager.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/iwanhoogendoorn'>@iwanhoogendoorn</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Color%20Scheme%20Manager.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Swap the entire Stroke and Background/Fill colour palettes between named, categorized themes (Cloud Providers, Code Editors, Tech Brands, Design Systems, Nature, and more) from a docked side panel. Applying a theme recolours your selection (or sets the active colour) and repaints the native picker — both the quick-pick rows and the extended 3×5 grid with shades. Create your own schemes, import from a flat hex list, a labelled STROKE/FILL text format, or a raw appState colorPalette JSON (paste or .txt/.json file), hand-pick a custom picker, and export the current palette. When the MindMap Builder script is installed, an optional toggle recolours mind maps branch-by-branch. The canvas background is always left white.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/color-scheme-manager.gif' style="width:560px;"></td></tr></table>
+
+## Comicbook Callout Editor
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Comickbook%20Callout%20Editor.md
+```
+<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Comicbook%20Callout%20Editor.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data"><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-comicbook-callout-editor.jpg'></td></tr></table>
+
 
 ## Concatenate lines
 ```excalidraw-script-install
