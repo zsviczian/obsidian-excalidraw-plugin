@@ -74,67 +74,79 @@ const DEFAULT_STATE = {
   "bgOpacity": 100
 };
 
+// Global State & User Data Variables
 let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 let editTarget = null; // Stores IDs if we are replacing an existing callout
+let scriptSettings = {};
+let presets = {};
+let activePresetName = "Default";
 
-// Load saved preferences & presets
-let scriptSettings = ea.getScriptSettings() || {};
-if (!scriptSettings[SCRIPT_SETTINGS_KEY]) {
-  scriptSettings[SCRIPT_SETTINGS_KEY] = {
-    presets: { "Default": JSON.parse(JSON.stringify(DEFAULT_STATE)) },
-    lastUsedPreset: "Default"
-  };
-}
-let presets = scriptSettings[SCRIPT_SETTINGS_KEY].presets || { "Default": JSON.parse(JSON.stringify(DEFAULT_STATE)) };
-let activePresetName = scriptSettings[SCRIPT_SETTINGS_KEY].lastUsedPreset || "Default";
-
-// Apply the last used preset if it exists
-if (presets[activePresetName]) {
-  Object.assign(state, presets[activePresetName]);
-}
-
-// Check for selected existing callout to edit
-const selectedEls = ea.getViewSelectedElements();
-let mainPoly = selectedEls.find(el => el.customData && el.customData.comicCallout);
-
-if (mainPoly) {
-  const calloutData = mainPoly.customData.comicCallout;
-  const expectedIds = mainPoly.customData.comicCalloutIds || [];
-  const selectedIds = selectedEls.map(e => e.id);
-  
-  // Check if exactly the original elements were selected
-  const isExactMatch = expectedIds.length === selectedIds.length && expectedIds.every(id => selectedIds.includes(id));
-  
-  let isValidInference = isExactMatch;
-  let newAllIds = [...expectedIds];
-  let textEl = null;
-  
-  if (!isExactMatch) {
-    const textEls = selectedEls.filter(e => e.type === "text");
-    const polyEls = selectedEls.filter(e => e.type === "line" && e.polygon);
-    
-    // If the selection has 1 text and at least 1 polygon, it's a duplicated callout we can infer
-    if (textEls.length === 1 && polyEls.length >= 1) {
-      isValidInference = true;
-      newAllIds = selectedIds;
-      textEl = textEls[0];
-    }
-  } else {
-    // If it's an exact match, find the text element within the selection
-    textEl = selectedEls.find(e => e.type === "text");
-  }
-  
-  // ALWAYS update text in settings if the user edited the text element in the scene
-  if (isValidInference && textEl && textEl.originalText && textEl.originalText !== calloutData.text) {
-    calloutData.text = textEl.originalText;
-  }
-  
-  if (isValidInference) {
-    Object.assign(state, calloutData);
-    editTarget = {
-      polyId: mainPoly.id,
-      allIds: newAllIds
+/**
+ * Loads preferences from Obsidian/Excalidraw settings and applies the active preset.
+ */
+function initializeStateAndPresets() {
+  scriptSettings = ea.getScriptSettings() || {};
+  if (!scriptSettings[SCRIPT_SETTINGS_KEY]) {
+    scriptSettings[SCRIPT_SETTINGS_KEY] = {
+      presets: { "Default": JSON.parse(JSON.stringify(DEFAULT_STATE)) },
+      lastUsedPreset: "Default"
     };
+  }
+  presets = scriptSettings[SCRIPT_SETTINGS_KEY].presets || { "Default": JSON.parse(JSON.stringify(DEFAULT_STATE)) };
+  activePresetName = scriptSettings[SCRIPT_SETTINGS_KEY].lastUsedPreset || "Default";
+
+  // Apply the last used preset if it exists
+  if (presets[activePresetName]) {
+    Object.assign(state, presets[activePresetName]);
+  }
+}
+
+/**
+ * Checks the active selection on the Excalidraw canvas to see if we are editing an existing callout.
+ */
+function detectEditTarget() {
+  const selectedEls = ea.getViewSelectedElements();
+  let mainPoly = selectedEls.find(el => el.customData && el.customData.comicCallout);
+
+  if (mainPoly) {
+    const calloutData = mainPoly.customData.comicCallout;
+    const expectedIds = mainPoly.customData.comicCalloutIds || [];
+    const selectedIds = selectedEls.map(e => e.id);
+    
+    // Check if exactly the original elements were selected
+    const isExactMatch = expectedIds.length === selectedIds.length && expectedIds.every(id => selectedIds.includes(id));
+    
+    let isValidInference = isExactMatch;
+    let newAllIds = [...expectedIds];
+    let textEl = null;
+    
+    if (!isExactMatch) {
+      const textEls = selectedEls.filter(e => e.type === "text");
+      const polyEls = selectedEls.filter(e => e.type === "line" && e.polygon);
+      
+      // If the selection has 1 text and at least 1 polygon, it's a duplicated callout we can infer
+      if (textEls.length === 1 && polyEls.length >= 1) {
+        isValidInference = true;
+        newAllIds = selectedIds;
+        textEl = textEls[0];
+      }
+    } else {
+      // If it's an exact match, find the text element within the selection
+      textEl = selectedEls.find(e => e.type === "text");
+    }
+    
+    // ALWAYS update text in settings if the user edited the text element in the scene
+    if (isValidInference && textEl && textEl.originalText && textEl.originalText !== calloutData.text) {
+      calloutData.text = textEl.originalText;
+    }
+    
+    if (isValidInference) {
+      Object.assign(state, calloutData);
+      editTarget = {
+        polyId: mainPoly.id,
+        allIds: newAllIds
+      };
+    }
   }
 }
 
@@ -817,50 +829,58 @@ function scheduleUpdate(previewContainer) {
   }, 150);
 }
 
-
 // ---------------------------------------------------------
 // 4. User Interface (Floating Modal)
 // ---------------------------------------------------------
 
-const modal = new ea.FloatingModal(ea.plugin.app);
-modal.titleEl.setText("Comic Book Callouts & Bubbles");
-modal.modalEl.style.width = "760px";
-modal.modalEl.style.maxWidth = "85vw";
-modal.modalEl.style.maxHeight = "85vh";
+// Global UI Node Variables
+let modal, container, leftCol, rightCol, previewContainer, actionsContainer;
 
-const container = modal.contentEl.createDiv({
-  attr: { style: "display: grid; grid-template-columns: 380px 1fr; gap: 20px; height: 70vh;" }
-});
+/**
+ * Constructs the core UI grid and floating modal, injecting required CSS.
+ */
+function buildModalLayout() {
+  modal = new ea.FloatingModal(ea.plugin.app);
+  modal.titleEl.setText("Comic Book Callouts & Bubbles");
+  modal.modalEl.style.width = "760px";
+  modal.modalEl.style.maxWidth = "85vw";
+  modal.modalEl.style.maxHeight = "85vh";
 
-// CSS Injection
-container.createEl("style", {
-  text: `
-    .comic-textarea-setting { display: block !important; border-top: none !important; padding-top: 0 !important; }
-    .comic-textarea-setting .setting-item-info { display: none !important; }
-    .comic-textarea-setting .setting-item-control { display: block !important; width: 100% !important; justify-content: stretch !important; }
-    .comic-textarea-setting textarea { width: 100% !important; box-sizing: border-box !important; min-height: 80px; resize: vertical; }
-    .comic-section-header { margin-top: 15px; display: block; color: var(--text-accent); border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 5px; margin-bottom: 10px; font-weight: bold; font-size: 1.1em;}
-    .comic-preset-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--background-modifier-border); }
-    .comic-preset-bar .dropdown { flex-grow: 1; margin-left: 4px; }
-    .comic-btn-icon { padding: 4px 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: var(--interactive-normal); border-radius: 4px; }
-    .comic-btn-icon:hover { background: var(--interactive-hover); }
-    .comic-tabs-header { display: flex; border-bottom: 1px solid var(--background-modifier-border); margin-bottom: 15px; margin-top: 10px; }
-    .comic-tab-btn { flex: 1; padding: 8px 5px; cursor: pointer; text-align: center; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); border-radius: 0; box-shadow: none; display: flex; align-items: center; justify-content: center; }
-    .comic-tab-btn svg { width: 20px; height: 20px; }
-    .comic-tab-btn:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
-    .comic-tab-btn.is-active { border-bottom-color: var(--interactive-accent); color: var(--interactive-accent); }
-`});
-const leftCol = container.createDiv({
-  attr: { style: "overflow-y: auto; padding-right: 15px; display: flex; flex-direction: column; gap: 10px;" }
-});
+  container = modal.contentEl.createDiv({
+    attr: { style: "display: grid; grid-template-columns: 380px 1fr; gap: 20px; height: 70vh;" }
+  });
 
-const rightCol = container.createDiv({
-  attr: { style: "display: flex; flex-direction: column; gap: 15px; flex: 1 1 auto; min-height: 0;" }
-});
+  // CSS Injection
+  container.createEl("style", {
+    text: `
+      .comic-textarea-setting { display: block !important; border-top: none !important; padding-top: 0 !important; }
+      .comic-textarea-setting .setting-item-info { display: none !important; }
+      .comic-textarea-setting .setting-item-control { display: block !important; width: 100% !important; justify-content: stretch !important; }
+      .comic-textarea-setting textarea { width: 100% !important; box-sizing: border-box !important; min-height: 80px; resize: vertical; }
+      .comic-section-header { margin-top: 15px; display: block; color: var(--text-accent); border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 5px; margin-bottom: 10px; font-weight: bold; font-size: 1.1em;}
+      .comic-preset-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--background-modifier-border); }
+      .comic-preset-bar .dropdown { flex-grow: 1; margin-left: 4px; }
+      .comic-btn-icon { padding: 4px 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: var(--interactive-normal); border-radius: 4px; }
+      .comic-btn-icon:hover { background: var(--interactive-hover); }
+      .comic-tabs-header { display: flex; border-bottom: 1px solid var(--background-modifier-border); margin-bottom: 15px; margin-top: 10px; }
+      .comic-tab-btn { flex: 1; padding: 8px 5px; cursor: pointer; text-align: center; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); border-radius: 0; box-shadow: none; display: flex; align-items: center; justify-content: center; }
+      .comic-tab-btn svg { width: 20px; height: 20px; }
+      .comic-tab-btn:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+      .comic-tab-btn.is-active { border-bottom-color: var(--interactive-accent); color: var(--interactive-accent); }
+  `});
+  
+  leftCol = container.createDiv({
+    attr: { style: "overflow-y: auto; padding-right: 15px; display: flex; flex-direction: column; gap: 10px;" }
+  });
 
-const previewContainer = rightCol.createDiv({
-  attr: { style: `flex: 1 1 auto; min-height: 0; border: 1px solid var(--background-modifier-border); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; background-color: ${st.viewBackgroundColor};` }
-});
+  rightCol = container.createDiv({
+    attr: { style: "display: flex; flex-direction: column; gap: 15px; flex: 1 1 auto; min-height: 0;" }
+  });
+
+  previewContainer = rightCol.createDiv({
+    attr: { style: `flex: 1 1 auto; min-height: 0; border: 1px solid var(--background-modifier-border); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; background-color: ${st.viewBackgroundColor};` }
+  });
+}
 
 // ---------------------------------------------------------
 // 4a. Settings UI
@@ -1361,44 +1381,59 @@ function renderSettings() {
   leftCol.scrollTop = scrollPos;
 }
 
-renderSettings();
+/**
+ * Creates the functional UI buttons (Cancel, Insert, Replace)
+ */
+function buildActionButtons() {
+  actionsContainer = rightCol.createDiv({
+    attr: { style: "display: flex; justify-content: flex-end; gap: 15px; flex: 0 0 auto;" }
+  });
 
+  const cancelBtn = actionsContainer.createEl("button", { text: "Cancel" });
+  cancelBtn.onclick = () => {
+    modal.close();
+  };
 
-// Actions
-const actionsContainer = rightCol.createDiv({
-  attr: { style: "display: flex; justify-content: flex-end; gap: 15px; flex: 0 0 auto;" }
-});
+  if (editTarget) {
+    const replaceBtn = actionsContainer.createEl("button", { text: "Replace Selected", cls: "mod-warning" });
+    replaceBtn.onclick = async () => {
+      await savePrefs();
+      modal.close();
+      await buildElements(true);
+      await ea.addElementsToView(false, false, true);
+    };
+  }
 
-const cancelBtn = actionsContainer.createEl("button", { text: "Cancel" });
-cancelBtn.onclick = () => {
-  modal.close();
-};
-
-if (editTarget) {
-  const replaceBtn = actionsContainer.createEl("button", { text: "Replace Selected", cls: "mod-warning" });
-  replaceBtn.onclick = async () => {
+  const insertBtn = actionsContainer.createEl("button", { text: editTarget ? "Insert as New" : "Insert Bubble", cls: "mod-cta" });
+  insertBtn.onclick = async () => {
     await savePrefs();
+    editTarget = null; // Clear target so we don't delete anything
     modal.close();
     await buildElements(true);
-    await ea.addElementsToView(false, false, true);
+    await ea.addElementsToView(true, false, true);
   };
 }
 
-const insertBtn = actionsContainer.createEl("button", { text: editTarget ? "Insert as New" : "Insert Bubble", cls: "mod-cta" });
-insertBtn.onclick = async () => {
-  await savePrefs();
-  editTarget = null; // Clear target so we don't delete anything
-  modal.close();
-  await buildElements(true);
-  await ea.addElementsToView(true, false, true);
-};
+/**
+ * Core initialization sequence
+ */
+function main() {
+  initializeStateAndPresets();
+  detectEditTarget();
+  buildModalLayout();
+  renderSettings();
+  buildActionButtons();
 
-// Initial Render
-scheduleUpdate(previewContainer);
+  // Initial Render Loop
+  scheduleUpdate(previewContainer);
 
-modal.onClose = () => {
-  savePrefs();
-  clearTimeout(previewTimeout);
-};
+  modal.onClose = () => {
+    savePrefs();
+    clearTimeout(previewTimeout);
+  };
 
-modal.open();
+  modal.open();
+}
+
+// Execute Script
+main();
