@@ -95,14 +95,46 @@ if (presets[activePresetName]) {
 
 // Check for selected existing callout to edit
 const selectedEls = ea.getViewSelectedElements();
-for (let el of selectedEls) {
-  if (el.customData && el.customData.comicCallout) {
-    Object.assign(state, el.customData.comicCallout);
+let mainPoly = selectedEls.find(el => el.customData && el.customData.comicCallout);
+
+if (mainPoly) {
+  const calloutData = mainPoly.customData.comicCallout;
+  const expectedIds = mainPoly.customData.comicCalloutIds || [];
+  const selectedIds = selectedEls.map(e => e.id);
+  
+  // Check if exactly the original elements were selected
+  const isExactMatch = expectedIds.length === selectedIds.length && expectedIds.every(id => selectedIds.includes(id));
+  
+  let isValidInference = isExactMatch;
+  let newAllIds = [...expectedIds];
+  let textEl = null;
+  
+  if (!isExactMatch) {
+    const textEls = selectedEls.filter(e => e.type === "text");
+    const polyEls = selectedEls.filter(e => e.type === "line" && e.polygon);
+    
+    // If the selection has 1 text and at least 1 polygon, it's a duplicated callout we can infer
+    if (textEls.length === 1 && polyEls.length >= 1) {
+      isValidInference = true;
+      newAllIds = selectedIds;
+      textEl = textEls[0];
+    }
+  } else {
+    // If it's an exact match, find the text element within the selection
+    textEl = selectedEls.find(e => e.type === "text");
+  }
+  
+  // ALWAYS update text in settings if the user edited the text element in the scene
+  if (isValidInference && textEl && textEl.originalText && textEl.originalText !== calloutData.text) {
+    calloutData.text = textEl.originalText;
+  }
+  
+  if (isValidInference) {
+    Object.assign(state, calloutData);
     editTarget = {
-      polyId: el.id,
-      allIds: el.customData.comicCalloutIds || []
+      polyId: mainPoly.id,
+      allIds: newAllIds
     };
-    break; // Load the first one found and stop
   }
 }
 
@@ -266,13 +298,15 @@ function injectSpikes(pts) {
 
 /**
  * Calculates the full perimeter of the callout (excluding the stem).
+ * Ensures ALL shapes start their point array at Angle 0 (Right/3 o'clock)
+ * so that the stem position percentage is visually consistent across all shapes.
  */
 function generateBaseShape(rx, ry) {
   let pts = [];
   const N = getPointCount();
 
   if (state.shapeType === 'spiky') {
-    // Precise generation for screams/stars without interpolation smoothing
+    // Precise generation for screams/stars
     const numPoints = state.bumpCount * 2;
     for (let i = 0; i < numPoints; i++) {
       const a = (i / numPoints) * 2 * Math.PI;
@@ -289,43 +323,61 @@ function generateBaseShape(rx, ry) {
       }
       pts.push([r * Math.cos(a) * rx, r * Math.sin(a) * ry]);
     }
-    return state.strokeSharpness === "sharp" ? pts : interpolatePolygon(pts, N);
+    // ALWAYS interpolate to preserve exact peaks/valleys but add structural resolution
+    pts = interpolatePolygon(pts, Math.max(numPoints, N));
   }
-
-  if (state.shapeType === 'polygon') {
+  else if (state.shapeType === 'polygon') {
     const polyVerts = [];
     const phase = (state.polyRotation * Math.PI / 180) + ((state.polySides % 2 === 0) ? (Math.PI / state.polySides) : (Math.PI / 2));
     for (let i = 0; i < state.polySides; i++) {
       const a = phase + (i / state.polySides) * 2 * Math.PI;
       polyVerts.push([Math.cos(a) * rx, Math.sin(a) * ry]);
     }
-    pts = interpolatePolygon(polyVerts, N); // Always interpolate to allow responsive stems
+    
+    // Rotate the array so the vertex closest to angle 0 (3 o'clock) is first
+    let minAngle = Infinity;
+    let startIdx = 0;
+    for (let i = 0; i < polyVerts.length; i++) {
+      let ang = Math.abs(Math.atan2(polyVerts[i][1], polyVerts[i][0]));
+      if (ang < minAngle) {
+        minAngle = ang;
+        startIdx = i;
+      }
+    }
+    const alignedVerts = [...polyVerts.slice(startIdx), ...polyVerts.slice(0, startIdx)];
+    pts = interpolatePolygon(alignedVerts, Math.max(state.polySides, N)); 
   }
   else if (state.shapeType === 'box') {
     const r = Math.min(rx, ry) * state.cornerRoundness;
+    const boxVerts = [];
+    
     if (r <= 0.1) {
-      pts = [[-rx, -ry], [rx, -ry], [rx, ry], [-rx, ry]];
-      pts = interpolatePolygon(pts, N); // Always interpolate
+      // Start right-middle and go clockwise
+      boxVerts.push([rx, 0], [rx, ry], [-rx, ry], [-rx, -ry], [rx, -ry]);
     } else {
       const arcPts = Math.max(3, Math.floor(N / 8));
-      pts.push(...createArc(-rx + r, -ry + r, r, Math.PI, Math.PI * 1.5, arcPts));
-      pts.push(...createArc(rx - r, -ry + r, r, Math.PI * 1.5, Math.PI * 2, arcPts));
-      pts.push(...createArc(rx - r, ry - r, r, 0, Math.PI * 0.5, arcPts));
-      pts.push(...createArc(-rx + r, ry - r, r, Math.PI * 0.5, Math.PI, arcPts));
-      pts = interpolatePolygon(pts, N); // Always interpolate
+      // Start right-middle and go clockwise appending corner arcs
+      boxVerts.push([rx, 0]);
+      boxVerts.push(...createArc(rx - r, ry - r, r, 0, Math.PI * 0.5, arcPts)); // Bottom-Right
+      boxVerts.push(...createArc(-rx + r, ry - r, r, Math.PI * 0.5, Math.PI, arcPts)); // Bottom-Left
+      boxVerts.push(...createArc(-rx + r, -ry + r, r, Math.PI, Math.PI * 1.5, arcPts)); // Top-Left
+      boxVerts.push(...createArc(rx - r, -ry + r, r, Math.PI * 1.5, Math.PI * 2, arcPts)); // Top-Right
     }
+    pts = interpolatePolygon(boxVerts, Math.max(boxVerts.length, N));
   }
   else if (state.shapeType === 'ribbon') {
-    const ribVerts = [[-rx, -ry], [rx, -ry], [rx * 0.8, 0], [rx, ry], [-rx, ry], [-rx * 0.8, 0]];
+    // Start right-middle and go clockwise
+    const ribVerts = [[rx * 0.8, 0], [rx, ry], [-rx, ry], [-rx * 0.8, 0], [-rx, -ry], [rx, -ry]];
+    
     if (state.ribbonEnds === "left") {
-      ribVerts[1] = [rx, -ry]; ribVerts[2] = [rx, 0]; ribVerts[3] = [rx, ry];
+      ribVerts[0] = [rx, 0]; ribVerts[1] = [rx, ry]; ribVerts[5] = [rx, -ry];
     } else if (state.ribbonEnds === "right") {
-      ribVerts[0] = [-rx, -ry]; ribVerts[5] = [-rx, 0]; ribVerts[4] = [-rx, ry];
+      ribVerts[3] = [-rx, 0]; ribVerts[2] = [-rx, ry]; ribVerts[4] = [-rx, -ry];
     } else if (state.ribbonEnds === "none") {
-      ribVerts[1] = [rx, -ry]; ribVerts[2] = [rx, 0]; ribVerts[3] = [rx, ry];
-      ribVerts[0] = [-rx, -ry]; ribVerts[5] = [-rx, 0]; ribVerts[4] = [-rx, ry];
+      ribVerts[0] = [rx, 0]; ribVerts[1] = [rx, ry]; ribVerts[5] = [rx, -ry];
+      ribVerts[3] = [-rx, 0]; ribVerts[2] = [-rx, ry]; ribVerts[4] = [-rx, -ry];
     }
-    pts = interpolatePolygon(ribVerts, N); // Always interpolate
+    pts = interpolatePolygon(ribVerts, Math.max(ribVerts.length, N));
   }
   else {
     // Parametric Shapes (Oval, Heart, Cloud)
@@ -359,6 +411,21 @@ function generateBaseShape(rx, ry) {
   // Cloud and Heart don't strictly need normalizeAndScale if math is right, but it ensures fitting
   if (state.shapeType === 'cloud' || state.shapeType === 'heart') {
     pts = normalizeAndScale(pts, rx, ry);
+    
+    // Heart naturally generates its first point at the top (12 o'clock). 
+    // Rotate the array so it also aligns to Angle 0 (3 o'clock) like everything else.
+    if (state.shapeType === 'heart') {
+      let minAngle = Infinity;
+      let startIdx = 0;
+      for (let i = 0; i < pts.length; i++) {
+        let ang = Math.abs(Math.atan2(pts[i][1], pts[i][0]));
+        if (ang < minAngle) {
+          minAngle = ang;
+          startIdx = i;
+        }
+      }
+      pts = [...pts.slice(startIdx), ...pts.slice(0, startIdx)];
+    }
   }
 
   return injectSpikes(pts);
@@ -762,7 +829,7 @@ modal.modalEl.style.maxWidth = "85vw";
 modal.modalEl.style.maxHeight = "85vh";
 
 const container = modal.contentEl.createDiv({
-  attr: { style: "display: grid; grid-template-columns: 380px 1fr; gap: 20px; height: 75vh;" }
+  attr: { style: "display: grid; grid-template-columns: 380px 1fr; gap: 20px; height: 70vh;" }
 });
 
 // CSS Injection
@@ -777,8 +844,12 @@ container.createEl("style", {
     .comic-preset-bar .dropdown { flex-grow: 1; margin-left: 4px; }
     .comic-btn-icon { padding: 4px 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: var(--interactive-normal); border-radius: 4px; }
     .comic-btn-icon:hover { background: var(--interactive-hover); }
+    .comic-tabs-header { display: flex; border-bottom: 1px solid var(--background-modifier-border); margin-bottom: 15px; margin-top: 10px; }
+    .comic-tab-btn { flex: 1; padding: 8px 5px; cursor: pointer; text-align: center; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); border-radius: 0; box-shadow: none; display: flex; align-items: center; justify-content: center; }
+    .comic-tab-btn svg { width: 20px; height: 20px; }
+    .comic-tab-btn:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+    .comic-tab-btn.is-active { border-bottom-color: var(--interactive-accent); color: var(--interactive-accent); }
 `});
-
 const leftCol = container.createDiv({
   attr: { style: "overflow-y: auto; padding-right: 15px; display: flex; flex-direction: column; gap: 10px;" }
 });
@@ -815,43 +886,14 @@ async function toggleFoldState(key, isOpen) {
   await ea.setScriptSettings(scriptSettings);
 }
 
-// Creates a collapsible <details> section with saved states and custom styling
-function createFoldableSection(container, title, foldKey) {
-  const details = container.createEl("details", { cls: "comic-section-details" });
-  details.style.marginBottom = "10px";
-  details.style.borderBottom = "1px solid var(--background-modifier-border)";
-  details.style.paddingBottom = "5px";
-
-  const summary = details.createEl("summary", { cls: "comic-section-header" });
-  summary.style.cursor = "pointer";
-  summary.style.outline = "none";
-  // Hide default arrow on browsers
-  summary.style.listStyle = "none";
-  summary.style.display = "flex";
-  summary.style.alignItems = "center";
-  summary.style.fontWeight = "bold";
-  summary.style.color = "var(--text-accent)";
-  summary.style.marginTop = "10px";
-
-  // Custom fold arrow
-  summary.innerHTML = `<span style="display:inline-block; width:20px; transition: transform 0.2s;" class="fold-arrow">▶</span> ${title}`;
-
-  const folds = getFolds();
-  if (folds[foldKey]) {
-    details.setAttribute("open", "");
-    summary.querySelector('.fold-arrow').style.transform = "rotate(90deg)";
+// Creates a simple organized section (replaces the old foldable UI)
+function createSection(container, title) {
+  const div = container.createDiv();
+  div.style.marginBottom = "10px";
+  if (title) {
+    div.createEl("div", { text: title, cls: "comic-section-header", attr: { style: "margin-top: 0;" } });
   }
-
-  details.addEventListener("toggle", () => {
-    const isOpen = details.hasAttribute("open");
-    summary.querySelector('.fold-arrow').style.transform = isOpen ? "rotate(90deg)" : "rotate(0deg)";
-    toggleFoldState(foldKey, isOpen);
-  });
-
-  const contentDiv = details.createDiv();
-  contentDiv.style.paddingTop = "10px";
-  contentDiv.style.paddingBottom = "5px";
-  return contentDiv;
+  return div;
 }
 
 function getOptimalPathResolution() {
@@ -943,7 +985,7 @@ function renderTextUI(container) {
 }
 
 function renderBaseShapeUI(container) {
-  const section = createFoldableSection(container, "Base Shape", "baseShape");
+  const section = createSection(container, "Base Shape");
 
   const shapeGrid = section.createDiv({
     attr: { style: "display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px 8px; margin-bottom: 15px;" }
@@ -966,12 +1008,12 @@ function renderBaseShapeUI(container) {
       renderSettings();
     };
   });
+
+  renderShapeModifiersUI(section);
+  renderExplosionSpikesUI(section);
 }
 
-function renderShapeModifiersUI(container) {
-  const sections = container.querySelectorAll('.comic-section-details');
-  const section = sections[sections.length - 1].querySelector('div');
-
+function renderShapeModifiersUI(section) {
   if (state.shapeType === "polygon") {
     new ea.obsidian.Setting(section).setName("Polygon Vertices")
       .addSlider(slider => slider.setLimits(3, 12, 1).setValue(state.polySides).onChange(val => { state.polySides = val; scheduleUpdate(previewContainer); }));
@@ -1012,9 +1054,10 @@ function renderShapeModifiersUI(container) {
 
 function renderExplosionSpikesUI(container) {
   if (['box', 'oval', 'ribbon', 'polygon'].includes(state.shapeType)) {
-    const spikeGroup = createFoldableSection(container, "Explosion Spikes", "explosionSpikes");
+    container.createEl("hr", { attr: { style: "margin: 15px 0;" } });
+    container.createEl("div", { text: "Explosion Spikes", cls: "comic-section-header", attr: { style: "border:none; padding:0; margin-bottom:5px; font-size:1em;" } });
 
-    new ea.obsidian.Setting(spikeGroup).setName("Add Spikes")
+    new ea.obsidian.Setting(container).setName("Add Spikes")
       .addToggle(t => t.setValue(state.addSpikes).onChange(val => {
         state.addSpikes = val;
         state.pathResolution = getOptimalPathResolution();
@@ -1023,28 +1066,28 @@ function renderExplosionSpikesUI(container) {
       }));
 
     if (state.addSpikes) {
-      new ea.obsidian.Setting(spikeGroup).setName("Spike Count")
+      new ea.obsidian.Setting(container).setName("Spike Count")
         .addSlider(s => s.setLimits(1, 20, 1).setValue(state.spikeCount).onChange(val => {
           state.spikeCount = val;
           updatePathRes();
           scheduleUpdate(previewContainer);
         }));
-      new ea.obsidian.Setting(spikeGroup).setName("Base Width (%)")
+      new ea.obsidian.Setting(container).setName("Base Width (%)")
         .addSlider(s => s.setLimits(2, 20, 1).setValue(state.spikeWidth).onChange(val => {
           state.spikeWidth = val;
           updatePathRes();
           scheduleUpdate(previewContainer);
         }));
-      new ea.obsidian.Setting(spikeGroup).setName("Spike Height")
+      new ea.obsidian.Setting(container).setName("Spike Height")
         .addSlider(s => s.setLimits(10, 100, 5).setValue(state.spikeHeight).onChange(val => { state.spikeHeight = val; scheduleUpdate(previewContainer); }));
-      new ea.obsidian.Setting(spikeGroup).setName("Distribution")
+      new ea.obsidian.Setting(container).setName("Distribution")
         .addDropdown(d => d.addOption("Even", "Even").addOption("Random", "Random").setValue(state.spikeDist).onChange(val => { state.spikeDist = val; scheduleUpdate(previewContainer); }));
     }
   }
 }
 
 function renderStemUI(container) {
-  const section = createFoldableSection(container, "Tail / Stem", "stem");
+  const section = createSection(container, "Tail / Stem");
 
   new ea.obsidian.Setting(section).setName("Type")
     .addDropdown(d => d.addOption("v_shape", "V-Shape").addOption("curvy_v", "Curvy Swoop").addOption("lightning", "Lightning").addOption("bubbles", "Thought Bubbles").addOption("line", "Line").addOption("none", "None")
@@ -1096,18 +1139,8 @@ function renderStemUI(container) {
   }
 }
 
-function renderAppearanceUI(container) {
-  const section = createFoldableSection(container, "Appearance", "appearance");
-
-  new ea.obsidian.Setting(section).setName("Path Resolution")
-    .setDesc("Lower for dashed styles, higher for smoothness.")
-    .addSlider(slider => {
-      modal.pathResSliderComp = slider;
-      slider.setLimits(10, 200, 10).setValue(state.pathResolution).onChange(val => {
-        state.pathResolution = val;
-        scheduleUpdate(previewContainer);
-      })
-    });
+function renderTextAppearanceUI(container) {
+  const section = createSection(container, "Text Properties");
 
   new ea.obsidian.Setting(section).setName("Text Wrap Width")
     .addSlider(slider => slider.setLimits(100, 600, 10).setValue(state.wrapWidth).onChange(val => { state.wrapWidth = val; scheduleUpdate(previewContainer); }));
@@ -1140,6 +1173,20 @@ function renderAppearanceUI(container) {
       .setValue(String(state.fontSize))
       .onChange(val => { state.fontSize = parseInt(val); scheduleUpdate(previewContainer); })
     );
+}
+
+function renderLineFillUI(container) {
+  const section = createSection(container, "Line and Fill Properties");
+
+  new ea.obsidian.Setting(section).setName("Path Resolution")
+    .setDesc("Lower for dashed styles, higher for smoothness.")
+    .addSlider(slider => {
+      modal.pathResSliderComp = slider;
+      slider.setLimits(10, 200, 10).setValue(state.pathResolution).onChange(val => {
+        state.pathResolution = val;
+        scheduleUpdate(previewContainer);
+      })
+    });
 
   new ea.obsidian.Setting(section).setName("Fill Style")
     .addDropdown(d => d
@@ -1171,7 +1218,7 @@ function renderAppearanceUI(container) {
 }
 
 function renderColorsUI(container) {
-  const section = createFoldableSection(container, "Colors", "colors");
+  const section = createSection(container, "Colors");
 
   const mkColorSyncPicker = (parent, name, stateKey) => {
     const row = new ea.obsidian.Setting(parent).setName(name);
@@ -1180,7 +1227,6 @@ function renderColorsUI(container) {
     let nativePicker;
     let btnEl;
 
-    // Handles the update synchronization across all 3 controls securely
     const updateAllUIs = (colorStr) => {
       if (textInput && textInput.inputEl.value !== colorStr) {
         textInput.setValue(colorStr);
@@ -1203,9 +1249,7 @@ function renderColorsUI(container) {
             }
           }
         }
-      } catch (e) {
-        // Ignore invalid intermediate color strings being typed
-      }
+      } catch (e) {}
     };
 
     const onColorChange = (newColor) => {
@@ -1214,7 +1258,6 @@ function renderColorsUI(container) {
       scheduleUpdate(previewContainer);
     };
 
-    // 1. EA Button Color Picker
     row.addButton(btn => {
       btnEl = btn.buttonEl;
       btnEl.style.width = "28px";
@@ -1227,7 +1270,6 @@ function renderColorsUI(container) {
       });
     });
 
-    // 2. Native HTML Color Picker
     nativePicker = row.controlEl.createEl("input", {
       type: "color",
       attr: { style: "width: 28px; height: 28px; padding: 0; border: none; cursor: pointer; background: transparent; border-radius: 4px; margin-right: 8px;" }
@@ -1236,7 +1278,6 @@ function renderColorsUI(container) {
       onColorChange(e.target.value);
     });
 
-    // 3. Text input for color string
     row.addText(text => {
       textInput = text;
       text.setValue(state[stateKey])
@@ -1255,6 +1296,8 @@ function renderColorsUI(container) {
 }
 
 // --- Settings Render Function ---
+let activeTab = "baseShape";
+
 function renderSettings() {
   const scrollPos = leftCol.scrollTop;
   leftCol.empty();
@@ -1272,12 +1315,48 @@ function renderSettings() {
 
   renderPresetsUI(leftCol);
   renderTextUI(leftCol);
-  renderBaseShapeUI(leftCol);
-  renderShapeModifiersUI(leftCol);
-  renderExplosionSpikesUI(leftCol);
-  renderStemUI(leftCol);
-  renderAppearanceUI(leftCol);
-  renderColorsUI(leftCol);
+
+  // Render Tabs Header
+  const tabsHeader = leftCol.createDiv({ cls: "comic-tabs-header" });
+  const tabs = [
+    { id: "baseShape", icon: "shapes", label: "Base Shape" },
+    { id: "stem", icon: "message-square", label: "Tail / Stem" },
+    { id: "text", icon: "type", label: "Text" },
+    { id: "lineFill", icon: "pen-tool", label: "Line and Fill" },
+    { id: "colors", icon: "palette", label: "Colors" }
+  ];
+  
+  tabs.forEach(tab => {
+    const btn = tabsHeader.createEl("button", { cls: "comic-tab-btn" + (activeTab === tab.id ? " is-active" : "") });
+    btn.innerHTML = ea.obsidian.getIcon(tab.icon)?.outerHTML || tab.label;
+    btn.setAttribute("aria-label", tab.label);
+    btn.setAttribute("title", tab.label);
+    btn.onclick = () => {
+      activeTab = tab.id;
+      renderSettings();
+    };
+  });
+  
+  // Render Active Tab Content
+  const tabContent = leftCol.createDiv({ cls: "comic-tab-content" });
+  
+  switch (activeTab) {
+    case "baseShape":
+      renderBaseShapeUI(tabContent);
+      break;
+    case "stem":
+      renderStemUI(tabContent);
+      break;
+    case "text":
+      renderTextAppearanceUI(tabContent);
+      break;
+    case "lineFill":
+      renderLineFillUI(tabContent);
+      break;
+    case "colors":
+      renderColorsUI(tabContent);
+      break;
+  }
 
   leftCol.scrollTop = scrollPos;
 }
