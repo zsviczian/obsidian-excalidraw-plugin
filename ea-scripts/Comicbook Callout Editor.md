@@ -9,7 +9,7 @@ A highly modular, versatile script for creating comic-book style speech bubbles,
 Features:
 - Live SVG Preview with correct padding and scale
 - Preset saving and loading (manage your own callout styles)
-- Edit & Replace existing callouts seamlessly
+- Edit & Replace existing callouts seamlessly (context-aware, prevents background insertions)
 - High-density polygon generation for perfect shapes, or low-density for dashed/dotted lines
 - Customizable base shapes (Oval, Box, Cloud, Spiky, Heart, Polygon, Ribbon)
 - Polygon rotation and Box corner roundness sliders
@@ -18,20 +18,25 @@ Features:
 - Sharp vs Rounded edge controls to fix crossing artifacts
 - Thought bubble size and spacing profiles
 - Granular color and appearance controls (Text, Stroke, Fill, Roughness)
+- Clean, scrollbar-free side panel layout with non-destructive UI updating
 
 ### Architecture Notes for Future Extensibility:
 1. **State Management**: The `state` object holds all parameters. Adding a new parameter means adding it to `DEFAULT_STATE`, creating a UI control for it, and using it in `buildElements()`.
+   - When saving metadata to Excalidraw's `customData`, `state` is deep-cloned to prevent shared reference mutations across multiple inserted callouts.
 2. **Shape Generation Pipeline**:
    - `generateBaseShape(rx, ry)`: Creates the closed perimeter of the main bubble.
    - `injectStem(basePts, rx, ry)`: Splices the tail/stem into the base perimeter array.
    - `buildElements(isFinal)`: Constructs the Excalidraw elements (Polygon + Text + Extras) into the EA workbench.
-   - `renderPreview()`: Generates an SVG snapshot for the live preview pane.
+   - `renderPreview(previewContainer)`: Generates an SVG snapshot for the live preview pane.
+3. **UI & Event Handling**:
+   - DOM elements (like action buttons and text areas) are preserved and updated during `onFocus` rather than destroyed to prevent interaction bugs (e.g., requiring double-clicks to insert).
+   - Action buttons dynamically enable/disable based on whether the active workspace leaf matches the script's target Excalidraw view.
 */
 
 // ---------------------------------------------------------
 // 1. Constants & State Initialization
 // ---------------------------------------------------------
-const st = ea.getExcalidrawAPI().getAppState();
+const st = () => ea.targetView ? ea.getExcalidrawAPI()?.getAppState() : null;
 const SCRIPT_SETTINGS_KEY = "ComicBubbles_Settings_V5";
 
 // The default parameters requested for the script
@@ -74,18 +79,37 @@ const DEFAULT_STATE = {
   "bgOpacity": 100
 };
 
+// SVG Icons for the Shape Selector Buttons
+const SHAPES = [
+  { id: "oval", name: "Oval", svg: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="40" ry="25" fill="none" stroke="currentColor" stroke-width="6"/></svg>` },
+  { id: "box", name: "Rectangle / Box", svg: `<svg viewBox="0 0 100 100"><rect x="15" y="25" width="70" height="50" rx="10" fill="none" stroke="currentColor" stroke-width="6"/></svg>` },
+  { id: "cloud", name: "Cloud", svg: `<svg viewBox="0 0 100 100"><path d="M 25 50 a 15 15 0 0 1 15 -15 a 20 20 0 0 1 35 5 a 15 15 0 0 1 10 20 a 15 15 0 0 1 -15 15 l -30 0 a 15 15 0 0 1 -15 -25 z" fill="none" stroke="currentColor" stroke-width="6"/></svg>` },
+  { id: "spiky", name: "Spiky / Scream", svg: `<svg viewBox="0 0 100 100"><path d="M 50 15 L 60 35 L 85 30 L 70 50 L 85 70 L 60 65 L 50 85 L 40 65 L 15 70 L 30 50 L 15 30 L 40 35 Z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/></svg>` },
+  { id: "heart", name: "Heart", svg: `<svg viewBox="0 0 100 100"><path d="M 50 85 C 50 85 15 55 15 35 C 15 20 30 15 40 25 C 50 35 50 35 50 35 C 50 35 50 35 60 25 C 70 15 85 20 85 35 C 85 55 50 85 50 85 Z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/></svg>` },
+  { id: "polygon", name: "Polygon", svg: `<svg viewBox="0 0 100 100"><polygon points="25,20 75,20 95,50 75,80 25,80 5,50" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/></svg>` },
+  { id: "ribbon", name: "Ribbon", svg: `<svg viewBox="0 0 100 100"><polygon points="10,25 90,25 75,50 90,75 10,75 25,50" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/></svg>` },
+];
+
 // Global State & User Data Variables
 let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
 let editTarget = null; // Stores IDs if we are replacing an existing callout
-let scriptSettings = {};
 let presets = {};
 let activePresetName = "Default";
+let previewTimeout;
+
+// Global UI Node Variables (Replaces old modal variables)
+let tabsContainer, inputsContainer, previewWrapper, previewContainer, actionsContainer;
+let mainScrollContainer;
+let activeTab = "baseShape";
+let pathResSliderComp;
+let textAreaComp;
+
 
 /**
  * Loads preferences from Obsidian/Excalidraw settings and applies the active preset.
  */
 function initializeStateAndPresets() {
-  scriptSettings = ea.getScriptSettings() || {};
+  const scriptSettings = ea.getScriptSettings() || {};
   if (!scriptSettings[SCRIPT_SETTINGS_KEY]) {
     scriptSettings[SCRIPT_SETTINGS_KEY] = {
       presets: { "Default": JSON.parse(JSON.stringify(DEFAULT_STATE)) },
@@ -105,7 +129,14 @@ function initializeStateAndPresets() {
  * Checks the active selection on the Excalidraw canvas to see if we are editing an existing callout.
  */
 function detectEditTarget() {
+  editTarget = null;  
+  
+  // Safe exit if no view is bound yet (e.g., during Obsidian startup)
+  if (!ea.targetView) return; 
+  
   const selectedEls = ea.getViewSelectedElements();
+  if (!selectedEls || selectedEls.length === 0) return;
+
   let mainPoly = selectedEls.find(el => el.customData && el.customData.comicCallout);
 
   if (mainPoly) {
@@ -159,23 +190,15 @@ async function savePrefs() {
   await ea.setScriptSettings(s);
 }
 
-// SVG Icons for the Shape Selector Buttons
-const SHAPES = [
-  { id: "oval", name: "Oval", svg: `<svg viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="40" ry="25" fill="none" stroke="currentColor" stroke-width="6"/></svg>` },
-  { id: "box", name: "Rectangle / Box", svg: `<svg viewBox="0 0 100 100"><rect x="15" y="25" width="70" height="50" rx="10" fill="none" stroke="currentColor" stroke-width="6"/></svg>` },
-  { id: "cloud", name: "Cloud", svg: `<svg viewBox="0 0 100 100"><path d="M 25 50 a 15 15 0 0 1 15 -15 a 20 20 0 0 1 35 5 a 15 15 0 0 1 10 20 a 15 15 0 0 1 -15 15 l -30 0 a 15 15 0 0 1 -15 -25 z" fill="none" stroke="currentColor" stroke-width="6"/></svg>` },
-  { id: "spiky", name: "Spiky / Scream", svg: `<svg viewBox="0 0 100 100"><path d="M 50 15 L 60 35 L 85 30 L 70 50 L 85 70 L 60 65 L 50 85 L 40 65 L 15 70 L 30 50 L 15 30 L 40 35 Z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/></svg>` },
-  { id: "heart", name: "Heart", svg: `<svg viewBox="0 0 100 100"><path d="M 50 85 C 50 85 15 55 15 35 C 15 20 30 15 40 25 C 50 35 50 35 50 35 C 50 35 50 35 60 25 C 70 15 85 20 85 35 C 85 55 50 85 50 85 Z" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/></svg>` },
-  { id: "polygon", name: "Polygon", svg: `<svg viewBox="0 0 100 100"><polygon points="25,20 75,20 95,50 75,80 25,80 5,50" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/></svg>` },
-  { id: "ribbon", name: "Ribbon", svg: `<svg viewBox="0 0 100 100"><polygon points="10,25 90,25 75,50 90,75 10,75 25,50" fill="none" stroke="currentColor" stroke-width="6" stroke-linejoin="round"/></svg>` },
-];
-
 // ---------------------------------------------------------
 // 2. Geometry & Math Generators
 // ---------------------------------------------------------
 
 /**
- * Pseudo-random generator for reproducible jitter in explosion spikes and bumpy shapes
+ * Pseudo-random generator for reproducible jitter in explosion spikes and bumpy shapes.
+ * 
+ * @param {number} seed - The numerical seed value to initialize the pseudo-random calculation.
+ * @returns {number} A deterministic pseudo-random float between 0 and 1.
  */
 function pseudoRandom(seed) {
   let x = Math.sin(seed * 12.9898) * 43758.5453;
@@ -199,6 +222,11 @@ function getPointCount() {
 /**
  * Normalizes an arbitrary set of points to be centered at 0,0 
  * and scaled to the specified X and Y radii.
+ * 
+ * @param {number[][]} pts - An array of [x, y] coordinate pairs to normalize.
+ * @param {number} rx - The target horizontal radius (X-axis scaling factor).
+ * @param {number} ry - The target vertical radius (Y-axis scaling factor).
+ * @returns {number[][]} A new array of scaled and centered [x, y] coordinate pairs.
  */
 function normalizeAndScale(pts, rx, ry) {
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -223,6 +251,10 @@ function normalizeAndScale(pts, rx, ry) {
 /**
  * Takes a low-density polygon (like a box or ribbon) and inserts 
  * evenly spaced points along its perimeter.
+ * 
+ * @param {number[][]} vertices - An array of the polygon's original [x, y] vertices.
+ * @param {number} N - The target total number of points to generate along the perimeter.
+ * @returns {number[][]} An array of interpolated [x, y] coordinate pairs forming the higher-density perimeter.
  */
 function interpolatePolygon(vertices, N) {
   if (vertices.length === 0) return [];
@@ -254,6 +286,14 @@ function interpolatePolygon(vertices, N) {
 /**
  * Creates an array of points forming a circular arc.
  * Used for rounded corners on boxes.
+ * 
+ * @param {number} cx - The X coordinate of the arc's center point.
+ * @param {number} cy - The Y coordinate of the arc's center point.
+ * @param {number} r - The radius of the arc.
+ * @param {number} startAng - The starting angle of the arc in radians.
+ * @param {number} endAng - The ending angle of the arc in radians.
+ * @param {number} numPts - The number of segments/interpolated points to generate for the arc.
+ * @returns {number[][]} An array of [x, y] coordinate pairs representing the curve of the arc.
  */
 function createArc(cx, cy, r, startAng, endAng, numPts) {
   if (r <= 0) return [[cx, cy]];
@@ -267,6 +307,9 @@ function createArc(cx, cy, r, startAng, endAng, numPts) {
 
 /**
  * Overlays explosion "Action" spikes onto a generated base shape.
+ * 
+ * @param {number[][]} pts - The base shape's perimeter points as an array of [x, y] coordinates.
+ * @returns {number[][]} A new array of [x, y] coordinates with the spike geometries injected.
  */
 function injectSpikes(pts) {
   const validShapeTypes = ['box', 'oval', 'ribbon', 'polygon'];
@@ -312,6 +355,10 @@ function injectSpikes(pts) {
  * Calculates the full perimeter of the callout (excluding the stem).
  * Ensures ALL shapes start their point array at Angle 0 (Right/3 o'clock)
  * so that the stem position percentage is visually consistent across all shapes.
+ * 
+ * @param {number} rx - The horizontal radius for generating the base shape.
+ * @param {number} ry - The vertical radius for generating the base shape.
+ * @returns {number[][]} An array of [x, y] coordinate pairs representing the shape's perimeter.
  */
 function generateBaseShape(rx, ry) {
   let pts = [];
@@ -444,37 +491,14 @@ function generateBaseShape(rx, ry) {
 }
 
 /**
- * Takes a low-density polygon (like a box or ribbon) and inserts 
- * evenly spaced points along its perimeter.
+ * Generates an array of points along a quadratic bezier curve.
+ * 
+ * @param {number[]} p0 - The starting [x, y] coordinate of the curve.
+ * @param {number[]} p1 - The [x, y] control point determining the curve's bend and direction.
+ * @param {number[]} p2 - The ending [x, y] coordinate of the curve.
+ * @param {number} steps - The number of segments/interpolated points to generate along the curve.
+ * @returns {number[][]} An array of [x, y] coordinate pairs defining the bezier curve.
  */
-function interpolatePolygon(vertices, N) {
-  if (vertices.length === 0) return [];
-  let totalLen = 0;
-  const segments = [];
-  for (let i = 0; i < vertices.length; i++) {
-    const p1 = vertices[i];
-    const p2 = vertices[(i + 1) % vertices.length];
-    const len = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
-    segments.push({ p1, p2, len });
-    totalLen += len;
-  }
-
-  const pts = [];
-  for (let seg of segments) {
-    // Preserve vertices and interpolate proportional lengths cleanly
-    const segPts = Math.max(1, Math.round((seg.len / totalLen) * N));
-    for (let i = 0; i < segPts; i++) {
-      const t = i / segPts;
-      pts.push([
-        seg.p1[0] + t * (seg.p2[0] - seg.p1[0]),
-        seg.p1[1] + t * (seg.p2[1] - seg.p1[1])
-      ]);
-    }
-  }
-  return pts;
-}
-
-// Generate quadratic bezier points
 function getQuadraticBezier(p0, p1, p2, steps) {
   const pts = [];
   for (let i = 0; i <= steps; i++) {
@@ -488,7 +512,14 @@ function getQuadraticBezier(p0, p1, p2, steps) {
   return pts;
 }
 
-// Shift array indices, useful for putting the "splice" point in the middle
+/**
+ * Shifts the elements of an array by a given offset, wrapping elements 
+ * around to the other side. Useful for putting the "splice" point in the middle.
+ * 
+ * @param {Array<any>} arr - The original array to be rotated.
+ * @param {number} offset - The number of positions to shift the array (can be positive or negative).
+ * @returns {Array<any>} A new array with its elements shifted by the offset.
+ */
 function rotateArray(arr, offset) {
   if (!arr || arr.length === 0) return arr;
   const k = ((offset % arr.length) + arr.length) % arr.length;
@@ -497,6 +528,11 @@ function rotateArray(arr, offset) {
 
 /**
  * Modifies the base perimeter to include the tail/stem.
+ * 
+ * @param {number[][]} basePts - An array of [x, y] coordinate pairs representing the base shape's perimeter.
+ * @param {number} rx - The horizontal bounding radius of the base shape.
+ * @param {number} ry - The vertical bounding radius of the base shape.
+ * @returns {{ polyPts: number[][], extraElements: Array<Object> }} An object containing the new perimeter points (including splicing stems), and any extra detached elements (like line stems or thought bubbles).
  */
 function injectStem(basePts, rx, ry) {
   if (state.stemType === "none" || basePts.length < 3) return { polyPts: basePts, extraElements: [] };
@@ -676,14 +712,19 @@ function injectStem(basePts, rx, ry) {
 // 3. EA Builder & Preview Loop
 // ---------------------------------------------------------
 
-let previewTimeout;
-
+/**
+ * Constructs the Excalidraw elements (polygon, text, and extra stem elements) based on the current state.
+ * If isFinal is true, it handles the actual replacement or insertion into the Excalidraw scene and attaches metadata.
+ * 
+ * @param {boolean} isFinal - Indicates if the build is for actual canvas insertion rather than just rendering a preview.
+ */
 async function buildElements(isFinal = false) {
   ea.clear();
 
   // Grab old position data if we are doing a replacement
   let oldPoly = null;
-  if (isFinal && editTarget) {
+  // Safe check for ea.targetView to prevent errors on EA workbench manipulation
+  if (isFinal && editTarget && ea.targetView) {
     const viewEls = ea.getViewElements();
     oldPoly = viewEls.find(el => el.id === editTarget.polyId);
     const elsToDelete = viewEls.filter(el => editTarget.allIds.includes(el.id) || el.id === editTarget.polyId);
@@ -694,7 +735,7 @@ async function buildElements(isFinal = false) {
   }
 
   // 1. Setup Global Styles FIRST (Must be done before text measurement)
-  ea.canvas.viewBackgroundColor = st.viewBackgroundColor;
+  ea.canvas.viewBackgroundColor = st()?.viewBackgroundColor ?? "gray";
   ea.style.strokeColor = state.strokeColor;
   ea.style.strokeWidth = state.strokeWidth;
   ea.style.roughness = parseInt(state.roughness);
@@ -808,20 +849,37 @@ async function buildElements(isFinal = false) {
   // 10. Add Metadata & Group
   if (isFinal) {
     ea.addAppendUpdateCustomData(polyId, {
-      comicCallout: state,
+      // DEEP COPY state to prevent shared reference mutations across multiple callouts
+      comicCallout: JSON.parse(JSON.stringify(state)), 
       comicCalloutIds: allIds
     });
   }
   ea.addToGroup(allIds);
 }
 
+/**
+ * Generates an SVG snapshot of the currently configured elements and injects it into the preview pane.
+ * 
+ * @param {HTMLElement} previewContainer - The DOM element where the live SVG preview should be rendered.
+ */
 async function renderPreview(previewContainer) {
+  // Prevent SVG generation without a valid view context (e.g., during Obsidian startup)
+  if (!ea.targetView) return; 
+
   await buildElements(false);
-  // Leverage Excalidraw's SVG export padding rather than injecting invisible blocks
   const svg = await ea.createSVG(undefined, undefined, undefined, undefined, undefined, 10);
-  previewContainer.innerHTML = svg.outerHTML;
+  
+  // Wait until SVG is generated before clearing to prevent collapse and UI flash
+  previewContainer.empty();
+  previewContainer.appendChild(svg);
 }
 
+/**
+ * Debounces the preview rendering execution to prevent UI freezing and visual artifacts
+ * when the user rapidly changes sliders, inputs text, or adjusts settings.
+ * 
+ * @param {HTMLElement} previewContainer - The DOM element containing the live preview.
+ */
 function scheduleUpdate(previewContainer) {
   clearTimeout(previewTimeout);
   previewTimeout = setTimeout(() => {
@@ -830,83 +888,16 @@ function scheduleUpdate(previewContainer) {
 }
 
 // ---------------------------------------------------------
-// 4. User Interface (Floating Modal)
+// 4. Settings UI
 // ---------------------------------------------------------
-
-// Global UI Node Variables
-let modal, container, leftCol, rightCol, previewContainer, actionsContainer;
 
 /**
- * Constructs the core UI grid and floating modal, injecting required CSS.
+ * Utility function to create a standardized, styled UI section container inside the side panel.
+ * 
+ * @param {HTMLElement} container - The parent DOM element.
+ * @param {string} title - The header text for the section.
+ * @returns {HTMLElement} The newly created section div.
  */
-function buildModalLayout() {
-  modal = new ea.FloatingModal(ea.plugin.app);
-  modal.titleEl.setText("Comic Book Callouts & Bubbles");
-  modal.modalEl.style.width = "760px";
-  modal.modalEl.style.maxWidth = "85vw";
-  modal.modalEl.style.maxHeight = "85vh";
-
-  container = modal.contentEl.createDiv({
-    attr: { style: "display: grid; grid-template-columns: 380px 1fr; gap: 20px; height: 70vh;" }
-  });
-
-  // CSS Injection
-  container.createEl("style", {
-    text: `
-      .comic-textarea-setting { display: block !important; border-top: none !important; padding-top: 0 !important; }
-      .comic-textarea-setting .setting-item-info { display: none !important; }
-      .comic-textarea-setting .setting-item-control { display: block !important; width: 100% !important; justify-content: stretch !important; }
-      .comic-textarea-setting textarea { width: 100% !important; box-sizing: border-box !important; min-height: 80px; resize: vertical; }
-      .comic-section-header { margin-top: 15px; display: block; color: var(--text-accent); border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 5px; margin-bottom: 10px; font-weight: bold; font-size: 1.1em;}
-      .comic-preset-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--background-modifier-border); }
-      .comic-preset-bar .dropdown { flex-grow: 1; margin-left: 4px; }
-      .comic-btn-icon { padding: 4px 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: var(--interactive-normal); border-radius: 4px; }
-      .comic-btn-icon:hover { background: var(--interactive-hover); }
-      .comic-tabs-header { display: flex; border-bottom: 1px solid var(--background-modifier-border); margin-bottom: 15px; margin-top: 10px; }
-      .comic-tab-btn { flex: 1; padding: 8px 5px; cursor: pointer; text-align: center; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); border-radius: 0; box-shadow: none; display: flex; align-items: center; justify-content: center; }
-      .comic-tab-btn svg { width: 20px; height: 20px; }
-      .comic-tab-btn:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
-      .comic-tab-btn.is-active { border-bottom-color: var(--interactive-accent); color: var(--interactive-accent); }
-  `});
-  
-  leftCol = container.createDiv({
-    attr: { style: "overflow-y: auto; padding-right: 15px; display: flex; flex-direction: column; gap: 10px;" }
-  });
-
-  rightCol = container.createDiv({
-    attr: { style: "display: flex; flex-direction: column; gap: 15px; flex: 1 1 auto; min-height: 0;" }
-  });
-
-  previewContainer = rightCol.createDiv({
-    attr: { style: `flex: 1 1 auto; min-height: 0; border: 1px solid var(--background-modifier-border); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; background-color: ${st.viewBackgroundColor};` }
-  });
-}
-
-// ---------------------------------------------------------
-// 4a. Settings UI
-// ---------------------------------------------------------
-// Helper to initialize and retrieve fold states
-function getFolds() {
-  if (!scriptSettings[SCRIPT_SETTINGS_KEY].folds) {
-    scriptSettings[SCRIPT_SETTINGS_KEY].folds = {
-      baseShape: true,
-      explosionSpikes: false,
-      stem: false,
-      appearance: false,
-      colors: false
-    };
-  }
-  return scriptSettings[SCRIPT_SETTINGS_KEY].folds;
-}
-
-// Helper to toggle and persist fold states
-async function toggleFoldState(key, isOpen) {
-  const folds = getFolds();
-  folds[key] = isOpen;
-  await ea.setScriptSettings(scriptSettings);
-}
-
-// Creates a simple organized section (replaces the old foldable UI)
 function createSection(container, title) {
   const div = container.createDiv();
   div.style.marginBottom = "10px";
@@ -916,6 +907,13 @@ function createSection(container, title) {
   return div;
 }
 
+/**
+ * Calculates the ideal path resolution (number of structural points) needed to render the 
+ * current shape cleanly. It balances Excalidraw performance with visual fidelity based on 
+ * shape complexity and active modifiers (like action spikes or cloud bumps).
+ * 
+ * @returns {number} The optimally calculated path resolution.
+ */
 function getOptimalPathResolution() {
   let res = 10;
   if (['box', 'polygon', 'ribbon'].includes(state.shapeType)) {
@@ -940,22 +938,34 @@ function getOptimalPathResolution() {
   return Math.max(10, Math.min(200, Math.ceil(res / 10) * 10));
 }
 
+/**
+ * Updates the state's path resolution to its optimal calculated value and automatically
+ * syncs the corresponding UI slider if it is currently rendered in the active tab.
+ */
 function updatePathRes() {
   state.pathResolution = getOptimalPathResolution();
-  if (modal.pathResSliderComp) modal.pathResSliderComp.setValue(state.pathResolution);
+  if (pathResSliderComp) pathResSliderComp.setValue(state.pathResolution);
 }
 
+/**
+ * Renders the preset management UI bar, which includes a dropdown selector and action buttons
+ * for saving, creating (Save As), and deleting custom user configurations.
+ * 
+ * @param {HTMLElement} container - The parent DOM element to render into.
+ */
 function renderPresetsUI(container) {
-  container.createEl("div", { text: "Presets", cls: "comic-section-header", attr: { style: "margin-top: 0;" } });
-  const presetBar = container.createDiv({ cls: "comic-preset-bar" });
+  container.empty();
+  const presetBar = container.createDiv({ cls: "comic-preset-bar", attr: { style: "margin-bottom: 0; padding-bottom: 0; border-bottom: none;" } });
   const pSelect = presetBar.createEl("select", { cls: "dropdown" });
   Object.keys(presets).forEach(p => pSelect.createEl("option", { text: p, value: p }));
   pSelect.value = activePresetName;
+  
   pSelect.onchange = () => {
     activePresetName = pSelect.value;
     Object.assign(state, presets[activePresetName]);
+    if (textAreaComp) textAreaComp.setValue(state.text);
+    renderTabsUI(tabsContainer); // Refresh parameters without full UI rebuild
     scheduleUpdate(previewContainer);
-    renderSettings();
   };
 
   const btnSave = presetBar.createEl("div", { cls: "comic-btn-icon", attr: { title: "Save Preset" } });
@@ -974,7 +984,7 @@ function renderPresetsUI(container) {
       activePresetName = name.trim();
       presets[activePresetName] = JSON.parse(JSON.stringify(state));
       await savePrefs();
-      renderSettings();
+      renderPresetsUI(container); // Re-render just this bar
       new Notice(`Preset "${activePresetName}" created.`);
     }
   };
@@ -989,26 +999,41 @@ function renderPresetsUI(container) {
     delete presets[activePresetName];
     activePresetName = "Default";
     Object.assign(state, presets["Default"]);
+    if (textAreaComp) textAreaComp.setValue(state.text);
     await savePrefs();
-    renderSettings();
+    renderPresetsUI(container);
+    renderTabsUI(tabsContainer);
     scheduleUpdate(previewContainer);
     new Notice(`Preset deleted.`);
   };
 }
 
+/**
+ * Renders the main multi-line text area block where the user inputs the speech/callout text.
+ * 
+ * @param {HTMLElement} container - The parent DOM element to render into.
+ */
 function renderTextUI(container) {
-  container.createEl("div", { text: "Dialogue Text", cls: "comic-section-header" });
-  const textSetting = new ea.obsidian.Setting(container).addTextArea(text => {
+  const wrapper = container.createDiv({ attr: { style: "width: 100%; display: flex; flex-direction: column;" } });
+  const textSetting = new ea.obsidian.Setting(wrapper).addTextArea(text => {
+    textAreaComp = text;
     text.setValue(state.text).onChange(val => { state.text = val; scheduleUpdate(previewContainer); });
   });
   textSetting.settingEl.classList.add("comic-textarea-setting");
+  textSetting.settingEl.style.marginTop = "0";
 }
 
+/**
+ * Renders the "Base Shape" tab content. This includes the primary visual shape selector grid
+ * and triggers the rendering functions for shape-specific modifiers and explosion spikes.
+ * 
+ * @param {HTMLElement} container - The parent DOM element to render into.
+ */
 function renderBaseShapeUI(container) {
   const section = createSection(container, "Base Shape");
 
   const shapeGrid = section.createDiv({
-    attr: { style: "display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px 8px; margin-bottom: 15px;" }
+    attr: { style: "display: grid; grid-template-columns: repeat(auto-fill, minmax(40px, 60px)); gap: 10px; margin-bottom: 15px; justify-content: start;" }
   });
 
   SHAPES.forEach((shape) => {
@@ -1017,7 +1042,7 @@ function renderBaseShapeUI(container) {
       attr: {
         title: shape.name,
         "aria-label": shape.name,
-        style: "height: 40px; padding: 4px; cursor: pointer;" + (isActive ? "background-color: var(--background-modifier-hover); color: var(--interactive-accent); border-color: var(--interactive-accent);" : "")
+        style: "height: 40px; width: 100%; padding: 4px; cursor: pointer;" + (isActive ? "background-color: var(--background-modifier-hover); color: var(--interactive-accent); border-color: var(--interactive-accent);" : "")
       }
     });
     btn.innerHTML = shape.svg;
@@ -1025,7 +1050,8 @@ function renderBaseShapeUI(container) {
       state.shapeType = shape.id;
       state.pathResolution = getOptimalPathResolution();
       scheduleUpdate(previewContainer);
-      renderSettings();
+      // Re-render tabs to update dynamic sliders (e.g. corner roundness vs bumps)
+      renderTabsUI(tabsContainer);
     };
   });
 
@@ -1033,6 +1059,149 @@ function renderBaseShapeUI(container) {
   renderExplosionSpikesUI(section);
 }
 
+/**
+ * Renders the configuration tabs, switching contents actively and preserving scroll
+ * 
+ * @param {HTMLElement} container - The parent DOM element to render into.
+ */
+function renderTabsUI(container) {
+  const scrollPos = mainScrollContainer ? mainScrollContainer.scrollTop : 0;
+  container.empty();
+
+  // Ensure safe fallbacks for legacy presets
+  if (state.bubbleBaseRadius === undefined) state.bubbleBaseRadius = 20;
+  if (state.invertBend === undefined) state.invertBend = false;
+  if (state.lineSecondBend === undefined) state.lineSecondBend = 0;
+  if (state.lightningSections === undefined) state.lightningSections = 1;
+  if (state.fontFamily === undefined) state.fontFamily = 5;
+  if (state.fontSize === undefined) state.fontSize = 16;
+  if (state.fillStyle === undefined) state.fillStyle = "solid";
+
+  // Render Tabs Header
+  const tabsHeader = container.createDiv({ cls: "comic-tabs-header" });
+  const tabs = [
+    { id: "baseShape", icon: "shapes", label: "Base Shape" },
+    { id: "stem", icon: "message-square", label: "Tail / Stem" },
+    { id: "text", icon: "type", label: "Text Properties" },
+    { id: "lineFill", icon: "pen-tool", label: "Line and Fill" },
+    { id: "colors", icon: "palette", label: "Colors" }
+  ];
+  
+  tabs.forEach(tab => {
+    const btn = tabsHeader.createEl("button", { cls: "comic-tab-btn" + (activeTab === tab.id ? " is-active" : "") });
+    btn.innerHTML = ea.obsidian.getIcon(tab.icon)?.outerHTML || tab.label;
+    btn.setAttribute("aria-label", tab.label);
+    btn.setAttribute("title", tab.label);
+    btn.onclick = () => {
+      activeTab = tab.id;
+      renderTabsUI(container);
+    };
+  });
+  
+  // Render Active Tab Content with fixed minimum height to prevent scroll jumps
+  const tabContent = container.createDiv({ cls: "comic-tab-content", attr: { style: "min-height: 380px;" } });
+  
+  switch (activeTab) {
+    case "baseShape":
+      renderBaseShapeUI(tabContent);
+      break;
+    case "stem":
+      renderStemUI(tabContent);
+      break;
+    case "text":
+      renderTextAppearanceUI(tabContent);
+      break;
+    case "lineFill":
+      renderLineFillUI(tabContent);
+      break;
+    case "colors":
+      renderColorsUI(tabContent);
+      break;
+  }
+
+  if (mainScrollContainer) {
+    mainScrollContainer.scrollTop = scrollPos;
+  }
+}
+
+/**
+ * Constructs the core UI grid for the side panel, injecting responsive CSS.
+ * Sets up the main structural containers including the preset manager, text area, 
+ * live preview pane, action buttons, and the configuration tabs.
+ * 
+ * @param {HTMLElement} contentEl - The root DOM element of the side panel tab where the UI layout will be built.
+ */
+function buildPanelLayout(contentEl) {
+  contentEl.empty();
+
+  contentEl.createEl("style", {
+    text: `
+      .comic-textarea-setting { display: block !important; border-top: none !important; padding: 0 !important; }
+      .comic-textarea-setting .setting-item-info { display: none !important; }
+      .comic-textarea-setting .setting-item-control { display: block !important; width: 100% !important; justify-content: stretch !important; }
+      .comic-textarea-setting textarea { width: 100% !important; box-sizing: border-box !important; min-height: 100px; resize: vertical; margin-bottom: 0; }
+      .comic-section-header { margin-top: 15px; display: block; color: var(--text-accent); border-bottom: 1px solid var(--background-modifier-border); padding-bottom: 5px; margin-bottom: 10px; font-weight: bold; font-size: 1.1em;}
+      .comic-preset-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+      .comic-preset-bar .dropdown { flex-grow: 1; margin-left: 0px; }
+      .comic-btn-icon { padding: 4px 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; background: var(--interactive-normal); border-radius: 4px; }
+      .comic-btn-icon:hover { background: var(--interactive-hover); }
+      .comic-tabs-header { display: flex; border-bottom: 1px solid var(--background-modifier-border); margin-bottom: 15px; margin-top: 10px; flex-wrap: wrap; }
+      .comic-tab-btn { flex: 1; padding: 8px 5px; cursor: pointer; text-align: center; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); border-radius: 0; box-shadow: none; display: flex; align-items: center; justify-content: center; min-width: 40px; }
+      .comic-tab-btn svg { width: 20px; height: 20px; }
+      .comic-tab-btn:hover { color: var(--text-normal); background: var(--background-modifier-hover); }
+      .comic-tab-btn.is-active { border-bottom-color: var(--interactive-accent); color: var(--interactive-accent); }
+      
+      /* Responsive Sidepanel Grid - Wrapped for responsiveness */
+      .comic-top-section { display: flex; flex-direction: row; flex-wrap: wrap; gap: 15px; align-items: stretch; margin-bottom: 5px; }
+      .comic-inputs-col { flex: 1 1 250px; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+      .comic-preview-col { flex: 1 1 250px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+      /* Hide main scrollbar completely while maintaining scrollability */
+      .comic-no-scrollbar {
+        overflow-y: auto;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE/Edge */
+      }
+      .comic-no-scrollbar::-webkit-scrollbar {
+        display: none; /* Chrome/Safari/Opera */
+      }
+  `});
+
+  mainScrollContainer = contentEl.createDiv({
+    cls: "comic-no-scrollbar",
+    attr: { style: "display: flex; flex-direction: column; gap: 8px; padding: 10px; height: 100%;" }
+  });
+
+  const topSection = mainScrollContainer.createDiv({ cls: "comic-top-section" });
+  
+  // 1. Template Selector & Text Area Column
+  inputsContainer = topSection.createDiv({ cls: "comic-inputs-col" });
+  
+  // Create separated inner containers so that updating the preset UI doesn't erase the text UI
+  const presetContainer = inputsContainer.createDiv();
+  const textContainer = inputsContainer.createDiv();
+
+  renderPresetsUI(presetContainer);
+  renderTextUI(textContainer);
+
+  // 2. Preview & Actions Column
+  previewWrapper = topSection.createDiv({ cls: "comic-preview-col" });
+  previewContainer = previewWrapper.createDiv({
+    attr: { style: `flex: 1 1 auto; min-height: 140px; border: 1px solid var(--background-modifier-border); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; background-color: ${st()?.viewBackgroundColor ?? "gray"};` }
+  });
+  buildActionButtons(previewWrapper);
+
+  // 3. Configuration Tabs
+  tabsContainer = mainScrollContainer.createDiv({ cls: "comic-tabs-container" });
+  renderTabsUI(tabsContainer);
+}
+
+/**
+ * Renders the contextual sliders and toggles that uniquely modify the currently selected base shape
+ * (e.g., polygon vertices rotation, cloud bump properties, box corner roundness, ribbon tails).
+ * 
+ * @param {HTMLElement} section - The parent DOM section to render into.
+ */
 function renderShapeModifiersUI(section) {
   if (state.shapeType === "polygon") {
     new ea.obsidian.Setting(section).setName("Polygon Vertices")
@@ -1072,6 +1241,12 @@ function renderShapeModifiersUI(section) {
     .addSlider(slider => slider.setLimits(0.5, 2.0, 0.1).setValue(state.heightRatio).onChange(val => { state.heightRatio = val; scheduleUpdate(previewContainer); }));
 }
 
+/**
+ * Renders the UI controls for adding "Action/Scream" explosion spikes to compatible 
+ * base shapes. Controls include the spike count, width, height, and distribution.
+ * 
+ * @param {HTMLElement} container - The parent DOM element to render into.
+ */
 function renderExplosionSpikesUI(container) {
   if (['box', 'oval', 'ribbon', 'polygon'].includes(state.shapeType)) {
     container.createEl("hr", { attr: { style: "margin: 15px 0;" } });
@@ -1081,7 +1256,7 @@ function renderExplosionSpikesUI(container) {
       .addToggle(t => t.setValue(state.addSpikes).onChange(val => {
         state.addSpikes = val;
         state.pathResolution = getOptimalPathResolution();
-        renderSettings();
+        renderTabsUI(tabsContainer); // Re-render to show/hide sub-sliders
         scheduleUpdate(previewContainer);
       }));
 
@@ -1106,12 +1281,22 @@ function renderExplosionSpikesUI(container) {
   }
 }
 
+/**
+ * Renders the "Tail / Stem" tab content, providing configurable options for the speech bubble's 
+ * tail. Settings include stem type, position along the perimeter, length, width, and bend angles.
+ * 
+ * @param {HTMLElement} container - The parent DOM element to render into.
+ */
 function renderStemUI(container) {
   const section = createSection(container, "Tail / Stem");
 
   new ea.obsidian.Setting(section).setName("Type")
     .addDropdown(d => d.addOption("v_shape", "V-Shape").addOption("curvy_v", "Curvy Swoop").addOption("lightning", "Lightning").addOption("bubbles", "Thought Bubbles").addOption("line", "Line").addOption("none", "None")
-      .setValue(state.stemType).onChange(val => { state.stemType = val; renderSettings(); scheduleUpdate(previewContainer); }));
+      .setValue(state.stemType).onChange(val => { 
+        state.stemType = val; 
+        renderTabsUI(tabsContainer); 
+        scheduleUpdate(previewContainer); 
+      }));
 
   new ea.obsidian.Setting(section).setName("Perimeter Position (%)")
     .addSlider(slider => slider.setLimits(0, 100, 1).setValue(state.stemPosition).onChange(val => { state.stemPosition = val; scheduleUpdate(previewContainer); }));
@@ -1159,6 +1344,12 @@ function renderStemUI(container) {
   }
 }
 
+/**
+ * Renders the "Text Properties" tab content. Controls formatting behaviors related to
+ * the inserted text, including wrap width, internal margins/padding, font family, and font size.
+ * 
+ * @param {HTMLElement} container - The parent DOM element to render into.
+ */
 function renderTextAppearanceUI(container) {
   const section = createSection(container, "Text Properties");
 
@@ -1195,13 +1386,20 @@ function renderTextAppearanceUI(container) {
     );
 }
 
+/**
+ * Renders the "Line and Fill Properties" tab content. Configures Excalidraw-specific
+ * style properties for the shape such as path resolution, stroke/fill styles, 
+ * sloppiness (roughness), stroke width, and background opacity.
+ * 
+ * @param {HTMLElement} container - The parent DOM element to render into.
+ */
 function renderLineFillUI(container) {
   const section = createSection(container, "Line and Fill Properties");
 
   new ea.obsidian.Setting(section).setName("Path Resolution")
     .setDesc("Lower for dashed styles, higher for smoothness.")
     .addSlider(slider => {
-      modal.pathResSliderComp = slider;
+      pathResSliderComp = slider;
       slider.setLimits(10, 200, 10).setValue(state.pathResolution).onChange(val => {
         state.pathResolution = val;
         scheduleUpdate(previewContainer);
@@ -1237,6 +1435,13 @@ function renderLineFillUI(container) {
     .addSlider(slider => slider.setLimits(0, 100, 5).setValue(state.bgOpacity).onChange(val => { state.bgOpacity = val; scheduleUpdate(previewContainer); }));
 }
 
+/**
+ * Renders the "Colors" tab content. Constructs synced color picker components consisting of
+ * an interactive swatch, a native input picker, and a text input field for hex/color values, 
+ * linked to the text, stroke, and fill color properties.
+ * 
+ * @param {HTMLElement} container - The parent DOM element to render into.
+ */
 function renderColorsUI(container) {
   const section = createSection(container, "Colors");
 
@@ -1315,124 +1520,149 @@ function renderColorsUI(container) {
   mkColorSyncPicker(section, "Fill Color", "bgColor");
 }
 
-// --- Settings Render Function ---
-let activeTab = "baseShape";
-
-function renderSettings() {
-  const scrollPos = leftCol.scrollTop;
-  leftCol.empty();
-
-  // Establish state fallbacks safely for presets created before these options existed
-  if (state.bubbleBaseRadius === undefined) state.bubbleBaseRadius = 20;
-  if (state.invertBend === undefined) state.invertBend = false;
-  if (state.lineSecondBend === undefined) state.lineSecondBend = 0;
-  if (state.lightningSections === undefined) state.lightningSections = 1;
-
-  // Safe fallbacks for the new font configurations and fill style
-  if (state.fontFamily === undefined) state.fontFamily = 5;
-  if (state.fontSize === undefined) state.fontSize = 16;
-  if (state.fillStyle === undefined) state.fillStyle = "solid";
-
-  renderPresetsUI(leftCol);
-  renderTextUI(leftCol);
-
-  // Render Tabs Header
-  const tabsHeader = leftCol.createDiv({ cls: "comic-tabs-header" });
-  const tabs = [
-    { id: "baseShape", icon: "shapes", label: "Base Shape" },
-    { id: "stem", icon: "message-square", label: "Tail / Stem" },
-    { id: "text", icon: "type", label: "Text" },
-    { id: "lineFill", icon: "pen-tool", label: "Line and Fill" },
-    { id: "colors", icon: "palette", label: "Colors" }
-  ];
+/**
+ * Creates the functional UI buttons (Insert, Replace) for the side panel
+ *
+ * @param {HTMLElement} container - The parent DOM element to render into.
+ */
+function buildActionButtons(container) {
+  // Query the container directly to prevent detached DOM nodes if the tab was re-rendered.
+  // We use a local variable to shadow any old global references.
+  let localActionsContainer = container.querySelector(".comic-actions-container");
   
-  tabs.forEach(tab => {
-    const btn = tabsHeader.createEl("button", { cls: "comic-tab-btn" + (activeTab === tab.id ? " is-active" : "") });
-    btn.innerHTML = ea.obsidian.getIcon(tab.icon)?.outerHTML || tab.label;
-    btn.setAttribute("aria-label", tab.label);
-    btn.setAttribute("title", tab.label);
-    btn.onclick = () => {
-      activeTab = tab.id;
-      renderSettings();
-    };
-  });
-  
-  // Render Active Tab Content
-  const tabContent = leftCol.createDiv({ cls: "comic-tab-content" });
-  
-  switch (activeTab) {
-    case "baseShape":
-      renderBaseShapeUI(tabContent);
-      break;
-    case "stem":
-      renderStemUI(tabContent);
-      break;
-    case "text":
-      renderTextAppearanceUI(tabContent);
-      break;
-    case "lineFill":
-      renderLineFillUI(tabContent);
-      break;
-    case "colors":
-      renderColorsUI(tabContent);
-      break;
+  if (!localActionsContainer) {
+    localActionsContainer = container.createDiv({
+      cls: "comic-actions-container",
+      attr: { style: "display: flex; justify-content: flex-end; gap: 15px; flex: 0 0 auto;" }
+    });
   }
 
-  leftCol.scrollTop = scrollPos;
-}
+  // Safely check for ea.targetView before checking if it's the active leaf
+  const isActiveView = ea.targetView && app.workspace.getLeaf()?.view === ea.targetView;
 
-/**
- * Creates the functional UI buttons (Cancel, Insert, Replace)
- */
-function buildActionButtons() {
-  actionsContainer = rightCol.createDiv({
-    attr: { style: "display: flex; justify-content: flex-end; gap: 15px; flex: 0 0 auto;" }
-  });
-
-  const cancelBtn = actionsContainer.createEl("button", { text: "Cancel" });
-  cancelBtn.onclick = () => {
-    modal.close();
-  };
-
-  if (editTarget) {
-    const replaceBtn = actionsContainer.createEl("button", { text: "Replace Selected", cls: "mod-warning" });
+  // Retrieve existing buttons or create them to avoid destroying DOM elements 
+  // mid-click (which breaks focus events and causes double-click requirements)
+  let replaceBtn = localActionsContainer.querySelector(".comic-replace-btn");
+  if (!replaceBtn) {
+    replaceBtn = localActionsContainer.createEl("button", { text: "Replace Selected", cls: "mod-warning comic-replace-btn" });
     replaceBtn.onclick = async () => {
       await savePrefs();
-      modal.close();
       await buildElements(true);
+      const newElements = ea.getElements().map(el => el);
       await ea.addElementsToView(false, false, true);
+      ea.selectElementsInView(newElements);
+      
+      detectEditTarget();
+      buildActionButtons(container);
+      scheduleUpdate(previewContainer);
     };
   }
 
-  const insertBtn = actionsContainer.createEl("button", { text: editTarget ? "Insert as New" : "Insert Bubble", cls: "mod-cta" });
-  insertBtn.onclick = async () => {
-    await savePrefs();
-    editTarget = null; // Clear target so we don't delete anything
-    modal.close();
-    await buildElements(true);
-    await ea.addElementsToView(true, false, true);
-  };
+  let insertBtn = localActionsContainer.querySelector(".comic-insert-btn");
+  if (!insertBtn) {
+    insertBtn = localActionsContainer.createEl("button", { cls: "mod-cta comic-insert-btn" });
+    insertBtn.onclick = async () => {
+      await savePrefs();
+      editTarget = null; // Clear target so we don't delete anything when inserting new
+      await buildElements(true);
+      
+      // Offset to center of the view to prevent "wait for click" positioning issue
+      const center = ea.getViewCenterPosition();
+      const els = ea.getElements();
+      els.forEach(el => {
+        el.x += center.x;
+        el.y += center.y;
+      });
+
+      const newElements = ea.getElements().map(el => el);
+      await ea.addElementsToView(false, false, true);
+      ea.selectElementsInView(newElements);
+      
+      detectEditTarget();
+      buildActionButtons(container);
+      scheduleUpdate(previewContainer);
+    };
+  }
+
+  // Safely update visibility and text 
+  if (editTarget) {
+    replaceBtn.style.display = "block";
+    insertBtn.innerText = "Insert as New";
+  } else {
+    replaceBtn.style.display = "none";
+    insertBtn.innerText = "Insert Bubble";
+  }
+
+  // Disable interaction if not observing target view AND not interacting with the sidepanel
+  replaceBtn.disabled = !isActiveView;
+  insertBtn.disabled = !isActiveView;
 }
 
 /**
  * Core initialization sequence
  */
-function main() {
+async function main() {
+  const existingTab = ea.checkForActiveSidepanelTabForScript();
+  if (existingTab) {
+    const hostEA = existingTab.getHostEA();
+    if (hostEA && hostEA !== ea) {
+      // Prevent setting an invalid view during startup
+      if (ea.targetView) hostEA.setView(ea.targetView);
+      existingTab.open();
+      return;
+    }
+  }
+
   initializeStateAndPresets();
   detectEditTarget();
-  buildModalLayout();
-  renderSettings();
-  buildActionButtons();
 
-  // Initial Render Loop
-  scheduleUpdate(previewContainer);
+  const tab = await ea.createSidepanelTab("Comic Bubbles", true, true);
+  if (!tab) return;
 
-  modal.onClose = () => {
+  tab.onOpen = () => {
+    buildPanelLayout(tab.contentEl);
+    scheduleUpdate(previewContainer);
+  };
+
+  tab.onFocus = (view) => {
+    let viewChanged = false;
+    if (view && view !== ea.targetView) {
+      ea.setView(view);
+      ea.clear();
+      viewChanged = true;
+    }
+    
+    // Update preview background color to match the currently focused Excalidraw view
+    if (previewContainer) {
+      previewContainer.style.backgroundColor = st()?.viewBackgroundColor ?? "gray";
+    }
+    
+    // Capture state before parsing selection to see if it actually changed
+    const oldTargetId = editTarget ? editTarget.polyId : null;
+    detectEditTarget();
+    const newTargetId = editTarget ? editTarget.polyId : null;
+
+    if (textAreaComp && textAreaComp.getValue() !== state.text) {
+      textAreaComp.setValue(state.text);
+    }
+    
+    // Only re-render UI if the view or target changed. 
+    // Unconditional re-rendering destroys elements during mousedown, causing the double-click issue.
+    if (viewChanged || oldTargetId !== newTargetId) {
+      renderTabsUI(tabsContainer);
+    }
+    
+    // Update button states (disabled/enabled, visibility) without destroying them
+    buildActionButtons(previewWrapper); 
+    scheduleUpdate(previewContainer);
+  };
+
+  tab.onClose = () => {
     savePrefs();
     clearTimeout(previewTimeout);
   };
 
-  modal.open();
+  tab.open();
 }
 
 // Execute Script
