@@ -1029,9 +1029,8 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public async awaitInit() {
     let counter = 0;
-    while ((!this.isReady || !this.fontsReady) && counter < 200) {
+    while ((!this.isReady || !this.fontsReady) && counter++ < 200) {
       await sleep(50);
-      counter++;
     }
   }
 

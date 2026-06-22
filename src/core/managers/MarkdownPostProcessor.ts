@@ -39,6 +39,7 @@ import { linkPrompt } from "../../shared/Dialogs/Prompt";
 import {
   isInstanceOfHTMLElement,
   isInstanceOfHTMLImageElement,
+  isInstanceOfSVGElement,
 } from "../../utils/typechecks";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { setElementDisplay } from "src/utils/htmlUtils";
@@ -580,7 +581,7 @@ const createImgElement = async (
 
   let timer: number;
   const clickEvent = (ev: PointerEvent) => {
-    if (!isInstanceOfHTMLElement(ev.target)) {
+    if (!(isInstanceOfHTMLElement(ev.target) || isInstanceOfSVGElement(ev.target))) {
       return;
     }
     const targetElement = ev.target;
@@ -1088,7 +1089,7 @@ const tmpObsidianWYSIWYG = async (
       internalEmbedDiv.removeClass("inline-embed");
       internalEmbedDiv.addClass("media-embed");
       internalEmbedDiv.addClass("image-embed");
-      if (!onCanvas && isInstanceOfHTMLElement(imgDiv.firstChild)) {
+      if (!onCanvas && (isInstanceOfHTMLElement(imgDiv.firstChild) || isInstanceOfSVGElement(imgDiv.firstChild))) {
         setStyle(imgDiv.firstChild, {
           maxHeight: "100%",
           maxWidth: null,

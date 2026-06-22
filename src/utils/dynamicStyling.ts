@@ -14,6 +14,7 @@ export const setDynamicStyle = (
   dynamicStyle: DynamicStyle,
   textBackgroundColor?: string,
 ) => {
+  color = color ?? "white";
   if (dynamicStyle === "none") {
     //view.excalidrawContainer?.removeAttribute("style");
     window.setTimeout(() =>
@@ -24,7 +25,8 @@ export const setDynamicStyle = (
     );
     const toolspanel = view.toolsPanelRef?.current?.containerRef?.current;
     if (toolspanel) {
-      let toolsStyle = toolspanel.getAttribute("style");
+      //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2810
+      let toolsStyle = toolspanel.getAttribute("style") ?? "";
       toolsStyle = toolsStyle.replace(/--color-primary.*/, "");
       toolspanel.setAttribute("style", toolsStyle);
     }

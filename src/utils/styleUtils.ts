@@ -32,7 +32,7 @@ type StyleObject = Partial<CSSStyleDeclaration> & {
 };
 
 export const setStyle = (
-  element: HTMLElement | SVGSVGElement | null | undefined,
+  element: HTMLElement | SVGElement | null | undefined,
   styles: StyleObject,
 ): void => {
   if (!element) {

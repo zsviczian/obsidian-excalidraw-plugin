@@ -479,6 +479,7 @@ export default class ExcalidrawView
   private previousSceneVersion = 0;
   public previousBackgroundColor = "";
   public previousTheme = "";
+  private pendingUIMode: UIMode | null = null;
 
   //variables used to handle click events in view mode
   private selectedTextElement: SelectedElementWithLink | null = null;
@@ -7142,8 +7143,14 @@ export default class ExcalidrawView
     this.exportDialog.open();
   }
 
-  private setExcalidrawAPI(api: ExcalidrawImperativeAPI) {
+  private setExcalidrawAPI(api: ExcalidrawImperativeAPI | null) {
     this.excalidrawAPI = api;
+    // Chasing ghosts: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2810
+    if (!api || this.pendingUIMode === null) {
+      return;
+    }
+    api.setDesktopUIMode(this.pendingUIMode);
+    this.pendingUIMode = null;
     //api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
   }
 
@@ -8049,7 +8056,12 @@ export default class ExcalidrawView
 
   public setUIMode(mode: UIMode) {
     const api = this.excalidrawAPI;
+    if (!api) {
+      this.pendingUIMode = mode;
+      return;
+    }
     api.setDesktopUIMode(mode);
+    this.pendingUIMode = null;
   }
 
   /**
