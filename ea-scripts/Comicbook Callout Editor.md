@@ -129,6 +129,7 @@ function initializeStateAndPresets() {
  * Checks the active selection on the Excalidraw canvas to see if we are editing an existing callout.
  */
 function detectEditTarget() {
+  const oldTargetId = editTarget ? editTarget.polyId : null;
   editTarget = null;  
   
   // Safe exit if no view is bound yet (e.g., during Obsidian startup)
@@ -169,10 +170,18 @@ function detectEditTarget() {
     // ALWAYS update text in settings if the user edited the text element in the scene
     if (isValidInference && textEl && textEl.originalText && textEl.originalText !== calloutData.text) {
       calloutData.text = textEl.originalText;
+      // If we are still focused on the same target, push the scene-edited text up to the state
+      if (oldTargetId === mainPoly.id) {
+        state.text = textEl.originalText;
+      }
     }
     
     if (isValidInference) {
-      Object.assign(state, calloutData);
+      // ONLY overwrite the editor settings if the user actually selected a different callout
+      if (oldTargetId !== mainPoly.id) {
+        Object.assign(state, calloutData);
+      }
+      
       editTarget = {
         polyId: mainPoly.id,
         allIds: newAllIds
