@@ -1043,3 +1043,7 @@ End Obsidian Sheets Plus support
   width: 100%;
   cursor: move;
 }
+
+.excalidraw .App-bottom-bar .App-toolbar {
+  min-width: 12.5em;
+}

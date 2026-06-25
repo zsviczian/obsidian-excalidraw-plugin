@@ -17,7 +17,12 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
-  "2.24.3": `
+  "2.25.0": `
+## New
+- Imporved ink flow for freedraw pen
+- You can now toggle between pressure sensitive and constant mode for the default excalidraw.com freedraw pen. [#11507](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11507), [#11551](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11551)
+- Comicbook Callout Editor script available in the Script Libarary
+
 ## Fixed
 - BUG: Double Click to edit from Obsidian in Live preview doesn't work anymore [#2813](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2813)
   `,

@@ -16,15 +16,28 @@ import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFile
 import { t } from "src/lang/helpers";
 import { getExcalidrawViews } from "src/utils/obsidianUtils";
 import { CaptureUpdateAction } from "src/constants/constants";
+import { getAppStateStrokeWidthEntry, getFreedrawStrokeWidthByKey } from "src/utils/excalidrawAutomateUtils";
 
 export function setPen(pen: PenStyle, api: ExcalidrawImperativeAPI) {
   const st = api.getAppState();
+  const strokeWidthEntry =
+    !pen.strokeWidth || pen.strokeWidth === 0
+      ? {}
+      : getAppStateStrokeWidthEntry(undefined, pen.strokeWidth);
+  const currentItemStrokeWidthKey =
+    "currentItemStrokeWidthKey" in strokeWidthEntry
+      ? strokeWidthEntry.currentItemStrokeWidthKey
+      : null;
+  const currentItemStrokeWidth =
+    "currentItemStrokeWidth" in strokeWidthEntry
+      ? strokeWidthEntry.currentItemStrokeWidth
+      : null;
   api.updateScene({
     appState: {
       currentStrokeOptions: pen.penOptions,
-      ...(!pen.strokeWidth || pen.strokeWidth === 0
-        ? null
-        : { currentItemStrokeWidth: pen.strokeWidth }),
+      currentItemStrokeWidthKey,
+      currentItemStrokeWidth,
+      currentItemStrokeVariability: pen.penOptions.constantPressure ? "constant" : "variable",
       ...(pen.backgroundColor
         ? { currentItemBackgroundColor: pen.backgroundColor }
         : null),
@@ -38,7 +51,9 @@ export function setPen(pen: PenStyle, api: ExcalidrawImperativeAPI) {
       ...(pen.freedrawOnly && !st.resetCustomPen //switching from custom pen to next custom pen
         ? {
             resetCustomPen: {
+              currentItemStrokeWidthKey: st.currentItemStrokeWidthKey,
               currentItemStrokeWidth: st.currentItemStrokeWidth,
+              currentItemStrokeVariability: st.currentItemStrokeVariability,
               currentItemBackgroundColor: st.currentItemBackgroundColor,
               currentItemStrokeColor: st.currentItemStrokeColor,
               currentItemFillStyle: st.currentItemFillStyle,
@@ -56,16 +71,21 @@ export function resetStrokeOptions(
   api: ExcalidrawImperativeAPI,
   clearCurrentStrokeOptions: boolean,
 ) {
+  const appState = api.getAppState();
   api.updateScene({
     appState: {
       ...(resetCustomPen
         ? {
-            currentItemStrokeWidth: resetCustomPen.currentItemStrokeWidth,
+            currentItemStrokeWidthKey:
+              resetCustomPen.currentItemStrokeWidthKey,
+            currentItemStrokeWidth:
+              resetCustomPen.currentItemStrokeWidth,
             currentItemBackgroundColor:
               resetCustomPen.currentItemBackgroundColor,
             currentItemStrokeColor: resetCustomPen.currentItemStrokeColor,
             currentItemFillStyle: resetCustomPen.currentItemFillStyle,
             currentItemRoughness: resetCustomPen.currentItemRoughness,
+            currentItemStrokeVariability: resetCustomPen.currentItemStrokeVariability,
           }
         : null),
       resetCustomPen: null,
@@ -234,7 +254,7 @@ export class ObsidianMenu {
         pen.freedrawOnly
       ) {
         const activePen = this.activePens[index] ?? { ...pen };
-        activePen.strokeWidth = appState.currentItemStrokeWidth;
+        activePen.strokeWidth = getFreedrawStrokeWidthByKey(appState.currentItemStrokeWidthKey, appState.currentItemStrokeWidth);
         activePen.backgroundColor = appState.currentItemBackgroundColor;
         activePen.strokeColor = appState.currentItemStrokeColor;
         activePen.fillStyle = appState.currentItemFillStyle;

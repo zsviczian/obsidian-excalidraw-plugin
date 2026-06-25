@@ -267,6 +267,7 @@ import {
   getFrameElementsMatchingQuery,
   getElementsWithLinkMatchingQuery,
   getImagesMatchingQuery,
+  getAppStateStrokeWidthEntry,
 } from "src/utils/excalidrawAutomateUtils";
 import { getYouTubeUrl, URLs } from "src/constants/safeUrls";
 import { setStyle } from "src/utils/styleUtils";
@@ -5020,7 +5021,8 @@ export default class ExcalidrawView
         currentItemStrokeColor: st.currentItemStrokeColor,
         currentItemBackgroundColor: st.currentItemBackgroundColor,
         currentItemFillStyle: st.currentItemFillStyle,
-        currentItemStrokeWidth: st.currentItemStrokeWidth,
+        ...getAppStateStrokeWidthEntry(st.currentItemStrokeWidthKey, st.currentItemStrokeWidth),
+        currentItemStrokeVariability: st.currentItemStrokeVariability,
         currentItemStrokeStyle: st.currentItemStrokeStyle,
         currentItemRoughness: st.currentItemRoughness,
         currentItemOpacity: st.currentItemOpacity,

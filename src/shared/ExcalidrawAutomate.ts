@@ -160,6 +160,7 @@ import {
   ensureActiveScriptSettingsObject,
   errorMessage,
   filterColorMap,
+  getAppStateStrokeWidthEntry,
   getEmbeddedFileForImageElment,
   getLineBox,
   getTemplate,
@@ -205,6 +206,7 @@ import { getAspectRatio } from "src/utils/YoutTubeUtils";
 import { getPDFCropRect } from "src/utils/PDFUtils";
 import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
 import { URL_REGISTRY } from "src/constants/safeUrls";
+import { FREEDRAW_STROKE_WIDTH, StrokeWidthKey } from "@zsviczian/excalidraw/types/common/src";
 
 type ExcalidrawAutomateHelpTarget = ((...args: unknown[]) => unknown) | string;
 
@@ -1446,8 +1448,10 @@ export class ExcalidrawAutomate {
           this.style.backgroundColor,
         currentItemFillStyle:
           templateAppstate.currentItemFillStyle ?? this.style.fillStyle,
-        currentItemStrokeWidth:
+        ...getAppStateStrokeWidthEntry (
+          templateAppstate.currentItemStrokeWidthKey,
           templateAppstate.currentItemStrokeWidth ?? this.style.strokeWidth,
+        ),
         currentItemStrokeStyle:
           templateAppstate.currentItemStrokeStyle ?? this.style.strokeStyle,
         currentItemRoughness:

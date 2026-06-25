@@ -59,6 +59,7 @@ import {
 import { ScriptEngine } from "src/shared/Scripts";
 import { ColorMap, FileData } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
+import type { StrokeWidthKey } from "@zsviczian/excalidraw/types/common/src/constants";
 
 declare const PLUGIN_VERSION: string;
 
@@ -1108,3 +1109,56 @@ export function ensureActiveScriptSettingsObject(
     ScriptSettingValue
   >;
 }
+
+export const getStrokeKeyFormLegacyWidth = (strokeWidth: number): StrokeWidthKey => {
+  switch(strokeWidth) {
+    case 0.5:
+      return "thin";
+    case 1:
+      return "medium";
+    case 2:
+      return "bold";
+    default:
+      return undefined;
+  }
+}
+
+// Returns an appState key for the stroke width
+// excalidraw.com deprected and removed currentItemStrokeWidth from appState
+// but the plugin still supports it to allow custom line width settings for scripts and custom pens
+// if the legacy stroke width is provided, it will be converted to the corresponding stroke width key
+// if there is a matching key, the key will be preferred over the legacy stroke width value
+// if there is no matching key, the legacy stroke width value will be used
+export const getAppStateStrokeWidthEntry = (strokeWidthKey:StrokeWidthKey, legacyStrokeWidth: number) => {
+    if (legacyStrokeWidth !== undefined) {
+      strokeWidthKey = getStrokeKeyFormLegacyWidth(legacyStrokeWidth);
+    }
+    if (!!legacyStrokeWidth && !strokeWidthKey) {
+      return { currentItemStrokeWidth: legacyStrokeWidth };
+    }
+    if (!strokeWidthKey) {
+      return {};
+    }
+    return {currentItemStrokeWidthKey: strokeWidthKey};
+}
+
+//replicated from excalidraw constants.ts
+const FREEDRAW_STROKE_WIDTH: Readonly<
+  Record<StrokeWidthKey | "extraBold", ExcalidrawElement["strokeWidth"]>
+> = {
+  thin: 0.5,
+  medium: 1,
+  bold: 2,
+  extraBold: 4, // legacy (may be used again in the future)
+};
+
+//based on excalidraw constants.ts getStrokeWidthByKey
+export const getFreedrawStrokeWidthByKey = (
+  strokeWidthKey: StrokeWidthKey,
+  strokeWidth?: number,
+): ExcalidrawElement["strokeWidth"] => {
+  if (strokeWidth) {
+    return strokeWidth;
+  }
+  return FREEDRAW_STROKE_WIDTH[strokeWidthKey];
+};
