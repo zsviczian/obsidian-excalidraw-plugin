@@ -1146,6 +1146,7 @@ export const getAppStateStrokeWidthEntry = (strokeWidthKey:StrokeWidthKey, legac
 const FREEDRAW_STROKE_WIDTH: Readonly<
   Record<StrokeWidthKey | "extraBold", ExcalidrawElement["strokeWidth"]>
 > = {
+  extraThin: 0.25,
   thin: 0.5,
   medium: 1,
   bold: 2,
