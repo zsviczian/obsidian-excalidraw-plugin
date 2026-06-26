@@ -1032,7 +1032,7 @@ End Obsidian Sheets Plus support
 }
 
 .excalidraw-toolsPanel-island {
-  width: 16em;
+  width: 14.5rem;
   height: fit-content;
   max-height: 400px;
   z-index: 5;
@@ -1046,4 +1046,17 @@ End Obsidian Sheets Plus support
 
 .excalidraw .App-bottom-bar .App-toolbar {
   min-width: 12.8em;
+}
+
+.excalidraw .Island.App-menu__left {
+  scrollbar-width: none;
+}
+
+.excalidraw .Island.excalidraw-toolsPanel-island .buttonList Button.ToolIcon_type_button {
+  flex: 0 0 18%;
+}
+
+.excalidraw .Island.excalidraw-toolsPanel-island .selected-shape-actions .buttonList {
+  justify-content: space-between;
+  column-gap: unset;
 }
