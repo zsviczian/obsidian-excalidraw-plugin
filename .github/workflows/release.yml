@@ -20,11 +20,11 @@ jobs:
     steps:
       # 1. Pull down your repository code
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # 2. Tell the server to install Node 22
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
 
