@@ -22,6 +22,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Imporved ink flow for freedraw pen
 - You can now toggle between pressure sensitive and constant mode for the default excalidraw.com freedraw pen. [#11507](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11507), [#11551](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11551)
 - Comicbook Callout Editor script available in the Script Libarary
+- Added new ExtraBold line width option, and XS font option
 
 ## Fixed
 - BUG: Double Click to edit from Obsidian in Live preview doesn't work anymore [#2813](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2813)

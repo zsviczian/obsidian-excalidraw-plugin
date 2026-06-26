@@ -39,7 +39,10 @@ Features:
 const st = () => ea.targetView ? ea.getExcalidrawAPI()?.getAppState() : null;
 const SCRIPT_SETTINGS_KEY = "ComicBubbles_Settings_V5";
 
-// The default parameters requested for the script
+/**
+ * The default parameters requested for the script.
+ * Holds all default settings for callouts including the new extended halo patterns.
+ */
 const DEFAULT_STATE = {
   "text": "What a beautiful day\nto draw comics!",
   "shapeType": "cloud",
@@ -64,8 +67,19 @@ const DEFAULT_STATE = {
   "spikeWidth": 5,
   "spikeHeight": 30,
   "spikeDist": "Even",
+  "haloType": "none",
+  "haloSpace": 10,
+  "haloLength": 25,
+  "haloDensity": 30,
+  "haloVariance": 20,
+  "haloThickness": 2,
+  "haloLayers": 1,
+  "haloThicknessPattern": "uniform",
+  "haloGapPattern": "uniform",
+  "haloStylePattern": "solid",
   "bubbleCount": 3,
   "bubbleShrink": 30,
+  "bubbleDistance": 20,
   "wrapWidth": 250,
   "textMargin": 35,
   "strokeStyle": "solid",
@@ -361,6 +375,148 @@ function injectSpikes(pts) {
 }
 
 /**
+ * Generates the halo elements (sun rays, dots, rings) radiating outwards from the base shape.
+ * It uses radial normals to determine direction, anchoring to the spiked shape to determine 
+ * the starting distance. This prevents crisscrossing lines and wild loops in concave areas 
+ * (like cloud valleys). It also skips the region containing the stem.
+ * 
+ * @param {number[][]} smoothPts - An array of [x, y] coordinates of the smooth base shape.
+ * @param {number[][]} spikedPts - An array of [x, y] coordinates of the shape with explosion spikes.
+ * @returns {Array<Object>} An array of objects defining the extra halo elements to render.
+ */
+function generateHalo(smoothPts, spikedPts) {
+  const type = state.haloType || "none";
+  if (type === "none" || smoothPts.length < 3) return [];
+
+  const haloElements = [];
+  const N = smoothPts.length;
+  
+  const density = state.haloDensity || 30;
+  const step = Math.max(1, N / density);
+  const layers = state.haloLayers || 1;
+  const tBase = state.haloThickness || 2;
+  const gBase = state.haloSpace || 10;
+
+  const thicknessPattern = state.haloThicknessPattern || "uniform";
+  const gapPattern = state.haloGapPattern || "uniform";
+  const stylePattern = state.haloStylePattern || "solid";
+
+  // Calculates whether an index falls inside the arc where the stem is injected
+  // Now applies to all stem types, including bubbles and lines.
+  const isStemArea = (i) => {
+    if (state.stemType === "none") return false;
+    let centerIdx = Math.floor((state.stemPosition / 100) * N) % N;
+    let gapSize = Math.max(2, Math.floor(N * (state.stemWidth / 100)));
+    let halfGap = Math.floor(gapSize / 2) + Math.floor(N * 0.05); // Include padding buffer
+    let dist = Math.abs(i - centerIdx);
+    if (dist > N / 2) dist = N - dist;
+    return dist <= halfGap;
+  };
+
+  let currentSpace = gBase;
+
+  for (let l = 0; l < layers; l++) {
+    // 1. Calculate layer thickness
+    let t = tBase;
+    if (layers > 1) {
+      if (thicknessPattern === "thick-to-thin") t = tBase * Math.max(0.2, (1 - l / (layers - 1)));
+      else if (thicknessPattern === "thin-to-thick") t = tBase * Math.max(0.2, (l / (layers - 1)));
+      else if (thicknessPattern === "thin-thick-thin") t = tBase * Math.max(0.2, Math.sin(Math.PI * l / (layers - 1)));
+      else if (thicknessPattern === "thick-thin-thick") t = tBase * Math.max(0.2, Math.abs(Math.cos(Math.PI * l / (layers - 1))));
+      else if (thicknessPattern === "random") t = tBase * (0.2 + 0.8 * pseudoRandom(l * 42));
+    }
+
+    // 2. Calculate layer gap (space AFTER this layer)
+    let g = gBase;
+    if (gapPattern === "follow-thickness") g = gBase * (t / tBase);
+    if (gapPattern === "follow-thickness-inverse") g = gBase * (tBase / t);
+
+    // 3. Calculate layer style
+    let s = "solid";
+    if (stylePattern === "dashed") s = "dashed";
+    else if (stylePattern === "dotted") s = "dotted";
+    else if (stylePattern === "random") {
+      const r = pseudoRandom(l * 84);
+      s = r < 0.33 ? "solid" : (r < 0.66 ? "dashed" : "dotted");
+    } else if (stylePattern === "follow-thickness") {
+      if (t >= tBase * 0.8) s = "solid";
+      else if (t >= tBase * 0.4) s = "dashed";
+      else s = "dotted";
+    } else if (stylePattern === "follow-thickness-inverse") {
+      if (t >= tBase * 0.8) s = "dotted";
+      else if (t >= tBase * 0.4) s = "dashed";
+      else s = "solid";
+    }
+
+    if (type === "rings" || type === "dashed-rings") {
+      let ringPts = [];
+      for (let i = 0; i <= N; i++) {
+        let idx = i % N;
+        
+        if (isStemArea(idx)) {
+          // Break the continuous path when we hit the stem gap
+          if (ringPts.length > 0) {
+            haloElements.push({ type: "line", pts: ringPts, thickness: t, strokeStyle: type === "dashed-rings" ? "dashed" : s });
+            ringPts = [];
+          }
+          continue;
+        }
+
+        // Radial normals for rings to gracefully scale up without self-intersecting loops
+        let dx = smoothPts[idx][0];
+        let dy = smoothPts[idx][1];
+        let len = Math.hypot(dx, dy) || 1;
+        let nx = dx / len;
+        let ny = dy / len;
+
+        let px = spikedPts[idx][0] + nx * currentSpace;
+        let py = spikedPts[idx][1] + ny * currentSpace;
+        ringPts.push([px, py]);
+      }
+      
+      if (ringPts.length > 0) {
+        // If it looped all the way around without hitting a stem, close the polygon loop
+        if (ringPts.length > N - 2) ringPts.push([ringPts[0][0], ringPts[0][1]]);
+        haloElements.push({ type: "line", pts: ringPts, thickness: t, strokeStyle: type === "dashed-rings" ? "dashed" : s });
+      }
+    } else {
+      // Rays and Dots
+      for (let i = 0; i < N; i += step) {
+         let idx = Math.floor(i) % N;
+         if (isStemArea(idx)) continue;
+
+         // Radial normals for Rays/Dots prevent crossing lines in deep shape valleys
+         let dx = smoothPts[idx][0];
+         let dy = smoothPts[idx][1];
+         let len = Math.hypot(dx, dy) || 1;
+         let nx = dx / len;
+         let ny = dy / len;
+
+         let variance = state.haloVariance || 0;
+         let v = variance > 0 ? (pseudoRandom(idx * 17 + l * 11) - 0.5) * 2 * (variance / 100) : 0;
+         
+         if (type === "rays") {
+           let rayLen = (state.haloLength || 25) * (1 + v);
+           let startX = spikedPts[idx][0] + nx * currentSpace;
+           let startY = spikedPts[idx][1] + ny * currentSpace;
+           let endX = startX + nx * rayLen;
+           let endY = startY + ny * rayLen;
+           haloElements.push({ type: "line", pts: [[startX, startY], [endX, endY]], thickness: t, strokeStyle: s });
+         } else if (type === "dots") {
+           let dropX = spikedPts[idx][0] + nx * currentSpace * (1 + Math.abs(v) * 0.5);
+           let dropY = spikedPts[idx][1] + ny * currentSpace * (1 + Math.abs(v) * 0.5);
+           haloElements.push({ type: "ellipse", x: dropX, y: dropY, w: t * 2, h: t * 2, strokeStyle: s });
+         }
+      }
+    }
+    
+    // Accumulate the space required for the next layer ring/dots/rays
+    currentSpace += t + g;
+  }
+  return haloElements;
+}
+
+/**
  * Calculates the full perimeter of the callout (excluding the stem).
  * Ensures ALL shapes start their point array at Angle 0 (Right/3 o'clock)
  * so that the stem position percentage is visually consistent across all shapes.
@@ -369,7 +525,7 @@ function injectSpikes(pts) {
  * @param {number} ry - The vertical radius for generating the base shape.
  * @returns {number[][]} An array of [x, y] coordinate pairs representing the shape's perimeter.
  */
-function generateBaseShape(rx, ry) {
+function generateSmoothBaseShape(rx, ry) {
   let pts = [];
   const N = getPointCount();
 
@@ -496,7 +652,7 @@ function generateBaseShape(rx, ry) {
     }
   }
 
-  return injectSpikes(pts);
+  return pts;
 }
 
 /**
@@ -612,9 +768,13 @@ function injectStem(basePts, rx, ry) {
       }
       const maxRelCenter = relCenters[relCenters.length - 1] || 1;
 
+      // Apply the user's defined starting offset for thought bubbles
+      let bubDist = state.bubbleDistance !== undefined ? state.bubbleDistance : 20;
+
       for (let i = 0; i < state.bubbleCount; i++) {
         const t = maxRelCenter === 0 ? 0 : relCenters[i] / maxRelCenter;
-        const actualDist = (state.stemLength * 0.2) + (state.stemLength * 0.8) * t;
+        // Interpolate the actual distance between the bubDist and the full stem length
+        const actualDist = bubDist + (state.stemLength - bubDist) * t;
         const bx = safeStartX + Math.cos(tipAng) * actualDist;
         const by = safeStartY + Math.sin(tipAng) * actualDist;
         extraElements.push({ type: "ellipse", x: bx, y: by, w: radii[i] * 2, h: radii[i] * 2 });
@@ -772,7 +932,9 @@ async function buildElements(isFinal = false) {
   const ry = (metrics.height / 2 + state.textMargin * fontScaleFactor) * paddingMultiplier * state.heightRatio;
 
   // 4. Generate Perimeter & Inject Stem
-  const basePts = generateBaseShape(rx, ry);
+  const smoothPts = generateSmoothBaseShape(rx, ry);
+  const basePts = injectSpikes(smoothPts);
+  const haloExtras = generateHalo(smoothPts, basePts);
   const { polyPts, extraElements } = injectStem(basePts, rx, ry);
 
   // EXPLICIT CLOSURE to prevent missing segments in Excalidraw polygon rendering
@@ -780,17 +942,53 @@ async function buildElements(isFinal = false) {
     polyPts.push([polyPts[0][0], polyPts[0][1]]);
   }
 
-  // 5. Draw Polygon
+  const allIds = [];
+
+  // 5. Add Halo Elements (Added first so they render underneath the main polygon on the z-index stack)
+  for (let extra of haloExtras) {
+    if (extra.type === "line") {
+      const oldBg = ea.style.backgroundColor;
+      const oldWidth = ea.style.strokeWidth;
+      const oldStyle = ea.style.strokeStyle;
+      ea.style.backgroundColor = "transparent";
+      ea.style.strokeWidth = extra.thickness;
+      ea.style.strokeStyle = extra.strokeStyle || "solid";
+      
+      const lId = ea.addLine(extra.pts);
+      ea.getElement(lId).roundness = null;
+      allIds.push(lId);
+      
+      ea.style.backgroundColor = oldBg;
+      ea.style.strokeWidth = oldWidth;
+      ea.style.strokeStyle = oldStyle;
+    } else if (extra.type === "ellipse") {
+      const oldBg = ea.style.backgroundColor;
+      const oldStroke = ea.style.strokeColor;
+      const oldStyle = ea.style.fillStyle;
+      ea.style.backgroundColor = state.strokeColor;
+      ea.style.strokeColor = "transparent";
+      ea.style.fillStyle = "solid";
+      
+      const eId = ea.addEllipse(extra.x - extra.w / 2, extra.y - extra.h / 2, extra.w, extra.h);
+      allIds.push(eId);
+      
+      ea.style.backgroundColor = oldBg;
+      ea.style.strokeColor = oldStroke;
+      ea.style.fillStyle = oldStyle;
+    }
+  }
+
+  // 6. Draw Main Polygon
   const polyId = ea.addLine(polyPts);
   const polyEl = ea.getElement(polyId);
   polyEl.polygon = true;
+  allIds.push(polyId);
 
   // Only apply Excalidraw's native roundness if requested AND if it's an appropriate shape
   const blockNativeRoundness = ['ribbon', 'polygon', 'spiky', 'box'].includes(state.shapeType);
   polyEl.roundness = state.strokeSharpness === "round" && !blockNativeRoundness ? { type: 2 } : null;
 
-  // 6. Add extra elements (bubbles, lines)
-  const allIds = [polyId];
+  // 7. Add extra elements (bubbles, lines)
   for (let extra of extraElements) {
     if (extra.type === "ellipse") {
       const eId = ea.addEllipse(extra.x - extra.w / 2, extra.y - extra.h / 2, extra.w, extra.h);
@@ -806,7 +1004,7 @@ async function buildElements(isFinal = false) {
     }
   }
 
-  // 7. Add Text LAST (so it renders on top in z-index)
+  // 8. Add Text LAST (so it renders on top in z-index)
   ea.style.strokeColor = state.textColor;
   ea.style.backgroundColor = "transparent";
 
@@ -822,7 +1020,7 @@ async function buildElements(isFinal = false) {
   textEl.y = -textEl.height / 2;
   allIds.push(textId);
 
-  // 8. Fix Z-index order inside EA's elements array
+  // 9. Fix Z-index order inside EA's elements array
   const viewEls = ea.getElements();
   const tIdx = viewEls.findIndex(e => e.id === textId);
   if (tIdx > -1) {
@@ -835,7 +1033,7 @@ async function buildElements(isFinal = false) {
     viewEls.unshift(p);
   }
 
-  // 9. Re-position to original location if replacing
+  // 10. Re-position to original location if replacing
   if (isFinal && editTarget && oldPoly) {
     const newPoly = ea.getElement(polyId);
     const oldCx = oldPoly.x + oldPoly.width / 2;
@@ -855,7 +1053,7 @@ async function buildElements(isFinal = false) {
     });
   }
 
-  // 10. Add Metadata & Group
+  // 11. Add Metadata & Group
   if (isFinal) {
     ea.addAppendUpdateCustomData(polyId, {
       // DEEP COPY state to prevent shared reference mutations across multiple callouts
@@ -868,6 +1066,8 @@ async function buildElements(isFinal = false) {
 
 /**
  * Generates an SVG snapshot of the currently configured elements and injects it into the preview pane.
+ * Applies max-width and max-height CSS to the SVG to ensure it scales gracefully without blowing up
+ * the preview container margins when rendering large multi-layered halos.
  * 
  * @param {HTMLElement} previewContainer - The DOM element where the live SVG preview should be rendered.
  */
@@ -877,6 +1077,12 @@ async function renderPreview(previewContainer) {
 
   await buildElements(false);
   const svg = await ea.createSVG(undefined, undefined, undefined, undefined, undefined, 10);
+  
+  // Constrain the SVG to neatly fit the preview boundary
+  svg.style.width = "100%";
+  svg.style.height = "100%";
+  svg.style.maxWidth = "100%";
+  svg.style.maxHeight = "100%";
   
   // Wait until SVG is generated before clearing to prevent collapse and UI flash
   previewContainer.empty();
@@ -1065,11 +1271,12 @@ function renderBaseShapeUI(container) {
   });
 
   renderShapeModifiersUI(section);
-  renderExplosionSpikesUI(section);
+  renderExplosionSpikesUI(container);
 }
 
 /**
- * Renders the configuration tabs, switching contents actively and preserving scroll
+ * Renders the configuration tabs, switching contents actively and preserving scroll.
+ * Sets up the tab navigation and maps each tab to its corresponding UI render function.
  * 
  * @param {HTMLElement} container - The parent DOM element to render into.
  */
@@ -1079,6 +1286,7 @@ function renderTabsUI(container) {
 
   // Ensure safe fallbacks for legacy presets
   if (state.bubbleBaseRadius === undefined) state.bubbleBaseRadius = 20;
+  if (state.bubbleDistance === undefined) state.bubbleDistance = 20;
   if (state.invertBend === undefined) state.invertBend = false;
   if (state.lineSecondBend === undefined) state.lineSecondBend = 0;
   if (state.lightningSections === undefined) state.lightningSections = 1;
@@ -1090,6 +1298,7 @@ function renderTabsUI(container) {
   const tabsHeader = container.createDiv({ cls: "comic-tabs-header" });
   const tabs = [
     { id: "baseShape", icon: "shapes", label: "Base Shape" },
+    { id: "halo", icon: "sun", label: "Halo Effects" },
     { id: "stem", icon: "message-square", label: "Tail / Stem" },
     { id: "text", icon: "type", label: "Text Properties" },
     { id: "lineFill", icon: "pen-tool", label: "Line and Fill" },
@@ -1113,6 +1322,9 @@ function renderTabsUI(container) {
   switch (activeTab) {
     case "baseShape":
       renderBaseShapeUI(tabContent);
+      break;
+    case "halo":
+      renderHaloUI(tabContent);
       break;
     case "stem":
       renderStemUI(tabContent);
@@ -1258,10 +1470,9 @@ function renderShapeModifiersUI(section) {
  */
 function renderExplosionSpikesUI(container) {
   if (['box', 'oval', 'ribbon', 'polygon'].includes(state.shapeType)) {
-    container.createEl("hr", { attr: { style: "margin: 15px 0;" } });
-    container.createEl("div", { text: "Explosion Spikes", cls: "comic-section-header", attr: { style: "border:none; padding:0; margin-bottom:5px; font-size:1em;" } });
+    const section = createSection(container, "Explosion Spikes");
 
-    new ea.obsidian.Setting(container).setName("Add Spikes")
+    new ea.obsidian.Setting(section).setName("Add Spikes")
       .addToggle(t => t.setValue(state.addSpikes).onChange(val => {
         state.addSpikes = val;
         state.pathResolution = getOptimalPathResolution();
@@ -1270,22 +1481,96 @@ function renderExplosionSpikesUI(container) {
       }));
 
     if (state.addSpikes) {
-      new ea.obsidian.Setting(container).setName("Spike Count")
+      new ea.obsidian.Setting(section).setName("Spike Count")
         .addSlider(s => s.setLimits(1, 20, 1).setValue(state.spikeCount).onChange(val => {
           state.spikeCount = val;
           updatePathRes();
           scheduleUpdate(previewContainer);
         }));
-      new ea.obsidian.Setting(container).setName("Base Width (%)")
+      new ea.obsidian.Setting(section).setName("Base Width (%)")
         .addSlider(s => s.setLimits(2, 20, 1).setValue(state.spikeWidth).onChange(val => {
           state.spikeWidth = val;
           updatePathRes();
           scheduleUpdate(previewContainer);
         }));
-      new ea.obsidian.Setting(container).setName("Spike Height")
+      new ea.obsidian.Setting(section).setName("Spike Height")
         .addSlider(s => s.setLimits(10, 100, 5).setValue(state.spikeHeight).onChange(val => { state.spikeHeight = val; scheduleUpdate(previewContainer); }));
-      new ea.obsidian.Setting(container).setName("Distribution")
+      new ea.obsidian.Setting(section).setName("Distribution")
         .addDropdown(d => d.addOption("Even", "Even").addOption("Random", "Random").setValue(state.spikeDist).onChange(val => { state.spikeDist = val; scheduleUpdate(previewContainer); }));
+    }
+  }
+}
+
+/**
+ * Renders the UI controls for adding "Halo" rays, dots, and rings to the base shape.
+ * Exposes advanced layout logic including layer thickness scaling, gap scaling, and styles.
+ * 
+ * @param {HTMLElement} container - The parent DOM element to render into.
+ */
+function renderHaloUI(container) {
+  const section = createSection(container, "Halo Effects");
+
+  new ea.obsidian.Setting(section).setName("Halo Type")
+    .addDropdown(d => d.addOption("none", "None").addOption("rays", "Sun Rays").addOption("dots", "Dots").addOption("rings", "Rings").addOption("dashed-rings", "Dashed Rings")
+      .setValue(state.haloType || "none").onChange(val => {
+        state.haloType = val;
+        renderTabsUI(tabsContainer);
+        scheduleUpdate(previewContainer);
+      }));
+
+  if (state.haloType && state.haloType !== "none") {
+    if (state.haloType === "rays" || state.haloType === "dots") {
+      new ea.obsidian.Setting(section).setName("Density")
+        .addSlider(s => s.setLimits(5, 100, 1).setValue(state.haloDensity || 30).onChange(val => { state.haloDensity = val; scheduleUpdate(previewContainer); }));
+    }
+    
+    new ea.obsidian.Setting(section).setName("Spacing from Bubble")
+      .addSlider(s => s.setLimits(0, 100, 1).setValue(state.haloSpace || 10).onChange(val => { state.haloSpace = val; scheduleUpdate(previewContainer); }));
+    
+    if (state.haloType === "rays") {
+      new ea.obsidian.Setting(section).setName("Ray Length")
+        .addSlider(s => s.setLimits(5, 200, 5).setValue(state.haloLength || 25).onChange(val => { state.haloLength = val; scheduleUpdate(previewContainer); }));
+    } 
+
+    new ea.obsidian.Setting(section).setName("Layers")
+      .addSlider(s => s.setLimits(1, 10, 1).setValue(state.haloLayers || 1).onChange(val => { 
+        state.haloLayers = val; 
+        renderTabsUI(tabsContainer); // Re-render to show/hide layer-dependent settings
+        scheduleUpdate(previewContainer); 
+      }));
+
+    if (state.haloType === "rays" || state.haloType === "dots") {
+        new ea.obsidian.Setting(section).setName("Length / Jitter Variance (%)")
+          .addSlider(s => s.setLimits(0, 100, 5).setValue(state.haloVariance || 20).onChange(val => { state.haloVariance = val; scheduleUpdate(previewContainer); }));
+    }
+
+    new ea.obsidian.Setting(section).setName("Thickness / Size")
+      .addSlider(s => s.setLimits(1, 20, 0.5).setValue(state.haloThickness || 2).onChange(val => { state.haloThickness = val; scheduleUpdate(previewContainer); }));
+
+    new ea.obsidian.Setting(section).setName("Style Pattern")
+      .addDropdown(d => d.addOption("solid", "All Solid")
+        .addOption("dashed", "All Dashed")
+        .addOption("dotted", "All Dotted")
+        .addOption("random", "Random")
+        .addOption("follow-thickness", "Follow Thickness")
+        .addOption("follow-thickness-inverse", "Follow Thickness Inverse")
+        .setValue(state.haloStylePattern || "solid").onChange(val => { state.haloStylePattern = val; scheduleUpdate(previewContainer); }));
+
+    if (state.haloLayers > 1) {
+      new ea.obsidian.Setting(section).setName("Thickness Pattern")
+        .addDropdown(d => d.addOption("uniform", "Uniform")
+          .addOption("thick-to-thin", "Thick to Thin")
+          .addOption("thin-to-thick", "Thin to Thick")
+          .addOption("thick-thin-thick", "Thick-Thin-Thick")
+          .addOption("thin-thick-thin", "Thin-Thick-Thin")
+          .addOption("random", "Random")
+          .setValue(state.haloThicknessPattern || "uniform").onChange(val => { state.haloThicknessPattern = val; scheduleUpdate(previewContainer); }));
+
+      new ea.obsidian.Setting(section).setName("Gap Pattern")
+        .addDropdown(d => d.addOption("uniform", "Uniform")
+          .addOption("follow-thickness", "Follow Thickness")
+          .addOption("follow-thickness-inverse", "Follow Thickness Inverse")
+          .setValue(state.haloGapPattern || "uniform").onChange(val => { state.haloGapPattern = val; scheduleUpdate(previewContainer); }));
     }
   }
 }
@@ -1301,11 +1586,7 @@ function renderStemUI(container) {
 
   new ea.obsidian.Setting(section).setName("Type")
     .addDropdown(d => d.addOption("v_shape", "V-Shape").addOption("curvy_v", "Curvy Swoop").addOption("lightning", "Lightning").addOption("bubbles", "Thought Bubbles").addOption("line", "Line").addOption("none", "None")
-      .setValue(state.stemType).onChange(val => { 
-        state.stemType = val; 
-        renderTabsUI(tabsContainer); 
-        scheduleUpdate(previewContainer); 
-      }));
+      .setValue(state.stemType).onChange(val => { state.stemType = val; renderTabsUI(tabsContainer); scheduleUpdate(previewContainer); }));
 
   new ea.obsidian.Setting(section).setName("Perimeter Position (%)")
     .addSlider(slider => slider.setLimits(0, 100, 1).setValue(state.stemPosition).onChange(val => { state.stemPosition = val; scheduleUpdate(previewContainer); }));
@@ -1350,6 +1631,9 @@ function renderStemUI(container) {
     new ea.obsidian.Setting(section).setName("Bubble Shrink (%)")
       .setDesc("How fast bubbles diminish.")
       .addSlider(slider => slider.setLimits(0, 90, 5).setValue(state.bubbleShrink).onChange(val => { state.bubbleShrink = val; scheduleUpdate(previewContainer); }));
+    new ea.obsidian.Setting(section).setName("Distance from Bubble")
+      .setDesc("Starting distance of the first thought bubble")
+      .addSlider(slider => slider.setLimits(0, 100, 1).setValue(state.bubbleDistance !== undefined ? state.bubbleDistance : 20).onChange(val => { state.bubbleDistance = val; scheduleUpdate(previewContainer); }));
   }
 }
 
@@ -1546,9 +1830,6 @@ function buildActionButtons(container) {
     });
   }
 
-  // Safely check for ea.targetView before checking if it's the active leaf
-  const isActiveView = ea.targetView && app.workspace.getLeaf()?.view === ea.targetView;
-
   // Retrieve existing buttons or create them to avoid destroying DOM elements 
   // mid-click (which breaks focus events and causes double-click requirements)
   let replaceBtn = localActionsContainer.querySelector(".comic-replace-btn");
@@ -1602,7 +1883,9 @@ function buildActionButtons(container) {
     insertBtn.innerText = "Insert Bubble";
   }
 
-  // Disable interaction if not observing target view AND not interacting with the sidepanel
+  // Safely check for ea.targetView before checking if it's the active leaf
+  const isActiveView = ea.targetView && app.workspace.getLeaf()?.view === ea.targetView;
+
   replaceBtn.disabled = !isActiveView;
   insertBtn.disabled = !isActiveView;
 }
