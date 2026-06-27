@@ -4,30 +4,31 @@
 
 ```js
 # Comic Book Callouts & Speech Bubbles Generator
-A highly modular, versatile script for creating comic-book style speech bubbles, thought clouds, screams, and narrative boxes within Excalidraw. 
+A highly modular, versatile Excalidraw Automate Sidepanel script for creating comic-book style speech bubbles, thought clouds, screams, narrative boxes, and radiant halo callouts.
 
 Features:
-- Live SVG Preview with correct padding and scale
-- Preset saving and loading (manage your own callout styles)
-- Edit & Replace existing callouts seamlessly (context-aware, prevents background insertions)
-- High-density polygon generation for perfect shapes, or low-density for dashed/dotted lines
-- Customizable base shapes (Oval, Box, Cloud, Spiky, Heart, Polygon, Ribbon)
-- Polygon rotation and Box corner roundness sliders
-- Base shape random explosion spikes with Randomize toggle for "Scream" bubbles
-- Various stem types (V-Shape, Curvy V, Lightning, Bubbles, Line) with adjustable position and bend
-- Sharp vs Rounded edge controls to fix crossing artifacts
-- Thought bubble size and spacing profiles
-- Granular color and appearance controls (Text, Stroke, Fill, Roughness)
-- Clean, scrollbar-free side panel layout with non-destructive UI updating
+- Sidepanel UX: Preserves user input and scroll state while hopping across multiple Excalidraw canvas views.
+- Live SVG Preview: Real-time rendered snapshot constrained safely to preview container bounds.
+- Context-Aware Editing: Seamlessly detects, imports, and updates existing canvas callouts without background insertion bugs.
+- Rich Base Shapes: Oval, Box (with corner roundness), Cloud, Spiky/Scream, Heart, Polygon (with rotation), and Ribbon.
+- Advanced Halo Generator: Multi-layered radiating sun rays, dots, continuous rings, and dashed rings with customizable spacing, density, variance, and dynamic mathematical thickness/gap growth patterns.
+- Action Explosion Spikes: Overlay deterministic pseudo-random spikes onto compatible base geometries.
+- Versatile Tails/Stems: Splicing stems (V-Shape, Curvy Swoop, Lightning Zig-Zag) and detached stems (Diminishing Thought Bubbles, Multi-segment Lines) with adjustable perimeter positioning and bend deflection.
+- Granular Typography: Wrap width, internal padding, font size profiles, and extended font family dropdown support (Excalifont, Lilita One, Comic Shanns, Nunito, Assistant, etc.).
+- Deep Appearance & Color Sync: Hachure/Zigzag/Cross-hatch fills, sloppiness profiles, stroke sharpness, and triple-synced color pickers (Swatch popover + Native picker + Hex text field).
+- Safe Preset Management: Save, load, and create custom user callout styles (text automatically excluded to prevent dialogue overwrites).
 
 ### Architecture Notes for Future Extensibility:
-1. **State Management**: The `state` object holds all parameters. Adding a new parameter means adding it to `DEFAULT_STATE`, creating a UI control for it, and using it in `buildElements()`.
+1. **State Management**: The `state` object holds all active parameters. Adding a new parameter means adding its default to `DEFAULT_STATE`, creating a UI control for it, and utilizing it in `buildElements()`.
    - When saving metadata to Excalidraw's `customData`, `state` is deep-cloned to prevent shared reference mutations across multiple inserted callouts.
+   - Missing properties on legacy presets or older canvas elements are safely healed by merging incoming objects against a deep copy of `DEFAULT_STATE`.
 2. **Shape Generation Pipeline**:
-   - `generateBaseShape(rx, ry)`: Creates the closed perimeter of the main bubble.
-   - `injectStem(basePts, rx, ry)`: Splices the tail/stem into the base perimeter array.
-   - `buildElements(isFinal)`: Constructs the Excalidraw elements (Polygon + Text + Extras) into the EA workbench.
-   - `renderPreview(previewContainer)`: Generates an SVG snapshot for the live preview pane.
+   - `generateSmoothBaseShape(rx, ry)`: Creates the smooth closed perimeter of the base shape.
+   - `injectSpikes(smoothPts)`: Splicing step that injects explosion spikes into compatible perimeters.
+   - `generateHalo(smoothPts, spikedPts)`: Computes radial normals to generate non-intersecting background halo elements while skipping the stem gap region.
+   - `injectStem(basePts, rx, ry)`: Splices or attaches the tail/stem into the main perimeter.
+   - `buildElements(isFinal)`: Constructs the workbench elements (Halo + Polygon + Extras + Text) and attaches deep-copied metadata.
+   - `renderPreview(previewContainer)`: Generates a size-constrained SVG snapshot.
 3. **UI & Event Handling**:
    - DOM elements (like action buttons and text areas) are preserved and updated during `onFocus` rather than destroyed to prevent interaction bugs (e.g., requiring double-clicks to insert).
    - Action buttons dynamically enable/disable based on whether the active workspace leaf matches the script's target Excalidraw view.
@@ -121,12 +122,16 @@ let textAreaComp;
 
 /**
  * Loads preferences from Obsidian/Excalidraw settings and applies the active preset.
+ * Safely heals missing legacy properties against DEFAULT_STATE and preserves default callout text.
  */
 function initializeStateAndPresets() {
   const scriptSettings = ea.getScriptSettings() || {};
   if (!scriptSettings[SCRIPT_SETTINGS_KEY]) {
+    const defaultPresetCopy = JSON.parse(JSON.stringify(DEFAULT_STATE));
+    delete defaultPresetCopy.text; // Strip dialogue text from preset storage
+
     scriptSettings[SCRIPT_SETTINGS_KEY] = {
-      presets: { "Default": JSON.parse(JSON.stringify(DEFAULT_STATE)) },
+      presets: { "Default": defaultPresetCopy },
       lastUsedPreset: "Default"
     };
   }
@@ -135,12 +140,17 @@ function initializeStateAndPresets() {
 
   // Apply the last used preset if it exists
   if (presets[activePresetName]) {
-    Object.assign(state, presets[activePresetName]);
+    const preservedText = state.text;
+    // Layer incoming preset over DEFAULT_STATE baseline to guarantee all modern keys exist
+    Object.assign(state, JSON.parse(JSON.stringify(DEFAULT_STATE)), presets[activePresetName]);
+    state.text = preservedText; // Preserve default text
   }
 }
 
 /**
  * Checks the active selection on the Excalidraw canvas to see if we are editing an existing callout.
+ * Safely merges missing keys from legacy scene elements against the DEFAULT_STATE baseline.
+ * Prioritizes Scene visual properties over customData if the user tweaked the canvas elements directly.
  */
 function detectEditTarget() {
   const oldTargetId = editTarget ? editTarget.polyId : null;
@@ -181,19 +191,69 @@ function detectEditTarget() {
       textEl = selectedEls.find(e => e.type === "text");
     }
     
-    // ALWAYS update text in settings if the user edited the text element in the scene
-    if (isValidInference && textEl && textEl.originalText && textEl.originalText !== calloutData.text) {
-      calloutData.text = textEl.originalText;
-      // If we are still focused on the same target, push the scene-edited text up to the state
-      if (oldTargetId === mainPoly.id) {
-        state.text = textEl.originalText;
-      }
-    }
-    
     if (isValidInference) {
-      // ONLY overwrite the editor settings if the user actually selected a different callout
+      let sceneOverrides = false;
+
+      // 1. Text content override
+      if (textEl && textEl.originalText && textEl.originalText !== calloutData.text) {
+        calloutData.text = textEl.originalText;
+        sceneOverrides = true;
+      }
+
+      // 2. Stroke Color (Main Polygon)
+      if (mainPoly.strokeColor && mainPoly.strokeColor !== calloutData.strokeColor) {
+        calloutData.strokeColor = mainPoly.strokeColor;
+        sceneOverrides = true;
+      }
+
+      // 3. Background Color & Opacity (Main Polygon)
+      if (mainPoly.backgroundColor) {
+        try {
+          const currentBgCM = ea.getCM(mainPoly.backgroundColor);
+          let dataBgCM = null;
+          try { dataBgCM = ea.getCM(calloutData.bgColor).alphaTo((calloutData.bgOpacity || 100) / 100); } catch(e) {}
+          
+          if (!dataBgCM || currentBgCM.stringRGB({alpha: true}) !== dataBgCM.stringRGB({alpha: true})) {
+            calloutData.bgColor = currentBgCM.stringHEX({alpha: false});
+            calloutData.bgOpacity = Math.round(currentBgCM.alpha * 100);
+            sceneOverrides = true;
+          }
+        } catch(e) {
+          // fallback if color parsing fails
+        }
+      }
+
+      if (textEl) {
+        // 4. Text Color (Stored as strokeColor on Text elements)
+        if (textEl.strokeColor && textEl.strokeColor !== calloutData.textColor) {
+          calloutData.textColor = textEl.strokeColor;
+          sceneOverrides = true;
+        }
+        // 5. Font Family
+        if (textEl.fontFamily && textEl.fontFamily !== calloutData.fontFamily) {
+          calloutData.fontFamily = textEl.fontFamily;
+          sceneOverrides = true;
+        }
+        // 6. Font Size
+        if (textEl.fontSize && textEl.fontSize !== calloutData.fontSize) {
+          calloutData.fontSize = textEl.fontSize;
+          sceneOverrides = true;
+        }
+      }
+
+      // Overwrite the editor settings if the user selected a different callout
       if (oldTargetId !== mainPoly.id) {
-        Object.assign(state, calloutData);
+        // Layer canvas data over DEFAULT_STATE baseline to gracefully supply missing legacy properties
+        Object.assign(state, JSON.parse(JSON.stringify(DEFAULT_STATE)), calloutData);
+      } else if (sceneOverrides) {
+        // If we are still focused on the same target, push the visual overrides up to the state
+        state.text = calloutData.text;
+        state.strokeColor = calloutData.strokeColor;
+        state.bgColor = calloutData.bgColor;
+        state.bgOpacity = calloutData.bgOpacity;
+        state.textColor = calloutData.textColor;
+        state.fontFamily = calloutData.fontFamily;
+        state.fontSize = calloutData.fontSize;
       }
       
       editTarget = {
@@ -204,11 +264,22 @@ function detectEditTarget() {
   }
 }
 
-// Helper to save preferences back to Obsidian
+/**
+ * Saves preferences back to Obsidian settings.
+ * Actively purges the `.text` property from stored presets to heal legacy customData over time.
+ */
 async function savePrefs() {
   let s = ea.getScriptSettings() || {};
   if (!s[SCRIPT_SETTINGS_KEY]) s[SCRIPT_SETTINGS_KEY] = {};
-  s[SCRIPT_SETTINGS_KEY].presets = presets;
+
+  const cleanPresets = {};
+  for (const [pName, pObj] of Object.entries(presets)) {
+    const sanitizedCopy = { ...pObj };
+    delete sanitizedCopy.text; // Enforce strict exclusion of dialogue text
+    cleanPresets[pName] = sanitizedCopy;
+  }
+
+  s[SCRIPT_SETTINGS_KEY].presets = cleanPresets;
   s[SCRIPT_SETTINGS_KEY].lastUsedPreset = activePresetName;
   await ea.setScriptSettings(s);
 }
@@ -1164,9 +1235,14 @@ function updatePathRes() {
 
 /**
  * Renders the preset management UI bar, which includes a dropdown selector and action buttons
- * for saving, creating (Save As), and deleting custom user configurations.
+ * for saving, creating (Save As), reapplying current preset, and deleting custom user configurations.
+ * Enforces strict separation between preset geometries/styles and the dialogue textarea.
  * 
  * @param {HTMLElement} container - The parent DOM element to render into.
+ */
+/**
+ * Renders the preset management UI bar.
+ * Enforces strict separation between preset geometries/styles and the dialogue textarea.
  */
 function renderPresetsUI(container) {
   container.empty();
@@ -1177,16 +1253,36 @@ function renderPresetsUI(container) {
   
   pSelect.onchange = () => {
     activePresetName = pSelect.value;
-    Object.assign(state, presets[activePresetName]);
-    if (textAreaComp) textAreaComp.setValue(state.text);
-    renderTabsUI(tabsContainer); // Refresh parameters without full UI rebuild
+    const activeText = state.text; // Cache active textarea content
+
+    // Layer selected preset over DEFAULT_STATE baseline to gracefully supply missing legacy keys
+    Object.assign(state, JSON.parse(JSON.stringify(DEFAULT_STATE)), presets[activePresetName]);
+    state.text = activeText; // Restore textarea content unchanged
+
+    renderTabsUI(tabsContainer); // Refresh UI controls without touching text UI
     scheduleUpdate(previewContainer);
+  };
+
+  const btnRefresh = presetBar.createEl("div", { cls: "comic-btn-icon", attr: { title: "Reapply Preset" } });
+  btnRefresh.innerHTML = ea.obsidian.getIcon("refresh-cw").outerHTML;
+  btnRefresh.onclick = () => {
+    if (presets[activePresetName]) {
+      const activeText = state.text; // Cache active textarea content
+      Object.assign(state, JSON.parse(JSON.stringify(DEFAULT_STATE)), presets[activePresetName]);
+      state.text = activeText; // Restore textarea content unchanged
+      
+      renderTabsUI(tabsContainer);
+      scheduleUpdate(previewContainer);
+      new Notice(`Preset "${activePresetName}" reapplied.`);
+    }
   };
 
   const btnSave = presetBar.createEl("div", { cls: "comic-btn-icon", attr: { title: "Save Preset" } });
   btnSave.innerHTML = ea.obsidian.getIcon("save").outerHTML;
   btnSave.onclick = async () => {
-    presets[activePresetName] = JSON.parse(JSON.stringify(state));
+    const presetCopy = JSON.parse(JSON.stringify(state));
+    delete presetCopy.text; // Strip dialogue text from preset
+    presets[activePresetName] = presetCopy;
     await savePrefs();
     new Notice(`Preset "${activePresetName}" saved.`);
   };
@@ -1197,7 +1293,9 @@ function renderPresetsUI(container) {
     const name = await utils.inputPrompt("New Preset Name:", "Name", "Custom Callout");
     if (name && name.trim()) {
       activePresetName = name.trim();
-      presets[activePresetName] = JSON.parse(JSON.stringify(state));
+      const presetCopy = JSON.parse(JSON.stringify(state));
+      delete presetCopy.text; // Strip dialogue text from preset
+      presets[activePresetName] = presetCopy;
       await savePrefs();
       renderPresetsUI(container); // Re-render just this bar
       new Notice(`Preset "${activePresetName}" created.`);
@@ -1213,8 +1311,11 @@ function renderPresetsUI(container) {
     }
     delete presets[activePresetName];
     activePresetName = "Default";
-    Object.assign(state, presets["Default"]);
-    if (textAreaComp) textAreaComp.setValue(state.text);
+    
+    const activeText = state.text;
+    Object.assign(state, JSON.parse(JSON.stringify(DEFAULT_STATE)), presets["Default"]);
+    state.text = activeText; // Preserve active textarea content
+
     await savePrefs();
     renderPresetsUI(container);
     renderTabsUI(tabsContainer);
