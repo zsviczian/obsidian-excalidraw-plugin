@@ -1,8 +1,8 @@
-import { Setting, ToggleComponent } from "obsidian";
+import { App, Setting, ToggleComponent } from "obsidian";
 import { EmbeddableMDCustomProps } from "./EmbeddableSettings";
 import { fragWithHTML } from "src/utils/utils";
 import { t } from "src/lang/helpers";
-import { hideElement, showElement } from "src/utils/styleUtils";
+import { hideElement, setStyle, showElement } from "src/utils/styleUtils";
 
 export class EmbeddalbeMDFileCustomDataSettingsComponent {
   constructor(
@@ -10,6 +10,8 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
     private mdCustomData: EmbeddableMDCustomProps,
     private update?: () => void,
     private isMDFile: boolean = true,
+    private isFullFile: boolean = true,
+    private app?: App
   ) {
     if (!update) {
       this.update = () => {};
@@ -53,6 +55,27 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
               this.mdCustomData.filenameVisible = value;
             }),
         );
+
+      const isGlobalHidden = this.app ? this.app.vault.getConfig("propertiesInDocument") === "hidden" : false;
+
+      const propertiesSetting = new Setting(contentEl)
+        .setName(t("ES_PROPERTIES_VISIBLE_HEAD"))
+        .setDesc(isGlobalHidden ? t("ES_PROPERTIES_VISIBLE_WARNING") : t("ES_PROPERTIES_VISIBLE_DESC"))
+        .addToggle((toggle) => {
+          toggle
+            .setValue(this.mdCustomData.propertiesVisible ?? true)
+            .onChange((value) => {
+              this.mdCustomData.propertiesVisible = value;
+            });
+          if (!this.isFullFile || isGlobalHidden) {
+            toggle.setDisabled(true);
+            setStyle(toggle.toggleEl, { opacity: "0.5" });
+          }
+        });
+
+      if (isGlobalHidden) {
+        propertiesSetting.descEl.addClass("mod-warning");
+      }
 
       new Setting(contentEl)
         .setName(t("ES_LOCKED_READING_MODE_HEAD"))

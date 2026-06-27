@@ -32,6 +32,7 @@ export type EmbeddableMDCustomProps = {
   borderColor: string;
   borderOpacity: number;
   filenameVisible: boolean;
+  propertiesVisible?: boolean;
   lockedReadingMode?: boolean;
 };
 
@@ -100,7 +101,7 @@ export class EmbeddableSettings extends Modal {
     this.mdCustomData = null;
   }
 
-  async createForm() {
+async createForm() {
     this.contentEl.createEl("h1", { text: t("ES_TITLE") });
 
     if (this.file) {
@@ -152,11 +153,14 @@ export class EmbeddableSettings extends Modal {
 
     if (this.isMDFile || this.notExcalidrawIsInternal) {
       this.contentEl.createEl("h3", { text: t("ES_EMBEDDABLE_SETTINGS") });
+      const isFullFile = this.element ? !this.element.link.includes("#") : true;
       new EmbeddalbeMDFileCustomDataSettingsComponent(
         this.contentEl,
         this.mdCustomData,
         undefined,
         this.isMDFile,
+        isFullFile,
+        this.app
       ).render();
     }
 
@@ -189,7 +193,7 @@ export class EmbeddableSettings extends Modal {
     }
   }
 
-  private async applySettings() {
+private async applySettings() {
     let dirty = false;
     const el = this.ea.getElement(
       this.element.id,
@@ -249,6 +253,8 @@ export class EmbeddableSettings extends Modal {
           this.element.customData?.backgroundOpacity ||
         this.mdCustomData.borderOpacity !==
           this.element.customData?.borderOpacity ||
+        this.mdCustomData.propertiesVisible !==
+          (this.element.customData?.mdProps as EmbeddableMDCustomProps)?.propertiesVisible ||
         this.mdCustomData.filenameVisible !==
           this.element.customData?.filenameVisible)
     ) {

@@ -203,6 +203,7 @@ declare module "obsidian" {
   }
   interface Vault {
     getAbstractFileByPathInsensitive(path: string): TAbstractFile | null;
+    getConfig(name: string): unknown;
   }
   interface FileView {
     _loaded: boolean;

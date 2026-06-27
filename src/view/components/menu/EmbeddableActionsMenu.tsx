@@ -370,6 +370,46 @@ export class EmbeddableMenu {
     );
   }
 
+  private async actionTogglePropertiesVisible(
+    element: ExcalidrawEmbeddableElement,
+  ) {
+    if (!element) {
+      return;
+    }
+    const mdProps =
+      (element.customData?.mdProps as EmbeddableMDCustomProps) ??
+      this.view.plugin.settings.embeddableMarkdownDefaults;
+    const isVisible = mdProps.propertiesVisible !== false;
+    mdProps.propertiesVisible = !isVisible;
+
+    const ea = getEA(this.view);
+    ea.copyViewElementsToEAforEditing([element]);
+    const eaEl = ea.getElement(element.id);
+    addAppendUpdateCustomData(eaEl, { mdProps });
+    await ea.addElementsToView();
+    ea.destroy();
+
+    // Fetch the updated element reference from the scene
+    const api = this.view.excalidrawAPI;
+    const updatedElement = api
+      .getSceneElements()
+      .find(
+        (e: ExcalidrawElement) => e.id === element.id,
+      ) as ExcalidrawEmbeddableElement;
+
+    // Force an appState update so the React menu component re-renders
+    if (updatedElement) {
+      this.view.updateScene({
+        appState: {
+          activeEmbeddable: {
+            element: updatedElement,
+            state: "active",
+          },
+        },
+      });
+    }
+  }
+
   private async actionToggleLockReadingMode(
     element: ExcalidrawEmbeddableElement,
   ) {
@@ -450,7 +490,7 @@ export class EmbeddableMenu {
     void navigator.clipboard.writeText(atob(link.split(",")[1]));
   }
 
-  renderButtons(appState: AppState) {
+renderButtons(appState: AppState) {
     const view = this.view;
     const api = view?.excalidrawAPI;
     if (!api) {
@@ -522,6 +562,8 @@ export class EmbeddableMenu {
           (element.customData?.mdProps as EmbeddableMDCustomProps) ??
           view.plugin.settings.embeddableMarkdownDefaults;
         const isLockedReadingMode = !!mdProps.lockedReadingMode;
+        const isPropertiesVisible = mdProps.propertiesVisible !== false;
+        const isGlobalPropertiesHidden = view.app.vault.getConfig("propertiesInDocument") === "hidden";
 
         return (
           <div
@@ -576,6 +618,18 @@ export class EmbeddableMenu {
                     void this.actionMarkdownBlock(file, subpath, element)
                   }
                   icon={ICONS.ZoomToBlock}
+                />
+              )}
+              {isMD && !isExcalidrawFile && !subpath && !isGlobalPropertiesHidden && (
+                <ActionButton
+                  key="TogglePropertiesVisible"
+                  title={
+                    isPropertiesVisible
+                      ? t("HIDE_PROPERTIES")
+                      : t("SHOW_PROPERTIES")
+                  }
+                  action={() => void this.actionTogglePropertiesVisible(element)}
+                  icon={isPropertiesVisible ? ICONS.File : ICONS.FileCodeCorner}
                 />
               )}
               {isMD && (
@@ -634,7 +688,7 @@ export class EmbeddableMenu {
     if (isObsidianiFrame || isExcalidrawiFrame) {
       const iframe = (
         isExcalidrawiFrame
-          ? api.getHTMLIFrameElement(element.id)
+          ? (api.getHTMLIFrameElement as (id: string) => HTMLIFrameElement)(element.id)
           : view.getEmbeddableElementById(element.id)
       ) as HTMLIFrameElement;
       if (!iframe || !iframe.contentWindow) {

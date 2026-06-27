@@ -22,12 +22,13 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Significantly improved ink flow for freedraw pen. You can now toggle between pressure sensitive and constant mode for the default excalidraw.com freedraw pen. [#11507](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11507), [#11551](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11551)
 
 ## New in the Plugin
+- Added the ability to show or hide document properties for embedded full Markdown files. This feature was requested by @Rolf during a Sketch Your Mind community monthly call discussion. [Join the community!](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM}/welcome)
 - Comic book Callout Editor script available in the Script Library
 - Added new ExtraBold line width option, and XS font option
 
 ## Fixed
 - BUG: Double Click to edit from Obsidian in Live preview doesn't work anymore [#2813](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2813)
-  `,
+`,
   "2.24.2": `
   ## Fixed
   - High impact regression in 2.24.0: Translations were not loading correctly. 🙏[@Lumintian](${URLs.GITHUB_COM}/Lumintian) [#2809](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2809)

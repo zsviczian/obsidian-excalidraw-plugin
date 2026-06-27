@@ -220,6 +220,8 @@ export const ICONS = {
   YouTube: getIconAsJSX("youtube"),
   heart: getIconAsJSX("heart"),
   twitter: getIconAsJSX("twitter"),
+  FileCodeCorner: getIconAsJSX("file-code-corner"),
+  File: getIconAsJSX("file"),
   exportLibrary: (
     <svg
       aria-hidden="true"

@@ -598,6 +598,100 @@ function RenderObsidianView({
     [isActiveRef.current],
   );
 
+  //--------------------------------------------------------------------------------
+  // Handle hiding properties dynamically in both the host container and the editing iframe
+  //--------------------------------------------------------------------------------
+  React.useEffect(() => {
+    if (!containerRef.current || file.extension !== "md") {
+      return;
+    }
+
+    const isPropertiesVisible =
+      mdProps?.propertiesVisible !== false || mdProps?.useObsidianDefaults;
+
+    const hostStyleId = `excalidraw-hide-properties-style-host-${element.id}`;
+    let hostStyle = containerRef.current.querySelector(`#${hostStyleId}`);
+
+    if (!isPropertiesVisible) {
+      if (!hostStyle) {
+        hostStyle = view.ownerDocument.createElement("style");
+        hostStyle.id = hostStyleId;
+        hostStyle.textContent = `
+          #embed-${element.id} .metadata-container { display: none; }
+          #embed-${element.id} .cm-line:has(.cm-hmd-frontmatter) { display: none; }
+        `;
+        containerRef.current.appendChild(hostStyle);
+      }
+    } else {
+      if (hostStyle) {
+        hostStyle.remove();
+      }
+    }
+
+    const updateIframe = () => {
+      const iframe:HTMLIFrameElement = containerRef.current?.querySelector("iframe.embed-iframe");
+      if (iframe && iframe.contentDocument && iframe.contentDocument.head) {
+        const iframeStyleId = "excalidraw-hide-properties-style-iframe";
+        let iframeStyle = iframe.contentDocument.getElementById(iframeStyleId);
+        if (!isPropertiesVisible) {
+          if (!iframeStyle) {
+            iframeStyle = iframe.contentDocument.createElement("style");
+            iframeStyle.id = iframeStyleId;
+            iframeStyle.textContent = `
+              .metadata-container { display: none !important; }
+              .cm-line:has(.cm-hmd-frontmatter) { display: none !important; }
+            `;
+            iframe.contentDocument.head.appendChild(iframeStyle);
+          }
+        } else {
+          if (iframeStyle) {
+            iframeStyle.remove();
+          }
+        }
+      }
+    };
+
+    // Run immediately just in case the iframe is already present
+    updateIframe();
+
+    let iframeLoadHandler: () => void;
+
+    // Observe changes so when Obsidian mounts the editor iframe we style it immediately
+    const mo = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.addedNodes.length > 0) {
+          updateIframe();
+          const iframe:HTMLIFrameElement = containerRef.current?.querySelector("iframe.embed-iframe");
+          if (iframe) {
+            if (iframeLoadHandler) {
+              iframe.removeEventListener("load", iframeLoadHandler);
+            }
+            iframeLoadHandler = () => updateIframe();
+            // Wait for the blank document inside to complete loading
+            iframe.addEventListener("load", iframeLoadHandler, { once: true });
+          }
+        }
+      }
+    });
+
+    mo.observe(containerRef.current, { childList: true, subtree: true });
+
+    return () => {
+      mo.disconnect();
+      const iframe = containerRef.current?.querySelector("iframe.embed-iframe") as HTMLIFrameElement;
+      if (iframe && iframeLoadHandler) {
+        iframe.removeEventListener("load", iframeLoadHandler);
+      }
+    };
+  }, [
+    containerRef,
+    mdProps?.propertiesVisible,
+    mdProps?.useObsidianDefaults,
+    element.id,
+    file.extension,
+    view.ownerDocument
+  ]);
+
   //runs once after mounting of the component and when the component is unmounted
   React.useEffect(() => {
     if (!containerRef?.current) {
@@ -1313,11 +1407,12 @@ export const CustomEmbeddable: React.FC<{
 }> = ({ element, view, appState, linkText }) => {
   const React = view.packages.react;
   const containerRef: React.RefObject<HTMLDivElement> = React.useRef(null);
-  const theme = getTheme(view, appState.theme);
-  const mdProps: EmbeddableMDCustomProps = element.customData?.mdProps || null;
+  const theme = getTheme(view, appState.theme as string);
+  const mdProps: EmbeddableMDCustomProps = element.customData?.mdProps as EmbeddableMDCustomProps || null;
   const selectedElementIds = Object.keys(appState.selectedElementIds);
   return (
     <div
+      id={`embed-${element.id}`}
       ref={containerRef}
       style={{
         width: `100%`,
@@ -1339,7 +1434,7 @@ export const CustomEmbeddable: React.FC<{
         view={view}
         containerRef={containerRef}
         activeEmbeddable={appState.activeEmbeddable}
-        theme={appState.theme}
+        theme={appState.theme as string}
         canvasColor={appState.viewBackgroundColor}
         selectedElementId={
           selectedElementIds.length === 1 ? selectedElementIds[0] : null
