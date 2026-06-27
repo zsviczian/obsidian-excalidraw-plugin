@@ -1044,10 +1044,6 @@ End Obsidian Sheets Plus support
   cursor: move;
 }
 
-.excalidraw .App-bottom-bar .App-toolbar {
-  min-width: 12.8em;
-}
-
 .excalidraw .Island.App-menu__left {
   scrollbar-width: none;
 }
@@ -1059,4 +1055,8 @@ End Obsidian Sheets Plus support
 .excalidraw .Island.excalidraw-toolsPanel-island .selected-shape-actions .buttonList {
   justify-content: space-between;
   column-gap: unset;
+}
+
+.excalidraw .App-tray-menu {
+  min-width: calc(6 * var(--default-button-size));
 }
