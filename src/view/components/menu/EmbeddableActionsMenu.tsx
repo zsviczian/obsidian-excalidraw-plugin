@@ -490,7 +490,7 @@ export class EmbeddableMenu {
     void navigator.clipboard.writeText(atob(link.split(",")[1]));
   }
 
-renderButtons(appState: AppState) {
+  renderButtons(appState: AppState) {
     const view = this.view;
     const api = view?.excalidrawAPI;
     if (!api) {
@@ -563,7 +563,8 @@ renderButtons(appState: AppState) {
           view.plugin.settings.embeddableMarkdownDefaults;
         const isLockedReadingMode = !!mdProps.lockedReadingMode;
         const isPropertiesVisible = mdProps.propertiesVisible !== false;
-        const isGlobalPropertiesHidden = view.app.vault.getConfig("propertiesInDocument") === "hidden";
+        const isGlobalPropertiesHidden =
+          view.app.vault.getConfig("propertiesInDocument") === "hidden";
 
         return (
           <div
@@ -620,18 +621,25 @@ renderButtons(appState: AppState) {
                   icon={ICONS.ZoomToBlock}
                 />
               )}
-              {isMD && !isExcalidrawFile && !subpath && !isGlobalPropertiesHidden && (
-                <ActionButton
-                  key="TogglePropertiesVisible"
-                  title={
-                    isPropertiesVisible
-                      ? t("HIDE_PROPERTIES")
-                      : t("SHOW_PROPERTIES")
-                  }
-                  action={() => void this.actionTogglePropertiesVisible(element)}
-                  icon={isPropertiesVisible ? ICONS.File : ICONS.FileCodeCorner}
-                />
-              )}
+              {isMD &&
+                !isExcalidrawFile &&
+                !subpath &&
+                !isGlobalPropertiesHidden && (
+                  <ActionButton
+                    key="TogglePropertiesVisible"
+                    title={
+                      isPropertiesVisible
+                        ? t("HIDE_PROPERTIES")
+                        : t("SHOW_PROPERTIES")
+                    }
+                    action={() =>
+                      void this.actionTogglePropertiesVisible(element)
+                    }
+                    icon={
+                      isPropertiesVisible ? ICONS.File : ICONS.FileCodeCorner
+                    }
+                  />
+                )}
               {isMD && (
                 <ActionButton
                   key="LockReadingMode"
@@ -688,7 +696,9 @@ renderButtons(appState: AppState) {
     if (isObsidianiFrame || isExcalidrawiFrame) {
       const iframe = (
         isExcalidrawiFrame
-          ? (api.getHTMLIFrameElement as (id: string) => HTMLIFrameElement)(element.id)
+          ? (api.getHTMLIFrameElement as (id: string) => HTMLIFrameElement)(
+              element.id,
+            )
           : view.getEmbeddableElementById(element.id)
       ) as HTMLIFrameElement;
       if (!iframe || !iframe.contentWindow) {

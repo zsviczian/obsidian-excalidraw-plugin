@@ -1110,8 +1110,10 @@ export function ensureActiveScriptSettingsObject(
   >;
 }
 
-export const getStrokeKeyFormLegacyWidth = (strokeWidth: number): StrokeWidthKey => {
-  switch(strokeWidth) {
+export const getStrokeKeyFormLegacyWidth = (
+  strokeWidth: number,
+): StrokeWidthKey => {
+  switch (strokeWidth) {
     case 0.5:
       return "thin";
     case 1:
@@ -1121,7 +1123,7 @@ export const getStrokeKeyFormLegacyWidth = (strokeWidth: number): StrokeWidthKey
     default:
       return undefined;
   }
-}
+};
 
 // Returns an appState key for the stroke width
 // excalidraw.com deprected and removed currentItemStrokeWidth from appState
@@ -1129,18 +1131,21 @@ export const getStrokeKeyFormLegacyWidth = (strokeWidth: number): StrokeWidthKey
 // if the legacy stroke width is provided, it will be converted to the corresponding stroke width key
 // if there is a matching key, the key will be preferred over the legacy stroke width value
 // if there is no matching key, the legacy stroke width value will be used
-export const getAppStateStrokeWidthEntry = (strokeWidthKey:StrokeWidthKey, legacyStrokeWidth: number) => {
-    if (legacyStrokeWidth !== undefined) {
-      strokeWidthKey = getStrokeKeyFormLegacyWidth(legacyStrokeWidth);
-    }
-    if (!!legacyStrokeWidth && !strokeWidthKey) {
-      return { currentItemStrokeWidth: legacyStrokeWidth };
-    }
-    if (!strokeWidthKey) {
-      return {};
-    }
-    return {currentItemStrokeWidthKey: strokeWidthKey};
-}
+export const getAppStateStrokeWidthEntry = (
+  strokeWidthKey: StrokeWidthKey,
+  legacyStrokeWidth: number,
+) => {
+  if (legacyStrokeWidth !== undefined) {
+    strokeWidthKey = getStrokeKeyFormLegacyWidth(legacyStrokeWidth);
+  }
+  if (!!legacyStrokeWidth && !strokeWidthKey) {
+    return { currentItemStrokeWidth: legacyStrokeWidth };
+  }
+  if (!strokeWidthKey) {
+    return {};
+  }
+  return { currentItemStrokeWidthKey: strokeWidthKey };
+};
 
 //replicated from excalidraw constants.ts
 const FREEDRAW_STROKE_WIDTH: Readonly<

@@ -1313,8 +1313,10 @@ export default {
     "The button will adjust the element scale so it will show the content at 100% relative to the current zoom level of your canvas",
   ES_ZOOM_100: "Relative 100%",
   ES_PROPERTIES_VISIBLE_HEAD: "Properties visible",
-  ES_PROPERTIES_VISIBLE_DESC: "Show document properties (YAML frontmatter) at the top of the embedded file.",
-  ES_PROPERTIES_VISIBLE_WARNING: "Global Obsidian settings are hiding document properties. This setting cannot reveal them. Please change your Obsidian settings to 'Visible' or 'Source' first.",
+  ES_PROPERTIES_VISIBLE_DESC:
+    "Show document properties (YAML frontmatter) at the top of the embedded file.",
+  ES_PROPERTIES_VISIBLE_WARNING:
+    "Global Obsidian settings are hiding document properties. This setting cannot reveal them. Please change your Obsidian settings to 'Visible' or 'Source' first.",
   SHOW_PROPERTIES: "Show properties",
   HIDE_PROPERTIES: "Hide properties",
 

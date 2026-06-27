@@ -101,7 +101,7 @@ export class EmbeddableSettings extends Modal {
     this.mdCustomData = null;
   }
 
-async createForm() {
+  async createForm() {
     this.contentEl.createEl("h1", { text: t("ES_TITLE") });
 
     if (this.file) {
@@ -160,7 +160,7 @@ async createForm() {
         undefined,
         this.isMDFile,
         isFullFile,
-        this.app
+        this.app,
       ).render();
     }
 
@@ -193,7 +193,7 @@ async createForm() {
     }
   }
 
-private async applySettings() {
+  private async applySettings() {
     let dirty = false;
     const el = this.ea.getElement(
       this.element.id,
@@ -254,7 +254,8 @@ private async applySettings() {
         this.mdCustomData.borderOpacity !==
           this.element.customData?.borderOpacity ||
         this.mdCustomData.propertiesVisible !==
-          (this.element.customData?.mdProps as EmbeddableMDCustomProps)?.propertiesVisible ||
+          (this.element.customData?.mdProps as EmbeddableMDCustomProps)
+            ?.propertiesVisible ||
         this.mdCustomData.filenameVisible !==
           this.element.customData?.filenameVisible)
     ) {

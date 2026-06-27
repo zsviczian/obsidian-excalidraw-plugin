@@ -629,7 +629,9 @@ function RenderObsidianView({
     }
 
     const updateIframe = () => {
-      const iframe:HTMLIFrameElement = containerRef.current?.querySelector("iframe.embed-iframe");
+      const iframe: HTMLIFrameElement = containerRef.current?.querySelector(
+        "iframe.embed-iframe",
+      );
       if (iframe && iframe.contentDocument && iframe.contentDocument.head) {
         const iframeStyleId = "excalidraw-hide-properties-style-iframe";
         let iframeStyle = iframe.contentDocument.getElementById(iframeStyleId);
@@ -661,7 +663,9 @@ function RenderObsidianView({
       for (const mutation of mutations) {
         if (mutation.addedNodes.length > 0) {
           updateIframe();
-          const iframe:HTMLIFrameElement = containerRef.current?.querySelector("iframe.embed-iframe");
+          const iframe: HTMLIFrameElement = containerRef.current?.querySelector(
+            "iframe.embed-iframe",
+          );
           if (iframe) {
             if (iframeLoadHandler) {
               iframe.removeEventListener("load", iframeLoadHandler);
@@ -678,7 +682,9 @@ function RenderObsidianView({
 
     return () => {
       mo.disconnect();
-      const iframe = containerRef.current?.querySelector("iframe.embed-iframe") as HTMLIFrameElement;
+      const iframe = containerRef.current?.querySelector(
+        "iframe.embed-iframe",
+      );
       if (iframe && iframeLoadHandler) {
         iframe.removeEventListener("load", iframeLoadHandler);
       }
@@ -689,7 +695,7 @@ function RenderObsidianView({
     mdProps?.useObsidianDefaults,
     element.id,
     file.extension,
-    view.ownerDocument
+    view.ownerDocument,
   ]);
 
   //runs once after mounting of the component and when the component is unmounted
@@ -1408,7 +1414,8 @@ export const CustomEmbeddable: React.FC<{
   const React = view.packages.react;
   const containerRef: React.RefObject<HTMLDivElement> = React.useRef(null);
   const theme = getTheme(view, appState.theme as string);
-  const mdProps: EmbeddableMDCustomProps = element.customData?.mdProps as EmbeddableMDCustomProps || null;
+  const mdProps: EmbeddableMDCustomProps =
+    (element.customData?.mdProps as EmbeddableMDCustomProps) || null;
   const selectedElementIds = Object.keys(appState.selectedElementIds);
   return (
     <div

@@ -11,7 +11,7 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
     private update?: () => void,
     private isMDFile: boolean = true,
     private isFullFile: boolean = true,
-    private app?: App
+    private app?: App,
   ) {
     if (!update) {
       this.update = () => {};
@@ -56,11 +56,17 @@ export class EmbeddalbeMDFileCustomDataSettingsComponent {
             }),
         );
 
-      const isGlobalHidden = this.app ? this.app.vault.getConfig("propertiesInDocument") === "hidden" : false;
+      const isGlobalHidden = this.app
+        ? this.app.vault.getConfig("propertiesInDocument") === "hidden"
+        : false;
 
       const propertiesSetting = new Setting(contentEl)
         .setName(t("ES_PROPERTIES_VISIBLE_HEAD"))
-        .setDesc(isGlobalHidden ? t("ES_PROPERTIES_VISIBLE_WARNING") : t("ES_PROPERTIES_VISIBLE_DESC"))
+        .setDesc(
+          isGlobalHidden
+            ? t("ES_PROPERTIES_VISIBLE_WARNING")
+            : t("ES_PROPERTIES_VISIBLE_DESC"),
+        )
         .addToggle((toggle) => {
           toggle
             .setValue(this.mdCustomData.propertiesVisible ?? true)
