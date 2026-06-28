@@ -18,7 +18,7 @@ import {
   mainDocument,
 } from "../constants/constants";
 import { createSVG } from "src/utils/excalidrawAutomateUtils";
-import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
+import { EquationItem, ExcalidrawData, getTransclusion } from "./ExcalidrawData";
 import { t } from "../lang/helpers";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "../core/main";
@@ -214,15 +214,15 @@ export class EmbeddedFile {
         this.file.extension.toLowerCase() === "svg")
     ) {
       try {
-        this.colorMap = colorMapJSON
-          ? JSON.parse(colorMapJSON.toLocaleLowerCase())
-          : null;
-      } catch (error) {
-        console.log(
-          `Error parsing colorMap for file ${imgPath}`,
-          this.constructor,
+        this.colorMap = (
+          colorMapJSON ? JSON.parse(colorMapJSON.toLocaleLowerCase()) : null
+        ) as ColorMap | null;
+      } catch (error: unknown) {
+        errorlog({
+          message: `Error parsing colorMap for file ${imgPath}`,
+          context: this.constructor,
           error,
-        );
+        });
         this.colorMap = null;
       }
     }
@@ -429,7 +429,7 @@ export class EmbeddedFilesLoader {
     this.pdfDocs.forEach((pdfDoc) => {
       try {
         pdfDoc.destroy();
-      } catch (e) {
+      } catch (e: unknown) {
         errorlog({ where: "EmbeddedFileLoader.emptyPDFDocsMap", error: e });
       }
     });
@@ -849,7 +849,7 @@ export class EmbeddedFilesLoader {
         pdfPageViewProps,
         renderScale: pdfRenderScale,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       errorlog({
         where: "EmbeddedFileLoader._getObsidianImage",
         uid: this.uid,
@@ -906,7 +906,7 @@ export class EmbeddedFilesLoader {
       promiseTry(async () => {
         try {
           await task();
-        } catch (error) {
+        } catch (error: unknown) {
           errorlog({
             where: "EmbeddedFileLoader.loadSceneFiles",
             uid: this.uid,
@@ -945,9 +945,9 @@ export class EmbeddedFilesLoader {
                     ? () => deferredValidationFileIds.add(id)
                     : undefined,
               });
-            if (this.terminate) {
-              return null;
-            }
+              if (this.terminate) {
+                return null;
+              }
 
               if (data) {
                 const fileData: FileData = {
@@ -995,11 +995,15 @@ export class EmbeddedFilesLoader {
       let equationItem;
       const equations = excalidrawData.getEquationEntries();
       while (!(equationItem = equations.next()).done) {
-        if (fileIDWhiteList && !fileIDWhiteList.has(equationItem.value[0] as FileId)) {
+        const eiValue = equationItem.value as [FileId, EquationItem];
+        if (
+          fileIDWhiteList &&
+          !fileIDWhiteList.has(eiValue[0])
+        ) {
           continue;
         }
-        const equation = equationItem.value[1] as {latex: string; isLoaded: boolean;};
-        const id = equationItem.value[0] as FileId;
+        const equation = eiValue[1];
+        const id = eiValue[0];
         yield createSafeLoadTask(
           async () => {
             if (this.terminate) {
@@ -1059,7 +1063,7 @@ export class EmbeddedFilesLoader {
                     hasSVGwithBitmap: false,
                     shouldScale: true,
                     size: await getImageSize(result.files[key].dataURL),
-                  };
+                  } as FileData;
                   files[batch].push(fileData);
                 }
                 return;
@@ -1372,7 +1376,7 @@ export class EmbeddedFilesLoader {
       const canvas = await renderPage(pageNum);
       if (this.terminate) {
         return [null, null, null, null, false];
-      };
+      }
       if (canvas) {
         const blob = await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((pngBlob) => {
@@ -1666,9 +1670,7 @@ export class EmbeddedFilesLoader {
     try {
       host.appendChild(svgEl);
       mainDocument.body.appendChild(host);
-      footerHeight = svgEl.querySelector(
-        ".excalidraw-md-footer",
-      ).scrollHeight;
+      footerHeight = svgEl.querySelector(".excalidraw-md-footer").scrollHeight;
       const height =
         svgEl.querySelector(".excalidraw-md-host").scrollHeight + footerHeight;
       svgHeight = height <= linkParts.height ? height : linkParts.height;

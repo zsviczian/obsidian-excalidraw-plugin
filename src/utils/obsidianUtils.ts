@@ -322,7 +322,9 @@ export const getFileCSSClasses = (file: TFile): string[] => {
     if (!fileCache?.frontmatter) {
       return [];
     }
-    const x = parseFrontMatterEntry(fileCache.frontmatter, "cssclasses") as string | string[];
+    const x = parseFrontMatterEntry(fileCache.frontmatter, "cssclasses") as
+      | string
+      | string[];
     if (Array.isArray(x)) {
       return x;
     }
@@ -382,8 +384,8 @@ export function mergeMarkdownFiles(template: string, target: string): string {
     .substring(4, templateFrontmatterEnd)
     .trim();
   const templateContent = template.substring(templateFrontmatterEnd + 3);
-  const templateFrontmatterObj =
-    (parse(templateFrontmatterRaw) || {}) as FrontMatterCache;
+  const templateFrontmatterObj = (parse(templateFrontmatterRaw) ||
+    {}) as FrontMatterCache;
 
   const hasTargetFM =
     target.startsWith("---\n") && target.indexOf("---\n", 4) > 0;
@@ -394,8 +396,9 @@ export function mergeMarkdownFiles(template: string, target: string): string {
       .replace(/\s+$/, ""); // keep as-is
     const targetContent = target.substring(targetFrontmatterEnd + 3);
 
-    const targetFrontmatterObj: FrontMatterCache =
-      (parse(targetFrontmatterRaw) || {}) as FrontMatterCache;
+    const targetFrontmatterObj: FrontMatterCache = (parse(
+      targetFrontmatterRaw,
+    ) || {}) as FrontMatterCache;
 
     // 1. Merge array keys present in both (target has precedence for ordering)
     const mergeArrayKeys = Object.keys(templateFrontmatterObj).filter(
@@ -672,12 +675,12 @@ type FrontmatterTypeMap = {
 };
 
 // 2. Automatically infer the shape of your valid frontmatter keys from the object
-type FrontmatterValueType<T extends keyof typeof FRONTMATTER_KEYS> = 
-  FrontmatterTypeMap[typeof FRONTMATTER_KEYS[T]["type"]];
+type FrontmatterValueType<T extends keyof typeof FRONTMATTER_KEYS> =
+  FrontmatterTypeMap[(typeof FRONTMATTER_KEYS)[T]["type"]];
 
 // 3. Construct a fully typed Record where keys are the true names (e.g., "excalidraw-open-md")
 export type ValidFrontmatter = {
-  [K in keyof typeof FRONTMATTER_KEYS as typeof FRONTMATTER_KEYS[K]["name"]]?: FrontmatterValueType<K>;
+  [K in keyof typeof FRONTMATTER_KEYS as (typeof FRONTMATTER_KEYS)[K]["name"]]?: FrontmatterValueType<K>;
 };
 
 // 4. Create a reusable type guard function
@@ -685,7 +688,7 @@ export function getSafeFrontmatter(frontmatter: unknown): ValidFrontmatter {
   if (typeof frontmatter !== "object" || frontmatter === null) {
     return {};
   }
-  
+
   // Cast safely inside the boundary helper function
   return frontmatter;
 }

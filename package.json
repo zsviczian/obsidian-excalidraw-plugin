@@ -29,7 +29,7 @@
     "@popperjs/core": "^2.11.8",
     "@radix-ui/number": "^1.1.2",
     "@zsviczian/colormaster": "^1.2.2",
-    "@zsviczian/excalidraw": "0.18.109",
+    "@zsviczian/excalidraw": "0.18.110",
     "chroma-js": "^3.1.2",
     "clsx": "^2.0.0",
     "es6-promise-pool": "2.5.0",

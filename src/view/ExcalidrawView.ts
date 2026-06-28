@@ -3249,7 +3249,7 @@ export default class ExcalidrawView
       this.nextLoader = null;
     }
     this.lastSceneLoadTime = 0;
-    (api.resetScene as ()=>void)();
+    (api.resetScene as () => void)();
     this.previousSceneVersion = 0;
   }
 

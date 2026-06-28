@@ -87,7 +87,9 @@ const discardImage = (el: Element | null) => {
   if (!el) {
     return;
   }
-  const images = isInstanceOfHTMLImageElement(el) ? [el] : Array.from(el.querySelectorAll("img"));
+  const images = isInstanceOfHTMLImageElement(el)
+    ? [el]
+    : Array.from(el.querySelectorAll("img"));
   images.forEach((img) => {
     if (img.src.startsWith("blob:")) {
       URL.revokeObjectURL(img.src);
@@ -551,7 +553,12 @@ const getIMG = async (
       }
       case PreviewImageType.SVG: {
         const img = createEl("div");
-        setImgStyle({ element: img, imgAttributes, onCanvas, isNativeSVG: true });
+        setImgStyle({
+          element: img,
+          imgAttributes,
+          onCanvas,
+          isNativeSVG: true,
+        });
         resultElement = await _getSVGNative({
           filenameParts,
           theme,
@@ -745,12 +752,12 @@ const createImgElement = async (
           imgstyle: [...Array.from(imgOrDiv.classList)],
         },
         onCanvas,
-        parent
+        parent,
       );
       if (!newImg) {
         return;
       }
-      
+
       if (!parent.isConnected) {
         discardImage(newImg);
         return;
@@ -841,18 +848,15 @@ const processReadingMode = async (
           if (!imgDiv) {
             return;
           }
-          
+
           // Ensure we don't attempt to append onto a detached DOM tree
           if (!maybeDrawing.isConnected) {
             discardImage(imgDiv);
             return;
           }
 
-          maybeDrawing.parentElement.replaceChild(
-            imgDiv,
-            maybeDrawing,
-          );
-        })
+          maybeDrawing.parentElement.replaceChild(imgDiv, maybeDrawing);
+        }),
       );
     }
   }
@@ -1172,7 +1176,7 @@ const tmpObsidianWYSIWYG = async (
     }
     internalEmbedDiv.empty();
     const onCanvas = internalEmbedDiv.hasClass("canvas-node-content");
-    
+
     await getGlobalTaskQueue(plugin).addTask(async () => {
       if (!internalEmbedDiv.isConnected) {
         return;
@@ -1246,7 +1250,7 @@ const tmpObsidianWYSIWYG = async (
   internalEmbedDiv.setAttribute("ready", "");
 
   internalEmbedDiv.empty();
-  
+
   await getGlobalTaskQueue(plugin).addTask(async () => {
     if (!internalEmbedDiv.isConnected) {
       return;
@@ -1477,13 +1481,17 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = (m) => {
       return;
     }
 
-    const img = await getIMG({
-      file,
-      fname: file.path,
-      fwidth: "300",
-      fheight: null,
-      imgstyle: ["excalidraw-svg"],
-    }, false, node);
+    const img = await getIMG(
+      {
+        file,
+        fname: file.path,
+        fwidth: "300",
+        fheight: null,
+        imgstyle: ["excalidraw-svg"],
+      },
+      false,
+      node,
+    );
 
     if (!img) {
       return;
