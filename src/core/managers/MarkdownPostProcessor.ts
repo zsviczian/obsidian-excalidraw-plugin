@@ -689,7 +689,6 @@ const createImgElement = async (
     void getGlobalTaskQueue(plugin).addTask(async () => {
       const parent = imgOrDiv.parentElement;
       if (!parent || !parent.isConnected) {
-        console.log("exit 7a: aborted RERENDER_EVENT from queue because parent is disconnected");
         return;
       }
       const imgMaxWidth = imgOrDiv.style.maxWidth;
@@ -710,7 +709,6 @@ const createImgElement = async (
       }
       
       if (!parent.isConnected) {
-        console.log("exit 7b: aborted RERENDER_EVENT DOM update because parent is disconnected");
         return;
       }
 
@@ -765,7 +763,6 @@ const processReadingMode = async (
   for (const maybeDrawing of embeddedItems) {
     // If the node is detached from the DOM, the user has closed the note or navigated away.
     if (!maybeDrawing.isConnected) {
-      console.log("exit 1a: aborted queuing processInternalEmbed because the element is no longer connected to the DOM");
       break;
     }
 
@@ -789,7 +786,6 @@ const processReadingMode = async (
       promises.push(
         getGlobalTaskQueue(plugin).addTask(async () => {
           if (!maybeDrawing.isConnected) {
-            console.log("exit 1b: aborted processInternalEmbed from queue because the element is no longer connected to the DOM");
             return;
           }
 
@@ -797,7 +793,6 @@ const processReadingMode = async (
           
           // Ensure we don't attempt to append onto a detached DOM tree
           if (!maybeDrawing.isConnected) {
-            console.log("exit 2: aborted processInternalEmbed because the element is no longer connected to the DOM");
             return;
           }
 
@@ -1126,7 +1121,6 @@ const tmpObsidianWYSIWYG = async (
     
     await getGlobalTaskQueue(plugin).addTask(async () => {
       if (!internalEmbedDiv.isConnected) {
-        console.log("exit 3a: aborted createImageDiv from queue because the element is no longer connected to the DOM");
         return;
       }
 
@@ -1134,8 +1128,7 @@ const tmpObsidianWYSIWYG = async (
 
       // Check if the user navigated away while the image was generating
       if (!internalEmbedDiv.isConnected) {
-        console.log("exit 3b: aborted processInternalEmbed because the element is no longer connected to the DOM");
-        return; 
+        return;
       }
 
       if (markdownEmbed) {
@@ -1198,7 +1191,6 @@ const tmpObsidianWYSIWYG = async (
   
   await getGlobalTaskQueue(plugin).addTask(async () => {
     if (!internalEmbedDiv.isConnected) {
-      console.log("exit 4a: aborted processInternalEmbed from queue because the element is no longer connected to the DOM");
       return;
     }
 
@@ -1206,7 +1198,6 @@ const tmpObsidianWYSIWYG = async (
 
     // Abort insertion if the container is no longer connected
     if (!internalEmbedDiv.isConnected) {
-      console.log("exit 4b: aborted processInternalEmbed because the element is no longer connected to the DOM");
       return;
     }
 
@@ -1227,7 +1218,7 @@ const tmpObsidianWYSIWYG = async (
       internalEmbedDiv.empty();
       void getGlobalTaskQueue(plugin).addTask(async () => {
         if (!internalEmbedDiv.isConnected) {
-          console.log("exit 5a: aborted processInternalEmbed from mutation observer queue because element is disconnected");
+          observer.disconnect();
           return;
         }
 
@@ -1235,8 +1226,6 @@ const tmpObsidianWYSIWYG = async (
 
         if (internalEmbedDiv.isConnected) {
           internalEmbedDiv.appendChild(imgDiv);
-        } else {
-          console.log("exit 5b: aborted processInternalEmbed from mutation observer because the element is no longer connected to the DOM");
         }
       });
     }, 500);
@@ -1419,7 +1408,6 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = (m) => {
   //I prevent the default Obsidian feature of opening the link in the native app
   void getGlobalTaskQueue(plugin).addTask(async () => {
     if (!node.isConnected) {
-      console.log("exit 6a: aborted legacy popover generation from queue because node is disconnected");
       return;
     }
 
@@ -1432,7 +1420,6 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = (m) => {
     });
 
     if (!node.isConnected) {
-      console.log("exit 6b: aborted legacy popover append because node is disconnected");
       return;
     }
 

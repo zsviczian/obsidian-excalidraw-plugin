@@ -1550,15 +1550,18 @@ export class EmbeddedFilesLoader {
 
     const renderComponent = new Component();
     renderComponent.load();
-    //await MarkdownRenderer.renderMarkdown(text, mdDIV, file.path, plugin);
-    await MarkdownRenderer.render(
-      this.plugin.app,
-      text,
-      mdDIV,
-      file.path,
-      renderComponent,
-    );
-    renderComponent.unload();
+    try {
+      //await MarkdownRenderer.renderMarkdown(text, mdDIV, file.path, plugin);
+      await MarkdownRenderer.render(
+        this.plugin.app,
+        text,
+        mdDIV,
+        file.path,
+        renderComponent,
+      );
+    } finally {
+      renderComponent.unload();
+    }
     if (this.terminate) {
       return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
     }
@@ -1611,36 +1614,43 @@ export class EmbeddedFilesLoader {
     //blank styles into inline styles using computedStyle
     const iframeHost = mainDocument.body.createDiv();
     hideElement(iframeHost);
-    const iframe = iframeHost.createEl("iframe");
-    const iframeDoc = iframe.contentWindow.document;
-    if (style) {
-      const styleEl = iframeDoc.createElement("style");
-      styleEl.type = "text/css";
-      setStyleText(styleEl, style);
-      iframeDoc.head.appendChild(styleEl);
-    }
-    const stylingDIV = iframeDoc.importNode(mdDIV, true);
-    iframeDoc.body.appendChild(stylingDIV);
-    const footerDIV = createDiv();
-    footerDIV.setAttribute("class", "excalidraw-md-footer");
-    iframeDoc.body.appendChild(footerDIV);
-
-    iframeDoc.body.querySelectorAll("*").forEach((el: HTMLElement) => {
-      const elementStyle = el.style;
-      const computedStyle = window.getComputedStyle(el);
-      let style = "";
-      for (const [prop] of Object.entries(elementStyle)) {
-        if (Object.hasOwn(elementStyle ?? {}, prop)) {
-          const value = computedStyle.getPropertyValue(prop);
-          style += `${prop}: ${value};`;
-        }
+    let xmlINiframe = "";
+    let xmlFooter = "";
+    try {
+      const iframe = iframeHost.createEl("iframe");
+      const iframeDoc = iframe.contentWindow.document;
+      if (style) {
+        const styleEl = iframeDoc.createElement("style");
+        styleEl.type = "text/css";
+        setStyleText(styleEl, style);
+        iframeDoc.head.appendChild(styleEl);
       }
-      el.setAttribute("style", style);
-    });
+      const stylingDIV = iframeDoc.importNode(mdDIV, true);
+      iframeDoc.body.appendChild(stylingDIV);
+      const footerDIV = createDiv();
+      footerDIV.setAttribute("class", "excalidraw-md-footer");
+      iframeDoc.body.appendChild(footerDIV);
 
-    const xmlINiframe = new XMLSerializer().serializeToString(stylingDIV);
-    const xmlFooter = new XMLSerializer().serializeToString(footerDIV);
-    mainDocument.body.removeChild(iframeHost);
+      iframeDoc.body.querySelectorAll("*").forEach((el: HTMLElement) => {
+        const elementStyle = el.style;
+        const computedStyle = window.getComputedStyle(el);
+        let style = "";
+        for (const [prop] of Object.entries(elementStyle)) {
+          if (Object.hasOwn(elementStyle ?? {}, prop)) {
+            const value = computedStyle.getPropertyValue(prop);
+            style += `${prop}: ${value};`;
+          }
+        }
+        el.setAttribute("style", style);
+      });
+
+      xmlINiframe = new XMLSerializer().serializeToString(stylingDIV);
+      xmlFooter = new XMLSerializer().serializeToString(footerDIV);
+    } finally {
+      if (iframeHost.parentElement) {
+        mainDocument.body.removeChild(iframeHost);
+      }
+    }
 
     //5.2
     //get SVG size
@@ -1651,15 +1661,22 @@ export class EmbeddedFilesLoader {
     );
     const svgEl = doc.firstElementChild;
     const host = createDiv();
-    host.appendChild(svgEl);
-    mainDocument.body.appendChild(host);
-    const footerHeight = svgEl.querySelector(
-      ".excalidraw-md-footer",
-    ).scrollHeight;
-    const height =
-      svgEl.querySelector(".excalidraw-md-host").scrollHeight + footerHeight;
-    const svgHeight = height <= linkParts.height ? height : linkParts.height;
-    mainDocument.body.removeChild(host);
+    let svgHeight = 0;
+    let footerHeight = 0;
+    try {
+      host.appendChild(svgEl);
+      mainDocument.body.appendChild(host);
+      footerHeight = svgEl.querySelector(
+        ".excalidraw-md-footer",
+      ).scrollHeight;
+      const height =
+        svgEl.querySelector(".excalidraw-md-host").scrollHeight + footerHeight;
+      svgHeight = height <= linkParts.height ? height : linkParts.height;
+    } finally {
+      if (host.parentElement) {
+        mainDocument.body.removeChild(host);
+      }
+    }
 
     //finalize SVG
     svgStyle = ` width="${linkParts.width}px" height="${svgHeight}px"`;
