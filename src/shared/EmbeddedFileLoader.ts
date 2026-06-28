@@ -479,6 +479,9 @@ export class EmbeddedFilesLoader {
     hasSVGwithBitmap: boolean;
     loadedFromCache?: boolean;
   }> {
+    if (this.terminate) {
+      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+    }
     //debug({where:"EmbeddedFileLoader.getExcalidrawSVG",uid:this.uid,file:file.name});
     const isMask = isMaskFile(this.plugin, file);
     const forceTheme = hasExportTheme(this.plugin, file)
@@ -540,6 +543,10 @@ export class EmbeddedFilesLoader {
         })
       : undefined;
 
+    if (this.terminate) {
+      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+    }
+
     if (maybeSVG && cacheValidation === "stale-first") {
       onStaleCacheHit?.();
     }
@@ -581,6 +588,10 @@ export class EmbeddedFilesLoader {
             ),
             inFile instanceof EmbeddedFile ? inFile.colorMap : null,
           ) as SVGSVGElement);
+
+    if (this.terminate) {
+      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+    }
 
     //https://stackoverflow.com/questions/51154171/remove-css-filter-on-child-elements
     const imageList = svg.querySelectorAll(
@@ -726,6 +737,10 @@ export class EmbeddedFilesLoader {
               )
             : await app.vault.readBinary(file);
 
+      if (this.terminate) {
+        return null;
+      }
+
       let dURL: DataURL = null;
       let excalidrawLoadedFromCache = false;
       if (isExcalidrawFile) {
@@ -738,6 +753,10 @@ export class EmbeddedFilesLoader {
           cacheValidation: options?.cacheValidation,
           onStaleCacheHit: options?.onStaleCacheHit,
         });
+
+        if (this.terminate) {
+          return null;
+        }
         dURL = res.dataURL;
         hasSVGwithBitmap = res.hasSVGwithBitmap;
         excalidrawLoadedFromCache = !!res.loadedFromCache;
@@ -754,6 +773,10 @@ export class EmbeddedFilesLoader {
       ] = isPDF
         ? await this.pdfToDataURL(file, linkParts, options)
         : [null, null, null, null, false];
+
+      if (this.terminate) {
+        return null;
+      }
 
       let mimeType: MimeType = isPDF ? "image/png" : "image/svg+xml";
 
@@ -781,6 +804,10 @@ export class EmbeddedFilesLoader {
               ? null
               : await getDataURL(ab, mimeType)));
 
+      if (this.terminate) {
+        return null;
+      }
+
       if (!isHyperLink && !dataURL && !isLocalLink) {
         markdownRendererRecursionWatcthdog.add(file);
         try {
@@ -797,6 +824,11 @@ export class EmbeddedFilesLoader {
       }
 
       const size = isPDF ? pdfSize : await getImageSize(dataURL);
+
+      if (this.terminate) {
+        return null;
+      }
+
       return {
         mimeType,
         fileId: await generateIdFromFile(
@@ -913,6 +945,10 @@ export class EmbeddedFilesLoader {
                     ? () => deferredValidationFileIds.add(id)
                     : undefined,
               });
+            if (this.terminate) {
+              return null;
+            }
+
               if (data) {
                 const fileData: FileData = {
                   mimeType: data.mimeType,
@@ -959,11 +995,11 @@ export class EmbeddedFilesLoader {
       let equationItem;
       const equations = excalidrawData.getEquationEntries();
       while (!(equationItem = equations.next()).done) {
-        if (fileIDWhiteList && !fileIDWhiteList.has(equationItem.value[0])) {
+        if (fileIDWhiteList && !fileIDWhiteList.has(equationItem.value[0] as FileId)) {
           continue;
         }
-        const equation = equationItem.value[1];
-        const id = equationItem.value[0];
+        const equation = equationItem.value[1] as {latex: string; isLoaded: boolean;};
+        const id = equationItem.value[0] as FileId;
         yield createSafeLoadTask(
           async () => {
             if (this.terminate) {
@@ -972,6 +1008,9 @@ export class EmbeddedFilesLoader {
             if (!excalidrawData.getEquation(id).isLoaded) {
               const latex = equation.latex;
               const data = await tex2dataURL(latex, 4, this.plugin);
+              if (this.terminate) {
+                return null;
+              }
               if (data) {
                 const fileData = {
                   mimeType: data.mimeType,
@@ -1008,7 +1047,7 @@ export class EmbeddedFilesLoader {
               const result = await mermaidToExcalidraw(data, {
                 themeVariables: { fontSize: "20" },
               });
-              if (!result) {
+              if (!result || this.terminate) {
                 return;
               }
               if (result?.files) {
@@ -1038,6 +1077,9 @@ export class EmbeddedFilesLoader {
                   hasSVGwithBitmap: false,
                   elements: result.elements,
                 });
+                if (this.terminate) {
+                  return;
+                }
                 if (res?.dataURL) {
                   const size = await getImageSize(res.dataURL);
                   const fileData: FileData = {
@@ -1328,6 +1370,9 @@ export class EmbeddedFilesLoader {
       };
 
       const canvas = await renderPage(pageNum);
+      if (this.terminate) {
+        return [null, null, null, null, false];
+      };
       if (canvas) {
         const blob = await new Promise<Blob>((resolve, reject) => {
           canvas.toBlob((pngBlob) => {
@@ -1368,10 +1413,16 @@ export class EmbeddedFilesLoader {
     file: TFile,
     linkParts: LinkParts,
   ): Promise<{ dataURL: DataURL; hasSVGwithBitmap: boolean }> {
+    if (this.terminate) {
+      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+    }
     //1.
     //get the markdown text
     let hasSVGwithBitmap = false;
     const transclusion = await getTransclusion(linkParts, plugin.app, file);
+    if (this.terminate) {
+      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+    }
     let text = (transclusion.leadingHashes ?? "") + transclusion.contents;
     if (text === "") {
       text =
@@ -1508,16 +1559,25 @@ export class EmbeddedFilesLoader {
       renderComponent,
     );
     renderComponent.unload();
+    if (this.terminate) {
+      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+    }
 
     mdDIV
       .querySelectorAll(":scope > *[class^='frontmatter']")
       .forEach((el) => mdDIV.removeChild(el));
 
     await replaceBlobWithBase64(mdDIV); //because image cache returns a blob
+    if (this.terminate) {
+      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+    }
     const internalEmbeds = Array.from(
       mdDIV.querySelectorAll("span[class='internal-embed']"),
     );
     for (let i = 0; i < internalEmbeds.length; i++) {
+      if (this.terminate) {
+        return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+      }
       const el = internalEmbeds[i];
       const src = el.getAttribute("src");
       if (!src) {
@@ -1531,6 +1591,9 @@ export class EmbeddedFilesLoader {
         continue;
       }
       const embeddedFile = await this._getObsidianImage(ef, 1);
+      if (this.terminate) {
+        return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
+      }
       const img = createEl("img");
       if (width) {
         img.setAttribute("width", width);

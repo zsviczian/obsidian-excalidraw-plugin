@@ -750,6 +750,12 @@ const processReadingMode = async (
   //This is a for loop instead of embeddedItems.forEach() because processInternalEmbed at the end
   //is awaited, otherwise excalidraw images would not display in the Kanban plugin
   for (const maybeDrawing of embeddedItems) {
+    // If the node is detached from the DOM, the user has closed the note or navigated away.
+    if (!maybeDrawing.isConnected) {
+      console.log("exit 1: aborted processInternalEmbed because the element is no longer connected to the DOM");
+      break;
+    }
+
     //check to see if the file in the src attribute exists
     const fname = maybeDrawing.getAttribute("src")?.split("#")[0];
     if (!fname) {
@@ -767,8 +773,15 @@ const processReadingMode = async (
         continue;
       }
 
+      const imgDiv = await processInternalEmbed(maybeDrawing, file);
+      // Ensure we don't attempt to append onto a detached DOM tree
+      if (!maybeDrawing.isConnected) {
+        console.log("exit 2: aborted processInternalEmbed because the element is no longer connected to the DOM");
+        break;
+      }
+
       maybeDrawing.parentElement.replaceChild(
-        await processInternalEmbed(maybeDrawing, file),
+        imgDiv,
         maybeDrawing,
       );
     }
@@ -1085,6 +1098,13 @@ const tmpObsidianWYSIWYG = async (
     internalEmbedDiv.empty();
     const onCanvas = internalEmbedDiv.hasClass("canvas-node-content");
     const imgDiv = await createImageDiv(attr, onCanvas);
+
+    // Check if the user navigated away while the image was generating
+    if (!internalEmbedDiv.isConnected) {
+      console.log("exit 3: aborted processInternalEmbed because the element is no longer connected to the DOM");
+      return; 
+    }
+
     if (markdownEmbed) {
       //display image on canvas without markdown frame
       internalEmbedDiv.removeClass("markdown-embed");
@@ -1142,6 +1162,13 @@ const tmpObsidianWYSIWYG = async (
 
   internalEmbedDiv.empty();
   const imgDiv = await processInternalEmbed(internalEmbedDiv, file);
+
+  // Abort insertion if the container is no longer connected
+  if (!internalEmbedDiv.isConnected) {
+    console.log("exit 4: aborted processInternalEmbed because the element is no longer connected to the DOM");
+    return;
+  }
+
   internalEmbedDiv.appendChild(imgDiv);
 
   //timer to avoid the image flickering when the user is typing
@@ -1158,7 +1185,11 @@ const tmpObsidianWYSIWYG = async (
       internalEmbedDiv.empty();
       void (async () => {
         const imgDiv = await processInternalEmbed(internalEmbedDiv, file);
-        internalEmbedDiv.appendChild(imgDiv);
+        if (internalEmbedDiv.isConnected) {
+          internalEmbedDiv.appendChild(imgDiv);
+        } else {
+          console.log("exit 5: aborted processInternalEmbed because the element is no longer connected to the DOM");
+        }
       })();
     }, 500);
   };
