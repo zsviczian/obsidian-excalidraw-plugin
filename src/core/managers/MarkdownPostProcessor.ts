@@ -29,6 +29,7 @@ import {
   getParentOfClass,
   isObsidianThemeDark,
   getFileCSSClasses,
+  getSafeFrontmatter,
 } from "../../utils/obsidianUtils";
 import { linkClickModifierType } from "../../utils/modifierkeyHelper";
 import { ImageKey, getImageCache } from "../../shared/ImageCache";
@@ -76,6 +77,24 @@ const getDefaultHeight = (plugin: ExcalidrawPlugin): string => {
     return "";
   }
   return plugin.settings.height;
+};
+
+/**
+ * Utility to aggressively halt background image decoding and free Blob memory
+ * when an element is discarded without being attached to the DOM.
+ */
+const discardImage = (el: Element | null) => {
+  if (!el) {
+    return;
+  }
+  const images = isInstanceOfHTMLImageElement(el) ? [el] : Array.from(el.querySelectorAll("img"));
+  images.forEach((img) => {
+    if (img.src.startsWith("blob:")) {
+      URL.revokeObjectURL(img.src);
+    }
+    // Instantly aborts the browser's background V8 image decoder task
+    img.src = "";
+  });
 };
 
 export const initializeMarkdownPostProcessor = (p: ExcalidrawPlugin) => {
@@ -430,6 +449,7 @@ const _getSVGNative = async ({
 const getIMG = async (
   imgAttributes: imgElementAttributes,
   onCanvas: boolean = false,
+  embedEl?: Node,
 ): Promise<HTMLImageElement | HTMLDivElement> => {
   let file = imgAttributes.file;
   if (!imgAttributes.file) {
@@ -474,66 +494,87 @@ const getIMG = async (
     theme ? theme === "dark" : undefined,
   );
 
+  let terminationTimer: number;
+  if (embedEl) {
+    terminationTimer = window.setInterval(() => {
+      if (!embedEl.isConnected) {
+        loader.terminate = true;
+        window.clearInterval(terminationTimer);
+      }
+    }, 500);
+  }
+
   const cacheReady = getImageCache().isReady();
 
-  await plugin.awaitInit();
-  switch (plugin.settings.previewImageType) {
-    case PreviewImageType.PNG: {
-      const img = createEl("img");
-      setImgStyle({
-        element: img,
-        imgAttributes,
-        onCanvas,
-        isNativeSVG: false,
-      });
-      return await _getPNG({
-        imgAttributes,
-        filenameParts,
-        theme,
-        cacheReady,
-        img,
-        file,
-        exportSettings,
-        loader,
-      });
+  let resultElement: HTMLImageElement | HTMLDivElement = null;
+  try {
+    await plugin.awaitInit();
+    switch (plugin.settings.previewImageType) {
+      case PreviewImageType.PNG: {
+        const img = createEl("img");
+        setImgStyle({
+          element: img,
+          imgAttributes,
+          onCanvas,
+          isNativeSVG: false,
+        });
+        resultElement = await _getPNG({
+          imgAttributes,
+          filenameParts,
+          theme,
+          cacheReady,
+          img,
+          file,
+          exportSettings,
+          loader,
+        });
+        break;
+      }
+      case PreviewImageType.SVGIMG: {
+        const img = createEl("img");
+        setImgStyle({
+          element: img,
+          imgAttributes,
+          onCanvas,
+          isNativeSVG: false,
+        });
+        resultElement = await _getSVGIMG({
+          filenameParts,
+          theme,
+          cacheReady,
+          img,
+          file,
+          exportSettings,
+          loader,
+        });
+        break;
+      }
+      case PreviewImageType.SVG: {
+        const img = createEl("div");
+        setImgStyle({ element: img, imgAttributes, onCanvas, isNativeSVG: true });
+        resultElement = await _getSVGNative({
+          filenameParts,
+          theme,
+          cacheReady,
+          containerElement: img,
+          file,
+          exportSettings,
+          loader,
+          width: imgAttributes.fwidth
+            ? !imgAttributes.fwidth.endsWith("%")
+              ? parseInt(imgAttributes.fwidth)
+              : 6000
+            : undefined,
+        });
+        break;
+      }
     }
-    case PreviewImageType.SVGIMG: {
-      const img = createEl("img");
-      setImgStyle({
-        element: img,
-        imgAttributes,
-        onCanvas,
-        isNativeSVG: false,
-      });
-      return await _getSVGIMG({
-        filenameParts,
-        theme,
-        cacheReady,
-        img,
-        file,
-        exportSettings,
-        loader,
-      });
-    }
-    case PreviewImageType.SVG: {
-      const img = createEl("div");
-      setImgStyle({ element: img, imgAttributes, onCanvas, isNativeSVG: true });
-      return await _getSVGNative({
-        filenameParts,
-        theme,
-        cacheReady,
-        containerElement: img,
-        file,
-        exportSettings,
-        loader,
-        width: imgAttributes.fwidth
-          ? !imgAttributes.fwidth.endsWith("%")
-            ? parseInt(imgAttributes.fwidth)
-            : 6000
-          : undefined,
-      });
+  } finally {
+    if (terminationTimer) {
+      window.clearInterval(terminationTimer);
     }
   }
+  return resultElement;
 };
 
 const addSVGToImgSrc = (
@@ -565,8 +606,9 @@ const addSVGToImgSrc = (
 const createImgElement = async (
   attr: imgElementAttributes,
   onCanvas: boolean = false,
+  embedEl?: Element,
 ): Promise<HTMLElement> => {
-  const imgOrDiv = await getIMG(attr, onCanvas);
+  const imgOrDiv = await getIMG(attr, onCanvas, embedEl);
   if (!imgOrDiv) {
     return null;
   }
@@ -703,12 +745,14 @@ const createImgElement = async (
           imgstyle: [...Array.from(imgOrDiv.classList)],
         },
         onCanvas,
+        parent
       );
       if (!newImg) {
         return;
       }
       
       if (!parent.isConnected) {
+        discardImage(newImg);
         return;
       }
 
@@ -743,8 +787,12 @@ const createImgElement = async (
 const createImageDiv = async (
   attr: imgElementAttributes,
   onCanvas: boolean = false,
+  embedEl?: Element,
 ): Promise<HTMLDivElement> => {
-  const img = await createImgElement(attr, onCanvas);
+  const img = await createImgElement(attr, onCanvas, embedEl);
+  if (!img) {
+    return null;
+  }
   return createDiv(attr.imgstyle.join(" "), (el) => el.append(img));
 };
 
@@ -790,9 +838,13 @@ const processReadingMode = async (
           }
 
           const imgDiv = await processInternalEmbed(maybeDrawing, file);
+          if (!imgDiv) {
+            return;
+          }
           
           // Ensure we don't attempt to append onto a detached DOM tree
           if (!maybeDrawing.isConnected) {
+            discardImage(imgDiv);
             return;
           }
 
@@ -822,7 +874,7 @@ const processInternalEmbed = async (
 
   const src = internalEmbedEl.getAttribute("src");
   if (!src) {
-    return;
+    return null;
   }
 
   //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1059
@@ -847,7 +899,7 @@ const processInternalEmbed = async (
       ? fnameParts.linkpartReference
       : "");
   attr.file = file;
-  return await createImageDiv(attr);
+  return await createImageDiv(attr, false, internalEmbedEl);
 };
 
 function getDimensionsFromAliasString(data: string) {
@@ -1004,7 +1056,8 @@ const tmpObsidianWYSIWYG = async (
   if (!plugin.isExcalidrawFile(file)) {
     return;
   }
-  if (ctx.frontmatter?.["excalidraw-embed-md"]) {
+  const safeFrontmatter = getSafeFrontmatter(ctx.frontmatter);
+  if (safeFrontmatter["excalidraw-open-md"]) {
     return;
   }
   if (ctx.remainingNestLevel < 4) {
@@ -1054,7 +1107,8 @@ const tmpObsidianWYSIWYG = async (
 
   if (!plugin.settings.renderImageInHoverPreviewForMDNotes) {
     //const isHoverPopover = internalEmbedDiv.parentElement?.hasClass("hover-popover");
-    const shouldOpenMD = Boolean(ctx.frontmatter?.["excalidraw-open-md"]);
+    const safeFrontmatter = getSafeFrontmatter(ctx.frontmatter);
+    const shouldOpenMD = Boolean(safeFrontmatter["excalidraw-open-md"]);
     if (isHoverPopover && shouldOpenMD) {
       return;
     }
@@ -1124,10 +1178,14 @@ const tmpObsidianWYSIWYG = async (
         return;
       }
 
-      const imgDiv = await createImageDiv(attr, onCanvas);
+      const imgDiv = await createImageDiv(attr, onCanvas, internalEmbedDiv);
+      if (!imgDiv) {
+        return;
+      }
 
       // Check if the user navigated away while the image was generating
       if (!internalEmbedDiv.isConnected) {
+        discardImage(imgDiv);
         return;
       }
 
@@ -1195,9 +1253,13 @@ const tmpObsidianWYSIWYG = async (
     }
 
     const imgDiv = await processInternalEmbed(internalEmbedDiv, file);
+    if (!imgDiv) {
+      return;
+    }
 
     // Abort insertion if the container is no longer connected
     if (!internalEmbedDiv.isConnected) {
+      discardImage(imgDiv);
       return;
     }
 
@@ -1223,9 +1285,14 @@ const tmpObsidianWYSIWYG = async (
         }
 
         const imgDiv = await processInternalEmbed(internalEmbedDiv, file);
+        if (!imgDiv) {
+          return;
+        }
 
         if (internalEmbedDiv.isConnected) {
           internalEmbedDiv.appendChild(imgDiv);
+        } else {
+          discardImage(imgDiv);
         }
       });
     }, 500);
@@ -1279,9 +1346,10 @@ export const markdownPostProcessor = async (
   const isHoverPopover = Boolean(
     containerEl && getParentOfClass(containerEl, "hover-popover"),
   );
+  const safeFrontmatter = getSafeFrontmatter(ctx.frontmatter);
   const isPreview =
     isHoverPopover &&
-    Boolean(ctx?.frontmatter?.["excalidraw-open-md"]) &&
+    Boolean(safeFrontmatter["excalidraw-open-md"]) &&
     !plugin.settings.renderImageInHoverPreviewForMDNotes;
   const embeddedItems = el.querySelectorAll(".internal-embed");
 
@@ -1323,9 +1391,7 @@ export const markdownPostProcessor = async (
   //then I want to hide all embedded items as these will be
   //transcluded text element or some other transcluded content inside the Excalidraw file
   //in reading mode these elements should be hidden
-  const excalidrawFile = Boolean(
-    ctx.frontmatter && "excalidraw-plugin" in ctx.frontmatter,
-  );
+  const excalidrawFile = Boolean(safeFrontmatter["excalidraw-plugin"]);
   if (!(isPreview || isMarkdownReadingMode || isPrinting) && excalidrawFile) {
     setElementDisplay(el, "none");
     return;
@@ -1417,9 +1483,14 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = (m) => {
       fwidth: "300",
       fheight: null,
       imgstyle: ["excalidraw-svg"],
-    });
+    }, false, node);
+
+    if (!img) {
+      return;
+    }
 
     if (!node.isConnected) {
+      discardImage(img);
       return;
     }
 
