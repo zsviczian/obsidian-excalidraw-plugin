@@ -1061,7 +1061,7 @@ End Obsidian Sheets Plus support
 .excalidraw .Island.excalidraw-toolsPanel-island .buttonList>.ToolIcon_type_button,
 .excalidraw .Island.excalidraw-toolsPanel-island .buttonList>.ToolIcon,
 .excalidraw .Island.excalidraw-toolsPanel-island .buttonList>label {
-  flex: 0 0 auto !important;
+  flex: 0 0 auto;
   margin: 0;
 }
 
