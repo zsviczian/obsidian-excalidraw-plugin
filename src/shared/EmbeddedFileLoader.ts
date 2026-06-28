@@ -78,7 +78,7 @@ import {
   isInstanceOfHTMLImageElement,
   isInstanceOfSVGElement,
 } from "src/utils/typechecks";
-import { strictArrayBuffer } from "src/utils/obsidianUtils";
+import { getSafeFrontmatter, strictArrayBuffer } from "src/utils/obsidianUtils";
 
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -1407,8 +1407,12 @@ export class EmbeddedFilesLoader {
         canvas.height = 0;
         return result;
       }
-    } catch (e) {
-      console.log(e);
+    } catch (e: unknown) {
+      errorlog({
+        where: "EmbeddedFileLoader.pdfToDataURL",
+        uid: this.uid,
+        error: e,
+      });
       return [null, null, null, null, false];
     }
   }
@@ -1436,14 +1440,13 @@ export class EmbeddedFilesLoader {
 
     //2.
     //get styles
+
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     let fontDef: string;
     let fontName = plugin.settings.mdFont;
-    if (
-      fileCache?.frontmatter &&
-      Boolean(fileCache.frontmatter[FRONTMATTER_KEYS.font.name])
-    ) {
-      fontName = fileCache.frontmatter[FRONTMATTER_KEYS.font.name];
+    const safeFrontmatter = getSafeFrontmatter(fileCache?.frontmatter);
+    if (safeFrontmatter[FRONTMATTER_KEYS.font.name]) {
+      fontName = safeFrontmatter[FRONTMATTER_KEYS.font.name];
     }
     switch (fontName) {
       case "Virgil":
@@ -1485,14 +1488,10 @@ export class EmbeddedFilesLoader {
       text = text.replace(/banner:\s*.*/, ""); //patch https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/814
     }
 
-    const fontColor = fileCache?.frontmatter
-      ? (fileCache.frontmatter[FRONTMATTER_KEYS["font-color"].name] ??
-        plugin.settings.mdFontColor)
-      : plugin.settings.mdFontColor;
+    const fmFontColor = safeFrontmatter[FRONTMATTER_KEYS["font-color"].name];
+    const fontColor = fmFontColor ?? plugin.settings.mdFontColor;
+    let style: string = safeFrontmatter[FRONTMATTER_KEYS["md-css"].name] ?? "";
 
-    let style = fileCache?.frontmatter
-      ? (fileCache.frontmatter[FRONTMATTER_KEYS["md-css"].name] ?? "")
-      : "";
     let frontmatterCSSisAfile = false;
     if (style && style !== "") {
       const f = plugin.app.metadataCache.getFirstLinkpathDest(style, file.path);
@@ -1515,10 +1514,9 @@ export class EmbeddedFilesLoader {
       }
     }
 
-    const borderColor = fileCache?.frontmatter
-      ? (fileCache.frontmatter[FRONTMATTER_KEYS["border-color"].name] ??
-        plugin.settings.mdBorderColor)
-      : plugin.settings.mdBorderColor;
+    const borderColor: string =
+      safeFrontmatter[FRONTMATTER_KEYS["border-color"].name] ??
+      plugin.settings.mdBorderColor;
 
     if (borderColor && borderColor !== "" && !style.match(/svg/i)) {
       style += `svg{border:2px solid;color:${borderColor};transform:scale(.95)}`;
@@ -1626,7 +1624,6 @@ export class EmbeddedFilesLoader {
       const iframeDoc = iframe.contentWindow.document;
       if (style) {
         const styleEl = iframeDoc.createElement("style");
-        styleEl.type = "text/css";
         setStyleText(styleEl, style);
         iframeDoc.head.appendChild(styleEl);
       }
