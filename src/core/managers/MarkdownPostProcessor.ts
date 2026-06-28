@@ -44,6 +44,7 @@ import {
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { setElementDisplay } from "src/utils/htmlUtils";
 import { setStyle } from "src/utils/styleUtils";
+import { getGlobalTaskQueue } from "src/shared/GlobalTaskQueue";
 
 interface imgElementAttributes {
   file?: TFile;
@@ -685,8 +686,12 @@ const createImgElement = async (
   eventElement.addEventListener("dblclick", clickEvent);
   eventElement.addEventListener(RERENDER_EVENT, (e) => {
     e.stopPropagation();
-    void (async () => {
+    void getGlobalTaskQueue(plugin).addTask(async () => {
       const parent = imgOrDiv.parentElement;
+      if (!parent || !parent.isConnected) {
+        console.log("exit 7a: aborted RERENDER_EVENT from queue because parent is disconnected");
+        return;
+      }
       const imgMaxWidth = imgOrDiv.style.maxWidth;
       const imgMaxHeigth = imgOrDiv.style.maxHeight;
       const fileSource = imgOrDiv.getAttribute("fileSource");
@@ -703,6 +708,12 @@ const createImgElement = async (
       if (!newImg) {
         return;
       }
+      
+      if (!parent.isConnected) {
+        console.log("exit 7b: aborted RERENDER_EVENT DOM update because parent is disconnected");
+        return;
+      }
+
       parent.empty();
       if (!onCanvas) {
         setStyle(newImg, {
@@ -712,7 +723,7 @@ const createImgElement = async (
       }
       newImg.setAttribute("fileSource", fileSource);
       parent.append(newImg);
-    })();
+    });
   });
   const cssClasses = getFileCSSClasses(attr.file);
   cssClasses.forEach((cssClass) => {
@@ -749,10 +760,12 @@ const processReadingMode = async (
   //Iterating all the containers in the file to check which one is an excalidraw drawing
   //This is a for loop instead of embeddedItems.forEach() because processInternalEmbed at the end
   //is awaited, otherwise excalidraw images would not display in the Kanban plugin
+  const promises: Promise<void>[] = [];
+
   for (const maybeDrawing of embeddedItems) {
     // If the node is detached from the DOM, the user has closed the note or navigated away.
     if (!maybeDrawing.isConnected) {
-      console.log("exit 1: aborted processInternalEmbed because the element is no longer connected to the DOM");
+      console.log("exit 1a: aborted queuing processInternalEmbed because the element is no longer connected to the DOM");
       break;
     }
 
@@ -773,19 +786,32 @@ const processReadingMode = async (
         continue;
       }
 
-      const imgDiv = await processInternalEmbed(maybeDrawing, file);
-      // Ensure we don't attempt to append onto a detached DOM tree
-      if (!maybeDrawing.isConnected) {
-        console.log("exit 2: aborted processInternalEmbed because the element is no longer connected to the DOM");
-        break;
-      }
+      promises.push(
+        getGlobalTaskQueue(plugin).addTask(async () => {
+          if (!maybeDrawing.isConnected) {
+            console.log("exit 1b: aborted processInternalEmbed from queue because the element is no longer connected to the DOM");
+            return;
+          }
 
-      maybeDrawing.parentElement.replaceChild(
-        imgDiv,
-        maybeDrawing,
+          const imgDiv = await processInternalEmbed(maybeDrawing, file);
+          
+          // Ensure we don't attempt to append onto a detached DOM tree
+          if (!maybeDrawing.isConnected) {
+            console.log("exit 2: aborted processInternalEmbed because the element is no longer connected to the DOM");
+            return;
+          }
+
+          maybeDrawing.parentElement.replaceChild(
+            imgDiv,
+            maybeDrawing,
+          );
+        })
       );
     }
   }
+
+  // Await the completion of all generated jobs allowing concurrent processing via the Global Task Queue
+  await Promise.all(promises);
 };
 
 const processInternalEmbed = async (
@@ -1097,53 +1123,61 @@ const tmpObsidianWYSIWYG = async (
     }
     internalEmbedDiv.empty();
     const onCanvas = internalEmbedDiv.hasClass("canvas-node-content");
-    const imgDiv = await createImageDiv(attr, onCanvas);
-
-    // Check if the user navigated away while the image was generating
-    if (!internalEmbedDiv.isConnected) {
-      console.log("exit 3: aborted processInternalEmbed because the element is no longer connected to the DOM");
-      return; 
-    }
-
-    if (markdownEmbed) {
-      //display image on canvas without markdown frame
-      internalEmbedDiv.removeClass("markdown-embed");
-      internalEmbedDiv.removeClass("inline-embed");
-      internalEmbedDiv.addClass("media-embed");
-      internalEmbedDiv.addClass("image-embed");
-      if (
-        !onCanvas &&
-        (isInstanceOfHTMLElement(imgDiv.firstChild) ||
-          isInstanceOfSVGElement(imgDiv.firstChild))
-      ) {
-        setStyle(imgDiv.firstChild, {
-          maxHeight: "100%",
-          maxWidth: null,
-        });
+    
+    await getGlobalTaskQueue(plugin).addTask(async () => {
+      if (!internalEmbedDiv.isConnected) {
+        console.log("exit 3a: aborted createImageDiv from queue because the element is no longer connected to the DOM");
+        return;
       }
-      // Resolve the cyclic size dependency by applying a CSS width and/or height
-      if (
-        !onCanvas &&
-        isHoverPopover &&
-        isInstanceOfHTMLImageElement(imgDiv.firstChild)
-      ) {
-        internalEmbedDiv.style.setProperty(
-          "--popover-width",
-          `${attr.fwidth}px`,
-        );
-        internalEmbedDiv.style.setProperty(
-          "--popover-height",
-          `${attr.fheight}px`,
-        );
-        setStyle(internalEmbedDiv, {
-          width: "var(--popover-width)",
-          height: "var(--popover-height)",
-        });
+
+      const imgDiv = await createImageDiv(attr, onCanvas);
+
+      // Check if the user navigated away while the image was generating
+      if (!internalEmbedDiv.isConnected) {
+        console.log("exit 3b: aborted processInternalEmbed because the element is no longer connected to the DOM");
+        return; 
       }
-      internalEmbedDiv.appendChild(imgDiv.firstChild);
-      return;
-    }
-    internalEmbedDiv.appendChild(imgDiv);
+
+      if (markdownEmbed) {
+        //display image on canvas without markdown frame
+        internalEmbedDiv.removeClass("markdown-embed");
+        internalEmbedDiv.removeClass("inline-embed");
+        internalEmbedDiv.addClass("media-embed");
+        internalEmbedDiv.addClass("image-embed");
+        if (
+          !onCanvas &&
+          (isInstanceOfHTMLElement(imgDiv.firstChild) ||
+            isInstanceOfSVGElement(imgDiv.firstChild))
+        ) {
+          setStyle(imgDiv.firstChild, {
+            maxHeight: "100%",
+            maxWidth: null,
+          });
+        }
+        // Resolve the cyclic size dependency by applying a CSS width and/or height
+        if (
+          !onCanvas &&
+          isHoverPopover &&
+          isInstanceOfHTMLImageElement(imgDiv.firstChild)
+        ) {
+          internalEmbedDiv.style.setProperty(
+            "--popover-width",
+            `${attr.fwidth}px`,
+          );
+          internalEmbedDiv.style.setProperty(
+            "--popover-height",
+            `${attr.fheight}px`,
+          );
+          setStyle(internalEmbedDiv, {
+            width: "var(--popover-width)",
+            height: "var(--popover-height)",
+          });
+        }
+        internalEmbedDiv.appendChild(imgDiv.firstChild);
+        return;
+      }
+      internalEmbedDiv.appendChild(imgDiv);
+    });
     return;
   }
 
@@ -1161,15 +1195,23 @@ const tmpObsidianWYSIWYG = async (
   internalEmbedDiv.setAttribute("ready", "");
 
   internalEmbedDiv.empty();
-  const imgDiv = await processInternalEmbed(internalEmbedDiv, file);
+  
+  await getGlobalTaskQueue(plugin).addTask(async () => {
+    if (!internalEmbedDiv.isConnected) {
+      console.log("exit 4a: aborted processInternalEmbed from queue because the element is no longer connected to the DOM");
+      return;
+    }
 
-  // Abort insertion if the container is no longer connected
-  if (!internalEmbedDiv.isConnected) {
-    console.log("exit 4: aborted processInternalEmbed because the element is no longer connected to the DOM");
-    return;
-  }
+    const imgDiv = await processInternalEmbed(internalEmbedDiv, file);
 
-  internalEmbedDiv.appendChild(imgDiv);
+    // Abort insertion if the container is no longer connected
+    if (!internalEmbedDiv.isConnected) {
+      console.log("exit 4b: aborted processInternalEmbed because the element is no longer connected to the DOM");
+      return;
+    }
+
+    internalEmbedDiv.appendChild(imgDiv);
+  });
 
   //timer to avoid the image flickering when the user is typing
   let timer: number = null;
@@ -1183,14 +1225,20 @@ const tmpObsidianWYSIWYG = async (
     timer = window.setTimeout(() => {
       timer = null;
       internalEmbedDiv.empty();
-      void (async () => {
+      void getGlobalTaskQueue(plugin).addTask(async () => {
+        if (!internalEmbedDiv.isConnected) {
+          console.log("exit 5a: aborted processInternalEmbed from mutation observer queue because element is disconnected");
+          return;
+        }
+
         const imgDiv = await processInternalEmbed(internalEmbedDiv, file);
+
         if (internalEmbedDiv.isConnected) {
           internalEmbedDiv.appendChild(imgDiv);
         } else {
-          console.log("exit 5: aborted processInternalEmbed because the element is no longer connected to the DOM");
+          console.log("exit 5b: aborted processInternalEmbed from mutation observer because the element is no longer connected to the DOM");
         }
-      })();
+      });
     }, 500);
   };
   const observer = DEBUGGING
@@ -1369,7 +1417,12 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = (m) => {
 
   //this div will be on top of original DIV. By stopping the propagation of the click
   //I prevent the default Obsidian feature of opening the link in the native app
-  void (async () => {
+  void getGlobalTaskQueue(plugin).addTask(async () => {
+    if (!node.isConnected) {
+      console.log("exit 6a: aborted legacy popover generation from queue because node is disconnected");
+      return;
+    }
+
     const img = await getIMG({
       file,
       fname: file.path,
@@ -1377,6 +1430,12 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = (m) => {
       fheight: null,
       imgstyle: ["excalidraw-svg"],
     });
+
+    if (!node.isConnected) {
+      console.log("exit 6b: aborted legacy popover append because node is disconnected");
+      return;
+    }
+
     const div = createDiv("", (el) => {
       el.appendChild(img);
       el.setAttribute("src", file.path);
@@ -1392,7 +1451,7 @@ const legacyExcalidrawPopoverObserverFn: MutationCallback = (m) => {
       });
     });
     node.appendChild(div);
-  })();
+  });
 };
 
 export const legacyExcalidrawPopoverObserver = DEBUGGING
