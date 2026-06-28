@@ -412,7 +412,7 @@ export const FRONTMATTER_KEYS = {
     type: "checkbox",
     depricated: false,
   },
-};
+} as const;
 
 export const CaptureUpdateAction = {
   /**

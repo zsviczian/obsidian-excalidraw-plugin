@@ -3240,11 +3240,16 @@ export default class ExcalidrawView
     this.cancelDeferredSceneFileValidation();
     if (this.activeLoader) {
       this.activeLoader.terminate = true;
+      this.activeLoader.emptyPDFDocsMap();
       this.activeLoader = null;
     }
-    this.nextLoader = null;
+    if (this.nextLoader) {
+      this.nextLoader.terminate = true;
+      this.nextLoader.emptyPDFDocsMap();
+      this.nextLoader = null;
+    }
     this.lastSceneLoadTime = 0;
-    api.resetScene();
+    (api.resetScene as () => void)();
     this.previousSceneVersion = 0;
   }
 

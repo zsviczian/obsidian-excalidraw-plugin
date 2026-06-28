@@ -500,6 +500,9 @@ export const getExcalidrawMarkdownHeaderSection = (
       : `${header}\n`;
 };
 
+export type EquationItem = { latex: string; isLoaded: boolean };
+export type MermaidItem = { mermaid: string; isLoaded: boolean };
+
 export class ExcalidrawData {
   public textElements: Map<
     string,
@@ -519,8 +522,8 @@ export class ExcalidrawData {
   public loaded: boolean = false;
   public elementLinks: Map<string, string> = null;
   public files: Map<FileId, EmbeddedFile> = null; //fileId, path
-  private equations: Map<FileId, { latex: string; isLoaded: boolean }> = null; //fileId, path
-  private mermaids: Map<FileId, { mermaid: string; isLoaded: boolean }> = null; //fileId, path
+  private equations: Map<FileId, EquationItem> = null; //fileId, path
+  private mermaids: Map<FileId, MermaidItem> = null; //fileId, path
   private compatibilityMode: boolean = false;
   private textElementCommentedOut: boolean = false;
   selectedElementIds: { [key: string]: boolean } = {}; //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/609
@@ -531,8 +534,8 @@ export class ExcalidrawData {
   ) {
     this.app = this.plugin.app;
     this.files = new Map<FileId, EmbeddedFile>();
-    this.equations = new Map<FileId, { latex: string; isLoaded: boolean }>();
-    this.mermaids = new Map<FileId, { mermaid: string; isLoaded: boolean }>();
+    this.equations = new Map<FileId, EquationItem>();
+    this.mermaids = new Map<FileId, MermaidItem>();
   }
 
   public destroy() {
@@ -768,8 +771,11 @@ export class ExcalidrawData {
         .forEach((textEl: Mutable<ExcalidrawTextElement>) => {
           textEl.containerId = null;
         }); // log({message:"cleanup",textEl})});
-    } catch (error) {
-      console.log(error);
+    } catch (error: unknown) {
+      errorlog({
+        message: "unexpected error in loadData",
+        error,
+      });
     }
   }
 

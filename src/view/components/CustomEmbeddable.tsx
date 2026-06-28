@@ -682,9 +682,7 @@ function RenderObsidianView({
 
     return () => {
       mo.disconnect();
-      const iframe = containerRef.current?.querySelector(
-        "iframe.embed-iframe",
-      );
+      const iframe = containerRef.current?.querySelector("iframe.embed-iframe");
       if (iframe && iframeLoadHandler) {
         iframe.removeEventListener("load", iframeLoadHandler);
       }
