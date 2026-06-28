@@ -477,7 +477,7 @@ export function renderWebView(
   view: ExcalidrawView,
   id: string,
   _: UIAppState,
-): JSX.Element {
+): React.JSX.Element {
   let isAllowed = false;
   try {
     const url = new URL(src);

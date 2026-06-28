@@ -5,7 +5,7 @@ type ButtonProps = {
   title: string;
   action: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
   longpress?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void;
-  icon: JSX.Element;
+  icon: React.JSX.Element;
 };
 
 type ButtonState = {

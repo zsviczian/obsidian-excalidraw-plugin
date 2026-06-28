@@ -18,7 +18,11 @@ import {
   mainDocument,
 } from "../constants/constants";
 import { createSVG } from "src/utils/excalidrawAutomateUtils";
-import { EquationItem, ExcalidrawData, getTransclusion } from "./ExcalidrawData";
+import {
+  EquationItem,
+  ExcalidrawData,
+  getTransclusion,
+} from "./ExcalidrawData";
 import { t } from "../lang/helpers";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "../core/main";
@@ -996,10 +1000,7 @@ export class EmbeddedFilesLoader {
       const equations = excalidrawData.getEquationEntries();
       while (!(equationItem = equations.next()).done) {
         const eiValue = equationItem.value as [FileId, EquationItem];
-        if (
-          fileIDWhiteList &&
-          !fileIDWhiteList.has(eiValue[0])
-        ) {
+        if (fileIDWhiteList && !fileIDWhiteList.has(eiValue[0])) {
           continue;
         }
         const equation = eiValue[1];

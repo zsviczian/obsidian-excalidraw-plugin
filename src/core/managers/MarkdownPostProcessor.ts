@@ -92,7 +92,7 @@ const discardImage = (el: Element | null) => {
     : Array.from(el.querySelectorAll("img"));
   images.forEach((img) => {
     if (img.src.startsWith("blob:")) {
-      URL.revokeObjectURL(img.src);
+      getImageCache().releaseObsidianURL(img.src);
     }
     // Instantly aborts the browser's background V8 image decoder task
     img.src = "";

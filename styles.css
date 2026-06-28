@@ -1032,7 +1032,15 @@ End Obsidian Sheets Plus support
 }
 
 .excalidraw-toolsPanel-island {
-  width: 14.5rem;
+  /* 
+    Width calculation: 
+    - 5 buttons: (var(--default-button-size) * 5)
+    - 4 column gaps of 0.25rem: 1rem
+    - standard left/right panel padding: ~1.5rem (0.75rem each side)
+    - plus a tiny 0.1rem buffer to prevent accidental wrapping 
+  */
+  width: calc((var(--default-button-size) * 5) + 2.6rem);
+
   height: fit-content;
   max-height: 400px;
   z-index: 5;
@@ -1048,13 +1056,23 @@ End Obsidian Sheets Plus support
   scrollbar-width: none;
 }
 
-.excalidraw .Island.excalidraw-toolsPanel-island .buttonList Button.ToolIcon_type_button {
-  flex: 0 0 18%;
+/* Ensure tool buttons remain perfectly square and sized just like native Excalidraw.
+   This overrides the old '18%' rule which was stretching the buttons. */
+.excalidraw .Island.excalidraw-toolsPanel-island .buttonList>.ToolIcon_type_button,
+.excalidraw .Island.excalidraw-toolsPanel-island .buttonList>.ToolIcon,
+.excalidraw .Island.excalidraw-toolsPanel-island .buttonList>label {
+  flex: 0 0 auto !important;
+  margin: 0;
 }
 
+/* Replicate the EXACT native Excalidraw property panel layout */
 .excalidraw .Island.excalidraw-toolsPanel-island .selected-shape-actions .buttonList {
-  justify-content: space-between;
-  column-gap: unset;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  /* Use standard gap shorthand: row-gap(0.5rem) column-gap(0.25rem). 
+     This perfectly matches the native panel spacing and avoids linter warnings! */
+  gap: 0.5rem 0.25rem;
 }
 
 .excalidraw .App-tray-menu {

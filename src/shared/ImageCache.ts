@@ -477,12 +477,31 @@ class ImageCache {
     if (cacheData.svg) {
       return convertSVGStringToElement(cacheData.svg);
     }
+    if (!cacheData.blob) {
+      return undefined;
+    }
     if (this.obsidanURLCache.has(key)) {
       return this.obsidanURLCache.get(key);
     }
     const obsidianURL = URL.createObjectURL(cacheData.blob);
     this.obsidanURLCache.set(key, obsidianURL);
     return obsidianURL;
+  }
+
+  public releaseObsidianURL(url: string): void {
+    if (!url || !this.obsidanURLCache) {
+      return;
+    }
+
+    const keysToDelete: string[] = [];
+    this.obsidanURLCache.forEach((cachedUrl, key) => {
+      if (cachedUrl === url) {
+        keysToDelete.push(key);
+      }
+    });
+
+    keysToDelete.forEach((key) => this.obsidanURLCache.delete(key));
+    URL.revokeObjectURL(url);
   }
 
   public async getBAKFromCache(filepath: string): Promise<BackupData | null> {
