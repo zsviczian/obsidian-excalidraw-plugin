@@ -1569,6 +1569,28 @@ export class EmbeddedFilesLoader {
       return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
     }
 
+    // MathJax typesetting may complete asynchronously after MarkdownRenderer.render() resolves.
+    // Awaiting typesetPromise ensures all mjx-container elements are fully populated before
+    // we clone the DOM into the iframe or serialize to SVG.
+    const mjx = (window as any).MathJax;
+    if (mjx?.typesetPromise) {
+      try {
+        await mjx.typesetPromise([mdDIV]);
+      } catch (_e) {
+        // Non-fatal: proceed with whatever state MathJax left the DOM in.
+      }
+    }
+
+    // Capture the MathJax CHTML stylesheet AFTER typesetting so all per-glyph rules
+    // are present. We pass the live <style> element (not textContent) because MathJax
+    // adds rules via sheet.insertRule(), which updates sheet.cssRules but never
+    // reflects in textContent — reading textContent would miss every glyph except
+    // any that happened to be in the element's original authored content.
+    const mjxCHtmlStyleContent = await scopeAndInlineMathJaxCSS(
+      mainDocument.getElementById("MJX-CHTML-styles") as HTMLStyleElement | null,
+      ".excalidraw-md-host",
+    );
+
     mdDIV
       .querySelectorAll(":scope > *[class^='frontmatter']")
       .forEach((el) => mdDIV.removeChild(el));
@@ -1626,6 +1648,13 @@ export class EmbeddedFilesLoader {
         const styleEl = iframeDoc.createElement("style");
         setStyleText(styleEl, style);
         iframeDoc.head.appendChild(styleEl);
+      }
+      // Inject the MathJax CHTML stylesheet into the iframe so that mjx-* custom elements
+      // are styled correctly when measuring scroll height and computing inline styles.
+      if (mjxCHtmlStyleContent) {
+        const mjxStyleEl = iframeDoc.createElement("style");
+        setStyleText(mjxStyleEl, mjxCHtmlStyleContent);
+        iframeDoc.head.appendChild(mjxStyleEl);
       }
       const stylingDIV = iframeDoc.importNode(mdDIV, true);
       iframeDoc.body.appendChild(stylingDIV);
@@ -1701,10 +1730,15 @@ export class EmbeddedFilesLoader {
     }
 
     const xml = new XMLSerializer().serializeToString(mdDIV);
+    // Prepend the MathJax CHTML stylesheet to the SVG's embedded <style> block so that
+    // mjx-container elements inside the <foreignObject> render correctly.
+    const finalStyle = mjxCHtmlStyleContent
+      ? mjxCHtmlStyleContent + "\n" + style
+      : style;
     const finalSVG = svg(
       xml,
       '<div class="excalidraw-md-footer"></div>',
-      style,
+      finalStyle,
     );
     plugin.ea.mostRecentMarkdownSVG = parser.parseFromString(
       finalSVG,
@@ -1716,6 +1750,114 @@ export class EmbeddedFilesLoader {
     };
   }
 }
+
+// ─── MathJax CHTML stylesheet helpers ────────────────────────────────────────
+
+// Cache keyed by "<rule-count>:<last-rule-text>" — cheap to compute and sufficient
+// for MathJax's append-only glyph stylesheet: every new character adds a new rule
+// at the end, so a change in count or last entry signals a cache miss.
+const mjxScopedStyleCache = new Map<string, Promise<string>>();
+
+/**
+ * Fetches a font file and returns it as a base64 data URI.
+ * This is necessary because fonts referenced by relative/app:// URLs in
+ * @font-face rules are blocked when the SVG is loaded as a data: URL.
+ */
+const fetchFontAsDataURI = async (url: string): Promise<string | null> => {
+  if (url.startsWith("data:")) return url;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const buf = await res.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    // Build base64 in 8 KB chunks to avoid call-stack overflow on large fonts.
+    let binary = "";
+    const chunk = 8192;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    }
+    const ext = url.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
+    const mime =
+      ext === "woff2" ? "font/woff2"
+      : ext === "woff" ? "font/woff"
+      : ext === "ttf"  ? "font/ttf"
+      : ext === "otf"  ? "font/otf"
+      : "font/woff2";
+    return `data:${mime};base64,${btoa(binary)}`;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Processes the live MathJax CHTML <style> element so it is safe to embed in the SVG.
+ *
+ * WHY we accept the element instead of its textContent: MathJax adds per-glyph CSS
+ * rules via sheet.insertRule(), which updates sheet.cssRules but NOT the element's
+ * textContent. Reading textContent would therefore miss every glyph rule added after
+ * initial load, explaining why only the very last character in a formula appeared.
+ *
+ * What this function does:
+ * 1. Scopes every style rule to `scope` (e.g. ".excalidraw-md-host") so that broad
+ *    selectors cannot bleed outside the math container and underline regular text.
+ * 2. Inlines every @font-face src URL as a base64 data URI so the mathematical fonts
+ *    (needed for correct radical-bar vertical metrics) load inside a data: SVG, where
+ *    the browser blocks all external URL references for security reasons.
+ *
+ * Results are cached by rule-count + last-rule text to avoid re-fetching fonts on
+ * every embed of the same formula set.
+ */
+const scopeAndInlineMathJaxCSS = (
+  styleEl: HTMLStyleElement | null,
+  scope: string,
+): Promise<string> => {
+  const sheet = styleEl?.sheet;
+  if (!sheet?.cssRules.length) return Promise.resolve("");
+
+  // Cheap cache key: rule count + last rule text (MathJax only ever appends rules).
+  const lastRule = sheet.cssRules[sheet.cssRules.length - 1]?.cssText ?? "";
+  const cacheKey = `${sheet.cssRules.length}:${lastRule.slice(0, 80)}`;
+
+  const cached = mjxScopedStyleCache.get(cacheKey);
+  if (cached) return cached;
+
+  const work = (async (): Promise<string> => {
+    // Snapshot the live rules array before any await so we process the state
+    // that existed when typesetPromise resolved, not a later state.
+    const rules = Array.from(sheet.cssRules);
+    let result = "";
+    for (const rule of rules) {
+      if (rule.type === CSSRule.FONT_FACE_RULE) {
+        // Inline each src URL as base64 so fonts work inside data: SVGs.
+        let ruleText = rule.cssText;
+        const urlRe = /url\(["']?([^"')]+)["']?\)/g;
+        for (const m of [...ruleText.matchAll(urlRe)]) {
+          const dataURI = await fetchFontAsDataURI(m[1]);
+          if (dataURI) ruleText = ruleText.replace(m[0], `url("${dataURI}")`);
+        }
+        result += ruleText + "\n";
+      } else if (rule.type === CSSRule.STYLE_RULE) {
+        // Prefix every selector with `scope` so rules cannot bleed to elements
+        // outside the math container (e.g. causing underlines on regular text).
+        const sr = rule as CSSStyleRule;
+        const scoped = sr.selectorText
+          .split(",")
+          .map((s) => `${scope} ${s.trim()}`)
+          .join(", ");
+        result += `${scoped} { ${sr.style.cssText} }\n`;
+      } else {
+        // @media, @keyframes, @supports, etc. — pass through unchanged.
+        result += rule.cssText + "\n";
+      }
+    }
+    return result;
+  })();
+
+  mjxScopedStyleCache.set(cacheKey, work);
+  return work;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const getSVGData = async (
   app: App,
