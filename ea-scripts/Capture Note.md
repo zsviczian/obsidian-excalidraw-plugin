@@ -67,7 +67,7 @@ The script assembles dynamic "New Section" labels contextualizing the timestamp 
 7.  Switches focus permanently to Note B and automatically executes `ea.viewZoomToElements()` centering the screen precisely on the newly built container.
 
 ```js*/
-
+const VERSION = "v260629";
 const FRAME_MARGIN = 10;
 
 if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.23.8")) {
@@ -150,17 +150,31 @@ const getLucideIconIds = () => {
 let suppressEscape = false;
 
 class FolderSuggest extends ea.obsidian.AbstractInputSuggest {
-  constructor(app, inputEl) {
+  constructor(app, inputEl, state = null, originFolderPath = "/") {
     super(app, inputEl);
     this.inputEl = inputEl;
+    this.state = state;
+    this.originFolderPath = originFolderPath === "/" ? "" : originFolderPath;
   }
   getSuggestions(query) {
-    const folders = app.vault.getAllLoadedFiles()
+    let folders = app.vault.getAllLoadedFiles()
       .filter(f => f instanceof ea.obsidian.TFolder)
       .map(f => f.path);
+    
+    // Filter and map paths relative to the current origin folder
+    if (this.state && this.state.useRelativeFolder) {
+      const prefix = this.originFolderPath ? this.originFolderPath + "/" : "";
+      folders = folders.filter(p => p.startsWith(prefix) || p === this.originFolderPath);
+      folders = folders.map(p => p === this.originFolderPath ? "" : p.substring(prefix.length));
+    }
+    
     return folders.filter(p => p.toLowerCase().includes(query.toLowerCase()));
   }
-  renderSuggestion(value, el) { el.setText(value); }
+  renderSuggestion(value, el) { 
+    // Display an indicator for the current folder if left empty in relative mode
+    const display = value === "" && this.state && this.state.useRelativeFolder ? "./ (Current Folder)" : value;
+    el.setText(display || "/"); 
+  }
   selectSuggestion(value) {
     this.inputEl.value = value;
     this.inputEl.dispatchEvent(new Event("input"));
@@ -704,7 +718,7 @@ async function injectVisualFormat(target_ea, targetX, targetY, sectionRawText, t
   // Conditionally add dynamic links back to the originating element and (if applicable) the DNP
   let linkStr = "";
   if (embeddedElementId && ontologyAction && originFilePath) {
-    linkStr += `(${ontologyAction}::[[${originFilePath}#^${embeddedElementId}]])`;
+    linkStr += `(${ontologyAction}::[[${originFilePath}#^group=${embeddedElementId}]])`;
   }
   if (!isCurrentDNP) {
     const frameOntology = settings.frameOntology || "note";
@@ -849,7 +863,7 @@ async function injectMarkdownFormat(file, target_ea, targetX, targetY, sectionRa
   if (embeddedElementId && ontologyAction && originFilePath) {
     const originFile = app.vault.getAbstractFileByPath(originFilePath);
     const originLinkpath = originFile ? getObsidianLinkpath(originFile, file.path) : originFilePath.replace(/\.md$/i, "");
-    linkStr += ` (${ontologyAction}::[[${originLinkpath}#^${embeddedElementId}]])`;
+    linkStr += ` (${ontologyAction}::[[${originLinkpath}#^group=${embeddedElementId}]])`;
   }
   if (!isCurrentDNP) {
     const frameOntology = settings.frameOntology || "note";
@@ -1078,10 +1092,10 @@ async function injectIntoOriginView(originView, activeElement, format, actionTyp
           const isEmbeddable = actionType === "CAPTURE_HERE" || !isMarkdownImage;
           if (isEmbeddable) {
             // Markdown Format + Embeddable: Multiple links
-            eaEl.link = `(${ontologyAction}:: [[${linkpath}#${refPath}]] [[${linkpath}#^${frameID}]])`;
+            eaEl.link = `(${ontologyAction}:: [[${linkpath}#${refPath}]] [[${linkpath}#^group=${frameID}]])`;
           } else {
             // Markdown Format + Static Image: Element ID link only
-            eaEl.link = `(${ontologyAction}:: [[${linkpath}#^${frameID}]])`;
+            eaEl.link = `(${ontologyAction}:: [[${linkpath}#^group=${frameID}]])`;
           }
         }
       }
@@ -1310,8 +1324,15 @@ async function start() {
     return;
   }
 
-  // Set the folder from the modal box
-  const targetFolder = (customFolder !== undefined && customFolder !== "") ? customFolder : opt.folder;
+  // Set the folder from the modal box (and apply relative behaviors)
+  let targetFolder = (customFolder !== undefined && customFolder !== "") ? customFolder : opt.folder;
+  if (captureData.useRelativeFolder) {
+    const baseFolder = originView.file.parent.path;
+    if (baseFolder !== "/") {
+      targetFolder = targetFolder ? `${baseFolder}/${targetFolder}` : baseFolder;
+    }
+  }
+
   const folder = ea.obsidian.normalizePath(targetFolder);
 
   // 3. Assemble WikiLink and File Path
@@ -1343,13 +1364,13 @@ async function start() {
     }
   }
 
-  // Handle Existing File Conflict Workflow
+  // Handle Existing File Conflict Workflow (Bypasses rename warning if type matches)
   if (fileTarget) {
     const existingType = await detectNoteType(fileTarget);
     const hasNoteType = existingType === noteType;
     const hasPrefix = opt.prefix ? fileTarget.basename.startsWith(opt.prefix) : true;
 
-    if (!hasNoteType || !hasPrefix) {
+    if (!hasNoteType) {
       const conflictDecision = await resolveExistingFileConflict(fileTarget, hasNoteType, hasPrefix, opt.prefix);
       if (!conflictDecision) return; 
 
@@ -1379,9 +1400,9 @@ async function start() {
     let folderPath = (opt.type === "folder") ? `${folder}/${cleanFilename}` : folder;
     const formattedFolderPath = folderPath ? folderPath.replace(/^\/+/, "") + "/" : "";
     
-    const format = app.vault.getConfig("newLinkFormat");
+    const fmt = app.vault.getConfig("newLinkFormat");
     let linkpath = `${formattedFolderPath}${targetBasename}`;
-    if (format === "shortest") {
+    if (fmt === "shortest") {
       const matches = app.vault.getFiles().filter(f => f.basename === targetBasename);
       if (matches.length === 0) {
         linkpath = targetBasename;
@@ -1399,7 +1420,7 @@ async function start() {
     return;
   }
 
-  // 4. Create File if new (File exists in memory for linking)
+  // 4. Create File if new
   const file = await ensureTargetFileExists(folder, cleanFilename, fname, opt, noteType);
 
   if (actionType === "ADD_LINK_CREATE") {
@@ -1546,21 +1567,68 @@ function buildCaptureFolderBox(contentEl, state) {
     .setName("Folder")
     .setDesc("Target directory for the note");
   
+  let folderInputComp;
+  const currentFolderPath = ea.targetView ? ea.targetView.file.parent.path : "/";
+
   folderSetting.addText(text => {
     state.ui.folderInput = text;
+    folderInputComp = text;
     text.inputEl.style.width = "100%";
     
     state.isProgrammaticUpdate = true;
     text.setValue(state.initialFolder);
     state.isProgrammaticUpdate = false;
     
-    new FolderSuggest(app, text.inputEl);
+    new FolderSuggest(app, text.inputEl, state, currentFolderPath);
 
     // Track manual edits by the user (ignoring programmatic setValue)
     text.inputEl.addEventListener("input", () => {
       if (!state.isProgrammaticUpdate) {
         state.folderManuallyEdited = true;
       }
+    });
+  });
+
+  // Relative vs Absolute folder path toggle
+  folderSetting.addExtraButton(btn => {
+    state.ui.folderToggleBtn = btn;
+    const updateIcon = () => {
+      btn.setIcon(state.useRelativeFolder ? "folder-dot" : "folder-lock");
+      btn.setTooltip(state.useRelativeFolder ? "In current folder or subfolder" : "Fixed absolute folder path");
+    };
+    updateIcon();
+    
+    btn.onClick(() => {
+      state.useRelativeFolder = !state.useRelativeFolder;
+      settings.useRelativeFolder = state.useRelativeFolder; // Save global preference
+      ea.setScriptSettings(settings);
+      updateIcon();
+      
+      // Handle path transformation automatically
+      state.isProgrammaticUpdate = true;
+      let currentVal = folderInputComp.getValue().trim();
+      const prefix = currentFolderPath === "/" ? "" : currentFolderPath;
+      
+      if (state.useRelativeFolder) {
+        // Absolute to Relative
+        if (currentVal === prefix) {
+          folderInputComp.setValue("");
+        } else if (currentVal.startsWith(prefix + "/")) {
+          folderInputComp.setValue(currentVal.substring(prefix.length + 1));
+        } else {
+          folderInputComp.setValue(""); // Does not fall within current path, clear
+        }
+      } else {
+        // Relative to Absolute
+        if (currentVal === "") {
+          folderInputComp.setValue(prefix);
+        } else {
+          folderInputComp.setValue(prefix ? `${prefix}/${currentVal}` : currentVal);
+        }
+      }
+      
+      state.isProgrammaticUpdate = false;
+      state.ui.folderInput.inputEl.dispatchEvent(new Event("input")); // Re-evaluate suggester
     });
   });
 }
@@ -1747,12 +1815,12 @@ function buildCaptureLinkTypeSelector(contentEl, state, callbacks) {
     state.selectedNoteType = selectedNoteType;
   }
 
-  const linkTypeRow = new ea.obsidian.Setting(contentEl).setName("Link Type");
-  linkTypeRow.controlEl.addClass("link-type-row-control");
-  const iconPreviewSpan = linkTypeRow.controlEl.createSpan();
+  const noteTypeRow = new ea.obsidian.Setting(contentEl).setName("Type");
+  noteTypeRow.controlEl.addClass("link-type-row-control");
+  const iconPreviewSpan = noteTypeRow.controlEl.createSpan();
   state.ui.iconPreviewSpan = iconPreviewSpan;
 
-  linkTypeRow.addDropdown(dropdown => {
+  noteTypeRow.addDropdown(dropdown => {
     state.ui.dropdownComponent = dropdown;
     noteTypeKeys.forEach(k => dropdown.addOption(k, k));
     dropdown.setValue(selectedNoteType);
@@ -1772,6 +1840,11 @@ function buildCaptureLinkTypeSelector(contentEl, state, callbacks) {
             if (opt && opt.folder !== undefined && state.ui.folderInput) {
                state.isProgrammaticUpdate = true;
                state.ui.folderInput.setValue(opt.folder);
+               state.useRelativeFolder = !!opt.useRelativeFolder;
+               if (state.ui.folderToggleBtn) {
+                 state.ui.folderToggleBtn.setIcon(state.useRelativeFolder ? "folder-dot" : "folder-lock");
+                 state.ui.folderToggleBtn.setTooltip(state.useRelativeFolder ? "In current folder or subfolder" : "Fixed absolute folder path");
+               }
                state.isProgrammaticUpdate = false;
             }
         }
@@ -1780,7 +1853,7 @@ function buildCaptureLinkTypeSelector(contentEl, state, callbacks) {
   });
 
   // Add a button to manually pull the target directory from the active Note Type
-  linkTypeRow.addExtraButton(btn => {
+  noteTypeRow.addExtraButton(btn => {
     state.ui.resetFolderBtn = btn;
     btn.setIcon("folder-sync")
        .setTooltip("Apply folder from selected Note Type")
@@ -1789,9 +1862,51 @@ function buildCaptureLinkTypeSelector(contentEl, state, callbacks) {
          if (opt && opt.folder !== undefined && state.ui.folderInput) {
            state.isProgrammaticUpdate = true;
            state.ui.folderInput.setValue(opt.folder);
+           state.useRelativeFolder = !!opt.useRelativeFolder;
+           if (state.ui.folderToggleBtn) {
+             state.ui.folderToggleBtn.setIcon(state.useRelativeFolder ? "folder-dot" : "folder-lock");
+             state.ui.folderToggleBtn.setTooltip(state.useRelativeFolder ? "In current folder or subfolder" : "Fixed absolute folder path");
+           }
            state.isProgrammaticUpdate = false;
            state.folderManuallyEdited = false;
          }
+       });
+  });
+
+  // 4.1 On-the-spot Note Type creation
+  noteTypeRow.addExtraButton(btn => {
+    btn.setIcon("plus")
+       .setTooltip("Create new Note Type")
+       .onClick(() => {
+         const tempId = "New Type " + (Object.keys(settings.noteTypes).length + 1);
+         settings.noteTypes[tempId] = {
+           folder: "",
+           useRelativeFolder: state.useRelativeFolder,
+           type: "file",
+           template: settings.baseTemplateForNewNoteTypes || "",
+           prefix: "",
+           icon: "file",
+           ontology: { default: "referencing", actions: ["referencing"] }
+         };
+         
+         // Passed with isNew = true to gracefully handle escape/cancel deletions
+         openEditNoteTypeModal(tempId, (finalName) => {
+           ea.setScriptSettings(settings);
+           const targetName = finalName || tempId;
+           
+           // Refresh dropdown options
+           const selectEl = state.ui.dropdownComponent.selectEl;
+           while(selectEl.options.length > 0) selectEl.remove(0);
+           Object.keys(settings.noteTypes).sort().forEach(k => state.ui.dropdownComponent.addOption(k, k));
+           
+           // Select newly created type
+           state.selectedNoteType = targetName;
+           settings.lastSelectedNoteType = targetName;
+           state.ui.dropdownComponent.setValue(targetName);
+           
+           callbacks.updateIconPreview();
+           callbacks.updateOntologyDropdown();
+         }, true); 
        });
   });
 
@@ -1862,6 +1977,7 @@ function buildCaptureFooter(contentEl, state, modal) {
     state.finalData = {
       filename: val,
       folder: folderVal,
+      useRelativeFolder: state.useRelativeFolder, // Append relative setting state
       noteType: state.selectedNoteType,
       format: state.selectedFormat,
       ontologyAction: state.selectedOntology,
@@ -1904,7 +2020,22 @@ async function openCaptureModal(initialSearchValue) {
     modal.modalEl.style.width = "480px";
     modal.modalEl.style.maxWidth = "100%";
     modal.modalEl.classList.add("excalidraw-capture-note-modal");
-    modal.titleEl.setText("Capture Contextual Note");
+    
+    // Clear default title text and convert to a flex container to align elements
+    modal.titleEl.empty();
+    modal.titleEl.style.display = "flex";
+    modal.titleEl.style.justifyContent = "space-between";
+    modal.titleEl.style.alignItems = "center";
+    modal.titleEl.style.width = "100%";
+    
+    // Add Main Title
+    modal.titleEl.createSpan({ text: "Capture Contextual Note" });
+    
+    // Add right-aligned Version string
+    modal.titleEl.createSpan({ 
+      text: VERSION, 
+      attr: { style: "font-size: 0.5em; color: var(--text-muted); font-weight: normal; margin-right: 8px;" } 
+    });
 
     let initialFolder = "";
     let initialFilename = initialSearchValue || "";
@@ -1970,6 +2101,7 @@ async function openCaptureModal(initialSearchValue) {
     const state = {
       finalData: null,
       initialFolder,
+      useRelativeFolder: settings.useRelativeFolder || false,
       initialSearchValue: initialFilename,
       folderManuallyEdited: false, // Start false so we can auto-update if they change to a new file
       isProgrammaticUpdate: false,
@@ -2041,6 +2173,11 @@ async function openCaptureModal(initialSearchValue) {
             if (opt && opt.folder !== undefined) {
               state.isProgrammaticUpdate = true;
               state.ui.folderInput.setValue(opt.folder);
+              state.useRelativeFolder = !!opt.useRelativeFolder;
+              if (state.ui.folderToggleBtn) {
+                state.ui.folderToggleBtn.setIcon(state.useRelativeFolder ? "folder-dot" : "folder-lock");
+                state.ui.folderToggleBtn.setTooltip(state.useRelativeFolder ? "In current folder or subfolder" : "Fixed absolute folder path");
+              }
               state.isProgrammaticUpdate = false;
             }
           }
@@ -2393,6 +2530,18 @@ function buildNoteTypesSection(contentEl) {
   const noteTypesSection = contentEl.createEl("details", { cls: "setting-sub-section" });
   noteTypesSection.createEl("summary", { text: "Note Types & Custom Ontologies" });
   
+  const baseTemplateContainer = noteTypesSection.createDiv({ attr: { style: "margin-bottom: 15px;" } });
+  new ea.obsidian.Setting(baseTemplateContainer)
+    .setName("Base Template for New Ontologies")
+    .setDesc("A generic template used automatically when creating new note types on the fly.")
+    .addText(text => {
+      text.setValue(settings.baseTemplateForNewNoteTypes || "").onChange(val => { 
+          settings.baseTemplateForNewNoteTypes = val; 
+          ea.setScriptSettings(settings);
+      });
+      new TemplateSuggest(app, text.inputEl);
+    });
+
   const addBtnContainer = noteTypesSection.createDiv({ cls: "flex-row-spaced", attr: { style: "margin-bottom:15px;" } });
   addBtnContainer.createEl("span", { text: "Manage your note types:" });
   const addBtn = addBtnContainer.createEl("button", { text: "Add", cls: "mod-cta" });
@@ -2404,16 +2553,19 @@ function buildNoteTypesSection(contentEl) {
     const tempId = "New Type " + (Object.keys(settings.noteTypes).length + 1);
     settings.noteTypes[tempId] = {
       folder: "",
+      useRelativeFolder: false,
       type: "file",
-      template: "",
+      template: settings.baseTemplateForNewNoteTypes || "",
       prefix: "",
       icon: "file",
       ontology: { default: "referencing", actions: ["referencing"] }
     };
+    
+    // Passed with isNew = true to gracefully handle escape/cancel deletions
     openEditNoteTypeModal(tempId, () => {
       ea.setScriptSettings(settings);
       refreshCallback();
-    });
+    }, true);
   });
 
   refreshCallback();
@@ -2462,12 +2614,13 @@ function openSettingsModal() {
 // -------------------------------------------------------------
 // 7. UI: Detailed Single Note Type Editor Modal (Secondary Modal)
 // -------------------------------------------------------------
-function openEditNoteTypeModal(noteTypeKey, saveCallback) {
+function openEditNoteTypeModal(noteTypeKey, saveCallback, isNew = false) {
   const modal = new ea.obsidian.Modal(app);
   modal.titleEl.setText(`Configure Note Type`);
 
   const typeConfig = settings.noteTypes[noteTypeKey];
   let originalKeyName = noteTypeKey;
+  let isSaved = false;
 
   // Fetch ExcaliBrain ontology actions
   let brainOntologies = [];
@@ -2524,15 +2677,67 @@ function openEditNoteTypeModal(noteTypeKey, saveCallback) {
         settings.noteTypes[finalName] = typeConfig;
         delete settings.noteTypes[originalKeyName];
       }
-      saveCallback();
+      isSaved = true;
+      saveCallback(finalName);
       modal.close();
     });
+
+    let folderInputComp;
+    const currentFolderPath = ea.targetView ? ea.targetView.file.parent.path : "/";
 
     new ea.obsidian.Setting(contentEl)
       .setName("Target Vault Folder")
       .addText(text => {
+        folderInputComp = text;
         text.setValue(typeConfig.folder).onChange(val => { typeConfig.folder = val; });
-        new FolderSuggest(app, text.inputEl);
+        // Passing typeConfig directly ensures the Suggester inherits the toggle boolean accurately 
+        new FolderSuggest(app, text.inputEl, typeConfig, currentFolderPath);
+        typeConfig._tempTextInput = text.inputEl; 
+      })
+      .addExtraButton(btn => {
+        const updateIcon = () => {
+          btn.setIcon(typeConfig.useRelativeFolder ? "folder-dot" : "folder-lock");
+          btn.setTooltip(typeConfig.useRelativeFolder ? "Relative to current note's folder" : "Absolute folder path");
+        };
+        updateIcon();
+        
+        btn.onClick(() => {
+          typeConfig.useRelativeFolder = !typeConfig.useRelativeFolder;
+          updateIcon();
+          
+          // Handle path transformation automatically
+          let currentVal = folderInputComp.getValue().trim();
+          const prefix = currentFolderPath === "/" ? "" : currentFolderPath;
+          
+          if (typeConfig.useRelativeFolder) {
+            // Absolute to Relative
+            if (currentVal === prefix) {
+              folderInputComp.setValue("");
+              typeConfig.folder = "";
+            } else if (currentVal.startsWith(prefix + "/")) {
+              const newRelative = currentVal.substring(prefix.length + 1);
+              folderInputComp.setValue(newRelative);
+              typeConfig.folder = newRelative;
+            } else {
+              folderInputComp.setValue("");
+              typeConfig.folder = "";
+            }
+          } else {
+            // Relative to Absolute
+            if (currentVal === "") {
+              folderInputComp.setValue(prefix);
+              typeConfig.folder = prefix;
+            } else {
+              const newAbsolute = prefix ? `${prefix}/${currentVal}` : currentVal;
+              folderInputComp.setValue(newAbsolute);
+              typeConfig.folder = newAbsolute;
+            }
+          }
+
+          if (typeConfig._tempTextInput) {
+             typeConfig._tempTextInput.dispatchEvent(new Event("input"));
+          }
+        });
       });
 
     new ea.obsidian.Setting(contentEl)
@@ -2543,9 +2748,16 @@ function openEditNoteTypeModal(noteTypeKey, saveCallback) {
         new TemplateSuggest(app, text.inputEl);
       });
 
+    // Strip unsafe characters to guarantee OS-level file creation compatibility
     new ea.obsidian.Setting(contentEl)
       .setName("File Prefix")
-      .addText(text => text.setValue(typeConfig.prefix).onChange(val => { typeConfig.prefix = val; }));
+      .addText(text => text.setValue(typeConfig.prefix).onChange(val => { 
+        const cleaned = val.replace(/[\\/:"*?<>|]/g, '');
+        if (cleaned !== val) {
+          text.setValue(cleaned);
+        }
+        typeConfig.prefix = cleaned; 
+      }));
 
     const iconSetting = new ea.obsidian.Setting(contentEl)
       .setName("Lucide Icon");
@@ -2673,6 +2885,11 @@ function openEditNoteTypeModal(noteTypeKey, saveCallback) {
   };
 
   modal.onClose = () => {
+    // If the creation workflow is abandoned before explicitly saving, erase the orphaned entry
+    if (isNew && !isSaved) {
+      delete settings.noteTypes[originalKeyName];
+      ea.setScriptSettings(settings);
+    }
     setTimeout(() => { delete modal; });
   };
   modal.open();
