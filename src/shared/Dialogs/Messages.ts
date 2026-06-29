@@ -29,6 +29,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 ## Fixed
 - BUG: Double Click to edit from Obsidian in Live preview doesn't work anymore [#2813](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2813)
 - Edge cases leading to memory leak and CPU overload when closing a markdown preview while embedded Excalidraw drawings are loading, or closing an ExcalidrawView, while nested images are still loading.
+- Markdown-embed-as-image snapshot drops MathJax/LaTeX output [#2818](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2818), [#2282](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2282) 🙏[@Jmarcos13](${URLs.GITHUB_COM}/Jmarcos13) via [#2822](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2822)
 `,
   "2.24.2": `
   ## Fixed

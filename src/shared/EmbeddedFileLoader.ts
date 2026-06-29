@@ -18,8 +18,8 @@ import {
   mainDocument,
 } from "../constants/constants";
 import { createSVG } from "src/utils/excalidrawAutomateUtils";
+import type { EquationItem } from "./ExcalidrawData";
 import {
-  EquationItem,
   ExcalidrawData,
   getTransclusion,
 } from "./ExcalidrawData";
@@ -1058,12 +1058,12 @@ export class EmbeddedFilesLoader {
               if (result?.files) {
                 for (const key in result.files) {
                   const fileData = {
-                    ...result.files[key],
+                    ...(result.files as Record<string, { dataURL: string }>)[key],
                     id: element.fileId,
                     created: Date.now(),
                     hasSVGwithBitmap: false,
                     shouldScale: true,
-                    size: await getImageSize(result.files[key].dataURL),
+                    size: await getImageSize((result.files as Record<string, { dataURL: string }>)[key].dataURL),
                   } as FileData;
                   files[batch].push(fileData);
                 }
@@ -1080,7 +1080,7 @@ export class EmbeddedFilesLoader {
                   depth,
                   inFile: null,
                   hasSVGwithBitmap: false,
-                  elements: result.elements,
+                  elements: result.elements as ExcalidrawElement[],
                 });
                 if (this.terminate) {
                   return;
@@ -1124,7 +1124,7 @@ export class EmbeddedFilesLoader {
       );
       try {
         addFiles(batchFiles, this.isDark, false);
-      } catch (e) {
+      } catch (e: unknown) {
         errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
       }
       files.push([]);
@@ -1154,7 +1154,7 @@ export class EmbeddedFilesLoader {
       try {
         //in try block because by the time files are loaded the user may have closed the view
         addFiles(batchFiles, this.isDark, true);
-      } catch (e) {
+      } catch (e: unknown) {
         errorlog({ where: "EmbeddedFileLoader.loadSceneFiles", error: e });
       }
     } finally {
@@ -1572,12 +1572,16 @@ export class EmbeddedFilesLoader {
     // MathJax typesetting may complete asynchronously after MarkdownRenderer.render() resolves.
     // Awaiting typesetPromise ensures all mjx-container elements are fully populated before
     // we clone the DOM into the iframe or serialize to SVG.
-    const mjx = (window as any).MathJax;
+    const mjx = window.MathJax;
     if (mjx?.typesetPromise) {
       try {
         await mjx.typesetPromise([mdDIV]);
-      } catch (_e) {
-        // Non-fatal: proceed with whatever state MathJax left the DOM in.
+      } catch (e: unknown) {
+        errorlog({
+          where: "EmbeddedFileLoader.convertMarkdownToSVG",
+          message: "Non-fatal: proceed with whatever state MathJax left the DOM in.",  
+          error: e,
+        });
       }
     }
 
@@ -1587,7 +1591,9 @@ export class EmbeddedFilesLoader {
     // reflects in textContent — reading textContent would miss every glyph except
     // any that happened to be in the element's original authored content.
     const mjxCHtmlStyleContent = await scopeAndInlineMathJaxCSS(
-      mainDocument.getElementById("MJX-CHTML-styles") as HTMLStyleElement | null,
+      mainDocument.getElementById(
+        "MJX-CHTML-styles",
+      ) as HTMLStyleElement | null,
       ".excalidraw-md-host",
     );
 
@@ -1778,11 +1784,15 @@ const fetchFontAsDataURI = async (url: string): Promise<string | null> => {
     }
     const ext = url.split("?")[0].split(".").pop()?.toLowerCase() ?? "";
     const mime =
-      ext === "woff2" ? "font/woff2"
-      : ext === "woff" ? "font/woff"
-      : ext === "ttf"  ? "font/ttf"
-      : ext === "otf"  ? "font/otf"
-      : "font/woff2";
+      ext === "woff2"
+        ? "font/woff2"
+        : ext === "woff"
+          ? "font/woff"
+          : ext === "ttf"
+            ? "font/ttf"
+            : ext === "otf"
+              ? "font/otf"
+              : "font/woff2";
     return `data:${mime};base64,${btoa(binary)}`;
   } catch {
     return null;
@@ -1818,8 +1828,8 @@ const scopeAndInlineMathJaxCSS = (
   const lastRule = sheet.cssRules[sheet.cssRules.length - 1]?.cssText ?? "";
   const cacheKey = `${sheet.cssRules.length}:${lastRule.slice(0, 80)}`;
 
-  const cached = mjxScopedStyleCache.get(cacheKey);
-  if (cached) return cached;
+  const cached = mjxScopedStyleCache.get(cacheKey) ?? null;
+  if (cached !== null) return cached;
 
   const work = (async (): Promise<string> => {
     // Snapshot the live rules array before any await so we process the state
@@ -1827,7 +1837,7 @@ const scopeAndInlineMathJaxCSS = (
     const rules = Array.from(sheet.cssRules);
     let result = "";
     for (const rule of rules) {
-      if (rule.type === CSSRule.FONT_FACE_RULE) {
+      if (rule instanceof CSSFontFaceRule) {
         // Inline each src URL as base64 so fonts work inside data: SVGs.
         let ruleText = rule.cssText;
         const urlRe = /url\(["']?([^"')]+)["']?\)/g;
@@ -1836,10 +1846,10 @@ const scopeAndInlineMathJaxCSS = (
           if (dataURI) ruleText = ruleText.replace(m[0], `url("${dataURI}")`);
         }
         result += ruleText + "\n";
-      } else if (rule.type === CSSRule.STYLE_RULE) {
+      } else if (rule instanceof CSSStyleRule) {
         // Prefix every selector with `scope` so rules cannot bleed to elements
         // outside the math container (e.g. causing underlines on regular text).
-        const sr = rule as CSSStyleRule;
+        const sr = rule;
         const scoped = sr.selectorText
           .split(",")
           .map((s) => `${scope} ${s.trim()}`)

@@ -171,6 +171,9 @@ declare global {
     React?: typeof import("react");
     ReactDOM?: typeof import("react-dom/client");
     ExcalidrawLib?: typeof ExcalidrawLib;
+    MathJax?: {
+      typesetPromise(elements: HTMLElement[]): Promise<void>
+    };
   }
   interface File {
     path?: string;

@@ -131,7 +131,7 @@ export class ObsidianMenu {
   private prevClickTimestamp: number = 0;
   constructor(
     private plugin: ExcalidrawPlugin,
-     
+
     private toolsRef: React.MutableRefObject<ToolsPanel>,
     private view: ExcalidrawView,
   ) {

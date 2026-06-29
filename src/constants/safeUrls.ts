@@ -219,7 +219,7 @@ export const URL_REGISTRY = {
     "https://community.obsidian.md/plugins/obsidian-excalidraw-plugin",
     UrlPurpose.RELEASE_LOG,
   ),
-  GITHUB_COM: defineUrl("https://github.com/", UrlPurpose.RELEASE_LOG),
+  GITHUB_COM: defineUrl("https://github.com", UrlPurpose.RELEASE_LOG),
   GITHUB_COM_EXCALIDRAW_EXCALIDRAW_ISSUES: defineUrl(
     "https://github.com/excalidraw/excalidraw/issues",
     UrlPurpose.RELEASE_LOG,

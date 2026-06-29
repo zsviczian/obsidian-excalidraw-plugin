@@ -409,7 +409,7 @@ class ImageCache {
             new Promise<undefined>((_, reject) =>
               window.setTimeout(() => {
                 reject(new Error("Timeout while retrieving cache data"));
-              }, 100),
+              }, 200),
             ),
           ]);
       this.fullyInitialized = true;
@@ -451,6 +451,7 @@ class ImageCache {
       console.error(
         "unexpected error in getResolvedCacheData",
         this.getResolvedCacheData.bind(this),
+        key_,
         error,
       );
       return undefined;
