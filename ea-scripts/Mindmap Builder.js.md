@@ -1489,8 +1489,17 @@ const extractConfigFromGlobals = () => ({
 });
 
 let mapPresets = getVal(K_PRESETS, {
-  "Default": extractConfigFromGlobals()
+  value: {
+    "Default": extractConfigFromGlobals()
+  },
+  hidden: true
 });
+
+// Safeguard against corrupted or undefined settings
+if (!mapPresets || typeof mapPresets !== "object") {
+  mapPresets = {};
+}
+
 let activePresetName = getVal(K_ACTIVE_PRESET, "Default");
 
 // Make sure Default is always available
