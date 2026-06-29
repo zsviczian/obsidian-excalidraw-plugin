@@ -377,6 +377,20 @@ const STRINGS = {
     CALENDAR_DATETYPE_DONE: "Done",
     CALENDAR_DATETYPE_CANCELLED: "Cancelled",
 
+    // Presets
+    PRESET_LABEL: "Preset",
+    PRESET_DEFAULT: "Default",
+    PRESET_UNSAVED: "Custom / Unlinked",
+    PRESET_BTN_SAVE: "Save to Preset",
+    PRESET_BTN_DELETE: "Delete Preset",
+    PRESET_BTN_NEW: "Create New Preset",
+    PRESET_BTN_APPLY: "Apply Preset to Map",
+    PRESET_WARNING_MODIFIED: "Map settings differ from preset.",
+    PROMPT_NEW_PRESET_NAME: "New preset name:",
+    NOTICE_PRESET_DELETED: "Preset deleted.",
+    NOTICE_PRESET_SAVED: "Preset saved.",
+    NOTICE_PRESET_APPLIED: "Preset applied.",
+
     // Misc
     INPUT_TITLE_PASTE_ROOT: "Mindmap Builder Paste",
     INSTRUCTIONS: "> [!Tip]\n" +
@@ -654,6 +668,19 @@ addLocale("zh", {
   CALENDAR_DATETYPE_DONE: "完成",
   CALENDAR_DATETYPE_CANCELLED: "取消",
 
+  // Presets
+  PRESET_LABEL: "预设",
+  PRESET_UNSAVED: "自定义 / 未关联",
+  PRESET_BTN_SAVE: "保存预设",
+  PRESET_BTN_DELETE: "删除预设",
+  PRESET_BTN_NEW: "新建预设",
+  PRESET_BTN_APPLY: "应用预设到导图",
+  PRESET_WARNING_MODIFIED: "导图设置与预设不符。",
+  PROMPT_NEW_PRESET_NAME: "新预设名称：",
+  NOTICE_PRESET_DELETED: "预设已删除。",
+  NOTICE_PRESET_SAVED: "预设已保存。",
+  NOTICE_PRESET_APPLIED: "预设已应用。",
+
   // Misc
   INPUT_TITLE_PASTE_ROOT: "MindMap Builder 粘贴",
   INSTRUCTIONS: "> [!Tip]\n" +
@@ -922,6 +949,19 @@ addLocale("zh-tw", {
   CALENDAR_DATETYPE_DONE: "完成",
   CALENDAR_DATETYPE_CANCELLED: "取消",
 
+  // Presets
+  PRESET_LABEL: "預設",
+  PRESET_UNSAVED: "自定義 / 未關聯",
+  PRESET_BTN_SAVE: "儲存預設",
+  PRESET_BTN_DELETE: "刪除預設",
+  PRESET_BTN_NEW: "新建預設",
+  PRESET_BTN_APPLY: "應用預設到導圖",
+  PRESET_WARNING_MODIFIED: "導圖設定與預設不符。",
+  PROMPT_NEW_PRESET_NAME: "新預設名稱：",
+  NOTICE_PRESET_DELETED: "預設已刪除。",
+  NOTICE_PRESET_SAVED: "預設已儲存。",
+  NOTICE_PRESET_APPLIED: "預設已應用。",
+
   // Misc
   INPUT_TITLE_PASTE_ROOT: "MindMap Builder 貼上",
   INSTRUCTIONS: "> [!Tip]\n" +
@@ -984,11 +1024,11 @@ const getZoom = (level) => {
 const fontScale = (type) => {
   switch (type) {
     case "Use scene fontsize":
-      return Array(4).fill(getAppState().currentItemFontSize);
+      return Array(5).fill(getAppState().currentItemFontSize);
     case "Fibonacci Scale":
-      return [68, 42, 26, 16];
+      return [68, 42, 26, 16, 10];
     default: // "Normal Scale"
-      return [36, 28, 20, 16];
+      return [36, 28, 20, 16, 12];
   }
 };
 
@@ -1002,9 +1042,13 @@ const saveSettings = async () => {
 }
 const setVal = (key, value, hidden = false) => {
   const def = ea.getScriptSettingValue(key, {value, hidden});
+  const isChanging = def.value !== value || def.hidden !== hidden;
   def.value = value;
   if (hidden) def.hidden = true;
   ea.setScriptSettingValue(key, def);
+  if (isChanging) {
+    dirty = true;
+  }
 }
 
 const K_WIDTH = "Max Text Width";
@@ -1027,9 +1071,11 @@ const K_ARROW_TYPE = "Arrow Type";
 const K_FILL_SWEEP = "Fill Sweep";
 const K_INJECT_LINK = "Inject Node Link";
 const K_LINK_ALIAS = "Node Link Alias";
+const K_PRESETS = "Map Presets";
+const K_ACTIVE_PRESET = "Active Preset";
 
 let injectNodeLink = getVal(K_INJECT_LINK, true);
-let nodeLinkAlias = getVal(K_LINK_ALIAS, "(link)");
+let nodeLinkAlias = getVal(K_LINK_ALIAS, "(…)");
 
 const isExcaliBrainView = () => {
   if (!ea.targetView || !ea.targetView.file) return false;
@@ -1305,7 +1351,6 @@ Object.keys(LAYOUT_METADATA).forEach(k => {
 
 if (layoutSettingsDirty) {
   setVal(K_LAYOUT, layoutSettings, true);
-  dirty = true;
 }
 
 // ---------------------------------------------------------------------------
@@ -1417,6 +1462,148 @@ let baseStrokeWidth = parseFloat(getVal(K_BASE_WIDTH, {
   value: 6
 }));
 if (isNaN(baseStrokeWidth)) baseStrokeWidth = 6;
+
+
+// ---------------------------------------------------------------------------
+// Map Presets State & Helpers
+// ---------------------------------------------------------------------------
+
+const LAYOUT_DEFAULTS = {};
+Object.keys(LAYOUT_METADATA).forEach(k => LAYOUT_DEFAULTS[k] = LAYOUT_METADATA[k].def);
+
+const extractConfigFromGlobals = () => ({
+  growthMode: currentModalGrowthMode,
+  arrowType,
+  fontsizeScale,
+  multicolor,
+  boxChildren,
+  roundedCorners,
+  maxWrapWidth: maxWidth,
+  isSolidArrow,
+  centerText,
+  fillSweep,
+  branchScale,
+  baseStrokeWidth,
+  customPalette: JSON.parse(JSON.stringify(customPalette)),
+  layoutSettings: JSON.parse(JSON.stringify(layoutSettings))
+});
+
+let mapPresets = getVal(K_PRESETS, {
+  "Default": extractConfigFromGlobals()
+});
+let activePresetName = getVal(K_ACTIVE_PRESET, "Default");
+
+// Make sure Default is always available
+if (!mapPresets["Default"]) {
+  mapPresets["Default"] = extractConfigFromGlobals();
+  setVal(K_PRESETS, mapPresets, true);
+}
+
+const diffMapConfig = (c1, c2) => {
+  if (!c1 || !c2) return true;
+  const keys = ["growthMode", "arrowType", "fontsizeScale", "multicolor", "boxChildren", "roundedCorners", "maxWrapWidth", "isSolidArrow", "centerText", "fillSweep", "branchScale", "baseStrokeWidth"];
+  for (let k of keys) {
+    if (c1[k] !== c2[k]) return true;
+  }
+  if (JSON.stringify(c1.customPalette) !== JSON.stringify(c2.customPalette)) return true;
+  
+  const l1 = { ...LAYOUT_DEFAULTS, ...(c1.layoutSettings || {}) };
+  const l2 = { ...LAYOUT_DEFAULTS, ...(c2.layoutSettings || {}) };
+  for (let k of Object.keys(LAYOUT_DEFAULTS)) {
+    if (l1[k] !== l2[k]) return true;
+  }
+  return false;
+};
+
+/**
+ * Applies the specified preset's configuration to the active global variables.
+ * 
+ * @param {string} presetName - The name of the preset to apply.
+ */
+const applyPresetToGlobals = (presetName) => {
+  const p = mapPresets[presetName];
+  if (!p) {
+    return;
+  }
+  currentModalGrowthMode = p.growthMode;
+  arrowType = p.arrowType;
+  fontsizeScale = p.fontsizeScale;
+  multicolor = p.multicolor;
+  boxChildren = p.boxChildren;
+  roundedCorners = p.roundedCorners;
+  maxWidth = p.maxWrapWidth;
+  isSolidArrow = p.isSolidArrow;
+  centerText = p.centerText;
+  fillSweep = p.fillSweep;
+  branchScale = p.branchScale;
+  baseStrokeWidth = p.baseStrokeWidth;
+  
+  if (p.customPalette) {
+    customPalette = JSON.parse(JSON.stringify(p.customPalette));
+  } else {
+    customPalette = getVal(K_PALETTE, { enabled: false, random: false, colors: [] });
+  }
+  
+  if (p.layoutSettings) {
+    layoutSettings = JSON.parse(JSON.stringify(p.layoutSettings));
+  } else {
+    const globalDefaults = getVal(K_LAYOUT, {});
+    Object.keys(LAYOUT_METADATA).forEach(k => {
+      layoutSettings[k] = globalDefaults[k] !== undefined ? globalDefaults[k] : LAYOUT_METADATA[k].def;
+    });
+  }
+  
+  setVal(K_GROWTH, currentModalGrowthMode);
+  setVal(K_ARROW_TYPE, arrowType);
+  setVal(K_FONTSIZE, fontsizeScale);
+  setVal(K_MULTICOLOR, multicolor);
+  setVal(K_BOX, boxChildren);
+  setVal(K_ROUND, roundedCorners);
+  setVal(K_WIDTH, maxWidth);
+  setVal(K_ARROWSTROKE, isSolidArrow);
+  setVal(K_CENTERTEXT, centerText);
+  setVal(K_FILL_SWEEP, fillSweep);
+  setVal(K_BRANCH_SCALE, branchScale);
+  setVal(K_BASE_WIDTH, baseStrokeWidth);
+  setVal(K_PALETTE, customPalette, true);
+  setVal(K_LAYOUT, layoutSettings, true);
+};
+
+const applyPresetToMap = async (presetName, sel) => {
+  applyPresetToGlobals(presetName);
+  await updateRootNodeCustomData({ 
+    presetName,
+    growthMode: currentModalGrowthMode,
+    arrowType,
+    fontsizeScale,
+    multicolor,
+    boxChildren,
+    roundedCorners,
+    maxWrapWidth: maxWidth,
+    isSolidArrow,
+    centerText,
+    fillSweep,
+    branchScale,
+    baseStrokeWidth,
+    layoutSettings: JSON.parse(JSON.stringify(layoutSettings))
+  }, sel);
+  
+  await refreshMapLayout(sel);
+  updateUI();
+};
+
+/**
+ * Refreshes the dropdown list of available map presets.
+ * Exclusively populates valid preset names without an ambiguous empty state.
+ */
+const refreshPresetDropdown = () => {
+  if (!presetDropdown) {
+    return;
+  }
+  presetDropdown.selectEl.innerHTML = "";
+  Object.keys(mapPresets).forEach(k => presetDropdown.addOption(k, k));
+  presetDropdown.setValue(activePresetName);
+};
 
 /**
  * Pure calculation logic for stroke width.
@@ -5482,9 +5669,10 @@ const addImage = async ({
  */
 const initializeRootCustomData = (nodeId) => {
   ea.addAppendUpdateCustomData(nodeId, {
+    presetName: activePresetName,
     growthMode: currentModalGrowthMode,
     autoLayoutDisabled: false,
-    arrowType: arrowType, // Save the arrow type on new root
+    arrowType: arrowType, 
     fontsizeScale,
     multicolor,
     boxChildren,
@@ -7451,6 +7639,9 @@ const toggleSubmapRoot = async () => {
     MAP_ROOT_CUSTOMDATA_KEYS.forEach((key) => {
       clearData[key] = undefined;
     });
+
+    clearData.presetName = undefined;
+    
     ea.addAppendUpdateCustomData(sel.id, clearData);
   } else {
     const sourceRoot = getSettingsRootNode(parent, allElements) || parent;
@@ -7459,6 +7650,7 @@ const toggleSubmapRoot = async () => {
 
     ea.addAppendUpdateCustomData(sel.id, {
       isAdditionalRoot: true,
+      presetName: sourceRoot.customData?.presetName || activePresetName,
       growthMode: inferredMode,
       autoLayoutDisabled: sourceCfg.autoLayoutDisabled,
       arrowType: sourceCfg.arrowType,
@@ -8738,6 +8930,7 @@ let floatingInputModal = null;
 let sidepanelWindow;
 let recordingScope = null;
 let disableTabEvents = false;
+let presetDropdown, presetWarningEl, presetSaveBtn, presetTrashBtn, presetPlusBtn, presetApplyBtn;
 // ---------------------------------------------------------------------------
 // Focus Management & UI State
 // ---------------------------------------------------------------------------
@@ -8851,19 +9044,43 @@ const disableUI = () => {
   if (editBtn) editBtn.extraSettingsEl.style.color = "";
 };
 
+/**
+ * Synchronizes the sidepanel UI elements with the state of the currently selected map node,
+ * or the active global variables if no node is selected.
+ * 
+ * Unconditionally sets the values on the Obsidian UI components to ensure that preset 
+ * applications and external script changes are immediately and accurately reflected in the panel.
+ * 
+ * @param {ExcalidrawElement} [sel] - The currently selected node element. If omitted, attempts to find the active mindmap node from the current canvas selection.
+ */
 const updateUI = (sel) => {
   if (!isViewSet()) {
-    if (inputEl) inputEl.disabled = true;
-    if (ontologyEl) ontologyEl.style.display = "none";
+    if (inputEl) {
+      inputEl.disabled = true;
+    }
+    if (ontologyEl) {
+      ontologyEl.style.display = "none";
+    }
     disableUI();
     return;
   }
-  if (inputEl) inputEl.disabled = false;
+  
+  if (inputEl) {
+    inputEl.disabled = false;
+  }
+  
   const all = ea.getViewElements();
   sel = sel ?? getMindmapNodeFromSelection();
-  if (ontologyEl) ontologyEl.style.display = sel ? "" : "none";
+  
+  if (ontologyEl) {
+    ontologyEl.style.display = sel ? "" : "none";
+  }
 
-  if (sel) {
+  let cd = {};
+  const isMapSelected = !!sel;
+  
+  // Track structural hierarchies and map logic if a node is selected
+  if (isMapSelected) {
     disableTabEvents = true;
 
     const info = getHierarchy(sel, all);
@@ -8880,6 +9097,9 @@ const updateUI = (sel) => {
     const nodeText = getTextFromNode(all, sel, true, false);
     const isLinkedFile = !!getNodeMarkdownFile(nodeText);
 
+    cd = root?.customData ?? {};
+
+    // --- Node-Specific UI Controls ---
     if (toggleCheckboxBtn) {
       const isTextNode = sel.type === "text" || (sel.boundElements && sel.boundElements.some(be => be.type === "text"));
       const canEditTask = (isTextNode && !isMasterRootSelected) || (inputEl && inputEl.value.trim() !== "");
@@ -8894,24 +9114,21 @@ const updateUI = (sel) => {
 
     if (toggleEmbedBtn) {
       const visualNode = sel.containerId ? all.find(el => el.id === sel.containerId) : sel;
-      const nodeText = getTextFromNode(all, visualNode, true, true).trim();
+      const nodeTextForEmbed = getTextFromNode(all, visualNode, true, true).trim();
       // Regex matches only exact format: [[NoteName#SectionName]] or ![[NoteName#SectionName]] with optional alias
       const linkRegex = /^!?\[\[([^\]]+?#[^\]|]+)(?:\|[^\]]*)?\]\]$/;
-      setButtonDisabled(toggleEmbedBtn, !linkRegex.test(nodeText));
+      setButtonDisabled(toggleEmbedBtn, !linkRegex.test(nodeTextForEmbed));
     }
 
     if (pinBtn) {
       pinBtn.setIcon(isPinned ? "pin" : "pin-off");
-      pinBtn.setTooltip(
-        `${isPinned ? t("PIN_TOOLTIP_PINNED") : t("PIN_TOOLTIP_UNPINNED")} ${getActionHotkeyString(ACTION_PIN)}`,
-      );
+      pinBtn.setTooltip(`${isPinned ? t("PIN_TOOLTIP_PINNED") : t("PIN_TOOLTIP_UNPINNED")} ${getActionHotkeyString(ACTION_PIN)}`);
       setButtonDisabled(pinBtn, false);
     }
 
     if (submapRootBtn) {
       submapRootBtn.setIcon(isAdditionalRoot ? "map-pin-minus-inside" : "map-pin-plus-inside");
-      const submapTooltip = isAdditionalRoot ? t("TOOLTIP_SUBMAP_ROOT_REMOVE") : t("TOOLTIP_SUBMAP_ROOT_ADD");
-      submapRootBtn.setTooltip(`${submapTooltip} ${getActionHotkeyString(ACTION_TOGGLE_SUBMAP_ROOT)}`);
+      submapRootBtn.setTooltip(`${isAdditionalRoot ? t("TOOLTIP_SUBMAP_ROOT_REMOVE") : t("TOOLTIP_SUBMAP_ROOT_ADD")} ${getActionHotkeyString(ACTION_TOGGLE_SUBMAP_ROOT)}`);
       setButtonDisabled(submapRootBtn, isMasterRoot);
     }
 
@@ -8926,11 +9143,12 @@ const updateUI = (sel) => {
     }
 
     const updateGroupBtn = (btn) => {
-      if (!btn) return;
+      if (!btn) {
+        return;
+      }
       const isGrouped = branchIds.length > 1 && !!getCommonGroupForElements(all.filter(el => branchIds.includes(el.id)))[0];
       btn.setIcon(isGrouped ? "ungroup" : "group");
-      const groupTooltip = isGrouped ? t("TOGGLE_GROUP_TOOLTIP_UNGROUP") : t("TOGGLE_GROUP_TOOLTIP_GROUP");
-      btn.setTooltip(`${groupTooltip} ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
+      btn.setTooltip(`${isGrouped ? t("TOGGLE_GROUP_TOOLTIP_UNGROUP") : t("TOGGLE_GROUP_TOOLTIP_GROUP")} ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
       setButtonDisabled(btn, groupBranches || branchIds.length <= 1);
     }
     updateGroupBtn(toggleGroupBtn);
@@ -8944,146 +9162,203 @@ const updateUI = (sel) => {
     setButtonDisabled(zoomBtn, false);
     setButtonDisabled(focusBtn, false);
     setButtonDisabled(floatingZoomBtn, false);
+    
     if (boundaryBtn) {
       boundaryBtn.setIcon(sel.customData?.boundaryId ? "cloud-off" : "cloud");
     }
+    
     setButtonDisabled(boundaryBtn, isMasterRootSelected);
     setButtonDisabled(cutBtn, isMasterRootSelected);
     setButtonDisabled(copyBtn, false);
     setButtonDisabled(importOutlineBtn, !isLinkedFile);
-    setButtonDisabled(autoLayoutToggle, false);
-
-    const cd = root?.customData ?? {};
-
-    const mapStrategy = cd?.growthMode;
-    if (typeof mapStrategy === "string" && mapStrategy !== currentModalGrowthMode && GROWTH_TYPES.includes(mapStrategy)) {
-      currentModalGrowthMode = mapStrategy;
-      if (strategyDropdown) strategyDropdown.setValue(mapStrategy);
-    }
-
-    const mapLayoutPref = cd?.autoLayoutDisabled === true;
-    if (mapLayoutPref !== autoLayoutDisabled) {
-      autoLayoutDisabled = mapLayoutPref;
-      if (autoLayoutToggle) autoLayoutToggle.setValue(!mapLayoutPref);
-    }
-
+    
     if (refreshBtn) {
-      setButtonDisabled(refreshBtn, autoLayoutDisabled);
+      setButtonDisabled(refreshBtn, cd.autoLayoutDisabled === true);
       refreshBtn.setTooltip(`${t("TOOLTIP_REFRESH")} ${getActionHotkeyString(ACTION_REARRANGE)}`);
     }
-
-    const mapArrowType = cd?.arrowType ?? getVal(K_ARROW_TYPE, "curved");
-    if (typeof mapArrowType === "string" && mapArrowType !== arrowType && ARROW_TYPES.includes(mapArrowType)) {
-      arrowType = mapArrowType;
-      if (arrowTypeToggle) arrowTypeToggle.setValue(arrowType === "curved");
+  } else {
+    disableUI();
+    if (mostRecentlySelectedNodeID) {
+      setButtonDisabled(zoomBtn, false);
+      setButtonDisabled(focusBtn, false);
+      setButtonDisabled(floatingZoomBtn, false);
     }
-
-    const mapFontScale = cd?.fontsizeScale ?? getVal(K_FONTSIZE, "Normal Scale");
-    if (mapFontScale !== fontsizeScale) {
-      fontsizeScale = mapFontScale;
-      if (fontSizeDropdown) fontSizeDropdown.setValue(fontsizeScale);
-    }
-
-    const mapMulticolor = typeof cd?.multicolor === "boolean" ? cd.multicolor : getVal(K_MULTICOLOR, true);
-    if (mapMulticolor !== multicolor) {
-      multicolor = mapMulticolor;
-      if (colorToggle) colorToggle.setValue(multicolor);
-    }
-
-    const mapBoxChildren = typeof cd?.boxChildren === "boolean" ? cd.boxChildren : getVal(K_BOX, false);
-    if (mapBoxChildren !== boxChildren) {
-      boxChildren = mapBoxChildren;
-      if (boxToggle) boxToggle.setValue(boxChildren);
-    }
-
-    const mapRounded = typeof cd?.roundedCorners === "boolean" ? cd.roundedCorners : getVal(K_ROUND, false);
-    if (mapRounded !== roundedCorners) {
-      roundedCorners = mapRounded;
-      if (roundToggle) roundToggle.setValue(roundedCorners);
-    }
-
-    let defaultWidth = parseInt(getVal(K_WIDTH, 450));
-    if (isNaN(defaultWidth)) defaultWidth = 450;
-
-    const mapWidth = typeof cd?.maxWrapWidth === "number" ? cd.maxWrapWidth : defaultWidth;
-
-    if (mapWidth !== maxWidth) {
-      maxWidth = mapWidth;
-      if (widthSlider) {
-        widthSlider.setValue(maxWidth);
-        if (widthSlider.valLabelEl) widthSlider.valLabelEl.setText(`${maxWidth}px`);
+    if (inputEl && inputEl.value.trim() !== "") {
+      if (toggleCheckboxBtn) {
+        setButtonDisabled(toggleCheckboxBtn, false);
+      }
+      if (calendarBtn) {
+        setButtonDisabled(calendarBtn, false);
       }
     }
+    // AutoLayoutToggle should be allowed to be configured for the NEXT map
+    setButtonDisabled(autoLayoutToggle, false);
+  }
 
-    const mapSolid = typeof cd?.isSolidArrow === "boolean" ? cd.isSolidArrow : getVal(K_ARROWSTROKE, true);
-    if (mapSolid !== isSolidArrow) {
-      isSolidArrow = mapSolid;
-      if (strokeToggle) strokeToggle.setValue(!isSolidArrow);
+  // --- Preset Detection & UI Warning Logic ---
+  const mapPresetName = cd?.presetName;
+  
+  if (isMapSelected) {
+    activePresetName = mapPresetName || "Default";
+    setVal(K_ACTIVE_PRESET, activePresetName);
+  } else {
+    activePresetName = getVal(K_ACTIVE_PRESET, "Default");
+  }
+  
+  if (presetDropdown) {
+    presetDropdown.setValue(activePresetName);
+  }
+  
+  let showWarning = false;
+  if (isMapSelected) {
+    const presetConfig = mapPresets[activePresetName];
+    const currentMapConfig = {
+      growthMode: cd?.growthMode ?? currentModalGrowthMode,
+      arrowType: cd?.arrowType ?? arrowType,
+      fontsizeScale: cd?.fontsizeScale ?? fontsizeScale,
+      multicolor: typeof cd?.multicolor === "boolean" ? cd.multicolor : multicolor,
+      boxChildren: typeof cd?.boxChildren === "boolean" ? cd.boxChildren : boxChildren,
+      roundedCorners: typeof cd?.roundedCorners === "boolean" ? cd.roundedCorners : roundedCorners,
+      maxWrapWidth: typeof cd?.maxWrapWidth === "number" ? cd.maxWrapWidth : maxWidth,
+      isSolidArrow: typeof cd?.isSolidArrow === "boolean" ? cd.isSolidArrow : isSolidArrow,
+      centerText: typeof cd?.centerText === "boolean" ? cd.centerText : centerText,
+      fillSweep: typeof cd?.fillSweep === "boolean" ? cd.fillSweep : fillSweep,
+      branchScale: cd?.branchScale ?? branchScale,
+      baseStrokeWidth: typeof cd?.baseStrokeWidth === "number" ? cd.baseStrokeWidth : baseStrokeWidth,
+      customPalette: cd?.customPalette ?? customPalette,
+      layoutSettings: cd?.layoutSettings ?? layoutSettings
+    };
+    showWarning = diffMapConfig(presetConfig, currentMapConfig);
+  }
+  
+  if (presetWarningEl) {
+    presetWarningEl.style.display = showWarning ? "block" : "none";
+  }
+  
+  if (presetApplyBtn) {
+    setButtonDisabled(presetApplyBtn, !isMapSelected);
+  }
+  
+  if (presetTrashBtn) {
+    setButtonDisabled(presetTrashBtn, activePresetName === "Default");
+  }
+  
+  if (presetSaveBtn) {
+    setButtonDisabled(presetSaveBtn, false);
+  }
+
+  // --- Sync Globals if Map Selected ---
+  // Using explicit fallback to getVal() if property is missing prevents state leakage 
+  // from previously selected maps onto legacy maps lacking these properties.
+  // The variables are committed to global storage to ensure continuity if user deselects to start a new map.
+  if (isMapSelected) {
+    currentModalGrowthMode = (typeof cd.growthMode === "string" && GROWTH_TYPES.includes(cd.growthMode)) ? cd.growthMode : getVal(K_GROWTH, "Right-Left");
+    setVal(K_GROWTH, currentModalGrowthMode);
+
+    autoLayoutDisabled = cd.autoLayoutDisabled === true;
+
+    arrowType = (typeof cd.arrowType === "string" && ARROW_TYPES.includes(cd.arrowType)) ? cd.arrowType : getVal(K_ARROW_TYPE, "curved");
+    setVal(K_ARROW_TYPE, arrowType);
+
+    fontsizeScale = cd.fontsizeScale ?? getVal(K_FONTSIZE, "Normal Scale");
+    setVal(K_FONTSIZE, fontsizeScale);
+
+    multicolor = typeof cd.multicolor === "boolean" ? cd.multicolor : getVal(K_MULTICOLOR, true);
+    setVal(K_MULTICOLOR, multicolor);
+
+    boxChildren = typeof cd.boxChildren === "boolean" ? cd.boxChildren : getVal(K_BOX, false);
+    setVal(K_BOX, boxChildren);
+
+    roundedCorners = typeof cd.roundedCorners === "boolean" ? cd.roundedCorners : getVal(K_ROUND, false);
+    setVal(K_ROUND, roundedCorners);
+
+    maxWidth = typeof cd.maxWrapWidth === "number" ? cd.maxWrapWidth : parseInt(getVal(K_WIDTH, 450)) || 450;
+    setVal(K_WIDTH, maxWidth);
+
+    isSolidArrow = typeof cd.isSolidArrow === "boolean" ? cd.isSolidArrow : getVal(K_ARROWSTROKE, true);
+    setVal(K_ARROWSTROKE, isSolidArrow);
+
+    centerText = typeof cd.centerText === "boolean" ? cd.centerText : getVal(K_CENTERTEXT, true);
+    setVal(K_CENTERTEXT, centerText);
+
+    fillSweep = typeof cd.fillSweep === "boolean" ? cd.fillSweep : getVal(K_FILL_SWEEP, false);
+    setVal(K_FILL_SWEEP, fillSweep);
+
+    branchScale = (cd.branchScale && BRANCH_SCALE_TYPES.includes(cd.branchScale)) ? cd.branchScale : getVal(K_BRANCH_SCALE, "Hierarchical");
+    setVal(K_BRANCH_SCALE, branchScale);
+
+    baseStrokeWidth = typeof cd.baseStrokeWidth === "number" ? cd.baseStrokeWidth : parseFloat(getVal(K_BASE_WIDTH, 6)) || 6;
+    setVal(K_BASE_WIDTH, baseStrokeWidth);
+    
+    if (cd.customPalette) {
+      customPalette = JSON.parse(JSON.stringify(cd.customPalette));
+    } else {
+      customPalette = getVal(K_PALETTE, { enabled: false, random: false, colors: [] });
     }
+    setVal(K_PALETTE, customPalette, true);
 
-    const mapBranchScale = (cd?.branchScale && BRANCH_SCALE_TYPES.includes(cd.branchScale)) ? cd.branchScale : getVal(K_BRANCH_SCALE, "Hierarchical");
-    if (mapBranchScale !== branchScale) {
-      branchScale = mapBranchScale;
-      if (branchScaleDropdown) branchScaleDropdown.setValue(branchScale);
-    }
-
-    let defaultBaseStroke = parseFloat(getVal(K_BASE_WIDTH, 6));
-    if (isNaN(defaultBaseStroke)) defaultBaseStroke = 6;
-
-    const mapBaseStroke = typeof cd?.baseStrokeWidth === "number" ? cd.baseStrokeWidth : defaultBaseStroke;
-
-    if (mapBaseStroke !== baseStrokeWidth) {
-      baseStrokeWidth = mapBaseStroke;
-      if (baseWidthSlider) {
-        baseWidthSlider.setValue(baseStrokeWidth);
-        if (baseWidthSlider.valLabelEl) baseWidthSlider.valLabelEl.setText(`${baseStrokeWidth}`);
-      }
-    }
-
-    const mapCenter = typeof cd?.centerText === "boolean" ? cd.centerText : getVal(K_CENTERTEXT, true);
-    if (mapCenter !== centerText) {
-      centerText = mapCenter;
-      if (centerToggle) centerToggle.setValue(centerText);
-    }
-
-    const mapFillSweep = typeof cd?.fillSweep === "boolean" ? cd.fillSweep : getVal(K_FILL_SWEEP, false);
-    if (mapFillSweep !== fillSweep) {
-      fillSweep = mapFillSweep;
-      if (fillSweepToggle) fillSweepToggle.setValue(fillSweep);
-    }
-
-    const mapLayoutSettings = cd?.layoutSettings;
-    if (mapLayoutSettings && typeof mapLayoutSettings === "object") {
-      layoutSettings = {
-        ...layoutSettings,
-        ...mapLayoutSettings
-      };
+    if (cd.layoutSettings && typeof cd.layoutSettings === "object") {
+      layoutSettings = { ...layoutSettings, ...cd.layoutSettings };
     } else {
       const globalDefaults = getVal(K_LAYOUT, {});
       Object.keys(LAYOUT_METADATA).forEach(k => {
         layoutSettings[k] = globalDefaults[k] !== undefined ? globalDefaults[k] : LAYOUT_METADATA[k].def;
       });
     }
+    setVal(K_LAYOUT, layoutSettings, true);
+  }
 
-    if (fillSweepToggleSetting && fillSweepToggleSetting.settingEl) {
-      const mode = cd?.growthMode || currentModalGrowthMode;
-      fillSweepToggleSetting.settingEl.style.display = mode === "Radial" ? "" : "none";
-    }
-    disableTabEvents = false;
-  } else {
-    disableUI();
-    // Re-enable navigation buttons if we have a history node
-    if (mostRecentlySelectedNodeID) {
-      setButtonDisabled(zoomBtn, false);
-      setButtonDisabled(focusBtn, false);
-      setButtonDisabled(floatingZoomBtn, false);
-    }
-    // Enable task buttons if there's text input
-    if (inputEl && inputEl.value.trim() !== "") {
-      if (toggleCheckboxBtn) setButtonDisabled(toggleCheckboxBtn, false);
-      if (calendarBtn) setButtonDisabled(calendarBtn, false);
+  // --- Unconditionally Sync Visual UI Components to Current Globals ---
+  if (strategyDropdown) {
+    strategyDropdown.setValue(currentModalGrowthMode);
+  }
+  if (autoLayoutToggle) {
+    autoLayoutToggle.setValue(!autoLayoutDisabled);
+  }
+  if (arrowTypeToggle) {
+    arrowTypeToggle.setValue(arrowType === "curved");
+  }
+  if (fontSizeDropdown) {
+    fontSizeDropdown.setValue(fontsizeScale);
+  }
+  if (colorToggle) {
+    colorToggle.setValue(multicolor);
+  }
+  if (boxToggle) {
+    boxToggle.setValue(boxChildren);
+  }
+  if (roundToggle) {
+    roundToggle.setValue(roundedCorners);
+  }
+  if (widthSlider) {
+    widthSlider.setValue(maxWidth);
+    if (widthSlider.valLabelEl) {
+      widthSlider.valLabelEl.setText(`${maxWidth}px`);
     }
   }
+  if (strokeToggle) {
+    strokeToggle.setValue(!isSolidArrow);
+  }
+  if (centerToggle) {
+    centerToggle.setValue(centerText);
+  }
+  if (fillSweepToggle) {
+    fillSweepToggle.setValue(fillSweep);
+  }
+  if (branchScaleDropdown) {
+    branchScaleDropdown.setValue(branchScale);
+  }
+  if (baseWidthSlider) {
+    baseWidthSlider.setValue(baseStrokeWidth);
+    if (baseWidthSlider.valLabelEl) {
+      baseWidthSlider.valLabelEl.setText(`${baseStrokeWidth}`);
+    }
+  }
+  if (fillSweepToggleSetting && fillSweepToggleSetting.settingEl) {
+    fillSweepToggleSetting.settingEl.style.display = currentModalGrowthMode === "Radial" ? "" : "none";
+  }
+
+  disableTabEvents = false;
 };
 
 const startEditing = () => {
@@ -10279,11 +10554,104 @@ const renderInput = (container, isFloating = false) => {
   updateUI();
 };
 
+/**
+ * Renders the main settings body and UI actions for the sidepanel.
+ * Includes the preset dropdown block for saving, deleting, applying, and creating named configurations.
+ * 
+ * @param {HTMLElement} contentEl - The parent DOM element to render into.
+ */
 const renderBody = (contentEl) => {
   bodyContainer = contentEl.createDiv();
   bodyContainer.style.width = "100%";
 
   bodyContainer.createEl("hr");
+
+  // --- Map Preset Manager UI ---
+  const presetSetting = new ea.obsidian.Setting(bodyContainer)
+    .setName(t("PRESET_LABEL"))
+    .addDropdown(d => {
+      presetDropdown = d;
+      refreshPresetDropdown();
+      d.onChange(async (v) => {
+        activePresetName = v;
+        setVal(K_ACTIVE_PRESET, v);
+        const sel = getMindmapNodeFromSelection();
+        if (sel) {
+          await applyPresetToMap(v, sel);
+          new Notice(t("NOTICE_PRESET_APPLIED"));
+        } else {
+          applyPresetToGlobals(v);
+          updateUI();
+        }
+      });
+    });
+
+  presetSetting.addExtraButton(btn => {
+    presetSaveBtn = btn;
+    btn.setIcon("save").setTooltip(t("PRESET_BTN_SAVE")).onClick(async () => {
+      if (!activePresetName) return;
+      mapPresets[activePresetName] = extractConfigFromGlobals();
+      setVal(K_PRESETS, mapPresets, true);
+      new Notice(t("NOTICE_PRESET_SAVED"));
+      updateUI(); 
+    });
+  });
+
+  presetSetting.addExtraButton(btn => {
+    presetTrashBtn = btn;
+    btn.setIcon("trash-2").setTooltip(t("PRESET_BTN_DELETE")).onClick(async () => {
+      if (!activePresetName || activePresetName === "Default") return;
+      delete mapPresets[activePresetName];
+      activePresetName = "Default";
+      setVal(K_PRESETS, mapPresets, true);
+      setVal(K_ACTIVE_PRESET, activePresetName);
+      new Notice(t("NOTICE_PRESET_DELETED"));
+      refreshPresetDropdown();
+      updateUI();
+    });
+  });
+
+  presetSetting.addExtraButton(btn => {
+    presetPlusBtn = btn;
+    btn.setIcon("plus").setTooltip(t("PRESET_BTN_NEW")).onClick(async () => {
+      const name = await utils.inputPrompt(t("PROMPT_NEW_PRESET_NAME"));
+      if (name && name.trim()) {
+        const trimmed = name.trim();
+        mapPresets[trimmed] = extractConfigFromGlobals();
+        activePresetName = trimmed;
+        setVal(K_PRESETS, mapPresets, true);
+        setVal(K_ACTIVE_PRESET, activePresetName);
+        refreshPresetDropdown();
+        
+        const sel = getMindmapNodeFromSelection();
+        if (sel) {
+          await updateRootNodeCustomData({ presetName: activePresetName }, sel);
+        }
+        new Notice(t("NOTICE_PRESET_SAVED"));
+        updateUI();
+      }
+    });
+  });
+
+  presetSetting.addExtraButton(btn => {
+    presetApplyBtn = btn;
+    btn.setIcon("refresh-cw").setTooltip(t("PRESET_BTN_APPLY")).onClick(async () => {
+      const sel = getMindmapNodeFromSelection();
+      if (sel && activePresetName) {
+        await applyPresetToMap(activePresetName, sel);
+        new Notice(t("NOTICE_PRESET_APPLIED"));
+      }
+    });
+  });
+
+  presetWarningEl = bodyContainer.createEl("div", {
+    text: t("PRESET_WARNING_MODIFIED"),
+    cls: "mod-warning",
+    attr: { style: "font-size: 0.85em; margin-top: -10px; margin-bottom: 10px; display: none; text-align: right;" }
+  });
+
+  bodyContainer.createEl("hr");
+  // --- End Map Preset Manager UI ---
 
   const zoomSetting = new ea.obsidian.Setting(bodyContainer);
   zoomSetting.setName(t("LABEL_ZOOM_LEVEL")).addDropdown((d) => {
@@ -10294,7 +10662,6 @@ const renderBody = (contentEl) => {
       if (disableTabEvents) return;
 
       setVal(K_ZOOM, v);
-      dirty = true;
       zoomToFit();
     });
   });
@@ -10314,7 +10681,6 @@ const renderBody = (contentEl) => {
       if (disableTabEvents) return;
 
       setVal(K_GROWTH, v);
-      dirty = true;
       if (fillSweepToggleSetting) {
         fillSweepToggleSetting.settingEl.style.display = v === "Radial" ? "" : "none";
       }
@@ -10339,7 +10705,6 @@ const renderBody = (contentEl) => {
           if (disableTabEvents) return;
 
           setVal(K_FILL_SWEEP, v);
-          dirty = true;
           if (!isViewSet()) return;
           const sel = getMindmapNodeFromSelection();
           if (!sel) return;
@@ -10376,7 +10741,6 @@ const renderBody = (contentEl) => {
         const modal = new LayoutConfigModal(app, layoutSettings, async (newSettings) => {
           layoutSettings = newSettings;
           setVal(K_LAYOUT, layoutSettings, true);
-          dirty = true;
           const sel = getMindmapNodeFromSelection();
           if (!sel) return;
           await updateRootNodeCustomData({
@@ -10400,7 +10764,6 @@ const renderBody = (contentEl) => {
         groupBranches = v;
         if (disableTabEvents) return;
         setVal(K_GROUP, v);
-        dirty = true;
         await refreshMapLayout();
         updateUI();
       }))
@@ -10422,7 +10785,6 @@ const renderBody = (contentEl) => {
           boxChildren = v;
           if (disableTabEvents) return;
           setVal(K_BOX, v);
-          dirty = true;
           await updateRootNodeCustomData({
             boxChildren: v
           });
@@ -10442,7 +10804,6 @@ const renderBody = (contentEl) => {
         roundedCorners = v;
         if (disableTabEvents) return;
         setVal(K_ROUND, v);
-        dirty = true;
         await updateRootNodeCustomData({
           roundedCorners: v
         });
@@ -10461,7 +10822,6 @@ const renderBody = (contentEl) => {
           if (disableTabEvents) return;
 
           setVal(K_ARROW_TYPE, arrowType);
-          dirty = true;
           if (!isViewSet()) return;
           const sel = getMindmapNodeFromSelection();
           if (!sel) return;
@@ -10484,7 +10844,6 @@ const renderBody = (contentEl) => {
         if (disableTabEvents) return;
 
         setVal(K_ARROWSTROKE, !v);
-        dirty = true;
         await updateRootNodeCustomData({
           isSolidArrow: !v
         });
@@ -10503,7 +10862,6 @@ const renderBody = (contentEl) => {
         if (disableTabEvents) return;
 
         setVal(K_BRANCH_SCALE, v);
-        dirty = true;
         const info = await updateRootNodeCustomData({
           branchScale: v
         });
@@ -10531,7 +10889,6 @@ const renderBody = (contentEl) => {
           if (disableTabEvents) return;
 
           setVal(K_BASE_WIDTH, v);
-          dirty = true;
           baseWidthUpdateTimer = setTimeout(async () => {
             const info = await updateRootNodeCustomData({
               baseStrokeWidth: v
@@ -10562,7 +10919,6 @@ const renderBody = (contentEl) => {
           if (disableTabEvents) return;
 
           setVal(K_MULTICOLOR, v);
-          dirty = true;
           await updateRootNodeCustomData({
             multicolor: v
           });
@@ -10575,7 +10931,6 @@ const renderBody = (contentEl) => {
         const modal = new PaletteManagerModal(app, customPalette, (newSettings) => {
           customPalette = newSettings;
           setVal(K_PALETTE, customPalette, true);
-          dirty = true;
         });
         modal.open();
       })
@@ -10594,7 +10949,6 @@ const renderBody = (contentEl) => {
         if (disableTabEvents) return;
 
         setVal(K_WIDTH, v);
-        dirty = true;
         await updateRootNodeCustomData({
           maxWrapWidth: v
         });
@@ -10620,7 +10974,6 @@ const renderBody = (contentEl) => {
           if (disableTabEvents) return;
 
           setVal(K_CENTERTEXT, v);
-          dirty = true;
           await updateRootNodeCustomData({
             centerText: v
           });
@@ -10636,7 +10989,6 @@ const renderBody = (contentEl) => {
       if (disableTabEvents) return;
 
       setVal(K_FONTSIZE, v);
-      dirty = true;
       await updateRootNodeCustomData({
         fontsizeScale: v
       });
@@ -10690,7 +11042,6 @@ const renderBody = (contentEl) => {
     });
 
     setVal(K_HOTKEYS, hotkeysToSave, true);
-    dirty = true;
     refreshHotkeys();
   };
 
@@ -11088,7 +11439,6 @@ const toggleDock = async ({
   isUndocked = !isUndocked;
   if (saveSetting) {
     setVal(K_UNDOCKED, isUndocked);
-    dirty = true;
   }
 
   // Update keyboard event routing
@@ -11750,7 +12100,6 @@ const openCalendarModal = async () => {
             .onChange(val => {
               injectNodeLink = val;
               setVal(K_INJECT_LINK, val);
-              dirty = true;
               aliasTextComp.inputEl.style.display = val ? "" : "none";
             });
     });
@@ -11761,7 +12110,6 @@ const openCalendarModal = async () => {
           .onChange(val => {
             nodeLinkAlias = val || "link";
             setVal(K_LINK_ALIAS, nodeLinkAlias);
-            dirty = true;
           });
       text.inputEl.style.display = injectNodeLink ? "" : "none";
       text.inputEl.style.width = "100px";
@@ -11867,7 +12215,7 @@ const openCalendarModal = async () => {
     }
     
     let finalPrefix = match ? `- [${match[1]}] ` : "- [ ] ";
-    let newText = `${finalPrefix}${cleanText}${tasksString}`;
+    let newText = `${finalPrefix}${cleanText}`;
 
     if (injectNodeLink) {
       if (isInputEl) {
@@ -11878,6 +12226,7 @@ const openCalendarModal = async () => {
         newText += ` ([[${fileName}#^group=${textElId}|${nodeLinkAlias}]])`;
       }
     }
+    newText += tasksString;
 
     if (isInputEl) {
       inputEl.value = newText;
@@ -13323,7 +13672,6 @@ const performAction = async (action, event) => {
         }
 
         if (requiresSave) {
-          dirty = true;
           await saveSettings();
           updateUI(); // Reflect changes in the sidepanel
         }
