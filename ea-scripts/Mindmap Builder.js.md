@@ -1499,19 +1499,79 @@ if (!mapPresets["Default"]) {
   setVal(K_PRESETS, mapPresets, true);
 }
 
+/**
+ * Normalizes a map configuration object, supplying standard defaults for any missing properties.
+ * Ensures that legacy presets or maps lacking newer schema keys are safely comparable.
+ * 
+ * @param {Object} c - The configuration object to normalize.
+ * @returns {Object} A fully populated configuration object.
+ */
+const normalizeMapConfig = (c) => {
+  if (!c) {
+    return {};
+  }
+  return {
+    growthMode: c.growthMode ?? "Right-Left",
+    arrowType: c.arrowType ?? "curved",
+    fontsizeScale: c.fontsizeScale ?? "Normal Scale",
+    multicolor: c.multicolor ?? true,
+    boxChildren: c.boxChildren ?? false,
+    roundedCorners: c.roundedCorners ?? false,
+    maxWrapWidth: c.maxWrapWidth ?? 450,
+    isSolidArrow: c.isSolidArrow ?? true,
+    centerText: c.centerText ?? true,
+    fillSweep: c.fillSweep ?? false,
+    branchScale: c.branchScale ?? "Hierarchical",
+    baseStrokeWidth: c.baseStrokeWidth ?? 6,
+    customPalette: c.customPalette ?? { enabled: false, random: false, colors: [] },
+    layoutSettings: { ...LAYOUT_DEFAULTS, ...(c.layoutSettings || {}) }
+  };
+};
+
+/**
+ * Compares two map configuration objects to determine if their visual settings differ.
+ * Accounts for missing legacy properties and floating point inaccuracies in layout metadata.
+ * 
+ * @param {Object} c1 - The first configuration object (usually the preset).
+ * @param {Object} c2 - The second configuration object (usually the map's current state).
+ * @returns {boolean} True if the configurations differ, false otherwise.
+ */
 const diffMapConfig = (c1, c2) => {
-  if (!c1 || !c2) return true;
-  const keys = ["growthMode", "arrowType", "fontsizeScale", "multicolor", "boxChildren", "roundedCorners", "maxWrapWidth", "isSolidArrow", "centerText", "fillSweep", "branchScale", "baseStrokeWidth"];
-  for (let k of keys) {
-    if (c1[k] !== c2[k]) return true;
+  if (!c1 || !c2) {
+    return true;
   }
-  if (JSON.stringify(c1.customPalette) !== JSON.stringify(c2.customPalette)) return true;
   
-  const l1 = { ...LAYOUT_DEFAULTS, ...(c1.layoutSettings || {}) };
-  const l2 = { ...LAYOUT_DEFAULTS, ...(c2.layoutSettings || {}) };
-  for (let k of Object.keys(LAYOUT_DEFAULTS)) {
-    if (l1[k] !== l2[k]) return true;
+  const n1 = normalizeMapConfig(c1);
+  const n2 = normalizeMapConfig(c2);
+  
+  const keys = [
+    "growthMode", "arrowType", "fontsizeScale", "multicolor", 
+    "boxChildren", "roundedCorners", "maxWrapWidth", "isSolidArrow", 
+    "centerText", "fillSweep", "branchScale", "baseStrokeWidth"
+  ];
+  
+  for (let k of keys) {
+    if (n1[k] !== n2[k]) {
+      return true;
+    }
   }
+  
+  if (JSON.stringify(n1.customPalette) !== JSON.stringify(n2.customPalette)) {
+    return true;
+  }
+  
+  for (let k of Object.keys(LAYOUT_DEFAULTS)) {
+    const v1 = n1.layoutSettings[k];
+    const v2 = n2.layoutSettings[k];
+    if (typeof v1 === "number" && typeof v2 === "number") {
+      if (Math.abs(v1 - v2) > 0.0001) {
+        return true;
+      }
+    } else if (v1 !== v2) {
+      return true;
+    }
+  }
+  
   return false;
 };
 
@@ -1525,33 +1585,23 @@ const applyPresetToGlobals = (presetName) => {
   if (!p) {
     return;
   }
-  currentModalGrowthMode = p.growthMode;
-  arrowType = p.arrowType;
-  fontsizeScale = p.fontsizeScale;
-  multicolor = p.multicolor;
-  boxChildren = p.boxChildren;
-  roundedCorners = p.roundedCorners;
-  maxWidth = p.maxWrapWidth;
-  isSolidArrow = p.isSolidArrow;
-  centerText = p.centerText;
-  fillSweep = p.fillSweep;
-  branchScale = p.branchScale;
-  baseStrokeWidth = p.baseStrokeWidth;
   
-  if (p.customPalette) {
-    customPalette = JSON.parse(JSON.stringify(p.customPalette));
-  } else {
-    customPalette = getVal(K_PALETTE, { enabled: false, random: false, colors: [] });
-  }
+  const n = normalizeMapConfig(p);
   
-  if (p.layoutSettings) {
-    layoutSettings = JSON.parse(JSON.stringify(p.layoutSettings));
-  } else {
-    const globalDefaults = getVal(K_LAYOUT, {});
-    Object.keys(LAYOUT_METADATA).forEach(k => {
-      layoutSettings[k] = globalDefaults[k] !== undefined ? globalDefaults[k] : LAYOUT_METADATA[k].def;
-    });
-  }
+  currentModalGrowthMode = n.growthMode;
+  arrowType = n.arrowType;
+  fontsizeScale = n.fontsizeScale;
+  multicolor = n.multicolor;
+  boxChildren = n.boxChildren;
+  roundedCorners = n.roundedCorners;
+  maxWidth = n.maxWrapWidth;
+  isSolidArrow = n.isSolidArrow;
+  centerText = n.centerText;
+  fillSweep = n.fillSweep;
+  branchScale = n.branchScale;
+  baseStrokeWidth = n.baseStrokeWidth;
+  customPalette = JSON.parse(JSON.stringify(n.customPalette));
+  layoutSettings = JSON.parse(JSON.stringify(n.layoutSettings));
   
   setVal(K_GROWTH, currentModalGrowthMode);
   setVal(K_ARROW_TYPE, arrowType);
@@ -11325,8 +11375,6 @@ const registerStyles = () => {
     ".excalidraw-mindmap-ui [tabindex]:focus-visible {",
     "  outline: 2px solid var(--interactive-accent) !important;",
     "  outline-offset: 2px;",
-    "  background-color: var(--interactive-accent);",
-    "  color: var(--background-primary);",
     "}",
     ...ea.DEVICE.isDesktop ?
     [".excalidraw-mindmap-ui hr {margin: 5px;}"] :
