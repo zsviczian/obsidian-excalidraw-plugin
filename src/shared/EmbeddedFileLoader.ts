@@ -19,10 +19,7 @@ import {
 } from "../constants/constants";
 import { createSVG } from "src/utils/excalidrawAutomateUtils";
 import type { EquationItem } from "./ExcalidrawData";
-import {
-  ExcalidrawData,
-  getTransclusion,
-} from "./ExcalidrawData";
+import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
 import { t } from "../lang/helpers";
 import { tex2dataURL } from "./LaTeX";
 import ExcalidrawPlugin from "../core/main";
@@ -1058,12 +1055,17 @@ export class EmbeddedFilesLoader {
               if (result?.files) {
                 for (const key in result.files) {
                   const fileData = {
-                    ...(result.files as Record<string, { dataURL: string }>)[key],
+                    ...(result.files as Record<string, { dataURL: string }>)[
+                      key
+                    ],
                     id: element.fileId,
                     created: Date.now(),
                     hasSVGwithBitmap: false,
                     shouldScale: true,
-                    size: await getImageSize((result.files as Record<string, { dataURL: string }>)[key].dataURL),
+                    size: await getImageSize(
+                      (result.files as Record<string, { dataURL: string }>)[key]
+                        .dataURL,
+                    ),
                   } as FileData;
                   files[batch].push(fileData);
                 }
@@ -1579,7 +1581,8 @@ export class EmbeddedFilesLoader {
       } catch (e: unknown) {
         errorlog({
           where: "EmbeddedFileLoader.convertMarkdownToSVG",
-          message: "Non-fatal: proceed with whatever state MathJax left the DOM in.",  
+          message:
+            "Non-fatal: proceed with whatever state MathJax left the DOM in.",
           error: e,
         });
       }

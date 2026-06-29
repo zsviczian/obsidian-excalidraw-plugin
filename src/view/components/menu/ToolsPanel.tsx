@@ -280,10 +280,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       return;
     }
     if (!plugin.settings.taskboneEnabled) {
-      new Notice(
-        "Taskbone OCR is not enabled. Please go to plugins settings to enable it.",
-        4000,
-      );
+      new Notice(t("TASKBON_NOT_ENABLED"), 4000);
       return;
     }
     void plugin.taskbone.getTextForView(view, {
@@ -570,8 +567,8 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
         >
           <div
             className="excalidraw-toolsPanel-dragHandle"
-            onClick={this.islandOnClick.bind(this)}
-            onPointerDown={this.islandOnPointerDown.bind(this)}
+            onClick={(e) => this.islandOnClick(e)}
+            onPointerDown={(e) => this.islandOnPointerDown(e)}
           >
             <svg
               aria-hidden="true"
@@ -604,26 +601,26 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"scriptEngine"}
                     title={t("INSTALL_SCRIPT_BUTTON")}
-                    action={this.actionOpenScriptInstallDialog.bind(this)}
+                    action={() => this.actionOpenScriptInstallDialog()}
                     icon={ICONS.scriptEngine}
                   />
                   <ActionButton
                     key={"release-notes"}
                     title={t("READ_RELEASE_NOTES")}
-                    action={this.actionOpenReleaseNotes.bind(this)}
+                    action={() => this.actionOpenReleaseNotes()}
                     icon={ICONS.releaseNotes}
                   />
                   <ActionButton
                     key={"about-excalidraw"}
                     title={t("ABOUT_EXCALIDRAW")}
-                    action={this.actionOpenAboutExcalidraw.bind(this)}
+                    action={() => this.actionOpenAboutExcalidraw()}
                     icon={ICONS.Info}
                   />
                   {this.state.isPreviewMode === null ? (
                     <ActionButton
                       key={"convert"}
                       title={t("CONVERT_FILE")}
-                      action={this.actionConvertExcalidrawToMD.bind(this)}
+                      action={() => this.actionConvertExcalidrawToMD()}
                       icon={ICONS.convertFile}
                     />
                   ) : (
@@ -633,7 +630,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                         title={
                           this.state.isPreviewMode ? t("PARSED") : t("RAW")
                         }
-                        action={this.actionToggleViewMode.bind(this)}
+                        action={() => this.actionToggleViewMode()}
                         icon={
                           this.state.isPreviewMode
                             ? ICONS.rawMode
@@ -645,7 +642,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"ui-mode"}
                     title={t("UI_MODE")}
-                    action={this.actionToggleTrayMode.bind(this)}
+                    action={() => this.actionToggleTrayMode()}
                     icon={ICONS.tray}
                   />
                   <ActionButton
@@ -655,7 +652,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                         ? t("EXIT_FULLSCREEN")
                         : t("GOTO_FULLSCREEN")
                     }
-                    action={this.actionToggleFullscreen.bind(this)}
+                    action={() => this.actionToggleFullscreen()}
                     icon={
                       this.state.isFullscreen
                         ? ICONS.exitFullScreen
@@ -667,31 +664,31 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"search"}
                     title={t("SEARCH")}
-                    action={this.actionSearch.bind(this)}
+                    action={() => this.actionSearch()}
                     icon={ICONS.search}
                   />
                   <ActionButton
                     key={"ocr"}
                     title={t("RUN_OCR")}
-                    action={this.actionOCR.bind(this)}
+                    action={(e) => this.actionOCR(e)}
                     icon={ICONS.ocr}
                   />
                   <ActionButton
                     key={"openLink"}
                     title={t("OPEN_LINK_CLICK")}
-                    action={this.actionOpenLink.bind(this)}
+                    action={(e) => this.actionOpenLink(e)}
                     icon={ICONS.openLink}
                   />
                   <ActionButton
                     key={"openLinkProperties"}
                     title={t("OPEN_LINK_PROPS")}
-                    action={this.actionOpenLinkProperties.bind(this)}
+                    action={() => this.actionOpenLinkProperties()}
                     icon={ICONS.openLinkProperties}
                   />
                   <ActionButton
                     key={"save"}
                     title={t("FORCE_SAVE")}
-                    action={this.actionForceSave.bind(this)}
+                    action={() => this.actionForceSave()}
                     icon={saveIcon(this.state.isDirty)}
                   />
                 </div>
@@ -702,25 +699,25 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"lib"}
                     title={t("DOWNLOAD_LIBRARY")}
-                    action={this.actionExportLibrary.bind(this)}
+                    action={() => this.actionExportLibrary()}
                     icon={ICONS.exportLibrary}
                   />
                   <ActionButton
                     key={"exportIMG"}
                     title={t("EXPORT_IMAGE")}
-                    action={this.actionExportImage.bind(this)}
+                    action={() => this.actionExportImage()}
                     icon={ICONS.ExportImage}
                   />
                   <ActionButton
                     key={"md"}
                     title={t("OPEN_AS_MD")}
-                    action={this.actionOpenAsMarkdown.bind(this)}
+                    action={() => this.actionOpenAsMarkdown()}
                     icon={ICONS.switchToMarkdown}
                   />
                   <ActionButton
                     key={"link-to-element"}
                     title={t("INSERT_LINK_TO_ELEMENT")}
-                    action={this.actionLinkToElement.bind(this)}
+                    action={(e) => this.actionLinkToElement(e)}
                     icon={ICONS.copyElementLink}
                   />
                 </div>
@@ -731,55 +728,55 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={"anyfile"}
                     title={t("UNIVERSAL_ADD_FILE")}
-                    action={this.actionAddAnyFile.bind(this)}
+                    action={() => this.actionAddAnyFile()}
                     icon={ICONS["add-file"]}
                   />
                   <ActionButton
                     key={"image"}
                     title={t("INSERT_IMAGE")}
-                    action={this.actionInsertImage.bind(this)}
+                    action={() => this.actionInsertImage()}
                     icon={ICONS.insertImage}
                   />
                   <ActionButton
                     key={"pdf"}
                     title={t("INSERT_PDF")}
-                    action={this.actionInsertPDF.bind(this)}
+                    action={() => this.actionInsertPDF()}
                     icon={ICONS.insertPDF}
                   />
                   <ActionButton
                     key={"insertMD"}
                     title={t("INSERT_MD")}
-                    action={this.actionInsertMarkdown.bind(this)}
+                    action={() => this.actionInsertMarkdown()}
                     icon={ICONS.insertMD}
                   />
                   <ActionButton
                     key={"insertBackOfNote"}
                     title={t("INSERT_CARD")}
-                    action={this.actionInsertBackOfNote.bind(this)}
+                    action={() => this.actionInsertBackOfNote()}
                     icon={ICONS.BackOfNote}
                   />
                   <ActionButton
                     key={"latex"}
                     title={t("INSERT_LATEX")}
-                    action={this.actionInsertLaTeX.bind(this)}
+                    action={(e) => this.actionInsertLaTeX(e)}
                     icon={ICONS.insertLaTeX}
                   />
                   <ActionButton
                     key={"link"}
                     title={t("INSERT_LINK")}
-                    action={this.actionInsertLink.bind(this)}
+                    action={() => this.actionInsertLink()}
                     icon={ICONS.insertLink}
                   />
                   <ActionButton
                     key={"import-svg"}
                     title={t("IMPORT_SVG")}
-                    action={this.actionImportSVG.bind(this)}
+                    action={() => this.actionImportSVG()}
                     icon={ICONS.importSVG}
                   />
                   <ActionButton
                     key={"crop-image"}
                     title={t("CROP_IMAGE")}
-                    action={this.actionCropImage.bind(this)}
+                    action={() => this.actionCropImage()}
                     icon={ICONS.Crop}
                   />
                 </div>
@@ -845,8 +842,8 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
                   <ActionButton
                     key={key}
                     title={value.name}
-                    action={this.actionRunScript.bind(this, key)}
-                    longpress={this.actionPinScript.bind(this, key, value.name)}
+                    action={() => void this.actionRunScript(key)}
+                    longpress={() => void this.actionPinScript(key, value.name)}
                     icon={new WeakRef(
                       value.svgString
                         ? stringToSVG(value.svgString)

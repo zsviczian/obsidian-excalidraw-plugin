@@ -1197,6 +1197,10 @@ export default {
   SELECT_TO_EMBED: "Select the drawing to insert into active document.",
   SELECT_MD: "Select the markdown document you want to insert",
 
+  //ToolsPanel.tsx
+  TASKBON_NOT_ENABLED:
+    "Taskbone OCR is not enabled. Please go to plugins settings to enable it.",
+
   //SelectCard.ts
   TYPE_SECTION: "Type section name to select.",
   SELECT_SECTION_OR_TYPE_NEW:

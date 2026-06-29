@@ -1039,7 +1039,7 @@ End Obsidian Sheets Plus support
     - standard left/right panel padding: ~1.5rem (0.75rem each side)
     - plus a tiny 0.1rem buffer to prevent accidental wrapping 
   */
-  width: calc((var(--default-button-size) * 5) + 2.6rem);
+  width: calc((var(--default-button-size) * 5) + 3rem);
 
   height: fit-content;
   max-height: 400px;

@@ -1481,11 +1481,20 @@ export default class ExcalidrawView
         ef.resetImage(this.file.path, link);
         this.excalidrawData.setFile(fileId, ef);
         this.setDirty();
+
+        await new Promise<void>((resolve) => {
+          void this.loadSceneFiles(
+            false,
+            new Set([fileId]),
+            resolve,
+            new Set([fileId]),
+          );
+        });
+
         if (originalAnchor !== nextAnchor) {
           await toggleImageAnchoring(el, this, nextAnchor, ef);
         }
-        await this.save(false);
-        await sleep(100);
+
         if (!this.plugin.isExcalidrawFile(ef.file) && !link.endsWith("|100%")) {
           const ea = getEA(this);
           const imgEl = this.getViewElements().find(
@@ -1496,10 +1505,12 @@ export default class ExcalidrawView
             return;
           }
           if (imgEl && (await ea.resetImageAspectRatio(imgEl))) {
-            await ea.addElementsToView(false);
+            await ea.addElementsToView(false, false);
           }
           ea.destroy();
         }
+
+        await this.save(false);
       };
       GenericInputPrompt.Prompt(
         this,
@@ -7403,17 +7414,17 @@ export default class ExcalidrawView
               : `${rank}: ${t("WELCOME_RANK_LEGENDARY")}`,
           children: title,
         }),
-        React.createElement(WelcomeScreen.Center.Heading, {
-          children: [
-            t("WELCOME_COMMAND_PALETTE"),
-            React.createElement("br"),
-            t("WELCOME_OBSIDIAN_MENU"),
-            React.createElement("br"),
-            t("WELCOME_SCRIPT_LIBRARY"),
-            React.createElement("br"),
-            t("WELCOME_HELP_MENU"),
-          ],
-        }),
+        React.createElement(
+          WelcomeScreen.Center.Heading,
+          null,
+          t("WELCOME_COMMAND_PALETTE"),
+          React.createElement("br"),
+          t("WELCOME_OBSIDIAN_MENU"),
+          React.createElement("br"),
+          t("WELCOME_SCRIPT_LIBRARY"),
+          React.createElement("br"),
+          t("WELCOME_HELP_MENU"),
+        ),
         React.createElement(
           WelcomeScreen.Center.Menu,
           {},

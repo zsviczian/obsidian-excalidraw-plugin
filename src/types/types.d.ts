@@ -172,7 +172,7 @@ declare global {
     ReactDOM?: typeof import("react-dom/client");
     ExcalidrawLib?: typeof ExcalidrawLib;
     MathJax?: {
-      typesetPromise(elements: HTMLElement[]): Promise<void>
+      typesetPromise(elements: HTMLElement[]): Promise<void>;
     };
   }
   interface File {
