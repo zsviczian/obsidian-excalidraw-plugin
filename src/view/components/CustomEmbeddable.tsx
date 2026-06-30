@@ -25,6 +25,7 @@ import { EmbeddableLeafRef } from "src/types/excalidrawViewTypes";
 import { t } from "src/lang/helpers";
 import { removeStyle, setStyle } from "src/utils/styleUtils";
 import { isInstanceOfHTMLElement } from "src/utils/typechecks";
+import { errorlog } from "src/utils/coreUtils";
 
 type PdfViewLike = {
   containerEl?: HTMLElement;
@@ -285,8 +286,12 @@ function setupPdfViewEnhancements(
         setStyle(view.contentEl, {
           cursor: "grabbing",
         });
-      } catch (error) {
-        console.log(error);
+      } catch (error: unknown) {
+        errorlog({
+          where: "CustomEmbeddable.onPointerDownCapture",
+          fn: "setStyle",
+          error: error,
+        });
       }
     };
 
@@ -323,8 +328,12 @@ function setupPdfViewEnhancements(
         setStyle(view.contentEl, {
           cursor: "",
         });
-      } catch (error) {
-        console.log(error);
+      } catch (error: unknown) {
+        errorlog({
+          where: "CustomEmbeddable.onPointerUp",
+          fn: "setStyle",
+          error: error,
+        });
       }
       window.removeEventListener("pointermove", onPointerMove, true);
       window.removeEventListener("pointerup", onPointerUp, true);
@@ -391,13 +400,21 @@ function setupPdfViewEnhancements(
                 // Cleanup existing handlers/observers
                 try {
                   pdfObserverRef.currentCleanup?.();
-                } catch (error) {
-                  console.log(error);
+                } catch (error: unknown) {
+                  errorlog({
+                    where: "CustomEmbeddable.onPointerUp",
+                    fn: "pdfObserverRef.currentCleanup",
+                    error: error,
+                  });
                 }
                 try {
                   pdfObserverRef.current?.disconnect();
-                } catch (error) {
-                  console.log(error);
+                } catch (error: unknown) {
+                  errorlog({
+                    where: "CustomEmbeddable.onPointerUp",
+                    fn: "pdfObserverRef.current.disconnect",
+                    error: error,
+                  });
                 }
 
                 // Re-setup on next tick to allow DOM to settle
@@ -421,18 +438,30 @@ function setupPdfViewEnhancements(
           pdfObserverRef.currentCleanup = () => {
             try {
               prevCleanup?.();
-            } catch (error) {
-              console.log(error);
+            } catch (error: unknown) {
+              errorlog({
+                where: "CustomEmbeddable.onPointerUp",
+                fn: "pdfObserverRef.currentCleanup",
+                error: error,
+              });
             }
             try {
               pdfObserverRef.current?.disconnect();
-            } catch (error) {
-              console.log(error);
+            } catch (error: unknown) {
+              errorlog({
+                where: "CustomEmbeddable.onPointerUp",
+                fn: "pdfObserverRef.current.disconnect",
+                error: error,
+              });
             }
             try {
               detachObserver?.disconnect();
-            } catch (error) {
-              console.log(error);
+            } catch (error: unknown) {
+              errorlog({
+                where: "CustomEmbeddable.onPointerUp",
+                fn: "detachObserver.disconnect",
+                error: error,
+              });
             }
             detachObserver = null;
           };
@@ -563,6 +592,7 @@ function RenderObsidianView({
     null,
   ) as React.MutableRefObject<EmbeddableLeafRef | null>;
   const isEditingRef = React.useRef(false);
+  const isPreviewRef = React.useRef(false);
   const isActiveRef = React.useRef(false);
   const viewTypeRef = React.useRef("empty");
   const themeRef = React.useRef(theme);
@@ -570,7 +600,7 @@ function RenderObsidianView({
     null,
   ) as PdfObserverRef;
   const pdfObserverDisabledRef = React.useRef(false);
-  const mobilePatchCleanupRef = React.useRef(null);
+  const mobilePatchCleanupRef = React.useRef<(() => void) | null>(null);
   const initialViewFileRef = React.useRef(view.file);
   const mdPropsRef = React.useRef(mdProps);
   const fileRef = React.useRef(file);
@@ -906,8 +936,12 @@ function RenderObsidianView({
       // cleanup persistent mobile patch if active
       try {
         mobilePatchCleanupRef.current?.();
-      } catch (error) {
-        console.log(error);
+      } catch (error: unknown) {
+        errorlog({
+          where: "CustomEmbeddable.onPointerUp",
+          fn: "mobilePatchCleanupRef.current",
+          error: error,
+        });
       }
       mobilePatchCleanupRef.current = null;
 
@@ -1179,20 +1213,25 @@ function RenderObsidianView({
         event?.stopPropagation();
       }
 
-      if (!isActiveRef.current || isEditingRef.current || !leafRef.current) {
-        return;
-      }
-
       const currentMdProps = mdPropsRef.current;
       const currentFile = fileRef.current;
 
       if (currentMdProps?.lockedReadingMode) {
         // Special case: if the card is a back-of-the-note card, ticking a checkbox in
         // reading mode triggers a change to the open file which would result in a view update.
-        if (currentFile?.path === view.file.path) {
+        if (!isActiveRef.current && isPreviewRef.current) {
+          view.clearEmbeddableNodeIsEditing();
+          isPreviewRef.current = false;
+        }
+        if (isActiveRef.current && currentFile?.path === view.file.path) {
           view.setPreventReload();
           void view.setEmbeddableNodeIsEditing();
+          isPreviewRef.current = true;
         }
+        return;
+      }
+
+      if (!isActiveRef.current || isEditingRef.current || !leafRef.current) {
         return;
       }
 
@@ -1205,9 +1244,11 @@ function RenderObsidianView({
         //Handle canvas node
         const newTheme = getTheme(view, themeRef.current);
         containerRef.current?.addClasses(["is-editing", "is-focused"]);
+        const isEditingSelf = fileRef.current?.path === view.file.path;
         void view.canvasNodeFactory.startEditing(
           leafRef.current.node,
           newTheme,
+          isEditingSelf,
         );
         return;
       }
@@ -1216,9 +1257,11 @@ function RenderObsidianView({
         const api: ExcalidrawImperativeAPI = view.excalidrawAPI;
         const el = api
           .getSceneElements()
-          .filter((el) => el.id === element.id)[0];
+          .filter(
+            (el: ExcalidrawEmbeddableElement) => el.id === element.id,
+          )[0] as ExcalidrawEmbeddableElement;
         if (!el || el.angle !== 0) {
-          new Notice("Sorry, cannot edit rotated markdown documents");
+          new Notice("Sorry, cannot edit rotated Markdown documents");
           return;
         }
         const modes = leafRef.current.leaf.view.modes;
@@ -1238,6 +1281,7 @@ function RenderObsidianView({
       isActiveRef.current,
       isEditingRef.current,
       viewTypeRef.current,
+      fileRef.current,
     ],
   );
 
@@ -1323,26 +1367,39 @@ function RenderObsidianView({
     const node = leafRef.current?.node;
     if (node) {
       //Handle canvas node
-      if (
-        isActiveRef.current &&
-        view.plugin.settings.markdownNodeOneClickEditing &&
-        !containerRef.current?.hasClass("is-editing")
-      ) {
-        if (mdPropsRef.current?.lockedReadingMode) {
+      if (isActiveRef.current) {
+        if (
+          mdPropsRef.current?.lockedReadingMode ||
+          (!view.plugin.settings.markdownNodeOneClickEditing &&
+            !containerRef.current?.hasClass("is-editing"))
+        ) {
           if (fileRef.current?.path === view.file.path) {
             view.setPreventReload();
             void view.setEmbeddableNodeIsEditing();
           }
-        } else {
+        } else if (
+          view.plugin.settings.markdownNodeOneClickEditing &&
+          !containerRef.current?.hasClass("is-editing")
+        ) {
           //!node.isEditing
           const newTheme = getTheme(view, themeRef.current);
           containerRef.current?.addClasses(["is-editing", "is-focused"]);
-          void view.canvasNodeFactory.startEditing(node, newTheme);
+          const isEditingSelf = fileRef.current?.path === view.file.path;
+          void view.canvasNodeFactory.startEditing(
+            node,
+            newTheme,
+            isEditingSelf,
+          );
         }
       } else {
+        if (
+          fileRef.current?.path === view.file.path &&
+          !containerRef.current?.hasClass("is-editing")
+        ) {
+          view.clearEmbeddableNodeIsEditing(); //else it will be cleared in stopEditing right below
+        }
         containerRef.current?.removeClasses(["is-editing", "is-focused"]);
         view.canvasNodeFactory.stopEditing(node);
-        view.clearEmbeddableNodeIsEditing();
       }
       return;
     }
@@ -1364,8 +1421,12 @@ function RenderObsidianView({
           // stop persistent observer when deactivated
           try {
             mobilePatchCleanupRef.current?.();
-          } catch (error) {
-            console.log(error);
+          } catch (error: unknown) {
+            errorlog({
+              where: "CustomEmbeddable.onPointerUp",
+              fn: "mobilePatchCleanupRef.current",
+              error: error,
+            });
           }
           mobilePatchCleanupRef.current = null;
         }

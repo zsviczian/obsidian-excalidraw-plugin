@@ -235,7 +235,7 @@ export class PluginFileManager {
               excalidrawFile: file,
               action: "export",
             }) ?? imageFullpath;
-        } catch (e) {
+        } catch (e: unknown) {
           errorlog({
             where: "FileManager.embedDrawing",
             fn: "plugin.ea.onImageExportPathHook",
@@ -771,7 +771,7 @@ export class PluginFileManager {
                 excalidrawFile: file,
                 action: "delete",
               }) ?? imgPath;
-          } catch (e) {
+          } catch (e: unknown) {
             errorlog({
               where: "FileManager.deleteEventHandler",
               fn: "plugin.ea.onImageExportPathHook",

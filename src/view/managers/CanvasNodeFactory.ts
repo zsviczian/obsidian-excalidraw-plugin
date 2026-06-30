@@ -152,13 +152,19 @@ export class CanvasNodeFactory {
     this.observer.observe(editorEl, { attributes: true });
   }
 
-  public async startEditing(node: ObsidianCanvasNode, theme: string) {
+  public async startEditing(
+    node: ObsidianCanvasNode,
+    theme: string,
+    isEditingSelf: boolean,
+  ) {
     if (!this.initialized || !node || !node.isEditable()) {
       return;
     }
 
     try {
-      await this.view.setEmbeddableNodeIsEditing();
+      if (isEditingSelf) {
+        await this.view.setEmbeddableNodeIsEditing();
+      }
 
       node.startEditing();
       node.isEditing = true;
