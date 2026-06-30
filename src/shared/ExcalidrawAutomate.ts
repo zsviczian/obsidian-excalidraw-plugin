@@ -4029,6 +4029,29 @@ export class ExcalidrawAutomate {
   }) => AutoexportConfig | null = null;
 
   /**
+   * If set, this callback is triggered when the scene changes in the target view.
+   * You can use this to react to appState or element changes.
+   * Any script can sign up for updates via this hook.
+   * Because this hook fires extremely frequently (on every mouse move during drawing),
+   * you MUST specify which appState keys you are interested in OR set trackElements to true.
+   * If trackElements is falsy and appStateKeys is empty or undefined, the callback will NOT be triggered to prevent performance issues.
+   * For sidepanel tabs, there is an additional filter feature: if triggerWhenInvisible is false,
+   * the callback will only trigger when the sidepanel is visible and the tab is active.
+   */
+  onSceneChangeHook: {
+    appStateKeys?: (keyof AppState)[];
+    trackElements?: boolean;
+    triggerWhenInvisible?: boolean;
+    callback: (
+      elements: readonly ExcalidrawElement[],
+      appState: AppState,
+      files: BinaryFiles,
+      view: ExcalidrawView,
+      ea: ExcalidrawAutomate,
+    ) => void;
+  } | null = null;
+
+  /**
    * if set, this callback is triggered, when an Excalidraw file is opened
    * You can use this callback in case you want to do something additional when the file is opened.
    * This will run before the file level script defined in the `excalidraw-onload-script` frontmatter.

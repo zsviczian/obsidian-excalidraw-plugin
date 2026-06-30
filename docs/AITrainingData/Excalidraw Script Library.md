@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-06-27T09:24:19.260Z
+Generated on: 2026-06-30T13:12:00.813Z
 
 ---
 
@@ -2219,7 +2219,7 @@ The script assembles dynamic "New Section" labels contextualizing the timestamp 
 7.  Switches focus permanently to Note B and automatically executes `ea.viewZoomToElements()` centering the screen precisely on the newly built container.
 
 ```js*/
-
+const VERSION = "v260629";
 const FRAME_MARGIN = 10;
 
 if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.23.8")) {
@@ -2302,17 +2302,31 @@ const getLucideIconIds = () => {
 let suppressEscape = false;
 
 class FolderSuggest extends ea.obsidian.AbstractInputSuggest {
-  constructor(app, inputEl) {
+  constructor(app, inputEl, state = null, originFolderPath = "/") {
     super(app, inputEl);
     this.inputEl = inputEl;
+    this.state = state;
+    this.originFolderPath = originFolderPath === "/" ? "" : originFolderPath;
   }
   getSuggestions(query) {
-    const folders = app.vault.getAllLoadedFiles()
+    let folders = app.vault.getAllLoadedFiles()
       .filter(f => f instanceof ea.obsidian.TFolder)
       .map(f => f.path);
+    
+    // Filter and map paths relative to the current origin folder
+    if (this.state && this.state.useRelativeFolder) {
+      const prefix = this.originFolderPath ? this.originFolderPath + "/" : "";
+      folders = folders.filter(p => p.startsWith(prefix) || p === this.originFolderPath);
+      folders = folders.map(p => p === this.originFolderPath ? "" : p.substring(prefix.length));
+    }
+    
     return folders.filter(p => p.toLowerCase().includes(query.toLowerCase()));
   }
-  renderSuggestion(value, el) { el.setText(value); }
+  renderSuggestion(value, el) { 
+    // Display an indicator for the current folder if left empty in relative mode
+    const display = value === "" && this.state && this.state.useRelativeFolder ? "./ (Current Folder)" : value;
+    el.setText(display || "/"); 
+  }
   selectSuggestion(value) {
     this.inputEl.value = value;
     this.inputEl.dispatchEvent(new Event("input"));
@@ -2856,7 +2870,7 @@ async function injectVisualFormat(target_ea, targetX, targetY, sectionRawText, t
   // Conditionally add dynamic links back to the originating element and (if applicable) the DNP
   let linkStr = "";
   if (embeddedElementId && ontologyAction && originFilePath) {
-    linkStr += `(${ontologyAction}::[[${originFilePath}#^${embeddedElementId}]])`;
+    linkStr += `(${ontologyAction}::[[${originFilePath}#^group=${embeddedElementId}]])`;
   }
   if (!isCurrentDNP) {
     const frameOntology = settings.frameOntology || "note";
@@ -3001,7 +3015,7 @@ async function injectMarkdownFormat(file, target_ea, targetX, targetY, sectionRa
   if (embeddedElementId && ontologyAction && originFilePath) {
     const originFile = app.vault.getAbstractFileByPath(originFilePath);
     const originLinkpath = originFile ? getObsidianLinkpath(originFile, file.path) : originFilePath.replace(/\.md$/i, "");
-    linkStr += ` (${ontologyAction}::[[${originLinkpath}#^${embeddedElementId}]])`;
+    linkStr += ` (${ontologyAction}::[[${originLinkpath}#^group=${embeddedElementId}]])`;
   }
   if (!isCurrentDNP) {
     const frameOntology = settings.frameOntology || "note";
@@ -3230,10 +3244,10 @@ async function injectIntoOriginView(originView, activeElement, format, actionTyp
           const isEmbeddable = actionType === "CAPTURE_HERE" || !isMarkdownImage;
           if (isEmbeddable) {
             // Markdown Format + Embeddable: Multiple links
-            eaEl.link = `(${ontologyAction}:: [[${linkpath}#${refPath}]] [[${linkpath}#^${frameID}]])`;
+            eaEl.link = `(${ontologyAction}:: [[${linkpath}#${refPath}]] [[${linkpath}#^group=${frameID}]])`;
           } else {
             // Markdown Format + Static Image: Element ID link only
-            eaEl.link = `(${ontologyAction}:: [[${linkpath}#^${frameID}]])`;
+            eaEl.link = `(${ontologyAction}:: [[${linkpath}#^group=${frameID}]])`;
           }
         }
       }
@@ -3462,8 +3476,15 @@ async function start() {
     return;
   }
 
-  // Set the folder from the modal box
-  const targetFolder = (customFolder !== undefined && customFolder !== "") ? customFolder : opt.folder;
+  // Set the folder from the modal box (and apply relative behaviors)
+  let targetFolder = (customFolder !== undefined && customFolder !== "") ? customFolder : opt.folder;
+  if (captureData.useRelativeFolder) {
+    const baseFolder = originView.file.parent.path;
+    if (baseFolder !== "/") {
+      targetFolder = targetFolder ? `${baseFolder}/${targetFolder}` : baseFolder;
+    }
+  }
+
   const folder = ea.obsidian.normalizePath(targetFolder);
 
   // 3. Assemble WikiLink and File Path
@@ -3495,13 +3516,13 @@ async function start() {
     }
   }
 
-  // Handle Existing File Conflict Workflow
+  // Handle Existing File Conflict Workflow (Bypasses rename warning if type matches)
   if (fileTarget) {
     const existingType = await detectNoteType(fileTarget);
     const hasNoteType = existingType === noteType;
     const hasPrefix = opt.prefix ? fileTarget.basename.startsWith(opt.prefix) : true;
 
-    if (!hasNoteType || !hasPrefix) {
+    if (!hasNoteType) {
       const conflictDecision = await resolveExistingFileConflict(fileTarget, hasNoteType, hasPrefix, opt.prefix);
       if (!conflictDecision) return; 
 
@@ -3531,9 +3552,9 @@ async function start() {
     let folderPath = (opt.type === "folder") ? `${folder}/${cleanFilename}` : folder;
     const formattedFolderPath = folderPath ? folderPath.replace(/^\/+/, "") + "/" : "";
     
-    const format = app.vault.getConfig("newLinkFormat");
+    const fmt = app.vault.getConfig("newLinkFormat");
     let linkpath = `${formattedFolderPath}${targetBasename}`;
-    if (format === "shortest") {
+    if (fmt === "shortest") {
       const matches = app.vault.getFiles().filter(f => f.basename === targetBasename);
       if (matches.length === 0) {
         linkpath = targetBasename;
@@ -3551,7 +3572,7 @@ async function start() {
     return;
   }
 
-  // 4. Create File if new (File exists in memory for linking)
+  // 4. Create File if new
   const file = await ensureTargetFileExists(folder, cleanFilename, fname, opt, noteType);
 
   if (actionType === "ADD_LINK_CREATE") {
@@ -3698,21 +3719,68 @@ function buildCaptureFolderBox(contentEl, state) {
     .setName("Folder")
     .setDesc("Target directory for the note");
   
+  let folderInputComp;
+  const currentFolderPath = ea.targetView ? ea.targetView.file.parent.path : "/";
+
   folderSetting.addText(text => {
     state.ui.folderInput = text;
+    folderInputComp = text;
     text.inputEl.style.width = "100%";
     
     state.isProgrammaticUpdate = true;
     text.setValue(state.initialFolder);
     state.isProgrammaticUpdate = false;
     
-    new FolderSuggest(app, text.inputEl);
+    new FolderSuggest(app, text.inputEl, state, currentFolderPath);
 
     // Track manual edits by the user (ignoring programmatic setValue)
     text.inputEl.addEventListener("input", () => {
       if (!state.isProgrammaticUpdate) {
         state.folderManuallyEdited = true;
       }
+    });
+  });
+
+  // Relative vs Absolute folder path toggle
+  folderSetting.addExtraButton(btn => {
+    state.ui.folderToggleBtn = btn;
+    const updateIcon = () => {
+      btn.setIcon(state.useRelativeFolder ? "folder-dot" : "folder-lock");
+      btn.setTooltip(state.useRelativeFolder ? "In current folder or subfolder" : "Fixed absolute folder path");
+    };
+    updateIcon();
+    
+    btn.onClick(() => {
+      state.useRelativeFolder = !state.useRelativeFolder;
+      settings.useRelativeFolder = state.useRelativeFolder; // Save global preference
+      ea.setScriptSettings(settings);
+      updateIcon();
+      
+      // Handle path transformation automatically
+      state.isProgrammaticUpdate = true;
+      let currentVal = folderInputComp.getValue().trim();
+      const prefix = currentFolderPath === "/" ? "" : currentFolderPath;
+      
+      if (state.useRelativeFolder) {
+        // Absolute to Relative
+        if (currentVal === prefix) {
+          folderInputComp.setValue("");
+        } else if (currentVal.startsWith(prefix + "/")) {
+          folderInputComp.setValue(currentVal.substring(prefix.length + 1));
+        } else {
+          folderInputComp.setValue(""); // Does not fall within current path, clear
+        }
+      } else {
+        // Relative to Absolute
+        if (currentVal === "") {
+          folderInputComp.setValue(prefix);
+        } else {
+          folderInputComp.setValue(prefix ? `${prefix}/${currentVal}` : currentVal);
+        }
+      }
+      
+      state.isProgrammaticUpdate = false;
+      state.ui.folderInput.inputEl.dispatchEvent(new Event("input")); // Re-evaluate suggester
     });
   });
 }
@@ -3899,12 +3967,12 @@ function buildCaptureLinkTypeSelector(contentEl, state, callbacks) {
     state.selectedNoteType = selectedNoteType;
   }
 
-  const linkTypeRow = new ea.obsidian.Setting(contentEl).setName("Link Type");
-  linkTypeRow.controlEl.addClass("link-type-row-control");
-  const iconPreviewSpan = linkTypeRow.controlEl.createSpan();
+  const noteTypeRow = new ea.obsidian.Setting(contentEl).setName("Type");
+  noteTypeRow.controlEl.addClass("link-type-row-control");
+  const iconPreviewSpan = noteTypeRow.controlEl.createSpan();
   state.ui.iconPreviewSpan = iconPreviewSpan;
 
-  linkTypeRow.addDropdown(dropdown => {
+  noteTypeRow.addDropdown(dropdown => {
     state.ui.dropdownComponent = dropdown;
     noteTypeKeys.forEach(k => dropdown.addOption(k, k));
     dropdown.setValue(selectedNoteType);
@@ -3924,6 +3992,11 @@ function buildCaptureLinkTypeSelector(contentEl, state, callbacks) {
             if (opt && opt.folder !== undefined && state.ui.folderInput) {
                state.isProgrammaticUpdate = true;
                state.ui.folderInput.setValue(opt.folder);
+               state.useRelativeFolder = !!opt.useRelativeFolder;
+               if (state.ui.folderToggleBtn) {
+                 state.ui.folderToggleBtn.setIcon(state.useRelativeFolder ? "folder-dot" : "folder-lock");
+                 state.ui.folderToggleBtn.setTooltip(state.useRelativeFolder ? "In current folder or subfolder" : "Fixed absolute folder path");
+               }
                state.isProgrammaticUpdate = false;
             }
         }
@@ -3932,7 +4005,7 @@ function buildCaptureLinkTypeSelector(contentEl, state, callbacks) {
   });
 
   // Add a button to manually pull the target directory from the active Note Type
-  linkTypeRow.addExtraButton(btn => {
+  noteTypeRow.addExtraButton(btn => {
     state.ui.resetFolderBtn = btn;
     btn.setIcon("folder-sync")
        .setTooltip("Apply folder from selected Note Type")
@@ -3941,9 +4014,51 @@ function buildCaptureLinkTypeSelector(contentEl, state, callbacks) {
          if (opt && opt.folder !== undefined && state.ui.folderInput) {
            state.isProgrammaticUpdate = true;
            state.ui.folderInput.setValue(opt.folder);
+           state.useRelativeFolder = !!opt.useRelativeFolder;
+           if (state.ui.folderToggleBtn) {
+             state.ui.folderToggleBtn.setIcon(state.useRelativeFolder ? "folder-dot" : "folder-lock");
+             state.ui.folderToggleBtn.setTooltip(state.useRelativeFolder ? "In current folder or subfolder" : "Fixed absolute folder path");
+           }
            state.isProgrammaticUpdate = false;
            state.folderManuallyEdited = false;
          }
+       });
+  });
+
+  // 4.1 On-the-spot Note Type creation
+  noteTypeRow.addExtraButton(btn => {
+    btn.setIcon("plus")
+       .setTooltip("Create new Note Type")
+       .onClick(() => {
+         const tempId = "New Type " + (Object.keys(settings.noteTypes).length + 1);
+         settings.noteTypes[tempId] = {
+           folder: "",
+           useRelativeFolder: state.useRelativeFolder,
+           type: "file",
+           template: settings.baseTemplateForNewNoteTypes || "",
+           prefix: "",
+           icon: "file",
+           ontology: { default: "referencing", actions: ["referencing"] }
+         };
+         
+         // Passed with isNew = true to gracefully handle escape/cancel deletions
+         openEditNoteTypeModal(tempId, (finalName) => {
+           ea.setScriptSettings(settings);
+           const targetName = finalName || tempId;
+           
+           // Refresh dropdown options
+           const selectEl = state.ui.dropdownComponent.selectEl;
+           while(selectEl.options.length > 0) selectEl.remove(0);
+           Object.keys(settings.noteTypes).sort().forEach(k => state.ui.dropdownComponent.addOption(k, k));
+           
+           // Select newly created type
+           state.selectedNoteType = targetName;
+           settings.lastSelectedNoteType = targetName;
+           state.ui.dropdownComponent.setValue(targetName);
+           
+           callbacks.updateIconPreview();
+           callbacks.updateOntologyDropdown();
+         }, true); 
        });
   });
 
@@ -4014,6 +4129,7 @@ function buildCaptureFooter(contentEl, state, modal) {
     state.finalData = {
       filename: val,
       folder: folderVal,
+      useRelativeFolder: state.useRelativeFolder, // Append relative setting state
       noteType: state.selectedNoteType,
       format: state.selectedFormat,
       ontologyAction: state.selectedOntology,
@@ -4056,7 +4172,22 @@ async function openCaptureModal(initialSearchValue) {
     modal.modalEl.style.width = "480px";
     modal.modalEl.style.maxWidth = "100%";
     modal.modalEl.classList.add("excalidraw-capture-note-modal");
-    modal.titleEl.setText("Capture Contextual Note");
+    
+    // Clear default title text and convert to a flex container to align elements
+    modal.titleEl.empty();
+    modal.titleEl.style.display = "flex";
+    modal.titleEl.style.justifyContent = "space-between";
+    modal.titleEl.style.alignItems = "center";
+    modal.titleEl.style.width = "100%";
+    
+    // Add Main Title
+    modal.titleEl.createSpan({ text: "Capture Contextual Note" });
+    
+    // Add right-aligned Version string
+    modal.titleEl.createSpan({ 
+      text: VERSION, 
+      attr: { style: "font-size: 0.5em; color: var(--text-muted); font-weight: normal; margin-right: 8px;" } 
+    });
 
     let initialFolder = "";
     let initialFilename = initialSearchValue || "";
@@ -4122,6 +4253,7 @@ async function openCaptureModal(initialSearchValue) {
     const state = {
       finalData: null,
       initialFolder,
+      useRelativeFolder: settings.useRelativeFolder || false,
       initialSearchValue: initialFilename,
       folderManuallyEdited: false, // Start false so we can auto-update if they change to a new file
       isProgrammaticUpdate: false,
@@ -4193,6 +4325,11 @@ async function openCaptureModal(initialSearchValue) {
             if (opt && opt.folder !== undefined) {
               state.isProgrammaticUpdate = true;
               state.ui.folderInput.setValue(opt.folder);
+              state.useRelativeFolder = !!opt.useRelativeFolder;
+              if (state.ui.folderToggleBtn) {
+                state.ui.folderToggleBtn.setIcon(state.useRelativeFolder ? "folder-dot" : "folder-lock");
+                state.ui.folderToggleBtn.setTooltip(state.useRelativeFolder ? "In current folder or subfolder" : "Fixed absolute folder path");
+              }
               state.isProgrammaticUpdate = false;
             }
           }
@@ -4545,6 +4682,18 @@ function buildNoteTypesSection(contentEl) {
   const noteTypesSection = contentEl.createEl("details", { cls: "setting-sub-section" });
   noteTypesSection.createEl("summary", { text: "Note Types & Custom Ontologies" });
   
+  const baseTemplateContainer = noteTypesSection.createDiv({ attr: { style: "margin-bottom: 15px;" } });
+  new ea.obsidian.Setting(baseTemplateContainer)
+    .setName("Base Template for New Ontologies")
+    .setDesc("A generic template used automatically when creating new note types on the fly.")
+    .addText(text => {
+      text.setValue(settings.baseTemplateForNewNoteTypes || "").onChange(val => { 
+          settings.baseTemplateForNewNoteTypes = val; 
+          ea.setScriptSettings(settings);
+      });
+      new TemplateSuggest(app, text.inputEl);
+    });
+
   const addBtnContainer = noteTypesSection.createDiv({ cls: "flex-row-spaced", attr: { style: "margin-bottom:15px;" } });
   addBtnContainer.createEl("span", { text: "Manage your note types:" });
   const addBtn = addBtnContainer.createEl("button", { text: "Add", cls: "mod-cta" });
@@ -4556,16 +4705,19 @@ function buildNoteTypesSection(contentEl) {
     const tempId = "New Type " + (Object.keys(settings.noteTypes).length + 1);
     settings.noteTypes[tempId] = {
       folder: "",
+      useRelativeFolder: false,
       type: "file",
-      template: "",
+      template: settings.baseTemplateForNewNoteTypes || "",
       prefix: "",
       icon: "file",
       ontology: { default: "referencing", actions: ["referencing"] }
     };
+    
+    // Passed with isNew = true to gracefully handle escape/cancel deletions
     openEditNoteTypeModal(tempId, () => {
       ea.setScriptSettings(settings);
       refreshCallback();
-    });
+    }, true);
   });
 
   refreshCallback();
@@ -4614,12 +4766,13 @@ function openSettingsModal() {
 // -------------------------------------------------------------
 // 7. UI: Detailed Single Note Type Editor Modal (Secondary Modal)
 // -------------------------------------------------------------
-function openEditNoteTypeModal(noteTypeKey, saveCallback) {
+function openEditNoteTypeModal(noteTypeKey, saveCallback, isNew = false) {
   const modal = new ea.obsidian.Modal(app);
   modal.titleEl.setText(`Configure Note Type`);
 
   const typeConfig = settings.noteTypes[noteTypeKey];
   let originalKeyName = noteTypeKey;
+  let isSaved = false;
 
   // Fetch ExcaliBrain ontology actions
   let brainOntologies = [];
@@ -4676,15 +4829,67 @@ function openEditNoteTypeModal(noteTypeKey, saveCallback) {
         settings.noteTypes[finalName] = typeConfig;
         delete settings.noteTypes[originalKeyName];
       }
-      saveCallback();
+      isSaved = true;
+      saveCallback(finalName);
       modal.close();
     });
+
+    let folderInputComp;
+    const currentFolderPath = ea.targetView ? ea.targetView.file.parent.path : "/";
 
     new ea.obsidian.Setting(contentEl)
       .setName("Target Vault Folder")
       .addText(text => {
+        folderInputComp = text;
         text.setValue(typeConfig.folder).onChange(val => { typeConfig.folder = val; });
-        new FolderSuggest(app, text.inputEl);
+        // Passing typeConfig directly ensures the Suggester inherits the toggle boolean accurately 
+        new FolderSuggest(app, text.inputEl, typeConfig, currentFolderPath);
+        typeConfig._tempTextInput = text.inputEl; 
+      })
+      .addExtraButton(btn => {
+        const updateIcon = () => {
+          btn.setIcon(typeConfig.useRelativeFolder ? "folder-dot" : "folder-lock");
+          btn.setTooltip(typeConfig.useRelativeFolder ? "Relative to current note's folder" : "Absolute folder path");
+        };
+        updateIcon();
+        
+        btn.onClick(() => {
+          typeConfig.useRelativeFolder = !typeConfig.useRelativeFolder;
+          updateIcon();
+          
+          // Handle path transformation automatically
+          let currentVal = folderInputComp.getValue().trim();
+          const prefix = currentFolderPath === "/" ? "" : currentFolderPath;
+          
+          if (typeConfig.useRelativeFolder) {
+            // Absolute to Relative
+            if (currentVal === prefix) {
+              folderInputComp.setValue("");
+              typeConfig.folder = "";
+            } else if (currentVal.startsWith(prefix + "/")) {
+              const newRelative = currentVal.substring(prefix.length + 1);
+              folderInputComp.setValue(newRelative);
+              typeConfig.folder = newRelative;
+            } else {
+              folderInputComp.setValue("");
+              typeConfig.folder = "";
+            }
+          } else {
+            // Relative to Absolute
+            if (currentVal === "") {
+              folderInputComp.setValue(prefix);
+              typeConfig.folder = prefix;
+            } else {
+              const newAbsolute = prefix ? `${prefix}/${currentVal}` : currentVal;
+              folderInputComp.setValue(newAbsolute);
+              typeConfig.folder = newAbsolute;
+            }
+          }
+
+          if (typeConfig._tempTextInput) {
+             typeConfig._tempTextInput.dispatchEvent(new Event("input"));
+          }
+        });
       });
 
     new ea.obsidian.Setting(contentEl)
@@ -4695,9 +4900,16 @@ function openEditNoteTypeModal(noteTypeKey, saveCallback) {
         new TemplateSuggest(app, text.inputEl);
       });
 
+    // Strip unsafe characters to guarantee OS-level file creation compatibility
     new ea.obsidian.Setting(contentEl)
       .setName("File Prefix")
-      .addText(text => text.setValue(typeConfig.prefix).onChange(val => { typeConfig.prefix = val; }));
+      .addText(text => text.setValue(typeConfig.prefix).onChange(val => { 
+        const cleaned = val.replace(/[\\/:"*?<>|]/g, '');
+        if (cleaned !== val) {
+          text.setValue(cleaned);
+        }
+        typeConfig.prefix = cleaned; 
+      }));
 
     const iconSetting = new ea.obsidian.Setting(contentEl)
       .setName("Lucide Icon");
@@ -4825,6 +5037,11 @@ function openEditNoteTypeModal(noteTypeKey, saveCallback) {
   };
 
   modal.onClose = () => {
+    // If the creation workflow is abandoned before explicitly saving, erase the orphaned entry
+    if (isNew && !isSaved) {
+      delete settings.noteTypes[originalKeyName];
+      ea.setScriptSettings(settings);
+    }
     setTimeout(() => { delete modal; });
   };
   modal.open();
@@ -17896,6 +18113,20 @@ const STRINGS = {
     CALENDAR_DATETYPE_DONE: "Done",
     CALENDAR_DATETYPE_CANCELLED: "Cancelled",
 
+    // Presets
+    PRESET_LABEL: "Preset",
+    PRESET_DEFAULT: "Default",
+    PRESET_UNSAVED: "Custom / Unlinked",
+    PRESET_BTN_SAVE: "Save to Preset",
+    PRESET_BTN_DELETE: "Delete Preset",
+    PRESET_BTN_NEW: "Create New Preset",
+    PRESET_BTN_APPLY: "Apply Preset to Map",
+    PRESET_WARNING_MODIFIED: "Map settings differ from preset.",
+    PROMPT_NEW_PRESET_NAME: "New preset name:",
+    NOTICE_PRESET_DELETED: "Preset deleted.",
+    NOTICE_PRESET_SAVED: "Preset saved.",
+    NOTICE_PRESET_APPLIED: "Preset applied.",
+
     // Misc
     INPUT_TITLE_PASTE_ROOT: "Mindmap Builder Paste",
     INSTRUCTIONS: "> [!Tip]\n" +
@@ -18173,6 +18404,19 @@ addLocale("zh", {
   CALENDAR_DATETYPE_DONE: "完成",
   CALENDAR_DATETYPE_CANCELLED: "取消",
 
+  // Presets
+  PRESET_LABEL: "预设",
+  PRESET_UNSAVED: "自定义 / 未关联",
+  PRESET_BTN_SAVE: "保存预设",
+  PRESET_BTN_DELETE: "删除预设",
+  PRESET_BTN_NEW: "新建预设",
+  PRESET_BTN_APPLY: "应用预设到导图",
+  PRESET_WARNING_MODIFIED: "导图设置与预设不符。",
+  PROMPT_NEW_PRESET_NAME: "新预设名称：",
+  NOTICE_PRESET_DELETED: "预设已删除。",
+  NOTICE_PRESET_SAVED: "预设已保存。",
+  NOTICE_PRESET_APPLIED: "预设已应用。",
+
   // Misc
   INPUT_TITLE_PASTE_ROOT: "MindMap Builder 粘贴",
   INSTRUCTIONS: "> [!Tip]\n" +
@@ -18441,6 +18685,19 @@ addLocale("zh-tw", {
   CALENDAR_DATETYPE_DONE: "完成",
   CALENDAR_DATETYPE_CANCELLED: "取消",
 
+  // Presets
+  PRESET_LABEL: "預設",
+  PRESET_UNSAVED: "自定義 / 未關聯",
+  PRESET_BTN_SAVE: "儲存預設",
+  PRESET_BTN_DELETE: "刪除預設",
+  PRESET_BTN_NEW: "新建預設",
+  PRESET_BTN_APPLY: "應用預設到導圖",
+  PRESET_WARNING_MODIFIED: "導圖設定與預設不符。",
+  PROMPT_NEW_PRESET_NAME: "新預設名稱：",
+  NOTICE_PRESET_DELETED: "預設已刪除。",
+  NOTICE_PRESET_SAVED: "預設已儲存。",
+  NOTICE_PRESET_APPLIED: "預設已應用。",
+
   // Misc
   INPUT_TITLE_PASTE_ROOT: "MindMap Builder 貼上",
   INSTRUCTIONS: "> [!Tip]\n" +
@@ -18503,11 +18760,11 @@ const getZoom = (level) => {
 const fontScale = (type) => {
   switch (type) {
     case "Use scene fontsize":
-      return Array(4).fill(getAppState().currentItemFontSize);
+      return Array(5).fill(getAppState().currentItemFontSize);
     case "Fibonacci Scale":
-      return [68, 42, 26, 16];
+      return [68, 42, 26, 16, 10];
     default: // "Normal Scale"
-      return [36, 28, 20, 16];
+      return [36, 28, 20, 16, 12];
   }
 };
 
@@ -18521,9 +18778,13 @@ const saveSettings = async () => {
 }
 const setVal = (key, value, hidden = false) => {
   const def = ea.getScriptSettingValue(key, {value, hidden});
+  const isChanging = def.value !== value || def.hidden !== hidden;
   def.value = value;
   if (hidden) def.hidden = true;
   ea.setScriptSettingValue(key, def);
+  if (isChanging) {
+    dirty = true;
+  }
 }
 
 const K_WIDTH = "Max Text Width";
@@ -18546,9 +18807,11 @@ const K_ARROW_TYPE = "Arrow Type";
 const K_FILL_SWEEP = "Fill Sweep";
 const K_INJECT_LINK = "Inject Node Link";
 const K_LINK_ALIAS = "Node Link Alias";
+const K_PRESETS = "Map Presets";
+const K_ACTIVE_PRESET = "Active Preset";
 
 let injectNodeLink = getVal(K_INJECT_LINK, true);
-let nodeLinkAlias = getVal(K_LINK_ALIAS, "(link)");
+let nodeLinkAlias = getVal(K_LINK_ALIAS, "(…)");
 
 const isExcaliBrainView = () => {
   if (!ea.targetView || !ea.targetView.file) return false;
@@ -18824,7 +19087,6 @@ Object.keys(LAYOUT_METADATA).forEach(k => {
 
 if (layoutSettingsDirty) {
   setVal(K_LAYOUT, layoutSettings, true);
-  dirty = true;
 }
 
 // ---------------------------------------------------------------------------
@@ -18936,6 +19198,207 @@ let baseStrokeWidth = parseFloat(getVal(K_BASE_WIDTH, {
   value: 6
 }));
 if (isNaN(baseStrokeWidth)) baseStrokeWidth = 6;
+
+
+// ---------------------------------------------------------------------------
+// Map Presets State & Helpers
+// ---------------------------------------------------------------------------
+
+const LAYOUT_DEFAULTS = {};
+Object.keys(LAYOUT_METADATA).forEach(k => LAYOUT_DEFAULTS[k] = LAYOUT_METADATA[k].def);
+
+const extractConfigFromGlobals = () => ({
+  growthMode: currentModalGrowthMode,
+  arrowType,
+  fontsizeScale,
+  multicolor,
+  boxChildren,
+  roundedCorners,
+  maxWrapWidth: maxWidth,
+  isSolidArrow,
+  centerText,
+  fillSweep,
+  branchScale,
+  baseStrokeWidth,
+  customPalette: JSON.parse(JSON.stringify(customPalette)),
+  layoutSettings: JSON.parse(JSON.stringify(layoutSettings))
+});
+
+let mapPresets = getVal(K_PRESETS, {
+  value: {
+    "Default": extractConfigFromGlobals()
+  },
+  hidden: true
+});
+
+// Safeguard against corrupted or undefined settings
+if (!mapPresets || typeof mapPresets !== "object") {
+  mapPresets = {};
+}
+
+let activePresetName = getVal(K_ACTIVE_PRESET, "Default");
+
+// Make sure Default is always available
+if (!mapPresets["Default"]) {
+  mapPresets["Default"] = extractConfigFromGlobals();
+  setVal(K_PRESETS, mapPresets, true);
+}
+
+/**
+ * Normalizes a map configuration object, supplying standard defaults for any missing properties.
+ * Ensures that legacy presets or maps lacking newer schema keys are safely comparable.
+ * 
+ * @param {Object} c - The configuration object to normalize.
+ * @returns {Object} A fully populated configuration object.
+ */
+const normalizeMapConfig = (c) => {
+  if (!c) {
+    return {};
+  }
+  return {
+    growthMode: c.growthMode ?? "Right-Left",
+    arrowType: c.arrowType ?? "curved",
+    fontsizeScale: c.fontsizeScale ?? "Normal Scale",
+    multicolor: c.multicolor ?? true,
+    boxChildren: c.boxChildren ?? false,
+    roundedCorners: c.roundedCorners ?? false,
+    maxWrapWidth: c.maxWrapWidth ?? 450,
+    isSolidArrow: c.isSolidArrow ?? true,
+    centerText: c.centerText ?? true,
+    fillSweep: c.fillSweep ?? false,
+    branchScale: c.branchScale ?? "Hierarchical",
+    baseStrokeWidth: c.baseStrokeWidth ?? 6,
+    customPalette: c.customPalette ?? { enabled: false, random: false, colors: [] },
+    layoutSettings: { ...LAYOUT_DEFAULTS, ...(c.layoutSettings || {}) }
+  };
+};
+
+/**
+ * Compares two map configuration objects to determine if their visual settings differ.
+ * Accounts for missing legacy properties and floating point inaccuracies in layout metadata.
+ * 
+ * @param {Object} c1 - The first configuration object (usually the preset).
+ * @param {Object} c2 - The second configuration object (usually the map's current state).
+ * @returns {boolean} True if the configurations differ, false otherwise.
+ */
+const diffMapConfig = (c1, c2) => {
+  if (!c1 || !c2) {
+    return true;
+  }
+  
+  const n1 = normalizeMapConfig(c1);
+  const n2 = normalizeMapConfig(c2);
+  
+  const keys = [
+    "growthMode", "arrowType", "fontsizeScale", "multicolor", 
+    "boxChildren", "roundedCorners", "maxWrapWidth", "isSolidArrow", 
+    "centerText", "fillSweep", "branchScale", "baseStrokeWidth"
+  ];
+  
+  for (let k of keys) {
+    if (n1[k] !== n2[k]) {
+      return true;
+    }
+  }
+  
+  if (JSON.stringify(n1.customPalette) !== JSON.stringify(n2.customPalette)) {
+    return true;
+  }
+  
+  for (let k of Object.keys(LAYOUT_DEFAULTS)) {
+    const v1 = n1.layoutSettings[k];
+    const v2 = n2.layoutSettings[k];
+    if (typeof v1 === "number" && typeof v2 === "number") {
+      if (Math.abs(v1 - v2) > 0.0001) {
+        return true;
+      }
+    } else if (v1 !== v2) {
+      return true;
+    }
+  }
+  
+  return false;
+};
+
+/**
+ * Applies the specified preset's configuration to the active global variables.
+ * 
+ * @param {string} presetName - The name of the preset to apply.
+ */
+const applyPresetToGlobals = (presetName) => {
+  const p = mapPresets[presetName];
+  if (!p) {
+    return;
+  }
+  
+  const n = normalizeMapConfig(p);
+  
+  currentModalGrowthMode = n.growthMode;
+  arrowType = n.arrowType;
+  fontsizeScale = n.fontsizeScale;
+  multicolor = n.multicolor;
+  boxChildren = n.boxChildren;
+  roundedCorners = n.roundedCorners;
+  maxWidth = n.maxWrapWidth;
+  isSolidArrow = n.isSolidArrow;
+  centerText = n.centerText;
+  fillSweep = n.fillSweep;
+  branchScale = n.branchScale;
+  baseStrokeWidth = n.baseStrokeWidth;
+  customPalette = JSON.parse(JSON.stringify(n.customPalette));
+  layoutSettings = JSON.parse(JSON.stringify(n.layoutSettings));
+  
+  setVal(K_GROWTH, currentModalGrowthMode);
+  setVal(K_ARROW_TYPE, arrowType);
+  setVal(K_FONTSIZE, fontsizeScale);
+  setVal(K_MULTICOLOR, multicolor);
+  setVal(K_BOX, boxChildren);
+  setVal(K_ROUND, roundedCorners);
+  setVal(K_WIDTH, maxWidth);
+  setVal(K_ARROWSTROKE, isSolidArrow);
+  setVal(K_CENTERTEXT, centerText);
+  setVal(K_FILL_SWEEP, fillSweep);
+  setVal(K_BRANCH_SCALE, branchScale);
+  setVal(K_BASE_WIDTH, baseStrokeWidth);
+  setVal(K_PALETTE, customPalette, true);
+  setVal(K_LAYOUT, layoutSettings, true);
+};
+
+const applyPresetToMap = async (presetName, sel) => {
+  applyPresetToGlobals(presetName);
+  await updateRootNodeCustomData({ 
+    presetName,
+    growthMode: currentModalGrowthMode,
+    arrowType,
+    fontsizeScale,
+    multicolor,
+    boxChildren,
+    roundedCorners,
+    maxWrapWidth: maxWidth,
+    isSolidArrow,
+    centerText,
+    fillSweep,
+    branchScale,
+    baseStrokeWidth,
+    layoutSettings: JSON.parse(JSON.stringify(layoutSettings))
+  }, sel);
+  
+  await refreshMapLayout(sel);
+  updateUI();
+};
+
+/**
+ * Refreshes the dropdown list of available map presets.
+ * Exclusively populates valid preset names without an ambiguous empty state.
+ */
+const refreshPresetDropdown = () => {
+  if (!presetDropdown) {
+    return;
+  }
+  presetDropdown.selectEl.innerHTML = "";
+  Object.keys(mapPresets).forEach(k => presetDropdown.addOption(k, k));
+  presetDropdown.setValue(activePresetName);
+};
 
 /**
  * Pure calculation logic for stroke width.
@@ -23001,9 +23464,10 @@ const addImage = async ({
  */
 const initializeRootCustomData = (nodeId) => {
   ea.addAppendUpdateCustomData(nodeId, {
+    presetName: activePresetName,
     growthMode: currentModalGrowthMode,
     autoLayoutDisabled: false,
-    arrowType: arrowType, // Save the arrow type on new root
+    arrowType: arrowType, 
     fontsizeScale,
     multicolor,
     boxChildren,
@@ -24970,6 +25434,9 @@ const toggleSubmapRoot = async () => {
     MAP_ROOT_CUSTOMDATA_KEYS.forEach((key) => {
       clearData[key] = undefined;
     });
+
+    clearData.presetName = undefined;
+    
     ea.addAppendUpdateCustomData(sel.id, clearData);
   } else {
     const sourceRoot = getSettingsRootNode(parent, allElements) || parent;
@@ -24978,6 +25445,7 @@ const toggleSubmapRoot = async () => {
 
     ea.addAppendUpdateCustomData(sel.id, {
       isAdditionalRoot: true,
+      presetName: sourceRoot.customData?.presetName || activePresetName,
       growthMode: inferredMode,
       autoLayoutDisabled: sourceCfg.autoLayoutDisabled,
       arrowType: sourceCfg.arrowType,
@@ -26257,6 +26725,7 @@ let floatingInputModal = null;
 let sidepanelWindow;
 let recordingScope = null;
 let disableTabEvents = false;
+let presetDropdown, presetWarningEl, presetSaveBtn, presetTrashBtn, presetPlusBtn, presetApplyBtn;
 // ---------------------------------------------------------------------------
 // Focus Management & UI State
 // ---------------------------------------------------------------------------
@@ -26370,19 +26839,43 @@ const disableUI = () => {
   if (editBtn) editBtn.extraSettingsEl.style.color = "";
 };
 
+/**
+ * Synchronizes the sidepanel UI elements with the state of the currently selected map node,
+ * or the active global variables if no node is selected.
+ * 
+ * Unconditionally sets the values on the Obsidian UI components to ensure that preset 
+ * applications and external script changes are immediately and accurately reflected in the panel.
+ * 
+ * @param {ExcalidrawElement} [sel] - The currently selected node element. If omitted, attempts to find the active mindmap node from the current canvas selection.
+ */
 const updateUI = (sel) => {
   if (!isViewSet()) {
-    if (inputEl) inputEl.disabled = true;
-    if (ontologyEl) ontologyEl.style.display = "none";
+    if (inputEl) {
+      inputEl.disabled = true;
+    }
+    if (ontologyEl) {
+      ontologyEl.style.display = "none";
+    }
     disableUI();
     return;
   }
-  if (inputEl) inputEl.disabled = false;
+  
+  if (inputEl) {
+    inputEl.disabled = false;
+  }
+  
   const all = ea.getViewElements();
   sel = sel ?? getMindmapNodeFromSelection();
-  if (ontologyEl) ontologyEl.style.display = sel ? "" : "none";
+  
+  if (ontologyEl) {
+    ontologyEl.style.display = sel ? "" : "none";
+  }
 
-  if (sel) {
+  let cd = {};
+  const isMapSelected = !!sel;
+  
+  // Track structural hierarchies and map logic if a node is selected
+  if (isMapSelected) {
     disableTabEvents = true;
 
     const info = getHierarchy(sel, all);
@@ -26399,6 +26892,9 @@ const updateUI = (sel) => {
     const nodeText = getTextFromNode(all, sel, true, false);
     const isLinkedFile = !!getNodeMarkdownFile(nodeText);
 
+    cd = root?.customData ?? {};
+
+    // --- Node-Specific UI Controls ---
     if (toggleCheckboxBtn) {
       const isTextNode = sel.type === "text" || (sel.boundElements && sel.boundElements.some(be => be.type === "text"));
       const canEditTask = (isTextNode && !isMasterRootSelected) || (inputEl && inputEl.value.trim() !== "");
@@ -26413,24 +26909,21 @@ const updateUI = (sel) => {
 
     if (toggleEmbedBtn) {
       const visualNode = sel.containerId ? all.find(el => el.id === sel.containerId) : sel;
-      const nodeText = getTextFromNode(all, visualNode, true, true).trim();
+      const nodeTextForEmbed = getTextFromNode(all, visualNode, true, true).trim();
       // Regex matches only exact format: [[NoteName#SectionName]] or ![[NoteName#SectionName]] with optional alias
       const linkRegex = /^!?\[\[([^\]]+?#[^\]|]+)(?:\|[^\]]*)?\]\]$/;
-      setButtonDisabled(toggleEmbedBtn, !linkRegex.test(nodeText));
+      setButtonDisabled(toggleEmbedBtn, !linkRegex.test(nodeTextForEmbed));
     }
 
     if (pinBtn) {
       pinBtn.setIcon(isPinned ? "pin" : "pin-off");
-      pinBtn.setTooltip(
-        `${isPinned ? t("PIN_TOOLTIP_PINNED") : t("PIN_TOOLTIP_UNPINNED")} ${getActionHotkeyString(ACTION_PIN)}`,
-      );
+      pinBtn.setTooltip(`${isPinned ? t("PIN_TOOLTIP_PINNED") : t("PIN_TOOLTIP_UNPINNED")} ${getActionHotkeyString(ACTION_PIN)}`);
       setButtonDisabled(pinBtn, false);
     }
 
     if (submapRootBtn) {
       submapRootBtn.setIcon(isAdditionalRoot ? "map-pin-minus-inside" : "map-pin-plus-inside");
-      const submapTooltip = isAdditionalRoot ? t("TOOLTIP_SUBMAP_ROOT_REMOVE") : t("TOOLTIP_SUBMAP_ROOT_ADD");
-      submapRootBtn.setTooltip(`${submapTooltip} ${getActionHotkeyString(ACTION_TOGGLE_SUBMAP_ROOT)}`);
+      submapRootBtn.setTooltip(`${isAdditionalRoot ? t("TOOLTIP_SUBMAP_ROOT_REMOVE") : t("TOOLTIP_SUBMAP_ROOT_ADD")} ${getActionHotkeyString(ACTION_TOGGLE_SUBMAP_ROOT)}`);
       setButtonDisabled(submapRootBtn, isMasterRoot);
     }
 
@@ -26445,11 +26938,12 @@ const updateUI = (sel) => {
     }
 
     const updateGroupBtn = (btn) => {
-      if (!btn) return;
+      if (!btn) {
+        return;
+      }
       const isGrouped = branchIds.length > 1 && !!getCommonGroupForElements(all.filter(el => branchIds.includes(el.id)))[0];
       btn.setIcon(isGrouped ? "ungroup" : "group");
-      const groupTooltip = isGrouped ? t("TOGGLE_GROUP_TOOLTIP_UNGROUP") : t("TOGGLE_GROUP_TOOLTIP_GROUP");
-      btn.setTooltip(`${groupTooltip} ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
+      btn.setTooltip(`${isGrouped ? t("TOGGLE_GROUP_TOOLTIP_UNGROUP") : t("TOGGLE_GROUP_TOOLTIP_GROUP")} ${getActionHotkeyString(ACTION_TOGGLE_GROUP)}`);
       setButtonDisabled(btn, groupBranches || branchIds.length <= 1);
     }
     updateGroupBtn(toggleGroupBtn);
@@ -26463,146 +26957,203 @@ const updateUI = (sel) => {
     setButtonDisabled(zoomBtn, false);
     setButtonDisabled(focusBtn, false);
     setButtonDisabled(floatingZoomBtn, false);
+    
     if (boundaryBtn) {
       boundaryBtn.setIcon(sel.customData?.boundaryId ? "cloud-off" : "cloud");
     }
+    
     setButtonDisabled(boundaryBtn, isMasterRootSelected);
     setButtonDisabled(cutBtn, isMasterRootSelected);
     setButtonDisabled(copyBtn, false);
     setButtonDisabled(importOutlineBtn, !isLinkedFile);
-    setButtonDisabled(autoLayoutToggle, false);
-
-    const cd = root?.customData ?? {};
-
-    const mapStrategy = cd?.growthMode;
-    if (typeof mapStrategy === "string" && mapStrategy !== currentModalGrowthMode && GROWTH_TYPES.includes(mapStrategy)) {
-      currentModalGrowthMode = mapStrategy;
-      if (strategyDropdown) strategyDropdown.setValue(mapStrategy);
-    }
-
-    const mapLayoutPref = cd?.autoLayoutDisabled === true;
-    if (mapLayoutPref !== autoLayoutDisabled) {
-      autoLayoutDisabled = mapLayoutPref;
-      if (autoLayoutToggle) autoLayoutToggle.setValue(!mapLayoutPref);
-    }
-
+    
     if (refreshBtn) {
-      setButtonDisabled(refreshBtn, autoLayoutDisabled);
+      setButtonDisabled(refreshBtn, cd.autoLayoutDisabled === true);
       refreshBtn.setTooltip(`${t("TOOLTIP_REFRESH")} ${getActionHotkeyString(ACTION_REARRANGE)}`);
     }
-
-    const mapArrowType = cd?.arrowType ?? getVal(K_ARROW_TYPE, "curved");
-    if (typeof mapArrowType === "string" && mapArrowType !== arrowType && ARROW_TYPES.includes(mapArrowType)) {
-      arrowType = mapArrowType;
-      if (arrowTypeToggle) arrowTypeToggle.setValue(arrowType === "curved");
+  } else {
+    disableUI();
+    if (mostRecentlySelectedNodeID) {
+      setButtonDisabled(zoomBtn, false);
+      setButtonDisabled(focusBtn, false);
+      setButtonDisabled(floatingZoomBtn, false);
     }
-
-    const mapFontScale = cd?.fontsizeScale ?? getVal(K_FONTSIZE, "Normal Scale");
-    if (mapFontScale !== fontsizeScale) {
-      fontsizeScale = mapFontScale;
-      if (fontSizeDropdown) fontSizeDropdown.setValue(fontsizeScale);
-    }
-
-    const mapMulticolor = typeof cd?.multicolor === "boolean" ? cd.multicolor : getVal(K_MULTICOLOR, true);
-    if (mapMulticolor !== multicolor) {
-      multicolor = mapMulticolor;
-      if (colorToggle) colorToggle.setValue(multicolor);
-    }
-
-    const mapBoxChildren = typeof cd?.boxChildren === "boolean" ? cd.boxChildren : getVal(K_BOX, false);
-    if (mapBoxChildren !== boxChildren) {
-      boxChildren = mapBoxChildren;
-      if (boxToggle) boxToggle.setValue(boxChildren);
-    }
-
-    const mapRounded = typeof cd?.roundedCorners === "boolean" ? cd.roundedCorners : getVal(K_ROUND, false);
-    if (mapRounded !== roundedCorners) {
-      roundedCorners = mapRounded;
-      if (roundToggle) roundToggle.setValue(roundedCorners);
-    }
-
-    let defaultWidth = parseInt(getVal(K_WIDTH, 450));
-    if (isNaN(defaultWidth)) defaultWidth = 450;
-
-    const mapWidth = typeof cd?.maxWrapWidth === "number" ? cd.maxWrapWidth : defaultWidth;
-
-    if (mapWidth !== maxWidth) {
-      maxWidth = mapWidth;
-      if (widthSlider) {
-        widthSlider.setValue(maxWidth);
-        if (widthSlider.valLabelEl) widthSlider.valLabelEl.setText(`${maxWidth}px`);
+    if (inputEl && inputEl.value.trim() !== "") {
+      if (toggleCheckboxBtn) {
+        setButtonDisabled(toggleCheckboxBtn, false);
+      }
+      if (calendarBtn) {
+        setButtonDisabled(calendarBtn, false);
       }
     }
+    // AutoLayoutToggle should be allowed to be configured for the NEXT map
+    setButtonDisabled(autoLayoutToggle, false);
+  }
 
-    const mapSolid = typeof cd?.isSolidArrow === "boolean" ? cd.isSolidArrow : getVal(K_ARROWSTROKE, true);
-    if (mapSolid !== isSolidArrow) {
-      isSolidArrow = mapSolid;
-      if (strokeToggle) strokeToggle.setValue(!isSolidArrow);
+  // --- Preset Detection & UI Warning Logic ---
+  const mapPresetName = cd?.presetName;
+  
+  if (isMapSelected) {
+    activePresetName = mapPresetName || "Default";
+    setVal(K_ACTIVE_PRESET, activePresetName);
+  } else {
+    activePresetName = getVal(K_ACTIVE_PRESET, "Default");
+  }
+  
+  if (presetDropdown) {
+    presetDropdown.setValue(activePresetName);
+  }
+  
+  let showWarning = false;
+  if (isMapSelected) {
+    const presetConfig = mapPresets[activePresetName];
+    const currentMapConfig = {
+      growthMode: cd?.growthMode ?? currentModalGrowthMode,
+      arrowType: cd?.arrowType ?? arrowType,
+      fontsizeScale: cd?.fontsizeScale ?? fontsizeScale,
+      multicolor: typeof cd?.multicolor === "boolean" ? cd.multicolor : multicolor,
+      boxChildren: typeof cd?.boxChildren === "boolean" ? cd.boxChildren : boxChildren,
+      roundedCorners: typeof cd?.roundedCorners === "boolean" ? cd.roundedCorners : roundedCorners,
+      maxWrapWidth: typeof cd?.maxWrapWidth === "number" ? cd.maxWrapWidth : maxWidth,
+      isSolidArrow: typeof cd?.isSolidArrow === "boolean" ? cd.isSolidArrow : isSolidArrow,
+      centerText: typeof cd?.centerText === "boolean" ? cd.centerText : centerText,
+      fillSweep: typeof cd?.fillSweep === "boolean" ? cd.fillSweep : fillSweep,
+      branchScale: cd?.branchScale ?? branchScale,
+      baseStrokeWidth: typeof cd?.baseStrokeWidth === "number" ? cd.baseStrokeWidth : baseStrokeWidth,
+      customPalette: cd?.customPalette ?? customPalette,
+      layoutSettings: cd?.layoutSettings ?? layoutSettings
+    };
+    showWarning = diffMapConfig(presetConfig, currentMapConfig);
+  }
+  
+  if (presetWarningEl) {
+    presetWarningEl.style.display = showWarning ? "block" : "none";
+  }
+  
+  if (presetApplyBtn) {
+    setButtonDisabled(presetApplyBtn, !isMapSelected);
+  }
+  
+  if (presetTrashBtn) {
+    setButtonDisabled(presetTrashBtn, activePresetName === "Default");
+  }
+  
+  if (presetSaveBtn) {
+    setButtonDisabled(presetSaveBtn, false);
+  }
+
+  // --- Sync Globals if Map Selected ---
+  // Using explicit fallback to getVal() if property is missing prevents state leakage 
+  // from previously selected maps onto legacy maps lacking these properties.
+  // The variables are committed to global storage to ensure continuity if user deselects to start a new map.
+  if (isMapSelected) {
+    currentModalGrowthMode = (typeof cd.growthMode === "string" && GROWTH_TYPES.includes(cd.growthMode)) ? cd.growthMode : getVal(K_GROWTH, "Right-Left");
+    setVal(K_GROWTH, currentModalGrowthMode);
+
+    autoLayoutDisabled = cd.autoLayoutDisabled === true;
+
+    arrowType = (typeof cd.arrowType === "string" && ARROW_TYPES.includes(cd.arrowType)) ? cd.arrowType : getVal(K_ARROW_TYPE, "curved");
+    setVal(K_ARROW_TYPE, arrowType);
+
+    fontsizeScale = cd.fontsizeScale ?? getVal(K_FONTSIZE, "Normal Scale");
+    setVal(K_FONTSIZE, fontsizeScale);
+
+    multicolor = typeof cd.multicolor === "boolean" ? cd.multicolor : getVal(K_MULTICOLOR, true);
+    setVal(K_MULTICOLOR, multicolor);
+
+    boxChildren = typeof cd.boxChildren === "boolean" ? cd.boxChildren : getVal(K_BOX, false);
+    setVal(K_BOX, boxChildren);
+
+    roundedCorners = typeof cd.roundedCorners === "boolean" ? cd.roundedCorners : getVal(K_ROUND, false);
+    setVal(K_ROUND, roundedCorners);
+
+    maxWidth = typeof cd.maxWrapWidth === "number" ? cd.maxWrapWidth : parseInt(getVal(K_WIDTH, 450)) || 450;
+    setVal(K_WIDTH, maxWidth);
+
+    isSolidArrow = typeof cd.isSolidArrow === "boolean" ? cd.isSolidArrow : getVal(K_ARROWSTROKE, true);
+    setVal(K_ARROWSTROKE, isSolidArrow);
+
+    centerText = typeof cd.centerText === "boolean" ? cd.centerText : getVal(K_CENTERTEXT, true);
+    setVal(K_CENTERTEXT, centerText);
+
+    fillSweep = typeof cd.fillSweep === "boolean" ? cd.fillSweep : getVal(K_FILL_SWEEP, false);
+    setVal(K_FILL_SWEEP, fillSweep);
+
+    branchScale = (cd.branchScale && BRANCH_SCALE_TYPES.includes(cd.branchScale)) ? cd.branchScale : getVal(K_BRANCH_SCALE, "Hierarchical");
+    setVal(K_BRANCH_SCALE, branchScale);
+
+    baseStrokeWidth = typeof cd.baseStrokeWidth === "number" ? cd.baseStrokeWidth : parseFloat(getVal(K_BASE_WIDTH, 6)) || 6;
+    setVal(K_BASE_WIDTH, baseStrokeWidth);
+    
+    if (cd.customPalette) {
+      customPalette = JSON.parse(JSON.stringify(cd.customPalette));
+    } else {
+      customPalette = getVal(K_PALETTE, { enabled: false, random: false, colors: [] });
     }
+    setVal(K_PALETTE, customPalette, true);
 
-    const mapBranchScale = (cd?.branchScale && BRANCH_SCALE_TYPES.includes(cd.branchScale)) ? cd.branchScale : getVal(K_BRANCH_SCALE, "Hierarchical");
-    if (mapBranchScale !== branchScale) {
-      branchScale = mapBranchScale;
-      if (branchScaleDropdown) branchScaleDropdown.setValue(branchScale);
-    }
-
-    let defaultBaseStroke = parseFloat(getVal(K_BASE_WIDTH, 6));
-    if (isNaN(defaultBaseStroke)) defaultBaseStroke = 6;
-
-    const mapBaseStroke = typeof cd?.baseStrokeWidth === "number" ? cd.baseStrokeWidth : defaultBaseStroke;
-
-    if (mapBaseStroke !== baseStrokeWidth) {
-      baseStrokeWidth = mapBaseStroke;
-      if (baseWidthSlider) {
-        baseWidthSlider.setValue(baseStrokeWidth);
-        if (baseWidthSlider.valLabelEl) baseWidthSlider.valLabelEl.setText(`${baseStrokeWidth}`);
-      }
-    }
-
-    const mapCenter = typeof cd?.centerText === "boolean" ? cd.centerText : getVal(K_CENTERTEXT, true);
-    if (mapCenter !== centerText) {
-      centerText = mapCenter;
-      if (centerToggle) centerToggle.setValue(centerText);
-    }
-
-    const mapFillSweep = typeof cd?.fillSweep === "boolean" ? cd.fillSweep : getVal(K_FILL_SWEEP, false);
-    if (mapFillSweep !== fillSweep) {
-      fillSweep = mapFillSweep;
-      if (fillSweepToggle) fillSweepToggle.setValue(fillSweep);
-    }
-
-    const mapLayoutSettings = cd?.layoutSettings;
-    if (mapLayoutSettings && typeof mapLayoutSettings === "object") {
-      layoutSettings = {
-        ...layoutSettings,
-        ...mapLayoutSettings
-      };
+    if (cd.layoutSettings && typeof cd.layoutSettings === "object") {
+      layoutSettings = { ...layoutSettings, ...cd.layoutSettings };
     } else {
       const globalDefaults = getVal(K_LAYOUT, {});
       Object.keys(LAYOUT_METADATA).forEach(k => {
         layoutSettings[k] = globalDefaults[k] !== undefined ? globalDefaults[k] : LAYOUT_METADATA[k].def;
       });
     }
+    setVal(K_LAYOUT, layoutSettings, true);
+  }
 
-    if (fillSweepToggleSetting && fillSweepToggleSetting.settingEl) {
-      const mode = cd?.growthMode || currentModalGrowthMode;
-      fillSweepToggleSetting.settingEl.style.display = mode === "Radial" ? "" : "none";
-    }
-    disableTabEvents = false;
-  } else {
-    disableUI();
-    // Re-enable navigation buttons if we have a history node
-    if (mostRecentlySelectedNodeID) {
-      setButtonDisabled(zoomBtn, false);
-      setButtonDisabled(focusBtn, false);
-      setButtonDisabled(floatingZoomBtn, false);
-    }
-    // Enable task buttons if there's text input
-    if (inputEl && inputEl.value.trim() !== "") {
-      if (toggleCheckboxBtn) setButtonDisabled(toggleCheckboxBtn, false);
-      if (calendarBtn) setButtonDisabled(calendarBtn, false);
+  // --- Unconditionally Sync Visual UI Components to Current Globals ---
+  if (strategyDropdown) {
+    strategyDropdown.setValue(currentModalGrowthMode);
+  }
+  if (autoLayoutToggle) {
+    autoLayoutToggle.setValue(!autoLayoutDisabled);
+  }
+  if (arrowTypeToggle) {
+    arrowTypeToggle.setValue(arrowType === "curved");
+  }
+  if (fontSizeDropdown) {
+    fontSizeDropdown.setValue(fontsizeScale);
+  }
+  if (colorToggle) {
+    colorToggle.setValue(multicolor);
+  }
+  if (boxToggle) {
+    boxToggle.setValue(boxChildren);
+  }
+  if (roundToggle) {
+    roundToggle.setValue(roundedCorners);
+  }
+  if (widthSlider) {
+    widthSlider.setValue(maxWidth);
+    if (widthSlider.valLabelEl) {
+      widthSlider.valLabelEl.setText(`${maxWidth}px`);
     }
   }
+  if (strokeToggle) {
+    strokeToggle.setValue(!isSolidArrow);
+  }
+  if (centerToggle) {
+    centerToggle.setValue(centerText);
+  }
+  if (fillSweepToggle) {
+    fillSweepToggle.setValue(fillSweep);
+  }
+  if (branchScaleDropdown) {
+    branchScaleDropdown.setValue(branchScale);
+  }
+  if (baseWidthSlider) {
+    baseWidthSlider.setValue(baseStrokeWidth);
+    if (baseWidthSlider.valLabelEl) {
+      baseWidthSlider.valLabelEl.setText(`${baseStrokeWidth}`);
+    }
+  }
+  if (fillSweepToggleSetting && fillSweepToggleSetting.settingEl) {
+    fillSweepToggleSetting.settingEl.style.display = currentModalGrowthMode === "Radial" ? "" : "none";
+  }
+
+  disableTabEvents = false;
 };
 
 const startEditing = () => {
@@ -27798,11 +28349,104 @@ const renderInput = (container, isFloating = false) => {
   updateUI();
 };
 
+/**
+ * Renders the main settings body and UI actions for the sidepanel.
+ * Includes the preset dropdown block for saving, deleting, applying, and creating named configurations.
+ * 
+ * @param {HTMLElement} contentEl - The parent DOM element to render into.
+ */
 const renderBody = (contentEl) => {
   bodyContainer = contentEl.createDiv();
   bodyContainer.style.width = "100%";
 
   bodyContainer.createEl("hr");
+
+  // --- Map Preset Manager UI ---
+  const presetSetting = new ea.obsidian.Setting(bodyContainer)
+    .setName(t("PRESET_LABEL"))
+    .addDropdown(d => {
+      presetDropdown = d;
+      refreshPresetDropdown();
+      d.onChange(async (v) => {
+        activePresetName = v;
+        setVal(K_ACTIVE_PRESET, v);
+        const sel = getMindmapNodeFromSelection();
+        if (sel) {
+          await applyPresetToMap(v, sel);
+          new Notice(t("NOTICE_PRESET_APPLIED"));
+        } else {
+          applyPresetToGlobals(v);
+          updateUI();
+        }
+      });
+    });
+
+  presetSetting.addExtraButton(btn => {
+    presetSaveBtn = btn;
+    btn.setIcon("save").setTooltip(t("PRESET_BTN_SAVE")).onClick(async () => {
+      if (!activePresetName) return;
+      mapPresets[activePresetName] = extractConfigFromGlobals();
+      setVal(K_PRESETS, mapPresets, true);
+      new Notice(t("NOTICE_PRESET_SAVED"));
+      updateUI(); 
+    });
+  });
+
+  presetSetting.addExtraButton(btn => {
+    presetTrashBtn = btn;
+    btn.setIcon("trash-2").setTooltip(t("PRESET_BTN_DELETE")).onClick(async () => {
+      if (!activePresetName || activePresetName === "Default") return;
+      delete mapPresets[activePresetName];
+      activePresetName = "Default";
+      setVal(K_PRESETS, mapPresets, true);
+      setVal(K_ACTIVE_PRESET, activePresetName);
+      new Notice(t("NOTICE_PRESET_DELETED"));
+      refreshPresetDropdown();
+      updateUI();
+    });
+  });
+
+  presetSetting.addExtraButton(btn => {
+    presetPlusBtn = btn;
+    btn.setIcon("plus").setTooltip(t("PRESET_BTN_NEW")).onClick(async () => {
+      const name = await utils.inputPrompt(t("PROMPT_NEW_PRESET_NAME"));
+      if (name && name.trim()) {
+        const trimmed = name.trim();
+        mapPresets[trimmed] = extractConfigFromGlobals();
+        activePresetName = trimmed;
+        setVal(K_PRESETS, mapPresets, true);
+        setVal(K_ACTIVE_PRESET, activePresetName);
+        refreshPresetDropdown();
+        
+        const sel = getMindmapNodeFromSelection();
+        if (sel) {
+          await updateRootNodeCustomData({ presetName: activePresetName }, sel);
+        }
+        new Notice(t("NOTICE_PRESET_SAVED"));
+        updateUI();
+      }
+    });
+  });
+
+  presetSetting.addExtraButton(btn => {
+    presetApplyBtn = btn;
+    btn.setIcon("refresh-cw").setTooltip(t("PRESET_BTN_APPLY")).onClick(async () => {
+      const sel = getMindmapNodeFromSelection();
+      if (sel && activePresetName) {
+        await applyPresetToMap(activePresetName, sel);
+        new Notice(t("NOTICE_PRESET_APPLIED"));
+      }
+    });
+  });
+
+  presetWarningEl = bodyContainer.createEl("div", {
+    text: t("PRESET_WARNING_MODIFIED"),
+    cls: "mod-warning",
+    attr: { style: "font-size: 0.85em; margin-top: -10px; margin-bottom: 10px; display: none; text-align: right;" }
+  });
+
+  bodyContainer.createEl("hr");
+  // --- End Map Preset Manager UI ---
 
   const zoomSetting = new ea.obsidian.Setting(bodyContainer);
   zoomSetting.setName(t("LABEL_ZOOM_LEVEL")).addDropdown((d) => {
@@ -27813,7 +28457,6 @@ const renderBody = (contentEl) => {
       if (disableTabEvents) return;
 
       setVal(K_ZOOM, v);
-      dirty = true;
       zoomToFit();
     });
   });
@@ -27833,7 +28476,6 @@ const renderBody = (contentEl) => {
       if (disableTabEvents) return;
 
       setVal(K_GROWTH, v);
-      dirty = true;
       if (fillSweepToggleSetting) {
         fillSweepToggleSetting.settingEl.style.display = v === "Radial" ? "" : "none";
       }
@@ -27858,7 +28500,6 @@ const renderBody = (contentEl) => {
           if (disableTabEvents) return;
 
           setVal(K_FILL_SWEEP, v);
-          dirty = true;
           if (!isViewSet()) return;
           const sel = getMindmapNodeFromSelection();
           if (!sel) return;
@@ -27895,7 +28536,6 @@ const renderBody = (contentEl) => {
         const modal = new LayoutConfigModal(app, layoutSettings, async (newSettings) => {
           layoutSettings = newSettings;
           setVal(K_LAYOUT, layoutSettings, true);
-          dirty = true;
           const sel = getMindmapNodeFromSelection();
           if (!sel) return;
           await updateRootNodeCustomData({
@@ -27919,7 +28559,6 @@ const renderBody = (contentEl) => {
         groupBranches = v;
         if (disableTabEvents) return;
         setVal(K_GROUP, v);
-        dirty = true;
         await refreshMapLayout();
         updateUI();
       }))
@@ -27941,7 +28580,6 @@ const renderBody = (contentEl) => {
           boxChildren = v;
           if (disableTabEvents) return;
           setVal(K_BOX, v);
-          dirty = true;
           await updateRootNodeCustomData({
             boxChildren: v
           });
@@ -27961,7 +28599,6 @@ const renderBody = (contentEl) => {
         roundedCorners = v;
         if (disableTabEvents) return;
         setVal(K_ROUND, v);
-        dirty = true;
         await updateRootNodeCustomData({
           roundedCorners: v
         });
@@ -27980,7 +28617,6 @@ const renderBody = (contentEl) => {
           if (disableTabEvents) return;
 
           setVal(K_ARROW_TYPE, arrowType);
-          dirty = true;
           if (!isViewSet()) return;
           const sel = getMindmapNodeFromSelection();
           if (!sel) return;
@@ -28003,7 +28639,6 @@ const renderBody = (contentEl) => {
         if (disableTabEvents) return;
 
         setVal(K_ARROWSTROKE, !v);
-        dirty = true;
         await updateRootNodeCustomData({
           isSolidArrow: !v
         });
@@ -28022,7 +28657,6 @@ const renderBody = (contentEl) => {
         if (disableTabEvents) return;
 
         setVal(K_BRANCH_SCALE, v);
-        dirty = true;
         const info = await updateRootNodeCustomData({
           branchScale: v
         });
@@ -28050,7 +28684,6 @@ const renderBody = (contentEl) => {
           if (disableTabEvents) return;
 
           setVal(K_BASE_WIDTH, v);
-          dirty = true;
           baseWidthUpdateTimer = setTimeout(async () => {
             const info = await updateRootNodeCustomData({
               baseStrokeWidth: v
@@ -28081,7 +28714,6 @@ const renderBody = (contentEl) => {
           if (disableTabEvents) return;
 
           setVal(K_MULTICOLOR, v);
-          dirty = true;
           await updateRootNodeCustomData({
             multicolor: v
           });
@@ -28094,7 +28726,6 @@ const renderBody = (contentEl) => {
         const modal = new PaletteManagerModal(app, customPalette, (newSettings) => {
           customPalette = newSettings;
           setVal(K_PALETTE, customPalette, true);
-          dirty = true;
         });
         modal.open();
       })
@@ -28113,7 +28744,6 @@ const renderBody = (contentEl) => {
         if (disableTabEvents) return;
 
         setVal(K_WIDTH, v);
-        dirty = true;
         await updateRootNodeCustomData({
           maxWrapWidth: v
         });
@@ -28139,7 +28769,6 @@ const renderBody = (contentEl) => {
           if (disableTabEvents) return;
 
           setVal(K_CENTERTEXT, v);
-          dirty = true;
           await updateRootNodeCustomData({
             centerText: v
           });
@@ -28155,7 +28784,6 @@ const renderBody = (contentEl) => {
       if (disableTabEvents) return;
 
       setVal(K_FONTSIZE, v);
-      dirty = true;
       await updateRootNodeCustomData({
         fontsizeScale: v
       });
@@ -28209,7 +28837,6 @@ const renderBody = (contentEl) => {
     });
 
     setVal(K_HOTKEYS, hotkeysToSave, true);
-    dirty = true;
     refreshHotkeys();
   };
 
@@ -28493,8 +29120,6 @@ const registerStyles = () => {
     ".excalidraw-mindmap-ui [tabindex]:focus-visible {",
     "  outline: 2px solid var(--interactive-accent) !important;",
     "  outline-offset: 2px;",
-    "  background-color: var(--interactive-accent);",
-    "  color: var(--background-primary);",
     "}",
     ...ea.DEVICE.isDesktop ?
     [".excalidraw-mindmap-ui hr {margin: 5px;}"] :
@@ -28607,7 +29232,6 @@ const toggleDock = async ({
   isUndocked = !isUndocked;
   if (saveSetting) {
     setVal(K_UNDOCKED, isUndocked);
-    dirty = true;
   }
 
   // Update keyboard event routing
@@ -29269,7 +29893,6 @@ const openCalendarModal = async () => {
             .onChange(val => {
               injectNodeLink = val;
               setVal(K_INJECT_LINK, val);
-              dirty = true;
               aliasTextComp.inputEl.style.display = val ? "" : "none";
             });
     });
@@ -29280,7 +29903,6 @@ const openCalendarModal = async () => {
           .onChange(val => {
             nodeLinkAlias = val || "link";
             setVal(K_LINK_ALIAS, nodeLinkAlias);
-            dirty = true;
           });
       text.inputEl.style.display = injectNodeLink ? "" : "none";
       text.inputEl.style.width = "100px";
@@ -29386,7 +30008,7 @@ const openCalendarModal = async () => {
     }
     
     let finalPrefix = match ? `- [${match[1]}] ` : "- [ ] ";
-    let newText = `${finalPrefix}${cleanText}${tasksString}`;
+    let newText = `${finalPrefix}${cleanText}`;
 
     if (injectNodeLink) {
       if (isInputEl) {
@@ -29397,6 +30019,7 @@ const openCalendarModal = async () => {
         newText += ` ([[${fileName}#^group=${textElId}|${nodeLinkAlias}]])`;
       }
     }
+    newText += tasksString;
 
     if (isInputEl) {
       inputEl.value = newText;
@@ -30842,7 +31465,6 @@ const performAction = async (action, event) => {
         }
 
         if (requiresSave) {
-          dirty = true;
           await saveSettings();
           updateUI(); // Reflect changes in the sidepanel
         }

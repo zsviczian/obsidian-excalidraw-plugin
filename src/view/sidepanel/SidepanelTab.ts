@@ -243,6 +243,13 @@ export class ExcalidrawSidepanelTab
     return this.host.isVisible();
   }
 
+  /**
+   * Returns whether the tab is the currently active tab in the sidepanel
+   */
+  public isActiveTab(): boolean {
+    return this.isActive;
+  }
+
   public reveal(): void {
     if (!this.isActive) {
       this.open();

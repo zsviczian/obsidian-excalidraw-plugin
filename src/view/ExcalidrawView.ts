@@ -504,6 +504,8 @@ export default class ExcalidrawView
     reactDOM: null,
     excalidrawLib: null,
   };
+  private lastAppState: AppState | null = null;
+  private lastElementsVersion: number = -1;
 
   constructor(leaf: WorkspaceLeaf, plugin: ExcalidrawPlugin) {
     super(leaf);
@@ -4266,6 +4268,115 @@ export default class ExcalidrawView
     return t("NOFILE");
   }
 
+  private triggerSceneChangeHooks(
+    et: readonly ExcalidrawElement[],
+    st: AppState,
+    files: BinaryFiles,
+  ) {
+    if (this.semaphores.viewunload) return;
+
+    const hookServer = this.getHookServer();
+    const sidepanel = ExcalidrawSidepanelView.getExisting(false);
+
+    const currentVersion = this.getSceneVersion(et);
+
+    if (
+      !hookServer?.onSceneChangeHook &&
+      !(sidepanel && sidepanel.hasEATargetingView(this))
+    ) {
+      this.lastAppState = st;
+      this.lastElementsVersion = currentVersion;
+      return;
+    }
+
+    const last = this.lastAppState;
+    const elementsChanged = currentVersion !== this.lastElementsVersion;
+
+    this.lastAppState = st;
+    this.lastElementsVersion = currentVersion;
+
+    if (!last && !elementsChanged) return;
+
+    if (hookServer && hookServer.onSceneChangeHook) {
+      this.evaluateSceneChangeHook(
+        hookServer,
+        et,
+        st,
+        last,
+        files,
+        elementsChanged,
+      );
+    }
+
+    if (sidepanel) {
+      sidepanel.forEachEATargetingView(this, (ea) => {
+        if (ea.onSceneChangeHook) {
+          this.evaluateSceneChangeHook(
+            ea,
+            et,
+            st,
+            last,
+            files,
+            elementsChanged,
+          );
+        }
+      });
+    }
+  }
+
+  private evaluateSceneChangeHook(
+    ea: ExcalidrawAutomate,
+    et: readonly ExcalidrawElement[],
+    st: AppState,
+    last: AppState | null,
+    files: BinaryFiles,
+    elementsChanged: boolean,
+  ) {
+    const hook = ea.onSceneChangeHook;
+
+    // Strictly enforce appStateKeys or trackElements to protect performance
+    if (!hook) return;
+    if (
+      !hook.trackElements &&
+      (!hook.appStateKeys || hook.appStateKeys.length === 0)
+    )
+      return;
+
+    const tab = ea.sidepanelTab;
+    if (tab) {
+      const isActiveAndVisible = tab.isActiveTab() && tab.isVisible();
+      if (!isActiveAndVisible && !hook.triggerWhenInvisible) return;
+    }
+
+    let hasRelevantChange = false;
+
+    if (hook.trackElements && elementsChanged) {
+      hasRelevantChange = true;
+    }
+
+    if (!hasRelevantChange && hook.appStateKeys && last) {
+      for (let i = 0; i < hook.appStateKeys.length; i++) {
+        const key = hook.appStateKeys[i];
+        if (st[key] !== last[key]) {
+          hasRelevantChange = true;
+          break;
+        }
+      }
+    }
+
+    if (!hasRelevantChange) return;
+
+    try {
+      hook.callback(et, st, files, this, ea);
+    } catch (e: unknown) {
+      errorlog({
+        where: "ExcalidrawView.evaluateSceneChangeHook",
+        fn: hook.callback,
+        error: e,
+      });
+    }
+  }
+
   // the view type name
   getViewType() {
     return VIEW_TYPE_EXCALIDRAW;
@@ -5626,7 +5737,7 @@ export default class ExcalidrawView
       });
     }
 
-    if (st.newElement?.type === "freedraw") {
+    if ((st.newElement as ExcalidrawElement)?.type === "freedraw") {
       this.freedrawLastActiveTimestamp = Date.now();
     }
     if (
@@ -5680,10 +5791,8 @@ export default class ExcalidrawView
         this.colorChangeTimer = null;
       }, 50); //just enough time if the user is playing with color picker, the change is not too frequent.
     }
-    if (this.semaphores.dirty) {
-      return;
-    }
     if (
+      !this.semaphores.dirty &&
       st.editingTextElement === null &&
       //Removed because of
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/565
@@ -5694,6 +5803,8 @@ export default class ExcalidrawView
     ) {
       this.checkSceneVersion(et);
     }
+
+    this.triggerSceneChangeHooks(et, st, files);
   }
 
   private onLibraryChange(items: LibraryItems) {

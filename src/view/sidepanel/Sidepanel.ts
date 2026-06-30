@@ -370,6 +370,29 @@ export class ExcalidrawSidepanelView extends ItemView {
   }
 
   /**
+   * Checks if there are any ExcalidrawAutomate instances hosted by tabs targeting the specified view.
+   */
+  public hasEATargetingView(view: ExcalidrawView): boolean {
+    for (const ea of this.tabHosts.values()) {
+      if (ea && ea.targetView === view) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Executes a callback for each ExcalidrawAutomate instance targeting the specified view.
+   * Avoids allocating intermediate arrays for performance.
+   */
+  public forEachEATargetingView(
+    view: ExcalidrawView,
+    cb: (ea: ExcalidrawAutomate) => void,
+  ): void {
+    for (const ea of this.tabHosts.values()) {
+      if (ea && ea.targetView === view) cb(ea);
+    }
+  }
+
+  /**
    * Returns a tab by its backing script name if present.
    */
   public getTabByScript(scriptName: string): ExcalidrawSidepanelTab | null {

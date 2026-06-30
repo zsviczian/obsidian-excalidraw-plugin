@@ -31,6 +31,34 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Edge cases leading to memory leak and CPU overload when closing a markdown preview while embedded Excalidraw drawings are loading, or closing an ExcalidrawView, while nested images are still loading.
 - Markdown-embed-as-image snapshot drops MathJax/LaTeX output [#2818](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2818), [#2282](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2282) 🙏[@Jmarcos13](${URLs.GITHUB_COM}/Jmarcos13) via [#2822](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2822)
 - Fixed the "Customize the Embedded File Link" action. If you change the dimensions of the markdown image or the pdf page reference number, the image immediately updates in the scene. You can also use this feature to swap out images e.g. a png icon to an SVG icon. Default shortcut is CTRL+WIN+Click or CMD+Control+Click on the image element.
+
+## New in ExcalidrawAutomate
+- Added \`onSceneChangeHook\` to allow scripts and sidepanel tabs to react to scene changes. The hook supports filtering by \`appStateKeys\` and checking for tab visibility to optimize performance.
+
+\`\`\`ts
+  /**
+   * If set, this callback is triggered when the scene changes in the target view.
+   * You can use this to react to appState or element changes.
+   * Any script can sign up for updates via this hook.
+   * Because this hook fires extremely frequently (on every mouse move during drawing),
+   * you MUST specify which appState keys you are interested in OR set trackElements to true.
+   * If trackElements is falsy and appStateKeys is empty or undefined, the callback will NOT be triggered to prevent performance issues.
+   * For sidepanel tabs, there is an additional filter feature: if triggerWhenInvisible is false,
+   * the callback will only trigger when the sidepanel is visible and the tab is active.
+   */
+  onSceneChangeHook: {
+    appStateKeys?: (keyof AppState)[];
+    trackElements?: boolean;
+    triggerWhenInvisible?: boolean;
+    callback: (
+      elements: readonly ExcalidrawElement[],
+      appState: AppState,
+      files: BinaryFiles,
+      view: ExcalidrawView,
+      ea: ExcalidrawAutomate,
+    ) => void;
+  } | null = null;
+\`\`\`
 `,
   "2.24.2": `
   ## Fixed

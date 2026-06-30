@@ -1322,6 +1322,22 @@ export declare class ExcalidrawAutomate {
         excalidrawFile: TFile;
     }) => AutoexportConfig | null;
     /**
+     * If set, this callback is triggered when the scene changes in the target view.
+     * You can use this to react to appState or element changes.
+     * Any script can sign up for updates via this hook.
+     * Because this hook fires extremely frequently (on every mouse move during drawing),
+     * you MUST specify which appState keys you are interested in OR set trackElements to true.
+     * If trackElements is falsy and appStateKeys is empty or undefined, the callback will NOT be triggered to prevent performance issues.
+     * For sidepanel tabs, there is an additional filter feature: if triggerWhenInvisible is false,
+     * the callback will only trigger when the sidepanel is visible and the tab is active.
+     */
+    onSceneChangeHook: {
+        appStateKeys?: (keyof AppState)[];
+        trackElements?: boolean;
+        triggerWhenInvisible?: boolean;
+        callback: (elements: readonly ExcalidrawElement[], appState: AppState, files: BinaryFiles, view: ExcalidrawView, ea: ExcalidrawAutomate) => void;
+    } | null;
+    /**
      * if set, this callback is triggered, when an Excalidraw file is opened
      * You can use this callback in case you want to do something additional when the file is opened.
      * This will run before the file level script defined in the `excalidraw-onload-script` frontmatter.
@@ -1738,6 +1754,8 @@ export interface SidepanelTab {
     getHostEA(): ExcalidrawAutomate;
     /** Returns whether the tab is currently visible in the UI */
     isVisible(): boolean;
+    /** Returns whether the tab is the currently active tab in the sidepanel */
+    isActiveTab(): boolean;
 }
 
 /* ***************************** */
@@ -2474,11 +2492,17 @@ export type ExcalidrawElbowArrowElement = Merge<ExcalidrawArrowElement, {
      */
     endIsSpecial: boolean | null;
 }>;
+export type StrokeVariability = "variable" | "constant";
+export type StrokeOptions = Readonly<{
+    variability: StrokeVariability;
+    streamline: number;
+}>;
 export type ExcalidrawFreeDrawElement = _ExcalidrawElementBase & Readonly<{
     type: "freedraw";
     points: readonly LocalPoint[];
     pressures: readonly number[];
     simulatePressure: boolean;
+    strokeOptions: StrokeOptions;
 }>;
 export type FileId = string & {
     _brand: "FileId";
@@ -2768,9 +2792,11 @@ export interface AppState {
     currentItemStrokeColor: string;
     currentItemBackgroundColor: string;
     currentItemFillStyle: ExcalidrawElement["fillStyle"];
-    currentItemStrokeWidth: number;
+    currentItemStrokeWidth: number | undefined;
+    currentItemStrokeWidthKey: StrokeWidthKey;
     currentItemStrokeStyle: ExcalidrawElement["strokeStyle"];
     currentItemRoughness: number;
+    currentItemStrokeVariability: StrokeVariability;
     currentItemOpacity: number;
     currentItemFontFamily: FontFamilyValues;
     currentItemFontSize: number;
@@ -3863,34 +3889,7 @@ declare class App extends React.Component<AppProps, AppState> {
      * 1 = 100% zoom, 2 = 200% zoom, 0.5 = 50% zoom
      */
     value: number) => void;
-    private cancelInProgressAnimation;
-    scrollToContent: (
-    /**
-     * target to scroll to
-     *
-     * - string - id of element or group, or url containing elementLink
-     * - ExcalidrawElement | ExcalidrawElement[] - element(s) objects
-     */
-    target?: string | ExcalidrawElement | readonly ExcalidrawElement[], opts?: ({
-        fitToContent?: boolean;
-        fitToViewport?: never;
-        viewportZoomFactor?: number;
-        animate?: boolean;
-        duration?: number;
-    } | {
-        fitToContent?: never;
-        fitToViewport?: boolean;
-        /** when fitToViewport=true, how much screen should the content cover,
-         * between 0.1 (10%) and 1 (100%)
-         */
-        viewportZoomFactor?: number;
-        animate?: boolean;
-        duration?: number;
-    }) & {
-        minZoom?: number;
-        maxZoom?: number;
-        canvasOffsets?: Offsets;
-    }) => void;
+    scrollToContent: (target?: string | ExcalidrawElement | readonly NonDeletedExcalidrawElement[], opts?: ScrollToContentOptions) => void;
     private maybeUnfollowRemoteUser;
     /** use when changing scrollX/scrollY/zoom based on user interaction */
     private translateCanvas;
@@ -4048,6 +4047,7 @@ declare class App extends React.Component<AppProps, AppState> {
     private newImagePlaceholder;
     private handleLinearElementOnPointerDown;
     private getCurrentItemRoundness;
+    private getCurrentItemStrokeWidth;
     private createGenericElementOnPointerDown;
     private createFrameElementOnPointerDown;
     private maybeCacheReferenceSnapPoints;

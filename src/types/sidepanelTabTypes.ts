@@ -70,4 +70,6 @@ export interface SidepanelTab {
   getHostEA(): ExcalidrawAutomate;
   /** Returns whether the tab is currently visible in the UI */
   isVisible(): boolean;
+  /** Returns whether the tab is the currently active tab in the sidepanel */
+  isActiveTab(): boolean;
 }

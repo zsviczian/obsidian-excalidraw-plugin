@@ -1261,6 +1261,95 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     desc: "Decompresses a base 64 compressed string using LZString",
     after: "",
   },
+  {
+    field: "onSceneChangeHook",
+    code: "onSceneChangeHook: { appStateKeys?: (keyof AppState)[]; trackElements?: boolean; triggerWhenInvisible?: boolean; callback: (elements: readonly ExcalidrawElement[], appState: AppState, files: BinaryFiles, view: ExcalidrawView, ea: ExcalidrawAutomate) => void; } | null;",
+    desc:
+      "If set, this callback is triggered when the scene changes in the target view.\n" +
+      "You can use this to react to appState or element changes. Any script can sign up for updates via this hook.\n" +
+      "Because this hook fires extremely frequently (dozens of times per second during drawing), you MUST specify the appState keys you want to track (e.g., ['zoom', 'scrollX', 'scrollY']) OR set trackElements to true.\n" +
+      "If trackElements is falsy and appStateKeys is empty or undefined, the hook is ignored to prevent severe performance degradation.\n" +
+      "For sidepanel tabs, there is an additional filter: if triggerWhenInvisible is false, the callback will only trigger when the sidepanel is visible and the tab is active.",
+    after: "",
+  },
+  {
+    field: "onViewUnloadHook",
+    code: "onViewUnloadHook: (view: ExcalidrawView) => void;",
+    desc: "If set, this callback is triggered when the user closes an Excalidraw view.",
+    after: "",
+  },
+  {
+    field: "onViewModeChangeHook",
+    code: "onViewModeChangeHook: (isViewModeEnabled: boolean, view: ExcalidrawView, ea: ExcalidrawAutomate) => void;",
+    desc: "If set, this callback is triggered when the user changes the view mode.",
+    after: "",
+  },
+  {
+    field: "onLinkHoverHook",
+    code: "onLinkHoverHook: (element: NonDeletedExcalidrawElement, linkText: string, view: ExcalidrawView, ea: ExcalidrawAutomate) => boolean;",
+    desc: "If set, this callback is triggered when the user hovers a link in the scene. Return false to prevent the native Excalidraw onLinkHover management flow.",
+    after: "",
+  },
+  {
+    field: "onLinkClickHook",
+    code: "onLinkClickHook: (element: ExcalidrawElement, linkText: string, event: MouseEvent, view: ExcalidrawView, ea: ExcalidrawAutomate) => boolean;",
+    desc: "If set, this callback is triggered when the user clicks a link in the scene. Return false to prevent the native Excalidraw onLinkClick management flow.",
+    after: "",
+  },
+  {
+    field: "onDropHook",
+    code: "onDropHook: (data: {ea: ExcalidrawAutomate; event: React.DragEvent<HTMLDivElement>; draggable: ObsidianDraggable; type: 'file' | 'text' | 'unknown'; payload: {files: TFile[]; text: string;}; excalidrawFile: TFile; view: ExcalidrawView; pointerPosition: {x: number; y: number}; }) => boolean;",
+    desc: "If set, this callback is triggered when Excalidraw receives an onDrop event. Return false to prevent the native Excalidraw onDrop management flow.",
+    after: "",
+  },
+  {
+    field: "onPasteHook",
+    code: "onPasteHook: (data: {ea: ExcalidrawAutomate; payload: ClipboardData; event: ClipboardEvent; excalidrawFile: TFile; view: ExcalidrawView; pointerPosition: {x: number; y: number}; }) => boolean;",
+    desc: "If set, this callback is triggered when Excalidraw receives an onPaste event. Return false to prevent the native Excalidraw onPaste management flow.",
+    after: "",
+  },
+  {
+    field: "onImageFilePathHook",
+    code: "onImageFilePathHook: (data: {currentImageName: string; drawingFilePath: string;}) => string | null;",
+    desc: "If set, this callback is triggered when an image is being saved in Excalidraw. You can use this to customize the naming and path of pasted images. Return null or undefined to continue with the default behavior. If a filepath is returned, it will be used.",
+    after: "",
+  },
+  {
+    field: "onImageExportPathHook",
+    code: "onImageExportPathHook: (data: {exportFilepath: string; exportExtension: string; excalidrawFile: TFile; oldExcalidrawPath?: string; action: 'export' | 'move' | 'delete';}) => string | null;",
+    desc: "If set, this callback is triggered when an image is exported to .svg, .png, or .excalidraw. Customize the naming and path for the exported image. Return null or undefined to use the default path.",
+    after: "",
+  },
+  {
+    field: "onTriggerAutoexportHook",
+    code: "onTriggerAutoexportHook: (data: {autoexportConfig: AutoexportConfig; excalidrawFile: TFile;}) => AutoexportConfig | null;",
+    desc: "If set, this callback is triggered when an Excalidraw file is being saved. Allows overriding auto-export settings on the fly. Return a modified AutoexportConfig to override, or null to use defaults.",
+    after: "",
+  },
+  {
+    field: "onFileOpenHook",
+    code: "onFileOpenHook: (data: {ea: ExcalidrawAutomate; excalidrawFile: TFile; view: ExcalidrawView;}) => Promise<void>;",
+    desc: "If set, this callback is triggered when an Excalidraw file is opened. It runs before the file-level script defined in the excalidraw-onload-script frontmatter.",
+    after: "",
+  },
+  {
+    field: "onFileCreateHook",
+    code: "onFileCreateHook: (data: {ea: ExcalidrawAutomate; excalidrawFile: TFile; view: ExcalidrawView;}) => Promise<void>;",
+    desc: "If set, this callback is triggered when a new Excalidraw file is created.",
+    after: "",
+  },
+  {
+    field: "onCanvasColorChangeHook",
+    code: "onCanvasColorChangeHook: (ea: ExcalidrawAutomate, view: ExcalidrawView, color: string) => void;",
+    desc: "If set, this callback is triggered whenever the active canvas color changes.",
+    after: "",
+  },
+  {
+    field: "onUpdateElementLinkForExportHook",
+    code: "onUpdateElementLinkForExportHook: (data: {originalLink: string; obsidianLink: string; linkedFile: TFile | null; hostFile: TFile;}) => string;",
+    desc: "If set, this callback is triggered whenever a drawing is exported to SVG. The string returned will replace the internal Obsidian link in the exported SVG.",
+    after: "",
+  },
 ];
 
 export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggesterInfo[] = [
