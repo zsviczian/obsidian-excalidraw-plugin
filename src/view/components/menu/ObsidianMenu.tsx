@@ -34,24 +34,24 @@ export type ResetCustomPenState = {
 
 export function setPen(pen: PenStyle, api: ExcalidrawImperativeAPI) {
   const st = api.getAppState();
-  
+
   const hasStrokeWidth = pen.strokeWidth && pen.strokeWidth !== 0;
   const strokeWidthEntry = hasStrokeWidth
     ? getAppStateStrokeWidthEntry(undefined, pen.strokeWidth)
     : {};
 
-  // If the pen has a stroke width, the omitted key MUST be set to null to clear it out in Excalidraw. 
+  // If the pen has a stroke width, the omitted key MUST be set to null to clear it out in Excalidraw.
   // If no stroke width is defined, pass undefined to ignore it during the merge.
   const currentItemStrokeWidthKey = hasStrokeWidth
-    ? ("currentItemStrokeWidthKey" in strokeWidthEntry
+    ? "currentItemStrokeWidthKey" in strokeWidthEntry
       ? strokeWidthEntry.currentItemStrokeWidthKey
-      : null)
+      : null
     : undefined;
-    
+
   const currentItemStrokeWidth = hasStrokeWidth
-    ? ("currentItemStrokeWidth" in strokeWidthEntry
+    ? "currentItemStrokeWidth" in strokeWidthEntry
       ? strokeWidthEntry.currentItemStrokeWidth
-      : null)
+      : null
     : undefined;
 
   const nextAppState: Partial<AppState> = {
@@ -73,22 +73,25 @@ export function setPen(pen: PenStyle, api: ExcalidrawImperativeAPI) {
     ...(pen.roughness !== null
       ? { currentItemRoughness: pen.roughness }
       : null),
-    ...(pen.freedrawOnly && !st.resetCustomPen //switching from custom pen to next custom pen
+    // Removed the pen.freedrawOnly restriction so that ALL pens can be correctly manually disabled
+    ...(!st.resetCustomPen
       ? {
           resetCustomPen: {
-            currentItemStrokeWidthKey: st.currentItemStrokeWidthKey as
-              | "extraThin"
-              | "thin"
-              | "medium"
-              | "bold"
-              | "extraBold" ?? null,
+            currentItemStrokeWidthKey:
+              (st.currentItemStrokeWidthKey as
+                | "extraThin"
+                | "thin"
+                | "medium"
+                | "bold"
+                | "extraBold") ?? null,
             currentItemStrokeWidth: st.currentItemStrokeWidth ?? null,
-            currentItemStrokeVariability: st.currentItemStrokeVariability as
-              | "constant"
-              | "variable" ?? null,
+            currentItemStrokeVariability:
+              (st.currentItemStrokeVariability as "constant" | "variable") ??
+              null,
             currentItemBackgroundColor: st.currentItemBackgroundColor ?? null,
             currentItemStrokeColor: st.currentItemStrokeColor ?? null,
-            currentItemFillStyle: st.currentItemFillStyle  as ExtendedFillStyle ?? null,
+            currentItemFillStyle:
+              (st.currentItemFillStyle as ExtendedFillStyle) ?? null,
             currentItemRoughness: st.currentItemRoughness ?? null,
           },
         }
@@ -109,13 +112,16 @@ export function resetStrokeOptions(
   const nextAppState: Partial<AppState> = {
     ...(resetCustomPen
       ? {
-          currentItemStrokeWidthKey: resetCustomPen.currentItemStrokeWidthKey ?? null,
+          currentItemStrokeWidthKey:
+            resetCustomPen.currentItemStrokeWidthKey ?? null,
           currentItemStrokeWidth: resetCustomPen.currentItemStrokeWidth ?? null,
-          currentItemBackgroundColor: resetCustomPen.currentItemBackgroundColor ?? null,
+          currentItemBackgroundColor:
+            resetCustomPen.currentItemBackgroundColor ?? null,
           currentItemStrokeColor: resetCustomPen.currentItemStrokeColor ?? null,
           currentItemFillStyle: resetCustomPen.currentItemFillStyle ?? null,
           currentItemRoughness: resetCustomPen.currentItemRoughness ?? null,
-          currentItemStrokeVariability: resetCustomPen.currentItemStrokeVariability ?? null,
+          currentItemStrokeVariability:
+            resetCustomPen.currentItemStrokeVariability ?? null,
         }
       : null),
     resetCustomPen: null,
@@ -162,11 +168,13 @@ export class ObsidianMenu {
     const api = this.view.excalidrawAPI;
     const st = api.getAppState();
 
+    // Deep compare objects to bypass Excalidraw's immutable reference updates
+    const isPenActive =
+      JSON.stringify(st.currentStrokeOptions ?? null) ===
+      JSON.stringify(pen.penOptions ?? null);
+
     //single second click to reset freedraw to default
-    if (
-      (st.currentStrokeOptions ?? null) === (pen.penOptions ?? null) &&
-      st.activeTool.type === "freedraw"
-    ) {
+    if (isPenActive && st.activeTool.type === "freedraw") {
       resetStrokeOptions(st.resetCustomPen as ResetCustomPenState, api, true);
       return;
     }
@@ -258,11 +266,17 @@ export class ObsidianMenu {
   public renderCustomPens(isMobile: boolean, appState: AppState) {
     return appState.customPens?.map((_, index) => {
       const pen = this.plugin.settings.customPens[index];
+
+      const isPenActive =
+        JSON.stringify(appState.currentStrokeOptions ?? null) ===
+        JSON.stringify(pen.penOptions ?? null);
+
       //Reset stroke setting when changing to a different tool
       if (
+        pen.freedrawOnly && // Enforce freedrawOnly so global pens do not auto-reset upon changing tools
         appState.resetCustomPen &&
         appState.activeTool.type !== "freedraw" &&
-        (appState.currentStrokeOptions ?? null) === (pen.penOptions ?? null)
+        isPenActive
       ) {
         window.setTimeout(() =>
           resetStrokeOptions(
@@ -272,11 +286,12 @@ export class ObsidianMenu {
           ),
         );
       }
+
       //if Pen settings are loaded, select custom pen when activating the freedraw element
       if (
         !appState.resetCustomPen &&
         appState.activeTool.type === "freedraw" &&
-        (appState.currentStrokeOptions ?? null) === (pen.penOptions ?? null) &&
+        isPenActive &&
         pen.freedrawOnly
       ) {
         window.setTimeout(() =>
@@ -287,7 +302,7 @@ export class ObsidianMenu {
       if (
         appState.resetCustomPen &&
         appState.activeTool.type === "freedraw" &&
-        (appState.currentStrokeOptions ?? null) === (pen.penOptions ?? null) &&
+        isPenActive &&
         pen.freedrawOnly
       ) {
         const activePen = this.activePens[index] ?? { ...pen };
@@ -320,8 +335,7 @@ export class ObsidianMenu {
             className="ToolIcon__icon"
             aria-label={DEVICE.isDesktop ? pen.type : undefined}
             style={{
-              ...(appState.activeTool.type === "freedraw" &&
-              appState.currentStrokeOptions === pen.penOptions
+              ...(appState.activeTool.type === "freedraw" && isPenActive
                 ? { background: "var(--color-primary)" }
                 : {}),
             }}
