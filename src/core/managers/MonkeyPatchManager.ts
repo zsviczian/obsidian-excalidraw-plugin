@@ -110,7 +110,7 @@ export class MonkeyPatchManager {
               delete plugin.excalidrawFileModes[leafKey];
             }
 
-            return next.apply(this) as ReturnType<WorkspaceLeaf["detach"]>;
+            return next.apply(this);
           };
         },
 
@@ -141,9 +141,7 @@ export class MonkeyPatchManager {
 
                 plugin.excalidrawFileModes[filePath] = VIEW_TYPE_EXCALIDRAW;
 
-                return next.apply(this, [newState, ...rest]) as ReturnType<
-                  WorkspaceLeaf["setViewState"]
-                >;
+                return next.apply(this, [newState, ...rest]);
               }
               plugin.forceToOpenInMarkdownFilepath = null;
             }
@@ -161,9 +159,7 @@ export class MonkeyPatchManager {
               }, 500);
             }
 
-            return next.apply(this, [state, ...rest]) as ReturnType<
-              WorkspaceLeaf["setViewState"]
-            >;
+            return next.apply(this, [state, ...rest]);
           };
         },
       }),
