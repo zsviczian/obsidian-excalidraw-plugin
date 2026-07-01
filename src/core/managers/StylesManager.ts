@@ -3,7 +3,7 @@ import ExcalidrawPlugin from "src/core/main";
 import { getAllWindowDocuments } from "../../utils/obsidianUtils";
 import { setStyleText } from "src/utils/htmlUtils";
 
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 export let REM_VALUE = 16;
 
 const STYLE_VARIABLES = [

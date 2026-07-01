@@ -3034,14 +3034,11 @@ export class ExcalidrawAutomate {
    * @returns {string} The ID of the added text element.
    */
   addLabelToLine(lineId: string, label: string): string {
-    const line = this.elementsDict[lineId] as
-      | Mutable<ExcalidrawLinearElement>
-      | undefined;
-    if (
-      !line ||
-      !["arrow", "line"].includes(line.type) ||
-      line.points.length !== 2
-    ) {
+    const line = this.elementsDict[lineId];
+    if(!line || (line.type !== "arrow" && line.type !== "line")) {
+      return;
+    }
+    if ( line.points.length !== 2) {
       return;
     }
 

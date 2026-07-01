@@ -12,7 +12,7 @@ import {
   isInstanceOfElement,
 } from "src/utils/typechecks";
 
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 export class ObserverManager {
   private plugin: ExcalidrawPlugin;
   private app: App;

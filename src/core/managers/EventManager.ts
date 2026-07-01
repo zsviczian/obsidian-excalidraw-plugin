@@ -35,7 +35,7 @@ import {
 } from "src/utils/excalidrawViewUtils";
 import { setStyle } from "src/utils/styleUtils";
 
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 
 /**
  * Registers event listeners for the plugin

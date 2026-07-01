@@ -4,6 +4,7 @@ import {
   AppState,
   BinaryFileData,
   BinaryFiles,
+  NormalizedZoomValue,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { errorlog, getDataURL } from "./coreUtils";
 import {
@@ -33,7 +34,7 @@ import {
 } from "./fileUtils";
 import { FILENAMEPARTS } from "../types/utilTypes";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
-import { getExcalidrawViews, getFileCSSClasses } from "./obsidianUtils";
+import { getExcalidrawViews, getFileCSSClasses, getSafeFrontmatter } from "./obsidianUtils";
 import { cleanBlockRef, cleanSectionHeading } from "./pathUtils";
 import { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 import { updateElementLinksToObsidianLinks } from "./excalidrawAutomateUtils";
@@ -366,7 +367,7 @@ export async function getSVG<TScene extends SceneForExport>(
     if (exportSettings.isMask) {
       const cropObject = new CropImage(
         elements,
-        files as unknown as ConstructorParameters<typeof CropImage>[1],
+        files,
       );
       svg = await cropObject.getCroppedSVG();
       cropObject.destroy();
@@ -426,7 +427,7 @@ export async function getPNG<TScene extends SceneForExport>(
   exportSettings: ExportSettings,
   padding: number,
   scale: number = 1,
-  overrideFiles?: Record<ExcalidrawElement["id"], BinaryFileData>,
+  overrideFiles?: BinaryFiles,
 ): Promise<Blob> {
   try {
     const baseFiles = scene.files ?? {};
@@ -441,7 +442,7 @@ export async function getPNG<TScene extends SceneForExport>(
     if (exportSettings.isMask) {
       const cropObject = new CropImage(
         elements,
-        files as unknown as ConstructorParameters<typeof CropImage>[1],
+        files,
       );
       const blob = await cropObject.getCroppedPNG();
       cropObject.destroy();
@@ -754,10 +755,14 @@ export function isMaskFile(
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS.mask.name] !== null &&
-      typeof fileCache.frontmatter[FRONTMATTER_KEYS.mask.name] !== "undefined"
+      getSafeFrontmatter(fileCache.frontmatter)[FRONTMATTER_KEYS.mask.name] !==
+        null &&
+      typeof getSafeFrontmatter(fileCache.frontmatter)[
+        FRONTMATTER_KEYS.mask.name
+      ] !== "undefined"
     ) {
-      return Boolean(fileCache.frontmatter[FRONTMATTER_KEYS.mask.name]);
+      const safeFrontmatter = getSafeFrontmatter(fileCache.frontmatter);
+      return Boolean(safeFrontmatter[FRONTMATTER_KEYS.mask.name]);
     }
   }
   return false;
@@ -769,11 +774,12 @@ export function hasExportTheme(
 ): boolean {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
+    const safeFrontmatter = getSafeFrontmatter(fileCache?.frontmatter);
+    const exportDarkKey = FRONTMATTER_KEYS["export-dark"].name;
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] !== null &&
-      typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] !==
-        "undefined"
+      safeFrontmatter[exportDarkKey] !== null &&
+      typeof safeFrontmatter[exportDarkKey] !== "undefined"
     ) {
       return true;
     }
@@ -788,15 +794,14 @@ export function getExportTheme(
 ): string {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
+    const safeFrontmatter = getSafeFrontmatter(fileCache?.frontmatter);
+    const exportDarkKey = FRONTMATTER_KEYS["export-dark"].name;
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] !== null &&
-      typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name] !==
-        "undefined"
+      safeFrontmatter[exportDarkKey] !== null &&
+      typeof safeFrontmatter[exportDarkKey] !== "undefined"
     ) {
-      return fileCache.frontmatter[FRONTMATTER_KEYS["export-dark"].name]
-        ? "dark"
-        : "light";
+      return safeFrontmatter[exportDarkKey] ? "dark" : "light";
     }
   }
   return plugin.settings.exportWithTheme ? theme : "light";
@@ -808,15 +813,14 @@ export function shouldEmbedScene(
 ): boolean {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
+    const safeFrontmatter = getSafeFrontmatter(fileCache?.frontmatter);
+    const exportEmbedSceneKey = FRONTMATTER_KEYS["export-embed-scene"].name;
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-embed-scene"].name] !==
-        null &&
-      typeof fileCache.frontmatter[
-        FRONTMATTER_KEYS["export-embed-scene"].name
-      ] !== "undefined"
+      safeFrontmatter[exportEmbedSceneKey] !== null &&
+      typeof safeFrontmatter[exportEmbedSceneKey] !== "undefined"
     ) {
-      return fileCache.frontmatter[FRONTMATTER_KEYS["export-embed-scene"].name];
+      return safeFrontmatter[exportEmbedSceneKey];
     }
   }
   return plugin.settings.exportEmbedScene;
@@ -828,13 +832,12 @@ export function hasExportBackground(
 ): boolean {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
+    const safeFrontmatter = getSafeFrontmatter(fileCache?.frontmatter);
+    const exportTransparentKey = FRONTMATTER_KEYS["export-transparent"].name;
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name] !==
-        null &&
-      typeof fileCache.frontmatter[
-        FRONTMATTER_KEYS["export-transparent"].name
-      ] !== "undefined"
+      safeFrontmatter[exportTransparentKey] !== null &&
+      typeof safeFrontmatter[exportTransparentKey] !== "undefined"
     ) {
       return true;
     }
@@ -848,17 +851,14 @@ export function getWithBackground(
 ): boolean {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
+    const safeFrontmatter = getSafeFrontmatter(fileCache?.frontmatter);
+    const exportTransparentKey = FRONTMATTER_KEYS["export-transparent"].name;
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-transparent"].name] !==
-        null &&
-      typeof fileCache.frontmatter[
-        FRONTMATTER_KEYS["export-transparent"].name
-      ] !== "undefined"
+      safeFrontmatter[exportTransparentKey] !== null &&
+      typeof safeFrontmatter[exportTransparentKey] !== "undefined"
     ) {
-      return !fileCache.frontmatter[
-        FRONTMATTER_KEYS["export-transparent"].name
-      ];
+      return !safeFrontmatter[exportTransparentKey];
     }
   }
   return plugin.settings.exportWithBackground;
@@ -870,17 +870,15 @@ export function getExportInternalLinks(
 ): boolean {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
+    const safeFrontmatter = getSafeFrontmatter(fileCache?.frontmatter);
+    const exportInternalLinksKey =
+      FRONTMATTER_KEYS["export-internal-links"].name;
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-internal-links"].name] !==
-        null &&
-      typeof fileCache.frontmatter[
-        FRONTMATTER_KEYS["export-internal-links"].name
-      ] !== "undefined"
+      safeFrontmatter[exportInternalLinksKey] !== null &&
+      typeof safeFrontmatter[exportInternalLinksKey] !== "undefined"
     ) {
-      return fileCache.frontmatter[
-        FRONTMATTER_KEYS["export-internal-links"].name
-      ];
+      return safeFrontmatter[exportInternalLinksKey];
     }
   }
   return true;
@@ -896,30 +894,26 @@ export function getExportPadding(
       return plugin.settings.exportPaddingSVG;
     }
 
+    const safeFrontmatter = getSafeFrontmatter(fileCache.frontmatter);
+    const exportPaddingKey = FRONTMATTER_KEYS["export-padding"].name;
+
     if (
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-padding"].name] !== null &&
-      typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-padding"].name] !==
-        "undefined"
+      safeFrontmatter[exportPaddingKey] !== null &&
+      typeof safeFrontmatter[exportPaddingKey] !== "undefined"
     ) {
-      const val = parseInt(
-        fileCache.frontmatter[FRONTMATTER_KEYS["export-padding"].name],
-      );
+      const val = parseInt(String(safeFrontmatter[exportPaddingKey]));
       if (!isNaN(val)) {
         return val;
       }
     }
 
     //deprecated. Retained for backward compatibility
+    const exportSvgPaddingKey = FRONTMATTER_KEYS["export-svgpadding"].name;
     if (
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-svgpadding"].name] !==
-        null &&
-      typeof fileCache.frontmatter[
-        FRONTMATTER_KEYS["export-svgpadding"].name
-      ] !== "undefined"
+      safeFrontmatter[exportSvgPaddingKey] !== null &&
+      typeof safeFrontmatter[exportSvgPaddingKey] !== "undefined"
     ) {
-      const val = parseInt(
-        fileCache.frontmatter[FRONTMATTER_KEYS["export-svgpadding"].name],
-      );
+      const val = parseInt(String(safeFrontmatter[exportSvgPaddingKey]));
       if (!isNaN(val)) {
         return val;
       }
@@ -931,25 +925,23 @@ export function getExportPadding(
 export function getPNGScale(
   plugin: ExcalidrawPlugin,
   file: TFile | null,
-): number {
+): NormalizedZoomValue {
   if (file) {
     const fileCache = plugin.app.metadataCache.getFileCache(file);
+    const safeFrontmatter = getSafeFrontmatter(fileCache?.frontmatter);
+    const exportPngScaleKey = FRONTMATTER_KEYS["export-pngscale"].name;
     if (
       fileCache?.frontmatter &&
-      fileCache.frontmatter[FRONTMATTER_KEYS["export-pngscale"].name] !==
-        null &&
-      typeof fileCache.frontmatter[FRONTMATTER_KEYS["export-pngscale"].name] !==
-        "undefined"
+      safeFrontmatter[exportPngScaleKey] !== null &&
+      typeof safeFrontmatter[exportPngScaleKey] !== "undefined"
     ) {
-      const val = parseFloat(
-        fileCache.frontmatter[FRONTMATTER_KEYS["export-pngscale"].name],
-      );
+      const val = parseFloat(String(safeFrontmatter[exportPngScaleKey]));
       if (!isNaN(val) && val > 0) {
-        return val;
+        return val as NormalizedZoomValue;
       }
     }
   }
-  return plugin.settings.pngExportScale;
+  return plugin.settings.pngExportScale as NormalizedZoomValue;
 }
 
 export function isVersionNewerThanOther(

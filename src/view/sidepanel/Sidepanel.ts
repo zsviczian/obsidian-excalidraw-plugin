@@ -129,9 +129,16 @@ export class ExcalidrawSidepanelView extends ItemView {
         let scriptName = "";
         let title = "";
         try {
-          const parsed = JSON.parse(entry);
-          scriptName = parsed?.script ?? parsed?.name ?? "";
-          title = parsed?.title ?? scriptName;
+          const parsed: unknown = JSON.parse(entry);
+          if (parsed && typeof parsed === "object") {
+            const p = parsed as Record<string, unknown>;
+            const pScript = typeof p.script === "string" ? p.script : "";
+            const pName = typeof p.name === "string" ? p.name : "";
+            const pTitle = typeof p.title === "string" ? p.title : "";
+
+            scriptName = pScript || pName || "";
+            title = pTitle || scriptName;
+          }
         } catch (error) {
           console.error(
             "unexpected error in parsing sidepanel tab entry",
@@ -349,10 +356,12 @@ export class ExcalidrawSidepanelView extends ItemView {
     tab.destroy();
     if (this.activeTabId === tab.id) {
       this.activeTabId = null;
-      const next = this.tabs.values().next().value as
-        | ExcalidrawSidepanelTab
-        | undefined;
-      this.setActiveTab(next ?? null);
+      let nextTab: ExcalidrawSidepanelTab | null = null;
+      for (const t of this.tabs.values()) {
+        nextTab = t;
+        break; // Grab just the first one
+      }
+      this.setActiveTab(nextTab);
     }
     this.updateEmptyStateVisibility();
   }

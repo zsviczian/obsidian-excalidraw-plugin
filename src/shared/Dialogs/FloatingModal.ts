@@ -8,7 +8,7 @@ import {
   isInstanceOfHTMLTextAreaElement,
 } from "src/utils/typechecks";
 
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 
 function getClientPoint(e: PointerEvent | TouchEvent) {
   if (e.type.startsWith("touch")) {

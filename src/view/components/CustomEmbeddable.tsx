@@ -26,7 +26,7 @@ import { removeStyle, setStyle } from "src/utils/styleUtils";
 import { isInstanceOfHTMLElement } from "src/utils/typechecks";
 import { errorlog } from "src/utils/coreUtils";
 
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 type PdfViewLike = {
   containerEl?: HTMLElement;
   viewer?: {
@@ -843,7 +843,7 @@ function RenderObsidianView({
           if (mdPropsRef.current?.lockedReadingMode) {
             return;
           }
-          const result:unknown= originalStartEditing.apply(this, args);
+          const result: unknown = originalStartEditing.apply(this, args);
           return result;
         };
       }

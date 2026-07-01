@@ -27,7 +27,7 @@ import { pointsOnPath } from "points-on-path";
 import { randomId, getWindingOrder } from "./utils";
 import { ROUNDNESS } from "../../constants/constants";
 
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 
 const SUPPORTED_TAGS = [
   "svg",

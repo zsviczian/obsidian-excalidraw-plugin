@@ -6,10 +6,7 @@ import {
   TFile,
   Vault,
 } from "obsidian";
-import {
-  DEVICE,
-  RERENDER_EVENT,
-} from "../../constants/constants";
+import { DEVICE, RERENDER_EVENT } from "../../constants/constants";
 import { EmbeddedFilesLoader } from "../../shared/EmbeddedFileLoader";
 import { createPNG, createSVG } from "../../utils/excalidrawAutomateUtils";
 import ExcalidrawPlugin from "../main";
@@ -54,7 +51,7 @@ interface imgElementAttributes {
   imgstyle: string[]; //css style to apply to IMG element
 }
 
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 
 let plugin: ExcalidrawPlugin;
 let app: App;

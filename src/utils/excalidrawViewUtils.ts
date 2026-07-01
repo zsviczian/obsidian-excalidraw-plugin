@@ -48,7 +48,7 @@ import { setSanitizedHtml } from "./htmlUtils";
 import { URLs } from "src/constants/safeUrls";
 import { isInstanceOfHTMLDivElement } from "./typechecks";
 
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 
 type CommandLinkOptInPlugin = {
   settings: {

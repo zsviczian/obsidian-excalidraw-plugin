@@ -16,7 +16,7 @@ import { getLinkParts } from "./sceneDataUtils";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { setStyle } from "./styleUtils";
 
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 
 export const createLeaf = (
   view: ExcalidrawView,

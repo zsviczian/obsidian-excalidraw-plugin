@@ -70,7 +70,7 @@ import { getGeminiSupportedSizes } from "src/utils/geminiImageModelUtils";
 import { URLs } from "src/constants/safeUrls";
 import { hideElement, setStyle, showElement } from "src/utils/styleUtils";
 
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 
 export interface ExcalidrawSettings {
   showTabTitlebarButtons: boolean;

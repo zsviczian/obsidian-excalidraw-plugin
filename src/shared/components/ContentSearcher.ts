@@ -4,7 +4,7 @@ import { htmlToMarkdown, Notice, setIcon } from "obsidian";
 import { setStyle } from "src/utils/styleUtils";
 import { isInstanceOfHTMLElement } from "src/utils/typechecks";
 
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 
 export class ContentSearcher {
   private contentDiv: HTMLElement;

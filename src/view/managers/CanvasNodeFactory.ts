@@ -17,7 +17,7 @@ import {
 } from "../../utils/obsidianUtils";
 import { CustomMutationObserver, DEBUGGING } from "../../utils/debugHelper";
 
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 
 interface ObsidianCanvas {
   createFileNode: (params: {

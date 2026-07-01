@@ -32,7 +32,7 @@ import { setElementDisplay } from "./htmlUtils";
 import { NestedFileMap } from "src/types/utilTypes";
 export { splitFolderAndFilename } from "./pathUtils";
 
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 type ImageExtension = keyof typeof IMAGE_MIME_TYPES;
 
 /**

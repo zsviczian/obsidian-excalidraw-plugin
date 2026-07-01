@@ -1711,7 +1711,7 @@ export class ExcalidrawData {
     key: FileId,
     name?: string,
   ) {
-    const scene = this.scene as SceneDataWithFiles;
+    const scene = this.scene;
     let fname = name;
 
     if (!fname) {
@@ -1766,7 +1766,7 @@ export class ExcalidrawData {
   }
 
   private syncCroppedPDFs() {
-    const scene = this.scene as SceneDataWithFiles;
+    const scene = this.scene;
     const pdfScale = this.plugin.settings.pdfScale;
     scene.elements
       .filter((el) => el.type === "image" && el.crop && !el.isDeleted)
@@ -1808,7 +1808,7 @@ export class ExcalidrawData {
    */
   private async syncFiles(): Promise<boolean> {
     let dirty = false;
-    const scene = this.scene as SceneDataWithFiles;
+    const scene = this.scene;
 
     //remove files and equations that no longer have a corresponding image element
     const images = scene.elements.filter(

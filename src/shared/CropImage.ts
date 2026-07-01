@@ -1,8 +1,7 @@
 import {
   ExcalidrawElement,
-  FileId,
 } from "@zsviczian/excalidraw/types/element/src/types";
-import { BinaryFileData } from "@zsviczian/excalidraw/types/excalidraw/types";
+import type { BinaryFiles } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Notice } from "obsidian";
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
@@ -11,7 +10,7 @@ import { svgToBase64 } from "../utils/utils";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { nanoid } from "src/constants/constants";
 
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 /**
  * Creates a masked image from an Excalidraw scene.
  *
@@ -43,7 +42,7 @@ export class CropImage {
 
   constructor(
     private elements: ExcalidrawElement[],
-    files: Map<FileId, BinaryFileData>,
+    files: BinaryFiles, // Record<ExcalidrawElement["id"], BinaryFileData>
   ) {
     const imageEA = getEA();
     this.imageEA = imageEA;

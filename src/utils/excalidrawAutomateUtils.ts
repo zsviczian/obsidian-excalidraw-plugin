@@ -451,7 +451,7 @@ export async function getTemplate(
         Object.values(scene.files)
           .filter((f: BinaryFileData) => fileIDWhiteList.has(f.id))
           .forEach((f: BinaryFileData) => {
-            files[f.id] = f;
+            files[f.id as string] = f;
           });
       } else {
         files = scene.files;
@@ -534,9 +534,8 @@ export async function createPNG(
       source: `${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG}/${PLUGIN_VERSION}`,
       elements,
       appState: {
-        theme: (forceTheme ??
-          template?.appState?.theme ??
-          canvasTheme) as string,
+        theme:
+          forceTheme ?? template?.appState?.theme ?? canvasTheme ?? "light",
         viewBackgroundColor:
           template?.appState?.viewBackgroundColor ?? canvasBackgroundColor,
         ...(template?.appState?.frameRendering
@@ -672,9 +671,8 @@ export async function createSVG(
     });
   }
 
-  const theme = (forceTheme ??
-    template?.appState?.theme ??
-    canvasTheme) as string;
+  const theme =
+    forceTheme ?? template?.appState?.theme ?? canvasTheme ?? "light";
   const withTheme =
     exportSettings?.withTheme ?? plugin.settings.exportWithTheme;
 
@@ -885,26 +883,28 @@ export const getTextElementsMatchingQuery = (
     return [];
   }
 
-  return elements.filter(
-    (el: ExcalidrawElement) =>
-      el.type === "text" &&
-      query.some((q) => {
-        if (exactMatch) {
-          const text =
-            el.customData?.text2Path?.text ??
-            el.rawText.toLowerCase().split("\n")[0].trim();
-          const m = text.match(/^#*(# .*)/);
-          if (!m || m.length !== 2) {
-            return false;
-          }
-          return m[1] === q.toLowerCase();
-        }
+  return elements.filter((el: ExcalidrawElement) => {
+    if (el.type !== "text") return false;
+
+    const text2PathText = el.customData?.text2Path?.text;
+    const customText =
+      typeof text2PathText === "string" ? text2PathText : undefined;
+
+    return query.some((q) => {
+      if (exactMatch) {
         const text =
-          el.customData?.text2Path?.text ??
-          el.rawText.toLowerCase().replaceAll("\n", " ").trim();
-        return text.includes(q.toLowerCase()); //to distinguish between "# frame" and "# frame 1" https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/530
-      }),
-  );
+          customText ?? el.rawText.toLowerCase().split("\n")[0].trim();
+        const m = text.match(/^#*(# .*)/);
+        if (!m || m.length !== 2) {
+          return false;
+        }
+        return m[1] === q.toLowerCase();
+      }
+      const text =
+        customText ?? el.rawText.toLowerCase().replaceAll("\n", " ").trim();
+      return text.includes(q.toLowerCase());
+    });
+  });
 };
 
 /**

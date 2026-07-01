@@ -26,7 +26,7 @@ import type ExcalidrawView from "src/view/ExcalidrawView";
 import { setStyle } from "./styleUtils";
 import { isInstanceOfHTMLBodyElement } from "./typechecks";
 
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 
 export const getParentOfClass = (
   element: Element,

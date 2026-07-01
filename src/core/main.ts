@@ -126,7 +126,7 @@ import { insertLaTeXToView } from "src/utils/excalidrawViewHelpers";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 
 type FileMasterInfo = {
   isHyperLink: boolean;

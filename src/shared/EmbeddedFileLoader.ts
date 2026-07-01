@@ -17,7 +17,6 @@ import {
   getCSSFontDefinition,
 } from "../constants/constants";
 import { createSVG } from "src/utils/excalidrawAutomateUtils";
-import type { EquationItem } from "./ExcalidrawData";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
 import { t } from "../lang/helpers";
 import { tex2dataURL } from "./LaTeX";
@@ -76,7 +75,7 @@ import {
 } from "src/utils/typechecks";
 import { getSafeFrontmatter, strictArrayBuffer } from "src/utils/obsidianUtils";
 
-declare const mainDocument:Document;
+declare const mainDocument: Document;
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
 //Later file A is embedded into file B as a Markdown embed
@@ -993,15 +992,10 @@ export class EmbeddedFilesLoader {
         );
       }
 
-      let equationItem;
-      const equations = excalidrawData.getEquationEntries();
-      while (!(equationItem = equations.next()).done) {
-        const eiValue = equationItem.value as [FileId, EquationItem];
-        if (fileIDWhiteList && !fileIDWhiteList.has(eiValue[0])) {
+      for (const [id, equation] of excalidrawData.getEquationEntries()) {
+        if (fileIDWhiteList && !fileIDWhiteList.has(id)) {
           continue;
         }
-        const equation = eiValue[1];
-        const id = eiValue[0];
         yield createSafeLoadTask(
           async () => {
             if (this.terminate) {
@@ -1251,11 +1245,22 @@ export class EmbeddedFilesLoader {
       let viewProps: PDFPageViewProps;
 
       const shouldRetryWithFreshDoc = (e: unknown): boolean => {
-        const message = `${
-          typeof e === "object" && e !== null && "message" in e
-            ? String((e as { message?: unknown }).message ?? "")
-            : String(e ?? "")
-        }`;
+        let message = "";
+
+        if (e instanceof Error) {
+          // Standard JS Errors are guaranteed to have a string .message
+          message = e.message;
+        } else if (typeof e === "string") {
+          // If someone threw a raw string
+          message = e;
+        } else if (e !== null && typeof e === "object" && "message" in e) {
+          // If it's a custom object with a message property
+          const maybeMessage = (e as { message?: unknown }).message;
+          if (typeof maybeMessage === "string") {
+            message = maybeMessage;
+          }
+        }
+
         return (
           message.includes("sendWithPromise") ||
           message.includes("WorkerTransport") ||
