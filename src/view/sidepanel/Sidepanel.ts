@@ -117,47 +117,14 @@ export class ExcalidrawSidepanelView extends ItemView {
   private restorePromise: Promise<void> | null = null;
   private leafChangeRef: EventRef | null = null;
   private windowMigrationCleanup: (() => void) | null = null;
+  private restoreRetryTimer: number | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
     private plugin: ExcalidrawPlugin,
   ) {
     super(leaf);
-    (plugin.settings.sidepanelTabs ?? [])
-      .filter((entry) => !!entry)
-      .forEach((entry) => {
-        let scriptName = "";
-        let title = "";
-        try {
-          const parsed: unknown = JSON.parse(entry);
-          if (parsed && typeof parsed === "object") {
-            const p = parsed as Record<string, unknown>;
-            const pScript = typeof p.script === "string" ? p.script : "";
-            const pName = typeof p.name === "string" ? p.name : "";
-            const pTitle = typeof p.title === "string" ? p.title : "";
-
-            scriptName = pScript || pName || "";
-            title = pTitle || scriptName;
-          }
-        } catch (error) {
-          console.error(
-            "unexpected error in parsing sidepanel tab entry",
-            entry,
-            error,
-          );
-          if (entry.includes("::")) {
-            const [namePart, ...rest] = entry.split("::");
-            scriptName = namePart;
-            title = rest.join("::") || namePart;
-          } else {
-            scriptName = entry;
-            title = entry;
-          }
-        }
-        if (scriptName) {
-          this.persistedScripts.set(scriptName, { title: title || scriptName });
-        }
-      });
+    this.loadPersistedScriptsFromSettings();
     this.readyPromise = new Promise((resolve) => {
       this.resolveReady = resolve;
     });
@@ -244,6 +211,10 @@ export class ExcalidrawSidepanelView extends ItemView {
    */
   protected async onClose() {
     await super.onClose();
+    if (this.restoreRetryTimer !== null) {
+      window.clearTimeout(this.restoreRetryTimer);
+      this.restoreRetryTimer = null;
+    }
     if (this.windowMigrationCleanup) {
       this.windowMigrationCleanup();
       this.windowMigrationCleanup = null;
@@ -459,11 +430,16 @@ export class ExcalidrawSidepanelView extends ItemView {
       return this.restorePromise;
     }
     this.restorePromise = (async () => {
+      const restoreReady = await this.awaitRestoreReadiness();
+      if (!restoreReady) {
+        this.queueRestoreRetry();
+        return;
+      }
+      this.loadPersistedScriptsFromSettings();
       if (!this.persistedScripts.size) {
         return;
       }
       ExcalidrawSidepanelView.restoreSilent = true;
-      await this.plugin.awaitInit();
       try {
         for (const [scriptName, meta] of Array.from(
           this.persistedScripts.entries(),
@@ -484,6 +460,35 @@ export class ExcalidrawSidepanelView extends ItemView {
       }
     })();
     return this.restorePromise;
+  }
+
+  /**
+   * Waits until the minimum prerequisites for sidepanel script restoration are available.
+   * Sidepanel restoration is independent from Excalidraw view loading.
+   */
+  private async awaitRestoreReadiness(): Promise<boolean> {
+    let counter = 0;
+    while (
+      (!this.plugin.settings || !this.plugin.scriptEngine) &&
+      counter++ < 200
+    ) {
+      await sleep(50);
+    }
+    return Boolean(this.plugin.settings && this.plugin.scriptEngine);
+  }
+
+  /**
+   * Re-attempts restore when sidepanel opens before plugin startup prerequisites are ready.
+   */
+  private queueRestoreRetry(): void {
+    if (this.restoreRetryTimer !== null) {
+      return;
+    }
+    this.restoreRetryTimer = window.setTimeout(() => {
+      this.restoreRetryTimer = null;
+      this.restorePromise = null;
+      void this.restorePersistedTabs();
+    }, 500);
   }
 
   /**
@@ -549,6 +554,54 @@ export class ExcalidrawSidepanelView extends ItemView {
         error,
       );
     }
+  }
+
+  /**
+   * Loads persisted sidepanel script descriptors from settings.
+   * This may run before settings are available, in which case it leaves the map unchanged.
+   */
+  private loadPersistedScriptsFromSettings() {
+    const sidepanelTabs = this.plugin.settings?.sidepanelTabs;
+    if (!sidepanelTabs) {
+      return;
+    }
+
+    this.persistedScripts.clear();
+    sidepanelTabs
+      .filter((entry) => !!entry)
+      .forEach((entry) => {
+        let scriptName = "";
+        let title = "";
+        try {
+          const parsed: unknown = JSON.parse(entry);
+          if (parsed && typeof parsed === "object") {
+            const p = parsed as Record<string, unknown>;
+            const pScript = typeof p.script === "string" ? p.script : "";
+            const pName = typeof p.name === "string" ? p.name : "";
+            const pTitle = typeof p.title === "string" ? p.title : "";
+
+            scriptName = pScript || pName || "";
+            title = pTitle || scriptName;
+          }
+        } catch (error) {
+          console.error(
+            "unexpected error in parsing sidepanel tab entry",
+            entry,
+            error,
+          );
+          if (entry.includes("::")) {
+            const [namePart, ...rest] = entry.split("::");
+            scriptName = namePart;
+            title = rest.join("::") || namePart;
+          } else {
+            scriptName = entry;
+            title = entry;
+          }
+        }
+        if (scriptName) {
+          this.persistedScripts.set(scriptName, { title: title || scriptName });
+        }
+      });
   }
 
   /**

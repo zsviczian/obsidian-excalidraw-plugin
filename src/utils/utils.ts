@@ -34,7 +34,11 @@ import {
 } from "./fileUtils";
 import { FILENAMEPARTS } from "../types/utilTypes";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
-import { getExcalidrawViews, getFileCSSClasses, getSafeFrontmatter } from "./obsidianUtils";
+import {
+  getExcalidrawViews,
+  getFileCSSClasses,
+  getSafeFrontmatter,
+} from "./obsidianUtils";
 import { cleanBlockRef, cleanSectionHeading } from "./pathUtils";
 import { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 import { updateElementLinksToObsidianLinks } from "./excalidrawAutomateUtils";
@@ -365,10 +369,7 @@ export async function getSVG<TScene extends SceneForExport>(
   try {
     let svg: SVGSVGElement;
     if (exportSettings.isMask) {
-      const cropObject = new CropImage(
-        elements,
-        files,
-      );
+      const cropObject = new CropImage(elements, files);
       svg = await cropObject.getCroppedSVG();
       cropObject.destroy();
     } else {
@@ -440,10 +441,7 @@ export async function getPNG<TScene extends SceneForExport>(
     );
 
     if (exportSettings.isMask) {
-      const cropObject = new CropImage(
-        elements,
-        files,
-      );
+      const cropObject = new CropImage(elements, files);
       const blob = await cropObject.getCroppedPNG();
       cropObject.destroy();
       return blob;

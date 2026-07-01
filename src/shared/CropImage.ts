@@ -1,6 +1,4 @@
-import {
-  ExcalidrawElement,
-} from "@zsviczian/excalidraw/types/element/src/types";
+import { ExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
 import type { BinaryFiles } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Notice } from "obsidian";
 import { getEA } from "src/core";

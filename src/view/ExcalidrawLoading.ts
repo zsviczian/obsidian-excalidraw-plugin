@@ -1,5 +1,5 @@
 import { App, FileView, WorkspaceLeaf } from "obsidian";
-import { VIEW_TYPE_EXCALIDRAW_LOADING } from "src/constants/constants";
+import { DEVICE, VIEW_TYPE_EXCALIDRAW_LOADING } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
 import { setElementDisplay } from "src/utils/htmlUtils";
 import { isUnwantedLeaf, setExcalidrawView } from "src/utils/obsidianUtils";
@@ -27,6 +27,9 @@ export class ExcalidrawLoading extends FileView {
   public async switchToExcalidraw() {
     const prevLeaf = this.app.workspace.getLeaf();
     await setExcalidrawView(this.leaf);
+    if (DEVICE.isDesktop) {
+      return;
+    }
     await sleep(100); // added this 2026.04.19 after instances where the hack did not seem to work, but wasn't able to reliably reproduce. This timeout does not seem to cause any issues and may help in cases where the hack was not working due to some sort of race condition
     const activeLeaf = this.app.workspace.getLeaf();
     if (!activeLeaf) {

@@ -3035,10 +3035,10 @@ export class ExcalidrawAutomate {
    */
   addLabelToLine(lineId: string, label: string): string {
     const line = this.elementsDict[lineId];
-    if(!line || (line.type !== "arrow" && line.type !== "line")) {
+    if (!line || (line.type !== "arrow" && line.type !== "line")) {
       return;
     }
-    if ( line.points.length !== 2) {
+    if (line.points.length !== 2) {
       return;
     }
 
