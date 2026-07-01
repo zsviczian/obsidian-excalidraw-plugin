@@ -38,7 +38,6 @@ import {
   MAX_IMAGE_SIZE,
   COLOR_NAMES,
   fileid,
-  GITHUB_RELEASES,
   getCommonBoundingBox,
   getLineHeight,
   getMaximumGroups,
@@ -205,7 +204,7 @@ import { AIRequest, ExcalidrawAISettings } from "src/types/AIUtilTypes";
 import { getAspectRatio } from "src/utils/YoutTubeUtils";
 import { getPDFCropRect } from "src/utils/PDFUtils";
 import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
-import { URL_REGISTRY } from "src/constants/safeUrls";
+import { URL_REGISTRY, URLs } from "src/constants/safeUrls";
 
 type ExcalidrawAutomateHelpTarget = ((...args: unknown[]) => unknown) | string;
 
@@ -1432,11 +1431,11 @@ export class ExcalidrawAutomate {
     const scene = {
       type: "excalidraw",
       version: 2,
-      source: GITHUB_RELEASES + PLUGIN_VERSION,
+      source: `${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG}/${PLUGIN_VERSION}`,
       elements,
       appState: {
         ...templateAppstate,
-        theme: templateAppstate.theme ?? this.canvas.theme,
+        theme: (templateAppstate.theme ?? this.canvas.theme) as string,
         viewBackgroundColor:
           templateAppstate.viewBackgroundColor ??
           this.canvas.viewBackgroundColor,

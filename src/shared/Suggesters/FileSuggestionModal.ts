@@ -56,7 +56,7 @@ export class FileSuggestionModal extends SuggestionModal<LinkSuggestion> {
     });
 
     // Pre-bind the handler
-    this.handleGetFile = this.getFile.bind(this);
+    this.handleGetFile = () => this.getFile();
     this.inputEl.addEventListener("input", this.handleGetFile);
 
     this.setPlaceholder(t("SELECT_FILE_TO_INSERT"));

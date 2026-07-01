@@ -24,7 +24,7 @@ export class PathSuggestionModal extends SuggestionModal<
     this.text = input;
 
     // Pre-bind the handler
-    this.handleGetFile = this.getFile.bind(this);
+    this.handleGetFile = () => this.getFile();
     this.inputEl.addEventListener("input", this.handleGetFile);
   }
 

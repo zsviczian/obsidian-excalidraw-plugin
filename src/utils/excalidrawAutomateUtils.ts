@@ -18,7 +18,6 @@ import { normalizePath, TFile } from "obsidian";
 
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import {
-  GITHUB_RELEASES,
   getCommonBoundingBox,
   IMAGE_TYPES,
   restoreElements,
@@ -60,6 +59,7 @@ import { ScriptEngine } from "src/shared/Scripts";
 import { ColorMap, FileData } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import type { StrokeWidthKey } from "@zsviczian/excalidraw/types/common/src/constants";
+import { URLs } from "src/constants/safeUrls";
 
 declare const PLUGIN_VERSION: string;
 
@@ -522,7 +522,7 @@ export async function createPNG(
   if (template?.files) {
     Object.values(template.files).forEach((f: BinaryFileData) => {
       if (!f.dataURL.startsWith("http")) {
-        files[f.id] = f;
+        files[f.id as string] = f;
       }
     });
   }
@@ -531,10 +531,12 @@ export async function createPNG(
     {
       type: "excalidraw",
       version: 2,
-      source: GITHUB_RELEASES + PLUGIN_VERSION,
+      source: `${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG}/${PLUGIN_VERSION}`,
       elements,
       appState: {
-        theme: forceTheme ?? template?.appState?.theme ?? canvasTheme,
+        theme: (forceTheme ??
+          template?.appState?.theme ??
+          canvasTheme) as string,
         viewBackgroundColor:
           template?.appState?.viewBackgroundColor ?? canvasBackgroundColor,
         ...(template?.appState?.frameRendering
@@ -666,11 +668,13 @@ export async function createSVG(
   const files = imagesDict ?? {};
   if (template?.files) {
     Object.values(template.files).forEach((f: BinaryFileData) => {
-      files[f.id] = f;
+      files[f.id as string] = f;
     });
   }
 
-  const theme = forceTheme ?? template?.appState?.theme ?? canvasTheme;
+  const theme = (forceTheme ??
+    template?.appState?.theme ??
+    canvasTheme) as string;
   const withTheme =
     exportSettings?.withTheme ?? plugin.settings.exportWithTheme;
 
@@ -680,7 +684,7 @@ export async function createSVG(
       //createAndOpenDrawing
       type: "excalidraw",
       version: 2,
-      source: GITHUB_RELEASES + PLUGIN_VERSION,
+      source: `${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG}/${PLUGIN_VERSION}`,
       elements: includeInternalLinks
         ? elements
         : sceneRemoveInternalLinks({ elements }),

@@ -20,7 +20,7 @@ export class FolderSuggestionModal extends SuggestionModal<TFolder> {
     this.text = input;
 
     // Pre-bind the handler
-    this.handleGetFolder = this.getFolder.bind(this);
+    this.handleGetFolder = () => this.getFolder();
     this.inputEl.addEventListener("input", this.handleGetFolder);
   }
   getFolder() {

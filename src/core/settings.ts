@@ -10,7 +10,6 @@ import {
   TFile,
 } from "obsidian";
 import {
-  GITHUB_RELEASES,
   LOGO_EXCALIDRAW_MASTERY,
   mainDocument,
   setRootElementSize,
@@ -679,7 +678,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   library2: {
     type: "excalidrawlib",
     version: 2,
-    source: GITHUB_RELEASES + PLUGIN_VERSION,
+    source: `${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG}/${PLUGIN_VERSION}`,
     libraryItems: [],
   },
   //patchCommentBlock: true,

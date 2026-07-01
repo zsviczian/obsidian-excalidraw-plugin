@@ -258,7 +258,7 @@ export class EventManager {
       } catch (error) {
         console.error(
           "Error parsing pasted Excalidraw element",
-          this.onPasteHandler.bind(this),
+          "EventManager.onPasteHandler",
           error,
         );
       }

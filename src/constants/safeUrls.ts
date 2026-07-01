@@ -164,11 +164,6 @@ export const URL_REGISTRY = {
     "https://youtube.com/shorts/O_1ls9c6wBY?feature=share",
     UrlPurpose.VIDEO,
   ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG_1_6_23:
-    defineUrl(
-      "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.6.23",
-      UrlPurpose.RELEASE_LOG,
-    ),
   EN_WIKIPEDIA_ORG_WIKI_SCALABLE_VECTOR_GRAPHICS: defineUrl(
     "https://en.wikipedia.org/wiki/Scalable_Vector_Graphics",
     UrlPurpose.DOCS,
@@ -299,10 +294,6 @@ export const URL_REGISTRY = {
   ),
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG: defineUrl(
     "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag",
-    UrlPurpose.RELEASE_LOG,
-  ),
-  GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG_1_9_9: defineUrl(
-    "https://github.com/zsviczian/obsidian-excalidraw-plugin/releases/tag/1.9.9",
     UrlPurpose.RELEASE_LOG,
   ),
   TRANSLATE_GOOGLE_COM: defineUrl(

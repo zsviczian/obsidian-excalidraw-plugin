@@ -797,7 +797,7 @@ export default {
     `该项能够提高 Markdown 文档的打开速度，尤其是当嵌入到 Markdown 文档中的绘图文件中含有大量图片或 MD-Embed 时。` +
     `但是，该项也可能导致预览图无法立即响应绘图文件或者 Obsidian 主题的修改。<br>` +
     `该项仅作用于嵌入到 Markdown 文档中的绘图。` +
-    `该项无法提升绘图文件的打开速度。详见 <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG_1_6_23}" target='_blank'>此说明</a>。`,
+    `该项无法提升绘图文件的打开速度。详见 <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG}/1.6.23" target='_blank'>此说明</a>。`,
   EMBED_PREVIEW_IMAGETYPE_NAME: "预览图的格式",
   EMBED_PREVIEW_IMAGETYPE_DESC:
     `<b>Native SVG：</b>高品质、可交互。<br>` +

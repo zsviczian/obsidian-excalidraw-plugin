@@ -450,7 +450,7 @@ class ImageCache {
     } catch (error) {
       console.error(
         "unexpected error in getResolvedCacheData",
-        this.getResolvedCacheData.bind(this),
+        "ImageCache.getResolvedCacheData",
         key_,
         error,
       );

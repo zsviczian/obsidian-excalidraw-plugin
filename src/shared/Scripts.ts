@@ -19,6 +19,7 @@ import {
   stripYamlFrontmatter,
 } from "../utils/obsidianUtils";
 import { ButtonDefinition, InputPromptOptions } from "src/types/promptTypes";
+import { errorlog } from "src/utils/coreUtils";
 
 export type ScriptIconMap = {
   [key: string]: { name: string; group: string; svgString: string };
@@ -424,12 +425,12 @@ export class ScriptEngine {
         hint,
         instructions,
       );
-    } catch (error) {
-      console.error(
-        "unexpected error in suggester",
-        this.suggester.bind(this),
+    } catch (error: unknown) {
+      errorlog({
+        message: "unexpected error in suggester",
+        where: "ScriptEngine.suggester",
         error,
-      );
+      });
       return undefined;
     }
   }

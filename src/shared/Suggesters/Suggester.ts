@@ -3,21 +3,17 @@ import { SuggestModal, Scope } from "obsidian";
 export class Suggester<T> {
   owner: SuggestModal<T>;
   items: T[];
-  suggestions: HTMLDivElement[];
+  suggestions: HTMLElement[];
   selectedItem: number;
   containerEl: HTMLElement;
   constructor(owner: SuggestModal<T>, containerEl: HTMLElement, scope: Scope) {
     this.containerEl = containerEl;
     this.owner = owner;
-    containerEl.on(
-      "click",
-      ".suggestion-item",
-      this.onSuggestionClick.bind(this),
+    containerEl.on("click", ".suggestion-item", (event, el) =>
+      this.onSuggestionClick(event, el),
     );
-    containerEl.on(
-      "mousemove",
-      ".suggestion-item",
-      this.onSuggestionMouseover.bind(this),
+    containerEl.on("mousemove", ".suggestion-item", (event, el) =>
+      this.onSuggestionMouseover(event, el),
     );
 
     scope.register([], "ArrowUp", () => {
@@ -49,7 +45,7 @@ export class Suggester<T> {
       this.owner.onChooseSuggestion(currentValue, evt);
     }
   }
-  onSuggestionClick(event: MouseEvent, el: HTMLDivElement): void {
+  onSuggestionClick(event: MouseEvent, el: HTMLElement): void {
     event.preventDefault();
     if (!this.suggestions || !this.suggestions.length) {
       return;
@@ -60,7 +56,7 @@ export class Suggester<T> {
     this.useSelectedItem(event);
   }
 
-  onSuggestionMouseover(event: MouseEvent, el: HTMLDivElement): void {
+  onSuggestionMouseover(event: MouseEvent, el: HTMLElement): void {
     if (!this.suggestions || !this.suggestions.length) {
       return;
     }

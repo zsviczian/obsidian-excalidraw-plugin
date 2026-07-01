@@ -935,7 +935,7 @@ export default {
     `is available, use that image instead of generating a preview image on the fly. This will result in faster previews especially when you have many embedded objects in the drawing, however, ` +
     `it may happen that your latest changes are not displayed and that the image will not automatically match your Obsidian theme in case you have changed the ` +
     `Obsidian theme since the export was created. This setting only applies to embedding images into markdown documents. ` +
-    `For a number of reasons, the same approach cannot be used to expedite the loading of drawings with many embedded objects. See demonstration <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG_1_6_23}" target='_blank'>here</a>.`,
+    `For a number of reasons, the same approach cannot be used to expedite the loading of drawings with many embedded objects. See demonstration <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG}/1.6.23" target='_blank'>here</a>.`,
   EMBED_PREVIEW_IMAGETYPE_NAME: "Image type in markdown preview",
   EMBED_PREVIEW_IMAGETYPE_DESC:
     "<b><u>Native SVG</u></b>: High Image Quality. Embedded Websites, YouTube videos, Obsidian Links, and external images embedded via a URL will all work. Embedded Obsidian pages will not<br>" +

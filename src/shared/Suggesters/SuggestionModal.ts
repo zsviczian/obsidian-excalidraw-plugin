@@ -34,9 +34,9 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
     this.collisionBoundary = collisionBoundary;
 
     // Pre-bind event handlers
-    this.handleInput = this.onInputChanged.bind(this);
-    this.handleFocus = this.onFocus.bind(this);
-    this.handleBlur = this.close.bind(this);
+    this.handleInput = () => this.onInputChanged();
+    this.handleFocus = () => this.onFocus();
+    this.handleBlur = () => this.close();
     this.handleMouseDown = (event: MouseEvent) => {
       event.preventDefault();
     };
@@ -44,7 +44,7 @@ export abstract class SuggestionModal<T> extends FuzzySuggestModal<T> {
     this.suggestEl = createDiv("suggestion-container");
     this.contentEl = this.suggestEl.createDiv("suggestion");
     this.suggester = new Suggester(this, this.contentEl, this.scope);
-    this.scope.register([], "Escape", this.onEscape.bind(this));
+    this.scope.register([], "Escape", () => this.onEscape());
     this.inputEl.addEventListener("input", this.handleInput);
     this.inputEl.addEventListener("focus", this.handleFocus);
     this.inputEl.addEventListener("blur", this.handleBlur);

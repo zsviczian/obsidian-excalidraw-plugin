@@ -32,6 +32,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Markdown-embed-as-image snapshot drops MathJax/LaTeX output [#2818](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2818), [#2282](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2282) 🙏[@Jmarcos13](${URLs.GITHUB_COM}/Jmarcos13) via [#2822](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2822)
 - Fixed the "Customize the Embedded File Link" action. If you change the dimensions of the markdown image or the pdf page reference number, the image immediately updates in the scene. You can also use this feature to swap out images e.g. a png icon to an SVG icon. Default shortcut is CTRL+WIN+Click or CMD+Control+Click on the image element.
 - LaTeX and Mermaid did not work on iOS. Released updated Excalidraw Extras and bumped the minimum required version to 0.0.15. [#2825](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2825)
+- Malformed "Source" URL in ExcalidrawLib and Excalidraw Data json. [#2826]${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2826)
 
 ## New in ExcalidrawAutomate
 - Added \`onSceneChangeHook\` to allow scripts and sidepanel tabs to react to scene changes. The hook supports filtering by \`appStateKeys\` and checking for tab visibility to optimize performance.

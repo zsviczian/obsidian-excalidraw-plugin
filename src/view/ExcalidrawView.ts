@@ -48,7 +48,6 @@ import {
   KEYCODE,
   FRONTMATTER_KEYS,
   DEVICE,
-  GITHUB_RELEASES,
   EXPORT_IMG_ICON_NAME,
   viewportCoordsToSceneCoords,
   ERROR_IFRAME_CONVERSION_CANCELED,
@@ -5139,7 +5138,7 @@ export default class ExcalidrawView
     return {
       type: "excalidraw",
       version: 2,
-      source: GITHUB_RELEASES + PLUGIN_VERSION,
+      source: `${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG}/${PLUGIN_VERSION}`,
       elements: el,
       //see also ExcalidrawAutomate async create(
       appState: {
@@ -5812,7 +5811,7 @@ export default class ExcalidrawView
       const lib = {
         type: "excalidrawlib",
         version: 2,
-        source: GITHUB_RELEASES + PLUGIN_VERSION,
+        source: `${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG}/${PLUGIN_VERSION}`,
         libraryItems: items,
       };
 

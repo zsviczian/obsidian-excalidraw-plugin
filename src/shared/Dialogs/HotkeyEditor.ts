@@ -29,8 +29,8 @@ export class HotkeyEditor extends BaseComponent {
     this.applySettingsUpdate = applySettingsUpdate;
 
     // Bind the event handlers once in the constructor
-    this.boundKeydownHandler = this.onKeydown.bind(this);
-    this.boundKeyupHandler = this.onKeyup.bind(this);
+    this.boundKeydownHandler = (e) => this.onKeydown(e);
+    this.boundKeyupHandler = (e) => this.onKeyup(e);
   }
 
   onload(): void {

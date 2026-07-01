@@ -570,7 +570,7 @@ export class ExcalidrawData {
 
     const saveVersion =
       this.scene.source?.split(
-        URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG,
+        `${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG}/`,
       )[1] ?? "1.8.16";
 
     const elements = this.scene.elements as Mutable<
@@ -831,7 +831,7 @@ export class ExcalidrawData {
       if (f && f instanceof TFile && f.stat.mtime > file.stat.mtime) {
         //the .excalidraw file is newer then the .md file
         const d = await this.app.vault.read(f);
-        this.scene = JSON.parse(d);
+        this.scene = JSON.parse(d) as ExcalidrawDataScene;
       }
     }
 
@@ -870,7 +870,7 @@ export class ExcalidrawData {
           `excalidraw.com.<br>🔄 If you're using Obsidian on ` +
           "multiple devices, you may proceed now, but please, before opening this " +
           "file on your other devices, update Excalidraw on those as well.<br>🔍 More info is available " +
-          `<a href=${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG_1_9_9}>here</a>.<br>🌐 ` +
+          `<a href=${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG}/1.9.9>here</a>.<br>🌐 ` +
           `<a href=${URLs.TRANSLATE_GOOGLE_COM}>` +
           "Translate</a>.",
       );
