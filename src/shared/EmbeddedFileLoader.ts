@@ -1917,10 +1917,10 @@ export const generateIdFromFile = async (
     id = Array.from(new Uint8Array(hashBuffer))
       .map((byte) => byte.toString(16).padStart(2, "0"))
       .join("") as FileId;
-  } catch (error) {
+  } catch (error: unknown) {
     errorlog({
       where: "EmbeddedFileLoader.generateIdFromFile",
-      error: error as unknown,
+      error: error,
     });
     id = fileid() as FileId;
   }

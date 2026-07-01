@@ -52,12 +52,12 @@ export const installButton = async (
   let decodedURI = source;
   try {
     decodedURI = decodeURI(source);
-  } catch (e) {
+  } catch (e: unknown) {
     errorlog({
       where:
         "ExcalidrawPlugin.registerInstallCodeblockProcessor.codeblockProcessor.onClick",
       source,
-      error: e as unknown,
+      error: e,
     });
   }
   const fname = decodedURI.substring(decodedURI.lastIndexOf("/") + 1);

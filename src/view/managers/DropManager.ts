@@ -147,9 +147,9 @@ export class DropManager {
             view: this.view, //the excalidraw view receiving the drop
             pointerPosition: this.currentPosition, //the pointer position on canvas at the time of drop
           });
-        } catch (e) {
+        } catch (e: unknown) {
           new Notice("On drop hook error. See console log for details");
-          errorlog({ where: "ExcalidrawView.onDrop", error: e as unknown });
+          errorlog({ where: "ExcalidrawView.onDrop", error: e });
           return false;
         }
       } else {

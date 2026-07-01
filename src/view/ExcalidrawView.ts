@@ -3351,10 +3351,10 @@ export default class ExcalidrawView
             ) {
               return;
             }
-          } catch (e) {
+          } catch (e: unknown) {
             errorlog({
               where: "ExcalidrawView.setViewData",
-              error: e as unknown,
+              error: e,
             });
             if (
               e instanceof Error &&
@@ -3489,10 +3489,10 @@ export default class ExcalidrawView
               excalidrawFile: this.file,
               view: this,
             });
-          } catch (e) {
+          } catch (e: unknown) {
             errorlog({
               where: "ExcalidrawView.setViewData.onFileOpenHook",
-              error: e as unknown,
+              error: e,
             });
           } finally {
             tempEA.destroy();

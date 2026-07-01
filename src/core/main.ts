@@ -1277,11 +1277,11 @@ export default class ExcalidrawPlugin extends Plugin {
           setButtonBgColor(b, "success");
           hideElement(b);
         });
-      } catch (e) {
+      } catch (e: unknown) {
         errorlog({
           where: "this.registerInstallCodeblockProcessor",
           source,
-          error: e as unknown,
+          error: e,
         });
       }
 

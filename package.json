@@ -76,7 +76,7 @@
     "cssnano": "^6.0.2",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^9.0.0",
-    "eslint-plugin-obsidianmd": "^0.3.0",
+    "eslint-plugin-obsidianmd": "^0.4.0",
     "eslint-plugin-prettier": "^5.0.0",
     "jiti": "^2.6.1",
     "jsesc": "^3.0.2",

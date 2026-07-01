@@ -55,8 +55,8 @@ export class ScriptInstallPrompt extends Modal {
         this.contentDiv.querySelectorAll("a.internal-link").forEach((el) => {
           el.removeAttribute("target");
         });
-      } catch (e) {
-        errorlog({ where: "ScriptInstallPrompt.onOpen", error: e as unknown });
+      } catch (e: unknown) {
+        errorlog({ where: "ScriptInstallPrompt.onOpen", error: e });
         new Notice(t("SCRIPT_INSTALL_PROMPT_OPEN_ERROR"));
         this.close();
       }
