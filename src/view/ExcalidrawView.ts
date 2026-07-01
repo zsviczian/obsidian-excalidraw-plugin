@@ -5499,7 +5499,7 @@ export default class ExcalidrawView
     if (event.target === this.excalidrawWrapperRef.current) {
       return;
     } //event should originate from the canvas
-    if (this.isFullscreen() && event.keyCode === KEYCODE.ESC) {
+    if (this.isFullscreen() && event.key === "Escape") {
       this.exitFullscreen();
     }
     if (
