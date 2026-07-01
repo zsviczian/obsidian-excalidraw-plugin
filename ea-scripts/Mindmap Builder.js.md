@@ -1484,8 +1484,8 @@ const extractConfigFromGlobals = () => ({
   fillSweep,
   branchScale,
   baseStrokeWidth,
-  customPalette: JSON.parse(JSON.stringify(customPalette)),
-  layoutSettings: JSON.parse(JSON.stringify(layoutSettings))
+  customPalette: JSON.parse(JSON.stringify(customPalette || { enabled: false, random: false, colors: [] })),
+  layoutSettings: JSON.parse(JSON.stringify(layoutSettings || {}))
 });
 
 let mapPresets = getVal(K_PRESETS, {
@@ -1609,8 +1609,8 @@ const applyPresetToGlobals = (presetName) => {
   fillSweep = n.fillSweep;
   branchScale = n.branchScale;
   baseStrokeWidth = n.baseStrokeWidth;
-  customPalette = JSON.parse(JSON.stringify(n.customPalette));
-  layoutSettings = JSON.parse(JSON.stringify(n.layoutSettings));
+  customPalette = JSON.parse(JSON.stringify(n.customPalette || { enabled: false, random: false, colors: [] }));
+  layoutSettings = JSON.parse(JSON.stringify(n.layoutSettings || {}));
   
   setVal(K_GROWTH, currentModalGrowthMode);
   setVal(K_ARROW_TYPE, arrowType);
@@ -9352,7 +9352,7 @@ const updateUI = (sel) => {
     if (cd.customPalette) {
       customPalette = JSON.parse(JSON.stringify(cd.customPalette));
     } else {
-      customPalette = getVal(K_PALETTE, { enabled: false, random: false, colors: [] });
+      customPalette = getVal(K_PALETTE, { enabled: false, random: false, colors: [] }) || { enabled: false, random: false, colors: [] };
     }
     setVal(K_PALETTE, customPalette, true);
 
