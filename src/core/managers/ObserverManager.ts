@@ -1,7 +1,7 @@
 import { DEBUGGING } from "src/utils/debugHelper";
 import ExcalidrawPlugin from "src/core/main";
 import { CustomMutationObserver } from "src/utils/debugHelper";
-import { DEVICE, mainDocument } from "src/constants/constants";
+import { DEVICE } from "src/constants/constants";
 import {
   getExcalidrawViews,
   isObsidianThemeDark,
@@ -12,6 +12,7 @@ import {
   isInstanceOfElement,
 } from "src/utils/typechecks";
 
+declare const mainDocument:Document;
 export class ObserverManager {
   private plugin: ExcalidrawPlugin;
   private app: App;

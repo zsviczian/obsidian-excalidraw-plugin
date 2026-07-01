@@ -4,8 +4,9 @@ import { errorlog } from "../../utils/utils";
 import { log } from "src/utils/debugHelper";
 import { ContentSearcher } from "../components/ContentSearcher";
 import { URLs } from "src/constants/safeUrls";
-import { mainDocument } from "src/constants/constants";
 import { t } from "src/lang/helpers";
+
+declare const mainDocument:Document;
 
 const URL =
   URLs.RAW_GITHUBUSERCONTENT_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_MASTER_EA_SCRIPTS_INDEX_NEW_MD;

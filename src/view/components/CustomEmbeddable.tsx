@@ -7,7 +7,6 @@ import {
   DEVICE,
   EXTENDED_EVENT_TYPES,
   KEYBOARD_EVENT_TYPES,
-  mainDocument,
 } from "src/constants/constants";
 import {
   ExcalidrawImperativeAPI,
@@ -27,6 +26,7 @@ import { removeStyle, setStyle } from "src/utils/styleUtils";
 import { isInstanceOfHTMLElement } from "src/utils/typechecks";
 import { errorlog } from "src/utils/coreUtils";
 
+declare const mainDocument:Document;
 type PdfViewLike = {
   containerEl?: HTMLElement;
   viewer?: {

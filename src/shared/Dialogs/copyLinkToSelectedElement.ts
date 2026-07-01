@@ -3,7 +3,8 @@ import { t } from "src/lang/helpers";
 import { NamedExcalidrawFrameElement } from "src/types/excalidrawElementTypes";
 import { ScriptEngine } from "../Scripts";
 import ExcalidrawView from "src/view/ExcalidrawView";
-import { mainDocument } from "src/constants/constants";
+
+declare const mainDocument:Document;
 
 /**
  *

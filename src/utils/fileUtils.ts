@@ -16,7 +16,6 @@ import {
   DEVICE,
   EXCALIDRAW_PLUGIN,
   FRONTMATTER_KEYS,
-  mainDocument,
   URLFETCHTIMEOUT,
 } from "src/constants/constants";
 import { ExcalidrawSettings } from "src/core/settings";
@@ -33,6 +32,7 @@ import { setElementDisplay } from "./htmlUtils";
 import { NestedFileMap } from "src/types/utilTypes";
 export { splitFolderAndFilename } from "./pathUtils";
 
+declare const mainDocument:Document;
 type ImageExtension = keyof typeof IMAGE_MIME_TYPES;
 
 /**

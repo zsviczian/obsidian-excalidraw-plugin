@@ -61,7 +61,6 @@ import {
   syncInvalidIndices,
   VIEW_TYPE_SIDEPANEL,
   sceneCoordsToViewportCoords,
-  mainDocument,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
@@ -278,6 +277,7 @@ const PREVENT_RELOAD_TIMEOUT = 2000;
 const RE_TAIL = /^## Drawing\n.*```\n%%$(.*)/ms;
 
 declare const PLUGIN_VERSION: string;
+declare const mainDocument:Document;
 
 type SelectedElementWithLink = { id: string; text: string };
 type SelectedImage = { id: string; fileId: FileId };
@@ -3402,8 +3402,8 @@ export default class ExcalidrawView
               );
               if (!drawingBAK) {
                 new Notice(
-                  `Error loading drawing:\n${e.message}${
-                    e.message === "Cannot read property 'index' of undefined"
+                  `Error loading drawing:\n${(e as Error).message}${
+                    (e as Error).message === "Cannot read property 'index' of undefined"
                       ? "\n'# Drawing' section is likely missing"
                       : ""
                   }\n\nTry manually fixing the file or restoring an earlier version from sync history.`,

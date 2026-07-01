@@ -36,7 +36,6 @@ import {
   FONTS_STYLE_ID,
   CJK_STYLE_ID,
   setRootElementSize,
-  mainDocument,
 } from "../constants/constants";
 import {
   ExcalidrawSettings,
@@ -127,6 +126,7 @@ import { insertLaTeXToView } from "src/utils/excalidrawViewHelpers";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
+declare const mainDocument:Document;
 
 type FileMasterInfo = {
   isHyperLink: boolean;

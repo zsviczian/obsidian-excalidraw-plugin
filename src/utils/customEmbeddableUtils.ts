@@ -2,7 +2,6 @@ import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element
 import {
   AUDIO_TYPES,
   DEVICE,
-  mainDocument,
   REG_LINKINDEX_INVALIDCHARS,
   VIDEO_TYPES,
 } from "src/constants/constants";
@@ -16,6 +15,8 @@ import type { LocalGraphView } from "src/types/types";
 import { getLinkParts } from "./sceneDataUtils";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { setStyle } from "./styleUtils";
+
+declare const mainDocument:Document;
 
 export const createLeaf = (
   view: ExcalidrawView,

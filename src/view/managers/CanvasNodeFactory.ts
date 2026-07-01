@@ -16,7 +16,8 @@ import {
   isObsidianThemeDark,
 } from "../../utils/obsidianUtils";
 import { CustomMutationObserver, DEBUGGING } from "../../utils/debugHelper";
-import { mainDocument } from "src/constants/constants";
+
+declare const mainDocument:Document;
 
 interface ObsidianCanvas {
   createFileNode: (params: {

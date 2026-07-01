@@ -9,8 +9,7 @@ import { setStyle } from "src/utils/styleUtils";
 //This is only for backward compatibility because an early version of obsidian included an encoding to avoid fantom links from littering Obsidian graph view
 declare const PLUGIN_VERSION: string;
 export let EXCALIDRAW_PLUGIN: ExcalidrawPlugin = null;
- 
-export const mainDocument = document; //signals deliberate use of main document instead of activeDocument
+declare const mainDocument:Document; //signals deliberate use of main document instead of activeDocument
 export const setExcalidrawPlugin = (plugin: ExcalidrawPlugin) => {
   EXCALIDRAW_PLUGIN = plugin;
 };

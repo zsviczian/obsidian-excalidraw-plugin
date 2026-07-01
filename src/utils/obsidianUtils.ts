@@ -19,13 +19,14 @@ import {
   DEVICE,
   EXCALIDRAW_PLUGIN,
   FRONTMATTER_KEYS,
-  mainDocument,
   VIEW_TYPE_EXCALIDRAW,
 } from "src/constants/constants";
 import { parse, stringify } from "yaml";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import { setStyle } from "./styleUtils";
 import { isInstanceOfHTMLBodyElement } from "./typechecks";
+
+declare const mainDocument:Document;
 
 export const getParentOfClass = (
   element: Element,

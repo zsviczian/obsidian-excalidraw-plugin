@@ -1,6 +1,5 @@
 import { App, Modal } from "obsidian";
 import { clamp } from "@radix-ui/number";
-import { mainDocument } from "src/constants/constants";
 import { setStyle } from "src/utils/styleUtils";
 import {
   isInstanceOfHTMLButtonElement,
@@ -8,6 +7,8 @@ import {
   isInstanceOfHTMLSelectElement,
   isInstanceOfHTMLTextAreaElement,
 } from "src/utils/typechecks";
+
+declare const mainDocument:Document;
 
 function getClientPoint(e: PointerEvent | TouchEvent) {
   if (e.type.startsWith("touch")) {

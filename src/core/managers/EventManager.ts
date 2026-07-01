@@ -25,7 +25,6 @@ import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import {
   FRONTMATTER_KEYS,
   ICON_NAME,
-  mainDocument,
   VIEW_TYPE_EXCALIDRAW,
 } from "src/constants/constants";
 import ExcalidrawView from "src/view/ExcalidrawView";
@@ -35,6 +34,8 @@ import {
   setMobileNavbarPosition,
 } from "src/utils/excalidrawViewUtils";
 import { setStyle } from "src/utils/styleUtils";
+
+declare const mainDocument:Document;
 
 /**
  * Registers event listeners for the plugin

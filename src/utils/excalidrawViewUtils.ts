@@ -8,7 +8,6 @@ import {
   CARD_HEIGHT,
   getDefaultColorPalette,
   DEVICE,
-  mainDocument,
   EXCALIDRAW_PLUGIN,
   PLUGIN_ID,
 } from "src/constants/constants";
@@ -48,6 +47,8 @@ import { CaptureUpdateAction } from "src/constants/constants";
 import { setSanitizedHtml } from "./htmlUtils";
 import { URLs } from "src/constants/safeUrls";
 import { isInstanceOfHTMLDivElement } from "./typechecks";
+
+declare const mainDocument:Document;
 
 type CommandLinkOptInPlugin = {
   settings: {

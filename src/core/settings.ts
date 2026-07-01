@@ -11,7 +11,6 @@ import {
 } from "obsidian";
 import {
   LOGO_EXCALIDRAW_MASTERY,
-  mainDocument,
   setRootElementSize,
 } from "src/constants/constants";
 import { t } from "src/lang/helpers";
@@ -70,6 +69,8 @@ import { decryptProviderProfiles } from "src/utils/settingsKeyObfuscation";
 import { getGeminiSupportedSizes } from "src/utils/geminiImageModelUtils";
 import { URLs } from "src/constants/safeUrls";
 import { hideElement, setStyle, showElement } from "src/utils/styleUtils";
+
+declare const mainDocument:Document;
 
 export interface ExcalidrawSettings {
   showTabTitlebarButtons: boolean;

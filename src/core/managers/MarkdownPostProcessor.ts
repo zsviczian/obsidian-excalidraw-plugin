@@ -8,7 +8,6 @@ import {
 } from "obsidian";
 import {
   DEVICE,
-  mainDocument,
   RERENDER_EVENT,
 } from "../../constants/constants";
 import { EmbeddedFilesLoader } from "../../shared/EmbeddedFileLoader";
@@ -54,6 +53,8 @@ interface imgElementAttributes {
   fheight: string; //Display height of image
   imgstyle: string[]; //css style to apply to IMG element
 }
+
+declare const mainDocument:Document;
 
 let plugin: ExcalidrawPlugin;
 let app: App;

@@ -2,8 +2,8 @@ import { WorkspaceWindow } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { getAllWindowDocuments } from "../../utils/obsidianUtils";
 import { setStyleText } from "src/utils/htmlUtils";
-import { mainDocument } from "src/constants/constants";
 
+declare const mainDocument:Document;
 export let REM_VALUE = 16;
 
 const STYLE_VARIABLES = [

@@ -1,9 +1,10 @@
 import { t } from "src/lang/helpers";
 import { escapeRegExp } from "../../utils/utils";
 import { htmlToMarkdown, Notice, setIcon } from "obsidian";
-import { mainDocument } from "src/constants/constants";
 import { setStyle } from "src/utils/styleUtils";
 import { isInstanceOfHTMLElement } from "src/utils/typechecks";
+
+declare const mainDocument:Document;
 
 export class ContentSearcher {
   private contentDiv: HTMLElement;

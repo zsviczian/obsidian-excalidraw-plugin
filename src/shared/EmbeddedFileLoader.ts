@@ -15,7 +15,6 @@ import {
   THEME_FILTER,
   FRONTMATTER_KEYS,
   getCSSFontDefinition,
-  mainDocument,
 } from "../constants/constants";
 import { createSVG } from "src/utils/excalidrawAutomateUtils";
 import type { EquationItem } from "./ExcalidrawData";
@@ -77,6 +76,7 @@ import {
 } from "src/utils/typechecks";
 import { getSafeFrontmatter, strictArrayBuffer } from "src/utils/obsidianUtils";
 
+declare const mainDocument:Document;
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
 //Later file A is embedded into file B as a Markdown embed

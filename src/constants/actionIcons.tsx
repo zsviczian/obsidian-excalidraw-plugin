@@ -1,9 +1,8 @@
 import { getIcon, sanitizeHTMLToDom } from "obsidian";
 import { PenStyle } from "src/types/penTypes";
 import React from "react";
-import { mainDocument } from "./constants";
 import { isInstanceOfSVGSVGElement } from "src/utils/typechecks";
-
+declare const mainDocument:Document;
 const BLOCKED_SVG_TAGS = new Set([
   "script",
   "foreignobject",

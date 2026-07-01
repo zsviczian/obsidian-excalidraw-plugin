@@ -4,14 +4,14 @@ import {
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { BinaryFileData } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Notice } from "obsidian";
-
 import { getEA } from "src/core";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
 import { cloneElement } from "src/utils/excalidrawViewHelpers";
-import { mainDocument, nanoid } from "src/constants/constants";
 import { svgToBase64 } from "../utils/utils";
 import { ExportSettings } from "src/types/exportUtilTypes";
+import { nanoid } from "src/constants/constants";
 
+declare const mainDocument:Document;
 /**
  * Creates a masked image from an Excalidraw scene.
  *

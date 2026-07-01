@@ -132,8 +132,8 @@ if (!isLib) {
 }
 
 const packageString = isLib
-? ""
-: ';const INITIAL_TIMESTAMP=Date.now();\n' +
+  ? ""
+  : ';const INITIAL_TIMESTAMP=Date.now();\n' +
   'const pako = (function() {\n' +
   '  const module = { exports: {} };\n' +
   '  const exports = module.exports;\n' +
@@ -156,7 +156,9 @@ const packageString = isLib
   'let {react, reactDOM } = new Function(`${REACT_PACKAGES}; return {react: React, reactDOM: ReactDOM};`)();\n' +
   'let excalidrawLib = {};\n' +
   `const PLUGIN_LANGUAGES = {${LANGUAGES.map(lang => `"${lang}": "${compressLanguageFile(lang)}"`).join(",")}};\n` +
-  'const PLUGIN_VERSION="' + manifest.version + '";';
+  //deliberate use of main document instead of activeDocument
+  `const mainDocument = document;\n` +
+  `const PLUGIN_VERSION="${manifest.version}";\n`;
 
 const BASE_CONFIG = {
   input: 'src/core/main.ts',
@@ -219,16 +221,16 @@ const BUILD_CONFIG = {
         ],
       ]),
       /*visualizer({
-			  filename: 'bundle-analysis.html',
-			  open: true, // Automatically opens in your browser when the build finishes
-			  gzipSize: true,
-			  brotliSize: true,
-		  }),*/
+        filename: 'bundle-analysis.html',
+        open: true, // Automatically opens in your browser when the build finishes
+        gzipSize: true,
+        brotliSize: true,
+      }),*/
     ] : [
-      postprocess([ [/var React = require\('react'\);/, packageString] ]),
+      postprocess([[/var React = require\('react'\);/, packageString]]),
     ]),
     copy({
-      targets: [ { src: 'manifest.json', dest: DIST_FOLDER } ],
+      targets: [{ src: 'manifest.json', dest: DIST_FOLDER }],
       verbose: true,
     }),
   ),
