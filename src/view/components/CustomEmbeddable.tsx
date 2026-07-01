@@ -843,7 +843,8 @@ function RenderObsidianView({
           if (mdPropsRef.current?.lockedReadingMode) {
             return;
           }
-          return originalStartEditing.apply(this, args) as unknown;
+          const result:unknown= originalStartEditing.apply(this, args);
+          return result;
         };
       }
 

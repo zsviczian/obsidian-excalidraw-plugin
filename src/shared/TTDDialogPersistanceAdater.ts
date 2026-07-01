@@ -25,7 +25,8 @@ const openTTDDatabase = async (): Promise<IDBDatabase | null> => {
       };
 
       request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
+      request.onerror = () =>
+        reject(request.error || new Error("Failed to open IndexedDB"));
     },
   ).catch((): null => null);
 };
@@ -39,7 +40,8 @@ const readChatsFromStore = async (
     const request = store.get(TTD_STORE_KEY);
 
     request.onsuccess = () => resolve(request.result as SavedChats | undefined);
-    request.onerror = () => reject(request.error);
+    request.onerror = () =>
+      reject(request.error || new Error("Failed to read from IndexedDB store"));
   });
 };
 
@@ -53,7 +55,8 @@ const writeChatsToStore = async (
     const request = store.put(chats, TTD_STORE_KEY);
 
     request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
+    request.onerror = () =>
+      reject(request.error || new Error("Failed to write to IndexedDB store"));
   });
 };
 

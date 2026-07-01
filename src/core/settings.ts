@@ -1315,19 +1315,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         cls: "excalidraw-mastery-promo__summary",
       },
     );
-    const excalidrawMasterySummaryTitle = excalidrawMasterySummary.createEl(
-      "span",
-      {
-        cls: "excalidraw-mastery-promo__summary-title",
-        text: t("EXCALIDRAW_MASTERY"),
-      },
-    );
-    const excalidrawMasterySummaryState = excalidrawMasterySummary.createEl(
-      "span",
-      {
-        cls: "excalidraw-mastery-promo__summary-state",
-      },
-    );
+    const excalidrawMasterySummaryTitle = excalidrawMasterySummary.createSpan({
+      cls: "excalidraw-mastery-promo__summary-title",
+      text: t("EXCALIDRAW_MASTERY"),
+    });
+    const excalidrawMasterySummaryState = excalidrawMasterySummary.createSpan({
+      cls: "excalidraw-mastery-promo__summary-state",
+    });
 
     const excalidrawMasteryLink = URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM;
     const updateExcalidrawMasteryPromoState = (persist: boolean) => {
@@ -2544,7 +2538,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       text: t("HOTKEY_OVERRIDE_HEAD"),
       cls: "excalidraw-setting-h3",
     });
-    detailsEl.createEl("span", {}, (el) => {
+    detailsEl.createSpan({}, (el) => {
       setSanitizedHtml(el, t("HOTKEY_OVERRIDE_DESC"));
     });
 
@@ -3091,7 +3085,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h1",
     });
 
-    detailsEl.createEl("span", undefined, (el) =>
+    detailsEl.createSpan(undefined, (el) =>
       setSanitizedHtml(el, t("LINKS_DESC")),
     );
 
@@ -3891,7 +3885,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
 
     detailsEl.createEl("hr", { cls: "excalidraw-setting-hr" });
-    detailsEl.createEl("span", {}, (el) => {
+    detailsEl.createSpan({}, (el) => {
       setSanitizedHtml(el, t("MD_EMBED_CUSTOMDATA_HEAD_DESC"));
     });
 

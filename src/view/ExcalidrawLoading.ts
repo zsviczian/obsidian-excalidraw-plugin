@@ -51,7 +51,7 @@ export class ExcalidrawLoading extends FileView {
 
   private displayLoadingText() {
     // Create a div element for displaying the text
-    const loadingTextEl = this.contentEl.createEl("div", {
+    const loadingTextEl = this.contentEl.createDiv({
       text: this.getDisplayText(),
     });
 

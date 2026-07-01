@@ -80,7 +80,7 @@ export class ModifierKeySettingsComponent {
         this.isMacOS ? "OPT" : "ALT",
         this.isMacOS ? "CTRL" : "META",
       ].forEach((key) => {
-        headerSetting.controlEl.createEl("span", {
+        headerSetting.controlEl.createSpan({
           text: key,
           cls: "modifier-key-col-header",
         });

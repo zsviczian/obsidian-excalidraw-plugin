@@ -781,7 +781,7 @@ export class GenericInputPrompt extends Modal {
     }
 
     // Create popup element
-    const popup = activeDocument.createElement("div");
+    const popup = activeDocument.createDiv();
     popup.addClass("excalidraw-genericInputPrompt-specialCharPopup");
 
     // Position near the button
@@ -809,7 +809,7 @@ export class GenericInputPrompt extends Modal {
 
     // Add character buttons
     specialChars.forEach((char) => {
-      const charButton = activeDocument.createElement("button");
+      const charButton = activeDocument.createEl("button");
       charButton.textContent = char;
       charButton.addClass("excalidraw-genericInputPrompt-specialCharButton");
 

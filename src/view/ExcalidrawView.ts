@@ -2303,7 +2303,7 @@ export default class ExcalidrawView
 
   private displayLoadingText() {
     // Create a div element for displaying the text
-    const loadingTextEl = this.contentEl.createEl("div", {
+    const loadingTextEl = this.contentEl.createDiv({
       text: `Loading Excalidraw... ${this.file?.basename ?? ""}`,
     });
 

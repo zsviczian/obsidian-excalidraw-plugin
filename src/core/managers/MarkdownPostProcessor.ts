@@ -552,7 +552,7 @@ const getIMG = async (
         break;
       }
       case PreviewImageType.SVG: {
-        const img = createEl("div");
+        const img = createDiv();
         setImgStyle({
           element: img,
           imgAttributes,
