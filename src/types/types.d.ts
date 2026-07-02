@@ -200,6 +200,9 @@ declare module "obsidian" {
       enablePlugin(id: string): Promise<void>;
       disablePlugin(id: string): Promise<void>;
     };
+    statusBar: {
+      containerEl: HTMLElement;
+    };
   }
   interface FileManager {
     promptForFileRename(file: TFile): Promise<void>;
