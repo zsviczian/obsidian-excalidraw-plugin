@@ -44,7 +44,6 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "roughjs": "^4.5.2",
-    "woff2sfnt-sfnt2woff": "^1.0.0",
     "yaml": "^2.9.0"
   },
   "devDependencies": {

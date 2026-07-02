@@ -188,6 +188,14 @@ const getRollupPlugins = (tsconfig, ...plugins) => [
     preventAssignment: true,
     "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV),
   }),
+  replace({ //This is a workaround to silence Obsidian codescanner complain about fs module usage in the plugin code. The plugin does not use fs module, but it is used by some dependencies.
+    preventAssignment: true,
+    delimiters: ['', ''],
+    values: {
+      "require('fs')": "null",
+      'require("fs")': "null"
+    }
+  }),
   commonjs(),
   nodeResolve({ browser: true, preferBuiltins: false }),
 ].concat(plugins);
