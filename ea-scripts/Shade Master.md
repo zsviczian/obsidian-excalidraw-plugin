@@ -77,6 +77,7 @@ const precision = [1,2,2,3];
 const minLigtness = 1/Math.pow(10,precision[2]);
 const maxLightness = 100 - minLigtness;
 const minSaturation = 1/Math.pow(10,precision[2]);
+let dirty = false;
 
 let settings = ea.getScriptSettings();
 //set default values on first run
