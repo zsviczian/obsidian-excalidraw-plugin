@@ -17,6 +17,10 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.25.1": `
+## Fixed
+- Excalidraw Automate Color Picker component used in Shade Master broke in 2.25.0. It is now restored.
+`,
   "2.25.0": `
 ${getYouTubeDiv("aqt5NJE2sJ8")}
 
