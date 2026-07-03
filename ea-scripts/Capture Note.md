@@ -67,7 +67,7 @@ The script assembles dynamic "New Section" labels contextualizing the timestamp 
 7.  Switches focus permanently to Note B and automatically executes `ea.viewZoomToElements()` centering the screen precisely on the newly built container.
 
 ```js*/
-const VERSION = "v260629";
+const VERSION = "v.260703";
 const FRAME_MARGIN = 10;
 
 if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.23.8")) {
