@@ -4594,7 +4594,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-07-04T16:43:46.169Z
+Generated on: 2026-07-04T16:58:43.617Z
 
 ---
 
@@ -44874,6 +44874,8 @@ Two files follow. First the template startup script with documenation comments, 
  *     elements: readonly ExcalidrawElement[],
  *     appState: AppState,
  *     files: BinaryFiles,
+ *     //Note: the ea object will not be set to the view and might be dirty
+ *     //best practice: `ea.setView(view); ea.clear();`
  *     view: ExcalidrawView,
  *     ea: ExcalidrawAutomate
  *   ) => void;
@@ -45620,4 +45622,162 @@ ea.onTriggerAutoexportHook = (data) => {
 //ea.onUpdateElementLinkForExportHook = (data) => {
 //  const decodedObsidianURI = decodeURIComponent(data.obsidianLink);
 //};
+
+/**
+ * If set, this callback is triggered when the scene changes in the target view.
+ * You can use this to react to appState or element changes. Any script can sign up for updates via this hook.
+ * 
+ * ⚠️ WARNING: PERFORMANCE IMPACT ⚠️
+ * Because this hook fires extremely frequently (dozens of times per second during drawing/panning), 
+ * you MUST specify the appState keys you want to track (e.g., ['zoom', 'scrollX', 'scrollY']) 
+ * OR set trackElements to true.
+ * If trackElements is falsy and appStateKeys is empty or undefined, the hook is ignored to prevent severe performance degradation.
+ * 
+ * For sidepanel tabs, there is an additional filter: if triggerWhenInvisible is false, 
+ * the callback will only trigger when the sidepanel is visible and the tab is active.
+ * 
+ * Signature:
+ * onSceneChangeHook: {
+ *   appStateKeys?: (keyof AppState)[];
+ *   trackElements?: boolean;
+ *   triggerWhenInvisible?: boolean;
+ *   callback: (
+ *     elements: readonly ExcalidrawElement[],
+ *     appState: AppState,
+ *     files: BinaryFiles,
+ *     //Note: the ea object will not be set to the view and might be dirty
+ *     //best practice: `ea.setView(view); ea.clear();`
+ *     view: ExcalidrawView,
+ *     ea: ExcalidrawAutomate
+ *   ) => void;
+ * } | null = null;
+ */
+// ea.onSceneChangeHook = {
+//   appStateKeys: ["zoom", "scrollX", "scrollY"],
+//   trackElements: true,
+//   triggerWhenInvisible: false,
+//   callback: (elements, appState, files, view, hookEA) => {
+//     console.log(`Scene changed in ${view.file?.basename}:`, {
+//       zoom: appState.zoom.value,
+//       scrollX: appState.scrollX,
+//       scrollY: appState.scrollY,
+//       elementCount: elements.length
+//     });
+//   }
+// };
+
+// 1. Define the tools that should remember their own distinct styles.
+// (We exclude tools like "selection", "eraser", or "laser" where persistent styling doesn't apply)
+const STYLED_TOOLS = [
+    "freedraw", 
+    "arrow", 
+    "line", 
+    "rectangle", 
+    "ellipse", 
+    "diamond", 
+    "text"
+];
+
+// 2. Define all the specific AppState style properties we want to track and persist
+const STYLES_TO_TRACK = [
+    "currentItemStrokeColor",
+    "currentItemBackgroundColor",
+    "currentItemFillStyle",
+    "currentItemStrokeWidth",
+    "currentItemStrokeWidthKey",
+    "currentItemStrokeStyle",
+    "currentItemRoughness",
+    "currentItemStrokeVariability",
+    "currentItemOpacity",
+    "currentItemFontFamily",
+    "currentItemFontSize",
+    "currentItemTextAlign",
+    "currentItemStartArrowhead",
+    "currentItemEndArrowhead",
+    "currentItemRoundness",
+    "currentItemArrowType",
+    "currentStrokeOptions" // Used by Custom Pens
+];
+
+// 3. Initialize the global cache, loading from localStorage so settings survive app restarts
+if (!window.ExcalidrawToolStyleCache) {
+    const saved = localStorage.getItem("ExcalidrawToolStyleCache");
+    window.ExcalidrawToolStyleCache = saved ? JSON.parse(saved) : {};
+}
+
+// 4. Register the Hook
+ea.onSceneChangeHook = {
+    // Only trigger the hook when the active tool or one of our tracked styles changes
+    appStateKeys: ["activeTool", ...STYLES_TO_TRACK],
+    trackElements: false,
+    triggerWhenInvisible: false,
+    
+    callback: (elements, appState, files, view, ea) => {
+        const activeTool = appState.activeTool?.type;
+        if (!activeTool) return;
+        ea.setView(view);
+        ea.clear();
+        
+        const cache = window.ExcalidrawToolStyleCache;
+        
+        // We store the "last tool" state locally on the view instance.
+        // This prevents bugs if you have multiple Excalidraw panes open side-by-side.
+        const lastTool = view.excalidrawToolStyle_lastActiveTool;
+        
+        // --- SCENARIO A: The User Switched Tools ---
+        if (activeTool !== lastTool) {
+            view.excalidrawToolStyle_lastActiveTool = activeTool;
+            
+            // If the new tool is one of our managed drawing tools, restore its stored style
+            if (STYLED_TOOLS.includes(activeTool)) {
+                const storedStyle = cache[activeTool];
+                if (storedStyle) {
+                    // Flag that we are applying a style programmatically so we don't treat it as a user modification
+                    view.excalidrawToolStyle_applyingStyle = true;
+                    
+                    ea.getExcalidrawAPI().updateScene({ 
+                        appState: storedStyle 
+                    });
+                }
+            }
+        } 
+        // --- SCENARIO B: The Tool Stayed the Same (User is tweaking styles) ---
+        else {
+            // Ignore the onSceneChange that gets fired immediately after we programmatically restore a style
+            if (view.excalidrawToolStyle_applyingStyle) {
+                view.excalidrawToolStyle_applyingStyle = false;
+                return;
+            }
+            
+            // If we are actively using a drawing tool, track its style changes and update the cache
+            if (STYLED_TOOLS.includes(activeTool)) {
+                const currentStyle = {};
+                let styleChanged = false;
+                const storedStyle = cache[activeTool] || {};
+                
+                for (const key of STYLES_TO_TRACK) {
+                    currentStyle[key] = appState[key];
+                    
+                    const val1 = currentStyle[key];
+                    const val2 = storedStyle[key];
+                    
+                    // Deep compare objects (like Roundness or Custom Pens settings), direct compare primitives
+                    if (typeof val1 === "object" || typeof val2 === "object") {
+                        if (JSON.stringify(val1) !== JSON.stringify(val2)) {
+                            styleChanged = true;
+                        }
+                    } else if (val1 !== val2) {
+                        styleChanged = true;
+                    }
+                }
+                
+                // If a change was detected, update the cache and persist it to localStorage
+                if (styleChanged) {
+                    cache[activeTool] = currentStyle;
+                    localStorage.setItem("ExcalidrawToolStyleCache", JSON.stringify(cache));
+                }
+            }
+        }
+    }
+};
 

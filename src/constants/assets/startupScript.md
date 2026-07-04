@@ -300,6 +300,8 @@
  *     elements: readonly ExcalidrawElement[],
  *     appState: AppState,
  *     files: BinaryFiles,
+ *     //Note: the ea object will not be set to the view and might be dirty
+ *     //best practice: `ea.setView(view); ea.clear();`
  *     view: ExcalidrawView,
  *     ea: ExcalidrawAutomate
  *   ) => void;

@@ -16,7 +16,8 @@ declare const PLUGIN_VERSION: string;
 
 // English
 export default {
-  INITIALIZATION_MESSAGE: "Excalidraw is waiting for Obsidian to initialize all of your plugins...",
+  INITIALIZATION_MESSAGE:
+    "Excalidraw is waiting for Obsidian to initialize all of your plugins...",
   // Sugester
   SELECT_FILE_TO_INSERT: "Select a file to insert",
   // main.ts

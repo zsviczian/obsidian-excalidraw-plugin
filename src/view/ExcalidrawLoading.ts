@@ -1,8 +1,5 @@
 import { App, FileView, WorkspaceLeaf } from "obsidian";
-import {
-  DEVICE,
-  VIEW_TYPE_EXCALIDRAW,
-} from "src/constants/constants";
+import { DEVICE, VIEW_TYPE_EXCALIDRAW } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
 import { t } from "src/lang/helpers";
 import { setElementDisplay } from "src/utils/htmlUtils";
