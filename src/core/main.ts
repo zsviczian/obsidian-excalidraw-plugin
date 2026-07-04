@@ -912,7 +912,7 @@ export default class ExcalidrawPlugin extends Plugin {
     }
     this.logStartupEvent("Styles manager initialized");
 
-    this.updatePhoneFooterSafeAreaPadding();
+    this.updateFooterSafeAreaPadding();
 
     try {
       this.scriptEngine = new ScriptEngine(this);
@@ -1162,13 +1162,14 @@ export default class ExcalidrawPlugin extends Plugin {
     });
   }
 
-  public updatePhoneFooterSafeAreaPadding() {
+  public updateFooterSafeAreaPadding() {
     const documents = new Set<Document>([
       mainDocument,
       ...this.getOpenObsidianDocuments(),
     ]);
     const shouldEnable =
-      DEVICE.isPhone && this.settings?.phoneFooterSafeAreaPadding;
+      (DEVICE.isPhone && this.settings?.phoneFooterSafeAreaPadding) ||
+      (DEVICE.isTablet && this.settings?.tabletFooterSafeAreaPadding);
 
     documents.forEach((ownerDocument) => {
       const existingStylesheet = ownerDocument.getElementById(

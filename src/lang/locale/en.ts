@@ -621,6 +621,10 @@ export default {
     "Extra bottom padding for phone controls",
   PHONE_FOOTER_SAFE_AREA_PADDING_DESC:
     "Adds extra bottom padding to the Excalidraw footer controls so zoom and undo buttons stay above the system navigation bar on phones. This setting only applies on phones.",
+  TABLET_FOOTER_SAFE_AREA_PADDING_NAME:
+    "Extra bottom padding for tablet controls",
+  TABLET_FOOTER_SAFE_AREA_PADDING_DESC:
+    "Adds extra bottom padding to the Excalidraw footer controls so zoom and undo buttons stay above the system navigation bar on tablets. This setting only applies on tablets.",
   DEFAULT_PEN_MODE_NAME: "Pen mode",
   DEFAULT_PEN_MODE_DESC:
     "Should pen mode be automatically enabled when opening Excalidraw?",

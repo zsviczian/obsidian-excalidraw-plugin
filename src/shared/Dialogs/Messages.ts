@@ -18,6 +18,9 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
 "2.25.1": `
+## New
+- Separate setting to enable extra bottom padding for tablet controls. This is useful for tablets with a system navigation bar that overlaps the Excalidraw footer controls. [#2833](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2833)
+
 ## Fixed
 - Excalidraw Automate Color Picker component used in Shade Master broke in 2.25.0. It is now restored.
 `,

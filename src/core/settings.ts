@@ -78,6 +78,7 @@ export interface ExcalidrawSettings {
   copyFrameLinkByName: boolean;
   disableDoubleClickTextEditing: boolean;
   phoneFooterSafeAreaPadding: boolean;
+  tabletFooterSafeAreaPadding: boolean;
   folder: string;
   cropFolder: string;
   annotateFolder: string;
@@ -562,6 +563,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   copyFrameLinkByName: false,
   disableDoubleClickTextEditing: false,
   phoneFooterSafeAreaPadding: false,
+  tabletFooterSafeAreaPadding: false,
   folder: "Excalidraw",
   cropFolder: "",
   annotateFolder: "",
@@ -2663,7 +2665,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.phoneFooterSafeAreaPadding)
           .onChange(async (value) => {
             this.plugin.settings.phoneFooterSafeAreaPadding = value;
-            this.plugin.updatePhoneFooterSafeAreaPadding();
+            this.plugin.updateFooterSafeAreaPadding();
+            this.applySettingsUpdate();
+          }),
+      );
+
+    new Setting(detailsEl)
+      .setName(t("TABLET_FOOTER_SAFE_AREA_PADDING_NAME"))
+      .setDesc(fragWithHTML(t("TABLET_FOOTER_SAFE_AREA_PADDING_DESC")))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.tabletFooterSafeAreaPadding)
+          .onChange(async (value) => {
+            this.plugin.settings.tabletFooterSafeAreaPadding = value;
+            this.plugin.updateFooterSafeAreaPadding();
             this.applySettingsUpdate();
           }),
       );
