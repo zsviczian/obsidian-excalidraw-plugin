@@ -4,6 +4,7 @@ import {
   VIEW_TYPE_EXCALIDRAW,
 } from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
+import { t } from "src/lang/helpers";
 import { setElementDisplay } from "src/utils/htmlUtils";
 import { isUnwantedLeaf } from "src/utils/obsidianUtils";
 
@@ -67,7 +68,7 @@ export class ExcalidrawLoading extends FileView {
   }
 
   getDisplayText() {
-    return `Excalidraw is waiting for Obsidian to initialize... ${this.file?.basename ?? ""}`;
+    return `${t("INITIALIZATION_MESSAGE")} ${this.file?.basename ?? ""}`;
   }
 
   private displayLoadingText() {
