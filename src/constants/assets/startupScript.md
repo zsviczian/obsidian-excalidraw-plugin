@@ -279,17 +279,17 @@
 //ea.onCanvasColorChangeHook = (ea, view, color) => {};
 
 /**
- * If set, this callback is triggered when the scene changes in the target view.
- * You can use this to react to appState or element changes. Any script can sign up for updates via this hook.
+ * If set, this callback is triggered when the scene changes in any of the Excalidraw Views.
+ * You can use this to react to appState or element changes.
+ * Note, the ea object the callback receives is not guaranteed to have its targetView set to view, and the EA workbench might be dirty.
+ * As best practice, if you want to write back to the sending view, I recommend initializing ExcalidrawView first inside the callback:
+ * ea.setView(view); ea.clear();
  * 
- * ⚠️ WARNING: PERFORMANCE IMPACT ⚠️
+ * WARNING: PERFORMANCE IMPACT
  * Because this hook fires extremely frequently (dozens of times per second during drawing/panning), 
  * you MUST specify the appState keys you want to track (e.g., ['zoom', 'scrollX', 'scrollY']) 
  * OR set trackElements to true.
  * If trackElements is falsy and appStateKeys is empty or undefined, the hook is ignored to prevent severe performance degradation.
- * 
- * For sidepanel tabs, there is an additional filter: if triggerWhenInvisible is false, 
- * the callback will only trigger when the sidepanel is visible and the tab is active.
  * 
  * Signature:
  * onSceneChangeHook: {
@@ -300,8 +300,6 @@
  *     elements: readonly ExcalidrawElement[],
  *     appState: AppState,
  *     files: BinaryFiles,
- *     //Note: the ea object will not be set to the view and might be dirty
- *     //best practice: `ea.setView(view); ea.clear();`
  *     view: ExcalidrawView,
  *     ea: ExcalidrawAutomate
  *   ) => void;
