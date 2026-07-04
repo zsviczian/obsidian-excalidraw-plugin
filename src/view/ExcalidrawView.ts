@@ -2303,7 +2303,7 @@ export default class ExcalidrawView
   private displayLoadingText() {
     // Create a div element for displaying the text
     const loadingTextEl = this.contentEl.createDiv({
-      text: `Loading Excalidraw... ${this.file?.basename ?? ""}`,
+      text: `Excalidraw is waiting for Obsidian to initialize... ${this.file?.basename ?? ""}`,
     });
 
     // Apply styling to center the text

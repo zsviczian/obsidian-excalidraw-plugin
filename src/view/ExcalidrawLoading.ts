@@ -1,11 +1,19 @@
 import { App, FileView, WorkspaceLeaf } from "obsidian";
-import { DEVICE, VIEW_TYPE_EXCALIDRAW_LOADING } from "src/constants/constants";
+import {
+  DEVICE,
+  VIEW_TYPE_EXCALIDRAW,
+} from "src/constants/constants";
 import ExcalidrawPlugin from "src/core/main";
 import { setElementDisplay } from "src/utils/htmlUtils";
-import { isUnwantedLeaf, setExcalidrawView } from "src/utils/obsidianUtils";
+import { isUnwantedLeaf } from "src/utils/obsidianUtils";
 
 export async function switchToExcalidraw(app: App) {
-  const leaves = app.workspace.getLeavesOfType(VIEW_TYPE_EXCALIDRAW_LOADING);
+  const leaves: WorkspaceLeaf[] = [];
+  app.workspace.iterateAllLeaves((leaf) => {
+    if (leaf.view instanceof ExcalidrawLoading) {
+      leaves.push(leaf);
+    }
+  });
   for (const leaf of leaves) {
     await (leaf.view as ExcalidrawLoading)?.switchToExcalidraw();
   }
@@ -26,7 +34,17 @@ export class ExcalidrawLoading extends FileView {
 
   public async switchToExcalidraw() {
     const prevLeaf = this.app.workspace.getLeaf();
-    await setExcalidrawView(this.leaf);
+    const state = this.leaf.view.getState();
+
+    // Force a fresh view instance: switching to the same type can be a no-op.
+    await this.leaf.setViewState({
+      type: "empty",
+      state: {},
+    });
+    await this.leaf.setViewState({
+      type: VIEW_TYPE_EXCALIDRAW,
+      state,
+    });
     if (DEVICE.isDesktop) {
       return;
     }
@@ -45,11 +63,11 @@ export class ExcalidrawLoading extends FileView {
   }
 
   getViewType(): string {
-    return VIEW_TYPE_EXCALIDRAW_LOADING;
+    return VIEW_TYPE_EXCALIDRAW;
   }
 
   getDisplayText() {
-    return `Loading Excalidraw... ${this.file?.basename ?? ""}`;
+    return `Excalidraw is waiting for Obsidian to initialize... ${this.file?.basename ?? ""}`;
   }
 
   private displayLoadingText() {
