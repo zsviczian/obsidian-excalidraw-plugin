@@ -1667,7 +1667,7 @@ export type ImageInfo = {
     isHyperLink?: boolean;
     hyperlink?: string;
     file?: string | TFile;
-    hasSVGwithBitmap: boolean;
+    hasSVGwithBitmap?: boolean;
     latex?: string;
     size?: Size;
     colorMap?: ColorMap;

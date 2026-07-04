@@ -277,3 +277,44 @@
  *   ) => void = null;
 */
 //ea.onCanvasColorChangeHook = (ea, view, color) => {};
+
+/**
+ * If set, this callback is triggered when the scene changes in the target view.
+ * You can use this to react to appState or element changes. Any script can sign up for updates via this hook.
+ * 
+ * ⚠️ WARNING: PERFORMANCE IMPACT ⚠️
+ * Because this hook fires extremely frequently (dozens of times per second during drawing/panning), 
+ * you MUST specify the appState keys you want to track (e.g., ['zoom', 'scrollX', 'scrollY']) 
+ * OR set trackElements to true.
+ * If trackElements is falsy and appStateKeys is empty or undefined, the hook is ignored to prevent severe performance degradation.
+ * 
+ * For sidepanel tabs, there is an additional filter: if triggerWhenInvisible is false, 
+ * the callback will only trigger when the sidepanel is visible and the tab is active.
+ * 
+ * Signature:
+ * onSceneChangeHook: {
+ *   appStateKeys?: (keyof AppState)[];
+ *   trackElements?: boolean;
+ *   triggerWhenInvisible?: boolean;
+ *   callback: (
+ *     elements: readonly ExcalidrawElement[],
+ *     appState: AppState,
+ *     files: BinaryFiles,
+ *     view: ExcalidrawView,
+ *     ea: ExcalidrawAutomate
+ *   ) => void;
+ * } | null = null;
+ */
+// ea.onSceneChangeHook = {
+//   appStateKeys: ["zoom", "scrollX", "scrollY"],
+//   trackElements: true,
+//   triggerWhenInvisible: false,
+//   callback: (elements, appState, files, view, hookEA) => {
+//     console.log(`Scene changed in ${view.file?.basename}:`, {
+//       zoom: appState.zoom.value,
+//       scrollX: appState.scrollX,
+//       scrollY: appState.scrollY,
+//       elementCount: elements.length
+//     });
+//   }
+// };

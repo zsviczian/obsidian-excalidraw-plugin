@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-06-30T13:12:00.813Z
+Generated on: 2026-07-04T16:43:46.169Z
 
 ---
 
@@ -2219,7 +2219,7 @@ The script assembles dynamic "New Section" labels contextualizing the timestamp 
 7.  Switches focus permanently to Note B and automatically executes `ea.viewZoomToElements()` centering the screen precisely on the newly built container.
 
 ```js*/
-const VERSION = "v260629";
+const VERSION = "v.260703";
 const FRAME_MARGIN = 10;
 
 if (!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.23.8")) {
@@ -2737,15 +2737,28 @@ async function ensureTargetFileExists(folder, filename, fname, opt, noteType) {
 
 // Resolves the Obsidian leaf behavior and explicitly waits for load instantiation
 async function openAndResolveTargetLeaf(file, originView, openNoteBBehavior) {
-  let noteBWorkspaceLeaf;
-  if (openNoteBBehavior === "adjacent pane") {
-    noteBWorkspaceLeaf = ea.openFileInNewOrAdjacentLeaf(file);
-  } else if (openNoteBBehavior === "new tab") {
-    noteBWorkspaceLeaf = app.workspace.getLeaf("tab");
-    await noteBWorkspaceLeaf.openFile(file, { active: true });
+  let noteBWorkspaceLeaf = null;
+
+  // Check if the file is already open in any existing leaf
+  app.workspace.iterateAllLeaves((leaf) => {
+    if (leaf.view && leaf.view.file && leaf.view.file.path === file.path) {
+      noteBWorkspaceLeaf = leaf;
+    }
+  });
+
+  if (noteBWorkspaceLeaf) {
+    app.workspace.setActiveLeaf(noteBWorkspaceLeaf, { focus: true });
   } else {
-    noteBWorkspaceLeaf = originView.leaf;
-    await noteBWorkspaceLeaf.openFile(file, { active: true });
+    // Standard logic if it is not open yet
+    if (openNoteBBehavior === "adjacent pane") {
+      noteBWorkspaceLeaf = ea.openFileInNewOrAdjacentLeaf(file);
+    } else if (openNoteBBehavior === "new tab") {
+      noteBWorkspaceLeaf = app.workspace.getLeaf("tab");
+      await noteBWorkspaceLeaf.openFile(file, { active: true });
+    } else {
+      noteBWorkspaceLeaf = originView.leaf;
+      await noteBWorkspaceLeaf.openFile(file, { active: true });
+    }
   }
 
   // Explicitly wait until the target leaf has fully instantiated its File representation 
@@ -3468,11 +3481,23 @@ async function start() {
   const captureData = await openCaptureModal(initialLinkText);
   if (!captureData) return;
 
-  const { filename, noteType, format, ontologyAction, actionType, openNoteBBehavior, folder: customFolder } = captureData;
+  const { filename, noteType, format, ontologyAction, actionType, openNoteBBehavior, folder: customFolder, sidepanelWasVisible } = captureData;
+  
+  // Inline cleanup helper attached to visibility flag
+  const closeSidepanelIfNeeded = () => {
+    if (!sidepanelWasVisible) {
+      const sidepanelLeaf = ea.getSidepanelLeaf();
+      if (sidepanelLeaf && sidepanelLeaf.view.containerEl.offsetParent !== null) {
+        ea.toggleSidepanelView();
+      }
+    }
+  };
+
   const opt = settings.noteTypes[noteType];
 
   if (!opt) {
     new Notice("Error: Note Type configuration is missing. Open Settings to configure Note Types.");
+    closeSidepanelIfNeeded();
     return;
   }
 
@@ -3524,7 +3549,10 @@ async function start() {
 
     if (!hasNoteType) {
       const conflictDecision = await resolveExistingFileConflict(fileTarget, hasNoteType, hasPrefix, opt.prefix);
-      if (!conflictDecision) return; 
+      if (!conflictDecision) {
+        closeSidepanelIfNeeded();
+        return; 
+      }
 
       if (conflictDecision.action === "CREATE_NEW") {
         fileTarget = null; 
@@ -3569,6 +3597,7 @@ async function start() {
     ea.addText(0, 0, targetWikiLink);
     await ea.addElementsToView(true, true, true);
     ea.clear();
+    closeSidepanelIfNeeded();
     return;
   }
 
@@ -3583,6 +3612,7 @@ async function start() {
       ea.clear();
     }
     new Notice(`Created file: ${file.basename}`);
+    closeSidepanelIfNeeded();
     return;
   }
 
@@ -3603,7 +3633,10 @@ async function start() {
 
   // 9. Ensure Target View is Excalidraw and get API
   const target_ea = await prepareTargetExcalidrawView(noteBWorkspaceLeaf);
-  if (!target_ea) return;
+  if (!target_ea) {
+    closeSidepanelIfNeeded();
+    return;
+  }
 
   // 10. Calculate insertion bounds on Target Note
   const bElements = target_ea.getViewElements();
@@ -3626,38 +3659,14 @@ async function start() {
 
   // 12. Final Focus / Zoom
   await handleFinalActionFocus(actionType, originView, noteBWorkspaceLeaf, embeddedElementId, target_ea, format, preGeneratedFrameID, clonedTemplateElementIds, mmAPI);
+
+  // 13. Sidepanel cleanup
+  closeSidepanelIfNeeded();
 }
 
 // -------------------------------------------------------------
 // 5. UI: Capture Note Modal (Refactored)
 // -------------------------------------------------------------
-
-function setupCaptureModalEscapeHandler(modal) {
-  const escapeKey = modal.scope.keys.find(k => k.key === "Escape");
-  if (escapeKey) {
-    const originalFunc = escapeKey.func;
-    escapeKey.func = (e) => {
-      // Block modal closure if a child suggester was just closed
-      if (suppressEscape) return false;
-      
-      // Block modal closure if custom dropdown is open
-      const customDropdown = modal.modalEl.querySelector(".mindmap-search-results");
-      if (customDropdown && customDropdown.style.display === "block") {
-        customDropdown.style.display = "none";
-        return false;
-      }
-      
-      // Block modal closure if any standard Obsidian suggester is currently open
-      const suggests = document.body.querySelectorAll('.suggestion-container');
-      for (const s of suggests) {
-        if (s.style.display !== "none") {
-          return false; 
-        }
-      }
-      return originalFunc(e);
-    };
-  }
-}
 
 function injectCaptureModalStyles(contentEl) {
   contentEl.createEl("style", {
@@ -3673,41 +3682,30 @@ function injectCaptureModalStyles(contentEl) {
       .mindmap-search-item.is-selected { background-color: var(--background-modifier-hover); }
       .link-type-row-control { display: flex; align-items: center; gap: 8px; width: 100%; justify-content: flex-end; }
       
-      /* Modal Restyling for single-row / responsive layouts */
+      /* Fluid Container-Agnostic Layout (No @media queries needed) */
       .excalidraw-capture-note-modal .setting-item {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: wrap;        /* Allows wrapping when sidepanel is thin */
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
+        gap: 8px;
+        padding: 8px 0;         /* Shrink vertical padding */
+        min-height: auto;       /* Override native Obsidian large min-height on mobile */
+        border-top: none;
       }
       .excalidraw-capture-note-modal .setting-item-info {
-        flex: 0 1 auto;
-        white-space: nowrap;
-        min-width: max-content;
+        flex: 1 1 120px;        /* Base width of 120px, grows if space permits */
+        white-space: normal;
+        margin-top: 4px;
       }
       .excalidraw-capture-note-modal .setting-item-control {
-        flex: 1 1 200px;
+        flex: 2 1 200px;        /* Base width of 200px. If container < 320px, it wraps to next line */
         justify-content: flex-end;
-        min-width: 200px;
+        width: 100%;            /* Expands to full width when wrapped */
       }
       .excalidraw-capture-note-modal .setting-item-control input[type="text"],
       .excalidraw-capture-note-modal .setting-item-control select {
         width: 100%;
-      }
-      @media (max-width: 450px) {
-        .excalidraw-capture-note-modal .setting-item {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 4px;
-        }
-        .excalidraw-capture-note-modal .setting-item-control {
-          width: 100%;
-          justify-content: stretch;
-        }
-        .excalidraw-capture-note-modal .setting-item-info {
-          white-space: normal;
-        }
       }
     `
   });
@@ -3959,7 +3957,7 @@ function buildCaptureSearchBox(contentEl, state, callbacks) {
   }
 }
 
-function buildCaptureLinkTypeSelector(contentEl, state, callbacks) {
+function buildCaptureLinkTypeSelector(contentEl, state, callbacks, tab) {
   const noteTypeKeys = Object.keys(settings.noteTypes).sort();
   let selectedNoteType = state.selectedNoteType;
   if (!selectedNoteType || !noteTypeKeys.includes(selectedNoteType)) {
@@ -4046,18 +4044,12 @@ function buildCaptureLinkTypeSelector(contentEl, state, callbacks) {
            ea.setScriptSettings(settings);
            const targetName = finalName || tempId;
            
-           // Refresh dropdown options
-           const selectEl = state.ui.dropdownComponent.selectEl;
-           while(selectEl.options.length > 0) selectEl.remove(0);
-           Object.keys(settings.noteTypes).sort().forEach(k => state.ui.dropdownComponent.addOption(k, k));
-           
-           // Select newly created type
            state.selectedNoteType = targetName;
            settings.lastSelectedNoteType = targetName;
-           state.ui.dropdownComponent.setValue(targetName);
            
-           callbacks.updateIconPreview();
-           callbacks.updateOntologyDropdown();
+           if(tab && typeof tab.onOpen === "function") {
+               tab.onOpen(); // Re-render the capture tab inline
+           }
          }, true); 
        });
   });
@@ -4113,12 +4105,16 @@ function buildCaptureOntologySelector(contentEl, state, callbacks) {
     });
 }
 
-function buildCaptureFooter(contentEl, state, modal) {
+function buildCaptureFooter(contentEl, state, tab) {
+  // Footer is a normal non-wrapping flex row. `align-items: flex-end` forces the cog down when the button group expands vertically.
   const footer = contentEl.createDiv({
-    attr: { style: "display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-direction: row-reverse;" }
+    attr: { style: "display: flex; justify-content: space-between; align-items: flex-end; margin-top: 20px; gap: 10px; margin-bottom: 30px;" }
   });
 
-  const buttonGroup = footer.createDiv({ attr: { style: "display: flex; gap: 8px; flex-direction: row-reverse;" } });
+  // buttonGroup gets CSS order 2 so it sits on the right visually
+  const buttonGroup = footer.createDiv({ 
+    attr: { style: "display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; flex: 1 1 auto; order: 2;" } 
+  });
 
   const handleAction = (actionType) => {
     const val = state.ui.searchInput.getValue().trim();
@@ -4129,62 +4125,92 @@ function buildCaptureFooter(contentEl, state, modal) {
     state.finalData = {
       filename: val,
       folder: folderVal,
-      useRelativeFolder: state.useRelativeFolder, // Append relative setting state
+      useRelativeFolder: state.useRelativeFolder, 
       noteType: state.selectedNoteType,
       format: state.selectedFormat,
       ontologyAction: state.selectedOntology,
       actionType,
-      openNoteBBehavior: state.openNoteBBehavior
+      openNoteBBehavior: state.openNoteBBehavior,
+      sidepanelWasVisible: state.sidepanelWasVisible 
     };
-    modal.close();
+    tab.close();
   };
 
-  const captureBtn = buttonGroup.createEl("button", { text: "Capture Note", cls: "mod-cta" });
+  // Assign CSS `order` so visual LTR layout matches standard wrap behavior 
+  // (Items with higher order appear further right, and will drop to the bottom line first when wrapped)
+  const captureBtn = buttonGroup.createEl("button", { 
+    text: "Capture", 
+    cls: "mod-cta", 
+    attr: { 
+      style: "order: 4;",
+      "aria-label": "Create the note, add backlinks/embeds, and open it for editing."
+    } 
+  });
   captureBtn.addEventListener("click", () => handleAction("CAPTURE"));
 
-  const linkOnlyBtn = buttonGroup.createEl("button", { text: "Link Only" });
+  const linkOnlyBtn = buttonGroup.createEl("button", { 
+    text: "Link", 
+    attr: { 
+      style: "order: 3;",
+      "aria-label": "Link to an item without creating the note and without opening it for editing."
+    } 
+  });
   linkOnlyBtn.addEventListener("click", () => handleAction("ADD_LINK_ONLY"));
 
-  const linkCreateBtn = buttonGroup.createEl("button", { text: "Link & Create" });
+  const linkCreateBtn = buttonGroup.createEl("button", { 
+    text: "Link + File", 
+    attr: { 
+      style: "order: 2;",
+      "aria-label": "Link to the item and create its note/file in the background (but do not open for note taking)."
+    } 
+  });
   linkCreateBtn.addEventListener("click", () => handleAction("ADD_LINK_CREATE"));
 
-  const captureHereBtn = buttonGroup.createEl("button", { text: "Capture Here" });
+  const captureHereBtn = buttonGroup.createEl("button", { text: "Capture Here", attr: { style: "order: 1;" } });
   captureHereBtn.style.display = state.selectedFormat === "Markdown" ? "" : "none";
   captureHereBtn.addEventListener("click", () => handleAction("CAPTURE_HERE"));
   state.ui.captureHereBtnReference = captureHereBtn;
 
-  const cogBtn = footer.createEl("button", { cls: "clickable-icon" });
+  // Cog gets CSS order 1 in the main footer container so it sits on the left visually
+  const cogBtn = footer.createEl("button", { cls: "clickable-icon", attr: { style: "order: 1; margin: auto;" } });
   cogBtn.innerHTML = ea.obsidian.getIcon("settings").outerHTML;
   cogBtn.addEventListener("click", () => {
     window.ExcalidrawCaptureNoteScript.tempSearchValue = state.ui.searchInput.getValue().trim();
-    modal.close();
-    openSettingsModal();
+    // Crucially: Do not call tab.close() here. 
+    openSettingsModal(tab);
   });
 }
 
 async function openCaptureModal(initialSearchValue) {
-  return new Promise(resolve => {
-    const modal = new ea.FloatingModal(app);
-    modal.enableKeyCapture();
+  return new Promise(async resolve => {
     
-    setupCaptureModalEscapeHandler(modal);
+    // Assess visibility state before grabbing the tab
+    const sidepanelLeaf = ea.getSidepanelLeaf();
+    let sidepanelWasVisible = false;
+    if (sidepanelLeaf && sidepanelLeaf.view.containerEl.offsetParent !== null) {
+      sidepanelWasVisible = true;
+    }
 
-    modal.modalEl.style.width = "480px";
-    modal.modalEl.style.maxWidth = "100%";
-    modal.modalEl.classList.add("excalidraw-capture-note-modal");
+    const tab = await ea.createSidepanelTab("Capture Contextual Note", false, true);
+    if (!tab) {
+        resolve(null);
+        return;
+    }
+    
+    tab.containerEl.classList.add("excalidraw-capture-note-modal");
     
     // Clear default title text and convert to a flex container to align elements
-    modal.titleEl.empty();
-    modal.titleEl.style.display = "flex";
-    modal.titleEl.style.justifyContent = "space-between";
-    modal.titleEl.style.alignItems = "center";
-    modal.titleEl.style.width = "100%";
+    tab.titleEl.empty();
+    tab.titleEl.style.display = "flex";
+    tab.titleEl.style.justifyContent = "space-between";
+    tab.titleEl.style.alignItems = "center";
+    tab.titleEl.style.width = "100%";
     
     // Add Main Title
-    modal.titleEl.createSpan({ text: "Capture Contextual Note" });
+    tab.titleEl.createSpan({ text: "Capture Contextual Note" });
     
     // Add right-aligned Version string
-    modal.titleEl.createSpan({ 
+    tab.titleEl.createSpan({ 
       text: VERSION, 
       attr: { style: "font-size: 0.5em; color: var(--text-muted); font-weight: normal; margin-right: 8px;" } 
     });
@@ -4264,6 +4290,7 @@ async function openCaptureModal(initialSearchValue) {
       selectedOntology: "",
       allFiles: allFiles,
       searchItems: searchItems,
+      sidepanelWasVisible: sidepanelWasVisible, // Include visibility state
       ui: {} 
     };
 
@@ -4339,25 +4366,34 @@ async function openCaptureModal(initialSearchValue) {
       }
     };
 
-    modal.onOpen = () => {
-      const { contentEl } = modal;
+    tab.onOpen = () => {
+      const { contentEl } = tab;
       contentEl.empty();
 
       injectCaptureModalStyles(contentEl);
       buildCaptureFolderBox(contentEl, state);
       buildCaptureSearchBox(contentEl, state, callbacks);
-      buildCaptureLinkTypeSelector(contentEl, state, callbacks);
+      buildCaptureLinkTypeSelector(contentEl, state, callbacks, tab);
       buildCaptureFormatSelector(contentEl, state);
       buildCaptureOpenBehaviorSelector(contentEl, state);
       buildCaptureOntologySelector(contentEl, state, callbacks);
-      buildCaptureFooter(contentEl, state, modal);
+      buildCaptureFooter(contentEl, state, tab);
       
       // Allow normal folder resets to happen on subsequent typing
       state.isInitializing = false;
     };
 
-    modal.onClose = () => resolve(state.finalData);
-    modal.open();
+    tab.onClose = () => {
+      // Clean up the sidepanel if we revealed it just for this script but it didn't complete
+      if (!state.finalData && !state.sidepanelWasVisible) {
+        const sidepanelLeaf = ea.getSidepanelLeaf();
+        if (sidepanelLeaf && sidepanelLeaf.view.containerEl.offsetParent !== null) {
+          ea.toggleSidepanelView();
+        }
+      }
+      resolve(state.finalData);
+    };
+    tab.open();
   });
 }
 
@@ -4365,7 +4401,7 @@ async function openCaptureModal(initialSearchValue) {
 // 6. UI: Settings & Multi-tier Configuration Modal (Refactored)
 // -------------------------------------------------------------
 
-function buildSettingsHeader(contentEl, modal) {
+function buildSettingsHeader(contentEl, modal, captureTab) {
   const headerContainer = contentEl.createDiv({ cls: "settings-header-container" });
   headerContainer.createEl("h2", { text: "DNP Workflows Configuration Panel", attr: { style: "margin:0;" } });
   
@@ -4373,7 +4409,14 @@ function buildSettingsHeader(contentEl, modal) {
   topSaveBtn.addEventListener("click", () => {
     ea.setScriptSettings(settings);
     modal.close();
-    start();
+    
+    // Instead of calling start() and creating an orphaned secondary sidepanel context, 
+    // we instruct the current sidepanel to safely re-paint itself inline.
+    if (captureTab && typeof captureTab.onOpen === "function") {
+       captureTab.onOpen(); 
+    } else {
+       start(); 
+    }
   });
 }
 
@@ -4726,7 +4769,7 @@ function buildNoteTypesSection(contentEl) {
 // -------------------------------------------------------------
 // Settings Orchestrator
 // -------------------------------------------------------------
-function openSettingsModal() {
+function openSettingsModal(captureTab = null) {
   const modal = new ea.obsidian.Modal(app);
   modal.titleEl.setText("");
 
@@ -4748,7 +4791,7 @@ function openSettingsModal() {
       `
     });
 
-    buildSettingsHeader(contentEl, modal);
+    buildSettingsHeader(contentEl, modal, captureTab);
     buildVisualSizingSection(contentEl);
     buildVisualTemplateSection(contentEl);
     buildPropertyInjectionSection(contentEl);
@@ -19220,8 +19263,8 @@ const extractConfigFromGlobals = () => ({
   fillSweep,
   branchScale,
   baseStrokeWidth,
-  customPalette: JSON.parse(JSON.stringify(customPalette)),
-  layoutSettings: JSON.parse(JSON.stringify(layoutSettings))
+  customPalette: JSON.parse(JSON.stringify(customPalette || { enabled: false, random: false, colors: [] })),
+  layoutSettings: JSON.parse(JSON.stringify(layoutSettings || {}))
 });
 
 let mapPresets = getVal(K_PRESETS, {
@@ -19345,8 +19388,8 @@ const applyPresetToGlobals = (presetName) => {
   fillSweep = n.fillSweep;
   branchScale = n.branchScale;
   baseStrokeWidth = n.baseStrokeWidth;
-  customPalette = JSON.parse(JSON.stringify(n.customPalette));
-  layoutSettings = JSON.parse(JSON.stringify(n.layoutSettings));
+  customPalette = JSON.parse(JSON.stringify(n.customPalette || { enabled: false, random: false, colors: [] }));
+  layoutSettings = JSON.parse(JSON.stringify(n.layoutSettings || {}));
   
   setVal(K_GROWTH, currentModalGrowthMode);
   setVal(K_ARROW_TYPE, arrowType);
@@ -27088,7 +27131,7 @@ const updateUI = (sel) => {
     if (cd.customPalette) {
       customPalette = JSON.parse(JSON.stringify(cd.customPalette));
     } else {
-      customPalette = getVal(K_PALETTE, { enabled: false, random: false, colors: [] });
+      customPalette = getVal(K_PALETTE, { enabled: false, random: false, colors: [] }) || { enabled: false, random: false, colors: [] };
     }
     setVal(K_PALETTE, customPalette, true);
 
@@ -35779,6 +35822,7 @@ const precision = [1,2,2,3];
 const minLigtness = 1/Math.pow(10,precision[2]);
 const maxLightness = 100 - minLigtness;
 const minSaturation = 1/Math.pow(10,precision[2]);
+let dirty = false;
 
 let settings = ea.getScriptSettings();
 //set default values on first run
