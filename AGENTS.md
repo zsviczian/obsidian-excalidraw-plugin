@@ -97,6 +97,7 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 ## Mobile
 
 - Don't assume desktop-only behavior unless `isDesktopOnly` is `true`.
+- Avoid using desktop only objects and functions such as Node Buffer, SharedArrayBuffer, etc. For the special case when this is required, make proper mobile safe guards.
 - Avoid large in-memory structures; be mindful of memory and storage constraints.
 
 ## Agent do/don't

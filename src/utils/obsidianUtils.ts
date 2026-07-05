@@ -660,12 +660,13 @@ export function stripYamlFrontmatter(text: string): string {
 export function strictArrayBuffer(
   buffer: ArrayBuffer | SharedArrayBuffer,
 ): ArrayBuffer {
-  if (buffer instanceof SharedArrayBuffer) {
+  // Check if SharedArrayBuffer is defined in the current environment
+  if (typeof SharedArrayBuffer !== "undefined" && buffer instanceof SharedArrayBuffer) {
     const strictBuffer = new ArrayBuffer(buffer.byteLength);
     new Uint8Array(strictBuffer).set(new Uint8Array(buffer));
     return strictBuffer;
   }
-  return buffer;
+  return buffer as ArrayBuffer;
 }
 
 // 1. Map your custom 'type' strings to actual TypeScript types
