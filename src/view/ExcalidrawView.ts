@@ -8140,6 +8140,7 @@ export default class ExcalidrawView
     if (!api) {
       return false;
     }
+    this.obsidianMenu?.invalidateCustomPenCache();
     api.updateScene({
       appState: {
         customPens: this.plugin.settings.customPens.slice(

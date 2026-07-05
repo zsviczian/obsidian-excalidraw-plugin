@@ -1129,6 +1129,25 @@ export const getStrokeKeyFormLegacyWidth = (
   }
 };
 
+export const getStrokeWidthKeyByWidth = (
+  strokeWidth: number,
+): StrokeWidthKey | "extraBold" | undefined => {
+  switch (strokeWidth) {
+    case 0.25:
+      return "extraThin";
+    case 0.5:
+      return "thin";
+    case 1:
+      return "medium";
+    case 2:
+      return "bold";
+    case 4:
+      return "extraBold";
+    default:
+      return undefined;
+  }
+};
+
 // Returns an appState key for the stroke width
 // excalidraw.com deprected and removed currentItemStrokeWidth from appState
 // but the plugin still supports it to allow custom line width settings for scripts and custom pens
@@ -1140,7 +1159,8 @@ export const getAppStateStrokeWidthEntry = (
   legacyStrokeWidth: number,
 ) => {
   if (legacyStrokeWidth !== undefined) {
-    strokeWidthKey = getStrokeKeyFormLegacyWidth(legacyStrokeWidth);
+    // Reusing the combined function here
+    strokeWidthKey = getStrokeWidthKeyByWidth(legacyStrokeWidth);
   }
   if (!!legacyStrokeWidth && !strokeWidthKey) {
     return { currentItemStrokeWidth: legacyStrokeWidth };

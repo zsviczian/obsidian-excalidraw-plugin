@@ -17,6 +17,12 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+  "2.25.2": `
+## Fixed
+- YouTube embeddables did not render on Android devices
+- Changing custom pen settings did not save correctly
+- Error generating image ID on mobile devices when uploading / pasting images to the scene
+  `,
   "2.25.1": `
 This is a very minor update to fix a small regression in 2.25.0
   

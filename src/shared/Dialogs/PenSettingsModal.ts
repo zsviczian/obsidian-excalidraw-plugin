@@ -1,11 +1,14 @@
 import { ExcalidrawImperativeAPI } from "@zsviczian/excalidraw/types/excalidraw/types";
 import {
   ColorComponent,
+  DropdownComponent,
   Modal,
   Setting,
+  SliderComponent,
   TextComponent,
   ToggleComponent,
 } from "obsidian";
+import type { StrokeWidthKey } from "@zsviczian/excalidraw/types/common/src/constants";
 import { COLOR_NAMES } from "src/constants/constants";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import ExcalidrawPlugin from "src/core/main";
@@ -51,6 +54,23 @@ const EASINGFUNCTIONS: Record<string, string> = {
   easeInBounce: "easeInBounce",
   easeOutBounce: "easeOutBounce",
   easeInOutBounce: "easeInOutBounce",
+};
+
+const FREEDRAW_STROKE_WIDTH_PRESETS: Readonly<Record<StrokeWidthKey, number>> = {
+  extraThin: 0.25,
+  thin: 0.5,
+  medium: 1,
+  bold: 2,
+  extraBold: 4,
+};
+
+const getStrokeWidthPresetKey = (strokeWidth: number): StrokeWidthKey | "" => {
+  const normalizedStrokeWidth = Math.round(strokeWidth * 100) / 100;
+  const matchedPreset = (Object.entries(FREEDRAW_STROKE_WIDTH_PRESETS) as [
+    StrokeWidthKey,
+    number,
+  ][]).find(([, value]) => value === normalizedStrokeWidth);
+  return matchedPreset?.[0] ?? "";
 };
 
 export class PenSettingsModal extends Modal {
@@ -546,26 +566,64 @@ export class PenSettingsModal extends Modal {
           }),
       );
 
+    let strokeWidthSlider: SliderComponent;
+    let strokeWidthPresetDropdown: DropdownComponent;
+    let strokeWidthPresetUpdateInProgress = false;
+
     const swSetting = new Setting(ce)
       .setName(
         fragWithHTML(
           `${t("PEN_SETTINGS_STROKE_WIDTH")} <b>${ps.strokeWidth === 0 ? t("PEN_SETTINGS_NOT_SET") : ps.strokeWidth}</b>`,
         ),
       )
-      .addSlider((slider) =>
-        slider
-          .setLimits(0.1, 8, 0.1)
-          .setValue(ps.strokeWidth)
-          .onChange((value) => {
+      .addDropdown((dropdown) => {
+        strokeWidthPresetDropdown = dropdown;
+        dropdown
+          .addOption("", t("PEN_SETTINGS_STROKE_PRESET_UNSET"))
+          .addOption("extraThin", t("PEN_SETTINGS_STROKE_PRESET_EXTRA_THIN"))
+          .addOption("thin", t("PEN_SETTINGS_STROKE_PRESET_THIN"))
+          .addOption("medium", t("PEN_SETTINGS_STROKE_PRESET_MEDIUM"))
+          .addOption("bold", t("PEN_SETTINGS_STROKE_PRESET_BOLD"))
+          .addOption("extraBold", t("PEN_SETTINGS_STROKE_PRESET_EXTRA_BOLD"))
+          .setValue(getStrokeWidthPresetKey(ps.strokeWidth))
+          .onChange((value: StrokeWidthKey | "") => {
             this.isDirty = true;
-            ps.strokeWidth = value;
+            if (!value) {
+              return;
+            }
+            const presetStrokeWidth = FREEDRAW_STROKE_WIDTH_PRESETS[value];
+            ps.strokeWidth = presetStrokeWidth;
+            strokeWidthPresetUpdateInProgress = true;
+            strokeWidthSlider?.setValue(presetStrokeWidth);
             swSetting.setName(
               fragWithHTML(
                 `${t("PEN_SETTINGS_STROKE_WIDTH")} <b>${ps.strokeWidth === 0 ? t("PEN_SETTINGS_NOT_SET") : ps.strokeWidth}</b>`,
               ),
             );
-          }),
-      );
+          });
+      })
+      .addSlider((slider) => {
+        strokeWidthSlider = slider;
+        slider
+          .setLimits(0.05, 8, 0.05)
+          .setValue(ps.strokeWidth)
+          .onChange((value) => {
+            this.isDirty = true;
+            ps.strokeWidth = value;
+
+            if (strokeWidthPresetUpdateInProgress) {
+              strokeWidthPresetUpdateInProgress = false;
+            } else {
+              strokeWidthPresetDropdown.setValue(getStrokeWidthPresetKey(value));
+            }
+
+            swSetting.setName(
+              fragWithHTML(
+                `${t("PEN_SETTINGS_STROKE_WIDTH")} <b>${ps.strokeWidth === 0 ? t("PEN_SETTINGS_NOT_SET") : ps.strokeWidth}</b>`,
+              ),
+            );
+          });
+      });
 
     new Setting(ce).setName(t("PEN_SETTINGS_HIGHLIGHTER")).addToggle((toggle) =>
       toggle.setValue(ps.penOptions.highlighter).onChange((value) => {

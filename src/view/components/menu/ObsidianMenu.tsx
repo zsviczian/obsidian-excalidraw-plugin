@@ -151,6 +151,10 @@ export class ObsidianMenu {
     );
   }
 
+  public invalidateCustomPenCache() {
+    this.activePens = {};
+  }
+
   private actionCustomPenLabelClick(index: number, pen: PenStyle) {
     const now = Date.now();
     const dblClick = now - this.clickTimestamp[index] < 500;
