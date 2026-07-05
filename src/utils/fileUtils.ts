@@ -187,6 +187,9 @@ export const getMimeType = (extension: string): MimeType => {
   }
 };
 
+//declared in rollup.config.mjs
+declare const deliberateFetch: (payload: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+
 // Using fetch as primary for maximum compatibility with CORS/image endpoints.
 // fetch is used here because requestUrl sometimes fails for certain endpoints (e.g. Firebase Storage, see comment below).
 // This is a network request, not a vault or blob:app:// read.
@@ -202,7 +205,7 @@ const getFileFromURL = async (
 
     // fetch is used here for broad compatibility with image endpoints, including those that fail with requestUrl.
     const response = await Promise.race([
-      fetch(url, { mode: "no-cors" }), // CORS error cannot be caught
+      deliberateFetch(url, { mode: "no-cors" }), // CORS error cannot be caught
       timeoutPromise,
     ]);
 

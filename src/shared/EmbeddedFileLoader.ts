@@ -75,6 +75,8 @@ import {
 } from "src/utils/typechecks";
 import { getSafeFrontmatter, strictArrayBuffer } from "src/utils/obsidianUtils";
 
+//declared in rollup.config.mjs
+declare const deliberateFetch: (payload: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 declare const mainDocument: Document;
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -1780,7 +1782,7 @@ const mjxScopedStyleCache = new Map<string, Promise<string>>();
 const fetchFontAsDataURI = async (url: string): Promise<string | null> => {
   if (url.startsWith("data:")) return url;
   try {
-    const res = await fetch(url);
+    const res = await deliberateFetch(url);
     if (!res.ok) return null;
     const buf = await res.arrayBuffer();
     const bytes = new Uint8Array(buf);
@@ -1945,7 +1947,7 @@ const replaceBlobWithBase64 = async (
     const blobUrl = img.src;
     try {
       // fetch is the only way to read blob: URLs in browser/Obsidian context.
-      const response = await fetch(blobUrl);
+      const response = await deliberateFetch(blobUrl);
       const blob = await response.blob();
       const base64 = await blobToBase64(blob);
       img.src = `data:${blob.type};base64,${base64}`;

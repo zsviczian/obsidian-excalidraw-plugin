@@ -33,6 +33,8 @@ function pointInRect(
   );
 }
 
+declare const getCaretRangeFromPoint: (doc: Document, x: number, y: number) => Range | null;
+
 function isPointOnText(e: PointerEvent | TouchEvent, doc: Document): boolean {
   const pt = getClientPoint(e);
   if (!pt) {
@@ -48,8 +50,8 @@ function isPointOnText(e: PointerEvent | TouchEvent, doc: Document): boolean {
     offsetNode = caretPos.offsetNode;
     offset = typeof caretPos.offset === "number" ? caretPos.offset : null;
   } else {
-    // Safari/WebKit
-    const caretRange = doc.caretRangeFromPoint?.(pt.x, pt.y);
+    // Safari/WebKit - see rollup.config.mjs for the declaration of getCaretRangeFromPoint
+    const caretRange = getCaretRangeFromPoint(doc, pt.x, pt.y);
     if (caretRange?.startContainer) {
       offsetNode = caretRange.startContainer;
       offset =

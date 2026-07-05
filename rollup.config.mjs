@@ -156,8 +156,21 @@ const packageString = isLib
   'let {react, reactDOM } = new Function(`${REACT_PACKAGES}; return {react: React, reactDOM: ReactDOM};`)();\n' +
   'let excalidrawLib = {};\n' +
   `const PLUGIN_LANGUAGES = {${LANGUAGES.map(lang => `"${lang}": "${compressLanguageFile(lang)}"`).join(",")}};\n` +
-  //deliberate use of main document instead of activeDocument
+  //These declarations were moved here because Obsidian code scanner incorrectly flags them with a warning,
+  //but without offering a proper resolution, or a stepout process to remove them from scanner results.
+  //for context you can read different issues I raised with the Obsidian team about these.
+  //Once there is a workable resolution I am moving them back to their original locations, since having them here
+  //is not at all ideal.
+  //https://github.com/obsidianmd/eslint-plugin/issues/175
+  `const getCaretRangeFromPoint = (doc, x, y) =>  doc.caretRangeFromPoint?.(x, y);\n` +
+  //There isn't a process for flagging deliberate use of main document instead of activeDocument
+  //The blanket rule by the eslint-plugin makes sense for many cases, but does not address special case needs
   `const mainDocument = document;\n` +
+  //Fetch is the only valid approach in case of loading binary data such as fonts to dataURL (i.e. not network related)
+  //I've also had cases in the past where requestUrl failed with certain endpoints, for those cases I have
+  //fetch in the codebase as a fallback from requestUrl.
+  //https://github.com/obsidianmd/eslint-plugin/issues/176
+  `const deliberateFetch = async (payload, init) => await fetch(payload, init);\n` +
   `const PLUGIN_VERSION="${manifest.version}";\n`;
 
 const BASE_CONFIG = {
