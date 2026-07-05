@@ -18,11 +18,17 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
   "2.25.2": `
+One more small maintenance release with a few important fixes.
+
+I'm now shifting my focus to the [SYM Community](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM}), where I'll be experimenting with some exciting new Visual PKM ideas. I'll also be taking a few weeks to recharge, so I don't expect another Excalidraw update until August.
+
+I hope these fixes make for a stable release. Have a great summer, and see you in the community!
+
 ## Fixed
-- YouTube embeddables did not render on Android devices
-- Changing custom pen settings did not save correctly. Added Save and Cancel buttons to the Pen Settings page.
-- Error generating image ID on mobile devices when uploading / pasting images to the scene
-  `,
+- Fixed YouTube embeddables not rendering on Android devices.
+- Fixed custom pen settings not being saved correctly. Added **Save** and **Cancel** buttons to the Pen Settings page.
+- Fixed an error generating image IDs on mobile devices when uploading or pasting images into a scene.
+`,
   "2.25.1": `
 This is a very minor update to fix a small regression in 2.25.0
   
