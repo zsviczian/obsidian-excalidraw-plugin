@@ -20,7 +20,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
   "2.25.2": `
 ## Fixed
 - YouTube embeddables did not render on Android devices
-- Changing custom pen settings did not save correctly
+- Changing custom pen settings did not save correctly. Added Save and Cancel buttons to the Pen Settings page.
 - Error generating image ID on mobile devices when uploading / pasting images to the scene
   `,
   "2.25.1": `

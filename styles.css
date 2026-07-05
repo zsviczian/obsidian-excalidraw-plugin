@@ -1078,3 +1078,19 @@ End Obsidian Sheets Plus support
 .excalidraw .App-tray-menu {
   min-width: calc(6 * var(--default-button-size));
 }
+
+.excalidraw-pen-settings-floating-actions {
+  position: sticky;
+  bottom: -20px;
+  margin-bottom: -20px;
+  padding-bottom: 20px;
+  padding-top: 15px;
+  background-color: var(--background-primary);
+  border-top: 1px solid var(--background-modifier-border);
+  z-index: 10;
+}
+
+.excalidraw-pen-settings-floating-actions .setting-item {
+  border-top: none;
+  padding: 0;
+}

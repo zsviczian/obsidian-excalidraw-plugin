@@ -661,7 +661,10 @@ export function strictArrayBuffer(
   buffer: ArrayBuffer | SharedArrayBuffer,
 ): ArrayBuffer {
   // Check if SharedArrayBuffer is defined in the current environment
-  if (typeof SharedArrayBuffer !== "undefined" && buffer instanceof SharedArrayBuffer) {
+  if (
+    typeof SharedArrayBuffer !== "undefined" &&
+    buffer instanceof SharedArrayBuffer
+  ) {
     const strictBuffer = new ArrayBuffer(buffer.byteLength);
     new Uint8Array(strictBuffer).set(new Uint8Array(buffer));
     return strictBuffer;

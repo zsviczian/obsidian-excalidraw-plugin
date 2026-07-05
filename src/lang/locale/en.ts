@@ -1635,17 +1635,20 @@ Thank you & Enjoy!
   PEN_SETTINGS_TYPE_THICK_THIN: "Mindmap Thick-Thin",
   PEN_SETTINGS_TYPE_THIN_THICK_THIN: "Mindmap Thin-Thick-Thin",
   PEN_SETTINGS_APPLY: "Apply New Template",
-  PEN_SETTINGS_SCOPE_FREEDRAW_ONLY: "Stroke & fill applies to: <b>Freedraw only</b>",
+  PEN_SETTINGS_SCOPE_FREEDRAW_ONLY:
+    "Stroke & fill applies to: <b>Freedraw only</b>",
   PEN_SETTINGS_SCOPE_ALL_SHAPES: "Stroke & fill applies to: <b>All shapes</b>",
   PEN_SETTINGS_SCOPE_DESC: `<b>"All shapes"</b> means that if for example, you select a blue pen with dashed fill and then switch to a different tool (e.g. to a line, a circle, an arrow - i.e. not the freedraw tool), those will all have the same blue line and dashed fill.<br><b>"Only applies to the freedraw line"</b> means that if for example you are writing black text, and you select a custom pen (e.g. a yellow highlighter), then after using the highlighter you switch to another tool, the previous settings (e.g. black stroke color) will apply to the new shape.`,
   PEN_SETTINGS_STROKE_CURRENT: "Stroke color: <b>Current</b>",
   PEN_SETTINGS_STROKE_PRESET: "Stroke color: <b>Preset color</b>",
-  PEN_SETTINGS_STROKE_DESC: "Use <b>current</b> stroke color of the canvas, or set a specific <b>preset color</b> for the pen",
+  PEN_SETTINGS_STROKE_DESC:
+    "Use <b>current</b> stroke color of the canvas, or set a specific <b>preset color</b> for the pen",
   PEN_SETTINGS_STROKE_SELECT: "Select stroke color",
   PEN_SETTINGS_USE_CANVAS_CURRENT: "Use Canvas Current",
   PEN_SETTINGS_BG_CURRENT: "Background color: <b>Current</b>",
   PEN_SETTINGS_BG_PRESET: "Background color: <b>Preset color</b>",
-  PEN_SETTINGS_BG_DESC: "Toggle to use the <b>current background color</b> of the canvas; or a <b>preset color</b>",
+  PEN_SETTINGS_BG_DESC:
+    "Toggle to use the <b>current background color</b> of the canvas; or a <b>preset color</b>",
   PEN_SETTINGS_BG_TRANSPARENT: "Background: <b>Transparent</b>",
   PEN_SETTINGS_BG_COLOR_PRESET: "Color: <b>Preset color</b>",
   PEN_SETTINGS_BG_TRANSPARENT_DESC: "Background has color or is transparent",
@@ -1674,10 +1677,12 @@ Thank you & Enjoy!
   PEN_SETTINGS_STROKE_PRESET_EXTRA_BOLD: "Extra bold",
   PEN_SETTINGS_HIGHLIGHTER: "Highlighter pen?",
   PEN_SETTINGS_PRESSURE: "Pressure sensitive pen?",
-  PEN_SETTINGS_PRESSURE_DESC: "<b>toggle on</b>: pressure sensitive<br><b>toggle off</b>: constant pressure",
+  PEN_SETTINGS_PRESSURE_DESC:
+    "<b>toggle on</b>: pressure sensitive<br><b>toggle off</b>: constant pressure",
   PEN_SETTINGS_OUTLINE_NONE: "No outline",
   PEN_SETTINGS_OUTLINE_WIDTH: "Outline width",
-  PEN_SETTINGS_OUTLINE_DESC: "If the stroke has an outline, this will mean the stroke color is the outline color, and the background color is the pen stroke's fill color. If the pen does not have an outline then the pen color is the stroke color. The Fill Style setting applies to the fill style of the enclosed shape, not of the line itself. The line can only have solid fill.",
+  PEN_SETTINGS_OUTLINE_DESC:
+    "If the stroke has an outline, this will mean the stroke color is the outline color, and the background color is the pen stroke's fill color. If the pen does not have an outline then the pen color is the stroke color. The Fill Style setting applies to the fill style of the enclosed shape, not of the line itself. The line can only have solid fill.",
   PEN_SETTINGS_PF_HEADING: "Perfect Freehand settings",
   PEN_SETTINGS_PF_DOCS: `Read the Perfect Freehand documentation following <a href="${URLs.GITHUB_COM_STEVERUIZOK_PERFECT_FREEHAND}" target="_blank">this link</a>.`,
   PEN_SETTINGS_PF_THINNING: "Thinning",
@@ -1689,7 +1694,8 @@ Thank you & Enjoy!
   PEN_SETTINGS_EASING: "Easing function",
   PEN_SETTINGS_EASING_DESC: `An easing function for the tapering effect. For more info <a href="${URLs.EASINGS_NET}" target="_blank">click here</a>`,
   PEN_SETTINGS_SIMULATE_PRESSURE: "Simulate Pressure",
-  PEN_SETTINGS_SIMULATE_PRESSURE_DESC: "Whether to simulate pressure based on velocity.",
+  PEN_SETTINGS_SIMULATE_PRESSURE_DESC:
+    "Whether to simulate pressure based on velocity.",
   PEN_SETTINGS_SIMULATE_PRESSURE_ALWAYS: "Always",
   PEN_SETTINGS_SIMULATE_PRESSURE_NEVER: "Never",
   PEN_SETTINGS_SIMULATE_PRESSURE_MOUSE: "Yes for mouse, No for pen",
@@ -1698,7 +1704,8 @@ Thank you & Enjoy!
   PEN_SETTINGS_CAP_START: "Cap Start",
   PEN_SETTINGS_CAP_DESC: "Whether to draw a cap",
   PEN_SETTINGS_TAPER: "Taper:",
-  PEN_SETTINGS_TAPER_DESC: "The distance to taper. If set to true, the taper will be the total length of the stroke.",
+  PEN_SETTINGS_TAPER_DESC:
+    "The distance to taper. If set to true, the taper will be the total length of the stroke.",
   PEN_SETTINGS_END_HEADING: "End",
   PEN_SETTINGS_END_DESC: "Tapering options for the end of the line.",
   PEN_SETTINGS_CAP_END: "Cap End",

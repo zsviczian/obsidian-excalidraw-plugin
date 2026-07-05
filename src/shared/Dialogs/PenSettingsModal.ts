@@ -56,26 +56,26 @@ const EASINGFUNCTIONS: Record<string, string> = {
   easeInOutBounce: "easeInOutBounce",
 };
 
-const FREEDRAW_STROKE_WIDTH_PRESETS: Readonly<Record<StrokeWidthKey, number>> = {
-  extraThin: 0.25,
-  thin: 0.5,
-  medium: 1,
-  bold: 2,
-  extraBold: 4,
-};
+const FREEDRAW_STROKE_WIDTH_PRESETS: Readonly<Record<StrokeWidthKey, number>> =
+  {
+    extraThin: 0.25,
+    thin: 0.5,
+    medium: 1,
+    bold: 2,
+    extraBold: 4,
+  };
 
 const getStrokeWidthPresetKey = (strokeWidth: number): StrokeWidthKey | "" => {
   const normalizedStrokeWidth = Math.round(strokeWidth * 100) / 100;
-  const matchedPreset = (Object.entries(FREEDRAW_STROKE_WIDTH_PRESETS) as [
-    StrokeWidthKey,
-    number,
-  ][]).find(([, value]) => value === normalizedStrokeWidth);
+  const matchedPreset = (
+    Object.entries(FREEDRAW_STROKE_WIDTH_PRESETS) as [StrokeWidthKey, number][]
+  ).find(([, value]) => value === normalizedStrokeWidth);
   return matchedPreset?.[0] ?? "";
 };
 
 export class PenSettingsModal extends Modal {
   private api: ExcalidrawImperativeAPI;
-  private isSaved: boolean = false;
+  private shouldSave: boolean = false;
   private isDirty: boolean = false;
   private tempPenSettings: PenStyle;
 
@@ -87,7 +87,9 @@ export class PenSettingsModal extends Modal {
     super(plugin.app);
     this.api = view.excalidrawAPI;
     // Clone the settings so changes aren't applied unless saved
-    this.tempPenSettings = JSON.parse(JSON.stringify(this.plugin.settings.customPens[this.pen])) as PenStyle;
+    this.tempPenSettings = JSON.parse(
+      JSON.stringify(this.plugin.settings.customPens[this.pen]),
+    ) as PenStyle;
   }
 
   onOpen(): void {
@@ -97,15 +99,15 @@ export class PenSettingsModal extends Modal {
   }
 
   onClose() {
-    if (this.isSaved && this.isDirty) {
+    if (this.shouldSave && this.isDirty) {
       // Overwrite actual settings with temp settings
       this.plugin.settings.customPens[this.pen] = this.tempPenSettings;
       void this.plugin.saveSettings();
-      
+
       getExcalidrawViews(this.app, true).forEach((excalidrawView) =>
         excalidrawView.updatePinnedCustomPens(),
       );
-      
+
       const pen = this.plugin.settings.customPens[this.pen];
       const api = this.view.excalidrawAPI;
       setPen(pen, api);
@@ -114,20 +116,23 @@ export class PenSettingsModal extends Modal {
   }
 
   private addActionButtons(container: HTMLElement) {
-    new Setting(container)
+    const actionContainer = container.createDiv(
+      "excalidraw-pen-settings-floating-actions",
+    );
+    new Setting(actionContainer)
       .addButton((bt) =>
         bt
           .setButtonText(t("PEN_SETTINGS_SAVE"))
           .setCta()
           .onClick(() => {
-            this.isSaved = true;
+            this.shouldSave = true;
             this.close();
-          })
+          }),
       )
       .addButton((bt) =>
         bt.setButtonText(t("PEN_SETTINGS_CANCEL")).onClick(() => {
           this.close();
-        })
+        }),
       );
   }
 
@@ -168,9 +173,6 @@ export class PenSettingsModal extends Modal {
     const ps = this.tempPenSettings;
     const ce = this.contentEl;
     ce.empty();
-
-    // Top buttons
-    this.addActionButtons(ce);
 
     ce.createEl("h1", { text: t("PEN_SETTINGS_HEADING") });
 
@@ -213,11 +215,7 @@ export class PenSettingsModal extends Modal {
             : t("PEN_SETTINGS_SCOPE_ALL_SHAPES"),
         ),
       )
-      .setDesc(
-        fragWithHTML(
-          t("PEN_SETTINGS_SCOPE_DESC"),
-        ),
-      )
+      .setDesc(fragWithHTML(t("PEN_SETTINGS_SCOPE_DESC")))
       .addToggle((toggle) =>
         toggle.setValue(ps.freedrawOnly).onChange((value) => {
           this.isDirty = true;
@@ -246,11 +244,7 @@ export class PenSettingsModal extends Modal {
             : t("PEN_SETTINGS_STROKE_PRESET"),
         ),
       )
-      .setDesc(
-        fragWithHTML(
-          t("PEN_SETTINGS_STROKE_DESC"),
-        ),
-      )
+      .setDesc(fragWithHTML(t("PEN_SETTINGS_STROKE_DESC")))
       .addToggle((toggle) => {
         strokeUseCurrentToggle = toggle;
         toggle.setValue(!ps.strokeColor).onChange((value) => {
@@ -283,18 +277,20 @@ export class PenSettingsModal extends Modal {
     const scSetting = new Setting(ce)
       .setName(t("PEN_SETTINGS_STROKE_SELECT"))
       .addButton((button) =>
-        button.setButtonText(t("PEN_SETTINGS_USE_CANVAS_CURRENT")).onClick(() => {
-          const st = this.api.getAppState();
-          const color =
-            st.resetCustomPen?.currentItemStrokeColor ??
-            st.currentItemStrokeColor;
-          [sHex, sOpacity] = hexColor(color);
-          ps.strokeColor = color;
-          this.isDirty = true;
-          sctComponent.setValue(color);
-          sChangeBounce = true;
-          sccpComponent.setValue(sHex);
-        }),
+        button
+          .setButtonText(t("PEN_SETTINGS_USE_CANVAS_CURRENT"))
+          .onClick(() => {
+            const st = this.api.getAppState();
+            const color =
+              st.resetCustomPen?.currentItemStrokeColor ??
+              st.currentItemStrokeColor;
+            [sHex, sOpacity] = hexColor(color);
+            ps.strokeColor = color;
+            this.isDirty = true;
+            sctComponent.setValue(color);
+            sChangeBounce = true;
+            sccpComponent.setValue(sHex);
+          }),
       )
       .addText((text) => {
         sctComponent = text;
@@ -331,6 +327,7 @@ export class PenSettingsModal extends Modal {
           if (!selected) {
             return;
           }
+          this.isDirty = true;
           strokeUseCurrentToggle?.setValue(false);
           sChangeBounce = true;
           [sHex, sOpacity] = hexColor(selected);
@@ -362,11 +359,7 @@ export class PenSettingsModal extends Modal {
             : t("PEN_SETTINGS_BG_PRESET"),
         ),
       )
-      .setDesc(
-        fragWithHTML(
-          t("PEN_SETTINGS_BG_DESC"),
-        ),
-      )
+      .setDesc(fragWithHTML(t("PEN_SETTINGS_BG_DESC")))
       .addToggle((toggle) => {
         bgUseCurrentToggle = toggle;
         toggle.setValue(!ps.backgroundColor).onChange((value) => {
@@ -447,18 +440,20 @@ export class PenSettingsModal extends Modal {
     const bgcSetting = new Setting(ce)
       .setName(t("PEN_SETTINGS_BG_COLOR"))
       .addButton((button) =>
-        button.setButtonText(t("PEN_SETTINGS_USE_CANVAS_CURRENT")).onClick(() => {
-          const st = this.api.getAppState();
-          const color =
-            st.resetCustomPen?.currentItemBackgroundColor ??
-            st.currentItemBackgroundColor;
-          [bgHex, bgOpacity] = hexColor(color);
-          ps.backgroundColor = color;
-          this.isDirty = true;
-          bgctComponent.setValue(color);
-          bgChangeBounce = true;
-          bgcpComponent.setValue(bgHex);
-        }),
+        button
+          .setButtonText(t("PEN_SETTINGS_USE_CANVAS_CURRENT"))
+          .onClick(() => {
+            const st = this.api.getAppState();
+            const color =
+              st.resetCustomPen?.currentItemBackgroundColor ??
+              st.currentItemBackgroundColor;
+            [bgHex, bgOpacity] = hexColor(color);
+            ps.backgroundColor = color;
+            this.isDirty = true;
+            bgctComponent.setValue(color);
+            bgChangeBounce = true;
+            bgcpComponent.setValue(bgHex);
+          }),
       )
       .addText((text) => {
         bgctComponent = text;
@@ -495,6 +490,7 @@ export class PenSettingsModal extends Modal {
           if (!selected) {
             return;
           }
+          this.isDirty = true;
           bgUseCurrentToggle?.setValue(false);
           bgtComponent?.setValue(false);
           bgChangeBounce = true;
@@ -539,8 +535,10 @@ export class PenSettingsModal extends Modal {
 
     const getSloppinessName = (roughness: number | null) => {
       if (roughness === null) return t("PEN_SETTINGS_NOT_SET");
-      if (roughness <= 0.5) return `${t("PEN_SETTINGS_SLOPPINESS_ARCHITECT")} (${roughness})`;
-      if (roughness <= 1.5) return `${t("PEN_SETTINGS_SLOPPINESS_ARTIST")} (${roughness})`;
+      if (roughness <= 0.5)
+        return `${t("PEN_SETTINGS_SLOPPINESS_ARCHITECT")} (${roughness})`;
+      if (roughness <= 1.5)
+        return `${t("PEN_SETTINGS_SLOPPINESS_ARTIST")} (${roughness})`;
       return `${t("PEN_SETTINGS_SLOPPINESS_CARTOONIST")} (${roughness})`;
     };
 
@@ -614,7 +612,9 @@ export class PenSettingsModal extends Modal {
             if (strokeWidthPresetUpdateInProgress) {
               strokeWidthPresetUpdateInProgress = false;
             } else {
-              strokeWidthPresetDropdown.setValue(getStrokeWidthPresetKey(value));
+              strokeWidthPresetDropdown.setValue(
+                getStrokeWidthPresetKey(value),
+              );
             }
 
             swSetting.setName(
@@ -634,11 +634,7 @@ export class PenSettingsModal extends Modal {
 
     new Setting(ce)
       .setName(t("PEN_SETTINGS_PRESSURE"))
-      .setDesc(
-        fragWithHTML(
-          t("PEN_SETTINGS_PRESSURE_DESC"),
-        ),
-      )
+      .setDesc(fragWithHTML(t("PEN_SETTINGS_PRESSURE_DESC")))
       .addToggle((toggle) =>
         toggle.setValue(!ps.penOptions.constantPressure).onChange((value) => {
           this.isDirty = true;
@@ -690,34 +686,33 @@ export class PenSettingsModal extends Modal {
 
     ce.createEl("h2", { text: t("PEN_SETTINGS_PF_HEADING") });
     const p = ce.createEl("p");
-    setSanitizedHtml(
-      p,
-      t("PEN_SETTINGS_PF_DOCS"),
-    );
+    setSanitizedHtml(p, t("PEN_SETTINGS_PF_DOCS"));
 
     const tSetting = new Setting(ce)
       .setName(
-        fragWithHTML(`${t("PEN_SETTINGS_PF_THINNING")} <b>${ps.penOptions.options.thinning}</b>`),
-      )
-      .setDesc(
         fragWithHTML(
-          t("PEN_SETTINGS_PF_THINNING_DESC"),
+          `${t("PEN_SETTINGS_PF_THINNING")} <b>${ps.penOptions.options.thinning}</b>`,
         ),
       )
+      .setDesc(fragWithHTML(t("PEN_SETTINGS_PF_THINNING_DESC")))
       .addSlider((slider) =>
         slider
           .setLimits(-1, 1, 0.05)
           .setValue(ps.penOptions.options.thinning)
           .onChange((value) => {
             this.isDirty = true;
-            tSetting.setName(fragWithHTML(`${t("PEN_SETTINGS_PF_THINNING")} <b>${value}</b>`));
+            tSetting.setName(
+              fragWithHTML(`${t("PEN_SETTINGS_PF_THINNING")} <b>${value}</b>`),
+            );
             ps.penOptions.options.thinning = value;
           }),
       );
 
     const sSetting = new Setting(ce)
       .setName(
-        fragWithHTML(`${t("PEN_SETTINGS_PF_SMOOTHING")} <b>${ps.penOptions.options.smoothing}</b>`),
+        fragWithHTML(
+          `${t("PEN_SETTINGS_PF_SMOOTHING")} <b>${ps.penOptions.options.smoothing}</b>`,
+        ),
       )
       .setDesc(fragWithHTML(t("PEN_SETTINGS_PF_SMOOTHING_DESC")))
       .addSlider((slider) =>
@@ -726,14 +721,18 @@ export class PenSettingsModal extends Modal {
           .setValue(ps.penOptions.options.smoothing)
           .onChange((value) => {
             this.isDirty = true;
-            sSetting.setName(fragWithHTML(`${t("PEN_SETTINGS_PF_SMOOTHING")} <b>${value}</b>`));
+            sSetting.setName(
+              fragWithHTML(`${t("PEN_SETTINGS_PF_SMOOTHING")} <b>${value}</b>`),
+            );
             ps.penOptions.options.smoothing = value;
           }),
       );
 
     const slSetting = new Setting(ce)
       .setName(
-        fragWithHTML(`${t("PEN_SETTINGS_PF_STREAMLINE")} <b>${ps.penOptions.options.streamline}</b>`),
+        fragWithHTML(
+          `${t("PEN_SETTINGS_PF_STREAMLINE")} <b>${ps.penOptions.options.streamline}</b>`,
+        ),
       )
       .setDesc(fragWithHTML(t("PEN_SETTINGS_PF_STREAMLINE_DESC")))
       .addSlider((slider) =>
@@ -742,18 +741,18 @@ export class PenSettingsModal extends Modal {
           .setValue(ps.penOptions.options.streamline)
           .onChange((value) => {
             this.isDirty = true;
-            slSetting.setName(fragWithHTML(`${t("PEN_SETTINGS_PF_STREAMLINE")} <b>${value}</b>`));
+            slSetting.setName(
+              fragWithHTML(
+                `${t("PEN_SETTINGS_PF_STREAMLINE")} <b>${value}</b>`,
+              ),
+            );
             ps.penOptions.options.streamline = value;
           }),
       );
 
     new Setting(ce)
       .setName(t("PEN_SETTINGS_EASING"))
-      .setDesc(
-        fragWithHTML(
-          t("PEN_SETTINGS_EASING_DESC"),
-        ),
-      )
+      .setDesc(fragWithHTML(t("PEN_SETTINGS_EASING_DESC")))
       .addDropdown((dropdown) =>
         dropdown
           .addOptions(EASINGFUNCTIONS)
@@ -841,11 +840,7 @@ export class PenSettingsModal extends Modal {
 
     new Setting(ce)
       .setName(t("PEN_SETTINGS_EASING"))
-      .setDesc(
-        fragWithHTML(
-          t("PEN_SETTINGS_EASING_DESC"),
-        ),
-      )
+      .setDesc(fragWithHTML(t("PEN_SETTINGS_EASING_DESC")))
       .addDropdown((dropdown) =>
         dropdown
           .addOptions(EASINGFUNCTIONS)
@@ -897,11 +892,7 @@ export class PenSettingsModal extends Modal {
 
     new Setting(ce)
       .setName(t("PEN_SETTINGS_EASING"))
-      .setDesc(
-        fragWithHTML(
-          t("PEN_SETTINGS_EASING_DESC"),
-        ),
-      )
+      .setDesc(fragWithHTML(t("PEN_SETTINGS_EASING_DESC")))
       .addDropdown((dropdown) =>
         dropdown
           .addOptions(EASINGFUNCTIONS)
