@@ -433,17 +433,21 @@ function _decodePng(dataUri) {
   return null;
 }
 
-// Discover *.strippack files the user could import — EXACTLY two places, no
-// recursion: the Excalidraw scripts folder itself and its Downloaded/ subfolder
-// (where the script-store installs). NOTE: Obsidian does not index unknown
-// extensions, so vault.getFiles() can't see .strippack — we list the adapter.
+// Discover *.strippack files the user could import — THREE places, no
+// recursion: the Excalidraw scripts folder itself, its Downloaded/ subfolder
+// (where the script-store installs), and the script's own data folder
+// ("Comic Strip Director (Library)", legacy names included). NOTE: Obsidian
+// does not index unknown extensions, so vault.getFiles() can't see
+// .strippack — we list the adapter.
 async function listStrippackFiles() {
   const appRef = _vaultApp();
   if (!appRef || !appRef.vault || !appRef.vault.adapter) return [];
   const adapter = appRef.vault.adapter;
   const hits = new Set();
   const root = _scriptsRoot();
-  for (const d of [root, root + "/Downloaded"]) {
+  const dirs = [root, root + "/Downloaded"];
+  try { const b = await resolveBundleDir(); if (b && !dirs.includes(b)) dirs.push(b); } catch (e) { /* no bundle yet */ }
+  for (const d of dirs) {
     try {
       if (!(await adapter.exists(d))) continue;
       const listing = await adapter.list(d);
@@ -746,7 +750,7 @@ async function importPacksFlow(placeholder, makeProgress) {
   try {
     const files = await listStrippackFiles();
     if (!files.length) {
-      new Notice("No .strippack files found in your Excalidraw scripts folder (or Scripts/Downloaded). Unzip the product download, copy the .strippack there with Finder/Explorer (drag-dropping onto Obsidian silently ignores it), then retry.", 9000);
+      new Notice("No .strippack files found in your Excalidraw scripts folder, Scripts/Downloaded, or the Comic Strip Director (Library) folder. Unzip the product download, copy the .strippack into one of those with Finder/Explorer (drag-dropping onto Obsidian silently ignores it), then retry.", 9000);
       return false;
     }
     const base = (x) => String(x).split("/").pop();
