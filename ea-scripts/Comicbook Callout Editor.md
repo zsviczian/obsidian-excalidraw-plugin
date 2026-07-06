@@ -34,6 +34,11 @@ Features:
    - Action buttons dynamically enable/disable based on whether the active workspace leaf matches the script's target Excalidraw view.
 */
 
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.25.0")) {
+  new Notice("This script requires a Excalidraw 2.25.0 or later. Please install the latest version.");
+  return;
+}
+
 // ---------------------------------------------------------
 // 1. Constants & State Initialization
 // ---------------------------------------------------------
