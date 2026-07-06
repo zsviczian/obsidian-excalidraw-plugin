@@ -42,7 +42,7 @@ Tags everything in `customData.stripDirector` and never touches `comicCallout`.
    drop the `.strippack` in your scripts folder (or `Scripts/Downloaded/`), then
    **Import pack…** — you can import many packs in one go.
 
-> **Using Obsidian Sync?** Consider excluding the `Comic Strip Director` data
+> **Using Obsidian Sync?** Consider excluding the `Comic Strip Director (Library)` data
 > folder from sync — packs contain a lot of images. And after a big import,
 > restart Obsidian so indexing catches up.
 
@@ -193,9 +193,9 @@ function _vaultApp() { return (ea.plugin && ea.plugin.app) || (typeof app !== "u
 // All companion data (vector figures, AI pngs, manifests, roster, anchors) lives
 // in a folder named exactly like this script, INSIDE the Scripts folder — so the
 // script and its data move / share as one portable bundle.
-const BUNDLE_DIR_NAME = "Comic Strip Director";
-// Data folders created under the script's previous name keep working.
-const LEGACY_BUNDLE_DIR_NAMES = ["Comicbook Strip Director (Library)"];
+const BUNDLE_DIR_NAME = "Comic Strip Director (Library)";
+// Data folders created under the script's previous names keep working.
+const LEGACY_BUNDLE_DIR_NAMES = ["Comic Strip Director", "Comicbook Strip Director (Library)"];
 // Where the data bundle lives. Resolved once at startup: normally in the scripts
 // folder root, but when this script is installed via the official script store it
 // runs from Scripts/Downloaded/ — so the data folder is honoured in EITHER place.
@@ -1772,12 +1772,19 @@ function addStoreBtn(parent, text) {
 }
 // Neutral action button — one shared rounded-rectangle style so Import / Import FX /
 // Manage / Fit-to-view / Generate all match each other and the store button.
-function styleActionBtn(b) {
+function styleActionBtn(b, opts) {
+  const accent = !!(opts && opts.accent);
+  const baseBg = accent ? "var(--interactive-accent)" : "var(--background-secondary)";
+  const hoverBg = accent ? "var(--interactive-accent-hover)" : "var(--background-modifier-hover)";
   b.style.cssText = "display:inline-flex;align-items:center;gap:5px;font-size:0.75em;font-weight:500;" +
-    "color:var(--text-normal);background:var(--background-secondary);border:1px solid var(--background-modifier-border);" +
+    `color:${accent ? "var(--text-on-accent)" : "var(--text-normal)"};background:${baseBg};` +
+    `border:1px solid ${accent ? "var(--interactive-accent)" : "var(--background-modifier-border)"};` +
     "padding:3px 10px;border-radius:5px;cursor:pointer;white-space:nowrap";
-  b.onmouseenter = () => { b.style.background = "var(--background-modifier-hover)"; };
-  b.onmouseleave = () => { b.style.background = "var(--background-secondary)"; };
+  try { b.classList.add("csd-btn"); } catch (e) { /* headless */ }
+  // Hover restores the button's OWN base colour — an accent button must not
+  // fall back to the plain background on mouse-leave.
+  b.onmouseenter = () => { b.style.background = hoverBg; };
+  b.onmouseleave = () => { b.style.background = baseBg; };
   return b;
 }
 
@@ -1880,6 +1887,16 @@ async function buildPanel(tab, ctx) {
   // generation aborts before appending async sections, so the panel renders exactly once.
   const __gen = (tab.__buildGen = (tab.__buildGen || 0) + 1);
   contentEl.empty();
+  // Responsive behaviour for any panel width: images scale, button rows wrap,
+  // long names break instead of overflowing, buttons share one size.
+  try {
+    if (contentEl.classList) contentEl.classList.add("csd-panel");
+    const st = contentEl.createEl("style");
+    st.setText(".csd-panel img { max-width: 100%; height: auto; }" +
+      " .csd-panel .csd-btn { min-height: 26px; max-width: 100%; }" +
+      " .csd-panel button { flex-shrink: 1; }" +
+      " .csd-panel div { overflow-wrap: break-word; min-width: 0; }");
+  } catch (e) { /* headless */ }
 
   renderHeader(contentEl);
   renderStatusLine(contentEl, tab, ctx);
@@ -2002,8 +2019,7 @@ function renderStatusLine(contentEl, tab, ctx) {
       const getRow = contentEl.createDiv();
       getRow.style.cssText = "display:flex;align-items:center;gap:8px;margin:6px 0 0;flex-wrap:wrap";
       const freeBtn = getRow.createEl("button", { text: "⭐ Get the free starter pack" });
-      styleActionBtn(freeBtn);
-      freeBtn.style.background = "var(--interactive-accent)"; freeBtn.style.color = "var(--text-on-accent)"; freeBtn.style.borderColor = "var(--interactive-accent)";
+      styleActionBtn(freeBtn, { accent: true });
       freeBtn.title = "One click: downloads the free Core Cast + FX packs and imports them";
       freeBtn.onclick = async () => {
         try {
@@ -2124,7 +2140,7 @@ function renderBuildPage(contentEl, tab, ctx) {
     // Painted (raster) FX — the built-in / importable comic effect art.
     const rfx = (FX_FIGURES && FX_FIGURES.figures) || [];
     const rfxWrap = fxWrap.createDiv();
-    const rfxHead = rfxWrap.createDiv(); rfxHead.style.cssText = "display:flex;align-items:center;gap:8px;margin:0 0 5px";
+    const rfxHead = rfxWrap.createDiv(); rfxHead.style.cssText = "display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 5px";
     const rfxTitle = rfxHead.createEl("span", { text: rfx.length ? `${rfx.length} effects` : "No effects yet" });
     rfxTitle.style.cssText = "font-size:0.76em;color:var(--text-muted)";
     const impFx = rfxHead.createEl("button", { text: "⬇ Import FX pack…" });
@@ -2189,7 +2205,7 @@ async function renderCharacters(contentEl, tab, ctx, __gen) {
     sec.style.paddingTop = "10px";
     sec.style.borderTop = "1px solid var(--background-modifier-border)";
     const hRow = sec.createDiv();
-    hRow.style.cssText = "display:flex;align-items:center;gap:10px;margin:0 0 2px";
+    hRow.style.cssText = "display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 2px";
     const h = hRow.createEl("div", { text: "Characters" });
     h.style.fontWeight = "600"; h.style.fontSize = "0.95em";
     // Manage lives on the character header (it filters this section), not in the import
@@ -2215,8 +2231,7 @@ async function renderCharacters(contentEl, tab, ctx, __gen) {
 
     if (!_freeTierInstalled()) {
       const freeBtn = packBar.createEl("button", { text: "⭐ Get the free starter pack" });
-      styleActionBtn(freeBtn);
-      freeBtn.style.background = "var(--interactive-accent)"; freeBtn.style.color = "var(--text-on-accent)"; freeBtn.style.borderColor = "var(--interactive-accent)";
+      styleActionBtn(freeBtn, { accent: true });
       freeBtn.title = "One click: downloads the free Core Cast + FX packs and imports them";
       freeBtn.onclick = async () => {
         try {
@@ -2514,10 +2529,11 @@ async function renderCharacters(contentEl, tab, ctx, __gen) {
 function renderSplitSection(contentEl, ctx) {
   const row = section(contentEl, "Split the selected panel", "Local action-beat cut — carve the panel you've selected into regions, each its own placement target");
   SPLIT_OPTIONS.forEach((opt) => {
-    new ea.obsidian.ButtonComponent(row)
+    const bc = new ea.obsidian.ButtonComponent(row)
       .setButtonText(opt.label)
       .setTooltip(opt.tip)
       .onClick(() => ctx.splitSelectedPanel && ctx.splitSelectedPanel(opt.id));
+    if (bc.buttonEl) styleActionBtn(bc.buttonEl);
   });
 }
 
@@ -2526,7 +2542,7 @@ function renderSplitSection(contentEl, ctx) {
 function renderVectorLibrary(contentEl, ctx) {
   if (!FIGURES) return;
   const row = section(contentEl, "Hand-drawn vector library", "Your original figures.json set — pick a style, then a figure, to stamp into the selected panel");
-  new ea.obsidian.ButtonComponent(row)
+  const figBC = new ea.obsidian.ButtonComponent(row)
     .setButtonText("+ Figure").setCta()
     .setTooltip("Choose style → figure, then stamp it into the selected panel")
     .onClick(async () => {
@@ -2541,15 +2557,17 @@ function renderVectorLibrary(contentEl, ctx) {
       const figure = figs.find((f) => f.id === id);
       if (ctx.placeFigure) await ctx.placeFigure(figure);
     });
+  if (figBC.buttonEl) styleActionBtn(figBC.buttonEl, { accent: true });
 }
 
 // Reserve-a-callout-zone control + a link that opens the companion Callout Editor.
 function renderCalloutSection(contentEl, ctx) {
   const row = section(contentEl, "Callout zone", "Reserve a speech/caption area — fill it with the Comicbook Callout Editor");
-  new ea.obsidian.ButtonComponent(row)
+  const zoneBC = new ea.obsidian.ButtonComponent(row)
     .setButtonText("+ Callout zone")
     .setTooltip("Adds a reserved zone to the selected panel (run Comicbook Callout Editor to letter it)")
     .onClick(() => ctx.addCalloutZone && ctx.addCalloutZone());
+  if (zoneBC.buttonEl) styleActionBtn(zoneBC.buttonEl, { accent: true });
   // Companion-script icon (same pattern the Callout Editor uses for THIS script):
   // installed → the Callout Editor's own icon, click runs it; not installed →
   // an ⓘ icon whose click shows a Script Recommendation dialog.
@@ -2601,17 +2619,11 @@ function renderFooter(contentEl) {
   const footer = contentEl.createDiv();
   footer.style.marginTop = "14px";
   footer.style.display = "flex";
+  footer.style.flexWrap = "wrap";
   footer.style.alignItems = "center";
   footer.style.justifyContent = "space-between";
   footer.style.gap = "10px";
   addStoreLink(footer, "🛒 More characters, costumes & FX packs — comicstripdirector.com");
-  const closeWrap = footer.createDiv();
-  new ea.obsidian.ButtonComponent(closeWrap)
-    .setButtonText("Close")
-    .onClick(() => {
-      if (ea.sidepanelTab) ea.sidepanelTab.close();
-      ea.toggleSidepanelView();
-    });
 }
 
 // ===========================================================================
