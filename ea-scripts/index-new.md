@@ -289,9 +289,9 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/iwanhoogendoorn'>@iwanhoogendoorn</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Color%20Scheme%20Manager.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Swap the entire Stroke and Background/Fill colour palettes between named, categorized themes (Cloud Providers, Code Editors, Tech Brands, Design Systems, Nature, and more) from a docked side panel. Applying a theme recolours your selection (or sets the active colour) and repaints the native picker — both the quick-pick rows and the extended 3×5 grid with shades. Create your own schemes, import from a flat hex list, a labelled STROKE/FILL text format, or a raw appState colorPalette JSON (paste or .txt/.json file), hand-pick a custom picker, and export the current palette. When the MindMap Builder script is installed, an optional toggle recolours mind maps branch-by-branch. The canvas background is always left white.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/color-scheme-manager.gif' style="width:560px;"></td></tr></table>
 
 ## Comic Strip Director
-
+```excalidraw-script-install
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Comic%20Strip%20Director.md
-
+```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/iwanhoogendoorn'>@iwanhoogendoorn</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Comic%20Strip%20Director.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data"><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-comic-strip-director.jpg'></td></tr></table>
 
 ## Comicbook Callout Editor
