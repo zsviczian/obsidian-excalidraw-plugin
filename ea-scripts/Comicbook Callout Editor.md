@@ -1149,9 +1149,11 @@ async function renderPreview(previewContainer) {
   await buildElements(false);
   const svg = await ea.createSVG(undefined, undefined, undefined, undefined, undefined, 10);
   
-  // Constrain the SVG to neatly fit the preview boundary
-  svg.style.width = "100%";
-  svg.style.height = "100%";
+  // Constrain the SVG to neatly fit the preview boundary without stretching.
+  // The 'auto' height preserves the true aspect ratio of the generated callout, 
+  // while the 100% max bounds prevent it from overflowing the 1:1 container. 
+  // The flex properties of the container handle horizontal & vertical centering.
+  svg.style.height = "auto";
   svg.style.maxWidth = "100%";
   svg.style.maxHeight = "100%";
   
@@ -1509,7 +1511,7 @@ function buildPanelLayout(contentEl) {
   // 2. Preview & Actions Column
   previewWrapper = topSection.createDiv({ cls: "comic-preview-col" });
   previewContainer = previewWrapper.createDiv({
-    attr: { style: `flex: 1 1 auto; min-height: 140px; border: 1px solid var(--background-modifier-border); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; background-color: ${st()?.viewBackgroundColor ?? "gray"};` }
+    attr: { style: `width: 100%; max-width: 500px; aspect-ratio: 1 / 1; margin: 0 auto; border: 1px solid var(--background-modifier-border); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; background-color: ${st()?.viewBackgroundColor ?? "gray"};` }
   });
   buildActionButtons(previewWrapper);
 
@@ -1915,7 +1917,7 @@ function renderColorsUI(container) {
 }
 
 /**
- * Creates the functional UI buttons (Insert, Replace) for the side panel
+ * Creates the functional UI buttons (Director, Insert, Replace) for the side panel
  *
  * @param {HTMLElement} container - The parent DOM element to render into.
  */
@@ -1927,11 +1929,77 @@ function buildActionButtons(container) {
   if (!localActionsContainer) {
     localActionsContainer = container.createDiv({
       cls: "comic-actions-container",
-      attr: { style: "display: flex; justify-content: flex-end; gap: 15px; flex: 0 0 auto;" }
+      attr: { style: "display: flex; justify-content: flex-end; gap: 15px; flex: 0 0 auto; align-items: center;" }
     });
   }
 
-  // Retrieve existing buttons or create them to avoid destroying DOM elements 
+  // 1. Comic Strip Director Button - Retrieve or create
+  let directorBtn = localActionsContainer.querySelector(".comic-director-btn");
+  if (!directorBtn) {
+    directorBtn = localActionsContainer.createEl("button", { cls: "comic-director-btn clickable-icon" });
+    // Push this button to the far left, allowing subsequent buttons to stay right-aligned
+    directorBtn.style.marginRight = "auto";
+    directorBtn.style.padding = "4px";
+    directorBtn.style.background = "transparent";
+    directorBtn.style.boxShadow = "none";
+  }
+
+  // Check availability every time buildActionButtons is called (including during tab.onFocus)
+  const SCRIPT_MD = "Comic Strip Director.md";
+  const SCRIPT_SVG = "Comic Strip Director.svg";
+  const scriptsFolder = ea.plugin.settings.scriptFolderPath + "/";
+  const f = app.vault.getMarkdownFiles().find(file => file.name === SCRIPT_MD && file.path.startsWith(scriptsFolder));
+  const svgFile = app.vault.getFiles().find(file => file.name === SCRIPT_SVG && file.path.startsWith(scriptsFolder));
+
+  const isInstalled = Boolean(f && svgFile);
+  const currentState = isInstalled ? "installed" : "missing";
+
+  // Only update DOM and click handlers if the installation state actually changed
+  if (directorBtn.dataset.state !== currentState) {
+    directorBtn.dataset.state = currentState;
+    if (isInstalled) {
+      app.vault.read(svgFile).then(svgContent => {
+        directorBtn.innerHTML = svgContent;
+        const svg = directorBtn.querySelector("svg");
+        if (svg) {
+          svg.style.width = "24px";
+          svg.style.height = "24px";
+        }
+      });
+      directorBtn.title = "Open Comic Strip Director";
+      directorBtn.setAttribute("aria-label", "Open Comic Strip Director");
+      directorBtn.onclick = () => {
+        const scriptpath = f.parent.path.split(scriptsFolder)[1] ?? "";
+        const commandId = `obsidian-excalidraw-plugin:${scriptpath}${scriptpath===""?"":"/"}${f.basename}`;
+        const cmd = app.commands.commands[commandId];
+        if (cmd?.checkCallback) {
+          cmd.checkCallback(false);
+        } else if (cmd?.callback) {
+          cmd.callback();
+        } else {
+          app.commands.executeCommandById(commandId);
+        }
+      };
+    } else {
+      directorBtn.innerHTML = ea.obsidian.getIcon("info").outerHTML;
+      directorBtn.title = "Comic Strip Director recommended";
+      directorBtn.setAttribute("aria-label", "Comic Strip Director recommended");
+      directorBtn.onclick = () => {
+        const modal = new ea.obsidian.Modal(app);
+        modal.onOpen = () => {
+          const { contentEl } = modal;
+          contentEl.createEl("h3", { text: "Script Recommendation" });
+          contentEl.createEl("p", { text: "For a complete comic creation workflow, please install the 'Comic Strip Director' script from the Excalidraw script store." });
+          const btnContainer = contentEl.createDiv({ attr: { style: "display: flex; justify-content: flex-end; margin-top: 20px;" } });
+          const okBtn = btnContainer.createEl("button", { text: "OK", cls: "mod-cta" });
+          okBtn.onclick = () => modal.close();
+        };
+        modal.open();
+      };
+    }
+  }
+
+  // 2. Retrieve existing buttons or create them to avoid destroying DOM elements 
   // mid-click (which breaks focus events and causes double-click requirements)
   let replaceBtn = localActionsContainer.querySelector(".comic-replace-btn");
   if (!replaceBtn) {
@@ -2012,6 +2080,37 @@ async function main() {
   const tab = await ea.createSidepanelTab("Comic Bubbles", true, true);
   if (!tab) return;
 
+  // React to canvas selection changes automatically
+  ea.onSceneChangeHook = {
+    appStateKeys: ["selectedElementIds"],
+    trackElements: false,
+    triggerWhenInvisible: false,
+    callback: (elements, appState, files, view, hookEA) => {
+      // Ensure we are working with the correct view
+      if (view && view !== ea.targetView) {
+        ea.setView(view);
+        ea.clear();
+      }
+
+      // Check if selection actually translates to a different callout target
+      const oldTargetId = editTarget ? editTarget.polyId : null;
+      detectEditTarget();
+      const newTargetId = editTarget ? editTarget.polyId : null;
+
+      if (textAreaComp && textAreaComp.getValue() !== state.text) {
+        textAreaComp.setValue(state.text);
+      }
+      
+      // Update UI configuration tabs if a completely new target shape was detected
+      if (oldTargetId !== newTargetId) {
+        renderTabsUI(tabsContainer);
+      }
+      
+      buildActionButtons(previewWrapper); 
+      scheduleUpdate(previewContainer);
+    }
+  };
+
   tab.onOpen = () => {
     buildPanelLayout(tab.contentEl);
     scheduleUpdate(previewContainer);
@@ -2051,6 +2150,7 @@ async function main() {
   };
 
   tab.onClose = () => {
+    ea.onSceneChangeHook = null; // Unregister hook to free resources
     savePrefs();
     clearTimeout(previewTimeout);
   };
