@@ -75,6 +75,7 @@ These are the scripts I use most often. I tried to order them by importance, but
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Mindmap%20Builder.svg"/></div>|[[#Mindmap Builder]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Capture%20Note.svg"/></div>|[[#Capture Note]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Comicbook%20Callout%20Editor.svg"/></div>|[[#Comicbook Callout Editor]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Comic%20Strip%20Director.svg"/></div>|[[#Comic Strip Director]]|
 
 ## Layout and Organization
 **Keywords**: Design, Placement, Arrangement, Structure, Formatting, Alignment
