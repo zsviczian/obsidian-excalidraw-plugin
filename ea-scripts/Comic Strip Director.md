@@ -1859,6 +1859,12 @@ async function pickFromList(values, labels, placeholder) {
   }
   return undefined;
 }
+// One consistent action row per section: flex, wrapping, uniform 6px gaps.
+function toolbarRow(parent) {
+  const r = parent.createDiv();
+  r.style.cssText = "display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 8px";
+  return r;
+}
 function section(parent, title, desc) {
   const sec = parent.createDiv();
   sec.style.margin = "14px 0 0";
@@ -2149,7 +2155,6 @@ function renderBuildPage(contentEl, tab, ctx) {
     rfxTitle.style.cssText = "font-size:0.76em;color:var(--text-muted)";
     const impFx = rfxHead.createEl("button", { text: "⬇ Import FX pack…" });
     styleActionBtn(impFx); impFx.style.marginLeft = "auto";
-    addStoreBtn(rfxHead, "🛒 More packs");
     impFx.onclick = async () => {
       try {
         if (await importPacksFlow("Pick an FX pack — or import all", () => createImportProgressMulti([tab.__csdCharSection, tab.__csdFxSection]))) { await reloadPackCaches(); await buildPanel(tab, ctx); }
@@ -2532,8 +2537,9 @@ async function renderCharacters(contentEl, tab, ctx, __gen) {
 // Split-the-selected-panel action buttons (diagonal / horizontal cuts).
 function renderSplitSection(contentEl, ctx) {
   const row = section(contentEl, "Split the selected panel", "Local action-beat cut — carve the panel you've selected into regions, each its own placement target");
+  const bar = toolbarRow(row);
   SPLIT_OPTIONS.forEach((opt) => {
-    const bc = new ea.obsidian.ButtonComponent(row)
+    const bc = new ea.obsidian.ButtonComponent(bar)
       .setButtonText(opt.label)
       .setTooltip(opt.tip)
       .onClick(() => ctx.splitSelectedPanel && ctx.splitSelectedPanel(opt.id));
@@ -2546,7 +2552,8 @@ function renderSplitSection(contentEl, ctx) {
 function renderVectorLibrary(contentEl, ctx) {
   if (!FIGURES) return;
   const row = section(contentEl, "Hand-drawn vector library", "Your original figures.json set — pick a style, then a figure, to stamp into the selected panel");
-  const figBC = new ea.obsidian.ButtonComponent(row)
+  const bar = toolbarRow(row);
+  const figBC = new ea.obsidian.ButtonComponent(bar)
     .setButtonText("+ Figure").setCta()
     .setTooltip("Choose style → figure, then stamp it into the selected panel")
     .onClick(async () => {
@@ -2567,7 +2574,8 @@ function renderVectorLibrary(contentEl, ctx) {
 // Reserve-a-callout-zone control + a link that opens the companion Callout Editor.
 function renderCalloutSection(contentEl, ctx) {
   const row = section(contentEl, "Callout zone", "Reserve a speech/caption area — fill it with the Comicbook Callout Editor");
-  const zoneBC = new ea.obsidian.ButtonComponent(row)
+  const bar = toolbarRow(row);
+  const zoneBC = new ea.obsidian.ButtonComponent(bar)
     .setButtonText("+ Callout zone")
     .setTooltip("Adds a reserved zone to the selected panel (run Comicbook Callout Editor to letter it)")
     .onClick(() => ctx.addCalloutZone && ctx.addCalloutZone());
@@ -2577,8 +2585,8 @@ function renderCalloutSection(contentEl, ctx) {
   // an ⓘ icon whose click shows a Script Recommendation dialog.
   try {
     const _iconHTML = (name, fallback) => { try { return ea.obsidian.getIcon(name).outerHTML; } catch (e) { return fallback; } };
-    const btn = row.createEl("button", { cls: "clickable-icon" });
-    btn.style.cssText = "margin-left:8px;padding:4px;background:transparent;box-shadow:none;border:none;cursor:pointer";
+    const btn = bar.createEl("button", { cls: "clickable-icon" });
+    btn.style.cssText = "padding:2px;background:transparent;box-shadow:none;border:none;cursor:pointer;display:inline-flex;align-items:center";
     const appRef = _vaultApp();
     const scriptsFolder = (((ea.plugin && ea.plugin.settings && ea.plugin.settings.scriptFolderPath) || "Excalidraw/Scripts").replace(/\/+$/, "")) + "/";
     const f = (appRef.vault.getMarkdownFiles ? appRef.vault.getMarkdownFiles() : [])
