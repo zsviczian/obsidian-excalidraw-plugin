@@ -2239,7 +2239,11 @@ async function renderCharacters(contentEl, tab, ctx, __gen) {
     const packBar = sec.createDiv();
     packBar.style.display = "flex"; packBar.style.flexWrap = "wrap"; packBar.style.gap = "6px"; packBar.style.margin = "0 0 8px";
 
-    if (!_freeTierInstalled()) {
+    // Only on a truly fresh install: once ANY figures are in the library
+    // (imported or starter), the button disappears — the settings record
+    // alone is not trusted (script settings are keyed by script name and
+    // reset on a rename).
+    if (!_freeTierInstalled() && !list.length) {
       const freeBtn = packBar.createEl("button", { text: "⭐ Get the free starter pack" });
       styleActionBtn(freeBtn, { accent: true });
       freeBtn.title = "One click: downloads the free Core Cast + FX packs and imports them";
