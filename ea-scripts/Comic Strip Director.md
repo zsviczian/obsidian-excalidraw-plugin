@@ -1767,8 +1767,10 @@ function addStoreLink(parent, text) {
 // other button in the panel (only the colour differs, so it reads as a call-to-action).
 function addStoreBtn(parent, text) {
   const a = parent.createEl("a", { text: text || "Get more packs" });
+  // Shop-orange, deliberately NOT the accent colour — the store button must not
+  // compete with primary actions like the starter pack or the library toggle.
   a.style.cssText = "display:inline-flex;align-items:center;gap:5px;font-size:0.75em;font-weight:600;" +
-    "color:var(--text-on-accent);background:var(--interactive-accent);border:1px solid transparent;" +
+    "color:#fff;background:var(--color-orange, #d97a16);border:1px solid transparent;" +
     "padding:3px 10px;border-radius:5px;text-decoration:none;cursor:pointer;white-space:nowrap";
   a.onmouseenter = () => { a.style.filter = "brightness(1.08)"; };
   a.onmouseleave = () => { a.style.filter = "none"; };
@@ -2152,8 +2154,6 @@ function renderBuildPage(contentEl, tab, ctx) {
     const rfx = (FX_FIGURES && FX_FIGURES.figures) || [];
     const rfxWrap = fxWrap.createDiv();
     const rfxHead = rfxWrap.createDiv(); rfxHead.style.cssText = "display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 5px";
-    const rfxTitle = rfxHead.createEl("span", { text: rfx.length ? `${rfx.length} effects` : "No effects yet" });
-    rfxTitle.style.cssText = "font-size:0.76em;color:var(--text-muted)";
     const impFx = rfxHead.createEl("button", { text: "⬇ Import FX pack…" });
     styleActionBtn(impFx);
     impFx.onclick = async () => {
@@ -2168,8 +2168,13 @@ function renderBuildPage(contentEl, tab, ctx) {
         cell.style.cssText = "width:52px;cursor:pointer;text-align:center;border:1px solid var(--background-modifier-border);border-radius:5px;padding:3px;background:var(--background-secondary)";
         cell.title = entry.word || entry.name || entry.id;
         const url = fxThumbURL(entry);
-        if (url) { const img = cell.createEl("img"); img.src = url; img.style.cssText = "width:44px;height:44px;object-fit:contain"; img.setAttr("loading", "lazy"); }
-        else { cell.createEl("div", { text: entry.word || entry.id }).style.cssText = "font-size:0.6em"; }
+        const fxWordCell = () => { cell.createEl("div", { text: entry.word || entry.id }).style.cssText = "font-size:0.6em"; };
+        if (url) {
+          const img = cell.createEl("img"); img.src = url; img.style.cssText = "width:44px;height:44px;object-fit:contain"; img.setAttr("loading", "lazy");
+          // A manifest row whose image is missing on disk must not show the
+          // browser's broken-image placeholder — fall back to the word.
+          img.onerror = () => { try { img.remove(); } catch (e) { img.style.display = "none"; } fxWordCell(); };
+        } else fxWordCell();
         makeActivatable(cell, async () => { await placeRasterFX(entry); });
       });
     } else {
@@ -2362,6 +2367,7 @@ async function renderCharacters(contentEl, tab, ctx, __gen) {
           img.src = url; img.style.width = "56px"; img.style.height = "56px";
           img.style.objectFit = "contain"; img.setAttr("loading", "lazy");
           img.style.background = "#ffffff"; img.style.borderRadius = "3px";
+          img.onerror = () => { try { img.remove(); } catch (e) { img.style.display = "none"; } const ph = cell.createDiv(); ph.style.cssText = "width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:0.7em"; ph.setText("▦"); };
         } else {
           const ph = cell.createDiv(); ph.style.width = "56px"; ph.style.height = "56px";
           ph.style.display = "flex"; ph.style.alignItems = "center"; ph.style.justifyContent = "center";
