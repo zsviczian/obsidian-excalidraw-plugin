@@ -81,7 +81,7 @@ function initializeSettings() {
                 { name: "Stickfigure", pattern: "^stickfigure - (.*?)(?: - [^-]+)?$" },
                 { name: "Logo", pattern: "^logo - (.*?)(?: - [^-]+)?$" }
             ],
-            excludeFolders: "Assets/nosync",
+            excludeFolders: "",
             defaultIconWidth: CONSTANTS.DEFAULT_ICON_WIDTH,
             thumbSize: CONSTANTS.DEFAULT_THUMB_SIZE,
             lightBgColor: "#FFFFFF60",
@@ -345,16 +345,28 @@ function injectCSS(contentEl) {
             z-index: 10; 
             background: var(--background-secondary); 
             border: 1px solid var(--background-modifier-border); 
-            padding: 10px 0; 
+            padding: 15px 0; 
             border-radius: 6px; 
             box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
         }
         
-        /* Apply Obsidian accent color directly to the range slider and force vertical layout safely */
+        /* Wrapper to hold the rotated slider without breaking layout */
+        .${CONSTANTS.CSS_PREFIX}slider-wrapper {
+            position: relative;
+            width: 30px;
+            height: 120px;
+            margin: 0 auto;
+        }
+        
+        /* Rotate standard horizontal slider to bypass webkit vertical limitations.
+           Obsidian's native theme colors will now perfectly apply to this element. */
         .${CONSTANTS.CSS_PREFIX}slider {
-            -webkit-appearance: slider-vertical;
-            appearance: slider-vertical;
-            accent-color: var(--interactive-accent) !important;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-90deg);
+            width: 120px !important; 
+            margin: 0;
         }
 
         .${CONSTANTS.CSS_PREFIX}settings-btn { 
@@ -422,10 +434,45 @@ function injectCSS(contentEl) {
 }
 
 /**
- * Builds the header section containing the search bar, scale popover, and settings button.
+ * Displays an informational modal with instructions on how to use the Icon Library.
+ * @param {App} app - The Obsidian App instance.
+ */
+function showInfoModal(app) {
+    const modal = new ea.obsidian.Modal(app);
+    modal.titleEl.setText("Icon Library Info");
+    const content = modal.contentEl;
+    
+    content.createEl("style", {
+        text: `
+        .icon-lib-info-list { margin-top: 0; padding-left: 20px; }
+        .icon-lib-info-list li { margin-bottom: 12px; line-height: 1.4; }
+        `
+    });
+    
+    content.createEl("p", { text: "Welcome to the Icon Library! Here is a brief explanation of its use:" });
+    const ul = content.createEl("ul", { cls: "icon-lib-info-list" });
+    
+    ul.createEl("li").innerHTML = `<b>Naming convention:</b> The pre-configured icon naming convention (recommended, but can be modified in settings) is "<code>type - comma, separated, keywords - source</code>", e.g. "icon - book, read, study - flaticon".`;
+    ul.createEl("li").innerHTML = `<b>Usage:</b> Type in your search, press <code>Tab</code>, use arrow keys to select, press <code>Enter</code> to insert into the scene, press <code>ESC</code> to close the sidepanel.`;
+    ul.createEl("li").innerHTML = `<b>Hotkey:</b> Setup an Obsidian Hotkey for the script so it opens quickly when needed.`;
+    ul.createEl("li").innerHTML = `<b>Mouse:</b> If using a mouse, simply click on an icon to insert it into the scene.`;
+    ul.createEl("li").innerHTML = `<b>MindMap Builder:</b> If you have MindMap Builder installed and running, and a mindmap node is currently selected, the icon will be added to the mindmap directly as a leaf.`;
+    ul.createEl("li").innerHTML = `<b>Size:</b> Default insert size is 180x180 (for square icons). To learn more why, join the <a href="https://community.sketch-your-mind.com/vtw">Visual Thinking Workshop</a>, or join <a href="https://community.sketch-your-mind.com/em">Excalidraw Mastery</a>.`;
+    ul.createEl("li").innerHTML = `<b>Philosophy:</b> To understand the underlying philosophy of the plugin and the scripts, read my book: <a href="https://community.sketch-your-mind.com/sym">Sketch Your Mind</a>.`;
+    ul.createEl("li").innerHTML = `<b>What else?</b> Have fun building beautiful visual structures!`;
+    
+    const btnContainer = content.createDiv({ attr: { style: "display: flex; justify-content: flex-end; margin-top: 20px;" }});
+    const closeBtn = btnContainer.createEl("button", { text: "Close", cls: "mod-cta" });
+    closeBtn.onclick = () => modal.close();
+    
+    modal.open();
+}
+
+/**
+ * Builds the header section containing the search bar, scale popover, and settings buttons.
  * @param {HTMLElement} contentEl - The parent container.
  * @param {Object} state - The global script state.
- * @returns {Object} References to the search input, size slider, and settings button.
+ * @returns {Object} References to the search input, size slider, and buttons.
  */
 function buildHeaderUI(contentEl, state) {
     const headerRow = contentEl.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}header` });
@@ -444,22 +491,31 @@ function buildHeaderUI(contentEl, state) {
     
     // Vertical Sizer Popover
     const sliderPopover = searchWrapper.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}slider-popover` });
-    const sizeSlider = sliderPopover.createEl("input", { 
+    
+    // Use the wrapper to absolutely position the rotated horizontal slider
+    const sliderWrapper = sliderPopover.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}slider-wrapper` });
+    const sizeSlider = sliderWrapper.createEl("input", { 
         type: "range", 
         cls: `${CONSTANTS.CSS_PREFIX}slider`,
         attr: { 
             min: "50", 
             max: "250", 
-            value: state.settings.thumbSize,
-            orient: "vertical", 
-            // Removed invalid writing-mode, rely on CSS appearance defined in injectCSS()
-            style: "width: 24px; height: 100px; display: block; margin: 0 auto;" 
+            value: state.settings.thumbSize
         } 
     });
 
+    // Info Button
+    const infoBtn = headerRow.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}settings-btn` });
+    infoBtn.innerHTML = ea.obsidian.getIcon("info")?.outerHTML || "i";
+    infoBtn.setAttribute("aria-label", "Instructions & Info");
+    infoBtn.setAttribute("title", "Instructions & Info");
+    infoBtn.addEventListener("click", () => showInfoModal(app));
+
     // Settings Button
     const settingsBtn = headerRow.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}settings-btn` });
-    settingsBtn.innerHTML = ea.obsidian.getIcon(CONSTANTS.ICON_SETTINGS)?.outerHTML;
+    settingsBtn.innerHTML = ea.obsidian.getIcon(CONSTANTS.ICON_SETTINGS)?.outerHTML || "⚙";
+    settingsBtn.setAttribute("aria-label", "Settings");
+    settingsBtn.setAttribute("title", "Settings");
 
     // Popover toggle logic
     scaleBtn.addEventListener("click", (e) => {
@@ -473,7 +529,7 @@ function buildHeaderUI(contentEl, state) {
         }
     });
 
-    return { searchInput, sizeSlider, settingsBtn };
+    return { searchInput, sizeSlider, infoBtn, settingsBtn };
 }
 
 /**
@@ -706,7 +762,26 @@ class IconSettingsModal extends ea.obsidian.Modal {
 
     renderFilters(container) {
         container.empty();
-        container.createEl("h4", { text: STRINGS.FILTERS_TITLE, attr: { style: "margin-top: 0; margin-bottom: 5px;" } });
+        
+        // Header Row for Filters and Reset Button
+        const headerRow = container.createDiv({ attr: { style: "display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;" }});
+        headerRow.createEl("h4", { text: STRINGS.FILTERS_TITLE, attr: { style: "margin: 0;" } });
+        
+        const resetBtn = headerRow.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Restore default regular expressions", title: "Restore default regular expressions" } });
+        resetBtn.innerHTML = ea.obsidian.getIcon("rotate-ccw")?.outerHTML || "Reset";
+        resetBtn.addEventListener("click", () => {
+            const confirmReset = window.confirm("Are you sure you want to reset all regular expressions to the script defaults?");
+            if (confirmReset) {
+                this.localSettings.filters = [
+                    { name: "Icon", pattern: "^icon - (.*?)(?: - [^-]+)?$" },
+                    { name: "Stickfigure", pattern: "^stickfigure - (.*?)(?: - [^-]+)?$" },
+                    { name: "Logo", pattern: "^logo - (.*?)(?: - [^-]+)?$" }
+                ];
+                this.renderFilters(container);
+                this.evaluateRegexTest();
+            }
+        });
+
         container.createEl("p", { text: STRINGS.FILTERS_DESC, cls: "setting-item-description", attr: { style: "margin-bottom: 10px;" } });
 
         this.localSettings.filters.forEach((f, idx) => {
@@ -767,8 +842,28 @@ class IconSettingsModal extends ea.obsidian.Modal {
 }
 
 // ==============================================================================
-// 6. Main Execution
+// 6. Main Execution & Render Queue
 // ==============================================================================
+
+const renderQueue = [];
+let isRendering = false;
+
+/**
+ * Processes the thumbnail rendering queue sequentially to prevent device lock-up.
+ */
+async function processRenderQueue() {
+    if (isRendering) return;
+    isRendering = true;
+    while (renderQueue.length > 0) {
+        const { file, container, card } = renderQueue.shift();
+        
+        // Skip rendering if the card has been detached from the DOM (e.g. search changed)
+        if (!card.isConnected) continue;
+        
+        await renderThumbnail(file, container);
+    }
+    isRendering = false;
+}
 
 /**
  * Main entry point for the Icon Library Sidepanel script.
@@ -831,11 +926,19 @@ async function main() {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                observer.unobserve(entry.target);
-                const file = app.vault.getAbstractFileByPath(entry.target.dataset.path);
                 const imgContainer = entry.target.querySelector(`.${CONSTANTS.CSS_PREFIX}img-container`);
-                if (file && imgContainer) {
-                    renderThumbnail(file, imgContainer);
+                
+                // Prevent duplicate queueing if elements flicker rapidly
+                if (!imgContainer.dataset.queued) {
+                    imgContainer.dataset.queued = "true";
+                    observer.unobserve(entry.target);
+                    
+                    const file = app.vault.getAbstractFileByPath(entry.target.dataset.path);
+                    if (file) {
+                        // Queue the item to be rendered rather than fetching all SVGs concurrently
+                        renderQueue.push({ file, container: imgContainer, card: entry.target });
+                        processRenderQueue();
+                    }
                 }
             }
         });
