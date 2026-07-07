@@ -29,8 +29,8 @@ const HELP_TEXT = `
 
 `;
 
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.19.1")) {
-  new Notice("Please update the Excalidraw Plugin to version 2.19.1 or higher.");
+if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("2.25.0")) {
+  new Notice("Please update the Excalidraw Plugin to version 2.25.0 or higher.");
   return;
 }
 
@@ -754,6 +754,25 @@ ea.createSidepanelTab("Shade Master", false, true).then(tab => {
     processQueue();
   };
 
+  // Register the scene change hook to listen for selection changes
+  ea.onSceneChangeHook = {
+    appStateKeys: ["selectedElementIds"],
+    trackElements: false,
+    triggerWhenInvisible: false,
+    callback: async (elements, appState, files, view, hookEA) => {
+      if (view && view !== ea.targetView) {
+        ea.setView(view);
+        ea.clear();
+      }
+      
+      // Check if selection changed
+      const currentSelectionStr = ea.getViewSelectedElements().map(e => e.id).sort().join(",");
+      if (currentSelectionStr !== lastSelectionIds) {
+        await initializeAndRender();
+      }
+    }
+  };
+
   tab.onOpen = async () => {
     terminate = false;
     // Initial load
@@ -774,6 +793,9 @@ ea.createSidepanelTab("Shade Master", false, true).then(tab => {
   };
 
   tab.onClose = async () => {
+    // Clean up the hook when closing the tab
+    ea.onSceneChangeHook = null;
+    
     terminate = true;
     if (dirty) {
       ea.setScriptSettings(settings);

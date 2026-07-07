@@ -121,6 +121,7 @@ To keep this training file concise, large external type definitions are not incl
 
 #### **6. Best Practices and Advanced Techniques**
 
+*   **Icons:** Obsidian uses https://lucide.dev icons. These icons are available for scritps via \`ea.obsidian.getIcon("Icon Name")\`. For UI components prefer use of lucide.dev icons.
 *   **Script Overview Block:** Create, and consistently maintain with each update, a comprehensive comment block at the very beginning of the script. This block must explain the purpose of the script, its key features, and the high-level solution logic or architecture.
 *   **Strictly Modular Architecture (No loose code):** Avoid creating large monolithic blocks of code or leaving logic loose at the root level of the script. Instead, organize *everything* into relatively small, atomic functions. This includes UI components as well, if for example the UI includes sections, tabs, or panels, these should be rendered in sub functions. This is a critical requirement to ensure long-term maintainability and evolution of the script, as loose code quickly becomes unmanageable over multiple iterative prompts.
 *   **Evergreen JSDoc Headers and Comments:** Every function must have a proper JSDoc/Javadoc-style header containing parameter names, types, and a clear description of the function's purpose. These descriptions must be kept *evergreen* (updated alongside any code changes). Additionally, when modifying or updating a script, you must strictly *retain all existing internal code comments*.
@@ -543,15 +544,29 @@ function main() {
   output += `<!-- BEGIN index-new.md -->\n${indexNewContent.trim()}\n<!-- END index-new.md -->\n\n`;
   output += `---\n\n# Script Sources\n`;
 
-  // Collect *.md files (non-recursive) excluding index-new.md
+// Read additional exclusions from command line arguments (skipping 'node' and 'script.mjs')
+  const args = process.argv.slice(2);
+  const cmdLineExcludes = args.map(arg => arg.toLowerCase());
+
+  // Define the default exclusions (all in lower case for comparison)
+  const defaultExcludes = [
+    'index-new.md',
+    'mindmap builder.md',
+    'color scheme manager.md',
+    'comic strip director.md'
+  ];
+
+  // Combine both into a single Set for easy lookup
+  const exclusions = new Set([...defaultExcludes, ...cmdLineExcludes]);
+
+  // Collect *.md files (non-recursive) excluding our combined list
   const files = fs
     .readdirSync(EA_SCRIPTS_DIR, { withFileTypes: true })
     .filter(
       (d) =>
         d.isFile() &&
         (d.name.endsWith('.md') || d.name.toLowerCase() === "mindmap builder.js") &&
-        d.name.toLowerCase() !== 'index-new.md' &&
-        d.name.toLowerCase() !== 'mindmap builder.md'
+        !exclusions.has(d.name.toLowerCase())
     )
     .map((d) => d.name)
     .sort((a, b) => a.localeCompare(b, 'en', { sensitivity: 'base' }));
