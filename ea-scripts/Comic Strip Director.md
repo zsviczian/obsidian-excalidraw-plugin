@@ -2094,7 +2094,7 @@ function renderBuildPage(contentEl, tab, ctx) {
     });
     paintAsp();
     const fitBtn = aspRow.createEl("button", { text: "⤢ Fit to view" });
-    styleActionBtn(fitBtn); fitBtn.style.marginLeft = "auto";
+    styleActionBtn(fitBtn);
     fitBtn.title = "Zoom the canvas so the whole strip is visible";
     fitBtn.onclick = () => ctx.fitToView && ctx.fitToView();
 
@@ -2155,7 +2155,7 @@ function renderBuildPage(contentEl, tab, ctx) {
     const rfxTitle = rfxHead.createEl("span", { text: rfx.length ? `${rfx.length} effects` : "No effects yet" });
     rfxTitle.style.cssText = "font-size:0.76em;color:var(--text-muted)";
     const impFx = rfxHead.createEl("button", { text: "⬇ Import FX pack…" });
-    styleActionBtn(impFx); impFx.style.marginLeft = "auto";
+    styleActionBtn(impFx);
     impFx.onclick = async () => {
       try {
         if (await importPacksFlow("Pick an FX pack — or import all", () => createImportProgressMulti([tab.__csdCharSection, tab.__csdFxSection]))) { await reloadPackCaches(); await buildPanel(tab, ctx); }
@@ -2261,10 +2261,9 @@ async function renderCharacters(contentEl, tab, ctx, __gen) {
       }
     };
 
-    // Store pill, pushed to the far right of the import toolbar (uniform pill family).
-    const packStore = packBar.createDiv();
-    packStore.style.cssText = "margin-left:auto;display:flex;align-items:center";
-    addStoreBtn(packStore, "🛒 More characters & packs");
+    // Store button flows right after Import — auto-margins in a WRAPPING row
+    // leave an orphaned right-pushed button on the second line when it wraps.
+    addStoreBtn(packBar, "🛒 More characters & packs");
     const managePanel = sec.createDiv();
     managePanel.style.display = "none"; managePanel.style.margin = "0 0 10px"; managePanel.style.padding = "8px";
     managePanel.style.border = "1px solid var(--background-modifier-border)"; managePanel.style.borderRadius = "6px";
