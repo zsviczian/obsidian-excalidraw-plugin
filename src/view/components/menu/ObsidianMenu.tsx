@@ -134,9 +134,67 @@ export function resetStrokeOptions(
   });
 }
 
+function areStrokeOptionsEqual(
+  left: PenStyle["penOptions"] | null | undefined,
+  right: PenStyle["penOptions"] | null | undefined,
+): boolean {
+  return JSON.stringify(left ?? null) === JSON.stringify(right ?? null);
+}
+
+function getCurrentPenMatchScore(
+  appState: AppState,
+  pen: PenStyle,
+): number | null {
+  if (!areStrokeOptionsEqual(appState.currentStrokeOptions, pen.penOptions)) {
+    return null;
+  }
+
+  let score = 0;
+
+  if (
+    pen.strokeWidth !== 0 &&
+    getFreedrawStrokeWidthByKey(
+      appState.currentItemStrokeWidthKey as
+        | "extraThin"
+        | "thin"
+        | "medium"
+        | "bold"
+        | "extraBold",
+      appState.currentItemStrokeWidth,
+    ) === pen.strokeWidth
+  ) {
+    score += 3;
+  }
+
+  if (
+    pen.strokeColor &&
+    appState.currentItemStrokeColor === pen.strokeColor
+  ) {
+    score += 4;
+  }
+
+  if (
+    pen.backgroundColor &&
+    appState.currentItemBackgroundColor === pen.backgroundColor
+  ) {
+    score += 4;
+  }
+
+  if (pen.fillStyle !== "" && appState.currentItemFillStyle === pen.fillStyle) {
+    score += 2;
+  }
+
+  if (pen.roughness !== null && appState.currentItemRoughness === pen.roughness) {
+    score += 1;
+  }
+
+  return score;
+}
+
 export class ObsidianMenu {
   private clickTimestamp: number[];
   private activePens: Record<number, PenStyle> = {};
+  private activePenIndex: number | null = null;
   private longpressTimeout: { [key: number]: number } = {};
   private prevClickTimestamp: number = 0;
   constructor(
@@ -153,6 +211,38 @@ export class ObsidianMenu {
 
   public invalidateCustomPenCache() {
     this.activePens = {};
+    this.activePenIndex = null;
+  }
+
+  private getResolvedActivePenIndex(appState: AppState): number | null {
+    if (this.activePenIndex !== null) {
+      const activePen =
+        this.activePens[this.activePenIndex] ??
+        this.plugin.settings.customPens[this.activePenIndex];
+      if (
+        activePen &&
+        areStrokeOptionsEqual(appState.currentStrokeOptions, activePen.penOptions)
+      ) {
+        return this.activePenIndex;
+      }
+    }
+
+    let bestIndex: number | null = null;
+    let bestScore = -1;
+
+    this.plugin.settings.customPens.forEach((pen, index) => {
+      const score = getCurrentPenMatchScore(
+        appState,
+        this.activePens[index] ?? pen,
+      );
+      if (score === null || score <= bestScore) {
+        return;
+      }
+      bestScore = score;
+      bestIndex = index;
+    });
+
+    return bestIndex;
   }
 
   private actionCustomPenLabelClick(index: number, pen: PenStyle) {
@@ -171,20 +261,20 @@ export class ObsidianMenu {
 
     const api = this.view.excalidrawAPI;
     const st = api.getAppState();
+    const resolvedActivePenIndex = this.getResolvedActivePenIndex(st);
 
-    // Deep compare objects to bypass Excalidraw's immutable reference updates
-    const isPenActive =
-      JSON.stringify(st.currentStrokeOptions ?? null) ===
-      JSON.stringify(pen.penOptions ?? null);
+    const isPenActive = resolvedActivePenIndex === index;
 
     //single second click to reset freedraw to default
     if (isPenActive && st.activeTool.type === "freedraw") {
+      this.activePenIndex = null;
       resetStrokeOptions(st.resetCustomPen as ResetCustomPenState, api, true);
       return;
     }
 
     //apply pen settings to canvas
     this.activePens[index] = this.activePens[index] ?? { ...pen };
+    this.activePenIndex = index;
     setPen(this.activePens[index], api);
     api.setActiveTool({ type: "freedraw" });
   }
@@ -268,12 +358,12 @@ export class ObsidianMenu {
   }
 
   public renderCustomPens(isMobile: boolean, appState: AppState) {
+    const activePenIndex = this.getResolvedActivePenIndex(appState);
     return appState.customPens?.map((_, index) => {
       const pen = this.plugin.settings.customPens[index];
+      const activePen = this.activePens[index] ?? pen;
 
-      const isPenActive =
-        JSON.stringify(appState.currentStrokeOptions ?? null) ===
-        JSON.stringify(pen.penOptions ?? null);
+      const isPenActive = activePenIndex === index;
 
       //Reset stroke setting when changing to a different tool
       if (
@@ -282,6 +372,7 @@ export class ObsidianMenu {
         appState.activeTool.type !== "freedraw" &&
         isPenActive
       ) {
+        this.activePenIndex = null;
         window.setTimeout(() =>
           resetStrokeOptions(
             appState.resetCustomPen as ResetCustomPenState,
@@ -298,9 +389,7 @@ export class ObsidianMenu {
         isPenActive &&
         pen.freedrawOnly
       ) {
-        window.setTimeout(() =>
-          setPen(this.activePens[index] ?? pen, this.view.excalidrawAPI),
-        );
+        window.setTimeout(() => setPen(activePen, this.view.excalidrawAPI));
       }
 
       if (
@@ -309,8 +398,8 @@ export class ObsidianMenu {
         isPenActive &&
         pen.freedrawOnly
       ) {
-        const activePen = this.activePens[index] ?? { ...pen };
-        activePen.strokeWidth = getFreedrawStrokeWidthByKey(
+        const updatedActivePen = this.activePens[index] ?? { ...pen };
+        updatedActivePen.strokeWidth = getFreedrawStrokeWidthByKey(
           appState.currentItemStrokeWidthKey as
             | "extraThin"
             | "thin"
@@ -319,12 +408,12 @@ export class ObsidianMenu {
             | "extraBold",
           appState.currentItemStrokeWidth,
         );
-        activePen.backgroundColor = appState.currentItemBackgroundColor;
-        activePen.strokeColor = appState.currentItemStrokeColor;
-        activePen.fillStyle =
+        updatedActivePen.backgroundColor = appState.currentItemBackgroundColor;
+        updatedActivePen.strokeColor = appState.currentItemStrokeColor;
+        updatedActivePen.fillStyle =
           appState.currentItemFillStyle as ExtendedFillStyle;
-        activePen.roughness = appState.currentItemRoughness;
-        this.activePens[index] = activePen;
+        updatedActivePen.roughness = appState.currentItemRoughness;
+        this.activePens[index] = updatedActivePen;
       }
 
       return (
@@ -438,6 +527,7 @@ export class ObsidianMenu {
     );
     this.longpressTimeout = {};
     this.activePens = {};
+    this.activePenIndex = null;
     this.plugin = null;
     this.toolsRef = null;
     this.view = null;

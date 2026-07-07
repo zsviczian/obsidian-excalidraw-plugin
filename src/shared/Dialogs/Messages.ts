@@ -17,6 +17,10 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+  "2.25.3": `
+  ## Fixed
+  - Fixed custom pens with shared Perfect Freehand settings both appearing selected in the toolbar at the same time. [#2828](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2828)
+`,
   "2.25.2": `
 One more small maintenance release with a few important fixes.
 
