@@ -5,17 +5,19 @@ Excalidraw-Obsidian is an Obsidian.md plugins that is built on the open source E
 Read the information below and respond with I'm ready. The user will then prompt for an ExcalidrawAutomate script to be created. Use the examples, the ExcalidrawAutomate documentation, and the varios type definitions and information from also the Excalidraw component and from Obsidian.md to generate the script based on the user's requirements.
 
 In addition to ExcalidrawAutomate, you can also use two other sources of functions:
-- The Excalidraw API available via ea.getExcalidrawAPI(). Note: the API is only available if ea.targetView is set. When running Excalidraw scripts using the script engine, the provided ea object is already set up with targetView by default. Otherwise you need to first run ea.setView().
-- window.ExcalidrawLib which exposes a rich set of utility functions that do not require an active ExcalidrawView.
+- The Excalidraw API available via `ea.getExcalidrawAPI()`. Note: the API is only available if `ea.targetView` is set. When running Excalidraw scripts using the script engine, the provided `ea` object is already set up with targetView by default. Otherwise you need to first run `ea.setView()`.
+- `window.ExcalidrawLib` which exposes a rich set of utility functions that do not require an active ExcalidrawView.
+
+**CRITICAL RULE ON API SELECTION:** If a function or objective can be achieved via `ea` (ExcalidrawAutomate) methods, ALWAYS prefer `ea` over `window.ExcalidrawLib`. `ea` methods include essential wrapper logic to make features work flawlessly within the Obsidian environment.
 
 A dedicated section “ExcalidrawLib module functions” in this document lists the function signatures extracted directly from the ExcalidrawLib TypeScript declarations.
 
-- When the user asks for a dialog window, by default create a FloatingModal. Do not extend the FloatingModal class. Instead, define the modal's behavior by creating a new instance (e.g., const modal = new ea.FloatingModal(...)) and then assigning functions directly to the onOpen and onClose properties of that instance.
+- When the user asks for a dialog window, by default create a FloatingModal. Do not extend the FloatingModal class. Instead, define the modal's behavior by creating a new instance (e.g., `const modal = new ea.FloatingModal(...)`) and then assigning functions directly to the `onOpen` and `onClose` properties of that instance.
 For a reference, follow the implementation pattern used in the "Printable Layout Wizard.md" script.
-- Elements have a customData property that can be used to store arbitrary data. To ensure the data the script adds to elements use the ea.addAppendUpdateCustomData function. This function ensures that existing customData is preserved when adding new data.
+- Elements have a `customData` property that can be used to store arbitrary data. To ensure the data the script adds to elements use the `ea.addAppendUpdateCustomData` function. This function ensures that existing customData is preserved when adding new data.
 - Elements can be hidden by setting their opacity to 0. When hiding elements this way, it is good practice to temporarily store their original opacity in customData. This allows for easy restoration of the original opacity later.
 - Elements can be deleted from the scene by setting their isDeleted property to true.
-- The Obsidian.md module is available on ea.obsidian.
+- The Obsidian.md module is available on `ea.obsidian`.
 
 **Sidepanels and multi-view tooling:**
 - Sidepanels are for scripts that must stay open while users hop between multiple Excalidraw views. They should implement the SidepanelTab hooks (`onOpen`, `onFocus(view)`, `onClose`, `onExcalidrawViewClosed`) and manage their own `ea.targetView` explicitly.
@@ -103,11 +105,11 @@ To keep this training file concise, large external type definitions are not incl
 
 #### **6. Best Practices and Advanced Techniques**
 
-*   **Icons:** Obsidian uses https://lucide.dev icons. These icons are available for scritps via `ea.obsidian.getIcon("Icon Name")`. For UI components prefer use of lucide.dev icons.
-*   **Script Overview Block:** Create, and consistently maintain with each update, a comprehensive comment block at the very beginning of the script. This block must explain the purpose of the script, its key features, and the high-level solution logic or architecture.
-*   **Strictly Modular Architecture (No loose code):** Avoid creating large monolithic blocks of code or leaving logic loose at the root level of the script. Instead, organize *everything* into relatively small, atomic functions. This includes UI components as well, if for example the UI includes sections, tabs, or panels, these should be rendered in sub functions. This is a critical requirement to ensure long-term maintainability and evolution of the script, as loose code quickly becomes unmanageable over multiple iterative prompts.
+*   **Script Overview Block (MANDATORY):** Create, and consistently maintain with each update, a comprehensive comment block at the very beginning of the script. This block must explain the purpose of the script, its key features, and the high-level solution logic or architecture.
+*   **Strictly Modular Architecture (NO LOOSE CODE):** Avoid creating large monolithic blocks of code or leaving logic loose at the root level of the script. Instead, organize *everything* into relatively small, atomic functions. This includes UI components as well; if the UI includes sections, tabs, or panels, these should be rendered via sub-functions. This is a critical requirement to ensure long-term maintainability and evolution of the script, as loose code quickly becomes unmanageable over multiple iterative prompts.
 *   **Evergreen JSDoc Headers and Comments:** Every function must have a proper JSDoc/Javadoc-style header containing parameter names, types, and a clear description of the function's purpose. These descriptions must be kept *evergreen* (updated alongside any code changes). Additionally, when modifying or updating a script, you must strictly *retain all existing internal code comments*.
 *   **Isolate Constants and User-Facing Strings:** *Do not embed hardcoded magic values, config parameters, or UI strings deep inside the logic.* You must separate all constants and language strings and collect them at the very top of the file. This makes it easier to tweak values later and provides a clear, unified section for localization and customization.
+*   **Icons:** Obsidian uses https://lucide.dev icons. These icons are available for scripts via `ea.obsidian.getIcon("Icon Name")`. For UI components prefer use of lucide.dev icons.
 *   **Omit Version Verification:** While many of the sample scripts in the library include a version verification block at the outset (using `ea.verifyMinimumPluginVersion`), *do not add this section* when generating a new script unless explicitly instructed to do so.
 *   **Embrace `await`:** Many EA functions are asynchronous and return a `Promise` (e.g., `ea.addElementsToView()`, `ea.createSVG()`, `utils.inputPrompt()`). **Always** use `await` when calling these functions to ensure your script executes in the correct order.
 *   **Accessing Obsidian API:** The full Obsidian API is available via `ea.obsidian`. For example, use `new ea.obsidian.Notice("message")` or `ea.obsidian.normalizePath(filepath)`.
@@ -117,12 +119,11 @@ To keep this training file concise, large external type definitions are not incl
     *   To permanently remove an element from the scene, set `element.isDeleted = true`.
 *   **Image Handling:** When dealing with image elements, use `ea.getViewFileForImageElement(imageElement)` to get the corresponding `TFile` from the Obsidian vault. This is necessary for any logic that needs to read or manipulate the source image file.
 
-#### **9. Text Element**
-*   There are three text properties.
-    *   **textElement.text** holds the wrapped, rendered text. This is what is displayed in the view. Excalidraw adds '\n' linebreaks during dynamic wrapping.
-    *   **textElement.originalText** holds the rendered, but unwrapped text. Any '\n' character in originalText is an intentional linebreak by the user. Rendered means that for example [[wiki links]] are rendered without the square brackets.
-    *   **textElement.rawText** holds the original raw text including intentional new line characters and the full markdown markup (thought currently only links are rendered, so markdown support is limited to these)
-*   When modifying element text from script, typically all 3 of these properties must be updated, though in case textElement.autoresize === true, or when a text element is bound in a container, excalidraw will update textElement.text following the size of the text element or the container.
+#### **7. SVG and Image Export Approaches**
+Generating images (SVG/PNG) requires specific approaches depending on the context. Follow these three rules strictly to avoid performance issues and missing assets:
+1. **Exporting elements currently in the EA workbench:** Use `await ea.createSVG(null, ...)` or `await ea.createPNG(null, ...)` (passing `null` as the `templatePath`).
+2. **Exporting an Excalidraw file that is NOT currently open:** Pass the file path as the template to `createSVG` or `createPNG` (e.g., `await ea.createSVG(file.path, ...)`). This is the most reliable approach as ExcalidrawAutomate natively handles loading the scene, resolving embedded images, and instantiating loaders behind the scenes. **Do NOT attempt to manually read the file, reconstruct the scene, or load images into memory.**
+3. **Exporting the currently active `ExcalidrawView`:** Use `await ea.createViewSVG(...)`. This is specifically for the open view. You can use the `elementsOverride` parameter to inject temporary elements (like transparent sizing rectangles) into the exported image without modifying the actual scene.
 
 #### **8. Custom Pens and Perfect Freehand**
 
@@ -212,6 +213,13 @@ Example freedraw element carrying `customData.strokeOptions`:
 ```json
 {"type":"excalidraw/clipboard","elements":[{"id":"...","type":"freedraw","strokeColor":"#3E6F8D","backgroundColor":"transparent","fillStyle":"hachure","strokeWidth":0.5,"roughness":0,"customData":{"strokeOptions":{"highlighter":false,"hasOutline":false,"outlineWidth":0,"constantPressure":true,"options":{"smoothing":0.4,"thinning":-0.5,"streamline":0.4,"easing":"linear","start":{"taper":5,"cap":false,"easing":"linear"},"end":{"taper":5,"cap":false,"easing":"linear"}}}}}],"files":{}}
 ```
+
+#### **9. Text Element**
+*   There are three text properties.
+    *   **textElement.text** holds the wrapped, rendered text. This is what is displayed in the view. Excalidraw adds '\n' linebreaks during dynamic wrapping.
+    *   **textElement.originalText** holds the rendered, but unwrapped text. Any '\n' character in originalText is an intentional linebreak by the user. Rendered means that for example [[wiki links]] are rendered without the square brackets.
+    *   **textElement.rawText** holds the original raw text including intentional new line characters and the full markdown markup (thought currently only links are rendered, so markdown support is limited to these)
+*   When modifying element text from script, typically all 3 of these properties must be updated, though in case textElement.autoresize === true, or when a text element is bound in a container, excalidraw will update textElement.text following the size of the text element or the container.
 
 
 ---
@@ -4595,7 +4603,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-07-07T10:45:51.595Z
+Generated on: 2026-07-07T17:18:14.373Z
 
 ---
 
@@ -4678,6 +4686,7 @@ These are the scripts I use most often. I tried to order them by importance, but
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Capture%20Note.svg"/></div>|[[#Capture Note]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Comicbook%20Callout%20Editor.svg"/></div>|[[#Comicbook Callout Editor]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Comic%20Strip%20Director.svg"/></div>|[[#Comic Strip Director]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Icon%20Library.svg"/></div>|[[#Icon Library]]|
 
 ## Layout and Organization
 **Keywords**: Design, Placement, Arrangement, Structure, Formatting, Alignment
@@ -4779,6 +4788,7 @@ These are the scripts I use most often. I tried to order them by importance, but
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Copy%20Selected%20Element%20Styles%20to%20Global.svg"/></div>|[[#Copy Selected Element Styles to Global]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/ExcaliAI.svg"/></div>|[[#ExcaliAI]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Excalidraw%20Writing%20Machine.svg"/></div>|[[#Excalidraw Writing Machine]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Icon%20Library.svg"/></div>|[[#Icon Library]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Palette%20loader.svg"/></div>|[[#Palette Loader]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Palm%20Guard.svg"/></div>|[[#Palm Guard]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/PDF%20Page%20Text%20to%20Clipboard.svg"/></div>|[[#PDF Page Text to Clipboard]]|
@@ -5086,6 +5096,12 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Full-Year%20Calendar%20Generator.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/simonperet'>@simonperet</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Full-Year%20Calendar%20Generator.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Generates a complete calendar for a specified year.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-full-year-calendar-exemple.excalidraw.png'></td></tr></table>
+
+## Icon Library
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Icon%20Library.md
+```
+<table><tr valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Icon%20Library.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Adds a fast, searchable icon library to Excalidraw as a native side panel. Build your own library from Excalidraw drawings, SVGs, PNGs, JPGs, WebP images, and more. Automatically generate SVG thumbnails for Excalidraw files, organize icons using customizable regular-expression filters, search by keyword, and insert icons into Excalidraw or MindMap Builder with a single click. The panel supports lazy loading for large libraries, keyboard navigation, adjustable thumbnail sizes, configurable thumbnail backgrounds, and flexible insertion settings.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-icon-library.jpg'></td></tr></table>
 
 ## Image Occlusion
 ```excalidraw-script-install
@@ -18423,6 +18439,1084 @@ try {
   _ = new Notice(err.toString())
 }
 ```
+
+---
+
+## Icon Library.md
+<!-- Source: ea-scripts/Icon Library.md -->
+
+/*
+ * ==============================================================================
+ * Icon Library Sidepanel
+ * ==============================================================================
+ * Purpose:
+ * Provides a responsive, lazily loaded icon library implemented natively as an
+ * Excalidraw Automate Sidepanel. It allows users to search, keyboard-navigate,
+ * and seamlessly insert items (SVG exports of Excalidraw files or raster images)
+ * into Excalidraw or MindMap Builder.
+ *
+ * Key Features:
+ * - Configurable regex-based file filtering and keyword extraction.
+ * - Auto-generation of SVG thumbnails for Excalidraw files.
+ * - Lazy-loaded grid with responsive thumbnail sizing via a vertical slider popover.
+ * - Theme-aware thumbnail backgrounds (configurable for Light and Dark modes).
+ * - Keyboard accessibility for navigation and insertion.
+ * - MindMap Builder integration.
+ *
+ * High-Level Logic / Architecture:
+ * - Global Constants & Strings: Centralized at the top for easy localization and tuning.
+ * - Main entry point (`main()`) handles singleton tab creation and state management.
+ * - Strictly modular UI rendering functions separate layout assembly from business logic.
+ * - Lazy loading is managed via an IntersectionObserver to conserve memory.
+ * - A custom settings modal handles configuration and includes a live regex tester.
+ * ==============================================================================
+ ```js*/
+
+// ==============================================================================
+// 1. Constants & Strings
+// ==============================================================================
+
+const STRINGS = {
+    TAB_TITLE: "Icon Library",
+    SEARCH_PLACEHOLDER: "Search icons...",
+    LOADING: "Loading...",
+    ERROR: "Error",
+    SETTINGS_TITLE: "Icon Library Settings",
+    SETTINGS_SAVE: "Save Settings",
+    TEST_REGEX_TITLE: "Test Regex & Find Matches",
+    TEST_REGEX_PLACEHOLDER: "Enter a filename to test regex...",
+    TEST_BTN_FIND: "Find All Matching Files in Vault",
+    EXCLUDE_NAME: "Exclude Folders",
+    EXCLUDE_DESC: "Comma or newline separated folder paths to ignore.",
+    WIDTH_NAME: "Default Icon Width",
+    WIDTH_DESC: "Width when inserting the icon into the scene.",
+    LIGHT_BG_NAME: "Light Mode Thumbnail Background",
+    LIGHT_BG_DESC: "Background color applied behind thumbnails in Light mode (e.g. #ffffff or rgba(0,0,0,0.1)). Leave empty for transparent.",
+    DARK_BG_NAME: "Dark Mode Thumbnail Background",
+    DARK_BG_DESC: "Background color applied behind thumbnails in Dark mode. Leave empty for transparent.",
+    FILTERS_TITLE: "Filters (Regular Expressions)",
+    FILTERS_DESC: "Create regular expressions to match filenames and extract keywords using capture groups (.*). Note: All expressions are evaluated case-insensitively."
+};
+
+const CONSTANTS = {
+    IMAGE_EXTS: ["png", "jpg", "jpeg", "gif", "svg", "webp"],
+    DEFAULT_THUMB_SIZE: 100,
+    DEFAULT_ICON_WIDTH: 180,
+    DEBOUNCE_DELAY: 200,
+    OBSERVER_MARGIN: "50px",
+    ICON_SCALE: "scaling",
+    ICON_EXPAND_FALLBACK: "expand",
+    ICON_SETTINGS: "settings",
+    CSS_PREFIX: "excalidraw-icon-library-"
+};
+
+// ==============================================================================
+// 2. Data & Utility Functions
+// ==============================================================================
+
+/**
+ * Initializes and returns the script settings, ensuring all default values are present.
+ * @returns {Object} The current settings object.
+ */
+function initializeSettings() {
+    let currentSettings = ea.getScriptSettings();
+
+    if (!currentSettings.filters) {
+        currentSettings = {
+            filters: [
+                { name: "Icon", pattern: "^icon - (.*?)(?: - [^-]+)?$" },
+                { name: "Stickfigure", pattern: "^stickfigure - (.*?)(?: - [^-]+)?$" },
+                { name: "Logo", pattern: "^logo - (.*?)(?: - [^-]+)?$" }
+            ],
+            excludeFolders: "",
+            defaultIconWidth: CONSTANTS.DEFAULT_ICON_WIDTH,
+            thumbSize: CONSTANTS.DEFAULT_THUMB_SIZE,
+            lightBgColor: "#FFFFFF60",
+            darkBgColor: "#FFFFFF60"
+        };
+        ea.setScriptSettings(currentSettings);
+    }
+    
+    // Patch existing configurations missing new properties
+    if (currentSettings.lightBgColor === undefined) currentSettings.lightBgColor = "#FFFFFF80";
+    if (currentSettings.darkBgColor === undefined) currentSettings.darkBgColor = "#FFFFFF80";
+    if (currentSettings.defaultIconWidth === undefined) currentSettings.defaultIconWidth = CONSTANTS.DEFAULT_ICON_WIDTH;
+    if (currentSettings.thumbSize === undefined) currentSettings.thumbSize = CONSTANTS.DEFAULT_THUMB_SIZE;
+    
+    return currentSettings;
+}
+
+/**
+ * Creates a debounced version of the provided function.
+ * @param {Function} func - The function to debounce.
+ * @param {number} wait - The delay in milliseconds.
+ * @returns {Function} The debounced function.
+ */
+function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
+/**
+ * Scans the vault for image and Excalidraw files matching the active regex filters.
+ * @param {Object} currentSettings - The current script settings.
+ * @returns {Array<{file: TFile, keyword: string}>} Sorted array of matched files.
+ */
+function getLibraryItems(currentSettings) {
+    const excludeFolders = (currentSettings.excludeFolders || "")
+        .split(/[\n,]/)
+        .map(f => f.trim())
+        .filter(f => f);
+
+    const files = app.vault.getFiles().filter(f => {
+        if (excludeFolders.some(ex => f.path.startsWith(ex))) return false;
+        const isImage = CONSTANTS.IMAGE_EXTS.includes(f.extension.toLowerCase());
+        const isExcal = ea.isExcalidrawFile(f);
+        return isImage || isExcal;
+    });
+
+    const items = [];
+    const activeFilters = currentSettings.filters
+        .map(f => {
+            try { return new RegExp(f.pattern, "i"); }
+            catch (e) { return null; }
+        })
+        .filter(f => f);
+
+    for (const file of files) {
+        let matched = false;
+        let keyword = file.basename;
+
+        for (const regex of activeFilters) {
+            const match = file.basename.match(regex);
+            if (match) {
+                matched = true;
+                if (match[1]) keyword = match[1];
+                break;
+            }
+        }
+
+        if (matched) {
+            items.push({ file, keyword: keyword.trim() });
+        }
+    }
+
+    return items.sort((a, b) => a.keyword.localeCompare(b.keyword));
+}
+
+// ==============================================================================
+// 3. Rendering & Insertion Logic
+// ==============================================================================
+
+/**
+ * Generates an SVG representation of an Excalidraw file for thumbnail display.
+ * Simplifies loading by passing the file path directly as the templatePath to ea.createSVG().
+ * Caches generated SVGs based on file modification time (mtime) for high performance.
+ * @param {TFile} file - The Excalidraw file.
+ * @returns {Promise<HTMLElement|SVGSVGElement>} The generated SVG element or an error div.
+ */
+async function getSvgThumbnail(file) {
+    // Initialize the cache Map directly on the function object to avoid loose global variables
+    if (!getSvgThumbnail.cache) {
+        getSvgThumbnail.cache = new Map();
+    }
+
+    const cacheKey = file.path;
+    const currentMtime = file.stat.mtime;
+    const cachedItem = getSvgThumbnail.cache.get(cacheKey);
+
+    // Return a clone of the cached SVG if the file hasn't been modified
+    if (cachedItem && cachedItem.mtime === currentMtime) {
+        // Deep clone the DOM node so it can be safely injected into multiple containers over time
+        return cachedItem.svg.cloneNode(true);
+    }
+
+    try {
+        // Ensure the workbench is empty so only the template content is rendered
+        ea.clear(); 
+        
+        // Configure export settings (withBackground = false, withTheme = false)
+        const exportSettings = ea.getExportSettings(false, false);
+        
+        // Generate the SVG by passing the file path as the template. 
+        // ExcalidrawAutomate handles loading the scene and any embedded images natively.
+        // We pass 'undefined' for the loader so EA creates its own.
+        const svg = await ea.createSVG(file.path, false, exportSettings, undefined, "light", 0);
+        
+        // Store the mtime and a clone of the generated SVG in the cache
+        getSvgThumbnail.cache.set(cacheKey, {
+            mtime: currentMtime,
+            svg: svg.cloneNode(true)
+        });
+        
+        return svg;
+    } catch (e) {
+        console.error("Failed to generate SVG for", file.path, e);
+        const div = document.createElement("div");
+        div.innerText = STRINGS.ERROR;
+        div.style.color = "var(--text-error)";
+        return div;
+    }
+}
+
+/**
+ * Renders the thumbnail inside the provided container, generating SVG or loading an image.
+ * @param {TFile} file - The file to render.
+ * @param {HTMLElement} container - The DOM container to render into.
+ * @returns {Promise<void>}
+ */
+async function renderThumbnail(file, container) {
+    container.empty();
+    if (ea.isExcalidrawFile(file)) {
+        const svg = await getSvgThumbnail(file);
+        svg.style.width = "100%";
+        svg.style.height = "100%";
+        container.appendChild(svg);
+    } else {
+        const img = container.createEl("img");
+        img.src = app.vault.getResourcePath(file);
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.objectFit = "contain";
+    }
+}
+
+/**
+ * Inserts the selected file into the Excalidraw scene or MindMap Builder.
+ * Modified to insert precisely at the visible center of the scene and auto-select.
+ * @param {TFile} file - The file to insert.
+ * @param {Object} currentSettings - The active settings containing dimensions.
+ * @returns {Promise<void>}
+ */
+async function insertItem(file, currentSettings) {
+    const mmb = window.MindMapBuilderAPI;
+    let insertedToMmb = false;
+    const targetWidth = currentSettings.defaultIconWidth;
+
+    // MindMap Builder integration
+    if (mmb && typeof mmb.ready === "function" && mmb.ready()) {
+        const selRes = mmb.getSelection();
+        if (selRes.ok && selRes.data.nodeId) {
+            const link = `![[${file.path}|${targetWidth}]]`;
+            const addRes = await mmb.addNode({
+                text: link,
+                parentId: selRes.data.nodeId
+            });
+            if (addRes.ok) insertedToMmb = true;
+        }
+    }
+
+    // Standard Excalidraw insertion
+    if (!insertedToMmb) {
+        if (!ea.targetView) return;
+
+        ea.clear();
+        const center = ea.getViewCenterPosition();
+        
+        const id = await ea.addImage(center.x, center.y, file, false); // Insert at 100% scale first
+        const el = ea.getElement(id);
+
+        if (el) {
+            if (el.width && el.height) {
+                const ratio = el.height / el.width;
+                el.width = targetWidth;
+                el.height = targetWidth * ratio;
+            } else {
+                el.width = targetWidth;
+                el.height = targetWidth;
+            }
+            
+            // Adjust X and Y so the element is perfectly centered on the screen
+            el.x = center.x - el.width / 2;
+            el.y = center.y - el.height / 2;
+        }
+
+        // Add to view without repositioning to cursor
+        await ea.addElementsToView(false, false, true);
+        
+        // Select the newly inserted element
+        const newEl = ea.getViewElements().find(e => e.id === id);
+        if (newEl) {
+            ea.selectElementsInView([newEl]);
+        }
+    }
+}
+
+// ==============================================================================
+// 4. UI Components & Layout
+// ==============================================================================
+
+/**
+ * Injects required CSS styles into the sidepanel content element.
+ * @param {HTMLElement} contentEl - The tab's content element.
+ */
+function injectCSS(contentEl) {
+    contentEl.createEl("style", {
+        text: `
+        .${CONSTANTS.CSS_PREFIX}header { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
+        
+        .${CONSTANTS.CSS_PREFIX}search-wrapper { 
+            display: flex; 
+            align-items: center; 
+            position: relative; 
+            flex-grow: 1; 
+            border: 1px solid var(--background-modifier-border); 
+            border-radius: 4px; 
+            background: var(--background-modifier-form-field); 
+        }
+        .${CONSTANTS.CSS_PREFIX}search { 
+            flex-grow: 1; 
+            padding: 5px 8px; 
+            border: none !important; 
+            box-shadow: none !important; 
+            background: transparent !important; 
+        }
+        
+        .${CONSTANTS.CSS_PREFIX}scale-btn { 
+            cursor: pointer; 
+            padding: 4px 8px; 
+            display: flex; 
+            align-items: center; 
+            color: var(--text-muted); 
+        }
+        .${CONSTANTS.CSS_PREFIX}scale-btn:hover { color: var(--text-normal); }
+        
+        .${CONSTANTS.CSS_PREFIX}slider-popover { 
+            display: none; 
+            position: absolute; 
+            right: 0; 
+            top: calc(100% + 5px); 
+            z-index: 10; 
+            background: var(--background-secondary); 
+            border: 1px solid var(--background-modifier-border); 
+            padding: 15px 0; 
+            border-radius: 6px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        }
+        
+        /* Wrapper to hold the rotated slider without breaking layout */
+        .${CONSTANTS.CSS_PREFIX}slider-wrapper {
+            position: relative;
+            width: 30px;
+            height: 120px;
+            margin: 0 auto;
+        }
+        
+        /* Rotate standard horizontal slider to bypass webkit vertical limitations.
+           Obsidian's native theme colors will now perfectly apply to this element. */
+        .${CONSTANTS.CSS_PREFIX}slider {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-90deg);
+            width: 120px !important; 
+            margin: 0;
+        }
+
+        .${CONSTANTS.CSS_PREFIX}settings-btn { 
+            cursor: pointer; 
+            padding: 4px; 
+            border-radius: 4px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        .${CONSTANTS.CSS_PREFIX}settings-btn:hover { background-color: var(--background-modifier-hover); }
+        
+        .${CONSTANTS.CSS_PREFIX}grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(var(--thumb-size, 100px), 1fr));
+            gap: 10px;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+        
+        .${CONSTANTS.CSS_PREFIX}card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid var(--background-modifier-border);
+            border-radius: 6px;
+            padding: 8px;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s, background-color 0.2s;
+            background: var(--background-secondary);
+        }
+        .${CONSTANTS.CSS_PREFIX}card:hover, .${CONSTANTS.CSS_PREFIX}card:focus {
+            border-color: var(--interactive-accent);
+            background: var(--background-primary);
+        }
+        
+        .${CONSTANTS.CSS_PREFIX}img-container {
+            width: 100%;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+        
+        .${CONSTANTS.CSS_PREFIX}label {
+            margin-top: 8px;
+            font-size: 0.8em;
+            text-align: center;
+            word-break: break-word;
+            color: var(--text-normal);
+            max-height: 2.4em;
+            overflow: hidden;
+            user-select: none;
+        }
+        
+        .${CONSTANTS.CSS_PREFIX}loading {
+            color: var(--text-muted);
+            font-size: 0.8em;
+        }
+        `
+    });
+}
+
+/**
+ * Displays an informational modal with instructions on how to use the Icon Library.
+ * @param {App} app - The Obsidian App instance.
+ */
+function showInfoModal(app) {
+    const modal = new ea.obsidian.Modal(app);
+    modal.titleEl.setText("Icon Library Info");
+    const content = modal.contentEl;
+    
+    content.createEl("style", {
+        text: `
+        .icon-lib-info-list { margin-top: 0; padding-left: 20px; }
+        .icon-lib-info-list li { margin-bottom: 12px; line-height: 1.4; }
+        `
+    });
+    
+    content.createEl("p", { text: "Welcome to the Icon Library! Here is a brief explanation of its use:" });
+    const ul = content.createEl("ul", { cls: "icon-lib-info-list" });
+    
+    ul.createEl("li").innerHTML = `<b>Naming convention:</b> The pre-configured icon naming convention (recommended, but can be modified in settings) is "<code>type - comma, separated, keywords - source</code>", e.g. "icon - book, read, study - flaticon".`;
+    ul.createEl("li").innerHTML = `<b>Usage:</b> Type in your search, press <code>Tab</code>, use arrow keys to select, press <code>Enter</code> to insert into the scene, press <code>ESC</code> to close the sidepanel.`;
+    ul.createEl("li").innerHTML = `<b>Hotkey:</b> Setup an Obsidian Hotkey for the script so it opens quickly when needed.`;
+    ul.createEl("li").innerHTML = `<b>Mouse:</b> If using a mouse, simply click on an icon to insert it into the scene.`;
+    ul.createEl("li").innerHTML = `<b>MindMap Builder:</b> If you have MindMap Builder installed and running, and a mindmap node is currently selected, the icon will be added to the mindmap directly as a leaf.`;
+    ul.createEl("li").innerHTML = `<b>Size:</b> Default insert size is 180x180 (for square icons). To learn more why, join the <a href="https://community.sketch-your-mind.com/vtw">Visual Thinking Workshop</a>, or join <a href="https://community.sketch-your-mind.com/em">Excalidraw Mastery</a>.`;
+    ul.createEl("li").innerHTML = `<b>Philosophy:</b> To understand the underlying philosophy of the plugin and the scripts, read my book: <a href="https://community.sketch-your-mind.com/sym">Sketch Your Mind</a>.`;
+    ul.createEl("li").innerHTML = `<b>What else?</b> Have fun building beautiful visual structures!`;
+    
+    const btnContainer = content.createDiv({ attr: { style: "display: flex; justify-content: flex-end; margin-top: 20px;" }});
+    const closeBtn = btnContainer.createEl("button", { text: "Close", cls: "mod-cta" });
+    closeBtn.onclick = () => modal.close();
+    
+    modal.open();
+}
+
+/**
+ * Builds the header section containing the search bar, scale popover, and settings buttons.
+ * @param {HTMLElement} contentEl - The parent container.
+ * @param {Object} state - The global script state.
+ * @returns {Object} References to the search input, size slider, buttons, and the document click handler.
+ */
+function buildHeaderUI(contentEl, state) {
+    const headerRow = contentEl.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}header` });
+    
+    // Search & Sizer wrapper
+    const searchWrapper = headerRow.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}search-wrapper` });
+    const searchInput = searchWrapper.createEl("input", { 
+        type: "text", 
+        cls: `${CONSTANTS.CSS_PREFIX}search`, 
+        placeholder: STRINGS.SEARCH_PLACEHOLDER 
+    });
+    
+    const scaleBtn = searchWrapper.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}scale-btn` });
+    scaleBtn.innerHTML = ea.obsidian.getIcon(CONSTANTS.ICON_SCALE)?.outerHTML 
+                      || ea.obsidian.getIcon(CONSTANTS.ICON_EXPAND_FALLBACK)?.outerHTML || "↕";
+    
+    // Vertical Sizer Popover
+    const sliderPopover = searchWrapper.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}slider-popover` });
+    
+    // Use the wrapper to absolutely position the rotated horizontal slider
+    const sliderWrapper = sliderPopover.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}slider-wrapper` });
+    const sizeSlider = sliderWrapper.createEl("input", { 
+        type: "range", 
+        cls: `${CONSTANTS.CSS_PREFIX}slider`,
+        attr: { 
+            min: "50", 
+            max: "250", 
+            value: state.settings.thumbSize
+        } 
+    });
+
+    // Info Button
+    const infoBtn = headerRow.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}settings-btn` });
+    infoBtn.innerHTML = ea.obsidian.getIcon("info")?.outerHTML || "i";
+    infoBtn.setAttribute("aria-label", "Instructions & Info");
+    infoBtn.setAttribute("title", "Instructions & Info");
+    infoBtn.addEventListener("click", () => showInfoModal(app));
+
+    // Settings Button
+    const settingsBtn = headerRow.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}settings-btn` });
+    settingsBtn.innerHTML = ea.obsidian.getIcon(CONSTANTS.ICON_SETTINGS)?.outerHTML || "⚙";
+    settingsBtn.setAttribute("aria-label", "Settings");
+    settingsBtn.setAttribute("title", "Settings");
+
+    // Popover toggle logic
+    scaleBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        sliderPopover.style.display = sliderPopover.style.display === "none" ? "block" : "none";
+    });
+
+    // We DO NOT attach this to the document here anymore to prevent memory leaks.
+    // We export it so `main()` can cleanly attach/detach it based on tab focus.
+    const outsideClickHandler = (e) => {
+        if (!scaleBtn.contains(e.target) && !sliderPopover.contains(e.target)) {
+            sliderPopover.style.display = "none";
+        }
+    };
+
+    return { searchInput, sizeSlider, infoBtn, settingsBtn, outsideClickHandler };
+}
+
+/**
+ * Handles keyboard navigation within the thumbnail grid.
+ * @param {KeyboardEvent} e - The keyboard event.
+ * @param {HTMLElement} card - The card element currently focused.
+ * @param {HTMLElement} grid - The parent grid container.
+ * @param {TFile} file - The file associated with the card.
+ * @param {Object} currentSettings - The active settings.
+ */
+function handleGridKeydown(e, card, grid, file, currentSettings) {
+    // Intercept Tab / Shift+Tab to jump back to search input
+    if (e.key === "Tab") {
+        e.preventDefault();
+        const searchInput = grid.parentElement.querySelector(`.${CONSTANTS.CSS_PREFIX}search`);
+        if (searchInput) searchInput.focus();
+        return;
+    }
+
+    const cards = Array.from(grid.querySelectorAll(`.${CONSTANTS.CSS_PREFIX}card`));
+    const idx = cards.indexOf(card);
+    if (idx === -1) return;
+
+    let cols = 1;
+    if (cards.length > 1) {
+        const top0 = cards[0].offsetTop;
+        for (let i = 1; i < cards.length; i++) {
+            if (cards[i].offsetTop > top0) {
+                cols = i;
+                break;
+            }
+        }
+        if (cols === 1 && cards[cards.length - 1].offsetTop === top0) {
+            cols = cards.length;
+        }
+    }
+
+    let target = -1;
+    if (e.key === "ArrowRight") target = idx + 1;
+    else if (e.key === "ArrowLeft") target = idx - 1;
+    else if (e.key === "ArrowDown") target = idx + cols;
+    else if (e.key === "ArrowUp") target = idx - cols;
+
+    if (target >= 0 && target < cards.length) {
+        e.preventDefault();
+        cards[target].focus();
+    } else if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        insertItem(file, currentSettings);
+    }
+}
+
+/**
+ * Creates a single thumbnail card and attaches listeners.
+ * @param {Object} item - The library item {file, keyword}.
+ * @param {HTMLElement} gridContainer - The grid DOM element.
+ * @param {IntersectionObserver} observer - The lazy loading observer.
+ * @param {Object} currentSettings - The active settings.
+ */
+function createThumbnailCard(item, gridContainer, observer, currentSettings) {
+    const card = gridContainer.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}card`, attr: { tabindex: "0" } });
+    card.dataset.path = item.file.path;
+    card.setAttribute("aria-label", item.keyword);
+
+    const imgContainer = card.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}img-container` });
+    
+    // Theme-aware background application
+    const isDarkTheme = document.body.hasClass("theme-dark");
+    const thumbBgColor = isDarkTheme ? currentSettings.darkBgColor : currentSettings.lightBgColor;
+    if (thumbBgColor && thumbBgColor.trim() !== "") {
+        imgContainer.style.backgroundColor = thumbBgColor;
+    }
+    
+    imgContainer.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}loading`, text: STRINGS.LOADING });
+    card.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}label`, text: item.keyword });
+
+    observer.observe(card);
+
+    card.addEventListener("click", () => insertItem(item.file, currentSettings));
+    card.addEventListener("keydown", (e) => handleGridKeydown(e, card, gridContainer, item.file, currentSettings));
+}
+
+/**
+ * Renders the grid of thumbnails based on the provided items and search term.
+ * @param {HTMLElement} gridContainer - The grid DOM element.
+ * @param {IntersectionObserver} observer - The observer for lazy loading.
+ * @param {Array<{file: TFile, keyword: string}>} items - The library items.
+ * @param {string} searchTerm - The current search filter.
+ * @param {Object} currentSettings - The active settings.
+ */
+function renderGrid(gridContainer, observer, items, searchTerm, currentSettings) {
+    gridContainer.empty();
+    const term = searchTerm.toLowerCase();
+    const filtered = items.filter(item => item.keyword.toLowerCase().includes(term));
+
+    for (const item of filtered) {
+        createThumbnailCard(item, gridContainer, observer, currentSettings);
+    }
+}
+
+// ==============================================================================
+// 5. Settings Modal
+// ==============================================================================
+
+/**
+ * Modal class for managing Icon Library settings.
+ */
+class IconSettingsModal extends ea.obsidian.Modal {
+    constructor(app, currentSettings, onSave) {
+        super(app);
+        this.localSettings = JSON.parse(JSON.stringify(currentSettings));
+        this.onSave = onSave;
+        
+        // Store references to the regex tester elements for live updates
+        this.testInput = null;
+        this.testResult = null;
+    }
+
+    /**
+     * Evaluates the current regex tester input against the live filter settings
+     * and updates the result text immediately.
+     */
+    evaluateRegexTest() {
+        if (!this.testInput || !this.testResult) return;
+        
+        const val = this.testInput.value;
+        if (!val) { 
+            this.testResult.innerText = ""; 
+            return; 
+        }
+        
+        let matched = false;
+        for (const f of this.localSettings.filters) {
+            try {
+                const regex = new RegExp(f.pattern, "i");
+                const match = val.match(regex);
+                if (match) {
+                    matched = true;
+                    this.testResult.innerText = `Matched filter '${f.name}'! Extracted Keyword: ${match[1] || match[0]}`;
+                    break;
+                }
+            } catch (e) { /* Ignore bad regex during typing */ }
+        }
+        
+        if (!matched) {
+            this.testResult.innerText = "No match.";
+        }
+    }
+
+    /**
+     * Renders a synchronized color picker and text input row that retains alpha transparency.
+     * @param {HTMLElement} container - The DOM container to append to.
+     * @param {string} name - Setting name.
+     * @param {string} desc - Setting description.
+     * @param {string} settingKey - The key in localSettings to bind to.
+     */
+    renderThemeColorSetting(container, name, desc, settingKey) {
+        const row = new ea.obsidian.Setting(container)
+            .setName(name)
+            .setDesc(desc);
+            
+        row.controlEl.style.display = "flex";
+        row.controlEl.style.gap = "8px";
+        row.controlEl.style.alignItems = "center";
+        
+        const colorInput = row.controlEl.createEl("input", { type: "color" });
+        const textInput = row.controlEl.createEl("input", { type: "text" });
+        textInput.style.width = "100px";
+        
+        const currentColor = this.localSettings[settingKey] || "";
+        textInput.value = currentColor;
+        colorInput.value = currentColor.length >= 7 ? currentColor.substring(0, 7) : "#ffffff";
+        
+        // Update text input when color picker is used, preserving previous alpha
+        colorInput.addEventListener("input", (e) => {
+            const newBase = e.target.value; 
+            const currentText = textInput.value;
+            let alpha = "";
+            if (currentText.length === 9) {
+                alpha = currentText.substring(7, 9);
+            }
+            const newValue = newBase + alpha;
+            textInput.value = newValue;
+            this.localSettings[settingKey] = newValue;
+        });
+        
+        // Update color picker visually when text input is modified
+        textInput.addEventListener("input", (e) => {
+            const val = e.target.value;
+            this.localSettings[settingKey] = val;
+            if (val.length >= 7) {
+                colorInput.value = val.substring(0, 7);
+            }
+        });
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.empty();
+        contentEl.createEl("h2", { text: STRINGS.SETTINGS_TITLE });
+
+        const filterContainer = contentEl.createDiv();
+        this.renderFilters(filterContainer);
+
+        // Regex Tester is a foldable section immediately below the filters
+        this.renderRegexTester(contentEl);
+
+        new ea.obsidian.Setting(contentEl)
+            .setName(STRINGS.EXCLUDE_NAME)
+            .setDesc(STRINGS.EXCLUDE_DESC)
+            .addTextArea(text => {
+                text.setValue(this.localSettings.excludeFolders);
+                text.onChange(v => { this.localSettings.excludeFolders = v; });
+            });
+
+        new ea.obsidian.Setting(contentEl)
+            .setName(STRINGS.WIDTH_NAME)
+            .setDesc(STRINGS.WIDTH_DESC)
+            .addText(text => {
+                text.setValue(String(this.localSettings.defaultIconWidth));
+                text.onChange(v => { this.localSettings.defaultIconWidth = parseInt(v) || CONSTANTS.DEFAULT_ICON_WIDTH; });
+            });
+
+        this.renderThemeColorSetting(contentEl, STRINGS.LIGHT_BG_NAME, STRINGS.LIGHT_BG_DESC, "lightBgColor");
+        this.renderThemeColorSetting(contentEl, STRINGS.DARK_BG_NAME, STRINGS.DARK_BG_DESC, "darkBgColor");
+
+        const saveBtnContainer = contentEl.createDiv({ attr: { style: "display: flex; justify-content: flex-end; margin-top: 20px;" } });
+        const saveBtn = saveBtnContainer.createEl("button", { text: STRINGS.SETTINGS_SAVE, cls: "mod-cta" });
+        saveBtn.addEventListener("click", () => {
+            // Close the modal immediately to prevent the UI from feeling frozen
+            this.close();
+            // Defer the heavy save and grid re-render logic to the next event loop tick
+            setTimeout(async () => {
+                await this.onSave(this.localSettings);
+            }, 10);
+        });
+    }
+
+    renderFilters(container) {
+        container.empty();
+        
+        // Header Row for Filters and Reset Button
+        const headerRow = container.createDiv({ attr: { style: "display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;" }});
+        headerRow.createEl("h4", { text: STRINGS.FILTERS_TITLE, attr: { style: "margin: 0;" } });
+        
+        const resetBtn = headerRow.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Restore default regular expressions", title: "Restore default regular expressions" } });
+        resetBtn.innerHTML = ea.obsidian.getIcon("rotate-ccw")?.outerHTML || "Reset";
+        resetBtn.addEventListener("click", () => {
+            const confirmReset = window.confirm("Are you sure you want to reset all regular expressions to the script defaults?");
+            if (confirmReset) {
+                this.localSettings.filters = [
+                    { name: "Icon", pattern: "^icon - (.*?)(?: - [^-]+)?$" },
+                    { name: "Stickfigure", pattern: "^stickfigure - (.*?)(?: - [^-]+)?$" },
+                    { name: "Logo", pattern: "^logo - (.*?)(?: - [^-]+)?$" }
+                ];
+                this.renderFilters(container);
+                this.evaluateRegexTest();
+            }
+        });
+
+        container.createEl("p", { text: STRINGS.FILTERS_DESC, cls: "setting-item-description", attr: { style: "margin-bottom: 10px;" } });
+
+        this.localSettings.filters.forEach((f, idx) => {
+            const row = container.createDiv({ attr: { style: "display: flex; gap: 8px; margin-bottom: 8px; align-items: center;" } });
+            const nameInput = row.createEl("input", { type: "text", value: f.name, placeholder: "Filter Name", attr: { style: "width: 120px;" } });
+            const patternInput = row.createEl("input", { type: "text", value: f.pattern, placeholder: "Regex pattern", attr: { style: "flex-grow: 1;" } });
+
+            nameInput.addEventListener("change", (e) => { f.name = e.target.value; });
+            
+            // Listen to input events to dynamically update the regex tester
+            patternInput.addEventListener("input", (e) => { 
+                f.pattern = e.target.value; 
+                this.evaluateRegexTest();
+            });
+
+            // Replace "Del" text with the trash icon
+            const delBtn = row.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Delete filter" } });
+            delBtn.innerHTML = ea.obsidian.getIcon("trash")?.outerHTML || "X";
+            delBtn.addEventListener("click", () => {
+                this.localSettings.filters.splice(idx, 1);
+                this.renderFilters(container);
+                this.evaluateRegexTest(); // Re-evaluate in case the deleted filter was the match
+            });
+        });
+
+        const addBtn = container.createEl("button", { text: "Add Filter", attr: { style: "margin-top: 5px;" } });
+        addBtn.addEventListener("click", () => {
+            this.localSettings.filters.push({ name: "New Filter", pattern: "^new - (.*)" });
+            this.renderFilters(container);
+        });
+    }
+
+    renderRegexTester(contentEl) {
+        // Transform into a foldable <details> element
+        const details = contentEl.createEl("details", { attr: { style: "margin-bottom: 20px; padding: 10px; border: 1px solid var(--background-modifier-border); border-radius: 6px;" } });
+        const summary = details.createEl("summary", { text: STRINGS.TEST_REGEX_TITLE, attr: { style: "font-weight: bold; cursor: pointer; outline: none;" } });
+        
+        const testContainer = details.createDiv({ attr: { style: "margin-top: 10px;" } });
+
+        this.testInput = testContainer.createEl("input", { type: "text", placeholder: STRINGS.TEST_REGEX_PLACEHOLDER, attr: { style: "width: 100%; margin-bottom: 10px;" } });
+        this.testResult = testContainer.createDiv({ attr: { style: "color: var(--text-accent); margin-bottom: 10px;" } });
+
+        // Evaluate automatically on keystroke
+        this.testInput.addEventListener("input", () => {
+            this.evaluateRegexTest();
+        });
+
+        const matchBtn = testContainer.createEl("button", { text: STRINGS.TEST_BTN_FIND });
+        const matchResult = testContainer.createDiv({ attr: { style: "max-height: 150px; overflow-y: auto; margin-top: 10px; font-size: 0.9em; color: var(--text-muted);" } });
+
+        matchBtn.addEventListener("click", () => {
+            const tempItems = getLibraryItems(this.localSettings);
+            matchResult.innerHTML = `<strong>Found ${tempItems.length} items.</strong><br>` +
+                tempItems.slice(0, 20).map(i => `<code>${i.file.name}</code> &rarr; <b>${i.keyword}</b>`).join("<br>") +
+                (tempItems.length > 20 ? "<br>..." : "");
+        });
+    }
+}
+
+// ==============================================================================
+// 6. Main Execution & Render Queue
+// ==============================================================================
+
+const renderQueue = [];
+let isRendering = false;
+
+/**
+ * Processes the thumbnail rendering queue sequentially to prevent device lock-up.
+ */
+async function processRenderQueue() {
+    if (isRendering) return;
+    isRendering = true;
+    while (renderQueue.length > 0) {
+        const { file, container, card } = renderQueue.shift();
+        
+        // Skip rendering if the card has been detached from the DOM (e.g. search changed)
+        if (!card.isConnected) continue;
+        
+        await renderThumbnail(file, container);
+    }
+    isRendering = false;
+}
+
+/**
+ * Main entry point for the Icon Library Sidepanel script.
+ * Manages singleton instancing, state management, and sidepanel layout orchestration.
+ * @returns {Promise<void>}
+ */
+async function main() {
+    const existingTab = ea.checkForActiveSidepanelTabForScript();
+    if (existingTab) {
+        if (existingTab.getHostEA() === ea) {
+            existingTab.open();
+        } else {
+            existingTab.open();
+            return;
+        }
+        setTimeout(() => {
+            const searchInput = existingTab.contentEl.querySelector(`.${CONSTANTS.CSS_PREFIX}search`);
+            if (searchInput) searchInput.focus();
+        }, 100);
+        return;
+    }
+
+    const state = {
+        settings: initializeSettings(),
+        libraryItems: []
+    };
+
+    const tab = await ea.createSidepanelTab(STRINGS.TAB_TITLE, false, true);
+    if (!tab) return;
+
+    tab.contentEl.empty();
+    injectCSS(tab.contentEl);
+
+    // Build UI and extract references
+    const headerUI = buildHeaderUI(tab.contentEl, state);
+    const searchInput = headerUI.searchInput;
+    const sizeSlider = headerUI.sizeSlider;
+    const outsideClickHandler = headerUI.outsideClickHandler;
+
+    // --- Dynamic Event Listener Management ---
+    let isListenersAttached = false;
+    let attachedDocument = null; // Track document to safely detach if windows migrate
+
+    const escapeKeyHandler = (e) => {
+        if (e.key === "Escape") {
+            // Ensure the event actually originated from within our tab
+            if (!tab.containerEl.contains(e.target)) return;
+
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Hide the sidepanel tab natively
+            const sidepanelLeaf = ea.getSidepanelLeaf();
+            if (sidepanelLeaf && sidepanelLeaf.view.containerEl.offsetParent !== null) {
+                ea.toggleSidepanelView();
+            }
+            
+            // Restore active focus to the Excalidraw view
+            if (ea.targetView && ea.targetView.leaf) {
+                app.workspace.setActiveLeaf(ea.targetView.leaf, { focus: true });
+            }
+        }
+    };
+
+    const attachListeners = () => {
+        if (isListenersAttached) return;
+        
+        // Use bubble phase (false) instead of capture (true) to play nice with Obsidian
+        tab.containerEl.addEventListener("keydown", escapeKeyHandler, false);
+        
+        attachedDocument = tab.contentEl.ownerDocument;
+        if (attachedDocument) {
+            attachedDocument.addEventListener("click", outsideClickHandler);
+        }
+        isListenersAttached = true;
+    };
+
+    const detachListeners = () => {
+        if (!isListenersAttached) return;
+        
+        tab.containerEl.removeEventListener("keydown", escapeKeyHandler, false);
+        
+        if (attachedDocument) {
+            attachedDocument.removeEventListener("click", outsideClickHandler);
+            attachedDocument = null;
+        }
+        isListenersAttached = false;
+    };
+
+    // Track focus leaving the sidepanel to eagerly detach listeners
+    tab.containerEl.addEventListener("focusout", (e) => {
+        // e.relatedTarget is the element receiving focus. 
+        // If it's outside our container (or null, meaning Obsidian canvas/window took focus), detach!
+        if (!e.relatedTarget || !tab.containerEl.contains(e.relatedTarget)) {
+            detachListeners();
+        }
+    });
+
+    // Track focus entering the sidepanel to safely re-attach listeners
+    tab.containerEl.addEventListener("focusin", (e) => {
+        attachListeners();
+    });
+
+    // Grid Setup
+    const gridContainer = tab.contentEl.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}grid` });
+    gridContainer.style.setProperty("--thumb-size", `${state.settings.thumbSize}px`);
+
+    // --- Handle Tab from Search Input to Grid ---
+    searchInput.addEventListener("keydown", (e) => {
+        // Only override standard Tab (allow Shift+Tab to natively escape out of search bar backwards)
+        if (e.key === "Tab" && !e.shiftKey) {
+            e.preventDefault();
+            // Focus the first available card in the result set
+            const firstCard = gridContainer.querySelector(`.${CONSTANTS.CSS_PREFIX}card`);
+            if (firstCard) {
+                firstCard.focus();
+            }
+        }
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const imgContainer = entry.target.querySelector(`.${CONSTANTS.CSS_PREFIX}img-container`);
+                
+                // Prevent duplicate queueing if elements flicker rapidly
+                if (!imgContainer.dataset.queued) {
+                    imgContainer.dataset.queued = "true";
+                    observer.unobserve(entry.target);
+                    
+                    const file = app.vault.getAbstractFileByPath(entry.target.dataset.path);
+                    if (file) {
+                        // Queue the item to be rendered
+                        renderQueue.push({ file, container: imgContainer, card: entry.target });
+                        processRenderQueue();
+                    }
+                }
+            }
+        });
+    }, { root: gridContainer, rootMargin: CONSTANTS.OBSERVER_MARGIN });
+
+    const debouncedSearch = debounce((term) => {
+        renderGrid(gridContainer, observer, state.libraryItems, term, state.settings);
+    }, CONSTANTS.DEBOUNCE_DELAY);
+
+    searchInput.addEventListener("input", (e) => debouncedSearch(e.target.value));
+
+    // Debounce the disk save to prevent lag
+    const debouncedSaveSize = debounce((size) => {
+        state.settings.thumbSize = parseInt(size);
+        ea.setScriptSettings(state.settings);
+    }, 500);
+
+    sizeSlider.addEventListener("input", (e) => {
+        const size = e.target.value;
+        gridContainer.style.setProperty("--thumb-size", `${size}px`);
+        debouncedSaveSize(size);
+    });
+
+    headerUI.settingsBtn.addEventListener("click", () => {
+        const modal = new IconSettingsModal(app, state.settings, async (newSettings) => {
+            state.settings = newSettings;
+            await ea.setScriptSettings(state.settings);
+            state.libraryItems = getLibraryItems(state.settings);
+            renderGrid(gridContainer, observer, state.libraryItems, searchInput.value, state.settings);
+        });
+        modal.open();
+    });
+
+    // Lifecycle Hooks
+    tab.onFocus = (view) => {
+        if (view && view !== ea.targetView) {
+            ea.setView(view);
+        }
+        // Ensure listeners are bound if the user forces focus via a Command/Hotkey
+        attachListeners();
+    };
+
+    tab.onOpen = () => {
+        state.libraryItems = getLibraryItems(state.settings);
+        renderGrid(gridContainer, observer, state.libraryItems, searchInput.value, state.settings);
+        setTimeout(() => {
+            searchInput.focus();
+            attachListeners(); // Ensure bound immediately on open
+        }, 100);
+    };
+
+    tab.onClose = () => {
+        // Robust cleanup on close
+        detachListeners();
+    };
+
+    tab.open();
+}
+
+main();
 
 ---
 

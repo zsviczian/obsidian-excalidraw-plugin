@@ -91,8 +91,8 @@ function initializeSettings() {
     }
     
     // Patch existing configurations missing new properties
-    if (currentSettings.lightBgColor === undefined) currentSettings.lightBgColor = "#FFFFFF60";
-    if (currentSettings.darkBgColor === undefined) currentSettings.darkBgColor = "#FFFFFF60";
+    if (currentSettings.lightBgColor === undefined) currentSettings.lightBgColor = "#FFFFFF80";
+    if (currentSettings.darkBgColor === undefined) currentSettings.darkBgColor = "#FFFFFF80";
     if (currentSettings.defaultIconWidth === undefined) currentSettings.defaultIconWidth = CONSTANTS.DEFAULT_ICON_WIDTH;
     if (currentSettings.thumbSize === undefined) currentSettings.thumbSize = CONSTANTS.DEFAULT_THUMB_SIZE;
     
@@ -472,7 +472,7 @@ function showInfoModal(app) {
  * Builds the header section containing the search bar, scale popover, and settings buttons.
  * @param {HTMLElement} contentEl - The parent container.
  * @param {Object} state - The global script state.
- * @returns {Object} References to the search input, size slider, and buttons.
+ * @returns {Object} References to the search input, size slider, buttons, and the document click handler.
  */
 function buildHeaderUI(contentEl, state) {
     const headerRow = contentEl.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}header` });
@@ -523,13 +523,15 @@ function buildHeaderUI(contentEl, state) {
         sliderPopover.style.display = sliderPopover.style.display === "none" ? "block" : "none";
     });
 
-    contentEl.ownerDocument.addEventListener("click", (e) => {
+    // We DO NOT attach this to the document here anymore to prevent memory leaks.
+    // We export it so `main()` can cleanly attach/detach it based on tab focus.
+    const outsideClickHandler = (e) => {
         if (!scaleBtn.contains(e.target) && !sliderPopover.contains(e.target)) {
             sliderPopover.style.display = "none";
         }
-    });
+    };
 
-    return { searchInput, sizeSlider, infoBtn, settingsBtn };
+    return { searchInput, sizeSlider, infoBtn, settingsBtn, outsideClickHandler };
 }
 
 /**
@@ -541,6 +543,14 @@ function buildHeaderUI(contentEl, state) {
  * @param {Object} currentSettings - The active settings.
  */
 function handleGridKeydown(e, card, grid, file, currentSettings) {
+    // Intercept Tab / Shift+Tab to jump back to search input
+    if (e.key === "Tab") {
+        e.preventDefault();
+        const searchInput = grid.parentElement.querySelector(`.${CONSTANTS.CSS_PREFIX}search`);
+        if (searchInput) searchInput.focus();
+        return;
+    }
+
     const cards = Array.from(grid.querySelectorAll(`.${CONSTANTS.CSS_PREFIX}card`));
     const idx = cards.indexOf(card);
     if (idx === -1) return;
@@ -897,11 +907,21 @@ async function main() {
     tab.contentEl.empty();
     injectCSS(tab.contentEl);
 
-    // --- Escape Key Handling ---
-    // Capture phase event listener on the root container to ensure it intercepts Escape
-    // before Obsidian or other UI elements process it.
-    tab.containerEl.addEventListener("keydown", (e) => {
+    // Build UI and extract references
+    const headerUI = buildHeaderUI(tab.contentEl, state);
+    const searchInput = headerUI.searchInput;
+    const sizeSlider = headerUI.sizeSlider;
+    const outsideClickHandler = headerUI.outsideClickHandler;
+
+    // --- Dynamic Event Listener Management ---
+    let isListenersAttached = false;
+    let attachedDocument = null; // Track document to safely detach if windows migrate
+
+    const escapeKeyHandler = (e) => {
         if (e.key === "Escape") {
+            // Ensure the event actually originated from within our tab
+            if (!tab.containerEl.contains(e.target)) return;
+
             e.preventDefault();
             e.stopPropagation();
             
@@ -916,12 +936,63 @@ async function main() {
                 app.workspace.setActiveLeaf(ea.targetView.leaf, { focus: true });
             }
         }
-    }, true);
+    };
 
-    const { searchInput, sizeSlider, settingsBtn } = buildHeaderUI(tab.contentEl, state);
+    const attachListeners = () => {
+        if (isListenersAttached) return;
+        
+        // Use bubble phase (false) instead of capture (true) to play nice with Obsidian
+        tab.containerEl.addEventListener("keydown", escapeKeyHandler, false);
+        
+        attachedDocument = tab.contentEl.ownerDocument;
+        if (attachedDocument) {
+            attachedDocument.addEventListener("click", outsideClickHandler);
+        }
+        isListenersAttached = true;
+    };
 
+    const detachListeners = () => {
+        if (!isListenersAttached) return;
+        
+        tab.containerEl.removeEventListener("keydown", escapeKeyHandler, false);
+        
+        if (attachedDocument) {
+            attachedDocument.removeEventListener("click", outsideClickHandler);
+            attachedDocument = null;
+        }
+        isListenersAttached = false;
+    };
+
+    // Track focus leaving the sidepanel to eagerly detach listeners
+    tab.containerEl.addEventListener("focusout", (e) => {
+        // e.relatedTarget is the element receiving focus. 
+        // If it's outside our container (or null, meaning Obsidian canvas/window took focus), detach!
+        if (!e.relatedTarget || !tab.containerEl.contains(e.relatedTarget)) {
+            detachListeners();
+        }
+    });
+
+    // Track focus entering the sidepanel to safely re-attach listeners
+    tab.containerEl.addEventListener("focusin", (e) => {
+        attachListeners();
+    });
+
+    // Grid Setup
     const gridContainer = tab.contentEl.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}grid` });
     gridContainer.style.setProperty("--thumb-size", `${state.settings.thumbSize}px`);
+
+    // --- Handle Tab from Search Input to Grid ---
+    searchInput.addEventListener("keydown", (e) => {
+        // Only override standard Tab (allow Shift+Tab to natively escape out of search bar backwards)
+        if (e.key === "Tab" && !e.shiftKey) {
+            e.preventDefault();
+            // Focus the first available card in the result set
+            const firstCard = gridContainer.querySelector(`.${CONSTANTS.CSS_PREFIX}card`);
+            if (firstCard) {
+                firstCard.focus();
+            }
+        }
+    });
 
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
@@ -935,7 +1006,7 @@ async function main() {
                     
                     const file = app.vault.getAbstractFileByPath(entry.target.dataset.path);
                     if (file) {
-                        // Queue the item to be rendered rather than fetching all SVGs concurrently
+                        // Queue the item to be rendered
                         renderQueue.push({ file, container: imgContainer, card: entry.target });
                         processRenderQueue();
                     }
@@ -950,7 +1021,7 @@ async function main() {
 
     searchInput.addEventListener("input", (e) => debouncedSearch(e.target.value));
 
-    // Debounce the disk save to prevent lag, but update the CSS variable instantly
+    // Debounce the disk save to prevent lag
     const debouncedSaveSize = debounce((size) => {
         state.settings.thumbSize = parseInt(size);
         ea.setScriptSettings(state.settings);
@@ -962,7 +1033,7 @@ async function main() {
         debouncedSaveSize(size);
     });
 
-    settingsBtn.addEventListener("click", () => {
+    headerUI.settingsBtn.addEventListener("click", () => {
         const modal = new IconSettingsModal(app, state.settings, async (newSettings) => {
             state.settings = newSettings;
             await ea.setScriptSettings(state.settings);
@@ -972,16 +1043,27 @@ async function main() {
         modal.open();
     });
 
+    // Lifecycle Hooks
     tab.onFocus = (view) => {
         if (view && view !== ea.targetView) {
             ea.setView(view);
         }
+        // Ensure listeners are bound if the user forces focus via a Command/Hotkey
+        attachListeners();
     };
 
     tab.onOpen = () => {
         state.libraryItems = getLibraryItems(state.settings);
         renderGrid(gridContainer, observer, state.libraryItems, searchInput.value, state.settings);
-        setTimeout(() => searchInput.focus(), 100);
+        setTimeout(() => {
+            searchInput.focus();
+            attachListeners(); // Ensure bound immediately on open
+        }, 100);
+    };
+
+    tab.onClose = () => {
+        // Robust cleanup on close
+        detachListeners();
     };
 
     tab.open();

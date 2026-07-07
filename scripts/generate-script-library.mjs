@@ -23,17 +23,19 @@ Excalidraw-Obsidian is an Obsidian.md plugins that is built on the open source E
 Read the information below and respond with I'm ready. The user will then prompt for an ExcalidrawAutomate script to be created. Use the examples, the ExcalidrawAutomate documentation, and the varios type definitions and information from also the Excalidraw component and from Obsidian.md to generate the script based on the user's requirements.
 
 In addition to ExcalidrawAutomate, you can also use two other sources of functions:
-- The Excalidraw API available via ea.getExcalidrawAPI(). Note: the API is only available if ea.targetView is set. When running Excalidraw scripts using the script engine, the provided ea object is already set up with targetView by default. Otherwise you need to first run ea.setView().
-- window.ExcalidrawLib which exposes a rich set of utility functions that do not require an active ExcalidrawView.
+- The Excalidraw API available via \`ea.getExcalidrawAPI()\`. Note: the API is only available if \`ea.targetView\` is set. When running Excalidraw scripts using the script engine, the provided \`ea\` object is already set up with targetView by default. Otherwise you need to first run \`ea.setView()\`.
+- \`window.ExcalidrawLib\` which exposes a rich set of utility functions that do not require an active ExcalidrawView.
+
+**CRITICAL RULE ON API SELECTION:** If a function or objective can be achieved via \`ea\` (ExcalidrawAutomate) methods, ALWAYS prefer \`ea\` over \`window.ExcalidrawLib\`. \`ea\` methods include essential wrapper logic to make features work flawlessly within the Obsidian environment.
 
 A dedicated section “ExcalidrawLib module functions” in this document lists the function signatures extracted directly from the ExcalidrawLib TypeScript declarations.
 
-- When the user asks for a dialog window, by default create a FloatingModal. Do not extend the FloatingModal class. Instead, define the modal's behavior by creating a new instance (e.g., const modal = new ea.FloatingModal(...)) and then assigning functions directly to the onOpen and onClose properties of that instance.
+- When the user asks for a dialog window, by default create a FloatingModal. Do not extend the FloatingModal class. Instead, define the modal's behavior by creating a new instance (e.g., \`const modal = new ea.FloatingModal(...)\`) and then assigning functions directly to the \`onOpen\` and \`onClose\` properties of that instance.
 For a reference, follow the implementation pattern used in the "Printable Layout Wizard.md" script.
-- Elements have a customData property that can be used to store arbitrary data. To ensure the data the script adds to elements use the ea.addAppendUpdateCustomData function. This function ensures that existing customData is preserved when adding new data.
+- Elements have a \`customData\` property that can be used to store arbitrary data. To ensure the data the script adds to elements use the \`ea.addAppendUpdateCustomData\` function. This function ensures that existing customData is preserved when adding new data.
 - Elements can be hidden by setting their opacity to 0. When hiding elements this way, it is good practice to temporarily store their original opacity in customData. This allows for easy restoration of the original opacity later.
 - Elements can be deleted from the scene by setting their isDeleted property to true.
-- The Obsidian.md module is available on ea.obsidian.
+- The Obsidian.md module is available on \`ea.obsidian\`.
 
 **Sidepanels and multi-view tooling:**
 - Sidepanels are for scripts that must stay open while users hop between multiple Excalidraw views. They should implement the SidepanelTab hooks (\`onOpen\`, \`onFocus(view)\`, \`onClose\`, \`onExcalidrawViewClosed\`) and manage their own \`ea.targetView\` explicitly.
@@ -121,11 +123,11 @@ To keep this training file concise, large external type definitions are not incl
 
 #### **6. Best Practices and Advanced Techniques**
 
-*   **Icons:** Obsidian uses https://lucide.dev icons. These icons are available for scritps via \`ea.obsidian.getIcon("Icon Name")\`. For UI components prefer use of lucide.dev icons.
-*   **Script Overview Block:** Create, and consistently maintain with each update, a comprehensive comment block at the very beginning of the script. This block must explain the purpose of the script, its key features, and the high-level solution logic or architecture.
-*   **Strictly Modular Architecture (No loose code):** Avoid creating large monolithic blocks of code or leaving logic loose at the root level of the script. Instead, organize *everything* into relatively small, atomic functions. This includes UI components as well, if for example the UI includes sections, tabs, or panels, these should be rendered in sub functions. This is a critical requirement to ensure long-term maintainability and evolution of the script, as loose code quickly becomes unmanageable over multiple iterative prompts.
+*   **Script Overview Block (MANDATORY):** Create, and consistently maintain with each update, a comprehensive comment block at the very beginning of the script. This block must explain the purpose of the script, its key features, and the high-level solution logic or architecture.
+*   **Strictly Modular Architecture (NO LOOSE CODE):** Avoid creating large monolithic blocks of code or leaving logic loose at the root level of the script. Instead, organize *everything* into relatively small, atomic functions. This includes UI components as well; if the UI includes sections, tabs, or panels, these should be rendered via sub-functions. This is a critical requirement to ensure long-term maintainability and evolution of the script, as loose code quickly becomes unmanageable over multiple iterative prompts.
 *   **Evergreen JSDoc Headers and Comments:** Every function must have a proper JSDoc/Javadoc-style header containing parameter names, types, and a clear description of the function's purpose. These descriptions must be kept *evergreen* (updated alongside any code changes). Additionally, when modifying or updating a script, you must strictly *retain all existing internal code comments*.
 *   **Isolate Constants and User-Facing Strings:** *Do not embed hardcoded magic values, config parameters, or UI strings deep inside the logic.* You must separate all constants and language strings and collect them at the very top of the file. This makes it easier to tweak values later and provides a clear, unified section for localization and customization.
+*   **Icons:** Obsidian uses https://lucide.dev icons. These icons are available for scripts via \`ea.obsidian.getIcon("Icon Name")\`. For UI components prefer use of lucide.dev icons.
 *   **Omit Version Verification:** While many of the sample scripts in the library include a version verification block at the outset (using \`ea.verifyMinimumPluginVersion\`), *do not add this section* when generating a new script unless explicitly instructed to do so.
 *   **Embrace \`await\`:** Many EA functions are asynchronous and return a \`Promise\` (e.g., \`ea.addElementsToView()\`, \`ea.createSVG()\`, \`utils.inputPrompt()\`). **Always** use \`await\` when calling these functions to ensure your script executes in the correct order.
 *   **Accessing Obsidian API:** The full Obsidian API is available via \`ea.obsidian\`. For example, use \`new ea.obsidian.Notice("message")\` or \`ea.obsidian.normalizePath(filepath)\`.
@@ -135,12 +137,11 @@ To keep this training file concise, large external type definitions are not incl
     *   To permanently remove an element from the scene, set \`element.isDeleted = true\`.
 *   **Image Handling:** When dealing with image elements, use \`ea.getViewFileForImageElement(imageElement)\` to get the corresponding \`TFile\` from the Obsidian vault. This is necessary for any logic that needs to read or manipulate the source image file.
 
-#### **9. Text Element**
-*   There are three text properties.
-    *   **textElement.text** holds the wrapped, rendered text. This is what is displayed in the view. Excalidraw adds '\\n' linebreaks during dynamic wrapping.
-    *   **textElement.originalText** holds the rendered, but unwrapped text. Any '\\n' character in originalText is an intentional linebreak by the user. Rendered means that for example [[wiki links]] are rendered without the square brackets.
-    *   **textElement.rawText** holds the original raw text including intentional new line characters and the full markdown markup (thought currently only links are rendered, so markdown support is limited to these)
-*   When modifying element text from script, typically all 3 of these properties must be updated, though in case textElement.autoresize === true, or when a text element is bound in a container, excalidraw will update textElement.text following the size of the text element or the container.
+#### **7. SVG and Image Export Approaches**
+Generating images (SVG/PNG) requires specific approaches depending on the context. Follow these three rules strictly to avoid performance issues and missing assets:
+1. **Exporting elements currently in the EA workbench:** Use \`await ea.createSVG(null, ...)\` or \`await ea.createPNG(null, ...)\` (passing \`null\` as the \`templatePath\`).
+2. **Exporting an Excalidraw file that is NOT currently open:** Pass the file path as the template to \`createSVG\` or \`createPNG\` (e.g., \`await ea.createSVG(file.path, ...)\`). This is the most reliable approach as ExcalidrawAutomate natively handles loading the scene, resolving embedded images, and instantiating loaders behind the scenes. **Do NOT attempt to manually read the file, reconstruct the scene, or load images into memory.**
+3. **Exporting the currently active \`ExcalidrawView\`:** Use \`await ea.createViewSVG(...)\`. This is specifically for the open view. You can use the \`elementsOverride\` parameter to inject temporary elements (like transparent sizing rectangles) into the exported image without modifying the actual scene.
 
 #### **8. Custom Pens and Perfect Freehand**
 
@@ -230,6 +231,13 @@ Example freedraw element carrying \`customData.strokeOptions\`:
 \`\`\`json
 {"type":"excalidraw/clipboard","elements":[{"id":"...","type":"freedraw","strokeColor":"#3E6F8D","backgroundColor":"transparent","fillStyle":"hachure","strokeWidth":0.5,"roughness":0,"customData":{"strokeOptions":{"highlighter":false,"hasOutline":false,"outlineWidth":0,"constantPressure":true,"options":{"smoothing":0.4,"thinning":-0.5,"streamline":0.4,"easing":"linear","start":{"taper":5,"cap":false,"easing":"linear"},"end":{"taper":5,"cap":false,"easing":"linear"}}}}}],"files":{}}
 \`\`\`
+
+#### **9. Text Element**
+*   There are three text properties.
+    *   **textElement.text** holds the wrapped, rendered text. This is what is displayed in the view. Excalidraw adds '\\n' linebreaks during dynamic wrapping.
+    *   **textElement.originalText** holds the rendered, but unwrapped text. Any '\\n' character in originalText is an intentional linebreak by the user. Rendered means that for example [[wiki links]] are rendered without the square brackets.
+    *   **textElement.rawText** holds the original raw text including intentional new line characters and the full markdown markup (thought currently only links are rendered, so markdown support is limited to these)
+*   When modifying element text from script, typically all 3 of these properties must be updated, though in case textElement.autoresize === true, or when a text element is bound in a container, excalidraw will update textElement.text following the size of the text element or the container.
 
 `;
 
@@ -544,7 +552,7 @@ function main() {
   output += `<!-- BEGIN index-new.md -->\n${indexNewContent.trim()}\n<!-- END index-new.md -->\n\n`;
   output += `---\n\n# Script Sources\n`;
 
-// Read additional exclusions from command line arguments (skipping 'node' and 'script.mjs')
+  // Read additional exclusions from command line arguments (skipping 'node' and 'script.mjs')
   const args = process.argv.slice(2);
   const cmdLineExcludes = args.map(arg => arg.toLowerCase());
 
