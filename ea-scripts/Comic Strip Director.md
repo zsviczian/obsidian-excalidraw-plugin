@@ -1758,7 +1758,7 @@ function _wireStore(a) {
 }
 function addStoreLink(parent, text) {
   const a = parent.createEl("a", { text: text || "More packs →" });
-  a.style.cssText = "font-size:0.82em;font-weight:600;color:var(--interactive-accent);text-decoration:none;cursor:pointer;white-space:nowrap";
+  a.style.cssText = "font-size:0.82em;font-weight:600;color:var(--interactive-accent);text-decoration:none;cursor:pointer;overflow-wrap:anywhere;min-width:0";
   a.onmouseenter = () => { a.style.textDecoration = "underline"; };
   a.onmouseleave = () => { a.style.textDecoration = "none"; };
   return _wireStore(a);
@@ -1903,6 +1903,7 @@ async function buildPanel(tab, ctx) {
     if (contentEl.classList) contentEl.classList.add("csd-panel");
     const st = contentEl.createEl("style");
     st.setText(".csd-panel img { max-width: 100%; height: auto; }" +
+      " .csd-panel a { max-width: 100%; }" +
       " .csd-panel .csd-btn { min-height: 26px; max-width: 100%; }" +
       " .csd-panel button { flex-shrink: 1; }" +
       " .csd-panel div { overflow-wrap: break-word; min-width: 0; }");
