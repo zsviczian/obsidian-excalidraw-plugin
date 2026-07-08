@@ -690,6 +690,98 @@ async function downloadFreeStarterPacks(makeProgress) {
   } finally { _importActive = false; if (prog) prog.done(); }
 }
 
+// --- pack removal ------------------------------------------------------------
+// Remove everything a store PRODUCT brought in (split parts collapse, same as
+// the picker chips). Shared figures that another pack also owns just lose this
+// owner; figures left with no owner are deleted from the manifest AND from disk
+// — guarded by a refcount over every SURVIVING row, so art any other row still
+// references is never deleted. Characters the pack added are dropped once no
+// remaining figure uses them. Indexes are backed up before each write; nothing
+// outside the bundle is ever touched. Pre-pack/dev-library rows (no provenance)
+// are never removed.
+async function removeProduct(product, prog) {
+  const appRef = _vaultApp();
+  const ad = appRef && appRef.vault && appRef.vault.adapter;
+  if (!ad) throw new Error("No vault adapter available.");
+  const dir = _aiDir();
+  const norm = (x) => { try { return ea.obsidian.normalizePath(x); } catch (e) { return String(x).replace(/\\/g, "/").replace(/\/{2,}/g, "/"); } };
+  const inst = _installedPackProducts();
+  const prodOfId = (pid) => packProductOf(pid, inst);
+
+  const manifestPath = await _resolveIndexPath(ad, [dir + "/" + AI_MANIFEST, AI_MANIFEST, "AI Figures/" + AI_MANIFEST]);
+  const manifest = (await _readIndexOrThrow(ad, manifestPath, "ai-figures.json")) || { figures: [] };
+  manifest.figures = (manifest.figures || []).filter(Boolean);
+  const rosterPath = await _resolveIndexPath(ad, [dir + "/" + ROSTER_FILE, ROSTER_FILE, "AI Figures/" + ROSTER_FILE]);
+  const roster = (await _readIndexOrThrow(ad, rosterPath, "roster.json")) || { characters: [], functions: [], actions: [] };
+  roster.characters = (roster.characters || []).filter(Boolean);
+  const fxPath = await _resolveIndexPath(ad, [dir + "/" + FX_MANIFEST, FX_MANIFEST]);
+  const fxMan = (await _readIndexOrThrow(ad, fxPath, "fx-figures.json")) || { figures: [] };
+  fxMan.figures = (fxMan.figures || []).filter(Boolean);
+
+  const keptRows = [], dropRows = [];
+  const removedPackIds = new Set();
+  for (const row of manifest.figures) {
+    const ids = (Array.isArray(row.packs) && row.packs.length) ? row.packs : (row.pack ? [row.pack] : []);
+    if (!ids.length) { keptRows.push(row); continue; }             // dev-library content — untouchable
+    const keep = ids.filter((pid) => prodOfId(pid) !== product);
+    ids.forEach((pid) => { if (prodOfId(pid) === product) removedPackIds.add(pid); });
+    if (keep.length === ids.length) { keptRows.push(row); continue; }
+    if (keep.length) { row.pack = keep[0]; row.packs = keep; keptRows.push(row); }
+    else dropRows.push(row);
+  }
+  const keptFx = [], dropFx = [];
+  for (const row of fxMan.figures) {
+    if (row.pack && prodOfId(row.pack) === product) { removedPackIds.add(row.pack); dropFx.push(row); }
+    else keptFx.push(row);
+  }
+  if (!dropRows.length && !dropFx.length && !removedPackIds.size) return { removedFigures: 0, removedFx: 0, removedFiles: 0 };
+
+  // Files: doomed = files of dropped rows that NO surviving row references.
+  const referenced = new Set();
+  for (const r of keptRows) if (r.file) referenced.add(norm(dir + "/" + r.file));
+  for (const r of keptFx) { if (r.file) referenced.add(norm(dir + "/" + r.file)); if (r.fileSvg) referenced.add(norm(dir + "/" + r.fileSvg)); }
+  const doomed = new Set();
+  const addDoom = (relPath) => {
+    const rel = _safePackRel(relPath);
+    if (!rel) return;
+    const abs = norm(dir + "/" + rel);
+    if (!referenced.has(abs)) doomed.add(abs);
+  };
+  for (const r of dropRows) if (r.file) { addDoom(r.file); addDoom(String(r.file).replace(/\.png$/i, ".svg")); }
+  for (const r of dropFx) { if (r.file) { addDoom(r.file); addDoom(String(r.file).replace(/\.png$/i, ".svg")); } if (r.fileSvg) addDoom(r.fileSvg); }
+  let removedFiles = 0, di = 0;
+  for (const abs of doomed) {
+    di++;
+    if (prog && prog.cancelled) break;           // cancel: indexes still commit below → library stays consistent
+    try { if (await ad.exists(abs)) { await ad.remove(abs); removedFiles++; } } catch (e) { /* locked — leave the file */ }
+    if (prog) prog.figures(di, doomed.size);
+  }
+
+  manifest.figures = keptRows;
+  await _backupVaultFile(ad, manifestPath);
+  await _writeIndexSafely(ad, manifestPath, manifest);
+  fxMan.figures = keptFx;
+  await _backupVaultFile(ad, fxPath);
+  await _writeIndexSafely(ad, fxPath, fxMan);
+
+  const usedChars = new Set(keptRows.map((r) => r.character).filter(Boolean));
+  const beforeChars = roster.characters.length;
+  roster.characters = roster.characters.filter((c) => !(c && c.pack && removedPackIds.has(c.pack) && !usedChars.has(c.id)));
+  if (roster.characters.length !== beforeChars) {
+    await _backupVaultFile(ad, rosterPath);
+    await _writeIndexSafely(ad, rosterPath, roster);
+  }
+
+  try {
+    const st = (ea.getScriptSettings && ea.getScriptSettings()) || {};
+    if (Array.isArray(st.installedPacks)) st.installedPacks = st.installedPacks.filter((r) => !(r && removedPackIds.has(r.packId)));
+    if (st.lastPack === product) st.lastPack = null;
+    ea.setScriptSettings(st);
+  } catch (e) { /* non-fatal */ }
+
+  return { removedFigures: dropRows.length, removedFx: dropFx.length, removedFiles, cancelled: !!(prog && prog.cancelled) };
+}
+
 // --- pack provenance → website product (picker filter sections) -------------
 // Split packs stamp each figure with their PART id (e.g. "fantasy-wizard");
 // the website sells the parent PRODUCT ("Fantasy Pack"). This static catalog
@@ -825,6 +917,13 @@ async function _writeIndexSafely(adapter, path, obj) {
   try { if (await adapter.exists(tmp)) await adapter.remove(tmp); } catch (e) { /* leave temp */ }
 }
 
+// Folder segment for a pack's own image directory ("Packs/<id>/…"). Single
+// path segment, sanitised — a hostile packId must not escape the bundle.
+function _packDirSegment(packId) {
+  const flat = String(packId == null ? "pack" : packId).replace(/[\/\\.]+/g, "-").replace(/^-+|-+$/g, "");
+  return _safePackRel(flat) || "pack";
+}
+
 // Reconstitute a manifest row from a pack figure entry (adds pack provenance).
 function _figureToManifestRow(f, packId) {
   return {
@@ -864,9 +963,16 @@ async function installPack(pack, onProgress) {
   // 1) Write figure images (PNG required, SVG optional). Skip ones already present.
   //    `available` = figures whose PNG is on disk after this step (written or pre-existing);
   //    only those earn a manifest row, so a png-less entry can't create a broken thumbnail.
+  //    NEW imports write into a per-pack folder ("Packs/<packId>/…") so packs stay
+  //    separated on disk; rows imported under the old shared layout keep their
+  //    original paths (rows carry the real path — nothing existing moves or breaks).
   let imagesWritten = 0, imagesSkipped = 0;
   const available = new Set();
   const figs = Array.isArray(pack.figures) ? pack.figures.filter((f) => f && typeof f === "object") : [];
+  const packPrefix = "Packs/" + _packDirSegment(pack.packId) + "/";
+  // Figures already OWNED by the manifest keep their existing art wherever it
+  // lives — never write a second copy into the new per-pack folder.
+  const ownedKeys = new Set(manifest.figures.map((x) => x && (x.cacheKey || x.id)).filter(Boolean));
 
   // Pre-list the target sub-folders once and pre-create them, so the per-figure loop
   // is pure in-memory membership checks + writes — no exists() round-trip per image.
@@ -875,7 +981,11 @@ async function installPack(pack, onProgress) {
   const norm = (p) => { try { return ea.obsidian.normalizePath(p); } catch (e) { return String(p).replace(/\\/g, "/").replace(/\/{2,}/g, "/").replace(/^\.\//, ""); } };
   const onDisk = new Set();                       // normalized abs paths already present
   const subdirs = new Set();
-  for (const f of figs) { const rel = _safePackRel(f.file) || ""; subdirs.add(rel.includes("/") ? rel.slice(0, rel.lastIndexOf("/")) : ""); }
+  for (const f of figs) {
+    const sd0 = _safePackRel(f.file);
+    const sd = sd0 ? (_safePackRel(packPrefix + sd0) || "") : "";
+    if (sd) subdirs.add(sd.includes("/") ? sd.slice(0, sd.lastIndexOf("/")) : "");
+  }
   for (const sd of subdirs) {
     const full = norm(sd ? dir + "/" + sd : dir);
     await _ensureDir(adapter, full);
@@ -887,7 +997,16 @@ async function installPack(pack, onProgress) {
 
   for (let i = 0; i < figs.length; i++) {
     const f = figs[i];
-    let rel = _safePackRel(f.file);              // bundle-relative, e.g. "New Figures/x.png"
+    const key0 = f.cacheKey || f.id;
+    if (key0 && ownedKeys.has(key0)) {
+      // Already in the library (this pack re-imported, or another pack ships the
+      // same figure) — its art stays where the owning row says it is.
+      available.add(key0); imagesSkipped++;
+      if (onProgress) onProgress(i + 1, figs.length);
+      continue;
+    }
+    const rel0 = _safePackRel(f.file);           // a rejected path stays rejected — no prefix rescue
+    let rel = rel0 ? _safePackRel(packPrefix + rel0) : null;   // e.g. "Packs/fantasy-wizard/New Figures/x.png"
     if (!rel) { if (onProgress) onProgress(i + 1, figs.length); continue; }
     // Cross-pack collision: the path already exists on disk but belongs to a DIFFERENT
     // figure (other cacheKey) — write this pack's art under a pack-suffixed name instead
@@ -900,7 +1019,8 @@ async function installPack(pack, onProgress) {
       rel = _safePackRel(suffixed) || rel;
     }
     f.file = rel;                                // manifest rows keep the sanitised path
-    const relSvg = _safePackRel(f.fileSvg);
+    const relSvg0 = f.fileSvg ? _safePackRel(f.fileSvg) : null;
+    const relSvg = relSvg0 ? _safePackRel(packPrefix + relSvg0) : null;
     const abs = norm(dir + "/" + rel);
     const svgAbs = relSvg ? norm(dir + "/" + relSvg) : null;
     let present = onDisk.has(abs);
@@ -1502,12 +1622,17 @@ async function importFXPack(pack, onProgress) {
   // Resolve every path through the sanitiser (the id-based fallback INCLUDED — a
   // hostile id must never escape the bundle), pre-create referenced subfolders,
   // and pre-list their contents once.
+  const packPrefix = "Packs/" + _packDirSegment(pack.packId) + "/";
+  const ownedIds = new Set(man.figures.map((x) => x && x.id).filter((x) => x != null));
   const rels = new Map();
-  const subdirs = new Set(["FX"]);
+  const subdirs = new Set();
   for (const f of figsIn) {
-    const rel = _safePackRel(f.file) || _safePackRel(f.id != null ? "FX/" + f.id + ".png" : null);
+    if (f.id != null && ownedIds.has(f.id)) continue;   // art already owned — never duplicate
+    const rel0 = _safePackRel(f.file) || _safePackRel(f.id != null ? "FX/" + f.id + ".png" : null);
+    const rel = rel0 ? _safePackRel(packPrefix + rel0) : null;
     if (!rel) continue;
-    const relSvg = _safePackRel(f.fileSvg);
+    const relSvg0 = f.fileSvg ? _safePackRel(f.fileSvg) : null;
+    const relSvg = relSvg0 ? _safePackRel(packPrefix + relSvg0) : null;
     rels.set(f, { rel, relSvg });
     if (rel.includes("/")) subdirs.add(rel.slice(0, rel.lastIndexOf("/")));
     if (relSvg && relSvg.includes("/")) subdirs.add(relSvg.slice(0, relSvg.lastIndexOf("/")));
@@ -1527,7 +1652,7 @@ async function importFXPack(pack, onProgress) {
     figIdx++;
     if (onProgress) onProgress(figIdx, figsIn.length);
     const r = rels.get(f);
-    if (!r) continue;
+    if (!r) { if (f.id != null && ownedIds.has(f.id)) available.add(f.id); continue; }
     f.file = r.rel;
     if (r.relSvg) f.fileSvg = r.relSvg; else delete f.fileSvg;
     const abs = norm(dir + "/" + r.rel);
@@ -1550,7 +1675,7 @@ async function importFXPack(pack, onProgress) {
   let added = 0;
   for (const f of figsIn) {
     if (f.id != null && available.has(f.id) && !have.has(f.id)) {
-      man.figures.push({ id: f.id, name: f.name, word: f.word, file: f.file, fileSvg: f.fileSvg, w: f.w, h: f.h, kind: "fx" });
+      man.figures.push({ id: f.id, name: f.name, word: f.word, file: f.file, fileSvg: f.fileSvg, w: f.w, h: f.h, kind: "fx", pack: pack.packId });
       have.add(f.id); added++;
     }
   }
@@ -2312,6 +2437,79 @@ async function renderCharacters(contentEl, tab, ctx, __gen) {
       const n = [...getDisabledChars()].filter((id) => present.has(id)).length;
       const foot = managePanel.createEl("div", { text: n ? `${n} character${n > 1 ? "s" : ""} hidden` : "All characters visible" });
       foot.style.fontSize = "0.72em"; foot.style.color = "var(--text-muted)"; foot.style.marginTop = "6px";
+
+      // ---- Installed packs: list by store product, with Remove -------------
+      const packsHead = managePanel.createEl("div", { text: "Installed packs" });
+      packsHead.style.cssText = "font-weight:600;font-size:0.8em;margin:12px 0 2px";
+      const packsHint = managePanel.createEl("div", { text: "Removing a pack deletes its figures and images. Art shared with another installed pack is kept. The dev library (content without pack info) can't be removed here." });
+      packsHint.style.cssText = "font-size:0.72em;color:var(--text-muted);margin:0 0 6px";
+      const packsWrap = managePanel.createDiv();
+      packsWrap.style.cssText = "display:flex;flex-direction:column;gap:4px";
+      const instMap = _installedPackProducts();
+      const counts = new Map();                    // product → {figs, fx}
+      for (const f of (list || [])) {
+        const ids = (Array.isArray(f.packs) && f.packs.length) ? f.packs : (f.pack ? [f.pack] : []);
+        for (const prod of new Set(ids.map((pid) => packProductOf(pid, instMap)))) {
+          if (!prod) continue;
+          const c = counts.get(prod) || { figs: 0, fx: 0 };
+          c.figs++; counts.set(prod, c);
+        }
+      }
+      for (const f of ((FX_FIGURES && FX_FIGURES.figures) || [])) {
+        if (!f || !f.pack) continue;
+        const prod = packProductOf(f.pack, instMap);
+        const c = counts.get(prod) || { figs: 0, fx: 0 };
+        c.fx++; counts.set(prod, c);
+      }
+      if (!counts.size) {
+        packsWrap.createEl("div", { text: "No removable packs installed." }).style.cssText = "font-size:0.74em;color:var(--text-muted)";
+      }
+      const order = (prod) => { const i = PACK_PRODUCTS.findIndex((x) => x.id === prod); return i < 0 ? PACK_PRODUCTS.length : i; };
+      [...counts.keys()].sort((a, b) => order(a) - order(b) || String(a).localeCompare(String(b))).forEach((prod) => {
+        const c = counts.get(prod);
+        const rowEl = packsWrap.createDiv();
+        rowEl.style.cssText = "display:flex;flex-wrap:wrap;align-items:center;gap:8px";
+        const label = rowEl.createEl("span", { text: `${packProductLabel(prod)} — ${c.figs} figure${c.figs === 1 ? "" : "s"}${c.fx ? `, ${c.fx} FX` : ""}` });
+        label.style.cssText = "font-size:0.76em";
+        const rm = rowEl.createEl("button", { text: "🗑 Remove" });
+        styleActionBtn(rm);
+        rm.style.color = "var(--text-error)";
+        rm.title = "Remove this pack's figures and images from the library";
+        rm.onclick = async () => {
+          // Explicit confirm — this deletes files.
+          let go = false;
+          try {
+            const M = ea.obsidian && ea.obsidian.Modal;
+            if (M) {
+              await new Promise((resolve) => {
+                const m = new M(_vaultApp());
+                m.onClose = () => resolve();
+                m.titleEl.setText("Remove pack?");
+                const cbody = m.contentEl;
+                cbody.createEl("p", { text: `Remove "${packProductLabel(prod)}" (${c.figs} figures${c.fx ? `, ${c.fx} FX` : ""})? Images not shared with another installed pack are deleted from disk. You can re-import the .strippack at any time.` });
+                const bc2 = cbody.createDiv({ attr: { style: "display:flex;justify-content:flex-end;gap:8px;margin-top:16px" } });
+                const cancelB = bc2.createEl("button", { text: "Cancel" });
+                cancelB.onclick = () => m.close();
+                const okB = bc2.createEl("button", { text: "Remove", cls: "mod-warning" });
+                okB.onclick = () => { go = true; m.close(); };
+                m.open();
+              });
+            } else go = true;
+          } catch (e) { go = true; }
+          if (!go) return;
+          const prog2 = createImportProgressMulti([tab.__csdCharSection, tab.__csdFxSection]);
+          try {
+            prog2.pack(1, 1, `Removing ${packProductLabel(prod)}…`);
+            const res = await removeProduct(prod, prog2);
+            new Notice(`Removed ${packProductLabel(prod)}: ${res.removedFigures} figure(s), ${res.removedFx} FX, ${res.removedFiles} file(s) deleted${res.cancelled ? " (cancelled early — re-remove to clean remaining files)" : ""}.`, 9000);
+          } catch (e) {
+            console.error("Comic Strip Director: pack removal failed", e);
+            new Notice("Pack removal failed — see console. Index backups (.import-backup) are next to the JSON files.", 9000);
+          } finally { prog2.done(); }
+          await reloadPackCaches();
+          await buildPanel(tab, ctx);
+        };
+      });
     }
 
     if (!hasAnyRoster || !list.length) {
