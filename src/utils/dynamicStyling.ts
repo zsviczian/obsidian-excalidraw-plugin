@@ -287,22 +287,20 @@ export const setDynamicStyle = (
           nameColor: str(isDark ? gray2().lighterBy(50) : gray2().darkerBy(50)),
         };
         const scene = api.getSceneElements() as unknown[];
-        scene
-          .filter(isFrameElement)
-          .forEach((e) => {
-            const f = cloneElement(e);
-            addAppendUpdateCustomData(f, { frameColor });
-            if (
-              e.customData &&
-              e.customData.frameColor &&
-              e.customData.frameColor.stroke === frameColor.stroke &&
-              e.customData.frameColor.fill === frameColor.fill &&
-              e.customData.frameColor.nameColor === frameColor.nameColor
-            ) {
-              return;
-            }
-            view.excalidrawAPI.mutateElement(e, { customData: f.customData });
-          });
+        scene.filter(isFrameElement).forEach((e) => {
+          const f = cloneElement(e);
+          addAppendUpdateCustomData(f, { frameColor });
+          if (
+            e.customData &&
+            e.customData.frameColor &&
+            e.customData.frameColor.stroke === frameColor.stroke &&
+            e.customData.frameColor.fill === frameColor.fill &&
+            e.customData.frameColor.nameColor === frameColor.nameColor
+          ) {
+            return;
+          }
+          view.excalidrawAPI.mutateElement(e, { customData: f.customData });
+        });
 
         view.updateScene({
           appState: {

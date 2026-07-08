@@ -7,6 +7,7 @@ import {
   isInstanceOfHTMLSelectElement,
   isInstanceOfHTMLTextAreaElement,
 } from "src/utils/typechecks";
+import { errorlog } from "src/utils/coreUtils";
 
 declare const mainDocument: Document;
 
@@ -33,7 +34,11 @@ function pointInRect(
   );
 }
 
-declare const getCaretRangeFromPoint: (doc: Document, x: number, y: number) => Range | null;
+declare const getCaretRangeFromPoint: (
+  doc: Document,
+  x: number,
+  y: number,
+) => Range | null;
 
 function isPointOnText(e: PointerEvent | TouchEvent, doc: Document): boolean {
   const pt = getClientPoint(e);
@@ -255,8 +260,12 @@ export class FloatingModal extends Modal {
       try {
         // Release modal scope so focus and key handling can return to the workspace.
         this.app.keymap.popScope(this.scope);
-      } catch (error) {
-        console.log(error);
+      } catch (error: unknown) {
+        errorlog({
+          where: "FloatingModal.open",
+          error,
+          message: "Failed to release modal scope",
+        });
       }
       // prevent automatic selection / focus restoration
       this.shouldRestoreSelection = false;
@@ -335,8 +344,12 @@ export class FloatingModal extends Modal {
     ) {
       try {
         this.previousActive.focus({ preventScroll: true });
-      } catch (error) {
-        console.log(error);
+      } catch (error: unknown) {
+        errorlog({
+          where: "FloatingModal.close",
+          error,
+          message: "Failed to restore focus to previous element",
+        });
       }
     }
     const { modalEl } = this;

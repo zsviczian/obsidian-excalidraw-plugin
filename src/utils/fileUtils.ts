@@ -188,7 +188,10 @@ export const getMimeType = (extension: string): MimeType => {
 };
 
 //declared in rollup.config.mjs
-declare const deliberateFetch: (payload: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+declare const deliberateFetch: (
+  payload: RequestInfo | URL,
+  init?: RequestInit,
+) => Promise<Response>;
 
 // Using fetch as primary for maximum compatibility with CORS/image endpoints.
 // fetch is used here because requestUrl sometimes fails for certain endpoints (e.g. Firebase Storage, see comment below).
@@ -227,8 +230,12 @@ const getFileFromURL = async (
       json: null,
       text: null,
     };
-  } catch (error) {
-    console.log("unexpected error in getFileFromURL", getFileFromURL, error);
+  } catch (error: unknown) {
+    errorlog({
+      where: getFileFromURL,
+      error,
+      message: "unexpected error in getFileFromURL",
+    });
     return null;
   }
 };
@@ -768,7 +775,7 @@ export async function exportImageToFile(
           excalidrawFile: view.file,
           action: "export",
         }) ?? path;
-    } catch (e) {
+    } catch (e: unknown) {
       errorlog({
         where: "fileUtils.exportImageToFile",
         fn: ea.onImageExportPathHook,
@@ -794,7 +801,7 @@ export async function importFileToVault(
         currentImageName: fname,
         drawingFilePath: excalidrawFile.path,
       });
-    } catch (e) {
+    } catch (e: unknown) {
       errorlog({
         where: "fileUtils.importFileToVault",
         fn: ea.onImageFilePathHook,

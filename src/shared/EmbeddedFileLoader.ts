@@ -76,7 +76,10 @@ import {
 import { getSafeFrontmatter, strictArrayBuffer } from "src/utils/obsidianUtils";
 
 //declared in rollup.config.mjs
-declare const deliberateFetch: (payload: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+declare const deliberateFetch: (
+  payload: RequestInfo | URL,
+  init?: RequestInit,
+) => Promise<Response>;
 declare const mainDocument: Document;
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
