@@ -12,7 +12,7 @@ Content structure:
 2. The curated script overview (index-new.md)
 3. Raw source of every *.md script in /ea-scripts (each fenced code block is auto-closed to ensure well-formed aggregation)
 
-Generated on: 2026-07-08T18:15:01.359Z
+Generated on: 2026-07-08T19:02:55.490Z
 
 ---
 
@@ -14510,7 +14510,7 @@ function buildHeaderUI(contentEl, state) {
         }
     };
 
-    return { searchInput, sizeSlider, infoBtn, settingsBtn, outsideClickHandler };
+    return { searchInput, sizeSlider, infoBtn, settingsBtn, outsideClickHandler, updateFunnelIcon };
 }
 
 /**
@@ -14900,6 +14900,10 @@ Your task:
                 { name: "Stickfigure", pattern: "^stickfigure - (.*?)(?: - [^-]+)?$", folderPattern: "", extensions: "", maxKb: "" },
                 { name: "Logo", pattern: "^logo - (.*?)(?: - [^-]+)?$", folderPattern: "", extensions: "", maxKb: "" }
             ];
+            
+            // Reset active filters to include the default ones
+            this.localSettings.activeFilterNames = this.localSettings.filters.map(f => f.name);
+            
             this.currentFilterIndex = 0;
             this.workingFilter = null;
             this.onSave(this.localSettings);
@@ -14961,7 +14965,19 @@ Your task:
     nextBtn.addEventListener("click", () => navigate(1));
 
     saveFilterBtn.addEventListener("click", () => {
+        const oldName = this.localSettings.filters[this.currentFilterIndex].name;
+        const newName = this.workingFilter.name;
+        
         this.localSettings.filters[this.currentFilterIndex] = JSON.parse(JSON.stringify(this.workingFilter));
+        
+        // Update name in active filters if it changed
+        if (oldName !== newName && this.localSettings.activeFilterNames) {
+            const activeIndex = this.localSettings.activeFilterNames.indexOf(oldName);
+            if (activeIndex > -1) {
+                this.localSettings.activeFilterNames[activeIndex] = newName;
+            }
+        }
+        
         this.onSave(this.localSettings);
         checkDirty();
         new Notice(`Filter '${this.workingFilter.name}' saved.`);
@@ -14970,10 +14986,25 @@ Your task:
 
     delBtn.addEventListener("click", () => {
         if (window.confirm("Are you sure you want to delete this filter?")) {
+            const filterName = this.localSettings.filters[this.currentFilterIndex].name;
             this.localSettings.filters.splice(this.currentFilterIndex, 1);
+            
+            // Remove from active filters
+            if (this.localSettings.activeFilterNames) {
+                this.localSettings.activeFilterNames = this.localSettings.activeFilterNames.filter(n => n !== filterName);
+            }
+            
             if (this.localSettings.filters.length === 0) {
                 // Ensure at least one filter remains
-                this.localSettings.filters.push({ name: "Default Filter", pattern: "^icon - (.*)", folderPattern: "", extensions: "", maxKb: "" });
+                const defaultName = "Default Filter";
+                this.localSettings.filters.push({ name: defaultName, pattern: "^icon - (.*)", folderPattern: "", extensions: "", maxKb: "" });
+                
+                if (!this.localSettings.activeFilterNames) {
+                    this.localSettings.activeFilterNames = [];
+                }
+                if (!this.localSettings.activeFilterNames.includes(defaultName)) {
+                    this.localSettings.activeFilterNames.push(defaultName);
+                }
             }
             this.currentFilterIndex = Math.max(0, this.currentFilterIndex - 1);
             this.workingFilter = null;
@@ -15025,6 +15056,12 @@ Your task:
         
         const newName = "New Filter " + (this.localSettings.filters.length + 1);
         this.localSettings.filters.push({ name: newName, pattern: "^new - (.*)", folderPattern: "", extensions: "", maxKb: "" });
+        
+        // Add the new filter to active filters by default
+        if (this.localSettings.activeFilterNames && !this.localSettings.activeFilterNames.includes(newName)) {
+            this.localSettings.activeFilterNames.push(newName);
+        }
+        
         this.currentFilterIndex = this.localSettings.filters.length - 1;
         this.workingFilter = null;
         this.onSave(this.localSettings);
@@ -15223,6 +15260,7 @@ async function main() {
     const searchInput = headerUI.searchInput;
     const sizeSlider = headerUI.sizeSlider;
     const outsideClickHandler = headerUI.outsideClickHandler;
+    const updateFunnelIcon = headerUI.updateFunnelIcon; // Added
 
     // --- Dynamic Event Listener Management ---
     let isListenersAttached = false;
@@ -15350,6 +15388,9 @@ async function main() {
             await ea.setScriptSettings(state.settings);
             state.libraryItems = getLibraryItems(state.settings);
             renderGrid(gridContainer, observer, state.libraryItems, searchInput.value, state.settings);
+            
+            // Re-evaluate funnel icon based on new active filters
+            if (updateFunnelIcon) updateFunnelIcon();
         });
         modal.open();
     });
