@@ -20,6 +20,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
   "2.25.3": `
   ## Fixed
   - Fixed custom pens with shared Perfect Freehand settings both appearing selected in the toolbar at the same time. [#2828](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2828)
+  - Plugin does not start. Changing dynamic styling setting to off, and to on again solves the issue. Added further safety checks to avoid plugin crash. [#2819](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2819)
 `,
   "2.25.2": `
 One more small maintenance release with a few important fixes.
