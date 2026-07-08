@@ -58,7 +58,6 @@ const CONSTANTS = {
     DEBOUNCE_DELAY: 200,
     OBSERVER_MARGIN: "50px",
     ICON_SCALE: "scaling",
-    ICON_EXPAND_FALLBACK: "expand",
     ICON_SETTINGS: "settings",
     CSS_PREFIX: "excalidraw-icon-library-"
 };
@@ -96,6 +95,11 @@ function initializeSettings() {
     if (currentSettings.defaultIconWidth === undefined) currentSettings.defaultIconWidth = CONSTANTS.DEFAULT_ICON_WIDTH;
     if (currentSettings.thumbSize === undefined) currentSettings.thumbSize = CONSTANTS.DEFAULT_THUMB_SIZE;
     
+    // Initialize active filters state if missing (defaults to all filters enabled)
+    if (currentSettings.activeFilterNames === undefined) {
+        currentSettings.activeFilterNames = currentSettings.filters.map(f => f.name);
+    }
+    
     return currentSettings;
 }
 
@@ -115,8 +119,9 @@ function debounce(func, wait) {
 
 /**
  * Scans the vault for image and Excalidraw files matching the active regex filters.
+ * Now captures and stores the filterName to support UI toggling.
  * @param {Object} currentSettings - The current script settings.
- * @returns {Array<{file: TFile, keyword: string}>} Sorted array of matched files.
+ * @returns {Array<{file: TFile, keyword: string, filterName: string}>} Sorted array of matched files.
  */
 function getLibraryItems(currentSettings) {
     const excludeFolders = (currentSettings.excludeFolders || "")
@@ -134,7 +139,7 @@ function getLibraryItems(currentSettings) {
     const items = [];
     const activeFilters = currentSettings.filters
         .map(f => {
-            try { return new RegExp(f.pattern, "i"); }
+            try { return { name: f.name, regex: new RegExp(f.pattern, "i") }; }
             catch (e) { return null; }
         })
         .filter(f => f);
@@ -142,18 +147,20 @@ function getLibraryItems(currentSettings) {
     for (const file of files) {
         let matched = false;
         let keyword = file.basename;
+        let filterName = "";
 
-        for (const regex of activeFilters) {
-            const match = file.basename.match(regex);
+        for (const filter of activeFilters) {
+            const match = file.basename.match(filter.regex);
             if (match) {
                 matched = true;
+                filterName = filter.name;
                 if (match[1]) keyword = match[1];
                 break;
             }
         }
 
         if (matched) {
-            items.push({ file, keyword: keyword.trim() });
+            items.push({ file, keyword: keyword.trim(), filterName });
         }
     }
 
@@ -469,7 +476,7 @@ function showInfoModal(app) {
 }
 
 /**
- * Builds the header section containing the search bar, scale popover, and settings buttons.
+ * Builds the header section containing the search bar, funnel filters, scale popover, and settings buttons.
  * @param {HTMLElement} contentEl - The parent container.
  * @param {Object} state - The global script state.
  * @returns {Object} References to the search input, size slider, buttons, and the document click handler.
@@ -477,20 +484,84 @@ function showInfoModal(app) {
 function buildHeaderUI(contentEl, state) {
     const headerRow = contentEl.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}header` });
     
-    // Search & Sizer wrapper
+    // 1. Search Wrapper (Now only contains the input field)
     const searchWrapper = headerRow.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}search-wrapper` });
     const searchInput = searchWrapper.createEl("input", { 
         type: "text", 
         cls: `${CONSTANTS.CSS_PREFIX}search`, 
         placeholder: STRINGS.SEARCH_PLACEHOLDER 
     });
+
+    // 2. Funnel Button & Popover (Separated into its own relative container)
+    const funnelContainer = headerRow.createDiv({ attr: { style: "position: relative;" } });
     
-    const scaleBtn = searchWrapper.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}scale-btn` });
+    const funnelBtn = funnelContainer.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}settings-btn` });
+    funnelBtn.setAttribute("aria-label", "Filter by Category");
+    funnelBtn.setAttribute("title", "Filter by Category");
+    
+    const funnelPopover = funnelContainer.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}slider-popover` });
+    funnelPopover.style.padding = "10px";
+    funnelPopover.style.minWidth = "150px";
+    funnelPopover.style.right = "0"; // Align to the right edge of its button
+    funnelPopover.style.width = "max-content";
+    funnelPopover.style.display = "none"; // Explicit initialization fixes the 1st-click bug
+
+    const updateFunnelIcon = () => {
+        const allEnabled = state.settings.filters.every(f => state.settings.activeFilterNames.includes(f.name));
+        funnelBtn.innerHTML = ea.obsidian.getIcon(allEnabled ? "funnel" : "funnel-x")?.outerHTML || "Y";
+        if (!allEnabled) {
+            funnelBtn.style.color = "var(--interactive-accent)";
+        } else {
+            funnelBtn.style.color = "";
+        }
+    };
+
+    const renderFunnelPopover = () => {
+        funnelPopover.empty();
+        funnelPopover.createEl("h4", { text: "Filters", attr: { style: "margin-top: 0; margin-bottom: 10px;" } });
+        state.settings.filters.forEach(f => {
+            const row = funnelPopover.createDiv({ attr: { style: "display: flex; align-items: center; gap: 8px; margin-bottom: 5px;" } });
+            const cb = row.createEl("input", { type: "checkbox" });
+            cb.checked = state.settings.activeFilterNames.includes(f.name);
+            row.createEl("label", { text: f.name });
+            
+            cb.addEventListener("change", (e) => {
+                if (e.target.checked) {
+                    if (!state.settings.activeFilterNames.includes(f.name)) {
+                        state.settings.activeFilterNames.push(f.name);
+                    }
+                } else {
+                    state.settings.activeFilterNames = state.settings.activeFilterNames.filter(n => n !== f.name);
+                }
+                ea.setScriptSettings(state.settings);
+                updateFunnelIcon();
+                // Triggering a fake input event natively triggers debouncedSearch and re-renders the grid
+                searchInput.dispatchEvent(new Event("input"));
+            });
+        });
+    };
+
+    funnelBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        renderFunnelPopover();
+        funnelPopover.style.display = funnelPopover.style.display === "none" ? "block" : "none";
+        sliderPopover.style.display = "none";
+    });
+    
+    updateFunnelIcon();
+    
+    // 3. Scale Button & Popover (Separated into its own relative container)
+    const scaleContainer = headerRow.createDiv({ attr: { style: "position: relative;" } });
+    
+    const scaleBtn = scaleContainer.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}settings-btn` });
     scaleBtn.innerHTML = ea.obsidian.getIcon(CONSTANTS.ICON_SCALE)?.outerHTML 
                       || ea.obsidian.getIcon(CONSTANTS.ICON_EXPAND_FALLBACK)?.outerHTML || "↕";
+    scaleBtn.setAttribute("aria-label", "Adjust Thumbnail Size");
+    scaleBtn.setAttribute("title", "Adjust Thumbnail Size");
     
-    // Vertical Sizer Popover
-    const sliderPopover = searchWrapper.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}slider-popover` });
+    const sliderPopover = scaleContainer.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}slider-popover` });
+    sliderPopover.style.display = "none"; // Explicit initialization fixes the 1st-click bug
+    sliderPopover.style.right = "0"; // Align to the right edge of its button
     
     // Use the wrapper to absolutely position the rotated horizontal slider
     const sliderWrapper = sliderPopover.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}slider-wrapper` });
@@ -504,30 +575,32 @@ function buildHeaderUI(contentEl, state) {
         } 
     });
 
-    // Info Button
+    scaleBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        sliderPopover.style.display = sliderPopover.style.display === "none" ? "block" : "none";
+        funnelPopover.style.display = "none";
+    });
+
+    // 4. Info Button
     const infoBtn = headerRow.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}settings-btn` });
     infoBtn.innerHTML = ea.obsidian.getIcon("info")?.outerHTML || "i";
     infoBtn.setAttribute("aria-label", "Instructions & Info");
     infoBtn.setAttribute("title", "Instructions & Info");
     infoBtn.addEventListener("click", () => showInfoModal(app));
 
-    // Settings Button
+    // 5. Settings Button
     const settingsBtn = headerRow.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}settings-btn` });
     settingsBtn.innerHTML = ea.obsidian.getIcon(CONSTANTS.ICON_SETTINGS)?.outerHTML || "⚙";
     settingsBtn.setAttribute("aria-label", "Settings");
     settingsBtn.setAttribute("title", "Settings");
 
-    // Popover toggle logic
-    scaleBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        sliderPopover.style.display = sliderPopover.style.display === "none" ? "block" : "none";
-    });
-
-    // We DO NOT attach this to the document here anymore to prevent memory leaks.
-    // We export it so `main()` can cleanly attach/detach it based on tab focus.
+    // Close popovers if clicking outside
     const outsideClickHandler = (e) => {
         if (!scaleBtn.contains(e.target) && !sliderPopover.contains(e.target)) {
             sliderPopover.style.display = "none";
+        }
+        if (!funnelBtn.contains(e.target) && !funnelPopover.contains(e.target)) {
+            funnelPopover.style.display = "none";
         }
     };
 
@@ -575,9 +648,15 @@ function handleGridKeydown(e, card, grid, file, currentSettings) {
     else if (e.key === "ArrowDown") target = idx + cols;
     else if (e.key === "ArrowUp") target = idx - cols;
 
+    const loadMoreBtn = grid.querySelector('.load-more-btn-wrapper button');
+
     if (target >= 0 && target < cards.length) {
         e.preventDefault();
         cards[target].focus();
+    } else if (target >= cards.length && loadMoreBtn) {
+        // If moving down or right past the last loaded card, pass focus to the Load More button
+        e.preventDefault();
+        loadMoreBtn.focus();
     } else if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         insertItem(file, currentSettings);
@@ -616,19 +695,80 @@ function createThumbnailCard(item, gridContainer, observer, currentSettings) {
 
 /**
  * Renders the grid of thumbnails based on the provided items and search term.
+ * Uses batch loading to improve performance with large libraries.
+ * Filters items actively based on toggled funnel categories.
  * @param {HTMLElement} gridContainer - The grid DOM element.
  * @param {IntersectionObserver} observer - The observer for lazy loading.
- * @param {Array<{file: TFile, keyword: string}>} items - The library items.
+ * @param {Array<{file: TFile, keyword: string, filterName: string}>} items - The library items.
  * @param {string} searchTerm - The current search filter.
  * @param {Object} currentSettings - The active settings.
+ * @param {number} [offset=0] - The starting index for the current batch.
+ * @param {boolean} [focusOnLoad=false] - Whether to automatically focus the first newly loaded item.
  */
-function renderGrid(gridContainer, observer, items, searchTerm, currentSettings) {
-    gridContainer.empty();
-    const term = searchTerm.toLowerCase();
-    const filtered = items.filter(item => item.keyword.toLowerCase().includes(term));
+function renderGrid(gridContainer, observer, items, searchTerm, currentSettings, offset = 0, focusOnLoad = false) {
+    if (offset === 0) {
+        gridContainer.empty();
+    } else {
+        // Remove existing Load More button before appending new cards
+        const existingBtn = gridContainer.querySelector('.load-more-btn-wrapper');
+        if (existingBtn) existingBtn.remove();
+    }
 
-    for (const item of filtered) {
+    const term = searchTerm.toLowerCase();
+    const activeFilterNames = currentSettings.activeFilterNames || [];
+    
+    // Apply search filter AND toggle filters concurrently
+    const filtered = items.filter(item => 
+        item.keyword.toLowerCase().includes(term) && 
+        activeFilterNames.includes(item.filterName)
+    );
+    
+    // Batch size limits DOM nodes created in a single render cycle
+    const BATCH_SIZE = 100;
+    const batch = filtered.slice(offset, offset + BATCH_SIZE);
+
+    for (const item of batch) {
         createThumbnailCard(item, gridContainer, observer, currentSettings);
+    }
+
+    // Automatically focus the first newly rendered card if requested (e.g. after pressing Enter on the Load More button)
+    if (focusOnLoad) {
+        setTimeout(() => {
+            const allCards = gridContainer.querySelectorAll(`.${CONSTANTS.CSS_PREFIX}card`);
+            if (allCards[offset]) {
+                allCards[offset].focus();
+            }
+        }, 50);
+    }
+
+    // If there are more items to show, append a "Load More" button
+    if (offset + BATCH_SIZE < filtered.length) {
+        const btnWrapper = gridContainer.createDiv({ 
+            cls: "load-more-btn-wrapper", 
+            attr: { style: "grid-column: 1 / -1; display: flex; justify-content: center; padding: 20px 0;" }
+        });
+        
+        const btn = btnWrapper.createEl("button", { text: "Load More", cls: "mod-cta" });
+        
+        const loadMoreAction = () => {
+            renderGrid(gridContainer, observer, items, searchTerm, currentSettings, offset + BATCH_SIZE, true);
+        };
+
+        btn.addEventListener("click", loadMoreAction);
+        
+        // Listen to keydown on the Load More button to allow upward traversal back into the cards grid
+        btn.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+                e.preventDefault();
+                const allCards = gridContainer.querySelectorAll(`.${CONSTANTS.CSS_PREFIX}card`);
+                if (allCards.length > 0) {
+                    allCards[allCards.length - 1].focus();
+                }
+            } else if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                loadMoreAction();
+            }
+        });
     }
 }
 
