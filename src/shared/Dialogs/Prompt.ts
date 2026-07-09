@@ -44,7 +44,7 @@ import { setStyle } from "src/utils/styleUtils";
  * Minimal type for obsidian-latex-suite plugin.
  * Only types the properties actually used by this codebase.
  */
-interface LatexSuitePlugin {
+export interface LatexSuitePlugin {
   editorExtensions?: Extension | Extension[];
 }
 

@@ -1350,6 +1350,18 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
     desc: "If set, this callback is triggered whenever a drawing is exported to SVG. The string returned will replace the internal Obsidian link in the exported SVG.",
     after: "",
   },
+  {
+    field: "getCM6",
+    code: "getCM6(): {EditorView: typeof EditorView; EditorState: typeof EditorState; keymap: typeof keymap; defaultKeymap: typeof defaultKeymap; history: typeof history; historyKeymap: typeof historyKeymap; LRLanguage: typeof LRLanguage; Tree: typeof Tree; NodeType: typeof NodeType;};",
+    desc: "Returns CodeMirror 6 constructor classes and utilities for creating advanced embedded editors (EditorView, EditorState, keymap, LRLanguage, etc.).",
+    after: "",
+  },
+  {
+    field: "getMathEditorExtensions",
+    code: "getMathEditorExtensions(): (LRLanguage | Extension)[];",
+    desc: "Returns the pre-configured CodeMirror 6 extensions used by Excalidraw's LaTeX editor. Includes the internal math parser required to trigger 'obsidian-latex-suite'.",
+    after: "",
+  },
 ];
 
 export const EXCALIDRAW_SCRIPTENGINE_INFO: SuggesterInfo[] = [

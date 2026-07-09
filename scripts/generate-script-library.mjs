@@ -118,6 +118,7 @@ To keep this training file concise, large external type definitions are not incl
     *   **Always Use \`ea.addAppendUpdateCustomData(id, newData)\`:** This is crucial. It safely adds or updates your key-value pairs without overwriting data that might have been stored by other scripts or the Excalidraw plugin itself.
 *   **Creating Configurable Scripts:** To make your script's behavior customizable by the user:
     *   Use \`ea.getScriptSettings()\` to retrieve saved settings.
+    *   scriptSettings are stored with Excalidraw settings in Obsidian data.json. Keep this light. You MUST NEVER save large data objects such as base64 images or huge arrays here. Keep this lean and efficient.
     *   Check if settings exist, and if not, define the default structure.
     *   Use \`await ea.setScriptSettings(settings)\` to save any changes. This allows users to configure your script in the Excalidraw plugin settings pane.
 

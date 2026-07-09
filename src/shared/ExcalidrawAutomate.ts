@@ -85,7 +85,7 @@ import {
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { EmbeddedFile, EmbeddedFilesLoader } from "./EmbeddedFileLoader";
 import { tex2dataURL } from "./LaTeX";
-import { NewFileActions } from "src/shared/Dialogs/Prompt";
+import { LatexSuitePlugin, NewFileActions } from "src/shared/Dialogs/Prompt";
 import {
   ConnectionPoint,
   DeviceType,
@@ -175,6 +175,12 @@ import {
   updateOrAddSVGColorInfo,
   verifyMinimumPluginVersion,
 } from "src/utils/excalidrawAutomateUtils";
+import { EditorView, keymap } from "@codemirror/view";
+import { EditorState, Extension } from "@codemirror/state";
+import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
+import { LRLanguage } from "@codemirror/language";
+import { Tree, NodeType } from "@lezer/common";
+import { parser as mathParser } from "./Dialogs/math-only";
 
 type MutableElementMapEntry = Mutable<ExcalidrawElement> &
   Record<string, unknown>;
@@ -4884,6 +4890,66 @@ export class ExcalidrawAutomate {
       res.content as unknown as ExcalidrawElement[],
     );
     return true;
+  }
+
+  /**
+   * Returns CodeMirror 6 constructor classes and utilities for creating advanced embedded editors.
+   * Includes EditorView, EditorState, keymap, history, LRLanguage, Tree, and NodeType.
+   * Useful when building custom sidepanels or modals that require rich text editing features.
+   * @returns {Object} An object containing CodeMirror 6 and Lezer classes/functions.
+   */
+  public getCM6(): {
+    EditorView: typeof EditorView;
+    EditorState: typeof EditorState;
+    keymap: typeof keymap;
+    defaultKeymap: typeof defaultKeymap;
+    history: typeof history;
+    historyKeymap: typeof historyKeymap;
+    LRLanguage: typeof LRLanguage;
+    Tree: typeof Tree;
+    NodeType: typeof NodeType;
+  } {
+    return {
+      EditorView,
+      EditorState,
+      keymap,
+      defaultKeymap,
+      history,
+      historyKeymap,
+      LRLanguage,
+      Tree,
+      NodeType,
+    };
+  }
+
+  /**
+   * Returns the pre-configured CodeMirror 6 extensions used by Excalidraw's native LaTeX editor.
+   * Includes the internal math parser required to trick 'obsidian-latex-suite' into thinking
+   * it is operating inside a math block, along with standard history and default keymaps.
+   * @returns { (LRLanguage | Extension)[]} An array of CodeMirror 6 extensions ready to be passed to EditorState.create().
+   */
+  public getMathEditorExtensions(): (LRLanguage | Extension)[] {
+    const minimalSetup = [
+      history(),
+      keymap.of([...defaultKeymap, ...historyKeymap]),
+    ];
+
+    const language = LRLanguage.define({ parser: mathParser });
+    const extensions = [
+      obsidian_module.editorLivePreviewField.init(() => false),
+      EditorView.editorAttributes.of({ class: "multi-select-container" }),
+      minimalSetup,
+      language,
+    ];
+
+    const latexSuite = this.plugin.app.plugins.plugins[
+      "obsidian-latex-suite"
+    ] as LatexSuitePlugin;
+    if (latexSuite?.editorExtensions) {
+      extensions.push(latexSuite.editorExtensions);
+    }
+
+    return extensions;
   }
 
   /**
