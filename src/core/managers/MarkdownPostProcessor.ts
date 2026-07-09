@@ -1074,9 +1074,11 @@ const tmpObsidianWYSIWYG = async (
 
   if (
     !plugin.settings.renderImageInMarkdownReadingMode &&
-    isMarkdownReadingMode
+    isMarkdownReadingMode  &&
+    // https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2835
+    !getParentOfClass(containerEl, "internal-embed") &&
+    !getParentOfClass(containerEl, "markdown-embed")
   ) {
-    // containerEl.parentElement?.parentElement?.hasClass("markdown-reading-view")) {
     return;
   }
 

@@ -179,7 +179,6 @@ import { EditorView, keymap } from "@codemirror/view";
 import { EditorState, Extension } from "@codemirror/state";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
 import { LRLanguage } from "@codemirror/language";
-import { Tree, NodeType } from "@lezer/common";
 import { parser as mathParser } from "./Dialogs/math-only";
 
 type MutableElementMapEntry = Mutable<ExcalidrawElement> &
@@ -4906,8 +4905,6 @@ export class ExcalidrawAutomate {
     history: typeof history;
     historyKeymap: typeof historyKeymap;
     LRLanguage: typeof LRLanguage;
-    Tree: typeof Tree;
-    NodeType: typeof NodeType;
   } {
     return {
       EditorView,
@@ -4917,8 +4914,6 @@ export class ExcalidrawAutomate {
       history,
       historyKeymap,
       LRLanguage,
-      Tree,
-      NodeType,
     };
   }
 

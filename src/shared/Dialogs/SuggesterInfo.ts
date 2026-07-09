@@ -1352,7 +1352,7 @@ export const EXCALIDRAW_AUTOMATE_INFO: SuggesterInfo[] = [
   },
   {
     field: "getCM6",
-    code: "getCM6(): {EditorView: typeof EditorView; EditorState: typeof EditorState; keymap: typeof keymap; defaultKeymap: typeof defaultKeymap; history: typeof history; historyKeymap: typeof historyKeymap; LRLanguage: typeof LRLanguage; Tree: typeof Tree; NodeType: typeof NodeType;};",
+    code: "getCM6(): {EditorView: typeof EditorView; EditorState: typeof EditorState; keymap: typeof keymap; defaultKeymap: typeof defaultKeymap; history: typeof history; historyKeymap: typeof historyKeymap; LRLanguage: typeof LRLanguage;};",
     desc: "Returns CodeMirror 6 constructor classes and utilities for creating advanced embedded editors (EditorView, EditorState, keymap, LRLanguage, etc.).",
     after: "",
   },

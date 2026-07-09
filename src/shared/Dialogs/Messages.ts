@@ -23,7 +23,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
   - Plugin does not start. Changing dynamic styling setting to off, and to on again solves the issue. Added further safety checks to avoid plugin crash. [#2819](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2819)
 
   ## New in ExcalidrawAutomate
-  - Added \`ea.getCM6()\` to expose CodeMirror 6 and Lezer classes/functions (EditorView, EditorState, etc.) to the ScriptEngine environment without needing unstable require imports.
+  - Added \`ea.getCM6()\` to expose CodeMirror 6 classes/functions (EditorView, EditorState, etc.) to the ScriptEngine environment without needing unstable require imports.
   - Added \`ea.getMathEditorExtensions()\` to expose Excalidraw's pre-configured LaTeX editor extensions, natively supporting obsidian-latex-suite integration in custom sidepanel scripts.
 `,
   "2.25.2": `
