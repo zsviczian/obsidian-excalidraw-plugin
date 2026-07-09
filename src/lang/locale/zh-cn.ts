@@ -977,9 +977,9 @@ export default {
   FIELD_SUGGESTER_DESC:
     "开启后，当您在编辑器中输入 <code>excalidraw-</code> 或者 <code>ea.</code> 时，会弹出一个带有函数说明的自动补全提示菜单。<br>" +
     "该功能借鉴了 Breadcrumbs 和 Templater 插件。",
-  ENABLE_ONLOAD_SCRIPTS_NAME: "启用 onload 脚本",
+  ENABLE_ONLOAD_SCRIPTS_NAME: "加载期脚本（onload）",
   ENABLE_ONLOAD_SCRIPTS_CONFIRMATION:
-    "此文件包含 <code>excalidraw-onload-script</code>。是否启用 onload 脚本？",
+    "此文件包含 <code>excalidraw-onload-script</code>。是否启用加载期脚本？",
   ENABLE_ONLOAD_SCRIPTS_CONFIRM_ENABLE: "启用脚本",
   ENABLE_ONLOAD_SCRIPTS_CONFIRM_DENY: "不允许",
   ENABLE_ONLOAD_SCRIPTS_DESC:
@@ -995,12 +995,12 @@ export default {
     "启用后，Excalidraw 将允许以 <code>cmd://</code> 开头的链接在你之后打开的绘图中执行 Obsidian 命令面板动作，直到你关闭此设置。" +
     "如果你打开未知来源的绘图，这会带来风险：恶意绘图可以让一次普通点击触发高权限命令。" +
     "只有在你信任该文件及其来源时才启用此功能。",
-  STARTUP_SCRIPT_NAME: "起动脚本",
+  STARTUP_SCRIPT_NAME: "启动期脚本（startup）",
   STARTUP_SCRIPT_DESC:
-    "插件启动时将自动执行该脚本。可用于为您的 Excalidraw 自动化脚本设置钩子。" +
-    "起动脚本请用 javascript 代码编写，并保存为 Markdown 格式。",
-  STARTUP_SCRIPT_BUTTON_CREATE: "创建起动脚本",
-  STARTUP_SCRIPT_BUTTON_OPEN: "打开起动脚本",
+    "插件启动时将自动执行该脚本。可用于设置 Excalidraw 自动化钩子。" +
+    "该脚本是包含 javascript 代码的 Markdown 文件。",
+  STARTUP_SCRIPT_BUTTON_CREATE: "创建启动期脚本",
+  STARTUP_SCRIPT_BUTTON_OPEN: "打开启动期脚本",
   FILETYPE_NAME: "在文件浏览器中为 excalidraw.md 文件添加类型标识符（如 ✏️）",
   FILETYPE_DESC: "可通过下一选项来自定义类型标识符。",
   FILETAG_NAME: "excalidraw.md 文件的类型标识符",
