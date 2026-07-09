@@ -113,10 +113,10 @@ export default {
   RESET_IMG_TO_100: "重置图像尺寸为 100%",
   RESET_IMG_ASPECT_RATIO: "重置所选图像的纵横比",
   TEMPORARY_DISABLE_AUTOSAVE:
-    "临时禁用自动保存功能，直到本次 Obsidian 退出（小白慎用！）",
+    "临时禁用自动保存功能，重启 Obsidian 不延续状态（小白慎用！）",
   TEMPORARY_ENABLE_AUTOSAVE: "启用自动保存功能",
   TEMPORARY_TOGGLE_VIEW_MODE_FOR_ALL_DRAWINGS:
-    "切换所有 Excalidraw 绘图的查看模式，直到本次 Obsidian 退出",
+    "所有 Excalidraw 绘图切换查看模式，重启 Obsidian 不延续状态",
   FONTS_LOADED: "Excalidraw: CJK 字体已加载",
   FONTS_LOAD_ERROR: "Excalidraw: 在资源文件夹下找不到 CJK 字体\n",
   TOGGLE_ENABLE_CONTEXT_MENU: "切换是否启用上下文菜单（在移动设备上很有用）",
@@ -232,7 +232,7 @@ export default {
     "向 NotebookLM 咨询有关插件的帮助。此模型已预加载了我所有的视频转录稿、发布说明和其他帮助内容。与 NotebookLM 聊天，浏览我的 250+ 视频和 Excalidraw 文件。",
   NOTEBOOKLM_LINK_TEXT: "学习插件。访问 NotebookLM 知识库。",
   EXCALIDRAW_MASTERY_PROMO_ARIA: "打开 Excalidraw Mastery",
-  EXCALIDRAW_MASTERY_PROMO_HTML: `<p><b>在各种开关和菜单里有点迷路吗？</b></p><p>Excalidraw 是一款为高强度工作流打造的 Visual PKM 强力工具，适合 <b>Visual-First Daily Notes</b>、深入的 <b>PDF 研究</b>、<b>自动化</b>、<b>AI 集成</b> 和 <b>Visual Zettelkasten</b>。但强大能力也意味着更高的复杂度。</p><p>跳过反复试错。<a href="${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM}" target="_blank">👉 加入 Excalidraw Mastery</a>，一步一步学会这些具体配置。减少工具摩擦，与一群善于视觉思考的支持型社群一起掌握你的知识体系。</p>`,
+  EXCALIDRAW_MASTERY_PROMO_HTML: `<p><b>在各种开关和菜单里找不着北？</b></p><p>Excalidraw 是一款为高强度工作流打造的 Visual PKM 强力工具，适合 <b>Visual-First Daily Notes</b>、深度 <b>PDF 研究</b>、<b>自动化</b>、<b>AI 集成</b> 和 <b>Visual Zettelkasten</b>。但强大能力也伴随着复杂度。</p><p>跳过反复试错。<a href="${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EM}" target="_blank">👉 加入 Excalidraw Mastery</a>，一步一步学会这些具体配置。减少工具摩擦，与视觉思维社区伙伴一起掌握知识！</p>`,
   EXCALIDRAW_MASTERY_PROMO_SHOW: "显示",
   EXCALIDRAW_MASTERY_PROMO_HIDE: "隐藏",
   LINKS_BUGS_ARIA: "在插件的 GitHub 页面报告错误和提交功能请求",
@@ -288,7 +288,7 @@ export default {
   FOLDER_EMBED_DESC:
     "在命令面板中执行“新建绘图”系列命令时，" +
     "新建的绘图文件的存储路径。<br>" +
-    "<b>开启：</b>使用上面的 Excalidraw 文件夹。 <br><b>关闭：</b>使用 Obsidian 设置的新附件默认位置。",
+    "<b>开启：</b>使用上面的 Excalidraw 文件夹。<br><b>关闭：</b>使用 Obsidian 设置的新附件默认位置。",
   TEMPLATE_NAME: "Excalidraw 模板文件（區分大小寫！）",
   TEMPLATE_DESC:
     "Excalidraw 模板文件（文件夹）的存储路径。<br>" +
@@ -311,15 +311,15 @@ export default {
     `目前 OpenAI API 还处于测试阶段，您需要使用自己的 API key。` +
     `创建 OpenAI 账户，充值至少 5 美元，生成 API key，` +
     `然后就可以在 Excalidraw 中配置并使用 AI。` +
-    `这些设置会被 ExcalidrawAutomate、Mermaid chat 和 diagram-to-code 共用。大多数情况下，您只需要设置提供商、API key 和默认模型。除非您的提供商要求自定义 URL，否则请将各 endpoint 覆盖项留空。旧的 OpenAI 专用 AI 设置会在首次运行时自动迁移到这里。`,
+    `适用于 ExcalidrawAutomate、Mermaid chat、diagram-to-code 以及相关的 AI 功能。旧的 OpenAI 专用 AI 设置会在首次运行时自动迁移到这里。`,
   AI_ENABLED_NAME: "启用 AI 功能",
-  AI_ENABLED_DESC: "您需要重新打开 Excalidraw 才能使更改生效。",
+  AI_ENABLED_DESC: "重新打开 Excalidraw 后生效。",
   AI_VERBOSE_LOGGING_NAME: "启用详细 AI 日志",
   AI_VERBOSE_LOGGING_DESC:
     "将详细的 AI 请求和响应诊断信息写入开发者控制台。除非您正在排查问题，否则请保持关闭。",
-  AI_PROVIDER_NAME: "定义可用提供商",
+  AI_PROVIDER_NAME: "定义可用的提供商",
   AI_PROVIDER_DESC:
-    "定义下方模型列表可用的提供商配置。文本、视觉和图像模型各自独立选择提供商。",
+    "配置可供下方模型列表使用的提供商。文本、视觉和图像模型各自独立选择提供商。",
   AI_PROVIDER_PROFILE_ROW_DESC: "类型：{{providerType}}<br>API：{{apiKey}}",
   AI_PROVIDER_OPTION_OPENAI: "OpenAI",
   AI_PROVIDER_OPTION_ANTHROPIC: "Anthropic / Claude",
@@ -350,10 +350,10 @@ export default {
     "1024x1024, 1536x1024, 1024x1536",
   AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_NAME: "提示词图像变换",
   AI_IMAGE_MODEL_CAPABILITIES_TRANSFORMS_DESC:
-    "当模型支持使用输入图像加文本提示词进行无蒙版编辑时，请启用此项。",
+    "当模型支持使用输入图像加文本提示词进行非蒙版编辑时，请启用该项。",
   AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_NAME: "蒙版图像编辑",
   AI_IMAGE_MODEL_CAPABILITIES_MASK_EDITS_DESC:
-    "当模型支持使用蒙版替换输入图像的局部区域时，请启用此项。",
+    "当模型支持使用蒙版替换输入图像的局部区域时，请启用该项。",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_YES: "是",
   AI_IMAGE_MODEL_CAPABILITIES_EDITS_NO: "否",
   AI_IMAGE_MODEL_CAPABILITY_MODAL_ADD_TITLE: "添加图像模型条目",
@@ -368,17 +368,17 @@ export default {
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_REMOVE_SIZE: "删除",
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_MODEL_REQUIRED: "必须填写模型 ID。",
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_SIZE_REQUIRED: "至少添加一个支持的分辨率。",
-  AI_IMAGE_MODEL_CAPABILITIES_MODAL_DUPLICATE_MODEL: "该模型 ID 已存在条目。",
+  AI_IMAGE_MODEL_CAPABILITIES_MODAL_DUPLICATE_MODEL: "已存在同 ID 的模型条目。",
   AI_MODEL_CONFIG_MODAL_MULTIMODAL_NAME: "多模态支持",
   AI_MODEL_CONFIG_MODAL_MULTIMODAL_DESC:
     "允许该文本模型接收图像输入，用于分析和 diagram-to-code 类任务。",
-  AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_NAME: "AI 默认输出 token 预算",
+  AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_NAME: "AI 默认 outgoing token 预算",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_DESC:
-    "AIRequest.maxOutgoingTokens 的默认值。Excalidraw 会将其作为发送文本的近似预算，并优先裁剪较长的提示词或较早的聊天历史。它也可能影响图像请求中附带发送的文本。",
+    "AIRequest.maxOutgoingTokens 的默认值。Excalidraw 以此为近似预算来限制发送的文本，优先修剪较长的提示词或较早的聊天历史。这也会影响随图像请求发送的文本。",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_PLACEHOLDER: "例如：8000",
-  AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_NAME: "AI 默认响应 token 上限",
+  AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_NAME: "AI 默认 response token 上限",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_DESC:
-    "AIRequest.maxTokens 的默认值。它限制模型返回的文本或多模态响应，不影响直接图像生成或图像编辑 endpoint。",
+    "AIRequest.maxTokens 的默认值。它限制模型返回的文本或多模态响应，不影响直接图像生成或图像编辑 endpoints。",
   AI_PROVIDER_DEFAULT_MAX_RESPONSE_TOKENS_PLACEHOLDER: "例如：4096",
   // AI Usage Metering - AIUsageModal
   AI_USAGE_MODAL_TITLE: "AI 用量（本次会话）",
@@ -400,7 +400,7 @@ export default {
   // AI Usage button - Settings
   AI_USAGE_SETTINGS_BUTTON_NAME: "会话 Token 用量",
   AI_USAGE_SETTINGS_BUTTON_DESC:
-    "按模型查看当前 Obsidian 会话的 AI Token 消耗情况。重启后用量将重置。",
+    "按模型查看当前 Obsidian 会话的 AI Token 消耗明细。重启后将重置。",
   SAVING_HEAD: "保存",
   SAVING_DESC: "包括：压缩，自动保存的时间间隔，文件的命名格式和扩展名等。",
   COMPRESS_NAME: "压缩 Excalidraw JSON",
@@ -492,9 +492,9 @@ export default {
   DEFAULT_OPEN_MODE_DESC:
     "设置 Excalidraw 的运行模式：普通模式（Normal）/禅模式（Zen）/查看模式（View）。<br>" +
     "可为某个绘图单独设置，方法是在其 frontmatter 中添加如 <code>excalidraw-default-mode: normal/zen/view</code> 的键值对。",
-  PHONE_FOOTER_SAFE_AREA_PADDING_NAME: "为手机端底部控件增加额外留白",
+  PHONE_FOOTER_SAFE_AREA_PADDING_NAME: "手机端控件额外底部边距",
   PHONE_FOOTER_SAFE_AREA_PADDING_DESC:
-    "为 Excalidraw 底部控件增加额外底部留白，让缩放和撤销按钮在手机上保持位于系统导航栏之上。该设置仅在手机上生效。",
+    "为 Excalidraw 底部控件添加额外底部空白边距，保持缩放和撤销按钮位于系统导航栏上方。仅在手机端生效。",
   DEFAULT_PEN_MODE_NAME: "触控笔模式（Pen mode）",
   DEFAULT_PEN_MODE_DESC: "打开绘图时，是否自动开启触控笔模式？",
   ENABLE_DOUBLE_CLICK_TEXT_EDITING_NAME: "启用双击文本创建",
@@ -690,9 +690,9 @@ export default {
     "<b>关闭：</b>允许在 number 位置后最近的空格处折行。",
   TRANSCLUSION_DEFAULT_WRAP_NAME: "MD-Transclusion 的默认折行位置",
   TRANSCLUSION_DEFAULT_WRAP_DESC:
-    "除了通过 <code>![[doc#^block]]{number}</code> 中的 number 来控制折行位置，您也可以在此设置 number 的默认值。<br>" +
-    "一般设为 0 即可，表示不设置固定的默认值，这样当您需要嵌入文档到便签中时，" +
-    "Excalidraw 能更好地帮您自动处理。",
+    "您可以在此设置/覆盖 <code>![[doc#^block]]{number}</code> 中 number 的默认值。<br>" +
+    "一般设为 0 即可，表示不设置固定的默认值，" +
+    "这样 Excalidraw 会自动处理折行。",
   PAGE_TRANSCLUSION_CHARCOUNT_NAME: "MD-Transclusion 的最大显示字符数",
   PAGE_TRANSCLUSION_CHARCOUNT_DESC:
     "通过 <code>![[内部链接]]</code> 或 <code>![](内部链接)</code> 格式，将文档以文本形式嵌入到绘图中时，" +
@@ -718,10 +718,10 @@ export default {
   MD_EMBED_CUSTOMDATA_HEAD_NAME:
     "以交互形式嵌入到绘图中的 Markdown 文档（MD-Embeddable）",
   MD_EMBED_CUSTOMDATA_HEAD_DESC: `以下设置只会影响以后的嵌入。已存在的嵌入保持不变。嵌入框的主题设置位于“界面 & 行为”部分。`,
-  MD_EMBED_SINGLECLICK_EDIT_NAME: "单击以编辑嵌入的 Markdown",
+  MD_EMBED_SINGLECLICK_EDIT_NAME: "单击编辑嵌入的 Markdown",
   MD_EMBED_SINGLECLICK_EDIT_DESC:
-    "单击嵌入的 Markdown 文档以进行编辑。 " +
-    "当此功能关闭时，Markdown 文档将首先以预览模式打开，然后在您再次单击时切换到编辑模式。",
+    "单击以编辑嵌入的 Markdown 文档。" +
+    "当此功能关闭时，Markdown 文档将首先以预览模式打开，再次单击切换到编辑模式。",
   MD_TRANSCLUDE_WIDTH_NAME: "MD-Embed 的默认宽度",
   MD_TRANSCLUDE_WIDTH_DESC:
     "该项会影响到折行，以及图像的宽度。<br>" +
@@ -768,11 +768,11 @@ export default {
     "默认值为 3。如果您的系统性能强大，可以增加该值。",
   IMAGE_CACHE_RETENTION_DAYS_NAME: "本地图像缓存保留时间",
   IMAGE_CACHE_RETENTION_DAYS_DESC:
-    "设置 Excalidraw 在清理未使用缓存前，保留本地已渲染资源（如嵌套 Excalidraw 图像和 PDF 页面）的天数。" +
-    "缓存项在被读取时会刷新其保留时间。<br><br>" +
-    "这只影响当前设备上 Excalidraw 的本地 缓存。它<b>不会</b>改变您的库体积、附件文件或同步数据量。" +
-    "实际影响的是 Obsidian 内部本地磁盘或浏览器存储占用。在手机以及浏览器存储配额较紧或剩余磁盘空间有限的桌面设备上，这一点可能尤其重要。<br><br>" +
-    "较小的值会更快回收本地缓存空间，但可能导致 PDF 和嵌入绘图需要更频繁地重新渲染。较大的值会保留更久的缓存，以换取更快的加载速度。",
+    "清理未使用缓存前，Excalidraw 保留渲染资源（如嵌套 Excalidraw 图像和 PDF 页面）本地缓存的天数。" +
+    "缓存项被读取时会刷新其保留时间。<br><br>" +
+    "这只影响当前设备上 Excalidraw 的本地缓存。它<b>不会</b>改变您的库体积、附件文件或同步数据量。" +
+    "实际影响在于 Obsidian 内部的本地磁盘或浏览器存储占用。在手机以及浏览器存储配额较紧、剩余磁盘空间有限的桌面设备上需要留意。<br><br>" +
+    "较小的值会更快回收本地缓存空间，但可能导致 PDF 和嵌入绘图更频繁地重新渲染。较大的值会保留更久的缓存，以换取更快的加载速度。",
   EXPORT_SUBHEAD: "导出",
   EMBED_SIZING: "图像尺寸",
   EMBED_THEME_BACKGROUND: "图像的主题和背景色",
@@ -823,8 +823,8 @@ export default {
     `如果您想选择 SVG/PNG 副本，需要先开启下方“导出”部分“导出设置”中的 <a href='#${
       TAG_AUTOEXPORT
     }'>自动导出 SVG/PNG 副本</a>。<br>` +
-    `如果您选择了 SVG/PNG 副本，当副本不存在时，该命令将会插入一条损坏的链接，您需要打开绘图文件并手动导出副本才能修复——` +
-    `也就是说，该项不会自动帮您生成 SVG/PNG 副本，而只会引用已有的 SVG/PNG 副本。`,
+    `对于那些没有现成副本的绘图，该命令将会插入一条损坏的链接，您需要打开绘图文件并手动导出副本才能修复。` +
+    `也就是说，该项不会自动帮您生成 SVG/PNG 副本，只会引用已有的 SVG/PNG 副本。`,
   EMBED_MARKDOWN_COMMENT_NAME: "将链接作为注释插入",
   EMBED_MARKDOWN_COMMENT_DESC:
     "在图像下方以 Markdown 链接形式插入原始 Excalidraw 文件的链接，如 <code>%%[[drawing.excalidraw]]%%</code>。<br>" +
@@ -887,7 +887,7 @@ export default {
     "为了解决这个问题，您可以启用该项。启用后 Excalidraw 将在 <code>## Text Elements</code> 的开头添加一个虚拟元素，供自动格式化工具修改。",
   PRESERVE_TEXT_AFTER_DRAWING_NAME: "兼容 Zotero 和脚注（footnotes）",
   PRESERVE_TEXT_AFTER_DRAWING_DESC:
-    "保留 Excalidraw Markdown 中 <code>## Drawing</code> 部分之后的文本内容。保存非常大的绘图时，这可能会造成微小的性能影响。",
+    "保留 Excalidraw Markdown 中 <code>## Drawing</code> 部分之后的文本内容。保存非常大的绘图时，这可能产生微小的性能影响。",
   SLIDING_PANES_NAME: "支持 Sliding Panes 插件",
   SLIDING_PANES_DESC:
     "该项需要重启 Obsidian 才能生效。<br>" +
@@ -946,7 +946,7 @@ export default {
   ENABLE_ONLOAD_SCRIPTS_CONFIRM_ENABLE: "启用脚本",
   ENABLE_ONLOAD_SCRIPTS_CONFIRM_DENY: "不允许",
   ENABLE_ONLOAD_SCRIPTS_DESC:
-    "启用后，Excalidraw 会在你之后打开的所有绘图中执行文件级别的 <code>excalidraw-onload-script</code>，直到你关闭此设置。 " +
+    "启用后，Excalidraw 会在你之后打开的所有绘图中执行文件级别的 <code>excalidraw-onload-script</code>，直到你关闭此设置。" +
     "如果你从未知来源下载 Markdown 文件，这会带来风险：恶意行为者可以利用 <code>excalidraw-onload-script</code> " +
     "在 Obsidian 中运行任意命令，并且有可能将数据传输到互联网。只有在你信任该文件及其来源时才启用此功能。",
   ENABLE_COMMAND_LINKS_NAME: "启用命令链接（cmd://）",
@@ -955,8 +955,8 @@ export default {
   ENABLE_COMMAND_LINKS_CONFIRM_ENABLE: "启用命令链接",
   ENABLE_COMMAND_LINKS_CONFIRM_DENY: "不允许",
   ENABLE_COMMAND_LINKS_DESC:
-    "启用后，Excalidraw 将允许以 <code>cmd://</code> 开头的链接在你之后打开的绘图中执行 Obsidian 命令面板动作，直到你关闭此设置。 " +
-    "如果你打开来自未知来源的绘图，这会带来风险：恶意绘图可以让一次普通点击触发高权限命令。 " +
+    "启用后，Excalidraw 将允许以 <code>cmd://</code> 开头的链接在你之后打开的绘图中执行 Obsidian 命令面板动作，直到你关闭此设置。" +
+    "如果你打开未知来源的绘图，这会带来风险：恶意绘图可以让一次普通点击触发高权限命令。" +
     "只有在你信任该文件及其来源时才启用此功能。",
   STARTUP_SCRIPT_NAME: "起动脚本",
   STARTUP_SCRIPT_DESC:
@@ -976,14 +976,14 @@ export default {
     "",
   FADE_OUT_EXCALIDRAW_MARKUP_NAME: "淡化 Excalidraw 标记",
   FADE_OUT_EXCALIDRAW_MARKUP_DESC:
-    "在 Markdown 视图模式下，在 Markdown 注释 %% " +
+    "在 Markdown 视图模式下，Markdown 注释 %% " +
     "之后的部分会淡化。文本仍然存在，但视觉杂乱感会减少。请注意，您可以将 %% 放在 # Text Elements 行的上一行，" +
-    "这样，整个 Excalidraw Markdown 都会淡化，包括 # Text Elements。 副作用是您将无法在其他 Markdown 笔记中引用文本块，即 %% 注释部分之后的内容。这应该不是大问题。" +
+    "这样，整个 Excalidraw Markdown 都会淡化，包括 # Text Elements。副作用是您将无法在其他 Markdown 笔记中引用文本块，即 %% 注释部分之后的内容。这应该不是大问题。" +
     "如果您想编辑 Excalidraw Markdown 脚本，只需切换至 Markdown 视图模式并暂时删除 %% 注释。",
   EXCALIDRAW_PROPERTIES_NAME: "将 Excalidraw 属性加载到 Obsidian 的自动提示中",
   EXCALIDRAW_PROPERTIES_DESC:
-    "切换该项以在插件启动时将 Excalidraw 笔记属性加载到 Obsidian 的属性自动提示中。" +
-    "启用此功能简化了 Excalidraw 前置属性的使用，使您能够利用许多强大的设置。如果您不希望自动加载这些属性，" +
+    "在插件启动时将 Excalidraw 笔记属性加载到 Obsidian 的属性自动提示中。" +
+    "启用此功能简化了 Excalidraw 前置属性的使用，以便您利用许多强大设置。如果您不希望自动加载这些属性，" +
     "您可以禁用此功能，但您将需要手动从自动提示中移除任何不需要的属性。" +
     "请注意，启用该项需要重启插件，因为属性是在启动时加载的。",
   FONTS_HEAD: "字体",
@@ -1176,7 +1176,7 @@ export default {
   PROMPT_BUTTON_SPECIAL_CHARS: "特殊字符",
   PROMPT_SELECT_TEMPLATE: "选择一个模板",
   LATEX_SUITE_PLUGIN_SUGGESTION:
-    "Install the 'Latex Suite' plugin from Obsidian Community Plugins to enable live preview as you type your equation.",
+    "安装 Obsidian 社区插件 'Latex Suite' 即可在输入公式时启用实时预览。",
 
   //ModifierKeySettings
   WEB_BROWSER_DRAG_ACTION: "从浏览器拖入时",
@@ -1350,19 +1350,19 @@ export default {
   //ReleaseNotes.ts
   RN_WELCOME: "欢迎使用 Excalidraw",
   FIRST_RUN: `
-Obsidian 的 Excalidraw 插件远不只是一个“画图工具”。由于它与 Obsidian 深度集成，它为可视化个人知识管理带来了全新的工作范式。
+Obsidian 的 Excalidraw 插件远不只是画图工具。由于它与 Obsidian 深度集成，它为可视化个人知识管理（Visual PKM）带来了全新的工作范式。
 
 <div style="text-align:center;margin-top:10px;">
 <a href="${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE}" target="_blank"><img src="${URLs.SKETCH_YOUR_MIND_COM_IMAGES_LOGO_EE_PNG}" style="width:50%;"></a>
 </div>
 
-如果你想顺利入门、避免一开始就被大量功能淹没，我非常推荐免费的 **[Excalidraw Essentials](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE})** 微课程。它能帮你快速抓住重点，用清晰的结构掌握核心基础。
+为助你轻装上阵，我非常推荐免费的 **[Excalidraw Essentials](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM_EE})** 微课程。它能帮你快速、系统地掌握核心基础。
 
-你也不必独自摸索。欢迎加入 **[Sketch Your Mind 社区](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM})**，与其他视觉思考者交流、分享工作流，一起构建更顺滑的 PKM 系统。
+你也不必独自摸索。欢迎加入 **[Sketch Your Mind 社区](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM})**，结识其他视觉思维者、分享工作流，一起构建更顺滑的 PKM 系统。
 
-如果你想先看看它现在都能做到什么，下面有一个核心功能展示。想持续了解最新更新，并进一步探索 Visual PKM，也欢迎订阅我的 YouTube 频道：[Visual PKM](${URLs.WWW_YOUTUBE_COM_VISUALPKM})。
+如果你想看看它现在能做到什么，下方有一个核心功能展示。想持续了解最新更新并探索 Visual PKM，也欢迎订阅我的 YouTube 频道：[Visual PKM](${URLs.WWW_YOUTUBE_COM_VISUALPKM})。
 
-感谢使用，祝你玩得开心！
+感谢使用 & Enjoy！
 
 <div class="excalidraw-videoWrapper">
 <a href="${URLs.WWW_YOUTUBE_COM_WATCH}" target="_blank"><img src="${URLs.I_YTIMG_COM_VI_P_Q6AVJGOWI_MAXRESDEFAULT_JPG}" style="width:100%;"></a>
