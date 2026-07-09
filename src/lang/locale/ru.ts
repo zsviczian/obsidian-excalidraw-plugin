@@ -151,7 +151,7 @@ export default {
   MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT:
     "Не добавляйте [[квадратные скобки]] вокруг имени файла! <br>" +
     "При редактировании ссылок на изображения в формате markdown-страниц следуйте этому формату: <mark>filename#^blockref|WIDTHxMAXHEIGHT</mark><br>" +
-    "Вы можете привязать изображения Excalidraw к 100% их размера, добавив  <code>|100%</code> в конец ссылки.<br>" +
+    "Вы можете привязать изображения Excalidraw к 100% их размера, добавив <code>|100%</code> в конец ссылки.<br>" +
     "Вы можете изменить страницу PDF, изменив <code>#page=1</code> на <code>#page=2</code> и т.д.<br>" +
     "Значения обрезки прямоугольника PDF: <code>left, bottom, right, top</code>. Например: <code>#rect=0,0,500,500</code><br>",
   FRAME_CLIPPING_ENABLED: "Рендеринг кадров: Включено",
@@ -715,7 +715,7 @@ export default {
   MD_DEFAULT_BORDER_COLOR_NAME:
     "Цвет границы, используемый по умолчанию для встроенных файлов разметки (markdown).",
   MD_DEFAULT_BORDER_COLOR_DESC:
-    `Установите это значение на любое допустимое имя цвета css, например "steelblue" (<a href="${URLs.WWW_W3SCHOOLS_COM_COLORS_COLORS_NAMES_ASP}">имена цветов</a>),  или на допустимый шестнадцатеричный цвет, например "#e67700", ` +
+    `Установите это значение на любое допустимое имя цвета css, например "steelblue" (<a href="${URLs.WWW_W3SCHOOLS_COM_COLORS_COLORS_NAMES_ASP}">имена цветов</a>), или на допустимый шестнадцатеричный цвет, например "#e67700", ` +
     `или на любую другую допустимую строку цвета css. Вы можете отменить эту настройку, добавив следующий frontmatter-key во встроенный файл разметки (markdown): <code>excalidraw-border-color: gray</code>. ` +
     `Оставьте пустым, если вам не нужна граница. `,
   MD_CSS_NAME: "CSS файл",
@@ -869,7 +869,7 @@ export default {
     `Если вы используете <a href="${URLs.GITHUB_COM_DEATHAU_SLIDING_PANES_OBSIDIAN}" target='_blank'>Sliding Panes plugin</a> ` +
     "Вы можете включить эту настройку, чтобы чертежи Excalidraw работали с плагином Sliding Panes.<br>" +
     "Обратите внимание, что поддержка раздвижных областей окна (Sliding Panes plugin) Excalidraw вызывает проблемы совместимости с рабочими пространствами Obsidian.<br>" +
-    "Обратите внимание, что функция 'Stack Tabs' теперь доступна в Obsidian, обеспечивая встроенную поддержку большинства функций  раздвижных областей окна (Sliding Panes plugin)",
+    "Обратите внимание, что функция 'Stack Tabs' теперь доступна в Obsidian, обеспечивая встроенную поддержку большинства функций раздвижных областей окна (Sliding Panes plugin)",
   EXPORT_EXCALIDRAW_NAME: "Автоэкспорт Excalidraw",
   EXPORT_EXCALIDRAW_DESC: "Аналогично автоэкспорту SVG, но для *.Excalidraw",
   SYNC_EXCALIDRAW_NAME:

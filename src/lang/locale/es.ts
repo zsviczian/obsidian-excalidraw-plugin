@@ -335,7 +335,7 @@ export default {
     "Si estás usando Excalidraw en modo de compatibilidad, entonces tu plantilla también debe ser un archivo Excalidraw heredado " +
     "como Excalidraw/Plantilla.excalidraw. <br><b>Carpeta de Plantillas:</b> También puedes establecer una carpeta como tu plantilla. " +
     "En este caso, se te pedirá qué plantilla usar al crear un nuevo bosquejo.<br>" +
-    "<b>Consejo:</b>  Si estás usando el complemento Obsidian Templater, puedes añadir código Templater a tus diferentes plantillas de Excalidraw " +
+    "<b>Consejo:</b> Si estás usando el complemento Obsidian Templater, puedes añadir código Templater a tus diferentes plantillas de Excalidraw " +
     "para automatizar la configuración de tus bosquejos.",
   SCRIPT_FOLDER_NAME:
     "Carpeta de scripts para Excalidraw Automate (¡Sensible a MAYÚSCULAS/minúsculas!)",
@@ -589,7 +589,7 @@ export default {
     `<ul><li><b>Habilitado:</b> El PDF incluirá el bosquejo de Excalidraw como una imagen.</li>` +
     `<li><b>Desactivado:</b> El PDF incluirá el contenido Markdown como texto.</li></ul>` +
     `Nota: Esta configuración no afecta la función de exportación a PDF dentro del propio Excalidraw.<br>` +
-    `Consulta la otra configuración relacionada para el  <a href='#${
+    `Consulta la otra configuración relacionada para el <a href='#${
       TAG_MDREADINGMODE
     }'>Modo de Lectura de Markdown</a> en 'Apariencia y Comportamiento' más arriba.<br>` +
     `⚠️ Debes cerrar y volver a abrir el archivo de Excalidraw/Markdown para que los cambios surtan efecto. ⚠️`,
@@ -758,7 +758,7 @@ export default {
     "El número máximo de caracteres a mostrar de la página al transcluir una página completa con el " +
     "formato ![[página de markdown]].",
   QUOTE_TRANSCLUSION_REMOVE_NAME:
-    "Transclusión de citas: eliminar el  '> ' inicial de cada línea",
+    "Transclusión de citas: eliminar el '> ' inicial de cada línea",
   QUOTE_TRANSCLUSION_REMOVE_DESC:
     "Elimina el '> ' inicial de cada línea de la transclusión. Esto mejorará la legibilidad de las citas en transclusiones de solo texto.<br>" +
     "<b><u>Activado:</u></b> Elimina el '> ' inicial<br><b><u>Desactivado:</u></b> No elimina el '> ' inicial (tenga en cuenta que se seguirá eliminando de la primera línea debido a la funcionalidad de la API de Obsidian).",
@@ -793,7 +793,7 @@ export default {
     "Altura máxima predeterminada de un documento Markdown transcluido",
   MD_TRANSCLUDE_HEIGHT_DESC:
     "La imagen incrustada tendrá la altura que requiera el texto Markdown, pero no superará este valor." +
-    "Puedes anular este valor editando el enlace de la imagen incrustada en la vista de Markdown con la siguiente sintaxis  <code>[[nombre-de-archivo#^referencia-de-bloque|ANCHOxALTURA_MÁXIMA]]</code>.",
+    "Puedes anular este valor editando el enlace de la imagen incrustada en la vista de Markdown con la siguiente sintaxis <code>[[nombre-de-archivo#^referencia-de-bloque|ANCHOxALTURA_MÁXIMA]]</code>.",
   MD_DEFAULT_FONT_NAME:
     "El tipo de letra de fuente predeterminado a usar para los archivos Markdown incrustados.",
   MD_DEFAULT_FONT_DESC:
@@ -858,7 +858,7 @@ export default {
     }'>Auto-exportar SVG/PNG</a>.Si hay una imagen exportada que coincide con el nombre del archivo del bosquejo ` +
     `disponible, se usará esa imagen en lugar de generar una vista previa al momento. Esto resultará en vistas previas más rápidas, especialmente si tienes muchos objetos incrustados en el bosquejo. Sin embargo, ` +
     `puede que tus últimos cambios no se muestren y la imagen no coincida automáticamente con el ` +
-    `tema de Obsidian si lo has cambiado desde que se creó la exportación. Esta configuración solo se aplica a la incrustación de imágenes en documentos Markdown.  ` +
+    `tema de Obsidian si lo has cambiado desde que se creó la exportación. Esta configuración solo se aplica a la incrustación de imágenes en documentos Markdown. ` +
     `Por diversas razones, el mismo enfoque no se puede usar para acelerar la carga de bosquejos con muchos objetos incrustados. Puedes ver una demostración <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG}/1.6.23" target='_blank'>aquí</a>.`,
   EMBED_PREVIEW_IMAGETYPE_NAME: "Tipo de imagen en la vista previa de Markdown",
   EMBED_PREVIEW_IMAGETYPE_DESC:
@@ -879,7 +879,7 @@ export default {
   EMBED_HEIGHT_NAME:
     "Altura predeterminada de la imagen incrustada (transcluida)",
   EMBED_HEIGHT_DESC:
-    "TLa altura predeterminada de un bosquejo incrustado. Esto se aplica al modo de edición de vista en vivo y al modo de lectura, así como a las vistas previas al pasar el cursor. Puedes especificar  " +
+    "La altura predeterminada de un bosquejo incrustado. Esto se aplica al modo de edición de vista en vivo y al modo de lectura, así como a las vistas previas al pasar el cursor. Puedes especificar " +
     "una altura personalizada al incrustar una imagen usando el formato <code>![[bosquejo.excalidraw|100]]</code> o " +
     "<code>[[bosquejo.excalidraw|100x100]]</code>.",
   EMBED_TYPE_NAME: "Tipo de archivo a insertar en el documento",
@@ -1002,7 +1002,7 @@ export default {
     "ExcalidrawAutomate es una API de scripting y automatización para Excalidraw. Desafortunadamente, la documentación de la API es escasa. " +
     `Te recomiendo leer el archivo <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_API_EXCALIDRAWAUTOMATE_D_TS}">ExcalidrawAutomate.d.ts</a>, ` +
     `visitar la página <a href="${URLs.ZSVICZIAN_GITHUB_IO_OBSIDIAN_EXCALIDRAW_PLUGIN}">Cómo usar ExcalidrawAutomate</a> (aunque la información ` +
-    `aquí no se ha actualizado en mucho tiempo), y finalmente, habilitar el sugeridor de campos que se encuentra abajo. El sugeridor de campos te mostrará las funciones disponibles,  ` +
+    `aquí no se ha actualizado en mucho tiempo), y finalmente, habilitar el sugeridor de campos que se encuentra abajo. El sugeridor de campos te mostrará las funciones disponibles, ` +
     `sus parámetros y una breve descripción mientras escribes. El sugeridor de campos es la documentación más actualizada de la API.`,
   FIELD_SUGGESTER_NAME: "Habilitar Sugeridor de Campos",
   FIELD_SUGGESTER_DESC:
