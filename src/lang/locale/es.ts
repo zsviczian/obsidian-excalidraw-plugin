@@ -99,8 +99,8 @@ export default {
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE:
     "Insertar última página PDF activa como imagen",
   UNIVERSAL_ADD_FILE: "Insertar CUALQUIER archivo",
-  // Claves de compatibilidad consumidas por Excalidraw upstream vía ExcalidrawPlugin.getLabel().
-  // Mantén este grupo sincronizado en los idiomas mantenidos.
+  // Compatibility keys consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().
+  // Keep this group in sync across maintained locales.
   INSERT_CARD: "Agregar tarjeta al reverso-de-la-nota",
   COMP_IMG: "Imágenes y archivos",
   COMP_IMG_FROM_SYSTEM: "Importar desde el sistema",

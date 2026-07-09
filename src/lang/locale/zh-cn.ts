@@ -79,8 +79,8 @@ export default {
   INSERT_PDF: "以图像形式嵌入 PDF 到当前绘图中",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE: "以图像形式嵌入最后激活的 PDF 页面",
   UNIVERSAL_ADD_FILE: "嵌入文件 (Insert ANY file)",
-  // 兼容性键：由 Excalidraw 上游通过 ExcalidrawPlugin.getLabel() 请求。
-  // 请在所有维护中的语言文件中保持这一组键同步。
+  // Compatibility keys consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().
+  // Keep this group in sync across maintained locales.
   ABOUT_LIBRARIES: "如何加载素材库",
   INSERT_CARD: "插入“背景笔记”卡片",
   COMP_IMG: "图片 & 文件",

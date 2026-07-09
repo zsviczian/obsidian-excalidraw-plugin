@@ -88,7 +88,8 @@ export default {
   INSERT_MD: "Вставка файла markdown из хранилища",
   INSERT_PDF: "Вставить PDF-файл из хранилища",
   UNIVERSAL_ADD_FILE: "Вставка ЛЮБОГО файла",
-  // Ключ совместимости, который запрашивает upstream Excalidraw через ExcalidrawPlugin.getLabel().
+  // Compatibility keys consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().
+  // Keep this group in sync across maintained locales.
   INSERT_CARD: "Добавить сноски",
   CONVERT_CARD_TO_FILE: "Переместить сноску в файл",
   ERROR_TRY_AGAIN: "Пожалуйста, попробуйте еще раз.",
