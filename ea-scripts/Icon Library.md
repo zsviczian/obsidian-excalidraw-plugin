@@ -326,7 +326,7 @@ async function insertItem(file, currentSettings) {
         ea.clear();
         const center = ea.getViewCenterPosition();
         
-        const id = await ea.addImage(center.x, center.y, file, false); // Insert at 100% scale first
+        const id = await ea.addImage(center.x, center.y, file, true); // Insert at 100% scale first
         const el = ea.getElement(id);
 
         if (el) {
