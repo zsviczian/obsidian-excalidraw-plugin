@@ -236,8 +236,8 @@ export default {
     "Encuentra ayuda en el menú de la esquina superior izquierda",
   WELCOME_YOUTUBE_ARIA: "Canal de YouTube de PKM Visual",
   WELCOME_YOUTUBE_LINK: "Echa un vistazo al canal de YouTube de PKM Visual.",
-  WELCOME_DISCORD_ARIA: "Únete al servidor de Discord",
-  WELCOME_DISCORD_LINK: "Únete al servidor de Discord",
+  WELCOME_SYM_ARIA: "Aprende Excalidraw, domina PKM y únete a la Comunidad",
+  WELCOME_SYM_LINK: "Aprende Excalidraw, domina PKM y únete a la Comunidad",
   WELCOME_TWITTER_ARIA: "Sígueme en Twitter",
   WELCOME_TWITTER_LINK: "Sígueme en Twitter",
   WELCOME_DONATE_ARIA: "Dona para apoyar Excalidraw-Obsidian",
@@ -266,9 +266,9 @@ export default {
   LINKS_YT_ARIA:
     "Visita mi canal de YouTube para aprender sobre Pensamiento Visual y Excalidraw",
   LINKS_YT: "Aprende en YouTube",
-  LINKS_DISCORD_ARIA:
-    "Únete al servidor de Discord del Taller de Pensamiento Visual",
-  LINKS_DISCORD: "Únete a la Comunidad",
+  LINKS_JOIN_SYM_ARIA:
+    "Aprende Excalidraw, domina el Pensamiento Visual y únete a la Comunidad",
+  LINKS_JOIN_SYM: "Aprender Excalidraw",
   LINKS_TWITTER: "Sígueme",
   LINKS_BOOK_ARIA: "Lee Sketch Your Mind, mi libro sobre Pensamiento Visual",
   LINKS_BOOK: "Lee el Libro",
