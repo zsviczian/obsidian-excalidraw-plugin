@@ -3378,11 +3378,36 @@ const zoomToFit = (mode) => {
       elementID: sel.id,
       level: nextLevel
     }
-    api().scrollToContent([sel], {
-      fitToViewport: true,
-      viewportZoomFactor: getZoom(nextLevel),
-      animate: true
-    });
+    
+    const targetZoom = getZoom(nextLevel);
+    
+    // Fallback for older versions vs new Excalidraw 2.26.0+ Viewport API
+    if (!ea.verifyMinimumPluginVersion("2.26.0")) {
+      api().scrollToContent([sel], {
+        fitToViewport: true,
+        viewportZoomFactor: targetZoom,
+        animate: true
+      });
+    } else {
+      // For the new API, we calculate a target rect centered on the element 
+      // with dimensions that will force 'fit: "contain"' to reach our target zoom.
+      const appState = api().getAppState();
+      const targetW = appState.width / targetZoom;
+      const targetH = appState.height / targetZoom;
+      const cx = sel.x + sel.width / 2;
+      const cy = sel.y + sel.height / 2;
+      
+      api().setViewport({
+        target: {
+          x: cx - targetW / 2,
+          y: cy - targetH / 2,
+          width: targetW,
+          height: targetH
+        },
+        fit: "contain",
+        animation: true
+      });
+    }
   }
 }
 
@@ -3411,10 +3436,20 @@ const focusSelected = () => {
 
   if (!sel) return;
 
-  api().scrollToContent(sel, {
-    fitToContent: false,
-    animate: true,
-  });
+  // Fallback for older versions vs new Excalidraw 2.26.0+ Viewport API
+  if (!ea.verifyMinimumPluginVersion("2.26.0")) {
+    api().scrollToContent(sel, {
+      fitToContent: false,
+      animate: true,
+    });
+  } else {
+    // fit: "none" recenters at the current zoom without changing it
+    api().setViewport({
+      target: [sel],
+      fit: "none",
+      animation: true
+    });
+  }
 };
 
 const getMindmapOrder = (node) => {
