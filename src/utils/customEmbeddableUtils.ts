@@ -1,4 +1,4 @@
-import { NonDeletedExcalidrawElement } from "@zsviczian/excalidraw/types/element/src/types";
+import { ExcalidrawEmbeddableElement } from "@zsviczian/excalidraw/types/element/src/types";
 import {
   AUDIO_TYPES,
   DEVICE,
@@ -43,7 +43,7 @@ export const createLeaf = (
 };
 
 export const useDefaultExcalidrawFrame = (
-  element: NonDeletedExcalidrawElement,
+  element: ExcalidrawEmbeddableElement,
 ) => {
   const link = (element.link ?? "").replace(
     /^.*?(?=\[\[|https?:\/\/|data:)/,

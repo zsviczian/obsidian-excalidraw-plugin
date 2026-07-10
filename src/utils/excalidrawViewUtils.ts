@@ -26,7 +26,6 @@ import {
   ExcalidrawImageElement,
   ExcalidrawTextElement,
   FileId,
-  NonDeletedExcalidrawElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { getAllNestedExcalidrawFiles } from "./fileUtils";
 import {
@@ -485,12 +484,10 @@ function isInternalLink(link: string): boolean {
   return true;
 }
 
-export function sceneRemoveInternalLinks(scene: {
-  elements: readonly ExcalidrawElement[];
-}): ExcalidrawElement[] {
-  const elements: ExcalidrawElement[] = JSON.parse(
-    JSON.stringify(scene.elements),
-  );
+export function sceneRemoveInternalLinks<T extends ExcalidrawElement>(scene: {
+  elements: readonly T[];
+}): T[] {
+  const elements = JSON.parse(JSON.stringify(scene.elements)) as T[];
   elements.forEach((el) => {
     if (!el.link) {
       return;
@@ -598,14 +595,15 @@ export function getExcalidrawFileForwardLinks(
 
 export function getFrameBasedOnFrameNameOrId(
   frameName: string,
-  elements: readonly NonDeletedExcalidrawElement[],
+  elements: readonly ExcalidrawElement[],
 ): ExcalidrawFrameElement | null {
   const frames = elements
-    .filter((el: ExcalidrawElement) => el.type === "frame")
+    .filter(
+      (el: ExcalidrawElement): el is ExcalidrawFrameElement =>
+        el.type === "frame",
+    )
     .map(
-      (
-        el: ExcalidrawFrameElement,
-      ): {
+      (el): {
         el: ExcalidrawFrameElement;
         id: string;
         name: string;

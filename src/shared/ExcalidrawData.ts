@@ -43,6 +43,7 @@ import {
   ElementsMap,
   ExcalidrawElement,
   ExcalidrawImageElement,
+  NonDeletedExcalidrawElement,
   ExcalidrawTextElement,
   FileId,
 } from "@zsviczian/excalidraw/types/element/src/types";
@@ -853,9 +854,11 @@ export class ExcalidrawData {
     this.deletedElements = this.scene.elements.filter(
       (el: ExcalidrawElement) => el.isDeleted,
     );
-    this.scene.elements = this.scene.elements.filter(
-      (el: ExcalidrawElement) => !el.isDeleted,
+    const nonDeletedSceneElements = this.scene.elements.filter(
+      (el: ExcalidrawElement): el is NonDeletedExcalidrawElement =>
+        !el.isDeleted,
     );
+    this.scene.elements = nonDeletedSceneElements as Mutable<ExcalidrawElement>[];
 
     //once off migration of legacy scenes
     if (
@@ -888,7 +891,7 @@ export class ExcalidrawData {
         displayFontMessage(this.app);
       };
     }, 5000);
-    await loadSceneFonts(this.scene.elements);
+    await loadSceneFonts(nonDeletedSceneElements);
     window.clearTimeout(timer);
 
     if (!this.scene.files) {

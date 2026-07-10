@@ -17,6 +17,11 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+"2.26.0": `
+
+## Excalidraw Automate Breaking Change
+- Excalidraw component API has discontinued \`api.scrollToContent(target?, opts?)\` and replaced it with \`api.setViewport(opts | null)\`. You'll need to update MindMap Builder and Comic Strip Director scripts. If you have your own scripts using this API function you'll need to update them accordingly. For more information read the Excalidraw [Change Log](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_CHANGELOG}#viewport-control--scrollzoom-locking)
+`,
   "2.25.3": `
   Minor maintenance release with two important fixes.
 

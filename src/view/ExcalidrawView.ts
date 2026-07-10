@@ -2232,7 +2232,7 @@ export default class ExcalidrawView
   }
 
   excalidrawGetSceneVersion: (elements: ExcalidrawElement[]) => number;
-  getSceneVersion(elements: readonly NonDeletedExcalidrawElement[]): number {
+  getSceneVersion(elements: readonly ExcalidrawElement[]): number {
     if (!this.excalidrawGetSceneVersion) {
       this.excalidrawGetSceneVersion =
         this.packages.excalidrawLib.getSceneVersion;
@@ -5385,11 +5385,12 @@ export default class ExcalidrawView
       }
     }
 
-    if (this.getHookServer().onLinkHoverHook) {
+    if (this.getHookServer().onLinkHoverHook && element && !element.isDeleted) {
       try {
+        const hoveredElement = element as NonDeletedExcalidrawElement;
         if (
           !this.getHookServer().onLinkHoverHook(
-            element,
+            hoveredElement,
             linktext,
             this,
             this.getHookServer(),
@@ -5698,7 +5699,7 @@ export default class ExcalidrawView
     }
   }
 
-  private checkSceneVersion(et: readonly NonDeletedExcalidrawElement[]) {
+  private checkSceneVersion(et: readonly ExcalidrawElement[]) {
     const sceneVersion = this.getSceneVersion(et);
     if (
       (sceneVersion > 0 || (sceneVersion === 0 && et.length > 0)) && //Addressing the rare case when the last element is deleted from the scene
@@ -7418,9 +7419,12 @@ export default class ExcalidrawView
           children: readonly ExcalidrawElement[];
         }) => {
           const appState = this.excalidrawAPI.getAppState();
+          const nonDeletedChildren = children.filter(
+            (child): child is NonDeletedExcalidrawElement => !child.isDeleted,
+          );
           try {
             const blob = await this.packages.excalidrawLib.exportToBlob({
-              elements: children,
+              elements: nonDeletedChildren,
               appState: {
                 ...appState,
                 exportBackground: true,
@@ -7433,7 +7437,9 @@ export default class ExcalidrawView
 
             const dataURL = await this.packages.excalidrawLib.getDataURL(blob);
             const textFromFrameChildren =
-              this.packages.excalidrawLib.getTextFromElements(children);
+              this.packages.excalidrawLib.getTextFromElements(
+                nonDeletedChildren,
+              );
 
             const response = await diagramToHTML({
               image: dataURL,
@@ -8278,11 +8284,18 @@ export default class ExcalidrawView
       return;
     }
 
+    const nonDeletedElements = elements.filter(
+      (el): el is NonDeletedExcalidrawElement => !el.isDeleted,
+    );
+    if (nonDeletedElements.length === 0) {
+      return;
+    }
+
     const zoomLevel = this.plugin.settings.zoomToFitMaxLevel;
     if (selectResult) {
-      api.selectElements(elements, true);
+      api.selectElements(nonDeletedElements, true);
     }
-    api.zoomToFit(elements, zoomLevel, margin);
+    api.zoomToFit(nonDeletedElements, zoomLevel, margin);
   }
 
   public getViewElements(): readonly ExcalidrawElement[] {
