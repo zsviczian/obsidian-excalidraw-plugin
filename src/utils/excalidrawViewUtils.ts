@@ -603,7 +603,9 @@ export function getFrameBasedOnFrameNameOrId(
         el.type === "frame",
     )
     .map(
-      (el): {
+      (
+        el,
+      ): {
         el: ExcalidrawFrameElement;
         id: string;
         name: string;

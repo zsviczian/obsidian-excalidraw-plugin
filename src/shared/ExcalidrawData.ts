@@ -858,7 +858,8 @@ export class ExcalidrawData {
       (el: ExcalidrawElement): el is NonDeletedExcalidrawElement =>
         !el.isDeleted,
     );
-    this.scene.elements = nonDeletedSceneElements as Mutable<ExcalidrawElement>[];
+    this.scene.elements =
+      nonDeletedSceneElements as Mutable<ExcalidrawElement>[];
 
     //once off migration of legacy scenes
     if (

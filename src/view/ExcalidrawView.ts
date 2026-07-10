@@ -8115,7 +8115,7 @@ export default class ExcalidrawView
       .filter((el: ExcalidrawElement) => el.width < 10000 && el.height < 10000);
     if ((DEVICE.isMobile && elements.length > 1000) || elements.length > 2500) {
       if (justLoaded) {
-        api.setViewport({target: elements, fit: "contain"});
+        api.setViewport({ target: elements, fit: "contain" });
       }
       return;
     }
