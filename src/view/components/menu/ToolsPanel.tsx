@@ -280,7 +280,7 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
       return;
     }
     if (!plugin.settings.taskboneEnabled) {
-      new Notice(t("TASKBON_NOT_ENABLED"), 4000);
+      new Notice(t("TASKBONE_NOT_ENABLED"), 4000);
       return;
     }
     void plugin.taskbone.getTextForView(view, {
