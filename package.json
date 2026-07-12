@@ -17,6 +17,7 @@
     "code:escape": "eslint --max-warnings=0 --ext .ts,.tsx ./src --quiet --format json | node -e \"let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const r=JSON.parse(d);for(const f of r){for(const m of f.messages||[]){if(m.ruleId==='no-useless-escape'){console.log(f.filePath+':'+m.line+':'+m.column+' '+m.ruleId+' '+m.message);}}}})\"",
     "madge": "madge --circular .",
     "doc": "npm run lib && node scripts/generate-script-library.mjs",
+    "skill": "npm run lib && node scripts/skill-builder.mjs",
     "mindmap": "node scripts/deploy-mindmap-builder.mjs",
     "lint": "eslint .",
     "lint:fix": "npx prettier --write \"src/**/*.{ts,tsx}\" && eslint --max-warnings=0 --ext .ts,.tsx ./src --fix"

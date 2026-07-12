@@ -362,14 +362,14 @@ const STRINGS = {
     CALENDAR_BTN_CANCEL: "Cancel",
     CALENDAR_BTN_TASK_ONLY: "Task Only",
     CALENDAR_BTN_ADD_DATE_TASK: "Add Date & Task",
-    
+
     CALENDAR_PRIORITY_HIGHEST: "Highest",
     CALENDAR_PRIORITY_HIGH: "High",
     CALENDAR_PRIORITY_MEDIUM: "Medium",
     CALENDAR_PRIORITY_NORMAL: "Normal",
     CALENDAR_PRIORITY_LOW: "Low",
     CALENDAR_PRIORITY_LOWEST: "Lowest",
-    
+
     CALENDAR_DATETYPE_DUE: "Due",
     CALENDAR_DATETYPE_START: "Start",
     CALENDAR_DATETYPE_SCHEDULED: "Scheduled",
@@ -630,7 +630,7 @@ addLocale("zh", {
   HORIZONTAL_L1_SOFTCAP_THRESHOLD: "L1 水平方向软上限",
   DESC_HORIZONTAL_L1_SOFTCAP_THRESHOLD: "超过该 px 值后，上/下 L1 子树宽度开始压缩。对大导图影响程度中到高。",
   HORIZONTAL_L1_COMPRESSION_MIN_SCALE: "L1 水平方向压缩下限",
-  DESC_HORIZONTAL_L1_COMPRESSION_MIN_SCALE: "上/下 L1 宽度压缩到的最小值。值越大越保留原宽度。达到软上限后影响中等。",
+  DESC_HORIZONTAL_L1_COMPRESSION_MIN_SCALE: "上/下 L1 宽度压缩到的最小值。值越大越保留原宽度。软上限被达到（、开始压缩）后影响中等。",
   VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO: "紧凑亲子间距比例",
   DESC_VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO: "紧凑垂直子树中，亲子间距使用 Gap X 乘以该比例。极大影响视觉效果。",
   DIRECTIONAL_CROSS_AXIS_RATIO: "正交轴之比",
@@ -645,22 +645,22 @@ addLocale("zh", {
   CALENDAR_DATE_TYPE: "日期类型",
   CALENDAR_PRIORITY: "优先级",
   CALENDAR_RECURRENCE: "重复",
-  CALENDAR_RECURRENCE_PLACEHOLDER: "每天",
-  CALENDAR_RECURRENCE_DESC: "例如，'every day'（每天），'every 2 weeks'（每两周）<br><a href=\"https://publish.obsidian.md/tasks/Getting+Started/Recurring+Tasks\" target=\"_blank\" tabindex=\"-1\">Tasks 插件重复任务文档</a>",
+  CALENDAR_RECURRENCE_PLACEHOLDER: "every day",
+  CALENDAR_RECURRENCE_DESC: "例如，'every day'，'every 2 weeks'<br><a href=\"https://publish.obsidian.md/tasks/Getting+Started/Recurring+Tasks\" target=\"_blank\" tabindex=\"-1\">Tasks 插件重复任务文档</a>",
   CALENDAR_INJECT_LINK: "插入节点链接",
   CALENDAR_INJECT_LINK_DESC: "在任务末尾添加指向该节点的链接。",
   CALENDAR_ALIAS_PLACEHOLDER: "别名",
   CALENDAR_BTN_CANCEL: "取消",
   CALENDAR_BTN_TASK_ONLY: "仅任务",
   CALENDAR_BTN_ADD_DATE_TASK: "添加日期和任务",
-  
+
   CALENDAR_PRIORITY_HIGHEST: "最高",
   CALENDAR_PRIORITY_HIGH: "高",
   CALENDAR_PRIORITY_MEDIUM: "中",
   CALENDAR_PRIORITY_NORMAL: "普通",
   CALENDAR_PRIORITY_LOW: "低",
   CALENDAR_PRIORITY_LOWEST: "最低",
-  
+
   CALENDAR_DATETYPE_DUE: "截止",
   CALENDAR_DATETYPE_START: "开始",
   CALENDAR_DATETYPE_SCHEDULED: "计划",
@@ -911,7 +911,7 @@ addLocale("zh-tw", {
   HORIZONTAL_L1_SOFTCAP_THRESHOLD: "L1 水平方向軟上限",
   DESC_HORIZONTAL_L1_SOFTCAP_THRESHOLD: "超過該 px 值後，上/下 L1 子樹寬度開始壓縮。對大導圖影響程度中到高。",
   HORIZONTAL_L1_COMPRESSION_MIN_SCALE: "L1 水平方向壓縮下限",
-  DESC_HORIZONTAL_L1_COMPRESSION_MIN_SCALE: "上/下 L1 寬度壓縮到的最小值。值越大越保留原寬度。達到軟上限後影響中等。",
+  DESC_HORIZONTAL_L1_COMPRESSION_MIN_SCALE: "上/下 L1 寬度壓縮到的最小值。值越大越保留原寬度。軟上限被達到（、開始壓縮）後影響中等。",
   VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO: "緊湊親子間距比例",
   DESC_VERTICAL_COMPACT_PARENT_CHILD_GAP_RATIO: "緊湊垂直子樹中，親子間距使用 Gap X 乘以該比例。極大影響視覺效果。",
   DIRECTIONAL_CROSS_AXIS_RATIO: "正交軸之比",
@@ -926,22 +926,22 @@ addLocale("zh-tw", {
   CALENDAR_DATE_TYPE: "日期類型",
   CALENDAR_PRIORITY: "優先級",
   CALENDAR_RECURRENCE: "重複",
-  CALENDAR_RECURRENCE_PLACEHOLDER: "每天",
-  CALENDAR_RECURRENCE_DESC: "例如，'every day'（每天），'every 2 weeks'（每兩週）<br><a href=\"https://publish.obsidian.md/tasks/Getting+Started/Recurring+Tasks\" target=\"_blank\" tabindex=\"-1\">Tasks 外掛重複任務文件</a>",
+  CALENDAR_RECURRENCE_PLACEHOLDER: "every day",
+  CALENDAR_RECURRENCE_DESC: "例如，'every day'，'every 2 weeks'<br><a href=\"https://publish.obsidian.md/tasks/Getting+Started/Recurring+Tasks\" target=\"_blank\" tabindex=\"-1\">Tasks 外掛重複任務文件</a>",
   CALENDAR_INJECT_LINK: "插入節點連結",
   CALENDAR_INJECT_LINK_DESC: "在任務末尾新增指向該節點的連結。",
   CALENDAR_ALIAS_PLACEHOLDER: "別名",
   CALENDAR_BTN_CANCEL: "取消",
   CALENDAR_BTN_TASK_ONLY: "僅任務",
   CALENDAR_BTN_ADD_DATE_TASK: "新增日期和任務",
-  
+
   CALENDAR_PRIORITY_HIGHEST: "最高",
   CALENDAR_PRIORITY_HIGH: "高",
   CALENDAR_PRIORITY_MEDIUM: "中",
   CALENDAR_PRIORITY_NORMAL: "普通",
   CALENDAR_PRIORITY_LOW: "低",
   CALENDAR_PRIORITY_LOWEST: "最低",
-  
+
   CALENDAR_DATETYPE_DUE: "截止",
   CALENDAR_DATETYPE_START: "開始",
   CALENDAR_DATETYPE_SCHEDULED: "計畫",

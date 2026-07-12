@@ -1631,6 +1631,28 @@ export declare class ExcalidrawAutomate {
      */
     importSVG(svgString: string): boolean;
     /**
+     * Returns CodeMirror 6 constructor classes and utilities for creating advanced embedded editors.
+     * Includes EditorView, EditorState, keymap, history, LRLanguage, Tree, and NodeType.
+     * Useful when building custom sidepanels or modals that require rich text editing features.
+     * @returns {Object} An object containing CodeMirror 6 and Lezer classes/functions.
+     */
+    getCM6(): {
+        EditorView: typeof EditorView;
+        EditorState: typeof EditorState;
+        keymap: typeof keymap;
+        defaultKeymap: typeof defaultKeymap;
+        history: typeof history;
+        historyKeymap: typeof historyKeymap;
+        LRLanguage: typeof LRLanguage;
+    };
+    /**
+     * Returns the pre-configured CodeMirror 6 extensions used by Excalidraw's native LaTeX editor.
+     * Includes the internal math parser required to trick 'obsidian-latex-suite' into thinking
+     * it is operating inside a math block, along with standard history and default keymaps.
+     * @returns { (LRLanguage | Extension)[]} An array of CodeMirror 6 extensions ready to be passed to EditorState.create().
+     */
+    getMathEditorExtensions(): (LRLanguage | Extension)[];
+    /**
      * Destroys the ExcalidrawAutomate instance, clearing all references and data.
      */
     destroy(): void;
