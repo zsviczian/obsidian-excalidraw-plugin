@@ -366,25 +366,43 @@ async function insertItem(file, currentSettings) {
 function injectCSS(contentEl) {
     contentEl.createEl("style", {
         text: `
-        .${CONSTANTS.CSS_PREFIX}header { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
+        .${CONSTANTS.CSS_PREFIX}header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 15px; }
         
         .${CONSTANTS.CSS_PREFIX}search-wrapper { 
             display: flex; 
             align-items: center; 
             position: relative; 
-            flex-grow: 1; 
+            flex-grow: 1;
+            min-width: 150px;
             border: 1px solid var(--background-modifier-border); 
             border-radius: 4px; 
             background: var(--background-modifier-form-field); 
         }
+
         .${CONSTANTS.CSS_PREFIX}search { 
             flex-grow: 1; 
             padding: 5px 8px; 
             border: none !important; 
             box-shadow: none !important; 
-            background: transparent !important; 
+            background: transparent !important;
+            width: 100%;
         }
-        
+
+        .${CONSTANTS.CSS_PREFIX}buttons-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto; 
+        }
+
+        .${CONSTANTS.CSS_PREFIX}scale-btn { 
+            cursor: pointer; 
+            padding: 4px 8px; 
+            display: flex; 
+            align-items: center; 
+            color: var(--text-muted); 
+        }
+
         .${CONSTANTS.CSS_PREFIX}scale-btn { 
             cursor: pointer; 
             padding: 4px 8px; 
@@ -542,8 +560,10 @@ function buildHeaderUI(contentEl, state) {
         placeholder: STRINGS.SEARCH_PLACEHOLDER 
     });
 
+    const buttonsWrapper = headerRow.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}buttons-wrapper` });
+
     // 2. Funnel Button & Popover (Separated into its own relative container)
-    const funnelContainer = headerRow.createDiv({ attr: { style: "position: relative;" } });
+    const funnelContainer = buttonsWrapper.createDiv({ attr: { style: "position: relative;" } });
     
     const funnelBtn = funnelContainer.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}settings-btn` });
     funnelBtn.setAttribute("aria-label", "Filter by Category");
@@ -601,7 +621,7 @@ function buildHeaderUI(contentEl, state) {
     updateFunnelIcon();
     
     // 3. Scale Button & Popover (Separated into its own relative container)
-    const scaleContainer = headerRow.createDiv({ attr: { style: "position: relative;" } });
+    const scaleContainer = buttonsWrapper.createDiv({ attr: { style: "position: relative;" } });
     
     const scaleBtn = scaleContainer.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}settings-btn` });
     scaleBtn.innerHTML = ea.obsidian.getIcon(CONSTANTS.ICON_SCALE)?.outerHTML 
@@ -632,14 +652,14 @@ function buildHeaderUI(contentEl, state) {
     });
 
     // 4. Info Button
-    const infoBtn = headerRow.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}settings-btn` });
+    const infoBtn = buttonsWrapper.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}settings-btn` });
     infoBtn.innerHTML = ea.obsidian.getIcon("info")?.outerHTML || "i";
     infoBtn.setAttribute("aria-label", "Instructions & Info");
     infoBtn.setAttribute("title", "Instructions & Info");
     infoBtn.addEventListener("click", () => showInfoModal(app));
 
     // 5. Settings Button
-    const settingsBtn = headerRow.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}settings-btn` });
+    const settingsBtn = buttonsWrapper.createDiv({ cls: `${CONSTANTS.CSS_PREFIX}settings-btn` });
     settingsBtn.innerHTML = ea.obsidian.getIcon(CONSTANTS.ICON_SETTINGS)?.outerHTML || "⚙";
     settingsBtn.setAttribute("aria-label", "Settings");
     settingsBtn.setAttribute("title", "Settings");
