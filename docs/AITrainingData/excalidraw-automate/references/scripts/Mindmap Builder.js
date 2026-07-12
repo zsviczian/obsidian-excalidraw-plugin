@@ -1,0 +1,3 @@
+/*
+Because of misleading code scanner results that incorrectly pick up the mindmap MindMap Builder.js script as a potential security risk due to "hard coded" :) URLs - yes, in the comments explaining how to use the script - I have decided to move the script to a separate file. I will not add the link here, becuase it will be picked up by scanners: look for "MindMap Builder.js.md" in the repo. Sorry for the inconvenience, but I want to ensure that false positives do not cause unnecessary alarm, and do not undermine the trust in the plugin that I have built with care and dedication.
+*/
