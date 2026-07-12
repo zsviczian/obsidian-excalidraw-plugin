@@ -3861,7 +3861,7 @@ export class ExcalidrawAutomate {
    * In case you want to prevent the excalidraw onLinkHover action you must return false, it will stop the native excalidraw onLinkHover management flow.
    */
   onLinkHoverHook: (
-    element: NonDeletedExcalidrawElement,
+    element: ExcalidrawElement,
     linkText: string,
     view: ExcalidrawView,
     ea: ExcalidrawAutomate,
