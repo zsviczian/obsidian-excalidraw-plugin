@@ -5387,7 +5387,7 @@ export default class ExcalidrawView
 
     if (this.getHookServer().onLinkHoverHook && element && !element.isDeleted) {
       try {
-        const hoveredElement = element as NonDeletedExcalidrawElement;
+        const hoveredElement = element;
         if (
           !this.getHookServer().onLinkHoverHook(
             hoveredElement,
