@@ -455,7 +455,7 @@ function buildExcalidrawLibFunctionsSection() {
     if (!sigEntries.length) continue;
 
     const rel = path.relative(ROOT, abs).replace(/\\/g, '/');
-    const header = makeSectionHeader(`${spec} -> ${rel}`).replace(/\*\/\n\/\*/g, '*\/\n/*');
+    const header = makeSectionHeader(`${spec} -> ${rel}`);
     sections.push(header + sigEntries.map(([, s]) => s).join('\n') + '\n');
   }
 
