@@ -99,8 +99,8 @@ export default {
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE:
     "Insertar última página PDF activa como imagen",
   UNIVERSAL_ADD_FILE: "Insertar CUALQUIER archivo",
-  // Claves de compatibilidad consumidas por Excalidraw upstream vía ExcalidrawPlugin.getLabel().
-  // Mantén este grupo sincronizado en los idiomas mantenidos.
+  // Compatibility keys consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().
+  // Keep this group in sync across maintained locales.
   INSERT_CARD: "Agregar tarjeta al reverso-de-la-nota",
   COMP_IMG: "Imágenes y archivos",
   COMP_IMG_FROM_SYSTEM: "Importar desde el sistema",
@@ -236,8 +236,8 @@ export default {
     "Encuentra ayuda en el menú de la esquina superior izquierda",
   WELCOME_YOUTUBE_ARIA: "Canal de YouTube de PKM Visual",
   WELCOME_YOUTUBE_LINK: "Echa un vistazo al canal de YouTube de PKM Visual.",
-  WELCOME_DISCORD_ARIA: "Únete al servidor de Discord",
-  WELCOME_DISCORD_LINK: "Únete al servidor de Discord",
+  WELCOME_SYM_ARIA: "Aprende Excalidraw, domina PKM y únete a la Comunidad",
+  WELCOME_SYM_LINK: "Aprende Excalidraw, domina PKM y únete a la Comunidad",
   WELCOME_TWITTER_ARIA: "Sígueme en Twitter",
   WELCOME_TWITTER_LINK: "Sígueme en Twitter",
   WELCOME_DONATE_ARIA: "Dona para apoyar Excalidraw-Obsidian",
@@ -266,9 +266,9 @@ export default {
   LINKS_YT_ARIA:
     "Visita mi canal de YouTube para aprender sobre Pensamiento Visual y Excalidraw",
   LINKS_YT: "Aprende en YouTube",
-  LINKS_DISCORD_ARIA:
-    "Únete al servidor de Discord del Taller de Pensamiento Visual",
-  LINKS_DISCORD: "Únete a la Comunidad",
+  LINKS_JOIN_SYM_ARIA:
+    "Aprende Excalidraw, domina el Pensamiento Visual y únete a la Comunidad",
+  LINKS_JOIN_SYM: "Aprender Excalidraw",
   LINKS_TWITTER: "Sígueme",
   LINKS_BOOK_ARIA: "Lee Sketch Your Mind, mi libro sobre Pensamiento Visual",
   LINKS_BOOK: "Lee el Libro",
@@ -335,7 +335,7 @@ export default {
     "Si estás usando Excalidraw en modo de compatibilidad, entonces tu plantilla también debe ser un archivo Excalidraw heredado " +
     "como Excalidraw/Plantilla.excalidraw. <br><b>Carpeta de Plantillas:</b> También puedes establecer una carpeta como tu plantilla. " +
     "En este caso, se te pedirá qué plantilla usar al crear un nuevo bosquejo.<br>" +
-    "<b>Consejo:</b>  Si estás usando el complemento Obsidian Templater, puedes añadir código Templater a tus diferentes plantillas de Excalidraw " +
+    "<b>Consejo:</b> Si estás usando el complemento Obsidian Templater, puedes añadir código Templater a tus diferentes plantillas de Excalidraw " +
     "para automatizar la configuración de tus bosquejos.",
   SCRIPT_FOLDER_NAME:
     "Carpeta de scripts para Excalidraw Automate (¡Sensible a MAYÚSCULAS/minúsculas!)",
@@ -366,8 +366,6 @@ export default {
   AI_PROVIDER_OPTION_GOOGLE: "Google / Gemini",
   AI_PROVIDER_OPTION_XAI: "xAI / Grok",
   AI_PROVIDER_OPTION_OPENAI_COMPATIBLE: "Compatible con OpenAI / local",
-  AI_PROVIDER_PROFILE_MODAL_OPENAI_COMPATIBLE_HINT:
-    "Para LLM locales compatibles con OpenAI, usa una API key ficticia si no hace falta una real, para que Excalidraw marque el perfil como configurado.",
   AI_PROVIDER_API_KEY_SET: "Configurada",
   AI_PROVIDER_API_KEY_NOT_SET: "Sin configurar",
   AI_PROVIDER_EDIT: "Editar proveedor",
@@ -417,9 +415,46 @@ export default {
     "Agrega al menos una resolución compatible.",
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_DUPLICATE_MODEL:
     "Ya existe una entrada con este ID de modelo.",
+  AI_PROVIDER_PROFILE_MODAL_ADD_TITLE: "Añadir perfil de proveedor",
+  AI_PROVIDER_PROFILE_MODAL_EDIT_TITLE: "Editar perfil de proveedor",
+  AI_PROVIDER_PROFILE_MODAL_NAME_NAME: "Nombre del perfil",
+  AI_PROVIDER_PROFILE_MODAL_NAME_DESC: "Esta etiqueta aparece en los menús desplegables de modelos.",
+  AI_PROVIDER_PROFILE_MODAL_NAME_PLACEHOLDER: "ej.: OpenAI",
+  AI_PROVIDER_PROFILE_MODAL_TYPE_NAME: "Tipo de proveedor",
+  AI_PROVIDER_PROFILE_MODAL_TYPE_DESC: "Seleccione la familia de API utilizada por este perfil.",
+  AI_PROVIDER_PROFILE_MODAL_API_KEY_NAME: "Clave API",
+  AI_PROVIDER_PROFILE_MODAL_API_KEY_DESC: "Se guarda en este perfil y la utilizan todos los modelos asignados a él.",
+  AI_PROVIDER_PROFILE_MODAL_API_KEY_PLACEHOLDER: "Clave API del proveedor",
+  AI_PROVIDER_PROFILE_MODAL_BASE_URL_NAME: "URL base",
+  AI_PROVIDER_PROFILE_MODAL_BASE_URL_DESC: "URL base utilizada para derivar los endpoints del proveedor.",
+  AI_PROVIDER_PROFILE_MODAL_BASE_URL_PLACEHOLDER: "ej.: https://api.openai.com/v1",
+  AI_PROVIDER_PROFILE_MODAL_OPENAI_COMPATIBLE_HINT: "Para LLM locales compatibles con OpenAI, ingrese una clave ficticia si no se requiere una real para que Excalidraw reconozca el perfil como configurado.",
+  AI_PROVIDER_PROFILE_MODAL_NAME_REQUIRED: "El nombre del perfil de proveedor es obligatorio.",
+  AI_PROVIDER_PROFILE_MODAL_DUPLICATE_NAME: "Ya existe un perfil de proveedor con este nombre.",
+  AI_MODEL_CONFIG_MODAL_NAME_NAME: "Nombre de la entrada",
+  AI_MODEL_CONFIG_MODAL_NAME_DESC: "Esta etiqueta aparece en el menú desplegable.",
+  AI_MODEL_CONFIG_MODAL_NAME_PLACEHOLDER: "ej.: gpt-5-mini",
+  AI_MODEL_CONFIG_MODAL_PROVIDER_NAME: "Proveedor",
+  AI_MODEL_CONFIG_MODAL_PROVIDER_DESC: "Elija qué perfil de proveedor debe usar este modelo.",
+  AI_MODEL_CONFIG_MODAL_MODEL_NAME: "Nombre del modelo",
+  AI_MODEL_CONFIG_MODAL_MODEL_DESC: "Nombre exacto del modelo enviado a la API.",
+  AI_MODEL_CONFIG_MODAL_MODEL_PLACEHOLDER: "ej.: gpt-5-mini",
+  AI_MODEL_CONFIG_MODAL_ENDPOINT_NAME: "Sobrescribir endpoint",
+  AI_MODEL_CONFIG_MODAL_ENDPOINT_DESC: "Sobrescritura opcional del endpoint completo para este modelo. Dejar en blanco para derivarlo del perfil del proveedor.",
+  AI_MODEL_CONFIG_MODAL_ENDPOINT_PLACEHOLDER: "Endpoint completo opcional",
   AI_MODEL_CONFIG_MODAL_MULTIMODAL_NAME: "Compatibilidad multimodal",
   AI_MODEL_CONFIG_MODAL_MULTIMODAL_DESC:
     "Permite que este modelo de texto acepte imágenes para análisis y tareas tipo diagram-to-code.",
+  AI_MODEL_CONFIG_MODAL_NAME_REQUIRED: "El nombre de la entrada es obligatorio.",
+  AI_MODEL_CONFIG_MODAL_PROVIDER_REQUIRED: "Seleccione un perfil de proveedor.",
+  AI_MODEL_CONFIG_MODAL_MODEL_REQUIRED: "El nombre del modelo es obligatorio.",
+  AI_MODEL_CONFIG_MODAL_DUPLICATE_NAME: "Ya existe una entrada de modelo con este nombre.",
+  AI_TEXT_MODEL_MODAL_ADD_TITLE: "Añadir modelo de texto",
+  AI_TEXT_MODEL_MODAL_EDIT_TITLE: "Editar modelo de texto",
+  AI_VISION_MODEL_MODAL_ADD_TITLE: "Añadir modelo de visión",
+  AI_VISION_MODEL_MODAL_EDIT_TITLE: "Editar modelo de visión",
+  AI_IMAGE_MODEL_MODAL_ADD_TITLE: "Añadir modelo de imagen",
+  AI_IMAGE_MODEL_MODAL_EDIT_TITLE: "Editar modelo de imagen",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_NAME:
     "Presupuesto predeterminado de tokens salientes de IA",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_DESC:
@@ -589,7 +624,7 @@ export default {
     `<ul><li><b>Habilitado:</b> El PDF incluirá el bosquejo de Excalidraw como una imagen.</li>` +
     `<li><b>Desactivado:</b> El PDF incluirá el contenido Markdown como texto.</li></ul>` +
     `Nota: Esta configuración no afecta la función de exportación a PDF dentro del propio Excalidraw.<br>` +
-    `Consulta la otra configuración relacionada para el  <a href='#${
+    `Consulta la otra configuración relacionada para el <a href='#${
       TAG_MDREADINGMODE
     }'>Modo de Lectura de Markdown</a> en 'Apariencia y Comportamiento' más arriba.<br>` +
     `⚠️ Debes cerrar y volver a abrir el archivo de Excalidraw/Markdown para que los cambios surtan efecto. ⚠️`,
@@ -758,7 +793,7 @@ export default {
     "El número máximo de caracteres a mostrar de la página al transcluir una página completa con el " +
     "formato ![[página de markdown]].",
   QUOTE_TRANSCLUSION_REMOVE_NAME:
-    "Transclusión de citas: eliminar el  '> ' inicial de cada línea",
+    "Transclusión de citas: eliminar el '> ' inicial de cada línea",
   QUOTE_TRANSCLUSION_REMOVE_DESC:
     "Elimina el '> ' inicial de cada línea de la transclusión. Esto mejorará la legibilidad de las citas en transclusiones de solo texto.<br>" +
     "<b><u>Activado:</u></b> Elimina el '> ' inicial<br><b><u>Desactivado:</u></b> No elimina el '> ' inicial (tenga en cuenta que se seguirá eliminando de la primera línea debido a la funcionalidad de la API de Obsidian).",
@@ -793,7 +828,7 @@ export default {
     "Altura máxima predeterminada de un documento Markdown transcluido",
   MD_TRANSCLUDE_HEIGHT_DESC:
     "La imagen incrustada tendrá la altura que requiera el texto Markdown, pero no superará este valor." +
-    "Puedes anular este valor editando el enlace de la imagen incrustada en la vista de Markdown con la siguiente sintaxis  <code>[[nombre-de-archivo#^referencia-de-bloque|ANCHOxALTURA_MÁXIMA]]</code>.",
+    "Puedes anular este valor editando el enlace de la imagen incrustada en la vista de Markdown con la siguiente sintaxis <code>[[nombre-de-archivo#^referencia-de-bloque|ANCHOxALTURA_MÁXIMA]]</code>.",
   MD_DEFAULT_FONT_NAME:
     "El tipo de letra de fuente predeterminado a usar para los archivos Markdown incrustados.",
   MD_DEFAULT_FONT_DESC:
@@ -858,7 +893,7 @@ export default {
     }'>Auto-exportar SVG/PNG</a>.Si hay una imagen exportada que coincide con el nombre del archivo del bosquejo ` +
     `disponible, se usará esa imagen en lugar de generar una vista previa al momento. Esto resultará en vistas previas más rápidas, especialmente si tienes muchos objetos incrustados en el bosquejo. Sin embargo, ` +
     `puede que tus últimos cambios no se muestren y la imagen no coincida automáticamente con el ` +
-    `tema de Obsidian si lo has cambiado desde que se creó la exportación. Esta configuración solo se aplica a la incrustación de imágenes en documentos Markdown.  ` +
+    `tema de Obsidian si lo has cambiado desde que se creó la exportación. Esta configuración solo se aplica a la incrustación de imágenes en documentos Markdown. ` +
     `Por diversas razones, el mismo enfoque no se puede usar para acelerar la carga de bosquejos con muchos objetos incrustados. Puedes ver una demostración <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG}/1.6.23" target='_blank'>aquí</a>.`,
   EMBED_PREVIEW_IMAGETYPE_NAME: "Tipo de imagen en la vista previa de Markdown",
   EMBED_PREVIEW_IMAGETYPE_DESC:
@@ -879,7 +914,7 @@ export default {
   EMBED_HEIGHT_NAME:
     "Altura predeterminada de la imagen incrustada (transcluida)",
   EMBED_HEIGHT_DESC:
-    "TLa altura predeterminada de un bosquejo incrustado. Esto se aplica al modo de edición de vista en vivo y al modo de lectura, así como a las vistas previas al pasar el cursor. Puedes especificar  " +
+    "La altura predeterminada de un bosquejo incrustado. Esto se aplica al modo de edición de vista en vivo y al modo de lectura, así como a las vistas previas al pasar el cursor. Puedes especificar " +
     "una altura personalizada al incrustar una imagen usando el formato <code>![[bosquejo.excalidraw|100]]</code> o " +
     "<code>[[bosquejo.excalidraw|100x100]]</code>.",
   EMBED_TYPE_NAME: "Tipo de archivo a insertar en el documento",
@@ -1002,7 +1037,7 @@ export default {
     "ExcalidrawAutomate es una API de scripting y automatización para Excalidraw. Desafortunadamente, la documentación de la API es escasa. " +
     `Te recomiendo leer el archivo <a href="${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_BLOB_MASTER_DOCS_API_EXCALIDRAWAUTOMATE_D_TS}">ExcalidrawAutomate.d.ts</a>, ` +
     `visitar la página <a href="${URLs.ZSVICZIAN_GITHUB_IO_OBSIDIAN_EXCALIDRAW_PLUGIN}">Cómo usar ExcalidrawAutomate</a> (aunque la información ` +
-    `aquí no se ha actualizado en mucho tiempo), y finalmente, habilitar el sugeridor de campos que se encuentra abajo. El sugeridor de campos te mostrará las funciones disponibles,  ` +
+    `aquí no se ha actualizado en mucho tiempo), y finalmente, habilitar el sugeridor de campos que se encuentra abajo. El sugeridor de campos te mostrará las funciones disponibles, ` +
     `sus parámetros y una breve descripción mientras escribes. El sugeridor de campos es la documentación más actualizada de la API.`,
   FIELD_SUGGESTER_NAME: "Habilitar Sugeridor de Campos",
   FIELD_SUGGESTER_DESC:

@@ -88,7 +88,8 @@ export default {
   INSERT_MD: "Вставка файла markdown из хранилища",
   INSERT_PDF: "Вставить PDF-файл из хранилища",
   UNIVERSAL_ADD_FILE: "Вставка ЛЮБОГО файла",
-  // Ключ совместимости, который запрашивает upstream Excalidraw через ExcalidrawPlugin.getLabel().
+  // Compatibility keys consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().
+  // Keep this group in sync across maintained locales.
   INSERT_CARD: "Добавить сноски",
   CONVERT_CARD_TO_FILE: "Переместить сноску в файл",
   ERROR_TRY_AGAIN: "Пожалуйста, попробуйте еще раз.",
@@ -150,7 +151,7 @@ export default {
   MARKDOWN_EMBED_CUSTOMIZE_LINK_PROMPT:
     "Не добавляйте [[квадратные скобки]] вокруг имени файла! <br>" +
     "При редактировании ссылок на изображения в формате markdown-страниц следуйте этому формату: <mark>filename#^blockref|WIDTHxMAXHEIGHT</mark><br>" +
-    "Вы можете привязать изображения Excalidraw к 100% их размера, добавив  <code>|100%</code> в конец ссылки.<br>" +
+    "Вы можете привязать изображения Excalidraw к 100% их размера, добавив <code>|100%</code> в конец ссылки.<br>" +
     "Вы можете изменить страницу PDF, изменив <code>#page=1</code> на <code>#page=2</code> и т.д.<br>" +
     "Значения обрезки прямоугольника PDF: <code>left, bottom, right, top</code>. Например: <code>#rect=0,0,500,500</code><br>",
   FRAME_CLIPPING_ENABLED: "Рендеринг кадров: Включено",
@@ -217,8 +218,8 @@ export default {
   WELCOME_HELP_MENU: "Найдите помощь в гамбургер-меню",
   WELCOME_YOUTUBE_ARIA: "Канал Visual PKM на YouTube",
   WELCOME_YOUTUBE_LINK: "Загляните на YouTube-канал Visual PKM.",
-  WELCOME_DISCORD_ARIA: "Присоединяйтесь к серверу Discord",
-  WELCOME_DISCORD_LINK: "Присоединяйтесь к серверу Discord",
+  WELCOME_SYM_ARIA: "Изучите Excalidraw, освойте PKM и вступите в Cообщество",
+  WELCOME_SYM_LINK: "Изучите Excalidraw, освойте PKM и вступите в Cообщество",
   WELCOME_TWITTER_ARIA: "Следите за мной в Twitter",
   WELCOME_TWITTER_LINK: "Следите за мной в Twitter",
   WELCOME_DONATE_ARIA: "Пожертвовать на поддержку Excalidraw-Obsidian",
@@ -308,8 +309,6 @@ export default {
   AI_PROVIDER_OPTION_GOOGLE: "Google / Gemini",
   AI_PROVIDER_OPTION_XAI: "xAI / Grok",
   AI_PROVIDER_OPTION_OPENAI_COMPATIBLE: "Совместимый с OpenAI / локальный",
-  AI_PROVIDER_PROFILE_MODAL_OPENAI_COMPATIBLE_HINT:
-    "Для локальных LLM, совместимых с OpenAI, укажите фиктивный API key, если реальный не нужен, чтобы Excalidraw считал профиль настроенным.",
   AI_PROVIDER_API_KEY_SET: "Настроено",
   AI_PROVIDER_API_KEY_NOT_SET: "Не настроено",
   AI_PROVIDER_EDIT: "Изменить провайдера",
@@ -358,9 +357,46 @@ export default {
     "Добавьте хотя бы одно поддерживаемое разрешение.",
   AI_IMAGE_MODEL_CAPABILITIES_MODAL_DUPLICATE_MODEL:
     "Запись модели с таким ID уже существует.",
+  AI_PROVIDER_PROFILE_MODAL_ADD_TITLE: "Добавить профиль провайдера",
+  AI_PROVIDER_PROFILE_MODAL_EDIT_TITLE: "Редактировать профиль провайдера",
+  AI_PROVIDER_PROFILE_MODAL_NAME_NAME: "Название профиля",
+  AI_PROVIDER_PROFILE_MODAL_NAME_DESC: "Эта метка будет отображаться в списках выбора моделей.",
+  AI_PROVIDER_PROFILE_MODAL_NAME_PLACEHOLDER: "например: OpenAI",
+  AI_PROVIDER_PROFILE_MODAL_TYPE_NAME: "Тип провайдера",
+  AI_PROVIDER_PROFILE_MODAL_TYPE_DESC: "Выберите семейство API, используемое этим профилем.",
+  AI_PROVIDER_PROFILE_MODAL_API_KEY_NAME: "API-ключ",
+  AI_PROVIDER_PROFILE_MODAL_API_KEY_DESC: "Сохраняется в этом профиле и используется всеми назначенными ему моделями.",
+  AI_PROVIDER_PROFILE_MODAL_API_KEY_PLACEHOLDER: "API-ключ провайдера",
+  AI_PROVIDER_PROFILE_MODAL_BASE_URL_NAME: "Базовый URL",
+  AI_PROVIDER_PROFILE_MODAL_BASE_URL_DESC: "Базовый адрес, используемый для формирования endpoints провайдера.",
+  AI_PROVIDER_PROFILE_MODAL_BASE_URL_PLACEHOLDER: "например: https://api.openai.com/v1",
+  AI_PROVIDER_PROFILE_MODAL_OPENAI_COMPATIBLE_HINT: "Для локальных OpenAI-совместимых LLM введите фиктивный ключ, если реальный не требуется, чтобы Excalidraw распознал профиль как настроенный.",
+  AI_PROVIDER_PROFILE_MODAL_NAME_REQUIRED: "Имя профиля провайдера обязательно.",
+  AI_PROVIDER_PROFILE_MODAL_DUPLICATE_NAME: "Профиль провайдера с таким именем уже существует.",
+  AI_MODEL_CONFIG_MODAL_NAME_NAME: "Название записи",
+  AI_MODEL_CONFIG_MODAL_NAME_DESC: "Эта метка будет отображаться в выпадающем списке.",
+  AI_MODEL_CONFIG_MODAL_NAME_PLACEHOLDER: "например: gpt-5-mini",
+  AI_MODEL_CONFIG_MODAL_PROVIDER_NAME: "Провайдер",
+  AI_MODEL_CONFIG_MODAL_PROVIDER_DESC: "Выберите профиль провайдера, который должна использовать эта модель.",
+  AI_MODEL_CONFIG_MODAL_MODEL_NAME: "Имя модели",
+  AI_MODEL_CONFIG_MODAL_MODEL_DESC: "Точное имя модели, отправляемое в API.",
+  AI_MODEL_CONFIG_MODAL_MODEL_PLACEHOLDER: "например: gpt-5-mini",
+  AI_MODEL_CONFIG_MODAL_ENDPOINT_NAME: "Переопределение endpoint",
+  AI_MODEL_CONFIG_MODAL_ENDPOINT_DESC: "Необязательный полный адрес эндпоинта для этой модели. Оставьте пустым, чтобы использовать адрес из профиля.",
+  AI_MODEL_CONFIG_MODAL_ENDPOINT_PLACEHOLDER: "Полный путь (необязательно)",
   AI_MODEL_CONFIG_MODAL_MULTIMODAL_NAME: "Мультимодальная поддержка",
   AI_MODEL_CONFIG_MODAL_MULTIMODAL_DESC:
     "Разрешает этой текстовой модели принимать изображения для анализа и задач в стиле diagram-to-code.",
+  AI_MODEL_CONFIG_MODAL_NAME_REQUIRED: "Название записи обязательно.",
+  AI_MODEL_CONFIG_MODAL_PROVIDER_REQUIRED: "Выберите профиль провайдера.",
+  AI_MODEL_CONFIG_MODAL_MODEL_REQUIRED: "Имя модели обязательно.",
+  AI_MODEL_CONFIG_MODAL_DUPLICATE_NAME: "Запись модели с таким именем уже существует.",
+  AI_TEXT_MODEL_MODAL_ADD_TITLE: "Добавить текстовую модель",
+  AI_TEXT_MODEL_MODAL_EDIT_TITLE: "Редактировать текстовую модель",
+  AI_VISION_MODEL_MODAL_ADD_TITLE: "Добавить визуальную модель",
+  AI_VISION_MODEL_MODAL_EDIT_TITLE: "Редактировать визуальную модель",
+  AI_IMAGE_MODEL_MODAL_ADD_TITLE: "Добавить модель генерации изображений",
+  AI_IMAGE_MODEL_MODAL_EDIT_TITLE: "Редактировать модель генерации изображений",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_NAME:
     "Бюджет исходящих токенов ИИ по умолчанию",
   AI_PROVIDER_DEFAULT_MAX_OUTGOING_TOKENS_DESC:
@@ -714,7 +750,7 @@ export default {
   MD_DEFAULT_BORDER_COLOR_NAME:
     "Цвет границы, используемый по умолчанию для встроенных файлов разметки (markdown).",
   MD_DEFAULT_BORDER_COLOR_DESC:
-    `Установите это значение на любое допустимое имя цвета css, например "steelblue" (<a href="${URLs.WWW_W3SCHOOLS_COM_COLORS_COLORS_NAMES_ASP}">имена цветов</a>),  или на допустимый шестнадцатеричный цвет, например "#e67700", ` +
+    `Установите это значение на любое допустимое имя цвета css, например "steelblue" (<a href="${URLs.WWW_W3SCHOOLS_COM_COLORS_COLORS_NAMES_ASP}">имена цветов</a>), или на допустимый шестнадцатеричный цвет, например "#e67700", ` +
     `или на любую другую допустимую строку цвета css. Вы можете отменить эту настройку, добавив следующий frontmatter-key во встроенный файл разметки (markdown): <code>excalidraw-border-color: gray</code>. ` +
     `Оставьте пустым, если вам не нужна граница. `,
   MD_CSS_NAME: "CSS файл",
@@ -868,7 +904,7 @@ export default {
     `Если вы используете <a href="${URLs.GITHUB_COM_DEATHAU_SLIDING_PANES_OBSIDIAN}" target='_blank'>Sliding Panes plugin</a> ` +
     "Вы можете включить эту настройку, чтобы чертежи Excalidraw работали с плагином Sliding Panes.<br>" +
     "Обратите внимание, что поддержка раздвижных областей окна (Sliding Panes plugin) Excalidraw вызывает проблемы совместимости с рабочими пространствами Obsidian.<br>" +
-    "Обратите внимание, что функция 'Stack Tabs' теперь доступна в Obsidian, обеспечивая встроенную поддержку большинства функций  раздвижных областей окна (Sliding Panes plugin)",
+    "Обратите внимание, что функция 'Stack Tabs' теперь доступна в Obsidian, обеспечивая встроенную поддержку большинства функций раздвижных областей окна (Sliding Panes plugin)",
   EXPORT_EXCALIDRAW_NAME: "Автоэкспорт Excalidraw",
   EXPORT_EXCALIDRAW_DESC: "Аналогично автоэкспорту SVG, но для *.Excalidraw",
   SYNC_EXCALIDRAW_NAME:
