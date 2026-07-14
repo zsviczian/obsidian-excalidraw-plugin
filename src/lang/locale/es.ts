@@ -952,7 +952,7 @@ export default {
     "los bosquejos creados en modo oscuro aparecerán como lo harían en modo claro.",
   EXPORT_EMBED_SCENE_NAME: "Incrustar escena en la imagen exportada",
   EXPORT_EMBED_SCENE_DESC:
-    "Incrusta la escena de Excalidraw en la imagen exportada. Se puede anular a nivel de archivo añadiendo la clave frontmatter <code>excalidraw-export-embed-scene: true/false<code> . " +
+    "Incrusta la escena de Excalidraw en la imagen exportada. Se puede anular a nivel de archivo añadiendo la clave frontmatter <code>excalidraw-export-embed-scene: true/false</code> . " +
     "La configuración solo surtirá efecto la próxima vez que (re)abras los bosquejos.",
   PDF_EXPORT_SETTINGS: "Configuración de exportación a PDF",
   EXPORT_HEAD: "Configuración de auto-exportación",

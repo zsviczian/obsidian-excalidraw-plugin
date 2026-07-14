@@ -996,7 +996,7 @@ export default {
     "drawings created in dark mode will appear as they would in light mode.",
   EXPORT_EMBED_SCENE_NAME: "Embed scene in exported image",
   EXPORT_EMBED_SCENE_DESC:
-    "Embed Excalidraw scene in exported image. Can be overridden at a file level by adding the <code>excalidraw-export-embed-scene: true/false<code> frontmatter key. " +
+    "Embed Excalidraw scene in exported image. Can be overridden at a file level by adding the <code>excalidraw-export-embed-scene: true/false</code> frontmatter key. " +
     "The setting only takes effect the next time you (re)open drawings.",
   PDF_EXPORT_SETTINGS: "PDF Export Settings",
   EXPORT_HEAD: "Auto-export Settings",
