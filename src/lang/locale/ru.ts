@@ -860,7 +860,7 @@ export default {
     "рисунки, созданные в темном режиме, будут отображаться так же, как и в светлом режиме. ",
   EXPORT_EMBED_SCENE_NAME: "Встроить сцену в экспортированное изображение",
   EXPORT_EMBED_SCENE_DESC:
-    "Вставка сцены Excalidraw в экспортируемое изображение. Можно переопределить на уровне файла, добавив ключ frontmatter. <code>excalidraw-export-embed-scene: true/false<code>. " +
+    "Вставка сцены Excalidraw в экспортируемое изображение. Можно переопределить на уровне файла, добавив ключ frontmatter. <code>excalidraw-export-embed-scene: true/false</code>. " +
     "Настройка вступит в силу только при следующем (повторном) открытии чертежей.",
   EXPORT_HEAD: "Настройки автоэкспорта",
   EXPORT_SYNC_NAME:
