@@ -761,7 +761,7 @@ Setting parameters could be set back to default values by click on button 'Defau
 
 See background information about [Voronoi diagram](https://en.wikipedia.org/wiki/Voronoi_diagram) at Wikipedia. 
 
-Comments and discussion are welcomed in the [Sketch Your Mind Community](https://community.sketch-your-mind.com)<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/VoronoiDiagramGenerator.jpg'></td></tr></table>
+Comments and discussion are welcomed in the [Sketch Your Mind Community](https://community.sketch-your-mind.com)<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/Voronoi_diagram_example.svg'></td></tr></table>
 
 ## Zoom to Fit Selected Elements
 ```excalidraw-script-install
