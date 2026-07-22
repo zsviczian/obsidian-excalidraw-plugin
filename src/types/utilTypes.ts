@@ -13,6 +13,7 @@ export type FILENAMEPARTS = {
   sectionref: string;
   linkpartReference: string;
   linkpartAlias: string;
+  padding?: number;
 };
 
 export enum PreviewImageType {

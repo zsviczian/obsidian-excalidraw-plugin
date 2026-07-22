@@ -677,6 +677,9 @@ export async function createSVG(
     exportSettings?.withTheme ?? plugin.settings.exportWithTheme;
 
   const filenameParts = getEmbeddedFilenameParts(templatePath);
+  if (filenameParts.hasArearef && filenameParts.padding != null) {
+    padding = filenameParts.padding;
+  }
   const svg = await getSVG(
     {
       //createAndOpenDrawing
