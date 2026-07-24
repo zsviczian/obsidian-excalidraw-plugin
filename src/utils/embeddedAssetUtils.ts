@@ -187,20 +187,31 @@ export function getEmbeddedFilenameParts(fname: string): FILENAMEPARTS {
       linkpartAlias: "",
     };
   }
+  const isArea = parts[4] === "area=" || parts[7] === "area=";
+  let blockref = parts[5];
+  let padding: number | undefined;
+  if (isArea && blockref) {
+    const m = blockref.match(/,padding=(\d+)$/);
+    if (m) {
+      blockref = blockref.slice(0, -m[0].length);
+      padding = parseInt(m[1]);
+    }
+  }
   return {
     filepath: parts[1],
     hasBlockref: Boolean(parts[3]),
     hasGroupref: parts[4] === "group=" || parts[7] === "group=",
     hasTaskbone: parts[4] === "taskbone" || parts[7] === "taskbone",
-    hasArearef: parts[4] === "area=" || parts[7] === "area=",
+    hasArearef: isArea,
     hasFrameref: parts[4] === "frame=" || parts[7] === "frame=",
     hasClippedFrameref:
       parts[4] === "clippedframe=" || parts[7] === "clippedframe=",
-    blockref: parts[5],
+    blockref,
     hasSectionref: Boolean(parts[6]),
     sectionref: parts[8],
     linkpartReference: parts[2],
     linkpartAlias: parts[9],
+    padding,
   };
 }
 

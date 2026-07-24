@@ -391,7 +391,16 @@ export async function getTemplate(
         (el: ExcalidrawElement) => el.id === filenameParts.blockref,
       );
       if (el) {
-        groupElements = plugin.ea.getElementsInArea(scene.elements, el);
+        const m = filenameParts.padding ?? plugin.settings.exportPaddingSVG;
+        const expanded = cloneElement(el);
+        expanded.x -= m;
+        expanded.y -= m;
+        expanded.width += 2 * m;
+        expanded.height += 2 * m;
+        groupElements = plugin.ea.getElementsInArea(
+          scene.elements,
+          expanded,
+        );
       }
     }
 
@@ -677,6 +686,9 @@ export async function createSVG(
     exportSettings?.withTheme ?? plugin.settings.exportWithTheme;
 
   const filenameParts = getEmbeddedFilenameParts(templatePath);
+  if (filenameParts.hasArearef && filenameParts.padding != null) {
+    padding = filenameParts.padding;
+  }
   const svg = await getSVG(
     {
       //createAndOpenDrawing
