@@ -28,6 +28,14 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
   - Added \`ea.getCM6()\` to expose CodeMirror 6 classes/functions (EditorView, EditorState, etc.) to the ScriptEngine environment.
   - Added \`ea.getMathEditorExtensions()\` to expose Excalidraw's pre-configured LaTeX editor extensions, natively supporting obsidian-latex-suite integration in custom sidepanel scripts.
 `,
+  "2.25.4": `
+  ## New
+  - Added \`,padding=N\` argument to area= embed links to control how much surrounding context is shown in preview. Useful for large canvases like maps.
+
+  \`\`\`
+  ![[file.excalidraw#^area=elementID,padding=120]]
+  \`\`\`
+`,
   "2.25.2": `
 One more small maintenance release with a few important fixes.
 
