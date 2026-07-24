@@ -1001,7 +1001,7 @@ export function getEmbeddedFilenameParts(fname: string): FILENAMEPARTS {
   let blockref = parts[5];
   let padding: number | undefined;
   if (isArea && blockref) {
-    const m = blockref.match(/,(\d+)$/);
+    const m = blockref.match(/,padding=(\d+)$/);
     if (m) {
       blockref = blockref.slice(0, -m[0].length);
       padding = parseInt(m[1]);
