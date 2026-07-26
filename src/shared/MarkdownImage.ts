@@ -50,17 +50,13 @@ export function getMarkdownImageCustomData(
     : undefined;
 }
 
-/** Resolves the element appearance, then remembered and configured defaults. */
+/** Resolves the element appearance, then the configured defaults. */
 export function getMarkdownImageRenderSettings(
   plugin: ExcalidrawPlugin,
   element?: ExcalidrawImageElement,
 ): MarkdownImageRenderSettings {
   const stored = element ? getMarkdownImageCustomData(element)?.render : null;
-  const fallback =
-    plugin.settings.markdownImageSettings.editor.rememberLastUsedAppearance
-      ? (plugin.settings.markdownImageSettings.lastUsedAppearance ??
-        plugin.settings.markdownImageSettings.defaults)
-      : plugin.settings.markdownImageSettings.defaults;
+  const fallback = plugin.settings.markdownImageSettings.defaults;
   return {
     width: stored?.width ?? fallback.width,
     fontFamily: stored?.fontFamily ?? fallback.fontFamily,
@@ -200,8 +196,9 @@ export async function insertMarkdownImage(
     hasSVGwithBitmap: rendered.hasSVGwithBitmap,
   };
   view.excalidrawData.setMarkdownImage(fileId, { markdown });
-  await ea.addElementsToView(false, true, true);
+  await ea.addElementsToView(false, false, true);
   ea.destroy();
+  view.setDirty();
   const inserted = view
     .getViewElements()
     .find((candidate) => candidate.id === id);
@@ -222,6 +219,7 @@ export async function updateMarkdownImage(
   if (containsReservedMarkdownImageMarker(element.fileId, markdown)) {
     return false;
   }
+  view.setMarkdownImageEditorIsEditing();
   const sourceFile =
     source === "external"
       ? (view.excalidrawData.getFile(element.fileId)?.file ?? view.file)
@@ -248,7 +246,8 @@ export async function updateMarkdownImage(
   if (source === "local") {
     view.excalidrawData.setMarkdownImage(element.fileId, { markdown });
   }
-  await ea.addElementsToView(false, true);
+  await ea.addElementsToView(false, false);
   ea.destroy();
+  view.setDirty();
   return true;
 }

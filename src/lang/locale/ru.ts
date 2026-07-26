@@ -101,13 +101,27 @@ export default {
   MARKDOWN_IMAGE_BORDER: "Рамка",
   MARKDOWN_IMAGE_BORDER_COLOR: "Цвет рамки",
   MARKDOWN_IMAGE_THEME: "Тема",
+  MARKDOWN_IMAGE_THEME_DESC:
+    "Управляет зависящим от темы содержимым: блоками кода, таблицами, ссылками и выносками.",
   MARKDOWN_IMAGE_MATCH_CANVAS: "Как на холсте",
   MARKDOWN_IMAGE_LIGHT: "Светлая",
   MARKDOWN_IMAGE_DARK: "Тёмная",
   MARKDOWN_IMAGE_CSS: "CSS",
+  MARKDOWN_IMAGE_CSS_DESC:
+    "Правила CSS применяются только к этому Markdown-изображению.",
+  MARKDOWN_IMAGE_CSS_DESKTOP_HELP:
+    "Чтобы проверить созданную разметку, откройте консоль разработчика ({shortcut}) и выполните команду, доступную по кнопке копирования.",
+  MARKDOWN_IMAGE_CSS_MOBILE_HELP:
+    "На компьютере созданную разметку можно проверить в консоли разработчика и выполнить команду, доступную по кнопке копирования.",
+  MARKDOWN_IMAGE_COPY_CSS_COMMAND:
+    "Копировать консольную команду для созданного Markdown SVG",
+  MARKDOWN_IMAGE_CSS_COMMAND_COPIED: "Консольная команда скопирована",
   MARKDOWN_IMAGE_USE_APPEARANCE: "Использовать оформление для новых Markdown-изображений",
   MARKDOWN_IMAGE_SET_DEFAULT: "Сделать по умолчанию",
+  MARKDOWN_IMAGE_SAVE_DEFAULT_ARIA:
+    "Сохранить текущие настройки оформления как настройки по умолчанию",
   MARKDOWN_IMAGE_RENDER_NOW: "Отобразить сейчас",
+  MARKDOWN_IMAGE_UPDATING: "Обновление изображения…",
   MARKDOWN_IMAGE_EXTERNAL_SOURCE: "Внешний источник Markdown",
   MARKDOWN_IMAGE_MAKE_LOCAL: "Создать локальную копию",
   MARKDOWN_IMAGE_EXTERNAL_TARGET: "Внешняя заметка, заголовок или блок",
@@ -126,6 +140,8 @@ export default {
   MARKDOWN_IMAGE_SOURCE_UNAVAILABLE: "Источник Markdown-изображения недоступен.",
   MARKDOWN_IMAGE_RESERVED_MARKER: "Текст Markdown содержит зарезервированную строку-маркер.",
   MARKDOWN_IMAGE_EMPTY_PLACEHOLDER: "Начните вводить текст в редакторе Markdown-изображения…",
+  MARKDOWN_IMAGE_NO_SELECTION: "Выберите Markdown-изображение для редактирования.",
+  MARKDOWN_IMAGE_RESIZE_EDITOR: "Изменить размер редактора Markdown",
   INSERT_PDF: "Вставить PDF-файл из хранилища",
   UNIVERSAL_ADD_FILE: "Вставка ЛЮБОГО файла",
   // Compatibility keys consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().

@@ -1633,7 +1633,7 @@ export default class ExcalidrawPlugin extends Plugin {
           fontFamily: this.settings.mdFont,
           fontColor: this.settings.mdFontColor,
           border: {
-            enabled: this.settings.mdBorderColor.trim().length > 0,
+            enabled: false,
             color: this.settings.mdBorderColor,
           },
           css: this.settings.mdCSS,

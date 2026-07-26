@@ -703,7 +703,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
       fontFamily: "Cascadia",
       fontColor: "Black",
       border: {
-        enabled: true,
+        enabled: false,
         color: "Black",
       },
       css: "",

@@ -1094,3 +1094,182 @@ End Obsidian Sheets Plus support
   border-top: none;
   padding: 0;
 }
+
+/* Editable Markdown images */
+.excalidraw-markdown-image-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.excalidraw-markdown-image-editor__toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  margin: -4px -4px 0;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+}
+
+.excalidraw-markdown-image-editor__toolbar .clickable-icon {
+  flex: 0 0 auto;
+}
+
+.excalidraw-markdown-image-editor__status {
+  margin-inline-start: auto;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  white-space: nowrap;
+}
+
+.excalidraw-markdown-image-editor__status.is-updating::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-inline-end: 6px;
+  border-radius: 50%;
+  background: var(--interactive-accent);
+  animation: excalidraw-markdown-image-pulse 1s ease-in-out infinite;
+}
+
+@keyframes excalidraw-markdown-image-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.excalidraw .excalidraw-selected-element-menu .Island {
+  position: relative;
+  display: flex;
+}
+
+.excalidraw .excalidraw-selected-element-menu.is-hidden {
+  display: none;
+}
+
+.excalidraw-markdown-image-editor__source,
+.excalidraw-markdown-image-editor__appearance {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-secondary-alt);
+  padding: 0 12px;
+}
+
+.excalidraw-markdown-image-editor__source:empty {
+  display: none;
+}
+
+.excalidraw-markdown-image-editor__section-title {
+  margin: 14px 0 4px;
+  color: var(--text-normal);
+  font-size: var(--font-ui-medium);
+}
+
+.excalidraw-markdown-image-editor__markdown-view {
+  position: relative;
+  width: 100%;
+  flex: 0 0 auto;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  box-sizing: border-box;
+}
+
+.excalidraw-markdown-image-editor__markdown-view > .workspace-split,
+.excalidraw-markdown-image-editor__markdown-view .workspace-leaf,
+.excalidraw-markdown-image-editor__markdown-view .workspace-leaf-content {
+  height: 100%;
+  min-height: 0;
+}
+
+.excalidraw-markdown-image-editor__editor-resize-handle {
+  position: relative;
+  z-index: 2;
+  height: 12px;
+  flex: 0 0 12px;
+  cursor: row-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.excalidraw-markdown-image-editor__editor-resize-handle::before {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  width: 40px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--background-modifier-border-hover);
+  content: "";
+  transform: translateX(-50%);
+}
+
+.excalidraw-markdown-image-editor__editor-resize-handle:hover::before,
+.excalidraw-markdown-image-editor__editor-resize-handle:focus-visible::before {
+  background: var(--interactive-accent);
+}
+
+.excalidraw-markdown-fragment-view .inline-title {
+  display: none !important;
+}
+
+.excalidraw-markdown-image-editor__number-input {
+  width: 76px;
+}
+
+.excalidraw-markdown-image-editor__appearance .setting-item-control input[type="range"] {
+  min-width: 110px;
+}
+
+.excalidraw-markdown-image-editor__css-setting {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.excalidraw-markdown-image-editor__css-setting .setting-item-info {
+  width: 100%;
+}
+
+.excalidraw-markdown-image-editor__css-setting .setting-item-control {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+}
+
+.excalidraw-markdown-image-editor__css-setting textarea {
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  flex: 1 1 auto;
+  box-sizing: border-box;
+}
+
+.excalidraw-markdown-image-editor__css-setting button {
+  flex: 0 0 auto;
+}
+
+.excalidraw-markdown-image-editor__css-setting textarea {
+  min-height: 140px;
+  resize: vertical;
+  font-family: var(--font-monospace);
+}
+
+.excalidraw-markdown-image-editor__placeholder {
+  margin: auto;
+  max-width: 28em;
+  padding: 32px 20px;
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  color: var(--text-muted);
+  text-align: center;
+}

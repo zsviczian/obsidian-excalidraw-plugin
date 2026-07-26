@@ -154,13 +154,18 @@ import {
   generateIdFromFile,
 } from "../shared/EmbeddedFileLoader";
 import {
+  getMarkdownImageCustomData,
   getMarkdownImageSource,
   isMarkdownImageElement,
 } from "../shared/MarkdownImage";
-import { openMarkdownImageEditor as openMarkdownImageEditorSidepanel } from "./sidepanel/MarkdownImageEditor";
+import {
+  handleMarkdownImageEditorSelection,
+  openMarkdownImageEditor as openMarkdownImageEditorSidepanel,
+} from "./sidepanel/MarkdownImageEditor";
 import { ScriptInstallPrompt } from "../shared/Dialogs/ScriptInstallPrompt";
 import { ObsidianMenu } from "./components/menu/ObsidianMenu";
 import { ToolsPanel } from "./components/menu/ToolsPanel";
+import { SelectedElementActionsMenu } from "./components/menu/SelectedElementActionsMenu";
 import { ScriptEngine } from "../shared/Scripts";
 import {
   getTextElementAtPointer,
@@ -468,6 +473,7 @@ export default class ExcalidrawView
   public compatibilityMode: boolean = false;
   private obsidianMenu: ObsidianMenu | null = null;
   private embeddableMenu: EmbeddableMenu | null = null;
+  private selectedElementActionsMenu: SelectedElementActionsMenu | null = null;
   private destroyers: Array<() => void> = [];
   private previousContentElHeight: number = 0;
   private resizeBatchTimer: number | null = null;
@@ -1083,6 +1089,13 @@ export default class ExcalidrawView
     this.clearEmbeddableNodeIsEditingTimer();
     this.semaphores.embeddableIsEditingSelf = true;
     await this.forceSave(true);
+  }
+
+  /** Debounces self-edit reloads without forcing a disk save. */
+  public setMarkdownImageEditorIsEditing(): void {
+    this.clearEmbeddableNodeIsEditingTimer();
+    this.semaphores.embeddableIsEditingSelf = true;
+    this.clearEmbeddableNodeIsEditing();
   }
 
   public clearEmbeddableNodeIsEditingTimer() {
@@ -2028,6 +2041,16 @@ export default class ExcalidrawView
       const imageElement = this.getScene().elements.find(
         (el: ExcalidrawElement) => el.id === selectedImage.id,
       ) as ExcalidrawImageElement;
+      const markdownImageCustomData = getMarkdownImageCustomData(imageElement);
+      if (
+        !markdownImageCustomData &&
+        linkClickType === "md-properties" &&
+        this.excalidrawData.hasFile(selectedImage.fileId)
+      ) {
+        this.updateScene({ appState: { contextMenu: null } });
+        void this.openEmbeddedLinkEditor(selectedImage.id);
+        return;
+      }
       const markdownImageSource = isMarkdownImageElement(this, imageElement)
         ? await getMarkdownImageSource(this, imageElement)
         : null;
@@ -5749,6 +5772,7 @@ export default class ExcalidrawView
   }
 
   private onChange(et: ExcalidrawElement[], st: AppState, files: BinaryFiles) {
+    this.selectedElementActionsMenu?.update(et, st);
     if (st.activeTool?.type) {
       if (st.activeTool.type === "image") {
         if (
@@ -5842,6 +5866,11 @@ export default class ExcalidrawView
       this.checkSceneVersion(et);
     }
 
+    handleMarkdownImageEditorSelection(
+      this,
+      et,
+      st.selectedElementIds,
+    );
     this.triggerSceneChangeHooks(et, st, files);
   }
 
@@ -7954,11 +7983,37 @@ export default class ExcalidrawView
       this.obsidianMenu = new ObsidianMenu(this.plugin, toolsPanelRef, this);
       this.embeddableMenu = new EmbeddableMenu(this, embeddableMenuRef);
       this.excalidrawWrapperRef = excalidrawWrapperRef;
+      this.selectedElementActionsMenu = new SelectedElementActionsMenu(
+        () => this.excalidrawContainer,
+      );
+      this.selectedElementActionsMenu.registerProvider({
+        id: "markdown-image",
+        getActions: (element) =>
+          element.type === "image" && isMarkdownImageElement(this, element)
+            ? [
+                {
+                  id: "edit-markdown-image",
+                  title: t("EDIT_MARKDOWN_IMAGE"),
+                  icon: "pen-line",
+                  action: () => void this.openMarkdownImageEditor(element.id),
+                },
+              ]
+            : [],
+      });
+      const appState = this.excalidrawAPI?.getAppState();
+      if (appState) {
+        this.selectedElementActionsMenu.update(
+          this.getViewElements(),
+          appState,
+        );
+      }
       return () => {
         this.obsidianMenu.destroy();
         this.obsidianMenu = null;
         this.embeddableMenu.destroy();
         this.embeddableMenu = null;
+        this.selectedElementActionsMenu.destroy();
+        this.selectedElementActionsMenu = null;
         this.toolsPanelRef.current = null;
         this.embeddableMenuRef.current = null;
         this.excalidrawWrapperRef.current = null;

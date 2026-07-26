@@ -16,6 +16,7 @@ import {
   THEME_FILTER,
   FRONTMATTER_KEYS,
   getCSSFontDefinition,
+  MARKDOWN_TO_SVG_RENDER_CLASS,
 } from "../constants/constants";
 import { createSVG } from "src/utils/excalidrawAutomateUtils";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
@@ -1645,8 +1646,13 @@ export class EmbeddedFilesLoader {
     const fmFontColor = safeFrontmatter[FRONTMATTER_KEYS["font-color"].name];
     const fontColor =
       overrides?.render.fontColor ?? fmFontColor ?? plugin.settings.mdFontColor;
+    const markdownImageThemeCSS = overrides
+      ? this.isDark
+        ? `.excalidraw-md-host.theme-dark{color-scheme:dark;--background-primary:#202020;--background-secondary:#2b2b2b;--text-normal:#dcddde;--text-muted:#a0a0a0;--link-color:#8ab4f8}.excalidraw-md-host.theme-dark a{color:var(--link-color)}.excalidraw-md-host.theme-dark th{background-color:#3a3a3a}.excalidraw-md-host.theme-dark pre[class*=language-],.excalidraw-md-host.theme-dark :not(pre)>code[class*=language-]{color:#dcddde;background-color:#2b2b2b;border-color:#555}.excalidraw-md-host.theme-dark blockquote{background-color:rgba(255,255,255,.08)}`
+        : `.excalidraw-md-host.theme-light{color-scheme:light;--background-primary:#ffffff;--background-secondary:#f5f5f5;--text-normal:#2e3338;--text-muted:#6b6b6b;--link-color:#086ddd}.excalidraw-md-host.theme-light a{color:var(--link-color)}.excalidraw-md-host.theme-light th{background-color:#dedede}.excalidraw-md-host.theme-light pre[class*=language-],.excalidraw-md-host.theme-light :not(pre)>code[class*=language-]{color:#393a34;background-color:#f5f5f5;border-color:#ddd}.excalidraw-md-host.theme-light blockquote{background-color:rgba(0,0,0,.06)}`
+      : "";
     let style: string = overrides
-      ? `${DEFAULT_MD_EMBED_CSS}\n${overrides.render.css}`
+      ? `${DEFAULT_MD_EMBED_CSS}\n${markdownImageThemeCSS}\n${overrides.render.css}`
       : (safeFrontmatter[FRONTMATTER_KEYS["md-css"].name] ?? "");
 
     let frontmatterCSSisAfile = false;
@@ -1677,31 +1683,45 @@ export class EmbeddedFilesLoader {
         : ""
       : (safeFrontmatter[FRONTMATTER_KEYS["border-color"].name] ??
         plugin.settings.mdBorderColor);
-
-    if (borderColor && borderColor !== "" && !style.match(/svg/i)) {
-      style += `svg{border:2px solid;color:${borderColor};transform:scale(.95)}`;
-    }
+    const drawBorder = Boolean(
+      borderColor && (overrides || !style.match(/svg/i)),
+    );
 
     //3.
     //SVG helper functions
     //the SVG will first have ~infinite height. After sizing this will be reduced
-    let svgStyle = ` width="${linkParts.width}px" height="100000"`;
-    let foreignObjectStyle = ` width="${linkParts.width}px" height="100%"`;
-
-    const svg = (xml: string, xmlFooter: string, style?: string) =>
-      `<svg xmlns="http://www.w3.org/2000/svg"${svgStyle}>${
+    let svgHeight = 100000;
+    const svg = (
+      xml: string,
+      xmlFooter: string,
+      style?: string,
+      includeBorder: boolean = false,
+    ) => {
+      const hasInsetBorder = includeBorder && drawBorder;
+      const inset = hasInsetBorder ? 2 : 0;
+      const width = Math.max(0, linkParts.width - inset * 2);
+      const height = Math.max(0, svgHeight - inset * 2);
+      const safeBorderColor = borderColor.replace(/[<>"']/g, "");
+      const border = hasInsetBorder
+        ? `<rect x="1" y="1" width="${Math.max(0, linkParts.width - 2)}" height="${Math.max(0, svgHeight - 2)}" fill="none" stroke="${safeBorderColor}" stroke-width="2"/>`
+        : "";
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="${linkParts.width}px" height="${svgHeight}px">${
         style ? `<style>${style}</style>` : ""
-      }<foreignObject x="0" y="0"${foreignObjectStyle}>${xml}${
+      }<foreignObject x="${inset}" y="${inset}" width="${width}px" height="${height}px">${xml}${
         xmlFooter //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/286#issuecomment-982179639
-      }</foreignObject>${
+      }</foreignObject>${border}${
         fontDef !== "" ? `<defs><style>${fontDef}</style></defs>` : ""
       }</svg>`;
+    };
 
     //4.
     //create document div - this will be the contents of the foreign object
     const mdDIV = createDiv();
     mdDIV.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
-    mdDIV.setAttribute("class", "excalidraw-md-host");
+    mdDIV.setAttribute(
+      "class",
+      `excalidraw-md-host ${MARKDOWN_TO_SVG_RENDER_CLASS} ${this.isDark ? "theme-dark" : "theme-light"}`,
+    );
     if (fontName !== "") {
       setStyle(mdDIV, { fontFamily: fontName });
     }
@@ -1767,7 +1787,7 @@ export class EmbeddedFilesLoader {
       return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
     }
     const internalEmbeds = Array.from(
-      mdDIV.querySelectorAll("span[class='internal-embed']"),
+      mdDIV.querySelectorAll<HTMLElement>("span.internal-embed[src]"),
     );
     for (let i = 0; i < internalEmbeds.length; i++) {
       if (this.terminate) {
@@ -1789,15 +1809,59 @@ export class EmbeddedFilesLoader {
       if (this.terminate) {
         return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
       }
+      if (!embeddedFile?.dataURL) {
+        continue;
+      }
       const img = createEl("img");
-      if (width) {
-        img.setAttribute("width", width);
+      const requestedWidth = width ? Number.parseFloat(width) : NaN;
+      const requestedHeight = height ? Number.parseFloat(height) : NaN;
+      const intrinsicWidth = embeddedFile.size?.width ?? 0;
+      const intrinsicHeight = embeddedFile.size?.height ?? 0;
+      const aspectRatio =
+        intrinsicWidth > 0 && intrinsicHeight > 0
+          ? intrinsicWidth / intrinsicHeight
+          : 0;
+      let renderedWidth = Number.isFinite(requestedWidth)
+        ? requestedWidth
+        : intrinsicWidth;
+      let renderedHeight = Number.isFinite(requestedHeight)
+        ? requestedHeight
+        : intrinsicHeight;
+      if (Number.isFinite(requestedWidth) && !Number.isFinite(requestedHeight)) {
+        renderedHeight = aspectRatio > 0 ? requestedWidth / aspectRatio : 0;
       }
-      if (height) {
-        img.setAttribute("height", height);
+      if (Number.isFinite(requestedHeight) && !Number.isFinite(requestedWidth)) {
+        renderedWidth = aspectRatio > 0 ? requestedHeight * aspectRatio : 0;
       }
+      const availableWidth = Math.max(1, linkParts.width - 20);
+      if (renderedWidth > availableWidth) {
+        const scale = availableWidth / renderedWidth;
+        renderedWidth = availableWidth;
+        renderedHeight *= scale;
+      }
+      if (renderedWidth > 0) {
+        img.setAttribute("width", String(Math.round(renderedWidth)));
+      }
+      if (renderedHeight > 0) {
+        img.setAttribute("height", String(Math.round(renderedHeight)));
+      }
+      img.alt = el.getAttribute("alt") ?? ef.file.name;
+      setStyle(img, {
+        display: "block",
+        maxWidth: "100%",
+        objectFit: "contain",
+      });
       img.src = embeddedFile.dataURL;
+      try {
+        await img.decode();
+      } catch {
+        // Explicit dimensions still make the image measurable if decode fails.
+      }
       el.replaceWith(img);
+    }
+    await replaceBlobWithBase64(mdDIV);
+    if (this.terminate) {
+      return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
     }
 
     //5.1
@@ -1854,12 +1918,16 @@ export class EmbeddedFilesLoader {
     //get SVG size
     const parser = new DOMParser();
     const doc = parser.parseFromString(
-      svg(xmlINiframe, xmlFooter),
+      svg(
+        xmlINiframe,
+        xmlFooter,
+        undefined,
+        drawBorder,
+      ),
       "image/svg+xml",
     );
     const svgEl = doc.firstElementChild;
     const host = createDiv();
-    let svgHeight = 0;
     let footerHeight = 0;
     try {
       host.appendChild(svgEl);
@@ -1867,10 +1935,12 @@ export class EmbeddedFilesLoader {
       footerHeight = svgEl.querySelector(".excalidraw-md-footer").scrollHeight;
       const height =
         svgEl.querySelector(".excalidraw-md-host").scrollHeight + footerHeight;
+      const borderHeight = drawBorder ? 4 : 0;
+      const measuredHeight = Math.ceil(height + borderHeight);
       svgHeight = overrides?.fullHeight
-        ? height
-        : height <= linkParts.height
-          ? height
+        ? measuredHeight
+        : measuredHeight <= linkParts.height
+          ? measuredHeight
           : linkParts.height;
     } finally {
       if (host.parentElement) {
@@ -1879,10 +1949,9 @@ export class EmbeddedFilesLoader {
     }
 
     //finalize SVG
-    svgStyle = ` width="${linkParts.width}px" height="${svgHeight}px"`;
-    foreignObjectStyle = ` width="${linkParts.width}px" height="${svgHeight}px"`;
+    const borderHeight = drawBorder ? 4 : 0;
     setStyle(mdDIV, {
-      height: `${svgHeight - footerHeight}px`,
+      height: `${Math.max(0, svgHeight - footerHeight - borderHeight)}px`,
       overflow: "hidden",
     });
 
@@ -1910,6 +1979,7 @@ export class EmbeddedFilesLoader {
       xml,
       '<div class="excalidraw-md-footer"></div>',
       finalStyle,
+      true,
     );
     plugin.ea.mostRecentMarkdownSVG = parser.parseFromString(
       finalSVG,

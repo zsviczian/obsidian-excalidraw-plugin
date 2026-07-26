@@ -110,13 +110,26 @@ export default {
   MARKDOWN_IMAGE_BORDER: "Borde",
   MARKDOWN_IMAGE_BORDER_COLOR: "Color del borde",
   MARKDOWN_IMAGE_THEME: "Tema",
+  MARKDOWN_IMAGE_THEME_DESC:
+    "Controla el contenido sensible al tema, como bloques de código, tablas, enlaces y llamadas.",
   MARKDOWN_IMAGE_MATCH_CANVAS: "Coincidir con el lienzo",
   MARKDOWN_IMAGE_LIGHT: "Claro",
   MARKDOWN_IMAGE_DARK: "Oscuro",
   MARKDOWN_IMAGE_CSS: "CSS",
+  MARKDOWN_IMAGE_CSS_DESC: "Reglas CSS aplicadas solo a esta imagen Markdown.",
+  MARKDOWN_IMAGE_CSS_DESKTOP_HELP:
+    "Para inspeccionar el marcado generado, abre la consola de desarrollo ({shortcut}) y ejecuta el comando disponible en el botón de copia.",
+  MARKDOWN_IMAGE_CSS_MOBILE_HELP:
+    "En un equipo de escritorio puedes inspeccionar el marcado generado en la consola de desarrollo y ejecutar el comando disponible en el botón de copia.",
+  MARKDOWN_IMAGE_COPY_CSS_COMMAND:
+    "Copiar el comando de consola del SVG Markdown generado",
+  MARKDOWN_IMAGE_CSS_COMMAND_COPIED: "Comando de consola copiado",
   MARKDOWN_IMAGE_USE_APPEARANCE: "Usar la apariencia para nuevas imágenes Markdown",
   MARKDOWN_IMAGE_SET_DEFAULT: "Establecer como predeterminado",
+  MARKDOWN_IMAGE_SAVE_DEFAULT_ARIA:
+    "Guardar la configuración de apariencia actual como predeterminada",
   MARKDOWN_IMAGE_RENDER_NOW: "Renderizar ahora",
+  MARKDOWN_IMAGE_UPDATING: "Actualizando imagen…",
   MARKDOWN_IMAGE_EXTERNAL_SOURCE: "Fuente Markdown externa",
   MARKDOWN_IMAGE_MAKE_LOCAL: "Crear copia local",
   MARKDOWN_IMAGE_EXTERNAL_TARGET: "Nota, encabezado o bloque externo",
@@ -135,6 +148,8 @@ export default {
   MARKDOWN_IMAGE_SOURCE_UNAVAILABLE: "La fuente de la imagen Markdown no está disponible.",
   MARKDOWN_IMAGE_RESERVED_MARKER: "El cuerpo Markdown contiene una línea de marcador reservada.",
   MARKDOWN_IMAGE_EMPTY_PLACEHOLDER: "Empieza a escribir en el editor de imágenes Markdown…",
+  MARKDOWN_IMAGE_NO_SELECTION: "Selecciona una imagen Markdown para editarla.",
+  MARKDOWN_IMAGE_RESIZE_EDITOR: "Cambiar el tamaño del editor Markdown",
   INSERT_PDF: "Insertar archivo PDF desde la bóveda",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE:
     "Insertar última página PDF activa como imagen",
