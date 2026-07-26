@@ -30,6 +30,7 @@ import { setElementIconAndText, setSanitizedHtml } from "src/utils/htmlUtils";
 import { getImageCache } from "src/shared/ImageCache";
 import { MultiOptionConfirmationPrompt } from "src/shared/Dialogs/Prompt";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
+import type { MarkdownImageSettings } from "src/types/markdownImageTypes";
 import { EmbeddalbeMDFileCustomDataSettingsComponent } from "src/shared/Dialogs/EmbeddableMDFileCustomDataSettingsComponent";
 import { startupScript } from "src/constants/starutpscript";
 import { ModifierKeySet, ModifierSetType } from "src/utils/modifierkeyHelper";
@@ -207,6 +208,7 @@ export interface ExcalidrawSettings {
   mdFontColor: string;
   mdBorderColor: string;
   mdCSS: string;
+  markdownImageSettings: MarkdownImageSettings;
   scriptEngineSettings: {
     [key: string]: {
       [key: string]: ScriptSettingValue | string | number | boolean;
@@ -694,6 +696,25 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   mdFontColor: "Black",
   mdBorderColor: "Black",
   mdCSS: "",
+  markdownImageSettings: {
+    defaults: {
+      source: "local",
+      width: 500,
+      fontFamily: "Cascadia",
+      fontColor: "Black",
+      border: {
+        enabled: true,
+        color: "Black",
+      },
+      css: "",
+      theme: "canvas",
+    },
+    editor: {
+      livePreview: true,
+      activeSection: "content",
+      rememberLastUsedAppearance: true,
+    },
+  },
   scriptEngineSettings: {},
   previousRelease: "0.0.0",
   showReleaseNotes: true,

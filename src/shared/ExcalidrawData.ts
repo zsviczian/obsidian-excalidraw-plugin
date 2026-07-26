@@ -68,6 +68,12 @@ import { displayFontMessage } from "../utils/excalidrawViewUtils";
 import { getPDFRect } from "../utils/PDFUtils";
 import { URLs } from "src/constants/safeUrls";
 import { errorlog } from "src/utils/coreUtils";
+import {
+  MARKDOWN_IMAGE_CUSTOM_DATA_KEY,
+  MARKDOWN_IMAGE_EMBEDDED_FILE_TOKEN,
+  type MarkdownImageCustomData,
+  type MarkdownImageData,
+} from "src/types/markdownImageTypes";
 
 type SceneDataWithFiles = SceneData & { files: BinaryFiles };
 
@@ -302,6 +308,68 @@ export function getMarkdownDrawingSection(
   return result;
 }
 
+const MARKDOWN_IMAGES_HEADING = "## Markdown Images";
+
+/**
+ * Reads locally stored Markdown-image bodies from the managed section following
+ * the Drawing code block. The body is kept verbatim between the blank-line
+ * delimiters; no heading or other wrapper content is added.
+ */
+export function parseMarkdownImages(data: string): Map<FileId, MarkdownImageData> {
+  const result = new Map<FileId, MarkdownImageData>();
+  const drawingIndex = data.indexOf("\n## Drawing\n");
+  if (drawingIndex === -1) {
+    return result;
+  }
+  const sectionIndex = data.indexOf(`\n${MARKDOWN_IMAGES_HEADING}\n`, drawingIndex);
+  if (sectionIndex === -1) {
+    return result;
+  }
+  const finalCommentIndex = data.lastIndexOf("\n%%");
+  const sectionEnd = finalCommentIndex > sectionIndex ? finalCommentIndex : data.length;
+  const section = data.substring(sectionIndex, sectionEnd);
+  const openMarker = /^<!-- excalidraw-markdown-image:([\w\d]+) -->\r?$/gm;
+  let match: RegExpExecArray | null;
+  while ((match = openMarker.exec(section)) !== null) {
+    const fileId = match[1] as FileId;
+    const bodyStartToken = section.startsWith("\r\n\r\n", openMarker.lastIndex)
+      ? "\r\n\r\n"
+      : "\n\n";
+    if (!section.startsWith(bodyStartToken, openMarker.lastIndex)) {
+      continue;
+    }
+    const closeMarker = `<!-- /excalidraw-markdown-image:${fileId} -->`;
+    const closePrefix = bodyStartToken;
+    const closeIndex = section.indexOf(
+      `${closePrefix}${closeMarker}`,
+      openMarker.lastIndex + bodyStartToken.length,
+    );
+    if (closeIndex === -1) {
+      continue;
+    }
+    const markdown = section.substring(
+      openMarker.lastIndex + bodyStartToken.length,
+      closeIndex,
+    );
+    result.set(fileId, { markdown });
+    openMarker.lastIndex = closeIndex + closePrefix.length + closeMarker.length;
+  }
+  return result;
+}
+
+function getMarkdownImagesSection(
+  markdownImages: ReadonlyMap<FileId, MarkdownImageData>,
+): string {
+  if (markdownImages.size === 0) {
+    return "";
+  }
+  let section = `\n\n${MARKDOWN_IMAGES_HEADING}\n`;
+  markdownImages.forEach(({ markdown }, fileId) => {
+    section += `\n<!-- excalidraw-markdown-image:${fileId} -->\n\n${markdown}\n\n<!-- /excalidraw-markdown-image:${fileId} -->\n`;
+  });
+  return section;
+}
+
 //WITHSECTION refers to back of the card note (see this.inputEl.onkeyup in SelectCard.ts)
 const RE_EXCALIDRAWDATA_WITHSECTION_OK =
   /^(#\n+)%%\n+# Excalidraw Data(?:\n|$)/m;
@@ -523,6 +591,7 @@ export class ExcalidrawData {
   public loaded: boolean = false;
   public elementLinks: Map<string, string> = null;
   public files: Map<FileId, EmbeddedFile> = null; //fileId, path
+  public markdownImages: Map<FileId, MarkdownImageData> = null;
   private equations: Map<FileId, EquationItem> = null; //fileId, path
   private mermaids: Map<FileId, MermaidItem> = null; //fileId, path
   private compatibilityMode: boolean = false;
@@ -535,6 +604,7 @@ export class ExcalidrawData {
   ) {
     this.app = this.plugin.app;
     this.files = new Map<FileId, EmbeddedFile>();
+    this.markdownImages = new Map<FileId, MarkdownImageData>();
     this.equations = new Map<FileId, EquationItem>();
     this.mermaids = new Map<FileId, MermaidItem>();
   }
@@ -554,6 +624,7 @@ export class ExcalidrawData {
     this.loaded = false;
     this.elementLinks = null;
     this.files = null;
+    this.markdownImages = null;
     this.equations = null;
     this.mermaids = null;
     this.compatibilityMode = null;
@@ -800,6 +871,7 @@ export class ExcalidrawData {
       { raw: string; parsed: string; hasTextLink: boolean }
     >();
     this.elementLinks = new Map<string, string>();
+    this.markdownImages.clear();
     if (this.file !== file) {
       //this is a reload - files, equations and mermaids will take care of reloading when needed
       this.files.clear();
@@ -850,6 +922,22 @@ export class ExcalidrawData {
       return sceneJSONandPOS;
     };
     sceneJSONandPOS = loadJSON();
+    const parsedMarkdownImages = parseMarkdownImages(data);
+    this.scene.elements.forEach((element: ExcalidrawElement) => {
+      const markdownImageData = element.customData?.[
+        MARKDOWN_IMAGE_CUSTOM_DATA_KEY
+      ] as MarkdownImageCustomData | undefined;
+      if (
+        element.type === "image" &&
+        markdownImageData?.source === "local" &&
+        !parsedMarkdownImages.has(element.fileId)
+      ) {
+        this.plugin.markdownImagesMaster.delete(element.fileId);
+      }
+    });
+    parsedMarkdownImages.forEach((value, fileId) =>
+      this.setMarkdownImage(fileId, value),
+    );
 
     this.deletedElements = this.scene.elements.filter(
       (el: ExcalidrawElement) => el.isDeleted,
@@ -1639,7 +1727,9 @@ export class ExcalidrawData {
 
     // deliberately not adding mermaids to here. It is enough to have the mermaidText in the image element's customData
     outString +=
-      this.equations.size > 0 || this.files.size > 0
+      this.equations.size > 0 ||
+      this.files.size > 0 ||
+      this.markdownImages.size > 0
         ? "## Embedded Files\n"
         : "";
     if (this.equations.size > 0) {
@@ -1666,6 +1756,11 @@ export class ExcalidrawData {
         }
       }
     }
+    if (this.markdownImages.size > 0) {
+      for (const key of this.markdownImages.keys()) {
+        outString += `${key}: ${MARKDOWN_IMAGE_EMBEDDED_FILE_TOKEN}\n\n`;
+      }
+    }
     //outString += this.equations.size > 0 || this.files.size > 0 ? "\n" : "";
 
     const sceneJSONstring = JSON.stringify(
@@ -1687,25 +1782,37 @@ export class ExcalidrawData {
     deletedElements: ExcalidrawElement[] = [],
   ): Promise<string> {
     const { outString, sceneJSONstring } = this.generateMDBase(deletedElements);
+    const drawingSection = await getMarkdownDrawingSectionAsync(
+      sceneJSONstring,
+      this.disableCompression ? false : this.plugin.settings.compress,
+    );
+    const markdownImagesSection = getMarkdownImagesSection(this.markdownImages);
     const result =
       outString +
       (this.textElementCommentedOut ? "" : "%%\n") +
-      (await getMarkdownDrawingSectionAsync(
-        sceneJSONstring,
-        this.disableCompression ? false : this.plugin.settings.compress,
-      ));
+      (markdownImagesSection
+        ? drawingSection.substring(0, drawingSection.length - 3) +
+          markdownImagesSection +
+          "\n%%"
+        : drawingSection);
     return result;
   }
 
   generateMDSync(deletedElements: ExcalidrawElement[] = []): string {
     const { outString, sceneJSONstring } = this.generateMDBase(deletedElements);
+    const drawingSection = getMarkdownDrawingSection(
+      sceneJSONstring,
+      this.disableCompression ? false : this.plugin.settings.compress,
+    );
+    const markdownImagesSection = getMarkdownImagesSection(this.markdownImages);
     const result =
       outString +
       (this.textElementCommentedOut ? "" : "%%\n") +
-      getMarkdownDrawingSection(
-        sceneJSONstring,
-        this.disableCompression ? false : this.plugin.settings.compress,
-      );
+      (markdownImagesSection
+        ? drawingSection.substring(0, drawingSection.length - 3) +
+          markdownImagesSection +
+          "\n%%"
+        : drawingSection);
     return result;
   }
 
@@ -1840,9 +1947,16 @@ export class ExcalidrawData {
       }
     });
 
+    this.markdownImages.forEach((value, key) => {
+      if (!fileIds.contains(key)) {
+        this.markdownImages.delete(key);
+        dirty = true;
+      }
+    });
+
     //check if there are any images that need to be processed in the new scene
     if (!scene.files || Object.keys(scene.files).length === 0) {
-      return false;
+      return dirty;
     }
 
     //assing new fileId to duplicate equation and markdown files
@@ -1855,6 +1969,7 @@ export class ExcalidrawData {
         const embeddedFile = this.getFile(fileId);
         const equation = this.getEquation(fileId);
         const mermaid = this.getMermaid(fileId);
+        const markdownImage = this.getMarkdownImage(fileId);
 
         //images should have a single reference, but equations, and markdown embeds should have as many as instances of the file in the scene
         if (
@@ -1879,7 +1994,7 @@ export class ExcalidrawData {
           return;
         }
 
-        if (!embeddedFile && !equation && !mermaid) {
+        if (!embeddedFile && !equation && !mermaid && !markdownImage) {
           //processing freshly pasted images from likely anotehr instance of excalidraw (e.g. Excalidraw.com, or another Obsidian instance)
           return;
         }
@@ -1910,6 +2025,9 @@ export class ExcalidrawData {
             isLoaded: false,
           });
         }
+        if (markdownImage) {
+          this.setMarkdownImage(newId as FileId, { ...markdownImage });
+        }
       }
       processedIds.add(fileId);
     });
@@ -1928,6 +2046,7 @@ export class ExcalidrawData {
           this.hasFile(key as FileId) ||
           this.hasEquation(key as FileId) ||
           this.hasMermaid(key as FileId) ||
+          this.hasMarkdownImage(key as FileId) ||
           mermaidElements.length > 0
         )
       ) {
@@ -2415,6 +2534,49 @@ export class ExcalidrawData {
       return true;
     }
     return false;
+  }
+
+  //--------------
+  //Local Markdown images
+  //--------------
+
+  /** Stores a local Markdown-image source and makes it available for intra-vault copy/paste. */
+  public setMarkdownImage(fileId: FileId, data: MarkdownImageData): void {
+    if (!data) {
+      return;
+    }
+    const value = { markdown: data.markdown ?? "" };
+    this.markdownImages.set(fileId, value);
+    this.plugin.markdownImagesMaster.set(fileId, value);
+  }
+
+  /** Returns local Markdown, restoring it from the intra-vault copy master. */
+  public getMarkdownImage(fileId: FileId): MarkdownImageData | undefined {
+    const local = this.markdownImages.get(fileId);
+    if (local) {
+      return local;
+    }
+    const master = this.plugin.markdownImagesMaster.get(fileId);
+    if (master) {
+      const value = { ...master };
+      this.markdownImages.set(fileId, value);
+      return value;
+    }
+    return undefined;
+  }
+
+  /** Returns whether local Markdown exists, restoring intra-vault clipboard data. */
+  public hasMarkdownImage(fileId: FileId): boolean {
+    return Boolean(this.getMarkdownImage(fileId));
+  }
+
+  /** Removes a local source, optionally discarding its clipboard master entry. */
+  public deleteMarkdownImage(fileId: FileId, clearMaster = false): void {
+    this.markdownImages.delete(fileId);
+    if (clearMaster) {
+      this.plugin.markdownImagesMaster.delete(fileId);
+    }
+    // Normally retain the master entry for copies already on the clipboard.
   }
 
   //--------------

@@ -153,6 +153,11 @@ import {
   EmbeddedFilesLoader,
   generateIdFromFile,
 } from "../shared/EmbeddedFileLoader";
+import {
+  getMarkdownImageSource,
+  isMarkdownImageElement,
+} from "../shared/MarkdownImage";
+import { openMarkdownImageEditor as openMarkdownImageEditorSidepanel } from "./sidepanel/MarkdownImageEditor";
 import { ScriptInstallPrompt } from "../shared/Dialogs/ScriptInstallPrompt";
 import { ObsidianMenu } from "./components/menu/ObsidianMenu";
 import { ToolsPanel } from "./components/menu/ToolsPanel";
@@ -273,7 +278,7 @@ import { setElementDisplay } from "src/utils/htmlUtils";
 
 const EMBEDDABLE_SEMAPHORE_TIMEOUT = 2000;
 const PREVENT_RELOAD_TIMEOUT = 2000;
-const RE_TAIL = /^## Drawing\n.*```\n%%$(.*)/ms;
+const RE_TAIL = /^## Drawing\n[\s\S]*\n%%$(.*)/ms;
 
 declare const PLUGIN_VERSION: string;
 declare const mainDocument: Document;
@@ -2023,14 +2028,42 @@ export default class ExcalidrawView
       const imageElement = this.getScene().elements.find(
         (el: ExcalidrawElement) => el.id === selectedImage.id,
       ) as ExcalidrawImageElement;
-      if (this.excalidrawData.hasEquation(selectedImage.fileId)) {
+      const markdownImageSource = isMarkdownImageElement(this, imageElement)
+        ? await getMarkdownImageSource(this, imageElement)
+        : null;
+      if (markdownImageSource) {
+        const result = await linkPrompt(
+          markdownImageSource.markdown,
+          this.app,
+          this,
+        );
+        if (!result) {
+          return;
+        }
+        [file, linkText, subpath] = result;
+        if (
+          markdownImageSource.source === "external" &&
+          markdownImageSource.embeddedFile?.file &&
+          linkText
+        ) {
+          file = this.app.metadataCache.getFirstLinkpathDest(
+            linkText,
+            markdownImageSource.embeddedFile.file.path,
+          );
+        }
+      }
+      if (
+        !markdownImageSource &&
+        this.excalidrawData.hasEquation(selectedImage.fileId)
+      ) {
         this.updateScene({ appState: { contextMenu: null } });
         void this.openLaTeXEditor(selectedImage.id);
         return;
       }
       if (
-        this.excalidrawData.hasMermaid(selectedImage.fileId) ||
-        getMermaidText(imageElement)
+        !markdownImageSource &&
+        (this.excalidrawData.hasMermaid(selectedImage.fileId) ||
+          getMermaidText(imageElement))
       ) {
         if (shouldRenderMermaid) {
           const api = this.excalidrawAPI;
@@ -2042,8 +2075,13 @@ export default class ExcalidrawView
         return;
       }
 
-      await this.save(false); //in case pasted images haven't been saved yet
-      if (this.excalidrawData.hasFile(selectedImage.fileId)) {
+      if (!markdownImageSource) {
+        await this.save(false); //in case pasted images haven't been saved yet
+      }
+      if (
+        !markdownImageSource &&
+        this.excalidrawData.hasFile(selectedImage.fileId)
+      ) {
         const fileId = selectedImage.fileId;
         const ef = this.excalidrawData.getFile(fileId);
         if (
@@ -6615,6 +6653,21 @@ export default class ExcalidrawView
     selectCardDialog.start(center);
   }
 
+  /** Opens the sidepanel editor for a selected image or inserts a new one. */
+  public async openMarkdownImageEditor(elementId?: string): Promise<void> {
+    const selected = elementId
+      ? this.getViewElements().find((element) => element.id === elementId)
+      : this.getViewSelectedElements().length === 1
+        ? this.getViewSelectedElements()[0]
+        : undefined;
+    const image = selected?.type === "image" ? selected : undefined;
+    if (image && !isMarkdownImageElement(this, image)) {
+      new Notice(t("MARKDOWN_IMAGE_SELECT_ERROR"));
+      return;
+    }
+    await openMarkdownImageEditorSidepanel(this, image);
+  }
+
   public async moveBackOfTheNoteCardToFile(id?: string) {
     id =
       id ??
@@ -6816,6 +6869,29 @@ export default class ExcalidrawView
     }
 
     if (!appState.viewModeEnabled) {
+      const selectedMarkdownImage =
+        this.getViewSelectedElements().length === 1 &&
+        this.getViewSelectedElements()[0].type === "image" &&
+        isMarkdownImageElement(
+          this,
+          this.getViewSelectedElements()[0] as ExcalidrawImageElement,
+        )
+          ? (this.getViewSelectedElements()[0] as ExcalidrawImageElement)
+          : null;
+      if (selectedMarkdownImage) {
+        contextMenuActions.push([
+          renderContextMenuAction(
+            React,
+            t("EDIT_MARKDOWN_IMAGE"),
+            () => {
+              void this.openMarkdownImageEditor(selectedMarkdownImage.id);
+            },
+            onClose,
+            "editMarkdownImage",
+          ),
+        ]);
+      }
+
       const selectedTextElements = this.getViewSelectedElements().filter(
         (el) => el.type === "text",
       );
@@ -7127,6 +7203,17 @@ export default class ExcalidrawView
         }
       }
 
+      contextMenuActions.push([
+        renderContextMenuAction(
+          React,
+          t("INSERT_MARKDOWN_IMAGE"),
+          () => {
+            void this.openMarkdownImageEditor();
+          },
+          onClose,
+          "insertMarkdownImage",
+        ),
+      ]);
       contextMenuActions.push([
         renderContextMenuAction(
           React,

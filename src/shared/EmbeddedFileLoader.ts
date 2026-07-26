@@ -1,8 +1,9 @@
 //https://stackoverflow.com/questions/2068344/how-do-i-get-a-youtube-video-thumbnail-from-the-youtube-api
 //https://img.youtube.com/vi/uZz5MgzWXiM/maxresdefault.jpg
 
-import {
+import type {
   ExcalidrawElement,
+  ExcalidrawImageElement,
   FileId,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
@@ -74,6 +75,11 @@ import {
   isInstanceOfSVGElement,
 } from "src/utils/typechecks";
 import { getSafeFrontmatter, strictArrayBuffer } from "src/utils/obsidianUtils";
+import {
+  MARKDOWN_IMAGE_CUSTOM_DATA_KEY,
+  type MarkdownImageCustomData,
+  type MarkdownImageRenderSettings,
+} from "src/types/markdownImageTypes";
 
 //declared in rollup.config.mjs
 declare const deliberateFetch: (
@@ -98,6 +104,12 @@ type LoadImageOptions = {
 };
 
 type LoadSceneEmitPolicy = "all" | "changed-only";
+
+export type MarkdownSVGRenderResult = {
+  dataURL: DataURL;
+  hasSVGwithBitmap: boolean;
+  size: Size;
+};
 
 const getPDFCacheId = (linkParts: LinkParts, pageNum: number): string => {
   // Different crops of the same PDF page must not overwrite each other in cache,
@@ -440,6 +452,33 @@ export class EmbeddedFilesLoader {
     });
     this.pdfDocs.clear();
     this.pdfDocsMap.clear();
+  }
+
+  /**
+   * Renders an in-memory Markdown fragment using the same SVG pipeline as
+   * Markdown file embeds. Unlike ordinary embeds, the returned image is never
+   * height-clipped.
+   */
+  public async renderMarkdownToSVG(
+    sourceFile: TFile,
+    markdown: string,
+    render: MarkdownImageRenderSettings,
+  ): Promise<MarkdownSVGRenderResult> {
+    const linkParts = getLinkParts(sourceFile.path);
+    linkParts.width = render.width;
+    linkParts.height = Number.MAX_SAFE_INTEGER;
+    const result = await this.convertMarkdownToSVG(
+      this.plugin,
+      sourceFile,
+      linkParts,
+      { markdown, render, fullHeight: true },
+    );
+    return {
+      ...result,
+      size: result.dataURL
+        ? await getImageSize(result.dataURL)
+        : { width: render.width, height: 0 },
+    };
   }
 
   public async getObsidianImage(
@@ -900,6 +939,14 @@ export class EmbeddedFilesLoader {
       return;
     }
     const entries = Array.from(excalidrawData.getFileEntries());
+    const markdownImageElements = excalidrawData.scene.elements.filter(
+      (element): element is ExcalidrawImageElement =>
+        element.type === "image" &&
+        Boolean(element.customData?.[MARKDOWN_IMAGE_CUSTOM_DATA_KEY]),
+    );
+    const markdownImageFileIds = new Set(
+      markdownImageElements.map((element) => element.fileId),
+    );
     //debug({where:"EmbeddedFileLoader.loadSceneFiles",uid:this.uid,isDark:this.isDark,sceneTheme:excalidrawData.scene.appState.theme});
     if (this.isDark === undefined) {
       this.isDark = excalidrawData?.scene?.appState?.theme === "dark";
@@ -930,6 +977,9 @@ export class EmbeddedFilesLoader {
       this: EmbeddedFilesLoader,
     ): Generator<Promise<void>> {
       for (const entry of entries) {
+        if (markdownImageFileIds.has(entry[0])) {
+          continue;
+        }
         if (fileIDWhiteList && !fileIDWhiteList.has(entry[0])) {
           continue;
         }
@@ -993,6 +1043,88 @@ export class EmbeddedFilesLoader {
             fileId: id,
             filepath: embeddedFile.file?.path ?? embeddedFile.hyperlink,
             depth,
+          },
+        );
+      }
+
+      for (const element of markdownImageElements) {
+        const id = element.fileId;
+        if (fileIDWhiteList && !fileIDWhiteList.has(id)) {
+          continue;
+        }
+        yield createSafeLoadTask(
+          async () => {
+            if (this.terminate) {
+              return;
+            }
+            const customData = element.customData?.[
+              MARKDOWN_IMAGE_CUSTOM_DATA_KEY
+            ] as MarkdownImageCustomData | undefined;
+            if (!customData) {
+              return;
+            }
+            const defaults = this.plugin.settings.markdownImageSettings.defaults;
+            const render: MarkdownImageRenderSettings = {
+              width: customData.render?.width ?? defaults.width,
+              fontFamily:
+                customData.render?.fontFamily ?? defaults.fontFamily,
+              fontColor: customData.render?.fontColor ?? defaults.fontColor,
+              border: {
+                enabled:
+                  customData.render?.border?.enabled ?? defaults.border.enabled,
+                color:
+                  customData.render?.border?.color ?? defaults.border.color,
+              },
+              css: customData.render?.css ?? defaults.css,
+              theme: customData.render?.theme ?? defaults.theme,
+            };
+            let sourceFile = excalidrawData.file;
+            let markdown: string | undefined;
+            if (customData.source === "external") {
+              const embeddedFile = excalidrawData.getFile(id);
+              if (
+                !embeddedFile?.file ||
+                embeddedFile.file.extension.toLowerCase() !== "md" ||
+                this.plugin.isExcalidrawFile(embeddedFile.file)
+              ) {
+                return;
+              }
+              sourceFile = embeddedFile.file;
+              const transclusion = await getTransclusion(
+                embeddedFile.linkParts,
+                this.plugin.app,
+                sourceFile,
+              );
+              markdown =
+                (transclusion.leadingHashes ?? "") + transclusion.contents;
+            } else {
+              markdown = excalidrawData.getMarkdownImage(id)?.markdown;
+            }
+            if (markdown === undefined) {
+              return;
+            }
+            const rendered = await this.renderMarkdownToSVG(
+              sourceFile,
+              markdown,
+              render,
+            );
+            if (!rendered.dataURL || this.terminate) {
+              return;
+            }
+            files[batch].push({
+              mimeType: "image/svg+xml",
+              id,
+              dataURL: rendered.dataURL,
+              created: Date.now(),
+              size: rendered.size,
+              hasSVGwithBitmap: rendered.hasSVGwithBitmap,
+              shouldScale: true,
+            });
+          },
+          {
+            phase: "markdown-image",
+            fileId: id,
+            elementId: element.id,
           },
         );
       }
@@ -1433,6 +1565,11 @@ export class EmbeddedFilesLoader {
     plugin: ExcalidrawPlugin,
     file: TFile,
     linkParts: LinkParts,
+    overrides?: {
+      markdown: string;
+      render: MarkdownImageRenderSettings;
+      fullHeight: boolean;
+    },
   ): Promise<{ dataURL: DataURL; hasSVGwithBitmap: boolean }> {
     if (this.terminate) {
       return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
@@ -1440,14 +1577,19 @@ export class EmbeddedFilesLoader {
     //1.
     //get the markdown text
     let hasSVGwithBitmap = false;
-    const transclusion = await getTransclusion(linkParts, plugin.app, file);
+    const transclusion = overrides
+      ? null
+      : await getTransclusion(linkParts, plugin.app, file);
     if (this.terminate) {
       return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
     }
-    let text = (transclusion.leadingHashes ?? "") + transclusion.contents;
+    let text = overrides
+      ? overrides.markdown
+      : (transclusion.leadingHashes ?? "") + transclusion.contents;
     if (text === "") {
-      text =
-        "# Empty markdown file\nCTRL+Click here to open the file for editing in the current active pane, or CTRL+SHIFT+Click to open it in an adjacent pane.";
+      text = overrides
+        ? `*${t("MARKDOWN_IMAGE_EMPTY_PLACEHOLDER")}*`
+        : "# Empty markdown file\nCTRL+Click here to open the file for editing in the current active pane, or CTRL+SHIFT+Click to open it in an adjacent pane.";
     }
 
     //2.
@@ -1455,7 +1597,7 @@ export class EmbeddedFilesLoader {
 
     const fileCache = plugin.app.metadataCache.getFileCache(file);
     let fontDef: string;
-    let fontName = plugin.settings.mdFont;
+    let fontName = overrides?.render.fontFamily ?? plugin.settings.mdFont;
     const safeFrontmatter = getSafeFrontmatter(fileCache?.frontmatter);
     if (safeFrontmatter[FRONTMATTER_KEYS.font.name]) {
       fontName = safeFrontmatter[FRONTMATTER_KEYS.font.name];
@@ -1501,18 +1643,21 @@ export class EmbeddedFilesLoader {
     }
 
     const fmFontColor = safeFrontmatter[FRONTMATTER_KEYS["font-color"].name];
-    const fontColor = fmFontColor ?? plugin.settings.mdFontColor;
-    let style: string = safeFrontmatter[FRONTMATTER_KEYS["md-css"].name] ?? "";
+    const fontColor =
+      overrides?.render.fontColor ?? fmFontColor ?? plugin.settings.mdFontColor;
+    let style: string = overrides
+      ? `${DEFAULT_MD_EMBED_CSS}\n${overrides.render.css}`
+      : (safeFrontmatter[FRONTMATTER_KEYS["md-css"].name] ?? "");
 
     let frontmatterCSSisAfile = false;
-    if (style && style !== "") {
+    if (!overrides && style && style !== "") {
       const f = plugin.app.metadataCache.getFirstLinkpathDest(style, file.path);
       if (f) {
         style = await plugin.app.vault.read(f);
         frontmatterCSSisAfile = true;
       }
     }
-    if (!frontmatterCSSisAfile) {
+    if (!overrides && !frontmatterCSSisAfile) {
       if (plugin.settings.mdCSS && plugin.settings.mdCSS !== "") {
         const f = plugin.app.metadataCache.getFirstLinkpathDest(
           plugin.settings.mdCSS,
@@ -1526,9 +1671,12 @@ export class EmbeddedFilesLoader {
       }
     }
 
-    const borderColor: string =
-      safeFrontmatter[FRONTMATTER_KEYS["border-color"].name] ??
-      plugin.settings.mdBorderColor;
+    const borderColor: string = overrides
+      ? overrides.render.border.enabled
+        ? overrides.render.border.color
+        : ""
+      : (safeFrontmatter[FRONTMATTER_KEYS["border-color"].name] ??
+        plugin.settings.mdBorderColor);
 
     if (borderColor && borderColor !== "" && !style.match(/svg/i)) {
       style += `svg{border:2px solid;color:${borderColor};transform:scale(.95)}`;
@@ -1719,7 +1867,11 @@ export class EmbeddedFilesLoader {
       footerHeight = svgEl.querySelector(".excalidraw-md-footer").scrollHeight;
       const height =
         svgEl.querySelector(".excalidraw-md-host").scrollHeight + footerHeight;
-      svgHeight = height <= linkParts.height ? height : linkParts.height;
+      svgHeight = overrides?.fullHeight
+        ? height
+        : height <= linkParts.height
+          ? height
+          : linkParts.height;
     } finally {
       if (host.parentElement) {
         mainDocument.body.removeChild(host);
