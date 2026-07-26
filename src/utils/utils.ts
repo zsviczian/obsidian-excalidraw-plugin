@@ -25,6 +25,7 @@ import {
   ExcalidrawElement,
   ExcalidrawImageElement,
   ImageCrop,
+  NonDeletedExcalidrawElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import {
   getDataURLFromURL,
@@ -364,7 +365,10 @@ export async function getSVG<TScene extends SceneForExport>(
   const baseFiles = scene.files ?? {};
   const files = overrideFiles ? { ...baseFiles, ...overrideFiles } : baseFiles;
 
-  elements = elements.filter((el: ExcalidrawElement) => el.isDeleted !== true);
+  let exportElements = elements.filter(
+    (el: ExcalidrawElement): el is NonDeletedExcalidrawElement =>
+      el.isDeleted !== true,
+  );
 
   try {
     let svg: SVGSVGElement;
@@ -373,11 +377,14 @@ export async function getSVG<TScene extends SceneForExport>(
       svg = await cropObject.getCroppedSVG();
       cropObject.destroy();
     } else {
-      if (elements.length === 0) {
-        elements = getEmptyDrawingElementsRuntime();
+      if (exportElements.length === 0) {
+        exportElements = getEmptyDrawingElementsRuntime().filter(
+          (el: ExcalidrawElement): el is NonDeletedExcalidrawElement =>
+            el.isDeleted !== true,
+        );
       }
       svg = await exportToSvg({
-        elements,
+        elements: exportElements,
         appState: {
           ...scene.appState,
           exportBackground: exportSettings.withBackground,
@@ -437,7 +444,8 @@ export async function getPNG<TScene extends SceneForExport>(
       : baseFiles;
 
     let elements = scene.elements.filter(
-      (el: ExcalidrawElement) => el.isDeleted !== true,
+      (el: ExcalidrawElement): el is NonDeletedExcalidrawElement =>
+        el.isDeleted !== true,
     );
 
     if (exportSettings.isMask) {
@@ -448,7 +456,10 @@ export async function getPNG<TScene extends SceneForExport>(
     }
 
     if (elements.length === 0) {
-      elements = getEmptyDrawingElementsRuntime();
+      elements = getEmptyDrawingElementsRuntime().filter(
+        (el: ExcalidrawElement): el is NonDeletedExcalidrawElement =>
+          el.isDeleted !== true,
+      );
     }
 
     return await exportToBlob({

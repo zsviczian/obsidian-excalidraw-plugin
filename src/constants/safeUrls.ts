@@ -223,6 +223,10 @@ export const URL_REGISTRY = {
     "https://github.com/excalidraw/excalidraw/pull",
     UrlPurpose.RELEASE_LOG,
   ),
+  GITHUB_COM_EXCALIDRAW_EXCALIDRAW_CHANGELOG: defineUrl(
+    "https://github.com/excalidraw/excalidraw/blob/master/packages/excalidraw/CHANGELOG.md",
+    UrlPurpose.RELEASE_LOG,
+  ),
   GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL: defineUrl(
     "https://github.com/zsviczian/obsidian-excalidraw-plugin/pull",
     UrlPurpose.RELEASE_LOG,

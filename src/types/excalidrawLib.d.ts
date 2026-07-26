@@ -150,7 +150,9 @@ declare namespace ExcalidrawLib {
   ): GlobalPoint[];
 
   function getCommonBoundingBox(
-    elements: ExcalidrawElement[] | readonly NonDeleted<ExcalidrawElement>[],
+    elements:
+      | readonly ExcalidrawElement[]
+      | readonly NonDeleted<ExcalidrawElement>[],
   ): BoundingBox;
 
   function getContainerElement(

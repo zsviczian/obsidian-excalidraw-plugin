@@ -1692,7 +1692,9 @@ export class ExcalidrawAutomate {
     const scene = this.targetView.getScene(selectedOnly);
 
     if (elementsOverride) {
-      scene.elements = elementsOverride;
+      scene.elements = elementsOverride.filter(
+        (el): el is NonDeletedExcalidrawElement => !el.isDeleted,
+      );
     }
 
     if (!view.getViewExportIncludeInternalLinks()) {
@@ -3859,7 +3861,7 @@ export class ExcalidrawAutomate {
    * In case you want to prevent the excalidraw onLinkHover action you must return false, it will stop the native excalidraw onLinkHover management flow.
    */
   onLinkHoverHook: (
-    element: NonDeletedExcalidrawElement,
+    element: ExcalidrawElement,
     linkText: string,
     view: ExcalidrawView,
     ea: ExcalidrawAutomate,
@@ -4134,8 +4136,8 @@ export class ExcalidrawAutomate {
    * @returns The elements within the area.
    */
   getElementsInArea(
-    elements: NonDeletedExcalidrawElement[],
-    element: NonDeletedExcalidrawElement,
+    elements: readonly ExcalidrawElement[],
+    element: ExcalidrawElement,
   ): ExcalidrawElement[] {
     const { x, y, width, height, id } = element;
     return elements.filter((el) => {
@@ -4258,7 +4260,7 @@ export class ExcalidrawAutomate {
    */
   getElementsInTheSameGroupWithElement(
     element: ExcalidrawElement,
-    elements: readonly NonDeletedExcalidrawElement[],
+    elements: readonly ExcalidrawElement[],
     includeFrameElements: boolean = false,
   ): ExcalidrawElement[] {
     if (!element || !elements) {
@@ -4315,7 +4317,7 @@ export class ExcalidrawAutomate {
    */
   getElementsInFrame(
     frameElement: ExcalidrawElement,
-    elements: readonly NonDeletedExcalidrawElement[],
+    elements: readonly ExcalidrawElement[],
     shouldIncludeFrame: boolean = false,
   ): ExcalidrawElement[] {
     if (!frameElement || !elements || frameElement.type !== "frame") {
