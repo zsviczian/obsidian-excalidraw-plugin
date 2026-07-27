@@ -124,6 +124,16 @@ export default {
   MARKDOWN_IMAGE_COPY_CSS_COMMAND:
     "Copy the generated Markdown SVG console command",
   MARKDOWN_IMAGE_CSS_COMMAND_COPIED: "Console command copied",
+  MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE:
+    "Use a different style for transclusions",
+  MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE_DESC:
+    "Show separate appearance settings for transcluded Markdown.",
+  MARKDOWN_IMAGE_TRANSCLUSION_APPEARANCE: "Transclusion appearance",
+  MARKDOWN_IMAGE_TRANSCLUSION_APPEARANCE_DESC:
+    "When enabled, these settings apply to ![[transcluded text]] within this Markdown image.",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS: "Transclusion CSS",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS_DESC:
+    "CSS rules applied only to transcluded Markdown.",
   MARKDOWN_IMAGE_USE_APPEARANCE: "Use appearance for new Markdown images",
   MARKDOWN_IMAGE_SET_DEFAULT: "Set as default",
   MARKDOWN_IMAGE_SAVE_DEFAULT_ARIA:

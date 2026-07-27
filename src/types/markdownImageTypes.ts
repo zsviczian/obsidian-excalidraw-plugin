@@ -5,6 +5,17 @@ export const MARKDOWN_IMAGE_SCHEMA_VERSION = 1;
 export type MarkdownImageSource = "local" | "external";
 export type MarkdownImageTheme = "canvas" | "light" | "dark";
 
+export type MarkdownImageTransclusionRenderSettings = {
+  enabled: boolean;
+  fontFamily: string;
+  fontColor: string;
+  border: {
+    enabled: boolean;
+    color: string;
+  };
+  css: string;
+};
+
 export type MarkdownImageRenderSettings = {
   width: number;
   fontFamily: string;
@@ -15,6 +26,7 @@ export type MarkdownImageRenderSettings = {
   };
   css: string;
   theme: MarkdownImageTheme;
+  transclusion: MarkdownImageTransclusionRenderSettings;
 };
 
 export type MarkdownImageCustomData = {

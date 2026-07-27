@@ -112,6 +112,19 @@ type MarkdownRenderOverrides = {
   isTransclusion?: boolean;
 };
 
+const getTransclusionRenderSettings = (
+  render: MarkdownImageRenderSettings,
+): MarkdownImageRenderSettings =>
+  render.transclusion.enabled
+    ? {
+        ...render,
+        fontFamily: render.transclusion.fontFamily,
+        fontColor: render.transclusion.fontColor,
+        border: { ...render.transclusion.border },
+        css: render.transclusion.css,
+      }
+    : render;
+
 type LoadSceneEmitPolicy = "all" | "changed-only";
 
 export type MarkdownSVGRenderResult = {
@@ -1088,6 +1101,8 @@ export class EmbeddedFilesLoader {
               return;
             }
             const defaults = this.plugin.settings.markdownImageSettings.defaults;
+            const storedTransclusion = customData.render?.transclusion;
+            const defaultTransclusion = defaults.transclusion;
             const render: MarkdownImageRenderSettings = {
               width: customData.render?.width ?? defaults.width,
               fontFamily:
@@ -1101,6 +1116,24 @@ export class EmbeddedFilesLoader {
               },
               css: customData.render?.css ?? defaults.css,
               theme: customData.render?.theme ?? defaults.theme,
+              transclusion: {
+                // Old elements did not have this property and must keep inheriting.
+                enabled: storedTransclusion?.enabled ?? false,
+                fontFamily:
+                  storedTransclusion?.fontFamily ??
+                  defaultTransclusion.fontFamily,
+                fontColor:
+                  storedTransclusion?.fontColor ?? defaultTransclusion.fontColor,
+                border: {
+                  enabled:
+                    storedTransclusion?.border?.enabled ??
+                    defaultTransclusion.border.enabled,
+                  color:
+                    storedTransclusion?.border?.color ??
+                    defaultTransclusion.border.color,
+                },
+                css: storedTransclusion?.css ?? defaultTransclusion.css,
+              },
             };
             let sourceFile = excalidrawData.file;
             let markdown: string | undefined;
@@ -1847,7 +1880,11 @@ export class EmbeddedFilesLoader {
         ef,
         1,
         inheritMarkdownImageAppearance
-          ? { markdownTransclusionRender: overrides.render }
+          ? {
+              markdownTransclusionRender: getTransclusionRenderSettings(
+                overrides.render,
+              ),
+            }
           : undefined,
       );
       if (this.terminate) {

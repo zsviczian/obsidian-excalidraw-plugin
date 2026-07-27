@@ -116,6 +116,16 @@ export default {
   MARKDOWN_IMAGE_COPY_CSS_COMMAND:
     "Копировать консольную команду для созданного Markdown SVG",
   MARKDOWN_IMAGE_CSS_COMMAND_COPIED: "Консольная команда скопирована",
+  MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE:
+    "Использовать отдельный стиль для встраиваний",
+  MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE_DESC:
+    "Показать отдельные настройки оформления для встроенного Markdown.",
+  MARKDOWN_IMAGE_TRANSCLUSION_APPEARANCE: "Оформление встраиваний",
+  MARKDOWN_IMAGE_TRANSCLUSION_APPEARANCE_DESC:
+    "Если включено, эти настройки применяются к ![[встроенному тексту]] внутри Markdown-изображения.",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS: "CSS встраиваний",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS_DESC:
+    "Правила CSS применяются только к встроенному Markdown.",
   MARKDOWN_IMAGE_USE_APPEARANCE: "Использовать оформление для новых Markdown-изображений",
   MARKDOWN_IMAGE_SET_DEFAULT: "Сделать по умолчанию",
   MARKDOWN_IMAGE_SAVE_DEFAULT_ARIA:

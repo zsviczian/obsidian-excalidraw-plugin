@@ -1637,6 +1637,13 @@ export default class ExcalidrawPlugin extends Plugin {
             color: this.settings.mdBorderColor,
           },
           css: this.settings.mdCSS,
+          transclusion: {
+            ...DEFAULT_SETTINGS.markdownImageSettings.defaults.transclusion,
+            border: {
+              ...DEFAULT_SETTINGS.markdownImageSettings.defaults.transclusion
+                .border,
+            },
+          },
         },
         editor: { ...DEFAULT_SETTINGS.markdownImageSettings.editor },
       };
@@ -1651,6 +1658,15 @@ export default class ExcalidrawPlugin extends Plugin {
           border: {
             ...DEFAULT_SETTINGS.markdownImageSettings.defaults.border,
             ...savedMarkdownImageSettings.defaults?.border,
+          },
+          transclusion: {
+            ...DEFAULT_SETTINGS.markdownImageSettings.defaults.transclusion,
+            ...savedMarkdownImageSettings.defaults?.transclusion,
+            border: {
+              ...DEFAULT_SETTINGS.markdownImageSettings.defaults.transclusion
+                .border,
+              ...savedMarkdownImageSettings.defaults?.transclusion?.border,
+            },
           },
         },
         editor: {

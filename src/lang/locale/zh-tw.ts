@@ -107,6 +107,14 @@ export default {
     "在桌面裝置上，可在開發者主控台中檢查產生的標記，並執行複製按鈕提供的命令。",
   MARKDOWN_IMAGE_COPY_CSS_COMMAND: "複製產生的 Markdown SVG 主控台命令",
   MARKDOWN_IMAGE_CSS_COMMAND_COPIED: "主控台命令已複製",
+  MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE: "為嵌入內容使用不同樣式",
+  MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE_DESC:
+    "顯示嵌入 Markdown 的獨立外觀設定。",
+  MARKDOWN_IMAGE_TRANSCLUSION_APPEARANCE: "嵌入內容外觀",
+  MARKDOWN_IMAGE_TRANSCLUSION_APPEARANCE_DESC:
+    "啟用後，這些設定將套用於此 Markdown 圖像中的 ![[嵌入文字]]。",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS: "嵌入內容 CSS",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS_DESC: "僅套用於嵌入 Markdown 的 CSS 規則。",
   MARKDOWN_IMAGE_USE_APPEARANCE: "將此外觀用於新的 Markdown 圖像",
   MARKDOWN_IMAGE_SET_DEFAULT: "設為預設",
   MARKDOWN_IMAGE_SAVE_DEFAULT_ARIA: "將目前外觀設定儲存為預設值",

@@ -708,6 +708,16 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
       },
       css: "",
       theme: "canvas",
+      transclusion: {
+        enabled: false,
+        fontFamily: "Cascadia",
+        fontColor: "Black",
+        border: {
+          enabled: false,
+          color: "Black",
+        },
+        css: "",
+      },
     },
     editor: {
       livePreview: true,

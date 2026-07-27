@@ -57,6 +57,8 @@ export function getMarkdownImageRenderSettings(
 ): MarkdownImageRenderSettings {
   const stored = element ? getMarkdownImageCustomData(element)?.render : null;
   const fallback = plugin.settings.markdownImageSettings.defaults;
+  const storedTransclusion = stored?.transclusion;
+  const fallbackTransclusion = fallback.transclusion;
   return {
     width: stored?.width ?? fallback.width,
     fontFamily: stored?.fontFamily ?? fallback.fontFamily,
@@ -67,6 +69,25 @@ export function getMarkdownImageRenderSettings(
     },
     css: stored?.css ?? fallback.css,
     theme: stored?.theme ?? fallback.theme,
+    transclusion: {
+      // Pre-feature elements must continue inheriting their parent appearance.
+      enabled: stored
+        ? (storedTransclusion?.enabled ?? false)
+        : fallbackTransclusion.enabled,
+      fontFamily:
+        storedTransclusion?.fontFamily ?? fallbackTransclusion.fontFamily,
+      fontColor:
+        storedTransclusion?.fontColor ?? fallbackTransclusion.fontColor,
+      border: {
+        enabled:
+          storedTransclusion?.border?.enabled ??
+          fallbackTransclusion.border.enabled,
+        color:
+          storedTransclusion?.border?.color ??
+          fallbackTransclusion.border.color,
+      },
+      css: storedTransclusion?.css ?? fallbackTransclusion.css,
+    },
   };
 }
 
@@ -84,6 +105,10 @@ export function setMarkdownImageCustomData(
     render: {
       ...render,
       border: { ...render.border },
+      transclusion: {
+        ...render.transclusion,
+        border: { ...render.transclusion.border },
+      },
     },
   };
   addAppendUpdateCustomData(element, {

@@ -492,6 +492,251 @@ class MarkdownImageEditorController {
       "excalidraw-markdown-image-editor__css-setting",
     );
 
+    const transclusionToggleSetting = new Setting(content)
+      .setName(t("MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE"))
+      .setDesc(t("MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE_DESC"))
+      .addToggle((toggle) => {
+        toggle.setValue(this.renderSettings.transclusion.enabled);
+        toggle.onChange((enabled) => {
+          if (!this.renderSettings) {
+            return;
+          }
+          this.renderSettings = {
+            ...this.renderSettings,
+            transclusion: {
+              ...this.renderSettings.transclusion,
+              enabled,
+            },
+          };
+          transclusionAppearance.hidden = !enabled;
+          this.scheduleRender();
+        });
+      });
+    transclusionToggleSetting.settingEl.addClass(
+      "excalidraw-markdown-image-editor__transclusion-toggle",
+    );
+
+    const transclusionAppearance = content.createDiv({
+      cls: "excalidraw-markdown-image-editor__appearance excalidraw-markdown-image-editor__transclusion-appearance",
+    });
+    transclusionAppearance.hidden =
+      !this.renderSettings.transclusion.enabled;
+    transclusionAppearance.createEl("h3", {
+      cls: "excalidraw-markdown-image-editor__section-title",
+      text: t("MARKDOWN_IMAGE_TRANSCLUSION_APPEARANCE"),
+    });
+    transclusionAppearance.createDiv({
+      cls: "excalidraw-markdown-image-editor__section-description",
+      text: t("MARKDOWN_IMAGE_TRANSCLUSION_APPEARANCE_DESC"),
+    });
+
+    new Setting(transclusionAppearance)
+      .setName(t("MARKDOWN_IMAGE_FONT"))
+      .addDropdown((dropdown) => {
+        for (const font of [
+          "Virgil",
+          "Cascadia",
+          "Excalifont",
+          "Comic Shanns",
+          "Liberation Sans",
+        ]) {
+          dropdown.addOption(font, font);
+        }
+        this.view.app.vault
+          .getFiles()
+          .filter(
+            (file) =>
+              ["ttf", "woff", "woff2", "otf"].contains(file.extension) &&
+              !file.path.startsWith(this.view.plugin.settings.fontAssetsPath),
+          )
+          .forEach((file) => {
+            dropdown.addOption(file.path, file.name);
+          });
+        dropdown.setValue(this.renderSettings.transclusion.fontFamily);
+        dropdown.onChange((fontFamily) => {
+          if (!this.renderSettings) {
+            return;
+          }
+          this.renderSettings = {
+            ...this.renderSettings,
+            transclusion: {
+              ...this.renderSettings.transclusion,
+              fontFamily,
+            },
+          };
+          void this.view.plugin.initializeFonts();
+          this.scheduleRender();
+        });
+      });
+
+    let transclusionFontColorTextEl: HTMLInputElement | null = null;
+    let transclusionFontColorPicker: ColorComponent | null = null;
+    let syncingTransclusionFontColorPicker = false;
+    const setTransclusionFontColor = (fontColor: string) => {
+      if (!this.renderSettings) {
+        return;
+      }
+      this.renderSettings = {
+        ...this.renderSettings,
+        transclusion: {
+          ...this.renderSettings.transclusion,
+          fontColor,
+        },
+      };
+      if (
+        transclusionFontColorTextEl &&
+        transclusionFontColorTextEl.value !== fontColor
+      ) {
+        transclusionFontColorTextEl.value = fontColor;
+      }
+      if (transclusionFontColorPicker !== null) {
+        const nativeColor = getNativeColorValue(fontColor);
+        if (transclusionFontColorPicker.getValue() !== nativeColor) {
+          syncingTransclusionFontColorPicker = true;
+          transclusionFontColorPicker.setValue(nativeColor);
+          syncingTransclusionFontColorPicker = false;
+        }
+      }
+      this.scheduleRender();
+    };
+    new Setting(transclusionAppearance)
+      .setName(t("MARKDOWN_IMAGE_FONT_COLOR"))
+      .addText((text) => {
+        transclusionFontColorTextEl = text.inputEl;
+        text
+          .setValue(this.renderSettings.transclusion.fontColor)
+          .onChange(setTransclusionFontColor);
+      })
+      .addColorPicker((picker) => {
+        transclusionFontColorPicker = picker;
+        picker
+          .setValue(
+            getNativeColorValue(this.renderSettings.transclusion.fontColor),
+          )
+          .onChange((fontColor) => {
+            if (!syncingTransclusionFontColorPicker) {
+              setTransclusionFontColor(fontColor);
+            }
+          });
+      })
+      .addButton((button) =>
+        button
+          .setIcon("swatch-book")
+          .setTooltip(t("MARKDOWN_IMAGE_FONT_COLOR"))
+          .onClick(async () => {
+            const selected = await showColorPicker(
+              "elementStroke",
+              button.buttonEl,
+              this.view,
+              true,
+            );
+            if (selected) {
+              setTransclusionFontColor(selected);
+            }
+          }),
+      );
+
+    let transclusionBorderColorTextEl: HTMLInputElement | null = null;
+    let transclusionBorderColorPicker: ColorComponent | null = null;
+    let syncingTransclusionBorderColorPicker = false;
+    const setTransclusionBorderColor = (color: string) => {
+      if (!this.renderSettings) {
+        return;
+      }
+      this.renderSettings = {
+        ...this.renderSettings,
+        transclusion: {
+          ...this.renderSettings.transclusion,
+          border: {
+            ...this.renderSettings.transclusion.border,
+            color,
+          },
+        },
+      };
+      if (
+        transclusionBorderColorTextEl &&
+        transclusionBorderColorTextEl.value !== color
+      ) {
+        transclusionBorderColorTextEl.value = color;
+      }
+      if (transclusionBorderColorPicker !== null) {
+        const nativeColor = getNativeColorValue(color);
+        if (transclusionBorderColorPicker.getValue() !== nativeColor) {
+          syncingTransclusionBorderColorPicker = true;
+          transclusionBorderColorPicker.setValue(nativeColor);
+          syncingTransclusionBorderColorPicker = false;
+        }
+      }
+      this.scheduleRender();
+    };
+    new Setting(transclusionAppearance)
+      .setName(t("MARKDOWN_IMAGE_BORDER"))
+      .addToggle((toggle) => {
+        toggle.setValue(this.renderSettings.transclusion.border.enabled);
+        toggle.onChange((enabled) => {
+          if (!this.renderSettings) {
+            return;
+          }
+          this.renderSettings = {
+            ...this.renderSettings,
+            transclusion: {
+              ...this.renderSettings.transclusion,
+              border: {
+                ...this.renderSettings.transclusion.border,
+                enabled,
+              },
+            },
+          };
+          this.scheduleRender();
+        });
+      });
+    new Setting(transclusionAppearance)
+      .setName(t("MARKDOWN_IMAGE_BORDER_COLOR"))
+      .addText((text) => {
+        transclusionBorderColorTextEl = text.inputEl;
+        text
+          .setValue(this.renderSettings.transclusion.border.color)
+          .onChange(setTransclusionBorderColor);
+      })
+      .addColorPicker((picker) => {
+        transclusionBorderColorPicker = picker;
+        picker
+          .setValue(
+            getNativeColorValue(
+              this.renderSettings.transclusion.border.color,
+            ),
+          )
+          .onChange((color) => {
+            if (!syncingTransclusionBorderColorPicker) {
+              setTransclusionBorderColor(color);
+            }
+          });
+      });
+
+    const transclusionCSSSetting = new Setting(transclusionAppearance)
+      .setName(t("MARKDOWN_IMAGE_TRANSCLUSION_CSS"))
+      .setDesc(t("MARKDOWN_IMAGE_TRANSCLUSION_CSS_DESC"))
+      .addTextArea((text) => {
+        text.setValue(this.renderSettings.transclusion.css);
+        text.inputEl.rows = 5;
+        text.onChange((css) => {
+          if (!this.renderSettings) {
+            return;
+          }
+          this.renderSettings = {
+            ...this.renderSettings,
+            transclusion: {
+              ...this.renderSettings.transclusion,
+              css,
+            },
+          };
+          this.scheduleRender();
+        });
+      });
+    transclusionCSSSetting.settingEl.addClass(
+      "excalidraw-markdown-image-editor__css-setting",
+    );
+
     void this.mountMarkdownView(editorHost);
   }
 
@@ -503,6 +748,10 @@ class MarkdownImageEditorController {
       ...this.view.plugin.settings.markdownImageSettings.defaults,
       ...this.renderSettings,
       border: { ...this.renderSettings.border },
+      transclusion: {
+        ...this.renderSettings.transclusion,
+        border: { ...this.renderSettings.transclusion.border },
+      },
     };
     void this.view.plugin.saveSettings();
   }
