@@ -102,6 +102,14 @@ type CacheValidationMode = "validated" | "stale-first";
 type LoadImageOptions = {
   cacheValidation?: CacheValidationMode;
   onStaleCacheHit?: () => void;
+  markdownTransclusionRender?: MarkdownImageRenderSettings;
+};
+
+type MarkdownRenderOverrides = {
+  markdown: string;
+  render: MarkdownImageRenderSettings;
+  fullHeight: boolean;
+  isTransclusion?: boolean;
 };
 
 type LoadSceneEmitPolicy = "all" | "changed-only";
@@ -856,10 +864,25 @@ export class EmbeddedFilesLoader {
       if (!isHyperLink && !dataURL && !isLocalLink) {
         markdownRendererRecursionWatcthdog.add(file);
         try {
+          const markdownTransclusionRender =
+            options?.markdownTransclusionRender;
+          const transclusion = markdownTransclusionRender
+            ? await getTransclusion(linkParts, this.plugin.app, file)
+            : null;
           const result = await this.convertMarkdownToSVG(
             this.plugin,
             file,
             linkParts,
+            markdownTransclusionRender
+              ? {
+                  markdown:
+                    (transclusion.leadingHashes ?? "") +
+                    transclusion.contents,
+                  render: markdownTransclusionRender,
+                  fullHeight: true,
+                  isTransclusion: true,
+                }
+              : undefined,
           );
           dataURL = result.dataURL;
           hasSVGwithBitmap = result.hasSVGwithBitmap;
@@ -1566,11 +1589,7 @@ export class EmbeddedFilesLoader {
     plugin: ExcalidrawPlugin,
     file: TFile,
     linkParts: LinkParts,
-    overrides?: {
-      markdown: string;
-      render: MarkdownImageRenderSettings;
-      fullHeight: boolean;
-    },
+    overrides?: MarkdownRenderOverrides,
   ): Promise<{ dataURL: DataURL; hasSVGwithBitmap: boolean }> {
     if (this.terminate) {
       return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
@@ -1600,7 +1619,7 @@ export class EmbeddedFilesLoader {
     let fontDef: string;
     let fontName = overrides?.render.fontFamily ?? plugin.settings.mdFont;
     const safeFrontmatter = getSafeFrontmatter(fileCache?.frontmatter);
-    if (safeFrontmatter[FRONTMATTER_KEYS.font.name]) {
+    if (!overrides && safeFrontmatter[FRONTMATTER_KEYS.font.name]) {
       fontName = safeFrontmatter[FRONTMATTER_KEYS.font.name];
     }
     switch (fontName) {
@@ -1703,9 +1722,12 @@ export class EmbeddedFilesLoader {
       const height = Math.max(0, svgHeight - inset * 2);
       const safeBorderColor = borderColor.replace(/[<>"']/g, "");
       const border = hasInsetBorder
-        ? `<rect x="1" y="1" width="${Math.max(0, linkParts.width - 2)}" height="${Math.max(0, svgHeight - 2)}" fill="none" stroke="${safeBorderColor}" stroke-width="2"/>`
+        ? `<rect class="excalidraw-md-border" x="1" y="1" width="${Math.max(0, linkParts.width - 2)}" height="${Math.max(0, svgHeight - 2)}" fill="none" stroke="${safeBorderColor}" stroke-width="2"/>`
         : "";
-      return `<svg xmlns="http://www.w3.org/2000/svg" width="${linkParts.width}px" height="${svgHeight}px">${
+      const svgClass = overrides?.isTransclusion
+        ? ' class="excalidraw-md-transclusion"'
+        : "";
+      return `<svg xmlns="http://www.w3.org/2000/svg"${svgClass} width="${linkParts.width}px" height="${svgHeight}px">${
         style ? `<style>${style}</style>` : ""
       }<foreignObject x="${inset}" y="${inset}" width="${width}px" height="${height}px">${xml}${
         xmlFooter //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/286#issuecomment-982179639
@@ -1800,12 +1822,34 @@ export class EmbeddedFilesLoader {
       }
       const width = el.getAttribute("width");
       const height = el.getAttribute("height");
+      const requestedWidth = width ? Number.parseFloat(width) : NaN;
+      const requestedHeight = height ? Number.parseFloat(height) : NaN;
+      const availableWidth = Math.max(1, linkParts.width - 20);
       const ef = new EmbeddedFile(plugin, file.path, src);
       //const f = app.metadataCache.getFirstLinkpathDest(src.split("#")[0],file.path);
       if (!ef.file) {
         continue;
       }
-      const embeddedFile = await this._getObsidianImage(ef, 1);
+      const inheritMarkdownImageAppearance = Boolean(
+        overrides &&
+          ef.file.extension.toLowerCase() === "md" &&
+          !plugin.isExcalidrawFile(ef.file),
+      );
+      if (inheritMarkdownImageAppearance) {
+        ef.linkParts.width = Number.isFinite(requestedWidth)
+          ? requestedWidth
+          : availableWidth;
+        ef.linkParts.height = Number.isFinite(requestedHeight)
+          ? requestedHeight
+          : Number.MAX_SAFE_INTEGER;
+      }
+      const embeddedFile = await this._getObsidianImage(
+        ef,
+        1,
+        inheritMarkdownImageAppearance
+          ? { markdownTransclusionRender: overrides.render }
+          : undefined,
+      );
       if (this.terminate) {
         return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
       }
@@ -1813,8 +1857,6 @@ export class EmbeddedFilesLoader {
         continue;
       }
       const img = createEl("img");
-      const requestedWidth = width ? Number.parseFloat(width) : NaN;
-      const requestedHeight = height ? Number.parseFloat(height) : NaN;
       const intrinsicWidth = embeddedFile.size?.width ?? 0;
       const intrinsicHeight = embeddedFile.size?.height ?? 0;
       const aspectRatio =
@@ -1833,7 +1875,6 @@ export class EmbeddedFilesLoader {
       if (Number.isFinite(requestedHeight) && !Number.isFinite(requestedWidth)) {
         renderedWidth = aspectRatio > 0 ? requestedHeight * aspectRatio : 0;
       }
-      const availableWidth = Math.max(1, linkParts.width - 20);
       if (renderedWidth > availableWidth) {
         const scale = availableWidth / renderedWidth;
         renderedWidth = availableWidth;

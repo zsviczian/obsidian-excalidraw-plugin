@@ -149,6 +149,10 @@ export default {
   MARKDOWN_IMAGE_RESERVED_MARKER: "El cuerpo Markdown contiene una línea de marcador reservada.",
   MARKDOWN_IMAGE_EMPTY_PLACEHOLDER: "Empieza a escribir en el editor de imágenes Markdown…",
   MARKDOWN_IMAGE_NO_SELECTION: "Selecciona una imagen Markdown para editarla.",
+  MARKDOWN_IMAGE_ATTACHED_TO: "Adjunto a {file}",
+  MARKDOWN_IMAGE_FOCUS_OWNER: "Enfocar el documento Excalidraw propietario: {file}",
+  MARKDOWN_IMAGE_OWNER_UNAVAILABLE:
+    "El documento Excalidraw propietario ya no está disponible.",
   MARKDOWN_IMAGE_RESIZE_EDITOR: "Cambiar el tamaño del editor Markdown",
   INSERT_PDF: "Insertar archivo PDF desde la bóveda",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE:

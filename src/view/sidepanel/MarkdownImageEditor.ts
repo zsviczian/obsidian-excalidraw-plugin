@@ -3,7 +3,9 @@ import {
   MarkdownView,
   Notice,
   Setting,
+  type App,
   type ColorComponent,
+  type TFile,
   type WorkspaceLeaf,
   type WorkspaceSplit,
   type EventRef,
@@ -35,7 +37,13 @@ import {
 import { t } from "src/lang/helpers";
 import { showColorPicker } from "src/shared/Dialogs/ColorPicker";
 import { fragWithHTML } from "src/utils/utils";
-import { COLOR_NAMES, DEVICE } from "src/constants/constants";
+import {
+  COLOR_NAMES,
+  DEVICE,
+  VIEW_TYPE_EXCALIDRAW,
+} from "src/constants/constants";
+import type ExcalidrawPlugin from "src/core/main";
+import { errorlog } from "src/utils/coreUtils";
 
 const MARKDOWN_SVG_CONSOLE_COMMAND =
   "ExcalidrawAutomate.mostRecentMarkdownSVG";
@@ -79,6 +87,10 @@ class MarkdownFragmentView extends MarkdownView {
 }
 
 class MarkdownImageEditorController {
+  private readonly app: App;
+  private readonly plugin: ExcalidrawPlugin;
+  private ownerLeaf: WorkspaceLeaf;
+  private ownerFile: TFile | null;
   private tab: ExcalidrawSidepanelTab | null = null;
   private element: ExcalidrawImageElement | null = null;
   private editorView: MarkdownView | null = null;
@@ -99,12 +111,35 @@ class MarkdownImageEditorController {
   private editorContentDirty = false;
   private editorResizeCleanup: (() => void) | null = null;
   private editorHeight: number | null = null;
+  private ownerInvalid = false;
+  private ownerInvalidation: Promise<void> | null = null;
+  private ownerAttachmentGeneration = 0;
+  private activeLeafChangeRef: EventRef | null = null;
 
-  constructor(public view: ExcalidrawView) {}
+  constructor(public view: ExcalidrawView) {
+    this.app = view.app;
+    this.plugin = view.plugin;
+    this.ownerLeaf = view.leaf;
+    this.ownerFile = view.file;
+  }
+
+  private get ownerFilePath(): string {
+    return this.ownerFile?.path ?? "";
+  }
+
+  private get ownerFileName(): string {
+    return this.ownerFile?.basename ?? this.ownerFilePath;
+  }
 
   public async open(element?: ExcalidrawImageElement): Promise<void> {
+    if (!this.ensureOwnerValid()) {
+      return;
+    }
     if (!element) {
       const id = await insertMarkdownImage(this.view);
+      if (!this.ensureOwnerValid()) {
+        return;
+      }
       if (!id) {
         new Notice(t("MARKDOWN_IMAGE_INSERT_ERROR"));
         return;
@@ -125,7 +160,7 @@ class MarkdownImageEditorController {
       element,
     );
     const sidepanel = await this.view.plugin.openSidepanel(true);
-    if (!sidepanel) {
+    if (!sidepanel || !this.ensureOwnerValid()) {
       return;
     }
     this.tab = await sidepanel.createTab({ title: t("MARKDOWN_IMAGE_TITLE") });
@@ -133,12 +168,17 @@ class MarkdownImageEditorController {
     this.tab.onClose = () => this.close();
     this.tab.onFocus = (view) => void this.handleSidepanelFocus(view);
     this.tab.onWindowMigrated = () => void this.rebuildEditor();
+    this.tab.onExcalidrawViewClosed = () => void this.invalidateOwner(false);
+    this.watchActiveExcalidrawView();
     this.renderPanel();
     this.tab.open(true);
   }
 
   private renderPanel(): void {
     if (!this.tab) {
+      return;
+    }
+    if (!this.ensureOwnerValid()) {
       return;
     }
     this.removeEditorResizeListener();
@@ -154,6 +194,7 @@ class MarkdownImageEditorController {
     const toolbar = content.createDiv({
       cls: "excalidraw-markdown-image-editor__toolbar",
     });
+    this.renderOwnerControls(toolbar);
     new ButtonComponent(toolbar)
       .setIcon("refresh-cw")
       .setTooltip(t("MARKDOWN_IMAGE_RENDER_NOW"))
@@ -455,7 +496,7 @@ class MarkdownImageEditorController {
   }
 
   private saveAppearanceDefaults(): void {
-    if (!this.renderSettings) {
+    if (!this.ensureOwnerValid() || !this.renderSettings) {
       return;
     }
     this.view.plugin.settings.markdownImageSettings.defaults = {
@@ -473,18 +514,247 @@ class MarkdownImageEditorController {
     this.renderStatusEl = null;
     this.tab.clear();
     this.tab.contentEl.addClass("excalidraw-markdown-image-editor");
+    if (this.isOwnerViewValid()) {
+      const toolbar = this.tab.contentEl.createDiv({
+        cls: "excalidraw-markdown-image-editor__toolbar",
+      });
+      this.renderOwnerControls(toolbar);
+    }
     this.tab.contentEl.createDiv({
       cls: "excalidraw-markdown-image-editor__placeholder",
       text: t("MARKDOWN_IMAGE_NO_SELECTION"),
     });
   }
 
+  private renderOwnerControls(toolbar: HTMLElement): void {
+    const ownerEl = toolbar.createSpan({
+      cls: "excalidraw-markdown-image-editor__owner",
+      text: t("MARKDOWN_IMAGE_ATTACHED_TO").replace(
+        "{file}",
+        this.ownerFileName,
+      ),
+    });
+    ownerEl.setAttribute("title", this.ownerFilePath);
+    const focusOwnerLabel = t("MARKDOWN_IMAGE_FOCUS_OWNER").replace(
+      "{file}",
+      this.ownerFilePath,
+    );
+    const focusOwnerButton = new ButtonComponent(toolbar)
+      .setIcon("locate-fixed")
+      .setTooltip(focusOwnerLabel)
+      .onClick(() => void this.focusOwner());
+    focusOwnerButton.buttonEl.setAttribute("aria-label", focusOwnerLabel);
+  }
+
+  private renderOwnerUnavailablePlaceholder(): void {
+    if (!this.tab) {
+      return;
+    }
+    this.renderStatusEl = null;
+    this.tab.clear();
+    this.tab.setDisabled(false);
+    this.tab.contentEl.addClass("excalidraw-markdown-image-editor");
+    this.tab.contentEl.createDiv({
+      cls: "excalidraw-markdown-image-editor__placeholder",
+      text: t("MARKDOWN_IMAGE_OWNER_UNAVAILABLE"),
+    });
+  }
+
+  private isOwnerIdentityValid(): boolean {
+    return Boolean(
+      this.ownerFilePath &&
+        this.ownerLeaf.view === this.view &&
+        this.view._plugin === this.plugin &&
+        this.view.file === this.ownerFile &&
+        this.view.excalidrawData?.file === this.ownerFile &&
+        this.view.excalidrawAPI,
+    );
+  }
+
+  private isOwnerViewValid(): boolean {
+    return !this.closed && !this.ownerInvalid && this.isOwnerIdentityValid();
+  }
+
+  private ensureOwnerValid(): boolean {
+    if (this.isOwnerViewValid()) {
+      return true;
+    }
+    if (!this.closed && !this.ownerInvalid) {
+      void this.invalidateOwner(false);
+    }
+    return false;
+  }
+
+  private async focusOwner(): Promise<void> {
+    if (!this.ensureOwnerValid()) {
+      return;
+    }
+    await this.app.workspace.revealLeaf(this.ownerLeaf);
+  }
+
+  public invalidateOwner(
+    saveEditor: boolean,
+    cancelPendingAttachment: boolean = true,
+  ): Promise<void> {
+    if (cancelPendingAttachment) {
+      this.ownerAttachmentGeneration++;
+    }
+    if (this.ownerInvalidation !== null) {
+      return this.ownerInvalidation;
+    }
+    const invalidatedView = this.view;
+    const canClearOwnerEditing = this.isOwnerIdentityValid();
+    this.ownerInvalid = true;
+    this.selectionGeneration++;
+    this.cancelScheduledRender();
+    this.removeEditorFocusListener();
+    this.tab?.setDisabled(true);
+    this.ownerInvalidation = (async () => {
+      try {
+        await this.flushAndDetachEditor(saveEditor);
+      } catch (error: unknown) {
+        errorlog({
+          where: "MarkdownImageEditorController.invalidateOwner",
+          error,
+        });
+      } finally {
+        if (canClearOwnerEditing) {
+          invalidatedView.clearEmbeddableNodeIsEditing();
+        }
+        this.element = null;
+        this.renderSettings = null;
+        this.lastObservedSelectionId = null;
+        this.renderOwnerUnavailablePlaceholder();
+      }
+    })();
+    return this.ownerInvalidation;
+  }
+
+  private watchActiveExcalidrawView(): void {
+    if (this.activeLeafChangeRef !== null) {
+      return;
+    }
+    this.activeLeafChangeRef = this.app.workspace.on(
+      "active-leaf-change",
+      (leaf) => {
+        if (leaf?.view?.getViewType?.() !== VIEW_TYPE_EXCALIDRAW) {
+          return;
+        }
+        void this.attachToView(leaf.view as ExcalidrawView);
+      },
+    );
+  }
+
+  private isAttachableView(view: ExcalidrawView): boolean {
+    return Boolean(
+      view._plugin === this.plugin &&
+        view.file &&
+        view.excalidrawData?.file === view.file &&
+        view.excalidrawAPI &&
+        view.leaf.view === view,
+    );
+  }
+
+  private isPreferredOwnerCandidate(view: ExcalidrawView): boolean {
+    return (
+      this.app.workspace.getLeaf(false) === view.leaf ||
+      this.plugin.lastActiveExcalidrawLeafID === view.leaf.id
+    );
+  }
+
+  private getSelectedMarkdownImage(
+    view: ExcalidrawView,
+    elements?: readonly ExcalidrawElement[],
+    selectedElementIds?: Record<string, boolean>,
+  ): { element?: ExcalidrawImageElement; selectedId: string | null } {
+    const ids =
+      selectedElementIds ??
+      view.excalidrawAPI?.getAppState().selectedElementIds ??
+      {};
+    const selectedIds = Object.keys(ids).filter((id) => ids[id]);
+    const selectedId = selectedIds.length === 1 ? selectedIds[0] : null;
+    const selected = selectedId
+      ? (elements ?? view.getViewElements()).find(
+          (element) => element.id === selectedId,
+        )
+      : undefined;
+    return {
+      element:
+        selected?.type === "image" && isMarkdownImageElement(view, selected)
+          ? selected
+          : undefined,
+      selectedId,
+    };
+  }
+
+  private async attachToView(
+    nextView: ExcalidrawView,
+    elements?: readonly ExcalidrawElement[],
+    selectedElementIds?: Record<string, boolean>,
+  ): Promise<void> {
+    if (
+      this.closed ||
+      !this.tab ||
+      !this.isAttachableView(nextView) ||
+      !this.isPreferredOwnerCandidate(nextView)
+    ) {
+      return;
+    }
+    if (nextView === this.view && this.isOwnerViewValid()) {
+      if (elements && selectedElementIds) {
+        this.handleSceneSelection(nextView, elements, selectedElementIds);
+      }
+      return;
+    }
+
+    const generation = ++this.ownerAttachmentGeneration;
+    if (!this.ownerInvalid || this.ownerInvalidation === null) {
+      await this.invalidateOwner(true, false);
+    } else {
+      await this.ownerInvalidation;
+    }
+    if (
+      generation !== this.ownerAttachmentGeneration ||
+      this.closed ||
+      !this.isAttachableView(nextView)
+    ) {
+      return;
+    }
+
+    this.view = nextView;
+    this.ownerLeaf = nextView.leaf;
+    this.ownerFile = nextView.file;
+    this.ownerInvalid = false;
+    this.ownerInvalidation = null;
+    this.tab.setDisabled(false);
+
+    const selection = this.getSelectedMarkdownImage(
+      nextView,
+      elements,
+      selectedElementIds,
+    );
+    this.element = selection.element ?? null;
+    this.lastObservedSelectionId = selection.selectedId;
+    this.renderSettings = selection.element
+      ? getMarkdownImageRenderSettings(this.plugin, selection.element)
+      : null;
+    if (selection.element) {
+      nextView.setMarkdownImageEditorIsEditing();
+    }
+    this.renderPanel();
+  }
+
   private async renderSourceControls(host: HTMLElement): Promise<void> {
-    if (!this.element || this.closed) {
+    if (!this.ensureOwnerValid() || !this.element || this.closed) {
       return;
     }
     const source = await getMarkdownImageSource(this.view, this.element);
-    if (!source || this.closed || !host.isConnected) {
+    if (
+      !source ||
+      this.closed ||
+      !host.isConnected ||
+      !this.ensureOwnerValid()
+    ) {
       return;
     }
     if (source.source === "external" && source.embeddedFile) {
@@ -518,7 +788,7 @@ class MarkdownImageEditorController {
   }
 
   private async useExternalSource(value: string): Promise<void> {
-    if (!this.element) {
+    if (!this.ensureOwnerValid() || !this.element) {
       return;
     }
     const link = this.normalizeExternalLink(value);
@@ -540,11 +810,17 @@ class MarkdownImageEditorController {
     }
     this.cancelScheduledRender();
     await this.flushAndDetachEditor();
+    if (!this.ensureOwnerValid()) {
+      return;
+    }
     this.cancelScheduledRender();
     const local = this.view.excalidrawData.getMarkdownImage(this.element.fileId);
     this.view.excalidrawData.setFile(this.element.fileId, embeddedFile);
     this.view.excalidrawData.deleteMarkdownImage(this.element.fileId, true);
     const external = await getMarkdownImageSource(this.view, this.element);
+    if (!this.ensureOwnerValid()) {
+      return;
+    }
     const updated = Boolean(
       external &&
         this.renderSettings &&
@@ -556,6 +832,9 @@ class MarkdownImageEditorController {
           "external",
         )),
     );
+    if (!this.ensureOwnerValid()) {
+      return;
+    }
     if (!updated) {
       this.view.excalidrawData.deleteFile(this.element.fileId);
       if (local) {
@@ -568,18 +847,29 @@ class MarkdownImageEditorController {
   }
 
   private async makeLocalCopy(): Promise<void> {
-    if (!this.element || !this.renderSettings) {
+    if (!this.ensureOwnerValid() || !this.element || !this.renderSettings) {
       return;
     }
     const previousExternal = await getMarkdownImageSource(this.view, this.element);
-    if (!previousExternal || previousExternal.source !== "external") {
+    if (
+      !this.ensureOwnerValid() ||
+      !previousExternal ||
+      previousExternal.source !== "external"
+    ) {
       return;
     }
     this.cancelScheduledRender();
     await this.flushAndDetachEditor();
+    if (!this.ensureOwnerValid()) {
+      return;
+    }
     this.cancelScheduledRender();
     const external = await getMarkdownImageSource(this.view, this.element);
-    if (!external || external.source !== "external") {
+    if (
+      !this.ensureOwnerValid() ||
+      !external ||
+      external.source !== "external"
+    ) {
       return;
     }
     this.view.excalidrawData.setMarkdownImage(this.element.fileId, {
@@ -593,6 +883,9 @@ class MarkdownImageEditorController {
       this.renderSettings,
       "local",
     );
+    if (!this.ensureOwnerValid()) {
+      return;
+    }
     if (!updated) {
       this.view.excalidrawData.deleteMarkdownImage(this.element.fileId, true);
       if (previousExternal.embeddedFile) {
@@ -608,11 +901,11 @@ class MarkdownImageEditorController {
   }
 
   private async extractToNote(): Promise<void> {
-    if (!this.element) {
+    if (!this.ensureOwnerValid() || !this.element) {
       return;
     }
     const source = await getMarkdownImageSource(this.view, this.element);
-    if (!source || source.source !== "local") {
+    if (!this.ensureOwnerValid() || !source || source.source !== "local") {
       return;
     }
     let path = await ScriptEngine.inputPrompt(
@@ -623,7 +916,7 @@ class MarkdownImageEditorController {
       t("MARKDOWN_IMAGE_EXTRACT_PATH"),
       t("MARKDOWN_IMAGE_DEFAULT_NOTE"),
     );
-    if (!path) {
+    if (!path || !this.ensureOwnerValid()) {
       return;
     }
     if (!path.toLowerCase().endsWith(".md")) {
@@ -666,10 +959,17 @@ class MarkdownImageEditorController {
   }
 
   public handleSceneSelection(
+    sourceView: ExcalidrawView,
     elements: readonly ExcalidrawElement[],
     selectedElementIds: Record<string, boolean>,
   ): void {
     if (!this.tab || this.closed) {
+      return;
+    }
+    if (sourceView !== this.view || !this.isOwnerViewValid()) {
+      if (this.isPreferredOwnerCandidate(sourceView)) {
+        void this.attachToView(sourceView, elements, selectedElementIds);
+      }
       return;
     }
     const selectedIds = Object.keys(selectedElementIds ?? {}).filter(
@@ -685,7 +985,7 @@ class MarkdownImageEditorController {
         ? elements.find((element) => element.id === selectedId)
         : undefined;
     const next =
-      selected?.type === "image" && isMarkdownImageElement(this.view, selected)
+      selected?.type === "image" && isMarkdownImageElement(sourceView, selected)
         ? selected
         : undefined;
     const generation = ++this.selectionGeneration;
@@ -716,56 +1016,28 @@ class MarkdownImageEditorController {
     this.renderPanel();
   }
 
-  private async handleSidepanelFocus(
+  private handleSidepanelFocus(
     nextView: ExcalidrawView | null,
-  ): Promise<void> {
-    if (!nextView || nextView === this.view || this.closed) {
+  ): void {
+    if (nextView) {
+      void this.attachToView(nextView);
       return;
     }
-    const generation = ++this.selectionGeneration;
-    const previousView = this.view;
-    this.cancelScheduledRender();
-    this.removeEditorFocusListener();
-    this.renderSelectionPlaceholder();
-    await this.flushAndDetachEditor();
-    if (generation !== this.selectionGeneration || this.closed) {
-      return;
-    }
-    previousView.clearEmbeddableNodeIsEditing();
-    this.view = nextView;
-    const selectedIds = Object.keys(
-      nextView.excalidrawAPI?.getAppState().selectedElementIds ?? {},
-    ).filter(
-      (id) => nextView.excalidrawAPI.getAppState().selectedElementIds[id],
-    );
-    const selected =
-      selectedIds.length === 1
-        ? nextView
-            .getViewElements()
-            .find((element) => element.id === selectedIds[0])
-        : undefined;
-    const markdownImage =
-      selected?.type === "image" && isMarkdownImageElement(nextView, selected)
-        ? selected
-        : undefined;
-    this.element = markdownImage ?? null;
-    this.lastObservedSelectionId = markdownImage?.id ?? null;
-    this.renderSettings = markdownImage
-      ? getMarkdownImageRenderSettings(nextView.plugin, markdownImage)
-      : null;
-    if (markdownImage) {
-      nextView.setMarkdownImageEditorIsEditing();
-    }
-    this.renderPanel();
+    this.ensureOwnerValid();
   }
 
   private async mountMarkdownView(host: HTMLElement): Promise<void> {
-    if (!this.element || this.closed) {
+    if (!this.ensureOwnerValid() || !this.element || this.closed) {
       return;
     }
     const element = this.element;
     const source = await getMarkdownImageSource(this.view, element);
-    if (!source || this.closed || this.element?.id !== element.id) {
+    if (
+      !source ||
+      this.closed ||
+      this.element?.id !== element.id ||
+      !this.ensureOwnerValid()
+    ) {
       host.setText(t("MARKDOWN_IMAGE_SOURCE_UNAVAILABLE"));
       return;
     }
@@ -786,6 +1058,7 @@ class MarkdownImageEditorController {
       });
       if (
         this.closed ||
+        !this.ensureOwnerValid() ||
         this.element?.id !== element.id ||
         this.editorLeaf !== leaf
       ) {
@@ -822,6 +1095,7 @@ class MarkdownImageEditorController {
     await leaf.open(fragmentView);
     if (
       this.closed ||
+      !this.ensureOwnerValid() ||
       this.element?.id !== element.id ||
       this.editorLeaf !== leaf
     ) {
@@ -835,6 +1109,9 @@ class MarkdownImageEditorController {
   }
 
   private prepareEditorView(host: HTMLElement, editorView: MarkdownView): void {
+    if (!this.ensureOwnerValid()) {
+      return;
+    }
     editorView.containerEl.addClass("excalidraw-markdown-fragment-view");
     editorView.containerEl
       .querySelectorAll(".inline-title")
@@ -856,15 +1133,24 @@ class MarkdownImageEditorController {
     };
     host.addEventListener("focusout", this.editorFocusOutHandler);
 
-    this.scenePointerDocument = this.view.containerEl.ownerDocument;
+    const viewContainer = this.view.containerEl;
+    if (!viewContainer) {
+      void this.invalidateOwner(false);
+      return;
+    }
+    this.scenePointerDocument = viewContainer.ownerDocument;
     this.scenePointerDownHandler = (event: PointerEvent) => {
+      if (!this.ensureOwnerValid()) {
+        return;
+      }
       const target = event.target;
       const targetWindow = this.scenePointerDocument?.defaultView;
+      const currentViewContainer = this.view.containerEl;
       if (
         target &&
         targetWindow?.Node &&
         target instanceof targetWindow.Node &&
-        this.view.containerEl.contains(target)
+        currentViewContainer?.contains(target)
       ) {
         void this.renderCurrentEditor();
       }
@@ -968,12 +1254,12 @@ class MarkdownImageEditorController {
 
   private watchEditorChanges(): void {
     if (this.editorChangeRef) {
-      this.view.app.workspace.offref(this.editorChangeRef);
+      this.app.workspace.offref(this.editorChangeRef);
     }
-    this.editorChangeRef = this.view.app.workspace.on(
+    this.editorChangeRef = this.app.workspace.on(
       "editor-change",
       (editor, info) => {
-        if (info !== this.editorView) {
+        if (info !== this.editorView || !this.ensureOwnerValid()) {
           return;
         }
         this.editorContentDirty = true;
@@ -1001,6 +1287,9 @@ class MarkdownImageEditorController {
   }
 
   private async renderCurrentEditor(force: boolean = false): Promise<void> {
+    if (!this.ensureOwnerValid()) {
+      return;
+    }
     if (!force && !this.editorContentDirty) {
       return;
     }
@@ -1009,12 +1298,15 @@ class MarkdownImageEditorController {
       return;
     }
     const source = await getMarkdownImageSource(this.view, this.element);
-    if (!source || this.closed) {
+    if (!source || this.closed || !this.ensureOwnerValid()) {
       return;
     }
     const markdown = this.editorView.getViewData();
     if (source.source === "external") {
       await this.editorView.save();
+      if (!this.ensureOwnerValid()) {
+        return;
+      }
       this.scheduleRender(undefined, 0);
       return;
     }
@@ -1026,6 +1318,9 @@ class MarkdownImageEditorController {
   }
 
   private scheduleRender(markdown?: string, delay: number = 350): void {
+    if (!this.ensureOwnerValid()) {
+      return;
+    }
     if (this.renderTimer !== null) {
       window.clearTimeout(this.renderTimer);
     }
@@ -1049,13 +1344,23 @@ class MarkdownImageEditorController {
     generation: number,
     markdown?: string,
   ): Promise<void> {
-    if (!this.element || !this.renderSettings || this.closed) {
+    if (
+      !this.ensureOwnerValid() ||
+      !this.element ||
+      !this.renderSettings ||
+      this.closed
+    ) {
       return;
     }
     this.setRenderStatus(true);
     try {
       const source = await getMarkdownImageSource(this.view, this.element);
-      if (!source || generation !== this.renderGeneration || this.closed) {
+      if (
+        !source ||
+        generation !== this.renderGeneration ||
+        this.closed ||
+        !this.ensureOwnerValid()
+      ) {
         return;
       }
       const liveMarkdown =
@@ -1070,7 +1375,11 @@ class MarkdownImageEditorController {
         this.renderSettings,
         source.source,
       );
-      if (!updated || generation !== this.renderGeneration) {
+      if (
+        !this.ensureOwnerValid() ||
+        !updated ||
+        generation !== this.renderGeneration
+      ) {
         return;
       }
       const nextElement = this.view
@@ -1100,7 +1409,7 @@ class MarkdownImageEditorController {
   }
 
   private async rebuildEditor(): Promise<void> {
-    if (!this.tab || this.closed) {
+    if (!this.tab || this.closed || !this.ensureOwnerValid()) {
       return;
     }
     this.cancelScheduledRender();
@@ -1109,7 +1418,7 @@ class MarkdownImageEditorController {
     this.renderPanel();
   }
 
-  private async flushAndDetachEditor(): Promise<void> {
+  private async flushAndDetachEditor(saveEditor: boolean = true): Promise<void> {
     const editorView = this.editorView;
     const editorLeaf = this.editorLeaf;
     this.editorView = null;
@@ -1119,10 +1428,10 @@ class MarkdownImageEditorController {
     this.removeEditorResizeListener();
     this.removeEditorFocusListener();
     if (this.editorChangeRef) {
-      this.view.app.workspace.offref(this.editorChangeRef);
+      this.app.workspace.offref(this.editorChangeRef);
       this.editorChangeRef = null;
     }
-    if (editorView) {
+    if (editorView && saveEditor) {
       await editorView.save();
     }
     editorLeaf?.detach();
@@ -1132,16 +1441,24 @@ class MarkdownImageEditorController {
     if (this.closed) {
       return;
     }
+    const canClearOwnerEditing = this.isOwnerIdentityValid();
     this.closed = true;
+    this.ownerAttachmentGeneration++;
     this.selectionGeneration++;
+    if (this.activeLeafChangeRef) {
+      this.app.workspace.offref(this.activeLeafChangeRef);
+      this.activeLeafChangeRef = null;
+    }
     this.cancelScheduledRender();
     void this.flushAndDetachEditor().finally(() => {
       this.cancelScheduledRender();
-      this.view.clearEmbeddableNodeIsEditing();
+      if (canClearOwnerEditing) {
+        this.view.clearEmbeddableNodeIsEditing();
+      }
       this.element = null;
       this.renderSettings = null;
     });
-    void this.view.plugin.saveSettings();
+    void this.plugin.saveSettings();
     this.tab = null;
   }
 
@@ -1169,8 +1486,22 @@ export function handleMarkdownImageEditorSelection(
   elements: readonly ExcalidrawElement[],
   selectedElementIds: Record<string, boolean>,
 ): void {
+  if (!activeController) {
+    return;
+  }
+  activeController.handleSceneSelection(view, elements, selectedElementIds);
+}
+
+/**
+ * Detaches the feature-owned editor before its Excalidraw host unloads.
+ *
+ * @param view - Excalidraw view whose file or view instance is being unloaded.
+ */
+export async function handleMarkdownImageEditorViewUnload(
+  view: ExcalidrawView,
+): Promise<void> {
   if (!activeController || activeController.view !== view) {
     return;
   }
-  activeController.handleSceneSelection(elements, selectedElementIds);
+  await activeController.invalidateOwner(true);
 }

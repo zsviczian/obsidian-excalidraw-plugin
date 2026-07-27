@@ -1123,8 +1123,17 @@ End Obsidian Sheets Plus support
   flex: 0 0 auto;
 }
 
+.excalidraw-markdown-image-editor__owner {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .excalidraw-markdown-image-editor__status {
-  margin-inline-start: auto;
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
   white-space: nowrap;

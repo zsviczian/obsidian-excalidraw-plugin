@@ -20,7 +20,8 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
   "2.26.0": `
 ## New in the plugin
 - Added editable Markdown images. Their source can be stored locally in the drawing or linked to an external Markdown note, heading, or block. Edit content and appearance in the Excalidraw sidepanel or use the floating action on a selected Markdown image; Markdown images participate in normal canvas layering and image export.
-- Fixed embedded vault images and clipped borders in Markdown-to-SVG renders, including editable Markdown images and transclusions.
+- Fixed embedded vault images and clipped borders in Markdown-to-SVG renders. Transcluded Markdown now inherits the editable Markdown image's appearance and flow width.
+- Fixed Markdown-image sidepanel ownership when its drawing is inactive, changes files, closes, or switches view modes. The panel automatically reattaches to the active Excalidraw view and its selected Markdown image.
 
 ## New and fixed from Excalidraw.com
 - New: flowchart (CTRL/CMD+arrow keys) now intelligently routes new shapes to avoid overlap of flowchart children [#11532](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11532)

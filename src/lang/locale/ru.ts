@@ -141,6 +141,10 @@ export default {
   MARKDOWN_IMAGE_RESERVED_MARKER: "Текст Markdown содержит зарезервированную строку-маркер.",
   MARKDOWN_IMAGE_EMPTY_PLACEHOLDER: "Начните вводить текст в редакторе Markdown-изображения…",
   MARKDOWN_IMAGE_NO_SELECTION: "Выберите Markdown-изображение для редактирования.",
+  MARKDOWN_IMAGE_ATTACHED_TO: "Привязано к {file}",
+  MARKDOWN_IMAGE_FOCUS_OWNER: "Перейти к исходному документу Excalidraw: {file}",
+  MARKDOWN_IMAGE_OWNER_UNAVAILABLE:
+    "Исходный документ Excalidraw больше недоступен.",
   MARKDOWN_IMAGE_RESIZE_EDITOR: "Изменить размер редактора Markdown",
   INSERT_PDF: "Вставить PDF-файл из хранилища",
   UNIVERSAL_ADD_FILE: "Вставка ЛЮБОГО файла",

@@ -160,6 +160,7 @@ import {
 } from "../shared/MarkdownImage";
 import {
   handleMarkdownImageEditorSelection,
+  handleMarkdownImageEditorViewUnload,
   openMarkdownImageEditor as openMarkdownImageEditorSidepanel,
 } from "./sidepanel/MarkdownImageEditor";
 import { ScriptInstallPrompt } from "../shared/Dialogs/ScriptInstallPrompt";
@@ -2745,6 +2746,7 @@ export default class ExcalidrawView
 
   async onUnloadFile(): Promise<void> {
     //deliberately not calling super.onUnloadFile() to avoid autosave (saved in unload)
+    await handleMarkdownImageEditorViewUnload(this);
     let counter = 0;
     while (this.semaphores.saving && counter++ < 200) {
       await sleep(50); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/1988

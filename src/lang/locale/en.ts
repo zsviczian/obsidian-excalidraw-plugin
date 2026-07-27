@@ -153,6 +153,10 @@ export default {
   MARKDOWN_IMAGE_EMPTY_PLACEHOLDER:
     "Start typing in the Markdown image editor…",
   MARKDOWN_IMAGE_NO_SELECTION: "Select a Markdown image to edit it.",
+  MARKDOWN_IMAGE_ATTACHED_TO: "Attached to {file}",
+  MARKDOWN_IMAGE_FOCUS_OWNER: "Focus owning Excalidraw document: {file}",
+  MARKDOWN_IMAGE_OWNER_UNAVAILABLE:
+    "The owning Excalidraw document is no longer available.",
   MARKDOWN_IMAGE_RESIZE_EDITOR: "Resize Markdown editor",
   INSERT_PDF: "Insert PDF file from vault",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE: "Insert last active PDF page as image",
