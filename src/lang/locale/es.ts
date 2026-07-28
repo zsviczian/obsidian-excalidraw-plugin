@@ -117,10 +117,17 @@ export default {
   MARKDOWN_IMAGE_DARK: "Oscuro",
   MARKDOWN_IMAGE_CSS: "CSS",
   MARKDOWN_IMAGE_CSS_DESC: "Reglas CSS aplicadas solo a esta imagen Markdown.",
+  MARKDOWN_IMAGE_CSS_IMPORTANT_HINT:
+    "Si una regla no tiene efecto, añade !important a la declaración.",
   MARKDOWN_IMAGE_CSS_DESKTOP_HELP:
     "Para inspeccionar el marcado generado, abre la consola de desarrollo ({shortcut}) y ejecuta el comando disponible en el botón de copia.",
   MARKDOWN_IMAGE_CSS_MOBILE_HELP:
     "En un equipo de escritorio puedes inspeccionar el marcado generado en la consola de desarrollo y ejecutar el comando disponible en el botón de copia.",
+  MARKDOWN_IMAGE_CSS_EDITOR_ARIA: "Editor CSS para esta imagen Markdown",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA:
+    "Editor CSS para Markdown transcluido",
+  MARKDOWN_IMAGE_INSERT_CSS_BOILERPLATE:
+    "Insertar una plantilla CSS comentada",
   MARKDOWN_IMAGE_COPY_CSS_COMMAND:
     "Copiar el comando de consola del SVG Markdown generado",
   MARKDOWN_IMAGE_CSS_COMMAND_COPIED: "Comando de consola copiado",

@@ -109,10 +109,17 @@ export default {
   MARKDOWN_IMAGE_CSS: "CSS",
   MARKDOWN_IMAGE_CSS_DESC:
     "Правила CSS применяются только к этому Markdown-изображению.",
+  MARKDOWN_IMAGE_CSS_IMPORTANT_HINT:
+    "Если правило не действует, добавьте !important к объявлению.",
   MARKDOWN_IMAGE_CSS_DESKTOP_HELP:
     "Чтобы проверить созданную разметку, откройте консоль разработчика ({shortcut}) и выполните команду, доступную по кнопке копирования.",
   MARKDOWN_IMAGE_CSS_MOBILE_HELP:
     "На компьютере созданную разметку можно проверить в консоли разработчика и выполнить команду, доступную по кнопке копирования.",
+  MARKDOWN_IMAGE_CSS_EDITOR_ARIA: "Редактор CSS для этого Markdown-изображения",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA:
+    "Редактор CSS для встроенного Markdown",
+  MARKDOWN_IMAGE_INSERT_CSS_BOILERPLATE:
+    "Вставить шаблон CSS с комментариями",
   MARKDOWN_IMAGE_COPY_CSS_COMMAND:
     "Копировать консольную команду для созданного Markdown SVG",
   MARKDOWN_IMAGE_CSS_COMMAND_COPIED: "Консольная команда скопирована",

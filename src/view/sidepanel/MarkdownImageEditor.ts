@@ -44,6 +44,13 @@ import {
 } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
 import { errorlog } from "src/utils/coreUtils";
+import {
+  CSSCodeEditor,
+  MARKDOWN_IMAGE_CSS_BOILERPLATE,
+  MARKDOWN_IMAGE_CSS_BOILERPLATE_MARKER,
+  TRANSCLUSION_CSS_BOILERPLATE,
+  TRANSCLUSION_CSS_BOILERPLATE_MARKER,
+} from "./CSSCodeEditor";
 
 const MARKDOWN_SVG_CONSOLE_COMMAND =
   "ExcalidrawAutomate.mostRecentMarkdownSVG";
@@ -115,6 +122,9 @@ class MarkdownImageEditorController {
   private ownerInvalidation: Promise<void> | null = null;
   private ownerAttachmentGeneration = 0;
   private activeLeafChangeRef: EventRef | null = null;
+  private cssEditors: CSSCodeEditor[] = [];
+  private focusOwnerButtonEl: HTMLButtonElement | null = null;
+  private ownerStatusEl: HTMLElement | null = null;
 
   constructor(public view: ExcalidrawView) {
     this.app = view.app;
@@ -182,6 +192,9 @@ class MarkdownImageEditorController {
       return;
     }
     this.removeEditorResizeListener();
+    this.destroyCSSEditors();
+    this.focusOwnerButtonEl = null;
+    this.ownerStatusEl = null;
     this.tab.clear();
     this.renderStatusEl = null;
     const content = this.tab.contentEl;
@@ -201,7 +214,7 @@ class MarkdownImageEditorController {
       .setCta()
       .onClick(() => void this.renderCurrentEditor(true));
     const saveDefaultsButton = new ButtonComponent(toolbar)
-      .setIcon("save")
+      .setButtonText(t("MARKDOWN_IMAGE_SET_DEFAULT"))
       .setTooltip(t("MARKDOWN_IMAGE_SET_DEFAULT"))
       .onClick(() => this.saveAppearanceDefaults());
     saveDefaultsButton.buttonEl.setAttribute(
@@ -264,6 +277,7 @@ class MarkdownImageEditorController {
       this.scheduleRender();
     };
     new Setting(appearance)
+      .setClass("excalidraw-markdown-image-editor__setting--wide")
       .setName(t("MARKDOWN_IMAGE_WIDTH"))
       .setDesc(t("MARKDOWN_IMAGE_WIDTH_DESC"))
       .addSlider((slider) => {
@@ -294,6 +308,7 @@ class MarkdownImageEditorController {
       });
 
     new Setting(appearance)
+      .setClass("excalidraw-markdown-image-editor__setting--font")
       .setName(t("MARKDOWN_IMAGE_FONT"))
       .addDropdown((dropdown) => {
       for (const font of [
@@ -348,6 +363,7 @@ class MarkdownImageEditorController {
       this.scheduleRender();
     };
     new Setting(appearance)
+      .setClass("excalidraw-markdown-image-editor__setting--color")
       .setName(t("MARKDOWN_IMAGE_FONT_COLOR"))
       .addText((text) => {
         fontColorTextEl = text.inputEl;
@@ -366,6 +382,7 @@ class MarkdownImageEditorController {
       .addButton((button) =>
         button
           .setIcon("swatch-book")
+          .setClass("excalidraw-markdown-image-editor__compact-button")
           .setTooltip(t("MARKDOWN_IMAGE_FONT_COLOR"))
           .onClick(async () => {
             const selected = await showColorPicker(
@@ -405,6 +422,8 @@ class MarkdownImageEditorController {
       this.scheduleRender();
     };
     new Setting(appearance)
+      .setClass("excalidraw-markdown-image-editor__setting--color")
+      .setClass("excalidraw-markdown-image-editor__setting--border")
       .setName(t("MARKDOWN_IMAGE_BORDER"))
       .addToggle((toggle) => {
         toggle.setValue(this.renderSettings.border.enabled);
@@ -435,6 +454,7 @@ class MarkdownImageEditorController {
       });
 
     new Setting(appearance)
+      .setClass("excalidraw-markdown-image-editor__setting--wide")
       .setName(t("MARKDOWN_IMAGE_THEME"))
       .setDesc(t("MARKDOWN_IMAGE_THEME_DESC"))
       .addDropdown((dropdown) => {
@@ -461,35 +481,58 @@ class MarkdownImageEditorController {
       .setName(t("MARKDOWN_IMAGE_CSS"))
       .setDesc(
         fragWithHTML(
-          `${t("MARKDOWN_IMAGE_CSS_DESC")} ${developerConsoleHelp}`,
+          `${t("MARKDOWN_IMAGE_CSS_DESC")} ${t("MARKDOWN_IMAGE_CSS_IMPORTANT_HINT")} ${developerConsoleHelp}`,
         ),
-      )
-      .addTextArea((text) => {
-        text.setValue(this.renderSettings.css);
-        text.inputEl.rows = 5;
-        text.onChange((css) => {
-          if (!this.renderSettings) {
-            return;
-          }
-          this.renderSettings = { ...this.renderSettings, css };
-          this.scheduleRender();
-        });
-      })
-      .addButton((button) => {
-        button
-          .setIcon("clipboard-copy")
-          .setTooltip(t("MARKDOWN_IMAGE_COPY_CSS_COMMAND"))
-          .onClick(async () => {
-            await navigator.clipboard.writeText(MARKDOWN_SVG_CONSOLE_COMMAND);
-            new Notice(t("MARKDOWN_IMAGE_CSS_COMMAND_COPIED"));
-          });
-        button.buttonEl.setAttribute(
-          "aria-label",
-          t("MARKDOWN_IMAGE_COPY_CSS_COMMAND"),
-        );
-      });
+      );
     cssSetting.settingEl.addClass(
       "excalidraw-markdown-image-editor__css-setting",
+    );
+    const cssEditorHost = cssSetting.controlEl.createDiv({
+      cls: "excalidraw-markdown-image-editor__css-editor",
+    });
+    const cssEditor = new CSSCodeEditor(
+      cssEditorHost,
+      this.renderSettings.css,
+      t("MARKDOWN_IMAGE_CSS_EDITOR_ARIA"),
+      (css) => {
+        if (!this.renderSettings) {
+          return;
+        }
+        this.renderSettings = { ...this.renderSettings, css };
+        this.scheduleRender();
+      },
+    );
+    this.cssEditors.push(cssEditor);
+    const cssActions = cssSetting.controlEl.createDiv({
+      cls: "excalidraw-markdown-image-editor__css-actions",
+    });
+    const insertCSSBoilerplateButton = new ButtonComponent(
+      cssActions,
+    )
+      .setIcon("file-code-2")
+      .setClass("excalidraw-markdown-image-editor__css-action-button")
+      .setTooltip(t("MARKDOWN_IMAGE_INSERT_CSS_BOILERPLATE"))
+      .onClick(() =>
+        cssEditor.insertBoilerplate(
+          MARKDOWN_IMAGE_CSS_BOILERPLATE,
+          MARKDOWN_IMAGE_CSS_BOILERPLATE_MARKER,
+        ),
+      );
+    insertCSSBoilerplateButton.buttonEl.setAttribute(
+      "aria-label",
+      t("MARKDOWN_IMAGE_INSERT_CSS_BOILERPLATE"),
+    );
+    const copyCSSCommandButton = new ButtonComponent(cssActions)
+      .setIcon("clipboard-copy")
+      .setClass("excalidraw-markdown-image-editor__css-action-button")
+      .setTooltip(t("MARKDOWN_IMAGE_COPY_CSS_COMMAND"))
+      .onClick(async () => {
+        await navigator.clipboard.writeText(MARKDOWN_SVG_CONSOLE_COMMAND);
+        new Notice(t("MARKDOWN_IMAGE_CSS_COMMAND_COPIED"));
+      });
+    copyCSSCommandButton.buttonEl.setAttribute(
+      "aria-label",
+      t("MARKDOWN_IMAGE_COPY_CSS_COMMAND"),
     );
 
     const transclusionToggleSetting = new Setting(content)
@@ -531,6 +574,7 @@ class MarkdownImageEditorController {
     });
 
     new Setting(transclusionAppearance)
+      .setClass("excalidraw-markdown-image-editor__setting--font")
       .setName(t("MARKDOWN_IMAGE_FONT"))
       .addDropdown((dropdown) => {
         for (const font of [
@@ -600,6 +644,7 @@ class MarkdownImageEditorController {
       this.scheduleRender();
     };
     new Setting(transclusionAppearance)
+      .setClass("excalidraw-markdown-image-editor__setting--color")
       .setName(t("MARKDOWN_IMAGE_FONT_COLOR"))
       .addText((text) => {
         transclusionFontColorTextEl = text.inputEl;
@@ -622,6 +667,7 @@ class MarkdownImageEditorController {
       .addButton((button) =>
         button
           .setIcon("swatch-book")
+          .setClass("excalidraw-markdown-image-editor__compact-button")
           .setTooltip(t("MARKDOWN_IMAGE_FONT_COLOR"))
           .onClick(async () => {
             const selected = await showColorPicker(
@@ -670,6 +716,7 @@ class MarkdownImageEditorController {
       this.scheduleRender();
     };
     new Setting(transclusionAppearance)
+      .setClass("excalidraw-markdown-image-editor__setting--color")
       .setName(t("MARKDOWN_IMAGE_BORDER"))
       .addToggle((toggle) => {
         toggle.setValue(this.renderSettings.transclusion.border.enabled);
@@ -691,6 +738,7 @@ class MarkdownImageEditorController {
         });
       });
     new Setting(transclusionAppearance)
+      .setClass("excalidraw-markdown-image-editor__setting--color")
       .setName(t("MARKDOWN_IMAGE_BORDER_COLOR"))
       .addText((text) => {
         transclusionBorderColorTextEl = text.inputEl;
@@ -715,26 +763,54 @@ class MarkdownImageEditorController {
 
     const transclusionCSSSetting = new Setting(transclusionAppearance)
       .setName(t("MARKDOWN_IMAGE_TRANSCLUSION_CSS"))
-      .setDesc(t("MARKDOWN_IMAGE_TRANSCLUSION_CSS_DESC"))
-      .addTextArea((text) => {
-        text.setValue(this.renderSettings.transclusion.css);
-        text.inputEl.rows = 5;
-        text.onChange((css) => {
-          if (!this.renderSettings) {
-            return;
-          }
-          this.renderSettings = {
-            ...this.renderSettings,
-            transclusion: {
-              ...this.renderSettings.transclusion,
-              css,
-            },
-          };
-          this.scheduleRender();
-        });
-      });
+      .setDesc(
+        `${t("MARKDOWN_IMAGE_TRANSCLUSION_CSS_DESC")} ${t("MARKDOWN_IMAGE_CSS_IMPORTANT_HINT")}`,
+      );
     transclusionCSSSetting.settingEl.addClass(
       "excalidraw-markdown-image-editor__css-setting",
+    );
+    const transclusionCSSEditorHost =
+      transclusionCSSSetting.controlEl.createDiv({
+        cls: "excalidraw-markdown-image-editor__css-editor",
+      });
+    const transclusionCSSEditor = new CSSCodeEditor(
+      transclusionCSSEditorHost,
+      this.renderSettings.transclusion.css,
+      t("MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA"),
+      (css) => {
+        if (!this.renderSettings) {
+          return;
+        }
+        this.renderSettings = {
+          ...this.renderSettings,
+          transclusion: {
+            ...this.renderSettings.transclusion,
+            css,
+          },
+        };
+        this.scheduleRender();
+      },
+    );
+    this.cssEditors.push(transclusionCSSEditor);
+    const transclusionCSSActions =
+      transclusionCSSSetting.controlEl.createDiv({
+        cls: "excalidraw-markdown-image-editor__css-actions",
+      });
+    const insertTransclusionCSSBoilerplateButton = new ButtonComponent(
+      transclusionCSSActions,
+    )
+      .setIcon("file-code-2")
+      .setClass("excalidraw-markdown-image-editor__css-action-button")
+      .setTooltip(t("MARKDOWN_IMAGE_INSERT_CSS_BOILERPLATE"))
+      .onClick(() =>
+        transclusionCSSEditor.insertBoilerplate(
+          TRANSCLUSION_CSS_BOILERPLATE,
+          TRANSCLUSION_CSS_BOILERPLATE_MARKER,
+        ),
+      );
+    insertTransclusionCSSBoilerplateButton.buttonEl.setAttribute(
+      "aria-label",
+      t("MARKDOWN_IMAGE_INSERT_CSS_BOILERPLATE"),
     );
 
     void this.mountMarkdownView(editorHost);
@@ -761,6 +837,9 @@ class MarkdownImageEditorController {
       return;
     }
     this.renderStatusEl = null;
+    this.destroyCSSEditors();
+    this.focusOwnerButtonEl = null;
+    this.ownerStatusEl = null;
     this.tab.clear();
     this.tab.contentEl.addClass("excalidraw-markdown-image-editor");
     if (this.isOwnerViewValid()) {
@@ -778,12 +857,13 @@ class MarkdownImageEditorController {
   private renderOwnerControls(toolbar: HTMLElement): void {
     const ownerEl = toolbar.createSpan({
       cls: "excalidraw-markdown-image-editor__owner",
-      text: t("MARKDOWN_IMAGE_ATTACHED_TO").replace(
-        "{file}",
-        this.ownerFileName,
-      ),
+      text: this.ownerFileName,
     });
-    ownerEl.setAttribute("title", this.ownerFilePath);
+    ownerEl.setAttribute(
+      "title",
+      t("MARKDOWN_IMAGE_ATTACHED_TO").replace("{file}", this.ownerFilePath),
+    );
+    this.ownerStatusEl = ownerEl;
     const focusOwnerLabel = t("MARKDOWN_IMAGE_FOCUS_OWNER").replace(
       "{file}",
       this.ownerFilePath,
@@ -793,6 +873,20 @@ class MarkdownImageEditorController {
       .setTooltip(focusOwnerLabel)
       .onClick(() => void this.focusOwner());
     focusOwnerButton.buttonEl.setAttribute("aria-label", focusOwnerLabel);
+    this.focusOwnerButtonEl = focusOwnerButton.buttonEl;
+    this.updateFocusOwnerButtonVisibility();
+  }
+
+  private updateFocusOwnerButtonVisibility(): void {
+    if (!this.focusOwnerButtonEl?.isConnected) {
+      return;
+    }
+    const ownerIsFocused =
+      this.app.workspace.getMostRecentLeaf() === this.ownerLeaf;
+    this.focusOwnerButtonEl.hidden = ownerIsFocused;
+    if (this.ownerStatusEl?.isConnected) {
+      this.ownerStatusEl.hidden = ownerIsFocused;
+    }
   }
 
   private renderOwnerUnavailablePlaceholder(): void {
@@ -800,6 +894,9 @@ class MarkdownImageEditorController {
       return;
     }
     this.renderStatusEl = null;
+    this.destroyCSSEditors();
+    this.focusOwnerButtonEl = null;
+    this.ownerStatusEl = null;
     this.tab.clear();
     this.tab.setDisabled(false);
     this.tab.contentEl.addClass("excalidraw-markdown-image-editor");
@@ -886,6 +983,7 @@ class MarkdownImageEditorController {
     this.activeLeafChangeRef = this.app.workspace.on(
       "active-leaf-change",
       (leaf) => {
+        this.updateFocusOwnerButtonVisibility();
         if (leaf?.view?.getViewType?.() !== VIEW_TYPE_EXCALIDRAW) {
           return;
         }
@@ -1008,6 +1106,7 @@ class MarkdownImageEditorController {
     }
     if (source.source === "external" && source.embeddedFile) {
       new Setting(host)
+        .setClass("excalidraw-markdown-image-editor__setting--wide")
         .setName(t("MARKDOWN_IMAGE_EXTERNAL_SOURCE"))
         .setDesc(source.embeddedFile.linkParts.original)
         .addButton((button) =>
@@ -1501,6 +1600,13 @@ class MarkdownImageEditorController {
     this.editorResizeCleanup = null;
   }
 
+  private destroyCSSEditors(): void {
+    for (const editor of this.cssEditors) {
+      editor.destroy();
+    }
+    this.cssEditors = [];
+  }
+
   private watchEditorChanges(): void {
     if (this.editorChangeRef) {
       this.app.workspace.offref(this.editorChangeRef);
@@ -1699,6 +1805,9 @@ class MarkdownImageEditorController {
       this.activeLeafChangeRef = null;
     }
     this.cancelScheduledRender();
+    this.destroyCSSEditors();
+    this.focusOwnerButtonEl = null;
+    this.ownerStatusEl = null;
     void this.flushAndDetachEditor().finally(() => {
       this.cancelScheduledRender();
       if (canClearOwnerEditing) {
