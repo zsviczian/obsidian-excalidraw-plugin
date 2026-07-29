@@ -60,7 +60,7 @@
     "@excalidraw/prettier-config": "^1.0.2",
     "@lezer/highlight": "1.2.3",
     "@rollup/plugin-babel": "^6.0.3",
-    "@rollup/plugin-commonjs": "^26.0.1",
+    "@rollup/plugin-commonjs": "^29.0.3",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-replace": "^5.0.2",
@@ -83,7 +83,7 @@
     "jiti": "^2.6.1",
     "jsesc": "^3.0.2",
     "obsidian": "1.8.7",
-    "postcss": "^8.4.31",
+    "postcss": "^8.5.25",
     "prettier": "^3.0.1",
     "rollup": "^4.14.0",
     "rollup-plugin-copy": "^3.5.0",
@@ -96,7 +96,12 @@
     "lodash": "^4.18.1",
     "lodash-es": "^4.18.1",
     "serialize-javascript": "^7.0.5",
-    "nanoid": "^5.1.11"
+    "nanoid": "^5.1.11",
+    "dompurify": "^3.4.12",
+    "fast-uri": "^3.1.4",
+    "immutable": "^4.3.9",
+    "js-yaml": "^4.3.0",
+    "svgo": "^3.3.4"
   },
   "resolutions": {
     "strip-ansi": "^7.0.1"
