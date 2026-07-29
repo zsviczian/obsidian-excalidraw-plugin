@@ -26,7 +26,10 @@ import {
   type MarkdownImageSourceData,
 } from "src/shared/MarkdownImage";
 import type { MarkdownImageRenderSettings } from "src/types/markdownImageTypes";
-import { createLeaf } from "src/utils/customEmbeddableUtils";
+import {
+  createLeaf,
+  patchMobileView,
+} from "src/utils/customEmbeddableUtils";
 import { setStyle } from "src/utils/styleUtils";
 import { EmbeddedFile } from "src/shared/EmbeddedFileLoader";
 import { ScriptEngine } from "src/shared/Scripts";
@@ -164,6 +167,7 @@ class MarkdownImageEditorController {
   private cssEditors: CSSCodeEditor[] = [];
   private focusOwnerButtonEl: HTMLButtonElement | null = null;
   private ownerStatusEl: HTMLElement | null = null;
+  private mobileViewPatchCleanup: (() => void) | null = null;
 
   constructor(public view: ExcalidrawView) {
     this.app = view.app;
@@ -208,6 +212,9 @@ class MarkdownImageEditorController {
       this.view.plugin,
       element,
     );
+    // Revealing a phone sidebar can coincide with Obsidian registering the
+    // soon-to-be-created detached Markdown leaf as its active editor.
+    patchMobileView(this.view);
     const sidepanel = await this.view.plugin.openSidepanel(true);
     if (!sidepanel || !this.ensureOwnerValid()) {
       return;
@@ -1450,6 +1457,7 @@ class MarkdownImageEditorController {
     const { leaf, rootSplit } = createLeaf(this.view);
     this.editorLeaf = leaf;
     this.editorRoot = rootSplit;
+    this.startMobileViewPatch(leaf);
     rootSplit.containerEl.addClass("mod-visible");
     setStyle(rootSplit.containerEl, { height: "100%", width: "100%" });
     host.appendChild(rootSplit.containerEl);
@@ -1831,9 +1839,41 @@ class MarkdownImageEditorController {
     this.renderPanel();
   }
 
+  private startMobileViewPatch(editorLeaf: WorkspaceLeaf): void {
+    this.stopMobileViewPatch();
+    const ownerView = this.view;
+    const cleanup = patchMobileView(ownerView, {
+      keepAlive: true,
+      isActive: () =>
+        !this.closed &&
+        !this.ownerInvalid &&
+        this.view === ownerView &&
+        this.editorLeaf === editorLeaf &&
+        this.isOwnerIdentityValid(),
+    });
+    this.mobileViewPatchCleanup =
+      typeof cleanup === "function" ? cleanup : null;
+  }
+
+  private stopMobileViewPatch(): void {
+    if (!this.mobileViewPatchCleanup) {
+      return;
+    }
+    try {
+      this.mobileViewPatchCleanup();
+    } catch (error: unknown) {
+      errorlog({
+        where: "MarkdownImageEditorController.stopMobileViewPatch",
+        error,
+      });
+    }
+    this.mobileViewPatchCleanup = null;
+  }
+
   private async flushAndDetachEditor(saveEditor: boolean = true): Promise<void> {
     const editorView = this.editorView;
     const editorLeaf = this.editorLeaf;
+    this.stopMobileViewPatch();
     this.editorView = null;
     this.editorLeaf = null;
     this.editorRoot = null;

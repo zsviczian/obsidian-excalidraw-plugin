@@ -1322,7 +1322,18 @@ End Obsidian Sheets Plus support
 
 .excalidraw-markdown-image-editor__setting--border
   > .setting-item-control {
+  min-width: min(200px, 100%);
+  flex: 1 1 200px;
   flex-wrap: nowrap;
+}
+
+.excalidraw-markdown-image-editor__setting--border {
+  flex-wrap: wrap;
+}
+
+.excalidraw-markdown-image-editor__setting--border
+  > .setting-item-info {
+  flex: 1 1 96px;
 }
 
 .excalidraw-markdown-image-editor__setting--border
