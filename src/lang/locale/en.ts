@@ -173,6 +173,13 @@ export default {
   MARKDOWN_IMAGE_OWNER_UNAVAILABLE:
     "The owning Excalidraw document is no longer available.",
   MARKDOWN_IMAGE_RESIZE_EDITOR: "Resize Markdown editor",
+  CONVERT_EMBEDDABLE_TO_MARKDOWN_IMAGE: "Convert to Markdown image",
+  CONVERT_MARKDOWN_IMAGE_TO_EMBEDDABLE: "Convert to embeddable",
+  MARKDOWN_IMAGE_CONVERSION_ERROR: "Could not convert the Markdown content.",
+  MARKDOWN_IMAGE_H1_WARNING:
+    "A local Markdown image can contain only one level 1 heading when converted to an embeddable. It must be the first content and its name must be unique in the drawing.",
+  MARKDOWN_IMAGE_SECTION_NAME: "Name the back-of-note section",
+  MARKDOWN_IMAGE_SECTION_NAME_PLACEHOLDER: "Enter a unique section name",
   INSERT_PDF: "Insert PDF file from vault",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE: "Insert last active PDF page as image",
   UNIVERSAL_ADD_FILE: "Insert ANY file",

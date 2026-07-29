@@ -308,66 +308,115 @@ export function getMarkdownDrawingSection(
   return result;
 }
 
-const MARKDOWN_IMAGES_HEADING = "## Markdown Images";
+const MARKDOWN_IMAGES_HEADING = "# Markdown Images";
+const MARKDOWN_IMAGE_OPEN_MARKER =
+  /^<!-- excalidraw-markdown-image:([\w-]+) -->\r?$/gm;
 
-/**
- * Reads locally stored Markdown-image bodies from the managed section following
- * the Drawing code block. The body is kept verbatim between the blank-line
- * delimiters; no heading or other wrapper content is added.
- */
-export function parseMarkdownImages(data: string): Map<FileId, MarkdownImageData> {
-  const result = new Map<FileId, MarkdownImageData>();
-  const drawingIndex = data.indexOf("\n## Drawing\n");
-  if (drawingIndex === -1) {
-    return result;
-  }
-  const sectionIndex = data.indexOf(`\n${MARKDOWN_IMAGES_HEADING}\n`, drawingIndex);
-  if (sectionIndex === -1) {
-    return result;
-  }
-  const finalCommentIndex = data.lastIndexOf("\n%%");
-  const sectionEnd = finalCommentIndex > sectionIndex ? finalCommentIndex : data.length;
-  const section = data.substring(sectionIndex, sectionEnd);
-  const openMarker = /^<!-- excalidraw-markdown-image:([\w\d]+) -->\r?$/gm;
+type MarkdownImageBlock = {
+  fileId: FileId;
+  start: number;
+  bodyStart: number;
+  bodyEnd: number;
+  end: number;
+};
+
+const getMarkdownImageBlocks = (data: string): MarkdownImageBlock[] => {
+  const blocks: MarkdownImageBlock[] = [];
+  const openMarker = new RegExp(MARKDOWN_IMAGE_OPEN_MARKER);
   let match: RegExpExecArray | null;
-  while ((match = openMarker.exec(section)) !== null) {
+  while ((match = openMarker.exec(data)) !== null) {
     const fileId = match[1] as FileId;
-    const bodyStartToken = section.startsWith("\r\n\r\n", openMarker.lastIndex)
+    const bodySeparator = data.startsWith("\r\n\r\n", openMarker.lastIndex)
       ? "\r\n\r\n"
       : "\n\n";
-    if (!section.startsWith(bodyStartToken, openMarker.lastIndex)) {
+    if (!data.startsWith(bodySeparator, openMarker.lastIndex)) {
       continue;
     }
     const closeMarker = `<!-- /excalidraw-markdown-image:${fileId} -->`;
-    const closePrefix = bodyStartToken;
-    const closeIndex = section.indexOf(
-      `${closePrefix}${closeMarker}`,
-      openMarker.lastIndex + bodyStartToken.length,
+    const closeIndex = data.indexOf(
+      `${bodySeparator}${closeMarker}`,
+      openMarker.lastIndex + bodySeparator.length,
     );
     if (closeIndex === -1) {
       continue;
     }
-    const markdown = section.substring(
-      openMarker.lastIndex + bodyStartToken.length,
-      closeIndex,
-    );
-    result.set(fileId, { markdown });
-    openMarker.lastIndex = closeIndex + closePrefix.length + closeMarker.length;
+    const end = closeIndex + bodySeparator.length + closeMarker.length;
+    blocks.push({
+      fileId,
+      start: match.index,
+      bodyStart: openMarker.lastIndex + bodySeparator.length,
+      bodyEnd: closeIndex,
+      end,
+    });
+    openMarker.lastIndex = end;
   }
+  return blocks;
+};
+
+/**
+ * Reads locally stored Markdown-image bodies from marker-delimited blocks.
+ * Marker matching is deliberately independent of headings and block position.
+ */
+export function parseMarkdownImages(data: string): Map<FileId, MarkdownImageData> {
+  const result = new Map<FileId, MarkdownImageData>();
+  getMarkdownImageBlocks(data).forEach((block) =>
+    result.set(block.fileId, {
+      markdown: data.substring(block.bodyStart, block.bodyEnd),
+    }),
+  );
   return result;
 }
 
-function getMarkdownImagesSection(
+const serializeMarkdownImageBlock = (
+  fileId: FileId,
+  markdown: string,
+): string =>
+  `<!-- excalidraw-markdown-image:${fileId} -->\n\n${markdown}\n\n<!-- /excalidraw-markdown-image:${fileId} -->`;
+
+/**
+ * Synchronizes local Markdown-image bodies in the user-editable note header.
+ * Existing blocks stay where the user placed them; only missing blocks receive
+ * the default scaffolding immediately above Excalidraw Data.
+ */
+export function syncMarkdownImagesInHeader(
+  header: string,
   markdownImages: ReadonlyMap<FileId, MarkdownImageData>,
 ): string {
-  if (markdownImages.size === 0) {
-    return "";
+  const blocks = getMarkdownImageBlocks(header);
+  const existingIds = new Set<FileId>();
+  let updated = header;
+  for (let index = blocks.length - 1; index >= 0; index--) {
+    const block = blocks[index];
+    const data = markdownImages.get(block.fileId);
+    if (!data) {
+      updated = updated.slice(0, block.start) + updated.slice(block.end);
+      continue;
+    }
+    existingIds.add(block.fileId);
+    updated =
+      updated.slice(0, block.bodyStart) +
+      data.markdown +
+      updated.slice(block.bodyEnd);
   }
-  let section = `\n\n${MARKDOWN_IMAGES_HEADING}\n`;
-  markdownImages.forEach(({ markdown }, fileId) => {
-    section += `\n<!-- excalidraw-markdown-image:${fileId} -->\n\n${markdown}\n\n<!-- /excalidraw-markdown-image:${fileId} -->\n`;
-  });
-  return section;
+
+  const missing = [...markdownImages.entries()].filter(
+    ([fileId]) => !existingIds.has(fileId),
+  );
+  if (missing.length > 0) {
+    const hasExistingBlocks = getMarkdownImageBlocks(updated).length > 0;
+    const hasScaffoldingHeading = /^# Markdown Images[ \t]*$/m.test(updated);
+    const blocksToAppend = missing
+      .map(([fileId, data]) => serializeMarkdownImageBlock(fileId, data.markdown))
+      .join("\n\n");
+    updated = `${updated.replace(/\s*$/, "")}${
+      hasExistingBlocks || hasScaffoldingHeading
+        ? "\n\n"
+        : `\n\n${MARKDOWN_IMAGES_HEADING}\n\n`
+    }${blocksToAppend}\n\n`;
+  } else if (markdownImages.size === 0) {
+    updated = updated.replace(/(?:^|\n)# Markdown Images[ \t]*\n*$/, "\n");
+  }
+  return updated;
 }
 
 //WITHSECTION refers to back of the card note (see this.inputEl.onkeyup in SelectCard.ts)
@@ -1786,15 +1835,10 @@ export class ExcalidrawData {
       sceneJSONstring,
       this.disableCompression ? false : this.plugin.settings.compress,
     );
-    const markdownImagesSection = getMarkdownImagesSection(this.markdownImages);
     const result =
       outString +
       (this.textElementCommentedOut ? "" : "%%\n") +
-      (markdownImagesSection
-        ? drawingSection.substring(0, drawingSection.length - 3) +
-          markdownImagesSection +
-          "\n%%"
-        : drawingSection);
+      drawingSection;
     return result;
   }
 
@@ -1804,15 +1848,10 @@ export class ExcalidrawData {
       sceneJSONstring,
       this.disableCompression ? false : this.plugin.settings.compress,
     );
-    const markdownImagesSection = getMarkdownImagesSection(this.markdownImages);
     const result =
       outString +
       (this.textElementCommentedOut ? "" : "%%\n") +
-      (markdownImagesSection
-        ? drawingSection.substring(0, drawingSection.length - 3) +
-          markdownImagesSection +
-          "\n%%"
-        : drawingSection);
+      drawingSection;
     return result;
   }
 

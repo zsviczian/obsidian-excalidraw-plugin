@@ -1,17 +1,19 @@
 import type { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import type {
+  ExcalidrawElement,
+  ExcalidrawEmbeddableElement,
   ExcalidrawImageElement,
   FileId,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import type ExcalidrawPlugin from "src/core/main";
 import { getEA } from "src/core";
 import type ExcalidrawView from "src/view/ExcalidrawView";
-import { fileid } from "src/constants/constants";
+import { fileid, MD_EX_SECTIONS } from "src/constants/constants";
 import {
+  EmbeddedFile,
   EmbeddedFilesLoader,
-  type EmbeddedFile,
 } from "src/shared/EmbeddedFileLoader";
-import { getTransclusion } from "src/shared/ExcalidrawData";
+import { getTransclusion, REGEX_LINK } from "src/shared/ExcalidrawData";
 import {
   addAppendUpdateCustomData,
 } from "src/utils/elementCustomDataUtils";
@@ -23,11 +25,20 @@ import {
   type MarkdownImageSource,
 } from "src/types/markdownImageTypes";
 import { resolveMarkdownImageRenderSettings } from "src/utils/markdownImageUtils";
+import { cleanSectionHeading } from "src/utils/pathUtils";
 
 export type MarkdownImageSourceData = {
   markdown: string;
   source: MarkdownImageSource;
   embeddedFile?: EmbeddedFile;
+};
+
+type ConvertibleElement = Mutable<ExcalidrawElement> & {
+  type: "image" | "embeddable";
+  fileId?: FileId | null;
+  status?: "pending" | "saved" | "error";
+  scale: [number, number];
+  crop?: ExcalidrawImageElement["crop"];
 };
 
 /** Returns whether a fragment would collide with its storage delimiter. */
@@ -37,7 +48,7 @@ export function containsReservedMarkdownImageMarker(
   return markdown
     .split(/\r?\n/)
     .some((line) =>
-      /^<!-- \/?excalidraw-markdown-image:[\w\d]+ -->$/.test(line),
+      /^<!-- \/?excalidraw-markdown-image:[\w-]+ -->$/.test(line),
     );
 }
 
@@ -145,6 +156,179 @@ async function renderMarkdown(
       view.excalidrawAPI?.getAppState().theme === "dark");
   const loader = new EmbeddedFilesLoader(view.plugin, isDark);
   return loader.renderMarkdownToSVG(sourceFile, markdown, render);
+}
+
+const getEmbeddableLinkTarget = (link: string): string | null => {
+  const result = REGEX_LINK.getRes(link).next();
+  if (result.value) {
+    return REGEX_LINK.getLink(result);
+  }
+  const normalized = link.replace(/^!?\[\[/, "").replace(/]]$/, "").trim();
+  return normalized || null;
+};
+
+/** Resolves a Markdown embeddable into a local or external image source. */
+export async function getEmbeddableMarkdownImageSource(
+  view: ExcalidrawView,
+  element: ExcalidrawEmbeddableElement,
+): Promise<MarkdownImageSourceData | null> {
+  const target = getEmbeddableLinkTarget(element.link);
+  if (!target) {
+    return null;
+  }
+  const embeddedFile = new EmbeddedFile(view.plugin, view.file.path, target);
+  if (!embeddedFile.file || embeddedFile.file.extension.toLowerCase() !== "md") {
+    return null;
+  }
+  const isLocal = embeddedFile.file.path === view.file.path;
+  const isManagedSection = MD_EX_SECTIONS.some(
+    (heading) =>
+      cleanSectionHeading(heading).toLocaleLowerCase() ===
+      embeddedFile.linkParts.ref?.toLocaleLowerCase(),
+  );
+  if (
+    (isLocal &&
+      (!embeddedFile.linkParts.ref ||
+        embeddedFile.linkParts.isBlockRef ||
+        isManagedSection)) ||
+    (!isLocal && view.plugin.isExcalidrawFile(embeddedFile.file))
+  ) {
+    return null;
+  }
+  const transclusion = await getTransclusion(
+    embeddedFile.linkParts,
+    view.app,
+    embeddedFile.file,
+  );
+  return {
+    markdown: (transclusion.leadingHashes ?? "") + transclusion.contents,
+    source: isLocal ? "local" : "external",
+    ...(isLocal ? {} : { embeddedFile }),
+  };
+}
+
+/** Retypes a Markdown embeddable as a full-height Markdown image. */
+export async function convertEmbeddableElementToMarkdownImage(
+  view: ExcalidrawView,
+  element: ExcalidrawEmbeddableElement,
+  sourceData: MarkdownImageSourceData,
+): Promise<boolean> {
+  const render = getMarkdownImageRenderSettings(view.plugin);
+  render.width = Math.max(50, Math.round(element.width));
+  const rendered = await renderMarkdown(
+    view,
+    sourceData.markdown,
+    render,
+    sourceData.embeddedFile?.file ?? view.file,
+  );
+  if (!rendered.dataURL || rendered.size.height <= 0) {
+    return false;
+  }
+
+  const fileId = fileid() as FileId;
+  const ea = getEA(view);
+  ea.copyViewElementsToEAforEditing([element]);
+  const editable = ea.getElement(element.id) as unknown as ConvertibleElement;
+  editable.type = "image";
+  editable.fileId = fileId;
+  editable.status = "saved";
+  editable.scale = [1, 1];
+  editable.crop = null;
+  editable.width = render.width;
+  editable.height = rendered.size.height;
+  editable.link = null;
+  addAppendUpdateCustomData(editable, { mdProps: undefined });
+  setMarkdownImageCustomData(
+    editable as unknown as Mutable<ExcalidrawImageElement>,
+    sourceData.source,
+    render,
+  );
+  ea.imagesDict[fileId] = {
+    id: fileId,
+    dataURL: rendered.dataURL,
+    mimeType: "image/svg+xml",
+    created: Date.now(),
+    size: rendered.size,
+    hasSVGwithBitmap: rendered.hasSVGwithBitmap,
+  };
+  if (sourceData.source === "local") {
+    view.excalidrawData.setMarkdownImage(fileId, {
+      markdown: sourceData.markdown,
+    });
+  } else if (sourceData.embeddedFile) {
+    view.excalidrawData.setFile(fileId, sourceData.embeddedFile);
+  }
+  view.excalidrawData.elementLinks.delete(element.id);
+  await ea.addElementsToView(false, false);
+  ea.destroy();
+  view.updateScene({ appState: { activeEmbeddable: null } });
+  const converted = view.getViewElements().find((item) => item.id === element.id);
+  if (converted) {
+    view.excalidrawAPI.selectElements([converted]);
+  }
+  view.setDirty();
+  return true;
+}
+
+/** Retypes a Markdown image as an embeddable while preserving scene identity. */
+export async function convertMarkdownImageElementToEmbeddable(
+  view: ExcalidrawView,
+  element: ExcalidrawImageElement,
+  link: string,
+): Promise<boolean> {
+  const ea = getEA(view);
+  ea.copyViewElementsToEAforEditing([element]);
+  const editable = ea.getElement(element.id) as unknown as ConvertibleElement;
+  editable.type = "embeddable";
+  editable.link = link;
+  editable.scale = [1, 1];
+  delete editable.fileId;
+  delete editable.status;
+  delete editable.crop;
+  addAppendUpdateCustomData(editable, {
+    [MARKDOWN_IMAGE_CUSTOM_DATA_KEY]: undefined,
+    mdProps: view.plugin.settings.embeddableMarkdownDefaults,
+  });
+  await ea.addElementsToView(false, false);
+  ea.destroy();
+  view.excalidrawData.elementLinks.set(element.id, link);
+  const converted = view.getViewElements().find((item) => item.id === element.id);
+  if (converted) {
+    view.excalidrawAPI.selectElements([converted]);
+  }
+  view.setDirty();
+  return true;
+}
+
+/** Finds level-one ATX headings outside fenced code blocks. */
+export function getLevelOneMarkdownHeadings(
+  markdown: string,
+): Array<{ title: string; index: number }> {
+  const headings: Array<{ title: string; index: number }> = [];
+  const linePattern = /.*(?:\n|$)/g;
+  let fence: string | null = null;
+  let match: RegExpExecArray | null;
+  while ((match = linePattern.exec(markdown)) !== null && match[0]) {
+    const line = match[0].replace(/\r?\n$/, "");
+    const fenceMatch = line.match(/^\s*(`{3,}|~{3,})/);
+    if (fenceMatch) {
+      if (!fence) {
+        fence = fenceMatch[1][0];
+      } else if (fence === fenceMatch[1][0]) {
+        fence = null;
+      }
+      continue;
+    }
+    if (!fence) {
+      const heading = line.match(
+        /^#(?!#)[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/,
+      );
+      if (heading) {
+        headings.push({ title: heading[1].trim(), index: match.index });
+      }
+    }
+  }
+  return headings;
 }
 
 /** Inserts a new local editable Markdown image without adding wrapper content. */

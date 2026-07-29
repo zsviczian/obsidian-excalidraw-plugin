@@ -11,6 +11,7 @@ import { ICONS } from "../../../constants/actionIcons";
 import { t } from "src/lang/helpers";
 import { ScriptEngine } from "../../../shared/Scripts";
 import {
+  MD_EX_SECTIONS,
   ROOTELEMENTSIZE,
   sceneCoordsToViewportCoords,
 } from "src/constants/constants";
@@ -443,6 +444,17 @@ export class EmbeddableMenu {
         const isBase = file.extension === "base";
         const isExcalidrawFile = view.plugin.isExcalidrawFile(file);
         const isPDF = file.extension === "pdf";
+        const canConvertToMarkdownImage =
+          isMD &&
+          (!isExcalidrawFile ||
+            (file.path === view.file.path &&
+              Boolean(subpath) &&
+              !subpath.startsWith("#^") &&
+              !MD_EX_SECTIONS.some(
+                (heading) =>
+                  cleanSectionHeading(heading).toLocaleLowerCase() ===
+                  cleanSectionHeading(subpath).toLocaleLowerCase(),
+              )));
         const { x, y } = sceneCoordsToViewportCoords(
           { sceneX: element.x, sceneY: element.y },
           appState,
@@ -531,6 +543,16 @@ export class EmbeddableMenu {
                     }
                   />
                 )}
+              {canConvertToMarkdownImage && (
+                <ActionButton
+                  key="ConvertToMarkdownImage"
+                  title={t("CONVERT_EMBEDDABLE_TO_MARKDOWN_IMAGE")}
+                  action={() =>
+                    void view.convertEmbeddableToMarkdownImage(element.id)
+                  }
+                  icon={ICONS.insertImage}
+                />
+              )}
               {isMD && (
                 <ActionButton
                   key="LockReadingMode"

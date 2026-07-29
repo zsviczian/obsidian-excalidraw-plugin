@@ -162,6 +162,17 @@ export default {
   MARKDOWN_IMAGE_OWNER_UNAVAILABLE:
     "Исходный документ Excalidraw больше недоступен.",
   MARKDOWN_IMAGE_RESIZE_EDITOR: "Изменить размер редактора Markdown",
+  CONVERT_EMBEDDABLE_TO_MARKDOWN_IMAGE:
+    "Преобразовать в изображение Markdown",
+  CONVERT_MARKDOWN_IMAGE_TO_EMBEDDABLE:
+    "Преобразовать во встраиваемый элемент",
+  MARKDOWN_IMAGE_CONVERSION_ERROR:
+    "Не удалось преобразовать содержимое Markdown.",
+  MARKDOWN_IMAGE_H1_WARNING:
+    "Локальное изображение Markdown может содержать только один заголовок уровня 1 при преобразовании во встраиваемый элемент. Он должен быть первым содержимым, а его имя — уникальным в рисунке.",
+  MARKDOWN_IMAGE_SECTION_NAME: "Название раздела в конце заметки",
+  MARKDOWN_IMAGE_SECTION_NAME_PLACEHOLDER:
+    "Введите уникальное название раздела",
   INSERT_PDF: "Вставить PDF-файл из хранилища",
   UNIVERSAL_ADD_FILE: "Вставка ЛЮБОГО файла",
   // Compatibility keys consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().

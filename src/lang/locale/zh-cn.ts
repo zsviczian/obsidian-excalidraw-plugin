@@ -148,6 +148,13 @@ export default {
   MARKDOWN_IMAGE_FOCUS_OWNER: "聚焦所属的 Excalidraw 文档：{file}",
   MARKDOWN_IMAGE_OWNER_UNAVAILABLE: "所属的 Excalidraw 文档已不可用。",
   MARKDOWN_IMAGE_RESIZE_EDITOR: "调整 Markdown 编辑器大小",
+  CONVERT_EMBEDDABLE_TO_MARKDOWN_IMAGE: "转换为 Markdown 图像",
+  CONVERT_MARKDOWN_IMAGE_TO_EMBEDDABLE: "转换为嵌入内容",
+  MARKDOWN_IMAGE_CONVERSION_ERROR: "无法转换 Markdown 内容。",
+  MARKDOWN_IMAGE_H1_WARNING:
+    "本地 Markdown 图像转换为嵌入内容时只能包含一个一级标题。该标题必须是首个内容，且名称在绘图中必须唯一。",
+  MARKDOWN_IMAGE_SECTION_NAME: "命名笔记末尾的章节",
+  MARKDOWN_IMAGE_SECTION_NAME_PLACEHOLDER: "输入唯一的章节名称",
   INSERT_PDF: "以图像形式嵌入 PDF 到当前绘图中",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE: "以图像形式嵌入最后激活的 PDF 页面",
   UNIVERSAL_ADD_FILE: "嵌入文件 / Insert ANY file",

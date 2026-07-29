@@ -27,6 +27,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Improved the Markdown-image sidepanel layout at narrow widths, including responsive border rows; normalized icon sizing; and hid the focus-owner action while its drawing is already focused. Main and transclusion appearance now share consistent font, color, border, and CSS controls.
 - Added heading, block, new-tab, and local-copy actions for external Markdown-image sources. Modifier-click now follows the configured link-click action, including opening the embedded-link editor.
 - Fixed the Markdown-image sidepanel editor hiding its owning Excalidraw leaf on phones.
+- Moved local Markdown-image source blocks above Excalidraw Data and made their parsing independent of headings and document position. Markdown embeddables and Markdown images can now be converted into one another while retaining external note, heading, and block references.
 
 ## New and fixed from Excalidraw.com
 - New: flowchart (CTRL/CMD+arrow keys) now intelligently routes new shapes to avoid overlap of flowchart children [#11532](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11532)

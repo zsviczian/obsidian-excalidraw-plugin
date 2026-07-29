@@ -23,6 +23,7 @@ const MD_TEXTELEMENTS = "## Text Elements";
 const MD_ELEMENTLINKS = "## Element Links";
 const MD_EMBEDFILES = "## Embedded Files";
 const MD_DRAWING = "## Drawing";
+const MD_MARKDOWN_IMAGES = "# Markdown Images";
 
 export const MD_EX_SECTIONS = [
   MD_EXCALIDRAW,
@@ -30,6 +31,7 @@ export const MD_EX_SECTIONS = [
   MD_ELEMENTLINKS,
   MD_EMBEDFILES,
   MD_DRAWING,
+  MD_MARKDOWN_IMAGES,
 ];
 
 export const ERROR_IFRAME_CONVERSION_CANCELED = "iframe conversion canceled";

@@ -170,6 +170,14 @@ export default {
   MARKDOWN_IMAGE_OWNER_UNAVAILABLE:
     "El documento Excalidraw propietario ya no está disponible.",
   MARKDOWN_IMAGE_RESIZE_EDITOR: "Cambiar el tamaño del editor Markdown",
+  CONVERT_EMBEDDABLE_TO_MARKDOWN_IMAGE: "Convertir en imagen Markdown",
+  CONVERT_MARKDOWN_IMAGE_TO_EMBEDDABLE: "Convertir en elemento incrustado",
+  MARKDOWN_IMAGE_CONVERSION_ERROR: "No se pudo convertir el contenido Markdown.",
+  MARKDOWN_IMAGE_H1_WARNING:
+    "Una imagen Markdown local solo puede contener un encabezado de nivel 1 al convertirse en elemento incrustado. Debe ser el primer contenido y su nombre debe ser único en el dibujo.",
+  MARKDOWN_IMAGE_SECTION_NAME: "Nombre de la sección al final de la nota",
+  MARKDOWN_IMAGE_SECTION_NAME_PLACEHOLDER:
+    "Introduce un nombre de sección único",
   INSERT_PDF: "Insertar archivo PDF desde la bóveda",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE:
     "Insertar última página PDF activa como imagen",
