@@ -21,23 +21,27 @@ declare const mainDocument: Document;
 export const createLeaf = (
   view: ExcalidrawView,
 ): { leaf: WorkspaceLeaf; rootSplit: WorkspaceSplit } => {
+  // Capture stable host objects. Embedded leaves can outlive the originating
+  // ExcalidrawView briefly while Obsidian changes that leaf's view type.
+  const app = view.app;
+  const plugin = view.plugin;
   const doc = view.ownerDocument;
   const rootSplit: WorkspaceSplit =
     new (WorkspaceSplit as ConstructableWorkspaceSplit)(
-      view.app.workspace,
+      app.workspace,
       "vertical",
     );
   rootSplit.getRoot = () =>
-    view.app.workspace[doc === mainDocument ? "rootSplit" : "floatingSplit"];
+    app.workspace[doc === mainDocument ? "rootSplit" : "floatingSplit"];
   rootSplit.getContainer = () => getContainerForDocument(doc);
   setStyle(rootSplit.containerEl, {
     width: "100%",
     height: "100%",
     borderRadius: "var(--embeddable-radius)",
   });
-  view.plugin.setDebounceActiveLeafChangeHandler();
+  plugin.setDebounceActiveLeafChangeHandler();
   return {
-    leaf: view.app.workspace.createLeafInParent(rootSplit, 0),
+    leaf: app.workspace.createLeafInParent(rootSplit, 0),
     rootSplit,
   };
 };

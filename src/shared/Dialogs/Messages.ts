@@ -18,6 +18,9 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
   "2.26.0": `
+## New
+- Added editable Markdown images. Their source can be stored locally as back-of-the-card markdown content in the drawing or linked to an external Markdown note, heading, or block. Edit content and appearance in the Excalidraw sidepanel or use the  action menu on a selected Markdown image; Markdown images participate in normal canvas layering and image export. You can convert interactive embeddables into images and back in the embeddale/image menu in the top left of the selected element.
+
 ## New and fixed from Excalidraw.com
 - New: flowchart (CTRL/CMD+arrow keys) now intelligently routes new shapes to avoid overlap of flowchart children [#11532](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11532)
 - New Draw To Shape feature: Draw a shape freehand, and Excalidraw will automatically convert it to a perfect shape. [#9313](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/9313)

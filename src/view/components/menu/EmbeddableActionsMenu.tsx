@@ -13,7 +13,6 @@ import { ScriptEngine } from "../../../shared/Scripts";
 import {
   MD_EX_SECTIONS,
   ROOTELEMENTSIZE,
-  nanoid,
   sceneCoordsToViewportCoords,
 } from "src/constants/constants";
 import {
@@ -39,44 +38,10 @@ import { CaptureUpdateAction } from "src/constants/constants";
 import { URLs } from "src/constants/safeUrls";
 import { setStyle } from "src/utils/styleUtils";
 import { addAppendUpdateCustomData } from "src/utils/elementCustomDataUtils";
-
-type BlockCacheEntry = Awaited<
-  ReturnType<ExcalidrawView["app"]["metadataCache"]["blockCache"]["getForFile"]>
->["blocks"][number];
-
-type HeadingBlockEntry = BlockCacheEntry & {
-  display: string;
-  node: BlockCacheEntry["node"] & {
-    type: "heading";
-  };
-};
-
-type ParagraphLikeBlockEntry = BlockCacheEntry & {
-  display: string;
-  node: BlockCacheEntry["node"] & {
-    type: "paragraph" | "blockquote" | "listItem" | "table" | "callout";
-  };
-};
-
-function isHeadingBlockEntry(
-  entry: BlockCacheEntry,
-): entry is HeadingBlockEntry {
-  return Boolean(entry.display && entry.node?.type === "heading");
-}
-
-function isParagraphLikeBlockEntry(
-  entry: BlockCacheEntry,
-): entry is ParagraphLikeBlockEntry {
-  return Boolean(
-    entry.display &&
-    entry.node &&
-    (entry.node.type === "paragraph" ||
-      entry.node.type === "blockquote" ||
-      entry.node.type === "listItem" ||
-      entry.node.type === "table" ||
-      entry.node.type === "callout"),
-  );
-}
+import {
+  selectMarkdownBlockSubpath,
+  selectMarkdownHeadingSubpath,
+} from "src/shared/Suggesters/markdownSubpathSuggester";
 
 export class EmbeddableMenu {
   private menuFadeTimeout: number = 0;
@@ -193,35 +158,12 @@ export class EmbeddableMenu {
       appState: { activeEmbeddable: null },
       captureUpdate: CaptureUpdateAction.NEVER,
     });
-    const sections = (
-      await this.view.app.metadataCache.blockCache.getForFile(
-        { isCancelled: () => false },
-        file,
-      )
-    ).blocks
-      .filter(isHeadingBlockEntry)
-      .filter((b) => !isExcalidrawFile || !MD_EX_SECTIONS.includes(b.display));
-    let values: string[];
-    let display: string[];
-    if (isExcalidrawFile) {
-      values = sections.map((b) => `#${cleanSectionHeading(b.display)}`);
-      display = sections.map((b) => b.display);
-    } else {
-      values = [""].concat(
-        sections.map((b) => `#${cleanSectionHeading(b.display)}`),
-      );
-      display = [t("SHOW_ENTIRE_FILE")].concat(sections.map((b) => b.display));
-    }
-    const newSubpath = await ScriptEngine.suggester(
+    const newSubpath = await selectMarkdownHeadingSubpath(
       this.view.app,
-      display,
-      values,
-      t("SELECT_SECTION"),
+      file,
+      isExcalidrawFile,
     );
-    if (!newSubpath && newSubpath !== "") {
-      return;
-    }
-    if (newSubpath !== subpath) {
+    if (newSubpath !== null && newSubpath !== subpath) {
       await this.updateElement(newSubpath, element, file);
     }
   }
@@ -296,63 +238,13 @@ export class EmbeddableMenu {
       appState: { activeEmbeddable: null },
       captureUpdate: CaptureUpdateAction.NEVER,
     });
-    const paragraphs = (
-      await this.view.app.metadataCache.blockCache.getForFile(
-        { isCancelled: () => false },
-        file,
-      )
-    ).blocks.filter(isParagraphLikeBlockEntry);
-    const values: Array<"entire-file" | (typeof paragraphs)[number]> = [
-      "entire-file",
-      ...paragraphs,
-    ];
-    const display = [t("SHOW_ENTIRE_FILE")].concat(
-      paragraphs.map(
-        (b) => `${b.node.id ? `#^${b.node.id}: ` : ``}${b.display.trim()}`,
-      ),
-    );
-
-    const selectedBlock = await ScriptEngine.suggester(
+    const newSubpath = await selectMarkdownBlockSubpath(
       this.view.app,
-      display,
-      values,
-      t("SELECT_SECTION"),
+      file,
     );
-    if (!selectedBlock) {
-      return;
+    if (newSubpath !== null && newSubpath !== subpath) {
+      await this.updateElement(newSubpath, element, file);
     }
-
-    if (selectedBlock === "entire-file") {
-      if (subpath === "") {
-        return;
-      }
-      await this.updateElement("", element, file);
-      return;
-    }
-
-    let blockID = selectedBlock.node.id;
-    if (blockID && `#^${blockID}` === subpath) {
-      return;
-    }
-    if (!blockID) {
-      const offset = selectedBlock.node?.position?.end?.offset;
-      if (!offset) {
-        return;
-      }
-      blockID = nanoid();
-      const fileContents = await this.view.app.vault.cachedRead(file);
-      if (!fileContents) {
-        return;
-      }
-      await this.view.app.vault.modify(
-        file,
-        `${fileContents.slice(0, offset)} ^${blockID}${fileContents.slice(
-          offset,
-        )}`,
-      );
-      await sleep(200); //wait for cache to update
-    }
-    await this.updateElement(`#^${blockID}`, element, file);
   }
 
   private actionZoomToElement(
@@ -552,6 +444,17 @@ export class EmbeddableMenu {
         const isBase = file.extension === "base";
         const isExcalidrawFile = view.plugin.isExcalidrawFile(file);
         const isPDF = file.extension === "pdf";
+        const canConvertToMarkdownImage =
+          isMD &&
+          (!isExcalidrawFile ||
+            (file.path === view.file.path &&
+              Boolean(subpath) &&
+              !subpath.startsWith("#^") &&
+              !MD_EX_SECTIONS.some(
+                (heading) =>
+                  cleanSectionHeading(heading).toLocaleLowerCase() ===
+                  cleanSectionHeading(subpath).toLocaleLowerCase(),
+              )));
         const { x, y } = sceneCoordsToViewportCoords(
           { sceneX: element.x, sceneY: element.y },
           appState,
@@ -640,6 +543,16 @@ export class EmbeddableMenu {
                     }
                   />
                 )}
+              {canConvertToMarkdownImage && (
+                <ActionButton
+                  key="ConvertToMarkdownImage"
+                  title={t("CONVERT_EMBEDDABLE_TO_MARKDOWN_IMAGE")}
+                  action={() =>
+                    void view.convertEmbeddableToMarkdownImage(element.id)
+                  }
+                  icon={ICONS.insertImage}
+                />
+              )}
               {isMD && (
                 <ActionButton
                   key="LockReadingMode"

@@ -95,6 +95,89 @@ export default {
     "Importar un archivo SVG como trazos de Excalidraw (soporte SVG limitado, TEXTO no es compatible actualmente)",
   IMPORT_SVG_CONTEXTMENU: "Convertir SVG a trazos - con limitaciones",
   INSERT_MD: "Insertar archivo Markdown desde la bóveda",
+  INSERT_MARKDOWN_IMAGE: "Insertar imagen Markdown editable",
+  EDIT_MARKDOWN_IMAGE: "Editar imagen Markdown",
+  MARKDOWN_IMAGE_SELECT_ERROR: "Selecciona una imagen Markdown e inténtalo de nuevo",
+  MARKDOWN_IMAGE_TITLE: "Imagen Markdown",
+  MARKDOWN_IMAGE_INSERT_ERROR: "No se pudo insertar la imagen Markdown",
+  MARKDOWN_IMAGE_APPEARANCE: "Apariencia",
+  MARKDOWN_IMAGE_WIDTH: "Ancho",
+  MARKDOWN_IMAGE_WIDTH_DESC: "Ancho del flujo Markdown en unidades del lienzo",
+  MARKDOWN_IMAGE_FONT: "Fuente",
+  MARKDOWN_IMAGE_FONT_COLOR: "Color de fuente",
+  MARKDOWN_IMAGE_BORDER: "Borde",
+  MARKDOWN_IMAGE_BORDER_COLOR: "Color del borde",
+  MARKDOWN_IMAGE_THEME: "Tema",
+  MARKDOWN_IMAGE_THEME_DESC:
+    "Controla el contenido sensible al tema, como bloques de código, tablas, enlaces y llamadas.",
+  MARKDOWN_IMAGE_MATCH_CANVAS: "Coincidir con el lienzo",
+  MARKDOWN_IMAGE_LIGHT: "Claro",
+  MARKDOWN_IMAGE_DARK: "Oscuro",
+  MARKDOWN_IMAGE_CSS: "CSS",
+  MARKDOWN_IMAGE_CSS_DESC: "Reglas CSS aplicadas solo a esta imagen Markdown.",
+  MARKDOWN_IMAGE_CSS_IMPORTANT_HINT:
+    "Si una regla no tiene efecto, añade !important a la declaración.",
+  MARKDOWN_IMAGE_CSS_DESKTOP_HELP:
+    "Para inspeccionar el marcado generado, abre la consola de desarrollo ({shortcut}) y ejecuta el comando disponible en el botón de copia.",
+  MARKDOWN_IMAGE_CSS_MOBILE_HELP:
+    "En un equipo de escritorio puedes inspeccionar el marcado generado en la consola de desarrollo y ejecutar el comando disponible en el botón de copia.",
+  MARKDOWN_IMAGE_CSS_EDITOR_ARIA: "Editor CSS para esta imagen Markdown",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA:
+    "Editor CSS para Markdown transcluido",
+  MARKDOWN_IMAGE_INSERT_CSS_BOILERPLATE:
+    "Insertar una plantilla CSS comentada",
+  MARKDOWN_IMAGE_COPY_CSS_COMMAND:
+    "Copiar el comando de consola del SVG Markdown generado",
+  MARKDOWN_IMAGE_CSS_COMMAND_COPIED: "Comando de consola copiado",
+  MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE:
+    "Usar un estilo diferente para las transclusiones",
+  MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE_DESC:
+    "Mostrar ajustes de apariencia separados para el Markdown transcluido.",
+  MARKDOWN_IMAGE_TRANSCLUSION_APPEARANCE: "Apariencia de la transclusión",
+  MARKDOWN_IMAGE_TRANSCLUSION_APPEARANCE_DESC:
+    "Al activarlo, estos ajustes se aplican al texto ![[transcluido]] dentro de esta imagen Markdown.",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS: "CSS de transclusión",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS_DESC:
+    "Reglas CSS aplicadas solo al Markdown transcluido.",
+  MARKDOWN_IMAGE_SET_DEFAULT: "Establecer como predeterminado",
+  MARKDOWN_IMAGE_SAVE_DEFAULT_ARIA:
+    "Guardar la configuración de apariencia actual como predeterminada",
+  MARKDOWN_IMAGE_RENDER_NOW: "Renderizar ahora",
+  MARKDOWN_IMAGE_UPDATING: "Actualizando imagen…",
+  MARKDOWN_IMAGE_EXTERNAL_SOURCE: "Fuente Markdown externa",
+  MARKDOWN_IMAGE_OPEN_EXTERNAL_SOURCE_NEW_TAB:
+    "Abrir la fuente Markdown externa en una pestaña nueva",
+  MARKDOWN_IMAGE_MAKE_LOCAL: "Crear copia local",
+  MARKDOWN_IMAGE_EXTERNAL_TARGET: "Nota, encabezado o bloque externo",
+  MARKDOWN_IMAGE_EXTERNAL_DESC: "Introduce un enlace de Obsidian como fuente externa",
+  MARKDOWN_IMAGE_USE_SOURCE: "Usar fuente",
+  MARKDOWN_IMAGE_EXTRACT_LOCAL: "Extraer Markdown local a una nota",
+  MARKDOWN_IMAGE_EXTRACT: "Extraer a nota",
+  MARKDOWN_IMAGE_SELECT_SOURCE: "Selecciona una nota, encabezado o bloque Markdown",
+  MARKDOWN_IMAGE_CHANGE_SOURCE_ERROR: "No se pudo cambiar la fuente de la imagen Markdown",
+  MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "No se pudo crear una copia Markdown local",
+  MARKDOWN_IMAGE_EXTRACT_TITLE: "Extraer imagen Markdown a una nota",
+  MARKDOWN_IMAGE_EXTRACT_PATH: "Ruta de la nueva nota Markdown",
+  MARKDOWN_IMAGE_DEFAULT_NOTE: "Imagen Markdown.md",
+  MARKDOWN_IMAGE_CREATE_NOTE_ERROR: "No se pudo crear la nota Markdown",
+  MARKDOWN_IMAGE_UNKNOWN_ERROR: "Error desconocido",
+  MARKDOWN_IMAGE_SOURCE_UNAVAILABLE: "La fuente de la imagen Markdown no está disponible.",
+  MARKDOWN_IMAGE_RESERVED_MARKER: "El cuerpo Markdown contiene una línea de marcador reservada.",
+  MARKDOWN_IMAGE_EMPTY_PLACEHOLDER: "Empieza a escribir en el editor de imágenes Markdown…",
+  MARKDOWN_IMAGE_NO_SELECTION: "Selecciona una imagen Markdown para editarla.",
+  MARKDOWN_IMAGE_ATTACHED_TO: "Adjunto a {file}",
+  MARKDOWN_IMAGE_FOCUS_OWNER: "Enfocar el documento Excalidraw propietario: {file}",
+  MARKDOWN_IMAGE_OWNER_UNAVAILABLE:
+    "El documento Excalidraw propietario ya no está disponible.",
+  MARKDOWN_IMAGE_RESIZE_EDITOR: "Cambiar el tamaño del editor Markdown",
+  CONVERT_EMBEDDABLE_TO_MARKDOWN_IMAGE: "Convertir en imagen Markdown",
+  CONVERT_MARKDOWN_IMAGE_TO_EMBEDDABLE: "Convertir en elemento incrustado",
+  MARKDOWN_IMAGE_CONVERSION_ERROR: "No se pudo convertir el contenido Markdown.",
+  MARKDOWN_IMAGE_H1_WARNING:
+    "Una imagen Markdown local solo puede contener un encabezado de nivel 1 al convertirse en elemento incrustado. Debe ser el primer contenido y su nombre debe ser único en el dibujo.",
+  MARKDOWN_IMAGE_SECTION_NAME: "Nombre de la sección al final de la nota",
+  MARKDOWN_IMAGE_SECTION_NAME_PLACEHOLDER:
+    "Introduce un nombre de sección único",
   INSERT_PDF: "Insertar archivo PDF desde la bóveda",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE:
     "Insertar última página PDF activa como imagen",

@@ -6,7 +6,11 @@ import {
   TFile,
   Vault,
 } from "obsidian";
-import { DEVICE, RERENDER_EVENT } from "../../constants/constants";
+import {
+  DEVICE,
+  MARKDOWN_TO_SVG_RENDER_CLASS,
+  RERENDER_EVENT,
+} from "../../constants/constants";
 import { EmbeddedFilesLoader } from "../../shared/EmbeddedFileLoader";
 import { createPNG, createSVG } from "../../utils/excalidrawAutomateUtils";
 import ExcalidrawPlugin from "../main";
@@ -1322,6 +1326,12 @@ export const markdownPostProcessor = async (
   el: HTMLElement,
   ctx: MarkdownPostProcessorContext,
 ) => {
+  if (
+    ctx.containerEl?.hasClass(MARKDOWN_TO_SVG_RENDER_CLASS) ||
+    el.closest(`.${MARKDOWN_TO_SVG_RENDER_CLASS}`)
+  ) {
+    return;
+  }
   await plugin.awaitSettings();
   const isPrinting = Boolean(
     mainDocument.body.querySelectorAll("body > .print").length > 0,

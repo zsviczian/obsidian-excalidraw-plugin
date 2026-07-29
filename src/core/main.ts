@@ -123,6 +123,7 @@ import { hideElement, setButtonBgColor } from "src/utils/styleUtils";
 import { installButton } from "src/utils/scriptLibraryUtils";
 import { isInstanceOfHTMLStyleElement } from "src/utils/typechecks";
 import { insertLaTeXToView } from "src/utils/excalidrawViewHelpers";
+import type { MarkdownImageData } from "src/types/markdownImageTypes";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
@@ -604,6 +605,7 @@ export default class ExcalidrawPlugin extends Plugin {
   //A master list of fileIds to facilitate copy / paste
   public filesMaster: Map<FileId, FileMasterInfo> = null; //fileId, path
   public equationsMaster: Map<FileId, string> = null; //fileId, formula
+  public markdownImagesMaster: Map<FileId, MarkdownImageData> = null;
   public mermaidsMaster: Map<FileId, string> = null; //fileId, mermaidText
   public scriptEngine: ScriptEngine;
   private stylesManager: StylesManager;
@@ -639,6 +641,7 @@ export default class ExcalidrawPlugin extends Plugin {
       }
     >();
     this.equationsMaster = new Map<FileId, string>();
+    this.markdownImagesMaster = new Map<FileId, MarkdownImageData>();
     this.mermaidsMaster = new Map<FileId, string>();
 
     //isExcalidraw function is used already is already used by MarkdownPostProcessor in onLoad before onLayoutReady
@@ -1590,6 +1593,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this.fileManager.destroy();
     this.equationsMaster.clear();
+    this.markdownImagesMaster.clear();
     this.filesMaster.clear();
     this.mermaidsMaster.clear();
 
@@ -1618,8 +1622,52 @@ export default class ExcalidrawPlugin extends Plugin {
       migrateLegacyAISettings(rawSettings);
     const persistedSettings = stripLegacyAISettings(migratedSettings);
     const decryptedSettings = decryptPersistedAPIKeys(persistedSettings);
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, decryptedSettings);
     let didSettingsMigration = false;
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, decryptedSettings);
+    const savedMarkdownImageSettings = decryptedSettings.markdownImageSettings;
+    if (!savedMarkdownImageSettings) {
+      this.settings.markdownImageSettings = {
+        defaults: {
+          ...DEFAULT_SETTINGS.markdownImageSettings.defaults,
+          width: this.settings.mdSVGwidth,
+          fontFamily: this.settings.mdFont,
+          fontColor: this.settings.mdFontColor,
+          border: {
+            enabled: false,
+            color: this.settings.mdBorderColor,
+          },
+          css: this.settings.mdCSS,
+          transclusion: {
+            ...DEFAULT_SETTINGS.markdownImageSettings.defaults.transclusion,
+            border: {
+              ...DEFAULT_SETTINGS.markdownImageSettings.defaults.transclusion
+                .border,
+            },
+          },
+        },
+      };
+      didSettingsMigration = true;
+    } else {
+      this.settings.markdownImageSettings = {
+        defaults: {
+          ...DEFAULT_SETTINGS.markdownImageSettings.defaults,
+          ...savedMarkdownImageSettings.defaults,
+          border: {
+            ...DEFAULT_SETTINGS.markdownImageSettings.defaults.border,
+            ...savedMarkdownImageSettings.defaults?.border,
+          },
+          transclusion: {
+            ...DEFAULT_SETTINGS.markdownImageSettings.defaults.transclusion,
+            ...savedMarkdownImageSettings.defaults?.transclusion,
+            border: {
+              ...DEFAULT_SETTINGS.markdownImageSettings.defaults.transclusion
+                .border,
+              ...savedMarkdownImageSettings.defaults?.transclusion?.border,
+            },
+          },
+        },
+      };
+    }
     const settingsRecord = this.settings as unknown as Record<string, unknown>;
     if (
       typeof settingsRecord.iframelyAllowed === "boolean" &&

@@ -86,6 +86,93 @@ export default {
     "Импорт SVG-файла в виде штрихов Excalidraw (поддержка SVG ограничена, TEXT в настоящее время не поддерживается)",
   IMPORT_SVG_CONTEXTMENU: "Преобразование SVG в штрихи - с ограничениями",
   INSERT_MD: "Вставка файла markdown из хранилища",
+  INSERT_MARKDOWN_IMAGE: "Вставить редактируемое Markdown-изображение",
+  EDIT_MARKDOWN_IMAGE: "Редактировать Markdown-изображение",
+  MARKDOWN_IMAGE_SELECT_ERROR: "Выберите Markdown-изображение и повторите попытку",
+  MARKDOWN_IMAGE_TITLE: "Markdown-изображение",
+  MARKDOWN_IMAGE_INSERT_ERROR: "Не удалось вставить Markdown-изображение",
+  MARKDOWN_IMAGE_APPEARANCE: "Оформление",
+  MARKDOWN_IMAGE_WIDTH: "Ширина",
+  MARKDOWN_IMAGE_WIDTH_DESC: "Ширина потока Markdown в единицах холста",
+  MARKDOWN_IMAGE_FONT: "Шрифт",
+  MARKDOWN_IMAGE_FONT_COLOR: "Цвет шрифта",
+  MARKDOWN_IMAGE_BORDER: "Рамка",
+  MARKDOWN_IMAGE_BORDER_COLOR: "Цвет рамки",
+  MARKDOWN_IMAGE_THEME: "Тема",
+  MARKDOWN_IMAGE_THEME_DESC:
+    "Управляет зависящим от темы содержимым: блоками кода, таблицами, ссылками и выносками.",
+  MARKDOWN_IMAGE_MATCH_CANVAS: "Как на холсте",
+  MARKDOWN_IMAGE_LIGHT: "Светлая",
+  MARKDOWN_IMAGE_DARK: "Тёмная",
+  MARKDOWN_IMAGE_CSS: "CSS",
+  MARKDOWN_IMAGE_CSS_DESC:
+    "Правила CSS применяются только к этому Markdown-изображению.",
+  MARKDOWN_IMAGE_CSS_IMPORTANT_HINT:
+    "Если правило не действует, добавьте !important к объявлению.",
+  MARKDOWN_IMAGE_CSS_DESKTOP_HELP:
+    "Чтобы проверить созданную разметку, откройте консоль разработчика ({shortcut}) и выполните команду, доступную по кнопке копирования.",
+  MARKDOWN_IMAGE_CSS_MOBILE_HELP:
+    "На компьютере созданную разметку можно проверить в консоли разработчика и выполнить команду, доступную по кнопке копирования.",
+  MARKDOWN_IMAGE_CSS_EDITOR_ARIA: "Редактор CSS для этого Markdown-изображения",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA:
+    "Редактор CSS для встроенного Markdown",
+  MARKDOWN_IMAGE_INSERT_CSS_BOILERPLATE:
+    "Вставить шаблон CSS с комментариями",
+  MARKDOWN_IMAGE_COPY_CSS_COMMAND:
+    "Копировать консольную команду для созданного Markdown SVG",
+  MARKDOWN_IMAGE_CSS_COMMAND_COPIED: "Консольная команда скопирована",
+  MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE:
+    "Использовать отдельный стиль для встраиваний",
+  MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE_DESC:
+    "Показать отдельные настройки оформления для встроенного Markdown.",
+  MARKDOWN_IMAGE_TRANSCLUSION_APPEARANCE: "Оформление встраиваний",
+  MARKDOWN_IMAGE_TRANSCLUSION_APPEARANCE_DESC:
+    "Если включено, эти настройки применяются к ![[встроенному тексту]] внутри Markdown-изображения.",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS: "CSS встраиваний",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS_DESC:
+    "Правила CSS применяются только к встроенному Markdown.",
+  MARKDOWN_IMAGE_SET_DEFAULT: "Сделать по умолчанию",
+  MARKDOWN_IMAGE_SAVE_DEFAULT_ARIA:
+    "Сохранить текущие настройки оформления как настройки по умолчанию",
+  MARKDOWN_IMAGE_RENDER_NOW: "Отобразить сейчас",
+  MARKDOWN_IMAGE_UPDATING: "Обновление изображения…",
+  MARKDOWN_IMAGE_EXTERNAL_SOURCE: "Внешний источник Markdown",
+  MARKDOWN_IMAGE_OPEN_EXTERNAL_SOURCE_NEW_TAB:
+    "Открыть внешний источник Markdown в новой вкладке",
+  MARKDOWN_IMAGE_MAKE_LOCAL: "Создать локальную копию",
+  MARKDOWN_IMAGE_EXTERNAL_TARGET: "Внешняя заметка, заголовок или блок",
+  MARKDOWN_IMAGE_EXTERNAL_DESC: "Введите ссылку Obsidian для внешнего источника",
+  MARKDOWN_IMAGE_USE_SOURCE: "Использовать источник",
+  MARKDOWN_IMAGE_EXTRACT_LOCAL: "Извлечь локальный Markdown в заметку",
+  MARKDOWN_IMAGE_EXTRACT: "Извлечь в заметку",
+  MARKDOWN_IMAGE_SELECT_SOURCE: "Выберите Markdown-заметку, заголовок или блок",
+  MARKDOWN_IMAGE_CHANGE_SOURCE_ERROR: "Не удалось изменить источник Markdown-изображения",
+  MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "Не удалось создать локальную копию Markdown",
+  MARKDOWN_IMAGE_EXTRACT_TITLE: "Извлечь Markdown-изображение в заметку",
+  MARKDOWN_IMAGE_EXTRACT_PATH: "Путь к новой Markdown-заметке",
+  MARKDOWN_IMAGE_DEFAULT_NOTE: "Markdown-изображение.md",
+  MARKDOWN_IMAGE_CREATE_NOTE_ERROR: "Не удалось создать Markdown-заметку",
+  MARKDOWN_IMAGE_UNKNOWN_ERROR: "Неизвестная ошибка",
+  MARKDOWN_IMAGE_SOURCE_UNAVAILABLE: "Источник Markdown-изображения недоступен.",
+  MARKDOWN_IMAGE_RESERVED_MARKER: "Текст Markdown содержит зарезервированную строку-маркер.",
+  MARKDOWN_IMAGE_EMPTY_PLACEHOLDER: "Начните вводить текст в редакторе Markdown-изображения…",
+  MARKDOWN_IMAGE_NO_SELECTION: "Выберите Markdown-изображение для редактирования.",
+  MARKDOWN_IMAGE_ATTACHED_TO: "Привязано к {file}",
+  MARKDOWN_IMAGE_FOCUS_OWNER: "Перейти к исходному документу Excalidraw: {file}",
+  MARKDOWN_IMAGE_OWNER_UNAVAILABLE:
+    "Исходный документ Excalidraw больше недоступен.",
+  MARKDOWN_IMAGE_RESIZE_EDITOR: "Изменить размер редактора Markdown",
+  CONVERT_EMBEDDABLE_TO_MARKDOWN_IMAGE:
+    "Преобразовать в изображение Markdown",
+  CONVERT_MARKDOWN_IMAGE_TO_EMBEDDABLE:
+    "Преобразовать во встраиваемый элемент",
+  MARKDOWN_IMAGE_CONVERSION_ERROR:
+    "Не удалось преобразовать содержимое Markdown.",
+  MARKDOWN_IMAGE_H1_WARNING:
+    "Локальное изображение Markdown может содержать только один заголовок уровня 1 при преобразовании во встраиваемый элемент. Он должен быть первым содержимым, а его имя — уникальным в рисунке.",
+  MARKDOWN_IMAGE_SECTION_NAME: "Название раздела в конце заметки",
+  MARKDOWN_IMAGE_SECTION_NAME_PLACEHOLDER:
+    "Введите уникальное название раздела",
   INSERT_PDF: "Вставить PDF-файл из хранилища",
   UNIVERSAL_ADD_FILE: "Вставка ЛЮБОГО файла",
   // Compatibility keys consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().

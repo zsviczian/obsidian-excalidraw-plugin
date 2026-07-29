@@ -10,6 +10,7 @@ import {
   DEVICE,
   EXCALIDRAW_PLUGIN,
   PLUGIN_ID,
+  MD_MARKDOWN_IMAGES,
 } from "src/constants/constants";
 import { App, Modal, Notice, TFile, request, requestUrl } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
@@ -625,22 +626,9 @@ export async function addBackOfTheNoteCard(
   center: boolean = false,
   position?: { x: number; y: number },
 ): Promise<string> {
-  const data = view.data;
-  const header = getExcalidrawMarkdownHeaderSection(data);
-  const body = data.split(header)[1];
-  const shouldAddHashtag = body && body.startsWith("%%");
-  const hastag = header.match(/#\n+$/m);
-  const shouldRemoveTrailingHashtag = Boolean(hastag);
-  view.data = data.replace(
-    header,
-    () =>
-      `${
-        shouldRemoveTrailingHashtag
-          ? header.substring(0, header.length - hastag[0].length)
-          : header
-      }\n# ${title}\n\n${cardBody ? `${cardBody}\n\n` : ""}${
-        shouldAddHashtag || shouldRemoveTrailingHashtag ? "#\n" : ""
-      }`,
+  insertBackOfTheNoteContent(
+    view,
+    `# ${title}${cardBody ? `\n\n${cardBody}` : ""}`,
   );
   await view.forceSave(true);
   let watchdog = 0;
@@ -708,6 +696,50 @@ export async function addBackOfTheNoteCard(
   }
   ea.destroy();
   return el.id;
+}
+
+/** Inserts a complete level-one section immediately before Excalidraw Data. */
+export function insertBackOfTheNoteContent(
+  view: ExcalidrawView,
+  sectionMarkdown: string,
+): void {
+  const data = view.data;
+  const header = getExcalidrawMarkdownHeaderSection(data);
+  const body = data.split(header)[1];
+  const shouldAddHashtag = body && body.startsWith("%%");
+  const hashtag = header.match(/#\n+$/);
+  const shouldRemoveTrailingHashtag = Boolean(hashtag);
+  const headerWithoutSeparator = shouldRemoveTrailingHashtag
+    ? header.substring(0, header.length - hashtag[0].length)
+    : header;
+  const scaffoldMatch = new RegExp(`^${MD_MARKDOWN_IMAGES}[ \\t]*$`, "m").exec(
+    headerWithoutSeparator,
+  );
+  let insertionIndex = scaffoldMatch?.index ?? headerWithoutSeparator.length;
+  if (scaffoldMatch) {
+    const storagePrefix = headerWithoutSeparator.slice(0, insertionIndex);
+    const storageSeparator = storagePrefix.match(/(?:^|\n)#\n+$/);
+    if (storageSeparator) {
+      insertionIndex = storageSeparator.index +
+        (storageSeparator[0].startsWith("\n") ? 1 : 0);
+    }
+  }
+  const normalizedSection = sectionMarkdown.replace(/^\n+|\n+$/g, "");
+  const prefix = headerWithoutSeparator
+    .slice(0, insertionIndex)
+    .replace(/\s*$/, "");
+  const suffix = headerWithoutSeparator.slice(insertionIndex).replace(/^\s*/, "");
+  const updatedHeader = `${prefix}\n${normalizedSection}\n\n${suffix}`;
+  view.data = data.replace(
+    header,
+    () =>
+      `${updatedHeader}${
+        !scaffoldMatch &&
+        (shouldAddHashtag || shouldRemoveTrailingHashtag)
+          ? "#\n"
+          : ""
+      }`,
+  );
 }
 
 export function renderContextMenuAction(

@@ -94,6 +94,92 @@ export default {
     "Import an SVG file as Excalidraw strokes (limited SVG support, TEXT currently not supported)",
   IMPORT_SVG_CONTEXTMENU: "Convert SVG to strokes - with limitations",
   INSERT_MD: "Insert markdown file from vault",
+  INSERT_MARKDOWN_IMAGE: "Insert editable Markdown image",
+  EDIT_MARKDOWN_IMAGE: "Edit Markdown image",
+  MARKDOWN_IMAGE_SELECT_ERROR: "Select a Markdown image and try again",
+  MARKDOWN_IMAGE_TITLE: "Markdown image",
+  MARKDOWN_IMAGE_INSERT_ERROR: "Could not insert Markdown image",
+  MARKDOWN_IMAGE_APPEARANCE: "Appearance",
+  MARKDOWN_IMAGE_WIDTH: "Width",
+  MARKDOWN_IMAGE_WIDTH_DESC: "Markdown flow width in canvas units",
+  MARKDOWN_IMAGE_FONT: "Font",
+  MARKDOWN_IMAGE_FONT_COLOR: "Font color",
+  MARKDOWN_IMAGE_BORDER: "Border",
+  MARKDOWN_IMAGE_BORDER_COLOR: "Border color",
+  MARKDOWN_IMAGE_THEME: "Theme",
+  MARKDOWN_IMAGE_THEME_DESC:
+    "Controls theme-sensitive content such as code blocks, tables, links, and callouts.",
+  MARKDOWN_IMAGE_MATCH_CANVAS: "Match canvas",
+  MARKDOWN_IMAGE_LIGHT: "Light",
+  MARKDOWN_IMAGE_DARK: "Dark",
+  MARKDOWN_IMAGE_CSS: "CSS",
+  MARKDOWN_IMAGE_CSS_DESC: "CSS rules applied only to this Markdown image.",
+  MARKDOWN_IMAGE_CSS_IMPORTANT_HINT:
+    "If a rule has no effect, add !important to the declaration.",
+  MARKDOWN_IMAGE_CSS_DESKTOP_HELP:
+    "To inspect the generated markup, open Developer Console ({shortcut}) and run the command available from the copy button.",
+  MARKDOWN_IMAGE_CSS_MOBILE_HELP:
+    "On desktop, you can inspect the generated markup in Developer Console and run the command available from the copy button.",
+  MARKDOWN_IMAGE_CSS_EDITOR_ARIA: "CSS editor for this Markdown image",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA:
+    "CSS editor for transcluded Markdown",
+  MARKDOWN_IMAGE_INSERT_CSS_BOILERPLATE:
+    "Insert a commented CSS boilerplate",
+  MARKDOWN_IMAGE_COPY_CSS_COMMAND:
+    "Copy the generated Markdown SVG console command",
+  MARKDOWN_IMAGE_CSS_COMMAND_COPIED: "Console command copied",
+  MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE:
+    "Use a different style for transclusions",
+  MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE_DESC:
+    "Show separate appearance settings for transcluded Markdown.",
+  MARKDOWN_IMAGE_TRANSCLUSION_APPEARANCE: "Transclusion appearance",
+  MARKDOWN_IMAGE_TRANSCLUSION_APPEARANCE_DESC:
+    "When enabled, these settings apply to ![[transcluded text]] within this Markdown image.",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS: "Transclusion CSS",
+  MARKDOWN_IMAGE_TRANSCLUSION_CSS_DESC:
+    "CSS rules applied only to transcluded Markdown.",
+  MARKDOWN_IMAGE_SET_DEFAULT: "Set as default",
+  MARKDOWN_IMAGE_SAVE_DEFAULT_ARIA:
+    "Save current appearance settings as the default",
+  MARKDOWN_IMAGE_RENDER_NOW: "Render now",
+  MARKDOWN_IMAGE_UPDATING: "Updating image…",
+  MARKDOWN_IMAGE_EXTERNAL_SOURCE: "External Markdown source",
+  MARKDOWN_IMAGE_OPEN_EXTERNAL_SOURCE_NEW_TAB:
+    "Open external Markdown source in a new tab",
+  MARKDOWN_IMAGE_MAKE_LOCAL: "Make local copy",
+  MARKDOWN_IMAGE_EXTERNAL_TARGET: "External note, heading, or block",
+  MARKDOWN_IMAGE_EXTERNAL_DESC:
+    "Enter an Obsidian link to use an external source",
+  MARKDOWN_IMAGE_USE_SOURCE: "Use source",
+  MARKDOWN_IMAGE_EXTRACT_LOCAL: "Extract local Markdown to a note",
+  MARKDOWN_IMAGE_EXTRACT: "Extract to note",
+  MARKDOWN_IMAGE_SELECT_SOURCE: "Select a Markdown note, heading, or block",
+  MARKDOWN_IMAGE_CHANGE_SOURCE_ERROR:
+    "Could not change the Markdown image source",
+  MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "Could not create a local Markdown copy",
+  MARKDOWN_IMAGE_EXTRACT_TITLE: "Extract Markdown image to note",
+  MARKDOWN_IMAGE_EXTRACT_PATH: "Path to the new Markdown note",
+  MARKDOWN_IMAGE_DEFAULT_NOTE: "Markdown image.md",
+  MARKDOWN_IMAGE_CREATE_NOTE_ERROR: "Could not create Markdown note",
+  MARKDOWN_IMAGE_UNKNOWN_ERROR: "Unknown error",
+  MARKDOWN_IMAGE_SOURCE_UNAVAILABLE: "Markdown image source is unavailable.",
+  MARKDOWN_IMAGE_RESERVED_MARKER:
+    "The Markdown body contains a reserved Markdown-image marker line.",
+  MARKDOWN_IMAGE_EMPTY_PLACEHOLDER:
+    "Start typing in the Markdown image editor…",
+  MARKDOWN_IMAGE_NO_SELECTION: "Select a Markdown image to edit it.",
+  MARKDOWN_IMAGE_ATTACHED_TO: "Attached to {file}",
+  MARKDOWN_IMAGE_FOCUS_OWNER: "Focus owning Excalidraw document: {file}",
+  MARKDOWN_IMAGE_OWNER_UNAVAILABLE:
+    "The owning Excalidraw document is no longer available.",
+  MARKDOWN_IMAGE_RESIZE_EDITOR: "Resize Markdown editor",
+  CONVERT_EMBEDDABLE_TO_MARKDOWN_IMAGE: "Convert to Markdown image",
+  CONVERT_MARKDOWN_IMAGE_TO_EMBEDDABLE: "Convert to embeddable",
+  MARKDOWN_IMAGE_CONVERSION_ERROR: "Could not convert the Markdown content.",
+  MARKDOWN_IMAGE_H1_WARNING:
+    "A local Markdown image can contain only one level 1 heading when converted to an embeddable. It must be the first content and its name must be unique in the drawing.",
+  MARKDOWN_IMAGE_SECTION_NAME: "Name the back-of-note section",
+  MARKDOWN_IMAGE_SECTION_NAME_PLACEHOLDER: "Enter a unique section name",
   INSERT_PDF: "Insert PDF file from vault",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE: "Insert last active PDF page as image",
   UNIVERSAL_ADD_FILE: "Insert ANY file",
