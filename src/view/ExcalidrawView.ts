@@ -154,7 +154,6 @@ import {
   generateIdFromFile,
 } from "../shared/EmbeddedFileLoader";
 import {
-  getMarkdownImageCustomData,
   getMarkdownImageSource,
   isMarkdownImageElement,
 } from "../shared/MarkdownImage";
@@ -2042,9 +2041,7 @@ export default class ExcalidrawView
       const imageElement = this.getScene().elements.find(
         (el: ExcalidrawElement) => el.id === selectedImage.id,
       ) as ExcalidrawImageElement;
-      const markdownImageCustomData = getMarkdownImageCustomData(imageElement);
       if (
-        !markdownImageCustomData &&
         linkClickType === "md-properties" &&
         this.excalidrawData.hasFile(selectedImage.fileId)
       ) {
@@ -2056,8 +2053,13 @@ export default class ExcalidrawView
         ? await getMarkdownImageSource(this, imageElement)
         : null;
       if (markdownImageSource) {
+        const externalSourceLink =
+          markdownImageSource.source === "external" &&
+          markdownImageSource.embeddedFile
+            ? markdownImageSource.embeddedFile.linkParts.original
+            : null;
         const result = await linkPrompt(
-          markdownImageSource.markdown,
+          `${externalSourceLink ? `[[${externalSourceLink}]] ` : ""}${markdownImageSource.markdown}`,
           this.app,
           this,
         );
@@ -2070,10 +2072,13 @@ export default class ExcalidrawView
           markdownImageSource.embeddedFile?.file &&
           linkText
         ) {
-          file = this.app.metadataCache.getFirstLinkpathDest(
-            linkText,
-            markdownImageSource.embeddedFile.file.path,
-          );
+          file =
+            linkText === markdownImageSource.embeddedFile.linkParts.path
+              ? markdownImageSource.embeddedFile.file
+              : this.app.metadataCache.getFirstLinkpathDest(
+                  linkText,
+                  markdownImageSource.embeddedFile.file.path,
+                );
         }
       }
       if (

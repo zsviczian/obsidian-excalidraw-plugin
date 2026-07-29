@@ -127,6 +127,8 @@ export default {
   MARKDOWN_IMAGE_RENDER_NOW: "立即渲染",
   MARKDOWN_IMAGE_UPDATING: "正在更新圖像…",
   MARKDOWN_IMAGE_EXTERNAL_SOURCE: "外部 Markdown 來源",
+  MARKDOWN_IMAGE_OPEN_EXTERNAL_SOURCE_NEW_TAB:
+    "在新分頁中開啟外部 Markdown 來源",
   MARKDOWN_IMAGE_MAKE_LOCAL: "建立本機副本",
   MARKDOWN_IMAGE_EXTERNAL_TARGET: "外部筆記、標題或區塊",
   MARKDOWN_IMAGE_EXTERNAL_DESC: "輸入 Obsidian 連結作為外部來源",

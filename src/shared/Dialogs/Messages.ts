@@ -24,7 +24,8 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Fixed Markdown-image sidepanel ownership when its drawing is inactive, changes files, closes, or switches view modes. The panel automatically reattaches to the active Excalidraw view and its selected Markdown image.
 - Added optional transclusion-specific font, color, border, and CSS settings for editable Markdown images.
 - Replaced Markdown-image CSS text fields with syntax-highlighted CSS editors and added commented boilerplate actions for the image and transclusion styles.
-- Improved the Markdown-image sidepanel layout at narrow widths; the focus-owner action is now hidden while its drawing is already focused.
+- Improved the Markdown-image sidepanel layout at narrow widths, normalized icon sizing, and hid the focus-owner action while its drawing is already focused. Main and transclusion appearance now share consistent font, color, border, and CSS controls.
+- Added heading, block, new-tab, and local-copy actions for external Markdown-image sources. Modifier-click now follows the configured link-click action, including opening the embedded-link editor.
 
 ## New and fixed from Excalidraw.com
 - New: flowchart (CTRL/CMD+arrow keys) now intelligently routes new shapes to avoid overlap of flowchart children [#11532](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11532)

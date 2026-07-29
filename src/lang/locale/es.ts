@@ -148,6 +148,8 @@ export default {
   MARKDOWN_IMAGE_RENDER_NOW: "Renderizar ahora",
   MARKDOWN_IMAGE_UPDATING: "Actualizando imagen…",
   MARKDOWN_IMAGE_EXTERNAL_SOURCE: "Fuente Markdown externa",
+  MARKDOWN_IMAGE_OPEN_EXTERNAL_SOURCE_NEW_TAB:
+    "Abrir la fuente Markdown externa en una pestaña nueva",
   MARKDOWN_IMAGE_MAKE_LOCAL: "Crear copia local",
   MARKDOWN_IMAGE_EXTERNAL_TARGET: "Nota, encabezado o bloque externo",
   MARKDOWN_IMAGE_EXTERNAL_DESC: "Introduce un enlace de Obsidian como fuente externa",

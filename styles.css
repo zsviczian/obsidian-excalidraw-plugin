@@ -1109,6 +1109,12 @@ End Obsidian Sheets Plus support
   container-type: inline-size;
 }
 
+.excalidraw-markdown-image-editor button > svg.svg-icon {
+  width: var(--icon-m);
+  min-width: var(--icon-m);
+  height: var(--icon-m);
+}
+
 .excalidraw-markdown-image-editor__toolbar {
   position: sticky;
   top: 0;

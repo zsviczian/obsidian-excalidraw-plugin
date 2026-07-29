@@ -23,6 +23,7 @@ import {
   isMarkdownImageElement,
   updateMarkdownImage,
   containsReservedMarkdownImageMarker,
+  type MarkdownImageSourceData,
 } from "src/shared/MarkdownImage";
 import type { MarkdownImageRenderSettings } from "src/types/markdownImageTypes";
 import { createLeaf } from "src/utils/customEmbeddableUtils";
@@ -40,10 +41,12 @@ import { fragWithHTML } from "src/utils/utils";
 import {
   COLOR_NAMES,
   DEVICE,
+  nanoid,
   VIEW_TYPE_EXCALIDRAW,
 } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
 import { errorlog } from "src/utils/coreUtils";
+import { cleanSectionHeading } from "src/utils/pathUtils";
 import {
   CSSCodeEditor,
   MARKDOWN_IMAGE_CSS_BOILERPLATE,
@@ -54,6 +57,42 @@ import {
 
 const MARKDOWN_SVG_CONSOLE_COMMAND =
   "ExcalidrawAutomate.mostRecentMarkdownSVG";
+
+type MarkdownImageAppearanceStyle = Pick<
+  MarkdownImageRenderSettings,
+  "fontFamily" | "fontColor" | "border" | "css"
+>;
+
+type AppearanceControlsOptions = {
+  scope: "image" | "transclusion";
+  includeTheme: boolean;
+  cssName: string;
+  cssDescription: string | DocumentFragment;
+  cssEditorAria: string;
+  cssBoilerplate: string;
+  cssBoilerplateMarker: string;
+  includeCSSCommand: boolean;
+};
+
+const setBlockReferenceIcon = (button: ButtonComponent): void => {
+  const document = button.buttonEl.ownerDocument;
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.classList.add("svg-icon");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("aria-hidden", "true");
+  const label = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "text",
+  );
+  label.setAttribute("x", "1");
+  label.setAttribute("y", "18");
+  label.setAttribute("font-size", "22px");
+  label.setAttribute("fill", "currentColor");
+  label.textContent = "#^";
+  svg.appendChild(label);
+  button.buttonEl.replaceChildren(svg);
+};
 
 const getNativeColorValue = (color: string): string => {
   if (/^#[0-9a-f]{6}$/i.test(color)) {
@@ -307,233 +346,24 @@ class MarkdownImageEditorController {
         });
       });
 
-    new Setting(appearance)
-      .setClass("excalidraw-markdown-image-editor__setting--font")
-      .setName(t("MARKDOWN_IMAGE_FONT"))
-      .addDropdown((dropdown) => {
-      for (const font of [
-        "Virgil",
-        "Cascadia",
-        "Excalifont",
-        "Comic Shanns",
-        "Liberation Sans",
-      ]) {
-        dropdown.addOption(font, font);
-      }
-      this.view.app.vault
-        .getFiles()
-        .filter(
-          (file) =>
-            ["ttf", "woff", "woff2", "otf"].contains(file.extension) &&
-            !file.path.startsWith(this.view.plugin.settings.fontAssetsPath),
-        )
-        .forEach((file) => {
-          dropdown.addOption(file.path, file.name);
-        });
-      dropdown.setValue(this.renderSettings.fontFamily);
-      dropdown.onChange((fontFamily) => {
-        if (!this.renderSettings) {
-          return;
-        }
-        this.renderSettings = { ...this.renderSettings, fontFamily };
-        void this.view.plugin.initializeFonts();
-        this.scheduleRender();
-      });
-    });
-
-    let fontColorTextEl: HTMLInputElement | null = null;
-    let fontColorPicker: ColorComponent | null = null;
-    let syncingFontColorPicker = false;
-    const setFontColor = (fontColor: string) => {
-      if (!this.renderSettings) {
-        return;
-      }
-      this.renderSettings = { ...this.renderSettings, fontColor };
-      if (fontColorTextEl && fontColorTextEl.value !== fontColor) {
-        fontColorTextEl.value = fontColor;
-      }
-      if (fontColorPicker !== null) {
-        const nativeColor = getNativeColorValue(fontColor);
-        if (fontColorPicker.getValue() !== nativeColor) {
-          syncingFontColorPicker = true;
-          fontColorPicker.setValue(nativeColor);
-          syncingFontColorPicker = false;
-        }
-      }
-      this.scheduleRender();
-    };
-    new Setting(appearance)
-      .setClass("excalidraw-markdown-image-editor__setting--color")
-      .setName(t("MARKDOWN_IMAGE_FONT_COLOR"))
-      .addText((text) => {
-        fontColorTextEl = text.inputEl;
-        text.setValue(this.renderSettings.fontColor).onChange(setFontColor);
-      })
-      .addColorPicker((picker) => {
-        fontColorPicker = picker;
-        picker
-          .setValue(getNativeColorValue(this.renderSettings.fontColor))
-          .onChange((fontColor) => {
-            if (!syncingFontColorPicker) {
-              setFontColor(fontColor);
-            }
-          });
-      })
-      .addButton((button) =>
-        button
-          .setIcon("swatch-book")
-          .setClass("excalidraw-markdown-image-editor__compact-button")
-          .setTooltip(t("MARKDOWN_IMAGE_FONT_COLOR"))
-          .onClick(async () => {
-            const selected = await showColorPicker(
-              "elementStroke",
-              button.buttonEl,
-              this.view,
-              true,
-            );
-            if (selected) {
-              setFontColor(selected);
-            }
-          }),
-      );
-
-    let borderColorTextEl: HTMLInputElement | null = null;
-    let borderColorPicker: ColorComponent | null = null;
-    let syncingBorderColorPicker = false;
-    const setBorderColor = (color: string) => {
-      if (!this.renderSettings) {
-        return;
-      }
-      this.renderSettings = {
-        ...this.renderSettings,
-        border: { ...this.renderSettings.border, color },
-      };
-      if (borderColorTextEl && borderColorTextEl.value !== color) {
-        borderColorTextEl.value = color;
-      }
-      if (borderColorPicker !== null) {
-        const nativeColor = getNativeColorValue(color);
-        if (borderColorPicker.getValue() !== nativeColor) {
-          syncingBorderColorPicker = true;
-          borderColorPicker.setValue(nativeColor);
-          syncingBorderColorPicker = false;
-        }
-      }
-      this.scheduleRender();
-    };
-    new Setting(appearance)
-      .setClass("excalidraw-markdown-image-editor__setting--color")
-      .setClass("excalidraw-markdown-image-editor__setting--border")
-      .setName(t("MARKDOWN_IMAGE_BORDER"))
-      .addToggle((toggle) => {
-        toggle.setValue(this.renderSettings.border.enabled);
-        toggle.onChange((enabled) => {
-          if (!this.renderSettings) {
-            return;
-          }
-          this.renderSettings = {
-            ...this.renderSettings,
-            border: { ...this.renderSettings.border, enabled },
-          };
-          this.scheduleRender();
-        });
-      })
-      .addText((text) => {
-        borderColorTextEl = text.inputEl;
-        text.setValue(this.renderSettings.border.color).onChange(setBorderColor);
-      })
-      .addColorPicker((picker) => {
-        borderColorPicker = picker;
-        picker
-          .setValue(getNativeColorValue(this.renderSettings.border.color))
-          .onChange((color) => {
-            if (!syncingBorderColorPicker) {
-              setBorderColor(color);
-            }
-          });
-      });
-
-    new Setting(appearance)
-      .setClass("excalidraw-markdown-image-editor__setting--wide")
-      .setName(t("MARKDOWN_IMAGE_THEME"))
-      .setDesc(t("MARKDOWN_IMAGE_THEME_DESC"))
-      .addDropdown((dropdown) => {
-        dropdown.addOption("canvas", t("MARKDOWN_IMAGE_MATCH_CANVAS"));
-        dropdown.addOption("light", t("MARKDOWN_IMAGE_LIGHT"));
-        dropdown.addOption("dark", t("MARKDOWN_IMAGE_DARK"));
-        dropdown.setValue(this.renderSettings.theme);
-        dropdown.onChange((theme: "canvas" | "light" | "dark") => {
-          if (!this.renderSettings) {
-            return;
-          }
-          this.renderSettings = { ...this.renderSettings, theme };
-          this.scheduleRender();
-        });
-      });
-
     const developerConsoleHelp = DEVICE.isMobile
       ? t("MARKDOWN_IMAGE_CSS_MOBILE_HELP")
       : t("MARKDOWN_IMAGE_CSS_DESKTOP_HELP").replace(
           "{shortcut}",
           DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i",
         );
-    const cssSetting = new Setting(appearance)
-      .setName(t("MARKDOWN_IMAGE_CSS"))
-      .setDesc(
-        fragWithHTML(
-          `${t("MARKDOWN_IMAGE_CSS_DESC")} ${t("MARKDOWN_IMAGE_CSS_IMPORTANT_HINT")} ${developerConsoleHelp}`,
-        ),
-      );
-    cssSetting.settingEl.addClass(
-      "excalidraw-markdown-image-editor__css-setting",
-    );
-    const cssEditorHost = cssSetting.controlEl.createDiv({
-      cls: "excalidraw-markdown-image-editor__css-editor",
+    this.renderAppearanceControls(appearance, {
+      scope: "image",
+      includeTheme: true,
+      cssName: t("MARKDOWN_IMAGE_CSS"),
+      cssDescription: fragWithHTML(
+        `${t("MARKDOWN_IMAGE_CSS_DESC")} ${t("MARKDOWN_IMAGE_CSS_IMPORTANT_HINT")} ${developerConsoleHelp}`,
+      ),
+      cssEditorAria: t("MARKDOWN_IMAGE_CSS_EDITOR_ARIA"),
+      cssBoilerplate: MARKDOWN_IMAGE_CSS_BOILERPLATE,
+      cssBoilerplateMarker: MARKDOWN_IMAGE_CSS_BOILERPLATE_MARKER,
+      includeCSSCommand: true,
     });
-    const cssEditor = new CSSCodeEditor(
-      cssEditorHost,
-      this.renderSettings.css,
-      t("MARKDOWN_IMAGE_CSS_EDITOR_ARIA"),
-      (css) => {
-        if (!this.renderSettings) {
-          return;
-        }
-        this.renderSettings = { ...this.renderSettings, css };
-        this.scheduleRender();
-      },
-    );
-    this.cssEditors.push(cssEditor);
-    const cssActions = cssSetting.controlEl.createDiv({
-      cls: "excalidraw-markdown-image-editor__css-actions",
-    });
-    const insertCSSBoilerplateButton = new ButtonComponent(
-      cssActions,
-    )
-      .setIcon("file-code-2")
-      .setClass("excalidraw-markdown-image-editor__css-action-button")
-      .setTooltip(t("MARKDOWN_IMAGE_INSERT_CSS_BOILERPLATE"))
-      .onClick(() =>
-        cssEditor.insertBoilerplate(
-          MARKDOWN_IMAGE_CSS_BOILERPLATE,
-          MARKDOWN_IMAGE_CSS_BOILERPLATE_MARKER,
-        ),
-      );
-    insertCSSBoilerplateButton.buttonEl.setAttribute(
-      "aria-label",
-      t("MARKDOWN_IMAGE_INSERT_CSS_BOILERPLATE"),
-    );
-    const copyCSSCommandButton = new ButtonComponent(cssActions)
-      .setIcon("clipboard-copy")
-      .setClass("excalidraw-markdown-image-editor__css-action-button")
-      .setTooltip(t("MARKDOWN_IMAGE_COPY_CSS_COMMAND"))
-      .onClick(async () => {
-        await navigator.clipboard.writeText(MARKDOWN_SVG_CONSOLE_COMMAND);
-        new Notice(t("MARKDOWN_IMAGE_CSS_COMMAND_COPIED"));
-      });
-    copyCSSCommandButton.buttonEl.setAttribute(
-      "aria-label",
-      t("MARKDOWN_IMAGE_COPY_CSS_COMMAND"),
-    );
 
     const transclusionToggleSetting = new Setting(content)
       .setName(t("MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE"))
@@ -573,7 +403,67 @@ class MarkdownImageEditorController {
       text: t("MARKDOWN_IMAGE_TRANSCLUSION_APPEARANCE_DESC"),
     });
 
-    new Setting(transclusionAppearance)
+    this.renderAppearanceControls(transclusionAppearance, {
+      scope: "transclusion",
+      includeTheme: false,
+      cssName: t("MARKDOWN_IMAGE_TRANSCLUSION_CSS"),
+      cssDescription: `${t("MARKDOWN_IMAGE_TRANSCLUSION_CSS_DESC")} ${t("MARKDOWN_IMAGE_CSS_IMPORTANT_HINT")}`,
+      cssEditorAria: t("MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA"),
+      cssBoilerplate: TRANSCLUSION_CSS_BOILERPLATE,
+      cssBoilerplateMarker: TRANSCLUSION_CSS_BOILERPLATE_MARKER,
+      includeCSSCommand: false,
+    });
+
+    void this.mountMarkdownView(editorHost);
+  }
+
+  private getAppearanceStyle(
+    scope: AppearanceControlsOptions["scope"],
+  ): MarkdownImageAppearanceStyle | null {
+    if (!this.renderSettings) {
+      return null;
+    }
+    return scope === "image"
+      ? this.renderSettings
+      : this.renderSettings.transclusion;
+  }
+
+  private updateAppearanceStyle(
+    scope: AppearanceControlsOptions["scope"],
+    changes: Partial<MarkdownImageAppearanceStyle>,
+  ): void {
+    if (!this.renderSettings) {
+      return;
+    }
+    const current = this.getAppearanceStyle(scope);
+    if (!current) {
+      return;
+    }
+    const next = {
+      ...current,
+      ...changes,
+      border: changes.border ? { ...changes.border } : { ...current.border },
+    };
+    this.renderSettings =
+      scope === "image"
+        ? { ...this.renderSettings, ...next }
+        : {
+            ...this.renderSettings,
+            transclusion: { ...this.renderSettings.transclusion, ...next },
+          };
+    this.scheduleRender();
+  }
+
+  private renderAppearanceControls(
+    host: HTMLElement,
+    options: AppearanceControlsOptions,
+  ): void {
+    const style = this.getAppearanceStyle(options.scope);
+    if (!style || !this.renderSettings) {
+      return;
+    }
+
+    new Setting(host)
       .setClass("excalidraw-markdown-image-editor__setting--font")
       .setName(t("MARKDOWN_IMAGE_FONT"))
       .addDropdown((dropdown) => {
@@ -596,71 +486,43 @@ class MarkdownImageEditorController {
           .forEach((file) => {
             dropdown.addOption(file.path, file.name);
           });
-        dropdown.setValue(this.renderSettings.transclusion.fontFamily);
-        dropdown.onChange((fontFamily) => {
-          if (!this.renderSettings) {
-            return;
-          }
-          this.renderSettings = {
-            ...this.renderSettings,
-            transclusion: {
-              ...this.renderSettings.transclusion,
-              fontFamily,
-            },
-          };
+        dropdown.setValue(style.fontFamily).onChange((fontFamily) => {
+          this.updateAppearanceStyle(options.scope, { fontFamily });
           void this.view.plugin.initializeFonts();
-          this.scheduleRender();
         });
       });
 
-    let transclusionFontColorTextEl: HTMLInputElement | null = null;
-    let transclusionFontColorPicker: ColorComponent | null = null;
-    let syncingTransclusionFontColorPicker = false;
-    const setTransclusionFontColor = (fontColor: string) => {
-      if (!this.renderSettings) {
-        return;
+    let fontColorTextEl: HTMLInputElement | null = null;
+    let fontColorPicker: ColorComponent | null = null;
+    let syncingFontColorPicker = false;
+    const setFontColor = (fontColor: string) => {
+      this.updateAppearanceStyle(options.scope, { fontColor });
+      if (fontColorTextEl && fontColorTextEl.value !== fontColor) {
+        fontColorTextEl.value = fontColor;
       }
-      this.renderSettings = {
-        ...this.renderSettings,
-        transclusion: {
-          ...this.renderSettings.transclusion,
-          fontColor,
-        },
-      };
-      if (
-        transclusionFontColorTextEl &&
-        transclusionFontColorTextEl.value !== fontColor
-      ) {
-        transclusionFontColorTextEl.value = fontColor;
-      }
-      if (transclusionFontColorPicker !== null) {
+      if (fontColorPicker !== null) {
         const nativeColor = getNativeColorValue(fontColor);
-        if (transclusionFontColorPicker.getValue() !== nativeColor) {
-          syncingTransclusionFontColorPicker = true;
-          transclusionFontColorPicker.setValue(nativeColor);
-          syncingTransclusionFontColorPicker = false;
+        if (fontColorPicker.getValue() !== nativeColor) {
+          syncingFontColorPicker = true;
+          fontColorPicker.setValue(nativeColor);
+          syncingFontColorPicker = false;
         }
       }
-      this.scheduleRender();
     };
-    new Setting(transclusionAppearance)
+    new Setting(host)
       .setClass("excalidraw-markdown-image-editor__setting--color")
       .setName(t("MARKDOWN_IMAGE_FONT_COLOR"))
       .addText((text) => {
-        transclusionFontColorTextEl = text.inputEl;
-        text
-          .setValue(this.renderSettings.transclusion.fontColor)
-          .onChange(setTransclusionFontColor);
+        fontColorTextEl = text.inputEl;
+        text.setValue(style.fontColor).onChange(setFontColor);
       })
       .addColorPicker((picker) => {
-        transclusionFontColorPicker = picker;
+        fontColorPicker = picker;
         picker
-          .setValue(
-            getNativeColorValue(this.renderSettings.transclusion.fontColor),
-          )
+          .setValue(getNativeColorValue(style.fontColor))
           .onChange((fontColor) => {
-            if (!syncingTransclusionFontColorPicker) {
-              setTransclusionFontColor(fontColor);
+            if (!syncingFontColorPicker) {
+              setFontColor(fontColor);
             }
           });
       })
@@ -677,143 +539,147 @@ class MarkdownImageEditorController {
               true,
             );
             if (selected) {
-              setTransclusionFontColor(selected);
+              setFontColor(selected);
             }
           }),
       );
 
-    let transclusionBorderColorTextEl: HTMLInputElement | null = null;
-    let transclusionBorderColorPicker: ColorComponent | null = null;
-    let syncingTransclusionBorderColorPicker = false;
-    const setTransclusionBorderColor = (color: string) => {
-      if (!this.renderSettings) {
+    let borderColorTextEl: HTMLInputElement | null = null;
+    let borderColorPicker: ColorComponent | null = null;
+    let syncingBorderColorPicker = false;
+    const setBorderColor = (color: string) => {
+      const current = this.getAppearanceStyle(options.scope);
+      if (!current) {
         return;
       }
-      this.renderSettings = {
-        ...this.renderSettings,
-        transclusion: {
-          ...this.renderSettings.transclusion,
-          border: {
-            ...this.renderSettings.transclusion.border,
-            color,
-          },
-        },
-      };
-      if (
-        transclusionBorderColorTextEl &&
-        transclusionBorderColorTextEl.value !== color
-      ) {
-        transclusionBorderColorTextEl.value = color;
+      this.updateAppearanceStyle(options.scope, {
+        border: { ...current.border, color },
+      });
+      if (borderColorTextEl && borderColorTextEl.value !== color) {
+        borderColorTextEl.value = color;
       }
-      if (transclusionBorderColorPicker !== null) {
+      if (borderColorPicker !== null) {
         const nativeColor = getNativeColorValue(color);
-        if (transclusionBorderColorPicker.getValue() !== nativeColor) {
-          syncingTransclusionBorderColorPicker = true;
-          transclusionBorderColorPicker.setValue(nativeColor);
-          syncingTransclusionBorderColorPicker = false;
+        if (borderColorPicker.getValue() !== nativeColor) {
+          syncingBorderColorPicker = true;
+          borderColorPicker.setValue(nativeColor);
+          syncingBorderColorPicker = false;
         }
       }
-      this.scheduleRender();
     };
-    new Setting(transclusionAppearance)
+    new Setting(host)
       .setClass("excalidraw-markdown-image-editor__setting--color")
+      .setClass("excalidraw-markdown-image-editor__setting--border")
       .setName(t("MARKDOWN_IMAGE_BORDER"))
-      .addToggle((toggle) => {
-        toggle.setValue(this.renderSettings.transclusion.border.enabled);
-        toggle.onChange((enabled) => {
-          if (!this.renderSettings) {
-            return;
+      .addToggle((toggle) =>
+        toggle.setValue(style.border.enabled).onChange((enabled) => {
+          const current = this.getAppearanceStyle(options.scope);
+          if (current) {
+            this.updateAppearanceStyle(options.scope, {
+              border: { ...current.border, enabled },
+            });
           }
-          this.renderSettings = {
-            ...this.renderSettings,
-            transclusion: {
-              ...this.renderSettings.transclusion,
-              border: {
-                ...this.renderSettings.transclusion.border,
-                enabled,
-              },
-            },
-          };
-          this.scheduleRender();
-        });
-      });
-    new Setting(transclusionAppearance)
-      .setClass("excalidraw-markdown-image-editor__setting--color")
-      .setName(t("MARKDOWN_IMAGE_BORDER_COLOR"))
+        }),
+      )
       .addText((text) => {
-        transclusionBorderColorTextEl = text.inputEl;
-        text
-          .setValue(this.renderSettings.transclusion.border.color)
-          .onChange(setTransclusionBorderColor);
+        borderColorTextEl = text.inputEl;
+        text.setValue(style.border.color).onChange(setBorderColor);
       })
       .addColorPicker((picker) => {
-        transclusionBorderColorPicker = picker;
+        borderColorPicker = picker;
         picker
-          .setValue(
-            getNativeColorValue(
-              this.renderSettings.transclusion.border.color,
-            ),
-          )
+          .setValue(getNativeColorValue(style.border.color))
           .onChange((color) => {
-            if (!syncingTransclusionBorderColorPicker) {
-              setTransclusionBorderColor(color);
+            if (!syncingBorderColorPicker) {
+              setBorderColor(color);
             }
           });
-      });
-
-    const transclusionCSSSetting = new Setting(transclusionAppearance)
-      .setName(t("MARKDOWN_IMAGE_TRANSCLUSION_CSS"))
-      .setDesc(
-        `${t("MARKDOWN_IMAGE_TRANSCLUSION_CSS_DESC")} ${t("MARKDOWN_IMAGE_CSS_IMPORTANT_HINT")}`,
+      })
+      .addButton((button) =>
+        button
+          .setIcon("swatch-book")
+          .setClass("excalidraw-markdown-image-editor__compact-button")
+          .setTooltip(t("MARKDOWN_IMAGE_BORDER_COLOR"))
+          .onClick(async () => {
+            const selected = await showColorPicker(
+              "elementStroke",
+              button.buttonEl,
+              this.view,
+              true,
+            );
+            if (selected) {
+              setBorderColor(selected);
+            }
+          }),
       );
-    transclusionCSSSetting.settingEl.addClass(
+
+    if (options.includeTheme) {
+      new Setting(host)
+        .setClass("excalidraw-markdown-image-editor__setting--wide")
+        .setName(t("MARKDOWN_IMAGE_THEME"))
+        .setDesc(t("MARKDOWN_IMAGE_THEME_DESC"))
+        .addDropdown((dropdown) => {
+          dropdown.addOption("canvas", t("MARKDOWN_IMAGE_MATCH_CANVAS"));
+          dropdown.addOption("light", t("MARKDOWN_IMAGE_LIGHT"));
+          dropdown.addOption("dark", t("MARKDOWN_IMAGE_DARK"));
+          dropdown.setValue(this.renderSettings.theme);
+          dropdown.onChange((theme: "canvas" | "light" | "dark") => {
+            if (!this.renderSettings) {
+              return;
+            }
+            this.renderSettings = { ...this.renderSettings, theme };
+            this.scheduleRender();
+          });
+        });
+    }
+
+    const cssSetting = new Setting(host)
+      .setName(options.cssName)
+      .setDesc(options.cssDescription);
+    cssSetting.settingEl.addClass(
       "excalidraw-markdown-image-editor__css-setting",
     );
-    const transclusionCSSEditorHost =
-      transclusionCSSSetting.controlEl.createDiv({
-        cls: "excalidraw-markdown-image-editor__css-editor",
-      });
-    const transclusionCSSEditor = new CSSCodeEditor(
-      transclusionCSSEditorHost,
-      this.renderSettings.transclusion.css,
-      t("MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA"),
-      (css) => {
-        if (!this.renderSettings) {
-          return;
-        }
-        this.renderSettings = {
-          ...this.renderSettings,
-          transclusion: {
-            ...this.renderSettings.transclusion,
-            css,
-          },
-        };
-        this.scheduleRender();
-      },
+    const cssEditorHost = cssSetting.controlEl.createDiv({
+      cls: "excalidraw-markdown-image-editor__css-editor",
+    });
+    const cssEditor = new CSSCodeEditor(
+      cssEditorHost,
+      style.css,
+      options.cssEditorAria,
+      (css) => this.updateAppearanceStyle(options.scope, { css }),
     );
-    this.cssEditors.push(transclusionCSSEditor);
-    const transclusionCSSActions =
-      transclusionCSSSetting.controlEl.createDiv({
-        cls: "excalidraw-markdown-image-editor__css-actions",
-      });
-    const insertTransclusionCSSBoilerplateButton = new ButtonComponent(
-      transclusionCSSActions,
-    )
+    this.cssEditors.push(cssEditor);
+    const cssActions = cssSetting.controlEl.createDiv({
+      cls: "excalidraw-markdown-image-editor__css-actions",
+    });
+    const insertCSSBoilerplateButton = new ButtonComponent(cssActions)
       .setIcon("file-code-2")
       .setClass("excalidraw-markdown-image-editor__css-action-button")
       .setTooltip(t("MARKDOWN_IMAGE_INSERT_CSS_BOILERPLATE"))
       .onClick(() =>
-        transclusionCSSEditor.insertBoilerplate(
-          TRANSCLUSION_CSS_BOILERPLATE,
-          TRANSCLUSION_CSS_BOILERPLATE_MARKER,
+        cssEditor.insertBoilerplate(
+          options.cssBoilerplate,
+          options.cssBoilerplateMarker,
         ),
       );
-    insertTransclusionCSSBoilerplateButton.buttonEl.setAttribute(
+    insertCSSBoilerplateButton.buttonEl.setAttribute(
       "aria-label",
       t("MARKDOWN_IMAGE_INSERT_CSS_BOILERPLATE"),
     );
-
-    void this.mountMarkdownView(editorHost);
+    if (options.includeCSSCommand) {
+      const copyCSSCommandButton = new ButtonComponent(cssActions)
+        .setIcon("clipboard-copy")
+        .setClass("excalidraw-markdown-image-editor__css-action-button")
+        .setTooltip(t("MARKDOWN_IMAGE_COPY_CSS_COMMAND"))
+        .onClick(async () => {
+          await navigator.clipboard.writeText(MARKDOWN_SVG_CONSOLE_COMMAND);
+          new Notice(t("MARKDOWN_IMAGE_CSS_COMMAND_COPIED"));
+        });
+      copyCSSCommandButton.buttonEl.setAttribute(
+        "aria-label",
+        t("MARKDOWN_IMAGE_COPY_CSS_COMMAND"),
+      );
+    }
   }
 
   private saveAppearanceDefaults(): void {
@@ -1105,13 +971,44 @@ class MarkdownImageEditorController {
       return;
     }
     if (source.source === "external" && source.embeddedFile) {
+      const elementId = this.element.id;
       new Setting(host)
         .setClass("excalidraw-markdown-image-editor__setting--wide")
         .setName(t("MARKDOWN_IMAGE_EXTERNAL_SOURCE"))
         .setDesc(source.embeddedFile.linkParts.original)
         .addButton((button) =>
           button
+            .setIcon("hash")
+            .setClass("excalidraw-markdown-image-editor__compact-button")
+            .setTooltip(t("NARROW_TO_HEADING"))
+            .onClick(() => {
+              void this.narrowExternalSourceToHeading(source, elementId);
+            }),
+        )
+        .addButton((button) => {
+          button
+            .setClass("excalidraw-markdown-image-editor__compact-button")
+            .setTooltip(t("NARROW_TO_BLOCK"))
+            .onClick(() => {
+              void this.narrowExternalSourceToBlock(source, elementId);
+            });
+          setBlockReferenceIcon(button);
+        })
+        .addButton((button) =>
+          button
+            .setIcon("external-link")
+            .setClass("excalidraw-markdown-image-editor__compact-button")
+            .setTooltip(
+              t("MARKDOWN_IMAGE_OPEN_EXTERNAL_SOURCE_NEW_TAB"),
+            )
+            .onClick(() => {
+              void this.openExternalSourceInNewTab(source, elementId);
+            }),
+        )
+        .addButton((button) =>
+          button
             .setIcon("copy")
+            .setClass("excalidraw-markdown-image-editor__compact-button")
             .setTooltip(t("MARKDOWN_IMAGE_MAKE_LOCAL"))
             .onClick(() => {
               void this.makeLocalCopy();
@@ -1128,6 +1025,167 @@ class MarkdownImageEditorController {
             void this.extractToNote();
           }),
     );
+  }
+
+  private getExternalSourceSubpath(source: MarkdownImageSourceData): string {
+    const linkParts = source.embeddedFile?.linkParts;
+    return linkParts?.ref
+      ? `#${linkParts.isBlockRef ? "^" : ""}${linkParts.ref}`
+      : "";
+  }
+
+  private isCurrentExternalSourceAction(elementId: string): boolean {
+    return this.ensureOwnerValid() && this.element?.id === elementId;
+  }
+
+  private async updateExternalSourceSubpath(
+    source: MarkdownImageSourceData,
+    subpath: string,
+    elementId: string,
+  ): Promise<void> {
+    const file = source.embeddedFile?.file;
+    if (!file || !this.isCurrentExternalSourceAction(elementId)) {
+      return;
+    }
+    const path = this.app.metadataCache.fileToLinktext(
+      file,
+      this.view.file.path,
+      true,
+    );
+    await this.useExternalSource(`${path}${subpath}`);
+  }
+
+  private async narrowExternalSourceToHeading(
+    source: MarkdownImageSourceData,
+    elementId: string,
+  ): Promise<void> {
+    const file = source.embeddedFile?.file;
+    if (!file || !this.isCurrentExternalSourceAction(elementId)) {
+      return;
+    }
+    const sections = (
+      await this.app.metadataCache.blockCache.getForFile(
+        { isCancelled: () => false },
+        file,
+      )
+    ).blocks.filter(
+      (entry) => entry.display && entry.node?.type === "heading",
+    );
+    const values = [""].concat(
+      sections.map((entry) => `#${cleanSectionHeading(entry.display)}`),
+    );
+    const display = [t("SHOW_ENTIRE_FILE")].concat(
+      sections.map((entry) => entry.display),
+    );
+    const subpath = await ScriptEngine.suggester(
+      this.app,
+      display,
+      values,
+      t("SELECT_SECTION"),
+    );
+    if (
+      (!subpath && subpath !== "") ||
+      subpath === this.getExternalSourceSubpath(source) ||
+      !this.isCurrentExternalSourceAction(elementId)
+    ) {
+      return;
+    }
+    await this.updateExternalSourceSubpath(source, subpath, elementId);
+  }
+
+  private async narrowExternalSourceToBlock(
+    source: MarkdownImageSourceData,
+    elementId: string,
+  ): Promise<void> {
+    const file = source.embeddedFile?.file;
+    if (!file || !this.isCurrentExternalSourceAction(elementId)) {
+      return;
+    }
+    const paragraphs = (
+      await this.app.metadataCache.blockCache.getForFile(
+        { isCancelled: () => false },
+        file,
+      )
+    ).blocks.filter(
+      (entry) =>
+        entry.display &&
+        entry.node &&
+        (entry.node.type === "paragraph" ||
+          entry.node.type === "blockquote" ||
+          entry.node.type === "listItem" ||
+          entry.node.type === "table" ||
+          entry.node.type === "callout"),
+    );
+    const values: Array<"entire-file" | (typeof paragraphs)[number]> = [
+      "entire-file",
+      ...paragraphs,
+    ];
+    const display = [t("SHOW_ENTIRE_FILE")].concat(
+      paragraphs.map(
+        (entry) =>
+          `${entry.node.id ? `#^${entry.node.id}: ` : ""}${entry.display.trim()}`,
+      ),
+    );
+    const selectedBlock = await ScriptEngine.suggester(
+      this.app,
+      display,
+      values,
+      t("SELECT_SECTION"),
+    );
+    if (!selectedBlock || !this.isCurrentExternalSourceAction(elementId)) {
+      return;
+    }
+    if (selectedBlock === "entire-file") {
+      if (this.getExternalSourceSubpath(source) !== "") {
+        await this.updateExternalSourceSubpath(source, "", elementId);
+      }
+      return;
+    }
+
+    let blockId = selectedBlock.node.id;
+    if (blockId && `#^${blockId}` === this.getExternalSourceSubpath(source)) {
+      return;
+    }
+    if (!blockId) {
+      const offset = selectedBlock.node?.position?.end?.offset;
+      if (!offset) {
+        return;
+      }
+      blockId = nanoid();
+      const fileContents = await this.app.vault.cachedRead(file);
+      if (!fileContents || !this.isCurrentExternalSourceAction(elementId)) {
+        return;
+      }
+      await this.app.vault.modify(
+        file,
+        `${fileContents.slice(0, offset)} ^${blockId}${fileContents.slice(offset)}`,
+      );
+      await sleep(200);
+    }
+    if (this.isCurrentExternalSourceAction(elementId)) {
+      await this.updateExternalSourceSubpath(
+        source,
+        `#^${blockId}`,
+        elementId,
+      );
+    }
+  }
+
+  private async openExternalSourceInNewTab(
+    source: MarkdownImageSourceData,
+    elementId: string,
+  ): Promise<void> {
+    const file = source.embeddedFile?.file;
+    if (!file || !this.isCurrentExternalSourceAction(elementId)) {
+      return;
+    }
+    const subpath = this.getExternalSourceSubpath(source);
+    const leaf = this.app.workspace.getLeaf("tab");
+    await leaf.openFile(file, {
+      active: true,
+      ...(subpath ? { eState: { subpath } } : {}),
+    });
+    this.app.workspace.setActiveLeaf(leaf, { focus: true });
   }
 
   private normalizeExternalLink(value: string): string {

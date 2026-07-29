@@ -148,6 +148,8 @@ export default {
   MARKDOWN_IMAGE_RENDER_NOW: "Render now",
   MARKDOWN_IMAGE_UPDATING: "Updating image…",
   MARKDOWN_IMAGE_EXTERNAL_SOURCE: "External Markdown source",
+  MARKDOWN_IMAGE_OPEN_EXTERNAL_SOURCE_NEW_TAB:
+    "Open external Markdown source in a new tab",
   MARKDOWN_IMAGE_MAKE_LOCAL: "Make local copy",
   MARKDOWN_IMAGE_EXTERNAL_TARGET: "External note, heading, or block",
   MARKDOWN_IMAGE_EXTERNAL_DESC:
