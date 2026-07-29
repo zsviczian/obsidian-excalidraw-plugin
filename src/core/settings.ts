@@ -7,7 +7,6 @@ import {
   PluginSettingTab,
   Setting,
   TextComponent,
-  TFile,
 } from "obsidian";
 import {
   LOGO_EXCALIDRAW_MASTERY,
@@ -70,6 +69,7 @@ import { decryptProviderProfiles } from "src/utils/settingsKeyObfuscation";
 import { getGeminiSupportedSizes } from "src/utils/geminiImageModelUtils";
 import { URLs } from "src/constants/safeUrls";
 import { hideElement, setStyle, showElement } from "src/utils/styleUtils";
+import { getSelectableFontFiles } from "src/utils/fontUtils";
 
 declare const mainDocument: Document;
 
@@ -3997,23 +3997,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     new Setting(detailsEl)
       .setName(t("MD_DEFAULT_FONT_NAME"))
       .setDesc(fragWithHTML(t("MD_DEFAULT_FONT_DESC")))
-      .addDropdown(async (d: DropdownComponent) => {
+      .addDropdown((d: DropdownComponent) => {
         //I do not know why Lilita One and Nunito do not work. The font string is there, but it is not rendered
         d.addOption("Virgil", "Virgil");
         d.addOption("Cascadia", "Cascadia");
         d.addOption("Excalifont", "Excalifont");
         d.addOption("Comic Shanns", "Comic Shanns");
         d.addOption("Liberation Sans", "Liberation Sans");
-        this.app.vault
-          .getFiles()
-          .filter(
-            (f) =>
-              ["ttf", "woff", "woff2", "otf"].contains(f.extension) &&
-              !f.path.startsWith(this.plugin.settings.fontAssetsPath),
-          )
-          .forEach((f: TFile) => {
-            d.addOption(f.path, f.name);
-          });
+        getSelectableFontFiles(
+          this.app,
+          this.plugin.settings.fontAssetsPath,
+        ).forEach((file) => {
+          d.addOption(file.path, file.name);
+        });
         d.setValue(this.plugin.settings.mdFont).onChange((value) => {
           this.requestReloadDrawings = true;
           this.plugin.settings.mdFont = value;
@@ -4168,18 +4164,14 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     new Setting(detailsEl)
       .setName(t("FOURTH_FONT_NAME"))
       .setDesc(fragWithHTML(t("FOURTH_FONT_DESC")))
-      .addDropdown(async (d: DropdownComponent) => {
+      .addDropdown((d: DropdownComponent) => {
         d.addOption("Virgil", "Virgil");
-        this.app.vault
-          .getFiles()
-          .filter(
-            (f) =>
-              ["ttf", "woff", "woff2", "otf"].contains(f.extension) &&
-              !f.path.startsWith(this.plugin.settings.fontAssetsPath),
-          )
-          .forEach((f: TFile) => {
-            d.addOption(f.path, f.name);
-          });
+        getSelectableFontFiles(
+          this.app,
+          this.plugin.settings.fontAssetsPath,
+        ).forEach((file) => {
+          d.addOption(file.path, file.name);
+        });
         d.setValue(this.plugin.settings.experimantalFourthFont).onChange(
           (value) => {
             this.requestReloadDrawings = true;

@@ -48,6 +48,7 @@ import {
 } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
 import { errorlog } from "src/utils/coreUtils";
+import { getSelectableFontFiles } from "src/utils/fontUtils";
 import {
   selectMarkdownBlockSubpath,
   selectMarkdownHeadingSubpath,
@@ -486,16 +487,12 @@ class MarkdownImageEditorController {
         ]) {
           dropdown.addOption(font, font);
         }
-        this.view.app.vault
-          .getFiles()
-          .filter(
-            (file) =>
-              ["ttf", "woff", "woff2", "otf"].contains(file.extension) &&
-              !file.path.startsWith(this.view.plugin.settings.fontAssetsPath),
-          )
-          .forEach((file) => {
-            dropdown.addOption(file.path, file.name);
-          });
+        getSelectableFontFiles(
+          this.view.app,
+          this.view.plugin.settings.fontAssetsPath,
+        ).forEach((file) => {
+          dropdown.addOption(file.path, file.name);
+        });
         dropdown.setValue(style.fontFamily).onChange((fontFamily) => {
           this.updateAppearanceStyle(options.scope, { fontFamily });
           void this.view.plugin.initializeFonts();

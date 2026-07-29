@@ -18,6 +18,7 @@ import {
   refreshTextDimensions,
   getContainerElement,
   loadSceneFonts,
+  MD_MARKDOWN_IMAGES,
 } from "../constants/constants";
 import ExcalidrawPlugin from "../core/main";
 import { TextMode } from "./TextMode";
@@ -308,9 +309,8 @@ export function getMarkdownDrawingSection(
   return result;
 }
 
-const MARKDOWN_IMAGES_HEADING = "# Markdown Images";
 const MARKDOWN_IMAGE_OPEN_MARKER =
-  /^<!-- excalidraw-markdown-image:([\w-]+) -->\r?$/gm;
+  /^<!-- excalidraw-markdown-image:([\w-]+) -->$/gm;
 
 type MarkdownImageBlock = {
   fileId: FileId;
@@ -404,17 +404,22 @@ export function syncMarkdownImagesInHeader(
   );
   if (missing.length > 0) {
     const hasExistingBlocks = getMarkdownImageBlocks(updated).length > 0;
-    const hasScaffoldingHeading = /^# Markdown Images[ \t]*$/m.test(updated);
+    const hasScaffoldingHeading = updated
+      .split(/\r?\n/)
+      .some((line) => line.trimEnd() === MD_MARKDOWN_IMAGES);
     const blocksToAppend = missing
       .map(([fileId, data]) => serializeMarkdownImageBlock(fileId, data.markdown))
       .join("\n\n");
     updated = `${updated.replace(/\s*$/, "")}${
       hasExistingBlocks || hasScaffoldingHeading
         ? "\n\n"
-        : `\n\n${MARKDOWN_IMAGES_HEADING}\n\n`
+        : `\n\n${MD_MARKDOWN_IMAGES}\n\n`
     }${blocksToAppend}\n\n`;
   } else if (markdownImages.size === 0) {
-    updated = updated.replace(/(?:^|\n)# Markdown Images[ \t]*\n*$/, "\n");
+    updated = updated.replace(
+      new RegExp(`(?:^|\\n)${MD_MARKDOWN_IMAGES}[ \\t]*\\n*$`),
+      "\n",
+    );
   }
   return updated;
 }

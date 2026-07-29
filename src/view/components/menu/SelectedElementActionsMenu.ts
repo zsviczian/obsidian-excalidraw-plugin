@@ -49,6 +49,9 @@ export class SelectedElementActionsMenu {
   private actionsEl: HTMLDivElement | null = null;
   private selectedElementId: string | null = null;
   private selectedElementIndex = -1;
+  private actionElementType: ExcalidrawElement["type"] | null = null;
+  private actionElementFileId: string | null = null;
+  private actionElementCustomData: ExcalidrawElement["customData"] | null = null;
   private positionKey = "";
 
   constructor(private readonly getHost: () => HTMLElement | null | undefined) {}
@@ -98,7 +101,16 @@ export class SelectedElementActionsMenu {
       return;
     }
 
-    if (selectionChanged) {
+    const fileId = element.type === "image" ? element.fileId : null;
+    const actionTargetChanged =
+      selectionChanged ||
+      element.type !== this.actionElementType ||
+      fileId !== this.actionElementFileId ||
+      element.customData !== this.actionElementCustomData;
+    if (actionTargetChanged) {
+      this.actionElementType = element.type;
+      this.actionElementFileId = fileId;
+      this.actionElementCustomData = element.customData;
       const actions = this.providers.flatMap((provider) =>
         provider.getActions(element),
       );
@@ -126,6 +138,7 @@ export class SelectedElementActionsMenu {
     this.providers.length = 0;
     this.selectedElementId = null;
     this.selectedElementIndex = -1;
+    this.clearActionTarget();
     this.positionKey = "";
   }
 
@@ -219,6 +232,13 @@ export class SelectedElementActionsMenu {
     if (clearSelection) {
       this.selectedElementId = null;
       this.selectedElementIndex = -1;
+      this.clearActionTarget();
     }
+  }
+
+  private clearActionTarget(): void {
+    this.actionElementType = null;
+    this.actionElementFileId = null;
+    this.actionElementCustomData = null;
   }
 }

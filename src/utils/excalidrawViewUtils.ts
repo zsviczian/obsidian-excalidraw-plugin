@@ -10,6 +10,7 @@ import {
   DEVICE,
   EXCALIDRAW_PLUGIN,
   PLUGIN_ID,
+  MD_MARKDOWN_IMAGES,
 } from "src/constants/constants";
 import { App, Modal, Notice, TFile, request, requestUrl } from "obsidian";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
@@ -711,7 +712,7 @@ export function insertBackOfTheNoteContent(
   const headerWithoutSeparator = shouldRemoveTrailingHashtag
     ? header.substring(0, header.length - hashtag[0].length)
     : header;
-  const scaffoldMatch = /^# Markdown Images[ \t]*$/m.exec(
+  const scaffoldMatch = new RegExp(`^${MD_MARKDOWN_IMAGES}[ \\t]*$`, "m").exec(
     headerWithoutSeparator,
   );
   let insertionIndex = scaffoldMatch?.index ?? headerWithoutSeparator.length;

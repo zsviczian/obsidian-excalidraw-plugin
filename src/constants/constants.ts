@@ -23,7 +23,7 @@ const MD_TEXTELEMENTS = "## Text Elements";
 const MD_ELEMENTLINKS = "## Element Links";
 const MD_EMBEDFILES = "## Embedded Files";
 const MD_DRAWING = "## Drawing";
-const MD_MARKDOWN_IMAGES = "# Markdown Images";
+export const MD_MARKDOWN_IMAGES = "# Markdown Images";
 
 export const MD_EX_SECTIONS = [
   MD_EXCALIDRAW,

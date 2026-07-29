@@ -26,6 +26,7 @@ import {
 } from "src/types/markdownImageTypes";
 import { resolveMarkdownImageRenderSettings } from "src/utils/markdownImageUtils";
 import { cleanSectionHeading } from "src/utils/pathUtils";
+import { errorlog } from "src/utils/coreUtils";
 
 export type MarkdownImageSourceData = {
   markdown: string;
@@ -39,6 +40,20 @@ type ConvertibleElement = Mutable<ExcalidrawElement> & {
   status?: "pending" | "saved" | "error";
   scale: [number, number];
   crop?: ExcalidrawImageElement["crop"];
+};
+
+const commitElements = async (
+  ea: ReturnType<typeof getEA>,
+  newElementsOnTop = false,
+): Promise<boolean> => {
+  try {
+    return await ea.addElementsToView(false, false, newElementsOnTop);
+  } catch (error: unknown) {
+    errorlog({ where: "MarkdownImage.commitElements", error });
+    return false;
+  } finally {
+    ea.destroy();
+  }
 };
 
 /** Returns whether a fragment would collide with its storage delimiter. */
@@ -258,9 +273,19 @@ export async function convertEmbeddableElementToMarkdownImage(
   } else if (sourceData.embeddedFile) {
     view.excalidrawData.setFile(fileId, sourceData.embeddedFile);
   }
+  let committed = false;
+  try {
+    committed = await commitElements(ea);
+  } finally {
+    if (!committed) {
+      view.excalidrawData.deleteMarkdownImage(fileId, true);
+      view.excalidrawData.deleteFile(fileId);
+    }
+  }
+  if (!committed) {
+    return false;
+  }
   view.excalidrawData.elementLinks.delete(element.id);
-  await ea.addElementsToView(false, false);
-  ea.destroy();
   view.updateScene({ appState: { activeEmbeddable: null } });
   const converted = view.getViewElements().find((item) => item.id === element.id);
   if (converted) {
@@ -289,8 +314,9 @@ export async function convertMarkdownImageElementToEmbeddable(
     [MARKDOWN_IMAGE_CUSTOM_DATA_KEY]: undefined,
     mdProps: view.plugin.settings.embeddableMarkdownDefaults,
   });
-  await ea.addElementsToView(false, false);
-  ea.destroy();
+  if (!(await commitElements(ea))) {
+    return false;
+  }
   view.excalidrawData.elementLinks.set(element.id, link);
   const converted = view.getViewElements().find((item) => item.id === element.id);
   if (converted) {
@@ -300,13 +326,14 @@ export async function convertMarkdownImageElementToEmbeddable(
   return true;
 }
 
-/** Finds level-one ATX headings outside fenced code blocks. */
+/** Finds level-one ATX and Setext headings outside fenced code blocks. */
 export function getLevelOneMarkdownHeadings(
   markdown: string,
 ): Array<{ title: string; index: number }> {
   const headings: Array<{ title: string; index: number }> = [];
   const linePattern = /.*(?:\n|$)/g;
   let fence: string | null = null;
+  let previousContentLine: { text: string; index: number } | null = null;
   let match: RegExpExecArray | null;
   while ((match = linePattern.exec(markdown)) !== null && match[0]) {
     const line = match[0].replace(/\r?\n$/, "");
@@ -317,6 +344,7 @@ export function getLevelOneMarkdownHeadings(
       } else if (fence === fenceMatch[1][0]) {
         fence = null;
       }
+      previousContentLine = null;
       continue;
     }
     if (!fence) {
@@ -325,7 +353,20 @@ export function getLevelOneMarkdownHeadings(
       );
       if (heading) {
         headings.push({ title: heading[1].trim(), index: match.index });
+        previousContentLine = null;
+        continue;
       }
+      if (/^[ \t]{0,3}=+[ \t]*$/.test(line) && previousContentLine) {
+        headings.push({
+          title: previousContentLine.text.trim(),
+          index: previousContentLine.index,
+        });
+        previousContentLine = null;
+        continue;
+      }
+      previousContentLine = line.trim()
+        ? { text: line, index: match.index }
+        : null;
     }
   }
   return headings;
@@ -375,8 +416,17 @@ export async function insertMarkdownImage(
     hasSVGwithBitmap: rendered.hasSVGwithBitmap,
   };
   view.excalidrawData.setMarkdownImage(fileId, { markdown });
-  await ea.addElementsToView(false, false, true);
-  ea.destroy();
+  let committed = false;
+  try {
+    committed = await commitElements(ea, true);
+  } finally {
+    if (!committed) {
+      view.excalidrawData.deleteMarkdownImage(fileId, true);
+    }
+  }
+  if (!committed) {
+    return null;
+  }
   view.setDirty();
   const inserted = view
     .getViewElements()
@@ -425,8 +475,9 @@ export async function updateMarkdownImage(
   if (source === "local") {
     view.excalidrawData.setMarkdownImage(element.fileId, { markdown });
   }
-  await ea.addElementsToView(false, false);
-  ea.destroy();
+  if (!(await commitElements(ea))) {
+    return false;
+  }
   view.setDirty();
   return true;
 }
