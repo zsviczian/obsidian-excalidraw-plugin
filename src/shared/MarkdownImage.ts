@@ -20,24 +20,25 @@ import {
   MARKDOWN_IMAGE_SCHEMA_VERSION,
   type MarkdownImageCustomData,
   type MarkdownImageRenderSettings,
+  type MarkdownImageSource,
 } from "src/types/markdownImageTypes";
+import { resolveMarkdownImageRenderSettings } from "src/utils/markdownImageUtils";
 
 export type MarkdownImageSourceData = {
   markdown: string;
-  source: "local" | "external";
+  source: MarkdownImageSource;
   embeddedFile?: EmbeddedFile;
 };
 
 /** Returns whether a fragment would collide with its storage delimiter. */
 export function containsReservedMarkdownImageMarker(
-  fileId: FileId,
   markdown: string,
 ): boolean {
-  const open = `<!-- excalidraw-markdown-image:${fileId} -->`;
-  const close = `<!-- /excalidraw-markdown-image:${fileId} -->`;
   return markdown
     .split(/\r?\n/)
-    .some((line) => line === open || line === close);
+    .some((line) =>
+      /^<!-- \/?excalidraw-markdown-image:[\w\d]+ -->$/.test(line),
+    );
 }
 
 /** Reads the feature metadata from an image element without modifying it. */
@@ -57,44 +58,13 @@ export function getMarkdownImageRenderSettings(
 ): MarkdownImageRenderSettings {
   const stored = element ? getMarkdownImageCustomData(element)?.render : null;
   const fallback = plugin.settings.markdownImageSettings.defaults;
-  const storedTransclusion = stored?.transclusion;
-  const fallbackTransclusion = fallback.transclusion;
-  return {
-    width: stored?.width ?? fallback.width,
-    fontFamily: stored?.fontFamily ?? fallback.fontFamily,
-    fontColor: stored?.fontColor ?? fallback.fontColor,
-    border: {
-      enabled: stored?.border?.enabled ?? fallback.border.enabled,
-      color: stored?.border?.color ?? fallback.border.color,
-    },
-    css: stored?.css ?? fallback.css,
-    theme: stored?.theme ?? fallback.theme,
-    transclusion: {
-      // Pre-feature elements must continue inheriting their parent appearance.
-      enabled: stored
-        ? (storedTransclusion?.enabled ?? false)
-        : fallbackTransclusion.enabled,
-      fontFamily:
-        storedTransclusion?.fontFamily ?? fallbackTransclusion.fontFamily,
-      fontColor:
-        storedTransclusion?.fontColor ?? fallbackTransclusion.fontColor,
-      border: {
-        enabled:
-          storedTransclusion?.border?.enabled ??
-          fallbackTransclusion.border.enabled,
-        color:
-          storedTransclusion?.border?.color ??
-          fallbackTransclusion.border.color,
-      },
-      css: storedTransclusion?.css ?? fallbackTransclusion.css,
-    },
-  };
+  return resolveMarkdownImageRenderSettings(fallback, stored);
 }
 
 /** Writes Markdown-image metadata through the repository custom-data helper. */
 export function setMarkdownImageCustomData(
   element: Mutable<ExcalidrawImageElement>,
-  source: "local" | "external",
+  source: MarkdownImageSource,
   render: MarkdownImageRenderSettings,
 ): void {
   const previous = getMarkdownImageCustomData(element);
@@ -239,9 +209,9 @@ export async function updateMarkdownImage(
   element: ExcalidrawImageElement,
   markdown: string,
   render: MarkdownImageRenderSettings,
-  source: "local" | "external",
+  source: MarkdownImageSource,
 ): Promise<boolean> {
-  if (containsReservedMarkdownImageMarker(element.fileId, markdown)) {
+  if (containsReservedMarkdownImageMarker(markdown)) {
     return false;
   }
   view.setMarkdownImageEditorIsEditing();

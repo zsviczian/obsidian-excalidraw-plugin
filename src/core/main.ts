@@ -1645,13 +1645,10 @@ export default class ExcalidrawPlugin extends Plugin {
             },
           },
         },
-        editor: { ...DEFAULT_SETTINGS.markdownImageSettings.editor },
       };
       didSettingsMigration = true;
     } else {
       this.settings.markdownImageSettings = {
-        ...DEFAULT_SETTINGS.markdownImageSettings,
-        ...savedMarkdownImageSettings,
         defaults: {
           ...DEFAULT_SETTINGS.markdownImageSettings.defaults,
           ...savedMarkdownImageSettings.defaults,
@@ -1668,10 +1665,6 @@ export default class ExcalidrawPlugin extends Plugin {
               ...savedMarkdownImageSettings.defaults?.transclusion?.border,
             },
           },
-        },
-        editor: {
-          ...DEFAULT_SETTINGS.markdownImageSettings.editor,
-          ...savedMarkdownImageSettings.editor,
         },
       };
     }

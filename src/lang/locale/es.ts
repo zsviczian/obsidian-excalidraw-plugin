@@ -101,8 +101,6 @@ export default {
   MARKDOWN_IMAGE_TITLE: "Imagen Markdown",
   MARKDOWN_IMAGE_INSERT_ERROR: "No se pudo insertar la imagen Markdown",
   MARKDOWN_IMAGE_APPEARANCE: "Apariencia",
-  MARKDOWN_IMAGE_LIVE_PREVIEW: "Vista previa en vivo",
-  MARKDOWN_IMAGE_REMEMBER_APPEARANCE: "Recordar la apariencia para nuevas imágenes Markdown",
   MARKDOWN_IMAGE_WIDTH: "Ancho",
   MARKDOWN_IMAGE_WIDTH_DESC: "Ancho del flujo Markdown en unidades del lienzo",
   MARKDOWN_IMAGE_FONT: "Fuente",
@@ -141,7 +139,6 @@ export default {
   MARKDOWN_IMAGE_TRANSCLUSION_CSS: "CSS de transclusión",
   MARKDOWN_IMAGE_TRANSCLUSION_CSS_DESC:
     "Reglas CSS aplicadas solo al Markdown transcluido.",
-  MARKDOWN_IMAGE_USE_APPEARANCE: "Usar la apariencia para nuevas imágenes Markdown",
   MARKDOWN_IMAGE_SET_DEFAULT: "Establecer como predeterminado",
   MARKDOWN_IMAGE_SAVE_DEFAULT_ARIA:
     "Guardar la configuración de apariencia actual como predeterminada",

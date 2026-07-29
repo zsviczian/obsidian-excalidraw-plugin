@@ -81,6 +81,7 @@ import {
   type MarkdownImageCustomData,
   type MarkdownImageRenderSettings,
 } from "src/types/markdownImageTypes";
+import { resolveMarkdownImageRenderSettings } from "src/utils/markdownImageUtils";
 
 //declared in rollup.config.mjs
 declare const deliberateFetch: (
@@ -486,21 +487,25 @@ export class EmbeddedFilesLoader {
     markdown: string,
     render: MarkdownImageRenderSettings,
   ): Promise<MarkdownSVGRenderResult> {
-    const linkParts = getLinkParts(sourceFile.path);
-    linkParts.width = render.width;
-    linkParts.height = Number.MAX_SAFE_INTEGER;
-    const result = await this.convertMarkdownToSVG(
-      this.plugin,
-      sourceFile,
-      linkParts,
-      { markdown, render, fullHeight: true },
-    );
-    return {
-      ...result,
-      size: result.dataURL
-        ? await getImageSize(result.dataURL)
-        : { width: render.width, height: 0 },
-    };
+    try {
+      const linkParts = getLinkParts(sourceFile.path);
+      linkParts.width = render.width;
+      linkParts.height = Number.MAX_SAFE_INTEGER;
+      const result = await this.convertMarkdownToSVG(
+        this.plugin,
+        sourceFile,
+        linkParts,
+        { markdown, render, fullHeight: true },
+      );
+      return {
+        ...result,
+        size: result.dataURL
+          ? await getImageSize(result.dataURL)
+          : { width: render.width, height: 0 },
+      };
+    } finally {
+      this.emptyPDFDocsMap();
+    }
   }
 
   public async getObsidianImage(
@@ -977,10 +982,10 @@ export class EmbeddedFilesLoader {
     }
     const entries = Array.from(excalidrawData.getFileEntries());
     const markdownImageElements = excalidrawData.scene.elements.filter(
-      (element): element is ExcalidrawImageElement =>
+      (element: ExcalidrawElement) =>
         element.type === "image" &&
         Boolean(element.customData?.[MARKDOWN_IMAGE_CUSTOM_DATA_KEY]),
-    );
+    ) as ExcalidrawImageElement[];
     const markdownImageFileIds = new Set(
       markdownImageElements.map((element) => element.fileId),
     );
@@ -1100,41 +1105,10 @@ export class EmbeddedFilesLoader {
             if (!customData) {
               return;
             }
-            const defaults = this.plugin.settings.markdownImageSettings.defaults;
-            const storedTransclusion = customData.render?.transclusion;
-            const defaultTransclusion = defaults.transclusion;
-            const render: MarkdownImageRenderSettings = {
-              width: customData.render?.width ?? defaults.width,
-              fontFamily:
-                customData.render?.fontFamily ?? defaults.fontFamily,
-              fontColor: customData.render?.fontColor ?? defaults.fontColor,
-              border: {
-                enabled:
-                  customData.render?.border?.enabled ?? defaults.border.enabled,
-                color:
-                  customData.render?.border?.color ?? defaults.border.color,
-              },
-              css: customData.render?.css ?? defaults.css,
-              theme: customData.render?.theme ?? defaults.theme,
-              transclusion: {
-                // Old elements did not have this property and must keep inheriting.
-                enabled: storedTransclusion?.enabled ?? false,
-                fontFamily:
-                  storedTransclusion?.fontFamily ??
-                  defaultTransclusion.fontFamily,
-                fontColor:
-                  storedTransclusion?.fontColor ?? defaultTransclusion.fontColor,
-                border: {
-                  enabled:
-                    storedTransclusion?.border?.enabled ??
-                    defaultTransclusion.border.enabled,
-                  color:
-                    storedTransclusion?.border?.color ??
-                    defaultTransclusion.border.color,
-                },
-                css: storedTransclusion?.css ?? defaultTransclusion.css,
-              },
-            };
+            const render = resolveMarkdownImageRenderSettings(
+              this.plugin.settings.markdownImageSettings.defaults,
+              customData.render,
+            );
             let sourceFile = excalidrawData.file;
             let markdown: string | undefined;
             if (customData.source === "external") {

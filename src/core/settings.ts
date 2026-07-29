@@ -698,7 +698,6 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   mdCSS: "",
   markdownImageSettings: {
     defaults: {
-      source: "local",
       width: 500,
       fontFamily: "Cascadia",
       fontColor: "Black",
@@ -718,11 +717,6 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
         },
         css: "",
       },
-    },
-    editor: {
-      livePreview: true,
-      activeSection: "content",
-      rememberLastUsedAppearance: true,
     },
   },
   scriptEngineSettings: {},

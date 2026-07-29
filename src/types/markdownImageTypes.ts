@@ -42,13 +42,5 @@ export type MarkdownImageData = {
 };
 
 export type MarkdownImageSettings = {
-  defaults: MarkdownImageRenderSettings & {
-    source: MarkdownImageSource;
-  };
-  editor: {
-    livePreview: boolean;
-    activeSection: "content" | "source" | "appearance";
-    rememberLastUsedAppearance: boolean;
-  };
-  lastUsedAppearance?: MarkdownImageRenderSettings;
+  defaults: MarkdownImageRenderSettings;
 };

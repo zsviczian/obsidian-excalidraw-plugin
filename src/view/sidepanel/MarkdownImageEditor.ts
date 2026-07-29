@@ -44,12 +44,14 @@ import { fragWithHTML } from "src/utils/utils";
 import {
   COLOR_NAMES,
   DEVICE,
-  nanoid,
   VIEW_TYPE_EXCALIDRAW,
 } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
 import { errorlog } from "src/utils/coreUtils";
-import { cleanSectionHeading } from "src/utils/pathUtils";
+import {
+  selectMarkdownBlockSubpath,
+  selectMarkdownHeadingSubpath,
+} from "src/shared/Suggesters/markdownSubpathSuggester";
 import {
   CSSCodeEditor,
   MARKDOWN_IMAGE_CSS_BOILERPLATE,
@@ -184,18 +186,18 @@ class MarkdownImageEditorController {
     return this.ownerFile?.basename ?? this.ownerFilePath;
   }
 
-  public async open(element?: ExcalidrawImageElement): Promise<void> {
+  public async open(element?: ExcalidrawImageElement): Promise<boolean> {
     if (!this.ensureOwnerValid()) {
-      return;
+      return false;
     }
     if (!element) {
       const id = await insertMarkdownImage(this.view);
       if (!this.ensureOwnerValid()) {
-        return;
+        return false;
       }
       if (!id) {
         new Notice(t("MARKDOWN_IMAGE_INSERT_ERROR"));
-        return;
+        return false;
       }
       element = this.view
         .getViewElements()
@@ -204,7 +206,7 @@ class MarkdownImageEditorController {
         | undefined;
     }
     if (!element) {
-      return;
+      return false;
     }
     this.element = element;
     this.lastObservedSelectionId = element.id;
@@ -217,7 +219,7 @@ class MarkdownImageEditorController {
     patchMobileView(this.view);
     const sidepanel = await this.view.plugin.openSidepanel(true);
     if (!sidepanel || !this.ensureOwnerValid()) {
-      return;
+      return false;
     }
     this.tab = await sidepanel.createTab({ title: t("MARKDOWN_IMAGE_TITLE") });
     this.view.setMarkdownImageEditorIsEditing();
@@ -228,6 +230,7 @@ class MarkdownImageEditorController {
     this.watchActiveExcalidrawView();
     this.renderPanel();
     this.tab.open(true);
+    return true;
   }
 
   private renderPanel(): void {
@@ -1070,28 +1073,14 @@ class MarkdownImageEditorController {
     if (!file || !this.isCurrentExternalSourceAction(elementId)) {
       return;
     }
-    const sections = (
-      await this.app.metadataCache.blockCache.getForFile(
-        { isCancelled: () => false },
-        file,
-      )
-    ).blocks.filter(
-      (entry) => entry.display && entry.node?.type === "heading",
-    );
-    const values = [""].concat(
-      sections.map((entry) => `#${cleanSectionHeading(entry.display)}`),
-    );
-    const display = [t("SHOW_ENTIRE_FILE")].concat(
-      sections.map((entry) => entry.display),
-    );
-    const subpath = await ScriptEngine.suggester(
+    const subpath = await selectMarkdownHeadingSubpath(
       this.app,
-      display,
-      values,
-      t("SELECT_SECTION"),
+      file,
+      false,
+      () => !this.isCurrentExternalSourceAction(elementId),
     );
     if (
-      (!subpath && subpath !== "") ||
+      subpath === null ||
       subpath === this.getExternalSourceSubpath(source) ||
       !this.isCurrentExternalSourceAction(elementId)
     ) {
@@ -1108,74 +1097,19 @@ class MarkdownImageEditorController {
     if (!file || !this.isCurrentExternalSourceAction(elementId)) {
       return;
     }
-    const paragraphs = (
-      await this.app.metadataCache.blockCache.getForFile(
-        { isCancelled: () => false },
-        file,
-      )
-    ).blocks.filter(
-      (entry) =>
-        entry.display &&
-        entry.node &&
-        (entry.node.type === "paragraph" ||
-          entry.node.type === "blockquote" ||
-          entry.node.type === "listItem" ||
-          entry.node.type === "table" ||
-          entry.node.type === "callout"),
-    );
-    const values: Array<"entire-file" | (typeof paragraphs)[number]> = [
-      "entire-file",
-      ...paragraphs,
-    ];
-    const display = [t("SHOW_ENTIRE_FILE")].concat(
-      paragraphs.map(
-        (entry) =>
-          `${entry.node.id ? `#^${entry.node.id}: ` : ""}${entry.display.trim()}`,
-      ),
-    );
-    const selectedBlock = await ScriptEngine.suggester(
+    const subpath = await selectMarkdownBlockSubpath(
       this.app,
-      display,
-      values,
-      t("SELECT_SECTION"),
+      file,
+      () => !this.isCurrentExternalSourceAction(elementId),
     );
-    if (!selectedBlock || !this.isCurrentExternalSourceAction(elementId)) {
+    if (
+      subpath === null ||
+      subpath === this.getExternalSourceSubpath(source) ||
+      !this.isCurrentExternalSourceAction(elementId)
+    ) {
       return;
     }
-    if (selectedBlock === "entire-file") {
-      if (this.getExternalSourceSubpath(source) !== "") {
-        await this.updateExternalSourceSubpath(source, "", elementId);
-      }
-      return;
-    }
-
-    let blockId = selectedBlock.node.id;
-    if (blockId && `#^${blockId}` === this.getExternalSourceSubpath(source)) {
-      return;
-    }
-    if (!blockId) {
-      const offset = selectedBlock.node?.position?.end?.offset;
-      if (!offset) {
-        return;
-      }
-      blockId = nanoid();
-      const fileContents = await this.app.vault.cachedRead(file);
-      if (!fileContents || !this.isCurrentExternalSourceAction(elementId)) {
-        return;
-      }
-      await this.app.vault.modify(
-        file,
-        `${fileContents.slice(0, offset)} ^${blockId}${fileContents.slice(offset)}`,
-      );
-      await sleep(200);
-    }
-    if (this.isCurrentExternalSourceAction(elementId)) {
-      await this.updateExternalSourceSubpath(
-        source,
-        `#^${blockId}`,
-        elementId,
-      );
-    }
+    await this.updateExternalSourceSubpath(source, subpath, elementId);
   }
 
   private async openExternalSourceInNewTab(
@@ -1493,9 +1427,7 @@ class MarkdownImageEditorController {
         if (!this.element) {
           return;
         }
-        if (
-          containsReservedMarkdownImageMarker(this.element.fileId, markdown)
-        ) {
+        if (containsReservedMarkdownImageMarker(markdown)) {
           new Notice(t("MARKDOWN_IMAGE_RESERVED_MARKER"));
           return;
         }
@@ -1690,12 +1622,7 @@ class MarkdownImageEditorController {
           : null;
         const markdown = source ? editor.getValue() : undefined;
         if (source && this.element && markdown !== undefined) {
-          if (
-            containsReservedMarkdownImageMarker(
-              this.element.fileId,
-              markdown,
-            )
-          ) {
+          if (containsReservedMarkdownImageMarker(markdown)) {
             return;
           }
           this.view.excalidrawData.setMarkdownImage(this.element.fileId, {
@@ -1896,6 +1823,9 @@ class MarkdownImageEditorController {
     }
     const canClearOwnerEditing = this.isOwnerIdentityValid();
     this.closed = true;
+    if (activeController === this) {
+      activeController = null;
+    }
     this.ownerAttachmentGeneration++;
     this.selectionGeneration++;
     if (this.activeLeafChangeRef) {
@@ -1932,8 +1862,16 @@ export async function openMarkdownImageEditor(
   element?: ExcalidrawImageElement,
 ): Promise<void> {
   activeController?.dispose();
-  activeController = new MarkdownImageEditorController(view);
-  await activeController.open(element);
+  const controller = new MarkdownImageEditorController(view);
+  activeController = controller;
+  try {
+    if (!(await controller.open(element))) {
+      controller.dispose();
+    }
+  } catch (error: unknown) {
+    controller.dispose();
+    throw error;
+  }
 }
 
 /** Efficiently forwards selection changes only while the feature panel exists. */

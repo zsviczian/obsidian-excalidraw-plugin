@@ -1478,6 +1478,18 @@ End Obsidian Sheets Plus support
     select {
     width: 100%;
   }
+
+  .excalidraw-markdown-image-editor__setting--border
+    > .setting-item-info,
+  .excalidraw-markdown-image-editor__setting--border
+    > .setting-item-control {
+    flex: 0 0 auto;
+  }
+
+  .excalidraw-markdown-image-editor__setting--border
+    > .setting-item-control {
+    flex-wrap: wrap;
+  }
 }
 
 .excalidraw-markdown-image-editor__css-setting {

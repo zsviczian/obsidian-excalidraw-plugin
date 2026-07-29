@@ -92,8 +92,6 @@ export default {
   MARKDOWN_IMAGE_TITLE: "Markdown-изображение",
   MARKDOWN_IMAGE_INSERT_ERROR: "Не удалось вставить Markdown-изображение",
   MARKDOWN_IMAGE_APPEARANCE: "Оформление",
-  MARKDOWN_IMAGE_LIVE_PREVIEW: "Предпросмотр в реальном времени",
-  MARKDOWN_IMAGE_REMEMBER_APPEARANCE: "Запоминать оформление для новых Markdown-изображений",
   MARKDOWN_IMAGE_WIDTH: "Ширина",
   MARKDOWN_IMAGE_WIDTH_DESC: "Ширина потока Markdown в единицах холста",
   MARKDOWN_IMAGE_FONT: "Шрифт",
@@ -133,7 +131,6 @@ export default {
   MARKDOWN_IMAGE_TRANSCLUSION_CSS: "CSS встраиваний",
   MARKDOWN_IMAGE_TRANSCLUSION_CSS_DESC:
     "Правила CSS применяются только к встроенному Markdown.",
-  MARKDOWN_IMAGE_USE_APPEARANCE: "Использовать оформление для новых Markdown-изображений",
   MARKDOWN_IMAGE_SET_DEFAULT: "Сделать по умолчанию",
   MARKDOWN_IMAGE_SAVE_DEFAULT_ARIA:
     "Сохранить текущие настройки оформления как настройки по умолчанию",
