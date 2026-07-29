@@ -1109,7 +1109,7 @@ End Obsidian Sheets Plus support
   container-type: inline-size;
 }
 
-.excalidraw-markdown-image-editor button > svg.svg-icon {
+.excalidraw-markdown-image-editor button>svg.svg-icon {
   width: var(--icon-m);
   min-width: var(--icon-m);
   height: var(--icon-m);
@@ -1221,7 +1221,7 @@ End Obsidian Sheets Plus support
   box-sizing: border-box;
 }
 
-.excalidraw-markdown-image-editor__markdown-view > .workspace-split,
+.excalidraw-markdown-image-editor__markdown-view>.workspace-split,
 .excalidraw-markdown-image-editor__markdown-view .workspace-leaf,
 .excalidraw-markdown-image-editor__markdown-view .workspace-leaf-content {
   height: 100%;
@@ -1256,7 +1256,7 @@ End Obsidian Sheets Plus support
 }
 
 .excalidraw-markdown-fragment-view .inline-title {
-  display: none !important;
+  display: none;
 }
 
 .excalidraw-markdown-image-editor__number-input {
@@ -1294,34 +1294,25 @@ End Obsidian Sheets Plus support
   row-gap: var(--size-4-2);
 }
 
-.excalidraw-markdown-image-editor__source .setting-item-control > *,
-.excalidraw-markdown-image-editor__appearance .setting-item-control > *,
-.excalidraw-markdown-image-editor__transclusion-toggle
-  .setting-item-control
-  > * {
+.excalidraw-markdown-image-editor__source .setting-item-control>*,
+.excalidraw-markdown-image-editor__appearance .setting-item-control>*,
+.excalidraw-markdown-image-editor__transclusion-toggle .setting-item-control>* {
   max-width: 100%;
 }
 
-.excalidraw-markdown-image-editor__source
-  .setting-item-control
-  input[type="text"],
-.excalidraw-markdown-image-editor__appearance
-  .setting-item-control
-  input[type="text"] {
+.excalidraw-markdown-image-editor__source .setting-item-control input[type="text"],
+.excalidraw-markdown-image-editor__appearance .setting-item-control input[type="text"] {
   min-width: min(100px, 100%);
   flex: 1 1 140px;
 }
 
-.excalidraw-markdown-image-editor__setting--color
-  > .setting-item-control
-  > input[type="text"] {
+.excalidraw-markdown-image-editor__setting--color>.setting-item-control>input[type="text"] {
   width: 0;
   min-width: min(72px, 100%);
   flex: 1 1 96px;
 }
 
-.excalidraw-markdown-image-editor__setting--border
-  > .setting-item-control {
+.excalidraw-markdown-image-editor__setting--border>.setting-item-control {
   min-width: min(200px, 100%);
   flex: 1 1 200px;
   flex-wrap: nowrap;
@@ -1331,14 +1322,11 @@ End Obsidian Sheets Plus support
   flex-wrap: wrap;
 }
 
-.excalidraw-markdown-image-editor__setting--border
-  > .setting-item-info {
+.excalidraw-markdown-image-editor__setting--border>.setting-item-info {
   flex: 1 1 96px;
 }
 
-.excalidraw-markdown-image-editor__setting--border
-  > .setting-item-control
-  > input[type="text"] {
+.excalidraw-markdown-image-editor__setting--border>.setting-item-control>input[type="text"] {
   width: 0;
   min-width: 48px;
   flex: 1 1 64px;
@@ -1350,12 +1338,8 @@ End Obsidian Sheets Plus support
   max-width: 100%;
 }
 
-.excalidraw-markdown-image-editor__source
-  .setting-item-control
-  input[type="color"],
-.excalidraw-markdown-image-editor__appearance
-  .setting-item-control
-  input[type="color"] {
+.excalidraw-markdown-image-editor__source .setting-item-control input[type="color"],
+.excalidraw-markdown-image-editor__appearance .setting-item-control input[type="color"] {
   width: var(--input-height, 32px);
   min-width: var(--input-height, 32px);
   max-width: var(--input-height, 32px);
@@ -1366,34 +1350,23 @@ End Obsidian Sheets Plus support
 
 .excalidraw-markdown-image-editor__source .setting-item-control button,
 .excalidraw-markdown-image-editor__appearance .setting-item-control button,
-.excalidraw-markdown-image-editor__transclusion-toggle
-  .setting-item-control
-  button,
-.excalidraw-markdown-image-editor__source
-  .setting-item-control
-  .clickable-icon,
-.excalidraw-markdown-image-editor__appearance
-  .setting-item-control
-  .clickable-icon {
+.excalidraw-markdown-image-editor__transclusion-toggle .setting-item-control button,
+.excalidraw-markdown-image-editor__source .setting-item-control .clickable-icon,
+.excalidraw-markdown-image-editor__appearance .setting-item-control .clickable-icon {
   width: auto;
   flex: 0 0 auto;
   align-self: center;
 }
 
-.excalidraw-markdown-image-editor__setting--color
-  > .setting-item-control
-  > button,
-.excalidraw-markdown-image-editor__setting--color
-  > .setting-item-control
-  > .clickable-icon {
+.excalidraw-markdown-image-editor__setting--color>.setting-item-control>button,
+.excalidraw-markdown-image-editor__setting--color>.setting-item-control>.clickable-icon {
   width: var(--input-height, 32px);
   min-width: var(--input-height, 32px);
   max-width: var(--input-height, 32px);
   flex: 0 0 var(--input-height, 32px);
 }
 
-.excalidraw-markdown-image-editor
-  button.excalidraw-markdown-image-editor__compact-button {
+.excalidraw-markdown-image-editor button.excalidraw-markdown-image-editor__compact-button {
   --icon-size: var(--icon-m);
   width: var(--input-height, 32px);
   min-width: var(--input-height, 32px);
@@ -1401,13 +1374,12 @@ End Obsidian Sheets Plus support
   flex: 0 0 var(--input-height, 32px);
 }
 
-.excalidraw-markdown-image-editor__setting--font
-  > .setting-item-control
-  select {
+.excalidraw-markdown-image-editor__setting--font>.setting-item-control select {
   width: min(240px, 100%);
 }
 
 @container excalidraw-markdown-image-editor (max-width: 560px) {
+
   .excalidraw-markdown-image-editor__setting--wide,
   .excalidraw-markdown-image-editor__transclusion-toggle {
     flex-direction: column;
@@ -1415,79 +1387,54 @@ End Obsidian Sheets Plus support
     gap: var(--size-4-2);
   }
 
-  .excalidraw-markdown-image-editor__setting--wide
-    > .setting-item-info,
-  .excalidraw-markdown-image-editor__setting--wide
-    > .setting-item-control,
-  .excalidraw-markdown-image-editor__transclusion-toggle
-    > .setting-item-info,
-  .excalidraw-markdown-image-editor__transclusion-toggle
-    > .setting-item-control {
+  .excalidraw-markdown-image-editor__setting--wide>.setting-item-info,
+  .excalidraw-markdown-image-editor__setting--wide>.setting-item-control,
+  .excalidraw-markdown-image-editor__transclusion-toggle>.setting-item-info,
+  .excalidraw-markdown-image-editor__transclusion-toggle>.setting-item-control {
     width: 100%;
   }
 
-  .excalidraw-markdown-image-editor__setting--wide
-    > .setting-item-control,
-  .excalidraw-markdown-image-editor__transclusion-toggle
-    > .setting-item-control {
+  .excalidraw-markdown-image-editor__setting--wide>.setting-item-control,
+  .excalidraw-markdown-image-editor__transclusion-toggle>.setting-item-control {
     justify-content: flex-start;
   }
 }
 
 @container excalidraw-markdown-image-editor (max-width: 300px) {
-  .excalidraw-markdown-image-editor__source > .setting-item,
-  .excalidraw-markdown-image-editor__appearance > .setting-item,
+
+  .excalidraw-markdown-image-editor__source>.setting-item,
+  .excalidraw-markdown-image-editor__appearance>.setting-item,
   .excalidraw-markdown-image-editor__transclusion-toggle {
     flex-direction: column;
     align-items: stretch;
     gap: var(--size-4-2);
   }
 
-  .excalidraw-markdown-image-editor__source
-    > .setting-item
-    > .setting-item-info,
-  .excalidraw-markdown-image-editor__source
-    > .setting-item
-    > .setting-item-control,
-  .excalidraw-markdown-image-editor__appearance
-    > .setting-item
-    > .setting-item-info,
-  .excalidraw-markdown-image-editor__appearance
-    > .setting-item
-    > .setting-item-control,
-  .excalidraw-markdown-image-editor__transclusion-toggle
-    > .setting-item-info,
-  .excalidraw-markdown-image-editor__transclusion-toggle
-    > .setting-item-control {
+  .excalidraw-markdown-image-editor__source>.setting-item>.setting-item-info,
+  .excalidraw-markdown-image-editor__source>.setting-item>.setting-item-control,
+  .excalidraw-markdown-image-editor__appearance>.setting-item>.setting-item-info,
+  .excalidraw-markdown-image-editor__appearance>.setting-item>.setting-item-control,
+  .excalidraw-markdown-image-editor__transclusion-toggle>.setting-item-info,
+  .excalidraw-markdown-image-editor__transclusion-toggle>.setting-item-control {
     width: 100%;
   }
 
-  .excalidraw-markdown-image-editor__source
-    > .setting-item
-    > .setting-item-control,
-  .excalidraw-markdown-image-editor__appearance
-    > .setting-item
-    > .setting-item-control,
-  .excalidraw-markdown-image-editor__transclusion-toggle
-    > .setting-item-control {
+  .excalidraw-markdown-image-editor__source>.setting-item>.setting-item-control,
+  .excalidraw-markdown-image-editor__appearance>.setting-item>.setting-item-control,
+  .excalidraw-markdown-image-editor__transclusion-toggle>.setting-item-control {
     justify-content: flex-start;
   }
 
-  .excalidraw-markdown-image-editor__setting--font
-    > .setting-item-control
-    select {
+  .excalidraw-markdown-image-editor__setting--font>.setting-item-control select {
     width: 100%;
   }
 
-  .excalidraw-markdown-image-editor__setting--border
-    > .setting-item-info,
-  .excalidraw-markdown-image-editor__setting--border
-    > .setting-item-control {
+  .excalidraw-markdown-image-editor__setting--border>.setting-item-info,
+  .excalidraw-markdown-image-editor__setting--border>.setting-item-control {
     flex: 0 0 auto;
   }
 
-  .excalidraw-markdown-image-editor__setting--border
-    > .setting-item-control {
+  .excalidraw-markdown-image-editor__setting--border>.setting-item-control {
     flex-wrap: wrap;
   }
 }
@@ -1588,8 +1535,8 @@ End Obsidian Sheets Plus support
   direction: ltr;
 }
 
-.excalidraw-markdown-image-editor__css-actions > button,
-.excalidraw-markdown-image-editor__css-actions > .clickable-icon {
+.excalidraw-markdown-image-editor__css-actions>button,
+.excalidraw-markdown-image-editor__css-actions>.clickable-icon {
   width: var(--input-height, 32px);
   min-width: var(--input-height, 32px);
   max-width: var(--input-height, 32px);
@@ -1597,8 +1544,7 @@ End Obsidian Sheets Plus support
   flex: 0 0 var(--input-height, 32px);
 }
 
-.excalidraw-markdown-image-editor
-  button.excalidraw-markdown-image-editor__css-action-button {
+.excalidraw-markdown-image-editor button.excalidraw-markdown-image-editor__css-action-button {
   --icon-size: var(--icon-m);
   width: var(--input-height, 32px);
   min-width: var(--input-height, 32px);
