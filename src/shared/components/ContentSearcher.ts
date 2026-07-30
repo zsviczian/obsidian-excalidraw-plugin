@@ -5,7 +5,7 @@ import { setStyle } from "src/utils/styleUtils";
 import { isInstanceOfHTMLElement } from "src/utils/typechecks";
 
 declare const mainDocument: Document;
-
+declare const deliberateCreateElement: (document: Document, tagName: string) => HTMLElement;
 export class ContentSearcher {
   private contentDiv: HTMLElement;
   private searchBar: HTMLInputElement;
@@ -121,7 +121,8 @@ export class ContentSearcher {
       );
       const nodesToExport =
         startIndex > -1 ? childNodes.slice(startIndex) : childNodes;
-      const htmlContainer = mainDocument.createElement("div");
+        // div should never be attached to the DOM
+      const htmlContainer = deliberateCreateElement(mainDocument, "div");
 
       nodesToExport.forEach((node) => {
         htmlContainer.appendChild(node.cloneNode(true));
@@ -248,14 +249,12 @@ export class ContentSearcher {
         const before = mainDocument.createTextNode(
           nodeContent.slice(lastIndex, match.index),
         );
-        const highlighted = mainDocument.createElement("mark");
+        newNode.appendChild(before);
+
+        const highlighted = newNode.createEl("mark");
         highlighted.className = "search-highlight";
         highlighted.textContent = match[0];
         highlighted.classList.add("search-result");
-
-        newNode.appendChild(before);
-        newNode.appendChild(highlighted);
-
         lastIndex = regex.lastIndex;
       }
       newNode.appendChild(

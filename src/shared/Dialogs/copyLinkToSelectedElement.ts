@@ -172,10 +172,10 @@ export async function copyLinkToSelectedElementToClipboard(
           container.createDiv?.("excalidraw-prompt-checkboxes") ?? container;
         const ownerDoc = wrapper.ownerDocument ?? mainDocument;
 
-        const anchorRow = ownerDoc.createElement("label");
+        const anchorRow = wrapper.createEl("label");
         anchorRow.addClass("excalidraw-copylinkprompt-label");
 
-        const anchorCb = ownerDoc.createElement("input");
+        const anchorCb = anchorRow.createEl("input");
         anchorCb.type = "checkbox";
         anchorCb.checked = anchorTo100;
         anchorCb.setAttribute("aria-label", t("UIFM_ANCHOR_DESC"));
@@ -183,18 +183,14 @@ export async function copyLinkToSelectedElementToClipboard(
           anchorTo100 = anchorCb.checked;
         });
 
-        const anchorText = ownerDoc.createElement("span");
+        const anchorText = anchorRow.createSpan();
         anchorText.textContent = t("UIFM_ANCHOR");
 
-        anchorRow.appendChild(anchorCb);
-        anchorRow.appendChild(anchorText);
-        wrapper.appendChild(anchorRow);
-
         if (frameNameIsValid) {
-          const frameRow = ownerDoc.createElement("label");
+          const frameRow = wrapper.createEl("label");
           frameRow.addClass("excalidraw-copylinkprompt-label");
 
-          const frameCb = ownerDoc.createElement("input");
+          const frameCb = frameRow.createEl("input");
           frameCb.type = "checkbox";
           frameCb.checked = copyFrameLinkByName;
           frameCb.setAttribute("aria-label", t("FRAME_WITH_NAME"));
@@ -202,12 +198,8 @@ export async function copyLinkToSelectedElementToClipboard(
             copyFrameLinkByName = frameCb.checked;
           });
 
-          const frameText = ownerDoc.createElement("span");
+          const frameText = frameRow.createSpan();
           frameText.textContent = t("FRAME_WITH_NAME");
-
-          frameRow.appendChild(frameCb);
-          frameRow.appendChild(frameText);
-          wrapper.appendChild(frameRow);
         }
       },
     );
