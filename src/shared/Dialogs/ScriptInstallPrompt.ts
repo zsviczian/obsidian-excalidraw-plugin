@@ -24,8 +24,7 @@ export class ScriptInstallPrompt extends Modal {
     this.renderComponent = new Component();
     this.renderComponent.load();
     this.contentEl.classList.add("excalidraw-scriptengine-install");
-    this.contentDiv = mainDocument.createElement("div");
-    this.contentEl.appendChild(this.contentDiv);
+    this.contentDiv = this.contentEl.createDiv();
 
     new ContentSearcher(this.contentDiv);
 

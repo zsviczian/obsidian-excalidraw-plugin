@@ -27,6 +27,8 @@ import { isInstanceOfHTMLElement } from "src/utils/typechecks";
 import { errorlog } from "src/utils/coreUtils";
 
 declare const mainDocument: Document;
+declare const deliberateCreateElement: (document: Document, tagName: string) => HTMLStyleElement;
+
 type PdfViewLike = {
   containerEl?: HTMLElement;
   viewer?: {
@@ -644,7 +646,7 @@ function RenderObsidianView({
 
     if (!isPropertiesVisible) {
       if (!hostStyle) {
-        hostStyle = view.ownerDocument.createElement("style");
+        hostStyle = deliberateCreateElement(view.ownerDocument, "style");
         hostStyle.id = hostStyleId;
         hostStyle.textContent = `
           #embed-${element.id} .metadata-container { display: none; }
@@ -667,7 +669,7 @@ function RenderObsidianView({
         let iframeStyle = iframe.contentDocument.getElementById(iframeStyleId);
         if (!isPropertiesVisible) {
           if (!iframeStyle) {
-            iframeStyle = iframe.contentDocument.createElement("style");
+            iframeStyle = deliberateCreateElement(iframe.contentDocument, "style");
             iframeStyle.id = iframeStyleId;
             iframeStyle.textContent = `
               .metadata-container { display: none !important; }

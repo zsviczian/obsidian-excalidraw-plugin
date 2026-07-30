@@ -49,11 +49,10 @@ export const download = (
   if (typeof data !== "string") {
     return;
   }
-  const element = mainDocument.createElement("a");
+  const element = mainDocument.body.createEl("a");
+  setElementDisplay(element, "none");
   element.setAttribute("href", (encoding ? `${encoding},` : "") + data);
   element.setAttribute("download", filename);
-  setElementDisplay(element, "none");
-  mainDocument.body.appendChild(element);
   element.click();
   mainDocument.body.removeChild(element);
 };
@@ -286,54 +285,6 @@ export const getDataURLFromURL = async (
     ? await getDataURL(response.arrayBuffer, mimeType)
     : (url as DataURL);
 };
-
-/*
-const timeoutPromise = (timeout: number) => {
-  return new Promise<never>((_, reject) =>
-    window.setTimeout(() => reject(new Error(`Timeout after ${timeout}ms`)), timeout)
-  );
-};
-
-export const getDataURLFromURL = async (
-  url: string,
-  mimeType: MimeType,
-  timeout: number = URLFETCHTIMEOUT
-): Promise<DataURL> => {
-  return Promise.race([
-    new Promise<DataURL>((resolve, reject) => {
-      const img = new Image();
-
-      // Add an 'onload' event listener to handle image loading success
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-
-        if (!ctx) {
-          reject(new Error('Canvas context is not supported.'));
-          return;
-        }
-
-        // Draw the image on the canvas.
-        ctx.drawImage(img, 0, 0);
-
-        // Get the image data from the canvas.
-        const dataURL = canvas.toDataURL(mimeType) as DataURL;
-        resolve(dataURL);
-      };
-
-      // Add an 'onerror' event listener to handle image loading failure
-      img.onerror = () => {
-        reject(new Error('Failed to load image: ' + url));
-      };
-
-      // Set the 'src' attribute to the image URL to start loading the image.
-      img.src = url;
-    }),
-    timeoutPromise(timeout)
-  ]);
-};*/
 
 export const blobToBase64 = async (blob: Blob): Promise<string> => {
   const arrayBuffer = await blob.arrayBuffer();

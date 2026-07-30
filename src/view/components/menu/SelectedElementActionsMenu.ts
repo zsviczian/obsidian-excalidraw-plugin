@@ -182,12 +182,9 @@ export class SelectedElementActionsMenu {
       return null;
     }
     if (!this.menuEl) {
-      this.menuEl = host.ownerDocument.createElement("div");
-      this.menuEl.addClasses([
-        "embeddable-menu",
-        "excalidraw-selected-element-menu",
-        "is-hidden",
-      ]);
+      this.menuEl = host.createDiv({
+        cls: "embeddable-menu excalidraw-selected-element-menu is-hidden"
+      });
       this.actionsEl = this.menuEl.createDiv({ cls: "Island" });
     }
     if (this.menuEl.parentElement !== host) {

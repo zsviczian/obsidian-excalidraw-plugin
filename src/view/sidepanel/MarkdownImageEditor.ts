@@ -80,20 +80,23 @@ type AppearanceControlsOptions = {
 };
 
 const setBlockReferenceIcon = (button: ButtonComponent): void => {
-  const document = button.buttonEl.ownerDocument;
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.classList.add("svg-icon");
-  svg.setAttribute("viewBox", "0 0 24 24");
-  svg.setAttribute("fill", "none");
-  svg.setAttribute("aria-hidden", "true");
-  const label = document.createElementNS(
-    "http://www.w3.org/2000/svg",
-    "text",
-  );
-  label.setAttribute("x", "1");
-  label.setAttribute("y", "18");
-  label.setAttribute("font-size", "22px");
-  label.setAttribute("fill", "currentColor");
+  const doc = button.buttonEl.ownerDocument;
+  const svg = doc.createSvg("svg", {
+    cls: "svg-icon",
+    attr: {
+      viewBox: "0 0 24 24",
+      fill: "none",
+      "aria-hidden": "true",
+    },
+  });
+  const label = doc.createSvg("text", {
+    attr: {
+      x: "1",
+      y: "18",
+      "font-size": "22px",
+      fill: "currentColor",
+    },
+  });
   label.textContent = "#^";
   svg.appendChild(label);
   button.buttonEl.replaceChildren(svg);
