@@ -116,7 +116,8 @@ export class StylesManager {
     iframeDoc.open();
     iframeDoc.close(); // Closes the stream to clear out the default page skeleton
     const targetHead = iframeDoc.head;
-    targetHead.empty();
+    // Obsidian's DOM helpers are not installed on elements from the iframe realm.
+    targetHead.replaceChildren();
     Array.from(mainDocument.head.children).forEach((child) => {
       targetHead.appendChild(child.cloneNode(true));
     });
