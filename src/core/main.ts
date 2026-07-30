@@ -589,7 +589,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public fourthFontLoaded: boolean = false;
   public excalidrawConfig: ExcalidrawConfig;
   public excalidrawFileModes: { [file: string]: string } = {};
-  public settings: ExcalidrawSettings;
+  public declare settings: ExcalidrawSettings;
   public activeExcalidrawView: ExcalidrawView = null;
   public lastActiveExcalidrawFilePath: string = null;
   public lastActiveExcalidrawLeafID: string = null;
