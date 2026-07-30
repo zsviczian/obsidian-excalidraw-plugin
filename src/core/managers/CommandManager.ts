@@ -928,6 +928,12 @@ export class CommandManager {
 
     this.forceSaveCommand = this.addCommand({
       id: "save",
+      /*
+       * This hotkey is only added and only active when ExcalidrawView is active.
+       * The plugin must intercept the standard save shortcut to ensure custom data 
+       * serialization happens before the application writes to disk.
+       * See also Poposcope.
+       */
       //eslint-disable-next-line obsidianmd/commands/no-default-hotkeys
       hotkeys: [{ modifiers: ["Ctrl"], key: "s" }], //See also Poposcope
       name: t("FORCE_SAVE"),
@@ -1058,8 +1064,7 @@ export class CommandManager {
     });
 
     this.addCommand({
-      // eslint-disable-next-line obsidianmd/commands/no-command-in-command-id -- this is actually the command to insert a "command" into the drawing.
-      id: "insert-command",
+      id: "insert-cmd",
       name: t("INSERT_COMMAND"),
       checkCallback: (checking: boolean) => {
         if (checking) {

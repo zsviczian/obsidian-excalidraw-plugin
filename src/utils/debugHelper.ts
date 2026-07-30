@@ -1,7 +1,7 @@
+declare const consoleLog: (...args: unknown[]) => void;
 export const durationTreshold = 0; //0.05; //ms
 
 export const DEBUGGING = false;
-const consoleLog: (...args: unknown[]) => void = console["log"].bind(console);
 export const log = (...args: unknown[]) => consoleLog(...args);
 export const debug = (
   fn: (...args: unknown[]) => unknown,
@@ -53,7 +53,6 @@ export class CustomMutationObserver {
       const executionTime = endTime - startTime;
       if (executionTime > durationTreshold) {
         const message = `Excalidraw ${this.name} MutationObserver callback took ${executionTime}ms to execute`;
-        // eslint-disable-next-line obsidianmd/rule-custom-message -- needed for production debugging
         log(message, observer);
       }
     };

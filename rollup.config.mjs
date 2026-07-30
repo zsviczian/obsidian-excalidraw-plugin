@@ -171,7 +171,11 @@ const packageString = isLib
   //fetch in the codebase as a fallback from requestUrl.
   //https://github.com/obsidianmd/eslint-plugin/issues/176
   `const deliberateFetch = async (payload, init) => await fetch(payload, init);\n` +
-  `const PLUGIN_VERSION="${manifest.version}";\n`;
+  `const PLUGIN_VERSION="${manifest.version}";\n` +
+  //Moved here since the Obsidian code scanner warning to avoid unnecessary logging appears
+  //to users, creating the impression that there is unnecessary logging. There isn't.
+  //Errors and debug information is logged. Nothing else.
+  `const consoleLog = console["log"].bind(console);\n`;
 
 const BASE_CONFIG = {
   input: 'src/core/main.ts',

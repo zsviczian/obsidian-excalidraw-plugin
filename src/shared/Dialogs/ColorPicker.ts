@@ -99,13 +99,13 @@ export const showColorPicker = async (
   }
 
   return new Promise((resolve) => {
-    const overlay = activeDocument.createElement("div");
+    const overlay = activeDocument.body.createDiv();
     overlay.classList.add("excalidraw-colorpicker-overlay");
 
-    const popup = activeDocument.createElement("div");
+    const popup = overlay.createDiv();
     popup.classList.add("excalidraw-colorpicker-popup");
 
-    const grid = activeDocument.createElement("div");
+    const grid = popup.createDiv();
     grid.classList.add("excalidraw-colorpicker-grid");
     setStyle(grid, {
       gridTemplateColumns: `repeat(${GRID_COLUMNS}, ${CELL_SIZE}px)`,
@@ -114,18 +114,13 @@ export const showColorPicker = async (
     });
 
     colors.forEach((color) => {
-      const swatch = activeDocument.createElement("button");
+      const swatch = grid.createEl("button");
       swatch.type = "button";
       swatch.ariaLabel = color;
       swatch.classList.add("excalidraw-colorpicker-swatch");
       setStyle(swatch, { backgroundColor: color });
       swatch.addEventListener("click", () => cleanup(color));
-      grid.appendChild(swatch);
     });
-
-    popup.appendChild(grid);
-    overlay.appendChild(popup);
-    activeDocument.body.appendChild(overlay);
 
     positionPopup(popup, anchorElement);
 

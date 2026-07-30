@@ -1290,8 +1290,7 @@ End Obsidian Sheets Plus support
   min-width: 0;
   max-width: 100%;
   flex-wrap: wrap;
-  column-gap: var(--size-4-2);
-  row-gap: var(--size-4-2);
+  gap: var(--size-4-2);
 }
 
 .excalidraw-markdown-image-editor__source .setting-item-control>*,
