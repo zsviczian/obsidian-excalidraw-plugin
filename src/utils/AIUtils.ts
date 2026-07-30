@@ -285,25 +285,50 @@ export const getJsonErrorMessage = (json: unknown): string | undefined => {
   return message == null ? undefined : String(message);
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- provider payloads are intentionally dynamic at this normalization boundary.
-const getFirstChoice = (json: Record<string, any>) =>
-  json?.choices?.[0] ?? null;
+type JsonObject = Record<string, unknown>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- provider payloads are intentionally dynamic at this normalization boundary.
-const getFirstChoiceContent = (json: Record<string, any>): string => {
-  const content = getFirstChoice(json)?.message?.content;
+const isJsonObject = (value: unknown): value is JsonObject =>
+  typeof value === "object" && value !== null;
+
+const getJsonObject = (value: unknown, key: string): JsonObject | null => {
+  if (!isJsonObject(value)) {
+    return null;
+  }
+  const nestedValue = value[key];
+  return isJsonObject(nestedValue) ? nestedValue : null;
+};
+
+const getJsonArray = (value: unknown, key: string): unknown[] => {
+  if (!isJsonObject(value)) {
+    return [];
+  }
+  const nestedValue = value[key];
+  return Array.isArray(nestedValue) ? nestedValue : [];
+};
+
+const getFirstChoice = (json: JsonObject): JsonObject | null => {
+  const firstChoice = getJsonArray(json, "choices")[0];
+  return isJsonObject(firstChoice) ? firstChoice : null;
+};
+
+const getFirstChoiceContent = (json: JsonObject): string => {
+  const message = getJsonObject(getFirstChoice(json), "message");
+  const content = message?.content;
   return typeof content === "string" ? content : "";
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- provider payloads are intentionally dynamic at this normalization boundary.
-const getFirstChoiceFinishReason = (json: Record<string, any>): string => {
+const getFirstChoiceFinishReason = (json: JsonObject): string => {
   const finishReason = getFirstChoice(json)?.finish_reason;
   return typeof finishReason === "string" ? finishReason : "";
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- provider payloads are intentionally dynamic at this normalization boundary.
-const getReasoningTokenCount = (json: Record<string, any>): number => {
-  const value = json?.usage?.completion_tokens_details?.reasoning_tokens;
+const getReasoningTokenCount = (json: JsonObject): number => {
+  const usage = getJsonObject(json, "usage");
+  const completionTokensDetails = getJsonObject(
+    usage,
+    "completion_tokens_details",
+  );
+  const value = completionTokensDetails?.reasoning_tokens;
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 };
 
@@ -1337,19 +1362,27 @@ const getGoogleEndpoint = (config: ResolvedModelConfig): string => {
   return `${baseEndpoint}/models/${config.model}:generateContent${separator}key=${encodeURIComponent(config.apiKey)}`;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- third-party provider payload schemas vary and are normalized in this function.
-const normalizeAnthropicResponse = (json: Record<string, any>) => {
+const normalizeAnthropicResponse = (json: JsonObject): JsonObject => {
+  const contentItems = getJsonArray(json, "content");
   const text =
-    json?.content
-      ?.filter((item: { type?: string }) => item?.type === "text")
-      .map((item: { text?: string }) => item.text)
+    contentItems
+      .filter(
+        (item): item is JsonObject =>
+          isJsonObject(item) && item.type === "text",
+      )
+      .map((item) => (typeof item.text === "string" ? item.text : ""))
+      .filter(Boolean)
       .join("\n\n") ?? "";
 
+  const usage = getJsonObject(json, "usage");
+  const inputTokens = usage?.input_tokens;
+  const outputTokens = usage?.output_tokens;
+
   return {
-    id: json?.id,
+    id: json.id,
     object: "chat.completion",
-    created: json?.created_at,
-    model: json?.model,
+    created: json.created_at,
+    model: json.model,
     choices: [
       {
         index: 0,
@@ -1357,31 +1390,39 @@ const normalizeAnthropicResponse = (json: Record<string, any>) => {
           role: "assistant",
           content: text,
         },
-        finish_reason: json?.stop_reason ?? "stop",
+        finish_reason: json.stop_reason ?? "stop",
       },
     ],
     usage: {
-      prompt_tokens: json?.usage?.input_tokens ?? null,
-      completion_tokens: json?.usage?.output_tokens ?? null,
+      prompt_tokens: inputTokens ?? null,
+      completion_tokens: outputTokens ?? null,
       total_tokens:
-        (json?.usage?.input_tokens ?? 0) + (json?.usage?.output_tokens ?? 0),
+        (typeof inputTokens === "number" ? inputTokens : 0) +
+        (typeof outputTokens === "number" ? outputTokens : 0),
     },
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- third-party provider payload schemas vary and are normalized in this function.
-const normalizeGoogleResponse = (json: Record<string, any>) => {
+const normalizeGoogleResponse = (json: JsonObject): JsonObject => {
+  const candidates = getJsonArray(json, "candidates");
+  const firstCandidate = isJsonObject(candidates[0]) ? candidates[0] : null;
+  const candidateContent = getJsonObject(firstCandidate, "content");
+  const parts = getJsonArray(candidateContent, "parts");
+
   const text =
-    json?.candidates?.[0]?.content?.parts
-      ?.map((part: { text?: string }) => part?.text)
+    parts
+      .map((part) => (isJsonObject(part) ? part.text : undefined))
+      .filter((value): value is string => typeof value === "string")
       .filter(Boolean)
       .join("\n\n") ?? "";
 
+  const usageMetadata = getJsonObject(json, "usageMetadata");
+
   return {
-    id: json?.responseId,
+    id: json.responseId,
     object: "chat.completion",
     created: Date.now(),
-    model: json?.modelVersion,
+    model: json.modelVersion,
     choices: [
       {
         index: 0,
@@ -1389,23 +1430,22 @@ const normalizeGoogleResponse = (json: Record<string, any>) => {
           role: "assistant",
           content: text,
         },
-        finish_reason: json?.candidates?.[0]?.finishReason ?? "stop",
+        finish_reason: firstCandidate?.finishReason ?? "stop",
       },
     ],
     usage: {
-      prompt_tokens: json?.usageMetadata?.promptTokenCount ?? null,
-      completion_tokens: json?.usageMetadata?.candidatesTokenCount ?? null,
-      total_tokens: json?.usageMetadata?.totalTokenCount ?? null,
+      prompt_tokens: usageMetadata?.promptTokenCount ?? null,
+      completion_tokens: usageMetadata?.candidatesTokenCount ?? null,
+      total_tokens: usageMetadata?.totalTokenCount ?? null,
     },
   };
 };
 
 const normalizeResponseJson = (
   provider: AIProvider,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic provider payload passed through provider-specific normalizers.
-  json: Record<string, any>,
-) => {
-  if (!json || json.error) {
+  json: JsonObject,
+): JsonObject => {
+  if (json.error) {
     return json;
   }
   switch (provider) {
@@ -1454,15 +1494,14 @@ const getMimeTypeForOutputFormat = (
   return `image/${normalized}`;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- image provider payload schemas vary and are normalized in this function.
-const normalizeOpenAIImageResponse = (json: Record<string, any>) => {
-  if (!json || json.error) {
+const normalizeOpenAIImageResponse = (json: JsonObject): JsonObject => {
+  if (json.error) {
     return json;
   }
   const data = Array.isArray(json.data)
     ? json.data.filter(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- image provider payload schemas vary and are normalized in this function.
-        (item: Record<string, any>) => item?.url || item?.b64_json,
+        (item: unknown) =>
+          isJsonObject(item) && Boolean(item.url || item.b64_json),
       )
     : [];
 
@@ -1472,49 +1511,68 @@ const normalizeOpenAIImageResponse = (json: Record<string, any>) => {
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- image provider payload schemas vary and are normalized in this function.
-const normalizeGoogleImageResponseForImages = (json: Record<string, any>) => {
-  if (!json || json.error) {
+const normalizeGoogleImageResponseForImages = (
+  json: JsonObject,
+): JsonObject => {
+  if (json.error) {
     return json;
   }
 
-  const parts = json?.candidates?.[0]?.content?.parts ?? [];
+  const candidates = getJsonArray(json, "candidates");
+  const firstCandidate = isJsonObject(candidates[0]) ? candidates[0] : null;
+  const candidateContent = getJsonObject(firstCandidate, "content");
+  const parts = getJsonArray(candidateContent, "parts");
   const revisedPrompt = parts
-    .map((part: { text?: string }) => part?.text)
+    .map((part) => (isJsonObject(part) ? part.text : undefined))
+    .filter((value): value is string => typeof value === "string")
     .filter(Boolean)
     .join("\n\n");
+
+  const firstPartWithMimeType = parts.find((part) => {
+    if (!isJsonObject(part)) {
+      return false;
+    }
+    const inlineData = getJsonObject(part, "inlineData");
+    return typeof inlineData?.mimeType === "string";
+  });
+  const firstInlineDataWithMimeType = isJsonObject(firstPartWithMimeType)
+    ? getJsonObject(firstPartWithMimeType, "inlineData")
+    : null;
 
   return {
     ...json,
     output_format: getMimeTypeForOutputFormat(
-      parts.find(
-        (part: { inlineData?: { mimeType?: string } }) =>
-          part?.inlineData?.mimeType,
-      )?.inlineData?.mimeType,
+      typeof firstInlineDataWithMimeType?.mimeType === "string"
+        ? firstInlineDataWithMimeType.mimeType
+        : undefined,
       "image/png",
     ).replace("image/", ""),
     data: parts
-      .filter(
-        (part: { inlineData?: { data?: string } }) => part?.inlineData?.data,
-      )
-      .map(
-        (
-          part: { inlineData: { data: string; mimeType?: string } },
-          index: number,
-        ) => ({
-          b64_json: part.inlineData.data,
-          mimeType: part.inlineData.mimeType ?? "image/png",
+      .map((part, index) => {
+        if (!isJsonObject(part)) {
+          return null;
+        }
+        const inlineData = getJsonObject(part, "inlineData");
+        if (!inlineData || typeof inlineData.data !== "string") {
+          return null;
+        }
+        return {
+          b64_json: inlineData.data,
+          mimeType:
+            typeof inlineData.mimeType === "string"
+              ? inlineData.mimeType
+              : "image/png",
           ...(revisedPrompt && index === 0
             ? { revised_prompt: revisedPrompt }
             : {}),
-        }),
-      ),
+        };
+      })
+      .filter(Boolean),
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- image provider payload schemas vary and are normalized in this function.
-const normalizeXAIImageResponse = (json: Record<string, any>) => {
-  if (!json || json.error) {
+const normalizeXAIImageResponse = (json: JsonObject): JsonObject => {
+  if (json.error) {
     return json;
   }
 
@@ -1523,17 +1581,17 @@ const normalizeXAIImageResponse = (json: Record<string, any>) => {
     : Array.isArray(json.images)
       ? json.images
       : [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- image provider payload schemas vary and are normalized in this function.
-  const normalizedData = rawItems.flatMap((item: Record<string, any>) => {
-    if (!item) {
+  const normalizedData = rawItems.flatMap((item: unknown) => {
+    if (!isJsonObject(item)) {
       return [];
     }
     if (item.url || item.b64_json) {
       return [item];
     }
 
-    if (typeof item.base64 === "string") {
-      const normalizedBase64 = stripImageDataPrefix(item.base64);
+    const itemBase64 = typeof item.base64 === "string" ? item.base64 : null;
+    if (itemBase64) {
+      const normalizedBase64 = stripImageDataPrefix(itemBase64);
       return normalizedBase64
         ? [
             {
@@ -1544,17 +1602,22 @@ const normalizeXAIImageResponse = (json: Record<string, any>) => {
         : [];
     }
 
-    if (item.image?.url || item.image?.b64_json) {
+    const itemImage = getJsonObject(item, "image");
+    if (itemImage?.url || itemImage?.b64_json) {
       return [
         {
-          url: item.image.url,
-          b64_json: item.image.b64_json,
+          url: itemImage.url,
+          b64_json: itemImage.b64_json,
         },
       ];
     }
 
-    if (typeof item.image?.base64 === "string") {
-      const normalizedBase64 = stripImageDataPrefix(item.image.base64);
+    const itemImageBase64 =
+      itemImage && typeof itemImage.base64 === "string"
+        ? itemImage.base64
+        : null;
+    if (itemImageBase64) {
+      const normalizedBase64 = stripImageDataPrefix(itemImageBase64);
       return normalizedBase64
         ? [
             {
@@ -1605,9 +1668,8 @@ const normalizeXAIImageResponse = (json: Record<string, any>) => {
 
 const normalizeImageResponseJson = (
   provider: AIProvider,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic provider payload passed through provider-specific normalizers.
-  json: Record<string, any>,
-) => {
+  json: JsonObject,
+): JsonObject => {
   switch (provider) {
     case "google":
       return normalizeGoogleImageResponseForImages(json);
@@ -1673,8 +1735,7 @@ const postJSON = async (
   },
   provider: AIProvider,
   signal?: AbortSignal,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- postJSON accepts provider-specific dynamic JSON and delegates normalization.
-  normalizeJson: (json: Record<string, any>) => Record<string, any> = (json) =>
+  normalizeJson: (json: JsonObject) => JsonObject = (json) =>
     normalizeResponseJson(provider, json),
 ): Promise<RequestUrlResponse> => {
   const result = await requestUrlWithAbort(
@@ -1688,7 +1749,10 @@ const postJSON = async (
     signal,
   );
 
-  const normalizedJson = normalizeJson(result.json);
+  const normalizedJson = normalizeJson(
+    isJsonObject(result.json) ? result.json : {},
+  );
+  const normalizedError = getJsonObject(normalizedJson, "error") ?? {};
   if (result.status >= 400) {
     return {
       status: result.status,
@@ -1699,7 +1763,7 @@ const postJSON = async (
           ? normalizedJson
           : {}),
         error: {
-          ...(normalizedJson?.error ?? {}),
+          ...normalizedError,
           message: getErrorMessageFromResponse({
             ...result,
             json: normalizedJson,
