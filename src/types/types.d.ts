@@ -202,6 +202,7 @@ declare module "obsidian" {
     };
     hotkeyManager: {
       addDefaultHotkeys(commandId: string, hotkeys: Hotkey[]): void;
+      
     };
   }
   interface FileManager {

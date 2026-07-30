@@ -4,8 +4,6 @@ import { NamedExcalidrawFrameElement } from "src/types/excalidrawElementTypes";
 import { ScriptEngine } from "../Scripts";
 import ExcalidrawView from "src/view/ExcalidrawView";
 
-declare const mainDocument: Document;
-
 /**
  *
  * @param view - ExcalidrawView instance

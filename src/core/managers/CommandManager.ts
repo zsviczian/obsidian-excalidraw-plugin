@@ -934,7 +934,8 @@ export class CommandManager {
     });
 
     const id = this.forceSaveCommand.id;
-    this.app.hotkeyManager.addDefaultHotkeys(id, [{ modifiers: ["Ctrl"], key: "s" }]); //See also Poposcope
+    this.app.hotkeyManager.addDefaultHotkeys(id, [{ modifiers: ["Ctrl"], key: "s" }]); //See also Popscope
+    this.forceSaveCommand.hotkeys = [{ modifiers: ["Ctrl"], key: "s" }];
 
     //removing raw mode. Not required. I never use it. Raw mode can still be enabled
     //via document properties. Only showing command palette action if raw mode is enabled

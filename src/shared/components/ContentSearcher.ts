@@ -238,8 +238,8 @@ export class ContentSearcher {
 
     nodesToReplace.forEach((node) => {
       const nodeContent = node.nodeValue;
-      const newNode = mainDocument.createDocumentFragment();
-
+      const newNode = createFragment();
+      
       let lastIndex = 0;
       let match;
       const regex = new RegExp(escapeRegExp(searchTerm), "gi");
