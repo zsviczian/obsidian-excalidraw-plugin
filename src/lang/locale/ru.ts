@@ -128,6 +128,7 @@ export default {
   MARKDOWN_IMAGE_SET_DEFAULT: "Сделать по умолчанию",
   MARKDOWN_IMAGE_SAVE_DEFAULT_ARIA:
     "Сохранить текущие настройки оформления как настройки по умолчанию",
+  MARKDOWN_IMAGE_DEFAULT_SAVED: "Настройки Markdown-изображения сохранены",
   MARKDOWN_IMAGE_RENDER_NOW: "Отобразить сейчас",
   MARKDOWN_IMAGE_UPDATING: "Обновление изображения…",
   MARKDOWN_IMAGE_EXTERNAL_SOURCE: "Внешний источник Markdown",

@@ -115,6 +115,7 @@ export default {
   MARKDOWN_IMAGE_TRANSCLUSION_CSS_DESC: "仅应用于嵌入 Markdown 的 CSS 规则。",
   MARKDOWN_IMAGE_SET_DEFAULT: "设为默认",
   MARKDOWN_IMAGE_SAVE_DEFAULT_ARIA: "将当前外观设置保存为默认值",
+  MARKDOWN_IMAGE_DEFAULT_SAVED: "Markdown 图像默认设置已保存",
   MARKDOWN_IMAGE_RENDER_NOW: "立即渲染",
   MARKDOWN_IMAGE_UPDATING: "正在更新图像…",
   MARKDOWN_IMAGE_EXTERNAL_SOURCE: "外部 Markdown 来源",

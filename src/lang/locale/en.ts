@@ -135,6 +135,7 @@ export default {
   MARKDOWN_IMAGE_SET_DEFAULT: "Set as default",
   MARKDOWN_IMAGE_SAVE_DEFAULT_ARIA:
     "Save current appearance settings as the default",
+  MARKDOWN_IMAGE_DEFAULT_SAVED: "Markdown image defaults saved",
   MARKDOWN_IMAGE_RENDER_NOW: "Render now",
   MARKDOWN_IMAGE_UPDATING: "Updating image…",
   MARKDOWN_IMAGE_EXTERNAL_SOURCE: "External Markdown source",

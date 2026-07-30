@@ -9,6 +9,7 @@ import {
   type WorkspaceLeaf,
   type WorkspaceSplit,
   type EventRef,
+  type MarkdownFileInfo,
 } from "obsidian";
 import type {
   ExcalidrawElement,
@@ -158,11 +159,15 @@ class MarkdownImageEditorController {
   private selectionGeneration = 0;
   private lastObservedSelectionId: string | null = null;
   private editorFocusHost: HTMLElement | null = null;
+  private editorFocusInHandler: (() => void) | null = null;
   private editorFocusOutHandler: ((event: FocusEvent) => void) | null = null;
+  private editorCommandView: MarkdownView | null = null;
+  private previousActiveEditor: MarkdownFileInfo | null = null;
   private scenePointerDocument: Document | null = null;
   private scenePointerDownHandler: ((event: PointerEvent) => void) | null = null;
   private renderStatusEl: HTMLElement | null = null;
   private editorContentDirty = false;
+  private editorRenderPromise: Promise<void> | null = null;
   private editorResizeCleanup: (() => void) | null = null;
   private editorHeight: number | null = null;
   private ownerInvalid = false;
@@ -268,7 +273,7 @@ class MarkdownImageEditorController {
     const saveDefaultsButton = new ButtonComponent(toolbar)
       .setButtonText(t("MARKDOWN_IMAGE_SET_DEFAULT"))
       .setTooltip(t("MARKDOWN_IMAGE_SET_DEFAULT"))
-      .onClick(() => this.saveAppearanceDefaults());
+      .onClick(() => void this.saveAppearanceDefaults());
     saveDefaultsButton.buttonEl.setAttribute(
       "aria-label",
       t("MARKDOWN_IMAGE_SAVE_DEFAULT_ARIA"),
@@ -669,7 +674,7 @@ class MarkdownImageEditorController {
     }
   }
 
-  private saveAppearanceDefaults(): void {
+  private async saveAppearanceDefaults(): Promise<void> {
     if (!this.ensureOwnerValid() || !this.renderSettings) {
       return;
     }
@@ -682,7 +687,8 @@ class MarkdownImageEditorController {
         border: { ...this.renderSettings.transclusion.border },
       },
     };
-    void this.view.plugin.saveSettings();
+    await this.view.plugin.saveSettings();
+    new Notice(t("MARKDOWN_IMAGE_DEFAULT_SAVED"), 2500);
   }
 
   private renderSelectionPlaceholder(): void {
@@ -1320,6 +1326,7 @@ class MarkdownImageEditorController {
     element: ExcalidrawImageElement | undefined,
     generation: number,
   ): Promise<void> {
+    await this.renderCurrentEditor();
     this.cancelScheduledRender();
     this.removeEditorFocusListener();
     this.renderSelectionPlaceholder();
@@ -1441,6 +1448,14 @@ class MarkdownImageEditorController {
       .forEach((title) => title.remove());
     this.removeEditorFocusListener();
     this.editorFocusHost = host;
+    this.editorCommandView = editorView;
+    this.editorFocusInHandler = () => {
+      if (this.app.workspace.activeEditor === editorView) {
+        return;
+      }
+      this.previousActiveEditor = this.app.workspace.activeEditor;
+      this.app.workspace.activeEditor = editorView;
+    };
     this.editorFocusOutHandler = (event: FocusEvent) => {
       const nextTarget = event.relatedTarget;
       const targetWindow = host.ownerDocument.defaultView;
@@ -1452,8 +1467,10 @@ class MarkdownImageEditorController {
       ) {
         return;
       }
+      this.restorePreviousActiveEditor();
       void this.renderCurrentEditor();
     };
+    host.addEventListener("focusin", this.editorFocusInHandler);
     host.addEventListener("focusout", this.editorFocusOutHandler);
 
     const viewContainer = this.view.containerEl;
@@ -1475,6 +1492,7 @@ class MarkdownImageEditorController {
         target instanceof targetWindow.Node &&
         currentViewContainer?.contains(target)
       ) {
+        this.restorePreviousActiveEditor();
         void this.renderCurrentEditor();
       }
     };
@@ -1486,14 +1504,23 @@ class MarkdownImageEditorController {
   }
 
   private removeEditorFocusListener(): void {
+    if (this.editorFocusHost && this.editorFocusInHandler) {
+      this.editorFocusHost.removeEventListener(
+        "focusin",
+        this.editorFocusInHandler,
+      );
+    }
     if (this.editorFocusHost && this.editorFocusOutHandler) {
       this.editorFocusHost.removeEventListener(
         "focusout",
         this.editorFocusOutHandler,
       );
     }
+    this.restorePreviousActiveEditor();
     this.editorFocusHost = null;
+    this.editorFocusInHandler = null;
     this.editorFocusOutHandler = null;
+    this.editorCommandView = null;
     if (this.scenePointerDocument && this.scenePointerDownHandler) {
       this.scenePointerDocument.removeEventListener(
         "pointerdown",
@@ -1503,6 +1530,16 @@ class MarkdownImageEditorController {
     }
     this.scenePointerDocument = null;
     this.scenePointerDownHandler = null;
+  }
+
+  private restorePreviousActiveEditor(): void {
+    if (
+      this.editorCommandView &&
+      this.app.workspace.activeEditor === this.editorCommandView
+    ) {
+      this.app.workspace.activeEditor = this.previousActiveEditor;
+    }
+    this.previousActiveEditor = null;
   }
 
   private setupEditorResize(
@@ -1611,35 +1648,75 @@ class MarkdownImageEditorController {
     );
   }
 
-  private async renderCurrentEditor(force: boolean = false): Promise<void> {
+  private renderCurrentEditor(force: boolean = false): Promise<void> {
+    if (this.editorRenderPromise !== null) {
+      return this.editorRenderPromise;
+    }
     if (!this.ensureOwnerValid()) {
-      return;
+      return Promise.resolve();
     }
     if (!force && !this.editorContentDirty) {
-      return;
+      return Promise.resolve();
     }
-    if (!this.element || !this.editorView) {
-      this.scheduleRender(undefined, 0);
-      return;
-    }
-    const source = await getMarkdownImageSource(this.view, this.element);
-    if (!source || this.closed || !this.ensureOwnerValid()) {
-      return;
-    }
-    const markdown = this.editorView.getViewData();
-    if (source.source === "external") {
-      await this.editorView.save();
-      if (!this.ensureOwnerValid()) {
-        return;
+    if (!this.element || !this.editorView || !this.renderSettings) {
+      if (force) {
+        this.scheduleRender(undefined, 0);
       }
-      this.scheduleRender(undefined, 0);
-      return;
+      return Promise.resolve();
     }
-    this.view.excalidrawData.setMarkdownImage(this.element.fileId, {
-      markdown,
+    const element = this.element;
+    const editorView = this.editorView;
+    const renderSettings = this.renderSettings;
+    const markdown = editorView.getViewData();
+    this.cancelScheduledRender();
+    this.setRenderStatus(true);
+    const renderPromise = (async () => {
+      try {
+        const source = await getMarkdownImageSource(this.view, element);
+        if (!source || this.closed || !this.ensureOwnerValid()) {
+          return;
+        }
+        if (source.source === "external") {
+          await editorView.save();
+          if (!this.ensureOwnerValid()) {
+            return;
+          }
+        } else {
+          this.view.excalidrawData.setMarkdownImage(element.fileId, {
+            markdown,
+          });
+          this.view.setDirty();
+        }
+        const updated = await updateMarkdownImage(
+          this.view,
+          element,
+          markdown,
+          renderSettings,
+          source.source,
+        );
+        if (!updated || !this.ensureOwnerValid()) {
+          return;
+        }
+        if (this.element?.id === element.id) {
+          this.refreshElementReference();
+        }
+        if (
+          this.editorView === editorView &&
+          markdown === editorView.getViewData()
+        ) {
+          this.editorContentDirty = false;
+        }
+      } finally {
+        this.setRenderStatus(false);
+      }
+    })();
+    const trackedRenderPromise = renderPromise.finally(() => {
+      if (this.editorRenderPromise === trackedRenderPromise) {
+        this.editorRenderPromise = null;
+      }
     });
-    this.view.setDirty();
-    this.scheduleRender(markdown, 0);
+    this.editorRenderPromise = trackedRenderPromise;
+    return this.editorRenderPromise;
   }
 
   private scheduleRender(markdown?: string, delay: number = 350): void {
