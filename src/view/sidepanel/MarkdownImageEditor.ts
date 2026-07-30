@@ -71,7 +71,6 @@ type MarkdownImageAppearanceStyle = Pick<
 
 type AppearanceControlsOptions = {
   scope: "image" | "transclusion";
-  includeTheme: boolean;
   cssName: string;
   cssDescription: string | DocumentFragment;
   cssEditorAria: string;
@@ -365,7 +364,6 @@ class MarkdownImageEditorController {
         );
     this.renderAppearanceControls(appearance, {
       scope: "image",
-      includeTheme: true,
       cssName: t("MARKDOWN_IMAGE_CSS"),
       cssDescription: fragWithHTML(
         `${t("MARKDOWN_IMAGE_CSS_DESC")} ${t("MARKDOWN_IMAGE_CSS_IMPORTANT_HINT")} ${developerConsoleHelp}`,
@@ -416,7 +414,6 @@ class MarkdownImageEditorController {
 
     this.renderAppearanceControls(transclusionAppearance, {
       scope: "transclusion",
-      includeTheme: false,
       cssName: t("MARKDOWN_IMAGE_TRANSCLUSION_CSS"),
       cssDescription: `${t("MARKDOWN_IMAGE_TRANSCLUSION_CSS_DESC")} ${t("MARKDOWN_IMAGE_CSS_IMPORTANT_HINT")}`,
       cssEditorAria: t("MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA"),
@@ -619,26 +616,6 @@ class MarkdownImageEditorController {
             }
           }),
       );
-
-    if (options.includeTheme) {
-      new Setting(host)
-        .setClass("excalidraw-markdown-image-editor__setting--wide")
-        .setName(t("MARKDOWN_IMAGE_THEME"))
-        .setDesc(t("MARKDOWN_IMAGE_THEME_DESC"))
-        .addDropdown((dropdown) => {
-          dropdown.addOption("canvas", t("MARKDOWN_IMAGE_MATCH_CANVAS"));
-          dropdown.addOption("light", t("MARKDOWN_IMAGE_LIGHT"));
-          dropdown.addOption("dark", t("MARKDOWN_IMAGE_DARK"));
-          dropdown.setValue(this.renderSettings.theme);
-          dropdown.onChange((theme: "canvas" | "light" | "dark") => {
-            if (!this.renderSettings) {
-              return;
-            }
-            this.renderSettings = { ...this.renderSettings, theme };
-            this.scheduleRender();
-          });
-        });
-    }
 
     const cssSetting = new Setting(host)
       .setName(options.cssName)

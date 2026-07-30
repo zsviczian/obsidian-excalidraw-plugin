@@ -109,6 +109,9 @@ export function setMarkdownImageCustomData(
   };
   addAppendUpdateCustomData(element, {
     [MARKDOWN_IMAGE_CUSTOM_DATA_KEY]: value,
+    ...(typeof element.customData?.doNotInvertSVGInDarkMode !== "boolean"
+      ? { doNotInvertSVGInDarkMode: false }
+      : {}),
   });
 }
 
@@ -165,11 +168,7 @@ async function renderMarkdown(
   render: MarkdownImageRenderSettings,
   sourceFile = view.file,
 ) {
-  const isDark =
-    render.theme === "dark" ||
-    (render.theme === "canvas" &&
-      view.excalidrawAPI?.getAppState().theme === "dark");
-  const loader = new EmbeddedFilesLoader(view.plugin, isDark);
+  const loader = new EmbeddedFilesLoader(view.plugin, false);
   return loader.renderMarkdownToSVG(sourceFile, markdown, render);
 }
 

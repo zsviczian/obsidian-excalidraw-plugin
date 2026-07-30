@@ -7251,8 +7251,12 @@ export default class ExcalidrawView
         type ImageType = "svg" | "pdf" | "bitmap" | "excalidraw";
 
         const getImageType = (
+          imageEl: ExcalidrawImageElement,
           embeddedFile?: EmbeddedFile,
         ): ImageType | null => {
+          if (isMarkdownImageElement(this, imageEl)) {
+            return "svg";
+          }
           if (!embeddedFile) {
             return null;
           }
@@ -7276,7 +7280,6 @@ export default class ExcalidrawView
 
         const getInvertInDarkMode = (
           imageEl: ExcalidrawImageElement,
-          embeddedFile: EmbeddedFile,
           imageType: ImageType,
         ): boolean => {
           const invertBitmap = imageEl.customData?.invertBitmapInDarkmode;
@@ -7296,8 +7299,8 @@ export default class ExcalidrawView
             const imagesWithStatus = selectedImages
               .map((el) => {
                 const embeddedFile = this.excalidrawData.getFile(el.fileId);
-                const imageType = getImageType(embeddedFile);
-                if (!embeddedFile || !imageType) {
+                const imageType = getImageType(el, embeddedFile);
+                if (!imageType) {
                   return null;
                 }
                 return {
@@ -7305,7 +7308,6 @@ export default class ExcalidrawView
                   imageType,
                   invertInDarkMode: getInvertInDarkMode(
                     el,
-                    embeddedFile,
                     imageType,
                   ),
                 };
@@ -7353,12 +7355,18 @@ export default class ExcalidrawView
                       editableEl.fileId,
                     );
                     const imageType =
-                      getImageType(embeddedFile) ?? img.imageType;
+                      getImageType(editableEl, embeddedFile) ?? img.imageType;
                     if (imageType === "svg" || imageType === "excalidraw") {
+                      const isMarkdownImage = isMarkdownImageElement(
+                        this,
+                        editableEl,
+                      );
                       addAppendUpdateCustomData(editableEl, {
-                        doNotInvertSVGInDarkMode: newInvertState
-                          ? undefined
-                          : true,
+                        doNotInvertSVGInDarkMode: isMarkdownImage
+                          ? !newInvertState
+                          : newInvertState
+                            ? undefined
+                            : true,
                         invertBitmapInDarkmode: undefined,
                       });
                     } else {

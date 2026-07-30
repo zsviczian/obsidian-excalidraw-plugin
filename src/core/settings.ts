@@ -706,7 +706,6 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
         color: "Black",
       },
       css: "",
-      theme: "canvas",
       transclusion: {
         enabled: false,
         fontFamily: "Cascadia",

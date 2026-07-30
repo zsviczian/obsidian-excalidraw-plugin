@@ -3,7 +3,6 @@ export const MARKDOWN_IMAGE_EMBEDDED_FILE_TOKEN = "markdown-image";
 export const MARKDOWN_IMAGE_SCHEMA_VERSION = 1;
 
 export type MarkdownImageSource = "local" | "external";
-export type MarkdownImageTheme = "canvas" | "light" | "dark";
 
 export type MarkdownImageTransclusionRenderSettings = {
   enabled: boolean;
@@ -25,7 +24,6 @@ export type MarkdownImageRenderSettings = {
     color: string;
   };
   css: string;
-  theme: MarkdownImageTheme;
   transclusion: MarkdownImageTransclusionRenderSettings;
 };
 

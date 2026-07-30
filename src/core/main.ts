@@ -1668,6 +1668,12 @@ export default class ExcalidrawPlugin extends Plugin {
         },
       };
     }
+    const markdownImageDefaults = this.settings.markdownImageSettings
+      .defaults as unknown as Record<string, unknown>;
+    if ("theme" in markdownImageDefaults) {
+      delete markdownImageDefaults.theme;
+      didSettingsMigration = true;
+    }
     const settingsRecord = this.settings as unknown as Record<string, unknown>;
     if (
       typeof settingsRecord.iframelyAllowed === "boolean" &&

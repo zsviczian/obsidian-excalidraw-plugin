@@ -16,7 +16,6 @@ export function resolveMarkdownImageRenderSettings(
       color: stored?.border?.color ?? defaults.border.color,
     },
     css: stored?.css ?? defaults.css,
-    theme: stored?.theme ?? defaults.theme,
     transclusion: {
       // Existing elements without transclusion settings keep parent inheritance.
       enabled: stored

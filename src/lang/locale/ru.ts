@@ -98,12 +98,6 @@ export default {
   MARKDOWN_IMAGE_FONT_COLOR: "Цвет шрифта",
   MARKDOWN_IMAGE_BORDER: "Рамка",
   MARKDOWN_IMAGE_BORDER_COLOR: "Цвет рамки",
-  MARKDOWN_IMAGE_THEME: "Тема",
-  MARKDOWN_IMAGE_THEME_DESC:
-    "Управляет зависящим от темы содержимым: блоками кода, таблицами, ссылками и выносками.",
-  MARKDOWN_IMAGE_MATCH_CANVAS: "Как на холсте",
-  MARKDOWN_IMAGE_LIGHT: "Светлая",
-  MARKDOWN_IMAGE_DARK: "Тёмная",
   MARKDOWN_IMAGE_CSS: "CSS",
   MARKDOWN_IMAGE_CSS_DESC:
     "Правила CSS применяются только к этому Markdown-изображению.",

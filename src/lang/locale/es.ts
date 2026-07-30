@@ -107,12 +107,6 @@ export default {
   MARKDOWN_IMAGE_FONT_COLOR: "Color de fuente",
   MARKDOWN_IMAGE_BORDER: "Borde",
   MARKDOWN_IMAGE_BORDER_COLOR: "Color del borde",
-  MARKDOWN_IMAGE_THEME: "Tema",
-  MARKDOWN_IMAGE_THEME_DESC:
-    "Controla el contenido sensible al tema, como bloques de código, tablas, enlaces y llamadas.",
-  MARKDOWN_IMAGE_MATCH_CANVAS: "Coincidir con el lienzo",
-  MARKDOWN_IMAGE_LIGHT: "Claro",
-  MARKDOWN_IMAGE_DARK: "Oscuro",
   MARKDOWN_IMAGE_CSS: "CSS",
   MARKDOWN_IMAGE_CSS_DESC: "Reglas CSS aplicadas solo a esta imagen Markdown.",
   MARKDOWN_IMAGE_CSS_IMPORTANT_HINT:

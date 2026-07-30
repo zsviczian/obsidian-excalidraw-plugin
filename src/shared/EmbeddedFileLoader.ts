@@ -82,6 +82,7 @@ import {
   type MarkdownImageRenderSettings,
 } from "src/types/markdownImageTypes";
 import { resolveMarkdownImageRenderSettings } from "src/utils/markdownImageUtils";
+import { addAppendUpdateCustomData } from "src/utils/elementCustomDataUtils";
 
 //declared in rollup.config.mjs
 declare const deliberateFetch: (
@@ -487,6 +488,18 @@ export class EmbeddedFilesLoader {
     markdown: string,
     render: MarkdownImageRenderSettings,
   ): Promise<MarkdownSVGRenderResult> {
+    if (this.isDark !== false) {
+      const lightThemeLoader = new EmbeddedFilesLoader(this.plugin, false);
+      try {
+        return await lightThemeLoader.renderMarkdownToSVG(
+          sourceFile,
+          markdown,
+          render,
+        );
+      } finally {
+        lightThemeLoader.terminate = true;
+      }
+    }
     try {
       const linkParts = getLinkParts(sourceFile.path);
       linkParts.width = render.width;
@@ -1109,6 +1122,27 @@ export class EmbeddedFilesLoader {
               this.plugin.settings.markdownImageSettings.defaults,
               customData.render,
             );
+            const legacyRender = customData.render as MarkdownImageRenderSettings & {
+              theme?: unknown;
+            };
+            if ("theme" in legacyRender) {
+              const migratedRender = { ...legacyRender };
+              delete migratedRender.theme;
+              addAppendUpdateCustomData(element, {
+                [MARKDOWN_IMAGE_CUSTOM_DATA_KEY]: {
+                  ...customData,
+                  render: migratedRender as MarkdownImageRenderSettings,
+                },
+              });
+            }
+            if (
+              typeof element.customData?.doNotInvertSVGInDarkMode !== "boolean"
+            ) {
+              addAppendUpdateCustomData(
+                element,
+                { doNotInvertSVGInDarkMode: false },
+              );
+            }
             let sourceFile = excalidrawData.file;
             let markdown: string | undefined;
             if (customData.source === "external") {
@@ -1673,9 +1707,7 @@ export class EmbeddedFilesLoader {
     const fontColor =
       overrides?.render.fontColor ?? fmFontColor ?? plugin.settings.mdFontColor;
     const markdownImageThemeCSS = overrides
-      ? this.isDark
-        ? `.excalidraw-md-host.theme-dark{color-scheme:dark;--background-primary:#202020;--background-secondary:#2b2b2b;--text-normal:#dcddde;--text-muted:#a0a0a0;--link-color:#8ab4f8}.excalidraw-md-host.theme-dark a{color:var(--link-color)}.excalidraw-md-host.theme-dark th{background-color:#3a3a3a}.excalidraw-md-host.theme-dark pre[class*=language-],.excalidraw-md-host.theme-dark :not(pre)>code[class*=language-]{color:#dcddde;background-color:#2b2b2b;border-color:#555}.excalidraw-md-host.theme-dark blockquote{background-color:rgba(255,255,255,.08)}`
-        : `.excalidraw-md-host.theme-light{color-scheme:light;--background-primary:#ffffff;--background-secondary:#f5f5f5;--text-normal:#2e3338;--text-muted:#6b6b6b;--link-color:#086ddd}.excalidraw-md-host.theme-light a{color:var(--link-color)}.excalidraw-md-host.theme-light th{background-color:#dedede}.excalidraw-md-host.theme-light pre[class*=language-],.excalidraw-md-host.theme-light :not(pre)>code[class*=language-]{color:#393a34;background-color:#f5f5f5;border-color:#ddd}.excalidraw-md-host.theme-light blockquote{background-color:rgba(0,0,0,.06)}`
+      ? `.excalidraw-md-host.theme-light{color-scheme:light;--background-primary:#ffffff;--background-secondary:#f5f5f5;--text-normal:#2e3338;--text-muted:#6b6b6b;--link-color:#086ddd}.excalidraw-md-host.theme-light a{color:var(--link-color)}.excalidraw-md-host.theme-light th{background-color:#dedede}.excalidraw-md-host.theme-light pre[class*=language-],.excalidraw-md-host.theme-light :not(pre)>code[class*=language-]{color:#393a34;background-color:#f5f5f5;border-color:#ddd}.excalidraw-md-host.theme-light blockquote{background-color:rgba(0,0,0,.06)}`
       : "";
     let style: string = overrides
       ? `${DEFAULT_MD_EMBED_CSS}\n${markdownImageThemeCSS}\n${overrides.render.css}`
