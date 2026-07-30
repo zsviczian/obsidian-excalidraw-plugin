@@ -2,6 +2,7 @@ import { ExcalidrawGenericElement } from "./elements/ExcalidrawElement";
 import ExcalidrawScene from "./elements/ExcalidrawScene";
 import Group from "./elements/Group";
 import { createTreeWalker, walk } from "./walker";
+import { log } from "../../utils/debugHelper";
 
 export type ConversionResult = {
   hasErrors: boolean;
@@ -55,7 +56,7 @@ export const svgToExcalidraw = (svgString: string): ConversionResult => {
       content,
     };
   } catch (error) {
-    console.log(error);
+    log(error);
     return {
       hasErrors: true,
       errors: `${error}`,

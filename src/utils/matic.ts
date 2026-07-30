@@ -6,6 +6,7 @@ import {
   extractCodeBlocks,
   getJsonErrorMessage,
 } from "./AIUtils";
+import { log } from "./debugHelper";
 import { URLs } from "src/constants/safeUrls";
 
 const DIAGRAM_TO_HTML_DEBUG_PREFIX = "[Excalidraw diagram-to-code debug]";
@@ -50,7 +51,7 @@ const logDiagramToHTMLDebug = (label: string, lines: string[]): void => {
     return;
   }
 
-  console.log(`${DIAGRAM_TO_HTML_DEBUG_PREFIX} ${label}\n${lines.join("\n")}`);
+  log(`${DIAGRAM_TO_HTML_DEBUG_PREFIX} ${label}\n${lines.join("\n")}`);
 };
 
 const getDiagramToHTMLFinishReason = (

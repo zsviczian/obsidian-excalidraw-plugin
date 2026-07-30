@@ -7721,7 +7721,7 @@ export default class ExcalidrawView
             if (err?.name === "AbortError") {
               return { error: new Error("Request aborted") };
             }
-            console.log(err);
+            log(err);
             return { error: new Error(err?.message ?? "Request failed") };
           }
         },

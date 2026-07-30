@@ -15,6 +15,7 @@ import type { LocalGraphView } from "src/types/types";
 import { getLinkParts } from "./sceneDataUtils";
 import ExcalidrawView from "src/view/ExcalidrawView";
 import { setStyle } from "./styleUtils";
+import { log } from "./debugHelper";
 
 declare const mainDocument: Document;
 
@@ -72,7 +73,7 @@ export const patchMobileView = (
   if (!DEVICE.isPhone) {
     return;
   }
-  console.log("patching mobile view");
+  log("patching mobile view");
   const parent = getParentOfClass(view.containerEl, "mod-top");
   if (parent) {
     if (!parent.hasClass("mod-visible")) {
@@ -161,7 +162,7 @@ export function predictViewType(app: App, file: TFile): string {
           return vt;
         }
       } catch (error) {
-        console.log(error);
+        log(error);
       }
     }
   }
@@ -177,7 +178,7 @@ export function predictViewType(app: App, file: TFile): string {
           return vt;
         }
       } catch (error) {
-        console.log(error);
+        log(error);
       }
     }
   }

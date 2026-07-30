@@ -69,6 +69,7 @@ import { displayFontMessage } from "../utils/excalidrawViewUtils";
 import { getPDFRect } from "../utils/PDFUtils";
 import { URLs } from "src/constants/safeUrls";
 import { errorlog } from "src/utils/coreUtils";
+import { log } from "src/utils/debugHelper";
 import {
   MARKDOWN_IMAGE_CUSTOM_DATA_KEY,
   MARKDOWN_IMAGE_EMBEDDED_FILE_TOKEN,
@@ -1366,7 +1367,7 @@ export class ExcalidrawData {
         te.width = width;
         te.height = height;
       } catch (error) {
-        console.log(
+        log(
           "error updating text element dimensions, likely due to element being deleted meanwhile",
           "updateSceneTextElements",
           error,

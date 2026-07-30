@@ -347,7 +347,7 @@ export class ExcalidrawAutomate {
       .sort((a, b) => a.localeCompare(b))
       .forEach((purpose) => {
         // Correct: %c turns on styling for the header
-        console.log(
+        log(
           `\n%c${purpose.toUpperCase()}`,
           "font-weight: bold; font-size: 16px;",
         );
@@ -356,7 +356,7 @@ export class ExcalidrawAutomate {
           .sort((a, b) => a.localeCompare(b))
           .forEach((url) => {
             // FIXED: Added %c to apply styles, and restored the bullet point hyphen
-            console.log(`%c${url}`, "font-weight: normal; font-size: 11px;");
+            log(`%c${url}`, "font-weight: normal; font-size: 11px;");
           });
       });
   }
@@ -1685,7 +1685,7 @@ export class ExcalidrawAutomate {
     elementsOverride?: ExcalidrawElement[];
   }): Promise<SVGSVGElement> {
     if (!this.targetView || !this.targetView.file || !this.targetView._loaded) {
-      console.log("No view loaded");
+      log("No view loaded");
       return;
     }
     const view = this.targetView;

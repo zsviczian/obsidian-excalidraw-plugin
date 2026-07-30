@@ -1,8 +1,8 @@
 export const durationTreshold = 0; //0.05; //ms
 
 export const DEBUGGING = false;
-//eslint-disable-next-line obsidianmd/rule-custom-message
-export const log = (...args: unknown[]) => console.log(...args);
+const consoleLog: (...args: unknown[]) => void = console["log"].bind(console);
+export const log = (...args: unknown[]) => consoleLog(...args);
 export const debug = (
   fn: (...args: unknown[]) => unknown,
   fnName: string,
@@ -17,7 +17,7 @@ let tsOrigin: number = 0;
 export function tsInit(msg: string) {
   tsOrigin = Date.now();
   timestamp = [tsOrigin, tsOrigin, tsOrigin, tsOrigin, tsOrigin]; // Initialize timestamps for L0 to L4
-  console.log(`0ms: ${msg}`);
+  log(`0ms: ${msg}`);
 }
 
 export function ts(msg: string, level: number) {
@@ -31,7 +31,7 @@ export function ts(msg: string, level: number) {
   timestamp[level] = now;
 
   const elapsedFromOrigin = now - tsOrigin;
-  console.log(`L${level} (${elapsedFromOrigin}ms) ${diff}ms: ${msg}`);
+  log(`L${level} (${elapsedFromOrigin}ms) ${diff}ms: ${msg}`);
 }
 
 export class CustomMutationObserver {
@@ -54,7 +54,7 @@ export class CustomMutationObserver {
       if (executionTime > durationTreshold) {
         const message = `Excalidraw ${this.name} MutationObserver callback took ${executionTime}ms to execute`;
         // eslint-disable-next-line obsidianmd/rule-custom-message -- needed for production debugging
-        console.log(message, observer);
+        log(message, observer);
       }
     };
 

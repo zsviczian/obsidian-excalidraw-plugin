@@ -13,6 +13,7 @@ import { getEA } from "src/core";
 import { t } from "src/lang/helpers";
 import { NamedExcalidrawFrameElement } from "src/types/excalidrawElementTypes";
 import type { PdfJsDocumentProxy } from "src/types/pdfJsTypes";
+import { log } from "src/utils/debugHelper";
 import { setSanitizedHtml } from "src/utils/htmlUtils";
 import { hideElement, setStyle, showElement } from "src/utils/styleUtils";
 
@@ -97,7 +98,7 @@ export class InsertPDFModal extends Modal {
           height: viewport.height,
         });
       } catch (e) {
-        console.log(e);
+        log(e);
       }
     }
     this.setImageSizeMessage();

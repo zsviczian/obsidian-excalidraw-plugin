@@ -30,6 +30,11 @@ Because Obsidian runs across a variety of environments, please manually test you
 - Desktop: Mac, Windows, Linux
 - Mobile: Android, iOS (Test on both Phones and Tablets)
 
+## 🪵 Logging Requirement
+
+- **Do not use direct `console.log(...)` calls in project code.** Use the shared logging helper exported as `log` from `src/utils/debugHelper.ts`.
+- If you are working in a Node script where importing `src/utils/debugHelper.ts` is not practical, define and use a local `log` wrapper instead of calling `console.log(...)` directly.
+
 ## 🏗️ Architecture & Sub-components
 
 This project consists of multiple sub-components and non-standard integrations to support Obsidian-specific features.

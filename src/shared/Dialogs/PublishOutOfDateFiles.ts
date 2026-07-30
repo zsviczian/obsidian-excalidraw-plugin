@@ -1,5 +1,6 @@
 import { Modal, Setting, TFile, TAbstractFile } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
+import { log } from "src/utils/debugHelper";
 import { getIMGFilename } from "src/utils/fileUtils";
 import { setElementDisplay } from "src/utils/htmlUtils";
 import { addYouTubeThumbnail } from "src/utils/utils";
@@ -27,7 +28,7 @@ const haveLinkedFilesChanged = (
     if (!file || !(file instanceof TFile)) {
       continue;
     }
-    console.log(path, {
+    log(path, {
       mtimeLinked: file.stat.mtime,
       mtimeSource: mtime,
       path: file.path,

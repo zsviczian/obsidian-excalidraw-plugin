@@ -136,7 +136,7 @@ export async function checkExcalidrawVersion() {
     // Check for script updates
     await checkScriptUpdates();
   } catch (e) {
-    console.log({ where: "Utils/checkExcalidrawVersion", error: e });
+    log({ where: "Utils/checkExcalidrawVersion", error: e });
   }
   versionUpdateCheckTimer = window.setTimeout(() => {
     versionUpdateChecked = false;
@@ -194,7 +194,7 @@ async function checkScriptUpdates() {
       log(message);
     }
   } catch (e) {
-    console.log({ where: "Utils/checkScriptUpdates", error: e });
+    log({ where: "Utils/checkScriptUpdates", error: e });
   }
 }
 
@@ -1413,7 +1413,7 @@ export class PromisePool<T> {
         },
       );
     } catch (error) {
-      console.log("Error in PromisePool.all:", error);
+      log("Error in PromisePool.all:", error);
       return Promise.resolve(Object.values(this.entries));
     }
   }

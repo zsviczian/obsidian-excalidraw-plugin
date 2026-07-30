@@ -2,6 +2,7 @@ import { App, Notice, TFile } from "obsidian";
 import ExcalidrawPlugin from "src/core/main";
 import { PDFPageViewProps, Size } from "src/types/embeddedFileLoaderTypes";
 import { convertSVGStringToElement, errorlog } from "../utils/utils";
+import { log } from "../utils/debugHelper";
 import { FILENAMEPARTS, PreviewImageType } from "../types/utilTypes";
 import { hasExcalidrawEmbeddedImagesTreeChanged } from "../utils/fileUtils";
 import { EXCALIDRAW_PLUGIN } from "src/constants/constants";
@@ -220,7 +221,7 @@ class ImageCache {
         );
         this.initializationNotice = false;
       }
-      console.log("Initialized Excalidraw Image Cache");
+      log("Initialized Excalidraw Image Cache");
     }
   }
 

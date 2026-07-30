@@ -30,6 +30,7 @@ import {
   getGeminiImageRequestConfig,
   getGeminiSupportedSizes,
 } from "src/utils/geminiImageModelUtils";
+import { log } from "./debugHelper";
 import { strictArrayBuffer } from "./obsidianUtils";
 
 type NormalizedBinaryInput = {
@@ -267,7 +268,7 @@ const logAIDebug = (
     return;
   }
 
-  console.log(`${AI_DEBUG_PREFIX} ${label}\n${lines.join("\n")}`);
+  log(`${AI_DEBUG_PREFIX} ${label}\n${lines.join("\n")}`);
 };
 
 export const getJsonErrorMessage = (json: unknown): string | undefined => {
@@ -2257,7 +2258,7 @@ const requestAI = async (
     if (errorName === "AbortError") {
       return createSyntheticResponse("Request aborted", 499);
     }
-    console.log(error);
+    log(error);
     const errorMessage =
       typeof error === "object" && error !== null && "message" in error
         ? String((error as { message?: unknown }).message ?? "Request failed")
