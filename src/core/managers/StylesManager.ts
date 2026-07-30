@@ -102,9 +102,8 @@ export class StylesManager {
     }
 
     const body = mainDocument.body;
-    const iframe: HTMLIFrameElement = mainDocument.createElement("iframe");
+    const iframe: HTMLIFrameElement = mainDocument.body.createEl("iframe");
     iframe.hidden = true;
-    body.appendChild(iframe);
 
     const iframeLoadedPromise = new Promise<void>((resolve) => {
       iframe.addEventListener("load", () => resolve());
@@ -115,11 +114,11 @@ export class StylesManager {
 
     iframeDoc.open();
     iframeDoc.close(); // Closes the stream to clear out the default page skeleton
-    const newHead = iframeDoc.createElement("head");
+    const targetHead = iframeDoc.head;
+    targetHead.empty();
     Array.from(mainDocument.head.children).forEach((child) => {
-      newHead.appendChild(child.cloneNode(true));
+      targetHead.appendChild(child.cloneNode(true));
     });
-    iframeDoc.documentElement.replaceChild(newHead, iframeDoc.head);
 
     await iframeLoadedPromise;
 
@@ -168,21 +167,19 @@ export class StylesManager {
         `.${EXCALIDRAW_CONTAINER_CLASS} .theme-dark {\n${this.styleDark}\n}`,
       );
     } else {
-      const lightStyleTag = doc.createElement("style");
+      const lightStyleTag = doc.head.createEl("style");
       lightStyleTag.setAttribute("id", "excalidraw-embedded-light");
       setStyleText(
         lightStyleTag,
         `.${EXCALIDRAW_CONTAINER_CLASS} .theme-light {\n${this.styleLight}\n}`,
       );
-      doc.head.appendChild(lightStyleTag);
 
-      const darkStyleTag = doc.createElement("style");
+      const darkStyleTag = doc.head.createEl("style");
       darkStyleTag.setAttribute("id", "excalidraw-embedded-dark");
       setStyleText(
         darkStyleTag,
         `.${EXCALIDRAW_CONTAINER_CLASS} .theme-dark {\n${this.styleDark}\n}`,
       );
-      doc.head.appendChild(darkStyleTag);
 
       this.stylesMap.set(doc, { light: lightStyleTag, dark: darkStyleTag });
     }

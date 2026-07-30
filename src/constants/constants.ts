@@ -216,10 +216,9 @@ export function setRootElementSize(size?: number) {
     ROOTELEMENTSIZE = size;
     return;
   }
-  const tempElement = mainDocument.createElement("div");
+  const tempElement = mainDocument.body.createDiv();
   setStyle(tempElement, { fontSize: "1rem" });
   tempElement.hidden = true;
-  mainDocument.body.appendChild(tempElement);
   const computedStyle = getComputedStyle(tempElement);
   const pixelSize = parseFloat(computedStyle.fontSize);
   mainDocument.body.removeChild(tempElement);

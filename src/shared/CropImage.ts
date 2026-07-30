@@ -204,6 +204,7 @@ export class CropImage {
       //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2026
       const svgData = svg.outerHTML;
       //const svgData = new XMLSerializer().serializeToString(svg);
+      // eslint-disable-next-line obsidianmd/prefer-create-el
       const canvas = mainDocument.createElement("canvas");
       const context = canvas.getContext("2d");
 

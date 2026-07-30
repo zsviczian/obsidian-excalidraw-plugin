@@ -1140,11 +1140,10 @@ export default class ExcalidrawPlugin extends Plugin {
     styleId: string = FONTS_STYLE_ID,
   ) {
     // replace the old local font <style> element with the one we just created
-    const newStylesheet = ownerDocument.createElement("style");
+    const newStylesheet = ownerDocument.head.createEl("style");
     newStylesheet.id = styleId;
     newStylesheet.textContent = declarations.join("");
     const oldStylesheet = ownerDocument.getElementById(styleId);
-    ownerDocument.head.appendChild(newStylesheet);
     if (oldStylesheet) {
       ownerDocument.head.removeChild(oldStylesheet);
     }
@@ -1189,10 +1188,9 @@ export default class ExcalidrawPlugin extends Plugin {
         return;
       }
 
-      const stylesheet = ownerDocument.createElement("style");
+      const stylesheet = ownerDocument.head.createEl("style");
       stylesheet.id = PHONE_FOOTER_SAFE_AREA_STYLE_ID;
       stylesheet.textContent = PHONE_FOOTER_SAFE_AREA_CSS;
-      ownerDocument.head.appendChild(stylesheet);
     });
   }
 
