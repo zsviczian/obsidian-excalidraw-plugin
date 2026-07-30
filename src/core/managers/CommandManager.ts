@@ -928,18 +928,13 @@ export class CommandManager {
 
     this.forceSaveCommand = this.addCommand({
       id: "save",
-      /*
-       * This hotkey is only added and only active when ExcalidrawView is active.
-       * The plugin must intercept the standard save shortcut to ensure custom data 
-       * serialization happens before the application writes to disk.
-       * See also Poposcope.
-       */
-      //eslint-disable-next-line obsidianmd/commands/no-default-hotkeys
-      hotkeys: [{ modifiers: ["Ctrl"], key: "s" }], //See also Poposcope
       name: t("FORCE_SAVE"),
       checkCallback: (checking: boolean) =>
         this.plugin.forceSaveActiveView(checking),
     });
+
+    const id = this.forceSaveCommand.id;
+    this.app.hotkeyManager.addDefaultHotkeys(id, [{ modifiers: ["Ctrl"], key: "s" }]); //See also Poposcope
 
     //removing raw mode. Not required. I never use it. Raw mode can still be enabled
     //via document properties. Only showing command palette action if raw mode is enabled

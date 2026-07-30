@@ -200,6 +200,9 @@ declare module "obsidian" {
       enablePlugin(id: string): Promise<void>;
       disablePlugin(id: string): Promise<void>;
     };
+    hotkeyManager: {
+      addDefaultHotkeys(commandId: string, hotkeys: Hotkey[]): void;
+    };
   }
   interface FileManager {
     promptForFileRename(file: TFile): Promise<void>;

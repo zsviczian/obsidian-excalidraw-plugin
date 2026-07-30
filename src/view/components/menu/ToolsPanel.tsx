@@ -587,10 +587,6 @@ export class ToolsPanel extends React.Component<PanelProps, PanelState> {
           <div
             className="Island App-menu__left scrollbar"
             style={{
-              maxHeight: "350px",
-              width: "initial",
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- CSS custom property key requires a permissive index signature in this inline style object.
-              ["--padding" as any]: "0.125rem",
               display: this.state.minimized ? "none" : "block",
             }}
           >

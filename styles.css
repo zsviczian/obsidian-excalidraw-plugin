@@ -1056,6 +1056,12 @@ End Obsidian Sheets Plus support
   scrollbar-width: none;
 }
 
+.excalidraw.excalidraw-toolsPanel-wrapper .Island.App-menu__left.scrollbar {
+  max-height: 350px;
+  width: initial;
+  --padding: 0.125rem;
+}
+
 /* Ensure tool buttons remain perfectly square and sized just like native Excalidraw.
    This overrides the old '18%' rule which was stretching the buttons. */
 .excalidraw .Island.excalidraw-toolsPanel-island .buttonList>.ToolIcon_type_button,
