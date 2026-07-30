@@ -170,7 +170,6 @@ export async function copyLinkToSelectedElementToClipboard(
       (container: HTMLElement) => {
         const wrapper =
           container.createDiv?.("excalidraw-prompt-checkboxes") ?? container;
-        const ownerDoc = wrapper.ownerDocument ?? mainDocument;
 
         const anchorRow = wrapper.createEl("label");
         anchorRow.addClass("excalidraw-copylinkprompt-label");

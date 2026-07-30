@@ -4,6 +4,7 @@ import { getAllWindowDocuments } from "../../utils/obsidianUtils";
 import { setStyleText } from "src/utils/htmlUtils";
 
 declare const mainDocument: Document;
+declare const deliberateCreateElement: (doc: Document, tagName: string) => HTMLStyleElement;
 export let REM_VALUE = 16;
 
 const STYLE_VARIABLES = [
@@ -167,19 +168,21 @@ export class StylesManager {
         `.${EXCALIDRAW_CONTAINER_CLASS} .theme-dark {\n${this.styleDark}\n}`,
       );
     } else {
-      const lightStyleTag = doc.head.createEl("style");
+      const lightStyleTag = deliberateCreateElement(doc, "style");
       lightStyleTag.setAttribute("id", "excalidraw-embedded-light");
       setStyleText(
         lightStyleTag,
         `.${EXCALIDRAW_CONTAINER_CLASS} .theme-light {\n${this.styleLight}\n}`,
       );
+      doc.head.appendChild(lightStyleTag);
 
-      const darkStyleTag = doc.head.createEl("style");
+      const darkStyleTag = deliberateCreateElement(doc, "style");
       darkStyleTag.setAttribute("id", "excalidraw-embedded-dark");
       setStyleText(
         darkStyleTag,
         `.${EXCALIDRAW_CONTAINER_CLASS} .theme-dark {\n${this.styleDark}\n}`,
       );
+      doc.head.appendChild(darkStyleTag);
 
       this.stylesMap.set(doc, { light: lightStyleTag, dark: darkStyleTag });
     }
