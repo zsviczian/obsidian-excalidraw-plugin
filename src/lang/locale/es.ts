@@ -148,6 +148,7 @@ export default {
   MARKDOWN_IMAGE_USE_SOURCE: "Usar fuente",
   MARKDOWN_IMAGE_EXTRACT_LOCAL: "Extraer Markdown local a una nota",
   MARKDOWN_IMAGE_EXTRACT: "Extraer a nota",
+  MARKDOWN_IMAGE_DUPLICATE_ERROR: "No se pudo duplicar la imagen Markdown",
   MARKDOWN_IMAGE_SELECT_SOURCE: "Selecciona una nota, encabezado o bloque Markdown",
   MARKDOWN_IMAGE_CHANGE_SOURCE_ERROR: "No se pudo cambiar la fuente de la imagen Markdown",
   MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "No se pudo crear una copia Markdown local",

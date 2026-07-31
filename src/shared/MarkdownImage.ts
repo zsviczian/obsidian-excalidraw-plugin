@@ -120,7 +120,8 @@ export async function getMarkdownImageSource(
   view: ExcalidrawView,
   element: ExcalidrawImageElement,
 ): Promise<MarkdownImageSourceData | null> {
-  const preferredSource = getMarkdownImageCustomData(element)?.source;
+  const customData = getMarkdownImageCustomData(element);
+  const preferredSource = customData?.source;
   const local =
     preferredSource === "external"
       ? undefined
@@ -132,7 +133,7 @@ export async function getMarkdownImageSource(
   if (
     !embeddedFile?.file ||
     embeddedFile.file.extension.toLowerCase() !== "md" ||
-    view.plugin.isExcalidrawFile(embeddedFile.file)
+    (view.plugin.isExcalidrawFile(embeddedFile.file) && !customData)
   ) {
     return null;
   }
@@ -172,6 +173,21 @@ async function renderMarkdown(
   return loader.renderMarkdownToSVG(sourceFile, markdown, render);
 }
 
+const setRenderedMarkdownImageFile = (
+  ea: ReturnType<typeof getEA>,
+  fileId: FileId,
+  rendered: Awaited<ReturnType<typeof renderMarkdown>>,
+): void => {
+  ea.imagesDict[fileId] = {
+    id: fileId,
+    dataURL: rendered.dataURL,
+    mimeType: "image/svg+xml",
+    created: Date.now(),
+    size: rendered.size,
+    hasSVGwithBitmap: rendered.hasSVGwithBitmap,
+  };
+};
+
 const getEmbeddableLinkTarget = (link: string): string | null => {
   const result = REGEX_LINK.getRes(link).next();
   if (result.value) {
@@ -204,8 +220,7 @@ export async function getEmbeddableMarkdownImageSource(
     (isLocal &&
       (!embeddedFile.linkParts.ref ||
         embeddedFile.linkParts.isBlockRef ||
-        isManagedSection)) ||
-    (!isLocal && view.plugin.isExcalidrawFile(embeddedFile.file))
+        isManagedSection))
   ) {
     return null;
   }
@@ -257,14 +272,7 @@ export async function convertEmbeddableElementToMarkdownImage(
     sourceData.source,
     render,
   );
-  ea.imagesDict[fileId] = {
-    id: fileId,
-    dataURL: rendered.dataURL,
-    mimeType: "image/svg+xml",
-    created: Date.now(),
-    size: rendered.size,
-    hasSVGwithBitmap: rendered.hasSVGwithBitmap,
-  };
+  setRenderedMarkdownImageFile(ea, fileId, rendered);
   if (sourceData.source === "local") {
     view.excalidrawData.setMarkdownImage(fileId, {
       markdown: sourceData.markdown,
@@ -436,6 +444,70 @@ export async function insertMarkdownImage(
   return id;
 }
 
+/** Duplicates a local Markdown image with independent element and file IDs. */
+export async function duplicateLocalMarkdownImageElement(
+  view: ExcalidrawView,
+  element: ExcalidrawImageElement,
+): Promise<string | null> {
+  const source = await getMarkdownImageSource(view, element);
+  if (!source || source.source !== "local") {
+    return null;
+  }
+  const render = getMarkdownImageRenderSettings(view.plugin, element);
+  const rendered = await renderMarkdown(view, source.markdown, render);
+  if (!rendered.dataURL || rendered.size.height <= 0) {
+    return null;
+  }
+
+  const ea = getEA(view);
+  const duplicate = ea.cloneElements([element])[0] as
+    | Mutable<ExcalidrawImageElement>
+    | undefined;
+  if (!duplicate) {
+    ea.destroy();
+    return null;
+  }
+  const fileId = fileid() as FileId;
+  duplicate.fileId = fileId;
+  duplicate.x = element.x + element.width + 20;
+  duplicate.y = element.y;
+  duplicate.width = render.width;
+  duplicate.height = rendered.size.height;
+  duplicate.crop = null;
+  duplicate.index = null;
+  duplicate.version = 1;
+  duplicate.versionNonce = Math.floor(Math.random() * 1000000000);
+  duplicate.updated = Date.now();
+  duplicate.groupIds = [];
+  duplicate.boundElements = null;
+  setMarkdownImageCustomData(duplicate, "local", render);
+  ea.elementsDict[duplicate.id] = duplicate;
+  setRenderedMarkdownImageFile(ea, fileId, rendered);
+  view.excalidrawData.setMarkdownImage(fileId, {
+    markdown: source.markdown,
+  });
+
+  let committed = false;
+  try {
+    committed = await commitElements(ea, true);
+  } finally {
+    if (!committed) {
+      view.excalidrawData.deleteMarkdownImage(fileId, true);
+    }
+  }
+  if (!committed) {
+    return null;
+  }
+  view.setDirty();
+  const inserted = view
+    .getViewElements()
+    .find((candidate) => candidate.id === duplicate.id);
+  if (inserted) {
+    view.excalidrawAPI.selectElements([inserted]);
+  }
+  return duplicate.id;
+}
+
 /** Renders and applies current source and appearance settings to an image. */
 export async function updateMarkdownImage(
   view: ExcalidrawView,
@@ -463,14 +535,7 @@ export async function updateMarkdownImage(
   editable.height = rendered.size.height;
   editable.crop = null;
   setMarkdownImageCustomData(editable, source, render);
-  ea.imagesDict[element.fileId] = {
-    id: element.fileId,
-    dataURL: rendered.dataURL,
-    mimeType: "image/svg+xml",
-    created: Date.now(),
-    size: rendered.size,
-    hasSVGwithBitmap: rendered.hasSVGwithBitmap,
-  };
+  setRenderedMarkdownImageFile(ea, element.fileId, rendered);
   if (source === "local") {
     view.excalidrawData.setMarkdownImage(element.fileId, { markdown });
   }

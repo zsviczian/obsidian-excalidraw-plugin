@@ -1,4 +1,5 @@
 import {
+  addIcon,
   ButtonComponent,
   MarkdownView,
   Notice,
@@ -21,6 +22,7 @@ import {
   getMarkdownImageRenderSettings,
   getMarkdownImageSource,
   insertMarkdownImage,
+  duplicateLocalMarkdownImageElement,
   isMarkdownImageElement,
   updateMarkdownImage,
   containsReservedMarkdownImageMarker,
@@ -61,9 +63,14 @@ import {
   TRANSCLUSION_CSS_BOILERPLATE,
   TRANSCLUSION_CSS_BOILERPLATE_MARKER,
 } from "./CSSCodeEditor";
+import {
+  BLOCK_REFERENCE_ICON_ID,
+  BLOCK_REFERENCE_ICON_REGISTRY_SVG,
+} from "src/constants/blockReferenceIcon";
 
 const MARKDOWN_SVG_CONSOLE_COMMAND =
   "ExcalidrawAutomate.mostRecentMarkdownSVG";
+let blockReferenceIconRegistered = false;
 
 type MarkdownImageAppearanceStyle = Pick<
   MarkdownImageRenderSettings,
@@ -81,26 +88,14 @@ type AppearanceControlsOptions = {
 };
 
 const setBlockReferenceIcon = (button: ButtonComponent): void => {
-  const doc = button.buttonEl.ownerDocument;
-  const svg = doc.createSvg("svg", {
-    cls: "svg-icon",
-    attr: {
-      viewBox: "0 0 24 24",
-      fill: "none",
-      "aria-hidden": "true",
-    },
-  });
-  const label = doc.createSvg("text", {
-    attr: {
-      x: "1",
-      y: "18",
-      "font-size": "22px",
-      fill: "currentColor",
-    },
-  });
-  label.textContent = "#^";
-  svg.appendChild(label);
-  button.buttonEl.replaceChildren(svg);
+  if (!blockReferenceIconRegistered) {
+    addIcon(
+      BLOCK_REFERENCE_ICON_ID,
+      BLOCK_REFERENCE_ICON_REGISTRY_SVG,
+    );
+    blockReferenceIconRegistered = true;
+  }
+  button.setIcon(BLOCK_REFERENCE_ICON_ID);
 };
 
 const getNativeColorValue = (color: string): string => {
@@ -1009,15 +1004,24 @@ class MarkdownImageEditorController {
         );
       return;
     }
-    new Setting(host).setName(t("MARKDOWN_IMAGE_EXTRACT_LOCAL")).addButton(
-      (button) =>
+    new Setting(host)
+      .setName(t("MARKDOWN_IMAGE_EXTRACT_LOCAL"))
+      .addButton((button) =>
         button
           .setIcon("file-output")
           .setTooltip(t("MARKDOWN_IMAGE_EXTRACT"))
           .onClick(() => {
             void this.extractToNote();
           }),
-    );
+      )
+      .addButton((button) =>
+        button
+          .setIcon("copy-plus")
+          .setTooltip(t("DUPLICATE_IMAGE"))
+          .onClick(() => {
+            void this.duplicateLocalMarkdownImage();
+          }),
+      );
   }
 
   private getExternalSourceSubpath(source: MarkdownImageSourceData): string {
@@ -1132,8 +1136,7 @@ class MarkdownImageEditorController {
     );
     if (
       !embeddedFile.file ||
-      embeddedFile.file.extension.toLowerCase() !== "md" ||
-      this.view.plugin.isExcalidrawFile(embeddedFile.file)
+      embeddedFile.file.extension.toLowerCase() !== "md"
     ) {
       new Notice(t("MARKDOWN_IMAGE_SELECT_SOURCE"));
       return;
@@ -1276,6 +1279,19 @@ class MarkdownImageEditorController {
     }
   }
 
+  private async duplicateLocalMarkdownImage(): Promise<void> {
+    if (!this.ensureOwnerValid() || !this.element) {
+      return;
+    }
+    await this.renderCurrentEditor();
+    if (!this.ensureOwnerValid() || !this.element) {
+      return;
+    }
+    if (!(await duplicateLocalMarkdownImageElement(this.view, this.element))) {
+      new Notice(t("MARKDOWN_IMAGE_DUPLICATE_ERROR"));
+    }
+  }
+
   private refreshElementReference(): void {
     if (!this.element) {
       return;
@@ -1381,13 +1397,31 @@ class MarkdownImageEditorController {
     host.appendChild(rootSplit.containerEl);
 
     if (source.source === "external" && source.embeddedFile?.file) {
+      const sourceFile = source.embeddedFile.file;
       const ref = source.embeddedFile.linkParts.ref
         ? `#${source.embeddedFile.linkParts.isBlockRef ? "^" : ""}${source.embeddedFile.linkParts.ref}`
         : "";
-      await leaf.openFile(source.embeddedFile.file, {
-        active: false,
-        ...(ref ? { eState: { subpath: ref } } : {}),
-      });
+      if (this.view.plugin.isExcalidrawFile(sourceFile)) {
+        this.view.plugin.excalidrawFileModes[leaf.id || sourceFile.path] =
+          "markdown";
+        await leaf.setViewState(
+          {
+            type: "markdown",
+            state: { file: sourceFile.path, mode: "source" },
+            active: false,
+          },
+          { history: false },
+        );
+        await leaf.loadIfDeferred();
+        if (ref) {
+          leaf.setEphemeralState({ subpath: ref });
+        }
+      } else {
+        await leaf.openFile(sourceFile, {
+          active: false,
+          ...(ref ? { eState: { subpath: ref } } : {}),
+        });
+      }
       if (
         this.closed ||
         !this.ensureOwnerValid() ||

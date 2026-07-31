@@ -127,6 +127,7 @@ export default {
   MARKDOWN_IMAGE_USE_SOURCE: "使用来源",
   MARKDOWN_IMAGE_EXTRACT_LOCAL: "将本地 Markdown 提取到笔记",
   MARKDOWN_IMAGE_EXTRACT: "提取到笔记",
+  MARKDOWN_IMAGE_DUPLICATE_ERROR: "无法复制 Markdown 图像",
   MARKDOWN_IMAGE_SELECT_SOURCE: "请选择 Markdown 笔记、标题或块",
   MARKDOWN_IMAGE_CHANGE_SOURCE_ERROR: "无法更改 Markdown 图像来源",
   MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "无法创建本地 Markdown 副本",

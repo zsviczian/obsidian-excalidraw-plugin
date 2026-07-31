@@ -447,6 +447,7 @@ export class EmbeddableMenu {
         const canConvertToMarkdownImage =
           isMD &&
           (!isExcalidrawFile ||
+            file.path !== view.file.path ||
             (file.path === view.file.path &&
               Boolean(subpath) &&
               !subpath.startsWith("#^") &&

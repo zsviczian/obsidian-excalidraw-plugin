@@ -1150,8 +1150,7 @@ export class EmbeddedFilesLoader {
               const embeddedFile = excalidrawData.getFile(id);
               if (
                 !embeddedFile?.file ||
-                embeddedFile.file.extension.toLowerCase() !== "md" ||
-                this.plugin.isExcalidrawFile(embeddedFile.file)
+                embeddedFile.file.extension.toLowerCase() !== "md"
               ) {
                 return;
               }

@@ -140,6 +140,7 @@ export default {
   MARKDOWN_IMAGE_USE_SOURCE: "Использовать источник",
   MARKDOWN_IMAGE_EXTRACT_LOCAL: "Извлечь локальный Markdown в заметку",
   MARKDOWN_IMAGE_EXTRACT: "Извлечь в заметку",
+  MARKDOWN_IMAGE_DUPLICATE_ERROR: "Не удалось дублировать Markdown-изображение",
   MARKDOWN_IMAGE_SELECT_SOURCE: "Выберите Markdown-заметку, заголовок или блок",
   MARKDOWN_IMAGE_CHANGE_SOURCE_ERROR: "Не удалось изменить источник Markdown-изображения",
   MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "Не удалось создать локальную копию Markdown",

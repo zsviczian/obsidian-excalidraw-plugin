@@ -2,6 +2,7 @@ import { getIcon, sanitizeHTMLToDom } from "obsidian";
 import { PenStyle } from "src/types/penTypes";
 import React from "react";
 import { isInstanceOfSVGSVGElement } from "src/utils/typechecks";
+import { BLOCK_REFERENCE_ICON_PATH } from "./blockReferenceIcon";
 declare const mainDocument: Document;
 const BLOCKED_SVG_TAGS = new Set([
   "script",
@@ -203,13 +204,11 @@ export const ICONS = {
       viewBox="0 0 24 24"
       fill="none"
       stroke="var(--icon-fill-color)"
-      strokeWidth="1"
+      strokeWidth="1.75"
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <text x="1" y="18" fontSize="22px">
-        #^
-      </text>
+      <path d={BLOCK_REFERENCE_ICON_PATH} />
     </svg>
   ),
   Edit: getIconAsJSX("pen-line"),
