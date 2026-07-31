@@ -1005,10 +1005,12 @@ class MarkdownImageEditorController {
       return;
     }
     new Setting(host)
+      .setClass("excalidraw-markdown-image-editor__setting--wide")
       .setName(t("MARKDOWN_IMAGE_EXTRACT_LOCAL"))
       .addButton((button) =>
         button
           .setIcon("file-output")
+          .setClass("excalidraw-markdown-image-editor__compact-button")
           .setTooltip(t("MARKDOWN_IMAGE_EXTRACT"))
           .onClick(() => {
             void this.extractToNote();
@@ -1017,6 +1019,7 @@ class MarkdownImageEditorController {
       .addButton((button) =>
         button
           .setIcon("copy-plus")
+          .setClass("excalidraw-markdown-image-editor__compact-button")
           .setTooltip(t("DUPLICATE_IMAGE"))
           .onClick(() => {
             void this.duplicateLocalMarkdownImage();
