@@ -858,7 +858,7 @@ class MarkdownImageEditorController {
 
   private isPreferredOwnerCandidate(view: ExcalidrawView): boolean {
     return (
-      this.app.workspace.getLeaf(false) === view.leaf ||
+      this.app.workspace.getMostRecentLeaf() === view.leaf ||
       this.plugin.lastActiveExcalidrawLeafID === view.leaf.id
     );
   }
@@ -1388,7 +1388,7 @@ class MarkdownImageEditorController {
       host.setText(t("MARKDOWN_IMAGE_SOURCE_UNAVAILABLE"));
       return;
     }
-    const { leaf, rootSplit } = createLeaf(this.view);
+    const { leaf, rootSplit } = createLeaf(this.view, host.ownerDocument);
     this.editorLeaf = leaf;
     this.editorRoot = rootSplit;
     this.startMobileViewPatch(leaf);

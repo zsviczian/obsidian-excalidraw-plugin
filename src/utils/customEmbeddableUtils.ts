@@ -19,14 +19,21 @@ import { log } from "./debugHelper";
 
 declare const mainDocument: Document;
 
+/**
+ * Creates a detached workspace leaf for an embedded view.
+ *
+ * @param view - Excalidraw view that owns the embedded content.
+ * @param doc - Document hosting the embedded UI, which may be a popout window.
+ */
 export const createLeaf = (
   view: ExcalidrawView,
+  doc: Document = view.ownerDocument,
 ): { leaf: WorkspaceLeaf; rootSplit: WorkspaceSplit } => {
   // Capture stable host objects. Embedded leaves can outlive the originating
-  // ExcalidrawView briefly while Obsidian changes that leaf's view type.
+  // ExcalidrawView briefly while Obsidian changes that leaf's view type. The
+  // optional document supports hosts that migrate independently to a popout.
   const app = view.app;
   const plugin = view.plugin;
-  const doc = view.ownerDocument;
   const rootSplit: WorkspaceSplit =
     new (WorkspaceSplit as ConstructableWorkspaceSplit)(
       app.workspace,
