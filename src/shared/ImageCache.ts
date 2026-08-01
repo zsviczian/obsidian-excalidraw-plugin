@@ -47,7 +47,9 @@ const getKey = (key: ImageKey): string =>
       : key.previewImageType === PreviewImageType.PNG
         ? 0
         : 2
-  }#${key.scale}${key.isTransparent ? "#t" : ""}`; //key.isSVG ? 1 : 0
+  }#${key.scale}${key.isTransparent ? "#t" : ""}${
+    key.padding === undefined ? "" : `#p${key.padding}`
+  }`; //key.isSVG ? 1 : 0
 
 class ImageCache {
   private dbName: string;

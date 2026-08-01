@@ -391,7 +391,18 @@ export async function getTemplate(
         (el: ExcalidrawElement) => el.id === filenameParts.blockref,
       );
       if (el) {
-        groupElements = plugin.ea.getElementsInArea(scene.elements, el);
+        const padding = filenameParts.padding;
+        const areaElement: ExcalidrawElement =
+          padding === undefined
+            ? el
+            : {
+                ...el,
+                x: el.x - padding,
+                y: el.y - padding,
+                width: el.width + 2 * padding,
+                height: el.height + 2 * padding,
+              };
+        groupElements = plugin.ea.getElementsInArea(scene.elements, areaElement);
       }
     }
 
@@ -512,7 +523,8 @@ export async function createPNG(
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
   }
-  padding = padding ?? plugin.settings.exportPaddingSVG;
+  const filenameParts = getEmbeddedFilenameParts(templatePath);
+  padding = filenameParts.padding ?? padding ?? plugin.settings.exportPaddingSVG;
   const template = templatePath
     ? await getTemplate(plugin, templatePath, true, loader, depth)
     : null;
@@ -549,10 +561,14 @@ export async function createPNG(
         exportSettings?.withBackground ?? plugin.settings.exportWithBackground,
       withTheme: exportSettings?.withTheme ?? plugin.settings.exportWithTheme,
       isMask: exportSettings?.isMask ?? false,
+      ...(exportSettings?.frameRendering
+        ? { frameRendering: exportSettings.frameRendering }
+        : {}),
     },
     padding,
     scale,
     overrideFiles,
+    filenameParts.padding !== undefined,
   );
 }
 
@@ -648,6 +664,8 @@ export async function createSVG(
   if (!loader) {
     loader = new EmbeddedFilesLoader(plugin);
   }
+  const filenameParts = getEmbeddedFilenameParts(templatePath);
+  padding = filenameParts.padding ?? padding ?? plugin.settings.exportPaddingSVG;
   if (typeof exportSettings.skipInliningFonts === "undefined") {
     exportSettings.skipInliningFonts = !embedFont;
   }
@@ -663,7 +681,6 @@ export async function createSVG(
     : null;
   let elements = template?.elements ?? [];
   elements = elements.concat(automateElements);
-  padding = padding ?? plugin.settings.exportPaddingSVG;
   const files = imagesDict ?? {};
   if (template?.files) {
     Object.values(template.files).forEach((f: BinaryFileData) => {
@@ -676,7 +693,6 @@ export async function createSVG(
   const withTheme =
     exportSettings?.withTheme ?? plugin.settings.exportWithTheme;
 
-  const filenameParts = getEmbeddedFilenameParts(templatePath);
   const svg = await getSVG(
     {
       //createAndOpenDrawing
@@ -715,6 +731,7 @@ export async function createSVG(
     padding,
     null,
     overrideFiles,
+    filenameParts.padding !== undefined,
   );
 
   if (withTheme && theme === "dark") {

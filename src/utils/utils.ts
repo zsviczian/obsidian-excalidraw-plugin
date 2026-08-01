@@ -33,7 +33,6 @@ import {
   getMimeType,
   getURLImageExtension,
 } from "./fileUtils";
-import { FILENAMEPARTS } from "../types/utilTypes";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import {
   getExcalidrawViews,
@@ -61,6 +60,10 @@ import { URLs } from "src/constants/safeUrls";
 import { isInstanceOfSVGSVGElement } from "./typechecks";
 export { errorlog, getDataURL } from "./coreUtils";
 export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
+export {
+  getEmbeddedFilenameParts,
+  isImagePartRef,
+} from "./embeddedFilenameParts";
 
 declare const PLUGIN_VERSION: string;
 
@@ -343,12 +346,19 @@ export async function getBinaryFileFromDataURL(
   return bytes.buffer;
 }
 
+/**
+ * Exports an Excalidraw scene to SVG.
+ *
+ * @param allowFramePadding - Whether clipped frame rendering should honor `padding`.
+ * Defaults to `false` to preserve the legacy zero-padding behavior for clipped frames.
+ */
 export async function getSVG<TScene extends SceneForExport>(
   scene: TScene,
   exportSettings: ExportSettings,
   padding: number,
   srcFile: TFile | null, //if set, will replace markdown links with obsidian links
   overrideFiles?: Record<ExcalidrawElement["id"], BinaryFileData>,
+  allowFramePadding: boolean = false,
 ): Promise<SVGSVGElement> {
   let elements: ExcalidrawElement[] = [...scene.elements];
   if (elements.some((el) => el.type === "embeddable")) {
@@ -396,7 +406,10 @@ export async function getSVG<TScene extends SceneForExport>(
             : {}),
         } as AppState,
         files,
-        exportPadding: exportSettings.frameRendering?.enabled ? 0 : padding,
+        exportPadding:
+          exportSettings.frameRendering?.enabled && !allowFramePadding
+            ? 0
+            : padding,
         exportingFrame: null,
         renderEmbeddables: true,
         skipInliningFonts: exportSettings.skipInliningFonts,
@@ -430,12 +443,19 @@ export function filterFiles(
   return filteredFiles;
 }
 
+/**
+ * Exports an Excalidraw scene to PNG.
+ *
+ * @param allowFramePadding - Whether clipped frame rendering should honor `padding`.
+ * Defaults to `false` to preserve the legacy zero-padding behavior for clipped frames.
+ */
 export async function getPNG<TScene extends SceneForExport>(
   scene: TScene,
   exportSettings: ExportSettings,
   padding: number,
   scale: number = 1,
   overrideFiles?: BinaryFiles,
+  allowFramePadding: boolean = false,
 ): Promise<Blob> {
   try {
     const baseFiles = scene.files ?? {};
@@ -475,7 +495,10 @@ export async function getPNG<TScene extends SceneForExport>(
           : {}),
       } as AppState,
       files: filterFiles(files),
-      exportPadding: exportSettings.frameRendering?.enabled ? 0 : padding,
+      exportPadding:
+        exportSettings.frameRendering?.enabled && !allowFramePadding
+          ? 0
+          : padding,
       mimeType: "image/png",
       getDimensions: (width: number, height: number) => ({
         width: width * scale,
@@ -984,53 +1007,6 @@ export function isVersionNewerThanOther(
       (parseInt(v[1]) >= parseInt(o[1]) &&
         parseInt(v[2]) >= parseInt(o[2]) &&
         parseInt(v[3]) > parseInt(o[3]))),
-  );
-}
-
-export function getEmbeddedFilenameParts(fname: string): FILENAMEPARTS {
-  //                        0 1        23    4                               5         6  7                             8          9
-  const parts = fname?.match(
-    /([^#^]*)((#\^)(group=|area=|frame=|clippedframe=|taskbone)?([^|]*)|(#)(group=|area=|frame=|clippedframe=|taskbone)?([^^|]*))(.*)/,
-  );
-  if (!parts) {
-    return {
-      filepath: fname,
-      hasBlockref: false,
-      hasGroupref: false,
-      hasTaskbone: false,
-      hasArearef: false,
-      hasFrameref: false,
-      hasClippedFrameref: false,
-      blockref: "",
-      hasSectionref: false,
-      sectionref: "",
-      linkpartReference: "",
-      linkpartAlias: "",
-    };
-  }
-  return {
-    filepath: parts[1],
-    hasBlockref: Boolean(parts[3]),
-    hasGroupref: parts[4] === "group=" || parts[7] === "group=",
-    hasTaskbone: parts[4] === "taskbone" || parts[7] === "taskbone",
-    hasArearef: parts[4] === "area=" || parts[7] === "area=",
-    hasFrameref: parts[4] === "frame=" || parts[7] === "frame=",
-    hasClippedFrameref:
-      parts[4] === "clippedframe=" || parts[7] === "clippedframe=",
-    blockref: parts[5],
-    hasSectionref: Boolean(parts[6]),
-    sectionref: parts[8],
-    linkpartReference: parts[2],
-    linkpartAlias: parts[9],
-  };
-}
-
-export function isImagePartRef(parts: FILENAMEPARTS): boolean {
-  return (
-    parts.hasGroupref ||
-    parts.hasArearef ||
-    parts.hasFrameref ||
-    parts.hasClippedFrameref
   );
 }
 

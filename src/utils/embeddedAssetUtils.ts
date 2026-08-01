@@ -1,9 +1,10 @@
 import type { TFile, App } from "obsidian";
 import { FRONTMATTER_KEYS } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
-import type { FILENAMEPARTS } from "src/types/utilTypes";
 import Pool from "es6-promise-pool";
 import { getDataURL } from "./coreUtils";
+
+export { getEmbeddedFilenameParts } from "./embeddedFilenameParts";
 
 export async function getFontDataURL(
   app: App,
@@ -165,43 +166,6 @@ export function getExportPadding(
     }
   }
   return plugin.settings.exportPaddingSVG;
-}
-
-export function getEmbeddedFilenameParts(fname: string): FILENAMEPARTS {
-  const parts = fname?.match(
-    /([^#^]*)((#\^)(group=|area=|frame=|clippedframe=|taskbone)?([^|]*)|(#)(group=|area=|frame=|clippedframe=|taskbone)?([^^|]*))(.*)/,
-  );
-  if (!parts) {
-    return {
-      filepath: fname,
-      hasBlockref: false,
-      hasGroupref: false,
-      hasTaskbone: false,
-      hasArearef: false,
-      hasFrameref: false,
-      hasClippedFrameref: false,
-      blockref: "",
-      hasSectionref: false,
-      sectionref: "",
-      linkpartReference: "",
-      linkpartAlias: "",
-    };
-  }
-  return {
-    filepath: parts[1],
-    hasBlockref: Boolean(parts[3]),
-    hasGroupref: parts[4] === "group=" || parts[7] === "group=",
-    hasTaskbone: parts[4] === "taskbone" || parts[7] === "taskbone",
-    hasArearef: parts[4] === "area=" || parts[7] === "area=",
-    hasFrameref: parts[4] === "frame=" || parts[7] === "frame=",
-    hasClippedFrameref:
-      parts[4] === "clippedframe=" || parts[7] === "clippedframe=",
-    blockref: parts[5],
-    hasSectionref: Boolean(parts[6]),
-    sectionref: parts[8],
-    linkpartReference: parts[2],
-    linkpartAlias: parts[9],
-  };
 }
 
 export function cropCanvas(

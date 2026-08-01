@@ -13,6 +13,8 @@ export type FILENAMEPARTS = {
   sectionref: string;
   linkpartReference: string;
   linkpartAlias: string;
+  /** Optional non-negative export padding parsed from an image-reference link. */
+  padding?: number;
 };
 
 export enum PreviewImageType {

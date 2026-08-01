@@ -23,6 +23,7 @@ import {
   getWithBackground,
   hasExportTheme,
   convertSVGStringToElement,
+  isImagePartRef,
   isMaskFile,
 } from "../../utils/utils";
 import {
@@ -150,24 +151,20 @@ const _getPNG = async ({
 
   if (cacheReady) {
     const src = await getImageCache().getImageFromCache(cacheKey);
-    //In case of PNG I cannot change the viewBox to select the area of the element
-    //being referenced. For PNG only the group reference works
     if (src && typeof src === "string") {
       img.src = src;
       return img;
     }
   }
 
-  const quickPNG = !(filenameParts.hasGroupref || filenameParts.hasFrameref)
+  const quickPNG = !isImagePartRef(filenameParts)
     ? await getQuickImagePreview(plugin, file.path, "png")
     : undefined;
 
   const png =
     quickPNG ??
     (await createPNG(
-      filenameParts.hasGroupref ||
-        filenameParts.hasFrameref ||
-        filenameParts.hasClippedFrameref
+      isImagePartRef(filenameParts)
         ? filenameParts.filepath + filenameParts.linkpartReference
         : file.path,
       scale,
@@ -189,6 +186,7 @@ const _getPNG = async ({
       [],
       plugin,
       0,
+      getExportPadding(plugin, file),
     ));
   if (!png) {
     return null;
