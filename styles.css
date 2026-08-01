@@ -1613,7 +1613,8 @@ button.excalidraw-font-picker {
   font-size: var(--font-ui-medium);
 }
 
-.menu:has(.excalidraw-font-picker__option--desktop) {
+.excalidraw-font-picker-menu-opening .menu,
+.menu.excalidraw-font-picker-menu--desktop {
   max-height: min(420px, 60vh);
   overflow-y: auto;
 }

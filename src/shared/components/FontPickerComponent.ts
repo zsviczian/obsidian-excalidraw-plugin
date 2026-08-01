@@ -119,19 +119,16 @@ export class FontPickerComponent extends ValueComponent<string> {
       option: SelectableFontOption;
       element: HTMLSpanElement;
     }> = [];
+    let firstOptionEl: HTMLSpanElement | null = null;
     const menu = new Menu().setUseNativeMenu(false);
     for (const option of options) {
       menu.addItem((item) => {
         const title = createFragment();
         const label = title.createSpan({
-          cls: [
-            "excalidraw-font-picker__option",
-            ...(!DEVICE.isMobile
-              ? ["excalidraw-font-picker__option--desktop"]
-              : []),
-          ],
+          cls: "excalidraw-font-picker__option",
           text: option.label,
         });
+        firstOptionEl ??= label;
         if (option.fontFile) {
           localPreviews.push({ option, element: label });
         } else {
@@ -158,10 +155,22 @@ export class FontPickerComponent extends ValueComponent<string> {
     this.menu = menu;
     this.buttonEl.setAttribute("aria-expanded", "true");
     const rect = this.buttonEl.getBoundingClientRect();
-    menu.showAtPosition(
-      { x: rect.left, y: rect.bottom, width: rect.width },
-      doc,
-    );
+    if (!DEVICE.isMobile) {
+      doc.body.classList.add("excalidraw-font-picker-menu-opening");
+    }
+    try {
+      menu.showAtPosition(
+        { x: rect.left, y: rect.bottom, width: rect.width },
+        doc,
+      );
+      if (!DEVICE.isMobile) {
+        firstOptionEl
+          ?.closest<HTMLElement>(".menu")
+          ?.classList.add("excalidraw-font-picker-menu--desktop");
+      }
+    } finally {
+      doc.body.classList.remove("excalidraw-font-picker-menu-opening");
+    }
     this.observeLocalPreviews(localPreviews, doc);
   }
 
