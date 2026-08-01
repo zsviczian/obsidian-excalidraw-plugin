@@ -1062,7 +1062,7 @@ End Obsidian Sheets Plus support
 }
 
 .excalidraw-toolsPanel-dragHandle {
-  height: 40px;
+  height: 22px;
   width: 100%;
   cursor: move;
 }
@@ -1110,10 +1110,6 @@ End Obsidian Sheets Plus support
   border-top: 1px solid var(--background-modifier-border);
   z-index: 10;
 
-.excalidraw-padding-zoom-icon svg {
-  width: 32px;
-  height: 32px;
-}
 }
 
 .excalidraw-pen-settings-floating-actions .setting-item {
@@ -1640,19 +1636,18 @@ button.excalidraw-font-picker {
   background: var(--background-secondary);
   border-radius: 4px;
   padding: 2px;
-  font-size: 18px;
-  line-height: 40px;
-  width: 40px;
-  height: 40px;
+  width: 22px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10;
 
 .excalidraw-padding-zoom-icon svg {
-  width: 32px;
-  height: 32px;
+  width: 18px;
+  height: 18px;
 }
+
 }
 
 .ex-pad-popup {
