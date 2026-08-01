@@ -27,6 +27,9 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - Fixed: Dragged arrow endpoint ignore grid and angle locks [#10972](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/10972)
 - New: Double-click to toggle arrowhead [#11615](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11615)
 
+## Fixed
+- Custom freedraw pens now remain selected while temporarily using the eraser or another tool, and are restored when returning to freedraw. [#2859](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2859)
+
 ## Excalidraw Automate Breaking Change
 - Excalidraw component API has discontinued \`api.scrollToContent(target?, opts?)\` and replaced it with \`api.setViewport(opts | null)\`. You'll need to update MindMap Builder and Comic Strip Director scripts. If you have your own scripts using this API function you'll need to update them accordingly. For more information read the Excalidraw [Change Log](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_CHANGELOG}#viewport-control--scrollzoom-locking)
 `,

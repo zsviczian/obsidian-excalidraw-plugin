@@ -303,7 +303,8 @@ export class ObsidianMenu {
 
       const isPenActive = activePenIndex === index;
 
-      //Reset stroke setting when changing to a different tool
+      // Temporarily restore the base stroke settings outside freedraw while
+      // retaining the active pen so it can be reapplied on return.
       if (
         pen.freedrawOnly && // Enforce freedrawOnly so global pens do not auto-reset upon changing tools
         appState.resetCustomPen &&
@@ -311,7 +312,6 @@ export class ObsidianMenu {
         !this.pendingPenActivation &&
         isPenActive
       ) {
-        this.activePenIndex = null;
         window.setTimeout(() =>
           resetStrokeOptions(
             appState.resetCustomPen as ResetCustomPenState,
