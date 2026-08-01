@@ -124,6 +124,8 @@ import { installButton } from "src/utils/scriptLibraryUtils";
 import { isInstanceOfHTMLStyleElement } from "src/utils/typechecks";
 import { insertLaTeXToView } from "src/utils/excalidrawViewHelpers";
 import type { MarkdownImageData } from "src/types/markdownImageTypes";
+import { StencilLibraryManager } from "./managers/StencilLibraryManager";
+import type { StencilLibraryData } from "src/types/stencilLibraryTypes";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
@@ -585,6 +587,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private monkeyPatchManager: MonkeyPatchManager;
   private commandManager: CommandManager;
   private eventManager: EventManager;
+  public stencilLibraryManager: StencilLibraryManager;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
   public fourthFontLoaded: boolean = false;
   public excalidrawConfig: ExcalidrawConfig;
@@ -879,6 +882,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.observerManager = new ObserverManager(this);
     this.monkeyPatchManager = new MonkeyPatchManager(this);
     this.commandManager = new CommandManager(this);
+    this.stencilLibraryManager = new StencilLibraryManager(this);
 
     try {
       initCompressionWorker();
@@ -1625,6 +1629,29 @@ export default class ExcalidrawPlugin extends Plugin {
     const decryptedSettings = decryptPersistedAPIKeys(persistedSettings);
     let didSettingsMigration = false;
     this.settings = Object.assign({}, DEFAULT_SETTINGS, decryptedSettings);
+    if (typeof decryptedSettings.libraryStorageMode === "undefined") {
+      const legacyLibrary: unknown =
+        typeof decryptedSettings.library === "string" &&
+        decryptedSettings.library !== "" &&
+        decryptedSettings.library !== "deprecated"
+          ? JSON_parse(decryptedSettings.library)
+          : decryptedSettings.library2;
+      const legacyLibraryRecord =
+        typeof legacyLibrary === "object" && legacyLibrary !== null
+          ? (legacyLibrary as Record<string, unknown>)
+          : null;
+      const hasLegacyItems = Boolean(
+        (Array.isArray(legacyLibraryRecord?.library) &&
+          legacyLibraryRecord.library.length) ||
+          (Array.isArray(legacyLibraryRecord?.libraryItems) &&
+            legacyLibraryRecord.libraryItems.length),
+      );
+      this.settings.libraryStorageMode = hasLegacyItems ? "data-json" : "vault";
+      this.settings.libraryMigrationStatus = hasLegacyItems
+        ? "pending"
+        : "not-required";
+      didSettingsMigration = true;
+    }
     const savedMarkdownImageSettings = decryptedSettings.markdownImageSettings;
     if (!savedMarkdownImageSettings) {
       this.settings.markdownImageSettings = {
@@ -1720,6 +1747,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   async onExternalSettingsChange() {
     await this.loadSettings();
+    this.stencilLibraryManager?.invalidate();
   }
 
   public async openSidepanel(
@@ -1728,7 +1756,7 @@ export default class ExcalidrawPlugin extends Plugin {
     return ExcalidrawSidepanelView.getOrCreate(this, reveal);
   }
 
-  public getStencilLibrary(): object {
+  public getLegacyStencilLibrary(): StencilLibraryData {
     if (
       this.settings.library === "" ||
       this.settings.library === "deprecated"
@@ -1738,13 +1766,35 @@ export default class ExcalidrawPlugin extends Plugin {
     return JSON_parse(this.settings.library);
   }
 
-  public async setStencilLibrary(library: object) {
+  public async setLegacyStencilLibrary(
+    library: StencilLibraryData,
+    save: boolean = true,
+  ) {
     this.settings.library = "deprecated";
     if (JSON.stringify(this.settings.library2) === JSON.stringify(library)) {
       return;
     }
     this.settings.library2 = library;
-    await this.saveSettings();
+    if (save) {
+      await this.saveSettings();
+    }
+  }
+
+  public getStencilLibrary():
+    | StencilLibraryData
+    | Promise<StencilLibraryData> {
+    return this.stencilLibraryManager.getLibrary().then((libraryItems) => ({
+      type: "excalidrawlib" as const,
+      version: 2,
+      libraryItems,
+    }));
+  }
+
+  public async setStencilLibrary(library: StencilLibraryData) {
+    const data = library;
+    await this.stencilLibraryManager.setLibrary(
+      data.libraryItems ?? data.library ?? [],
+    );
   }
 
   public triggerEmbedUpdates(filepath?: string) {

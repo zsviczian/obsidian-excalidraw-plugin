@@ -39,6 +39,41 @@ export default {
   CONVERT_FILE_KEEP_EXT: "*.excalidraw => *.excalidraw.md",
   CONVERT_FILE_REPLACE_EXT: "*.excalidraw => *.md (совместимость с Logseq)",
   DOWNLOAD_LIBRARY: "Экспорт библиотеки трафаретов в файл *.excalidrawlib",
+  LIBRARY_MIGRATION_TITLE: "Перенести библиотеку Excalidraw в хранилище",
+  LIBRARY_MIGRATION_DESC:
+    "Excalidraw может хранить библиотеку в отдельном файле хранилища вместо data.json. Это делает сохранение стабильнее. Существующие элементы будут объединены с выбранным локальным файлом; файлы *.excalidrawlib в той же папке также будут загружены. Выберите «Позже», чтобы скрыть это сообщение до завтра.",
+  LIBRARY_MIGRATION_SYNC_WARNING:
+    'Для синхронизации файлов библиотеки включите «Синхронизировать все остальные типы» в настройках Obsidian Sync.',
+  LIBRARY_MIGRATION_KEEP_DATA_JSON: "Оставить в data.json",
+  LIBRARY_MIGRATION_LATER: "Позже",
+  LIBRARY_MIGRATION_MIGRATE: "Перенести библиотеку",
+  LIBRARY_MIGRATION_SUCCESS: "Библиотека Excalidraw перенесена в хранилище.",
+  LIBRARY_MIGRATION_FAILED:
+    "Не удалось перенести библиотеку. Исходная библиотека data.json не изменена.",
+  LIBRARY_FILE_READ_ERROR: "Не удалось прочитать файл библиотеки: {PATH}",
+  LIBRARY_STORAGE_NAME: "Хранилище библиотеки",
+  LIBRARY_STORAGE_DESC:
+    "Файлы хранилища делают сохранение стабильнее, поскольку библиотека находится вне data.json.",
+  LIBRARY_STORAGE_VAULT: "Папка хранилища (рекомендуется)",
+  LIBRARY_STORAGE_DATA_JSON: "data.json плагина (устаревшее)",
+  LIBRARY_FOLDER_NAME: "Папка библиотеки",
+  LIBRARY_FOLDER_DESC:
+    "Папка для локальной библиотеки и загруженных файлов. Файлы библиотек имеют расширение .excalidrawlib. Чтобы видеть их в проводнике файлов Obsidian, включите «Показывать все типы файлов» в настройках Obsidian.",
+  LIBRARY_FILE_NAME: "Имя файла локальной библиотеки",
+  LIBRARY_FILE_DESC:
+    "Имя редактируемого файла локальной библиотеки. Расширение добавляется автоматически.",
+  LIBRARY_MIGRATE_NOW: "Перенести библиотеку сейчас",
+  LIBRARY_MIGRATE_NOW_DESC:
+    "Перенести существующую библиотеку data.json в настроенный файл хранилища.",
+  LIBRARY_PATH_MISSING: "Этот путь сейчас не существует в хранилище.",
+  CREATE_FOLDER: "Создать папку",
+  CREATE_FOLDER_CONFIRM: "Создать папку <b>{PATH}</b>?",
+  CREATE_FOLDER_NEVER_MIND: "Не надо",
+  CREATE_FOLDER_YES: "Да",
+  CREATE_FOLDER_SUCCESS: "Папка создана: {PATH}",
+  CREATE_FOLDER_FAILED: "Не удалось создать папку: {PATH}",
+  CREATE_FOLDER_PATH_IS_FILE:
+    "Невозможно создать папку: по этому пути уже существует файл: {PATH}",
   OPEN_EXISTING_NEW_PANE: "Открыть существующий чертеж - В НОВОЙ ПАНЕЛИ",
   OPEN_EXISTING_ACTIVE_PANE:
     "Открыть существующий чертеж - В ТЕКУЩЕЙ АКТИВНОЙ ПАНЕЛИ",

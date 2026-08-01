@@ -77,6 +77,14 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 - Use arrow notation for navigation: **Settings → Community plugins**.
 - Keep in-app strings short, consistent, and free of jargon.
 
+## DOM Styling And Visibility
+
+- Prefer Obsidian's established classes such as `mod-warning` before adding plugin-specific CSS. Consult the Obsidian CSS variables and component conventions when styling settings or dialogs.
+- Do not write an element's `style` attribute directly. Use `setStyle` and `removeStyle` from `src/utils/styleUtils.ts` when a dynamic inline style is genuinely necessary.
+- Use the existing visibility helpers instead of the native `hidden` property or attribute, which is not reliable in Obsidian's styled UI. Choose `hideElement`/`showElement` or `setComponentVisibility` from `src/utils/styleUtils.ts`, or `setElementHidden`/`setElementDisplay` from `src/utils/htmlUtils.ts` when a boolean/display-oriented API is clearer.
+- Search `src/utils/styleUtils.ts` and `src/utils/htmlUtils.ts` before introducing new DOM styling helpers or display classes.
+- For a known vault path, use the most specific synchronous lookup: `app.vault.getFolderByPath()` for folders and `app.vault.getFileByPath()` for files. Use `getAbstractFileByPath()` only when either type is intentionally accepted, and avoid adapter-level existence checks when the Vault API already models the target.
+
 ## Performance
 
 - Keep startup light. Defer heavy work until needed.

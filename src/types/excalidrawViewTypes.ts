@@ -5,7 +5,6 @@ import {
   AppState,
   BinaryFiles,
   ExcalidrawProps,
-  LibraryItems,
   SceneData,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import {
@@ -78,10 +77,7 @@ export type ExcalidrawLinkOpenEvent = Parameters<
   NonNullable<ExcalidrawProps["onLinkOpen"]>
 >[1];
 
-export type StencilLibraryData = {
-  library?: LibraryItems;
-  libraryItems?: LibraryItems;
-};
+export type { StencilLibraryData } from "./stencilLibraryTypes";
 
 export interface ExcalidrawEphemeralState {
   rename?: string;

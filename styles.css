@@ -366,6 +366,21 @@ textarea.excalidraw-wysiwyg {
   min-width: 10em;
 }
 
+.excalidraw-folder-path-control {
+  flex-wrap: wrap;
+}
+
+.excalidraw-folder-create-row {
+  display: flex;
+  flex: 0 0 100%;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.excalidraw-folder-create-row > button:not(.excalidraw-display-none) {
+  margin-top: var(--size-2-2);
+}
+
 .excalidraw-ai-provider-table {
   margin: auto;
   width: 80%;

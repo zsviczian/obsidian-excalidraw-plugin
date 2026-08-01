@@ -109,6 +109,7 @@ export let {
   exportToBlob,
   mutateElement,
   restoreElements,
+  restoreLibraryItems,
   mermaidToExcalidraw,
   getFontFamilyString,
   getContainerElement,
@@ -136,6 +137,7 @@ export function updateExcalidrawLib() {
       "measureText",
       "getLineHeight",
       "restoreElements",
+      "restoreLibraryItems",
     ];
 
     for (const fnName of requiredFunctions) {
@@ -166,6 +168,7 @@ export function updateExcalidrawLib() {
       exportToBlob,
       mutateElement,
       restoreElements,
+      restoreLibraryItems,
       mermaidToExcalidraw,
       getFontFamilyString,
       getContainerElement,

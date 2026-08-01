@@ -4729,7 +4729,7 @@ export default class ExcalidrawView
   }
 
   async getLibrary(): Promise<LibraryItems> {
-    const data = this.plugin.getStencilLibrary() as StencilLibraryData;
+    const data = await this.plugin.getStencilLibrary();
     return data?.library ? data.library : (data?.libraryItems ?? []);
   }
 
@@ -6057,7 +6057,7 @@ export default class ExcalidrawView
 
   private onLibraryChange(items: LibraryItems) {
     void (async () => {
-      const lib = {
+      const lib: StencilLibraryData = {
         type: "excalidrawlib",
         version: 2,
         source: `${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_RELEASES_TAG}/${PLUGIN_VERSION}`,

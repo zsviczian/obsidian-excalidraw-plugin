@@ -44,6 +44,41 @@ export default {
   CONVERT_FILE_KEEP_EXT: "*.excalidraw => *.excalidraw.md",
   CONVERT_FILE_REPLACE_EXT: "*.excalidraw => *.md (Logseq compatibility)",
   DOWNLOAD_LIBRARY: "Export stencil library as an *.excalidrawlib file",
+  LIBRARY_MIGRATION_TITLE: "Move your Excalidraw library into the vault",
+  LIBRARY_MIGRATION_DESC:
+    "Excalidraw can store your library in a dedicated vault file instead of data.json. This keeps plugin settings smaller and makes saving more stable. Your existing items will be merged into the selected local library file; downloaded *.excalidrawlib files placed in the same folder will also be loaded. Choose Later to hide this message until tomorrow.",
+  LIBRARY_MIGRATION_SYNC_WARNING:
+    'To sync library files with Obsidian Sync, enable "Sync all other types" in Obsidian Sync settings.',
+  LIBRARY_MIGRATION_KEEP_DATA_JSON: "Keep using data.json",
+  LIBRARY_MIGRATION_LATER: "Later",
+  LIBRARY_MIGRATION_MIGRATE: "Move library",
+  LIBRARY_MIGRATION_SUCCESS: "Excalidraw library moved into the vault.",
+  LIBRARY_MIGRATION_FAILED:
+    "The library could not be moved. Your original data.json library was kept unchanged.",
+  LIBRARY_FILE_READ_ERROR: "Could not read Excalidraw library file: {PATH}",
+  LIBRARY_STORAGE_NAME: "Library storage",
+  LIBRARY_STORAGE_DESC:
+    "Vault files provide more stable saving because the stencil library is kept out of data.json.",
+  LIBRARY_STORAGE_VAULT: "Vault folder (recommended)",
+  LIBRARY_STORAGE_DATA_JSON: "Plugin data.json (legacy)",
+  LIBRARY_FOLDER_NAME: "Library folder",
+  LIBRARY_FOLDER_DESC:
+    'Folder for local-library.excalidrawlib and downloaded library files. Library files use the .excalidrawlib extension. To see them in Obsidian\'s file explorer, enable "Show all file types" in Obsidian settings.',
+  LIBRARY_FILE_NAME: "Local library file name",
+  LIBRARY_FILE_DESC:
+    "Name of the editable local library file. The .excalidrawlib extension is added automatically.",
+  LIBRARY_MIGRATE_NOW: "Move library now",
+  LIBRARY_MIGRATE_NOW_DESC:
+    "Move the existing data.json library into the configured vault file.",
+  LIBRARY_PATH_MISSING: "This path does not currently exist in the vault.",
+  CREATE_FOLDER: "Create folder",
+  CREATE_FOLDER_CONFIRM: "Do you want to create the folder <b>{PATH}</b>?",
+  CREATE_FOLDER_NEVER_MIND: "Never mind",
+  CREATE_FOLDER_YES: "Yes",
+  CREATE_FOLDER_SUCCESS: "Created folder: {PATH}",
+  CREATE_FOLDER_FAILED: "Could not create folder: {PATH}",
+  CREATE_FOLDER_PATH_IS_FILE:
+    "The folder cannot be created because a file already exists at: {PATH}",
   OPEN_SIDEPANEL: "Open Excalidraw Sidepanel",
   OPEN_EXISTING_NEW_PANE: "Open existing drawing - IN A NEW PANE",
   OPEN_EXISTING_ACTIVE_PANE:

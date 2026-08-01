@@ -23,6 +23,8 @@ import {
   AppState,
   BinaryFiles,
   DataURL,
+  LibraryItem,
+  LibraryItems_anyVersion,
   Zoom,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
@@ -107,6 +109,11 @@ declare namespace ExcalidrawLib {
       deleteInvisibleElements?: boolean;
     },
   ): CombineBrandsIfNeeded<T, OrderedExcalidrawElement>;
+
+  function restoreLibraryItems(
+    libraryItems: LibraryItems_anyVersion | undefined,
+    defaultStatus: LibraryItem["status"],
+  ): LibraryItem[];
 
   function exportToSvg(
     opts: Omit<ExportOpts, "getDimensions"> & {

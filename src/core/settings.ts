@@ -25,7 +25,11 @@ import {
 } from "src/utils/fileUtils";
 import { PENS } from "src/utils/pens";
 import { addYouTubeThumbnail, fragWithHTML } from "src/utils/utils";
-import { setElementIconAndText, setSanitizedHtml } from "src/utils/htmlUtils";
+import {
+  setElementHidden,
+  setElementIconAndText,
+  setSanitizedHtml,
+} from "src/utils/htmlUtils";
 import { getImageCache } from "src/shared/ImageCache";
 import { MultiOptionConfirmationPrompt } from "src/shared/Dialogs/Prompt";
 import { EmbeddableMDCustomProps } from "src/shared/Dialogs/EmbeddableSettings";
@@ -70,6 +74,13 @@ import { getGeminiSupportedSizes } from "src/utils/geminiImageModelUtils";
 import { URLs } from "src/constants/safeUrls";
 import { hideElement, setStyle, showElement } from "src/utils/styleUtils";
 import { getSelectableFontFiles } from "src/utils/fontUtils";
+import { VaultPathSuggest } from "src/shared/Suggesters/VaultPathSuggest";
+import { confirmAndCreateFolder } from "src/shared/Dialogs/CreateFolderPrompt";
+import type {
+  StencilLibraryData,
+  StencilLibraryMigrationStatus,
+  StencilLibraryStorageMode,
+} from "src/types/stencilLibraryTypes";
 
 declare const mainDocument: Document;
 declare type SettingDefinitionItem = string;
@@ -82,6 +93,11 @@ export interface ExcalidrawSettings {
   phoneFooterSafeAreaPadding: boolean;
   tabletFooterSafeAreaPadding: boolean;
   folder: string;
+  libraryFolderPath: string;
+  libraryFileName: string;
+  libraryStorageMode: StencilLibraryStorageMode;
+  libraryMigrationStatus: StencilLibraryMigrationStatus;
+  libraryMigrationSnoozeUntil: number;
   cropFolder: string;
   annotateFolder: string;
   embedUseExcalidrawFolder: boolean;
@@ -198,7 +214,7 @@ export interface ExcalidrawSettings {
   //loadCount: number; //version 1.2 migration counter
   drawingOpenCount: number;
   library: string;
-  library2: object;
+  library2: StencilLibraryData;
   //patchCommentBlock: boolean; //1.3.12
   imageElementNotice: boolean; //1.4.0
   //runWYSIWYGpatch: boolean; //1.4.9
@@ -568,6 +584,11 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   phoneFooterSafeAreaPadding: false,
   tabletFooterSafeAreaPadding: false,
   folder: "Excalidraw",
+  libraryFolderPath: "Excalidraw/Libraries",
+  libraryFileName: "local-library",
+  libraryStorageMode: "vault",
+  libraryMigrationStatus: "not-required",
+  libraryMigrationSnoozeUntil: 0,
   cropFolder: "",
   annotateFolder: "",
   embedUseExcalidrawFolder: false,
@@ -1166,6 +1187,80 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     ) {
       this.plugin.settings.scriptFolderPath = "Excalidraw/Scripts";
     }
+    this.plugin.settings.libraryFolderPath = normalizePath(
+      this.plugin.settings.libraryFolderPath ||
+        `${this.plugin.settings.folder}/Libraries`,
+    );
+    this.plugin.settings.libraryFileName =
+      this.plugin.settings.libraryFileName
+        .trim()
+        .replace(/[\\/]/g, "-")
+        .replace(/\.excalidrawlib$/i, "") || "local-library";
+  }
+
+  private addVaultPathSupport(
+    setting: Setting,
+    text: TextComponent,
+    kind: "file" | "folder",
+    options: {
+      optional?: boolean;
+      extensions?: readonly string[];
+      resolvePath?: (value: string) => string;
+      createFolder?: boolean;
+      validate?: boolean;
+    } = {},
+  ): void {
+    new VaultPathSuggest(this.app, text.inputEl, kind, options.extensions);
+    let createFolderButtonEl: HTMLButtonElement | null = null;
+    const updateWarning = () => {
+      setting.descEl
+        .querySelectorAll(".excalidraw-path-warning")
+        .forEach((element) => element.remove());
+      setting.settingEl.removeClass("mod-warning", "mod_warning");
+      const value = text.getValue().trim();
+      const resolvedValue = options.resolvePath?.(value) ?? value;
+      const path = resolvedValue ? normalizePath(resolvedValue) : "";
+      const exists = path
+        ? kind === "folder"
+          ? Boolean(this.app.vault.getFolderByPath(path))
+          : Boolean(this.app.vault.getFileByPath(path))
+        : false;
+      if (createFolderButtonEl) {
+        setElementHidden(
+          createFolderButtonEl,
+          kind !== "folder" || !value || exists,
+        );
+      }
+      if ((!value && options.optional) || options.validate === false) {
+        return;
+      }
+      if (exists) {
+        return;
+      }
+      setting.settingEl.addClass("mod-warning", "mod_warning");
+      setting.descEl.createDiv({
+        cls: "excalidraw-path-warning mod-warning",
+        text: t("LIBRARY_PATH_MISSING"),
+      });
+    };
+    if (kind === "folder" && options.createFolder !== false) {
+      setting.addButton((button) => {
+        createFolderButtonEl = button.buttonEl;
+        setElementHidden(button.buttonEl, true);
+        button.setButtonText(t("CREATE_FOLDER")).onClick(async () => {
+          if (await confirmAndCreateFolder(this.plugin, text.getValue())) {
+            updateWarning();
+          }
+        });
+      });
+      setting.controlEl.addClass("excalidraw-folder-path-control");
+      const createFolderRow = setting.controlEl.createDiv({
+        cls: "excalidraw-folder-create-row",
+      });
+      createFolderRow.appendChild(createFolderButtonEl);
+    }
+    text.inputEl.addEventListener("input", updateWarning);
+    updateWarning();
   }
 
   private async persistDirtySettings() {
@@ -1542,18 +1637,111 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(detailsEl)
+    const drawingFolderSetting = new Setting(detailsEl)
       .setName(t("FOLDER_NAME"))
-      .setDesc(fragWithHTML(t("FOLDER_DESC")))
+      .setDesc(fragWithHTML(t("FOLDER_DESC")));
+    drawingFolderSetting.addText((text) => {
+      text
+        .setPlaceholder(t("FOLDER_PLACEHOLDER"))
+        .setValue(this.plugin.settings.folder)
+        .onChange(async (value) => {
+          const previousFolder = this.plugin.settings.folder;
+          this.plugin.settings.folder = value;
+          if (
+            this.plugin.settings.libraryFolderPath ===
+            normalizePath(`${previousFolder}/Libraries`)
+          ) {
+            this.plugin.settings.libraryFolderPath = normalizePath(
+              `${value}/Libraries`,
+            );
+          }
+          this.applySettingsUpdate();
+        });
+      this.addVaultPathSupport(drawingFolderSetting, text, "folder");
+    });
+
+    const libraryStorageSetting = new Setting(detailsEl)
+      .setName(t("LIBRARY_STORAGE_NAME"))
+      .setDesc(t("LIBRARY_STORAGE_DESC"));
+    libraryStorageSetting.addDropdown((dropdown) =>
+      dropdown
+        .addOption("vault", t("LIBRARY_STORAGE_VAULT"))
+        .addOption("data-json", t("LIBRARY_STORAGE_DATA_JSON"))
+        .setValue(this.plugin.settings.libraryStorageMode)
+        .onChange(async (value) => {
+          if (value === this.plugin.settings.libraryStorageMode) {
+            return;
+          }
+          if (value === "data-json") {
+            await this.plugin.stencilLibraryManager.switchToLegacyStorage();
+          } else if (this.plugin.stencilLibraryManager.hasLegacyItems()) {
+            await this.plugin.stencilLibraryManager.showMigrationPrompt();
+          } else {
+            this.plugin.settings.libraryStorageMode = "vault";
+            this.plugin.settings.libraryMigrationStatus = "completed";
+            this.plugin.settings.libraryMigrationSnoozeUntil = 0;
+            this.plugin.stencilLibraryManager.invalidate();
+            await this.plugin.saveSettings();
+          }
+          this.display();
+        }),
+    );
+
+    const libraryFolderSetting = new Setting(detailsEl)
+      .setName(t("LIBRARY_FOLDER_NAME"))
+      .setDesc(t("LIBRARY_FOLDER_DESC"));
+    libraryFolderSetting.addText((text) => {
+      text
+        .setValue(this.plugin.settings.libraryFolderPath)
+        .onChange((value) => {
+          this.plugin.settings.libraryFolderPath = value;
+          this.plugin.stencilLibraryManager.invalidate();
+          this.applySettingsUpdate(true);
+        });
+      this.addVaultPathSupport(libraryFolderSetting, text, "folder", {
+        optional: this.plugin.settings.libraryStorageMode === "data-json",
+        createFolder: this.plugin.settings.libraryStorageMode === "vault",
+        validate: this.plugin.settings.libraryStorageMode === "vault",
+      });
+    });
+    libraryFolderSetting.setDisabled(
+      this.plugin.settings.libraryStorageMode === "data-json",
+    );
+
+    const libraryFileSetting = new Setting(detailsEl)
+      .setName(t("LIBRARY_FILE_NAME"))
+      .setDesc(t("LIBRARY_FILE_DESC"))
       .addText((text) =>
         text
-          .setPlaceholder(t("FOLDER_PLACEHOLDER"))
-          .setValue(this.plugin.settings.folder)
-          .onChange(async (value) => {
-            this.plugin.settings.folder = value;
-            this.applySettingsUpdate();
+          .setValue(this.plugin.settings.libraryFileName)
+          .onChange((value) => {
+            this.plugin.settings.libraryFileName = value;
+            this.plugin.stencilLibraryManager.invalidate();
+            this.applySettingsUpdate(true);
           }),
       );
+    libraryFileSetting.setDisabled(
+      this.plugin.settings.libraryStorageMode === "data-json",
+    );
+
+    if (
+      this.plugin.settings.libraryStorageMode === "data-json" &&
+      this.plugin.settings.libraryMigrationStatus !== "opted-out" &&
+      this.plugin.stencilLibraryManager.hasLegacyItems()
+    ) {
+      new Setting(detailsEl)
+        .setName(t("LIBRARY_MIGRATE_NOW"))
+        .setDesc(t("LIBRARY_MIGRATE_NOW_DESC"))
+        .addButton((button) =>
+          button
+            .setCta()
+            .setButtonText(t("LIBRARY_MIGRATION_MIGRATE"))
+            .onClick(async () => {
+              await this.plugin.stencilLibraryManager.showMigrationPrompt();
+              this.display();
+            }),
+        );
+    }
 
     new Setting(detailsEl)
       .setName(t("FOLDER_EMBED_NAME"))
@@ -1567,58 +1755,69 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(detailsEl)
+    const cropFolderSetting = new Setting(detailsEl)
       .setName(t("CROP_FOLDER_NAME"))
-      .setDesc(fragWithHTML(t("CROP_FOLDER_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("CROP_FOLDER_PLACEHOLDER"))
-          .setValue(this.plugin.settings.cropFolder)
-          .onChange(async (value) => {
-            this.plugin.settings.cropFolder = value;
-            this.applySettingsUpdate();
-          }),
-      );
+      .setDesc(fragWithHTML(t("CROP_FOLDER_DESC")));
+    cropFolderSetting.addText((text) => {
+      text
+        .setPlaceholder(t("CROP_FOLDER_PLACEHOLDER"))
+        .setValue(this.plugin.settings.cropFolder)
+        .onChange(async (value) => {
+          this.plugin.settings.cropFolder = value;
+          this.applySettingsUpdate();
+        });
+      this.addVaultPathSupport(cropFolderSetting, text, "folder", {
+        optional: true,
+      });
+    });
 
-    new Setting(detailsEl)
+    const annotateFolderSetting = new Setting(detailsEl)
       .setName(t("ANNOTATE_FOLDER_NAME"))
-      .setDesc(fragWithHTML(t("ANNOTATE_FOLDER_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("ANNOTATE_FOLDER_PLACEHOLDER"))
-          .setValue(this.plugin.settings.annotateFolder)
-          .onChange(async (value) => {
-            this.plugin.settings.annotateFolder = value;
-            this.applySettingsUpdate();
-          }),
-      );
+      .setDesc(fragWithHTML(t("ANNOTATE_FOLDER_DESC")));
+    annotateFolderSetting.addText((text) => {
+      text
+        .setPlaceholder(t("ANNOTATE_FOLDER_PLACEHOLDER"))
+        .setValue(this.plugin.settings.annotateFolder)
+        .onChange(async (value) => {
+          this.plugin.settings.annotateFolder = value;
+          this.applySettingsUpdate();
+        });
+      this.addVaultPathSupport(annotateFolderSetting, text, "folder", {
+        optional: true,
+      });
+    });
 
-    new Setting(detailsEl)
+    const templateFileSetting = new Setting(detailsEl)
       .setName(t("TEMPLATE_NAME"))
-      .setDesc(fragWithHTML(t("TEMPLATE_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("TEMPLATE_PLACEHOLDER"))
-          .setValue(this.plugin.settings.templateFilePath)
-          .onChange(async (value) => {
-            this.plugin.settings.templateFilePath = value;
-            this.applySettingsUpdate();
-          }),
-      );
+      .setDesc(fragWithHTML(t("TEMPLATE_DESC")));
+    templateFileSetting.addText((text) => {
+      text
+        .setPlaceholder(t("TEMPLATE_PLACEHOLDER"))
+        .setValue(this.plugin.settings.templateFilePath)
+        .onChange(async (value) => {
+          this.plugin.settings.templateFilePath = value;
+          this.applySettingsUpdate();
+        });
+      this.addVaultPathSupport(templateFileSetting, text, "file", {
+        optional: true,
+        extensions: ["md", "excalidraw"],
+      });
+    });
     addYouTubeThumbnail(detailsEl, "jgUpYznHP9A", 216);
 
-    new Setting(detailsEl)
+    const scriptFolderSetting = new Setting(detailsEl)
       .setName(t("SCRIPT_FOLDER_NAME"))
-      .setDesc(fragWithHTML(t("SCRIPT_FOLDER_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("SCRIPT_FOLDER_PLACEHOLDER"))
-          .setValue(this.plugin.settings.scriptFolderPath)
-          .onChange(async (value) => {
-            this.plugin.settings.scriptFolderPath = value;
-            this.applySettingsUpdate();
-          }),
-      );
+      .setDesc(fragWithHTML(t("SCRIPT_FOLDER_DESC")));
+    scriptFolderSetting.addText((text) => {
+      text
+        .setPlaceholder(t("SCRIPT_FOLDER_PLACEHOLDER"))
+        .setValue(this.plugin.settings.scriptFolderPath)
+        .onChange(async (value) => {
+          this.plugin.settings.scriptFolderPath = value;
+          this.applySettingsUpdate();
+        });
+      this.addVaultPathSupport(scriptFolderSetting, text, "folder");
+    });
 
     // ------------------------------------------------
     // Saving
@@ -4205,18 +4404,21 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     const cjkdescdiv = detailsEl.createDiv({ cls: "setting-item-description" });
     setSanitizedHtml(cjkdescdiv, t("OFFLINE_CJK_DESC"));
 
-    new Setting(detailsEl)
+    const cjkAssetsFolderSetting = new Setting(detailsEl)
       .setName(t("CJK_ASSETS_FOLDER_NAME"))
-      .setDesc(fragWithHTML(t("CJK_ASSETS_FOLDER_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("CJK_ASSETS_FOLDER_PLACEHOLDER"))
-          .setValue(this.plugin.settings.fontAssetsPath)
-          .onChange(async (value) => {
-            this.plugin.settings.fontAssetsPath = value;
-            this.applySettingsUpdate();
-          }),
-      );
+      .setDesc(fragWithHTML(t("CJK_ASSETS_FOLDER_DESC")));
+    cjkAssetsFolderSetting.addText((text) => {
+      text
+        .setPlaceholder(t("CJK_ASSETS_FOLDER_PLACEHOLDER"))
+        .setValue(this.plugin.settings.fontAssetsPath)
+        .onChange(async (value) => {
+          this.plugin.settings.fontAssetsPath = value;
+          this.applySettingsUpdate();
+        });
+      this.addVaultPathSupport(cjkAssetsFolderSetting, text, "folder", {
+        optional: true,
+      });
+    });
 
     new Setting(detailsEl)
       .setName(t("LOAD_CHINESE_FONTS_NAME"))
@@ -4279,18 +4481,22 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(detailsEl)
+    const latexPreambleSetting = new Setting(detailsEl)
       .setName(t("LATEX_PREAMBLE_NAME"))
-      .setDesc(fragWithHTML(t("LATEX_PREAMBLE_DESC")))
-      .addText((text) =>
-        text
-          .setPlaceholder("e.g.: preamble.sty")
-          .setValue(this.plugin.settings.latexPreambleLocation)
-          .onChange(async (value) => {
-            this.plugin.settings.latexPreambleLocation = value;
-            this.applySettingsUpdate();
-          }),
-      );
+      .setDesc(fragWithHTML(t("LATEX_PREAMBLE_DESC")));
+    latexPreambleSetting.addText((text) => {
+      text
+        .setPlaceholder("e.g.: preamble.sty")
+        .setValue(this.plugin.settings.latexPreambleLocation)
+        .onChange(async (value) => {
+          this.plugin.settings.latexPreambleLocation = value;
+          this.applySettingsUpdate();
+        });
+      this.addVaultPathSupport(latexPreambleSetting, text, "file", {
+        optional: true,
+        extensions: ["sty"],
+      });
+    });
 
     new Setting(detailsEl)
       .setName(t("FILETYPE_NAME"))
@@ -4466,9 +4672,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       );
       return Boolean(this.app.vault.getAbstractFileByPath(startupPath));
     };
-    new Setting(detailsEl)
+    const startupScriptSetting = new Setting(detailsEl)
       .setName(t("STARTUP_SCRIPT_NAME"))
-      .setDesc(fragWithHTML(t("STARTUP_SCRIPT_DESC")))
+      .setDesc(fragWithHTML(t("STARTUP_SCRIPT_DESC")));
+    startupScriptSetting
       .addText((text) => {
         startupScriptPathText = text;
         text
@@ -4482,6 +4689,12 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
             );
             this.applySettingsUpdate();
           });
+        this.addVaultPathSupport(startupScriptSetting, text, "file", {
+          optional: true,
+          extensions: ["md"],
+          resolvePath: (value) =>
+            value && !value.endsWith(".md") ? `${value}.md` : value,
+        });
       })
       .addButton((button) => {
         startupScriptButton = button;

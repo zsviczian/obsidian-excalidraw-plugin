@@ -44,6 +44,41 @@ export default {
   CONVERT_FILE_REPLACE_EXT: "*.excalidraw => *.md (compatibilidad con Logseq)",
   DOWNLOAD_LIBRARY:
     "Exportar librería de plantillas como archivo *.excalidrawlib",
+  LIBRARY_MIGRATION_TITLE: "Mover la biblioteca de Excalidraw a la bóveda",
+  LIBRARY_MIGRATION_DESC:
+    "Excalidraw puede guardar la biblioteca en un archivo de la bóveda en lugar de data.json. Esto hace más estable el guardado. Los elementos existentes se combinarán con el archivo local seleccionado y también se cargarán los archivos *.excalidrawlib copiados en la misma carpeta. Elige «Más tarde» para ocultar este mensaje hasta mañana.",
+  LIBRARY_MIGRATION_SYNC_WARNING:
+    'Para sincronizar las bibliotecas con Obsidian Sync, activa "Sincronizar todos los demás tipos" en los ajustes de Sync.',
+  LIBRARY_MIGRATION_KEEP_DATA_JSON: "Seguir usando data.json",
+  LIBRARY_MIGRATION_LATER: "Más tarde",
+  LIBRARY_MIGRATION_MIGRATE: "Mover biblioteca",
+  LIBRARY_MIGRATION_SUCCESS: "La biblioteca de Excalidraw se movió a la bóveda.",
+  LIBRARY_MIGRATION_FAILED:
+    "No se pudo mover la biblioteca. La biblioteca original de data.json no se modificó.",
+  LIBRARY_FILE_READ_ERROR: "No se pudo leer la biblioteca: {PATH}",
+  LIBRARY_STORAGE_NAME: "Almacenamiento de la biblioteca",
+  LIBRARY_STORAGE_DESC:
+    "Los archivos de la bóveda ofrecen un guardado más estable al mantener la biblioteca fuera de data.json.",
+  LIBRARY_STORAGE_VAULT: "Carpeta de la bóveda (recomendado)",
+  LIBRARY_STORAGE_DATA_JSON: "data.json del complemento (heredado)",
+  LIBRARY_FOLDER_NAME: "Carpeta de bibliotecas",
+  LIBRARY_FOLDER_DESC:
+    "Carpeta para la biblioteca local y los archivos descargados. Los archivos de biblioteca usan la extensión .excalidrawlib. Para verlos en el explorador de archivos de Obsidian, activa «Mostrar todos los tipos de archivo» en los ajustes de Obsidian.",
+  LIBRARY_FILE_NAME: "Nombre del archivo de biblioteca local",
+  LIBRARY_FILE_DESC:
+    "Nombre de la biblioteca local editable. La extensión se añade automáticamente.",
+  LIBRARY_MIGRATE_NOW: "Mover la biblioteca ahora",
+  LIBRARY_MIGRATE_NOW_DESC:
+    "Mover la biblioteca existente de data.json al archivo configurado en la bóveda.",
+  LIBRARY_PATH_MISSING: "Esta ruta no existe actualmente en la bóveda.",
+  CREATE_FOLDER: "Crear carpeta",
+  CREATE_FOLDER_CONFIRM: "¿Quieres crear la carpeta <b>{PATH}</b>?",
+  CREATE_FOLDER_NEVER_MIND: "No importa",
+  CREATE_FOLDER_YES: "Sí",
+  CREATE_FOLDER_SUCCESS: "Carpeta creada: {PATH}",
+  CREATE_FOLDER_FAILED: "No se pudo crear la carpeta: {PATH}",
+  CREATE_FOLDER_PATH_IS_FILE:
+    "No se puede crear la carpeta porque ya existe un archivo en: {PATH}",
   OPEN_EXISTING_NEW_PANE: "Abrir bosquejo existente - EN UN PANEL NUEVO",
   OPEN_EXISTING_ACTIVE_PANE:
     "Abrir bosquejo existente - EN EL PANEL ACTIVO ACTUAL",
