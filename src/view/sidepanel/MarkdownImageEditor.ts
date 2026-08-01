@@ -1369,10 +1369,21 @@ class MarkdownImageEditorController {
   private handleSidepanelFocus(
     nextView: ExcalidrawView | null,
   ): void {
-    if (nextView) {
+    const ownerIsValid = this.isOwnerViewValid();
+    const nextViewIsActive =
+      nextView !== null &&
+      this.app.workspace.getMostRecentLeaf() === nextView.leaf;
+    if (
+      nextView &&
+      (!ownerIsValid || nextView === this.view || nextViewIsActive)
+    ) {
       void this.attachToView(nextView);
       return;
     }
+    // Focusing the sidepanel makes its own leaf the most recent one. In that
+    // transition, the plugin's last-active Excalidraw leaf can briefly be
+    // stale. Keep the owner established by the active-leaf listener instead
+    // of tearing down a valid editor in favor of the stale view.
     this.ensureOwnerValid();
   }
 
