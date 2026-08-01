@@ -115,6 +115,88 @@ type MarkdownRenderOverrides = {
   isTransclusion?: boolean;
 };
 
+const waitForMarkdownPostProcessors = (
+  container: HTMLElement,
+): Promise<void> => {
+  if (
+    !container.querySelector(
+      ".mermaid, .dataview, [class*='block-language-']",
+    )
+  ) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    const minimumWait = 250;
+    const quietPeriod = 150;
+    const maximumWait = 2000;
+    let minimumElapsed = false;
+    let quietElapsed = false;
+    let quietTimer: number | null = null;
+    let minimumTimer: number | null = null;
+    let maximumTimer: number | null = null;
+
+    const observer = new MutationObserver(() => {
+      quietElapsed = false;
+      if (quietTimer !== null) {
+        window.clearTimeout(quietTimer);
+      }
+      quietTimer = window.setTimeout(() => {
+        quietElapsed = true;
+        finishIfReady();
+      }, quietPeriod);
+    });
+    const cleanup = () => {
+      observer.disconnect();
+      [quietTimer, minimumTimer, maximumTimer].forEach((timer) => {
+        if (timer !== null) {
+          window.clearTimeout(timer);
+        }
+      });
+    };
+    const finish = () => {
+      cleanup();
+      resolve();
+    };
+    const finishIfReady = () => {
+      if (minimumElapsed && quietElapsed) {
+        finish();
+      }
+    };
+
+    observer.observe(container, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      characterData: true,
+    });
+    quietTimer = window.setTimeout(() => {
+      quietElapsed = true;
+      finishIfReady();
+    }, quietPeriod);
+    minimumTimer = window.setTimeout(() => {
+      minimumElapsed = true;
+      finishIfReady();
+    }, minimumWait);
+    maximumTimer = window.setTimeout(finish, maximumWait);
+  });
+};
+
+const snapshotRenderedCanvases = (container: HTMLElement): void => {
+  container.querySelectorAll("canvas").forEach((canvas) => {
+    try {
+      const image = canvas.ownerDocument.createElement("img");
+      image.src = canvas.toDataURL("image/png");
+      image.width = canvas.width;
+      image.height = canvas.height;
+      image.alt = canvas.getAttribute("aria-label") ?? "Rendered chart";
+      canvas.replaceWith(image);
+    } catch {
+      // Tainted or WebGL canvases cannot always be exported; retain the canvas.
+    }
+  });
+};
+
 const getTransclusionRenderSettings = (
   render: MarkdownImageRenderSettings,
 ): MarkdownImageRenderSettings =>
@@ -1777,7 +1859,7 @@ export class EmbeddedFilesLoader {
 
     //4.
     //create document div - this will be the contents of the foreign object
-    const mdDIV = createDiv();
+    let mdDIV = createDiv();
     mdDIV.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
     mdDIV.setAttribute(
       "class",
@@ -1792,8 +1874,21 @@ export class EmbeddedFilesLoader {
       color: fontColor && fontColor !== "" ? fontColor : "initial",
     });
 
+    const renderHost = mainDocument.body.createDiv();
+    renderHost.setAttribute("aria-hidden", "true");
+    setStyle(renderHost, {
+      position: "fixed",
+      left: "-100000px",
+      top: "0",
+      width: `${linkParts.width}px`,
+      opacity: "0",
+      pointerEvents: "none",
+      zIndex: "-1",
+    });
+    renderHost.appendChild(mdDIV);
     const renderComponent = new Component();
     renderComponent.load();
+    let renderedDIV: HTMLDivElement | null = null;
     try {
       //await MarkdownRenderer.renderMarkdown(text, mdDIV, file.path, plugin);
       await MarkdownRenderer.render(
@@ -1803,8 +1898,15 @@ export class EmbeddedFilesLoader {
         file.path,
         renderComponent,
       );
+      await waitForMarkdownPostProcessors(mdDIV);
+      snapshotRenderedCanvases(mdDIV);
+      renderedDIV = mdDIV.cloneNode(true) as HTMLDivElement;
     } finally {
       renderComponent.unload();
+      renderHost.remove();
+    }
+    if (renderedDIV) {
+      mdDIV = renderedDIV;
     }
     if (this.terminate) {
       return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
