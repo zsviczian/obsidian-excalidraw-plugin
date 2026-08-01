@@ -5,6 +5,7 @@ import {
   ExcalidrawImperativeAPI,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
 import {
+  ANIMATED_IMAGE_TYPES,
   DEVICE,
   IMAGE_TYPES,
   REG_LINKINDEX_INVALIDCHARS,
@@ -428,6 +429,25 @@ export class DropManager {
                   const droppedFilename = event.dataTransfer.files[i].name;
                   const fileToImport =
                     await event.dataTransfer.files[i].arrayBuffer();
+                  const insertImportedFile = async (file: TFile) => {
+                    const isSingleAnimatedRasterImage =
+                      files.length === 1 &&
+                      ANIMATED_IMAGE_TYPES.contains(
+                        file.extension.toLowerCase(),
+                      ) &&
+                      file.extension.toLowerCase() !== "svg";
+                    if (isSingleAnimatedRasterImage) {
+                      const modal = new UniversalInsertFileModal(
+                        this.plugin,
+                        this.view,
+                      );
+                      modal.open(file, pos);
+                      return;
+                    }
+                    const ea = getEA(this.view);
+                    await insertImageToView(ea, pos, file);
+                    ea.destroy();
+                  };
                   const maybeFile = this.app.metadataCache.getFirstLinkpathDest(
                     droppedFilename,
                     this.file.path,
@@ -452,9 +472,7 @@ export class DropManager {
                           fileToImport,
                         );
                       }
-                      const ea = getEA(this.view);
-                      await insertImageToView(ea, pos, maybeFile);
-                      ea.destroy();
+                      await insertImportedFile(maybeFile);
                       return false;
                     }
                   }
@@ -465,9 +483,7 @@ export class DropManager {
                     this.view.file,
                     this.view,
                   );
-                  const ea = getEA(this.view);
-                  await insertImageToView(ea, pos, file);
-                  ea.destroy();
+                  await insertImportedFile(file);
                 })();
               } else if (extension === "excalidraw") {
                 return true; //excalidraw to continue processing
