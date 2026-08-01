@@ -73,7 +73,8 @@ import { decryptProviderProfiles } from "src/utils/settingsKeyObfuscation";
 import { getGeminiSupportedSizes } from "src/utils/geminiImageModelUtils";
 import { URLs } from "src/constants/safeUrls";
 import { hideElement, setStyle, showElement } from "src/utils/styleUtils";
-import { getSelectableFontFiles } from "src/utils/fontUtils";
+import { getSelectableFontOptions } from "src/utils/fontUtils";
+import { FontPickerComponent } from "src/shared/components/FontPickerComponent";
 import { VaultPathSuggest } from "src/shared/Suggesters/VaultPathSuggest";
 import { confirmAndCreateFolder } from "src/shared/Dialogs/CreateFolderPrompt";
 import type {
@@ -1150,12 +1151,20 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private isPersistingSettings: boolean = false;
   private settingsFocusoutHandler: ((event: FocusEvent) => void) | null = null;
   private hotkeyEditor: HotkeyEditor;
+  private fontPickers: FontPickerComponent[] = [];
   //private reloadMathJax: boolean = false;
   //private applyDebounceTimer: number = 0;
 
   constructor(app: App, plugin: ExcalidrawPlugin) {
     super(app, plugin);
     this.plugin = plugin;
+  }
+
+  private destroyFontPickers(): void {
+    for (const picker of this.fontPickers) {
+      picker.destroy();
+    }
+    this.fontPickers = [];
   }
 
   /**
@@ -1372,6 +1381,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
 
   hide() {
     this.detachSettingsFocusoutHandler();
+    this.destroyFontPickers();
     if (this.plugin.settings.overrideObsidianFontSize) {
       setStyle(mainDocument.documentElement, { fontSize: "" });
       setRootElementSize(16);
@@ -1405,6 +1415,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     this.settingsDirty = false;
     this.requestEmbedUpdate = false;
     this.requestReloadDrawings = false;
+    this.destroyFontPickers();
     const { containerEl } = this;
     containerEl.addClass("excalidraw-settings");
     this.containerEl.empty();
@@ -4207,28 +4218,27 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(detailsEl)
+    const markdownFontSetting = new Setting(detailsEl)
       .setName(t("MD_DEFAULT_FONT_NAME"))
-      .setDesc(fragWithHTML(t("MD_DEFAULT_FONT_DESC")))
-      .addDropdown((d: DropdownComponent) => {
-        //I do not know why Lilita One and Nunito do not work. The font string is there, but it is not rendered
-        d.addOption("Virgil", "Virgil");
-        d.addOption("Cascadia", "Cascadia");
-        d.addOption("Excalifont", "Excalifont");
-        d.addOption("Comic Shanns", "Comic Shanns");
-        d.addOption("Liberation Sans", "Liberation Sans");
-        getSelectableFontFiles(
-          this.app,
-          this.plugin.settings.fontAssetsPath,
-        ).forEach((file) => {
-          d.addOption(file.path, file.name);
-        });
-        d.setValue(this.plugin.settings.mdFont).onChange((value) => {
+      .setDesc(fragWithHTML(t("MD_DEFAULT_FONT_DESC")));
+    this.fontPickers.push(
+      new FontPickerComponent(
+        markdownFontSetting.controlEl,
+        this.app,
+        () =>
+          getSelectableFontOptions(
+            this.app,
+            this.plugin.settings.fontAssetsPath,
+          ),
+      )
+        .setAriaLabel(t("MD_DEFAULT_FONT_NAME"))
+        .setValue(this.plugin.settings.mdFont)
+        .onChange((value) => {
           this.requestReloadDrawings = true;
           this.plugin.settings.mdFont = value;
           this.applySettingsUpdate(true);
-        });
-      });
+        }),
+    );
 
     new Setting(detailsEl)
       .setName(t("MD_DEFAULT_COLOR_NAME"))
@@ -4374,26 +4384,29 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(detailsEl)
+    const fourthFontSetting = new Setting(detailsEl)
       .setName(t("FOURTH_FONT_NAME"))
-      .setDesc(fragWithHTML(t("FOURTH_FONT_DESC")))
-      .addDropdown((d: DropdownComponent) => {
-        d.addOption("Virgil", "Virgil");
-        getSelectableFontFiles(
-          this.app,
-          this.plugin.settings.fontAssetsPath,
-        ).forEach((file) => {
-          d.addOption(file.path, file.name);
-        });
-        d.setValue(this.plugin.settings.experimantalFourthFont).onChange(
-          (value) => {
-            this.requestReloadDrawings = true;
-            this.plugin.settings.experimantalFourthFont = value;
-            this.applySettingsUpdate(true);
-            void this.plugin.initializeFonts();
-          },
-        );
-      });
+      .setDesc(fragWithHTML(t("FOURTH_FONT_DESC")));
+    this.fontPickers.push(
+      new FontPickerComponent(
+        fourthFontSetting.controlEl,
+        this.app,
+        () =>
+          getSelectableFontOptions(
+            this.app,
+            this.plugin.settings.fontAssetsPath,
+            ["Virgil"],
+          ),
+      )
+        .setAriaLabel(t("FOURTH_FONT_NAME"))
+        .setValue(this.plugin.settings.experimantalFourthFont)
+        .onChange((value) => {
+          this.requestReloadDrawings = true;
+          this.plugin.settings.experimantalFourthFont = value;
+          this.applySettingsUpdate(true);
+          void this.plugin.initializeFonts();
+        }),
+    );
 
     detailsEl = fontsDetailsEl.createEl("details");
     detailsEl.createEl("summary", {

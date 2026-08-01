@@ -89,7 +89,7 @@ declare const deliberateFetch: (
   payload: RequestInfo | URL,
   init?: RequestInit,
 ) => Promise<Response>;
-declare const deliberateCreateElement: (document: Document, tagName: string) => HTMLStyleElement;
+declare const deliberateCreateElement: (document: Document, tagName: string) => HTMLElement;
 declare const mainDocument: Document;
 //An ugly workaround for the following situation.
 //File A is a markdown file that has an embedded Excalidraw file B
@@ -185,7 +185,7 @@ const waitForMarkdownPostProcessors = (
 const snapshotRenderedCanvases = (container: HTMLElement): void => {
   container.querySelectorAll("canvas").forEach((canvas) => {
     try {
-      const image = canvas.ownerDocument.createElement("img");
+      const image = deliberateCreateElement(canvas.ownerDocument, "img") as HTMLImageElement;
       image.src = canvas.toDataURL("image/png");
       image.width = canvas.width;
       image.height = canvas.height;
@@ -2063,14 +2063,14 @@ export class EmbeddedFilesLoader {
       const iframeDoc = iframe.contentWindow.document;
       if (style) {
         // Obsidian style.css does not good in this case, yet the code scanner enforces it
-        const styleEl = deliberateCreateElement(iframeDoc, "style");
+        const styleEl = deliberateCreateElement(iframeDoc, "style") as HTMLStyleElement;
         setStyleText(styleEl, style);
         iframeDoc.head.appendChild(styleEl);
       }
       // Inject the MathJax CHTML stylesheet into the iframe so that mjx-* custom elements
       // are styled correctly when measuring scroll height and computing inline styles.
       if (mjxCHtmlStyleContent) {
-        const mjxStyleEl = deliberateCreateElement(iframeDoc, "style");
+        const mjxStyleEl = deliberateCreateElement(iframeDoc, "style") as HTMLStyleElement;
         setStyleText(mjxStyleEl, mjxCHtmlStyleContent);
         iframeDoc.head.appendChild(mjxStyleEl);
       }

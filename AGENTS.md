@@ -80,6 +80,7 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 ## DOM Styling And Visibility
 
 - Prefer Obsidian's established classes such as `mod-warning` before adding plugin-specific CSS. Consult the Obsidian CSS variables and component conventions when styling settings or dialogs.
+- Never use `document.createElement()`, `Document.createElement()`, or `Document.createDocumentFragment()`. Always use Obsidian's `createEl()`, `createDiv()`, `createSpan()`, `createSvg()`, and `createFragment()` helpers. When an element must deliberately belong to a specific document that Obsidian's helpers cannot target, such as a canvas used for drawing or an element inside an iframe, use the `deliberateCreateElement` function injected by `rollup.config.mjs` and declare it in the consuming module, for example `declare const deliberateCreateElement: (document: Document, tagName: string) => HTMLElement;`.
 - Do not write an element's `style` attribute directly. Use `setStyle` and `removeStyle` from `src/utils/styleUtils.ts` when a dynamic inline style is genuinely necessary.
 - Use the existing visibility helpers instead of the native `hidden` property or attribute, which is not reliable in Obsidian's styled UI. Choose `hideElement`/`showElement` or `setComponentVisibility` from `src/utils/styleUtils.ts`, or `setElementHidden`/`setElementDisplay` from `src/utils/htmlUtils.ts` when a boolean/display-oriented API is clearer.
 - Search `src/utils/styleUtils.ts` and `src/utils/htmlUtils.ts` before introducing new DOM styling helpers or display classes.

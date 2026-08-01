@@ -51,7 +51,8 @@ import {
 } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
 import { errorlog } from "src/utils/coreUtils";
-import { getSelectableFontFiles } from "src/utils/fontUtils";
+import { getSelectableFontOptions } from "src/utils/fontUtils";
+import { FontPickerComponent } from "src/shared/components/FontPickerComponent";
 import {
   selectMarkdownBlockSubpath,
   selectMarkdownHeadingSubpath,
@@ -170,6 +171,7 @@ class MarkdownImageEditorController {
   private ownerAttachmentGeneration = 0;
   private activeLeafChangeRef: EventRef | null = null;
   private cssEditors: CSSCodeEditor[] = [];
+  private fontPickers: FontPickerComponent[] = [];
   private focusOwnerButtonEl: HTMLButtonElement | null = null;
   private ownerStatusEl: HTMLElement | null = null;
   private mobileViewPatchCleanup: (() => void) | null = null;
@@ -245,6 +247,7 @@ class MarkdownImageEditorController {
     }
     this.removeEditorResizeListener();
     this.destroyCSSEditors();
+    this.destroyFontPickers();
     this.focusOwnerButtonEl = null;
     this.ownerStatusEl = null;
     this.tab.clear();
@@ -474,30 +477,24 @@ class MarkdownImageEditorController {
       return;
     }
 
-    new Setting(host)
+    const fontSetting = new Setting(host)
       .setClass("excalidraw-markdown-image-editor__setting--font")
-      .setName(t("MARKDOWN_IMAGE_FONT"))
-      .addDropdown((dropdown) => {
-        for (const font of [
-          "Virgil",
-          "Cascadia",
-          "Excalifont",
-          "Comic Shanns",
-          "Liberation Sans",
-        ]) {
-          dropdown.addOption(font, font);
-        }
-        getSelectableFontFiles(
+      .setName(t("MARKDOWN_IMAGE_FONT"));
+    const fontPicker = new FontPickerComponent(
+      fontSetting.controlEl,
+      this.view.app,
+      () =>
+        getSelectableFontOptions(
           this.view.app,
           this.view.plugin.settings.fontAssetsPath,
-        ).forEach((file) => {
-          dropdown.addOption(file.path, file.name);
-        });
-        dropdown.setValue(style.fontFamily).onChange((fontFamily) => {
-          this.updateAppearanceStyle(options.scope, { fontFamily });
-          void this.view.plugin.initializeFonts();
-        });
+        ),
+    )
+      .setAriaLabel(t("MARKDOWN_IMAGE_FONT"))
+      .setValue(style.fontFamily)
+      .onChange((fontFamily) => {
+        this.updateAppearanceStyle(options.scope, { fontFamily });
       });
+    this.fontPickers.push(fontPicker);
 
     let fontColorTextEl: HTMLInputElement | null = null;
     let fontColorPicker: ColorComponent | null = null;
@@ -692,6 +689,7 @@ class MarkdownImageEditorController {
     }
     this.renderStatusEl = null;
     this.destroyCSSEditors();
+    this.destroyFontPickers();
     this.focusOwnerButtonEl = null;
     this.ownerStatusEl = null;
     this.tab.clear();
@@ -749,6 +747,7 @@ class MarkdownImageEditorController {
     }
     this.renderStatusEl = null;
     this.destroyCSSEditors();
+    this.destroyFontPickers();
     this.focusOwnerButtonEl = null;
     this.ownerStatusEl = null;
     this.tab.clear();
@@ -1667,6 +1666,13 @@ class MarkdownImageEditorController {
     this.cssEditors = [];
   }
 
+  private destroyFontPickers(): void {
+    for (const picker of this.fontPickers) {
+      picker.destroy();
+    }
+    this.fontPickers = [];
+  }
+
   private watchEditorChanges(): void {
     if (this.editorChangeRef) {
       this.app.workspace.offref(this.editorChangeRef);
@@ -1936,6 +1942,7 @@ class MarkdownImageEditorController {
     }
     this.cancelScheduledRender();
     this.destroyCSSEditors();
+    this.destroyFontPickers();
     this.focusOwnerButtonEl = null;
     this.ownerStatusEl = null;
     void this.flushAndDetachEditor().finally(() => {
