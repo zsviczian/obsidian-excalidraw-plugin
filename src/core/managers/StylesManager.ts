@@ -69,10 +69,20 @@ export class StylesManager {
   }
 
   private async onCSSChange() {
-    await this.harvestStyles();
-    getAllWindowDocuments(this.plugin.app).forEach((doc) => {
-      this.copyPropertiesToTheme(doc);
-    });
+    const harvest = async () => {
+      await this.harvestStyles();
+      getAllWindowDocuments(this.plugin.app).forEach((doc) => {
+        this.copyPropertiesToTheme(doc);
+      });
+    };
+
+    if (!this.plugin.app.workspace.layoutReady) {
+      this.plugin.app.workspace.onLayoutReady(async () => {
+        await harvest();
+      });
+      return;
+    }
+    await harvest();
   }
 
   private onWindowOpen(win: WorkspaceWindow) {
@@ -143,8 +153,10 @@ export class StylesManager {
       const cm = this.plugin.ea.getCM(
         computedStyles.getPropertyValue("--background-primary"),
       );
-      cm.alphaTo(0.9);
-      allVariables["--background-primary"] = cm.stringHEX();
+      if(cm) {
+        cm.alphaTo(0.9);
+        allVariables["--background-primary"] = cm.stringHEX();
+      }
       return Object.entries(allVariables)
         .map(([key, value]) => `${key}: ${value} !important;`)
         .join(" ");
