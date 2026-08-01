@@ -38,6 +38,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 ## Fixed
 - Custom freedraw pens now remain selected while temporarily using the eraser or another tool, and are restored when returning to freedraw. [#2859](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2859)
+- Dragging an external video or other non-image file with the **Import external file** action now offers the same use, overwrite, or import choice as images when a matching file already exists in the Vault. [#2851](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2851) 🙏[@WolfExplode](${URLs.GITHUB_COM}/WolfExplode)
 
 ## Excalidraw Automate Breaking Change
 - Excalidraw component API has discontinued \`api.scrollToContent(target?, opts?)\` and replaced it with \`api.setViewport(opts | null)\`. You'll need to update MindMap Builder and Comic Strip Director scripts. If you have your own scripts using this API function you'll need to update them accordingly. For more information read the Excalidraw [Change Log](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_CHANGELOG}#viewport-control--scrollzoom-locking)

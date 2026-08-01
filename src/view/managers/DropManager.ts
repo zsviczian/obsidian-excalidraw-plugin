@@ -424,7 +424,9 @@ export class DropManager {
           } else {
             const extension = getURLImageExtension(link.url);
             if (localFileDragAction === "image-import") {
-              if (IMAGE_TYPES.contains(extension)) {
+              if (extension === "excalidraw") {
+                return true; //excalidraw to continue processing
+              } else {
                 void (async () => {
                   const droppedFilename = event.dataTransfer.files[i].name;
                   const fileToImport =
@@ -452,7 +454,8 @@ export class DropManager {
                     droppedFilename,
                     this.file.path,
                   );
-                  if (maybeFile && maybeFile instanceof TFile) {
+                  let file = maybeFile instanceof TFile ? maybeFile : null;
+                  if (file) {
                     const action = await ScriptEngine.suggester(
                       this.app,
                       [
@@ -462,40 +465,26 @@ export class DropManager {
                       ],
                       ["Use", "Overwrite", "Import"],
                       `A file with the same name/path already exists in the Vault\n${
-                        maybeFile.path
+                        file.path
                       }`,
                     );
-                    if (action !== "Import") {
-                      if (action === "Overwrite") {
-                        await this.app.vault.modifyBinary(
-                          maybeFile,
-                          fileToImport,
-                        );
-                      }
-                      await insertImportedFile(maybeFile);
-                      return false;
+                    if (action === "Overwrite") {
+                      await this.app.vault.modifyBinary(file, fileToImport);
+                    } else if (action === "Import") {
+                      file = null;
                     }
                   }
-                  const file = await importFileToVault(
+                  file ??= await importFileToVault(
                     this.app,
                     droppedFilename,
                     fileToImport,
                     this.view.file,
                     this.view,
                   );
-                  await insertImportedFile(file);
-                })();
-              } else if (extension === "excalidraw") {
-                return true; //excalidraw to continue processing
-              } else {
-                void (async () => {
-                  const file = await importFileToVault(
-                    this.app,
-                    event.dataTransfer.files[i].name,
-                    await event.dataTransfer.files[i].arrayBuffer(),
-                    this.view.file,
-                    this.view,
-                  );
+                  if (IMAGE_TYPES.contains(extension)) {
+                    await insertImportedFile(file);
+                    return;
+                  }
                   const modal = new UniversalInsertFileModal(
                     this.plugin,
                     this.view,
