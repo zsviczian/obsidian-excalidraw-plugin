@@ -1062,7 +1062,7 @@ End Obsidian Sheets Plus support
 }
 
 .excalidraw-toolsPanel-dragHandle {
-  height: 26px;
+  height: 40px;
   width: 100%;
   cursor: move;
 }
@@ -1109,13 +1109,17 @@ End Obsidian Sheets Plus support
   background-color: var(--background-primary);
   border-top: 1px solid var(--background-modifier-border);
   z-index: 10;
+
+.excalidraw-padding-zoom-icon svg {
+  width: 32px;
+  height: 32px;
+}
 }
 
 .excalidraw-pen-settings-floating-actions .setting-item {
   border-top: none;
   padding: 0;
 }
-
 /* Editable Markdown images */
 .excalidraw-markdown-image-editor {
   display: flex;
@@ -1617,4 +1621,77 @@ button.excalidraw-font-picker {
 .menu.excalidraw-font-picker-menu--desktop {
   max-height: min(420px, 60vh);
   overflow-y: auto;
+}
+
+/* --- padding UI --- */
+
+.excalidraw-padding-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.excalidraw-padding-zoom-icon {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+  background: var(--background-secondary);
+  border-radius: 4px;
+  padding: 3px;
+  font-size: 18px;
+  line-height: 40px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+
+.excalidraw-padding-zoom-icon svg {
+  width: 32px;
+  height: 32px;
+}
+}
+
+.ex-pad-popup {
+  position: fixed;
+  z-index: 999;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.ex-pad-popup-label {
+  min-width: 36px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.ex-pad-popup-track {
+  width: 10px;
+  height: 160px;
+  background: var(--background-modifier-border);
+  border-radius: 5px;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ex-pad-popup-knob {
+  width: 18px;
+  height: 14px;
+  background: var(--interactive-accent);
+  border-radius: 3px;
+  position: absolute;
+  left: -4px;
+  top: 0;
 }
