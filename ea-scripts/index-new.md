@@ -101,7 +101,7 @@ These are the scripts I use most often. I tried to order them by importance, but
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Mindmap%20Builder.svg"/></div>|[[#Mindmap Builder]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Mindmap%20format.svg"/></div>|[[#Mindmap format]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Printable%20Layout%20Wizard.svg"/></div>|[[#Printable Layout Wizard]]|
-|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/VoronoiDiagramGenerator.svg"/></div>|[[#VoronoiDiagramGenerator]]|
+|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/VoronoiDiagramGenerator.svg"/></div>|[[#Voronoi Diagram Generator]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Zoom%20to%20Fit%20Selected%20Elements.svg"/></div>|[[#Zoom to Fit Selected Elements]]|
 
 ## Connectors and Arrows
