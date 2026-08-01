@@ -145,18 +145,16 @@ export default {
   MARKDOWN_IMAGE_CSS_DESC: "CSS rules applied only to this Markdown image.",
   MARKDOWN_IMAGE_CSS_IMPORTANT_HINT:
     "If a rule has no effect, add !important to the declaration.",
-  MARKDOWN_IMAGE_CSS_DESKTOP_HELP:
-    "To inspect the generated markup, open Developer Console ({shortcut}) and run the command available from the copy button.",
-  MARKDOWN_IMAGE_CSS_MOBILE_HELP:
-    "On desktop, you can inspect the generated markup in Developer Console and run the command available from the copy button.",
+  MARKDOWN_IMAGE_CSS_SVG_COPY_HINT:
+    "Use the copy button below to copy the generated SVG for inspection.",
   MARKDOWN_IMAGE_CSS_EDITOR_ARIA: "CSS editor for this Markdown image",
   MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA:
     "CSS editor for transcluded Markdown",
   MARKDOWN_IMAGE_INSERT_CSS_BOILERPLATE:
     "Insert a commented CSS boilerplate",
-  MARKDOWN_IMAGE_COPY_CSS_COMMAND:
-    "Copy the generated Markdown SVG console command",
-  MARKDOWN_IMAGE_CSS_COMMAND_COPIED: "Console command copied",
+  MARKDOWN_IMAGE_COPY_SVG: "Copy the current Markdown image SVG",
+  MARKDOWN_IMAGE_SVG_COPIED: "Markdown image SVG copied",
+  MARKDOWN_IMAGE_SVG_COPY_ERROR: "Could not copy the Markdown image SVG",
   MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE:
     "Use a different style for transclusions",
   MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE_DESC:

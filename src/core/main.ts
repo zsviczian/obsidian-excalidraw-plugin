@@ -1659,12 +1659,12 @@ export default class ExcalidrawPlugin extends Plugin {
           ...DEFAULT_SETTINGS.markdownImageSettings.defaults,
           width: this.settings.mdSVGwidth,
           fontFamily: this.settings.mdFont,
-          fontColor: this.settings.mdFontColor,
+          fontColor: this.settings.mdFontColor ?? "#000000",
           border: {
             enabled: false,
             color: this.settings.mdBorderColor,
           },
-          css: this.settings.mdCSS,
+          css: "",
           transclusion: {
             ...DEFAULT_SETTINGS.markdownImageSettings.defaults.transclusion,
             border: {

@@ -43,10 +43,9 @@ import {
 } from "src/utils/fileUtils";
 import { t } from "src/lang/helpers";
 import { showColorPicker } from "src/shared/Dialogs/ColorPicker";
-import { fragWithHTML } from "src/utils/utils";
+import { getBinaryFileFromDataURL } from "src/utils/utils";
 import {
   COLOR_NAMES,
-  DEVICE,
   VIEW_TYPE_EXCALIDRAW,
 } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
@@ -69,8 +68,6 @@ import {
   BLOCK_REFERENCE_ICON_REGISTRY_SVG,
 } from "src/constants/blockReferenceIcon";
 
-const MARKDOWN_SVG_CONSOLE_COMMAND =
-  "ExcalidrawAutomate.mostRecentMarkdownSVG";
 let blockReferenceIconRegistered = false;
 
 type MarkdownImageAppearanceStyle = Pick<
@@ -85,7 +82,7 @@ type AppearanceControlsOptions = {
   cssEditorAria: string;
   cssBoilerplate: string;
   cssBoilerplateMarker: string;
-  includeCSSCommand: boolean;
+  includeSVGCopy: boolean;
 };
 
 const setBlockReferenceIcon = (button: ButtonComponent): void => {
@@ -362,22 +359,14 @@ class MarkdownImageEditorController {
         });
       });
 
-    const developerConsoleHelp = DEVICE.isMobile
-      ? t("MARKDOWN_IMAGE_CSS_MOBILE_HELP")
-      : t("MARKDOWN_IMAGE_CSS_DESKTOP_HELP").replace(
-          "{shortcut}",
-          DEVICE.isMacOS ? "CMD+OPT+i" : "CTRL+SHIFT+i",
-        );
     this.renderAppearanceControls(appearance, {
       scope: "image",
       cssName: t("MARKDOWN_IMAGE_CSS"),
-      cssDescription: fragWithHTML(
-        `${t("MARKDOWN_IMAGE_CSS_DESC")} ${t("MARKDOWN_IMAGE_CSS_IMPORTANT_HINT")} ${developerConsoleHelp}`,
-      ),
+      cssDescription: `${t("MARKDOWN_IMAGE_CSS_DESC")} ${t("MARKDOWN_IMAGE_CSS_IMPORTANT_HINT")} ${t("MARKDOWN_IMAGE_CSS_SVG_COPY_HINT")}`,
       cssEditorAria: t("MARKDOWN_IMAGE_CSS_EDITOR_ARIA"),
       cssBoilerplate: MARKDOWN_IMAGE_CSS_BOILERPLATE,
       cssBoilerplateMarker: MARKDOWN_IMAGE_CSS_BOILERPLATE_MARKER,
-      includeCSSCommand: true,
+      includeSVGCopy: true,
     });
 
     const transclusionToggleSetting = new Setting(content)
@@ -425,7 +414,7 @@ class MarkdownImageEditorController {
       cssEditorAria: t("MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA"),
       cssBoilerplate: TRANSCLUSION_CSS_BOILERPLATE,
       cssBoilerplateMarker: TRANSCLUSION_CSS_BOILERPLATE_MARKER,
-      includeCSSCommand: false,
+      includeSVGCopy: false,
     });
 
     void this.mountMarkdownView(editorHost);
@@ -519,6 +508,11 @@ class MarkdownImageEditorController {
       .addText((text) => {
         fontColorTextEl = text.inputEl;
         text.setValue(style.fontColor).onChange(setFontColor);
+        text.inputEl.addEventListener("blur", () => {
+          if (text.inputEl.value.trim() === "") {
+            setFontColor("black");
+          }
+        });
       })
       .addColorPicker((picker) => {
         fontColorPicker = picker;
@@ -650,19 +644,46 @@ class MarkdownImageEditorController {
       "aria-label",
       t("MARKDOWN_IMAGE_INSERT_CSS_BOILERPLATE"),
     );
-    if (options.includeCSSCommand) {
-      const copyCSSCommandButton = new ButtonComponent(cssActions)
+    if (options.includeSVGCopy) {
+      const copySVGButton = new ButtonComponent(cssActions)
         .setIcon("clipboard-copy")
         .setClass("excalidraw-markdown-image-editor__css-action-button")
-        .setTooltip(t("MARKDOWN_IMAGE_COPY_CSS_COMMAND"))
-        .onClick(async () => {
-          await navigator.clipboard.writeText(MARKDOWN_SVG_CONSOLE_COMMAND);
-          new Notice(t("MARKDOWN_IMAGE_CSS_COMMAND_COPIED"));
-        });
-      copyCSSCommandButton.buttonEl.setAttribute(
+        .setTooltip(t("MARKDOWN_IMAGE_COPY_SVG"))
+        .onClick(() => void this.copyCurrentMarkdownSVG());
+      copySVGButton.buttonEl.setAttribute(
         "aria-label",
-        t("MARKDOWN_IMAGE_COPY_CSS_COMMAND"),
+        t("MARKDOWN_IMAGE_COPY_SVG"),
       );
+    }
+  }
+
+  private async copyCurrentMarkdownSVG(): Promise<void> {
+    if (!this.ensureOwnerValid() || !this.element?.fileId) {
+      new Notice(t("MARKDOWN_IMAGE_SVG_COPY_ERROR"));
+      return;
+    }
+    try {
+      const file = this.view.excalidrawAPI?.getFiles()[this.element.fileId];
+      if (!file?.dataURL.startsWith("data:image/svg+xml")) {
+        new Notice(t("MARKDOWN_IMAGE_SVG_COPY_ERROR"));
+        return;
+      }
+      const data = await getBinaryFileFromDataURL(file.dataURL);
+      const clipboard =
+        this.tab?.contentEl.ownerDocument.defaultView?.navigator.clipboard ??
+        navigator.clipboard;
+      if (!data || !clipboard) {
+        new Notice(t("MARKDOWN_IMAGE_SVG_COPY_ERROR"));
+        return;
+      }
+      await clipboard.writeText(new TextDecoder().decode(data));
+      new Notice(t("MARKDOWN_IMAGE_SVG_COPIED"));
+    } catch (error: unknown) {
+      errorlog({
+        where: "MarkdownImageEditor.copyCurrentMarkdownSVG",
+        error,
+      });
+      new Notice(t("MARKDOWN_IMAGE_SVG_COPY_ERROR"));
     }
   }
 

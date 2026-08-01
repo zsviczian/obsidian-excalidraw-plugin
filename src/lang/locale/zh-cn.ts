@@ -125,16 +125,15 @@ export default {
   MARKDOWN_IMAGE_CSS_DESC: "仅应用于此 Markdown 图像的 CSS 规则。",
   MARKDOWN_IMAGE_CSS_IMPORTANT_HINT:
     "如果规则没有效果，请在声明中添加 !important。",
-  MARKDOWN_IMAGE_CSS_DESKTOP_HELP:
-    "要检查生成的标记，请打开开发者控制台（{shortcut}），然后运行复制按钮提供的命令。",
-  MARKDOWN_IMAGE_CSS_MOBILE_HELP:
-    "在桌面设备上，可在开发者控制台中检查生成的标记，并运行复制按钮提供的命令。",
+  MARKDOWN_IMAGE_CSS_SVG_COPY_HINT:
+    "使用下方的复制按钮复制生成的 SVG 以供检查。",
   MARKDOWN_IMAGE_CSS_EDITOR_ARIA: "此 Markdown 图像的 CSS 编辑器",
   MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA:
     "嵌入 Markdown 的 CSS 编辑器",
   MARKDOWN_IMAGE_INSERT_CSS_BOILERPLATE: "插入带注释的 CSS 模板",
-  MARKDOWN_IMAGE_COPY_CSS_COMMAND: "复制生成的 Markdown SVG 控制台命令",
-  MARKDOWN_IMAGE_CSS_COMMAND_COPIED: "控制台命令已复制",
+  MARKDOWN_IMAGE_COPY_SVG: "复制当前 Markdown 图像的 SVG",
+  MARKDOWN_IMAGE_SVG_COPIED: "已复制 Markdown 图像 SVG",
+  MARKDOWN_IMAGE_SVG_COPY_ERROR: "无法复制 Markdown 图像 SVG",
   MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE: "为嵌入内容使用不同样式",
   MARKDOWN_IMAGE_TRANSCLUSION_DIFFERENT_STYLE_DESC:
     "显示嵌入 Markdown 的独立外观设置。",

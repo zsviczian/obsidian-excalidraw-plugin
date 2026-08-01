@@ -1,5 +1,8 @@
 import type { MarkdownImageRenderSettings } from "src/types/markdownImageTypes";
 
+const normalizeFontColor = (fontColor: string): string =>
+  fontColor.trim() === "" ? "black" : fontColor;
+
 /** Resolves a complete render configuration from stored values and defaults. */
 export function resolveMarkdownImageRenderSettings(
   defaults: MarkdownImageRenderSettings,
@@ -10,7 +13,7 @@ export function resolveMarkdownImageRenderSettings(
   return {
     width: stored?.width ?? defaults.width,
     fontFamily: stored?.fontFamily ?? defaults.fontFamily,
-    fontColor: stored?.fontColor ?? defaults.fontColor,
+    fontColor: normalizeFontColor(stored?.fontColor ?? defaults.fontColor),
     border: {
       enabled: stored?.border?.enabled ?? defaults.border.enabled,
       color: stored?.border?.color ?? defaults.border.color,
@@ -23,7 +26,9 @@ export function resolveMarkdownImageRenderSettings(
         : defaultTransclusion.enabled,
       fontFamily:
         storedTransclusion?.fontFamily ?? defaultTransclusion.fontFamily,
-      fontColor: storedTransclusion?.fontColor ?? defaultTransclusion.fontColor,
+      fontColor: normalizeFontColor(
+        storedTransclusion?.fontColor ?? defaultTransclusion.fontColor,
+      ),
       border: {
         enabled:
           storedTransclusion?.border?.enabled ??

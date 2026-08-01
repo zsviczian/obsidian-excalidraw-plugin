@@ -39,6 +39,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 ## Fixed
 - Custom freedraw pens now remain selected while temporarily using the eraser or another tool, and are restored when returning to freedraw. [#2859](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2859)
 - Font selectors for Markdown images and font settings now preview each available font face and refresh the vault font list whenever opened.
+- Empty Markdown-image font colors now normalize to black when the editor loads or the color field loses focus. The CSS controls can also copy the selected image's generated SVG directly for inspection.
 - Dragging an external video or other non-image file with the **Import external file** action now offers the same use, overwrite, or import choice as images when a matching file already exists in the Vault. [#2851](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2851) 🙏[@WolfExplode](${URLs.GITHUB_COM}/WolfExplode)
 
 ## Excalidraw Automate Breaking Change
