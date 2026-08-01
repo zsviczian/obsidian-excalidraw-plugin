@@ -16,15 +16,29 @@ with painted sound-effect FX — no drawing skills required.
   action-beat cut; each region is its own placement target.
 - **Characters** — pick **who → as what → doing what** from the character packs
   you've imported. The picker only shows combinations you actually own, with a
-  real thumbnail for every tile. Show/hide characters with **⚙ Manage**.
+  real thumbnail for every tile, and a **search box** filters characters,
+  costumes and actions at once. Show/hide characters with **⚙ Manage**.
+- **↔ Facing toggle** — stamp figures mirrored, so characters can face each
+  other across a panel.
+- **Current page mini-map** — every placement slot at a glance (shaded =
+  filled, accent ring = next auto-fill target). Click a region to select its
+  panel, flip between pages, **export the page** to any folder on disk
+  (PNG 1–4× or SVG), **copy** it straight to the clipboard, or **remove** it.
+- **Pose swap** — click an action while a placed figure is selected and it is
+  replaced in place, keeping its exact spot and size.
+- Plus: a **★ Recent** row of your last-placed figures, **paper fill** for new
+  pages, **↻ Build again**, dialogue seed text for callout zones, and
+  **drag-and-drop** `.strippack` import.
 - **Character & FX packs** — install `.strippack` files with **Import pack…** /
   **Import FX pack…** (idempotent, backed-up merges). New characters, costumes
   and FX: [comicstripdirector.com](https://comicstripdirector.com/).
 - **FX callouts** — painted POW! / ZAP! / KABOOM! bursts, stamped into a panel.
 - **Hand-drawn vector library** — your original `figures.json` set; stamped with
   your exact strokes, colours and jitter preserved. Your art is never restyled.
-- **Callout zone** — a light, dashed placeholder where dialogue goes. Select it
-  and run the **Comicbook Callout Editor** to turn it into a real speech bubble.
+- **Callout zone** — a light, dashed placeholder where dialogue goes, sized
+  for lettering and placed in the free space around your figures (never on top
+  of them — and figures placed later dodge the zone too). Select it and run
+  the **Comicbook Callout Editor** to turn it into a real speech bubble.
 
 Tags everything in `customData.stripDirector` and never touches `comicCallout`.
 
@@ -90,6 +104,9 @@ const SPLIT_OPTIONS = [
   { id: "horizontal", label: "Horizontal",  tip: "Split into top / bottom halves (2 regions)" },
 ];
 const STRIP_ROLES = ["panel", "calloutZone", "figure", "panelGroup", "subpanel", "fx"];
+// Script version — shown in the header/About and quoted in "update this
+// script" errors, so support requests always carry the installed version.
+const SCRIPT_VERSION = "2.0.0";
 const COMIC_STROKE = "#1e1e1e";
 const COMIC_STROKE_WIDTH = 4;
 const COMIC_ROUGHNESS = 0;
@@ -104,6 +121,10 @@ const STORE_URL = "https://comicstripdirector.com/";
 // The companion script that letters the reserved callout zones (speech bubbles etc.).
 const CALLOUT_EDITOR_URL = "https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Comicbook%20Callout%20Editor.md";
 const FIT_PAD = 0.9;          // breathing room when scaling a figure into a panel
+// ↔ Facing toggle: while on, newly stamped figures (vector AND image) are
+// mirrored horizontally so characters can face each other. Session-scoped;
+// FX bursts and callout zones are never mirrored (lettering must stay readable).
+let FLIP_NEXT = false;
 
 // ===========================================================================
 // SECTION A — LAYOUT  (panel split, tagging, callout zones)
@@ -152,10 +173,12 @@ function tagStripDirector(ea, id, data) {
   ids.forEach((i) => ea.addAppendUpdateCustomData(i, { stripDirector: payload }));
   return ids;
 }
-function addCalloutZonePlaceholder(ea, rect, panelIndex, seedText, page) {
+function addCalloutZonePlaceholder(ea, rect, panelIndex, seedText, page, zoneOverride) {
   const padX = rect.w * 0.1;
   const padTop = rect.h * 0.08;
-  const zone = {
+  // Preferred: an adaptive rect from computeZoneRect (sized for lettering,
+  // dodging figures). The legacy fixed-proportions layout is the fallback.
+  const zone = zoneOverride || {
     x: rect.x + padX, y: rect.y + padTop,
     w: rect.w - 2 * padX, h: Math.min(rect.h * 0.34, rect.h - 2 * padTop),
   };
@@ -172,8 +195,21 @@ function addCalloutZonePlaceholder(ea, rect, panelIndex, seedText, page) {
     ea.style.strokeColor = CALLOUT_STROKE;
     ea.style.strokeStyle = "solid";
     ea.style.opacity = CALLOUT_TEXT_OPACITY;
-    ea.style.fontSize = 16;
-    ids.push(ea.addText(zone.x + 8, zone.y + 8, String(seedText).trim(), {
+    // The dialogue must FIT the zone: shrink the font first, and when even
+    // the smallest font would overflow, truncate with an ellipsis (the full
+    // line goes into the Callout Editor later anyway).
+    let text = String(seedText).trim();
+    let fs = Math.max(12, Math.min(20, Math.round(zone.h * 0.2)));
+    const linesAt = (f) => {
+      const charsPerLine = Math.max(4, Math.floor((zone.w - 16) / (f * 0.6)));
+      return { lines: Math.ceil(text.length / charsPerLine), charsPerLine };
+    };
+    while (fs > 10 && linesAt(fs).lines * fs * 1.35 + 14 > zone.h) fs--;
+    const m = linesAt(fs);
+    const maxLines = Math.max(1, Math.floor((zone.h - 14) / (fs * 1.35)));
+    if (m.lines > maxLines) text = text.slice(0, Math.max(4, maxLines * m.charsPerLine - 1)) + "…";
+    ea.style.fontSize = fs;
+    ids.push(ea.addText(zone.x + 8, zone.y + 8, text, {
       width: zone.w - 16, textAlign: "center", verticalAlign: "top",
     }));
   }
@@ -485,7 +521,7 @@ async function importPackFileAt(path, prog) {
     return `${res.name}: +${res.added} FX (${res.written} images)`;
   }
   if (fmt.startsWith("strippack/") || fmt.startsWith("strippack-fx/"))
-    throw new Error(base + ": needs a newer version of this script (" + fmt + ") — update Comic Strip Director.");
+    throw new Error(base + ": needs a newer version of this script (" + fmt + ") — update Comic Strip Director (you have v" + SCRIPT_VERSION + ").");
   throw new Error(base + ": not a Strip Director pack.");
 }
 // Import a batch of .strippack files sequentially, with per-file progress and a
@@ -943,7 +979,7 @@ async function installPack(pack, onProgress) {
   if (!adapter) throw new Error("No vault adapter available.");
   if (!pack || pack.format !== PACK_FORMAT) {
     const fmt = pack && String(pack.format || "");
-    if (fmt && fmt.startsWith("strippack/")) throw new Error("This pack uses a newer format (" + fmt + ") — update the Comic Strip Director script, then import again.");
+    if (fmt && fmt.startsWith("strippack/")) throw new Error("This pack uses a newer format (" + fmt + ") — update the Comic Strip Director script (you have v" + SCRIPT_VERSION + "), then import again.");
     throw new Error("Not a Strip Director pack (expected " + PACK_FORMAT + ").");
   }
   const dir = _aiDir();
@@ -1128,8 +1164,8 @@ function findComposed(character, func, action, prefix) {
 //   into ea.elementsDict with fresh ids + remapped refs, scaled to fit, then
 //   the caller commits ONCE. Keeps seed/colours/roughness verbatim (his art).
 // ===========================================================================
-function stampFigure(ea, figure, panel, panelIdx, half, page) {
-  const s = Math.min(panel.w / figure.w, panel.h / figure.h) * FIT_PAD;
+function stampFigure(ea, figure, panel, panelIdx, half, page, pad) {
+  const s = Math.min(panel.w / figure.w, panel.h / figure.h) * (pad == null ? FIT_PAD : pad);
   const dx = panel.x + (panel.w - figure.w * s) / 2;
   const dy = panel.y + (panel.h - figure.h * s) / 2;
 
@@ -1160,11 +1196,21 @@ function stampFigure(ea, figure, panel, panelIdx, half, page) {
     if (src.startBinding) el.startBinding = { ...src.startBinding, elementId: remap(src.startBinding.elementId) };
     if (src.endBinding) el.endBinding = { ...src.endBinding, elementId: remap(src.endBinding.elementId) };
 
-    el.x = dx + src.x * s;
+    // ↔ Facing: mirror each element's box across the figure's vertical centre
+    // line (in source space, before scaling). Points mirror inside their own
+    // bbox; rotation runs the other way; text glyphs stay readable (only the
+    // box position mirrors, which is what you want for a flipped character).
+    const srcW = typeof src.width === "number" ? src.width : 0;
+    el.x = dx + (FLIP_NEXT ? (figure.w - src.x - srcW) : src.x) * s;
     el.y = dy + src.y * s;
     if (typeof src.width === "number") el.width = src.width * s;
     if (typeof src.height === "number") el.height = src.height * s;
-    if (Array.isArray(src.points)) el.points = src.points.map(([px, py]) => [px * s, py * s]);
+    if (Array.isArray(src.points) && src.points.length) {
+      let minPx = Infinity, maxPx = -Infinity;
+      if (FLIP_NEXT) for (const p of src.points) { if (p[0] < minPx) minPx = p[0]; if (p[0] > maxPx) maxPx = p[0]; }
+      el.points = src.points.map(([px, py]) => [(FLIP_NEXT ? (minPx + maxPx - px) : px) * s, py * s]);
+    }
+    if (FLIP_NEXT && typeof src.angle === "number" && src.angle) el.angle = (Math.PI * 2 - src.angle) % (Math.PI * 2);
     if (typeof src.fontSize === "number") el.fontSize = src.fontSize * s;
     if (typeof src.strokeWidth === "number") el.strokeWidth = Math.max(0.5, src.strokeWidth * s);
 
@@ -1199,22 +1245,190 @@ function panelByIndex(idx, page) {
   return state.panels.find((x) => x.index === idx && (page === undefined || (x.page || 0) === (page || 0)))
     || state.panels[idx] || null;
 }
-function getActivePanelIndex() {
+// Which panel (on which page) the user is targeting: the canvas selection on
+// ANY page wins — selecting a page-1 panel while page 2 is current must split
+// or letter THAT panel, not a same-index panel on the current page.
+function getActiveTarget() {
   try {
     const sel = ea.getViewSelectedElements ? ea.getViewSelectedElements() : [];
     for (const el of sel) {
       const sd = el.customData && el.customData.stripDirector;
       if (!sd) continue;
-      if ((sd.page || 0) !== (state.page || 0)) continue;   // selection on another page — ignore
-      if (sd.role === "panel" && typeof sd.index === "number") return clampIdx(sd.index);
-      if (typeof sd.panel === "number") return clampIdx(sd.panel);
+      if (sd.role === "panel" && typeof sd.index === "number") return { page: sd.page || 0, idx: sd.index };
+      if (typeof sd.panel === "number") return { page: sd.page || 0, idx: sd.panel };
     }
   } catch (e) { /* no selection */ }
-  return clampIdx(typeof state.activePanel === "number" ? state.activePanel : 0);
+  return { page: state.page || 0, idx: clampIdx(typeof state.activePanel === "number" ? state.activePanel : 0) };
+}
+
+// 1-based "page N" label for notices (pages are ordered by their y-origin id).
+function pageLabel(pageId) {
+  try {
+    const pages = [...new Set((state.panels || []).map((p) => p.page || 0))].sort((a, b) => a - b);
+    const i = pages.indexOf(pageId || 0);
+    return i >= 0 ? `page ${i + 1}` : "another page";
+  } catch (e) { return "another page"; }
 }
 // Inner box where a figure is placed inside a region (leaves a margin all round).
 function figureBox(rect) {
   return { x: rect.x + rect.w * 0.08, y: rect.y + rect.h * 0.10, w: rect.w * 0.84, h: rect.h * 0.80 };
+}
+
+// Union bbox of the elements with `role` already living in a slot (live canvas
+// read; an element without a half tag counts for every half of its panel).
+function _slotBBox(role, page, panelIdx, half) {
+  try {
+    const els = ea.getViewElements ? ea.getViewElements() : [];
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity, hit = false;
+    for (const el of els) {
+      if (!el || el.isDeleted) continue;
+      const sd = el.customData && el.customData.stripDirector;
+      if (!sd || sd.role !== role || sd.panel !== panelIdx) continue;
+      if ((sd.page || 0) !== (page || 0)) continue;
+      if (half !== undefined && sd.half !== undefined && sd.half !== half) continue;
+      minX = Math.min(minX, el.x); minY = Math.min(minY, el.y);
+      maxX = Math.max(maxX, el.x + (el.width || 0)); maxY = Math.max(maxY, el.y + (el.height || 0));
+      hit = true;
+    }
+    return hit ? { x: minX, y: minY, w: maxX - minX, h: maxY - minY } : null;
+  } catch (e) { return null; }
+}
+
+// Figure box that DODGES a callout zone already in the slot: the figure takes
+// the larger free band above/below the zone, so it never lands on the dialogue.
+// If the free band would be too small for a decent figure, fall back to the
+// classic full-region placement (better a slight overlap than a tiny figure).
+function figureBoxSmart(region, page, panelIdx, half) {
+  const zb = _slotBBox("calloutZone", page, panelIdx, half);
+  if (zb) {
+    // Largest free band on any side of the zone; take it when it still leaves
+    // room for a decent figure (≥ 40% of the region's area).
+    const cands = [
+      { x: region.x, y: region.y, w: region.w, h: zb.y - region.y },
+      { x: region.x, y: zb.y + zb.h, w: region.w, h: (region.y + region.h) - (zb.y + zb.h) },
+      { x: region.x, y: region.y, w: zb.x - region.x, h: region.h },
+      { x: zb.x + zb.w, y: region.y, w: (region.x + region.w) - (zb.x + zb.w), h: region.h },
+    ].filter((b) => b.w > 0 && b.h > 0);
+    if (cands.length) {
+      cands.sort((a, b) => b.w * b.h - a.w * a.h);
+      const best = cands[0];
+      if (best.w * best.h >= region.w * region.h * 0.40) return figureBox(best);
+    }
+  }
+  return figureBox(region);
+}
+
+function _rectsOverlap(a, b) {
+  return a && b && a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+}
+
+// Scale + move the figure elements already in a slot into `target` (aspect
+// kept, bottom-aligned so characters stay grounded). Used when a callout zone
+// arrives AFTER the figure and there is no free band — the figure gives way.
+async function _refitSlotFigures(page, panelIdx, half, target) {
+  try {
+    const els = (ea.getViewElements ? ea.getViewElements() : []).filter((el) => {
+      if (!el || el.isDeleted) return false;
+      const sd = el.customData && el.customData.stripDirector;
+      return sd && sd.role === "figure" && sd.panel === panelIdx && (sd.page || 0) === (page || 0) &&
+        (half === undefined || sd.half === undefined || sd.half === half);
+    });
+    if (!els.length) return false;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const el of els) {
+      minX = Math.min(minX, el.x); minY = Math.min(minY, el.y);
+      maxX = Math.max(maxX, el.x + (el.width || 0)); maxY = Math.max(maxY, el.y + (el.height || 0));
+    }
+    const fb = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+    if (!(fb.w > 0) || !(fb.h > 0)) return false;
+    const s = Math.min(1, Math.min(target.w / fb.w, target.h / fb.h));
+    if (!(s > 0)) return false;
+    const ox = target.x + (target.w - fb.w * s) / 2;
+    const oy = target.y + (target.h - fb.h * s);            // bottom-aligned
+    ea.clear();
+    ea.copyViewElementsToEAforEditing(els);
+    for (const el of ea.getElements()) {
+      const relX = el.x - fb.x, relY = el.y - fb.y;
+      el.x = ox + relX * s;
+      el.y = oy + relY * s;
+      if (typeof el.width === "number") el.width *= s;
+      if (typeof el.height === "number") el.height *= s;
+      if (Array.isArray(el.points)) el.points = el.points.map(([px, py]) => [px * s, py * s]);
+      if (typeof el.fontSize === "number") el.fontSize *= s;
+      if (typeof el.strokeWidth === "number") el.strokeWidth = Math.max(0.5, el.strokeWidth * s);
+    }
+    await ea.addElementsToView(false, true);                // same ids → updated in place
+    if (ea.clear) ea.clear();
+    return true;
+  } catch (e) {
+    console.error("Comic Strip Director: figure refit failed", e);
+    try { if (ea.clear) ea.clear(); } catch (x) { /* headless */ }
+    return false;
+  }
+}
+
+// Callout-zone geometry, the way letterers actually work:
+//   SIZE  — driven by the dialogue when given (long line → wider/taller
+//           bubble), clamped in absolute canvas units, plus a little jitter
+//           so no two zones are identical clones.
+//   PLACE — in the free space around the figure, preferring beside/above the
+//           HEAD and avoiding under the feet; any band close in size to the
+//           best can win, and the zone hugs the speaker inside its band —
+//           so placement varies naturally from panel to panel.
+function computeZoneRect(region, figBox, seedText) {
+  const clampNum = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const rnd = (lo, hi) => lo + Math.random() * (hi - lo);
+  const padX = Math.max(6, region.w * 0.05);
+  const padY = Math.max(6, region.h * 0.05);
+  const inner = { x: region.x + padX, y: region.y + padY, w: region.w - 2 * padX, h: region.h - 2 * padY };
+
+  const len = String(seedText || "").trim().length;
+  let idealW, idealH;
+  if (len) {
+    const fsz = clampNum(region.h * 0.05, 13, 18);
+    const targetLines = len <= 24 ? 2 : len <= 64 ? 3 : 4;
+    idealW = clampNum(Math.ceil(len / targetLines) * fsz * 0.62 + 40, 120, Math.min(inner.w, 560)) * rnd(0.94, 1.08);
+    const lines = Math.max(1, Math.ceil(len / Math.max(6, (idealW - 28) / (fsz * 0.62))));
+    idealH = clampNum(lines * fsz * 1.55 + 26, 44, 210) * rnd(0.95, 1.06);
+  } else {
+    idealW = clampNum(region.w * rnd(0.26, 0.44), 110, 430);
+    idealH = clampNum(region.h * rnd(0.15, 0.26), 44, 150);
+  }
+
+  let band = inner, anchor = "top";
+  if (figBox) {
+    const cands = [
+      { anchor: "top",    x: inner.x, y: inner.y, w: inner.w, h: (figBox.y - padY) - inner.y, weight: 1 },
+      { anchor: "left",   x: inner.x, y: inner.y, w: (figBox.x - padX) - inner.x, h: inner.h, weight: 1 },
+      { anchor: "right",  x: figBox.x + figBox.w + padX, y: inner.y, w: (inner.x + inner.w) - (figBox.x + figBox.w + padX), h: inner.h, weight: 1 },
+      { anchor: "bottom", x: inner.x, y: figBox.y + figBox.h + padY, w: inner.w, h: (inner.y + inner.h) - (figBox.y + figBox.h + padY), weight: 0.4 },
+    ].filter((b) => b.w >= 90 && b.h >= 40);
+    if (cands.length) {
+      const score = (b) => b.w * b.h * b.weight;
+      const best = Math.max(...cands.map(score));
+      const good = cands.filter((b) => score(b) >= best * 0.55);
+      band = good[Math.floor(Math.random() * good.length)];
+      anchor = band.anchor;
+    }
+    // No usable free band → legacy top placement (the figure is huge); the
+    // caller refits the figure to make room.
+  }
+
+  const w = Math.min(idealW, band.w);
+  const h = Math.min(idealH, band.h);
+  let x, y;
+  if (anchor === "left") x = band.x + band.w - w;            // hug the speaker
+  else if (anchor === "right") x = band.x;
+  else if (figBox) {
+    const overHead = figBox.x + figBox.w / 2 - w / 2 + rnd(-0.12, 0.12) * band.w;
+    x = clampNum(overHead, band.x, band.x + band.w - w);
+  } else x = band.x + rnd(0, Math.max(0, band.w - w));
+  if (anchor === "bottom") y = band.y + band.h - h;
+  else if (anchor === "left" || anchor === "right") {
+    const headY = figBox ? figBox.y + rnd(-0.05, 0.10) * figBox.h : band.y;
+    y = clampNum(headY, band.y, band.y + band.h - h);
+  } else y = band.y + rnd(0, Math.max(0, Math.min(band.h - h, band.h * 0.15)));
+  return { x, y, w, h };
 }
 
 // --- split sub-region geometry (FIX 2: place figures INSIDE a split half) ---
@@ -1291,8 +1505,39 @@ function occupiedSlots() {
 }
 function nextEmptySlot() {
   const occ = occupiedSlots();
-  for (const s of allSlots()) if (!occ.has(slotKey(s.page, s.panelIdx, s.half))) return s;
+  // Prefer the CURRENT page's empty slots — a hole on an earlier page must
+  // not teleport the next figure off-screen (stable sort keeps in-page order).
+  const cur = state.page || 0;
+  const slots = allSlots().sort((a, b) => ((a.page || 0) === cur ? 0 : 1) - ((b.page || 0) === cur ? 0 : 1));
+  for (const s of slots) if (!occ.has(slotKey(s.page, s.panelIdx, s.half))) return s;
   return null;
+}
+
+// POSE SWAP: when the current selection contains a Strip Director figure,
+// return that figure's elements + on-canvas box + slot tag — the caller then
+// replaces it IN PLACE (same spot and size, manual moves/resizes respected)
+// instead of filling the next empty slot. Multi-element vector figures are
+// collected by their shared slot tag. Null when no figure is selected.
+function selectedFigureSlot() {
+  try {
+    const sel = ea.getViewSelectedElements ? ea.getViewSelectedElements() : [];
+    const figs = sel.filter((el) => el && !el.isDeleted && el.customData &&
+      el.customData.stripDirector && el.customData.stripDirector.role === "figure");
+    if (!figs.length) return null;
+    const sd = figs[0].customData.stripDirector;
+    const group = figs.filter((el) => {
+      const t = el.customData.stripDirector;
+      return t.panel === sd.panel && t.half === sd.half && (t.page || 0) === (sd.page || 0);
+    });
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const el of group) {
+      minX = Math.min(minX, el.x); minY = Math.min(minY, el.y);
+      maxX = Math.max(maxX, el.x + (el.width || 0)); maxY = Math.max(maxY, el.y + (el.height || 0));
+    }
+    if (!(maxX > minX) || !(maxY > minY)) return null;
+    return { els: group, box: { x: minX, y: minY, w: maxX - minX, h: maxY - minY },
+      panelIdx: sd.panel, half: sd.half, page: sd.page || 0 };
+  } catch (e) { return null; }
 }
 
 // Rehydrate state.panels from the canvas. After the script is reloaded or a saved
@@ -1300,34 +1545,51 @@ function nextEmptySlot() {
 // outlines are still on the canvas — which made placement wrongly report "build a
 // strip first". We rebuild the panel list (and any split sub-regions) from the
 // customData tags so an existing strip is recognised without rebuilding it.
-function syncPanelsFromCanvas() {
+function syncPanelsFromCanvas(replaceAlways) {
   try {
     const els = ea.getViewElements ? ea.getViewElements() : [];
-    const byIndex = {};
+    const byKey = {};                          // "page/index" — stacked pages reuse indexes
     const panels = [];
     for (const el of els) {
       if (!el || el.isDeleted) continue;
       const sd = el.customData && el.customData.stripDirector;
-      if (sd && sd.role === "panel" && typeof sd.index === "number" && !byIndex[sd.index]) {
+      if (sd && sd.role === "panel" && typeof sd.index === "number") {
+        const page = sd.page || 0;
+        const key = page + "/" + sd.index;
+        if (byKey[key]) continue;
         // Prefer the stored polygon's inscribed box (angled panels); fall back to the
         // element's bounding box for older/rectangular panels.
         const rect = (sd.poly && sd.poly.length >= 3)
           ? Object.assign(panelPlacementBox(sd.poly), { index: sd.index })
           : { x: el.x, y: el.y, w: el.width, h: el.height, index: sd.index };
-        const p = { rect, poly: sd.poly || null, index: sd.index, frameIds: [el.id], figureIds: [], zoneIds: [], split: "none", subpanels: [] };
-        byIndex[sd.index] = p; panels.push(p);
+        const p = { rect, poly: sd.poly || null, index: sd.index, page, frameIds: [el.id], figureIds: [], zoneIds: [], split: "none", subpanels: [] };
+        byKey[key] = p; panels.push(p);
       }
     }
     for (const el of els) {
       if (!el || el.isDeleted) continue;
       const sd = el.customData && el.customData.stripDirector;
-      if (sd && sd.role === "subpanel" && typeof sd.panel === "number" && byIndex[sd.panel]) {
-        byIndex[sd.panel].subpanels.push({ half: sd.half, box: { x: el.x, y: el.y, w: el.width, h: el.height } });
-        byIndex[sd.panel].split = "manual";
+      if (sd && sd.role === "subpanel" && typeof sd.panel === "number") {
+        const host = byKey[(sd.page || 0) + "/" + sd.panel];
+        if (!host) continue;
+        // Angled sub-regions carry their polygon — rebuild the true inscribed
+        // placement box; older tags without one keep the element bounding box.
+        const box = (sd.poly && sd.poly.length >= 3) ? inscribedBox(sd.poly) : { x: el.x, y: el.y, w: el.width, h: el.height };
+        host.subpanels.push({ half: sd.half, poly: sd.poly || null, box, id: el.id });
+        host.split = "manual";
       }
     }
-    panels.sort((a, b) => a.index - b.index);
-    if (panels.length) state.panels = panels;
+    panels.sort((a, b) => (a.page - b.page) || (a.index - b.index));
+    // `replaceAlways` (mini-map ground truth) also accepts an EMPTY result —
+    // otherwise a fully removed page would linger in state forever.
+    if (panels.length || replaceAlways) {
+      state.panels = panels;
+      // Keep the user's current page when it still exists (the pager relies
+      // on this); fall back to the latest-built page when it vanished.
+      if (panels.length && !panels.some((p) => (p.page || 0) === (state.page || 0))) {
+        state.page = panels[panels.length - 1].page;
+      }
+    }
     return panels.length;
   } catch (e) { return 0; }
 }
@@ -1352,7 +1614,11 @@ function getPlacementContext(opts) {
       const selPage = sd.page || 0;
       if (sd.role === "subpanel" && typeof sd.panel === "number") {
         // The selected element itself carries its geometry — works across pages.
-        const region = { x: el.x, y: el.y, w: el.width, h: el.height };
+        // Angled sub-regions store their polygon; use its inscribed box so the
+        // figure lands inside the wedge, not the (larger) bounding box.
+        const region = (sd.poly && sd.poly.length >= 3)
+          ? inscribedBox(sd.poly)
+          : { x: el.x, y: el.y, w: el.width, h: el.height };
         if (!forFigure || !occ.has(slotKey(selPage, sd.panel, sd.half)))
           return { page: selPage, panelIdx: sd.panel, half: sd.half, region, explicit: true };
       }
@@ -1381,15 +1647,16 @@ function getPlacementContext(opts) {
     return slot ? { page: slot.page, panelIdx: slot.panelIdx, half: slot.half, region: slot.region, auto: true } : null;
   }
 
-  // 3. Callout zones / default: the active panel (first region if split).
-  const idx = getActivePanelIndex();
-  const panel = panelByIndex(idx);
+  // 3. Callout zones / default: the targeted panel (first region if split) —
+  //    page-aware, so a canvas selection on another page is honoured.
+  const t = getActiveTarget();
+  const panel = panelByIndex(t.idx, t.page);
   if (!panel) return null;
   if (panel.subpanels && panel.subpanels.length) {
     const sub = panel.subpanels[0]; // split panel, no half chosen -> default to first
-    return { page: panel.page || 0, panelIdx: idx, half: sub.half, region: sub.box, defaulted: true };
+    return { page: panel.page || 0, panelIdx: t.idx, half: sub.half, region: sub.box, defaulted: true };
   }
-  return { page: panel.page || 0, panelIdx: idx, half: undefined, region: panel.rect };
+  return { page: panel.page || 0, panelIdx: t.idx, half: undefined, region: panel.rect };
 }
 
 // Commit the EA workbench once. `onTop` puts figures above the panel frames.
@@ -1398,18 +1665,56 @@ async function commit(onTop) {
   if (ea.clear) ea.clear();
 }
 
+// Tell the side panel the canvas changed (mini-map / recents repaint). `ctx` is
+// created in the bootstrap; before that (or headless) this is a silent no-op.
+function notifySceneChanged() {
+  const run = () => {
+    try { (ctx.sceneWatchers || []).forEach((fn) => { try { fn(); } catch (e) { /* stale watcher */ } }); }
+    catch (e) { /* ctx not ready */ }
+  };
+  run();
+  // The view applies some mutations (deletions especially) asynchronously —
+  // repaint once more after they have settled.
+  try { setTimeout(run, 350); } catch (e) { /* headless */ }
+}
+
+// Yes/No modal for destructive actions. Resolves true when confirmed; degrades
+// to true (proceed) only when the Modal API itself is unavailable (headless).
+function confirmModal(title, text, cta) {
+  return new Promise((resolve) => {
+    let ok = false;
+    try {
+      const M = ea.obsidian && ea.obsidian.Modal;
+      const appRef = _vaultApp();
+      if (!M || !appRef) { resolve(true); return; }
+      const m = new M(appRef);
+      m.onClose = () => resolve(ok);
+      m.titleEl.setText(title);
+      m.contentEl.createEl("p", { text });
+      const row = m.contentEl.createDiv({ attr: { style: "display:flex;justify-content:flex-end;gap:8px;margin-top:16px" } });
+      const c = row.createEl("button", { text: "Cancel" });
+      c.onclick = () => m.close();
+      const g = row.createEl("button", { text: cta || "OK", cls: "mod-warning" });
+      g.onclick = () => { ok = true; m.close(); };
+      m.open();
+    } catch (e) { resolve(true); }
+  });
+}
+
 // Frame elements in the viewport (zoom-to-fit). Pass the ids to focus, or call
 // with no args to fit every Strip Director element on the canvas. Templates are
 // drawn at a fixed 1320px width, so without this the strip overflows a 100% view.
 function fitToView(ids) {
   try {
     const api = ea.getExcalidrawAPI && ea.getExcalidrawAPI();
-    if (!api || !api.scrollToContent) return;
+    if (!api || (!api.setViewport && !api.scrollToContent)) return;
     const all = ea.getViewElements ? ea.getViewElements() : api.getSceneElements();
     let els = ids && ids.length ? all.filter((el) => ids.includes(el.id)) : null;
     if (!els || !els.length) els = all.filter((el) => el.customData && el.customData.stripDirector);
     if (!els || !els.length) return;
-    api.scrollToContent(els, { fitToContent: true, animate: true });
+    // Excalidraw >= 2.26.0 replaced scrollToContent with setViewport.
+    if (api.setViewport) api.setViewport({ target: els, fit: "scale-down", animation: true });
+    else api.scrollToContent(els, { fitToContent: true, animate: true });
   } catch (e) { console.error("Strip Director fit-to-view failed", e); }
 }
 
@@ -1429,6 +1734,152 @@ function nextPageOrigin() {
     }
     return maxY === null ? { x: 0, y: 0 } : { x: 0, y: maxY + 90 };
   } catch (e) { return { x: 0, y: 0 }; }
+}
+
+// Every Strip Director element belonging to one page (panels, subpanels,
+// figures, FX, callout zones) — the unit for remove/export.
+function pageElements(pageId) {
+  const els = ea.getViewElements ? ea.getViewElements() : [];
+  return els.filter((el) => el && !el.isDeleted && el.customData && el.customData.stripDirector &&
+    ((el.customData.stripDirector.page || 0) === (pageId || 0)));
+}
+
+// Delete one whole page from the canvas (undo restores it in one step).
+async function removePage(pageId) {
+  const els = pageElements(pageId);
+  if (!els.length) { new Notice("Nothing on that page."); return false; }
+  if (!ea.deleteViewElements) { new Notice("This Excalidraw version can't delete elements from a script — select and delete the page manually."); return false; }
+  ea.deleteViewElements(els);
+  state.panels = (state.panels || []).filter((p) => (p.page || 0) !== (pageId || 0));
+  if ((state.page || 0) === (pageId || 0)) state.page = state.panels.length ? (state.panels[state.panels.length - 1].page || 0) : 0;
+  // The view applies the deletion asynchronously — wait (bounded) until the
+  // scene reflects it, or the mini-map repaint would re-sync the doomed
+  // elements straight back into state.
+  try {
+    for (let i = 0; i < 10 && pageElements(pageId).length; i++) await new Promise((r) => setTimeout(r, 50));
+  } catch (e) { /* repaint below self-corrects via the delayed pass */ }
+  new Notice(`Removed the page (${els.length} elements). Ctrl/Cmd+Z restores it.`);
+  notifySceneChanged();
+  return true;
+}
+
+// Render one page to a PNG blob (1–4× scale) or SVG markup, via the EA
+// workbench (the page's elements are copied in, images included).
+async function _renderPage(pageId, format, scale) {
+  const els = pageElements(pageId);
+  if (!els.length) { new Notice("Nothing on that page."); return null; }
+  try {
+    ea.clear();
+    ea.copyViewElementsToEAforEditing(els, true);          // true → copy image files too
+    // Always render LIGHT with background — a comic page must not come out
+    // dark-inverted just because the vault happens to be in dark mode.
+    const exportSettings = { withBackground: true, withTheme: false };
+    if (format === "svg") {
+      const svg = await ea.createSVG(null, true, exportSettings, undefined, "light");
+      return { svg: new XMLSerializer().serializeToString(svg) };
+    }
+    return { blob: await ea.createPNG(null, scale || 1, exportSettings, undefined, "light") };
+  } catch (e) {
+    console.error("Comic Strip Director: page render failed", e);
+    new Notice("Could not render the page — see console for details.");
+    return null;
+  } finally { if (ea.clear) ea.clear(); }
+}
+
+// System "Save as…" dialog (Electron, desktop only). Returns the chosen path,
+// null when the user cancelled, or undefined when no dialog API exists — the
+// caller then falls back to saving inside the vault. The chosen folder is
+// remembered (exportDir) and offered as the default next time.
+async function _pickSavePath(defaultName, format) {
+  try {
+    const elx = (typeof window !== "undefined") ? window.electron : null;
+    let remote = elx && elx.remote;
+    if (!remote && typeof window !== "undefined" && window.require) {
+      try { remote = window.require("@electron/remote"); } catch (e) { remote = null; }
+    }
+    const dialog = remote && remote.dialog;
+    if (!dialog || !dialog.showSaveDialog) return undefined;
+    const s = (ea.getScriptSettings && ea.getScriptSettings()) || {};
+    const defDir = (typeof s.exportDir === "string" && s.exportDir) ? s.exportDir + "/" : "";
+    const res = await dialog.showSaveDialog({
+      title: "Export comic page",
+      defaultPath: defDir + defaultName,
+      filters: [format === "svg" ? { name: "SVG image", extensions: ["svg"] } : { name: "PNG image", extensions: ["png"] }],
+    });
+    const fp = typeof res === "string" ? res : (res && !res.canceled ? res.filePath : null);
+    if (!fp) return null;
+    try { s.exportDir = fp.replace(/[\\/][^\\/]*$/, ""); ea.setScriptSettings(s); } catch (e) { /* pref only */ }
+    return fp;
+  } catch (e) { console.error("Comic Strip Director: save dialog failed", e); return undefined; }
+}
+
+// Export one page to a self-chosen folder on disk (system save dialog). When
+// no dialog is available (mobile/sandbox), saves next to the drawing instead.
+async function exportPageTo(pageId, format, scale) {
+  const out = await _renderPage(pageId, format, scale);
+  if (!out) return;
+  const file = ea.targetView && ea.targetView.file;
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  const name = ((file && file.basename) || "Comic strip") + " page " + stamp +
+    (format === "png" && (scale || 1) > 1 ? " @" + scale + "x" : "") + "." + format;
+  const path = await _pickSavePath(name, format);
+  if (path === null) return;                               // cancelled
+  try {
+    if (path) {
+      const fs = (typeof window !== "undefined" && window.require) ? window.require("fs") : null;
+      if (!fs) throw new Error("File system access unavailable");
+      if (out.svg) fs.writeFileSync(path, out.svg, "utf8");
+      else fs.writeFileSync(path, new Uint8Array(await out.blob.arrayBuffer()));
+      new Notice("Exported " + path, 8000);
+      return;
+    }
+    const appRef = _vaultApp();
+    const dir = (file && file.parent && file.parent.path && file.parent.path !== "/") ? file.parent.path + "/" : "";
+    const dest = dir + name;
+    if (out.svg) await appRef.vault.adapter.write(dest, out.svg);
+    else await appRef.vault.adapter.writeBinary(dest, await out.blob.arrayBuffer());
+    new Notice("No system save dialog available here — exported into the vault instead: " + dest, 9000);
+  } catch (e) {
+    console.error("Comic Strip Director: export failed", e);
+    new Notice("Export failed — see console for details.");
+  }
+}
+
+// Copy one page to the clipboard: PNG as a real image (paste anywhere), SVG as
+// markup text (paste into a vector editor or file).
+async function copyPageToClipboard(pageId, format, scale) {
+  const out = await _renderPage(pageId, format, scale);
+  if (!out) return;
+  try {
+    if (out.svg) {
+      await navigator.clipboard.writeText(out.svg);
+      new Notice("SVG copied to the clipboard (as markup).");
+      return;
+    }
+    if (navigator.clipboard && typeof ClipboardItem !== "undefined") {
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": out.blob })]);
+      new Notice(`PNG copied to the clipboard (${scale || 1}×).`);
+      return;
+    }
+    throw new Error("Clipboard image API unavailable");
+  } catch (e) {
+    console.error("Comic Strip Director: copy failed", e);
+    new Notice("Copy failed — see console. Tip: use ⬇ Export instead.");
+  }
+}
+
+// ★ Recent figures — remember the last-placed AI figures (by cacheKey/id) so the
+// picker can offer one-click re-stamps. Bounded, deduped, persisted in settings.
+function _pushRecent(entry) {
+  try {
+    const key = entry && (entry.cacheKey || entry.id);
+    if (!key) return;
+    const s = (ea.getScriptSettings && ea.getScriptSettings()) || {};
+    const list = (Array.isArray(s.recentFigures) ? s.recentFigures : []).filter((k) => k !== key);
+    list.unshift(key);
+    s.recentFigures = list.slice(0, 8);
+    ea.setScriptSettings(s);
+  } catch (e) { /* non-fatal */ }
 }
 
 // ===========================================================================
@@ -1477,6 +1928,16 @@ const LAYOUT_CATALOG = [
   { id: "s-3tall", nm: "3 vertical tall", grp: "Splash", asp: "pt", p: _grid(3, 1) },
 ];
 function layoutById(id) { return LAYOUT_CATALOG.find((L) => L.id === id) || null; }
+// Resolve ANY layout id, generated ones included ("gen-6-3x2" is rebuilt from
+// its embedded panel count) — powers the ↻ Build again button.
+function layoutByAnyId(id, aspect) {
+  if (!id) return null;
+  const hit = layoutById(id);
+  if (hit) return hit;
+  const m = /^gen-(\d+)-/.exec(String(id));
+  if (m) return genLayouts(parseInt(m[1], 10), aspect).find((L) => L.id === id) || null;
+  return null;
+}
 function shrinkToward(pts, f) { const c = polyCentroid(pts); return pts.map((p) => [p[0] + (c[0] - p[0]) * f, p[1] + (c[1] - p[1]) * f]); }
 // Canvas page box for an aspect (ld landscape / pt portrait / sq square), offset by origin.
 function catalogArea(asp) {
@@ -1491,17 +1952,39 @@ function instantiateLayout(layout, area, gutterFrac) {
     index,
   }));
 }
+// Axis-aligned 4-point rectangle test (TL,TR,BR,BL order, no rotation).
+function _isAxisRect(poly) {
+  return poly.length === 4 &&
+    poly[0][1] === poly[1][1] && poly[2][1] === poly[3][1] &&
+    poly[0][0] === poly[3][0] && poly[1][0] === poly[2][0];
+}
 // Placement box for a panel polygon: exact bbox for an axis-aligned rectangle,
 // inscribed box (fits inside) for angled/triangular panels.
 function panelPlacementBox(poly) {
-  const axis = poly.length === 4 &&
-    poly[0][1] === poly[1][1] && poly[2][1] === poly[3][1] &&
-    poly[0][0] === poly[3][0] && poly[1][0] === poly[2][0];
-  if (axis) {
+  if (_isAxisRect(poly)) {
     const xs = poly.map((p) => p[0]), ys = poly.map((p) => p[1]);
     return { x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) };
   }
   return inscribedBox(poly);
+}
+// Clip a convex polygon to one side of the infinite line A→B: keep the points
+// where keepSign · cross(B−A, P−A) ≥ 0, emitting the divider intersections, so
+// the two halves share the cut edge exactly. Used to split ANGLED panels along
+// their real borders (splitting the inscribed box would ignore the panel shape).
+function _clipHalfPlane(poly, A, B, keepSign) {
+  const side = (p) => ((B[0] - A[0]) * (p[1] - A[1]) - (B[1] - A[1]) * (p[0] - A[0])) * keepSign;
+  const EPS = 1e-9;
+  const out = [];
+  for (let i = 0; i < poly.length; i++) {
+    const P = poly[i], Q = poly[(i + 1) % poly.length];
+    const sp = side(P), sq = side(Q);
+    if (sp >= -EPS) out.push(P);
+    if ((sp > EPS && sq < -EPS) || (sp < -EPS && sq > EPS)) {
+      const t = sp / (sp - sq);
+      out.push([P[0] + (Q[0] - P[0]) * t, P[1] + (Q[1] - P[1]) * t]);
+    }
+  }
+  return out;
 }
 // Parametric generator — any N panels → a few sensible layout variants.
 function factorPairs(n) { const o = []; for (let r = 1; r <= n; r++) if (n % r === 0) o.push([n / r, r]); return o; }
@@ -1532,7 +2015,13 @@ async function buildStripFromLayout(layout, asp) {
   const panels = instantiateLayout(layout, area, 0.05);
   ea.style.strokeColor = COMIC_STROKE; ea.style.strokeWidth = COMIC_STROKE_WIDTH;
   ea.style.strokeStyle = "solid"; ea.style.roughness = COMIC_ROUGHNESS;
-  ea.style.backgroundColor = "transparent"; ea.style.opacity = 100;
+  // "Paper" pref: fill this page's panels white so stacked pages and exports
+  // mask whatever sits behind them. Splits and zones commit ON TOP of the
+  // stack so the fill can never hide them.
+  const _paper = !!(((ea.getScriptSettings && ea.getScriptSettings()) || {}).panelPaper);
+  ea.style.backgroundColor = _paper ? "#ffffff" : "transparent";
+  ea.style.fillStyle = "solid";
+  ea.style.opacity = 100;
   panels.forEach((pn) => {
     const id = ea.addLine(pn.poly.concat([pn.poly[0]]));
     // Persist the panel polygon so a reload rebuilds the exact inscribed placement
@@ -1543,6 +2032,7 @@ async function buildStripFromLayout(layout, asp) {
   state.activePanel = 0;
   await commit(false);
   fitToView(state.panels.flatMap((p) => p.frameIds));
+  notifySceneChanged();
   new Notice(`Built "${layout.nm}" — ${panels.length} panels. Select a panel, then fill it or add FX.`);
 }
 
@@ -1581,9 +2071,11 @@ async function placeRasterFX(entry) {
   if (!entry) return;
   const basePath = fxImagePath(entry);
   if (!basePath) { new Notice(`Could not place ${entry.word || entry.name || "FX"} — its image path is invalid.`); return; }
-  const ai = getActivePanelIndex();
-  const p = panelByIndex(ai);
-  const region = (p && p.rect) || { x: state.origin.x, y: state.origin.y, w: 460, h: 340 };
+  // Resolve the target like every other placement — getPlacementContext also
+  // rehydrates state.panels after a script reload (a bare panelByIndex lookup
+  // used to drop the FX at the canvas origin in that case).
+  const pc = getPlacementContext();
+  const region = (pc && pc.region) || { x: state.origin.x, y: state.origin.y, w: 460, h: 340 };
   ea.clear();
   let id;
   try { const fxPath = await _preferSvgSibling(basePath); id = await ea.addImage(region.x, region.y, fxPath, false, false); }
@@ -1593,12 +2085,25 @@ async function placeRasterFX(entry) {
     const natW = el.width || entry.w || 300, natH = el.height || entry.h || 300;
     const target = Math.min(region.w, region.h) * 0.55, s = target / Math.max(natW, natH);
     el.width = natW * s; el.height = natH * s;
-    el.x = region.x + (region.w - el.width) / 2;
-    el.y = region.y + (region.h - el.height) * 0.28;
+    // Fan multiple FX out across the panel instead of stamping every burst on
+    // the exact same spot — cycle through classic corner/centre positions.
+    let fxCount = 0;
+    try {
+      for (const e2 of (ea.getViewElements ? ea.getViewElements() : [])) {
+        const sd2 = e2 && !e2.isDeleted && e2.customData && e2.customData.stripDirector;
+        if (sd2 && sd2.role === "fx" && sd2.panel === (pc ? pc.panelIdx : 0) &&
+          ((sd2.page || 0) === (pc ? (pc.page || 0) : (state.page || 0)))) fxCount++;
+      }
+    } catch (e) { /* none */ }
+    const spots = [[0.5, 0.30], [0.24, 0.22], [0.76, 0.22], [0.26, 0.64], [0.74, 0.64], [0.5, 0.68]];
+    const sp = spots[fxCount % spots.length];
+    el.x = Math.max(region.x, Math.min(region.x + region.w - el.width, region.x + region.w * sp[0] - el.width / 2));
+    el.y = Math.max(region.y, Math.min(region.y + region.h - el.height, region.y + region.h * sp[1] - el.height / 2));
   }
-  tagStripDirector(ea, [id], { role: "fx", panel: ai, page: state.page || 0 });
+  tagStripDirector(ea, [id], { role: "fx", panel: pc ? pc.panelIdx : 0, page: pc ? (pc.page || 0) : (state.page || 0) });
   await ea.addElementsToView(false, true, true);
   if (ea.clear) ea.clear();
+  notifySceneChanged();
   new Notice(`Placed ${entry.word || entry.name}.`);
 }
 // Install a Comic FX pack (strippack-fx/v1) — writes PNGs + merges fx-figures.json.
@@ -1607,7 +2112,7 @@ async function importFXPack(pack, onProgress) {
   if (!ad) throw new Error("No vault adapter.");
   if (!pack || pack.format !== "strippack-fx/v1") {
     const fmt = pack && String(pack.format || "");
-    if (fmt && fmt.startsWith("strippack-fx/")) throw new Error("This FX pack uses a newer format (" + fmt + ") — update the Comic Strip Director script, then import again.");
+    if (fmt && fmt.startsWith("strippack-fx/")) throw new Error("This FX pack uses a newer format (" + fmt + ") — update the Comic Strip Director script (you have v" + SCRIPT_VERSION + "), then import again.");
     throw new Error("Not a Comic FX pack (strippack-fx/v1).");
   }
   const dir = _fxDir();
@@ -1685,14 +2190,30 @@ async function importFXPack(pack, onProgress) {
 
 async function splitSelectedPanel(mode) {
   if (mode === "none") { new Notice("Pick Diagonal or Triangle to split a panel."); return; }
-  const idx = getActivePanelIndex();
-  const panel = panelByIndex(idx);
+  if (!state.panels || !state.panels.length) syncPanelsFromCanvas();
+  const t = getActiveTarget();
+  const idx = t.idx;
+  const panel = panelByIndex(idx, t.page);
   if (!panel) { new Notice("Build a strip and select a panel first."); return; }
   // Draw each resulting sub-region as its OWN closed, selectable outline tagged
   // role:"subpanel" so a figure / zone can be placed INSIDE one half (not the
   // parent rect). Polygon edges coincide with the panel border + the divider, so
   // at roughness 0 the overlap is invisible — it just looks like a split panel.
-  const polys = splitPanel(panel.rect, mode);
+  // Rectangular panels split exactly as before. ANGLED panels clip their real
+  // polygon along the divider — panel.rect is only the inscribed box there, and
+  // splitting that box drew sub-regions that ignored the panel borders.
+  let polys;
+  const angled = panel.poly && panel.poly.length >= 3 && !_isAxisRect(panel.poly);
+  if (angled && ["diag-back", "diag-fwd", "horizontal", "diagonal"].includes(mode)) {
+    const xs = panel.poly.map((p) => p[0]), ys = panel.poly.map((p) => p[1]);
+    const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+    const A = mode === "horizontal" ? [minX, (minY + maxY) / 2] : mode === "diag-fwd" ? [maxX, minY] : [minX, minY];
+    const B = mode === "horizontal" ? [maxX, (minY + maxY) / 2] : mode === "diag-fwd" ? [minX, maxY] : [maxX, maxY];
+    polys = [_clipHalfPlane(panel.poly, A, B, 1), _clipHalfPlane(panel.poly, A, B, -1)].filter((p) => p.length >= 3);
+    if (polys.length < 2) { new Notice("This panel's shape can't be cut that way — try a different split."); return; }
+  } else {
+    polys = splitPanel(panel.rect, mode);
+  }
   ea.style.strokeColor = COMIC_STROKE;
   ea.style.strokeWidth = COMIC_STROKE_WIDTH;
   ea.style.strokeStyle = "solid";
@@ -1702,29 +2223,79 @@ async function splitSelectedPanel(mode) {
   panel.subpanels = [];
   polys.forEach((poly, hi) => {
     const id = ea.addLine(poly.concat([poly[0]]));
-    tagStripDirector(ea, [id], { role: "subpanel", panel: idx, half: hi, page: panel.page || 0 });
+    // Persist the sub-region polygon so a reload rebuilds the exact inscribed
+    // placement box (angled halves aren't rectangles).
+    tagStripDirector(ea, [id], { role: "subpanel", panel: idx, half: hi, page: panel.page || 0, poly });
     panel.frameIds.push(id);
-    panel.subpanels.push({ poly, half: hi, box: inscribedBox(poly) });
+    panel.subpanels.push({ poly, half: hi, box: inscribedBox(poly), id });
   });
   panel.split = mode;
-  await commit(false);
+  await commit(true);          // on top — a paper-filled panel must not hide the divider
+  notifySceneChanged();
   new Notice(`Split panel ${idx + 1} into ${polys.length} regions (${mode}). Select a region, then place a figure / zone in it.`);
 }
 
-async function addCalloutZone() {
+async function addCalloutZone(seedText) {
   const pc = getPlacementContext();
-  if (!pc) { new Notice("Build a strip and select a panel first."); return; }
-  const ids = addCalloutZonePlaceholder(ea, pc.region, pc.panelIdx, "", pc.page);
+  if (!pc) { new Notice("Build a strip and select a panel first."); return false; }
+  const seeded = seedText && String(seedText).trim().length;
+  // Size + place the zone around what's already in the slot: the figure AND
+  // any earlier zones (a second speech bubble finds its own spot). When the
+  // figure fills the panel (no free band anywhere), something must give: the
+  // zone takes the top and the figure is refitted into the space below it.
+  const figBox = _slotBBox("figure", pc.page, pc.panelIdx, pc.half);
+  const prevZones = _slotBBox("calloutZone", pc.page, pc.panelIdx, pc.half);
+  const uni = (a, b) => ({
+    x: Math.min(a.x, b.x), y: Math.min(a.y, b.y),
+    w: Math.max(a.x + a.w, b.x + b.w) - Math.min(a.x, b.x),
+    h: Math.max(a.y + a.h, b.y + b.h) - Math.min(a.y, b.y),
+  });
+  const obstacle = (figBox && prevZones) ? uni(figBox, prevZones) : (figBox || prevZones);
+  let zoneRect = computeZoneRect(pc.region, obstacle, seeded ? seedText : "");
+  if (figBox && _rectsOverlap(zoneRect, figBox)) {
+    // Earlier zones still count as obstacles here — a second bubble in a
+    // crowded panel must not land on the first one.
+    zoneRect = computeZoneRect(pc.region, prevZones, seeded ? seedText : "");
+    const gap = Math.max(6, pc.region.h * 0.03);
+    // The figure moves below EVERY zone (the new one and any earlier ones).
+    const bandTop = Math.max(zoneRect.y + zoneRect.h, prevZones ? prevZones.y + prevZones.h : -Infinity) + gap;
+    const band = {
+      x: pc.region.x + pc.region.w * 0.08, y: bandTop,
+      w: pc.region.w * 0.84, h: (pc.region.y + pc.region.h) - bandTop - pc.region.h * 0.06,
+    };
+    if (band.h > 40) await _refitSlotFigures(pc.page, pc.panelIdx, pc.half, band);
+  }
+  const ids = addCalloutZonePlaceholder(ea, pc.region, pc.panelIdx, seeded ? seedText : "", pc.page, zoneRect);
   if (pc.half !== undefined) tagStripDirector(ea, ids, { role: "calloutZone", panel: pc.panelIdx, half: pc.half, page: pc.page || 0 });
   const panel = panelByIndex(pc.panelIdx, pc.page);
   if (panel) panel.zoneIds.push(...ids);
-  await commit(false);
-  new Notice("Reserved a callout zone — select it and run Comicbook Callout Editor to letter it.");
+  await commit(true);          // on top — a paper-filled panel must not hide the zone
+  notifySceneChanged();
+  new Notice(seeded
+    ? "Reserved a callout zone with your dialogue — select it and run Comicbook Callout Editor to letter it."
+    : "Reserved a callout zone — select it and run Comicbook Callout Editor to letter it.");
+  return true;
 }
 
 // Stamp one of the user's hand-drawn figures into the selected panel or split sub-region.
 async function placeFigure(figure) {
   if (!figure) return;
+  // POSE SWAP: a selected Strip Director figure is replaced in place — stamp
+  // the new one into the old one's exact box first, THEN delete the old, so a
+  // failed stamp never loses the original.
+  const swap = selectedFigureSlot();
+  if (swap && ea.deleteViewElements) {
+    ea.clear();
+    const ids2 = stampFigure(ea, figure, swap.box, swap.panelIdx, swap.half, swap.page, 1);
+    await ea.addElementsToView(false, true, true);
+    if (ea.clear) ea.clear();
+    ea.deleteViewElements(swap.els);
+    const pn = panelByIndex(swap.panelIdx, swap.page);
+    if (pn) pn.figureIds.push(...ids2);
+    notifySceneChanged();
+    new Notice(`Swapped to "${figure.name}" in panel ${swap.panelIdx + 1}.`);
+    return;
+  }
   const pc = getPlacementContext({ forFigure: true });
   if (!pc) {
     new Notice(state.panels.length
@@ -1733,12 +2304,14 @@ async function placeFigure(figure) {
     return;
   }
   ea.clear();                                  // fresh workbench
-  const ids = stampFigure(ea, figure, figureBox(pc.region), pc.panelIdx, pc.half, pc.page);
+  const ids = stampFigure(ea, figure, figureBoxSmart(pc.region, pc.page, pc.panelIdx, pc.half), pc.panelIdx, pc.half, pc.page);
   await ea.addElementsToView(false, true, true); // one commit, figures on top
   if (ea.clear) ea.clear();
   const panel = panelByIndex(pc.panelIdx, pc.page);
   if (panel) panel.figureIds.push(...ids);
-  const where = pc.half !== undefined ? `panel ${pc.panelIdx + 1}, region ${pc.half + 1}` : `panel ${pc.panelIdx + 1}`;
+  notifySceneChanged();
+  const where = (pc.half !== undefined ? `panel ${pc.panelIdx + 1}, region ${pc.half + 1}` : `panel ${pc.panelIdx + 1}`) +
+    ((pc.page || 0) !== (state.page || 0) ? ` on ${pageLabel(pc.page)}` : "");
   new Notice(`Placed "${figure.name}" in ${where}.`);
 }
 
@@ -1758,7 +2331,7 @@ async function _preferSvgSibling(pngPath) {
 // Stamp an AI-composed figure (image element) into a placement box, scaled to fit.
 // EA owns the image id + fileId (binary embedded on commit) — no id/group remap
 // (unlike the vector clone path). Recipe per the ea-image notes.
-async function stampImageFigure(entry, box, panelIdx, half, page) {
+async function stampImageFigure(entry, box, panelIdx, half, page, pad) {
   const path = await _preferSvgSibling(aiFigureImagePath(entry));
   // scale=false → keep natural size (we scale to fit below); anchor=false → a
   // normal, freely RESIZABLE image (anchored images are pinned to 100% and refuse resize).
@@ -1767,11 +2340,12 @@ async function stampImageFigure(entry, box, panelIdx, half, page) {
   if (el) {
     const natW = el.width || entry.w || box.w;
     const natH = el.height || entry.h || box.h;
-    const s = Math.min(box.w / natW, box.h / natH) * FIT_PAD;
+    const s = Math.min(box.w / natW, box.h / natH) * (pad == null ? FIT_PAD : pad);
     el.width = natW * s;
     el.height = natH * s;
     el.x = box.x + (box.w - el.width) / 2;
     el.y = box.y + (box.h - el.height) / 2;
+    if (FLIP_NEXT) el.scale = [-1, 1];        // ↔ Facing: mirror the artwork
   }
   const tag = { role: "figure", panel: panelIdx, page: page === undefined ? (state.page || 0) : page };
   if (half !== undefined) tag.half = half;
@@ -1782,6 +2356,29 @@ async function stampImageFigure(entry, box, panelIdx, half, page) {
 // Place an AI-composed image figure into the selected panel / split region.
 async function placeAIFigure(entry) {
   if (!entry) return;
+  // POSE SWAP: a selected Strip Director figure is replaced in place — stamp
+  // first, THEN delete the old, so a failed stamp never loses the original.
+  const swap = selectedFigureSlot();
+  if (swap && ea.deleteViewElements) {
+    ea.clear();
+    let ids2;
+    try { ids2 = await stampImageFigure(entry, swap.box, swap.panelIdx, swap.half, swap.page, 1); }
+    catch (e) {
+      console.error("Comic Strip Director — pose swap failed", e);
+      new Notice(`Could not place "${entry.name}" — is its image in the AI Figures folder?`);
+      if (ea.clear) ea.clear();
+      return;
+    }
+    await ea.addElementsToView(false, true, true);
+    if (ea.clear) ea.clear();
+    ea.deleteViewElements(swap.els);
+    const pn = panelByIndex(swap.panelIdx, swap.page);
+    if (pn) pn.figureIds.push(...ids2);
+    _pushRecent(entry);
+    notifySceneChanged();
+    new Notice(`Swapped to "${entry.name}" in panel ${swap.panelIdx + 1}.`);
+    return;
+  }
   const pc = getPlacementContext({ forFigure: true });
   if (!pc) {
     new Notice(state.panels.length
@@ -1792,7 +2389,7 @@ async function placeAIFigure(entry) {
   ea.clear();
   let ids;
   try {
-    ids = await stampImageFigure(entry, figureBox(pc.region), pc.panelIdx, pc.half, pc.page);
+    ids = await stampImageFigure(entry, figureBoxSmart(pc.region, pc.page, pc.panelIdx, pc.half), pc.panelIdx, pc.half, pc.page);
   } catch (e) {
     console.error("Comic Strip Director — AI figure stamp failed", e);
     new Notice(`Could not place "${entry.name}" — is its image in the AI Figures folder?`);
@@ -1803,7 +2400,10 @@ async function placeAIFigure(entry) {
   if (ea.clear) ea.clear();
   const panel = panelByIndex(pc.panelIdx, pc.page);
   if (panel) panel.figureIds.push(...ids);
-  const where = pc.half !== undefined ? `panel ${pc.panelIdx + 1}, region ${pc.half + 1}` : `panel ${pc.panelIdx + 1}`;
+  _pushRecent(entry);
+  notifySceneChanged();
+  const where = (pc.half !== undefined ? `panel ${pc.panelIdx + 1}, region ${pc.half + 1}` : `panel ${pc.panelIdx + 1}`) +
+    ((pc.page || 0) !== (state.page || 0) ? ` on ${pageLabel(pc.page)}` : "");
   new Notice(`Placed AI figure "${entry.name}" in ${where}.`);
 }
 
@@ -1844,7 +2444,24 @@ const ABOUT = `
   each region becomes its own placement target.
 - **Characters** → pick **who** → **as what** (costume) → **doing what**
   (action). The picker shows only combinations from the packs you've imported,
-  each with a real preview. **⚙ Manage** shows/hides imported characters.
+  each with a real preview, and the **search box** filters characters, costumes
+  and actions at once. **⚙ Manage** shows/hides imported characters.
+- **↔ Facing toggle** → while on, newly placed figures are mirrored
+  horizontally — put two characters face to face.
+- **Current page** mini-map → every placement slot at a glance (shaded =
+  filled, accent ring = next auto-fill). Click a region to select its panel;
+  flip between pages; **⬇ Export** the page (PNG 1–4× or SVG) to any folder
+  on disk; **⧉ Copy** it to the clipboard; or **🗑 Remove** it.
+- **Pose swap** → select a placed figure, then click any action — it is
+  replaced in place, keeping its exact spot and size.
+- **★ Recent** → your last-placed figures as one-click re-stamps.
+- **▣ Paper** → newly built pages get white-filled panels, so stacked pages
+  and exports mask whatever sits behind them.
+- **↻ Build again** → rebuild the last-used layout as the next page.
+- **Dialogue seed** → type a line next to **+ Callout zone** and it lands
+  inside the reserved zone, ready for lettering.
+- **Drop to import** → drag \`.strippack\` files from Finder/Explorer onto the
+  drop zone in the Characters section.
 - **Import pack… / Import FX pack…** → install \`.strippack\` character or FX
   packs. Imports are safe: existing files are never overwritten, indexes are
   backed up first, and re-importing is a no-op.
@@ -1866,7 +2483,7 @@ also an importable **\`.excalidrawlib\`** stencil. Everything is tagged \`custom
 are available at [comicstripdirector.com](${STORE_URL}) — import them with the
 **⬇ Import pack…** / **⬇ Import FX pack…** buttons.
 
-Requires Excalidraw plugin 2.19.1 or higher.
+Comic Strip Director v${SCRIPT_VERSION} — requires Excalidraw plugin 2.19.1 or higher.
 `;
 
 function prettyId(id) {
@@ -1917,6 +2534,79 @@ function styleActionBtn(b, opts) {
   b.onmouseenter = () => { b.style.background = hoverBg; };
   b.onmouseleave = () => { b.style.background = baseBg; };
   return b;
+}
+
+// ↔ Facing toggle button. One shared FLIP_NEXT state; every section that shows
+// the toggle registers a repaint in ctx.flipRepaints (reset per buildPanel), so
+// flipping it in Characters also updates the copy in the vector library row.
+function addFlipToggle(parent, ctx) {
+  const b = parent.createEl("button", { text: "" });
+  b.title = "Mirror newly placed figures horizontally, so characters can face each other";
+  const paint = () => { styleActionBtn(b, { accent: FLIP_NEXT }); b.setText(FLIP_NEXT ? "↔ Facing: flipped" : "↔ Facing: normal"); };
+  paint();
+  if (ctx && Array.isArray(ctx.flipRepaints)) ctx.flipRepaints.push(paint);
+  b.onclick = () => {
+    FLIP_NEXT = !FLIP_NEXT;
+    const fns = (ctx && Array.isArray(ctx.flipRepaints)) ? ctx.flipRepaints : [paint];
+    fns.forEach((fn) => { try { fn(); } catch (e) { /* stale node */ } });
+  };
+  return b;
+}
+
+// Drag-and-drop import target: drop .strippack files straight from Finder /
+// Explorer. Each file is written into the scripts folder, then pushed through
+// the NORMAL import pipeline (progress overlay, section locks, cancel,
+// idempotent re-import) — exactly as if it had been copied there manually.
+function addPackDropZone(parent, tab, ctx) {
+  const dz = parent.createDiv({ text: "…or drop .strippack files here" });
+  dz.style.cssText = "flex:1 1 150px;min-width:130px;border:1.5px dashed var(--background-modifier-border);" +
+    "border-radius:5px;padding:4px 8px;font-size:0.72em;color:var(--text-faint);text-align:center;cursor:copy;align-self:stretch;display:flex;align-items:center;justify-content:center";
+  const hi = (on) => {
+    dz.style.borderColor = on ? "var(--interactive-accent)" : "var(--background-modifier-border)";
+    dz.style.color = on ? "var(--text-muted)" : "var(--text-faint)";
+  };
+  try {
+    dz.addEventListener("dragover", (e) => { e.preventDefault(); e.stopPropagation(); hi(true); });
+    dz.addEventListener("dragleave", () => hi(false));
+    dz.addEventListener("drop", async (e) => {
+      e.preventDefault(); e.stopPropagation(); hi(false);
+      try {
+        const files = [...((e.dataTransfer && e.dataTransfer.files) || [])];
+        const packs = files.filter((f) => f && f.name && f.name.toLowerCase().endsWith(".strippack"));
+        const zips = files.filter((f) => f && f.name && f.name.toLowerCase().endsWith(".zip"));
+        if (!packs.length) {
+          new Notice(zips.length
+            ? "That's the shop ZIP — unzip it first, then drop the .strippack files here."
+            : "No .strippack files in that drop.");
+          return;
+        }
+        if (_importActive) { new Notice("An import is already running — wait for it to finish (or cancel it) first."); return; }
+        _importActive = true;
+        try {
+          const ad = _vaultApp() && _vaultApp().vault && _vaultApp().vault.adapter;
+          if (!ad) { new Notice("No vault adapter available."); return; }
+          const root = _scriptsRoot();
+          const targets = [];
+          for (const f of packs) {
+            const base = _safeRel(String(f.name).split(/[\\/]/).pop());
+            if (!base) continue;
+            const dest = root + "/" + base;
+            await ad.writeBinary(dest, await f.arrayBuffer());
+            targets.push(dest);
+          }
+          if (!targets.length) { new Notice("Those file names couldn't be used."); return; }
+          const prog = createImportProgressMulti([tab.__csdCharSection, tab.__csdFxSection]);
+          try { await importPackFiles(targets, prog); } finally { prog.done(); }
+        } finally { _importActive = false; }
+        await reloadPackCaches();
+        await buildPanel(tab, ctx);
+      } catch (err) {
+        console.error("Strip Director: drop import failed", err);
+        new Notice("Drop import failed — see console for details.");
+      }
+    });
+  } catch (e) { /* headless */ }
+  return dz;
 }
 
 // Open the Comicbook Callout Editor the friendliest way available, in order:
@@ -2023,6 +2713,8 @@ async function buildPanel(tab, ctx) {
   // and they race around the awaits below. Stamp each run; a run that finds a newer
   // generation aborts before appending async sections, so the panel renders exactly once.
   const __gen = (tab.__buildGen = (tab.__buildGen || 0) + 1);
+  ctx.flipRepaints = [];                       // fresh ↔ Facing toggle registry per rebuild
+  ctx.sceneWatchers = [];                      // mini-map / recents repaint hooks (notifySceneChanged)
   contentEl.empty();
   // Responsive behaviour for any panel width: images scale, button rows wrap,
   // long names break instead of overflowing, buttons share one size.
@@ -2039,6 +2731,7 @@ async function buildPanel(tab, ctx) {
   renderHeader(contentEl);
   renderStatusLine(contentEl, tab, ctx);
   renderBuildPage(contentEl, tab, ctx);
+  renderMiniMap(contentEl, ctx);
   renderSplitSection(contentEl, ctx);
   renderVectorLibrary(contentEl, ctx);
   if (!(await renderCharacters(contentEl, tab, ctx, __gen))) return;
@@ -2055,6 +2748,8 @@ function renderHeader(contentEl) {
   const h2 = header.createEl("h2", { text: "Strip Director" });
   h2.style.margin = "0";
   h2.style.flex = "1 1 auto";
+  const ver = header.createEl("span", { text: "v" + SCRIPT_VERSION });
+  ver.style.cssText = "font-size:0.7em;color:var(--text-faint)";
   const about = contentEl.createDiv();
   about.style.display = "none";
   about.style.background = "var(--background-secondary)";
@@ -2180,6 +2875,7 @@ function renderBuildPage(contentEl, tab, ctx) {
     const wPrefs = (ea.getScriptSettings && ea.getScriptSettings()) || {};
     const wSave = (patch) => { try { const s = ea.getScriptSettings() || {}; Object.assign(s, patch); ea.setScriptSettings(s); } catch (e) {} };
     let aspect = ["ld", "pt", "sq"].includes(wPrefs.pageAspect) ? wPrefs.pageAspect : "pt";
+    let lastLayoutId = wPrefs.lastLayout || null;   // powers ↻ Build again + the picker highlight
     let genList = [];   // currently generated variants (appended to the picker)
 
     const layoutThumbSVG = (L) => {
@@ -2205,7 +2901,7 @@ function renderBuildPage(contentEl, tab, ctx) {
 
     // aspect toggle
     const aspRow = wsec.createDiv();
-    aspRow.style.display = "flex"; aspRow.style.gap = "6px"; aspRow.style.margin = "0 0 8px";
+    aspRow.style.display = "flex"; aspRow.style.flexWrap = "wrap"; aspRow.style.gap = "6px"; aspRow.style.margin = "0 0 8px";
     let paintAsp = () => {};
     const aspBtns = [["ld", "Landscape"], ["pt", "Portrait"], ["sq", "Square"]].map(([id, label]) => {
       const b = aspRow.createEl("button", { text: label });
@@ -2224,6 +2920,26 @@ function renderBuildPage(contentEl, tab, ctx) {
     styleActionBtn(fitBtn);
     fitBtn.title = "Zoom the canvas so the whole strip is visible";
     fitBtn.onclick = () => ctx.fitToView && ctx.fitToView();
+    // ↻ Build again — one click rebuilds the last-used layout as the next page.
+    const againBtn = aspRow.createEl("button", { text: "↻ Build again" });
+    styleActionBtn(againBtn);
+    let paintAgain = () => {
+      const L = layoutByAnyId(lastLayoutId, aspect);
+      againBtn.style.display = L ? "" : "none";
+      if (L) againBtn.title = `Build another "${L.nm}" page below the last one`;
+    };
+    paintAgain();
+    againBtn.onclick = async () => {
+      const L = layoutByAnyId(lastLayoutId, aspect);
+      if (L) await buildStripFromLayout(L, aspect);
+    };
+    // ▣ Paper — newly built pages get white-filled panels (masks what's behind).
+    let paper = !!wPrefs.panelPaper;
+    const paperBtn = aspRow.createEl("button", { text: "" });
+    const paintPaper = () => { styleActionBtn(paperBtn, { accent: paper }); paperBtn.setText(paper ? "▣ Paper: on" : "▢ Paper: off"); };
+    paintPaper();
+    paperBtn.title = "Fill the panels of newly built pages with white paper — stacked pages and exports mask whatever sits behind them";
+    paperBtn.onclick = () => { paper = !paper; wSave({ panelPaper: paper }); paintPaper(); };
 
     // generator row
     const genRow = wsec.createDiv();
@@ -2249,13 +2965,19 @@ function renderBuildPage(contentEl, tab, ctx) {
       cell.style.cursor = "pointer"; cell.style.textAlign = "center";
       cell.style.border = "1px solid var(--background-modifier-border)"; cell.style.borderRadius = "5px";
       cell.style.padding = "4px"; cell.style.background = "var(--background-secondary)";
+      if (L.id === lastLayoutId) cell.style.boxShadow = "0 0 0 2px var(--interactive-accent)";   // last used
       cell.title = `${L.nm} — ${L.p.length} panel${L.p.length > 1 ? "s" : ""}`;
       const holder = cell.createDiv(); holder.innerHTML = layoutThumbSVG(L);
       const svg = holder.querySelector("svg"); if (svg) { svg.style.width = "100%"; svg.style.height = "auto"; }
       const cap = cell.createEl("div", { text: L.nm });
       cap.style.fontSize = "0.6em"; cap.style.lineHeight = "1.1"; cap.style.marginTop = "2px";
       cap.style.whiteSpace = "nowrap"; cap.style.overflow = "hidden"; cap.style.textOverflow = "ellipsis";
-      makeActivatable(cell, async () => { wSave({ lastLayout: L.id }); await buildStripFromLayout(L, aspect); });
+      makeActivatable(cell, async () => {
+        wSave({ lastLayout: L.id });
+        lastLayoutId = L.id;
+        renderPicker(); paintAgain();
+        await buildStripFromLayout(L, aspect);
+      });
       return cell;
     }
     function renderPicker() {
@@ -2312,6 +3034,146 @@ function renderBuildPage(contentEl, tab, ctx) {
   // "Build a page" supersedes it; its "Fit to view" moved next to the aspect toggle.)
 }
 
+// Current-page mini-map: every placement slot as a clickable schematic — shaded
+// when filled, accent ring on the next auto-fill target. Clicking a region
+// selects its panel on the canvas so placements / splits / zones target it.
+// Multi-page strips get a pager (which also sets state.page, so the whole
+// panel targets the shown page), plus per-page Export and Remove actions.
+// Repaints via ctx.sceneWatchers whenever a placement changes the canvas.
+function renderMiniMap(contentEl, ctx) {
+  const sec = contentEl.createDiv();
+  sec.style.cssText = "margin:14px 0 0;padding-top:10px;border-top:1px solid var(--background-modifier-border)";
+  const h = sec.createEl("div", { text: "Current page" });
+  h.style.cssText = "font-weight:600;font-size:0.95em;margin:0 0 2px";
+  const sub = sec.createEl("div", { text: "Shaded = filled slot · accent ring = next auto-fill. Click a region to select its panel." });
+  sub.style.cssText = "font-size:0.78em;color:var(--text-muted);margin:0 0 6px";
+  const body = sec.createDiv();
+
+  const rectPoly = (r) => [[r.x, r.y], [r.x + r.w, r.y], [r.x + r.w, r.y + r.h], [r.x, r.y + r.h]];
+  const paint = () => {
+    body.empty();
+    syncPanelsFromCanvas(true);        // ground truth on every repaint — an
+                                       // empty canvas must EMPTY the map too
+    const pages = [...new Set((state.panels || []).map((p) => p.page || 0))].sort((a, b) => a - b);
+    if (!pages.length) {
+      body.createEl("div", { text: "No page yet — pick a layout above." }).style.cssText = "font-size:0.74em;color:var(--text-muted)";
+      return;
+    }
+    if (!pages.includes(state.page || 0)) state.page = pages[pages.length - 1];
+    const shown = state.page || 0;
+    const panels = state.panels.filter((p) => (p.page || 0) === shown);
+
+    // Pager + per-page actions.
+    const rowEl = body.createDiv();
+    rowEl.style.cssText = "display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 6px";
+    if (pages.length > 1) {
+      const pi = pages.indexOf(shown);
+      const mkNav = (txt, delta) => {
+        const b = rowEl.createEl("button", { text: txt });
+        styleActionBtn(b);
+        const target = pages[pi + delta];
+        if (target === undefined) { b.style.opacity = "0.4"; b.style.pointerEvents = "none"; return; }
+        b.onclick = () => {
+          state.page = target;                 // placements/splits/zones now target this page
+          fitToView(pageElements(target).map((el) => el.id));
+          paint();
+        };
+      };
+      mkNav("‹", -1);
+      rowEl.createEl("span", { text: `Page ${pi + 1} / ${pages.length}` }).style.cssText = "font-size:0.75em;color:var(--text-muted)";
+      mkNav("›", 1);
+    }
+    const askFmt = async (title) => {
+      const v = await pickFromList(
+        ["png1", "png2", "png3", "png4", "svg"],
+        ["PNG 1×", "PNG 2×", "PNG 3×", "PNG 4×", "SVG (vector)"],
+        title);
+      if (!v) return null;
+      return v === "svg" ? { format: "svg", scale: 1 } : { format: "png", scale: parseInt(v.slice(3), 10) };
+    };
+    const exp = rowEl.createEl("button", { text: "⬇ Export…" });
+    styleActionBtn(exp);
+    exp.title = "Export this page as PNG (1–4×) or SVG to a folder you choose";
+    exp.onclick = async () => {
+      const f = await askFmt("Export this page as…");
+      if (f) await exportPageTo(shown, f.format, f.scale);
+    };
+    const cpy = rowEl.createEl("button", { text: "⧉ Copy…" });
+    styleActionBtn(cpy);
+    cpy.title = "Copy this page to the clipboard as PNG (1–4×) or SVG markup";
+    cpy.onclick = async () => {
+      const f = await askFmt("Copy this page as…");
+      if (f) await copyPageToClipboard(shown, f.format, f.scale);
+    };
+    const rf = rowEl.createEl("button", { text: "↻" });
+    styleActionBtn(rf);
+    rf.title = "Refresh the mini-map (after undo/redo or manual canvas edits)";
+    rf.setAttribute("aria-label", "Refresh the mini-map");
+    rf.onclick = () => paint();
+    const del = rowEl.createEl("button", { text: "🗑 Remove page" });
+    styleActionBtn(del);
+    del.style.color = "var(--text-error)";
+    del.title = "Delete this page's panels, figures, FX and callout zones (undo restores it)";
+    del.onclick = async () => {
+      const n = pages.indexOf(shown) + 1;
+      if (!(await confirmModal("Remove page?", `Remove page ${n} — all of its panels, figures, FX and callout zones? Ctrl/Cmd+Z restores it.`, "Remove"))) return;
+      await removePage(shown);
+    };
+
+    // The schematic itself.
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const polyOf = (p) => (p.poly && p.poly.length >= 3) ? p.poly : rectPoly(p.rect);
+    for (const p of panels) for (const pt of polyOf(p)) {
+      minX = Math.min(minX, pt[0]); minY = Math.min(minY, pt[1]);
+      maxX = Math.max(maxX, pt[0]); maxY = Math.max(maxY, pt[1]);
+    }
+    const padPx = Math.max(maxX - minX, maxY - minY) * 0.02 + 6;
+    minX -= padPx; minY -= padPx; maxX += padPx; maxY += padPx;
+    const occ = occupiedSlots();
+    const next = nextEmptySlot();
+    const nextKey = next ? slotKey(next.page, next.panelIdx, next.half) : null;
+    const parts = [];
+    const meta = [];
+    let i = 0;
+    for (const p of panels) {
+      const regions = (p.subpanels && p.subpanels.length)
+        ? p.subpanels.map((spn) => ({
+            poly: (spn.poly && spn.poly.length >= 3) ? spn.poly : rectPoly(spn.box),
+            half: spn.half, elId: spn.id || (p.frameIds && p.frameIds[0]),
+          }))
+        : [{ poly: polyOf(p), half: undefined, elId: p.frameIds && p.frameIds[0] }];
+      for (const r of regions) {
+        const k = slotKey(p.page || 0, p.index, r.half);
+        const filled = occ.has(k);
+        const isNext = nextKey === k;
+        const d = r.poly.map((pt, j) => (j ? "L" : "M") + pt[0].toFixed(1) + " " + pt[1].toFixed(1)).join(" ") + " Z";
+        parts.push(`<path d="${d}" data-i="${i}" fill="${filled ? "var(--interactive-accent)" : "var(--background-primary)"}" fill-opacity="${filled ? 0.3 : 1}" stroke="${isNext ? "var(--interactive-accent)" : "var(--text-muted)"}" stroke-width="${isNext ? 10 : 4}" stroke-linejoin="round" style="cursor:pointer"/>`);
+        meta.push({ elId: r.elId, panelIdx: p.index });
+        i++;
+      }
+      const c = polyCentroid(polyOf(p));
+      parts.push(`<text x="${c[0].toFixed(1)}" y="${c[1].toFixed(1)}" font-size="${Math.max(28, (maxY - minY) / 14).toFixed(0)}" fill="var(--text-faint)" text-anchor="middle" dominant-baseline="middle" pointer-events="none">${p.index + 1}</text>`);
+    }
+    const svgHost = body.createDiv();
+    svgHost.innerHTML = `<svg viewBox="${minX.toFixed(1)} ${minY.toFixed(1)} ${(maxX - minX).toFixed(1)} ${(maxY - minY).toFixed(1)}" style="width:100%;max-height:180px;display:block">${parts.join("")}</svg>`;
+    try {
+      svgHost.querySelectorAll("path[data-i]").forEach((pathEl) => {
+        pathEl.addEventListener("click", () => {
+          const m = meta[parseInt(pathEl.getAttribute("data-i"), 10)];
+          if (!m) return;
+          state.activePanel = m.panelIdx;
+          try {
+            const el = (ea.getViewElements ? ea.getViewElements() : []).find((x) => x && x.id === m.elId);
+            if (el && ea.selectElementsInView) ea.selectElementsInView([el]);
+          } catch (e) { /* selection unavailable */ }
+        });
+      });
+    } catch (e) { /* headless */ }
+  };
+  paint();
+  if (Array.isArray(ctx.sceneWatchers)) ctx.sceneWatchers.push(paint);
+}
+
 // AI characters — the guided who → costume → action picker, with pack import and
 // the Manage panel. Async (loads the roster + figures). Returns false if a newer
 // buildPanel run superseded this one mid-await (so the caller stops before
@@ -2348,12 +3210,13 @@ async function renderCharacters(contentEl, tab, ctx, __gen) {
     hRow.style.cssText = "display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 2px";
     const h = hRow.createEl("div", { text: "Characters" });
     h.style.fontWeight = "600"; h.style.fontSize = "0.95em";
+    addFlipToggle(hRow, ctx);
     // Manage lives on the character header (it filters this section), not in the import
     // toolbar. Created here; wired to its panel further down.
     const manageBtn = hRow.createEl("button", { text: "⚙ Manage" });
     styleActionBtn(manageBtn); manageBtn.style.marginLeft = "auto";
     manageBtn.title = "Show or hide imported characters in the picker";
-    const sub = sec.createEl("div", { text: "Pick a character → a role → an action. The action stamps into the next empty slot." });
+    const sub = sec.createEl("div", { text: "Pick a character → a role → an action. The action stamps into the next empty slot — or replaces the selected figure (pose swap)." });
     sub.style.fontSize = "0.78em"; sub.style.color = "var(--text-muted)"; sub.style.margin = "0 0 8px";
 
     // --- Character packs: import + enable/disable -----------------------------
@@ -2398,6 +3261,7 @@ async function renderCharacters(contentEl, tab, ctx, __gen) {
     // Store button flows right after Import — auto-margins in a WRAPPING row
     // leave an orphaned right-pushed button on the second line when it wraps.
     addStoreBtn(packBar, "🛒 More characters & packs");
+    addPackDropZone(packBar, tab, ctx);
     const managePanel = sec.createDiv();
     managePanel.style.display = "none"; managePanel.style.margin = "0 0 10px"; managePanel.style.padding = "8px";
     managePanel.style.border = "1px solid var(--background-modifier-border)"; managePanel.style.borderRadius = "6px";
@@ -2551,6 +3415,31 @@ async function renderCharacters(contentEl, tab, ctx, __gen) {
         repaintLib();
       }
 
+      // Search — one box filters characters, costumes and actions at once
+      // (matches figure fields AND roster display names, all terms must hit).
+      // Only shown once the library is big enough to need it.
+      let query = "";
+      if (list.length >= 12) {
+        const inp = sec.createEl("input");
+        inp.type = "search";
+        inp.placeholder = "Search characters, costumes, actions…";
+        inp.setAttribute("aria-label", "Search the character library");
+        inp.style.cssText = "width:100%;max-width:300px;margin:0 0 6px;padding:3px 9px;font-size:0.78em;" +
+          "border:1px solid var(--background-modifier-border);border-radius:5px;background:var(--background-primary);color:var(--text-normal)";
+        // Debounced — a full picker re-render per keystroke stutters on
+        // multi-thousand-figure libraries.
+        let deb = null;
+        inp.oninput = () => {
+          query = inp.value.trim().toLowerCase();
+          if (deb) clearTimeout(deb);
+          deb = setTimeout(() => { deb = null; render(); }, 150);
+        };
+      }
+
+      // ★ Recent — one-click re-stamps of the last-placed figures (painted
+      // below, once tile()/grid() exist; repaints after every placement).
+      const recentWrap = sec.createDiv();
+
       const stepWrap = sec.createDiv();
 
       function tile(parent, url, label, selected, onClick) {
@@ -2603,6 +3492,19 @@ async function renderCharacters(contentEl, tab, ctx, __gen) {
         // per combo, preferring non-legacy art for thumbnails.
         const hasLegacyRoster = ((rosterLegacy && rosterLegacy.characters) || []).length > 0;
         const inLib = (f) => !hasLegacyRoster || (AI_LIB === "legacy" ? f.lib === "legacy" : f.lib !== "legacy");
+        // Search matcher: every whitespace-separated term must match the figure's
+        // own fields or the roster display name of its character/costume/action.
+        const rosterNames = new Map();
+        for (const c of chars) if (c && c.id) rosterNames.set(c.id, String(c.name || "").toLowerCase());
+        for (const fn2 of funcs) if (fn2 && fn2.id) rosterNames.set(fn2.id, String(fn2.name || "").toLowerCase());
+        for (const a2 of acts) if (a2 && a2.id) rosterNames.set(a2.id, String(a2.label || a2.name || "").toLowerCase());
+        const terms = query ? query.split(/\s+/).filter(Boolean) : [];
+        const matchesQuery = (f) => {
+          if (!terms.length) return true;
+          const hay = aiSearchText(f) + " " + (rosterNames.get(f.character) || "") + " " +
+            (rosterNames.get(f.function) || "") + " " + (rosterNames.get(f.action) || "");
+          return terms.every((t) => hay.includes(t));
+        };
         const rank = (f) => (f.action === "present" ? 3 : f.action === "stand" ? 2 : f.action === "wave" ? 1 : 0) * 2 + (f.lib !== "legacy" ? 1 : 0);
         // PACK FILTER (step 0) — group figures by the website product they came
         // from (split parts collapse into their parent pack). Chips only appear
@@ -2616,9 +3518,9 @@ async function renderCharacters(contentEl, tab, ctx, __gen) {
           for (const pid of ids) out.add(packProductOf(pid, instProducts));
           return out;
         };
-        const packsHere = new Map();             // product → figure count (lib-filtered)
+        const packsHere = new Map();             // product → figure count (lib+search-filtered)
         for (const f of list) {
-          if (!inLib(f)) continue;
+          if (!inLib(f) || !matchesQuery(f)) continue;
           for (const prod of prodsOf(f)) packsHere.set(prod, (packsHere.get(prod) || 0) + 1);
         }
         if (selPack != null && !packsHere.has(selPack)) selPack = null;  // pack no longer present
@@ -2644,7 +3546,7 @@ async function renderCharacters(contentEl, tab, ctx, __gen) {
         const charSet = new Set(), charFuncs = new Map(), comboActs = new Map();
         const charRep = new Map(), comboRep = new Map(), comboFig = new Map();
         for (const f of list) {
-          if (!inLib(f)) continue;
+          if (!inLib(f) || !matchesQuery(f)) continue;
           if (selPack != null && !prodsOf(f).has(selPack)) continue;
           const ch = f.character || "", fn = f.function || "", key = ch + "|" + fn;
           charSet.add(ch);
@@ -2694,7 +3596,10 @@ async function renderCharacters(contentEl, tab, ctx, __gen) {
             selChar = ""; selFunc = null; savePrefs({ lastChar: "" }); render();
           });
         }
-        if (!g1.children.length) {
+        if (!g1.children.length && terms.length) {
+          const none = g1.createEl("div", { text: `No matches for “${query}” — clear the search to see everything.` });
+          none.style.cssText = "font-size:0.74em;color:var(--text-muted)";
+        } else if (!g1.children.length) {
           const disabledHere = charsAll.some((c) => charSet.has(c.id) && DISABLED.has(c.id));
           const none = g1.createEl("div", { text: disabledHere
             ? "Every imported character is hidden — open ⚙ Manage characters to show some."
@@ -2735,6 +3640,23 @@ async function renderCharacters(contentEl, tab, ctx, __gen) {
           if (entry && (entry.pack || entry.packs)) cell.title = (a.label || a.id) + " — " + [...prodsOf(entry)].map(packProductLabel).join(", ");
         });
       }
+      const paintRecents = () => {
+        recentWrap.empty();
+        let keys = [];
+        try {
+          const s = (ea.getScriptSettings && ea.getScriptSettings()) || {};
+          keys = Array.isArray(s.recentFigures) ? s.recentFigures : [];
+        } catch (e) { /* none */ }
+        const entries = keys.map((k) => list.find((f) => (f.cacheKey || f.id) === k)).filter(Boolean).slice(0, 6);
+        if (!entries.length) return;
+        stepLabel(recentWrap, "★ Recent — click to place again");
+        const g = grid(recentWrap);
+        entries.forEach((en) => tile(g, aiThumbURL(en), en.name || en.id, false, async () => {
+          if (ctx.placeAIFigure) await ctx.placeAIFigure(en);
+        }));
+      };
+      paintRecents();
+      if (Array.isArray(ctx.sceneWatchers)) ctx.sceneWatchers.push(paintRecents);
       rerenderPicker = render;
       render();
     }
@@ -2777,16 +3699,31 @@ function renderVectorLibrary(contentEl, ctx) {
       if (ctx.placeFigure) await ctx.placeFigure(figure);
     });
   if (figBC.buttonEl) styleActionBtn(figBC.buttonEl, { accent: true });
+  addFlipToggle(bar, ctx);
 }
 
 // Reserve-a-callout-zone control + a link that opens the companion Callout Editor.
 function renderCalloutSection(contentEl, ctx) {
   const row = section(contentEl, "Callout zone", "Reserve a speech/caption area — fill it with the Comicbook Callout Editor");
+  // Optional dialogue seed on its OWN full-width row — squeezed next to the
+  // button it collapsed to a two-word input in narrow side panels.
+  const txtRow = row.createDiv();
+  txtRow.style.cssText = "flex:1 1 100%;width:100%;margin:0 0 2px";
+  const txt = txtRow.createEl("input");
+  txt.type = "text";
+  txt.placeholder = "Dialogue (optional)…";
+  txt.setAttribute("aria-label", "Dialogue text for the callout zone");
+  txt.style.cssText = "width:100%;box-sizing:border-box;padding:5px 9px;font-size:0.8em;" +
+    "border:1px solid var(--background-modifier-border);border-radius:5px;background:var(--background-primary);color:var(--text-normal)";
   const bar = toolbarRow(row);
+  const placeZone = async () => {
+    if (ctx.addCalloutZone && await ctx.addCalloutZone(txt.value)) txt.value = "";
+  };
+  try { txt.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); placeZone(); } }); } catch (e) { /* headless */ }
   const zoneBC = new ea.obsidian.ButtonComponent(bar)
     .setButtonText("+ Callout zone")
-    .setTooltip("Adds a reserved zone to the selected panel (run Comicbook Callout Editor to letter it)")
-    .onClick(() => ctx.addCalloutZone && ctx.addCalloutZone());
+    .setTooltip("Adds a reserved zone to the selected panel — typed dialogue is seeded into it (run Comicbook Callout Editor to letter it)")
+    .onClick(placeZone);
   if (zoneBC.buttonEl) styleActionBtn(zoneBC.buttonEl, { accent: true });
   // Companion-script icon (same pattern the Callout Editor uses for THIS script):
   // installed → the Callout Editor's own icon, click runs it; not installed →
@@ -2838,6 +3775,9 @@ function renderCalloutSection(contentEl, ctx) {
 function renderFooter(contentEl) {
   const footer = contentEl.createDiv();
   footer.style.marginTop = "14px";
+  // Clear the pane's bottom edge / Obsidian status bar — without this the
+  // last line renders half-clipped at the bottom of the side panel.
+  footer.style.paddingBottom = "34px";
   footer.style.display = "flex";
   footer.style.flexWrap = "wrap";
   footer.style.alignItems = "center";
