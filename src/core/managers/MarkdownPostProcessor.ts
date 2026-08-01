@@ -34,6 +34,7 @@ import {
 } from "../../utils/obsidianUtils";
 import { linkClickModifierType } from "../../utils/modifierkeyHelper";
 import { ImageKey, getImageCache } from "../../shared/ImageCache";
+import { initPaddingUI, wrapWithPaddingPopup } from "../../shared/PaddingUI";
 import { FILENAMEPARTS, PreviewImageType } from "../../types/utilTypes";
 import { CustomMutationObserver, DEBUGGING } from "../../utils/debugHelper";
 import { getExcalidrawFileForwardLinks } from "../../utils/excalidrawViewUtils";
@@ -107,6 +108,7 @@ export const initializeMarkdownPostProcessor = (p: ExcalidrawPlugin) => {
   app = plugin.app;
   vault = app.vault;
   metadataCache = app.metadataCache;
+  initPaddingUI(plugin);
 };
 
 const _getPNG = async ({
@@ -903,7 +905,16 @@ const processInternalEmbed = async (
       ? fnameParts.linkpartReference
       : "");
   attr.file = file;
-  return await createImageDiv(attr, false, internalEmbedEl);
+  const imgDiv = await createImageDiv(attr, false, internalEmbedEl);
+  if (!imgDiv) {
+    return null;
+  }
+
+  if (fnameParts.hasArearef) {
+    return wrapWithPaddingPopup(imgDiv, src, fnameParts);
+  }
+
+  return imgDiv;
 };
 
 function getDimensionsFromAliasString(data: string) {
