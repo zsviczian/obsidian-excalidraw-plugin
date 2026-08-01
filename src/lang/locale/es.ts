@@ -174,6 +174,10 @@ export default {
   MARKDOWN_IMAGE_SECTION_NAME: "Nombre de la sección al final de la nota",
   MARKDOWN_IMAGE_SECTION_NAME_PLACEHOLDER:
     "Introduce un nombre de sección único",
+  MARKDOWN_IMAGE_DELETE_TEXT_PROMPT:
+    "¿Eliminar el texto Markdown guardado para esta imagen? La imagen se eliminará de la escena en cualquier caso.",
+  MARKDOWN_IMAGE_KEEP_TEXT: "Conservar texto Markdown",
+  MARKDOWN_IMAGE_DELETE_TEXT: "Eliminar texto Markdown",
   INSERT_PDF: "Insertar archivo PDF desde la bóveda",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE:
     "Insertar última página PDF activa como imagen",

@@ -169,6 +169,10 @@ export default {
   MARKDOWN_IMAGE_SECTION_NAME: "Название раздела в конце заметки",
   MARKDOWN_IMAGE_SECTION_NAME_PLACEHOLDER:
     "Введите уникальное название раздела",
+  MARKDOWN_IMAGE_DELETE_TEXT_PROMPT:
+    "Удалить текст Markdown, сохранённый для этого изображения? Само изображение будет удалено со сцены в любом случае.",
+  MARKDOWN_IMAGE_KEEP_TEXT: "Сохранить текст Markdown",
+  MARKDOWN_IMAGE_DELETE_TEXT: "Удалить текст Markdown",
   INSERT_PDF: "Вставить PDF-файл из хранилища",
   UNIVERSAL_ADD_FILE: "Вставка ЛЮБОГО файла",
   // Compatibility keys consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().

@@ -176,6 +176,10 @@ export default {
     "A local Markdown image can contain only one level 1 heading when converted to an embeddable. It must be the first content and its name must be unique in the drawing.",
   MARKDOWN_IMAGE_SECTION_NAME: "Name the back-of-note section",
   MARKDOWN_IMAGE_SECTION_NAME_PLACEHOLDER: "Enter a unique section name",
+  MARKDOWN_IMAGE_DELETE_TEXT_PROMPT:
+    "Delete the Markdown text stored for this image? The image will be removed from the scene either way.",
+  MARKDOWN_IMAGE_KEEP_TEXT: "Keep Markdown text",
+  MARKDOWN_IMAGE_DELETE_TEXT: "Delete Markdown text",
   INSERT_PDF: "Insert PDF file from vault",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE: "Insert last active PDF page as image",
   UNIVERSAL_ADD_FILE: "Insert ANY file",

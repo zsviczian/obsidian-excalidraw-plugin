@@ -368,6 +368,35 @@ export function parseMarkdownImages(data: string): Map<FileId, MarkdownImageData
   return result;
 }
 
+/**
+ * Removes a local Markdown-image block's marker comments while preserving its
+ * Markdown body and surrounding document content exactly.
+ *
+ * @param data - Complete Excalidraw Markdown document.
+ * @param fileId - File ID identifying the local Markdown-image block.
+ * @param markdown - Optional current in-memory body to preserve instead of a
+ * potentially stale body from the document.
+ * @returns The document with the matching marker comments removed.
+ */
+export function unwrapMarkdownImageBlock(
+  data: string,
+  fileId: FileId,
+  markdown?: string,
+): string {
+  const blocks = getMarkdownImageBlocks(data).filter(
+    (block) => block.fileId === fileId,
+  );
+  let updated = data;
+  for (let index = blocks.length - 1; index >= 0; index--) {
+    const block = blocks[index];
+    updated =
+      updated.slice(0, block.start) +
+      (markdown ?? updated.slice(block.bodyStart, block.bodyEnd)) +
+      updated.slice(block.end);
+  }
+  return updated;
+}
+
 const serializeMarkdownImageBlock = (
   fileId: FileId,
   markdown: string,
@@ -2004,7 +2033,9 @@ export class ExcalidrawData {
       return dirty;
     }
 
-    //assing new fileId to duplicate equation and markdown files
+    // Assign new fileIds where duplicate image references require independent
+    // backing data. Local Markdown images deliberately keep a shared fileId;
+    // the explicit "Duplicate selected image" action creates an independent ID.
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/601
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/593
     //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/297
@@ -2030,6 +2061,9 @@ export class ExcalidrawData {
         if (mermaid) {
           return;
         }
+        if (markdownImage) {
+          return;
+        }
 
         if (getMermaidText(images[idx])) {
           this.setMermaid(fileId, {
@@ -2039,7 +2073,7 @@ export class ExcalidrawData {
           return;
         }
 
-        if (!embeddedFile && !equation && !mermaid && !markdownImage) {
+        if (!embeddedFile && !equation && !mermaid) {
           //processing freshly pasted images from likely anotehr instance of excalidraw (e.g. Excalidraw.com, or another Obsidian instance)
           return;
         }
@@ -2069,9 +2103,6 @@ export class ExcalidrawData {
             latex: equation.latex,
             isLoaded: false,
           });
-        }
-        if (markdownImage) {
-          this.setMarkdownImage(newId as FileId, { ...markdownImage });
         }
       }
       processedIds.add(fileId);

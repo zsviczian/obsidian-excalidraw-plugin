@@ -151,6 +151,10 @@ export default {
     "本地 Markdown 图像转换为嵌入内容时只能包含一个一级标题。该标题必须是首个内容，且名称在绘图中必须唯一。",
   MARKDOWN_IMAGE_SECTION_NAME: "命名笔记末尾的章节",
   MARKDOWN_IMAGE_SECTION_NAME_PLACEHOLDER: "输入唯一的章节名称",
+  MARKDOWN_IMAGE_DELETE_TEXT_PROMPT:
+    "是否删除为此图像保存的 Markdown 文本？无论如何，该图像都会从场景中移除。",
+  MARKDOWN_IMAGE_KEEP_TEXT: "保留 Markdown 文本",
+  MARKDOWN_IMAGE_DELETE_TEXT: "删除 Markdown 文本",
   INSERT_PDF: "以图像形式嵌入 PDF 到当前绘图中",
   INSERT_LAST_ACTIVE_PDF_PAGE_AS_IMAGE: "以图像形式嵌入最后激活的 PDF 页面",
   UNIVERSAL_ADD_FILE: "嵌入文件 / Insert ANY file",

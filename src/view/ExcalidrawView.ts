@@ -79,6 +79,7 @@ import {
   getExcalidrawMarkdownHeaderSection,
   parseMarkdownImages,
   syncMarkdownImagesInHeader,
+  unwrapMarkdownImageBlock,
 } from "../shared/ExcalidrawData";
 import {
   checkAndCreateFolder,
@@ -160,6 +161,7 @@ import {
   convertMarkdownImageElementToEmbeddable,
   getEmbeddableMarkdownImageSource,
   getLevelOneMarkdownHeadings,
+  getMarkdownImageCustomData,
   getMarkdownImageSource,
   isMarkdownImageElement,
 } from "../shared/MarkdownImage";
@@ -493,6 +495,17 @@ export default class ExcalidrawView
   private preventReloadResetTimer: number | null = null;
   private editingSelfResetTimer: number | null = null;
   private colorChangeTimer: number | null = null;
+  private markdownImageDeleteCandidateTimer: number | null = null;
+  private markdownImageDeleteCandidates = new Map<
+    ExcalidrawElement["id"],
+    ExcalidrawImageElement
+  >();
+  private markdownImageDeletionQueue: Array<{
+    element: ExcalidrawImageElement;
+    filePath: string;
+  }> = [];
+  private pendingMarkdownImageDeletionIds = new Set<ExcalidrawElement["id"]>();
+  private markdownImageDeletionPrompt: Promise<void> | null = null;
   private previousSceneVersion = 0;
   public previousBackgroundColor = "";
   public previousTheme = "";
@@ -1131,6 +1144,9 @@ export default class ExcalidrawView
 
     if (!this.isLoaded) {
       return;
+    }
+    if (this.markdownImageDeletionPrompt !== null) {
+      await this.markdownImageDeletionPrompt;
     }
     if (
       !overrideEmbeddableIsEditingSelfDebounce &&
@@ -3015,6 +3031,11 @@ export default class ExcalidrawView
     if (this.colorChangeTimer) {
       window.clearTimeout(this.colorChangeTimer);
       this.colorChangeTimer = null;
+    }
+    if (this.markdownImageDeleteCandidateTimer) {
+      window.clearTimeout(this.markdownImageDeleteCandidateTimer);
+      this.markdownImageDeleteCandidateTimer = null;
+      this.markdownImageDeleteCandidates.clear();
     }
     if (this.semaphores?.wheelTimeout) {
       window.clearTimeout(this.semaphores.wheelTimeout);
@@ -5569,6 +5590,34 @@ export default class ExcalidrawView
     this.lastKeyDownPosition = { x: 0, y: 0 };
   };
 
+  private excalidrawDIVonKeyDownCapture(event: KeyboardEvent): void {
+    if (
+      this.semaphores?.viewunload ||
+      (event.key !== "Backspace" && event.key !== "Delete")
+    ) {
+      return;
+    }
+    this.markdownImageDeleteCandidates.clear();
+    this.getViewSelectedElements()
+      .filter(
+        (element): element is ExcalidrawImageElement =>
+          element.type === "image" &&
+          getMarkdownImageCustomData(element)?.source === "local" &&
+          this.excalidrawData.hasMarkdownImage(element.fileId),
+      )
+      .forEach((element) =>
+        this.markdownImageDeleteCandidates.set(element.id, element),
+      );
+
+    if (this.markdownImageDeleteCandidateTimer) {
+      window.clearTimeout(this.markdownImageDeleteCandidateTimer);
+    }
+    this.markdownImageDeleteCandidateTimer = window.setTimeout(() => {
+      this.markdownImageDeleteCandidates.clear();
+      this.markdownImageDeleteCandidateTimer = null;
+    }, 1000);
+  }
+
   private excalidrawDIVonKeyDown(event: KeyboardEvent) {
     //(process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.excalidrawDIVonKeyDown, "ExcalidrawView.excalidrawDIVonKeyDown", event);
     if (this.semaphores?.viewunload) {
@@ -5788,8 +5837,123 @@ export default class ExcalidrawView
     }
   }
 
+  private handleDeletedMarkdownImageCandidates(
+    elements: readonly ExcalidrawElement[],
+  ): void {
+    if (this.markdownImageDeleteCandidates.size === 0) {
+      return;
+    }
+    const currentElements = new Map(
+      elements.map((element) => [element.id, element]),
+    );
+    this.markdownImageDeleteCandidates.forEach((candidate, elementId) => {
+      const current = currentElements.get(elementId);
+      if (current && !current.isDeleted) {
+        return;
+      }
+      this.markdownImageDeleteCandidates.delete(elementId);
+      this.queueMarkdownImageDeletion(candidate);
+    });
+    if (
+      this.markdownImageDeleteCandidates.size === 0 &&
+      this.markdownImageDeleteCandidateTimer
+    ) {
+      window.clearTimeout(this.markdownImageDeleteCandidateTimer);
+      this.markdownImageDeleteCandidateTimer = null;
+    }
+  }
+
+  private queueMarkdownImageDeletion(element: ExcalidrawImageElement): void {
+    if (!this.file || this.pendingMarkdownImageDeletionIds.has(element.id)) {
+      return;
+    }
+    this.pendingMarkdownImageDeletionIds.add(element.id);
+    this.markdownImageDeletionQueue.push({
+      element,
+      filePath: this.file.path,
+    });
+    if (this.markdownImageDeletionPrompt !== null) {
+      return;
+    }
+    const processing = this.processMarkdownImageDeletionQueue();
+    this.markdownImageDeletionPrompt = processing;
+    void processing.finally(() => {
+      if (this.markdownImageDeletionPrompt === processing) {
+        this.markdownImageDeletionPrompt = null;
+      }
+    });
+  }
+
+  private async processMarkdownImageDeletionQueue(): Promise<void> {
+    while (this.markdownImageDeletionQueue.length > 0) {
+      const item = this.markdownImageDeletionQueue.shift();
+      if (!item) {
+        continue;
+      }
+      const { element, filePath } = item;
+      try {
+        const viewElements = this.getViewElements();
+        if (
+          !this.file ||
+          this.file.path !== filePath ||
+          viewElements.some((candidate) => candidate.id === element.id) ||
+          viewElements.some(
+            (candidate) =>
+              candidate.id !== element.id &&
+              candidate.type === "image" &&
+              candidate.fileId === element.fileId &&
+              getMarkdownImageCustomData(candidate)?.source === "local",
+          ) ||
+          !this.excalidrawData.hasMarkdownImage(element.fileId)
+        ) {
+          continue;
+        }
+
+        const prompt = new MultiOptionConfirmationPrompt<
+          "keep" | "delete" | null
+        >(
+          this.plugin,
+          t("MARKDOWN_IMAGE_DELETE_TEXT_PROMPT"),
+          new Map([
+            [t("MARKDOWN_IMAGE_KEEP_TEXT"), "keep"],
+            [t("MARKDOWN_IMAGE_DELETE_TEXT"), "delete"],
+          ]),
+          t("MARKDOWN_IMAGE_KEEP_TEXT"),
+        );
+        const decision = await prompt.waitForClose;
+        if (
+          !this.file ||
+          this.file.path !== filePath ||
+          this.getViewElements().some((candidate) => candidate.id === element.id)
+        ) {
+          continue;
+        }
+        if (decision !== "delete") {
+          const markdown = this.excalidrawData.getMarkdownImage(
+            element.fileId,
+          )?.markdown;
+          this.data = unwrapMarkdownImageBlock(
+            this.data,
+            element.fileId,
+            markdown,
+          );
+        }
+        this.excalidrawData.deleteMarkdownImage(element.fileId);
+        this.setDirty();
+      } catch (error: unknown) {
+        errorlog({
+          where: "ExcalidrawView.processMarkdownImageDeletionQueue",
+          error,
+        });
+      } finally {
+        this.pendingMarkdownImageDeletionIds.delete(element.id);
+      }
+    }
+  }
+
   private onChange(et: ExcalidrawElement[], st: AppState, files: BinaryFiles) {
     this.selectedElementActionsMenu?.update(et, st);
+    this.handleDeletedMarkdownImageCandidates(et);
     if (st.activeTool?.type) {
       if (st.activeTool.type === "image") {
         if (
@@ -8294,6 +8458,7 @@ export default class ExcalidrawView
           ref: excalidrawWrapperRef,
           key: "abc",
           tabIndex: 0,
+          onKeyDownCapture: this.excalidrawDIVonKeyDownCapture.bind(this),
           onKeyDown: this.excalidrawDIVonKeyDown.bind(this),
           onKeyUp: this.excalidrawDIVonKeyUp.bind(this),
           onPointerDown: this.onPointerDown.bind(this),
