@@ -1639,7 +1639,7 @@ button.excalidraw-font-picker {
   transition: opacity 0.15s;
   background: var(--background-secondary);
   border-radius: 4px;
-  padding: 3px;
+  padding: 2px;
   font-size: 18px;
   line-height: 40px;
   width: 40px;
