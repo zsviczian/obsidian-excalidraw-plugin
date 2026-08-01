@@ -280,7 +280,7 @@ For more details, see this [video](https://youtu.be/yZQoJg2RCKI)
   - If the `group=` prefix is found, Excalidraw will select the group of elements in the
       same group as the element referenced by the elementID (block reference) or the section heading.
   - If the `area=` prefix is found, Excalidraw will insert a cutout of the image around the referenced element.
-  - Note that the `area=` selector is not supported when embedding Excalidraw as a PNG into your markdown documents.
+  - You can append `,padding=N` to `area=`, `group=`, `frame=`, and `clippedframe=` image references to override the exported image padding, e.g. `![[file#^area=elementID,padding=120]]`. For `area=`, the value also controls how far around the referenced element Excalidraw searches for surrounding elements. Use `padding=0` for no added margin. This works with both SVG and PNG previews.
   - Referencing the elementID of a text element without the `group=` or `area=` prefix will
       transclude the element as plain text. Referencing a non-Text Element (e.g. rectangle,
       ellipse, etc.) without the `group=` or `area=` prefix will result in an Obsidian error.
