@@ -119,7 +119,7 @@ export const wrapWithPaddingPopup = (
     let dragging = false;
     const posToValue = (clientY: number) => {
       const tr = track.getBoundingClientRect();
-      const pct = 1 - (clientY - tr.top) / tr.height;
+      const pct = (clientY - tr.top) / tr.height;
       return Math.round(Math.max(0, pct * 1000) / 10) * 10;
     };
 
@@ -140,7 +140,7 @@ export const wrapWithPaddingPopup = (
     popup.addEventListener("wheel", (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
-      onValueChange(Math.max(0, value + (ev.deltaY < 0 ? 50 : -50)));
+      onValueChange(Math.max(0, value + (ev.deltaY < 0 ? -50 : 50)));
     }, { passive: false });
 
     popup.appendChild(label);
