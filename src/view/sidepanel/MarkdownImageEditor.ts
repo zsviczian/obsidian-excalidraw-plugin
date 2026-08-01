@@ -1422,6 +1422,9 @@ class MarkdownImageEditorController {
       host.setText(t("MARKDOWN_IMAGE_SOURCE_UNAVAILABLE"));
       return;
     }
+    const ownerView = this.view;
+    const ownerFile = this.ownerFile;
+    const elementFileId = element.fileId;
     const { leaf, rootSplit } = createLeaf(this.view, host.ownerDocument);
     this.editorLeaf = leaf;
     this.editorRoot = rootSplit;
@@ -1476,18 +1479,23 @@ class MarkdownImageEditorController {
     const fragmentView = new MarkdownFragmentView(
       leaf,
       async (markdown) => {
-        if (!this.element) {
-          return;
-        }
         if (containsReservedMarkdownImageMarker(markdown)) {
           new Notice(t("MARKDOWN_IMAGE_RESERVED_MARKER"));
           return;
         }
-        this.view.excalidrawData.setMarkdownImage(this.element.fileId, {
+        const excalidrawData = ownerView.excalidrawData;
+        if (
+          !excalidrawData ||
+          excalidrawData.file !== ownerFile ||
+          ownerView.file !== ownerFile
+        ) {
+          return;
+        }
+        excalidrawData.setMarkdownImage(elementFileId, {
           markdown,
         });
-        this.view.setDirty();
-        this.view.setMarkdownImageEditorIsEditing();
+        ownerView.setDirty();
+        ownerView.setMarkdownImageEditorIsEditing();
       },
     );
     await leaf.open(fragmentView);
@@ -1940,10 +1948,13 @@ class MarkdownImageEditorController {
       this.app.workspace.offref(this.editorChangeRef);
       this.editorChangeRef = null;
     }
-    if (editorView && saveEditor) {
-      await editorView.save();
+    try {
+      if (editorView && saveEditor) {
+        await editorView.save();
+      }
+    } finally {
+      editorLeaf?.detach();
     }
-    editorLeaf?.detach();
   }
 
   private close(): void {
