@@ -50,7 +50,7 @@ export const wrapWithPaddingPopup = (
 
     const doc = wrapper.ownerDocument;
 
-    const existing = doc.querySelector(".ex-pad-popup");
+    const existing = mainDocument.querySelector(".ex-pad-popup");
     if (existing) existing.remove();
 
     let value = currentPadding;
@@ -91,6 +91,7 @@ export const wrapWithPaddingPopup = (
 
     const popup = doc.createElement("div");
     popup.className = "ex-pad-popup";
+    popup.style.touchAction = "none";
 
     const label = doc.createElement("span");
     label.className = "ex-pad-popup-label";
@@ -98,6 +99,7 @@ export const wrapWithPaddingPopup = (
 
     const track = doc.createElement("div");
     track.className = "ex-pad-popup-track";
+    track.style.touchAction = "none";
 
     const knob = doc.createElement("div");
     knob.className = "ex-pad-popup-knob";
@@ -123,17 +125,23 @@ export const wrapWithPaddingPopup = (
       return Math.round(Math.max(0, pct * 1000) / 10) * 10;
     };
 
-    track.addEventListener("pointerdown", (ev: PointerEvent) => {
+    const onPointerDown = (ev: PointerEvent) => {
       dragging = true;
-      track.setPointerCapture(ev.pointerId);
+      window.clearTimeout(debounceTimer);
       onValueChange(posToValue(ev.clientY));
-    });
-    track.addEventListener("pointermove", (ev: PointerEvent) => {
+    };
+    const onPointerMove = (ev: PointerEvent) => {
       if (!dragging) return;
       onValueChange(posToValue(ev.clientY));
-    });
-    track.addEventListener("pointerup", () => { dragging = false; });
-    track.addEventListener("pointerleave", () => { dragging = false; });
+    };
+    const onPointerUp = () => {
+      dragging = false;
+      doSave();
+    };
+
+    track.addEventListener("pointerdown", onPointerDown);
+    doc.addEventListener("pointermove", onPointerMove);
+    doc.addEventListener("pointerup", onPointerUp);
 
     track.appendChild(knob);
 
@@ -158,6 +166,8 @@ export const wrapWithPaddingPopup = (
       if (!popup.contains(ev.target as Node)) {
         popup.remove();
         doc.removeEventListener("click", close);
+        doc.removeEventListener("pointermove", onPointerMove);
+        doc.removeEventListener("pointerup", onPointerUp);
         window.clearTimeout(debounceTimer);
         doSave();
       }
