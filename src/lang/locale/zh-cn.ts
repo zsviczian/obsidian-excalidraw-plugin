@@ -117,6 +117,9 @@ export default {
   MARKDOWN_IMAGE_APPEARANCE: "外观",
   MARKDOWN_IMAGE_WIDTH: "宽度",
   MARKDOWN_IMAGE_WIDTH_DESC: "以画布单位表示的 Markdown 排版宽度",
+  MARKDOWN_IMAGE_BOTTOM_PADDING: "底部内边距",
+  MARKDOWN_IMAGE_BOTTOM_PADDING_DESC:
+    "渲染后的 Markdown 下方额外空间（像素）",
   MARKDOWN_IMAGE_FONT: "字体",
   MARKDOWN_IMAGE_FONT_COLOR: "字体颜色",
   MARKDOWN_IMAGE_BORDER: "边框",

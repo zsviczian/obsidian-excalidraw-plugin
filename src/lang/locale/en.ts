@@ -137,6 +137,9 @@ export default {
   MARKDOWN_IMAGE_APPEARANCE: "Appearance",
   MARKDOWN_IMAGE_WIDTH: "Width",
   MARKDOWN_IMAGE_WIDTH_DESC: "Markdown flow width in canvas units",
+  MARKDOWN_IMAGE_BOTTOM_PADDING: "Bottom padding",
+  MARKDOWN_IMAGE_BOTTOM_PADDING_DESC:
+    "Extra space below the rendered Markdown, in pixels",
   MARKDOWN_IMAGE_FONT: "Font",
   MARKDOWN_IMAGE_FONT_COLOR: "Font color",
   MARKDOWN_IMAGE_BORDER: "Border",

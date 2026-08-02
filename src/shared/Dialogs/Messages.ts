@@ -25,6 +25,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
   - Their source can be stored locally as back-of-the-card markdown content in the drawing or linked to an external Markdown note, heading, or block, including an Excalidraw Markdown file.
   - Edit content and appearance in the Excalidraw sidepanel or use the action menu on a selected Markdown image; the editor supports standard Obsidian Markdown shortcuts and refreshes the image when focus leaves the editor.
   - Markdown images participate in normal canvas layering and image export.
+  - Dropping a Markdown note as an image now offers its headings when available and lets you insert the selected source as an editable Markdown image or embeddable. Excalidraw notes offer their back-of-note headings while hiding Excalidraw Managed data sections.
   - Ordinary copies of a local Markdown image share its Markdown source; use **Duplicate selected image** to create an independent image ID and Markdown body. You can also convert interactive embeddables into images and back in the embeddable/image menu in the top left of the selected element, and control dark-mode image inversion from the context menu.
 - Added the Voronoi diagram script. 🙏[@FreeCutter](${URLs.GITHUB_COM}/FreeCutter) [#2845](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2845)
 - Image-reference embeds now accept an optional \`,padding=N\` link parameter to override their export padding, including \`area=\`, \`group=\`, \`frame=\`, and \`clippedframe=\` references. For \`area=\`, the value also controls how far around the target Excalidraw searches for surrounding elements. Use \`padding=0\` for no added margin. [#2850](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2850) 🙏[@Evgene-Kopylov](${URLs.GITHUB_COM}/Evgene-Kopylov)
@@ -38,6 +39,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 ## Fixed
 - Custom freedraw pens now remain selected while temporarily using the eraser or another tool, and are restored when returning to freedraw. [#2859](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2859)
+- Markdown images now offer configurable bottom padding in the sidepanel Appearance section to prevent the final rendered line or border from being clipped.
 - Font selectors for Markdown images and font settings now preview each available font face and refresh the vault font list whenever opened.
 - Empty Markdown-image font colors now normalize to black when the editor loads or the color field loses focus. The CSS controls can also copy the selected image's generated SVG directly for inspection.
 - Dragging an external video or other non-image file with the **Import external file** action now offers the same use, overwrite, or import choice as images when a matching file already exists in the Vault. [#2851](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2851) 🙏[@WolfExplode](${URLs.GITHUB_COM}/WolfExplode)

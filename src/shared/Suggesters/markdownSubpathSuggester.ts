@@ -24,6 +24,34 @@ function isHeadingBlockEntry(entry: BlockCacheEntry): entry is HeadingBlockEntry
   return Boolean(entry.display && entry.node?.type === "heading");
 }
 
+export type MarkdownHeadingSubpath = {
+  display: string;
+  subpath: string;
+};
+
+/** Returns link subpaths for user-authored Markdown headings. */
+export async function getMarkdownHeadingSubpaths(
+  app: App,
+  file: TFile,
+  isExcalidrawFile: boolean,
+): Promise<MarkdownHeadingSubpath[]> {
+  return (
+    await app.metadataCache.blockCache.getForFile(
+      { isCancelled: () => false },
+      file,
+    )
+  ).blocks
+    .filter(isHeadingBlockEntry)
+    .filter(
+      (entry) =>
+        !isExcalidrawFile || !MD_EX_SECTIONS.includes(entry.display),
+    )
+    .map((entry) => ({
+      display: entry.display,
+      subpath: `#${cleanSectionHeading(entry.display)}`,
+    }));
+}
+
 function isParagraphLikeBlockEntry(
   entry: BlockCacheEntry,
 ): entry is ParagraphLikeBlockEntry {
@@ -45,20 +73,12 @@ export async function selectMarkdownHeadingSubpath(
   isExcalidrawFile: boolean,
   isCancelled?: () => boolean,
 ): Promise<string | null> {
-  const sections = (
-    await app.metadataCache.blockCache.getForFile(
-      { isCancelled: () => false },
-      file,
-    )
-  ).blocks
-    .filter(isHeadingBlockEntry)
-    .filter(
-      (entry) =>
-        !isExcalidrawFile || !MD_EX_SECTIONS.includes(entry.display),
-    );
-  const values = sections.map(
-    (entry) => `#${cleanSectionHeading(entry.display)}`,
+  const sections = await getMarkdownHeadingSubpaths(
+    app,
+    file,
+    isExcalidrawFile,
   );
+  const values = sections.map((entry) => entry.subpath);
   const display = sections.map((entry) => entry.display);
   if (!isExcalidrawFile) {
     values.unshift("");

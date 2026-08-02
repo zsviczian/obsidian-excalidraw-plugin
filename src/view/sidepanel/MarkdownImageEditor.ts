@@ -359,6 +359,27 @@ class MarkdownImageEditorController {
         });
       });
 
+    new Setting(appearance)
+      .setClass("excalidraw-markdown-image-editor__setting--wide")
+      .setName(t("MARKDOWN_IMAGE_BOTTOM_PADDING"))
+      .setDesc(t("MARKDOWN_IMAGE_BOTTOM_PADDING_DESC"))
+      .addSlider((slider) =>
+        slider
+          .setLimits(0, 100, 1)
+          .setValue(this.renderSettings.paddingBottom)
+          .setDynamicTooltip()
+          .onChange((paddingBottom) => {
+            if (!this.renderSettings) {
+              return;
+            }
+            this.renderSettings = {
+              ...this.renderSettings,
+              paddingBottom,
+            };
+            this.scheduleRender();
+          }),
+      );
+
     this.renderAppearanceControls(appearance, {
       scope: "image",
       cssName: t("MARKDOWN_IMAGE_CSS"),

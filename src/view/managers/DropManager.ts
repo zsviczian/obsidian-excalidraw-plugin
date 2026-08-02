@@ -38,7 +38,10 @@ import {
   importFileToVault,
 } from "src/utils/fileUtils";
 import { ScriptEngine } from "src/shared/Scripts";
-import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
+import {
+  UniversalInsertFileModal,
+  type UniversalInsertFileAction,
+} from "src/shared/Dialogs/UniversalInsertFileModal";
 import { Position } from "src/types/excalidrawViewTypes";
 import { setStyle } from "src/utils/styleUtils";
 import { ObsidianDraggable } from "src/types/types";
@@ -107,6 +110,18 @@ export class DropManager {
     return this.view.file;
   }
 
+  private openDroppedMarkdownFile(
+    file: TFile,
+    position: Position,
+    action: UniversalInsertFileAction,
+  ): void {
+    new UniversalInsertFileModal(this.plugin, this.view).open(
+      file,
+      position,
+      action,
+    );
+  }
+
   public onDrop(event: React.DragEvent<HTMLDivElement>): boolean {
     if (this.draginfoDiv) {
       this.ownerDocument.body.removeChild(this.draginfoDiv);
@@ -173,22 +188,24 @@ export class DropManager {
             return false;
           }
           if (
+            file.extension.toLowerCase() === "md" &&
+            (internalDragAction === "image" ||
+              internalDragAction === "embeddable")
+          ) {
+            this.openDroppedMarkdownFile(
+              file,
+              { ...this.currentPosition },
+              internalDragAction,
+            );
+            return false;
+          }
+          if (
             ["image", "image-fullsize"].contains(internalDragAction) &&
             (IMAGE_TYPES.contains(file.extension) ||
               file.extension === "md" ||
               file.extension.toLowerCase() === "pdf")
           ) {
-            if (
-              internalDragAction === "image" &&
-              file.extension.toLowerCase() === "md" &&
-              !this.plugin.isExcalidrawFile(file)
-            ) {
-              void insertMarkdownImage(
-                this.view,
-                file,
-                { ...this.currentPosition },
-              );
-            } else if (file.extension.toLowerCase() === "pdf") {
+            if (file.extension.toLowerCase() === "pdf") {
               const insertPDFModal = new InsertPDFModal(this.plugin, this.view);
               insertPDFModal.open(file);
             } else {
@@ -231,6 +248,19 @@ export class DropManager {
         return false;
       case "files":
         if (!onDropHook("file", draggable.files, null)) {
+          if (
+            draggable.files.length === 1 &&
+            draggable.files[0].extension.toLowerCase() === "md" &&
+            (internalDragAction === "image" ||
+              internalDragAction === "embeddable")
+          ) {
+            this.openDroppedMarkdownFile(
+              draggable.files[0],
+              { ...this.currentPosition },
+              internalDragAction,
+            );
+            return false;
+          }
           void (async () => {
             if (["image", "image-fullsize"].contains(internalDragAction)) {
               const ea: ExcalidrawAutomate = getEA(this.view);
@@ -430,6 +460,19 @@ export class DropManager {
           const { x, y } = this.currentPosition;
           const pos = { x: x + i * 300, y: y + i * 300 };
           if (link.isInternal) {
+            if (
+              files.length === 1 &&
+              link.file.extension.toLowerCase() === "md"
+            ) {
+              this.openDroppedMarkdownFile(
+                link.file,
+                pos,
+                localFileDragAction === "embeddable"
+                  ? "embeddable"
+                  : "image",
+              );
+              continue;
+            }
             if (localFileDragAction === "embeddable") {
               const ea = getEA(this.view);
               void insertEmbeddableToView(ea, pos, link.file).then(() =>

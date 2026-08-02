@@ -1872,6 +1872,10 @@ export class EmbeddedFilesLoader {
       overflow: "auto",
       display: "block",
       color: fontColor && fontColor !== "" ? fontColor : "initial",
+      paddingBottom:
+        overrides && !overrides.isTransclusion
+          ? `${overrides.render.paddingBottom}px`
+          : undefined,
     });
 
     const renderHost = mainDocument.body.createDiv();

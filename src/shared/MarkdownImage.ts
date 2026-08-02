@@ -119,15 +119,22 @@ export function setMarkdownImageCustomData(
 /** Resolves a Markdown image element or Markdown file to its renderable source. */
 export async function getMarkdownImageSource(
   view: ExcalidrawView,
-  source: ExcalidrawImageElement | TFile,
+  source: ExcalidrawImageElement | TFile | EmbeddedFile,
 ): Promise<MarkdownImageSourceData | null> {
   let sourceFile: TFile | null;
+  let suppliedEmbeddedFile: EmbeddedFile | null;
   let element: ExcalidrawImageElement | null;
   if (source instanceof TFile) {
     sourceFile = source;
+    suppliedEmbeddedFile = null;
+    element = null;
+  } else if (source instanceof EmbeddedFile) {
+    sourceFile = null;
+    suppliedEmbeddedFile = source;
     element = null;
   } else {
     sourceFile = null;
+    suppliedEmbeddedFile = null;
     element = source;
   }
   const customData = element ? getMarkdownImageCustomData(element) : null;
@@ -141,11 +148,14 @@ export async function getMarkdownImageSource(
   }
   const embeddedFile = element
     ? view.excalidrawData.getFile(element.fileId)
-    : new EmbeddedFile(view.plugin, view.file.path, sourceFile.path);
+    : (suppliedEmbeddedFile ??
+      new EmbeddedFile(view.plugin, view.file.path, sourceFile.path));
   if (
     !embeddedFile?.file ||
     embeddedFile.file.extension.toLowerCase() !== "md" ||
-    (view.plugin.isExcalidrawFile(embeddedFile.file) && !customData)
+    (view.plugin.isExcalidrawFile(embeddedFile.file) &&
+      !customData &&
+      !suppliedEmbeddedFile?.linkParts.ref)
   ) {
     return null;
   }
@@ -409,7 +419,7 @@ export function getLevelOneMarkdownHeadings(
 /** Inserts an editable Markdown image from local text or a linked Markdown note. */
 export async function insertMarkdownImage(
   view: ExcalidrawView,
-  source: string | TFile = "",
+  source: string | TFile | EmbeddedFile = "",
   position: { x: number; y: number } = view.currentPosition,
 ): Promise<string | null> {
   if (!view.excalidrawAPI || !view.file) {

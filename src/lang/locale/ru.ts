@@ -129,6 +129,9 @@ export default {
   MARKDOWN_IMAGE_APPEARANCE: "Оформление",
   MARKDOWN_IMAGE_WIDTH: "Ширина",
   MARKDOWN_IMAGE_WIDTH_DESC: "Ширина потока Markdown в единицах холста",
+  MARKDOWN_IMAGE_BOTTOM_PADDING: "Нижний отступ",
+  MARKDOWN_IMAGE_BOTTOM_PADDING_DESC:
+    "Дополнительное пространство под отрисованным Markdown в пикселях",
   MARKDOWN_IMAGE_FONT: "Шрифт",
   MARKDOWN_IMAGE_FONT_COLOR: "Цвет шрифта",
   MARKDOWN_IMAGE_BORDER: "Рамка",

@@ -722,6 +722,7 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   markdownImageSettings: {
     defaults: {
       width: 500,
+      paddingBottom: 10,
       fontFamily: "Cascadia",
       fontColor: "Black",
       border: {

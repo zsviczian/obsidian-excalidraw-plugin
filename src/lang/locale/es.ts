@@ -138,6 +138,9 @@ export default {
   MARKDOWN_IMAGE_APPEARANCE: "Apariencia",
   MARKDOWN_IMAGE_WIDTH: "Ancho",
   MARKDOWN_IMAGE_WIDTH_DESC: "Ancho del flujo Markdown en unidades del lienzo",
+  MARKDOWN_IMAGE_BOTTOM_PADDING: "Relleno inferior",
+  MARKDOWN_IMAGE_BOTTOM_PADDING_DESC:
+    "Espacio adicional debajo del Markdown renderizado, en píxeles",
   MARKDOWN_IMAGE_FONT: "Fuente",
   MARKDOWN_IMAGE_FONT_COLOR: "Color de fuente",
   MARKDOWN_IMAGE_BORDER: "Borde",
