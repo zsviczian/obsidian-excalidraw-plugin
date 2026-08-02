@@ -3,6 +3,7 @@ import {
   ButtonComponent,
   MarkdownView,
   Notice,
+  resolveSubpath,
   Setting,
   type App,
   type ColorComponent,
@@ -1482,13 +1483,9 @@ class MarkdownImageEditorController {
           { history: false },
         );
         await leaf.loadIfDeferred();
-        if (ref) {
-          leaf.setEphemeralState({ subpath: ref });
-        }
       } else {
         await leaf.openFile(sourceFile, {
           active: false,
-          ...(ref ? { eState: { subpath: ref } } : {}),
         });
       }
       if (
@@ -1503,6 +1500,7 @@ class MarkdownImageEditorController {
       if (leaf.view instanceof MarkdownView) {
         this.editorView = leaf.view;
         this.prepareEditorView(host, leaf.view);
+        this.revealExternalSourceSubpath(leaf.view, sourceFile, ref);
         this.watchEditorChanges();
       }
       return;
@@ -1544,6 +1542,29 @@ class MarkdownImageEditorController {
     this.editorView = fragmentView;
     this.prepareEditorView(host, fragmentView);
     this.watchEditorChanges();
+  }
+
+  private revealExternalSourceSubpath(
+    editorView: MarkdownView,
+    sourceFile: TFile,
+    subpath: string,
+  ): void {
+    if (!subpath) {
+      return;
+    }
+    const cache = this.app.metadataCache.getFileCache(sourceFile);
+    const location = cache ? resolveSubpath(cache, subpath) : null;
+    if (!location) {
+      return;
+    }
+    const position = {
+      line: location.start.line,
+      ch: location.start.col,
+    };
+    // A collapsed cursor reveals the referenced content without leaving the
+    // detached MarkdownView in Obsidian's persistent subpath-selection state.
+    editorView.editor.setCursor(position);
+    editorView.editor.scrollIntoView({ from: position, to: position }, true);
   }
 
   private prepareEditorView(host: HTMLElement, editorView: MarkdownView): void {
@@ -1791,11 +1812,24 @@ class MarkdownImageEditorController {
         if (!source || this.closed || !this.ensureOwnerValid()) {
           return;
         }
+        let renderMarkdown = markdown;
         if (source.source === "external") {
           await editorView.save();
           if (!this.ensureOwnerValid()) {
             return;
           }
+          const refreshedSource = await getMarkdownImageSource(
+            this.view,
+            element,
+          );
+          if (
+            !refreshedSource ||
+            refreshedSource.source !== "external" ||
+            !this.ensureOwnerValid()
+          ) {
+            return;
+          }
+          renderMarkdown = refreshedSource.markdown;
         } else {
           this.view.excalidrawData.setMarkdownImage(element.fileId, {
             markdown,
@@ -1805,7 +1839,7 @@ class MarkdownImageEditorController {
         const updated = await updateMarkdownImage(
           this.view,
           element,
-          markdown,
+          renderMarkdown,
           renderSettings,
           source.source,
         );
