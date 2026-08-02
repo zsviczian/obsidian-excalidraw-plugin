@@ -104,16 +104,32 @@ export const wrapWithPaddingPopup = (
     const knob = doc.createElement("div");
     knob.className = "ex-pad-popup-knob";
 
+    const STEPS = [0, 10];
+    for (let s = 50; s <= 500; s += 50) STEPS.push(s);
+    for (let s = 600; s <= 1000; s += 100) STEPS.push(s);
+    for (let s = 1200; s <= 2000; s += 200) STEPS.push(s);
+
+    const valueToStep = (v: number) => {
+      let best = STEPS[0];
+      for (const s of STEPS) {
+        if (Math.abs(s - v) < Math.abs(best - v)) best = s;
+      }
+      return best;
+    };
+
+    const stepIndex = (v: number) => STEPS.indexOf(valueToStep(v));
+
     const updateKnob = (v: number) => {
-      const pct = Math.min(1, v / 1000);
+      const idx = stepIndex(v);
+      const pct = idx / (STEPS.length - 1);
       knob.style.top = (160 - 14) * pct + "px";
     };
     updateKnob(value);
 
     const onValueChange = (v: number) => {
-      value = v;
-      label.textContent = String(v);
-      updateKnob(v);
+      value = valueToStep(v);
+      label.textContent = String(value);
+      updateKnob(value);
       window.clearTimeout(debounceTimer);
       debounceTimer = window.setTimeout(doSave, 400);
     };
@@ -122,7 +138,8 @@ export const wrapWithPaddingPopup = (
     const posToValue = (clientY: number) => {
       const tr = track.getBoundingClientRect();
       const pct = (clientY - tr.top) / tr.height;
-      return Math.round(Math.max(0, pct * 1000) / 10) * 10;
+      const idx = Math.round(pct * (STEPS.length - 1));
+      return STEPS[Math.max(0, Math.min(STEPS.length - 1, idx))];
     };
 
     const onPointerDown = (ev: PointerEvent) => {
@@ -148,7 +165,9 @@ export const wrapWithPaddingPopup = (
     popup.addEventListener("wheel", (ev) => {
       ev.preventDefault();
       ev.stopPropagation();
-      onValueChange(Math.max(0, value + (ev.deltaY < 0 ? -50 : 50)));
+      const idx = stepIndex(value);
+      const next = idx + (ev.deltaY < 0 ? -1 : 1);
+      if (next >= 0 && next < STEPS.length) onValueChange(STEPS[next]);
     }, { passive: false });
 
     popup.appendChild(label);
