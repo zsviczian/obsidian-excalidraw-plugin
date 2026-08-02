@@ -11,18 +11,12 @@ export const initPaddingUI = (_plugin: ExcalidrawPlugin) => {
 export const wrapWithPaddingPopup = (
   imgDiv: HTMLDivElement,
   src: string,
-  fnameParts: { hasArearef: boolean; padding?: number; blockref: string },
+  fnameParts: { hasArearef: boolean; padding?: number; blockref: string; linkpartReference: string },
 ): HTMLDivElement => {
   const currentPadding =
     fnameParts.padding ?? plugin.settings.exportPaddingSVG;
 
   const bareRef = src.replace(/,padding=\d+/, "");
-  const existing = mainDocument.querySelector(
-    '.excalidraw-padding-wrapper[data-bare-ref="' + bareRef.replace(/"/g, '\\"') + '"]'
-  ) as HTMLDivElement | null;
-  if (existing) {
-    return existing;
-  }
 
   const wrapper = mainDocument.createElement("div");
   wrapper.className = "excalidraw-padding-wrapper";
@@ -61,34 +55,21 @@ export const wrapWithPaddingPopup = (
     let value = currentPadding;
     let debounceTimer: number;
 
-    const allWrappers = doc.querySelectorAll(
-      '.excalidraw-padding-wrapper[data-bare-ref="' +
-        bareRef.replace(/"/g, "\\\"") +
-        '"]',
-    );
-    let instanceIdx = 0;
-    allWrappers.forEach((w, i) => {
-      if (w === wrapper) instanceIdx = i + 1;
-    });
-
     const doSave = async () => {
-      if (!instanceIdx) return;
       const file = plugin.app.workspace.getActiveFile();
       if (!file || !("extension" in file)) return;
       const defaultPad = plugin.settings.exportPaddingSVG;
+      const newSuffix = value === defaultPad ? "" : ",padding=" + value;
+      const base = fnameParts.linkpartReference.replace(/,padding=\d+$/, "");
+      const target = fnameParts.linkpartReference;
+      const replacement = base + newSuffix;
       await plugin.app.vault.process(file, (data: string) => {
-        const esc = bareRef.replace(
-          /[.*+?^${}()|[\]\\]/g,
-          "\\$&",
-        );
-        const re = new RegExp(esc + "(,padding=\\d+)?", "g");
-        let count = 0;
-        return data.replace(re, (match: string) => {
-          count++;
-          if (count !== instanceIdx) return match;
-          if (value === defaultPad) return bareRef;
-          return bareRef + ",padding=" + value;
-        });
+        if (data.includes(target)) {
+          return data.replace(target, replacement);
+        }
+        const esc = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const re = new RegExp(esc + "(,padding=\\d+)?");
+        return data.replace(re, replacement);
       });
     };
 
@@ -179,10 +160,11 @@ export const wrapWithPaddingPopup = (
 
     const rect = icon.getBoundingClientRect();
     const pr = popup.getBoundingClientRect();
+    const win = doc.defaultView ?? window;
     popup.style.left =
-      Math.min(rect.left, window.innerWidth - pr.width - 8) + "px";
+      Math.min(rect.left, win.innerWidth - pr.width - 8) + "px";
     popup.style.top =
-      Math.min(rect.bottom + 4, window.innerHeight - pr.height - 8) + "px";
+      Math.min(rect.bottom + 4, win.innerHeight - pr.height - 8) + "px";
 
     const close = (ev: MouseEvent) => {
       if (!popup.contains(ev.target as Node)) {
