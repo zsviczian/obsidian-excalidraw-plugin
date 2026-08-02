@@ -1,4 +1,5 @@
 import type { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
+import { TFile } from "obsidian";
 import type {
   ExcalidrawElement,
   ExcalidrawEmbeddableElement,
@@ -115,21 +116,32 @@ export function setMarkdownImageCustomData(
   });
 }
 
-/** Resolves the current local fragment or external Markdown transclusion. */
+/** Resolves a Markdown image element or Markdown file to its renderable source. */
 export async function getMarkdownImageSource(
   view: ExcalidrawView,
-  element: ExcalidrawImageElement,
+  source: ExcalidrawImageElement | TFile,
 ): Promise<MarkdownImageSourceData | null> {
-  const customData = getMarkdownImageCustomData(element);
+  let sourceFile: TFile | null;
+  let element: ExcalidrawImageElement | null;
+  if (source instanceof TFile) {
+    sourceFile = source;
+    element = null;
+  } else {
+    sourceFile = null;
+    element = source;
+  }
+  const customData = element ? getMarkdownImageCustomData(element) : null;
   const preferredSource = customData?.source;
   const local =
-    preferredSource === "external"
+    !element || preferredSource === "external"
       ? undefined
       : view.excalidrawData.getMarkdownImage(element.fileId);
   if (local !== undefined) {
     return { markdown: local.markdown, source: "local" };
   }
-  const embeddedFile = view.excalidrawData.getFile(element.fileId);
+  const embeddedFile = element
+    ? view.excalidrawData.getFile(element.fileId)
+    : new EmbeddedFile(view.plugin, view.file.path, sourceFile.path);
   if (
     !embeddedFile?.file ||
     embeddedFile.file.extension.toLowerCase() !== "md" ||
@@ -186,6 +198,28 @@ const setRenderedMarkdownImageFile = (
     size: rendered.size,
     hasSVGwithBitmap: rendered.hasSVGwithBitmap,
   };
+};
+
+const setMarkdownImageSource = (
+  view: ExcalidrawView,
+  fileId: FileId,
+  sourceData: MarkdownImageSourceData,
+): void => {
+  if (sourceData.source === "local") {
+    view.excalidrawData.setMarkdownImage(fileId, {
+      markdown: sourceData.markdown,
+    });
+  } else if (sourceData.embeddedFile) {
+    view.excalidrawData.setFile(fileId, sourceData.embeddedFile);
+  }
+};
+
+const deleteMarkdownImageSource = (
+  view: ExcalidrawView,
+  fileId: FileId,
+): void => {
+  view.excalidrawData.deleteMarkdownImage(fileId, true);
+  view.excalidrawData.deleteFile(fileId);
 };
 
 const getEmbeddableLinkTarget = (link: string): string | null => {
@@ -273,20 +307,13 @@ export async function convertEmbeddableElementToMarkdownImage(
     render,
   );
   setRenderedMarkdownImageFile(ea, fileId, rendered);
-  if (sourceData.source === "local") {
-    view.excalidrawData.setMarkdownImage(fileId, {
-      markdown: sourceData.markdown,
-    });
-  } else if (sourceData.embeddedFile) {
-    view.excalidrawData.setFile(fileId, sourceData.embeddedFile);
-  }
+  setMarkdownImageSource(view, fileId, sourceData);
   let committed = false;
   try {
     committed = await commitElements(ea);
   } finally {
     if (!committed) {
-      view.excalidrawData.deleteMarkdownImage(fileId, true);
-      view.excalidrawData.deleteFile(fileId);
+      deleteMarkdownImageSource(view, fileId);
     }
   }
   if (!committed) {
@@ -379,24 +406,37 @@ export function getLevelOneMarkdownHeadings(
   return headings;
 }
 
-/** Inserts a new local editable Markdown image without adding wrapper content. */
+/** Inserts an editable Markdown image from local text or a linked Markdown note. */
 export async function insertMarkdownImage(
   view: ExcalidrawView,
-  markdown: string = "",
+  source: string | TFile = "",
+  position: { x: number; y: number } = view.currentPosition,
 ): Promise<string | null> {
   if (!view.excalidrawAPI || !view.file) {
     return null;
   }
+  const sourceData =
+    typeof source === "string"
+      ? { markdown: source, source: "local" as const }
+      : await getMarkdownImageSource(view, source);
+  if (!sourceData) {
+    return null;
+  }
   const render = getMarkdownImageRenderSettings(view.plugin);
-  const rendered = await renderMarkdown(view, markdown, render);
+  const rendered = await renderMarkdown(
+    view,
+    sourceData.markdown,
+    render,
+    sourceData.embeddedFile?.file ?? view.file,
+  );
   if (!rendered.dataURL || rendered.size.height <= 0) {
     return null;
   }
   const ea = getEA(view);
   const fileId = fileid() as FileId;
   const id = await ea.addImage(
-    view.currentPosition.x,
-    view.currentPosition.y,
+    position.x,
+    position.y,
     rendered.dataURL,
     false,
     false,
@@ -406,29 +446,20 @@ export async function insertMarkdownImage(
     return null;
   }
   const element = ea.getElement(id) as Mutable<ExcalidrawImageElement>;
-  const generatedFileId = element.fileId;
-  const image = ea.imagesDict[generatedFileId];
-  delete ea.imagesDict[generatedFileId];
+  delete ea.imagesDict[element.fileId];
   element.fileId = fileId;
   element.width = render.width;
   element.height = rendered.size.height;
   element.crop = null;
-  setMarkdownImageCustomData(element, "local", render);
-  ea.imagesDict[fileId] = {
-    ...image,
-    id: fileId,
-    dataURL: rendered.dataURL,
-    mimeType: "image/svg+xml",
-    size: rendered.size,
-    hasSVGwithBitmap: rendered.hasSVGwithBitmap,
-  };
-  view.excalidrawData.setMarkdownImage(fileId, { markdown });
+  setMarkdownImageCustomData(element, sourceData.source, render);
+  setRenderedMarkdownImageFile(ea, fileId, rendered);
+  setMarkdownImageSource(view, fileId, sourceData);
   let committed = false;
   try {
     committed = await commitElements(ea, true);
   } finally {
     if (!committed) {
-      view.excalidrawData.deleteMarkdownImage(fileId, true);
+      deleteMarkdownImageSource(view, fileId);
     }
   }
   if (!committed) {

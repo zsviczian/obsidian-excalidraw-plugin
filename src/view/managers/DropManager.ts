@@ -43,6 +43,7 @@ import { Position } from "src/types/excalidrawViewTypes";
 import { setStyle } from "src/utils/styleUtils";
 import { ObsidianDraggable } from "src/types/types";
 import type React from "react";
+import { insertMarkdownImage } from "src/shared/MarkdownImage";
 
 /*
 static getDropAction(event: DragEvent): string {
@@ -177,7 +178,17 @@ export class DropManager {
               file.extension === "md" ||
               file.extension.toLowerCase() === "pdf")
           ) {
-            if (file.extension.toLowerCase() === "pdf") {
+            if (
+              internalDragAction === "image" &&
+              file.extension.toLowerCase() === "md" &&
+              !this.plugin.isExcalidrawFile(file)
+            ) {
+              void insertMarkdownImage(
+                this.view,
+                file,
+                { ...this.currentPosition },
+              );
+            } else if (file.extension.toLowerCase() === "pdf") {
               const insertPDFModal = new InsertPDFModal(this.plugin, this.view);
               insertPDFModal.open(file);
             } else {
@@ -227,6 +238,22 @@ export class DropManager {
               let counter: number = 0;
               const ids: string[] = [];
               for (const f of draggable.files) {
+                if (
+                  internalDragAction === "image" &&
+                  f.extension.toLowerCase() === "md" &&
+                  !this.plugin.isExcalidrawFile(f)
+                ) {
+                  const id = await insertMarkdownImage(this.view, f, {
+                    x: this.currentPosition.x + counter * 50,
+                    y: this.currentPosition.y + counter * 50,
+                  });
+                  if (id) {
+                    ids.push(id);
+                    counter++;
+                    ea.selectElementsInView(ids);
+                  }
+                  continue;
+                }
                 if (IMAGE_TYPES.contains(f.extension) || f.extension === "md") {
                   ids.push(
                     await ea.addImage(
