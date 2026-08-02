@@ -54,16 +54,7 @@ export const wrapWithPaddingPopup = (
 
     let value = currentPadding;
     let debounceTimer: number;
-
-    const allWrappers = doc.querySelectorAll(
-      '.excalidraw-padding-wrapper[data-bare-ref="' +
-        bareRef.replace(/"/g, "\\\"") +
-        '"]',
-    );
-    let pos = 0;
-    allWrappers.forEach((w, i) => {
-      if (w === wrapper) pos = i + 1;
-    });
+    let target = fnameParts.linkpartReference;
 
     const doSave = async () => {
       const file = plugin.app.workspace.getActiveFile();
@@ -73,16 +64,15 @@ export const wrapWithPaddingPopup = (
       const base = fnameParts.linkpartReference.replace(/,padding=\d+$/, "");
       const replacement = base + newSuffix;
       await plugin.app.vault.process(file, (data: string) => {
+        const idx = data.indexOf(target);
+        if (idx !== -1) {
+          target = replacement;
+          return data.substring(0, idx) + replacement + data.substring(idx + target.length);
+        }
         const esc = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        const re = new RegExp(esc + "(,padding=\\d+)?", "g");
-        const matches = data.match(re) || [];
-        const targetPos = matches.length >= pos ? pos : 1;
-        let found = 0;
-        const result = data.replace(re, (match: string) => {
-          found++;
-          if (found !== targetPos) return match;
-          return replacement;
-        });
+        const re = new RegExp(esc + "(,padding=\\d+)?");
+        const result = data.replace(re, replacement);
+        target = replacement;
         return result;
       });
     };
