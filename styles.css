@@ -1642,12 +1642,11 @@ button.excalidraw-font-picker {
   align-items: center;
   justify-content: center;
   z-index: 10;
+}
 
 .excalidraw-padding-zoom-icon svg {
   width: 18px;
   height: 18px;
-}
-
 }
 
 .ex-pad-popup {
