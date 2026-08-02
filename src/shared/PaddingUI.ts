@@ -66,8 +66,9 @@ export const wrapWithPaddingPopup = (
       await plugin.app.vault.process(file, (data: string) => {
         const idx = data.indexOf(target);
         if (idx !== -1) {
+          const oldLen = target.length;
           target = replacement;
-          return data.substring(0, idx) + replacement + data.substring(idx + target.length);
+          return data.substring(0, idx) + replacement + data.substring(idx + oldLen);
         }
         const esc = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         const re = new RegExp(esc + "(,padding=\\d+)?");
@@ -106,6 +107,9 @@ export const wrapWithPaddingPopup = (
     };
 
     const stepIndex = (v: number) => STEPS.indexOf(valueToStep(v));
+
+    value = valueToStep(value);
+    label.textContent = String(value);
 
     const updateKnob = (v: number) => {
       const idx = stepIndex(v);
