@@ -35,12 +35,12 @@ import {
 } from "src/utils/customEmbeddableUtils";
 import { setStyle } from "src/utils/styleUtils";
 import { EmbeddedFile } from "src/shared/EmbeddedFileLoader";
-import { ScriptEngine } from "src/shared/Scripts";
 import {
   createOrOverwriteFile,
   getNewUniqueFilepath,
   splitFolderAndFilename,
 } from "src/utils/fileUtils";
+import { getAttachmentsFolderAndFilePath } from "src/utils/pathUtils";
 import { t } from "src/lang/helpers";
 import { showColorPicker } from "src/shared/Dialogs/ColorPicker";
 import { getBinaryFileFromDataURL } from "src/utils/utils";
@@ -67,6 +67,7 @@ import {
   BLOCK_REFERENCE_ICON_ID,
   BLOCK_REFERENCE_ICON_REGISTRY_SVG,
 } from "src/constants/blockReferenceIcon";
+import { FileAndFolderSelectorModal } from "src/shared/Dialogs/FileAndFolderSelectorModal";
 
 let blockReferenceIconRegistered = false;
 
@@ -1285,26 +1286,36 @@ class MarkdownImageEditorController {
     if (!this.ensureOwnerValid() || !source || source.source !== "local") {
       return;
     }
-    let path = await ScriptEngine.inputPrompt(
-      this.view,
-      this.view.plugin,
-      this.view.app,
-      t("MARKDOWN_IMAGE_EXTRACT_TITLE"),
-      t("MARKDOWN_IMAGE_EXTRACT_PATH"),
+    const attachmentLocation = await getAttachmentsFolderAndFilePath(
+      this.app,
+      this.view.file.path,
       t("MARKDOWN_IMAGE_DEFAULT_NOTE"),
     );
-    if (!path || !this.ensureOwnerValid()) {
+    if (!this.ensureOwnerValid()) {
       return;
     }
-    if (!path.toLowerCase().endsWith(".md")) {
-      path += ".md";
+    const defaultLocation = splitFolderAndFilename(
+      attachmentLocation.filepath,
+    );
+    const location = await new FileAndFolderSelectorModal(this.app, {
+      title: t("MARKDOWN_IMAGE_EXTRACT_TITLE"),
+      folderLabel: t("FILE_AND_FOLDER_SELECTOR_FOLDER"),
+      fileNameLabel: t("FILE_AND_FOLDER_SELECTOR_FILENAME"),
+      submitButtonText: t("MARKDOWN_IMAGE_EXTRACT"),
+      folderPath: defaultLocation.folderpath,
+      fileName: defaultLocation.filename,
+    }).start();
+    if (!location || !this.ensureOwnerValid()) {
+      return;
     }
     try {
-      const { folderpath, filename } = splitFolderAndFilename(path);
-      path = getNewUniqueFilepath(
+      const filename = location.fileName.toLowerCase().endsWith(".md")
+        ? location.fileName
+        : `${location.fileName}.md`;
+      const path = getNewUniqueFilepath(
         this.view.app.vault,
         filename,
-        folderpath,
+        location.folderPath,
       );
       const file = await createOrOverwriteFile(
         this.view.app,

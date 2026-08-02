@@ -164,7 +164,10 @@ export default {
   MARKDOWN_IMAGE_CHANGE_SOURCE_ERROR: "无法更改 Markdown 图像来源",
   MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "无法创建本地 Markdown 副本",
   MARKDOWN_IMAGE_EXTRACT_TITLE: "将 Markdown 图像提取到笔记",
-  MARKDOWN_IMAGE_EXTRACT_PATH: "新 Markdown 笔记的路径",
+  FILE_AND_FOLDER_SELECTOR_FOLDER: "文件夹",
+  FILE_AND_FOLDER_SELECTOR_FILENAME: "文件名",
+  FILE_AND_FOLDER_SELECTOR_EXPORT_TITLE: "导出到仓库",
+  FILE_AND_FOLDER_SELECTOR_EXPORT: "导出",
   MARKDOWN_IMAGE_DEFAULT_NOTE: "Markdown 图像.md",
   MARKDOWN_IMAGE_CREATE_NOTE_ERROR: "无法创建 Markdown 笔记",
   MARKDOWN_IMAGE_UNKNOWN_ERROR: "未知错误",
@@ -255,8 +258,6 @@ export default {
     "反转模式：默认方向按键已禁用。需要时请使用 Ctrl/CMD 临时启用。",
   ARROW_BINDING_NORMAL_MODE:
     "正常模式：方向键已启用。需要时请使用 Ctrl/CMD 临时禁用。",
-  EXPORT_FILENAME_PROMPT: "请提供文件名",
-  EXPORT_FILENAME_PROMPT_PLACEHOLDER: "请输入文件名，留空以取消操作",
   WARNING_SERIOUS_ERROR:
     "警告：Excalidraw 遇到了未知的问题!\n\n" +
     "您最近的更改可能无法保存。\n\n" +

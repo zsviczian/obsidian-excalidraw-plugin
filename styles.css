@@ -370,6 +370,21 @@ textarea.excalidraw-wysiwyg {
   flex-wrap: wrap;
 }
 
+.excalidraw-file-and-folder-selector__field {
+  flex-wrap: wrap;
+}
+
+.excalidraw-file-and-folder-selector__field > .setting-item-control {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.excalidraw-file-and-folder-selector__field input[type="text"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+
 .excalidraw-folder-create-row {
   display: flex;
   flex: 0 0 100%;

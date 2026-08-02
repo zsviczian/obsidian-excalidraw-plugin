@@ -190,7 +190,10 @@ export default {
   MARKDOWN_IMAGE_CHANGE_SOURCE_ERROR: "No se pudo cambiar la fuente de la imagen Markdown",
   MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "No se pudo crear una copia Markdown local",
   MARKDOWN_IMAGE_EXTRACT_TITLE: "Extraer imagen Markdown a una nota",
-  MARKDOWN_IMAGE_EXTRACT_PATH: "Ruta de la nueva nota Markdown",
+  FILE_AND_FOLDER_SELECTOR_FOLDER: "Carpeta",
+  FILE_AND_FOLDER_SELECTOR_FILENAME: "Nombre del archivo",
+  FILE_AND_FOLDER_SELECTOR_EXPORT_TITLE: "Exportar a la bóveda",
+  FILE_AND_FOLDER_SELECTOR_EXPORT: "Exportar",
   MARKDOWN_IMAGE_DEFAULT_NOTE: "Imagen Markdown.md",
   MARKDOWN_IMAGE_CREATE_NOTE_ERROR: "No se pudo crear la nota Markdown",
   MARKDOWN_IMAGE_UNKNOWN_ERROR: "Error desconocido",
@@ -282,9 +285,6 @@ export default {
     "Modo Invertido: La vinculación de flechas predeterminada está ahora deshabilitada. Usa CTRL/CMD para habilitar temporalmente la vinculación cuando sea necesario.",
   ARROW_BINDING_NORMAL_MODE:
     "Modo Normal: La vinculación de flechas está ahora habilitada. Usa CTRL/CMD para deshabilitar temporalmente la vinculación cuando sea necesario.",
-  EXPORT_FILENAME_PROMPT: "Por favor, ingresa el nombre de archivo",
-  EXPORT_FILENAME_PROMPT_PLACEHOLDER:
-    "nombre de archivo, dejar en blanco para cancelar la acción",
   WARNING_SERIOUS_ERROR:
     "ADVERTENCIA: ¡Excalidraw encontró un problema desconocido!\n\n" +
     "Existe el riesgo de que tus cambios más recientes no se puedan guardar.\n\n" +

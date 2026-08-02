@@ -182,7 +182,10 @@ export default {
   MARKDOWN_IMAGE_CHANGE_SOURCE_ERROR: "Не удалось изменить источник Markdown-изображения",
   MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "Не удалось создать локальную копию Markdown",
   MARKDOWN_IMAGE_EXTRACT_TITLE: "Извлечь Markdown-изображение в заметку",
-  MARKDOWN_IMAGE_EXTRACT_PATH: "Путь к новой Markdown-заметке",
+  FILE_AND_FOLDER_SELECTOR_FOLDER: "Папка",
+  FILE_AND_FOLDER_SELECTOR_FILENAME: "Имя файла",
+  FILE_AND_FOLDER_SELECTOR_EXPORT_TITLE: "Экспорт в хранилище",
+  FILE_AND_FOLDER_SELECTOR_EXPORT: "Экспортировать",
   MARKDOWN_IMAGE_DEFAULT_NOTE: "Markdown-изображение.md",
   MARKDOWN_IMAGE_CREATE_NOTE_ERROR: "Не удалось создать Markdown-заметку",
   MARKDOWN_IMAGE_UNKNOWN_ERROR: "Неизвестная ошибка",
@@ -284,9 +287,6 @@ export default {
     "Инвертированный режим: Привязка стрелок по умолчанию теперь отключена. Используйте CTRL/CMD, чтобы временно включить привязку, когда это необходимо.",
   ARROW_BINDING_NORMAL_MODE:
     "Обычный режим: Привязка стрелок теперь включена. Используйте CTRL/CMD, чтобы временно отключить привязку при необходимости.",
-  EXPORT_FILENAME_PROMPT: "Пожалуйста, укажите имя файла",
-  EXPORT_FILENAME_PROMPT_PLACEHOLDER:
-    "имя файла, оставьте пустым, чтобы отменить действие",
   WARNING_SERIOUS_ERROR:
     "ПРЕДУПРЕЖДЕНИЕ: Excalidraw столкнулся с неизвестной проблемой!\n\n" +
     "Есть риск, что последние изменения не будут сохранены.\n\n" +

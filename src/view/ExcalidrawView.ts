@@ -82,7 +82,6 @@ import {
   unwrapMarkdownImageBlock,
 } from "../shared/ExcalidrawData";
 import {
-  checkAndCreateFolder,
   createFileAndAwaitMetacacheUpdate,
   createOrOverwriteFile,
   download,
@@ -143,7 +142,6 @@ import {
   LaTexPrompt,
   MultiOptionConfirmationPrompt,
   NewFileActions,
-  Prompt,
   linkPrompt,
 } from "../shared/Dialogs/Prompt";
 import {
@@ -188,6 +186,7 @@ import {
   SwordColors,
 } from "../constants/actionIcons";
 import { ExportDialog } from "../shared/Dialogs/ExportDialog";
+import { FileAndFolderSelectorModal } from "../shared/Dialogs/FileAndFolderSelectorModal";
 import { getEA } from "src/core";
 import {
   anyModifierKeysPressed,
@@ -617,34 +616,32 @@ export default class ExcalidrawView
       return;
     }
     if (DEVICE.isMobile) {
-      const prompt = new Prompt(
-        this.app,
-        t("EXPORT_FILENAME_PROMPT"),
-        this.file.basename,
-        t("EXPORT_FILENAME_PROMPT_PLACEHOLDER"),
+      const location = await new FileAndFolderSelectorModal(this.app, {
+        title: t("FILE_AND_FOLDER_SELECTOR_EXPORT_TITLE"),
+        folderLabel: t("FILE_AND_FOLDER_SELECTOR_FOLDER"),
+        fileNameLabel: t("FILE_AND_FOLDER_SELECTOR_FILENAME"),
+        submitButtonText: t("FILE_AND_FOLDER_SELECTOR_EXPORT"),
+        folderPath: splitFolderAndFilename(this.file.path).folderpath,
+        fileName: `${this.file.basename}.excalidraw`,
+      }).start();
+      if (!location) {
+        return;
+      }
+      const filename = location.fileName.toLowerCase().endsWith(".excalidraw")
+        ? location.fileName
+        : `${location.fileName}.excalidraw`;
+      const path = getNewUniqueFilepath(
+        this.app.vault,
+        filename,
+        location.folderPath,
       );
-      void prompt.openAndGetValue((filename: string) => {
-        if (!filename) {
-          return;
-        }
-        void (async () => {
-          filename = `${filename}.excalidraw`;
-          const folderpath = splitFolderAndFilename(this.file?.path).folderpath;
-          await checkAndCreateFolder(folderpath); //create folder if it does not exist
-          const path = getNewUniqueFilepath(
-            this.app.vault,
-            filename,
-            folderpath,
-          );
-          const file = await exportImageToFile(
-            this,
-            path,
-            JSON.stringify(this.getScene(), null, "\t"),
-            ".excalidraw",
-          );
-          new Notice(`Exported to ${file?.name}`, 6000);
-        })();
-      });
+      const file = await exportImageToFile(
+        this,
+        path,
+        JSON.stringify(this.getScene(), null, "\t"),
+        ".excalidraw",
+      );
+      new Notice(`Exported to ${file?.name}`, 6000);
       return;
     }
     download(
@@ -4529,94 +4526,94 @@ export default class ExcalidrawView
     if (!textElement) {
       return;
     }
-    const prompt = new Prompt(
-      this.app,
-      "Filename",
-      "",
-      "Leave blank to cancel this action",
-    );
-    void prompt.openAndGetValue((filename: string) => {
-      void (async () => {
-        if (!filename) {
-          return;
-        }
-        filename = `${filename}.md`;
-        const folderpath = splitFolderAndFilename(this.file.path).folderpath;
-        await checkAndCreateFolder(folderpath); //create folder if it does not exist
-        const fname = getNewUniqueFilepath(
-          this.app.vault,
-          filename,
-          folderpath,
-        );
-        const text: string[] = [];
-        if (containerElement && containerElement.link) {
-          text.push(containerElement.link);
-        }
-        text.push(textElement.rawText);
-        const f = await createOrOverwriteFile(this.app, fname, text.join("\n"));
-        if (f) {
-          const ea: ExcalidrawAutomate = getEA(this);
-          const elements = containerElement
-            ? [textElement, containerElement]
-            : [textElement];
-          ea.copyViewElementsToEAforEditing(elements);
-          ea.getElements().forEach((el) => (el.isDeleted = true));
-          const [x, y, w, h] = containerElement
-            ? [
-                containerElement.x,
-                containerElement.y,
-                containerElement.width,
-                containerElement.height,
-              ]
-            : [textElement.x, textElement.y, MAX_IMAGE_SIZE, MAX_IMAGE_SIZE];
-          const id = ea.addEmbeddable(x, y, w, h, undefined, f);
-          if (containerElement) {
-            const props: (keyof ExcalidrawElement)[] = [
-              "backgroundColor",
-              "fillStyle",
-              "roughness",
-              "roundness",
-              "strokeColor",
-              "strokeStyle",
-              "strokeWidth",
-            ];
-            props.forEach((prop) => {
-              const element = ea.getElement(id);
-              if (prop in element) {
-                const mutableElement = element as Mutable<ExcalidrawElement>;
-                switch (prop) {
-                  case "backgroundColor":
-                    mutableElement.backgroundColor =
-                      containerElement.backgroundColor;
-                    break;
-                  case "fillStyle":
-                    mutableElement.fillStyle = containerElement.fillStyle;
-                    break;
-                  case "roughness":
-                    mutableElement.roughness = containerElement.roughness;
-                    break;
-                  case "roundness":
-                    mutableElement.roundness = containerElement.roundness;
-                    break;
-                  case "strokeColor":
-                    mutableElement.strokeColor = containerElement.strokeColor;
-                    break;
-                  case "strokeStyle":
-                    mutableElement.strokeStyle = containerElement.strokeStyle;
-                    break;
-                  case "strokeWidth":
-                    mutableElement.strokeWidth = containerElement.strokeWidth;
-                    break;
-                }
+    void (async () => {
+      const location = await new FileAndFolderSelectorModal(this.app, {
+        title: t("CONVERT_TO_MARKDOWN"),
+        folderLabel: t("FILE_AND_FOLDER_SELECTOR_FOLDER"),
+        fileNameLabel: t("FILE_AND_FOLDER_SELECTOR_FILENAME"),
+        submitButtonText: t("PROMPT_BUTTON_CREATE_MARKDOWN"),
+        folderPath: splitFolderAndFilename(this.file.path).folderpath,
+        fileName: "",
+      }).start();
+      if (!location) {
+        return;
+      }
+      const filename = location.fileName.toLowerCase().endsWith(".md")
+        ? location.fileName
+        : `${location.fileName}.md`;
+      const fname = getNewUniqueFilepath(
+        this.app.vault,
+        filename,
+        location.folderPath,
+      );
+      const text: string[] = [];
+      if (containerElement && containerElement.link) {
+        text.push(containerElement.link);
+      }
+      text.push(textElement.rawText);
+      const f = await createOrOverwriteFile(this.app, fname, text.join("\n"));
+      if (f) {
+        const ea: ExcalidrawAutomate = getEA(this);
+        const elements = containerElement
+          ? [textElement, containerElement]
+          : [textElement];
+        ea.copyViewElementsToEAforEditing(elements);
+        ea.getElements().forEach((el) => (el.isDeleted = true));
+        const [x, y, w, h] = containerElement
+          ? [
+              containerElement.x,
+              containerElement.y,
+              containerElement.width,
+              containerElement.height,
+            ]
+          : [textElement.x, textElement.y, MAX_IMAGE_SIZE, MAX_IMAGE_SIZE];
+        const id = ea.addEmbeddable(x, y, w, h, undefined, f);
+        if (containerElement) {
+          const props: (keyof ExcalidrawElement)[] = [
+            "backgroundColor",
+            "fillStyle",
+            "roughness",
+            "roundness",
+            "strokeColor",
+            "strokeStyle",
+            "strokeWidth",
+          ];
+          props.forEach((prop) => {
+            const element = ea.getElement(id);
+            if (prop in element) {
+              const mutableElement = element as Mutable<ExcalidrawElement>;
+              switch (prop) {
+                case "backgroundColor":
+                  mutableElement.backgroundColor =
+                    containerElement.backgroundColor;
+                  break;
+                case "fillStyle":
+                  mutableElement.fillStyle = containerElement.fillStyle;
+                  break;
+                case "roughness":
+                  mutableElement.roughness = containerElement.roughness;
+                  break;
+                case "roundness":
+                  mutableElement.roundness = containerElement.roundness;
+                  break;
+                case "strokeColor":
+                  mutableElement.strokeColor = containerElement.strokeColor;
+                  break;
+                case "strokeStyle":
+                  mutableElement.strokeStyle = containerElement.strokeStyle;
+                  break;
+                case "strokeWidth":
+                  mutableElement.strokeWidth = containerElement.strokeWidth;
+                  break;
               }
-            });
-          }
-          ea.getElement(id);
-          await ea.addElementsToView();
-          ea.destroy();
+            }
+          });
         }
-      })();
-    });
+        ea.getElement(id);
+        await ea.addElementsToView();
+        ea.destroy();
+      }
+    })();
   }
 
   async addYouTubeThumbnail(link: string) {
