@@ -374,7 +374,7 @@ textarea.excalidraw-wysiwyg {
   flex-wrap: wrap;
 }
 
-.excalidraw-file-and-folder-selector__field > .setting-item-control {
+.excalidraw-file-and-folder-selector__field>.setting-item-control {
   flex: 1 1 18rem;
   min-width: 0;
 }
@@ -385,6 +385,10 @@ textarea.excalidraw-wysiwyg {
   width: 100%;
 }
 
+.is-mobile .excalidraw-file-and-folder-selector .setting-item-control {
+  flex: 0 0 auto;
+}
+
 .excalidraw-folder-create-row {
   display: flex;
   flex: 0 0 100%;
@@ -392,7 +396,7 @@ textarea.excalidraw-wysiwyg {
   width: 100%;
 }
 
-.excalidraw-folder-create-row > button:not(.excalidraw-display-none) {
+.excalidraw-folder-create-row>button:not(.excalidraw-display-none) {
   margin-top: var(--size-2-2);
 }
 
