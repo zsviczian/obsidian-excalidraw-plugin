@@ -16,12 +16,17 @@ export const wrapWithPaddingPopup = (
   const currentPadding =
     fnameParts.padding ?? plugin.settings.exportPaddingSVG;
 
+  const bareRef = src.replace(/,padding=\d+/, "");
+  const existing = mainDocument.querySelector(
+    '.excalidraw-padding-wrapper[data-bare-ref="' + bareRef.replace(/"/g, '\\"') + '"]'
+  ) as HTMLDivElement | null;
+  if (existing) {
+    return existing;
+  }
+
   const wrapper = mainDocument.createElement("div");
   wrapper.className = "excalidraw-padding-wrapper";
-  wrapper.setAttribute(
-    "data-bare-ref",
-    src.replace(/,padding=\d+/, ""),
-  );
+  wrapper.setAttribute("data-bare-ref", bareRef);
   wrapper.appendChild(imgDiv);
 
   const icon = mainDocument.createElement("span");
@@ -55,8 +60,6 @@ export const wrapWithPaddingPopup = (
 
     let value = currentPadding;
     let debounceTimer: number;
-
-    const bareRef = src.replace(/,padding=\d+/, "");
 
     const allWrappers = doc.querySelectorAll(
       '.excalidraw-padding-wrapper[data-bare-ref="' +
