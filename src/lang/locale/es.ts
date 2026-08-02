@@ -146,11 +146,10 @@ export default {
   MARKDOWN_IMAGE_BORDER: "Borde",
   MARKDOWN_IMAGE_BORDER_COLOR: "Color del borde",
   MARKDOWN_IMAGE_CSS: "CSS",
-  MARKDOWN_IMAGE_CSS_DESC: "Reglas CSS aplicadas solo a esta imagen Markdown.",
+  MARKDOWN_IMAGE_CSS_DESC:
+    "CSS solo para esta imagen Markdown. Copia el SVG de abajo y pide a tu LLM preferido el CSS que necesitas.",
   MARKDOWN_IMAGE_CSS_IMPORTANT_HINT:
     "Si una regla no tiene efecto, añade !important a la declaración.",
-  MARKDOWN_IMAGE_CSS_SVG_COPY_HINT:
-    "Usa el botón de copia de abajo para copiar el SVG generado y examinarlo.",
   MARKDOWN_IMAGE_CSS_EDITOR_ARIA: "Editor CSS para esta imagen Markdown",
   MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA:
     "Editor CSS para Markdown transcluido",

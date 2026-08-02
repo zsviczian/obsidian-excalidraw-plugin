@@ -5588,9 +5588,16 @@ export default class ExcalidrawView
   };
 
   private excalidrawDIVonKeyDownCapture(event: KeyboardEvent): void {
+    const isDeleteKey = event.key === "Backspace" || event.key === "Delete";
+    const isCutShortcut =
+      event.key.toLowerCase() === "x" &&
+      isWinCTRLorMacCMD(event) &&
+      !isSHIFT(event) &&
+      !isWinALTorMacOPT(event) &&
+      !isWinMETAorMacCTRL(event);
     if (
       this.semaphores?.viewunload ||
-      (event.key !== "Backspace" && event.key !== "Delete")
+      (!isDeleteKey && !isCutShortcut)
     ) {
       return;
     }

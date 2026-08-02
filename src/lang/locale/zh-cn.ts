@@ -125,11 +125,10 @@ export default {
   MARKDOWN_IMAGE_BORDER: "边框",
   MARKDOWN_IMAGE_BORDER_COLOR: "边框颜色",
   MARKDOWN_IMAGE_CSS: "CSS",
-  MARKDOWN_IMAGE_CSS_DESC: "仅应用于此 Markdown 图像的 CSS 规则。",
+  MARKDOWN_IMAGE_CSS_DESC:
+    "CSS 仅应用于此 Markdown 图像。复制下方的 SVG，让你选择的 LLM 生成所需的 CSS。",
   MARKDOWN_IMAGE_CSS_IMPORTANT_HINT:
     "如果规则没有效果，请在声明中添加 !important。",
-  MARKDOWN_IMAGE_CSS_SVG_COPY_HINT:
-    "使用下方的复制按钮复制生成的 SVG 以供检查。",
   MARKDOWN_IMAGE_CSS_EDITOR_ARIA: "此 Markdown 图像的 CSS 编辑器",
   MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA:
     "嵌入 Markdown 的 CSS 编辑器",

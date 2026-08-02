@@ -385,7 +385,7 @@ class MarkdownImageEditorController {
     this.renderAppearanceControls(appearance, {
       scope: "image",
       cssName: t("MARKDOWN_IMAGE_CSS"),
-      cssDescription: `${t("MARKDOWN_IMAGE_CSS_DESC")} ${t("MARKDOWN_IMAGE_CSS_IMPORTANT_HINT")} ${t("MARKDOWN_IMAGE_CSS_SVG_COPY_HINT")}`,
+      cssDescription: `${t("MARKDOWN_IMAGE_CSS_DESC")} ${t("MARKDOWN_IMAGE_CSS_IMPORTANT_HINT")}`,
       cssEditorAria: t("MARKDOWN_IMAGE_CSS_EDITOR_ARIA"),
       cssBoilerplate: MARKDOWN_IMAGE_CSS_BOILERPLATE,
       cssBoilerplateMarker: MARKDOWN_IMAGE_CSS_BOILERPLATE_MARKER,

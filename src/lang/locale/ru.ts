@@ -138,11 +138,9 @@ export default {
   MARKDOWN_IMAGE_BORDER_COLOR: "Цвет рамки",
   MARKDOWN_IMAGE_CSS: "CSS",
   MARKDOWN_IMAGE_CSS_DESC:
-    "Правила CSS применяются только к этому Markdown-изображению.",
+    "CSS только для этого Markdown-изображения. Скопируйте SVG ниже и попросите предпочитаемую LLM подобрать нужный CSS.",
   MARKDOWN_IMAGE_CSS_IMPORTANT_HINT:
     "Если правило не действует, добавьте !important к объявлению.",
-  MARKDOWN_IMAGE_CSS_SVG_COPY_HINT:
-    "Используйте кнопку копирования ниже, чтобы скопировать созданный SVG для проверки.",
   MARKDOWN_IMAGE_CSS_EDITOR_ARIA: "Редактор CSS для этого Markdown-изображения",
   MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA:
     "Редактор CSS для встроенного Markdown",
