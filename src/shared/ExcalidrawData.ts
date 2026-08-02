@@ -2753,7 +2753,7 @@ export const getTransclusion = async (
     if (!para) {
       return { contents: linkParts.original.trim(), lineNum: 0 };
     }
-    if (["blockquote"].includes(para.type)) {
+    if (para.type === "blockquote" && para.children?.[0]) {
       para = para.children[0];
     } //blockquotes are special, they have one child, which has the paragraph
     const startPos = para.position.start.offset;
@@ -2770,38 +2770,46 @@ export const getTransclusion = async (
   }
 
   const headings = blocks.filter(
-    (block: MarkdownBlockCacheEntry) => block.display.search(/^#+\s/) === 0,
+    (block: MarkdownBlockCacheEntry) =>
+      block.node.type === "heading" &&
+      block.display.search(/^#+\s/) === 0 &&
+      Boolean(block.node.children?.[0]?.position?.start),
   ); // startsWith("#"));
   let startPos: number = null;
   let lineNum: number = 0;
-  let endPos: number = null;
   let depth: number = 1;
   for (let i = 0; i < headings.length; i++) {
-    if (startPos && !endPos) {
+    if (startPos !== null) {
       let j = i;
-      while (j < headings.length && headings[j].node.depth > depth) {
+      while (
+        j < headings.length &&
+        (headings[j].node.depth ?? 1) > depth
+      ) {
         j++;
       }
-      if (j === headings.length && headings[j - 1].node.depth > depth) {
+      if (j === headings.length) {
         return {
           leadingHashes: `${"#".repeat(depth)} `,
           contents: contents.substring(startPos).trim(),
           lineNum,
         };
       }
-      endPos = headings[j].node.position.start.offset - 1;
+      const endPos = headings[j].node.position.start.offset - 1;
       return {
         leadingHashes: `${"#".repeat(depth)} `,
         contents: contents.substring(startPos, endPos).trim(),
         lineNum,
       };
     }
-    const c = headings[i].node.children[0];
+    const c = headings[i].node.children?.[0];
+    if (!c) {
+      continue;
+    }
     const dataHeading = headings[i].node.data?.hProperties?.dataHeading;
     const cc = c?.children;
     //const refNoSpace = linkParts.ref.replaceAll(" ","");
     if (
-      !startPos &&
+      startPos === null &&
       (cleanBlockRef(c?.value) === linkParts.ref ||
         cleanBlockRef(c?.title) === linkParts.ref ||
         cleanBlockRef(dataHeading) === linkParts.ref ||
@@ -2811,12 +2819,12 @@ export const getTransclusion = async (
         cleanSectionHeading(dataHeading) === linkParts.ref ||
         (cc ? cleanSectionHeading(cc[0]?.value) === linkParts.ref : false))
     ) {
-      startPos = headings[i].node.children[0]?.position.start.offset; //
-      depth = headings[i].node.depth;
-      lineNum = headings[i].node.children[0]?.position.start.line; //
+      startPos = c.position.start.offset;
+      depth = headings[i].node.depth ?? 1;
+      lineNum = c.position.start.line;
     }
   }
-  if (startPos) {
+  if (startPos !== null) {
     return {
       leadingHashes: `${"#".repeat(depth)} `,
       contents: contents.substring(startPos).trim(),

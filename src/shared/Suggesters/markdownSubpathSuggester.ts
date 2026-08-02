@@ -1,4 +1,4 @@
-import type { App, TFile } from "obsidian";
+import { resolveSubpath, type App, type TFile } from "obsidian";
 import { MD_EX_SECTIONS, nanoid } from "src/constants/constants";
 import { t } from "src/lang/helpers";
 import { ScriptEngine } from "src/shared/Scripts";
@@ -35,7 +35,7 @@ export async function getMarkdownHeadingSubpaths(
   file: TFile,
   isExcalidrawFile: boolean,
 ): Promise<MarkdownHeadingSubpath[]> {
-  return (
+  const sections = (
     await app.metadataCache.blockCache.getForFile(
       { isCancelled: () => false },
       file,
@@ -50,6 +50,13 @@ export async function getMarkdownHeadingSubpaths(
       display: entry.display,
       subpath: `#${cleanSectionHeading(entry.display)}`,
     }));
+  const fileCache = app.metadataCache.getFileCache(file);
+  return fileCache
+    ? sections.filter(
+        (section) =>
+          resolveSubpath(fileCache, section.subpath)?.type === "heading",
+      )
+    : [];
 }
 
 function isParagraphLikeBlockEntry(
