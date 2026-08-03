@@ -17,9 +17,8 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+// ${getYouTubeDiv("p9MBFxUoOXQ")}
   "2.26.0": `
-${getYouTubeDiv("p9MBFxUoOXQ")}
-
 ## New
 - Stencil libraries can now be stored as vault files instead of \`data.json\`, improving plugin settings stability. Existing users are offered a safe, merge-first migration. To sync libraries, enable **Sync all other types** in Obsidian Sync. To view library files, enable **Show all file types** in Obsidian settings.
 - Added editable Markdown images.

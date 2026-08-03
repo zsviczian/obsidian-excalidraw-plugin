@@ -421,7 +421,7 @@ export async function insertMarkdownImage(
   view: ExcalidrawView,
   source: string | TFile | EmbeddedFile = "",
   position: { x: number; y: number } = view.currentPosition,
-): Promise<string | null> {
+): Promise<ExcalidrawImageElement | null> {
   if (!view.excalidrawAPI || !view.file) {
     return null;
   }
@@ -476,13 +476,8 @@ export async function insertMarkdownImage(
     return null;
   }
   view.setDirty();
-  const inserted = view
-    .getViewElements()
-    .find((candidate) => candidate.id === id);
-  if (inserted) {
-    view.excalidrawAPI.selectElements([inserted]);
-  }
-  return id;
+  view.excalidrawAPI.selectElements([element]);
+  return element;
 }
 
 /** Duplicates a local Markdown image with independent element and file IDs. */

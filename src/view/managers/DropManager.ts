@@ -273,12 +273,12 @@ export class DropManager {
                   f.extension.toLowerCase() === "md" &&
                   !this.plugin.isExcalidrawFile(f)
                 ) {
-                  const id = await insertMarkdownImage(this.view, f, {
+                  const element = await insertMarkdownImage(this.view, f, {
                     x: this.currentPosition.x + counter * 50,
                     y: this.currentPosition.y + counter * 50,
                   });
-                  if (id) {
-                    ids.push(id);
+                  if (element) {
+                    ids.push(element.id);
                     counter++;
                     ea.selectElementsInView(ids);
                   }

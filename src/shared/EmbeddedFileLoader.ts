@@ -1060,6 +1060,7 @@ export class EmbeddedFilesLoader {
     validationConcurrency,
     emitPolicy = "all",
     onDeferredValidationCandidates,
+    sceneElements,
   }: {
     excalidrawData: ExcalidrawData;
     addFiles: (files: FileData[], isDark: boolean, final?: boolean) => void;
@@ -1071,13 +1072,16 @@ export class EmbeddedFilesLoader {
     validationConcurrency?: number;
     emitPolicy?: LoadSceneEmitPolicy;
     onDeferredValidationCandidates?: (fileIds: Set<FileId>) => void;
+    sceneElements?: readonly ExcalidrawElement[];
   }) {
     if (depth > 7) {
       new Notice(t("INFINITE_LOOP_WARNING") + depth.toString(), 6000);
       return;
     }
     const entries = Array.from(excalidrawData.getFileEntries());
-    const markdownImageElements = excalidrawData.scene.elements.filter(
+    const markdownImageElements = (
+      sceneElements ?? excalidrawData.scene.elements
+    ).filter(
       (element: ExcalidrawElement) =>
         element.type === "image" &&
         Boolean(element.customData?.[MARKDOWN_IMAGE_CUSTOM_DATA_KEY]),

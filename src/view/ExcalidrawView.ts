@@ -760,6 +760,7 @@ export default class ExcalidrawView
     void (await new Promise<void>((resolve) => {
       void loader.loadSceneFiles({
         excalidrawData: this.excalidrawData,
+        sceneElements: this.getViewElements(),
         addFiles: (
           files: FileData[],
           _isDark: boolean,
@@ -3740,6 +3741,7 @@ export default class ExcalidrawView
       // candidates, run one at a time, and emit only regenerated images.
       void loader.loadSceneFiles({
         excalidrawData: this.excalidrawData,
+        sceneElements: this.getViewElements(),
         addFiles: (
           files: FileData[],
           isDark: boolean,
@@ -3848,6 +3850,7 @@ export default class ExcalidrawView
       this.activeLoader = l;
       void l.loadSceneFiles({
         excalidrawData: this.excalidrawData,
+        sceneElements: this.getViewElements(),
         addFiles: (
           files: FileData[],
           isDark: boolean,
@@ -3953,6 +3956,51 @@ export default class ExcalidrawView
     const reloadFiles = new Set<FileId>();
 
     try {
+      const syncMarkdownImageSource = (
+        incomingElement: ExcalidrawImageElement,
+      ): boolean => {
+        const customData = getMarkdownImageCustomData(incomingElement);
+        if (!customData) {
+          return false;
+        }
+        if (customData.source === "local") {
+          const incomingSource = inData.getMarkdownImage(
+            incomingElement.fileId,
+          );
+          if (!incomingSource) {
+            return false;
+          }
+          const currentSource = this.excalidrawData.getMarkdownImage(
+            incomingElement.fileId,
+          );
+          if (currentSource?.markdown === incomingSource.markdown) {
+            return false;
+          }
+          this.excalidrawData.setMarkdownImage(
+            incomingElement.fileId,
+            incomingSource,
+          );
+          return true;
+        }
+
+        const incomingFile = inData.getFile(incomingElement.fileId);
+        if (!incomingFile) {
+          return false;
+        }
+        const currentFile = this.excalidrawData.getFile(
+          incomingElement.fileId,
+        );
+        if (
+          currentFile?.file === incomingFile.file &&
+          currentFile?.hyperlink === incomingFile.hyperlink &&
+          currentFile?.linkParts?.original === incomingFile.linkParts?.original
+        ) {
+          return false;
+        }
+        this.excalidrawData.setFile(incomingElement.fileId, incomingFile);
+        return true;
+      };
+
       const deletedIds = inData.deletedElements.map((el) => el.id);
       const sceneElements = this.excalidrawAPI
         .getSceneElementsIncludingDeleted()
@@ -3971,7 +4019,10 @@ export default class ExcalidrawView
             );
             break;
           case "image":
-            if (inData.getFile(incomingElement.fileId)) {
+            if (getMarkdownImageCustomData(incomingElement)) {
+              syncMarkdownImageSource(incomingElement);
+              reloadFiles.add(incomingElement.fileId);
+            } else if (inData.getFile(incomingElement.fileId)) {
               this.excalidrawData.setFile(
                 incomingElement.fileId,
                 inData.getFile(incomingElement.fileId),
@@ -4046,6 +4097,15 @@ export default class ExcalidrawView
               sceneElementIds.splice(parentLayer + 1, 0, incomingElement.id);
             }
           } else if (sceneElement && incomingElement.type === "image") {
+            if (getMarkdownImageCustomData(incomingElement)) {
+              if (
+                syncMarkdownImageSource(incomingElement) ||
+                !this.excalidrawAPI.getFiles()[incomingElement.fileId]
+              ) {
+                reloadFiles.add(incomingElement.fileId);
+              }
+              return;
+            }
             //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/632
             const incomingFile = inData.getFile(incomingElement.fileId);
             const sceneFile = this.excalidrawData.getFile(
@@ -4072,6 +4132,17 @@ export default class ExcalidrawView
           }
         },
       );
+      const loadedFiles = this.excalidrawAPI.getFiles();
+      sceneElements.forEach((element) => {
+        if (
+          element.type === "image" &&
+          getMarkdownImageCustomData(element) &&
+          !loadedFiles[element.fileId]
+        ) {
+          syncMarkdownImageSource(element);
+          reloadFiles.add(element.fileId);
+        }
+      });
       this.previousSceneVersion = this.getSceneVersion(sceneElements);
       //changing files could result in a race condition for sync. If at the end of sync there are differences
       //set dirty will trigger an autosave
@@ -5587,20 +5658,7 @@ export default class ExcalidrawView
     this.lastKeyDownPosition = { x: 0, y: 0 };
   };
 
-  private excalidrawDIVonKeyDownCapture(event: KeyboardEvent): void {
-    const isDeleteKey = event.key === "Backspace" || event.key === "Delete";
-    const isCutShortcut =
-      event.key.toLowerCase() === "x" &&
-      isWinCTRLorMacCMD(event) &&
-      !isSHIFT(event) &&
-      !isWinALTorMacOPT(event) &&
-      !isWinMETAorMacCTRL(event);
-    if (
-      this.semaphores?.viewunload ||
-      (!isDeleteKey && !isCutShortcut)
-    ) {
-      return;
-    }
+  private captureSelectedMarkdownImageDeleteCandidates(): void {
     this.markdownImageDeleteCandidates.clear();
     this.getViewSelectedElements()
       .filter(
@@ -5620,6 +5678,31 @@ export default class ExcalidrawView
       this.markdownImageDeleteCandidates.clear();
       this.markdownImageDeleteCandidateTimer = null;
     }, 1000);
+  }
+
+  private excalidrawDIVonKeyDownCapture(event: KeyboardEvent): void {
+    const isDeleteKey = event.key === "Backspace" || event.key === "Delete";
+    const isCutShortcut =
+      event.key.toLowerCase() === "x" &&
+      isWinCTRLorMacCMD(event) &&
+      !isSHIFT(event) &&
+      !isWinALTorMacOPT(event) &&
+      !isWinMETAorMacCTRL(event);
+    if (
+      this.semaphores?.viewunload ||
+      (!isDeleteKey && !isCutShortcut)
+    ) {
+      return;
+    }
+    this.captureSelectedMarkdownImageDeleteCandidates();
+  }
+
+  private excalidrawDIVonPointerDownCapture(event: PointerEvent): void {
+    const target = event.target as Element | null;
+    if (!target?.closest('[data-testid="deleteSelectedElements"]')) {
+      return;
+    }
+    this.captureSelectedMarkdownImageDeleteCandidates();
   }
 
   private excalidrawDIVonKeyDown(event: KeyboardEvent) {
@@ -6867,13 +6950,11 @@ export default class ExcalidrawView
     selectCardDialog.start(center);
   }
 
-  /** Opens the sidepanel editor for a selected image or inserts a new one. */
+  /** Opens an image by ID for editing, or inserts a new Markdown image. */
   public async openMarkdownImageEditor(elementId?: string): Promise<void> {
     const selected = elementId
       ? this.getViewElements().find((element) => element.id === elementId)
-      : this.getViewSelectedElements().length === 1
-        ? this.getViewSelectedElements()[0]
-        : undefined;
+      : undefined;
     const image = selected?.type === "image" ? selected : undefined;
     if (image && !isMarkdownImageElement(this, image)) {
       new Notice(t("MARKDOWN_IMAGE_SELECT_ERROR"));
@@ -8463,6 +8544,8 @@ export default class ExcalidrawView
           key: "abc",
           tabIndex: 0,
           onKeyDownCapture: this.excalidrawDIVonKeyDownCapture.bind(this),
+          onPointerDownCapture:
+            this.excalidrawDIVonPointerDownCapture.bind(this),
           onKeyDown: this.excalidrawDIVonKeyDown.bind(this),
           onKeyUp: this.excalidrawDIVonKeyUp.bind(this),
           onPointerDown: this.onPointerDown.bind(this),

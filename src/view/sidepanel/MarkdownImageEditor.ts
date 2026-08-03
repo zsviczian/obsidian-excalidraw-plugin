@@ -152,12 +152,19 @@ class MarkdownImageEditorController {
   private closed = false;
   private editorChangeRef: EventRef | null = null;
   private selectionGeneration = 0;
+  private initializing = false;
   private lastObservedSelectionId: string | null = null;
   private editorFocusHost: HTMLElement | null = null;
   private editorFocusInHandler: (() => void) | null = null;
   private editorFocusOutHandler: ((event: FocusEvent) => void) | null = null;
   private editorCommandView: MarkdownView | null = null;
   private previousActiveEditor: MarkdownFileInfo | null = null;
+  private editorCommandRoutingActive = false;
+  private editorCommandScopeActive = false;
+  private focusEditorOnMount = false;
+  private sidepanelRevealComplete = false;
+  private editorFocusStabilizationWindow: Window | null = null;
+  private editorFocusStabilizationFrame: number | null = null;
   private scenePointerDocument: Document | null = null;
   private scenePointerDownHandler: ((event: PointerEvent) => void) | null = null;
   private renderStatusEl: HTMLElement | null = null;
@@ -194,47 +201,88 @@ class MarkdownImageEditorController {
     if (!this.ensureOwnerValid()) {
       return false;
     }
-    if (!element) {
-      const id = await insertMarkdownImage(this.view);
-      if (!this.ensureOwnerValid()) {
+    this.initializing = true;
+    this.focusEditorOnMount = true;
+    try {
+      // Establish and reveal the feature tab before inserting a new image. The
+      // insertion renders Markdown asynchronously; leaving the prior script tab
+      // active during that work lets its delayed focus handlers win the race.
+      patchMobileView(this.view);
+      const sidepanel = await this.view.plugin.openSidepanel(false);
+      if (!sidepanel || !this.ensureOwnerValid()) {
         return false;
       }
-      if (!id) {
-        new Notice(t("MARKDOWN_IMAGE_INSERT_ERROR"));
+      this.tab = await sidepanel.createTab({
+        title: t("MARKDOWN_IMAGE_TITLE"),
+      });
+      this.tab.onClose = () => this.close();
+      this.tab.onFocus = (view) => void this.handleSidepanelFocus(view);
+      this.tab.onWindowMigrated = () => void this.rebuildEditor();
+      this.tab.onExcalidrawViewClosed = () => void this.invalidateOwner(false);
+      this.watchActiveExcalidrawView();
+      this.renderPanel();
+      await this.app.workspace.revealLeaf(sidepanel.leaf);
+      if (!this.tab || this.closed || !this.ensureOwnerValid()) {
         return false;
       }
-      element = this.view
-        .getViewElements()
-        .find((candidate) => candidate.id === id) as
-        | ExcalidrawImageElement
-        | undefined;
+      this.sidepanelRevealComplete = true;
+
+      if (!element) {
+        element = await insertMarkdownImage(this.view);
+        if (!this.ensureOwnerValid()) {
+          return false;
+        }
+        if (!element) {
+          new Notice(t("MARKDOWN_IMAGE_INSERT_ERROR"));
+          return false;
+        }
+      }
+
+      this.element = element;
+      this.lastObservedSelectionId = element.id;
+      this.renderSettings = getMarkdownImageRenderSettings(
+        this.view.plugin,
+        element,
+      );
+      this.view.setMarkdownImageEditorIsEditing();
+      this.renderPanel();
+      this.focusEditorIfRequested();
+      return true;
+    } finally {
+      this.initializing = false;
     }
-    if (!element) {
-      return false;
-    }
-    this.element = element;
-    this.lastObservedSelectionId = element.id;
-    this.renderSettings = getMarkdownImageRenderSettings(
-      this.view.plugin,
-      element,
+  }
+
+  public isEditingElement(
+    view: ExcalidrawView,
+    element: ExcalidrawImageElement,
+  ): boolean {
+    return (
+      !this.closed &&
+      this.tab !== null &&
+      this.view === view &&
+      this.element?.id === element.id &&
+      this.isOwnerViewValid()
     );
-    // Revealing a phone sidebar can coincide with Obsidian registering the
-    // soon-to-be-created detached Markdown leaf as its active editor.
-    patchMobileView(this.view);
-    const sidepanel = await this.view.plugin.openSidepanel(true);
-    if (!sidepanel || !this.ensureOwnerValid()) {
-      return false;
+  }
+
+  public async revealAndFocus(): Promise<void> {
+    if (!this.tab || !this.ensureOwnerValid()) {
+      return;
     }
-    this.tab = await sidepanel.createTab({ title: t("MARKDOWN_IMAGE_TITLE") });
-    this.view.setMarkdownImageEditorIsEditing();
-    this.tab.onClose = () => this.close();
-    this.tab.onFocus = (view) => void this.handleSidepanelFocus(view);
-    this.tab.onWindowMigrated = () => void this.rebuildEditor();
-    this.tab.onExcalidrawViewClosed = () => void this.invalidateOwner(false);
-    this.watchActiveExcalidrawView();
-    this.renderPanel();
-    this.tab.open(true);
-    return true;
+    const sidepanel = await this.plugin.openSidepanel(false);
+    if (!sidepanel || !this.tab || !this.ensureOwnerValid()) {
+      return;
+    }
+    this.focusEditorOnMount = true;
+    this.sidepanelRevealComplete = false;
+    this.tab.open(false);
+    await this.app.workspace.revealLeaf(sidepanel.leaf);
+    if (!this.tab || !this.ensureOwnerValid()) {
+      return;
+    }
+    this.sidepanelRevealComplete = true;
+    this.focusEditorIfRequested();
   }
 
   private renderPanel(): void {
@@ -1365,7 +1413,7 @@ class MarkdownImageEditorController {
     elements: readonly ExcalidrawElement[],
     selectedElementIds: Record<string, boolean>,
   ): void {
-    if (!this.tab || this.closed) {
+    if (!this.tab || this.closed || this.initializing) {
       return;
     }
     if (sourceView !== this.view || !this.isOwnerViewValid()) {
@@ -1430,14 +1478,18 @@ class MarkdownImageEditorController {
       nextView &&
       (!ownerIsValid || nextView === this.view || nextViewIsActive)
     ) {
-      void this.attachToView(nextView);
+      void this.attachToView(nextView).then(() => {
+        this.focusEditorIfRequested();
+      });
       return;
     }
     // Focusing the sidepanel makes its own leaf the most recent one. In that
     // transition, the plugin's last-active Excalidraw leaf can briefly be
     // stale. Keep the owner established by the active-leaf listener instead
     // of tearing down a valid editor in favor of the stale view.
-    this.ensureOwnerValid();
+    if (this.ensureOwnerValid()) {
+      this.focusEditorIfRequested();
+    }
   }
 
   private async mountMarkdownView(host: HTMLElement): Promise<void> {
@@ -1502,6 +1554,7 @@ class MarkdownImageEditorController {
         this.prepareEditorView(host, leaf.view);
         this.revealExternalSourceSubpath(leaf.view, sourceFile, ref);
         this.watchEditorChanges();
+        this.focusEditorIfRequested(leaf.view);
       }
       return;
     }
@@ -1542,6 +1595,7 @@ class MarkdownImageEditorController {
     this.editorView = fragmentView;
     this.prepareEditorView(host, fragmentView);
     this.watchEditorChanges();
+    this.focusEditorIfRequested(fragmentView);
   }
 
   private revealExternalSourceSubpath(
@@ -1579,29 +1633,29 @@ class MarkdownImageEditorController {
     this.editorFocusHost = host;
     this.editorCommandView = editorView;
     this.editorFocusInHandler = () => {
-      if (this.app.workspace.activeEditor === editorView) {
-        return;
-      }
-      this.previousActiveEditor = this.app.workspace.activeEditor;
-      this.app.workspace.activeEditor = editorView;
+      this.activateEditorCommandRouting(editorView);
     };
-    this.editorFocusOutHandler = (event: FocusEvent) => {
-      const nextTarget = event.relatedTarget;
+    this.editorFocusOutHandler = () => {
+      const finishFocusTransition = () => {
+        if (this.editorView !== editorView || !this.ensureOwnerValid()) {
+          return;
+        }
+        if (host.contains(host.ownerDocument.activeElement)) {
+          this.activateEditorCommandRouting(editorView);
+          return;
+        }
+        this.restorePreviousActiveEditor();
+        void this.renderCurrentEditor();
+      };
       const targetWindow = host.ownerDocument.defaultView;
-      if (
-        nextTarget &&
-        targetWindow?.Node &&
-        nextTarget instanceof targetWindow.Node &&
-        host.contains(nextTarget)
-      ) {
-        return;
+      if (targetWindow) {
+        targetWindow.setTimeout(finishFocusTransition, 0);
+      } else {
+        finishFocusTransition();
       }
-      this.restorePreviousActiveEditor();
-      void this.renderCurrentEditor();
     };
     host.addEventListener("focusin", this.editorFocusInHandler);
     host.addEventListener("focusout", this.editorFocusOutHandler);
-
     const viewContainer = this.view.containerEl;
     if (!viewContainer) {
       void this.invalidateOwner(false);
@@ -1632,7 +1686,91 @@ class MarkdownImageEditorController {
     );
   }
 
+  private activateEditorCommandRouting(editorView: MarkdownView): void {
+    if (!this.editorCommandRoutingActive) {
+      this.previousActiveEditor =
+        this.app.workspace.activeEditor === editorView
+          ? null
+          : this.app.workspace.activeEditor;
+      this.editorCommandRoutingActive = true;
+    }
+    if (!this.editorCommandScopeActive && editorView.scope) {
+      this.app.keymap.pushScope(editorView.scope);
+      this.editorCommandScopeActive = true;
+    }
+    this.app.workspace.activeEditor = editorView;
+  }
+
+  private focusEditorIfRequested(
+    editorView: MarkdownView | null = this.editorView,
+  ): void {
+    if (
+      !this.focusEditorOnMount ||
+      !this.sidepanelRevealComplete ||
+      !editorView ||
+      !this.tab?.isActiveTab()
+    ) {
+      return;
+    }
+    const targetWindow = editorView.containerEl.ownerDocument.defaultView;
+    targetWindow?.setTimeout(() => {
+      if (this.editorView !== editorView || !this.ensureOwnerValid()) {
+        return;
+      }
+      this.app.workspace.setActiveLeaf(editorView.leaf, { focus: true });
+      editorView.editor.focus();
+      this.stabilizeActiveEditor(editorView, targetWindow);
+    }, 0);
+  }
+
+  private stabilizeActiveEditor(
+    editorView: MarkdownView,
+    targetWindow: Window,
+  ): void {
+    this.stopEditorFocusStabilization();
+    this.editorFocusStabilizationWindow = targetWindow;
+    const deadline = targetWindow.performance.now() + 500;
+    const stabilize = () => {
+      if (
+        this.editorView !== editorView ||
+        !this.ensureOwnerValid() ||
+        !this.tab?.isActiveTab() ||
+        !this.editorFocusHost?.contains(
+          editorView.containerEl.ownerDocument.activeElement,
+        )
+      ) {
+        this.stopEditorFocusStabilization();
+        return;
+      }
+      this.activateEditorCommandRouting(editorView);
+      if (targetWindow.performance.now() >= deadline) {
+        this.editorFocusStabilizationFrame = null;
+        this.editorFocusStabilizationWindow = null;
+        this.focusEditorOnMount = false;
+        return;
+      }
+      this.editorFocusStabilizationFrame = targetWindow.requestAnimationFrame(
+        stabilize,
+      );
+    };
+    stabilize();
+  }
+
+  private stopEditorFocusStabilization(): void {
+    if (
+      this.editorFocusStabilizationWindow &&
+      this.editorFocusStabilizationFrame !== null
+    ) {
+      this.editorFocusStabilizationWindow.cancelAnimationFrame(
+        this.editorFocusStabilizationFrame,
+      );
+    }
+    this.editorFocusStabilizationWindow = null;
+    this.editorFocusStabilizationFrame = null;
+  }
+
   private removeEditorFocusListener(): void {
+    this.stopEditorFocusStabilization();
     if (this.editorFocusHost && this.editorFocusInHandler) {
       this.editorFocusHost.removeEventListener(
         "focusin",
@@ -1662,13 +1800,19 @@ class MarkdownImageEditorController {
   }
 
   private restorePreviousActiveEditor(): void {
+    if (this.editorCommandScopeActive && this.editorCommandView?.scope) {
+      this.app.keymap.popScope(this.editorCommandView.scope);
+    }
+    this.editorCommandScopeActive = false;
     if (
+      this.editorCommandRoutingActive &&
       this.editorCommandView &&
       this.app.workspace.activeEditor === this.editorCommandView
     ) {
       this.app.workspace.activeEditor = this.previousActiveEditor;
     }
     this.previousActiveEditor = null;
+    this.editorCommandRoutingActive = false;
   }
 
   private setupEditorResize(
@@ -2029,6 +2173,7 @@ class MarkdownImageEditorController {
     }
     const canClearOwnerEditing = this.isOwnerIdentityValid();
     this.closed = true;
+    this.sidepanelRevealComplete = false;
     if (activeController === this) {
       activeController = null;
     }
@@ -2068,15 +2213,27 @@ export async function openMarkdownImageEditor(
   view: ExcalidrawView,
   element?: ExcalidrawImageElement,
 ): Promise<void> {
-  activeController?.dispose();
+  if (element && activeController?.isEditingElement(view, element)) {
+    await activeController.revealAndFocus();
+    return;
+  }
+  const previousController = activeController;
   const controller = new MarkdownImageEditorController(view);
   activeController = controller;
   try {
     if (!(await controller.open(element))) {
       controller.dispose();
+      if (activeController === null && previousController) {
+        activeController = previousController;
+      }
+      return;
     }
+    previousController?.dispose();
   } catch (error: unknown) {
     controller.dispose();
+    if (activeController === null && previousController) {
+      activeController = previousController;
+    }
     throw error;
   }
 }
