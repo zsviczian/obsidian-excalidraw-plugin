@@ -9,7 +9,6 @@ import {
   type ColorComponent,
   type TFile,
   type WorkspaceLeaf,
-  type WorkspaceSplit,
   type EventRef,
   type MarkdownFileInfo,
 } from "obsidian";
@@ -1720,7 +1719,7 @@ class MarkdownImageEditorController {
     // the virtual keyboard starts opening, fixing the "first tap" bug.
     this.activateEditorCommandRouting(editorView);
 
-    if (DEVICE.isPhone) {
+    if (DEVICE.isMobile) {
       this.app.workspace.setActiveLeaf(editorView.leaf, { focus: false });
       editorView.editor.focus();
       return;

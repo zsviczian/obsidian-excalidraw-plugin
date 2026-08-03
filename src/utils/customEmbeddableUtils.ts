@@ -77,10 +77,10 @@ export const patchMobileView = (
   view: ExcalidrawView,
   opts?: { keepAlive?: boolean; isActive?: () => boolean },
 ): (() => void) | void => {
-  if (!DEVICE.isPhone) {
+  if (!DEVICE.isMobile) {
     return;
   }
-  log("patching mobile view");
+  // log("patching mobile view");
   const parent = getParentOfClass(view.containerEl, "mod-top");
   if (parent) {
     if (!parent.hasClass("mod-visible")) {
