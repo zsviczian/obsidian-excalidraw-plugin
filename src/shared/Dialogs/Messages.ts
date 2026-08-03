@@ -18,34 +18,36 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
   "2.26.0": `
+${getYouTubeDiv("p9MBFxUoOXQ")}
+
 ## New
-- Stencil libraries can now be stored as vault files instead of inside the plugin's data.json, improving settings save stability for large libraries. Existing users are offered a safe, merge-first migration. Enable **Sync all other types** in Obsidian Sync to synchronize library files, and enable **Show all file types** in Obsidian settings to see them in the file explorer.
-- Folder and file path settings in plugin setting now provide vault suggestions, warn when a configured path does not exist, and offer to create missing folders after confirmation.
+- Stencil libraries can now be stored as vault files instead of \`data.json\`, improving plugin settings stability. Existing users are offered a safe, merge-first migration. To sync libraries, enable **Sync all other types** in Obsidian Sync. To view library files, enable **Show all file types** in Obsidian settings.
 - Added editable Markdown images.
-  - Their source can be stored locally as back-of-the-card markdown content in the drawing or linked to an external Markdown note, heading, or block, including an Excalidraw Markdown file.
-  - Edit content and appearance in the Excalidraw sidepanel or use the action menu on a selected Markdown image; the editor supports standard Obsidian Markdown shortcuts and refreshes the image when focus leaves the editor.
-  - Markdown images participate in normal canvas layering and image export.
-  - Dropping a Markdown note as an image now offers its headings when available and lets you insert the selected source as an editable Markdown image or embeddable. Excalidraw notes offer their back-of-note headings while hiding Excalidraw Managed data sections.
-  - Ordinary copies of a local Markdown image share its Markdown source; use **Duplicate selected image** to create an independent image ID and Markdown body. You can also convert interactive embeddables into images and back in the embeddable/image menu in the top left of the selected element, and control dark-mode image inversion from the context menu.
+  - Store content locally (back-of-the-card) or link to a Markdown note, heading, or block.
+  - Edit content and appearance from the Excalidraw side panel.
+  - Supports canvas layering and image export.
+  - Dragging a Markdown note as an image lets you choose a heading (when available) and insert it as either an editable Markdown image or embeddable.
+  - Local Markdown image copies share the same source. Use **Duplicate selected image** to create an independent image and Markdown body. You can also convert between images and embeddables from the selected element's menu.
+- Image-reference embeds now support an optional \`padding=N\` parameter, e.g.:  \`![[drawing#^area=xyz,padding=10]]\` [#2850](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2850) 🙏[@Evgene-Kopylov](${URLs.GITHUB_COM}/Evgene-Kopylov)
 - Added the Voronoi diagram script. 🙏[@FreeCutter](${URLs.GITHUB_COM}/FreeCutter) [#2845](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2845)
-- Image-reference embeds now accept an optional \`,padding=N\` link parameter to override their export padding, including \`area=\`, \`group=\`, \`frame=\`, and \`clippedframe=\` references. For \`area=\`, the value also controls how far around the target Excalidraw searches for surrounding elements. Use \`padding=0\` for no added margin. [#2850](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2850) 🙏[@Evgene-Kopylov](${URLs.GITHUB_COM}/Evgene-Kopylov)
-- Dragging a single external GIF, WebP, or APNG onto a drawing with the **Import external file** action now offers a choice between inserting it as an image or as an embeddable after importing it to the Vault. [#2848](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2848)
+- Dragging a single external GIF with the **Import external file** action now lets you import it as either an image or an embeddable. [#2848](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2848)
+- Folder and file path settings now provide vault suggestions, warn about missing paths, and can create missing folders after confirmation.
 
 ## New and fixed from Excalidraw.com
-- New: flowchart (CTRL/CMD+arrow keys) now intelligently routes new shapes to avoid overlap of flowchart children [#11532](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11532)
-- New Draw To Shape feature: Draw a shape freehand, and Excalidraw will automatically convert it to a perfect shape. [#9313](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/9313)
-- Fixed: Dragged arrow endpoint ignore grid and angle locks [#10972](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/10972)
-- New: Double-click to toggle arrowhead [#11615](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11615)
+- New: Flowchart (CTRL/CMD+Arrow) now intelligently routes new shapes to avoid overlapping child nodes. [#11532](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11532)
+- New: Draw To Shape automatically converts freehand drawings into perfect shapes. [#9313](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/9313)
+- Fixed: Dragged arrow endpoints now respect grid and angle locks. [#10972](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/10972)
+- New: Double-click an arrow to toggle its arrowhead. [#11615](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11615)
 
 ## Fixed
-- Custom freedraw pens now remain selected while temporarily using the eraser or another tool, and are restored when returning to freedraw. [#2859](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2859)
-- Markdown images now offer configurable bottom padding in the sidepanel Appearance section to prevent the final rendered line or border from being clipped.
-- Font selectors for Markdown images and font settings now preview each available font face and refresh the vault font list whenever opened.
-- Empty Markdown-image font colors now normalize to black when the editor loads or the color field loses focus. The CSS controls can also copy the selected image's generated SVG directly for inspection.
-- Dragging an external video or other non-image file with the **Import external file** action now offers the same use, overwrite, or import choice as images when a matching file already exists in the Vault. [#2851](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2851) 🙏[@WolfExplode](${URLs.GITHUB_COM}/WolfExplode)
+- Custom freedraw pens now remain selected after temporarily switching to the eraser or another tool, and are restored when returning to freedraw. [#2859](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2859)
+- Added configurable bottom padding for Markdown images to prevent clipped final lines or borders.
+- Markdown image font selectors now preview each font and refresh the vault font list whenever opened.
+- Empty Markdown image font colors now normalize to black when the editor opens or the color field loses focus. CSS controls can also copy the generated SVG for inspection.
+- Dragging an external video or other non-image file with the **Import external file** action now offers the same use, overwrite, or import options as images when a matching vault file already exists. [#2851](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2851) 🙏[@WolfExplode](${URLs.GITHUB_COM}/WolfExplode)
 
 ## Excalidraw Automate Breaking Change
-- Excalidraw component API has discontinued \`api.scrollToContent(target?, opts?)\` and replaced it with \`api.setViewport(opts | null)\`. You'll need to update MindMap Builder and Comic Strip Director scripts. If you have your own scripts using this API function you'll need to update them accordingly. For more information read the Excalidraw [Change Log](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_CHANGELOG}#viewport-control--scrollzoom-locking)
+- The Excalidraw API has replaced \`api.scrollToContent(target?, opts?)\` with \`api.setViewport(opts | null)\`. Update the MindMap Builder and Comic Strip Director scripts, along with any custom scripts using the old API. See the Excalidraw [Change Log](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_CHANGELOG}#viewport-control--scrollzoom-locking) for details.
 `,
   "2.25.3": `
   Minor maintenance release with two important fixes.
