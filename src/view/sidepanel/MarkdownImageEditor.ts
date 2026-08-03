@@ -1722,6 +1722,9 @@ class MarkdownImageEditorController {
     if (DEVICE.isMobile) {
       this.app.workspace.setActiveLeaf(editorView.leaf, { focus: false });
       editorView.editor.focus();
+      window.setTimeout(() => {
+        this.focusEditorOnMount = false;
+      }, 500);
       return;
     }
 
