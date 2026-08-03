@@ -71,7 +71,7 @@ import {
 } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { setStyleText } from "src/utils/htmlUtils";
-import { hideElement, setStyle } from "src/utils/styleUtils";
+import { setStyle } from "src/utils/styleUtils";
 import {
   isInstanceOfHTMLImageElement,
   isInstanceOfSVGElement,
@@ -185,7 +185,7 @@ const waitForMarkdownPostProcessors = (
 
 const waitForDocumentFonts = async (doc: Document): Promise<void> => {
   const fontSet = doc.fonts;
-  if (!fontSet?.ready) {
+  if (!fontSet) {
     return;
   }
   // FontFaceSet.ready can hang on some environments if a face stalls.
@@ -266,12 +266,10 @@ const appendMarkdownBottomSpacer = (
   if (!(paddingBottom > 0)) {
     return;
   }
-  const paddingSpacer = createDiv();
-  paddingSpacer.setAttribute("class", "excalidraw-md-padding-spacer");
-  
   // FIX: WebKit/iOS will often return a 0 bounding client rect for completely empty divs.
   // We insert a zero-width space so the layout engine is forced to render the block and measure its height.
-  paddingSpacer.innerHTML = "&#8203;"; 
+  const paddingSpacer = createDiv({text: "&#8203;"});
+  paddingSpacer.setAttribute("class", "excalidraw-md-padding-spacer");
   
   setStyle(paddingSpacer, {
     display: "block",
