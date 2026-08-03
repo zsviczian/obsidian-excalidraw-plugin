@@ -146,7 +146,6 @@ class MarkdownImageEditorController {
   private element: ExcalidrawImageElement | null = null;
   private editorView: MarkdownView | null = null;
   private editorLeaf: WorkspaceLeaf | null = null;
-  private editorRoot: WorkspaceSplit | null = null;
   private renderSettings: MarkdownImageRenderSettings | null = null;
   private renderTimer: number | null = null;
   private renderGeneration = 0;
@@ -1513,7 +1512,6 @@ class MarkdownImageEditorController {
     const elementFileId = element.fileId;
     const { leaf, rootSplit } = createLeaf(this.view, host.ownerDocument);
     this.editorLeaf = leaf;
-    this.editorRoot = rootSplit;
     this.startMobileViewPatch(leaf);
     rootSplit.containerEl.addClass("mod-visible");
     setStyle(rootSplit.containerEl, { height: "100%", width: "100%" });
@@ -1716,17 +1714,24 @@ class MarkdownImageEditorController {
     if (this.editorView !== editorView || !this.ensureOwnerValid()) {
       return;
     }
-    if (DEVICE.isMobile) {
-      // Activating the detached editor leaf navigates away from Obsidian's
-      // mobile drawer and closes the sidepanel. Establish the active editor
-      // before focusing so the mobile Markdown toolbar initializes with the
-      // keyboard, while keeping the sidepanel leaf visible.
+
+    // Pre-emptively route commands and update Obsidian's active editor state.
+    // This ensures the mobile toolbar sees the correct state the exact moment 
+    // the virtual keyboard starts opening, fixing the "first tap" bug.
+    this.activateEditorCommandRouting(editorView);
+
+    if (DEVICE.isPhone) {
+      this.app.workspace.setActiveLeaf(editorView.leaf, { focus: false });
+      editorView.editor.focus();
       return;
     }
+
     this.app.workspace.setActiveLeaf(editorView.leaf, { focus: true });
     editorView.editor.focus();
     const targetWindow = editorView.containerEl.ownerDocument.defaultView;
-    this.stabilizeActiveEditor(editorView, targetWindow);
+    if (targetWindow) {
+      this.stabilizeActiveEditor(editorView, targetWindow);
+    }
   }
 
   private stabilizeActiveEditor(
@@ -2156,7 +2161,6 @@ class MarkdownImageEditorController {
     this.stopMobileViewPatch();
     this.editorView = null;
     this.editorLeaf = null;
-    this.editorRoot = null;
     this.editorContentDirty = false;
     this.removeEditorResizeListener();
     this.removeEditorFocusListener();
