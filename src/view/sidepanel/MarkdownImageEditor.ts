@@ -47,6 +47,7 @@ import { showColorPicker } from "src/shared/Dialogs/ColorPicker";
 import { getBinaryFileFromDataURL } from "src/utils/utils";
 import {
   COLOR_NAMES,
+  DEVICE,
   VIEW_TYPE_EXCALIDRAW,
 } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
@@ -1712,15 +1713,20 @@ class MarkdownImageEditorController {
     ) {
       return;
     }
+    if (this.editorView !== editorView || !this.ensureOwnerValid()) {
+      return;
+    }
+    if (DEVICE.isMobile) {
+      // Activating the detached editor leaf navigates away from Obsidian's
+      // mobile drawer and closes the sidepanel. Establish the active editor
+      // before focusing so the mobile Markdown toolbar initializes with the
+      // keyboard, while keeping the sidepanel leaf visible.
+      return;
+    }
+    this.app.workspace.setActiveLeaf(editorView.leaf, { focus: true });
+    editorView.editor.focus();
     const targetWindow = editorView.containerEl.ownerDocument.defaultView;
-    targetWindow?.setTimeout(() => {
-      if (this.editorView !== editorView || !this.ensureOwnerValid()) {
-        return;
-      }
-      this.app.workspace.setActiveLeaf(editorView.leaf, { focus: true });
-      editorView.editor.focus();
-      this.stabilizeActiveEditor(editorView, targetWindow);
-    }, 0);
+    this.stabilizeActiveEditor(editorView, targetWindow);
   }
 
   private stabilizeActiveEditor(
