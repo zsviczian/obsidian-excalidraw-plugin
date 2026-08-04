@@ -19,8 +19,11 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
   "2.26.3": `
 ## Fixed
-- Editing one Markdown image and immediately selecting another to edit could silently drop the first image's changes, both from memory and from the note on disk. Reported on the [Sketch Your Mind community](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM}/t/excalidraw-2-26-0/7791/2?u=zsolt). 🙏
-- Deleting the last local Markdown image via the Excalidraw properties panel's delete button no longer skips the prompt to keep or delete its Markdown content. Deletion detection now covers every trigger (keyboard, Cut, context menu, panel button, undo/redo, or scripts) uniformly.
+- Editing one Markdown image and immediately selecting another to edit could silently drop the first image's contents, both from memory and from the note on disk. Reported on the [Sketch Your Mind community](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM}/t/excalidraw-2-26-0/7791/2). 🙏
+- Deleting the last local Markdown image via the Excalidraw properties panel's delete button no longer skips the prompt to keep or delete its Markdown content. Deletion detection now covers every trigger (keyboard, Cut, context menu, panel button, or scripts) uniformly.
+
+## New from Excalidraw.com
+- New tool: Bucket fill. See more tools menu, or press B to toggle the bucket fill tool. [#11799](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11799)
 `,
   "2.26.2": `
 ${getYouTubeDiv("p9MBFxUoOXQ")}
