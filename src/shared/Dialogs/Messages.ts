@@ -17,6 +17,10 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+  "2.26.3": `
+## Fixed
+- Editing one Markdown image and immediately selecting another to edit could silently drop the first image's changes, both from memory and from the note on disk. Reported on the [Sketch Your Mind community](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM}/t/excalidraw-2-26-0/7791/2?u=zsolt). 🙏
+`,
   "2.26.2": `
 ${getYouTubeDiv("p9MBFxUoOXQ")}
 

@@ -174,6 +174,7 @@ class MarkdownImageEditorController {
   private ownerInvalid = false;
   private ownerInvalidation: Promise<void> | null = null;
   private ownerAttachmentGeneration = 0;
+  private selectionSwitchQueue: Promise<void> = Promise.resolve();
   private activeLeafChangeRef: EventRef | null = null;
   private cssEditors: CSSCodeEditor[] = [];
   private fontPickers: FontPickerComponent[] = [];
@@ -1438,22 +1439,104 @@ class MarkdownImageEditorController {
         ? selected
         : undefined;
     const generation = ++this.selectionGeneration;
-    void this.switchElement(next, generation);
+    this.selectionSwitchQueue = this.selectionSwitchQueue
+      .catch(() => {
+        // Keep the queue alive after any prior failure.
+      })
+      .then(() => this.switchElement(next, generation));
+  }
+
+  private async waitForOwnerSaveIdle(maxFrames: number = 180): Promise<void> {
+    const ownerView = this.view;
+    const ownerWindow = ownerView.ownerWindow ?? window;
+    for (let frame = 0; frame < maxFrames; frame++) {
+      if (!this.ensureOwnerValid() || this.view !== ownerView) {
+        return;
+      }
+      const semaphores = ownerView.semaphores;
+      if (!semaphores?.saving && !semaphores?.autosaving) {
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        ownerWindow.requestAnimationFrame(() => resolve());
+      });
+    }
+  }
+
+  /**
+   * Forces a disk save of the owner view, retrying if a concurrent save (autosave, or another
+   * controller flushing during a handoff) claims the saving semaphore between
+   * waitForOwnerSaveIdle() resolving and the save() call below. save() silently no-ops when
+   * semaphores.saving is already true when it is entered, and awaiting an already-resolved
+   * promise still yields a microtask turn, so a single poll-then-call attempt cannot guarantee
+   * persistence on its own.
+   */
+  private async persistOwnerAfterEditorFlush(maxAttempts: number = 5): Promise<void> {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      if (!this.ensureOwnerValid()) {
+        return;
+      }
+      await this.waitForOwnerSaveIdle();
+      if (!this.ensureOwnerValid()) {
+        return;
+      }
+      if (this.view.semaphores.saving) {
+        continue;
+      }
+      await this.view.save(true, true, true);
+      return;
+    }
+  }
+
+  /**
+   * Flushes the current editor's content into excalidrawData and force-persists it to disk.
+   * Shared by switchElement() (selection changes within this controller) and
+   * flushPendingEditsBeforeHandoff() (handoff to a brand new controller in
+   * openMarkdownImageEditor()) so a previous element's edits are always guaranteed to be flushed
+   * and saved before anything else starts editing a different element.
+   */
+  private async flushCurrentElement(): Promise<void> {
+    await this.renderCurrentEditor();
+    this.cancelScheduledRender();
+    this.removeEditorFocusListener();
+    await this.flushAndDetachEditor();
+    await this.persistOwnerAfterEditorFlush();
+    this.cancelScheduledRender();
+  }
+
+  /**
+   * Flushes and force-persists the currently edited element before this controller is replaced
+   * by a brand new controller instance for a different element (see openMarkdownImageEditor()).
+   * Without this, dispose()/close() detach and save the editor via a fire-and-forget call, so the
+   * previous element's edits can still be in flight after the new controller has already started
+   * editing (and locking, via embeddableIsEditingSelf) a different element.
+   */
+  public async flushPendingEditsBeforeHandoff(): Promise<void> {
+    if (this.closed || !this.element) {
+      return;
+    }
+    try {
+      await this.flushCurrentElement();
+    } catch (error: unknown) {
+      errorlog({
+        where: "MarkdownImageEditorController.flushPendingEditsBeforeHandoff",
+        error,
+      });
+    }
   }
 
   private async switchElement(
     element: ExcalidrawImageElement | undefined,
     generation: number,
   ): Promise<void> {
-    await this.renderCurrentEditor();
-    this.cancelScheduledRender();
-    this.removeEditorFocusListener();
-    this.renderSelectionPlaceholder();
-    await this.flushAndDetachEditor();
-    this.cancelScheduledRender();
     if (generation !== this.selectionGeneration || this.closed) {
       return;
     }
+    await this.flushCurrentElement();
+    if (generation !== this.selectionGeneration || this.closed) {
+      return;
+    }
+    this.renderSelectionPlaceholder();
     this.element = element ?? null;
     this.renderSettings = element
       ? getMarkdownImageRenderSettings(this.view.plugin, element)
@@ -2230,6 +2313,10 @@ export async function openMarkdownImageEditor(
     return;
   }
   const previousController = activeController;
+  // Guarantee the previously edited element's changes are flushed and persisted before this
+  // handoff: otherwise dispose() below would save the old element in the background while the
+  // new controller has already started editing (and locking) a different element.
+  await previousController?.flushPendingEditsBeforeHandoff();
   const controller = new MarkdownImageEditorController(view);
   activeController = controller;
   try {
