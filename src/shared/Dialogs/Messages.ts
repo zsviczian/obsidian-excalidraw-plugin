@@ -17,6 +17,11 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+  "2.26.4": `
+## Fixed
+- Markdown-image edits could still be lost to disk in a couple of related races: switching the side panel to a different open drawing while editing, or clicking into a back-of-the-note embeddable right after editing, could both silently skip the save if another save was already in flight at that exact moment. [#2865](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2865)
+
+`,
   "2.26.3": `
 ## Fixed
 - Editing one Markdown image and immediately selecting another to edit could silently drop the first image's contents, both from memory and from the note on disk. Reported on the [Sketch Your Mind community](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM}/t/excalidraw-2-26-0/7791/2). 🙏

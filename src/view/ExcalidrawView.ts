@@ -1105,7 +1105,11 @@ export default class ExcalidrawView
   public async setEmbeddableNodeIsEditing() {
     this.clearEmbeddableNodeIsEditingTimer();
     this.semaphores.embeddableIsEditingSelf = true;
-    await this.forceSave(true);
+    // Wait for any in-flight save (e.g. a Markdown-image editor flush) rather than silently
+    // aborting: a same-file back-of-the-note embeddable is about to open its own editor on this
+    // same file, so the disk copy must be current or the embeddable's editor will load a stale
+    // version and a later save from it can clobber pending Markdown-image edits.
+    await this.forceSave(true, true);
   }
 
   /** Debounces self-edit reloads without forcing a disk save. */
@@ -2332,7 +2336,23 @@ export default class ExcalidrawView
     );
   }
 
-  public async forceSave(silent: boolean = false) {
+  /**
+   * @param waitIfBusy - When true, waits (up to ~5s) for an in-flight save/autosave to clear
+   * instead of immediately aborting. Callers that need a guaranteed fresh disk write before
+   * handing off to a different editor of the same file (e.g. setEmbeddableNodeIsEditing) should
+   * pass true; the default preserves the existing "abort and notify" behavior for callers such as
+   * the manual save button, where an immediate abort is the expected feedback.
+   */
+  public async forceSave(silent: boolean = false, waitIfBusy: boolean = false) {
+    if (waitIfBusy) {
+      let counter = 0;
+      while (
+        (this.semaphores.autosaving || this.semaphores.saving) &&
+        counter++ < 100
+      ) {
+        await sleep(50);
+      }
+    }
     if (this.semaphores.autosaving || this.semaphores.saving) {
       if (!silent) {
         new Notice(t("FORCE_SAVE_ABORTED"));

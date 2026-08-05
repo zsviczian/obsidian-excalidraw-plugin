@@ -7,6 +7,7 @@ import { getLastActiveExcalidrawView } from "src/utils/excalidrawViewLookup";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import { ExcalidrawSidepanelTab } from "./SidepanelTab";
 import { hideElement, showElement } from "src/utils/styleUtils";
+import { handleMarkdownImageEditorSidepanelClosing } from "./MarkdownImageEditor";
 
 type TabCreationConfig = {
   title: string;
@@ -223,6 +224,11 @@ export class ExcalidrawSidepanelView extends ItemView {
       this.app.workspace.offref(this.leafChangeRef);
       this.leafChangeRef = null;
     }
+    // Flush and force-persist any in-progress Markdown-image edit before tearing down its tab
+    // below - otherwise closing the whole side panel without ever refocusing the owning
+    // Excalidraw view leaves the edit sitting unsaved on disk (see notifyWillClose()'s onClose()
+    // cascade, which only flushes into memory in a fire-and-forget way).
+    await handleMarkdownImageEditorSidepanelClosing();
     this.tabs.forEach((tab) => {
       tab.notifyWillClose();
       const hostEA = this.tabHosts.get(tab.id);
