@@ -19,7 +19,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
   "2.26.4": `
 ## Fixed
-- Markdown-image edits could still be lost to disk in a couple of related races: switching the side panel to a different open drawing while editing, or clicking into a back-of-the-note embeddable right after editing, could both silently skip the save if another save was already in flight at that exact moment. [#2865](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2865)
+- Markdown-image edits could be lost in some usage scenarios, 2.26.3 did not provide a broad enough fix. [#2865](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2865)
 
 `,
   "2.26.3": `
