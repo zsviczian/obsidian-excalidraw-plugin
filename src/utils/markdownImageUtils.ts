@@ -12,6 +12,10 @@ export function resolveMarkdownImageRenderSettings(
   const defaultTransclusion = defaults.transclusion;
   return {
     width: stored?.width ?? defaults.width,
+    paddingBottom: Math.min(
+      100,
+      Math.max(0, Math.round(stored?.paddingBottom ?? defaults.paddingBottom)),
+    ),
     fontFamily: stored?.fontFamily ?? defaults.fontFamily,
     fontColor: normalizeFontColor(stored?.fontColor ?? defaults.fontColor),
     border: {

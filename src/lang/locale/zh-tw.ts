@@ -117,16 +117,18 @@ export default {
   MARKDOWN_IMAGE_APPEARANCE: "外觀",
   MARKDOWN_IMAGE_WIDTH: "寬度",
   MARKDOWN_IMAGE_WIDTH_DESC: "以畫布單位表示的 Markdown 排版寬度",
+  MARKDOWN_IMAGE_BOTTOM_PADDING: "底部內距",
+  MARKDOWN_IMAGE_BOTTOM_PADDING_DESC:
+    "算繪後的 Markdown 下方額外空間（像素）",
   MARKDOWN_IMAGE_FONT: "字型",
   MARKDOWN_IMAGE_FONT_COLOR: "字型顏色",
   MARKDOWN_IMAGE_BORDER: "邊框",
   MARKDOWN_IMAGE_BORDER_COLOR: "邊框顏色",
   MARKDOWN_IMAGE_CSS: "CSS",
-  MARKDOWN_IMAGE_CSS_DESC: "僅套用於此 Markdown 圖像的 CSS 規則。",
+  MARKDOWN_IMAGE_CSS_DESC:
+    "CSS 僅套用於此 Markdown 圖像。複製下方的 SVG，讓你選擇的 LLM 產生所需的 CSS。",
   MARKDOWN_IMAGE_CSS_IMPORTANT_HINT:
     "如果規則沒有作用，請在宣告中加入 !important。",
-  MARKDOWN_IMAGE_CSS_SVG_COPY_HINT:
-    "使用下方的複製按鈕複製產生的 SVG 以供檢查。",
   MARKDOWN_IMAGE_CSS_EDITOR_ARIA: "此 Markdown 圖像的 CSS 編輯器",
   MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA:
     "嵌入 Markdown 的 CSS 編輯器",
@@ -161,7 +163,10 @@ export default {
   MARKDOWN_IMAGE_CHANGE_SOURCE_ERROR: "無法變更 Markdown 圖像來源",
   MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "無法建立本機 Markdown 副本",
   MARKDOWN_IMAGE_EXTRACT_TITLE: "將 Markdown 圖像擷取到筆記",
-  MARKDOWN_IMAGE_EXTRACT_PATH: "新 Markdown 筆記的路徑",
+  FILE_AND_FOLDER_SELECTOR_FOLDER: "資料夾",
+  FILE_AND_FOLDER_SELECTOR_FILENAME: "檔案名稱",
+  FILE_AND_FOLDER_SELECTOR_EXPORT_TITLE: "匯出到儲存庫",
+  FILE_AND_FOLDER_SELECTOR_EXPORT: "匯出",
   MARKDOWN_IMAGE_DEFAULT_NOTE: "Markdown 圖像.md",
   MARKDOWN_IMAGE_CREATE_NOTE_ERROR: "無法建立 Markdown 筆記",
   MARKDOWN_IMAGE_UNKNOWN_ERROR: "未知錯誤",
@@ -252,8 +257,6 @@ export default {
     "反轉模式：預設方向按鍵已停用。需要時請使用 Ctrl/CMD 臨時啟用。",
   ARROW_BINDING_NORMAL_MODE:
     "正常模式：方向鍵已啟用。需要時請使用 Ctrl/CMD 臨時停用。",
-  EXPORT_FILENAME_PROMPT: "請提供檔名",
-  EXPORT_FILENAME_PROMPT_PLACEHOLDER: "請輸入檔名，留空以取消操作",
   WARNING_SERIOUS_ERROR:
     "警告：Excalidraw 遇到了未知的問題!\n\n" +
     "您最近的更改可能無法儲存。\n\n" +

@@ -129,17 +129,18 @@ export default {
   MARKDOWN_IMAGE_APPEARANCE: "Оформление",
   MARKDOWN_IMAGE_WIDTH: "Ширина",
   MARKDOWN_IMAGE_WIDTH_DESC: "Ширина потока Markdown в единицах холста",
+  MARKDOWN_IMAGE_BOTTOM_PADDING: "Нижний отступ",
+  MARKDOWN_IMAGE_BOTTOM_PADDING_DESC:
+    "Дополнительное пространство под отрисованным Markdown в пикселях",
   MARKDOWN_IMAGE_FONT: "Шрифт",
   MARKDOWN_IMAGE_FONT_COLOR: "Цвет шрифта",
   MARKDOWN_IMAGE_BORDER: "Рамка",
   MARKDOWN_IMAGE_BORDER_COLOR: "Цвет рамки",
   MARKDOWN_IMAGE_CSS: "CSS",
   MARKDOWN_IMAGE_CSS_DESC:
-    "Правила CSS применяются только к этому Markdown-изображению.",
+    "CSS только для этого Markdown-изображения. Скопируйте SVG ниже и попросите предпочитаемую LLM подобрать нужный CSS.",
   MARKDOWN_IMAGE_CSS_IMPORTANT_HINT:
     "Если правило не действует, добавьте !important к объявлению.",
-  MARKDOWN_IMAGE_CSS_SVG_COPY_HINT:
-    "Используйте кнопку копирования ниже, чтобы скопировать созданный SVG для проверки.",
   MARKDOWN_IMAGE_CSS_EDITOR_ARIA: "Редактор CSS для этого Markdown-изображения",
   MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA:
     "Редактор CSS для встроенного Markdown",
@@ -179,7 +180,10 @@ export default {
   MARKDOWN_IMAGE_CHANGE_SOURCE_ERROR: "Не удалось изменить источник Markdown-изображения",
   MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "Не удалось создать локальную копию Markdown",
   MARKDOWN_IMAGE_EXTRACT_TITLE: "Извлечь Markdown-изображение в заметку",
-  MARKDOWN_IMAGE_EXTRACT_PATH: "Путь к новой Markdown-заметке",
+  FILE_AND_FOLDER_SELECTOR_FOLDER: "Папка",
+  FILE_AND_FOLDER_SELECTOR_FILENAME: "Имя файла",
+  FILE_AND_FOLDER_SELECTOR_EXPORT_TITLE: "Экспорт в хранилище",
+  FILE_AND_FOLDER_SELECTOR_EXPORT: "Экспортировать",
   MARKDOWN_IMAGE_DEFAULT_NOTE: "Markdown-изображение.md",
   MARKDOWN_IMAGE_CREATE_NOTE_ERROR: "Не удалось создать Markdown-заметку",
   MARKDOWN_IMAGE_UNKNOWN_ERROR: "Неизвестная ошибка",
@@ -281,9 +285,6 @@ export default {
     "Инвертированный режим: Привязка стрелок по умолчанию теперь отключена. Используйте CTRL/CMD, чтобы временно включить привязку, когда это необходимо.",
   ARROW_BINDING_NORMAL_MODE:
     "Обычный режим: Привязка стрелок теперь включена. Используйте CTRL/CMD, чтобы временно отключить привязку при необходимости.",
-  EXPORT_FILENAME_PROMPT: "Пожалуйста, укажите имя файла",
-  EXPORT_FILENAME_PROMPT_PLACEHOLDER:
-    "имя файла, оставьте пустым, чтобы отменить действие",
   WARNING_SERIOUS_ERROR:
     "ПРЕДУПРЕЖДЕНИЕ: Excalidraw столкнулся с неизвестной проблемой!\n\n" +
     "Есть риск, что последние изменения не будут сохранены.\n\n" +

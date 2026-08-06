@@ -2,7 +2,7 @@ import { FuzzySuggestModal, TFile } from "obsidian";
 import ExcalidrawView from "../../view/ExcalidrawView";
 import { t } from "../../lang/helpers";
 import ExcalidrawPlugin from "../../core/main";
-import { getEA } from "src/core";
+import { UniversalInsertFileModal } from "./UniversalInsertFileModal";
 
 export class InsertMDDialog extends FuzzySuggestModal<TFile> {
   public plugin: ExcalidrawPlugin;
@@ -40,12 +40,11 @@ export class InsertMDDialog extends FuzzySuggestModal<TFile> {
   }
 
   onChooseItem(item: TFile): void {
-    const ea = getEA(this.view);
-    void (async () => {
-      await ea.addImage(0, 0, item);
-      await ea.addElementsToView(true, false, true);
-      ea.destroy();
-    })();
+    new UniversalInsertFileModal(this.plugin, this.view).open(
+      item,
+      this.view.currentPosition,
+      "image",
+    );
   }
 
   public start(view: ExcalidrawView) {

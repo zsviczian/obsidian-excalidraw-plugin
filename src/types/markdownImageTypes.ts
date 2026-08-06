@@ -17,6 +17,7 @@ export type MarkdownImageTransclusionRenderSettings = {
 
 export type MarkdownImageRenderSettings = {
   width: number;
+  paddingBottom: number;
   fontFamily: string;
   fontColor: string;
   border: {

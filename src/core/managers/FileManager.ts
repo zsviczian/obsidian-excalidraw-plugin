@@ -20,7 +20,8 @@ import {
   nanoid,
   VIEW_TYPE_EXCALIDRAW,
 } from "src/constants/constants";
-import { Prompt, templatePromt } from "src/shared/Dialogs/Prompt";
+import { templatePromt } from "src/shared/Dialogs/Prompt";
+import { FileAndFolderSelectorModal } from "src/shared/Dialogs/FileAndFolderSelectorModal";
 import {
   changeThemeOfExcalidrawMD,
   ExcalidrawData,
@@ -32,6 +33,7 @@ import ExcalidrawPlugin from "src/core/main";
 import {
   checkAndCreateFolder,
   createFileAndAwaitMetacacheUpdate,
+  createOrOverwriteFile,
   download,
   getIMGFilename,
   getLink,
@@ -47,6 +49,7 @@ import {
 import { errorlog, getExportTheme } from "src/utils/utils";
 import { getImageCache } from "src/shared/ImageCache";
 import { PaneTarget } from "src/types/utilTypes";
+import { t } from "src/lang/helpers";
 
 export class PluginFileManager {
   private plugin: ExcalidrawPlugin;
@@ -384,29 +387,29 @@ export class PluginFileManager {
 
   public async exportLibrary() {
     if (DEVICE.isMobile) {
-      const prompt = new Prompt(
-        this.app,
-        "Please provide a filename",
-        "my-library",
-        "filename, leave blank to cancel action",
+      const location = await new FileAndFolderSelectorModal(this.app, {
+        title: t("FILE_AND_FOLDER_SELECTOR_EXPORT_TITLE"),
+        folderLabel: t("FILE_AND_FOLDER_SELECTOR_FOLDER"),
+        fileNameLabel: t("FILE_AND_FOLDER_SELECTOR_FILENAME"),
+        submitButtonText: t("FILE_AND_FOLDER_SELECTOR_EXPORT"),
+        folderPath: normalizePath(this.settings.folder),
+        fileName: "my-library.excalidrawlib",
+      }).start();
+      if (!location) {
+        return;
+      }
+      const filename = location.fileName
+        .toLowerCase()
+        .endsWith(".excalidrawlib")
+        ? location.fileName
+        : `${location.fileName}.excalidrawlib`;
+      const fname = getNewUniqueFilepath(
+        this.app.vault,
+        filename,
+        location.folderPath,
       );
-      void prompt.openAndGetValue((filename: string) => {
-        void (async () => {
-          if (!filename) {
-            return;
-          }
-          filename = `${filename}.excalidrawlib`;
-          const folderpath = normalizePath(this.settings.folder);
-          await checkAndCreateFolder(folderpath); //create folder if it does not exist
-          const fname = getNewUniqueFilepath(
-            this.app.vault,
-            filename,
-            folderpath,
-          );
-          await this.app.vault.create(fname, this.settings.library);
-          new Notice(`Exported library to ${fname}`, 6000);
-        })();
-      });
+      await createOrOverwriteFile(this.app, fname, this.settings.library);
+      new Notice(`Exported library to ${fname}`, 6000);
       return;
     }
     download(

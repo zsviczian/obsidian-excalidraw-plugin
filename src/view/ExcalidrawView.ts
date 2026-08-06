@@ -82,7 +82,6 @@ import {
   unwrapMarkdownImageBlock,
 } from "../shared/ExcalidrawData";
 import {
-  checkAndCreateFolder,
   createFileAndAwaitMetacacheUpdate,
   createOrOverwriteFile,
   download,
@@ -143,7 +142,6 @@ import {
   LaTexPrompt,
   MultiOptionConfirmationPrompt,
   NewFileActions,
-  Prompt,
   linkPrompt,
 } from "../shared/Dialogs/Prompt";
 import {
@@ -188,6 +186,7 @@ import {
   SwordColors,
 } from "../constants/actionIcons";
 import { ExportDialog } from "../shared/Dialogs/ExportDialog";
+import { FileAndFolderSelectorModal } from "../shared/Dialogs/FileAndFolderSelectorModal";
 import { getEA } from "src/core";
 import {
   anyModifierKeysPressed,
@@ -617,34 +616,32 @@ export default class ExcalidrawView
       return;
     }
     if (DEVICE.isMobile) {
-      const prompt = new Prompt(
-        this.app,
-        t("EXPORT_FILENAME_PROMPT"),
-        this.file.basename,
-        t("EXPORT_FILENAME_PROMPT_PLACEHOLDER"),
+      const location = await new FileAndFolderSelectorModal(this.app, {
+        title: t("FILE_AND_FOLDER_SELECTOR_EXPORT_TITLE"),
+        folderLabel: t("FILE_AND_FOLDER_SELECTOR_FOLDER"),
+        fileNameLabel: t("FILE_AND_FOLDER_SELECTOR_FILENAME"),
+        submitButtonText: t("FILE_AND_FOLDER_SELECTOR_EXPORT"),
+        folderPath: splitFolderAndFilename(this.file.path).folderpath,
+        fileName: `${this.file.basename}.excalidraw`,
+      }).start();
+      if (!location) {
+        return;
+      }
+      const filename = location.fileName.toLowerCase().endsWith(".excalidraw")
+        ? location.fileName
+        : `${location.fileName}.excalidraw`;
+      const path = getNewUniqueFilepath(
+        this.app.vault,
+        filename,
+        location.folderPath,
       );
-      void prompt.openAndGetValue((filename: string) => {
-        if (!filename) {
-          return;
-        }
-        void (async () => {
-          filename = `${filename}.excalidraw`;
-          const folderpath = splitFolderAndFilename(this.file?.path).folderpath;
-          await checkAndCreateFolder(folderpath); //create folder if it does not exist
-          const path = getNewUniqueFilepath(
-            this.app.vault,
-            filename,
-            folderpath,
-          );
-          const file = await exportImageToFile(
-            this,
-            path,
-            JSON.stringify(this.getScene(), null, "\t"),
-            ".excalidraw",
-          );
-          new Notice(`Exported to ${file?.name}`, 6000);
-        })();
-      });
+      const file = await exportImageToFile(
+        this,
+        path,
+        JSON.stringify(this.getScene(), null, "\t"),
+        ".excalidraw",
+      );
+      new Notice(`Exported to ${file?.name}`, 6000);
       return;
     }
     download(
@@ -763,6 +760,7 @@ export default class ExcalidrawView
     void (await new Promise<void>((resolve) => {
       void loader.loadSceneFiles({
         excalidrawData: this.excalidrawData,
+        sceneElements: this.getViewElements(),
         addFiles: (
           files: FileData[],
           _isDark: boolean,
@@ -3743,6 +3741,7 @@ export default class ExcalidrawView
       // candidates, run one at a time, and emit only regenerated images.
       void loader.loadSceneFiles({
         excalidrawData: this.excalidrawData,
+        sceneElements: this.getViewElements(),
         addFiles: (
           files: FileData[],
           isDark: boolean,
@@ -3851,6 +3850,7 @@ export default class ExcalidrawView
       this.activeLoader = l;
       void l.loadSceneFiles({
         excalidrawData: this.excalidrawData,
+        sceneElements: this.getViewElements(),
         addFiles: (
           files: FileData[],
           isDark: boolean,
@@ -3956,6 +3956,51 @@ export default class ExcalidrawView
     const reloadFiles = new Set<FileId>();
 
     try {
+      const syncMarkdownImageSource = (
+        incomingElement: ExcalidrawImageElement,
+      ): boolean => {
+        const customData = getMarkdownImageCustomData(incomingElement);
+        if (!customData) {
+          return false;
+        }
+        if (customData.source === "local") {
+          const incomingSource = inData.getMarkdownImage(
+            incomingElement.fileId,
+          );
+          if (!incomingSource) {
+            return false;
+          }
+          const currentSource = this.excalidrawData.getMarkdownImage(
+            incomingElement.fileId,
+          );
+          if (currentSource?.markdown === incomingSource.markdown) {
+            return false;
+          }
+          this.excalidrawData.setMarkdownImage(
+            incomingElement.fileId,
+            incomingSource,
+          );
+          return true;
+        }
+
+        const incomingFile = inData.getFile(incomingElement.fileId);
+        if (!incomingFile) {
+          return false;
+        }
+        const currentFile = this.excalidrawData.getFile(
+          incomingElement.fileId,
+        );
+        if (
+          currentFile?.file === incomingFile.file &&
+          currentFile?.hyperlink === incomingFile.hyperlink &&
+          currentFile?.linkParts?.original === incomingFile.linkParts?.original
+        ) {
+          return false;
+        }
+        this.excalidrawData.setFile(incomingElement.fileId, incomingFile);
+        return true;
+      };
+
       const deletedIds = inData.deletedElements.map((el) => el.id);
       const sceneElements = this.excalidrawAPI
         .getSceneElementsIncludingDeleted()
@@ -3974,7 +4019,10 @@ export default class ExcalidrawView
             );
             break;
           case "image":
-            if (inData.getFile(incomingElement.fileId)) {
+            if (getMarkdownImageCustomData(incomingElement)) {
+              syncMarkdownImageSource(incomingElement);
+              reloadFiles.add(incomingElement.fileId);
+            } else if (inData.getFile(incomingElement.fileId)) {
               this.excalidrawData.setFile(
                 incomingElement.fileId,
                 inData.getFile(incomingElement.fileId),
@@ -4049,6 +4097,15 @@ export default class ExcalidrawView
               sceneElementIds.splice(parentLayer + 1, 0, incomingElement.id);
             }
           } else if (sceneElement && incomingElement.type === "image") {
+            if (getMarkdownImageCustomData(incomingElement)) {
+              if (
+                syncMarkdownImageSource(incomingElement) ||
+                !this.excalidrawAPI.getFiles()[incomingElement.fileId]
+              ) {
+                reloadFiles.add(incomingElement.fileId);
+              }
+              return;
+            }
             //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/632
             const incomingFile = inData.getFile(incomingElement.fileId);
             const sceneFile = this.excalidrawData.getFile(
@@ -4075,6 +4132,17 @@ export default class ExcalidrawView
           }
         },
       );
+      const loadedFiles = this.excalidrawAPI.getFiles();
+      sceneElements.forEach((element) => {
+        if (
+          element.type === "image" &&
+          getMarkdownImageCustomData(element) &&
+          !loadedFiles[element.fileId]
+        ) {
+          syncMarkdownImageSource(element);
+          reloadFiles.add(element.fileId);
+        }
+      });
       this.previousSceneVersion = this.getSceneVersion(sceneElements);
       //changing files could result in a race condition for sync. If at the end of sync there are differences
       //set dirty will trigger an autosave
@@ -4529,94 +4597,94 @@ export default class ExcalidrawView
     if (!textElement) {
       return;
     }
-    const prompt = new Prompt(
-      this.app,
-      "Filename",
-      "",
-      "Leave blank to cancel this action",
-    );
-    void prompt.openAndGetValue((filename: string) => {
-      void (async () => {
-        if (!filename) {
-          return;
-        }
-        filename = `${filename}.md`;
-        const folderpath = splitFolderAndFilename(this.file.path).folderpath;
-        await checkAndCreateFolder(folderpath); //create folder if it does not exist
-        const fname = getNewUniqueFilepath(
-          this.app.vault,
-          filename,
-          folderpath,
-        );
-        const text: string[] = [];
-        if (containerElement && containerElement.link) {
-          text.push(containerElement.link);
-        }
-        text.push(textElement.rawText);
-        const f = await createOrOverwriteFile(this.app, fname, text.join("\n"));
-        if (f) {
-          const ea: ExcalidrawAutomate = getEA(this);
-          const elements = containerElement
-            ? [textElement, containerElement]
-            : [textElement];
-          ea.copyViewElementsToEAforEditing(elements);
-          ea.getElements().forEach((el) => (el.isDeleted = true));
-          const [x, y, w, h] = containerElement
-            ? [
-                containerElement.x,
-                containerElement.y,
-                containerElement.width,
-                containerElement.height,
-              ]
-            : [textElement.x, textElement.y, MAX_IMAGE_SIZE, MAX_IMAGE_SIZE];
-          const id = ea.addEmbeddable(x, y, w, h, undefined, f);
-          if (containerElement) {
-            const props: (keyof ExcalidrawElement)[] = [
-              "backgroundColor",
-              "fillStyle",
-              "roughness",
-              "roundness",
-              "strokeColor",
-              "strokeStyle",
-              "strokeWidth",
-            ];
-            props.forEach((prop) => {
-              const element = ea.getElement(id);
-              if (prop in element) {
-                const mutableElement = element as Mutable<ExcalidrawElement>;
-                switch (prop) {
-                  case "backgroundColor":
-                    mutableElement.backgroundColor =
-                      containerElement.backgroundColor;
-                    break;
-                  case "fillStyle":
-                    mutableElement.fillStyle = containerElement.fillStyle;
-                    break;
-                  case "roughness":
-                    mutableElement.roughness = containerElement.roughness;
-                    break;
-                  case "roundness":
-                    mutableElement.roundness = containerElement.roundness;
-                    break;
-                  case "strokeColor":
-                    mutableElement.strokeColor = containerElement.strokeColor;
-                    break;
-                  case "strokeStyle":
-                    mutableElement.strokeStyle = containerElement.strokeStyle;
-                    break;
-                  case "strokeWidth":
-                    mutableElement.strokeWidth = containerElement.strokeWidth;
-                    break;
-                }
+    void (async () => {
+      const location = await new FileAndFolderSelectorModal(this.app, {
+        title: t("CONVERT_TO_MARKDOWN"),
+        folderLabel: t("FILE_AND_FOLDER_SELECTOR_FOLDER"),
+        fileNameLabel: t("FILE_AND_FOLDER_SELECTOR_FILENAME"),
+        submitButtonText: t("PROMPT_BUTTON_CREATE_MARKDOWN"),
+        folderPath: splitFolderAndFilename(this.file.path).folderpath,
+        fileName: "",
+      }).start();
+      if (!location) {
+        return;
+      }
+      const filename = location.fileName.toLowerCase().endsWith(".md")
+        ? location.fileName
+        : `${location.fileName}.md`;
+      const fname = getNewUniqueFilepath(
+        this.app.vault,
+        filename,
+        location.folderPath,
+      );
+      const text: string[] = [];
+      if (containerElement && containerElement.link) {
+        text.push(containerElement.link);
+      }
+      text.push(textElement.rawText);
+      const f = await createOrOverwriteFile(this.app, fname, text.join("\n"));
+      if (f) {
+        const ea: ExcalidrawAutomate = getEA(this);
+        const elements = containerElement
+          ? [textElement, containerElement]
+          : [textElement];
+        ea.copyViewElementsToEAforEditing(elements);
+        ea.getElements().forEach((el) => (el.isDeleted = true));
+        const [x, y, w, h] = containerElement
+          ? [
+              containerElement.x,
+              containerElement.y,
+              containerElement.width,
+              containerElement.height,
+            ]
+          : [textElement.x, textElement.y, MAX_IMAGE_SIZE, MAX_IMAGE_SIZE];
+        const id = ea.addEmbeddable(x, y, w, h, undefined, f);
+        if (containerElement) {
+          const props: (keyof ExcalidrawElement)[] = [
+            "backgroundColor",
+            "fillStyle",
+            "roughness",
+            "roundness",
+            "strokeColor",
+            "strokeStyle",
+            "strokeWidth",
+          ];
+          props.forEach((prop) => {
+            const element = ea.getElement(id);
+            if (prop in element) {
+              const mutableElement = element as Mutable<ExcalidrawElement>;
+              switch (prop) {
+                case "backgroundColor":
+                  mutableElement.backgroundColor =
+                    containerElement.backgroundColor;
+                  break;
+                case "fillStyle":
+                  mutableElement.fillStyle = containerElement.fillStyle;
+                  break;
+                case "roughness":
+                  mutableElement.roughness = containerElement.roughness;
+                  break;
+                case "roundness":
+                  mutableElement.roundness = containerElement.roundness;
+                  break;
+                case "strokeColor":
+                  mutableElement.strokeColor = containerElement.strokeColor;
+                  break;
+                case "strokeStyle":
+                  mutableElement.strokeStyle = containerElement.strokeStyle;
+                  break;
+                case "strokeWidth":
+                  mutableElement.strokeWidth = containerElement.strokeWidth;
+                  break;
               }
-            });
-          }
-          ea.getElement(id);
-          await ea.addElementsToView();
-          ea.destroy();
+            }
+          });
         }
-      })();
-    });
+        ea.getElement(id);
+        await ea.addElementsToView();
+        ea.destroy();
+      }
+    })();
   }
 
   async addYouTubeThumbnail(link: string) {
@@ -5590,13 +5658,7 @@ export default class ExcalidrawView
     this.lastKeyDownPosition = { x: 0, y: 0 };
   };
 
-  private excalidrawDIVonKeyDownCapture(event: KeyboardEvent): void {
-    if (
-      this.semaphores?.viewunload ||
-      (event.key !== "Backspace" && event.key !== "Delete")
-    ) {
-      return;
-    }
+  private captureSelectedMarkdownImageDeleteCandidates(): void {
     this.markdownImageDeleteCandidates.clear();
     this.getViewSelectedElements()
       .filter(
@@ -5616,6 +5678,31 @@ export default class ExcalidrawView
       this.markdownImageDeleteCandidates.clear();
       this.markdownImageDeleteCandidateTimer = null;
     }, 1000);
+  }
+
+  private excalidrawDIVonKeyDownCapture(event: KeyboardEvent): void {
+    const isDeleteKey = event.key === "Backspace" || event.key === "Delete";
+    const isCutShortcut =
+      event.key.toLowerCase() === "x" &&
+      isWinCTRLorMacCMD(event) &&
+      !isSHIFT(event) &&
+      !isWinALTorMacOPT(event) &&
+      !isWinMETAorMacCTRL(event);
+    if (
+      this.semaphores?.viewunload ||
+      (!isDeleteKey && !isCutShortcut)
+    ) {
+      return;
+    }
+    this.captureSelectedMarkdownImageDeleteCandidates();
+  }
+
+  private excalidrawDIVonPointerDownCapture(event: PointerEvent): void {
+    const target = event.target as Element | null;
+    if (!target?.closest('[data-testid="deleteSelectedElements"]')) {
+      return;
+    }
+    this.captureSelectedMarkdownImageDeleteCandidates();
   }
 
   private excalidrawDIVonKeyDown(event: KeyboardEvent) {
@@ -6863,13 +6950,11 @@ export default class ExcalidrawView
     selectCardDialog.start(center);
   }
 
-  /** Opens the sidepanel editor for a selected image or inserts a new one. */
+  /** Opens an image by ID for editing, or inserts a new Markdown image. */
   public async openMarkdownImageEditor(elementId?: string): Promise<void> {
     const selected = elementId
       ? this.getViewElements().find((element) => element.id === elementId)
-      : this.getViewSelectedElements().length === 1
-        ? this.getViewSelectedElements()[0]
-        : undefined;
+      : undefined;
     const image = selected?.type === "image" ? selected : undefined;
     if (image && !isMarkdownImageElement(this, image)) {
       new Notice(t("MARKDOWN_IMAGE_SELECT_ERROR"));
@@ -8459,6 +8544,8 @@ export default class ExcalidrawView
           key: "abc",
           tabIndex: 0,
           onKeyDownCapture: this.excalidrawDIVonKeyDownCapture.bind(this),
+          onPointerDownCapture:
+            this.excalidrawDIVonPointerDownCapture.bind(this),
           onKeyDown: this.excalidrawDIVonKeyDown.bind(this),
           onKeyUp: this.excalidrawDIVonKeyUp.bind(this),
           onPointerDown: this.onPointerDown.bind(this),

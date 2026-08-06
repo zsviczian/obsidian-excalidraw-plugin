@@ -38,11 +38,15 @@ import {
   importFileToVault,
 } from "src/utils/fileUtils";
 import { ScriptEngine } from "src/shared/Scripts";
-import { UniversalInsertFileModal } from "src/shared/Dialogs/UniversalInsertFileModal";
+import {
+  UniversalInsertFileModal,
+  type UniversalInsertFileAction,
+} from "src/shared/Dialogs/UniversalInsertFileModal";
 import { Position } from "src/types/excalidrawViewTypes";
 import { setStyle } from "src/utils/styleUtils";
 import { ObsidianDraggable } from "src/types/types";
 import type React from "react";
+import { insertMarkdownImage } from "src/shared/MarkdownImage";
 
 /*
 static getDropAction(event: DragEvent): string {
@@ -104,6 +108,18 @@ export class DropManager {
 
   get file(): TFile {
     return this.view.file;
+  }
+
+  private openDroppedMarkdownFile(
+    file: TFile,
+    position: Position,
+    action: UniversalInsertFileAction,
+  ): void {
+    new UniversalInsertFileModal(this.plugin, this.view).open(
+      file,
+      position,
+      action,
+    );
   }
 
   public onDrop(event: React.DragEvent<HTMLDivElement>): boolean {
@@ -172,6 +188,18 @@ export class DropManager {
             return false;
           }
           if (
+            file.extension.toLowerCase() === "md" &&
+            (internalDragAction === "image" ||
+              internalDragAction === "embeddable")
+          ) {
+            this.openDroppedMarkdownFile(
+              file,
+              { ...this.currentPosition },
+              internalDragAction,
+            );
+            return false;
+          }
+          if (
             ["image", "image-fullsize"].contains(internalDragAction) &&
             (IMAGE_TYPES.contains(file.extension) ||
               file.extension === "md" ||
@@ -220,6 +248,19 @@ export class DropManager {
         return false;
       case "files":
         if (!onDropHook("file", draggable.files, null)) {
+          if (
+            draggable.files.length === 1 &&
+            draggable.files[0].extension.toLowerCase() === "md" &&
+            (internalDragAction === "image" ||
+              internalDragAction === "embeddable")
+          ) {
+            this.openDroppedMarkdownFile(
+              draggable.files[0],
+              { ...this.currentPosition },
+              internalDragAction,
+            );
+            return false;
+          }
           void (async () => {
             if (["image", "image-fullsize"].contains(internalDragAction)) {
               const ea: ExcalidrawAutomate = getEA(this.view);
@@ -227,6 +268,22 @@ export class DropManager {
               let counter: number = 0;
               const ids: string[] = [];
               for (const f of draggable.files) {
+                if (
+                  internalDragAction === "image" &&
+                  f.extension.toLowerCase() === "md" &&
+                  !this.plugin.isExcalidrawFile(f)
+                ) {
+                  const element = await insertMarkdownImage(this.view, f, {
+                    x: this.currentPosition.x + counter * 50,
+                    y: this.currentPosition.y + counter * 50,
+                  });
+                  if (element) {
+                    ids.push(element.id);
+                    counter++;
+                    ea.selectElementsInView(ids);
+                  }
+                  continue;
+                }
                 if (IMAGE_TYPES.contains(f.extension) || f.extension === "md") {
                   ids.push(
                     await ea.addImage(
@@ -403,6 +460,19 @@ export class DropManager {
           const { x, y } = this.currentPosition;
           const pos = { x: x + i * 300, y: y + i * 300 };
           if (link.isInternal) {
+            if (
+              files.length === 1 &&
+              link.file.extension.toLowerCase() === "md"
+            ) {
+              this.openDroppedMarkdownFile(
+                link.file,
+                pos,
+                localFileDragAction === "embeddable"
+                  ? "embeddable"
+                  : "image",
+              );
+              continue;
+            }
             if (localFileDragAction === "embeddable") {
               const ea = getEA(this.view);
               void insertEmbeddableToView(ea, pos, link.file).then(() =>

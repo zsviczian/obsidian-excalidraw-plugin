@@ -138,16 +138,18 @@ export default {
   MARKDOWN_IMAGE_APPEARANCE: "Apariencia",
   MARKDOWN_IMAGE_WIDTH: "Ancho",
   MARKDOWN_IMAGE_WIDTH_DESC: "Ancho del flujo Markdown en unidades del lienzo",
+  MARKDOWN_IMAGE_BOTTOM_PADDING: "Relleno inferior",
+  MARKDOWN_IMAGE_BOTTOM_PADDING_DESC:
+    "Espacio adicional debajo del Markdown renderizado, en píxeles",
   MARKDOWN_IMAGE_FONT: "Fuente",
   MARKDOWN_IMAGE_FONT_COLOR: "Color de fuente",
   MARKDOWN_IMAGE_BORDER: "Borde",
   MARKDOWN_IMAGE_BORDER_COLOR: "Color del borde",
   MARKDOWN_IMAGE_CSS: "CSS",
-  MARKDOWN_IMAGE_CSS_DESC: "Reglas CSS aplicadas solo a esta imagen Markdown.",
+  MARKDOWN_IMAGE_CSS_DESC:
+    "CSS solo para esta imagen Markdown. Copia el SVG de abajo y pide a tu LLM preferido el CSS que necesitas.",
   MARKDOWN_IMAGE_CSS_IMPORTANT_HINT:
     "Si una regla no tiene efecto, añade !important a la declaración.",
-  MARKDOWN_IMAGE_CSS_SVG_COPY_HINT:
-    "Usa el botón de copia de abajo para copiar el SVG generado y examinarlo.",
   MARKDOWN_IMAGE_CSS_EDITOR_ARIA: "Editor CSS para esta imagen Markdown",
   MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA:
     "Editor CSS para Markdown transcluido",
@@ -187,7 +189,10 @@ export default {
   MARKDOWN_IMAGE_CHANGE_SOURCE_ERROR: "No se pudo cambiar la fuente de la imagen Markdown",
   MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "No se pudo crear una copia Markdown local",
   MARKDOWN_IMAGE_EXTRACT_TITLE: "Extraer imagen Markdown a una nota",
-  MARKDOWN_IMAGE_EXTRACT_PATH: "Ruta de la nueva nota Markdown",
+  FILE_AND_FOLDER_SELECTOR_FOLDER: "Carpeta",
+  FILE_AND_FOLDER_SELECTOR_FILENAME: "Nombre del archivo",
+  FILE_AND_FOLDER_SELECTOR_EXPORT_TITLE: "Exportar a la bóveda",
+  FILE_AND_FOLDER_SELECTOR_EXPORT: "Exportar",
   MARKDOWN_IMAGE_DEFAULT_NOTE: "Imagen Markdown.md",
   MARKDOWN_IMAGE_CREATE_NOTE_ERROR: "No se pudo crear la nota Markdown",
   MARKDOWN_IMAGE_UNKNOWN_ERROR: "Error desconocido",
@@ -279,9 +284,6 @@ export default {
     "Modo Invertido: La vinculación de flechas predeterminada está ahora deshabilitada. Usa CTRL/CMD para habilitar temporalmente la vinculación cuando sea necesario.",
   ARROW_BINDING_NORMAL_MODE:
     "Modo Normal: La vinculación de flechas está ahora habilitada. Usa CTRL/CMD para deshabilitar temporalmente la vinculación cuando sea necesario.",
-  EXPORT_FILENAME_PROMPT: "Por favor, ingresa el nombre de archivo",
-  EXPORT_FILENAME_PROMPT_PLACEHOLDER:
-    "nombre de archivo, dejar en blanco para cancelar la acción",
   WARNING_SERIOUS_ERROR:
     "ADVERTENCIA: ¡Excalidraw encontró un problema desconocido!\n\n" +
     "Existe el riesgo de que tus cambios más recientes no se puedan guardar.\n\n" +

@@ -137,16 +137,18 @@ export default {
   MARKDOWN_IMAGE_APPEARANCE: "Appearance",
   MARKDOWN_IMAGE_WIDTH: "Width",
   MARKDOWN_IMAGE_WIDTH_DESC: "Markdown flow width in canvas units",
+  MARKDOWN_IMAGE_BOTTOM_PADDING: "Bottom padding",
+  MARKDOWN_IMAGE_BOTTOM_PADDING_DESC:
+    "Extra space below the rendered Markdown, in pixels",
   MARKDOWN_IMAGE_FONT: "Font",
   MARKDOWN_IMAGE_FONT_COLOR: "Font color",
   MARKDOWN_IMAGE_BORDER: "Border",
   MARKDOWN_IMAGE_BORDER_COLOR: "Border color",
   MARKDOWN_IMAGE_CSS: "CSS",
-  MARKDOWN_IMAGE_CSS_DESC: "CSS rules applied only to this Markdown image.",
+  MARKDOWN_IMAGE_CSS_DESC:
+    "CSS for this Markdown image only. Copy the SVG below and ask your preferred LLM for the CSS you need.",
   MARKDOWN_IMAGE_CSS_IMPORTANT_HINT:
     "If a rule has no effect, add !important to the declaration.",
-  MARKDOWN_IMAGE_CSS_SVG_COPY_HINT:
-    "Use the copy button below to copy the generated SVG for inspection.",
   MARKDOWN_IMAGE_CSS_EDITOR_ARIA: "CSS editor for this Markdown image",
   MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA:
     "CSS editor for transcluded Markdown",
@@ -187,7 +189,10 @@ export default {
     "Could not change the Markdown image source",
   MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "Could not create a local Markdown copy",
   MARKDOWN_IMAGE_EXTRACT_TITLE: "Extract Markdown image to note",
-  MARKDOWN_IMAGE_EXTRACT_PATH: "Path to the new Markdown note",
+  FILE_AND_FOLDER_SELECTOR_FOLDER: "Folder",
+  FILE_AND_FOLDER_SELECTOR_FILENAME: "File name",
+  FILE_AND_FOLDER_SELECTOR_EXPORT_TITLE: "Export to Vault",
+  FILE_AND_FOLDER_SELECTOR_EXPORT: "Export",
   MARKDOWN_IMAGE_DEFAULT_NOTE: "Markdown image.md",
   MARKDOWN_IMAGE_CREATE_NOTE_ERROR: "Could not create Markdown note",
   MARKDOWN_IMAGE_UNKNOWN_ERROR: "Unknown error",
@@ -289,8 +294,6 @@ export default {
     "Inverted Mode: Default arrow binding is now disabled. Use CTRL/CMD to temporarily enable binding when needed.",
   ARROW_BINDING_NORMAL_MODE:
     "Normal Mode: Arrow binding is now enabled. Use CTRL/CMD to temporarily disable binding when needed.",
-  EXPORT_FILENAME_PROMPT: "Please provide filename",
-  EXPORT_FILENAME_PROMPT_PLACEHOLDER: "filename, leave blank to cancel action",
   WARNING_SERIOUS_ERROR:
     "WARNING: Excalidraw ran into an unknown problem!\n\n" +
     "There is a risk that your most recent changes cannot be saved.\n\n" +

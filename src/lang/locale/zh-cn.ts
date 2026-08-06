@@ -117,16 +117,18 @@ export default {
   MARKDOWN_IMAGE_APPEARANCE: "外观",
   MARKDOWN_IMAGE_WIDTH: "宽度",
   MARKDOWN_IMAGE_WIDTH_DESC: "以画布单位表示的 Markdown 排版宽度",
+  MARKDOWN_IMAGE_BOTTOM_PADDING: "底部内边距",
+  MARKDOWN_IMAGE_BOTTOM_PADDING_DESC:
+    "渲染后的 Markdown 下方额外空间（像素）",
   MARKDOWN_IMAGE_FONT: "字体",
   MARKDOWN_IMAGE_FONT_COLOR: "字体颜色",
   MARKDOWN_IMAGE_BORDER: "边框",
   MARKDOWN_IMAGE_BORDER_COLOR: "边框颜色",
   MARKDOWN_IMAGE_CSS: "CSS",
-  MARKDOWN_IMAGE_CSS_DESC: "仅应用于此 Markdown 图像的 CSS 规则。",
+  MARKDOWN_IMAGE_CSS_DESC:
+    "CSS 仅应用于此 Markdown 图像。复制下方的 SVG，让你选择的 LLM 生成所需的 CSS。",
   MARKDOWN_IMAGE_CSS_IMPORTANT_HINT:
     "如果规则没有效果，请在声明中添加 !important。",
-  MARKDOWN_IMAGE_CSS_SVG_COPY_HINT:
-    "使用下方的复制按钮复制生成的 SVG 以供检查。",
   MARKDOWN_IMAGE_CSS_EDITOR_ARIA: "此 Markdown 图像的 CSS 编辑器",
   MARKDOWN_IMAGE_TRANSCLUSION_CSS_EDITOR_ARIA:
     "嵌入 Markdown 的 CSS 编辑器",
@@ -161,7 +163,10 @@ export default {
   MARKDOWN_IMAGE_CHANGE_SOURCE_ERROR: "无法更改 Markdown 图像来源",
   MARKDOWN_IMAGE_LOCAL_COPY_ERROR: "无法创建本地 Markdown 副本",
   MARKDOWN_IMAGE_EXTRACT_TITLE: "将 Markdown 图像提取到笔记",
-  MARKDOWN_IMAGE_EXTRACT_PATH: "新 Markdown 笔记的路径",
+  FILE_AND_FOLDER_SELECTOR_FOLDER: "文件夹",
+  FILE_AND_FOLDER_SELECTOR_FILENAME: "文件名",
+  FILE_AND_FOLDER_SELECTOR_EXPORT_TITLE: "导出到仓库",
+  FILE_AND_FOLDER_SELECTOR_EXPORT: "导出",
   MARKDOWN_IMAGE_DEFAULT_NOTE: "Markdown 图像.md",
   MARKDOWN_IMAGE_CREATE_NOTE_ERROR: "无法创建 Markdown 笔记",
   MARKDOWN_IMAGE_UNKNOWN_ERROR: "未知错误",
@@ -252,8 +257,6 @@ export default {
     "反转模式：默认方向按键已禁用。需要时请使用 Ctrl/CMD 临时启用。",
   ARROW_BINDING_NORMAL_MODE:
     "正常模式：方向键已启用。需要时请使用 Ctrl/CMD 临时禁用。",
-  EXPORT_FILENAME_PROMPT: "请提供文件名",
-  EXPORT_FILENAME_PROMPT_PLACEHOLDER: "请输入文件名，留空以取消操作",
   WARNING_SERIOUS_ERROR:
     "警告：Excalidraw 遇到了未知的问题!\n\n" +
     "您最近的更改可能无法保存。\n\n" +
