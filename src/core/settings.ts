@@ -1147,10 +1147,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private requestReloadDrawings: boolean = false;
   private requestUpdatePinnedPens: boolean = false;
   private requestUpdateDynamicStyling: boolean = false;
-  private settingsDirty: boolean = false;
-  private settingsRevision: number = 0;
-  private isPersistingSettings: boolean = false;
-  private settingsFocusoutHandler: ((event: FocusEvent) => void) | null = null;
+  private settingsPersistenceChain: Promise<void> = Promise.resolve();
   private hotkeyEditor: HotkeyEditor;
   private fontPickers: FontPickerComponent[] = [];
   //private reloadMathJax: boolean = false;
@@ -1180,11 +1177,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
    */
   getSettingDefinitions(): SettingDefinitionItem[] { //SettingDefinitionItem[] {
     return [];
-  }
-
-  private markSettingsDirty() {
-    this.settingsDirty = true;
-    this.settingsRevision += 1;
   }
 
   private normalizeSettingsBeforeSave() {
@@ -1273,70 +1265,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     updateWarning();
   }
 
-  private async persistDirtySettings() {
-    if (!this.settingsDirty || this.isPersistingSettings) {
-      return;
-    }
-
-    this.isPersistingSettings = true;
-    try {
-      while (this.settingsDirty) {
-        const revisionToSave = this.settingsRevision;
-        this.normalizeSettingsBeforeSave();
-        await this.plugin.saveSettings();
-        if (this.settingsRevision === revisionToSave) {
-          this.settingsDirty = false;
-        }
-      }
-    } finally {
-      this.isPersistingSettings = false;
-    }
-  }
-
-  private detachSettingsFocusoutHandler() {
-    if (!this.settingsFocusoutHandler) {
-      return;
-    }
-    this.containerEl.removeEventListener(
-      "focusout",
-      this.settingsFocusoutHandler,
-    );
-    this.settingsFocusoutHandler = null;
-  }
-
-  private hasPendingActions(): boolean {
-    return (
-      this.requestUpdatePinnedPens ||
-      this.requestUpdateDynamicStyling ||
-      this.requestReloadDrawings ||
-      this.requestEmbedUpdate
-    );
-  }
-
-  private attachSettingsFocusoutHandler() {
-    this.detachSettingsFocusoutHandler();
-    this.settingsFocusoutHandler = (event: FocusEvent) => {
-      window.setTimeout(() => {
-        if (!this.containerEl?.isConnected) {
-          return;
-        }
-
-        const nextFocusTarget =
-          (event.relatedTarget as Node | null) ??
-          this.containerEl.ownerDocument.activeElement;
-        if (nextFocusTarget && this.containerEl.contains(nextFocusTarget)) {
-          return;
-        }
-
-        // Execute pending actions if settings are dirty or if there are pending actions
-        if (this.settingsDirty || this.hasPendingActions()) {
-          void this.persistDirtySettings().then(() =>
-            this.applyPendingActions(),
-          );
-        }
-      }, 0);
+  private persistSettingsAndApplyPendingActions() {
+    const persistAndApply = async () => {
+      this.normalizeSettingsBeforeSave();
+      await this.plugin.saveSettings();
+      await this.applyPendingActions();
     };
-    this.containerEl.addEventListener("focusout", this.settingsFocusoutHandler);
+    // Keep queuing updates even if an earlier save failed.
+    this.settingsPersistenceChain = this.settingsPersistenceChain
+      .catch((): void => undefined)
+      .then(persistAndApply);
   }
 
   private async applyPendingActions() {
@@ -1374,14 +1312,13 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   }
 
   applySettingsUpdate(requestReloadDrawings: boolean = false) {
-    this.markSettingsDirty();
     if (requestReloadDrawings) {
       this.requestReloadDrawings = true;
     }
+    this.persistSettingsAndApplyPendingActions();
   }
 
   hide() {
-    this.detachSettingsFocusoutHandler();
     this.destroyFontPickers();
     if (this.plugin.settings.overrideObsidianFontSize) {
       setStyle(mainDocument.documentElement, { fontSize: "" });
@@ -1395,15 +1332,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       setRootElementSize();
     }
 
-    void (async () => {
-      void (await this.persistDirtySettings());
-      void (await this.applyPendingActions());
-      this.hotkeyEditor.unload();
-      if (this.hotkeyEditor.isDirty) {
-        this.plugin.registerHotkeyOverrides();
-      }
-      this.plugin.scriptEngine.updateScriptPath();
-    })();
+    this.hotkeyEditor.unload();
+    if (this.hotkeyEditor.isDirty) {
+      this.plugin.registerHotkeyOverrides();
+    }
+    this.plugin.scriptEngine.updateScriptPath();
     /*    if(this.reloadMathJax) {
       this.plugin.loadMathJax();
     }*/
@@ -1413,14 +1346,12 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     let detailsEl: HTMLElement;
 
     //await this.plugin.loadSettings(); //in case sync loaded changed settings in the background
-    this.settingsDirty = false;
     this.requestEmbedUpdate = false;
     this.requestReloadDrawings = false;
     this.destroyFontPickers();
     const { containerEl } = this;
     containerEl.addClass("excalidraw-settings");
     this.containerEl.empty();
-    this.attachSettingsFocusoutHandler();
 
     // ------------------------------------------------
     // Search and Settings to Clipboard

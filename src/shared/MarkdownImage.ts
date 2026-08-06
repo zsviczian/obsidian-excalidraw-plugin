@@ -579,5 +579,14 @@ export async function updateMarkdownImage(
     return false;
   }
   view.setDirty();
+  // Persist right after every successful render instead of only on specific UI events (switching
+  // elements, closing the sidepanel, etc.). Those events are not reliable signals of "the user is
+  // done": the sidepanel can be hidden/collapsed (no close event fires) or be a popout window that
+  // is moved out of view, and none of that tells us whether the editor is still visible. Saving
+  // here ties persistence directly to the one thing we know for certain changed: the element in
+  // the scene. forceSave's waitIfBusy avoids silently no-oping against a concurrent save, and the
+  // override bypasses the embeddableIsEditingSelf debounce without touching it, so this does not
+  // disrupt the ongoing edit the way a reload()-driven refresh would.
+  await view.forceSave(true, true);
   return true;
 }

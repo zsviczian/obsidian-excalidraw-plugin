@@ -9,7 +9,6 @@ import {
   type ColorComponent,
   type TFile,
   type WorkspaceLeaf,
-  type WorkspaceSplit,
   type EventRef,
   type MarkdownFileInfo,
 } from "obsidian";
@@ -47,6 +46,7 @@ import { showColorPicker } from "src/shared/Dialogs/ColorPicker";
 import { getBinaryFileFromDataURL } from "src/utils/utils";
 import {
   COLOR_NAMES,
+  DEVICE,
   VIEW_TYPE_EXCALIDRAW,
 } from "src/constants/constants";
 import type ExcalidrawPlugin from "src/core/main";
@@ -117,6 +117,7 @@ const getNativeColorValue = (color: string): string => {
 
 class MarkdownFragmentView extends MarkdownView {
   private saveFragment: (markdown: string) => Promise<void>;
+  private closing = false;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -129,8 +130,22 @@ class MarkdownFragmentView extends MarkdownView {
     this.saveFragment = saveFragment;
   }
 
+  /**
+   * Marks this fragment as done - called right after flushAndDetachEditor() has explicitly
+   * flushed it and is about to detach its leaf. leaf.detach() is not awaited, and Obsidian's own
+   * TextFileView teardown can still invoke save() on this instance later, after its CodeMirror
+   * editor has already been torn down; at that point getViewData() returns an empty string, and
+   * without this guard that empty content would silently overwrite the just-flushed Markdown.
+   */
+  public markClosing(): void {
+    this.closing = true;
+  }
+
   /** Redirects TextFileView autosave to the managed Markdown-image fragment. */
   public async save(): Promise<void> {
+    if (this.closing) {
+      return;
+    }
     this.data = this.getViewData();
     await this.saveFragment(this.data);
   }
@@ -145,7 +160,6 @@ class MarkdownImageEditorController {
   private element: ExcalidrawImageElement | null = null;
   private editorView: MarkdownView | null = null;
   private editorLeaf: WorkspaceLeaf | null = null;
-  private editorRoot: WorkspaceSplit | null = null;
   private renderSettings: MarkdownImageRenderSettings | null = null;
   private renderTimer: number | null = null;
   private renderGeneration = 0;
@@ -175,6 +189,7 @@ class MarkdownImageEditorController {
   private ownerInvalid = false;
   private ownerInvalidation: Promise<void> | null = null;
   private ownerAttachmentGeneration = 0;
+  private selectionSwitchQueue: Promise<void> = Promise.resolve();
   private activeLeafChangeRef: EventRef | null = null;
   private cssEditors: CSSCodeEditor[] = [];
   private fontPickers: FontPickerComponent[] = [];
@@ -215,7 +230,7 @@ class MarkdownImageEditorController {
       this.tab = await sidepanel.createTab({
         title: t("MARKDOWN_IMAGE_TITLE"),
       });
-      this.tab.onClose = () => this.close();
+      this.tab.onClose = () => void this.close();
       this.tab.onFocus = (view) => void this.handleSidepanelFocus(view);
       this.tab.onWindowMigrated = () => void this.rebuildEditor();
       this.tab.onExcalidrawViewClosed = () => void this.invalidateOwner(false);
@@ -903,6 +918,21 @@ class MarkdownImageEditorController {
     this.ownerInvalidation = (async () => {
       try {
         await this.flushAndDetachEditor(saveEditor);
+        // flushAndDetachEditor() only writes the flushed edit into excalidrawData (in memory).
+        // This controller is about to stop tracking invalidatedView (it's being handed off to a
+        // different view, or torn down), so nothing else is guaranteed to persist that edit to
+        // disk afterward - force it now while we still have a definite reference to the view.
+        if (saveEditor && canClearOwnerEditing) {
+          await invalidatedView.forceSave(true, true);
+          await invalidatedView.reload(false, invalidatedView.file);
+          // reload() clears semaphores.embeddableIsEditingSelf as soon as a debounce timer is
+          // pending, opening a window (spanning its vault.read() await) where a concurrently
+          // polling autosave can slip in - see the matching comment in
+          // persistOwnerAfterEditorFlush() for why this is a real, tight race. Re-arm it; the
+          // finally block below calls clearEmbeddableNodeIsEditing() right after, which is the
+          // intended graceful (debounced) wind-down instead of reload()'s abrupt one.
+          invalidatedView.setMarkdownImageEditorIsEditing();
+        }
       } catch (error: unknown) {
         errorlog({
           where: "MarkdownImageEditorController.invalidateOwner",
@@ -1439,22 +1469,120 @@ class MarkdownImageEditorController {
         ? selected
         : undefined;
     const generation = ++this.selectionGeneration;
-    void this.switchElement(next, generation);
+    this.selectionSwitchQueue = this.selectionSwitchQueue
+      .catch(() => {
+        // Keep the queue alive after any prior failure.
+      })
+      .then(() => this.switchElement(next, generation));
+  }
+
+  private async waitForOwnerSaveIdle(maxFrames: number = 180): Promise<void> {
+    const ownerView = this.view;
+    const ownerWindow = ownerView.ownerWindow ?? window;
+    for (let frame = 0; frame < maxFrames; frame++) {
+      if (!this.ensureOwnerValid() || this.view !== ownerView) {
+        return;
+      }
+      const semaphores = ownerView.semaphores;
+      if (!semaphores?.saving && !semaphores?.autosaving) {
+        return;
+      }
+      await new Promise<void>((resolve) => {
+        ownerWindow.requestAnimationFrame(() => resolve());
+      });
+    }
+  }
+
+  /**
+   * Forces a disk save of the owner view, retrying if a concurrent save (autosave, or another
+   * controller flushing during a handoff) claims the saving semaphore between
+   * waitForOwnerSaveIdle() resolving and the save() call below. save() silently no-ops when
+   * semaphores.saving is already true when it is entered, and awaiting an already-resolved
+   * promise still yields a microtask turn, so a single poll-then-call attempt cannot guarantee
+   * persistence on its own.
+   */
+  private async persistOwnerAfterEditorFlush(maxAttempts: number = 5): Promise<void> {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      if (!this.ensureOwnerValid()) {
+        return;
+      }
+      await this.waitForOwnerSaveIdle();
+      if (!this.ensureOwnerValid()) {
+        return;
+      }
+      if (this.view.semaphores.saving) {
+        continue;
+      }
+      await this.view.save(true, true, true);
+      // save() does not refresh view.data, so prepareGetViewData() would keep rebuilding the
+      // Markdown-image header section from a stale copy on every later save in this same view
+      // (e.g. switching directly from one Markdown image to another via switchElement()). Reuse
+      // the same reload(false, file) call invalidateOwner() uses for the cross-view handoff case.
+      if (this.ensureOwnerValid()) {
+        await this.view.reload(false, this.view.file);
+        // reload() clears semaphores.embeddableIsEditingSelf as soon as a debounce timer is
+        // pending (it assumes editing has ended). It hasn't: flushCurrentElement() runs mid-session,
+        // and switchElement()/flushPendingEditsBeforeHandoff() decide the real end state right
+        // after this returns. Re-arm it immediately so nothing else can misread editing as finished
+        // in that gap; the caller's own clear/set call right after this resolves is what should
+        // decide the final state, not reload()'s side effect.
+        if (this.ensureOwnerValid()) {
+          this.view.setMarkdownImageEditorIsEditing();
+        }
+      }
+      return;
+    }
+  }
+
+  /**
+   * Flushes the current editor's content into excalidrawData and force-persists it to disk.
+   * Shared by switchElement() (selection changes within this controller) and
+   * flushPendingEditsBeforeHandoff() (handoff to a brand new controller in
+   * openMarkdownImageEditor()) so a previous element's edits are always guaranteed to be flushed
+   * and saved before anything else starts editing a different element.
+   */
+  private async flushCurrentElement(): Promise<void> {
+    await this.renderCurrentEditor();
+    this.cancelScheduledRender();
+    this.removeEditorFocusListener();
+    await this.flushAndDetachEditor();
+    await this.persistOwnerAfterEditorFlush();
+    this.cancelScheduledRender();
+  }
+
+  /**
+   * Flushes and force-persists the currently edited element before this controller is replaced
+   * by a brand new controller instance for a different element (see openMarkdownImageEditor()).
+   * Without this, dispose()/close() detach and save the editor via a fire-and-forget call, so the
+   * previous element's edits can still be in flight after the new controller has already started
+   * editing (and locking, via embeddableIsEditingSelf) a different element.
+   */
+  public async flushPendingEditsBeforeHandoff(): Promise<void> {
+    if (this.closed || !this.element) {
+      return;
+    }
+    try {
+      await this.flushCurrentElement();
+    } catch (error: unknown) {
+      errorlog({
+        where: "MarkdownImageEditorController.flushPendingEditsBeforeHandoff",
+        error,
+      });
+    }
   }
 
   private async switchElement(
     element: ExcalidrawImageElement | undefined,
     generation: number,
   ): Promise<void> {
-    await this.renderCurrentEditor();
-    this.cancelScheduledRender();
-    this.removeEditorFocusListener();
-    this.renderSelectionPlaceholder();
-    await this.flushAndDetachEditor();
-    this.cancelScheduledRender();
     if (generation !== this.selectionGeneration || this.closed) {
       return;
     }
+    await this.flushCurrentElement();
+    if (generation !== this.selectionGeneration || this.closed) {
+      return;
+    }
+    this.renderSelectionPlaceholder();
     this.element = element ?? null;
     this.renderSettings = element
       ? getMarkdownImageRenderSettings(this.view.plugin, element)
@@ -1512,7 +1640,6 @@ class MarkdownImageEditorController {
     const elementFileId = element.fileId;
     const { leaf, rootSplit } = createLeaf(this.view, host.ownerDocument);
     this.editorLeaf = leaf;
-    this.editorRoot = rootSplit;
     this.startMobileViewPatch(leaf);
     rootSplit.containerEl.addClass("mod-visible");
     setStyle(rootSplit.containerEl, { height: "100%", width: "100%" });
@@ -1712,15 +1839,30 @@ class MarkdownImageEditorController {
     ) {
       return;
     }
-    const targetWindow = editorView.containerEl.ownerDocument.defaultView;
-    targetWindow?.setTimeout(() => {
-      if (this.editorView !== editorView || !this.ensureOwnerValid()) {
-        return;
-      }
-      this.app.workspace.setActiveLeaf(editorView.leaf, { focus: true });
+    if (this.editorView !== editorView || !this.ensureOwnerValid()) {
+      return;
+    }
+
+    // Pre-emptively route commands and update Obsidian's active editor state.
+    // This ensures the mobile toolbar sees the correct state the exact moment 
+    // the virtual keyboard starts opening, fixing the "first tap" bug.
+    this.activateEditorCommandRouting(editorView);
+
+    if (DEVICE.isMobile) {
+      this.app.workspace.setActiveLeaf(editorView.leaf, { focus: false });
       editorView.editor.focus();
+      window.setTimeout(() => {
+        this.focusEditorOnMount = false;
+      }, 500);
+      return;
+    }
+
+    this.app.workspace.setActiveLeaf(editorView.leaf, { focus: true });
+    editorView.editor.focus();
+    const targetWindow = editorView.containerEl.ownerDocument.defaultView;
+    if (targetWindow) {
       this.stabilizeActiveEditor(editorView, targetWindow);
-    }, 0);
+    }
   }
 
   private stabilizeActiveEditor(
@@ -2150,7 +2292,6 @@ class MarkdownImageEditorController {
     this.stopMobileViewPatch();
     this.editorView = null;
     this.editorLeaf = null;
-    this.editorRoot = null;
     this.editorContentDirty = false;
     this.removeEditorResizeListener();
     this.removeEditorFocusListener();
@@ -2163,11 +2304,24 @@ class MarkdownImageEditorController {
         await editorView.save();
       }
     } finally {
+      // leaf.detach() below is not awaited; Obsidian's own TextFileView teardown can still call
+      // save() on editorView again afterward, once its CodeMirror editor is already gone. Without
+      // markClosing(), that later call would silently overwrite the flush above with "".
+      if (editorView instanceof MarkdownFragmentView) {
+        editorView.markClosing();
+      }
       editorLeaf?.detach();
     }
   }
 
-  private close(): void {
+  /**
+   * Flushes and force-persists the editing session, then tears down the controller. Awaited by
+   * dispose() so that closing the sidepanel (the whole panel, not just switching elements/views)
+   * reliably reaches disk even if the user never returns focus to the owning Excalidraw view -
+   * previously this flushed into excalidrawData via a fire-and-forget call with no forced save,
+   * so data could sit unsaved indefinitely, which is especially risky on mobile.
+   */
+  private async close(): Promise<void> {
     if (this.closed) {
       return;
     }
@@ -2188,21 +2342,32 @@ class MarkdownImageEditorController {
     this.destroyFontPickers();
     this.focusOwnerButtonEl = null;
     this.ownerStatusEl = null;
-    void this.flushAndDetachEditor().finally(() => {
+    try {
+      await this.flushAndDetachEditor();
+      if (canClearOwnerEditing) {
+        await this.view.forceSave(true, true);
+        await this.view.reload(false, this.view.file);
+      }
+    } catch (error: unknown) {
+      errorlog({
+        where: "MarkdownImageEditorController.close",
+        error,
+      });
+    } finally {
       this.cancelScheduledRender();
       if (canClearOwnerEditing) {
         this.view.clearEmbeddableNodeIsEditing();
       }
       this.element = null;
       this.renderSettings = null;
-    });
+    }
     void this.plugin.saveSettings();
     this.tab = null;
   }
 
-  public dispose(): void {
+  public async dispose(): Promise<void> {
     this.tab?.close();
-    this.close();
+    await this.close();
   }
 }
 
@@ -2218,19 +2383,23 @@ export async function openMarkdownImageEditor(
     return;
   }
   const previousController = activeController;
+  // Guarantee the previously edited element's changes are flushed and persisted before this
+  // handoff: otherwise dispose() below would save the old element in the background while the
+  // new controller has already started editing (and locking) a different element.
+  await previousController?.flushPendingEditsBeforeHandoff();
   const controller = new MarkdownImageEditorController(view);
   activeController = controller;
   try {
     if (!(await controller.open(element))) {
-      controller.dispose();
+      void controller.dispose();
       if (activeController === null && previousController) {
         activeController = previousController;
       }
       return;
     }
-    previousController?.dispose();
+    void previousController?.dispose();
   } catch (error: unknown) {
-    controller.dispose();
+    void controller.dispose();
     if (activeController === null && previousController) {
       activeController = previousController;
     }
@@ -2262,4 +2431,20 @@ export async function handleMarkdownImageEditorViewUnload(
     return;
   }
   await activeController.invalidateOwner(true);
+}
+
+/**
+ * Flushes and force-persists the active Markdown-image editing session before the sidepanel view
+ * itself closes. Without this, closing the whole side panel (e.g. collapsing it, or closing the
+ * leaf) without ever returning focus to the owning Excalidraw view left the edit flushed only into
+ * excalidrawData in memory, with no forced disk save - especially risky on mobile, where the app
+ * can be suspended shortly after. The sidepanel is a plugin-wide singleton (see
+ * ExcalidrawSidepanelView.getExisting()), and so is activeController, so there is no separate
+ * "which sidepanel" identity to check here.
+ */
+export async function handleMarkdownImageEditorSidepanelClosing(): Promise<void> {
+  if (!activeController) {
+    return;
+  }
+  await activeController.dispose();
 }

@@ -9,6 +9,7 @@ import type {
 import { DataURL } from "@zsviczian/excalidraw/types/excalidraw/types";
 import { App, Component, MarkdownRenderer, Notice, TFile } from "obsidian";
 import {
+  DEVICE,
   DEFAULT_MD_EMBED_CSS,
   fileid,
   IMAGE_TYPES,
@@ -70,7 +71,7 @@ import {
 } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import { setStyleText } from "src/utils/htmlUtils";
-import { hideElement, setStyle } from "src/utils/styleUtils";
+import { setStyle } from "src/utils/styleUtils";
 import {
   isInstanceOfHTMLImageElement,
   isInstanceOfSVGElement,
@@ -181,6 +182,131 @@ const waitForMarkdownPostProcessors = (
     maximumTimer = window.setTimeout(finish, maximumWait);
   });
 };
+
+const waitForDocumentFonts = async (doc: Document): Promise<void> => {
+  const fontSet = doc.fonts;
+  if (!fontSet) {
+    return;
+  }
+  // FontFaceSet.ready can hang on some environments if a face stalls.
+  await Promise.race([
+    fontSet.ready,
+    new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 500);
+    }),
+  ]);
+};
+
+const measureElementHeight = (element: Element | null): number => {
+  if (!element) {
+    return 0;
+  }
+  const typedElement = element as HTMLElement;
+  const rectHeight = Number(typedElement.getBoundingClientRect?.().height ?? 0);
+  return Math.max(
+    Number(typedElement.scrollHeight ?? 0),
+    Number(typedElement.offsetHeight ?? 0),
+    Number(typedElement.clientHeight ?? 0),
+    Number.isFinite(rectHeight) ? rectHeight : 0,
+  );
+};
+
+const getCssPixelValue = (value: string | null | undefined): number => {
+  if (!value) {
+    return 0;
+  }
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const measureRenderedContentHeight = (element: Element | null): number => {
+  if (!element) {
+    return 0;
+  }
+  const typedElement = element as HTMLElement;
+  const ownerWindow = typedElement.ownerDocument.defaultView;
+  const hostRect = typedElement.getBoundingClientRect();
+  let maxContentBottom = 0;
+
+  typedElement.querySelectorAll("*").forEach((child) => {
+    const childElement = child as HTMLElement;
+    const childRect = childElement.getBoundingClientRect();
+    if (!Number.isFinite(childRect.bottom)) {
+      return;
+    }
+    maxContentBottom = Math.max(maxContentBottom, childRect.bottom - hostRect.top);
+  });
+
+  const lastChild = typedElement.lastElementChild as HTMLElement | null;
+  const lastChildMarginBottom =
+    ownerWindow && lastChild
+      ? getCssPixelValue(ownerWindow.getComputedStyle(lastChild).marginBottom)
+      : 0;
+  const hostPaddingBottom = ownerWindow
+    ? getCssPixelValue(ownerWindow.getComputedStyle(typedElement).paddingBottom)
+    : 0;
+
+  return Math.max(
+    measureElementHeight(typedElement),
+    maxContentBottom + lastChildMarginBottom,
+    hostRect.height,
+  ) + hostPaddingBottom;
+};
+
+const appendMarkdownBottomSpacer = (
+  container: HTMLElement,
+  paddingBottom: number,
+): void => {
+  const existingSpacer = container.querySelector(
+    ".excalidraw-md-padding-spacer",
+  );
+  if (existingSpacer?.parentElement) {
+    existingSpacer.parentElement.removeChild(existingSpacer);
+  }
+  if (!(paddingBottom > 0)) {
+    return;
+  }
+  // FIX: WebKit/iOS will often return a 0 bounding client rect for completely empty divs.
+  // We insert a zero-width space so the layout engine is forced to render the block and measure its height.
+  const paddingSpacer = createDiv({text: "&#8203;"});
+  paddingSpacer.setAttribute("class", "excalidraw-md-padding-spacer");
+  
+  setStyle(paddingSpacer, {
+    display: "block",
+    width: "100%",
+    height: `${paddingBottom}px`,
+    minHeight: `${paddingBottom}px`,
+    color: "transparent",
+    lineHeight: "0px"
+  });
+  container.appendChild(paddingSpacer);
+};
+
+const ISOLATED_MARKDOWN_RENDER_CSS = `
+.excalidraw-md-host,
+.excalidraw-md-host * {
+  box-sizing: border-box;
+}
+
+.excalidraw-md-host {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0px;
+  word-spacing: 0px;
+  text-rendering: geometricPrecision;
+  -webkit-text-size-adjust: none;
+  text-size-adjust: none;
+  font-kerning: none;
+  font-variant-ligatures: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+`;
 
 const snapshotRenderedCanvases = (container: HTMLElement): void => {
   container.querySelectorAll("canvas").forEach((canvas) => {
@@ -1796,7 +1922,7 @@ export class EmbeddedFilesLoader {
       ? `.excalidraw-md-host.theme-light{color-scheme:light;--background-primary:#ffffff;--background-secondary:#f5f5f5;--text-normal:#2e3338;--text-muted:#6b6b6b;--link-color:#086ddd}.excalidraw-md-host.theme-light a{color:var(--link-color)}.excalidraw-md-host.theme-light th{background-color:#dedede}.excalidraw-md-host.theme-light pre[class*=language-],.excalidraw-md-host.theme-light :not(pre)>code[class*=language-]{color:#393a34;background-color:#f5f5f5;border-color:#ddd}.excalidraw-md-host.theme-light blockquote{background-color:rgba(0,0,0,.06)}`
       : "";
     let style: string = overrides
-      ? `${DEFAULT_MD_EMBED_CSS}\n${markdownImageThemeCSS}\n${overrides.render.css}`
+      ? `${DEFAULT_MD_EMBED_CSS}\n${ISOLATED_MARKDOWN_RENDER_CSS}\n${markdownImageThemeCSS}\n${overrides.render.css}`
       : (safeFrontmatter[FRONTMATTER_KEYS["md-css"].name] ?? "");
 
     let frontmatterCSSisAfile = false;
@@ -1819,6 +1945,9 @@ export class EmbeddedFilesLoader {
       } else {
         style += DEFAULT_MD_EMBED_CSS;
       }
+    }
+    if (!style.includes(ISOLATED_MARKDOWN_RENDER_CSS)) {
+      style = `${ISOLATED_MARKDOWN_RENDER_CSS}\n${style}`;
     }
 
     const borderColor: string = overrides
@@ -1852,10 +1981,13 @@ export class EmbeddedFilesLoader {
       const svgClass = overrides?.isTransclusion
         ? ' class="excalidraw-md-transclusion"'
         : "";
-      return `<svg xmlns="http://www.w3.org/2000/svg"${svgClass} width="${linkParts.width}px" height="${svgHeight}px">${
+      
+      // FIX: Added viewBox="0 0 ${linkParts.width} ${svgHeight}" 
+      // This is mandatory for Safari to respect the width/height of the SVG when loaded as an image.
+      return `<svg xmlns="http://www.w3.org/2000/svg"${svgClass} width="${linkParts.width}px" height="${svgHeight}px" viewBox="0 0 ${linkParts.width} ${svgHeight}">${
         style ? `<style>${style}</style>` : ""
       }<foreignObject x="${inset}" y="${inset}" width="${width}px" height="${height}px">${xml}${
-        xmlFooter //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/286#issuecomment-982179639
+        xmlFooter 
       }</foreignObject>${border}${
         fontDef !== "" ? `<defs><style>${fontDef}</style></defs>` : ""
       }</svg>`;
@@ -1872,14 +2004,15 @@ export class EmbeddedFilesLoader {
     if (fontName !== "") {
       setStyle(mdDIV, { fontFamily: fontName });
     }
+    const markdownImagePaddingBottom =
+      overrides && !overrides.isTransclusion
+        ? overrides.render.paddingBottom
+        : 0;
     setStyle(mdDIV, {
-      overflow: "auto",
+      overflow: "hidden",
       display: "block",
       color: fontColor && fontColor !== "" ? fontColor : "initial",
-      paddingBottom:
-        overrides && !overrides.isTransclusion
-          ? `${overrides.render.paddingBottom}px`
-          : undefined,
+      paddingBottom: undefined,
     });
 
     const renderHost = mainDocument.body.createDiv();
@@ -1894,6 +2027,27 @@ export class EmbeddedFilesLoader {
       zIndex: "-1",
     });
     renderHost.appendChild(mdDIV);
+    const isolatedRenderStyleEl = deliberateCreateElement(
+      mainDocument,
+      "style",
+    ) as HTMLStyleElement;
+    setStyleText(
+      isolatedRenderStyleEl,
+      ISOLATED_MARKDOWN_RENDER_CSS.replaceAll(
+        ".excalidraw-md-host",
+        `.${MARKDOWN_TO_SVG_RENDER_CLASS}`,
+      ),
+    );
+    mainDocument.head.appendChild(isolatedRenderStyleEl);
+    const isolatedFontStyleEl =
+      fontDef !== ""
+        ? (deliberateCreateElement(mainDocument, "style") as HTMLStyleElement)
+        : null;
+    if (isolatedFontStyleEl) {
+      setStyleText(isolatedFontStyleEl, fontDef);
+      mainDocument.head.appendChild(isolatedFontStyleEl);
+      await waitForDocumentFonts(mainDocument);
+    }
     const renderComponent = new Component();
     renderComponent.load();
     let renderedDIV: HTMLDivElement | null = null;
@@ -1912,10 +2066,13 @@ export class EmbeddedFilesLoader {
     } finally {
       renderComponent.unload();
       renderHost.remove();
+      isolatedRenderStyleEl.remove();
+      isolatedFontStyleEl?.remove();
     }
     if (renderedDIV) {
       mdDIV = renderedDIV;
     }
+    appendMarkdownBottomSpacer(mdDIV, markdownImagePaddingBottom);
     if (this.terminate) {
       return { dataURL: "" as DataURL, hasSVGwithBitmap: false };
     }
@@ -2063,17 +2220,64 @@ export class EmbeddedFilesLoader {
     //First I need to create a fully self contained copy of the document to convert
     //blank styles into inline styles using computedStyle
     const iframeHost = mainDocument.body.createDiv();
-    hideElement(iframeHost);
+    // Use a fixed off-screen container with STRICT width boundaries to defeat iOS iframe flattening.
+    setStyle(iframeHost, {
+      position: "fixed",
+      left: "-100000px",
+      top: "0",
+      width: `${linkParts.width}px`,
+      height: "10000px", // Give it plenty of room to render without scrollbars
+      overflow: "hidden",
+      visibility: "hidden",
+      pointerEvents: "none",
+    });
     let xmlINiframe = "";
     let xmlFooter = "";
+    let iframeContentHeight = 0;
+    let iframeFooterHeight = 0;
     try {
       const iframe = iframeHost.createEl("iframe");
+      // FIX: Lock the iframe's internal dimensions
+      setStyle(iframe, {
+        width: `${linkParts.width}px`,
+        height: "100%",
+        border: "none",
+        margin: "0",
+        padding: "0"
+      });
+
       const iframeDoc = iframe.contentWindow.document;
+      const iframeWindow = iframe.contentWindow;
+
+      // FIX: Force the iframe's body to respect the target width and prevent text inflation
+      // Removed `overflow: hidden !important` so we don't accidentally clip valid heights on iOS measurement.
+      const bodyReset = deliberateCreateElement(iframeDoc, "style") as HTMLStyleElement;
+      setStyleText(bodyReset, `
+        html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          width: ${linkParts.width}px !important;
+          max-width: ${linkParts.width}px !important;
+          overflow: visible !important;
+          -webkit-text-size-adjust: none !important;
+          text-size-adjust: none !important;
+        }
+      `);
+      iframeDoc.head.appendChild(bodyReset);
+
       if (style) {
         // Obsidian style.css does not good in this case, yet the code scanner enforces it
         const styleEl = deliberateCreateElement(iframeDoc, "style") as HTMLStyleElement;
         setStyleText(styleEl, style);
         iframeDoc.head.appendChild(styleEl);
+      }
+      if (fontDef !== "") {
+        const fontStyleEl = deliberateCreateElement(
+          iframeDoc,
+          "style",
+        ) as HTMLStyleElement;
+        setStyleText(fontStyleEl, fontDef);
+        iframeDoc.head.appendChild(fontStyleEl);
       }
       // Inject the MathJax CHTML stylesheet into the iframe so that mjx-* custom elements
       // are styled correctly when measuring scroll height and computing inline styles.
@@ -2087,10 +2291,11 @@ export class EmbeddedFilesLoader {
       const footerDIV = createDiv();
       footerDIV.setAttribute("class", "excalidraw-md-footer");
       iframeDoc.body.appendChild(footerDIV);
+      await waitForDocumentFonts(iframeDoc);
 
       iframeDoc.body.querySelectorAll("*").forEach((el: HTMLElement) => {
         const elementStyle = el.style;
-        const computedStyle = window.getComputedStyle(el);
+        const computedStyle = iframeWindow.getComputedStyle(el);
         let style = "";
         for (const [prop] of Object.entries(elementStyle)) {
           if (Object.hasOwn(elementStyle ?? {}, prop)) {
@@ -2100,6 +2305,9 @@ export class EmbeddedFilesLoader {
         }
         el.setAttribute("style", style);
       });
+
+      iframeContentHeight = measureRenderedContentHeight(stylingDIV);
+      iframeFooterHeight = measureRenderedContentHeight(footerDIV);
 
       xmlINiframe = new XMLSerializer().serializeToString(stylingDIV);
       xmlFooter = new XMLSerializer().serializeToString(footerDIV);
@@ -2127,11 +2335,20 @@ export class EmbeddedFilesLoader {
     try {
       host.appendChild(svgEl);
       mainDocument.body.appendChild(host);
-      footerHeight = svgEl.querySelector(".excalidraw-md-footer").scrollHeight;
-      const height =
-        svgEl.querySelector(".excalidraw-md-host").scrollHeight + footerHeight;
+      footerHeight = Math.max(
+        measureRenderedContentHeight(svgEl.querySelector(".excalidraw-md-footer")),
+        iframeFooterHeight,
+      );
+      const contentHeight = Math.max(
+        measureRenderedContentHeight(svgEl.querySelector(".excalidraw-md-host")),
+        iframeContentHeight,
+      );
       const borderHeight = drawBorder ? 4 : 0;
-      const measuredHeight = Math.ceil(height + borderHeight);
+      // Safari on iOS under-reports foreignObject content height intermittently.
+      const iOSSafetyPadding = DEVICE.isIOS ? 1 : 0;
+      const measuredHeight = Math.ceil(
+        contentHeight + footerHeight + borderHeight + iOSSafetyPadding,
+      );
       svgHeight = overrides?.fullHeight
         ? measuredHeight
         : measuredHeight <= linkParts.height

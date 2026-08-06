@@ -276,7 +276,11 @@ import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
 import { copyLinkToSelectedElementToClipboard } from "src/shared/Dialogs/copyLinkToSelectedElement";
 import { getPDFCropRect } from "src/utils/PDFUtils";
 import { ttdPersistenceAdapter } from "src/shared/TTDDialogPersistanceAdater";
-import { CaptureUpdateActionType } from "@zsviczian/excalidraw/types/element/src";
+import {
+  CaptureUpdateActionType,
+  DurableIncrement,
+  EphemeralIncrement,
+} from "@zsviczian/excalidraw/types/element/src";
 import {
   getTextElementsMatchingQuery,
   getFrameElementsMatchingQuery,
@@ -494,11 +498,6 @@ export default class ExcalidrawView
   private preventReloadResetTimer: number | null = null;
   private editingSelfResetTimer: number | null = null;
   private colorChangeTimer: number | null = null;
-  private markdownImageDeleteCandidateTimer: number | null = null;
-  private markdownImageDeleteCandidates = new Map<
-    ExcalidrawElement["id"],
-    ExcalidrawImageElement
-  >();
   private markdownImageDeletionQueue: Array<{
     element: ExcalidrawImageElement;
     filePath: string;
@@ -1106,7 +1105,11 @@ export default class ExcalidrawView
   public async setEmbeddableNodeIsEditing() {
     this.clearEmbeddableNodeIsEditingTimer();
     this.semaphores.embeddableIsEditingSelf = true;
-    await this.forceSave(true);
+    // Wait for any in-flight save (e.g. a Markdown-image editor flush) rather than silently
+    // aborting: a same-file back-of-the-note embeddable is about to open its own editor on this
+    // same file, so the disk copy must be current or the embeddable's editor will load a stale
+    // version and a later save from it can clobber pending Markdown-image edits.
+    await this.forceSave(true, true);
   }
 
   /** Debounces self-edit reloads without forcing a disk save. */
@@ -2333,7 +2336,23 @@ export default class ExcalidrawView
     );
   }
 
-  public async forceSave(silent: boolean = false) {
+  /**
+   * @param waitIfBusy - When true, waits (up to ~5s) for an in-flight save/autosave to clear
+   * instead of immediately aborting. Callers that need a guaranteed fresh disk write before
+   * handing off to a different editor of the same file (e.g. setEmbeddableNodeIsEditing) should
+   * pass true; the default preserves the existing "abort and notify" behavior for callers such as
+   * the manual save button, where an immediate abort is the expected feedback.
+   */
+  public async forceSave(silent: boolean = false, waitIfBusy: boolean = false) {
+    if (waitIfBusy) {
+      let counter = 0;
+      while (
+        (this.semaphores.autosaving || this.semaphores.saving) &&
+        counter++ < 100
+      ) {
+        await sleep(50);
+      }
+    }
     if (this.semaphores.autosaving || this.semaphores.saving) {
       if (!silent) {
         new Notice(t("FORCE_SAVE_ABORTED"));
@@ -3029,11 +3048,6 @@ export default class ExcalidrawView
     if (this.colorChangeTimer) {
       window.clearTimeout(this.colorChangeTimer);
       this.colorChangeTimer = null;
-    }
-    if (this.markdownImageDeleteCandidateTimer) {
-      window.clearTimeout(this.markdownImageDeleteCandidateTimer);
-      this.markdownImageDeleteCandidateTimer = null;
-      this.markdownImageDeleteCandidates.clear();
     }
     if (this.semaphores?.wheelTimeout) {
       window.clearTimeout(this.semaphores.wheelTimeout);
@@ -5658,53 +5672,6 @@ export default class ExcalidrawView
     this.lastKeyDownPosition = { x: 0, y: 0 };
   };
 
-  private captureSelectedMarkdownImageDeleteCandidates(): void {
-    this.markdownImageDeleteCandidates.clear();
-    this.getViewSelectedElements()
-      .filter(
-        (element): element is ExcalidrawImageElement =>
-          element.type === "image" &&
-          getMarkdownImageCustomData(element)?.source === "local" &&
-          this.excalidrawData.hasMarkdownImage(element.fileId),
-      )
-      .forEach((element) =>
-        this.markdownImageDeleteCandidates.set(element.id, element),
-      );
-
-    if (this.markdownImageDeleteCandidateTimer) {
-      window.clearTimeout(this.markdownImageDeleteCandidateTimer);
-    }
-    this.markdownImageDeleteCandidateTimer = window.setTimeout(() => {
-      this.markdownImageDeleteCandidates.clear();
-      this.markdownImageDeleteCandidateTimer = null;
-    }, 1000);
-  }
-
-  private excalidrawDIVonKeyDownCapture(event: KeyboardEvent): void {
-    const isDeleteKey = event.key === "Backspace" || event.key === "Delete";
-    const isCutShortcut =
-      event.key.toLowerCase() === "x" &&
-      isWinCTRLorMacCMD(event) &&
-      !isSHIFT(event) &&
-      !isWinALTorMacOPT(event) &&
-      !isWinMETAorMacCTRL(event);
-    if (
-      this.semaphores?.viewunload ||
-      (!isDeleteKey && !isCutShortcut)
-    ) {
-      return;
-    }
-    this.captureSelectedMarkdownImageDeleteCandidates();
-  }
-
-  private excalidrawDIVonPointerDownCapture(event: PointerEvent): void {
-    const target = event.target as Element | null;
-    if (!target?.closest('[data-testid="deleteSelectedElements"]')) {
-      return;
-    }
-    this.captureSelectedMarkdownImageDeleteCandidates();
-  }
-
   private excalidrawDIVonKeyDown(event: KeyboardEvent) {
     //(process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.excalidrawDIVonKeyDown, "ExcalidrawView.excalidrawDIVonKeyDown", event);
     if (this.semaphores?.viewunload) {
@@ -5924,30 +5891,32 @@ export default class ExcalidrawView
     }
   }
 
-  private handleDeletedMarkdownImageCandidates(
-    elements: readonly ExcalidrawElement[],
+  /**
+   * Detects local Markdown-image elements that were just soft-deleted (isDeleted flipped to
+   * true) in a durable Excalidraw history increment and queues them for the keep-or-delete-file
+   * prompt. Unlike watching specific keyboard/pointer gestures, this catches every way an element
+   * can be deleted - Backspace/Delete, Cut, the Excalidraw properties-panel trash icon, the
+   * context menu, undo/redo, or a script - because they all funnel through the same durable
+   * store increment.
+   */
+  private onExcalidrawIncrement(
+    event: DurableIncrement | EphemeralIncrement,
   ): void {
-    if (this.markdownImageDeleteCandidates.size === 0) {
+    if (event.type !== "durable") {
       return;
     }
-    const currentElements = new Map(
-      elements.map((element) => [element.id, element]),
-    );
-    this.markdownImageDeleteCandidates.forEach((candidate, elementId) => {
-      const current = currentElements.get(elementId);
-      if (current && !current.isDeleted) {
+    Object.values(event.change.elements).forEach((element) => {
+      if (element.type !== "image" || !element.isDeleted) {
         return;
       }
-      this.markdownImageDeleteCandidates.delete(elementId);
-      this.queueMarkdownImageDeletion(candidate);
+      if (
+        getMarkdownImageCustomData(element)?.source !== "local" ||
+        !this.excalidrawData.hasMarkdownImage(element.fileId)
+      ) {
+        return;
+      }
+      this.queueMarkdownImageDeletion(element);
     });
-    if (
-      this.markdownImageDeleteCandidates.size === 0 &&
-      this.markdownImageDeleteCandidateTimer
-    ) {
-      window.clearTimeout(this.markdownImageDeleteCandidateTimer);
-      this.markdownImageDeleteCandidateTimer = null;
-    }
   }
 
   private queueMarkdownImageDeletion(element: ExcalidrawImageElement): void {
@@ -6040,7 +6009,6 @@ export default class ExcalidrawView
 
   private onChange(et: ExcalidrawElement[], st: AppState, files: BinaryFiles) {
     this.selectedElementActionsMenu?.update(et, st);
-    this.handleDeletedMarkdownImageCandidates(et);
     if (st.activeTool?.type) {
       if (st.activeTool.type === "image") {
         if (
@@ -8543,9 +8511,6 @@ export default class ExcalidrawView
           ref: excalidrawWrapperRef,
           key: "abc",
           tabIndex: 0,
-          onKeyDownCapture: this.excalidrawDIVonKeyDownCapture.bind(this),
-          onPointerDownCapture:
-            this.excalidrawDIVonPointerDownCapture.bind(this),
           onKeyDown: this.excalidrawDIVonKeyDown.bind(this),
           onKeyUp: this.excalidrawDIVonKeyUp.bind(this),
           onPointerDown: this.onPointerDown.bind(this),
@@ -8585,6 +8550,7 @@ export default class ExcalidrawView
             aiEnabled: this.plugin.settings.aiEnabled ?? true,
             onChange: (et, st, files) =>
               this.onChange(et as ExcalidrawElement[], st, files),
+            onIncrement: (event) => this.onExcalidrawIncrement(event),
             onLibraryChange: (libraryItems) =>
               this.onLibraryChange(libraryItems),
             renderTopRightUI: (isMobile: boolean, appState: AppState) =>

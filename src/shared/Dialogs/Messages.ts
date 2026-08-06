@@ -17,8 +17,22 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
-// ${getYouTubeDiv("p9MBFxUoOXQ")}
-  "2.26.0": `
+  "2.26.4": `
+## Fixed
+- Markdown-image edits could be lost in some usage scenarios, 2.26.3 did not provide a broad enough fix. [#2865](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2865)
+
+`,
+  "2.26.3": `
+## Fixed
+- Editing one Markdown image and immediately selecting another to edit could silently drop the first image's contents, both from memory and from the note on disk. Reported on the [Sketch Your Mind community](${URLs.COMMUNITY_SKETCH_YOUR_MIND_COM}/t/excalidraw-2-26-0/7791/2). 🙏
+- Deleting the last local Markdown image via the Excalidraw properties panel's delete button no longer skips the prompt to keep or delete its Markdown content. Deletion detection now covers every trigger (keyboard, Cut, context menu, panel button, or scripts) uniformly.
+
+## New from Excalidraw.com
+- New tool: Bucket fill. See more tools menu, or press B to toggle the bucket fill tool. [#11799](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11799)
+`,
+  "2.26.2": `
+${getYouTubeDiv("p9MBFxUoOXQ")}
+
 ## New
 - Stencil libraries can now be stored as vault files instead of \`data.json\`, improving plugin settings stability. Existing users are offered a safe, merge-first migration. To sync libraries, enable **Sync all other types** in Obsidian Sync. To view library files, enable **Show all file types** in Obsidian settings.
 - Added editable Markdown images.
