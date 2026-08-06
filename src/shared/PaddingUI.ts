@@ -8,6 +8,16 @@ export const initPaddingUI = (_plugin: ExcalidrawPlugin) => {
   plugin = _plugin;
 };
 
+/** Ищет N-е вхождение подстроки (0-based). Возвращает -1 если не найдено. */
+const nthIndexOf = (str: string, search: string, n: number): number => {
+  let idx = -1;
+  for (let i = 0; i <= n; i++) {
+    idx = str.indexOf(search, idx + 1);
+    if (idx === -1) return -1;
+  }
+  return idx;
+};
+
 export const wrapWithPaddingPopup = (
   imgDiv: HTMLDivElement,
   src: string,
@@ -21,6 +31,7 @@ export const wrapWithPaddingPopup = (
   const wrapper = mainDocument.createElement("div");
   wrapper.className = "excalidraw-padding-wrapper";
   wrapper.setAttribute("data-bare-ref", bareRef);
+  wrapper.setAttribute("data-area-id", fnameParts.blockref);
   wrapper.appendChild(imgDiv);
 
   const icon = mainDocument.createElement("span");
@@ -56,6 +67,16 @@ export const wrapWithPaddingPopup = (
     let debounceTimer: number;
     let target = fnameParts.linkpartReference;
 
+    // Определяем порядковый номер этой вставки среди всех вставок
+    // с тем же area=ID в DOM. Порядок в DOM стабильно соответствует
+    // порядку в markdown-файле (элементы рендерятся последовательно).
+    const areaId = fnameParts.blockref;
+    const allWrappers = Array.from(
+      doc.querySelectorAll(`.excalidraw-padding-wrapper[data-area-id="${areaId}"]`),
+    );
+    const occIdx = allWrappers.indexOf(wrapper);
+    const hasOccurrence = occIdx !== -1;
+
     const doSave = async () => {
       const file = plugin.app.workspace.getActiveFile();
       if (!file || !("extension" in file)) return;
@@ -64,9 +85,23 @@ export const wrapWithPaddingPopup = (
       const base = fnameParts.linkpartReference.replace(/,padding=\d+$/, "");
       const replacement = base + newSuffix;
       await plugin.app.vault.process(file, (data: string) => {
-        const idx = data.indexOf(target);
+        let idx: number;
+        let oldLen: number;
+        if (hasOccurrence) {
+          // Ищем N-е вхождение базовой ссылки (без ,padding=) — она
+          // не меняется при смене padding, поэтому индекс стабилен.
+          idx = nthIndexOf(data, base, occIdx);
+          if (idx !== -1) {
+            const afterBase = data.substring(idx + base.length);
+            const padMatch = afterBase.match(/^,padding=\d+/);
+            oldLen = base.length + (padMatch ? padMatch[0].length : 0);
+          }
+        } else {
+          // Запасной путь: точный поиск по linkpartReference
+          idx = data.indexOf(target);
+          oldLen = target.length;
+        }
         if (idx !== -1) {
-          const oldLen = target.length;
           target = replacement;
           return data.substring(0, idx) + replacement + data.substring(idx + oldLen);
         }
