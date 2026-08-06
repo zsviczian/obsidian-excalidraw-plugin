@@ -144,7 +144,6 @@ export const wrapWithPaddingPopup = (
 
     const stepIndex = (v: number) => STEPS.indexOf(valueToStep(v));
 
-    value = valueToStep(value);
     label.textContent = String(value);
 
     const updateKnob = (v: number) => {
