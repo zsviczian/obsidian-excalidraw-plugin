@@ -71,8 +71,10 @@ export const wrapWithPaddingPopup = (
     // с тем же area=ID в DOM. Порядок в DOM стабильно соответствует
     // порядку в markdown-файле (элементы рендерятся последовательно).
     const areaId = fnameParts.blockref;
+    const rootNode = wrapper.getRootNode() as Document;
+    const queryDoc = rootNode.nodeType === 9 ? rootNode : mainDocument;
     const allWrappers = Array.from(
-      doc.querySelectorAll(`.excalidraw-padding-wrapper[data-area-id="${areaId}"]`),
+      queryDoc.querySelectorAll(`.excalidraw-padding-wrapper[data-area-id="${areaId}"]`),
     );
     const occIdx = allWrappers.indexOf(wrapper);
     const hasOccurrence = occIdx !== -1;
