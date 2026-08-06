@@ -43,9 +43,7 @@ ${getYouTubeDiv("p9MBFxUoOXQ")}
   - Local Markdown image copies share the same source. Use **Duplicate selected image** to create an independent image and Markdown body. You can also convert between images and embeddables from the selected element's menu.
 - Image-reference embeds now support an optional \`padding=N\` parameter, e.g.:  \`![[drawing#^area=xyz,padding=10]]\` [#2850](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2850) 🙏[@Evgene-Kopylov](${URLs.GITHUB_COM}/Evgene-Kopylov)
 - Added the Voronoi diagram script. 🙏[@FreeCutter](${URLs.GITHUB_COM}/FreeCutter) [#2845](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2845)
-- Image-reference embeds now accept an optional \`,padding=N\` link parameter to override their export padding, including \`area=\`, \`group=\`, \`frame=\`, and \`clippedframe=\` references. For \`area=\`, the value also controls how far around the target Excalidraw searches for surrounding elements. Use \`padding=0\` for no added margin. [#2850](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_PULL}/2850) 🙏[@Evgene-Kopylov](${URLs.GITHUB_COM}/Evgene-Kopylov)
-- \`area=\` embed previews in reading mode now show a zoom icon on hover. Clicking it opens an interactive slider to adjust the padding value visually, updating the markdown link in real time. Drag the knob or use the mouse wheel (0/10, then step 50 up to 2000).
-- Dragging a single external GIF, WebP, or APNG onto a drawing with the **Import external file** action now offers a choice between inserting it as an image or as an embeddable after importing it to the Vault. [#2848](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2848)
+- Dragging a single external GIF with the **Import external file** action now lets you import it as either an image or an embeddable. [#2848](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2848)
 - Folder and file path settings now provide vault suggestions, warn about missing paths, and can create missing folders after confirmation.
 
 ## New and fixed from Excalidraw.com
