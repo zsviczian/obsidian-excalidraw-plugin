@@ -1081,7 +1081,7 @@ End Obsidian Sheets Plus support
 }
 
 .excalidraw-toolsPanel-dragHandle {
-  height: 22px;
+  height: 26px;
   width: 100%;
   cursor: move;
 }
@@ -1128,13 +1128,13 @@ End Obsidian Sheets Plus support
   background-color: var(--background-primary);
   border-top: 1px solid var(--background-modifier-border);
   z-index: 10;
-
 }
 
 .excalidraw-pen-settings-floating-actions .setting-item {
   border-top: none;
   padding: 0;
 }
+
 /* Editable Markdown images */
 .excalidraw-markdown-image-editor {
   display: flex;
