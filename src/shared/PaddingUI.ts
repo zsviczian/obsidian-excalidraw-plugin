@@ -8,7 +8,7 @@ export const initPaddingUI = (_plugin: ExcalidrawPlugin) => {
   plugin = _plugin;
 };
 
-/** Ищет N-е вхождение подстроки (0-based). Возвращает -1 если не найдено. */
+/** Finds the N-th occurrence of a substring (0-based). Returns -1 if not found. */
 const nthIndexOf = (str: string, search: string, n: number): number => {
   let idx = -1;
   for (let i = 0; i <= n; i++) {
@@ -67,9 +67,8 @@ export const wrapWithPaddingPopup = (
     let debounceTimer: number;
     let target = fnameParts.linkpartReference;
 
-    // Определяем порядковый номер этой вставки среди всех вставок
-    // с тем же area=ID в DOM. Порядок в DOM стабильно соответствует
-    // порядку в markdown-файле (элементы рендерятся последовательно).
+    // Order this embed among all embeds with the same area=ID in DOM.
+    // DOM order matches source markdown order (elements render sequentially).
     const areaId = fnameParts.blockref;
     const rootNode = wrapper.getRootNode() as Document;
     const queryDoc = rootNode.nodeType === 9 ? rootNode : mainDocument;
@@ -90,8 +89,8 @@ export const wrapWithPaddingPopup = (
         let idx: number;
         let oldLen: number;
         if (hasOccurrence) {
-          // Ищем N-е вхождение базовой ссылки (без ,padding=) — она
-          // не меняется при смене padding, поэтому индекс стабилен.
+          // Find the N-th occurrence of the base reference (sans ,padding=).
+          // The base reference is stable across padding changes.
           idx = nthIndexOf(data, base, occIdx);
           if (idx !== -1) {
             const afterBase = data.substring(idx + base.length);
@@ -99,7 +98,7 @@ export const wrapWithPaddingPopup = (
             oldLen = base.length + (padMatch ? padMatch[0].length : 0);
           }
         } else {
-          // Запасной путь: точный поиск по linkpartReference
+          // Fallback: exact match by linkpartReference
           idx = data.indexOf(target);
           oldLen = target.length;
         }
