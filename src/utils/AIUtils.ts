@@ -24,7 +24,6 @@ import {
 } from "src/types/AIUtilTypes";
 import {
   decryptProviderProfiles,
-  decryptStoredAPIKey,
 } from "src/utils/settingsKeyObfuscation";
 import {
   getGeminiImageRequestConfig,
@@ -449,16 +448,6 @@ const joinURL = (baseURL: string, path: string): string => {
   return `${normalizeBaseURL(baseURL)}/${path.replace(/^\/+/, "")}`;
 };
 
-const inferLegacyBaseURL = (url: string, suffix: string): string => {
-  const normalized = normalizeBaseURL(url);
-  if (!normalized) {
-    return "";
-  }
-  return normalized.endsWith(suffix)
-    ? normalized.slice(0, -suffix.length)
-    : normalized;
-};
-
 const inferConfiguredBaseURL = (url: string): string => {
   const normalized = normalizeBaseURL(url);
   if (!normalized) {
@@ -473,13 +462,6 @@ const inferConfiguredBaseURL = (url: string): string => {
     : normalized;
 };
 
-const getResolvedProvider = (
-  request: AIRequest,
-  plugin: ExcalidrawPlugin,
-): AIProvider => {
-  return request.provider ?? plugin.settings.aiProvider ?? "openai";
-};
-
 const getProviderProfiles = (
   plugin: ExcalidrawPlugin,
 ): Record<string, AIProviderProfile> => {
@@ -488,17 +470,9 @@ const getProviderProfiles = (
     ? decryptProviderProfiles(plugin.settings.aiProviderProfiles)
     : {
         OpenAI: {
-          provider: plugin.settings.aiProvider ?? "openai",
-          apiKey: decryptStoredAPIKey(
-            plugin.settings.aiAPIKey || plugin.settings.openAIAPIToken,
-          ),
-          baseURL:
-            inferConfiguredBaseURL(plugin.settings.aiBaseURL) ||
-            inferLegacyBaseURL(
-              plugin.settings.openAIURL,
-              "/chat/completions",
-            ) ||
-            DEFAULT_PROVIDER_BASE_URLS[plugin.settings.aiProvider ?? "openai"],
+          provider: "openai",
+          apiKey: "",
+          baseURL: URLs.API_OPENAI_COM_V1,
         },
       };
 };
@@ -527,36 +501,15 @@ const getModelConfigs = (plugin: ExcalidrawPlugin, kind: "text" | "image") => {
       return plugin.settings.aiTextModelConfigs;
     }
 
-    if (
-      plugin.settings.aiVisionModelConfigs &&
-      Object.keys(plugin.settings.aiVisionModelConfigs).length > 0
-    ) {
-      return Object.fromEntries(
-        Object.entries(plugin.settings.aiVisionModelConfigs).map(
-          ([modelId, config]) => [
-            modelId,
-            {
-              ...config,
-              multimodalSupport: config.multimodalSupport ?? true,
-            },
-          ],
-        ),
-      );
-    }
-
     const defaultTextModel =
       plugin.settings.aiDefaultTextModel ||
-      plugin.settings.aiDefaultVisionModel ||
-      plugin.settings.openAIDefaultTextModel ||
-      plugin.settings.openAIDefaultVisionModel ||
       "gpt-5-mini";
 
     return {
       [defaultTextModel]: {
         providerId: getDefaultProviderProfileId(plugin),
         model: defaultTextModel,
-        endpoint:
-          plugin.settings.aiTextEndpoint || plugin.settings.openAIURL || "",
+        endpoint: "",
         multimodalSupport: true,
       },
     };
@@ -564,18 +517,7 @@ const getModelConfigs = (plugin: ExcalidrawPlugin, kind: "text" | "image") => {
 
   const defaultImageModel =
     plugin.settings.aiDefaultImageGenerationModel ||
-    plugin.settings.openAIDefaultImageGenerationModel ||
     "gpt-image-1";
-  const legacyCapability = plugin.settings.aiImageModelCapabilities?.[
-    defaultImageModel
-  ] as
-    | {
-        supportedSizes?: string[];
-        supportsPromptImageTransforms?: boolean;
-        supportsMaskImageEdits?: boolean;
-        supportsImageEdits?: boolean;
-      }
-    | undefined;
 
   return plugin.settings.aiImageModelConfigs &&
     Object.keys(plugin.settings.aiImageModelConfigs).length > 0
@@ -584,15 +526,9 @@ const getModelConfigs = (plugin: ExcalidrawPlugin, kind: "text" | "image") => {
         [defaultImageModel]: {
           providerId: getDefaultProviderProfileId(plugin),
           model: defaultImageModel,
-          supportedSizes: legacyCapability?.supportedSizes ?? ["1024x1024"],
-          supportsPromptImageTransforms:
-            legacyCapability?.supportsPromptImageTransforms ??
-            legacyCapability?.supportsImageEdits ??
-            true,
-          supportsMaskImageEdits:
-            legacyCapability?.supportsMaskImageEdits ??
-            legacyCapability?.supportsImageEdits ??
-            true,
+          supportedSizes: ["1024x1024"],
+          supportsPromptImageTransforms: true,
+          supportsMaskImageEdits: true,
         },
       };
 };
@@ -611,13 +547,11 @@ const getSelectedModelConfigId = (
           request.textModelId,
           plugin.settings.aiDefaultMultimodalModel,
           plugin.settings.aiDefaultTextModel,
-          plugin.settings.aiDefaultVisionModel,
         ]
       : [
           request.textModelId,
           plugin.settings.aiDefaultTextModel,
           plugin.settings.aiDefaultMultimodalModel,
-          plugin.settings.aiDefaultVisionModel,
         ];
 
     const normalizedConfiguredIds = configuredIds.filter(Boolean);
@@ -682,7 +616,7 @@ const getResolvedModelConfig = (
   const provider =
     request.provider ??
     profile?.provider ??
-    getResolvedProvider(request, plugin);
+    "openai";
   const hasRequestBaseURL = Boolean(request.baseURL?.trim());
   const baseURL = normalizeBaseURL(
     (hasRequestBaseURL ? inferConfiguredBaseURL(request.baseURL) : "") ||
@@ -705,8 +639,7 @@ const getResolvedModelConfig = (
     apiKey:
       request.apiKey?.trim() ||
       profile?.apiKey ||
-      plugin.settings.aiAPIKey ||
-      plugin.settings.openAIAPIToken,
+      "",
     baseURL,
     endpoint,
     model: request.model?.trim() || selectedConfig?.model || "",
@@ -718,9 +651,6 @@ const getResolvedModelConfig = (
   }
 
   const imageConfig = selectedConfig as AIImageModelConfig;
-  const legacySupportsImageEdits = (
-    imageConfig as AIImageModelConfig & { supportsImageEdits?: boolean }
-  ).supportsImageEdits;
   const resolvedModel = request.model?.trim() || selectedConfig?.model || "";
   const geminiSupportedSizes = getGeminiSupportedSizes(provider, resolvedModel);
   return {
@@ -730,11 +660,9 @@ const getResolvedModelConfig = (
         ? geminiSupportedSizes
         : [...(imageConfig.supportedSizes ?? ["1024x1024"])],
     supportsPromptImageTransforms:
-      imageConfig.supportsPromptImageTransforms ??
-      legacySupportsImageEdits ??
-      true,
+      imageConfig.supportsPromptImageTransforms ?? true,
     supportsMaskImageEdits:
-      imageConfig.supportsMaskImageEdits ?? legacySupportsImageEdits ?? true,
+      imageConfig.supportsMaskImageEdits ?? true,
   };
 };
 
@@ -754,10 +682,7 @@ const resolveAIConfig = (
       "image",
       request,
     ) as ResolvedImageConfig,
-    maxTokens:
-      resolvedPlugin.settings.aiDefaultMaxResponseTokens ||
-      resolvedPlugin.settings.aiDefaultMaxTokens ||
-      resolvedPlugin.settings.openAIDefaultTextModelMaxTokens,
+    maxTokens: resolvedPlugin.settings.aiDefaultMaxResponseTokens,
     maxOutgoingTokens: resolvedPlugin.settings.aiDefaultMaxOutgoingTokens || 0,
   };
 };
@@ -2279,10 +2204,6 @@ const requestAI = async (
         "defaultMultimodalModel",
         plugin.settings.aiDefaultMultimodalModel || "<empty>",
       ),
-      debugValueLine(
-        "legacyVisionDefault",
-        plugin.settings.aiDefaultVisionModel || "<empty>",
-      ),
       debugValueLine("resolvedProvider", config.text.provider),
       debugValueLine("resolvedModel", config.text.model),
       debugValueLine("resolvedEndpoint", config.text.endpoint),
@@ -2530,9 +2451,6 @@ export const getAISettings = (
         AIImageModelConfig
       >,
     ).map(([modelId, config]) => {
-      const legacySupportsImageEdits = (
-        config as AIImageModelConfig & { supportsImageEdits?: boolean }
-      ).supportsImageEdits;
       const geminiSupportedSizes = getGeminiSupportedSizes(
         providerProfiles[config.providerId]?.provider,
         config.model,
@@ -2546,11 +2464,9 @@ export const getAISettings = (
               ? geminiSupportedSizes
               : [...(config.supportedSizes ?? ["1024x1024"])],
           supportsPromptImageTransforms:
-            config.supportsPromptImageTransforms ??
-            legacySupportsImageEdits ??
-            true,
+            config.supportsPromptImageTransforms ?? true,
           supportsMaskImageEdits:
-            config.supportsMaskImageEdits ?? legacySupportsImageEdits ?? true,
+            config.supportsMaskImageEdits ?? true,
         },
       ];
     }),
@@ -2583,9 +2499,7 @@ export const getAISettings = (
     defaultMaxOutgoingTokens:
       resolvedPlugin.settings.aiDefaultMaxOutgoingTokens || 0,
     defaultMaxResponseTokens:
-      resolvedPlugin.settings.aiDefaultMaxResponseTokens ||
-      resolvedPlugin.settings.aiDefaultMaxTokens ||
-      resolvedPlugin.settings.openAIDefaultTextModelMaxTokens,
+      resolvedPlugin.settings.aiDefaultMaxResponseTokens,
   };
 };
 
