@@ -6,6 +6,19 @@ import { getDataURL } from "./coreUtils";
 
 export { getEmbeddedFilenameParts } from "./embeddedFilenameParts";
 
+/**
+ * Loads a vault font and creates its data URL and `@font-face` definition.
+ *
+ * @param app - Obsidian application used to resolve and read the font file.
+ * @param fontFileName - Vault link path or font filename to resolve.
+ * @param sourcePath - Vault path from which the font link is resolved.
+ * @param name - Optional font-family name overriding the file basename.
+ * @returns The font definition, resolved family name, and encoded data URL.
+ * Empty strings are returned when the font cannot be resolved.
+ * @remarks
+ * MIME types and CSS format names intentionally preserve the established
+ * extension mapping used by plugin startup and embedded SVG font loading.
+ */
 export async function getFontDataURL(
   app: App,
   fontFileName: string,
@@ -50,11 +63,22 @@ export async function getFontDataURL(
   return { fontDef, fontName, dataURL };
 }
 
+/**
+ * Encodes SVG markup as a base64 data URL.
+ *
+ * @param svg - Serialized SVG markup.
+ * @returns A base64-encoded `data:image/svg+xml` URL.
+ * @remarks
+ * Literal `&nbsp;` entities are converted to spaces before encoding because
+ * they are not valid predefined XML entities. URI encoding is converted to a
+ * byte string before `btoa()` so non-Latin text remains UTF-8 safe.
+ */
 export function svgToBase64(svg: string): string {
   const cleanSvg = svg.replaceAll("&nbsp;", " ");
   const encodedData = encodeURIComponent(cleanSvg).replace(
     /%([0-9A-F]{2})/g,
-    (_match, p1) => String.fromCharCode(parseInt(p1, 16)),
+    (_match: string, hexByte: string) =>
+      String.fromCharCode(parseInt(hexByte, 16)),
   );
   return `data:image/svg+xml;base64,${btoa(encodedData)}`;
 }
@@ -168,6 +192,18 @@ export function getExportPadding(
   return plugin.settings.exportPaddingSVG;
 }
 
+/**
+ * Copies a rectangular canvas region into a new canvas, optionally scaling it.
+ * Based on: https://stackoverflow.com/a/54555834
+ * 
+ * @param srcCanvas - Source canvas to crop.
+ * @param crop - Source rectangle in canvas coordinates.
+ * @param output - Destination dimensions; defaults to the crop dimensions.
+ * @returns A newly created canvas containing the cropped image.
+ * @remarks
+ * This preserves the existing `drawImage()` behavior without clamping the
+ * source rectangle or changing browser interpolation and transparency rules.
+ */
 export function cropCanvas(
   srcCanvas: HTMLCanvasElement,
   crop: { left: number; top: number; width: number; height: number },

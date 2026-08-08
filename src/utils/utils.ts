@@ -6,7 +6,7 @@ import {
   BinaryFiles,
   NormalizedZoomValue,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { errorlog, getDataURL } from "./coreUtils";
+import { errorlog } from "./coreUtils";
 import {
   exportToSvg,
   exportToBlob,
@@ -57,8 +57,11 @@ export { arrayToMap };
 export { errorlog, getDataURL } from "./coreUtils";
 export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 export { getBinaryFileFromDataURL } from "./fileUtils";
+export { cropCanvas } from "./embeddedAssetUtils";
+export { getFontDataURL } from "./embeddedAssetUtils";
 export { getLinkParts } from "./linkUtils";
 export type { LinkParts } from "./linkUtils";
+export { svgToBase64 } from "./embeddedAssetUtils";
 export { wrapTextAtCharLength } from "./textUtils";
 export {
   getEmbeddedFilenameParts,
@@ -213,68 +216,12 @@ export function rotatedDimensions(
   return [bb.minX, bb.minY, bb.maxX - bb.minX, bb.maxY - bb.minY];
 }
 
-export async function getFontDataURL(
-  app: App,
-  fontFileName: string,
-  sourcePath: string,
-  name?: string,
-): Promise<{ fontDef: string; fontName: string; dataURL: string }> {
-  let fontDef: string = "";
-  let fontName = "";
-  let dataURL = "";
-  const f = app.metadataCache.getFirstLinkpathDest(fontFileName, sourcePath);
-  if (f) {
-    const ab = await app.vault.readBinary(f);
-    let mimeType = "";
-    let format = "";
-
-    switch (f.extension) {
-      case "woff":
-        mimeType = "application/font-woff";
-        format = "woff";
-        break;
-      case "woff2":
-        mimeType = "font/woff2";
-        format = "woff2";
-        break;
-      case "ttf":
-        mimeType = "font/ttf";
-        format = "truetype";
-        break;
-      case "otf":
-        mimeType = "font/otf";
-        format = "opentype";
-        break;
-      default:
-        mimeType = "application/octet-stream"; // Fallback if file type is unexpected
-    }
-    fontName = name ?? f.basename;
-    dataURL = await getDataURL(ab, mimeType);
-    const split = dataURL.split(";base64,", 2);
-    dataURL = `${split[0]};charset=utf-8;base64,${split[1]}`;
-    fontDef = ` @font-face {font-family: "${fontName}";src: url("${dataURL}") format("${format}")}`;
-  }
-  return { fontDef, fontName, dataURL };
-}
-
 export function base64StringToBlob(
   base64String: string,
   mimeType: string,
 ): Blob {
   const buffer = Buffer.from(base64String, "base64");
   return new Blob([buffer], { type: mimeType });
-}
-
-export function svgToBase64(svg: string): string {
-  const cleanSvg = svg.replaceAll("&nbsp;", " ");
-
-  // Convert the string to UTF-8 and handle non-Latin1 characters
-  const encodedData = encodeURIComponent(cleanSvg).replace(
-    /%([0-9A-F]{2})/g,
-    (match, p1) => String.fromCharCode(parseInt(p1, 16)),
-  );
-
-  return `data:image/svg+xml;base64,${btoa(encodedData)}`;
 }
 
 /**
@@ -1158,34 +1105,6 @@ export async function getFontMetrics(
     console.error("Error loading font:", error);
     return null;
   }
-}
-
-// Thanks https://stackoverflow.com/a/54555834
-export function cropCanvas(
-  srcCanvas: HTMLCanvasElement,
-  crop: { left: number; top: number; width: number; height: number },
-  output: { width: number; height: number } = {
-    width: crop.width,
-    height: crop.height,
-  },
-) {
-  const dstCanvas = createEl("canvas");
-  dstCanvas.width = output.width;
-  dstCanvas.height = output.height;
-  dstCanvas
-    .getContext("2d")
-    .drawImage(
-      srcCanvas,
-      crop.left,
-      crop.top,
-      crop.width,
-      crop.height,
-      0,
-      0,
-      output.width,
-      output.height,
-    );
-  return dstCanvas;
 }
 
 // Promise.try, adapted from https://github.com/sindresorhus/p-try
