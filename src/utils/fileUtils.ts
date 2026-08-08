@@ -286,6 +286,41 @@ export const getDataURLFromURL = async (
     : (url as DataURL);
 };
 
+/**
+ * Decodes a base64 data URL into binary data, fetching remote URLs first.
+ *
+ * @param dataURL - A base64 data URL or an HTTP, HTTPS, or FTP URL.
+ * @returns The decoded bytes, or `null` when the input cannot be resolved to a
+ * base64 payload.
+ * @remarks
+ * Remote URL handling intentionally preserves the existing MIME inference and
+ * `getDataURLFromURL()` fallback behavior used on desktop and mobile.
+ */
+export async function getBinaryFileFromDataURL(
+  dataURL: string,
+): Promise<ArrayBuffer> {
+  if (!dataURL) {
+    return null;
+  }
+  if (dataURL.match(/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i)) {
+    const hyperlink = dataURL;
+    const extension = getURLImageExtension(hyperlink);
+    const mimeType = getMimeType(extension);
+    dataURL = await getDataURLFromURL(hyperlink, mimeType);
+  }
+  const base64Match = dataURL.match(/base64,(.*)/);
+  if (!base64Match) {
+    return null;
+  }
+  const binaryString = window.atob(base64Match[1]);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
 export const blobToBase64 = async (blob: Blob): Promise<string> => {
   const arrayBuffer = await blob.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);

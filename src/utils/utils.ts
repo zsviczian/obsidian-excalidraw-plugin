@@ -27,19 +27,13 @@ import {
   ImageCrop,
   NonDeletedExcalidrawElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
-import {
-  getDataURLFromURL,
-  getIMGFilename,
-  getMimeType,
-  getURLImageExtension,
-} from "./fileUtils";
+import { getIMGFilename } from "./fileUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import {
   getExcalidrawViews,
   getFileCSSClasses,
   getSafeFrontmatter,
 } from "./obsidianUtils";
-import { cleanBlockRef, cleanSectionHeading } from "./pathUtils";
 import { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 import { arrayToMap } from "./collectionUtils";
 import { updateElementLinksToObsidianLinks } from "./excalidrawAutomateUtils";
@@ -62,6 +56,10 @@ import { isInstanceOfSVGSVGElement } from "./typechecks";
 export { arrayToMap };
 export { errorlog, getDataURL } from "./coreUtils";
 export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
+export { getBinaryFileFromDataURL } from "./fileUtils";
+export { getLinkParts } from "./linkUtils";
+export type { LinkParts } from "./linkUtils";
+export { wrapTextAtCharLength } from "./textUtils";
 export {
   getEmbeddedFilenameParts,
   isImagePartRef,
@@ -208,50 +206,6 @@ export function randomInteger() {
   return Math.floor(random.next() * 2 ** 31);
 }
 
-//https://macromates.com/blog/2006/wrapping-text-with-regular-expressions/
-export function wrapTextAtCharLength(
-  text: string,
-  lineLen: number,
-  forceWrap: boolean = false,
-  tolerance: number = 0,
-): string {
-  if (!lineLen) {
-    return text;
-  }
-  let outstring = "";
-  if (forceWrap) {
-    for (const t of text.split("\n")) {
-      const v = t.match(new RegExp(`(.){1,${lineLen}}`, "g"));
-      outstring += v ? `${v.join("\n")}\n` : "\n";
-    }
-    return outstring.replace(/\n$/, "");
-  }
-
-  //  1                2            3                               4
-  const reg = new RegExp(
-    `(.{1,${lineLen}})(\\s+|$\\n?)|([^\\s]{1,${
-      lineLen + tolerance
-    }})(\\s+|$\\n?)?`,
-    //`(.{1,${lineLen}})(\\s+|$\\n?)|([^\\s]+)(\\s+|$\\n?)`,
-    "gm",
-  );
-  const res = text.matchAll(reg);
-  let parts;
-  while (!(parts = res.next()).done) {
-    outstring += parts.value[1]
-      ? parts.value[1].trimEnd()
-      : parts.value[3].trimEnd();
-    const newLine =
-      (parts.value[2] ? parts.value[2].split("\n").length - 1 : 0) +
-      (parts.value[4] ? parts.value[4].split("\n").length - 1 : 0);
-    outstring += "\n".repeat(newLine);
-    if (newLine === 0) {
-      outstring += "\n";
-    }
-  }
-  return outstring.replace(/\n$/, "");
-}
-
 export function rotatedDimensions(
   element: ExcalidrawElement,
 ): [number, number, number, number] {
@@ -321,31 +275,6 @@ export function svgToBase64(svg: string): string {
   );
 
   return `data:image/svg+xml;base64,${btoa(encodedData)}`;
-}
-
-export async function getBinaryFileFromDataURL(
-  dataURL: string,
-): Promise<ArrayBuffer> {
-  if (!dataURL) {
-    return null;
-  }
-  if (dataURL.match(/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i)) {
-    const hyperlink = dataURL;
-    const extension = getURLImageExtension(hyperlink);
-    const mimeType = getMimeType(extension);
-    dataURL = await getDataURLFromURL(hyperlink, mimeType);
-  }
-  const parts = dataURL.matchAll(/base64,(.*)/g).next();
-  if (!parts.value) {
-    return null;
-  }
-  const binary_string = window.atob(parts.value[1]);
-  const len = binary_string.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binary_string.charCodeAt(i);
-  }
-  return bytes.buffer;
 }
 
 /**
@@ -747,38 +676,6 @@ export function setUIMode(app: App, settings: ExcalidrawSettings) {
   getExcalidrawViews(app, true).forEach((view: ExcalidrawView) =>
     view.setUIMode(uiMode),
   );
-}
-
-export type LinkParts = {
-  original: string;
-  path: string;
-  isBlockRef: boolean;
-  ref: string;
-  width: number;
-  height: number;
-  page: number;
-};
-
-export function getLinkParts(fname: string, file?: TFile): LinkParts {
-  //            1           2    3           4      5
-  const REG = /(^[^#|]*)#?(\^)?([^|]*)?\|?(\d*)x?(\d*)/;
-  const parts = fname.match(REG);
-  const isBlockRef = parts[2] === "^";
-  let page = parseInt(parts[3]?.match(/page=(\d*)/)?.[1]);
-  page = isNaN(page) ? null : page;
-  return {
-    original: fname,
-    path: file && parts[1] === "" ? file.path : parts[1],
-    isBlockRef,
-    ref: parts[3]?.match(/^page=\d*$/i)
-      ? parts[3]
-      : isBlockRef
-        ? cleanBlockRef(parts[3])
-        : cleanSectionHeading(parts[3]),
-    width: parts[4] ? parseInt(parts[4]) : undefined,
-    height: parts[5] ? parseInt(parts[5]) : undefined,
-    page,
-  };
 }
 
 export function isMaskFile(
