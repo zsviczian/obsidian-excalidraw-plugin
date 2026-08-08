@@ -20,6 +20,7 @@ validated, and what remains uncertain.
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
 | Retire legacy AI settings and fallbacks | Complete | Removed the retired migration, schema/default fields, GPT reset, and AI runtime fallbacks without filtering unknown persisted keys; manual testing found no issues |
+| Audit and consolidate duplicate logic | In progress | Removed the unused duplicate `updateFrontmatterInString()` implementation; continue one independently testable helper family at a time |
 | All later phases | Planned | Begin only after the preceding checkpoint is validated |
 
 ### Action log
@@ -32,6 +33,8 @@ validated, and what remains uncertain.
 | 2026-08-08 | Rejected automatic settings sanitization | Because supported settings change frequently, unknown-key removal creates unacceptable forward-version, downgrade, and mixed-device sync risk. Phase 1 is now limited to removing confirmed legacy AI code and fallback fields | Plan updated; no runtime code changed |
 | 2026-08-08 | Completed Phase 1 legacy AI retirement | Removed the legacy migration and stripping helpers from `main.ts`, retired obsolete settings/default fields and the GPT one-off reset, and removed all legacy fallback reads from `AIUtils.ts`. Current provider profiles, model maps, multimodal default, and token settings remain intact. Unknown persisted keys are not sanitized and may round-trip inertly | Repository-wide residue search found no legacy AI runtime references; `ExcalidrawSettings` and `DEFAULT_SETTINGS` each contain the same 183 keys; production build passed after every code slice with the existing 34 circular dependency warnings and no new warnings; `dist/main.js` is 5,097,728 bytes (8,657 bytes smaller than baseline) |
 | 2026-08-08 | Closed the Phase 1 validation checkpoint | Manual testing of the legacy AI retirement found no regressions | User confirmed testing completed with no issues |
+| 2026-08-08 | Consolidated `updateFrontmatterInString()` | Kept the used implementation in `sceneDataUtils.ts` as canonical, added TSDoc describing its intentionally string-based behavior, and removed the identical unreferenced implementation from `utils.ts` | Repository search confirms one definition and one consumer import; `npm run build` passed with the existing 34 circular dependency warnings; bundle size remains 5,097,728 bytes; targeted ESLint reports the existing backlog but no diagnostics on changed lines; `git diff --check` passed |
+| 2026-08-08 | Consolidated `arrayToMap()` | Extracted the identical implementations to side-effect-free `collectionUtils.ts` with TSDoc, then re-exported the same binding from `utils.ts` and `sceneDataUtils.ts` so all existing import paths and callers remain intact. Directly importing `sceneDataUtils.ts` from `utils.ts` was rejected because it would introduce a cycle through `fileUtils`, `main`, and `utils` | Repository search confirms one implementation; `npm run build` passed with the same 34 circular dependency warnings; bundle size is 5,097,611 bytes, 117 bytes smaller than the preceding step; the new module passes targeted ESLint; `npm run madge` remains unavailable because `madge` is not installed; `git diff --check` passed |
 
 ## Executive recommendation
 

@@ -41,6 +41,7 @@ import {
 } from "./obsidianUtils";
 import { cleanBlockRef, cleanSectionHeading } from "./pathUtils";
 import { addAppendUpdateCustomData } from "./elementCustomDataUtils";
+import { arrayToMap } from "./collectionUtils";
 import { updateElementLinksToObsidianLinks } from "./excalidrawAutomateUtils";
 import { CropImage } from "../shared/CropImage";
 import opentype from "opentype.js";
@@ -58,6 +59,7 @@ import { getEmptyDrawingElementsRuntime } from "src/constants/emptydrawing";
 import { makeEntitiesXmlSafe, sanitizedFragment } from "./htmlUtils";
 import { URLs } from "src/constants/safeUrls";
 import { isInstanceOfSVGSVGElement } from "./typechecks";
+export { arrayToMap };
 export { errorlog, getDataURL } from "./coreUtils";
 export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 export {
@@ -1039,38 +1041,6 @@ export function _getContainerElement(
     //return scene.elements.find((el:ExcalidrawElement)=>el.id === element.containerId) ?? null;
   }
   return null;
-}
-
-/**
- * Transforms array of objects containing `id` attribute,
- * or array of ids (strings), into a Map, keyd by `id`.
- */
-export function arrayToMap<T extends { id: string } | string>(
-  items: readonly T[] | Map<string, T>,
-) {
-  if (items instanceof Map) {
-    return items;
-  }
-  return items.reduce((acc: Map<string, T>, element) => {
-    acc.set(typeof element === "string" ? element : element.id, element);
-    return acc;
-  }, new Map());
-}
-
-export function updateFrontmatterInString(
-  data: string,
-  keyValuePairs?: [string, string][],
-): string {
-  if (!data || !keyValuePairs) {
-    return data;
-  }
-  for (const kvp of keyValuePairs) {
-    const r = new RegExp(`${kvp[0]}:\\s.*\\n`, "g");
-    data = data.match(r)
-      ? data.replaceAll(r, `${kvp[0]}: ${kvp[1]}\n`)
-      : data.replace(/^---\n/, `---\n${kvp[0]}: ${kvp[1]}\n`);
-  }
-  return data;
 }
 
 function isHyperLink(link: string) {

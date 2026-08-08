@@ -14,6 +14,9 @@ import {
 } from "./fileUtils";
 import { cleanBlockRef, cleanSectionHeading } from "./pathUtils";
 import { runCompressionWorker } from "src/shared/Workers/compression-worker";
+import { arrayToMap } from "./collectionUtils";
+
+export { arrayToMap };
 
 export function wrapTextAtCharLength(
   text: string,
@@ -213,18 +216,16 @@ export function isVersionNewerThanOther(
   );
 }
 
-export function arrayToMap<T extends { id: string } | string>(
-  items: readonly T[] | Map<string, T>,
-) {
-  if (items instanceof Map) {
-    return items;
-  }
-  return items.reduce((acc: Map<string, T>, element) => {
-    acc.set(typeof element === "string" ? element : element.id, element);
-    return acc;
-  }, new Map());
-}
-
+/**
+ * Updates or inserts simple, single-line properties in serialized frontmatter.
+ *
+ * @param data - Markdown text whose frontmatter should be updated.
+ * @param keyValuePairs - Property names and serialized values to apply.
+ * @returns The updated text, or the original text when there is nothing to do.
+ * @remarks
+ * This intentionally preserves the existing string-based behavior: it does not
+ * parse YAML, and insertion requires an opening `---` followed by a newline.
+ */
 export function updateFrontmatterInString(
   data: string,
   keyValuePairs?: [string, string][],
