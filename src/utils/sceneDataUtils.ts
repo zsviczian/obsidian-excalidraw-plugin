@@ -15,6 +15,7 @@ export { getBinaryFileFromDataURL } from "./fileUtils";
 export { getLinkParts } from "./linkUtils";
 export type { LinkParts } from "./linkUtils";
 export { wrapTextAtCharLength } from "./textUtils";
+export { isVersionNewerThanOther } from "./versionUtils";
 
 export async function compressAsync(data: string): Promise<string> {
   return await runCompressionWorker(data, "compress");
@@ -85,39 +86,6 @@ export function getExportTheme(
   return plugin.settings.exportWithTheme ? theme : "light";
 }
 
-export function isVersionNewerThanOther(
-  version: string,
-  otherVersion: string,
-): boolean {
-  if (!version || !otherVersion) {
-    return true;
-  }
-
-  const v = version.match(/(\d*)\.(\d*)\.(\d*)/);
-  const o = otherVersion.match(/(\d*)\.(\d*)\.(\d*)/);
-
-  return Boolean(
-    v &&
-    v.length === 4 &&
-    o &&
-    o.length === 4 &&
-    !(
-      isNaN(parseInt(v[1])) ||
-      isNaN(parseInt(v[2])) ||
-      isNaN(parseInt(v[3]))
-    ) &&
-    !(
-      isNaN(parseInt(o[1])) ||
-      isNaN(parseInt(o[2])) ||
-      isNaN(parseInt(o[3]))
-    ) &&
-    (parseInt(v[1]) > parseInt(o[1]) ||
-      (parseInt(v[1]) >= parseInt(o[1]) && parseInt(v[2]) > parseInt(o[2])) ||
-      (parseInt(v[1]) >= parseInt(o[1]) &&
-        parseInt(v[2]) >= parseInt(o[2]) &&
-        parseInt(v[3]) > parseInt(o[3]))),
-  );
-}
 
 /**
  * Updates or inserts simple, single-line properties in serialized frontmatter.

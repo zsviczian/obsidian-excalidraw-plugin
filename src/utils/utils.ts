@@ -36,6 +36,7 @@ import {
 } from "./obsidianUtils";
 import { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 import { arrayToMap } from "./collectionUtils";
+import { isVersionNewerThanOther } from "./versionUtils";
 import { updateElementLinksToObsidianLinks } from "./excalidrawAutomateUtils";
 import { CropImage } from "../shared/CropImage";
 import opentype from "opentype.js";
@@ -59,10 +60,13 @@ export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
 export { getBinaryFileFromDataURL } from "./fileUtils";
 export { cropCanvas } from "./embeddedAssetUtils";
 export { getFontDataURL } from "./embeddedAssetUtils";
+export { getImageSize } from "./embeddedAssetUtils";
+export { promiseTry } from "./embeddedAssetUtils";
 export { getLinkParts } from "./linkUtils";
 export type { LinkParts } from "./linkUtils";
 export { svgToBase64 } from "./embeddedAssetUtils";
 export { wrapTextAtCharLength } from "./textUtils";
+export { isVersionNewerThanOther };
 export {
   getEmbeddedFilenameParts,
   isImagePartRef,
@@ -422,20 +426,6 @@ export async function getQuickImagePreview(
     default:
       return await plugin.app.vault.read(file);
   }
-}
-
-export async function getImageSize(
-  src: string,
-): Promise<{ height: number; width: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      //console.log({ height: img.naturalHeight, width: img.naturalWidth, img});
-      resolve({ height: img.naturalHeight, width: img.naturalWidth });
-    };
-    img.onerror = reject;
-    img.src = src;
-  });
 }
 
 export function scaleLoadedImage<T extends SceneWithElements>(
@@ -822,40 +812,6 @@ export function getPNGScale(
   return plugin.settings.pngExportScale as NormalizedZoomValue;
 }
 
-export function isVersionNewerThanOther(
-  version: string,
-  otherVersion: string,
-): boolean {
-  if (!version || !otherVersion) {
-    return true;
-  }
-
-  const v = version.match(/(\d*)\.(\d*)\.(\d*)/);
-  const o = otherVersion.match(/(\d*)\.(\d*)\.(\d*)/);
-
-  return Boolean(
-    v &&
-    v.length === 4 &&
-    o &&
-    o.length === 4 &&
-    !(
-      isNaN(parseInt(v[1])) ||
-      isNaN(parseInt(v[2])) ||
-      isNaN(parseInt(v[3]))
-    ) &&
-    !(
-      isNaN(parseInt(o[1])) ||
-      isNaN(parseInt(o[2])) ||
-      isNaN(parseInt(o[3]))
-    ) &&
-    (parseInt(v[1]) > parseInt(o[1]) ||
-      (parseInt(v[1]) >= parseInt(o[1]) && parseInt(v[2]) > parseInt(o[2])) ||
-      (parseInt(v[1]) >= parseInt(o[1]) &&
-        parseInt(v[2]) >= parseInt(o[2]) &&
-        parseInt(v[3]) > parseInt(o[3]))),
-  );
-}
-
 export function fragWithHTML(html: string) {
   return createFragment((frag) => frag.appendChild(sanitizedFragment(html)));
 }
@@ -1105,16 +1061,6 @@ export async function getFontMetrics(
     console.error("Error loading font:", error);
     return null;
   }
-}
-
-// Promise.try, adapted from https://github.com/sindresorhus/p-try
-export async function promiseTry<TValue, TArgs extends unknown[]>(
-  fn: (...args: TArgs) => PromiseLike<TValue> | TValue,
-  ...args: TArgs
-): Promise<TValue> {
-  return new Promise((resolve) => {
-    resolve(fn(...args));
-  });
 }
 
 // extending the missing types

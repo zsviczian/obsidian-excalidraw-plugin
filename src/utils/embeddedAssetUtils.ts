@@ -83,6 +83,16 @@ export function svgToBase64(svg: string): string {
   return `data:image/svg+xml;base64,${btoa(encodedData)}`;
 }
 
+/**
+ * Loads an image source and reports its intrinsic dimensions.
+ *
+ * @param src - Image URL, blob URL, or data URL accepted by `HTMLImageElement`.
+ * @returns The image's natural width and height after it loads.
+ * @throws Rejects with the browser image error when loading fails.
+ * @remarks
+ * This intentionally preserves native image loading behavior without adding a
+ * timeout, cross-origin mode, or rendered-size fallback.
+ */
 export async function getImageSize(
   src: string,
 ): Promise<{ height: number; width: number }> {
@@ -231,6 +241,14 @@ export function cropCanvas(
   return dstCanvas;
 }
 
+/**
+ * Invokes a synchronous or asynchronous function through a promise boundary.
+ *
+ * @param fn - Function to invoke.
+ * @param args - Arguments passed to `fn`.
+ * @returns A promise that adopts the function's returned value or thenable.
+ * @remarks Synchronous exceptions thrown by `fn` become promise rejections.
+ */
 export async function promiseTry<TValue, TArgs extends unknown[]>(
   fn: (...args: TArgs) => PromiseLike<TValue> | TValue,
   ...args: TArgs
