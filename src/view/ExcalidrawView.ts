@@ -222,7 +222,7 @@ import { CanvasNodeFactory } from "./managers/CanvasNodeFactory";
 import { EmbeddableMenu } from "./components/menu/EmbeddableActionsMenu";
 import { useDefaultExcalidrawFrame } from "../utils/customEmbeddableUtils";
 import { UniversalInsertFileModal } from "../shared/Dialogs/UniversalInsertFileModal";
-import { getMermaidText, shouldRenderMermaid } from "../utils/mermaidUtils";
+import { shouldRenderMermaid } from "../utils/mermaidUtils";
 import { nanoid } from "nanoid";
 import { CustomMutationObserver, DEBUGGING, log } from "../utils/debugHelper";
 import {
@@ -247,12 +247,15 @@ import {
   MarkdownBlockCacheEntry,
   MarkdownViewOpenState,
   Position,
+  SelectedElementWithLink,
+  SelectedImage,
   StencilLibraryData,
   ViewSemaphores,
 } from "../types/excalidrawViewTypes";
 import { DropManager } from "./managers/DropManager";
 import { ViewExportManager } from "./managers/ViewExportManager";
 import { ViewFullscreenManager } from "./managers/ViewFullscreenManager";
+import { ViewLinkNavigationManager } from "./managers/ViewLinkNavigationManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 import { PageOrientation, PageSize } from "src/types/exportUtilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
@@ -286,9 +289,6 @@ const RE_TAIL = /^## Drawing\n[\s\S]*\n%%$(.*)/ms;
 
 declare const PLUGIN_VERSION: string;
 declare const mainDocument: Document;
-
-type SelectedElementWithLink = { id: string; text: string };
-type SelectedImage = { id: string; fileId: FileId };
 
 interface WorkspaceItemExt extends WorkspaceItem {
   containerEl: HTMLElement;
@@ -400,6 +400,7 @@ export default class ExcalidrawView
   private dropManager: DropManager;
   private exportManager: ViewExportManager;
   private fullscreenManager: ViewFullscreenManager;
+  private linkNavigationManager: ViewLinkNavigationManager;
   public hoverPopover: HoverPopover | null = null;
   private freedrawLastActiveTimestamp: number = 0;
   public exportDialog: ExportDialog | null = null;
@@ -538,6 +539,34 @@ export default class ExcalidrawView
       sceneRemoveInternalLinks,
     });
     this.fullscreenManager = new ViewFullscreenManager(this);
+    this.linkNavigationManager = new ViewLinkNavigationManager(this, {
+      REGEX_LINK,
+      REG_LINKINDEX_HYPERLINK,
+      NewFileActions,
+      linkPrompt,
+      getMarkdownImageSource,
+      isMarkdownImageElement,
+      splitFolderAndFilename,
+      getTextElementAtPointer,
+      anyModifierKeysPressed,
+      emulateKeysForLinkClick,
+      linkClickModifierType,
+      getLeaf,
+      openLeaf,
+      getExcalidrawFileForwardLinks,
+      openExternalLink,
+      parseObsidianLink,
+      arrayToMap,
+      errorlog,
+      getContainerElementForText: (element) =>
+        _getContainerElement(element, {
+          elements: this.excalidrawAPI.getSceneElements(),
+        }),
+      getSelectedTextElement: () => this.getSelectedTextElement(),
+      getSelectedImageElement: () => this.getSelectedImageElement(),
+      getSelectedElementWithLink: () => this.getSelectedElementWithLink(),
+      forceSaveIfRequired: () => this.forceSaveIfRequired(),
+    });
     this.setHookServer();
     this.dropManager = new DropManager(this);
   }
@@ -1279,42 +1308,18 @@ export default class ExcalidrawView
     this.fullscreenManager.exitFullscreen();
   }
 
-  removeLinkTooltip() {
-    const tooltip = this.ownerDocument.body.querySelector(
-      "body>div.excalidraw-tooltip,div.excalidraw-tooltip--visible",
-    );
-    if (tooltip) {
-      tooltip.classList.remove("excalidraw-tooltip--visible");
-    }
+  /** Removes the active link tooltip through the navigation manager. */
+  removeLinkTooltip(): void {
+    this.linkNavigationManager.removeLinkTooltip();
   }
 
+  /** Invokes the link-click hook through the navigation manager. */
   handleLinkHookCall(
     element: ExcalidrawElement,
     link: string,
     event: MouseEvent | null,
   ): boolean {
-    if (this.getHookServer().onLinkClickHook) {
-      try {
-        if (
-          !this.getHookServer().onLinkClickHook(
-            element,
-            link,
-            event,
-            this,
-            this.getHookServer(),
-          )
-        ) {
-          return true;
-        }
-      } catch (e) {
-        errorlog({
-          where: "ExcalidrawView.onLinkOpen",
-          fn: "getHookServer().onLinkClickHook",
-          error: e,
-        });
-      }
-    }
-    return false;
+    return this.linkNavigationManager.handleLinkHookCall(element, link, event);
   }
 
   private getLinkTextForElement(
@@ -1326,191 +1331,29 @@ export default class ExcalidrawView
     selectedElement: ExcalidrawElement;
     isLinearElement: boolean;
   } {
-    if (selectedText?.id || selectedElementWithLink?.id) {
-      let selectedTextElement: ExcalidrawTextElement = selectedText.id
-        ? (this.excalidrawAPI
-            .getSceneElements()
-            .find(
-              (el: ExcalidrawElement) => el.id === selectedText.id,
-            ) as ExcalidrawTextElement)
-        : null;
-
-      let selectedElement = selectedElementWithLink.id
-        ? (this.excalidrawAPI
-            .getSceneElements()
-            .find(
-              (el: ExcalidrawElement) => el.id === selectedElementWithLink.id,
-            ) as ExcalidrawElement)
-        : null;
-
-      //if the user clicked on the label of an arrow then the label will be captured in selectedElement, because
-      //Excalidraw returns the container as the selected element. But in this case we want this to be treated as the
-      //text element, as the assumption is, if the user wants to invoke the linear element editor for an arrow that has
-      //a label with a link, then he/she should rather CTRL+click on the arrow line, not the label. CTRL+Click on
-      //the label is an indication of wanting to navigate.
-      if (!selectedTextElement && selectedElement?.type === "text") {
-        const container = getContainerElement(
-          selectedElement,
-          arrayToMap(this.excalidrawAPI.getSceneElements()) as ElementsMap,
-        );
-        if (container?.type === "arrow") {
-          const x = getTextElementAtPointer(this.currentPosition, this);
-          if (x?.id === selectedElement.id) {
-            selectedTextElement = selectedElement;
-            selectedElement = null;
-          }
-        }
-      }
-
-      //CTRL click on a linear element with a link will navigate instead of line editor
-      if (
-        !allowLinearElementClick &&
-        ["arrow", "line"].includes(selectedElement?.type)
-      ) {
-        return {
-          linkText: selectedElement.link,
-          selectedElement,
-          isLinearElement: true,
-        };
-      }
-
-      if (!selectedTextElement && selectedElement?.type === "text") {
-        if (!allowLinearElementClick) {
-          //CTRL click on a linear element with a link will navigate instead of line editor
-          const container = getContainerElement(
-            selectedElement,
-            arrayToMap(this.excalidrawAPI.getSceneElements()) as ElementsMap,
-          );
-          if (container?.type !== "arrow") {
-            selectedTextElement = selectedElement;
-            selectedElement = null;
-          } else {
-            const x = this.processLinkText(
-              selectedElement.rawText,
-              selectedElement,
-              container,
-              false,
-            );
-            return {
-              linkText: x.linkText,
-              selectedElement: container,
-              isLinearElement: true,
-            };
-          }
-        } else {
-          selectedTextElement = selectedElement;
-          selectedElement = null;
-        }
-      }
-
-      const linkCandidates: string[] = [];
-      const addCandidate = (value?: string | null) => {
-        if (value && value.trim().length > 0) {
-          linkCandidates.push(value);
-        }
-      };
-
-      if (selectedTextElement) {
-        const textBody =
-          this.textMode === TextMode.parsed
-            ? this.excalidrawData.getRawText(selectedTextElement.id)
-            : (selectedTextElement.rawText ??
-              selectedTextElement.text ??
-              selectedText.text);
-        addCandidate(textBody);
-        addCandidate(selectedTextElement.link);
-
-        if (!selectedElement && selectedTextElement.containerId) {
-          const container = _getContainerElement(selectedTextElement, {
-            elements: this.excalidrawAPI.getSceneElements(),
-          });
-          addCandidate(container?.link);
-        }
-      } else {
-        const rawTextCandidate = selectedText?.id
-          ? this.textMode === TextMode.parsed
-            ? this.excalidrawData.getRawText(selectedText.id)
-            : selectedText.text
-          : selectedText?.text;
-        addCandidate(rawTextCandidate);
-      }
-
-      addCandidate(selectedElement?.link ?? selectedElementWithLink?.text);
-
-      const linkText = Array.from(new Set(linkCandidates)).join(" ");
-
-      return {
-        linkText: linkText || null,
-        selectedElement: selectedElement ?? selectedTextElement,
-        isLinearElement: false,
-      };
-    }
-    return { linkText: null, selectedElement: null, isLinearElement: false };
+    return this.linkNavigationManager.getLinkTextForElement(
+      selectedText,
+      selectedElementWithLink,
+      allowLinearElementClick,
+    );
   }
 
+  /** Resolves raw element text through the navigation manager. */
   processLinkText(
     linkText: string,
     selectedTextElement: ExcalidrawTextElement,
     selectedElement: ExcalidrawElement,
     shouldOpenLink: boolean = true,
   ) {
-    if (!linkText) {
-      return { linkText: null, selectedElement: null };
-    }
-
-    if (linkText.startsWith("#")) {
-      return {
-        linkText,
-        selectedElement: selectedTextElement ?? selectedElement,
-      };
-    }
-
-    const maybeObsidianLink = parseObsidianLink(
+    return this.linkNavigationManager.processLinkText(
       linkText,
-      this.app,
+      selectedTextElement,
+      selectedElement,
       shouldOpenLink,
     );
-    if (typeof maybeObsidianLink === "string") {
-      linkText = maybeObsidianLink;
-    }
-
-    const partsArray = REGEX_LINK.getResList(linkText);
-    if (!linkText || partsArray.length === 0) {
-      //the container link takes precedence over the text link
-      if (selectedTextElement?.containerId) {
-        const container = _getContainerElement(selectedTextElement, {
-          elements: this.excalidrawAPI.getSceneElements(),
-        });
-        if (container) {
-          linkText = container.link;
-
-          if (linkText?.startsWith("#")) {
-            return {
-              linkText,
-              selectedElement: selectedTextElement ?? selectedElement,
-            };
-          }
-
-          const maybeObsidianLink = parseObsidianLink(
-            linkText,
-            this.app,
-            shouldOpenLink,
-          );
-          if (typeof maybeObsidianLink === "string") {
-            linkText = maybeObsidianLink;
-          }
-        }
-      }
-      if (!linkText || partsArray.length === 0) {
-        linkText = selectedTextElement?.link;
-      }
-    }
-    return {
-      linkText,
-      selectedElement: selectedTextElement ?? selectedElement,
-    };
   }
 
+  /** Performs the configured link action through the navigation manager. */
   async linkClick(
     ev: MouseEvent | null,
     selectedText: SelectedElementWithLink,
@@ -1518,309 +1361,24 @@ export default class ExcalidrawView
     selectedElementWithLink: SelectedElementWithLink,
     keys?: ModifierKeys,
     allowLinearElementClick: boolean = false,
-  ) {
-    if (!selectedText) {
-      selectedText = { id: null, text: null };
-    }
-    if (!selectedImage) {
-      selectedImage = { id: null, fileId: null };
-    }
-    if (!selectedElementWithLink) {
-      selectedElementWithLink = { id: null, text: null };
-    }
-    if (!ev && !keys) {
-      keys = emulateKeysForLinkClick("new-tab");
-    }
-    if (ev && !keys) {
-      keys = {
-        shiftKey: ev.shiftKey,
-        ctrlKey: ev.ctrlKey,
-        metaKey: ev.metaKey,
-        altKey: ev.altKey,
-      };
-    }
-
-    const linkClickType = linkClickModifierType(keys);
-
-    let file = null;
-    let subpath: string = null;
-    let { linkText, selectedElement, isLinearElement } =
-      this.getLinkTextForElement(
-        selectedText,
-        selectedElementWithLink,
-        allowLinearElementClick,
-      );
-
-    //if (selectedText?.id || selectedElementWithLink?.id) {
-    if (selectedElement) {
-      if (!allowLinearElementClick && linkText && isLinearElement) {
-        if (this.semaphores.warnAboutLinearElementLinkClick) {
-          new Notice(t("LINEAR_ELEMENT_LINK_CLICK_ERROR"), 20000);
-          this.semaphores.warnAboutLinearElementLinkClick = false;
-        }
-        return;
-      }
-      if (!linkText) {
-        return;
-      }
-      linkText = linkText.replaceAll("\n", ""); //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/187
-
-      if (openExternalLink(linkText, this.app)) {
-        return;
-      }
-
-      const maybeObsidianLink = parseObsidianLink(linkText, this.app);
-      if (typeof maybeObsidianLink === "boolean" && maybeObsidianLink) {
-        return;
-      }
-      if (typeof maybeObsidianLink === "string") {
-        linkText = maybeObsidianLink;
-      }
-
-      const result = await linkPrompt(linkText, this.app, this);
-      if (!result) {
-        return;
-      }
-      [file, linkText, subpath] = result;
-
-      if (this.handleLinkHookCall(selectedElement, linkText, ev)) {
-        return;
-      }
-    }
-    if (selectedImage?.id) {
-      const imageElement = this.getScene().elements.find(
-        (el: ExcalidrawElement) => el.id === selectedImage.id,
-      ) as ExcalidrawImageElement;
-      if (
-        linkClickType === "md-properties" &&
-        this.excalidrawData.hasFile(selectedImage.fileId)
-      ) {
-        this.updateScene({ appState: { contextMenu: null } });
-        void this.openEmbeddedLinkEditor(selectedImage.id);
-        return;
-      }
-      const markdownImageSource = isMarkdownImageElement(this, imageElement)
-        ? await getMarkdownImageSource(this, imageElement)
-        : null;
-      if (markdownImageSource) {
-        const externalSourceLink =
-          markdownImageSource.source === "external" &&
-          markdownImageSource.embeddedFile
-            ? markdownImageSource.embeddedFile.linkParts.original
-            : null;
-        const result = await linkPrompt(
-          `${externalSourceLink ? `[[${externalSourceLink}]] ` : ""}${markdownImageSource.markdown}`,
-          this.app,
-          this,
-        );
-        if (!result) {
-          return;
-        }
-        [file, linkText, subpath] = result;
-        if (
-          markdownImageSource.source === "external" &&
-          markdownImageSource.embeddedFile?.file &&
-          linkText
-        ) {
-          file =
-            linkText === markdownImageSource.embeddedFile.linkParts.path
-              ? markdownImageSource.embeddedFile.file
-              : this.app.metadataCache.getFirstLinkpathDest(
-                  linkText,
-                  markdownImageSource.embeddedFile.file.path,
-                );
-        }
-      }
-      if (
-        !markdownImageSource &&
-        this.excalidrawData.hasEquation(selectedImage.fileId)
-      ) {
-        this.updateScene({ appState: { contextMenu: null } });
-        void this.openLaTeXEditor(selectedImage.id);
-        return;
-      }
-      if (
-        !markdownImageSource &&
-        (this.excalidrawData.hasMermaid(selectedImage.fileId) ||
-          getMermaidText(imageElement))
-      ) {
-        if (shouldRenderMermaid) {
-          const api = this.excalidrawAPI;
-          api.updateScene({
-            appState: { openDialog: { name: "ttd", tab: "mermaid" } },
-            captureUpdate: CaptureUpdateAction.NEVER,
-          });
-        }
-        return;
-      }
-
-      if (!markdownImageSource) {
-        await this.save(false); //in case pasted images haven't been saved yet
-      }
-      if (
-        !markdownImageSource &&
-        this.excalidrawData.hasFile(selectedImage.fileId)
-      ) {
-        const fileId = selectedImage.fileId;
-        const ef = this.excalidrawData.getFile(fileId);
-        if (
-          !ef.isHyperLink &&
-          !ef.isLocalLink &&
-          ef.file &&
-          linkClickType === "md-properties"
-        ) {
-          this.updateScene({ appState: { contextMenu: null } });
-          void this.openEmbeddedLinkEditor(selectedImage.id);
-          return;
-        }
-        let secondOrderLinks: string = " ";
-
-        const backlinks = this.app.metadataCache?.getBacklinksForFile(
-          ef.file,
-        )?.data;
-        const secondOrderLinksSet = new Set<string>();
-        if (backlinks && this.plugin.settings.showSecondOrderLinks) {
-          const linkPaths = Object.keys(backlinks)
-            .filter((path) => path !== this.file.path && path !== ef.file.path)
-            .map((path) => {
-              const filepathParts = splitFolderAndFilename(path);
-              if (secondOrderLinksSet.has(path)) {
-                return "";
-              }
-              secondOrderLinksSet.add(path);
-              return `[[${path}|${t("LINKLIST_SECOND_ORDER_LINK")}: ${filepathParts.basename}]]`;
-            });
-          secondOrderLinks += linkPaths.join(" ");
-        }
-
-        if (
-          this.plugin.settings.showSecondOrderLinks &&
-          this.plugin.isExcalidrawFile(ef.file)
-        ) {
-          secondOrderLinks += getExcalidrawFileForwardLinks(
-            this.app,
-            ef.file,
-            secondOrderLinksSet,
-          );
-        }
-
-        const linkString =
-          (ef.isHyperLink || ef.isLocalLink
-            ? `[](${ef.hyperlink}) `
-            : `[[${ef.linkParts.original}]] `) +
-          (imageElement.link
-            ? imageElement.link.match(/$cmd:\/\/.*/) ||
-              imageElement.link.match(REG_LINKINDEX_HYPERLINK)
-              ? `[](${imageElement.link})`
-              : imageElement.link
-            : "");
-
-        const result = await linkPrompt(
-          linkString + secondOrderLinks,
-          this.app,
-          this,
-        );
-        if (!result) {
-          return;
-        }
-        [file, linkText, subpath] = result;
-      }
-    }
-
-    if (!linkText) {
-      if (allowLinearElementClick) {
-        return;
-      }
-      new Notice(t("LINK_BUTTON_CLICK_NO_TEXT"), 20000);
-      return;
-    }
-
-    const id =
-      selectedImage.id ?? selectedText.id ?? selectedElementWithLink.id;
-    const el = this.excalidrawAPI
-      .getSceneElements()
-      .filter((el: ExcalidrawElement) => el.id === id)[0];
-    if (this.handleLinkHookCall(el, linkText, ev)) {
-      return;
-    }
-
-    try {
-      if (linkClickType !== "active-pane" && this.isFullscreen()) {
-        this.exitFullscreen();
-      }
-      if (!file) {
-        new NewFileActions({
-          plugin: this.plugin,
-          path: linkText,
-          keys,
-          view: this,
-          sourceElement: el,
-        }).open();
-        return;
-      }
-      if (this.linksAlwaysOpenInANewPane && !anyModifierKeysPressed(keys)) {
-        keys = emulateKeysForLinkClick("new-pane");
-      }
-
-      try {
-        const drawIO = this.app.plugins.plugins["drawio-obsidian"];
-        if (drawIO && drawIO._loaded) {
-          if (file.extension === "svg") {
-            const svg = await this.app.vault.cachedRead(file);
-            if (/(&lt;|<)(mxfile|mxgraph)/i.test(svg)) {
-              const leaf = getLeaf(this.plugin, this.leaf, keys);
-              void leaf.setViewState({
-                type: "diagram-edit",
-                state: {
-                  file: file.path,
-                },
-              });
-              return;
-            }
-          }
-        }
-      } catch (e) {
-        console.error(e);
-      }
-
-      //if link will open in the same pane I want to save the drawing before opening the link
-      await this.forceSaveIfRequired();
-      const { promise } = openLeaf({
-        plugin: this.plugin,
-        fnGetLeaf: () => getLeaf(this.plugin, this.leaf, keys),
-        file,
-        openState: {
-          active: !this.linksAlwaysOpenInANewPane,
-          ...(subpath ? { eState: { subpath } } : {}),
-        },
-      }); //if file exists open file and jump to reference
-      await promise;
-      //view.app.workspace.setActiveLeaf(leaf, true, true); //0.15.4 ExcaliBrain focus issue
-    } catch (e) {
-      new Notice(e, 4000);
-    }
-  }
-
-  async handleLinkClick(
-    ev: MouseEvent | ModifierKeys,
-    allowLinearElementClick: boolean = false,
-  ) {
-    this.removeLinkTooltip();
-
-    const selectedText = this.getSelectedTextElement();
-    const selectedImage = selectedText?.id
-      ? null
-      : this.getSelectedImageElement();
-    const selectedElementWithLink =
-      selectedImage?.id || selectedText?.id
-        ? null
-        : this.getSelectedElementWithLink();
-    void this.linkClick(
-      ev instanceof MouseEvent ? ev : null,
+  ): Promise<void> {
+    return this.linkNavigationManager.linkClick(
+      ev,
       selectedText,
       selectedImage,
       selectedElementWithLink,
-      ev instanceof MouseEvent ? null : ev,
+      keys,
+      allowLinearElementClick,
+    );
+  }
+
+  /** Resolves the current selection through the navigation manager. */
+  async handleLinkClick(
+    ev: MouseEvent | ModifierKeys,
+    allowLinearElementClick: boolean = false,
+  ): Promise<void> {
+    return this.linkNavigationManager.handleLinkClick(
+      ev,
       allowLinearElementClick,
     );
   }
