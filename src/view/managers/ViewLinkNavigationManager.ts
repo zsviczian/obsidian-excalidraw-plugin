@@ -575,31 +575,6 @@ export class ViewLinkNavigationManager {
         keys = this.dependencies.emulateKeysForLinkClick("new-pane");
       }
 
-      try {
-        const drawIO = this.view.app.plugins.plugins["drawio-obsidian"];
-        if (drawIO && drawIO._loaded) {
-          if (file.extension === "svg") {
-            const svg = await this.view.app.vault.cachedRead(file);
-            if (/(&lt;|<)(mxfile|mxgraph)/i.test(svg)) {
-              const leaf = this.dependencies.getLeaf(
-                this.view.plugin,
-                this.view.leaf,
-                keys,
-              );
-              void leaf.setViewState({
-                type: "diagram-edit",
-                state: {
-                  file: file.path,
-                },
-              });
-              return;
-            }
-          }
-        }
-      } catch (e) {
-        console.error(e);
-      }
-
       // Save before replacing this pane with the link destination.
       await this.dependencies.forceSaveIfRequired();
       const { promise } = this.dependencies.openLeaf({
