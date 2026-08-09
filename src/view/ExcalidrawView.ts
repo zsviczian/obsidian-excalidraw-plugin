@@ -84,10 +84,7 @@ import {
 import {
   createFileAndAwaitMetacacheUpdate,
   createOrOverwriteFile,
-  download,
-  exportImageToFile,
   getDataURLFromURL,
-  getIMGFilename,
   getMimeType,
   getNewUniqueFilepath,
   getURLImageExtension,
@@ -254,20 +251,9 @@ import {
   ViewSemaphores,
 } from "../types/excalidrawViewTypes";
 import { DropManager } from "./managers/DropManager";
+import { ViewExportManager } from "./managers/ViewExportManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
-import {
-  exportPNG,
-  exportPNGToClipboard,
-  exportSVG,
-  exportToPDF,
-  getMarginValue,
-  getPageDimensions,
-} from "src/utils/exportUtils";
-import {
-  PageOrientation,
-  PageSize,
-  ExportSettings,
-} from "src/types/exportUtilTypes";
+import { PageOrientation, PageSize } from "src/types/exportUtilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
 import { updateElementIdsInScene } from "src/utils/excalidrawSceneUtils";
 import { FileData } from "src/types/embeddedFileLoaderTypes";
@@ -415,6 +401,7 @@ export default class ExcalidrawView
   implements HoverParent
 {
   private dropManager: DropManager;
+  private exportManager: ViewExportManager;
   public hoverPopover: HoverPopover | null = null;
   private freedrawLastActiveTimestamp: number = 0;
   public exportDialog: ExportDialog | null = null;
@@ -539,6 +526,20 @@ export default class ExcalidrawView
     this._plugin = plugin;
     this.excalidrawData = new ExcalidrawData(plugin, this);
     this.canvasNodeFactory = new CanvasNodeFactory(this);
+    this.exportManager = new ViewExportManager(this, {
+      getOrCreateExportDialog: () => this.getOrCreateExportDialog(),
+      createEmbeddedFilesLoader: (isDark) =>
+        new EmbeddedFilesLoader(this.plugin, isDark),
+      getExportInternalLinks,
+      getExportPadding,
+      getExportTheme,
+      getPNG,
+      getPNGScale,
+      getSVG,
+      getWithBackground,
+      isMaskFile,
+      sceneRemoveInternalLinks,
+    });
     this.setHookServer();
     this.dropManager = new DropManager(this);
   }
@@ -591,500 +592,134 @@ export default class ExcalidrawView
     }, 1500);
   }
 
+  private getOrCreateExportDialog(): ExportDialog | null {
+    if (!this.file) {
+      return null;
+    }
+    if (!this.exportDialog) {
+      this.exportDialog = new ExportDialog(this.plugin, this, this.file);
+    }
+    return this.exportDialog;
+  }
+
+  /** Preserves the public view API while delegating raw scene persistence. */
   public saveExcalidraw(scene?: ExcalidrawViewScene) {
-    if (!scene) {
-      if (!this.excalidrawAPI) {
-        return;
-      }
-      scene = this.getScene();
-    }
-    const filepath = `${this.file?.path.substring(
-      0,
-      this.file.path.lastIndexOf(".md"),
-    )}.excalidraw`;
-    void exportImageToFile(
-      this,
-      filepath,
-      JSON.stringify(scene, null, "\t"),
-      ".excalidraw",
-    );
+    return this.exportManager.saveExcalidraw(scene);
   }
 
+  /** Preserves the public view API while delegating raw scene export. */
   public async exportExcalidraw(selectedOnly?: boolean) {
-    if (!this.excalidrawAPI || !this.file) {
-      return;
-    }
-    if (DEVICE.isMobile) {
-      const location = await new FileAndFolderSelectorModal(this.app, {
-        title: t("FILE_AND_FOLDER_SELECTOR_EXPORT_TITLE"),
-        folderLabel: t("FILE_AND_FOLDER_SELECTOR_FOLDER"),
-        fileNameLabel: t("FILE_AND_FOLDER_SELECTOR_FILENAME"),
-        submitButtonText: t("FILE_AND_FOLDER_SELECTOR_EXPORT"),
-        folderPath: splitFolderAndFilename(this.file.path).folderpath,
-        fileName: `${this.file.basename}.excalidraw`,
-      }).start();
-      if (!location) {
-        return;
-      }
-      const filename = location.fileName.toLowerCase().endsWith(".excalidraw")
-        ? location.fileName
-        : `${location.fileName}.excalidraw`;
-      const path = getNewUniqueFilepath(
-        this.app.vault,
-        filename,
-        location.folderPath,
-      );
-      const file = await exportImageToFile(
-        this,
-        path,
-        JSON.stringify(this.getScene(), null, "\t"),
-        ".excalidraw",
-      );
-      new Notice(`Exported to ${file?.name}`, 6000);
-      return;
-    }
-    download(
-      "data:text/plain;charset=utf-8",
-      encodeURIComponent(
-        JSON.stringify(this.getScene(selectedOnly), null, "\t"),
-      ),
-      `${this.file.basename}.excalidraw`,
+    return this.exportManager.exportExcalidraw(selectedOnly);
+  }
+
+  /** Resolves export theme through the view-scoped export manager. */
+  public getViewExportTheme(theme?: string): string {
+    return this.exportManager.getViewExportTheme(theme);
+  }
+
+  /** Resolves embedded-scene export behavior through the export manager. */
+  public getViewExportEmbedScene(embedScene?: boolean): boolean {
+    return this.exportManager.getViewExportEmbedScene(embedScene);
+  }
+
+  /** Resolves export padding through the view-scoped export manager. */
+  public getViewExportPadding(padding?: number): number {
+    return this.exportManager.getViewExportPadding(padding);
+  }
+
+  /** Resolves PNG export scale through the view-scoped export manager. */
+  public getViewExportScale(scale?: number): number {
+    return this.exportManager.getViewExportScale(scale);
+  }
+
+  /** Resolves export background behavior through the export manager. */
+  public getViewExportWithBackground(withBackground?: boolean) {
+    return this.exportManager.getViewExportWithBackground(withBackground);
+  }
+
+  /** Resolves internal-link export behavior through the export manager. */
+  public getViewExportIncludeInternalLinks(includeInternalLinks?: boolean) {
+    return this.exportManager.getViewExportIncludeInternalLinks(
+      includeInternalLinks,
     );
   }
 
-  public getViewExportTheme(theme?: string): string {
-    if (theme) {
-      return theme;
-    }
-    if (!this.file) {
-      return this.excalidrawAPI.getAppState().theme;
-    }
-    if (!this.exportDialog) {
-      this.exportDialog = new ExportDialog(this.plugin, this, this.file);
-    }
-    const ed = this.exportDialog;
-    return ed
-      ? ed.theme
-      : getExportTheme(
-          this.plugin,
-          this.file,
-          this.excalidrawAPI.getAppState().theme,
-        );
-  }
-
-  public getViewExportEmbedScene(embedScene?: boolean): boolean {
-    if (!this.file) {
-      return false;
-    }
-    if (!this.exportDialog) {
-      this.exportDialog = new ExportDialog(this.plugin, this, this.file);
-    }
-    const ed = this.exportDialog;
-    return typeof embedScene === "undefined"
-      ? ed
-        ? ed.embedScene
-        : false
-      : embedScene;
-  }
-
-  public getViewExportPadding(padding?: number): number {
-    if (typeof padding !== "undefined") {
-      return padding;
-    }
-    if (!this.file) {
-      return 0;
-    }
-    if (!this.exportDialog) {
-      this.exportDialog = new ExportDialog(this.plugin, this, this.file);
-    }
-    const ed = this.exportDialog;
-    return ed ? ed.padding : getExportPadding(this.plugin, this.file);
-  }
-
-  public getViewExportScale(scale?: number): number {
-    if (typeof scale !== "undefined") {
-      return scale;
-    }
-    if (!this.file) {
-      return 1;
-    }
-    if (!this.exportDialog) {
-      this.exportDialog = new ExportDialog(this.plugin, this, this.file);
-    }
-    const ed = this.exportDialog;
-    return ed ? ed.scale : getPNGScale(this.plugin, this.file);
-  }
-
-  public getViewExportWithBackground(withBackground?: boolean) {
-    if (typeof withBackground !== "undefined" || !this.file) {
-      return withBackground;
-    }
-    if (!this.exportDialog) {
-      this.exportDialog = new ExportDialog(this.plugin, this, this.file);
-    }
-    const ed = this.exportDialog;
-    return ed ? !ed.transparent : getWithBackground(this.plugin, this.file);
-  }
-
-  public getViewExportIncludeInternalLinks(includeInternalLinks?: boolean) {
-    if (typeof includeInternalLinks !== "undefined" || !this.file) {
-      return includeInternalLinks;
-    }
-    if (!this.exportDialog) {
-      this.exportDialog = new ExportDialog(this.plugin, this, this.file);
-    }
-    const ed = this.exportDialog;
-    return ed
-      ? ed.exportInternalLinks
-      : getExportInternalLinks(this.plugin, this.file);
-  }
-
-  private async loadFilesForExport(
-    exportTheme: string,
-  ): Promise<Record<FileId, BinaryFileData> | null> {
-    const api = this.excalidrawAPI;
-    if (!api || !this.excalidrawData) {
-      return null;
-    }
-
-    const viewTheme = api.getAppState().theme;
-    if (!exportTheme || exportTheme === viewTheme) {
-      return null;
-    }
-
-    const loader = new EmbeddedFilesLoader(this.plugin, exportTheme === "dark");
-    const collected: Record<FileId, BinaryFileData> = {};
-    let resolved = false;
-
-    void (await new Promise<void>((resolve) => {
-      void loader.loadSceneFiles({
-        excalidrawData: this.excalidrawData,
-        sceneElements: this.getViewElements(),
-        addFiles: (
-          files: FileData[],
-          _isDark: boolean,
-          final: boolean = true,
-        ) => {
-          if (files && files.length > 0) {
-            files.forEach((f) => {
-              collected[f.id] = { ...f };
-            });
-          }
-          if (final && !resolved) {
-            resolved = true;
-            resolve();
-          }
-        },
-        depth: 0,
-        isThemeChange: true,
-      });
-    }));
-
-    return Object.keys(collected).length ? collected : null;
-  }
-
+  /** Creates an SVG while retaining the established public view signature. */
   public async svg(
     scene: ExcalidrawViewScene,
     theme?: string,
     embedScene?: boolean,
     embedFont: boolean = false,
   ): Promise<SVGSVGElement> {
-    const exportSettings: ExportSettings = {
-      withBackground: !!this.getViewExportWithBackground(),
-      withTheme: true,
-      isMask: isMaskFile(this.plugin, this.file),
-      skipInliningFonts: !embedFont,
-    };
-
-    const exportTheme = this.getViewExportTheme(theme);
-    const overrideFiles = await this.loadFilesForExport(exportTheme);
-
-    return await getSVG(
-      {
-        ...scene,
-        ...{
-          appState: {
-            ...scene.appState,
-            theme: exportTheme,
-            exportEmbedScene: this.getViewExportEmbedScene(embedScene),
-          },
-        },
-      },
-      exportSettings,
-      this.getViewExportPadding(),
-      this.file,
-      overrideFiles ?? undefined,
-    );
+    return this.exportManager.svg(scene, theme, embedScene, embedFont);
   }
 
+  /** Saves SVG autoexports through the view-scoped export manager. */
   public async saveSVG(data: {
     scene?: ExcalidrawViewScene;
     embedScene?: boolean;
     autoexportConfig?: AutoexportConfig;
   }) {
-    if (!data) {
-      data = {};
-    }
-    if (!this.file) {
-      return;
-    }
-    let { scene, embedScene, autoexportConfig } = data;
-    if (!scene) {
-      if (!this.excalidrawAPI) {
-        return false;
-      }
-      scene = this.getScene();
-    }
-
-    const exportImage = async (filepath: string, theme?: string) => {
-      const svg = await this.svg(scene, theme, embedScene, true);
-      if (!svg) {
-        return;
-      }
-      //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2026
-      const svgString = svg.outerHTML;
-      await exportImageToFile(
-        this,
-        filepath,
-        svgString,
-        theme === "dark"
-          ? ".dark.svg"
-          : theme === "light"
-            ? ".light.svg"
-            : ".svg",
-      );
-    };
-
-    if (
-      autoexportConfig?.theme
-        ? autoexportConfig.theme === "both"
-        : this.plugin.settings.autoExportLightAndDark
-    ) {
-      await exportImage(getIMGFilename(this.file.path, "dark.svg"), "dark");
-      await exportImage(getIMGFilename(this.file.path, "light.svg"), "light");
-    } else {
-      await exportImage(
-        getIMGFilename(this.file.path, "svg"),
-        autoexportConfig?.theme,
-      );
-    }
+    return this.exportManager.saveSVG(data);
   }
 
+  /** Downloads an SVG through the view-scoped export manager. */
   public async exportSVG(
     embedScene?: boolean,
     selectedOnly?: boolean,
   ): Promise<void> {
-    if (!this.excalidrawAPI || !this.file) {
-      return;
-    }
-
-    const scene = this.getScene(selectedOnly);
-    if (!scene) {
-      return;
-    }
-    if (!this.getViewExportIncludeInternalLinks()) {
-      scene.elements = sceneRemoveInternalLinks(scene);
-    }
-    const svg = await this.svg(scene, undefined, embedScene, true);
-    if (!svg) {
-      return;
-    }
-    exportSVG(svg, this.file.basename);
+    return this.exportManager.exportSVG(embedScene, selectedOnly);
   }
 
+  /** Returns an SVG through the view-scoped export manager. */
   public async getSVG(
     embedScene?: boolean,
     selectedOnly?: boolean,
   ): Promise<SVGSVGElement> {
-    if (!this.excalidrawAPI || !this.file) {
-      return new SVGSVGElement();
-    }
-
-    const svg = await this.svg(
-      this.getScene(selectedOnly),
-      undefined,
-      embedScene,
-      true,
-    );
-    if (!svg) {
-      return new SVGSVGElement();
-    }
-    return svg;
+    return this.exportManager.getSVG(embedScene, selectedOnly);
   }
 
+  /** Downloads a PDF through the view-scoped export manager. */
   public async exportPDF(
     selectedOnly?: boolean,
     pageSize: PageSize = "A4",
     orientation: PageOrientation = "portrait",
   ): Promise<void> {
-    if (!this.excalidrawAPI || !this.file) {
-      return;
-    }
-
-    const scene = this.getScene(selectedOnly);
-    if (!scene) {
-      return;
-    }
-    if (!this.getViewExportIncludeInternalLinks()) {
-      scene.elements = sceneRemoveInternalLinks(scene);
-    }
-
-    const svg = await this.svg(scene, undefined, false, true);
-
-    if (!svg) {
-      return;
-    }
-
-    const boundingBox = this.plugin.ea.getBoundingBox(scene.elements);
-    const margin = getMarginValue(this.exportDialog?.margin ?? "normal");
-    const [width, height] = [boundingBox.width, boundingBox.height];
-
-    await exportToPDF({
-      SVG: [svg],
-      scale: {
-        zoom: this.exportDialog?.scale ?? 1,
-        fitToPage:
-          pageSize === "MATCH IMAGE" || pageSize === "HD Screen"
-            ? 1
-            : (this.exportDialog?.fitToPage ?? 1),
-      },
-      pageProps: {
-        dimensions: getPageDimensions(pageSize, orientation, { width, height }),
-        backgroundColor: this.exportDialog?.getPaperColor() ?? "#FFFFFF",
-        margin,
-        alignment: this.exportDialog?.alignment ?? "center",
-      },
-      filename: `${this.file.basename}.pdf`,
-    });
+    return this.exportManager.exportPDF(selectedOnly, pageSize, orientation);
   }
 
+  /** Creates a PNG blob while retaining the established view signature. */
   public async png(
     scene: ExcalidrawViewScene,
     theme?: string,
     embedScene?: boolean,
   ): Promise<Blob> {
-    const exportSettings: ExportSettings = {
-      withBackground: !!this.getViewExportWithBackground(),
-      withTheme: true,
-      isMask: isMaskFile(this.plugin, this.file),
-    };
-
-    const exportTheme = this.getViewExportTheme(theme);
-    const overrideFiles = await this.loadFilesForExport(exportTheme);
-
-    return await getPNG(
-      {
-        ...scene,
-        ...{
-          appState: {
-            ...scene.appState,
-            theme: exportTheme,
-            exportEmbedScene: this.getViewExportEmbedScene(embedScene),
-          },
-        },
-      },
-      exportSettings,
-      this.getViewExportPadding(),
-      this.getViewExportScale(),
-      overrideFiles ?? undefined,
-    );
+    return this.exportManager.png(scene, theme, embedScene);
   }
 
+  /** Saves PNG autoexports through the view-scoped export manager. */
   public async savePNG(data: {
     scene?: ExcalidrawViewScene;
     embedScene?: boolean;
     autoexportConfig?: AutoexportConfig;
   }) {
-    if (!data) {
-      data = {};
-    }
-    if (!this.file) {
-      return;
-    }
-    let { scene, embedScene, autoexportConfig } = data;
-    if (!scene) {
-      if (!this.excalidrawAPI) {
-        return false;
-      }
-      scene = this.getScene();
-    }
-
-    const exportImage = async (filepath: string, theme?: string) => {
-      const png = await this.png(scene, theme, embedScene);
-      if (!png) {
-        return;
-      }
-      await exportImageToFile(
-        this,
-        filepath,
-        png,
-        theme === "dark"
-          ? ".dark.png"
-          : theme === "light"
-            ? ".light.png"
-            : ".png",
-      );
-    };
-
-    if (
-      autoexportConfig?.theme
-        ? autoexportConfig.theme === "both"
-        : this.plugin.settings.autoExportLightAndDark
-    ) {
-      await exportImage(getIMGFilename(this.file.path, "dark.png"), "dark");
-      await exportImage(getIMGFilename(this.file.path, "light.png"), "light");
-    } else {
-      await exportImage(
-        getIMGFilename(this.file.path, "png"),
-        autoexportConfig?.theme,
-      );
-    }
+    return this.exportManager.savePNG(data);
   }
 
+  /** Copies a PNG through the view-scoped export manager. */
   public async exportPNGToClipboard(
     embedScene?: boolean,
     selectedOnly?: boolean,
   ) {
-    if (!this.excalidrawAPI || !this.file) {
-      return;
-    }
-
-    const png = await this.png(
-      this.getScene(selectedOnly),
-      undefined,
-      embedScene,
-    );
-    if (!png) {
-      return;
-    }
-
-    // in Safari so far we need to construct the ClipboardItem synchronously
-    // (i.e. in the same tick) otherwise browser will complain for lack of
-    // user intent. Using a Promise ClipboardItem constructor solves this.
-    // https://bugs.webkit.org/show_bug.cgi?id=222262
-    //
-    // not await so that we can detect whether the thrown error likely relates
-    // to a lack of support for the Promise ClipboardItem constructor
-    await exportPNGToClipboard(png);
+    return this.exportManager.exportPNGToClipboard(embedScene, selectedOnly);
   }
 
+  /** Downloads a PNG through the view-scoped export manager. */
   public async exportPNG(
     embedScene?: boolean,
     selectedOnly?: boolean,
   ): Promise<void> {
-    if (!this.excalidrawAPI || !this.file) {
-      return;
-    }
-
-    const png = await this.png(
-      this.getScene(selectedOnly),
-      undefined,
-      embedScene,
-    );
-    if (!png) {
-      return;
-    }
-    exportPNG(png, this.file.basename);
+    return this.exportManager.exportPNG(embedScene, selectedOnly);
   }
 
   public setPreventReload() {

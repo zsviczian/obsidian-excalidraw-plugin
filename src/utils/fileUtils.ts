@@ -20,7 +20,7 @@ import {
 } from "src/constants/constants";
 import { ExcalidrawSettings } from "src/core/settings";
 import { errorlog, getDataURL } from "./coreUtils";
-import ExcalidrawPlugin from "src/core/main";
+import type ExcalidrawPlugin from "src/core/main";
 import {
   getAttachmentsFolderAndFilePath,
   splitFolderAndFilename,

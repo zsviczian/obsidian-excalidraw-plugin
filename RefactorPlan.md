@@ -25,8 +25,9 @@ validated, and what remains uncertain.
 | Extract font management | Implemented; awaiting manual validation | `FontManager` now owns CJK discovery/loading, custom-font registration, document stylesheets, readiness, and cleanup; plugin methods and the externally read `fourthFontLoaded` field remain intact |
 | Extract startup instrumentation | Implemented; awaiting manual validation | `StartupTimer` now owns startup event history, delta tracking, and breakdown formatting; lifecycle calls, public methods, and the public `loadTimestamp` field remain intact |
 | Remove confirmed dead `main.ts` code | Implemented; awaiting manual validation | Removed the uncalled cache-registration method and the never-assigned duplicate file-explorer observer field/cleanup; the active observer in `ObserverManager` remains unchanged |
+| Extract view export pipeline | Implemented; awaiting manual validation | `ViewExportManager` now owns raw scene, SVG, PNG, clipboard, PDF, option-resolution, and alternate-theme embedded-file export behavior; all view methods and `exportDialog` compatibility remain intact |
 | Audit and consolidate duplicate logic | In progress | Consolidated `updateFrontmatterInString()`, `arrayToMap()`, `wrapTextAtCharLength()`, `getLinkParts()`/`LinkParts`, `getBinaryFileFromDataURL()`, `svgToBase64()`, `getFontDataURL()`, `cropCanvas()`, `getImageSize()`, `promiseTry()`, `isVersionNewerThanOther()`, `repositionElementsToCursor()`, the internal `cloneElement()`, and `getBoundTextElementId()`; continue one independently testable helper family at a time |
-| All later phases | Planned | Begin only after the preceding checkpoint is validated |
+| Remaining view phases | Planned | Begin only after the export-manager checkpoint is manually validated |
 
 ### Action log
 
@@ -58,6 +59,7 @@ validated, and what remains uncertain.
 | 2026-08-09 | Extracted font management from `main.ts` | Added documented `FontManager` to own the existing CJK asset cache, vault reads, CJK/custom stylesheet lifecycle, custom font metrics and package registration, readiness state, and device-aware document traversal. Preserved every plugin-facing font method as a delegate, retained `plugin.fourthFontLoaded` for view compatibility, kept the initial readiness value and 100ms timer unchanged, and injected lazy package-map access without changing `PackageManager` construction or ownership | `npm run build`, `npm run lib`, targeted manager ESLint, and scoped `git diff --check` passed; `main.ts` decreased by 130 lines from 1,512 to 1,382; bundle size increased by 379 bytes to 5,094,849 bytes from manager/facade overhead; `npm run madge` could not run because `madge` is not installed; desktop, mobile, CJK, custom-font, and popout manual validation remains pending |
 | 2026-08-09 | Extracted startup timing instrumentation from `main.ts` | Added documented `StartupTimer` to own the private event list, previous-event timestamp, total/delta formatting, and debug output. Kept every timing call in its original lifecycle position, retained `logStartupEvent()` and the misspelled `printStarupBreakdown()` as plugin delegates, preserved pre-layout events across the layout-ready baseline reset, and retained `loadTimestamp` as an own public field with unchanged assignment behavior | `npm run build`, `npm run lib`, targeted manager ESLint, and scoped `git diff --check` passed; `main.ts` decreased by 6 lines from 1,382 to 1,376; the latest bundle is 5,095,747 bytes, 898 bytes above the preceding checkpoint due to the manager and compatibility facade; `npm run madge` could not run because `madge` is not installed; startup breakdown inspection remains pending |
 | 2026-08-09 | Rejected a catch-all Markdown integration manager and removed proven dead code from `main.ts` | Markdown post-processing, install-codeblock handling, observer setup, and rerender behavior have different lifecycle and ownership constraints, so they will remain explicit rather than being grouped under a weak abstraction. Removed the uncalled private `registerEventListeners()`, its `MetadataCache` import, the never-assigned `main.ts` `fileExplorerObserver`, and its inert unload check. The active file-explorer observer and teardown in `ObserverManager` were not changed | Repository-wide reference searches confirmed both removed members had no callers or assignments and that `PluginFileManager.initialize()` owns the active initial cache walk; `npm run build` passed with the existing circular-dependency warnings; targeted lint reports only the same four pre-existing startup-script `any` diagnostics and none on changed lines; `git diff --check` passed; `main.ts` decreased by 29 lines from 1,376 to 1,347 and the bundle decreased by 381 bytes to 5,095,366 bytes; manual unload/reload validation remains pending |
+| 2026-08-09 | Extracted the complete `ExcalidrawView` export pipeline | Added documented `ViewExportManager` to own raw `.excalidraw`, SVG, PNG, clipboard, PDF, export-option resolution, autoexport file writing, and alternate-theme embedded-file loading. Retained every existing public method on `ExcalidrawView` as a documented delegate, kept the public `exportDialog` field and its persistence/teardown lifecycle on the view, and supplied existing runtime dependencies explicitly to avoid a new import cycle. Converted seven type-only imports and pointed `exportUtils` directly at canonical `svgToBase64()` to remove runtime back-edges without changing behavior | `npm run build` passed after every code change; `npm run lib`, manager-targeted ESLint, repository reference searches, and `git diff --check` passed. Broader touched-file lint retains the existing backlog but reports no manager diagnostics. Circular dependency warnings decreased from 34 to 33; `ExcalidrawView.ts` decreased by 365 lines from 9,080 to 8,715; the bundle increased by 2,177 bytes to 5,097,543 bytes and remains below 5 MiB; manual export validation remains pending |
 
 ## Executive recommendation
 
@@ -505,8 +507,9 @@ mutual exclusion. For every extraction, retain the current method on
 
 Recommended order:
 
-1. `ViewExportManager`: export preference resolution, file collection, SVG,
-   PNG, PDF, clipboard, and save-to-file operations.
+1. Completed: `ViewExportManager` owns export preference resolution, file
+   collection, SVG, PNG, PDF, clipboard, and save-to-file operations while the
+   view retains compatibility delegates and dialog lifecycle.
 2. `ViewLinkNavigationManager`: link parsing, hook invocation, navigation, and
    link click handling.
 3. `ViewSceneFileManager`: active/next/deferred embedded-file loaders and
@@ -741,9 +744,9 @@ Before merging any refactor step, answer all of the following:
 2. Complete the duplicate inventory, classify the confirmed utility
    candidates, and consolidate one exact, low-risk family after mapping all
    callers. Record the decision and validation in the action log.
-3. Extract `ViewExportManager` while keeping all current `ExcalidrawView`
-   export methods as delegates. This establishes the view-controller pattern
-   away from lifecycle and synchronization.
+3. Completed: extracted `ViewExportManager` while keeping all current
+   `ExcalidrawView` export methods as delegates. This establishes the
+   view-controller pattern away from lifecycle and synchronization.
 
 The next checkpoint is extracting the package-aware React root using
 `createElement()` without TSX or state changes, followed by popout validation.

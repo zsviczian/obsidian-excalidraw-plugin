@@ -1,6 +1,6 @@
 import { customAlphabet } from "nanoid";
 import { ExcalidrawLib } from "../types/excalidrawLib";
-import ExcalidrawPlugin from "src/core/main";
+import type ExcalidrawPlugin from "src/core/main";
 import { DeviceType } from "src/types/types";
 import { errorHandler } from "../utils/ErrorHandler";
 import { getLanguage } from "obsidian";

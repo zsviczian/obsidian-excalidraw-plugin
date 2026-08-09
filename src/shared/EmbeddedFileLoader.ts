@@ -23,7 +23,7 @@ import { createSVG } from "src/utils/excalidrawAutomateUtils";
 import { ExcalidrawData, getTransclusion } from "./ExcalidrawData";
 import { t } from "../lang/helpers";
 import { tex2dataURL } from "./LaTeX";
-import ExcalidrawPlugin from "../core/main";
+import type ExcalidrawPlugin from "../core/main";
 import type { PdfJsDocumentProxy } from "src/types/pdfJsTypes";
 import {
   blobToBase64,
