@@ -485,13 +485,13 @@ export class CommandManager {
       id: "excalidraw-disable-autosave",
       name: t("TEMPORARY_DISABLE_AUTOSAVE"),
       checkCallback: (checking) => {
-        if (!this.settings.autosave) {
+        if (!this.plugin.autosaveEnabled) {
           return false;
         } //already disabled
         if (checking) {
           return true;
         }
-        this.settings.autosave = false;
+        this.plugin.autosaveEnabled = false;
         return true;
       },
     });
@@ -500,13 +500,13 @@ export class CommandManager {
       id: "excalidraw-enable-autosave",
       name: t("TEMPORARY_ENABLE_AUTOSAVE"),
       checkCallback: (checking) => {
-        if (this.settings.autosave) {
+        if (this.plugin.autosaveEnabled) {
           return false;
         } //already enabled
         if (checking) {
           return true;
         }
-        this.settings.autosave = true;
+        this.plugin.autosaveEnabled = true;
         return true;
       },
     });

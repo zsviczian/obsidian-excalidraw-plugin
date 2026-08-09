@@ -20,6 +20,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
   "2.27.0": `
 ## Maintenance
 - Retired obsolete pre-profile ExcalidrawAI settings migration and fallback handling. Current provider profiles and model configurations are unchanged.
+- Temporary autosave disablement is now session-scoped and no longer stored with plugin settings.
 
 `,
   "2.26.4": `

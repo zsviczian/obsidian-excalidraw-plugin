@@ -1,6 +1,6 @@
 # Incremental refactor assessment and plan
 
-Status: active plan for the 2.27.0 refactor, last updated 2026-08-08
+Status: active plan for the 2.27.0 refactor, last updated 2026-08-09
 
 This document is the working plan for reducing the size and coupling of
 `src/core/main.ts` and `src/view/ExcalidrawView.ts` without destabilizing the
@@ -20,6 +20,11 @@ validated, and what remains uncertain.
 | --- | --- | --- |
 | Assessment and baseline design | Complete | Initial architecture, risks, sequencing, and validation matrix documented |
 | Retire legacy AI settings and fallbacks | Complete | Removed the retired migration, schema/default fields, GPT reset, and AI runtime fallbacks without filtering unknown persisted keys; manual testing found no issues |
+| Extract settings implementation service | Implemented; awaiting manual validation | `PluginSettingsManager` now owns persistence, default assembly, remaining migrations, and API-key obfuscation; plugin methods and startup readiness remain intact, while temporary autosave enablement is now explicit plugin-instance state rather than persisted settings state |
+| Extract footer safe-area styling | Implemented; awaiting manual validation | `FooterSafeAreaManager` now owns device-specific stylesheet injection, open-document traversal, and unload cleanup; the plugin method remains as a settings-UI compatibility delegate |
+| Extract font management | Implemented; awaiting manual validation | `FontManager` now owns CJK discovery/loading, custom-font registration, document stylesheets, readiness, and cleanup; plugin methods and the externally read `fourthFontLoaded` field remain intact |
+| Extract startup instrumentation | Implemented; awaiting manual validation | `StartupTimer` now owns startup event history, delta tracking, and breakdown formatting; lifecycle calls, public methods, and the public `loadTimestamp` field remain intact |
+| Remove confirmed dead `main.ts` code | Implemented; awaiting manual validation | Removed the uncalled cache-registration method and the never-assigned duplicate file-explorer observer field/cleanup; the active observer in `ObserverManager` remains unchanged |
 | Audit and consolidate duplicate logic | In progress | Consolidated `updateFrontmatterInString()`, `arrayToMap()`, `wrapTextAtCharLength()`, `getLinkParts()`/`LinkParts`, `getBinaryFileFromDataURL()`, `svgToBase64()`, `getFontDataURL()`, `cropCanvas()`, `getImageSize()`, `promiseTry()`, `isVersionNewerThanOther()`, `repositionElementsToCursor()`, the internal `cloneElement()`, and `getBoundTextElementId()`; continue one independently testable helper family at a time |
 | All later phases | Planned | Begin only after the preceding checkpoint is validated |
 
@@ -46,6 +51,13 @@ validated, and what remains uncertain.
 | 2026-08-08 | Consolidated `getImageSize()` and `promiseTry()` | Kept the identical embedded-asset implementations as canonical, documented their native image-loading and promise-boundary semantics, and preserved the `utils.ts` import surface through re-exports. The former `getImageSize()` differed only in bracing and comments; both `promiseTry()` copies were textually identical. No caller used distinct behavior | Repository search confirms one implementation of each helper; `npm run build` passed after each code change; targeted ESLint passed |
 | 2026-08-08 | Consolidated `isVersionNewerThanOther()` | Extracted the identical implementations to dependency-light `versionUtils.ts` and preserved both `utils.ts` and `sceneDataUtils.ts` import paths. Missing, malformed, prerelease, and numeric comparison behavior remains unchanged | Repository search confirms one implementation; `npm run build` and targeted ESLint passed |
 | 2026-08-08 | Consolidated element positioning, cloning, and bound-text helpers | Extracted `estimateBounds()`, `repositionElementsToCursor()`, the internal ID-preserving `cloneElement()`, and `getBoundTextElementId()` to documented `excalidrawElementUtils.ts`, preserving exports from both former owner modules. Repositioning and cloning were identical. The only bound-text difference was a redundant optional chain after an equivalent non-null/length guard, so callers could not observe it. The public `ExcalidrawAutomate.cloneElement()` API, which assigns a new ID, was not changed | Repository search confirms one implementation of each helper; targeted ESLint, `npm run build`, `npm run lib`, and `git diff --check` passed; bundle size remains 5,095,379 bytes because Rollup had already eliminated the duplicate paths; `npm run madge` could not run because `madge` is not installed |
+| 2026-08-08 | Extracted plugin settings implementation from `main.ts` | Added documented `PluginSettingsManager` with a narrow host contract to own load/save, default assembly, existing library/Markdown-image/oEmbed/preview migrations, and API-key obfuscation. At this extraction checkpoint, retained `plugin.settings`, all public plugin method signatures, startup autosave behavior, settings readiness, settings-tab timing, external-change library invalidation, persisted format, and unknown-key behavior. After delegate TSDoc, `main.ts` decreased from 1,676 to 1,563 lines | `npm run build` passed after each code change; `npm run lib` and a scoped `git diff --check` passed; the new manager and changed delegate lines have no ESLint diagnostics, while targeted lint still reports four unrelated existing `any` diagnostics in the startup-script block of `main.ts`; the initial extraction build was 5,094,122 bytes, 1,257 bytes below the preceding checkpoint. A concurrent unrelated `nanoid` dependency update changed the final workspace build to 5,094,522 bytes; `npm run madge` could not run because `madge` is not installed; manual settings validation remains pending |
+| 2026-08-09 | Reviewed and retained `reEnableAutosave` | An attempted removal was reversed after confirming that this is not migration code: it resets the session-scoped temporary disable/enable autosave commands when the plugin starts. Restored `LoadSettingsOptions`, startup `{ reEnableAutosave: true }`, and the post-load in-memory assignment exactly as extracted. No autosave behavior change remains | Repository search confirms the complete option flow is restored; `npm run build`, `npm run lib`, targeted manager ESLint, and scoped `git diff --check` passed; the existing 34 circular dependency warnings are unchanged; `main.ts` is again 1,563 lines and the bundle is again 5,094,522 bytes; manual settings validation remains pending |
+| 2026-08-09 | Moved temporary autosave enablement out of persisted settings | A full runtime and history review confirmed that `settings.autosave` had no settings UI and served only as the global gate for the temporary enable/disable commands. Replaced it with documented plugin-instance state initialized to enabled, updated commands and view scheduling to use that state, removed `autosave` from `ExcalidrawSettings` and `DEFAULT_SETTINGS`, and removed `LoadSettingsOptions`/`reEnableAutosave`. Desktop and mobile interval settings remain unchanged. Existing persisted `autosave` keys are intentionally left inert under the no-sanitizer policy | Repository search confirms there are no remaining supported-setting or runtime references to `settings.autosave`; the settings interface and defaults contain the same 182 keys; `npm run build`, `npm run lib`, and scoped `git diff --check` passed with the existing 34 circular dependency warnings. Broad lint reports only the existing backlog and no diagnostics on changed lines; bundle size decreased by 151 bytes to 5,094,371 bytes; manual session-command validation remains pending |
+| 2026-08-09 | Extracted footer safe-area styling from `main.ts` | Added documented `FooterSafeAreaManager` with a narrow host contract to own phone/tablet CSS injection, exact device-aware open-document traversal, setting-driven removal, and unload cleanup. Kept `plugin.updateFooterSafeAreaPadding()` and its layout-ready and settings UI call sites unchanged as delegates. Font document traversal remains in `main.ts` until the separate font extraction | `npm run build`, targeted manager ESLint, and scoped `git diff --check` passed; `main.ts` decreased by 46 lines from 1,558 to 1,512; bundle size increased by 99 bytes to 5,094,470 bytes from manager/delegate overhead; `npm run madge` could not run because `madge` is not installed; phone/tablet manual validation remains pending |
+| 2026-08-09 | Extracted font management from `main.ts` | Added documented `FontManager` to own the existing CJK asset cache, vault reads, CJK/custom stylesheet lifecycle, custom font metrics and package registration, readiness state, and device-aware document traversal. Preserved every plugin-facing font method as a delegate, retained `plugin.fourthFontLoaded` for view compatibility, kept the initial readiness value and 100ms timer unchanged, and injected lazy package-map access without changing `PackageManager` construction or ownership | `npm run build`, `npm run lib`, targeted manager ESLint, and scoped `git diff --check` passed; `main.ts` decreased by 130 lines from 1,512 to 1,382; bundle size increased by 379 bytes to 5,094,849 bytes from manager/facade overhead; `npm run madge` could not run because `madge` is not installed; desktop, mobile, CJK, custom-font, and popout manual validation remains pending |
+| 2026-08-09 | Extracted startup timing instrumentation from `main.ts` | Added documented `StartupTimer` to own the private event list, previous-event timestamp, total/delta formatting, and debug output. Kept every timing call in its original lifecycle position, retained `logStartupEvent()` and the misspelled `printStarupBreakdown()` as plugin delegates, preserved pre-layout events across the layout-ready baseline reset, and retained `loadTimestamp` as an own public field with unchanged assignment behavior | `npm run build`, `npm run lib`, targeted manager ESLint, and scoped `git diff --check` passed; `main.ts` decreased by 6 lines from 1,382 to 1,376; the latest bundle is 5,095,747 bytes, 898 bytes above the preceding checkpoint due to the manager and compatibility facade; `npm run madge` could not run because `madge` is not installed; startup breakdown inspection remains pending |
+| 2026-08-09 | Rejected a catch-all Markdown integration manager and removed proven dead code from `main.ts` | Markdown post-processing, install-codeblock handling, observer setup, and rerender behavior have different lifecycle and ownership constraints, so they will remain explicit rather than being grouped under a weak abstraction. Removed the uncalled private `registerEventListeners()`, its `MetadataCache` import, the never-assigned `main.ts` `fileExplorerObserver`, and its inert unload check. The active file-explorer observer and teardown in `ObserverManager` were not changed | Repository-wide reference searches confirmed both removed members had no callers or assignments and that `PluginFileManager.initialize()` owns the active initial cache walk; `npm run build` passed with the existing circular-dependency warnings; targeted lint reports only the same four pre-existing startup-script `any` diagnostics and none on changed lines; `git diff --check` passed; `main.ts` decreased by 29 lines from 1,376 to 1,347 and the bundle decreased by 381 bytes to 5,095,366 bytes; manual unload/reload validation remains pending |
 
 ## Executive recommendation
 
@@ -286,7 +298,6 @@ src/core/
     PluginSettingsManager.ts      Load/save/encryption/default assembly
     FontManager.ts                Per-document fonts and package registration
     ViewportStyleManager.ts       Phone/tablet safe-area behavior
-    MarkdownIntegrationManager.ts Post processors and install code blocks
 
 src/view/
   ExcalidrawView.ts               Obsidian host, public facade, composition
@@ -468,19 +479,20 @@ popout creation, so it should not be combined with package-manager changes.
 
 Candidates should be extracted one at a time:
 
-1. Move install-codeblock registration and Markdown integration setup behind a
-   `MarkdownIntegrationManager`, while still registering the Markdown post
-   processor from `onload()`.
+1. Keep Markdown post-processing, install-codeblock registration, observer
+   setup, and rerender behavior explicit in their current owners. A proposed
+   `MarkdownIntegrationManager` was rejected because these responsibilities do
+   not form a cohesive lifecycle unit.
 2. Move startup-script execution behind a focused runner owned by the script
    subsystem.
-3. Move startup timing storage/formatting into a small `StartupTimer` while
-   retaining `plugin.logStartupEvent()` as a delegate if consumers need it.
+3. Completed: startup timing storage/formatting now belongs to `StartupTimer`,
+   with the plugin methods retained as compatibility delegates.
 4. Group initialization and cleanup of managers, but keep a readable ordered
    list in `onloadOnLayoutReady()` and `onunload()`.
-5. Only after reference searches and runtime validation, remove confirmed dead
-   members. Current review candidates include the unused private
-   `registerEventListeners()` and a `fileExplorerObserver` field in `main.ts`
-   that appears separate from the observer owned by `ObserverManager`.
+5. Completed: after repository-wide reference searches, removed the unused
+   private `registerEventListeners()` and the never-assigned
+   `fileExplorerObserver` field and unload check from `main.ts`. The active
+   observer owned by `ObserverManager` remains intact.
 
 Do not hide lifecycle ordering inside a generic service container. The desired
 `main.ts` is a readable composition root, not an empty forwarding shell.

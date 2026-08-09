@@ -111,7 +111,6 @@ export interface ExcalidrawSettings {
   compress: boolean;
   decompressForMDView: boolean;
   onceOffCompressFlagReset: boolean; //used to reset compress to true in 2.2.0
-  autosave: boolean;
   autosaveIntervalDesktop: number;
   autosaveIntervalMobile: number;
   drawingFilenamePrefix: string;
@@ -558,7 +557,6 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   compress: true,
   decompressForMDView: false,
   onceOffCompressFlagReset: false,
-  autosave: true,
   autosaveIntervalDesktop: 60000,
   autosaveIntervalMobile: 30000,
   drawingFilenamePrefix: "Drawing ",
