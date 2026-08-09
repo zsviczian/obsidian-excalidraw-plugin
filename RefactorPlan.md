@@ -34,6 +34,7 @@ validated, and what remains uncertain.
 | Audit production bundle size | Complete | Ranked packaging, dependency, dead-data, and static-payload reductions; translation extraction remains a last resort |
 | Use inflate-only Pako runtime | Complete | Replaced the full Pako distribution with its API-compatible inflate-only build; all existing Excalidraw and locale payloads retain their format and decompression path |
 | Replace bundled YAML runtime | Implemented; awaiting manual validation | `mergeMarkdownFiles()` now uses Obsidian's public YAML APIs, and `yaml` is no longer a direct production dependency |
+| Compress per-window React payload | Complete | React, ReactDOM, and the JSX shim are inflated before React participates in plugin bootstrap; the decompressed source remains available for popout-window package creation, and manual testing found no startup or runtime regression |
 | Audit and consolidate duplicate logic | In progress | Consolidated `updateFrontmatterInString()`, `arrayToMap()`, `wrapTextAtCharLength()`, `getLinkParts()`/`LinkParts`, `getBinaryFileFromDataURL()`, `svgToBase64()`, `getFontDataURL()`, `cropCanvas()`, `getImageSize()`, `promiseTry()`, `isVersionNewerThanOther()`, `repositionElementsToCursor()`, the internal `cloneElement()`, and `getBoundTextElementId()`; continue one independently testable helper family at a time |
 | Remaining view phases | In progress | Manually validate the extension renderer checkpoint before choosing between the higher-risk scene-file loader and a mechanical package-aware React-root extraction |
 
@@ -76,6 +77,8 @@ validated, and what remains uncertain.
 | 2026-08-09 | Audited production `main.js` size | The fresh 5,103,913-byte bundle has 138,967 bytes of headroom below 5 MiB. The first recommended batch is packaging-only: use Pako's inflate-only build (about 25 KB gross saving) and store the per-window React payload deflated (about 78 KB gross saving). The next source-level candidate is replacing the bundled `yaml` parser used only by `mergeMarkdownFiles()` with Obsidian's external `parseYaml()`/`stringifyYaml()` APIs after compatibility tests. Larger later candidates are a focused TTF/OTF metadata reader instead of `opentype.js`, build-time compaction of CJK metadata and static help/startup payloads, and pruning release-note entries that the current ten-item display cap makes unreachable. Translation extraction and changes to the embedded Excalidraw runtime remain last-resort work | Generated a Rollup module-composition report, measured injected payloads and standalone dependency costs, searched all imports/callers, ran `npm run code:unused` with no unused-variable findings, verified that only `pako.inflate()` is called and that `pako_inflate.min.js` decodes the current payload format, and confirmed that 13 of 23 release-note entries are unreachable under the current `.slice(0, 10)` behavior. The documentation-only production build passed with the existing 33 circular-dependency warnings; no runtime source was changed |
 | 2026-08-09 | Replaced full Pako with its inflate-only distribution | Changed only the Rollup build input from `pako.min.js` to `pako_inflate.min.js`. The existing CommonJS wrapper, `pako.inflate()` call, global `unpackBase64Deflate()` compatibility surface, compressed payload format, and per-window package architecture remain unchanged. Obsidian YAML replacement is the next checkpoint. React compression is deferred because a previous attempt prevented `main.js` from completing bootstrap before the inflater could run | `npm run build` passed with the existing 33 circular-dependency warnings; `node --check dist/main.js` passed; the inflate-only and full builds produced byte-for-byte identical output for all five emitted Excalidraw and locale payloads; `git diff --check` passed. `main.js` decreased exactly 25,380 bytes, from 5,103,913 to 5,078,533 bytes, leaving 164,347 bytes below 5 MiB. Manual validation should prioritize cold startup and locale switching on mobile, then a desktop popout; a decompression failure during initialization is the highest-impact risk |
 | 2026-08-09 | Replaced the bundled YAML runtime with Obsidian's public YAML APIs | Updated the sole runtime consumer, `mergeMarkdownFiles()`, to use `parseYaml()` and `stringifyYaml()` from `obsidian`, added TSDoc for its precedence and array-merge contract, and removed `yaml` as a direct production dependency. Existing target frontmatter remains text-preserved. Obsidian serialization may represent nulls as empty values and keep long scalars on one line; these forms parse to the same values as the previous output | Repository search confirms no source imports from `yaml`; targeted ESLint and `npm run lib` passed; production builds before and after dependency cleanup passed with the existing 33 circular-dependency warnings; the CRLF-aware whitespace check passed. `main.js` decreased 104,707 bytes, from 5,078,533 to 4,973,826 bytes, leaving 269,054 bytes below 5 MiB. Manual validation should prioritize template/target array merging and missing keys through **Convert note to Excalidraw** and `ExcalidrawAutomate.create()`, then null, long-text, date, alias, multiline, quoted-value, desktop, and mobile cases |
+| 2026-08-09 | Compressed the per-window React runtime payload | Deflated the minified React, ReactDOM, and JSX-shim source at build time. In the emitted bootstrap, inflate-only Pako and the dependency-free `unpackBase64Deflate()` helper are initialized first; only then is `REACT_PACKAGES` inflated and evaluated. The decompressed string remains alive for `PackageManager.getPackage()` to evaluate in each popout window. Removed the now-unused direct `jsesc` development dependency. This ordering specifically addresses the prior attempt that failed before React decompression could run | `npm run build` passed with the existing 33 circular-dependency warnings; `node --check dist/main.js` passed; emitted-order inspection confirms the inflater precedes React decompression; an isolated bootstrap smoke test initialized React 18.3.1 and ReactDOM, then successfully evaluated the retained package source a second time to simulate a popout. `main.js` decreased 78,540 bytes, from 4,973,826 to 4,895,286 bytes, leaving 347,594 bytes below 5 MiB. Manual validation is mandatory because the historical failure occurred during Obsidian startup: test desktop and mobile cold starts first, then main-window rendering, a new and restored popout, moving a leaf between windows, plugin disable/re-enable, and the extension-renderer paths |
+| 2026-08-09 | Closed the compressed React validation checkpoint | Manual testing found no startup or runtime regressions with the bootstrap-safe compressed React payload | User confirmed the implementation works; the checkpoint is ready to commit |
 
 ## Executive recommendation
 
@@ -145,7 +148,9 @@ The first implemented reduction, switching to inflate-only Pako, reduced the
 bundle exactly 25,380 bytes to 5,078,533 bytes. Current headroom is 164,347
 bytes (about 160 KiB or 3.13%). Replacing the bundled YAML runtime then reduced
 the bundle another 104,707 bytes to 4,973,826 bytes. Current headroom is
-269,054 bytes (about 263 KiB or 5.13%).
+269,054 bytes (about 263 KiB or 5.13%). Compressing the React package source
+then reduced the bundle another 78,540 bytes to 4,895,286 bytes. Current
+headroom is 347,594 bytes (about 339 KiB or 6.63%).
 
 | Injected section | Approximate production characters | Share of `main.js` |
 | --- | ---: | ---: |
@@ -171,13 +176,13 @@ Recommended order:
    `stringifyYaml()` functions. The production bundle decreased 104,707 bytes.
    Parsing remains equivalent; Obsidian's frontmatter serializer can format
    nulls and long lines differently while preserving their parsed values.
-3. Deferred: deflate the React/ReactDOM/JSX-shim source at build time. A prior
-   attempt caused `main.js` bootstrap to fail before the inflater ran because
-   React participates elsewhere in the bundled module initialization. Revisit
-   this only after isolating the exact bootstrap dependency and proving the
-   approach in Obsidian, not merely with a syntax check. The theoretical gross
-   saving remains about 78 KB, but the prior runtime failure makes it a
-   higher-risk optimization than the YAML substitution.
+3. Implemented; awaiting manual validation: deflated the
+   React/ReactDOM/JSX-shim source at build time. Unlike the prior failed
+   attempt, the emitted bootstrap initializes Pako and the inflater before
+   decompressing or evaluating React. The production bundle decreased 78,540
+   bytes, and the decompressed package source remains available for popouts.
+   This still requires real Obsidian startup testing because that is where the
+   earlier approach failed.
 4. Remove or archive release-note entries that cannot be rendered. The dialog
    always slices the assembled notes to ten entries; `Messages.ts` currently
    has 23 top-level entries, so `2.24.1` and the 12 older entries are
