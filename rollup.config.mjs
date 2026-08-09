@@ -104,7 +104,9 @@ const reactdom_pkg = isLib ? "" : minifyCode(isProd
   ? fs.readFileSync("./node_modules/react-dom/umd/react-dom.production.min.js", "utf8")
   : fs.readFileSync("./node_modules/react-dom/umd/react-dom.development.js", "utf8"));
 
-const pako_pkg = isLib ? "" : fs.readFileSync("./node_modules/pako/dist/pako.min.js", "utf8");
+// Runtime payloads are only decompressed; including Pako's deflate implementation
+// would add unused code to the size-constrained Obsidian plugin bundle.
+const pako_pkg = isLib ? "" : fs.readFileSync("./node_modules/pako/dist/pako_inflate.min.js", "utf8");
 
 if (!isLib) {
   const excalidraw_styles = isProd
