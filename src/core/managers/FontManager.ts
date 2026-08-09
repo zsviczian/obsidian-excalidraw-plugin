@@ -7,7 +7,8 @@ import {
 } from "src/constants/constants";
 import { t } from "src/lang/helpers";
 import { getCJKDataURLs } from "src/utils/CJKLoader";
-import { getFontDataURL, getFontMetrics } from "src/utils/utils";
+import { getFontDataURL } from "src/utils/utils";
+import { getFontMetrics } from "src/utils/fontMetrics";
 import type ExcalidrawPlugin from "src/core/main";
 
 declare const mainDocument: Document;
@@ -115,9 +116,9 @@ export class FontManager {
       this.plugin.settings.experimantalFourthFont,
       "",
     );
-    let fontMetrics = file.extension.startsWith("woff")
+    let fontMetrics = file.extension.startsWith("woff") || !font.arrayBuffer
       ? undefined
-      : await getFontMetrics(fourthFontDataURL, "Local Font");
+      : getFontMetrics(font.arrayBuffer);
 
     if (!fontMetrics) {
       fontMetrics = {
@@ -125,7 +126,6 @@ export class FontManager {
         ascender: 750,
         descender: -250,
         lineHeight: 1.2,
-        fontName: "Local Font",
       };
     }
     this.getPackageMap().forEach(({ excalidrawLib }) => {

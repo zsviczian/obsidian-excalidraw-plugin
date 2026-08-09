@@ -31,6 +31,11 @@ validated, and what remains uncertain.
 | Extract view link navigation | Implemented; awaiting manual validation | `ViewLinkNavigationManager` now owns element-link resolution, hook dispatch, link prompting, modifier-aware navigation, and special image-link handling while all view methods remain compatibility delegates |
 | Retire obsolete Draw.io integration | Implemented; awaiting manual validation | Removed special Diagram-plugin routing and retired the Create DrawIO file script from the maintained library and generated reference catalogs; user-installed vault scripts remain untouched |
 | Extract Excalidraw extension rendering | Implemented; awaiting manual validation | `ViewExcalidrawExtensionRenderer` now owns text-to-diagram, diagram-to-code, welcome screen, custom main menu, and embeddable rendering while the view retains its existing render delegates and package-managed React runtime |
+| Audit production bundle size | Complete | Ranked packaging, dependency, dead-data, and static-payload reductions; translation extraction remains a last resort |
+| Use inflate-only Pako runtime | Complete | Replaced the full Pako distribution with its API-compatible inflate-only build; all existing Excalidraw and locale payloads retain their format and decompression path |
+| Replace bundled YAML runtime | Implemented; awaiting manual validation | `mergeMarkdownFiles()` now uses Obsidian's public YAML APIs, and `yaml` is no longer a direct production dependency |
+| Compress per-window React payload | Complete | React, ReactDOM, and the JSX shim are inflated before React participates in plugin bootstrap; the decompressed source remains available for popout-window package creation, and manual testing found no startup or runtime regression |
+| Replace bundled OpenType metric reader | Complete | A bounds-checked SFNT reader now extracts only the TTF/OTF metrics consumed by Excalidraw; WOFF/WOFF2 fallback behavior is unchanged, `opentype.js` is no longer bundled, and manual testing found no font regression |
 | Audit and consolidate duplicate logic | In progress | Consolidated `updateFrontmatterInString()`, `arrayToMap()`, `wrapTextAtCharLength()`, `getLinkParts()`/`LinkParts`, `getBinaryFileFromDataURL()`, `svgToBase64()`, `getFontDataURL()`, `cropCanvas()`, `getImageSize()`, `promiseTry()`, `isVersionNewerThanOther()`, `repositionElementsToCursor()`, the internal `cloneElement()`, and `getBoundTextElementId()`; continue one independently testable helper family at a time |
 | Remaining view phases | In progress | Manually validate the extension renderer checkpoint before choosing between the higher-risk scene-file loader and a mechanical package-aware React-root extraction |
 
@@ -70,6 +75,13 @@ validated, and what remains uncertain.
 | 2026-08-09 | Extracted link navigation from `ExcalidrawView` | Added documented `ViewLinkNavigationManager` to own tooltip removal, link-source resolution, public hook dispatch, modifier handling, link prompting, new-file behavior, embedded and Markdown image links, LaTeX/Mermaid/Draw.io branches, fullscreen exit, and pane navigation. Retained `removeLinkTooltip()`, `handleLinkHookCall()`, the private selection resolver, `processLinkText()`, `linkClick()`, and `handleLinkClick()` on the view as delegates so every existing caller and hook surface remains intact. Supplied cyclic runtime dependencies and four private view operations explicitly; the manager imports the concrete view only as a type. Reused canonical `SelectedElementWithLink` and `SelectedImage` interfaces from `excalidrawViewTypes.ts` and removed their local duplicates | Final `npm run build`, `npm run lib`, manager-targeted ESLint, repository call-site searches, import-graph analysis, and `git diff --check` passed. The build retained the 33-warning circular-dependency baseline; static analysis found zero runtime import paths from the manager back to `ExcalidrawView`. The full-view lint retains its pre-existing type backlog but no new unused import. `ExcalidrawView.ts` decreased by 442 lines from 8,564 to 8,122; the manager contains 649 documented lines; bundle size increased by 2,478 bytes to 5,100,849 bytes and remains below 5 MiB. Manual link-routing validation remains pending, with modifier semantics and special image-link branches the highest-risk areas |
 | 2026-08-09 | Retired Draw.io/Diagram plugin customization | Removed detection of `drawio-obsidian`, Draw.io SVG inspection, and routing to the external `diagram-edit` view from link navigation. Deleted the Create DrawIO file Automate script and icon from the maintained script library, its directory metadata and install catalog entries, and its generated script-library and AI-reference copies. Added a 2.27.0 release note. Historical release notes remain unchanged as an accurate record, and existing script files in user vaults are intentionally not deleted | `npm run build`, `npm run lib`, manager-targeted ESLint, JSON parsing, repository residue searches, and `git diff --check` passed. Runtime and maintained catalog searches find no Draw.io plugin IDs, view types, or SVG markers; only the new retirement note, this action history, and historical release notes retain the name. Circular-dependency warnings remain at 33; `ViewLinkNavigationManager.ts` decreased by 25 lines from 649 to 624; the final bundle is 5,100,535 bytes, 314 bytes below the preceding checkpoint and still below 5 MiB. Manual validation should confirm ordinary SVG links now follow normal Obsidian navigation and that the script no longer appears in the downloadable catalog |
 | 2026-08-09 | Extracted Excalidraw extension rendering from `ExcalidrawView` | Added documented `ViewExcalidrawExtensionRenderer` to own `ttdDialog()`, `diagramToCode()`, `ttdDialogTrigger()`, `renderWelcomeScreen()`, `renderCustomActionsMenu()`, and `renderEmbeddable()`. Kept the six private view methods and all Excalidraw root call sites as delegates. The renderer uses `view.packages.react` and `view.packages.excalidrawLib`; back-edge-prone runtime modules and private dialog actions are constructor-injected, and the concrete view import is type-only. `renderEmbeddableMenu()`, `renderToolsPanel()`, and `renderTopRightUI()` remain in the view because they own refs, live menu instances, or view lifecycle state | Production builds passed after every code edit, `npm run lib` passed, renderer-targeted ESLint and `git diff --check` passed, and full-view lint showed only the established type backlog after extraction-specific unused imports were removed. The build retained the 33-warning circular-dependency baseline. `ExcalidrawView.ts` decreased by 358 lines from 8,122 to 7,764; the renderer contains 479 documented lines; the bundle increased by 1,746 bytes to 5,102,281 bytes and remains below 5 MiB. Manual testing should prioritize a popout window, then the main-window welcome/menu/embeddable paths, then ExcaliAI text-to-diagram and diagram-to-code; repeat core rendering on mobile, with popout React isolation the highest-risk regression |
+| 2026-08-09 | Audited production `main.js` size | The fresh 5,103,913-byte bundle has 138,967 bytes of headroom below 5 MiB. The first recommended batch is packaging-only: use Pako's inflate-only build (about 25 KB gross saving) and store the per-window React payload deflated (about 78 KB gross saving). The next source-level candidate is replacing the bundled `yaml` parser used only by `mergeMarkdownFiles()` with Obsidian's external `parseYaml()`/`stringifyYaml()` APIs after compatibility tests. Larger later candidates are a focused TTF/OTF metadata reader instead of `opentype.js`, build-time compaction of CJK metadata and static help/startup payloads, and pruning release-note entries that the current ten-item display cap makes unreachable. Translation extraction and changes to the embedded Excalidraw runtime remain last-resort work | Generated a Rollup module-composition report, measured injected payloads and standalone dependency costs, searched all imports/callers, ran `npm run code:unused` with no unused-variable findings, verified that only `pako.inflate()` is called and that `pako_inflate.min.js` decodes the current payload format, and confirmed that 13 of 23 release-note entries are unreachable under the current `.slice(0, 10)` behavior. The documentation-only production build passed with the existing 33 circular-dependency warnings; no runtime source was changed |
+| 2026-08-09 | Replaced full Pako with its inflate-only distribution | Changed only the Rollup build input from `pako.min.js` to `pako_inflate.min.js`. The existing CommonJS wrapper, `pako.inflate()` call, global `unpackBase64Deflate()` compatibility surface, compressed payload format, and per-window package architecture remain unchanged. Obsidian YAML replacement is the next checkpoint. React compression is deferred because a previous attempt prevented `main.js` from completing bootstrap before the inflater could run | `npm run build` passed with the existing 33 circular-dependency warnings; `node --check dist/main.js` passed; the inflate-only and full builds produced byte-for-byte identical output for all five emitted Excalidraw and locale payloads; `git diff --check` passed. `main.js` decreased exactly 25,380 bytes, from 5,103,913 to 5,078,533 bytes, leaving 164,347 bytes below 5 MiB. Manual validation should prioritize cold startup and locale switching on mobile, then a desktop popout; a decompression failure during initialization is the highest-impact risk |
+| 2026-08-09 | Replaced the bundled YAML runtime with Obsidian's public YAML APIs | Updated the sole runtime consumer, `mergeMarkdownFiles()`, to use `parseYaml()` and `stringifyYaml()` from `obsidian`, added TSDoc for its precedence and array-merge contract, and removed `yaml` as a direct production dependency. Existing target frontmatter remains text-preserved. Obsidian serialization may represent nulls as empty values and keep long scalars on one line; these forms parse to the same values as the previous output | Repository search confirms no source imports from `yaml`; targeted ESLint and `npm run lib` passed; production builds before and after dependency cleanup passed with the existing 33 circular-dependency warnings; the CRLF-aware whitespace check passed. `main.js` decreased 104,707 bytes, from 5,078,533 to 4,973,826 bytes, leaving 269,054 bytes below 5 MiB. Manual validation should prioritize template/target array merging and missing keys through **Convert note to Excalidraw** and `ExcalidrawAutomate.create()`, then null, long-text, date, alias, multiline, quoted-value, desktop, and mobile cases |
+| 2026-08-09 | Compressed the per-window React runtime payload | Deflated the minified React, ReactDOM, and JSX-shim source at build time. In the emitted bootstrap, inflate-only Pako and the dependency-free `unpackBase64Deflate()` helper are initialized first; only then is `REACT_PACKAGES` inflated and evaluated. The decompressed string remains alive for `PackageManager.getPackage()` to evaluate in each popout window. Removed the now-unused direct `jsesc` development dependency. This ordering specifically addresses the prior attempt that failed before React decompression could run | `npm run build` passed with the existing 33 circular-dependency warnings; `node --check dist/main.js` passed; emitted-order inspection confirms the inflater precedes React decompression; an isolated bootstrap smoke test initialized React 18.3.1 and ReactDOM, then successfully evaluated the retained package source a second time to simulate a popout. `main.js` decreased 78,540 bytes, from 4,973,826 to 4,895,286 bytes, leaving 347,594 bytes below 5 MiB. Manual validation is mandatory because the historical failure occurred during Obsidian startup: test desktop and mobile cold starts first, then main-window rendering, a new and restored popout, moving a leaf between windows, plugin disable/re-enable, and the extension-renderer paths |
+| 2026-08-09 | Closed the compressed React validation checkpoint | Manual testing found no startup or runtime regressions with the bootstrap-safe compressed React payload | User confirmed the implementation works; the checkpoint is ready to commit |
+| 2026-08-09 | Replaced `opentype.js` with a focused SFNT metric reader | Added documented, bounds-checked parsing of `head.unitsPerEm`, `hhea.ascender`, and `hhea.descender`, preserving exact raw values and the established line-height calculation. The already-read vault buffer is reused instead of decoding the generated data URL. Glyph outlines, shaping, rendering, and embedding remain owned by the browser and Excalidraw. Removed unused font-family-name parsing plus the `opentype.js` runtime and type dependencies. WOFF/WOFF2 continue to use the same fallback metrics as before | The new reader produced exact metric parity with `opentype.js` across all 21 installed TTF/OTF fixtures, including a CFF OTF, and safely rejected three malformed/truncated fixtures. Repository search found no remaining runtime dependency references. Targeted ESLint passed for the new reader and `FontManager`; `node --check dist/main.js` and production builds passed with the existing 33 circular-dependency warnings; `npm run madge` remains unavailable because `madge` is not installed. `main.js` decreased 186,132 bytes, from 4,895,286 to 4,709,154 bytes, leaving 533,726 bytes below 5 MiB. Manual validation should first compare existing and newly created local-font text using representative TTF and OTF files on desktop, including wrapping, baselines, bound text, reload, SVG/PNG/PDF export, and a popout; then repeat core text creation/reload on mobile and smoke-test WOFF/WOFF2. The highest-risk regression is different layout for an unusual TTF/OTF whose metrics fall back because its table structure is malformed or unsupported |
+| 2026-08-09 | Closed the focused SFNT reader validation checkpoint | Manual testing found no regressions in local-font loading or behavior after removing `opentype.js` | User confirmed the implementation works well; the checkpoint is ready to commit |
 
 ## Executive recommendation
 
@@ -127,6 +139,108 @@ That is only 136,495 bytes, or 2.60%, below a 5 MiB limit. Bundle size
 must be checked after every refactor. Source-file splitting will improve source
 architecture but will not create runtime chunks because Rollup uses
 `inlineDynamicImports: true` and deliberately emits one CommonJS `main.js`.
+
+### Bundle-size reduction audit for the 2.27.0 checkpoint
+
+After the view extractions, a fresh production bundle is 5,103,913 bytes. The
+5 MiB ceiling is 5,242,880 bytes, leaving 138,967 bytes (about 136 KiB or
+2.65%) of headroom. The large injected sections explain why ordinary source
+cleanup has limited impact:
+
+The first implemented reduction, switching to inflate-only Pako, reduced the
+bundle exactly 25,380 bytes to 5,078,533 bytes. Current headroom is 164,347
+bytes (about 160 KiB or 3.13%). Replacing the bundled YAML runtime then reduced
+the bundle another 104,707 bytes to 4,973,826 bytes. Current headroom is
+269,054 bytes (about 263 KiB or 5.13%). Compressing the React package source
+then reduced the bundle another 78,540 bytes to 4,895,286 bytes. Replacing
+`opentype.js` with the focused SFNT reader reduced it another 186,132 bytes to
+4,709,154 bytes. Current headroom is 533,726 bytes (about 521 KiB or 10.18%).
+
+| Injected section | Approximate production characters | Share of `main.js` |
+| --- | ---: | ---: |
+| Deflated/base64 Excalidraw runtime | 2,786,756 | 54.6% |
+| Minified Rollup application bundle | 1,941,603 | 38.1% |
+| Four compressed non-English locales | 188,668 | 3.7% |
+| Uncompressed per-window React/ReactDOM payload | 138,628 | 2.7% |
+| Inflate-only Pako runtime | 21,479 | 0.4% |
+
+The recent structural extractions increased the application section slightly,
+but they did not duplicate React or Excalidraw. The best first savings are
+therefore packaging and dependency substitutions rather than reversing the
+new module boundaries.
+
+Recommended order:
+
+1. Completed: replaced `pako.min.js` with `pako_inflate.min.js`. Repository-wide
+   search found only `pako.inflate()` at runtime, and the smaller distribution
+   decodes the same zlib payloads. The source files are 46,859 and 21,479 bytes
+   respectively; the production bundle decreased exactly 25,380 bytes.
+2. Implemented; awaiting manual validation: replaced the `yaml` package used
+   only by `mergeMarkdownFiles()` with Obsidian's external `parseYaml()` and
+   `stringifyYaml()` functions. The production bundle decreased 104,707 bytes.
+   Parsing remains equivalent; Obsidian's frontmatter serializer can format
+   nulls and long lines differently while preserving their parsed values.
+3. Implemented; awaiting manual validation: deflated the
+   React/ReactDOM/JSX-shim source at build time. Unlike the prior failed
+   attempt, the emitted bootstrap initializes Pako and the inflater before
+   decompressing or evaluating React. The production bundle decreased 78,540
+   bytes, and the decompressed package source remains available for popouts.
+   This still requires real Obsidian startup testing because that is where the
+   earlier approach failed.
+4. Remove or archive release-note entries that cannot be rendered. The dialog
+   always slices the assembled notes to ten entries; `Messages.ts` currently
+   has 23 top-level entries, so `2.24.1` and the 12 older entries are
+   unreachable even when the user manually requests all notes. Those entries
+   occupy about 18 KB of source string data. Preserve their history outside
+   the runtime import graph.
+5. Implemented; awaiting manual validation: replaced `opentype.js` with a
+   focused SFNT reader for the three metrics actually consumed by Excalidraw.
+   English family-name parsing was removed because it had no consumer. The
+   reader matched all 21 available TTF/OTF fixtures exactly and retains the
+   existing fallback for invalid files and all WOFF/WOFF2 fonts. The production
+   bundle decreased 186,132 bytes.
+
+Secondary static-payload candidates, after the above checkpoints:
+
+- `CJKLoader.ts` contains about 122 KB of generated font filenames and Unicode
+  ranges. Build-time serialization plus the already available inflater can
+  compact this substantially without moving the data to Excalidraw Extras.
+- `SuggesterInfo.ts` contains about 80 KB of static ExcalidrawAutomate help
+  metadata. Lazy inflation could reduce its stored representation, but its
+  synchronous public help and suggester paths must retain the same object
+  shape and timing.
+- The startup-script template is stored as 18,912 base64 characters; deflating
+  the decoded template produces about 5,096 base64 characters. This is a
+  modest, localized later win.
+- The empty-drawing placeholder is about 23 KB of static scene data and the
+  embedded Excalidraw Mastery settings logo is about 20 KB. Compacting them or
+  changing the image format is possible, but both are user-visible and should
+  follow the non-visual reductions.
+- `chroma-js` is used only for applying SVG color alpha while ColorMaster is
+  already bundled. Consolidation may remove another dependency, but named
+  colors and exact output syntax must be compared before assuming the two
+  implementations are interchangeable.
+
+Do not prioritize the following:
+
+- Moving translations to Excalidraw Extras. The four compressed locales total
+  about 189 KB, but the safer first two packaging changes alone should recover
+  roughly 103 KB, and the dependency substitutions offer more headroom.
+- Removing `polybooljs`, `lz-string`, or compatibility facades solely because
+  they appear large. They participate in the public ExcalidrawAutomate or
+  persisted-scene surface.
+- Replacing Popper or CodeMirror CSS parsing without a dedicated behavioral
+  project. Their collision handling and editor behavior carry more risk than
+  their likely saving justifies.
+- Changing the embedded Excalidraw runtime or its base64 codec as an early
+  step. It dominates bundle size, but it is also the most startup-sensitive
+  and popout-sensitive payload.
+
+Every bundle reduction must record both gross source expectation and actual
+`dist/main.js` delta. Packaging changes require startup tests in the main
+window and a popout on desktop, plus a mobile cold start. Font, YAML, SVG, and
+static-data changes require the feature-specific tests described above rather
+than relying on build success alone.
 
 ### `main.ts`
 

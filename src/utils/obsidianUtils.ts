@@ -5,6 +5,8 @@ import {
   MarkdownView,
   OpenViewState,
   parseFrontMatterEntry,
+  parseYaml,
+  stringifyYaml,
   TextFileView,
   TFile,
   View,
@@ -21,7 +23,6 @@ import {
   FRONTMATTER_KEYS,
   VIEW_TYPE_EXCALIDRAW,
 } from "src/constants/constants";
-import { parse, stringify } from "yaml";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import { setStyle } from "./styleUtils";
 import { isInstanceOfHTMLBodyElement } from "./typechecks";
@@ -378,6 +379,17 @@ export const openLeaf = ({
   return { leaf, promise };
 };
 
+/**
+ * Merges an Excalidraw Markdown template into a target Markdown document.
+ *
+ * Existing target frontmatter values take precedence. Arrays present in both
+ * documents are merged in target-first order, while template-only keys are
+ * appended using Obsidian's YAML parser and serializer.
+ *
+ * @param template - Template Markdown containing frontmatter and optional body.
+ * @param target - Target Markdown whose existing frontmatter is preserved.
+ * @returns The merged Markdown document.
+ */
 export function mergeMarkdownFiles(template: string, target: string): string {
   // Template frontmatter
   const templateFrontmatterEnd = template.indexOf("---", 4);
@@ -385,7 +397,7 @@ export function mergeMarkdownFiles(template: string, target: string): string {
     .substring(4, templateFrontmatterEnd)
     .trim();
   const templateContent = template.substring(templateFrontmatterEnd + 3);
-  const templateFrontmatterObj = (parse(templateFrontmatterRaw) ||
+  const templateFrontmatterObj = (parseYaml(templateFrontmatterRaw) ||
     {}) as FrontMatterCache;
 
   const hasTargetFM =
@@ -397,7 +409,7 @@ export function mergeMarkdownFiles(template: string, target: string): string {
       .replace(/\s+$/, ""); // keep as-is
     const targetContent = target.substring(targetFrontmatterEnd + 3);
 
-    const targetFrontmatterObj: FrontMatterCache = (parse(
+    const targetFrontmatterObj: FrontMatterCache = (parseYaml(
       targetFrontmatterRaw,
     ) || {}) as FrontMatterCache;
 
@@ -414,7 +426,7 @@ export function mergeMarkdownFiles(template: string, target: string): string {
         const tplArr = templateFrontmatterObj[k] as unknown[];
         const merged = [...tArr, ...tplArr.filter((v) => !tArr.includes(v))];
         // Produce YAML for just this key
-        const mergedYaml = stringify({ [k]: merged }).trimEnd();
+        const mergedYaml = stringifyYaml({ [k]: merged }).trimEnd();
         targetFrontmatterRaw =
           replaceYamlKeyBlock(targetFrontmatterRaw, k, mergedYaml) ??
           targetFrontmatterRaw;
@@ -430,14 +442,14 @@ export function mergeMarkdownFiles(template: string, target: string): string {
     }
 
     const appended = Object.keys(newKeys).length
-      ? `${targetFrontmatterRaw}\n${stringify(newKeys).trimEnd()}`
+      ? `${targetFrontmatterRaw}\n${stringifyYaml(newKeys).trimEnd()}`
       : targetFrontmatterRaw;
 
     return `---\n${appended}\n---\n${targetContent}\n\n${templateContent.trim()}\n`;
   }
   // No frontmatter in target: use template FM + target content + template content
   const targetContent = target.trim();
-  const templateFMYaml = stringify(templateFrontmatterObj).trimEnd();
+  const templateFMYaml = stringifyYaml(templateFrontmatterObj).trimEnd();
   return `---\n${templateFMYaml}\n---\n${targetContent}\n\n${templateContent.trim()}\n`;
 }
 

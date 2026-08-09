@@ -13,8 +13,9 @@ export { getEmbeddedFilenameParts } from "./embeddedFilenameParts";
  * @param fontFileName - Vault link path or font filename to resolve.
  * @param sourcePath - Vault path from which the font link is resolved.
  * @param name - Optional font-family name overriding the file basename.
- * @returns The font definition, resolved family name, and encoded data URL.
- * Empty strings are returned when the font cannot be resolved.
+ * @returns The font definition, resolved family name, encoded data URL, and
+ * original buffer. Empty strings and a null buffer are returned when the font
+ * cannot be resolved.
  * @remarks
  * MIME types and CSS format names intentionally preserve the established
  * extension mapping used by plugin startup and embedded SVG font loading.
@@ -24,13 +25,19 @@ export async function getFontDataURL(
   fontFileName: string,
   sourcePath: string,
   name?: string,
-): Promise<{ fontDef: string; fontName: string; dataURL: string }> {
+): Promise<{
+  fontDef: string;
+  fontName: string;
+  dataURL: string;
+  arrayBuffer: ArrayBuffer | null;
+}> {
   let fontDef = "";
   let fontName = "";
   let dataURL = "";
+  let arrayBuffer: ArrayBuffer | null = null;
   const f = app.metadataCache.getFirstLinkpathDest(fontFileName, sourcePath);
   if (f) {
-    const ab = await app.vault.readBinary(f);
+    arrayBuffer = await app.vault.readBinary(f);
     let mimeType = "";
     let format = "";
 
@@ -55,12 +62,12 @@ export async function getFontDataURL(
         mimeType = "application/octet-stream";
     }
     fontName = name ?? f.basename;
-    dataURL = await getDataURL(ab, mimeType);
+    dataURL = await getDataURL(arrayBuffer, mimeType);
     const split = dataURL.split(";base64,", 2);
     dataURL = `${split[0]};charset=utf-8;base64,${split[1]}`;
     fontDef = ` @font-face {font-family: "${fontName}";src: url("${dataURL}") format("${format}")}`;
   }
-  return { fontDef, fontName, dataURL };
+  return { fontDef, fontName, dataURL, arrayBuffer };
 }
 
 /**

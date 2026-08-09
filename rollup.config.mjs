@@ -10,7 +10,6 @@ import fs from 'fs';
 import path from 'path';
 import postprocess from '@zsviczian/rollup-plugin-postprocess';
 import cssnano from 'cssnano';
-import jsesc from 'jsesc';
 import { minify } from 'uglify-js';
 import json from '@rollup/plugin-json';
 import { parseEnv } from 'node:util';
@@ -103,8 +102,13 @@ const react_pkg = isLib ? "" : minifyCode(isProd
 const reactdom_pkg = isLib ? "" : minifyCode(isProd
   ? fs.readFileSync("./node_modules/react-dom/umd/react-dom.production.min.js", "utf8")
   : fs.readFileSync("./node_modules/react-dom/umd/react-dom.development.js", "utf8"));
+const reactPackagesCompressed = isLib
+  ? ""
+  : compressDeflateBase64(react_pkg + reactdom_pkg + jsxRuntimeShim);
 
-const pako_pkg = isLib ? "" : fs.readFileSync("./node_modules/pako/dist/pako.min.js", "utf8");
+// Runtime payloads are only decompressed; including Pako's deflate implementation
+// would add unused code to the size-constrained Obsidian plugin bundle.
+const pako_pkg = isLib ? "" : fs.readFileSync("./node_modules/pako/dist/pako_inflate.min.js", "utf8");
 
 if (!isLib) {
   const excalidraw_styles = isProd
@@ -140,10 +144,7 @@ const packageString = isLib
   '  ' + pako_pkg + '\n' +
   '  return module.exports;\n' +
   '})();\n' +
-  '\nlet REACT_PACKAGES = `' +
-  jsesc(react_pkg + reactdom_pkg + jsxRuntimeShim, { quotes: 'backtick' }) +
-  '`;\n' +
-  // NEW: Fast, mobile-compatible runtime decompression 
+  // Define the dependency-free inflater before React participates in bootstrap.
   'const unpackBase64Deflate = (b64) => {\n' +
   '  const binStr = atob(b64);\n' +
   '  const len = binStr.length;\n' +
@@ -152,6 +153,7 @@ const packageString = isLib
   '  return new TextDecoder().decode(pako.inflate(bytes));\n' +
   '};\n' +
   'window.unpackBase64Deflate = unpackBase64Deflate;\n' +
+  'let REACT_PACKAGES = unpackBase64Deflate("' + reactPackagesCompressed + '");\n' +
   'const unpackExcalidraw = () => unpackBase64Deflate("' + compressDeflateBase64(excalidraw_pkg) + '");\n' +
   'let {react, reactDOM } = new Function(`${REACT_PACKAGES}; return {react: React, reactDOM: ReactDOM};`)();\n' +
   'let excalidrawLib = {};\n' +
