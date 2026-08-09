@@ -2740,7 +2740,7 @@ export default class ExcalidrawView
         this.refreshCanvasOffset();
         if (
           this.isDirty() &&
-          this.plugin.settings.autosave &&
+          this.plugin.autosaveEnabled &&
           !this.semaphores.forceSaving &&
           !this.semaphores.autosaving &&
           !this.semaphores.embeddableIsEditingSelf &&
@@ -2761,7 +2761,7 @@ export default class ExcalidrawView
             timer,
             this.plugin.activeExcalidrawView === this &&
               this.semaphores.dirty &&
-              this.plugin.settings.autosave
+              this.plugin.autosaveEnabled
               ? 1000 //try again in 1 second
               : this.autosaveInterval,
           );

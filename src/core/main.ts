@@ -39,7 +39,6 @@ import {
 } from "../constants/constants";
 import {
   ExcalidrawSettings,
-  DEFAULT_SETTINGS,
   ExcalidrawSettingTab,
 } from "./settings";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
@@ -75,7 +74,7 @@ import {
 import { FieldSuggester } from "../shared/Suggesters/FieldSuggester";
 import { ReleaseNotes } from "../shared/Dialogs/ReleaseNotes";
 import { DeviceType, Packages } from "../types/types";
-import { PaneTarget, PreviewImageType } from "../types/utilTypes";
+import { PaneTarget } from "../types/utilTypes";
 import {
   emulateCTRLClickForLinks,
   linkClickModifierType,
@@ -111,10 +110,6 @@ import { getHighlightColor } from "src/utils/dynamicStyling";
 import { InlineLinkSuggester } from "src/shared/Suggesters/InlineLinkSuggester";
 import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
-import {
-  decryptPersistedAPIKeys,
-  encryptPersistedAPIKeys,
-} from "src/utils/settingsKeyObfuscation";
 import { hideElement, setButtonBgColor } from "src/utils/styleUtils";
 import { installButton } from "src/utils/scriptLibraryUtils";
 import { isInstanceOfHTMLStyleElement } from "src/utils/typechecks";
@@ -122,6 +117,7 @@ import { insertLaTeXToView } from "src/utils/excalidrawViewHelpers";
 import type { MarkdownImageData } from "src/types/markdownImageTypes";
 import { StencilLibraryManager } from "./managers/StencilLibraryManager";
 import type { StencilLibraryData } from "src/types/stencilLibraryTypes";
+import { PluginSettingsManager } from "./managers/PluginSettingsManager";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
@@ -143,9 +139,6 @@ const PHONE_FOOTER_SAFE_AREA_CSS = `
   padding-bottom: 50px;
 }
 `;
-
-type PersistedExcalidrawSettings = Partial<ExcalidrawSettings> &
-  Record<string, unknown>;
 
 /**
  * Compatibility labels consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().
@@ -174,12 +167,15 @@ export default class ExcalidrawPlugin extends Plugin {
   private monkeyPatchManager: MonkeyPatchManager;
   private commandManager: CommandManager;
   private eventManager: EventManager;
+  private settingsManager: PluginSettingsManager;
   public stencilLibraryManager: StencilLibraryManager;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
   public fourthFontLoaded: boolean = false;
   public excalidrawConfig: ExcalidrawConfig;
   public excalidrawFileModes: { [file: string]: string } = {};
   public declare settings: ExcalidrawSettings;
+  /** Session-scoped autosave gate controlled by the temporary commands. */
+  public autosaveEnabled: boolean = true;
   public activeExcalidrawView: ExcalidrawView = null;
   public lastActiveExcalidrawFilePath: string = null;
   public lastActiveExcalidrawLeafID: string = null;
@@ -237,6 +233,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     //isExcalidraw function is used already is already used by MarkdownPostProcessor in onLoad before onLayoutReady
     this.fileManager = new PluginFileManager(this);
+    this.settingsManager = new PluginSettingsManager(this);
 
     setExcalidrawPlugin(this);
     /*if((process.env.NODE_ENV === 'development')) {
@@ -399,7 +396,7 @@ export default class ExcalidrawPlugin extends Plugin {
     );
 
     try {
-      void this.loadSettings({ reEnableAutosave: true }).then(() =>
+      void this.loadSettings().then(() =>
         this.onloadCheckForOnceOffSettingsUpdates(),
       );
     } catch (e) {
@@ -1191,134 +1188,19 @@ export default class ExcalidrawPlugin extends Plugin {
     terminateCompressionWorker();
   }
 
-  public async loadSettings(
-    opts: { reEnableAutosave?: boolean } = { reEnableAutosave: false },
-  ) {
-    if (typeof opts.reEnableAutosave === "undefined") {
-      opts.reEnableAutosave = false;
-    }
-    const persistedSettings = ((await this.loadData()) ??
-      {}) as PersistedExcalidrawSettings;
-    const decryptedSettings = decryptPersistedAPIKeys(persistedSettings);
-    let didSettingsMigration = false;
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, decryptedSettings);
-    if (typeof decryptedSettings.libraryStorageMode === "undefined") {
-      const legacyLibrary: unknown =
-        typeof decryptedSettings.library === "string" &&
-        decryptedSettings.library !== "" &&
-        decryptedSettings.library !== "deprecated"
-          ? JSON_parse(decryptedSettings.library)
-          : decryptedSettings.library2;
-      const legacyLibraryRecord =
-        typeof legacyLibrary === "object" && legacyLibrary !== null
-          ? (legacyLibrary as Record<string, unknown>)
-          : null;
-      const hasLegacyItems = Boolean(
-        (Array.isArray(legacyLibraryRecord?.library) &&
-          legacyLibraryRecord.library.length) ||
-          (Array.isArray(legacyLibraryRecord?.libraryItems) &&
-            legacyLibraryRecord.libraryItems.length),
-      );
-      this.settings.libraryStorageMode = hasLegacyItems ? "data-json" : "vault";
-      this.settings.libraryMigrationStatus = hasLegacyItems
-        ? "pending"
-        : "not-required";
-      didSettingsMigration = true;
-    }
-    const savedMarkdownImageSettings = decryptedSettings.markdownImageSettings;
-    if (!savedMarkdownImageSettings) {
-      this.settings.markdownImageSettings = {
-        defaults: {
-          ...DEFAULT_SETTINGS.markdownImageSettings.defaults,
-          width: this.settings.mdSVGwidth,
-          fontFamily: this.settings.mdFont,
-          fontColor: this.settings.mdFontColor ?? "#000000",
-          border: {
-            enabled: false,
-            color: this.settings.mdBorderColor,
-          },
-          css: "",
-          transclusion: {
-            ...DEFAULT_SETTINGS.markdownImageSettings.defaults.transclusion,
-            border: {
-              ...DEFAULT_SETTINGS.markdownImageSettings.defaults.transclusion
-                .border,
-            },
-          },
-        },
-      };
-      didSettingsMigration = true;
-    } else {
-      this.settings.markdownImageSettings = {
-        defaults: {
-          ...DEFAULT_SETTINGS.markdownImageSettings.defaults,
-          ...savedMarkdownImageSettings.defaults,
-          border: {
-            ...DEFAULT_SETTINGS.markdownImageSettings.defaults.border,
-            ...savedMarkdownImageSettings.defaults?.border,
-          },
-          transclusion: {
-            ...DEFAULT_SETTINGS.markdownImageSettings.defaults.transclusion,
-            ...savedMarkdownImageSettings.defaults?.transclusion,
-            border: {
-              ...DEFAULT_SETTINGS.markdownImageSettings.defaults.transclusion
-                .border,
-              ...savedMarkdownImageSettings.defaults?.transclusion?.border,
-            },
-          },
-        },
-      };
-    }
-    const markdownImageDefaults = this.settings.markdownImageSettings
-      .defaults as unknown as Record<string, unknown>;
-    if ("theme" in markdownImageDefaults) {
-      delete markdownImageDefaults.theme;
-      didSettingsMigration = true;
-    }
-    const settingsRecord = this.settings as unknown as Record<string, unknown>;
-    if (
-      typeof settingsRecord.iframelyAllowed === "boolean" &&
-      typeof this.settings.oEmbedAllowed !== "boolean"
-    ) {
-      this.settings.oEmbedAllowed = settingsRecord.iframelyAllowed;
-      didSettingsMigration = true;
-    }
-    if ("iframelyAllowed" in settingsRecord) {
-      delete settingsRecord.iframelyAllowed;
-      didSettingsMigration = true;
-    }
-    if (!this.settings.previewImageType) {
-      //migration 1.9.13
-      if (typeof this.settings.displaySVGInPreview === "undefined") {
-        this.settings.previewImageType = PreviewImageType.SVGIMG;
-      } else {
-        this.settings.previewImageType = this.settings.displaySVGInPreview
-          ? PreviewImageType.SVGIMG
-          : PreviewImageType.PNG;
-      }
-    }
-    const encryptedPersistedSettings = encryptPersistedAPIKeys(
-      this.settings as PersistedExcalidrawSettings,
-    );
-    const shouldPersistEncryptedSettings =
-      JSON.stringify(encryptedPersistedSettings) !==
-      JSON.stringify(persistedSettings);
-    if (didSettingsMigration || shouldPersistEncryptedSettings) {
-      await this.saveData(encryptedPersistedSettings);
-    }
-    if (opts.reEnableAutosave) {
-      this.settings.autosave = true;
-    }
+  /**
+   * Loads settings through the plugin-owned settings manager.
+   */
+  public async loadSettings(): Promise<void> {
+    await this.settingsManager.loadSettings();
   }
 
-  async saveSettings() {
-    await this.saveData(
-      encryptPersistedAPIKeys(
-        this.settings as PersistedExcalidrawSettings,
-      ),
-    );
+  /** Persists the current settings through the plugin-owned settings manager. */
+  async saveSettings(): Promise<void> {
+    await this.settingsManager.saveSettings();
   }
 
+  /** Reloads externally changed settings and invalidates cached libraries. */
   async onExternalSettingsChange() {
     await this.loadSettings();
     this.stencilLibraryManager?.invalidate();
