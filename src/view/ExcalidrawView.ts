@@ -252,6 +252,7 @@ import {
 } from "../types/excalidrawViewTypes";
 import { DropManager } from "./managers/DropManager";
 import { ViewExportManager } from "./managers/ViewExportManager";
+import { ViewFullscreenManager } from "./managers/ViewFullscreenManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 import { PageOrientation, PageSize } from "src/types/exportUtilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
@@ -292,9 +293,6 @@ type SelectedImage = { id: string; fileId: FileId };
 interface WorkspaceItemExt extends WorkspaceItem {
   containerEl: HTMLElement;
 }
-
-const HIDE = "excalidraw-hidden";
-const SHOW = "excalidraw-visible";
 
 export const addFiles = async (
   files: FileData[],
@@ -401,6 +399,7 @@ export default class ExcalidrawView
 {
   private dropManager: DropManager;
   private exportManager: ViewExportManager;
+  private fullscreenManager: ViewFullscreenManager;
   public hoverPopover: HoverPopover | null = null;
   private freedrawLastActiveTimestamp: number = 0;
   public exportDialog: ExportDialog | null = null;
@@ -538,6 +537,7 @@ export default class ExcalidrawView
       isMaskFile,
       sceneRemoveInternalLinks,
     });
+    this.fullscreenManager = new ViewFullscreenManager(this);
     this.setHookServer();
     this.dropManager = new DropManager(this);
   }
@@ -1264,124 +1264,19 @@ export default class ExcalidrawView
     );
   }
 
-  gotoFullscreen() {
-    if (this.plugin.leafChangeTimeout) {
-      window.clearTimeout(this.plugin.leafChangeTimeout); //leafChangeTimeout is created on window in main.ts!!!
-      this.plugin.clearLeafChangeTimeout();
-    }
-    if (!this.excalidrawWrapperRef) {
-      return;
-    }
-    if (this.toolsPanelRef && this.toolsPanelRef.current) {
-      this.toolsPanelRef.current.setFullscreen(true);
-    }
-
-    const hide = (el: HTMLElement) => {
-      setStyle(el, { marginTop: "0px" });
-      let tmpEl = el;
-      while (tmpEl && !tmpEl.hasClass("workspace-split")) {
-        el.addClass(SHOW);
-        el = tmpEl;
-        tmpEl = el.parentElement;
-      }
-      if (el) {
-        el.addClass(SHOW);
-        el.querySelectorAll(`div.workspace-split:not(.${SHOW})`).forEach(
-          (node) => {
-            if (node !== el) {
-              node.addClass(SHOW);
-            }
-          },
-        );
-        el.querySelector(
-          `div.workspace-leaf-content.${SHOW} > .view-header`,
-        ).addClass(SHOW);
-        el.querySelectorAll(
-          `div.workspace-tab-container.${SHOW} > div.workspace-leaf:not(.${SHOW})`,
-        ).forEach((node) => node.addClass(SHOW));
-        el.querySelectorAll(
-          `div.workspace-tabs.${SHOW} > div.workspace-tab-header-container`,
-        ).forEach((node) => node.addClass(SHOW));
-        el.querySelectorAll(
-          `div.workspace-split.${SHOW} > div.workspace-tabs:not(.${SHOW})`,
-        ).forEach((node) => node.addClass(SHOW));
-      }
-      const doc = this.ownerDocument;
-      doc.body
-        .querySelectorAll(`div.workspace-split:not(.${SHOW})`)
-        .forEach((node) => {
-          if (node !== tmpEl) {
-            node.addClass(HIDE);
-          } else {
-            node.addClass(SHOW);
-          }
-        });
-      doc.body
-        .querySelector(`div.workspace-leaf-content.${SHOW} > .view-header`)
-        .addClass(HIDE);
-      doc.body
-        .querySelectorAll(
-          `div.workspace-tab-container.${SHOW} > div.workspace-leaf:not(.${SHOW})`,
-        )
-        .forEach((node) => node.addClass(HIDE));
-      doc.body
-        .querySelectorAll(
-          `div.workspace-tabs.${SHOW} > div.workspace-tab-header-container`,
-        )
-        .forEach((node) => node.addClass(HIDE));
-      doc.body
-        .querySelectorAll(
-          `div.workspace-split.${SHOW} > div.workspace-tabs:not(.${SHOW})`,
-        )
-        .forEach((node) => node.addClass(HIDE));
-      doc.body
-        .querySelectorAll(`div.workspace-ribbon`)
-        .forEach((node) => node.addClass(HIDE));
-      doc.body
-        .querySelectorAll(`div.mobile-navbar`)
-        .forEach((node) => node.addClass(HIDE));
-      doc.body
-        .querySelectorAll(`div.status-bar`)
-        .forEach((node) => node.addClass(HIDE));
-      doc.body
-        .querySelectorAll(`div.titlebar`)
-        .forEach((node) => node.addClass(HIDE));
-      const topPadding = doc.body.querySelector(
-        ".is-mobile .workspace > .mod-root",
-      );
-      if (topPadding && isInstanceOfHTMLElement(topPadding)) {
-        setStyle(topPadding, { paddingTop: "0px" });
-      }
-    };
-
-    hide(this.contentEl);
+  /** Enters fullscreen through the view-scoped fullscreen manager. */
+  gotoFullscreen(): void {
+    this.fullscreenManager.gotoFullscreen();
   }
 
+  /** Reports fullscreen state through the view-scoped fullscreen manager. */
   isFullscreen(): boolean {
-    return Boolean(this.ownerDocument.body.querySelector(".excalidraw-hidden"));
+    return this.fullscreenManager.isFullscreen();
   }
 
-  exitFullscreen() {
-    if (!this.isFullscreen()) {
-      return;
-    }
-    if (this.toolsPanelRef && this.toolsPanelRef.current) {
-      this.toolsPanelRef.current.setFullscreen(false);
-    }
-    const doc = this.ownerDocument;
-    doc
-      .querySelectorAll(".excalidraw-hidden")
-      .forEach((el) => el.removeClass(HIDE));
-    doc
-      .querySelectorAll(".excalidraw-visible")
-      .forEach((el) => el.removeClass(SHOW));
-    const topPadding = doc.body.querySelector(
-      ".is-mobile .workspace > .mod-root",
-    );
-    if (topPadding && isInstanceOfHTMLElement(topPadding)) {
-      setStyle(topPadding, { paddingTop: "" });
-    }
-    setStyle(this.contentEl, { marginTop: "" });
+  /** Exits fullscreen through the view-scoped fullscreen manager. */
+  exitFullscreen(): void {
+    this.fullscreenManager.exitFullscreen();
   }
 
   removeLinkTooltip() {
