@@ -359,7 +359,6 @@ export const addFiles = async (
     });
 
   if (s.dirty) {
-    //debug({where:"ExcalidrawView.addFiles",file:view.file.name,dataTheme:view.excalidrawData.scene.appState.theme,before:"updateScene",state:scene.appState})
     view.updateScene({
       elements: s.scene.elements,
       appState: s.scene.appState,
@@ -406,7 +405,6 @@ export default class ExcalidrawView
   private freedrawLastActiveTimestamp: number = 0;
   public exportDialog: ExportDialog | null = null;
   public excalidrawData: ExcalidrawData;
-  //public excalidrawRef: React.MutableRefObject<unknown> = null;
   public excalidrawRoot: ReturnType<Packages["reactDOM"]["createRoot"]> | null =
     null;
   public excalidrawAPI: ExcalidrawImperativeAPI = null;
@@ -790,8 +788,6 @@ export default class ExcalidrawView
     ) {
       return;
     }
-    //console.log("saving - embeddable not editing")
-    //debug({where:"save", preventReload, forcesave, semaphores:this.semaphores});
     if (this.semaphores.saving) {
       return;
     }
@@ -1362,7 +1358,6 @@ export default class ExcalidrawView
   }
 
   isFullscreen(): boolean {
-    //(process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.isFullscreen, "ExcalidrawView.isFullscreen");
     return Boolean(this.ownerDocument.body.querySelector(".excalidraw-hidden"));
   }
 
@@ -1390,13 +1385,11 @@ export default class ExcalidrawView
   }
 
   removeLinkTooltip() {
-    //.classList.remove("excalidraw-tooltip--visible");document.querySelector(".excalidraw-tooltip",);
     const tooltip = this.ownerDocument.body.querySelector(
       "body>div.excalidraw-tooltip,div.excalidraw-tooltip--visible",
     );
     if (tooltip) {
       tooltip.classList.remove("excalidraw-tooltip--visible");
-      //this.ownerDocument.body.removeChild(tooltip);
     }
   }
 
@@ -2302,7 +2295,6 @@ export default class ExcalidrawView
     }
     const st: AppState = api.getAppState();
     this.excalidrawData.scene.theme = theme;
-    //debug({where:"ExcalidrawView.setTheme",file:this.file.name,dataTheme:this.excalidrawData.scene.appState.theme,before:"updateScene"});
     this.updateScene({
       appState: {
         ...st,
@@ -2383,7 +2375,6 @@ export default class ExcalidrawView
           !isEditingText &&
           !isEditingNewElement //https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/630
         ) {
-          //console.log("autosave");
           this.autosaveTimer = null;
           if (this.excalidrawAPI) {
             this.semaphores.autosaving = true;
@@ -2720,7 +2711,6 @@ export default class ExcalidrawView
     //happen within 100 ms. When this happens the timer is cleared and the
     //next time reload triggers the file will be reloaded as normal.
     if (this.semaphores.embeddableIsEditingSelf) {
-      //console.log("reload - embeddable is editing")
       if (this.editingSelfResetTimer) {
         this.clearEmbeddableNodeIsEditingTimer();
         this.semaphores.embeddableIsEditingSelf = false;
@@ -2730,7 +2720,6 @@ export default class ExcalidrawView
       }
       return;
     }
-    //console.log("reload - embeddable is not editing")
 
     if (this.semaphores.preventReload) {
       this.semaphores.preventReload = false;
@@ -3584,7 +3573,6 @@ export default class ExcalidrawView
     if (this.semaphores.embeddableIsEditingSelf) {
       return;
     }
-    //console.log("synchronizeWithData - embeddable is not editing");
     //check if saving, wait until not
     let counter = 0;
     while (this.semaphores.saving && counter++ < 30) {
@@ -3847,8 +3835,6 @@ export default class ExcalidrawView
       const zenModeEnabled = !this.isLoaded
         ? om.zenModeEnabled
         : api.getAppState().zenModeEnabled;
-      //debug({where:"ExcalidrawView.loadDrawing",file:this.file.name,dataTheme:excalidrawData.appState.theme,before:"updateScene"})
-      //api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
 
       this.updateScene(
         {
@@ -3911,7 +3897,6 @@ export default class ExcalidrawView
             ?.firstElementChild as HTMLElement | null
         )?.focus();
       }
-      //debug({where:"ExcalidrawView.loadDrawing",file:this.file.name,before:"this.loadSceneFiles"});
       this.onAfterLoadScene(justloaded);
     } else {
       await this.instantiateExcalidraw({
@@ -5105,7 +5090,6 @@ export default class ExcalidrawView
     if (this.hoverPreviewTarget) {
       return;
     } //hover preview is already shown
-    //(process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.showHoverPreview, "ExcalidrawView.showHoverPreview", linktext, element);
     if (!this.lastMouseEvent) {
       return;
     }
@@ -5308,7 +5292,6 @@ export default class ExcalidrawView
   };
 
   private excalidrawDIVonKeyDown(event: KeyboardEvent) {
-    //(process.env.NODE_ENV === 'development') && DEBUGGING && debug(this.excalidrawDIVonKeyDown, "ExcalidrawView.excalidrawDIVonKeyDown", event);
     if (this.semaphores?.viewunload) {
       return;
     }
@@ -5978,8 +5961,6 @@ export default class ExcalidrawView
       }
     }
     if (data.elements) {
-      //const onlyImages = data.elements.length > 0 && data.elements.every((el) => el.type === "image");
-      //const preventReload = !onlyImages;
       data.elements
         .filter((el) => el.type === "text" || el.link)
         .forEach((el) =>
@@ -6099,7 +6080,6 @@ export default class ExcalidrawView
   }
 
   private async onThemeChange(newTheme: string) {
-    //debug({where:"ExcalidrawView.onThemeChange",file:this.file.name,before:"this.loadSceneFiles",newTheme});
     this.excalidrawData.scene.appState.theme = newTheme;
     await this.loadSceneFiles(true);
     this.toolsPanelRef?.current?.setTheme(newTheme as "dark" | "light");
@@ -7457,7 +7437,6 @@ export default class ExcalidrawView
     }
     api.setDesktopUIMode(this.pendingUIMode);
     this.pendingUIMode = null;
-    //api.setLocalFont(this.plugin.settings.experimentalEnableFourthFont);
   }
 
   private onExcalidrawInitialize(api: ExcalidrawImperativeAPI) {
@@ -8031,10 +8010,6 @@ export default class ExcalidrawView
     const toolsPanelRef = React.useRef<ToolsPanel>(null);
     const embeddableMenuRef = React.useRef<HTMLDivElement>(null);
     this.toolsPanelRef = toolsPanelRef;
-    // const [dimensions, setDimensions] = React.useState({
-    //   width: undefined,
-    //   height: undefined,
-    // });
 
     React.useEffect(() => {
       this.embeddableMenuRef = embeddableMenuRef;
@@ -8084,24 +8059,6 @@ export default class ExcalidrawView
         this.excalidrawWrapperRef.current = null;
       };
     }, []);
-
-    //React.useEffect(() => {
-    //   setDimensions({
-    //     width: this.contentEl.clientWidth,
-    //     height: this.contentEl.clientHeight,
-    //   });
-
-    //   const onResize = () => {
-    //     const width = this.contentEl.clientWidth;
-    //     const height = this.contentEl.clientHeight;
-    //     setDimensions({ width, height });
-    //   };
-
-    //   this.ownerWindow.addEventListener("resize", onResize);
-    //   return () => {
-    //     this.ownerWindow.removeEventListener("resize", onResize);
-    //   };
-    // }, [excalidrawWrapperRef]);
 
     const observer = React.useRef(
       new ResizeObserver((entries) => {
@@ -8159,8 +8116,6 @@ export default class ExcalidrawView
           {
             onExcalidrawAPI: (api) => this.setExcalidrawAPI(api),
             onInitialize: (api) => this.onExcalidrawInitialize(api),
-            //width: "100%", //dimensions.width, //2026.05.15
-            //height: "100%", //dimensions.height, //2026.05.15
             UIOptions: {
               canvasActions: {
                 loadScene: false,
@@ -8248,7 +8203,6 @@ export default class ExcalidrawView
     this.contentEl.empty();
     const React = this.packages.react;
     const ReactDOM = this.packages.reactDOM;
-    //console.log("ExcalidrawView.instantiateExcalidraw()");
     this.clearDirty();
 
     // apply the handedness, settings were just reloaded in the calling method.
