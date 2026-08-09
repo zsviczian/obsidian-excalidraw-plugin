@@ -112,12 +112,12 @@ import { KeyBlocker } from "src/types/excalidrawAutomateTypes";
 import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 import { hideElement, setButtonBgColor } from "src/utils/styleUtils";
 import { installButton } from "src/utils/scriptLibraryUtils";
-import { isInstanceOfHTMLStyleElement } from "src/utils/typechecks";
 import { insertLaTeXToView } from "src/utils/excalidrawViewHelpers";
 import type { MarkdownImageData } from "src/types/markdownImageTypes";
 import { StencilLibraryManager } from "./managers/StencilLibraryManager";
 import type { StencilLibraryData } from "src/types/stencilLibraryTypes";
 import { PluginSettingsManager } from "./managers/PluginSettingsManager";
+import { FooterSafeAreaManager } from "./managers/FooterSafeAreaManager";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
@@ -132,13 +132,6 @@ type FileMasterInfo = {
   blockrefData: string;
   colorMapJSON?: string;
 };
-
-const PHONE_FOOTER_SAFE_AREA_STYLE_ID = "excalidraw-phone-footer-safe-area";
-const PHONE_FOOTER_SAFE_AREA_CSS = `
-.excalidraw .App-bottom-bar {
-  padding-bottom: 50px;
-}
-`;
 
 /**
  * Compatibility labels consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().
@@ -168,6 +161,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private commandManager: CommandManager;
   private eventManager: EventManager;
   private settingsManager: PluginSettingsManager;
+  private footerSafeAreaManager: FooterSafeAreaManager;
   public stencilLibraryManager: StencilLibraryManager;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
   public fourthFontLoaded: boolean = false;
@@ -234,6 +228,7 @@ export default class ExcalidrawPlugin extends Plugin {
     //isExcalidraw function is used already is already used by MarkdownPostProcessor in onLoad before onLayoutReady
     this.fileManager = new PluginFileManager(this);
     this.settingsManager = new PluginSettingsManager(this);
+    this.footerSafeAreaManager = new FooterSafeAreaManager(this);
 
     setExcalidrawPlugin(this);
     /*if((process.env.NODE_ENV === 'development')) {
@@ -743,50 +738,9 @@ export default class ExcalidrawPlugin extends Plugin {
     });
   }
 
-  public updateFooterSafeAreaPadding() {
-    const documents = new Set<Document>([
-      mainDocument,
-      ...this.getOpenObsidianDocuments(),
-    ]);
-    const shouldEnable =
-      (DEVICE.isPhone && this.settings?.phoneFooterSafeAreaPadding) ||
-      (DEVICE.isTablet && this.settings?.tabletFooterSafeAreaPadding);
-
-    documents.forEach((ownerDocument) => {
-      const existingStylesheet = ownerDocument.getElementById(
-        PHONE_FOOTER_SAFE_AREA_STYLE_ID,
-      );
-      if (!shouldEnable) {
-        if (existingStylesheet) {
-          ownerDocument.head.removeChild(existingStylesheet);
-        }
-        return;
-      }
-      if (isInstanceOfHTMLStyleElement(existingStylesheet)) {
-        existingStylesheet.textContent = PHONE_FOOTER_SAFE_AREA_CSS;
-        return;
-      }
-
-      const stylesheet = deliberateCreateElement(ownerDocument, "style");
-      stylesheet.id = PHONE_FOOTER_SAFE_AREA_STYLE_ID;
-      stylesheet.textContent = PHONE_FOOTER_SAFE_AREA_CSS;
-      ownerDocument.head.appendChild(stylesheet);
-    });
-  }
-
-  private removePhoneFooterSafeAreaPadding() {
-    const documents = new Set<Document>([
-      mainDocument,
-      ...this.getOpenObsidianDocuments(),
-    ]);
-    documents.forEach((ownerDocument) => {
-      const existingStylesheet = ownerDocument.getElementById(
-        PHONE_FOOTER_SAFE_AREA_STYLE_ID,
-      );
-      if (existingStylesheet) {
-        ownerDocument.head.removeChild(existingStylesheet);
-      }
-    });
+  /** Updates the optional mobile footer padding across open documents. */
+  public updateFooterSafeAreaPadding(): void {
+    this.footerSafeAreaManager.updateFooterSafeAreaPadding();
   }
 
   private getOpenObsidianDocuments(): Document[] {
@@ -1137,7 +1091,7 @@ export default class ExcalidrawPlugin extends Plugin {
     this.stylesManager = null;
 
     this.removeFonts();
-    this.removePhoneFooterSafeAreaPadding();
+    this.footerSafeAreaManager.destroy();
 
     this.eaInstances.forEach((ea) => ea?.destroy());
     this.eaInstances.clear();
