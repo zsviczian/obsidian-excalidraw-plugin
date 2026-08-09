@@ -19,7 +19,6 @@ import {
   ExcalidrawElement,
   ExcalidrawImageElement,
   ExcalidrawEmbeddableElement,
-  ExcalidrawMagicFrameElement,
   ExcalidrawTextElement,
   FileId,
   NonDeletedExcalidrawElement,
@@ -37,7 +36,6 @@ import {
   LibraryItems,
   UIAppState,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
-import type { TTTDDialog } from "@zsviczian/excalidraw/types/excalidraw/components/TTDDialog/types";
 import {
   VIEW_TYPE_EXCALIDRAW,
   ICON_NAME,
@@ -175,13 +173,6 @@ import {
   getImageElementAtPointer,
   getElementWithLinkAtPointer,
 } from "../utils/getElementAtPointer";
-import {
-  excalidrawSword,
-  ICONS,
-  LogoWrapper,
-  saveIcon,
-  SwordColors,
-} from "../constants/actionIcons";
 import { ExportDialog } from "../shared/Dialogs/ExportDialog";
 import { FileAndFolderSelectorModal } from "../shared/Dialogs/FileAndFolderSelectorModal";
 import { getEA } from "src/core";
@@ -224,7 +215,7 @@ import { useDefaultExcalidrawFrame } from "../utils/customEmbeddableUtils";
 import { UniversalInsertFileModal } from "../shared/Dialogs/UniversalInsertFileModal";
 import { shouldRenderMermaid } from "../utils/mermaidUtils";
 import { nanoid } from "nanoid";
-import { CustomMutationObserver, DEBUGGING, log } from "../utils/debugHelper";
+import { CustomMutationObserver, DEBUGGING } from "../utils/debugHelper";
 import {
   errorHTML,
   extractCodeBlocks,
@@ -256,6 +247,7 @@ import { DropManager } from "./managers/DropManager";
 import { ViewExportManager } from "./managers/ViewExportManager";
 import { ViewFullscreenManager } from "./managers/ViewFullscreenManager";
 import { ViewLinkNavigationManager } from "./managers/ViewLinkNavigationManager";
+import { ViewExcalidrawExtensionRenderer } from "./managers/ViewExcalidrawExtensionRenderer";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 import { PageOrientation, PageSize } from "src/types/exportUtilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
@@ -265,7 +257,6 @@ import { UIMode } from "src/shared/Dialogs/UIModeSettingComponent";
 import { UIModeSettings } from "src/shared/Dialogs/UIModeSettings";
 import { copyLinkToSelectedElementToClipboard } from "src/shared/Dialogs/copyLinkToSelectedElement";
 import { getPDFCropRect } from "src/utils/PDFUtils";
-import { ttdPersistenceAdapter } from "src/shared/TTDDialogPersistanceAdater";
 import {
   CaptureUpdateActionType,
   DurableIncrement,
@@ -401,6 +392,7 @@ export default class ExcalidrawView
   private exportManager: ViewExportManager;
   private fullscreenManager: ViewFullscreenManager;
   private linkNavigationManager: ViewLinkNavigationManager;
+  private excalidrawExtensionRenderer: ViewExcalidrawExtensionRenderer;
   public hoverPopover: HoverPopover | null = null;
   private freedrawLastActiveTimestamp: number = 0;
   public exportDialog: ExportDialog | null = null;
@@ -567,6 +559,26 @@ export default class ExcalidrawView
       getSelectedElementWithLink: () => this.getSelectedElementWithLink(),
       forceSaveIfRequired: () => this.forceSaveIfRequired(),
     });
+    this.excalidrawExtensionRenderer =
+      new ViewExcalidrawExtensionRenderer(this, {
+        CustomEmbeddable,
+        REGEX_LINK,
+        REG_LINKINDEX_HYPERLINK,
+        diagramToHTML,
+        errorHTML,
+        extractCodeBlocks,
+        generateAIText,
+        getJsonErrorMessage,
+        openExternalLink,
+        renderWebView,
+        useDefaultExcalidrawFrame,
+        openUIModeSettings: () => {
+          const uiModes = new UIModeSettings(this.plugin);
+          uiModes.open();
+        },
+        openScriptInstallPrompt: () => this.actionOpenScriptInstallPrompt(),
+        openExportImageDialog: () => this.actionOpenExportImageDialog(),
+      });
     this.setHookServer();
     this.dropManager = new DropManager(this);
   }
@@ -6906,400 +6918,30 @@ export default class ExcalidrawView
   }
 
   private ttdDialog() {
-    const systemPrompt =
-      "The user will provide you with a text prompt. Your task is to generate a mermaid diagram based on the prompt. Use the graph, sequenceDiagram, flowchart or classDiagram types based on what best fits the request. Return a single message containing only the mermaid diagram in a codeblock. Avoid the use of `()` parenthesis in the mermaid script.";
-    const instruction =
-      "Return a single message containing only the mermaid diagram in a codeblock.";
-
-    return this.packages.react.createElement(
-      this.packages.excalidrawLib.TTDDialog,
-      {
-        persistenceAdapter: ttdPersistenceAdapter,
-        onTextSubmit: async (
-          props: Parameters<TTTDDialog.onTextSubmit>[0],
-        ): Promise<TTTDDialog.OnTextSubmitRetValue> => {
-          const {
-            messages = [],
-            onChunk,
-            onStreamCreated,
-            signal,
-          } = props ?? {};
-
-          try {
-            onStreamCreated?.();
-
-            const { response, json, content, rateLimit, rateLimitRemaining } =
-              await generateAIText(
-                {
-                  systemPrompt,
-                  messages,
-                  instruction,
-                },
-                {
-                  plugin: this.plugin,
-                  signal,
-                },
-              );
-
-            if (
-              !response ||
-              response.status < 200 ||
-              response.status >= 300 ||
-              json?.error
-            ) {
-              log(json);
-              return {
-                error: new Error(
-                  getJsonErrorMessage(json) ??
-                    `Request failed with status ${response?.status ?? 0}`,
-                ),
-                rateLimit,
-                rateLimitRemaining,
-              };
-            }
-
-            if (!content) {
-              log(json);
-              return {
-                error: new Error(
-                  "Generation failed... see console log for details",
-                ),
-                rateLimit,
-                rateLimitRemaining,
-              };
-            }
-
-            let generatedResponse =
-              extractCodeBlocks(content).find(
-                (block) => (block.type ?? "").toLowerCase() === "mermaid",
-              )?.data ??
-              extractCodeBlocks(content)[0]?.data ??
-              content.trim();
-
-            if (!generatedResponse) {
-              log(json);
-              return {
-                error: new Error(
-                  "Generation failed... see console log for details",
-                ),
-                rateLimit,
-                rateLimitRemaining,
-              };
-            }
-
-            if (generatedResponse.startsWith("mermaid")) {
-              generatedResponse = generatedResponse
-                .replace(/^mermaid/, "")
-                .trim();
-            }
-
-            onChunk?.(generatedResponse);
-
-            return {
-              generatedResponse,
-              error: null,
-              rateLimit,
-              rateLimitRemaining,
-            };
-          } catch (err) {
-            if (err?.name === "AbortError") {
-              return { error: new Error("Request aborted") };
-            }
-            log(err);
-            return { error: new Error(err?.message ?? "Request failed") };
-          }
-        },
-      },
-    );
+    return this.excalidrawExtensionRenderer.ttdDialog();
   }
 
   private diagramToCode() {
-    return this.packages.react.createElement(
-      this.packages.excalidrawLib.DiagramToCodePlugin,
-      {
-        generate: async ({
-          frame,
-          children,
-        }: {
-          frame: ExcalidrawMagicFrameElement;
-          children: readonly ExcalidrawElement[];
-        }) => {
-          const appState = this.excalidrawAPI.getAppState();
-          const nonDeletedChildren = children.filter(
-            (child): child is NonDeletedExcalidrawElement => !child.isDeleted,
-          );
-          try {
-            const blob = await this.packages.excalidrawLib.exportToBlob({
-              elements: nonDeletedChildren,
-              appState: {
-                ...appState,
-                exportBackground: true,
-                viewBackgroundColor: appState.viewBackgroundColor,
-              },
-              exportingFrame: frame,
-              files: this.excalidrawAPI.getFiles(),
-              mimeType: "image/jpeg",
-            });
-
-            const dataURL = await this.packages.excalidrawLib.getDataURL(blob);
-            const textFromFrameChildren =
-              this.packages.excalidrawLib.getTextFromElements(
-                nonDeletedChildren,
-              );
-
-            const response = await diagramToHTML({
-              image: dataURL,
-              text: textFromFrameChildren,
-              theme: appState.theme,
-            });
-
-            if (!response.ok) {
-              const text =
-                response.error ||
-                getJsonErrorMessage(response.json) ||
-                "Unknown error during generation";
-              return {
-                html: errorHTML(text),
-              };
-            }
-
-            if (!response.html) {
-              return {
-                html: errorHTML("Nothing generated"),
-              };
-            }
-
-            return { html: response.html };
-          } catch (err) {
-            return {
-              html: errorHTML(err?.message ?? "Request failed"),
-            };
-          }
-        },
-      },
-    );
+    return this.excalidrawExtensionRenderer.diagramToCode();
   }
 
   private ttdDialogTrigger() {
-    return this.packages.react.createElement(
-      this.packages.excalidrawLib.TTDDialogTrigger,
-      {},
-    );
+    return this.excalidrawExtensionRenderer.ttdDialogTrigger();
   }
 
   private renderWelcomeScreen() {
-    if (!this.plugin.settings.showSplashscreen) {
-      return null;
-    }
-    const React = this.packages.react;
-    const { WelcomeScreen } = this.packages.excalidrawLib;
-    const filecount = this.app.vault
-      .getFiles()
-      .filter((f) => this.plugin.isExcalidrawFile(f)).length;
-    const rank =
-      filecount < 200
-        ? "Bronze"
-        : filecount < 750
-          ? "Silver"
-          : filecount < 2000
-            ? "Gold"
-            : "Platinum";
-    const nextRankDelta =
-      filecount < 200
-        ? 200 - filecount
-        : filecount < 750
-          ? 750 - filecount
-          : filecount < 2000
-            ? 2000 - filecount
-            : 0;
-    const { title } = SwordColors[rank];
-    return React.createElement(
-      WelcomeScreen,
-      {},
-      React.createElement(
-        WelcomeScreen.Center,
-        {},
-        React.createElement(
-          WelcomeScreen.Center.Logo,
-          {},
-          React.createElement(
-            LogoWrapper as React.FC<{ children?: React.ReactNode }>,
-            {},
-            excalidrawSword(rank),
-          ),
-        ),
-        React.createElement(WelcomeScreen.Center.Heading, {
-          color: "var(--color-gray-40)",
-          message:
-            nextRankDelta > 0
-              ? `${rank}: ${nextRankDelta} ${t("WELCOME_RANK_NEXT")}`
-              : `${rank}: ${t("WELCOME_RANK_LEGENDARY")}`,
-          children: title,
-        }),
-        React.createElement(
-          WelcomeScreen.Center.Heading,
-          null,
-          t("WELCOME_COMMAND_PALETTE"),
-          React.createElement("br"),
-          t("WELCOME_OBSIDIAN_MENU"),
-          React.createElement("br"),
-          t("WELCOME_SCRIPT_LIBRARY"),
-          React.createElement("br"),
-          t("WELCOME_HELP_MENU"),
-        ),
-        React.createElement(
-          WelcomeScreen.Center.Menu,
-          {},
-          React.createElement(WelcomeScreen.Center.MenuItemLink, {
-            icon: ICONS.Learn,
-            href: URLs.COMMUNITY_SKETCH_YOUR_MIND_COM,
-            shortcut: null,
-            "aria-label": t("WELCOME_SYM_ARIA"),
-            children: t("WELCOME_SYM_LINK"),
-          }),
-          React.createElement(WelcomeScreen.Center.MenuItemLink, {
-            icon: ICONS.YouTube,
-            href: URLs.WWW_YOUTUBE_COM_VISUALPKM,
-            shortcut: null,
-            "aria-label": t("WELCOME_YOUTUBE_ARIA"),
-            children: t("WELCOME_YOUTUBE_LINK"),
-          }),
-          React.createElement(WelcomeScreen.Center.MenuItemLink, {
-            icon: ICONS.twitter,
-            href: URLs.TWITTER_COM_ZSVICZIAN,
-            shortcut: null,
-            "aria-label": t("WELCOME_TWITTER_ARIA"),
-            children: t("WELCOME_TWITTER_LINK"),
-          }),
-          React.createElement(WelcomeScreen.Center.MenuItemLink, {
-            icon: ICONS.heart,
-            href: URLs.KO_FI_COM_ZSOLT,
-            shortcut: null,
-            "aria-label": t("WELCOME_DONATE_ARIA"),
-            children: t("WELCOME_DONATE_LINK"),
-          }),
-        ),
-      ),
-    );
+    return this.excalidrawExtensionRenderer.renderWelcomeScreen();
   }
 
   private renderCustomActionsMenu() {
-    const React = this.packages.react;
-    const { MainMenu } = this.packages.excalidrawLib;
-
-    return React.createElement(
-      MainMenu,
-      {},
-      React.createElement(MainMenu.DefaultItems.ChangeCanvasBackground),
-      React.createElement(MainMenu.DefaultItems.Preferences),
-      React.createElement(MainMenu.DefaultItems.ToggleTheme),
-      React.createElement(MainMenu.Separator),
-      React.createElement(MainMenu.Item, {
-        icon: ICONS.tray,
-        "aria-label": t("ARIA_LABEL_TRAY_MODE"),
-        onSelect: () => {
-          const uiModes = new UIModeSettings(this.plugin);
-          uiModes.open();
-        },
-        children: t("TRAY_TRAY_MODE"),
-      }),
-      React.createElement(MainMenu.Item, {
-        icon: saveIcon(false),
-        "aria-label": t("FORCE_SAVE"),
-        onSelect: () => {
-          void this.forceSave();
-        },
-        children: t("TRAY_SAVE"),
-      }),
-      React.createElement(MainMenu.Item, {
-        icon: ICONS.scriptEngine,
-        "aria-label": t("TRAY_SCRIPT_LIBRARY_ARIA"),
-        onSelect: () => this.actionOpenScriptInstallPrompt(),
-        children: t("TRAY_SCRIPT_LIBRARY"),
-      }),
-      React.createElement(MainMenu.Item, {
-        icon: ICONS.ExportImage,
-        "aria-label": t("TRAY_EXPORT_ARIA"),
-        onSelect: () => this.actionOpenExportImageDialog(),
-        children: t("TRAY_EXPORT"),
-      }),
-      React.createElement(MainMenu.Item, {
-        icon: ICONS.switchToMarkdown,
-        "aria-label": t("TRAY_SWITCH_TO_MD_ARIA"),
-        onSelect: () => {
-          void this.openAsMarkdown();
-        },
-        children: t("TRAY_SWITCH_TO_MD"),
-      }),
-      React.createElement(MainMenu.Separator),
-      React.createElement(MainMenu.Item, {
-        icon: ICONS.Learn,
-        "aria-label": t("LINKS_JOIN_SYM_ARIA"),
-        onSelect: () =>
-          openExternalLink(URLs.COMMUNITY_SKETCH_YOUR_MIND_COM, this.app),
-        children: t("LINKS_JOIN_SYM"),
-      }),
-      React.createElement(MainMenu.DefaultItems.Help),
-      React.createElement(MainMenu.DefaultItems.ClearCanvas),
-    );
+    return this.excalidrawExtensionRenderer.renderCustomActionsMenu();
   }
 
   private renderEmbeddable(
     element: ExcalidrawEmbeddableElement,
     appState: UIAppState,
   ) {
-    const React = this.packages.react;
-    try {
-      const useExcalidrawFrame = useDefaultExcalidrawFrame(element);
-
-      if (
-        !this.file ||
-        !element ||
-        !element.link ||
-        element.link.length === 0 ||
-        useExcalidrawFrame
-      ) {
-        return null;
-      }
-
-      if (
-        element.link.match(REG_LINKINDEX_HYPERLINK) ||
-        element.link.startsWith("data:")
-      ) {
-        if (!useExcalidrawFrame) {
-          return renderWebView(element.link, this, element.id, appState);
-        }
-        return null;
-      }
-
-      const res = REGEX_LINK.getRes(element.link).next();
-      if (!res || (!res.value && res.done)) {
-        return null;
-      }
-
-      const linkText = REGEX_LINK.getLink(res);
-
-      if (linkText.match(REG_LINKINDEX_HYPERLINK)) {
-        if (!useExcalidrawFrame) {
-          return renderWebView(linkText, this, element.id, appState);
-        }
-        return null;
-      }
-
-      return React.createElement(CustomEmbeddable, {
-        element,
-        view: this,
-        appState,
-        linkText,
-      });
-    } catch (error) {
-      console.error(
-        "unexpected error in renderEmbeddable",
-        this.renderEmbeddable.bind(this),
-        error,
-      );
-      return null;
-    }
+    return this.excalidrawExtensionRenderer.renderEmbeddable(element, appState);
   }
 
   private renderEmbeddableMenu(appState: AppState) {

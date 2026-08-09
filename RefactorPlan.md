@@ -30,8 +30,9 @@ validated, and what remains uncertain.
 | Extract view fullscreen handling | Implemented; awaiting manual validation | `ViewFullscreenManager` now owns the existing document-scoped fullscreen class and style mutations while `ExcalidrawView` retains its public compatibility methods |
 | Extract view link navigation | Implemented; awaiting manual validation | `ViewLinkNavigationManager` now owns element-link resolution, hook dispatch, link prompting, modifier-aware navigation, and special image-link handling while all view methods remain compatibility delegates |
 | Retire obsolete Draw.io integration | Implemented; awaiting manual validation | Removed special Diagram-plugin routing and retired the Create DrawIO file script from the maintained library and generated reference catalogs; user-installed vault scripts remain untouched |
+| Extract Excalidraw extension rendering | Implemented; awaiting manual validation | `ViewExcalidrawExtensionRenderer` now owns text-to-diagram, diagram-to-code, welcome screen, custom main menu, and embeddable rendering while the view retains its existing render delegates and package-managed React runtime |
 | Audit and consolidate duplicate logic | In progress | Consolidated `updateFrontmatterInString()`, `arrayToMap()`, `wrapTextAtCharLength()`, `getLinkParts()`/`LinkParts`, `getBinaryFileFromDataURL()`, `svgToBase64()`, `getFontDataURL()`, `cropCanvas()`, `getImageSize()`, `promiseTry()`, `isVersionNewerThanOther()`, `repositionElementsToCursor()`, the internal `cloneElement()`, and `getBoundTextElementId()`; continue one independently testable helper family at a time |
-| Remaining view phases | In progress | Continue one manager checkpoint at a time; the scene-file loader is the next cohesive candidate but carries higher timer, cache, and teardown risk |
+| Remaining view phases | In progress | Manually validate the extension renderer checkpoint before choosing between the higher-risk scene-file loader and a mechanical package-aware React-root extraction |
 
 ### Action log
 
@@ -68,6 +69,7 @@ validated, and what remains uncertain.
 | 2026-08-09 | Extracted fullscreen DOM coordination from `ExcalidrawView` | Added documented `ViewFullscreenManager` with a narrow structural host to own the existing enter, state-check, and exit algorithms. Preserved the public `gotoFullscreen()`, `isFullscreen()`, and `exitFullscreen()` methods as delegates, the owner-document scoping needed by popout windows, tools-panel state updates, leaf-change timeout cancellation, CSS class names, selectors, and mobile layout restoration | `npm run build`, `npm run lib`, manager-targeted ESLint, repository call-site searches, and `git diff --check` passed. The same 33 circular-dependency warnings remain; `ExcalidrawView.ts` decreased by 105 lines from 8,669 to 8,564; the manager contains 166 documented lines; bundle size increased by 828 bytes to 5,098,371 bytes and remains below 5 MiB. Manual main-window, popout, mobile, and teardown validation remains pending, with cross-document DOM restoration the highest-risk area |
 | 2026-08-09 | Extracted link navigation from `ExcalidrawView` | Added documented `ViewLinkNavigationManager` to own tooltip removal, link-source resolution, public hook dispatch, modifier handling, link prompting, new-file behavior, embedded and Markdown image links, LaTeX/Mermaid/Draw.io branches, fullscreen exit, and pane navigation. Retained `removeLinkTooltip()`, `handleLinkHookCall()`, the private selection resolver, `processLinkText()`, `linkClick()`, and `handleLinkClick()` on the view as delegates so every existing caller and hook surface remains intact. Supplied cyclic runtime dependencies and four private view operations explicitly; the manager imports the concrete view only as a type. Reused canonical `SelectedElementWithLink` and `SelectedImage` interfaces from `excalidrawViewTypes.ts` and removed their local duplicates | Final `npm run build`, `npm run lib`, manager-targeted ESLint, repository call-site searches, import-graph analysis, and `git diff --check` passed. The build retained the 33-warning circular-dependency baseline; static analysis found zero runtime import paths from the manager back to `ExcalidrawView`. The full-view lint retains its pre-existing type backlog but no new unused import. `ExcalidrawView.ts` decreased by 442 lines from 8,564 to 8,122; the manager contains 649 documented lines; bundle size increased by 2,478 bytes to 5,100,849 bytes and remains below 5 MiB. Manual link-routing validation remains pending, with modifier semantics and special image-link branches the highest-risk areas |
 | 2026-08-09 | Retired Draw.io/Diagram plugin customization | Removed detection of `drawio-obsidian`, Draw.io SVG inspection, and routing to the external `diagram-edit` view from link navigation. Deleted the Create DrawIO file Automate script and icon from the maintained script library, its directory metadata and install catalog entries, and its generated script-library and AI-reference copies. Added a 2.27.0 release note. Historical release notes remain unchanged as an accurate record, and existing script files in user vaults are intentionally not deleted | `npm run build`, `npm run lib`, manager-targeted ESLint, JSON parsing, repository residue searches, and `git diff --check` passed. Runtime and maintained catalog searches find no Draw.io plugin IDs, view types, or SVG markers; only the new retirement note, this action history, and historical release notes retain the name. Circular-dependency warnings remain at 33; `ViewLinkNavigationManager.ts` decreased by 25 lines from 649 to 624; the final bundle is 5,100,535 bytes, 314 bytes below the preceding checkpoint and still below 5 MiB. Manual validation should confirm ordinary SVG links now follow normal Obsidian navigation and that the script no longer appears in the downloadable catalog |
+| 2026-08-09 | Extracted Excalidraw extension rendering from `ExcalidrawView` | Added documented `ViewExcalidrawExtensionRenderer` to own `ttdDialog()`, `diagramToCode()`, `ttdDialogTrigger()`, `renderWelcomeScreen()`, `renderCustomActionsMenu()`, and `renderEmbeddable()`. Kept the six private view methods and all Excalidraw root call sites as delegates. The renderer uses `view.packages.react` and `view.packages.excalidrawLib`; back-edge-prone runtime modules and private dialog actions are constructor-injected, and the concrete view import is type-only. `renderEmbeddableMenu()`, `renderToolsPanel()`, and `renderTopRightUI()` remain in the view because they own refs, live menu instances, or view lifecycle state | Production builds passed after every code edit, `npm run lib` passed, renderer-targeted ESLint and `git diff --check` passed, and full-view lint showed only the established type backlog after extraction-specific unused imports were removed. The build retained the 33-warning circular-dependency baseline. `ExcalidrawView.ts` decreased by 358 lines from 8,122 to 7,764; the renderer contains 479 documented lines; the bundle increased by 1,746 bytes to 5,102,281 bytes and remains below 5 MiB. Manual testing should prioritize a popout window, then the main-window welcome/menu/embeddable paths, then ExcaliAI text-to-diagram and diagram-to-code; repeat core rendering on mobile, with popout React isolation the highest-risk regression |
 
 ## Executive recommendation
 
@@ -314,6 +316,7 @@ src/view/
   components/
     ExcalidrawRoot.tsx            Package-aware render tree, eventually TSX
   managers/
+    ViewExcalidrawExtensionRenderer.ts
     ViewExportManager.ts
     ViewLinkNavigationManager.ts
     ViewSceneFileManager.ts
@@ -525,11 +528,15 @@ Recommended order:
 3. Implemented: `ViewLinkNavigationManager` owns link-source resolution, hook
    invocation, prompting, modifier handling, special embedded-image branches,
    and pane navigation while the view retains compatibility delegates.
-4. `ViewSceneFileManager`: active/next/deferred embedded-file loaders and
+4. Implemented: `ViewExcalidrawExtensionRenderer` owns the plugin-specific
+   Excalidraw render slots for TTD, diagram-to-code, the welcome screen, custom
+   actions, and embeddables. The view retains its render delegates and supplies
+   all elements through its window-scoped React and Excalidraw packages.
+5. `ViewSceneFileManager`: active/next/deferred embedded-file loaders and
    deferred validation scheduling.
-5. `MarkdownImageController`: deletion queue, edit handoff, conversion, and
+6. `MarkdownImageController`: deletion queue, edit handoff, conversion, and
    local-source operations.
-6. `ViewInteractionController`: hover preview and pointer/key interaction only
+7. `ViewInteractionController`: hover preview and pointer/key interaction only
    after the earlier controllers establish a working host-interface pattern.
 
 Each manager should depend on the smallest host interface practical rather
@@ -761,14 +768,16 @@ Before merging any refactor step, answer all of the following:
    `ExcalidrawView` export methods as delegates. This establishes the
    view-controller pattern away from lifecycle and synchronization.
 
-The current checkpoint is manual validation of `ViewLinkNavigationManager`,
-with particular attention to platform-specific modifier semantics, hook
-interception, and special embedded-image branches. The next cohesive candidate
-is `ViewSceneFileManager`, but its loader queue, retry timers, cache validation,
-and lifecycle teardown make it a higher-risk extraction. Extract the
-package-aware React root only after these controller checkpoints, using
-`createElement()` without TSX or state changes first; convert to TSX only in a
-subsequent change.
+The current checkpoint is manual validation of
+`ViewExcalidrawExtensionRenderer`. First test a popout window because a
+cross-window React mismatch is the highest-impact risk, then verify the welcome
+screen, custom menu actions, web and Obsidian embeddables, text-to-diagram, and
+diagram-to-code in the main window. Repeat basic rendering and embeddables on a
+mobile device. The next controller candidate remains `ViewSceneFileManager`,
+but its loader queue, retry timers, cache validation, and lifecycle teardown
+make it a higher-risk extraction. A mechanical package-aware React-root move
+is now also viable, but it must keep `createElement()` and current state timing
+unchanged; any TSX or state-management conversion belongs in a later step.
 
 After those steps, reassess coupling, bundle size, and manual-test coverage
 before committing to the next phase. The plan is deliberately a sequence of
