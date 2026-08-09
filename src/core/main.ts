@@ -33,8 +33,6 @@ import {
   LOCALE,
   setExcalidrawPlugin,
   DEVICE,
-  FONTS_STYLE_ID,
-  CJK_STYLE_ID,
   setRootElementSize,
 } from "../constants/constants";
 import {
@@ -51,11 +49,9 @@ import {
   getNewUniqueFilepath,
 } from "../utils/fileUtils";
 import {
-  getFontDataURL,
   errorlog,
   isVersionNewerThanOther,
   versionUpdateCheckTimer,
-  getFontMetrics,
   calculateUIModeValue,
 } from "../utils/utils";
 import {
@@ -91,7 +87,6 @@ import {
   terminateCompressionWorker,
 } from "../shared/Workers/compression-worker";
 import { WeakArray } from "../shared/WeakArray";
-import { getCJKDataURLs } from "../utils/CJKLoader";
 import {
   ExcalidrawLoading,
   switchToExcalidraw,
@@ -118,11 +113,11 @@ import { StencilLibraryManager } from "./managers/StencilLibraryManager";
 import type { StencilLibraryData } from "src/types/stencilLibraryTypes";
 import { PluginSettingsManager } from "./managers/PluginSettingsManager";
 import { FooterSafeAreaManager } from "./managers/FooterSafeAreaManager";
+import { FontManager } from "./managers/FontManager";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
 declare const mainDocument: Document;
-declare const deliberateCreateElement: (document: Document, tagName: string) => HTMLStyleElement;
 
 type FileMasterInfo = {
   isHyperLink: boolean;
@@ -162,6 +157,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private eventManager: EventManager;
   private settingsManager: PluginSettingsManager;
   private footerSafeAreaManager: FooterSafeAreaManager;
+  private fontManager: FontManager;
   public stencilLibraryManager: StencilLibraryManager;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
   public fourthFontLoaded: boolean = false;
@@ -195,9 +191,7 @@ export default class ExcalidrawPlugin extends Plugin {
   public forceToOpenInMarkdownFilepath: string = null;
   //private slob:string;
   public loadTimestamp: number;
-  private isLocalCJKFontAvailabe: boolean = undefined;
   public isReady = false;
-  private fontsReady = true; //setting this to true allows for a race condition during startup loading fonts and rendering Excalidraw
   private startupAnalytics: string[] = [];
   private lastLogTimestamp: number;
   private settingsReady: boolean = false;
@@ -229,6 +223,9 @@ export default class ExcalidrawPlugin extends Plugin {
     this.fileManager = new PluginFileManager(this);
     this.settingsManager = new PluginSettingsManager(this);
     this.footerSafeAreaManager = new FooterSafeAreaManager(this);
+    this.fontManager = new FontManager(this, () =>
+      this.packageManager.getPackageMap(),
+    );
 
     setExcalidrawPlugin(this);
     /*if((process.env.NODE_ENV === 'development')) {
@@ -334,38 +331,16 @@ export default class ExcalidrawPlugin extends Plugin {
     );
   }
 
-  public getCJKFontSettings() {
-    const assetsFoler = this.settings.fontAssetsPath;
-    if (typeof this.isLocalCJKFontAvailabe === "undefined") {
-      this.isLocalCJKFontAvailabe = this.app.vault
-        .getFiles()
-        .some((f) => f.path.startsWith(assetsFoler));
-    }
-    if (!this.isLocalCJKFontAvailabe) {
-      return { c: false, j: false, k: false };
-    }
-    return {
-      c: this.settings.loadChineseFonts,
-      j: this.settings.loadJapaneseFonts,
-      k: this.settings.loadKoreanFonts,
-    };
+  /** Returns the configured CJK ranges when local font assets are available. */
+  public getCJKFontSettings(): { c: boolean; j: boolean; k: boolean } {
+    return this.fontManager.getCJKFontSettings();
   }
 
+  /** Reads a configured CJK font file from the vault. */
   public async loadFontFromFile(
     fontName: string,
   ): Promise<ArrayBuffer | undefined> {
-    const assetsFoler = this.settings.fontAssetsPath;
-
-    if (!this.isLocalCJKFontAvailabe) {
-      return;
-    }
-    const file = this.app.vault.getFileByPath(
-      normalizePath(`${assetsFoler}/${fontName}`),
-    );
-    if (!file || !(file instanceof TFile)) {
-      return;
-    }
-    return await this.app.vault.readBinary(file);
+    return await this.fontManager.loadFontFromFile(fontName);
   }
 
   async onload() {
@@ -605,7 +580,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public async awaitInit() {
     let counter = 0;
-    while ((!this.isReady || !this.fontsReady) && counter++ < 200) {
+    while ((!this.isReady || !this.fontManager.isReady) && counter++ < 200) {
       await sleep(50);
     }
   }
@@ -631,133 +606,28 @@ export default class ExcalidrawPlugin extends Plugin {
     );
   }
 
-  public async initializeFonts() {
-    const cjkFontDataURLs = await getCJKDataURLs(this);
-    if (typeof cjkFontDataURLs === "boolean" && !cjkFontDataURLs) {
-      new Notice(t("FONTS_LOAD_ERROR") + this.settings.fontAssetsPath, 6000);
-    }
-
-    if (typeof cjkFontDataURLs === "object") {
-      const fontDeclarations = cjkFontDataURLs.map(
-        (dataURL) =>
-          `@font-face { font-family: 'Xiaolai'; src: url("${dataURL}"); font-display: swap; font-weight: 400; }`,
-      );
-      for (const ownerDocument of this.getOpenObsidianDocuments()) {
-        await this.addFonts(fontDeclarations, ownerDocument, CJK_STYLE_ID);
-      }
-      new Notice(t("FONTS_LOADED"));
-    }
-
-    const font = await getFontDataURL(
-      this.app,
-      this.settings.experimantalFourthFont,
-      "",
-      "Local Font",
-    );
-
-    if (font.dataURL === "") {
-      this.fourthFontLoaded = true;
-      return;
-    }
-
-    const fourthFontDataURL = font.dataURL;
-
-    const f = this.app.metadataCache.getFirstLinkpathDest(
-      this.settings.experimantalFourthFont,
-      "",
-    );
-    // Call getFontMetrics with the fourthFontDataURL
-    let fontMetrics = f.extension.startsWith("woff")
-      ? undefined
-      : await getFontMetrics(fourthFontDataURL, "Local Font");
-
-    if (!fontMetrics) {
-      //console.log("Font Metrics not found, using default");
-      fontMetrics = {
-        unitsPerEm: 1000,
-        ascender: 750,
-        descender: -250,
-        lineHeight: 1.2,
-        fontName: "Local Font",
-      };
-    }
-    this.packageManager.getPackageMap().forEach(({ excalidrawLib }) => {
-      if (!fontMetrics) {
-        return;
-      }
-      excalidrawLib.registerLocalFont(
-        { metrics: fontMetrics },
-        fourthFontDataURL,
-      );
-    });
-    // Add fonts to open Obsidian documents
-    for (const ownerDocument of this.getOpenObsidianDocuments()) {
-      await this.addFonts(
-        [
-          `@font-face{font-family:'Local Font';src:url("${fourthFontDataURL}");font-display: swap;font-weight: 400;`,
-        ],
-        ownerDocument,
-      );
-    }
-    if (!this.fourthFontLoaded) {
-      window.setTimeout(() => {
-        this.fourthFontLoaded = true;
-      }, 100);
-    }
-    this.fontsReady = true;
+  /** Initializes configured CJK and custom fonts across open documents. */
+  public async initializeFonts(): Promise<void> {
+    await this.fontManager.initializeFonts();
   }
 
+  /** Adds or replaces a plugin-owned font stylesheet. */
   public async addFonts(
     declarations: string[],
-    ownerDocument: Document = mainDocument,
-    styleId: string = FONTS_STYLE_ID,
-  ) {
-    // replace the old local font <style> element with the one we just created
-    const newStylesheet = deliberateCreateElement(ownerDocument, "style");
-    newStylesheet.id = styleId;
-    newStylesheet.textContent = declarations.join("");
-    const oldStylesheet = ownerDocument.getElementById(styleId);
-    ownerDocument.head.appendChild(newStylesheet);
-    if (oldStylesheet) {
-      ownerDocument.head.removeChild(oldStylesheet);
-    }
-    await ownerDocument.fonts.load("20px Local Font");
+    ownerDocument?: Document,
+    styleId?: string,
+  ): Promise<void> {
+    await this.fontManager.addFonts(declarations, ownerDocument, styleId);
   }
 
-  public removeFonts() {
-    this.getOpenObsidianDocuments().forEach((ownerDocument) => {
-      const oldCustomFontStylesheet =
-        ownerDocument.getElementById(FONTS_STYLE_ID);
-      if (oldCustomFontStylesheet) {
-        ownerDocument.head.removeChild(oldCustomFontStylesheet);
-      }
-      const oldCJKFontStylesheet = ownerDocument.getElementById(CJK_STYLE_ID);
-      if (oldCJKFontStylesheet) {
-        ownerDocument.head.removeChild(oldCJKFontStylesheet);
-      }
-    });
+  /** Removes plugin-owned font stylesheets from all open documents. */
+  public removeFonts(): void {
+    this.fontManager.removeFonts();
   }
 
   /** Updates the optional mobile footer padding across open documents. */
   public updateFooterSafeAreaPadding(): void {
     this.footerSafeAreaManager.updateFooterSafeAreaPadding();
-  }
-
-  private getOpenObsidianDocuments(): Document[] {
-    const visitedDocs = new Set<Document>();
-    this.app.workspace.iterateAllLeaves((leaf) => {
-      const ownerDocument = DEVICE.isMobile
-        ? mainDocument
-        : leaf.view.containerEl.ownerDocument;
-      if (!ownerDocument) {
-        return;
-      }
-      if (visitedDocs.has(ownerDocument)) {
-        return;
-      }
-      visitedDocs.add(ownerDocument);
-    });
-    return Array.from(visitedDocs);
   }
 
   /**
