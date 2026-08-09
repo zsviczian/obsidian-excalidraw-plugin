@@ -114,6 +114,7 @@ import type { StencilLibraryData } from "src/types/stencilLibraryTypes";
 import { PluginSettingsManager } from "./managers/PluginSettingsManager";
 import { FooterSafeAreaManager } from "./managers/FooterSafeAreaManager";
 import { FontManager } from "./managers/FontManager";
+import { StartupTimer } from "./managers/StartupTimer";
 
 declare const PLUGIN_VERSION: string;
 declare const INITIAL_TIMESTAMP: number;
@@ -158,6 +159,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private settingsManager: PluginSettingsManager;
   private footerSafeAreaManager: FooterSafeAreaManager;
   private fontManager: FontManager;
+  private startupTimer: StartupTimer;
   public stencilLibraryManager: StencilLibraryManager;
   public eaInstances = new WeakArray<ExcalidrawAutomate>();
   public fourthFontLoaded: boolean = false;
@@ -192,8 +194,6 @@ export default class ExcalidrawPlugin extends Plugin {
   //private slob:string;
   public loadTimestamp: number;
   public isReady = false;
-  private startupAnalytics: string[] = [];
-  private lastLogTimestamp: number;
   private settingsReady: boolean = false;
   public wasPenModeActivePreviously: boolean = false;
   public popScope: (() => void) | null = null;
@@ -203,7 +203,7 @@ export default class ExcalidrawPlugin extends Plugin {
   constructor(app: App, manifest: PluginManifest) {
     super(app, manifest);
     this.loadTimestamp = INITIAL_TIMESTAMP;
-    this.lastLogTimestamp = this.loadTimestamp;
+    this.startupTimer = new StartupTimer(this.loadTimestamp, PLUGIN_VERSION);
     this.filesMaster = new Map<
       FileId,
       {
@@ -233,20 +233,14 @@ export default class ExcalidrawPlugin extends Plugin {
     }*/
   }
 
-  public logStartupEvent(message: string) {
-    const timestamp = Date.now();
-    this.startupAnalytics.push(
-      `${message}\nTotal: ${timestamp - this.loadTimestamp}ms Delta: ${timestamp - this.lastLogTimestamp}ms\n`,
-    );
-    this.lastLogTimestamp = timestamp;
+  /** Records a startup timing event without changing lifecycle ordering. */
+  public logStartupEvent(message: string): void {
+    this.startupTimer.logEvent(message, this.loadTimestamp);
   }
 
-  public printStarupBreakdown() {
-    log(
-      `Excalidraw ${PLUGIN_VERSION} startup breakdown:\n${this.startupAnalytics.join(
-        "\n",
-      )}`,
-    );
+  /** Prints the startup breakdown; spelling retained for compatibility. */
+  public printStarupBreakdown(): void {
+    this.startupTimer.printBreakdown();
   }
 
   get locale() {
@@ -409,7 +403,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   private async onloadOnLayoutReady() {
     this.loadTimestamp = Date.now();
-    this.lastLogTimestamp = this.loadTimestamp;
+    this.startupTimer.reset(this.loadTimestamp);
     this.logStartupEvent(
       "\n----------------------------------\nWorkspace onLayoutReady event fired (these actions are outside the plugin initialization)",
     );
