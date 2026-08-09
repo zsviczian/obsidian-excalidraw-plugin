@@ -18,9 +18,7 @@ import { normalizePath, TFile } from "obsidian";
 
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import {
-  getCommonBoundingBox,
   IMAGE_TYPES,
-  restoreElements,
   REG_LINKINDEX_INVALIDCHARS,
   THEME_FILTER,
   EXCALIDRAW_PLUGIN,
@@ -60,6 +58,14 @@ import { ColorMap, FileData } from "src/types/embeddedFileLoaderTypes";
 import { ExportSettings } from "src/types/exportUtilTypes";
 import type { StrokeWidthKey } from "@zsviczian/excalidraw/types/common/src/constants";
 import { URLs } from "src/constants/safeUrls";
+import { cloneElement } from "./excalidrawElementUtils";
+
+export {
+  cloneElement,
+  estimateBounds,
+  getBoundTextElementId,
+  repositionElementsToCursor,
+} from "./excalidrawElementUtils";
 
 declare const PLUGIN_VERSION: string;
 
@@ -811,40 +817,6 @@ function estimateLineBound(
   return [minX, minY, maxX, maxY];
 }
 
-export function estimateBounds(
-  elements: ExcalidrawElement[],
-): [number, number, number, number] {
-  const bb = getCommonBoundingBox(elements);
-  return [bb.minX, bb.minY, bb.maxX, bb.maxY];
-}
-
-export function repositionElementsToCursor(
-  elements: ExcalidrawElement[],
-  newPosition: { x: number; y: number },
-  center: boolean = false,
-): ExcalidrawElement[] {
-  const [x1, y1, x2, y2] = estimateBounds(elements);
-  let [offsetX, offsetY] = [0, 0];
-  if (center) {
-    [offsetX, offsetY] = [
-      newPosition.x - (x1 + x2) / 2,
-      newPosition.y - (y1 + y2) / 2,
-    ];
-  } else {
-    [offsetX, offsetY] = [newPosition.x - x1, newPosition.y - y1];
-  }
-
-  elements.forEach((element: Mutable<ExcalidrawElement>) => {
-    element.x = element.x + offsetX;
-    element.y = element.y + offsetY;
-  });
-
-  return restoreElements(elements, null, {
-    refreshDimensions: true,
-    repairBindings: true,
-  });
-}
-
 export const search = async (view: ExcalidrawView) => {
   const ea = view.plugin.ea;
   ea.reset();
@@ -1029,16 +1001,6 @@ export const getImagesMatchingQuery = (
   );
 };
 
-export const cloneElement = (
-  el: ExcalidrawElement,
-): Mutable<ExcalidrawElement> => {
-  const newEl = JSON.parse(JSON.stringify(el)) as Mutable<ExcalidrawElement>;
-  newEl.version = el.version + 1;
-  newEl.updated = Date.now();
-  newEl.versionNonce = Math.floor(Math.random() * 1000000000);
-  return newEl;
-};
-
 export const verifyMinimumPluginVersion = (
   requiredVersion: string,
 ): boolean => {
@@ -1046,12 +1008,6 @@ export const verifyMinimumPluginVersion = (
     PLUGIN_VERSION.split("-")[0] === requiredVersion ||
     isVersionNewerThanOther(PLUGIN_VERSION.split("-")[0], requiredVersion)
   );
-};
-
-export const getBoundTextElementId = (container: ExcalidrawElement | null) => {
-  return container?.boundElements?.length
-    ? container?.boundElements?.find((ele) => ele.type === "text")?.id || null
-    : null;
 };
 
 /**

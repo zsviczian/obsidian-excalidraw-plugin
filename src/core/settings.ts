@@ -111,7 +111,6 @@ export interface ExcalidrawSettings {
   compress: boolean;
   decompressForMDView: boolean;
   onceOffCompressFlagReset: boolean; //used to reset compress to true in 2.2.0
-  onceOffGPTVersionReset: boolean; //used to reset GPT version in 2.2.11
   autosave: boolean;
   autosaveIntervalDesktop: number;
   autosaveIntervalMobile: number;
@@ -270,32 +269,12 @@ export interface ExcalidrawSettings {
   aiVerboseLogging: boolean;
   aiProviderProfiles: Record<string, AIProviderProfile>;
   aiTextModelConfigs: Record<string, AIModelConfig>;
-  aiVisionModelConfigs: Record<string, AIModelConfig>;
   aiImageModelConfigs: Record<string, AIImageModelConfig>;
-  aiProvider: "openai" | "anthropic" | "google" | "xai" | "openai-compatible";
-  aiAPIKey: string;
-  aiBaseURL: string;
-  aiTextEndpoint: string;
-  aiImageGenerationEndpoint: string;
-  aiImageEditsEndpoint: string;
-  aiImageVariationsEndpoint: string;
   aiDefaultTextModel: string;
   aiDefaultMultimodalModel: string;
-  aiDefaultVisionModel: string;
   aiDefaultImageGenerationModel: string;
-  aiImageModelCapabilities: Record<string, AIImageModelCapability>;
   aiDefaultMaxOutgoingTokens: number;
   aiDefaultMaxResponseTokens: number;
-  aiDefaultMaxTokens: number; //legacy migration source, do not use directly
-  openAIAPIToken: string;
-  openAIDefaultTextModel: string;
-  openAIDefaultTextModelMaxTokens: number;
-  openAIDefaultVisionModel: string;
-  openAIDefaultImageGenerationModel: string;
-  openAIURL: string;
-  openAIImageGenerationURL: string;
-  openAIImageEditsURL: string;
-  openAIImageVariationURL: string;
   modifierKeyConfig: {
     Mac: Record<ModifierSetType, ModifierKeySet>;
     Win: Record<ModifierSetType, ModifierKeySet>;
@@ -394,21 +373,6 @@ const KNOWN_AI_IMAGE_MODEL_CAPABILITIES: Record<
   },
 };
 
-const cloneKnownAIImageModelCapabilities = () =>
-  Object.fromEntries(
-    Object.entries(KNOWN_AI_IMAGE_MODEL_CAPABILITIES).map(
-      ([model, capability]) => [
-        model,
-        {
-          supportedSizes: [...capability.supportedSizes],
-          supportsPromptImageTransforms:
-            capability.supportsPromptImageTransforms,
-          supportsMaskImageEdits: capability.supportsMaskImageEdits,
-        },
-      ],
-    ),
-  );
-
 export const KNOWN_AI_PROVIDER_PROFILES: Record<string, AIProviderProfile> = {
   OpenAI: {
     provider: "openai",
@@ -471,14 +435,6 @@ export const KNOWN_AI_TEXT_MODEL_CONFIGS: Record<string, AIModelConfig> = {
     multimodalSupport: true,
   },
 };
-
-export const KNOWN_AI_VISION_MODEL_CONFIGS: Record<string, AIModelConfig> =
-  Object.fromEntries(
-    Object.entries(KNOWN_AI_TEXT_MODEL_CONFIGS).map(([modelId, config]) => [
-      modelId,
-      { ...config },
-    ]),
-  );
 
 export const KNOWN_AI_IMAGE_MODEL_CONFIGS: Record<string, AIImageModelConfig> =
   {
@@ -602,7 +558,6 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   compress: true,
   decompressForMDView: false,
   onceOffCompressFlagReset: false,
-  onceOffGPTVersionReset: false,
   autosave: true,
   autosaveIntervalDesktop: 60000,
   autosaveIntervalMobile: 30000,
@@ -807,32 +762,12 @@ export const DEFAULT_SETTINGS: ExcalidrawSettings = {
   aiVerboseLogging: false,
   aiProviderProfiles: cloneKnownAIProviderProfiles(),
   aiTextModelConfigs: cloneModelConfigs(KNOWN_AI_TEXT_MODEL_CONFIGS),
-  aiVisionModelConfigs: cloneModelConfigs(KNOWN_AI_VISION_MODEL_CONFIGS),
   aiImageModelConfigs: cloneModelConfigs(KNOWN_AI_IMAGE_MODEL_CONFIGS),
-  aiProvider: "openai",
-  aiAPIKey: "",
-  aiBaseURL: "",
-  aiTextEndpoint: "",
-  aiImageGenerationEndpoint: "",
-  aiImageEditsEndpoint: "",
-  aiImageVariationsEndpoint: "",
   aiDefaultTextModel: "gpt-5-mini",
   aiDefaultMultimodalModel: "gpt-5-mini",
-  aiDefaultVisionModel: "gpt-5-mini",
   aiDefaultImageGenerationModel: "gpt-image-1",
-  aiImageModelCapabilities: cloneKnownAIImageModelCapabilities(),
   aiDefaultMaxOutgoingTokens: 0,
   aiDefaultMaxResponseTokens: 0,
-  aiDefaultMaxTokens: 0,
-  openAIAPIToken: "",
-  openAIDefaultTextModel: "gpt-5-mini",
-  openAIDefaultTextModelMaxTokens: 4096,
-  openAIDefaultVisionModel: "gpt-5-mini",
-  openAIDefaultImageGenerationModel: "gpt-image-1",
-  openAIURL: URLs.API_OPENAI_COM_V1_CHAT_COMPLETIONS,
-  openAIImageGenerationURL: URLs.API_OPENAI_COM_V1_IMAGES_GENERATIONS,
-  openAIImageEditsURL: URLs.API_OPENAI_COM_V1_IMAGES_EDITS,
-  openAIImageVariationURL: URLs.API_OPENAI_COM_V1_IMAGES_VARIATIONS,
   modifierKeyConfig: {
     Mac: {
       LocalFileDragAction: {
@@ -2088,9 +2023,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       Object.keys(this.plugin.settings.aiProviderProfiles ?? {})[0] || "OpenAI";
     let selectedTextModelConfig =
       this.plugin.settings.aiDefaultTextModel?.trim() ||
-      this.plugin.settings.aiDefaultVisionModel?.trim() ||
       Object.keys(this.plugin.settings.aiTextModelConfigs ?? {})[0] ||
-      Object.keys(this.plugin.settings.aiVisionModelConfigs ?? {})[0] ||
       "gpt-5-mini";
     let selectedImageModelConfig =
       this.plugin.settings.aiDefaultImageGenerationModel?.trim() ||
@@ -2113,23 +2046,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           Object.keys(this.plugin.settings.aiTextModelConfigs).length > 0
         ) {
           return this.plugin.settings.aiTextModelConfigs;
-        }
-
-        if (
-          this.plugin.settings.aiVisionModelConfigs &&
-          Object.keys(this.plugin.settings.aiVisionModelConfigs).length > 0
-        ) {
-          return Object.fromEntries(
-            Object.entries(this.plugin.settings.aiVisionModelConfigs).map(
-              ([modelId, config]) => [
-                modelId,
-                {
-                  ...config,
-                  multimodalSupport: config.multimodalSupport ?? true,
-                },
-              ],
-            ),
-          );
         }
 
         return cloneModelConfigs(KNOWN_AI_TEXT_MODEL_CONFIGS);

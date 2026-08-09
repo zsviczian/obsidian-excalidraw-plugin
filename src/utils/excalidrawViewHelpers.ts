@@ -1,63 +1,16 @@
 import type {
-  ExcalidrawElement,
   ExcalidrawImageElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
-import type { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
-import { getCommonBoundingBox, restoreElements } from "src/constants/constants";
 import { getEA } from "src/core";
 import { t } from "src/lang/helpers";
 import type ExcalidrawView from "src/view/ExcalidrawView";
 import { errorlog } from "./utils";
 
-function estimateBounds(
-  elements: ExcalidrawElement[],
-): [number, number, number, number] {
-  const bb = getCommonBoundingBox(elements);
-  return [bb.minX, bb.minY, bb.maxX, bb.maxY];
-}
-
-export function repositionElementsToCursor(
-  elements: ExcalidrawElement[],
-  newPosition: { x: number; y: number },
-  center: boolean = false,
-): ExcalidrawElement[] {
-  const [x1, y1, x2, y2] = estimateBounds(elements);
-  let [offsetX, offsetY] = [0, 0];
-  if (center) {
-    [offsetX, offsetY] = [
-      newPosition.x - (x1 + x2) / 2,
-      newPosition.y - (y1 + y2) / 2,
-    ];
-  } else {
-    [offsetX, offsetY] = [newPosition.x - x1, newPosition.y - y1];
-  }
-
-  elements.forEach((element: Mutable<ExcalidrawElement>) => {
-    element.x = element.x + offsetX;
-    element.y = element.y + offsetY;
-  });
-
-  return restoreElements(elements, null, {
-    refreshDimensions: true,
-    repairBindings: true,
-  });
-}
-
-export const cloneElement = (
-  el: ExcalidrawElement,
-): Mutable<ExcalidrawElement> => {
-  const newEl = JSON.parse(JSON.stringify(el)) as Mutable<ExcalidrawElement>;
-  newEl.version = el.version + 1;
-  newEl.updated = Date.now();
-  newEl.versionNonce = Math.floor(Math.random() * 1000000000);
-  return newEl;
-};
-
-export const getBoundTextElementId = (container: ExcalidrawElement | null) => {
-  return container?.boundElements?.length
-    ? container.boundElements.find((ele) => ele.type === "text")?.id || null
-    : null;
-};
+export {
+  cloneElement,
+  getBoundTextElementId,
+  repositionElementsToCursor,
+} from "./excalidrawElementUtils";
 
 export const insertLaTeXToView = (
   view: ExcalidrawView,

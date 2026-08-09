@@ -41,10 +41,6 @@ import {
   ExcalidrawSettings,
   DEFAULT_SETTINGS,
   ExcalidrawSettingTab,
-  cloneKnownAIProviderProfiles,
-  cloneModelConfigs,
-  KNOWN_AI_TEXT_MODEL_CONFIGS,
-  KNOWN_AI_IMAGE_MODEL_CONFIGS,
 } from "./settings";
 import { ExcalidrawAutomate } from "../shared/ExcalidrawAutomate";
 import { initExcalidrawAutomate } from "src/utils/excalidrawAutomateUtils";
@@ -151,59 +147,6 @@ const PHONE_FOOTER_SAFE_AREA_CSS = `
 type PersistedExcalidrawSettings = Partial<ExcalidrawSettings> &
   Record<string, unknown>;
 
-const LEGACY_AI_SETTING_KEYS: (keyof ExcalidrawSettings)[] = [
-  "aiDefaultMaxTokens",
-  "aiDefaultMultimodalModel",
-  "aiDefaultVisionModel",
-  "aiProvider",
-  "aiAPIKey",
-  "aiBaseURL",
-  "aiTextEndpoint",
-  "aiImageGenerationEndpoint",
-  "aiImageEditsEndpoint",
-  "aiImageVariationsEndpoint",
-  "aiImageModelCapabilities",
-  "aiVisionModelConfigs",
-  "openAIAPIToken",
-  "openAIDefaultTextModel",
-  "openAIDefaultTextModelMaxTokens",
-  "openAIDefaultVisionModel",
-  "openAIDefaultImageGenerationModel",
-  "openAIURL",
-  "openAIImageGenerationURL",
-  "openAIImageEditsURL",
-  "openAIImageVariationURL",
-];
-
-const AI_TEXT_SUFFIX = "/chat/completions";
-
-const normalizeAISettingURL = (value: unknown): string => {
-  return typeof value === "string" ? value.trim().replace(/\/+$/, "") : "";
-};
-
-const joinAISettingURL = (baseURL: string, path: string): string => {
-  if (!baseURL) {
-    return "";
-  }
-  return `${baseURL.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
-};
-
-const hasNonEmptyString = (value: unknown): value is string => {
-  return typeof value === "string" && value.trim() !== "";
-};
-
-const hasPositiveNumber = (value: unknown): value is number => {
-  return typeof value === "number" && value > 0;
-};
-
-const LEGACY_PROVIDER_LABELS: Record<string, string> = {
-  openai: "OpenAI",
-  anthropic: "Anthropic",
-  google: "Google Gemini",
-  xai: "xAI",
-  "openai-compatible": "OpenAI-compatible",
-};
-
 /**
  * Compatibility labels consumed by upstream Excalidraw via ExcalidrawPlugin.getLabel().
  * Keep these keys present in `en.ts`, and keep maintained locales in sync.
@@ -222,362 +165,6 @@ const EXCALIDRAW_EXTERNAL_GET_LABEL_KEYS = [
 const EXCALIDRAW_EXTERNAL_GET_LABEL_KEY_SET = new Set<keyof typeof en>(
   EXCALIDRAW_EXTERNAL_GET_LABEL_KEYS,
 );
-
-const stripLegacyAISettings = <T extends PersistedExcalidrawSettings>(
-  settings: T,
-): T => {
-  const sanitized = { ...settings };
-  LEGACY_AI_SETTING_KEYS.forEach((key) => {
-    delete sanitized[key];
-  });
-  return sanitized;
-};
-
-const migrateLegacyAISettings = (
-  settings: PersistedExcalidrawSettings,
-): { settings: PersistedExcalidrawSettings; didMigrate: boolean } => {
-  const migrated = { ...settings };
-  const migratedRecord = migrated as Record<string, unknown>;
-  let didMigrate = false;
-
-  const assignStringIfMissing = (
-    key: keyof ExcalidrawSettings,
-    value: unknown,
-  ) => {
-    if (!hasNonEmptyString(value) || hasNonEmptyString(migrated[key])) {
-      return;
-    }
-    migratedRecord[key] = value.trim();
-    didMigrate = true;
-  };
-
-  const assignPositiveNumberIfMissing = (
-    key: keyof ExcalidrawSettings,
-    value: unknown,
-  ) => {
-    if (!hasPositiveNumber(value) || hasPositiveNumber(migrated[key])) {
-      return;
-    }
-    migratedRecord[key] = value;
-    didMigrate = true;
-  };
-
-  assignStringIfMissing("aiAPIKey", settings.openAIAPIToken);
-  assignStringIfMissing(
-    "aiDefaultMultimodalModel",
-    settings.aiDefaultVisionModel,
-  );
-  assignStringIfMissing(
-    "aiDefaultMultimodalModel",
-    settings.openAIDefaultVisionModel,
-  );
-  assignStringIfMissing("aiDefaultTextModel", settings.openAIDefaultTextModel);
-  assignStringIfMissing("aiDefaultTextModel", settings.aiDefaultVisionModel);
-  assignStringIfMissing(
-    "aiDefaultTextModel",
-    settings.openAIDefaultVisionModel,
-  );
-  assignStringIfMissing(
-    "aiDefaultImageGenerationModel",
-    settings.openAIDefaultImageGenerationModel,
-  );
-  assignPositiveNumberIfMissing(
-    "aiDefaultMaxResponseTokens",
-    settings.aiDefaultMaxTokens,
-  );
-  assignPositiveNumberIfMissing(
-    "aiDefaultMaxResponseTokens",
-    settings.openAIDefaultTextModelMaxTokens,
-  );
-
-  const legacyTextEndpoint = normalizeAISettingURL(settings.openAIURL);
-  const inferredLegacyBaseURL = legacyTextEndpoint.endsWith(AI_TEXT_SUFFIX)
-    ? legacyTextEndpoint.slice(0, -AI_TEXT_SUFFIX.length)
-    : legacyTextEndpoint;
-
-  assignStringIfMissing("aiBaseURL", inferredLegacyBaseURL);
-
-  const effectiveBaseURL =
-    normalizeAISettingURL(migrated.aiBaseURL) || inferredLegacyBaseURL;
-  const derivedTextEndpoint = joinAISettingURL(
-    effectiveBaseURL,
-    AI_TEXT_SUFFIX,
-  );
-
-  if (
-    hasNonEmptyString(legacyTextEndpoint) &&
-    !hasNonEmptyString(migrated.aiTextEndpoint) &&
-    legacyTextEndpoint !== derivedTextEndpoint
-  ) {
-    migrated.aiTextEndpoint = legacyTextEndpoint;
-    didMigrate = true;
-  }
-
-  const assignEndpointOverrideIfNeeded = (
-    key: keyof ExcalidrawSettings,
-    legacyValue: unknown,
-    suffix: string,
-  ) => {
-    const normalizedLegacyValue = normalizeAISettingURL(legacyValue);
-    if (!normalizedLegacyValue || hasNonEmptyString(migrated[key])) {
-      return;
-    }
-
-    const derivedEndpoint = joinAISettingURL(effectiveBaseURL, suffix);
-    if (!derivedEndpoint || normalizedLegacyValue !== derivedEndpoint) {
-      migratedRecord[key] = normalizedLegacyValue;
-      didMigrate = true;
-    }
-  };
-
-  assignEndpointOverrideIfNeeded(
-    "aiImageGenerationEndpoint",
-    settings.openAIImageGenerationURL,
-    "/images/generations",
-  );
-  assignEndpointOverrideIfNeeded(
-    "aiImageEditsEndpoint",
-    settings.openAIImageEditsURL,
-    "/images/edits",
-  );
-  assignEndpointOverrideIfNeeded(
-    "aiImageVariationsEndpoint",
-    settings.openAIImageVariationURL,
-    "/images/variations",
-  );
-
-  const hadProviderProfiles = Boolean(
-    migrated.aiProviderProfiles &&
-    Object.keys(migrated.aiProviderProfiles).length > 0,
-  );
-  const hadTextModelConfigs = Boolean(
-    migrated.aiTextModelConfigs &&
-    Object.keys(migrated.aiTextModelConfigs).length > 0,
-  );
-  const hadVisionModelConfigs = Boolean(
-    migrated.aiVisionModelConfigs &&
-    Object.keys(migrated.aiVisionModelConfigs).length > 0,
-  );
-  const hadImageModelConfigs = Boolean(
-    migrated.aiImageModelConfigs &&
-    Object.keys(migrated.aiImageModelConfigs).length > 0,
-  );
-
-  const ensureProviderProfiles = () => {
-    if (
-      migrated.aiProviderProfiles &&
-      Object.keys(migrated.aiProviderProfiles).length > 0
-    ) {
-      return migrated.aiProviderProfiles;
-    }
-    migrated.aiProviderProfiles = cloneKnownAIProviderProfiles();
-    didMigrate = true;
-    return migrated.aiProviderProfiles;
-  };
-
-  const ensureModelConfigs = (kind: "text" | "vision" | "image") => {
-    if (
-      kind === "text" &&
-      migrated.aiTextModelConfigs &&
-      Object.keys(migrated.aiTextModelConfigs).length > 0
-    ) {
-      return migrated.aiTextModelConfigs;
-    }
-    if (
-      kind === "image" &&
-      migrated.aiImageModelConfigs &&
-      Object.keys(migrated.aiImageModelConfigs).length > 0
-    ) {
-      return migrated.aiImageModelConfigs;
-    }
-
-    const defaults =
-      kind === "text"
-        ? cloneModelConfigs(KNOWN_AI_TEXT_MODEL_CONFIGS)
-        : cloneModelConfigs(KNOWN_AI_IMAGE_MODEL_CONFIGS);
-
-    if (kind === "text") {
-      migrated.aiTextModelConfigs = defaults;
-    }
-    if (kind === "image") {
-      migrated.aiImageModelConfigs =
-        defaults as typeof migrated.aiImageModelConfigs;
-    }
-    didMigrate = true;
-    return defaults;
-  };
-
-  const providerProfiles = ensureProviderProfiles();
-  const legacyProviderType = migrated.aiProvider ?? "openai";
-  const providerProfileId =
-    LEGACY_PROVIDER_LABELS[legacyProviderType] ?? "OpenAI";
-  if (!hadProviderProfiles) {
-    providerProfiles[providerProfileId] = {
-      provider: legacyProviderType,
-      apiKey: migrated.aiAPIKey ?? "",
-      baseURL:
-        normalizeAISettingURL(migrated.aiBaseURL) ||
-        providerProfiles[providerProfileId]?.baseURL ||
-        "",
-    };
-    didMigrate = true;
-  }
-
-  const textModelId = (
-    migrated.aiDefaultTextModel ||
-    settings.aiDefaultVisionModel ||
-    settings.openAIDefaultTextModel ||
-    settings.openAIDefaultVisionModel ||
-    "gpt-5-mini"
-  ).trim();
-  const multimodalTextModelId = (
-    migrated.aiDefaultMultimodalModel ||
-    settings.aiDefaultVisionModel ||
-    settings.openAIDefaultVisionModel ||
-    textModelId
-  ).trim();
-  const imageModelId = (
-    migrated.aiDefaultImageGenerationModel ||
-    settings.openAIDefaultImageGenerationModel ||
-    "gpt-image-1"
-  ).trim();
-  const legacyCapabilities = settings.aiImageModelCapabilities as
-    | Record<
-        string,
-        {
-          supportedSizes?: string[];
-          supportsPromptImageTransforms?: boolean;
-          supportsMaskImageEdits?: boolean;
-          supportsImageEdits?: boolean;
-        }
-      >
-    | undefined;
-
-  const textModels = ensureModelConfigs("text");
-  if (!hadTextModelConfigs) {
-    textModels[textModelId] = {
-      providerId: providerProfileId,
-      model: textModelId,
-      endpoint: migrated.aiTextEndpoint ?? "",
-      multimodalSupport: true,
-    };
-  }
-
-  if (hadVisionModelConfigs && migrated.aiVisionModelConfigs) {
-    Object.entries(migrated.aiVisionModelConfigs).forEach(
-      ([modelId, config]) => {
-        const existingConfig = textModels[modelId];
-        if (!existingConfig) {
-          textModels[modelId] = {
-            ...config,
-            multimodalSupport: config.multimodalSupport ?? true,
-          };
-          didMigrate = true;
-          return;
-        }
-
-        if (existingConfig.multimodalSupport === undefined) {
-          existingConfig.multimodalSupport = config.multimodalSupport ?? true;
-          didMigrate = true;
-        }
-      },
-    );
-  }
-
-  Object.values(textModels).forEach((config) => {
-    if (config.multimodalSupport === undefined) {
-      config.multimodalSupport = true;
-      didMigrate = true;
-    }
-  });
-
-  const imageModels = ensureModelConfigs("image") as Record<
-    string,
-    (typeof KNOWN_AI_IMAGE_MODEL_CONFIGS)[string]
-  >;
-  if (!hadImageModelConfigs) {
-    const legacySupportsImageEdits =
-      legacyCapabilities?.[imageModelId]?.supportsImageEdits;
-    imageModels[imageModelId] = {
-      providerId: providerProfileId,
-      model: imageModelId,
-      supportedSizes: [
-        ...(legacyCapabilities?.[imageModelId]?.supportedSizes?.length
-          ? legacyCapabilities[imageModelId].supportedSizes
-          : (imageModels[imageModelId]?.supportedSizes ?? ["1024x1024"])),
-      ],
-      supportsPromptImageTransforms:
-        legacyCapabilities?.[imageModelId]?.supportsPromptImageTransforms ??
-        imageModels[imageModelId]?.supportsPromptImageTransforms ??
-        legacySupportsImageEdits ??
-        true,
-      supportsMaskImageEdits:
-        legacyCapabilities?.[imageModelId]?.supportsMaskImageEdits ??
-        imageModels[imageModelId]?.supportsMaskImageEdits ??
-        legacySupportsImageEdits ??
-        true,
-    };
-  }
-
-  Object.entries(imageModels).forEach(([modelId, config]) => {
-    const legacyConfig = config as typeof config & {
-      supportsImageEdits?: boolean;
-    };
-    const legacySupportsImageEdits =
-      legacyCapabilities?.[modelId]?.supportsImageEdits ??
-      legacyConfig.supportsImageEdits;
-    const nextConfig = {
-      ...config,
-      supportsPromptImageTransforms:
-        config.supportsPromptImageTransforms ??
-        legacyCapabilities?.[modelId]?.supportsPromptImageTransforms ??
-        legacySupportsImageEdits ??
-        true,
-      supportsMaskImageEdits:
-        config.supportsMaskImageEdits ??
-        legacyCapabilities?.[modelId]?.supportsMaskImageEdits ??
-        legacySupportsImageEdits ??
-        true,
-    };
-
-    if (
-      nextConfig.supportsPromptImageTransforms !==
-        config.supportsPromptImageTransforms ||
-      nextConfig.supportsMaskImageEdits !== config.supportsMaskImageEdits ||
-      legacyConfig.supportsImageEdits !== undefined
-    ) {
-      imageModels[modelId] = nextConfig;
-      delete (
-        imageModels[modelId] as typeof nextConfig & {
-          supportsImageEdits?: boolean;
-        }
-      ).supportsImageEdits;
-      didMigrate = true;
-    }
-  });
-
-  if (!migrated.aiDefaultTextModel) {
-    migrated.aiDefaultTextModel = textModelId;
-  }
-  if (!migrated.aiDefaultMultimodalModel) {
-    migrated.aiDefaultMultimodalModel = multimodalTextModelId;
-  }
-  if (!migrated.aiDefaultImageGenerationModel) {
-    migrated.aiDefaultImageGenerationModel = imageModelId;
-  }
-
-  if (migrated.aiDefaultVisionModel !== undefined) {
-    delete migratedRecord.aiDefaultVisionModel;
-    didMigrate = true;
-  }
-
-  if (migrated.aiVisionModelConfigs !== undefined) {
-    delete migratedRecord.aiVisionModelConfigs;
-    didMigrate = true;
-  }
-
-  return { settings: migrated, didMigrate };
-};
 
 export default class ExcalidrawPlugin extends Plugin {
   public extrasGateway: ExcalidrawExtrasGateway;
@@ -844,20 +431,9 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   private async onloadCheckForOnceOffSettingsUpdates() {
-    const updateSettings =
-      !this.settings.onceOffCompressFlagReset ||
-      !this.settings.onceOffGPTVersionReset;
     if (!this.settings.onceOffCompressFlagReset) {
       this.settings.compress = true;
       this.settings.onceOffCompressFlagReset = true;
-    }
-    if (!this.settings.onceOffGPTVersionReset) {
-      this.settings.onceOffGPTVersionReset = true;
-      if (this.settings.openAIDefaultVisionModel === "gpt-4-vision-preview") {
-        this.settings.openAIDefaultVisionModel = "gpt-4o";
-      }
-    }
-    if (updateSettings) {
       await this.saveSettings();
     }
     this.addSettingTab(new ExcalidrawSettingTab(this.app, this));
@@ -1621,11 +1197,8 @@ export default class ExcalidrawPlugin extends Plugin {
     if (typeof opts.reEnableAutosave === "undefined") {
       opts.reEnableAutosave = false;
     }
-    const rawSettings = ((await this.loadData()) ??
+    const persistedSettings = ((await this.loadData()) ??
       {}) as PersistedExcalidrawSettings;
-    const { settings: migratedSettings, didMigrate } =
-      migrateLegacyAISettings(rawSettings);
-    const persistedSettings = stripLegacyAISettings(migratedSettings);
     const decryptedSettings = decryptPersistedAPIKeys(persistedSettings);
     let didSettingsMigration = false;
     this.settings = Object.assign({}, DEFAULT_SETTINGS, decryptedSettings);
@@ -1725,12 +1298,12 @@ export default class ExcalidrawPlugin extends Plugin {
       }
     }
     const encryptedPersistedSettings = encryptPersistedAPIKeys(
-      stripLegacyAISettings(this.settings as PersistedExcalidrawSettings),
+      this.settings as PersistedExcalidrawSettings,
     );
     const shouldPersistEncryptedSettings =
       JSON.stringify(encryptedPersistedSettings) !==
       JSON.stringify(persistedSettings);
-    if (didMigrate || didSettingsMigration || shouldPersistEncryptedSettings) {
+    if (didSettingsMigration || shouldPersistEncryptedSettings) {
       await this.saveData(encryptedPersistedSettings);
     }
     if (opts.reEnableAutosave) {
@@ -1739,10 +1312,11 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   async saveSettings() {
-    const persistedSettings = stripLegacyAISettings(
-      this.settings as PersistedExcalidrawSettings,
+    await this.saveData(
+      encryptPersistedAPIKeys(
+        this.settings as PersistedExcalidrawSettings,
+      ),
     );
-    await this.saveData(encryptPersistedAPIKeys(persistedSettings));
   }
 
   async onExternalSettingsChange() {
