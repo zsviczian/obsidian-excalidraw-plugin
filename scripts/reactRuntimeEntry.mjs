@@ -14,8 +14,8 @@ import * as jsxRuntime from "react/jsx-runtime";
 const ReactDOM = Object.assign({}, ReactDOMLegacy, ReactDOMClient);
 const ReactJSXRuntime = jsxRuntime;
 const ReactJSXDevRuntime = Object.assign({}, jsxDevRuntime, {
-  // React 18's production entry exposes `jsxDEV` as undefined. Keep the
-  // callable compatibility surface used by the former runtime shim.
+  // Keep a callable production fallback for bundles compiled against the
+  // development JSX runtime entrypoint.
   jsxDEV: jsxDevRuntime.jsxDEV || jsxRuntime.jsx,
 });
 
