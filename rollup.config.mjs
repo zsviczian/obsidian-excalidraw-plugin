@@ -13,6 +13,7 @@ import cssnano from 'cssnano';
 import { minify } from 'uglify-js';
 import json from '@rollup/plugin-json';
 import { parseEnv } from 'node:util';
+import { buildReactRuntime } from './scripts/buildReactRuntime.mjs';
 
 function compressDeflateBase64(code) {
   // Compress using Node's native zlib at maximum compression
@@ -33,26 +34,6 @@ const isProd = (process.env.NODE_ENV === "production");
 const isLib = (process.env.NODE_ENV === "lib");
 console.log(`Running: ${process.env.NODE_ENV}; isProd: ${isProd}; isLib: ${isLib}`);
 
-
-// Excalidraw React 19 compatiblity shim
-// Create JSX runtime compatibility layer
-const jsxRuntimeShim = `
-  const jsx = (type, props, key) => {
-    return React.createElement(type, props);
-  };
-  const jsxs = (type, props, key) => {
-    return React.createElement(type, props);
-  };
-  const Fragment = React.Fragment;
-  React.jsx = jsx;
-  React.jsxs = jsxs;
-  React.Fragment = Fragment;
-  React.jsxRuntime = { jsx, jsxs, Fragment };
-  window.__WEBPACK_EXTERNAL_MODULE_react_jsx_runtime__ = { jsx, jsxs, Fragment };
-  window.__WEBPACK_EXTERNAL_MODULE_react_jsx_dev_runtime__ = { jsx, jsxs, Fragment, jsxDEV: jsx };
-  window['react/jsx-runtime'] = { jsx, jsxs, Fragment };
-  window['react/jsx-dev-runtime'] = { jsx, jsxs, Fragment, jsxDEV: jsx };
-`;
 
 // Add non-English locales here to embed them as compressed payloads in main.js.
 // When adding a locale file:
@@ -93,18 +74,26 @@ function compressLanguageFile(lang) {
   return compressDeflateBase64(minifyCode(`x = ${content};`));
 }
 
-const excalidraw_pkg = isLib ? "" : minifyCode(isProd
-  ? fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.production.min.js", "utf8")
-  : fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/excalidraw.development.js", "utf8"));
-const react_pkg = isLib ? "" : minifyCode(isProd
-  ? fs.readFileSync("./node_modules/react/umd/react.production.min.js", "utf8")
-  : fs.readFileSync("./node_modules/react/umd/react.development.js", "utf8"));
-const reactdom_pkg = isLib ? "" : minifyCode(isProd
-  ? fs.readFileSync("./node_modules/react-dom/umd/react-dom.production.min.js", "utf8")
-  : fs.readFileSync("./node_modules/react-dom/umd/react-dom.development.js", "utf8"));
+const excalidrawSource = isLib ? "" : fs.readFileSync(
+  isProd
+    ? "./node_modules/@zsviczian/excalidraw/dist/obsidian/excalidraw.production.min.js"
+    : "./node_modules/@zsviczian/excalidraw/dist/obsidian/excalidraw.development.js",
+  "utf8",
+);
+const excalidraw_pkg = isLib
+  ? ""
+  : isProd
+    ? minifyCode(excalidrawSource)
+    : `${excalidrawSource}\n//# sourceURL=obsidian-excalidraw-runtime.development.js\n`;
+const reactRuntimeSource = isLib
+  ? ""
+  : await buildReactRuntime({ isProduction: isProd });
+const reactRuntime = isLib || !isProd
+  ? reactRuntimeSource
+  : minifyCode(reactRuntimeSource);
 const reactPackagesCompressed = isLib
   ? ""
-  : compressDeflateBase64(react_pkg + reactdom_pkg + jsxRuntimeShim);
+  : compressDeflateBase64(reactRuntime);
 
 // Runtime payloads are only decompressed; including Pako's deflate implementation
 // would add unused code to the size-constrained Obsidian plugin bundle.
@@ -112,8 +101,8 @@ const pako_pkg = isLib ? "" : fs.readFileSync("./node_modules/pako/dist/pako_inf
 
 if (!isLib) {
   const excalidraw_styles = isProd
-    ? fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/styles.production.css", "utf8")
-    : fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/styles.development.css", "utf8");
+    ? fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/obsidian/excalidraw.production.min.css", "utf8")
+    : fs.readFileSync("./node_modules/@zsviczian/excalidraw/dist/obsidian/excalidraw.development.css", "utf8");
   const plugin_styles = fs.readFileSync("./styles.css", "utf8");
   const styles = excalidraw_styles + plugin_styles;
   cssnano()
@@ -155,7 +144,9 @@ const packageString = isLib
   'window.unpackBase64Deflate = unpackBase64Deflate;\n' +
   'let REACT_PACKAGES = unpackBase64Deflate("' + reactPackagesCompressed + '");\n' +
   'const unpackExcalidraw = () => unpackBase64Deflate("' + compressDeflateBase64(excalidraw_pkg) + '");\n' +
-  'let {react, reactDOM } = new Function(`${REACT_PACKAGES}; return {react: React, reactDOM: ReactDOM};`)();\n' +
+  'let {React, ReactDOM, ReactJSXRuntime, ReactJSXDevRuntime} = new Function(`${REACT_PACKAGES}; return {React, ReactDOM, ReactJSXRuntime, ReactJSXDevRuntime};`)();\n' +
+  'let react = React;\n' +
+  'let reactDOM = ReactDOM;\n' +
   'let excalidrawLib = {};\n' +
   `const PLUGIN_LANGUAGES = {${LANGUAGES.map(lang => `"${lang}": "${compressLanguageFile(lang)}"`).join(",")}};\n` +
   //These declarations were moved here because Obsidian code scanner incorrectly flags them with a warning,

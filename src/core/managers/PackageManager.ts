@@ -11,6 +11,8 @@ declare let REACT_PACKAGES: string;
 declare let react: typeof React;
 declare let reactDOM: typeof ReactDOM;
 declare let excalidrawLib: typeof ExcalidrawLib;
+declare let ReactJSXRuntime: unknown;
+declare let ReactJSXDevRuntime: unknown;
 declare const unpackExcalidraw: () => string;
 
 export class PackageManager {
@@ -25,11 +27,29 @@ export class PackageManager {
     try {
       this.EXCALIDRAW_PACKAGE = unpackExcalidraw();
 
-      // Use safe evaluation for unpacking the Excalidraw package
-      excalidrawLib = errorHandler.safeEval(
-        `(function() {${this.EXCALIDRAW_PACKAGE};return ExcalidrawLib;})()`,
+      // Evaluate Excalidraw in the main window with the same private React
+      // instance used by the plugin bundle. The runtime is passed explicitly
+      // because window.React and window.ReactDOM are deliberately not set.
+      const loadExcalidraw = errorHandler.safeEval<
+        (
+          reactInstance: typeof React,
+          reactDOMInstance: typeof ReactDOM,
+          jsxRuntime: unknown,
+          jsxDevRuntime: unknown,
+        ) => typeof ExcalidrawLib
+      >(
+        `(function(React, ReactDOM, ReactJSXRuntime, ReactJSXDevRuntime) {
+          ${this.EXCALIDRAW_PACKAGE};
+          return ExcalidrawLib;
+        })`,
         "PackageManager constructor - excalidrawLib initialization",
         window,
+      );
+      excalidrawLib = loadExcalidraw(
+        react,
+        reactDOM,
+        ReactJSXRuntime,
+        ReactJSXDevRuntime,
       );
 
       if (!excalidrawLib) {
@@ -134,7 +154,11 @@ export class PackageManager {
           }>(
             `(function() {
             ${REACT_PACKAGES + this.EXCALIDRAW_PACKAGE};
-            return {react: React, reactDOM: ReactDOM, excalidrawLib: ExcalidrawLib};
+            return {
+              react: React,
+              reactDOM: ReactDOM,
+              excalidrawLib: ExcalidrawLib,
+            };
           })()`,
             "PackageManager.getPackage - package evaluation",
             win,
@@ -176,10 +200,8 @@ export class PackageManager {
         return;
       }
 
-      const { react, reactDOM, excalidrawLib } = pkg;
-
+      const { excalidrawLib } = pkg;
       if (win.ExcalidrawLib === excalidrawLib) {
-        // Safely clean up resources
         errorHandler.wrapWithTryCatch(() => {
           if (
             excalidrawLib &&
@@ -189,18 +211,6 @@ export class PackageManager {
           }
           delete win.ExcalidrawLib;
         }, "PackageManager.deletePackage - cleanup ExcalidrawLib");
-      }
-
-      if (win.React === react) {
-        errorHandler.wrapWithTryCatch(() => {
-          delete win.React;
-        }, "PackageManager.deletePackage - cleanup React");
-      }
-
-      if (win.ReactDOM === reactDOM) {
-        errorHandler.wrapWithTryCatch(() => {
-          delete win.ReactDOM;
-        }, "PackageManager.deletePackage - cleanup ReactDOM");
       }
 
       this.packageMap.delete(win);
