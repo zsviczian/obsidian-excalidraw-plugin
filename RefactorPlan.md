@@ -35,6 +35,7 @@ validated, and what remains uncertain.
 | Use inflate-only Pako runtime | Complete | Replaced the full Pako distribution with its API-compatible inflate-only build; all existing Excalidraw and locale payloads retain their format and decompression path |
 | Replace bundled YAML runtime | Implemented; awaiting manual validation | `mergeMarkdownFiles()` now uses Obsidian's public YAML APIs, and `yaml` is no longer a direct production dependency |
 | Compress per-window React payload | Complete | React, ReactDOM, and the JSX shim are inflated before React participates in plugin bootstrap; the decompressed source remains available for popout-window package creation, and manual testing found no startup or runtime regression |
+| Replace bundled OpenType metric reader | Complete | A bounds-checked SFNT reader now extracts only the TTF/OTF metrics consumed by Excalidraw; WOFF/WOFF2 fallback behavior is unchanged, `opentype.js` is no longer bundled, and manual testing found no font regression |
 | Audit and consolidate duplicate logic | In progress | Consolidated `updateFrontmatterInString()`, `arrayToMap()`, `wrapTextAtCharLength()`, `getLinkParts()`/`LinkParts`, `getBinaryFileFromDataURL()`, `svgToBase64()`, `getFontDataURL()`, `cropCanvas()`, `getImageSize()`, `promiseTry()`, `isVersionNewerThanOther()`, `repositionElementsToCursor()`, the internal `cloneElement()`, and `getBoundTextElementId()`; continue one independently testable helper family at a time |
 | Remaining view phases | In progress | Manually validate the extension renderer checkpoint before choosing between the higher-risk scene-file loader and a mechanical package-aware React-root extraction |
 
@@ -79,6 +80,8 @@ validated, and what remains uncertain.
 | 2026-08-09 | Replaced the bundled YAML runtime with Obsidian's public YAML APIs | Updated the sole runtime consumer, `mergeMarkdownFiles()`, to use `parseYaml()` and `stringifyYaml()` from `obsidian`, added TSDoc for its precedence and array-merge contract, and removed `yaml` as a direct production dependency. Existing target frontmatter remains text-preserved. Obsidian serialization may represent nulls as empty values and keep long scalars on one line; these forms parse to the same values as the previous output | Repository search confirms no source imports from `yaml`; targeted ESLint and `npm run lib` passed; production builds before and after dependency cleanup passed with the existing 33 circular-dependency warnings; the CRLF-aware whitespace check passed. `main.js` decreased 104,707 bytes, from 5,078,533 to 4,973,826 bytes, leaving 269,054 bytes below 5 MiB. Manual validation should prioritize template/target array merging and missing keys through **Convert note to Excalidraw** and `ExcalidrawAutomate.create()`, then null, long-text, date, alias, multiline, quoted-value, desktop, and mobile cases |
 | 2026-08-09 | Compressed the per-window React runtime payload | Deflated the minified React, ReactDOM, and JSX-shim source at build time. In the emitted bootstrap, inflate-only Pako and the dependency-free `unpackBase64Deflate()` helper are initialized first; only then is `REACT_PACKAGES` inflated and evaluated. The decompressed string remains alive for `PackageManager.getPackage()` to evaluate in each popout window. Removed the now-unused direct `jsesc` development dependency. This ordering specifically addresses the prior attempt that failed before React decompression could run | `npm run build` passed with the existing 33 circular-dependency warnings; `node --check dist/main.js` passed; emitted-order inspection confirms the inflater precedes React decompression; an isolated bootstrap smoke test initialized React 18.3.1 and ReactDOM, then successfully evaluated the retained package source a second time to simulate a popout. `main.js` decreased 78,540 bytes, from 4,973,826 to 4,895,286 bytes, leaving 347,594 bytes below 5 MiB. Manual validation is mandatory because the historical failure occurred during Obsidian startup: test desktop and mobile cold starts first, then main-window rendering, a new and restored popout, moving a leaf between windows, plugin disable/re-enable, and the extension-renderer paths |
 | 2026-08-09 | Closed the compressed React validation checkpoint | Manual testing found no startup or runtime regressions with the bootstrap-safe compressed React payload | User confirmed the implementation works; the checkpoint is ready to commit |
+| 2026-08-09 | Replaced `opentype.js` with a focused SFNT metric reader | Added documented, bounds-checked parsing of `head.unitsPerEm`, `hhea.ascender`, and `hhea.descender`, preserving exact raw values and the established line-height calculation. The already-read vault buffer is reused instead of decoding the generated data URL. Glyph outlines, shaping, rendering, and embedding remain owned by the browser and Excalidraw. Removed unused font-family-name parsing plus the `opentype.js` runtime and type dependencies. WOFF/WOFF2 continue to use the same fallback metrics as before | The new reader produced exact metric parity with `opentype.js` across all 21 installed TTF/OTF fixtures, including a CFF OTF, and safely rejected three malformed/truncated fixtures. Repository search found no remaining runtime dependency references. Targeted ESLint passed for the new reader and `FontManager`; `node --check dist/main.js` and production builds passed with the existing 33 circular-dependency warnings; `npm run madge` remains unavailable because `madge` is not installed. `main.js` decreased 186,132 bytes, from 4,895,286 to 4,709,154 bytes, leaving 533,726 bytes below 5 MiB. Manual validation should first compare existing and newly created local-font text using representative TTF and OTF files on desktop, including wrapping, baselines, bound text, reload, SVG/PNG/PDF export, and a popout; then repeat core text creation/reload on mobile and smoke-test WOFF/WOFF2. The highest-risk regression is different layout for an unusual TTF/OTF whose metrics fall back because its table structure is malformed or unsupported |
+| 2026-08-09 | Closed the focused SFNT reader validation checkpoint | Manual testing found no regressions in local-font loading or behavior after removing `opentype.js` | User confirmed the implementation works well; the checkpoint is ready to commit |
 
 ## Executive recommendation
 
@@ -149,8 +152,9 @@ bundle exactly 25,380 bytes to 5,078,533 bytes. Current headroom is 164,347
 bytes (about 160 KiB or 3.13%). Replacing the bundled YAML runtime then reduced
 the bundle another 104,707 bytes to 4,973,826 bytes. Current headroom is
 269,054 bytes (about 263 KiB or 5.13%). Compressing the React package source
-then reduced the bundle another 78,540 bytes to 4,895,286 bytes. Current
-headroom is 347,594 bytes (about 339 KiB or 6.63%).
+then reduced the bundle another 78,540 bytes to 4,895,286 bytes. Replacing
+`opentype.js` with the focused SFNT reader reduced it another 186,132 bytes to
+4,709,154 bytes. Current headroom is 533,726 bytes (about 521 KiB or 10.18%).
 
 | Injected section | Approximate production characters | Share of `main.js` |
 | --- | ---: | ---: |
@@ -189,12 +193,12 @@ Recommended order:
    unreachable even when the user manually requests all notes. Those entries
    occupy about 18 KB of source string data. Preserve their history outside
    the runtime import graph.
-5. Replace `opentype.js` only as a separately tested feature change. It is
-   imported at one site solely to read `unitsPerEm`, ascender, descender, and
-   English family name for custom TTF/OTF fonts. Its measured standalone
-   production cost is about 169 KB. A focused SFNT table reader could recover
-   most of that, but must cover real TTF/OTF collections and name encodings;
-   this has more functional risk than the preceding items.
+5. Implemented; awaiting manual validation: replaced `opentype.js` with a
+   focused SFNT reader for the three metrics actually consumed by Excalidraw.
+   English family-name parsing was removed because it had no consumer. The
+   reader matched all 21 available TTF/OTF fixtures exactly and retains the
+   existing fallback for invalid files and all WOFF/WOFF2 fonts. The production
+   bundle decreased 186,132 bytes.
 
 Secondary static-payload candidates, after the above checkpoints:
 

@@ -39,7 +39,6 @@ import { arrayToMap } from "./collectionUtils";
 import { isVersionNewerThanOther } from "./versionUtils";
 import { updateElementLinksToObsidianLinks } from "./excalidrawAutomateUtils";
 import { CropImage } from "../shared/CropImage";
-import opentype from "opentype.js";
 import Pool from "es6-promise-pool";
 import { t } from "src/lang/helpers";
 import { log } from "./debugHelper";
@@ -1028,39 +1027,6 @@ export function addYouTubeThumbnail(
       style: "width: 100%; height: auto; cursor: pointer;",
     },
   });
-}
-
-export interface FontMetrics {
-  unitsPerEm: 1000 | 1024 | 2048;
-  ascender: number;
-  descender: number;
-  lineHeight: number;
-  fontName: string;
-}
-
-export async function getFontMetrics(
-  fontUrl: string,
-  name: string,
-): Promise<FontMetrics | null> {
-  try {
-    const font = await opentype.load(fontUrl);
-    const unitsPerEm = font.unitsPerEm as 1000 | 1024 | 2048;
-    const ascender = font.ascender;
-    const descender = font.descender;
-    const lineHeight = (ascender - descender) / unitsPerEm;
-    const fontName = font.names.fontFamily.en ?? name;
-
-    return {
-      unitsPerEm,
-      ascender,
-      descender,
-      lineHeight,
-      fontName,
-    };
-  } catch (error) {
-    console.error("Error loading font:", error);
-    return null;
-  }
 }
 
 // extending the missing types
