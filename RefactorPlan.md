@@ -33,6 +33,7 @@ validated, and what remains uncertain.
 | Extract Excalidraw extension rendering | Implemented; awaiting manual validation | `ViewExcalidrawExtensionRenderer` now owns text-to-diagram, diagram-to-code, welcome screen, custom main menu, and embeddable rendering while the view retains its existing render delegates and package-managed React runtime |
 | Audit production bundle size | Complete | Ranked packaging, dependency, dead-data, and static-payload reductions; translation extraction remains a last resort |
 | Use inflate-only Pako runtime | Complete | Replaced the full Pako distribution with its API-compatible inflate-only build; all existing Excalidraw and locale payloads retain their format and decompression path |
+| Replace bundled YAML runtime | Implemented; awaiting manual validation | `mergeMarkdownFiles()` now uses Obsidian's public YAML APIs, and `yaml` is no longer a direct production dependency |
 | Audit and consolidate duplicate logic | In progress | Consolidated `updateFrontmatterInString()`, `arrayToMap()`, `wrapTextAtCharLength()`, `getLinkParts()`/`LinkParts`, `getBinaryFileFromDataURL()`, `svgToBase64()`, `getFontDataURL()`, `cropCanvas()`, `getImageSize()`, `promiseTry()`, `isVersionNewerThanOther()`, `repositionElementsToCursor()`, the internal `cloneElement()`, and `getBoundTextElementId()`; continue one independently testable helper family at a time |
 | Remaining view phases | In progress | Manually validate the extension renderer checkpoint before choosing between the higher-risk scene-file loader and a mechanical package-aware React-root extraction |
 
@@ -74,6 +75,7 @@ validated, and what remains uncertain.
 | 2026-08-09 | Extracted Excalidraw extension rendering from `ExcalidrawView` | Added documented `ViewExcalidrawExtensionRenderer` to own `ttdDialog()`, `diagramToCode()`, `ttdDialogTrigger()`, `renderWelcomeScreen()`, `renderCustomActionsMenu()`, and `renderEmbeddable()`. Kept the six private view methods and all Excalidraw root call sites as delegates. The renderer uses `view.packages.react` and `view.packages.excalidrawLib`; back-edge-prone runtime modules and private dialog actions are constructor-injected, and the concrete view import is type-only. `renderEmbeddableMenu()`, `renderToolsPanel()`, and `renderTopRightUI()` remain in the view because they own refs, live menu instances, or view lifecycle state | Production builds passed after every code edit, `npm run lib` passed, renderer-targeted ESLint and `git diff --check` passed, and full-view lint showed only the established type backlog after extraction-specific unused imports were removed. The build retained the 33-warning circular-dependency baseline. `ExcalidrawView.ts` decreased by 358 lines from 8,122 to 7,764; the renderer contains 479 documented lines; the bundle increased by 1,746 bytes to 5,102,281 bytes and remains below 5 MiB. Manual testing should prioritize a popout window, then the main-window welcome/menu/embeddable paths, then ExcaliAI text-to-diagram and diagram-to-code; repeat core rendering on mobile, with popout React isolation the highest-risk regression |
 | 2026-08-09 | Audited production `main.js` size | The fresh 5,103,913-byte bundle has 138,967 bytes of headroom below 5 MiB. The first recommended batch is packaging-only: use Pako's inflate-only build (about 25 KB gross saving) and store the per-window React payload deflated (about 78 KB gross saving). The next source-level candidate is replacing the bundled `yaml` parser used only by `mergeMarkdownFiles()` with Obsidian's external `parseYaml()`/`stringifyYaml()` APIs after compatibility tests. Larger later candidates are a focused TTF/OTF metadata reader instead of `opentype.js`, build-time compaction of CJK metadata and static help/startup payloads, and pruning release-note entries that the current ten-item display cap makes unreachable. Translation extraction and changes to the embedded Excalidraw runtime remain last-resort work | Generated a Rollup module-composition report, measured injected payloads and standalone dependency costs, searched all imports/callers, ran `npm run code:unused` with no unused-variable findings, verified that only `pako.inflate()` is called and that `pako_inflate.min.js` decodes the current payload format, and confirmed that 13 of 23 release-note entries are unreachable under the current `.slice(0, 10)` behavior. The documentation-only production build passed with the existing 33 circular-dependency warnings; no runtime source was changed |
 | 2026-08-09 | Replaced full Pako with its inflate-only distribution | Changed only the Rollup build input from `pako.min.js` to `pako_inflate.min.js`. The existing CommonJS wrapper, `pako.inflate()` call, global `unpackBase64Deflate()` compatibility surface, compressed payload format, and per-window package architecture remain unchanged. Obsidian YAML replacement is the next checkpoint. React compression is deferred because a previous attempt prevented `main.js` from completing bootstrap before the inflater could run | `npm run build` passed with the existing 33 circular-dependency warnings; `node --check dist/main.js` passed; the inflate-only and full builds produced byte-for-byte identical output for all five emitted Excalidraw and locale payloads; `git diff --check` passed. `main.js` decreased exactly 25,380 bytes, from 5,103,913 to 5,078,533 bytes, leaving 164,347 bytes below 5 MiB. Manual validation should prioritize cold startup and locale switching on mobile, then a desktop popout; a decompression failure during initialization is the highest-impact risk |
+| 2026-08-09 | Replaced the bundled YAML runtime with Obsidian's public YAML APIs | Updated the sole runtime consumer, `mergeMarkdownFiles()`, to use `parseYaml()` and `stringifyYaml()` from `obsidian`, added TSDoc for its precedence and array-merge contract, and removed `yaml` as a direct production dependency. Existing target frontmatter remains text-preserved. Obsidian serialization may represent nulls as empty values and keep long scalars on one line; these forms parse to the same values as the previous output | Repository search confirms no source imports from `yaml`; targeted ESLint and `npm run lib` passed; production builds before and after dependency cleanup passed with the existing 33 circular-dependency warnings; the CRLF-aware whitespace check passed. `main.js` decreased 104,707 bytes, from 5,078,533 to 4,973,826 bytes, leaving 269,054 bytes below 5 MiB. Manual validation should prioritize template/target array merging and missing keys through **Convert note to Excalidraw** and `ExcalidrawAutomate.create()`, then null, long-text, date, alias, multiline, quoted-value, desktop, and mobile cases |
 
 ## Executive recommendation
 
@@ -141,7 +143,9 @@ cleanup has limited impact:
 
 The first implemented reduction, switching to inflate-only Pako, reduced the
 bundle exactly 25,380 bytes to 5,078,533 bytes. Current headroom is 164,347
-bytes (about 160 KiB or 3.13%).
+bytes (about 160 KiB or 3.13%). Replacing the bundled YAML runtime then reduced
+the bundle another 104,707 bytes to 4,973,826 bytes. Current headroom is
+269,054 bytes (about 263 KiB or 5.13%).
 
 | Injected section | Approximate production characters | Share of `main.js` |
 | --- | ---: | ---: |
@@ -162,13 +166,11 @@ Recommended order:
    search found only `pako.inflate()` at runtime, and the smaller distribution
    decodes the same zlib payloads. The source files are 46,859 and 21,479 bytes
    respectively; the production bundle decreased exactly 25,380 bytes.
-2. Next checkpoint: replace the `yaml` package used only by
-   `mergeMarkdownFiles()` with
-   Obsidian's external `parseYaml()` and `stringifyYaml()` functions. A
-   standalone production bundle of the currently used YAML exports is about
-   97 KB. The code change is small, but serializer compatibility must be tested
-   before adoption because quoting, multiline values, scalar coercion, dates,
-   aliases, and formatting may differ.
+2. Implemented; awaiting manual validation: replaced the `yaml` package used
+   only by `mergeMarkdownFiles()` with Obsidian's external `parseYaml()` and
+   `stringifyYaml()` functions. The production bundle decreased 104,707 bytes.
+   Parsing remains equivalent; Obsidian's frontmatter serializer can format
+   nulls and long lines differently while preserving their parsed values.
 3. Deferred: deflate the React/ReactDOM/JSX-shim source at build time. A prior
    attempt caused `main.js` bootstrap to fail before the inflater ran because
    React participates elsewhere in the bundled module initialization. Revisit
