@@ -1,6 +1,6 @@
 # Incremental refactor assessment and plan
 
-Status: active plan for the 2.27.0 refactor, last updated 2026-08-08
+Status: active plan for the 2.27.0 refactor, last updated 2026-08-09
 
 This document is the working plan for reducing the size and coupling of
 `src/core/main.ts` and `src/view/ExcalidrawView.ts` without destabilizing the
@@ -24,6 +24,7 @@ validated, and what remains uncertain.
 | Extract footer safe-area styling | Implemented; awaiting manual validation | `FooterSafeAreaManager` now owns device-specific stylesheet injection, open-document traversal, and unload cleanup; the plugin method remains as a settings-UI compatibility delegate |
 | Extract font management | Implemented; awaiting manual validation | `FontManager` now owns CJK discovery/loading, custom-font registration, document stylesheets, readiness, and cleanup; plugin methods and the externally read `fourthFontLoaded` field remain intact |
 | Extract startup instrumentation | Implemented; awaiting manual validation | `StartupTimer` now owns startup event history, delta tracking, and breakdown formatting; lifecycle calls, public methods, and the public `loadTimestamp` field remain intact |
+| Remove confirmed dead `main.ts` code | Implemented; awaiting manual validation | Removed the uncalled cache-registration method and the never-assigned duplicate file-explorer observer field/cleanup; the active observer in `ObserverManager` remains unchanged |
 | Audit and consolidate duplicate logic | In progress | Consolidated `updateFrontmatterInString()`, `arrayToMap()`, `wrapTextAtCharLength()`, `getLinkParts()`/`LinkParts`, `getBinaryFileFromDataURL()`, `svgToBase64()`, `getFontDataURL()`, `cropCanvas()`, `getImageSize()`, `promiseTry()`, `isVersionNewerThanOther()`, `repositionElementsToCursor()`, the internal `cloneElement()`, and `getBoundTextElementId()`; continue one independently testable helper family at a time |
 | All later phases | Planned | Begin only after the preceding checkpoint is validated |
 
@@ -56,6 +57,7 @@ validated, and what remains uncertain.
 | 2026-08-09 | Extracted footer safe-area styling from `main.ts` | Added documented `FooterSafeAreaManager` with a narrow host contract to own phone/tablet CSS injection, exact device-aware open-document traversal, setting-driven removal, and unload cleanup. Kept `plugin.updateFooterSafeAreaPadding()` and its layout-ready and settings UI call sites unchanged as delegates. Font document traversal remains in `main.ts` until the separate font extraction | `npm run build`, targeted manager ESLint, and scoped `git diff --check` passed; `main.ts` decreased by 46 lines from 1,558 to 1,512; bundle size increased by 99 bytes to 5,094,470 bytes from manager/delegate overhead; `npm run madge` could not run because `madge` is not installed; phone/tablet manual validation remains pending |
 | 2026-08-09 | Extracted font management from `main.ts` | Added documented `FontManager` to own the existing CJK asset cache, vault reads, CJK/custom stylesheet lifecycle, custom font metrics and package registration, readiness state, and device-aware document traversal. Preserved every plugin-facing font method as a delegate, retained `plugin.fourthFontLoaded` for view compatibility, kept the initial readiness value and 100ms timer unchanged, and injected lazy package-map access without changing `PackageManager` construction or ownership | `npm run build`, `npm run lib`, targeted manager ESLint, and scoped `git diff --check` passed; `main.ts` decreased by 130 lines from 1,512 to 1,382; bundle size increased by 379 bytes to 5,094,849 bytes from manager/facade overhead; `npm run madge` could not run because `madge` is not installed; desktop, mobile, CJK, custom-font, and popout manual validation remains pending |
 | 2026-08-09 | Extracted startup timing instrumentation from `main.ts` | Added documented `StartupTimer` to own the private event list, previous-event timestamp, total/delta formatting, and debug output. Kept every timing call in its original lifecycle position, retained `logStartupEvent()` and the misspelled `printStarupBreakdown()` as plugin delegates, preserved pre-layout events across the layout-ready baseline reset, and retained `loadTimestamp` as an own public field with unchanged assignment behavior | `npm run build`, `npm run lib`, targeted manager ESLint, and scoped `git diff --check` passed; `main.ts` decreased by 6 lines from 1,382 to 1,376; the latest bundle is 5,095,747 bytes, 898 bytes above the preceding checkpoint due to the manager and compatibility facade; `npm run madge` could not run because `madge` is not installed; startup breakdown inspection remains pending |
+| 2026-08-09 | Rejected a catch-all Markdown integration manager and removed proven dead code from `main.ts` | Markdown post-processing, install-codeblock handling, observer setup, and rerender behavior have different lifecycle and ownership constraints, so they will remain explicit rather than being grouped under a weak abstraction. Removed the uncalled private `registerEventListeners()`, its `MetadataCache` import, the never-assigned `main.ts` `fileExplorerObserver`, and its inert unload check. The active file-explorer observer and teardown in `ObserverManager` were not changed | Repository-wide reference searches confirmed both removed members had no callers or assignments and that `PluginFileManager.initialize()` owns the active initial cache walk; `npm run build` passed with the existing circular-dependency warnings; targeted lint reports only the same four pre-existing startup-script `any` diagnostics and none on changed lines; `git diff --check` passed; `main.ts` decreased by 29 lines from 1,376 to 1,347 and the bundle decreased by 381 bytes to 5,095,366 bytes; manual unload/reload validation remains pending |
 
 ## Executive recommendation
 
@@ -296,7 +298,6 @@ src/core/
     PluginSettingsManager.ts      Load/save/encryption/default assembly
     FontManager.ts                Per-document fonts and package registration
     ViewportStyleManager.ts       Phone/tablet safe-area behavior
-    MarkdownIntegrationManager.ts Post processors and install code blocks
 
 src/view/
   ExcalidrawView.ts               Obsidian host, public facade, composition
@@ -478,19 +479,20 @@ popout creation, so it should not be combined with package-manager changes.
 
 Candidates should be extracted one at a time:
 
-1. Move install-codeblock registration and Markdown integration setup behind a
-   `MarkdownIntegrationManager`, while still registering the Markdown post
-   processor from `onload()`.
+1. Keep Markdown post-processing, install-codeblock registration, observer
+   setup, and rerender behavior explicit in their current owners. A proposed
+   `MarkdownIntegrationManager` was rejected because these responsibilities do
+   not form a cohesive lifecycle unit.
 2. Move startup-script execution behind a focused runner owned by the script
    subsystem.
-3. Move startup timing storage/formatting into a small `StartupTimer` while
-   retaining `plugin.logStartupEvent()` as a delegate if consumers need it.
+3. Completed: startup timing storage/formatting now belongs to `StartupTimer`,
+   with the plugin methods retained as compatibility delegates.
 4. Group initialization and cleanup of managers, but keep a readable ordered
    list in `onloadOnLayoutReady()` and `onunload()`.
-5. Only after reference searches and runtime validation, remove confirmed dead
-   members. Current review candidates include the unused private
-   `registerEventListeners()` and a `fileExplorerObserver` field in `main.ts`
-   that appears separate from the observer owned by `ObserverManager`.
+5. Completed: after repository-wide reference searches, removed the unused
+   private `registerEventListeners()` and the never-assigned
+   `fileExplorerObserver` field and unload check from `main.ts`. The active
+   observer owned by `ObserverManager` remains intact.
 
 Do not hide lifecycle ordering inside a generic service container. The desired
 `main.ts` is a readable composition root, not an empty forwarding shell.

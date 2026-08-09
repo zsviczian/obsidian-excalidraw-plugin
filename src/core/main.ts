@@ -11,7 +11,6 @@ import {
   ViewState,
   ViewStateResult,
   Notice,
-  MetadataCache,
   TAbstractFile,
   FrontMatterCache,
 } from "obsidian";
@@ -178,7 +177,6 @@ export default class ExcalidrawPlugin extends Plugin {
   private legacyExcalidrawPopoverObserver:
     | MutationObserver
     | CustomMutationObserver;
-  private fileExplorerObserver: MutationObserver | CustomMutationObserver;
   public opencount: number = 0;
   public ea: ExcalidrawAutomate;
   //A master list of fileIds to facilitate copy / paste
@@ -908,29 +906,6 @@ export default class ExcalidrawPlugin extends Plugin {
     };
   }
 
-  /**
-   * Registers event listeners for the plugin
-   * Must be called after the workspace is read (onLayoutReady)
-   * Intended to be called from onLayoutReady in onload()
-   */
-  private async registerEventListeners() {
-    await this.awaitInit();
-
-    const metaCache: MetadataCache = this.app.metadataCache;
-    metaCache.getCachedFiles().forEach((filename: string) => {
-      const fm = metaCache.getCache(filename)?.frontmatter;
-      if (
-        (fm && typeof fm[FRONTMATTER_KEYS.plugin.name] !== "undefined") ||
-        filename.match(/\.excalidraw$/)
-      ) {
-        this.fileManager.updateFileCache(
-          this.app.vault.getFileByPath(filename),
-          fm,
-        );
-      }
-    });
-  }
-
   onunload() {
     ExcalidrawSidepanelView.onPluginUnload(this);
     const excalidrawViews = getExcalidrawViews(this.app);
@@ -975,10 +950,6 @@ export default class ExcalidrawPlugin extends Plugin {
       this.legacyExcalidrawPopoverObserver.disconnect();
     }
     this.observerManager.destroy();
-
-    if (this.fileExplorerObserver) {
-      this.fileExplorerObserver.disconnect();
-    }
 
     this.excalidrawConfig = null;
 
