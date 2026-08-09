@@ -19,8 +19,7 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 `,
   "2.27.0": `
 ## Maintenance
-- Retired obsolete pre-profile ExcalidrawAI settings migration and fallback handling. Current provider profiles and model configurations are unchanged.
-- Temporary autosave disablement is now session-scoped and no longer stored with plugin settings.
+- Refactoring the plugin. Removed unused functions, improved code structure and readability. Removed the obsolete Draw.io/Diagram plugin integration (since the other plugin no longer works and is not maintained) and retired the Create DrawIO file script from the script library.
 
 `,
   "2.26.4": `

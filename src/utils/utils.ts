@@ -19,7 +19,7 @@ import {
   SCRIPT_INSTALL_FOLDER,
   VIEW_TYPE_EXCALIDRAW,
 } from "../constants/constants";
-import ExcalidrawPlugin from "../core/main";
+import type ExcalidrawPlugin from "../core/main";
 import {
   ElementsMap,
   ExcalidrawElement,
