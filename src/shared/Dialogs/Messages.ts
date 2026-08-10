@@ -27,6 +27,9 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 - The Excalidraw color palette now uses its natural height when space is available instead of being unnecessarily limited to a short, vertically scrolling panel. Its native color control also remains aligned with the hex input.
 - The text-to-diagram chat history menu is visible again, allowing saved chats to be restored and deleted.
 
+## New from Excalidraw.com
+- Improved bucket tool and eyedropper support [#11849](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11849)
+
 `,
   "2.26.4": `
 ## Fixed
