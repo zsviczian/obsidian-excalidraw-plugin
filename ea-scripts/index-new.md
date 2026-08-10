@@ -761,3 +761,9 @@ Comments and discussion are welcomed in the [Sketch Your Mind Community](https:/
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Zoom%20to%20Fit%20Selected%20Elements.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Zoom%20to%20Fit%20Selected%20Elements.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Similar to Excalidraw standard <kbd>SHIFT+2</kbd> feature: Zoom to fit selected elements, but with the ability to zoom to 1000%. Inspiration: [#272](https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/272)</td></tr></table>
+
+## Image Hover Lightbox
+```excalidraw-script-install
+https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Image%20Hover%20Lightbox.md
+```
+<table><tr valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/ottopan'>@ottopan</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/otto-OBplugins/excalidraw-image-hover-lightbox/blob/main/scripts/Image%20Hover%20Lightbox.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">Hover an image in an Excalidraw canvas to show a fullscreen-corner button, then open the image in a lightbox. The script can be configured as an Excalidraw Startup Script for automatic mounting.</td></tr></table>
