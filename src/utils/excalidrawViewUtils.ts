@@ -20,7 +20,7 @@ import {
   getExcalidrawMarkdownHeaderSection,
   REGEX_TAGS,
 } from "../shared/ExcalidrawData";
-import ExcalidrawView from "src/view/ExcalidrawView";
+import type ExcalidrawView from "src/view/ExcalidrawView";
 import {
   ExcalidrawElement,
   ExcalidrawFrameElement,

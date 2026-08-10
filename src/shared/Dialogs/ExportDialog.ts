@@ -3,7 +3,7 @@ import { Modal, Notice, Setting, TFile } from "obsidian";
 import { getEA } from "src/core";
 import { DEVICE } from "src/constants/constants";
 import { ExcalidrawAutomate } from "src/shared/ExcalidrawAutomate";
-import ExcalidrawView from "src/view/ExcalidrawView";
+import type ExcalidrawView from "src/view/ExcalidrawView";
 import ExcalidrawPlugin from "src/core/main";
 import {
   fragWithHTML,

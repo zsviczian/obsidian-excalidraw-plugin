@@ -6,7 +6,7 @@ import {
   BinaryFiles,
   NormalizedZoomValue,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
-import { errorlog, getDataURL } from "./coreUtils";
+import { errorlog } from "./coreUtils";
 import {
   exportToSvg,
   exportToBlob,
@@ -19,7 +19,7 @@ import {
   SCRIPT_INSTALL_FOLDER,
   VIEW_TYPE_EXCALIDRAW,
 } from "../constants/constants";
-import ExcalidrawPlugin from "../core/main";
+import type ExcalidrawPlugin from "../core/main";
 import {
   ElementsMap,
   ExcalidrawElement,
@@ -27,23 +27,18 @@ import {
   ImageCrop,
   NonDeletedExcalidrawElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
-import {
-  getDataURLFromURL,
-  getIMGFilename,
-  getMimeType,
-  getURLImageExtension,
-} from "./fileUtils";
+import { getIMGFilename } from "./fileUtils";
 import { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
 import {
   getExcalidrawViews,
   getFileCSSClasses,
   getSafeFrontmatter,
 } from "./obsidianUtils";
-import { cleanBlockRef, cleanSectionHeading } from "./pathUtils";
 import { addAppendUpdateCustomData } from "./elementCustomDataUtils";
+import { arrayToMap } from "./collectionUtils";
+import { isVersionNewerThanOther } from "./versionUtils";
 import { updateElementLinksToObsidianLinks } from "./excalidrawAutomateUtils";
 import { CropImage } from "../shared/CropImage";
-import opentype from "opentype.js";
 import Pool from "es6-promise-pool";
 import { t } from "src/lang/helpers";
 import { log } from "./debugHelper";
@@ -58,8 +53,19 @@ import { getEmptyDrawingElementsRuntime } from "src/constants/emptydrawing";
 import { makeEntitiesXmlSafe, sanitizedFragment } from "./htmlUtils";
 import { URLs } from "src/constants/safeUrls";
 import { isInstanceOfSVGSVGElement } from "./typechecks";
+export { arrayToMap };
 export { errorlog, getDataURL } from "./coreUtils";
 export { addAppendUpdateCustomData } from "./elementCustomDataUtils";
+export { getBinaryFileFromDataURL } from "./fileUtils";
+export { cropCanvas } from "./embeddedAssetUtils";
+export { getFontDataURL } from "./embeddedAssetUtils";
+export { getImageSize } from "./embeddedAssetUtils";
+export { promiseTry } from "./embeddedAssetUtils";
+export { getLinkParts } from "./linkUtils";
+export type { LinkParts } from "./linkUtils";
+export { svgToBase64 } from "./embeddedAssetUtils";
+export { wrapTextAtCharLength } from "./textUtils";
+export { isVersionNewerThanOther };
 export {
   getEmbeddedFilenameParts,
   isImagePartRef,
@@ -206,99 +212,11 @@ export function randomInteger() {
   return Math.floor(random.next() * 2 ** 31);
 }
 
-//https://macromates.com/blog/2006/wrapping-text-with-regular-expressions/
-export function wrapTextAtCharLength(
-  text: string,
-  lineLen: number,
-  forceWrap: boolean = false,
-  tolerance: number = 0,
-): string {
-  if (!lineLen) {
-    return text;
-  }
-  let outstring = "";
-  if (forceWrap) {
-    for (const t of text.split("\n")) {
-      const v = t.match(new RegExp(`(.){1,${lineLen}}`, "g"));
-      outstring += v ? `${v.join("\n")}\n` : "\n";
-    }
-    return outstring.replace(/\n$/, "");
-  }
-
-  //  1                2            3                               4
-  const reg = new RegExp(
-    `(.{1,${lineLen}})(\\s+|$\\n?)|([^\\s]{1,${
-      lineLen + tolerance
-    }})(\\s+|$\\n?)?`,
-    //`(.{1,${lineLen}})(\\s+|$\\n?)|([^\\s]+)(\\s+|$\\n?)`,
-    "gm",
-  );
-  const res = text.matchAll(reg);
-  let parts;
-  while (!(parts = res.next()).done) {
-    outstring += parts.value[1]
-      ? parts.value[1].trimEnd()
-      : parts.value[3].trimEnd();
-    const newLine =
-      (parts.value[2] ? parts.value[2].split("\n").length - 1 : 0) +
-      (parts.value[4] ? parts.value[4].split("\n").length - 1 : 0);
-    outstring += "\n".repeat(newLine);
-    if (newLine === 0) {
-      outstring += "\n";
-    }
-  }
-  return outstring.replace(/\n$/, "");
-}
-
 export function rotatedDimensions(
   element: ExcalidrawElement,
 ): [number, number, number, number] {
   const bb = getCommonBoundingBox([element]);
   return [bb.minX, bb.minY, bb.maxX - bb.minX, bb.maxY - bb.minY];
-}
-
-export async function getFontDataURL(
-  app: App,
-  fontFileName: string,
-  sourcePath: string,
-  name?: string,
-): Promise<{ fontDef: string; fontName: string; dataURL: string }> {
-  let fontDef: string = "";
-  let fontName = "";
-  let dataURL = "";
-  const f = app.metadataCache.getFirstLinkpathDest(fontFileName, sourcePath);
-  if (f) {
-    const ab = await app.vault.readBinary(f);
-    let mimeType = "";
-    let format = "";
-
-    switch (f.extension) {
-      case "woff":
-        mimeType = "application/font-woff";
-        format = "woff";
-        break;
-      case "woff2":
-        mimeType = "font/woff2";
-        format = "woff2";
-        break;
-      case "ttf":
-        mimeType = "font/ttf";
-        format = "truetype";
-        break;
-      case "otf":
-        mimeType = "font/otf";
-        format = "opentype";
-        break;
-      default:
-        mimeType = "application/octet-stream"; // Fallback if file type is unexpected
-    }
-    fontName = name ?? f.basename;
-    dataURL = await getDataURL(ab, mimeType);
-    const split = dataURL.split(";base64,", 2);
-    dataURL = `${split[0]};charset=utf-8;base64,${split[1]}`;
-    fontDef = ` @font-face {font-family: "${fontName}";src: url("${dataURL}") format("${format}")}`;
-  }
-  return { fontDef, fontName, dataURL };
 }
 
 export function base64StringToBlob(
@@ -307,43 +225,6 @@ export function base64StringToBlob(
 ): Blob {
   const buffer = Buffer.from(base64String, "base64");
   return new Blob([buffer], { type: mimeType });
-}
-
-export function svgToBase64(svg: string): string {
-  const cleanSvg = svg.replaceAll("&nbsp;", " ");
-
-  // Convert the string to UTF-8 and handle non-Latin1 characters
-  const encodedData = encodeURIComponent(cleanSvg).replace(
-    /%([0-9A-F]{2})/g,
-    (match, p1) => String.fromCharCode(parseInt(p1, 16)),
-  );
-
-  return `data:image/svg+xml;base64,${btoa(encodedData)}`;
-}
-
-export async function getBinaryFileFromDataURL(
-  dataURL: string,
-): Promise<ArrayBuffer> {
-  if (!dataURL) {
-    return null;
-  }
-  if (dataURL.match(/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i)) {
-    const hyperlink = dataURL;
-    const extension = getURLImageExtension(hyperlink);
-    const mimeType = getMimeType(extension);
-    dataURL = await getDataURLFromURL(hyperlink, mimeType);
-  }
-  const parts = dataURL.matchAll(/base64,(.*)/g).next();
-  if (!parts.value) {
-    return null;
-  }
-  const binary_string = window.atob(parts.value[1]);
-  const len = binary_string.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binary_string.charCodeAt(i);
-  }
-  return bytes.buffer;
 }
 
 /**
@@ -546,20 +427,6 @@ export async function getQuickImagePreview(
   }
 }
 
-export async function getImageSize(
-  src: string,
-): Promise<{ height: number; width: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      //console.log({ height: img.naturalHeight, width: img.naturalWidth, img});
-      resolve({ height: img.naturalHeight, width: img.naturalWidth });
-    };
-    img.onerror = reject;
-    img.src = src;
-  });
-}
-
 export function scaleLoadedImage<T extends SceneWithElements>(
   scene: T,
   files: FileData[],
@@ -745,38 +612,6 @@ export function setUIMode(app: App, settings: ExcalidrawSettings) {
   getExcalidrawViews(app, true).forEach((view: ExcalidrawView) =>
     view.setUIMode(uiMode),
   );
-}
-
-export type LinkParts = {
-  original: string;
-  path: string;
-  isBlockRef: boolean;
-  ref: string;
-  width: number;
-  height: number;
-  page: number;
-};
-
-export function getLinkParts(fname: string, file?: TFile): LinkParts {
-  //            1           2    3           4      5
-  const REG = /(^[^#|]*)#?(\^)?([^|]*)?\|?(\d*)x?(\d*)/;
-  const parts = fname.match(REG);
-  const isBlockRef = parts[2] === "^";
-  let page = parseInt(parts[3]?.match(/page=(\d*)/)?.[1]);
-  page = isNaN(page) ? null : page;
-  return {
-    original: fname,
-    path: file && parts[1] === "" ? file.path : parts[1],
-    isBlockRef,
-    ref: parts[3]?.match(/^page=\d*$/i)
-      ? parts[3]
-      : isBlockRef
-        ? cleanBlockRef(parts[3])
-        : cleanSectionHeading(parts[3]),
-    width: parts[4] ? parseInt(parts[4]) : undefined,
-    height: parts[5] ? parseInt(parts[5]) : undefined,
-    page,
-  };
 }
 
 export function isMaskFile(
@@ -976,40 +811,6 @@ export function getPNGScale(
   return plugin.settings.pngExportScale as NormalizedZoomValue;
 }
 
-export function isVersionNewerThanOther(
-  version: string,
-  otherVersion: string,
-): boolean {
-  if (!version || !otherVersion) {
-    return true;
-  }
-
-  const v = version.match(/(\d*)\.(\d*)\.(\d*)/);
-  const o = otherVersion.match(/(\d*)\.(\d*)\.(\d*)/);
-
-  return Boolean(
-    v &&
-    v.length === 4 &&
-    o &&
-    o.length === 4 &&
-    !(
-      isNaN(parseInt(v[1])) ||
-      isNaN(parseInt(v[2])) ||
-      isNaN(parseInt(v[3]))
-    ) &&
-    !(
-      isNaN(parseInt(o[1])) ||
-      isNaN(parseInt(o[2])) ||
-      isNaN(parseInt(o[3]))
-    ) &&
-    (parseInt(v[1]) > parseInt(o[1]) ||
-      (parseInt(v[1]) >= parseInt(o[1]) && parseInt(v[2]) > parseInt(o[2])) ||
-      (parseInt(v[1]) >= parseInt(o[1]) &&
-        parseInt(v[2]) >= parseInt(o[2]) &&
-        parseInt(v[3]) > parseInt(o[3]))),
-  );
-}
-
 export function fragWithHTML(html: string) {
   return createFragment((frag) => frag.appendChild(sanitizedFragment(html)));
 }
@@ -1039,38 +840,6 @@ export function _getContainerElement(
     //return scene.elements.find((el:ExcalidrawElement)=>el.id === element.containerId) ?? null;
   }
   return null;
-}
-
-/**
- * Transforms array of objects containing `id` attribute,
- * or array of ids (strings), into a Map, keyd by `id`.
- */
-export function arrayToMap<T extends { id: string } | string>(
-  items: readonly T[] | Map<string, T>,
-) {
-  if (items instanceof Map) {
-    return items;
-  }
-  return items.reduce((acc: Map<string, T>, element) => {
-    acc.set(typeof element === "string" ? element : element.id, element);
-    return acc;
-  }, new Map());
-}
-
-export function updateFrontmatterInString(
-  data: string,
-  keyValuePairs?: [string, string][],
-): string {
-  if (!data || !keyValuePairs) {
-    return data;
-  }
-  for (const kvp of keyValuePairs) {
-    const r = new RegExp(`${kvp[0]}:\\s.*\\n`, "g");
-    data = data.match(r)
-      ? data.replaceAll(r, `${kvp[0]}: ${kvp[1]}\n`)
-      : data.replace(/^---\n/, `---\n${kvp[0]}: ${kvp[1]}\n`);
-  }
-  return data;
 }
 
 function isHyperLink(link: string) {
@@ -1257,77 +1026,6 @@ export function addYouTubeThumbnail(
       alt: "YouTube video thumbnail",
       style: "width: 100%; height: auto; cursor: pointer;",
     },
-  });
-}
-
-export interface FontMetrics {
-  unitsPerEm: 1000 | 1024 | 2048;
-  ascender: number;
-  descender: number;
-  lineHeight: number;
-  fontName: string;
-}
-
-export async function getFontMetrics(
-  fontUrl: string,
-  name: string,
-): Promise<FontMetrics | null> {
-  try {
-    const font = await opentype.load(fontUrl);
-    const unitsPerEm = font.unitsPerEm as 1000 | 1024 | 2048;
-    const ascender = font.ascender;
-    const descender = font.descender;
-    const lineHeight = (ascender - descender) / unitsPerEm;
-    const fontName = font.names.fontFamily.en ?? name;
-
-    return {
-      unitsPerEm,
-      ascender,
-      descender,
-      lineHeight,
-      fontName,
-    };
-  } catch (error) {
-    console.error("Error loading font:", error);
-    return null;
-  }
-}
-
-// Thanks https://stackoverflow.com/a/54555834
-export function cropCanvas(
-  srcCanvas: HTMLCanvasElement,
-  crop: { left: number; top: number; width: number; height: number },
-  output: { width: number; height: number } = {
-    width: crop.width,
-    height: crop.height,
-  },
-) {
-  const dstCanvas = createEl("canvas");
-  dstCanvas.width = output.width;
-  dstCanvas.height = output.height;
-  dstCanvas
-    .getContext("2d")
-    .drawImage(
-      srcCanvas,
-      crop.left,
-      crop.top,
-      crop.width,
-      crop.height,
-      0,
-      0,
-      output.width,
-      output.height,
-    );
-  return dstCanvas;
-}
-
-// Promise.try, adapted from https://github.com/sindresorhus/p-try
-export async function promiseTry<TValue, TArgs extends unknown[]>(
-  fn: (...args: TArgs) => PromiseLike<TValue> | TValue,
-  ...args: TArgs
-): Promise<TValue> {
-  return new Promise((resolve) => {
-    resolve(fn(...args));
   });
 }
 

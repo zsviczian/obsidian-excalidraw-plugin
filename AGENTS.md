@@ -37,24 +37,16 @@ Use https://github.com/obsidian-typings/obsidian-typings as a reference when dea
 
 Treat build code and runtime code as one system.
 
-## Project overview
+## Project Overview And Tooling
 
 - Target: Obsidian Community Plugin (TypeScript → bundled JavaScript).
-- Entry point: `src/main.ts` compiled to `main.js` and loaded by Obsidian.
-- Required release artifacts: `main.js`, `manifest.json`, and optional `styles.css`.
-
-## Environment & tooling
-
-- Node.js: use current LTS (Node 22+).
-- **Package manager: npm** (required for this sample - `package.json` defines npm scripts and dependencies).
-- **Bundler: esbuild** (required for this sample - `esbuild.config.mjs` and build scripts depend on it). Alternative bundlers like Rollup or webpack are acceptable for other projects if they bundle all external dependencies into `main.js`.
-- Types: `obsidian` type definitions.
-
-## Linting
-
-- ESLint is preconfigured with `eslint-plugin-obsidianmd` for Obsidian-specific rules.
-- Run `npm run lint` to lint the project.
-- A GitHub Action automatically lints every commit on all branches.
+- Runtime entry point: `src/core/main.ts`, compiled by `rollup.config.mjs` to `dist/main.js`.
+- Required release artifacts: `main.js`, `manifest.json`, and `styles.css`.
+- Node.js: use Node 22 or newer. Check `node --version` before diagnosing build-tool failures; mixed Node/Corepack installations can produce misleading errors.
+- Package manager: npm. Use `npm install` and the scripts in this repository's `package.json`.
+- Runtime bundler: Rollup. Do not replace this build with a sample-plugin esbuild setup; Rollup also assembles compressed runtime payloads and merged CSS.
+- Primary lint command: `npm run code`. `npm run lint` is broader and may expose unrelated repository backlog.
+- Types: Obsidian type definitions plus conservative declarations for intentionally used unpublished APIs.
 
 ## Security, privacy, and compliance
 
@@ -85,6 +77,7 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 - Use the existing visibility helpers instead of the native `hidden` property or attribute, which is not reliable in Obsidian's styled UI. Choose `hideElement`/`showElement` or `setComponentVisibility` from `src/utils/styleUtils.ts`, or `setElementHidden`/`setElementDisplay` from `src/utils/htmlUtils.ts` when a boolean/display-oriented API is clearer.
 - Search `src/utils/styleUtils.ts` and `src/utils/htmlUtils.ts` before introducing new DOM styling helpers or display classes.
 - For a known vault path, use the most specific synchronous lookup: `app.vault.getFolderByPath()` for folders and `app.vault.getFileByPath()` for files. Use `getAbstractFileByPath()` only when either type is intentionally accepted, and avoid adapter-level existence checks when the Vault API already models the target.
+- Radix content in the customized Excalidraw package may be rendered through `ObsidianRadixPortal` directly under the owning document's body. A body portal escapes component ancestor selectors and modal stacking contexts. When a trigger is visible but its menu or popover is not, first inspect whether the content mounted behind a modal or lost ancestor-scoped styles. Use a class on the portaled content, a portal-safe selector, and an explicit stacking level when required; validate main-window, popout, click-outside, and Escape behavior.
 
 ## Performance
 
@@ -191,20 +184,44 @@ This project uses a non-trivial Rollup build because startup time, popout-window
 
 The build embeds or injects runtime code for:
 
-- React and ReactDOM
-- a JSX runtime shim for compatibility
-- the customized `@zsviczian/excalidraw` package
+- React, ReactDOM/client, and the official JSX runtime entry points built from the installed npm packages
+- the customized `@zsviczian/excalidraw` Obsidian artifact built from Excalidraw's ESM source graph
 - `MathjaxToSVG`
 - `lz-string`
 - selected compressed locale payloads
 
 These payloads are executed or unpacked at runtime. This is intentional.
 
+React and the Excalidraw package are separate payloads. React must not be bundled into the Excalidraw artifact, because the plugin creates a matching private React runtime in every Obsidian window. Mermaid is also intentionally absent from the artifact and is loaded lazily at runtime through Excalidraw Extras. All other required Excalidraw assets are expected to work offline except the deliberately lazy CJK font subsets.
+
+### Two-Repository Excalidraw Workflow
+
+The customized component lives in the sibling `zsviczian/excalidraw` repository. When both repositories are available locally, it is normally at `../excalidraw`; verify the actual workspace path and branch instead of assuming it.
+
+- The Excalidraw repository uses Yarn and builds the consumer-specific payload from `packages/excalidraw` with `yarn build:obsidian`.
+- That build emits four files under `packages/excalidraw/dist/obsidian/`: production and development JavaScript plus production and development CSS.
+- This plugin consumes the same four paths from `node_modules/@zsviczian/excalidraw/dist/obsidian/` in `rollup.config.mjs`.
+- For a temporary unpublished integration test, build the sibling package and copy only those four generated files into the installed package under `node_modules`. Do not change `package.json` or `package-lock.json` to a local `file:` dependency merely for this handoff. A later `npm install` restores the published package.
+- For the durable handoff, publish a new `@zsviczian/excalidraw` version, update this repository's dependency, run `npm install`, and rebuild the plugin.
+- Never hand-edit or commit generated `dist/`, `lib/`, or `node_modules` artifacts as source fixes.
+- Treat the repositories as separate Git histories. Check branch, status, diff, build, and commit state independently in each one, and do not commit or publish unless explicitly requested.
+
 ### Popout Window Support
 
 - `src/core/managers/PackageManager.ts` manages window-scoped React/ReactDOM/Excalidraw packages.
 - This is necessary because the plugin must work in Obsidian/Electron popout windows.
 - Do not replace this with a naive global singleton approach.
+- The runtime is built from official npm package entry points and kept in plugin/package lexical scope. Do not assign React or ReactDOM to `window`; only the documented `window.ExcalidrawLib` compatibility surface remains global.
+- Rendering, DOM ownership, events, observers, portals, and React roots must use the owning view window where appropriate.
+
+### Main-Window Persistent Storage
+
+Window ownership for rendering is not the same as ownership for persistent plugin data.
+
+- Existing plugin-level IndexedDB and local-storage data belongs to Obsidian's main application window and must remain shared across normal views and popouts.
+- Do not change persistent storage to `view.ownerWindow`, create one database per popout, or infer a storage migration from a rendering bug unless the task explicitly requires that behavior.
+- Diagnose persistence and presentation separately. For example, a visible history button conditioned on loaded records proves the load path worked even when a portaled history menu is hidden.
+- If a new feature is intentionally view-local, document that exception and test window migration and popout teardown explicitly.
 
 ### MathJax Subproject
 
@@ -243,6 +260,16 @@ These payloads are executed or unpacked at runtime. This is intentional.
 - Backwards compatibility is a strong default requirement.
 - Preserve existing abstractions unless the task clearly requires a redesign.
 - Avoid broad refactors unless there is strong evidence they are necessary.
+
+### Incremental Refactoring Protocol
+
+- Use `RefactorPlan.md` as the living architectural record. Update the progress table and append an action-log entry after each completed or reverted checkpoint.
+- Make one independently testable behavior change or mechanical extraction at a time. Prefer moving code intact before simplifying it.
+- Preserve timers, observers, semaphores, lifecycle ordering, and unpublished-API workarounds unless their purpose has been traced and an equivalent behavior has been verified across affected platforms.
+- Do not convert `ExcalidrawView` wholesale into React. It must remain an Obsidian `TextFileView`; React is the child rendering runtime. Extract cohesive view-scoped controllers and components while retaining compatibility delegates on the view.
+- For duplicate utilities, compare every implementation and caller before consolidation. Marginal behavior differences must be shown unused or deliberately preserved.
+- Do not derive a runtime settings sanitizer from the TypeScript interface. Interfaces do not exist at runtime, settings evolve frequently, and unknown keys may belong to a newer or companion version. Remove obsolete keys only through an explicit, reviewed migration or retirement decision.
+- End every checkpoint with risk-based manual test recommendations: identify the highest-probability failure, the affected workflow, and whether main-window, popout, desktop operating systems, and mobile need separate coverage.
 
 ## Naming And Placement Conventions
 
@@ -419,6 +446,10 @@ Validation guidance:
 - Run `npm run lib` if you touch the public/library API surface.
 - Run `npm run build:mathjax` or `npm run build:all` if you edit `MathjaxToSVG/`.
 - Run `npm run madge` after structural import changes or when touching shared architecture.
+- When the customized Excalidraw source changes, run its `yarn build:obsidian`, refresh the four local package artifacts, and then run this repository's production and relevant development builds. A plugin build against the old installed artifact does not validate the component change.
+- After React/package-loading changes, validate cold startup, plugin reload, the main window, new and restored popouts, and moving a leaf between windows. Confirm that no `window.React` or `window.ReactDOM` global was introduced.
+- After Radix/portal changes, validate visibility, positioning, stacking, click-outside, and Escape handling in both the main window and a popout; include mobile when viewport collision behavior can differ.
+- Record `dist/main.js` byte size after packaging changes and report remaining headroom under the release limit.
 - Prefer targeted diagnostics for the files you touched when repo-wide lint noise obscures signal.
 - Prefer `npm run build` plus targeted file diagnostics over raw `tsc --noEmit` as the primary gate. Standalone `tsc` can surface large volumes of dependency-typing noise unrelated to touched files.
 - Do not treat `dist/` output edits as source fixes.
@@ -611,7 +642,7 @@ In some cases, `@typescript-eslint/no-explicit-any` or `@typescript-eslint/no-un
 
 - **Provider-specific dynamic payloads**: AI providers, image APIs, and other external services return schemas that vary by provider. Normalizing these requires accepting `any` properties or using type assertions on the `item` parameter to access provider-specific fields.
   - Example: `(item: Record<string, any>) => item.image?.url || item.image?.b64_json` normalizes images from different providers into a common schema.
-  
+
 - **Mutation-path type casts**: When updating scene elements or bound references, Excalidraw type definitions may return readonly or union types, but the mutation path requires the mutable variant. The assertion is necessary and doesn't bypass a real type mismatch.
   - Example: `sceneElements.find(...) as unknown as Mutable<ExcalidrawElement>` during ID migration where the lookup guarantees the mutable variant exists.
 

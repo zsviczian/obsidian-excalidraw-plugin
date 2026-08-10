@@ -4796,7 +4796,6 @@ These are the scripts I use most often. I tried to order them by importance, but
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Add%20Link%20to%20Existing%20File%20and%20Open.svg"/></div>|[[#Add Link to Existing File and Open]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Add%20Link%20to%20New%20Page%20and%20Open.svg"/></div>|[[#Add Link to New Page and Open]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Convert%20text%20to%20link%20with%20folder%20and%20alias.svg"/></div>|[[#Convert text to link with folder and alias]]|
-|<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Create%20DrawIO%20file.svg"/></div>|[[#Create DrawIO file]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Create%20new%20markdown%20file%20and%20embed%20into%20active%20drawing.svg"/></div>|[[#Create new markdown file and embed into active drawing]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Folder%20Note%20Core%20-%20Make%20Current%20Drawing%20a%20Folder.svg"/></div>|[[#Folder Note Core - Make Current Drawing a Folder]]|
 |<div><img src="https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Set%20Link%20Alias.svg"/></div>|[[#Set Link Alias]]|
@@ -4971,12 +4970,6 @@ https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea
 https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Copy%20Selected%20Element%20Styles%20to%20Global.md
 ```
 <table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/1-2-3'>@1-2-3</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Copy%20Selected%20Element%20Styles%20to%20Global.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">This script will copy styles of any selected element into Excalidraw's global styles.<br><img src='https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/images/scripts-copy-selected-element-styles-to-global.png'></td></tr></table>
-
-## Create DrawIO file
-```excalidraw-script-install
-https://raw.githubusercontent.com/zsviczian/obsidian-excalidraw-plugin/master/ea-scripts/Create%20DrawIO%20file.md
-```
-<table><tr  valign='top'><td class="label">Author</td><td class="data"><a href='https://github.com/zsviczian'>@zsviczian</a></td></tr><tr valign='top'><td class="label">Source</td><td class="data"><a href='https://github.com/zsviczian/obsidian-excalidraw-plugin/blob/master/ea-scripts/Create%20DrawIO%20file.md'>File on GitHub</a></td></tr><tr valign='top'><td class="label">Description</td><td class="data">The script will prompt you for a filename, then create a new draw.io diagram file and open the file in the <a href='https://github.com/zapthedingbat/drawio-obsidian'>Diagram plugin</a>, in a new tab.<br><a href="YouTube: DJcosmN-q2s" target="_blank"><img src ="https://i.ytimg.com/vi/DJcosmN-q2s/maxresdefault.jpg" style="width:400px;"></a></td></tr></table>
 
 ## Create new markdown file and embed into active drawing
 ```excalidraw-script-install
@@ -12447,46 +12440,6 @@ if(element.type === 'arrow') {
 	appState.currentItemStartArrowhead = element.startArrowhead;
 	appState.currentItemEndArrowhead = element.endArrowhead;
 }
-```
-
----
-
-## Create DrawIO file.md
-<!-- Source: ea-scripts/Create DrawIO file.md -->
-
-/*
-Creates a new draw.io diagram file and opens the file in the [Diagram plugin](https://github.com/zapthedingbat/drawio-obsidian) in a new tab.
-```js*/
-
-if(!ea.verifyMinimumPluginVersion || !ea.verifyMinimumPluginVersion("1.9.7")) {
-  new Notice("This script requires a newer version of Excalidraw. Please install the latest version.");
-  return;
-}
-
-const drawIO = app.plugins.plugins["drawio-obsidian"];
-if(!drawIO || !drawIO?._loaded) {
-  new Notice("Can't find the draw.io diagram plugin");
-}
-
-filename = await utils.inputPrompt("Diagram name?");
-if(!filename) return;
-filename = filename.toLowerCase().endsWith(".svg") ? filename : filename + ".svg";
-const filepath = await ea.getAttachmentFilepath(filename);
-if(!filepath) return;
-const leaf = app.workspace.getLeaf('tab')
-if(!leaf) return;
-
-const file = await this.app.vault.create(filepath, `<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><!--${ea.generateElementId()}--><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="300px" height="300px" viewBox="-0.5 -0.5 1 1" content="&lt;mxGraphModel&gt;&lt;root&gt;&lt;mxCell id=&quot;0&quot;/&gt;&lt;mxCell id=&quot;1&quot; parent=&quot;0&quot;/&gt;&lt;/root&gt;&lt;/mxGraphModel&gt;"></svg>`);
-
-await ea.addImage(0,0,file);
-await ea.addElementsToView(true,true);
-
-leaf.setViewState({
-  type: "diagram-edit",
-  state: {
-    file: filepath
-  }
-});
 ```
 
 ---
@@ -46316,4 +46269,3 @@ ea.onSceneChangeHook = {
         }
     }
 };
-

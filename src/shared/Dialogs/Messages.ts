@@ -17,6 +17,20 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 
 <div class="ex-coffee-div"><a href="${URLs.KO_FI_COM_ZSOLT}"><img src="${URLs.CDN_KO_FI_COM_CDN_KOFI3_PNG}" border="0" alt="Buy Me a Coffee at ko-fi.com"  height=45></a></div>
 `,
+  "2.27.0": `
+## Maintenance
+- Refactoring the plugin. Removed unused functions, improved code structure and readability. Removed the obsolete Draw.io/Diagram plugin integration (since the other plugin no longer works and is not maintained) and retired the Create DrawIO file script from the script library.
+- Migrated the embedded Excalidraw runtime from the retired UMD build path to a dedicated ESM-source-based Obsidian package while preserving offline operation, popout windows, and runtime Mermaid loading through Excalidraw Extras. The Assistant UI font is now bundled instead of fetched from the internet, and the plugin-private React runtime is generated from the official npm package entrypoints instead of legacy UMD files.
+- Updated the plugin-private React and ReactDOM runtime to React 19.
+
+## Fixed
+- The Excalidraw color palette now uses its natural height when space is available instead of being unnecessarily limited to a short, vertically scrolling panel. Its native color control also remains aligned with the hex input.
+- The text-to-diagram chat history menu is visible again, allowing saved chats to be restored and deleted.
+
+## New from Excalidraw.com
+- Improved bucket tool and eyedropper support [#11849](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11849)
+
+`,
   "2.26.4": `
 ## Fixed
 - Markdown-image edits could be lost in some usage scenarios, 2.26.3 did not provide a broad enough fix. [#2865](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2865)

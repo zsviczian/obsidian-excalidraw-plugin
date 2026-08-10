@@ -160,6 +160,7 @@ export type LocalGraphView = View & {
 declare global {
   interface Window {
     ExcalidrawAutomate: ExcalidrawAutomate;
+    ExcalidrawLib: typeof ExcalidrawLib;
     pdfjsLib: PdfJsLibrary;
     unpackBase64Deflate?: (value: string) => string;
     PolyBool?: PolyBoolLibrary;
@@ -168,9 +169,6 @@ declare global {
       setAlwaysOnTop(flag: boolean): void;
     };
     eval: (x: string) => unknown;
-    React?: typeof import("react");
-    ReactDOM?: typeof import("react-dom/client");
-    ExcalidrawLib?: typeof ExcalidrawLib;
     MathJax?: {
       typesetPromise(elements: HTMLElement[]): Promise<void>;
     };

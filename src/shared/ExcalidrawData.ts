@@ -1155,9 +1155,19 @@ export class ExcalidrawData {
         /^((%%\n*)?# Excalidraw Data\n\n?## Text Elements(?:\n|$))/m,
       ) ?? data.match(/^((%%\n*)?##? Text Elements(?:\n|$))/m);
 
+    // "# Excalidraw Data" (or equivalent) was found above, so `position` was
+    // not -1 and we got here, but there may be no "## Text Elements" heading
+    // anywhere in the remaining data (e.g. a hand-authored or externally
+    // generated file with zero text elements, or one where the heading was
+    // deleted while "## Element Links" / "## Embedded Files" / the block-ref
+    // text below it were left in place). Falling back to "" instead of
+    // throwing on a null match lets execution fall through to the existing
+    // Element Links / Embedded Files / text-element parsing below, exactly as
+    // happens today for a file with an empty "## Text Elements" section.
+    // https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2871
     const textElementsMatch = normalMatch
       ? normalMatch[0]
-      : data.match(/(.*##? Text Elements(?:\n|$))/m)[0];
+      : (data.match(/(.*##? Text Elements(?:\n|$))/m)?.[0] ?? "");
 
     data = data.slice(textElementsMatch.length);
     this.textElementCommentedOut = textElementsMatch.startsWith("%%\n");
