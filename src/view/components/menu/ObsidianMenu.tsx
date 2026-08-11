@@ -144,7 +144,7 @@ export class ObsidianMenu {
   constructor(
     private plugin: ExcalidrawPlugin,
 
-    private toolsRef: React.MutableRefObject<ToolsPanel>,
+    private toolsRef: React.RefObject<ToolsPanel>,
     private view: ExcalidrawView,
   ) {
     this.clickTimestamp = Array.from(

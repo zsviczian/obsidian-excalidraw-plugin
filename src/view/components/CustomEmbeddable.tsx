@@ -40,7 +40,7 @@ type PdfViewLike = {
   };
 };
 
-type PdfObserverRef = React.MutableRefObject<MutationObserver | null> & {
+type PdfObserverRef = React.RefObject<MutationObserver | null> & {
   currentCleanup?: () => void;
 };
 
@@ -171,9 +171,9 @@ function setPDFViewTheme(view: ExcalidrawView, pdfView: PdfViewLike | null) {
 
 function setupPdfViewEnhancements(
   view: ExcalidrawView,
-  leafRef: React.MutableRefObject<EmbeddableLeafRef | null>,
+  leafRef: React.RefObject<EmbeddableLeafRef | null>,
   pdfObserverRef: PdfObserverRef,
-  pdfObserverDisabledRef: React.MutableRefObject<boolean>,
+  pdfObserverDisabledRef: React.RefObject<boolean>,
 ) {
   const pdfView = leafRef.current?.node?.child;
   if (!pdfView) {
@@ -592,7 +592,7 @@ function RenderObsidianView({
   const React = view.packages.react;
   const leafRef = React.useRef(
     null,
-  ) as React.MutableRefObject<EmbeddableLeafRef | null>;
+  ) as React.RefObject<EmbeddableLeafRef | null>;
   const isEditingRef = React.useRef(false);
   const isPreviewRef = React.useRef(false);
   const isActiveRef = React.useRef(false);

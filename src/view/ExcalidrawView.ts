@@ -399,10 +399,10 @@ export default class ExcalidrawView
   public excalidrawRoot: ReturnType<Packages["reactDOM"]["createRoot"]> | null =
     null;
   public excalidrawAPI: ExcalidrawImperativeAPI = null;
-  public excalidrawWrapperRef: React.MutableRefObject<HTMLDivElement | null> | null =
+  public excalidrawWrapperRef: React.RefObject<HTMLDivElement | null> | null =
     null;
-  public toolsPanelRef: React.MutableRefObject<ToolsPanel | null> | null = null;
-  public embeddableMenuRef: React.MutableRefObject<HTMLDivElement | null> | null =
+  public toolsPanelRef: React.RefObject<ToolsPanel | null> | null = null;
+  public embeddableMenuRef: React.RefObject<HTMLDivElement | null> | null =
     null;
   private parentMoveObserver: MutationObserver | CustomMutationObserver | null =
     null;
@@ -6948,7 +6948,7 @@ export default class ExcalidrawView
     return this.embeddableMenu?.renderButtons(appState);
   }
 
-  public renderToolsPanel(observer: React.MutableRefObject<ResizeObserver>) {
+  public renderToolsPanel(observer: React.RefObject<ResizeObserver>) {
     const React = this.packages.react;
 
     return React.createElement(ToolsPanel, {
