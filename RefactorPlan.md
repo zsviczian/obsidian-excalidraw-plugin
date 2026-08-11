@@ -40,7 +40,8 @@ validated, and what remains uncertain.
 | Upgrade the private React runtime to React 19 | Implemented; awaiting manual validation | Updated the paired React and ReactDOM runtime to stable 19.2.8 with matching React 19 types while retaining private per-window package creation and the official JSX runtime entrypoints |
 | Repair text-to-diagram history menu | Implemented; awaiting manual validation | Persistence is working and saved chats are loaded; the body-portaled history dropdown now retains its TTD styling and stacks above the text-to-diagram modal |
 | Audit and consolidate duplicate logic | In progress | Consolidated `updateFrontmatterInString()`, `arrayToMap()`, `wrapTextAtCharLength()`, `getLinkParts()`/`LinkParts`, `getBinaryFileFromDataURL()`, `svgToBase64()`, `getFontDataURL()`, `cropCanvas()`, `getImageSize()`, `promiseTry()`, `isVersionNewerThanOther()`, `repositionElementsToCursor()`, the internal `cloneElement()`, and `getBoundTextElementId()`; continue one independently testable helper family at a time |
-| Remaining view phases | In progress | Manually validate the extension renderer checkpoint before choosing between the higher-risk scene-file loader and a mechanical package-aware React-root extraction |
+| Extract the React root (Phase 7) | Implemented; awaiting manual validation | `src/view/components/ExcalidrawRoot.ts` now owns the mechanical body of the former `excalidrawRootElement()`: menu/observer mount and teardown, and the full Excalidraw prop wiring. `ExcalidrawView` keeps `excalidrawRoot`/`createRoot()` ownership and the bound-function render call; ~30 previously private members the render tree touches were widened to `public` (type-only, no logic change) following the precedent already set by `packages`/`plugin`/`excalidrawAPI` |
+| Remaining view phases | In progress | Manually validate the React-root extraction checkpoint; the higher-risk scene-file loader (`ViewSceneFileManager`) remains the next Phase 6 controller candidate. Phase 8 (converting the extracted root to TSX) should follow only after this checkpoint closes |
 
 ### Action log
 
@@ -103,6 +104,7 @@ validated, and what remains uncertain.
 | 2026-08-09 | Corrected the text-to-diagram persistence diagnosis | Manual inspection confirmed chats are present in the existing main-window IndexedDB store, and the history button proves `savedChats` was loaded. Reverted the view-window persistence-adapter experiment and retained the original main-window adapter | Investigate menu rendering instead: the shared dropdown is body-portaled by `ObsidianRadixPortal`, so the history content can sit behind the modal and lose styles that depended on a TTD ancestor. Validate menu visibility, restore, delete, and popout behavior after the component fix |
 | 2026-08-09 | Restored the text-to-diagram history menu above its modal | `DropdownMenu.Content` already uses `ObsidianRadixPortal`; the regression was that its body-level portal escaped both the modal stacking context and the TTD header ancestor used by its styles. Added a TTD-specific class that survives the portal and moved the existing menu rules to that selector with a z-index immediately above the Excalidraw modal | `yarn build:obsidian` passed and emitted the class in JavaScript plus the portal-safe selector in both CSS builds. The plugin production build using the local component artifacts passed with the existing 33 circular dependencies. Validate opening, restoring, and deleting history in the main window first, then repeat in a popout and on mobile; stacking and click-outside behavior are the highest-risk areas |
 | 2026-08-10 | Codified the refactor and ESM migration lessons in contributor guidance | Corrected stale sample-plugin details in the plugin agent guide, documented incremental refactoring and risk-based testing, separated per-window rendering from main-window persistence, and described the two-repository ESM artifact handoff. Expanded both contributor guides and added a fork-specific `AGENTS.md` covering fingerprinting, external React and Mermaid, offline assets, Radix portals, upstream mergeability, and validation | Documentation-only change. Verify links, commands, artifact names, package-manager boundaries, and Git diffs in both repositories; future component work should validate `yarn build:obsidian` before refreshing the plugin's local artifacts, and future plugin work should continue to run `npm run build` after source changes |
+| 2026-08-11 | Extracted the React root without changing rendering syntax (Phase 7) | Added `src/view/components/ExcalidrawRoot.ts` exporting `createExcalidrawRootElement(view, initdata)`, a mechanical move of the former `excalidrawRootElement()` body: `React.useRef`/`useEffect` hook calls, ObsidianMenu/EmbeddableMenu/SelectedElementActionsMenu mount and teardown, the ResizeObserver wiring, and the full `Excalidraw` prop object, all with `this.` replaced by `view.` and zero logic changes. `ExcalidrawView.instantiateExcalidraw()` now calls `React.createElement(createExcalidrawRootElement.bind(null, this, initdata))` in place of the former `this.excalidrawRootElement.bind(this, initdata)` — same bound-zero-arg-function-component shape, same `excalidrawRoot`/`ReactDOM.createRoot()` ownership. Because the render tree reached ~30 previously private `ExcalidrawView` fields and methods (`dropManager`, `obsidianMenu`, `embeddableMenu`, `selectedElementActionsMenu`, and the on*/render* callback family), those were widened to `public` as a type-only part of this same checkpoint rather than inventing a narrow host-object interface, matching how `packages`/`plugin`/`excalidrawAPI`/`getViewElements()`/`openMarkdownImageEditor()` were already public for the same reason. Removed two imports (`obsidianToExcalidrawMap`, `shouldRenderMermaid`) that became unused in `ExcalidrawView.ts` after the move | `npm run build`, `npm run lib`, and `node --check dist/main.js` passed with the existing 33 circular-dependency baseline (verified: baseline `ExcalidrawView.ts`-only lint is 162 problems/155 errors/7 warnings; post-move the same 155 errors split as 146 in `ExcalidrawView.ts` + 9 in the new file, confirming the extraction relocated pre-existing findings rather than introducing new ones). `ExcalidrawView.ts` decreased by 191 lines from 7,765 to 7,574; the new module is 243 documented lines; `dist/main.js` is 4,710,938 bytes, 194 bytes below the preceding checkpoint. Manual validation should prioritize a popout window first (cross-window React mismatch is the highest-impact risk given the render tree moved files), then main-window tools-panel positioning/resize, the embeddable and selected-element context menus, welcome screen, and text-to-diagram/diagram-to-code dialogs; repeat basic editing on mobile |
 
 ## Executive recommendation
 
@@ -903,16 +905,19 @@ Before merging any refactor step, answer all of the following:
    `ExcalidrawView` export methods as delegates. This establishes the
    view-controller pattern away from lifecycle and synchronization.
 
-The current checkpoint is manual validation of
-`ViewExcalidrawExtensionRenderer`. First test a popout window because a
-cross-window React mismatch is the highest-impact risk, then verify the welcome
-screen, custom menu actions, web and Obsidian embeddables, text-to-diagram, and
-diagram-to-code in the main window. Repeat basic rendering and embeddables on a
-mobile device. The next controller candidate remains `ViewSceneFileManager`,
-but its loader queue, retry timers, cache validation, and lifecycle teardown
-make it a higher-risk extraction. A mechanical package-aware React-root move
-is now also viable, but it must keep `createElement()` and current state timing
-unchanged; any TSX or state-management conversion belongs in a later step.
+The current checkpoint is manual validation of the Phase 7 React-root
+extraction (`src/view/components/ExcalidrawRoot.ts`). First test a popout
+window because a cross-window React mismatch is the highest-impact risk given
+the render tree now lives in a different file, then verify tools-panel
+positioning/resize, the embeddable and selected-element context menus, the
+welcome screen, custom menu actions, web and Obsidian embeddables, and
+text-to-diagram/diagram-to-code in the main window. Repeat basic rendering and
+embeddables on a mobile device. The next controller candidate remains
+`ViewSceneFileManager`, but its loader queue, retry timers, cache validation,
+and lifecycle teardown make it a higher-risk extraction than this one was.
+Phase 8 (converting the extracted root to TSX) should follow only after this
+checkpoint is manually validated, and must not be combined with any state or
+callback-wiring change.
 
 After those steps, reassess coupling, bundle size, and manual-test coverage
 before committing to the next phase. The plan is deliberately a sequence of

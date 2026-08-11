@@ -49,7 +49,6 @@ import {
   viewportCoordsToSceneCoords,
   ERROR_IFRAME_CONVERSION_CANCELED,
   restoreElements,
-  obsidianToExcalidrawMap,
   MAX_IMAGE_SIZE,
   fileid,
   MD_EX_SECTIONS,
@@ -213,7 +212,7 @@ import { CanvasNodeFactory } from "./managers/CanvasNodeFactory";
 import { EmbeddableMenu } from "./components/menu/EmbeddableActionsMenu";
 import { useDefaultExcalidrawFrame } from "../utils/customEmbeddableUtils";
 import { UniversalInsertFileModal } from "../shared/Dialogs/UniversalInsertFileModal";
-import { shouldRenderMermaid } from "../utils/mermaidUtils";
+import { createExcalidrawRootElement } from "./components/ExcalidrawRoot";
 import { nanoid } from "nanoid";
 import { CustomMutationObserver, DEBUGGING } from "../utils/debugHelper";
 import {
@@ -388,7 +387,7 @@ export default class ExcalidrawView
   extends TextFileView
   implements HoverParent
 {
-  private dropManager: DropManager;
+  public dropManager: DropManager;
   private exportManager: ViewExportManager;
   private fullscreenManager: ViewFullscreenManager;
   private linkNavigationManager: ViewLinkNavigationManager;
@@ -460,9 +459,9 @@ export default class ExcalidrawView
     HTMLElement
   >;
   public compatibilityMode: boolean = false;
-  private obsidianMenu: ObsidianMenu | null = null;
-  private embeddableMenu: EmbeddableMenu | null = null;
-  private selectedElementActionsMenu: SelectedElementActionsMenu | null = null;
+  public obsidianMenu: ObsidianMenu | null = null;
+  public embeddableMenu: EmbeddableMenu | null = null;
+  public selectedElementActionsMenu: SelectedElementActionsMenu | null = null;
   private destroyers: Array<() => void> = [];
   private previousContentElHeight: number = 0;
   private resizeBatchTimer: number | null = null;
@@ -4753,11 +4752,11 @@ export default class ExcalidrawView
 
   private lastKeyDownPosition: { x: number; y: number } = { x: 0, y: 0 };
 
-  private excalidrawDIVonKeyUp = () => {
+  public excalidrawDIVonKeyUp = () => {
     this.lastKeyDownPosition = { x: 0, y: 0 };
   };
 
-  private excalidrawDIVonKeyDown(event: KeyboardEvent) {
+  public excalidrawDIVonKeyDown(event: KeyboardEvent) {
     if (this.semaphores?.viewunload) {
       return;
     }
@@ -4782,7 +4781,7 @@ export default class ExcalidrawView
     }
   }
 
-  private onPointerDown(e: PointerEvent) {
+  public onPointerDown(e: PointerEvent) {
     if (!(isWinCTRLorMacCMD(e) || isWinMETAorMacCTRL(e))) {
       return;
     }
@@ -4832,15 +4831,15 @@ export default class ExcalidrawView
     });
   }
 
-  private onMouseMove(e: MouseEvent | { nativeEvent: MouseEvent }) {
+  public onMouseMove(e: MouseEvent | { nativeEvent: MouseEvent }) {
     this.lastMouseEvent = "nativeEvent" in e ? e.nativeEvent : e;
   }
 
-  private onMouseOver() {
+  public onMouseOver() {
     this.clearHoverPreview();
   }
 
-  private onPointerUpdate(p: {
+  public onPointerUpdate(p: {
     pointer: { x: number; y: number; tool: "pointer" | "laser" };
     button: "down" | "up";
     pointersMap: Gesture["pointers"];
@@ -4983,7 +4982,7 @@ export default class ExcalidrawView
    * context menu, undo/redo, or a script - because they all funnel through the same durable
    * store increment.
    */
-  private onExcalidrawIncrement(
+  public onExcalidrawIncrement(
     event: DurableIncrement | EphemeralIncrement,
   ): void {
     if (event.type !== "durable") {
@@ -5091,7 +5090,7 @@ export default class ExcalidrawView
     }
   }
 
-  private onChange(et: ExcalidrawElement[], st: AppState, files: BinaryFiles) {
+  public onChange(et: ExcalidrawElement[], st: AppState, files: BinaryFiles) {
     this.selectedElementActionsMenu?.update(et, st);
     if (st.activeTool?.type) {
       if (st.activeTool.type === "image") {
@@ -5194,7 +5193,7 @@ export default class ExcalidrawView
     this.triggerSceneChangeHooks(et, st, files);
   }
 
-  private onLibraryChange(items: LibraryItems) {
+  public onLibraryChange(items: LibraryItems) {
     void (async () => {
       const lib: StencilLibraryData = {
         type: "excalidrawlib",
@@ -5219,7 +5218,7 @@ export default class ExcalidrawView
     );
   }
 
-  private onPaste(
+  public onPaste(
     data: ClipboardData,
     event: ClipboardEvent | null,
     files: ParsedDataTransferFile[],
@@ -5545,7 +5544,7 @@ export default class ExcalidrawView
     return true;
   }
 
-  private async onThemeChange(newTheme: string) {
+  public async onThemeChange(newTheme: string) {
     this.excalidrawData.scene.appState.theme = newTheme;
     await this.loadSceneFiles(true);
     this.toolsPanelRef?.current?.setTheme(newTheme as "dark" | "light");
@@ -5562,7 +5561,7 @@ export default class ExcalidrawView
 
   //returns the raw text of the element which is the original text without parsing
   //in compatibility mode, returns the original text, and for backward compatibility the text if originalText is not available
-  private onBeforeTextEdit(
+  public onBeforeTextEdit(
     textElement: ExcalidrawTextElement,
     isExistingElement: boolean,
   ): string {
@@ -5591,7 +5590,7 @@ export default class ExcalidrawView
     return raw;
   }
 
-  private onBeforeTextSubmit(
+  public onBeforeTextSubmit(
     textElement: ExcalidrawTextElement,
     nextText: string,
     nextOriginalText: string,
@@ -5828,7 +5827,7 @@ export default class ExcalidrawView
     };
   }
 
-  private async onLinkOpen(
+  public async onLinkOpen(
     element: ExcalidrawElement,
     e: ExcalidrawLinkOpenEvent,
   ): Promise<void> {
@@ -5885,7 +5884,7 @@ export default class ExcalidrawView
     );
   }
 
-  private onLinkHover(
+  public onLinkHover(
     element: NonDeletedExcalidrawElement,
     event: React.PointerEvent<HTMLCanvasElement>,
   ): void {
@@ -5920,7 +5919,7 @@ export default class ExcalidrawView
     }
   }
 
-  private onViewModeChange(isViewModeEnabled: boolean) {
+  public onViewModeChange(isViewModeEnabled: boolean) {
     if (!this.semaphores.viewunload) {
       this.toolsPanelRef?.current?.setExcalidrawViewMode(isViewModeEnabled);
     }
@@ -6334,7 +6333,7 @@ export default class ExcalidrawView
     new Notice("Image successfully converted to local file");
   }
 
-  private insertLinkAction(linkVal: string) {
+  public insertLinkAction(linkVal: string) {
     let link = linkVal.match(/\[\[(.*?)\]\]/)?.[1];
     if (!link) {
       link = linkVal.replaceAll("[", "").replaceAll("]", "");
@@ -6349,7 +6348,7 @@ export default class ExcalidrawView
     );
   }
 
-  private onContextMenu(
+  public onContextMenu(
     elements: readonly ExcalidrawElement[],
     appState: AppState,
     onClose: (callback?: () => void) => void,
@@ -6895,7 +6894,7 @@ export default class ExcalidrawView
     this.exportDialog.open();
   }
 
-  private setExcalidrawAPI(api: ExcalidrawImperativeAPI | null) {
+  public setExcalidrawAPI(api: ExcalidrawImperativeAPI | null) {
     this.excalidrawAPI = api;
     // Chasing ghosts: https://github.com/zsviczian/obsidian-excalidraw-plugin/issues/2810
     if (!api || this.pendingUIMode === null) {
@@ -6905,7 +6904,7 @@ export default class ExcalidrawView
     this.pendingUIMode = null;
   }
 
-  private onExcalidrawInitialize(api: ExcalidrawImperativeAPI) {
+  public onExcalidrawInitialize(api: ExcalidrawImperativeAPI) {
     // Ensure we keep the latest editor API reference before running scene-dependent setup.
     this.setExcalidrawAPI(api);
     window.setTimeout(() => {
@@ -6918,38 +6917,38 @@ export default class ExcalidrawView
     });
   }
 
-  private ttdDialog() {
+  public ttdDialog() {
     return this.excalidrawExtensionRenderer.ttdDialog();
   }
 
-  private diagramToCode() {
+  public diagramToCode() {
     return this.excalidrawExtensionRenderer.diagramToCode();
   }
 
-  private ttdDialogTrigger() {
+  public ttdDialogTrigger() {
     return this.excalidrawExtensionRenderer.ttdDialogTrigger();
   }
 
-  private renderWelcomeScreen() {
+  public renderWelcomeScreen() {
     return this.excalidrawExtensionRenderer.renderWelcomeScreen();
   }
 
-  private renderCustomActionsMenu() {
+  public renderCustomActionsMenu() {
     return this.excalidrawExtensionRenderer.renderCustomActionsMenu();
   }
 
-  private renderEmbeddable(
+  public renderEmbeddable(
     element: ExcalidrawEmbeddableElement,
     appState: UIAppState,
   ) {
     return this.excalidrawExtensionRenderer.renderEmbeddable(element, appState);
   }
 
-  private renderEmbeddableMenu(appState: AppState) {
+  public renderEmbeddableMenu(appState: AppState) {
     return this.embeddableMenu?.renderButtons(appState);
   }
 
-  private renderToolsPanel(observer: React.MutableRefObject<ResizeObserver>) {
+  public renderToolsPanel(observer: React.MutableRefObject<ResizeObserver>) {
     const React = this.packages.react;
 
     return React.createElement(ToolsPanel, {
@@ -6961,7 +6960,7 @@ export default class ExcalidrawView
     });
   }
 
-  private renderTopRightUI(isMobile: boolean, appState: AppState) {
+  public renderTopRightUI(isMobile: boolean, appState: AppState) {
     if (!this.excalidrawAPI || !this.semaphores.viewloaded || !this.isLoaded) {
       return null;
     }
@@ -7098,198 +7097,6 @@ export default class ExcalidrawView
     }
   }
 
-  private excalidrawRootElement(initdata: ExcalidrawInitialDataState) {
-    const React = this.packages.react;
-    const { Excalidraw } = this.packages.excalidrawLib;
-
-    const excalidrawWrapperRef = React.useRef<HTMLDivElement>(null);
-    const toolsPanelRef = React.useRef<ToolsPanel>(null);
-    const embeddableMenuRef = React.useRef<HTMLDivElement>(null);
-    this.toolsPanelRef = toolsPanelRef;
-
-    React.useEffect(() => {
-      this.embeddableMenuRef = embeddableMenuRef;
-      this.obsidianMenu = new ObsidianMenu(this.plugin, toolsPanelRef, this);
-      this.embeddableMenu = new EmbeddableMenu(this, embeddableMenuRef);
-      this.excalidrawWrapperRef = excalidrawWrapperRef;
-      this.selectedElementActionsMenu = new SelectedElementActionsMenu(
-        () => this.excalidrawContainer,
-      );
-      this.selectedElementActionsMenu.registerProvider({
-        id: "markdown-image",
-        getActions: (element) =>
-          element.type === "image" && isMarkdownImageElement(this, element)
-            ? [
-                {
-                  id: "edit-markdown-image",
-                  title: t("EDIT_MARKDOWN_IMAGE"),
-                  icon: "pen-line",
-                  action: () => void this.openMarkdownImageEditor(element.id),
-                },
-                {
-                  id: "convert-markdown-image-to-embeddable",
-                  title: t("CONVERT_MARKDOWN_IMAGE_TO_EMBEDDABLE"),
-                  icon: "layout-template",
-                  action: () =>
-                    void this.convertMarkdownImageToEmbeddable(element.id),
-                },
-              ]
-            : [],
-      });
-      const appState = this.excalidrawAPI?.getAppState();
-      if (appState) {
-        this.selectedElementActionsMenu.update(
-          this.getViewElements(),
-          appState,
-        );
-      }
-      return () => {
-        this.obsidianMenu.destroy();
-        this.obsidianMenu = null;
-        this.embeddableMenu.destroy();
-        this.embeddableMenu = null;
-        this.selectedElementActionsMenu.destroy();
-        this.selectedElementActionsMenu = null;
-        this.toolsPanelRef.current = null;
-        this.embeddableMenuRef.current = null;
-        this.excalidrawWrapperRef.current = null;
-      };
-    }, []);
-
-    const observer = React.useRef(
-      new ResizeObserver((entries) => {
-        if (!toolsPanelRef || !toolsPanelRef.current) {
-          return;
-        }
-        const { width, height } = entries[0].contentRect;
-        if (width === 0 || height === 0) {
-          return;
-        }
-        const dx = toolsPanelRef.current.onRightEdge
-          ? toolsPanelRef.current.previousWidth - width
-          : 0;
-        const dy = toolsPanelRef.current.onBottomEdge
-          ? toolsPanelRef.current.previousHeight - height
-          : 0;
-        toolsPanelRef.current.updatePosition(dy, dx);
-      }),
-    );
-
-    React.useEffect(() => {
-      if (toolsPanelRef?.current) {
-        observer.current.observe(toolsPanelRef.current.containerRef.current);
-      }
-      return () => {
-        //unobserve is done in ToolsPanel componentWillUnmount
-      };
-    }, [toolsPanelRef, observer]);
-
-    //---------------------------------------------------------------------------------
-    //---------------------------------------------------------------------------------
-    // Render Excalidraw DIV
-    //---------------------------------------------------------------------------------
-    //---------------------------------------------------------------------------------
-    return React.createElement(
-      React.Fragment,
-      null,
-      React.createElement(
-        "div",
-        {
-          className: "excalidraw-wrapper",
-          ref: excalidrawWrapperRef,
-          key: "abc",
-          tabIndex: 0,
-          onKeyDown: this.excalidrawDIVonKeyDown.bind(this),
-          onKeyUp: this.excalidrawDIVonKeyUp.bind(this),
-          onPointerDown: this.onPointerDown.bind(this),
-          onMouseMove: this.onMouseMove.bind(this),
-          onMouseOver: this.onMouseOver.bind(this),
-          onDragOver: this.dropManager?.onDragOver.bind(this.dropManager),
-          onDragLeave: this.dropManager?.onDragLeave.bind(this.dropManager),
-        },
-        React.createElement(
-          Excalidraw,
-          {
-            onExcalidrawAPI: (api) => this.setExcalidrawAPI(api),
-            onInitialize: (api) => this.onExcalidrawInitialize(api),
-            UIOptions: {
-              canvasActions: {
-                loadScene: false,
-                export: false,
-                saveAsImage: false,
-                saveToActiveFile: false,
-              },
-              //desktopUIMode: calculateUIModeValue(this.plugin.settings), //2026.05.15
-              //formFactor: DEVICE.isMobile ? "phone" : DEVICE.isTablet ? "tablet" : "desktop",
-            },
-            imageOptions: {
-              maxWidthOrHeight: 3440,
-              maxFileSizeBytes: 20 * 1024 * 1024,
-            },
-            initState: initdata?.appState,
-            initialData: initdata,
-            detectScroll: true,
-            onPointerUpdate: (p) => this.onPointerUpdate(p),
-            libraryReturnUrl: "app://obsidian.md",
-            autoFocus: true,
-            langCode: obsidianToExcalidrawMap[this.plugin.locale] ?? "en-EN",
-            aiEnabled: this.plugin.settings.aiEnabled ?? true,
-            onChange: (et, st, files) =>
-              this.onChange(et as ExcalidrawElement[], st, files),
-            onIncrement: (event) => this.onExcalidrawIncrement(event),
-            onLibraryChange: (libraryItems) =>
-              this.onLibraryChange(libraryItems),
-            renderTopRightUI: (isMobile: boolean, appState: AppState) =>
-              this.renderTopRightUI(isMobile, appState),
-            renderEmbeddableMenu: (appState) =>
-              this.renderEmbeddableMenu(appState),
-            onPaste: (data, event, files) => this.onPaste(data, event, files),
-            onThemeChange: (theme: string) => {
-              void this.onThemeChange(theme);
-            },
-            onDrop: (event) => this.dropManager?.onDrop(event),
-            onBeforeTextEdit: (element, isExisting) =>
-              this.onBeforeTextEdit(element, isExisting),
-            onBeforeTextSubmit: (
-              element,
-              nextText,
-              nextOriginalText,
-              isDeleted,
-            ) =>
-              this.onBeforeTextSubmit(
-                element,
-                nextText,
-                nextOriginalText,
-                isDeleted,
-              ),
-            onLinkOpen: (element, e) => {
-              void this.onLinkOpen(element, e);
-            },
-            onLinkHover: (element, event) => this.onLinkHover(element, event),
-            onContextMenu: (elements, st, onClose) =>
-              this.onContextMenu(elements, st, onClose),
-            onViewModeChange: (isViewModeEnabled) =>
-              this.onViewModeChange(isViewModeEnabled),
-            validateEmbeddable: true,
-            renderWebview: DEVICE.isDesktop,
-            renderEmbeddable: (el, st) => this.renderEmbeddable(el, st),
-            renderMermaid: shouldRenderMermaid(),
-            showDeprecatedFonts: true,
-            insertLinkAction: DEVICE.isDesktop
-              ? undefined
-              : (linkval) => this.insertLinkAction(linkval),
-          },
-          this.renderCustomActionsMenu(),
-          this.renderWelcomeScreen(),
-          this.ttdDialog(),
-          this.diagramToCode(),
-          this.ttdDialogTrigger(),
-        ),
-        this.renderToolsPanel(observer),
-      ),
-    );
-  }
-
   private async instantiateExcalidraw(initdata: ExcalidrawInitialDataState) {
     await this.plugin.awaitInit();
     let counter = 0;
@@ -7306,7 +7113,9 @@ export default class ExcalidrawView
 
     this.excalidrawRoot = ReactDOM.createRoot(this.contentEl);
     this.excalidrawRoot.render(
-      React.createElement(this.excalidrawRootElement.bind(this, initdata)),
+      React.createElement(
+        createExcalidrawRootElement.bind(null, this, initdata),
+      ),
     );
   }
 
