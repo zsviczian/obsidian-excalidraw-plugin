@@ -26,9 +26,14 @@ I build this plugin as a labor of love. Curious about the philosophy behind it? 
 ## Fixed
 - The Excalidraw color palette now uses its natural height when space is available instead of being unnecessarily limited to a short, vertically scrolling panel. Its native color control also remains aligned with the hex input.
 - The text-to-diagram chat history menu is visible again, allowing saved chats to be restored and deleted.
+- Stencil library is persisted with tab-indented JSON to support Git diffs. [#2883](${URLs.GITHUB_COM_ZSVICZIAN_OBSIDIAN_EXCALIDRAW_PLUGIN_ISSUES}/2883)
+- Custom color-picker top picks (pinned by dragging a color onto the strip) are now saved with the drawing instead of being forgotten on reload.
+- Changing the canvas background color from the color-picker popover no longer leaves the popover's own theming out of sync until it's closed and reopened.
 
 ## New from Excalidraw.com
 - Improved bucket tool and eyedropper support [#11849](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11849)
+- Respect box selection mode ('contain' vs 'overlap') in lasso selection [#11862](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11862)
+- Color-picker top picks can now be customized by dragging a color from the palette onto the strip; right-click the strip to reset [#11872](${URLs.GITHUB_COM_EXCALIDRAW_EXCALIDRAW_PULL}/11872)
 
 `,
   "2.26.4": `
