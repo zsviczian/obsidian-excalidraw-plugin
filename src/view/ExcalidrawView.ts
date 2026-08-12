@@ -12,9 +12,6 @@ import {
   HoverParent,
   HoverPopover,
 } from "obsidian";
-//import * as React from "react";
-//import * as ReactDOM from "react-dom";
-//import Excalidraw from "@zsviczian/excalidraw";
 import {
   ExcalidrawElement,
   ExcalidrawImageElement,
@@ -248,6 +245,7 @@ import { ViewFullscreenManager } from "./managers/ViewFullscreenManager";
 import { ViewLinkNavigationManager } from "./managers/ViewLinkNavigationManager";
 import { ViewExcalidrawExtensionRenderer } from "./managers/ViewExcalidrawExtensionRenderer";
 import { MarkdownImageController } from "./managers/MarkdownImageController";
+import { ViewSceneFileManager } from "./managers/ViewSceneFileManager";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 import { PageOrientation, PageSize } from "src/types/exportUtilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
@@ -394,6 +392,7 @@ export default class ExcalidrawView
   private linkNavigationManager: ViewLinkNavigationManager;
   private excalidrawExtensionRenderer: ViewExcalidrawExtensionRenderer;
   private markdownImageController: MarkdownImageController;
+  private sceneFileManager: ViewSceneFileManager;
   public hoverPopover: HoverPopover | null = null;
   private freedrawLastActiveTimestamp: number = 0;
   public exportDialog: ExportDialog | null = null;
@@ -590,6 +589,11 @@ export default class ExcalidrawView
       insertBackOfTheNoteContent,
       errorlog,
     });
+    this.sceneFileManager = new ViewSceneFileManager(this, {
+      createEmbeddedFilesLoader: (isDark) =>
+        new EmbeddedFilesLoader(this.plugin, isDark),
+      addFiles,
+    });
     this.setHookServer();
     this.dropManager = new DropManager(this);
   }
@@ -599,6 +603,11 @@ export default class ExcalidrawView
   }
   get plugin(): ExcalidrawPlugin {
     return this._plugin;
+  }
+  /** Read externally by `EventManager.ts` to skip scheduling deferred
+   * validation while a scene-file load is already in flight. */
+  get activeLoader(): EmbeddedFilesLoader {
+    return this.sceneFileManager.activeLoader;
   }
   get excalidrawContainer(): HTMLDivElement {
     return this.excalidrawWrapperRef?.current?.firstElementChild as
@@ -1981,17 +1990,7 @@ export default class ExcalidrawView
       this.excalidrawRoot = null;
     }
 
-    this.cancelDeferredSceneFileValidation();
-    if (this.activeLoader) {
-      this.activeLoader.terminate = true;
-      this.activeLoader.emptyPDFDocsMap();
-      this.activeLoader = null;
-    }
-    if (this.nextLoader) {
-      this.nextLoader.terminate = true;
-      this.nextLoader.emptyPDFDocsMap();
-      this.nextLoader = null;
-    }
+    this.sceneFileManager.terminateActiveLoaders();
     if (this.plugin) {
       this.plugin.scriptEngine?.removeViewEAs(this);
       const sidepanel =
@@ -2155,17 +2154,7 @@ export default class ExcalidrawView
       window.clearTimeout(this.semaphores.wheelTimeout);
       this.semaphores.wheelTimeout = null;
     }
-    this.cancelDeferredSceneFileValidation();
-    if (this.activeLoader) {
-      this.activeLoader.terminate = true;
-      this.activeLoader.emptyPDFDocsMap();
-      this.activeLoader = null;
-    }
-    if (this.nextLoader) {
-      this.nextLoader.terminate = true;
-      this.nextLoader.emptyPDFDocsMap();
-      this.nextLoader = null;
-    }
+    this.sceneFileManager.terminateActiveLoaders();
   }
 
   /**
@@ -2459,17 +2448,7 @@ export default class ExcalidrawView
     if (!api) {
       return;
     }
-    this.cancelDeferredSceneFileValidation();
-    if (this.activeLoader) {
-      this.activeLoader.terminate = true;
-      this.activeLoader.emptyPDFDocsMap();
-      this.activeLoader = null;
-    }
-    if (this.nextLoader) {
-      this.nextLoader.terminate = true;
-      this.nextLoader.emptyPDFDocsMap();
-      this.nextLoader = null;
-    }
+    this.sceneFileManager.terminateActiveLoaders();
     this.lastSceneLoadTime = 0;
     (api.resetScene as () => void)();
     this.previousSceneVersion = 0;
@@ -2792,257 +2771,33 @@ export default class ExcalidrawView
     return { Bold, Regular };
   }
 
-  public activeLoader: EmbeddedFilesLoader = null;
-  private nextLoader: EmbeddedFilesLoader = null;
-  private deferredValidationLoader: EmbeddedFilesLoader = null;
-  private deferredValidationTimer: number | null = null;
-  private deferredValidationFilePath: string | null = null;
-  private queuedLoadSceneFilesRequest: {
-    isThemeChange: boolean;
-    fileIDWhiteList?: Set<FileId>;
-    forceReloadFileIDs?: Set<FileId>;
-    callback?: () => void;
-  } | null = null;
-  // File IDs collected during the stale-first pass. These are the only files that
-  // need a validated retry after the scene is already visible.
-  private pendingDeferredValidationFileIDs: Set<FileId> = new Set();
-
-  private cancelDeferredSceneFileValidation() {
-    if (this.deferredValidationTimer) {
-      window.clearTimeout(this.deferredValidationTimer);
-      this.deferredValidationTimer = null;
-    }
-    if (this.deferredValidationLoader) {
-      this.deferredValidationLoader.terminate = true;
-      this.deferredValidationLoader.emptyPDFDocsMap();
-      this.deferredValidationLoader = null;
-    }
-    this.deferredValidationFilePath = null;
-    this.queuedLoadSceneFilesRequest = null;
-  }
-
-  private addDeferredValidationCandidates(fileIDs?: Set<FileId>) {
-    if (!fileIDs || fileIDs.size === 0) {
-      return;
-    }
-    fileIDs.forEach((fileId) =>
-      this.pendingDeferredValidationFileIDs.add(fileId),
-    );
-  }
-
-  private scheduleDeferredSceneFileValidation(
-    fileIDs: Set<FileId>,
-    isThemeChange: boolean,
-    emitPolicy: "changed-only" | "all" = "changed-only",
-  ) {
-    this.cancelDeferredSceneFileValidation();
-    if (!fileIDs || fileIDs.size === 0 || !this.file || !this.excalidrawAPI) {
-      return;
-    }
-
-    const currentFile = this.file.path;
-    const loader = new EmbeddedFilesLoader(this.plugin);
-    this.deferredValidationFilePath = currentFile;
-    this.deferredValidationTimer = window.setTimeout(() => {
-      this.deferredValidationTimer = null;
-      if (!this.file || !this.excalidrawAPI || this.file.path !== currentFile) {
-        this.deferredValidationFilePath = null;
-        return;
-      }
-
-      this.deferredValidationLoader = loader;
-      // Second pass is intentionally conservative: revalidate only stale-first
-      // candidates, run one at a time, and emit only regenerated images.
-      void loader.loadSceneFiles({
-        excalidrawData: this.excalidrawData,
-        sceneElements: this.getViewElements(),
-        addFiles: (
-          files: FileData[],
-          isDark: boolean,
-          final: boolean = true,
-        ) => {
-          if (
-            !this.file ||
-            !this.excalidrawAPI ||
-            this.file.path !== currentFile
-          ) {
-            if (final && this.deferredValidationLoader === loader) {
-              this.deferredValidationLoader = null;
-              this.deferredValidationFilePath = null;
-            }
-            return;
-          }
-          if (files && files.length > 0) {
-            void addFiles(files, this, isDark);
-          }
-          if (!final) {
-            return;
-          }
-          this.lastSceneLoadTime = Date.now();
-          if (this.deferredValidationLoader === loader) {
-            this.deferredValidationLoader = null;
-          }
-          this.deferredValidationFilePath = null;
-          const queuedLoad = this.queuedLoadSceneFilesRequest;
-          this.queuedLoadSceneFilesRequest = null;
-          if (queuedLoad && this.file?.path === currentFile) {
-            void this.loadSceneFiles(
-              queuedLoad.isThemeChange,
-              queuedLoad.fileIDWhiteList,
-              queuedLoad.callback,
-              queuedLoad.forceReloadFileIDs,
-            );
-          }
-        },
-        depth: 0,
-        isThemeChange,
-        fileIDWhiteList: fileIDs,
-        forceReloadFileIDs: fileIDs,
-        cacheValidation: "validated",
-        validationConcurrency: 1,
-        emitPolicy,
-      });
-    }, 250);
-  }
-
+  /** Delegates to `ViewSceneFileManager`; called from `EventManager.ts` on leaf switch. */
   public scheduleSceneFileDeferredValidation(
     fileIDs: Set<FileId>,
     isThemeChange: boolean = false,
     forceEmitFromCache: boolean = false,
   ) {
-    if (!this.excalidrawAPI || !fileIDs || fileIDs.size === 0) {
-      return;
-    }
-    if (this.activeLoader) {
-      this.addDeferredValidationCandidates(fileIDs);
-      return;
-    }
-    this.scheduleDeferredSceneFileValidation(
-      new Set(fileIDs),
+    this.sceneFileManager.scheduleSceneFileDeferredValidation(
+      fileIDs,
       isThemeChange,
-      forceEmitFromCache ? "all" : "changed-only",
+      forceEmitFromCache,
     );
   }
 
+  /** Delegates to `ViewSceneFileManager`; part of the ExcalidrawAutomate public
+   * surface (`ExcalidrawAutomate.ts`'s `targetView.loadSceneFiles(...)`). */
   public async loadSceneFiles(
     isThemeChange: boolean = false,
     fileIDWhiteList?: Set<FileId>,
     callback?: () => void,
     forceReloadFileIDs?: Set<FileId>,
   ) {
-    if (!this.excalidrawAPI) {
-      return;
-    }
-
-    const requestFilePath = this.file?.path ?? null;
-    const deferredValidationForSameFile =
-      !!requestFilePath &&
-      this.deferredValidationFilePath === requestFilePath &&
-      (this.deferredValidationTimer !== null ||
-        !!this.deferredValidationLoader);
-
-    if (deferredValidationForSameFile) {
-      // Keep deferred validation running for the current file and enqueue this request.
-      this.queuedLoadSceneFilesRequest = {
-        isThemeChange,
-        fileIDWhiteList,
-        callback,
-        forceReloadFileIDs,
-      };
-      return;
-    }
-
-    this.cancelDeferredSceneFileValidation();
-    if (!this.activeLoader) {
-      this.pendingDeferredValidationFileIDs.clear();
-    }
-
-    const loader = new EmbeddedFilesLoader(this.plugin);
-
-    const runLoader = (l: EmbeddedFilesLoader) => {
-      this.nextLoader = null;
-      this.activeLoader = l;
-      void l.loadSceneFiles({
-        excalidrawData: this.excalidrawData,
-        sceneElements: this.getViewElements(),
-        addFiles: (
-          files: FileData[],
-          isDark: boolean,
-          final: boolean = true,
-        ) => {
-          if (callback && final) {
-            callback();
-          }
-          if (!this.file || !this.excalidrawAPI) {
-            return; //The view was closed in the mean time
-          }
-          if (files && files.length > 0) {
-            void addFiles(files, this, isDark);
-          }
-          if (!final) {
-            return;
-          }
-          this.lastSceneLoadTime = Date.now();
-          this.activeLoader = null;
-          if (this.nextLoader) {
-            runLoader(this.nextLoader);
-          } else {
-            // Once the scene is painted, validate cached candidates in the background
-            // so unchanged cache hits do not delay the initial scene load.
-            if (this.pendingDeferredValidationFileIDs.size > 0) {
-              this.scheduleDeferredSceneFileValidation(
-                new Set(this.pendingDeferredValidationFileIDs),
-                isThemeChange,
-              );
-              this.pendingDeferredValidationFileIDs.clear();
-            }
-            //in case one or more files have not loaded retry later hoping that sync has delivered the file in the mean time.
-            this.excalidrawData.getFiles().some((ef) => {
-              if (ef && !ef.file && ef.attemptCounter < 30) {
-                const currentFile = this.file.path;
-                const retryLoadSceneFiles = () => {
-                  if (
-                    !this ||
-                    !this.excalidrawAPI ||
-                    currentFile !== this.file.path
-                  ) {
-                    return;
-                  }
-                  // Keep deferred validation uninterrupted. If it is running,
-                  // retry again once it completes.
-                  if (
-                    this.deferredValidationLoader ||
-                    this.deferredValidationTimer
-                  ) {
-                    window.setTimeout(retryLoadSceneFiles, 500);
-                    return;
-                  }
-                  void this.loadSceneFiles();
-                };
-                window.setTimeout(() => {
-                  retryLoadSceneFiles();
-                }, 2000);
-                return true;
-              }
-              return false;
-            });
-          }
-        },
-        depth: 0,
-        isThemeChange,
-        fileIDWhiteList,
-        forceReloadFileIDs,
-        cacheValidation: "stale-first",
-        onDeferredValidationCandidates: (fileIds: Set<FileId>) => {
-          this.addDeferredValidationCandidates(fileIds);
-        },
-      });
-    };
-    if (!this.activeLoader) {
-      runLoader(loader);
-    } else {
-      this.nextLoader = loader;
-    }
+    await this.sceneFileManager.loadSceneFiles(
+      isThemeChange,
+      fileIDWhiteList,
+      callback,
+      forceReloadFileIDs,
+    );
   }
 
   public async synchronizeWithData(inData: ExcalidrawData) {
