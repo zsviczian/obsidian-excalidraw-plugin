@@ -1,59 +1,48 @@
 import { randomId, randomInteger } from "../utils";
 
-import {
-  ExcalidrawLinearElement,
-  FillStyle,
-  GroupId,
-  RoundnessType,
-  StrokeStyle,
+import type {
+  ExcalidrawEllipseElement,
+  ExcalidrawRectangleElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
+import type { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
+import type { Radians } from "@zsviczian/excalidraw/types/math/src/types";
 
 export type Point = [number, number];
 
-export type ExcalidrawElementBase = {
-  id: string;
-  x: number;
-  y: number;
-  strokeColor: string;
-  backgroundColor: string;
-  fillStyle: FillStyle;
-  strokeWidth: number;
-  strokeStyle: StrokeStyle;
-  roundness: null | { type: RoundnessType; value?: number };
-  roughness: number;
-  opacity: number;
-  width: number;
-  height: number;
-  angle: number;
-  /** Random integer used to seed shape generation so that the roughjs shape
-      doesn't differ across renders. */
-  seed: number;
-  /** Integer that is sequentially incremented on each change. Used to reconcile
-      elements during collaboration or when saving to server. */
-  version: number;
-  /** Random integer that is regenerated on each change.
-      Used for deterministic reconciliation of updates during collaboration,
-      in case the versions (see above) are identical. */
-  versionNonce: number;
-  isDeleted: boolean;
-  /** List of groups the element belongs to.
-      Ordered from deepest to shallowest. */
-  groupIds: GroupId[];
-  /** Ids of (linear) elements that are bound to this element. */
-  boundElementIds: ExcalidrawLinearElement["id"][] | null;
-};
+/**
+ * Mutable local copy of the fork's element base shape. The real
+ * `_ExcalidrawElementBase` type is `Readonly` and not exported on its own,
+ * so this is derived via `Omit` from `ExcalidrawRectangleElement` (which
+ * adds nothing beyond the `type` discriminant over the real base) rather
+ * than hand-duplicating every field -- field types can't drift from the
+ * real ones this way. `Mutable` strips the `readonly` modifiers so the
+ * existing object-literal-mutation style in attributes.ts keeps working.
+ */
+export type ExcalidrawElementBase = Mutable<
+  Omit<ExcalidrawRectangleElement, "type">
+>;
 
-export type ExcalidrawRectangle = ExcalidrawElementBase & {
-  type: "rectangle";
-};
+export type ExcalidrawRectangle = Mutable<ExcalidrawRectangleElement>;
 
+export type ExcalidrawEllipse = Mutable<ExcalidrawEllipseElement>;
+
+/**
+ * NOTE: not yet aligned to the real `ExcalidrawLineElement` type. That type
+ * additionally requires `startBinding`/`endBinding`/`startArrowhead`/
+ * `endArrowhead`/`polygon` and branded `LocalPoint` tuples (via
+ * `pointFrom()`) instead of plain `[number, number]`, which would also
+ * touch every point-producing helper in this module (bezier.ts,
+ * path-to-points.ts, ellipse.ts, transform.ts). Left as a local shape for
+ * now; a real-type pass is a separate, larger step.
+ */
 export type ExcalidrawLine = ExcalidrawElementBase & {
   type: "line";
   points: readonly Point[];
 };
 
-export type ExcalidrawEllipse = ExcalidrawElementBase & {
-  type: "ellipse";
+export type ExcalidrawDraw = ExcalidrawElementBase & {
+  type: "line";
+  points: readonly Point[];
 };
 
 export type ExcalidrawGenericElement =
@@ -61,11 +50,6 @@ export type ExcalidrawGenericElement =
   | ExcalidrawEllipse
   | ExcalidrawLine
   | ExcalidrawDraw;
-
-export type ExcalidrawDraw = ExcalidrawElementBase & {
-  type: "line";
-  points: readonly Point[];
-};
 
 export function createExElement(): ExcalidrawElementBase {
   return {
@@ -82,13 +66,20 @@ export function createExElement(): ExcalidrawElementBase {
     opacity: 100,
     width: 0,
     height: 0,
-    angle: 0,
+    angle: 0 as Radians,
     seed: randomInteger(),
     version: 0,
     versionNonce: 0,
     isDeleted: false,
     groupIds: [],
-    boundElementIds: null,
+    // The following match the real fork's own newElement() defaults for a
+    // freshly created, not-yet-in-scene element (packages/element/src/newElement.ts).
+    frameId: null,
+    index: null,
+    boundElements: null,
+    updated: Date.now(),
+    link: null,
+    locked: false,
   };
 }
 
