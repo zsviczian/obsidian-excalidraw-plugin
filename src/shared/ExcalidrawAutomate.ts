@@ -4887,14 +4887,7 @@ export class ExcalidrawAutomate {
       );
       return false;
     }
-    // rectangle/ellipse elements are the real fork types; "line"/"draw"
-    // elements are still a local shape missing binding/arrowhead fields
-    // and use plain [number, number] points instead of branded LocalPoint
-    // (see the note in svgToExcalidraw/elements/ExcalidrawElement.ts), so
-    // the union isn't yet assignable without this cast.
-    this.copyViewElementsToEAforEditing(
-      res.content as unknown as ExcalidrawElement[],
-    );
+    this.copyViewElementsToEAforEditing(res.content);
     return true;
   }
 

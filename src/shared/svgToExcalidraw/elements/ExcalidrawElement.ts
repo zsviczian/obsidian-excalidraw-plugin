@@ -2,11 +2,17 @@ import { randomId, randomInteger } from "../utils";
 
 import type {
   ExcalidrawEllipseElement,
+  ExcalidrawLineElement,
   ExcalidrawRectangleElement,
 } from "@zsviczian/excalidraw/types/element/src/types";
 import type { Mutable } from "@zsviczian/excalidraw/types/common/src/utility-types";
+import type { LocalPoint } from "@zsviczian/excalidraw/types/math/src/types";
 import type { Radians } from "@zsviczian/excalidraw/types/math/src/types";
 
+/** Internal, unbranded working point used by every geometry helper in this
+ * module (bezier/ellipse/path math, matrix transforms). Only converted to
+ * the real fork's branded `LocalPoint` at the point an element is finalized
+ * -- see `toLocalPoint()`. */
 export type Point = [number, number];
 
 /**
@@ -26,30 +32,23 @@ export type ExcalidrawRectangle = Mutable<ExcalidrawRectangleElement>;
 
 export type ExcalidrawEllipse = Mutable<ExcalidrawEllipseElement>;
 
-/**
- * NOTE: not yet aligned to the real `ExcalidrawLineElement` type. That type
- * additionally requires `startBinding`/`endBinding`/`startArrowhead`/
- * `endArrowhead`/`polygon` and branded `LocalPoint` tuples (via
- * `pointFrom()`) instead of plain `[number, number]`, which would also
- * touch every point-producing helper in this module (bezier.ts,
- * path-to-points.ts, ellipse.ts, transform.ts). Left as a local shape for
- * now; a real-type pass is a separate, larger step.
- */
-export type ExcalidrawLine = ExcalidrawElementBase & {
-  type: "line";
-  points: readonly Point[];
-};
-
-export type ExcalidrawDraw = ExcalidrawElementBase & {
-  type: "line";
-  points: readonly Point[];
-};
+export type ExcalidrawLine = Mutable<ExcalidrawLineElement>;
 
 export type ExcalidrawGenericElement =
   | ExcalidrawRectangle
   | ExcalidrawEllipse
-  | ExcalidrawLine
-  | ExcalidrawDraw;
+  | ExcalidrawLine;
+
+/**
+ * Reimplements the fork's `pointFrom<LocalPoint>(x, y)` locally instead of
+ * importing it: at runtime that function is just `[x, y] as Point` (a pure
+ * compile-time brand, verified against packages/math/src/point.ts in the
+ * fork), and this plugin never imports runtime Excalidraw code directly --
+ * the actual runtime is loaded separately per-window via `PackageManager`/
+ * `window.ExcalidrawLib`. Importing it here would statically bundle a
+ * second copy of fork code into the plugin build.
+ */
+const toLocalPoint = ([x, y]: Point): LocalPoint => [x, y] as LocalPoint;
 
 export function createExElement(): ExcalidrawElementBase {
   return {
@@ -90,14 +89,6 @@ export function createExRect(): ExcalidrawRectangle {
   };
 }
 
-export function createExLine(): ExcalidrawLine {
-  return {
-    ...createExElement(),
-    type: "line",
-    points: [],
-  };
-}
-
 export function createExEllipse(): ExcalidrawEllipse {
   return {
     ...createExElement(),
@@ -105,10 +96,18 @@ export function createExEllipse(): ExcalidrawEllipse {
   };
 }
 
-export function createExDraw(): ExcalidrawDraw {
+/** SVG shapes converted to a "line" element are always closed, fillable
+ * regions (the polygon feature didn't exist yet when this module was
+ * written; every caller wants `polygon: true`). */
+export function createExLine(points: readonly Point[] = []): ExcalidrawLine {
   return {
     ...createExElement(),
     type: "line",
-    points: [],
+    polygon: true,
+    points: points.map(toLocalPoint),
+    startBinding: null,
+    endBinding: null,
+    startArrowhead: null,
+    endArrowhead: null,
   };
 }

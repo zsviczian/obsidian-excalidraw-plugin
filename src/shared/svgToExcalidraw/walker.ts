@@ -7,11 +7,9 @@ import {
   ExcalidrawRectangle,
   ExcalidrawEllipse,
   ExcalidrawLine,
-  ExcalidrawDraw,
   createExRect,
   createExEllipse,
   createExLine,
-  createExDraw,
   Point,
 } from "./elements/ExcalidrawElement";
 import {
@@ -276,10 +274,9 @@ const walkers = {
     const [width, height] = dimensionsFromPoints(relativePoints);
 
     const line: ExcalidrawLine = {
-      ...createExLine(),
+      ...createExLine(relativePoints.concat([[0, 0]])),
       ...getGroupAttrs(groups),
       ...presAttrsToElementValues(el),
-      points: relativePoints.concat([[0, 0]]),
       x,
       y,
       width,
@@ -317,10 +314,9 @@ const walkers = {
     const shouldFill = !hasFill || (hasFill && fill !== "none");
 
     const line: ExcalidrawLine = {
-      ...createExLine(),
+      ...createExLine(relativePoints.concat(shouldFill ? [[0, 0]] : [])),
       ...getGroupAttrs(groups),
       ...presAttrsToElementValues(el),
-      points: relativePoints.concat(shouldFill ? [[0, 0]] : []),
       x,
       y,
       width,
@@ -379,14 +375,14 @@ const walkers = {
     const fillColor = get(el, "fill", "black");
     const fillRule = get(el, "fill-rule", "nonzero");
 
-    let elements: ExcalidrawDraw[] = [];
+    let elements: ExcalidrawLine[] = [];
     let localGroup = randomId();
 
     switch (fillRule) {
       case "nonzero": {
         let initialWindingOrder = "clockwise";
 
-        elements = points.map((pointArr, idx): ExcalidrawDraw => {
+        elements = points.map((pointArr, idx): ExcalidrawLine => {
           const tPoints: Point[] = transformPoints(pointArr, mat4.clone(mat));
           const x = tPoints[0][0];
           const y = tPoints[0][1];
@@ -409,11 +405,10 @@ const walkers = {
           }
 
           return {
-            ...createExDraw(),
+            ...createExLine(relativePoints),
             strokeWidth: 0,
             strokeColor: "#00000000",
             ...presAttrs(el, groups),
-            points: relativePoints,
             backgroundColor,
             width,
             height,
@@ -425,7 +420,7 @@ const walkers = {
         break;
       }
       case "evenodd":
-        elements = points.map((pointArr, idx): ExcalidrawDraw => {
+        elements = points.map((pointArr, idx): ExcalidrawLine => {
           const tPoints: Point[] = transformPoints(pointArr, mat4.clone(mat));
           const x = tPoints[0][0];
           const y = tPoints[0][1];
@@ -441,9 +436,8 @@ const walkers = {
           }
 
           return {
-            ...createExDraw(),
+            ...createExLine(relativePoints),
             ...presAttrs(el, groups),
-            points: relativePoints,
             width,
             height,
             x: x + getNum(el, "x", 0),
