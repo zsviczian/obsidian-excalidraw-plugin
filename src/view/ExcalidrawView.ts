@@ -247,6 +247,7 @@ import { ViewExportManager } from "./managers/ViewExportManager";
 import { ViewFullscreenManager } from "./managers/ViewFullscreenManager";
 import { ViewLinkNavigationManager } from "./managers/ViewLinkNavigationManager";
 import { ViewExcalidrawExtensionRenderer } from "./managers/ViewExcalidrawExtensionRenderer";
+import { MarkdownImageController } from "./managers/MarkdownImageController";
 import { ImageInfo } from "src/types/excalidrawAutomateTypes";
 import { PageOrientation, PageSize } from "src/types/exportUtilTypes";
 import { CaptureUpdateAction } from "src/constants/constants";
@@ -392,6 +393,7 @@ export default class ExcalidrawView
   private fullscreenManager: ViewFullscreenManager;
   private linkNavigationManager: ViewLinkNavigationManager;
   private excalidrawExtensionRenderer: ViewExcalidrawExtensionRenderer;
+  private markdownImageController: MarkdownImageController;
   public hoverPopover: HoverPopover | null = null;
   private freedrawLastActiveTimestamp: number = 0;
   public exportDialog: ExportDialog | null = null;
@@ -474,12 +476,6 @@ export default class ExcalidrawView
   private preventReloadResetTimer: number | null = null;
   private editingSelfResetTimer: number | null = null;
   private colorChangeTimer: number | null = null;
-  private markdownImageDeletionQueue: Array<{
-    element: ExcalidrawImageElement;
-    filePath: string;
-  }> = [];
-  private pendingMarkdownImageDeletionIds = new Set<ExcalidrawElement["id"]>();
-  private markdownImageDeletionPrompt: Promise<void> | null = null;
   private previousSceneVersion = 0;
   public previousBackgroundColor = "";
   public previousTheme = "";
@@ -578,6 +574,22 @@ export default class ExcalidrawView
         openScriptInstallPrompt: () => this.actionOpenScriptInstallPrompt(),
         openExportImageDialog: () => this.actionOpenExportImageDialog(),
       });
+    this.markdownImageController = new MarkdownImageController(this, {
+      isMarkdownImageElement,
+      getMarkdownImageCustomData,
+      getEmbeddableMarkdownImageSource,
+      convertEmbeddableElementToMarkdownImage,
+      getMarkdownImageSource,
+      convertMarkdownImageElementToEmbeddable,
+      getLevelOneMarkdownHeadings,
+      openMarkdownImageEditorSidepanel,
+      parseMarkdownImages,
+      unwrapMarkdownImageBlock,
+      MultiOptionConfirmationPrompt,
+      GenericInputPrompt,
+      insertBackOfTheNoteContent,
+      errorlog,
+    });
     this.setHookServer();
     this.dropManager = new DropManager(this);
   }
@@ -819,8 +831,8 @@ export default class ExcalidrawView
     if (!this.isLoaded) {
       return;
     }
-    if (this.markdownImageDeletionPrompt !== null) {
-      await this.markdownImageDeletionPrompt;
+    if (this.markdownImageController.markdownImageDeletionPrompt !== null) {
+      await this.markdownImageController.markdownImageDeletionPrompt;
     }
     if (
       !overrideEmbeddableIsEditingSelfDebounce &&
@@ -4998,96 +5010,8 @@ export default class ExcalidrawView
       ) {
         return;
       }
-      this.queueMarkdownImageDeletion(element);
+      this.markdownImageController.queueMarkdownImageDeletion(element);
     });
-  }
-
-  private queueMarkdownImageDeletion(element: ExcalidrawImageElement): void {
-    if (!this.file || this.pendingMarkdownImageDeletionIds.has(element.id)) {
-      return;
-    }
-    this.pendingMarkdownImageDeletionIds.add(element.id);
-    this.markdownImageDeletionQueue.push({
-      element,
-      filePath: this.file.path,
-    });
-    if (this.markdownImageDeletionPrompt !== null) {
-      return;
-    }
-    const processing = this.processMarkdownImageDeletionQueue();
-    this.markdownImageDeletionPrompt = processing;
-    void processing.finally(() => {
-      if (this.markdownImageDeletionPrompt === processing) {
-        this.markdownImageDeletionPrompt = null;
-      }
-    });
-  }
-
-  private async processMarkdownImageDeletionQueue(): Promise<void> {
-    while (this.markdownImageDeletionQueue.length > 0) {
-      const item = this.markdownImageDeletionQueue.shift();
-      if (!item) {
-        continue;
-      }
-      const { element, filePath } = item;
-      try {
-        const viewElements = this.getViewElements();
-        if (
-          !this.file ||
-          this.file.path !== filePath ||
-          viewElements.some((candidate) => candidate.id === element.id) ||
-          viewElements.some(
-            (candidate) =>
-              candidate.id !== element.id &&
-              candidate.type === "image" &&
-              candidate.fileId === element.fileId &&
-              getMarkdownImageCustomData(candidate)?.source === "local",
-          ) ||
-          !this.excalidrawData.hasMarkdownImage(element.fileId)
-        ) {
-          continue;
-        }
-
-        const prompt = new MultiOptionConfirmationPrompt<
-          "keep" | "delete" | null
-        >(
-          this.plugin,
-          t("MARKDOWN_IMAGE_DELETE_TEXT_PROMPT"),
-          new Map([
-            [t("MARKDOWN_IMAGE_KEEP_TEXT"), "keep"],
-            [t("MARKDOWN_IMAGE_DELETE_TEXT"), "delete"],
-          ]),
-          t("MARKDOWN_IMAGE_KEEP_TEXT"),
-        );
-        const decision = await prompt.waitForClose;
-        if (
-          !this.file ||
-          this.file.path !== filePath ||
-          this.getViewElements().some((candidate) => candidate.id === element.id)
-        ) {
-          continue;
-        }
-        if (decision !== "delete") {
-          const markdown = this.excalidrawData.getMarkdownImage(
-            element.fileId,
-          )?.markdown;
-          this.data = unwrapMarkdownImageBlock(
-            this.data,
-            element.fileId,
-            markdown,
-          );
-        }
-        this.excalidrawData.deleteMarkdownImage(element.fileId);
-        this.setDirty();
-      } catch (error: unknown) {
-        errorlog({
-          where: "ExcalidrawView.processMarkdownImageDeletionQueue",
-          error,
-        });
-      } finally {
-        this.pendingMarkdownImageDeletionIds.delete(element.id);
-      }
-    }
   }
 
   public onChange(et: ExcalidrawElement[], st: AppState, files: BinaryFiles) {
@@ -5940,7 +5864,7 @@ export default class ExcalidrawView
     }
   }
 
-  private async getBackOfTheNoteSections() {
+  public async getBackOfTheNoteSections() {
     return (
       await this.app.metadataCache.blockCache.getForFile(
         { isCancelled: () => false },
@@ -6000,183 +5924,25 @@ export default class ExcalidrawView
 
   /** Opens an image by ID for editing, or inserts a new Markdown image. */
   public async openMarkdownImageEditor(elementId?: string): Promise<void> {
-    const selected = elementId
-      ? this.getViewElements().find((element) => element.id === elementId)
-      : undefined;
-    const image = selected?.type === "image" ? selected : undefined;
-    if (image && !isMarkdownImageElement(this, image)) {
-      new Notice(t("MARKDOWN_IMAGE_SELECT_ERROR"));
-      return;
-    }
-    await openMarkdownImageEditorSidepanel(this, image);
+    await this.markdownImageController.openMarkdownImageEditor(elementId);
   }
 
   /** Converts a Markdown embeddable without changing its scene identity. */
   public async convertEmbeddableToMarkdownImage(
     elementId: string,
   ): Promise<void> {
-    const element = this.getViewElements().find(
-      (candidate): candidate is ExcalidrawEmbeddableElement =>
-        candidate.id === elementId && candidate.type === "embeddable",
+    await this.markdownImageController.convertEmbeddableToMarkdownImage(
+      elementId,
     );
-    if (!element) {
-      return;
-    }
-    const source = await getEmbeddableMarkdownImageSource(this, element);
-    if (!source) {
-      new Notice(t("MARKDOWN_IMAGE_CONVERSION_ERROR"));
-      return;
-    }
-
-    let localSection = "";
-    if (source.source === "local") {
-      const child = this.getEmbeddableLeafElementById(element.id)?.node?.child;
-      if (!child || child.file !== this.file) {
-        new Notice(t("MARKDOWN_IMAGE_CONVERSION_ERROR"));
-        return;
-      }
-      if (child.lastSavedData !== this.data) {
-        await this.forceSave(true);
-        if (child.lastSavedData !== this.data) {
-          new Notice(t("ERROR_TRY_AGAIN"));
-          return;
-        }
-      }
-      localSection = `${child.heading ?? ""}${child.text ?? ""}`;
-      if (!localSection.trim()) {
-        new Notice(t("MARKDOWN_IMAGE_CONVERSION_ERROR"));
-        return;
-      }
-      source.markdown = localSection.trim();
-    }
-
-    if (!(await convertEmbeddableElementToMarkdownImage(this, element, source))) {
-      new Notice(t("MARKDOWN_IMAGE_CONVERSION_ERROR"));
-      return;
-    }
-    if (source.source === "local") {
-      this.data = this.data.replace(localSection, "");
-      await this.forceSave(true);
-    }
   }
 
   /** Converts a Markdown image to an external or back-of-note embeddable. */
   public async convertMarkdownImageToEmbeddable(
     elementId: string,
   ): Promise<void> {
-    const element = this.getViewElements().find(
-      (candidate): candidate is ExcalidrawImageElement =>
-        candidate.id === elementId && candidate.type === "image",
+    await this.markdownImageController.convertMarkdownImageToEmbeddable(
+      elementId,
     );
-    if (!element || !isMarkdownImageElement(this, element)) {
-      return;
-    }
-    const source = await getMarkdownImageSource(this, element);
-    if (!source) {
-      new Notice(t("MARKDOWN_IMAGE_CONVERSION_ERROR"));
-      return;
-    }
-
-    if (source.source === "external" && source.embeddedFile) {
-      const link = `[[${source.embeddedFile.linkParts.original}]]`;
-      if (await convertMarkdownImageElementToEmbeddable(this, element, link)) {
-        this.excalidrawData.deleteFile(element.fileId);
-      }
-      return;
-    }
-
-    const parsedMarkdownImages = parseMarkdownImages(this.data);
-    const headings = getLevelOneMarkdownHeadings(source.markdown);
-    let title: string;
-    let sectionMarkdown: string;
-    if (headings.length > 0) {
-      const firstContentIndex = source.markdown.search(/\S/);
-      const candidateTitle = cleanSectionHeading(headings[0].title);
-      const documentHeadingCount = getLevelOneMarkdownHeadings(this.data).filter(
-        (heading) =>
-          cleanSectionHeading(heading.title).toLocaleLowerCase() ===
-          candidateTitle.toLocaleLowerCase(),
-      ).length;
-      const storedHeadingCount = getLevelOneMarkdownHeadings(
-        parsedMarkdownImages.get(element.fileId)?.markdown ?? "",
-      ).filter(
-        (heading) =>
-          cleanSectionHeading(heading.title).toLocaleLowerCase() ===
-          candidateTitle.toLocaleLowerCase(),
-      ).length;
-      const valid =
-        headings.length === 1 &&
-        headings[0].index === firstContentIndex &&
-        documentHeadingCount - storedHeadingCount === 0 &&
-        candidateTitle.length > 0 &&
-        !MD_EX_SECTIONS.some(
-          (heading) =>
-            cleanSectionHeading(heading).toLocaleLowerCase() ===
-            candidateTitle.toLocaleLowerCase(),
-        );
-      if (!valid) {
-        new Notice(t("MARKDOWN_IMAGE_H1_WARNING"), 10000);
-        return;
-      }
-      const proceed = await new MultiOptionConfirmationPrompt(
-        this.plugin,
-        t("MARKDOWN_IMAGE_H1_WARNING"),
-      ).waitForClose;
-      if (!proceed) {
-        return;
-      }
-      title = candidateTitle;
-      sectionMarkdown = source.markdown.trim();
-    } else {
-      title = (
-        await GenericInputPrompt.Prompt(
-          this,
-          this.plugin,
-          this.app,
-          t("MARKDOWN_IMAGE_SECTION_NAME"),
-          t("MARKDOWN_IMAGE_SECTION_NAME_PLACEHOLDER"),
-          "",
-        )
-      )?.trim();
-      const sections = await this.getBackOfTheNoteSections();
-      if (
-        !title ||
-        MD_EX_SECTIONS.some(
-          (heading) =>
-            cleanSectionHeading(heading).toLocaleLowerCase() ===
-            title.toLocaleLowerCase(),
-        ) ||
-        sections.some(
-          (heading) => heading.toLocaleLowerCase() === title.toLocaleLowerCase(),
-        )
-      ) {
-        new Notice(t("INVALID_SECTION_NAME"));
-        return;
-      }
-      sectionMarkdown = `# ${title}\n\n${source.markdown.trim()}`.trim();
-    }
-
-    const localIds = parsedMarkdownImages.size
-      ? [...parsedMarkdownImages.keys()]
-      : [...this.excalidrawData.markdownImages.keys()];
-    const localIndex = localIds.indexOf(element.fileId);
-    if (localIndex !== -1 && localIndex < localIds.length - 1) {
-      sectionMarkdown += "\n\n# \n\n";
-    }
-
-    const previousData = this.data;
-    insertBackOfTheNoteContent(this, sectionMarkdown);
-    this.excalidrawData.deleteMarkdownImage(element.fileId);
-    const link = `[[${this.file.path}#${title}]]`;
-    if (!(await convertMarkdownImageElementToEmbeddable(this, element, link))) {
-      this.data = previousData;
-      this.excalidrawData.setMarkdownImage(element.fileId, {
-        markdown: source.markdown,
-      });
-      new Notice(t("MARKDOWN_IMAGE_CONVERSION_ERROR"));
-      return;
-    }
-    await this.forceSave(true);
   }
 
   public async moveBackOfTheNoteCardToFile(id?: string) {
