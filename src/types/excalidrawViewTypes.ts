@@ -52,9 +52,6 @@ export type ExcalidrawViewAppState = Omit<
   Partial<AppState>,
   "showHyperlinkPopup"
 > & {
-  currentStrokeOptions?: unknown;
-  resetCustomPen?: unknown;
-  customPens?: unknown[];
   pinnedScripts?: string[];
   showHyperlinkPopup?:
     | AppState["showHyperlinkPopup"]

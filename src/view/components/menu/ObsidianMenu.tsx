@@ -2,6 +2,7 @@ import {
   AppState,
   ExcalidrawImperativeAPI,
 } from "@zsviczian/excalidraw/types/excalidraw/types";
+import { ObsidianResetCustomPenState } from "@zsviczian/excalidraw/types/excalidraw/obsidianTypes";
 import clsx from "clsx";
 import { TFile } from "obsidian";
 import * as React from "react";
@@ -22,15 +23,9 @@ import {
 } from "src/utils/excalidrawAutomateUtils";
 import { ToolsPanel } from "./ToolsPanel";
 
-export type ResetCustomPenState = {
-  currentItemStrokeWidthKey?: string | null;
-  currentItemStrokeWidth?: number | null;
-  currentItemStrokeVariability?: string | null;
-  currentItemBackgroundColor?: string | null;
-  currentItemStrokeColor?: string | null;
-  currentItemFillStyle?: string | null;
-  currentItemRoughness?: number | null;
-};
+/** Aliased to the fork's canonical type (packages/excalidraw/types.ts) so
+ * the two repositories cannot drift apart. */
+export type ResetCustomPenState = ObsidianResetCustomPenState;
 
 export function setPen(pen: PenStyle, api: ExcalidrawImperativeAPI) {
   const st = api.getAppState();
@@ -199,7 +194,7 @@ export class ObsidianMenu {
     //single second click to reset freedraw to default
     if (isPenActive && st.activeTool.type === "freedraw") {
       this.activePenIndex = null;
-      resetStrokeOptions(st.resetCustomPen as ResetCustomPenState, api, true);
+      resetStrokeOptions(st.resetCustomPen, api, true);
       return;
     }
 
@@ -314,7 +309,7 @@ export class ObsidianMenu {
       ) {
         window.setTimeout(() =>
           resetStrokeOptions(
-            appState.resetCustomPen as ResetCustomPenState,
+            appState.resetCustomPen,
             this.view.excalidrawAPI,
             false,
           ),
