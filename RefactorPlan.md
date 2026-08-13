@@ -1142,3 +1142,75 @@ real `getSettingDefinitions()`:
 Each remains its own small, separately-committed step per the same
 full-type-closeout-before-commit, review-before-commit discipline used for
 all four control types above.
+
+## Related, separate effort: no-unsafe-* lint cleanup — parked 2026-08-13
+
+Started while looking for the next refactoring target after the settings.ts
+work above. Independent of both plans on this page; not blocked by them and
+doesn't block them.
+
+**Context:** a survey across the codebase found it already disciplined about
+the usual cruft — only 2 explicit `any` annotations and 0 `as any` casts in
+all of `src/`, `npm run code:unused` (the project's own dead-code check)
+found nothing, and only 3 TODO/FIXME markers exist. The one real remaining
+backlog is 470 `@typescript-eslint/no-unsafe-*` findings (was 514 before the
+fix below), concentrated in `ExcalidrawView.ts` (145), `ExcalidrawData.ts`
+(64, was 108), `ExcalidrawAutomate.ts` (77), and `AIUtils.ts` (42).
+
+**Done:** fixed `ExcalidrawData.ts`'s cluster at its root cause. Traced it to
+8 `let parts;` / `let res;` declarations with no initializer and no type
+annotation (`getDecompressedScene`, `getJSON`, the text-element/element-link
+parsing loop, and both `quickParse`/`hasTransclusion` link-parsing loops) —
+each later assigned via `someIterator.next()`. With no annotation and no
+initializer, TypeScript infers these as implicit `any` forever, cascading
+into every downstream `.value`/`.length`/`.index` access. The correct type,
+`RegExpMatchIteratorResult = IteratorResult<RegExpMatchArray, undefined>`,
+already existed in the same file (line 102) and was already used correctly
+by half a dozen other methods (`REGEX_TAGS`/`REGEX_LINK`'s `getResList`,
+`getTag`, `getLink`, etc.) — and was already *implied* by the exact
+functions these bare variables got passed into. Applying it to the 8
+un-annotated declarations was a pure type-annotation change (8 one-line
+edits, nothing else touched) — TypeScript was just made aware of a type the
+code was already behaving as. Reduced `ExcalidrawData.ts` from 108 to 64
+findings (44 fewer, matched exactly by the whole-codebase count dropping
+514 → 470). `npm run build`, `tsc --noEmit`, and `node --check dist/main.js`
+all passed; the existing 33-warning circular-dependency baseline is
+unchanged. **Not yet committed** — reviewed but a commit wasn't requested
+before this effort was parked.
+
+**Investigated and deliberately not pursued: `AIUtils.ts`'s cluster (42
+findings).** This is a *qualitatively different* kind of `any`, not a
+same-shape follow-up to the fix above:
+
+- The root is Obsidian's own `RequestUrlResponse.json: any`
+  (`node_modules/obsidian/obsidian.d.ts:3585`) — a genuine external
+  boundary (arbitrary third-party HTTP JSON), not a local missing
+  annotation. Any type added here is an *assumption* about what
+  OpenAI/Anthropic/Google/xAI/OpenAI-compatible providers return, not a
+  fact already provable from existing code the way `RegExpMatchIteratorResult`
+  was.
+  - The largest sub-cluster, `buildGenerateAIImageResult` (~35 of the 42
+  findings), parses `json.data` behind an `Array.isArray(json?.data)`
+  runtime guard — i.e. a runtime check is already standing in for a type.
+  Adding a fixed interface wouldn't break that guard, but it creates
+  exactly the risk flagged as a hard constraint for this codebase: future
+  edits could be tempted to skip the guard because "the type says it's
+  there."
+  - `response.json.error` is directly **mutated** in one spot (line ~2065,
+  `response.json.error.imageRequest = {...}`) — a plugin-specific field no
+  provider ever sends. A correct interface has to account for that, which
+  turns this into real interface-design work across 5 provider shapes, not
+  a mechanical fix.
+- Conclusion: doesn't meet the same low-risk bar. Left entirely untouched.
+
+**If resumed:** look for more `ExcalidrawData.ts`-shaped cases elsewhere in
+the `no-unsafe-*` backlog — specifically, a local variable whose real type
+is already known and already used correctly elsewhere in the same file or
+codebase, just missing on one declaration — rather than external-boundary
+`any` (network responses, `JSON.parse` of untrusted content, etc.), which
+needs the same scrutiny `AIUtils.ts` got before touching. `ExcalidrawView.ts`
+(145 findings) and `ExcalidrawAutomate.ts` (77 findings) are the two
+remaining large clusters and haven't been individually triaged yet — either
+could contain more of the safe kind, but that needs checking file-by-file
+the same way this session did for `ExcalidrawData.ts` and `AIUtils.ts`, not
+assumed from the finding count alone.

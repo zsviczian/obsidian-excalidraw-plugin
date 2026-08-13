@@ -222,7 +222,7 @@ const getDecompressedScene = (
   let res = data.matchAll(DRAWING_COMPRESSED_REG);
 
   //In case the user adds a text element with the contents "# Drawing\n"
-  let parts;
+  let parts: RegExpMatchIteratorResult;
   parts = res.next();
   if (parts.done) {
     //did not find a match
@@ -255,7 +255,7 @@ export const changeThemeOfExcalidrawMD = (data: string): string => {
 };
 
 export function getJSON(data: string): { scene: string; pos: number } {
-  let res;
+  let res: IterableIterator<RegExpMatchArray>;
   if (isCompressedMD(data)) {
     const [result, parts] = getDecompressedScene(data);
     if (result) {
@@ -269,7 +269,7 @@ export function getJSON(data: string): { scene: string; pos: number } {
   res = data.matchAll(DRAWING_REG);
 
   //In case the user adds a text element with the contents "# Drawing\n"
-  let parts;
+  let parts: RegExpMatchIteratorResult;
   parts = res.next();
   if (parts.done) {
     //did not find a match
@@ -1172,7 +1172,7 @@ export class ExcalidrawData {
     data = data.slice(textElementsMatch.length);
     this.textElementCommentedOut = textElementsMatch.startsWith("%%\n");
     position = 0;
-    let parts;
+    let parts: RegExpMatchIteratorResult;
 
     //load element links
     const elementLinkMap = new Map<string, string>();
@@ -1617,7 +1617,7 @@ export class ExcalidrawData {
     const res = REGEX_LINK.getRes(text);
     let linkIcon = false;
     let urlIcon = false;
-    let parts;
+    let parts: RegExpMatchIteratorResult;
     if (text.match(REG_LINKINDEX_HYPERLINK)) {
       link = text;
       urlIcon = true;
@@ -1719,7 +1719,7 @@ export class ExcalidrawData {
   private quickParse(text: string): [string, string] {
     const hasTransclusion = (text: string): boolean => {
       const res = REGEX_LINK.getRes(text);
-      let parts;
+      let parts: RegExpMatchIteratorResult;
       while (!(parts = res.next()).done) {
         if (REGEX_LINK.isTransclusion(parts)) {
           return true;
@@ -1737,7 +1737,7 @@ export class ExcalidrawData {
     const res = REGEX_LINK.getRes(text);
     let linkIcon = false;
     let urlIcon = false;
-    let parts;
+    let parts: RegExpMatchIteratorResult;
     if (text.match(REG_LINKINDEX_HYPERLINK)) {
       link = text;
       urlIcon = true;
