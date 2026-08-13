@@ -92,6 +92,27 @@ interface SettingDefinition {
 interface ToggleControl {
   type: "toggle";
   key: BooleanSettingKey;
+  /**
+   * When true, the displayed toggle state and onChange value are the
+   * logical negation of the stored setting (e.g. a "double-click text
+   * editing" toggle backed by a `disableDoubleClickTextEditing` field).
+   */
+  negate?: boolean;
+  /**
+   * Extra logic run before the setting is assigned. Rare — matches the one
+   * existing case (aiEnabled) where a wrapper is shown/hidden using the
+   * *previous* semantics of "value" as the toggle's new state.
+   */
+  before?: (value: boolean) => void | Promise<void>;
+  /**
+   * Extra logic run after the setting is assigned but before
+   * applySettingsUpdate() — the common case (e.g. refreshing a derived
+   * preview, toggling a sibling's disabled state, setting a request flag
+   * that applySettingsUpdate()'s pending-actions pass will consume).
+   */
+  after?: (value: boolean) => void | Promise<void>;
+  /** Extra logic run after applySettingsUpdate() completes. Rare. */
+  afterUpdate?: (value: boolean) => void | Promise<void>;
   /** true => applySettingsUpdate(true); default => applySettingsUpdate() */
   reload?: boolean;
 }
@@ -219,9 +240,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   /**
    * Interprets a SettingDefinition to build the equivalent imperative
    * Setting UI. Only the toggle, text, dropdown, and slider controls are
-   * handled so far.
+   * handled so far. Returns the underlying Setting for toggle/text/dropdown
+   * (callers that need to keep manipulating it afterward, e.g. disabling a
+   * sibling setting, can capture the return value); slider has no
+   * equivalent object to return since createSliderWithText() doesn't
+   * expose one, so it returns undefined.
    */
-  private buildSetting(container: HTMLElement, def: SettingDefinition): void {
+  private buildSetting(
+    container: HTMLElement,
+    def: SettingDefinition,
+  ): Setting | undefined {
     const { control } = def;
     if (control.type === "slider") {
       const scale = control.scale ?? 1;
@@ -238,22 +266,30 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.applySettingsUpdate(control.reload ?? false);
         },
       });
-      return;
+      return undefined;
     }
     const setting = new Setting(container).setName(def.name);
     if (def.desc) {
       setting.setDesc(def.desc);
     }
     if (control.type === "toggle") {
+      const negate = control.negate ?? false;
       setting.addToggle((toggle) =>
         toggle
-          .setValue(this.plugin.settings[control.key])
+          .setValue(
+            negate
+              ? !this.plugin.settings[control.key]
+              : this.plugin.settings[control.key],
+          )
           .onChange(async (value) => {
-            this.plugin.settings[control.key] = value;
+            await control.before?.(value);
+            this.plugin.settings[control.key] = negate ? !value : value;
+            await control.after?.(value);
             this.applySettingsUpdate(control.reload ?? false);
+            await control.afterUpdate?.(value);
           }),
       );
-      return;
+      return setting;
     }
     if (control.type === "text") {
       setting.addText((text) => {
@@ -273,7 +309,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           },
         );
       });
-      return;
+      return setting;
     }
     // control.type === "dropdown" (the only remaining case)
     setting.addDropdown((dropdown) => {
@@ -287,6 +323,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           this.applySettingsUpdate(control.reload ?? false);
         });
     });
+    return setting;
   }
 
   /**
@@ -1012,18 +1049,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(detailsEl)
-      .setName(t("FILENAME_PREFIX_EMBED_NAME"))
-      .setDesc(fragWithHTML(t("FILENAME_PREFIX_EMBED_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.drawingEmbedPrefixWithFilename)
-          .onChange(async (value) => {
-            this.plugin.settings.drawingEmbedPrefixWithFilename = value;
-            setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("FILENAME_PREFIX_EMBED_NAME"),
+      desc: fragWithHTML(t("FILENAME_PREFIX_EMBED_DESC")),
+      control: {
+        type: "toggle",
+        key: "drawingEmbedPrefixWithFilename",
+        after: () =>
+          setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample()),
+      },
+    });
 
     new Setting(detailsEl)
       .setName(t("FILENAME_POSTFIX_NAME"))
@@ -1061,18 +1096,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(detailsEl)
-      .setName(t("FILENAME_EXCALIDRAW_EXTENSION_NAME"))
-      .setDesc(fragWithHTML(t("FILENAME_EXCALIDRAW_EXTENSION_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.useExcalidrawExtension)
-          .onChange(async (value) => {
-            this.plugin.settings.useExcalidrawExtension = value;
-            setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("FILENAME_EXCALIDRAW_EXTENSION_NAME"),
+      desc: fragWithHTML(t("FILENAME_EXCALIDRAW_EXTENSION_DESC")),
+      control: {
+        type: "toggle",
+        key: "useExcalidrawExtension",
+        after: () =>
+          setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample()),
+      },
+    });
 
     this.buildSetting(detailsEl, {
       name: t("CROP_PREFIX_NAME"),
@@ -1728,40 +1761,26 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h1",
     });
 
-    new Setting(detailsEl)
-      .setName(t("ENABLE_DOUBLE_CLICK_TEXT_EDITING_NAME"))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(!this.plugin.settings.disableDoubleClickTextEditing)
-          .onChange(async (value) => {
-            this.plugin.settings.disableDoubleClickTextEditing = !value;
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("ENABLE_DOUBLE_CLICK_TEXT_EDITING_NAME"),
+      control: {
+        type: "toggle",
+        key: "disableDoubleClickTextEditing",
+        negate: true,
+      },
+    });
 
-    new Setting(detailsEl)
-      .setName(t("DISABLE_CONTEXT_MENU_NAME"))
-      .setDesc(t("DISABLE_CONTEXT_MENU_DESC"))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(!this.plugin.settings.disableContextMenu)
-          .onChange(async (value) => {
-            this.plugin.settings.disableContextMenu = !value;
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("DISABLE_CONTEXT_MENU_NAME"),
+      desc: t("DISABLE_CONTEXT_MENU_DESC"),
+      control: { type: "toggle", key: "disableContextMenu", negate: true },
+    });
 
-    const readingModeEl = new Setting(detailsEl)
-      .setName(t("SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME"))
-      .setDesc(fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.renderImageInMarkdownReadingMode)
-          .onChange(async (value) => {
-            this.plugin.settings.renderImageInMarkdownReadingMode = value;
-            this.applySettingsUpdate();
-          }),
-      );
+    const readingModeEl = this.buildSetting(detailsEl, {
+      name: t("SHOW_DRAWING_OR_MD_IN_READING_MODE_NAME"),
+      desc: fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_READING_MODE_DESC")),
+      control: { type: "toggle", key: "renderImageInMarkdownReadingMode" },
+    });
     readingModeEl.nameEl.setAttribute("id", TAG_MDREADINGMODE);
 
     this.buildSetting(detailsEl, {
@@ -1776,23 +1795,22 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h3",
     });
 
-    new Setting(detailsEl)
-      .setName(t("SHOW_TAB_TITLEBAR_BUTTONS"))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.showTabTitlebarButtons)
-          .onChange(async (value) => {
-            this.plugin.settings.showTabTitlebarButtons = value;
-            this.applySettingsUpdate();
-            getExcalidrawViews(this.app, true).forEach((excalidrawView) => {
-              if (value) {
-                excalidrawView.addTabTitlebarButtons();
-              } else {
-                excalidrawView.removeTabTitlebarButtons();
-              }
-            });
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("SHOW_TAB_TITLEBAR_BUTTONS"),
+      control: {
+        type: "toggle",
+        key: "showTabTitlebarButtons",
+        afterUpdate: (value) => {
+          getExcalidrawViews(this.app, true).forEach((excalidrawView) => {
+            if (value) {
+              excalidrawView.addTabTitlebarButtons();
+            } else {
+              excalidrawView.removeTabTitlebarButtons();
+            }
+          });
+        },
+      },
+    });
 
     new UIModeSettingsComponent(detailsEl, this.plugin.settings, this.app, () =>
       this.applySettingsUpdate(),
@@ -1863,22 +1881,21 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       control: { type: "toggle", key: "matchThemeAlways" },
     });
 
-    new Setting(detailsEl)
-      .setName(t("MATCH_THEME_TRIGGER_NAME"))
-      .setDesc(fragWithHTML(t("MATCH_THEME_TRIGGER_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.matchThemeTrigger)
-          .onChange(async (value) => {
-            this.plugin.settings.matchThemeTrigger = value;
-            if (value) {
-              this.plugin.addThemeObserver();
-            } else {
-              this.plugin.removeThemeObserver();
-            }
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("MATCH_THEME_TRIGGER_NAME"),
+      desc: fragWithHTML(t("MATCH_THEME_TRIGGER_DESC")),
+      control: {
+        type: "toggle",
+        key: "matchThemeTrigger",
+        after: (value) => {
+          if (value) {
+            this.plugin.addThemeObserver();
+          } else {
+            this.plugin.removeThemeObserver();
+          }
+        },
+      },
+    });
 
     this.buildSetting(detailsEl, {
       name: t("DEFAULT_OPEN_MODE_NAME"),
@@ -1898,31 +1915,25 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       },
     });
 
-    new Setting(detailsEl)
-      .setName(t("PHONE_FOOTER_SAFE_AREA_PADDING_NAME"))
-      .setDesc(fragWithHTML(t("PHONE_FOOTER_SAFE_AREA_PADDING_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.phoneFooterSafeAreaPadding)
-          .onChange(async (value) => {
-            this.plugin.settings.phoneFooterSafeAreaPadding = value;
-            this.plugin.updateFooterSafeAreaPadding();
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("PHONE_FOOTER_SAFE_AREA_PADDING_NAME"),
+      desc: fragWithHTML(t("PHONE_FOOTER_SAFE_AREA_PADDING_DESC")),
+      control: {
+        type: "toggle",
+        key: "phoneFooterSafeAreaPadding",
+        after: () => this.plugin.updateFooterSafeAreaPadding(),
+      },
+    });
 
-    new Setting(detailsEl)
-      .setName(t("TABLET_FOOTER_SAFE_AREA_PADDING_NAME"))
-      .setDesc(fragWithHTML(t("TABLET_FOOTER_SAFE_AREA_PADDING_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.tabletFooterSafeAreaPadding)
-          .onChange(async (value) => {
-            this.plugin.settings.tabletFooterSafeAreaPadding = value;
-            this.plugin.updateFooterSafeAreaPadding();
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("TABLET_FOOTER_SAFE_AREA_PADDING_NAME"),
+      desc: fragWithHTML(t("TABLET_FOOTER_SAFE_AREA_PADDING_DESC")),
+      control: {
+        type: "toggle",
+        key: "tabletFooterSafeAreaPadding",
+        after: () => this.plugin.updateFooterSafeAreaPadding(),
+      },
+    });
 
     detailsEl = displayDetailsEl.createEl("details");
     detailsEl.createEl("summary", {
@@ -1937,36 +1948,32 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       control: { type: "toggle", key: "panWithRightMouseButton", reload: true },
     });
 
-    new Setting(detailsEl)
-      .setName(t("DEFAULT_PINCHZOOM_NAME"))
-      .setDesc(fragWithHTML(t("DEFAULT_PINCHZOOM_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.allowPinchZoom)
-          .onChange(async (value) => {
-            this.plugin.settings.allowPinchZoom = value;
-            getExcalidrawViews(this.app, true).forEach((excalidrawView) =>
-              excalidrawView.updatePinchZoom(),
-            );
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("DEFAULT_PINCHZOOM_NAME"),
+      desc: fragWithHTML(t("DEFAULT_PINCHZOOM_DESC")),
+      control: {
+        type: "toggle",
+        key: "allowPinchZoom",
+        after: () =>
+          getExcalidrawViews(this.app, true).forEach((excalidrawView) =>
+            excalidrawView.updatePinchZoom(),
+          ),
+      },
+    });
     addYouTubeThumbnail(detailsEl, "rBarRfcSxNo", 107);
 
-    new Setting(detailsEl)
-      .setName(t("DEFAULT_WHEELZOOM_NAME"))
-      .setDesc(fragWithHTML(t("DEFAULT_WHEELZOOM_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.allowWheelZoom)
-          .onChange(async (value) => {
-            this.plugin.settings.allowWheelZoom = value;
-            getExcalidrawViews(this.app, true).forEach((excalidrawView) =>
-              excalidrawView.updateWheelZoom(),
-            );
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("DEFAULT_WHEELZOOM_NAME"),
+      desc: fragWithHTML(t("DEFAULT_WHEELZOOM_DESC")),
+      control: {
+        type: "toggle",
+        key: "allowWheelZoom",
+        after: () =>
+          getExcalidrawViews(this.app, true).forEach((excalidrawView) =>
+            excalidrawView.updateWheelZoom(),
+          ),
+      },
+    });
 
     this.buildSetting(detailsEl, {
       name: t("ZOOM_TO_FIT_ONOPEN_NAME"),
@@ -2372,17 +2379,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     let todoPrefixSetting: TextComponent;
     let donePrefixSetting: TextComponent;
 
-    new Setting(detailsEl)
-      .setName(t("PARSE_TODO_NAME"))
-      .setDesc(fragWithHTML(t("PARSE_TODO_DESC")))
-      .addToggle((toggle) =>
-        toggle.setValue(this.plugin.settings.parseTODO).onChange((value) => {
-          this.plugin.settings.parseTODO = value;
+    this.buildSetting(detailsEl, {
+      name: t("PARSE_TODO_NAME"),
+      desc: fragWithHTML(t("PARSE_TODO_DESC")),
+      control: {
+        type: "toggle",
+        key: "parseTODO",
+        after: (value) => {
           todoPrefixSetting.setDisabled(!value);
           donePrefixSetting.setDisabled(!value);
-          this.applySettingsUpdate(true);
-        }),
-      );
+        },
+        reload: true,
+      },
+    });
 
     new Setting(detailsEl)
       .setName(t("TODO_NAME"))
@@ -2440,17 +2449,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       control: { type: "toggle", key: "allowCtrlClick" },
     });
 
-    const s = new Setting(detailsEl)
-      .setName(t("TRANSCLUSION_WRAP_NAME"))
-      .setDesc(fragWithHTML(t("TRANSCLUSION_WRAP_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.forceWrap)
-          .onChange(async (value) => {
-            this.plugin.settings.forceWrap = value;
-            this.applySettingsUpdate(true);
-          }),
-      );
+    const s = this.buildSetting(detailsEl, {
+      name: t("TRANSCLUSION_WRAP_NAME"),
+      desc: fragWithHTML(t("TRANSCLUSION_WRAP_DESC")),
+      control: { type: "toggle", key: "forceWrap", reload: true },
+    });
     setSanitizedHtml(
       s.descEl,
       `<code>![[doc#^ref]]{number}</code> ${t("TRANSCLUSION_WRAP_DESC")}`,
@@ -2512,18 +2515,18 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(detailsEl)
-      .setName(t("QUOTE_TRANSCLUSION_REMOVE_NAME"))
-      .setDesc(fragWithHTML(t("QUOTE_TRANSCLUSION_REMOVE_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.removeTransclusionQuoteSigns)
-          .onChange((value) => {
-            this.plugin.settings.removeTransclusionQuoteSigns = value;
-            this.requestEmbedUpdate = true;
-            this.applySettingsUpdate(true);
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("QUOTE_TRANSCLUSION_REMOVE_NAME"),
+      desc: fragWithHTML(t("QUOTE_TRANSCLUSION_REMOVE_DESC")),
+      control: {
+        type: "toggle",
+        key: "removeTransclusionQuoteSigns",
+        after: () => {
+          this.requestEmbedUpdate = true;
+        },
+        reload: true,
+      },
+    });
 
     this.buildSetting(detailsEl, {
       name: t("GET_URL_TITLE_NAME"),
@@ -2611,17 +2614,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           });
       });
 
-    const embedComment = new Setting(detailsEl)
-      .setName(t("EMBED_MARKDOWN_COMMENT_NAME"))
-      .setDesc(fragWithHTML(t("EMBED_MARKDOWN_COMMENT_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.embedMarkdownCommentLinks)
-          .onChange(async (value) => {
-            this.plugin.settings.embedMarkdownCommentLinks = value;
-            this.applySettingsUpdate();
-          }),
-      );
+    const embedComment = this.buildSetting(detailsEl, {
+      name: t("EMBED_MARKDOWN_COMMENT_NAME"),
+      desc: fragWithHTML(t("EMBED_MARKDOWN_COMMENT_DESC")),
+      control: { type: "toggle", key: "embedMarkdownCommentLinks" },
+    });
 
     if (this.plugin.settings.embedType === "excalidraw") {
       hideElement(embedComment.settingEl);
@@ -2733,17 +2730,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     });
     addYouTubeThumbnail(detailsEl, "wTtaXmRJ7wg", 171);
 
-    const pdfExportEl = new Setting(detailsEl)
-      .setName(t("SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME"))
-      .setDesc(fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.renderImageInMarkdownToPDF)
-          .onChange(async (value) => {
-            this.plugin.settings.renderImageInMarkdownToPDF = value;
-            this.applySettingsUpdate();
-          }),
-      );
+    const pdfExportEl = this.buildSetting(detailsEl, {
+      name: t("SHOW_DRAWING_OR_MD_IN_EXPORTPDF_NAME"),
+      desc: fragWithHTML(t("SHOW_DRAWING_OR_MD_IN_EXPORTPDF_DESC")),
+      control: { type: "toggle", key: "renderImageInMarkdownToPDF" },
+    });
     pdfExportEl.nameEl.setAttribute("id", TAG_PDFEXPORT);
 
     this.buildSetting(detailsEl, {
@@ -2817,31 +2808,29 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h4",
     });
 
-    new Setting(detailsEl)
-      .setName(t("EXPORT_BACKGROUND_NAME"))
-      .setDesc(fragWithHTML(t("EXPORT_BACKGROUND_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.exportWithBackground)
-          .onChange(async (value) => {
-            this.plugin.settings.exportWithBackground = value;
-            this.applySettingsUpdate();
-            this.requestEmbedUpdate = true;
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("EXPORT_BACKGROUND_NAME"),
+      desc: fragWithHTML(t("EXPORT_BACKGROUND_DESC")),
+      control: {
+        type: "toggle",
+        key: "exportWithBackground",
+        afterUpdate: () => {
+          this.requestEmbedUpdate = true;
+        },
+      },
+    });
 
-    new Setting(detailsEl)
-      .setName(t("EXPORT_THEME_NAME"))
-      .setDesc(fragWithHTML(t("EXPORT_THEME_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.exportWithTheme)
-          .onChange(async (value) => {
-            this.plugin.settings.exportWithTheme = value;
-            this.applySettingsUpdate();
-            this.requestEmbedUpdate = true;
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("EXPORT_THEME_NAME"),
+      desc: fragWithHTML(t("EXPORT_THEME_DESC")),
+      control: {
+        type: "toggle",
+        key: "exportWithTheme",
+        afterUpdate: () => {
+          this.requestEmbedUpdate = true;
+        },
+      },
+    });
 
     this.buildSetting(detailsEl, {
       name: t("PREVIEW_MATCH_OBSIDIAN_NAME"),
@@ -3221,21 +3210,22 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       cls: "excalidraw-setting-h3",
     });
     addYouTubeThumbnail(detailsEl, "eKFmrSQhFA4");
-    new Setting(detailsEl)
-      .setName(t("ENABLE_FOURTH_FONT_NAME"))
-      .setDesc(fragWithHTML(t("ENABLE_FOURTH_FONT_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.experimentalEnableFourthFont)
-          .onChange(async (value) => {
-            this.requestReloadDrawings = true;
-            this.plugin.settings.experimentalEnableFourthFont = value;
-            this.applySettingsUpdate();
-            if (value) {
-              await this.plugin.initializeFonts();
-            }
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("ENABLE_FOURTH_FONT_NAME"),
+      desc: fragWithHTML(t("ENABLE_FOURTH_FONT_DESC")),
+      control: {
+        type: "toggle",
+        key: "experimentalEnableFourthFont",
+        before: () => {
+          this.requestReloadDrawings = true;
+        },
+        afterUpdate: async (value) => {
+          if (value) {
+            await this.plugin.initializeFonts();
+          }
+        },
+      },
+    });
 
     const fourthFontSetting = new Setting(detailsEl)
       .setName(t("FOURTH_FONT_NAME"))
@@ -3345,18 +3335,15 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       });
     });
 
-    new Setting(detailsEl)
-      .setName(t("FILETYPE_NAME"))
-      .setDesc(fragWithHTML(t("FILETYPE_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.experimentalFileType)
-          .onChange(async (value) => {
-            this.plugin.settings.experimentalFileType = value;
-            this.plugin.experimentalFileTypeDisplayToggle(value);
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("FILETYPE_NAME"),
+      desc: fragWithHTML(t("FILETYPE_DESC")),
+      control: {
+        type: "toggle",
+        key: "experimentalFileType",
+        after: (value) => this.plugin.experimentalFileTypeDisplayToggle(value),
+      },
+    });
 
     this.buildSetting(detailsEl, {
       name: t("FILETAG_NAME"),
@@ -3374,21 +3361,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       control: { type: "toggle", key: "experimentalLivePreview" },
     });
 
-    new Setting(detailsEl)
-      .setName(t("FADE_OUT_EXCALIDRAW_MARKUP_NAME"))
-      .setDesc(fragWithHTML(t("FADE_OUT_EXCALIDRAW_MARKUP_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.fadeOutExcalidrawMarkup)
-          .onChange(async (value) => {
-            this.plugin.settings.fadeOutExcalidrawMarkup = value;
-            this.plugin.editorHandler.updateCMExtensionState(
-              EDITOR_FADEOUT,
-              value,
-            );
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("FADE_OUT_EXCALIDRAW_MARKUP_NAME"),
+      desc: fragWithHTML(t("FADE_OUT_EXCALIDRAW_MARKUP_DESC")),
+      control: {
+        type: "toggle",
+        key: "fadeOutExcalidrawMarkup",
+        after: (value) =>
+          this.plugin.editorHandler.updateCMExtensionState(
+            EDITOR_FADEOUT,
+            value,
+          ),
+      },
+    });
 
     this.buildSetting(detailsEl, {
       name: t("EXCALIDRAW_PROPERTIES_NAME"),
@@ -3409,24 +3394,25 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     let taskboneAPIKeyText: TextComponent;
 
     addYouTubeThumbnail(detailsEl, "7gu4ETx7zro");
-    new Setting(detailsEl)
-      .setName(t("TASKBONE_ENABLE_NAME"))
-      .setDesc(fragWithHTML(t("TASKBONE_ENABLE_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.taskboneEnabled)
-          .onChange(async (value) => {
-            taskboneAPIKeyText.setDisabled(!value);
-            this.plugin.settings.taskboneEnabled = value;
-            if (this.plugin.settings.taskboneAPIkey === "") {
-              const apiKey = await this.plugin.taskbone.initialize(false);
-              if (apiKey) {
-                taskboneAPIKeyText.setValue(apiKey);
-              }
+    this.buildSetting(detailsEl, {
+      name: t("TASKBONE_ENABLE_NAME"),
+      desc: fragWithHTML(t("TASKBONE_ENABLE_DESC")),
+      control: {
+        type: "toggle",
+        key: "taskboneEnabled",
+        before: (value) => {
+          taskboneAPIKeyText.setDisabled(!value);
+        },
+        after: async () => {
+          if (this.plugin.settings.taskboneAPIkey === "") {
+            const apiKey = await this.plugin.taskbone.initialize(false);
+            if (apiKey) {
+              taskboneAPIKeyText.setValue(apiKey);
             }
-            this.applySettingsUpdate();
-          }),
-      );
+          }
+        },
+      },
+    });
 
     new Setting(detailsEl)
       .setName(t("TASKBONE_APIKEY_NAME"))
@@ -3591,18 +3577,16 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       control: { type: "toggle", key: "slidingPanesSupport" },
     });
 
-    new Setting(detailsEl)
-      .setName(t("COMPATIBILITY_MODE_NAME"))
-      .setDesc(fragWithHTML(t("COMPATIBILITY_MODE_DESC")))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.compatibilityMode)
-          .onChange(async (value) => {
-            this.plugin.settings.compatibilityMode = value;
-            setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
-            this.applySettingsUpdate();
-          }),
-      );
+    this.buildSetting(detailsEl, {
+      name: t("COMPATIBILITY_MODE_NAME"),
+      desc: fragWithHTML(t("COMPATIBILITY_MODE_DESC")),
+      control: {
+        type: "toggle",
+        key: "compatibilityMode",
+        after: () =>
+          setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample()),
+      },
+    });
 
     this.buildSetting(detailsEl, {
       name: t("EXPORT_EXCALIDRAW_NAME"),

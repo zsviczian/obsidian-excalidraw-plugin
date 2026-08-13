@@ -985,3 +985,66 @@ to resume.
    coverage before committing to the next phase. This plan is deliberately a
    sequence of checkpoints rather than a promise to execute every proposed
    module unchanged.
+
+## Related, separate effort: settings.ts declarative-shape adoption
+
+Started 2026-08-13, independent of the `ExcalidrawView`/`main.ts` plan above
+(different file, different motivation — not part of the parked plan, not
+blocked by it, and not blocking it). Tracked here because it's the other
+active refactor in the codebase and future sessions should know it exists.
+
+**Goal:** prepare for Obsidian's declarative settings API
+(`getSettingDefinitions()`, requires Obsidian 1.13+) without bumping
+`minAppVersion` past 1.8.7 yet, by modeling settings as data
+(`SettingDefinition` objects with a `control` variant) that the *current*
+`display()` interprets via a new `buildSetting()` method, rather than each
+setting being hand-built with `new Setting(...).addToggle(...)` etc.
+`render`/`visible` (for Obsidian's real API) are deliberately not
+implemented yet — only the legacy-rendering interpreter exists so far.
+
+**Sequence so far:** extracted `ExcalidrawSettings`/`DEFAULT_SETTINGS`/AI
+config constants to `src/core/settingsDefaults.ts`; split
+`ExcalidrawSettingTab.display()` into 14 per-section methods (pure code
+motion, verified via reconstruction diff); added the `SettingDefinition`
+type system and `buildSetting()` interpreter, piloted against one or two
+settings per control type (toggle/text/dropdown/slider) before doing a
+full pass; converted all plain toggles, then extended `ToggleControl` with
+`before`/`after`/`afterUpdate` hooks (matching every side-effect ordering
+found: before assignment, between assignment and `applySettingsUpdate()`,
+after `applySettingsUpdate()`) and `negate` (for two inverted-boolean
+settings), and made `buildSetting()` return the underlying `Setting` so
+callers that need to keep manipulating it afterward (e.g.
+`.nameEl.setAttribute(...)`, later show/hide) can capture it. Toggle
+control type is now fully closed out — text/dropdown/slider still have
+their remaining non-pilot instances unconverted.
+
+**Deliberately left as legacy imperative code (toggle type), each because
+it doesn't fit the current `control` shape cleanly:**
+
+- `AI_ENABLED_NAME` (`aiEnabled`) — reads with a `?? true` defensive
+  fallback for legacy persisted data; `ToggleControl` has no way to express
+  a read-time default.
+- `GRID_DIRECTION_NAME` — two `.addToggle()` calls chained onto one
+  `Setting` row (horizontal/vertical), bound to a nested,
+  migration-guarded field (`gridSettings.GRID_DIRECTION?.horizontal ??
+  true` with an inline "2.10.1 migration" backfill). `SettingDefinition`
+  assumes one control per row and a flat top-level key.
+- `GRID_DYNAMIC_COLOR_NAME` (`gridSettings.DYNAMIC_COLOR`) — nested field,
+  not a flat `BooleanSettingKey`.
+- `EXPORT_SVG_NAME` / `EXPORT_PNG_NAME` (`autoexportSVG`/`autoexportPNG`)
+  — each toggle mutates a *different* setting's dropdown options
+  (add/remove an "SVG"/"PNG" choice from the embed-type dropdown). A
+  genuine cross-control relationship, structurally the same category as
+  the deferred `visible` mechanism.
+- The dynamic per-installed-script toggle in the Compatibility section —
+  not a real named setting at all (`variableName`/`getValue`/`setValue`
+  are runtime-generated per script), inherently `render`-only content once
+  that control type exists.
+
+**If resumed:** convert the remaining text/dropdown/slider instances the
+same way (mechanical, one control type at a time, full-type verification
+before commit — the user explicitly asked for full-type closeout before
+committing, and to review the diff before each commit). Only after all
+four control types are fully converted does adding `render` and `visible`
+start to make sense, since at that point the exception list above becomes
+the actual scope for `render`.
