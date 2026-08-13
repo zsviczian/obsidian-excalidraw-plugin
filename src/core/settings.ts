@@ -95,6 +95,12 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   private settingsPersistenceChain: Promise<void> = Promise.resolve();
   private hotkeyEditor: HotkeyEditor;
   private fontPickers: FontPickerComponent[] = [];
+  /**
+   * Filename-sample preview element from the Saving section, refreshed by
+   * both that section and the Compatibility section's compatibilityMode
+   * toggle (which changes how sample filenames are generated).
+   */
+  private filenameSampleEl: HTMLElement;
   //private reloadMathJax: boolean = false;
   //private applyDebounceTimer: number = 0;
 
@@ -108,6 +114,19 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       picker.destroy();
     }
     this.fontPickers = [];
+  }
+
+  private getFilenameSample(): string {
+    return `${t(
+      "FILENAME_SAMPLE",
+    )}<a href=${URLs.WWW_YOUTUBE_COM_VISUALPKM} target='_blank'>${getDrawingFilename(
+      this.plugin.settings,
+    )}</a></b><br>${t(
+      "FILENAME_EMBED_SAMPLE",
+    )}<a href=${URLs.WWW_YOUTUBE_COM_VISUALPKM} target='_blank'>${getEmbedFilename(
+      "{NOTE_NAME}",
+      this.plugin.settings,
+    )}</a></b>`;
   }
 
   /**
@@ -288,8 +307,6 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
   }
 
   display() {
-    let detailsEl: HTMLElement;
-
     //await this.plugin.loadSettings(); //in case sync loaded changed settings in the background
     this.requestEmbedUpdate = false;
     this.requestReloadDrawings = false;
@@ -298,6 +315,24 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
     containerEl.addClass("excalidraw-settings");
     this.containerEl.empty();
 
+    this.renderSearchSection();
+    this.renderPromoLinksSection();
+    this.renderGeneralSection();
+    this.renderSavingSection();
+    this.renderAISection();
+    this.renderDisplaySection();
+    this.renderLinksAndTransclusionsSection();
+    this.renderEmbedAndExportSection();
+    this.renderEmbeddingSettingsSection();
+    this.renderNonExcalidrawFeaturesSection();
+    this.renderFontsSection();
+    this.renderExperimentalFeaturesSection();
+    this.renderExcalidrawAutomateSection();
+    this.renderCompatibilitySection();
+  }
+
+  private renderSearchSection(): void {
+    const { containerEl } = this;
     // ------------------------------------------------
     // Search and Settings to Clipboard
     // ------------------------------------------------
@@ -401,6 +436,10 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         anchor.setAttribute("rel", "noopener noreferrer");
       });
 
+  }
+
+  private renderPromoLinksSection(): void {
+    const { containerEl } = this;
     // ------------------------------------------------
     // Promo links
     // ------------------------------------------------
@@ -465,6 +504,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       });
     });
 
+  }
+
+  private renderGeneralSection(): void {
+    const { containerEl } = this;
+    let detailsEl: HTMLElement;
     // ------------------------------------------------
     // Saving
     // ------------------------------------------------
@@ -707,6 +751,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       this.addVaultPathSupport(scriptFolderSetting, text, "folder");
     });
 
+  }
+
+  private renderSavingSection(): void {
+    const { containerEl } = this;
+    let detailsEl: HTMLElement;
     // ------------------------------------------------
     // Saving
     // ------------------------------------------------
@@ -790,21 +839,8 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       setSanitizedHtml(el, t("FILENAME_DESC"));
     });
 
-    const getFilenameSample = () => {
-      return `${t(
-        "FILENAME_SAMPLE",
-      )}<a href=${URLs.WWW_YOUTUBE_COM_VISUALPKM} target='_blank'>${getDrawingFilename(
-        this.plugin.settings,
-      )}</a></b><br>${t(
-        "FILENAME_EMBED_SAMPLE",
-      )}<a href=${URLs.WWW_YOUTUBE_COM_VISUALPKM} target='_blank'>${getEmbedFilename(
-        "{NOTE_NAME}",
-        this.plugin.settings,
-      )}</a></b>`;
-    };
-
-    const filenameEl = detailsEl.createEl("p", { text: "" });
-    setSanitizedHtml(filenameEl, getFilenameSample());
+    this.filenameSampleEl = detailsEl.createEl("p", { text: "" });
+    setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
 
     new Setting(detailsEl)
       .setName(t("FILENAME_PREFIX_NAME"))
@@ -819,7 +855,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               "_",
             );
             text.setValue(this.plugin.settings.drawingFilenamePrefix);
-            setSanitizedHtml(filenameEl, getFilenameSample());
+            setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
             this.applySettingsUpdate();
           }),
       );
@@ -832,7 +868,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.drawingEmbedPrefixWithFilename)
           .onChange(async (value) => {
             this.plugin.settings.drawingEmbedPrefixWithFilename = value;
-            setSanitizedHtml(filenameEl, getFilenameSample());
+            setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
             this.applySettingsUpdate();
           }),
       );
@@ -850,7 +886,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               "_",
             );
             text.setValue(this.plugin.settings.drawingFilnameEmbedPostfix);
-            setSanitizedHtml(filenameEl, getFilenameSample());
+            setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
             this.applySettingsUpdate();
           }),
       );
@@ -868,7 +904,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
               "_",
             );
             text.setValue(this.plugin.settings.drawingFilenameDateTime);
-            setSanitizedHtml(filenameEl, getFilenameSample());
+            setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
             this.applySettingsUpdate();
           }),
       );
@@ -881,7 +917,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.useExcalidrawExtension)
           .onChange(async (value) => {
             this.plugin.settings.useExcalidrawExtension = value;
-            setSanitizedHtml(filenameEl, getFilenameSample());
+            setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
             this.applySettingsUpdate();
           }),
       );
@@ -966,6 +1002,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
+  }
+
+  private renderAISection(): void {
+    const { containerEl } = this;
+    let detailsEl: HTMLElement;
     //------------------------------------------------
     // AI Settings
     //------------------------------------------------
@@ -1551,6 +1592,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       },
     );
 
+  }
+
+  private renderDisplaySection(): void {
+    const { containerEl } = this;
+    let detailsEl: HTMLElement;
     // ------------------------------------------------
     // Display
     // ------------------------------------------------
@@ -2194,6 +2240,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
       () => this.applySettingsUpdate(),
     ).render();
 
+  }
+
+  private renderLinksAndTransclusionsSection(): void {
+    const { containerEl } = this;
+    let detailsEl: HTMLElement;
     // ------------------------------------------------
     // Links and Transclusions
     // ------------------------------------------------
@@ -2490,6 +2541,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
+  }
+
+  private renderEmbedAndExportSection(): void {
+    const { containerEl } = this;
+    let detailsEl: HTMLElement;
     // ------------------------------------------------
     // Embed and Export
     // ------------------------------------------------
@@ -2947,6 +3003,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
+  }
+
+  private renderEmbeddingSettingsSection(): void {
+    const { containerEl } = this;
+    let detailsEl: HTMLElement;
     // ------------------------------------------------
     // Embedding settings
     // ------------------------------------------------
@@ -3140,6 +3201,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
+  }
+
+  private renderNonExcalidrawFeaturesSection(): void {
+    const { containerEl } = this;
+    let detailsEl: HTMLElement;
     // ------------------------------------------------
     // Non-excalidraw.com supported features
     // ------------------------------------------------
@@ -3205,6 +3271,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
+  }
+
+  private renderFontsSection(): void {
+    const { containerEl } = this;
+    let detailsEl: HTMLElement;
     // ------------------------------------------------
     // Fonts supported features
     // ------------------------------------------------
@@ -3324,6 +3395,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           }),
       );
 
+  }
+
+  private renderExperimentalFeaturesSection(): void {
+    const { containerEl } = this;
+    let detailsEl: HTMLElement;
     // ------------------------------------------------
     // Experimental features
     // ------------------------------------------------
@@ -3482,6 +3558,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setDisabled(!this.plugin.settings.taskboneEnabled);
       });
 
+  }
+
+  private renderExcalidrawAutomateSection(): void {
+    const { containerEl } = this;
+    let detailsEl: HTMLElement;
     // ------------------------------------------------
     // ExcalidrawAutomate
     // ------------------------------------------------
@@ -3606,6 +3687,11 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           });
       });
 
+  }
+
+  private renderCompatibilitySection(): void {
+    const { containerEl } = this;
+    let detailsEl: HTMLElement;
     // ------------------------------------------------
     // Compatibility
     // ------------------------------------------------
@@ -3664,7 +3750,7 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.compatibilityMode)
           .onChange(async (value) => {
             this.plugin.settings.compatibilityMode = value;
-            setSanitizedHtml(filenameEl, getFilenameSample());
+            setSanitizedHtml(this.filenameSampleEl, this.getFilenameSample());
             this.applySettingsUpdate();
           }),
       );
@@ -3929,4 +4015,5 @@ export class ExcalidrawSettingTab extends PluginSettingTab {
         });
     }
   }
+
 }
