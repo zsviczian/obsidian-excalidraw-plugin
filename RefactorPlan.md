@@ -1175,8 +1175,7 @@ code was already behaving as. Reduced `ExcalidrawData.ts` from 108 to 64
 findings (44 fewer, matched exactly by the whole-codebase count dropping
 514 → 470). `npm run build`, `tsc --noEmit`, and `node --check dist/main.js`
 all passed; the existing 33-warning circular-dependency baseline is
-unchanged. **Not yet committed** — reviewed but a commit wasn't requested
-before this effort was parked.
+unchanged. Committed (`c78cfcc1`).
 
 **Investigated and deliberately not pursued: `AIUtils.ts`'s cluster (42
 findings).** This is a *qualitatively different* kind of `any`, not a
